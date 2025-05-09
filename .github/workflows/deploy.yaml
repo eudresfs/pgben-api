@@ -1,4 +1,3 @@
-
 name: Build and Deploy
 on:
   push:
@@ -41,18 +40,37 @@ jobs:
       
       - name: Notify Discord - Build
         if: always()
-        uses: sarisia/actions-status-discord@v1
-        with:
-          webhook: ${{ secrets.DISCORD_WEBHOOK }}
-          title: "🔨 Build: ${{ github.event.repository.name }}"
-          description: |
-            **Status:** ${{ job.status }}
-            **Branch:** ${{ github.ref_name }}
-            **Image:** ${{ env.CONTAINER_PATH }}
-            **Commit:** ${{ github.event.head_commit.message }}
-          color: ${{ job.status == 'success' && '0x43B581' || '0xF04747' }}
-          username: GitHub Actions
-          avatar_url: https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png
+        run: |
+          # Instala curl se não estiver disponível
+          if ! command -v curl &> /dev/null; then
+            apt-get update && apt-get install -y curl
+          fi
+          
+          # Define a cor baseada no status
+          if [ "${{ job.status }}" == "success" ]; then
+            COLOR="3066993"  # Verde
+          else
+            COLOR="15158332"  # Vermelho
+          fi
+          
+          # Cria a mensagem JSON
+          PAYLOAD=$(cat <<EOF
+          {
+            "embeds": [{
+              "title": "🔨 Build: ${{ github.event.repository.name }}",
+              "description": "**Status:** ${{ job.status }}\n**Branch:** ${{ github.ref_name }}\n**Image:** ${{ env.CONTAINER_PATH }}\n**Commit:** ${{ github.event.head_commit.message }}",
+              "color": $COLOR,
+              "footer": {
+                "text": "GitHub Actions"
+              },
+              "timestamp": "$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+            }]
+          }
+          EOF
+          )
+          
+          # Envia para o Discord
+          curl -H "Content-Type: application/json" -d "$PAYLOAD" ${{ secrets.DISCORD_WEBHOOK }}
   
   deploy:
     needs:
@@ -63,32 +81,46 @@ jobs:
         id: deploy
         run: |
           kubectl -n $K8S_NAMESPACE set image deployment/$DEPLOYMENT_NAME $DEPLOYMENT_NAME=$CONTAINER_PATH --record
+          DEPLOY_STATUS=$?
           kubectl -n $K8S_NAMESPACE rollout status deployment/$DEPLOYMENT_NAME
-        continue-on-error: true
-      
-      - name: Check deployment success
-        id: check
-        run: |
-          if [ "${{ steps.deploy.outcome }}" == "success" ]; then
-            echo "::set-output name=status::success"
-          else
-            echo "::set-output name=status::failure"
+          ROLLOUT_STATUS=$?
+          
+          # Armazena o status para uso posterior
+          echo "::set-output name=deploy_exit_code::$DEPLOY_STATUS"
+          echo "::set-output name=rollout_exit_code::$ROLLOUT_STATUS"
+          
+          # Falha se algum dos comandos falhar
+          if [ $DEPLOY_STATUS -ne 0 ] || [ $ROLLOUT_STATUS -ne 0 ]; then
             exit 1
           fi
       
       - name: Notify Discord - Deploy
         if: always()
-        uses: sarisia/actions-status-discord@v1
-        with:
-          webhook: ${{ secrets.DISCORD_WEBHOOK }}
-          title: "🚀 Deploy: ${{ github.event.repository.name }}"
-          description: |
-            **Status:** ${{ steps.check.outputs.status == 'success' && '✅ Success' || '❌ Failed' }}
-            **Namespace:** ${{ env.K8S_NAMESPACE }}
-            **Deployment:** ${{ env.DEPLOYMENT_NAME }}
-            **Image:** ${{ env.CONTAINER_PATH }}
-            **Commit:** ${{ github.event.head_commit.message }}
-            **By:** ${{ github.actor }}
-          color: ${{ steps.check.outputs.status == 'success' && '0x43B581' || '0xF04747' }}
-          username: GitHub Actions
-          avatar_url: https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png
+        run: |
+          # Define a cor baseada no status
+          if [ "${{ steps.deploy.outcome }}" == "success" ]; then
+            STATUS="✅ Success"
+            COLOR="3066993"  # Verde
+          else
+            STATUS="❌ Failed"
+            COLOR="15158332"  # Vermelho
+          fi
+          
+          # Cria a mensagem JSON
+          PAYLOAD=$(cat <<EOF
+          {
+            "embeds": [{
+              "title": "🚀 Deploy: ${{ github.event.repository.name }}",
+              "description": "**Status:** $STATUS\n**Namespace:** ${{ env.K8S_NAMESPACE }}\n**Deployment:** ${{ env.DEPLOYMENT_NAME }}\n**Image:** ${{ env.CONTAINER_PATH }}\n**Commit:** ${{ github.event.head_commit.message }}\n**By:** ${{ github.actor }}",
+              "color": $COLOR,
+              "footer": {
+                "text": "GitHub Actions"
+              },
+              "timestamp": "$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+            }]
+          }
+          EOF
+          )
+          
+          # Envia para o Discord
+          curl -H "Content-Type: application/json" -d "$PAYLOAD" ${{ secrets.DISCORD_WEBHOOK }}
