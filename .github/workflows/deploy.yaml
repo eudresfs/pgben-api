@@ -1,0 +1,54 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches: [ "main" ]
+
+env:
+  CPR_ADDR: cpr.kemosoft.com.br
+  K8S_NAMESPACE: consigmais
+  DEPLOYMENT_NAME: ${{ github.event.repository.name }}
+  CONTAINER_PATH: cpr.kemosoft.com.br/${{ github.event.repository.name }}:${{ github.sha }}
+
+jobs:
+
+  build:
+    runs-on: arc-runner-set
+    container:
+      image: gcr.io/kaniko-project/executor:v1.20.0-debug
+    permissions:
+      contents: read
+
+    steps:
+      - name: build and push image to cpr
+        run: |
+          cat <<EOF > /kaniko/.docker/config.json
+          {
+            "auths": {
+              "$CPR_ADDR": {
+                "auth": "$(echo -n "$CPR_USERNAME:$CPR_PASSWORD" | base64 -w0)"
+              }
+            }
+          }
+          EOF
+
+          /kaniko/executor --dockerfile="/Dockerfile" \
+            --context="${{ github.repositoryUrl }}#${{ github.ref }}#${{ github.sha }}"  \
+            --destination="${{ env.CONTAINER_PATH }}" \
+            ${{ env.KANIKO_CACHE_ARGS }} \
+            --push-retry 5 
+        env:
+          GIT_USERNAME: ${{ github.actor }}
+          GIT_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+          CPR_USERNAME: ${{ secrets.CPR_USERNAME }}
+          CPR_PASSWORD: ${{ secrets.CPR_PASSWORD }}
+
+  deploy:
+    needs:
+      - build
+    runs-on: k8s
+    steps:
+      - name: patch deployment
+        run: |
+          kubectl -n $K8S_NAMESPACE set image deployment/$DEPLOYMENT_NAME $DEPLOYMENT_NAME=$CONTAINER_PATH --record
+          kubectl -n $K8S_NAMESPACE rollout status deployment/$DEPLOYMENT_NAME
