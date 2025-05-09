@@ -37,40 +37,6 @@ jobs:
           GIT_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
           CPR_USERNAME: ${{ secrets.CPR_USERNAME }}
           CPR_PASSWORD: ${{ secrets.CPR_PASSWORD }}
-      
-      - name: Notify Discord - Build
-        if: always()
-        run: |
-          # Instala curl se não estiver disponível
-          if ! command -v curl &> /dev/null; then
-            apt-get update && apt-get install -y curl
-          fi
-          
-          # Define a cor baseada no status
-          if [ "${{ job.status }}" == "success" ]; then
-            COLOR="3066993"  # Verde
-          else
-            COLOR="15158332"  # Vermelho
-          fi
-          
-          # Cria a mensagem JSON
-          PAYLOAD=$(cat <<EOF
-          {
-            "embeds": [{
-              "title": "🔨 Build: ${{ github.event.repository.name }}",
-              "description": "**Status:** ${{ job.status }}\n**Branch:** ${{ github.ref_name }}\n**Image:** ${{ env.CONTAINER_PATH }}\n**Commit:** ${{ github.event.head_commit.message }}",
-              "color": $COLOR,
-              "footer": {
-                "text": "GitHub Actions"
-              },
-              "timestamp": "$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
-            }]
-          }
-          EOF
-          )
-          
-          # Envia para o Discord
-          curl -H "Content-Type: application/json" -d "$PAYLOAD" ${{ secrets.DISCORD_WEBHOOK }}
   
   deploy:
     needs:
@@ -86,41 +52,61 @@ jobs:
           ROLLOUT_STATUS=$?
           
           # Armazena o status para uso posterior
-          echo "::set-output name=deploy_exit_code::$DEPLOY_STATUS"
-          echo "::set-output name=rollout_exit_code::$ROLLOUT_STATUS"
+          if [ $DEPLOY_STATUS -eq 0 ] && [ $ROLLOUT_STATUS -eq 0 ]; then
+            DEPLOY_RESULT="success"
+          else
+            DEPLOY_RESULT="failure"
+          fi
+          echo "DEPLOY_RESULT=$DEPLOY_RESULT" >> $GITHUB_ENV
           
           # Falha se algum dos comandos falhar
           if [ $DEPLOY_STATUS -ne 0 ] || [ $ROLLOUT_STATUS -ne 0 ]; then
             exit 1
           fi
-      
-      - name: Notify Discord - Deploy
+          
+      - name: Send to Discord notification
         if: always()
         run: |
-          # Define a cor baseada no status
-          if [ "${{ steps.deploy.outcome }}" == "success" ]; then
+          # Salva o webhook do Discord em uma variável
+          WEBHOOK_URL="${{ secrets.DISCORD_WEBHOOK }}"
+          
+          # Extrai o host e o path do webhook
+          DISCORD_HOST=$(echo $WEBHOOK_URL | sed -e 's|^https://||' -e 's|/.*$||')
+          DISCORD_PATH=$(echo $WEBHOOK_URL | sed -e 's|^https://[^/]*||')
+          
+          # Prepara a mensagem
+          if [ "${{ env.DEPLOY_RESULT }}" = "success" ]; then
             STATUS="✅ Success"
-            COLOR="3066993"  # Verde
           else
             STATUS="❌ Failed"
-            COLOR="15158332"  # Vermelho
           fi
           
-          # Cria a mensagem JSON
-          PAYLOAD=$(cat <<EOF
-          {
-            "embeds": [{
-              "title": "🚀 Deploy: ${{ github.event.repository.name }}",
-              "description": "**Status:** $STATUS\n**Namespace:** ${{ env.K8S_NAMESPACE }}\n**Deployment:** ${{ env.DEPLOYMENT_NAME }}\n**Image:** ${{ env.CONTAINER_PATH }}\n**Commit:** ${{ github.event.head_commit.message }}\n**By:** ${{ github.actor }}",
-              "color": $COLOR,
-              "footer": {
-                "text": "GitHub Actions"
-              },
-              "timestamp": "$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
-            }]
-          }
-          EOF
-          )
+          # Cria a mensagem JSON - versão simplificada
+          JSON_DATA='{"content":"**🚀 Deploy: ${{ github.event.repository.name }}**\n**Status:** '"$STATUS"'\n**Namespace:** ${{ env.K8S_NAMESPACE }}\n**Deployment:** ${{ env.DEPLOYMENT_NAME }}\n**Image:** ${{ env.CONTAINER_PATH }}\n**By:** ${{ github.actor }}"}'
           
-          # Envia para o Discord
-          curl -H "Content-Type: application/json" -d "$PAYLOAD" ${{ secrets.DISCORD_WEBHOOK }}
+          # Tenta usar netcat se disponível
+          if command -v nc > /dev/null; then
+            {
+              echo -e "POST $DISCORD_PATH HTTP/1.1"
+              echo -e "Host: $DISCORD_HOST"
+              echo -e "Content-Type: application/json"
+              echo -e "Content-Length: ${#JSON_DATA}"
+              echo -e "\r\n"
+              echo -e "$JSON_DATA"
+            } | nc $DISCORD_HOST 443 -N
+          # Alternativa usando somente bash e /dev/tcp se disponível
+          elif [ -w /dev/tcp/$DISCORD_HOST/443 ]; then
+            exec 3>/dev/tcp/$DISCORD_HOST/443
+            
+            echo -e "POST $DISCORD_PATH HTTP/1.1\r
+            Host: $DISCORD_HOST\r
+            Content-Type: application/json\r
+            Content-Length: ${#JSON_DATA}\r
+            \r
+            $JSON_DATA" >&3
+            
+            exec 3>&-
+          else
+            echo "Não foi possível enviar a notificação para o Discord. Nem nc nem /dev/tcp estão disponíveis."
+            echo "Deploy status: $STATUS"
+          fi
