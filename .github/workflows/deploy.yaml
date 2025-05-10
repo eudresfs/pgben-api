@@ -63,4 +63,8 @@ jobs:
           # kubectl -n $K8S_NAMESPACE set image deployment/$DEPLOYMENT_NAME $DEPLOYMENT_NAME=$CONTAINER_PATH --record
           kubectl -n $K8S_NAMESPACE rollout status deployment/$DEPLOYMENT_NAME
 
+      - name: Deploy Kubernetes Resources
+        run: |
+          # Os parâmetros são: namespace, app-name, port, target-port(container-port)
+          ./deploy-k8s-resources.sh consigmais pgben-server 80 3000
           

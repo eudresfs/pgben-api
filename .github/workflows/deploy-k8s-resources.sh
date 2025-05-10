@@ -1,0 +1,88 @@
+#!/bin/bash
+set -e
+
+# Parâmetros da linha de comando
+NAMESPACE=$1
+APP_NAME=$2
+PORT=$3
+TARGET_PORT=$4  # Porta exposta no container
+DOMAIN="${APP_NAME}.kemosoft.com.br"
+
+echo "Configurando recursos para: $APP_NAME"
+echo "Namespace: $NAMESPACE"
+echo "Porta externa: $PORT, Porta interna: $TARGET_PORT"
+echo "Domínio: $DOMAIN"
+
+# Verificar se o serviço já existe
+if ! kubectl get svc ${APP_NAME}-svc -n ${NAMESPACE} &> /dev/null; then
+  echo "Criando serviço ${APP_NAME}-svc..."
+  cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app: ${APP_NAME}
+  name: ${APP_NAME}-svc
+  namespace: ${NAMESPACE}
+spec:
+  ports:
+  - name: ${APP_NAME}
+    port: ${PORT}
+    protocol: TCP
+    targetPort: ${TARGET_PORT}  # Porta do container
+  selector:
+    app: ${APP_NAME}
+  type: ClusterIP
+EOF
+  echo "Serviço ${APP_NAME}-svc criado com sucesso!"
+else
+  echo "Serviço ${APP_NAME}-svc já existe. Pulando criação."
+fi
+
+# Verificar se o ingress já existe
+if ! kubectl get ingress ${APP_NAME}-ingress -n ${NAMESPACE} &> /dev/null; then
+  echo "Criando ingress ${APP_NAME}-ingress..."
+  cat <<EOF | kubectl apply -f -
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    cert-manager.io/issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/add-headers: |
+      add_header 'Access-Control-Allow-Origin' '*';
+      add_header 'Access-Control-Allow-Methods' '*';
+      add_header 'Access-Control-Allow-Headers' '*';
+    nginx.ingress.kubernetes.io/backend-protocol: HTTP
+    nginx.ingress.kubernetes.io/proxy-body-size: 100M
+  name: ${APP_NAME}-ingress
+  namespace: ${NAMESPACE}
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: ${DOMAIN}
+    http:
+      paths:
+      - backend:
+          service:
+            name: ${APP_NAME}-svc
+            port:
+              number: ${PORT}  # Esta é a porta do serviço
+        path: /
+        pathType: Prefix
+  tls:
+  - hosts:
+    - ${DOMAIN}
+    secretName: wildcard-cert
+EOF
+  echo "Ingress ${APP_NAME}-ingress criado com sucesso!"
+  echo ""
+  echo "============================================================"
+  echo "ATENÇÃO: CONFIGURAÇÃO DE DNS NECESSÁRIA"
+  echo "============================================================"
+  echo ""
+else
+  echo "Ingress ${APP_NAME}-ingress já existe. Pulando criação."
+fi
+
+echo "Configuração concluída!"
