@@ -9,4 +9,5 @@ RUN yarn build
 
 EXPOSE 3000
 
-CMD npm start:pm2
+CMD ["./node_modules/.bin/pm2", "start", "dist/main.js", "--no-daemon", "--name", "ms-crm"]
+
