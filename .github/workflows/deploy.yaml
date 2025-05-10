@@ -1,22 +1,26 @@
 name: Build and Deploy
+
 on:
   push:
     branches: [ "main" ]
+
 env:
   CPR_ADDR: cpr.kemosoft.com.br
   K8S_NAMESPACE: consigmais
   DEPLOYMENT_NAME: ${{ github.event.repository.name }}
   CONTAINER_PATH: cpr.kemosoft.com.br/${{ github.event.repository.name }}:${{ github.sha }}
+
 jobs:
+
   build:
     runs-on: arc-runner-set
     container:
       image: gcr.io/kaniko-project/executor:v1.20.0-debug
     permissions:
       contents: read
+
     steps:
       - name: build and push image to cpr
-        id: build
         run: |
           cat <<EOF > /kaniko/.docker/config.json
           {
@@ -27,6 +31,7 @@ jobs:
             }
           }
           EOF
+
           /kaniko/executor --dockerfile="/Dockerfile" \
             --context="${{ github.repositoryUrl }}#${{ github.ref }}#${{ github.sha }}"  \
             --destination="${{ env.CONTAINER_PATH }}" \
@@ -37,7 +42,7 @@ jobs:
           GIT_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
           CPR_USERNAME: ${{ secrets.CPR_USERNAME }}
           CPR_PASSWORD: ${{ secrets.CPR_PASSWORD }}
-  
+
   deploy:
     needs:
       - build
@@ -45,44 +50,17 @@ jobs:
     steps:
       - name: patch deployment
         run: |
-          kubectl -n $K8S_NAMESPACE set image deployment/$DEPLOYMENT_NAME $DEPLOYMENT_NAME=$CONTAINER_PATH --record
-          DEPLOY_STATUS=$?
-          kubectl -n $K8S_NAMESPACE rollout status deployment/$DEPLOYMENT_NAME
-          ROLLOUT_STATUS=$?
-          
-          # Determinar o status geral
-          if [ $DEPLOY_STATUS -eq 0 ] && [ $ROLLOUT_STATUS -eq 0 ]; then
-            STATUS="✅ Success"
+          if ! kubectl get deployment $DEPLOYMENT_NAME -n $K8S_NAMESPACE &>/dev/null; then
+            echo "Deployment does not exist, creating..."
+            kubectl create deployment $DEPLOYMENT_NAME -n $K8S_NAMESPACE --image=$CONTAINER_PATH
+            
+            # Adiciona o imagePullSecret logo após criar o deployment
+            kubectl patch deployment $DEPLOYMENT_NAME -n $K8S_NAMESPACE -p '{"spec":{"template":{"spec":{"imagePullSecrets":[{"name":"cpr"}]}}}}'
           else
-            STATUS="❌ Failed"
+            echo "Deployment exists, updating image..."
+            kubectl -n $K8S_NAMESPACE set image deployment/$DEPLOYMENT_NAME $DEPLOYMENT_NAME=$CONTAINER_PATH --record
           fi
+          # kubectl -n $K8S_NAMESPACE set image deployment/$DEPLOYMENT_NAME $DEPLOYMENT_NAME=$CONTAINER_PATH --record
+          kubectl -n $K8S_NAMESPACE rollout status deployment/$DEPLOYMENT_NAME
+
           
-          # Criar um pod temporário para enviar a notificação
-          cat <<EOF | kubectl apply -f -
-          apiVersion: v1
-          kind: Pod
-          metadata:
-            name: discord-notifier-${{ github.run_id }}-${{ github.run_number }}
-            namespace: $K8S_NAMESPACE
-          spec:
-            containers:
-            - name: curl
-              image: curlimages/curl:7.81.0
-              command: 
-              - sh
-              - -c
-              - |
-                curl -H "Content-Type: application/json" -d '{
-                  "content": "**🚀 Deploy: ${{ github.event.repository.name }}**\n**Status:** $STATUS\n**Namespace:** ${{ env.K8S_NAMESPACE }}\n**Deployment:** ${{ env.DEPLOYMENT_NAME }}\n**Image:** ${{ env.CONTAINER_PATH }}\n**Commit:** ${{ github.event.head_commit.message }}\n**By:** ${{ github.actor }}"
-                }' $DISCORD_WEBHOOK
-              env:
-              - name: DISCORD_WEBHOOK
-                value: "${{ secrets.DISCORD_WEBHOOK }}"
-            restartPolicy: Never
-          EOF
-          
-          # Aguardar a conclusão do pod
-          kubectl -n $K8S_NAMESPACE wait --for=condition=complete --timeout=60s pod/discord-notifier-${{ github.run_id }}-${{ github.run_number }}
-          
-          # Limpar o pod após a conclusão
-          kubectl -n $K8S_NAMESPACE delete pod discord-notifier-${{ github.run_id }}-${{ github.run_number }}
