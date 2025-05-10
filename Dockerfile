@@ -4,9 +4,9 @@ WORKDIR /app
 
 COPY . .
 
-RUN yarn install
-RUN yarn build
+RUN npm install
+RUN npm build
 
 EXPOSE 3000
 
-CMD yarn start:pm2
+CMD npm start:pm2
