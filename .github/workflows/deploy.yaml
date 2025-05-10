@@ -2,7 +2,7 @@ name: Build and Deploy
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ['main']
 
 env:
   CPR_ADDR: cpr.kemosoft.com.br
@@ -11,7 +11,6 @@ env:
   CONTAINER_PATH: cpr.kemosoft.com.br/${{ github.event.repository.name }}:${{ github.sha }}
 
 jobs:
-
   build:
     runs-on: arc-runner-set
     container:
@@ -36,7 +35,7 @@ jobs:
             --context="${{ github.repositoryUrl }}#${{ github.ref }}#${{ github.sha }}"  \
             --destination="${{ env.CONTAINER_PATH }}" \
             ${{ env.KANIKO_CACHE_ARGS }} \
-            --push-retry 5 
+            --push-retry 5
         env:
           GIT_USERNAME: ${{ github.actor }}
           GIT_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
@@ -66,5 +65,6 @@ jobs:
       - name: Deploy Kubernetes Resources
         run: |
           # Os parâmetros são: namespace, app-name, port, target-port(container-port)
+          pwd
+          ls -la
           ./deploy-k8s-resources.sh consigmais pgben-server 80 3000
-          
