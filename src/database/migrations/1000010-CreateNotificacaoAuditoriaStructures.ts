@@ -69,6 +69,7 @@ export class CreateNotificacaoAuditoriaStructures1000010 implements MigrationInt
       CREATE INDEX "idx_log_auditoria_registro" ON "log_auditoria"("registro_id");
       CREATE INDEX "idx_log_auditoria_data" ON "log_auditoria"("created_at");
     `);
+  }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     // Remover índices
@@ -95,5 +96,4 @@ export class CreateNotificacaoAuditoriaStructures1000010 implements MigrationInt
     await queryRunner.query('DROP TYPE IF EXISTS "status_notificacao_enum";');
     await queryRunner.query('DROP TYPE IF EXISTS "tipo_notificacao_enum";');
   }
-}
 }

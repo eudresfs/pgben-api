@@ -55,6 +55,11 @@ export class CreateCidadaoStructure1000001 implements MigrationInterface {
             default: 'uuid_generate_v4()',
           },
           {
+            name: 'unidade_id',
+            type: 'uuid',
+            isNullable: false,
+          },
+          {
             name: 'nome',
             type: 'varchar',
             isNullable: false,
