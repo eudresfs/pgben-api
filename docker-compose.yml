@@ -1,0 +1,82 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:14-alpine
+    container_name: semtas_postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: semtas_beneficios
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    command: postgres -c 'max_connections=200' -c 'shared_buffers=256MB' -c 'work_mem=8MB'
+    networks:
+      - semtas_network
+
+  redis:
+    image: redis:alpine
+    container_name: semtas_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    networks:
+      - semtas_network
+
+  minio:
+    image: minio/minio
+    container_name: semtas_minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    restart: unless-stopped
+    networks:
+      - semtas_network
+
+  createbuckets:
+    image: minio/mc
+    container_name: semtas_createbuckets
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c '
+      sleep 5;
+      /usr/bin/mc config host add myminio http://minio:9000 minioadmin minioadmin;
+      /usr/bin/mc mb myminio/documents;
+      /usr/bin/mc policy set public myminio/documents;
+      mkdir -p /tmp/beneficio/auxilio-natalidade;
+      mkdir -p /tmp/beneficio/aluguel-social;
+      exit 0;
+      '
+    networks:
+      - semtas_network
+
+  mailhog:
+    image: mailhog/mailhog
+    container_name: semtas_mailhog
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    restart: unless-stopped
+    networks:
+      - semtas_network
+
+networks:
+  semtas_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:

@@ -1,0 +1,14 @@
+{
+  "type": "postgres",
+  "host": "localhost",
+  "port": 5432,
+  "username": "postgres",
+  "password": "postgres",
+  "database": "pgben",
+  "entities": ["src/**/*.entity{.ts,.js}"],
+  "migrations": ["src/database/migrations/**/*{.ts,.js}"],
+  "seeds": ["src/database/seeds/**/*{.ts,.js}"],
+  "factories": ["src/database/factories/**/*{.ts,.js}"],
+  "synchronize": false,
+  "logging": true
+}
