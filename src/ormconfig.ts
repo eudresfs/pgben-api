@@ -4,8 +4,8 @@ import { config } from 'dotenv';
 // Entidades
 import { User } from './user/entities/user.entity';
 import { Unidade } from './modules/unidade/entities/unidade.entity';
-import { Setor } from './modules/setor/entities/setor.entity';
-import { SetorUnidade } from './modules/setor/entities/setor-unidade.entity';
+import { Setor } from './modules/unidade/entities/setor.entity';
+import { SetorUnidade } from './modules/unidade/entities/setor-unidade.entity';
 import { Cidadao } from './modules/cidadao/entities/cidadao.entity';
 import { ComposicaoFamiliar } from './modules/cidadao/entities/composicao-familiar.entity';
 import { DadosSociais } from './modules/cidadao/entities/dados-sociais.entity';

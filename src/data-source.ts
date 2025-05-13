@@ -1,11 +1,12 @@
 import { DataSource } from 'typeorm';
 import { config as dotenvConfig } from 'dotenv';
+import options from '../ormconfig';
 
 // Entidades
 import { User } from './user/entities/user.entity';
 import { Unidade } from './modules/unidade/entities/unidade.entity';
-import { Setor } from './modules/setor/entities/setor.entity';
-import { SetorUnidade } from './modules/setor/entities/setor-unidade.entity';
+import { Setor } from './modules/unidade/entities/setor.entity';
+import { SetorUnidade } from './modules/unidade/entities/setor-unidade.entity';
 import { Cidadao } from './modules/cidadao/entities/cidadao.entity';
 import { ComposicaoFamiliar } from './modules/cidadao/entities/composicao-familiar.entity';
 import { DadosSociais } from './modules/cidadao/entities/dados-sociais.entity';
@@ -26,13 +27,10 @@ import { DemandaMotivo } from './modules/ocorrencia/entities/demanda-motivo.enti
 
 dotenvConfig();
 
+// Utilizando as opções do ormconfig.ts, mas substituindo a configuração de entidades
+// para usar as classes de entidade diretamente em vez de padrões glob
 export const AppDataSource = new DataSource({
-  type: 'postgres',
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '5432', 10),
-  username: process.env.DB_USERNAME || 'postgres',
-  password: process.env.DB_PASSWORD || 'postgres',
-  database: process.env.DB_DATABASE || 'pgben',
+  ...options,
   entities: [
     User,
     Unidade,

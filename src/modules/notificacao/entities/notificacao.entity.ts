@@ -10,7 +10,7 @@ import {
   Index
 } from 'typeorm';
 import { IsNotEmpty, IsOptional } from 'class-validator';
-import { User } from '../../../user/entities/user.entity';
+import { Usuario } from '../../usuario/entities/usuario.entity';
 
 export enum TipoNotificacao {
   SISTEMA = 'sistema',
@@ -38,9 +38,9 @@ export class Notificacao {
   @IsNotEmpty({ message: 'Destinatário é obrigatório' })
   destinatario_id: string;
 
-  @ManyToOne(() => User)
+  @ManyToOne(() => Usuario)
   @JoinColumn({ name: 'destinatario_id' })
-  destinatario: User;
+  destinatario: Usuario;
 
   @Column({
     type: 'enum',

@@ -11,7 +11,7 @@ import {
 } from 'typeorm';
 import { IsNotEmpty, IsNumber, Min } from 'class-validator';
 import { Documento } from './documento.entity';
-import { User } from '../../../user/entities/user.entity';
+import { Usuario } from '../../usuario/entities/usuario.entity';
 
 @Entity('documentos_enviados')
 @Index(['documento_id'])
@@ -52,9 +52,9 @@ export class DocumentoEnviado {
   @IsNotEmpty({ message: 'Usuário que enviou é obrigatório' })
   enviado_por_id: string;
 
-  @ManyToOne(() => User)
+  @ManyToOne(() => Usuario)
   @JoinColumn({ name: 'enviado_por_id' })
-  enviado_por: User;
+  enviado_por: Usuario;
 
   @Column({ default: false })
   verificado: boolean;
@@ -62,14 +62,14 @@ export class DocumentoEnviado {
   @Column({ nullable: true })
   verificado_por_id: string;
 
-  @ManyToOne(() => User)
+  @ManyToOne(() => Usuario)
   @JoinColumn({ name: 'verificado_por_id' })
-  verificado_por: User;
+  verificado_por: Usuario;
 
   @Column({ type: 'timestamp', nullable: true })
   data_verificacao: Date;
 
-  @Column('text', { nullable: true })
+  @Column('text', { nullable: true }) 
   observacoes: string;
 
   @CreateDateColumn()

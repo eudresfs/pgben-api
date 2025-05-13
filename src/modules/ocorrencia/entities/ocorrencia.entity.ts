@@ -10,7 +10,7 @@ import {
   Index
 } from 'typeorm';
 import { IsNotEmpty, IsOptional } from 'class-validator';
-import { User } from '../../../user/entities/user.entity';
+import { Usuario } from '../../usuario/entities/usuario.entity';
 import { Cidadao } from '../../cidadao/entities/cidadao.entity';
 import { Solicitacao } from '../../solicitacao/entities/solicitacao.entity';
 import { DemandaMotivo } from './demanda-motivo.entity';
@@ -70,9 +70,9 @@ export class Ocorrencia {
   @IsNotEmpty({ message: 'Registrado por é obrigatório' })
   registrado_por_id: string;
 
-  @ManyToOne(() => User)
+  @ManyToOne(() => Usuario)
   @JoinColumn({ name: 'registrado_por_id' })
-  registrado_por: User;
+  registrado_por: Usuario;
 
   @Column({ nullable: true })
   @IsOptional()
@@ -93,9 +93,9 @@ export class Ocorrencia {
   @IsOptional()
   responsavel_id: string;
 
-  @ManyToOne(() => User, { nullable: true })
+  @ManyToOne(() => Usuario, { nullable: true })
   @JoinColumn({ name: 'responsavel_id' })
-  responsavel: User;
+  responsavel: Usuario;
 
   @Column('text', { nullable: true })
   @IsOptional()

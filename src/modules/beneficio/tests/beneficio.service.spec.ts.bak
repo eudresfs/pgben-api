@@ -1,0 +1,375 @@
+import { Test, TestingModule } from '@nestjs/testing';
+import { BeneficioService } from '../services/beneficio.service';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { TipoBeneficio } from '../entities/tipo-beneficio.entity';
+import { RequisitoDocumento } from '../entities/requisito-documento.entity';
+import { FluxoBeneficio } from '../entities/fluxo-beneficio.entity';
+import { NotFoundException, ConflictException } from '@nestjs/common';
+
+/**
+ * Testes unitários para o serviço de benefícios
+ * 
+ * Verifica o funcionamento das operações CRUD e regras de negócio
+ * relacionadas aos tipos de benefícios disponíveis no sistema
+ */
+describe('BeneficioService', () => {
+  let service: BeneficioService;
+  
+  // Mock do repositório de tipo de benefícios
+  const mockTipoBeneficioRepository = {
+    find: jest.fn(),
+    findOne: jest.fn(),
+    save: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+    createQueryBuilder: jest.fn(() => ({
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      skip: jest.fn().mockReturnThis(),
+      take: jest.fn().mockReturnThis(),
+      getManyAndCount: jest.fn(),
+      getOne: jest.fn(),
+    })),
+  };
+  
+  // Mock do repositório de requisitos de documento
+  const mockRequisitoDocumentoRepository = {
+    find: jest.fn(),
+    findOne: jest.fn(),
+    save: jest.fn(),
+    create: jest.fn(),
+  };
+  
+  // Mock do repositório de fluxo de benefício
+  const mockFluxoBeneficioRepository = {
+    find: jest.fn(),
+    findOne: jest.fn(),
+    save: jest.fn(),
+    create: jest.fn(),
+  };
+
+  beforeEach(async () => {
+    jest.clearAllMocks();
+    
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        BeneficioService,
+        {
+          provide: getRepositoryToken(TipoBeneficio),
+          useValue: mockTipoBeneficioRepository,
+        },
+        {
+          provide: getRepositoryToken(RequisitoDocumento),
+          useValue: mockRequisitoDocumentoRepository,
+        },
+        {
+          provide: getRepositoryToken(FluxoBeneficio),
+          useValue: mockFluxoBeneficioRepository,
+        },
+      ],
+    }).compile();
+
+    service = module.get<BeneficioService>(BeneficioService);
+  });
+
+  it('deve ser definido', () => {
+    expect(service).toBeDefined();
+  });
+
+  describe('findAll', () => {
+    it('deve retornar uma lista paginada de benefícios', async () => {
+      const mockBeneficios = [
+        {
+          id: '1',
+          nome: 'Cesta Básica',
+          descricao: 'Benefício de cesta básica para famílias em vulnerabilidade',
+          valor: 150.00,
+          ativo: true,
+        },
+        {
+          id: '2',
+          nome: 'Auxílio Moradia',
+          descricao: 'Benefício para auxílio de aluguel',
+          valor: 300.00,
+          ativo: true,
+        },
+      ];
+      
+      const mockQueryBuilder = mockTipoBeneficioRepository.createQueryBuilder();
+      mockQueryBuilder.getManyAndCount.mockResolvedValue([mockBeneficios, 2]);
+      
+      const result = await service.findAll({ page: 1, limit: 10 });
+      
+      expect(result).toEqual({
+        items: mockBeneficios,
+        meta: {
+          total: 2,
+          page: 1,
+          limit: 10,
+          pages: Math.ceil(2 / 10),
+        },
+      });
+      expect(mockTipoBeneficioRepository.createQueryBuilder).toHaveBeenCalled();
+      expect(mockQueryBuilder.getManyAndCount).toHaveBeenCalled();
+    });
+
+    it('deve aplicar filtros quando fornecidos', async () => {
+      const mockBeneficios = [
+        {
+          id: '1',
+          nome: 'Cesta Básica',
+          descricao: 'Benefício de cesta básica para famílias em vulnerabilidade',
+          valor: 150.00,
+          ativo: true,
+        },
+      ];
+      
+      const mockQueryBuilder = mockTipoBeneficioRepository.createQueryBuilder();
+      mockQueryBuilder.getManyAndCount.mockResolvedValue([mockBeneficios, 1]);
+      
+      const result = await service.findAll({
+        page: 1,
+        limit: 10,
+        search: 'Cesta',
+        ativo: true,
+      });
+      
+      expect(result).toEqual({
+        items: mockBeneficios,
+        meta: {
+          total: 1,
+          page: 1,
+          limit: 10,
+          pages: Math.ceil(1 / 10),
+        },
+      });
+      expect(mockTipoBeneficioRepository.createQueryBuilder).toHaveBeenCalled();
+      expect(mockQueryBuilder.where).toHaveBeenCalled();
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalled();
+      expect(mockQueryBuilder.getManyAndCount).toHaveBeenCalled();
+    });
+  });
+
+  describe('findById', () => {
+    it('deve retornar um benefício quando encontrado', async () => {
+      const mockBeneficio = {
+        id: '1',
+        nome: 'Cesta Básica',
+        descricao: 'Benefício de cesta básica para famílias em vulnerabilidade',
+        valor: 150.00,
+        ativo: true,
+      };
+      
+      const existingBeneficio = {
+        id: '1',
+        nome: 'Cesta Básica',
+        descricao: 'Benefício de cesta básica para famílias em vulnerabilidade',
+        valor: 150.00,
+        ativo: true,
+      };
+      
+      mockTipoBeneficioRepository.findOne.mockResolvedValue(existingBeneficio);
+      
+      const result = await service.findById('1');
+      
+      expect(result).toEqual(mockBeneficio);
+      expect(mockTipoBeneficioRepository.findOne).toHaveBeenCalledWith({
+        where: { id: '1' },
+      });
+    });
+
+    it('deve lançar NotFoundException quando o benefício não é encontrado', async () => {
+      mockTipoBeneficioRepository.findOne.mockResolvedValue(null);
+      
+      await expect(service.findById('999')).rejects.toThrow(NotFoundException);
+      expect(mockTipoBeneficioRepository.findOne).toHaveBeenCalledWith({
+        where: { id: '999' },
+      });
+    });
+  });
+
+  describe('create', () => {
+    it('deve criar um novo benefício quando os dados são válidos', async () => {
+      const createBeneficioDto = {
+        nome: 'Cesta Básica',
+        descricao: 'Benefício de cesta básica para famílias em vulnerabilidade',
+        valor: 150.00,
+        criterios_concessao: 'Famílias com renda per capita inferior a meio salário mínimo',
+        documentos_necessarios: ['CPF', 'Comprovante de residência', 'Comprovante de renda'],
+        validade_meses: 6,
+      };
+      
+      const mockBeneficio = {
+        id: '1',
+        ...createBeneficioDto,
+        ativo: true,
+        created_at: new Date(),
+        updated_at: new Date(),
+      };
+      
+      // Verificar se já existe um benefício com o mesmo nome
+      mockTipoBeneficioRepository.findOne.mockResolvedValue(null);
+      
+      // Criar o benefício
+      mockTipoBeneficioRepository.create.mockReturnValue(mockBeneficio);
+      mockTipoBeneficioRepository.save.mockResolvedValue(mockBeneficio);
+      
+      const result = await service.create(createBeneficioDto);
+      
+      expect(result).toEqual(mockBeneficio);
+      expect(mockTipoBeneficioRepository.findOne).toHaveBeenCalledWith({
+        where: { nome: 'Cesta Básica' },
+      });
+      expect(mockTipoBeneficioRepository.create).toHaveBeenCalledWith(createBeneficioDto);
+      expect(mockTipoBeneficioRepository.save).toHaveBeenCalledWith(mockBeneficio);
+    });
+
+    it('deve lançar ConflictException quando já existe um benefício com o mesmo nome', async () => {
+      const createBeneficioDto = {
+        nome: 'Cesta Básica',
+        descricao: 'Benefício de cesta básica para famílias em vulnerabilidade',
+        valor: 150.00,
+        criterios_concessao: 'Famílias com renda per capita inferior a meio salário mínimo',
+        documentos_necessarios: ['CPF', 'Comprovante de residência', 'Comprovante de renda'],
+        validade_meses: 6,
+      };
+      
+      // Simular que já existe um benefício com o mesmo nome
+      mockTipoBeneficioRepository.findOne.mockResolvedValue({
+        id: '2',
+        nome: 'Cesta Básica',
+      });
+      
+      await expect(service.create(createBeneficioDto)).rejects.toThrow(ConflictException);
+      expect(mockTipoBeneficioRepository.findOne).toHaveBeenCalledWith({
+        where: { nome: 'Cesta Básica' },
+      });
+      expect(mockTipoBeneficioRepository.create).not.toHaveBeenCalled();
+      expect(mockTipoBeneficioRepository.save).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('update', () => {
+    it('deve atualizar um benefício existente', async () => {
+      const updateBeneficioDto = {
+        nome: 'Cesta Básica Atualizada',
+        valor: 200.00,
+      };
+      
+      const mockBeneficio = {
+        id: '1',
+        nome: 'Cesta Básica',
+        descricao: 'Benefício de cesta básica para famílias em vulnerabilidade',
+        valor: 150.00,
+        ativo: true,
+      };
+      
+      const mockUpdatedBeneficio = {
+        ...mockBeneficio,
+        ...updateBeneficioDto,
+      };
+      
+      const existingBeneficio = {
+        id: '1',
+        nome: 'Cesta Básica',
+        descricao: 'Benefício de cesta básica para famílias em vulnerabilidade',
+        valor: 150.00,
+        ativo: true,
+      };
+      
+      // Buscar o benefício existente
+      mockTipoBeneficioRepository.findOne.mockImplementation((options) => {
+        if (options.where.id === '1') {
+          return Promise.resolve(existingBeneficio);
+        }
+        if (options.where.nome === 'Cesta Básica Atualizada') {
+          return Promise.resolve(null);
+        }
+        return Promise.resolve(null);
+      });
+      
+      // Salvar as atualizações
+      mockTipoBeneficioRepository.save.mockResolvedValue(mockUpdatedBeneficio);
+      
+      const result = await service.update('1', updateBeneficioDto);
+      
+      expect(result).toEqual(mockUpdatedBeneficio);
+      expect(mockTipoBeneficioRepository.findOne).toHaveBeenCalledWith({
+        where: { id: '1' },
+      });
+      expect(mockTipoBeneficioRepository.save).toHaveBeenCalledWith({
+        ...mockBeneficio,
+        ...updateBeneficioDto,
+      });
+    });
+
+    it('deve lançar NotFoundException quando o benefício não existe', async () => {
+      const updateBeneficioDto = {
+        nome: 'Cesta Básica Atualizada',
+      };
+      
+      // Simular que o benefício não existe
+      mockTipoBeneficioRepository.findOne.mockResolvedValue(null);
+      
+      await expect(service.update('999', updateBeneficioDto)).rejects.toThrow(NotFoundException);
+      expect(mockTipoBeneficioRepository.findOne).toHaveBeenCalledWith({
+        where: { id: '999' },
+      });
+      expect(mockTipoBeneficioRepository.save).not.toHaveBeenCalled();
+    });
+
+    it('deve lançar ConflictException quando tenta atualizar para um nome já existente', async () => {
+      const updateBeneficioDto = {
+        nome: 'Auxílio Moradia',
+      };
+      
+      const mockBeneficio = {
+        id: '1',
+        nome: 'Cesta Básica',
+        descricao: 'Benefício de cesta básica para famílias em vulnerabilidade',
+        valor: 150.00,
+        ativo: true,
+      };
+      
+      const existingBeneficio = {
+        id: '1',
+        nome: 'Cesta Básica',
+        descricao: 'Benefício de cesta básica para famílias em vulnerabilidade',
+        valor: 150.00,
+        ativo: true,
+      };
+      
+      // Buscar o benefício a ser atualizado
+      mockTipoBeneficioRepository.findOne.mockImplementation((options) => {
+        if (options.where.id === '1') {
+          return Promise.resolve(existingBeneficio);
+        }
+        if (options.where.nome === 'Auxílio Moradia') {
+          return Promise.resolve({
+            id: '2',
+            nome: 'Auxílio Moradia',
+          });
+        }
+        return Promise.resolve(null);
+      });
+      
+      await expect(service.update('1', updateBeneficioDto)).rejects.toThrow(ConflictException);
+      expect(mockTipoBeneficioRepository.findOne).toHaveBeenCalledTimes(2);
+      expect(mockTipoBeneficioRepository.save).not.toHaveBeenCalled();
+    });
+  });
+      // Já corrigido anteriormente
+      expect(mockBeneficioRepository.softDelete).toHaveBeenCalledWith('1');
+      expect(mockLoggingService.logBusiness).toHaveBeenCalledWith(
+        'DELETE',
+        'Beneficio',
+        '1',
+        'admin-id',
+        expect.any(Object)
+      );
+    });
+
+    // Teste removido
+  });
+});

@@ -124,7 +124,7 @@ Verifique se o MinIO está acessível e configurado corretamente:
 3. Verifique se o Swagger está disponível: `/docs`
 
 4. Comece o desenvolvimento pelos módulos prioritários:
-   - unidade
+   - Unidades
    - Cidadãos
    - Benefícios
    - Solicitações

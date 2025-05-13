@@ -31,27 +31,21 @@ export class Unidade {
   @IsNotEmpty({ message: 'Nome é obrigatório' })
   nome: string;
 
+  @Column({ unique: true })
+  @IsNotEmpty({ message: 'Código é obrigatório' })
+  codigo: string;
+
   @Column({ nullable: true })
   sigla: string;
 
-  @Column({
-    type: 'enum',
-    enum: TipoUnidade,
-    default: TipoUnidade.CRAS,
-  })
-  @IsEnum(TipoUnidade, { message: 'Tipo de unidade inválido' })
-  tipo: TipoUnidade;
+  @Column({ nullable: true, default: 'cras' })
+  tipo: string;
 
-  @Column('json', { nullable: true })
-  endereco: {
-    logradouro: string;
-    numero: string;
-    complemento?: string;
-    bairro: string;
-    cidade: string;
-    uf: string;
-    cep: string;
-  };
+  @Column({ nullable: true })
+  tipo_unidade: string;
+
+  @Column({ nullable: true })
+  endereco: string;
 
   @Column({ nullable: true })
   telefone: string;
@@ -60,20 +54,15 @@ export class Unidade {
   @IsEmail({}, { message: 'Email inválido' })
   email: string;
 
-  @Column({
-    type: 'enum',
-    enum: StatusUnidade,
-    default: StatusUnidade.ATIVO,
-  })
-  @IsEnum(StatusUnidade, { message: 'Status inválido' })
-  status: StatusUnidade;
+  @Column({ nullable: true })
+  responsavel: string;
 
-  @CreateDateColumn({ name: 'created_at' })
-  createdAt: Date;
+  @CreateDateColumn()
+  created_at: Date;
 
-  @UpdateDateColumn({ name: 'updated_at' })
-  updatedAt: Date;
+  @UpdateDateColumn()
+  updated_at: Date;
 
-  @DeleteDateColumn({ name: 'removed_at' })
-  removedAt: Date;
+  @DeleteDateColumn()
+  removed_at: Date;
 }

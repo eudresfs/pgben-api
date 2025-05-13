@@ -35,20 +35,20 @@
 ### **3. Banco de Dados**
 
 * [ ] Confirmar que o PostgreSQL está rodando e acessível via `psql` ou GUI
-* [ ] Criar banco de dados `semtas_beneficios` para ambiente de desenvolvimento
+* [ ] Criar banco de dados `pgben` para ambiente de desenvolvimento
 * [ ] Adaptar esquemas de tabelas do documento "Schemas e Otimizações PostgreSQL":
   * Revisar tabelas de usuários e adaptá-las para estender o modelo do starter
   * Revisar tabelas de unidade e setor
-  * Revisar tabelas de beneficiários e dados sociais
+  * Revisar tabelas de cidadao e dados sociais
   * Revisar tabelas de benefícios e requisitos documentais
   * Revisar tabelas de solicitações e documentos
   * Revisar tabelas de histórico e auditoria
 * [ ] Converter esquemas SQL em entidades TypeORM
 * [ ] Criar migrations iniciais para estrutura base
 * [ ] Preparar seeds para dados iniciais:
-  * unidade (CRAS, CREAS listados na documentação)
+  * Unidades (CRAS, CREAS listados na documentação)
   * Tipos de benefícios (Auxílio Natalidade e Aluguel Social)
-  * setor básicos
+  * Setores básicos
   * Usuário administrador padrão
 * [ ] Executar migrations com `npm run typeorm:migration:run`
 * [ ] Verificar estrutura criada via ferramenta de administração (DBeaver, TablePlus)
@@ -67,6 +67,8 @@
   * `src/modules/documento/` - Gestão de uploads e armazenamento
   * `src/modules/relatorios/` - Endpoints para dashboards e KPIs
   * `src/modules/notificacao/` - Sistema de notificações e emails
+  * `src/modules/audit/` - Auditoria de ações
+  * `src/modules/ocorrencia/` - Registro de ocorrências
 * [ ] Para cada módulo, preparar subdiretórios padrão:
   * `dto/` - Data Transfer Objects com validações
   * `entities/` - Entidades TypeORM 
@@ -85,7 +87,7 @@
 * [ ] Acessar rota de health check (`GET /health`)
 * [ ] Confirmar se o Swagger está disponível e funcionando em `/docs`
 * [ ] Verificar se logs estão sendo gerados corretamente (via Winston)
-* [ ] Validar funcionamento do módulo Auth do starter kit:
+* [ ] Validar funcionamento do módulo Auth:
   * Teste de registro de usuário
   * Teste de login e obtenção de token JWT
   * Teste de refresh token

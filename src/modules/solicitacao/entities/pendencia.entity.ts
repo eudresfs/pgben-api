@@ -11,7 +11,7 @@ import {
 } from 'typeorm';
 import { IsNotEmpty, IsOptional } from 'class-validator';
 import { Solicitacao } from './solicitacao.entity';
-import { User } from '../../../user/entities/user.entity';
+import { Usuario } from '../../usuario/entities/usuario.entity';
 
 export enum StatusPendencia {
   ABERTA = 'aberta',
@@ -41,9 +41,9 @@ export class Pendencia {
   @IsNotEmpty({ message: 'Usuário que registrou é obrigatório' })
   registrado_por_id: string;
 
-  @ManyToOne(() => User)
+  @ManyToOne(() => Usuario)
   @JoinColumn({ name: 'registrado_por_id' })
-  registrado_por: User;
+  registrado_por: Usuario;
 
   @Column({
     type: 'enum',
@@ -55,9 +55,9 @@ export class Pendencia {
   @Column({ nullable: true })
   resolvido_por_id: string;
 
-  @ManyToOne(() => User)
+  @ManyToOne(() => Usuario)
   @JoinColumn({ name: 'resolvido_por_id' })
-  resolvido_por: User;
+  resolvido_por: Usuario;
 
   @Column({ type: 'timestamp', nullable: true })
   data_resolucao: Date;

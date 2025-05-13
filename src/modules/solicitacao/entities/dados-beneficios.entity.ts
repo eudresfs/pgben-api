@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -26,66 +27,93 @@ export class DadosBeneficios {
   @JoinColumn({ name: 'solicitacao_id' })
   solicitacao: Solicitacao;
 
-  @Column('jsonb', { nullable: true })
-  @IsOptional()
-  auxilio_natalidade: {
-    data_nascimento?: Date;
-    data_prevista_parto?: Date;
-    realizou_pre_natal?: boolean;
-    local_pre_natal?: string;
-    itens_solicitados?: string[];
-  };
-
-  @Column('jsonb', { nullable: true })
-  @IsOptional()
-  aluguel_social: {
-    motivo?: string;
-    valor_solicitado?: number;
-    periodo_meses?: number;
-    tipo_solicitacao?: 'novo' | 'renovacao' | 'prorrogacao';
-    contrato_aluguel?: boolean;
-    data_inicio_contrato?: Date;
-    data_fim_contrato?: Date;
-    nome_proprietario?: string;
-    cpf_proprietario?: string;
-  };
-
-  @Column('jsonb', { nullable: true })
-  @IsOptional()
-  dados_pagamento: {
-    tipo_pagamento?: 'pix' | 'transferencia' | 'ordem_pagamento';
-    chave_pix?: string;
-    tipo_chave_pix?: 'cpf' | 'email' | 'telefone' | 'aleatoria';
-    banco?: string;
-    agencia?: string;
-    conta?: string;
-    titular?: string;
-    cpf_titular?: string;
-  };
+  @Column('enum', { name: 'tipo_beneficio', enum: 'tipo_beneficio_enum' })
+  @IsNotEmpty({ message: 'Tipo de benefício é obrigatório' })
+  tipo_beneficio: string;
 
   @Column('decimal', { precision: 10, scale: 2, nullable: true })
   @IsOptional()
-  @IsNumber({}, { message: 'Valor aprovado deve ser um número' })
-  @Min(0, { message: 'Valor aprovado não pode ser negativo' })
-  valor_aprovado: number;
+  @IsNumber({}, { message: 'Valor solicitado deve ser um número' })
+  @Min(0, { message: 'Valor solicitado deve ser maior que zero' })
+  valor_solicitado: number;
+
+  @Column('integer', { nullable: true })
+  @IsOptional()
+  @IsNumber({}, { message: 'Período em meses deve ser um número' })
+  @Min(1, { message: 'Período em meses deve ser maior que zero' })
+  periodo_meses: number;
+
+  // Campos específicos para Auxílio Natalidade
+  @Column({ type: 'date', nullable: true })
+  @IsOptional()
+  data_prevista_parto: Date;
+
+  @Column({ type: 'date', nullable: true })
+  @IsOptional()
+  data_nascimento: Date;
+
+  @Column({ type: 'boolean', nullable: true })
+  @IsOptional()
+  pre_natal: boolean;
+
+  @Column({ type: 'boolean', nullable: true })
+  @IsOptional()
+  psf_ubs: boolean;
+
+  @Column({ type: 'boolean', nullable: true })
+  @IsOptional()
+  gravidez_risco: boolean;
+
+  @Column({ type: 'boolean', nullable: true })
+  @IsOptional()
+  gravidez_gemelar: boolean;
+
+  // Campos específicos para Aluguel Social
+  @Column({ type: 'text', nullable: true })
+  @IsOptional()
+  motivo: string;
 
   @Column('decimal', { precision: 10, scale: 2, nullable: true })
   @IsOptional()
-  @IsNumber({}, { message: 'Valor liberado deve ser um número' })
-  @Min(0, { message: 'Valor liberado não pode ser negativo' })
-  valor_liberado: number;
+  @IsNumber({}, { message: 'Valor do aluguel deve ser um número' })
+  @Min(0, { message: 'Valor do aluguel deve ser maior que zero' })
+  valor_aluguel: number;
 
-  @Column({ type: 'date', nullable: true })
+  @Column({ type: 'text', nullable: true })
   @IsOptional()
-  data_inicio_beneficio: Date;
+  endereco_aluguel: string;
 
-  @Column({ type: 'date', nullable: true })
+  @Column({ length: 100, nullable: true })
   @IsOptional()
-  data_fim_beneficio: Date;
+  bairro_aluguel: string;
 
-  @Column({ nullable: true })
+  @Column({ length: 8, nullable: true })
   @IsOptional()
-  observacoes: string;
+  cep_aluguel: string;
+
+  @Column({ length: 255, nullable: true })
+  @IsOptional()
+  nome_proprietario: string;
+
+  @Column({ length: 11, nullable: true })
+  @IsOptional()
+  cpf_proprietario: string;
+
+  @Column({ length: 20, nullable: true })
+  @IsOptional()
+  telefone_proprietario: string;
+
+  @Column({ length: 100, nullable: true })
+  @IsOptional()
+  banco_proprietario: string;
+
+  @Column({ length: 10, nullable: true })
+  @IsOptional()
+  agencia_proprietario: string;
+
+  @Column({ length: 20, nullable: true })
+  @IsOptional()
+  conta_proprietario: string;
 
   @CreateDateColumn()
   created_at: Date;

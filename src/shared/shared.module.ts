@@ -5,8 +5,15 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { configModuleOptions } from './configs/module-options';
 import { AllExceptionsFilter } from './filters/all-exceptions.filter';
-import { LoggingInterceptor } from './interceptors/logging.interceptor';
+import { LoggingInterceptor as AppLoggingInterceptor } from './interceptors/logging.interceptor';
 import { AppLoggerModule } from './logger/logger.module';
+
+// Novos módulos de logging e monitoramento
+import { LoggingModule } from './logging/logging.module';
+import { MonitoringModule } from './monitoring/monitoring.module';
+import { GlobalExceptionFilter } from './logging/exception.filter';
+import { LoggingInterceptor } from './logging/logging.interceptor';
+import { MetricsInterceptor } from './monitoring/metrics.interceptor';
 
 @Module({
   imports: [
@@ -30,14 +37,25 @@ import { AppLoggerModule } from './logger/logger.module';
       }),
     }),
     AppLoggerModule,
+    // Novos módulos
+    LoggingModule,
+    MonitoringModule,
   ],
-  exports: [AppLoggerModule, ConfigModule],
+  exports: [AppLoggerModule, ConfigModule, LoggingModule, MonitoringModule],
   providers: [
+    // Interceptores para logging e métricas
+    { provide: APP_INTERCEPTOR, useClass: AppLoggingInterceptor },
     { provide: APP_INTERCEPTOR, useClass: LoggingInterceptor },
+    { provide: APP_INTERCEPTOR, useClass: MetricsInterceptor },
 
+    // Filtros de exceção
     {
       provide: APP_FILTER,
       useClass: AllExceptionsFilter,
+    },
+    {
+      provide: APP_FILTER,
+      useClass: GlobalExceptionFilter,
     },
   ],
 })

@@ -9,7 +9,7 @@ Proponho uma arquitetura em camadas com separação clara de responsabilidades, 
 │                   Controllers (API RESTful)                 │
 │                                                             │
 │  ┌───────────────┐ ┌───────────────┐ ┌───────────────────┐  │
-│  │ Autenticação  │ │ Beneficiários │ │   Solicitações    │  │
+│  │ Autenticação  │ │ cidadãos │ │   Solicitações    │  │
 │  └───────────────┘ └───────────────┘ └───────────────────┘  │
 └─────────────────────────────────────────────────────────────┘
                            │
@@ -17,7 +17,7 @@ Proponho uma arquitetura em camadas com separação clara de responsabilidades, 
 │                   Services (Lógica de Negócio)              │
 │                                                             │
 │  ┌───────────────┐ ┌───────────────┐ ┌───────────────────┐  │
-│  │ Autenticação  │ │ Beneficiários │ │   Solicitações    │  │
+│  │ Autenticação  │ │ cidadãos │ │   Solicitações    │  │
 │  └───────────────┘ └───────────────┘ └───────────────────┘  │
 └─────────────────────────────────────────────────────────────┘
                            │
@@ -25,7 +25,7 @@ Proponho uma arquitetura em camadas com separação clara de responsabilidades, 
 │               Repositories (Acesso a Dados)                 │
 │                                                             │
 │  ┌───────────────┐ ┌───────────────┐ ┌───────────────────┐  │
-│  │   Usuários    │ │ Beneficiários │ │   Solicitações    │  │
+│  │    Usuário    │ │  cidadão │ │    Solicitação    │  │
 │  └───────────────┘ └───────────────┘ └───────────────────┘  │
 └─────────────────────────────────────────────────────────────┘
                            │
@@ -33,7 +33,7 @@ Proponho uma arquitetura em camadas com separação clara de responsabilidades, 
 │                      Entidades (Domain)                     │
 │                                                             │
 │  ┌───────────────┐ ┌───────────────┐ ┌───────────────────┐  │
-│  │   Usuários    │ │ Beneficiários │ │   Solicitações    │  │
+│  │    Usuário    │ │  cidadão │ │    Solicitação    │  │
 │  └───────────────┘ └───────────────┘ └───────────────────┘  │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -43,15 +43,16 @@ Proponho uma arquitetura em camadas com separação clara de responsabilidades, 
 Baseado nos requisitos, dividirei a API nos seguintes módulos:
 
 01. **Auth**: Autenticação e autorização
-02. **Usuários**: Gestão de usuários do sistema
-03. **Unidades**: Gestão de unidade solicitantes
-04. **Beneficiários**: Gestão de cadastros de beneficiários
-05. **Benefícios**: Configuração de tipos de benefícios
-06. **Solicitações**: Fluxo principal do sistema
-07. **Documentos**: Gerenciamento de uploads
+02. **Usuário**: Gestão de usuários do sistema
+03. **Unidade**: Gestão de unidade solicitantes
+04. **Cidadão**: Gestão de cadastros de cidadãos, requerentes e representates legais
+05. **Benefício**: Configuração de tipos de benefícios
+06. **Solicitação**: Fluxo principal do sistema
+07. **Documento**: Gerenciamento de uploads
 08. **Relatórios**: Dados para dashboards e relatórios
-09. **Notificações**: Sistema de notificações
+09. **Notificação**: Sistema de notificações
 10. **Auditoria**: Logs de ações no sistema
+11; **Ocorrências**: Report de ocorrências
 
 ## 3. Definição de Endpoints da API
 
@@ -67,7 +68,7 @@ POST /api/v1/auth/reset-password         # Redefinição de senha
 POST /api/v1/auth/first-access           # Primeiro acesso (completar cadastro)
 ```
 
-### 3.2 Usuários
+### 3.2 Usuário
 
 ```
 GET    /api/v1/usuario                  # Listar usuários (com filtros e paginação)
@@ -79,7 +80,7 @@ PUT    /api/v1/usuario/:id/senha        # Alterar senha
 GET    /api/v1/usuario/me               # Obter perfil do usuário atual
 ```
 
-### 3.3 Unidades
+### 3.3 Unidade
 
 ```
 GET    /api/v1/unidade                  # Listar unidade
@@ -92,20 +93,20 @@ POST   /api/v1/setor                    # Criar novo setor
 PUT    /api/v1/setor/:id                # Atualizar setor
 ```
 
-### 3.4 Beneficiários
+### 3.4 Cidadão
 
 ```
-GET    /api/v1/beneficiarios                      # Listar beneficiários (com filtros)
-GET    /api/v1/beneficiarios/:id                  # Obter detalhes de um beneficiário
-POST   /api/v1/beneficiarios                      # Criar novo beneficiário
-PUT    /api/v1/beneficiarios/:id                  # Atualizar beneficiário
-GET    /api/v1/beneficiarios/cpf/:cpf             # Buscar beneficiário por CPF
-GET    /api/v1/beneficiarios/nis/:nis             # Buscar beneficiário por NIS
-GET    /api/v1/beneficiarios/:id/solicitacao      # Histórico de solicitações
-POST   /api/v1/beneficiarios/:id/composicao       # Adicionar membro à composição familiar
+GET    /api/v1/cidadao                      # Listar cidadãos (com filtros e paginação)
+GET    /api/v1/cidadao/:id                  # Obter detalhes de um cidadão
+POST   /api/v1/cidadao                      # Criar novo cidadão
+PUT    /api/v1/cidadao/:id                  # Atualizar cidadão
+GET    /api/v1/cidadao/cpf/:cpf             # Buscar cidadão por CPF
+GET    /api/v1/cidadao/nis/:nis             # Buscar cidadão por NIS
+GET    /api/v1/cidadao/:id/solicitacao      # Histórico de solicitações
+POST   /api/v1/cidadao/:id/composicao       # Adicionar membro à composição familiar
 ```
 
-### 3.5 Benefícios
+### 3.5 Benefício
 
 ```
 GET    /api/v1/beneficio                      # Listar tipos de benefícios
@@ -117,10 +118,10 @@ POST   /api/v1/beneficio/:id/requisitos       # Adicionar requisito documental
 PUT    /api/v1/beneficio/:id/fluxo            # Configurar fluxo de aprovação
 ```
 
-### 3.6 Solicitações (Core do Sistema)
+### 3.6 Solicitação (Core do Sistema)
 
 ```
-GET    /api/v1/solicitacao                      # Listar solicitações (com filtros)
+GET    /api/v1/solicitacao                      # Listar solicitações (com filtros e paginação)
 GET    /api/v1/solicitacao/:id                  # Obter detalhes de uma solicitação
 POST   /api/v1/solicitacao                      # Criar nova solicitação
 PUT    /api/v1/solicitacao/:id                  # Atualizar solicitação (em rascunho)
@@ -140,7 +141,7 @@ GET    /api/v1/solicitacao/aprovadas            # Listar aprovadas
 GET    /api/v1/solicitacao/whatsapp             # Listar solicitações via WhatsApp
 ```
 
-### 3.7 Documentos
+### 3.7 Documento
 
 ```
 POST   /api/v1/solicitacao/:id/documento       # Upload de documento
@@ -153,7 +154,7 @@ DELETE /api/v1/documento/:id                    # Remover documento
 
 ```
 GET    /api/v1/relatorios/dashboard              # Dados para dashboard
-GET    /api/v1/relatorios/beneficiarios          # Relatório de beneficiários
+GET    /api/v1/relatorios/cidadao          # Relatório de cidadãos
 GET    /api/v1/relatorios/solicitacao            # Relatório de solicitações
 GET    /api/v1/relatorios/unidade                # Relatório por unidade
 GET    /api/v1/relatorios/tempo-atendimento      # Relatório de tempo médio
@@ -161,7 +162,7 @@ GET    /api/v1/relatorios/export/csv             # Exportar como CSV
 GET    /api/v1/relatorios/export/pdf             # Exportar como PDF
 ```
 
-### 3.9 Notificações
+### 3.9 Notificação
 
 ```
 GET    /api/v1/notificacao                      # Listar notificações do usuário
@@ -190,7 +191,7 @@ export class LoginDto {
 
   @IsString()
   @MinLength(8)
-  @ApiProperty({ example: 'senhaSegura123' })
+  @ApiProperty({ example: 'senha!Segura123' })
   senha: string;
 }
 ```
@@ -467,7 +468,7 @@ app.useGlobalPipes(
 src/
 ├── main.ts
 ├── app.module.ts
-├── common/               # Utilitários e código compartilhado
+├── shared/               # Utilitários e código compartilhado
 │   ├── dto/
 │   ├── filters/
 │   ├── guards/
@@ -487,7 +488,7 @@ src/
 │   └── dto/
 ├── unidade/             # Módulo de unidade
 │   ├── ... (estrutura semelhante)
-├── beneficiarios/        # Módulo de beneficiários
+├── cidadao/        # Módulo de cidadãos
 │   ├── ... (estrutura semelhante)
 ├── beneficio/           # Módulo de tipos de benefícios
 │   ├── ... (estrutura semelhante)

@@ -15,7 +15,7 @@ import {
 import { IsNotEmpty, IsOptional } from 'class-validator';
 import { Cidadao } from '../../cidadao/entities/cidadao.entity';
 import { TipoBeneficio } from '../../beneficio/entities/tipo-beneficio.entity';
-import { User } from '../../../user/entities/user.entity';
+import { Usuario } from '../../usuario/entities/usuario.entity';
 import { Unidade } from '../../unidade/entities/unidade.entity';
 import { Documento } from '../../documento/entities/documento.entity';
 
@@ -86,9 +86,9 @@ export class Solicitacao {
   @IsNotEmpty({ message: 'Técnico responsável é obrigatório' })
   tecnico_id: string;
 
-  @ManyToOne(() => User)
+  @ManyToOne(() => Usuario)
   @JoinColumn({ name: 'tecnico_id' })
-  tecnico: User;
+  tecnico: Usuario;
 
   @Column({ type: 'timestamp' })
   @IsNotEmpty({ message: 'Data de abertura é obrigatória' })
@@ -108,9 +108,9 @@ export class Solicitacao {
   @Column({ nullable: true })
   aprovador_id: string;
 
-  @ManyToOne(() => User)
+  @ManyToOne(() => Usuario)
   @JoinColumn({ name: 'aprovador_id' })
-  aprovador: User;
+  aprovador: Usuario;
 
   @Column({ type: 'timestamp', nullable: true })
   data_aprovacao: Date;
@@ -121,9 +121,9 @@ export class Solicitacao {
   @Column({ nullable: true })
   liberador_id: string;
 
-  @ManyToOne(() => User, (user) => user.solicitacoes_liberadas)
+  @ManyToOne(() => Usuario)
   @JoinColumn({ name: 'liberador_id' })
-  liberador: User;
+  liberador: Usuario;
 
   @Column('text', { nullable: true })
   @IsOptional()

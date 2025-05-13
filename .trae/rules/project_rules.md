@@ -10,6 +10,7 @@ REGRAS DE OURO:
 - Usar camelCase para nomes de variáveis, funções e propriedades
 - Usar PascalCase para nomes de classes, interfaces e tipos
 - Usar UPPER_SNAKE_CASE para constantes
+- Usar snake_case para propriedades de entidades
 - Prefixar interfaces com 'I' (ex: IUserService)
 - Sufixar DTOs com 'Dto' (ex: CreateUserDto)
 

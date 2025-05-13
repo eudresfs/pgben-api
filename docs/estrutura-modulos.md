@@ -6,137 +6,6 @@ Este documento descreve a estrutura de módulos do Sistema de Gestão de Benefí
 
 O sistema segue uma arquitetura modular baseada em domínios, onde cada módulo representa uma área funcional específica do sistema. Cada módulo contém seus próprios componentes (controllers, services, entities, DTOs, etc.) e pode ser desenvolvido, testado e mantido de forma independente.
 
-## Estrutura de Diretórios
-
-```
-src/
-  modules/
-    unidade/
-      dto/
-        create-unidade.dto.ts
-        update-unidade.dto.ts
-        create-setor.dto.ts
-        update-setor.dto.ts
-      entities/
-        unidade.entity.ts
-        setor.entity.ts
-      controllers/
-        unidade.controller.ts
-        setor.controller.ts
-      services/
-        unidade.service.ts
-        setor.service.ts
-      repositories/
-        unidade.repository.ts
-        setor.repository.ts
-      unidade.module.ts
-
-    cidadao/
-      dto/
-        create-cidadao.dto.ts
-        update-cidadao.dto.ts
-        create-dados-sociais.dto.ts
-      entities/
-        cidadao.entity.ts
-        dados-sociais.entity.ts
-      controllers/
-        cidadao.controller.ts
-      services/
-        cidadao.service.ts
-      repositories/
-        cidadao.repository.ts
-      cidadao.module.ts
-
-    beneficio/
-      dto/
-        create-beneficio.dto.ts
-        update-beneficio.dto.ts
-        create-requisito.dto.ts
-      entities/
-        beneficio.entity.ts
-        requisito.entity.ts
-      controllers/
-        beneficio.controller.ts
-        requisitos.controller.ts
-      services/
-        beneficio.service.ts
-        requisitos.service.ts
-      repositories/
-        beneficio.repository.ts
-      beneficio.module.ts
-
-    solicitacao/
-      dto/
-        create-solicitacao.dto.ts
-        update-solicitacao.dto.ts
-        aprovar-solicitacao.dto.ts
-        rejeitar-solicitacao.dto.ts
-      entities/
-        solicitacao.entity.ts
-        historico-solicitacao.entity.ts
-      controllers/
-        solicitacao.controller.ts
-      services/
-        solicitacao.service.ts
-        workflow.service.ts
-      repositories/
-        solicitacao.repository.ts
-      solicitacao.module.ts
-
-    documento/
-      dto/
-        upload-documento.dto.ts
-      entities/
-        documento.entity.ts
-      controllers/
-        documento.controller.ts
-      services/
-        documento.service.ts
-        storage.service.ts
-      repositories/
-        documento.repository.ts
-      documento.module.ts
-
-    relatorios/
-      dto/
-        filtro-relatorio.dto.ts
-      controllers/
-        relatorios.controller.ts
-      services/
-        relatorios.service.ts
-        dashboard.service.ts
-      relatorios.module.ts
-
-    notificacao/
-      dto/
-        create-notificacao.dto.ts
-      entities/
-        notificacao.entity.ts
-      controllers/
-        notificacao.controller.ts
-      services/
-        notificacao.service.ts
-        email.service.ts
-      repositories/
-        notificacao.repository.ts
-      notificacao.module.ts
-
-    auth/
-      (estender o módulo Auth do starter kit)
-      dto/
-        login.dto.ts
-        register.dto.ts
-        refresh-token.dto.ts
-      controllers/
-        auth.controller.ts
-      services/
-        auth.service.ts
-      guards/
-        roles.guard.ts
-      decorators/
-        roles.decorator.ts
-      auth.module.ts
-```
 
 ## Descrição dos Módulos
 
@@ -260,7 +129,7 @@ src/
 ## Implementação Inicial
 
 Para o MVP, focar na implementação dos módulos:
-1. unidade
+1. Unidades
 2. Cidadãos
 3. Benefícios (Auxílio Natalidade e Aluguel Social)
 4. Solicitações

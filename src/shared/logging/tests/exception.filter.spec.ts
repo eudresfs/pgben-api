@@ -1,0 +1,265 @@
+import { Test, TestingModule } from '@nestjs/testing';
+import { GlobalExceptionFilter } from '../exception.filter';
+import { LoggingService } from '../logging.service';
+import { ArgumentsHost, HttpException, HttpStatus, InternalServerErrorException } from '@nestjs/common';
+import { Request, Response } from 'express';
+
+/**
+ * Testes unitários para o filtro de exceções global
+ * 
+ * Verifica o comportamento do filtro ao capturar diferentes tipos de exceções
+ * e formatar as respostas de erro apropriadamente
+ */
+describe('GlobalExceptionFilter', () => {
+  let filter: GlobalExceptionFilter;
+  let loggingService: LoggingService;
+  
+  // Mock do serviço de logging
+  const mockLoggingService = {
+    error: jest.fn(),
+  };
+
+  beforeEach(async () => {
+    jest.clearAllMocks();
+    
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        GlobalExceptionFilter,
+        {
+          provide: LoggingService,
+          useValue: mockLoggingService,
+        },
+      ],
+    }).compile();
+
+    filter = module.get<GlobalExceptionFilter>(GlobalExceptionFilter);
+    loggingService = module.get<LoggingService>(LoggingService);
+  });
+
+  it('deve ser definido', () => {
+    expect(filter).toBeDefined();
+  });
+
+  describe('catch', () => {
+    it('deve lidar com HttpException', () => {
+      // Mock da exceção HTTP
+      const exception = new HttpException('Mensagem de erro', HttpStatus.BAD_REQUEST);
+      
+      // Mock da resposta
+      const mockResponse = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn(),
+      } as unknown as Response;
+      
+      // Mock da requisição
+      const mockRequest = {
+        url: '/api/test',
+        method: 'GET',
+        ip: '127.0.0.1',
+        headers: {
+          'user-agent': 'test-agent',
+        },
+        user: {
+          id: 'user-123',
+        },
+      } as unknown as Request;
+      
+      // Mock do host de argumentos
+      const mockArgumentsHost = {
+        switchToHttp: jest.fn().mockReturnValue({
+          getResponse: jest.fn().mockReturnValue(mockResponse),
+          getRequest: jest.fn().mockReturnValue(mockRequest),
+        }),
+      } as unknown as ArgumentsHost;
+      
+      // Executar o filtro
+      filter.catch(exception, mockArgumentsHost);
+      
+      // Verificar se o status e o corpo da resposta foram definidos corretamente
+      expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        statusCode: HttpStatus.BAD_REQUEST,
+        message: 'Mensagem de erro',
+        timestamp: expect.any(String),
+        path: '/api/test',
+      });
+      
+      // Verificar se o erro foi registrado
+      expect(mockLoggingService.error).toHaveBeenCalledWith(
+        'Exceção HTTP: Mensagem de erro',
+        expect.any(String),
+        'ExceptionFilter',
+        expect.objectContaining({
+          statusCode: HttpStatus.BAD_REQUEST,
+          path: '/api/test',
+          method: 'GET',
+          userId: 'user-123',
+        })
+      );
+    });
+
+    it('deve lidar com exceções internas do servidor', () => {
+      // Mock de uma exceção interna
+      const exception = new Error('Erro interno');
+      
+      // Mock da resposta
+      const mockResponse = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn(),
+      } as unknown as Response;
+      
+      // Mock da requisição
+      const mockRequest = {
+        url: '/api/test',
+        method: 'POST',
+        ip: '127.0.0.1',
+        headers: {},
+      } as unknown as Request;
+      
+      // Mock do host de argumentos
+      const mockArgumentsHost = {
+        switchToHttp: jest.fn().mockReturnValue({
+          getResponse: jest.fn().mockReturnValue(mockResponse),
+          getRequest: jest.fn().mockReturnValue(mockRequest),
+        }),
+      } as unknown as ArgumentsHost;
+      
+      // Executar o filtro
+      filter.catch(exception, mockArgumentsHost);
+      
+      // Verificar se o status e o corpo da resposta foram definidos corretamente
+      expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.INTERNAL_SERVER_ERROR);
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: 'Erro interno do servidor',
+        timestamp: expect.any(String),
+        path: '/api/test',
+      });
+      
+      // Verificar se o erro foi registrado
+      expect(mockLoggingService.error).toHaveBeenCalledWith(
+        'Erro interno: Erro interno',
+        expect.any(String),
+        'ExceptionFilter',
+        expect.objectContaining({
+          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+          path: '/api/test',
+          method: 'POST',
+          userId: undefined,
+        })
+      );
+    });
+
+    it('deve preservar a mensagem de erro original para InternalServerErrorException', () => {
+      // Mock de uma exceção interna do NestJS
+      const exception = new InternalServerErrorException('Erro específico do servidor');
+      
+      // Mock da resposta
+      const mockResponse = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn(),
+      } as unknown as Response;
+      
+      // Mock da requisição
+      const mockRequest = {
+        url: '/api/test',
+        method: 'PUT',
+        ip: '127.0.0.1',
+        headers: {},
+      } as unknown as Request;
+      
+      // Mock do host de argumentos
+      const mockArgumentsHost = {
+        switchToHttp: jest.fn().mockReturnValue({
+          getResponse: jest.fn().mockReturnValue(mockResponse),
+          getRequest: jest.fn().mockReturnValue(mockRequest),
+        }),
+      } as unknown as ArgumentsHost;
+      
+      // Executar o filtro
+      filter.catch(exception, mockArgumentsHost);
+      
+      // Verificar se o status e o corpo da resposta foram definidos corretamente
+      expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.INTERNAL_SERVER_ERROR);
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: 'Erro específico do servidor',
+        timestamp: expect.any(String),
+        path: '/api/test',
+      });
+      
+      // Verificar se o erro foi registrado
+      expect(mockLoggingService.error).toHaveBeenCalledWith(
+        'Exceção HTTP: Erro específico do servidor',
+        expect.any(String),
+        'ExceptionFilter',
+        expect.objectContaining({
+          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+          path: '/api/test',
+          method: 'PUT',
+        })
+      );
+    });
+
+    it('deve lidar com exceções em ambiente de produção', () => {
+      // Salvar o ambiente original
+      const originalEnv = process.env.NODE_ENV;
+      
+      // Definir o ambiente como produção
+      process.env.NODE_ENV = 'production';
+      
+      // Mock de uma exceção interna
+      const exception = new Error('Detalhes sensíveis do erro');
+      
+      // Mock da resposta
+      const mockResponse = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn(),
+      } as unknown as Response;
+      
+      // Mock da requisição
+      const mockRequest = {
+        url: '/api/test',
+        method: 'DELETE',
+        ip: '127.0.0.1',
+        headers: {},
+      } as unknown as Request;
+      
+      // Mock do host de argumentos
+      const mockArgumentsHost = {
+        switchToHttp: jest.fn().mockReturnValue({
+          getResponse: jest.fn().mockReturnValue(mockResponse),
+          getRequest: jest.fn().mockReturnValue(mockRequest),
+        }),
+      } as unknown as ArgumentsHost;
+      
+      // Executar o filtro
+      filter.catch(exception, mockArgumentsHost);
+      
+      // Verificar se o status e o corpo da resposta foram definidos corretamente
+      // Em produção, não devemos expor detalhes do erro
+      expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.INTERNAL_SERVER_ERROR);
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: 'Erro interno do servidor',
+        timestamp: expect.any(String),
+        path: '/api/test',
+      });
+      
+      // Verificar se o erro foi registrado com os detalhes completos
+      expect(mockLoggingService.error).toHaveBeenCalledWith(
+        'Erro interno: Detalhes sensíveis do erro',
+        expect.any(String),
+        'ExceptionFilter',
+        expect.objectContaining({
+          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+          path: '/api/test',
+          method: 'DELETE',
+        })
+      );
+      
+      // Restaurar o ambiente original
+      process.env.NODE_ENV = originalEnv;
+    });
+  });
+});
