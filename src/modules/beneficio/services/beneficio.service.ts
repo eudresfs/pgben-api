@@ -7,6 +7,8 @@ import { FluxoBeneficio } from '../entities/fluxo-beneficio.entity';
 import { CreateTipoBeneficioDto } from '../dto/create-tipo-beneficio.dto';
 import { UpdateTipoBeneficioDto } from '../dto/update-tipo-beneficio.dto';
 import { CreateRequisitoDocumentoDto } from '../dto/create-requisito-documento.dto';
+import { TipoDocumento } from '../entities/requisito-documento.entity';
+import { TipoEtapa, PerfilResponsavel } from '../entities/fluxo-beneficio.entity';
 import { ConfigurarFluxoDto } from '../dto/configurar-fluxo.dto';
 
 /**
@@ -58,7 +60,9 @@ export class BeneficioService {
     queryBuilder.orderBy('tipo_beneficio.created_at', 'DESC');
     
     // Executar consulta
-    const [items, total] = await queryBuilder.getManyAndCount();
+    const result = await queryBuilder.getManyAndCount();
+    const items = result[0];
+    const total = result[1];
     
     return {
       items,
@@ -138,7 +142,7 @@ export class BeneficioService {
     // Buscar requisitos
     return this.requisitoDocumentoRepository.find({
       where: { tipo_beneficio: { id: beneficioId } },
-      order: { obrigatorio: 'DESC', nome: 'ASC' },
+      order: { obrigatorio: 'DESC', tipo_documento: 'ASC' },
     });
   }
 
@@ -149,16 +153,16 @@ export class BeneficioService {
     // Verificar se o benefício existe
     const tipoBeneficio = await this.findById(beneficioId);
     
-    // Verificar se já existe um requisito com o mesmo nome para este benefício
+    // Verificar se já existe um requisito com o mesmo tipo de documento para este benefício
     const existingRequisito = await this.requisitoDocumentoRepository.findOne({
       where: { 
-        nome: createRequisitoDocumentoDto.nome,
+        tipo_documento: createRequisitoDocumentoDto.tipo_documento,
         tipo_beneficio: { id: beneficioId }
       },
     });
     
     if (existingRequisito) {
-      throw new ConflictException(`Já existe um requisito com o nome '${createRequisitoDocumentoDto.nome}' para este benefício`);
+      throw new ConflictException(`Já existe um requisito com o tipo de documento '${createRequisitoDocumentoDto.tipo_documento}' para este benefício`);
     }
     
     // Criar e salvar o requisito
@@ -183,23 +187,33 @@ export class BeneficioService {
     }
     
     // Verificar se já existe um fluxo para este benefício
-    let fluxo = await this.fluxoBeneficioRepository.findOne({
+    let fluxos = await this.fluxoBeneficioRepository.find({
       where: { tipo_beneficio: { id: beneficioId } },
+      order: { ordem: 'ASC' }
     });
     
-    if (fluxo) {
-      // Atualizar fluxo existente
-      fluxo.etapas = configurarFluxoDto.etapas;
-      fluxo.descricao = configurarFluxoDto.descricao;
-    } else {
-      // Criar novo fluxo
-      fluxo = this.fluxoBeneficioRepository.create({
-        tipo_beneficio: tipoBeneficio,
-        etapas: configurarFluxoDto.etapas,
-        descricao: configurarFluxoDto.descricao,
-      });
+    // Remover fluxos existentes
+    if (fluxos && fluxos.length > 0) {
+      await this.fluxoBeneficioRepository.remove(fluxos);
     }
     
-    return this.fluxoBeneficioRepository.save(fluxo);
+    // Criar novas etapas do fluxo
+    const novasEtapas = configurarFluxoDto.etapas.map((etapa, index) => {
+      return this.fluxoBeneficioRepository.create({
+        tipo_beneficio: tipoBeneficio,
+        nome_etapa: etapa.nome,
+        tipo_etapa: etapa.tipo_aprovador as unknown as TipoEtapa, // Converter o tipo de aprovador para tipo de etapa
+        perfil_responsavel: etapa.tipo_aprovador as unknown as PerfilResponsavel, // Converter o tipo de aprovador para perfil responsável
+        ordem: etapa.ordem || (index + 1),
+        descricao: etapa.descricao,
+        obrigatorio: true, // Valor padrão
+        permite_retorno: false, // Valor padrão
+        setor_id: etapa.prazo_dias ? etapa.prazo_dias.toString() : undefined // Usar prazo_dias como setor_id temporário
+      });
+    });
+    
+    // Salvar as novas etapas
+    return this.fluxoBeneficioRepository.save(novasEtapas);
+
   }
 }

@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, IsBoolean, IsOptional, MaxLength } from 'class-validator';
+import { IsNotEmpty, IsString, IsBoolean, IsOptional, MaxLength, IsEnum } from 'class-validator';
+import { TipoDocumento } from '../entities/requisito-documento.entity';
 
 /**
  * DTO para criação de requisito documental
@@ -8,13 +9,13 @@ import { IsNotEmpty, IsString, IsBoolean, IsOptional, MaxLength } from 'class-va
  */
 export class CreateRequisitoDocumentoDto {
   @ApiProperty({ 
-    description: 'Nome do documento requerido', 
-    example: 'Comprovante de Residência' 
+    description: 'Tipo do documento requerido',
+    enum: TipoDocumento,
+    example: TipoDocumento.COMPROVANTE_RESIDENCIA
   })
-  @IsNotEmpty({ message: 'Nome é obrigatório' })
-  @IsString({ message: 'Nome deve ser um texto' })
-  @MaxLength(100, { message: 'Nome não pode ter mais de 100 caracteres' })
-  nome: string;
+  @IsNotEmpty({ message: 'Tipo de documento é obrigatório' })
+  @IsEnum(TipoDocumento, { message: 'Tipo de documento inválido' })
+  tipo_documento: TipoDocumento;
 
   @ApiProperty({ 
     description: 'Descrição do documento e suas especificações',

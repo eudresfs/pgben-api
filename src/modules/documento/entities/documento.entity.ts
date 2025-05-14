@@ -11,7 +11,8 @@ import {
 } from 'typeorm';
 import { IsNotEmpty, IsNumber, Min } from 'class-validator';
 import { Solicitacao } from '../../solicitacao/entities/solicitacao.entity';
-import { User } from '../../../user/entities/user.entity';
+// Temporariamente comentado até que a entidade User seja criada
+// import { User } from '../../../user/entities/user.entity';
 import { TipoDocumento } from '../../beneficio/entities/requisito-documento.entity';
 
 @Entity('documentos')
@@ -60,9 +61,10 @@ export class Documento {
   @IsNotEmpty({ message: 'Usuário que fez upload é obrigatório' })
   uploader_id: string;
 
-  @ManyToOne(() => User)
-  @JoinColumn({ name: 'uploader_id' })
-  uploader: User;
+  // Temporariamente comentado até que a entidade User seja criada
+  // @ManyToOne(() => User)
+  // @JoinColumn({ name: 'uploader_id' })
+  // uploader: User;
 
   @Column('jsonb', { nullable: true })
   metadados: {

@@ -95,8 +95,8 @@ describe('HealthController', () => {
     });
   });
 
-  describe('checkDisk', () => {
-    it('deve verificar o espaço em disco', async () => {
+  describe('checkSystem', () => {
+    it('deve verificar o espaço em disco e memória', async () => {
       const mockHealthCheckResult = {
         status: 'ok',
         info: {
@@ -107,24 +107,6 @@ describe('HealthController', () => {
               total: 500000000,
             },
           },
-        },
-      };
-      
-      mockHealthCheckService.check.mockResolvedValue(mockHealthCheckResult);
-      
-      const result = await controller.checkDisk();
-      
-      expect(result).toEqual(mockHealthCheckResult);
-      expect(mockHealthCheckService.check).toHaveBeenCalled();
-      expect(mockDiskHealthIndicator.checkStorage).not.toHaveBeenCalled(); // Chamado dentro da função check
-    });
-  });
-
-  describe('checkMemory', () => {
-    it('deve verificar o uso de memória', async () => {
-      const mockHealthCheckResult = {
-        status: 'ok',
-        info: {
           memory_heap: {
             status: 'up',
           },
@@ -136,12 +118,45 @@ describe('HealthController', () => {
       
       mockHealthCheckService.check.mockResolvedValue(mockHealthCheckResult);
       
-      const result = await controller.checkMemory();
+      const result = await controller.checkSystem();
       
       expect(result).toEqual(mockHealthCheckResult);
       expect(mockHealthCheckService.check).toHaveBeenCalled();
+      expect(mockDiskHealthIndicator.checkStorage).not.toHaveBeenCalled(); // Chamado dentro da função check
       expect(mockMemoryHealthIndicator.checkHeap).not.toHaveBeenCalled(); // Chamado dentro da função check
       expect(mockMemoryHealthIndicator.checkRSS).not.toHaveBeenCalled(); // Chamado dentro da função check
+    });
+  });
+
+  describe('checkDatabase', () => {
+    it('deve verificar a conexão com o banco de dados', async () => {
+      const mockHealthCheckResult = {
+        status: 'ok',
+        info: {
+          database: {
+            status: 'up',
+          },
+        },
+      };
+      
+      mockHealthCheckService.check.mockResolvedValue(mockHealthCheckResult);
+      
+      const result = await controller.checkDatabase();
+      
+      expect(result).toEqual(mockHealthCheckResult);
+      expect(mockHealthCheckService.check).toHaveBeenCalled();
+      expect(mockTypeOrmHealthIndicator.pingCheck).not.toHaveBeenCalled(); // Chamado dentro da função check
+    });
+  });
+  
+  describe('ping', () => {
+    it('deve retornar status ok e informações básicas', async () => {
+      const result = controller.ping();
+      
+      expect(result).toHaveProperty('status', 'ok');
+      expect(result).toHaveProperty('timestamp');
+      expect(result).toHaveProperty('service', 'pgben-api');
+      expect(result).toHaveProperty('version');
     });
   });
 });

@@ -137,7 +137,7 @@ export class UsuarioService {
       role: createUsuarioDto.role,
       unidadeId: createUsuarioDto.unidadeId,
       setorId: createUsuarioDto.setorId,
-      primeiroAcesso: true,
+      primeiro_acesso: true,
     });
     
     // Remover campos sensíveis

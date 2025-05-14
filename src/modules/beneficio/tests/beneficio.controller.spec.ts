@@ -2,24 +2,23 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { BeneficioController } from '../controllers/beneficio.controller';
 import { BeneficioService } from '../services/beneficio.service';
 import { NotFoundException, ConflictException } from '@nestjs/common';
+import { Periodicidade } from '../entities/tipo-beneficio.entity';
+import { TipoAprovador } from '../dto/configurar-fluxo.dto';
+import { TipoDocumento } from '../entities/requisito-documento.entity';
 
-/**
- * Testes unitários para o controlador de benefícios
- * 
- * Verifica o funcionamento dos endpoints relacionados aos tipos de benefícios
- * disponíveis no sistema
- */
 describe('BeneficioController', () => {
   let controller: BeneficioController;
-  
+  let service: BeneficioService;
+
   // Mock do serviço de benefícios
   const mockBeneficioService = {
     findAll: jest.fn(),
     findById: jest.fn(),
     create: jest.fn(),
     update: jest.fn(),
-    toggleStatus: jest.fn(),
-    remove: jest.fn(),
+    findRequisitosByBeneficioId: jest.fn(),
+    addRequisito: jest.fn(),
+    configurarFluxo: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -36,6 +35,7 @@ describe('BeneficioController', () => {
     }).compile();
 
     controller = module.get<BeneficioController>(BeneficioController);
+    service = module.get<BeneficioService>(BeneficioService);
   });
 
   it('deve ser definido', () => {
@@ -44,23 +44,25 @@ describe('BeneficioController', () => {
 
   describe('findAll', () => {
     it('deve retornar uma lista paginada de benefícios', async () => {
+      const mockBeneficios = [
+        {
+          id: '1',
+          nome: 'Cesta Básica',
+          descricao: 'Benefício de cesta básica para famílias em vulnerabilidade',
+          valor: 150.00,
+          ativo: true,
+        },
+        {
+          id: '2',
+          nome: 'Auxílio Moradia',
+          descricao: 'Benefício para auxílio de aluguel',
+          valor: 300.00,
+          ativo: true,
+        },
+      ];
+      
       const mockResult = {
-        items: [
-          {
-            id: '1',
-            nome: 'Cesta Básica',
-            descricao: 'Benefício de cesta básica para famílias em vulnerabilidade',
-            valor: 150.00,
-            ativo: true,
-          },
-          {
-            id: '2',
-            nome: 'Auxílio Moradia',
-            descricao: 'Benefício para auxílio de aluguel',
-            valor: 300.00,
-            ativo: true,
-          },
-        ],
+        items: mockBeneficios,
         meta: {
           total: 2,
           page: 1,
@@ -71,16 +73,20 @@ describe('BeneficioController', () => {
       
       mockBeneficioService.findAll.mockResolvedValue(mockResult);
       
-      const query = { page: 1, limit: 10 };
-      const result = await controller.findAll(query);
+      const result = await controller.findAll(1, 10, undefined, undefined);
       
       expect(result).toEqual(mockResult);
-      expect(mockBeneficioService.findAll).toHaveBeenCalledWith(query);
+      expect(mockBeneficioService.findAll).toHaveBeenCalledWith({
+        page: 1,
+        limit: 10,
+        search: undefined,
+        ativo: undefined,
+      });
     });
   });
 
-  describe('findById', () => {
-    it('deve retornar um benefício quando encontrado pelo ID', async () => {
+  describe('findOne', () => {
+    it('deve retornar um benefício quando encontrado', async () => {
       const mockBeneficio = {
         id: '1',
         nome: 'Cesta Básica',
@@ -91,16 +97,16 @@ describe('BeneficioController', () => {
       
       mockBeneficioService.findById.mockResolvedValue(mockBeneficio);
       
-      const result = await controller.findById('1');
+      const result = await controller.findOne('1');
       
       expect(result).toEqual(mockBeneficio);
       expect(mockBeneficioService.findById).toHaveBeenCalledWith('1');
     });
 
-    it('deve propagar NotFoundException quando o benefício não é encontrado', async () => {
-      mockBeneficioService.findById.mockRejectedValue(new NotFoundException('Benefício não encontrado'));
+    it('deve lançar NotFoundException quando o benefício não é encontrado', async () => {
+      mockBeneficioService.findById.mockRejectedValue(new NotFoundException());
       
-      await expect(controller.findById('999')).rejects.toThrow(NotFoundException);
+      await expect(controller.findOne('999')).rejects.toThrow(NotFoundException);
       expect(mockBeneficioService.findById).toHaveBeenCalledWith('999');
     });
   });
@@ -111,9 +117,13 @@ describe('BeneficioController', () => {
         nome: 'Cesta Básica',
         descricao: 'Benefício de cesta básica para famílias em vulnerabilidade',
         valor: 150.00,
-        criterios_concessao: 'Famílias com renda per capita inferior a meio salário mínimo',
-        documentos_necessarios: ['CPF', 'Comprovante de residência', 'Comprovante de renda'],
-        validade_meses: 6,
+        periodicidade: Periodicidade.MENSAL,
+        base_juridica: 'Lei Municipal 123/2023',
+        criterios_elegibilidade: {
+          idade_minima: 18,
+          renda_maxima: 1500,
+          outros: ['Residir no município']
+        }
       };
       
       const mockBeneficio = {
@@ -126,37 +136,30 @@ describe('BeneficioController', () => {
       
       mockBeneficioService.create.mockResolvedValue(mockBeneficio);
       
-      const mockRequest = {
-        user: {
-          id: 'admin-id',
-          role: 'admin',
-        },
-      };
-      
-      const result = await controller.create(createBeneficioDto, mockRequest);
+      const result = await controller.create(createBeneficioDto);
       
       expect(result).toEqual(mockBeneficio);
-      expect(mockBeneficioService.create).toHaveBeenCalledWith(createBeneficioDto, mockRequest.user);
+      expect(mockBeneficioService.create).toHaveBeenCalledWith(createBeneficioDto);
     });
 
-    it('deve propagar ConflictException quando já existe um benefício com o mesmo nome', async () => {
+    it('deve lançar ConflictException quando já existe um benefício com o mesmo nome', async () => {
       const createBeneficioDto = {
         nome: 'Cesta Básica',
         descricao: 'Benefício de cesta básica para famílias em vulnerabilidade',
         valor: 150.00,
+        periodicidade: Periodicidade.MENSAL,
+        base_juridica: 'Lei Municipal 123/2023',
+        criterios_elegibilidade: {
+          idade_minima: 18,
+          renda_maxima: 1500,
+          outros: ['Residir no município']
+        }
       };
       
-      mockBeneficioService.create.mockRejectedValue(new ConflictException('Já existe um benefício com este nome'));
+      mockBeneficioService.create.mockRejectedValue(new ConflictException());
       
-      const mockRequest = {
-        user: {
-          id: 'admin-id',
-          role: 'admin',
-        },
-      };
-      
-      await expect(controller.create(createBeneficioDto, mockRequest)).rejects.toThrow(ConflictException);
-      expect(mockBeneficioService.create).toHaveBeenCalledWith(createBeneficioDto, mockRequest.user);
+      await expect(controller.create(createBeneficioDto)).rejects.toThrow(ConflictException);
+      expect(mockBeneficioService.create).toHaveBeenCalledWith(createBeneficioDto);
     });
   });
 
@@ -177,104 +180,111 @@ describe('BeneficioController', () => {
       
       mockBeneficioService.update.mockResolvedValue(mockUpdatedBeneficio);
       
-      const mockRequest = {
-        user: {
-          id: 'admin-id',
-          role: 'admin',
-        },
-      };
-      
-      const result = await controller.update('1', updateBeneficioDto, mockRequest);
+      const result = await controller.update('1', updateBeneficioDto);
       
       expect(result).toEqual(mockUpdatedBeneficio);
-      expect(mockBeneficioService.update).toHaveBeenCalledWith('1', updateBeneficioDto, mockRequest.user);
+      expect(mockBeneficioService.update).toHaveBeenCalledWith('1', updateBeneficioDto);
     });
 
-    it('deve propagar NotFoundException quando o benefício não existe', async () => {
+    it('deve lançar NotFoundException quando o benefício não existe', async () => {
       const updateBeneficioDto = {
         nome: 'Cesta Básica Atualizada',
       };
       
-      mockBeneficioService.update.mockRejectedValue(new NotFoundException('Benefício não encontrado'));
+      mockBeneficioService.update.mockRejectedValue(new NotFoundException());
       
-      const mockRequest = {
-        user: {
-          id: 'admin-id',
-          role: 'admin',
-        },
-      };
-      
-      await expect(controller.update('999', updateBeneficioDto, mockRequest)).rejects.toThrow(NotFoundException);
-      expect(mockBeneficioService.update).toHaveBeenCalledWith('999', updateBeneficioDto, mockRequest.user);
+      await expect(controller.update('999', updateBeneficioDto)).rejects.toThrow(NotFoundException);
+      expect(mockBeneficioService.update).toHaveBeenCalledWith('999', updateBeneficioDto);
     });
   });
 
-  describe('toggleStatus', () => {
-    it('deve alternar o status de um benefício', async () => {
-      const mockUpdatedBeneficio = {
+  describe('findRequisitos', () => {
+    it('deve retornar os requisitos documentais de um benefício', async () => {
+      const mockRequisitos = [
+        {
+          id: '1',
+          nome: 'CPF',
+          obrigatorio: true,
+        },
+        {
+          id: '2',
+          nome: 'Comprovante de Residência',
+          obrigatorio: true,
+        }
+      ];
+      
+      mockBeneficioService.findRequisitosByBeneficioId.mockResolvedValue(mockRequisitos);
+      
+      const result = await controller.findRequisitos('1');
+      
+      expect(result).toEqual(mockRequisitos);
+      expect(mockBeneficioService.findRequisitosByBeneficioId).toHaveBeenCalledWith('1');
+    });
+  });
+
+  describe('addRequisito', () => {
+    it('deve adicionar um requisito documental a um benefício', async () => {
+      const createRequisitoDto = {
+        tipo_documento: TipoDocumento.CPF,
+        descricao: 'Documento de identificação',
+        obrigatorio: true,
+      };
+      
+      const mockRequisito = {
         id: '1',
-        nome: 'Cesta Básica',
-        ativo: false,
-      };
-      
-      mockBeneficioService.toggleStatus.mockResolvedValue(mockUpdatedBeneficio);
-      
-      const mockRequest = {
-        user: {
-          id: 'admin-id',
-          role: 'admin',
+        ...createRequisitoDto,
+        tipo_beneficio: {
+          id: '1',
+          nome: 'Cesta Básica',
         },
       };
       
-      const result = await controller.toggleStatus('1', mockRequest);
+      mockBeneficioService.addRequisito.mockResolvedValue(mockRequisito);
       
-      expect(result).toEqual(mockUpdatedBeneficio);
-      expect(mockBeneficioService.toggleStatus).toHaveBeenCalledWith('1', mockRequest.user);
-    });
-
-    it('deve propagar NotFoundException quando o benefício não existe', async () => {
-      mockBeneficioService.toggleStatus.mockRejectedValue(new NotFoundException('Benefício não encontrado'));
+      const result = await controller.addRequisito('1', createRequisitoDto);
       
-      const mockRequest = {
-        user: {
-          id: 'admin-id',
-          role: 'admin',
-        },
-      };
-      
-      await expect(controller.toggleStatus('999', mockRequest)).rejects.toThrow(NotFoundException);
-      expect(mockBeneficioService.toggleStatus).toHaveBeenCalledWith('999', mockRequest.user);
+      expect(result).toEqual(mockRequisito);
+      expect(mockBeneficioService.addRequisito).toHaveBeenCalledWith('1', createRequisitoDto);
     });
   });
 
-  describe('remove', () => {
-    it('deve remover um benefício existente', async () => {
-      mockBeneficioService.remove.mockResolvedValue(undefined);
+  describe('configurarFluxo', () => {
+    it('deve configurar o fluxo de aprovação de um benefício', async () => {
+      const configurarFluxoDto = {
+        descricao: 'Fluxo de aprovação para cesta básica',
+        etapas: [
+          {
+            ordem: 1,
+            nome: 'Análise técnica',
+            descricao: 'Verificação inicial dos documentos',
+            tipo_aprovador: TipoAprovador.TECNICO,
+            prazo_dias: 2
+          },
+          {
+            ordem: 2,
+            nome: 'Aprovação coordenação',
+            descricao: 'Aprovação pela coordenação da unidade',
+            tipo_aprovador: TipoAprovador.GESTOR_UNIDADE,
+            prazo_dias: 3
+          }
+        ],
+      };
       
-      const mockRequest = {
-        user: {
-          id: 'admin-id',
-          role: 'admin',
+      const mockFluxo = {
+        id: '1',
+        ...configurarFluxoDto,
+        tipo_beneficio: {
+          id: '1',
+          nome: 'Cesta Básica',
         },
       };
       
-      await controller.remove('1', mockRequest);
+      mockBeneficioService.configurarFluxo.mockResolvedValue(mockFluxo);
       
-      expect(mockBeneficioService.remove).toHaveBeenCalledWith('1', mockRequest.user);
-    });
-
-    it('deve propagar NotFoundException quando o benefício não existe', async () => {
-      mockBeneficioService.remove.mockRejectedValue(new NotFoundException('Benefício não encontrado'));
+      const result = await controller.configurarFluxo('1', configurarFluxoDto);
       
-      const mockRequest = {
-        user: {
-          id: 'admin-id',
-          role: 'admin',
-        },
-      };
-      
-      await expect(controller.remove('999', mockRequest)).rejects.toThrow(NotFoundException);
-      expect(mockBeneficioService.remove).toHaveBeenCalledWith('999', mockRequest.user);
+      expect(result).toEqual(mockFluxo);
+      expect(mockBeneficioService.configurarFluxo).toHaveBeenCalledWith('1', configurarFluxoDto);
     });
   });
 });

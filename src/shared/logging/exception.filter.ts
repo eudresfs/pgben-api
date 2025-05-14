@@ -4,9 +4,17 @@ import {
   ArgumentsHost,
   HttpException,
   HttpStatus,
-  Logger,
+  Injectable,
 } from '@nestjs/common';
+import { LoggingService } from './logging.service';
 import { Request, Response } from 'express';
+
+// Estender a interface Request para incluir a propriedade user
+declare module 'express' {
+  interface Request {
+    user?: any;
+  }
+}
 
 /**
  * Filtro de Exceções Global
@@ -17,8 +25,9 @@ import { Request, Response } from 'express';
  * - Adiciona informações de rastreamento em ambiente de desenvolvimento
  */
 @Catch()
+@Injectable()
 export class GlobalExceptionFilter implements ExceptionFilter {
-  private readonly logger = new Logger('ExceptionFilter');
+  constructor(private readonly loggingService: LoggingService) {}
 
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
@@ -50,13 +59,23 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     }
     
     // Log detalhado do erro
-    const userId = request.user ? (request.user as any).id : 'anônimo';
+    const userId = request.user ? request.user.id : 'anônimo';
     const userIp = request.ip;
-    const userAgent = request.get('user-agent') || '';
+    const userAgent = request.headers?.['user-agent'] || request.get?.('user-agent') || '';
     
-    this.logger.error(
-      `Exceção capturada: ${request.method} ${request.url} - Status: ${status} - Usuário: ${userId} - IP: ${userIp} - User-Agent: ${userAgent} - Mensagem: ${message}`,
+    this.loggingService.error(
+      `Exceção capturada: ${request.method} ${request.url} - Status: ${status} - Mensagem: ${message}`,
       exception instanceof Error ? exception.stack : 'Sem stack trace disponível',
+      'ExceptionFilter',
+      {
+        method: request.method,
+        path: request.url,
+        statusCode: status,
+        message,
+        userId,
+        ip: userIp,
+        userAgent
+      }
     );
     
     response.status(status).json(errorResponse);

@@ -91,7 +91,11 @@ export class UsuarioRepository {
    */
   async update(id: string, data: Partial<Usuario>): Promise<Usuario> {
     await this.repository.update(id, data);
-    return this.findById(id);
+    const usuario = await this.findById(id);
+    if (!usuario) {
+      throw new Error(`Usuário com ID ${id} não encontrado`);
+    }
+    return usuario;
   }
 
   /**
@@ -102,7 +106,11 @@ export class UsuarioRepository {
    */
   async updateStatus(id: string, status: string): Promise<Usuario> {
     await this.repository.update(id, { status });
-    return this.findById(id);
+    const usuario = await this.findById(id);
+    if (!usuario) {
+      throw new Error(`Usuário com ID ${id} não encontrado`);
+    }
+    return usuario;
   }
 
   /**
@@ -112,8 +120,12 @@ export class UsuarioRepository {
    * @returns Usuário atualizado
    */
   async updateSenha(id: string, senhaHash: string): Promise<Usuario> {
-    await this.repository.update(id, { senhaHash, primeiroAcesso: false });
-    return this.findById(id);
+    await this.repository.update(id, { senhaHash, primeiro_acesso: false });
+    const usuario = await this.findById(id);
+    if (!usuario) {
+      throw new Error(`Usuário com ID ${id} não encontrado`);
+    }
+    return usuario;
   }
 
   /**

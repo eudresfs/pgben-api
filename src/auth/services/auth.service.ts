@@ -5,20 +5,20 @@ import { plainToClass } from 'class-transformer';
 
 import { AppLogger } from '../../shared/logger/logger.service';
 import { RequestContext } from '../../shared/request-context/request-context.dto';
-import { UserOutput } from '../../user/dtos/user-output.dto';
-import { UserService } from '../../user/services/user.service';
-import { ROLE } from '../constants/role.constant';
+import { UsuarioService } from '../../modules/usuario/services/usuario.service';
+import { Role } from '../../modules/auth/enums/role.enum';
 import { RegisterInput } from '../dtos/auth-register-input.dto';
 import { RegisterOutput } from '../dtos/auth-register-output.dto';
 import {
   AuthTokenOutput,
   UserAccessTokenClaims,
 } from '../dtos/auth-token-output.dto';
+import { UserOutput, UsuarioAdapter } from '../adapters/usuario-adapter';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private userService: UserService,
+    private usuarioService: UsuarioService,
     private jwtService: JwtService,
     private configService: ConfigService,
     private readonly logger: AppLogger,
@@ -31,21 +31,27 @@ export class AuthService {
     username: string,
     pass: string,
   ): Promise<UserAccessTokenClaims> {
-    this.logger.log(ctx, `${this.validateUser.name} was called`);
+    this.logger.log(ctx, `${this.validateUser.name} foi chamado`);
 
-    // The userService will throw Unauthorized in case of invalid username/password.
-    const user = await this.userService.validateUsernamePassword(
-      ctx,
-      username,
-      pass,
-    );
-
-    // Prevent disabled users from logging in.
-    if (user.isAccountDisabled) {
-      throw new UnauthorizedException('This user account has been disabled');
+    // Buscar usuário pelo email (username)
+    const usuario = await this.usuarioService.findByEmail(username);
+    if (!usuario) {
+      throw new UnauthorizedException('Nome de usuário ou senha inválidos');
     }
 
-    return user;
+    // Verificar se a senha está correta
+    const senhaCorreta = await require('bcrypt').compare(pass, usuario.senhaHash);
+    if (!senhaCorreta) {
+      throw new UnauthorizedException('Nome de usuário ou senha inválidos');
+    }
+
+    // Verificar se o usuário está ativo
+    if (usuario.status === 'inativo') {
+      throw new UnauthorizedException('Esta conta de usuário foi desativada');
+    }
+
+    // Converter para o formato esperado
+    return UsuarioAdapter.toUserAccessTokenClaims(usuario);
   }
 
   login(ctx: RequestContext): AuthTokenOutput {
@@ -58,27 +64,41 @@ export class AuthService {
     ctx: RequestContext,
     input: RegisterInput,
   ): Promise<RegisterOutput> {
-    this.logger.log(ctx, `${this.register.name} was called`);
+    this.logger.log(ctx, `${this.register.name} foi chamado`);
 
-    // TODO : Setting default role as USER here. Will add option to change this later via ADMIN users.
-    input.roles = [ROLE.USER];
-    input.isAccountDisabled = false;
+    // Adaptar o input para o formato esperado pelo UsuarioService
+    const createUsuarioDto = {
+      nome: input.name,
+      email: input.username,
+      senha: input.password,
+      role: (input.roles?.[0] as unknown as Role) || Role.TECNICO_UNIDADE
+    };
 
-    const registeredUser = await this.userService.createUser(ctx, input);
-    return plainToClass(RegisterOutput, registeredUser, {
+    // Criar o usuário
+    const registeredUser = await this.usuarioService.create(createUsuarioDto);
+    
+    // Converter para o formato esperado
+    const userOutput = UsuarioAdapter.toUserOutput(registeredUser as any);
+    
+    return plainToClass(RegisterOutput, userOutput, {
       excludeExtraneousValues: true,
     });
   }
 
   async refreshToken(ctx: RequestContext): Promise<AuthTokenOutput> {
-    this.logger.log(ctx, `${this.refreshToken.name} was called`);
+    this.logger.log(ctx, `${this.refreshToken.name} foi chamado`);
 
-    const user = await this.userService.findById(ctx, ctx.user!.id);
-    if (!user) {
-      throw new UnauthorizedException('Invalid user id');
+    // Garantir que o ID seja uma string
+    const userId = typeof ctx.user!.id === 'number' ? ctx.user!.id.toString() : ctx.user!.id;
+    const usuario = await this.usuarioService.findById(userId);
+    if (!usuario) {
+      throw new UnauthorizedException('ID de usuário inválido');
     }
 
-    return this.getAuthToken(ctx, user);
+    // Converter para o formato esperado
+    const userOutput = UsuarioAdapter.toUserOutput(usuario as any);
+    
+    return this.getAuthToken(ctx, userOutput);
   }
 
   getAuthToken(

@@ -15,7 +15,7 @@ export class AuthTokenOutput {
 
 export class UserAccessTokenClaims {
   @Expose()
-  id: number;
+  id: string | number;
   @Expose()
   username: string;
   @Expose()
@@ -23,5 +23,5 @@ export class UserAccessTokenClaims {
 }
 
 export class UserRefreshTokenClaims {
-  id: number;
+  id: string | number;
 }

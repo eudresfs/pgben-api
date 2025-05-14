@@ -1,0 +1,74 @@
+import { Expose } from 'class-transformer';
+import { Usuario } from '../../modules/usuario/entities/usuario.entity';
+import { ROLE } from '../constants/role.constant';
+
+/**
+ * DTO para saída de usuário compatível com o serviço de autenticação
+ */
+export class UserOutput {
+  @Expose()
+  id: string | number;
+
+  @Expose()
+  name: string;
+
+  @Expose()
+  username: string;
+
+  @Expose()
+  email: string;
+
+  @Expose()
+  isAccountDisabled: boolean;
+
+  @Expose()
+  createdAt: string;
+
+  @Expose()
+  updatedAt: string;
+
+  @Expose()
+  roles: ROLE[];
+}
+
+/**
+ * Claims do token de acesso do usuário
+ */
+export class UserAccessTokenClaims {
+  id: string | number;
+  username: string;
+  roles: ROLE[];
+}
+
+/**
+ * Adaptador para converter a entidade Usuario para o formato esperado pelo serviço de autenticação
+ */
+export class UsuarioAdapter {
+  /**
+   * Converte um Usuario para UserOutput
+   */
+  static toUserOutput(usuario: Usuario): UserOutput {
+    const userOutput = new UserOutput();
+    userOutput.id = usuario.id;
+    userOutput.name = usuario.nome;
+    userOutput.username = usuario.email; // Usando email como username
+    userOutput.email = usuario.email;
+    userOutput.isAccountDisabled = usuario.status === 'inativo';
+    userOutput.createdAt = usuario.created_at?.toISOString() || new Date().toISOString();
+    userOutput.updatedAt = usuario.updated_at?.toISOString() || new Date().toISOString();
+    userOutput.roles = [usuario.role as unknown as ROLE];
+    
+    return userOutput;
+  }
+
+  /**
+   * Converte um Usuario para UserAccessTokenClaims
+   */
+  static toUserAccessTokenClaims(usuario: Usuario): UserAccessTokenClaims {
+    return {
+      id: usuario.id,
+      username: usuario.email, // Usando email como username
+      roles: [usuario.role as unknown as ROLE],
+    };
+  }
+}
