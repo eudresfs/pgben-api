@@ -1,13 +1,13 @@
 import { DataSource } from 'typeorm';
 import { Seeder, SeederFactoryManager, runSeeder } from 'typeorm-extension';
-import TipoDocumentoSeed from './TipoDocumentoSeed';
-import UnidadeSeed from './UnidadeSeed';
-import UserSeed from './UserSeed';
-import SetorTipoBeneficioSeed from './SetorTipoBeneficioSeed';
-import RequisitoDocumentoSeed from './RequisitoDocumentoSeed';
-import DemandaMotivoSeed from './DemandaMotivoSeed';
-import OcorrenciaSeed from './OcorrenciaSeed';
-import { PendenciaSeed } from './PendenciaSeed';
+import { TipoDocumentoSeed } from './initial/TipoDocumentoSeed';
+import { UnidadeSeed } from './initial/UnidadeSeed';
+import { UserSeed } from './initial/UserSeed';
+import { SetorTipoBeneficioSeed } from './initial/SetorTipoBeneficioSeed';
+import { RequisitoDocumentoSeed } from './initial/RequisitoDocumentoSeed';
+import { DemandaMotivoSeed } from './initial/DemandaMotivoSeed';
+import { OcorrenciaSeed } from './initial/OcorrenciaSeed';
+import { PendenciaSeed } from './initial/PendenciaSeed';
 
 /**
  * Classe orquestradora para execução das seeds de dados iniciais do sistema
