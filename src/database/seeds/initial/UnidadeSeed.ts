@@ -102,9 +102,26 @@ export default class UnidadeSeed implements Seeder {
 
     // Inserir unidades no banco de dados
     for (const unidadeData of unidades) {
-      const unidade = unidadeRepository.create(unidadeData);
-      await unidadeRepository.save(unidade);
-      console.log(`Unidade ${unidadeData.nome} criada com sucesso.`);
+      try {
+        // Converter o objeto de endereço para uma string JSON
+        const enderecoString = JSON.stringify(unidadeData.endereco);
+        
+        // Criar uma nova instância de Unidade com os campos corretos
+        const unidade = new Unidade();
+        unidade.nome = unidadeData.nome;
+        unidade.sigla = unidadeData.sigla;
+        unidade.tipo = unidadeData.tipo as any;
+        unidade.status = unidadeData.status as any;
+        unidade.endereco = enderecoString;
+        unidade.telefone = unidadeData.telefone;
+        unidade.email = unidadeData.email;
+        
+        // Salvar a unidade
+        await unidadeRepository.save(unidade);
+        console.log(`Unidade ${unidadeData.nome} criada com sucesso.`);
+      } catch (error) {
+        console.error(`Erro ao criar unidade ${unidadeData.nome}:`, error);
+      }
     }
 
     console.log('Seed de unidades concluído com sucesso!');

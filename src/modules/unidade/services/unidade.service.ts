@@ -131,17 +131,19 @@ export class UnidadeService {
    * Atualiza o status de uma unidade
    * @param id ID da unidade
    * @param updateStatusUnidadeDto Novo status
-   * @returns Unidade atualizada
    */
   async updateStatus(id: string, updateStatusUnidadeDto: UpdateStatusUnidadeDto) {
-    // Verificar se unidade existe
-    const unidade = await this.unidadeRepository.findById(id);
+    // Verificar se a unidade existe
+    const unidade = await this.findById(id);
     if (!unidade) {
-      throw new NotFoundException('Unidade não encontrada');
+      throw new NotFoundException(`Unidade com ID ${id} não encontrada`);
     }
     
-    // Atualizar status
-    const unidadeAtualizada = await this.unidadeRepository.updateStatus(id, updateStatusUnidadeDto.status);
+    // Atualizar status - garantindo que o status seja do tipo correto StatusUnidade
+    const unidadeAtualizada = await this.unidadeRepository.updateStatus(
+      id, 
+      updateStatusUnidadeDto.status
+    );
     
     return unidadeAtualizada;
   }
@@ -153,9 +155,9 @@ export class UnidadeService {
    */
   async findSetoresByUnidadeId(unidadeId: string) {
     // Verificar se unidade existe
-    const unidade = await this.unidadeRepository.findById(unidadeId);
+    const unidade = await this.findById(unidadeId);
     if (!unidade) {
-      throw new NotFoundException('Unidade não encontrada');
+      throw new NotFoundException(`Unidade com ID ${unidadeId} não encontrada`);
     }
     
     // Buscar setores

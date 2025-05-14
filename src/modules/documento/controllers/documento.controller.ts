@@ -22,6 +22,25 @@ import { RolesGuard } from '../../auth/guards/roles.guard';
 import { Roles } from '../../auth/decorators/roles.decorator';
 import { Role } from '../../auth/enums/role.enum';
 import { Request } from 'express';
+import { Multer } from 'multer'; 
+
+declare global {
+  namespace Express {
+    namespace Multer {
+      interface File {
+        fieldname: string;
+        originalname: string;
+        encoding: string;
+        mimetype: string;
+        size: number;
+        destination: string;
+        filename: string;
+        path: string;
+        buffer: Buffer;
+      }
+    }
+  }
+}
 
 /**
  * Controlador de Documentos
@@ -108,7 +127,7 @@ export class DocumentoController {
   @ApiOperation({ summary: 'Verificar documento' })
   @ApiResponse({ status: 200, description: 'Documento verificado com sucesso' })
   @ApiResponse({ status: 404, description: 'Documento não encontrado' })
-  @Roles(Role.ADMIN, Role.GESTOR_SEMTAS, Role.TECNICO_SEMTAS, Role.COORDENADOR_UNIDADE)
+  @Roles(Role.ADMIN, Role.GESTOR_SEMTAS, Role.TECNICO_SEMTAS, Role.COORDENADOR)
   async verificarDocumento(
     @Param('id') id: string,
     @Body('observacoes') observacoes: string,

@@ -7,7 +7,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between } from 'typeorm';
 import { Solicitacao, StatusSolicitacao } from '../../solicitacao/entities/solicitacao.entity';
-import { Unidade } from '../../unidade/entities/unidade.entity';
+import { StatusUnidade, Unidade } from '../../unidade/entities/unidade.entity';
 import { TipoBeneficio } from '../../beneficio/entities/tipo-beneficio.entity';
 import { Role } from '../../auth/enums/role.enum';
 import * as PDFDocument from 'pdfkit';
@@ -104,12 +104,12 @@ export class RelatorioService {
     const { dataInicio, dataFim, unidadeId, formato, user } = options;
     
     // Verificar permissões do usuário
-    if (![Role.ADMIN, Role.GESTOR_SEMTAS, Role.TECNICO_SEMTAS, Role.COORDENADOR_UNIDADE].includes(user.role)) {
+    if (![Role.ADMIN, Role.GESTOR_SEMTAS, Role.TECNICO_SEMTAS, Role.COORDENADOR].includes(user.role)) {
       throw new UnauthorizedException('Você não tem permissão para gerar este relatório');
     }
     
     // Verificar permissão por unidade
-    if (user.role === Role.COORDENADOR_UNIDADE && (!unidadeId || unidadeId !== user.unidade_id)) {
+    if (user.role === Role.COORDENADOR && (!unidadeId || unidadeId !== user.unidade_id)) {
       throw new UnauthorizedException('Você só pode gerar relatórios para sua unidade');
     }
     
@@ -131,7 +131,7 @@ export class RelatorioService {
     
     if (unidadeId) {
       queryBuilder.andWhere('solicitacao.unidade_id = :unidadeId', { unidadeId });
-    } else if (user.role === Role.COORDENADOR_UNIDADE) {
+    } else if (user.role === Role.COORDENADOR) {
       queryBuilder.andWhere('solicitacao.unidade_id = :unidadeId', { unidadeId: user.unidade_id });
     }
     
@@ -183,10 +183,18 @@ export class RelatorioService {
     }
     
     // Buscar todas as unidades
-    const unidades = await this.unidadeRepository.find({ where: { ativo: true } });
+    const unidades = await this.unidadeRepository.find({ where: { status: StatusUnidade.ATIVO } });
+    
+    // Definir a interface para o resultado
+    interface RelatorioUnidade {
+      unidade: Unidade;
+      totalSolicitacoes: number;
+      solicitacoesLiberadas: number;
+      solicitacoesPendentes: number;
+    }
     
     // Para cada unidade, contar solicitações
-    const resultado = [];
+    const resultado: RelatorioUnidade[] = [];
     for (const unidade of unidades) {
       const totalSolicitacoes = await this.solicitacaoRepository.count({
         where: {
@@ -517,7 +525,17 @@ export class RelatorioService {
       ]
     });
     
-    const records = [];
+    // Definir interface para os registros do CSV
+    interface RegistroCSV {
+      status: string;
+      protocolo: string;
+      beneficiario: string;
+      beneficio: string;
+      unidade: string;
+      data_abertura: string;
+    }
+    
+    const records: RegistroCSV[] = [];
     Object.keys(agrupadas).forEach(status => {
       agrupadas[status].forEach(solicitacao => {
         records.push({

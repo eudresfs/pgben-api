@@ -9,7 +9,7 @@ import {
 } from 'typeorm';
 import { IsNotEmpty } from 'class-validator';
 import { Solicitacao } from './solicitacao.entity';
-import { User } from '../../../user/entities/user.entity';
+import { Usuario } from '../../usuario/entities/usuario.entity';
 import { StatusSolicitacao } from './solicitacao.entity';
 
 @Entity('historico_solicitacao')
@@ -44,9 +44,9 @@ export class HistoricoSolicitacao {
   @IsNotEmpty({ message: 'Usuário que realizou a alteração é obrigatório' })
   usuario_id: string;
 
-  @ManyToOne(() => User)
+  @ManyToOne(() => Usuario)
   @JoinColumn({ name: 'usuario_id' })
-  usuario: User;
+  usuario: Usuario;
 
   @Column('text', { nullable: true })
   observacao: string;

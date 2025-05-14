@@ -4,7 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { SharedModule } from './shared/shared.module';
-import { AuthModule } from './modules/auth/auth.module';
+import { AuthModule } from './auth/auth.module';
 import { UsuarioModule } from './modules/usuario/usuario.module';
 import { UnidadeModule } from './modules/unidade/unidade.module';
 import { CidadaoModule } from './modules/cidadao/cidadao.module';
@@ -13,8 +13,9 @@ import { SolicitacaoModule } from './modules/solicitacao/solicitacao.module';
 import { DocumentoModule } from './modules/documento/documento.module';
 import { RelatorioModule } from './modules/relatorio/relatorio.module';
 import { NotificacaoModule } from './modules/notificacao/notificacao.module';
-import { AuditoriaModule } from './modules/auditoria/auditoria.module';
-import { OcorrenciaModule } from './modules/ocorrencia/ocorrencia.module';
+// Módulos que serão implementados futuramente
+// import { AuditoriaModule } from './modules/auditoria/auditoria.module';
+// import { OcorrenciaModule } from './modules/ocorrencia/ocorrencia.module';
 
 @Module({
   imports: [
@@ -54,8 +55,8 @@ import { OcorrenciaModule } from './modules/ocorrencia/ocorrencia.module';
     DocumentoModule,
     RelatorioModule,
     NotificacaoModule,
-    AuditoriaModule,
-    OcorrenciaModule,
+    // AuditoriaModule,
+    // OcorrenciaModule,
   ],
   controllers: [AppController],
   providers: [AppService],

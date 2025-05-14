@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { Repository, DataSource } from 'typeorm';
 import { Setor } from '../entities/setor.entity';
 
@@ -52,7 +52,7 @@ export class SetorRepository {
    */
   async findByUnidadeId(unidadeId: string): Promise<Setor[]> {
     return this.repository.find({ 
-      where: { unidadeId },
+      where: { unidade_id: unidadeId },
       order: { nome: 'ASC' }
     });
   }
@@ -75,7 +75,11 @@ export class SetorRepository {
    */
   async update(id: string, data: Partial<Setor>): Promise<Setor> {
     await this.repository.update(id, data);
-    return this.findById(id);
+    const updatedSetor = await this.findById(id);
+    if (!updatedSetor) {
+      throw new NotFoundException(`Setor com ID ${id} não encontrado`);
+    }
+    return updatedSetor;
   }
 
   /**

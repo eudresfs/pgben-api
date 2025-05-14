@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Repository, DataSource } from 'typeorm';
-import { Unidade } from '../entities/unidade.entity';
+import { StatusUnidade, Unidade } from '../entities/unidade.entity';
 
 /**
  * Repositório de unidades
@@ -72,7 +72,11 @@ export class UnidadeRepository {
    */
   async update(id: string, data: Partial<Unidade>): Promise<Unidade> {
     await this.repository.update(id, data);
-    return this.findById(id);
+    const unidade = await this.findById(id);
+    if (!unidade) {
+      throw new Error('Unidade não encontrada');
+    }
+    return unidade;
   }
 
   /**
@@ -81,9 +85,13 @@ export class UnidadeRepository {
    * @param status Novo status
    * @returns Unidade atualizada
    */
-  async updateStatus(id: string, status: string): Promise<Unidade> {
+  async updateStatus(id: string, status: StatusUnidade): Promise<Unidade> {
     await this.repository.update(id, { status });
-    return this.findById(id);
+    const unidade = await this.findById(id);
+    if (!unidade) {
+      throw new Error('Unidade não encontrada');
+    }
+    return unidade;
   }
 
   /**

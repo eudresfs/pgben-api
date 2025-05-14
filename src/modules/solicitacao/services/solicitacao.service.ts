@@ -8,7 +8,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, ILike } from 'typeorm';
 import { Solicitacao, StatusSolicitacao } from '../entities/solicitacao.entity';
 import { HistoricoSolicitacao } from '../entities/historico-solicitacao.entity';
-import { Pendencia } from '../entities/pendencia.entity';
+import { Pendencia, StatusPendencia } from '../entities/pendencia.entity';
 import { CreateSolicitacaoDto } from '../dto/create-solicitacao.dto';
 import { UpdateSolicitacaoDto } from '../dto/update-solicitacao.dto';
 import { AvaliarSolicitacaoDto } from '../dto/avaliar-solicitacao.dto';
@@ -175,13 +175,25 @@ export class SolicitacaoService {
       throw new UnauthorizedException('Você não tem permissão para criar solicitações nesta unidade');
     }
     
-    // Criar a solicitação
-    const solicitacao = this.solicitacaoRepository.create({
-      ...createSolicitacaoDto,
-      tecnico_id: user.id,
-      data_abertura: new Date(),
-      status: StatusSolicitacao.RASCUNHO,
-    });
+    // Criar a solicitação usando a instância direta da entidade para evitar problemas de tipagem
+    const solicitacao = new Solicitacao();
+    
+    // Preencher os campos da solicitação
+    solicitacao.beneficiario_id = createSolicitacaoDto.beneficiario_id;
+    solicitacao.tipo_beneficio_id = createSolicitacaoDto.tipo_beneficio_id;
+    solicitacao.unidade_id = createSolicitacaoDto.unidade_id;
+    solicitacao.tecnico_id = user.id;
+    solicitacao.data_abertura = new Date();
+    solicitacao.status = StatusSolicitacao.RASCUNHO;
+    
+    // Campos opcionais
+    if (createSolicitacaoDto.observacoes) {
+      solicitacao.observacoes = createSolicitacaoDto.observacoes;
+    }
+    
+    if (createSolicitacaoDto.dados_complementares) {
+      solicitacao.dados_complementares = createSolicitacaoDto.dados_complementares;
+    }
     
     // Salvar a solicitação
     const savedSolicitacao = await this.solicitacaoRepository.save(solicitacao);
@@ -315,14 +327,14 @@ export class SolicitacaoService {
       
       // Registrar pendências
       if (avaliarSolicitacaoDto.pendencias && avaliarSolicitacaoDto.pendencias.length > 0) {
-        for (const descricao of avaliarSolicitacaoDto.pendencias) {
-          const pendencia = this.pendenciaRepository.create({
-            solicitacao_id: id,
-            descricao,
-            resolvida: false,
-            criado_por: user.id,
-            data_criacao: new Date(),
-          });
+        for (const descricaoTexto of avaliarSolicitacaoDto.pendencias) {
+          // Criar uma nova instância de Pendencia diretamente para evitar problemas de tipagem
+          const pendencia = new Pendencia();
+          pendencia.solicitacao_id = id;
+          pendencia.descricao = descricaoTexto;
+          pendencia.status = StatusPendencia.ABERTA;
+          pendencia.registrado_por_id = user.id;
+          
           await this.pendenciaRepository.save(pendencia);
         }
       }
@@ -418,13 +430,22 @@ export class SolicitacaoService {
     acao: string,
     descricao: string
   ) {
-    const historico = this.historicoRepository.create({
-      solicitacao_id: solicitacaoId,
-      usuario_id: usuarioId,
-      acao,
-      descricao,
-      data: new Date(),
+    // Buscar a solicitação para obter o status atual
+    const solicitacao = await this.solicitacaoRepository.findOne({
+      where: { id: solicitacaoId }
     });
+    
+    if (!solicitacao) {
+      throw new NotFoundException(`Solicitação com ID ${solicitacaoId} não encontrada`);
+    }
+    
+    // Criar uma nova instância de HistoricoSolicitacao
+    const historico = new HistoricoSolicitacao();
+    historico.solicitacao_id = solicitacaoId;
+    historico.usuario_id = usuarioId;
+    historico.status_anterior = solicitacao.status;
+    historico.status_atual = solicitacao.status;
+    historico.observacao = `${acao}: ${descricao}`;
     
     return this.historicoRepository.save(historico);
   }
@@ -439,7 +460,7 @@ export class SolicitacaoService {
     // Buscar o histórico
     return this.historicoRepository.find({
       where: { solicitacao_id: solicitacaoId },
-      order: { data: 'DESC' },
+      order: { created_at: 'DESC' },
       relations: ['usuario'],
     });
   }
@@ -454,7 +475,7 @@ export class SolicitacaoService {
     // Buscar as pendências
     return this.pendenciaRepository.find({
       where: { solicitacao_id: solicitacaoId },
-      order: { data_criacao: 'DESC' },
+      order: { created_at: 'DESC' },
     });
   }
 }

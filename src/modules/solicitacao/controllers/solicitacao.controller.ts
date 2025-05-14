@@ -146,7 +146,7 @@ export class SolicitacaoController {
    * Avalia uma solicitação (aprovar/reprovar)
    */
   @Put(':id/avaliar')
-  @Roles(Role.ADMIN, Role.GESTOR_SEMTAS, Role.TECNICO_SEMTAS, Role.COORDENADOR_UNIDADE)
+  @Roles(Role.ADMIN, Role.GESTOR_SEMTAS, Role.TECNICO_SEMTAS, Role.COORDENADOR)
   @ApiOperation({ summary: 'Avaliar solicitação (aprovar/reprovar)' })
   @ApiResponse({ status: 200, description: 'Solicitação avaliada com sucesso' })
   @ApiResponse({ status: 400, description: 'Solicitação não pode ser avaliada' })

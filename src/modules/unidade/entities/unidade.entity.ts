@@ -57,6 +57,13 @@ export class Unidade {
   @Column({ nullable: true })
   responsavel: string;
 
+  @Column({ 
+    type: 'enum', 
+    enum: StatusUnidade, 
+    default: StatusUnidade.ATIVO 
+  })
+  status: StatusUnidade;
+
   @CreateDateColumn()
   created_at: Date;
 

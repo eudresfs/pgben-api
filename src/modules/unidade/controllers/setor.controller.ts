@@ -57,4 +57,3 @@ export class SetorController {
     return this.setorService.findById(id);
   }
 }
-}

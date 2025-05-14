@@ -66,7 +66,7 @@ export default class SolicitacaoSeed implements Seeder {
     }
 
     // Gerar 100 solicitações de exemplo
-    const solicitacoes = [];
+    const solicitacoes: any[] = [];
     for (let i = 0; i < 100; i++) {
       // Selecionar cidadãos aleatórios para beneficiário e solicitante
       const beneficiario = faker.helpers.arrayElement(cidadaos);
@@ -207,7 +207,7 @@ export default class SolicitacaoSeed implements Seeder {
         parentesco,
       });
       
-      const solicitacaoSalva = await solicitacaoRepository.save(solicitacao as any);
+      const solicitacaoSalva = await solicitacaoRepository.save(solicitacao);
       solicitacoes.push(solicitacaoSalva);
       console.log(`Solicitação ${protocolo} criada com sucesso.`);
       

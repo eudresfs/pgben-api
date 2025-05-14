@@ -29,7 +29,8 @@ const options: DataSourceOptions & SeederOptions = {
     max: 30,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 5000
-  }
+  },
+  ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false
 };
 
 // Exporta as opções para uso com diferentes ferramentas

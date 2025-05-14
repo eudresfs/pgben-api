@@ -6,6 +6,7 @@ import {
   InternalServerErrorException
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { Multer } from 'multer'; 
 import { Repository } from 'typeorm';
 import { Documento } from '../entities/documento.entity';
 import { DocumentoEnviado } from '../entities/documento-enviado.entity';
@@ -129,14 +130,15 @@ export class DocumentoService {
       const savedDocumento = await this.documentoRepository.save(documento);
       
       // Criar registro de envio do documento
-      const documentoEnviado = this.documentoEnviadoRepository.create({
-        documento_id: savedDocumento.id,
-        solicitacao_id: uploadDocumentoDto.solicitacao_id,
-        usuario_id: user.id,
-        data_envio: new Date(),
-        ip_origem: '127.0.0.1', // Em produção, obter do request
-        user_agent: 'API', // Em produção, obter do request
-      });
+      const documentoEnviado = new DocumentoEnviado();
+      documentoEnviado.documento_id = savedDocumento.id;
+      documentoEnviado.nome_arquivo = arquivo.originalname;
+      documentoEnviado.caminho_arquivo = savedDocumento.caminho_arquivo;
+      documentoEnviado.tamanho = arquivo.size;
+      documentoEnviado.mime_type = arquivo.mimetype;
+      documentoEnviado.enviado_por_id = user.id;
+      documentoEnviado.data_envio = new Date();
+      documentoEnviado.observacoes = uploadDocumentoDto.observacoes || 'Enviado via API';
       
       await this.documentoEnviadoRepository.save(documentoEnviado);
       
@@ -195,7 +197,7 @@ export class DocumentoService {
     const documento = await this.findById(id, user);
     
     // Verificar se o usuário tem permissão para verificar documentos
-    if (![Role.ADMIN, Role.GESTOR_SEMTAS, Role.TECNICO_SEMTAS, Role.COORDENADOR_UNIDADE].includes(user.role)) {
+    if (![Role.ADMIN, Role.GESTOR_SEMTAS, Role.TECNICO_SEMTAS, Role.COORDENADOR].includes(user.role)) {
       throw new UnauthorizedException('Você não tem permissão para verificar documentos');
     }
     

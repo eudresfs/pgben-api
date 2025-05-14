@@ -21,6 +21,7 @@ export enum TipoOcorrencia {
   SUGESTAO = 'sugestao',
   ELOGIO = 'elogio',
   INFORMACAO = 'informacao',
+  IRREGULARIDADE = 'irregularidade',
   OUTRO = 'outro',
 }
 
@@ -28,6 +29,7 @@ export enum StatusOcorrencia {
   ABERTA = 'aberta',
   EM_ANALISE = 'em_analise',
   RESOLVIDA = 'resolvida',
+  CONCLUIDA = 'concluida',
   CANCELADA = 'cancelada',
 }
 

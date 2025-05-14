@@ -3,7 +3,7 @@ import { SeederOptions } from 'typeorm-extension';
 import { config } from 'dotenv';
 
 // Entidades
-import { User } from '../../user/entities/user.entity';
+import { Usuario } from '../../modules/usuario/entities/usuario.entity';
 import { Unidade } from '../../modules/unidade/entities/unidade.entity';
 import { Setor } from '../../modules/unidade/entities/setor.entity';
 import { SetorUnidade } from '../../modules/unidade/entities/setor-unidade.entity';
@@ -36,7 +36,7 @@ const options: DataSourceOptions & SeederOptions = {
   password: process.env.DB_PASSWORD || 'postgres',
   database: process.env.DB_DATABASE || 'pgben',
   entities: [
-    User,
+    Usuario,
     Unidade,
     Setor,
     SetorUnidade,

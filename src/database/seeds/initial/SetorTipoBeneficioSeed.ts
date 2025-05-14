@@ -1,6 +1,6 @@
 import { DataSource } from 'typeorm';
 import { Seeder, SeederFactoryManager } from 'typeorm-extension';
-import { Setor, StatusSetor } from '../../../modules/unidade/entities/setor.entity';
+import { Setor } from '../../../modules/unidade/entities/setor.entity';
 import { TipoBeneficio, Periodicidade } from '../../../modules/beneficio/entities/tipo-beneficio.entity';
 
 export default class SetorTipoBeneficioSeed implements Seeder {
@@ -31,31 +31,31 @@ export default class SetorTipoBeneficioSeed implements Seeder {
         nome: 'Proteção Social Básica',
         sigla: 'PSB',
         descricao: 'Setor responsável pela proteção social básica',
-        status: StatusSetor.ATIVO,
+        status: true,
       },
       {
         nome: 'Proteção Social Especial',
         sigla: 'PSE',
         descricao: 'Setor responsável pela proteção social especial',
-        status: StatusSetor.ATIVO,
+        status: true,
       },
       {
         nome: 'Gestão do SUAS',
         sigla: 'GSUAS',
         descricao: 'Setor responsável pela gestão do SUAS',
-        status: StatusSetor.ATIVO,
+        status: true,
       },
       {
         nome: 'Vigilância Socioassistencial',
         sigla: 'VS',
         descricao: 'Setor responsável pela vigilância socioassistencial',
-        status: StatusSetor.ATIVO,
+        status: true,
       },
       {
         nome: 'Administrativo',
         sigla: 'ADM',
         descricao: 'Setor administrativo',
-        status: StatusSetor.ATIVO,
+        status: true,
       },
     ];
 

@@ -33,21 +33,21 @@ export class RelatorioController {
    */
   @Get('beneficios-concedidos')
   @Roles(Role.ADMIN, Role.GESTOR_SEMTAS, Role.TECNICO_SEMTAS)
-  @ApiOperation({ summary: 'Relatório de benefícios concedidos' })
+  @ApiOperation({ summary: 'Gera relatório de benefícios concedidos' })
   @ApiResponse({ status: 200, description: 'Relatório gerado com sucesso' })
-  @ApiQuery({ name: 'data_inicio', required: true, type: String, description: 'Data inicial (formato: YYYY-MM-DD)' })
-  @ApiQuery({ name: 'data_fim', required: true, type: String, description: 'Data final (formato: YYYY-MM-DD)' })
-  @ApiQuery({ name: 'unidade_id', required: false, type: String, description: 'Filtro por unidade' })
-  @ApiQuery({ name: 'tipo_beneficio_id', required: false, type: String, description: 'Filtro por tipo de benefício' })
-  @ApiQuery({ name: 'formato', required: false, enum: ['pdf', 'excel', 'csv'], description: 'Formato de saída' })
+  @ApiQuery({ name: 'data_inicio', required: true })
+  @ApiQuery({ name: 'data_fim', required: true })
+  @ApiQuery({ name: 'unidade_id', required: false })
+  @ApiQuery({ name: 'tipo_beneficio_id', required: false })
+  @ApiQuery({ name: 'formato', enum: ['pdf', 'excel', 'csv'], default: 'pdf' })
   async beneficiosConcedidos(
+    @Req() req: Request,
+    @Res() res: Response,
     @Query('data_inicio') dataInicio: string,
     @Query('data_fim') dataFim: string,
     @Query('unidade_id') unidadeId?: string,
     @Query('tipo_beneficio_id') tipoBeneficioId?: string,
-    @Query('formato') formato: 'pdf' | 'excel' | 'csv' = 'pdf',
-    @Req() req: Request,
-    @Res() res: Response
+    @Query('formato') formato: 'pdf' | 'excel' | 'csv' = 'pdf'
   ) {
     if (!dataInicio || !dataFim) {
       throw new BadRequestException('Data inicial e final são obrigatórias');
@@ -81,7 +81,7 @@ export class RelatorioController {
    * Gera relatório de solicitações por status
    */
   @Get('solicitacoes-por-status')
-  @Roles(Role.ADMIN, Role.GESTOR_SEMTAS, Role.TECNICO_SEMTAS, Role.COORDENADOR_UNIDADE)
+  @Roles(Role.ADMIN, Role.GESTOR_SEMTAS, Role.TECNICO_SEMTAS, Role.COORDENADOR)
   @ApiOperation({ summary: 'Relatório de solicitações por status' })
   @ApiResponse({ status: 200, description: 'Relatório gerado com sucesso' })
   @ApiQuery({ name: 'data_inicio', required: true, type: String, description: 'Data inicial (formato: YYYY-MM-DD)' })
@@ -89,12 +89,12 @@ export class RelatorioController {
   @ApiQuery({ name: 'unidade_id', required: false, type: String, description: 'Filtro por unidade' })
   @ApiQuery({ name: 'formato', required: false, enum: ['pdf', 'excel', 'csv'], description: 'Formato de saída' })
   async solicitacoesPorStatus(
+    @Req() req: Request,
+    @Res() res: Response,
     @Query('data_inicio') dataInicio: string,
     @Query('data_fim') dataFim: string,
     @Query('unidade_id') unidadeId?: string,
-    @Query('formato') formato: 'pdf' | 'excel' | 'csv' = 'pdf',
-    @Req() req: Request,
-    @Res() res: Response
+    @Query('formato') formato: 'pdf' | 'excel' | 'csv' = 'pdf'
   ) {
     if (!dataInicio || !dataFim) {
       throw new BadRequestException('Data inicial e final são obrigatórias');

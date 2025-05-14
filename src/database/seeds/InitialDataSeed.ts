@@ -1,10 +1,16 @@
 import { DataSource } from 'typeorm';
 import { Seeder, SeederFactoryManager, runSeeder } from 'typeorm-extension';
-import { TipoDocumentoSeed } from './initial/TipoDocumentoSeed';
-import { UnidadeSeed } from './initial/UnidadeSeed';
-import { UserSeed } from './initial/UserSeed';
-import { SetorTipoBeneficioSeed } from './initial/SetorTipoBeneficioSeed';
-import { RequisitoDocumentoSeed } from './initial/RequisitoDocumentoSeed';
+// Importações de seeds com export default
+import TipoDocumentoSeed from './initial/TipoDocumentoSeed';
+import UnidadeSeed from './initial/UnidadeSeed';
+import UserSeed from './initial/UserSeed';
+import SetorTipoBeneficioSeed from './initial/SetorTipoBeneficioSeed';
+import RequisitoDocumentoSeed from './initial/RequisitoDocumentoSeed';
+import OcorrenciaSeed from './initial/OcorrenciaSeed';
+import DemandaMotivoSeed from './initial/DemandaMotivoSeed';
+
+// Importações de seeds com export class
+import { PendenciaSeed } from './initial/PendenciaSeed';
 
 /**
  * Classe orquestradora para execução das seeds de dados iniciais do sistema
@@ -24,8 +30,11 @@ export class InitialDataSeed implements Seeder {
     await runSeeder(dataSource, TipoDocumentoSeed);
     await runSeeder(dataSource, UnidadeSeed);
     await runSeeder(dataSource, UserSeed);
+    await runSeeder(dataSource, DemandaMotivoSeed);
     await runSeeder(dataSource, SetorTipoBeneficioSeed);
     await runSeeder(dataSource, RequisitoDocumentoSeed);
+    await runSeeder(dataSource, OcorrenciaSeed);
+    await runSeeder(dataSource, PendenciaSeed);
 
     console.log('✅ Seed de dados iniciais concluída com sucesso!');
   }

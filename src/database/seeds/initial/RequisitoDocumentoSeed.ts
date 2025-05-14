@@ -98,14 +98,20 @@ export default class RequisitoDocumentoSeed implements Seeder {
           continue;
         }
 
-        const requisitoDocumento = requisitoDocumentoRepository.create({
-          tipo_beneficio_id: tipoBeneficio.id,
-          tipo_documento_id: tipoDocumento.id,
-          obrigatorio: requisito.obrigatorio,
-        });
-
-        await requisitoDocumentoRepository.save(requisitoDocumento);
-        console.log(`Requisito de documento ${requisito.nome} para ${beneficioNome} criado com sucesso.`);
+        try {
+          // Criar uma nova instância de RequisitoDocumento com os campos corretos
+          const requisitoDocumento = new RequisitoDocumento();
+          requisitoDocumento.tipo_beneficio_id = tipoBeneficio.id;
+          requisitoDocumento.tipo_documento = tipoDocumento.nome.toLowerCase();
+          requisitoDocumento.obrigatorio = requisito.obrigatorio;
+          
+          // Salvar o requisito de documento
+          await requisitoDocumentoRepository.save(requisitoDocumento);
+          console.log(`Requisito de documento ${tipoDocumento.nome} para ${tipoBeneficio.nome} criado com sucesso.`);
+        } catch (error) {
+          console.error(`Erro ao criar requisito de documento para ${tipoBeneficio.nome}:`, error);
+          continue;
+        }
       }
     }
 

@@ -7,7 +7,7 @@ import {
   ManyToOne,
   JoinColumn
 } from 'typeorm';
-import { User } from '../../../user/entities/user.entity';
+import { Usuario } from '../../usuario/entities/usuario.entity';
 
 export enum TipoOperacao {
   CRIACAO = 'criacao',
@@ -41,9 +41,9 @@ export class LogAuditoria {
   @Column({ nullable: true })
   usuario_id: string;
 
-  @ManyToOne(() => User, { nullable: true })
+  @ManyToOne(() => Usuario, { nullable: true })
   @JoinColumn({ name: 'usuario_id' })
-  usuario: User;
+  usuario: Usuario;
 
   @Column({
     type: 'enum',
