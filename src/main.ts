@@ -1,9 +1,10 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { SwaggerModule } from '@nestjs/swagger';
 import { ResponseInterceptor } from './shared/interceptors/response.interceptor';
 import { HttpExceptionFilter } from './shared/filters/http-exception.filter';
+import { swaggerConfig, swaggerDocumentOptions, swaggerSetupOptions } from './shared/configs/swagger-pt';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -14,16 +15,9 @@ async function bootstrap() {
   // Configuração do CORS
   app.enableCors();
   
-  // Configuração do Swagger
-  const config = new DocumentBuilder()
-    .setTitle('API de Gestão de Benefícios Eventuais')
-    .setDescription('API para o Sistema de Gestão de Benefícios Eventuais da SEMTAS')
-    .setVersion('1.0')
-    .addBearerAuth()
-    .build();
-  
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api-docs', app, document);
+  // Configuração do Swagger em português
+  const document = SwaggerModule.createDocument(app, swaggerConfig, swaggerDocumentOptions);
+  SwaggerModule.setup('api-docs', app, document, swaggerSetupOptions);
   
   // Configuração do pipe de validação global
   app.useGlobalPipes(

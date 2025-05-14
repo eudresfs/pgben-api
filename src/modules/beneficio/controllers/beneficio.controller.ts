@@ -15,7 +15,7 @@ import { Role } from '../../auth/enums/role.enum';
  * 
  * Responsável por gerenciar as rotas relacionadas a tipos de benefícios
  */
-@ApiTags('Benefícios')
+@ApiTags('beneficios')
 @Controller('beneficio')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()

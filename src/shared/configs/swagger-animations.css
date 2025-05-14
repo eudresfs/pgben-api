@@ -1,0 +1,178 @@
+/* Animações para o Swagger UI */
+
+/* Animação de entrada para o cabeçalho */
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Animação de entrada para os blocos */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Animação de destaque */
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(10, 77, 104, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(10, 77, 104, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(10, 77, 104, 0);
+  }
+}
+
+/* Animação de carregamento */
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Aplicação das animações */
+.swagger-ui .info {
+  animation: fadeInDown 0.8s ease-out;
+}
+
+.swagger-ui .opblock-tag {
+  animation: fadeInUp 0.6s ease-out;
+  animation-fill-mode: both;
+}
+
+/* Atraso sequencial para os blocos de operações */
+.swagger-ui .opblock:nth-child(1) { animation-delay: 0.1s; }
+.swagger-ui .opblock:nth-child(2) { animation-delay: 0.2s; }
+.swagger-ui .opblock:nth-child(3) { animation-delay: 0.3s; }
+.swagger-ui .opblock:nth-child(4) { animation-delay: 0.4s; }
+.swagger-ui .opblock:nth-child(5) { animation-delay: 0.5s; }
+.swagger-ui .opblock:nth-child(6) { animation-delay: 0.6s; }
+.swagger-ui .opblock:nth-child(7) { animation-delay: 0.7s; }
+.swagger-ui .opblock:nth-child(8) { animation-delay: 0.8s; }
+.swagger-ui .opblock:nth-child(9) { animation-delay: 0.9s; }
+.swagger-ui .opblock:nth-child(10) { animation-delay: 1.0s; }
+
+/* Animação para botões */
+.swagger-ui .btn.execute {
+  transition: all 0.3s ease;
+}
+
+.swagger-ui .btn.execute:hover {
+  animation: pulse 1.5s infinite;
+}
+
+/* Animação de carregamento */
+.swagger-ui .loading-container .loading:after {
+  animation: rotate 1s linear infinite;
+}
+
+/* Efeitos de hover aprimorados */
+.swagger-ui .opblock:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+.swagger-ui .opblock-summary:hover {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+/* Efeito de expansão suave */
+.swagger-ui .opblock-body {
+  transition: all 0.5s ease;
+}
+
+/* Estilização para exemplos de código */
+.swagger-ui .highlight-code {
+  transition: all 0.3s ease;
+}
+
+.swagger-ui .highlight-code:hover {
+  transform: scale(1.01);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Estilização para campos de formulário */
+.swagger-ui input[type=text],
+.swagger-ui textarea {
+  transition: all 0.3s ease;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.swagger-ui input[type=text]:focus,
+.swagger-ui textarea:focus {
+  border-color: #0a4d68;
+  box-shadow: 0 0 0 3px rgba(10, 77, 104, 0.2);
+  outline: none;
+}
+
+/* Efeito de destaque para respostas */
+.swagger-ui .responses-table .response.response-success:hover {
+  background-color: rgba(73, 204, 144, 0.1);
+}
+
+.swagger-ui .responses-table .response.response-error:hover {
+  background-color: rgba(249, 62, 62, 0.1);
+}
+
+/* Estilização para o modo escuro (opcional) */
+@media (prefers-color-scheme: dark) {
+  body {
+    background-color: #1a1a1a;
+    color: #f0f0f0;
+  }
+  
+  .swagger-ui .info {
+    background: linear-gradient(135deg, #0a3d58 0%, #076475 100%);
+  }
+  
+  .swagger-ui .scheme-container,
+  .swagger-ui .opblock,
+  .swagger-ui section.models {
+    background-color: #2a2a2a;
+    border-color: #444;
+  }
+  
+  .swagger-ui .opblock-tag {
+    background-color: #222;
+    color: #f0f0f0;
+  }
+  
+  .swagger-ui table {
+    background-color: #2a2a2a;
+    border-color: #444;
+  }
+  
+  .swagger-ui table thead tr {
+    background-color: #333;
+  }
+  
+  .swagger-ui table tbody tr:hover {
+    background-color: #333;
+  }
+  
+  .swagger-ui .parameter__name {
+    color: #05BFDB;
+  }
+  
+  .swagger-ui .model-box {
+    background-color: #333;
+  }
+}

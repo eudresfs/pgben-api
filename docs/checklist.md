@@ -16,7 +16,7 @@
 
 * [ ] Criar arquivo `.env` baseado no `.env.example`
 * [ ] Definir variáveis específicas para o projeto SEMTAS:
-  * Banco de dados: `DB_HOST`, `DB_PORT`, `DB_USERNAME`, `DB_PASSWORD`, `DB_DATABASE=semtas_beneficios`
+  * Banco de dados: `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASS`, `DB_NAME=semtas_beneficios`
   * JWT: `JWT_SECRET`, `JWT_EXPIRATION_TIME=15m`, `JWT_REFRESH_SECRET`, `JWT_REFRESH_EXPIRATION=1d`
   * Email: `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_USER`, `EMAIL_PASSWORD`, `EMAIL_FROM=noreply@semtas.gov.br`
   * MinIO: `MINIO_ENDPOINT`, `MINIO_PORT`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`, `MINIO_BUCKET=documents`

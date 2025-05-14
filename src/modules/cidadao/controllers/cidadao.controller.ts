@@ -12,7 +12,7 @@ import { RolesGuard } from '../../auth/guards/roles.guard';
  * 
  * Responsável por gerenciar as rotas relacionadas a cidadãos/beneficiários
  */
-@ApiTags('Cidadãos')
+@ApiTags('cidadaos')
 @Controller('cidadao')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()

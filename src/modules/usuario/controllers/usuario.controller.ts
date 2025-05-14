@@ -15,7 +15,7 @@ import { Role } from '../../auth/enums/role.enum';
  * 
  * Responsável por gerenciar as rotas relacionadas a usuários
  */
-@ApiTags('Usuários')
+@ApiTags('usuarios')
 @Controller('usuario')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()

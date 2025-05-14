@@ -8,6 +8,7 @@ import {
   DiskHealthIndicator
 } from '@nestjs/terminus';
 import { Public } from '../../modules/auth/decorators/public.decorator';
+import { ApiTags } from '@nestjs/swagger';
 
 /**
  * Controlador de Health Check
@@ -15,6 +16,7 @@ import { Public } from '../../modules/auth/decorators/public.decorator';
  * Fornece endpoints para verificar a saúde da aplicação
  * e seus componentes (banco de dados, memória, disco, etc.)
  */
+@ApiTags('health')
 @Controller('health')
 export class HealthController {
   constructor(

@@ -17,6 +17,12 @@ export enum Sexo {
   OUTRO = 'outro',
 }
 
+export enum TipoCidadao {
+  BENEFICIARIO = 'beneficiario',
+  REQUERENTE = 'requerente',
+  REPRESENTANTE_LEGAL = 'representante_legal'
+}
+
 @Entity('cidadao')
 @Index(['cpf'], { unique: true })
 @Index(['nis'], { unique: true, where: "nis IS NOT NULL" })
@@ -41,6 +47,14 @@ export class Cidadao {
   @Column({ type: 'date' })
   @IsNotEmpty({ message: 'Data de nascimento é obrigatória' })
   data_nascimento: Date;
+
+  @Column({ type: 'enum',
+    enum: TipoCidadao,
+    default: 'cidadao'
+  })
+  @IsEnum(TipoCidadao, { message: 'Tipo de cidadao inválido' })
+  @IsNotEmpty({ message: 'Tipo de cidadao é obrigatório' })
+  tipo_cidadao: TipoCidadao;
 
   @Column({
     type: 'enum',

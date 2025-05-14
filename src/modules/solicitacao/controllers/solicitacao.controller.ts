@@ -12,7 +12,8 @@ import {
   BadRequestException,
   UnauthorizedException
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery, ApiBody, getSchemaPath } from '@nestjs/swagger';
+import { criarSolicitacaoPayload, criarSolicitacaoResponse, avaliarSolicitacaoPayload, avaliarSolicitacaoResponse } from '../../../shared/configs/swagger-payloads';
 import { SolicitacaoService } from '../services/solicitacao.service';
 import { CreateSolicitacaoDto } from '../dto/create-solicitacao.dto';
 import { UpdateSolicitacaoDto } from '../dto/update-solicitacao.dto';
@@ -29,7 +30,7 @@ import { Request } from 'express';
  * 
  * Responsável por gerenciar as rotas relacionadas às solicitações de benefícios
  */
-@ApiTags('Solicitações')
+@ApiTags('solicitacoes')
 @Controller('solicitacao')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
@@ -116,7 +117,62 @@ export class SolicitacaoController {
   @Put(':id')
   @Roles(Role.ADMIN, Role.GESTOR_SEMTAS, Role.TECNICO_SEMTAS, Role.TECNICO_UNIDADE)
   @ApiOperation({ summary: 'Atualizar solicitação existente' })
-  @ApiResponse({ status: 200, description: 'Solicitação atualizada com sucesso' })
+  @ApiBody({ 
+    description: 'Dados da solicitação atualizada',
+    schema: {
+      example: {
+        "nome": "João Silva",
+        "cpf": "12345678901",
+        "data_nascimento": "1990-01-01",
+        "endereco": {
+          "logradouro": "Rua Exemplo",
+          "numero": "123",
+          "bairro": "Bairro Exemplo",
+          "cidade": "Cidade Exemplo",
+          "estado": "Estado Exemplo",
+          "cep": "12345678"
+        },
+        "contato": {
+          "telefone": "123456789",
+          "email": "joao.silva@example.com"
+        },
+        "beneficio": {
+          "id": 1,
+          "nome": "Benefício Exemplo"
+        },
+        "status": "EM_ANALISE"
+      }
+    }
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Solicitação atualizada com sucesso',
+    schema: {
+      example: {
+        "id": 1,
+        "nome": "João Silva",
+        "cpf": "12345678901",
+        "data_nascimento": "1990-01-01",
+        "endereco": {
+          "logradouro": "Rua Exemplo",
+          "numero": "123",
+          "bairro": "Bairro Exemplo",
+          "cidade": "Cidade Exemplo",
+          "estado": "Estado Exemplo",
+          "cep": "12345678"
+        },
+        "contato": {
+          "telefone": "123456789",
+          "email": "joao.silva@example.com"
+        },
+        "beneficio": {
+          "id": 1,
+          "nome": "Benefício Exemplo"
+        },
+        "status": "EM_ANALISE"
+      }
+    }
+  })
   @ApiResponse({ status: 400, description: 'Dados inválidos' })
   @ApiResponse({ status: 404, description: 'Solicitação não encontrada' })
   async update(
@@ -148,7 +204,19 @@ export class SolicitacaoController {
   @Put(':id/avaliar')
   @Roles(Role.ADMIN, Role.GESTOR_SEMTAS, Role.TECNICO_SEMTAS, Role.COORDENADOR)
   @ApiOperation({ summary: 'Avaliar solicitação (aprovar/reprovar)' })
-  @ApiResponse({ status: 200, description: 'Solicitação avaliada com sucesso' })
+  @ApiBody({ 
+    description: 'Dados da avaliação da solicitação',
+    schema: {
+      example: avaliarSolicitacaoPayload
+    }
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Solicitação avaliada com sucesso',
+    schema: {
+      example: avaliarSolicitacaoResponse
+    }
+  })
   @ApiResponse({ status: 400, description: 'Solicitação não pode ser avaliada' })
   @ApiResponse({ status: 404, description: 'Solicitação não encontrada' })
   async avaliarSolicitacao(

@@ -13,7 +13,7 @@ import { Role } from '../../auth/enums/role.enum';
  * 
  * Responsável por gerenciar as rotas relacionadas a setores dentro das unidades
  */
-@ApiTags('Setores')
+@ApiTags('setores')
 @Controller('setor')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()

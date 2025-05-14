@@ -26,7 +26,7 @@ import { Request } from 'express';
  * Responsável por gerenciar as rotas relacionadas às notificações
  * enviadas aos usuários do sistema
  */
-@ApiTags('Notificações')
+@ApiTags('notificacoes')
 @Controller('notificacao')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()

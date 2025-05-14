@@ -1815,7 +1815,7 @@ jobs:
           POSTGRES_HOST: ${{ secrets.STAGING_DB_HOST }}
           POSTGRES_PORT: ${{ secrets.STAGING_DB_PORT }}
           POSTGRES_USER: ${{ secrets.STAGING_DB_USER }}
-          POSTGRES_PASSWORD: ${{ secrets.STAGING_DB_PASSWORD }}
+          POSTGRES_PASSWORD: ${{ secrets.STAGING_DB_PASS }}
           POSTGRES_DB: ${{ secrets.STAGING_DB_NAME }}
 
   apply-migrations-production:
@@ -1839,7 +1839,7 @@ jobs:
           POSTGRES_HOST: ${{ secrets.PROD_DB_HOST }}
           POSTGRES_PORT: ${{ secrets.PROD_DB_PORT }}
           POSTGRES_USER: ${{ secrets.PROD_DB_USER }}
-          POSTGRES_PASSWORD: ${{ secrets.PROD_DB_PASSWORD }}
+          POSTGRES_PASSWORD: ${{ secrets.PROD_DB_PASS }}
           POSTGRES_DB: ${{ secrets.PROD_DB_NAME }}
 ```
 

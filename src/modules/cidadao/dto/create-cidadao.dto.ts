@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsEmail, IsString, IsOptional, IsEnum, IsNotEmpty, IsDate, IsNumber, ValidateNested, Validate } from 'class-validator';
 import { Type } from 'class-transformer';
 import { Sexo } from '../entities/cidadao.entity';
@@ -7,6 +7,8 @@ import { NISValidator } from '../validators/nis-validator';
 
 /**
  * DTO para endereço do cidadão
+ * 
+ * Contém todos os campos necessários para registrar o endereço completo de um cidadão
  */
 export class EnderecoDto {
   @IsString({ message: 'Logradouro deve ser uma string' })
@@ -27,7 +29,7 @@ export class EnderecoDto {
 
   @IsString({ message: 'Complemento deve ser uma string' })
   @IsOptional()
-  @ApiProperty({ 
+  @ApiPropertyOptional({ 
     example: 'Apto 101',
     description: 'Complemento do endereço',
     required: false
@@ -69,6 +71,9 @@ export class EnderecoDto {
 
 /**
  * DTO para criação de cidadão
+ * 
+ * Contém todos os campos necessários para cadastrar um novo cidadão no sistema,
+ * incluindo informações pessoais, documentos, endereço e dados socioeconômicos.
  */
 export class CreateCidadaoDto {
   @IsString({ message: 'Nome deve ser uma string' })
@@ -117,27 +122,36 @@ export class CreateCidadaoDto {
   @IsString({ message: 'NIS deve ser uma string' })
   @IsOptional()
   @Validate(NISValidator, { message: 'NIS inválido' })
-  @ApiProperty({ 
+  @ApiPropertyOptional({ 
     example: '12345678901',
-    description: 'Número de Identificação Social (NIS)',
+    description: 'Número de Identificação Social (NIS) do cidadão, utilizado para programas sociais',
     required: false
   })
   nis?: string;
 
+  @IsString({ message: 'Nome social deve ser uma string' })
+  @IsOptional()
+  @ApiPropertyOptional({ 
+    example: 'Maria Santos',
+    description: 'Nome social do cidadão (usado para pessoas trans e travestis)',
+    required: false
+  })
+  nome_social?: string;
+
   @IsString({ message: 'Telefone deve ser uma string' })
   @IsOptional()
-  @ApiProperty({ 
+  @ApiPropertyOptional({ 
     example: '(84) 98765-4321',
-    description: 'Telefone do cidadão',
+    description: 'Telefone do cidadão para contato',
     required: false
   })
   telefone?: string;
 
   @IsEmail({}, { message: 'Email inválido' })
   @IsOptional()
-  @ApiProperty({ 
-    example: 'maria.silva@email.com',
-    description: 'Email do cidadão',
+  @ApiPropertyOptional({ 
+    example: 'email@exemplo.com',
+    description: 'Endereço de email do cidadão para contato',
     required: false
   })
   email?: string;
@@ -153,9 +167,9 @@ export class CreateCidadaoDto {
 
   @IsNumber({}, { message: 'Renda deve ser um número' })
   @IsOptional()
-  @ApiProperty({ 
+  @ApiPropertyOptional({ 
     example: 1200.50,
-    description: 'Renda mensal do cidadão',
+    description: 'Renda mensal do cidadão em reais (R$)',
     required: false
   })
   renda?: number;

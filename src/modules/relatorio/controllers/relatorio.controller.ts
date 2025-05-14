@@ -21,7 +21,7 @@ import { Request, Response } from 'express';
  * Responsável por gerenciar as rotas relacionadas aos relatórios
  * gerenciais e operacionais do sistema
  */
-@ApiTags('Relatórios')
+@ApiTags('relatorios')
 @Controller('relatorio')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()

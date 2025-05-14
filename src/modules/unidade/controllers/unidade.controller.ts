@@ -14,7 +14,7 @@ import { Role } from '../../auth/enums/role.enum';
  * 
  * Responsável por gerenciar as rotas relacionadas a unidades (CRAS, CREAS, etc.)
  */
-@ApiTags('Unidades')
+@ApiTags('unidades')
 @Controller('unidade')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
