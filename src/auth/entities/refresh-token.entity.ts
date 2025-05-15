@@ -7,7 +7,7 @@ export class RefreshToken {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'usuario_id', type: 'uuid' })
+  @Column({ name: 'usuario_id', type: 'uuid', nullable: false })
   usuarioId: string;
 
   @Column({ type: 'varchar', length: 500, unique: true })
@@ -34,7 +34,7 @@ export class RefreshToken {
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamp with time zone' })
   updatedAt: Date;
 
-  @ManyToOne(() => Usuario, usuario => usuario.refreshTokens)
-  @JoinColumn({ name: 'usuario_id' })
+  @ManyToOne(() => Usuario, usuario => usuario.refreshTokens, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'usuario_id', referencedColumnName: 'id' })
   usuario: Usuario;
 }

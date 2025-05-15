@@ -54,7 +54,7 @@ export class CriarTabelaRefreshTokens1715799600000 implements MigrationInterface
       ALTER TABLE refresh_tokens
       ADD CONSTRAINT fk_refresh_token_usuario
       FOREIGN KEY (usuario_id)
-      REFERENCES usuarios(id)
+      REFERENCES usuario(id)
       ON DELETE CASCADE;
     `);
     

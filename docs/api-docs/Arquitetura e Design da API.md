@@ -9,7 +9,7 @@ Proponho uma arquitetura em camadas com separação clara de responsabilidades, 
 │                   Controllers (API RESTful)                 │
 │                                                             │
 │  ┌───────────────┐ ┌───────────────┐ ┌───────────────────┐  │
-│  │ Autenticação  │ │ cidadãos │ │   Solicitações    │  │
+│  │ Autenticação  │ │ Cidadãos      │ │   Solicitações    │  │
 │  └───────────────┘ └───────────────┘ └───────────────────┘  │
 └─────────────────────────────────────────────────────────────┘
                            │
@@ -17,7 +17,7 @@ Proponho uma arquitetura em camadas com separação clara de responsabilidades, 
 │                   Services (Lógica de Negócio)              │
 │                                                             │
 │  ┌───────────────┐ ┌───────────────┐ ┌───────────────────┐  │
-│  │ Autenticação  │ │ cidadãos │ │   Solicitações    │  │
+│  │ Autenticação  │ │ Cidadãos      │ │   Solicitações    │  │
 │  └───────────────┘ └───────────────┘ └───────────────────┘  │
 └─────────────────────────────────────────────────────────────┘
                            │
@@ -25,7 +25,7 @@ Proponho uma arquitetura em camadas com separação clara de responsabilidades, 
 │               Repositories (Acesso a Dados)                 │
 │                                                             │
 │  ┌───────────────┐ ┌───────────────┐ ┌───────────────────┐  │
-│  │    Usuário    │ │  cidadão │ │    Solicitação    │  │
+│  │    Usuário    │ │  Cidadão      │ │    Solicitação    │  │
 │  └───────────────┘ └───────────────┘ └───────────────────┘  │
 └─────────────────────────────────────────────────────────────┘
                            │
@@ -33,7 +33,7 @@ Proponho uma arquitetura em camadas com separação clara de responsabilidades, 
 │                      Entidades (Domain)                     │
 │                                                             │
 │  ┌───────────────┐ ┌───────────────┐ ┌───────────────────┐  │
-│  │    Usuário    │ │  cidadão │ │    Solicitação    │  │
+│  │    Usuário    │ │  Cidadão      │ │    Solicitação    │  │
 │  └───────────────┘ └───────────────┘ └───────────────────┘  │
 └─────────────────────────────────────────────────────────────┘
 ```

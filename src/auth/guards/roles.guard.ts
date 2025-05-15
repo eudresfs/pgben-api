@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import {
   CanActivate,
   ExecutionContext,
@@ -22,14 +23,23 @@ export class RolesGuard implements CanActivate {
     if (!requiredRoles) {
       return true;
     }
-    const { user } = context.switchToHttp().getRequest();
+    const request = context.switchToHttp().getRequest();
+    const user = request.user;
 
-    if (requiredRoles.some((role) => user.roles?.includes(role))) {
+    if (!user) {
+      throw new UnauthorizedException('Usuário não autenticado');
+    }
+
+    if (!user.roles || !Array.isArray(user.roles)) {
+      throw new UnauthorizedException('Usuário não possui roles definidas');
+    }
+
+    if (requiredRoles.some((role) => user.roles.includes(role))) {
       return true;
     }
 
     throw new UnauthorizedException(
-      `User with roles ${user.roles} does not have access to this route with roles ${requiredRoles}`,
+      `Usuário com cargo ${user.roles.join(', ')} não tem acesso a esta rota.`,
     );
   }
 }

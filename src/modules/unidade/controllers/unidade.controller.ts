@@ -1,5 +1,21 @@
-import { Controller, Get, Post, Body, Put, Patch, Param, Query, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Put,
+  Patch,
+  Param,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { UnidadeService } from '../services/unidade.service';
 import { CreateUnidadeDto } from '../dto/create-unidade.dto';
 import { UpdateUnidadeDto } from '../dto/update-unidade.dto';
@@ -11,7 +27,7 @@ import { Role } from '../../../shared/enums/role.enum';
 
 /**
  * Controlador de unidades
- * 
+ *
  * Responsável por gerenciar as rotas relacionadas a unidades (CRAS, CREAS, etc.)
  */
 @ApiTags('unidades')
@@ -26,12 +42,40 @@ export class UnidadeController {
    */
   @Get()
   @ApiOperation({ summary: 'Listar unidades' })
-  @ApiResponse({ status: 200, description: 'Lista de unidades retornada com sucesso' })
-  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Página atual' })
-  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Itens por página' })
-  @ApiQuery({ name: 'search', required: false, type: String, description: 'Termo de busca' })
-  @ApiQuery({ name: 'tipo', required: false, type: String, description: 'Filtro por tipo de unidade' })
-  @ApiQuery({ name: 'status', required: false, type: String, description: 'Filtro por status' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de unidades retornada com sucesso',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Página atual',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Itens por página',
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    type: String,
+    description: 'Termo de busca',
+  })
+  @ApiQuery({
+    name: 'tipo',
+    required: false,
+    type: String,
+    description: 'Filtro por tipo de unidade',
+  })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    type: String,
+    description: 'Filtro por status',
+  })
   async findAll(
     @Query('page') page?: number,
     @Query('limit') limit?: number,
@@ -82,7 +126,10 @@ export class UnidadeController {
   @ApiResponse({ status: 400, description: 'Dados inválidos' })
   @ApiResponse({ status: 404, description: 'Unidade não encontrada' })
   @ApiResponse({ status: 409, description: 'Código já em uso' })
-  async update(@Param('id') id: string, @Body() updateUnidadeDto: UpdateUnidadeDto) {
+  async update(
+    @Param('id') id: string,
+    @Body() updateUnidadeDto: UpdateUnidadeDto,
+  ) {
     return this.unidadeService.update(id, updateUnidadeDto);
   }
 
@@ -106,7 +153,10 @@ export class UnidadeController {
    */
   @Get(':id/setor')
   @ApiOperation({ summary: 'Listar setores de uma unidade' })
-  @ApiResponse({ status: 200, description: 'Lista de setores retornada com sucesso' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de setores retornada com sucesso',
+  })
   @ApiResponse({ status: 404, description: 'Unidade não encontrada' })
   async findSetores(@Param('id') id: string) {
     return this.unidadeService.findSetoresByUnidadeId(id);

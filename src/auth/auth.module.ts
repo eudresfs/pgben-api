@@ -14,7 +14,7 @@ import { LocalStrategy } from './strategies/local.strategy';
 import { UsuarioModule } from '../modules/usuario/usuario.module';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
-import { Role } from '../shared/enums/role.enum';
+import { AppLoggerModule } from '../shared/logger/logger.module';
 
 @Module({
   imports: [
@@ -30,6 +30,7 @@ import { Role } from '../shared/enums/role.enum';
       }),
     }),
     UsuarioModule,
+    AppLoggerModule,
   ],
   controllers: [AuthController],
   providers: [
@@ -41,10 +42,6 @@ import { Role } from '../shared/enums/role.enum';
     JwtAuthGuard,
     RolesGuard,
   ],
-  exports: [
-    AuthService,
-    JwtAuthGuard,
-    RolesGuard,
-  ],
+  exports: [AuthService, JwtAuthGuard, RolesGuard],
 })
 export class AuthModule {}
