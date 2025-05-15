@@ -1,0 +1,155 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-rules
+  namespace: pgben
+data:
+  api_alerts.yml: |
+    groups:
+    - name: api_alerts
+      rules:
+      # Alerta para alta taxa de erros na API
+      - alert: ApiHighErrorRate
+        expr: sum(rate(http_requests_total{job="pgben-api", status_code=~"5.."}[5m])) / sum(rate(http_requests_total{job="pgben-api"}[5m])) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Alta taxa de erros na API"
+          description: "A API está apresentando uma taxa de erros superior a 5% nos últimos 5 minutos."
+          
+      # Alerta para latência alta na API
+      - alert: ApiHighLatency
+        expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job="pgben-api"}[5m])) by (le)) > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Latência alta na API"
+          description: "O percentil 95 da latência da API está acima de 2 segundos nos últimos 5 minutos."
+          
+      # Alerta para muitas requisições em andamento
+      - alert: ApiTooManyRequests
+        expr: sum(http_requests_in_progress{job="pgben-api"}) > 100
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Muitas requisições em andamento"
+          description: "Há mais de 100 requisições em andamento na API."
+
+  security_alerts.yml: |
+    groups:
+    - name: security_alerts
+      rules:
+      # Alerta para alto número de falhas de autenticação
+      - alert: HighAuthenticationFailures
+        expr: sum(rate(authentication_attempts_total{job="pgben-security-metrics", success="false"}[15m])) > 10
+        for: 15m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Alto número de falhas de autenticação"
+          description: "Foram detectadas mais de 10 falhas de autenticação por minuto nos últimos 15 minutos."
+          
+      # Alerta para alto número de falhas de autorização
+      - alert: HighAuthorizationFailures
+        expr: sum(rate(authorization_failures_total{job="pgben-security-metrics"}[15m])) > 5
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Alto número de falhas de autorização"
+          description: "Foram detectadas mais de 5 falhas de autorização por minuto nos últimos 15 minutos."
+          
+      # Alerta para acessos não autorizados a dados LGPD
+      - alert: UnauthorizedLgpdDataAccess
+        expr: sum(rate(lgpd_data_access_total{job="pgben-security-metrics", authorized="false"}[5m])) > 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Acessos não autorizados a dados LGPD"
+          description: "Foram detectados acessos não autorizados a dados protegidos pela LGPD."
+
+  document_alerts.yml: |
+    groups:
+    - name: document_alerts
+      rules:
+      # Alerta para falhas em operações com documentos sensíveis
+      - alert: SensitiveDocumentOperationFailures
+        expr: sum(rate(document_operations_total{job="pgben-document-metrics", sensitive="true", operation=~"upload|download|delete"}[5m])) - sum(rate(document_operations_total{job="pgben-document-metrics", sensitive="true", operation=~"upload_success|download_success|delete_success"}[5m])) > 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Falhas em operações com documentos sensíveis"
+          description: "Foram detectadas falhas em operações com documentos sensíveis."
+          
+      # Alerta para alto tempo de upload de documentos
+      - alert: HighDocumentUploadTime
+        expr: histogram_quantile(0.95, sum(rate(document_upload_duration_seconds_bucket{job="pgben-document-metrics"}[5m])) by (le)) > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Alto tempo de upload de documentos"
+          description: "O percentil 95 do tempo de upload de documentos está acima de 10 segundos."
+
+  system_alerts.yml: |
+    groups:
+    - name: system_alerts
+      rules:
+      # Alerta para alto uso de memória
+      - alert: HighMemoryUsage
+        expr: sum(system_memory_usage_bytes{job="pgben-system-metrics", type="heapUsed"}) / sum(system_memory_usage_bytes{job="pgben-system-metrics", type="heapTotal"}) > 0.85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Alto uso de memória"
+          description: "O uso de memória heap está acima de 85%."
+          
+      # Alerta para alto uso de CPU
+      - alert: HighCpuUsage
+        expr: system_cpu_usage_percent{job="pgben-system-metrics"} > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Alto uso de CPU"
+          description: "O uso de CPU está acima de 80%."
+          
+      # Alerta para alto uso de disco
+      - alert: HighDiskUsage
+        expr: node_filesystem_avail_bytes{job="node-exporter", mountpoint="/"} / node_filesystem_size_bytes{job="node-exporter", mountpoint="/"} < 0.1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Alto uso de disco"
+          description: "O espaço disponível em disco está abaixo de 10%."
+
+  database_alerts.yml: |
+    groups:
+    - name: database_alerts
+      rules:
+      # Alerta para alto número de conexões com o banco de dados
+      - alert: HighDatabaseConnections
+        expr: pg_stat_activity_count{job="postgres-exporter"} > 100
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Alto número de conexões com o banco de dados"
+          description: "O número de conexões ativas com o banco de dados está acima de 100."
+          
+      # Alerta para consultas lentas
+      - alert: SlowDatabaseQueries
+        expr: histogram_quantile(0.95, sum(rate(database_query_duration_seconds_bucket{job="pgben-api"}[5m])) by (le)) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Consultas lentas ao banco de dados"
+          description: "O percentil 95 do tempo de consulta ao banco de dados está acima de 1 segundo."

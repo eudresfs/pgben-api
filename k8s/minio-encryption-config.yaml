@@ -1,0 +1,98 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: pgben-minio-kms-key
+  namespace: pgben
+type: Opaque
+data:
+  # Chave KMS codificada em base64 (32 bytes)
+  key: UEdCZW5LTVNLZXkxMjM0NTY3ODkwMTIzNDU2Nzg5MDEyMzQ=
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pgben-minio-encryption-config
+  namespace: pgben
+data:
+  config.env: |
+    # Configuração de criptografia em repouso
+    MINIO_KMS_KES_ENDPOINT=https://kes-service:7373
+    MINIO_KMS_KES_KEY_FILE=/etc/minio/certs/minio.key
+    MINIO_KMS_KES_CERT_FILE=/etc/minio/certs/minio.crt
+    MINIO_KMS_KES_CA_PATH=/etc/minio/certs/ca.crt
+    MINIO_KMS_KES_KEY_NAME=pgben-key
+    
+    # Configuração de criptografia automática para documentos sensíveis
+    MINIO_KMS_AUTO_ENCRYPTION=on
+    MINIO_KMS_AUTO_ENCRYPTION_FILTER=*.pdf,*.docx,*.xlsx,*.pptx,*.jpg,*.png,*.zip
+    
+    # Configuração de versionamento
+    MINIO_BUCKET_VERSIONING=on
+    
+    # Configuração de worm (Write Once Read Many)
+    MINIO_WORM=on
+    
+    # Configuração de TLS
+    MINIO_DOMAIN=minio.pgben.local
+    MINIO_SERVER_URL=https://minio.pgben.local
+    MINIO_BROWSER_REDIRECT_URL=https://minio.pgben.local
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pgben-kes-config
+  namespace: pgben
+data:
+  config.yaml: |
+    address: 0.0.0.0:7373
+    root: /etc/kes/certs/server.cert
+    
+    tls:
+      cert: /etc/kes/certs/server.cert
+      key: /etc/kes/certs/server.key
+      ca: /etc/kes/certs/ca.cert
+    
+    policy:
+      minio:
+        paths:
+          - /v1/key/create/*
+          - /v1/key/generate/*
+          - /v1/key/decrypt/*
+          - /v1/key/bulk/decrypt
+          - /v1/key/list
+        identities:
+          - ${MINIO_IDENTITY}
+    
+    keys:
+      fs:
+        path: /etc/kes/keys
+      
+      vault:
+        endpoint: ""
+        namespace: ""
+        prefix: pgben/keys/
+        approle:
+          id: ""
+          secret: ""
+          retry: 15s
+        status:
+          ping: 10s
+      
+      aws:
+        endpoint: ""
+        region: ""
+        kmskey: ""
+        secretsmanager: false
+        
+      gcp:
+        project_id: ""
+        location: ""
+        key_ring: ""
+        crypto_key: ""
+        
+      azure:
+        tenant_id: ""
+        client_id: ""
+        client_secret: ""
+        vault_name: ""
+        key_name: ""

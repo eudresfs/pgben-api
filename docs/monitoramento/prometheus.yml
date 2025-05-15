@@ -1,0 +1,66 @@
+# Configuração do Prometheus para o PGBen
+# Este arquivo deve ser colocado no diretório de configuração do Prometheus
+
+global:
+  scrape_interval: 15s     # Intervalo de coleta de métricas
+  evaluation_interval: 15s # Intervalo de avaliação de regras de alerta
+  scrape_timeout: 10s      # Timeout para coleta de métricas
+
+# Regras de alerta (podem ser definidas em arquivos separados)
+rule_files:
+  # - "alerting_rules.yml"
+
+# Configurações de scraping (coleta de métricas)
+scrape_configs:
+  # Coleta de métricas do próprio Prometheus
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Coleta de métricas do PGBen
+  - job_name: 'pgben-api'
+    metrics_path: '/metricas'
+    scrape_interval: 10s
+    static_configs:
+      - targets: ['localhost:3000']
+        labels:
+          environment: 'development'
+          service: 'pgben-api'
+
+  # Coleta de métricas do Node Exporter (métricas do sistema)
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['localhost:9100']
+        labels:
+          environment: 'development'
+          service: 'node-exporter'
+
+  # Coleta de métricas do PostgreSQL Exporter
+  - job_name: 'postgres-exporter'
+    static_configs:
+      - targets: ['localhost:9187']
+        labels:
+          environment: 'development'
+          service: 'postgres'
+
+  # Coleta de métricas do Redis Exporter
+  - job_name: 'redis-exporter'
+    static_configs:
+      - targets: ['localhost:9121']
+        labels:
+          environment: 'development'
+          service: 'redis'
+
+# Configurações de alerting
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          # - 'alertmanager:9093'
+
+# Configurações de armazenamento
+storage:
+  tsdb:
+    path: /var/lib/prometheus/data
+    retention:
+      time: 15d  # Retenção de dados por 15 dias

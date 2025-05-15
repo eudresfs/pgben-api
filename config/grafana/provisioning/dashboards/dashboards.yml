@@ -1,0 +1,11 @@
+apiVersion: 1
+
+providers:
+  - name: 'PGBen Dashboards'
+    orgId: 1
+    folder: 'PGBen'
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /etc/grafana/provisioning/dashboards/json

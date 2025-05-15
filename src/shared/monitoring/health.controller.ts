@@ -7,7 +7,7 @@ import {
   MemoryHealthIndicator,
   DiskHealthIndicator
 } from '@nestjs/terminus';
-import { Public } from '../../modules/auth/decorators/public.decorator';
+import { Public } from '../../auth/decorators/public.decorator';
 import { ApiTags } from '@nestjs/swagger';
 
 /**

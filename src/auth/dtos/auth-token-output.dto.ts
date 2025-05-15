@@ -1,7 +1,17 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
+import { IsString } from 'class-validator';
 
-import { ROLE } from '../constants/role.constant';
+import { Role } from '../../shared/enums/role.enum';
+
+/**
+ * DTO para solicitação de refresh token
+ */
+export class RefreshTokenInput {
+  @ApiProperty()
+  @IsString()
+  refreshToken: string;
+}
 
 export class AuthTokenOutput {
   @Expose()
@@ -19,7 +29,7 @@ export class UserAccessTokenClaims {
   @Expose()
   username: string;
   @Expose()
-  roles: ROLE[];
+  roles: Role[];
 }
 
 export class UserRefreshTokenClaims {

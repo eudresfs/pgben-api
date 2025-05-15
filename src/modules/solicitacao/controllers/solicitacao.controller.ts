@@ -18,10 +18,10 @@ import { SolicitacaoService } from '../services/solicitacao.service';
 import { CreateSolicitacaoDto } from '../dto/create-solicitacao.dto';
 import { UpdateSolicitacaoDto } from '../dto/update-solicitacao.dto';
 import { AvaliarSolicitacaoDto } from '../dto/avaliar-solicitacao.dto';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../../auth/guards/roles.guard';
-import { Roles } from '../../auth/decorators/roles.decorator';
-import { Role } from '../../auth/enums/role.enum';
+import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../../../auth/guards/roles.guard';
+import { Roles } from '../../../auth/decorators/role.decorator';
+import { Role } from '../../../shared/enums/role.enum';
 import { StatusSolicitacao } from '../entities/solicitacao.entity';
 import { Request } from 'express';
 
@@ -202,7 +202,7 @@ export class SolicitacaoController {
    * Avalia uma solicitação (aprovar/reprovar)
    */
   @Put(':id/avaliar')
-  @Roles(Role.ADMIN, Role.GESTOR_SEMTAS, Role.TECNICO_SEMTAS, Role.COORDENADOR)
+  @Roles(Role.ADMIN, Role.GESTOR_SEMTAS, Role.TECNICO_SEMTAS, Role.COORDENADOR_UNIDADE)
   @ApiOperation({ summary: 'Avaliar solicitação (aprovar/reprovar)' })
   @ApiBody({ 
     description: 'Dados da avaliação da solicitação',

@@ -1,0 +1,68 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: postgres-backup
+  namespace: pgben
+spec:
+  schedule: "0 2 * * *"  # Todos os dias às 2h da manhã
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 5
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: postgres-backup
+            image: postgres:14-alpine
+            command:
+            - /bin/sh
+            - -c
+            - |
+              cp /scripts/postgres-backup.sh /tmp/ && \
+              chmod +x /tmp/postgres-backup.sh && \
+              /tmp/postgres-backup.sh
+            env:
+            - name: PGBEN_DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: pgben-config
+                  key: DB_NAME
+            - name: PGBEN_DB_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: pgben-config
+                  key: DB_USER
+            - name: PGBEN_DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: pgben-config
+                  key: DB_HOST
+            - name: PGBEN_DB_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: pgben-config
+                  key: DB_PORT
+            - name: PGBEN_DB_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: pgben-secrets
+                  key: DB_PASS
+            - name: PGBEN_BACKUP_DIR
+              value: "/backup/postgres"
+            - name: PGBEN_RETENTION_DAYS
+              value: "30"
+            volumeMounts:
+            - name: backup-volume
+              mountPath: /backup
+            - name: scripts-volume
+              mountPath: /scripts
+          restartPolicy: OnFailure
+          volumes:
+          - name: backup-volume
+            persistentVolumeClaim:
+              claimName: pgben-backup-pvc
+          - name: scripts-volume
+            configMap:
+              name: pgben-backup-scripts
+              defaultMode: 0755

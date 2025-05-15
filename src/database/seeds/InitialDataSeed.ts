@@ -6,7 +6,7 @@ import UnidadeSeed from './initial/UnidadeSeed';
 import UserSeed from './initial/UserSeed';
 import SetorTipoBeneficioSeed from './initial/SetorTipoBeneficioSeed';
 import RequisitoDocumentoSeed from './initial/RequisitoDocumentoSeed';
-import OcorrenciaSeed from './initial/OcorrenciaSeed';
+import { OcorrenciaSeed } from './initial/OcorrenciaSeed';
 import DemandaMotivoSeed from './initial/DemandaMotivoSeed';
 
 // Importações de seeds com export class

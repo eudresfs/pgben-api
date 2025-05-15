@@ -4,10 +4,10 @@ import { UnidadeService } from '../services/unidade.service';
 import { CreateUnidadeDto } from '../dto/create-unidade.dto';
 import { UpdateUnidadeDto } from '../dto/update-unidade.dto';
 import { UpdateStatusUnidadeDto } from '../dto/update-status-unidade.dto';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../../auth/guards/roles.guard';
-import { Roles } from '../../auth/decorators/roles.decorator';
-import { Role } from '../../auth/enums/role.enum';
+import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../../../auth/guards/roles.guard';
+import { Roles } from '../../../auth/decorators/role.decorator';
+import { Role } from '../../../shared/enums/role.enum';
 
 /**
  * Controlador de unidades

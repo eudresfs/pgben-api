@@ -17,10 +17,10 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { DocumentoService } from '../services/documento.service';
 import { UploadDocumentoDto } from '../dto/upload-documento.dto';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../../auth/guards/roles.guard';
-import { Roles } from '../../auth/decorators/roles.decorator';
-import { Role } from '../../auth/enums/role.enum';
+import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../../../auth/guards/roles.guard';
+import { Roles } from '../../../auth/decorators/role.decorator';
+import { Role } from '../../../shared/enums/role.enum';
 import { Request } from 'express';
 import { Multer } from 'multer'; 
 
@@ -127,7 +127,7 @@ export class DocumentoController {
   @ApiOperation({ summary: 'Verificar documento' })
   @ApiResponse({ status: 200, description: 'Documento verificado com sucesso' })
   @ApiResponse({ status: 404, description: 'Documento não encontrado' })
-  @Roles(Role.ADMIN, Role.GESTOR_SEMTAS, Role.TECNICO_SEMTAS, Role.COORDENADOR)
+  @Roles(Role.ADMIN, Role.GESTOR_SEMTAS, Role.TECNICO_SEMTAS, Role.COORDENADOR_UNIDADE)
   async verificarDocumento(
     @Param('id') id: string,
     @Body('observacoes') observacoes: string,

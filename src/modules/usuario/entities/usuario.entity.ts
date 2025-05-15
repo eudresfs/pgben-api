@@ -5,9 +5,11 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   DeleteDateColumn,
+  OneToMany,
 } from 'typeorm';
 import { Exclude } from 'class-transformer';
-import { Role } from '../../auth/enums/role.enum';
+import { Role } from '../../../shared/enums/role.enum'
+import { RefreshToken } from '../../../auth/entities/refresh-token.entity';
 
 /**
  * Entidade de usuário
@@ -60,6 +62,9 @@ export class Usuario {
 
   @Column({ name: 'primeiro_acesso', default: true })
   primeiro_acesso: boolean;
+
+  @OneToMany(() => RefreshToken, refreshToken => refreshToken.usuario)
+  refreshTokens: RefreshToken[];
 
   @CreateDateColumn()
   created_at: Date;

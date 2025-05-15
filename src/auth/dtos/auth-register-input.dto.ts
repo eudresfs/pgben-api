@@ -7,8 +7,11 @@ import {
   MaxLength,
 } from 'class-validator';
 
-import { ROLE } from '../constants/role.constant';
+import { Role } from '../../shared/enums/role.enum';
 
+/**
+ * DTO para registro de novo usuário
+ */
 export class RegisterInput {
   @ApiProperty()
   @IsNotEmpty()
@@ -33,7 +36,9 @@ export class RegisterInput {
   @MaxLength(100)
   email: string;
 
-  // These keys can only be set by ADMIN user.
-  roles: ROLE[] = [ROLE.USER];
-  isAccountDisabled: boolean;
+  @ApiProperty({ example: [Role.TECNICO_UNIDADE] })
+  roles: Role[] = [Role.TECNICO_UNIDADE];
+
+  @ApiPropertyOptional({ example: false })
+  isAccountDisabled: boolean = false;
 }

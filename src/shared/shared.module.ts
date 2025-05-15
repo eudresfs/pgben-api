@@ -14,6 +14,8 @@ import { MonitoringModule } from './monitoring/monitoring.module';
 import { GlobalExceptionFilter } from './logging/exception.filter';
 import { LoggingInterceptor } from './logging/logging.interceptor';
 import { MetricsInterceptor } from './monitoring/metrics.interceptor';
+import { CriptografiaService } from './services/criptografia.service';
+import { MinioService } from './services/minio.service';
 
 @Module({
   imports: [
@@ -41,8 +43,12 @@ import { MetricsInterceptor } from './monitoring/metrics.interceptor';
     LoggingModule,
     MonitoringModule,
   ],
-  exports: [AppLoggerModule, ConfigModule, LoggingModule, MonitoringModule],
+  exports: [AppLoggerModule, ConfigModule, LoggingModule, MonitoringModule, CriptografiaService, MinioService],
   providers: [
+    // Serviços compartilhados
+    CriptografiaService,
+    MinioService,
+    
     // Interceptores para logging e métricas
     { provide: APP_INTERCEPTOR, useClass: AppLoggingInterceptor },
     { provide: APP_INTERCEPTOR, useClass: LoggingInterceptor },

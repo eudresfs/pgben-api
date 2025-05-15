@@ -12,7 +12,10 @@ import { Documento } from '../entities/documento.entity';
 import { DocumentoEnviado } from '../entities/documento-enviado.entity';
 import { UploadDocumentoDto } from '../dto/upload-documento.dto';
 import { SolicitacaoService } from '../../solicitacao/services/solicitacao.service';
-import { Role } from '../../auth/enums/role.enum';
+import { Role } from '../../../shared/enums/role.enum';
+import { MinioService } from '../../../shared/services/minio.service';
+import { AuditoriaService } from '../../auditoria/services/auditoria.service';
+import { TipoOperacao } from '../../auditoria/enums/tipo-operacao.enum';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
@@ -32,7 +35,9 @@ export class DocumentoService {
     @InjectRepository(DocumentoEnviado)
     private documentoEnviadoRepository: Repository<DocumentoEnviado>,
     
-    private solicitacaoService: SolicitacaoService
+    private solicitacaoService: SolicitacaoService,
+    private minioService: MinioService,
+    private auditoriaService: AuditoriaService
   ) {}
 
   /**
@@ -74,6 +79,20 @@ export class DocumentoService {
       throw new UnauthorizedException('Você não tem permissão para acessar este documento');
     }
     
+    // Registrar acesso ao documento na auditoria (especialmente se for sensível)
+    if (documento.metadados?.criptografado) {
+      await this.auditoriaService.create({
+        tipo_operacao: TipoOperacao.READ,
+        entidade_afetada: 'Documento',
+        entidade_id: id,
+        usuario_id: user.id,
+        endpoint: `/api/v1/documentos/${id}`,
+        metodo_http: 'GET',
+        dados_sensiveis_acessados: [documento.tipo_documento],
+        contemDadosLGPD: () => true
+      } as any);
+    }
+    
     return documento;
   }
 
@@ -92,38 +111,30 @@ export class DocumentoService {
       throw new UnauthorizedException('Você não tem permissão para adicionar documentos a esta solicitação');
     }
     
-    // Criar diretório de upload se não existir
-    const uploadDir = path.join(process.cwd(), 'uploads', 'documentos', uploadDocumentoDto.solicitacao_id);
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    
-    // Gerar nome de arquivo único
-    const fileExtension = path.extname(arquivo.originalname);
-    const fileName = `${Date.now()}-${crypto.randomBytes(8).toString('hex')}${fileExtension}`;
-    const filePath = path.join(uploadDir, fileName);
-    
-    // Calcular hash do arquivo para verificação de integridade
-    const fileHash = crypto.createHash('sha256').update(arquivo.buffer).digest('hex');
-    
     try {
-      // Salvar arquivo no sistema de arquivos
-      fs.writeFileSync(filePath, arquivo.buffer);
+      // Upload do arquivo para o MinIO com criptografia (se for documento sensível)
+      const resultado = await this.minioService.uploadArquivo(
+        arquivo.buffer,
+        arquivo.originalname,
+        uploadDocumentoDto.solicitacao_id,
+        uploadDocumentoDto.tipo_documento
+      );
       
       // Criar registro do documento no banco de dados
       const documento = this.documentoRepository.create({
         solicitacao_id: uploadDocumentoDto.solicitacao_id,
         tipo_documento: uploadDocumentoDto.tipo_documento,
         nome_arquivo: arquivo.originalname,
-        caminho_arquivo: `/uploads/documentos/${uploadDocumentoDto.solicitacao_id}/${fileName}`,
-        tamanho: arquivo.size,
+        caminho_arquivo: resultado.nomeArquivo, // Caminho no MinIO
+        tamanho: resultado.tamanho,
         mime_type: arquivo.mimetype,
         data_upload: new Date(),
         uploader_id: user.id,
         metadados: {
-          hash: fileHash,
+          hash: resultado.hash,
           observacoes: uploadDocumentoDto.observacoes,
-          verificado: false
+          verificado: false,
+          criptografado: resultado.criptografado
         }
       });
       
@@ -133,8 +144,8 @@ export class DocumentoService {
       const documentoEnviado = new DocumentoEnviado();
       documentoEnviado.documento_id = savedDocumento.id;
       documentoEnviado.nome_arquivo = arquivo.originalname;
-      documentoEnviado.caminho_arquivo = savedDocumento.caminho_arquivo;
-      documentoEnviado.tamanho = arquivo.size;
+      documentoEnviado.caminho_arquivo = resultado.nomeArquivo;
+      documentoEnviado.tamanho = resultado.tamanho;
       documentoEnviado.mime_type = arquivo.mimetype;
       documentoEnviado.enviado_por_id = user.id;
       documentoEnviado.data_envio = new Date();
@@ -142,13 +153,28 @@ export class DocumentoService {
       
       await this.documentoEnviadoRepository.save(documentoEnviado);
       
+      // Registrar operação na auditoria
+      await this.auditoriaService.create({
+        tipo_operacao: TipoOperacao.CREATE,
+        entidade_afetada: 'Documento',
+        entidade_id: savedDocumento.id,
+        dados_novos: { 
+          id: savedDocumento.id,
+          tipo_documento: savedDocumento.tipo_documento,
+          nome_arquivo: savedDocumento.nome_arquivo,
+          tamanho: savedDocumento.tamanho,
+          solicitacao_id: savedDocumento.solicitacao_id,
+          criptografado: resultado.criptografado
+        },
+        usuario_id: user.id,
+        endpoint: `/api/v1/documentos`,
+        metodo_http: 'POST',
+        dados_sensiveis_acessados: resultado.criptografado ? [uploadDocumentoDto.tipo_documento] : undefined,
+        contemDadosLGPD: () => resultado.criptografado
+      } as any);
+      
       return savedDocumento;
     } catch (error) {
-      // Em caso de erro, remover o arquivo se foi criado
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-      }
-      
       throw new InternalServerErrorException(`Erro ao salvar documento: ${error.message}`);
     }
   }
@@ -174,14 +200,29 @@ export class DocumentoService {
     }
     
     try {
-      // Remover arquivo do sistema de arquivos
-      const filePath = path.join(process.cwd(), documento.caminho_arquivo.substring(1));
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-      }
+      // Remover arquivo do MinIO
+      await this.minioService.removerArquivo(documento.caminho_arquivo);
       
       // Remover registro do banco de dados (soft delete)
       await this.documentoRepository.softDelete(id);
+      
+      // Registrar operação na auditoria
+      await this.auditoriaService.create({
+        tipo_operacao: TipoOperacao.DELETE,
+        entidade_afetada: 'Documento',
+        entidade_id: id,
+        dados_anteriores: {
+          id: documento.id,
+          tipo_documento: documento.tipo_documento,
+          nome_arquivo: documento.nome_arquivo,
+          solicitacao_id: documento.solicitacao_id
+        },
+        usuario_id: user.id,
+        endpoint: `/api/v1/documentos/${id}`,
+        metodo_http: 'DELETE',
+        dados_sensiveis_acessados: documento.metadados?.criptografado ? [documento.tipo_documento] : undefined,
+        contemDadosLGPD: () => !!documento.metadados?.criptografado
+      } as any);
       
       return { message: 'Documento removido com sucesso' };
     } catch (error) {
@@ -197,7 +238,7 @@ export class DocumentoService {
     const documento = await this.findById(id, user);
     
     // Verificar se o usuário tem permissão para verificar documentos
-    if (![Role.ADMIN, Role.GESTOR_SEMTAS, Role.TECNICO_SEMTAS, Role.COORDENADOR].includes(user.role)) {
+    if (![Role.ADMIN, Role.GESTOR_SEMTAS, Role.TECNICO_SEMTAS, Role.COORDENADOR_UNIDADE].includes(user.role)) {
       throw new UnauthorizedException('Você não tem permissão para verificar documentos');
     }
     

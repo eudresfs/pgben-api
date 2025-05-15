@@ -1,82 +1,154 @@
-version: '3.8'
-
+# Definições de serviços
 services:
+  # Serviço da API
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pgben_api
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_USER: ${DB_USER:-postgres}
+      DATABASE_PASSWORD: ${DB_PASS:-postgres}
+      DATABASE_NAME: ${DB_NAME:-pgben_db}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+      JWT_SECRET: ${JWT_SECRET:-default_jwt_secret_for_dev_only}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-default_key_32chars_for_dev_only_}
+      MAIL_HOST: mailhog
+      MAIL_PORT: 1025
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:3000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - pgben_network
+
+  # Banco de dados PostgreSQL
   postgres:
     image: postgres:14-alpine
-    container_name: semtas_postgres
+    container_name: pgben_postgres
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"  # Exposição apenas para localhost
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: semtas_beneficios
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASS:-postgres}
+      POSTGRES_DB: ${DB_NAME:-pgben_db}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     restart: unless-stopped
     command: postgres -c 'max_connections=200' -c 'shared_buffers=256MB' -c 'work_mem=8MB'
     networks:
-      - semtas_network
+      - pgben_network
 
+  # Redis para cache e filas
   redis:
     image: redis:alpine
-    container_name: semtas_redis
+    container_name: pgben_redis
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"  # Exposição apenas para localhost
     volumes:
       - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     restart: unless-stopped
     networks:
-      - semtas_network
+      - pgben_network
 
+  # MinIO para armazenamento de documentos
   minio:
     image: minio/minio
-    container_name: semtas_minio
+    container_name: pgben_minio
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "127.0.0.1:9000:9000"  # API apenas para localhost
+      - "127.0.0.1:9001:9001"  # Console apenas para localhost
     environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin}
     volumes:
       - minio_data:/data
     command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
     restart: unless-stopped
     networks:
-      - semtas_network
+      - pgben_network
 
+  # Configuração inicial do MinIO
   createbuckets:
     image: minio/mc
-    container_name: semtas_createbuckets
+    container_name: pgben_createbuckets
     depends_on:
-      - minio
+      minio:
+        condition: service_healthy
     entrypoint: >
       /bin/sh -c '
-      sleep 5;
-      /usr/bin/mc config host add myminio http://minio:9000 minioadmin minioadmin;
-      /usr/bin/mc mb myminio/documents;
-      /usr/bin/mc policy set public myminio/documents;
+      /usr/bin/mc config host add myminio http://minio:9000 ${MINIO_ACCESS_KEY:-minioadmin} ${MINIO_SECRET_KEY:-minioadmin};
+      /usr/bin/mc mb -p myminio/documents;
+      /usr/bin/mc policy set download myminio/documents;
       mkdir -p /tmp/beneficio/auxilio-natalidade;
       mkdir -p /tmp/beneficio/aluguel-social;
       exit 0;
       '
     networks:
-      - semtas_network
+      - pgben_network
 
+  # Servidor SMTP para testes
   mailhog:
     image: mailhog/mailhog
-    container_name: semtas_mailhog
+    container_name: pgben_mailhog
     ports:
-      - "1025:1025"
-      - "8025:8025"
+      - "127.0.0.1:1025:1025"  # SMTP apenas para localhost
+      - "127.0.0.1:8025:8025"  # Interface web apenas para localhost
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "1025"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
     restart: unless-stopped
     networks:
-      - semtas_network
+      - pgben_network
 
+# Definição de redes
 networks:
-  semtas_network:
+  pgben_network:
     driver: bridge
+    name: pgben_network
 
+# Definição de volumes
 volumes:
   postgres_data:
+    name: pgben_postgres_data
   redis_data:
+    name: pgben_redis_data
   minio_data:
+    name: pgben_minio_data

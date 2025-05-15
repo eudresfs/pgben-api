@@ -51,15 +51,21 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @UseGuards(LocalAuthGuard)
   @UseInterceptors(ClassSerializerInterceptor)
-  login(
+  async login(
     @ReqContext() ctx: RequestContext,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     @Body() credential: LoginInput,
-  ): BaseApiResponse<AuthTokenOutput> {
+  ): Promise<BaseApiResponse<AuthTokenOutput>> {
     this.logger.log(ctx, `${this.login.name} was called`);
 
-    const authToken = this.authService.login(ctx);
-    return { data: authToken, meta: {} };
+    const authToken = await this.authService.login(ctx);
+    
+    // Converter para o formato BaseApiResponse
+    const response = new BaseApiResponse<AuthTokenOutput>();
+    response.data = authToken;
+    response.meta = {};
+    
+    return response;
   }
 
   @Post('register')
@@ -95,12 +101,17 @@ export class AuthController {
   @UseInterceptors(ClassSerializerInterceptor)
   async refreshToken(
     @ReqContext() ctx: RequestContext,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     @Body() credential: RefreshTokenInput,
   ): Promise<BaseApiResponse<AuthTokenOutput>> {
     this.logger.log(ctx, `${this.refreshToken.name} was called`);
 
-    const authToken = await this.authService.refreshToken(ctx);
-    return { data: authToken, meta: {} };
+    const authToken = await this.authService.refreshToken(ctx, credential);
+    
+    // Converter para o formato BaseApiResponse
+    const response = new BaseApiResponse<AuthTokenOutput>();
+    response.data = authToken;
+    response.meta = {};
+    
+    return response;
   }
 }

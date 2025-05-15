@@ -1,0 +1,55 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: verify-backups
+  namespace: pgben
+spec:
+  schedule: "0 8 * * 1"  # Toda segunda-feira às 8h da manhã
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 5
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: verify-backups
+            image: alpine:latest
+            command:
+            - /bin/sh
+            - -c
+            - |
+              apk add --no-cache bash gzip tar coreutils mailx && \
+              cp /scripts/verify-backups.sh /tmp/ && \
+              chmod +x /tmp/verify-backups.sh && \
+              /tmp/verify-backups.sh
+            env:
+            - name: PGBEN_BACKUP_DIR
+              value: "/backup/postgres"
+            - name: PGBEN_MINIO_BACKUP_DIR
+              value: "/backup/minio"
+            - name: PGBEN_VERIFY_DAYS
+              value: "7"
+            - name: PGBEN_ADMIN_EMAIL
+              valueFrom:
+                configMapKeyRef:
+                  name: pgben-config
+                  key: ADMIN_EMAIL
+            volumeMounts:
+            - name: backup-volume
+              mountPath: /backup
+            - name: scripts-volume
+              mountPath: /scripts
+            - name: log-volume
+              mountPath: /var/log/pgben
+          restartPolicy: OnFailure
+          volumes:
+          - name: backup-volume
+            persistentVolumeClaim:
+              claimName: pgben-backup-pvc
+          - name: scripts-volume
+            configMap:
+              name: pgben-backup-scripts
+              defaultMode: 0755
+          - name: log-volume
+            emptyDir: {}

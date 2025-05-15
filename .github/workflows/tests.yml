@@ -1,0 +1,100 @@
+name: Testes Automatizados
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    name: Testes Unitários e de Integração
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_USER: pgben_test
+          POSTGRES_PASSWORD: pgben_test
+          POSTGRES_DB: pgben_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v3
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'yarn'
+
+      - name: Instalar dependências
+        run: yarn install
+
+      - name: Executar testes unitários
+        run: yarn test
+        env:
+          NODE_ENV: test
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USER: pgben_test
+          DB_PASS: pgben_test
+          DB_NAME: pgben_test
+          JWT_SECRET: test_jwt_secret_key
+          MINIO_ENDPOINT: localhost
+          MINIO_PORT: 9000
+          MINIO_ACCESS_KEY: minioadmin
+          MINIO_SECRET_KEY: minioadmin
+          MINIO_BUCKET: pgben-test
+
+      - name: Executar testes de integração
+        run: yarn test:integration
+        env:
+          NODE_ENV: test
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USER: pgben_test
+          DB_PASS: pgben_test
+          DB_NAME: pgben_test
+          JWT_SECRET: test_jwt_secret_key
+          MINIO_ENDPOINT: localhost
+          MINIO_PORT: 9000
+          MINIO_ACCESS_KEY: minioadmin
+          MINIO_SECRET_KEY: minioadmin
+          MINIO_BUCKET: pgben-test
+
+      - name: Executar testes de API
+        run: yarn test:api
+        env:
+          NODE_ENV: test
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USER: pgben_test
+          DB_PASS: pgben_test
+          DB_NAME: pgben_test
+          JWT_SECRET: test_jwt_secret_key
+          MINIO_ENDPOINT: localhost
+          MINIO_PORT: 9000
+          MINIO_ACCESS_KEY: minioadmin
+          MINIO_SECRET_KEY: minioadmin
+          MINIO_BUCKET: pgben-test
+
+      - name: Gerar relatório de cobertura
+        run: yarn test:cov
+
+      - name: Publicar relatório de cobertura
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: ./coverage/lcov.info
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false

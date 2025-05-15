@@ -6,8 +6,10 @@
 2. [Organização de Diretórios](#organização-de-diretórios)
 3. [Componentes Principais](#componentes-principais)
 4. [Fluxos de Dados](#fluxos-de-dados)
-5. [Guia de Modificação e Extensão](#guia-de-modificação-e-extensão)
-6. [Anexos Técnicos](#anexos-técnicos)
+5. [Monitoramento e Observabilidade](#monitoramento-e-observabilidade)
+6. [Guia de Modificação e Extensão](#guia-de-modificação-e-extensão)
+7. [Deploy com Docker](#deploy-com-docker)
+8. [Anexos Técnicos](#anexos-técnicos)
 
 ## Visão Geral da Arquitetura
 
@@ -492,11 +494,92 @@ O sistema utiliza scripts NPM para automação de tarefas:
 - `npm run seed:run`: Executa os seeds do banco de dados
 
 #### Docker
-O sistema pode ser executado em contêineres Docker utilizando o Dockerfile e o docker-compose.yml:
+O sistema pode ser executado em contêineres Docker utilizando o script de deploy:
 
-- `docker-compose up`: Inicia a aplicação e o banco de dados em contêineres Docker
-- `docker-compose down`: Para e remove os contêineres Docker
+- `./deploy.sh all` ou `deploy.bat all`: Inicia a aplicação e o sistema de monitoramento
+- `./deploy.sh start` ou `deploy.bat start`: Inicia apenas a aplicação
+- `./deploy.sh monitoring` ou `deploy.bat monitoring`: Inicia apenas o sistema de monitoramento
+- `./deploy.sh stop` ou `deploy.bat stop`: Para todos os serviços
+- `./deploy.sh status` ou `deploy.bat status`: Mostra o status dos serviços
+- `./deploy.sh logs <serviço>` ou `deploy.bat logs <serviço>`: Mostra os logs de um serviço específico
+- `./deploy.sh info` ou `deploy.bat info`: Mostra informações de acesso
+- `./deploy.sh help` ou `deploy.bat help`: Mostra a ajuda
 
 ---
 
 Este documento foi criado para fornecer uma visão abrangente da estrutura de código do Sistema de Gestão de Benefícios Eventuais - Kit Enxoval da SEMTAS. Ele serve como guia para desenvolvedores novos e existentes, facilitando a compreensão, manutenção e extensão do sistema.
+
+## Monitoramento e Observabilidade
+
+O sistema inclui um módulo completo de monitoramento e observabilidade para garantir a confiabilidade, segurança e conformidade com a LGPD.
+
+### Módulo de Métricas (`/src/modules/metricas`)
+
+Responsável pela coleta e exposição de métricas para monitoramento do sistema.
+
+- **Controllers**: Expõem endpoints para métricas e verificação de saúde do sistema.
+- **Services**: Implementam a coleta de métricas de HTTP, negócio e sistema.
+- **Middlewares**: Interceptam requisições HTTP para coletar métricas automaticamente.
+
+### Componentes de Monitoramento
+
+#### Prometheus
+Coleta e armazena métricas do sistema, com regras de alerta configuradas para:
+- Métricas da API (erros, latência, requisições)
+- Métricas de segurança (falhas de autenticação, acessos não autorizados a dados LGPD)
+- Métricas de documentos (operações com documentos sensíveis)
+- Métricas de sistema (CPU, memória, disco)
+- Métricas de banco de dados (conexões, consultas lentas)
+
+#### Grafana
+Visualização de métricas através de dashboards para:
+- Visão geral da API
+- Segurança e conformidade com LGPD
+- Desempenho do banco de dados
+- Operações com documentos
+- Recursos do sistema
+
+#### Alertmanager
+Gerenciamento de alertas com notificações por e-mail e Slack para problemas detectados no sistema.
+
+### Endpoints de Monitoramento
+
+- `/metricas`: Endpoint para coleta de métricas pelo Prometheus
+- `/metricas/health`: Endpoint para verificação da saúde do sistema
+
+## Deploy com Docker
+
+O sistema pode ser facilmente implantado usando Docker e Docker Compose. Foram criados scripts de deploy para facilitar este processo.
+
+### Pré-requisitos
+
+- Docker
+- Docker Compose
+
+### Estrutura de Deploy
+
+- `docker-compose.yml`: Configuração principal da aplicação (API, PostgreSQL, Redis, MinIO)
+- `docs/monitoramento/docker-compose.monitoring.yml`: Configuração do sistema de monitoramento (Prometheus, Grafana, Alertmanager, Exporters)
+
+### Como Implantar
+
+1. Clone o repositório
+2. Configure o arquivo `.env` com as variáveis de ambiente necessárias (ou use o script de deploy que criará um arquivo padrão)
+3. Execute o script de deploy:
+
+```bash
+# No Linux/macOS
+./deploy.sh all
+
+# No Windows
+deploy.bat all
+```
+
+### Acessando os Serviços
+
+- **API PGBen**: http://localhost:3000
+- **Interface MinIO**: http://localhost:9001
+- **Interface MailHog**: http://localhost:8025
+- **Prometheus**: http://localhost:9090
+- **Grafana**: http://localhost:3001 (usuário: admin, senha: admin)
+- **Alertmanager**: http://localhost:9093

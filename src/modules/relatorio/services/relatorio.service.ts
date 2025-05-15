@@ -9,7 +9,7 @@ import { Repository, Between } from 'typeorm';
 import { Solicitacao, StatusSolicitacao } from '../../solicitacao/entities/solicitacao.entity';
 import { StatusUnidade, Unidade } from '../../unidade/entities/unidade.entity';
 import { TipoBeneficio } from '../../beneficio/entities/tipo-beneficio.entity';
-import { Role } from '../../auth/enums/role.enum';
+import { Role } from '../../../shared/enums/role.enum';
 import * as PDFDocument from 'pdfkit';
 import * as ExcelJS from 'exceljs';
 import * as fs from 'fs';
@@ -104,12 +104,12 @@ export class RelatorioService {
     const { dataInicio, dataFim, unidadeId, formato, user } = options;
     
     // Verificar permissões do usuário
-    if (![Role.ADMIN, Role.GESTOR_SEMTAS, Role.TECNICO_SEMTAS, Role.COORDENADOR].includes(user.role)) {
+    if (![Role.ADMIN, Role.GESTOR_SEMTAS, Role.TECNICO_SEMTAS, Role.COORDENADOR_UNIDADE].includes(user.role)) {
       throw new UnauthorizedException('Você não tem permissão para gerar este relatório');
     }
     
     // Verificar permissão por unidade
-    if (user.role === Role.COORDENADOR && (!unidadeId || unidadeId !== user.unidade_id)) {
+    if (user.role === Role.COORDENADOR_UNIDADE && (!unidadeId || unidadeId !== user.unidade_id)) {
       throw new UnauthorizedException('Você só pode gerar relatórios para sua unidade');
     }
     
@@ -131,7 +131,7 @@ export class RelatorioService {
     
     if (unidadeId) {
       queryBuilder.andWhere('solicitacao.unidade_id = :unidadeId', { unidadeId });
-    } else if (user.role === Role.COORDENADOR) {
+    } else if (user.role === Role.COORDENADOR_UNIDADE) {
       queryBuilder.andWhere('solicitacao.unidade_id = :unidadeId', { unidadeId: user.unidade_id });
     }
     

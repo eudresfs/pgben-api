@@ -13,8 +13,9 @@ import { SolicitacaoModule } from './modules/solicitacao/solicitacao.module';
 import { DocumentoModule } from './modules/documento/documento.module';
 import { RelatorioModule } from './modules/relatorio/relatorio.module';
 import { NotificacaoModule } from './modules/notificacao/notificacao.module';
-// Módulos que serão implementados futuramente
-// import { AuditoriaModule } from './modules/auditoria/auditoria.module';
+// Módulos de segurança e observabilidade
+import { AuditoriaModule } from './modules/auditoria/auditoria.module';
+import { MetricasModule } from './modules/metricas/metricas.module';
 // import { OcorrenciaModule } from './modules/ocorrencia/ocorrencia.module';
 
 @Module({
@@ -55,7 +56,10 @@ import { NotificacaoModule } from './modules/notificacao/notificacao.module';
     DocumentoModule,
     RelatorioModule,
     NotificacaoModule,
-    // AuditoriaModule,
+    
+    // Módulos de segurança e observabilidade
+    AuditoriaModule,
+    MetricasModule,
     // OcorrenciaModule,
   ],
   controllers: [AppController],

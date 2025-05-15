@@ -1,0 +1,120 @@
+version: '3.8'
+
+services:
+  # Prometheus - Sistema de coleta e armazenamento de métricas
+  prometheus:
+    image: prom/prometheus:v2.45.0
+    container_name: pgben_prometheus
+    restart: unless-stopped
+    volumes:
+      - ../k8s/prometheus-config.yaml:/etc/prometheus/prometheus.yml:ro
+      - ../k8s/prometheus-rules.yaml:/etc/prometheus/rules/prometheus-rules.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    ports:
+      - "9090:9090"
+    networks:
+      - pgben_network
+    depends_on:
+      - postgres-exporter
+      - redis-exporter
+      - node-exporter
+
+  # Grafana - Sistema de visualização de métricas e dashboards
+  grafana:
+    image: grafana/grafana:10.0.3
+    container_name: pgben_grafana
+    restart: unless-stopped
+    volumes:
+      - ../k8s/grafana-datasource.yaml:/etc/grafana/provisioning/datasources/datasource.yml:ro
+      - ../k8s/grafana-dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yml:ro
+      - ../k8s:/etc/grafana/provisioning/dashboards/pgben:ro
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=http://localhost:3001
+    ports:
+      - "3001:3000"
+    networks:
+      - pgben_network
+    depends_on:
+      - prometheus
+
+  # Node Exporter - Coleta métricas do sistema operacional
+  node-exporter:
+    image: prom/node-exporter:v1.6.1
+    container_name: pgben_node_exporter
+    restart: unless-stopped
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    ports:
+      - "9100:9100"
+    networks:
+      - pgben_network
+
+  # PostgreSQL Exporter - Coleta métricas do PostgreSQL
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.14.0
+    container_name: pgben_postgres_exporter
+    restart: unless-stopped
+    environment:
+      - DATA_SOURCE_NAME=postgresql://${DB_USER:-postgres}:${DB_PASS:-postgres}@postgres:5432/${DB_NAME:-pgben_db}?sslmode=disable
+    ports:
+      - "9187:9187"
+    networks:
+      - pgben_network
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # Redis Exporter - Coleta métricas do Redis
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.54.0
+    container_name: pgben_redis_exporter
+    restart: unless-stopped
+    environment:
+      - REDIS_ADDR=redis://redis:6379
+    ports:
+      - "9121:9121"
+    networks:
+      - pgben_network
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  # Alertmanager - Gerenciamento de alertas
+  alertmanager:
+    image: prom/alertmanager:v0.26.0
+    container_name: pgben_alertmanager
+    restart: unless-stopped
+    volumes:
+      - ../k8s/alertmanager-config.yaml:/etc/alertmanager/alertmanager.yml:ro
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+    ports:
+      - "9093:9093"
+    networks:
+      - pgben_network
+
+networks:
+  pgben_network:
+    external: true
+    name: pgben_network
+
+volumes:
+  prometheus_data:
+    name: pgben_prometheus_data

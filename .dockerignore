@@ -1,0 +1,50 @@
+# Arquivos e diretórios a serem ignorados durante o COPY no Docker
+
+# Dependências
+node_modules
+npm-debug.log
+yarn-error.log
+yarn-debug.log
+
+# Sistema de controle de versão
+.git
+.gitignore
+
+# Logs
+logs
+*.log
+
+# Arquivos de cobertura de testes
+coverage
+.nyc_output
+
+# Arquivos temporários
+tmp
+temp
+.DS_Store
+
+# Documentação
+docs
+*.md
+
+# Build diretórios (para o estágio 1)
+dist
+build
+
+# Configuração de ferramentas de desenvolvimento
+.idea
+.vscode
+*.sublime-*
+.env
+.env.*
+*.env.local
+
+# Docker e configuração relacionada
+docker-compose*
+Dockerfile*
+!Dockerfile
+
+# Outros arquivos desnecessários
+*.swp
+*.bak
+*.tmp

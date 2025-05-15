@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEmail, IsString, IsOptional, IsEnum, IsUUID } from 'class-validator';
-import { Role } from '../../auth/enums/role.enum';
+import { Role } from '../../../shared/enums/role.enum'
+
 
 /**
  * DTO para atualização de usuário

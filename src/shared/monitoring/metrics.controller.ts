@@ -1,7 +1,7 @@
 import { Controller, Get, Res } from '@nestjs/common';
 import { Response } from 'express';
 import { MetricsService } from './metrics.service';
-import { Public } from '../../modules/auth/decorators/public.decorator';
+import { Public } from '../../auth/decorators/public.decorator';
 import { ApiTags } from '@nestjs/swagger';
 
 /**

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
+   <!-- Exemplo de supressão para falsos positivos ou vulnerabilidades que não se aplicam ao contexto -->
+   <suppress>
+      <notes>Falso positivo para vulnerabilidade CVE-2020-7598 em minimist</notes>
+      <packageUrl regex="true">^pkg:npm/minimist@.*$</packageUrl>
+      <cve>CVE-2020-7598</cve>
+   </suppress>
+   <suppress>
+      <notes>Vulnerabilidade em dependência de desenvolvimento que não afeta o ambiente de produção</notes>
+      <packageUrl regex="true">^pkg:npm/jest@.*$</packageUrl>
+      <vulnerabilityName regex="true">.*</vulnerabilityName>
+   </suppress>
+   <suppress>
+      <notes>Vulnerabilidade em dependência de desenvolvimento que não afeta o ambiente de produção</notes>
+      <packageUrl regex="true">^pkg:npm/ts-jest@.*$</packageUrl>
+      <vulnerabilityName regex="true">.*</vulnerabilityName>
+   </suppress>
+</suppressions>

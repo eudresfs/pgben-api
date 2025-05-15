@@ -1,35 +1,50 @@
+// src/auth/auth.module.ts
 import { Module } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
-import { PassportModule } from '@nestjs/passport';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
-import { SharedModule } from '../shared/shared.module';
-import { UsuarioModule } from '../modules/usuario/usuario.module';
-import { STRATEGY_JWT_AUTH } from './constants/strategy.constant';
 import { AuthController } from './controllers/auth.controller';
 import { AuthService } from './services/auth.service';
+import { RefreshTokenService } from './services/refresh-token.service';
+import { RefreshToken } from './entities/refresh-token.entity';
 import { JwtAuthStrategy } from './strategies/jwt-auth.strategy';
 import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
 import { LocalStrategy } from './strategies/local.strategy';
+import { UsuarioModule } from '../modules/usuario/usuario.module';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { RolesGuard } from './guards/roles.guard';
+import { Role } from '../shared/enums/role.enum';
 
 @Module({
   imports: [
-    SharedModule,
-    PassportModule.register({ defaultStrategy: STRATEGY_JWT_AUTH }),
+    TypeOrmModule.forFeature([RefreshToken]),
     JwtModule.registerAsync({
-      imports: [SharedModule],
-      useFactory: async (configService: ConfigService) => ({
-        publicKey: configService.get<string>('jwt.publicKey'),
-        privateKey: configService.get<string>('jwt.privateKey'),
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        secret: configService.get('JWT_SECRET'),
         signOptions: {
-          algorithm: 'RS256',
+          expiresIn: configService.get('JWT_ACCESS_TOKEN_EXPIRES_IN'),
         },
       }),
-      inject: [ConfigService],
     }),
     UsuarioModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, LocalStrategy, JwtAuthStrategy, JwtRefreshStrategy],
+  providers: [
+    AuthService,
+    RefreshTokenService,
+    JwtAuthStrategy,
+    JwtRefreshStrategy,
+    LocalStrategy,
+    JwtAuthGuard,
+    RolesGuard,
+  ],
+  exports: [
+    AuthService,
+    JwtAuthGuard,
+    RolesGuard,
+  ],
 })
 export class AuthModule {}

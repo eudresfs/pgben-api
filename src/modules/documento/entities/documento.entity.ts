@@ -72,6 +72,9 @@ export class Documento {
     validade?: Date;
     verificado?: boolean;
     observacoes?: string;
+    criptografado?: boolean;
+    iv?: string;
+    authTag?: string;
   };
 
   @CreateDateColumn()

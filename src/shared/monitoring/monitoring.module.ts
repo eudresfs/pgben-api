@@ -5,6 +5,9 @@ import { HealthController } from './health.controller';
 import { MetricsController } from './metrics.controller';
 import { MetricsService } from './metrics.service';
 import { MetricsInterceptor } from './metrics.interceptor';
+import { EnhancedMetricsService } from './enhanced-metrics.service';
+import { EnhancedMetricsController } from './enhanced-metrics.controller';
+import { EnhancedMetricsInterceptor } from './enhanced-metrics.interceptor';
 
 /**
  * Módulo Global de Monitoramento
@@ -18,8 +21,18 @@ import { MetricsInterceptor } from './metrics.interceptor';
     TerminusModule,
     HttpModule,
   ],
-  controllers: [HealthController, MetricsController],
-  providers: [MetricsService, MetricsInterceptor],
-  exports: [MetricsService, MetricsInterceptor],
+  controllers: [HealthController, MetricsController, EnhancedMetricsController],
+  providers: [
+    MetricsService, 
+    MetricsInterceptor,
+    EnhancedMetricsService,
+    EnhancedMetricsInterceptor
+  ],
+  exports: [
+    MetricsService, 
+    MetricsInterceptor,
+    EnhancedMetricsService,
+    EnhancedMetricsInterceptor
+  ],
 })
 export class MonitoringModule {}

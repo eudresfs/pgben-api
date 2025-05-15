@@ -1,0 +1,68 @@
+name: DAST - Análise Dinâmica de Segurança
+
+on:
+  schedule:
+    - cron: '0 2 * * 1'  # Executa toda segunda-feira às 2h da manhã
+  workflow_dispatch:  # Permite execução manual
+
+jobs:
+  zap_scan:
+    name: ZAP Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v3
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'yarn'
+          
+      - name: Instalar dependências
+        run: yarn install
+        
+      - name: Build da aplicação
+        run: yarn build
+        
+      - name: Iniciar servidor para testes
+        run: |
+          yarn start:test &
+          sleep 30  # Aguarda o servidor iniciar
+        env:
+          NODE_ENV: test
+          DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
+          JWT_SECRET: ${{ secrets.TEST_JWT_SECRET }}
+          
+      - name: ZAP Baseline Scan
+        uses: zaproxy/action-baseline@v0.7.0
+        with:
+          target: 'http://localhost:3000/api'
+          rules_file_name: 'zap-rules.tsv'
+          cmd_options: '-a -j'
+          
+      - name: ZAP Full Scan
+        uses: zaproxy/action-full-scan@v0.4.0
+        with:
+          target: 'http://localhost:3000/api'
+          rules_file_name: 'zap-rules.tsv'
+          cmd_options: '-a -j'
+          
+      - name: Publicar relatório de segurança
+        uses: actions/upload-artifact@v3
+        with:
+          name: zap-scan-report
+          path: |
+            baseline-report.html
+            full-scan-report.html
+            
+      - name: Notificar equipe sobre vulnerabilidades
+        if: failure()
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_CHANNEL: seguranca
+          SLACK_COLOR: danger
+          SLACK_TITLE: 'Vulnerabilidades encontradas no scan DAST'
+          SLACK_MESSAGE: 'O scan de segurança DAST encontrou vulnerabilidades que precisam ser corrigidas. Verifique o relatório no GitHub Actions.'

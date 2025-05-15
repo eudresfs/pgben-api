@@ -119,4 +119,5 @@ export class Ocorrencia {
 
   @DeleteDateColumn()
   removed_at: Date;
+  usuario_id: string;
 }

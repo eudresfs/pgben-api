@@ -4,8 +4,8 @@ import { CidadaoService } from '../services/cidadao.service';
 import { CreateCidadaoDto } from '../dto/create-cidadao.dto';
 import { UpdateCidadaoDto } from '../dto/update-cidadao.dto';
 import { CreateComposicaoFamiliarDto } from '../dto/create-composicao-familiar.dto';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../../auth/guards/roles.guard';
+import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../../../auth/guards/roles.guard';
 
 /**
  * Controlador de cidadãos

@@ -2,23 +2,29 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { plainToClass } from 'class-transformer';
+import { Request } from 'express';
+import { Role } from '../../shared/enums/role.enum';
 
 import { AppLogger } from '../../shared/logger/logger.service';
 import { RequestContext } from '../../shared/request-context/request-context.dto';
 import { UsuarioService } from '../../modules/usuario/services/usuario.service';
-import { Role } from '../../modules/auth/enums/role.enum';
 import { RegisterInput } from '../dtos/auth-register-input.dto';
 import { RegisterOutput } from '../dtos/auth-register-output.dto';
 import {
   AuthTokenOutput,
   UserAccessTokenClaims,
+
 } from '../dtos/auth-token-output.dto';
 import { UserOutput, UsuarioAdapter } from '../adapters/usuario-adapter';
+import { RefreshTokenService } from './refresh-token.service';
+import { RefreshTokenInput } from '../dtos/auth-refresh-token-input.dto';
+import { Usuario } from '../../modules/usuario/entities/usuario.entity';
 
 @Injectable()
 export class AuthService {
   constructor(
     private usuarioService: UsuarioService,
+    private refreshTokenService: RefreshTokenService,
     private jwtService: JwtService,
     private configService: ConfigService,
     private readonly logger: AppLogger,
@@ -54,10 +60,27 @@ export class AuthService {
     return UsuarioAdapter.toUserAccessTokenClaims(usuario);
   }
 
-  login(ctx: RequestContext): AuthTokenOutput {
-    this.logger.log(ctx, `${this.login.name} was called`);
+  async login(ctx: RequestContext): Promise<AuthTokenOutput> {
+    this.logger.log(ctx, `${this.login.name} foi chamado`);
 
-    return this.getAuthToken(ctx, ctx.user!);
+    // Obter o token de autenticação
+    const tokens = this.getAuthToken(ctx, ctx.user!);
+
+    // Criar e salvar o refresh token
+    const usuario = await this.usuarioService.findById(ctx.user!.id as string);
+    if (!usuario) {
+      throw new UnauthorizedException('Usuário não encontrado');
+    }
+    
+    const refreshToken = await this.refreshTokenService.createToken(
+      usuario as Usuario,
+      Number(this.configService.get<string>('JWT_REFRESH_TOKEN_EXPIRES_IN') || '86400'),
+    );
+
+    return {
+      ...tokens,
+      refreshToken: refreshToken.token,
+    };
   }
 
   async register(
@@ -71,7 +94,7 @@ export class AuthService {
       nome: input.name,
       email: input.username,
       senha: input.password,
-      role: (input.roles?.[0] as unknown as Role) || Role.TECNICO_UNIDADE
+      role: (input.roles?.[0] as unknown as Role) || Role.CIDADAO
     };
 
     // Criar o usuário
@@ -85,20 +108,60 @@ export class AuthService {
     });
   }
 
-  async refreshToken(ctx: RequestContext): Promise<AuthTokenOutput> {
+  async refreshToken(
+    ctx: RequestContext,
+    refreshTokenInput: RefreshTokenInput,
+  ): Promise<AuthTokenOutput> {
     this.logger.log(ctx, `${this.refreshToken.name} foi chamado`);
 
-    // Garantir que o ID seja uma string
-    const userId = typeof ctx.user!.id === 'number' ? ctx.user!.id.toString() : ctx.user!.id;
-    const usuario = await this.usuarioService.findById(userId);
-    if (!usuario) {
-      throw new UnauthorizedException('ID de usuário inválido');
+    // Encontrar o token de refresh
+    const refreshToken = await this.refreshTokenService.findToken(
+      refreshTokenInput.refreshToken,
+    );
+
+    // Verificar se o token existe e não foi revogado
+    if (!refreshToken || refreshToken.revoked) {
+      throw new UnauthorizedException('Token de refresh inválido');
     }
 
-    // Converter para o formato esperado
+    // Verificar se o token expirou
+    if (new Date() > refreshToken.expiresAt) {
+      throw new UnauthorizedException('Token de refresh expirado');
+    }
+
+    // Revogar o token atual
+    const ipAddress = (ctx as any).req?.ip || '0.0.0.0';
+    await this.refreshTokenService.revokeToken(
+      refreshToken.token,
+      ipAddress,
+    );
+
+    // Revogar tokens descendentes
+    await this.refreshTokenService.revokeDescendantTokens(
+      refreshToken,
+      ipAddress,
+    );
+
+    // Obter o usuário
+    const usuario = await this.usuarioService.findById(refreshToken.usuario.id);
+    if (!usuario) {
+      throw new UnauthorizedException('Usuário não encontrado');
+    }
+
+    // Gerar novos tokens
     const userOutput = UsuarioAdapter.toUserOutput(usuario as any);
-    
-    return this.getAuthToken(ctx, userOutput);
+    const tokens = this.getAuthToken(ctx, userOutput);
+
+    // Criar e salvar o novo refresh token
+    const newRefreshToken = await this.refreshTokenService.createToken(
+      usuario as Usuario,
+      Number(this.configService.get<string>('JWT_REFRESH_TOKEN_EXPIRES_IN') || '86400'),
+    );
+
+    return {
+      ...tokens,
+      refreshToken: newRefreshToken.token,
+    };
   }
 
   getAuthToken(

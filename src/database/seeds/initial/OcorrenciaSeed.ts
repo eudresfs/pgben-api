@@ -1,8 +1,9 @@
+/* eslint-disable prettier/prettier */
 import { DataSource } from 'typeorm';
 import { Seeder, SeederFactoryManager } from 'typeorm-extension';
-import { Ocorrencia, TipoOcorrencia } from '../../../modules/ocorrencia/entities/ocorrencia.entity';
+import { Ocorrencia, TipoOcorrencia, StatusOcorrencia } from '../../../modules/ocorrencia/entities/ocorrencia.entity';
 import { DemandaMotivo, TipoDemanda } from '../../../modules/ocorrencia/entities/demanda-motivo.entity';
-import { User } from '../../../user/entities/user.entity';
+import { Usuario as User } from '../../../modules/usuario/entities/usuario.entity';
 
 export class OcorrenciaSeed implements Seeder {
   public async run(
@@ -46,11 +47,11 @@ export class OcorrenciaSeed implements Seeder {
       {
         titulo: 'Sugestão de melhoria no processo de solicitação',
         descricao: 'Sugestão para simplificar o processo de solicitação de benefícios eventuais, reduzindo a quantidade de documentos necessários na fase inicial.',
-        tipo: TipoOcorrencia.OBSERVACAO,
+        tipo: TipoOcorrencia.OUTRO, // Alterado de OBSERVACAO para OUTRO
         demanda_motivo: getMotivoByTipo(TipoDemanda.SUGESTAO),
         usuario: usuarios[0],
-        prioridade: 'media',
-        status: 'aberta',
+        prioridade: 2, // Média (1=Baixa, 2=Média, 3=Alta)
+        status: StatusOcorrencia.ABERTA,
       },
       {
         titulo: 'Reclamação sobre demora na análise',
@@ -58,8 +59,8 @@ export class OcorrenciaSeed implements Seeder {
         tipo: TipoOcorrencia.IRREGULARIDADE,
         demanda_motivo: getMotivoByTipo(TipoDemanda.RECLAMACAO),
         usuario: usuarios[1],
-        prioridade: 'alta',
-        status: 'em_analise',
+        prioridade: 3, // Alta (1=Baixa, 2=Média, 3=Alta)
+        status: StatusOcorrencia.EM_ANALISE,
       },
       {
         titulo: 'Elogio ao atendimento da unidade CRAS Norte',
@@ -67,17 +68,17 @@ export class OcorrenciaSeed implements Seeder {
         tipo: TipoOcorrencia.OUTRO,
         demanda_motivo: getMotivoByTipo(TipoDemanda.ELOGIO),
         usuario: usuarios[2],
-        prioridade: 'baixa',
-        status: 'concluida',
+        prioridade: 1, // Baixa (1=Baixa, 2=Média, 3=Alta)
+        status: StatusOcorrencia.CONCLUIDA,
       },
       {
         titulo: 'Dúvida sobre documentação para auxílio natalidade',
         descricao: 'Solicitação de informação sobre quais documentos são necessários para solicitar o auxílio natalidade.',
-        tipo: TipoOcorrencia.OBSERVACAO,
+        tipo: TipoOcorrencia.OUTRO, // Alterado de OBSERVACAO para OUTRO
         demanda_motivo: getMotivoByTipo(TipoDemanda.INFORMACAO),
         usuario: usuarios[0],
-        prioridade: 'media',
-        status: 'aberta',
+        prioridade: 2, // Média (1=Baixa, 2=Média, 3=Alta)
+        status: StatusOcorrencia.ABERTA,
       },
       {
         titulo: 'Denúncia de irregularidade em benefício',
@@ -85,14 +86,24 @@ export class OcorrenciaSeed implements Seeder {
         tipo: TipoOcorrencia.IRREGULARIDADE,
         demanda_motivo: getMotivoByTipo(TipoDemanda.DENUNCIA),
         usuario: usuarios[1],
-        prioridade: 'alta',
-        status: 'em_analise',
+        prioridade: 3, // Alta (1=Baixa, 2=Média, 3=Alta)
+        status: StatusOcorrencia.EM_ANALISE,
       },
     ];
 
     // Inserir ocorrências no banco de dados
     for (const ocorrenciaData of ocorrencias) {
-      const ocorrencia = ocorrenciaRepository.create(ocorrenciaData);
+      // Criar a entidade com os campos corretos
+      const ocorrencia = new Ocorrencia();
+      ocorrencia.titulo = ocorrenciaData.titulo;
+      ocorrencia.descricao = ocorrenciaData.descricao;
+      ocorrencia.tipo = ocorrenciaData.tipo;
+      ocorrencia.demanda_motivo_id = ocorrenciaData.demanda_motivo.id;
+      ocorrencia.registrado_por_id = ocorrenciaData.usuario.id;
+      // Definir prioridade e status
+      ocorrencia.prioridade = ocorrenciaData.prioridade;
+      ocorrencia.status = ocorrenciaData.status;
+      
       await ocorrenciaRepository.save(ocorrencia);
       console.log(`Ocorrência '${ocorrenciaData.titulo}' criada com sucesso.`);
     }

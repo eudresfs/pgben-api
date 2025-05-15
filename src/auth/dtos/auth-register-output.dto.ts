@@ -1,8 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
 
-import { ROLE } from '../constants/role.constant';
+import { Role } from '../../shared/enums/role.enum';
 
+/**
+ * DTO para saída de registro de usuário
+ */
 export class RegisterOutput {
   @Expose()
   @ApiProperty()
@@ -17,8 +20,8 @@ export class RegisterOutput {
   username: string;
 
   @Expose()
-  @ApiProperty({ example: [ROLE.USER] })
-  roles: ROLE[];
+  @ApiProperty({ example: [Role.TECNICO_UNIDADE] })
+  roles: Role[];
 
   @Expose()
   @ApiProperty()

@@ -1,6 +1,6 @@
 import { Expose } from 'class-transformer';
 import { Usuario } from '../../modules/usuario/entities/usuario.entity';
-import { ROLE } from '../constants/role.constant';
+import { Role } from '../../shared/enums/role.enum';
 
 /**
  * DTO para saída de usuário compatível com o serviço de autenticação
@@ -28,7 +28,7 @@ export class UserOutput {
   updatedAt: string;
 
   @Expose()
-  roles: ROLE[];
+  roles: Role[];
 }
 
 /**
@@ -37,7 +37,7 @@ export class UserOutput {
 export class UserAccessTokenClaims {
   id: string | number;
   username: string;
-  roles: ROLE[];
+  roles: Role[];
 }
 
 /**
@@ -56,7 +56,7 @@ export class UsuarioAdapter {
     userOutput.isAccountDisabled = usuario.status === 'inativo';
     userOutput.createdAt = usuario.created_at?.toISOString() || new Date().toISOString();
     userOutput.updatedAt = usuario.updated_at?.toISOString() || new Date().toISOString();
-    userOutput.roles = [usuario.role as unknown as ROLE];
+    userOutput.roles = [usuario.role as unknown as Role];
     
     return userOutput;
   }
@@ -68,7 +68,7 @@ export class UsuarioAdapter {
     return {
       id: usuario.id,
       username: usuario.email, // Usando email como username
-      roles: [usuario.role as unknown as ROLE],
+      roles: [usuario.role as unknown as Role],
     };
   }
 }

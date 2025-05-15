@@ -1,0 +1,35 @@
+{
+  "name": "PGBen Quality Gate",
+  "conditions": [
+    {
+      "metric": "new_security_rating",
+      "op": "GREATER_THAN",
+      "error": "1"
+    },
+    {
+      "metric": "new_reliability_rating",
+      "op": "GREATER_THAN",
+      "error": "1"
+    },
+    {
+      "metric": "new_maintainability_rating",
+      "op": "GREATER_THAN",
+      "error": "1"
+    },
+    {
+      "metric": "new_coverage",
+      "op": "LESS_THAN",
+      "error": "80"
+    },
+    {
+      "metric": "new_duplicated_lines_density",
+      "op": "GREATER_THAN",
+      "error": "3"
+    },
+    {
+      "metric": "new_security_hotspots_reviewed",
+      "op": "LESS_THAN",
+      "error": "100"
+    }
+  ]
+}

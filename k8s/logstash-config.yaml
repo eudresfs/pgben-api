@@ -1,0 +1,96 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: logstash-config
+  namespace: pgben
+data:
+  logstash.yml: |
+    http.host: "0.0.0.0"
+    xpack.monitoring.elasticsearch.hosts: [ "http://elasticsearch:9200" ]
+    
+  pipelines.yml: |
+    - pipeline.id: main
+      path.config: "/usr/share/logstash/pipeline"
+      
+  logstash-pipeline.conf: |
+    input {
+      beats {
+        port => 5044
+      }
+      
+      tcp {
+        port => 5000
+        codec => json
+      }
+      
+      http {
+        port => 8080
+        codec => json
+      }
+    }
+    
+    filter {
+      if [type] == "pgben-api" {
+        grok {
+          match => { "message" => "%{TIMESTAMP_ISO8601:timestamp} %{LOGLEVEL:log_level} \[%{DATA:service}\] %{GREEDYDATA:log_message}" }
+        }
+        
+        # Extrair informações adicionais para logs de API
+        if [log_message] =~ "Request" {
+          grok {
+            match => { "log_message" => "Request %{WORD:http_method} %{URIPATHPARAM:request_path} %{NUMBER:response_code}" }
+          }
+        }
+        
+        # Identificar logs de segurança
+        if [log_message] =~ "security|auth|authentication|authorization|LGPD" {
+          mutate {
+            add_tag => ["security"]
+          }
+        }
+        
+        # Identificar logs de documentos
+        if [log_message] =~ "document|upload|download|file" {
+          mutate {
+            add_tag => ["document"]
+          }
+        }
+      }
+      
+      # Adicionar timestamp para todos os logs
+      date {
+        match => [ "timestamp", "ISO8601" ]
+        target => "@timestamp"
+      }
+      
+      # Adicionar informações do host
+      mutate {
+        add_field => { "environment" => "${ENVIRONMENT:production}" }
+      }
+    }
+    
+    output {
+      elasticsearch {
+        hosts => ["http://elasticsearch:9200"]
+        user => "${ELASTICSEARCH_USER:elastic}"
+        password => "${ELASTICSEARCH_PASSWORD:changeme}"
+        index => "pgben-%{+YYYY.MM.dd}"
+        
+        # Usar índices diferentes para diferentes tipos de logs
+        if "security" in [tags] {
+          index => "pgben-security-%{+YYYY.MM.dd}"
+        }
+        
+        if "document" in [tags] {
+          index => "pgben-document-%{+YYYY.MM.dd}"
+        }
+      }
+      
+      # Saída de debug opcional
+      if [log_level] == "DEBUG" {
+        file {
+          path => "/var/log/logstash/debug.log"
+          codec => rubydebug
+        }
+      }
+    }

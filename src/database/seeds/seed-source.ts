@@ -20,7 +20,7 @@ import { Pendencia } from '../../modules/solicitacao/entities/pendencia.entity';
 import { Documento } from '../../modules/documento/entities/documento.entity';
 import { DocumentoEnviado } from '../../modules/documento/entities/documento-enviado.entity';
 import { HistoricoSolicitacao } from '../../modules/solicitacao/entities/historico-solicitacao.entity';
-import { LogAuditoria } from '../../modules/audit/entities/log-auditoria.entity';
+import { LogAuditoria } from '../../modules/auditoria/entities/log-auditoria.entity';
 import { Notificacao } from '../../modules/notificacao/entities/notificacao.entity';
 import { Ocorrencia } from '../../modules/ocorrencia/entities/ocorrencia.entity';
 import { DemandaMotivo } from '../../modules/ocorrencia/entities/demanda-motivo.entity';

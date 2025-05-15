@@ -1,0 +1,50 @@
+10016	IGNORE	A cookie has been set without the secure flag, which means that the cookie can be accessed via unencrypted connections.
+10017	IGNORE	A cookie has been set without the HttpOnly flag, which means that the cookie can be accessed by JavaScript.
+10096	IGNORE	X-Frame-Options header is not included in the HTTP response to protect against 'ClickJacking' attacks.
+10038	IGNORE	Content Security Policy (CSP) header not set
+10063	IGNORE	Feature Policy Header Not Set
+90022	IGNORE	Application Error Disclosure
+10049	IGNORE	Content Security Policy (CSP) Report-Only header encountered
+10055	IGNORE	CSP: Wildcard Directive
+10021	WARN	X-Content-Type-Options header missing
+10020	WARN	X-Frame-Options header not set
+10036	WARN	Server Leaks Version Information via "Server" HTTP Response Header Field
+10098	WARN	Cross-Domain Misconfiguration
+10027	WARN	Information Disclosure - Suspicious Comments
+10202	WARN	Absence of Anti-CSRF Tokens
+40025	WARN	Proxy Disclosure
+2	WARN	Private IP Disclosure
+3	WARN	Session ID in URL Rewrite
+10015	ERROR	Incomplete or No Cache-control and Pragma HTTP Header Set
+10040	ERROR	Secure Pages Include Mixed Content
+10056	ERROR	X-Debug-Token Information Leak
+10105	ERROR	Weak Authentication Method
+10202	ERROR	CSRF Tokens Scanner
+20012	ERROR	Anti-CSRF Tokens Scanner
+30001	ERROR	Buffer Overflow
+30002	ERROR	Format String Error
+30003	ERROR	Integer Overflow Error
+40012	ERROR	Cross Site Scripting (Reflected)
+40014	ERROR	Cross Site Scripting (Persistent)
+40016	ERROR	Cross Site Scripting (Persistent) - Prime
+40017	ERROR	Cross Site Scripting (Persistent) - Spider
+40018	ERROR	SQL Injection
+40019	ERROR	SQL Injection - MySQL
+40020	ERROR	SQL Injection - Hypersonic SQL
+40021	ERROR	SQL Injection - Oracle
+40022	ERROR	SQL Injection - PostgreSQL
+40023	ERROR	SQL Injection - SQLite
+40024	ERROR	SQL Injection - MsSQL
+50000	ERROR	Script Active Scan Rules
+50001	ERROR	Script Passive Scan Rules
+90018	ERROR	Advanced SQL Injection
+90019	ERROR	Server Side Include
+90020	ERROR	Remote OS Command Injection
+90021	ERROR	XPath Injection
+90023	ERROR	XML External Entity Attack
+90024	ERROR	Generic Padding Oracle
+90025	ERROR	Expression Language Injection
+90028	ERROR	Insecure HTTP Method
+90029	ERROR	SOAP Action Spoofing
+90030	ERROR	WSDL File Detection
+90033	ERROR	Loosely Scoped Cookie

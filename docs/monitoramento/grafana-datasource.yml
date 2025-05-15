@@ -1,0 +1,35 @@
+# Configuração de fonte de dados do Grafana para o PGBen
+# Este arquivo deve ser colocado no diretório de configuração do Grafana
+
+apiVersion: 1
+
+# Lista de fontes de dados a serem adicionadas ao Grafana
+datasources:
+  # Configuração do Prometheus como fonte de dados principal
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: false
+    jsonData:
+      timeInterval: "15s"
+      httpMethod: "POST"
+    version: 1
+
+  # Configuração do PostgreSQL como fonte de dados para consultas diretas
+  - name: PostgreSQL
+    type: postgres
+    url: postgres:5432
+    user: ${POSTGRES_USER}
+    secureJsonData:
+      password: ${POSTGRES_PASSWORD}
+    jsonData:
+      database: ${POSTGRES_DB}
+      sslmode: "disable"
+      maxOpenConns: 10
+      maxIdleConns: 5
+      maxIdleConnsTime: "10m"
+      connMaxLifetime: "1h"
+    editable: false
+    version: 1

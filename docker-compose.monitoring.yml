@@ -1,0 +1,131 @@
+services:
+  # Prometheus para coleta de métricas
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: semtas_prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    restart: unless-stopped
+    networks:
+      - semtas_network
+
+  # Grafana para visualização de métricas
+  grafana:
+    image: grafana/grafana:latest
+    container_name: semtas_grafana
+    ports:
+      - "3001:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./config/grafana/provisioning:/etc/grafana/provisioning
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    restart: unless-stopped
+    networks:
+      - semtas_network
+    depends_on:
+      - prometheus
+
+  # Elasticsearch para armazenamento de logs
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.0
+    container_name: semtas_elasticsearch
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    restart: unless-stopped
+    networks:
+      - semtas_network
+
+  # Logstash para processamento de logs
+  logstash:
+    image: docker.elastic.co/logstash/logstash:7.17.0
+    container_name: semtas_logstash
+    ports:
+      - "5000:5000"
+      - "9600:9600"
+    volumes:
+      - ./config/logstash/pipeline:/usr/share/logstash/pipeline
+      - ./config/logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml
+    environment:
+      - "LS_JAVA_OPTS=-Xms256m -Xmx256m"
+    restart: unless-stopped
+    networks:
+      - semtas_network
+    depends_on:
+      - elasticsearch
+
+  # Kibana para visualização de logs
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.17.0
+    container_name: semtas_kibana
+    ports:
+      - "5601:5601"
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    restart: unless-stopped
+    networks:
+      - semtas_network
+    depends_on:
+      - elasticsearch
+
+  # Jaeger para rastreamento distribuído
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: semtas_jaeger
+    ports:
+      - "5775:5775/udp"
+      - "6831:6831/udp"
+      - "6832:6832/udp"
+      - "5778:5778"
+      - "16686:16686"
+      - "14268:14268"
+      - "14250:14250"
+    environment:
+      - COLLECTOR_ZIPKIN_HOST_PORT=9411
+    restart: unless-stopped
+    networks:
+      - semtas_network
+
+  # Alertmanager para gerenciamento de alertas
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: semtas_alertmanager
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./config/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+      - alertmanager_data:/alertmanager
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+    restart: unless-stopped
+    networks:
+      - semtas_network
+    depends_on:
+      - prometheus
+
+networks:
+  semtas_network:
+    external: true
+
+volumes:
+  prometheus_data:
+  grafana_data:
+  elasticsearch_data:
+  alertmanager_data:

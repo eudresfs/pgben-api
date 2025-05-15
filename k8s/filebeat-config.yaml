@@ -1,0 +1,95 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: filebeat-config
+  namespace: pgben
+data:
+  filebeat.yml: |
+    filebeat.inputs:
+    - type: container
+      paths:
+        - /var/log/containers/pgben-server-*.log
+      processors:
+        - add_kubernetes_metadata:
+            host: ${NODE_NAME}
+            matchers:
+            - logs_path:
+                logs_path: "/var/log/containers/"
+      json.keys_under_root: true
+      json.add_error_key: true
+      json.message_key: log
+      
+    - type: log
+      enabled: true
+      paths:
+        - /var/log/pgben/*.log
+      fields:
+        type: pgben-api
+      fields_under_root: true
+      
+    processors:
+      - add_host_metadata: ~
+      - add_cloud_metadata: ~
+      - add_kubernetes_metadata: ~
+      - add_fields:
+          target: ''
+          fields:
+            application: pgben
+            environment: ${ENVIRONMENT:production}
+            
+      # Enriquecimento de logs de segurança
+      - if:
+          contains:
+            message: "security|auth|authentication|authorization|LGPD"
+        then:
+          - add_tags:
+              tags: ["security"]
+              target: "tags"
+              
+      # Enriquecimento de logs de documentos
+      - if:
+          contains:
+            message: "document|upload|download|file"
+        then:
+          - add_tags:
+              tags: ["document"]
+              target: "tags"
+              
+      # Enriquecimento de logs de banco de dados
+      - if:
+          contains:
+            message: "database|sql|query|transaction"
+        then:
+          - add_tags:
+              tags: ["database"]
+              target: "tags"
+    
+    output.elasticsearch:
+      hosts: ["${ELASTICSEARCH_HOST:elasticsearch}:${ELASTICSEARCH_PORT:9200}"]
+      username: "${ELASTICSEARCH_USERNAME:elastic}"
+      password: "${ELASTICSEARCH_PASSWORD:changeme}"
+      indices:
+        - index: "pgben-%{+yyyy.MM.dd}"
+          when.not.contains:
+            tags: ["security", "document", "database"]
+        - index: "pgben-security-%{+yyyy.MM.dd}"
+          when.contains:
+            tags: "security"
+        - index: "pgben-document-%{+yyyy.MM.dd}"
+          when.contains:
+            tags: "document"
+        - index: "pgben-database-%{+yyyy.MM.dd}"
+          when.contains:
+            tags: "database"
+            
+    # Configuração alternativa para enviar para Logstash
+    #output.logstash:
+    #  hosts: ["${LOGSTASH_HOST:logstash}:${LOGSTASH_PORT:5044}"]
+    
+    logging.level: info
+    logging.to_files: true
+    logging.files:
+      path: /var/log/filebeat
+      name: filebeat
+      keepfiles: 7
+      permissions: 0644

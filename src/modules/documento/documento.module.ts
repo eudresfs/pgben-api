@@ -6,6 +6,8 @@ import { DocumentoService } from './services/documento.service';
 import { Documento } from './entities/documento.entity';
 import { DocumentoEnviado } from './entities/documento-enviado.entity';
 import { SolicitacaoModule } from '../solicitacao/solicitacao.module';
+import { SharedModule } from '../../shared/shared.module';
+import { AuditoriaModule } from '../auditoria/auditoria.module';
 import { diskStorage } from 'multer';
 import * as path from 'path';
 import * as crypto from 'crypto';
@@ -22,6 +24,9 @@ import * as crypto from 'crypto';
       Documento,
       DocumentoEnviado
     ]),
+    SharedModule,
+    SolicitacaoModule,
+    AuditoriaModule,
     MulterModule.register({
       storage: diskStorage({
         destination: (req, file, cb) => {
@@ -55,11 +60,10 @@ import * as crypto from 'crypto';
           cb(new Error('Tipo de arquivo não permitido'), false);
         }
       },
-    }),
-    SolicitacaoModule,
+    })
   ],
   controllers: [DocumentoController],
   providers: [DocumentoService],
-  exports: [DocumentoService],
+  exports: [DocumentoService]
 })
 export class DocumentoModule {}

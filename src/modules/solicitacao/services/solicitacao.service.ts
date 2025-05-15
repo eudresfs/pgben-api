@@ -12,7 +12,7 @@ import { Pendencia, StatusPendencia } from '../entities/pendencia.entity';
 import { CreateSolicitacaoDto } from '../dto/create-solicitacao.dto';
 import { UpdateSolicitacaoDto } from '../dto/update-solicitacao.dto';
 import { AvaliarSolicitacaoDto } from '../dto/avaliar-solicitacao.dto';
-import { Role } from '../../auth/enums/role.enum';
+import { Role } from '../../../shared/enums/role.enum'
 
 /**
  * Serviço de Solicitações
