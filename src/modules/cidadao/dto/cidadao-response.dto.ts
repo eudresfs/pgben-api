@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Sexo } from '../entities/cidadao.entity';
+import { PapelCidadaoResponseDto } from './papel-cidadao-response.dto';
 
 export class EnderecoResponseDto {
   @ApiProperty({ example: 'Rua das Flores', description: 'Logradouro do endereço' })
@@ -83,19 +84,19 @@ export class CidadaoResponseDto {
   ativo: boolean;
 
   @ApiProperty({ example: '2023-01-01T00:00:00.000Z', description: 'Data de criação do registro' })
-  createdAt: Date;
+  created_at: Date;
 
   @ApiProperty({ example: '2023-01-01T00:00:00.000Z', description: 'Data da última atualização do registro' })
-  updatedAt: Date;
+  updated_at: Date;
 
   @ApiPropertyOptional({ example: null, description: 'Data de desativação do registro, se aplicável' })
-  deletedAt?: Date;
+  deleted_at?: Date;
 
-  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000', description: 'ID do usuário que realizou o cadastro' })
-  createdBy: string;
-
-  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000', description: 'ID do usuário que realizou a última atualização' })
-  updatedBy: string;
+  @ApiPropertyOptional({ 
+    type: [PapelCidadaoResponseDto],
+    description: 'Papéis que o cidadão possui no sistema'
+  })
+  papeis?: PapelCidadaoResponseDto[];
 }
 
 export class CidadaoPaginatedResponseDto {

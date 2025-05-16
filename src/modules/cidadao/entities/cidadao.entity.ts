@@ -5,11 +5,13 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   DeleteDateColumn,
-  Index
+  Index,
+  OneToMany
 } from 'typeorm';
 import { IsEmail, IsNotEmpty, Length, IsOptional, IsEnum, Validate } from 'class-validator';
 import { CPFValidator } from '../validators/cpf-validator';
 import { NISValidator } from '../validators/nis-validator';
+import { PapelCidadao } from './papel-cidadao.entity';
 
 export enum Sexo {
   MASCULINO = 'masculino',
@@ -17,15 +19,11 @@ export enum Sexo {
   OUTRO = 'outro',
 }
 
-export enum TipoCidadao {
-  BENEFICIARIO = 'beneficiario',
-  REQUERENTE = 'requerente',
-  REPRESENTANTE_LEGAL = 'representante_legal'
-}
-
 @Entity('cidadao')
 @Index(['cpf'], { unique: true })
 @Index(['nis'], { unique: true, where: "nis IS NOT NULL" })
+@Index(['nome', 'ativo'])
+@Index(['created_at', 'ativo'])
 export class Cidadao {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -48,13 +46,8 @@ export class Cidadao {
   @IsNotEmpty({ message: 'Data de nascimento é obrigatória' })
   data_nascimento: Date;
 
-  @Column({ type: 'enum',
-    enum: TipoCidadao,
-    default: 'cidadao'
-  })
-  @IsEnum(TipoCidadao, { message: 'Tipo de cidadao inválido' })
-  @IsNotEmpty({ message: 'Tipo de cidadao é obrigatório' })
-  tipo_cidadao: TipoCidadao;
+  @OneToMany(() => PapelCidadao, papelCidadao => papelCidadao.cidadao, { eager: true })
+  papeis: PapelCidadao[];
 
   @Column({
     type: 'enum',
@@ -106,8 +99,8 @@ export class Cidadao {
     renda?: number;
   }[];
 
-  // Removida referência circular para Solicitacao
-  // As consultas de solicitações por cidadão devem ser feitas via repositório
+  @Column({ default: true })
+  ativo: boolean;
 
   @CreateDateColumn()
   created_at: Date;

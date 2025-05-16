@@ -8,11 +8,13 @@ import { Unidade } from './modules/unidade/entities/unidade.entity';
 import { Setor } from './modules/unidade/entities/setor.entity';
 import { SetorUnidade } from './modules/unidade/entities/setor-unidade.entity';
 import { Cidadao } from './modules/cidadao/entities/cidadao.entity';
+import { PapelCidadao } from './modules/cidadao/entities/papel-cidadao.entity';
 import { ComposicaoFamiliar } from './modules/cidadao/entities/composicao-familiar.entity';
 import { DadosSociais } from './modules/cidadao/entities/dados-sociais.entity';
 import { SituacaoMoradia } from './modules/cidadao/entities/situacao-moradia.entity';
 import { TipoBeneficio } from './modules/beneficio/entities/tipo-beneficio.entity';
 import { RequisitoDocumento } from './modules/beneficio/entities/requisito-documento.entity';
+import { CampoDinamicoBeneficio } from './modules/beneficio/entities/campo-dinamico-beneficio.entity';
 import { FluxoBeneficio } from './modules/beneficio/entities/fluxo-beneficio.entity';
 import { Solicitacao } from './modules/solicitacao/entities/solicitacao.entity';
 import { DadosBeneficios } from './modules/solicitacao/entities/dados-beneficios.entity';
@@ -43,11 +45,13 @@ export const AppDataSource = new DataSource({
     Setor,
     SetorUnidade,
     Cidadao,
+    PapelCidadao,
     ComposicaoFamiliar,
     DadosSociais,
     SituacaoMoradia,
     TipoBeneficio,
     RequisitoDocumento,
+    CampoDinamicoBeneficio,
     FluxoBeneficio,
     Solicitacao,
     DadosBeneficios,

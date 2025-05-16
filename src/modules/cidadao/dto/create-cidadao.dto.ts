@@ -1,9 +1,12 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEmail, IsString, IsOptional, IsEnum, IsNotEmpty, IsDate, IsNumber, ValidateNested, Validate } from 'class-validator';
+import { IsEmail, IsString, IsOptional, IsEnum, IsNotEmpty, IsDate, IsNumber, ValidateNested, Validate, Matches, ValidateIf, IsArray } from 'class-validator';
 import { Type } from 'class-transformer';
 import { Sexo } from '../entities/cidadao.entity';
+import { TipoPapel } from '../entities/papel-cidadao.entity';
 import { CPFValidator } from '../validators/cpf-validator';
 import { NISValidator } from '../validators/nis-validator';
+import { TelefoneValidator } from '../validators/telefone-validator';
+import { CEPValidator } from '../validators/cep-validator';
 
 /**
  * DTO para endereço do cidadão
@@ -62,6 +65,7 @@ export class EnderecoDto {
 
   @IsString({ message: 'CEP deve ser uma string' })
   @IsNotEmpty({ message: 'CEP é obrigatório' })
+  @Validate(CEPValidator, { message: 'CEP inválido' })
   @ApiProperty({ 
     example: '59000-000',
     description: 'CEP do endereço'
@@ -75,7 +79,54 @@ export class EnderecoDto {
  * Contém todos os campos necessários para cadastrar um novo cidadão no sistema,
  * incluindo informações pessoais, documentos, endereço e dados socioeconômicos.
  */
+/**
+ * DTO para papel do cidadão na criação
+ */
+export class PapelCidadaoCreateDto {
+  @IsEnum(TipoPapel, { message: 'Tipo de papel inválido' })
+  @IsNotEmpty({ message: 'Tipo de papel é obrigatório' })
+  @ApiProperty({ 
+    enum: TipoPapel,
+    example: TipoPapel.BENEFICIARIO,
+    description: 'Tipo de papel do cidadão'
+  })
+  tipo_papel: TipoPapel;
+
+  @ApiPropertyOptional({ 
+    type: 'object',
+    additionalProperties: true,
+    example: {
+      grau_parentesco: 'Mãe',
+      documento_representacao: '12345',
+      data_validade_representacao: '2026-01-01'
+    },
+    description: 'Metadados específicos do papel (varia conforme o tipo)'
+  })
+  metadados?: {
+    grau_parentesco?: string;
+    documento_representacao?: string;
+    data_validade_representacao?: Date;
+    [key: string]: any;
+  };
+}
+
 export class CreateCidadaoDto {
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => PapelCidadaoCreateDto)
+  @IsOptional()
+  @ApiPropertyOptional({ 
+    type: [PapelCidadaoCreateDto],
+    description: 'Papéis que o cidadão irá assumir no sistema'
+  })
+  papeis?: PapelCidadaoCreateDto[];
+  
+  /**
+   * Validador personalizado para verificar regras de negócio específicas
+   */
+  @ValidateIf(o => o.papeis?.some(p => p.tipo_papel === TipoPapel.BENEFICIARIO) && (!o.renda || o.renda > 1500))
+  @IsNotEmpty({ message: 'Para beneficiários com renda superior a R$ 1.500,00, a composição familiar é obrigatória' })
+  composicao_familiar?: any[];
   @IsString({ message: 'Nome deve ser uma string' })
   @IsNotEmpty({ message: 'Nome é obrigatório' })
   @ApiProperty({ 
@@ -120,11 +171,12 @@ export class CreateCidadaoDto {
   sexo: Sexo;
 
   @IsString({ message: 'NIS deve ser uma string' })
-  @IsOptional()
+  @ValidateIf(o => o.papeis?.some(p => p.tipo_papel === TipoPapel.BENEFICIARIO))
+  @IsNotEmpty({ message: 'NIS é obrigatório para beneficiários' })
   @Validate(NISValidator, { message: 'NIS inválido' })
   @ApiPropertyOptional({ 
     example: '12345678901',
-    description: 'Número de Identificação Social (NIS) do cidadão, utilizado para programas sociais',
+    description: 'Número de Identificação Social (NIS) do cidadão, utilizado para programas sociais. Obrigatório para beneficiários.',
     required: false
   })
   nis?: string;
@@ -140,6 +192,7 @@ export class CreateCidadaoDto {
 
   @IsString({ message: 'Telefone deve ser uma string' })
   @IsOptional()
+  @Validate(TelefoneValidator, { message: 'Telefone inválido' })
   @ApiPropertyOptional({ 
     example: '(84) 98765-4321',
     description: 'Telefone do cidadão para contato',

@@ -11,6 +11,7 @@ import {
 import { IsNotEmpty, IsNumber, Min } from 'class-validator';
 import { Solicitacao } from '../../solicitacao/entities/solicitacao.entity';
 import { RequisitoDocumento } from './requisito-documento.entity';
+import { CampoDinamicoBeneficio } from './campo-dinamico-beneficio.entity';
 
 export enum Periodicidade {
   UNICO = 'unico',
@@ -64,6 +65,9 @@ export class TipoBeneficio {
 
   @OneToMany(() => RequisitoDocumento, requisito => requisito.tipo_beneficio)
   requisitos_documentos: RequisitoDocumento[];
+
+  @OneToMany(() => CampoDinamicoBeneficio, campo => campo.tipo_beneficio)
+  campos_dinamicos: CampoDinamicoBeneficio[];
 
   @OneToMany(() => Solicitacao, solicitacao => solicitacao.tipo_beneficio)
   solicitacao: Solicitacao[];

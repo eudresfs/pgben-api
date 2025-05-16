@@ -1,5 +1,5 @@
 import { Controller, Get, Post, Body, Put, Param, Query, UseGuards, Request, ParseUUIDPipe } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery, ApiParam, ApiOkResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery, ApiParam, ApiOkResponse, ApiConflictResponse, ApiNotFoundResponse, ApiBadRequestResponse } from '@nestjs/swagger';
 import { CidadaoService } from '../services/cidadao.service';
 import { CreateCidadaoDto } from '../dto/create-cidadao.dto';
 import { UpdateCidadaoDto } from '../dto/update-cidadao.dto';
@@ -15,7 +15,7 @@ import { ApiErrorResponse } from '../../../shared/dtos/api-error-response.dto';
  * Responsável por gerenciar as rotas relacionadas a cidadãos/beneficiários
  */
 @ApiTags('cidadaos')
-@Controller('cidadao')
+@Controller('v1/cidadao')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
 export class CidadaoController {
@@ -135,33 +135,39 @@ export class CidadaoController {
    */
   @Post()
   @ApiOperation({ 
-    summary: 'Criar novo cidadão',
+    summary: 'Criar cidadão',
     description: 'Cadastra um novo cidadão no sistema.'
+  })
+  @ApiOkResponse({
+    description: 'Cidadão criado com sucesso',
+    type: CidadaoResponseDto
+  })
+  @ApiBadRequestResponse({
+    description: 'Dados inválidos fornecidos',
+    type: ApiErrorResponse,
+    schema: {
+      example: {
+        statusCode: 400,
+        message: 'CPF inválido',
+        error: 'Bad Request'
+      }
+    }
+  })
+  @ApiConflictResponse({
+    description: 'Conflito - CPF ou NIS já cadastrado',
+    type: ApiErrorResponse,
+    schema: {
+      example: {
+        statusCode: 409,
+        message: 'Já existe um cidadão cadastrado com este CPF',
+        error: 'Conflict'
+      }
+    }
   })
   @ApiResponse({
     status: 201,
     description: 'Cidadão criado com sucesso',
     type: CidadaoResponseDto
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Dados inválidos',
-    type: ApiErrorResponse
-  })
-  @ApiResponse({
-    status: 401,
-    description: 'Não autorizado',
-    type: ApiErrorResponse
-  })
-  @ApiResponse({
-    status: 403,
-    description: 'Acesso negado',
-    type: ApiErrorResponse
-  })
-  @ApiResponse({
-    status: 409,
-    description: 'CPF ou NIS já em uso',
-    type: ApiErrorResponse
   })
   async create(
     @Body() createCidadaoDto: CreateCidadaoDto, 

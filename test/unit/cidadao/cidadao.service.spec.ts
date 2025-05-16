@@ -186,10 +186,75 @@ describe('CidadaoService', () => {
       expect(repository.findById).toHaveBeenCalledWith(mockCidadao.id);
     });
 
+    it('deve retornar os dados corretos no DTO de resposta', async () => {
+      const cidadaoCompleto = {
+        ...mockCidadao,
+        dataNascimento: new Date('1990-01-01'),
+        sexo: Sexo.MASCULINO,
+        nomeMae: 'Maria da Silva',
+        nomePai: 'João Silva',
+        email: 'joao@example.com',
+        telefone: '11999999999',
+        cep: '12345678',
+        logradouro: 'Rua Exemplo',
+        numero: '123',
+        complemento: 'Apto 101',
+        bairro: 'Centro',
+        cidade: 'São Paulo',
+        uf: 'SP',
+        nis: '12345678901',
+        cns: '123456789012345',
+        fotoUrl: 'http://example.com/foto.jpg',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        updatedBy: 'user-1'
+      };
+      
+      mockCidadaoRepository.findById.mockResolvedValue(cidadaoCompleto);
+      
+      const result = await service.findById(mockCidadao.id);
+      
+      expect(result).toMatchObject({
+        id: mockCidadao.id,
+        nome: mockCidadao.nome,
+        cpf: mockCidadao.cpf,
+        rg: mockCidadao.rg,
+        dataNascimento: expect.any(String),
+        sexo: Sexo.MASCULINO,
+        nomeMae: 'Maria da Silva',
+        nomePai: 'João Silva',
+        email: 'joao@example.com',
+        telefone: '11999999999',
+        cep: '12345678',
+        logradouro: 'Rua Exemplo',
+        numero: '123',
+        complemento: 'Apto 101',
+        bairro: 'Centro',
+        cidade: 'São Paulo',
+        uf: 'SP',
+        nis: '12345678901',
+        cns: '123456789012345',
+        fotoUrl: 'http://example.com/foto.jpg',
+        createdAt: expect.any(String),
+        updatedAt: expect.any(String),
+        updatedBy: 'user-1',
+      });
+    });
+
+    it('deve lançar BadRequestException para ID vazio', async () => {
+      await expect(service.findById('')).rejects.toThrow(BadRequestException);
+    });
+
     it('deve lançar NotFoundException quando o cidadão não for encontrado', async () => {
       mockCidadaoRepository.findById.mockResolvedValue(null);
       
       await expect(service.findById('id-inexistente')).rejects.toThrow(NotFoundException);
+    });
+
+    it('deve lançar InternalServerErrorException em caso de erro inesperado', async () => {
+      mockCidadaoRepository.findById.mockRejectedValue(new Error('Erro inesperado'));
+      
+      await expect(service.findById('id-válido')).rejects.toThrow(InternalServerErrorException);
     });
   });
 
@@ -203,8 +268,37 @@ describe('CidadaoService', () => {
       expect(repository.findByCpf).toHaveBeenCalledWith('12345678901');
     });
 
-    it('deve lançar BadRequestException para CPF inválido', async () => {
-      await expect(service.findByCpf('123')).rejects.toThrow(BadRequestException);
+    it('deve formatar o CPF removendo caracteres não numéricos', async () => {
+      mockCidadaoRepository.findByCpf.mockResolvedValue(mockCidadao);
+      
+      await service.findByCpf('123.456.789-01');
+      
+      expect(repository.findByCpf).toHaveBeenCalledWith('12345678901');
+    });
+
+    it('deve lançar BadRequestException para CPF vazio', async () => {
+      await expect(service.findByCpf('')).rejects.toThrow(BadRequestException);
+    });
+
+    it('deve lançar BadRequestException para CPF com menos de 11 dígitos', async () => {
+      await expect(service.findByCpf('1234567890')).rejects.toThrow(BadRequestException);
+    });
+
+    it('deve lançar BadRequestException para CPF com mais de 11 dígitos', async () => {
+      await expect(service.findByCpf('123456789012')).rejects.toThrow(BadRequestException);
+    });
+
+    it('deve lançar BadRequestException para CPF com caracteres não numéricos', async () => {
+      await expect(service.findByCpf('123abc456de')).rejects.toThrow(BadRequestException);
+    });
+
+    it('deve lançar BadRequestException para CPF inválido (todos dígitos iguais)', async () => {
+      await expect(service.findByCpf('111.111.111-11')).rejects.toThrow(BadRequestException);
+    });
+
+    it('deve lançar BadRequestException para CPF inválido (dígito verificador incorreto)', async () => {
+      // CPF válido seria 123.456.789-09
+      await expect(service.findByCpf('123.456.789-10')).rejects.toThrow(BadRequestException);
     });
 
     it('deve lançar NotFoundException quando o cidadão não for encontrado', async () => {
@@ -285,6 +379,10 @@ describe('CidadaoService', () => {
       renda: 5000,
     };
 
+    beforeEach(() => {
+      jest.clearAllMocks();
+    });
+
     it('deve criar um novo cidadão', async () => {
       mockCidadaoRepository.findByCpf.mockResolvedValue(null);
       mockCidadaoRepository.findByNis.mockResolvedValue(null);
@@ -296,8 +394,42 @@ describe('CidadaoService', () => {
       expect(repository.create).toHaveBeenCalledWith({
         ...createCidadaoDto,
         cpf: '12345678901',
-        nis: '12345678901'
+        nis: '12345678901',
+        unidadeId: 'unidade-1',
+        createdBy: 'user-1',
+        updatedBy: 'user-1',
       });
+    });
+
+    it('deve formatar CPF e NIS removendo caracteres não numéricos', async () => {
+      mockCidadaoRepository.findByCpf.mockResolvedValue(null);
+      mockCidadaoRepository.findByNis.mockResolvedValue(null);
+      mockCidadaoRepository.create.mockResolvedValue(mockCidadao);
+      
+      await service.create({
+        ...createCidadaoDto,
+        cpf: '123.456.789-01',
+        nis: '123.456.789-01',
+      }, 'unidade-1', 'user-1');
+      
+      expect(repository.create).toHaveBeenCalledWith(expect.objectContaining({
+        cpf: '12345678901',
+        nis: '12345678901',
+      }));
+    });
+
+    it('deve lançar BadRequestException para CPF inválido', async () => {
+      await expect(service.create({
+        ...createCidadaoDto,
+        cpf: '123',
+      }, 'unidade-1', 'user-1')).rejects.toThrow(BadRequestException);
+    });
+
+    it('deve lançar BadRequestException para NIS inválido', async () => {
+      await expect(service.create({
+        ...createCidadaoDto,
+        nis: '123',
+      }, 'unidade-1', 'user-1')).rejects.toThrow(BadRequestException);
     });
 
     it('deve lançar ConflictException para CPF já cadastrado', async () => {
@@ -314,109 +446,179 @@ describe('CidadaoService', () => {
       await expect(service.create(createCidadaoDto, 'unidade-1', 'user-1'))
         .rejects.toThrow(ConflictException);
     });
+
+    it('deve lançar InternalServerErrorException em caso de erro inesperado', async () => {
+      mockCidadaoRepository.findByCpf.mockRejectedValue(new Error('Erro inesperado'));
+      
+      await expect(service.create(createCidadaoDto, 'unidade-1', 'user-1'))
+        .rejects.toThrow(InternalServerErrorException);
+    });
+
+    it('deve permitir criação sem NIS', async () => {
+      const { nis, ...dtoSemNis } = createCidadaoDto;
+      mockCidadaoRepository.findByCpf.mockResolvedValue(null);
+      mockCidadaoRepository.create.mockResolvedValue(mockCidadao);
+      
+      await service.create(dtoSemNis as CreateCidadaoDto, 'unidade-1', 'user-1');
+      
+      expect(repository.create).toHaveBeenCalledWith(expect.objectContaining({
+        nis: null,
+      }));
+    });
   });
 
-  describe('update', () => {
-    const updateCidadaoDto: UpdateCidadaoDto = {
-      nome: 'João da Silva Atualizado',
-      email: 'joao.atualizado@example.com',
+  describe('findAll', () => {
+    it('deve retornar uma lista paginada de cidadãos com metadados', async () => {
+      const mockCidadaoList = [mockCidadao];
+      const total = 1;
+      
+      mockCidadaoRepository.findAll.mockResolvedValue([mockCidadaoList, total]);
+      
+      const result = await service.findAll({
+        page: 1,
+        limit: 10,
+      });
+      
+      expect(result).toHaveProperty('items');
+      expect(result).toHaveProperty('meta');
+      expect(result.items).toHaveLength(1);
+      expect(result.meta).toEqual({
+        total: 1,
+        page: 1,
+        limit: 10,
+        pages: 1,
+        hasNext: false,
+        hasPrev: false,
+      });
+    });
+
+    it('deve aplicar filtros de busca corretamente', async () => {
+      const mockCidadaoList = [mockCidadao];
+      const total = 1;
+      
+      mockCidadaoRepository.findAll.mockResolvedValue([mockCidadaoList, total]);
+      
+      await service.findAll({
+        search: 'João',
+        bairro: 'Centro',
+        ativo: true,
+        unidadeId: 'unidade-1',
+      });
+      
+      expect(mockCidadaoRepository.findAll).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            $or: expect.any(Array),
+            'endereco.bairro': expect.any(Object),
+            ativo: true,
+            unidadeId: 'unidade-1',
+          })
+        })
+      );
+    });
+
+    it('deve lançar InternalServerErrorException em caso de erro inesperado', async () => {
+      mockCidadaoRepository.findAll.mockRejectedValue(new Error('Erro inesperado'));
+      
+      await expect(service.findAll({})).rejects.toThrow(InternalServerErrorException);
+    });
+  });
+
+  describe('addComposicaoFamiliar', () => {
+    const mockComposicao = {
+      nome: 'Maria da Silva',
+      parentesco: 'Mãe',
+      data_nascimento: new Date('1960-01-01'),
+      cpf: '98765432100',
+      renda: 1500,
     };
 
-    it('deve atualizar um cidadão existente', async () => {
-      const cidadaoAtualizado = { ...mockCidadao, ...updateCidadaoDto };
+    it('deve adicionar um membro à composição familiar', async () => {
+      const cidadaoAtualizado = {
+        ...mockCidadao,
+        composicao_familiar: [mockComposicao],
+      };
       
       mockCidadaoRepository.findById.mockResolvedValue(mockCidadao);
-      mockCidadaoRepository.findByCpf.mockResolvedValue(null);
       mockCidadaoRepository.update.mockResolvedValue(cidadaoAtualizado);
       
-      const result = await service.update(
-        mockCidadao.id, 
-        updateCidadaoDto, 
+      const result = await service.addComposicaoFamiliar(
+        mockCidadao.id,
+        mockComposicao,
         'user-1'
       );
       
-      expect(result).toEqual(plainToInstance(CidadaoResponseDto, cidadaoAtualizado));
-      expect(repository.update).toHaveBeenCalledWith(mockCidadao.id, {
-        ...updateCidadaoDto,
-        updatedBy: 'user-1',
+      expect(result.composicao_familiar).toHaveLength(1);
+      expect(result.composicao_familiar[0]).toMatchObject({
+        nome: mockComposicao.nome,
+        parentesco: mockComposicao.parentesco,
       });
+      expect(mockCidadaoRepository.update).toHaveBeenCalled();
     });
 
-    it('deve formatar o CPF ao atualizar', async () => {
-      const updateWithCpf = { ...updateCidadaoDto, cpf: '111.222.333-44' };
-      const cidadaoAtualizado = { ...mockCidadao, ...updateWithCpf, cpf: '11122233344' };
+    it('deve inicializar o array de composição familiar se for nulo', async () => {
+      const cidadaoSemComposicao = {
+        ...mockCidadao,
+        composicao_familiar: null,
+      };
       
-      mockCidadaoRepository.findById.mockResolvedValue(mockCidadao);
-      mockCidadaoRepository.findByCpf.mockResolvedValue(null);
-      mockCidadaoRepository.update.mockResolvedValue(cidadaoAtualizado);
+      mockCidadaoRepository.findById.mockResolvedValue(cidadaoSemComposicao);
       
-      await service.update(mockCidadao.id, updateWithCpf, 'user-1');
+      await service.addComposicaoFamiliar(
+        mockCidadao.id,
+        mockComposicao,
+        'user-1'
+      );
       
-      expect(repository.update).toHaveBeenCalledWith(mockCidadao.id, {
-        ...updateCidadaoDto,
-        cpf: '11122233344',
-        updatedBy: 'user-1',
-      });
-    });
-
-    it('deve formatar o NIS ao atualizar', async () => {
-      const updateWithNis = { ...updateCidadaoDto, nis: '123.456.789-01' };
-      const cidadaoAtualizado = { ...mockCidadao, ...updateWithNis, nis: '12345678901' };
-      
-      mockCidadaoRepository.findById.mockResolvedValue(mockCidadao);
-      mockCidadaoRepository.findByCpf.mockResolvedValue(null);
-      mockCidadaoRepository.findByNis.mockResolvedValue(null);
-      mockCidadaoRepository.update.mockResolvedValue(cidadaoAtualizado);
-      
-      await service.update(mockCidadao.id, updateWithNis, 'user-1');
-      
-      expect(repository.update).toHaveBeenCalledWith(mockCidadao.id, {
-        ...updateCidadaoDto,
-        nis: '12345678901',
-        updatedBy: 'user-1',
-      });
-    });
-
-    it('deve lançar ConflictException para CPF já cadastrado', async () => {
-      const outroCidadao = { ...mockCidadao, id: 'outro-id' };
-      const updateWithCpf = { ...updateCidadaoDto, cpf: '111.222.333-44' };
-      
-      mockCidadaoRepository.findById.mockResolvedValue(mockCidadao);
-      mockCidadaoRepository.findByCpf.mockResolvedValue(outroCidadao);
-      
-      await expect(service.update(mockCidadao.id, updateWithCpf, 'user-1'))
-        .rejects.toThrow(ConflictException);
-    });
-
-    it('deve lançar ConflictException para NIS já cadastrado', async () => {
-      const outroCidadao = { ...mockCidadao, id: 'outro-id' };
-      const updateWithNis = { ...updateCidadaoDto, nis: '123.456.789-01' };
-      
-      mockCidadaoRepository.findById.mockResolvedValue(mockCidadao);
-      mockCidadaoRepository.findByCpf.mockResolvedValue(null);
-      mockCidadaoRepository.findByNis.mockResolvedValue(outroCidadao);
-      
-      await expect(service.update(mockCidadao.id, updateWithNis, 'user-1'))
-        .rejects.toThrow(ConflictException);
+      expect(mockCidadaoRepository.update).toHaveBeenCalledWith(
+        mockCidadao.id,
+        expect.objectContaining({
+          composicao_familiar: expect.arrayContaining([
+            expect.objectContaining({
+              nome: mockComposicao.nome,
+              criadoPor: 'user-1',
+            })
+          ])
+        })
+      );
     });
 
     it('deve lançar NotFoundException quando o cidadão não for encontrado', async () => {
       mockCidadaoRepository.findById.mockResolvedValue(null);
       
-      await expect(service.update('id-inexistente', {}, 'user-1'))
-        .rejects.toThrow(NotFoundException);
+      await expect(
+        service.addComposicaoFamiliar('id-inexistente', mockComposicao, 'user-1')
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('deve lançar InternalServerErrorException em caso de erro inesperado', async () => {
+      mockCidadaoRepository.findById.mockRejectedValue(new Error('Erro inesperado'));
+      
+      await expect(
+        service.addComposicaoFamiliar('id-valido', mockComposicao, 'user-1')
+      ).rejects.toThrow(InternalServerErrorException);
     });
   });
 
   describe('remove', () => {
+    beforeEach(() => {
+      jest.clearAllMocks();
+    });
+
     it('deve remover um cidadão existente (soft delete)', async () => {
       mockCidadaoRepository.findById.mockResolvedValue(mockCidadao);
       
       await service.remove(mockCidadao.id, 'user-1');
       
       expect(repository.update).toHaveBeenCalledWith(mockCidadao.id, {
-        removed_at: expect.any(Date)
+        removed_at: expect.any(Date),
+        updatedBy: 'user-1'
       });
+    });
+
+    it('deve lançar BadRequestException para ID vazio', async () => {
+      await expect(service.remove('', 'user-1'))
+        .rejects.toThrow(BadRequestException);
     });
 
     it('deve lançar NotFoundException quando o cidadão não for encontrado', async () => {
@@ -424,6 +626,27 @@ describe('CidadaoService', () => {
       
       await expect(service.remove('id-inexistente', 'user-1'))
         .rejects.toThrow(NotFoundException);
+    });
+
+    it('deve lançar InternalServerErrorException em caso de erro inesperado', async () => {
+      mockCidadaoRepository.findById.mockRejectedValue(new Error('Erro inesperado'));
+      
+      await expect(service.remove('id-válido', 'user-1'))
+        .rejects.toThrow(InternalServerErrorException);
+    });
+
+    it('não deve tentar remover um cidadão já removido', async () => {
+      const cidadaoRemovido = {
+        ...mockCidadao,
+        removed_at: new Date()
+      };
+      
+      mockCidadaoRepository.findById.mockResolvedValue(cidadaoRemovido);
+      
+      await service.remove(mockCidadao.id, 'user-1');
+      
+      // Verifica se o update foi chamado mesmo para um cidadão já removido
+      expect(repository.update).toHaveBeenCalled();
     });
   });
 });

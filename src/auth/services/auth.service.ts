@@ -21,6 +21,10 @@ import { Usuario } from '../../modules/usuario/entities/usuario.entity';
 
 @Injectable()
 export class AuthService {
+  // Valores padrão no formato semântico
+  private readonly DEFAULT_ACCESS_TOKEN_EXPIRES_IN = '1h';
+  private readonly DEFAULT_REFRESH_TOKEN_EXPIRES_IN = '7d';
+
   constructor(
     private usuarioService: UsuarioService,
     private refreshTokenService: RefreshTokenService,
@@ -29,6 +33,64 @@ export class AuthService {
     private readonly logger: AppLogger,
   ) {
     this.logger.setContext(AuthService.name);
+
+    // Log das configurações de token
+    const accessTokenExpiresIn = this.getAccessTokenExpiresIn();
+    const refreshTokenExpiresIn = this.getRefreshTokenExpiresIn();
+
+    this.logger.log({} as RequestContext,
+      `Configuração de tokens - Access Token: ${accessTokenExpiresIn}, ` +
+      `Refresh Token: ${refreshTokenExpiresIn} ` +
+      `(em segundos: ${this.timeToSeconds(refreshTokenExpiresIn)})`
+    );
+
+    // Debug das variáveis de ambiente
+    console.log('JWT_REFRESH_TOKEN_EXPIRES_IN:', this.configService.get('JWT_REFRESH_TOKEN_EXPIRES_IN', 'não definido'));
+    console.log('JWT_ACCESS_TOKEN_EXPIRES_IN:', this.configService.get('JWT_ACCESS_TOKEN_EXPIRES_IN', 'não definido'));
+  }
+
+  /**
+   * Obtém o tempo de expiração do access token no formato semântico (1h, 7d, etc)
+   */
+  private getAccessTokenExpiresIn(): string {
+    return this.configService.get<string>('JWT_ACCESS_TOKEN_EXPIRES_IN', this.DEFAULT_ACCESS_TOKEN_EXPIRES_IN);
+  }
+
+  /**
+   * Obtém o tempo de expiração do refresh token no formato semântico (1h, 7d, etc)
+   */
+  private getRefreshTokenExpiresIn(): string {
+    return this.configService.get<string>('JWT_REFRESH_TOKEN_EXPIRES_IN', this.DEFAULT_REFRESH_TOKEN_EXPIRES_IN);
+  }
+
+  /**
+   * Converte uma string de tempo no formato semântico (1h, 7d, etc) para segundos
+   */
+  private timeToSeconds(timeString: string): number {
+    // Se for apenas um número, considera como segundos
+    if (/^\d+$/.test(timeString)) {
+      return parseInt(timeString, 10);
+    }
+
+    // Se for no formato número+unidade (ex: 7d, 24h, etc)
+    const match = timeString.match(/^(\d+)([smhdw])$/);
+    if (match) {
+      const value = parseInt(match[1], 10);
+      const unit = match[2];
+
+      switch (unit) {
+        case 's': return value; // segundos
+        case 'm': return value * 60; // minutos
+        case 'h': return value * 60 * 60; // horas
+        case 'd': return value * 24 * 60 * 60; // dias
+        case 'w': return value * 7 * 24 * 60 * 60; // semanas
+        default: return 86400; // padrão: 1 dia
+      }
+    }
+
+    // Fallback para valores que não conseguimos interpretar
+    this.logger.warn({} as RequestContext, `Não foi possível interpretar o formato de tempo: ${timeString}, usando 1 dia como padrão`);
+    return 86400; // 1 dia em segundos
   }
 
   async validateUser(
@@ -70,12 +132,16 @@ export class AuthService {
     if (!usuario) {
       throw new UnauthorizedException('Usuário não encontrado');
     }
-    
-    // Garantir um valor padrão para JWT_REFRESH_TOKEN_EXPIRES_IN
-    const refreshExpiresIn = this.configService.get<string>('JWT_REFRESH_TOKEN_EXPIRES_IN') || '86400';
+
+    // Obter o tempo de expiração
+    const refreshTokenExpiresIn = this.getRefreshTokenExpiresIn();
+    const refreshTokenSeconds = this.timeToSeconds(refreshTokenExpiresIn);
+
+    this.logger.log(ctx, `Criando refresh token com duração de ${refreshTokenExpiresIn} (${refreshTokenSeconds} segundos)`);
+
     const refreshToken = await this.refreshTokenService.createToken(
       usuario as Usuario,
-      Number(refreshExpiresIn),
+      refreshTokenSeconds, // Converte para segundos para o RefreshTokenService
     );
 
     return {
@@ -100,10 +166,10 @@ export class AuthService {
 
     // Criar o usuário
     const registeredUser = await this.usuarioService.create(createUsuarioDto);
-    
+
     // Converter para o formato esperado
     const userOutput = UsuarioAdapter.toUserOutput(registeredUser as any);
-    
+
     return plainToClass(RegisterOutput, userOutput, {
       excludeExtraneousValues: true,
     });
@@ -153,11 +219,15 @@ export class AuthService {
     const userOutput = UsuarioAdapter.toUserOutput(usuario as any);
     const tokens = this.getAuthToken(ctx, userOutput);
 
-    // Garantir um valor padrão para JWT_REFRESH_TOKEN_EXPIRES_IN
-    const refreshExpiresIn = this.configService.get<string>('JWT_REFRESH_TOKEN_EXPIRES_IN') || '86400';
+    // Obter o tempo de expiração
+    const refreshTokenExpiresIn = this.getRefreshTokenExpiresIn();
+    const refreshTokenSeconds = this.timeToSeconds(refreshTokenExpiresIn);
+
+    this.logger.log(ctx, `Criando novo refresh token com duração de ${refreshTokenExpiresIn} (${refreshTokenSeconds} segundos)`);
+
     const newRefreshToken = await this.refreshTokenService.createToken(
       usuario as Usuario,
-      Number(refreshExpiresIn),
+      refreshTokenSeconds, // Converte para segundos para o RefreshTokenService
     );
 
     return {
@@ -185,17 +255,22 @@ export class AuthService {
       'base64'
     ).toString('utf8');
 
+    // Obter valores de expiração no formato semântico
+    const accessTokenExpiresIn = this.getAccessTokenExpiresIn();
+    const refreshTokenExpiresIn = this.getRefreshTokenExpiresIn();
+
+    this.logger.log(ctx, `Gerando tokens - Access token expira em: ${accessTokenExpiresIn}, Refresh token expira em: ${refreshTokenExpiresIn}`);
+
     const accessToken = this.jwtService.sign({
       ...payload,
       ...subject
     }, {
       secret: privateKey,
       algorithm: 'RS256',
-      expiresIn: this.configService.get('JWT_ACCESS_TOKEN_EXPIRES_IN', '1h')
+      expiresIn: accessTokenExpiresIn
     });
 
     // Para o refreshToken, usamos o mesmo JwtService, mas com opções diferentes de expiração
-    const refreshTokenExpiresIn = this.configService.get('JWT_REFRESH_TOKEN_EXPIRES_IN', '7d');
     const refreshTokenJwt = this.jwtService.sign(subject, {
       secret: privateKey,
       algorithm: 'RS256',
@@ -206,7 +281,7 @@ export class AuthService {
       accessToken,
       refreshToken: refreshTokenJwt,
     };
-    
+
     return plainToClass(AuthTokenOutput, authToken, {
       excludeExtraneousValues: true,
     });
