@@ -12,22 +12,24 @@ $temp = [System.IO.Path]::GetTempPath()
 $privateKeyPath = Join-Path $temp "jwt-private.pem"
 $publicKeyPath  = Join-Path $temp "jwt-public.pem"
 
-# Gera chave privada
+# Gera chave privada RSA de 2048 bits específica para RS256
 & $openssl genpkey -algorithm RSA -out $privateKeyPath -pkeyopt rsa_keygen_bits:2048
 
-# Gera chave pública
+# Extrai chave pública da chave privada
 & $openssl rsa -in $privateKeyPath -pubout -out $publicKeyPath
 
 # Codifica as chaves em base64
 $privateKeyBase64 = [Convert]::ToBase64String([IO.File]::ReadAllBytes($privateKeyPath))
 $publicKeyBase64  = [Convert]::ToBase64String([IO.File]::ReadAllBytes($publicKeyPath))
 
-# Gera secrets randômicos para JWT_SECRET e JWT_REFRESH_SECRET
+# Gera secrets randômicos para JWT_SECRET e JWT_REFRESH_SECRET (para tokens HS256, se ainda necessário)
 $jwtSecret         = [Convert]::ToBase64String([Guid]::NewGuid().ToByteArray())
 $jwtRefreshSecret  = [Convert]::ToBase64String([Guid]::NewGuid().ToByteArray())
 
 # Conteúdo final
 $envContent = @"
+# JWT Settings
+JWT_ALGORITHM=RS256
 JWT_SECRET=$jwtSecret
 JWT_REFRESH_SECRET=$jwtRefreshSecret
 JWT_PRIVATE_KEY_BASE64=$privateKeyBase64
@@ -50,5 +52,6 @@ Copy-Item $publicKeyPath  -Destination (Join-Path $secretsPath "jwt-public.pem")
 # Limpa arquivos temporários
 Remove-Item $privateKeyPath, $publicKeyPath
 
-Write-Host "`n✅ Arquivo '.env.jwt' gerado com sucesso!"
+Write-Host "`n✅ Arquivo '.env.jwt' gerado com sucesso para algoritmo RS256!"
+Write-Host "🔐 Chaves assimétricas RSA criadas e configuradas"
 Write-Host "📂 Caminho: $(Resolve-Path $envPath)"

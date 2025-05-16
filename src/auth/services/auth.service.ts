@@ -13,7 +13,6 @@ import { RegisterOutput } from '../dtos/auth-register-output.dto';
 import {
   AuthTokenOutput,
   UserAccessTokenClaims,
-
 } from '../dtos/auth-token-output.dto';
 import { UserOutput, UsuarioAdapter } from '../adapters/usuario-adapter';
 import { RefreshTokenService } from './refresh-token.service';
@@ -72,9 +71,11 @@ export class AuthService {
       throw new UnauthorizedException('Usuário não encontrado');
     }
     
+    // Garantir um valor padrão para JWT_REFRESH_TOKEN_EXPIRES_IN
+    const refreshExpiresIn = this.configService.get<string>('JWT_REFRESH_TOKEN_EXPIRES_IN') || '86400';
     const refreshToken = await this.refreshTokenService.createToken(
       usuario as Usuario,
-      Number(this.configService.get<string>('JWT_REFRESH_TOKEN_EXPIRES_IN') || '86400'),
+      Number(refreshExpiresIn),
     );
 
     return {
@@ -152,10 +153,11 @@ export class AuthService {
     const userOutput = UsuarioAdapter.toUserOutput(usuario as any);
     const tokens = this.getAuthToken(ctx, userOutput);
 
-    // Criar e salvar o novo refresh token
+    // Garantir um valor padrão para JWT_REFRESH_TOKEN_EXPIRES_IN
+    const refreshExpiresIn = this.configService.get<string>('JWT_REFRESH_TOKEN_EXPIRES_IN') || '86400';
     const newRefreshToken = await this.refreshTokenService.createToken(
       usuario as Usuario,
-      Number(this.configService.get<string>('JWT_REFRESH_TOKEN_EXPIRES_IN') || '86400'),
+      Number(refreshExpiresIn),
     );
 
     return {
@@ -177,15 +179,34 @@ export class AuthService {
       roles: user.roles,
     };
 
+    // Garantir que estamos usando o algoritmo RS256 e a chave privada para assinar o token
+    const privateKey = Buffer.from(
+      this.configService.get<string>('JWT_PRIVATE_KEY_BASE64', ''),
+      'base64'
+    ).toString('utf8');
+
+    const accessToken = this.jwtService.sign({
+      ...payload,
+      ...subject
+    }, {
+      secret: privateKey,
+      algorithm: 'RS256',
+      expiresIn: this.configService.get('JWT_ACCESS_TOKEN_EXPIRES_IN', '1h')
+    });
+
+    // Para o refreshToken, usamos o mesmo JwtService, mas com opções diferentes de expiração
+    const refreshTokenExpiresIn = this.configService.get('JWT_REFRESH_TOKEN_EXPIRES_IN', '7d');
+    const refreshTokenJwt = this.jwtService.sign(subject, {
+      secret: privateKey,
+      algorithm: 'RS256',
+      expiresIn: refreshTokenExpiresIn
+    });
+
     const authToken = {
-      refreshToken: this.jwtService.sign(subject, {
-        expiresIn: this.configService.get('jwt.refreshTokenExpiresInSec'),
-      }),
-      accessToken: this.jwtService.sign(
-        { ...payload, ...subject },
-        { expiresIn: this.configService.get('jwt.accessTokenExpiresInSec') },
-      ),
+      accessToken,
+      refreshToken: refreshTokenJwt,
     };
+    
     return plainToClass(AuthTokenOutput, authToken, {
       excludeExtraneousValues: true,
     });

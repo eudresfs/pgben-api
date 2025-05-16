@@ -1,3 +1,4 @@
+// src/auth/strategies/jwt-auth.strategy.ts
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
@@ -12,10 +13,26 @@ export class JwtAuthStrategy extends PassportStrategy(
   STRATEGY_JWT_AUTH,
 ) {
   constructor(private readonly configService: ConfigService) {
+    // Obter a chave pública do ambiente
+    const publicKeyBase64 = configService.get<string>('JWT_PUBLIC_KEY_BASE64');
+    
+    if (!publicKeyBase64) {
+      throw new Error('JWT_PUBLIC_KEY_BASE64 não está configurado');
+    }
+    
+    // Decodificar a chave pública
+    const publicKey = Buffer.from(publicKeyBase64, 'base64').toString('utf8').trim();
+    
+    console.log('Configurando JWT Strategy com chave pública (início):', publicKey.substring(0, 50) + '...');
+    
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-      secretOrKey: configService.get<string>('jwt.publicKey'),
+      ignoreExpiration: false,
+      secretOrKey: publicKey,
       algorithms: ['RS256'],
+      jsonWebTokenOptions: {
+        algorithms: ['RS256']
+      }
     });
   }
 

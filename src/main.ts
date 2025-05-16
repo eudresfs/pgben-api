@@ -1,6 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, HttpException, HttpStatus } from '@nestjs/common';
 import { SwaggerModule } from '@nestjs/swagger';
 import { ResponseInterceptor } from './shared/interceptors/response.interceptor';
 import { HttpExceptionFilter } from './shared/filters/http-exception.filter';
@@ -37,13 +37,16 @@ async function bootstrap() {
       exceptionFactory: (errors) => {
         const messages = errors.map((error) => ({
           property: error.property,
-          constraints: error.constraints,
+          constraints: error.constraints || {},
         }));
-        return {
-          statusCode: 400,
-          message: 'Erro de validação',
-          errors: messages,
-        };
+        return new HttpException(
+          {
+            statusCode: 400,
+            message: 'Erro de validação',
+            errors: messages,
+          },
+          HttpStatus.BAD_REQUEST,
+        );
       },
     }),
   );

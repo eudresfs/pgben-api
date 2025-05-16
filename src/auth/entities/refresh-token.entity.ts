@@ -29,10 +29,10 @@ export class RefreshToken {
   replacedByToken: string | null;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamp with time zone' })
-  createdAt: Date;
+  created_at: Date;
 
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamp with time zone' })
-  updatedAt: Date;
+  updated_at: Date;
 
   @ManyToOne(() => Usuario, usuario => usuario.refreshTokens, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'usuario_id', referencedColumnName: 'id' })

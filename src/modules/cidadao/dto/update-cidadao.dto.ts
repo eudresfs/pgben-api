@@ -10,6 +10,7 @@ import { EnderecoDto } from './create-cidadao.dto';
  * DTO para atualização de cidadão
  */
 export class UpdateCidadaoDto {
+  [x: string]: any;
   @IsString({ message: 'Nome deve ser uma string' })
   @IsOptional()
   @ApiProperty({ 

@@ -4,14 +4,13 @@ import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { configModuleOptions } from './configs/module-options';
-import { AllExceptionsFilter } from './filters/all-exceptions.filter';
+import { HttpExceptionFilter } from './filters/http-exception.filter';
 import { LoggingInterceptor as AppLoggingInterceptor } from './interceptors/logging.interceptor';
 import { AppLoggerModule } from './logger/logger.module';
 
 // Novos módulos de logging e monitoramento
 import { LoggingModule } from './logging/logging.module';
 import { MonitoringModule } from './monitoring/monitoring.module';
-import { GlobalExceptionFilter } from './logging/exception.filter';
 import { LoggingInterceptor } from './logging/logging.interceptor';
 import { MetricsInterceptor } from './monitoring/metrics.interceptor';
 import { CriptografiaService } from './services/criptografia.service';
@@ -54,14 +53,10 @@ import { MinioService } from './services/minio.service';
     { provide: APP_INTERCEPTOR, useClass: LoggingInterceptor },
     { provide: APP_INTERCEPTOR, useClass: MetricsInterceptor },
 
-    // Filtros de exceção
+    // Filtro de exceção global
     {
       provide: APP_FILTER,
-      useClass: AllExceptionsFilter,
-    },
-    {
-      provide: APP_FILTER,
-      useClass: GlobalExceptionFilter,
+      useClass: HttpExceptionFilter,
     },
   ],
 })

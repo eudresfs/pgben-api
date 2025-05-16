@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Put, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Put, Param, UseGuards, Logger } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { SetorService } from '../services/setor.service';
 import { CreateSetorDto } from '../dto/create-setor.dto';
@@ -18,6 +18,8 @@ import { Role } from '../../../shared/enums/role.enum'
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
 export class SetorController {
+  private readonly logger = new Logger(SetorController.name);
+  
   constructor(private readonly setorService: SetorService) { }
 
   /**
@@ -30,7 +32,10 @@ export class SetorController {
   @ApiResponse({ status: 400, description: 'Dados inválidos' })
   @ApiResponse({ status: 404, description: 'Unidade não encontrada' })
   async create(@Body() createSetorDto: CreateSetorDto) {
-    return this.setorService.create(createSetorDto);
+    this.logger.log('Dados recebidos para criação de setor:', JSON.stringify(createSetorDto, null, 2));
+    const result = await this.setorService.create(createSetorDto);
+    this.logger.log('Setor criado com sucesso:', JSON.stringify(result, null, 2));
+    return result;
   }
 
   /**

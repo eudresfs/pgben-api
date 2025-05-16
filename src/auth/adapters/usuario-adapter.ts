@@ -22,10 +22,10 @@ export class UserOutput {
   isAccountDisabled: boolean;
 
   @Expose()
-  createdAt: string;
+  created_at: string;
 
   @Expose()
-  updatedAt: string;
+  updated_at: string;
 
   @Expose()
   roles: Role[];
@@ -54,8 +54,8 @@ export class UsuarioAdapter {
     userOutput.username = usuario.email; // Usando email como username
     userOutput.email = usuario.email;
     userOutput.isAccountDisabled = usuario.status === 'inativo';
-    userOutput.createdAt = usuario.created_at?.toISOString() || new Date().toISOString();
-    userOutput.updatedAt = usuario.updated_at?.toISOString() || new Date().toISOString();
+    userOutput.created_at = usuario.created_at?.toISOString() || new Date().toISOString();
+    userOutput.updated_at = usuario.updated_at?.toISOString() || new Date().toISOString();
     userOutput.roles = [usuario.role as unknown as Role];
     
     return userOutput;

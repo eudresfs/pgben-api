@@ -27,7 +27,7 @@ export class UsuarioRepository {
     where?: any;
     order?: any;
   }): Promise<[Usuario[], number]> {
-    const { skip = 0, take = 10, where = {}, order = { createdAt: 'DESC' } } = options || {};
+    const { skip = 0, take = 10, where = {}, order = { created_at: 'DESC' } } = options || {};
     
     return this.repository.findAndCount({
       skip,

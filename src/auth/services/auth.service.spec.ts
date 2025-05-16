@@ -6,7 +6,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AppLogger } from '../../shared/logger/logger.service';
 import { RequestContext } from '../../shared/request-context/request-context.dto';
 import { UsuarioService } from '../../modules/usuario/services/usuario.service';
-import { Role } from '../../modules/auth/enums/role.enum';
+import { Role } from '../../auth/enums/role.enum';
 import { ROLE } from '../constants/role.constant';
 import {
   AuthTokenOutput,
@@ -21,14 +21,14 @@ describe('AuthService', () => {
   const accessTokenClaims: UserAccessTokenClaims = {
     id: 6,
     username: 'john',
-    roles: [ROLE.USER],
+    roles: [Role.TECNICO_UNIDADE],
   };
 
   const registerInput = {
     username: 'jhon',
     name: 'Jhon doe',
     password: 'any password',
-    roles: [ROLE.USER],
+    roles: [Role.TECNICO_UNIDADE],
     isAccountDisabled: false,
     email: 'randomUser@random.com',
   };
@@ -39,8 +39,8 @@ describe('AuthService', () => {
     name: 'John doe',
     isAccountDisabled: false,
     email: 'randomUser@random.com',
-    createdAt: currentDate,
-    updatedAt: currentDate,
+    created_at: currentDate,
+    updated_at: currentDate,
     ...accessTokenClaims,
   };
 
