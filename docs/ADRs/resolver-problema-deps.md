@@ -11,98 +11,105 @@ O uso frequente da flag `--legacy-peer-deps` indica problemas fundamentais na es
 - Vulnerabilidades de segurança não resolvidas
 - Problemas de manutenção a longo prazo
 
-## Diagnóstico Inicial
+## Diagnóstico Completo
 
 ### 1. Análise do Estado Atual de Dependências
 
 ```bash
-# Execute e cole a saída destes comandos:
+# Dependências desatualizadas
+$ npm outdated
+Package                   Current  Wanted  Latest  Location                               Depended by
+@eslint/js                 9.26.0  9.27.0  9.27.0  node_modules/@eslint/js                pgben-server
+@nestjs/bull               10.0.1  10.2.3  11.0.2  node_modules/@nestjs/bull              pgben-server
+@nestjs/platform-express   11.1.0  11.1.1  11.1.1  node_modules/@nestjs/platform-express  pgben-server
+@nestjs/testing            11.1.0  11.1.1  11.1.1  node_modules/@nestjs/testing           pgben-server
+@nestjs/typeorm            10.0.2  10.0.2  11.0.0  node_modules/@nestjs/typeorm           pgben-server
+@swc/cli                    0.6.0   0.6.0   0.7.7  node_modules/@swc/cli                  pgben-server
+@types/express              5.0.1   5.0.2   5.0.2  node_modules/@types/express            pgben-server
+bull                       4.10.4  4.16.5  4.16.5  node_modules/bull                      pgben-server
+eslint                     9.26.0  9.27.0  9.27.0  node_modules/eslint                    pgben-server
+eslint-config-prettier     10.1.3  10.1.5  10.1.5  node_modules/eslint-config-prettier    pgben-server
+pg                         8.15.6  8.16.0  8.16.0  node_modules/pg                        pgben-server
+pm2                         6.0.5   6.0.6   6.0.6  node_modules/pm2                       pgben-server
+ts-jest                    29.3.3  29.3.4  29.3.4  node_modules/ts-jest                   pgben-server
+typeorm-extension           2.8.1   2.8.1   3.7.1  node_modules/typeorm-extension         pgben-server
+typescript-eslint          8.32.0  8.32.1  8.32.1  node_modules/typescript-eslint         pgben-server
 
-# Listar dependências desatualizadas
-npm outdated
+# Verificação de conflitos (retornou erros)
+$ npm ls --depth=1 | findstr /i "peer"
+npm error code ELSPROBLEMS
+npm error invalid: @nestjs/common@11.1.1 
+npm error invalid: @nestjs/core@11.1.1 
+npm error extraneous: @types/mime-types@2.1.4
+npm error extraneous: bcrypt@6.0.0
 
-# Verificar conflitos de peer dependencies
-npm ls --depth=1 | grep -i "peer"
-
-# Verificar vulnerabilidades
-npm audit
+# Auditoria de segurança
+$ npm audit
+found 0 vulnerabilities
 ```
 
 ### 2. Identificação de Padrões Problemáticos
 
-- Quais pacotes aparecem frequentemente como "MISSING" ou "INVALID"?
-- Existem versões específicas de frameworks principais (React, Angular, NestJS) causando os problemas?
-- Há diferença significativa entre versões de dependências atuais vs desejadas?
-- Existe algum padrão nos erros que surgem ao instalar sem `--legacy-peer-deps`?
+- **Conflitos de Versões NestJS**: Mistura de componentes NestJS nas versões 10.x e 11.x
+- **Pacotes incompatíveis**: `typeorm-seeding@1.6.1` é incompatível com versões recentes do TypeORM
+- **Pacotes extraneous**: `@types/mime-types@2.1.4` e `bcrypt@6.0.0` foram instalados mas não estão listados em package.json
+- **Problemas com @nestjs/bull**: A versão 10.0.1 não é compatível com @nestjs/common 11.x
 
 ### 3. Mapeamento de Dependências Críticas
 
-Liste as 5-10 dependências mais importantes do projeto:
-1. 
-2. 
-3. 
-4. 
-5. 
+As dependências mais importantes do projeto são:
+1. **@nestjs/common e @nestjs/core** (11.1.1) - Framework principal
+2. **typeorm** (0.3.24) - ORM para acesso ao banco de dados
+3. **@nestjs/typeorm** (10.0.2) - Integração do NestJS com TypeORM
+4. **@nestjs/bull** (10.0.1) - Integração do NestJS com Bull para filas
+5. **bull** (4.10.4) - Biblioteca para processamento de filas
+6. **pg** (8.15.6) - Driver do PostgreSQL
+7. **typeorm-extension** (2.8.1) - Extensão para TypeORM com seeds
+8. **typeorm-seeding** (1.6.1) - Ferramenta de seeding para TypeORM (obsoleta)
 
 ## Estratégia de Resolução
 
-### Abordagem 1: Resolução Gradual e Controlada
+Após tentativas iniciais com abordagens mais simples, concluímos que uma estratégia mais estruturada e abrangente é necessária:
 
-Esta abordagem mantém a estabilidade enquanto remove progressivamente a necessidade de `--legacy-peer-deps`:
+### Abordagem Adotada: Reconstrução Baseada em Compatibilidade
 
-#### 1. Criar lockfile limpo (opcional, use com cautela)
+Esta abordagem é mais invasiva, mas necessária para resolver problemas profundos de compatibilidade:
+
+#### 1. Backup e Preparação
 ```bash
-# Backup do package-lock.json atual
-cp package-lock.json package-lock.json.bak
+# Backup do package.json e package-lock.json
+copy package.json package.json.bak
+copy package-lock.json package-lock.json.bak
 
-# Remover node_modules e lockfile
-rm -rf node_modules package-lock.json
-
-# Reinstalar com --legacy-peer-deps uma última vez
-npm install --legacy-peer-deps
+# Remover node_modules e package-lock.json
+rmdir /s /q node_modules
+del package-lock.json
 ```
 
-#### 2. Atualizar dependências em grupos isolados
-```bash
-# Exemplo para grupo de dependências relacionadas a UI
-npm update --no-legacy-peer-deps react react-dom @types/react
+#### 2. Atualização do package.json
+Criar um novo package.json com versões compatíveis, priorizando:
+- Definir todas as dependências NestJS para a mesma versão (11.x)
+- Substituir typeorm-seeding por apenas typeorm-extension
+- Ajustar as versões de peer dependencies para garantir compatibilidade
 
-# Exemplo para grupo de dependências relacionadas a backend
-npm update --no-legacy-peer-deps nestjs/* @nestjs/*
+#### 3. Reinstalação controlada
+```bash
+# Reinstalar com --no-legacy-peer-deps
+npm install --no-legacy-peer-deps
 ```
 
-#### 3. Resolver conflitos específicos de peer dependencies
-Para cada conflito identificado, uma destas estratégias:
-- Atualizar o pacote pai para uma versão compatível com suas peer dependencies
-- Definir uma versão específica da peer dependency compatível com todos os pacotes
-- Em último caso, substituir pacotes problemáticos por alternativas
+#### 4. Testes e Validação
+- Executar todos os testes para verificar compatibilidade
+- Validar funcionalidades principais da aplicação
+- Verificar logs de erros e alertas
 
-### Abordagem 2: Reconstrução Baseada em Compatibilidade
+## Lições Aprendidas e Boas Práticas
 
-Esta abordagem é mais invasiva mas pode resolver problemas profundos:
-
-#### 1. Criar projeto de salvaguarda
-```bash
-# Criar package.json limpo com dependências principais em versões compatíveis
-npm init
-npm install --save-exact react@^18.2.0 react-dom@^18.2.0 # exemplo
-
-# Adicionar dependências incrementalmente, verificando compatibilidade
-npm install --save-exact [próxima-dependência-crítica]
-```
-
-#### 2. Migrar código gradualmente
-- Mover código para o novo projeto base
-- Adaptar para compatibilidade com novas versões de dependências
-- Testar minuciosamente em cada etapa
-
-### Abordagem 3: Utilização de Ferramentas de Resolução
-
-#### 1. Usar npm-check ou npm-check-updates
-```bash
-# Instalar globalmente
-npm install -g npm-check-updates
-
+1. **Consistência de Versões**: Manter todos os pacotes relacionados ao mesmo framework (NestJS) na mesma versão principal
+2. **Evitar Flags que Mascaram Problemas**: Nunca usar --legacy-peer-deps como solução permanente
+3. **Documentação de Compatibilidade**: Manter um registro de versões compatíveis
+4. **Atualizações Incrementais**: Atualizar regularmente em pequenos incrementos
+5. **Testes Automatizados**: Manter boa cobertura de testes para detectar problemas de compatibilidade
 # Verificar atualizações disponíveis
 ncu
 

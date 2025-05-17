@@ -4,7 +4,7 @@ import { AuditoriaService } from '../services/auditoria.service';
 import { LogAuditoriaRepository } from '../repositories/log-auditoria.repository';
 import { TipoOperacao } from '../enums/tipo-operacao.enum';
 import { CreateLogAuditoriaDto } from '../dto/create-log-auditoria.dto';
-import * as faker from 'faker';
+import { faker } from '@faker-js/faker';
 import { performance } from 'perf_hooks';
 
 /**
@@ -32,7 +32,7 @@ async function runLoadTest() {
         provide: LogAuditoriaRepository,
         useValue: {
           create: jest.fn().mockImplementation(async (dto) => ({
-            id: faker.datatype.uuid(),
+            id: faker.string.uuid(),
             ...dto,
           })),
           findAll: jest
@@ -158,7 +158,7 @@ async function runLoadTest() {
       case 3:
         // Consulta por usuário
         await auditoriaService.buscarLogs({
-          usuario_id: faker.datatype.uuid(),
+          usuario_id: faker.string.uuid(),
           page: 1,
           limit: 10,
         });
@@ -191,7 +191,7 @@ async function runLoadTest() {
   const integrityStart = performance.now();
 
   for (let i = 0; i < Math.min(NUM_LOGS / 10, 1000); i++) {
-    const logId = faker.datatype.uuid();
+    const logId = faker.string.uuid();
     await auditoriaService.verificarIntegridade(logId);
 
     if (i % 100 === 0) {
@@ -226,24 +226,24 @@ async function runLoadTest() {
 function createRandomLogDto(): CreateLogAuditoriaDto {
   const dto = new CreateLogAuditoriaDto();
 
-  dto.tipo_operacao = faker.random.arrayElement(Object.values(TipoOperacao));
-  dto.entidade_afetada = faker.random.arrayElement([
+  dto.tipo_operacao = faker.helpers.arrayElement(Object.values(TipoOperacao));
+  dto.entidade_afetada = faker.helpers.arrayElement([
     'Usuario',
     'Beneficio',
     'Atendimento',
     'Documento',
   ]);
-  dto.entidade_id = faker.datatype.uuid();
-  dto.usuario_id = faker.datatype.uuid();
+  dto.entidade_id = faker.string.uuid();
+  dto.usuario_id = faker.string.uuid();
   dto.ip_origem = faker.internet.ip();
   dto.user_agent = faker.internet.userAgent();
-  dto.endpoint = `/api/${dto.entidade_afetada.toLowerCase()}/${faker.random.arrayElement(['', dto.entidade_id])}`;
-  dto.metodo_http = faker.random.arrayElement(['GET', 'POST', 'PUT', 'DELETE']);
+  dto.endpoint = `/api/${dto.entidade_afetada.toLowerCase()}/${faker.helpers.arrayElement(['', dto.entidade_id])}`;
+  dto.metodo_http = faker.helpers.arrayElement(['GET', 'POST', 'PUT', 'DELETE']);
   dto.descricao = `${dto.metodo_http} ${dto.endpoint}`;
   dto.data_hora = new Date();
 
   // Adicionar dados sensíveis em 20% dos casos
-  if (faker.datatype.number({ min: 1, max: 5 }) === 1) {
+  if (faker.number.int({ min: 1, max: 5 }) === 1) {
     dto.dados_sensiveis_acessados = ['cpf', 'data_nascimento', 'endereco'];
   }
 
@@ -253,9 +253,9 @@ function createRandomLogDto(): CreateLogAuditoriaDto {
     dto.tipo_operacao === TipoOperacao.UPDATE
   ) {
     dto.dados_novos = {
-      nome: faker.name.findName(),
+      nome: faker.person.fullName(),
       email: faker.internet.email(),
-      status: faker.random.arrayElement(['ativo', 'inativo', 'pendente']),
+      status: faker.helpers.arrayElement(['ativo', 'inativo', 'pendente']),
     };
   }
 
