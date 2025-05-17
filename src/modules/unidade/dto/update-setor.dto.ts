@@ -7,46 +7,46 @@ import { IsString, IsOptional, IsUUID, IsBoolean } from 'class-validator';
 export class UpdateSetorDto {
   @IsString({ message: 'Nome deve ser uma string' })
   @IsOptional()
-  @ApiProperty({ 
+  @ApiProperty({
     example: 'Setor de Atendimento',
     description: 'Nome do setor',
-    required: false
+    required: false,
   })
   nome?: string;
 
   @IsString({ message: 'Descrição deve ser uma string' })
   @IsOptional()
-  @ApiProperty({ 
+  @ApiProperty({
     example: 'Responsável pelo atendimento inicial aos cidadãos',
     description: 'Descrição das atividades do setor',
-    required: false
+    required: false,
   })
   descricao?: string;
 
   @IsString({ message: 'Sigla deve ser uma string' })
   @IsOptional()
-  @ApiProperty({ 
+  @ApiProperty({
     example: 'SA',
     description: 'Sigla do setor',
-    required: false
+    required: false,
   })
   sigla?: string;
 
   @IsUUID(undefined, { message: 'ID da unidade inválido' })
   @IsOptional()
-  @ApiProperty({ 
+  @ApiProperty({
     example: '123e4567-e89b-12d3-a456-426614174000',
     description: 'ID da unidade à qual o setor pertence',
-    required: false
+    required: false,
   })
   unidadeId?: string;
 
   @IsBoolean({ message: 'Status deve ser um booleano' })
   @IsOptional()
-  @ApiProperty({ 
+  @ApiProperty({
     example: true,
     description: 'Status do setor (ativo/inativo)',
-    required: false
+    required: false,
   })
   status?: boolean;
 }

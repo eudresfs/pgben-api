@@ -6,8 +6,11 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
   OneToMany,
+  Index,
 } from 'typeorm';
 import { IsEmail, IsNotEmpty, IsEnum } from 'class-validator';
+import { Setor } from './setor.entity';
+import { Usuario } from '../../usuario/entities/usuario.entity';
 
 export enum TipoUnidade {
   CRAS = 'cras',
@@ -23,6 +26,10 @@ export enum StatusUnidade {
 }
 
 @Entity('unidade')
+@Index(['nome'])
+@Index(['codigo'], { unique: true })
+@Index(['tipo'])
+@Index(['status'])
 export class Unidade {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -57,10 +64,11 @@ export class Unidade {
   @Column({ nullable: true })
   responsavel: string;
 
-  @Column({ 
-    type: 'enum', 
-    enum: StatusUnidade, 
-    default: StatusUnidade.ATIVO 
+  @Column({
+    type: 'enum',
+    enum: StatusUnidade,
+    enumName: 'status_unidade',
+    default: StatusUnidade.ATIVO,
   })
   status: StatusUnidade;
 
@@ -72,4 +80,16 @@ export class Unidade {
 
   @DeleteDateColumn()
   removed_at: Date;
+
+  /**
+   * Relacionamento com os setores da unidade
+   */
+  @OneToMany(() => Setor, (setor) => setor.unidade)
+  setores: Setor[];
+
+  /**
+   * Relacionamento com os usuários da unidade
+   */
+  @OneToMany(() => Usuario, (usuario) => usuario.unidade)
+  usuarios: Usuario[];
 }

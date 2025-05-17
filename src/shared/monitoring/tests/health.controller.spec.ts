@@ -2,11 +2,15 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { HealthController } from '../health.controller';
 import { TerminusModule } from '@nestjs/terminus';
 import { HttpModule } from '@nestjs/axios';
-import { DiskHealthIndicator, MemoryHealthIndicator, HealthCheckService } from '@nestjs/terminus';
+import {
+  DiskHealthIndicator,
+  MemoryHealthIndicator,
+  HealthCheckService,
+} from '@nestjs/terminus';
 
 /**
  * Testes unitários para o controlador de saúde
- * 
+ *
  * Verifica o funcionamento dos endpoints de verificação de saúde
  * da aplicação, incluindo verificações de banco de dados, disco e memória
  */
@@ -15,21 +19,21 @@ describe('HealthController', () => {
   let healthCheckService: HealthCheckService;
   let diskHealthIndicator: DiskHealthIndicator;
   let memoryHealthIndicator: MemoryHealthIndicator;
-  
+
   // Mocks para os serviços de verificação de saúde
   const mockHealthCheckService = {
     check: jest.fn(),
   };
-  
+
   const mockDiskHealthIndicator = {
     checkStorage: jest.fn(),
   };
-  
+
   const mockMemoryHealthIndicator = {
     checkHeap: jest.fn(),
     checkRSS: jest.fn(),
   };
-  
+
   // Mock para o TypeOrmHealthIndicator
   const mockTypeOrmHealthIndicator = {
     pingCheck: jest.fn(),
@@ -37,12 +41,9 @@ describe('HealthController', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
-    
+
     const module: TestingModule = await Test.createTestingModule({
-      imports: [
-        TerminusModule,
-        HttpModule,
-      ],
+      imports: [TerminusModule, HttpModule],
       controllers: [HealthController],
       providers: [
         {
@@ -67,7 +68,9 @@ describe('HealthController', () => {
     controller = module.get<HealthController>(HealthController);
     healthCheckService = module.get<HealthCheckService>(HealthCheckService);
     diskHealthIndicator = module.get<DiskHealthIndicator>(DiskHealthIndicator);
-    memoryHealthIndicator = module.get<MemoryHealthIndicator>(MemoryHealthIndicator);
+    memoryHealthIndicator = module.get<MemoryHealthIndicator>(
+      MemoryHealthIndicator,
+    );
   });
 
   it('deve ser definido', () => {
@@ -84,11 +87,11 @@ describe('HealthController', () => {
           },
         },
       };
-      
+
       mockHealthCheckService.check.mockResolvedValue(mockHealthCheckResult);
-      
+
       const result = await controller.check();
-      
+
       expect(result).toEqual(mockHealthCheckResult);
       expect(mockHealthCheckService.check).toHaveBeenCalled();
       expect(mockTypeOrmHealthIndicator.pingCheck).not.toHaveBeenCalled(); // Chamado dentro da função check
@@ -115,11 +118,11 @@ describe('HealthController', () => {
           },
         },
       };
-      
+
       mockHealthCheckService.check.mockResolvedValue(mockHealthCheckResult);
-      
+
       const result = await controller.checkSystem();
-      
+
       expect(result).toEqual(mockHealthCheckResult);
       expect(mockHealthCheckService.check).toHaveBeenCalled();
       expect(mockDiskHealthIndicator.checkStorage).not.toHaveBeenCalled(); // Chamado dentro da função check
@@ -138,21 +141,21 @@ describe('HealthController', () => {
           },
         },
       };
-      
+
       mockHealthCheckService.check.mockResolvedValue(mockHealthCheckResult);
-      
+
       const result = await controller.checkDatabase();
-      
+
       expect(result).toEqual(mockHealthCheckResult);
       expect(mockHealthCheckService.check).toHaveBeenCalled();
       expect(mockTypeOrmHealthIndicator.pingCheck).not.toHaveBeenCalled(); // Chamado dentro da função check
     });
   });
-  
+
   describe('ping', () => {
     it('deve retornar status ok e informações básicas', async () => {
       const result = controller.ping();
-      
+
       expect(result).toHaveProperty('status', 'ok');
       expect(result).toHaveProperty('timestamp');
       expect(result).toHaveProperty('service', 'pgben-api');

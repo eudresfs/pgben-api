@@ -9,7 +9,7 @@ import * as crypto from 'crypto';
 
 /**
  * Serviço de integração com MinIO
- * 
+ *
  * Responsável por gerenciar o armazenamento de documentos no MinIO,
  * com suporte a criptografia para dados sensíveis.
  */
@@ -31,24 +31,33 @@ export class MinioService implements OnModuleInit {
     'CERTIDAO_CASAMENTO',
     'CARTAO_NIS',
     'CARTAO_BOLSA_FAMILIA',
-    'DECLARACAO_VULNERABILIDADE'
+    'DECLARACAO_VULNERABILIDADE',
   ];
 
   constructor(
     private configService: ConfigService,
-    private criptografiaService: CriptografiaService
+    private criptografiaService: CriptografiaService,
   ) {
     // Configuração do cliente MinIO
     this.minioClient = new Minio.Client({
       endPoint: this.configService.get<string>('MINIO_ENDPOINT', 'localhost'),
       port: this.configService.get<number>('MINIO_PORT', 9000),
       useSSL: this.configService.get<boolean>('MINIO_USE_SSL', false),
-      accessKey: this.configService.get<string>('MINIO_ACCESS_KEY', 'minioadmin'),
-      secretKey: this.configService.get<string>('MINIO_SECRET_KEY', 'minioadmin')
+      accessKey: this.configService.get<string>(
+        'MINIO_ACCESS_KEY',
+        'minioadmin',
+      ),
+      secretKey: this.configService.get<string>(
+        'MINIO_SECRET_KEY',
+        'minioadmin',
+      ),
     });
 
     // Nome do bucket para armazenamento de documentos
-    this.bucketName = this.configService.get<string>('MINIO_BUCKET', 'documents');
+    this.bucketName = this.configService.get<string>(
+      'MINIO_BUCKET',
+      'documents',
+    );
 
     // Diretório temporário para arquivos em processamento
     this.tempDir = path.join(os.tmpdir(), 'pgben-temp');
@@ -94,7 +103,7 @@ export class MinioService implements OnModuleInit {
   private gerarNomeArquivo(
     nomeOriginal: string,
     solicitacaoId: string,
-    tipoDocumento: string
+    tipoDocumento: string,
   ): string {
     const extensao = path.extname(nomeOriginal);
     const timestamp = Date.now();
@@ -114,7 +123,7 @@ export class MinioService implements OnModuleInit {
     arquivo: Buffer,
     nomeOriginal: string,
     solicitacaoId: string,
-    tipoDocumento: string
+    tipoDocumento: string,
   ): Promise<{
     nomeArquivo: string;
     tamanho: number;
@@ -123,42 +132,47 @@ export class MinioService implements OnModuleInit {
     metadados: any;
   }> {
     // Gerar nome único para o arquivo
-    const nomeArquivo = this.gerarNomeArquivo(nomeOriginal, solicitacaoId, tipoDocumento);
-    
+    const nomeArquivo = this.gerarNomeArquivo(
+      nomeOriginal,
+      solicitacaoId,
+      tipoDocumento,
+    );
+
     // Calcular hash do arquivo original para verificação de integridade
     const hash = this.criptografiaService.gerarHash(arquivo);
-    
+
     // Verificar se o documento deve ser criptografado
     const criptografar = this.documentoRequerCriptografia(tipoDocumento);
-    
+
     let arquivoFinal = arquivo;
-    let metadados: any = {
+    const metadados: any = {
       'Content-Type': this.detectarMimeType(nomeOriginal),
       'X-Amz-Meta-Original-Name': nomeOriginal,
       'X-Amz-Meta-Hash': hash,
-      'X-Amz-Meta-Encrypted': criptografar ? 'true' : 'false'
+      'X-Amz-Meta-Encrypted': criptografar ? 'true' : 'false',
     };
-    
+
     // Se o documento for sensível, criptografar
     if (criptografar) {
       try {
         // Criptografar o arquivo
-        const { dadosCriptografados, iv, authTag } = this.criptografiaService.criptografarBuffer(arquivo);
-        
+        const { dadosCriptografados, iv, authTag } =
+          this.criptografiaService.criptografarBuffer(arquivo);
+
         // Usar o arquivo criptografado
         arquivoFinal = dadosCriptografados;
-        
+
         // Adicionar metadados de criptografia
         metadados['X-Amz-Meta-IV'] = iv.toString('base64');
         metadados['X-Amz-Meta-AuthTag'] = authTag.toString('base64');
-        
+
         this.logger.log(`Arquivo ${nomeArquivo} criptografado com sucesso`);
       } catch (error) {
         this.logger.error(`Erro ao criptografar arquivo: ${error.message}`);
         throw new Error(`Falha ao criptografar documento: ${error.message}`);
       }
     }
-    
+
     try {
       // Fazer upload do arquivo para o MinIO
       await this.minioClient.putObject(
@@ -166,11 +180,13 @@ export class MinioService implements OnModuleInit {
         nomeArquivo,
         arquivoFinal,
         arquivoFinal.length,
-        metadados
+        metadados,
       );
-      
-      this.logger.log(`Arquivo ${nomeArquivo} enviado para o MinIO com sucesso`);
-      
+
+      this.logger.log(
+        `Arquivo ${nomeArquivo} enviado para o MinIO com sucesso`,
+      );
+
       return {
         nomeArquivo,
         tamanho: arquivo.length, // Tamanho original, não o criptografado
@@ -179,11 +195,13 @@ export class MinioService implements OnModuleInit {
         metadados: {
           tipoDocumento,
           solicitacaoId,
-          nomeOriginal
-        }
+          nomeOriginal,
+        },
       };
     } catch (error) {
-      this.logger.error(`Erro ao enviar arquivo para o MinIO: ${error.message}`);
+      this.logger.error(
+        `Erro ao enviar arquivo para o MinIO: ${error.message}`,
+      );
       throw new Error(`Falha ao armazenar documento: ${error.message}`);
     }
   }
@@ -199,61 +217,82 @@ export class MinioService implements OnModuleInit {
   }> {
     try {
       // Obter metadados do arquivo
-      const stat = await this.minioClient.statObject(this.bucketName, nomeArquivo);
-      
+      const stat = await this.minioClient.statObject(
+        this.bucketName,
+        nomeArquivo,
+      );
+
       // Criar arquivo temporário para download
-      const tempFilePath = path.join(this.tempDir, `download-${Date.now()}-${path.basename(nomeArquivo)}`);
-      
+      const tempFilePath = path.join(
+        this.tempDir,
+        `download-${Date.now()}-${path.basename(nomeArquivo)}`,
+      );
+
       // Baixar arquivo do MinIO
-      await this.minioClient.fGetObject(this.bucketName, nomeArquivo, tempFilePath);
-      
+      await this.minioClient.fGetObject(
+        this.bucketName,
+        nomeArquivo,
+        tempFilePath,
+      );
+
       // Ler arquivo baixado
       const arquivoCriptografado = fs.readFileSync(tempFilePath);
-      
+
       // Verificar se o arquivo está criptografado
       const criptografado = stat.metaData['x-amz-meta-encrypted'] === 'true';
-      
+
       let arquivoFinal = arquivoCriptografado;
-      
+
       // Se estiver criptografado, descriptografar
       if (criptografado) {
         const iv = Buffer.from(stat.metaData['x-amz-meta-iv'], 'base64');
-        const authTag = Buffer.from(stat.metaData['x-amz-meta-authtag'], 'base64');
-        
+        const authTag = Buffer.from(
+          stat.metaData['x-amz-meta-authtag'],
+          'base64',
+        );
+
         try {
           arquivoFinal = this.criptografiaService.descriptografarBuffer(
             arquivoCriptografado,
             iv,
-            authTag
+            authTag,
           );
-          
-          this.logger.log(`Arquivo ${nomeArquivo} descriptografado com sucesso`);
+
+          this.logger.log(
+            `Arquivo ${nomeArquivo} descriptografado com sucesso`,
+          );
         } catch (error) {
-          this.logger.error(`Erro ao descriptografar arquivo: ${error.message}`);
-          throw new Error(`Falha ao descriptografar documento: ${error.message}`);
+          this.logger.error(
+            `Erro ao descriptografar arquivo: ${error.message}`,
+          );
+          throw new Error(
+            `Falha ao descriptografar documento: ${error.message}`,
+          );
         }
       }
-      
+
       // Verificar integridade do arquivo
       const hashOriginal = stat.metaData['x-amz-meta-hash'];
       const hashCalculado = this.criptografiaService.gerarHash(arquivoFinal);
-      
+
       if (hashOriginal !== hashCalculado) {
         this.logger.error(`Integridade do arquivo ${nomeArquivo} comprometida`);
-        throw new Error('A integridade do documento foi comprometida. O hash não corresponde ao original.');
+        throw new Error(
+          'A integridade do documento foi comprometida. O hash não corresponde ao original.',
+        );
       }
-      
+
       // Remover arquivo temporário
       fs.unlinkSync(tempFilePath);
-      
+
       return {
         arquivo: arquivoFinal,
         metadados: {
           nomeOriginal: stat.metaData['x-amz-meta-original-name'],
           contentType: stat.metaData['content-type'],
           tamanho: arquivoFinal.length,
-          criptografado
-        }
+          criptografado,
+        },
       };
     } catch (error) {
       this.logger.error(`Erro ao baixar arquivo do MinIO: ${error.message}`);
@@ -282,7 +321,7 @@ export class MinioService implements OnModuleInit {
    */
   private detectarMimeType(nomeArquivo: string): string {
     const extensao = path.extname(nomeArquivo).toLowerCase();
-    
+
     const mimeTypes = {
       '.pdf': 'application/pdf',
       '.jpg': 'image/jpeg',
@@ -292,19 +331,22 @@ export class MinioService implements OnModuleInit {
       '.tiff': 'image/tiff',
       '.tif': 'image/tiff',
       '.doc': 'application/msword',
-      '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      '.docx':
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       '.xls': 'application/vnd.ms-excel',
-      '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      '.xlsx':
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       '.ppt': 'application/vnd.ms-powerpoint',
-      '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      '.pptx':
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
       '.txt': 'text/plain',
       '.zip': 'application/zip',
       '.rar': 'application/x-rar-compressed',
       '.7z': 'application/x-7z-compressed',
       '.tar': 'application/x-tar',
-      '.gz': 'application/gzip'
+      '.gz': 'application/gzip',
     };
-    
+
     return mimeTypes[extensao] || 'application/octet-stream';
   }
 
@@ -314,16 +356,21 @@ export class MinioService implements OnModuleInit {
    * @param expiracaoSegundos Tempo de expiração da URL em segundos
    * @returns URL pré-assinada
    */
-  async gerarUrlPreAssinada(nomeArquivo: string, expiracaoSegundos = 3600): Promise<string> {
+  async gerarUrlPreAssinada(
+    nomeArquivo: string,
+    expiracaoSegundos = 3600,
+  ): Promise<string> {
     try {
       return await this.minioClient.presignedGetObject(
         this.bucketName,
         nomeArquivo,
-        expiracaoSegundos
+        expiracaoSegundos,
       );
     } catch (error) {
       this.logger.error(`Erro ao gerar URL pré-assinada: ${error.message}`);
-      throw new Error(`Falha ao gerar URL para acesso ao documento: ${error.message}`);
+      throw new Error(
+        `Falha ao gerar URL para acesso ao documento: ${error.message}`,
+      );
     }
   }
 }

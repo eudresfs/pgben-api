@@ -42,12 +42,19 @@ import { MinioService } from './services/minio.service';
     LoggingModule,
     MonitoringModule,
   ],
-  exports: [AppLoggerModule, ConfigModule, LoggingModule, MonitoringModule, CriptografiaService, MinioService],
+  exports: [
+    AppLoggerModule,
+    ConfigModule,
+    LoggingModule,
+    MonitoringModule,
+    CriptografiaService,
+    MinioService,
+  ],
   providers: [
     // Serviços compartilhados
     CriptografiaService,
     MinioService,
-    
+
     // Interceptores para logging e métricas
     { provide: APP_INTERCEPTOR, useClass: AppLoggingInterceptor },
     { provide: APP_INTERCEPTOR, useClass: LoggingInterceptor },

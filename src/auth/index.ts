@@ -15,7 +15,10 @@ export { AuthService } from './services/auth.service';
 export { LoginInput } from './dtos/auth-login-input.dto';
 export { RegisterInput } from './dtos/auth-register-input.dto';
 export { RegisterOutput } from './dtos/auth-register-output.dto';
-export { AuthTokenOutput, UserAccessTokenClaims } from './dtos/auth-token-output.dto';
+export {
+  AuthTokenOutput,
+  UserAccessTokenClaims,
+} from './dtos/auth-token-output.dto';
 
 // Enums
 export { Role } from '../shared/enums/role.enum';

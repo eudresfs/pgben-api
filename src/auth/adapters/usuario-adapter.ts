@@ -54,10 +54,12 @@ export class UsuarioAdapter {
     userOutput.username = usuario.email; // Usando email como username
     userOutput.email = usuario.email;
     userOutput.isAccountDisabled = usuario.status === 'inativo';
-    userOutput.created_at = usuario.created_at?.toISOString() || new Date().toISOString();
-    userOutput.updated_at = usuario.updated_at?.toISOString() || new Date().toISOString();
+    userOutput.created_at =
+      usuario.created_at?.toISOString() || new Date().toISOString();
+    userOutput.updated_at =
+      usuario.updated_at?.toISOString() || new Date().toISOString();
     userOutput.roles = [usuario.role as unknown as Role];
-    
+
     return userOutput;
   }
 

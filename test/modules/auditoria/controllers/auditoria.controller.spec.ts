@@ -47,7 +47,9 @@ describe('AuditoriaController', () => {
       createDto.usuario_id = 'mock-user-id';
 
       const mockResult = { id: 'mock-log-id', ...createDto };
-      jest.spyOn(service, 'create').mockResolvedValue(mockResult as LogAuditoria);
+      jest
+        .spyOn(service, 'create')
+        .mockResolvedValue(mockResult as LogAuditoria);
 
       const result = await controller.create(createDto);
 
@@ -73,7 +75,9 @@ describe('AuditoriaController', () => {
         },
       ];
 
-      jest.spyOn(service, 'findAll').mockResolvedValue(mockLogs as LogAuditoria[]);
+      jest
+        .spyOn(service, 'findAll')
+        .mockResolvedValue(mockLogs as LogAuditoria[]);
 
       const result = await controller.findAll({});
 
@@ -100,7 +104,9 @@ describe('AuditoriaController', () => {
         },
       ];
 
-      jest.spyOn(service, 'findAll').mockResolvedValue(mockLogs as LogAuditoria[]);
+      jest
+        .spyOn(service, 'findAll')
+        .mockResolvedValue(mockLogs as LogAuditoria[]);
 
       const result = await controller.findAll(filtros);
 
@@ -135,7 +141,9 @@ describe('AuditoriaController', () => {
     it('deve lançar NotFoundException quando o log não é encontrado', async () => {
       jest.spyOn(service, 'findOne').mockRejectedValue(new NotFoundException());
 
-      await expect(controller.findOne('non-existent-id')).rejects.toThrow(NotFoundException);
+      await expect(controller.findOne('non-existent-id')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -158,7 +166,9 @@ describe('AuditoriaController', () => {
         },
       ];
 
-      jest.spyOn(service, 'findByEntidade').mockResolvedValue(mockLogs as LogAuditoria[]);
+      jest
+        .spyOn(service, 'findByEntidade')
+        .mockResolvedValue(mockLogs as LogAuditoria[]);
 
       const result = await controller.findByEntidade('Usuario', 'user-1');
 
@@ -192,7 +202,9 @@ describe('AuditoriaController', () => {
     it('deve lançar NotFoundException quando o log não é encontrado', async () => {
       jest.spyOn(service, 'update').mockRejectedValue(new NotFoundException());
 
-      await expect(controller.update('non-existent-id', {})).rejects.toThrow(NotFoundException);
+      await expect(controller.update('non-existent-id', {})).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -216,7 +228,9 @@ describe('AuditoriaController', () => {
     it('deve lançar NotFoundException quando o log não é encontrado', async () => {
       jest.spyOn(service, 'remove').mockRejectedValue(new NotFoundException());
 
-      await expect(controller.remove('non-existent-id')).rejects.toThrow(NotFoundException);
+      await expect(controller.remove('non-existent-id')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 });

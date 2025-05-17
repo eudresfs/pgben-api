@@ -7,7 +7,7 @@ import {
   DeleteDateColumn,
   ManyToOne,
   JoinColumn,
-  Index
+  Index,
 } from 'typeorm';
 import { IsNotEmpty, IsOptional } from 'class-validator';
 import { Usuario } from '../../usuario/entities/usuario.entity';
@@ -87,7 +87,8 @@ export class Ocorrencia {
   @Column({
     type: 'enum',
     enum: StatusOcorrencia,
-    default: StatusOcorrencia.ABERTA
+    enumName: 'status_ocorrencia',
+    default: StatusOcorrencia.ABERTA,
   })
   status: StatusOcorrencia;
 

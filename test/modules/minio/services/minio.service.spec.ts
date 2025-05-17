@@ -25,20 +25,34 @@ describe('MinioService', () => {
         size: 100,
         etag: 'mock-etag',
         lastModified: new Date(),
-        metaData: { 'content-type': 'application/pdf' }
+        metaData: { 'content-type': 'application/pdf' },
       }),
       removeObject: jest.fn().mockResolvedValue(undefined),
       listObjects: jest.fn().mockImplementation(() => {
         const stream = require('stream');
         const readable = new stream.Readable({ objectMode: true });
         readable._read = () => {};
-        readable.push({ name: 'arquivo1.pdf', size: 100, lastModified: new Date() });
-        readable.push({ name: 'arquivo2.pdf', size: 200, lastModified: new Date() });
+        readable.push({
+          name: 'arquivo1.pdf',
+          size: 100,
+          lastModified: new Date(),
+        });
+        readable.push({
+          name: 'arquivo2.pdf',
+          size: 200,
+          lastModified: new Date(),
+        });
         readable.push(null);
         return readable;
       }),
-      presignedGetObject: jest.fn().mockResolvedValue('https://minio.exemplo.com/bucket/arquivo.pdf'),
-      presignedPutObject: jest.fn().mockResolvedValue('https://minio.exemplo.com/bucket/upload-arquivo.pdf')
+      presignedGetObject: jest
+        .fn()
+        .mockResolvedValue('https://minio.exemplo.com/bucket/arquivo.pdf'),
+      presignedPutObject: jest
+        .fn()
+        .mockResolvedValue(
+          'https://minio.exemplo.com/bucket/upload-arquivo.pdf',
+        ),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -53,8 +67,12 @@ describe('MinioService', () => {
         {
           provide: CriptografiaService,
           useValue: {
-            criptografarArquivo: jest.fn().mockImplementation(buffer => Buffer.from(`criptografado:${buffer.toString()}`)),
-            descriptografarArquivo: jest.fn().mockImplementation(buffer => {
+            criptografarArquivo: jest
+              .fn()
+              .mockImplementation((buffer) =>
+                Buffer.from(`criptografado:${buffer.toString()}`),
+              ),
+            descriptografarArquivo: jest.fn().mockImplementation((buffer) => {
               const str = buffer.toString();
               return Buffer.from(str.replace('criptografado:', ''));
             }),
@@ -79,7 +97,7 @@ describe('MinioService', () => {
 
     service = module.get<MinioService>(MinioService);
     criptografiaService = module.get<CriptografiaService>(CriptografiaService);
-    
+
     // Substitui o cliente Minio real pelo mock
     service['minioClient'] = mockMinioClient;
   });
@@ -91,18 +109,25 @@ describe('MinioService', () => {
   describe('inicializarBucket', () => {
     it('deve verificar se o bucket existe e não criar se já existir', async () => {
       await service.inicializarBucket();
-      
-      expect(mockMinioClient.bucketExists).toHaveBeenCalledWith('pgben-documentos');
+
+      expect(mockMinioClient.bucketExists).toHaveBeenCalledWith(
+        'pgben-documentos',
+      );
       expect(mockMinioClient.makeBucket).not.toHaveBeenCalled();
     });
 
     it('deve criar o bucket se não existir', async () => {
       mockMinioClient.bucketExists.mockResolvedValueOnce(false);
-      
+
       await service.inicializarBucket();
-      
-      expect(mockMinioClient.bucketExists).toHaveBeenCalledWith('pgben-documentos');
-      expect(mockMinioClient.makeBucket).toHaveBeenCalledWith('pgben-documentos', 'us-east-1');
+
+      expect(mockMinioClient.bucketExists).toHaveBeenCalledWith(
+        'pgben-documentos',
+      );
+      expect(mockMinioClient.makeBucket).toHaveBeenCalledWith(
+        'pgben-documentos',
+        'us-east-1',
+      );
     });
   });
 
@@ -114,10 +139,19 @@ describe('MinioService', () => {
       const contentType = 'application/pdf';
       const metadados = { usuario_id: '123', entidade_id: '456' };
       const criptografar = true;
-      
-      await service.uploadArquivo(buffer, nomeArquivo, bucket, contentType, metadados, criptografar);
-      
-      expect(criptografiaService.criptografarArquivo).toHaveBeenCalledWith(buffer);
+
+      await service.uploadArquivo(
+        buffer,
+        nomeArquivo,
+        bucket,
+        contentType,
+        metadados,
+        criptografar,
+      );
+
+      expect(criptografiaService.criptografarArquivo).toHaveBeenCalledWith(
+        buffer,
+      );
       expect(mockMinioClient.putObject).toHaveBeenCalledWith(
         bucket,
         nomeArquivo,
@@ -125,10 +159,10 @@ describe('MinioService', () => {
         expect.any(Number),
         expect.objectContaining({
           'Content-Type': contentType,
-          'usuario_id': '123',
-          'entidade_id': '456',
-          'criptografado': 'true'
-        })
+          usuario_id: '123',
+          entidade_id: '456',
+          criptografado: 'true',
+        }),
       );
     });
 
@@ -139,9 +173,16 @@ describe('MinioService', () => {
       const contentType = 'application/pdf';
       const metadados = { usuario_id: '123', entidade_id: '456' };
       const criptografar = false;
-      
-      await service.uploadArquivo(buffer, nomeArquivo, bucket, contentType, metadados, criptografar);
-      
+
+      await service.uploadArquivo(
+        buffer,
+        nomeArquivo,
+        bucket,
+        contentType,
+        metadados,
+        criptografar,
+      );
+
       expect(criptografiaService.criptografarArquivo).not.toHaveBeenCalled();
       expect(mockMinioClient.putObject).toHaveBeenCalledWith(
         bucket,
@@ -150,10 +191,10 @@ describe('MinioService', () => {
         buffer.length,
         expect.objectContaining({
           'Content-Type': contentType,
-          'usuario_id': '123',
-          'entidade_id': '456',
-          'criptografado': 'false'
-        })
+          usuario_id: '123',
+          entidade_id: '456',
+          criptografado: 'false',
+        }),
       );
     });
 
@@ -161,15 +202,15 @@ describe('MinioService', () => {
       const buffer = Buffer.from('conteúdo do arquivo');
       const nomeArquivo = 'documento.pdf';
       const contentType = 'application/pdf';
-      
+
       await service.uploadArquivo(buffer, nomeArquivo, null, contentType);
-      
+
       expect(mockMinioClient.putObject).toHaveBeenCalledWith(
         'pgben-documentos',
         nomeArquivo,
         expect.any(Buffer),
         expect.any(Number),
-        expect.any(Object)
+        expect.any(Object),
       );
     });
   });
@@ -177,15 +218,18 @@ describe('MinioService', () => {
   describe('downloadArquivo', () => {
     it('deve baixar e descriptografar um arquivo criptografado', async () => {
       mockMinioClient.statObject.mockResolvedValueOnce({
-        metaData: { 'content-type': 'application/pdf', 'criptografado': 'true' }
+        metaData: { 'content-type': 'application/pdf', criptografado: 'true' },
       });
-      
+
       const nomeArquivo = 'documento.pdf';
       const bucket = 'pgben-documentos';
-      
+
       const resultado = await service.downloadArquivo(nomeArquivo, bucket);
-      
-      expect(mockMinioClient.getObject).toHaveBeenCalledWith(bucket, nomeArquivo);
+
+      expect(mockMinioClient.getObject).toHaveBeenCalledWith(
+        bucket,
+        nomeArquivo,
+      );
       expect(criptografiaService.descriptografarArquivo).toHaveBeenCalled();
       expect(resultado.buffer).toBeDefined();
       expect(resultado.contentType).toBe('application/pdf');
@@ -193,15 +237,18 @@ describe('MinioService', () => {
 
     it('deve baixar sem descriptografar um arquivo não criptografado', async () => {
       mockMinioClient.statObject.mockResolvedValueOnce({
-        metaData: { 'content-type': 'application/pdf', 'criptografado': 'false' }
+        metaData: { 'content-type': 'application/pdf', criptografado: 'false' },
       });
-      
+
       const nomeArquivo = 'documento.pdf';
       const bucket = 'pgben-documentos';
-      
+
       const resultado = await service.downloadArquivo(nomeArquivo, bucket);
-      
-      expect(mockMinioClient.getObject).toHaveBeenCalledWith(bucket, nomeArquivo);
+
+      expect(mockMinioClient.getObject).toHaveBeenCalledWith(
+        bucket,
+        nomeArquivo,
+      );
       expect(criptografiaService.descriptografarArquivo).not.toHaveBeenCalled();
       expect(resultado.buffer).toBeDefined();
       expect(resultado.contentType).toBe('application/pdf');
@@ -209,14 +256,17 @@ describe('MinioService', () => {
 
     it('deve usar o bucket padrão quando não especificado', async () => {
       mockMinioClient.statObject.mockResolvedValueOnce({
-        metaData: { 'content-type': 'application/pdf', 'criptografado': 'false' }
+        metaData: { 'content-type': 'application/pdf', criptografado: 'false' },
       });
-      
+
       const nomeArquivo = 'documento.pdf';
-      
+
       await service.downloadArquivo(nomeArquivo);
-      
-      expect(mockMinioClient.getObject).toHaveBeenCalledWith('pgben-documentos', nomeArquivo);
+
+      expect(mockMinioClient.getObject).toHaveBeenCalledWith(
+        'pgben-documentos',
+        nomeArquivo,
+      );
     });
   });
 
@@ -224,18 +274,24 @@ describe('MinioService', () => {
     it('deve remover um arquivo do bucket', async () => {
       const nomeArquivo = 'documento.pdf';
       const bucket = 'pgben-documentos';
-      
+
       await service.removerArquivo(nomeArquivo, bucket);
-      
-      expect(mockMinioClient.removeObject).toHaveBeenCalledWith(bucket, nomeArquivo);
+
+      expect(mockMinioClient.removeObject).toHaveBeenCalledWith(
+        bucket,
+        nomeArquivo,
+      );
     });
 
     it('deve usar o bucket padrão quando não especificado', async () => {
       const nomeArquivo = 'documento.pdf';
-      
+
       await service.removerArquivo(nomeArquivo);
-      
-      expect(mockMinioClient.removeObject).toHaveBeenCalledWith('pgben-documentos', nomeArquivo);
+
+      expect(mockMinioClient.removeObject).toHaveBeenCalledWith(
+        'pgben-documentos',
+        nomeArquivo,
+      );
     });
   });
 
@@ -243,10 +299,14 @@ describe('MinioService', () => {
     it('deve listar arquivos de um bucket', async () => {
       const bucket = 'pgben-documentos';
       const prefix = 'usuario/123/';
-      
+
       const resultado = await service.listarArquivos(bucket, prefix);
-      
-      expect(mockMinioClient.listObjects).toHaveBeenCalledWith(bucket, prefix, true);
+
+      expect(mockMinioClient.listObjects).toHaveBeenCalledWith(
+        bucket,
+        prefix,
+        true,
+      );
       expect(resultado).toHaveLength(2);
       expect(resultado[0].nome).toBe('arquivo1.pdf');
       expect(resultado[1].nome).toBe('arquivo2.pdf');
@@ -254,10 +314,14 @@ describe('MinioService', () => {
 
     it('deve usar o bucket padrão quando não especificado', async () => {
       const prefix = 'usuario/123/';
-      
+
       await service.listarArquivos(null, prefix);
-      
-      expect(mockMinioClient.listObjects).toHaveBeenCalledWith('pgben-documentos', prefix, true);
+
+      expect(mockMinioClient.listObjects).toHaveBeenCalledWith(
+        'pgben-documentos',
+        prefix,
+        true,
+      );
     });
   });
 
@@ -266,19 +330,31 @@ describe('MinioService', () => {
       const nomeArquivo = 'documento.pdf';
       const bucket = 'pgben-documentos';
       const expiracaoSegundos = 300;
-      
-      const url = await service.gerarUrlDownload(nomeArquivo, bucket, expiracaoSegundos);
-      
-      expect(mockMinioClient.presignedGetObject).toHaveBeenCalledWith(bucket, nomeArquivo, expiracaoSegundos);
+
+      const url = await service.gerarUrlDownload(
+        nomeArquivo,
+        bucket,
+        expiracaoSegundos,
+      );
+
+      expect(mockMinioClient.presignedGetObject).toHaveBeenCalledWith(
+        bucket,
+        nomeArquivo,
+        expiracaoSegundos,
+      );
       expect(url).toBe('https://minio.exemplo.com/bucket/arquivo.pdf');
     });
 
     it('deve usar o bucket padrão quando não especificado', async () => {
       const nomeArquivo = 'documento.pdf';
-      
+
       await service.gerarUrlDownload(nomeArquivo);
-      
-      expect(mockMinioClient.presignedGetObject).toHaveBeenCalledWith('pgben-documentos', nomeArquivo, 60);
+
+      expect(mockMinioClient.presignedGetObject).toHaveBeenCalledWith(
+        'pgben-documentos',
+        nomeArquivo,
+        60,
+      );
     });
   });
 
@@ -287,19 +363,31 @@ describe('MinioService', () => {
       const nomeArquivo = 'documento.pdf';
       const bucket = 'pgben-documentos';
       const expiracaoSegundos = 300;
-      
-      const url = await service.gerarUrlUpload(nomeArquivo, bucket, expiracaoSegundos);
-      
-      expect(mockMinioClient.presignedPutObject).toHaveBeenCalledWith(bucket, nomeArquivo, expiracaoSegundos);
+
+      const url = await service.gerarUrlUpload(
+        nomeArquivo,
+        bucket,
+        expiracaoSegundos,
+      );
+
+      expect(mockMinioClient.presignedPutObject).toHaveBeenCalledWith(
+        bucket,
+        nomeArquivo,
+        expiracaoSegundos,
+      );
       expect(url).toBe('https://minio.exemplo.com/bucket/upload-arquivo.pdf');
     });
 
     it('deve usar o bucket padrão quando não especificado', async () => {
       const nomeArquivo = 'documento.pdf';
-      
+
       await service.gerarUrlUpload(nomeArquivo);
-      
-      expect(mockMinioClient.presignedPutObject).toHaveBeenCalledWith('pgben-documentos', nomeArquivo, 60);
+
+      expect(mockMinioClient.presignedPutObject).toHaveBeenCalledWith(
+        'pgben-documentos',
+        nomeArquivo,
+        60,
+      );
     });
   });
 });

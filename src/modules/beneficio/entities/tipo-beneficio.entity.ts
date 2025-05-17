@@ -6,7 +6,7 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
   OneToMany,
-  Index
+  Index,
 } from 'typeorm';
 import { IsNotEmpty, IsNumber, Min } from 'class-validator';
 import { Solicitacao } from '../../solicitacao/entities/solicitacao.entity';
@@ -38,7 +38,8 @@ export class TipoBeneficio {
   @Column({
     type: 'enum',
     enum: Periodicidade,
-    default: Periodicidade.UNICO
+    enumName: 'periodicidade',
+    default: Periodicidade.UNICO,
   })
   periodicidade: Periodicidade;
 
@@ -63,13 +64,13 @@ export class TipoBeneficio {
     outros?: string[];
   };
 
-  @OneToMany(() => RequisitoDocumento, requisito => requisito.tipo_beneficio)
+  @OneToMany(() => RequisitoDocumento, (requisito) => requisito.tipo_beneficio)
   requisitos_documentos: RequisitoDocumento[];
 
-  @OneToMany(() => CampoDinamicoBeneficio, campo => campo.tipo_beneficio)
+  @OneToMany(() => CampoDinamicoBeneficio, (campo) => campo.tipo_beneficio)
   campos_dinamicos: CampoDinamicoBeneficio[];
 
-  @OneToMany(() => Solicitacao, solicitacao => solicitacao.tipo_beneficio)
+  @OneToMany(() => Solicitacao, (solicitacao) => solicitacao.tipo_beneficio)
   solicitacao: Solicitacao[];
 
   @CreateDateColumn()

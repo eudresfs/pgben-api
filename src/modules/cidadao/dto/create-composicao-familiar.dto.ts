@@ -1,5 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsOptional, IsNotEmpty, IsDate, IsNumber } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsNotEmpty,
+  IsDate,
+  IsNumber,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 /**
@@ -8,35 +14,35 @@ import { Type } from 'class-transformer';
 export class CreateComposicaoFamiliarDto {
   @IsString({ message: 'Nome deve ser uma string' })
   @IsNotEmpty({ message: 'Nome é obrigatório' })
-  @ApiProperty({ 
+  @ApiProperty({
     example: 'João da Silva',
-    description: 'Nome completo do membro familiar'
+    description: 'Nome completo do membro familiar',
   })
   nome: string;
 
   @IsString({ message: 'Parentesco deve ser uma string' })
   @IsNotEmpty({ message: 'Parentesco é obrigatório' })
-  @ApiProperty({ 
+  @ApiProperty({
     example: 'filho',
-    description: 'Relação de parentesco com o cidadão'
+    description: 'Relação de parentesco com o cidadão',
   })
   parentesco: string;
 
   @IsDate()
   @Type(() => Date)
   @IsNotEmpty({ message: 'Data de nascimento é obrigatória' })
-  @ApiProperty({ 
+  @ApiProperty({
     example: '2010-05-20',
-    description: 'Data de nascimento do membro familiar'
+    description: 'Data de nascimento do membro familiar',
   })
   data_nascimento: Date;
 
   @IsNumber({}, { message: 'Renda deve ser um número' })
   @IsOptional()
-  @ApiProperty({ 
+  @ApiProperty({
     example: 0,
     description: 'Renda mensal do membro familiar',
-    required: false
+    required: false,
   })
   renda?: number;
 }

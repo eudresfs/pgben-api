@@ -1,13 +1,13 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { 
-  IsNotEmpty, 
-  IsString, 
-  IsUUID, 
-  IsOptional, 
+import {
+  IsNotEmpty,
+  IsString,
+  IsUUID,
+  IsOptional,
   IsObject,
   ValidateNested,
   IsArray,
-  ArrayMinSize
+  ArrayMinSize,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -15,17 +15,26 @@ import { Type } from 'class-transformer';
  * DTO para documento anexado à solicitação
  */
 export class DocumentoSolicitacaoDto {
-  @ApiProperty({ description: 'Nome do documento', example: 'Comprovante de Residência' })
+  @ApiProperty({
+    description: 'Nome do documento',
+    example: 'Comprovante de Residência',
+  })
   @IsNotEmpty({ message: 'Nome do documento é obrigatório' })
   @IsString({ message: 'Nome do documento deve ser um texto' })
   nome: string;
 
-  @ApiProperty({ description: 'Tipo do documento', example: 'comprovante_residencia' })
+  @ApiProperty({
+    description: 'Tipo do documento',
+    example: 'comprovante_residencia',
+  })
   @IsNotEmpty({ message: 'Tipo do documento é obrigatório' })
   @IsString({ message: 'Tipo do documento deve ser um texto' })
   tipo: string;
 
-  @ApiProperty({ description: 'URL ou caminho do arquivo', example: '/uploads/documentos/12345.pdf' })
+  @ApiProperty({
+    description: 'URL ou caminho do arquivo',
+    example: '/uploads/documentos/12345.pdf',
+  })
   @IsNotEmpty({ message: 'Caminho do arquivo é obrigatório' })
   @IsString({ message: 'Caminho do arquivo deve ser um texto' })
   arquivo_url: string;
@@ -50,7 +59,9 @@ export class CreateSolicitacaoDto {
   @IsUUID('4', { message: 'ID do tipo de benefício inválido' })
   tipo_beneficio_id: string;
 
-  @ApiProperty({ description: 'ID da unidade onde a solicitação está sendo feita' })
+  @ApiProperty({
+    description: 'ID da unidade onde a solicitação está sendo feita',
+  })
   @IsNotEmpty({ message: 'ID da unidade é obrigatório' })
   @IsUUID('4', { message: 'ID da unidade inválido' })
   unidade_id: string;
@@ -60,14 +71,16 @@ export class CreateSolicitacaoDto {
   @IsString({ message: 'Observações devem ser um texto' })
   observacoes?: string;
 
-  @ApiPropertyOptional({ description: 'Dados complementares específicos do tipo de benefício' })
+  @ApiPropertyOptional({
+    description: 'Dados complementares específicos do tipo de benefício',
+  })
   @IsOptional()
   @IsObject({ message: 'Dados complementares devem ser um objeto' })
   dados_complementares?: Record<string, any>;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Documentos anexados à solicitação',
-    type: [DocumentoSolicitacaoDto]
+    type: [DocumentoSolicitacaoDto],
   })
   @IsArray({ message: 'Documentos deve ser um array' })
   @ArrayMinSize(1, { message: 'Deve haver pelo menos um documento anexado' })

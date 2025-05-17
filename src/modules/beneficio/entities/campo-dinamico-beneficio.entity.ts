@@ -7,9 +7,16 @@ import {
   DeleteDateColumn,
   ManyToOne,
   JoinColumn,
-  Index
+  Index,
 } from 'typeorm';
-import { IsNotEmpty, IsEnum, IsOptional, IsBoolean, IsNumber, Min } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsEnum,
+  IsOptional,
+  IsBoolean,
+  IsNumber,
+  Min,
+} from 'class-validator';
 import { TipoBeneficio } from './tipo-beneficio.entity';
 
 /**
@@ -21,12 +28,12 @@ export enum TipoDado {
   BOOLEAN = 'boolean',
   DATE = 'date',
   ARRAY = 'array',
-  OBJECT = 'object'
+  OBJECT = 'object',
 }
 
 /**
  * Entidade para campos dinâmicos de benefícios
- * 
+ *
  * Permite definir campos específicos para cada tipo de benefício,
  * com validações e regras de negócio próprias.
  */
@@ -40,7 +47,10 @@ export class CampoDinamicoBeneficio {
   @IsNotEmpty({ message: 'Tipo de benefício é obrigatório' })
   tipo_beneficio_id: string;
 
-  @ManyToOne(() => TipoBeneficio, tipoBeneficio => tipoBeneficio.campos_dinamicos)
+  @ManyToOne(
+    () => TipoBeneficio,
+    (tipoBeneficio) => tipoBeneficio.campos_dinamicos,
+  )
   @JoinColumn({ name: 'tipo_beneficio_id' })
   tipo_beneficio: TipoBeneficio;
 
@@ -54,7 +64,8 @@ export class CampoDinamicoBeneficio {
 
   @Column({
     type: 'enum',
-    enum: TipoDado
+    enum: TipoDado,
+    enumName: 'tipo_dado',
   })
   @IsNotEmpty({ message: 'Tipo de dado é obrigatório' })
   @IsEnum(TipoDado, { message: 'Tipo de dado inválido' })

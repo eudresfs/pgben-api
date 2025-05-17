@@ -20,7 +20,8 @@ describe('CriptografiaService', () => {
           provide: ConfigService,
           useValue: {
             get: jest.fn((key: string) => {
-              if (key === 'ENCRYPTION_KEY') return 'chave-de-criptografia-de-32-caracteres';
+              if (key === 'ENCRYPTION_KEY')
+                return 'chave-de-criptografia-de-32-caracteres';
               if (key === 'ENCRYPTION_IV') return 'vetor-de-16-chars';
               return null;
             }),
@@ -41,10 +42,10 @@ describe('CriptografiaService', () => {
     it('deve criptografar um texto corretamente', () => {
       const textoOriginal = 'Dados sensíveis para criptografar';
       const textoCriptografado = service.criptografar(textoOriginal);
-      
+
       // O texto criptografado não deve ser igual ao original
       expect(textoCriptografado).not.toEqual(textoOriginal);
-      
+
       // O texto criptografado deve ser uma string não vazia
       expect(typeof textoCriptografado).toBe('string');
       expect(textoCriptografado.length).toBeGreaterThan(0);
@@ -52,10 +53,10 @@ describe('CriptografiaService', () => {
 
     it('deve gerar criptografias diferentes para o mesmo texto em chamadas distintas', () => {
       const textoOriginal = 'Dados sensíveis para criptografar';
-      
+
       const criptografia1 = service.criptografar(textoOriginal);
       const criptografia2 = service.criptografar(textoOriginal);
-      
+
       // Devido ao IV aleatório, as criptografias devem ser diferentes
       expect(criptografia1).not.toEqual(criptografia2);
     });
@@ -68,7 +69,7 @@ describe('CriptografiaService', () => {
     it('deve criptografar objetos convertendo-os para JSON', () => {
       const objetoOriginal = { nome: 'João', cpf: '123.456.789-00' };
       const textoCriptografado = service.criptografar(objetoOriginal);
-      
+
       // O texto criptografado deve ser uma string não vazia
       expect(typeof textoCriptografado).toBe('string');
       expect(textoCriptografado.length).toBeGreaterThan(0);
@@ -80,7 +81,7 @@ describe('CriptografiaService', () => {
       const textoOriginal = 'Dados sensíveis para criptografar';
       const textoCriptografado = service.criptografar(textoOriginal);
       const textoDescriptografado = service.descriptografar(textoCriptografado);
-      
+
       expect(textoDescriptografado).toEqual(textoOriginal);
     });
 
@@ -92,14 +93,15 @@ describe('CriptografiaService', () => {
     it('deve descriptografar e converter para objeto quando o conteúdo original era um objeto', () => {
       const objetoOriginal = { nome: 'João', cpf: '123.456.789-00' };
       const textoCriptografado = service.criptografar(objetoOriginal);
-      const objetoDescriptografado = service.descriptografarParaObjeto(textoCriptografado);
-      
+      const objetoDescriptografado =
+        service.descriptografarParaObjeto(textoCriptografado);
+
       expect(objetoDescriptografado).toEqual(objetoOriginal);
     });
 
     it('deve lançar erro ao tentar descriptografar um texto inválido', () => {
       const textoInvalido = 'texto-nao-criptografado';
-      
+
       expect(() => service.descriptografar(textoInvalido)).toThrow();
     });
   });
@@ -107,11 +109,12 @@ describe('CriptografiaService', () => {
   describe('criptografarArquivo', () => {
     it('deve criptografar um buffer de arquivo corretamente', () => {
       const conteudoOriginal = Buffer.from('Conteúdo do arquivo sensível');
-      const conteudoCriptografado = service.criptografarArquivo(conteudoOriginal);
-      
+      const conteudoCriptografado =
+        service.criptografarArquivo(conteudoOriginal);
+
       // O conteúdo criptografado não deve ser igual ao original
       expect(conteudoCriptografado.equals(conteudoOriginal)).toBe(false);
-      
+
       // O conteúdo criptografado deve ser um Buffer não vazio
       expect(Buffer.isBuffer(conteudoCriptografado)).toBe(true);
       expect(conteudoCriptografado.length).toBeGreaterThan(0);
@@ -126,9 +129,12 @@ describe('CriptografiaService', () => {
   describe('descriptografarArquivo', () => {
     it('deve descriptografar corretamente um buffer previamente criptografado', () => {
       const conteudoOriginal = Buffer.from('Conteúdo do arquivo sensível');
-      const conteudoCriptografado = service.criptografarArquivo(conteudoOriginal);
-      const conteudoDescriptografado = service.descriptografarArquivo(conteudoCriptografado);
-      
+      const conteudoCriptografado =
+        service.criptografarArquivo(conteudoOriginal);
+      const conteudoDescriptografado = service.descriptografarArquivo(
+        conteudoCriptografado,
+      );
+
       expect(conteudoDescriptografado.equals(conteudoOriginal)).toBe(true);
     });
 
@@ -139,7 +145,7 @@ describe('CriptografiaService', () => {
 
     it('deve lançar erro ao tentar descriptografar um buffer inválido', () => {
       const bufferInvalido = Buffer.from('buffer-nao-criptografado');
-      
+
       expect(() => service.descriptografarArquivo(bufferInvalido)).toThrow();
     });
   });
@@ -148,21 +154,21 @@ describe('CriptografiaService', () => {
     it('deve gerar um hash para uma string', () => {
       const textoOriginal = 'Texto para gerar hash';
       const hash = service.gerarHash(textoOriginal);
-      
+
       // O hash deve ser uma string não vazia
       expect(typeof hash).toBe('string');
       expect(hash.length).toBeGreaterThan(0);
-      
+
       // O hash não deve ser igual ao texto original
       expect(hash).not.toEqual(textoOriginal);
     });
 
     it('deve gerar o mesmo hash para o mesmo texto', () => {
       const textoOriginal = 'Texto para gerar hash';
-      
+
       const hash1 = service.gerarHash(textoOriginal);
       const hash2 = service.gerarHash(textoOriginal);
-      
+
       // Os hashes devem ser iguais
       expect(hash1).toEqual(hash2);
     });
@@ -170,10 +176,10 @@ describe('CriptografiaService', () => {
     it('deve gerar hashes diferentes para textos diferentes', () => {
       const texto1 = 'Texto 1';
       const texto2 = 'Texto 2';
-      
+
       const hash1 = service.gerarHash(texto1);
       const hash2 = service.gerarHash(texto2);
-      
+
       // Os hashes devem ser diferentes
       expect(hash1).not.toEqual(hash2);
     });
@@ -188,27 +194,27 @@ describe('CriptografiaService', () => {
     it('deve verificar corretamente um hash válido', () => {
       const textoOriginal = 'Texto para verificar hash';
       const hash = service.gerarHash(textoOriginal);
-      
+
       const resultado = service.verificarHash(textoOriginal, hash);
-      
+
       expect(resultado).toBe(true);
     });
 
     it('deve rejeitar um hash inválido', () => {
       const textoOriginal = 'Texto para verificar hash';
       const hashInvalido = 'hash-invalido';
-      
+
       const resultado = service.verificarHash(textoOriginal, hashInvalido);
-      
+
       expect(resultado).toBe(false);
     });
 
     it('deve rejeitar quando o texto é diferente do original', () => {
       const textoOriginal = 'Texto para verificar hash';
       const hash = service.gerarHash(textoOriginal);
-      
+
       const resultado = service.verificarHash('Texto diferente', hash);
-      
+
       expect(resultado).toBe(false);
     });
   });

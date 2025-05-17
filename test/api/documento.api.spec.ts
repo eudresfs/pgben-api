@@ -34,7 +34,8 @@ describe('Documento API', () => {
       getRepositoryToken(Documento),
     );
     minioService = moduleFixture.get<MinioService>(MinioService);
-    criptografiaService = moduleFixture.get<CriptografiaService>(CriptografiaService);
+    criptografiaService =
+      moduleFixture.get<CriptografiaService>(CriptografiaService);
     jwtService = moduleFixture.get<JwtService>(JwtService);
 
     // Gerar token de autenticação para testes
@@ -53,22 +54,28 @@ describe('Documento API', () => {
   beforeEach(async () => {
     // Limpar documentos antes de cada teste
     await documentoRepository.clear();
-    
+
     // Espiar o MinioService para evitar chamadas reais ao MinIO durante os testes
-    jest.spyOn(minioService, 'uploadArquivo').mockImplementation(async (arquivo, nomeArquivo, metadados) => {
-      return {
-        etag: 'mock-etag',
-        versionId: 'mock-version-id',
-      };
-    });
-    
-    jest.spyOn(minioService, 'downloadArquivo').mockImplementation(async (nomeArquivo) => {
-      return Buffer.from('Conteúdo mockado do arquivo');
-    });
-    
-    jest.spyOn(minioService, 'removerArquivo').mockImplementation(async (nomeArquivo) => {
-      return true;
-    });
+    jest
+      .spyOn(minioService, 'uploadArquivo')
+      .mockImplementation(async (arquivo, nomeArquivo, metadados) => {
+        return {
+          etag: 'mock-etag',
+          versionId: 'mock-version-id',
+        };
+      });
+
+    jest
+      .spyOn(minioService, 'downloadArquivo')
+      .mockImplementation(async (nomeArquivo) => {
+        return Buffer.from('Conteúdo mockado do arquivo');
+      });
+
+    jest
+      .spyOn(minioService, 'removerArquivo')
+      .mockImplementation(async (nomeArquivo) => {
+        return true;
+      });
   });
 
   afterAll(async () => {
@@ -109,8 +116,11 @@ describe('Documento API', () => {
 
     it('deve fazer upload de um documento sensível com criptografia', async () => {
       // Espiar o CriptografiaService para verificar se a criptografia é chamada
-      const spyCriptografar = jest.spyOn(criptografiaService, 'cryptografarBuffer');
-      
+      const spyCriptografar = jest.spyOn(
+        criptografiaService,
+        'cryptografarBuffer',
+      );
+
       // Act
       const response = await request(app.getHttpServer())
         .post('/api/documentos/upload')
@@ -129,7 +139,7 @@ describe('Documento API', () => {
       expect(response.body.criptografado).toBe(true);
       expect(response.body.iv).toBeDefined();
       expect(response.body.auth_tag).toBeDefined();
-      
+
       // Verificar se a criptografia foi chamada
       expect(spyCriptografar).toHaveBeenCalled();
     });
@@ -360,7 +370,8 @@ describe('Documento API', () => {
       await documentoRepository.save(documento);
 
       // Espiar o CriptografiaService para verificar se a descriptografia é chamada
-      const spyDescriptografar = jest.spyOn(criptografiaService, 'descriptografarBuffer')
+      const spyDescriptografar = jest
+        .spyOn(criptografiaService, 'descriptografarBuffer')
         .mockImplementation((dados, iv, authTag) => {
           return Buffer.from('Conteúdo descriptografado mockado');
         });
@@ -426,7 +437,9 @@ describe('Documento API', () => {
         where: { id: documento.id },
       });
       expect(deletedDoc).toBeNull();
-      expect(minioService.removerArquivo).toHaveBeenCalledWith('documentos/exclusao.pdf');
+      expect(minioService.removerArquivo).toHaveBeenCalledWith(
+        'documentos/exclusao.pdf',
+      );
     });
 
     it('deve retornar 404 ao tentar excluir documento inexistente', async () => {

@@ -8,13 +8,13 @@ import {
 
 /**
  * Migration: CreateDocumentoSchema
- * 
+ *
  * Descrição: Cria a estrutura do módulo de documento, incluindo tabelas para
  * modelos de documentos, templates, metadados e controle de versões.
- * 
+ *
  * Domínio: Documento
  * Dependências: 1040000-CreateSolicitacaoSchema.ts
- * 
+ *
  * @author Arquiteto de Dados
  * @date 16/05/2025
  */
@@ -627,36 +627,96 @@ export class CreateDocumentoSchema1050000 implements MigrationInterface {
     `);
 
     // 3. Remover chaves estrangeiras
-    await queryRunner.dropForeignKey('historico_versao_documento', 'FK_HISTORICO_VERSAO_USUARIO');
-    await queryRunner.dropForeignKey('historico_versao_documento', 'FK_HISTORICO_VERSAO_DOCUMENTO');
-    await queryRunner.dropForeignKey('assinatura_documento', 'FK_ASSINATURA_USUARIO');
-    await queryRunner.dropForeignKey('assinatura_documento', 'FK_ASSINATURA_DOCUMENTO');
-    await queryRunner.dropForeignKey('documento_gerado', 'FK_DOCUMENTO_GERADO_USUARIO');
-    await queryRunner.dropForeignKey('documento_gerado', 'FK_DOCUMENTO_GERADO_CIDADAO');
-    await queryRunner.dropForeignKey('documento_gerado', 'FK_DOCUMENTO_GERADO_SOLICITACAO');
-    await queryRunner.dropForeignKey('documento_gerado', 'FK_DOCUMENTO_GERADO_MODELO');
-    await queryRunner.dropForeignKey('modelo_documento', 'FK_MODELO_DOCUMENTO_CATEGORIA');
-    
+    await queryRunner.dropForeignKey(
+      'historico_versao_documento',
+      'FK_HISTORICO_VERSAO_USUARIO',
+    );
+    await queryRunner.dropForeignKey(
+      'historico_versao_documento',
+      'FK_HISTORICO_VERSAO_DOCUMENTO',
+    );
+    await queryRunner.dropForeignKey(
+      'assinatura_documento',
+      'FK_ASSINATURA_USUARIO',
+    );
+    await queryRunner.dropForeignKey(
+      'assinatura_documento',
+      'FK_ASSINATURA_DOCUMENTO',
+    );
+    await queryRunner.dropForeignKey(
+      'documento_gerado',
+      'FK_DOCUMENTO_GERADO_USUARIO',
+    );
+    await queryRunner.dropForeignKey(
+      'documento_gerado',
+      'FK_DOCUMENTO_GERADO_CIDADAO',
+    );
+    await queryRunner.dropForeignKey(
+      'documento_gerado',
+      'FK_DOCUMENTO_GERADO_SOLICITACAO',
+    );
+    await queryRunner.dropForeignKey(
+      'documento_gerado',
+      'FK_DOCUMENTO_GERADO_MODELO',
+    );
+    await queryRunner.dropForeignKey(
+      'modelo_documento',
+      'FK_MODELO_DOCUMENTO_CATEGORIA',
+    );
+
     // 4. Remover índices
-    await queryRunner.dropIndex('historico_versao_documento', 'IDX_HISTORICO_VERSAO_DOCUMENTO');
-    await queryRunner.dropIndex('assinatura_documento', 'IDX_ASSINATURA_USUARIO');
-    await queryRunner.dropIndex('assinatura_documento', 'IDX_ASSINATURA_DOCUMENTO');
-    await queryRunner.dropIndex('documento_gerado', 'IDX_DOCUMENTO_GERADO_CIDADAO');
-    await queryRunner.dropIndex('documento_gerado', 'IDX_DOCUMENTO_GERADO_SOLICITACAO');
-    await queryRunner.dropIndex('documento_gerado', 'IDX_DOCUMENTO_GERADO_MODELO');
-    await queryRunner.dropIndex('modelo_documento', 'IDX_MODELO_DOCUMENTO_ATIVO');
-    await queryRunner.dropIndex('modelo_documento', 'IDX_MODELO_DOCUMENTO_CATEGORIA');
-    await queryRunner.dropIndex('modelo_documento', 'IDX_MODELO_DOCUMENTO_TIPO');
-    await queryRunner.dropIndex('modelo_documento', 'IDX_MODELO_DOCUMENTO_NOME');
-    await queryRunner.dropIndex('categoria_documento', 'IDX_CATEGORIA_DOCUMENTO_NOME');
-    
+    await queryRunner.dropIndex(
+      'historico_versao_documento',
+      'IDX_HISTORICO_VERSAO_DOCUMENTO',
+    );
+    await queryRunner.dropIndex(
+      'assinatura_documento',
+      'IDX_ASSINATURA_USUARIO',
+    );
+    await queryRunner.dropIndex(
+      'assinatura_documento',
+      'IDX_ASSINATURA_DOCUMENTO',
+    );
+    await queryRunner.dropIndex(
+      'documento_gerado',
+      'IDX_DOCUMENTO_GERADO_CIDADAO',
+    );
+    await queryRunner.dropIndex(
+      'documento_gerado',
+      'IDX_DOCUMENTO_GERADO_SOLICITACAO',
+    );
+    await queryRunner.dropIndex(
+      'documento_gerado',
+      'IDX_DOCUMENTO_GERADO_MODELO',
+    );
+    await queryRunner.dropIndex(
+      'modelo_documento',
+      'IDX_MODELO_DOCUMENTO_ATIVO',
+    );
+    await queryRunner.dropIndex(
+      'modelo_documento',
+      'IDX_MODELO_DOCUMENTO_CATEGORIA',
+    );
+    await queryRunner.dropIndex(
+      'modelo_documento',
+      'IDX_MODELO_DOCUMENTO_TIPO',
+    );
+    await queryRunner.dropIndex(
+      'modelo_documento',
+      'IDX_MODELO_DOCUMENTO_NOME',
+    );
+    await queryRunner.dropIndex(
+      'categoria_documento',
+      'IDX_CATEGORIA_DOCUMENTO_NOME',
+    );
+
     // 5. Remover tabelas
     await queryRunner.dropTable('historico_versao_documento');
     await queryRunner.dropTable('assinatura_documento');
     await queryRunner.dropTable('documento_gerado');
     await queryRunner.dropTable('modelo_documento');
     await queryRunner.dropTable('categoria_documento');
-    
+
     // 6. Remover tipos enumerados
     await queryRunner.query(`
       DROP TYPE IF EXISTS "formato_documento_enum";

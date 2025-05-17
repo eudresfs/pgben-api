@@ -6,7 +6,7 @@ import * as path from 'path';
 
 /**
  * Serviço de Criptografia
- * 
+ *
  * Responsável por criptografar e descriptografar dados sensíveis,
  * especialmente documentos armazenados no MinIO.
  * Implementa criptografia AES-256-GCM para garantir confidencialidade
@@ -24,15 +24,16 @@ export class CriptografiaService {
 
   constructor(private configService: ConfigService) {
     // Obter ou gerar a chave mestra para criptografia
-    this.keyPath = this.configService.get<string>('ENCRYPTION_KEY_PATH') || 
-                   path.join(process.cwd(), 'config', 'encryption.key');
-    
+    this.keyPath =
+      this.configService.get<string>('ENCRYPTION_KEY_PATH') ||
+      path.join(process.cwd(), 'config', 'encryption.key');
+
     // Garantir que o diretório da chave existe
     const keyDir = path.dirname(this.keyPath);
     if (!fs.existsSync(keyDir)) {
       fs.mkdirSync(keyDir, { recursive: true });
     }
-    
+
     // Verificar se a chave já existe, caso contrário, criar uma nova
     if (fs.existsSync(this.keyPath)) {
       this.masterKey = fs.readFileSync(this.keyPath);
@@ -49,28 +50,28 @@ export class CriptografiaService {
    * @param data Buffer a ser criptografado
    * @returns Objeto com dados criptografados, IV e tag de autenticação
    */
-  criptografarBuffer(data: Buffer): { 
-    dadosCriptografados: Buffer; 
-    iv: Buffer; 
+  criptografarBuffer(data: Buffer): {
+    dadosCriptografados: Buffer;
+    iv: Buffer;
     authTag: Buffer;
   } {
     // Gerar IV (Initialization Vector) aleatório
     const iv = crypto.randomBytes(this.ivLength);
-    
+
     // Criar cipher com algoritmo, chave e IV
     const cipher = crypto.createCipheriv(this.algorithm, this.masterKey, iv, {
-      authTagLength: this.authTagLength
+      authTagLength: this.authTagLength,
     });
-    
+
     // Criptografar dados
     const dadosCriptografados = Buffer.concat([
       cipher.update(data),
-      cipher.final()
+      cipher.final(),
     ]);
-    
+
     // Obter tag de autenticação
     const authTag = cipher.getAuthTag();
-    
+
     return { dadosCriptografados, iv, authTag };
   }
 
@@ -84,27 +85,34 @@ export class CriptografiaService {
   descriptografarBuffer(
     dadosCriptografados: Buffer,
     iv: Buffer,
-    authTag: Buffer
+    authTag: Buffer,
   ): Buffer {
     try {
       // Criar decipher com algoritmo, chave e IV
-      const decipher = crypto.createDecipheriv(this.algorithm, this.masterKey, iv, {
-        authTagLength: this.authTagLength
-      });
-      
+      const decipher = crypto.createDecipheriv(
+        this.algorithm,
+        this.masterKey,
+        iv,
+        {
+          authTagLength: this.authTagLength,
+        },
+      );
+
       // Definir tag de autenticação para verificação
       decipher.setAuthTag(authTag);
-      
+
       // Descriptografar dados
       const dadosDescriptografados = Buffer.concat([
         decipher.update(dadosCriptografados),
-        decipher.final()
+        decipher.final(),
       ]);
-      
+
       return dadosDescriptografados;
     } catch (error) {
       this.logger.error(`Erro ao descriptografar dados: ${error.message}`);
-      throw new Error('Falha na descriptografia. Os dados podem ter sido corrompidos ou adulterados.');
+      throw new Error(
+        'Falha na descriptografia. Os dados podem ter sido corrompidos ou adulterados.',
+      );
     }
   }
 
@@ -114,23 +122,26 @@ export class CriptografiaService {
    * @param caminhoDestino Caminho onde o arquivo criptografado será salvo
    * @returns Metadados de criptografia (IV e tag de autenticação)
    */
-  criptografarArquivo(caminhoArquivo: string, caminhoDestino: string): {
+  criptografarArquivo(
+    caminhoArquivo: string,
+    caminhoDestino: string,
+  ): {
     iv: string;
     authTag: string;
   } {
     // Ler arquivo
     const dados = fs.readFileSync(caminhoArquivo);
-    
+
     // Criptografar dados
     const { dadosCriptografados, iv, authTag } = this.criptografarBuffer(dados);
-    
+
     // Salvar arquivo criptografado
     fs.writeFileSync(caminhoDestino, dadosCriptografados);
-    
+
     // Retornar metadados de criptografia em formato base64
     return {
       iv: iv.toString('base64'),
-      authTag: authTag.toString('base64')
+      authTag: authTag.toString('base64'),
     };
   }
 
@@ -145,22 +156,22 @@ export class CriptografiaService {
     caminhoArquivo: string,
     caminhoDestino: string,
     iv: string,
-    authTag: string
+    authTag: string,
   ): void {
     // Ler arquivo criptografado
     const dadosCriptografados = fs.readFileSync(caminhoArquivo);
-    
+
     // Converter IV e authTag de base64 para Buffer
     const ivBuffer = Buffer.from(iv, 'base64');
     const authTagBuffer = Buffer.from(authTag, 'base64');
-    
+
     // Descriptografar dados
     const dadosDescriptografados = this.descriptografarBuffer(
       dadosCriptografados,
       ivBuffer,
-      authTagBuffer
+      authTagBuffer,
     );
-    
+
     // Salvar arquivo descriptografado
     fs.writeFileSync(caminhoDestino, dadosDescriptografados);
   }
@@ -174,25 +185,27 @@ export class CriptografiaService {
   criptografarParaTransporte(data: Buffer): Buffer {
     // Criptografar dados
     const { dadosCriptografados, iv, authTag } = this.criptografarBuffer(data);
-    
+
     // Criar buffer com formato: [IV_LENGTH(2)][IV(16)][AUTH_TAG_LENGTH(2)][AUTH_TAG(16)][ENCRYPTED_DATA]
-    const resultado = Buffer.alloc(4 + iv.length + authTag.length + dadosCriptografados.length);
-    
+    const resultado = Buffer.alloc(
+      4 + iv.length + authTag.length + dadosCriptografados.length,
+    );
+
     // Escrever tamanho do IV (2 bytes)
     resultado.writeUInt16BE(iv.length, 0);
-    
+
     // Escrever IV
     iv.copy(resultado, 2);
-    
+
     // Escrever tamanho da tag de autenticação (2 bytes)
     resultado.writeUInt16BE(authTag.length, 2 + iv.length);
-    
+
     // Escrever tag de autenticação
     authTag.copy(resultado, 4 + iv.length);
-    
+
     // Escrever dados criptografados
     dadosCriptografados.copy(resultado, 4 + iv.length + authTag.length);
-    
+
     return resultado;
   }
 
@@ -204,19 +217,19 @@ export class CriptografiaService {
   descriptografarDeTransporte(data: Buffer): Buffer {
     // Ler tamanho do IV (2 bytes)
     const ivLength = data.readUInt16BE(0);
-    
+
     // Ler IV
     const iv = data.slice(2, 2 + ivLength);
-    
+
     // Ler tamanho da tag de autenticação (2 bytes)
     const authTagLength = data.readUInt16BE(2 + ivLength);
-    
+
     // Ler tag de autenticação
     const authTag = data.slice(4 + ivLength, 4 + ivLength + authTagLength);
-    
+
     // Ler dados criptografados
     const dadosCriptografados = data.slice(4 + ivLength + authTagLength);
-    
+
     // Descriptografar dados
     return this.descriptografarBuffer(dadosCriptografados, iv, authTag);
   }

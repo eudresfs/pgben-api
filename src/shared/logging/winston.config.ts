@@ -6,7 +6,7 @@ import * as path from 'path';
 
 /**
  * Configuração do Winston para logging
- * 
+ *
  * Define os formatos, níveis e destinos dos logs da aplicação
  */
 export const winstonConfig: WinstonModuleOptions = {
@@ -23,7 +23,7 @@ export const winstonConfig: WinstonModuleOptions = {
       ),
       level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
     }),
-    
+
     // Arquivo de log para todos os níveis
     new winston.transports.DailyRotateFile({
       dirname: path.join(process.cwd(), 'logs'),
@@ -38,7 +38,7 @@ export const winstonConfig: WinstonModuleOptions = {
       ),
       level: 'info',
     }),
-    
+
     // Arquivo de log específico para erros
     new winston.transports.DailyRotateFile({
       dirname: path.join(process.cwd(), 'logs'),

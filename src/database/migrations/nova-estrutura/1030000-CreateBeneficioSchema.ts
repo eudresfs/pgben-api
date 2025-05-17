@@ -8,13 +8,13 @@ import {
 
 /**
  * Migration: CreateBeneficioSchema
- * 
+ *
  * Descrição: Cria a estrutura do módulo de benefício, incluindo tabelas para
  * tipos de benefício, requisitos documentais, campos dinâmicos e fluxos de aprovação.
- * 
+ *
  * Domínio: Benefício
  * Dependências: 1020000-CreateCidadaoSchema.ts
- * 
+ *
  * @author Arquiteto de Dados
  * @date 16/05/2025
  */
@@ -616,30 +616,63 @@ export class CreateBeneficioSchema1030000 implements MigrationInterface {
     `);
 
     // 3. Remover chaves estrangeiras
-    await queryRunner.dropForeignKey('versao_schema_beneficio', 'FK_VERSAO_SCHEMA_TIPO_BENEFICIO');
-    await queryRunner.dropForeignKey('campo_dinamico_beneficio', 'FK_CAMPO_DINAMICO_TIPO_BENEFICIO');
-    await queryRunner.dropForeignKey('fluxo_beneficio', 'FK_FLUXO_BENEFICIO_SETOR');
-    await queryRunner.dropForeignKey('fluxo_beneficio', 'FK_FLUXO_BENEFICIO_TIPO_BENEFICIO');
-    await queryRunner.dropForeignKey('requisito_documento', 'FK_REQUISITO_DOCUMENTO_TIPO_BENEFICIO');
-    
+    await queryRunner.dropForeignKey(
+      'versao_schema_beneficio',
+      'FK_VERSAO_SCHEMA_TIPO_BENEFICIO',
+    );
+    await queryRunner.dropForeignKey(
+      'campo_dinamico_beneficio',
+      'FK_CAMPO_DINAMICO_TIPO_BENEFICIO',
+    );
+    await queryRunner.dropForeignKey(
+      'fluxo_beneficio',
+      'FK_FLUXO_BENEFICIO_SETOR',
+    );
+    await queryRunner.dropForeignKey(
+      'fluxo_beneficio',
+      'FK_FLUXO_BENEFICIO_TIPO_BENEFICIO',
+    );
+    await queryRunner.dropForeignKey(
+      'requisito_documento',
+      'FK_REQUISITO_DOCUMENTO_TIPO_BENEFICIO',
+    );
+
     // 4. Remover índices
-    await queryRunner.dropIndex('versao_schema_beneficio', 'IDX_VERSAO_SCHEMA_ATIVO');
-    await queryRunner.dropIndex('versao_schema_beneficio', 'IDX_VERSAO_SCHEMA_TIPO_BENEFICIO');
-    await queryRunner.dropIndex('campo_dinamico_beneficio', 'IDX_CAMPO_DINAMICO_TIPO_BENEFICIO');
+    await queryRunner.dropIndex(
+      'versao_schema_beneficio',
+      'IDX_VERSAO_SCHEMA_ATIVO',
+    );
+    await queryRunner.dropIndex(
+      'versao_schema_beneficio',
+      'IDX_VERSAO_SCHEMA_TIPO_BENEFICIO',
+    );
+    await queryRunner.dropIndex(
+      'campo_dinamico_beneficio',
+      'IDX_CAMPO_DINAMICO_TIPO_BENEFICIO',
+    );
     await queryRunner.dropIndex('fluxo_beneficio', 'IDX_FLUXO_BENEFICIO_SETOR');
-    await queryRunner.dropIndex('fluxo_beneficio', 'IDX_FLUXO_BENEFICIO_TIPO_BENEFICIO');
-    await queryRunner.dropIndex('requisito_documento', 'IDX_REQUISITO_DOCUMENTO_FASE');
-    await queryRunner.dropIndex('requisito_documento', 'IDX_REQUISITO_DOCUMENTO_TIPO_BENEFICIO');
+    await queryRunner.dropIndex(
+      'fluxo_beneficio',
+      'IDX_FLUXO_BENEFICIO_TIPO_BENEFICIO',
+    );
+    await queryRunner.dropIndex(
+      'requisito_documento',
+      'IDX_REQUISITO_DOCUMENTO_FASE',
+    );
+    await queryRunner.dropIndex(
+      'requisito_documento',
+      'IDX_REQUISITO_DOCUMENTO_TIPO_BENEFICIO',
+    );
     await queryRunner.dropIndex('tipo_beneficio', 'IDX_TIPO_BENEFICIO_ATIVO');
     await queryRunner.dropIndex('tipo_beneficio', 'IDX_TIPO_BENEFICIO_NOME');
-    
+
     // 5. Remover tabelas
     await queryRunner.dropTable('versao_schema_beneficio');
     await queryRunner.dropTable('campo_dinamico_beneficio');
     await queryRunner.dropTable('fluxo_beneficio');
     await queryRunner.dropTable('requisito_documento');
     await queryRunner.dropTable('tipo_beneficio');
-    
+
     // 6. Remover tipos enumerados
     await queryRunner.query(`
       DROP TYPE IF EXISTS "tipo_campo_enum";

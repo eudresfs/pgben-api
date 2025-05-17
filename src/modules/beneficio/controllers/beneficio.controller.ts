@@ -1,5 +1,20 @@
-import { Controller, Get, Post, Body, Put, Param, Query, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Put,
+  Param,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { BeneficioService } from '../services/beneficio.service';
 import { CreateTipoBeneficioDto } from '../dto/create-tipo-beneficio.dto';
 import { UpdateTipoBeneficioDto } from '../dto/update-tipo-beneficio.dto';
@@ -12,7 +27,7 @@ import { Role } from '../../../shared/enums/role.enum';
 
 /**
  * Controlador de benefícios
- * 
+ *
  * Responsável por gerenciar as rotas relacionadas a tipos de benefícios
  */
 @ApiTags('beneficios')
@@ -27,11 +42,34 @@ export class BeneficioController {
    */
   @Get()
   @ApiOperation({ summary: 'Listar tipos de benefícios' })
-  @ApiResponse({ status: 200, description: 'Lista de benefícios retornada com sucesso' })
-  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Página atual' })
-  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Itens por página' })
-  @ApiQuery({ name: 'search', required: false, type: String, description: 'Termo de busca (nome)' })
-  @ApiQuery({ name: 'ativo', required: false, type: Boolean, description: 'Filtro por status' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de benefícios retornada com sucesso',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Página atual',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Itens por página',
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    type: String,
+    description: 'Termo de busca (nome)',
+  })
+  @ApiQuery({
+    name: 'ativo',
+    required: false,
+    type: Boolean,
+    description: 'Filtro por status',
+  })
   async findAll(
     @Query('page') page?: number,
     @Query('limit') limit?: number,
@@ -80,7 +118,10 @@ export class BeneficioController {
   @ApiResponse({ status: 400, description: 'Dados inválidos' })
   @ApiResponse({ status: 404, description: 'Benefício não encontrado' })
   @ApiResponse({ status: 409, description: 'Nome já em uso' })
-  async update(@Param('id') id: string, @Body() updateTipoBeneficioDto: UpdateTipoBeneficioDto) {
+  async update(
+    @Param('id') id: string,
+    @Body() updateTipoBeneficioDto: UpdateTipoBeneficioDto,
+  ) {
     return this.beneficioService.update(id, updateTipoBeneficioDto);
   }
 
@@ -89,7 +130,10 @@ export class BeneficioController {
    */
   @Get(':id/requisitos')
   @ApiOperation({ summary: 'Listar requisitos documentais' })
-  @ApiResponse({ status: 200, description: 'Lista de requisitos retornada com sucesso' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de requisitos retornada com sucesso',
+  })
   @ApiResponse({ status: 404, description: 'Benefício não encontrado' })
   async findRequisitos(@Param('id') id: string) {
     return this.beneficioService.findRequisitosByBeneficioId(id);

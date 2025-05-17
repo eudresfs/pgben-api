@@ -1,17 +1,30 @@
-import { 
-  Entity, 
-  PrimaryGeneratedColumn, 
-  Column, 
-  CreateDateColumn, 
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
   UpdateDateColumn,
   ManyToOne,
-  JoinColumn
+  JoinColumn,
 } from 'typeorm';
 import { TipoBeneficio } from './tipo-beneficio.entity';
 
 /**
+ * Enum para os status possíveis de uma solicitação de benefício
+ */
+export enum StatusSolicitacaoBeneficio {
+  PENDENTE = 'PENDENTE',
+  ANALISE = 'ANALISE',
+  APROVADA = 'APROVADA',
+  REJEITADA = 'REJEITADA',
+  CANCELADA = 'CANCELADA',
+  EM_PROCESSAMENTO = 'EM_PROCESSAMENTO',
+  CONCLUIDA = 'CONCLUIDA'
+}
+
+/**
  * Entidade de Solicitação de Benefício
- * 
+ *
  * Armazena as solicitações de benefícios com suporte a dados dinâmicos
  * específicos para cada tipo de benefício.
  */
@@ -39,13 +52,14 @@ export class SolicitacaoBeneficio {
   @Column({ name: 'versao_schema', type: 'integer' })
   versao_schema: number;
 
-  @Column({ 
-    name: 'status', 
-    type: 'varchar', 
-    length: 50,
-    default: 'PENDENTE'
+  @Column({
+    name: 'status',
+    type: 'enum',
+    enum: StatusSolicitacaoBeneficio,
+    enumName: 'status_solicitacao_beneficio',
+    default: StatusSolicitacaoBeneficio.PENDENTE,
   })
-  status: string;
+  status: StatusSolicitacaoBeneficio;
 
   @CreateDateColumn({ name: 'created_at' })
   created_at: Date;

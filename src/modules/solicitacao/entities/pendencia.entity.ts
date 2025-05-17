@@ -7,7 +7,7 @@ import {
   DeleteDateColumn,
   ManyToOne,
   JoinColumn,
-  Index
+  Index,
 } from 'typeorm';
 import { IsNotEmpty, IsOptional } from 'class-validator';
 import { Solicitacao } from './solicitacao.entity';
@@ -48,7 +48,8 @@ export class Pendencia {
   @Column({
     type: 'enum',
     enum: StatusPendencia,
-    default: StatusPendencia.ABERTA
+    enumName: 'status_pendencia',
+    default: StatusPendencia.ABERTA,
   })
   status: StatusPendencia;
 

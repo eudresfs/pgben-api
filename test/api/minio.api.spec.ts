@@ -36,37 +36,62 @@ describe('MinIO API', () => {
 
     // Criar arquivo temporário para testes
     testFilePath = path.join(__dirname, '..', 'temp-test-file.txt');
-    fs.writeFileSync(testFilePath, 'Conteúdo de teste para upload direto no MinIO');
+    fs.writeFileSync(
+      testFilePath,
+      'Conteúdo de teste para upload direto no MinIO',
+    );
   });
 
   beforeEach(async () => {
     // Espiar o MinioService para evitar chamadas reais ao MinIO durante os testes
-    jest.spyOn(minioService, 'uploadArquivo').mockImplementation(async (arquivo, nomeArquivo, metadados) => {
-      return {
-        etag: 'mock-etag',
-        versionId: 'mock-version-id',
-      };
-    });
-    
-    jest.spyOn(minioService, 'downloadArquivo').mockImplementation(async (nomeArquivo) => {
-      return Buffer.from('Conteúdo mockado do arquivo');
-    });
-    
-    jest.spyOn(minioService, 'removerArquivo').mockImplementation(async (nomeArquivo) => {
-      return true;
-    });
+    jest
+      .spyOn(minioService, 'uploadArquivo')
+      .mockImplementation(async (arquivo, nomeArquivo, metadados) => {
+        return {
+          etag: 'mock-etag',
+          versionId: 'mock-version-id',
+        };
+      });
 
-    jest.spyOn(minioService, 'listarArquivos').mockImplementation(async (prefix, recursive) => {
-      return [
-        { name: 'documentos/arquivo1.pdf', size: 1024, lastModified: new Date() },
-        { name: 'documentos/arquivo2.pdf', size: 2048, lastModified: new Date() },
-        { name: 'documentos/arquivo3.pdf', size: 3072, lastModified: new Date() }
-      ];
-    });
+    jest
+      .spyOn(minioService, 'downloadArquivo')
+      .mockImplementation(async (nomeArquivo) => {
+        return Buffer.from('Conteúdo mockado do arquivo');
+      });
 
-    jest.spyOn(minioService, 'verificarArquivoExiste').mockImplementation(async (nomeArquivo) => {
-      return nomeArquivo.includes('existe');
-    });
+    jest
+      .spyOn(minioService, 'removerArquivo')
+      .mockImplementation(async (nomeArquivo) => {
+        return true;
+      });
+
+    jest
+      .spyOn(minioService, 'listarArquivos')
+      .mockImplementation(async (prefix, recursive) => {
+        return [
+          {
+            name: 'documentos/arquivo1.pdf',
+            size: 1024,
+            lastModified: new Date(),
+          },
+          {
+            name: 'documentos/arquivo2.pdf',
+            size: 2048,
+            lastModified: new Date(),
+          },
+          {
+            name: 'documentos/arquivo3.pdf',
+            size: 3072,
+            lastModified: new Date(),
+          },
+        ];
+      });
+
+    jest
+      .spyOn(minioService, 'verificarArquivoExiste')
+      .mockImplementation(async (nomeArquivo) => {
+        return nomeArquivo.includes('existe');
+      });
   });
 
   afterAll(async () => {
@@ -124,13 +149,17 @@ describe('MinIO API', () => {
 
       // Assert
       expect(response.body).toBeInstanceOf(Buffer);
-      expect(minioService.downloadArquivo).toHaveBeenCalledWith('testes/arquivo-existe.txt');
+      expect(minioService.downloadArquivo).toHaveBeenCalledWith(
+        'testes/arquivo-existe.txt',
+      );
     });
 
     it('deve retornar 404 para arquivo inexistente', async () => {
       // Configurar o mock para retornar false para verificação de existência
-      jest.spyOn(minioService, 'verificarArquivoExiste').mockResolvedValueOnce(false);
-      
+      jest
+        .spyOn(minioService, 'verificarArquivoExiste')
+        .mockResolvedValueOnce(false);
+
       // Act & Assert
       await request(app.getHttpServer())
         .get('/api/storage/download/testes/arquivo-nao-existe.txt')
@@ -161,7 +190,10 @@ describe('MinIO API', () => {
       expect(response.body[0]).toHaveProperty('name');
       expect(response.body[0]).toHaveProperty('size');
       expect(response.body[0]).toHaveProperty('lastModified');
-      expect(minioService.listarArquivos).toHaveBeenCalledWith('documentos/', true);
+      expect(minioService.listarArquivos).toHaveBeenCalledWith(
+        'documentos/',
+        true,
+      );
     });
 
     it('deve requerer autenticação para listar arquivos', async () => {
@@ -183,13 +215,17 @@ describe('MinIO API', () => {
 
       // Assert
       expect(response.body).toHaveProperty('success', true);
-      expect(minioService.removerArquivo).toHaveBeenCalledWith('testes/arquivo-existe.txt');
+      expect(minioService.removerArquivo).toHaveBeenCalledWith(
+        'testes/arquivo-existe.txt',
+      );
     });
 
     it('deve retornar 404 para arquivo inexistente', async () => {
       // Configurar o mock para retornar false para verificação de existência
-      jest.spyOn(minioService, 'verificarArquivoExiste').mockResolvedValueOnce(false);
-      
+      jest
+        .spyOn(minioService, 'verificarArquivoExiste')
+        .mockResolvedValueOnce(false);
+
       // Act & Assert
       await request(app.getHttpServer())
         .delete('/api/storage/testes/arquivo-nao-existe.txt')
@@ -214,13 +250,17 @@ describe('MinIO API', () => {
         .expect(200);
 
       // Assert
-      expect(minioService.verificarArquivoExiste).toHaveBeenCalledWith('testes/arquivo-existe.txt');
+      expect(minioService.verificarArquivoExiste).toHaveBeenCalledWith(
+        'testes/arquivo-existe.txt',
+      );
     });
 
     it('deve retornar 404 para arquivo inexistente', async () => {
       // Configurar o mock para retornar false para verificação de existência
-      jest.spyOn(minioService, 'verificarArquivoExiste').mockResolvedValueOnce(false);
-      
+      jest
+        .spyOn(minioService, 'verificarArquivoExiste')
+        .mockResolvedValueOnce(false);
+
       // Act & Assert
       await request(app.getHttpServer())
         .head('/api/storage/testes/arquivo-nao-existe.txt')

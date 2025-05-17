@@ -7,15 +7,13 @@ import { LoggingService } from '../logging/logging.service';
 
 /**
  * Módulo Global de Logging
- * 
+ *
  * Configura o sistema de logging para toda a aplicação
  * usando Winston como provedor de logs
  */
 @Global()
 @Module({
-  imports: [
-    WinstonModule.forRoot(winstonConfig),
-  ],
+  imports: [WinstonModule.forRoot(winstonConfig)],
   providers: [LoggingService],
   exports: [LoggingService],
 })

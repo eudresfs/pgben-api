@@ -7,14 +7,12 @@ import { Usuario } from './entities/usuario.entity';
 
 /**
  * Módulo de usuários
- * 
+ *
  * Responsável por gerenciar os usuários do sistema, incluindo
  * cadastro, autenticação, perfis e permissões.
  */
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([Usuario]),
-  ],
+  imports: [TypeOrmModule.forFeature([Usuario])],
   controllers: [UsuarioController],
   providers: [UsuarioService, UsuarioRepository],
   exports: [UsuarioService, UsuarioRepository],

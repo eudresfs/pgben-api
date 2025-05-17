@@ -4,7 +4,7 @@ import { Cidadao } from '../entities/cidadao.entity';
 
 /**
  * Repositório de cidadãos
- * 
+ *
  * Responsável por operações de acesso a dados relacionadas a cidadãos
  */
 @Injectable()
@@ -26,8 +26,13 @@ export class CidadaoRepository {
     where?: any;
     order?: any;
   }): Promise<[Cidadao[], number]> {
-    const { skip = 0, take = 10, where = {}, order = { created_at: 'DESC' } } = options || {};
-    
+    const {
+      skip = 0,
+      take = 10,
+      where = {},
+      order = { created_at: 'DESC' },
+    } = options || {};
+
     return this.repository.findAndCount({
       skip,
       take,
@@ -53,12 +58,9 @@ export class CidadaoRepository {
   async findByCpf(cpf: string): Promise<Cidadao | null> {
     // Normaliza o CPF removendo caracteres não numéricos
     const cpfNormalizado = cpf.replace(/\D/g, '');
-    
-    return this.repository.findOne({ 
-      where: [
-        { cpf: cpfNormalizado },
-        { cpf }
-      ] 
+
+    return this.repository.findOne({
+      where: [{ cpf: cpfNormalizado }, { cpf }],
     });
   }
 
@@ -70,12 +72,9 @@ export class CidadaoRepository {
   async findByNis(nis: string): Promise<Cidadao | null> {
     // Normaliza o NIS removendo caracteres não numéricos
     const nisNormalizado = nis.replace(/\D/g, '');
-    
-    return this.repository.findOne({ 
-      where: [
-        { nis: nisNormalizado },
-        { nis }
-      ] 
+
+    return this.repository.findOne({
+      where: [{ nis: nisNormalizado }, { nis }],
     });
   }
 
@@ -89,12 +88,12 @@ export class CidadaoRepository {
     if (data.cpf) {
       data.cpf = data.cpf.replace(/\D/g, '');
     }
-    
+
     // Normaliza o NIS removendo caracteres não numéricos
     if (data.nis) {
       data.nis = data.nis.replace(/\D/g, '');
     }
-    
+
     const cidadao = this.repository.create(data);
     return this.repository.save(cidadao);
   }
@@ -110,7 +109,7 @@ export class CidadaoRepository {
     if (data.nis) {
       data.nis = data.nis.replace(/\D/g, '');
     }
-    
+
     await this.repository.update(id, data);
     const cidadao = await this.findById(id);
     if (!cidadao) {
@@ -127,24 +126,24 @@ export class CidadaoRepository {
    */
   async addComposicaoFamiliar(id: string, membro: any): Promise<Cidadao> {
     const cidadao = await this.findById(id);
-    
+
     if (!cidadao) {
       throw new Error('Cidadão não encontrado');
     }
-    
+
     // Inicializa a composição familiar se não existir
     if (!cidadao.composicao_familiar) {
       cidadao.composicao_familiar = [];
     }
-    
+
     // Adiciona o novo membro
     cidadao.composicao_familiar.push(membro);
-    
+
     // Atualiza o cidadão
     await this.repository.update(id, {
-      composicao_familiar: cidadao.composicao_familiar
+      composicao_familiar: cidadao.composicao_familiar,
     });
-    
+
     const cidadaoAtualizado = await this.findById(id);
     if (!cidadaoAtualizado) {
       throw new Error('Cidadão não encontrado após atualização');

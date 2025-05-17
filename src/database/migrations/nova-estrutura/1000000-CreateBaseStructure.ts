@@ -8,13 +8,13 @@ import {
 
 /**
  * Migration: CreateBaseStructure
- * 
+ *
  * Descrição: Cria a estrutura base do banco de dados, incluindo extensões PostgreSQL,
  * schemas e tabelas fundamentais para o funcionamento do sistema.
- * 
+ *
  * Domínio: Base
  * Dependências: Nenhuma
- * 
+ *
  * @author Arquiteto de Dados
  * @date 16/05/2025
  */
@@ -347,8 +347,14 @@ export class CreateBaseStructure1000000 implements MigrationInterface {
     `);
 
     // 2. Remover índices
-    await queryRunner.dropIndex('configuracao_sistema', 'IDX_CONFIGURACAO_CATEGORIA');
-    await queryRunner.dropIndex('configuracao_sistema', 'IDX_CONFIGURACAO_CHAVE');
+    await queryRunner.dropIndex(
+      'configuracao_sistema',
+      'IDX_CONFIGURACAO_CATEGORIA',
+    );
+    await queryRunner.dropIndex(
+      'configuracao_sistema',
+      'IDX_CONFIGURACAO_CHAVE',
+    );
 
     // 3. Remover tabela de configurações
     await queryRunner.dropTable('configuracao_sistema');

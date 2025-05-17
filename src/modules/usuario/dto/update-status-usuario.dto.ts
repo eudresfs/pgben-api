@@ -6,10 +6,10 @@ import { IsEnum } from 'class-validator';
  */
 export class UpdateStatusUsuarioDto {
   @IsEnum(['ativo', 'inativo'], { message: 'Status deve ser ativo ou inativo' })
-  @ApiProperty({ 
+  @ApiProperty({
     enum: ['ativo', 'inativo'],
     example: 'ativo',
-    description: 'Status do usuário'
+    description: 'Status do usuário',
   })
   status: string;
 }

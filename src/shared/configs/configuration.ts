@@ -7,8 +7,12 @@ const loadJwtKeys = () => {
       throw new Error('JWT keys are not properly configured');
     }
 
-    const publicKey = Buffer.from(publicKeyBase64, 'base64').toString('utf8').trim();
-    const privateKey = Buffer.from(privateKeyBase64, 'base64').toString('utf8').trim();
+    const publicKey = Buffer.from(publicKeyBase64, 'base64')
+      .toString('utf8')
+      .trim();
+    const privateKey = Buffer.from(privateKeyBase64, 'base64')
+      .toString('utf8')
+      .trim();
 
     return {
       publicKey,
@@ -16,13 +20,15 @@ const loadJwtKeys = () => {
     };
   } catch (error) {
     console.error('Failed to load JWT keys:', error);
-    throw new Error('Failed to load JWT keys. Please check your configuration.');
+    throw new Error(
+      'Failed to load JWT keys. Please check your configuration.',
+    );
   }
 };
 
 export default (): any => {
   const jwtKeys = loadJwtKeys();
-  
+
   return {
     env: process.env.APP_ENV,
     port: process.env.APP_PORT,
@@ -44,6 +50,7 @@ export default (): any => {
         10,
       ),
     },
-    defaultAdminUserPassword: process.env.DEFAULT_ADMIN_USER_PASSWORD || 'admin',
+    defaultAdminUserPassword:
+      process.env.DEFAULT_ADMIN_USER_PASSWORD || 'admin',
   };
 };

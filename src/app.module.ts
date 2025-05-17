@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
+import { CacheModule } from '@nestjs/cache-manager';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ScheduleAdapterModule } from './shared/schedule/schedule-adapter.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { SharedModule } from './shared/shared.module';
@@ -11,12 +13,12 @@ import { CidadaoModule } from './modules/cidadao/cidadao.module';
 import { BeneficioModule } from './modules/beneficio/beneficio.module';
 import { SolicitacaoModule } from './modules/solicitacao/solicitacao.module';
 import { DocumentoModule } from './modules/documento/documento.module';
-import { RelatorioModule } from './modules/relatorio/relatorio.module';
+import { RelatoriosUnificadoModule } from './modules/relatorios-unificado/relatorios-unificado.module';
 import { NotificacaoModule } from './modules/notificacao/notificacao.module';
-// Módulos de segurança e observabilidade
 import { AuditoriaModule } from './modules/auditoria/auditoria.module';
 import { MetricasModule } from './modules/metricas/metricas.module';
-// import { OcorrenciaModule } from './modules/ocorrencia/ocorrencia.module';
+import { BullModule } from '@nestjs/bull';
+import { getBullConfig } from './config/bull.config';
 
 @Module({
   imports: [
@@ -26,6 +28,16 @@ import { MetricasModule } from './modules/metricas/metricas.module';
       envFilePath: '.env',
     }),
     
+    // Configuração do agendador de tarefas personalizado
+    ScheduleAdapterModule,
+
+    // Cache para relatórios
+    CacheModule.register({
+      isGlobal: true,
+      ttl: 3600, // tempo de vida do cache: 1 hora
+      max: 100, // máximo de 100 itens no cache
+    }),
+
     // Configuração do TypeORM
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
@@ -42,10 +54,17 @@ import { MetricasModule } from './modules/metricas/metricas.module';
         logging: configService.get('NODE_ENV') === 'development',
       }),
     }),
-    
+
+    // Configuração centralizada do Bull
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: getBullConfig,
+    }),
+
     // Módulos compartilhados
     SharedModule,
-    
+
     // Módulos da aplicação
     AuthModule,
     UsuarioModule,
@@ -54,13 +73,12 @@ import { MetricasModule } from './modules/metricas/metricas.module';
     BeneficioModule,
     SolicitacaoModule,
     DocumentoModule,
-    RelatorioModule,
+    RelatoriosUnificadoModule,
     NotificacaoModule,
-    
+
     // Módulos de segurança e observabilidade
-    AuditoriaModule,
+    AuditoriaModule, // Módulo global de auditoria
     MetricasModule,
-    // OcorrenciaModule,
   ],
   controllers: [AppController],
   providers: [AppService],

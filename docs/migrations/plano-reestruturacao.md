@@ -36,21 +36,21 @@ Este documento detalha o plano completo para a reestruturação das migrations d
 - [x] 3.7 Implementar migration de auditoria (1060000-CreateAuditoriaSchema.ts)
 - [x] 3.8 Implementar migration de relatório (1070000-CreateRelatorioSchema.ts)
 - [x] 3.9 Implementar migration de integração (1080000-CreateIntegracaoSchema.ts)
-- [ ] 3.10 Criar seeds essenciais (core)
-- [ ] 3.11 Criar seeds de referência (reference)
-- [ ] 3.12 Criar seeds de desenvolvimento (development)
-- [ ] 3.13 Implementar utilitários para seeds (utils)
+- [x] 3.10 Criar seeds essenciais (core)
+- [x] 3.11 Criar seeds de referência (reference)
+- [x] 3.12 Criar seeds de desenvolvimento (development)
+- [x] 3.13 Implementar utilitários para seeds (utils)
 
 ### Fase 4: Testes
-- [ ] 4.1 Criar ambiente de teste limpo
-- [ ] 4.2 Executar migrations em ordem
-- [ ] 4.3 Verificar integridade referencial
-- [ ] 4.4 Testar operações down() de cada migration
-- [ ] 4.5 Executar seeds e verificar consistência
-- [ ] 4.6 Testar políticas RLS
-- [ ] 4.7 Validar performance de queries críticas
-- [ ] 4.8 Testar particionamento de tabelas
-- [ ] 4.9 Documentar resultados dos testes
+- [x] 4.1 Criar ambiente de teste limpo
+- [x] 4.2 Executar migrations em ordem
+- [x] 4.3 Verificar integridade referencial
+- [x] 4.4 Testar operações down() de cada migration
+- [x] 4.5 Executar seeds e verificar consistência
+- [x] 4.6 Testar políticas RLS
+- [x] 4.7 Validar performance de queries críticas
+- [x] 4.8 Testar particionamento de tabelas
+- [x] 4.9 Documentar resultados dos testes
 
 ### Fase 5: Documentação
 - [ ] 5.1 Atualizar README principal

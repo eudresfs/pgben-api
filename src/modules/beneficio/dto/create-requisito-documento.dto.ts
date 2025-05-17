@@ -1,40 +1,49 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, IsBoolean, IsOptional, MaxLength, IsEnum } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsString,
+  IsBoolean,
+  IsOptional,
+  MaxLength,
+  IsEnum,
+} from 'class-validator';
 import { TipoDocumento } from '../entities/requisito-documento.entity';
 
 /**
  * DTO para criação de requisito documental
- * 
+ *
  * Define os documentos necessários para solicitação de um benefício
  */
 export class CreateRequisitoDocumentoDto {
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Tipo do documento requerido',
     enum: TipoDocumento,
-    example: TipoDocumento.COMPROVANTE_RESIDENCIA
+    example: TipoDocumento.COMPROVANTE_RESIDENCIA,
   })
   @IsNotEmpty({ message: 'Tipo de documento é obrigatório' })
   @IsEnum(TipoDocumento, { message: 'Tipo de documento inválido' })
   tipo_documento: TipoDocumento;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Descrição do documento e suas especificações',
-    example: 'Comprovante de residência dos últimos 3 meses (conta de água, luz ou telefone)'
+    example:
+      'Comprovante de residência dos últimos 3 meses (conta de água, luz ou telefone)',
   })
   @IsNotEmpty({ message: 'Descrição é obrigatória' })
   @IsString({ message: 'Descrição deve ser um texto' })
   descricao: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Indica se o documento é obrigatório para a solicitação',
-    default: true
+    default: true,
   })
   @IsBoolean({ message: 'Obrigatoriedade deve ser um booleano' })
   obrigatorio: boolean;
 
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     description: 'Observações adicionais sobre o documento',
-    example: 'Caso não possua comprovante em seu nome, apresentar declaração do titular'
+    example:
+      'Caso não possua comprovante em seu nome, apresentar declaração do titular',
   })
   @IsOptional()
   @IsString({ message: 'Observações devem ser um texto' })

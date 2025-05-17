@@ -1,22 +1,25 @@
-import { 
-  Injectable, 
-  NotFoundException, 
-  ConflictException, 
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
   BadRequestException,
   InternalServerErrorException,
-  Logger
+  Logger,
 } from '@nestjs/common';
 import { CacheService } from '../../../shared/cache';
 import { CidadaoRepository } from '../repositories/cidadao.repository';
 import { CreateCidadaoDto } from '../dto/create-cidadao.dto';
 import { UpdateCidadaoDto } from '../dto/update-cidadao.dto';
-import { CidadaoResponseDto, CidadaoPaginatedResponseDto } from '../dto/cidadao-response.dto';
+import {
+  CidadaoResponseDto,
+  CidadaoPaginatedResponseDto,
+} from '../dto/cidadao-response.dto';
 import { plainToInstance } from 'class-transformer';
 import { PapelCidadaoService } from './papel-cidadao.service';
 
 /**
  * Serviço de cidadãos
- * 
+ *
  * Responsável pela lógica de negócio relacionada a cidadãos/beneficiários
  */
 @Injectable()
@@ -44,18 +47,18 @@ export class CidadaoService {
     unidadeId?: string;
     ativo?: boolean;
   }): Promise<CidadaoPaginatedResponseDto> {
-    const { 
-      page = 1, 
-      limit = 10, 
-      search, 
-      bairro, 
-      unidadeId, 
-      ativo 
+    const {
+      page = 1,
+      limit = 10,
+      search,
+      bairro,
+      unidadeId,
+      ativo,
     } = options || {};
-    
+
     // Construir filtros
     const where: any = {};
-    
+
     // Aplicar filtro de busca (nome, CPF ou NIS)
     if (search) {
       where.$or = [
@@ -64,7 +67,7 @@ export class CidadaoService {
         { nis: { $iLike: `%${search.replace(/\D/g, '')}%` } },
       ];
     }
-    
+
     // Aplicar filtro de bairro
     if (bairro) {
       where['endereco.bairro'] = { $iLike: `%${bairro}%` };
@@ -74,15 +77,15 @@ export class CidadaoService {
     if (ativo !== undefined) {
       where.ativo = ativo;
     }
-    
+
     // Aplicar filtro de unidade (se fornecido)
     if (unidadeId) {
       where.unidadeId = unidadeId;
     }
-    
+
     // Calcular skip para paginação
     const skip = (page - 1) * limit;
-    
+
     try {
       // Buscar cidadãos
       const [cidadaos, total] = await this.cidadaoRepository.findAll({
@@ -91,20 +94,20 @@ export class CidadaoService {
         take: limit,
         order: { nome: 'ASC' },
       });
-      
+
       // Calcular totais para paginação
       const pages = Math.ceil(total / limit);
       const hasNext = page < pages;
       const hasPrev = page > 1;
-      
+
       // Mapear para o DTO de resposta
-      const items = cidadaos.map(cidadao => 
-        plainToInstance(CidadaoResponseDto, cidadao, { 
+      const items = cidadaos.map((cidadao) =>
+        plainToInstance(CidadaoResponseDto, cidadao, {
           excludeExtraneousValues: true,
-          enableImplicitConversion: true 
-        })
+          enableImplicitConversion: true,
+        }),
       );
-      
+
       return {
         items,
         meta: {
@@ -131,32 +134,36 @@ export class CidadaoService {
     try {
       // Verificar cache
       const cacheKey = `${this.CACHE_PREFIX}id:${id}`;
-      const cachedCidadao = await this.cacheService.get<CidadaoResponseDto>(cacheKey);
-      
+      const cachedCidadao =
+        await this.cacheService.get<CidadaoResponseDto>(cacheKey);
+
       if (cachedCidadao) {
         this.logger.debug(`Cache hit para cidadão ID: ${id}`);
         return cachedCidadao;
       }
-      
+
       this.logger.debug(`Cache miss para cidadão ID: ${id}`);
       const cidadao = await this.cidadaoRepository.findById(id);
-      
+
       if (!cidadao) {
         throw new NotFoundException('Cidadão não encontrado');
       }
-      
-      const cidadaoDto = plainToInstance(CidadaoResponseDto, cidadao, { 
+
+      const cidadaoDto = plainToInstance(CidadaoResponseDto, cidadao, {
         excludeExtraneousValues: true,
-        enableImplicitConversion: true 
+        enableImplicitConversion: true,
       });
-      
+
       // Armazenar no cache
       await this.cacheService.set(cacheKey, cidadaoDto, this.CACHE_TTL);
-      
+
       return cidadaoDto;
     } catch (error) {
       if (error instanceof NotFoundException) throw error;
-      this.logger.error(`Erro ao buscar cidadão: ${error.message}`, error.stack);
+      this.logger.error(
+        `Erro ao buscar cidadão: ${error.message}`,
+        error.stack,
+      );
       throw new InternalServerErrorException('Erro ao buscar cidadão');
     }
   }
@@ -171,43 +178,55 @@ export class CidadaoService {
   async findByCpf(cpf: string): Promise<CidadaoResponseDto> {
     // Remover formatação do CPF
     const cpfLimpo = cpf.replace(/\D/g, '');
-    
+
     // Validar CPF
     if (cpfLimpo.length !== 11 || !/^\d{11}$/.test(cpfLimpo)) {
       throw new BadRequestException('CPF inválido');
     }
-    
+
     try {
       // Verificar cache
       const cacheKey = `${this.CACHE_PREFIX}cpf:${cpfLimpo}`;
-      const cachedCidadao = await this.cacheService.get<CidadaoResponseDto>(cacheKey);
-      
+      const cachedCidadao =
+        await this.cacheService.get<CidadaoResponseDto>(cacheKey);
+
       if (cachedCidadao) {
         this.logger.debug(`Cache hit para cidadão CPF: ${cpfLimpo}`);
         return cachedCidadao;
       }
-      
+
       this.logger.debug(`Cache miss para cidadão CPF: ${cpfLimpo}`);
       const cidadao = await this.cidadaoRepository.findByCpf(cpfLimpo);
-      
+
       if (!cidadao) {
         throw new NotFoundException('Cidadão não encontrado');
       }
-      
-      const cidadaoDto = plainToInstance(CidadaoResponseDto, cidadao, { 
+
+      const cidadaoDto = plainToInstance(CidadaoResponseDto, cidadao, {
         excludeExtraneousValues: true,
-        enableImplicitConversion: true 
+        enableImplicitConversion: true,
       });
-      
+
       // Armazenar no cache
       await this.cacheService.set(cacheKey, cidadaoDto, this.CACHE_TTL);
       // Também armazenar por ID para referência cruzada
-      await this.cacheService.set(`${this.CACHE_PREFIX}id:${cidadao.id}`, cidadaoDto, this.CACHE_TTL);
-      
+      await this.cacheService.set(
+        `${this.CACHE_PREFIX}id:${cidadao.id}`,
+        cidadaoDto,
+        this.CACHE_TTL,
+      );
+
       return cidadaoDto;
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof BadRequestException) throw error;
-      this.logger.error(`Erro ao buscar cidadão por CPF: ${error.message}`, error.stack);
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      )
+        throw error;
+      this.logger.error(
+        `Erro ao buscar cidadão por CPF: ${error.message}`,
+        error.stack,
+      );
       throw new InternalServerErrorException('Erro ao buscar cidadão por CPF');
     }
   }
@@ -222,45 +241,62 @@ export class CidadaoService {
   async findByNis(nis: string): Promise<CidadaoResponseDto> {
     // Remover formatação do NIS
     const nisLimpo = nis.replace(/\D/g, '');
-    
+
     // Validar NIS
     if (nisLimpo.length !== 11 || !/^\d{11}$/.test(nisLimpo)) {
       throw new BadRequestException('NIS inválido');
     }
-    
+
     try {
       // Verificar cache
       const cacheKey = `${this.CACHE_PREFIX}nis:${nisLimpo}`;
-      const cachedCidadao = await this.cacheService.get<CidadaoResponseDto>(cacheKey);
-      
+      const cachedCidadao =
+        await this.cacheService.get<CidadaoResponseDto>(cacheKey);
+
       if (cachedCidadao) {
         this.logger.debug(`Cache hit para cidadão NIS: ${nisLimpo}`);
         return cachedCidadao;
       }
-      
+
       this.logger.debug(`Cache miss para cidadão NIS: ${nisLimpo}`);
       const cidadao = await this.cidadaoRepository.findByNis(nisLimpo);
-      
+
       if (!cidadao) {
         throw new NotFoundException('Cidadão não encontrado');
       }
-      
-      const cidadaoDto = plainToInstance(CidadaoResponseDto, cidadao, { 
+
+      const cidadaoDto = plainToInstance(CidadaoResponseDto, cidadao, {
         excludeExtraneousValues: true,
-        enableImplicitConversion: true 
+        enableImplicitConversion: true,
       });
-      
+
       // Armazenar no cache
-      await this.cacheService.set(`${this.CACHE_PREFIX}id:${cidadao.id}`, cidadaoDto, this.CACHE_TTL);
-      await this.cacheService.set(`${this.CACHE_PREFIX}cpf:${cidadao.cpf}`, cidadaoDto, this.CACHE_TTL);
-      
+      await this.cacheService.set(
+        `${this.CACHE_PREFIX}id:${cidadao.id}`,
+        cidadaoDto,
+        this.CACHE_TTL,
+      );
+      await this.cacheService.set(
+        `${this.CACHE_PREFIX}cpf:${cidadao.cpf}`,
+        cidadaoDto,
+        this.CACHE_TTL,
+      );
+
       if (cidadao.nis) {
-        await this.cacheService.set(`${this.CACHE_PREFIX}nis:${cidadao.nis}`, cidadaoDto, this.CACHE_TTL);
+        await this.cacheService.set(
+          `${this.CACHE_PREFIX}nis:${cidadao.nis}`,
+          cidadaoDto,
+          this.CACHE_TTL,
+        );
       }
-      
+
       return cidadaoDto;
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof BadRequestException) throw error;
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      )
+        throw error;
       throw new InternalServerErrorException('Erro ao buscar cidadão por NIS');
     }
   }
@@ -281,77 +317,86 @@ export class CidadaoService {
     try {
       // Invalidar cache por ID
       await this.cacheService.del(`${this.CACHE_PREFIX}id:${cidadao.id}`);
-      
+
       // Invalidar cache por CPF
       if (cidadao.cpf) {
         await this.cacheService.del(`${this.CACHE_PREFIX}cpf:${cidadao.cpf}`);
       }
-      
+
       // Invalidar cache por NIS
       if (cidadao.nis) {
         await this.cacheService.del(`${this.CACHE_PREFIX}nis:${cidadao.nis}`);
       }
-      
+
       // Invalidar cache de listagens
       await this.cacheService.del(`${this.CACHE_PREFIX}list:*`);
     } catch (error) {
-      this.logger.error(`Erro ao invalidar cache: ${error.message}`, error.stack);
+      this.logger.error(
+        `Erro ao invalidar cache: ${error.message}`,
+        error.stack,
+      );
     }
   }
 
   async create(
-    createCidadaoDto: CreateCidadaoDto, 
+    createCidadaoDto: CreateCidadaoDto,
     unidadeId: string,
-    userId: string
+    userId: string,
   ): Promise<CidadaoResponseDto> {
     // Remover formatação do CPF e NIS
     const cpfLimpo = createCidadaoDto.cpf.replace(/\D/g, '');
     const nisLimpo = createCidadaoDto.nis?.replace(/\D/g, '') || null;
-    
+
     try {
       // Verificar se já existe cidadão com o mesmo CPF
       const cpfExists = await this.cidadaoRepository.findByCpf(cpfLimpo);
-      
+
       if (cpfExists) {
-        throw new ConflictException('Já existe um cidadão cadastrado com este CPF');
+        throw new ConflictException(
+          'Já existe um cidadão cadastrado com este CPF',
+        );
       }
-      
+
       // Verificar se já existe cidadão com o mesmo NIS (se fornecido)
       if (nisLimpo) {
         const nisExists = await this.cidadaoRepository.findByNis(nisLimpo);
-        
+
         if (nisExists) {
-          throw new ConflictException('Já existe um cidadão cadastrado com este NIS');
+          throw new ConflictException(
+            'Já existe um cidadão cadastrado com este NIS',
+          );
         }
       }
-      
+
       // Extrair papéis do DTO para processar separadamente
       const { papeis, ...cidadaoData } = createCidadaoDto;
-      
+
       // Criar o cidadão
       const cidadaoCriado = await this.cidadaoRepository.create({
         ...cidadaoData,
         cpf: cpfLimpo,
-        nis: nisLimpo || undefined
+        nis: nisLimpo || undefined,
       });
-      
+
       // Criar papéis para o cidadão, se fornecidos
       if (papeis && papeis.length > 0) {
         await this.papelCidadaoService.createMany(
           cidadaoCriado.id,
-          papeis.map(papel => ({
+          papeis.map((papel) => ({
             tipo_papel: papel.tipo_papel,
-            metadados: papel.metadados
-          }))
+            metadados: papel.metadados,
+          })),
         );
       }
-      
+
       // Buscar cidadão com papéis para retornar
-      const cidadaoCompleto = await this.cidadaoRepository.findById(cidadaoCriado.id);
-      
-      return plainToInstance(CidadaoResponseDto, cidadaoCompleto, { 
+      const cidadaoCompleto = await this.cidadaoRepository.findById(
+        cidadaoCriado.id,
+      );
+
+      return plainToInstance(CidadaoResponseDto, cidadaoCompleto, {
         excludeExtraneousValues: true,
-        enableImplicitConversion: true 
+        enableImplicitConversion: true,
       });
     } catch (error) {
       if (error instanceof ConflictException) throw error;
@@ -369,79 +414,108 @@ export class CidadaoService {
    * @throws ConflictException se já existir outro cidadão com o mesmo CPF ou NIS
    */
   async update(
-    id: string, 
+    id: string,
     updateCidadaoDto: UpdateCidadaoDto,
-    userId: string
+    userId: string,
   ): Promise<CidadaoResponseDto> {
     try {
       // Verificar se o cidadão existe
       const cidadao = await this.cidadaoRepository.findById(id);
-      
+
       if (!cidadao) {
         throw new NotFoundException('Cidadão não encontrado');
       }
-      
+
       const updateData: any = { ...updateCidadaoDto };
-      
+
       // Verificar se o CPF foi alterado e se já existe outro cidadão com o novo CPF
       if (updateCidadaoDto.cpf) {
         const cpfLimpo = updateCidadaoDto.cpf.replace(/\D/g, '');
-        
+
         if (cpfLimpo !== cidadao.cpf) {
           const cpfExists = await this.cidadaoRepository.findByCpf(cpfLimpo);
-          
+
           if (cpfExists) {
-            throw new ConflictException('Já existe um cidadão cadastrado com este CPF');
+            throw new ConflictException(
+              'Já existe um cidadão cadastrado com este CPF',
+            );
           }
-          
+
           // Atualizar o CPF formatado
           updateData.cpf = cpfLimpo;
         }
       }
-      
+
       // Verificar se o NIS foi alterado e se já existe outro cidadão com o novo NIS
       if ('nis' in updateCidadaoDto) {
-        const nisLimpo = updateCidadaoDto.nis ? updateCidadaoDto.nis.replace(/\D/g, '') : null;
-        
+        const nisLimpo = updateCidadaoDto.nis
+          ? updateCidadaoDto.nis.replace(/\D/g, '')
+          : null;
+
         if (nisLimpo !== cidadao.nis) {
           if (nisLimpo) {
             const nisExists = await this.cidadaoRepository.findByNis(nisLimpo);
-            
+
             if (nisExists) {
-              throw new ConflictException('Já existe um cidadão cadastrado com este NIS');
+              throw new ConflictException(
+                'Já existe um cidadão cadastrado com este NIS',
+              );
             }
           }
-          
+
           // Atualizar o NIS formatado
           updateData.nis = nisLimpo;
         }
       }
-      
+
       // Adicionar informações de auditoria
       updateData.updatedBy = userId;
-      
+
       // Atualizar o cidadão
-      const cidadaoAtualizado = await this.cidadaoRepository.update(id, updateData);
-      
+      const cidadaoAtualizado = await this.cidadaoRepository.update(
+        id,
+        updateData,
+      );
+
       // Invalidar cache
       await this.invalidateCache(cidadaoAtualizado);
-      
-      const cidadaoDto = plainToInstance(CidadaoResponseDto, cidadaoAtualizado, { 
-        excludeExtraneousValues: true,
-        enableImplicitConversion: true 
-      });
-      
+
+      const cidadaoDto = plainToInstance(
+        CidadaoResponseDto,
+        cidadaoAtualizado,
+        {
+          excludeExtraneousValues: true,
+          enableImplicitConversion: true,
+        },
+      );
+
       // Atualizar cache com novos dados
-      await this.cacheService.set(`${this.CACHE_PREFIX}id:${cidadaoAtualizado.id}`, cidadaoDto, this.CACHE_TTL);
-      await this.cacheService.set(`${this.CACHE_PREFIX}cpf:${cidadaoAtualizado.cpf}`, cidadaoDto, this.CACHE_TTL);
-      
+      await this.cacheService.set(
+        `${this.CACHE_PREFIX}id:${cidadaoAtualizado.id}`,
+        cidadaoDto,
+        this.CACHE_TTL,
+      );
+      await this.cacheService.set(
+        `${this.CACHE_PREFIX}cpf:${cidadaoAtualizado.cpf}`,
+        cidadaoDto,
+        this.CACHE_TTL,
+      );
+
       if (cidadaoAtualizado.nis) {
-        await this.cacheService.set(`${this.CACHE_PREFIX}nis:${cidadaoAtualizado.nis}`, cidadaoDto, this.CACHE_TTL);
+        await this.cacheService.set(
+          `${this.CACHE_PREFIX}nis:${cidadaoAtualizado.nis}`,
+          cidadaoDto,
+          this.CACHE_TTL,
+        );
       }
-      
+
       return cidadaoDto;
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof ConflictException) throw error;
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ConflictException
+      )
+        throw error;
       throw new InternalServerErrorException('Erro ao atualizar cidadão');
     }
   }
@@ -456,16 +530,16 @@ export class CidadaoService {
     try {
       // Verificar se o cidadão existe
       const cidadao = await this.cidadaoRepository.findById(id);
-      
+
       if (!cidadao) {
         throw new NotFoundException('Cidadão não encontrado');
       }
-      
+
       // Realizar soft delete
       await this.cidadaoRepository.update(id, {
-        removed_at: new Date()
+        removed_at: new Date(),
       });
-      
+
       // Invalidar cache
       await this.invalidateCache(cidadao);
     } catch (error) {
@@ -493,23 +567,23 @@ export class CidadaoService {
    * @throws NotFoundException se o cidadão não for encontrado
    */
   async addComposicaoFamiliar(
-    cidadaoId: string, 
+    cidadaoId: string,
     createComposicaoFamiliarDto: any,
-    userId: string
+    userId: string,
   ): Promise<CidadaoResponseDto> {
     try {
       // Verificar se o cidadão existe
       const cidadao = await this.cidadaoRepository.findById(cidadaoId);
-      
+
       if (!cidadao) {
         throw new NotFoundException('Cidadão não encontrado');
       }
-      
+
       // Atualizar a composição familiar
-      const composicaoAtual = Array.isArray(cidadao.composicao_familiar) 
-        ? cidadao.composicao_familiar 
+      const composicaoAtual = Array.isArray(cidadao.composicao_familiar)
+        ? cidadao.composicao_familiar
         : [];
-      
+
       const novaComposicao = [
         ...composicaoAtual,
         {
@@ -517,29 +591,39 @@ export class CidadaoService {
           id: Date.now().toString(), // ID temporário
           criadoEm: new Date(),
           criadoPor: userId,
-        }
+        },
       ];
-      
+
       // Atualizar o cidadão com a nova composição familiar
       const cidadaoAtualizado = await this.cidadaoRepository.update(cidadaoId, {
-        composicao_familiar: novaComposicao
+        composicao_familiar: novaComposicao,
       });
-      
+
       // Invalidar cache
       await this.invalidateCache(cidadaoAtualizado);
-      
-      const cidadaoDto = plainToInstance(CidadaoResponseDto, cidadaoAtualizado, { 
-        excludeExtraneousValues: true,
-        enableImplicitConversion: true 
-      });
-      
+
+      const cidadaoDto = plainToInstance(
+        CidadaoResponseDto,
+        cidadaoAtualizado,
+        {
+          excludeExtraneousValues: true,
+          enableImplicitConversion: true,
+        },
+      );
+
       // Atualizar cache
-      await this.cacheService.set(`${this.CACHE_PREFIX}id:${cidadaoAtualizado.id}`, cidadaoDto, this.CACHE_TTL);
-      
+      await this.cacheService.set(
+        `${this.CACHE_PREFIX}id:${cidadaoAtualizado.id}`,
+        cidadaoDto,
+        this.CACHE_TTL,
+      );
+
       return cidadaoDto;
     } catch (error) {
       if (error instanceof NotFoundException) throw error;
-      throw new InternalServerErrorException('Erro ao adicionar membro à composição familiar');
+      throw new InternalServerErrorException(
+        'Erro ao adicionar membro à composição familiar',
+      );
     }
   }
 }

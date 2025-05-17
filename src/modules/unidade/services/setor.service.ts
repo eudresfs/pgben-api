@@ -1,4 +1,12 @@
-import { Injectable, NotFoundException, InternalServerErrorException, Logger, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  InternalServerErrorException,
+  Logger,
+  BadRequestException,
+  ConflictException,
+} from '@nestjs/common';
+import { DataSource } from 'typeorm';
 import { SetorRepository } from '../repositories/setor.repository';
 import { UnidadeRepository } from '../repositories/unidade.repository';
 import { CreateSetorDto } from '../dto/create-setor.dto';
@@ -7,15 +15,17 @@ import { Setor } from '../entities/setor.entity';
 
 /**
  * Serviço de setores
- * 
+ *
  * Responsável pela lógica de negócio relacionada a setores
  */
 @Injectable()
 export class SetorService {
   private readonly logger = new Logger(SetorService.name);
+
   constructor(
+    private readonly dataSource: DataSource,
     private readonly setorRepository: SetorRepository,
-    private readonly unidadeRepository: UnidadeRepository
+    private readonly unidadeRepository: UnidadeRepository,
   ) {}
 
   /**
@@ -24,52 +34,115 @@ export class SetorService {
    * @returns Setor criado
    */
   async create(createSetorDto: CreateSetorDto) {
-    this.logger.log(`Iniciando criação de setor: ${JSON.stringify(createSetorDto)}`);
-    
+    this.logger.log(
+      `Iniciando criação de setor: ${JSON.stringify(createSetorDto)}`,
+    );
+
     // Validações iniciais
     if (!createSetorDto.unidadeId) {
       this.logger.error('ID da unidade não fornecido');
       throw new BadRequestException('ID da unidade é obrigatório');
     }
 
-    // Verificar se a unidade existe
-    this.logger.log(`Buscando unidade com ID: ${createSetorDto.unidadeId}`);
-    const unidade = await this.unidadeRepository.findById(createSetorDto.unidadeId);
-    if (!unidade) {
-      this.logger.error(`Unidade não encontrada: ${createSetorDto.unidadeId}`);
-      throw new NotFoundException(`Unidade com ID ${createSetorDto.unidadeId} não encontrada`);
-    }
-    
-    // Mapear DTO para a entidade
-    const { unidadeId, ...setorData } = createSetorDto;
-    
-    // Criar o objeto do setor com os dados básicos
-    const setor = new Setor();
-    Object.assign(setor, setorData);
-    setor.unidade_id = unidadeId;
-    
-    this.logger.log(`Dados do setor mapeados: ${JSON.stringify(setor)}`);
-    
     try {
-      // Criar setor
-      const setorCriado = await this.setorRepository.create(setor);
-      this.logger.log(`Setor criado com sucesso: ${setorCriado.id}`);
-      
-      return setorCriado;
+      // Usar transação para garantir consistência
+      return await this.dataSource.transaction(async (manager) => {
+        const unidadeRepo = manager.getRepository('unidade');
+        const setorRepo = manager.getRepository('setor');
+
+        // Verificar se a unidade existe
+        this.logger.log(`Buscando unidade com ID: ${createSetorDto.unidadeId}`);
+        const unidade = await unidadeRepo.findOne({
+          where: { id: createSetorDto.unidadeId },
+        });
+        if (!unidade) {
+          this.logger.error(
+            `Unidade não encontrada: ${createSetorDto.unidadeId}`,
+          );
+          throw new NotFoundException(
+            `Unidade com ID ${createSetorDto.unidadeId} não encontrada`,
+          );
+        }
+
+        // Verificar se já existe um setor com o mesmo nome na mesma unidade
+        if (createSetorDto.nome) {
+          const setorExistente = await setorRepo.findOne({
+            where: {
+              nome: createSetorDto.nome,
+              unidade_id: createSetorDto.unidadeId,
+            },
+          });
+
+          if (setorExistente) {
+            this.logger.error(
+              `Já existe um setor com o nome '${createSetorDto.nome}' nesta unidade`,
+            );
+            throw new ConflictException(
+              `Já existe um setor com o nome '${createSetorDto.nome}' nesta unidade`,
+            );
+          }
+        }
+
+        // Verificar se já existe um setor com a mesma sigla na mesma unidade (se fornecida)
+        if (createSetorDto.sigla) {
+          const setorExistente = await setorRepo.findOne({
+            where: {
+              sigla: createSetorDto.sigla,
+              unidade_id: createSetorDto.unidadeId,
+            },
+          });
+
+          if (setorExistente) {
+            this.logger.error(
+              `Já existe um setor com a sigla '${createSetorDto.sigla}' nesta unidade`,
+            );
+            throw new ConflictException(
+              `Já existe um setor com a sigla '${createSetorDto.sigla}' nesta unidade`,
+            );
+          }
+        }
+
+        // Mapear DTO para a entidade
+        const { unidadeId, ...setorData } = createSetorDto;
+
+        // Criar o objeto do setor com os dados básicos
+        const setor = new Setor();
+        Object.assign(setor, setorData);
+        setor.unidade_id = unidadeId;
+
+        this.logger.log(`Dados do setor mapeados: ${JSON.stringify(setor)}`);
+
+        // Criar setor
+        const setorCriado = await setorRepo.save(setor);
+        this.logger.log(`Setor criado com sucesso: ${setorCriado.id}`);
+
+        return setorCriado;
+      });
     } catch (error) {
       this.logger.error(`Erro ao criar setor: ${error.message}`, error.stack);
-      
-      // Se for um erro de validação do banco de dados
-      if (error.code === '23505') { // Código de violação de chave única
-        throw new BadRequestException('Já existe um setor com estes dados');
+
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException ||
+        error instanceof ConflictException
+      ) {
+        throw error;
       }
-      
+
+      // Se for um erro de validação do banco de dados
+      if (error.code === '23505') {
+        // Código de violação de chave única
+        throw new ConflictException('Já existe um setor com estes dados');
+      }
+
       // Se for um erro de chave estrangeira
       if (error.code === '23503') {
         throw new BadRequestException('Dados de relacionamento inválidos');
       }
-      
-      throw new InternalServerErrorException('Falha ao criar setor. Por favor, tente novamente.');
+
+      throw new InternalServerErrorException(
+        'Falha ao criar setor. Por favor, tente novamente.',
+      );
     }
   }
 
@@ -80,44 +153,136 @@ export class SetorService {
    * @returns Setor atualizado
    */
   async update(id: string, updateSetorDto: UpdateSetorDto) {
+    this.logger.log(
+      `Atualizando setor ${id} com dados: ${JSON.stringify(updateSetorDto)}`,
+    );
+
     try {
-      this.logger.log(`Atualizando setor ${id} com dados: ${JSON.stringify(updateSetorDto)}`);
-      
-      // Verificar se setor existe
-      const setorExistente = await this.setorRepository.findById(id);
-      if (!setorExistente) {
-        this.logger.error(`Setor não encontrado: ${id}`);
-        throw new NotFoundException(`Setor com ID ${id} não encontrado`);
-      }
-      
-      // Verificar se a unidade existe (se fornecida)
-      if (updateSetorDto.unidadeId && updateSetorDto.unidadeId !== setorExistente.unidade_id) {
-        this.logger.log(`Validando unidade com ID: ${updateSetorDto.unidadeId}`);
-        const unidade = await this.unidadeRepository.findById(updateSetorDto.unidadeId);
-        if (!unidade) {
-          this.logger.error(`Unidade não encontrada: ${updateSetorDto.unidadeId}`);
-          throw new NotFoundException(`Unidade com ID ${updateSetorDto.unidadeId} não encontrada`);
+      // Usar transação para garantir consistência
+      return await this.dataSource.transaction(async (manager) => {
+        const setorRepo = manager.getRepository('setor');
+        const unidadeRepo = manager.getRepository('unidade');
+
+        // Verificar se setor existe
+        const setorExistente = await setorRepo.findOne({ where: { id } });
+        if (!setorExistente) {
+          this.logger.error(`Setor não encontrado: ${id}`);
+          throw new NotFoundException(`Setor com ID ${id} não encontrado`);
         }
-        setorExistente.unidade_id = updateSetorDto.unidadeId;
-      }
-      
-      // Atualizar os demais campos
-      const { unidadeId, ...setorData } = updateSetorDto;
-      Object.assign(setorExistente, setorData);
-      
-      this.logger.log(`Dados atualizados do setor: ${JSON.stringify(setorExistente)}`);
-      
-      // Atualizar setor
-      const setorAtualizado = await this.setorRepository.update(id, setorExistente);
-      this.logger.log(`Setor ${id} atualizado com sucesso`);
-      
-      return setorAtualizado;
+
+        // Verificar se a unidade existe (se fornecida)
+        let novaUnidadeId = setorExistente.unidade_id;
+        if (
+          updateSetorDto.unidadeId &&
+          updateSetorDto.unidadeId !== setorExistente.unidade_id
+        ) {
+          this.logger.log(
+            `Validando unidade com ID: ${updateSetorDto.unidadeId}`,
+          );
+          const unidade = await unidadeRepo.findOne({
+            where: { id: updateSetorDto.unidadeId },
+          });
+          if (!unidade) {
+            this.logger.error(
+              `Unidade não encontrada: ${updateSetorDto.unidadeId}`,
+            );
+            throw new NotFoundException(
+              `Unidade com ID ${updateSetorDto.unidadeId} não encontrada`,
+            );
+          }
+          novaUnidadeId = updateSetorDto.unidadeId;
+        }
+
+        // Verificar se já existe um setor com o mesmo nome na mesma unidade (se o nome for alterado)
+        if (
+          updateSetorDto.nome &&
+          updateSetorDto.nome !== setorExistente.nome
+        ) {
+          const setorExistenteComMesmoNome = await setorRepo.findOne({
+            where: {
+              nome: updateSetorDto.nome,
+              unidade_id: novaUnidadeId,
+              id: { $ne: id }, // Excluir o próprio setor da busca
+            },
+          });
+
+          if (setorExistenteComMesmoNome) {
+            this.logger.error(
+              `Já existe um setor com o nome '${updateSetorDto.nome}' nesta unidade`,
+            );
+            throw new ConflictException(
+              `Já existe um setor com o nome '${updateSetorDto.nome}' nesta unidade`,
+            );
+          }
+        }
+
+        // Verificar se já existe um setor com a mesma sigla na mesma unidade (se a sigla for alterada)
+        if (
+          updateSetorDto.sigla &&
+          updateSetorDto.sigla !== setorExistente.sigla
+        ) {
+          const setorExistenteComMesmaSigla = await setorRepo.findOne({
+            where: {
+              sigla: updateSetorDto.sigla,
+              unidade_id: novaUnidadeId,
+              id: { $ne: id }, // Excluir o próprio setor da busca
+            },
+          });
+
+          if (setorExistenteComMesmaSigla) {
+            this.logger.error(
+              `Já existe um setor com a sigla '${updateSetorDto.sigla}' nesta unidade`,
+            );
+            throw new ConflictException(
+              `Já existe um setor com a sigla '${updateSetorDto.sigla}' nesta unidade`,
+            );
+          }
+        }
+
+        // Atualizar os demais campos
+        const { unidadeId, ...setorData } = updateSetorDto;
+
+        // Atualizar setor
+        await setorRepo.update(id, {
+          ...setorData,
+          unidade_id: novaUnidadeId,
+        });
+
+        // Buscar setor atualizado
+        const setorAtualizado = await setorRepo.findOne({ where: { id } });
+        if (!setorAtualizado) {
+          throw new NotFoundException(
+            `Setor com ID ${id} não encontrado após atualização`,
+          );
+        }
+
+        this.logger.log(`Setor ${id} atualizado com sucesso`);
+
+        return setorAtualizado;
+      });
     } catch (error) {
-      this.logger.error(`Erro ao atualizar setor ${id}: ${error.message}`, error.stack);
-      if (error instanceof NotFoundException) {
+      this.logger.error(
+        `Erro ao atualizar setor ${id}: ${error.message}`,
+        error.stack,
+      );
+
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException ||
+        error instanceof ConflictException
+      ) {
         throw error;
       }
-      throw new InternalServerErrorException('Falha ao atualizar setor. Por favor, tente novamente.');
+
+      // Se for um erro de validação do banco de dados
+      if (error.code === '23505') {
+        // Código de violação de chave única
+        throw new ConflictException('Já existe um setor com estes dados');
+      }
+
+      throw new InternalServerErrorException(
+        'Falha ao atualizar setor. Por favor, tente novamente.',
+      );
     }
   }
 
@@ -127,13 +292,29 @@ export class SetorService {
    * @returns Setor encontrado
    */
   async findById(id: string) {
-    const setor = await this.setorRepository.findById(id);
-    
-    if (!setor) {
-      throw new NotFoundException('Setor não encontrado');
+    this.logger.log(`Buscando setor com ID: ${id}`);
+
+    try {
+      const setor = await this.setorRepository.findById(id);
+
+      if (!setor) {
+        this.logger.warn(`Setor não encontrado: ${id}`);
+        throw new NotFoundException('Setor não encontrado');
+      }
+
+      return setor;
+    } catch (error) {
+      this.logger.error(
+        `Erro ao buscar setor ${id}: ${error.message}`,
+        error.stack,
+      );
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'Falha ao buscar setor. Por favor, tente novamente.',
+      );
     }
-    
-    return setor;
   }
 
   /**
@@ -142,15 +323,40 @@ export class SetorService {
    * @returns Lista de setores da unidade
    */
   async findByUnidadeId(unidadeId: string) {
-    // Verificar se a unidade existe
-    const unidade = await this.unidadeRepository.findById(unidadeId);
-    if (!unidade) {
-      throw new NotFoundException('Unidade não encontrada');
+    this.logger.log(`Buscando setores da unidade com ID: ${unidadeId}`);
+
+    try {
+      // Verificar se a unidade existe
+      const unidade = await this.unidadeRepository.findById(unidadeId);
+      if (!unidade) {
+        this.logger.warn(`Unidade não encontrada: ${unidadeId}`);
+        throw new NotFoundException('Unidade não encontrada');
+      }
+
+      // Buscar setores
+      const setores = await this.setorRepository.findByUnidadeId(unidadeId);
+      this.logger.log(
+        `Encontrados ${setores.length} setores para a unidade ${unidadeId}`,
+      );
+
+      return {
+        items: setores,
+        meta: {
+          total: setores.length,
+          unidadeId,
+        },
+      };
+    } catch (error) {
+      this.logger.error(
+        `Erro ao buscar setores da unidade ${unidadeId}: ${error.message}`,
+        error.stack,
+      );
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'Falha ao buscar setores. Por favor, tente novamente.',
+      );
     }
-    
-    // Buscar setores
-    const setores = await this.setorRepository.findByUnidadeId(unidadeId);
-    
-    return setores;
   }
 }

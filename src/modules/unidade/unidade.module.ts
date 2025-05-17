@@ -11,14 +11,12 @@ import { Setor } from './entities/setor.entity';
 
 /**
  * Módulo de unidades
- * 
+ *
  * Responsável por gerenciar as unidades (CRAS, CREAS, etc.) e seus setores,
  * incluindo cadastro, atualização e consulta.
  */
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([Unidade, Setor]),
-  ],
+  imports: [TypeOrmModule.forFeature([Unidade, Setor])],
   controllers: [UnidadeController, SetorController],
   providers: [UnidadeService, SetorService, UnidadeRepository, SetorRepository],
   exports: [UnidadeService, SetorService, UnidadeRepository, SetorRepository],

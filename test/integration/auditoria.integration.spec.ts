@@ -67,7 +67,9 @@ describe('Auditoria (Integração)', () => {
       expect(logs[0].tipo_operacao).toBe(TipoOperacao.CREATE);
       expect(logs[0].entidade_afetada).toBe('documentos');
       expect(logs[0].usuario_id).toBe('test-user-id');
-      expect(logs[0].dados_novos).toEqual(expect.objectContaining(documentoDto));
+      expect(logs[0].dados_novos).toEqual(
+        expect.objectContaining(documentoDto),
+      );
     });
 
     it('deve registrar log ao consultar um documento', async () => {
@@ -107,7 +109,9 @@ describe('Auditoria (Integração)', () => {
       expect(logs[0].entidade_afetada).toBe('documentos');
       expect(logs[0].entidade_id).toBe('documento-123');
       expect(logs[0].usuario_id).toBe('test-user-id');
-      expect(logs[0].dados_novos).toEqual(expect.objectContaining(documentoDto));
+      expect(logs[0].dados_novos).toEqual(
+        expect.objectContaining(documentoDto),
+      );
     });
 
     it('deve registrar log ao excluir um documento', async () => {

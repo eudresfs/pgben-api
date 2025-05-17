@@ -8,7 +8,7 @@ import { FluxoBeneficio } from './entities/fluxo-beneficio.entity';
 import { CampoDinamicoBeneficio } from './entities/campo-dinamico-beneficio.entity';
 import { VersaoSchemaBeneficio } from './entities/versao-schema-beneficio.entity';
 import { SolicitacaoBeneficio } from './entities/solicitacao-beneficio.entity';
-import { HistoricoSolicitacao } from './entities/historico-solicitacao.entity';
+import { HistoricoSolicitacaoBeneficio } from './entities/historico-solicitacao.entity';
 import { CampoDinamicoController } from './controllers/campo-dinamico.controller';
 import { FormularioDinamicoController } from './controllers/formulario-dinamico.controller';
 import { SolicitacaoBeneficioController } from './controllers/solicitacao-beneficio.controller';
@@ -21,7 +21,7 @@ import { TipoBeneficioRepository } from './repositories/tipo-beneficio.repositor
 
 /**
  * Módulo de benefícios
- * 
+ *
  * Responsável por gerenciar os benefícios do sistema, incluindo tipos de benefícios,
  * requisitos documentais, fluxos de aprovação e campos dinâmicos.
  */
@@ -34,7 +34,7 @@ import { TipoBeneficioRepository } from './repositories/tipo-beneficio.repositor
       CampoDinamicoBeneficio,
       VersaoSchemaBeneficio,
       SolicitacaoBeneficio,
-      HistoricoSolicitacao
+      HistoricoSolicitacaoBeneficio,
     ]),
   ],
   controllers: [
@@ -42,7 +42,7 @@ import { TipoBeneficioRepository } from './repositories/tipo-beneficio.repositor
     CampoDinamicoController,
     FormularioDinamicoController,
     SolicitacaoBeneficioController,
-    ExportacaoController
+    ExportacaoController,
   ],
   providers: [
     BeneficioService,
@@ -50,13 +50,13 @@ import { TipoBeneficioRepository } from './repositories/tipo-beneficio.repositor
     ValidacaoDinamicaService,
     DadosDinamicosService,
     ExportacaoService,
-    TipoBeneficioRepository
+    TipoBeneficioRepository,
   ],
   exports: [
     BeneficioService,
     CampoDinamicoService,
     ValidacaoDinamicaService,
-    DadosDinamicosService
+    DadosDinamicosService,
   ],
 })
 export class BeneficioModule {}

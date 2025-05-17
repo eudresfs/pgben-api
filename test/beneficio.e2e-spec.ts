@@ -9,7 +9,7 @@ import { Role } from '../src/shared/enums/role.enum';
 
 /**
  * Testes de integração para o módulo de benefícios
- * 
+ *
  * Estes testes verificam o funcionamento completo das rotas de benefícios,
  * incluindo a criação, atualização, consulta e remoção de benefícios.
  */
@@ -18,12 +18,12 @@ describe('BeneficioController (e2e)', () => {
   let beneficioRepository: Repository<any>;
   let usuarioRepository: Repository<any>;
   let jwtService: JwtService;
-  
+
   // Tokens de acesso para diferentes perfis
   let adminToken: string;
   let gestorToken: string;
   let tecnicoToken: string;
-  
+
   // IDs de benefícios criados durante os testes
   let beneficioId: string;
 
@@ -33,7 +33,7 @@ describe('BeneficioController (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    
+
     // Configurar pipes de validação global
     app.useGlobalPipes(
       new ValidationPipe({
@@ -42,36 +42,42 @@ describe('BeneficioController (e2e)', () => {
         forbidNonWhitelisted: true,
       }),
     );
-    
+
     await app.init();
-    
+
     // Obter repositórios e serviços necessários
     beneficioRepository = app.get(getRepositoryToken('Beneficio'));
     usuarioRepository = app.get(getRepositoryToken('Usuario'));
     jwtService = app.get(JwtService);
-    
+
     // Limpar e preparar o banco de dados para os testes
     await beneficioRepository.clear();
-    
+
     // Criar usuários de teste para diferentes perfis
-    const adminUser = await usuarioRepository.findOne({ where: { role: Role.ADMIN } });
-    const gestorUser = await usuarioRepository.findOne({ where: { role: Role.GESTOR_SEMTAS } });
-    const tecnicoUser = await usuarioRepository.findOne({ where: { role: Role.TECNICO_UNIDADE } });
-    
+    const adminUser = await usuarioRepository.findOne({
+      where: { role: Role.ADMIN },
+    });
+    const gestorUser = await usuarioRepository.findOne({
+      where: { role: Role.GESTOR_SEMTAS },
+    });
+    const tecnicoUser = await usuarioRepository.findOne({
+      where: { role: Role.TECNICO_UNIDADE },
+    });
+
     // Gerar tokens de acesso para os usuários
     adminToken = jwtService.sign(
       { sub: adminUser.id, email: adminUser.email, role: adminUser.role },
-      { secret: process.env.JWT_SECRET || 'secret_test', expiresIn: '1h' }
+      { secret: process.env.JWT_SECRET || 'secret_test', expiresIn: '1h' },
     );
-    
+
     gestorToken = jwtService.sign(
       { sub: gestorUser.id, email: gestorUser.email, role: gestorUser.role },
-      { secret: process.env.JWT_SECRET || 'secret_test', expiresIn: '1h' }
+      { secret: process.env.JWT_SECRET || 'secret_test', expiresIn: '1h' },
     );
-    
+
     tecnicoToken = jwtService.sign(
       { sub: tecnicoUser.id, email: tecnicoUser.email, role: tecnicoUser.role },
-      { secret: process.env.JWT_SECRET || 'secret_test', expiresIn: '1h' }
+      { secret: process.env.JWT_SECRET || 'secret_test', expiresIn: '1h' },
     );
   });
 
@@ -109,23 +115,28 @@ describe('BeneficioController (e2e)', () => {
       const createBeneficioDto = {
         nome: 'Cesta Básica',
         descricao: 'Benefício de cesta básica para famílias em vulnerabilidade',
-        valor: 150.00,
-        criterios_concessao: 'Famílias com renda per capita inferior a meio salário mínimo',
-        documentos_necessarios: ['CPF', 'Comprovante de residência', 'Comprovante de renda'],
+        valor: 150.0,
+        criterios_concessao:
+          'Famílias com renda per capita inferior a meio salário mínimo',
+        documentos_necessarios: [
+          'CPF',
+          'Comprovante de residência',
+          'Comprovante de renda',
+        ],
         validade_meses: 6,
       };
-      
+
       const response = await request(app.getHttpServer())
         .post('/beneficios')
         .set('Authorization', `Bearer ${adminToken}`)
         .send(createBeneficioDto)
         .expect(201);
-      
+
       expect(response.body).toHaveProperty('id');
       expect(response.body.nome).toBe(createBeneficioDto.nome);
       expect(response.body.valor).toBe(createBeneficioDto.valor);
       expect(response.body.ativo).toBe(true);
-      
+
       // Salvar o ID para uso em testes posteriores
       beneficioId = response.body.id;
     });
@@ -134,18 +145,23 @@ describe('BeneficioController (e2e)', () => {
       const createBeneficioDto = {
         nome: 'Auxílio Moradia',
         descricao: 'Benefício para auxílio de aluguel',
-        valor: 300.00,
-        criterios_concessao: 'Famílias em situação de vulnerabilidade habitacional',
-        documentos_necessarios: ['CPF', 'Comprovante de residência', 'Laudo social'],
+        valor: 300.0,
+        criterios_concessao:
+          'Famílias em situação de vulnerabilidade habitacional',
+        documentos_necessarios: [
+          'CPF',
+          'Comprovante de residência',
+          'Laudo social',
+        ],
         validade_meses: 12,
       };
-      
+
       const response = await request(app.getHttpServer())
         .post('/beneficios')
         .set('Authorization', `Bearer ${gestorToken}`)
         .send(createBeneficioDto)
         .expect(201);
-      
+
       expect(response.body).toHaveProperty('id');
       expect(response.body.nome).toBe(createBeneficioDto.nome);
       expect(response.body.valor).toBe(createBeneficioDto.valor);
@@ -156,9 +172,9 @@ describe('BeneficioController (e2e)', () => {
       const createBeneficioDto = {
         nome: 'Auxílio Funeral',
         descricao: 'Benefício para auxílio funeral',
-        valor: 500.00,
+        valor: 500.0,
       };
-      
+
       return request(app.getHttpServer())
         .post('/beneficios')
         .set('Authorization', `Bearer ${tecnicoToken}`)
@@ -170,9 +186,9 @@ describe('BeneficioController (e2e)', () => {
       const createBeneficioDto = {
         nome: 'Auxílio Funeral',
         descricao: 'Benefício para auxílio funeral',
-        valor: 500.00,
+        valor: 500.0,
       };
-      
+
       return request(app.getHttpServer())
         .post('/beneficios')
         .send(createBeneficioDto)
@@ -185,7 +201,7 @@ describe('BeneficioController (e2e)', () => {
         descricao: 'Benefício inválido',
         valor: -100, // Valor negativo, que deve ser inválido
       };
-      
+
       return request(app.getHttpServer())
         .post('/beneficios')
         .set('Authorization', `Bearer ${adminToken}`)
@@ -197,9 +213,9 @@ describe('BeneficioController (e2e)', () => {
       const duplicateDto = {
         nome: 'Cesta Básica', // Nome já existente
         descricao: 'Outro benefício com mesmo nome',
-        valor: 200.00,
+        valor: 200.0,
       };
-      
+
       return request(app.getHttpServer())
         .post('/beneficios')
         .set('Authorization', `Bearer ${adminToken}`)
@@ -240,7 +256,9 @@ describe('BeneficioController (e2e)', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200)
         .expect((res) => {
-          expect(res.body.items.every(item => item.ativo === true)).toBe(true);
+          expect(res.body.items.every((item) => item.ativo === true)).toBe(
+            true,
+          );
         });
     });
   });
@@ -278,9 +296,9 @@ describe('BeneficioController (e2e)', () => {
     it('deve atualizar um benefício quando o usuário é admin', () => {
       const updateDto = {
         descricao: 'Descrição atualizada da cesta básica',
-        valor: 180.00,
+        valor: 180.0,
       };
-      
+
       return request(app.getHttpServer())
         .patch(`/beneficios/${beneficioId}`)
         .set('Authorization', `Bearer ${adminToken}`)
@@ -296,9 +314,10 @@ describe('BeneficioController (e2e)', () => {
 
     it('deve atualizar um benefício quando o usuário é gestor', () => {
       const updateDto = {
-        criterios_concessao: 'Critérios atualizados para concessão da cesta básica',
+        criterios_concessao:
+          'Critérios atualizados para concessão da cesta básica',
       };
-      
+
       return request(app.getHttpServer())
         .patch(`/beneficios/${beneficioId}`)
         .set('Authorization', `Bearer ${gestorToken}`)
@@ -306,7 +325,9 @@ describe('BeneficioController (e2e)', () => {
         .expect(200)
         .expect((res) => {
           expect(res.body.id).toBe(beneficioId);
-          expect(res.body.criterios_concessao).toBe(updateDto.criterios_concessao);
+          expect(res.body.criterios_concessao).toBe(
+            updateDto.criterios_concessao,
+          );
         });
     });
 
@@ -314,7 +335,7 @@ describe('BeneficioController (e2e)', () => {
       const updateDto = {
         descricao: 'Tentativa de atualização por técnico',
       };
-      
+
       return request(app.getHttpServer())
         .patch(`/beneficios/${beneficioId}`)
         .set('Authorization', `Bearer ${tecnicoToken}`)
@@ -326,7 +347,7 @@ describe('BeneficioController (e2e)', () => {
       const updateDto = {
         descricao: 'Tentativa de atualização sem autenticação',
       };
-      
+
       return request(app.getHttpServer())
         .patch(`/beneficios/${beneficioId}`)
         .send(updateDto)
@@ -337,7 +358,7 @@ describe('BeneficioController (e2e)', () => {
       const updateDto = {
         descricao: 'Tentativa de atualização de benefício inexistente',
       };
-      
+
       return request(app.getHttpServer())
         .patch('/beneficios/00000000-0000-0000-0000-000000000000')
         .set('Authorization', `Bearer ${adminToken}`)

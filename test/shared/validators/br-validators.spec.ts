@@ -1,6 +1,11 @@
 import { validate } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
-import { IsCPF, IsNIS, IsCEP, IsTelefone } from '../../../src/shared/validators/br-validators';
+import {
+  IsCPF,
+  IsNIS,
+  IsCEP,
+  IsTelefone,
+} from '../../../src/shared/validators/br-validators';
 
 // Classes de teste para cada validador
 class TestCPF {
@@ -26,11 +31,7 @@ class TestTelefone {
 describe('Validadores Brasileiros', () => {
   describe('CPF Validator', () => {
     it('deve validar CPFs corretos', async () => {
-      const cpfsValidos = [
-        '529.982.247-25',
-        '52998224725',
-        '111.444.777-35'
-      ];
+      const cpfsValidos = ['529.982.247-25', '52998224725', '111.444.777-35'];
 
       for (const cpf of cpfsValidos) {
         const testObj = plainToInstance(TestCPF, { cpf });
@@ -46,7 +47,7 @@ describe('Validadores Brasileiros', () => {
         '529.982.247-26', // Dígito verificador errado
         '123456', // Tamanho inválido
         'abc.def.ghi-jk', // Não numérico
-        '' // Vazio
+        '', // Vazio
       ];
 
       for (const cpf of cpfsInvalidos) {
@@ -59,11 +60,7 @@ describe('Validadores Brasileiros', () => {
 
   describe('NIS Validator', () => {
     it('deve validar NIS corretos', async () => {
-      const nisValidos = [
-        '170.82167.34-9',
-        '1708216734-9',
-        '17082167349'
-      ];
+      const nisValidos = ['170.82167.34-9', '1708216734-9', '17082167349'];
 
       for (const nis of nisValidos) {
         const testObj = plainToInstance(TestNIS, { nis });
@@ -79,7 +76,7 @@ describe('Validadores Brasileiros', () => {
         '170.82167.34-8', // Dígito verificador errado
         '123456', // Tamanho inválido
         'abc.defgh.ij-k', // Não numérico
-        '' // Vazio
+        '', // Vazio
       ];
 
       for (const nis of nisInvalidos) {
@@ -92,11 +89,7 @@ describe('Validadores Brasileiros', () => {
 
   describe('CEP Validator', () => {
     it('deve validar CEPs corretos', async () => {
-      const cepsValidos = [
-        '59000-000',
-        '59000000',
-        '01001-000'
-      ];
+      const cepsValidos = ['59000-000', '59000000', '01001-000'];
 
       for (const cep of cepsValidos) {
         const testObj = plainToInstance(TestCEP, { cep });
@@ -110,7 +103,7 @@ describe('Validadores Brasileiros', () => {
         '5900-000', // Tamanho inválido
         '590000000', // Tamanho inválido
         'abcde-fgh', // Não numérico
-        '' // Vazio
+        '', // Vazio
       ];
 
       for (const cep of cepsInvalidos) {
@@ -129,7 +122,7 @@ describe('Validadores Brasileiros', () => {
         '(84) 99999-8888', // Celular com DDD
         '84999998888', // Celular com DDD sem formatação
         '99999-8888', // Celular sem DDD (não recomendado, mas válido pelo validador)
-        '999998888' // Celular sem DDD sem formatação
+        '999998888', // Celular sem DDD sem formatação
       ];
 
       for (const telefone of telefonesValidos) {
@@ -146,7 +139,7 @@ describe('Validadores Brasileiros', () => {
         '(84) 999-8888', // Formato inválido
         '(84) 9999-88888', // Tamanho inválido
         'abcde-fghij', // Não numérico
-        '' // Vazio
+        '', // Vazio
       ];
 
       for (const telefone of telefonesInvalidos) {

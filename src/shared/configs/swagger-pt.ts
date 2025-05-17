@@ -1,10 +1,13 @@
 import { DocumentBuilder, SwaggerCustomOptions } from '@nestjs/swagger';
-import { respostasPadrao, respostasEspecificas } from './swagger-respostas-padrao';
+import {
+  respostasPadrao,
+  respostasEspecificas,
+} from './swagger-respostas-padrao';
 import { respostasExemplo } from './swagger-respostas';
 
 /**
  * Configuração do Swagger em português
- * 
+ *
  * Este arquivo centraliza todas as configurações do Swagger para a aplicação,
  * garantindo consistência na documentação em português.
  */
@@ -13,44 +16,63 @@ export const swaggerConfig = new DocumentBuilder()
   .setTitle('API de Gestão de Benefícios Eventuais')
   .setDescription(
     '<h2>Visão Geral</h2>' +
-    '<p>API para gestão de benefícios eventuais da Secretaria Municipal de Assistência Social.</p>' +
-    '<p>Esta API permite o gerenciamento completo do fluxo de solicitação, análise e concessão de benefícios eventuais.</p>' +
-    '<h2>Autenticação</h2>' +
-    '<p>A API utiliza autenticação JWT (JSON Web Token). Para acessar os endpoints protegidos, é necessário obter um token através do endpoint de login e incluí-lo no cabeçalho das requisições.</p>' +
-    '<h3>Como obter o token</h3>' +
-    '<ol>' +
-    '  <li>Faça uma requisição POST para <code>/auth/login</code> com suas credenciais</li>' +
-    '  <li>O sistema retornará um token JWT</li>' +
-    '  <li>Inclua o token no cabeçalho Authorization de suas requisições: <code>Authorization: Bearer {seu_token}</code></li>' +
-    '</ol>' +
-    '<h2>Estrutura da API</h2>' +
-    '<p>A API está organizada nos seguintes módulos:</p>' +
-    '<ul>' +
-    '  <li><strong>Autenticação</strong>: Login, refresh token e gerenciamento de senhas</li>' +
-    '  <li><strong>Cidadãos</strong>: Cadastro e gestão de cidadãos beneficiários</li>' +
-    '  <li><strong>Benefícios</strong>: Configuração e gestão dos tipos de benefícios disponíveis</li>' +
-    '  <li><strong>Solicitações</strong>: Gestão das solicitações de benefícios (criação, avaliação, acompanhamento)</li>' +
-    '  <li><strong>Documentos</strong>: Upload e gestão de documentos anexados às solicitações</li>' +
-    '  <li><strong>Usuários</strong>: Administração de usuários do sistema (funcionários)</li>' +
-    '  <li><strong>Unidades</strong>: Gestão das unidades de atendimento da Secretaria</li>' +
-    '  <li><strong>Notificações</strong>: Envio e controle de notificações aos cidadãos e usuários</li>' +
-    '  <li><strong>Ocorrências</strong>: Registro de ocorrências, atividades e alterações nas solicitações</li>' +
-    '  <li><strong>Health</strong>: Verificação de saúde e status do sistema</li>' +
-    '  <li><strong>Metrics</strong>: Métricas e estatísticas de uso do sistema</li>' +
-    '</ul>'
+      '<p>API para gestão de benefícios eventuais da Secretaria Municipal de Assistência Social.</p>' +
+      '<p>Esta API permite o gerenciamento completo do fluxo de solicitação, análise e concessão de benefícios eventuais.</p>' +
+      '<h2>Autenticação</h2>' +
+      '<p>A API utiliza autenticação JWT (JSON Web Token). Para acessar os endpoints protegidos, é necessário obter um token através do endpoint de login e incluí-lo no cabeçalho das requisições.</p>' +
+      '<h3>Como obter o token</h3>' +
+      '<ol>' +
+      '  <li>Faça uma requisição POST para <code>/auth/login</code> com suas credenciais</li>' +
+      '  <li>O sistema retornará um token JWT</li>' +
+      '  <li>Inclua o token no cabeçalho Authorization de suas requisições: <code>Authorization: Bearer {seu_token}</code></li>' +
+      '</ol>' +
+      '<h2>Estrutura da API</h2>' +
+      '<p>A API está organizada nos seguintes módulos:</p>' +
+      '<ul>' +
+      '  <li><strong>Autenticação</strong>: Login, refresh token e gerenciamento de senhas</li>' +
+      '  <li><strong>Cidadãos</strong>: Cadastro e gestão de cidadãos beneficiários</li>' +
+      '  <li><strong>Benefícios</strong>: Configuração e gestão dos tipos de benefícios disponíveis</li>' +
+      '  <li><strong>Solicitações</strong>: Gestão das solicitações de benefícios (criação, avaliação, acompanhamento)</li>' +
+      '  <li><strong>Documentos</strong>: Upload e gestão de documentos anexados às solicitações</li>' +
+      '  <li><strong>Usuários</strong>: Administração de usuários do sistema (funcionários)</li>' +
+      '  <li><strong>Unidades</strong>: Gestão das unidades de atendimento da Secretaria</li>' +
+      '  <li><strong>Notificações</strong>: Envio e controle de notificações aos cidadãos e usuários</li>' +
+      '  <li><strong>Ocorrências</strong>: Registro de ocorrências, atividades e alterações nas solicitações</li>' +
+      '  <li><strong>Health</strong>: Verificação de saúde e status do sistema</li>' +
+      '  <li><strong>Metrics</strong>: Métricas e estatísticas de uso do sistema</li>' +
+      '</ul>',
   )
   .setVersion('1.0')
-  .setContact('Equipe SEMTAS', 'https://www.natal.rn.gov.br/semtas', 'suporte@semtas.natal.rn.gov.br')
+  .setContact(
+    'Equipe SEMTAS',
+    'https://www.natal.rn.gov.br/semtas',
+    'suporte@semtas.natal.rn.gov.br',
+  )
   .setLicense('Uso Interno', 'https://www.natal.rn.gov.br/semtas/licenca')
   .addTag('auth', 'Autenticação e controle de acesso ao sistema')
   .addTag('cidadaos', 'Cadastro e gestão de cidadãos beneficiários')
-  .addTag('beneficios', 'Configuração e gestão dos tipos de benefícios disponíveis')
-  .addTag('solicitacoes', 'Gestão das solicitações de benefícios (criação, avaliação, acompanhamento)')
-  .addTag('documentos', 'Upload e gestão de documentos anexados às solicitações')
+  .addTag(
+    'beneficios',
+    'Configuração e gestão dos tipos de benefícios disponíveis',
+  )
+  .addTag(
+    'solicitacoes',
+    'Gestão das solicitações de benefícios (criação, avaliação, acompanhamento)',
+  )
+  .addTag(
+    'documentos',
+    'Upload e gestão de documentos anexados às solicitações',
+  )
   .addTag('usuarios', 'Administração de usuários do sistema (funcionários)')
   .addTag('unidades', 'Gestão das unidades de atendimento da Secretaria')
-  .addTag('notificacoes', 'Envio e controle de notificações aos cidadãos e usuários')
-  .addTag('ocorrencias', 'Registro de ocorrências, atividades e alterações nas solicitações')
+  .addTag(
+    'notificacoes',
+    'Envio e controle de notificações aos cidadãos e usuários',
+  )
+  .addTag(
+    'ocorrencias',
+    'Registro de ocorrências, atividades e alterações nas solicitações',
+  )
   .addTag('health', 'Verificação de saúde e status do sistema')
   .addTag('metrics', 'Métricas e estatísticas de uso do sistema')
   .addBearerAuth(
@@ -582,9 +604,9 @@ export const swaggerSetupOptions: SwaggerCustomOptions = {
 export const exemplosPayload = {
   login: {
     email: 'usuario@semtas.gov.br',
-    senha: 'senha123'
+    senha: 'senha123',
   },
-  
+
   criarCidadao: {
     nome: 'Maria da Silva',
     cpf: '123.456.789-00',
@@ -598,37 +620,39 @@ export const exemplosPayload = {
       bairro: 'Centro',
       cidade: 'Natal',
       estado: 'RN',
-      cep: '59000-000'
+      cep: '59000-000',
     },
     telefone: '(84) 98765-4321',
     email: 'maria.silva@email.com',
     nis: '12345678901',
     escolaridade: 'Medio_Completo',
-    renda: 1200.50
+    renda: 1200.5,
   },
-  
+
   criarSolicitacao: {
     beneficiario_id: '550e8400-e29b-41d4-a716-446655440000',
     solicitante_id: '550e8400-e29b-41d4-a716-446655440000',
     tipo_beneficio_id: '550e8400-e29b-41d4-a716-446655440000',
     dados_beneficio: {
-      valor_solicitado: 1500.00,
-      justificativa: 'Falecimento de familiar próximo, sem condições financeiras para arcar com as despesas funerárias.',
-      observacoes: 'Família em situação de vulnerabilidade social.'
-    }
+      valor_solicitado: 1500.0,
+      justificativa:
+        'Falecimento de familiar próximo, sem condições financeiras para arcar com as despesas funerárias.',
+      observacoes: 'Família em situação de vulnerabilidade social.',
+    },
   },
-  
+
   avaliarSolicitacao: {
     parecer: 'Aprovado',
-    observacoes: 'Documentação completa e situação de vulnerabilidade confirmada.',
-    valor_aprovado: 1500.00
+    observacoes:
+      'Documentação completa e situação de vulnerabilidade confirmada.',
+    valor_aprovado: 1500.0,
   },
-  
+
   criarPendencia: {
     tipo: 'documento',
     descricao: 'Apresentar documento de identidade legível',
-    data_limite: '2023-01-28T14:30:00Z'
-  }
+    data_limite: '2023-01-28T14:30:00Z',
+  },
 };
 
 // Exemplos de respostas para endpoints
@@ -644,11 +668,11 @@ export const exemplosResponse = {
       cargo: 'tecnico_semtas',
       unidade: {
         id: '550e8400-e29b-41d4-a716-446655440000',
-        nome: 'CRAS Centro'
-      }
-    }
+        nome: 'CRAS Centro',
+      },
+    },
   },
-  
+
   cidadao: {
     id: '550e8400-e29b-41d4-a716-446655440000',
     nome: 'Maria da Silva',
@@ -664,21 +688,21 @@ export const exemplosResponse = {
       bairro: 'Centro',
       cidade: 'Natal',
       estado: 'RN',
-      cep: '59000-000'
+      cep: '59000-000',
     },
     telefone: '(84) 98765-4321',
     email: 'maria.silva@email.com',
     nis: '12345678901',
     escolaridade: 'Medio_Completo',
-    renda: 1200.50,
+    renda: 1200.5,
     unidade: {
       id: '550e8400-e29b-41d4-a716-446655440000',
-      nome: 'CRAS Centro'
+      nome: 'CRAS Centro',
     },
     data_cadastro: '2023-01-15T14:30:00Z',
-    ultima_atualizacao: '2023-01-15T14:30:00Z'
+    ultima_atualizacao: '2023-01-15T14:30:00Z',
   },
-  
+
   solicitacao: {
     id: '550e8400-e29b-41d4-a716-446655440000',
     numero_protocolo: 'SOL-2023-00001',
@@ -688,43 +712,44 @@ export const exemplosResponse = {
     beneficiario: {
       id: '550e8400-e29b-41d4-a716-446655440000',
       nome: 'Maria da Silva',
-      cpf: '123.456.789-00'
+      cpf: '123.456.789-00',
     },
     solicitante: {
       id: '550e8400-e29b-41d4-a716-446655440000',
       nome: 'Maria da Silva',
-      cpf: '123.456.789-00'
+      cpf: '123.456.789-00',
     },
     tipo_beneficio: {
       id: '550e8400-e29b-41d4-a716-446655440000',
-      nome: 'Auxílio Funeral'
+      nome: 'Auxílio Funeral',
     },
     unidade: {
       id: '550e8400-e29b-41d4-a716-446655440000',
-      nome: 'CRAS Centro'
+      nome: 'CRAS Centro',
     },
     tecnico_responsavel: {
       id: '550e8400-e29b-41d4-a716-446655440000',
-      nome: 'João Oliveira'
+      nome: 'João Oliveira',
     },
     dados_beneficio: {
-      valor_solicitado: 1500.00,
+      valor_solicitado: 1500.0,
       valor_aprovado: null,
-      justificativa: 'Falecimento de familiar próximo, sem condições financeiras para arcar com as despesas funerárias.',
-      observacoes: 'Família em situação de vulnerabilidade social.'
+      justificativa:
+        'Falecimento de familiar próximo, sem condições financeiras para arcar com as despesas funerárias.',
+      observacoes: 'Família em situação de vulnerabilidade social.',
     },
     etapa_atual: {
       ordem: 1,
       nome: 'Análise Técnica',
       responsavel: {
         id: '550e8400-e29b-41d4-a716-446655440000',
-        nome: 'João Oliveira'
+        nome: 'João Oliveira',
       },
       data_inicio: '2023-01-20T09:15:00Z',
-      prazo: '2023-01-22T09:15:00Z'
-    }
+      prazo: '2023-01-22T09:15:00Z',
+    },
   },
-  
+
   solicitacaoAvaliada: {
     id: '550e8400-e29b-41d4-a716-446655440000',
     numero_protocolo: 'SOL-2023-00001',
@@ -734,32 +759,34 @@ export const exemplosResponse = {
     beneficiario: {
       id: '550e8400-e29b-41d4-a716-446655440000',
       nome: 'Maria da Silva',
-      cpf: '123.456.789-00'
+      cpf: '123.456.789-00',
     },
     tipo_beneficio: {
       id: '550e8400-e29b-41d4-a716-446655440000',
-      nome: 'Auxílio Funeral'
+      nome: 'Auxílio Funeral',
     },
     dados_beneficio: {
-      valor_solicitado: 1500.00,
-      valor_aprovado: 1500.00,
-      justificativa: 'Falecimento de familiar próximo, sem condições financeiras para arcar com as despesas funerárias.',
-      observacoes: 'Família em situação de vulnerabilidade social.'
+      valor_solicitado: 1500.0,
+      valor_aprovado: 1500.0,
+      justificativa:
+        'Falecimento de familiar próximo, sem condições financeiras para arcar com as despesas funerárias.',
+      observacoes: 'Família em situação de vulnerabilidade social.',
     },
     etapa_atual: {
       ordem: 2,
       nome: 'Aprovação da Coordenação',
       responsavel: {
         id: '550e8400-e29b-41d4-a716-446655440000',
-        nome: 'Ana Souza'
+        nome: 'Ana Souza',
       },
       data_inicio: '2023-01-21T14:30:00Z',
-      prazo: '2023-01-22T14:30:00Z'
+      prazo: '2023-01-22T14:30:00Z',
     },
     parecer: 'Aprovado',
-    observacoes_avaliacao: 'Documentação completa e situação de vulnerabilidade confirmada.'
+    observacoes_avaliacao:
+      'Documentação completa e situação de vulnerabilidade confirmada.',
   },
-  
+
   pendencia: {
     id: '550e8400-e29b-41d4-a716-446655440000',
     solicitacao_id: '550e8400-e29b-41d4-a716-446655440000',
@@ -771,8 +798,8 @@ export const exemplosResponse = {
     data_resolucao: null,
     usuario_criacao: {
       id: '550e8400-e29b-41d4-a716-446655440000',
-      nome: 'João Oliveira'
+      nome: 'João Oliveira',
     },
-    usuario_resolucao: null
-  }
+    usuario_resolucao: null,
+  },
 };

@@ -8,13 +8,13 @@ import {
 
 /**
  * Migration: CreateRelatorioSchema
- * 
+ *
  * Descrição: Cria a estrutura do módulo de relatório, incluindo tabelas para
  * definição de relatórios, parâmetros, agendamentos e resultados.
- * 
+ *
  * Domínio: Relatório
  * Dependências: 1060000-CreateAuditoriaSchema.ts
- * 
+ *
  * @author Arquiteto de Dados
  * @date 16/05/2025
  */
@@ -156,7 +156,8 @@ export class CreateRelatorioSchema1070000 implements MigrationInterface {
             name: 'formatos_disponiveis',
             type: 'formato_saida_enum[]',
             isNullable: false,
-            default: "ARRAY['pdf'::formato_saida_enum, 'excel'::formato_saida_enum]",
+            default:
+              "ARRAY['pdf'::formato_saida_enum, 'excel'::formato_saida_enum]",
           },
           {
             name: 'ativo',
@@ -720,37 +721,91 @@ export class CreateRelatorioSchema1070000 implements MigrationInterface {
     `);
 
     // 3. Remover chaves estrangeiras
-    await queryRunner.dropForeignKey('execucao_relatorio', 'FK_EXECUCAO_USUARIO');
-    await queryRunner.dropForeignKey('execucao_relatorio', 'FK_EXECUCAO_AGENDAMENTO');
-    await queryRunner.dropForeignKey('execucao_relatorio', 'FK_EXECUCAO_RELATORIO');
-    await queryRunner.dropForeignKey('agendamento_relatorio', 'FK_AGENDAMENTO_USUARIO');
-    await queryRunner.dropForeignKey('agendamento_relatorio', 'FK_AGENDAMENTO_RELATORIO');
-    await queryRunner.dropForeignKey('parametro_relatorio', 'FK_PARAMETRO_RELATORIO');
-    await queryRunner.dropForeignKey('definicao_relatorio', 'FK_DEFINICAO_RELATORIO_CATEGORIA');
-    
+    await queryRunner.dropForeignKey(
+      'execucao_relatorio',
+      'FK_EXECUCAO_USUARIO',
+    );
+    await queryRunner.dropForeignKey(
+      'execucao_relatorio',
+      'FK_EXECUCAO_AGENDAMENTO',
+    );
+    await queryRunner.dropForeignKey(
+      'execucao_relatorio',
+      'FK_EXECUCAO_RELATORIO',
+    );
+    await queryRunner.dropForeignKey(
+      'agendamento_relatorio',
+      'FK_AGENDAMENTO_USUARIO',
+    );
+    await queryRunner.dropForeignKey(
+      'agendamento_relatorio',
+      'FK_AGENDAMENTO_RELATORIO',
+    );
+    await queryRunner.dropForeignKey(
+      'parametro_relatorio',
+      'FK_PARAMETRO_RELATORIO',
+    );
+    await queryRunner.dropForeignKey(
+      'definicao_relatorio',
+      'FK_DEFINICAO_RELATORIO_CATEGORIA',
+    );
+
     // 4. Remover índices
     await queryRunner.dropIndex('execucao_relatorio', 'IDX_EXECUCAO_STATUS');
     await queryRunner.dropIndex('execucao_relatorio', 'IDX_EXECUCAO_USUARIO');
-    await queryRunner.dropIndex('execucao_relatorio', 'IDX_EXECUCAO_AGENDAMENTO');
+    await queryRunner.dropIndex(
+      'execucao_relatorio',
+      'IDX_EXECUCAO_AGENDAMENTO',
+    );
     await queryRunner.dropIndex('execucao_relatorio', 'IDX_EXECUCAO_RELATORIO');
-    await queryRunner.dropIndex('agendamento_relatorio', 'IDX_AGENDAMENTO_ATIVO');
-    await queryRunner.dropIndex('agendamento_relatorio', 'IDX_AGENDAMENTO_PERIODICIDADE');
-    await queryRunner.dropIndex('agendamento_relatorio', 'IDX_AGENDAMENTO_USUARIO');
-    await queryRunner.dropIndex('agendamento_relatorio', 'IDX_AGENDAMENTO_RELATORIO');
-    await queryRunner.dropIndex('parametro_relatorio', 'IDX_PARAMETRO_RELATORIO');
-    await queryRunner.dropIndex('definicao_relatorio', 'IDX_DEFINICAO_RELATORIO_ATIVO');
-    await queryRunner.dropIndex('definicao_relatorio', 'IDX_DEFINICAO_RELATORIO_TIPO');
-    await queryRunner.dropIndex('definicao_relatorio', 'IDX_DEFINICAO_RELATORIO_CATEGORIA');
-    await queryRunner.dropIndex('definicao_relatorio', 'IDX_DEFINICAO_RELATORIO_NOME');
-    await queryRunner.dropIndex('categoria_relatorio', 'IDX_CATEGORIA_RELATORIO_NOME');
-    
+    await queryRunner.dropIndex(
+      'agendamento_relatorio',
+      'IDX_AGENDAMENTO_ATIVO',
+    );
+    await queryRunner.dropIndex(
+      'agendamento_relatorio',
+      'IDX_AGENDAMENTO_PERIODICIDADE',
+    );
+    await queryRunner.dropIndex(
+      'agendamento_relatorio',
+      'IDX_AGENDAMENTO_USUARIO',
+    );
+    await queryRunner.dropIndex(
+      'agendamento_relatorio',
+      'IDX_AGENDAMENTO_RELATORIO',
+    );
+    await queryRunner.dropIndex(
+      'parametro_relatorio',
+      'IDX_PARAMETRO_RELATORIO',
+    );
+    await queryRunner.dropIndex(
+      'definicao_relatorio',
+      'IDX_DEFINICAO_RELATORIO_ATIVO',
+    );
+    await queryRunner.dropIndex(
+      'definicao_relatorio',
+      'IDX_DEFINICAO_RELATORIO_TIPO',
+    );
+    await queryRunner.dropIndex(
+      'definicao_relatorio',
+      'IDX_DEFINICAO_RELATORIO_CATEGORIA',
+    );
+    await queryRunner.dropIndex(
+      'definicao_relatorio',
+      'IDX_DEFINICAO_RELATORIO_NOME',
+    );
+    await queryRunner.dropIndex(
+      'categoria_relatorio',
+      'IDX_CATEGORIA_RELATORIO_NOME',
+    );
+
     // 5. Remover tabelas
     await queryRunner.dropTable('execucao_relatorio');
     await queryRunner.dropTable('agendamento_relatorio');
     await queryRunner.dropTable('parametro_relatorio');
     await queryRunner.dropTable('definicao_relatorio');
     await queryRunner.dropTable('categoria_relatorio');
-    
+
     // 6. Remover tipos enumerados
     await queryRunner.query(`
       DROP TYPE IF EXISTS "tipo_parametro_enum";

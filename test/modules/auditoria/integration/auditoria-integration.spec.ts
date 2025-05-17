@@ -31,7 +31,7 @@ describe('Auditoria Integration Tests', () => {
     })
       .overrideProvider(getRepositoryToken(LogAuditoria))
       .useValue({
-        create: jest.fn().mockImplementation(dto => dto),
+        create: jest.fn().mockImplementation((dto) => dto),
         save: jest.fn().mockResolvedValue({ id: 'mock-log-id' }),
         find: jest.fn().mockResolvedValue([]),
         findOne: jest.fn().mockResolvedValue(null),
@@ -45,13 +45,21 @@ describe('Auditoria Integration Tests', () => {
       .compile();
 
     app = moduleFixture.createNestApplication();
-    app.use(moduleFixture.get<AuditoriaMiddleware>(AuditoriaMiddleware).use.bind(moduleFixture.get<AuditoriaMiddleware>(AuditoriaMiddleware)));
-    
-    logAuditoriaRepository = moduleFixture.get<Repository<LogAuditoria>>(getRepositoryToken(LogAuditoria));
+    app.use(
+      moduleFixture
+        .get<AuditoriaMiddleware>(AuditoriaMiddleware)
+        .use.bind(moduleFixture.get<AuditoriaMiddleware>(AuditoriaMiddleware)),
+    );
+
+    logAuditoriaRepository = moduleFixture.get<Repository<LogAuditoria>>(
+      getRepositoryToken(LogAuditoria),
+    );
     auditoriaService = moduleFixture.get<AuditoriaService>(AuditoriaService);
-    auditoriaQueueService = moduleFixture.get<AuditoriaQueueService>(AuditoriaQueueService);
+    auditoriaQueueService = moduleFixture.get<AuditoriaQueueService>(
+      AuditoriaQueueService,
+    );
     auditoriaQueue = moduleFixture.get<Queue>(getQueueToken('auditoria'));
-    
+
     await app.init();
   });
 
@@ -66,7 +74,7 @@ describe('Auditoria Integration Tests', () => {
         .get('/api/v1/usuarios')
         .set('User-Agent', 'test-agent')
         .expect(404); // 404 porque não temos o endpoint real configurado neste teste
-      
+
       // Verifica se o serviço de fila foi chamado para enfileirar o log
       expect(auditoriaQueue.add).toHaveBeenCalledWith(
         'registrar-log',
@@ -74,7 +82,7 @@ describe('Auditoria Integration Tests', () => {
           tipo_operacao: TipoOperacao.READ,
           entidade_afetada: 'Usuario',
         }),
-        expect.any(Object)
+        expect.any(Object),
       );
     });
 
@@ -92,19 +100,22 @@ describe('Auditoria Integration Tests', () => {
             numero: 123,
             bairro: 'Bairro Teste',
             cidade: 'Cidade Teste',
-            uf: 'SP'
-          }
+            uf: 'SP',
+          },
         })
         .set('User-Agent', 'test-agent')
         .expect(404); // 404 porque não temos o endpoint real configurado neste teste
-      
+
       // Verifica se o serviço de fila foi chamado para enfileirar o acesso a dados sensíveis
       expect(auditoriaQueue.add).toHaveBeenCalledWith(
         'registrar-acesso-dados-sensiveis',
         expect.objectContaining({
-          dados_sensiveis_acessados: expect.arrayContaining(['cpf', 'endereco']),
+          dados_sensiveis_acessados: expect.arrayContaining([
+            'cpf',
+            'endereco',
+          ]),
         }),
-        expect.any(Object)
+        expect.any(Object),
       );
     });
   });
@@ -118,9 +129,9 @@ describe('Auditoria Integration Tests', () => {
       logDto.descricao = 'Criação de novo usuário';
       logDto.ip_origem = '192.168.1.1';
       logDto.usuario_id = 'mock-user-id';
-      
+
       const result = await auditoriaService.create(logDto);
-      
+
       expect(logAuditoriaRepository.create).toHaveBeenCalledWith(logDto);
       expect(logAuditoriaRepository.save).toHaveBeenCalled();
       expect(result).toEqual({ id: 'mock-log-id' });
@@ -134,9 +145,9 @@ describe('Auditoria Integration Tests', () => {
       logDto.descricao = 'Criação de novo usuário';
       logDto.ip_origem = '192.168.1.1';
       logDto.usuario_id = 'mock-user-id';
-      
+
       await auditoriaQueueService.enfileirarLogAuditoria(logDto);
-      
+
       expect(auditoriaQueue.add).toHaveBeenCalledWith(
         'registrar-log',
         logDto,
@@ -146,7 +157,7 @@ describe('Auditoria Integration Tests', () => {
             type: 'exponential',
             delay: 1000,
           }),
-        })
+        }),
       );
     });
   });
@@ -155,10 +166,12 @@ describe('Auditoria Integration Tests', () => {
     it('deve validar corretamente o DTO de log de auditoria', async () => {
       const logDto = new CreateLogAuditoriaDto();
       // Não preenchemos campos obrigatórios
-      
+
       // Mockamos o método save para simular falha na validação
-      jest.spyOn(logAuditoriaRepository, 'save').mockRejectedValueOnce(new Error('Validation failed'));
-      
+      jest
+        .spyOn(logAuditoriaRepository, 'save')
+        .mockRejectedValueOnce(new Error('Validation failed'));
+
       await expect(auditoriaService.create(logDto)).rejects.toThrow();
     });
 
@@ -170,9 +183,9 @@ describe('Auditoria Integration Tests', () => {
       logDto.descricao = 'Criação de novo usuário';
       logDto.ip_origem = '192.168.1.1';
       logDto.usuario_id = 'mock-user-id';
-      
+
       await auditoriaService.create(logDto);
-      
+
       expect(logAuditoriaRepository.save).toHaveBeenCalled();
     });
   });

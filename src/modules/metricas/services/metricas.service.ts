@@ -9,17 +9,17 @@ import * as client from 'prom-client';
 export class MetricasService {
   private readonly logger = new Logger(MetricasService.name);
   private registry: client.Registry;
-  
+
   // Métricas HTTP
   private httpRequestsTotal: client.Counter<string>;
   private httpRequestDuration: client.Histogram<string>;
   private httpRequestsSizeBytes: client.Histogram<string>;
   private httpResponsesSizeBytes: client.Histogram<string>;
-  
+
   // Métricas de negócio
   private operacoesTotal: client.Counter<string>;
   private dadosSensiveisAcessosTotal: client.Counter<string>;
-  
+
   // Métricas de sistema
   private memoryUsage: client.Gauge<string>;
   private cpuUsage: client.Gauge<string>;
@@ -27,13 +27,13 @@ export class MetricasService {
   constructor() {
     // Inicializa o registro de métricas
     this.registry = new client.Registry();
-    
+
     // Registra o coletor padrão (métricas do Node.js)
     client.collectDefaultMetrics({
       register: this.registry,
       prefix: 'pgben_',
     });
-    
+
     this.inicializarMetricas();
     this.logger.log('Serviço de métricas inicializado');
   }
@@ -121,16 +121,23 @@ export class MetricasService {
     responseSize: number,
   ): void {
     const statusCode = status.toString();
-    
+
     // Normaliza o path para evitar cardinalidade alta
     const normalizedPath = this.normalizarPath(path);
-    
-    this.httpRequestsTotal.inc({ method, path: normalizedPath, status: statusCode });
+
+    this.httpRequestsTotal.inc({
+      method,
+      path: normalizedPath,
+      status: statusCode,
+    });
     this.httpRequestDuration.observe(
       { method, path: normalizedPath, status: statusCode },
       duration,
     );
-    this.httpRequestsSizeBytes.observe({ method, path: normalizedPath }, requestSize);
+    this.httpRequestsSizeBytes.observe(
+      { method, path: normalizedPath },
+      requestSize,
+    );
     this.httpResponsesSizeBytes.observe(
       { method, path: normalizedPath, status: statusCode },
       responseSize,
@@ -152,8 +159,16 @@ export class MetricasService {
    * @param campo Campo sensível acessado
    * @param usuarioId ID do usuário que acessou os dados
    */
-  registrarAcessoDadosSensiveis(entidade: string, campo: string, usuarioId: string): void {
-    this.dadosSensiveisAcessosTotal.inc({ entidade, campo, usuario_id: usuarioId });
+  registrarAcessoDadosSensiveis(
+    entidade: string,
+    campo: string,
+    usuarioId: string,
+  ): void {
+    this.dadosSensiveisAcessosTotal.inc({
+      entidade,
+      campo,
+      usuario_id: usuarioId,
+    });
   }
 
   /**
@@ -162,7 +177,7 @@ export class MetricasService {
   atualizarMetricasSistema(): void {
     const memoryUsage = process.memoryUsage();
     this.memoryUsage.set(memoryUsage.rss);
-    
+
     // Nota: Para obter métricas precisas de CPU, seria necessário
     // implementar uma solução mais robusta usando bibliotecas como os-utils
     // Esta é uma implementação simplificada
@@ -187,7 +202,10 @@ export class MetricasService {
     // Remove IDs e outros parâmetros variáveis do path
     // Exemplo: /api/v1/usuarios/123e4567-e89b-12d3-a456-426614174000 -> /api/v1/usuarios/:id
     return path
-      .replace(/\/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/g, '/:id')
+      .replace(
+        /\/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/g,
+        '/:id',
+      )
       .replace(/\/[0-9]+/g, '/:id');
   }
 }

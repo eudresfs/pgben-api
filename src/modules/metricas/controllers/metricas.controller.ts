@@ -13,7 +13,7 @@ import { Public } from '../../../shared/decorators/public.decorator';
 export class MetricasController {
   constructor(
     private readonly metricasService: MetricasService,
-    private readonly healthService: HealthService
+    private readonly healthService: HealthService,
   ) {}
 
   /**

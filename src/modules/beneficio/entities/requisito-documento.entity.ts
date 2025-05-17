@@ -7,7 +7,7 @@ import {
   DeleteDateColumn,
   ManyToOne,
   JoinColumn,
-  Index
+  Index,
 } from 'typeorm';
 import { IsNotEmpty } from 'class-validator';
 import { TipoBeneficio } from './tipo-beneficio.entity';
@@ -33,13 +33,17 @@ export class RequisitoDocumento {
   @IsNotEmpty({ message: 'Tipo de benefício é obrigatório' })
   tipo_beneficio_id: string;
 
-  @ManyToOne(() => TipoBeneficio, tipoBeneficio => tipoBeneficio.requisitos_documentos)
+  @ManyToOne(
+    () => TipoBeneficio,
+    (tipoBeneficio) => tipoBeneficio.requisitos_documentos,
+  )
   @JoinColumn({ name: 'tipo_beneficio_id' })
   tipo_beneficio: TipoBeneficio;
 
   @Column({
     type: 'enum',
-    enum: TipoDocumento
+    enum: TipoDocumento,
+    enumName: 'tipo_documento',
   })
   @IsNotEmpty({ message: 'Tipo de documento é obrigatório' })
   tipo_documento: TipoDocumento;

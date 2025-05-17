@@ -38,29 +38,42 @@ export class AuthService {
     const accessTokenExpiresIn = this.getAccessTokenExpiresIn();
     const refreshTokenExpiresIn = this.getRefreshTokenExpiresIn();
 
-    this.logger.log({} as RequestContext,
+    this.logger.log(
+      {} as RequestContext,
       `Configuração de tokens - Access Token: ${accessTokenExpiresIn}, ` +
-      `Refresh Token: ${refreshTokenExpiresIn} ` +
-      `(em segundos: ${this.timeToSeconds(refreshTokenExpiresIn)})`
+        `Refresh Token: ${refreshTokenExpiresIn} ` +
+        `(em segundos: ${this.timeToSeconds(refreshTokenExpiresIn)})`,
     );
 
     // Debug das variáveis de ambiente
-    console.log('JWT_REFRESH_TOKEN_EXPIRES_IN:', this.configService.get('JWT_REFRESH_TOKEN_EXPIRES_IN', 'não definido'));
-    console.log('JWT_ACCESS_TOKEN_EXPIRES_IN:', this.configService.get('JWT_ACCESS_TOKEN_EXPIRES_IN', 'não definido'));
+    console.log(
+      'JWT_REFRESH_TOKEN_EXPIRES_IN:',
+      this.configService.get('JWT_REFRESH_TOKEN_EXPIRES_IN', 'não definido'),
+    );
+    console.log(
+      'JWT_ACCESS_TOKEN_EXPIRES_IN:',
+      this.configService.get('JWT_ACCESS_TOKEN_EXPIRES_IN', 'não definido'),
+    );
   }
 
   /**
    * Obtém o tempo de expiração do access token no formato semântico (1h, 7d, etc)
    */
   private getAccessTokenExpiresIn(): string {
-    return this.configService.get<string>('JWT_ACCESS_TOKEN_EXPIRES_IN', this.DEFAULT_ACCESS_TOKEN_EXPIRES_IN);
+    return this.configService.get<string>(
+      'JWT_ACCESS_TOKEN_EXPIRES_IN',
+      this.DEFAULT_ACCESS_TOKEN_EXPIRES_IN,
+    );
   }
 
   /**
    * Obtém o tempo de expiração do refresh token no formato semântico (1h, 7d, etc)
    */
   private getRefreshTokenExpiresIn(): string {
-    return this.configService.get<string>('JWT_REFRESH_TOKEN_EXPIRES_IN', this.DEFAULT_REFRESH_TOKEN_EXPIRES_IN);
+    return this.configService.get<string>(
+      'JWT_REFRESH_TOKEN_EXPIRES_IN',
+      this.DEFAULT_REFRESH_TOKEN_EXPIRES_IN,
+    );
   }
 
   /**
@@ -79,17 +92,26 @@ export class AuthService {
       const unit = match[2];
 
       switch (unit) {
-        case 's': return value; // segundos
-        case 'm': return value * 60; // minutos
-        case 'h': return value * 60 * 60; // horas
-        case 'd': return value * 24 * 60 * 60; // dias
-        case 'w': return value * 7 * 24 * 60 * 60; // semanas
-        default: return 86400; // padrão: 1 dia
+        case 's':
+          return value; // segundos
+        case 'm':
+          return value * 60; // minutos
+        case 'h':
+          return value * 60 * 60; // horas
+        case 'd':
+          return value * 24 * 60 * 60; // dias
+        case 'w':
+          return value * 7 * 24 * 60 * 60; // semanas
+        default:
+          return 86400; // padrão: 1 dia
       }
     }
 
     // Fallback para valores que não conseguimos interpretar
-    this.logger.warn({} as RequestContext, `Não foi possível interpretar o formato de tempo: ${timeString}, usando 1 dia como padrão`);
+    this.logger.warn(
+      {} as RequestContext,
+      `Não foi possível interpretar o formato de tempo: ${timeString}, usando 1 dia como padrão`,
+    );
     return 86400; // 1 dia em segundos
   }
 
@@ -107,7 +129,10 @@ export class AuthService {
     }
 
     // Verificar se a senha está correta
-    const senhaCorreta = await require('bcrypt').compare(pass, usuario.senhaHash);
+    const senhaCorreta = await require('bcrypt').compare(
+      pass,
+      usuario.senhaHash,
+    );
     if (!senhaCorreta) {
       throw new UnauthorizedException('Nome de usuário ou senha inválidos');
     }
@@ -137,7 +162,10 @@ export class AuthService {
     const refreshTokenExpiresIn = this.getRefreshTokenExpiresIn();
     const refreshTokenSeconds = this.timeToSeconds(refreshTokenExpiresIn);
 
-    this.logger.log(ctx, `Criando refresh token com duração de ${refreshTokenExpiresIn} (${refreshTokenSeconds} segundos)`);
+    this.logger.log(
+      ctx,
+      `Criando refresh token com duração de ${refreshTokenExpiresIn} (${refreshTokenSeconds} segundos)`,
+    );
 
     const refreshToken = await this.refreshTokenService.createToken(
       usuario as Usuario,
@@ -161,7 +189,7 @@ export class AuthService {
       nome: input.name,
       email: input.username,
       senha: input.password,
-      role: (input.roles?.[0] as unknown as Role) || Role.CIDADAO
+      role: (input.roles?.[0] as unknown as Role) || Role.CIDADAO,
     };
 
     // Criar o usuário
@@ -198,10 +226,7 @@ export class AuthService {
 
     // Revogar o token atual
     const ipAddress = (ctx as any).req?.ip || '0.0.0.0';
-    await this.refreshTokenService.revokeToken(
-      refreshToken.token,
-      ipAddress,
-    );
+    await this.refreshTokenService.revokeToken(refreshToken.token, ipAddress);
 
     // Revogar tokens descendentes
     await this.refreshTokenService.revokeDescendantTokens(
@@ -223,7 +248,10 @@ export class AuthService {
     const refreshTokenExpiresIn = this.getRefreshTokenExpiresIn();
     const refreshTokenSeconds = this.timeToSeconds(refreshTokenExpiresIn);
 
-    this.logger.log(ctx, `Criando novo refresh token com duração de ${refreshTokenExpiresIn} (${refreshTokenSeconds} segundos)`);
+    this.logger.log(
+      ctx,
+      `Criando novo refresh token com duração de ${refreshTokenExpiresIn} (${refreshTokenSeconds} segundos)`,
+    );
 
     const newRefreshToken = await this.refreshTokenService.createToken(
       usuario as Usuario,
@@ -252,29 +280,35 @@ export class AuthService {
     // Garantir que estamos usando o algoritmo RS256 e a chave privada para assinar o token
     const privateKey = Buffer.from(
       this.configService.get<string>('JWT_PRIVATE_KEY_BASE64', ''),
-      'base64'
+      'base64',
     ).toString('utf8');
 
     // Obter valores de expiração no formato semântico
     const accessTokenExpiresIn = this.getAccessTokenExpiresIn();
     const refreshTokenExpiresIn = this.getRefreshTokenExpiresIn();
 
-    this.logger.log(ctx, `Gerando tokens - Access token expira em: ${accessTokenExpiresIn}, Refresh token expira em: ${refreshTokenExpiresIn}`);
+    this.logger.log(
+      ctx,
+      `Gerando tokens - Access token expira em: ${accessTokenExpiresIn}, Refresh token expira em: ${refreshTokenExpiresIn}`,
+    );
 
-    const accessToken = this.jwtService.sign({
-      ...payload,
-      ...subject
-    }, {
-      secret: privateKey,
-      algorithm: 'RS256',
-      expiresIn: accessTokenExpiresIn
-    });
+    const accessToken = this.jwtService.sign(
+      {
+        ...payload,
+        ...subject,
+      },
+      {
+        secret: privateKey,
+        algorithm: 'RS256',
+        expiresIn: accessTokenExpiresIn,
+      },
+    );
 
     // Para o refreshToken, usamos o mesmo JwtService, mas com opções diferentes de expiração
     const refreshTokenJwt = this.jwtService.sign(subject, {
       secret: privateKey,
       algorithm: 'RS256',
-      expiresIn: refreshTokenExpiresIn
+      expiresIn: refreshTokenExpiresIn,
     });
 
     const authToken = {

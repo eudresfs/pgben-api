@@ -13,7 +13,7 @@ import { HttpModule } from '@nestjs/axios';
 
 /**
  * Testes para o MonitoringModule
- * 
+ *
  * Verifica se o módulo está configurado corretamente com todos os providers,
  * controladores e exportações necessárias.
  */
@@ -53,7 +53,9 @@ describe('MonitoringModule', () => {
   });
 
   it('deve fornecer o EnhancedMetricsController', () => {
-    const controller = module.get<EnhancedMetricsController>(EnhancedMetricsController);
+    const controller = module.get<EnhancedMetricsController>(
+      EnhancedMetricsController,
+    );
     expect(controller).toBeDefined();
     expect(controller).toBeInstanceOf(EnhancedMetricsController);
   });

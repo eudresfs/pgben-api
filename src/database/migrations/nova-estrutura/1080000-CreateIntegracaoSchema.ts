@@ -8,13 +8,13 @@ import {
 
 /**
  * Migration: CreateIntegracaoSchema
- * 
+ *
  * Descrição: Cria a estrutura do módulo de integração, incluindo tabelas para
  * configuração de APIs externas, webhooks, filas de mensagens e logs de integração.
- * 
+ *
  * Domínio: Integração
  * Dependências: 1070000-CreateRelatorioSchema.ts
- * 
+ *
  * @author Arquiteto de Dados
  * @date 16/05/2025
  */
@@ -212,7 +212,8 @@ export class CreateIntegracaoSchema1080000 implements MigrationInterface {
             name: 'mapeamento_campos',
             type: 'jsonb',
             isNullable: true,
-            comment: 'Mapeamento entre campos do sistema externo e campos internos',
+            comment:
+              'Mapeamento entre campos do sistema externo e campos internos',
           },
           {
             name: 'transformacoes',
@@ -857,28 +858,73 @@ export class CreateIntegracaoSchema1080000 implements MigrationInterface {
     `);
 
     // 3. Remover chaves estrangeiras
-    await queryRunner.dropForeignKey('log_execucao_integracao', 'FK_LOG_EXECUCAO_INTEGRACAO_MENSAGEM');
-    await queryRunner.dropForeignKey('mensagem_integracao', 'FK_MENSAGEM_INTEGRACAO_WEBHOOK');
-    await queryRunner.dropForeignKey('mensagem_integracao', 'FK_MENSAGEM_INTEGRACAO_AGENDAMENTO');
-    await queryRunner.dropForeignKey('mensagem_integracao', 'FK_MENSAGEM_INTEGRACAO_CONFIGURACAO');
+    await queryRunner.dropForeignKey(
+      'log_execucao_integracao',
+      'FK_LOG_EXECUCAO_INTEGRACAO_MENSAGEM',
+    );
+    await queryRunner.dropForeignKey(
+      'mensagem_integracao',
+      'FK_MENSAGEM_INTEGRACAO_WEBHOOK',
+    );
+    await queryRunner.dropForeignKey(
+      'mensagem_integracao',
+      'FK_MENSAGEM_INTEGRACAO_AGENDAMENTO',
+    );
+    await queryRunner.dropForeignKey(
+      'mensagem_integracao',
+      'FK_MENSAGEM_INTEGRACAO_CONFIGURACAO',
+    );
     await queryRunner.dropForeignKey('webhook', 'FK_WEBHOOK_CONFIGURACAO');
-    await queryRunner.dropForeignKey('agendamento_integracao', 'FK_AGENDAMENTO_INTEGRACAO_CONFIGURACAO');
-    await queryRunner.dropForeignKey('configuracao_integracao', 'FK_CONFIGURACAO_INTEGRACAO_SISTEMA');
-    
+    await queryRunner.dropForeignKey(
+      'agendamento_integracao',
+      'FK_AGENDAMENTO_INTEGRACAO_CONFIGURACAO',
+    );
+    await queryRunner.dropForeignKey(
+      'configuracao_integracao',
+      'FK_CONFIGURACAO_INTEGRACAO_SISTEMA',
+    );
+
     // 4. Remover índices
-    await queryRunner.dropIndex('log_execucao_integracao', 'IDX_LOG_EXECUCAO_INTEGRACAO_MENSAGEM');
-    await queryRunner.dropIndex('mensagem_integracao', 'IDX_MENSAGEM_INTEGRACAO_DATA_CRIACAO');
-    await queryRunner.dropIndex('mensagem_integracao', 'IDX_MENSAGEM_INTEGRACAO_STATUS');
-    await queryRunner.dropIndex('mensagem_integracao', 'IDX_MENSAGEM_INTEGRACAO_CONFIGURACAO');
+    await queryRunner.dropIndex(
+      'log_execucao_integracao',
+      'IDX_LOG_EXECUCAO_INTEGRACAO_MENSAGEM',
+    );
+    await queryRunner.dropIndex(
+      'mensagem_integracao',
+      'IDX_MENSAGEM_INTEGRACAO_DATA_CRIACAO',
+    );
+    await queryRunner.dropIndex(
+      'mensagem_integracao',
+      'IDX_MENSAGEM_INTEGRACAO_STATUS',
+    );
+    await queryRunner.dropIndex(
+      'mensagem_integracao',
+      'IDX_MENSAGEM_INTEGRACAO_CONFIGURACAO',
+    );
     await queryRunner.dropIndex('webhook', 'IDX_WEBHOOK_ATIVO');
     await queryRunner.dropIndex('webhook', 'IDX_WEBHOOK_CONFIGURACAO');
-    await queryRunner.dropIndex('agendamento_integracao', 'IDX_AGENDAMENTO_INTEGRACAO_ATIVO');
-    await queryRunner.dropIndex('agendamento_integracao', 'IDX_AGENDAMENTO_INTEGRACAO_CONFIGURACAO');
-    await queryRunner.dropIndex('configuracao_integracao', 'IDX_CONFIGURACAO_INTEGRACAO_STATUS');
-    await queryRunner.dropIndex('configuracao_integracao', 'IDX_CONFIGURACAO_INTEGRACAO_TIPO');
-    await queryRunner.dropIndex('configuracao_integracao', 'IDX_CONFIGURACAO_INTEGRACAO_SISTEMA');
+    await queryRunner.dropIndex(
+      'agendamento_integracao',
+      'IDX_AGENDAMENTO_INTEGRACAO_ATIVO',
+    );
+    await queryRunner.dropIndex(
+      'agendamento_integracao',
+      'IDX_AGENDAMENTO_INTEGRACAO_CONFIGURACAO',
+    );
+    await queryRunner.dropIndex(
+      'configuracao_integracao',
+      'IDX_CONFIGURACAO_INTEGRACAO_STATUS',
+    );
+    await queryRunner.dropIndex(
+      'configuracao_integracao',
+      'IDX_CONFIGURACAO_INTEGRACAO_TIPO',
+    );
+    await queryRunner.dropIndex(
+      'configuracao_integracao',
+      'IDX_CONFIGURACAO_INTEGRACAO_SISTEMA',
+    );
     await queryRunner.dropIndex('sistema_externo', 'IDX_SISTEMA_EXTERNO_NOME');
-    
+
     // 5. Remover tabelas
     await queryRunner.dropTable('log_execucao_integracao');
     await queryRunner.dropTable('mensagem_integracao');
@@ -886,7 +932,7 @@ export class CreateIntegracaoSchema1080000 implements MigrationInterface {
     await queryRunner.dropTable('agendamento_integracao');
     await queryRunner.dropTable('configuracao_integracao');
     await queryRunner.dropTable('sistema_externo');
-    
+
     // 6. Remover tipos enumerados
     await queryRunner.query(`
       DROP TYPE IF EXISTS "status_mensagem_enum";

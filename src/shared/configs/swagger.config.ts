@@ -2,7 +2,7 @@ import { DocumentBuilder, SwaggerCustomOptions } from '@nestjs/swagger';
 
 /**
  * Configuração do Swagger para a documentação da API
- * 
+ *
  * Este arquivo centraliza todas as configurações do Swagger para a aplicação
  */
 
@@ -10,26 +10,30 @@ export const swaggerConfig = new DocumentBuilder()
   .setTitle('API de Gestão de Benefícios Eventuais')
   .setDescription(
     'API para o Sistema de Gestão de Benefícios Eventuais da SEMTAS<br><br>' +
-    '<h2>Visão Geral</h2>' +
-    '<p>Esta API fornece endpoints para gerenciar o processo completo de solicitação, análise e concessão de benefícios eventuais.</p>' +
-    '<h2>Autenticação</h2>' +
-    '<p>A API utiliza autenticação JWT (JSON Web Token). Para acessar endpoints protegidos, é necessário obter um token através do endpoint de login e incluí-lo no cabeçalho das requisições.</p>' +
-    '<h2>Estrutura da API</h2>' +
-    '<p>A API está organizada nos seguintes módulos:</p>' +
-    '<ul>' +
-    '  <li><strong>Autenticação</strong>: Login, refresh token e gerenciamento de senhas</li>' +
-    '  <li><strong>Usuários</strong>: Gerenciamento de usuários do sistema</li>' +
-    '  <li><strong>Cidadãos</strong>: Cadastro e gerenciamento de cidadãos/beneficiários</li>' +
-    '  <li><strong>Unidades</strong>: Gerenciamento de unidades e setores</li>' +
-    '  <li><strong>Benefícios</strong>: Configuração de tipos de benefícios e requisitos</li>' +
-    '  <li><strong>Solicitações</strong>: Gerenciamento do fluxo de solicitações de benefícios</li>' +
-    '  <li><strong>Documentos</strong>: Upload e gerenciamento de documentos</li>' +
-    '  <li><strong>Ocorrências</strong>: Registro de ocorrências relacionadas às solicitações</li>' +
-    '  <li><strong>Notificações</strong>: Sistema de notificações para usuários</li>' +
-    '</ul>'
+      '<h2>Visão Geral</h2>' +
+      '<p>Esta API fornece endpoints para gerenciar o processo completo de solicitação, análise e concessão de benefícios eventuais.</p>' +
+      '<h2>Autenticação</h2>' +
+      '<p>A API utiliza autenticação JWT (JSON Web Token). Para acessar endpoints protegidos, é necessário obter um token através do endpoint de login e incluí-lo no cabeçalho das requisições.</p>' +
+      '<h2>Estrutura da API</h2>' +
+      '<p>A API está organizada nos seguintes módulos:</p>' +
+      '<ul>' +
+      '  <li><strong>Autenticação</strong>: Login, refresh token e gerenciamento de senhas</li>' +
+      '  <li><strong>Usuários</strong>: Gerenciamento de usuários do sistema</li>' +
+      '  <li><strong>Cidadãos</strong>: Cadastro e gerenciamento de cidadãos/beneficiários</li>' +
+      '  <li><strong>Unidades</strong>: Gerenciamento de unidades e setores</li>' +
+      '  <li><strong>Benefícios</strong>: Configuração de tipos de benefícios e requisitos</li>' +
+      '  <li><strong>Solicitações</strong>: Gerenciamento do fluxo de solicitações de benefícios</li>' +
+      '  <li><strong>Documentos</strong>: Upload e gerenciamento de documentos</li>' +
+      '  <li><strong>Ocorrências</strong>: Registro de ocorrências relacionadas às solicitações</li>' +
+      '  <li><strong>Notificações</strong>: Sistema de notificações para usuários</li>' +
+      '</ul>',
   )
   .setVersion('1.0')
-  .setContact('Equipe SEMTAS', 'https://www.natal.rn.gov.br/semtas', 'suporte@semtas.natal.rn.gov.br')
+  .setContact(
+    'Equipe SEMTAS',
+    'https://www.natal.rn.gov.br/semtas',
+    'suporte@semtas.natal.rn.gov.br',
+  )
   .setLicense('Uso Interno', 'https://www.natal.rn.gov.br/semtas/licenca')
   .addTag('auth', 'Autenticação e autorização')
   .addTag('usuarios', 'Usuários do sistema')
@@ -49,7 +53,7 @@ export const swaggerConfig = new DocumentBuilder()
       description: 'Insira o token JWT',
       in: 'header',
     },
-    'JWT-auth'
+    'JWT-auth',
   )
   .build();
 

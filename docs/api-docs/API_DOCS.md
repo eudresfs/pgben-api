@@ -79,9 +79,84 @@ Authorization: Bearer seu_token_jwt
     "estado": "RN",
     "cep": "59000-000"
   },
-  "telefone": "(84) 98765-4321"
+  "telefone": "(84) 98765-4321",
+  "papeis": [
+    {
+      "tipo_papel": "BENEFICIARIO",
+      "metadados": {
+        "documento": "123456789",
+        "validade": "2025-12-31"
+      }
+    },
+    {
+      "tipo_papel": "REQUERENTE",
+      "metadados": {
+        "processo": "REQ-2024-0001"
+      }
+    }
+  ]
 }
 ```
+
+#### Sobre o campo `papeis`
+- O campo `papeis` é um array de objetos, onde cada objeto representa um papel do cidadão (ex: BENEFICIARIO, REQUERENTE, REPRESENTANTE_LEGAL).
+- O campo `metadados` permite armazenar informações dinâmicas e específicas para cada tipo de papel, em formato JSON.
+- Exemplo de metadados para BENEFICIARIO: `{ "documento": "123456789", "validade": "2025-12-31" }`
+- Exemplo de metadados para REQUERENTE: `{ "processo": "REQ-2024-0001" }`
+
+### Exemplo de resposta ao consultar cidadão
+
+```
+GET /api/v1/cidadao/{id}
+Authorization: Bearer seu_token_jwt
+
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "nome": "Maria da Silva",
+  "cpf": "123.456.789-00",
+  "data_nascimento": "1985-05-10",
+  ...
+  "papeis": [
+    {
+      "id": "b1e6e8cc-0e4f-4c30-9c5d-123456789abc",
+      "tipo_papel": "BENEFICIARIO",
+      "metadados": {
+        "documento": "123456789",
+        "validade": "2025-12-31"
+      },
+      "criadoEm": "2024-05-01T10:00:00Z",
+      "atualizadoEm": "2024-05-10T15:00:00Z"
+    },
+    {
+      "id": "a2e6e8cc-0e4f-4c30-9c5d-987654321abc",
+      "tipo_papel": "REQUERENTE",
+      "metadados": {
+        "processo": "REQ-2024-0001"
+      },
+      "criadoEm": "2024-05-02T10:00:00Z",
+      "atualizadoEm": "2024-05-10T15:00:00Z"
+    }
+  ]
+}
+```
+
+### Cadastro de Papel do Cidadão
+
+```
+POST /api/v1/papel-cidadao
+Content-Type: application/json
+Authorization: Bearer seu_token_jwt
+
+{
+  "cidadaoId": "550e8400-e29b-41d4-a716-446655440000",
+  "tipo_papel": "REPRESENTANTE_LEGAL",
+  "metadados": {
+    "documento": "999888777",
+    "validade": "2026-01-01"
+  }
+}
+```
+
 
 ### Criação de Solicitação de Benefício
 

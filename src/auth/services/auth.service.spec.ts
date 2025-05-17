@@ -6,7 +6,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AppLogger } from '../../shared/logger/logger.service';
 import { RequestContext } from '../../shared/request-context/request-context.dto';
 import { UsuarioService } from '../../modules/usuario/services/usuario.service';
-import { Role } from '../../auth/enums/role.enum';
+import { Role } from '../../shared/enums/role.enum';
 import { ROLE } from '../constants/role.constant';
 import {
   AuthTokenOutput,
@@ -85,8 +85,10 @@ describe('AuthService', () => {
 
   describe('validateUser', () => {
     const bcrypt = require('bcrypt');
-    jest.spyOn(bcrypt, 'compare').mockImplementation(() => Promise.resolve(true));
-    
+    jest
+      .spyOn(bcrypt, 'compare')
+      .mockImplementation(() => Promise.resolve(true));
+
     it('should success when username/password valid', async () => {
       const mockUsuario = {
         id: '123',
@@ -94,18 +96,24 @@ describe('AuthService', () => {
         email: 'jhon@example.com',
         senhaHash: 'hashedpassword',
         status: 'ativo',
-        role: Role.TECNICO_UNIDADE
+        role: Role.TECNICO_UNIDADE,
       };
-      
+
       jest
         .spyOn(mockedUsuarioService, 'findByEmail')
         .mockImplementation(() => Promise.resolve(mockUsuario));
 
-      const result = await service.validateUser(ctx, 'jhon@example.com', 'somepass');
-      
+      const result = await service.validateUser(
+        ctx,
+        'jhon@example.com',
+        'somepass',
+      );
+
       expect(result).toHaveProperty('id', '123');
       expect(result).toHaveProperty('username', 'jhon@example.com');
-      expect(mockedUsuarioService.findByEmail).toBeCalledWith('jhon@example.com');
+      expect(mockedUsuarioService.findByEmail).toBeCalledWith(
+        'jhon@example.com',
+      );
     });
 
     it('should fail when username/password invalid', async () => {
@@ -117,37 +125,41 @@ describe('AuthService', () => {
       await expect(
         service.validateUser(ctx, 'jhon@example.com', 'somepass'),
       ).rejects.toThrowError(UnauthorizedException);
-      
+
       // Senha incorreta
-      jest
-        .spyOn(mockedUsuarioService, 'findByEmail')
-        .mockImplementation(() => Promise.resolve({
+      jest.spyOn(mockedUsuarioService, 'findByEmail').mockImplementation(() =>
+        Promise.resolve({
           id: '123',
           nome: 'John Doe',
           email: 'jhon@example.com',
           senhaHash: 'hashedpassword',
-          status: 'ativo'
-        }));
-      
-      jest.spyOn(bcrypt, 'compare').mockImplementation(() => Promise.resolve(false));
-      
+          status: 'ativo',
+        }),
+      );
+
+      jest
+        .spyOn(bcrypt, 'compare')
+        .mockImplementation(() => Promise.resolve(false));
+
       await expect(
         service.validateUser(ctx, 'jhon@example.com', 'wrongpass'),
       ).rejects.toThrowError(UnauthorizedException);
     });
 
     it('should fail when user account is disabled', async () => {
-      jest
-        .spyOn(mockedUsuarioService, 'findByEmail')
-        .mockImplementation(() => Promise.resolve({
+      jest.spyOn(mockedUsuarioService, 'findByEmail').mockImplementation(() =>
+        Promise.resolve({
           id: '123',
           nome: 'John Doe',
           email: 'jhon@example.com',
           senhaHash: 'hashedpassword',
-          status: 'inativo'
-        }));
-      
-      jest.spyOn(bcrypt, 'compare').mockImplementation(() => Promise.resolve(true));
+          status: 'inativo',
+        }),
+      );
+
+      jest
+        .spyOn(bcrypt, 'compare')
+        .mockImplementation(() => Promise.resolve(true));
 
       await expect(
         service.validateUser(ctx, 'jhon@example.com', 'somepass'),
@@ -175,9 +187,9 @@ describe('AuthService', () => {
         status: 'ativo',
         role: Role.TECNICO_UNIDADE,
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       };
-      
+
       jest
         .spyOn(mockedUsuarioService, 'create')
         .mockImplementation(() => Promise.resolve(mockUsuarioCriado));
@@ -201,16 +213,42 @@ describe('AuthService', () => {
         status: 'ativo',
         role: Role.TECNICO_UNIDADE,
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       };
-      
+
       jest
         .spyOn(mockedUsuarioService, 'findById')
         .mockImplementation(() => Promise.resolve(mockUsuario));
 
       jest.spyOn(service, 'getAuthToken').mockImplementation(() => authToken);
 
-      const result = await service.refreshToken(ctx);
+      // Criar um input para o refresh token
+      const refreshTokenInput = {
+        refreshToken: 'valid-refresh-token'
+      };
+      
+      // Mock do RefreshTokenService
+      const mockRefreshToken = {
+        token: 'valid-refresh-token',
+        revoked: false,
+        expiresAt: new Date(Date.now() + 1000 * 60 * 60), // 1 hora no futuro
+        usuario: { id: '123' }
+      };
+      
+      // Mock do serviço de tokens
+      const mockRefreshTokenService = {
+        findToken: jest.fn().mockResolvedValue(mockRefreshToken),
+        revokeToken: jest.fn().mockResolvedValue(true),
+        revokeDescendantTokens: jest.fn().mockResolvedValue(true),
+        createToken: jest.fn().mockResolvedValue({ token: 'new-refresh-token' })
+      };
+      
+      // Substituir o serviço mockado
+      Object.defineProperty(service, 'refreshTokenService', {
+        value: mockRefreshTokenService
+      });
+      
+      const result = await service.refreshToken(ctx, refreshTokenInput);
 
       expect(service.getAuthToken).toBeCalled();
       expect(result).toMatchObject(authToken);
@@ -221,8 +259,34 @@ describe('AuthService', () => {
         .spyOn(mockedUsuarioService, 'findById')
         .mockImplementation(() => Promise.resolve(null));
 
-      await expect(service.refreshToken(ctx)).rejects.toThrowError(
-        'ID de usuário inválido',
+      // Criar um input para o refresh token
+      const refreshTokenInput = {
+        refreshToken: 'invalid-refresh-token'
+      };
+      
+      // Mock do RefreshTokenService
+      const mockRefreshToken = {
+        token: 'invalid-refresh-token',
+        revoked: false,
+        expiresAt: new Date(Date.now() + 1000 * 60 * 60), // 1 hora no futuro
+        usuario: { id: '999' } // ID que não existe
+      };
+      
+      // Mock do serviço de tokens
+      const mockRefreshTokenService = {
+        findToken: jest.fn().mockResolvedValue(mockRefreshToken),
+        revokeToken: jest.fn().mockResolvedValue(true),
+        revokeDescendantTokens: jest.fn().mockResolvedValue(true),
+        createToken: jest.fn().mockResolvedValue(null)
+      };
+      
+      // Substituir o serviço mockado
+      Object.defineProperty(service, 'refreshTokenService', {
+        value: mockRefreshTokenService
+      });
+      
+      await expect(service.refreshToken(ctx, refreshTokenInput)).rejects.toThrowError(
+        'Usuário não encontrado',
       );
     });
 
@@ -234,13 +298,13 @@ describe('AuthService', () => {
   describe('getAuthToken', () => {
     const accessTokenExpiry = 100;
     const refreshTokenExpiry = 200;
-    const user = { id: 5, username: 'username', roles: [ROLE.USER] };
+    const user = { id: 5, username: 'username', roles: [Role.CIDADAO] };
 
     const subject = { sub: user.id };
     const payload = {
       username: user.username,
       sub: user.id,
-      roles: [ROLE.USER],
+      roles: [Role.CIDADAO],
     };
 
     beforeEach(() => {

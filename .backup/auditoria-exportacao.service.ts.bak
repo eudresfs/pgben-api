@@ -1,0 +1,1540 @@
+import { Injectable, Logger, ForbiddenException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { LogAuditoria } from '../entities/log-auditoria.entity';
+import { QueryLogAuditoriaDto } from '../dto/query-log-auditoria.dto';
+import { ConfigService } from '@nestjs/config';
+import * as fs from 'fs';
+import * as path from 'path';
+import * as zlib from 'zlib';
+import * as ExcelJS from 'exceljs';
+import PDFDocument = require('pdfkit');
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import * as sanitizeFilename from 'sanitize-filename';
+import * as mime from 'mime-types';
+
+/**
+ * Formatos de exportação suportados para os logs de auditoria - Versão MVP
+ * 
+ * @enum {string}
+ * @property {string} JSON - Formato JSON (JavaScript Object Notation)
+ * @property {string} CSV - Formato CSV (Comma-Separated Values)
+ * @note Formatos Excel e PDF foram adiados para versões futuras do sistema
+ */
+export enum FormatoExportacao {
+  /** Formato JSON (JavaScript Object Notation) */
+  JSON = 'json',
+  /** Formato CSV (Comma-Separated Values) */
+  CSV = 'csv',
+  // Formatos removidos para o MVP:
+  // EXCEL = 'xlsx',
+  // PDF = 'pdf',
+}
+
+/**
+ * Opções de exportação para os logs de auditoria
+ * 
+ * @interface OpcoesExportacao
+ * @property {FormatoExportacao} formato - Formato de saída desejado para a exportação
+ * @property {string} [caminho] - Caminho personalizado para salvar o arquivo exportado (opcional)
+ * @property {string} [nomeArquivo] - Nome personalizado para o arquivo exportado (opcional)
+ * @property {boolean} [comprimido] - Indica se o arquivo deve ser compactado (opcional)
+ * @property {string[]} [campos] - Lista de campos a serem incluídos na exportação (opcional)
+ */
+export interface OpcoesExportacao {
+  /**
+   * Formato de exportação
+   */
+  formato: FormatoExportacao;
+
+  /**
+   * Caminho para salvar o arquivo (opcional)
+   * Se não for fornecido, será usado o diretório padrão
+   */
+  caminho?: string;
+
+  /**
+   * Nome do arquivo (opcional)
+   * Se não for fornecido, será gerado automaticamente
+   */
+  nomeArquivo?: string;
+
+  /**
+   * Indica se o arquivo deve ser comprimido
+   */
+  comprimido?: boolean;
+
+  /**
+   * Campos a serem incluídos na exportação
+   * Se não for fornecido, todos os campos serão incluídos
+   */
+  campos?: string[];
+}
+
+/**
+ * Resultado da operação de exportação
+ * 
+ * @interface ResultadoExportacao
+ * @property {string} caminhoArquivo - Caminho completo do arquivo gerado
+ * @property {number} registrosExportados - Quantidade de registros exportados
+ * @property {number} tamanhoArquivo - Tamanho do arquivo em bytes
+ * @property {Date} dataHora - Data e hora da exportação
+ * @property {FormatoExportacao} formato - Formato do arquivo gerado
+ */
+export interface ResultadoExportacao {
+  /** Caminho completo do arquivo gerado */
+  caminhoArquivo: string;
+  /** Quantidade de registros exportados */
+  registrosExportados: number;
+  /** Tamanho do arquivo em bytes */
+  tamanhoArquivo: number;
+
+  /**
+   * Data e hora da exportação
+   */
+  dataHora: Date;
+
+  /**
+   * Formato da exportação
+   */
+  formato: FormatoExportacao;
+}
+
+/**
+ * Serviço para exportação de logs de auditoria
+ */
+/**
+ * Serviço responsável por exportar logs de auditoria - Versão MVP
+ * 
+ * Implementação simplificada para MVP com suporte apenas a formatos essenciais (JSON, CSV).
+ * Formatos avançados (Excel, PDF) e funcionalidades complexas foram adiados para versões futuras.
+ * 
+ * @class AuditoriaExportacaoService
+ */
+@Injectable()
+export class AuditoriaExportacaoService {
+  /** Logger para registro de eventos do serviço */
+  private readonly logger = new Logger(AuditoriaExportacaoService.name);
+  
+  /** Diretório base para armazenar os arquivos exportados */
+  private readonly diretorioExportacao: string;
+  
+  /** Tamanho máximo de registros para exportação em lote */
+  /**
+   * Tamanho máximo de registros para exportação em lote
+   * Valor configurável via variável de ambiente, padrão 10.000
+   */
+  private readonly MAX_REGISTROS_POR_LOTE: number;
+  
+  /**
+   * Tamanho máximo do arquivo de exportação em bytes (100MB)
+   */
+  /**
+   * Tamanho máximo do arquivo de exportação em bytes (50MB por padrão)
+   * Pode ser configurado via variável de ambiente AUDITORIA_MAX_FILE_SIZE_MB
+   */
+  private readonly TAMANHO_MAXIMO_ARQUIVO: number;
+  
+  /**
+   * Timeout para operações de exportação em milissegundos (5 minutos)
+   */
+  private readonly TIMEOUT_EXPORTACAO = 5 * 60 * 1000;
+
+  /**
+   * Cria uma nova instância do serviço de exportação de auditoria
+   * 
+   * @param logAuditoriaRepository - Repositório para acesso aos logs de auditoria
+   * @param configService - Serviço de configuração para obter parâmetros do sistema
+   */
+  constructor(
+    @InjectRepository(LogAuditoria)
+    private readonly logAuditoriaRepository: Repository<LogAuditoria>,
+    private readonly configService: ConfigService,
+  ) {
+    // Configurar limites
+    this.MAX_REGISTROS_POR_LOTE = 
+      Math.min(
+        Math.max(1, Number(this.configService.get<number>('AUDITORIA_MAX_EXPORT_RECORDS') || 10000)),
+        50000 // Limite absoluto de 50.000 registros
+      );
+      
+    // Configurar tamanho máximo do arquivo (em MB, padrão 100MB)
+    this.TAMANHO_MAXIMO_ARQUIVO = 
+      Math.min(
+        Math.max(1, Number(this.configService.get<number>('AUDITORIA_MAX_FILE_SIZE_MB') || 100)),
+        500 // Limite absoluto de 500MB
+      ) * 1024 * 1024; // Converter para bytes
+    // Configurar diretório de exportação
+    const exportDir = this.configService.get<string>('AUDITORIA_EXPORT_DIR');
+    this.diretorioExportacao = exportDir || 
+      path.join(process.cwd(), 'exports', 'auditoria');
+
+    // Garantir que o diretório existe
+    if (!fs.existsSync(this.diretorioExportacao)) {
+      fs.mkdirSync(this.diretorioExportacao, { recursive: true });
+      this.logger.log(
+        `Diretório de exportação criado: ${this.diretorioExportacao}`,
+      );
+    }
+  }
+
+  /**
+   * Exporta logs de auditoria com base nos filtros e opções fornecidos
+   *
+   * @param filtros Filtros para selecionar os logs
+   * @param opcoes Opções de exportação
+   * @returns Resultado da exportação
+   */
+  /**
+   * Exporta logs de auditoria com base nos filtros fornecidos
+   * 
+   * @param filtros - Critérios de filtragem para os logs
+   * @param opcoes - Configurações para a exportação
+   * @returns Informações sobre o arquivo gerado
+   * @throws {Error} Quando ocorre um erro durante a exportação
+   */
+  async exportarLogs(
+    filtros: QueryLogAuditoriaDto,
+    opcoes: OpcoesExportacao,
+  ): Promise<ResultadoExportacao> {
+    // Validar opções de exportação
+    this.validarOpcoesExportacao(opcoes);
+    
+    // Validar filtros
+    if (!filtros || typeof filtros !== 'object') {
+      throw new Error('Filtros de consulta inválidos');
+    }
+    const startTime = Date.now();
+    const exportId = Math.random().toString(36).substring(2, 10);
+    
+    this.logger.log(`[${exportId}] Iniciando exportação de logs com filtros: ${JSON.stringify(filtros)}`);
+    
+    try {
+
+  if (logs.length === 0) {
+    throw new Error('Nenhum log encontrado para os critérios fornecidos');
+  }
+
+  if (logs.length > this.MAX_REGISTROS_POR_LOTE) {
+    this.logger.warn(
+      `Limite de registros excedido: ${logs.length}. A exportação será limitada a ${this.MAX_REGISTROS_POR_LOTE} registros.`,
+    );
+
+  /**
+   * Busca logs de auditoria para exportação com base nos filtros fornecidos
+   * 
+   * @param filtros - Critérios de filtragem para os logs
+   * @returns Lista de logs de auditoria
+   * @private
+   */
+  private async buscarLogsParaExportacao(
+    filtros: QueryLogAuditoriaDto,
+  ): Promise<LogAuditoria[]> {
+    try {
+      // Validar parâmetros de entrada
+      if (!filtros) {
+        throw new Error('Parâmetros de filtro não fornecidos');
+      }
+      
+      this.logger.debug(`Buscando logs com filtros: ${JSON.stringify(filtros)}`);
+      
+      // Remover paginação para exportar todos os logs
+      const { pagina, itens_por_pagina, ...filtrosSemPaginacao } = filtros;
+
+      // Construir query
+      const query = this.logAuditoriaRepository.createQueryBuilder('log');
+
+      // Aplicar filtros
+      if (filtrosSemPaginacao.tipo_operacao) {
+        query.andWhere('log.tipo_operacao = :tipo_operacao', { tipo_operacao: filtrosSemPaginacao.tipo_operacao });
+      }
+
+      if (filtrosSemPaginacao.entidade_afetada) {
+        query.andWhere('log.entidade_afetada = :entidade_afetada', { entidade_afetada: filtrosSemPaginacao.entidade_afetada });
+      }
+
+      if (filtrosSemPaginacao.entidade_id) {
+        query.andWhere('log.entidade_id = :entidade_id', { entidade_id: filtrosSemPaginacao.entidade_id });
+      }
+
+      if (filtrosSemPaginacao.usuario_id) {
+        query.andWhere('log.usuario_id = :usuario_id', { usuario_id: filtrosSemPaginacao.usuario_id });
+      }
+
+      if (filtrosSemPaginacao.data_inicial) {
+        const dataInicio = new Date(filtrosSemPaginacao.data_inicial);
+        if (isNaN(dataInicio.getTime())) {
+          throw new Error('Data de início inválida');
+        }
+        query.andWhere('log.created_at >= :data_inicial', { data_inicial: dataInicio });
+      }
+
+      if (filtrosSemPaginacao.data_final) {
+        const dataFim = new Date(filtrosSemPaginacao.data_final);
+        if (isNaN(dataFim.getTime())) {
+          throw new Error('Data de fim inválida');
+        }
+        // Ajustar para o final do dia
+        dataFim.setHours(23, 59, 59, 999);
+        query.andWhere('log.created_at <= :data_final', { data_final: dataFim });
+      }
+
+      // Ordenar por data de criação (mais recentes primeiro)
+      query.orderBy('log.created_at', 'DESC');
+
+      // Executar a consulta
+      this.logger.debug(`Executando consulta: ${query.getSql()}`);
+      const result = await query.getMany();
+      
+      this.logger.debug(`Consulta retornou ${result.length} registros`);
+      return result;
+      
+    } catch (error) {
+      this.logger.error(`Erro ao buscar logs: ${error.message}`, error.stack);
+      throw new Error(`Falha ao buscar logs: ${error.message}`);
+    }
+  }
+
+  /**
+   * Processa os campos dos logs para exportação
+   *
+   * @param logs Logs a serem processados
+   * @param campos Campos a serem incluídos
+   * @returns Logs processados
+   */
+  /**
+   * Filtra e formata os campos dos logs conforme solicitado
+   * 
+   * @param logs - Lista de logs a serem processados
+   * @param campos - Lista opcional de campos a serem incluídos
+   * @returns Array de objetos com os campos processados
+   * @private
+   */
+  private processarCampos(
+    logs: LogAuditoria[], 
+    campos?: string[]
+  ): Array<Record<string, unknown>> {
+    if (!campos || campos.length === 0) {
+      return logs;
+    }
+
+    return logs.map((log) => {
+      const resultado: any = {};
+
+      campos.forEach((campo) => {
+        if (campo in log) {
+          resultado[campo] = log[campo];
+        }
+      });
+
+      return resultado;
+    });
+  }
+
+  /**
+   * Valida as opções de exportação
+   * @private
+   */
+  private validarOpcoesExportacao(opcoes: OpcoesExportacao): void {
+    if (!opcoes) {
+      throw new Error('Opções de exportação não fornecidas');
+    }
+    
+    if (!Object.values(FormatoExportacao).includes(opcoes.formato)) {
+      throw new Error(`Formato de exportação inválido: ${opcoes.formato}`);
+    }
+    
+    // Validar campos personalizados, se fornecidos
+    if (opcoes.campos && Array.isArray(opcoes.campos)) {
+      const camposInvalidos = opcoes.campos.filter(
+        campo => typeof campo !== 'string' || !/^[a-zA-Z0-9_]+$/.test(campo)
+      );
+      
+      if (camposInvalidos.length > 0) {
+        throw new Error(`Campos inválidos: ${camposInvalidos.join(', ')}`);
+      }
+    }
+  }
+
+  /**
+   * Gera um nome de arquivo para a exportação
+   *
+   * @param opcoes Opções de exportação
+   * @returns Nome do arquivo
+   */
+  /**
+   * Gera um nome de arquivo único para a exportação
+   * 
+   * @param opcoes - Opções de exportação contendo formato e compressão
+   * @returns Nome do arquivo gerado
+   * @private
+   */
+  /**
+   * Gera um nome de arquivo seguro para exportação
+   * @private
+   */
+  private gerarNomeArquivo(opcoes: OpcoesExportacao): string {
+    let nomeArquivo: string;
+    
+    if (opcoes.nomeArquivo) {
+      // Sanitizar o nome do arquivo para evitar path traversal
+      nomeArquivo = sanitizeFilename(opcoes.nomeArquivo, { replacement: '_' });
+      
+      // Remover a extensão se existir
+      const ext = path.extname(nomeArquivo);
+      if (ext) {
+        nomeArquivo = nomeArquivo.slice(0, -ext.length);
+      }
+    } else {
+      // Gerar nome baseado na data/hora
+      const dataHora = format(new Date(), 'yyyyMMdd-HHmmss');
+      nomeArquivo = `auditoria-${dataHora}`;
+    }
+    
+    // Adicionar a extensão correta baseada no formato
+    const extensao = opcoes.formato;
+    const nomeFinal = `${nomeArquivo}.${extensao}${opcoes.comprimido ? '.gz' : ''}`;
+    
+    // Validar o nome do arquivo final
+    if (!/^[\w\-. ]+$/.test(nomeFinal)) {
+      throw new Error('Nome de arquivo inválido');
+    }
+    
+    return nomeFinal;
+  }
+
+  /**
+   * Valida se o caminho do arquivo é seguro para escrita
+   * @private
+   */
+  private validarCaminhoArquivo(caminhoArquivo: string): string {
+    try {
+      // Normalizar o caminho para resolver ../ e ./
+      const caminhoNormalizado = path.normalize(caminhoArquivo);
+      
+      // Resolver o caminho absoluto
+      const caminhoAbsoluto = path.resolve(caminhoNormalizado);
+      
+      // Verificar se o caminho está dentro do diretório de exportação
+      const diretorioExportacaoAbsoluto = path.resolve(this.diretorioExportacao);
+      
+      if (!caminhoAbsoluto.startsWith(diretorioExportacaoAbsoluto)) {
+        throw new ForbiddenException('Caminho do arquivo não permitido');
+      }
+      
+      // Verificar se o caminho contém tentativas de path traversal
+      if (caminhoNormalizado.includes('..') || path.isAbsolute(caminhoNormalizado) && 
+          !caminhoNormalizado.startsWith(diretorioExportacaoAbsoluto)) {
+        throw new ForbiddenException('Caminho do arquivo inválido');
+      }
+      
+      // Verificar se o diretório pai existe ou criá-lo
+      const diretorioPai = path.dirname(caminhoAbsoluto);
+      if (!fs.existsSync(diretorioPai)) {
+        fs.mkdirSync(diretorioPai, { recursive: true, mode: 0o755 });
+      }
+      
+      // Verificar permissões de escrita
+      try {
+        fs.accessSync(diretorioPai, fs.constants.W_OK);
+      } catch {
+        throw new ForbiddenException('Sem permissão para escrever no diretório de destino');
+      }
+      
+      return caminhoAbsoluto;
+      
+    } catch (error) {
+      this.logger.error(`Erro ao validar caminho do arquivo: ${error.message}`, error.stack);
+      throw new ForbiddenException(`Caminho do arquivo inválido: ${error.message}`);
+    }
+  }
+
+  /**
+   * Exporta logs para o formato JSON
+   *
+   * @param logs Logs a serem exportados
+   * @param caminhoArquivo Caminho do arquivo
+   * @param comprimido Indica se o arquivo deve ser comprimido
+   * @returns Tamanho do arquivo em bytes
+   */
+  /**
+   * Exporta os logs para o formato JSON
+   * 
+   * @param logs - Dados a serem exportados
+   * @param caminhoArquivo - Caminho onde o arquivo será salvo
+   * @param comprimido - Indica se o arquivo deve ser compactado
+   * @returns Tamanho do arquivo gerado em bytes
+   * @private
+   */
+  /**
+   * Sanitiza os dados antes da exportação para evitar injeção de código
+   * @private
+   */
+  /**
+   * Sanitiza os dados antes da exportação para evitar injeção de código
+   * @private
+   */
+  private sanitizarDadosParaExportacao(dados: unknown[]): unknown[] {
+    // Validação de entrada
+    if (!Array.isArray(dados)) {
+      this.logger.warn('Dados fornecidos não são um array. Retornando array vazio.');
+      return [];
+    }
+
+    try {
+      // Função auxiliar para sanitizar valores recursivamente
+      const sanitizeValue = (val: unknown): unknown => {
+        if (val === null || val === undefined) {
+          return val;
+        }
+        
+        if (Array.isArray(val)) {
+          return val.map(sanitizeValue);
+        }
+        
+        if (typeof val === 'object') {
+          return Object.entries(val).reduce((acc, [k, v]) => {
+            // Remover propriedades potencialmente perigosas
+            if (!k.startsWith('__') && k !== 'constructor' && k !== 'prototype') {
+              acc[k] = sanitizeValue(v);
+            }
+            return acc;
+          }, {} as Record<string, unknown>);
+        }
+        
+        if (typeof val === 'string') {
+          // Remover caracteres de controle e caracteres potencialmente perigosos
+          return val
+            .replace(/[\x00-\x1F\x7F-\x9F\uFFFD]/g, '')
+            .replace(/[\u200B-\u200D\uFEFF]/g, ''); // Remover caracteres de largura zero
+        }
+        
+        return val;
+      };
+
+      return dados
+        .map((item, index) => {
+          try {
+            if (!item || typeof item !== 'object') {
+              return item;
+            }
+            
+            // Converter para JSON e de volta para remover funções e referências circulares
+            const safeItem = JSON.parse(JSON.stringify(item));
+            return sanitizeValue(safeItem);
+          } catch (error) {
+            this.logger.warn(
+              `Erro ao sanitizar item ${index}: ${error instanceof Error ? error.message : 'Erro desconhecido'}`
+            );
+            return null;
+          }
+        })
+        .filter(item => item !== null);
+    } catch (error) {
+      this.logger.error(
+        `Erro crítico ao sanitizar dados: ${error instanceof Error ? error.message : 'Erro desconhecido'}`
+      );
+      return [];
+    }
+  }
+
+  /**
+   * Exporta dados para o formato JSON
+   * @param logs - Dados a serem exportados
+   * @param caminhoArquivo - Caminho do arquivo de destino
+   * @param comprimido - Se verdadeiro, compacta o arquivo usando gzip
+   * @returns Tamanho do arquivo gerado em bytes
+   * @throws {Error} Quando ocorre um erro durante a exportação
+   */
+  private async exportarJSON(
+    logs: Record<string, unknown>[],
+    caminhoArquivo: string,
+    comprimido?: boolean,
+  ): Promise<number> {
+    // Validação de parâmetros
+    if (!Array.isArray(logs)) {
+      throw new Error('O parâmetro logs deve ser um array');
+    }
+
+    if (typeof caminhoArquivo !== 'string' || !caminhoArquivo.trim()) {
+      throw new Error('Caminho do arquivo inválido');
+    }
+
+    // Sanitizar dados antes de exportar
+    const logsSanitizados = this.sanitizarDadosParaExportacao(logs);
+    
+    // Verificar se há dados para exportar
+    if (!logsSanitizados.length) {
+      this.logger.warn('Nenhum dado válido para exportar para JSON');
+      return 0;
+    }
+    
+    // Verificar tamanho máximo permitido
+    const tamanhoEstimado = JSON.stringify(logs).length * 1.1; // Estimativa conservadora
+    if (tamanhoEstimado > this.TAMANHO_MAXIMO_ARQUIVO) {
+      throw new Error(`Tamanho do arquivo excede o limite de ${this.TAMANHO_MAXIMO_ARQUIVO / (1024 * 1024)}MB`);
+    }
+    
+    // Configurar timeout
+    const timeoutPromise = new Promise<never>((_, reject) => 
+      setTimeout(() => reject(new Error('Tempo excedido ao exportar para JSON')), this.TIMEOUT_EXPORTACAO)
+    );
+    
+    // Executar exportação com timeout
+    return Promise.race([
+      this.exportarJSONInterno(logs, caminhoArquivo, comprimido),
+      timeoutPromise
+    ]);
+  }
+  
+  /**
+   * Método interno para exportação de JSON
+   * @private
+   */
+  private async exportarJSONInterno(
+    logs: Record<string, unknown>[],
+    caminhoArquivo: string,
+    comprimido?: boolean,
+  ): Promise<number> {
+    const startTime = Date.now();
+    const exportId = Math.random().toString(36).substring(2, 10);
+    
+    this.logger.log(`[${exportId}] Iniciando exportação para JSON (comprimido: ${comprimido})`);
+    
+    try {
+      // Validação dos parâmetros de entrada
+      if (!Array.isArray(logs)) {
+        throw new Error('O parâmetro logs deve ser um array');
+      }
+      
+      if (typeof caminhoArquivo !== 'string' || !caminhoArquivo.trim()) {
+        throw new Error('Caminho do arquivo inválido');
+      }
+      
+      // Garantir que o diretório de destino existe
+      const diretorio = path.dirname(caminhoArquivo);
+      if (!fs.existsSync(diretorio)) {
+        fs.mkdirSync(diretorio, { recursive: true });
+      }
+      
+      const conteudo = JSON.stringify(logs, null, 2);
+
+      if (comprimido) {
+      const gzip = zlib.createGzip();
+      const output = fs.createWriteStream(caminhoArquivo);
+
+      return new Promise((resolve, reject) => {
+        const input = fs.createReadStream(Buffer.from(conteudo));
+
+        input.pipe(gzip).pipe(output);
+
+        output.on('finish', () => {
+          const stats = fs.statSync(caminhoArquivo);
+          resolve(stats.size);
+        });
+
+        output.on('error', reject);
+      });
+    } else {
+      fs.writeFileSync(caminhoArquivo, conteudo);
+      const stats = fs.statSync(caminhoArquivo);
+      return stats.size;
+    }
+  }
+
+  /**
+   * Exporta logs para o formato CSV
+   *
+   * @param logs Logs a serem exportados
+   * @param caminhoArquivo Caminho do arquivo
+   * @param comprimido Indica se o arquivo deve ser comprimido
+   * @returns Tamanho do arquivo em bytes
+   */
+  /**
+   * Exporta os logs para o formato CSV
+   * 
+   * @param logs - Dados a serem exportados
+   * @param caminhoArquivo - Caminho onde o arquivo será salvo
+   * @param comprimido - Indica se o arquivo deve ser compactado
+   * @returns Tamanho do arquivo gerado em bytes
+   * @throws {Error} Quando ocorre um erro durante a exportação
+   * @private
+   */
+  /**
+   * Escapa valores CSV para evitar injeção de fórmulas maliciosas
+   * @param valor - Valor a ser escapado para CSV
+   * @returns String escapada e segura para uso em CSV
+   * @private
+   */
+  private escaparValorCSV(valor: unknown): string {
+    if (valor === null || valor === undefined) {
+      return '';
+    }
+    
+    const str = String(valor);
+    
+    // Se o valor começar com =, +, -, @, &, etc., adiciona um prefixo de escape
+    if (/^[=+\-@&].*$/.test(str)) {
+      return `\t${str}`; // Usa tab como prefixo para evitar injeção de fórmulas
+    }
+    
+    // Se o valor contiver vírgulas, quebras de linha ou aspas, envolve em aspas
+    if (str.includes(',') || str.includes('\n') || str.includes('"')) {
+      return `"${str.replace(/"/g, '""')}"`; // Escapa aspas duplas
+    }
+    
+    return str;
+  }
+
+  private async exportarCSV(
+    logs: Record<string, unknown>[],
+    caminhoArquivo: string,
+    comprimido?: boolean,
+  ): Promise<number> {
+    // Sanitizar dados antes de exportar
+    const logsSanitizados = this.sanitizarDadosParaExportacao(logs);
+    
+    // Verificar se o array de logs está vazio
+    if (!logsSanitizados.length) {
+      this.logger.warn('Nenhum dado para exportar para CSV');
+      return 0;
+    }
+    // Verificar se o array de logs está vazio
+    if (!logs.length) {
+      this.logger.warn('Nenhum dado para exportar para CSV');
+      return 0;
+    }
+    
+    // Verificar tamanho máximo permitido
+    const tamanhoEstimado = JSON.stringify(logs).length * 1.5; // Estimativa conservadora
+    if (tamanhoEstimado > this.TAMANHO_MAXIMO_ARQUIVO) {
+      throw new Error(`Tamanho do arquivo excede o limite de ${this.TAMANHO_MAXIMO_ARQUIVO / (1024 * 1024)}MB`);
+    }
+    
+    // Configurar timeout
+    const timeoutPromise = new Promise<never>((_, reject) => 
+      setTimeout(() => reject(new Error('Tempo excedido ao exportar para CSV')), this.TIMEOUT_EXPORTACAO)
+    );
+    
+    // Executar exportação com timeout
+    return Promise.race([
+      this.exportarCSVInterno(logs, caminhoArquivo, comprimido),
+      timeoutPromise
+    ]);
+  }
+  
+  /**
+   * Método interno para exportação de CSV
+   * @private
+   */
+  private async exportarCSVInterno(
+    logs: Record<string, unknown>[],
+    caminhoArquivo: string,
+    comprimido?: boolean,
+  ): Promise<number> {
+    // Verificar se há logs para exportar
+    if (!logs || !Array.isArray(logs) || logs.length === 0) {
+      throw new Error('Nenhum dado para exportar');
+    }
+    
+    // Verificar se o caminho do arquivo é seguro
+    if (!caminhoArquivo || typeof caminhoArquivo !== 'string') {
+      throw new Error('Caminho do arquivo inválido');
+    }
+    const startTime = Date.now();
+    const exportId = Math.random().toString(36).substring(2, 10);
+    
+    this.logger.log(`[${exportId}] Iniciando exportação para CSV (comprimido: ${comprimido})`);
+    
+    try {
+      // Validação dos parâmetros de entrada
+      if (!Array.isArray(logs)) {
+        throw new Error('O parâmetro logs deve ser um array');
+      }
+      
+      if (!logs.length) {
+        throw new Error('Nenhum dado para exportar');
+      }
+      
+      if (typeof caminhoArquivo !== 'string' || !caminhoArquivo.trim()) {
+        throw new Error('Caminho do arquivo inválido');
+      }
+      
+      // Garantir que o diretório de destino existe
+      const diretorio = path.dirname(caminhoArquivo);
+      if (!fs.existsSync(diretorio)) {
+        fs.mkdirSync(diretorio, { recursive: true });
+      }
+
+      // Converter para CSV manualmente para evitar dependência externa
+      const headers = Object.keys(logs[0]);
+      const csvRows = [];
+      
+      // Adicionar cabeçalho
+      csvRows.push(headers.join(','));
+      
+      // Adicionar linhas
+      for (const log of logs) {
+        const values = headers.map(header => {
+          const value = log[header];
+          if (value === null || value === undefined) {
+            return '';
+          }
+          // Escapar aspas e quebras de linha
+          const escaped = String(value).replace(/"/g, '""');
+          return `"${escaped}"`;
+        });
+        csvRows.push(values.join(','));
+      }
+
+      const csvContent = csvRows.join('\n');
+
+      if (comprimido) {
+        const gzip = zlib.createGzip();
+        const output = fs.createWriteStream(caminhoArquivo);
+
+        return new Promise<number>((resolve, reject) => {
+          const { Readable } = require('stream');
+          const input = Readable.from([csvContent]);
+
+          input.pipe(gzip).pipe(output);
+
+          output.on('finish', () => {
+            try {
+              const stats = fs.statSync(caminhoArquivo);
+              resolve(stats.size);
+            } catch (error) {
+              reject(new Error(`Falha ao obter estatísticas do arquivo: ${error instanceof Error ? error.message : 'Erro desconhecido'}`));
+            }
+          });
+
+          output.on('error', (error: Error) => {
+            reject(new Error(`Erro ao escrever arquivo CSV: ${error.message}`));
+          });
+        });
+      } else {
+        await fs.promises.writeFile(caminhoArquivo, csvContent, 'utf8');
+        const stats = fs.statSync(caminhoArquivo);
+        return stats.size;
+      }
+    } catch (error) {
+      this.logger.error(`Erro ao exportar para CSV: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+      throw new Error(`Falha ao exportar para CSV: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+    }
+  }
+
+  /**
+   * Exporta logs para o formato Excel
+   *
+}
+// Removido método duplicado
+
+/**
+* Exporta logs para o formato CSV
+*
+* @param logs Logs a serem exportados
+* @param caminhoArquivo Caminho do arquivo
+* @param comprimido Indica se o arquivo deve ser comprimido
+* @returns Tamanho do arquivo em bytes
+*/
+/**
+* Exporta os logs para o formato CSV
+* 
+* @param logs - Dados a serem exportados
+* @param caminhoArquivo - Caminho onde o arquivo será salvo
+* @param comprimido - Indica se o arquivo deve ser compactado
+* @returns Tamanho do arquivo gerado em bytes
+* @throws {Error} Quando ocorre um erro durante a exportação
+* @private
+*/
+/**
+* Escapa valores CSV para evitar injeção de fórmulas maliciosas
+* @private
+*/
+/**
+ * Escapa valores para uso seguro em CSV, evitando injeção de fórmulas e problemas de formatação.
+ * @param valor Valor a ser escapado
+ * @returns Valor convertido para string e seguro para CSV
+ * @private
+ */
+private escaparValorCSV(valor: unknown): string {
+  if (valor === null || valor === undefined) {
+    return '';
+  }
+  const str = String(valor);
+  // Se o valor começar com =, +, -, @, &, etc., adiciona um prefixo de escape
+  if (/^[=+\-@&].*$/.test(str)) {
+    return `\t${str}`; // Usa tab como prefixo para evitar injeção de fórmulas
+  }
+  // Se o valor contiver vírgulas, quebras de linha ou aspas, envolve em aspas
+  if (str.includes(',') || str.includes('\n') || str.includes('"')) {
+    return `"${str.replace(/"/g, '""')}"`; // Escapa aspas duplas
+  }
+  return str;
+}
+
+return '';
+}
+
+const str = String(valor);
+// Se o valor começar com =, +, -, @, &, etc., adiciona um prefixo de escape
+if (/^[=+\-@&].*$/.test(str)) {
+return `\t${str}`; // Usa tab como prefixo para evitar injeção de fórmulas
+}
+
+// Se o valor contiver vírgulas, quebras de linha ou aspas, envolve em aspas
+if (str.includes(',') || str.includes('\n') || str.includes('"')) {
+return `"${str.replace(/"/g, '""')}"`; // Escapa aspas duplas
+}
+
+return str;
+}
+
+private async exportarCSV(
+logs: Record<string, unknown>[],
+caminhoArquivo: string,
+comprimido?: boolean,
+): Promise<number> {
+// Sanitizar dados antes de exportar
+const logsSanitizados = this.sanitizarDadosParaExportacao(logs);
+
+// Verificar se o array de logs está vazio
+if (!logsSanitizados.length) {
+this.logger.warn('Nenhum dado para exportar para CSV');
+return 0;
+}
+// Verificar se o array de logs está vazio
+if (!logs.length) {
+this.logger.warn('Nenhum dado para exportar para CSV');
+return 0;
+}
+
+// Verificar tamanho máximo permitido
+const tamanhoEstimado = JSON.stringify(logs).length * 1.5; // Estimativa conservadora
+if (tamanhoEstimado > this.TAMANHO_MAXIMO_ARQUIVO) {
+throw new Error(`Tamanho do arquivo excede o limite de ${this.TAMANHO_MAXIMO_ARQUIVO / (1024 * 1024)}MB`);
+}
+
+// Configurar timeout
+const timeoutPromise = new Promise<never>((_, reject) => 
+setTimeout(() => reject(new Error('Tempo excedido ao exportar para CSV')), this.TIMEOUT_EXPORTACAO)
+);
+
+// Executar exportação com timeout
+return Promise.race([
+this.exportarCSVInterno(logs, caminhoArquivo, comprimido),
+timeoutPromise
+]);
+}
+
+/**
+* Método interno para exportação de CSV
+* @private
+*/
+private async exportarCSVInterno(
+logs: Record<string, unknown>[],
+caminhoArquivo: string,
+comprimido?: boolean,
+): Promise<number> {
+// Verificar se há logs para exportar
+if (!logs || !Array.isArray(logs) || logs.length === 0) {
+throw new Error('Nenhum dado para exportar');
+}
+
+// Verificar se o caminho do arquivo é seguro
+if (!caminhoArquivo || typeof caminhoArquivo !== 'string') {
+throw new Error('Caminho do arquivo inválido');
+}
+const startTime = Date.now();
+const exportId = Math.random().toString(36).substring(2, 10);
+
+this.logger.log(`[${exportId}] Iniciando exportação para CSV (comprimido: ${comprimido})`);
+
+try {
+// Validação dos parâmetros de entrada
+if (!Array.isArray(logs)) {
+throw new Error('O parâmetro logs deve ser um array');
+}
+
+if (!logs.length) {
+throw new Error('Nenhum dado para exportar');
+}
+
+if (typeof caminhoArquivo !== 'string' || !caminhoArquivo.trim()) {
+throw new Error('Caminho do arquivo inválido');
+}
+
+// Garantir que o diretório de destino existe
+const diretorio = path.dirname(caminhoArquivo);
+if (!fs.existsSync(diretorio)) {
+fs.mkdirSync(diretorio, { recursive: true });
+}
+
+// Converter para CSV manualmente para evitar dependência externa
+const headers = Object.keys(logs[0]);
+const csvRows = [];
+
+// Adicionar cabeçalho
+csvRows.push(headers.join(','));
+
+// Adicionar linhas
+for (const log of logs) {
+const values = headers.map(header => {
+const value = log[header];
+if (value === null || value === undefined) {
+return '';
+}
+// Escapar aspas e quebras de linha
+const escaped = String(value).replace(/"/g, '""');
+return `"${escaped}"`;
+});
+csvRows.push(values.join(','));
+}
+
+const csvContent = csvRows.join('\n');
+
+if (comprimido) {
+const gzip = zlib.createGzip();
+const output = fs.createWriteStream(caminhoArquivo);
+
+return new Promise<number>((resolve, reject) => {
+const { Readable } = require('stream');
+const input = Readable.from([csvContent]);
+
+input.pipe(gzip).pipe(output);
+
+output.on('finish', () => {
+try {
+const stats = fs.statSync(caminhoArquivo);
+resolve(stats.size);
+} catch (error) {
+reject(new Error(`Falha ao obter estatísticas do arquivo: ${error instanceof Error ? error.message : 'Erro desconhecido'}`));
+}
+});
+
+output.on('error', (error: Error) => {
+reject(new Error(`Erro ao escrever arquivo CSV: ${error.message}`));
+});
+});
+} else {
+await fs.promises.writeFile(caminhoArquivo, csvContent, 'utf8');
+const stats = fs.statSync(caminhoArquivo);
+return stats.size;
+}
+} catch (error) {
+this.logger.error(`Erro ao exportar para CSV: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+throw new Error(`Falha ao exportar para CSV: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+}
+// Removido método duplicado
+
+/**
+* Exporta logs para o formato Excel
+*
+* @param logs Logs a serem exportados
+* @param caminhoArquivo Caminho do arquivo
+* @returns Tamanho do arquivo em bytes
+*/
+/**
+* Exporta os logs para o formato Excel (XLSX)
+* 
+* @param logs - Dados a serem exportados
+* @param caminhoArquivo - Caminho onde o arquivo será salvo
+* @returns Tamanho do arquivo gerado em bytes
+* @throws {Error} Quando ocorre um erro durante a exportação
+* @private
+*/
+/**
+* Sanitiza valores para planilhas Excel para evitar injeção de fórmulas
+* @private
+*/
+private sanitizarValorExcel(valor: unknown): string | number | boolean | Date | null {
+if (valor === null || valor === undefined) {
+return '';
+}
+
+// Converter datas para objeto Date
+if (typeof valor === 'string' && !isNaN(Date.parse(valor))) {
+try {
+return new Date(valor);
+} catch (e) {
+// Se não for uma data válida, continua como string
+}
+}
+
+// Se for um número, booleano ou data, retorna como está
+if (typeof valor === 'number' || typeof valor === 'boolean' || valor instanceof Date) {
+return valor;
+}
+
+// Para strings, remove caracteres de controle e verifica por fórmulas
+const str = String(valor).replace(/[\x00-\x1F\x7F-\x9F]/g, '');
+// Se começar com =, +, -, @, adiciona um espaço no início para desativar fórmulas
+if (/^[=+\-@]/.test(str)) {
+return `'${str}`; // Prefixo com apóstrofo para tratar como texto
+}
+
+return str;
+}
+
+private async exportarExcel(
+logs: Array<Record<string, unknown>>,
+caminhoArquivo: string,
+): Promise<number> {
+// Sanitizar dados antes de exportar
+const logsSanitizados = this.sanitizarDadosParaExportacao(logs);
+
+// Verificar se o array de logs está vazio
+if (!logsSanitizados.length) {
+this.logger.warn('Nenhum dado para exportar para Excel');
+return 0;
+}
+// Verificar se o array de logs está vazio
+if (!logs.length) {
+this.logger.warn('Nenhum dado para exportar para Excel');
+return 0;
+}
+
+// Verificar tamanho máximo permitido
+const tamanhoEstimado = JSON.stringify(logs).length * 2; // Estimativa conservadora
+if (tamanhoEstimado > this.TAMANHO_MAXIMO_ARQUIVO) {
+throw new Error(`Tamanho do arquivo excede o limite de ${this.TAMANHO_MAXIMO_ARQUIVO / (1024 * 1024)}MB`);
+}
+
+// Configurar timeout
+const timeoutPromise = new Promise<never>((_, reject) => 
+setTimeout(() => reject(new Error('Tempo excedido ao exportar para Excel')), this.TIMEOUT_EXPORTACAO)
+);
+
+// Executar exportação com timeout
+return Promise.race([
+this.exportarExcelInterno(logs, caminhoArquivo),
+timeoutPromise
+]);
+}
+
+/**
+* Método interno para exportação de Excel
+* @private
+*/
+private async exportarExcelInterno(
+logs: Array<Record<string, unknown>>,
+caminhoArquivo: string,
+): Promise<number> {
+// Verificar se há logs para exportar
+if (!logs || !Array.isArray(logs) || logs.length === 0) {
+throw new Error('Nenhum dado para exportar');
+}
+
+// Verificar se o caminho do arquivo é seguro
+if (!caminhoArquivo || typeof caminhoArquivo !== 'string') {
+throw new Error('Caminho do arquivo inválido');
+}
+
+// Verificar se o diretório de destino existe e é gravável
+const diretorio = path.dirname(caminhoArquivo);
+try {
+await fs.promises.access(diretorio, fs.constants.W_OK);
+} catch (error) {
+throw new Error(`Sem permissão para escrever no diretório: ${diretorio}`);
+}
+const startTime = Date.now();
+const exportId = Math.random().toString(36).substring(2, 10);
+
+this.logger.log(`[${exportId}] Iniciando exportação para Excel`);
+
+try {
+// Validação dos parâmetros de entrada
+if (!Array.isArray(logs)) {
+throw new Error('O parâmetro logs deve ser um array');
+}
+
+if (!logs.length) {
+throw new Error('Nenhum dado para exportar');
+}
+
+if (typeof caminhoArquivo !== 'string' || !caminhoArquivo.trim()) {
+throw new Error('Caminho do arquivo inválido');
+}
+
+// Garantir que o diretório de destino existe
+const diretorio = path.dirname(caminhoArquivo);
+if (!fs.existsSync(diretorio)) {
+fs.mkdirSync(diretorio, { recursive: true });
+}
+
+const workbook = new ExcelJS.Workbook();
+workbook.creator = 'Sistema de Auditoria';
+workbook.created = new Date();
+
+const worksheet = workbook.addWorksheet('Logs de Auditoria');
+
+// Adicionar cabeçalho
+const headers = Object.keys(logs[0]);
+const headerRow = worksheet.addRow(headers);
+
+// Estilizar cabeçalho
+headerRow.font = { bold: true };
+headerRow.fill = {
+type: 'pattern',
+pattern: 'solid',
+fgColor: { argb: 'FFD3D3D3' },
+};
+
+// Adicionar linhas
+for (const log of logs) {
+const rowData = headers.map(header => {
+const valor = log[header];
+if (valor === null || valor === undefined) {
+return '';
+} else if (typeof valor === 'object') {
+return JSON.stringify(valor);
+}
+return valor;
+});
+
+worksheet.addRow(rowData);
+}
+
+// Ajustar largura das colunas
+worksheet.columns = headers.map(header => ({
+header,
+key: header,
+width: Math.min(30, Math.max(10, header.length * 1.3)),
+}));
+
+// Salvar arquivo
+await workbook.xlsx.writeFile(caminhoArquivo);
+
+const stats = fs.statSync(caminhoArquivo);
+return stats.size;
+
+} catch (error) {
+this.logger.error(`Erro ao exportar para Excel: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+throw new Error(`Falha ao exportar para Excel: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+}
+// Removido método duplicado
+
+/**
+* Exporta logs para o formato PDF
+*
+* @param logs Logs a serem exportados
+* @param caminhoArquivo Caminho do arquivo
+* @returns Tamanho do arquivo em bytes
+*/
+/**
+* Exporta os logs para o formato PDF
+* 
+* @param logs - Dados a serem exportados com campos específicos para PDF
+* @param caminhoArquivo - Caminho onde o arquivo será salvo
+* @returns Tamanho do arquivo gerado em bytes
+* @throws {Error} Quando ocorre um erro durante a exportação
+* @private
+*/
+/**
+* Sanitiza textos para PDF para evitar injeção de código
+* @private
+*/
+private sanitizarTextoPDF(texto: string): string {
+if (!texto) return '';
+
+// Remove caracteres de controle e caracteres não imprimíveis
+return String(texto)
+.replace(/[\x00-\x1F\x7F-\x9F]/g, '') // Caracteres de controle
+.replace(/[\u2028\u2029]/g, '') // Separadores de linha unicode
+.replace(/[\u0000-\u001F\u007F-\u009F\u00AD\u0600-\u0604\u200B-\u200F\u2028-\u202F\u2060-\u206F\uFEFF\uFFF0-\uFFFF]/g, ''); // Outros caracteres problemáticos
+}
+
+/**
+* Exporta os logs para o formato PDF
+* 
+* @param logs - Dados a serem exportados com campos específicos para PDF
+* @param caminhoArquivo - Caminho onde o arquivo será salvo
+* @returns Tamanho do arquivo gerado em bytes
+* @throws {Error} Quando ocorre um erro durante a exportação
+* @private
+*/
+private async exportarPDF(
+logs: Array<
+Record<string, unknown> & {
+id?: string;
+tipo_operacao?: string;
+entidade_afetada?: string;
+entidade_id?: string;
+usuario_id?: string;
+created_at?: string | Date;
+metodo_http?: string;
+endpoint?: string;
+},
+>,
+caminhoArquivo: string,
+): Promise<number> {
+// Sanitizar dados antes de exportar
+const logsSanitizados = logs.map(log => ({
+...log,
+id: log.id ? this.sanitizarTextoPDF(String(log.id)) : undefined,
+tipo_operacao: log.tipo_operacao ? this.sanitizarTextoPDF(log.tipo_operacao) : undefined,
+entidade_afetada: log.entidade_afetada ? this.sanitizarTextoPDF(log.entidade_afetada) : undefined,
+entidade_id: log.entidade_id ? this.sanitizarTextoPDF(String(log.entidade_id)) : undefined,
+usuario_id: log.usuario_id ? this.sanitizarTextoPDF(String(log.usuario_id)) : undefined,
+created_at: log.created_at || undefined,
+metodo_http: log.metodo_http ? this.sanitizarTextoPDF(log.metodo_http) : undefined,
+endpoint: log.endpoint ? this.sanitizarTextoPDF(log.endpoint) : undefined,
+// Sanitizar outros campos dinâmicos
+...Object.keys(log).reduce((acc, key) => {
+if (['id', 'tipo_operacao', 'entidade_afetada', 'entidade_id', 'usuario_id', 'created_at', 'metodo_http', 'endpoint'].includes(key)) {
+return acc;
+}
+const value = log[key];
+acc[key] = typeof value === 'string' ? this.sanitizarTextoPDF(value) : 
+(value && typeof value === 'object' ? JSON.stringify(this.sanitizarDadosParaExportacao([value])[0]) : value);
+return acc;
+}, {} as Record<string, unknown>)
+}));
+
+// Verificar se o array de logs está vazio
+if (!logsSanitizados.length) {
+this.logger.warn('Nenhum dado para exportar para PDF');
+return 0;
+}
+
+// Verificar tamanho máximo permitido
+const tamanhoEstimado = JSON.stringify(logsSanitizados).length * 3; // Estimativa conservadora para PDF
+if (tamanhoEstimado > this.TAMANHO_MAXIMO_ARQUIVO) {
+throw new Error(`Tamanho do arquivo excede o limite de ${this.TAMANHO_MAXIMO_ARQUIVO / (1024 * 1024)}MB`);
+}
+
+// Configurar timeout
+const timeoutPromise = new Promise<never>((_, reject) => 
+setTimeout(() => reject(new Error('Tempo excedido ao exportar para PDF')), this.TIMEOUT_EXPORTACAO)
+);
+
+// Executar exportação com timeout
+return Promise.race([
+this.exportarPDFInterno(logsSanitizados, caminhoArquivo),
+timeoutPromise
+]);
+}
+
+/**
+* Método interno para exportação de PDF
+* @private
+*/
+private async exportarPDFInterno(
+logs: Array<
+Record<string, unknown> & {
+id?: string;
+tipo_operacao?: string;
+entidade_afetada?: string;
+entidade_id?: string;
+usuario_id?: string;
+created_at?: string | Date;
+metodo_http?: string;
+endpoint?: string;
+},
+>,
+caminhoArquivo: string,
+): Promise<number> {
+// Verificar se há logs para exportar
+if (!logs || !Array.isArray(logs) || logs.length === 0) {
+throw new Error('Nenhum dado para exportar');
+}
+
+// Verificar se o caminho do arquivo é seguro
+if (!caminhoArquivo || typeof caminhoArquivo !== 'string') {
+throw new Error('Caminho do arquivo inválido');
+}
+
+// Verificar se o diretório de destino existe e é gravável
+const diretorio = path.dirname(caminhoArquivo);
+try {
+await fs.promises.access(diretorio, fs.constants.W_OK);
+} catch (error) {
+throw new Error(`Sem permissão para escrever no diretório: ${diretorio}`);
+}
+const startTime = Date.now();
+const exportId = Math.random().toString(36).substring(2, 10);
+
+this.logger.log(`[${exportId}] Iniciando exportação para PDF`);
+
+try {
+const doc = new PDFDocument({ 
+margin: 50,
+info: {
+Title: 'Relatório de Auditoria',
+Author: 'Sistema de Gestão de Benefícios Eventuais',
+CreationDate: new Date(),
+}
+});
+
+const stream = fs.createWriteStream(caminhoArquivo);
+
+doc.pipe(stream);
+
+// Título
+doc
+.fontSize(18)
+.text('Relatório de Logs de Auditoria', { align: 'center' });
+doc.moveDown();
+
+// Data de geração
+const dataFormatada = format(new Date(), 'dd/MM/yyyy HH:mm:ss', {
+locale: ptBR,
+});
+doc
+.fontSize(12)
+.text(`Gerado em: ${dataFormatada}`, { align: 'right' });
+doc.moveDown();
+
+// Informações gerais
+doc.fontSize(12).text(`Total de registros: ${logs.length}`);
+doc.moveDown();
+
+// Tabela de logs
+if (logs.length > 0) {
+const headers = Object.keys(logs[0]);
+const simplifiedHeaders = [
+'ID',
+'Operação',
+'Entidade',
+'Usuário',
+'Data/Hora',
+'Endpoint',
+];
+
+// Mapear para headers simplificados
+const tableData = logs.map((log) => ({
+id: log.id || '',
+operacao: log.tipo_operacao || '',
+entidade: `${log.entidade_afetada || ''} (${log.entidade_id || ''})`,
+usuario: log.usuario_id || '',
+dataHora: log.created_at
+? format(new Date(log.created_at), 'dd/MM/yyyy HH:mm:ss')
+: '',
+endpoint: `${log.metodo_http || ''} ${log.endpoint || ''}`,
+}));
+
+// Desenhar cabeçalho
+let yPos = doc.y + 10;
+const xPos = 50;
+const colWidth = (doc.page.width - 100) / simplifiedHeaders.length;
+
+// Estilo do cabeçalho
+doc.font('Helvetica-Bold');
+
+simplifiedHeaders.forEach((header, i) => {
+doc.text(header, xPos + i * colWidth, yPos, {
+width: colWidth,
+align: 'left',
+});
+});
+
+// Linha após cabeçalho
+yPos += 20;
+doc
+.moveTo(xPos, yPos)
+.lineTo(doc.page.width - 50, yPos)
+.stroke();
+yPos += 10;
+
+// Estilo do conteúdo
+doc.font('Helvetica');
+
+// Desenhar linhas
+tableData.forEach((row, rowIndex) => {
+// Verificar se precisa de nova página
+if (yPos > doc.page.height - 100) {
+doc.addPage();
+yPos = 50;
+
+// Adicionar cabeçalho na nova página
+doc.font('Helvetica-Bold');
+simplifiedHeaders.forEach((header, i) => {
+doc.text(header, xPos + i * colWidth, yPos, {
+width: colWidth,
+align: 'left',
+});
+});
+
+// Linha após cabeçalho
+yPos += 20;
+doc
+.moveTo(xPos, yPos)
+.lineTo(doc.page.width - 50, yPos)
+.stroke();
+yPos += 10;
+
+doc.font('Helvetica');
+}
+
+// Desenhar células
+doc.text(row.id.substring(0, 8) + '...', xPos, yPos, {
+width: colWidth,
+align: 'left',
+});
+doc.text(row.operacao, xPos + colWidth, yPos, {
+width: colWidth,
+align: 'left',
+});
+doc.text(row.entidade, xPos + 2 * colWidth, yPos, {
+width: colWidth,
+align: 'left',
+});
+doc.text(
+row.usuario.substring(0, 8) + '...',
+xPos + 3 * colWidth,
+yPos,
+{ width: colWidth, align: 'left' },
+);
+doc.text(row.dataHora, xPos + 4 * colWidth, yPos, {
+width: colWidth,
+align: 'left',
+});
+doc.text(row.endpoint, xPos + 5 * colWidth, yPos, {
+width: colWidth,
+align: 'left',
+});
+
+// Linha após cada 5 registros
+if (rowIndex % 5 === 4) {
+yPos += 20;
+doc
+.moveTo(xPos, yPos)
+.lineTo(doc.page.width - 50, yPos)
+.stroke();
+yPos += 5;
+} else {
+yPos += 25;
+}
+});
+} else {
+doc.text('Nenhum registro encontrado', { align: 'center' });
+}
+
+// Rodapé
+doc
+.fontSize(10)
+.text(
+'Este relatório é gerado automaticamente pelo Sistema de Gestão de Benefícios Eventuais. ' +
+'Os logs apresentados são protegidos por assinatura digital para garantir sua integridade.',
+50,
+doc.page.height - 50,
+{ align: 'center' },
+);
+
+// Finalizar documento
+doc.end();
+
+stream.on('finish', () => {
+const stats = fs.statSync(caminhoArquivo);
+resolve(stats.size);
+});
+
+stream.on('error', reject);
+} catch (error) {
+this.logger.error(`[${exportId}] Erro ao exportar PDF: ${error.message}`, error.stack);
+reject(error);
+}
+});
+}
+}

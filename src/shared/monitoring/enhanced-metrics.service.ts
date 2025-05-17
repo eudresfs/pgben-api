@@ -3,36 +3,36 @@ import * as client from 'prom-client';
 
 /**
  * Serviço de Métricas Aprimorado
- * 
+ *
  * Responsável por coletar e expor métricas avançadas da aplicação
  * utilizando o Prometheus Client, com foco em segurança e compliance LGPD
  */
 @Injectable()
 export class EnhancedMetricsService {
   private readonly register: client.Registry;
-  
+
   // Métricas HTTP
   private httpRequestsTotal!: client.Counter;
   private httpRequestDuration!: client.Histogram;
   private httpRequestsInProgress!: client.Gauge;
-  
+
   // Métricas de Banco de Dados
   private databaseQueriesTotal!: client.Counter;
   private databaseQueryDuration!: client.Histogram;
   private databaseConnectionsActive!: client.Gauge;
-  
+
   // Métricas de Segurança e Compliance
   private securityEventsTotal!: client.Counter;
   private lgpdDataAccessTotal!: client.Counter;
   private authenticationAttemptsTotal!: client.Counter;
   private authorizationFailuresTotal!: client.Counter;
-  
+
   // Métricas de Documentos
   private documentOperationsTotal!: client.Counter;
   private documentStorageBytes!: client.Gauge;
   private documentUploadDuration!: client.Histogram;
   private documentDownloadDuration!: client.Histogram;
-  
+
   // Métricas de Sistema
   private systemMemoryUsage!: client.Gauge;
   private systemCpuUsage!: client.Gauge;
@@ -40,22 +40,22 @@ export class EnhancedMetricsService {
   constructor() {
     // Criar registro de métricas
     this.register = new client.Registry();
-    
+
     // Adicionar métricas padrão do Node.js
     client.collectDefaultMetrics({ register: this.register });
-    
+
     // Inicializar métricas HTTP
     this.initHttpMetrics();
-    
+
     // Inicializar métricas de banco de dados
     this.initDatabaseMetrics();
-    
+
     // Inicializar métricas de segurança e compliance
     this.initSecurityMetrics();
-    
+
     // Inicializar métricas de documentos
     this.initDocumentMetrics();
-    
+
     // Inicializar métricas de sistema
     this.initSystemMetrics();
   }
@@ -71,7 +71,7 @@ export class EnhancedMetricsService {
       labelNames: ['method', 'route', 'status_code', 'user_role'],
       registers: [this.register],
     });
-    
+
     // Histograma de duração das requisições HTTP
     this.httpRequestDuration = new client.Histogram({
       name: 'http_request_duration_seconds',
@@ -80,7 +80,7 @@ export class EnhancedMetricsService {
       buckets: [0.01, 0.05, 0.1, 0.5, 1, 2, 5, 10],
       registers: [this.register],
     });
-    
+
     // Gauge de requisições em andamento
     this.httpRequestsInProgress = new client.Gauge({
       name: 'http_requests_in_progress',
@@ -101,7 +101,7 @@ export class EnhancedMetricsService {
       labelNames: ['entity', 'operation', 'success'],
       registers: [this.register],
     });
-    
+
     // Histograma de duração das consultas ao banco de dados
     this.databaseQueryDuration = new client.Histogram({
       name: 'database_query_duration_seconds',
@@ -110,7 +110,7 @@ export class EnhancedMetricsService {
       buckets: [0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1],
       registers: [this.register],
     });
-    
+
     // Gauge de conexões ativas com o banco de dados
     this.databaseConnectionsActive = new client.Gauge({
       name: 'database_connections_active',
@@ -130,7 +130,7 @@ export class EnhancedMetricsService {
       labelNames: ['type', 'severity', 'source'],
       registers: [this.register],
     });
-    
+
     // Contador de acessos a dados protegidos pela LGPD
     this.lgpdDataAccessTotal = new client.Counter({
       name: 'lgpd_data_access_total',
@@ -138,7 +138,7 @@ export class EnhancedMetricsService {
       labelNames: ['data_type', 'operation', 'authorized', 'user_role'],
       registers: [this.register],
     });
-    
+
     // Contador de tentativas de autenticação
     this.authenticationAttemptsTotal = new client.Counter({
       name: 'authentication_attempts_total',
@@ -146,7 +146,7 @@ export class EnhancedMetricsService {
       labelNames: ['success', 'method', 'ip_address'],
       registers: [this.register],
     });
-    
+
     // Contador de falhas de autorização
     this.authorizationFailuresTotal = new client.Counter({
       name: 'authorization_failures_total',
@@ -167,7 +167,7 @@ export class EnhancedMetricsService {
       labelNames: ['operation', 'document_type', 'sensitive', 'encrypted'],
       registers: [this.register],
     });
-    
+
     // Gauge de armazenamento de documentos
     this.documentStorageBytes = new client.Gauge({
       name: 'document_storage_bytes',
@@ -175,7 +175,7 @@ export class EnhancedMetricsService {
       labelNames: ['document_type', 'sensitive'],
       registers: [this.register],
     });
-    
+
     // Histograma de duração de upload de documentos
     this.documentUploadDuration = new client.Histogram({
       name: 'document_upload_duration_seconds',
@@ -184,7 +184,7 @@ export class EnhancedMetricsService {
       buckets: [0.1, 0.5, 1, 2, 5, 10, 30],
       registers: [this.register],
     });
-    
+
     // Histograma de duração de download de documentos
     this.documentDownloadDuration = new client.Histogram({
       name: 'document_download_duration_seconds',
@@ -206,7 +206,7 @@ export class EnhancedMetricsService {
       labelNames: ['type'],
       registers: [this.register],
     });
-    
+
     // Gauge de uso de CPU
     this.systemCpuUsage = new client.Gauge({
       name: 'system_cpu_usage_percent',
@@ -218,22 +218,37 @@ export class EnhancedMetricsService {
   /**
    * Incrementa o contador de requisições HTTP
    */
-  recordHttpRequest(method: string, route: string, statusCode: number, userRole: string = 'anonymous'): void {
-    this.httpRequestsTotal.inc({ method, route, status_code: statusCode.toString(), user_role: userRole });
+  recordHttpRequest(
+    method: string,
+    route: string,
+    statusCode: number,
+    userRole: string = 'anonymous',
+  ): void {
+    this.httpRequestsTotal.inc({
+      method,
+      route,
+      status_code: statusCode.toString(),
+      user_role: userRole,
+    });
   }
 
   /**
    * Registra a duração de uma requisição HTTP
    */
   recordHttpRequestDuration(
-    method: string, 
-    route: string, 
-    statusCode: number, 
+    method: string,
+    route: string,
+    statusCode: number,
     durationSeconds: number,
-    userRole: string = 'anonymous'
+    userRole: string = 'anonymous',
   ): void {
     this.httpRequestDuration.observe(
-      { method, route, status_code: statusCode.toString(), user_role: userRole },
+      {
+        method,
+        route,
+        status_code: statusCode.toString(),
+        user_role: userRole,
+      },
       durationSeconds,
     );
   }
@@ -241,28 +256,48 @@ export class EnhancedMetricsService {
   /**
    * Incrementa o contador de requisições HTTP em andamento
    */
-  incrementHttpRequestsInProgress(method: string, route: string, userRole: string = 'anonymous'): void {
+  incrementHttpRequestsInProgress(
+    method: string,
+    route: string,
+    userRole: string = 'anonymous',
+  ): void {
     this.httpRequestsInProgress.inc({ method, route, user_role: userRole });
   }
 
   /**
    * Decrementa o contador de requisições HTTP em andamento
    */
-  decrementHttpRequestsInProgress(method: string, route: string, userRole: string = 'anonymous'): void {
+  decrementHttpRequestsInProgress(
+    method: string,
+    route: string,
+    userRole: string = 'anonymous',
+  ): void {
     this.httpRequestsInProgress.dec({ method, route, user_role: userRole });
   }
 
   /**
    * Incrementa o contador de consultas ao banco de dados
    */
-  recordDatabaseQuery(entity: string, operation: string, success: boolean = true): void {
-    this.databaseQueriesTotal.inc({ entity, operation, success: success.toString() });
+  recordDatabaseQuery(
+    entity: string,
+    operation: string,
+    success: boolean = true,
+  ): void {
+    this.databaseQueriesTotal.inc({
+      entity,
+      operation,
+      success: success.toString(),
+    });
   }
 
   /**
    * Registra a duração de uma consulta ao banco de dados
    */
-  recordDatabaseQueryDuration(entity: string, operation: string, durationSeconds: number): void {
+  recordDatabaseQueryDuration(
+    entity: string,
+    operation: string,
+    durationSeconds: number,
+  ): void {
     this.databaseQueryDuration.observe({ entity, operation }, durationSeconds);
   }
 
@@ -284,73 +319,96 @@ export class EnhancedMetricsService {
    * Registra um acesso a dados protegidos pela LGPD
    */
   recordLgpdDataAccess(
-    dataType: string, 
-    operation: string, 
+    dataType: string,
+    operation: string,
     authorized: boolean = true,
-    userRole: string = 'anonymous'
+    userRole: string = 'anonymous',
   ): void {
-    this.lgpdDataAccessTotal.inc({ 
-      data_type: dataType, 
-      operation, 
+    this.lgpdDataAccessTotal.inc({
+      data_type: dataType,
+      operation,
       authorized: authorized.toString(),
-      user_role: userRole
+      user_role: userRole,
     });
   }
 
   /**
    * Registra uma tentativa de autenticação
    */
-  recordAuthenticationAttempt(success: boolean, method: string, ipAddress: string): void {
-    this.authenticationAttemptsTotal.inc({ 
-      success: success.toString(), 
-      method, 
-      ip_address: ipAddress 
+  recordAuthenticationAttempt(
+    success: boolean,
+    method: string,
+    ipAddress: string,
+  ): void {
+    this.authenticationAttemptsTotal.inc({
+      success: success.toString(),
+      method,
+      ip_address: ipAddress,
     });
   }
 
   /**
    * Registra uma falha de autorização
    */
-  recordAuthorizationFailure(resource: string, requiredRole: string, userRole: string): void {
-    this.authorizationFailuresTotal.inc({ resource, required_role: requiredRole, user_role: userRole });
+  recordAuthorizationFailure(
+    resource: string,
+    requiredRole: string,
+    userRole: string,
+  ): void {
+    this.authorizationFailuresTotal.inc({
+      resource,
+      required_role: requiredRole,
+      user_role: userRole,
+    });
   }
 
   /**
    * Registra uma operação com documento
    */
   recordDocumentOperation(
-    operation: string, 
-    documentType: string, 
+    operation: string,
+    documentType: string,
     sensitive: boolean = false,
-    encrypted: boolean = false
+    encrypted: boolean = false,
   ): void {
-    this.documentOperationsTotal.inc({ 
-      operation, 
-      document_type: documentType, 
+    this.documentOperationsTotal.inc({
+      operation,
+      document_type: documentType,
       sensitive: sensitive.toString(),
-      encrypted: encrypted.toString()
+      encrypted: encrypted.toString(),
     });
   }
 
   /**
    * Atualiza o tamanho total de armazenamento de documentos
    */
-  setDocumentStorageBytes(bytes: number, documentType: string, sensitive: boolean = false): void {
-    this.documentStorageBytes.set({ document_type: documentType, sensitive: sensitive.toString() }, bytes);
+  setDocumentStorageBytes(
+    bytes: number,
+    documentType: string,
+    sensitive: boolean = false,
+  ): void {
+    this.documentStorageBytes.set(
+      { document_type: documentType, sensitive: sensitive.toString() },
+      bytes,
+    );
   }
 
   /**
    * Registra a duração de um upload de documento
    */
   recordDocumentUploadDuration(
-    documentType: string, 
-    sensitive: boolean, 
+    documentType: string,
+    sensitive: boolean,
     encrypted: boolean,
-    durationSeconds: number
+    durationSeconds: number,
   ): void {
     this.documentUploadDuration.observe(
-      { document_type: documentType, sensitive: sensitive.toString(), encrypted: encrypted.toString() },
-      durationSeconds
+      {
+        document_type: documentType,
+        sensitive: sensitive.toString(),
+        encrypted: encrypted.toString(),
+      },
+      durationSeconds,
     );
   }
 
@@ -358,14 +416,18 @@ export class EnhancedMetricsService {
    * Registra a duração de um download de documento
    */
   recordDocumentDownloadDuration(
-    documentType: string, 
-    sensitive: boolean, 
+    documentType: string,
+    sensitive: boolean,
     encrypted: boolean,
-    durationSeconds: number
+    durationSeconds: number,
   ): void {
     this.documentDownloadDuration.observe(
-      { document_type: documentType, sensitive: sensitive.toString(), encrypted: encrypted.toString() },
-      durationSeconds
+      {
+        document_type: documentType,
+        sensitive: sensitive.toString(),
+        encrypted: encrypted.toString(),
+      },
+      durationSeconds,
     );
   }
 
@@ -378,9 +440,12 @@ export class EnhancedMetricsService {
     this.systemMemoryUsage.set({ type: 'heapTotal' }, memoryUsage.heapTotal);
     this.systemMemoryUsage.set({ type: 'heapUsed' }, memoryUsage.heapUsed);
     this.systemMemoryUsage.set({ type: 'external' }, memoryUsage.external);
-    
+
     if (memoryUsage.arrayBuffers) {
-      this.systemMemoryUsage.set({ type: 'arrayBuffers' }, memoryUsage.arrayBuffers);
+      this.systemMemoryUsage.set(
+        { type: 'arrayBuffers' },
+        memoryUsage.arrayBuffers,
+      );
     }
   }
 
@@ -397,7 +462,7 @@ export class EnhancedMetricsService {
   async getMetrics(): Promise<string> {
     // Atualizar métricas de sistema antes de retornar
     this.updateMemoryUsage();
-    
+
     return this.register.metrics();
   }
 

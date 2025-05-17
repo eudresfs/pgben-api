@@ -7,7 +7,7 @@ import {
   DeleteDateColumn,
   ManyToOne,
   JoinColumn,
-  Index
+  Index,
 } from 'typeorm';
 import { Cidadao } from './cidadao.entity';
 
@@ -17,12 +17,12 @@ import { Cidadao } from './cidadao.entity';
 export enum TipoPapel {
   BENEFICIARIO = 'beneficiario',
   REQUERENTE = 'requerente',
-  REPRESENTANTE_LEGAL = 'representante_legal'
+  REPRESENTANTE_LEGAL = 'representante_legal',
 }
 
 /**
  * Entidade de Papel do Cidadão
- * 
+ *
  * Estabelece uma relação N:M entre cidadãos e os papéis que podem assumir no sistema.
  * Um mesmo cidadão pode ter múltiplos papéis em diferentes contextos.
  */
@@ -42,7 +42,8 @@ export class PapelCidadao {
   @Column({
     name: 'tipo_papel',
     type: 'enum',
-    enum: TipoPapel
+    enum: TipoPapel,
+    enumName: 'tipo_papel',
   })
   tipo_papel: TipoPapel;
 

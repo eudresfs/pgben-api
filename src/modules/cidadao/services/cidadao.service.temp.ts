@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { CidadaoRepository } from '../repositories/cidadao.repository';
 import { CreateCidadaoDto } from '../dto/create-cidadao.dto';
 import { UpdateCidadaoDto } from '../dto/update-cidadao.dto';
@@ -6,7 +10,7 @@ import { CreateComposicaoFamiliarDto } from '../dto/create-composicao-familiar.d
 
 /**
  * Serviço de cidadãos
- * 
+ *
  * Responsável pela lógica de negócio relacionada a cidadãos/beneficiários
  */
 @Injectable()
@@ -30,30 +34,30 @@ export class CidadaoService {
     unidadeId?: string;
   }) {
     const { page = 1, limit = 10, search, bairro, unidadeId } = options || {};
-    
+
     // Construir filtros
     const where: any = {};
-    
+
     if (search) {
       where.nome = { $iLike: `%${search}%` };
     }
-    
+
     if (bairro) {
       where['endereco.bairro'] = { $iLike: `%${bairro}%` };
     }
-    
+
     // Filtro por unidade será implementado quando houver integração com solicitações
-    
+
     // Calcular skip para paginação
     const skip = (page - 1) * limit;
-    
+
     // Buscar cidadãos
     const [cidadaos, total] = await this.cidadaoRepository.findAll({
       skip,
       take: limit,
       where,
     });
-    
+
     return {
       items: cidadaos,
       meta: {
@@ -72,11 +76,11 @@ export class CidadaoService {
    */
   async findById(id: string) {
     const cidadao = await this.cidadaoRepository.findById(id);
-    
+
     if (!cidadao) {
       throw new NotFoundException('Cidadão não encontrado');
     }
-    
+
     return cidadao;
   }
 
@@ -88,25 +92,35 @@ export class CidadaoService {
    */
   async create(createCidadaoDto: CreateCidadaoDto, unidadeId: string) {
     // Verificar se CPF já existe
-    const cpfExistente = await this.cidadaoRepository.findByCpf(createCidadaoDto.cpf);
+    const cpfExistente = await this.cidadaoRepository.findByCpf(
+      createCidadaoDto.cpf,
+    );
     if (cpfExistente) {
       throw new ConflictException('CPF já está cadastrado');
     }
-    
+
     // Verificar se NIS já existe (se fornecido)
     if (createCidadaoDto.nis) {
-      const nisExistente = await this.cidadaoRepository.findByNis(createCidadaoDto.nis);
+      const nisExistente = await this.cidadaoRepository.findByNis(
+        createCidadaoDto.nis,
+      );
       if (nisExistente) {
         throw new ConflictException('NIS já está cadastrado');
       }
     }
+
+    // Extrair papéis do DTO para processar separadamente
+    const { papeis, ...cidadaoData } = createCidadaoDto;
     
-    // Criar cidadão
+    // Criar cidadão sem os papéis
     const cidadao = await this.cidadaoRepository.create({
-      ...createCidadaoDto,
+      ...cidadaoData,
       // Adicionar unidadeId quando houver integração com unidades
     });
     
+    // Processar papéis separadamente se existirem
+    // Isso será implementado quando o repositório tiver um método para adicionar papéis
+
     return cidadao;
   }
 
@@ -122,18 +136,23 @@ export class CidadaoService {
     if (!cidadao) {
       throw new NotFoundException('Cidadão não encontrado');
     }
-    
+
     // Verificar se NIS já existe (se fornecido e diferente do atual)
     if (updateCidadaoDto.nis && updateCidadaoDto.nis !== cidadao.nis) {
-      const nisExistente = await this.cidadaoRepository.findByNis(updateCidadaoDto.nis);
+      const nisExistente = await this.cidadaoRepository.findByNis(
+        updateCidadaoDto.nis,
+      );
       if (nisExistente) {
         throw new ConflictException('NIS já está cadastrado');
       }
     }
-    
+
     // Atualizar cidadão
-    const cidadaoAtualizado = await this.cidadaoRepository.update(id, updateCidadaoDto);
-    
+    const cidadaoAtualizado = await this.cidadaoRepository.update(
+      id,
+      updateCidadaoDto,
+    );
+
     return cidadaoAtualizado;
   }
 
@@ -144,11 +163,11 @@ export class CidadaoService {
    */
   async findByCpf(cpf: string) {
     const cidadao = await this.cidadaoRepository.findByCpf(cpf);
-    
+
     if (!cidadao) {
       throw new NotFoundException('Cidadão não encontrado');
     }
-    
+
     return cidadao;
   }
 
@@ -159,11 +178,11 @@ export class CidadaoService {
    */
   async findByNis(nis: string) {
     const cidadao = await this.cidadaoRepository.findByNis(nis);
-    
+
     if (!cidadao) {
       throw new NotFoundException('Cidadão não encontrado');
     }
-    
+
     return cidadao;
   }
 
@@ -178,18 +197,19 @@ export class CidadaoService {
     if (!cidadao) {
       throw new NotFoundException('Cidadão não encontrado');
     }
-    
+
     // Buscar solicitações
     // Implementar quando o módulo de solicitações estiver pronto
     // const solicitacoes = await this.solicitacaoRepository.findByCidadaoId(cidadaoId);
-    
+
     // Retorno temporário
     return {
       items: [],
       meta: {
         total: 0,
       },
-      message: 'Histórico de solicitações será implementado quando o módulo de solicitações estiver pronto',
+      message:
+        'Histórico de solicitações será implementado quando o módulo de solicitações estiver pronto',
     };
   }
 
@@ -199,19 +219,23 @@ export class CidadaoService {
    * @param createComposicaoFamiliarDto Dados do membro familiar
    * @returns Cidadão atualizado
    */
-  async addComposicaoFamiliar(cidadaoId: string, createComposicaoFamiliarDto: CreateComposicaoFamiliarDto) {
+  async addComposicaoFamiliar(
+    cidadaoId: string,
+    createComposicaoFamiliarDto: CreateComposicaoFamiliarDto,
+  ) {
     // Verificar se cidadão existe
     const cidadao = await this.cidadaoRepository.findById(cidadaoId);
     if (!cidadao) {
       throw new NotFoundException('Cidadão não encontrado');
     }
-    
+
     // Adicionar membro à composição familiar
-    const cidadaoAtualizado = await this.cidadaoRepository.addComposicaoFamiliar(
-      cidadaoId,
-      createComposicaoFamiliarDto
-    );
-    
+    const cidadaoAtualizado =
+      await this.cidadaoRepository.addComposicaoFamiliar(
+        cidadaoId,
+        createComposicaoFamiliarDto,
+      );
+
     return cidadaoAtualizado;
   }
 
@@ -225,7 +249,7 @@ export class CidadaoService {
     if (!cidadao) {
       throw new NotFoundException('Cidadão não encontrado');
     }
-    
+
     // Remover cidadão (soft delete)
     await this.cidadaoRepository.remove(id);
   }

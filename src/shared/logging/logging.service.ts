@@ -4,7 +4,7 @@ import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 
 /**
  * Serviço de Logging
- * 
+ *
  * Fornece métodos para registrar logs em diferentes níveis
  * e com informações estruturadas
  */
@@ -28,7 +28,12 @@ export class LoggingService {
   /**
    * Registra um log de nível "error"
    */
-  error(message: string, trace?: string, context?: string, meta?: Record<string, any>): void {
+  error(
+    message: string,
+    trace?: string,
+    context?: string,
+    meta?: Record<string, any>,
+  ): void {
     this.logger.error(message, {
       trace,
       context,
@@ -73,7 +78,12 @@ export class LoggingService {
   /**
    * Registra uma operação de banco de dados
    */
-  logDatabase(operation: string, entity: string, duration: number, query?: string): void {
+  logDatabase(
+    operation: string,
+    entity: string,
+    duration: number,
+    query?: string,
+  ): void {
     this.logger.debug(`DB: ${operation} ${entity} - ${duration}ms`, {
       context: 'Database',
       operation,
@@ -87,30 +97,48 @@ export class LoggingService {
   /**
    * Registra uma operação de autenticação
    */
-  logAuth(operation: string, userId: string, success: boolean, ip?: string, userAgent?: string): void {
-    this.logger.info(`Auth: ${operation} - Usuário: ${userId} - Sucesso: ${success}`, {
-      context: 'Authentication',
-      operation,
-      userId,
-      success,
-      ip,
-      userAgent,
-      timestamp: new Date().toISOString(),
-    });
+  logAuth(
+    operation: string,
+    userId: string,
+    success: boolean,
+    ip?: string,
+    userAgent?: string,
+  ): void {
+    this.logger.info(
+      `Auth: ${operation} - Usuário: ${userId} - Sucesso: ${success}`,
+      {
+        context: 'Authentication',
+        operation,
+        userId,
+        success,
+        ip,
+        userAgent,
+        timestamp: new Date().toISOString(),
+      },
+    );
   }
 
   /**
    * Registra uma operação de negócio
    */
-  logBusiness(operation: string, entity: string, entityId: string, userId: string, details?: Record<string, any>): void {
-    this.logger.info(`Business: ${operation} ${entity} ${entityId} - Usuário: ${userId}`, {
-      context: 'Business',
-      operation,
-      entity,
-      entityId,
-      userId,
-      details,
-      timestamp: new Date().toISOString(),
-    });
+  logBusiness(
+    operation: string,
+    entity: string,
+    entityId: string,
+    userId: string,
+    details?: Record<string, any>,
+  ): void {
+    this.logger.info(
+      `Business: ${operation} ${entity} ${entityId} - Usuário: ${userId}`,
+      {
+        context: 'Business',
+        operation,
+        entity,
+        entityId,
+        userId,
+        details,
+        timestamp: new Date().toISOString(),
+      },
+    );
   }
 }

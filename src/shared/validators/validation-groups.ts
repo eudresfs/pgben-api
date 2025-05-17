@@ -1,6 +1,6 @@
 /**
  * Grupos de validação
- * 
+ *
  * Define grupos para validação condicional de DTOs em diferentes contextos
  */
 

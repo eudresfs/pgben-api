@@ -1,28 +1,34 @@
-import { 
-  Controller, 
-  Get, 
-  Post, 
-  Body, 
-  Param, 
-  Put, 
-  Query, 
-  UseGuards, 
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Put,
+  Query,
+  UseGuards,
   Req,
   NotFoundException,
-  BadRequestException
+  BadRequestException,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { NotificacaoService } from '../services/notificacao.service';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../auth/guards/roles.guard';
 import { Roles } from '../../../auth/decorators/role.decorator';
 import { Role } from '../../../shared/enums/role.enum';
-import { StatusNotificacao } from '../entities/notificacao.entity';
+import { StatusNotificacaoProcessamento } from '../entities/notification.entity';
 import { Request } from 'express';
 
 /**
  * Controlador de Notificações
- * 
+ *
  * Responsável por gerenciar as rotas relacionadas às notificações
  * enviadas aos usuários do sistema
  */
@@ -38,18 +44,36 @@ export class NotificacaoController {
    */
   @Get()
   @ApiOperation({ summary: 'Listar notificações do usuário' })
-  @ApiResponse({ status: 200, description: 'Lista de notificações retornada com sucesso' })
-  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Página atual' })
-  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Itens por página' })
-  @ApiQuery({ name: 'status', required: false, enum: StatusNotificacao, description: 'Filtro por status' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de notificações retornada com sucesso',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Página atual',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Itens por página',
+  })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    enum: StatusNotificacaoProcessamento,
+    description: 'Filtro por status',
+  })
   async findAll(
     @Req() req: Request,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
-    @Query('status') status?: StatusNotificacao,
+    @Query('status') status?: StatusNotificacaoProcessamento,
   ) {
     const user = req.user;
-    
+
     return this.notificacaoService.findAll({
       page: page ? +page : undefined,
       limit: limit ? +limit : undefined,
@@ -63,7 +87,10 @@ export class NotificacaoController {
    */
   @Get(':id')
   @ApiOperation({ summary: 'Obter detalhes de uma notificação' })
-  @ApiResponse({ status: 200, description: 'Notificação encontrada com sucesso' })
+  @ApiResponse({
+    status: 200,
+    description: 'Notificação encontrada com sucesso',
+  })
   @ApiResponse({ status: 404, description: 'Notificação não encontrada' })
   async findOne(@Param('id') id: string, @Req() req: Request) {
     const user = req.user;
@@ -75,7 +102,10 @@ export class NotificacaoController {
    */
   @Put(':id/ler')
   @ApiOperation({ summary: 'Marcar notificação como lida' })
-  @ApiResponse({ status: 200, description: 'Notificação marcada como lida com sucesso' })
+  @ApiResponse({
+    status: 200,
+    description: 'Notificação marcada como lida com sucesso',
+  })
   @ApiResponse({ status: 404, description: 'Notificação não encontrada' })
   async marcarComoLida(@Param('id') id: string, @Req() req: Request) {
     const user = req.user;
@@ -87,7 +117,10 @@ export class NotificacaoController {
    */
   @Put(':id/arquivar')
   @ApiOperation({ summary: 'Arquivar notificação' })
-  @ApiResponse({ status: 200, description: 'Notificação arquivada com sucesso' })
+  @ApiResponse({
+    status: 200,
+    description: 'Notificação arquivada com sucesso',
+  })
   @ApiResponse({ status: 404, description: 'Notificação não encontrada' })
   async arquivar(@Param('id') id: string, @Req() req: Request) {
     const user = req.user;
@@ -99,7 +132,10 @@ export class NotificacaoController {
    */
   @Put('todas/ler')
   @ApiOperation({ summary: 'Marcar todas as notificações como lidas' })
-  @ApiResponse({ status: 200, description: 'Notificações marcadas como lidas com sucesso' })
+  @ApiResponse({
+    status: 200,
+    description: 'Notificações marcadas como lidas com sucesso',
+  })
   async marcarTodasComoLidas(@Req() req: Request) {
     const user = req.user;
     return this.notificacaoService.marcarTodasComoLidas(user.id);

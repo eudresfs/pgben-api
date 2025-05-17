@@ -8,13 +8,13 @@ import {
 
 /**
  * Migration: CreateAuditoriaSchema
- * 
+ *
  * Descrição: Cria a estrutura do módulo de auditoria, incluindo tabelas para
  * registro de logs de ações, alterações de dados e trilhas de auditoria.
- * 
+ *
  * Domínio: Auditoria
  * Dependências: 1050000-CreateDocumentoSchema.ts
- * 
+ *
  * @author Arquiteto de Dados
  * @date 16/05/2025
  */
@@ -687,36 +687,75 @@ export class CreateAuditoriaSchema1060000 implements MigrationInterface {
     `);
 
     // 4. Remover chaves estrangeiras
-    await queryRunner.dropForeignKey('alerta_seguranca', 'FK_ALERTA_SEGURANCA_LOG_ACAO');
-    await queryRunner.dropForeignKey('alerta_seguranca', 'FK_ALERTA_SEGURANCA_USUARIO_RESOLUCAO');
-    await queryRunner.dropForeignKey('item_trilha_auditoria', 'FK_ITEM_TRILHA_AUDITORIA_LOG_ACAO');
-    await queryRunner.dropForeignKey('item_trilha_auditoria', 'FK_ITEM_TRILHA_AUDITORIA_TRILHA');
-    await queryRunner.dropForeignKey('trilha_auditoria', 'FK_TRILHA_AUDITORIA_RESPONSAVEL');
-    await queryRunner.dropForeignKey('log_alteracao', 'FK_LOG_ALTERACAO_LOG_ACAO');
+    await queryRunner.dropForeignKey(
+      'alerta_seguranca',
+      'FK_ALERTA_SEGURANCA_LOG_ACAO',
+    );
+    await queryRunner.dropForeignKey(
+      'alerta_seguranca',
+      'FK_ALERTA_SEGURANCA_USUARIO_RESOLUCAO',
+    );
+    await queryRunner.dropForeignKey(
+      'item_trilha_auditoria',
+      'FK_ITEM_TRILHA_AUDITORIA_LOG_ACAO',
+    );
+    await queryRunner.dropForeignKey(
+      'item_trilha_auditoria',
+      'FK_ITEM_TRILHA_AUDITORIA_TRILHA',
+    );
+    await queryRunner.dropForeignKey(
+      'trilha_auditoria',
+      'FK_TRILHA_AUDITORIA_RESPONSAVEL',
+    );
+    await queryRunner.dropForeignKey(
+      'log_alteracao',
+      'FK_LOG_ALTERACAO_LOG_ACAO',
+    );
     await queryRunner.dropForeignKey('log_acao', 'FK_LOG_ACAO_USUARIO');
-    
+
     // 5. Remover índices
-    await queryRunner.dropIndex('alerta_seguranca', 'IDX_ALERTA_SEGURANCA_LOG_ACAO');
-    await queryRunner.dropIndex('alerta_seguranca', 'IDX_ALERTA_SEGURANCA_RESOLVIDO');
-    await queryRunner.dropIndex('alerta_seguranca', 'IDX_ALERTA_SEGURANCA_NIVEL');
-    await queryRunner.dropIndex('item_trilha_auditoria', 'IDX_ITEM_TRILHA_AUDITORIA_LOG_ACAO');
-    await queryRunner.dropIndex('item_trilha_auditoria', 'IDX_ITEM_TRILHA_AUDITORIA_TRILHA');
-    await queryRunner.dropIndex('trilha_auditoria', 'IDX_TRILHA_AUDITORIA_RESPONSAVEL');
-    await queryRunner.dropIndex('trilha_auditoria', 'IDX_TRILHA_AUDITORIA_STATUS');
+    await queryRunner.dropIndex(
+      'alerta_seguranca',
+      'IDX_ALERTA_SEGURANCA_LOG_ACAO',
+    );
+    await queryRunner.dropIndex(
+      'alerta_seguranca',
+      'IDX_ALERTA_SEGURANCA_RESOLVIDO',
+    );
+    await queryRunner.dropIndex(
+      'alerta_seguranca',
+      'IDX_ALERTA_SEGURANCA_NIVEL',
+    );
+    await queryRunner.dropIndex(
+      'item_trilha_auditoria',
+      'IDX_ITEM_TRILHA_AUDITORIA_LOG_ACAO',
+    );
+    await queryRunner.dropIndex(
+      'item_trilha_auditoria',
+      'IDX_ITEM_TRILHA_AUDITORIA_TRILHA',
+    );
+    await queryRunner.dropIndex(
+      'trilha_auditoria',
+      'IDX_TRILHA_AUDITORIA_RESPONSAVEL',
+    );
+    await queryRunner.dropIndex(
+      'trilha_auditoria',
+      'IDX_TRILHA_AUDITORIA_STATUS',
+    );
     await queryRunner.dropIndex('log_alteracao', 'IDX_LOG_ALTERACAO_LOG_ACAO');
     await queryRunner.dropIndex('log_acao', 'IDX_LOG_ACAO_NIVEL');
     await queryRunner.dropIndex('log_acao', 'IDX_LOG_ACAO_ENTIDADE');
     await queryRunner.dropIndex('log_acao', 'IDX_LOG_ACAO_TIPO_ACAO');
     await queryRunner.dropIndex('log_acao', 'IDX_LOG_ACAO_DATA_HORA');
     await queryRunner.dropIndex('log_acao', 'IDX_LOG_ACAO_USUARIO');
-    
+
     // 6. Remover tabelas
     await queryRunner.dropTable('alerta_seguranca');
     await queryRunner.dropTable('item_trilha_auditoria');
     await queryRunner.dropTable('trilha_auditoria');
     await queryRunner.dropTable('log_alteracao');
     await queryRunner.dropTable('log_acao');
-    
+
     // 7. Remover tipos enumerados
     await queryRunner.query(`
       DROP TYPE IF EXISTS "status_auditoria_enum";

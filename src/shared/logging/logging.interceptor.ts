@@ -18,7 +18,7 @@ declare module 'express' {
 
 /**
  * Interceptor de Logging
- * 
+ *
  * Intercepta todas as requisições HTTP e registra informações como:
  * - Método HTTP
  * - URL
@@ -33,14 +33,15 @@ export class LoggingInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const ctx = context.switchToHttp();
     const request = ctx.getRequest<Request>();
-    const userAgent = request.headers?.['user-agent'] || request.get?.('user-agent') || '';
+    const userAgent =
+      request.headers?.['user-agent'] || request.get?.('user-agent') || '';
     const ip = request.ip;
     const method = request.method;
     const originalUrl = request.url || request.originalUrl;
     const userId = request.user ? request.user.id : 'anônimo';
-    
+
     const startTime = Date.now();
-    
+
     this.loggingService.info(
       `Requisição iniciada: ${method} ${originalUrl}`,
       'HTTP',
@@ -50,7 +51,7 @@ export class LoggingInterceptor implements NestInterceptor {
         ip,
         userAgent,
         userId,
-      }
+      },
     );
 
     return next.handle().pipe(
@@ -58,9 +59,12 @@ export class LoggingInterceptor implements NestInterceptor {
         next: (data: any) => {
           const response = ctx.getResponse<Response>();
           const { statusCode } = response;
-          const contentLength = response.getHeader?.('content-length') || response.get?.('content-length') || 0;
+          const contentLength =
+            response.getHeader?.('content-length') ||
+            response.get?.('content-length') ||
+            0;
           const responseTime = Date.now() - startTime;
-          
+
           this.loggingService.info(
             `Requisição concluída: ${method} ${originalUrl} - Status: ${statusCode} - Tempo: ${responseTime}ms`,
             'HTTP',
@@ -71,14 +75,14 @@ export class LoggingInterceptor implements NestInterceptor {
               contentLength,
               duration: responseTime,
               userId,
-            }
+            },
           );
         },
         error: (error) => {
           const response = ctx.getResponse<Response>();
           const statusCode = error.status || 500;
           const responseTime = Date.now() - startTime;
-          
+
           this.loggingService.error(
             `Requisição falhou: ${method} ${originalUrl} - Status: ${statusCode} - Tempo: ${responseTime}ms - Erro: ${error.message}`,
             error.stack,
@@ -89,8 +93,8 @@ export class LoggingInterceptor implements NestInterceptor {
               statusCode,
               duration: responseTime,
               userId,
-              error: error.message
-            }
+              error: error.message,
+            },
           );
         },
       }),

@@ -252,8 +252,84 @@ O sistema utiliza o TypeORM como ORM (Object-Relational Mapping) para interagir 
 #### Migrações
 As migrações são gerenciadas pelo TypeORM e estão localizadas em `/src/database/migrations`. Elas são responsáveis por criar e atualizar o schema do banco de dados de forma controlada.
 
+##### Nova Estrutura de Migrations
+
+O sistema utiliza uma estrutura organizada de migrations para garantir a consistência e facilitar a manutenção do banco de dados. As migrations estão organizadas em ordem numérica, seguindo um padrão específico:
+
+```
+/src/database/migrations/nova-estrutura/
+├── 1000000-CreateBaseStructure.ts      # Estrutura base e extensões
+├── 1010000-CreateAuthSchema.ts         # Esquema de autenticação
+├── 1020000-CreateCidadaoSchema.ts      # Esquema de cidadão
+├── 1030000-CreateBeneficioSchema.ts    # Esquema de benefício
+├── 1040000-CreateSolicitacaoSchema.ts  # Esquema de solicitação
+├── 1050000-CreateDocumentoSchema.ts    # Esquema de documento
+├── 1060000-CreateAuditoriaSchema.ts    # Esquema de auditoria
+├── 1070000-CreateRelatorioSchema.ts    # Esquema de relatório
+└── 1080000-CreateIntegracaoSchema.ts   # Esquema de integração
+```
+
+Cada migration implementa:
+- Criação de tipos enumerados
+- Criação de tabelas com colunas e restrições
+- Criação de índices para otimização
+- Criação de chaves estrangeiras para integridade referencial
+- Implementação de políticas RLS (Row Level Security) para segurança
+- Criação de triggers e funções quando necessário
+- Método `down()` para reverter todas as alterações
+
+##### Documentação Detalhada de Migrations
+
+Para uma compreensão completa da estrutura de migrations, consulte os seguintes documentos:
+
+- [Plano de Reestruturação de Migrations](./docs/migrations/plano-reestruturacao.md) - Visão geral da reestruturação
+- [Guia para Adição de Novas Migrations](./docs/migrations/guia-novas-migrations.md) - Instruções detalhadas para criar novas migrations
+- [Estratégias de Otimização](./docs/migrations/estrategias-otimizacao.md) - Documentação sobre índices, particionamento e outras otimizações
+- [Políticas de Segurança](./docs/migrations/politicas-seguranca.md) - Detalhes sobre as políticas RLS e outras medidas de segurança
+
 #### Seeds
-Os seeds estão localizados em `/src/database/seeds` e são responsáveis por popular o banco de dados com dados iniciais, como tipos de benefícios, unidades e usuários administradores.
+Os seeds estão localizados em `/src/database/seeds` e são responsáveis por popular o banco de dados com dados iniciais. A nova estrutura de seeds está organizada em categorias:
+
+```
+/src/database/seeds/
+├── core/                 # Seeds essenciais (perfis, usuários, setores, etc.)
+│   ├── UsuarioPerfilSeed.ts   # Perfis de usuário e usuário administrador
+│   ├── SetorSeed.ts           # Setores básicos
+│   ├── UnidadeSeed.ts         # Unidades de atendimento
+│   └── TipoBeneficioSeed.ts   # Tipos de benefícios disponíveis
+├── reference/            # Seeds de dados de referência
+│   ├── CategoriaDocumentoSeed.ts  # Categorias de documentos
+│   ├── ModeloDocumentoSeed.ts     # Modelos de documentos
+│   └── RequisitoDocumentoSeed.ts  # Requisitos de documentos por benefício
+├── development/          # Seeds para ambiente de desenvolvimento
+│   ├── CidadaoDevSeed.ts      # Cidadãos fictícios para testes
+│   └── SolicitacaoDevSeed.ts  # Solicitações fictícias para testes
+└── utils/                # Utilitários para execução de seeds
+    ├── DataGenerator.ts       # Gerador de dados aleatórios
+    └── SeedExecutor.ts        # Executor de seeds por ambiente
+```
+
+Os seeds são executados de acordo com o ambiente:
+- Em produção: apenas seeds core
+- Em homologação: seeds core e reference
+- Em desenvolvimento: todos os seeds
+
+Para executar os seeds, use o comando:
+```bash
+npm run seed:run
+```
+
+##### Documentação Detalhada de Seeds
+
+Para uma compreensão completa da estrutura de seeds, consulte os seguintes documentos:
+
+- [README de Seeds](./src/database/seeds/README.md) - Visão geral da estrutura e propósito dos seeds
+- [Documentação de Testes](./src/database/tests/README.md) - Informações sobre como testar migrations e seeds
+
+Para executar apenas os seeds essenciais:
+```bash
+npm run seed:core
+```
 
 ### Utilitários e Módulos Compartilhados
 

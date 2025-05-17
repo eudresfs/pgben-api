@@ -1,24 +1,28 @@
-import { 
-  Injectable, 
-  NotFoundException, 
-  BadRequestException, 
-  UnauthorizedException 
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Notificacao, StatusNotificacao, TipoNotificacao } from '../entities/notificacao.entity';
+import {
+  NotificacaoSistema,
+  StatusNotificacaoProcessamento,
+  TipoNotificacao,
+} from '../entities/notification.entity';
 
 /**
  * Serviço de Notificações
- * 
+ *
  * Responsável pela lógica de negócio relacionada às notificações
  * enviadas aos usuários do sistema
  */
 @Injectable()
 export class NotificacaoService {
   constructor(
-    @InjectRepository(Notificacao)
-    private notificacaoRepository: Repository<Notificacao>,
+    @InjectRepository(NotificacaoSistema)
+    private notificacaoRepository: Repository<NotificacaoSistema>,
   ) {}
 
   /**
@@ -27,28 +31,29 @@ export class NotificacaoService {
   async findAll(options: {
     page?: number;
     limit?: number;
-    status?: StatusNotificacao;
+    status?: StatusNotificacaoProcessamento;
     userId: string;
   }) {
     const { page = 1, limit = 10, status, userId } = options;
-    
-    const queryBuilder = this.notificacaoRepository.createQueryBuilder('notificacao')
+
+    const queryBuilder = this.notificacaoRepository
+      .createQueryBuilder('notificacao')
       .where('notificacao.destinatario_id = :userId', { userId });
-    
+
     if (status) {
       queryBuilder.andWhere('notificacao.status = :status', { status });
     }
-    
+
     // Calcular paginação
     const skip = (page - 1) * limit;
     queryBuilder.skip(skip).take(limit);
-    
+
     // Ordenação padrão (mais recentes primeiro)
     queryBuilder.orderBy('notificacao.created_at', 'DESC');
-    
+
     // Executar consulta
     const [items, total] = await queryBuilder.getManyAndCount();
-    
+
     return {
       items,
       meta: {
@@ -67,16 +72,18 @@ export class NotificacaoService {
     const notificacao = await this.notificacaoRepository.findOne({
       where: { id },
     });
-    
+
     if (!notificacao) {
       throw new NotFoundException(`Notificação com ID ${id} não encontrada`);
     }
-    
+
     // Verificar se a notificação pertence ao usuário
     if (notificacao.destinatario_id !== userId) {
-      throw new UnauthorizedException('Você não tem permissão para acessar esta notificação');
+      throw new UnauthorizedException(
+        'Você não tem permissão para acessar esta notificação',
+      );
     }
-    
+
     return notificacao;
   }
 
@@ -85,14 +92,14 @@ export class NotificacaoService {
    */
   async marcarComoLida(id: string, userId: string) {
     const notificacao = await this.findById(id, userId);
-    
-    if (notificacao.status === StatusNotificacao.LIDA) {
+
+    if (notificacao.status === StatusNotificacaoProcessamento.LIDA) {
       return notificacao; // Já está marcada como lida
     }
-    
-    notificacao.status = StatusNotificacao.LIDA;
+
+    notificacao.status = StatusNotificacaoProcessamento.LIDA;
     notificacao.data_leitura = new Date();
-    
+
     return this.notificacaoRepository.save(notificacao);
   }
 
@@ -101,13 +108,13 @@ export class NotificacaoService {
    */
   async arquivar(id: string, userId: string) {
     const notificacao = await this.findById(id, userId);
-    
-    if (notificacao.status === StatusNotificacao.ARQUIVADA) {
+
+    if (notificacao.status === StatusNotificacaoProcessamento.ARQUIVADA) {
       return notificacao; // Já está arquivada
     }
-    
-    notificacao.status = StatusNotificacao.ARQUIVADA;
-    
+
+    notificacao.status = StatusNotificacaoProcessamento.ARQUIVADA;
+
     return this.notificacaoRepository.save(notificacao);
   }
 
@@ -116,18 +123,18 @@ export class NotificacaoService {
    */
   async marcarTodasComoLidas(userId: string) {
     const agora = new Date();
-    
+
     await this.notificacaoRepository.update(
-      { 
-        destinatario_id: userId, 
-        status: StatusNotificacao.NAO_LIDA 
+      {
+        destinatario_id: userId,
+        status: StatusNotificacaoProcessamento.NAO_LIDA,
       },
-      { 
-        status: StatusNotificacao.LIDA, 
-        data_leitura: agora 
-      }
+      {
+        status: StatusNotificacaoProcessamento.LIDA,
+        data_leitura: agora,
+      },
     );
-    
+
     return { message: 'Todas as notificações foram marcadas como lidas' };
   }
 
@@ -138,10 +145,10 @@ export class NotificacaoService {
     const count = await this.notificacaoRepository.count({
       where: {
         destinatario_id: userId,
-        status: StatusNotificacao.NAO_LIDA
-      }
+        status: StatusNotificacaoProcessamento.NAO_LIDA,
+      },
     });
-    
+
     return { count };
   }
 
@@ -160,9 +167,9 @@ export class NotificacaoService {
   }) {
     const notificacao = this.notificacaoRepository.create({
       ...dados,
-      status: StatusNotificacao.NAO_LIDA,
+      status: StatusNotificacaoProcessamento.NAO_LIDA,
     });
-    
+
     return this.notificacaoRepository.save(notificacao);
   }
 

@@ -7,7 +7,7 @@ import {
   DeleteDateColumn,
   ManyToOne,
   JoinColumn,
-  Index
+  Index,
 } from 'typeorm';
 import { IsNotEmpty, IsOptional, IsNumber, Min, IsEnum } from 'class-validator';
 import { TipoBeneficio } from './tipo-beneficio.entity';
@@ -37,7 +37,9 @@ export class FluxoBeneficio {
   @IsNotEmpty({ message: 'Tipo de benefício é obrigatório' })
   tipo_beneficio_id: string;
 
-  @ManyToOne(() => TipoBeneficio, tipoBeneficio => tipoBeneficio.id, { onDelete: 'CASCADE' })
+  @ManyToOne(() => TipoBeneficio, (tipoBeneficio) => tipoBeneficio.id, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'tipo_beneficio_id' })
   tipo_beneficio: TipoBeneficio;
 
@@ -48,6 +50,7 @@ export class FluxoBeneficio {
   @Column({
     type: 'enum',
     enum: TipoEtapa,
+    enumName: 'tipo_etapa',
   })
   @IsNotEmpty({ message: 'Tipo de etapa é obrigatório' })
   @IsEnum(TipoEtapa, { message: 'Tipo de etapa inválido' })
@@ -61,6 +64,7 @@ export class FluxoBeneficio {
   @Column({
     type: 'enum',
     enum: PerfilResponsavel,
+    enumName: 'perfil_responsavel',
   })
   @IsNotEmpty({ message: 'Perfil responsável é obrigatório' })
   @IsEnum(PerfilResponsavel, { message: 'Perfil responsável inválido' })

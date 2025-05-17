@@ -8,13 +8,13 @@ import {
 
 /**
  * Migration: CreateAuthSchema
- * 
+ *
  * Descrição: Cria a estrutura de autenticação e autorização do sistema,
  * incluindo tabelas de usuários, perfis, permissões e unidades.
- * 
+ *
  * Domínio: Autenticação e Autorização
  * Dependências: 1000000-CreateBaseStructure.ts
- * 
+ *
  * @author Arquiteto de Dados
  * @date 16/05/2025
  */
@@ -823,16 +823,34 @@ export class CreateAuthSchema1010000 implements MigrationInterface {
     `);
 
     // 3. Remover chaves estrangeiras
-    await queryRunner.dropForeignKey('role_permissao', 'FK_ROLE_PERMISSAO_PERMISSAO');
-    await queryRunner.dropForeignKey('refresh_token', 'FK_REFRESH_TOKEN_USUARIO');
-    await queryRunner.dropForeignKey('usuario_unidade', 'FK_USUARIO_UNIDADE_SETOR');
-    await queryRunner.dropForeignKey('usuario_unidade', 'FK_USUARIO_UNIDADE_UNIDADE');
-    await queryRunner.dropForeignKey('usuario_unidade', 'FK_USUARIO_UNIDADE_USUARIO');
+    await queryRunner.dropForeignKey(
+      'role_permissao',
+      'FK_ROLE_PERMISSAO_PERMISSAO',
+    );
+    await queryRunner.dropForeignKey(
+      'refresh_token',
+      'FK_REFRESH_TOKEN_USUARIO',
+    );
+    await queryRunner.dropForeignKey(
+      'usuario_unidade',
+      'FK_USUARIO_UNIDADE_SETOR',
+    );
+    await queryRunner.dropForeignKey(
+      'usuario_unidade',
+      'FK_USUARIO_UNIDADE_UNIDADE',
+    );
+    await queryRunner.dropForeignKey(
+      'usuario_unidade',
+      'FK_USUARIO_UNIDADE_USUARIO',
+    );
     await queryRunner.dropForeignKey('setor', 'FK_SETOR_UNIDADE');
 
     // 4. Remover índices
     // Índices de role_permissao
-    await queryRunner.dropIndex('role_permissao', 'IDX_ROLE_PERMISSAO_PERMISSAO');
+    await queryRunner.dropIndex(
+      'role_permissao',
+      'IDX_ROLE_PERMISSAO_PERMISSAO',
+    );
     await queryRunner.dropIndex('role_permissao', 'IDX_ROLE_PERMISSAO_ROLE');
 
     // Índices de permissao
@@ -845,10 +863,19 @@ export class CreateAuthSchema1010000 implements MigrationInterface {
     await queryRunner.dropIndex('refresh_token', 'IDX_REFRESH_TOKEN_USUARIO');
 
     // Índices de usuario_unidade
-    await queryRunner.dropIndex('usuario_unidade', 'IDX_USUARIO_UNIDADE_PRINCIPAL');
+    await queryRunner.dropIndex(
+      'usuario_unidade',
+      'IDX_USUARIO_UNIDADE_PRINCIPAL',
+    );
     await queryRunner.dropIndex('usuario_unidade', 'IDX_USUARIO_UNIDADE_SETOR');
-    await queryRunner.dropIndex('usuario_unidade', 'IDX_USUARIO_UNIDADE_UNIDADE');
-    await queryRunner.dropIndex('usuario_unidade', 'IDX_USUARIO_UNIDADE_USUARIO');
+    await queryRunner.dropIndex(
+      'usuario_unidade',
+      'IDX_USUARIO_UNIDADE_UNIDADE',
+    );
+    await queryRunner.dropIndex(
+      'usuario_unidade',
+      'IDX_USUARIO_UNIDADE_USUARIO',
+    );
 
     // Índices de usuario
     await queryRunner.dropIndex('usuario', 'IDX_USUARIO_STATUS');

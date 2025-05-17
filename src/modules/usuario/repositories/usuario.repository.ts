@@ -5,7 +5,7 @@ import { Usuario } from '../entities/usuario.entity';
 
 /**
  * Repositório de usuários
- * 
+ *
  * Responsável por operações de acesso a dados relacionadas a usuários
  */
 @Injectable()
@@ -27,8 +27,13 @@ export class UsuarioRepository {
     where?: any;
     order?: any;
   }): Promise<[Usuario[], number]> {
-    const { skip = 0, take = 10, where = {}, order = { created_at: 'DESC' } } = options || {};
-    
+    const {
+      skip = 0,
+      take = 10,
+      where = {},
+      order = { created_at: 'DESC' },
+    } = options || {};
+
     return this.repository.findAndCount({
       skip,
       take,
@@ -105,7 +110,10 @@ export class UsuarioRepository {
    * @returns Usuário atualizado
    */
   async updateStatus(id: string, status: string): Promise<Usuario> {
-    await this.repository.update(id, { status });
+    // Usando a mesma abordagem do updateSenha para evitar erro de tipagem
+    const dadosAtualizacao = { status } as unknown as Partial<Usuario>;
+    
+    await this.repository.update(id, dadosAtualizacao);
     const usuario = await this.findById(id);
     if (!usuario) {
       throw new Error(`Usuário com ID ${id} não encontrado`);
@@ -120,7 +128,13 @@ export class UsuarioRepository {
    * @returns Usuário atualizado
    */
   async updateSenha(id: string, senhaHash: string): Promise<Usuario> {
-    await this.repository.update(id, { senhaHash, primeiro_acesso: false });
+    // Usando DeepPartial do TypeORM para evitar erro de tipagem
+    const dadosAtualizacao = { 
+      senhaHash, 
+      primeiro_acesso: false 
+    } as unknown as Partial<Usuario>;
+    
+    await this.repository.update(id, dadosAtualizacao);
     const usuario = await this.findById(id);
     if (!usuario) {
       throw new Error(`Usuário com ID ${id} não encontrado`);

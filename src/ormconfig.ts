@@ -19,8 +19,10 @@ import { Pendencia } from './modules/solicitacao/entities/pendencia.entity';
 import { Documento } from './modules/documento/entities/documento.entity';
 import { DocumentoEnviado } from './modules/documento/entities/documento-enviado.entity';
 import { HistoricoSolicitacao } from './modules/solicitacao/entities/historico-solicitacao.entity';
+import { HistoricoSolicitacaoBeneficio } from './modules/beneficio/entities/historico-solicitacao.entity';
 import { LogAuditoria } from './modules/auditoria/entities/log-auditoria.entity';
-import { Notificacao } from './modules/notificacao/entities/notificacao.entity';
+import { NotificacaoSistema } from './modules/notificacao/entities/notification.entity';
+import { NotificationTemplate } from './modules/notificacao/entities/notification-template.entity';
 import { Ocorrencia } from './modules/ocorrencia/entities/ocorrencia.entity';
 import { DemandaMotivo } from './modules/ocorrencia/entities/demanda-motivo.entity';
 
@@ -51,8 +53,10 @@ export default new DataSource({
     Documento,
     DocumentoEnviado,
     HistoricoSolicitacao,
+    HistoricoSolicitacaoBeneficio,
     LogAuditoria,
-    Notificacao,
+    NotificacaoSistema,
+    NotificationTemplate,
     Ocorrencia,
     DemandaMotivo,
   ],

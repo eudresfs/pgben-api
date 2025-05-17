@@ -10,12 +10,12 @@ import {
   notificacaoSchema,
   ocorrenciaSchema,
   healthCheckSchema,
-  metricasSchema
+  metricasSchema,
 } from './swagger-entidades';
 
 /**
  * Esquemas reutilizáveis para a documentação Swagger
- * 
+ *
  * Este arquivo contém esquemas que podem ser reutilizados em vários endpoints
  * para melhorar a consistência da documentação e evitar repetição.
  */

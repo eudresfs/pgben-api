@@ -1,4 +1,13 @@
-import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ConflictException,
+  Logger,
+  InternalServerErrorException,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { DataSource } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { UsuarioRepository } from '../repositories/usuario.repository';
 import { CreateUsuarioDto } from '../dto/create-usuario.dto';
@@ -9,12 +18,18 @@ import { Usuario } from '../entities/usuario.entity';
 
 /**
  * Serviço de usuários
- * 
+ *
  * Responsável pela lógica de negócio relacionada a usuários
  */
 @Injectable()
 export class UsuarioService {
-  constructor(private readonly usuarioRepository: UsuarioRepository) {}
+  private readonly logger = new Logger(UsuarioService.name);
+  private readonly SALT_ROUNDS = 12; // Aumentando a segurança do hash
+
+  constructor(
+    private readonly dataSource: DataSource,
+    private readonly usuarioRepository: UsuarioRepository,
+  ) {}
 
   /**
    * Busca todos os usuários com filtros e paginação
@@ -29,43 +44,50 @@ export class UsuarioService {
     status?: string;
     unidadeId?: string;
   }) {
-    const { page = 1, limit = 10, search, role, status, unidadeId } = options || {};
-    
+    const {
+      page = 1,
+      limit = 10,
+      search,
+      role,
+      status,
+      unidadeId,
+    } = options || {};
+
     // Construir filtros
     const where: any = {};
-    
+
     if (search) {
       where.nome = { $iLike: `%${search}%` };
     }
-    
+
     if (role) {
       where.role = role;
     }
-    
+
     if (status) {
       where.status = status;
     }
-    
+
     if (unidadeId) {
       where.unidadeId = unidadeId;
     }
-    
+
     // Calcular skip para paginação
     const skip = (page - 1) * limit;
-    
+
     // Buscar usuários
     const [usuarios, total] = await this.usuarioRepository.findAll({
       skip,
       take: limit,
       where,
     });
-    
+
     // Remover campos sensíveis
-    const usuariosSemSenha = usuarios.map(usuario => {
+    const usuariosSemSenha = usuarios.map((usuario) => {
       const { senhaHash, ...usuarioSemSenha } = usuario;
       return usuarioSemSenha;
     });
-    
+
     return {
       items: usuariosSemSenha,
       meta: {
@@ -84,14 +106,14 @@ export class UsuarioService {
    */
   async findById(id: string) {
     const usuario = await this.usuarioRepository.findById(id);
-    
+
     if (!usuario) {
       throw new NotFoundException('Usuário não encontrado');
     }
-    
+
     // Remover campos sensíveis
     const { senhaHash, ...usuarioSemSenha } = usuario;
-    
+
     return usuarioSemSenha;
   }
 
@@ -101,49 +123,85 @@ export class UsuarioService {
    * @returns Usuário criado
    */
   async create(createUsuarioDto: CreateUsuarioDto) {
-    // Verificar se email já existe
-    const emailExistente = await this.usuarioRepository.findByEmail(createUsuarioDto.email);
-    if (emailExistente) {
-      throw new ConflictException('Email já está em uso');
-    }
-    
-    // Verificar se CPF já existe (se fornecido)
-    if (createUsuarioDto.cpf) {
-      const cpfExistente = await this.usuarioRepository.findByCpf(createUsuarioDto.cpf);
-      if (cpfExistente) {
-        throw new ConflictException('CPF já está em uso');
+    this.logger.log(`Iniciando criação de usuário: ${createUsuarioDto.email}`);
+
+    try {
+      // Usar transação para garantir consistência
+      return await this.dataSource.transaction(async (manager) => {
+        const usuarioRepo = manager.getRepository('usuario');
+
+        // Verificar se email já existe
+        const emailExistente = await usuarioRepo.findOne({
+          where: { email: createUsuarioDto.email },
+        });
+        if (emailExistente) {
+          this.logger.warn(`Email já está em uso: ${createUsuarioDto.email}`);
+          throw new ConflictException('Email já está em uso');
+        }
+
+        // Verificar se CPF já existe (se fornecido)
+        if (createUsuarioDto.cpf) {
+          const cpfExistente = await usuarioRepo.findOne({
+            where: { cpf: createUsuarioDto.cpf },
+          });
+          if (cpfExistente) {
+            this.logger.warn(`CPF já está em uso: ${createUsuarioDto.cpf}`);
+            throw new ConflictException('CPF já está em uso');
+          }
+        }
+
+        // Verificar se matrícula já existe (se fornecida)
+        if (createUsuarioDto.matricula) {
+          const matriculaExistente = await usuarioRepo.findOne({
+            where: { matricula: createUsuarioDto.matricula },
+          });
+          if (matriculaExistente) {
+            this.logger.warn(
+              `Matrícula já está em uso: ${createUsuarioDto.matricula}`,
+            );
+            throw new ConflictException('Matrícula já está em uso');
+          }
+        }
+
+        // Gerar hash da senha com maior segurança
+        const senhaHash = await bcrypt.hash(
+          createUsuarioDto.senha,
+          this.SALT_ROUNDS,
+        );
+
+        // Criar usuário
+        const novoUsuario = usuarioRepo.create({
+          nome: createUsuarioDto.nome,
+          email: createUsuarioDto.email.toLowerCase(), // Normalizar email para minúsculas
+          senhaHash,
+          cpf: createUsuarioDto.cpf,
+          telefone: createUsuarioDto.telefone,
+          matricula: createUsuarioDto.matricula,
+          role: createUsuarioDto.role,
+          unidadeId: createUsuarioDto.unidadeId,
+          setorId: createUsuarioDto.setorId,
+          primeiro_acesso: true,
+          ultimo_login: null,
+          tentativas_login: 0,
+        });
+
+        const usuarioSalvo = await usuarioRepo.save(novoUsuario);
+        this.logger.log(`Usuário criado com sucesso: ${usuarioSalvo.id}`);
+
+        // Remover campos sensíveis
+        const { senhaHash: _, ...usuarioSemSenha } = usuarioSalvo;
+
+        return usuarioSemSenha;
+      });
+    } catch (error) {
+      this.logger.error(`Erro ao criar usuário: ${error.message}`, error.stack);
+      if (error instanceof ConflictException) {
+        throw error;
       }
+      throw new InternalServerErrorException(
+        'Falha ao criar usuário. Por favor, tente novamente.',
+      );
     }
-    
-    // Verificar se matrícula já existe (se fornecida)
-    if (createUsuarioDto.matricula) {
-      const matriculaExistente = await this.usuarioRepository.findByMatricula(createUsuarioDto.matricula);
-      if (matriculaExistente) {
-        throw new ConflictException('Matrícula já está em uso');
-      }
-    }
-    
-    // Gerar hash da senha
-    const senhaHash = await bcrypt.hash(createUsuarioDto.senha, 10);
-    
-    // Criar usuário
-    const usuario = await this.usuarioRepository.create({
-      nome: createUsuarioDto.nome,
-      email: createUsuarioDto.email,
-      senhaHash,
-      cpf: createUsuarioDto.cpf,
-      telefone: createUsuarioDto.telefone,
-      matricula: createUsuarioDto.matricula,
-      role: createUsuarioDto.role,
-      unidadeId: createUsuarioDto.unidadeId,
-      setorId: createUsuarioDto.setorId,
-      primeiro_acesso: true,
-    });
-    
-    // Remover campos sensíveis
-    const { senhaHash: _, ...usuarioSemSenha } = usuario;
-    
-    return usuarioSemSenha;
   }
 
   /**
@@ -153,43 +211,96 @@ export class UsuarioService {
    * @returns Usuário atualizado
    */
   async update(id: string, updateUsuarioDto: UpdateUsuarioDto) {
-    // Verificar se usuário existe
-    const usuario = await this.usuarioRepository.findById(id);
-    if (!usuario) {
-      throw new NotFoundException('Usuário não encontrado');
-    }
-    
-    // Verificar se email já existe (se fornecido)
-    if (updateUsuarioDto.email && updateUsuarioDto.email !== usuario.email) {
-      const emailExistente = await this.usuarioRepository.findByEmail(updateUsuarioDto.email);
-      if (emailExistente) {
-        throw new ConflictException('Email já está em uso');
+    this.logger.log(`Iniciando atualização do usuário ${id}`);
+
+    try {
+      // Usar transação para garantir consistência
+      return await this.dataSource.transaction(async (manager) => {
+        const usuarioRepo = manager.getRepository('usuario');
+
+        // Verificar se usuário existe
+        const usuario = await usuarioRepo.findOne({ where: { id } });
+        if (!usuario) {
+          this.logger.warn(`Usuário não encontrado: ${id}`);
+          throw new NotFoundException('Usuário não encontrado');
+        }
+
+        // Verificar se email já existe (se fornecido)
+        if (
+          updateUsuarioDto.email &&
+          updateUsuarioDto.email.toLowerCase() !== usuario.email.toLowerCase()
+        ) {
+          const emailExistente = await usuarioRepo.findOne({
+            where: { email: updateUsuarioDto.email.toLowerCase() },
+          });
+          if (emailExistente) {
+            this.logger.warn(`Email já está em uso: ${updateUsuarioDto.email}`);
+            throw new ConflictException('Email já está em uso');
+          }
+          // Normalizar email para minúsculas
+          updateUsuarioDto.email = updateUsuarioDto.email.toLowerCase();
+        }
+
+        // Verificar se CPF já existe (se fornecido)
+        if (updateUsuarioDto.cpf && updateUsuarioDto.cpf !== usuario.cpf) {
+          const cpfExistente = await usuarioRepo.findOne({
+            where: { cpf: updateUsuarioDto.cpf },
+          });
+          if (cpfExistente) {
+            this.logger.warn(`CPF já está em uso: ${updateUsuarioDto.cpf}`);
+            throw new ConflictException('CPF já está em uso');
+          }
+        }
+
+        // Verificar se matrícula já existe (se fornecida)
+        if (
+          updateUsuarioDto.matricula &&
+          updateUsuarioDto.matricula !== usuario.matricula
+        ) {
+          const matriculaExistente = await usuarioRepo.findOne({
+            where: { matricula: updateUsuarioDto.matricula },
+          });
+          if (matriculaExistente) {
+            this.logger.warn(
+              `Matrícula já está em uso: ${updateUsuarioDto.matricula}`,
+            );
+            throw new ConflictException('Matrícula já está em uso');
+          }
+        }
+
+        // Atualizar usuário
+        await usuarioRepo.update(id, updateUsuarioDto);
+
+        // Buscar usuário atualizado
+        const usuarioAtualizado = await usuarioRepo.findOne({ where: { id } });
+        if (!usuarioAtualizado) {
+          throw new NotFoundException(
+            'Usuário não encontrado após atualização',
+          );
+        }
+
+        this.logger.log(`Usuário ${id} atualizado com sucesso`);
+
+        // Remover campos sensíveis
+        const { senhaHash, ...usuarioSemSenha } = usuarioAtualizado;
+
+        return usuarioSemSenha;
+      });
+    } catch (error) {
+      this.logger.error(
+        `Erro ao atualizar usuário ${id}: ${error.message}`,
+        error.stack,
+      );
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ConflictException
+      ) {
+        throw error;
       }
+      throw new InternalServerErrorException(
+        'Falha ao atualizar usuário. Por favor, tente novamente.',
+      );
     }
-    
-    // Verificar se CPF já existe (se fornecido)
-    if (updateUsuarioDto.cpf && updateUsuarioDto.cpf !== usuario.cpf) {
-      const cpfExistente = await this.usuarioRepository.findByCpf(updateUsuarioDto.cpf);
-      if (cpfExistente) {
-        throw new ConflictException('CPF já está em uso');
-      }
-    }
-    
-    // Verificar se matrícula já existe (se fornecida)
-    if (updateUsuarioDto.matricula && updateUsuarioDto.matricula !== usuario.matricula) {
-      const matriculaExistente = await this.usuarioRepository.findByMatricula(updateUsuarioDto.matricula);
-      if (matriculaExistente) {
-        throw new ConflictException('Matrícula já está em uso');
-      }
-    }
-    
-    // Atualizar usuário
-    const usuarioAtualizado = await this.usuarioRepository.update(id, updateUsuarioDto);
-    
-    // Remover campos sensíveis
-    const { senhaHash, ...usuarioSemSenha } = usuarioAtualizado;
-    
-    return usuarioSemSenha;
   }
 
   /**
@@ -198,19 +309,25 @@ export class UsuarioService {
    * @param updateStatusUsuarioDto Novo status
    * @returns Usuário atualizado
    */
-  async updateStatus(id: string, updateStatusUsuarioDto: UpdateStatusUsuarioDto) {
+  async updateStatus(
+    id: string,
+    updateStatusUsuarioDto: UpdateStatusUsuarioDto,
+  ) {
     // Verificar se usuário existe
     const usuario = await this.usuarioRepository.findById(id);
     if (!usuario) {
       throw new NotFoundException('Usuário não encontrado');
     }
-    
+
     // Atualizar status
-    const usuarioAtualizado = await this.usuarioRepository.updateStatus(id, updateStatusUsuarioDto.status);
-    
+    const usuarioAtualizado = await this.usuarioRepository.updateStatus(
+      id,
+      updateStatusUsuarioDto.status,
+    );
+
     // Remover campos sensíveis
     const { senhaHash, ...usuarioSemSenha } = usuarioAtualizado;
-    
+
     return usuarioSemSenha;
   }
 
@@ -221,30 +338,85 @@ export class UsuarioService {
    * @returns Mensagem de sucesso
    */
   async updateSenha(id: string, updateSenhaDto: UpdateSenhaDto) {
-    // Verificar se usuário existe
-    const usuario = await this.usuarioRepository.findById(id);
-    if (!usuario) {
-      throw new NotFoundException('Usuário não encontrado');
+    this.logger.log(`Iniciando atualização de senha do usuário ${id}`);
+
+    try {
+      // Usar transação para garantir consistência
+      return await this.dataSource.transaction(async (manager) => {
+        const usuarioRepo = manager.getRepository('usuario');
+
+        // Verificar se usuário existe
+        const usuario = await usuarioRepo.findOne({ where: { id } });
+        if (!usuario) {
+          this.logger.warn(`Usuário não encontrado: ${id}`);
+          throw new NotFoundException('Usuário não encontrado');
+        }
+
+        // Verificar se a senha atual está correta
+        const senhaCorreta = await bcrypt.compare(
+          updateSenhaDto.senhaAtual,
+          usuario.senhaHash,
+        );
+        if (!senhaCorreta) {
+          this.logger.warn(
+            `Tentativa de alteração de senha com senha atual incorreta: ${id}`,
+          );
+          // Incrementar contador de tentativas falhas para prevenção de ataques de força bruta
+          await usuarioRepo.update(id, {
+            tentativas_login: () => '"tentativas_login" + 1',
+          });
+          throw new UnauthorizedException('Senha atual incorreta');
+        }
+
+        // Verificar se a nova senha e a confirmação coincidem
+        if (updateSenhaDto.novaSenha !== updateSenhaDto.confirmacaoSenha) {
+          this.logger.warn(`Nova senha e confirmação não coincidem: ${id}`);
+          throw new BadRequestException(
+            'Nova senha e confirmação não coincidem',
+          );
+        }
+
+        // Verificar se a nova senha é diferente da atual
+        if (updateSenhaDto.novaSenha === updateSenhaDto.senhaAtual) {
+          throw new BadRequestException(
+            'A nova senha deve ser diferente da senha atual',
+          );
+        }
+
+        // Gerar hash da nova senha com maior segurança
+        const senhaHash = await bcrypt.hash(
+          updateSenhaDto.novaSenha,
+          this.SALT_ROUNDS,
+        );
+
+        // Atualizar senha e resetar contador de tentativas
+        await usuarioRepo.update(id, {
+          senhaHash,
+          tentativas_login: 0,
+          primeiro_acesso: false,
+          ultimo_login: new Date(),
+        });
+
+        this.logger.log(`Senha do usuário ${id} atualizada com sucesso`);
+
+        return { message: 'Senha atualizada com sucesso' };
+      });
+    } catch (error) {
+      this.logger.error(
+        `Erro ao atualizar senha do usuário ${id}: ${error.message}`,
+        error.stack,
+      );
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException ||
+        error instanceof UnauthorizedException
+      ) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'Falha ao atualizar senha. Por favor, tente novamente.',
+      );
     }
-    
-    // Verificar se a senha atual está correta
-    const senhaCorreta = await bcrypt.compare(updateSenhaDto.senhaAtual, usuario.senhaHash);
-    if (!senhaCorreta) {
-      throw new BadRequestException('Senha atual incorreta');
-    }
-    
-    // Verificar se a nova senha e a confirmação coincidem
-    if (updateSenhaDto.novaSenha !== updateSenhaDto.confirmacaoSenha) {
-      throw new BadRequestException('Nova senha e confirmação não coincidem');
-    }
-    
-    // Gerar hash da nova senha
-    const senhaHash = await bcrypt.hash(updateSenhaDto.novaSenha, 10);
-    
-    // Atualizar senha
-    await this.usuarioRepository.updateSenha(id, senhaHash);
-    
-    return { message: 'Senha atualizada com sucesso' };
   }
 
   /**
@@ -262,6 +434,26 @@ export class UsuarioService {
    * @returns Usuário encontrado ou null
    */
   async findByEmail(email: string): Promise<Usuario | null> {
-    return this.usuarioRepository.findByEmail(email);
+    this.logger.log(`Buscando usuário por email: ${email}`);
+
+    try {
+      // Normalizar email para minúsculas para evitar problemas de case sensitivity
+      const normalizedEmail = email.toLowerCase();
+      const usuario = await this.usuarioRepository.findByEmail(normalizedEmail);
+
+      if (!usuario) {
+        this.logger.warn(
+          `Usuário não encontrado para o email: ${normalizedEmail}`,
+        );
+      }
+
+      return usuario;
+    } catch (error) {
+      this.logger.error(
+        `Erro ao buscar usuário por email: ${error.message}`,
+        error.stack,
+      );
+      return null;
+    }
   }
 }

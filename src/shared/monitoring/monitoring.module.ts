@@ -11,28 +11,25 @@ import { EnhancedMetricsInterceptor } from './enhanced-metrics.interceptor';
 
 /**
  * Módulo Global de Monitoramento
- * 
+ *
  * Configura o sistema de monitoramento para toda a aplicação
  * incluindo health checks e métricas
  */
 @Global()
 @Module({
-  imports: [
-    TerminusModule,
-    HttpModule,
-  ],
+  imports: [TerminusModule, HttpModule],
   controllers: [HealthController, MetricsController, EnhancedMetricsController],
   providers: [
-    MetricsService, 
+    MetricsService,
     MetricsInterceptor,
     EnhancedMetricsService,
-    EnhancedMetricsInterceptor
+    EnhancedMetricsInterceptor,
   ],
   exports: [
-    MetricsService, 
+    MetricsService,
     MetricsInterceptor,
     EnhancedMetricsService,
-    EnhancedMetricsInterceptor
+    EnhancedMetricsInterceptor,
   ],
 })
 export class MonitoringModule {}

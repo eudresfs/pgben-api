@@ -6,10 +6,10 @@ import { CreateLogAuditoriaDto } from '../dto/create-log-auditoria.dto';
 import { TipoOperacao } from '../enums/tipo-operacao.enum';
 
 /**
- * Serviço de Fila de Auditoria
- * 
- * Responsável por enfileirar logs de auditoria para processamento assíncrono,
- * evitando impacto na performance das requisições do usuário.
+ * Serviço de Fila de Auditoria - Versão MVP
+ *
+ * Responsável por processar logs de auditoria.
+ * Implementação simplificada para o MVP com foco nas operações essenciais.
  */
 @Injectable()
 export class AuditoriaQueueService {
@@ -20,41 +20,58 @@ export class AuditoriaQueueService {
   ) {}
 
   /**
-   * Adiciona um log de auditoria à fila para processamento assíncrono
-   * 
+   * Processa um log de auditoria (implementação simplificada para o MVP)
+   *
    * @param logAuditoriaDto Dados do log de auditoria a ser registrado
-   * @returns Promise com o resultado da operação de enfileiramento
+   * @returns Promise com o resultado da operação
    */
-  async enfileirarLogAuditoria(logAuditoriaDto: CreateLogAuditoriaDto): Promise<void> {
+  async processarLog(
+    logAuditoriaDto: CreateLogAuditoriaDto,
+  ): Promise<void> {
     try {
+      // No MVP, simplificamos o processamento enfileirando diretamente
+      // com configuração básica
       await this.auditoriaQueue.add('registrar-log', logAuditoriaDto, {
-        attempts: 3, // Tenta 3 vezes em caso de falha
-        backoff: {
-          type: 'exponential',
-          delay: 1000, // Delay inicial de 1 segundo entre tentativas
-        },
-        removeOnComplete: true, // Remove o job após conclusão com sucesso
-        removeOnFail: false, // Mantém jobs com falha para investigação
+        attempts: 2,
+        removeOnComplete: true,
       });
+
+      this.logger.debug(
+        `Log de auditoria processado: ${logAuditoriaDto.entidade_afetada} - ${logAuditoriaDto.tipo_operacao}`,
+      );
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
       
-      this.logger.debug(`Log de auditoria enfileirado: ${logAuditoriaDto.entidade_afetada} - ${logAuditoriaDto.tipo_operacao}`);
-    } catch (error) {
-      this.logger.error(`Erro ao enfileirar log de auditoria: ${error.message}`, error.stack);
-      // Em caso de falha no enfileiramento, ainda permite que a aplicação continue
+      this.logger.error(
+        `Erro ao processar log de auditoria: ${errorMessage}`,
+      );
     }
   }
 
   /**
-   * Adiciona um registro de acesso a dados sensíveis à fila para processamento assíncrono
+   * Enfileira um log de auditoria para processamento assíncrono
    * 
-   * @param usuarioId ID do usuário que acessou os dados sensíveis
-   * @param entidade Nome da entidade que contém os dados sensíveis
-   * @param entidadeId ID da entidade que contém os dados sensíveis
+   * @param logAuditoriaDto Dados do log de auditoria a ser registrado
+   * @returns Promise com o resultado da operação
+   */
+  async enfileirarLogAuditoria(
+    logAuditoriaDto: CreateLogAuditoriaDto,
+  ): Promise<void> {
+    return this.processarLog(logAuditoriaDto);
+  }
+
+  /**
+   * Enfileira um registro de acesso a dados sensíveis para processamento assíncrono
+   * 
+   * @param usuarioId ID do usuário que acessou os dados
+   * @param entidade Nome da entidade acessada
+   * @param entidadeId ID da entidade acessada
    * @param camposSensiveis Lista de campos sensíveis acessados
-   * @param ip IP do usuário
-   * @param userAgent User agent do navegador/cliente
-   * @param endpoint Endpoint acessado
+   * @param ip Endereço IP de origem do acesso
+   * @param userAgent User agent do navegador
+   * @param url URL acessada
    * @param metodo Método HTTP utilizado
+   * @returns Promise com o resultado da operação
    */
   async enfileirarAcessoDadosSensiveis(
     usuarioId: string,
@@ -63,33 +80,30 @@ export class AuditoriaQueueService {
     camposSensiveis: string[],
     ip: string,
     userAgent: string,
-    endpoint: string,
+    url: string,
     metodo: string,
   ): Promise<void> {
     try {
-      await this.auditoriaQueue.add('registrar-acesso-dados-sensiveis', {
-        usuarioId,
-        entidade,
-        entidadeId,
-        camposSensiveis,
-        ip,
-        userAgent,
-        endpoint,
-        metodo,
-        timestamp: new Date(),
-      }, {
-        priority: 1, // Prioridade alta para acessos a dados sensíveis
-        attempts: 5, // Mais tentativas para garantir o registro
-        backoff: {
-          type: 'exponential',
-          delay: 500, // Delay inicial menor para tentar mais rapidamente
-        },
-        removeOnComplete: false, // Mantém registro de acessos a dados sensíveis
-      });
+      // Cria um DTO de log específico para acesso a dados sensíveis
+      const logAuditoriaDto = new CreateLogAuditoriaDto();
+      logAuditoriaDto.tipo_operacao = TipoOperacao.ACCESS;
+      logAuditoriaDto.entidade_afetada = entidade;
+      logAuditoriaDto.entidade_id = entidadeId;
+      logAuditoriaDto.usuario_id = usuarioId;
+      logAuditoriaDto.ip_origem = ip;
+      logAuditoriaDto.user_agent = userAgent;
+      logAuditoriaDto.endpoint = url;
+      logAuditoriaDto.metodo_http = metodo;
+      logAuditoriaDto.dados_sensiveis_acessados = camposSensiveis;
+      logAuditoriaDto.descricao = `Acesso a dados sensíveis: ${camposSensiveis.join(', ')}`;
+
+      return this.processarLog(logAuditoriaDto);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
       
-      this.logger.debug(`Acesso a dados sensíveis enfileirado: ${entidade} - Campos: ${camposSensiveis.join(', ')}`);
-    } catch (error) {
-      this.logger.error(`Erro ao enfileirar acesso a dados sensíveis: ${error.message}`, error.stack);
+      this.logger.error(
+        `Erro ao enfileirar acesso a dados sensíveis: ${errorMessage}`,
+      );
     }
   }
 }

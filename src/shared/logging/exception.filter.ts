@@ -18,7 +18,7 @@ declare module 'express' {
 
 /**
  * Filtro de Exceções Global
- * 
+ *
  * Captura todas as exceções lançadas pela aplicação e:
  * - Registra informações detalhadas no log
  * - Formata a resposta de erro para o cliente
@@ -33,17 +33,17 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     const ctx = host.switchToHttp();
     const request = ctx.getRequest<Request>();
     const response = ctx.getResponse<Response>();
-    
+
     const status =
       exception instanceof HttpException
         ? exception.getStatus()
         : HttpStatus.INTERNAL_SERVER_ERROR;
-    
+
     const message =
       exception instanceof HttpException
         ? exception.message
         : 'Erro interno do servidor';
-    
+
     const errorResponse = {
       statusCode: status,
       timestamp: new Date().toISOString(),
@@ -51,21 +51,26 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       method: request.method,
       message,
     };
-    
+
     // Adicionar detalhes do erro em ambiente de desenvolvimento
     if (process.env.NODE_ENV !== 'production') {
-      errorResponse['error'] = exception instanceof Error ? exception.name : 'Erro desconhecido';
-      errorResponse['stack'] = exception instanceof Error ? exception.stack : undefined;
+      errorResponse['error'] =
+        exception instanceof Error ? exception.name : 'Erro desconhecido';
+      errorResponse['stack'] =
+        exception instanceof Error ? exception.stack : undefined;
     }
-    
+
     // Log detalhado do erro
     const userId = request.user ? request.user.id : 'anônimo';
     const userIp = request.ip;
-    const userAgent = request.headers?.['user-agent'] || request.get?.('user-agent') || '';
-    
+    const userAgent =
+      request.headers?.['user-agent'] || request.get?.('user-agent') || '';
+
     this.loggingService.error(
       `Exceção capturada: ${request.method} ${request.url} - Status: ${status} - Mensagem: ${message}`,
-      exception instanceof Error ? exception.stack : 'Sem stack trace disponível',
+      exception instanceof Error
+        ? exception.stack
+        : 'Sem stack trace disponível',
       'ExceptionFilter',
       {
         method: request.method,
@@ -74,10 +79,10 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         message,
         userId,
         ip: userIp,
-        userAgent
-      }
+        userAgent,
+      },
     );
-    
+
     response.status(status).json(errorResponse);
   }
 }

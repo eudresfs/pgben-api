@@ -1,17 +1,23 @@
-import { 
-  Controller, 
-  Get, 
-  Post, 
-  Body, 
-  Param, 
-  Delete, 
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Delete,
   UseGuards,
   Query,
   NotFoundException,
   ConflictException,
-  BadRequestException
+  BadRequestException,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../auth/guards/roles.guard';
 import { PapelCidadaoService } from '../services/papel-cidadao.service';
@@ -20,7 +26,7 @@ import { TipoPapel } from '../entities/papel-cidadao.entity';
 
 /**
  * Controlador de Papéis de Cidadão
- * 
+ *
  * Gerencia os diferentes papéis que um cidadão pode assumir no sistema
  * (beneficiário, requerente, representante legal).
  */
@@ -44,9 +50,11 @@ export class PapelCidadaoController {
     try {
       return await this.papelCidadaoService.create(createPapelCidadaoDto);
     } catch (error) {
-      if (error instanceof NotFoundException || 
-          error instanceof ConflictException || 
-          error instanceof BadRequestException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ConflictException ||
+        error instanceof BadRequestException
+      ) {
         throw error;
       }
       throw new BadRequestException('Erro ao criar papel para cidadão');
@@ -58,7 +66,10 @@ export class PapelCidadaoController {
    */
   @Get('cidadao/:cidadaoId')
   @ApiOperation({ summary: 'Listar papéis de um cidadão' })
-  @ApiResponse({ status: 200, description: 'Lista de papéis retornada com sucesso' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de papéis retornada com sucesso',
+  })
   @ApiResponse({ status: 404, description: 'Cidadão não encontrado' })
   async findByCidadaoId(@Param('cidadaoId') cidadaoId: string) {
     return this.papelCidadaoService.findByCidadaoId(cidadaoId);
@@ -69,7 +80,10 @@ export class PapelCidadaoController {
    */
   @Get('tipo/:tipoPapel')
   @ApiOperation({ summary: 'Buscar cidadãos por tipo de papel' })
-  @ApiResponse({ status: 200, description: 'Lista de cidadãos retornada com sucesso' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de cidadãos retornada com sucesso',
+  })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'search', required: false, type: String })
@@ -77,12 +91,12 @@ export class PapelCidadaoController {
     @Param('tipoPapel') tipoPapel: TipoPapel,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
-    @Query('search') search?: string
+    @Query('search') search?: string,
   ) {
     return this.papelCidadaoService.findCidadaosByTipoPapel(tipoPapel, {
       page: page ? Number(page) : undefined,
       limit: limit ? Number(limit) : undefined,
-      search
+      search,
     });
   }
 
@@ -90,13 +104,21 @@ export class PapelCidadaoController {
    * Verifica se um cidadão possui um determinado papel
    */
   @Get('verificar/:cidadaoId/:tipoPapel')
-  @ApiOperation({ summary: 'Verificar se um cidadão possui um determinado papel' })
-  @ApiResponse({ status: 200, description: 'Verificação realizada com sucesso' })
+  @ApiOperation({
+    summary: 'Verificar se um cidadão possui um determinado papel',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Verificação realizada com sucesso',
+  })
   async verificarPapel(
     @Param('cidadaoId') cidadaoId: string,
-    @Param('tipoPapel') tipoPapel: TipoPapel
+    @Param('tipoPapel') tipoPapel: TipoPapel,
   ) {
-    const temPapel = await this.papelCidadaoService.verificarPapel(cidadaoId, tipoPapel);
+    const temPapel = await this.papelCidadaoService.verificarPapel(
+      cidadaoId,
+      tipoPapel,
+    );
     return { temPapel };
   }
 

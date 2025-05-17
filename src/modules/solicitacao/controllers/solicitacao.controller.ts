@@ -1,19 +1,32 @@
-import { 
-  Controller, 
-  Get, 
-  Post, 
-  Body, 
-  Param, 
-  Put, 
-  Query, 
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Put,
+  Query,
   UseGuards,
   Req,
   NotFoundException,
   BadRequestException,
-  UnauthorizedException
+  UnauthorizedException,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery, ApiBody, getSchemaPath } from '@nestjs/swagger';
-import { criarSolicitacaoPayload, criarSolicitacaoResponse, avaliarSolicitacaoPayload, avaliarSolicitacaoResponse } from '../../../shared/configs/swagger-payloads';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiQuery,
+  ApiBody,
+  getSchemaPath,
+} from '@nestjs/swagger';
+import {
+  criarSolicitacaoPayload,
+  criarSolicitacaoResponse,
+  avaliarSolicitacaoPayload,
+  avaliarSolicitacaoResponse,
+} from '../../../shared/configs/swagger-payloads';
 import { SolicitacaoService } from '../services/solicitacao.service';
 import { CreateSolicitacaoDto } from '../dto/create-solicitacao.dto';
 import { UpdateSolicitacaoDto } from '../dto/update-solicitacao.dto';
@@ -27,7 +40,7 @@ import { Request } from 'express';
 
 /**
  * Controlador de Solicitações
- * 
+ *
  * Responsável por gerenciar as rotas relacionadas às solicitações de benefícios
  */
 @ApiTags('solicitacoes')
@@ -42,15 +55,58 @@ export class SolicitacaoController {
    */
   @Get()
   @ApiOperation({ summary: 'Listar solicitações' })
-  @ApiResponse({ status: 200, description: 'Lista de solicitações retornada com sucesso' })
-  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Página atual' })
-  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Itens por página' })
-  @ApiQuery({ name: 'status', required: false, enum: StatusSolicitacao, description: 'Filtro por status' })
-  @ApiQuery({ name: 'unidade_id', required: false, type: String, description: 'Filtro por unidade' })
-  @ApiQuery({ name: 'beneficio_id', required: false, type: String, description: 'Filtro por tipo de benefício' })
-  @ApiQuery({ name: 'protocolo', required: false, type: String, description: 'Busca por protocolo' })
-  @ApiQuery({ name: 'data_inicio', required: false, type: String, description: 'Data inicial (formato: YYYY-MM-DD)' })
-  @ApiQuery({ name: 'data_fim', required: false, type: String, description: 'Data final (formato: YYYY-MM-DD)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de solicitações retornada com sucesso',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Página atual',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Itens por página',
+  })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    enum: StatusSolicitacao,
+    description: 'Filtro por status',
+  })
+  @ApiQuery({
+    name: 'unidade_id',
+    required: false,
+    type: String,
+    description: 'Filtro por unidade',
+  })
+  @ApiQuery({
+    name: 'beneficio_id',
+    required: false,
+    type: String,
+    description: 'Filtro por tipo de benefício',
+  })
+  @ApiQuery({
+    name: 'protocolo',
+    required: false,
+    type: String,
+    description: 'Busca por protocolo',
+  })
+  @ApiQuery({
+    name: 'data_inicio',
+    required: false,
+    type: String,
+    description: 'Data inicial (formato: YYYY-MM-DD)',
+  })
+  @ApiQuery({
+    name: 'data_fim',
+    required: false,
+    type: String,
+    description: 'Data final (formato: YYYY-MM-DD)',
+  })
   async findAll(
     @Req() req: Request,
     @Query('page') page?: number,
@@ -64,7 +120,7 @@ export class SolicitacaoController {
   ) {
     // Verificar permissões do usuário para filtrar solicitações por unidade
     const user = req.user;
-    
+
     return this.solicitacaoService.findAll({
       page: page ? +page : undefined,
       limit: limit ? +limit : undefined,
@@ -83,18 +139,23 @@ export class SolicitacaoController {
    */
   @Get(':id')
   @ApiOperation({ summary: 'Obter detalhes de uma solicitação' })
-  @ApiResponse({ status: 200, description: 'Solicitação encontrada com sucesso' })
+  @ApiResponse({
+    status: 200,
+    description: 'Solicitação encontrada com sucesso',
+  })
   @ApiResponse({ status: 404, description: 'Solicitação não encontrada' })
   async findOne(@Param('id') id: string, @Req() req: Request) {
     const solicitacao = await this.solicitacaoService.findById(id);
-    
+
     // Verificar se o usuário tem permissão para acessar esta solicitação
     // (Administradores, gestores SEMTAS, ou usuários da mesma unidade)
     const user = req.user;
     if (!this.solicitacaoService.canAccessSolicitacao(solicitacao, user)) {
-      throw new UnauthorizedException('Você não tem permissão para acessar esta solicitação');
+      throw new UnauthorizedException(
+        'Você não tem permissão para acessar esta solicitação',
+      );
     }
-    
+
     return solicitacao;
   }
 
@@ -102,11 +163,19 @@ export class SolicitacaoController {
    * Cria uma nova solicitação de benefício
    */
   @Post()
-  @Roles(Role.ADMIN, Role.GESTOR_SEMTAS, Role.TECNICO_SEMTAS, Role.TECNICO_UNIDADE)
+  @Roles(
+    Role.ADMIN,
+    Role.GESTOR_SEMTAS,
+    Role.TECNICO_SEMTAS,
+    Role.TECNICO_UNIDADE,
+  )
   @ApiOperation({ summary: 'Criar nova solicitação de benefício' })
   @ApiResponse({ status: 201, description: 'Solicitação criada com sucesso' })
   @ApiResponse({ status: 400, description: 'Dados inválidos' })
-  async create(@Body() createSolicitacaoDto: CreateSolicitacaoDto, @Req() req: Request) {
+  async create(
+    @Body() createSolicitacaoDto: CreateSolicitacaoDto,
+    @Req() req: Request,
+  ) {
     const user = req.user;
     return this.solicitacaoService.create(createSolicitacaoDto, user);
   }
@@ -115,70 +184,75 @@ export class SolicitacaoController {
    * Atualiza uma solicitação existente
    */
   @Put(':id')
-  @Roles(Role.ADMIN, Role.GESTOR_SEMTAS, Role.TECNICO_SEMTAS, Role.TECNICO_UNIDADE)
+  @Roles(
+    Role.ADMIN,
+    Role.GESTOR_SEMTAS,
+    Role.TECNICO_SEMTAS,
+    Role.TECNICO_UNIDADE,
+  )
   @ApiOperation({ summary: 'Atualizar solicitação existente' })
-  @ApiBody({ 
+  @ApiBody({
     description: 'Dados da solicitação atualizada',
     schema: {
       example: {
-        "nome": "João Silva",
-        "cpf": "12345678901",
-        "data_nascimento": "1990-01-01",
-        "endereco": {
-          "logradouro": "Rua Exemplo",
-          "numero": "123",
-          "bairro": "Bairro Exemplo",
-          "cidade": "Cidade Exemplo",
-          "estado": "Estado Exemplo",
-          "cep": "12345678"
+        nome: 'João Silva',
+        cpf: '12345678901',
+        data_nascimento: '1990-01-01',
+        endereco: {
+          logradouro: 'Rua Exemplo',
+          numero: '123',
+          bairro: 'Bairro Exemplo',
+          cidade: 'Cidade Exemplo',
+          estado: 'Estado Exemplo',
+          cep: '12345678',
         },
-        "contato": {
-          "telefone": "123456789",
-          "email": "joao.silva@example.com"
+        contato: {
+          telefone: '123456789',
+          email: 'joao.silva@example.com',
         },
-        "beneficio": {
-          "id": 1,
-          "nome": "Benefício Exemplo"
+        beneficio: {
+          id: 1,
+          nome: 'Benefício Exemplo',
         },
-        "status": "EM_ANALISE"
-      }
-    }
+        status: 'EM_ANALISE',
+      },
+    },
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Solicitação atualizada com sucesso',
     schema: {
       example: {
-        "id": 1,
-        "nome": "João Silva",
-        "cpf": "12345678901",
-        "data_nascimento": "1990-01-01",
-        "endereco": {
-          "logradouro": "Rua Exemplo",
-          "numero": "123",
-          "bairro": "Bairro Exemplo",
-          "cidade": "Cidade Exemplo",
-          "estado": "Estado Exemplo",
-          "cep": "12345678"
+        id: 1,
+        nome: 'João Silva',
+        cpf: '12345678901',
+        data_nascimento: '1990-01-01',
+        endereco: {
+          logradouro: 'Rua Exemplo',
+          numero: '123',
+          bairro: 'Bairro Exemplo',
+          cidade: 'Cidade Exemplo',
+          estado: 'Estado Exemplo',
+          cep: '12345678',
         },
-        "contato": {
-          "telefone": "123456789",
-          "email": "joao.silva@example.com"
+        contato: {
+          telefone: '123456789',
+          email: 'joao.silva@example.com',
         },
-        "beneficio": {
-          "id": 1,
-          "nome": "Benefício Exemplo"
+        beneficio: {
+          id: 1,
+          nome: 'Benefício Exemplo',
         },
-        "status": "EM_ANALISE"
-      }
-    }
+        status: 'EM_ANALISE',
+      },
+    },
   })
   @ApiResponse({ status: 400, description: 'Dados inválidos' })
   @ApiResponse({ status: 404, description: 'Solicitação não encontrada' })
   async update(
-    @Param('id') id: string, 
+    @Param('id') id: string,
     @Body() updateSolicitacaoDto: UpdateSolicitacaoDto,
-    @Req() req: Request
+    @Req() req: Request,
   ) {
     const user = req.user;
     return this.solicitacaoService.update(id, updateSolicitacaoDto, user);
@@ -188,10 +262,21 @@ export class SolicitacaoController {
    * Submete uma solicitação para análise
    */
   @Put(':id/submeter')
-  @Roles(Role.ADMIN, Role.GESTOR_SEMTAS, Role.TECNICO_SEMTAS, Role.TECNICO_UNIDADE)
+  @Roles(
+    Role.ADMIN,
+    Role.GESTOR_SEMTAS,
+    Role.TECNICO_SEMTAS,
+    Role.TECNICO_UNIDADE,
+  )
   @ApiOperation({ summary: 'Submeter solicitação para análise' })
-  @ApiResponse({ status: 200, description: 'Solicitação submetida com sucesso' })
-  @ApiResponse({ status: 400, description: 'Solicitação não pode ser submetida' })
+  @ApiResponse({
+    status: 200,
+    description: 'Solicitação submetida com sucesso',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Solicitação não pode ser submetida',
+  })
   @ApiResponse({ status: 404, description: 'Solicitação não encontrada' })
   async submeterSolicitacao(@Param('id') id: string, @Req() req: Request) {
     const user = req.user;
@@ -202,30 +287,42 @@ export class SolicitacaoController {
    * Avalia uma solicitação (aprovar/reprovar)
    */
   @Put(':id/avaliar')
-  @Roles(Role.ADMIN, Role.GESTOR_SEMTAS, Role.TECNICO_SEMTAS, Role.COORDENADOR_UNIDADE)
+  @Roles(
+    Role.ADMIN,
+    Role.GESTOR_SEMTAS,
+    Role.TECNICO_SEMTAS,
+    Role.COORDENADOR_UNIDADE,
+  )
   @ApiOperation({ summary: 'Avaliar solicitação (aprovar/reprovar)' })
-  @ApiBody({ 
+  @ApiBody({
     description: 'Dados da avaliação da solicitação',
     schema: {
-      example: avaliarSolicitacaoPayload
-    }
+      example: avaliarSolicitacaoPayload,
+    },
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Solicitação avaliada com sucesso',
     schema: {
-      example: avaliarSolicitacaoResponse
-    }
+      example: avaliarSolicitacaoResponse,
+    },
   })
-  @ApiResponse({ status: 400, description: 'Solicitação não pode ser avaliada' })
+  @ApiResponse({
+    status: 400,
+    description: 'Solicitação não pode ser avaliada',
+  })
   @ApiResponse({ status: 404, description: 'Solicitação não encontrada' })
   async avaliarSolicitacao(
     @Param('id') id: string,
     @Body() avaliarSolicitacaoDto: AvaliarSolicitacaoDto,
-    @Req() req: Request
+    @Req() req: Request,
   ) {
     const user = req.user;
-    return this.solicitacaoService.avaliarSolicitacao(id, avaliarSolicitacaoDto, user);
+    return this.solicitacaoService.avaliarSolicitacao(
+      id,
+      avaliarSolicitacaoDto,
+      user,
+    );
   }
 
   /**
@@ -248,8 +345,14 @@ export class SolicitacaoController {
   @Put(':id/cancelar')
   @Roles(Role.ADMIN, Role.GESTOR_SEMTAS, Role.TECNICO_SEMTAS)
   @ApiOperation({ summary: 'Cancelar solicitação' })
-  @ApiResponse({ status: 200, description: 'Solicitação cancelada com sucesso' })
-  @ApiResponse({ status: 400, description: 'Solicitação não pode ser cancelada' })
+  @ApiResponse({
+    status: 200,
+    description: 'Solicitação cancelada com sucesso',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Solicitação não pode ser cancelada',
+  })
   @ApiResponse({ status: 404, description: 'Solicitação não encontrada' })
   async cancelarSolicitacao(@Param('id') id: string, @Req() req: Request) {
     const user = req.user;
@@ -266,11 +369,13 @@ export class SolicitacaoController {
   async getHistorico(@Param('id') id: string, @Req() req: Request) {
     const user = req.user;
     const solicitacao = await this.solicitacaoService.findById(id);
-    
+
     if (!this.solicitacaoService.canAccessSolicitacao(solicitacao, user)) {
-      throw new UnauthorizedException('Você não tem permissão para acessar esta solicitação');
+      throw new UnauthorizedException(
+        'Você não tem permissão para acessar esta solicitação',
+      );
     }
-    
+
     return this.solicitacaoService.getHistorico(id);
   }
 
@@ -279,16 +384,21 @@ export class SolicitacaoController {
    */
   @Get(':id/pendencias')
   @ApiOperation({ summary: 'Listar pendências de uma solicitação' })
-  @ApiResponse({ status: 200, description: 'Pendências retornadas com sucesso' })
+  @ApiResponse({
+    status: 200,
+    description: 'Pendências retornadas com sucesso',
+  })
   @ApiResponse({ status: 404, description: 'Solicitação não encontrada' })
   async getPendencias(@Param('id') id: string, @Req() req: Request) {
     const user = req.user;
     const solicitacao = await this.solicitacaoService.findById(id);
-    
+
     if (!this.solicitacaoService.canAccessSolicitacao(solicitacao, user)) {
-      throw new UnauthorizedException('Você não tem permissão para acessar esta solicitação');
+      throw new UnauthorizedException(
+        'Você não tem permissão para acessar esta solicitação',
+      );
     }
-    
+
     return this.solicitacaoService.getPendencias(id);
   }
 }

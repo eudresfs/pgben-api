@@ -16,12 +16,12 @@ describe('MinioService - Teste Simples', () => {
           useValue: {
             get: jest.fn((key: string, defaultValue?: any) => {
               const config = {
-                'MINIO_BUCKET': 'test-bucket',
-                'MINIO_ENDPOINT': 'localhost',
-                'MINIO_PORT': 9000,
-                'MINIO_USE_SSL': false,
-                'MINIO_ACCESS_KEY': 'minioadmin',
-                'MINIO_SECRET_KEY': 'minioadmin',
+                MINIO_BUCKET: 'test-bucket',
+                MINIO_ENDPOINT: 'localhost',
+                MINIO_PORT: 9000,
+                MINIO_USE_SSL: false,
+                MINIO_ACCESS_KEY: 'minioadmin',
+                MINIO_SECRET_KEY: 'minioadmin',
               };
               return config[key] || defaultValue;
             }),

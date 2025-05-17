@@ -1,21 +1,11 @@
 import { Module } from '@nestjs/common';
-import { BullModule } from '@nestjs/bull';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { CacheService } from './cache.service';
+import { BullModule } from '@nestjs/bull';
 
 @Module({
   imports: [
-    BullModule.forRootAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        redis: {
-          host: configService.get('REDIS_HOST', 'localhost'),
-          port: parseInt(configService.get('REDIS_PORT', '6379')),
-          password: configService.get('REDIS_PASSWORD', ''),
-        },
-      }),
-    }),
+    // Registramos a fila de cache
     BullModule.registerQueue({
       name: 'cache',
     }),

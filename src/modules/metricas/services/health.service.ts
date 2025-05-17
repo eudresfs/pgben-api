@@ -28,8 +28,10 @@ export class HealthService {
       this.checkMinIO(),
     ]);
 
-    const status = checks.every((check) => check.status === 'up') ? 'up' : 'down';
-    
+    const status = checks.every((check) => check.status === 'up')
+      ? 'up'
+      : 'down';
+
     return {
       status,
       timestamp: new Date(),
@@ -53,14 +55,16 @@ export class HealthService {
     try {
       // Tenta executar uma consulta simples para verificar a conexão
       await this.logAuditoriaRepository.query('SELECT 1');
-      
+
       return {
         status: 'up',
         responseTime: 0, // Idealmente, mediríamos o tempo de resposta
       };
     } catch (error) {
-      this.logger.error(`Erro ao verificar conexão com banco de dados: ${error.message}`);
-      
+      this.logger.error(
+        `Erro ao verificar conexão com banco de dados: ${error.message}`,
+      );
+
       return {
         status: 'down',
         error: error.message,
@@ -76,14 +80,16 @@ export class HealthService {
     try {
       // Aqui seria ideal ter uma injeção do serviço Redis para verificar a conexão
       // Como estamos apenas simulando, retornamos um status positivo
-      
+
       return {
         status: 'up',
         responseTime: 0,
       };
     } catch (error) {
-      this.logger.error(`Erro ao verificar conexão com Redis: ${error.message}`);
-      
+      this.logger.error(
+        `Erro ao verificar conexão com Redis: ${error.message}`,
+      );
+
       return {
         status: 'down',
         error: error.message,
@@ -99,14 +105,16 @@ export class HealthService {
     try {
       // Aqui seria ideal ter uma injeção do serviço MinIO para verificar a conexão
       // Como estamos apenas simulando, retornamos um status positivo
-      
+
       return {
         status: 'up',
         responseTime: 0,
       };
     } catch (error) {
-      this.logger.error(`Erro ao verificar conexão com MinIO: ${error.message}`);
-      
+      this.logger.error(
+        `Erro ao verificar conexão com MinIO: ${error.message}`,
+      );
+
       return {
         status: 'down',
         error: error.message,

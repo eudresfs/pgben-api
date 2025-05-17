@@ -8,13 +8,13 @@ import {
 
 /**
  * Migration: CreateSolicitacaoSchema
- * 
+ *
  * Descrição: Cria a estrutura do módulo de solicitação, incluindo tabelas para
  * solicitações de benefícios, histórico de status, avaliações e documentos anexados.
- * 
+ *
  * Domínio: Solicitação
  * Dependências: 1030000-CreateBeneficioSchema.ts
- * 
+ *
  * @author Arquiteto de Dados
  * @date 16/05/2025
  */
@@ -110,7 +110,8 @@ export class CreateSolicitacaoSchema1040000 implements MigrationInterface {
             name: 'dados_solicitacao',
             type: 'jsonb',
             isNullable: true,
-            comment: 'Dados específicos da solicitação conforme schema do benefício',
+            comment:
+              'Dados específicos da solicitação conforme schema do benefício',
           },
           {
             name: 'justificativa',
@@ -608,7 +609,7 @@ export class CreateSolicitacaoSchema1040000 implements MigrationInterface {
         columnNames: ['solicitacao_id'],
       }),
     );
-    
+
     await queryRunner.createIndex(
       'dados_beneficios',
       new TableIndex({
@@ -616,7 +617,7 @@ export class CreateSolicitacaoSchema1040000 implements MigrationInterface {
         columnNames: ['tipo_beneficio'],
       }),
     );
-    
+
     // Índices para a tabela solicitacao
     await queryRunner.createIndex(
       'solicitacao',
@@ -775,7 +776,7 @@ export class CreateSolicitacaoSchema1040000 implements MigrationInterface {
         onDelete: 'CASCADE',
       }),
     );
-    
+
     // Chave estrangeira para dados_beneficios
     await queryRunner.createForeignKey(
       'dados_beneficios',
@@ -952,35 +953,92 @@ export class CreateSolicitacaoSchema1040000 implements MigrationInterface {
     `);
 
     // 3. Remover chaves estrangeiras
-    await queryRunner.dropForeignKey('parcela_pagamento', 'FK_PARCELA_COMPROVANTE');
-    await queryRunner.dropForeignKey('parcela_pagamento', 'FK_PARCELA_SOLICITACAO');
-    await queryRunner.dropForeignKey('documento_solicitacao', 'FK_DOCUMENTO_USUARIO_UPLOAD');
-    await queryRunner.dropForeignKey('documento_solicitacao', 'FK_DOCUMENTO_REQUISITO');
-    await queryRunner.dropForeignKey('documento_solicitacao', 'FK_DOCUMENTO_SOLICITACAO');
-    await queryRunner.dropForeignKey('avaliacao_solicitacao', 'FK_AVALIACAO_AVALIADOR');
-    await queryRunner.dropForeignKey('avaliacao_solicitacao', 'FK_AVALIACAO_SOLICITACAO');
-    await queryRunner.dropForeignKey('historico_status_solicitacao', 'FK_HISTORICO_STATUS_USUARIO');
-    await queryRunner.dropForeignKey('historico_status_solicitacao', 'FK_HISTORICO_STATUS_SOLICITACAO');
-    await queryRunner.dropForeignKey('solicitacao', 'FK_SOLICITACAO_RESPONSAVEL');
-    await queryRunner.dropForeignKey('solicitacao', 'FK_SOLICITACAO_SETOR_ATUAL');
-    await queryRunner.dropForeignKey('solicitacao', 'FK_SOLICITACAO_TIPO_BENEFICIO');
+    await queryRunner.dropForeignKey(
+      'parcela_pagamento',
+      'FK_PARCELA_COMPROVANTE',
+    );
+    await queryRunner.dropForeignKey(
+      'parcela_pagamento',
+      'FK_PARCELA_SOLICITACAO',
+    );
+    await queryRunner.dropForeignKey(
+      'documento_solicitacao',
+      'FK_DOCUMENTO_USUARIO_UPLOAD',
+    );
+    await queryRunner.dropForeignKey(
+      'documento_solicitacao',
+      'FK_DOCUMENTO_REQUISITO',
+    );
+    await queryRunner.dropForeignKey(
+      'documento_solicitacao',
+      'FK_DOCUMENTO_SOLICITACAO',
+    );
+    await queryRunner.dropForeignKey(
+      'avaliacao_solicitacao',
+      'FK_AVALIACAO_AVALIADOR',
+    );
+    await queryRunner.dropForeignKey(
+      'avaliacao_solicitacao',
+      'FK_AVALIACAO_SOLICITACAO',
+    );
+    await queryRunner.dropForeignKey(
+      'historico_status_solicitacao',
+      'FK_HISTORICO_STATUS_USUARIO',
+    );
+    await queryRunner.dropForeignKey(
+      'historico_status_solicitacao',
+      'FK_HISTORICO_STATUS_SOLICITACAO',
+    );
+    await queryRunner.dropForeignKey(
+      'solicitacao',
+      'FK_SOLICITACAO_RESPONSAVEL',
+    );
+    await queryRunner.dropForeignKey(
+      'solicitacao',
+      'FK_SOLICITACAO_SETOR_ATUAL',
+    );
+    await queryRunner.dropForeignKey(
+      'solicitacao',
+      'FK_SOLICITACAO_TIPO_BENEFICIO',
+    );
     await queryRunner.dropForeignKey('solicitacao', 'FK_SOLICITACAO_CIDADAO');
-    await queryRunner.dropForeignKey('dados_beneficios', 'FK_DADOS_BENEFICIOS_SOLICITACAO');
-    
+    await queryRunner.dropForeignKey(
+      'dados_beneficios',
+      'FK_DADOS_BENEFICIOS_SOLICITACAO',
+    );
+
     // 4. Remover índices
     await queryRunner.dropIndex('parcela_pagamento', 'IDX_PARCELA_SOLICITACAO');
-    await queryRunner.dropIndex('documento_solicitacao', 'IDX_DOCUMENTO_SOLICITACAO');
+    await queryRunner.dropIndex(
+      'documento_solicitacao',
+      'IDX_DOCUMENTO_SOLICITACAO',
+    );
     await queryRunner.dropIndex('avaliacao_solicitacao', 'IDX_AVALIACAO_TIPO');
-    await queryRunner.dropIndex('avaliacao_solicitacao', 'IDX_AVALIACAO_SOLICITACAO');
-    await queryRunner.dropIndex('historico_status_solicitacao', 'IDX_HISTORICO_STATUS_SOLICITACAO');
+    await queryRunner.dropIndex(
+      'avaliacao_solicitacao',
+      'IDX_AVALIACAO_SOLICITACAO',
+    );
+    await queryRunner.dropIndex(
+      'historico_status_solicitacao',
+      'IDX_HISTORICO_STATUS_SOLICITACAO',
+    );
     await queryRunner.dropIndex('solicitacao', 'IDX_SOLICITACAO_SETOR_ATUAL');
     await queryRunner.dropIndex('solicitacao', 'IDX_SOLICITACAO_STATUS');
-    await queryRunner.dropIndex('solicitacao', 'IDX_SOLICITACAO_TIPO_BENEFICIO');
+    await queryRunner.dropIndex(
+      'solicitacao',
+      'IDX_SOLICITACAO_TIPO_BENEFICIO',
+    );
     await queryRunner.dropIndex('solicitacao', 'IDX_SOLICITACAO_CIDADAO');
     await queryRunner.dropIndex('solicitacao', 'IDX_SOLICITACAO_NUMERO');
-    await queryRunner.dropIndex('dados_beneficios', 'IDX_DADOS_BENEFICIOS_SOLICITACAO');
-    await queryRunner.dropIndex('dados_beneficios', 'IDX_DADOS_BENEFICIOS_TIPO');
-    
+    await queryRunner.dropIndex(
+      'dados_beneficios',
+      'IDX_DADOS_BENEFICIOS_SOLICITACAO',
+    );
+    await queryRunner.dropIndex(
+      'dados_beneficios',
+      'IDX_DADOS_BENEFICIOS_TIPO',
+    );
+
     // 5. Remover tabelas
     await queryRunner.dropTable('parcela_pagamento');
     await queryRunner.dropTable('documento_solicitacao');
@@ -988,7 +1046,7 @@ export class CreateSolicitacaoSchema1040000 implements MigrationInterface {
     await queryRunner.dropTable('historico_status_solicitacao');
     await queryRunner.dropTable('solicitacao');
     await queryRunner.dropTable('dados_beneficios');
-    
+
     // 6. Remover tipos enumerados
     await queryRunner.query(`
       DROP TYPE IF EXISTS "resultado_avaliacao_enum";

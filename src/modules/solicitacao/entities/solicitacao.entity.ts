@@ -18,6 +18,7 @@ import { TipoBeneficio } from '../../beneficio/entities/tipo-beneficio.entity';
 import { Usuario } from '../../usuario/entities/usuario.entity';
 import { Unidade } from '../../unidade/entities/unidade.entity';
 import { Documento } from '../../documento/entities/documento.entity';
+import { HistoricoSolicitacao } from './historico-solicitacao.entity';
 
 export enum StatusSolicitacao {
   RASCUNHO = 'rascunho',
@@ -43,19 +44,78 @@ export class Solicitacao {
   @Column({ unique: true })
   @IsNotEmpty({ message: 'Protocolo é obrigatório' })
   protocolo: string;
-  
+
   @BeforeInsert()
   generateProtocol() {
     const date = new Date();
-    const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+    const random = Math.floor(Math.random() * 10000)
+      .toString()
+      .padStart(4, '0');
     this.protocolo = `SOL${date.getFullYear()}${(date.getMonth() + 1).toString().padStart(2, '0')}${random}`;
   }
-  
+
+  @Column({ select: false, insert: false, update: false })
+  private statusAnterior: StatusSolicitacao;
+
+  @Column({ select: false, insert: false, update: false })
+  private usuarioAlteracao: string;
+
+  @Column({ select: false, insert: false, update: false })
+  private observacaoAlteracao: string;
+
+  @Column({ select: false, insert: false, update: false })
+  private ipUsuario: string;
+
+  /**
+   * Prepara a alteração de status para posterior registro no histórico
+   * @param novoStatus Novo status da solicitação
+   * @param usuario ID do usuário que realizou a alteração
+   * @param observacao Observação sobre a alteração
+   * @param ip IP do usuário que realizou a alteração
+   */
+  prepararAlteracaoStatus(
+    novoStatus: StatusSolicitacao,
+    usuario: string,
+    observacao: string,
+    ip: string,
+  ) {
+    this.statusAnterior = this.status;
+    this.status = novoStatus;
+    this.usuarioAlteracao = usuario;
+    this.observacaoAlteracao = observacao;
+    this.ipUsuario = ip;
+  }
+
   @AfterUpdate()
-  logStatusChange() {
-    // Lógica para registrar mudança de status no histórico
-    // Esta implementação depende da estrutura da tabela de histórico
-    // e deve ser complementada com um serviço específico
+  async logStatusChange() {
+    // Verificar se houve mudança de status e se temos as informações necessárias
+    if (
+      this.statusAnterior &&
+      this.statusAnterior !== this.status &&
+      this.usuarioAlteracao
+    ) {
+      // Importar o getRepository do typeorm
+      const { getRepository } = require('typeorm');
+
+      // Obter o repositório de HistoricoSolicitacao
+      const historicoRepository = getRepository(HistoricoSolicitacao);
+
+      // Criar e salvar um registro de histórico
+      await historicoRepository.save({
+        solicitacao_id: this.id,
+        status_anterior: this.statusAnterior,
+        status_atual: this.status,
+        usuario_id: this.usuarioAlteracao,
+        observacao: this.observacaoAlteracao,
+        dados_alterados: {
+          status: {
+            de: this.statusAnterior,
+            para: this.status,
+          },
+        },
+        ip_usuario: this.ipUsuario,
+      });
+    }
   }
 
   @Column()
@@ -97,6 +157,7 @@ export class Solicitacao {
   @Column({
     type: 'enum',
     enum: StatusSolicitacao,
+    enumName: 'status_solicitacao',
     default: StatusSolicitacao.RASCUNHO,
   })
   status: StatusSolicitacao;
@@ -134,7 +195,7 @@ export class Solicitacao {
 
   @OneToMany(() => Documento, (documento) => documento.solicitacao, {
     cascade: ['insert', 'update'],
-    onDelete: 'RESTRICT'
+    onDelete: 'RESTRICT',
   })
   documentos: Documento[];
 

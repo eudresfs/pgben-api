@@ -7,7 +7,7 @@ import {
   DeleteDateColumn,
   ManyToOne,
   JoinColumn,
-  Index
+  Index,
 } from 'typeorm';
 import { IsNotEmpty, IsNumber, Min } from 'class-validator';
 import { Documento } from './documento.entity';
@@ -69,7 +69,7 @@ export class DocumentoEnviado {
   @Column({ type: 'timestamp', nullable: true })
   data_verificacao: Date;
 
-  @Column('text', { nullable: true }) 
+  @Column('text', { nullable: true })
   observacoes: string;
 
   @CreateDateColumn()

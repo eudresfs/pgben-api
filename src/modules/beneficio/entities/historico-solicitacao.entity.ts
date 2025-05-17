@@ -1,21 +1,21 @@
-import { 
-  Entity, 
-  PrimaryGeneratedColumn, 
-  Column, 
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
   CreateDateColumn,
   ManyToOne,
-  JoinColumn
+  JoinColumn,
 } from 'typeorm';
-import { SolicitacaoBeneficio } from './solicitacao-beneficio.entity';
+import { SolicitacaoBeneficio, StatusSolicitacaoBeneficio } from './solicitacao-beneficio.entity';
 
 /**
  * Entidade de Histórico de Solicitação de Benefício
- * 
+ *
  * Armazena o histórico de mudanças de status das solicitações de benefícios,
  * permitindo rastrear todo o fluxo de aprovação.
  */
-@Entity('historico_solicitacao')
-export class HistoricoSolicitacao {
+@Entity('historico_solicitacao_beneficio')
+export class HistoricoSolicitacaoBeneficio {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
@@ -26,11 +26,21 @@ export class HistoricoSolicitacao {
   @JoinColumn({ name: 'solicitacao_id' })
   solicitacao: SolicitacaoBeneficio;
 
-  @Column({ name: 'status_anterior', type: 'varchar', length: 50, nullable: true })
-  status_anterior: string;
+  @Column({
+    name: 'status_anterior',
+    type: 'enum',
+    enum: StatusSolicitacaoBeneficio,
+    enumName: 'status_solicitacao_beneficio',
+    nullable: true,
+  })
+  status_anterior: StatusSolicitacaoBeneficio;
 
-  @Column({ name: 'status_novo', type: 'varchar', length: 50 })
-  status_novo: string;
+  @Column({
+    name: 'status_novo', 
+    type: 'enum',
+    enum: StatusSolicitacaoBeneficio
+  })
+  status_novo: StatusSolicitacaoBeneficio;
 
   @Column({ name: 'usuario_id', type: 'uuid' })
   usuario_id: string;

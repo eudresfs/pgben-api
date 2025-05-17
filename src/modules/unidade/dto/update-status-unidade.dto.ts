@@ -7,11 +7,11 @@ import { StatusUnidade } from '../entities/unidade.entity';
  */
 export class UpdateStatusUnidadeDto {
   @IsEnum(StatusUnidade, { message: 'Status deve ser ativo ou inativo' })
-  @ApiProperty({ 
+  @ApiProperty({
     enum: StatusUnidade,
     enumName: 'StatusUnidade',
     example: StatusUnidade.ATIVO,
-    description: 'Status da unidade'
+    description: 'Status da unidade',
   })
   status: StatusUnidade;
 }

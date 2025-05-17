@@ -8,14 +8,14 @@ import { BaseDto } from '../../../shared/dtos/base.dto';
 
 /**
  * Middleware de Auditoria
- * 
+ *
  * Responsável por interceptar as requisições HTTP e registrar logs de auditoria
  * automaticamente, garantindo a rastreabilidade das operações realizadas no sistema.
  */
 @Injectable()
 export class AuditoriaMiddleware implements NestMiddleware {
   private readonly logger = new Logger(AuditoriaMiddleware.name);
-  
+
   // Lista de endpoints que não devem ser auditados (para evitar poluição de logs)
   private readonly excludedEndpoints = [
     '/api/v1/health',
@@ -23,7 +23,7 @@ export class AuditoriaMiddleware implements NestMiddleware {
     '/api-docs',
     '/api/v1/auth/login',
   ];
-  
+
   // Lista de campos sensíveis que devem ser monitorados (para compliance com LGPD)
   private readonly camposSensiveis = [
     'cpf',
@@ -54,33 +54,33 @@ export class AuditoriaMiddleware implements NestMiddleware {
       // Captura dados da requisição antes de processá-la
       const { method, originalUrl, body, user, ip } = req;
       const userAgent = req.headers['user-agent'] as string;
-      
+
       // Determina o tipo de operação com base no método HTTP
       const tipoOperacao = this.mapHttpMethodToOperationType(method);
-      
+
       // Extrai informações da entidade com base na URL
       const { entidade, entidadeId } = this.extractEntityInfo(originalUrl);
-      
+
       // Verifica se há dados sensíveis no corpo da requisição
       const dadosSensiveis = this.detectarDadosSensiveis(body);
-      
+
       // Captura a resposta original para auditar após o processamento
       const originalSend = res.send;
-      
-      res.send = function(body) {
+
+      res.send = function (body) {
         res.locals.responseBody = body;
         return originalSend.call(this, body);
       };
-      
+
       // Continua o processamento da requisição
       next();
-      
+
       // Após o processamento, registra o log de auditoria
       res.on('finish', async () => {
         try {
           // Obtém o código de status da resposta
           const statusCode = res.statusCode;
-          
+
           // Só registra operações bem-sucedidas (códigos 2xx)
           if (statusCode >= 200 && statusCode < 300) {
             // Extrai dados da resposta
@@ -93,29 +93,43 @@ export class AuditoriaMiddleware implements NestMiddleware {
                   responseData = res.locals.responseBody;
                 }
               } catch (e) {
-                this.logger.warn(`Erro ao parsear corpo da resposta: ${e.message}`);
+                this.logger.warn(
+                  `Erro ao parsear corpo da resposta: ${e.message}`,
+                );
               }
             }
-            
+
             // Cria uma instância do DTO de log de auditoria
-            const logAuditoriaDto = CreateLogAuditoriaDto.plainToInstance({
-              tipo_operacao: tipoOperacao,
-              entidade_afetada: entidade,
-              entidade_id: entidadeId || '',
-              dados_anteriores: method === 'PUT' || method === 'PATCH' ? body : undefined,
-              dados_novos: method === 'POST' || method === 'PUT' || method === 'PATCH' ? responseData : undefined,
-              usuario_id: user?.id,
-              ip_origem: ip,
-              user_agent: userAgent,
-              endpoint: originalUrl,
-              metodo_http: method,
-              descricao: `${method} em ${entidade}${entidadeId ? ` (ID: ${entidadeId})` : ''}`,
-              dados_sensiveis_acessados: dadosSensiveis && dadosSensiveis.length > 0 ? dadosSensiveis : undefined,
-            }, CreateLogAuditoriaDto);
-            
+            const logAuditoriaDto = CreateLogAuditoriaDto.plainToInstance(
+              {
+                tipo_operacao: tipoOperacao,
+                entidade_afetada: entidade,
+                entidade_id: entidadeId || '',
+                dados_anteriores:
+                  method === 'PUT' || method === 'PATCH' ? body : undefined,
+                dados_novos:
+                  method === 'POST' || method === 'PUT' || method === 'PATCH'
+                    ? responseData
+                    : undefined,
+                usuario_id: user?.id,
+                ip_origem: ip,
+                user_agent: userAgent,
+                endpoint: originalUrl,
+                metodo_http: method,
+                descricao: `${method} em ${entidade}${entidadeId ? ` (ID: ${entidadeId})` : ''}`,
+                dados_sensiveis_acessados:
+                  dadosSensiveis && dadosSensiveis.length > 0
+                    ? dadosSensiveis
+                    : undefined,
+              },
+              CreateLogAuditoriaDto,
+            );
+
             // Enfileira o log de auditoria para processamento assíncrono
-            await this.auditoriaQueueService.enfileirarLogAuditoria(logAuditoriaDto);
-            
+            await this.auditoriaQueueService.enfileirarLogAuditoria(
+              logAuditoriaDto,
+            );
+
             // Se houver acesso a dados sensíveis, enfileira para processamento assíncrono
             if (dadosSensiveis.length > 0 && user?.id) {
               await this.auditoriaQueueService.enfileirarAcessoDadosSensiveis(
@@ -132,7 +146,10 @@ export class AuditoriaMiddleware implements NestMiddleware {
           }
         } catch (error) {
           // Em caso de erro, apenas loga e não interrompe o fluxo da aplicação
-          this.logger.error(`Erro ao registrar log de auditoria: ${error.message}`, error.stack);
+          this.logger.error(
+            `Erro ao registrar log de auditoria: ${error.message}`,
+            error.stack,
+          );
         }
       });
     } else {
@@ -146,19 +163,19 @@ export class AuditoriaMiddleware implements NestMiddleware {
    */
   private shouldAudit(req: Request): boolean {
     const { originalUrl } = req;
-    
+
     // Não audita endpoints excluídos
     for (const excluded of this.excludedEndpoints) {
       if (originalUrl.startsWith(excluded)) {
         return false;
       }
     }
-    
+
     // Não audita requisições OPTIONS (CORS)
     if (req.method === 'OPTIONS') {
       return false;
     }
-    
+
     return true;
   }
 
@@ -184,31 +201,38 @@ export class AuditoriaMiddleware implements NestMiddleware {
   /**
    * Extrai informações da entidade com base na URL
    */
-  private extractEntityInfo(url: string): { entidade: string; entidadeId: string | undefined } {
+  private extractEntityInfo(url: string): {
+    entidade: string;
+    entidadeId: string | undefined;
+  } {
     // Remove o prefixo da API
     const path = url.replace(/^\/api\/v\d+\//, '');
-    
+
     // Divide o caminho em segmentos
     const segments = path.split('/').filter(Boolean);
-    
+
     if (segments.length === 0) {
       return { entidade: 'Desconhecido', entidadeId: undefined };
     }
-    
+
     // O primeiro segmento geralmente é o nome da entidade
     const entidade = this.normalizeEntityName(segments[0]);
-    
+
     // Se houver um segundo segmento e for um UUID, é o ID da entidade
     let entidadeId: string | undefined = undefined;
     if (segments.length > 1) {
       const potentialId = segments[1];
       // Verifica se parece um UUID ou ID numérico
-      if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(potentialId) || 
-          /^\d+$/.test(potentialId)) {
+      if (
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          potentialId,
+        ) ||
+        /^\d+$/.test(potentialId)
+      ) {
         entidadeId = potentialId;
       }
     }
-    
+
     return { entidade, entidadeId };
   }
 
@@ -228,32 +252,32 @@ export class AuditoriaMiddleware implements NestMiddleware {
     if (!body || typeof body !== 'object') {
       return [];
     }
-    
+
     const camposEncontrados = new Set<string>();
-    
+
     // Função recursiva para procurar campos sensíveis
     const procurarCamposSensiveis = (obj: any, caminho = '') => {
       if (!obj || typeof obj !== 'object') {
         return;
       }
-      
+
       for (const [chave, valor] of Object.entries(obj)) {
         const caminhoCompleto = caminho ? `${caminho}.${chave}` : chave;
-        
+
         // Verifica se o campo atual é sensível
         if (this.camposSensiveis.includes(chave) && valor) {
           camposEncontrados.add(chave);
         }
-        
+
         // Se for um objeto ou array, continua a busca recursivamente
         if (valor && typeof valor === 'object') {
           procurarCamposSensiveis(valor, caminhoCompleto);
         }
       }
     };
-    
+
     procurarCamposSensiveis(body);
-    
+
     return Array.from(camposEncontrados);
   }
 }

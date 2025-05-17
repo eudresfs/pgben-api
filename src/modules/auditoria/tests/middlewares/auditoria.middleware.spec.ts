@@ -38,9 +38,9 @@ function createMockRequest(options: any = {}): Request {
     app: {},
     res: {},
     next: jest.fn(),
-    ...options
+    ...options,
   };
-  
+
   return mockRequest as unknown as Request;
 }
 
@@ -78,9 +78,9 @@ function createMockResponse(options: any = {}): Response {
       }
       return mockResponse;
     }),
-    ...options
+    ...options,
   };
-  
+
   return mockResponse as unknown as Response;
 }
 
@@ -158,13 +158,15 @@ describe('AuditoriaMiddleware', () => {
       // Assert
       expect(next).toHaveBeenCalled();
       expect(res.on).toHaveBeenCalledWith('finish', expect.any(Function));
-      expect(auditoriaService.create).toHaveBeenCalledWith(expect.objectContaining({
-        tipo_operacao: TipoOperacao.READ,
-        entidade_afetada: 'documentos',
-        entidade_id: '123',
-        usuario_id: 'user-123',
-        ip_origem: '127.0.0.1',
-      }));
+      expect(auditoriaService.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tipo_operacao: TipoOperacao.READ,
+          entidade_afetada: 'documentos',
+          entidade_id: '123',
+          usuario_id: 'user-123',
+          ip_origem: '127.0.0.1',
+        }),
+      );
     });
 
     it('deve registrar operação POST', () => {
@@ -191,13 +193,15 @@ describe('AuditoriaMiddleware', () => {
       // Assert
       expect(next).toHaveBeenCalled();
       expect(res.on).toHaveBeenCalledWith('finish', expect.any(Function));
-      expect(auditoriaService.create).toHaveBeenCalledWith(expect.objectContaining({
-        tipo_operacao: TipoOperacao.CREATE,
-        entidade_afetada: 'documentos',
-        dados_novos: req.body,
-        usuario_id: 'user-123',
-        ip_origem: '127.0.0.1',
-      }));
+      expect(auditoriaService.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tipo_operacao: TipoOperacao.CREATE,
+          entidade_afetada: 'documentos',
+          dados_novos: req.body,
+          usuario_id: 'user-123',
+          ip_origem: '127.0.0.1',
+        }),
+      );
     });
 
     it('deve registrar operação PUT', () => {
@@ -224,14 +228,16 @@ describe('AuditoriaMiddleware', () => {
       // Assert
       expect(next).toHaveBeenCalled();
       expect(res.on).toHaveBeenCalledWith('finish', expect.any(Function));
-      expect(auditoriaService.create).toHaveBeenCalledWith(expect.objectContaining({
-        tipo_operacao: TipoOperacao.UPDATE,
-        entidade_afetada: 'documentos',
-        entidade_id: '123',
-        dados_novos: req.body,
-        usuario_id: 'user-123',
-        ip_origem: '127.0.0.1',
-      }));
+      expect(auditoriaService.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tipo_operacao: TipoOperacao.UPDATE,
+          entidade_afetada: 'documentos',
+          entidade_id: '123',
+          dados_novos: req.body,
+          usuario_id: 'user-123',
+          ip_origem: '127.0.0.1',
+        }),
+      );
     });
 
     it('deve registrar operação DELETE', () => {
@@ -257,13 +263,15 @@ describe('AuditoriaMiddleware', () => {
       // Assert
       expect(next).toHaveBeenCalled();
       expect(res.on).toHaveBeenCalledWith('finish', expect.any(Function));
-      expect(auditoriaService.create).toHaveBeenCalledWith(expect.objectContaining({
-        tipo_operacao: TipoOperacao.DELETE,
-        entidade_afetada: 'documentos',
-        entidade_id: '123',
-        usuario_id: 'user-123',
-        ip_origem: '127.0.0.1',
-      }));
+      expect(auditoriaService.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tipo_operacao: TipoOperacao.DELETE,
+          entidade_afetada: 'documentos',
+          entidade_id: '123',
+          usuario_id: 'user-123',
+          ip_origem: '127.0.0.1',
+        }),
+      );
     });
 
     it('deve registrar operação PATCH', () => {
@@ -286,13 +294,15 @@ describe('AuditoriaMiddleware', () => {
       // Assert
       expect(next).toHaveBeenCalled();
       expect(res.on).toHaveBeenCalledWith('finish', expect.any(Function));
-      expect(auditoriaService.create).toHaveBeenCalledWith(expect.objectContaining({
-        tipo_operacao: TipoOperacao.UPDATE,
-        entidade_afetada: 'documentos',
-        entidade_id: '123',
-        usuario_id: 'user-123',
-        ip_origem: '127.0.0.1',
-      }));
+      expect(auditoriaService.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tipo_operacao: TipoOperacao.UPDATE,
+          entidade_afetada: 'documentos',
+          entidade_id: '123',
+          usuario_id: 'user-123',
+          ip_origem: '127.0.0.1',
+        }),
+      );
     });
 
     it('não deve registrar operações para rotas ignoradas', () => {
@@ -340,13 +350,15 @@ describe('AuditoriaMiddleware', () => {
       // Assert
       expect(next).toHaveBeenCalled();
       expect(res.on).toHaveBeenCalledWith('finish', expect.any(Function));
-      expect(auditoriaService.create).toHaveBeenCalledWith(expect.objectContaining({
-        tipo_operacao: TipoOperacao.READ,
-        entidade_afetada: 'documentos',
-        entidade_id: '123',
-        usuario_id: null,
-        ip_origem: '127.0.0.1',
-      }));
+      expect(auditoriaService.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tipo_operacao: TipoOperacao.READ,
+          entidade_afetada: 'documentos',
+          entidade_id: '123',
+          usuario_id: null,
+          ip_origem: '127.0.0.1',
+        }),
+      );
     });
   });
 });

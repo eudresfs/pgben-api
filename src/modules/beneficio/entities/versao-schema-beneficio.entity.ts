@@ -6,14 +6,20 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
-  Index
+  Index,
 } from 'typeorm';
-import { IsNotEmpty, IsNumber, Min, IsBoolean, IsOptional } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsNumber,
+  Min,
+  IsBoolean,
+  IsOptional,
+} from 'class-validator';
 import { TipoBeneficio } from './tipo-beneficio.entity';
 
 /**
  * Entidade para versionamento de schema de benefícios
- * 
+ *
  * Permite controlar a evolução do schema de campos dinâmicos sem quebrar
  * dados existentes, mantendo um histórico de versões.
  */

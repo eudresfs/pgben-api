@@ -13,46 +13,46 @@ export const respostasPadrao = {
     description: 'Operação realizada com sucesso',
     schema: {
       type: 'object',
-      example: respostasExemplo.sucesso
-    }
+      example: respostasExemplo.sucesso,
+    },
   },
-  
+
   // Resposta de criação (201)
   criado: {
     status: 201,
     description: 'Recurso criado com sucesso',
     schema: {
       type: 'object',
-      example: respostasExemplo.sucesso
-    }
+      example: respostasExemplo.sucesso,
+    },
   },
-  
+
   // Resposta sem conteúdo (204)
   semConteudo: {
     status: 204,
-    description: 'Operação realizada com sucesso (sem conteúdo para retornar)'
+    description: 'Operação realizada com sucesso (sem conteúdo para retornar)',
   },
-  
+
   // Resposta de erro de requisição (400)
   requisicaoInvalida: {
     status: 400,
     description: 'Dados da requisição inválidos',
     schema: {
       type: 'object',
-      example: respostasExemplo.erro
-    }
+      example: respostasExemplo.erro,
+    },
   },
-  
+
   // Resposta de não autorizado (401)
   naoAutorizado: {
     status: 401,
     description: 'Não autorizado - autenticação necessária',
     schema: {
       type: 'object',
-      example: respostasExemplo.naoAutorizado
-    }
+      example: respostasExemplo.naoAutorizado,
+    },
   },
-  
+
   // Resposta de acesso proibido (403)
   acessoProibido: {
     status: 403,
@@ -62,21 +62,21 @@ export const respostasPadrao = {
       example: {
         statusCode: 403,
         mensagem: 'Acesso proibido',
-        erro: 'Forbidden'
-      }
-    }
+        erro: 'Forbidden',
+      },
+    },
   },
-  
+
   // Resposta de recurso não encontrado (404)
   naoEncontrado: {
     status: 404,
     description: 'Recurso não encontrado',
     schema: {
       type: 'object',
-      example: respostasExemplo.naoEncontrado
-    }
+      example: respostasExemplo.naoEncontrado,
+    },
   },
-  
+
   // Resposta de erro interno do servidor (500)
   erroInterno: {
     status: 500,
@@ -86,10 +86,10 @@ export const respostasPadrao = {
       example: {
         statusCode: 500,
         mensagem: 'Erro interno do servidor',
-        erro: 'Internal Server Error'
-      }
-    }
-  }
+        erro: 'Internal Server Error',
+      },
+    },
+  },
 };
 
 // Configuração de respostas para rotas específicas
@@ -101,16 +101,16 @@ export const respostasEspecificas = {
       description: 'Cidadão encontrado',
       schema: {
         type: 'object',
-        example: respostasExemplo.cidadaoEncontrado
-      }
+        example: respostasExemplo.cidadaoEncontrado,
+      },
     },
     criar: {
       status: 201,
       description: 'Cidadão criado com sucesso',
       schema: {
         type: 'object',
-        example: respostasExemplo.cidadaoCriado
-      }
+        example: respostasExemplo.cidadaoCriado,
+      },
     },
     listar: {
       status: 200,
@@ -118,13 +118,13 @@ export const respostasEspecificas = {
       schema: {
         type: 'array',
         items: {
-          type: 'object'
+          type: 'object',
         },
-        example: respostasExemplo.cidadaosListados
-      }
-    }
+        example: respostasExemplo.cidadaosListados,
+      },
+    },
   },
-  
+
   // Benefício
   beneficio: {
     obter: {
@@ -132,16 +132,16 @@ export const respostasEspecificas = {
       description: 'Benefício encontrado',
       schema: {
         type: 'object',
-        example: respostasExemplo.beneficioEncontrado
-      }
+        example: respostasExemplo.beneficioEncontrado,
+      },
     },
     criar: {
       status: 201,
       description: 'Benefício criado com sucesso',
       schema: {
         type: 'object',
-        example: respostasExemplo.beneficioCriado
-      }
+        example: respostasExemplo.beneficioCriado,
+      },
     },
     listar: {
       status: 200,
@@ -149,13 +149,13 @@ export const respostasEspecificas = {
       schema: {
         type: 'array',
         items: {
-          type: 'object'
+          type: 'object',
         },
-        example: respostasExemplo.beneficiosListados
-      }
-    }
+        example: respostasExemplo.beneficiosListados,
+      },
+    },
   },
-  
+
   // Solicitação
   solicitacao: {
     obter: {
@@ -163,16 +163,16 @@ export const respostasEspecificas = {
       description: 'Solicitação encontrada',
       schema: {
         type: 'object',
-        example: respostasExemplo.solicitacaoEncontrada
-      }
+        example: respostasExemplo.solicitacaoEncontrada,
+      },
     },
     criar: {
       status: 201,
       description: 'Solicitação criada com sucesso',
       schema: {
         type: 'object',
-        example: respostasExemplo.solicitacaoCriada
-      }
+        example: respostasExemplo.solicitacaoCriada,
+      },
     },
     listar: {
       status: 200,
@@ -180,21 +180,21 @@ export const respostasEspecificas = {
       schema: {
         type: 'array',
         items: {
-          type: 'object'
+          type: 'object',
         },
-        example: respostasExemplo.solicitacoesListadas
-      }
+        example: respostasExemplo.solicitacoesListadas,
+      },
     },
     avaliar: {
       status: 200,
       description: 'Solicitação avaliada com sucesso',
       schema: {
         type: 'object',
-        example: respostasExemplo.solicitacaoAvaliada
-      }
-    }
+        example: respostasExemplo.solicitacaoAvaliada,
+      },
+    },
   },
-  
+
   // Documento
   documento: {
     obter: {
@@ -202,16 +202,16 @@ export const respostasEspecificas = {
       description: 'Documento encontrado',
       schema: {
         type: 'object',
-        example: respostasExemplo.documentoEncontrado
-      }
+        example: respostasExemplo.documentoEncontrado,
+      },
     },
     criar: {
       status: 201,
       description: 'Documento criado com sucesso',
       schema: {
         type: 'object',
-        example: respostasExemplo.documentoCriado
-      }
+        example: respostasExemplo.documentoCriado,
+      },
     },
     listar: {
       status: 200,
@@ -219,13 +219,13 @@ export const respostasEspecificas = {
       schema: {
         type: 'array',
         items: {
-          type: 'object'
+          type: 'object',
         },
-        example: respostasExemplo.documentosListados
-      }
-    }
+        example: respostasExemplo.documentosListados,
+      },
+    },
   },
-  
+
   // Usuário
   usuario: {
     obter: {
@@ -233,16 +233,16 @@ export const respostasEspecificas = {
       description: 'Usuário encontrado',
       schema: {
         type: 'object',
-        example: respostasExemplo.usuarioEncontrado
-      }
+        example: respostasExemplo.usuarioEncontrado,
+      },
     },
     criar: {
       status: 201,
       description: 'Usuário criado com sucesso',
       schema: {
         type: 'object',
-        example: respostasExemplo.usuarioCriado
-      }
+        example: respostasExemplo.usuarioCriado,
+      },
     },
     listar: {
       status: 200,
@@ -250,13 +250,13 @@ export const respostasEspecificas = {
       schema: {
         type: 'array',
         items: {
-          type: 'object'
+          type: 'object',
         },
-        example: respostasExemplo.usuariosListados
-      }
-    }
+        example: respostasExemplo.usuariosListados,
+      },
+    },
   },
-  
+
   // Unidade
   unidade: {
     obter: {
@@ -264,16 +264,16 @@ export const respostasEspecificas = {
       description: 'Unidade encontrada',
       schema: {
         type: 'object',
-        example: respostasExemplo.unidadeEncontrada
-      }
+        example: respostasExemplo.unidadeEncontrada,
+      },
     },
     criar: {
       status: 201,
       description: 'Unidade criada com sucesso',
       schema: {
         type: 'object',
-        example: respostasExemplo.unidadeCriada
-      }
+        example: respostasExemplo.unidadeCriada,
+      },
     },
     listar: {
       status: 200,
@@ -281,13 +281,13 @@ export const respostasEspecificas = {
       schema: {
         type: 'array',
         items: {
-          type: 'object'
+          type: 'object',
         },
-        example: respostasExemplo.unidadesListadas
-      }
-    }
+        example: respostasExemplo.unidadesListadas,
+      },
+    },
   },
-  
+
   // Notificação
   notificacao: {
     obter: {
@@ -295,16 +295,16 @@ export const respostasEspecificas = {
       description: 'Notificação encontrada',
       schema: {
         type: 'object',
-        example: respostasExemplo.notificacaoEncontrada
-      }
+        example: respostasExemplo.notificacaoEncontrada,
+      },
     },
     criar: {
       status: 201,
       description: 'Notificação criada com sucesso',
       schema: {
         type: 'object',
-        example: respostasExemplo.notificacaoCriada
-      }
+        example: respostasExemplo.notificacaoCriada,
+      },
     },
     listar: {
       status: 200,
@@ -312,13 +312,13 @@ export const respostasEspecificas = {
       schema: {
         type: 'array',
         items: {
-          type: 'object'
+          type: 'object',
         },
-        example: respostasExemplo.notificacoesListadas
-      }
-    }
+        example: respostasExemplo.notificacoesListadas,
+      },
+    },
   },
-  
+
   // Ocorrência
   ocorrencia: {
     obter: {
@@ -326,16 +326,16 @@ export const respostasEspecificas = {
       description: 'Ocorrência encontrada',
       schema: {
         type: 'object',
-        example: respostasExemplo.ocorrenciaEncontrada
-      }
+        example: respostasExemplo.ocorrenciaEncontrada,
+      },
     },
     criar: {
       status: 201,
       description: 'Ocorrência criada com sucesso',
       schema: {
         type: 'object',
-        example: respostasExemplo.ocorrenciaCriada
-      }
+        example: respostasExemplo.ocorrenciaCriada,
+      },
     },
     listar: {
       status: 200,
@@ -343,13 +343,13 @@ export const respostasEspecificas = {
       schema: {
         type: 'array',
         items: {
-          type: 'object'
+          type: 'object',
         },
-        example: respostasExemplo.ocorrenciasListadas
-      }
-    }
+        example: respostasExemplo.ocorrenciasListadas,
+      },
+    },
   },
-  
+
   // Health Check
   healthCheck: {
     obter: {
@@ -357,11 +357,11 @@ export const respostasEspecificas = {
       description: 'Informações de saúde do sistema',
       schema: {
         type: 'object',
-        example: respostasExemplo.healthCheck
-      }
-    }
+        example: respostasExemplo.healthCheck,
+      },
+    },
   },
-  
+
   // Métricas
   metricas: {
     obter: {
@@ -369,8 +369,8 @@ export const respostasEspecificas = {
       description: 'Métricas do sistema',
       schema: {
         type: 'object',
-        example: respostasExemplo.metricas
-      }
-    }
-  }
+        example: respostasExemplo.metricas,
+      },
+    },
+  },
 };

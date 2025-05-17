@@ -8,17 +8,13 @@ import { Pendencia } from './entities/pendencia.entity';
 
 /**
  * Módulo de Solicitações
- * 
+ *
  * Responsável por gerenciar as solicitações de benefícios,
  * incluindo criação, aprovação, liberação e acompanhamento.
  */
 @Module({
   imports: [
-    TypeOrmModule.forFeature([
-      Solicitacao,
-      HistoricoSolicitacao,
-      Pendencia
-    ]),
+    TypeOrmModule.forFeature([Solicitacao, HistoricoSolicitacao, Pendencia]),
   ],
   controllers: [SolicitacaoController],
   providers: [SolicitacaoService],

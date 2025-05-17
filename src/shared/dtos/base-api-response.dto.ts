@@ -20,7 +20,7 @@ export function SwaggerBaseApiResponse<T extends ApiPropertyType>(
 ): typeof BaseApiResponse {
   class ExtendedBaseApiResponse<T> extends BaseApiResponse<T> {
     @ApiProperty({ type: type as any }) // Casting `type` to `any` to bypass type checking for now
-    public declare data: T;
+    declare public data: T;
   }
   // NOTE : Overwrite the returned class name, otherwise whichever type calls this function in the last,
   // will overwrite all previous definitions. i.e., Swagger will have all response types as the same one.

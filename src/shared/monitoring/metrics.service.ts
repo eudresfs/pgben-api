@@ -3,7 +3,7 @@ import * as client from 'prom-client';
 
 /**
  * Serviço de Métricas
- * 
+ *
  * Responsável por coletar e expor métricas da aplicação
  * utilizando o Prometheus Client
  */
@@ -19,10 +19,10 @@ export class MetricsService {
   constructor() {
     // Criar registro de métricas
     this.register = new client.Registry();
-    
+
     // Adicionar métricas padrão do Node.js
     client.collectDefaultMetrics({ register: this.register });
-    
+
     // Contador de requisições HTTP
     this.httpRequestsTotal = new client.Counter({
       name: 'http_requests_total',
@@ -30,7 +30,7 @@ export class MetricsService {
       labelNames: ['method', 'route', 'status_code'],
       registers: [this.register],
     });
-    
+
     // Histograma de duração das requisições HTTP
     this.httpRequestDuration = new client.Histogram({
       name: 'http_request_duration_seconds',
@@ -39,7 +39,7 @@ export class MetricsService {
       buckets: [0.01, 0.05, 0.1, 0.5, 1, 2, 5, 10],
       registers: [this.register],
     });
-    
+
     // Gauge de requisições em andamento
     this.httpRequestsInProgress = new client.Gauge({
       name: 'http_requests_in_progress',
@@ -47,7 +47,7 @@ export class MetricsService {
       labelNames: ['method', 'route'],
       registers: [this.register],
     });
-    
+
     // Contador de consultas ao banco de dados
     this.databaseQueriesTotal = new client.Counter({
       name: 'database_queries_total',
@@ -55,7 +55,7 @@ export class MetricsService {
       labelNames: ['entity', 'operation'],
       registers: [this.register],
     });
-    
+
     // Histograma de duração das consultas ao banco de dados
     this.databaseQueryDuration = new client.Histogram({
       name: 'database_query_duration_seconds',
@@ -70,13 +70,22 @@ export class MetricsService {
    * Incrementa o contador de requisições HTTP
    */
   recordHttpRequest(method: string, route: string, statusCode: number): void {
-    this.httpRequestsTotal.inc({ method, route, status_code: statusCode.toString() });
+    this.httpRequestsTotal.inc({
+      method,
+      route,
+      status_code: statusCode.toString(),
+    });
   }
 
   /**
    * Registra a duração de uma requisição HTTP
    */
-  recordHttpRequestDuration(method: string, route: string, statusCode: number, durationSeconds: number): void {
+  recordHttpRequestDuration(
+    method: string,
+    route: string,
+    statusCode: number,
+    durationSeconds: number,
+  ): void {
     this.httpRequestDuration.observe(
       { method, route, status_code: statusCode.toString() },
       durationSeconds,
@@ -107,7 +116,11 @@ export class MetricsService {
   /**
    * Registra a duração de uma consulta ao banco de dados
    */
-  recordDatabaseQueryDuration(entity: string, operation: string, durationSeconds: number): void {
+  recordDatabaseQueryDuration(
+    entity: string,
+    operation: string,
+    durationSeconds: number,
+  ): void {
     this.databaseQueryDuration.observe({ entity, operation }, durationSeconds);
   }
 

@@ -18,7 +18,7 @@ const mockMinioClient = {
 
 // Mock do módulo minio
 jest.mock('minio', () => ({
-  Client: jest.fn().mockImplementation(() => mockMinioClient)
+  Client: jest.fn().mockImplementation(() => mockMinioClient),
 }));
 
 describe('MinioService', () => {
@@ -32,14 +32,17 @@ describe('MinioService', () => {
         {
           provide: ConfigService,
           useValue: {
-            get: jest.fn((key: string, defaultValue?: any) => ({
-              'MINIO_BUCKET': 'documents',
-              'MINIO_ENDPOINT': 'localhost',
-              'MINIO_PORT': 9000,
-              'MINIO_USE_SSL': false,
-              'MINIO_ACCESS_KEY': 'minioadmin',
-              'MINIO_SECRET_KEY': 'minioadmin',
-            }[key] || defaultValue)),
+            get: jest.fn(
+              (key: string, defaultValue?: any) =>
+                ({
+                  MINIO_BUCKET: 'documents',
+                  MINIO_ENDPOINT: 'localhost',
+                  MINIO_PORT: 9000,
+                  MINIO_USE_SSL: false,
+                  MINIO_ACCESS_KEY: 'minioadmin',
+                  MINIO_SECRET_KEY: 'minioadmin',
+                })[key] || defaultValue,
+            ),
           },
         },
         {
@@ -51,11 +54,11 @@ describe('MinioService', () => {
 
     // Obtém a instância do serviço
     service = module.get<MinioService>(MinioService);
-    
+
     // Inicializa o serviço
     await service.onModuleInit();
   });
-  
+
   afterEach(() => {
     // Limpa todos os mocks após cada teste
     jest.clearAllMocks();
@@ -73,7 +76,7 @@ describe('MinioService', () => {
       mockCriptografiaService.criptografarBuffer.mockReturnValue({
         dadosCriptografados: Buffer.from('conteúdo criptografado'),
         iv: Buffer.from('iv'),
-        authTag: Buffer.from('authTag')
+        authTag: Buffer.from('authTag'),
       });
     });
 
@@ -83,19 +86,19 @@ describe('MinioService', () => {
       const nomeOriginal = 'documento.pdf';
       const solicitacaoId = '123';
       const tipoDocumento = 'COMPROVANTE';
-      
+
       const nomeArquivo = `${solicitacaoId}/${tipoDocumento}/timestamp-random.pdf`;
       const hash = 'hash-do-arquivo';
-      
+
       mockCriptografiaService.gerarHash.mockReturnValue(hash);
       mockMinioClient.putObject.mockResolvedValue({ etag: 'etag-do-arquivo' });
-      
+
       // Act
       const resultado = await service.uploadArquivo(
         buffer,
         nomeOriginal,
         solicitacaoId,
-        tipoDocumento
+        tipoDocumento,
       );
 
       // Assert
@@ -110,15 +113,17 @@ describe('MinioService', () => {
           'X-Amz-Meta-Original-Name': nomeOriginal,
           'X-Amz-Meta-Hash': hash,
           'X-Amz-Meta-Encrypted': 'false',
-        })
+        }),
       );
 
       expect(resultado).toEqual({
-        nomeArquivo: expect.stringContaining(`${solicitacaoId}/${tipoDocumento}`),
+        nomeArquivo: expect.stringContaining(
+          `${solicitacaoId}/${tipoDocumento}`,
+        ),
         tamanho: buffer.length,
         hash,
         criptografado: false,
-        metadados: expect.any(Object)
+        metadados: expect.any(Object),
       });
     });
 
@@ -149,12 +154,14 @@ describe('MinioService', () => {
         buffer,
         nomeOriginal,
         solicitacaoId,
-        tipoDocumento
+        tipoDocumento,
       );
 
       // Assert
       expect(mockCriptografiaService.gerarHash).toHaveBeenCalledWith(buffer);
-      expect(mockCriptografiaService.criptografarBuffer).toHaveBeenCalledWith(buffer);
+      expect(mockCriptografiaService.criptografarBuffer).toHaveBeenCalledWith(
+        buffer,
+      );
       expect(mockMinioClient.putObject).toHaveBeenCalledWith(
         'documents',
         expect.stringContaining(`${solicitacaoId}/${tipoDocumento}`),
@@ -167,15 +174,17 @@ describe('MinioService', () => {
           'X-Amz-Meta-Encrypted': 'true',
           'X-Amz-Meta-IV': iv.toString('base64'),
           'X-Amz-Meta-AuthTag': authTag.toString('base64'),
-        })
+        }),
       );
 
       expect(resultado).toEqual({
-        nomeArquivo: expect.stringContaining(`${solicitacaoId}/${tipoDocumento}`),
+        nomeArquivo: expect.stringContaining(
+          `${solicitacaoId}/${tipoDocumento}`,
+        ),
         tamanho: buffer.length, // Tamanho original, não o criptografado
         hash,
         criptografado: true,
-        metadados: expect.any(Object)
+        metadados: expect.any(Object),
       });
     });
   });
@@ -186,7 +195,7 @@ describe('MinioService', () => {
       const nomeArquivo = '123/comprovante/documento.pdf';
       const buffer = Buffer.from('conteúdo do arquivo de teste');
       const hash = 'hash-do-arquivo';
-      
+
       // Mock do statObject
       mockMinioClient.statObject.mockResolvedValue({
         metaData: {
@@ -195,46 +204,50 @@ describe('MinioService', () => {
           'x-amz-meta-original-name': 'documento.pdf',
           'content-type': 'application/pdf',
           'x-amz-meta-tipodocumento': 'COMPROVANTE',
-          'x-amz-meta-solicitacaoid': '123'
+          'x-amz-meta-solicitacaoid': '123',
         },
         size: buffer.length,
       });
-      
+
       // Mock do fGetObject para simular o download do arquivo
-      mockMinioClient.fGetObject.mockImplementation((bucket, file, filePath) => {
-        // Simula a criação do arquivo temporário
-        fs.writeFileSync(filePath, buffer);
-        return Promise.resolve();
-      });
-      
+      mockMinioClient.fGetObject.mockImplementation(
+        (bucket, file, filePath) => {
+          // Simula a criação do arquivo temporário
+          fs.writeFileSync(filePath, buffer);
+          return Promise.resolve();
+        },
+      );
+
       // Mock do fs.readFileSync para simular a leitura do arquivo baixado
       jest.spyOn(fs, 'readFileSync').mockReturnValue(buffer);
-      
+
       // Mock do fs.unlinkSync para simular a remoção do arquivo temporário
       jest.spyOn(fs, 'unlinkSync').mockImplementation(() => {});
-      
+
       mockCriptografiaService.gerarHash.mockReturnValue(hash);
-      
+
       // Act
       const resultado = await service.downloadArquivo(nomeArquivo);
-      
+
       // Assert
       expect(mockMinioClient.statObject).toHaveBeenCalledWith(
         'documents',
-        nomeArquivo
+        nomeArquivo,
       );
-      
+
       expect(mockMinioClient.fGetObject).toHaveBeenCalledWith(
         'documents',
         nomeArquivo,
-        expect.stringContaining(path.join(require('os').tmpdir(), 'pgben-temp'))
+        expect.stringContaining(
+          path.join(require('os').tmpdir(), 'pgben-temp'),
+        ),
       );
-      
+
       expect(mockCriptografiaService.gerarHash).toHaveBeenCalledWith(buffer);
-      
+
       // Verifica se o arquivo temporário foi removido
       expect(fs.unlinkSync).toHaveBeenCalled();
-      
+
       expect(resultado).toEqual({
         arquivo: buffer,
         metadados: {
@@ -243,11 +256,11 @@ describe('MinioService', () => {
           tipoDocumento: 'COMPROVANTE',
           solicitacaoId: '123',
           tamanho: buffer.length,
-          criptografado: false
-        }
+          criptografado: false,
+        },
       });
     });
-    
+
     it('deve baixar e descriptografar um arquivo criptografado', async () => {
       // Arrange
       const nomeArquivo = '123/laudo-medico/documento-sensivel.pdf';
@@ -256,7 +269,7 @@ describe('MinioService', () => {
       const hash = 'hash-do-arquivo';
       const iv = 'aXYtZGUtdGVzdGU=';
       const authTag = 'YXV0aC10YWctZGUtdGVzdGU=';
-      
+
       // Mock do statObject
       mockMinioClient.statObject.mockResolvedValue({
         metaData: {
@@ -265,94 +278,98 @@ describe('MinioService', () => {
           'x-amz-meta-iv': iv,
           'x-amz-meta-authtag': authTag,
           'x-amz-meta-original-name': 'documento-sensivel.pdf',
-          'content-type': 'application/pdf'
+          'content-type': 'application/pdf',
         },
         size: bufferCriptografado.length,
       });
-      
+
       // Mock do fGetObject para simular o download do arquivo
       mockMinioClient.fGetObject.mockImplementation((bucket, file, path) => {
         // Simula a criação do arquivo temporário
         fs.writeFileSync(path, bufferCriptografado);
         return Promise.resolve();
       });
-      
+
       // Mock do fs.readFileSync para simular a leitura do arquivo baixado
       jest.spyOn(fs, 'readFileSync').mockReturnValue(bufferCriptografado);
-      
-      mockCriptografiaService.descriptografarBuffer.mockReturnValue(bufferDescriptografado);
+
+      mockCriptografiaService.descriptografarBuffer.mockReturnValue(
+        bufferDescriptografado,
+      );
       mockCriptografiaService.gerarHash.mockReturnValue(hash);
-      
+
       // Act
       const resultado = await service.downloadArquivo(nomeArquivo);
-      
+
       // Assert
       expect(mockMinioClient.statObject).toHaveBeenCalledWith(
         'documents',
-        nomeArquivo
+        nomeArquivo,
       );
-      
+
       expect(mockMinioClient.fGetObject).toHaveBeenCalledWith(
         'documents',
         nomeArquivo,
-        expect.any(String)
+        expect.any(String),
       );
-      
-      expect(mockCriptografiaService.descriptografarBuffer).toHaveBeenCalledWith(
+
+      expect(
+        mockCriptografiaService.descriptografarBuffer,
+      ).toHaveBeenCalledWith(
         bufferCriptografado,
         Buffer.from(iv, 'base64'),
-        Buffer.from(authTag, 'base64')
+        Buffer.from(authTag, 'base64'),
       );
-      
+
       expect(mockCriptografiaService.gerarHash).toHaveBeenCalledWith(
-        bufferDescriptografado
+        bufferDescriptografado,
       );
-      
+
       expect(resultado).toEqual({
         arquivo: bufferDescriptografado,
         metadados: {
           nomeOriginal: 'documento-sensivel.pdf',
           contentType: 'application/pdf',
           tamanho: bufferDescriptografado.length,
-          criptografado: true
-        }
+          criptografado: true,
+        },
       });
     });
-    
+
     it('deve lançar erro quando a integridade do arquivo é comprometida', async () => {
       // Arrange
       const nomeArquivo = '123/comprovante/documento.pdf';
       const buffer = Buffer.from('conteúdo do arquivo de teste');
       const hashCorreto = 'hash-correto';
       const hashIncorreto = 'hash-incorreto';
-      
+
       // Mock do statObject
       mockMinioClient.statObject.mockResolvedValue({
         metaData: {
           'x-amz-meta-hash': hashCorreto,
           'x-amz-meta-encrypted': 'false',
           'x-amz-meta-original-name': 'documento.pdf',
-          'content-type': 'application/pdf'
+          'content-type': 'application/pdf',
         },
         size: buffer.length,
       });
-      
+
       // Mock do fGetObject para simular o download do arquivo
       mockMinioClient.fGetObject.mockImplementation((bucket, file, path) => {
         // Simula a criação do arquivo temporário
         fs.writeFileSync(path, buffer);
         return Promise.resolve();
       });
-      
+
       // Mock do fs.readFileSync para simular a leitura do arquivo baixado
       jest.spyOn(fs, 'readFileSync').mockReturnValue(buffer);
-      
+
       // Configurar o mock para retornar um hash diferente do esperado
       mockCriptografiaService.gerarHash.mockReturnValue(hashIncorreto);
-      
+
       // Act & Assert
       await expect(service.downloadArquivo(nomeArquivo)).rejects.toThrow(
-        /A integridade do documento foi comprometida/
+        /A integridade do documento foi comprometida/,
       );
     });
   });
@@ -362,14 +379,14 @@ describe('MinioService', () => {
       // Arrange
       const nomeArquivo = '123/comprovante/documento.pdf';
       mockMinioClient.removeObject.mockResolvedValue(true);
-      
+
       // Act
       await service.removerArquivo(nomeArquivo);
-      
+
       // Assert
       expect(mockMinioClient.removeObject).toHaveBeenCalledWith(
         'documents',
-        nomeArquivo
+        nomeArquivo,
       );
     });
 
@@ -378,11 +395,11 @@ describe('MinioService', () => {
       const nomeArquivo = '123/comprovante/inexistente.pdf';
       const error = new Error('Arquivo não encontrado');
       mockMinioClient.removeObject.mockRejectedValue(error);
-      
+
       // Act & Assert
-      await expect(service.removerArquivo(nomeArquivo))
-        .rejects
-        .toThrow(`Erro ao remover o arquivo ${nomeArquivo}: ${error.message}`);
+      await expect(service.removerArquivo(nomeArquivo)).rejects.toThrow(
+        `Erro ao remover o arquivo ${nomeArquivo}: ${error.message}`,
+      );
     });
 
     it('deve verificar se o bucket existe antes de remover', async () => {
@@ -390,10 +407,10 @@ describe('MinioService', () => {
       const nomeArquivo = '123/comprovante/documento.pdf';
       mockMinioClient.bucketExists.mockResolvedValue(true);
       mockMinioClient.removeObject.mockResolvedValue(true);
-      
+
       // Act
       await service.removerArquivo(nomeArquivo);
-      
+
       // Assert
       expect(mockMinioClient.bucketExists).toHaveBeenCalledWith('documents');
     });
@@ -404,12 +421,15 @@ describe('MinioService', () => {
       mockMinioClient.bucketExists.mockResolvedValue(false);
       mockMinioClient.makeBucket.mockResolvedValue(true);
       mockMinioClient.removeObject.mockResolvedValue(true);
-      
+
       // Act
       await service.removerArquivo(nomeArquivo);
-      
+
       // Assert
-      expect(mockMinioClient.makeBucket).toHaveBeenCalledWith('documents', 'us-east-1');
+      expect(mockMinioClient.makeBucket).toHaveBeenCalledWith(
+        'documents',
+        'us-east-1',
+      );
     });
   });
 
@@ -420,11 +440,18 @@ describe('MinioService', () => {
       const nomeOriginal = 'documento.pdf';
       const solicitacaoId = '123';
       const tipoDocumento = 'COMPROVANTE';
-      
+
       // Act & Assert
-      await expect(service.uploadArquivo(buffer, nomeOriginal, solicitacaoId, tipoDocumento))
-        .rejects
-        .toThrow('Falha ao armazenar documento: Cannot read properties of undefined (reading \'length\')');
+      await expect(
+        service.uploadArquivo(
+          buffer,
+          nomeOriginal,
+          solicitacaoId,
+          tipoDocumento,
+        ),
+      ).rejects.toThrow(
+        "Falha ao armazenar documento: Cannot read properties of undefined (reading 'length')",
+      );
     });
 
     it('deve fazer upload com sucesso mesmo sem nome de arquivo', async () => {
@@ -433,12 +460,17 @@ describe('MinioService', () => {
       const nomeOriginal = '';
       const solicitacaoId = '123';
       const tipoDocumento = 'COMPROVANTE';
-      
+
       mockMinioClient.putObject.mockResolvedValue({ etag: 'etag-do-arquivo' });
-      
+
       // Act
-      const resultado = await service.uploadArquivo(buffer, nomeOriginal, solicitacaoId, tipoDocumento);
-      
+      const resultado = await service.uploadArquivo(
+        buffer,
+        nomeOriginal,
+        solicitacaoId,
+        tipoDocumento,
+      );
+
       // Assert
       expect(resultado).toBeDefined();
       expect(resultado.nomeArquivo).toContain(solicitacaoId);
@@ -452,12 +484,17 @@ describe('MinioService', () => {
       const nomeOriginal = 'documento.pdf';
       const solicitacaoId = '';
       const tipoDocumento = 'COMPROVANTE';
-      
+
       mockMinioClient.putObject.mockResolvedValue({ etag: 'etag-do-arquivo' });
-      
+
       // Act
-      const resultado = await service.uploadArquivo(buffer, nomeOriginal, solicitacaoId, tipoDocumento);
-      
+      const resultado = await service.uploadArquivo(
+        buffer,
+        nomeOriginal,
+        solicitacaoId,
+        tipoDocumento,
+      );
+
       // Assert
       expect(resultado).toBeDefined();
       expect(resultado.nomeArquivo).toContain(tipoDocumento);
@@ -470,12 +507,17 @@ describe('MinioService', () => {
       const nomeOriginal = 'documento.pdf';
       const solicitacaoId = '123';
       const tipoDocumento = '';
-      
+
       mockMinioClient.putObject.mockResolvedValue({ etag: 'etag-do-arquivo' });
-      
+
       // Act
-      const resultado = await service.uploadArquivo(buffer, nomeOriginal, solicitacaoId, tipoDocumento);
-      
+      const resultado = await service.uploadArquivo(
+        buffer,
+        nomeOriginal,
+        solicitacaoId,
+        tipoDocumento,
+      );
+
       // Assert
       expect(resultado).toBeDefined();
       expect(resultado.nomeArquivo).toContain(solicitacaoId);
@@ -490,15 +532,15 @@ describe('MinioService', () => {
       const nomeOriginal = 'documento.pdf';
       const error = new Error('Falha no upload');
       mockMinioClient.putObject.mockRejectedValue(error);
-      
+
       // Act & Assert
-      await expect(service.uploadArquivo(buffer, nomeOriginal, '123', 'COMPROVANTE'))
-        .rejects
-        .toThrow(`Falha ao armazenar documento: ${error.message}`);
-      
+      await expect(
+        service.uploadArquivo(buffer, nomeOriginal, '123', 'COMPROVANTE'),
+      ).rejects.toThrow(`Falha ao armazenar documento: ${error.message}`);
+
       // Verifica se o logger foi chamado corretamente
       expect(loggerErrorSpy).toHaveBeenCalledWith(
-        `Erro ao enviar arquivo para o MinIO: ${error.message}`
+        `Erro ao enviar arquivo para o MinIO: ${error.message}`,
       );
     });
 
@@ -509,11 +551,11 @@ describe('MinioService', () => {
       mockMinioClient.getObject.mockImplementation(() => {
         throw error;
       });
-      
+
       // Act & Assert
-      await expect(service.downloadArquivo(nomeArquivo))
-        .rejects
-        .toThrow(`Erro ao baixar o arquivo ${nomeArquivo}: ${error.message}`);
+      await expect(service.downloadArquivo(nomeArquivo)).rejects.toThrow(
+        `Erro ao baixar o arquivo ${nomeArquivo}: ${error.message}`,
+      );
     });
 
     it('deve lançar erro ao gerar URL pré-assinada para arquivo inexistente', async () => {
@@ -521,11 +563,11 @@ describe('MinioService', () => {
       const nomeArquivo = '123/comprovante/inexistente.pdf';
       const error = new Error('Arquivo não encontrado');
       mockMinioClient.statObject.mockRejectedValue(error);
-      
+
       // Act & Assert
-      await expect(service.gerarUrlPreAssinada(nomeArquivo))
-        .rejects
-        .toThrow(`Erro ao gerar URL pré-assinada para ${nomeArquivo}: ${error.message}`);
+      await expect(service.gerarUrlPreAssinada(nomeArquivo)).rejects.toThrow(
+        `Erro ao gerar URL pré-assinada para ${nomeArquivo}: ${error.message}`,
+      );
     });
   });
 
@@ -534,20 +576,24 @@ describe('MinioService', () => {
       // Arrange
       const nomeArquivo = '123/comprovante/documento.pdf';
       const expiracao = 3600; // 1 hora
-      const url = 'https://minio.exemplo.com/pgben-documentos/123/comprovante/documento.pdf?token=xyz';
-      
+      const url =
+        'https://minio.exemplo.com/pgben-documentos/123/comprovante/documento.pdf?token=xyz';
+
       mockMinioClient.presignedGetObject.mockResolvedValue(url);
-      
+
       // Act
-      const resultado = await service.gerarUrlPreAssinada(nomeArquivo, expiracao);
-      
+      const resultado = await service.gerarUrlPreAssinada(
+        nomeArquivo,
+        expiracao,
+      );
+
       // Assert
       expect(mockMinioClient.presignedGetObject).toHaveBeenCalledWith(
         'documents',
         nomeArquivo,
-        expiracao
+        expiracao,
       );
-      
+
       expect(resultado).toEqual(url);
     });
   });

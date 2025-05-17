@@ -236,7 +236,7 @@ describe('Auditoria API', () => {
       const hoje = new Date();
       const ontem = new Date(hoje);
       ontem.setDate(ontem.getDate() - 1);
-      
+
       const anteontem = new Date(hoje);
       anteontem.setDate(anteontem.getDate() - 2);
 
@@ -284,9 +284,15 @@ describe('Auditoria API', () => {
 
       // Assert
       expect(response.body.data.length).toBeGreaterThanOrEqual(2);
-      expect(response.body.data.some(log => log.descricao === 'Log de hoje')).toBe(true);
-      expect(response.body.data.some(log => log.descricao === 'Log de ontem')).toBe(true);
-      expect(response.body.data.some(log => log.descricao === 'Log de anteontem')).toBe(false);
+      expect(
+        response.body.data.some((log) => log.descricao === 'Log de hoje'),
+      ).toBe(true);
+      expect(
+        response.body.data.some((log) => log.descricao === 'Log de ontem'),
+      ).toBe(true);
+      expect(
+        response.body.data.some((log) => log.descricao === 'Log de anteontem'),
+      ).toBe(false);
     });
   });
 
@@ -381,7 +387,9 @@ describe('Auditoria API', () => {
 
       // Assert
       expect(response.header['content-type']).toContain('text/csv');
-      expect(response.text).toContain('tipo_operacao,entidade_afetada,entidade_id');
+      expect(response.text).toContain(
+        'tipo_operacao,entidade_afetada,entidade_id',
+      );
       expect(response.text.split('\n').length).toBeGreaterThan(3); // Cabeçalho + 3 registros
     });
 

@@ -17,7 +17,7 @@ describe('AuditoriaQueueProcessor', () => {
         {
           provide: getRepositoryToken(LogAuditoria),
           useValue: {
-            create: jest.fn().mockImplementation(dto => dto),
+            create: jest.fn().mockImplementation((dto) => dto),
             save: jest.fn().mockResolvedValue({ id: 'mock-log-id' }),
             findOne: jest.fn().mockResolvedValue(null),
           },
@@ -36,7 +36,9 @@ describe('AuditoriaQueueProcessor', () => {
     }).compile();
 
     processor = module.get<AuditoriaQueueProcessor>(AuditoriaQueueProcessor);
-    logAuditoriaRepository = module.get<Repository<LogAuditoria>>(getRepositoryToken(LogAuditoria));
+    logAuditoriaRepository = module.get<Repository<LogAuditoria>>(
+      getRepositoryToken(LogAuditoria),
+    );
   });
 
   it('deve ser definido', () => {
@@ -70,9 +72,13 @@ describe('AuditoriaQueueProcessor', () => {
         },
       };
 
-      jest.spyOn(logAuditoriaRepository, 'save').mockRejectedValueOnce(new Error('Erro ao salvar'));
+      jest
+        .spyOn(logAuditoriaRepository, 'save')
+        .mockRejectedValueOnce(new Error('Erro ao salvar'));
 
-      await expect(processor.processarLogAuditoria(mockJob as any)).rejects.toThrow('Erro ao salvar');
+      await expect(
+        processor.processarLogAuditoria(mockJob as any),
+      ).rejects.toThrow('Erro ao salvar');
     });
   });
 

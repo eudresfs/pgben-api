@@ -7,7 +7,7 @@ import {
   DeleteDateColumn,
   OneToOne,
   JoinColumn,
-  Index
+  Index,
 } from 'typeorm';
 import { IsNotEmpty, IsOptional, IsNumber, Min, IsEnum } from 'class-validator';
 import { Cidadao } from './cidadao.entity';
@@ -48,7 +48,8 @@ export class SituacaoMoradia {
   @Column({
     type: 'enum',
     enum: TipoMoradiaEnum,
-    nullable: true
+    enumName: 'tipo_moradia_enum',
+    nullable: true,
   })
   @IsOptional()
   @IsEnum(TipoMoradiaEnum, { message: 'Tipo de moradia inválido' })
@@ -57,7 +58,8 @@ export class SituacaoMoradia {
   @Column({
     type: 'enum',
     enum: TipoConstrucaoEnum,
-    nullable: true
+    enumName: 'tipo_construcao_enum',
+    nullable: true,
   })
   @IsOptional()
   @IsEnum(TipoConstrucaoEnum, { message: 'Tipo de construção inválido' })

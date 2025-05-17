@@ -8,13 +8,12 @@ import { Cidadao } from './entities/cidadao.entity';
 import { PapelCidadao } from './entities/papel-cidadao.entity';
 import { CacheModule } from '../../shared/cache';
 import { CidadaoAuditInterceptor } from './interceptors/cidadao-audit.interceptor';
-import { AuditoriaModule } from '../auditoria/auditoria.module';
 import { PapelCidadaoService } from './services/papel-cidadao.service';
 import { PapelCidadaoController } from './controllers/papel-cidadao.controller';
 
 /**
  * Módulo de cidadãos
- * 
+ *
  * Responsável por gerenciar os cidadãos/beneficiários do sistema,
  * incluindo cadastro, consulta e composição familiar.
  */
@@ -22,17 +21,16 @@ import { PapelCidadaoController } from './controllers/papel-cidadao.controller';
   imports: [
     TypeOrmModule.forFeature([Cidadao, PapelCidadao]),
     CacheModule,
-    AuditoriaModule,
   ],
   controllers: [CidadaoController, PapelCidadaoController],
   providers: [
-    CidadaoService, 
+    CidadaoService,
     CidadaoRepository,
     PapelCidadaoService,
     {
       provide: APP_INTERCEPTOR,
-      useClass: CidadaoAuditInterceptor
-    }
+      useClass: CidadaoAuditInterceptor,
+    },
   ],
   exports: [CidadaoService, CidadaoRepository, PapelCidadaoService],
 })

@@ -7,14 +7,14 @@ import { Request, Response } from 'express';
 
 /**
  * Testes unitários para o interceptor de logging
- * 
+ *
  * Verifica o funcionamento do interceptor que registra
  * informações sobre requisições HTTP
  */
 describe('LoggingInterceptor', () => {
   let interceptor: LoggingInterceptor;
   let loggingService: LoggingService;
-  
+
   // Mock do serviço de logging
   const mockLoggingService = {
     info: jest.fn(),
@@ -24,7 +24,7 @@ describe('LoggingInterceptor', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
-    
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         LoggingInterceptor,
@@ -37,9 +37,10 @@ describe('LoggingInterceptor', () => {
 
     interceptor = module.get<LoggingInterceptor>(LoggingInterceptor);
     loggingService = module.get<LoggingService>(LoggingService);
-    
+
     // Mock para Date.now()
-    jest.spyOn(Date, 'now')
+    jest
+      .spyOn(Date, 'now')
       .mockImplementationOnce(() => 1000)
       .mockImplementationOnce(() => 1200);
   });
@@ -67,38 +68,38 @@ describe('LoggingInterceptor', () => {
           email: 'usuario@teste.com',
         },
       } as unknown as Request;
-      
+
       const mockResponse = {
         statusCode: 200,
       } as unknown as Response;
-      
+
       const mockExecutionContext = {
         switchToHttp: jest.fn().mockReturnValue({
           getRequest: jest.fn().mockReturnValue(mockRequest),
           getResponse: jest.fn().mockReturnValue(mockResponse),
         }),
       } as unknown as ExecutionContext;
-      
+
       // Mock do handler de chamada
       const mockCallHandler = {
         handle: jest.fn().mockReturnValue(of({ data: 'test' })),
       } as unknown as CallHandler;
-      
+
       // Executar o interceptor
       interceptor.intercept(mockExecutionContext, mockCallHandler).subscribe({
         next: (data) => {
           expect(data).toEqual({ data: 'test' });
-          
+
           // Verificar se o log de início da requisição foi registrado
           expect(mockLoggingService.info).toHaveBeenCalledWith(
             'Requisição iniciada: GET /api/cidadaos',
             'HTTP',
             expect.objectContaining({
               method: 'GET',
-              url: '/api/cidadaos'
-            })
+              url: '/api/cidadaos',
+            }),
           );
-          
+
           // Verificar se o log de fim da requisição foi registrado
           expect(mockLoggingService.info).toHaveBeenCalledWith(
             'Requisição concluída: GET /api/cidadaos - Status: 200 - Tempo: 200ms',
@@ -106,10 +107,10 @@ describe('LoggingInterceptor', () => {
             expect.objectContaining({
               method: 'GET',
               url: '/api/cidadaos',
-              statusCode: 200
-            })
+              statusCode: 200,
+            }),
           );
-          
+
           done();
         },
         error: done,
@@ -127,38 +128,38 @@ describe('LoggingInterceptor', () => {
         },
         // Sem objeto user
       } as unknown as Request;
-      
+
       const mockResponse = {
         statusCode: 200,
       } as unknown as Response;
-      
+
       const mockExecutionContext = {
         switchToHttp: jest.fn().mockReturnValue({
           getRequest: jest.fn().mockReturnValue(mockRequest),
           getResponse: jest.fn().mockReturnValue(mockResponse),
         }),
       } as unknown as ExecutionContext;
-      
+
       // Mock do handler de chamada
       const mockCallHandler = {
         handle: jest.fn().mockReturnValue(of({ data: 'public' })),
       } as unknown as CallHandler;
-      
+
       // Executar o interceptor
       interceptor.intercept(mockExecutionContext, mockCallHandler).subscribe({
         next: (data) => {
           expect(data).toEqual({ data: 'public' });
-          
+
           // Verificar se o log de início da requisição foi registrado sem userId
           expect(mockLoggingService.info).toHaveBeenCalledWith(
             'Requisição iniciada: GET /api/public',
             'HTTP',
             expect.objectContaining({
               method: 'GET',
-              url: '/api/public'
-            })
+              url: '/api/public',
+            }),
           );
-          
+
           // Verificar se o log de fim da requisição foi registrado sem userId
           expect(mockLoggingService.info).toHaveBeenCalledWith(
             'Requisição concluída: GET /api/public - Status: 200 - Tempo: 200ms',
@@ -166,10 +167,10 @@ describe('LoggingInterceptor', () => {
             expect.objectContaining({
               method: 'GET',
               url: '/api/public',
-              statusCode: 200
-            })
+              statusCode: 200,
+            }),
           );
-          
+
           done();
         },
         error: done,

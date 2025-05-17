@@ -1,14 +1,18 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { EnhancedMetricsInterceptor } from '../enhanced-metrics.interceptor';
 import { EnhancedMetricsService } from '../enhanced-metrics.service';
-import { ExecutionContext, CallHandler, UnauthorizedException } from '@nestjs/common';
+import {
+  ExecutionContext,
+  CallHandler,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { of, throwError } from 'rxjs';
 import { Request, Response } from 'express';
 import { Reflector } from '@nestjs/core';
 
 /**
  * Testes unitários para o interceptor de métricas aprimorado
- * 
+ *
  * Verifica o funcionamento do interceptor que coleta métricas
  * avançadas sobre as requisições HTTP, com foco em segurança e compliance LGPD
  */
@@ -16,7 +20,7 @@ describe('EnhancedMetricsInterceptor', () => {
   let interceptor: EnhancedMetricsInterceptor;
   let metricsService: EnhancedMetricsService;
   let reflector: Reflector;
-  
+
   // Mock do serviço de métricas aprimoradas
   const mockMetricsService = {
     incrementHttpRequestsInProgress: jest.fn(),
@@ -35,12 +39,13 @@ describe('EnhancedMetricsInterceptor', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
-    
+
     // Mock para Date.now() - primeiro retorna 1000, depois 1200
-    jest.spyOn(Date, 'now')
+    jest
+      .spyOn(Date, 'now')
       .mockImplementationOnce(() => 1000)
       .mockImplementationOnce(() => 1200);
-    
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         EnhancedMetricsInterceptor,
@@ -55,7 +60,9 @@ describe('EnhancedMetricsInterceptor', () => {
       ],
     }).compile();
 
-    interceptor = module.get<EnhancedMetricsInterceptor>(EnhancedMetricsInterceptor);
+    interceptor = module.get<EnhancedMetricsInterceptor>(
+      EnhancedMetricsInterceptor,
+    );
     metricsService = module.get<EnhancedMetricsService>(EnhancedMetricsService);
     reflector = module.get<Reflector>(Reflector);
   });
@@ -86,12 +93,12 @@ describe('EnhancedMetricsInterceptor', () => {
           'user-agent': 'test-agent',
         },
       } as unknown as Request;
-      
+
       const mockResponse = {
         statusCode: 200,
         getHeaders: jest.fn().mockReturnValue({}),
       } as unknown as Response;
-      
+
       const mockExecutionContext = {
         switchToHttp: jest.fn().mockReturnValue({
           getRequest: jest.fn().mockReturnValue(mockRequest),
@@ -100,55 +107,54 @@ describe('EnhancedMetricsInterceptor', () => {
         getHandler: jest.fn(),
         getClass: jest.fn(),
       } as unknown as ExecutionContext;
-      
+
       // Mock do handler de chamada
       const mockCallHandler = {
         handle: jest.fn().mockReturnValue(of({ data: 'test' })),
       } as unknown as CallHandler;
-      
+
       // Mock do reflector para retornar metadados de LGPD
-      mockReflector.get.mockReturnValueOnce(false) // isPublic
+      mockReflector.get
+        .mockReturnValueOnce(false) // isPublic
         .mockReturnValueOnce(['dados_pessoais']); // lgpdDataTypes
-      
+
       // Executar o interceptor
       interceptor.intercept(mockExecutionContext, mockCallHandler).subscribe({
         next: (data) => {
           expect(data).toEqual({ data: 'test' });
-          
+
           // Verificar se as métricas foram coletadas corretamente
-          expect(mockMetricsService.incrementHttpRequestsInProgress).toHaveBeenCalledWith(
-            'GET',
-            '/api/cidadaos',
-            'admin'
-          );
-          
-          expect(mockMetricsService.decrementHttpRequestsInProgress).toHaveBeenCalledWith(
-            'GET',
-            '/api/cidadaos',
-            'admin'
-          );
-          
+          expect(
+            mockMetricsService.incrementHttpRequestsInProgress,
+          ).toHaveBeenCalledWith('GET', '/api/cidadaos', 'admin');
+
+          expect(
+            mockMetricsService.decrementHttpRequestsInProgress,
+          ).toHaveBeenCalledWith('GET', '/api/cidadaos', 'admin');
+
           // O método recordHttpRequest não recebe ip e user-agent
           expect(mockMetricsService.recordHttpRequest).toHaveBeenCalledWith(
             'GET',
             '/api/cidadaos',
             200,
-            'admin'
+            'admin',
           );
-          
+
           // Verificar se a duração foi registrada
           // O método recordHttpRequestDuration não recebe ip e user-agent
-          expect(mockMetricsService.recordHttpRequestDuration).toHaveBeenCalledWith(
+          expect(
+            mockMetricsService.recordHttpRequestDuration,
+          ).toHaveBeenCalledWith(
             'GET',
             '/api/cidadaos',
             200,
             0.2, // 200ms em segundos
-            'admin'
+            'admin',
           );
-          
+
           // O método recordLgpdDataAccess não é chamado automaticamente no interceptor
           // A verificação de acesso a dados LGPD deve ser feita manualmente
-          
+
           done();
         },
         error: (err) => {
@@ -174,12 +180,12 @@ describe('EnhancedMetricsInterceptor', () => {
           'user-agent': 'test-agent',
         },
       } as unknown as Request;
-      
+
       const mockResponse = {
         statusCode: 500,
         getHeaders: jest.fn().mockReturnValue({}),
       } as unknown as Response;
-      
+
       const mockExecutionContext = {
         switchToHttp: jest.fn().mockReturnValue({
           getRequest: jest.fn().mockReturnValue(mockRequest),
@@ -188,21 +194,21 @@ describe('EnhancedMetricsInterceptor', () => {
         getHandler: jest.fn(),
         getClass: jest.fn(),
       } as unknown as ExecutionContext;
-      
+
       // Mock do handler de chamada com erro
       const mockError = new Error('Erro interno do servidor');
       (mockError as any).status = 500;
-      
+
       const mockCallHandler = {
         handle: jest.fn().mockReturnValue(throwError(() => mockError)),
       } as unknown as CallHandler;
-      
+
       // Mock do reflector - não é usado em caso de erro
       mockReflector.get.mockImplementation((key: string) => {
         if (key === 'isPublic') return false;
         return undefined;
       });
-      
+
       // Executar o interceptor
       interceptor.intercept(mockExecutionContext, mockCallHandler).subscribe({
         next: () => {
@@ -210,31 +216,33 @@ describe('EnhancedMetricsInterceptor', () => {
         },
         error: (error) => {
           expect(error).toBe(mockError);
-          
+
           // Verificar se as métricas de erro foram registradas
           expect(mockMetricsService.recordHttpRequest).toHaveBeenCalledWith(
             'POST',
             '/api/cidadaos',
             500,
-            'user'
+            'user',
           );
-          
+
           // Verificar se a duração foi registrada
-          expect(mockMetricsService.recordHttpRequestDuration).toHaveBeenCalledWith(
+          expect(
+            mockMetricsService.recordHttpRequestDuration,
+          ).toHaveBeenCalledWith(
             'POST',
             '/api/cidadaos',
             500,
             expect.any(Number), // Duração em segundos
-            'user'
+            'user',
           );
-          
+
           // Verificar se o evento de segurança foi registrado
           expect(mockMetricsService.recordSecurityEvent).toHaveBeenCalledWith(
             'server_error',
             'error',
-            'api'
+            'api',
           );
-          
+
           done();
         },
       });
@@ -253,12 +261,12 @@ describe('EnhancedMetricsInterceptor', () => {
           'user-agent': 'test-agent',
         },
       } as unknown as Request;
-      
+
       const mockResponse = {
         statusCode: 200,
         getHeaders: jest.fn().mockReturnValue({}),
       } as unknown as Response;
-      
+
       const mockExecutionContext = {
         switchToHttp: jest.fn().mockReturnValue({
           getRequest: jest.fn().mockReturnValue(mockRequest),
@@ -267,44 +275,46 @@ describe('EnhancedMetricsInterceptor', () => {
         getHandler: jest.fn(),
         getClass: jest.fn(),
       } as unknown as ExecutionContext;
-      
+
       // Mock do handler de chamada
       const mockCallHandler = {
         handle: jest.fn().mockReturnValue(of({ data: 'public data' })),
       } as unknown as CallHandler;
-      
+
       // O interceptor não verifica isPublic, apenas registra métricas
       // A verificação de rotas públicas é feita por outros middlewares/guards
       mockReflector.get.mockImplementation((key: string) => {
         if (key === 'isPublic') return true;
         return undefined;
       });
-      
+
       // Executar o interceptor
       interceptor.intercept(mockExecutionContext, mockCallHandler).subscribe({
         next: (data) => {
           expect(data).toEqual({ data: 'public data' });
-          
+
           // Verificar se as métricas foram coletadas sem informações de usuário
           expect(mockMetricsService.recordHttpRequest).toHaveBeenCalledWith(
             'GET',
             '/api/public',
             200,
-            'anonymous'
+            'anonymous',
           );
-          
+
           // Verificar se a duração foi registrada
-          expect(mockMetricsService.recordHttpRequestDuration).toHaveBeenCalledWith(
+          expect(
+            mockMetricsService.recordHttpRequestDuration,
+          ).toHaveBeenCalledWith(
             'GET',
             '/api/public',
             200,
             expect.any(Number), // Duração em segundos
-            'anonymous'
+            'anonymous',
           );
-          
+
           // O interceptor não verifica isPublic, então não podemos garantir que recordLgpdDataAccess não foi chamado
           // A verificação de rotas públicas é feita por outros middlewares/guards
-          
+
           done();
         },
         error: done,
@@ -328,12 +338,12 @@ describe('EnhancedMetricsInterceptor', () => {
           'user-agent': 'test-agent',
         },
       } as unknown as Request;
-      
+
       const mockResponse = {
         statusCode: 403,
         getHeaders: jest.fn().mockReturnValue({}),
       } as unknown as Response;
-      
+
       const mockExecutionContext = {
         switchToHttp: jest.fn().mockReturnValue({
           getRequest: jest.fn().mockReturnValue(mockRequest),
@@ -342,15 +352,15 @@ describe('EnhancedMetricsInterceptor', () => {
         getHandler: jest.fn(),
         getClass: jest.fn(),
       } as unknown as ExecutionContext;
-      
+
       // Mock do handler de chamada com erro de autorização
       const mockError = new UnauthorizedException('Acesso não autorizado');
       (mockError as any).status = 403;
-      
+
       const mockCallHandler = {
         handle: jest.fn().mockReturnValue(throwError(() => mockError)),
       } as unknown as CallHandler;
-      
+
       // Mock do reflector para o teste de autorização
       mockReflector.get.mockImplementation((key: string) => {
         if (key === 'isPublic') return false;
@@ -358,7 +368,7 @@ describe('EnhancedMetricsInterceptor', () => {
         if (key === 'lgpdDataTypes') return [];
         return undefined;
       });
-      
+
       // Executar o interceptor
       interceptor.intercept(mockExecutionContext, mockCallHandler).subscribe({
         next: () => {
@@ -366,21 +376,19 @@ describe('EnhancedMetricsInterceptor', () => {
         },
         error: (error) => {
           expect(error).toBe(mockError);
-          
+
           // Verificar se o evento de segurança foi registrado
           expect(mockMetricsService.recordSecurityEvent).toHaveBeenCalledWith(
             'authorization_failure',
             'warning',
-            'api'
+            'api',
           );
-          
+
           // Verificar se a falha de autorização foi registrada
-          expect(mockMetricsService.recordAuthorizationFailure).toHaveBeenCalledWith(
-            '/api/admin',
-            'unknown',
-            'user'
-          );
-          
+          expect(
+            mockMetricsService.recordAuthorizationFailure,
+          ).toHaveBeenCalledWith('/api/admin', 'unknown', 'user');
+
           done();
         },
       });

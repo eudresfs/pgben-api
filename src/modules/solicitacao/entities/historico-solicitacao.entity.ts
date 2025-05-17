@@ -5,7 +5,7 @@ import {
   CreateDateColumn,
   ManyToOne,
   JoinColumn,
-  Index
+  Index,
 } from 'typeorm';
 import { IsNotEmpty } from 'class-validator';
 import { Solicitacao } from './solicitacao.entity';
@@ -29,6 +29,7 @@ export class HistoricoSolicitacao {
   @Column({
     type: 'enum',
     enum: StatusSolicitacao,
+    enumName: 'status_solicitacao',
   })
   @IsNotEmpty({ message: 'Status anterior é obrigatório' })
   status_anterior: StatusSolicitacao;
@@ -36,6 +37,7 @@ export class HistoricoSolicitacao {
   @Column({
     type: 'enum',
     enum: StatusSolicitacao,
+    enumName: 'status_solicitacao',
   })
   @IsNotEmpty({ message: 'Status atual é obrigatório' })
   status_atual: StatusSolicitacao;

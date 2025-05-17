@@ -18,7 +18,7 @@ describe('AuditoriaService', () => {
         {
           provide: getRepositoryToken(LogAuditoria),
           useValue: {
-            create: jest.fn().mockImplementation(dto => dto),
+            create: jest.fn().mockImplementation((dto) => dto),
             save: jest.fn().mockResolvedValue({ id: 'mock-log-id' }),
             find: jest.fn().mockResolvedValue([]),
             findOne: jest.fn().mockResolvedValue(null),
@@ -30,7 +30,9 @@ describe('AuditoriaService', () => {
     }).compile();
 
     service = module.get<AuditoriaService>(AuditoriaService);
-    repository = module.get<Repository<LogAuditoria>>(getRepositoryToken(LogAuditoria));
+    repository = module.get<Repository<LogAuditoria>>(
+      getRepositoryToken(LogAuditoria),
+    );
   });
 
   it('deve ser definido', () => {
@@ -59,11 +61,15 @@ describe('AuditoriaService', () => {
       // Não definimos campos obrigatórios
 
       // Mockamos o método de validação para simular falha
-      jest.spyOn(CreateLogAuditoriaDto.prototype, 'validar').mockImplementation(() => {
-        throw new Error('Dados inválidos');
-      });
+      jest
+        .spyOn(CreateLogAuditoriaDto.prototype, 'validar')
+        .mockImplementation(() => {
+          throw new Error('Dados inválidos');
+        });
 
-      await expect(service.create(invalidDto)).rejects.toThrow('Dados inválidos');
+      await expect(service.create(invalidDto)).rejects.toThrow(
+        'Dados inválidos',
+      );
       expect(repository.save).not.toHaveBeenCalled();
     });
   });
@@ -85,7 +91,9 @@ describe('AuditoriaService', () => {
         },
       ];
 
-      jest.spyOn(repository, 'find').mockResolvedValueOnce(mockLogs as LogAuditoria[]);
+      jest
+        .spyOn(repository, 'find')
+        .mockResolvedValueOnce(mockLogs as LogAuditoria[]);
 
       const result = await service.findAll();
 
@@ -125,18 +133,24 @@ describe('AuditoriaService', () => {
         created_at: new Date(),
       };
 
-      jest.spyOn(repository, 'findOne').mockResolvedValueOnce(mockLog as LogAuditoria);
+      jest
+        .spyOn(repository, 'findOne')
+        .mockResolvedValueOnce(mockLog as LogAuditoria);
 
       const result = await service.findOne('log-1');
 
-      expect(repository.findOne).toHaveBeenCalledWith({ where: { id: 'log-1' } });
+      expect(repository.findOne).toHaveBeenCalledWith({
+        where: { id: 'log-1' },
+      });
       expect(result).toEqual(mockLog);
     });
 
     it('deve lançar NotFoundException quando o log não é encontrado', async () => {
       jest.spyOn(repository, 'findOne').mockResolvedValueOnce(null);
 
-      await expect(service.findOne('non-existent-id')).rejects.toThrow(NotFoundException);
+      await expect(service.findOne('non-existent-id')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -154,7 +168,9 @@ describe('AuditoriaService', () => {
         created_at: new Date(),
       };
 
-      jest.spyOn(repository, 'findOne').mockResolvedValueOnce(mockLog as LogAuditoria);
+      jest
+        .spyOn(repository, 'findOne')
+        .mockResolvedValueOnce(mockLog as LogAuditoria);
 
       await service.update('log-1', updateDto);
 
@@ -164,7 +180,9 @@ describe('AuditoriaService', () => {
     it('deve lançar NotFoundException quando o log não é encontrado', async () => {
       jest.spyOn(repository, 'findOne').mockResolvedValueOnce(null);
 
-      await expect(service.update('non-existent-id', {})).rejects.toThrow(NotFoundException);
+      await expect(service.update('non-existent-id', {})).rejects.toThrow(
+        NotFoundException,
+      );
       expect(repository.update).not.toHaveBeenCalled();
     });
   });
@@ -178,7 +196,9 @@ describe('AuditoriaService', () => {
         created_at: new Date(),
       };
 
-      jest.spyOn(repository, 'findOne').mockResolvedValueOnce(mockLog as LogAuditoria);
+      jest
+        .spyOn(repository, 'findOne')
+        .mockResolvedValueOnce(mockLog as LogAuditoria);
 
       await service.remove('log-1');
 
@@ -188,7 +208,9 @@ describe('AuditoriaService', () => {
     it('deve lançar NotFoundException quando o log não é encontrado', async () => {
       jest.spyOn(repository, 'findOne').mockResolvedValueOnce(null);
 
-      await expect(service.remove('non-existent-id')).rejects.toThrow(NotFoundException);
+      await expect(service.remove('non-existent-id')).rejects.toThrow(
+        NotFoundException,
+      );
       expect(repository.delete).not.toHaveBeenCalled();
     });
   });
@@ -212,7 +234,9 @@ describe('AuditoriaService', () => {
         },
       ];
 
-      jest.spyOn(repository, 'find').mockResolvedValueOnce(mockLogs as LogAuditoria[]);
+      jest
+        .spyOn(repository, 'find')
+        .mockResolvedValueOnce(mockLogs as LogAuditoria[]);
 
       const result = await service.findByEntidade('Usuario', 'user-1');
 

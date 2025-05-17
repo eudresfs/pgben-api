@@ -7,7 +7,7 @@ import {
   DeleteDateColumn,
   OneToOne,
   JoinColumn,
-  Index
+  Index,
 } from 'typeorm';
 import { IsNotEmpty, IsOptional, IsNumber, Min, IsEnum } from 'class-validator';
 import { Cidadao } from './cidadao.entity';
@@ -51,7 +51,8 @@ export class DadosSociais {
   @Column({
     type: 'enum',
     enum: EscolaridadeEnum,
-    nullable: true
+    enumName: 'escolaridade_enum',
+    nullable: true,
   })
   @IsOptional()
   @IsEnum(EscolaridadeEnum, { message: 'Escolaridade inválida' })
@@ -60,7 +61,8 @@ export class DadosSociais {
   @Column({
     type: 'enum',
     enum: SituacaoTrabalhoEnum,
-    nullable: true
+    enumName: 'situacao_trabalho_enum',
+    nullable: true,
   })
   @IsOptional()
   @IsEnum(SituacaoTrabalhoEnum, { message: 'Situação de trabalho inválida' })

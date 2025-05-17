@@ -6,7 +6,7 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
   OneToMany,
-  Index
+  Index,
 } from 'typeorm';
 import { IsNotEmpty } from 'class-validator';
 import { Ocorrencia } from './ocorrencia.entity';
@@ -29,6 +29,7 @@ export class DemandaMotivo {
   @Column({
     type: 'enum',
     enum: TipoDemanda,
+    enumName: 'tipo_demanda',
   })
   @IsNotEmpty({ message: 'Tipo de demanda é obrigatório' })
   tipo: TipoDemanda;
@@ -43,7 +44,7 @@ export class DemandaMotivo {
   @Column({ default: true })
   ativo: boolean;
 
-  @OneToMany(() => Ocorrencia, ocorrencia => ocorrencia.demanda_motivo)
+  @OneToMany(() => Ocorrencia, (ocorrencia) => ocorrencia.demanda_motivo)
   ocorrencia: Ocorrencia[];
 
   @CreateDateColumn()

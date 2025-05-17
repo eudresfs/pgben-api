@@ -6,12 +6,12 @@ import { Sexo } from '../entities/cidadao.entity';
 
 /**
  * Testes unitários para o controlador de cidadão
- * 
+ *
  * Verifica o funcionamento dos endpoints relacionados aos cidadãos
  */
 describe('CidadaoController', () => {
   let controller: CidadaoController;
-  
+
   // Mock do serviço de cidadão
   const mockCidadaoService = {
     findAll: jest.fn(),
@@ -26,7 +26,7 @@ describe('CidadaoController', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
-    
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [CidadaoController],
       providers: [
@@ -66,25 +66,31 @@ describe('CidadaoController', () => {
           pages: 1,
         },
       };
-      
+
       mockCidadaoService.findAll.mockResolvedValue(mockResult);
-      
+
       // Mock do objeto request com o usuário logado
       const mockRequest = {
         user: {
-          unidadeId: 'unidade-id-1'
-        }
+          unidadeId: 'unidade-id-1',
+        },
       };
-      
-      const result = await controller.findAll(mockRequest, 1, 10, undefined, undefined);
-      
+
+      const result = await controller.findAll(
+        mockRequest,
+        1,
+        10,
+        undefined,
+        undefined,
+      );
+
       expect(result).toEqual(mockResult);
       expect(mockCidadaoService.findAll).toHaveBeenCalledWith({
         page: 1,
         limit: 10,
         search: undefined,
         bairro: undefined,
-        unidadeId: 'unidade-id-1'
+        unidadeId: 'unidade-id-1',
       });
     });
   });
@@ -96,19 +102,23 @@ describe('CidadaoController', () => {
         nome: 'João Silva',
         cpf: '123.456.789-00',
       };
-      
+
       mockCidadaoService.findById.mockResolvedValue(mockCidadao);
-      
+
       const result = await controller.findOne('1');
-      
+
       expect(result).toEqual(mockCidadao);
       expect(mockCidadaoService.findById).toHaveBeenCalledWith('1');
     });
 
     it('deve propagar NotFoundException quando o cidadão não é encontrado', async () => {
-      mockCidadaoService.findById.mockRejectedValue(new NotFoundException('Cidadão não encontrado'));
-      
-      await expect(controller.findOne('999')).rejects.toThrow(NotFoundException);
+      mockCidadaoService.findById.mockRejectedValue(
+        new NotFoundException('Cidadão não encontrado'),
+      );
+
+      await expect(controller.findOne('999')).rejects.toThrow(
+        NotFoundException,
+      );
       expect(mockCidadaoService.findById).toHaveBeenCalledWith('999');
     });
   });
@@ -120,20 +130,28 @@ describe('CidadaoController', () => {
         nome: 'João Silva',
         cpf: '123.456.789-00',
       };
-      
+
       mockCidadaoService.findByCpf.mockResolvedValue(mockCidadao);
-      
+
       const result = await controller.findByCpf('123.456.789-00');
-      
+
       expect(result).toEqual(mockCidadao);
-      expect(mockCidadaoService.findByCpf).toHaveBeenCalledWith('123.456.789-00');
+      expect(mockCidadaoService.findByCpf).toHaveBeenCalledWith(
+        '123.456.789-00',
+      );
     });
 
     it('deve propagar NotFoundException quando o cidadão não é encontrado pelo CPF', async () => {
-      mockCidadaoService.findByCpf.mockRejectedValue(new NotFoundException('Cidadão não encontrado'));
-      
-      await expect(controller.findByCpf('999.999.999-99')).rejects.toThrow(NotFoundException);
-      expect(mockCidadaoService.findByCpf).toHaveBeenCalledWith('999.999.999-99');
+      mockCidadaoService.findByCpf.mockRejectedValue(
+        new NotFoundException('Cidadão não encontrado'),
+      );
+
+      await expect(controller.findByCpf('999.999.999-99')).rejects.toThrow(
+        NotFoundException,
+      );
+      expect(mockCidadaoService.findByCpf).toHaveBeenCalledWith(
+        '999.999.999-99',
+      );
     });
   });
 
@@ -157,25 +175,28 @@ describe('CidadaoController', () => {
           estado: 'RN',
         },
       };
-      
+
       const mockCidadao = {
         id: '1',
         ...createCidadaoDto,
       };
-      
+
       mockCidadaoService.create.mockResolvedValue(mockCidadao);
-      
+
       // Mock do objeto request com o usuário logado
       const mockRequest = {
         user: {
-          unidadeId: 'unidade-id-1'
-        }
+          unidadeId: 'unidade-id-1',
+        },
       };
-      
+
       const result = await controller.create(createCidadaoDto, mockRequest);
-      
+
       expect(result).toEqual(mockCidadao);
-      expect(mockCidadaoService.create).toHaveBeenCalledWith(createCidadaoDto, 'unidade-id-1');
+      expect(mockCidadaoService.create).toHaveBeenCalledWith(
+        createCidadaoDto,
+        'unidade-id-1',
+      );
     });
 
     it('deve propagar ConflictException quando já existe um cidadão com o mesmo CPF', async () => {
@@ -194,18 +215,25 @@ describe('CidadaoController', () => {
           estado: 'RN',
         },
       };
-      
-      mockCidadaoService.create.mockRejectedValue(new ConflictException('CPF já cadastrado'));
-      
+
+      mockCidadaoService.create.mockRejectedValue(
+        new ConflictException('CPF já cadastrado'),
+      );
+
       // Mock do objeto request com o usuário logado
       const mockRequest = {
         user: {
-          unidadeId: 'unidade-id-1'
-        }
+          unidadeId: 'unidade-id-1',
+        },
       };
-      
-      await expect(controller.create(createCidadaoDto, mockRequest)).rejects.toThrow(ConflictException);
-      expect(mockCidadaoService.create).toHaveBeenCalledWith(createCidadaoDto, 'unidade-id-1');
+
+      await expect(
+        controller.create(createCidadaoDto, mockRequest),
+      ).rejects.toThrow(ConflictException);
+      expect(mockCidadaoService.create).toHaveBeenCalledWith(
+        createCidadaoDto,
+        'unidade-id-1',
+      );
     });
   });
 
@@ -215,31 +243,41 @@ describe('CidadaoController', () => {
         nome: 'João Silva Atualizado',
         telefone: '(84) 88888-8888',
       };
-      
+
       const mockUpdatedCidadao = {
         id: '1',
         nome: 'João Silva Atualizado',
         cpf: '123.456.789-00',
         telefone: '(84) 88888-8888',
       };
-      
+
       mockCidadaoService.update.mockResolvedValue(mockUpdatedCidadao);
-      
+
       const result = await controller.update('1', updateCidadaoDto);
-      
+
       expect(result).toEqual(mockUpdatedCidadao);
-      expect(mockCidadaoService.update).toHaveBeenCalledWith('1', updateCidadaoDto);
+      expect(mockCidadaoService.update).toHaveBeenCalledWith(
+        '1',
+        updateCidadaoDto,
+      );
     });
 
     it('deve propagar NotFoundException quando o cidadão não existe', async () => {
       const updateCidadaoDto = {
         nome: 'João Silva Atualizado',
       };
-      
-      mockCidadaoService.update.mockRejectedValue(new NotFoundException('Cidadão não encontrado'));
-      
-      await expect(controller.update('999', updateCidadaoDto)).rejects.toThrow(NotFoundException);
-      expect(mockCidadaoService.update).toHaveBeenCalledWith('999', updateCidadaoDto);
+
+      mockCidadaoService.update.mockRejectedValue(
+        new NotFoundException('Cidadão não encontrado'),
+      );
+
+      await expect(controller.update('999', updateCidadaoDto)).rejects.toThrow(
+        NotFoundException,
+      );
+      expect(mockCidadaoService.update).toHaveBeenCalledWith(
+        '999',
+        updateCidadaoDto,
+      );
     });
   });
 
@@ -250,19 +288,23 @@ describe('CidadaoController', () => {
         nome: 'João Silva',
         nis: '12345678901',
       };
-      
+
       mockCidadaoService.findByNis.mockResolvedValue(mockCidadao);
-      
+
       const result = await controller.findByNis('12345678901');
-      
+
       expect(result).toEqual(mockCidadao);
       expect(mockCidadaoService.findByNis).toHaveBeenCalledWith('12345678901');
     });
 
     it('deve propagar NotFoundException quando o cidadão não é encontrado pelo NIS', async () => {
-      mockCidadaoService.findByNis.mockRejectedValue(new NotFoundException('Cidadão não encontrado'));
-      
-      await expect(controller.findByNis('99999999999')).rejects.toThrow(NotFoundException);
+      mockCidadaoService.findByNis.mockRejectedValue(
+        new NotFoundException('Cidadão não encontrado'),
+      );
+
+      await expect(controller.findByNis('99999999999')).rejects.toThrow(
+        NotFoundException,
+      );
       expect(mockCidadaoService.findByNis).toHaveBeenCalledWith('99999999999');
     });
   });

@@ -6,7 +6,7 @@ import { ApiTags } from '@nestjs/swagger';
 
 /**
  * Controlador de Métricas
- * 
+ *
  * Expõe endpoints para acesso às métricas da aplicação
  * no formato do Prometheus
  */

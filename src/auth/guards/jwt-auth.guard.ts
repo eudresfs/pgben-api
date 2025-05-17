@@ -17,18 +17,23 @@ export class JwtAuthGuard extends AuthGuard(STRATEGY_JWT_AUTH) {
     // Adicionando verificações de token nos cabeçalhos
     const request = context.switchToHttp().getRequest();
     const authHeader = request.headers.authorization;
-    
+
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       throw new UnauthorizedException('Token de autenticação não fornecido');
     }
-    
+
     return super.canActivate(context);
   }
 
   handleRequest(err: any, user: any, info: any) {
     // Você pode lançar uma exceção com base nos argumentos "info" ou "err"
     if (err || !user) {
-      throw err || new UnauthorizedException(info instanceof Error ? info.message : 'Falha na autenticação');
+      throw (
+        err ||
+        new UnauthorizedException(
+          info instanceof Error ? info.message : 'Falha na autenticação',
+        )
+      );
     }
     return user;
   }

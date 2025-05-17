@@ -1,15 +1,15 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { 
-  IsNotEmpty, 
-  IsString, 
-  IsNumber, 
-  IsEnum, 
-  IsBoolean, 
+import {
+  IsNotEmpty,
+  IsString,
+  IsNumber,
+  IsEnum,
+  IsBoolean,
   IsOptional,
   Min,
   MaxLength,
   ValidateNested,
-  IsObject
+  IsObject,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { Periodicidade } from '../entities/tipo-beneficio.entity';
@@ -30,13 +30,17 @@ export class CriteriosElegibilidadeDto {
   @Min(0, { message: 'Idade máxima não pode ser negativa' })
   idade_maxima?: number;
 
-  @ApiPropertyOptional({ description: 'Renda máxima per capita para elegibilidade' })
+  @ApiPropertyOptional({
+    description: 'Renda máxima per capita para elegibilidade',
+  })
   @IsOptional()
   @IsNumber({}, { message: 'Renda máxima deve ser um número' })
   @Min(0, { message: 'Renda máxima não pode ser negativa' })
   renda_maxima?: number;
 
-  @ApiPropertyOptional({ description: 'Tempo mínimo de residência no município (em meses)' })
+  @ApiPropertyOptional({
+    description: 'Tempo mínimo de residência no município (em meses)',
+  })
   @IsOptional()
   @IsNumber({}, { message: 'Tempo mínimo de residência deve ser um número' })
   @Min(0, { message: 'Tempo mínimo de residência não pode ser negativo' })
@@ -52,7 +56,10 @@ export class CriteriosElegibilidadeDto {
  * DTO para criação de tipo de benefício
  */
 export class CreateTipoBeneficioDto {
-  @ApiProperty({ description: 'Nome do tipo de benefício', example: 'Auxílio Moradia' })
+  @ApiProperty({
+    description: 'Nome do tipo de benefício',
+    example: 'Auxílio Moradia',
+  })
   @IsNotEmpty({ message: 'Nome é obrigatório' })
   @IsString({ message: 'Nome deve ser um texto' })
   @MaxLength(100, { message: 'Nome não pode ter mais de 100 caracteres' })
@@ -63,10 +70,10 @@ export class CreateTipoBeneficioDto {
   @IsString({ message: 'Descrição deve ser um texto' })
   descricao: string;
 
-  @ApiProperty({ 
-    description: 'Periodicidade do benefício', 
+  @ApiProperty({
+    description: 'Periodicidade do benefício',
     enum: Periodicidade,
-    example: Periodicidade.MENSAL
+    example: Periodicidade.MENSAL,
   })
   @IsNotEmpty({ message: 'Periodicidade é obrigatória' })
   @IsEnum(Periodicidade, { message: 'Periodicidade inválida' })
@@ -77,7 +84,7 @@ export class CreateTipoBeneficioDto {
   @IsString({ message: 'Base jurídica deve ser um texto' })
   base_juridica: string;
 
-  @ApiProperty({ description: 'Valor do benefício', example: 400.00 })
+  @ApiProperty({ description: 'Valor do benefício', example: 400.0 })
   @IsNotEmpty({ message: 'Valor é obrigatório' })
   @IsNumber({}, { message: 'Valor deve ser um número' })
   @Min(0, { message: 'Valor não pode ser negativo' })
@@ -88,7 +95,9 @@ export class CreateTipoBeneficioDto {
   @IsBoolean({ message: 'Ativo deve ser um booleano' })
   ativo?: boolean;
 
-  @ApiPropertyOptional({ description: 'Critérios de elegibilidade para o benefício' })
+  @ApiPropertyOptional({
+    description: 'Critérios de elegibilidade para o benefício',
+  })
   @IsOptional()
   @IsObject({ message: 'Critérios de elegibilidade devem ser um objeto' })
   @ValidateNested()

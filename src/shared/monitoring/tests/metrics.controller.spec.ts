@@ -5,14 +5,14 @@ import { Response } from 'express';
 
 /**
  * Testes unitários para o controlador de métricas
- * 
+ *
  * Verifica o funcionamento do endpoint que expõe as métricas
  * da aplicação para o Prometheus
  */
 describe('MetricsController', () => {
   let controller: MetricsController;
   let metricsService: MetricsService;
-  
+
   // Mock do serviço de métricas
   const mockMetricsService = {
     getMetrics: jest.fn().mockResolvedValue('metrics_data'),
@@ -20,7 +20,7 @@ describe('MetricsController', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
-    
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [MetricsController],
       providers: [
@@ -46,11 +46,14 @@ describe('MetricsController', () => {
         setHeader: jest.fn(),
         send: jest.fn(),
       } as unknown as Response;
-      
+
       await controller.getMetrics(mockResponse);
-      
+
       expect(metricsService.getMetrics).toHaveBeenCalled();
-      expect(mockResponse.setHeader).toHaveBeenCalledWith('Content-Type', 'text/plain');
+      expect(mockResponse.setHeader).toHaveBeenCalledWith(
+        'Content-Type',
+        'text/plain',
+      );
       expect(mockResponse.send).toHaveBeenCalledWith('metrics_data');
     });
   });

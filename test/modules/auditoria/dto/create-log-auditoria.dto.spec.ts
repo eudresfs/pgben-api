@@ -145,7 +145,9 @@ describe('CreateLogAuditoriaDto', () => {
       descricao: 'Criação de novo usuário',
     });
 
-    expect(dto.toString()).toBe('[create] Usuario (123e4567-e89b-12d3-a456-426614174000) - Criação de novo usuário');
+    expect(dto.toString()).toBe(
+      '[create] Usuario (123e4567-e89b-12d3-a456-426614174000) - Criação de novo usuário',
+    );
 
     const dtoSemDescricao = plainToInstance(CreateLogAuditoriaDto, {
       tipo_operacao: TipoOperacao.CREATE,

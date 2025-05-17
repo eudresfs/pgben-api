@@ -10,7 +10,7 @@ import { EnhancedMetricsService } from './enhanced-metrics.service';
 
 /**
  * Interceptor de Métricas Aprimorado
- * 
+ *
  * Intercepta todas as requisições HTTP e registra métricas avançadas como:
  * - Contador de requisições com informações de perfil de usuário
  * - Duração das requisições
@@ -25,76 +25,110 @@ export class EnhancedMetricsInterceptor implements NestInterceptor {
     const ctx = context.switchToHttp();
     const request = ctx.getRequest();
     const { method, url, ip } = request;
-    
+
     // Extrair a rota base sem parâmetros para evitar cardinalidade alta
     const route = this.normalizeRoute(url);
-    
+
     // Obter informações do usuário, se disponíveis
     const userRole = this.getUserRole(request);
-    
+
     // Incrementar contador de requisições em andamento
-    this.metricsService.incrementHttpRequestsInProgress(method, route, userRole);
-    
+    this.metricsService.incrementHttpRequestsInProgress(
+      method,
+      route,
+      userRole,
+    );
+
     const startTime = process.hrtime();
-    
+
     return next.handle().pipe(
       tap({
         next: (data) => {
           const response = ctx.getResponse();
           const statusCode = response.statusCode;
-          
+
           // Calcular duração da requisição
           const [seconds, nanoseconds] = process.hrtime(startTime);
           const durationSeconds = seconds + nanoseconds / 1e9;
-          
+
           // Registrar métricas HTTP
-          this.metricsService.recordHttpRequest(method, route, statusCode, userRole);
-          this.metricsService.recordHttpRequestDuration(method, route, statusCode, durationSeconds, userRole);
-          
+          this.metricsService.recordHttpRequest(
+            method,
+            route,
+            statusCode,
+            userRole,
+          );
+          this.metricsService.recordHttpRequestDuration(
+            method,
+            route,
+            statusCode,
+            durationSeconds,
+            userRole,
+          );
+
           // Decrementar contador de requisições em andamento
-          this.metricsService.decrementHttpRequestsInProgress(method, route, userRole);
-          
+          this.metricsService.decrementHttpRequestsInProgress(
+            method,
+            route,
+            userRole,
+          );
+
           // Verificar e registrar acesso a dados protegidos pela LGPD
           this.checkAndRecordLgpdDataAccess(request, data, route);
         },
         error: (error) => {
           const statusCode = error.status || 500;
-          
+
           // Calcular duração da requisição
           const [seconds, nanoseconds] = process.hrtime(startTime);
           const durationSeconds = seconds + nanoseconds / 1e9;
-          
+
           // Registrar métricas HTTP
-          this.metricsService.recordHttpRequest(method, route, statusCode, userRole);
-          this.metricsService.recordHttpRequestDuration(method, route, statusCode, durationSeconds, userRole);
-          
+          this.metricsService.recordHttpRequest(
+            method,
+            route,
+            statusCode,
+            userRole,
+          );
+          this.metricsService.recordHttpRequestDuration(
+            method,
+            route,
+            statusCode,
+            durationSeconds,
+            userRole,
+          );
+
           // Decrementar contador de requisições em andamento
-          this.metricsService.decrementHttpRequestsInProgress(method, route, userRole);
-          
+          this.metricsService.decrementHttpRequestsInProgress(
+            method,
+            route,
+            userRole,
+          );
+
           // Registrar evento de segurança para erros de autorização (401, 403)
           if (statusCode === 401 || statusCode === 403) {
             this.metricsService.recordSecurityEvent(
               'authorization_failure',
               'warning',
-              'api'
+              'api',
             );
-            
+
             // Registrar falha de autorização
             if (statusCode === 403 && request.user) {
               this.metricsService.recordAuthorizationFailure(
                 route,
                 'unknown', // Papel necessário não está disponível aqui
-                this.getUserRole(request)
+                this.getUserRole(request),
               );
             }
           }
-          
+
           // Registrar evento de segurança para erros do servidor (5xx)
           if (statusCode >= 500) {
             this.metricsService.recordSecurityEvent(
               'server_error',
               'error',
-              'api'
+              'api',
             );
           }
         },
@@ -109,11 +143,14 @@ export class EnhancedMetricsInterceptor implements NestInterceptor {
   private normalizeRoute(url: string): string {
     // Remover query string
     const path = url.split('?')[0];
-    
+
     // Substituir IDs numéricos, UUIDs e outros identificadores por placeholders
     return path
       .replace(/\/\d+/g, '/:id')
-      .replace(/\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi, '/:uuid')
+      .replace(
+        /\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi,
+        '/:uuid',
+      )
       .replace(/\/[^\/]+\.(pdf|doc|docx|jpg|png|xlsx)$/i, '/:.file');
   }
 
@@ -124,35 +161,41 @@ export class EnhancedMetricsInterceptor implements NestInterceptor {
     if (!request.user) {
       return 'anonymous';
     }
-    
+
     if (Array.isArray(request.user.roles) && request.user.roles.length > 0) {
       return request.user.roles[0]; // Usar o primeiro papel como identificador
     }
-    
+
     if (request.user.role) {
       return request.user.role;
     }
-    
+
     return 'authenticated';
   }
 
   /**
    * Verifica e registra acesso a dados protegidos pela LGPD
    */
-  private checkAndRecordLgpdDataAccess(request: any, data: any, route: string): void {
+  private checkAndRecordLgpdDataAccess(
+    request: any,
+    data: any,
+    route: string,
+  ): void {
     // Verificar se a rota está relacionada a dados pessoais
     const lgpdRoutes = [
       '/api/cidadaos',
       '/api/beneficiarios',
       '/api/documentos',
     ];
-    
-    const isLgpdRoute = lgpdRoutes.some(lgpdRoute => route.startsWith(lgpdRoute));
-    
+
+    const isLgpdRoute = lgpdRoutes.some((lgpdRoute) =>
+      route.startsWith(lgpdRoute),
+    );
+
     if (!isLgpdRoute) {
       return;
     }
-    
+
     // Determinar o tipo de dados LGPD
     let dataType = 'unknown';
     if (route.includes('cidadaos')) {
@@ -162,7 +205,7 @@ export class EnhancedMetricsInterceptor implements NestInterceptor {
     } else if (route.includes('documentos')) {
       dataType = 'documentos';
     }
-    
+
     // Determinar a operação
     let operation = 'unknown';
     if (request.method === 'GET') {
@@ -174,16 +217,16 @@ export class EnhancedMetricsInterceptor implements NestInterceptor {
     } else if (request.method === 'DELETE') {
       operation = 'exclusao';
     }
-    
+
     // Verificar se o acesso foi autorizado (assumimos que sim, já que chegamos aqui)
     const authorized = true;
-    
+
     // Registrar o acesso
     this.metricsService.recordLgpdDataAccess(
       dataType,
       operation,
       authorized,
-      this.getUserRole(request)
+      this.getUserRole(request),
     );
   }
 }

@@ -6,9 +6,16 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
   Index,
-  OneToMany
+  OneToMany,
 } from 'typeorm';
-import { IsEmail, IsNotEmpty, Length, IsOptional, IsEnum, Validate } from 'class-validator';
+import {
+  IsEmail,
+  IsNotEmpty,
+  Length,
+  IsOptional,
+  IsEnum,
+  Validate,
+} from 'class-validator';
 import { CPFValidator } from '../validators/cpf-validator';
 import { NISValidator } from '../validators/nis-validator';
 import { PapelCidadao } from './papel-cidadao.entity';
@@ -21,7 +28,7 @@ export enum Sexo {
 
 @Entity('cidadao')
 @Index(['cpf'], { unique: true })
-@Index(['nis'], { unique: true, where: "nis IS NOT NULL" })
+@Index(['nis'], { unique: true, where: 'nis IS NOT NULL' })
 @Index(['nome', 'ativo'])
 @Index(['created_at', 'ativo'])
 export class Cidadao {
@@ -46,12 +53,15 @@ export class Cidadao {
   @IsNotEmpty({ message: 'Data de nascimento é obrigatória' })
   data_nascimento: Date;
 
-  @OneToMany(() => PapelCidadao, papelCidadao => papelCidadao.cidadao, { eager: true })
+  @OneToMany(() => PapelCidadao, (papelCidadao) => papelCidadao.cidadao, {
+    eager: true,
+  })
   papeis: PapelCidadao[];
 
   @Column({
     type: 'enum',
     enum: Sexo,
+    enumName: 'sexo',
   })
   @IsEnum(Sexo, { message: 'Sexo inválido' })
   @IsNotEmpty({ message: 'Sexo é obrigatório' })

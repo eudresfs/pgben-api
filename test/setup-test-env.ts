@@ -64,16 +64,28 @@ jest.mock('../src/modules/minio/services/minio.service', () => {
       }),
       downloadArquivo: jest.fn().mockResolvedValue({
         buffer: Buffer.from('Conteúdo mockado do arquivo'),
-        contentType: 'application/pdf'
+        contentType: 'application/pdf',
       }),
       removerArquivo: jest.fn().mockResolvedValue(true),
       listarArquivos: jest.fn().mockResolvedValue([
-        { nome: 'documentos/arquivo1.pdf', tamanho: 1024, dataModificacao: new Date() },
-        { nome: 'documentos/arquivo2.pdf', tamanho: 2048, dataModificacao: new Date() },
+        {
+          nome: 'documentos/arquivo1.pdf',
+          tamanho: 1024,
+          dataModificacao: new Date(),
+        },
+        {
+          nome: 'documentos/arquivo2.pdf',
+          tamanho: 2048,
+          dataModificacao: new Date(),
+        },
       ]),
       verificarArquivoExiste: jest.fn().mockResolvedValue(true),
-      gerarUrlDownload: jest.fn().mockResolvedValue('https://minio.exemplo.com/pgben-test/arquivo.pdf'),
-      gerarUrlUpload: jest.fn().mockResolvedValue('https://minio.exemplo.com/pgben-test/upload.pdf'),
+      gerarUrlDownload: jest
+        .fn()
+        .mockResolvedValue('https://minio.exemplo.com/pgben-test/arquivo.pdf'),
+      gerarUrlUpload: jest
+        .fn()
+        .mockResolvedValue('https://minio.exemplo.com/pgben-test/upload.pdf'),
     })),
   };
 });
@@ -97,7 +109,7 @@ jest.mock('../src/modules/auditoria/entities/log-auditoria.entity', () => {
       dados_sensiveis_acessados?: string[];
       motivo?: string;
       data_hora: Date = new Date();
-    }
+    },
   };
 });
 
@@ -139,18 +151,22 @@ jest.mock('../src/modules/criptografia/services/criptografia.service', () => {
         return `CRIPTOGRAFADO:${typeof texto === 'object' ? JSON.stringify(texto) : texto}`;
       }),
       descriptografar: jest.fn().mockImplementation((textoCriptografado) => {
-        if (textoCriptografado === null || textoCriptografado === undefined) return '';
+        if (textoCriptografado === null || textoCriptografado === undefined)
+          return '';
         return textoCriptografado.replace('CRIPTOGRAFADO:', '');
       }),
-      descriptografarParaObjeto: jest.fn().mockImplementation((textoCriptografado) => {
-        if (textoCriptografado === null || textoCriptografado === undefined) return {};
-        const texto = textoCriptografado.replace('CRIPTOGRAFADO:', '');
-        try {
-          return JSON.parse(texto);
-        } catch (e) {
-          return {};
-        }
-      }),
+      descriptografarParaObjeto: jest
+        .fn()
+        .mockImplementation((textoCriptografado) => {
+          if (textoCriptografado === null || textoCriptografado === undefined)
+            return {};
+          const texto = textoCriptografado.replace('CRIPTOGRAFADO:', '');
+          try {
+            return JSON.parse(texto);
+          } catch (e) {
+            return {};
+          }
+        }),
       criptografarArquivo: jest.fn().mockImplementation((buffer) => {
         if (buffer === null || buffer === undefined) return Buffer.from([]);
         return Buffer.from(`CRIPTOGRAFADO:${buffer.toString()}`);
@@ -185,7 +201,6 @@ jest.mock('supertest', () => {
     field: jest.fn().mockReturnThis(),
     expect: jest.fn().mockResolvedValue({ body: {} }),
   };
-  
+
   return jest.fn(() => mockRequest);
 });
-

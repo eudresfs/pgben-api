@@ -4,7 +4,7 @@ import { StatusUnidade, Unidade } from '../entities/unidade.entity';
 
 /**
  * Repositório de unidades
- * 
+ *
  * Responsável por operações de acesso a dados relacionadas a unidades
  */
 @Injectable()
@@ -26,8 +26,13 @@ export class UnidadeRepository {
     where?: any;
     order?: any;
   }): Promise<[Unidade[], number]> {
-    const { skip = 0, take = 10, where = {}, order = { created_at: 'DESC' } } = options || {};
-    
+    const {
+      skip = 0,
+      take = 10,
+      where = {},
+      order = { created_at: 'DESC' },
+    } = options || {};
+
     return this.repository.findAndCount({
       skip,
       take,

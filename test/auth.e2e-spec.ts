@@ -9,7 +9,7 @@ import { JwtService } from '@nestjs/jwt';
 
 /**
  * Testes de integração para o módulo de autenticação
- * 
+ *
  * Estes testes verificam o funcionamento completo das rotas de autenticação,
  * incluindo login, refresh token e recuperação de senha.
  */
@@ -17,7 +17,7 @@ describe('AuthController (e2e)', () => {
   let app: INestApplication;
   let usuarioRepository: Repository<any>;
   let jwtService: JwtService;
-  
+
   // Usuário de teste
   const testUser = {
     id: '550e8400-e29b-41d4-a716-446655440000',
@@ -35,7 +35,7 @@ describe('AuthController (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    
+
     // Configurar pipes de validação global
     app.useGlobalPipes(
       new ValidationPipe({
@@ -44,16 +44,16 @@ describe('AuthController (e2e)', () => {
         forbidNonWhitelisted: true,
       }),
     );
-    
+
     await app.init();
-    
+
     // Obter repositórios e serviços necessários
     usuarioRepository = app.get(getRepositoryToken('Usuario'));
     jwtService = app.get(JwtService);
-    
+
     // Limpar e preparar o banco de dados para os testes
     await usuarioRepository.clear();
-    
+
     // Criar um usuário de teste
     const hashedPassword = await bcrypt.hash('senha123', 10);
     await usuarioRepository.save({
@@ -109,7 +109,10 @@ describe('AuthController (e2e)', () => {
       // Gerar um refresh token válido para o usuário de teste
       const refreshToken = jwtService.sign(
         { sub: testUser.id, email: testUser.email },
-        { secret: process.env.JWT_REFRESH_SECRET || 'refresh_secret_test', expiresIn: '7d' }
+        {
+          secret: process.env.JWT_REFRESH_SECRET || 'refresh_secret_test',
+          expiresIn: '7d',
+        },
       );
 
       return request(app.getHttpServer())
@@ -162,7 +165,7 @@ describe('AuthController (e2e)', () => {
       // Gerar um token de redefinição de senha válido
       const resetToken = jwtService.sign(
         { sub: testUser.id, email: testUser.email, type: 'reset_password' },
-        { secret: process.env.JWT_SECRET || 'secret_test', expiresIn: '1h' }
+        { secret: process.env.JWT_SECRET || 'secret_test', expiresIn: '1h' },
       );
 
       return request(app.getHttpServer())
@@ -182,7 +185,7 @@ describe('AuthController (e2e)', () => {
       // Gerar um token de redefinição de senha válido
       const resetToken = jwtService.sign(
         { sub: testUser.id, email: testUser.email, type: 'reset_password' },
-        { secret: process.env.JWT_SECRET || 'secret_test', expiresIn: '1h' }
+        { secret: process.env.JWT_SECRET || 'secret_test', expiresIn: '1h' },
       );
 
       return request(app.getHttpServer())

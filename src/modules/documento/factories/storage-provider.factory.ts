@@ -1,0 +1,210 @@
+import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import {
+  StorageProvider,
+  TipoStorageProvider,
+} from '../interfaces/storage-provider.interface';
+import { S3StorageAdapter } from '../adapters/s3-storage.adapter';
+import { LocalStorageAdapter } from '../adapters/local-storage.adapter';
+import { MinioService } from '../../../shared/services/minio.service';
+import * as fs from 'fs';
+import * as path from 'path';
+
+/**
+ * Factory para criação de provedores de armazenamento
+ *
+ * Permite selecionar o provedor de armazenamento adequado
+ * com base na configuração do sistema
+ */
+@Injectable()
+export class StorageProviderFactory {
+  private readonly logger = new Logger(StorageProviderFactory.name);
+  private readonly defaultProvider: TipoStorageProvider;
+
+  constructor(
+    private configService: ConfigService,
+    private s3StorageAdapter: S3StorageAdapter,
+    private localStorageAdapter: LocalStorageAdapter,
+    private minioService: MinioService,
+  ) {
+    this.defaultProvider = this.configService.get<TipoStorageProvider>(
+      'STORAGE_PROVIDER',
+      TipoStorageProvider.MINIO,
+    );
+
+    this.logger.log(
+      `Provedor de armazenamento padrão: ${this.defaultProvider}`,
+    );
+
+    // Inicializar o diretório de uploads local se necessário
+    if (this.defaultProvider === TipoStorageProvider.LOCAL) {
+      const uploadsDir = this.configService.get<string>(
+        'UPLOADS_DIR',
+        path.join(process.cwd(), 'uploads'),
+      );
+      if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+        this.logger.log(`Diretório de uploads criado: ${uploadsDir}`);
+      }
+    }
+  }
+
+  /**
+   * Obtém o provedor de armazenamento padrão
+   * @returns Provedor de armazenamento
+   */
+  getProvider(): StorageProvider {
+    return this.createProvider(this.defaultProvider);
+  }
+
+  /**
+   * Cria um provedor de armazenamento com base no tipo especificado
+   * @param type Tipo de provedor de armazenamento (opcional, usa o padrão se não especificado)
+   * @returns Provedor de armazenamento
+   */
+  createProvider(type?: TipoStorageProvider): StorageProvider {
+    const providerType = type || this.defaultProvider;
+
+    this.logger.debug(`Criando provedor de armazenamento: ${providerType}`);
+
+    switch (providerType) {
+      case TipoStorageProvider.S3:
+        return this.s3StorageAdapter;
+
+      case TipoStorageProvider.MINIO:
+        return this.createMinioAdapter();
+
+      case TipoStorageProvider.LOCAL:
+        return this.localStorageAdapter;
+
+      default:
+        this.logger.warn(
+          `Tipo de provedor desconhecido: ${providerType}. Usando provedor padrão: ${this.defaultProvider}`,
+        );
+        // Evitar recursão infinita usando diretamente o provedor padrão
+        if (this.defaultProvider === TipoStorageProvider.S3) {
+          return this.s3StorageAdapter;
+        } else if (this.defaultProvider === TipoStorageProvider.MINIO) {
+          return this.createMinioAdapter();
+        } else {
+          return this.localStorageAdapter;
+        }
+    }
+  }
+
+  /**
+   * Cria um adaptador para o MinIO que implementa a interface StorageProvider
+   * @returns Adaptador para o MinIO
+   */
+  private createMinioAdapter(): StorageProvider {
+    // Adaptar o MinioService para a interface StorageProvider
+    return {
+      nome: 'MinIO',
+
+      salvarArquivo: async (
+        buffer: Buffer,
+        nomeArquivo: string,
+        mimetype: string,
+        metadados?: Record<string, any>,
+      ): Promise<string> => {
+        // Extrair solicitação ID e tipo de documento dos metadados, se disponíveis
+        const solicitacaoId = metadados?.solicitacaoId || 'default';
+        const tipoDocumento = metadados?.tipoDocumento || 'OUTRO';
+
+        // Fazer upload usando o MinioService
+        const resultado = await this.minioService.uploadArquivo(
+          buffer,
+          nomeArquivo,
+          solicitacaoId,
+          tipoDocumento,
+        );
+
+        return resultado.nomeArquivo;
+      },
+
+      obterArquivo: async (caminho: string): Promise<Buffer> => {
+        // Fazer download usando o MinioService
+        const resultado = await this.minioService.downloadArquivo(caminho);
+        return resultado.arquivo;
+      },
+
+      removerArquivo: async (caminho: string): Promise<void> => {
+        await this.minioService.removerArquivo(caminho);
+      },
+      upload: async (
+        buffer: Buffer,
+        key: string,
+        mimetype: string,
+        metadata?: Record<string, any>,
+      ): Promise<string> => {
+        // Usar o método salvarArquivo para manter consistência
+        return this.minioService
+          .uploadArquivo(buffer, key, 'default', 'OUTRO')
+          .then((result) => result.nomeArquivo);
+      },
+
+      download: async (key: string): Promise<Buffer> => {
+        // Usar o método obterArquivo para manter consistência
+        return this.minioService
+          .downloadArquivo(key)
+          .then((result) => result.arquivo);
+      },
+
+      delete: async (key: string): Promise<void> => {
+        // Usar o método removerArquivo para manter consistência
+        return this.minioService.removerArquivo(key);
+      },
+
+      getUrl: async (key: string, expiresIn?: number): Promise<string> => {
+        return this.minioService.gerarUrlPreAssinada(key, expiresIn || 3600);
+      },
+
+      exists: async (key: string): Promise<boolean> => {
+        try {
+          // Tentar fazer download para verificar se existe
+          await this.minioService.downloadArquivo(key);
+          return true;
+        } catch (error) {
+          if (error.message && error.message.includes('not found')) {
+            return false;
+          }
+          throw error; // Propagar outros erros
+        }
+      },
+
+      copy: async (
+        sourceKey: string,
+        destinationKey: string,
+      ): Promise<string> => {
+        // Implementar cópia baixando e fazendo upload novamente
+        const resultado = await this.minioService.downloadArquivo(sourceKey);
+
+        // Extrair partes da chave de destino
+        const parts = destinationKey.split('/');
+        const solicitacaoId = parts[0] || 'default';
+        const tipoDocumento = parts[1] || 'OUTRO';
+        const nomeOriginal = parts.length > 2 ? parts[2] : destinationKey;
+
+        // Fazer upload com a nova chave
+        const resultadoUpload = await this.minioService.uploadArquivo(
+          resultado.arquivo,
+          nomeOriginal,
+          solicitacaoId,
+          tipoDocumento,
+        );
+
+        return resultadoUpload.nomeArquivo;
+      },
+
+      list: async (prefix: string, maxKeys?: number): Promise<string[]> => {
+        // Não há método direto para listar arquivos no MinioService
+        // Implementar usando o cliente Minio diretamente seria mais adequado
+        // Por enquanto, retornar array vazio
+        this.logger.warn(
+          'Método list não implementado completamente no adaptador MinIO',
+        );
+        return [];
+      },
+    };
+  }
+}

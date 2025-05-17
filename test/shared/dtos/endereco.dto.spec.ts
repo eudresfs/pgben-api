@@ -1,7 +1,10 @@
 import { validate } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
 import { EnderecoDto } from '../../../src/shared/dtos/endereco.dto';
-import { CREATE, UPDATE } from '../../../src/shared/validators/validation-groups';
+import {
+  CREATE,
+  UPDATE,
+} from '../../../src/shared/validators/validation-groups';
 
 describe('EnderecoDto', () => {
   it('deve ser válido com todos os campos obrigatórios', async () => {
@@ -11,7 +14,7 @@ describe('EnderecoDto', () => {
       bairro: 'Centro',
       cidade: 'Natal',
       estado: 'RN',
-      cep: '59000-000'
+      cep: '59000-000',
     });
 
     const errors = await validate(dto);
@@ -26,7 +29,7 @@ describe('EnderecoDto', () => {
       bairro: 'Centro',
       cidade: 'Natal',
       estado: 'RN',
-      cep: '59000-000'
+      cep: '59000-000',
     });
 
     const errors = await validate(dto);
@@ -39,7 +42,7 @@ describe('EnderecoDto', () => {
       bairro: 'Centro',
       cidade: 'Natal',
       estado: 'RN',
-      cep: '59000-000'
+      cep: '59000-000',
     });
 
     const errors = await validate(dto, { groups: [CREATE] });
@@ -53,7 +56,7 @@ describe('EnderecoDto', () => {
       bairro: 'Centro',
       cidade: 'Natal',
       estado: 'RN',
-      cep: '59000-000'
+      cep: '59000-000',
     });
 
     const errors = await validate(dto, { groups: [CREATE] });
@@ -67,7 +70,7 @@ describe('EnderecoDto', () => {
       numero: '123',
       cidade: 'Natal',
       estado: 'RN',
-      cep: '59000-000'
+      cep: '59000-000',
     });
 
     const errors = await validate(dto, { groups: [CREATE] });
@@ -81,7 +84,7 @@ describe('EnderecoDto', () => {
       numero: '123',
       bairro: 'Centro',
       estado: 'RN',
-      cep: '59000-000'
+      cep: '59000-000',
     });
 
     const errors = await validate(dto, { groups: [CREATE] });
@@ -95,7 +98,7 @@ describe('EnderecoDto', () => {
       numero: '123',
       bairro: 'Centro',
       cidade: 'Natal',
-      cep: '59000-000'
+      cep: '59000-000',
     });
 
     const errors = await validate(dto, { groups: [CREATE] });
@@ -109,7 +112,7 @@ describe('EnderecoDto', () => {
       numero: '123',
       bairro: 'Centro',
       cidade: 'Natal',
-      estado: 'RN'
+      estado: 'RN',
     });
 
     const errors = await validate(dto, { groups: [CREATE] });
@@ -124,7 +127,7 @@ describe('EnderecoDto', () => {
       bairro: 'Centro',
       cidade: 'Natal',
       estado: 'RN',
-      cep: '5900-000' // CEP com tamanho inválido
+      cep: '5900-000', // CEP com tamanho inválido
     });
 
     const errors = await validate(dto);
@@ -135,7 +138,7 @@ describe('EnderecoDto', () => {
   it('deve permitir atualização parcial no grupo UPDATE', async () => {
     const dto = plainToInstance(EnderecoDto, {
       logradouro: 'Rua das Palmeiras',
-      numero: '456'
+      numero: '456',
     });
 
     const errors = await validate(dto, { groups: [UPDATE] });
@@ -149,12 +152,12 @@ describe('EnderecoDto', () => {
       bairro: 'Centro',
       cidade: 'Natal',
       estado: 'RN',
-      cep: '59000-000'
+      cep: '59000-000',
     });
 
     const enderecoIncompleto = plainToInstance(EnderecoDto, {
       logradouro: 'Rua das Flores',
-      numero: '123'
+      numero: '123',
     });
 
     expect(enderecoCompleto.isCompleto()).toBe(true);
@@ -168,7 +171,7 @@ describe('EnderecoDto', () => {
       bairro: 'Centro',
       cidade: 'Natal',
       estado: 'RN',
-      cep: '59000-000'
+      cep: '59000-000',
     });
 
     const enderecoComComplemento = plainToInstance(EnderecoDto, {
@@ -178,10 +181,14 @@ describe('EnderecoDto', () => {
       bairro: 'Centro',
       cidade: 'Natal',
       estado: 'RN',
-      cep: '59000-000'
+      cep: '59000-000',
     });
 
-    expect(enderecoSemComplemento.toString()).toBe('Rua das Flores, 123 - Centro, Natal - RN, 59000-000');
-    expect(enderecoComComplemento.toString()).toBe('Rua das Flores, 123 - Apto 101 - Centro, Natal - RN, 59000-000');
+    expect(enderecoSemComplemento.toString()).toBe(
+      'Rua das Flores, 123 - Centro, Natal - RN, 59000-000',
+    );
+    expect(enderecoComComplemento.toString()).toBe(
+      'Rua das Flores, 123 - Apto 101 - Centro, Natal - RN, 59000-000',
+    );
   });
 });

@@ -7,7 +7,7 @@ import {
   DeleteDateColumn,
   ManyToOne,
   JoinColumn,
-  Index
+  Index,
 } from 'typeorm';
 import { IsNotEmpty, IsOptional, IsNumber, Min } from 'class-validator';
 import { Cidadao } from './cidadao.entity';
@@ -35,7 +35,7 @@ export class ComposicaoFamiliar {
   @IsNotEmpty({ message: 'ID do cidadão é obrigatório' })
   cidadao_id: string;
 
-  @ManyToOne(() => Cidadao, cidadao => cidadao.id, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Cidadao, (cidadao) => cidadao.id, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'cidadao_id' })
   cidadao: Cidadao;
 
@@ -46,7 +46,8 @@ export class ComposicaoFamiliar {
   @Column({
     type: 'enum',
     enum: Parentesco,
-    default: Parentesco.OUTRO
+    enumName: 'parentesco',
+    default: Parentesco.OUTRO,
   })
   @IsNotEmpty({ message: 'Parentesco é obrigatório' })
   parentesco: Parentesco;

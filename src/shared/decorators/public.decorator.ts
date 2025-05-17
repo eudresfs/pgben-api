@@ -3,7 +3,7 @@ import { SetMetadata } from '@nestjs/common';
 /**
  * Decorador para marcar rotas como públicas, ou seja, que não requerem autenticação.
  * Útil para endpoints como health check, métricas e documentação.
- * 
+ *
  * @example
  * ```typescript
  * @Public()

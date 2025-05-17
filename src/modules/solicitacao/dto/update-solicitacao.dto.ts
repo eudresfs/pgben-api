@@ -6,16 +6,16 @@ import { DocumentoSolicitacaoDto } from './create-solicitacao.dto';
 
 /**
  * DTO para atualização de solicitação
- * 
+ *
  * Estende o DTO de criação, tornando todos os campos opcionais
  * e omitindo o ID do beneficiário, que não pode ser alterado após a criação
  */
 export class UpdateSolicitacaoDto extends PartialType(
-  OmitType(CreateSolicitacaoDto, ['beneficiario_id'] as const)
+  OmitType(CreateSolicitacaoDto, ['beneficiario_id'] as const),
 ) {
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     description: 'Documentos a serem adicionados à solicitação',
-    type: [DocumentoSolicitacaoDto]
+    type: [DocumentoSolicitacaoDto],
   })
   @IsOptional()
   @IsArray({ message: 'Documentos deve ser um array' })

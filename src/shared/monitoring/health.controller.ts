@@ -1,18 +1,18 @@
 import { Controller, Get } from '@nestjs/common';
-import { 
-  HealthCheckService, 
-  HttpHealthIndicator, 
-  TypeOrmHealthIndicator, 
-  HealthCheck, 
+import {
+  HealthCheckService,
+  HttpHealthIndicator,
+  TypeOrmHealthIndicator,
+  HealthCheck,
   MemoryHealthIndicator,
-  DiskHealthIndicator
+  DiskHealthIndicator,
 } from '@nestjs/terminus';
 import { Public } from '../../auth/decorators/public.decorator';
 import { ApiTags } from '@nestjs/swagger';
 
 /**
  * Controlador de Health Check
- * 
+ *
  * Fornece endpoints para verificar a saúde da aplicação
  * e seus componentes (banco de dados, memória, disco, etc.)
  */
@@ -38,18 +38,19 @@ export class HealthController {
     return this.health.check([
       // Verificar se o banco de dados está funcionando
       () => this.db.pingCheck('database'),
-      
+
       // Verificar se o site oficial está acessível
       () => this.http.pingCheck('site_oficial', 'https://www.natal.rn.gov.br/'),
-      
+
       // Verificar uso de memória
       () => this.memory.checkHeap('memory_heap', 300 * 1024 * 1024), // 300MB
-      
+
       // Verificar uso de disco
-      () => this.disk.checkStorage('disk', { 
-        path: '/', 
-        thresholdPercent: 0.9, // 90% de uso máximo
-      }),
+      () =>
+        this.disk.checkStorage('disk', {
+          path: '/',
+          thresholdPercent: 0.9, // 90% de uso máximo
+        }),
     ]);
   }
 
@@ -75,9 +76,7 @@ export class HealthController {
   @Public()
   @HealthCheck()
   checkDatabase() {
-    return this.health.check([
-      () => this.db.pingCheck('database'),
-    ]);
+    return this.health.check([() => this.db.pingCheck('database')]);
   }
 
   /**
@@ -90,10 +89,11 @@ export class HealthController {
     return this.health.check([
       () => this.memory.checkHeap('memory_heap', 300 * 1024 * 1024),
       () => this.memory.checkRSS('memory_rss', 300 * 1024 * 1024),
-      () => this.disk.checkStorage('disk', { 
-        path: '/', 
-        thresholdPercent: 0.9,
-      }),
+      () =>
+        this.disk.checkStorage('disk', {
+          path: '/',
+          thresholdPercent: 0.9,
+        }),
     ]);
   }
 }

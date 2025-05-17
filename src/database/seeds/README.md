@@ -1,21 +1,51 @@
-# Seeds para o Sistema de Gestão de Benefícios Eventuais
+# Seeds para a Plataforma de Gestão de Benefícios (PGBen)
 
 ## Visão Geral
 
 Este diretório contém os arquivos de seed para popular o banco de dados do Sistema de Gestão de Benefícios Eventuais da SEMTAS com dados iniciais necessários para o funcionamento básico do sistema.
 
-## Estrutura de Seeds
+## Nova Estrutura de Seeds
 
-As seeds foram organizadas seguindo a ordem de dependência entre as entidades:
+As seeds foram reorganizadas em uma estrutura mais modular e organizada, divididas em categorias específicas de acordo com seu propósito:
 
-1. **Entidades Básicas (sem dependências)**:
-   - `TipoDocumentoSeed`: Tipos de documentos necessários para solicitações
-   - `UnidadeSeed`: Unidades de atendimento (CRAS, CREAS, etc.)
-   - `SetorTipoBeneficioSeed`: Setores administrativos e tipos de benefícios disponíveis
+```
+/seeds/
+├── core/                 # Seeds essenciais (perfis, usuários, setores, etc.)
+├── reference/            # Seeds de referência (categorias, modelos, etc.)
+├── development/          # Seeds para ambiente de desenvolvimento
+└── utils/                # Utilitários para geração e execução de seeds
+```
 
-2. **Entidades com Dependências**:
-   - `RequisitoDocumentoSeed`: Associação entre tipos de benefícios e documentos necessários
-   - `UserSeed`: Usuários administrativos do sistema
+### 1. Seeds Essenciais (core)
+
+Contém dados fundamentais para o funcionamento do sistema:
+
+- `UsuarioPerfilSeed`: Perfis de usuário e usuário administrador inicial
+- `SetorSeed`: Setores básicos do sistema (Cadastro Único, Assistência Social, etc.)
+- `UnidadeSeed`: Unidades de atendimento (CRAS, CREAS, etc.)
+- `TipoBeneficioSeed`: Tipos de benefícios disponíveis no sistema
+
+### 2. Seeds de Referência (reference)
+
+Contém dados de referência utilizados em várias partes do sistema:
+
+- `CategoriaDocumentoSeed`: Categorias para organização dos documentos
+- `ModeloDocumentoSeed`: Modelos de documentos para geração automática
+- `RequisitoDocumentoSeed`: Requisitos de documentos para cada tipo de benefício
+
+### 3. Seeds de Desenvolvimento (development)
+
+Contém dados fictícios para testes e desenvolvimento:
+
+- `CidadaoDevSeed`: Cidadãos fictícios com dados completos
+- `SolicitacaoDevSeed`: Solicitações de benefícios fictícias
+
+### 4. Utilitários (utils)
+
+Ferramentas para facilitar a geração e execução de seeds:
+
+- `DataGenerator`: Geração de dados aleatórios (CPF, nomes, endereços, etc.)
+- `SeedExecutor`: Execução organizada de seeds por ambiente
 
 ## Dados Populados
 

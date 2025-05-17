@@ -1,5 +1,13 @@
 // src/auth/entities/refresh-token.entity.ts
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { Usuario } from '../../modules/usuario/entities/usuario.entity';
 
 @Entity('refresh_tokens')
@@ -19,13 +27,27 @@ export class RefreshToken {
   @Column({ type: 'boolean', default: false })
   revoked: boolean;
 
-  @Column({ name: 'revoked_at', type: 'timestamp with time zone', nullable: true })
+  @Column({
+    name: 'revoked_at',
+    type: 'timestamp with time zone',
+    nullable: true,
+  })
   revokedAt: Date | null;
 
-  @Column({ name: 'revoked_by_ip', type: 'varchar', length: 45, nullable: true })
+  @Column({
+    name: 'revoked_by_ip',
+    type: 'varchar',
+    length: 45,
+    nullable: true,
+  })
   revokedByIp: string | null;
 
-  @Column({ name: 'replaced_by_token', type: 'varchar', length: 500, nullable: true })
+  @Column({
+    name: 'replaced_by_token',
+    type: 'varchar',
+    length: 500,
+    nullable: true,
+  })
   replacedByToken: string | null;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamp with time zone' })
@@ -34,7 +56,9 @@ export class RefreshToken {
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamp with time zone' })
   updated_at: Date;
 
-  @ManyToOne(() => Usuario, usuario => usuario.refreshTokens, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Usuario, (usuario) => usuario.refreshTokens, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'usuario_id', referencedColumnName: 'id' })
   usuario: Usuario;
 }

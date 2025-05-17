@@ -69,7 +69,9 @@ describe('AuditoriaQueueService', () => {
 
       mockQueue.add.mockRejectedValueOnce(new Error('Erro ao enfileirar'));
 
-      await expect(service.enfileirarLogAuditoria(logDto)).rejects.toThrow('Erro ao enfileirar');
+      await expect(service.enfileirarLogAuditoria(logDto)).rejects.toThrow(
+        'Erro ao enfileirar',
+      );
     });
   });
 

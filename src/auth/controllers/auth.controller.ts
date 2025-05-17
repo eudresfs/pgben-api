@@ -8,7 +8,7 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { ApiOperation,ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import {
   BaseApiErrorResponse,
@@ -59,12 +59,12 @@ export class AuthController {
     this.logger.log(ctx, `${this.login.name} was called`);
 
     const authToken = await this.authService.login(ctx);
-    
+
     // Converter para o formato BaseApiResponse
     const response = new BaseApiResponse<AuthTokenOutput>();
     response.data = authToken;
     response.meta = {};
-    
+
     return response;
   }
 
@@ -106,12 +106,12 @@ export class AuthController {
     this.logger.log(ctx, `${this.refreshToken.name} was called`);
 
     const authToken = await this.authService.refreshToken(ctx, credential);
-    
+
     // Converter para o formato BaseApiResponse
     const response = new BaseApiResponse<AuthTokenOutput>();
     response.data = authToken;
     response.meta = {};
-    
+
     return response;
   }
 }

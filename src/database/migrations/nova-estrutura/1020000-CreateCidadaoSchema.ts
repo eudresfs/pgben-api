@@ -8,13 +8,13 @@ import {
 
 /**
  * Migration: CreateCidadaoSchema
- * 
+ *
  * Descrição: Cria a estrutura do módulo de cidadão, incluindo tabelas para
  * dados pessoais, composição familiar, situação socioeconômica e papéis.
- * 
+ *
  * Domínio: Cidadão
  * Dependências: 1010000-CreateAuthSchema.ts
- * 
+ *
  * @author Arquiteto de Dados
  * @date 16/05/2025
  */
@@ -165,7 +165,8 @@ export class CreateCidadaoSchema1020000 implements MigrationInterface {
             name: 'endereco',
             type: 'jsonb',
             isNullable: false,
-            comment: 'Formato: {logradouro, numero, complemento, bairro, cidade, uf, cep}',
+            comment:
+              'Formato: {logradouro, numero, complemento, bairro, cidade, uf, cep}',
           },
           {
             name: 'telefone',
@@ -335,7 +336,7 @@ export class CreateCidadaoSchema1020000 implements MigrationInterface {
       new TableIndex({
         name: 'IDX_CIDADAO_CPF',
         columnNames: ['cpf'],
-        where: "removed_at IS NULL",
+        where: 'removed_at IS NULL',
       }),
     );
 
@@ -344,7 +345,7 @@ export class CreateCidadaoSchema1020000 implements MigrationInterface {
       new TableIndex({
         name: 'IDX_CIDADAO_NIS',
         columnNames: ['nis'],
-        where: "removed_at IS NULL",
+        where: 'removed_at IS NULL',
       }),
     );
 
@@ -1100,30 +1101,62 @@ export class CreateCidadaoSchema1020000 implements MigrationInterface {
 
     // 4. Remover chaves estrangeiras
     // Remover chaves estrangeiras das novas tabelas
-    await queryRunner.dropForeignKey('info_bancaria', 'FK_INFO_BANCARIA_CIDADAO');
-    await queryRunner.dropForeignKey('beneficio_social', 'FK_BENEFICIO_SOCIAL_CIDADAO');
-    await queryRunner.dropForeignKey('composicao_familiar', 'FK_COMPOSICAO_FAMILIAR_CIDADAO');
-    await queryRunner.dropForeignKey('situacao_moradia', 'FK_SITUACAO_MORADIA_CIDADAO');
-    
+    await queryRunner.dropForeignKey(
+      'info_bancaria',
+      'FK_INFO_BANCARIA_CIDADAO',
+    );
+    await queryRunner.dropForeignKey(
+      'beneficio_social',
+      'FK_BENEFICIO_SOCIAL_CIDADAO',
+    );
+    await queryRunner.dropForeignKey(
+      'composicao_familiar',
+      'FK_COMPOSICAO_FAMILIAR_CIDADAO',
+    );
+    await queryRunner.dropForeignKey(
+      'situacao_moradia',
+      'FK_SITUACAO_MORADIA_CIDADAO',
+    );
+
     // Remover chaves estrangeiras originais
     await queryRunner.dropForeignKey('papel_cidadao', 'FK_PAPEL_CIDADAO_GRUPO');
-    await queryRunner.dropForeignKey('papel_cidadao', 'FK_PAPEL_CIDADAO_CIDADAO');
-    await queryRunner.dropForeignKey('grupo_familiar', 'FK_GRUPO_FAMILIAR_RESPONSAVEL');
+    await queryRunner.dropForeignKey(
+      'papel_cidadao',
+      'FK_PAPEL_CIDADAO_CIDADAO',
+    );
+    await queryRunner.dropForeignKey(
+      'grupo_familiar',
+      'FK_GRUPO_FAMILIAR_RESPONSAVEL',
+    );
     await queryRunner.dropForeignKey('cidadao', 'FK_CIDADAO_UNIDADE');
 
     // 5. Remover índices
     // Remover índices das novas tabelas
     await queryRunner.dropIndex('info_bancaria', 'IDX_INFO_BANCARIA_CIDADAO');
-    await queryRunner.dropIndex('beneficio_social', 'IDX_BENEFICIO_SOCIAL_CIDADAO');
-    await queryRunner.dropIndex('composicao_familiar', 'IDX_COMPOSICAO_FAMILIAR_CIDADAO');
-    await queryRunner.dropIndex('situacao_moradia', 'IDX_SITUACAO_MORADIA_CIDADAO');
-    
+    await queryRunner.dropIndex(
+      'beneficio_social',
+      'IDX_BENEFICIO_SOCIAL_CIDADAO',
+    );
+    await queryRunner.dropIndex(
+      'composicao_familiar',
+      'IDX_COMPOSICAO_FAMILIAR_CIDADAO',
+    );
+    await queryRunner.dropIndex(
+      'situacao_moradia',
+      'IDX_SITUACAO_MORADIA_CIDADAO',
+    );
+
     // Remover índices originais
     await queryRunner.dropIndex('papel_cidadao', 'IDX_PAPEL_CIDADAO_TIPO');
     await queryRunner.dropIndex('papel_cidadao', 'IDX_PAPEL_CIDADAO_GRUPO');
     await queryRunner.dropIndex('papel_cidadao', 'IDX_PAPEL_CIDADAO_CIDADAO');
-    await queryRunner.dropIndex('grupo_familiar', 'IDX_GRUPO_FAMILIAR_RESPONSAVEL');
-    await queryRunner.query(`DROP INDEX IF EXISTS IDX_CIDADAO_ENDERECO_BAIRRO;`);
+    await queryRunner.dropIndex(
+      'grupo_familiar',
+      'IDX_GRUPO_FAMILIAR_RESPONSAVEL',
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS IDX_CIDADAO_ENDERECO_BAIRRO;`,
+    );
     await queryRunner.query(`DROP INDEX IF EXISTS IDX_CIDADAO_NOME_GIN;`);
     await queryRunner.dropIndex('cidadao', 'IDX_CIDADAO_UNIDADE');
     await queryRunner.dropIndex('cidadao', 'IDX_CIDADAO_NIS');
@@ -1135,12 +1168,12 @@ export class CreateCidadaoSchema1020000 implements MigrationInterface {
     await queryRunner.dropTable('beneficio_social');
     await queryRunner.dropTable('composicao_familiar');
     await queryRunner.dropTable('situacao_moradia');
-    
+
     // Remover tabelas originais
     await queryRunner.dropTable('papel_cidadao');
     await queryRunner.dropTable('grupo_familiar');
     await queryRunner.dropTable('cidadao');
-    
+
     // 7. Remover tipos enumerados
     await queryRunner.query(`
       -- Remover novos tipos enumerados

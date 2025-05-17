@@ -38,7 +38,9 @@ describe('AuditoriaService', () => {
     }).compile();
 
     service = module.get<AuditoriaService>(AuditoriaService);
-    repository = module.get<Repository<LogAuditoria>>(getRepositoryToken(LogAuditoria));
+    repository = module.get<Repository<LogAuditoria>>(
+      getRepositoryToken(LogAuditoria),
+    );
   });
 
   it('deve ser definido', () => {
@@ -56,7 +58,7 @@ describe('AuditoriaService', () => {
       dto.dados_novos = { nome: 'Documento 1' };
       dto.usuario_id = 'user-123';
       dto.ip_origem = '127.0.0.1';
-      
+
       const createLogAuditoriaDto = dto;
 
       const logAuditoria = new LogAuditoria();
@@ -89,7 +91,9 @@ describe('AuditoriaService', () => {
       const count = 2;
 
       const queryBuilder = repository.createQueryBuilder();
-      jest.spyOn(queryBuilder, 'getManyAndCount').mockResolvedValue([logs, count]);
+      jest
+        .spyOn(queryBuilder, 'getManyAndCount')
+        .mockResolvedValue([logs, count]);
 
       const result = await service.findAll(queryParams);
 
