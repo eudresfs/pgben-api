@@ -16,7 +16,7 @@ import { ApiTags } from '@nestjs/swagger';
  * Fornece endpoints para verificar a saúde da aplicação
  * e seus componentes (banco de dados, memória, disco, etc.)
  */
-@ApiTags('health')
+@ApiTags('Métricas')
 @Controller('health')
 export class HealthController {
   constructor(

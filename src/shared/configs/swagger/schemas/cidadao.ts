@@ -1,29 +1,30 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 /**
- * DTO para endereço
+ * DTO básico para endereço
  */
 export class EnderecoDto {
   @ApiProperty({
-    description: 'CEP',
+    description: 'CEP no formato 00000000 (apenas números)',
     example: '59000000',
+    pattern: '^[0-9]{8}$',
   })
   cep: string;
 
   @ApiProperty({
-    description: 'Logradouro',
-    example: 'Rua Exemplo',
+    description: 'Logradouro (rua, avenida, etc)',
+    example: 'Rua das Flores',
   })
   logradouro: string;
 
-  @ApiProperty({
-    description: 'Número',
+  @ApiProperty({    
+    description: 'Número do imóvel',
     example: '123',
   })
   numero: string;
 
   @ApiProperty({
-    description: 'Complemento',
+    description: 'Complemento do endereço',
     example: 'Apto 101',
     required: false,
   })
@@ -42,182 +43,131 @@ export class EnderecoDto {
   cidade: string;
 
   @ApiProperty({
-    description: 'UF',
+    description: 'UF (estado)',
     example: 'RN',
-    maxLength: 2,
-    minLength: 2,
+    pattern: '^[A-Z]{2}$',
   })
   uf: string;
 }
 
 /**
- * DTO base para cidadão
+ * DTO para criação de cidadão
  */
-export class CidadaoBaseDto {
+export class CreateCidadaoDto {
   @ApiProperty({
-    description: 'Nome completo',
+    description: 'Nome completo do cidadão',
     example: 'João da Silva',
   })
   nome: string;
 
   @ApiProperty({
-    description: 'Nome social',
-    example: 'Joana',
-    required: false,
-  })
-  nomeSocial?: string;
-
-  @ApiProperty({
-    description: 'CPF (apenas números)',
+    description: 'CPF no formato 00000000000 (apenas números)',
     example: '12345678900',
+    pattern: '^[0-9]{11}$',
   })
   cpf: string;
 
   @ApiProperty({
-    description: 'RG',
-    example: '1234567',
+    description: 'NIS (Número de Identificação Social)',
+    example: '12345678901',
+    required: false,
   })
-  rg: string;
+  nis?: string;
 
   @ApiProperty({
-    description: 'Órgão emissor do RG',
-    example: 'SSP/RN',
-  })
-  orgaoEmissor: string;
-
-  @ApiProperty({
-    description: 'UF do órgão emissor',
-    example: 'RN',
-    maxLength: 2,
-    minLength: 2,
-  })
-  ufOrgaoEmissor: string;
-
-  @ApiProperty({
-    description: 'Data de nascimento (ISO 8601)',
+    description: 'Data de nascimento no formato YYYY-MM-DD',
     example: '1990-01-01',
+    type: 'string',
+    format: 'date',
   })
   dataNascimento: string;
 
   @ApiProperty({
-    description: 'Sexo (M, F ou O)',
+    description: 'Gênero',
     example: 'M',
     enum: ['M', 'F', 'O'],
   })
-  sexo: string;
+  genero: string;
 
   @ApiProperty({
-    description: 'Nome da mãe',
-    example: 'Maria da Silva',
+    description: 'Telefone no formato DDD + número',
+    example: '84999999999',
   })
-  nomeMae: string;
-
-  @ApiProperty({
-    description: 'Nome do pai',
-    example: 'José da Silva',
-    required: false,
-  })
-  nomePai?: string;
-
-  @ApiProperty({
-    description: 'Estado civil',
-    example: 'SOLTEIRO',
-    enum: ['SOLTEIRO', 'CASADO', 'DIVORCIADO', 'VIUVO', 'SEPARADO', 'UNIAO_ESTAVEL'],
-  })
-  estadoCivil: string;
-
-  @ApiProperty({
-    description: 'Grau de instrução',
-    example: 'ENSINO_MEDIO_COMPLETO',
-    enum: [
-      'ANALFABETO',
-      'ENSINO_FUNDAMENTAL_INCOMPLETO',
-      'ENSINO_FUNDAMENTAL_COMPLETO',
-      'ENSINO_MEDIO_INCOMPLETO',
-      'ENSINO_MEDIO_COMPLETO',
-      'SUPERIOR_INCOMPLETO',
-      'SUPERIOR_COMPLETO',
-      'POS_GRADUACAO',
-      'MESTRADO',
-      'DOUTORADO',
-    ],
-  })
-  grauInstrucao: string;
-
-  @ApiProperty({
-    description: 'Renda familiar',
-    example: 2000.5,
-  })
-  rendaFamiliar: number;
-
-  @ApiProperty({
-    description: 'Número de dependentes',
-    example: 2,
-    default: 0,
-  })
-  numeroDependentes?: number;
-
-  @ApiProperty({
-    description: 'Telefone principal',
-    example: '84999998888',
-  })
-  telefone1: string;
-
-  @ApiProperty({
-    description: 'Telefone secundário',
-    example: '84999997777',
-    required: false,
-  })
-  telefone2?: string;
+  telefone: string;
 
   @ApiProperty({
     description: 'E-mail',
-    example: 'joao@exemplo.com',
+    example: 'joao.silva@email.com',
+    required: false,
   })
-  email: string;
+  email?: string;
 
   @ApiProperty({
-    description: 'Endereço',
+    description: 'Endereço residencial',
     type: EnderecoDto,
   })
   endereco: EnderecoDto;
 }
 
 /**
- * DTO para criação de cidadão
+ * DTO para resposta de cidadão
  */
-export class CreateCidadaoDto extends CidadaoBaseDto {}
+export class CidadaoResponseDto extends CreateCidadaoDto {
+  @ApiProperty({
+    description: 'Identificador único do cidadão',
+    example: '5f8d3b4e3b4f3b2d3c2e1d2f',
+  })
+  id: string;
+
+  @ApiProperty({
+    description: 'Data e hora de criação do registro',
+    example: '2025-05-18T12:00:00.000Z',
+  })
+  createdAt: Date;
+
+  @ApiProperty({
+    description: 'Data e hora da última atualização do registro',
+    example: '2025-05-18T12:00:00.000Z',
+  })
+  updatedAt: Date;
+}
 
 /**
  * DTO para atualização de cidadão
  */
-export class UpdateCidadaoDto extends CidadaoBaseDto {
+export class UpdateCidadaoDto {
   @ApiProperty({
-    description: 'ID do cidadão',
-    example: '5f8d3b4e3b4f3b2d3c2e1d2f',
+    description: 'Nome completo do cidadão',
+    example: 'João da Silva',
+    required: false,
   })
-  id: string;
-}
-
-/**
- * DTO para resposta de cidadão
- */
-export class CidadaoResponseDto extends CidadaoBaseDto {
-  @ApiProperty({
-    description: 'ID do cidadão',
-    example: '5f8d3b4e3b4f3b2d3c2e1d2f',
-  })
-  id: string;
+  nome?: string;
 
   @ApiProperty({
-    description: 'Data de criação',
-    example: '2025-05-17T21:50:07.000Z',
+    description: 'NIS (Número de Identificação Social)',
+    example: '12345678901',
+    required: false,
   })
-  createdAt: string;
+  nis?: string;
 
   @ApiProperty({
-    description: 'Data da última atualização',
-    example: '2025-05-17T21:50:07.000Z',
+    description: 'Telefone no formato DDD + número',
+    example: '84999999999',
+    required: false,
   })
-  updatedAt: string;
+  telefone?: string;
+
+  @ApiProperty({
+    description: 'E-mail',
+    example: 'joao.silva@email.com',
+    required: false,
+  })
+  email?: string;
+
+  @ApiProperty({
+    description: 'Endereço residencial',
+    type: EnderecoDto,
+    required: false,
+  })
+  endereco?: EnderecoDto;
 }

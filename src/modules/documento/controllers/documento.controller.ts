@@ -67,7 +67,7 @@ declare global {
  * Responsável por gerenciar as rotas relacionadas aos documentos
  * anexados às solicitações de benefícios
  */
-@ApiTags('documentos')
+@ApiTags('Documentos')
 @Controller('v1/documento')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()

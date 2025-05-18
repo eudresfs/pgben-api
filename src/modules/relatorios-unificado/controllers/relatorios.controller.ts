@@ -36,7 +36,7 @@ import {
  * Responsável por gerenciar as rotas relacionadas aos relatórios
  * gerenciais e operacionais do sistema
  */
-@ApiTags('relatorios')
+@ApiTags('Relatórios')
 @Controller('v1/relatorios')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()

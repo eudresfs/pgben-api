@@ -25,7 +25,7 @@ import { Role } from '../../../shared/enums/role.enum';
 /**
  * Controlador para gerenciamento de templates de notificação
  */
-@ApiTags('Notificação - Templates')
+@ApiTags('Notificações')
 @Controller('v1/notificacao/templates')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()

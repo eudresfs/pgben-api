@@ -25,24 +25,13 @@ import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../auth/guards/roles.guard';
 import { Roles } from '../../../auth/decorators/role.decorator';
 import { Role } from '../../../shared/enums/role.enum';
-// Importando os exemplos do Swagger para os benefícios
-import {
-  tipoBeneficioExemplo,
-  tiposBeneficioLista,
-  createTipoBeneficioRequest,
-  updateTipoBeneficioRequest,
-  erroValidacaoResponse,
-  naoEncontradoResponse,
-  conflitoResponse,
-  listaPaginadaBeneficiosResponse
-} from '@/shared/configs/swagger/examples/beneficio';
 
 /**
  * Controlador de benefícios
  *
  * Responsável por gerenciar as rotas relacionadas a tipos de benefícios
  */
-@ApiTags('beneficios')
+@ApiTags('Benefícios')
 @Controller('v1/beneficio')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
@@ -62,7 +51,7 @@ export class BeneficioController {
     description: 'Lista de benefícios retornada com sucesso',
     content: {
       'application/json': {
-        example: listaPaginadaBeneficiosResponse
+        example: ""
       }
     }
   })
@@ -117,7 +106,7 @@ export class BeneficioController {
     description: 'Benefício encontrado com sucesso',
     content: {
       'application/json': {
-        example: tipoBeneficioExemplo
+        example: ""
       }
     }
   })
@@ -126,7 +115,7 @@ export class BeneficioController {
     description: 'Benefício não encontrado',
     content: {
       'application/json': {
-        example: naoEncontradoResponse
+        example: ""
       }
     }
   })
@@ -147,7 +136,7 @@ export class BeneficioController {
     type: CreateTipoBeneficioDto,
     examples: {
       'Auxílio Emergencial': {
-        value: createTipoBeneficioRequest
+        value: ""
       }
     }
   })
@@ -156,7 +145,7 @@ export class BeneficioController {
     description: 'Benefício criado com sucesso',
     content: {
       'application/json': {
-        example: tipoBeneficioExemplo
+        example: ""
       }
     }
   })
@@ -165,7 +154,7 @@ export class BeneficioController {
     description: 'Dados inválidos',
     content: {
       'application/json': {
-        example: erroValidacaoResponse
+        example: ""
       }
     }
   })
@@ -174,7 +163,7 @@ export class BeneficioController {
     description: 'Nome já em uso',
     content: {
       'application/json': {
-        example: conflitoResponse
+        example: ""
       }
     }
   })
@@ -195,7 +184,7 @@ export class BeneficioController {
     type: UpdateTipoBeneficioDto,
     examples: {
       'Atualização de Benefício': {
-        value: updateTipoBeneficioRequest
+        value: ""
       }
     }
   })
@@ -204,7 +193,7 @@ export class BeneficioController {
     description: 'Benefício atualizado com sucesso',
     content: {
       'application/json': {
-        example: tipoBeneficioExemplo
+        example: ""
       }
     }
   })
@@ -213,7 +202,7 @@ export class BeneficioController {
     description: 'Dados inválidos',
     content: {
       'application/json': {
-        example: erroValidacaoResponse
+        example: ""
       }
     }
   })
@@ -222,7 +211,7 @@ export class BeneficioController {
     description: 'Benefício não encontrado',
     content: {
       'application/json': {
-        example: naoEncontradoResponse
+        example: ""
       }
     }
   })
@@ -231,7 +220,7 @@ export class BeneficioController {
     description: 'Nome já em uso',
     content: {
       'application/json': {
-        example: conflitoResponse
+        example: ""
       }
     }
   })

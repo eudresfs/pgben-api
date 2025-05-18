@@ -21,17 +21,11 @@ import {
   ApiBody,
   getSchemaPath,
 } from '@nestjs/swagger';
-import {
-  criarSolicitacaoPayload,
-  criarSolicitacaoResponse,
-  avaliarSolicitacaoPayload,
-  avaliarSolicitacaoResponse,
-} from '../../../shared/configs/swagger/swagger-payloads';
 import { SolicitacaoService } from '../services/solicitacao.service';
 import { CreateSolicitacaoDto } from '../dto/create-solicitacao.dto';
 import { UpdateSolicitacaoDto } from '../dto/update-solicitacao.dto';
 import { AvaliarSolicitacaoDto } from '../dto/avaliar-solicitacao.dto';
-import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../auth/guards/roles.guard';
 import { Roles } from '../../../auth/decorators/role.decorator';
 import { Role } from '../../../shared/enums/role.enum';
@@ -43,7 +37,7 @@ import { Request } from 'express';
  *
  * Responsável por gerenciar as rotas relacionadas às solicitações de benefícios
  */
-@ApiTags('solicitacoes')
+@ApiTags('Solicitações')
 @Controller('v1/solicitacao')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
@@ -297,14 +291,14 @@ export class SolicitacaoController {
   @ApiBody({
     description: 'Dados da avaliação da solicitação',
     schema: {
-      example: avaliarSolicitacaoPayload,
+      example: "",
     },
   })
   @ApiResponse({
     status: 200,
     description: 'Solicitação avaliada com sucesso',
     schema: {
-      example: avaliarSolicitacaoResponse,
+      example: "",
     },
   })
   @ApiResponse({

@@ -16,7 +16,7 @@ import { MetricasAnomaliasService } from '../services/metricas-anomalia.service'
  * 2. Detectar anomalias em séries históricas
  * 3. Gerar previsões baseadas em dados históricos
  */
-@ApiTags('métricas-analise')
+@ApiTags('Métricas')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('v1/metricas/analise')

@@ -10,8 +10,8 @@ import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
  * Expõe endpoints para acesso às métricas avançadas da aplicação
  * no formato do Prometheus, com foco em segurança e compliance LGPD
  */
-@ApiTags('monitoring')
-@Controller('monitoring/metrics')
+@ApiTags('Monitoramento')
+@Controller('monitoramento/metricas')
 export class EnhancedMetricsController {
   constructor(private readonly metricsService: EnhancedMetricsService) {}
 

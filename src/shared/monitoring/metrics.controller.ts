@@ -10,8 +10,8 @@ import { ApiTags } from '@nestjs/swagger';
  * Expõe endpoints para acesso às métricas da aplicação
  * no formato do Prometheus
  */
-@ApiTags('metrics')
-@Controller('metrics')
+@ApiTags('Métricas')
+@Controller('metricas')
 export class MetricsController {
   constructor(private readonly metricsService: MetricsService) {}
 

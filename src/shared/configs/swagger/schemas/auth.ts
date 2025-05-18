@@ -1,25 +1,24 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 /**
- * DTO para login de usuário
+ * DTO para requisição de login
  */
-export class LoginDto {
+export class LoginRequestDto {
   @ApiProperty({
-    description: 'CPF do usuário (apenas números)',
-    example: '12345678900',
+    description: 'Nome de usuário ou e-mail',
+    example: 'usuario@semtas.natal.rn.gov.br',
   })
-  cpf: string;
+  username: string;
 
   @ApiProperty({
     description: 'Senha do usuário',
     example: 'Senha@123',
-    minLength: 8,
   })
-  senha: string;
+  password: string;
 }
 
 /**
- * DTO para resposta de login
+ * DTO para resposta de login bem-sucedido
  */
 export class LoginResponseDto {
   @ApiProperty({
@@ -29,30 +28,24 @@ export class LoginResponseDto {
   accessToken: string;
 
   @ApiProperty({
-    description: 'Token de atualização JWT',
+    description: 'Token de atualização para renovar o accessToken',
     example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
   })
   refreshToken: string;
 
   @ApiProperty({
-    description: 'Tempo de expiração do token de acesso em segundos',
+    description: 'Tempo de expiração do token em segundos',
     example: 3600,
   })
   expiresIn: number;
-
-  @ApiProperty({
-    description: 'Tipo do token',
-    example: 'Bearer',
-  })
-  tokenType: string;
 }
 
 /**
  * DTO para renovação de token
  */
-export class RefreshTokenDto {
+export class RefreshTokenRequestDto {
   @ApiProperty({
-    description: 'Token de atualização',
+    description: 'Token de atualização obtido no login',
     example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
   })
   refreshToken: string;
@@ -63,64 +56,20 @@ export class RefreshTokenDto {
  */
 export class AlterarSenhaDto {
   @ApiProperty({
-    description: 'Senha atual',
-    example: 'SenhaAtual@123',
+    description: 'Senha atual do usuário',
+    example: 'Senha@123',
   })
   senhaAtual: string;
 
   @ApiProperty({
-    description: 'Nova senha',
+    description: 'Nova senha do usuário',
     example: 'NovaSenha@123',
-    minLength: 8,
   })
   novaSenha: string;
 
   @ApiProperty({
     description: 'Confirmação da nova senha',
     example: 'NovaSenha@123',
-    minLength: 8,
   })
-  confirmarNovaSenha: string;
-}
-
-/**
- * DTO para recuperação de senha
- */
-export class RecuperarSenhaDto {
-  @ApiProperty({
-    description: 'CPF do usuário',
-    example: '12345678900',
-  })
-  cpf: string;
-
-  @ApiProperty({
-    description: 'E-mail cadastrado',
-    example: 'usuario@exemplo.com',
-  })
-  email: string;
-}
-
-/**
- * DTO para redefinição de senha
- */
-export class RedefinirSenhaDto {
-  @ApiProperty({
-    description: 'Token de redefinição de senha',
-    example: 'token-aleatorio-123',
-  })
-  token: string;
-
-  @ApiProperty({
-    description: 'Nova senha',
-    example: 'NovaSenha@123',
-    minLength: 8,
-  })
-  novaSenha: string;
-
-  @ApiProperty({
-    description: 'Confirmação da nova senha',
-    example: 'NovaSenha@123',
-    minLength: 8,
-  })
-  confirmarNovaSenha: string;
+  confirmacaoSenha: string;
 }

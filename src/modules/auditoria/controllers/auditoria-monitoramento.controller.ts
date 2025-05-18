@@ -5,7 +5,7 @@ import { AuditoriaMonitoramentoService } from '../services/auditoria-monitoramen
 /**
  * Controlador para monitoramento do módulo de auditoria
  */
-@ApiTags('Auditoria - Monitoramento')
+@ApiTags('Auditoria')
 @Controller('v1/auditoria/monitoramento')
 export class AuditoriaMonitoramentoController {
   private readonly logger = new Logger(AuditoriaMonitoramentoController.name);

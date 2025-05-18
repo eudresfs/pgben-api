@@ -27,7 +27,7 @@ import { JwtRefreshGuard } from '../guards/jwt-refresh.guard';
 import { LocalAuthGuard } from '../guards/local-auth.guard';
 import { AuthService } from '../services/auth.service';
 
-@ApiTags('auth')
+@ApiTags('Autenticação')
 @Controller('v1/auth') 
 export class AuthController {
   constructor(

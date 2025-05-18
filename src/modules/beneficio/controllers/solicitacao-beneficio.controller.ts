@@ -30,24 +30,12 @@ import { SolicitacaoBeneficio, StatusSolicitacaoBeneficio } from '../entities/so
 import { TipoBeneficio } from '../entities/tipo-beneficio.entity';
 import { HistoricoSolicitacaoBeneficio } from '../entities/historico-solicitacao.entity';
 
-// Importando os exemplos do Swagger para as solicitações de benefício
-import {
-  solicitacaoBeneficioExemplo, 
-  createSolicitacaoBeneficioRequest, 
-  updateStatusSolicitacaoRequest,
-  listaSolicitacoesResponse,
-  historicoSolicitacaoResponse,
-  erroValidacaoResponse,
-  naoEncontradoResponse,
-  conflitoResponse
-} from '@/shared/configs/swagger/examples/beneficio';
-
 /**
  * Controlador de Solicitações de Benefício
  *
  * Responsável por gerenciar as solicitações de benefícios com suporte a campos dinâmicos.
  */
-@ApiTags('solicitacao-beneficio')
+@ApiTags('Benefícios')
 @Controller('v1/solicitacao')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
@@ -78,7 +66,7 @@ export class SolicitacaoBeneficioController {
     type: CreateSolicitacaoBeneficioDto,
     examples: {
       'Solicitação de Auxílio Emergencial': {
-        value: createSolicitacaoBeneficioRequest
+        value: ""
       }
     }
   })
@@ -89,7 +77,7 @@ export class SolicitacaoBeneficioController {
       'application/json': {
         example: {
           message: 'Solicitação criada com sucesso',
-          solicitacao: solicitacaoBeneficioExemplo
+          solicitacao: ""
         }
       }
     }
@@ -99,7 +87,7 @@ export class SolicitacaoBeneficioController {
     description: 'Dados inválidos',
     content: {
       'application/json': {
-        example: erroValidacaoResponse
+        example: ""
       }
     }
   })
@@ -108,7 +96,7 @@ export class SolicitacaoBeneficioController {
     description: 'Tipo de benefício não encontrado',
     content: {
       'application/json': {
-        example: naoEncontradoResponse
+        example: ""
       }
     }
   })
@@ -168,7 +156,7 @@ export class SolicitacaoBeneficioController {
     description: 'Lista de solicitações retornada com sucesso',
     content: {
       'application/json': {
-        example: listaSolicitacoesResponse
+        example: ""
       }
     }
   })
@@ -230,7 +218,7 @@ export class SolicitacaoBeneficioController {
     description: 'Solicitação retornada com sucesso',
     content: {
       'application/json': {
-        example: solicitacaoBeneficioExemplo
+        example: SolicitacaoBeneficio
       }
     }
   })
@@ -239,7 +227,7 @@ export class SolicitacaoBeneficioController {
     description: 'Solicitação não encontrada',
     content: {
       'application/json': {
-        example: naoEncontradoResponse
+        example: ""
       }
     }
   })
@@ -265,7 +253,7 @@ export class SolicitacaoBeneficioController {
     type: UpdateStatusSolicitacaoDto,
     examples: {
       'Atualização de Status': {
-        value: updateStatusSolicitacaoRequest
+        value: UpdateStatusSolicitacaoDto
       }
     }
   })
@@ -276,7 +264,7 @@ export class SolicitacaoBeneficioController {
       'application/json': {
         example: {
           message: 'Status atualizado com sucesso',
-          solicitacao: solicitacaoBeneficioExemplo
+          solicitacao: SolicitacaoBeneficio
         }
       }
     }
@@ -286,7 +274,7 @@ export class SolicitacaoBeneficioController {
     description: 'Dados inválidos ou transição de status inválida',
     content: {
       'application/json': {
-        example: erroValidacaoResponse
+        example: ""
       }
     }
   })
@@ -295,7 +283,7 @@ export class SolicitacaoBeneficioController {
     description: 'Solicitação não encontrada',
     content: {
       'application/json': {
-        example: naoEncontradoResponse
+        example: ""
       }
     }
   })
@@ -359,7 +347,7 @@ export class SolicitacaoBeneficioController {
     description: 'Histórico retornado com sucesso',
     content: {
       'application/json': {
-        example: historicoSolicitacaoResponse
+        example: ""
       }
     }
   })
@@ -368,7 +356,7 @@ export class SolicitacaoBeneficioController {
     description: 'Solicitação não encontrada',
     content: {
       'application/json': {
-        example: naoEncontradoResponse
+        example: ""
       }
     }
   })

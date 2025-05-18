@@ -32,7 +32,7 @@ import { Role } from '../../../shared/enums/role.enum';
  *
  * Responsável por gerenciar as rotas relacionadas a usuários
  */
-@ApiTags('usuarios')
+@ApiTags('Usuários')
 @Controller('v1/usuario')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()

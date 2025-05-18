@@ -15,7 +15,7 @@ import { RolesGuard } from '../../../auth/guards/roles.guard';
  * Responsável por fornecer a estrutura de formulários dinâmicos
  * específicos para cada tipo de benefício.
  */
-@ApiTags('formularios-dinamicos-beneficio')
+@ApiTags('Benefícios')
 @Controller('v1/beneficio/:tipoBeneficioId/formulario')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()

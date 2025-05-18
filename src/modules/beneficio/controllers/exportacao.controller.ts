@@ -17,7 +17,7 @@ import { ExportacaoService } from '../services/exportacao.service';
  * Responsável por fornecer endpoints para exportação de dados de solicitações
  * de benefícios em diferentes formatos.
  */
-@ApiTags('exportacao-beneficio')
+@ApiTags('Benefícios')
 @Controller('v1/beneficio/exportacao')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()

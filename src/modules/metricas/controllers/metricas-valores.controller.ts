@@ -22,7 +22,7 @@ import {
  * 3. Comparar valores entre períodos
  * 4. Executar coleta manual de métricas
  */
-@ApiTags('métricas-valores')
+@ApiTags('Métricas')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('v1/metricas/valores')

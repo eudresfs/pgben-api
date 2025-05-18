@@ -30,7 +30,7 @@ import { Role } from '../../../shared/enums/role.enum';
  *
  * Responsável por gerenciar as rotas relacionadas a unidades (CRAS, CREAS, etc.)
  */
-@ApiTags('unidades')
+@ApiTags('Unidades')
 @Controller('v1/unidade')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()

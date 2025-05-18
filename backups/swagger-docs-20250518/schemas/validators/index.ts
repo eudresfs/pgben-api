@@ -6,4 +6,7 @@
  */
 
 // Exporta os validadores
-export {};
+export * from './cpf.validator';
+export * from './nis.validator';
+export * from './telefone.validator';
+export * from './cep.validator';

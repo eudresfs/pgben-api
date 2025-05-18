@@ -30,7 +30,7 @@ import { TipoPapel } from '../entities/papel-cidadao.entity';
  * Gerencia os diferentes papéis que um cidadão pode assumir no sistema
  * (beneficiário, requerente, representante legal).
  */
-@ApiTags('papel-cidadao')
+@ApiTags('Cidadão')
 @Controller('v1/cidadao/papel')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()

@@ -27,7 +27,7 @@ import { Role } from '../../../shared/enums/role.enum';
  * Responsável por gerenciar as rotas relacionadas a campos dinâmicos
  * específicos para cada tipo de benefício.
  */
-@ApiTags('campos-dinamicos-beneficio')
+@ApiTags('Benefícios')
 @Controller('v1/beneficio/:tipoBeneficioId/campos-dinamicos')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()

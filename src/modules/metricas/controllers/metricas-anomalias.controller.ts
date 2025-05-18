@@ -10,7 +10,7 @@ import { Roles } from '@/auth';
 /**
  * Controlador para detecção de anomalias e análise de tendências
  */
-@ApiTags('Métricas - Anomalias e Tendências')
+@ApiTags('Métricas')
 @Controller('v1/metricas/analise')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()

@@ -1,27 +1,17 @@
 /**
- * Arquivo de barril para exportação de todos os schemas
+ * Índice centralizador de schemas (DTOs) para documentação Swagger
  * 
- * Este arquivo serve como um ponto de entrada centralizado para todos os schemas
- * utilizados na documentação da API, organizados por domínio e finalidade.
+ * Este arquivo exporta schemas básicos e essenciais para a API
  */
 
-// Schemas comuns - exporta apenas os tipos específicos necessários
-export {
-  ErrorResponse,
-  SuccessResponse,
-  PaginatedResponse,
-  PaginatedMeta,
-  ValidationErrorResponse
-} from './common';
+// Schemas comuns (paginação, erro, etc)
+export * from './common';
 
-// Schemas de domínio
+// Autenticação
 export * from './auth';
-export * from './beneficio';
+
+// Cidadão
 export * from './cidadao';
-export * from './documento';
 
-// Tipos de dados comuns - exporta apenas os tipos específicos necessários
-export type { PaginationMeta, PaginationQueryParams } from './types';
-
-// Utilitários de validação
-export * from './validators';
+// Benefícios
+export * from './beneficio';

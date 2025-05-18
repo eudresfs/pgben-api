@@ -1,35 +1,63 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 /**
- * DTO para tipo de benefício
+ * DTO para criação de tipo de benefício
  */
-export class TipoBeneficioDto {
+export class CreateTipoBeneficioDto {
   @ApiProperty({
-    description: 'ID do tipo de benefício',
-    example: '5f8d3b4e3b4f3b2d3c2e1d2f',
-  })
-  id: string;
-
-  @ApiProperty({
-    description: 'Nome do benefício',
-    example: 'Auxílio Emergencial',
+    description: 'Nome do tipo de benefício',
+    example: 'Auxílio Moradia',
   })
   nome: string;
 
   @ApiProperty({
-    description: 'Descrição do benefício',
-    example: 'Auxílio financeiro temporário para famílias em situação de vulnerabilidade',
+    description: 'Descrição detalhada do benefício',
+    example: 'Auxílio financeiro para famílias em situação de vulnerabilidade social com fim habitacional',
   })
   descricao: string;
 
   @ApiProperty({
-    description: 'Valor do benefício',
-    example: 600.0,
+    description: 'Base legal que institui o benefício',
+    example: 'Lei Municipal 7.205/2021',
+  })
+  baseLegal: string;
+
+  @ApiProperty({
+    description: 'Valor do benefício em Reais',
+    example: 400.00,
+    type: 'number',
+    format: 'float',
   })
   valor: number;
 
   @ApiProperty({
-    description: 'Indica se o benefício está ativo',
+    description: 'Periodicidade do benefício',
+    example: 'MENSAL',
+    enum: ['UNICO', 'MENSAL', 'BIMESTRAL', 'TRIMESTRAL', 'SEMESTRAL', 'ANUAL'],
+  })
+  periodicidade: string;
+
+  @ApiProperty({
+    description: 'Número máximo de parcelas (0 = sem limite)',
+    example: 12,
+    default: 0,
+  })
+  limiteParcelas: number;
+
+  @ApiProperty({
+    description: 'Critérios de elegibilidade em formato JSON',
+    example: {
+      rendaPerCapita: { max: 178.0 },
+      idade: { min: 18 },
+      tempoResidenciaCidade: { min: 12, unidade: 'meses' },
+    },
+    type: 'object',
+    additionalProperties: true
+  })
+  criteriosElegibilidade: Record<string, any>;
+
+  @ApiProperty({
+    description: 'Se o benefício está ativo para solicitações',
     example: true,
     default: true,
   })
@@ -37,93 +65,95 @@ export class TipoBeneficioDto {
 }
 
 /**
- * DTO para criação de tipo de benefício
+ * DTO para resposta de tipo de benefício
  */
-export class CreateTipoBeneficioDto {
+export class TipoBeneficioResponseDto extends CreateTipoBeneficioDto {
   @ApiProperty({
-    description: 'Nome do benefício',
-    example: 'Auxílio Emergencial',
+    description: 'Identificador único do tipo de benefício',
+    example: '5f8d3b4e3b4f3b2d3c2e1d2f',
   })
-  nome: string;
+  id: string;
 
   @ApiProperty({
-    description: 'Descrição do benefício',
-    example: 'Auxílio financeiro temporário para famílias em situação de vulnerabilidade',
+    description: 'Data e hora de criação do registro',
+    example: '2025-05-18T12:00:00.000Z',
   })
-  descricao: string;
+  createdAt: Date;
 
   @ApiProperty({
-    description: 'Valor do benefício',
-    example: 600.0,
+    description: 'Data e hora da última atualização do registro',
+    example: '2025-05-18T12:00:00.000Z',
   })
-  valor: number;
+  updatedAt: Date;
 }
 
 /**
  * DTO para atualização de tipo de benefício
  */
-export class UpdateTipoBeneficioDto extends CreateTipoBeneficioDto {
+export class UpdateTipoBeneficioDto {
   @ApiProperty({
-    description: 'ID do tipo de benefício',
-    example: '5f8d3b4e3b4f3b2d3c2e1d2f',
-  })
-  id: string;
-
-  @ApiProperty({
-    description: 'Indica se o benefício está ativo',
-    example: true,
-    default: true,
-  })
-  ativo?: boolean;
-}
-
-/**
- * DTO para solicitação de benefício
- */
-export class SolicitacaoBeneficioDto {
-  @ApiProperty({
-    description: 'ID da solicitação',
-    example: '5f8d3b4e3b4f3b2d3c2e1d2f',
-  })
-  id: string;
-
-  @ApiProperty({
-    description: 'ID do cidadão solicitante',
-    example: '5f8d3b4e3b4f3b2d3c2e1d2f',
-  })
-  cidadaoId: string;
-
-  @ApiProperty({
-    description: 'Tipo de benefício solicitado',
-    type: TipoBeneficioDto,
-  })
-  tipoBeneficio: TipoBeneficioDto;
-
-  @ApiProperty({
-    description: 'Status da solicitação',
-    example: 'EM_ANALISE',
-    enum: ['RASCUNHO', 'EM_ANALISE', 'APROVADA', 'REPROVADA', 'CANCELADA', 'CONCLUIDA'],
-  })
-  status: string;
-
-  @ApiProperty({
-    description: 'Data da solicitação',
-    example: '2025-05-17T21:50:07.000Z',
-  })
-  dataSolicitacao: string;
-
-  @ApiProperty({
-    description: 'Data da última atualização',
-    example: '2025-05-17T21:50:07.000Z',
-  })
-  dataAtualizacao: string;
-
-  @ApiProperty({
-    description: 'Observações sobre a solicitação',
-    example: 'Solicitação em análise pela equipe técnica',
+    description: 'Nome do tipo de benefício',
+    example: 'Auxílio Moradia',
     required: false,
   })
-  observacoes?: string;
+  nome?: string;
+
+  @ApiProperty({
+    description: 'Descrição detalhada do benefício',
+    example: 'Auxílio financeiro para famílias em situação de vulnerabilidade social com fim habitacional',
+    required: false,
+  })
+  descricao?: string;
+
+  @ApiProperty({
+    description: 'Base legal que institui o benefício',
+    example: 'Lei Municipal 7.205/2021',
+    required: false,
+  })
+  baseLegal?: string;
+
+  @ApiProperty({
+    description: 'Valor do benefício em Reais',
+    example: 400.00,
+    type: 'number',
+    format: 'float',
+    required: false,
+  })
+  valor?: number;
+
+  @ApiProperty({
+    description: 'Periodicidade do benefício',
+    example: 'MENSAL',
+    enum: ['UNICO', 'MENSAL', 'BIMESTRAL', 'TRIMESTRAL', 'SEMESTRAL', 'ANUAL'],
+    required: false,
+  })
+  periodicidade?: string;
+
+  @ApiProperty({
+    description: 'Número máximo de parcelas (0 = sem limite)',
+    example: 12,
+    required: false,
+  })
+  limiteParcelas?: number;
+
+  @ApiProperty({
+    description: 'Critérios de elegibilidade em formato JSON',
+    example: {
+      rendaPerCapita: { max: 178.0 },
+      idade: { min: 18 },
+      tempoResidenciaCidade: { min: 12, unidade: 'meses' },
+    },
+    type: 'object',
+    additionalProperties: true
+  })
+  criteriosElegibilidade?: Record<string, any>;
+
+  @ApiProperty({
+    description: 'Se o benefício está ativo para solicitações',
+    example: true,
+    required: false,
+  })
+  ativo?: boolean;
 }
 
 /**
@@ -137,34 +167,21 @@ export class CreateSolicitacaoBeneficioDto {
   cidadaoId: string;
 
   @ApiProperty({
-    description: 'ID do tipo de benefício',
+    description: 'ID do tipo de benefício solicitado',
     example: '5f8d3b4e3b4f3b2d3c2e1d2f',
   })
   tipoBeneficioId: string;
 
   @ApiProperty({
-    description: 'Observações sobre a solicitação',
-    example: 'Solicito o benefício em caráter emergencial',
-    required: false,
+    description: 'Dados específicos do benefício em formato JSON',
+    example: {
+      motivoSolicitacao: 'Perda de renda por desemprego',
+      possuiComprovanteResidencia: true,
+      rendaFamiliar: 850.00,
+      quantidadePessoas: 3,
+    },
+    type: 'object',
+    additionalProperties: true
   })
-  observacoes?: string;
-}
-
-/**
- * DTO para atualização de status de solicitação
- */
-export class UpdateStatusSolicitacaoDto {
-  @ApiProperty({
-    description: 'Novo status da solicitação',
-    example: 'APROVADA',
-    enum: ['EM_ANALISE', 'APROVADA', 'REPROVADA', 'CANCELADA', 'CONCLUIDA'],
-  })
-  status: string;
-
-  @ApiProperty({
-    description: 'Observações sobre a mudança de status',
-    example: 'Solicitação aprovada conforme análise técnica',
-    required: false,
-  })
-  observacoes?: string;
+  dadosDinamicos: Record<string, any>;
 }

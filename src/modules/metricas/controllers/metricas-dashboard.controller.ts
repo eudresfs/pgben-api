@@ -15,7 +15,7 @@ import { MetricasService, MetricasAnomaliasService } from '../services';
  * 2. Listar alertas ativos de anomalias
  * 3. Obter KPIs configurados para dashboard
  */
-@ApiTags('métricas-dashboard')
+@ApiTags('Métricas')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('v1/metricas/dashboard')

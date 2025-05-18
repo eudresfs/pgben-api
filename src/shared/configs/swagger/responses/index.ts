@@ -1,16 +1,12 @@
 /**
- * Arquivo de barril para exportação de todas as respostas HTTP
+ * Índice para respostas padronizadas da API
  */
 
-// Respostas comuns
-export * from './common';
+// Respostas de erro (já implementado)
+export * from './errors';
 
-// Respostas específicas por domínio
+// Respostas de sucesso
+export * from './success';
+
+// Respostas de autenticação
 export * from './auth';
-export * from './beneficio';
-
-// Utilitários de resposta
-export * from './decorators';
-
-// Tipos de resposta
-export * from './types';

@@ -39,7 +39,7 @@ import { ApiErrorResponse } from '../../../shared/dtos/api-error-response.dto';
  *
  * Responsável por gerenciar as rotas relacionadas a cidadãos/beneficiários
  */
-@ApiTags('cidadaos')
+@ApiTags('Cidadão')
 @Controller('v1/cidadao')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()

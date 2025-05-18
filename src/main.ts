@@ -8,7 +8,8 @@ import {
   swaggerConfig,
   swaggerDocumentOptions,
   swaggerSetupOptions,
-} from './shared/configs/swagger/swagger-pt';
+  setupSwagger,
+} from './shared/configs/swagger';
 import { HealthCheckService } from './shared/services/health-check.service';
 import * as http from 'http';
 
@@ -53,12 +54,7 @@ async function bootstrap() {
     });
 
     // Configuração do Swagger
-    const document = SwaggerModule.createDocument(
-      app,
-      swaggerConfig,
-      swaggerDocumentOptions,
-    );
-    SwaggerModule.setup('api-docs', app, document, swaggerSetupOptions);
+    setupSwagger(app);
 
     // Configuração do pipe de validação global
     app.useGlobalPipes(
@@ -123,8 +119,7 @@ async function bootstrap() {
     
     logger.log('============================================');
     logger.log(`✅ Servidor iniciado com sucesso em http://localhost:${port}`);
-    logger.log(`✅ Swagger disponível em http://localhost:${port}/api-docs`);
-    logger.log(`✅ Prometheus disponível em http://localhost:${port}/api/prometheus`);
+    logger.log(`✅ Documentação da API disponível em http://localhost:${port}/api-docs`);
     logger.log(`✅ Ambiente: ${process.env.NODE_ENV || 'development'}`);
     logger.log('============================================');
 

@@ -30,7 +30,7 @@ import { Role } from '../../../shared/enums/role.enum';
  * Responsável por expor as funcionalidades de auditoria via API REST.
  * Permite consultar logs de auditoria e gerar relatórios.
  */
-@ApiTags('auditoria')
+@ApiTags('Auditoria')
 @Controller('v1/auditoria')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
