@@ -1,7 +1,1 @@
-export enum Role {
-  ADMIN = 'ADMIN',
-  TECNICO_UNIDADE = 'TECNICO_UNIDADE',
-  GESTOR_UNIDADE = 'GESTOR_UNIDADE',
-  GESTOR_MUNICIPAL = 'GESTOR_MUNICIPAL',
-  CIDADAO = 'CIDADAO',
-}
+export { Role } from '../../shared/enums/role.enum'
