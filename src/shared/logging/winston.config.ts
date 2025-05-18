@@ -21,7 +21,7 @@ export const winstonConfig: WinstonModuleOptions = {
           prettyPrint: true,
         }),
       ),
-      level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
+      level: process.env.NODE_ENV === 'production' ? 'warn' : 'info',
     }),
 
     // Arquivo de log para todos os níveis
@@ -36,7 +36,7 @@ export const winstonConfig: WinstonModuleOptions = {
         winston.format.timestamp(),
         winston.format.json(),
       ),
-      level: 'info',
+      level: 'warn',
     }),
 
     // Arquivo de log específico para erros

@@ -31,7 +31,7 @@ import { Role } from '../../../shared/enums/role.enum';
  * Permite consultar logs de auditoria e gerar relatórios.
  */
 @ApiTags('auditoria')
-@Controller('auditoria')
+@Controller('v1/auditoria')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
 export class AuditoriaController {

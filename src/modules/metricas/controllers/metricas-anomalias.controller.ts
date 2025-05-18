@@ -11,7 +11,7 @@ import { Roles } from '@/auth';
  * Controlador para detecção de anomalias e análise de tendências
  */
 @ApiTags('Métricas - Anomalias e Tendências')
-@Controller('metricas/analise')
+@Controller('v1/metricas/analise')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
 export class MetricasAnomaliasController {

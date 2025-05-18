@@ -6,15 +6,18 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { configModuleOptions } from './configs/module-options';
 import { HttpExceptionFilter } from './filters/http-exception.filter';
 import { LoggingInterceptor as AppLoggingInterceptor } from './interceptors/logging.interceptor';
-import { AppLoggerModule } from './logger/logger.module';
 
-// Novos módulos de logging e monitoramento
-import { LoggingModule } from './logging/logging.module';
+// Módulo unificado de logging
+import { UnifiedLoggerModule } from './logging/unified-logger.module';
+
+// Monitoramento
 import { MonitoringModule } from './monitoring/monitoring.module';
 import { LoggingInterceptor } from './logging/logging.interceptor';
 import { MetricsInterceptor } from './monitoring/metrics.interceptor';
 import { CriptografiaService } from './services/criptografia.service';
 import { MinioService } from './services/minio.service';
+import { ChaveMonitorService } from './services/chave-monitor.service';
+import { HealthCheckService } from './services/health-check.service';
 
 @Module({
   imports: [
@@ -37,23 +40,26 @@ import { MinioService } from './services/minio.service';
         debug: configService.get<string>('env') === 'development',
       }),
     }),
-    AppLoggerModule,
-    // Novos módulos
-    LoggingModule,
+    // Módulo unificado de logging
+    UnifiedLoggerModule,
+    // Monitoramento
     MonitoringModule,
   ],
   exports: [
-    AppLoggerModule,
+    UnifiedLoggerModule,
     ConfigModule,
-    LoggingModule,
     MonitoringModule,
     CriptografiaService,
     MinioService,
+    ChaveMonitorService,
+    HealthCheckService,
   ],
   providers: [
     // Serviços compartilhados
+    ChaveMonitorService,
     CriptografiaService,
     MinioService,
+    HealthCheckService,
 
     // Interceptores para logging e métricas
     { provide: APP_INTERCEPTOR, useClass: AppLoggingInterceptor },

@@ -16,6 +16,7 @@ import {
   ApiResponse,
   ApiBearerAuth,
   ApiQuery,
+  ApiBody,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../auth/guards/roles.guard';
@@ -29,13 +30,25 @@ import { SolicitacaoBeneficio, StatusSolicitacaoBeneficio } from '../entities/so
 import { TipoBeneficio } from '../entities/tipo-beneficio.entity';
 import { HistoricoSolicitacaoBeneficio } from '../entities/historico-solicitacao.entity';
 
+// Importando os exemplos do Swagger para as solicitações de benefício
+import {
+  solicitacaoBeneficioExemplo, 
+  createSolicitacaoBeneficioRequest, 
+  updateStatusSolicitacaoRequest,
+  listaSolicitacoesResponse,
+  historicoSolicitacaoResponse,
+  erroValidacaoResponse,
+  naoEncontradoResponse,
+  conflitoResponse
+} from '@/shared/configs/swagger/examples/beneficio';
+
 /**
  * Controlador de Solicitações de Benefício
  *
  * Responsável por gerenciar as solicitações de benefícios com suporte a campos dinâmicos.
  */
 @ApiTags('solicitacao-beneficio')
-@Controller('solicitacao')
+@Controller('v1/solicitacao')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
 export class SolicitacaoBeneficioController {
@@ -57,9 +70,48 @@ export class SolicitacaoBeneficioController {
    * @returns Solicitação criada
    */
   @Post()
-  @ApiOperation({ summary: 'Criar solicitação de benefício' })
-  @ApiResponse({ status: 201, description: 'Solicitação criada com sucesso' })
-  @ApiResponse({ status: 400, description: 'Dados inválidos' })
+  @ApiOperation({ 
+    summary: 'Criar solicitação de benefício',
+    description: 'Cria uma nova solicitação de benefício com suporte a campos dinâmicos.'
+  })
+  @ApiBody({
+    type: CreateSolicitacaoBeneficioDto,
+    examples: {
+      'Solicitação de Auxílio Emergencial': {
+        value: createSolicitacaoBeneficioRequest
+      }
+    }
+  })
+  @ApiResponse({ 
+    status: 201, 
+    description: 'Solicitação criada com sucesso',
+    content: {
+      'application/json': {
+        example: {
+          message: 'Solicitação criada com sucesso',
+          solicitacao: solicitacaoBeneficioExemplo
+        }
+      }
+    }
+  })
+  @ApiResponse({ 
+    status: 400, 
+    description: 'Dados inválidos',
+    content: {
+      'application/json': {
+        example: erroValidacaoResponse
+      }
+    }
+  })
+  @ApiResponse({ 
+    status: 404, 
+    description: 'Tipo de benefício não encontrado',
+    content: {
+      'application/json': {
+        example: naoEncontradoResponse
+      }
+    }
+  })
   async create(
     @Body() createSolicitacaoBeneficioDto: CreateSolicitacaoBeneficioDto,
   ) {
@@ -107,14 +159,37 @@ export class SolicitacaoBeneficioController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Listar solicitações de benefício' })
+  @ApiOperation({ 
+    summary: 'Listar solicitações de benefício',
+    description: 'Retorna uma lista de solicitações de benefício com filtros opcionais.'
+  })
   @ApiResponse({
     status: 200,
     description: 'Lista de solicitações retornada com sucesso',
+    content: {
+      'application/json': {
+        example: listaSolicitacoesResponse
+      }
+    }
   })
-  @ApiQuery({ name: 'cidadao_id', required: false, type: String })
-  @ApiQuery({ name: 'tipo_beneficio_id', required: false, type: String })
-  @ApiQuery({ name: 'status', required: false, enum: StatusSolicitacaoBeneficio })
+  @ApiQuery({ 
+    name: 'cidadao_id', 
+    required: false, 
+    type: String,
+    description: 'ID do cidadão para filtrar as solicitações'
+  })
+  @ApiQuery({ 
+    name: 'tipo_beneficio_id', 
+    required: false, 
+    type: String,
+    description: 'ID do tipo de benefício para filtrar as solicitações'
+  })
+  @ApiQuery({ 
+    name: 'status', 
+    required: false, 
+    enum: StatusSolicitacaoBeneficio,
+    description: 'Status para filtrar as solicitações'
+  })
   async findAll(
     @Query('cidadao_id') cidadaoId?: string,
     @Query('tipo_beneficio_id') tipoBeneficioId?: string,
@@ -146,12 +221,28 @@ export class SolicitacaoBeneficioController {
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Obter solicitação de benefício por ID' })
+  @ApiOperation({ 
+    summary: 'Obter solicitação de benefício por ID',
+    description: 'Retorna os detalhes completos de uma solicitação de benefício específica.'
+  })
   @ApiResponse({
     status: 200,
     description: 'Solicitação retornada com sucesso',
+    content: {
+      'application/json': {
+        example: solicitacaoBeneficioExemplo
+      }
+    }
   })
-  @ApiResponse({ status: 404, description: 'Solicitação não encontrada' })
+  @ApiResponse({ 
+    status: 404, 
+    description: 'Solicitação não encontrada',
+    content: {
+      'application/json': {
+        example: naoEncontradoResponse
+      }
+    }
+  })
   async findOne(@Param('id') id: string) {
     const solicitacao = await this.solicitacaoRepository.findOne({
       where: { id },
@@ -166,10 +257,48 @@ export class SolicitacaoBeneficioController {
   }
 
   @Patch(':id/status')
-  @ApiOperation({ summary: 'Atualizar status de uma solicitação de benefício' })
-  @ApiResponse({ status: 200, description: 'Status atualizado com sucesso' })
-  @ApiResponse({ status: 400, description: 'Dados inválidos' })
-  @ApiResponse({ status: 404, description: 'Solicitação não encontrada' })
+  @ApiOperation({ 
+    summary: 'Atualizar status de uma solicitação de benefício',
+    description: 'Atualiza o status de uma solicitação de benefício e registra o histórico da alteração.'
+  })
+  @ApiBody({
+    type: UpdateStatusSolicitacaoDto,
+    examples: {
+      'Atualização de Status': {
+        value: updateStatusSolicitacaoRequest
+      }
+    }
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Status atualizado com sucesso',
+    content: {
+      'application/json': {
+        example: {
+          message: 'Status atualizado com sucesso',
+          solicitacao: solicitacaoBeneficioExemplo
+        }
+      }
+    }
+  })
+  @ApiResponse({ 
+    status: 400, 
+    description: 'Dados inválidos ou transição de status inválida',
+    content: {
+      'application/json': {
+        example: erroValidacaoResponse
+      }
+    }
+  })
+  @ApiResponse({ 
+    status: 404, 
+    description: 'Solicitação não encontrada',
+    content: {
+      'application/json': {
+        example: naoEncontradoResponse
+      }
+    }
+  })
   async updateStatus(
     @Param('id') id: string,
     @Body() updateStatusDto: UpdateStatusSolicitacaoDto,
@@ -221,9 +350,28 @@ export class SolicitacaoBeneficioController {
   }
 
   @Get(':id/historico')
-  @ApiOperation({ summary: 'Obter histórico de status de uma solicitação' })
-  @ApiResponse({ status: 200, description: 'Histórico retornado com sucesso' })
-  @ApiResponse({ status: 404, description: 'Solicitação não encontrada' })
+  @ApiOperation({ 
+    summary: 'Obter histórico de alterações de uma solicitação',
+    description: 'Retorna o histórico completo de alterações de status de uma solicitação de benefício.'
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Histórico retornado com sucesso',
+    content: {
+      'application/json': {
+        example: historicoSolicitacaoResponse
+      }
+    }
+  })
+  @ApiResponse({ 
+    status: 404, 
+    description: 'Solicitação não encontrada',
+    content: {
+      'application/json': {
+        example: naoEncontradoResponse
+      }
+    }
+  })
   async getHistorico(@Param('id') id: string) {
     // Verificar se a solicitação existe
     const solicitacao = await this.solicitacaoRepository.findOne({

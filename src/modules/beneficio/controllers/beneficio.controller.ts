@@ -14,6 +14,7 @@ import {
   ApiResponse,
   ApiBearerAuth,
   ApiQuery,
+  ApiBody,
 } from '@nestjs/swagger';
 import { BeneficioService } from '../services/beneficio.service';
 import { CreateTipoBeneficioDto } from '../dto/create-tipo-beneficio.dto';
@@ -24,6 +25,17 @@ import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../auth/guards/roles.guard';
 import { Roles } from '../../../auth/decorators/role.decorator';
 import { Role } from '../../../shared/enums/role.enum';
+// Importando os exemplos do Swagger para os benefícios
+import {
+  tipoBeneficioExemplo,
+  tiposBeneficioLista,
+  createTipoBeneficioRequest,
+  updateTipoBeneficioRequest,
+  erroValidacaoResponse,
+  naoEncontradoResponse,
+  conflitoResponse,
+  listaPaginadaBeneficiosResponse
+} from '@/shared/configs/swagger/examples/beneficio';
 
 /**
  * Controlador de benefícios
@@ -31,7 +43,7 @@ import { Role } from '../../../shared/enums/role.enum';
  * Responsável por gerenciar as rotas relacionadas a tipos de benefícios
  */
 @ApiTags('beneficios')
-@Controller('beneficio')
+@Controller('v1/beneficio')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
 export class BeneficioController {
@@ -41,10 +53,18 @@ export class BeneficioController {
    * Lista todos os tipos de benefícios
    */
   @Get()
-  @ApiOperation({ summary: 'Listar tipos de benefícios' })
+  @ApiOperation({ 
+    summary: 'Listar tipos de benefícios',
+    description: 'Retorna uma lista paginada de todos os tipos de benefícios cadastrados no sistema.'
+  })
   @ApiResponse({
     status: 200,
     description: 'Lista de benefícios retornada com sucesso',
+    content: {
+      'application/json': {
+        example: listaPaginadaBeneficiosResponse
+      }
+    }
   })
   @ApiQuery({
     name: 'page',
@@ -88,9 +108,28 @@ export class BeneficioController {
    * Obtém detalhes de um tipo de benefício específico
    */
   @Get(':id')
-  @ApiOperation({ summary: 'Obter detalhes de um benefício' })
-  @ApiResponse({ status: 200, description: 'Benefício encontrado com sucesso' })
-  @ApiResponse({ status: 404, description: 'Benefício não encontrado' })
+  @ApiOperation({ 
+    summary: 'Obter detalhes de um benefício',
+    description: 'Retorna os detalhes completos de um tipo de benefício específico.'
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Benefício encontrado com sucesso',
+    content: {
+      'application/json': {
+        example: tipoBeneficioExemplo
+      }
+    }
+  })
+  @ApiResponse({ 
+    status: 404, 
+    description: 'Benefício não encontrado',
+    content: {
+      'application/json': {
+        example: naoEncontradoResponse
+      }
+    }
+  })
   async findOne(@Param('id') id: string) {
     return this.beneficioService.findById(id);
   }
@@ -100,10 +139,45 @@ export class BeneficioController {
    */
   @Post()
   @Roles(Role.ADMIN, Role.GESTOR_SEMTAS)
-  @ApiOperation({ summary: 'Criar novo tipo de benefício' })
-  @ApiResponse({ status: 201, description: 'Benefício criado com sucesso' })
-  @ApiResponse({ status: 400, description: 'Dados inválidos' })
-  @ApiResponse({ status: 409, description: 'Nome já em uso' })
+  @ApiOperation({ 
+    summary: 'Criar novo tipo de benefício',
+    description: 'Cria um novo tipo de benefício no sistema.'
+  })
+  @ApiBody({
+    type: CreateTipoBeneficioDto,
+    examples: {
+      'Auxílio Emergencial': {
+        value: createTipoBeneficioRequest
+      }
+    }
+  })
+  @ApiResponse({ 
+    status: 201, 
+    description: 'Benefício criado com sucesso',
+    content: {
+      'application/json': {
+        example: tipoBeneficioExemplo
+      }
+    }
+  })
+  @ApiResponse({ 
+    status: 400, 
+    description: 'Dados inválidos',
+    content: {
+      'application/json': {
+        example: erroValidacaoResponse
+      }
+    }
+  })
+  @ApiResponse({ 
+    status: 409, 
+    description: 'Nome já em uso',
+    content: {
+      'application/json': {
+        example: conflitoResponse
+      }
+    }
+  })
   async create(@Body() createTipoBeneficioDto: CreateTipoBeneficioDto) {
     return this.beneficioService.create(createTipoBeneficioDto);
   }
@@ -113,11 +187,54 @@ export class BeneficioController {
    */
   @Put(':id')
   @Roles(Role.ADMIN, Role.GESTOR_SEMTAS)
-  @ApiOperation({ summary: 'Atualizar tipo de benefício existente' })
-  @ApiResponse({ status: 200, description: 'Benefício atualizado com sucesso' })
-  @ApiResponse({ status: 400, description: 'Dados inválidos' })
-  @ApiResponse({ status: 404, description: 'Benefício não encontrado' })
-  @ApiResponse({ status: 409, description: 'Nome já em uso' })
+  @ApiOperation({ 
+    summary: 'Atualizar tipo de benefício existente',
+    description: 'Atualiza os dados de um tipo de benefício existente.'
+  })
+  @ApiBody({
+    type: UpdateTipoBeneficioDto,
+    examples: {
+      'Atualização de Benefício': {
+        value: updateTipoBeneficioRequest
+      }
+    }
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Benefício atualizado com sucesso',
+    content: {
+      'application/json': {
+        example: tipoBeneficioExemplo
+      }
+    }
+  })
+  @ApiResponse({ 
+    status: 400, 
+    description: 'Dados inválidos',
+    content: {
+      'application/json': {
+        example: erroValidacaoResponse
+      }
+    }
+  })
+  @ApiResponse({ 
+    status: 404, 
+    description: 'Benefício não encontrado',
+    content: {
+      'application/json': {
+        example: naoEncontradoResponse
+      }
+    }
+  })
+  @ApiResponse({ 
+    status: 409, 
+    description: 'Nome já em uso',
+    content: {
+      'application/json': {
+        example: conflitoResponse
+      }
+    }
+  })
   async update(
     @Param('id') id: string,
     @Body() updateTipoBeneficioDto: UpdateTipoBeneficioDto,

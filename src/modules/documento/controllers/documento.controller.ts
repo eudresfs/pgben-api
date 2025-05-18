@@ -68,7 +68,7 @@ declare global {
  * anexados às solicitações de benefícios
  */
 @ApiTags('documentos')
-@Controller('documento')
+@Controller('v1/documento')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
 export class DocumentoController {

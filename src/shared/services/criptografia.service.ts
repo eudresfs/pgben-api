@@ -1,8 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
+
 import { ConfigService } from '@nestjs/config';
 import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
+
+import { ChaveMonitorService } from './chave-monitor.service';
 
 /**
  * Serviço de Criptografia
@@ -22,7 +25,10 @@ export class CriptografiaService {
   private readonly masterKey: Buffer;
   private readonly keyPath: string;
 
-  constructor(private configService: ConfigService) {
+  constructor(
+    private configService: ConfigService,
+    private chaveMonitorService?: ChaveMonitorService,
+  ) {
     // Obter ou gerar a chave mestra para criptografia
     this.keyPath =
       this.configService.get<string>('ENCRYPTION_KEY_PATH') ||
@@ -38,10 +44,23 @@ export class CriptografiaService {
     if (fs.existsSync(this.keyPath)) {
       this.masterKey = fs.readFileSync(this.keyPath);
       this.logger.log('Chave de criptografia carregada com sucesso');
+      
+      // Verificar integridade da chave se o monitor estiver disponível
+      if (this.chaveMonitorService) {
+        const integridadeOk = this.chaveMonitorService.verificarIntegridade();
+        if (!integridadeOk) {
+          this.logger.warn('Alerta de segurança: Possível comprometimento da chave de criptografia');
+        }
+      }
     } else {
       this.masterKey = crypto.randomBytes(this.keyLength);
       fs.writeFileSync(this.keyPath, this.masterKey, { mode: 0o600 }); // Permissões restritas
       this.logger.log('Nova chave de criptografia gerada e salva');
+      
+      // Criar backup da chave se o monitor estiver disponível
+      if (this.chaveMonitorService) {
+        this.chaveMonitorService.criarBackup();
+      }
     }
   }
 

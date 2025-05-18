@@ -17,7 +17,7 @@ import { Role } from '../../../shared/enums/role.enum';
  * Controlador para gerenciamento de métricas
  */
 @ApiTags('Métricas')
-@Controller('metricas')
+@Controller('v1/metricas')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
 export class MetricasDefinicaoController {

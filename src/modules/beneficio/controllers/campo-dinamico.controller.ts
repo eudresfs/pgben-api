@@ -28,7 +28,7 @@ import { Role } from '../../../shared/enums/role.enum';
  * específicos para cada tipo de benefício.
  */
 @ApiTags('campos-dinamicos-beneficio')
-@Controller('beneficio/:tipoBeneficioId/campos-dinamicos')
+@Controller('v1/beneficio/:tipoBeneficioId/campos-dinamicos')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
 export class CampoDinamicoController {

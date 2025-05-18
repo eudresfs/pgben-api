@@ -25,7 +25,7 @@ import {
 @ApiTags('métricas-valores')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Controller('api/metricas/valores')
+@Controller('v1/metricas/valores')
 export class MetricasValoresController {
   constructor(
     private readonly metricasService: MetricasService,

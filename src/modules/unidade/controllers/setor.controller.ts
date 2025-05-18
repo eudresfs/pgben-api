@@ -28,7 +28,7 @@ import { Role } from '../../../shared/enums/role.enum';
  * Responsável por gerenciar as rotas relacionadas a setores dentro das unidades
  */
 @ApiTags('setores')
-@Controller('setor')
+@Controller('v1/setor')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
 export class SetorController {

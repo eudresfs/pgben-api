@@ -26,7 +26,7 @@ import {
   criarSolicitacaoResponse,
   avaliarSolicitacaoPayload,
   avaliarSolicitacaoResponse,
-} from '../../../shared/configs/swagger-payloads';
+} from '../../../shared/configs/swagger/swagger-payloads';
 import { SolicitacaoService } from '../services/solicitacao.service';
 import { CreateSolicitacaoDto } from '../dto/create-solicitacao.dto';
 import { UpdateSolicitacaoDto } from '../dto/update-solicitacao.dto';
@@ -44,7 +44,7 @@ import { Request } from 'express';
  * Responsável por gerenciar as rotas relacionadas às solicitações de benefícios
  */
 @ApiTags('solicitacoes')
-@Controller('solicitacao')
+@Controller('v1/solicitacao')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
 export class SolicitacaoController {

@@ -31,7 +31,7 @@ import { TipoPapel } from '../entities/papel-cidadao.entity';
  * (beneficiário, requerente, representante legal).
  */
 @ApiTags('papel-cidadao')
-@Controller('cidadao/papel')
+@Controller('v1/cidadao/papel')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
 export class PapelCidadaoController {

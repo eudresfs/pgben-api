@@ -37,7 +37,7 @@ import {
  * gerenciais e operacionais do sistema
  */
 @ApiTags('relatorios')
-@Controller('relatorios')
+@Controller('v1/relatorios')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
 export class RelatoriosController {

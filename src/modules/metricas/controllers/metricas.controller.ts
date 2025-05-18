@@ -9,7 +9,7 @@ import { Public } from '../../../shared/decorators/public.decorator';
  * pelo Prometheus.
  */
 @ApiTags('Métricas')
-@Controller('metricas')
+@Controller('v1/metricas')
 export class MetricasController {
   constructor(
     private readonly metricasService: MetricasService,

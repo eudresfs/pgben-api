@@ -33,7 +33,7 @@ import { Request } from 'express';
  * enviadas aos usuários do sistema
  */
 @ApiTags('notificacoes')
-@Controller('notificacao')
+@Controller('v1/notificacao')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
 export class NotificacaoController {
