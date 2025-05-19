@@ -139,11 +139,11 @@ Este documento contém um checklist detalhado das tarefas para implementação c
 ### PagamentoController
 - [x] Implementar endpoint GET /api/pagamentos
   - [x] Configurar filtros e paginação
-  - [x] Implementar controle de acesso
+  - [ ] Implementar controle de acesso
   - [x] Documentar com Swagger
 - [x] Implementar endpoint GET /api/pagamentos/{id}
   - [x] Validar parâmetros
-  - [x] Implementar controle de acesso
+  - [ ] Implementar controle de acesso
   - [x] Documentar com Swagger
 - [x] Implementar endpoint POST /api/pagamentos/liberar/{solicitacaoId}
   - [x] Validar parâmetros e corpo

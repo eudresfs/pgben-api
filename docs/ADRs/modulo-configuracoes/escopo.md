@@ -1,5 +1,3 @@
-Agradeço pela análise detalhada do módulo de Pagamento. Suas observações são muito pertinentes e melhoram significativamente a proposta inicial. Vou incorporar essas sugestões na especificação do próximo módulo.
-
 # Módulo de Configuração - Especificação Detalhada
 
 ## 1. Visão Geral
