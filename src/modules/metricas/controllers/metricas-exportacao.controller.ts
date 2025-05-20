@@ -28,7 +28,7 @@ export class MetricasExportacaoController {
    * Exporta dados de uma métrica específica em formato CSV ou JSON
    */
   @Get(':codigo')
-  @Roles(Role.ADMIN, Role.GESTOR_SEMTAS, Role.TECNICO_SEMTAS)
+  @Roles(Role.ADMIN, Role.GESTOR, Role.TECNICO)
   @ApiOperation({ summary: 'Exporta dados de uma métrica (CSV/JSON)' })
   @ApiResponse({ status: 200, description: 'Dados exportados com sucesso' })
   @ApiResponse({ status: 404, description: 'Métrica não encontrada' })
@@ -70,7 +70,7 @@ export class MetricasExportacaoController {
    * Gera relatório completo de métricas para análise externa
    */
   @Get('relatorio')
-  @Roles(Role.ADMIN, Role.GESTOR_SEMTAS)
+  @Roles(Role.ADMIN, Role.GESTOR)
   @ApiOperation({ summary: 'Gera relatório completo de métricas' })
   @ApiResponse({ status: 200, description: 'Relatório gerado com sucesso' })
   async gerarRelatorioCompleto(

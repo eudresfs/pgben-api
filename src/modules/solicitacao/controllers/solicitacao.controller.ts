@@ -159,9 +159,9 @@ export class SolicitacaoController {
   @Post()
   @Roles(
     Role.ADMIN,
-    Role.GESTOR_SEMTAS,
-    Role.TECNICO_SEMTAS,
-    Role.TECNICO_UNIDADE,
+    Role.GESTOR,
+    Role.TECNICO,
+    Role.TECNICO,
   )
   @ApiOperation({ summary: 'Criar nova solicitação de benefício' })
   @ApiResponse({ status: 201, description: 'Solicitação criada com sucesso' })
@@ -180,9 +180,9 @@ export class SolicitacaoController {
   @Put(':id')
   @Roles(
     Role.ADMIN,
-    Role.GESTOR_SEMTAS,
-    Role.TECNICO_SEMTAS,
-    Role.TECNICO_UNIDADE,
+    Role.GESTOR,
+    Role.TECNICO,
+    Role.TECNICO,
   )
   @ApiOperation({ summary: 'Atualizar solicitação existente' })
   @ApiBody({
@@ -258,9 +258,9 @@ export class SolicitacaoController {
   @Put(':id/submeter')
   @Roles(
     Role.ADMIN,
-    Role.GESTOR_SEMTAS,
-    Role.TECNICO_SEMTAS,
-    Role.TECNICO_UNIDADE,
+    Role.GESTOR,
+    Role.TECNICO,
+    Role.TECNICO,
   )
   @ApiOperation({ summary: 'Submeter solicitação para análise' })
   @ApiResponse({
@@ -283,9 +283,9 @@ export class SolicitacaoController {
   @Put(':id/avaliar')
   @Roles(
     Role.ADMIN,
-    Role.GESTOR_SEMTAS,
-    Role.TECNICO_SEMTAS,
-    Role.COORDENADOR_UNIDADE,
+    Role.GESTOR,
+    Role.TECNICO,
+    Role.COORDENADOR,
   )
   @ApiOperation({ summary: 'Avaliar solicitação (aprovar/reprovar)' })
   @ApiBody({
@@ -323,7 +323,7 @@ export class SolicitacaoController {
    * Libera um benefício aprovado
    */
   @Put(':id/liberar')
-  @Roles(Role.ADMIN, Role.GESTOR_SEMTAS)
+  @Roles(Role.ADMIN, Role.GESTOR)
   @ApiOperation({ summary: 'Liberar benefício aprovado' })
   @ApiResponse({ status: 200, description: 'Benefício liberado com sucesso' })
   @ApiResponse({ status: 400, description: 'Benefício não pode ser liberado' })
@@ -337,7 +337,7 @@ export class SolicitacaoController {
    * Cancela uma solicitação
    */
   @Put(':id/cancelar')
-  @Roles(Role.ADMIN, Role.GESTOR_SEMTAS, Role.TECNICO_SEMTAS)
+  @Roles(Role.ADMIN, Role.GESTOR, Role.TECNICO)
   @ApiOperation({ summary: 'Cancelar solicitação' })
   @ApiResponse({
     status: 200,

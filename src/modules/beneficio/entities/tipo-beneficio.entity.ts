@@ -16,12 +16,13 @@ import { CampoDinamicoBeneficio } from './campo-dinamico-beneficio.entity';
 export enum Periodicidade {
   UNICO = 'unico',
   MENSAL = 'mensal',
+  BIMESTRAL = 'bimestral',
   TRIMESTRAL = 'trimestral',
   SEMESTRAL = 'semestral',
   ANUAL = 'anual',
 }
 
-@Entity('tipos_beneficio')
+@Entity('tipo_beneficio')
 @Index(['nome'], { unique: true })
 export class TipoBeneficio {
   @PrimaryGeneratedColumn('uuid')
@@ -44,8 +45,8 @@ export class TipoBeneficio {
   periodicidade: Periodicidade;
 
   @Column('text')
-  @IsNotEmpty({ message: 'Base jurídica é obrigatória' })
-  base_juridica: string;
+  @IsNotEmpty({ message: 'Base legal é obrigatória' })
+  base_legal: string;
 
   @Column('decimal', { precision: 10, scale: 2 })
   @IsNumber({}, { message: 'Valor deve ser um número' })

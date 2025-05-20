@@ -562,7 +562,7 @@ Aproveitaremos o RBAC já implementado no starter kit e o estenderemos:
 // Roles específicas para o sistema
 export enum Role {
   ADMIN = 'administrador',
-  GESTOR_SEMTAS = 'gestor_semtas',
+  GESTOR = 'gestor_semtas',
   TECNICO_SEMTAS = 'tecnico_semtas',
   TECNICO_UNIDADE = 'tecnico_unidade',
 }
@@ -574,7 +574,7 @@ export class SolicitacaoController {
 
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.GESTOR_SEMTAS, Role.TECNICO_SEMTAS)
+  @Roles(Role.ADMIN, Role.GESTOR, Role.TECNICO_SEMTAS)
   async findAll(): Promise<Solicitacao[]> {
     return this.solicitacaoService.findAll();
   }

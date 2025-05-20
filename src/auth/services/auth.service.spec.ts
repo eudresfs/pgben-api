@@ -21,14 +21,14 @@ describe('AuthService', () => {
   const accessTokenClaims: UserAccessTokenClaims = {
     id: 6,
     username: 'john',
-    roles: [Role.TECNICO_UNIDADE],
+    roles: [Role.TECNICO],
   };
 
   const registerInput = {
     username: 'jhon',
     name: 'Jhon doe',
     password: 'any password',
-    roles: [Role.TECNICO_UNIDADE],
+    roles: [Role.TECNICO],
     isAccountDisabled: false,
     email: 'randomUser@random.com',
   };
@@ -96,7 +96,7 @@ describe('AuthService', () => {
         email: 'jhon@example.com',
         senhaHash: 'hashedpassword',
         status: 'ativo',
-        role: Role.TECNICO_UNIDADE,
+        role: Role.TECNICO,
       };
 
       jest
@@ -185,7 +185,7 @@ describe('AuthService', () => {
         nome: 'Jhon doe',
         email: 'randomUser@random.com',
         status: 'ativo',
-        role: Role.TECNICO_UNIDADE,
+        role: Role.TECNICO,
         created_at: new Date(),
         updated_at: new Date(),
       };
@@ -211,7 +211,7 @@ describe('AuthService', () => {
         nome: 'John Doe',
         email: 'jhon@example.com',
         status: 'ativo',
-        role: Role.TECNICO_UNIDADE,
+        role: Role.TECNICO,
         created_at: new Date(),
         updated_at: new Date(),
       };

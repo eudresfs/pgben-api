@@ -55,7 +55,7 @@ export class UpdateUsuarioDto {
   @IsOptional()
   @ApiProperty({
     enum: Role,
-    example: Role.TECNICO_UNIDADE,
+    example: Role.TECNICO,
     description: 'Papel do usuário no sistema',
     required: false,
   })

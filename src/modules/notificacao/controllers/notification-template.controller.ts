@@ -57,7 +57,7 @@ export class NotificationTemplateController {
    * Lista todos os templates de notificação com paginação e filtros
    */
   @Get()
-  @Roles(Role.ADMIN, Role.GESTOR_SEMTAS)
+  @Roles(Role.ADMIN, Role.GESTOR)
   @ApiOperation({ summary: 'Listar templates de notificação' })
   @ApiResponse({
     status: 200,
@@ -79,7 +79,7 @@ export class NotificationTemplateController {
    * Obtém um template de notificação pelo ID
    */
   @Get(':id')
-  @Roles(Role.ADMIN, Role.GESTOR_SEMTAS)
+  @Roles(Role.ADMIN, Role.GESTOR)
   @ApiOperation({ summary: 'Obter template por ID' })
   @ApiResponse({
     status: 200,

@@ -53,7 +53,7 @@ export class RelatoriosController {
    * @returns Stream do relatório no formato solicitado
    */
   @Get('beneficios-concedidos')
-  @Roles(Role.ADMIN, Role.GESTOR_SEMTAS, Role.TECNICO_SEMTAS)
+  @Roles(Role.ADMIN, Role.GESTOR, Role.TECNICO)
   @ApiOperation({
     summary: 'Gera relatório de benefícios concedidos',
     description:
@@ -146,9 +146,9 @@ export class RelatoriosController {
   @Get('solicitacoes-por-status')
   @Roles(
     Role.ADMIN,
-    Role.GESTOR_SEMTAS,
-    Role.TECNICO_SEMTAS,
-    Role.COORDENADOR_UNIDADE,
+    Role.GESTOR,
+    Role.TECNICO,
+    Role.COORDENADOR,
   )
   @ApiOperation({
     summary: 'Gera relatório de solicitações por status',
@@ -239,7 +239,7 @@ export class RelatoriosController {
    * @returns Stream do relatório no formato solicitado
    */
   @Get('atendimentos-por-unidade')
-  @Roles(Role.ADMIN, Role.GESTOR_SEMTAS)
+  @Roles(Role.ADMIN, Role.GESTOR)
   @ApiOperation({
     summary: 'Gera relatório de atendimentos por unidade',
     description:

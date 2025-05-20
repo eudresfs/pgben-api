@@ -107,7 +107,7 @@ export class UnidadeController {
    * Cria uma nova unidade
    */
   @Post()
-  @Roles(Role.ADMIN, Role.GESTOR_SEMTAS)
+  @Roles(Role.ADMIN, Role.GESTOR)
   @ApiOperation({ summary: 'Criar nova unidade' })
   @ApiResponse({ status: 201, description: 'Unidade criada com sucesso' })
   @ApiResponse({ status: 400, description: 'Dados inválidos' })
@@ -120,7 +120,7 @@ export class UnidadeController {
    * Atualiza uma unidade existente
    */
   @Put(':id')
-  @Roles(Role.ADMIN, Role.GESTOR_SEMTAS)
+  @Roles(Role.ADMIN, Role.GESTOR)
   @ApiOperation({ summary: 'Atualizar unidade existente' })
   @ApiResponse({ status: 200, description: 'Unidade atualizada com sucesso' })
   @ApiResponse({ status: 400, description: 'Dados inválidos' })
@@ -137,7 +137,7 @@ export class UnidadeController {
    * Atualiza o status de uma unidade
    */
   @Patch(':id/status')
-  @Roles(Role.ADMIN, Role.GESTOR_SEMTAS)
+  @Roles(Role.ADMIN, Role.GESTOR)
   @ApiOperation({ summary: 'Ativar/inativar unidade' })
   @ApiResponse({ status: 200, description: 'Status atualizado com sucesso' })
   @ApiResponse({ status: 404, description: 'Unidade não encontrada' })

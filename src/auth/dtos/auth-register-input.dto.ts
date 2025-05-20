@@ -36,8 +36,8 @@ export class RegisterInput {
   @MaxLength(100)
   email: string;
 
-  @ApiProperty({ example: [Role.TECNICO_UNIDADE] })
-  roles: Role[] = [Role.TECNICO_UNIDADE];
+  @ApiProperty({ example: [Role.TECNICO] })
+  roles: Role[] = [Role.TECNICO];
 
   @ApiPropertyOptional({ example: false })
   isAccountDisabled: boolean = false;

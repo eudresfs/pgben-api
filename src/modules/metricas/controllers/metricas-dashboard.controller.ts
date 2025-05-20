@@ -29,7 +29,7 @@ export class MetricasDashboardController {
    * Obtém resumo das métricas principais para dashboard
    */
   @Get('resumo')
-  @Roles(Role.ADMIN, Role.GESTOR_SEMTAS, Role.TECNICO_SEMTAS)
+  @Roles(Role.ADMIN, Role.GESTOR, Role.TECNICO)
   @ApiOperation({ summary: 'Obtém resumo das métricas principais' })
   @ApiResponse({ status: 200, description: 'Resumo obtido com sucesso' })
   async obterResumo(
@@ -49,7 +49,7 @@ export class MetricasDashboardController {
    * Lista alertas ativos de anomalias
    */
   @Get('alertas')
-  @Roles(Role.ADMIN, Role.GESTOR_SEMTAS, Role.TECNICO_SEMTAS)
+  @Roles(Role.ADMIN, Role.GESTOR, Role.TECNICO)
   @ApiOperation({ summary: 'Lista alertas ativos de anomalias' })
   @ApiResponse({ status: 200, description: 'Alertas listados com sucesso' })
   async listarAlertas(
@@ -68,7 +68,7 @@ export class MetricasDashboardController {
    * Obtém KPIs configurados para dashboard
    */
   @Get('kpis')
-  @Roles(Role.ADMIN, Role.GESTOR_SEMTAS, Role.TECNICO_SEMTAS)
+  @Roles(Role.ADMIN, Role.GESTOR, Role.TECNICO)
   @ApiOperation({ summary: 'Obtém KPIs configurados para dashboard' })
   @ApiResponse({ status: 200, description: 'KPIs obtidos com sucesso' })
   async obterKPIs(

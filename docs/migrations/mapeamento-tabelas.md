@@ -51,8 +51,8 @@ Este documento contém o mapeamento completo das tabelas existentes no sistema P
 | `composicao_familiar` | Membros da família | id, cidadao_id, nome_membro, parentesco | cidadao |
 | `beneficio_social` | Benefícios sociais recebidos | id, cidadao_id, tipo_beneficio, valor | cidadao |
 | `info_bancaria` | Dados bancários | id, cidadao_id, banco, agencia, conta | cidadao |
-| `papel_cidadao` | Papéis do cidadão | id, cidadao_id, tipo_papel, grupo_familiar_id | cidadao, grupo_familiar |
-| `grupo_familiar` | Grupos familiares | id, responsavel_id, endereco, dados_socioeconomicos | cidadao, papel_cidadao |
+| `papel_cidadao` | Papéis do cidadão | id, cidadao_id, tipo_papel, composicao_familiar_id | cidadao, composicao_familiar |
+| `composicao_familiar` | Grupos familiares | id, responsavel_id, endereco, dados_socioeconomicos | cidadao, papel_cidadao |
 
 ### 3. Benefício
 

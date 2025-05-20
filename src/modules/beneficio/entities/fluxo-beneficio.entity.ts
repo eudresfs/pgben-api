@@ -11,6 +11,7 @@ import {
 } from 'typeorm';
 import { IsNotEmpty, IsOptional, IsNumber, Min, IsEnum } from 'class-validator';
 import { TipoBeneficio } from './tipo-beneficio.entity';
+import { Role } from '@/shared/enums/role.enum'
 
 export enum TipoEtapa {
   ABERTURA = 'abertura',
@@ -18,13 +19,6 @@ export enum TipoEtapa {
   ANALISE_TECNICA = 'analise_tecnica',
   APROVACAO = 'aprovacao',
   LIBERACAO = 'liberacao',
-}
-
-export enum PerfilResponsavel {
-  TECNICO_UNIDADE = 'tecnico_unidade',
-  TECNICO_SEMTAS = 'tecnico_semtas',
-  GESTOR_SEMTAS = 'gestor_semtas',
-  ADMIN = 'admin',
 }
 
 @Entity('fluxo_beneficio')
@@ -63,12 +57,12 @@ export class FluxoBeneficio {
 
   @Column({
     type: 'enum',
-    enum: PerfilResponsavel,
+    enum: Role,
     enumName: 'perfil_responsavel',
   })
   @IsNotEmpty({ message: 'Perfil responsável é obrigatório' })
-  @IsEnum(PerfilResponsavel, { message: 'Perfil responsável inválido' })
-  perfil_responsavel: PerfilResponsavel;
+  @IsEnum(Role, { message: 'Perfil responsável inválido' })
+  perfil_responsavel: Role;
 
   @Column({ nullable: true })
   @IsOptional()

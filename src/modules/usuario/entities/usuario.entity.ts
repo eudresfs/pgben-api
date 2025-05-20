@@ -57,7 +57,7 @@ export class Usuario {
     type: 'enum',
     enum: Role,
     enumName: 'role',
-    default: Role.TECNICO_UNIDADE,
+    default: Role.TECNICO,
   })
   role: Role;
 

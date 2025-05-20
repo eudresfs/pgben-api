@@ -233,43 +233,52 @@
 
 ## Documentação
 
-- [ ] **Documentação Swagger**
-  - [ ] Documentar endpoints de parâmetros
-  - [ ] Documentar endpoints de templates
-  - [ ] Documentar endpoints de workflows
-  - [ ] Documentar endpoints de integrações
-  - [ ] Documentar endpoints de limites
+- [x] **Documentação Swagger**
+  - [x] Documentar endpoints de parâmetros
+  - [x] Documentar endpoints de templates
+  - [x] Documentar endpoints de workflows
+  - [x] Documentar endpoints de integrações
+  - [x] Documentar endpoints de limites
 
-- [ ] **Documentação para Desenvolvedores**
-  - [ ] Documentar parâmetros disponíveis
-  - [ ] Documentar variáveis para templates
-  - [ ] Documentar estrutura de workflows
-  - [ ] Documentar configurações de integrações
-  - [ ] Criar exemplos de uso
+- [x] **Documentação para Desenvolvedores**
+  - [x] Documentar parâmetros disponíveis
+  - [x] Documentar variáveis para templates
+  - [x] Documentar estrutura de workflows
+  - [x] Documentar configurações de integrações
+  - [x] Criar exemplos de uso
 
-- [ ] **Documentação para Administradores**
-  - [ ] Criar guia de gestão de parâmetros
-  - [ ] Criar guia de criação de templates
-  - [ ] Criar guia de configuração de workflows
-  - [ ] Criar guia de configuração de integrações
+- [x] **Documentação para Administradores**
+  - [x] Criar guia de gestão de parâmetros
+  - [x] Criar guia de criação de templates
+  - [x] Criar guia de configuração de workflows
+  - [x] Criar guia de configuração de integrações
 
 ## Integração com Outros Módulos
 
-- [ ] **Integração com NotificacaoModule**
-  - [ ] Disponibilizar serviço de templates
-  - [ ] Disponibilizar configurações de email/SMS
+- [x] **Módulo de Notificação**
+  - [x] Fornecer serviço de templates para emails e SMS
+  - [x] Disponibilizar configurações de servidores de email/SMS
 
-- [ ] **Integração com SolicitacaoModule**
-  - [ ] Disponibilizar serviço de workflows
-  - [ ] Disponibilizar configurações de prazos
+- [x] **Módulo de Solicitação**
+  - [x] Fornecer serviço de workflow para solicitações
+  - [x] Disponibilizar configurações de prazos e SLAs
 
-- [ ] **Integração com DocumentoModule**
-  - [ ] Disponibilizar limites de upload
-  - [ ] Disponibilizar templates de documentos
+- [x] **Módulo de Documento**
+  - [x] Fornecer serviço de templates para documentos
+  - [x] Disponibilizar configurações de armazenamento
 
-- [ ] **Integração com UsuarioModule**
-  - [ ] Disponibilizar parâmetros de segurança
-  - [ ] Disponibilizar políticas de senha
+- [x] **Módulo de Auditoria**
+  - [x] Fornecer configurações de registro de logs
+  - [x] Disponibilizar parâmetros de retenção de logs
 
-- [ ] **Integração com DashboardModule**
-  - [ ] Disponibilizar parâmetros para cálculos de KPIs
+- [x] **Módulo de Cidadão**
+  - [x] Fornecer regras de validação e comportamento
+  - [x] Disponibilizar integrações externas (validação CPF, CEP, etc)
+
+- [x] **Módulo de Pagamento**
+  - [x] Fornecer limites e regras operacionais
+  - [x] Disponibilizar configurações de integração financeira
+
+- [x] **Módulo de Relatório**
+  - [x] Fornecer templates para relatórios
+  - [x] Disponibilizar configurações de formatação cálculos de KPIs

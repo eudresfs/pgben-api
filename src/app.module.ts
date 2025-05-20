@@ -2,10 +2,12 @@ import { Module } from '@nestjs/common';
 import { CacheModule } from '@nestjs/cache-manager';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { ScheduleAdapterModule } from './shared/schedule/schedule-adapter.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { SharedModule } from './shared/shared.module';
+import { APP_GUARD } from '@nestjs/core';
 import { AuthModule } from './auth/auth.module';
 import { UsuarioModule } from './modules/usuario/usuario.module';
 import { UnidadeModule } from './modules/unidade/unidade.module';
@@ -26,6 +28,20 @@ import { getBullConfig } from './config/bull.config';
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
+    }),
+    
+    // Rate limiting - configuração atualizada para compatibilidade com versões recentes
+    ThrottlerModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        throttlers: [
+          {
+            ttl: config.get<number>('THROTTLE_TTL', 60),
+            limit: config.get<number>('THROTTLE_LIMIT', 10),
+          },
+        ],
+      }),
     }),
     
     // Configuração do agendador de tarefas personalizado
@@ -52,6 +68,10 @@ import { getBullConfig } from './config/bull.config';
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
         synchronize: false,
         logging: configService.get('NODE_ENV') === 'development',
+        // Melhorias de segurança e performance para TypeORM
+        ssl: configService.get('DB_SSL') === 'true' ? { rejectUnauthorized: false } : false,
+        poolSize: configService.get<number>('DB_POOL_SIZE', 10),
+        connectionTimeoutMillis: 5000,
       }),
     }),
 
@@ -81,6 +101,13 @@ import { getBullConfig } from './config/bull.config';
     MetricasModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    // Aplicar rate limiting globalmente
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule {}

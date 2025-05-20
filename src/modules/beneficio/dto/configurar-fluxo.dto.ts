@@ -18,7 +18,7 @@ export enum TipoAprovador {
   COORDENADOR_CRAS = 'coordenador_cras',
   COORDENADOR_CREAS = 'coordenador_creas',
   GESTOR_UNIDADE = 'gestor_unidade',
-  GESTOR_SEMTAS = 'gestor_semtas',
+  GESTOR = 'gestor_semtas',
   COMISSAO = 'comissao',
 }
 

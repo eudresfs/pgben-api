@@ -13,11 +13,10 @@ import { CreateTipoBeneficioDto } from '../dto/create-tipo-beneficio.dto';
 import { UpdateTipoBeneficioDto } from '../dto/update-tipo-beneficio.dto';
 import { CreateRequisitoDocumentoDto } from '../dto/create-requisito-documento.dto';
 import { TipoDocumento } from '../entities/requisito-documento.entity';
-import {
-  TipoEtapa,
-  PerfilResponsavel,
-} from '../entities/fluxo-beneficio.entity';
+import { TipoEtapa } from '../entities/fluxo-beneficio.entity';
 import { ConfigurarFluxoDto } from '../dto/configurar-fluxo.dto';
+import { Role as PerfilResponsavel } from '@/shared/enums/role.enum';
+
 
 /**
  * Serviço de Benefícios

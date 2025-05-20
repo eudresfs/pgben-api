@@ -73,7 +73,7 @@ import { Solicitacao } from './solicitacao.entity';
 
 export enum UserRole {
   ADMIN = 'administrador',
-  GESTOR_SEMTAS = 'gestor_semtas',
+  GESTOR = 'gestor_semtas',
   TECNICO_SEMTAS = 'tecnico_semtas',
   TECNICO_UNIDADE = 'tecnico_unidade',
 }

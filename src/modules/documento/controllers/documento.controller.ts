@@ -253,9 +253,9 @@ export class DocumentoController {
   @ApiResponse({ status: 422, description: 'Arquivo infectado com malware' })
   @Roles(
     Role.ADMIN,
-    Role.GESTOR_SEMTAS,
-    Role.TECNICO_SEMTAS,
-    Role.TECNICO_UNIDADE,
+    Role.GESTOR,
+    Role.TECNICO,
+    Role.TECNICO,
   )
   async upload(
     @UploadedFile() arquivo: Express.Multer.File,
@@ -305,9 +305,9 @@ export class DocumentoController {
   })
   @Roles(
     Role.ADMIN,
-    Role.GESTOR_SEMTAS,
-    Role.TECNICO_SEMTAS,
-    Role.TECNICO_UNIDADE,
+    Role.GESTOR,
+    Role.TECNICO,
+    Role.TECNICO,
   )
   async remove(@Param('id', ParseUUIDPipe) id: string, @Req() req: Request) {
     return this.documentoService.remove(id, req.user);
@@ -342,9 +342,9 @@ export class DocumentoController {
   })
   @Roles(
     Role.ADMIN,
-    Role.GESTOR_SEMTAS,
-    Role.TECNICO_SEMTAS,
-    Role.COORDENADOR_UNIDADE,
+    Role.GESTOR,
+    Role.TECNICO,
+    Role.COORDENADOR,
   )
   async verificarDocumento(
     @Param('id', ParseUUIDPipe) id: string,
@@ -370,7 +370,7 @@ export class DocumentoController {
     format: 'uuid',
   })
   @HttpCode(HttpStatus.OK)
-  @Roles(Role.ADMIN, Role.GESTOR_SEMTAS)
+  @Roles(Role.ADMIN, Role.GESTOR)
   async scanMalware(
     @Param('id', ParseUUIDPipe) id: string,
     @Req() req: Request,

@@ -80,7 +80,7 @@ export class SolicitacaoService {
       queryBuilder.andWhere('solicitacao.unidade_id = :unidade_id', {
         unidade_id,
       });
-    } else if (![Role.ADMIN, Role.GESTOR_SEMTAS].includes(user.role)) {
+    } else if (![Role.ADMIN, Role.GESTOR].includes(user.role)) {
       // Usuários que não são admin ou gestor SEMTAS só podem ver solicitações da sua unidade
       queryBuilder.andWhere('solicitacao.unidade_id = :unidade_id', {
         unidade_id: user.unidade_id,
@@ -163,7 +163,7 @@ export class SolicitacaoService {
    */
   canAccessSolicitacao(solicitacao: Solicitacao, user: any): boolean {
     // Administradores e gestores SEMTAS podem acessar qualquer solicitação
-    if ([Role.ADMIN, Role.GESTOR_SEMTAS].includes(user.role)) {
+    if ([Role.ADMIN, Role.GESTOR].includes(user.role)) {
       return true;
     }
 
@@ -393,7 +393,7 @@ export class SolicitacaoService {
       const solicitacao = await this.findById(id);
 
       // Verificar se o usuário tem permissão
-      if (![Role.ADMIN, Role.GESTOR_SEMTAS].includes(user.role)) {
+      if (![Role.ADMIN, Role.GESTOR].includes(user.role)) {
         throw new UnauthorizedException(
           'Você não tem permissão para liberar benefícios',
         );
@@ -436,7 +436,7 @@ export class SolicitacaoService {
 
       // Verificar se o usuário tem permissão
       if (
-        ![Role.ADMIN, Role.GESTOR_SEMTAS, Role.TECNICO_SEMTAS].includes(
+        ![Role.ADMIN, Role.GESTOR, Role.TECNICO].includes(
           user.role,
         )
       ) {

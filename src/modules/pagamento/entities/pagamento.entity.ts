@@ -1,6 +1,8 @@
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { StatusPagamentoEnum } from '../enums/status-pagamento.enum';
 import { MetodoPagamentoEnum } from '../enums/metodo-pagamento.enum';
+import { Usuario } from '@/modules/usuario/entities/usuario.entity';
+import { Solicitacao } from '@/modules/solicitacao/entities/solicitacao.entity';
 
 /**
  * Entidade que representa um pagamento de benefício no sistema.
@@ -95,17 +97,17 @@ export class Pagamento {
   /**
    * Relacionamentos com outras entidades
    */
-  // @ManyToOne(() => Solicitacao)
-  // @JoinColumn({ name: 'solicitacao_id' })
-  // solicitacao: Solicitacao;
+  @ManyToOne(() => Solicitacao)
+  @JoinColumn({ name: 'solicitacao_id' })
+  solicitacao: Solicitacao;
 
-  // @ManyToOne(() => InfoBancaria)
-  // @JoinColumn({ name: 'info_bancaria_id' })
-  // infoBancaria: InfoBancaria;
+  /* @ManyToOne(() => InfoBancaria)
+  @JoinColumn({ name: 'info_bancaria_id' })
+  infoBancaria: InfoBancaria; */
 
-  // @ManyToOne(() => Usuario)
-  // @JoinColumn({ name: 'liberado_por' })
-  // responsavelLiberacao: Usuario;
+  @ManyToOne(() => Usuario)
+  @JoinColumn({ name: 'liberado_por' })
+  responsavelLiberacao: Usuario;
 
   /**
    * Comprovantes anexados a este pagamento

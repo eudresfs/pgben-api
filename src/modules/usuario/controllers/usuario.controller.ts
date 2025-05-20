@@ -43,7 +43,7 @@ export class UsuarioController {
    * Lista todos os usuários com filtros e paginação
    */
   @Get()
-  @Roles(Role.ADMIN, Role.GESTOR_SEMTAS)
+  @Roles(Role.ADMIN, Role.GESTOR)
   @ApiOperation({ summary: 'Listar usuários' })
   @ApiResponse({
     status: 200,
@@ -107,7 +107,7 @@ export class UsuarioController {
    * Obtém detalhes de um usuário específico
    */
   @Get(':id')
-  @Roles(Role.ADMIN, Role.GESTOR_SEMTAS)
+  @Roles(Role.ADMIN, Role.GESTOR)
   @ApiOperation({ summary: 'Obter detalhes de um usuário' })
   @ApiResponse({ status: 200, description: 'Usuário encontrado com sucesso' })
   @ApiResponse({ status: 404, description: 'Usuário não encontrado' })
@@ -119,7 +119,7 @@ export class UsuarioController {
    * Cria um novo usuário
    */
   @Post()
-  @Roles(Role.ADMIN, Role.GESTOR_SEMTAS)
+  @Roles(Role.ADMIN, Role.GESTOR)
   @ApiOperation({ summary: 'Criar novo usuário' })
   @ApiResponse({ status: 201, description: 'Usuário criado com sucesso' })
   @ApiResponse({ status: 400, description: 'Dados inválidos' })
@@ -135,7 +135,7 @@ export class UsuarioController {
    * Atualiza um usuário existente
    */
   @Put(':id')
-  @Roles(Role.ADMIN, Role.GESTOR_SEMTAS)
+  @Roles(Role.ADMIN, Role.GESTOR)
   @ApiOperation({ summary: 'Atualizar usuário existente' })
   @ApiResponse({ status: 200, description: 'Usuário atualizado com sucesso' })
   @ApiResponse({ status: 400, description: 'Dados inválidos' })
@@ -155,7 +155,7 @@ export class UsuarioController {
    * Atualiza o status de um usuário
    */
   @Patch(':id/status')
-  @Roles(Role.ADMIN, Role.GESTOR_SEMTAS)
+  @Roles(Role.ADMIN, Role.GESTOR)
   @ApiOperation({ summary: 'Ativar/inativar usuário' })
   @ApiResponse({ status: 200, description: 'Status atualizado com sucesso' })
   @ApiResponse({ status: 404, description: 'Usuário não encontrado' })

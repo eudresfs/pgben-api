@@ -46,9 +46,9 @@ export class NotificationController {
   @Post()
   @Roles(
     Role.ADMIN,
-    Role.GESTOR_SEMTAS,
-    Role.COORDENADOR_UNIDADE,
-    Role.TECNICO_UNIDADE,
+    Role.GESTOR,
+    Role.COORDENADOR,
+    Role.TECNICO,
   )
   @ApiOperation({ summary: 'Criar e enviar uma nova notificação' })
   @ApiResponse({

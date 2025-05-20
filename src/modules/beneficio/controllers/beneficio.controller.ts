@@ -127,7 +127,7 @@ export class BeneficioController {
    * Cria um novo tipo de benefício
    */
   @Post()
-  @Roles(Role.ADMIN, Role.GESTOR_SEMTAS)
+  @Roles(Role.ADMIN, Role.GESTOR)
   @ApiOperation({ 
     summary: 'Criar novo tipo de benefício',
     description: 'Cria um novo tipo de benefício no sistema.'
@@ -175,7 +175,7 @@ export class BeneficioController {
    * Atualiza um tipo de benefício existente
    */
   @Put(':id')
-  @Roles(Role.ADMIN, Role.GESTOR_SEMTAS)
+  @Roles(Role.ADMIN, Role.GESTOR)
   @ApiOperation({ 
     summary: 'Atualizar tipo de benefício existente',
     description: 'Atualiza os dados de um tipo de benefício existente.'
@@ -249,7 +249,7 @@ export class BeneficioController {
    * Adiciona requisito documental a um benefício
    */
   @Post(':id/requisitos')
-  @Roles(Role.ADMIN, Role.GESTOR_SEMTAS)
+  @Roles(Role.ADMIN, Role.GESTOR)
   @ApiOperation({ summary: 'Adicionar requisito documental' })
   @ApiResponse({ status: 201, description: 'Requisito adicionado com sucesso' })
   @ApiResponse({ status: 400, description: 'Dados inválidos' })
@@ -265,7 +265,7 @@ export class BeneficioController {
    * Configura fluxo de aprovação de um benefício
    */
   @Put(':id/fluxo')
-  @Roles(Role.ADMIN, Role.GESTOR_SEMTAS)
+  @Roles(Role.ADMIN, Role.GESTOR)
   @ApiOperation({ summary: 'Configurar fluxo de aprovação' })
   @ApiResponse({ status: 200, description: 'Fluxo configurado com sucesso' })
   @ApiResponse({ status: 400, description: 'Dados inválidos' })

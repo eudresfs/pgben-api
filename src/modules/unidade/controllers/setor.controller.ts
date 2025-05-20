@@ -40,7 +40,7 @@ export class SetorController {
    * Cria um novo setor
    */
   @Post()
-  @Roles(Role.ADMIN, Role.GESTOR_SEMTAS)
+  @Roles(Role.ADMIN, Role.GESTOR)
   @ApiOperation({ summary: 'Criar novo setor' })
   @ApiResponse({ status: 201, description: 'Setor criado com sucesso' })
   @ApiResponse({ status: 400, description: 'Dados inválidos' })
@@ -62,7 +62,7 @@ export class SetorController {
    * Atualiza um setor existente
    */
   @Put(':id')
-  @Roles(Role.ADMIN, Role.GESTOR_SEMTAS)
+  @Roles(Role.ADMIN, Role.GESTOR)
   @ApiOperation({ summary: 'Atualizar setor existente' })
   @ApiResponse({ status: 200, description: 'Setor atualizado com sucesso' })
   @ApiResponse({ status: 400, description: 'Dados inválidos' })

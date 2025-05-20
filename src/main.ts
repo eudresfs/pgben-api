@@ -1,166 +1,129 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe, HttpException, HttpStatus, Logger } from '@nestjs/common';
-import { SwaggerModule } from '@nestjs/swagger';
 import { ResponseInterceptor } from './shared/interceptors/response.interceptor';
 import { HttpExceptionFilter } from './shared/filters/http-exception.filter';
-import {
-  swaggerConfig,
-  swaggerDocumentOptions,
-  swaggerSetupOptions,
-  setupSwagger,
-} from './shared/configs/swagger';
+import { setupSwagger } from './shared/configs/swagger';
 import { HealthCheckService } from './shared/services/health-check.service';
-import * as http from 'http';
+import { ConfigService } from '@nestjs/config';
+import helmet from 'helmet';
+import compression from 'compression';
+import timeout from 'connect-timeout';
 
-/**
- * Bootstrap da aplicação PGBen
- * Implementação que garante o funcionamento correto do servidor
- */
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
   logger.log('Iniciando aplicação PGBen...');
 
-  try {
-    // Configuração da porta
-    const port = parseInt(process.env.PORT || '3000', 10);
-    
-    // Verificar se a porta está disponível antes de tentar usar
-    const isPortAvailable = await checkPortAvailability(port, logger);
-    if (!isPortAvailable) {
-      logger.warn(`Porta ${port} já está em uso. Tentando porta alternativa ${port + 1}...`);
-      const isAltPortAvailable = await checkPortAvailability(port + 1, logger);
-      if (!isAltPortAvailable) {
-        logger.error(`Portas ${port} e ${port + 1} estão em uso. Verifique os processos em execução.`);
-      }
-    }
+  /** 1. Cria a aplicação NestJS com Express */
+  const app = await NestFactory.create(AppModule, {
+    logger: ['error', 'warn', 'log', 'debug'],
+    abortOnError: false,
+  });
 
-    // Criar a aplicação NestJS
-    logger.log('Criando instância da aplicação NestJS...');
-    const app = await NestFactory.create(AppModule, {
-      logger: ['error', 'warn', 'log', 'debug'],
-      abortOnError: false,
-    });
+  /** 2. Carrega configurações centralizadas */
+  const configService = app.get(ConfigService);
+  const port = configService.get<number>('PORT', 3000);
+  const env = configService.get<string>('NODE_ENV', 'development');
+  const isDev = env === 'development';
+  
+  /** 3. Prefixo global */
+  app.setGlobalPrefix('api');
 
-    // Configurar a aplicação
-    app.setGlobalPrefix('api/');
-    
-    // Configuração do CORS otimizada
-    app.enableCors({
-      origin: ['http://localhost:4200', 'http://localhost:3000', 'http://127.0.0.1:3000'],
-      methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-      credentials: true,
-      allowedHeaders: 'Origin,X-Requested-With,Content-Type,Accept,Authorization',
-    });
+  /** 4. Middleware de segurança */
+  app.use(helmet({
+    contentSecurityPolicy: isDev ? false : undefined,
+  }));
+  app.use(compression()); // Compressão gzip
+  app.use(timeout('45s')); // Timeout global para requisições
+  
+  /** 5. CORS */
+  app.enableCors({
+    origin: isDev ? true : [
+      configService.get<string>('FRONTEND_URL', 'http://localhost:4200'),
+      'http://localhost:3000',
+      'http://127.0.0.1:3000',
+    ],
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    credentials: true,
+    allowedHeaders: 'Origin,X-Requested-With,Content-Type,Accept,Authorization',
+  });
 
-    // Configuração do Swagger
+  /** 6. Swagger */
+  if (isDev || configService.get<boolean>('ENABLE_SWAGGER', false)) {
     setupSwagger(app);
-
-    // Configuração do pipe de validação global
-    app.useGlobalPipes(
-      new ValidationPipe({
-        whitelist: true,
-        forbidNonWhitelisted: true,
-        transform: true,
-        transformOptions: { enableImplicitConversion: true },
-        exceptionFactory: (errors) => {
-          const messages = errors.map((error) => ({
-            property: error.property,
-            constraints: error.constraints || {},
-          }));
-          return new HttpException(
-            {
-              statusCode: 400,
-              message: 'Erro de validação',
-              errors: messages,
-            },
-            HttpStatus.BAD_REQUEST,
-          );
-        },
-      }),
-    );
-
-    // Configuração do interceptor de resposta global
-    app.useGlobalInterceptors(new ResponseInterceptor());
-
-    // Configuração do filtro de exceção global
-    app.useGlobalFilters(new HttpExceptionFilter());
-
-    // Verificar saúde dos serviços externos
-    try {
-      const healthCheckService = app.get(HealthCheckService);
-      const redisAvailable = await healthCheckService.isRedisAvailable();
-      healthCheckService.logServicesStatus(redisAvailable);
-    } catch (error) {
-      logger.error(`Erro ao verificar saúde dos serviços: ${error.message}`);
-      logger.error('Continuando inicialização apesar do erro...');
-    }
-
-    // Iniciar o servidor HTTP com método alternativo que funcionou anteriormente
-    logger.log('Iniciando servidor HTTP...');
-    
-    // Método que funcionou: usar o httpAdapter diretamente
-    const httpAdapter = app.getHttpAdapter();
-    const server = httpAdapter.getHttpServer();
-    
-    // Iniciar com binding explícito para localhost
-    await new Promise<void>((resolve, reject) => {
-      server.once('error', (err: any) => {
-        logger.error(`Erro ao iniciar servidor: ${err.message}`);
-        reject(err);
-      });
-      
-      // Usar 'localhost' em vez de '0.0.0.0' - essa foi a solução que funcionou
-      server.listen(port, 'localhost', () => {
-        logger.log(`Servidor iniciado com sucesso em localhost:${port}`);
-        resolve();
-      });
-    });
-    
-    logger.log('============================================');
-    logger.log(`✅ Servidor iniciado com sucesso em http://localhost:${port}`);
-    logger.log(`✅ Documentação da API disponível em http://localhost:${port}/api-docs`);
-    logger.log(`✅ Ambiente: ${process.env.NODE_ENV || 'development'}`);
-    logger.log('============================================');
-
-  } catch (error) {
-    logger.error(`ERRO AO INICIAR SERVIDOR: ${error.message}`);
-    logger.error(error.stack);
-    process.exit(1);
   }
-}
 
-/**
- * Função auxiliar para verificar se uma porta está disponível
- */
-async function checkPortAvailability(port: number, logger: Logger): Promise<boolean> {
-  return new Promise<boolean>((resolve) => {
-    const server = http.createServer();
-    
-    server.once('error', (err: any) => {
-      server.close();
-      if (err.code === 'EADDRINUSE') {
-        logger.warn(`Porta ${port} já está em uso por outro processo`);
-        resolve(false);
-      } else {
-        logger.warn(`Erro ao verificar porta ${port}: ${err.message}`);
-        resolve(true); // Em caso de outro erro, assumir que a porta está disponível
-      }
+  /** 7. Pipes / interceptors / filters globais */
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+      transformOptions: { enableImplicitConversion: true },
+      exceptionFactory: (errors) => {
+        const messages = errors.map((err) => ({
+          property: err.property,
+          constraints: err.constraints || {},
+        }));
+        return new HttpException(
+          { statusCode: 400, message: 'Erro de validação', errors: messages },
+          HttpStatus.BAD_REQUEST,
+        );
+      },
+    }),
+  );
+  app.useGlobalInterceptors(new ResponseInterceptor());
+  app.useGlobalFilters(new HttpExceptionFilter());
+  
+  // Middleware para garantir que requisições com timeout sejam encerradas
+  app.use((req, res, next) => {
+    if (!req.timedout) next();
+  });
+
+  /** 8. Health-check (ignora falhas para não travar o bootstrap) */
+  try {
+    const health = app.get(HealthCheckService);
+    const redisOK = await health.isRedisAvailable();
+    health.logServicesStatus(redisOK);
+  } catch (e) {
+    logger.warn(`Health-check falhou, mas continuando: ${e.message}`);
+  }
+
+  /** 9. Sobe o servidor */
+  const server = await app.listen(port, '0.0.0.0');
+  logger.log('============================================');
+  logger.log(`✅ Servidor online:  http://localhost:${port}`);
+  
+  if (isDev || configService.get<boolean>('ENABLE_SWAGGER', false)) {
+    logger.log(`✅ Swagger:          http://localhost:${port}/api-docs`);
+  }
+  
+  logger.log(`✅ Ambiente:         ${env}`);
+  logger.log('============================================');
+
+  /** 10. Configuração para graceful shutdown */
+  const signals = ['SIGTERM', 'SIGINT'];
+  signals.forEach(signal => {
+    process.on(signal, async () => {
+      logger.log(`${signal} recebido - iniciando shutdown gracioso...`);
+      
+      // Fecha conexões com banco de dados e outros recursos
+      await app.close();
+      
+      // Notifica servidores de logs externos
+      logger.log('Aplicação encerrada com sucesso');
+      
+      // Aguarda finalização de logs
+      setTimeout(() => {
+        process.exit(0);
+      }, 1000);
     });
-    
-    server.once('listening', () => {
-      server.close();
-      logger.log(`Porta ${port} está disponível`);
-      resolve(true);
-    });
-    
-    server.listen(port, 'localhost');
   });
 }
 
-bootstrap().catch(error => {
+bootstrap().catch((err) => {
   const logger = new Logger('Bootstrap');
-  logger.error(`Erro não capturado: ${error.message}`);
-  logger.error(error.stack);
+  logger.error(`Falha crítica ao iniciar: ${err.message}`);
+  logger.error(err.stack);
   process.exit(1);
 });

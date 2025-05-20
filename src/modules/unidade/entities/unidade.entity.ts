@@ -45,11 +45,13 @@ export class Unidade {
   @Column({ nullable: true })
   sigla: string;
 
-  @Column({ nullable: true, default: 'cras' })
-  tipo: string;
-
-  @Column({ nullable: true })
-  tipo_unidade: string;
+  @Column({
+    type: 'enum',
+    enum: TipoUnidade,
+    enumName: 'tipo_unidade',
+    default: TipoUnidade.CRAS,
+  })
+  tipo: TipoUnidade;
 
   @Column({ nullable: true })
   endereco: string;
@@ -62,7 +64,7 @@ export class Unidade {
   email: string;
 
   @Column({ nullable: true })
-  responsavel: string;
+  responsavel_matricula: string;
 
   @Column({
     type: 'enum',

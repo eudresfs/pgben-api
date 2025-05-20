@@ -22,15 +22,6 @@ export enum TipoMoradiaEnum {
   OUTRO = 'outro',
 }
 
-export enum TipoConstrucaoEnum {
-  ALVENARIA = 'alvenaria',
-  MADEIRA = 'madeira',
-  MISTA = 'mista',
-  TAIPA = 'taipa',
-  PALAFITA = 'palafita',
-  OUTRO = 'outro',
-}
-
 @Entity('situacao_moradia')
 @Index(['cidadao_id'], { unique: true })
 export class SituacaoMoradia {
@@ -55,16 +46,6 @@ export class SituacaoMoradia {
   @IsEnum(TipoMoradiaEnum, { message: 'Tipo de moradia inválido' })
   tipo_moradia: TipoMoradiaEnum;
 
-  @Column({
-    type: 'enum',
-    enum: TipoConstrucaoEnum,
-    enumName: 'tipo_construcao_enum',
-    nullable: true,
-  })
-  @IsOptional()
-  @IsEnum(TipoConstrucaoEnum, { message: 'Tipo de construção inválido' })
-  tipo_construcao: TipoConstrucaoEnum;
-
   @Column({ nullable: true })
   @IsOptional()
   numero_comodos: number;
@@ -77,18 +58,23 @@ export class SituacaoMoradia {
 
   @Column({ nullable: true })
   @IsOptional()
+  @IsNumber({}, { message: 'Tempo de moradia deve ser um número' })
   tempo_moradia: number;
 
-  @Column({ default: false })
+  @Column({ nullable: true })
+  @IsOptional()
   possui_banheiro: boolean;
 
-  @Column({ default: false })
+  @Column({ nullable: true })
+  @IsOptional()
   possui_energia_eletrica: boolean;
 
-  @Column({ default: false })
+  @Column({ nullable: true })
+  @IsOptional()
   possui_agua_encanada: boolean;
 
-  @Column({ default: false })
+  @Column({ nullable: true })
+  @IsOptional()
   possui_coleta_lixo: boolean;
 
   @Column({ nullable: true })

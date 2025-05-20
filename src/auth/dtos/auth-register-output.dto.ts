@@ -20,7 +20,7 @@ export class RegisterOutput {
   username: string;
 
   @Expose()
-  @ApiProperty({ example: [Role.TECNICO_UNIDADE] })
+  @ApiProperty({ example: [Role.TECNICO] })
   roles: Role[];
 
   @Expose()

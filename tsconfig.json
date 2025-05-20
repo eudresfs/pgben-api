@@ -24,6 +24,6 @@
     "esModuleInterop": true,
     "resolveJsonModule": true
   },
-  "include": ["src/**/*", "test/**/*"],
+  "include": ["src/**/*", "test/**/*", ".backup/nova-estrutura", ".backup/1000000-CreateBaseStructure.ts", ".backup/1010000-CreateAuthSchema.ts", ".backup/1020000-CidadaoSchemaConsolidado.ts", ".backup/1030000-CreateBeneficioSchema.ts", ".backup/1040000-CreateSolicitacaoSchema.ts", ".backup/1050000-DocumentoSchemaConsolidado.ts", ".backup/1060000-AuditoriaSchemaConsolidado.ts", ".backup/1070000-CreateRelatorioSchema.ts", ".backup/1080000-CreateIntegracaoSchema.ts", ".backup/1090000-CreateNotificacaoSchema.ts", ".backup/1100000-MetricasSchemaConsolidado.ts", ".backup/1110000-PagamentoSchemaConsolidado.ts", ".backup/1621500000-CreateIntegradorSchema.ts", ".backup/1716400000000-CreateConfiguracaoSchema.ts"],
   "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.e2e.ts", "**/*-spec.ts", "**/*.spec.ts", "tests", "__tests__"]
 }

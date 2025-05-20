@@ -78,7 +78,7 @@ export class RelatoriosService {
 
     // Verificar permissões do usuário
     if (
-      ![Role.ADMIN, Role.GESTOR_SEMTAS, Role.TECNICO_SEMTAS].includes(user.role)
+      ![Role.ADMIN, Role.GESTOR, Role.TECNICO].includes(user.role)
     ) {
       throw new UnauthorizedException(
         'Você não tem permissão para gerar este relatório',
@@ -214,9 +214,9 @@ export class RelatoriosService {
     if (
       ![
         Role.ADMIN,
-        Role.GESTOR_SEMTAS,
-        Role.TECNICO_SEMTAS,
-        Role.COORDENADOR_UNIDADE,
+        Role.GESTOR,
+        Role.TECNICO,
+        Role.COORDENADOR,
       ].includes(user.role)
     ) {
       throw new UnauthorizedException(
@@ -226,7 +226,7 @@ export class RelatoriosService {
 
     // Verificar permissão por unidade
     if (
-      user.role === Role.COORDENADOR_UNIDADE &&
+      user.role === Role.COORDENADOR &&
       (!unidadeId || unidadeId !== user.unidade_id)
     ) {
       throw new UnauthorizedException(
@@ -356,7 +356,7 @@ export class RelatoriosService {
     const { dataInicio, dataFim, formato, user } = options;
 
     // Verificar permissões do usuário
-    if (![Role.ADMIN, Role.GESTOR_SEMTAS].includes(user.role)) {
+    if (![Role.ADMIN, Role.GESTOR].includes(user.role)) {
       throw new UnauthorizedException(
         'Você não tem permissão para gerar este relatório',
       );

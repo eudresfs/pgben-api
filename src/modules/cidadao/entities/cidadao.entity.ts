@@ -15,10 +15,14 @@ import {
   IsOptional,
   IsEnum,
   Validate,
+  IsString,
+  MaxLength,
+  MinLength,
 } from 'class-validator';
 import { CPFValidator } from '../validators/cpf-validator';
 import { NISValidator } from '../validators/nis-validator';
 import { PapelCidadao } from './papel-cidadao.entity';
+import { ComposicaoFamiliar } from './composicao-familiar.entity';
 
 export enum Sexo {
   MASCULINO = 'masculino',
@@ -37,7 +41,14 @@ export class Cidadao {
 
   @Column()
   @IsNotEmpty({ message: 'Nome é obrigatório' })
+  @IsString({ message: 'Nome deve ser uma string' })
+  @MinLength(3, { message: 'Nome deve ter no mínimo 3 caracteres' })
+  @MaxLength(100, { message: 'Nome deve ter no máximo 100 caracteres' })
   nome: string;
+
+  @Column()
+  @IsOptional()
+  nome_social: string;
 
   @Column({ unique: true })
   @IsNotEmpty({ message: 'CPF é obrigatório' })
@@ -49,6 +60,27 @@ export class Cidadao {
   @IsNotEmpty({ message: 'RG é obrigatório' })
   rg: string;
 
+  @Column({ unique: true })
+  @IsNotEmpty({ message: 'NIS é obrigatório' })
+  @Length(11, 11, { message: 'NIS deve ter 11 caracteres' })
+  @Validate(NISValidator, { message: 'NIS inválido' })
+  nis: string;
+
+  @Column({ unique: true })
+  @IsNotEmpty({ message: 'Nome da mãe é obrigatório' })
+  @IsString({ message: 'Nome da mãe deve ser uma string' })
+  @MinLength(3, { message: 'Nome da mãe deve ter no mínimo 3 caracteres' })
+  @MaxLength(100, { message: 'Nome da mãe deve ter no máximo 100 caracteres' })
+  nome_mae: string;
+
+  @Column({ unique: true })
+  @IsNotEmpty({ message: 'Naturalidade é obrigatório' })
+  naturalidade: string;
+
+  @Column({ nullable: false })
+  @IsNotEmpty({ message: 'Prontuario SUAS é obrigatório' })
+  prontuario_suas: string;
+
   @Column({ type: 'date' })
   @IsNotEmpty({ message: 'Data de nascimento é obrigatória' })
   data_nascimento: Date;
@@ -57,6 +89,11 @@ export class Cidadao {
     eager: true,
   })
   papeis: PapelCidadao[];
+
+  @OneToMany(() => ComposicaoFamiliar, (composicaoFamiliar) => composicaoFamiliar.cidadao, {
+    eager: true,
+  })
+  composicao_familiar: ComposicaoFamiliar[];
 
   @Column({
     type: 'enum',
@@ -67,14 +104,8 @@ export class Cidadao {
   @IsNotEmpty({ message: 'Sexo é obrigatório' })
   sexo: Sexo;
 
-  @Column({ nullable: true, unique: true })
-  @IsOptional()
-  @Length(11, 11, { message: 'NIS deve ter 11 caracteres' })
-  @Validate(NISValidator, { message: 'NIS inválido' })
-  nis: string;
-
-  @Column({ nullable: true })
-  @IsOptional()
+  @Column({ nullable: false })
+  @IsNotEmpty({ message: 'Telefone é obrigatório' })
   telefone: string;
 
   @Column({ nullable: true })
@@ -94,20 +125,6 @@ export class Cidadao {
     estado: string;
     cep: string;
   };
-
-  @Column('decimal', { precision: 10, scale: 2, nullable: true })
-  @IsOptional()
-  renda: number;
-
-  @Column('jsonb', { nullable: true })
-  @IsOptional()
-  @Index()
-  composicao_familiar: {
-    nome: string;
-    parentesco: string;
-    data_nascimento: Date;
-    renda?: number;
-  }[];
 
   @Column({ default: true })
   ativo: boolean;

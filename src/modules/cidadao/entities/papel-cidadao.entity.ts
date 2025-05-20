@@ -10,6 +10,7 @@ import {
   Index,
 } from 'typeorm';
 import { Cidadao } from './cidadao.entity';
+import { ComposicaoFamiliar } from './composicao-familiar.entity';
 
 /**
  * Enum para tipos de papéis que um cidadão pode assumir
@@ -38,6 +39,13 @@ export class PapelCidadao {
   @ManyToOne(() => Cidadao, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'cidadao_id' })
   cidadao: Cidadao;
+  
+  @Column({ name: 'composicao_familiar_id', type: 'uuid', nullable: true })
+  composicao_familiar_id: string;
+
+  @ManyToOne(() => ComposicaoFamiliar, { onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'composicao_familiar_id' })
+  composicao_familiar: ComposicaoFamiliar;
 
   @Column({
     name: 'tipo_papel',

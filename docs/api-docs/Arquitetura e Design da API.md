@@ -294,7 +294,7 @@ Implementaremos Role-Based Access Control com os seguintes papéis:
 ```typescript
 enum Role {
   ADMIN = 'administrador',
-  GESTOR_SEMTAS = 'gestor_semtas',
+  GESTOR = 'gestor_semtas',
   TECNICO_SEMTAS = 'tecnico_semtas',
   TECNICO_UNIDADE = 'tecnico_unidade',
 }
@@ -337,7 +337,7 @@ export class SolicitacoesController {
   }
 
   @Put(':id/aprovar')
-  @Roles(Role.GESTOR_SEMTAS, Role.ADMIN)
+  @Roles(Role.GESTOR, Role.ADMIN)
   async aprovar(@Param('id') id: string, @Req() req) {
     return this.solicitacoesService.aprovar(id, req.user);
   }

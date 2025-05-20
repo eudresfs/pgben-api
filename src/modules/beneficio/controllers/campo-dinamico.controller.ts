@@ -52,7 +52,7 @@ export class CampoDinamicoController {
    * Cria um novo campo dinâmico para um tipo de benefício
    */
   @Post()
-  @Roles(Role.ADMIN, Role.GESTOR_SEMTAS)
+  @Roles(Role.ADMIN, Role.GESTOR)
   @ApiOperation({ summary: 'Criar novo campo dinâmico' })
   @ApiResponse({
     status: 201,
@@ -75,7 +75,7 @@ export class CampoDinamicoController {
    * Atualiza um campo dinâmico existente
    */
   @Put(':id')
-  @Roles(Role.ADMIN, Role.GESTOR_SEMTAS)
+  @Roles(Role.ADMIN, Role.GESTOR)
   @ApiOperation({ summary: 'Atualizar campo dinâmico existente' })
   @ApiResponse({
     status: 200,
@@ -95,7 +95,7 @@ export class CampoDinamicoController {
    * Remove um campo dinâmico
    */
   @Delete(':id')
-  @Roles(Role.ADMIN, Role.GESTOR_SEMTAS)
+  @Roles(Role.ADMIN, Role.GESTOR)
   @ApiOperation({ summary: 'Remover campo dinâmico' })
   @ApiResponse({
     status: 200,
@@ -121,7 +121,7 @@ export class CampoDinamicoController {
    * Obtém o histórico de versões do schema de um tipo de benefício
    */
   @Get('schema/historico')
-  @Roles(Role.ADMIN, Role.GESTOR_SEMTAS)
+  @Roles(Role.ADMIN, Role.GESTOR)
   @ApiOperation({ summary: 'Obter histórico de versões do schema' })
   @ApiResponse({ status: 200, description: 'Histórico retornado com sucesso' })
   @ApiResponse({ status: 404, description: 'Tipo de benefício não encontrado' })

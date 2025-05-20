@@ -102,7 +102,7 @@ export class CreateUsuarioDto {
   @IsEnum(Role, { message: 'Papel inválido' })
   @ApiProperty({
     enum: Role,
-    example: Role.TECNICO_UNIDADE,
+    example: Role.TECNICO,
     description: 'Papel do usuário no sistema',
   })
   role: Role;

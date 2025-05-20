@@ -23,7 +23,7 @@ export class MetricasAnomaliasController {
    * Detecta anomalias para um snapshot específico
    */
   @Post('anomalias/snapshot/:id')
-  @Roles(Role.ADMIN, Role.GESTOR_SEMTAS, Role.COORDENADOR_UNIDADE)
+  @Roles(Role.ADMIN, Role.GESTOR, Role.COORDENADOR)
   @ApiOperation({ summary: 'Detectar anomalias para um snapshot específico' })
   @ApiParam({ name: 'id', description: 'ID do snapshot' })
   @ApiQuery({ 
@@ -57,7 +57,7 @@ export class MetricasAnomaliasController {
    * Executa detecção de anomalias em lote para todas as métricas
    */
   @Post('anomalias/batch')
-  @Roles(Role.ADMIN, Role.COORDENADOR_UNIDADE)
+  @Roles(Role.ADMIN, Role.COORDENADOR)
   @ApiOperation({ summary: 'Detectar anomalias em lote para todas as métricas' })
   @ApiQuery({ 
     name: 'nivel_confianca', 
@@ -87,7 +87,7 @@ export class MetricasAnomaliasController {
    * Analisa tendências para uma métrica
    */
   @Post('tendencias/metrica/:id')
-  @Roles(Role.ADMIN, Role.GESTOR_SEMTAS, Role.COORDENADOR_UNIDADE)
+  @Roles(Role.ADMIN, Role.GESTOR, Role.COORDENADOR)
   @ApiOperation({ summary: 'Analisar tendências para uma métrica' })
   @ApiParam({ name: 'id', description: 'ID da métrica' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Resultado da análise de tendências' })

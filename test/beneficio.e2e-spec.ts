@@ -58,10 +58,10 @@ describe('BeneficioController (e2e)', () => {
       where: { role: Role.ADMIN },
     });
     const gestorUser = await usuarioRepository.findOne({
-      where: { role: Role.GESTOR_SEMTAS },
+      where: { role: Role.GESTOR },
     });
     const tecnicoUser = await usuarioRepository.findOne({
-      where: { role: Role.TECNICO_UNIDADE },
+      where: { role: Role.TECNICO },
     });
 
     // Gerar tokens de acesso para os usuários
