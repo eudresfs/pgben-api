@@ -26,6 +26,10 @@ $publicKeyBase64  = [Convert]::ToBase64String([IO.File]::ReadAllBytes($publicKey
 $jwtSecret         = [Convert]::ToBase64String([Guid]::NewGuid().ToByteArray())
 $jwtRefreshSecret  = [Convert]::ToBase64String([Guid]::NewGuid().ToByteArray())
 
+# Gera uma chave de criptografia segura de 32 bytes (256 bits)
+$encryptionKey = -join ((65..90) + (97..122) + (48..57) | Get-Random -Count 32 | ForEach-Object {[char]$_})
+$auditSignignKey = -join ((65..90) + (97..122) + (48..57) | Get-Random -Count 32 | ForEach-Object {[char]$_})
+
 # Conteúdo final
 $envContent = @"
 # JWT Settings
@@ -34,10 +38,14 @@ JWT_SECRET=$jwtSecret
 JWT_REFRESH_SECRET=$jwtRefreshSecret
 JWT_PRIVATE_KEY_BASE64=$privateKeyBase64
 JWT_PUBLIC_KEY_BASE64=$publicKeyBase64
+
+# Encryption Key (32 bytes for AES-256)
+ENCRYPTION_KEY=$encryptionKey
+AUDIT_SIGNING_KEY=$auditSignignKey
 "@
 
-# Escreve no arquivo .env.jwt
-$envPath = ".env.jwt"
+# Escreve no arquivo .env.keys
+$envPath = ".env.keys"
 $envContent | Out-File -Encoding utf8 -FilePath $envPath
 
 # Copia as chaves para a pasta de segredos (opcional)
@@ -50,8 +58,11 @@ Copy-Item $privateKeyPath -Destination (Join-Path $secretsPath "jwt-private.pem"
 Copy-Item $publicKeyPath  -Destination (Join-Path $secretsPath "jwt-public.pem") -Force
 
 # Limpa arquivos temporários
-Remove-Item $privateKeyPath, $publicKeyPath
+Remove-Item $privateKeyPath, $publicKeyPath 
 
 Write-Host "`n✅ Arquivo '.env.jwt' gerado com sucesso para algoritmo RS256!"
 Write-Host "🔐 Chaves assimétricas RSA criadas e configuradas"
+Write-Host "🔑 Chave de criptografia gerada: $encryptionKey"
+Write-Host "🔍 Chave de auditoria gerada: $auditSignignKey"
+Write-Host "   (Copie esta chave para o seu arquivo .env principal)"
 Write-Host "📂 Caminho: $(Resolve-Path $envPath)"

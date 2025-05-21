@@ -29,8 +29,11 @@ export class CriptografiaService {
       // Gerar uma chave aleatória de 32 bytes (256 bits)
       this.key = crypto.randomBytes(32);
     } else {
-      // Usar a chave configurada
-      this.key = Buffer.from(keyString, 'hex');
+      this.logger.log('Usando chave de criptografia da variável de ambiente');
+      
+      // Usar a chave configurada - usando 'utf8' em vez de 'hex'
+      // A chave é uma string de 32 caracteres, não uma string hexadecimal
+      this.key = Buffer.from(keyString, 'utf8');
 
       // Verificar se a chave tem o tamanho correto
       if (this.key.length !== 32) {

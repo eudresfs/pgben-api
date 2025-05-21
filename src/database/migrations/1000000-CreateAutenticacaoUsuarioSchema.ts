@@ -122,6 +122,7 @@ export class CreateAutenticacaoUsuarioSchema1685468879182 implements MigrationIn
         BEFORE UPDATE ON usuario
         FOR EACH ROW
         EXECUTE FUNCTION update_timestamp();
+
       `);
 
       // 6. Criar tabela de associação entre roles e permissões (baseado na entidade RolePermissao)
@@ -176,7 +177,29 @@ export class CreateAutenticacaoUsuarioSchema1685468879182 implements MigrationIn
         FOR EACH ROW
         EXECUTE FUNCTION update_timestamp();
       `);
-
+      
+      // 8. Inserir usuário administrador padrão
+      await queryRunner.query(`
+        INSERT INTO "usuario" (
+          "id",
+          "nome",
+          "email",
+          "senha_hash",
+          "role",
+          "status",
+          "primeiro_acesso"
+        ) VALUES (
+          '00000000-0000-0000-0000-000000000000',
+          'Administrador do Sistema',
+          'admin@natal.pgben.gov.br',
+          '$2b$10$IObmeMKebVcMlY8BzrHf1ebGncJ.5SBnWhxVKgXAQULGPs568CiAO',
+          'admin',
+          'ativo',
+          false
+        ) ON CONFLICT (id) DO NOTHING;
+      `);
+      
+      console.log('Usuário administrador padrão criado com sucesso.');
       console.log('Migration 1000000-CreateAutenticacaoUsuarioSchema executada com sucesso.');
     } catch (error) {
       console.error('Erro ao executar migration 1000000-CreateAutenticacaoUsuarioSchema:', error);

@@ -2,27 +2,29 @@
 services:
   # Serviço da API
   api:
+    volumes:
+      - .:/app
     build:
       context: .
       dockerfile: Dockerfile
     container_name: pgben_api
     ports:
       - "3000:3000"
+    env_file: .env
     environment:
       NODE_ENV: production
       DATABASE_HOST: postgres
       DATABASE_PORT: 5432
       DATABASE_USER: ${DB_USER:-postgres}
       DATABASE_PASSWORD: ${DB_PASS:-postgres}
-      DATABASE_NAME: ${DB_NAME:-pgben_db}
+      DATABASE_NAME: ${DB_NAME:-pgben}
       REDIS_HOST: redis
       REDIS_PORT: 6379
       MINIO_ENDPOINT: minio
       MINIO_PORT: 9000
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
-      JWT_SECRET: ${JWT_SECRET:-default_jwt_secret_for_dev_only}
-      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-default_key_32chars_for_dev_only_}
+      ENCRYPTION_KEY: "${ENCRYPTION_KEY}"
       MAIL_HOST: mailhog
       MAIL_PORT: 1025
     depends_on:
@@ -51,7 +53,7 @@ services:
     environment:
       POSTGRES_USER: ${DB_USER:-postgres}
       POSTGRES_PASSWORD: ${DB_PASS:-postgres}
-      POSTGRES_DB: ${DB_NAME:-pgben_db}
+      POSTGRES_DB: ${DB_NAME:-pgben}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -63,6 +65,8 @@ services:
     command: postgres -c 'max_connections=200' -c 'shared_buffers=256MB' -c 'work_mem=8MB'
     networks:
       - pgben_network
+    # Garante que a imagem já foi baixada antes de iniciar o serviço
+    pull_policy: if_not_present
 
   # Redis para cache e filas
   redis:
@@ -80,6 +84,8 @@ services:
     restart: unless-stopped
     networks:
       - pgben_network
+    # Garante que a imagem já foi baixada antes de iniciar o serviço
+    pull_policy: if_not_present
 
   # MinIO para armazenamento de documentos
   minio:
@@ -102,6 +108,8 @@ services:
     restart: unless-stopped
     networks:
       - pgben_network
+    # Garante que a imagem já foi baixada antes de iniciar o serviço
+    pull_policy: if_not_present
 
   # Configuração inicial do MinIO
   createbuckets:
@@ -152,3 +160,4 @@ volumes:
     name: pgben_redis_data
   minio_data:
     name: pgben_minio_data
+    

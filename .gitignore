@@ -1,9 +1,8 @@
-# compiled output
+# Compiled output
 /dist
 /node_modules
 /build
 /secrets
-
 
 # Logs
 logs
@@ -16,10 +15,12 @@ lerna-debug.log*
 
 # OS
 .DS_Store
+Thumbs.db
 
 # Tests
 /coverage
 /.nyc_output
+/test-results
 
 # IDEs and editors
 /.idea
@@ -37,17 +38,19 @@ lerna-debug.log*
 !.vscode/launch.json
 !.vscode/extensions.json
 
-# dotenv environment variable files
+# Environment variables
 .env
+.env.docker
 .env.development.local
 .env.test.local
 .env.production.local
 .env.local
 
-# temp directory
+# Temporary files
 .temp
 .tmp
 .bak
+temp/
 
 # Runtime data
 pids
@@ -57,3 +60,80 @@ pids
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# NestJS specific
+schematic.lock
+
+# Dependency lock files (uncomment if needed)
+# package-lock.json
+# yarn.lock
+
+# Database
+*.sqlite
+*.sqlite3
+/pgdata
+/postgres_data
+dump.sql
+dump.gz
+*.dump
+
+# MinIO / storage
+/minio_data
+/minio-data
+/data
+/uploads
+.minio.sys/
+
+# Kubernetes / Docker
+/k8s-secrets
+*.dockerignore
+docker-compose.override.yml
+
+# ELK Stack
+/elasticsearch_data
+/kibana_data
+/logstash_data
+
+# Monitoring & observability
+/prometheus_data
+/grafana_data
+/tempo_data
+/loki_data
+
+# Certs and keys
+*.pem
+*.key
+*.crt
+*.csr
+*.srl
+/certs
+/keys
+
+# Backup files
+*.backup
+*.bkp
+backups/
+/backup-data
+
+# Application specific
+.windsurf
+workflow-output/
+
+# Generated documentation
+/docs-generated
+/openapi-spec.json
+/swagger-spec.json
+
+# NPM error logs
+.npm/_logs
+
+# Local terraform files
+*.terraform
+.terraform.lock.hcl
+terraform.tfstate
+terraform.tfstate.backup
+
+# Audit report files
+**/zap-report
+**/sonarqube_data
+audit-results/

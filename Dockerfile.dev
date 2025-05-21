@@ -1,0 +1,31 @@
+# Imagem base para desenvolvimento
+FROM node:20-alpine
+
+# Diretório de trabalho
+WORKDIR /app
+
+# Instalar dependências necessárias para desenvolvimento
+RUN apk add --no-cache curl wget netcat-openbsd
+
+# Instalar nodemon globalmente para hot reload
+RUN npm install -g nodemon ts-node
+
+# Copia os arquivos de configuração do projeto
+COPY package*.json ./
+
+# Instala as dependências (incluindo as de desenvolvimento)
+RUN npm install
+
+# Script de inicialização para verificar dependências e iniciar em modo de desenvolvimento
+COPY docker-entrypoint.dev.sh /docker-entrypoint.dev.sh
+RUN chmod +x /docker-entrypoint.dev.sh
+
+# Portas expostas
+EXPOSE 3000
+
+# Verificação de saúde
+HEALTHCHECK --interval=10s --timeout=5s --start-period=30s --retries=3 \
+  CMD wget -q -O - http://localhost:3000/api/v1/health || exit 1
+
+# Comando de inicialização para desenvolvimento
+CMD ["/docker-entrypoint.dev.sh"]

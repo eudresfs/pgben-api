@@ -29,38 +29,52 @@ export class CriptografiaService {
     private configService: ConfigService,
     private chaveMonitorService?: ChaveMonitorService,
   ) {
-    // Obter ou gerar a chave mestra para criptografia
-    this.keyPath =
-      this.configService.get<string>('ENCRYPTION_KEY_PATH') ||
-      path.join(process.cwd(), 'config', 'encryption.key');
+    // Obter a chave da variável de ambiente ou do arquivo
+    const envKey = this.configService.get<string>('ENCRYPTION_KEY');
+    
+    if (envKey) {
+      // Usar a chave da variável de ambiente
+      this.masterKey = Buffer.from(envKey);
+      this.logger.log('Usando chave de criptografia da variável de ambiente');
+    } else {
+      // Caminho padrão para o arquivo de chave
+      this.keyPath =
+        this.configService.get<string>('ENCRYPTION_KEY_PATH') ||
+        path.join(process.cwd(), 'config', 'encryption.key');
 
-    // Garantir que o diretório da chave existe
-    const keyDir = path.dirname(this.keyPath);
-    if (!fs.existsSync(keyDir)) {
-      fs.mkdirSync(keyDir, { recursive: true });
-    }
+      // Garantir que o diretório da chave existe
+      const keyDir = path.dirname(this.keyPath);
+      if (!fs.existsSync(keyDir)) {
+        fs.mkdirSync(keyDir, { recursive: true });
+      }
 
-    // Verificar se a chave já existe, caso contrário, criar uma nova
-    if (fs.existsSync(this.keyPath)) {
-      this.masterKey = fs.readFileSync(this.keyPath);
-      this.logger.log('Chave de criptografia carregada com sucesso');
-      
-      // Verificar integridade da chave se o monitor estiver disponível
-      if (this.chaveMonitorService) {
-        const integridadeOk = this.chaveMonitorService.verificarIntegridade();
-        if (!integridadeOk) {
-          this.logger.warn('Alerta de segurança: Possível comprometimento da chave de criptografia');
+      // Verificar se a chave já existe, caso contrário, criar uma nova
+      if (fs.existsSync(this.keyPath)) {
+        this.masterKey = fs.readFileSync(this.keyPath);
+        this.logger.log('Chave de criptografia carregada do arquivo');
+        
+        // Verificar integridade da chave se o monitor estiver disponível
+        if (this.chaveMonitorService) {
+          const integridadeOk = this.chaveMonitorService.verificarIntegridade();
+          if (!integridadeOk) {
+            this.logger.warn('Alerta de segurança: Possível comprometimento da chave de criptografia');
+          }
+        }
+      } else {
+        this.masterKey = crypto.randomBytes(this.keyLength);
+        fs.writeFileSync(this.keyPath, this.masterKey, { mode: 0o600 });
+        this.logger.log('Nova chave de criptografia gerada e salva');
+        
+        // Criar backup da chave se o monitor estiver disponível
+        if (this.chaveMonitorService) {
+          this.chaveMonitorService.criarBackup();
         }
       }
-    } else {
-      this.masterKey = crypto.randomBytes(this.keyLength);
-      fs.writeFileSync(this.keyPath, this.masterKey, { mode: 0o600 }); // Permissões restritas
-      this.logger.log('Nova chave de criptografia gerada e salva');
-      
-      // Criar backup da chave se o monitor estiver disponível
-      if (this.chaveMonitorService) {
-        this.chaveMonitorService.criarBackup();
-      }
+    }
+
+    // Verificar o tamanho da chave
+    if (this.masterKey.length !== this.keyLength) {
+      throw new Error(`A chave de criptografia deve ter ${this.keyLength} bytes (${this.keyLength * 8} bits)`);
     }
   }
 

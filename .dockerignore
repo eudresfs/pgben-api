@@ -43,6 +43,7 @@ build
 docker-compose*
 Dockerfile*
 !Dockerfile
+!Dockerfile.dev
 
 # Outros arquivos desnecessários
 *.swp
