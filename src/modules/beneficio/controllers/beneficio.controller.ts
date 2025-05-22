@@ -22,9 +22,9 @@ import { UpdateTipoBeneficioDto } from '../dto/update-tipo-beneficio.dto';
 import { CreateRequisitoDocumentoDto } from '../dto/create-requisito-documento.dto';
 import { ConfigurarFluxoDto } from '../dto/configurar-fluxo.dto';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../../../auth/guards/roles.guard';
-import { Roles } from '../../../auth/decorators/role.decorator';
-import { Role } from '../../../shared/enums/role.enum';
+import { PermissionGuard } from '../../../auth/guards/permission.guard';
+import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
+import { ScopeType } from '../../../auth/entities/user-permission.entity';
 
 /**
  * Controlador de benefícios
@@ -33,7 +33,7 @@ import { Role } from '../../../shared/enums/role.enum';
  */
 @ApiTags('Benefícios')
 @Controller('v1/beneficio')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, PermissionGuard)
 @ApiBearerAuth()
 export class BeneficioController {
   constructor(private readonly beneficioService: BeneficioService) {}
@@ -42,6 +42,10 @@ export class BeneficioController {
    * Lista todos os tipos de benefícios
    */
   @Get()
+  @RequiresPermission({
+    permissionName: 'beneficio.listar',
+    scopeType: ScopeType.GLOBAL
+  })
   @ApiOperation({ 
     summary: 'Listar tipos de benefícios',
     description: 'Retorna uma lista paginada de todos os tipos de benefícios cadastrados no sistema.'
@@ -97,6 +101,10 @@ export class BeneficioController {
    * Obtém detalhes de um tipo de benefício específico
    */
   @Get(':id')
+  @RequiresPermission({
+    permissionName: 'beneficio.visualizar',
+    scopeType: ScopeType.GLOBAL
+  })
   @ApiOperation({ 
     summary: 'Obter detalhes de um benefício',
     description: 'Retorna os detalhes completos de um tipo de benefício específico.'
@@ -127,7 +135,10 @@ export class BeneficioController {
    * Cria um novo tipo de benefício
    */
   @Post()
-  @Roles(Role.ADMIN, Role.GESTOR)
+  @RequiresPermission({
+    permissionName: 'beneficio.criar',
+    scopeType: ScopeType.GLOBAL
+  })
   @ApiOperation({ 
     summary: 'Criar novo tipo de benefício',
     description: 'Cria um novo tipo de benefício no sistema.'
@@ -175,7 +186,10 @@ export class BeneficioController {
    * Atualiza um tipo de benefício existente
    */
   @Put(':id')
-  @Roles(Role.ADMIN, Role.GESTOR)
+  @RequiresPermission({
+    permissionName: 'beneficio.editar',
+    scopeType: ScopeType.GLOBAL
+  })
   @ApiOperation({ 
     summary: 'Atualizar tipo de benefício existente',
     description: 'Atualiza os dados de um tipo de benefício existente.'
@@ -235,6 +249,10 @@ export class BeneficioController {
    * Lista requisitos documentais de um benefício
    */
   @Get(':id/requisitos')
+  @RequiresPermission({
+    permissionName: 'beneficio.requisito.listar',
+    scopeType: ScopeType.GLOBAL
+  })
   @ApiOperation({ summary: 'Listar requisitos documentais' })
   @ApiResponse({
     status: 200,
@@ -249,7 +267,10 @@ export class BeneficioController {
    * Adiciona requisito documental a um benefício
    */
   @Post(':id/requisitos')
-  @Roles(Role.ADMIN, Role.GESTOR)
+  @RequiresPermission({
+    permissionName: 'beneficio.requisito.adicionar',
+    scopeType: ScopeType.GLOBAL
+  })
   @ApiOperation({ summary: 'Adicionar requisito documental' })
   @ApiResponse({ status: 201, description: 'Requisito adicionado com sucesso' })
   @ApiResponse({ status: 400, description: 'Dados inválidos' })
@@ -265,7 +286,10 @@ export class BeneficioController {
    * Configura fluxo de aprovação de um benefício
    */
   @Put(':id/fluxo')
-  @Roles(Role.ADMIN, Role.GESTOR)
+  @RequiresPermission({
+    permissionName: 'beneficio.fluxo.configurar',
+    scopeType: ScopeType.GLOBAL
+  })
   @ApiOperation({ summary: 'Configurar fluxo de aprovação' })
   @ApiResponse({ status: 200, description: 'Fluxo configurado com sucesso' })
   @ApiResponse({ status: 400, description: 'Dados inválidos' })
