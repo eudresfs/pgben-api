@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CacheModule } from '@nestjs/cache-manager';
 import { APP_INTERCEPTOR } from '@nestjs/core';
+import { AuthModule } from '@/auth/auth.module'
 
 // Entidades
 import { Solicitacao } from '../solicitacao/entities/solicitacao.entity';
@@ -25,10 +26,11 @@ import { RelatoriosAuditInterceptor } from './interceptors';
   imports: [
     TypeOrmModule.forFeature([Solicitacao, Unidade, TipoBeneficio]),
     CacheModule.register({
-      ttl: 60 * 60 * 1000, // Cache válido por 1 hora
-      max: 100, // Máximo de 100 itens no cache
-      isGlobal: false,
+      ttl: 300, // 5 minutos de cache
+      max: 100, // máximo de 100 itens em cache
     }),
+    // Importa o módulo compartilhado de autenticação
+    AuthModule,
   ],
   controllers: [RelatoriosController],
   providers: [

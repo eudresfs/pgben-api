@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleAdapterModule } from '../../shared/schedule/schedule-adapter.module';
+import { AuthModule } from '@/auth/auth.module'
 
 // Controladores
 import { NotificacaoController } from './controllers/notificacao.controller';
@@ -29,6 +30,8 @@ import { NotificationTemplate } from './entities/notification-template.entity';
     TypeOrmModule.forFeature([NotificacaoSistema, NotificationTemplate]),
     ScheduleAdapterModule,
     ConfigModule,
+    // Importa o módulo compartilhado de autenticação
+    AuthModule,
   ],
   controllers: [
     NotificacaoController,

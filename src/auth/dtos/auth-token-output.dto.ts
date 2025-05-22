@@ -23,13 +23,12 @@ export class AuthTokenOutput {
   refreshToken: string;
 }
 
-export class UserAccessTokenClaims {
-  @Expose()
+export interface UserAccessTokenClaims {
   id: string | number;
-  @Expose()
   username: string;
-  @Expose()
-  roles: Role[];
+  roles: string[];
+  permissions?: string[];
+  permissionScopes?: Record<string, string>;
 }
 
 export class UserRefreshTokenClaims {

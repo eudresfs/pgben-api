@@ -20,9 +20,9 @@ import {
 } from '@nestjs/swagger';
 import { RelatoriosService } from '../services/relatorios.service';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../../../auth/guards/roles.guard';
-import { Roles } from '../../../auth/decorators/role.decorator';
-import { Role } from '../../../shared/enums/role.enum';
+import { PermissionGuard } from '../../../auth/guards/permission.guard';
+import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
+import { ScopeType } from '../../../auth/entities/user-permission.entity';
 import { Request, Response } from 'express';
 import {
   RelatorioBeneficiosDto,
@@ -38,7 +38,7 @@ import {
  */
 @ApiTags('Relatórios')
 @Controller('v1/relatorios')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, PermissionGuard)
 @ApiBearerAuth()
 export class RelatoriosController {
   [x: string]: any;
@@ -53,7 +53,11 @@ export class RelatoriosController {
    * @returns Stream do relatório no formato solicitado
    */
   @Get('beneficios-concedidos')
-  @Roles(Role.ADMIN, Role.GESTOR, Role.TECNICO)
+  @RequiresPermission({
+    permissionName: 'relatorio.beneficios.concedidos',
+    scopeType: ScopeType.UNIT,
+    scopeIdExpression: 'query.unidade_id'
+  })
   @ApiOperation({
     summary: 'Gera relatório de benefícios concedidos',
     description:
@@ -144,12 +148,11 @@ export class RelatoriosController {
    * @returns Stream do relatório no formato solicitado
    */
   @Get('solicitacoes-por-status')
-  @Roles(
-    Role.ADMIN,
-    Role.GESTOR,
-    Role.TECNICO,
-    Role.COORDENADOR,
-  )
+  @RequiresPermission({
+    permissionName: 'relatorio.solicitacoes.status',
+    scopeType: ScopeType.UNIT,
+    scopeIdExpression: 'query.unidade_id'
+  })
   @ApiOperation({
     summary: 'Gera relatório de solicitações por status',
     description:
@@ -239,7 +242,10 @@ export class RelatoriosController {
    * @returns Stream do relatório no formato solicitado
    */
   @Get('atendimentos-por-unidade')
-  @Roles(Role.ADMIN, Role.GESTOR)
+  @RequiresPermission({
+    permissionName: 'relatorio.atendimentos.unidade',
+    scopeType: ScopeType.GLOBAL
+  })
   @ApiOperation({
     summary: 'Gera relatório de atendimentos por unidade',
     description:

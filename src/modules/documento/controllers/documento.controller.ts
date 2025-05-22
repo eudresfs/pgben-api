@@ -37,9 +37,9 @@ import { ThumbnailService } from '../services/thumbnail.service';
 import { StorageProviderFactory } from '../factories/storage-provider.factory';
 import { UploadDocumentoDto } from '../dto/upload-documento.dto';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../../../auth/guards/roles.guard';
-import { Roles } from '../../../auth/decorators/role.decorator';
-import { Role } from '../../../shared/enums/role.enum';
+import { PermissionGuard } from '../../../auth/guards/permission.guard';
+import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
+import { ScopeType } from '../../../auth/entities/user-permission.entity';
 import { Request } from 'express';
 import { Multer } from 'multer';
 
@@ -69,7 +69,7 @@ declare global {
  */
 @ApiTags('Documentos')
 @Controller('v1/documento')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, PermissionGuard)
 @ApiBearerAuth()
 export class DocumentoController {
   constructor(
@@ -84,6 +84,11 @@ export class DocumentoController {
    * Lista todos os documentos de uma solicitação
    */
   @Get('solicitacao/:solicitacaoId')
+  @RequiresPermission({
+    permissionName: 'documento.listar',
+    scopeType: ScopeType.UNIT,
+    scopeIdExpression: 'solicitacao.unidadeId',
+  })
   @ApiOperation({ summary: 'Listar documentos de uma solicitação' })
   @ApiResponse({
     status: 200,
@@ -130,6 +135,11 @@ export class DocumentoController {
    * Obtém detalhes de um documento específico
    */
   @Get(':id')
+  @RequiresPermission({
+    permissionName: 'documento.visualizar',
+    scopeType: ScopeType.UNIT,
+    scopeIdExpression: 'documento.solicitacao.unidadeId',
+  })
   @ApiOperation({ summary: 'Obter detalhes de um documento' })
   @ApiResponse({ status: 200, description: 'Documento encontrado com sucesso' })
   @ApiResponse({ status: 404, description: 'Documento não encontrado' })
@@ -153,6 +163,11 @@ export class DocumentoController {
    * Faz download de um documento
    */
   @Get(':id/download')
+  @RequiresPermission({
+    permissionName: 'documento.download',
+    scopeType: ScopeType.UNIT,
+    scopeIdExpression: 'documento.solicitacao.unidadeId',
+  })
   @ApiOperation({ summary: 'Fazer download de um documento' })
   @ApiResponse({ status: 200, description: 'Documento baixado com sucesso' })
   @ApiResponse({ status: 404, description: 'Documento não encontrado' })
@@ -188,6 +203,11 @@ export class DocumentoController {
    * Obtém uma miniatura de um documento de imagem
    */
   @Get(':id/thumbnail')
+  @RequiresPermission({
+    permissionName: 'documento.thumbnail',
+    scopeType: ScopeType.UNIT,
+    scopeIdExpression: 'documento.solicitacao.unidadeId',
+  })
   @ApiOperation({ summary: 'Obter miniatura de um documento de imagem' })
   @ApiResponse({ status: 200, description: 'Miniatura gerada com sucesso' })
   @ApiResponse({ status: 404, description: 'Documento não encontrado' })
@@ -251,12 +271,6 @@ export class DocumentoController {
   @ApiResponse({ status: 403, description: 'Acesso negado' })
   @ApiResponse({ status: 415, description: 'Tipo de arquivo não suportado' })
   @ApiResponse({ status: 422, description: 'Arquivo infectado com malware' })
-  @Roles(
-    Role.ADMIN,
-    Role.GESTOR,
-    Role.TECNICO,
-    Role.TECNICO,
-  )
   async upload(
     @UploadedFile() arquivo: Express.Multer.File,
     @Body() uploadDocumentoDto: UploadDocumentoDto,
@@ -292,6 +306,11 @@ export class DocumentoController {
    * Remove um documento de uma solicitação
    */
   @Delete(':id')
+  @RequiresPermission({
+    permissionName: 'documento.remover',
+    scopeType: ScopeType.UNIT,
+    scopeIdExpression: 'documento.solicitacao.unidadeId',
+  })
   @ApiOperation({ summary: 'Remover documento' })
   @ApiResponse({ status: 200, description: 'Documento removido com sucesso' })
   @ApiResponse({ status: 404, description: 'Documento não encontrado' })
@@ -303,12 +322,6 @@ export class DocumentoController {
     type: 'string',
     format: 'uuid',
   })
-  @Roles(
-    Role.ADMIN,
-    Role.GESTOR,
-    Role.TECNICO,
-    Role.TECNICO,
-  )
   async remove(@Param('id', ParseUUIDPipe) id: string, @Req() req: Request) {
     return this.documentoService.remove(id, req.user);
   }
@@ -317,6 +330,11 @@ export class DocumentoController {
    * Verifica um documento
    */
   @Post(':id/verificar')
+  @RequiresPermission({
+    permissionName: 'documento.verificar',
+    scopeType: ScopeType.UNIT,
+    scopeIdExpression: 'documento.solicitacao.unidadeId',
+  })
   @ApiOperation({ summary: 'Verificar documento' })
   @ApiResponse({ status: 200, description: 'Documento verificado com sucesso' })
   @ApiResponse({ status: 404, description: 'Documento não encontrado' })
@@ -340,12 +358,6 @@ export class DocumentoController {
       },
     },
   })
-  @Roles(
-    Role.ADMIN,
-    Role.GESTOR,
-    Role.TECNICO,
-    Role.COORDENADOR,
-  )
   async verificarDocumento(
     @Param('id', ParseUUIDPipe) id: string,
     @Body('observacoes') observacoes: string,
@@ -358,6 +370,11 @@ export class DocumentoController {
    * Verifica um documento em busca de malware
    */
   @Post(':id/scan-malware')
+  @RequiresPermission({
+    permissionName: 'documento.scan.malware',
+    scopeType: ScopeType.UNIT,
+    scopeIdExpression: 'documento.solicitacao.unidadeId',
+  })
   @ApiOperation({ summary: 'Verificar documento em busca de malware' })
   @ApiResponse({ status: 200, description: 'Documento verificado com sucesso' })
   @ApiResponse({ status: 404, description: 'Documento não encontrado' })
@@ -370,7 +387,6 @@ export class DocumentoController {
     format: 'uuid',
   })
   @HttpCode(HttpStatus.OK)
-  @Roles(Role.ADMIN, Role.GESTOR)
   async scanMalware(
     @Param('id', ParseUUIDPipe) id: string,
     @Req() req: Request,

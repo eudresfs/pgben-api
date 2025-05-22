@@ -21,9 +21,9 @@ import { CreateUnidadeDto } from '../dto/create-unidade.dto';
 import { UpdateUnidadeDto } from '../dto/update-unidade.dto';
 import { UpdateStatusUnidadeDto } from '../dto/update-status-unidade.dto';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../../../auth/guards/roles.guard';
-import { Roles } from '../../../auth/decorators/role.decorator';
-import { Role } from '../../../shared/enums/role.enum';
+import { PermissionGuard } from '../../../auth/guards/permission.guard';
+import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
+import { ScopeType } from '../../../auth/entities/user-permission.entity';
 
 /**
  * Controlador de unidades
@@ -32,7 +32,7 @@ import { Role } from '../../../shared/enums/role.enum';
  */
 @ApiTags('Unidades')
 @Controller('v1/unidade')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, PermissionGuard)
 @ApiBearerAuth()
 export class UnidadeController {
   constructor(private readonly unidadeService: UnidadeService) {}
@@ -41,6 +41,10 @@ export class UnidadeController {
    * Lista todas as unidades com filtros e paginação
    */
   @Get()
+  @RequiresPermission({
+    permissionName: 'unidade.listar',
+    scopeType: ScopeType.GLOBAL
+  })
   @ApiOperation({ summary: 'Listar unidades' })
   @ApiResponse({
     status: 200,
@@ -96,6 +100,10 @@ export class UnidadeController {
    * Obtém detalhes de uma unidade específica
    */
   @Get(':id')
+  @RequiresPermission({
+    permissionName: 'unidade.visualizar',
+    scopeType: ScopeType.GLOBAL
+  })
   @ApiOperation({ summary: 'Obter detalhes de uma unidade' })
   @ApiResponse({ status: 200, description: 'Unidade encontrada com sucesso' })
   @ApiResponse({ status: 404, description: 'Unidade não encontrada' })
@@ -107,7 +115,10 @@ export class UnidadeController {
    * Cria uma nova unidade
    */
   @Post()
-  @Roles(Role.ADMIN, Role.GESTOR)
+  @RequiresPermission({
+    permissionName: 'unidade.criar',
+    scopeType: ScopeType.GLOBAL
+  })
   @ApiOperation({ summary: 'Criar nova unidade' })
   @ApiResponse({ status: 201, description: 'Unidade criada com sucesso' })
   @ApiResponse({ status: 400, description: 'Dados inválidos' })
@@ -120,7 +131,10 @@ export class UnidadeController {
    * Atualiza uma unidade existente
    */
   @Put(':id')
-  @Roles(Role.ADMIN, Role.GESTOR)
+  @RequiresPermission({
+    permissionName: 'unidade.editar',
+    scopeType: ScopeType.GLOBAL
+  })
   @ApiOperation({ summary: 'Atualizar unidade existente' })
   @ApiResponse({ status: 200, description: 'Unidade atualizada com sucesso' })
   @ApiResponse({ status: 400, description: 'Dados inválidos' })
@@ -137,7 +151,10 @@ export class UnidadeController {
    * Atualiza o status de uma unidade
    */
   @Patch(':id/status')
-  @Roles(Role.ADMIN, Role.GESTOR)
+  @RequiresPermission({
+    permissionName: 'unidade.status.alterar',
+    scopeType: ScopeType.GLOBAL
+  })
   @ApiOperation({ summary: 'Ativar/inativar unidade' })
   @ApiResponse({ status: 200, description: 'Status atualizado com sucesso' })
   @ApiResponse({ status: 404, description: 'Unidade não encontrada' })
@@ -152,6 +169,10 @@ export class UnidadeController {
    * Lista os setores de uma unidade específica
    */
   @Get(':id/setor')
+  @RequiresPermission({
+    permissionName: 'unidade.setor.listar',
+    scopeType: ScopeType.GLOBAL
+  })
   @ApiOperation({ summary: 'Listar setores de uma unidade' })
   @ApiResponse({
     status: 200,

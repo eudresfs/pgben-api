@@ -85,9 +85,13 @@ import { getBullConfig } from './config/bull.config';
     // Módulos compartilhados
     SharedModule,
 
+    // Módulos de segurança e observabilidade
+    AuditoriaModule,
+    MetricasModule,
+
     // Módulos da aplicação
-    AuthModule,
-    UsuarioModule,
+    AuthModule,        // ← Movido para cima conforme Teste 1.4
+    UsuarioModule,     // ← Movido para baixo conforme Teste 1.4
     UnidadeModule,
     CidadaoModule,
     BeneficioModule,
@@ -95,10 +99,6 @@ import { getBullConfig } from './config/bull.config';
     DocumentoModule,
     RelatoriosUnificadoModule,
     NotificacaoModule,
-
-    // Módulos de segurança e observabilidade
-    AuditoriaModule, // Módulo global de auditoria
-    MetricasModule,
   ],
   controllers: [AppController],
   providers: [

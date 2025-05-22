@@ -23,6 +23,9 @@ export class CreateUsuarioDto {
   @IsNotEmpty({ message: 'Nome é obrigatório' })
   @MinLength(3, { message: 'Nome deve ter no mínimo 3 caracteres' })
   @MaxLength(100, { message: 'Nome deve ter no máximo 100 caracteres' })
+  @Matches(/^[A-Za-zÀ-ÖØ-öø-ÿ]+ [A-Za-zÀ-ÖØ-öø-ÿ ]+$/, {
+    message: 'O nome do usuário deve ter pelo menos nome e sobrenome',
+  })
   @ApiProperty({
     example: 'João da Silva',
     description: 'Nome completo do usuário',
@@ -61,7 +64,7 @@ export class CreateUsuarioDto {
   senha: string;
 
   @IsString({ message: 'CPF deve ser uma string' })
-  @IsOptional()
+  @IsNotEmpty({ message: 'CPF é obrigatório' })
   @Matches(/^\d{3}\.\d{3}\.\d{3}\-\d{2}$/, {
     message: 'CPF deve estar no formato 123.456.789-00',
   })
@@ -71,35 +74,35 @@ export class CreateUsuarioDto {
   @ApiProperty({
     example: '123.456.789-00',
     description: 'CPF do usuário',
-    required: false,
+    required: true,
   })
-  cpf?: string;
+  cpf: string;
 
   @IsString({ message: 'Telefone deve ser uma string' })
-  @IsOptional()
+  @IsNotEmpty({ message: 'Telefone é obrigatório' })
   @Matches(/^\(\d{2}\)\s\d{4,5}-\d{4}$/, {
     message: 'Telefone deve estar no formato (XX) XXXX-XXXX ou (XX) XXXXX-XXXX',
   })
   @ApiProperty({
     example: '(84) 98765-4321',
     description: 'Telefone do usuário',
-    required: false,
+    required: true,
   })
-  telefone?: string;
+  telefone: string;
 
   @IsString({ message: 'Matrícula deve ser uma string' })
-  @IsOptional()
+  @IsNotEmpty({ message: 'Matrícula é obrigatória' })
   @Matches(/^[0-9]{5,10}$/, {
     message: 'Matrícula deve conter entre 5 e 10 dígitos numéricos',
   })
   @ApiProperty({
     example: '12345',
     description: 'Matrícula do usuário',
-    required: false,
+    required: true,
   })
-  matricula?: string;
+  matricula: string;
 
-  @IsEnum(Role, { message: 'Papel inválido' })
+  @IsEnum(Role, { message: `Cargo não existe, os cargos possíveis são: ${Object.values(Role).join(', ')}` })
   @ApiProperty({
     enum: Role,
     example: Role.TECNICO,

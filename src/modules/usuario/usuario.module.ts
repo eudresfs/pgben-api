@@ -1,9 +1,10 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsuarioController } from './controllers/usuario.controller';
 import { UsuarioService } from './services/usuario.service';
 import { UsuarioRepository } from './repositories/usuario.repository';
 import { Usuario } from './entities/usuario.entity';
+import { AuthModule } from '@/auth/auth.module';
 
 /**
  * Módulo de usuários
@@ -12,7 +13,10 @@ import { Usuario } from './entities/usuario.entity';
  * cadastro, autenticação, perfis e permissões.
  */
 @Module({
-  imports: [TypeOrmModule.forFeature([Usuario])],
+  imports: [
+    TypeOrmModule.forFeature([Usuario]),
+    forwardRef(() => AuthModule),
+  ],
   controllers: [UsuarioController],
   providers: [UsuarioService, UsuarioRepository],
   exports: [UsuarioService, UsuarioRepository],

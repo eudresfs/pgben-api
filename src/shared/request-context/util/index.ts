@@ -19,9 +19,7 @@ export function createRequestContext(request: Request): RequestContext {
 
   // If request.user does not exist, we explicitly set it to null.
   ctx.user = request.user
-    ? plainToClass(UserAccessTokenClaims, request.user, {
-        excludeExtraneousValues: true,
-      })
+    ? request.user as UserAccessTokenClaims
     : null;
 
   return ctx;

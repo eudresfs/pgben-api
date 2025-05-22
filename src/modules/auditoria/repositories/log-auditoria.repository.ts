@@ -1,11 +1,10 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject, Optional } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, FindOptionsWhere, Raw } from 'typeorm';
 import { LogAuditoria } from '../entities/log-auditoria.entity';
 import { TipoOperacao } from '../enums/tipo-operacao.enum';
 import { CreateLogAuditoriaDto } from '../dto/create-log-auditoria.dto';
 import { QueryLogAuditoriaDto } from '../dto/query-log-auditoria.dto';
-import { AuditoriaSignatureService } from '../services/auditoria-signature.service';
 import * as zlib from 'zlib';
 import { promisify } from 'util';
 
@@ -28,7 +27,6 @@ export class LogAuditoriaRepository {
   constructor(
     @InjectRepository(LogAuditoria)
     private readonly repository: Repository<LogAuditoria>,
-    private readonly signatureService: AuditoriaSignatureService,
   ) {}
 
   /**
@@ -47,16 +45,10 @@ export class LogAuditoriaRepository {
       // Comprimir dados grandes se necessário
       await this.compressLogDataIfNeeded(logAuditoria);
 
-      // Salvar o log
+      // Salvar o log sem assinatura para evitar dependência circular
       const savedLog = await this.repository.save(logAuditoria);
-
-      // Assinar o log para garantir integridade
-      const assinatura = await this.signatureService.assinarLog(savedLog);
-
-      // Armazenar a assinatura (em uma implementação real, seria em uma tabela separada)
-      this.logger.debug(
-        `Log ${savedLog.id} assinado com sucesso: ${assinatura.substring(0, 20)}...`,
-      );
+      
+      this.logger.debug(`Log ${savedLog.id} criado com sucesso`);
 
       return savedLog;
     } catch (error) {

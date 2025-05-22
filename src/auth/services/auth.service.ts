@@ -18,6 +18,7 @@ import { UserOutput, UsuarioAdapter } from '../adapters/usuario-adapter';
 import { RefreshTokenService } from './refresh-token.service';
 import { RefreshTokenInput } from '../dtos/auth-refresh-token-input.dto';
 import { Usuario } from '../../modules/usuario/entities/usuario.entity';
+import { PermissionService } from './permission.service';
 
 @Injectable()
 export class AuthService {
@@ -31,6 +32,7 @@ export class AuthService {
     private jwtService: JwtService,
     private configService: ConfigService,
     private readonly logger: AppLogger,
+    private readonly permissionService: PermissionService,
   ) {
     this.logger.setContext(AuthService.name);
 
@@ -142,8 +144,14 @@ export class AuthService {
       throw new UnauthorizedException('Esta conta de usuário foi desativada');
     }
 
-    // Converter para o formato esperado
-    return UsuarioAdapter.toUserAccessTokenClaims(usuario);
+    // Obter as permissões do usuário
+    const permissions = await this.permissionService.getUserPermissions(usuario.id);
+    
+    // Obter os escopos das permissões
+    const permissionScopes: Record<string, string> = {};
+    
+    // Converter para o formato esperado incluindo permissões
+    return UsuarioAdapter.toUserAccessTokenClaims(usuario, permissions, permissionScopes);
   }
 
   async login(ctx: RequestContext): Promise<AuthTokenOutput> {
@@ -189,7 +197,10 @@ export class AuthService {
       nome: input.name,
       email: input.username,
       senha: input.password,
-      role: (input.roles?.[0] as unknown as Role) || Role.CIDADAO,
+      role: (input.roles?.[0] as unknown as Role) || Role.TECNICO,
+      cpf: input.cpf,
+      telefone: input.telefone,
+      matricula: input.matricula,
     };
 
     // Criar o usuário
@@ -276,6 +287,16 @@ export class AuthService {
       sub: user.id,
       roles: user.roles,
     };
+    
+    // Adicionar permissões ao payload se disponíveis
+    if ('permissions' in user && user.permissions) {
+      payload['permissions'] = user.permissions;
+    }
+    
+    // Adicionar escopos de permissões ao payload se disponíveis
+    if ('permissionScopes' in user && user.permissionScopes) {
+      payload['permissionScopes'] = user.permissionScopes;
+    }
 
     // Garantir que estamos usando o algoritmo RS256 e a chave privada para assinar o token
     const privateKey = Buffer.from(

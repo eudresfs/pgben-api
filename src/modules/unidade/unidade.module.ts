@@ -8,6 +8,7 @@ import { UnidadeRepository } from './repositories/unidade.repository';
 import { SetorRepository } from './repositories/setor.repository';
 import { Unidade } from './entities/unidade.entity';
 import { Setor } from './entities/setor.entity';
+import { AuthModule } from '@/auth/auth.module'
 
 /**
  * Módulo de unidades
@@ -16,7 +17,11 @@ import { Setor } from './entities/setor.entity';
  * incluindo cadastro, atualização e consulta.
  */
 @Module({
-  imports: [TypeOrmModule.forFeature([Unidade, Setor])],
+  imports: [
+    TypeOrmModule.forFeature([Unidade, Setor]),
+    // Importa o módulo compartilhado de autenticação
+    AuthModule,
+  ],
   controllers: [UnidadeController, SetorController],
   providers: [UnidadeService, SetorService, UnidadeRepository, SetorRepository],
   exports: [UnidadeService, SetorService, UnidadeRepository, SetorRepository],

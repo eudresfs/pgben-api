@@ -1,5 +1,9 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
+import { PermissionGuard } from '../../../auth/guards/permission.guard';
+import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
+import { ScopeType } from '../../../auth/entities/user-permission.entity';
 import { ParametroService } from '../services/parametro.service';
 import { ParametroCreateDto } from '../dtos/parametro/parametro-create.dto';
 import { ParametroUpdateDto } from '../dtos/parametro/parametro-update.dto';
@@ -11,6 +15,7 @@ import { ParametroResponseDto } from '../dtos/parametro/parametro-response.dto';
 @ApiTags('Configuração - Parâmetros')
 @ApiBearerAuth()
 @Controller('configuracao/parametros')
+@UseGuards(JwtAuthGuard, PermissionGuard)
 export class ParametroController {
   constructor(private readonly parametroService: ParametroService) {}
 
@@ -20,7 +25,10 @@ export class ParametroController {
    * @returns Lista de parâmetros
    */
   @Get()
-  // @Roles('admin')
+  @RequiresPermission({
+    permissionName: 'configuracao.parametro.listar',
+    scopeType: ScopeType.GLOBAL
+  })
   @ApiOperation({ summary: 'Buscar todos os parâmetros do sistema' })
   @ApiQuery({ 
     name: 'categoria', 
@@ -44,7 +52,10 @@ export class ParametroController {
    * @returns Parâmetro encontrado
    */
   @Get(':chave')
-  // @Roles('admin')
+  @RequiresPermission({
+    permissionName: 'configuracao.parametro.visualizar',
+    scopeType: ScopeType.GLOBAL
+  })
   @ApiOperation({ summary: 'Buscar parâmetro por chave' })
   @ApiParam({ 
     name: 'chave', 
@@ -72,7 +83,10 @@ export class ParametroController {
    * @returns Parâmetro criado
    */
   @Post()
-  // @Roles('admin')
+  @RequiresPermission({
+    permissionName: 'configuracao.parametro.criar',
+    scopeType: ScopeType.GLOBAL
+  })
   @ApiOperation({ summary: 'Criar novo parâmetro' })
   @ApiResponse({ 
     status: 201, 
@@ -96,7 +110,10 @@ export class ParametroController {
    * @returns Parâmetro atualizado
    */
   @Put(':chave')
-  // @Roles('admin')
+  @RequiresPermission({
+    permissionName: 'configuracao.parametro.editar',
+    scopeType: ScopeType.GLOBAL
+  })
   @ApiOperation({ summary: 'Atualizar parâmetro existente' })
   @ApiParam({ 
     name: 'chave', 
@@ -128,7 +145,10 @@ export class ParametroController {
    * @param chave Chave do parâmetro
    */
   @Delete(':chave')
-  // @Roles('admin')
+  @RequiresPermission({
+    permissionName: 'configuracao.parametro.remover',
+    scopeType: ScopeType.GLOBAL
+  })
   @ApiOperation({ summary: 'Remover parâmetro' })
   @ApiParam({ 
     name: 'chave', 
@@ -157,7 +177,10 @@ export class ParametroController {
    * Limpa o cache de parâmetros
    */
   @Post('cache/limpar')
-  // @Roles('admin')
+  @RequiresPermission({
+    permissionName: 'configuracao.parametro.cache.limpar',
+    scopeType: ScopeType.GLOBAL
+  })
   @ApiOperation({ summary: 'Limpar cache de parâmetros' })
   @ApiResponse({ 
     status: 200, 

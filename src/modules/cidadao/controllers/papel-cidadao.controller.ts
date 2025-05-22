@@ -19,7 +19,9 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../../../auth/guards/roles.guard';
+import { PermissionGuard } from '../../../auth/guards/permission.guard';
+import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
+import { ScopeType } from '../../../auth/entities/user-permission.entity';
 import { PapelCidadaoService } from '../services/papel-cidadao.service';
 import { CreatePapelCidadaoDto } from '../dto/create-papel-cidadao.dto';
 import { TipoPapel } from '../entities/papel-cidadao.entity';
@@ -32,7 +34,7 @@ import { TipoPapel } from '../entities/papel-cidadao.entity';
  */
 @ApiTags('Cidadão')
 @Controller('v1/cidadao/papel')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, PermissionGuard)
 @ApiBearerAuth()
 export class PapelCidadaoController {
   constructor(private readonly papelCidadaoService: PapelCidadaoService) {}
@@ -41,6 +43,11 @@ export class PapelCidadaoController {
    * Cria um novo papel para um cidadão
    */
   @Post()
+  @RequiresPermission({
+    permissionName: 'cidadao.papel.criar',
+    scopeType: ScopeType.UNIT,
+    scopeIdExpression: 'cidadao.unidadeId',
+  })
   @ApiOperation({ summary: 'Criar novo papel para um cidadão' })
   @ApiResponse({ status: 201, description: 'Papel criado com sucesso' })
   @ApiResponse({ status: 400, description: 'Dados inválidos' })
@@ -65,6 +72,11 @@ export class PapelCidadaoController {
    * Lista todos os papéis de um cidadão
    */
   @Get('cidadao/:cidadaoId')
+  @RequiresPermission({
+    permissionName: 'cidadao.papel.listar',
+    scopeType: ScopeType.UNIT,
+    scopeIdExpression: 'cidadao.unidadeId',
+  })
   @ApiOperation({ summary: 'Listar papéis de um cidadão' })
   @ApiResponse({
     status: 200,
@@ -79,6 +91,7 @@ export class PapelCidadaoController {
    * Busca cidadãos por tipo de papel
    */
   @Get('tipo/:tipoPapel')
+  @RequiresPermission({ permissionName: 'cidadao.papel.listar' })
   @ApiOperation({ summary: 'Buscar cidadãos por tipo de papel' })
   @ApiResponse({
     status: 200,
@@ -104,6 +117,11 @@ export class PapelCidadaoController {
    * Verifica se um cidadão possui um determinado papel
    */
   @Get('verificar/:cidadaoId/:tipoPapel')
+  @RequiresPermission({
+    permissionName: 'cidadao.papel.visualizar',
+    scopeType: ScopeType.UNIT,
+    scopeIdExpression: 'cidadao.unidadeId',
+  })
   @ApiOperation({
     summary: 'Verificar se um cidadão possui um determinado papel',
   })
@@ -126,6 +144,11 @@ export class PapelCidadaoController {
    * Desativa um papel de um cidadão
    */
   @Delete(':id')
+  @RequiresPermission({
+    permissionName: 'cidadao.papel.excluir',
+    scopeType: ScopeType.UNIT,
+    scopeIdExpression: 'papel.cidadao.unidadeId',
+  })
   @ApiOperation({ summary: 'Desativar papel de um cidadão' })
   @ApiResponse({ status: 200, description: 'Papel desativado com sucesso' })
   @ApiResponse({ status: 404, description: 'Papel não encontrado' })

@@ -2,6 +2,7 @@ import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ScheduleAdapterModule } from '../../shared/schedule/schedule-adapter.module';
+import { AuthModule } from '@/auth/auth.module'
 
 // Controladores
 import { MetricasController } from './controllers/metricas.controller';
@@ -66,6 +67,9 @@ import { PrometheusModule } from '@willsoto/nestjs-prometheus';
       MetricaSnapshot,
       MetricaConfiguracao
     ]),
+    
+    // Importa o módulo compartilhado de autenticação
+    AuthModule,
   ],
   
   // Controladores para API

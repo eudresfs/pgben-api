@@ -10,6 +10,7 @@ import { CacheModule } from '../../shared/cache';
 import { CidadaoAuditInterceptor } from './interceptors/cidadao-audit.interceptor';
 import { PapelCidadaoService } from './services/papel-cidadao.service';
 import { PapelCidadaoController } from './controllers/papel-cidadao.controller';
+import { AuthModule } from '@/auth/auth.module'
 
 /**
  * Módulo de cidadãos
@@ -21,6 +22,8 @@ import { PapelCidadaoController } from './controllers/papel-cidadao.controller';
   imports: [
     TypeOrmModule.forFeature([Cidadao, PapelCidadao]),
     CacheModule,
+    // Importa o módulo compartilhado de autenticação
+    AuthModule,
   ],
   controllers: [CidadaoController, PapelCidadaoController],
   providers: [

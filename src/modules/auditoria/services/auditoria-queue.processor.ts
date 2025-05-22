@@ -1,9 +1,7 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
 import { InjectQueue } from '@nestjs/bull';
 import { Job, Queue } from 'bull';
-import { Repository } from 'typeorm';
-import { LogAuditoria } from '../entities/log-auditoria.entity';
+import { LogAuditoriaRepository } from '../repositories/log-auditoria.repository';
 import { CreateLogAuditoriaDto } from '../dto/create-log-auditoria.dto';
 import { TipoOperacao } from '../enums/tipo-operacao.enum';
 import { registeredProcessors } from '../../../config/bull.config';
@@ -24,8 +22,8 @@ export class AuditoriaQueueProcessor implements OnModuleInit {
   private readonly logger = new Logger(AuditoriaQueueProcessor.name);
 
   constructor(
-    @InjectRepository(LogAuditoria)
-    private readonly logAuditoriaRepository: Repository<LogAuditoria>,
+    // ← MUDANÇA: Use o repository customizado em vez do TypeORM direto
+    private readonly logAuditoriaRepository: LogAuditoriaRepository,
     @InjectQueue('auditoria')
     private readonly auditoriaQueue: Queue,
   ) {}
@@ -68,8 +66,6 @@ export class AuditoriaQueueProcessor implements OnModuleInit {
    *
    * @param job Trabalho contendo os dados do log de auditoria
    */
-  // Removemos o decorador @Process para evitar duplicação
-  // O processamento será feito manualmente no construtor
   async processarLogAuditoria(job: Job<CreateLogAuditoriaDto>): Promise<void> {
     try {
       const logData = job.data;
@@ -77,11 +73,8 @@ export class AuditoriaQueueProcessor implements OnModuleInit {
         `Processando log de auditoria: ${logData.entidade_afetada} - ${logData.tipo_operacao}`,
       );
 
-      // Cria uma nova instância de LogAuditoria com os dados recebidos
-      const logAuditoria = this.logAuditoriaRepository.create(logData);
-
-      // Salva o log no banco de dados
-      const savedLog = await this.logAuditoriaRepository.save(logAuditoria);
+      // ← MUDANÇA: Use o método create do repository customizado
+      const savedLog = await this.logAuditoriaRepository.create(logData);
 
       this.logger.debug(
         `Log de auditoria processado com sucesso: ID ${savedLog.id}`,
@@ -101,8 +94,6 @@ export class AuditoriaQueueProcessor implements OnModuleInit {
    *
    * @param job Trabalho contendo os dados de acesso a dados sensíveis
    */
-  // Removemos o decorador @Process para evitar duplicação
-  // O processamento será feito manualmente no onModuleInit
   async processarAcessoDadosSensiveis(job: Job<any>): Promise<void> {
     try {
       const {
@@ -121,30 +112,31 @@ export class AuditoriaQueueProcessor implements OnModuleInit {
         `Processando acesso a dados sensíveis: ${entidade} - Campos: ${camposSensiveis.join(', ')}`,
       );
 
-      // Cria um log específico para acesso a dados sensíveis
-      // Criamos primeiro uma nova instância da entidade
-      const logAuditoria = new LogAuditoria();
-      
-      // Preenchemos os dados manualmente
-      logAuditoria.tipo_operacao = TipoOperacao.ACCESS;
-      logAuditoria.entidade_afetada = entidade;
-      logAuditoria.entidade_id = entidadeId;
-      logAuditoria.dados_anteriores = {};
-      logAuditoria.dados_novos = {};
-      logAuditoria.usuario_id = usuarioId;
-      logAuditoria.ip_origem = ip;
-      logAuditoria.user_agent = userAgent;
-      logAuditoria.endpoint = endpoint;
-      logAuditoria.metodo_http = metodo;
-      logAuditoria.dados_sensiveis_acessados = camposSensiveis;
-      logAuditoria.data_hora = timestamp || new Date();
-      logAuditoria.descricao = `Acesso a dados sensíveis (${camposSensiveis.join(', ')}) da entidade ${entidade}`;
+      // ← MUDANÇA: Crie um DTO e use o repository customizado
+      const createLogDto: CreateLogAuditoriaDto = {
+        tipo_operacao: TipoOperacao.ACCESS,
+        entidade_afetada: entidade,
+        entidade_id: entidadeId,
+        dados_anteriores: {},
+        dados_novos: {},
+        usuario_id: usuarioId,
+        ip_origem: ip,
+        user_agent: userAgent,
+        endpoint: endpoint,
+        metodo_http: metodo,
+        dados_sensiveis_acessados: camposSensiveis,
+        data_hora: timestamp || new Date(),
+        descricao: `Acesso a dados sensíveis (${camposSensiveis.join(', ')}) da entidade ${entidade}`,
+        validar: function (validationGroup?: string): void {
+          throw new Error('Function not implemented.');
+        }
+      };
 
-      // Salva o log no banco de dados
-      await this.logAuditoriaRepository.save(logAuditoria);
+      // Use o repository customizado
+      const savedLog = await this.logAuditoriaRepository.create(createLogDto);
 
       this.logger.debug(
-        `Acesso a dados sensíveis registrado com sucesso: ID ${logAuditoria.id}`,
+        `Acesso a dados sensíveis registrado com sucesso: ID ${savedLog.id}`,
       );
     } catch (error) {
       this.logger.error(

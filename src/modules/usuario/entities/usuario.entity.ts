@@ -15,6 +15,9 @@ import { Role } from '../../../shared/enums/role.enum';
 import { RefreshToken } from '../../../auth/entities/refresh-token.entity';
 import { Unidade } from '../../unidade/entities/unidade.entity';
 import { Setor } from '../../unidade/entities/setor.entity';
+import { IsCPF, IsTelefone } from '@/shared/validators/br-validators';
+import { IsNotEmpty, IsString, Length, MaxLength, MinLength, Validate } from 'class-validator';
+import { IsStrongPassword } from '@/shared/validators/strong-password.validator';
 
 /**
  * Entidade de usuário
@@ -35,22 +38,35 @@ export class Usuario {
   id: string;
 
   @Column()
+  @IsNotEmpty({ message: 'Nome é obrigatório' })
+  @IsString({ message: 'Nome deve ser uma string' })
+  @MinLength(3, { message: 'Nome deve ter no mínimo 3 caracteres' })
+  @MaxLength(100, { message: 'Nome deve ter no máximo 100 caracteres' })
   nome: string;
 
   @Column({ unique: true })
+  @IsNotEmpty({ message: 'Email é obrigatório' })
   email: string;
 
   @Column({ name: 'senha_hash' })
+  @IsNotEmpty({ message: 'Senha é obrigatória' })
   @Exclude()
+  @Validate(IsStrongPassword, {message: 'A senha não pode conter informações pessoais ou ser uma senha comum'})
   senhaHash: string;
 
-  @Column({ unique: true, nullable: true })
+  @Column({ unique: true, nullable: false })
+  @IsNotEmpty({ message: 'CPF é obrigatório' })
+  @Length(11, 14, { message: 'CPF deve ter entre 11 e 14 caracteres' })
+  @Validate(IsCPF, { message: 'CPF inválido' })
   cpf: string;
 
-  @Column({ nullable: true })
+  @Column({ nullable: false })
+  @IsNotEmpty({ message: 'Telefone é obrigatório' })
+  @Validate(IsTelefone, { message: 'Telefone inválido, deve conter DDD + número (10 ou 11 dígitos no total)' })
   telefone: string;
 
-  @Column({ unique: true, nullable: true })
+  @Column({ unique: true, nullable: false })
+  @MinLength(5, { message: 'Matrícula deve ter no mínimo 5 caracteres' })
   matricula: string;
 
   @Column({

@@ -1,6 +1,8 @@
 import { Expose } from 'class-transformer';
 import { Usuario } from '../../modules/usuario/entities/usuario.entity';
 import { Role } from '../../shared/enums/role.enum';
+import { Permission } from '../entities/permission.entity';
+import { ScopeType } from '../entities/user-permission.entity';
 
 /**
  * DTO para saída de usuário compatível com o serviço de autenticação
@@ -34,10 +36,12 @@ export class UserOutput {
 /**
  * Claims do token de acesso do usuário
  */
-export class UserAccessTokenClaims {
+export interface UserAccessTokenClaims {
   id: string | number;
   username: string;
   roles: Role[];
+  permissions?: string[];
+  permissionScopes?: Record<string, string>;
 }
 
 /**
@@ -65,12 +69,36 @@ export class UsuarioAdapter {
 
   /**
    * Converte um Usuario para UserAccessTokenClaims
+   * 
+   * @param usuario Usuário a ser convertido
+   * @param permissions Lista de permissões do usuário (opcional)
+   * @param permissionScopes Mapeamento de permissões para escopos (opcional)
+   * @returns Claims do token de acesso do usuário
    */
-  static toUserAccessTokenClaims(usuario: Usuario): UserAccessTokenClaims {
-    return {
+  static toUserAccessTokenClaims(
+    usuario: Usuario,
+    permissions?: Permission[],
+    permissionScopes?: Record<string, ScopeType | string>
+  ): UserAccessTokenClaims {
+    const claims: UserAccessTokenClaims = {
       id: usuario.id,
       username: usuario.email, // Usando email como username
       roles: [usuario.role as unknown as Role],
     };
+
+    // Adiciona permissões se disponíveis
+    if (permissions && permissions.length > 0) {
+      claims.permissions = permissions.map(p => p.name);
+    }
+
+    // Adiciona escopos de permissões se disponíveis
+    if (permissionScopes && Object.keys(permissionScopes).length > 0) {
+      claims.permissionScopes = {};
+      for (const [permissionId, scopeType] of Object.entries(permissionScopes)) {
+        claims.permissionScopes[permissionId] = scopeType.toString();
+      }
+    }
+
+    return claims;
   }
 }

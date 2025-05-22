@@ -44,10 +44,24 @@ export class JwtAuthStrategy extends PassportStrategy(
   async validate(payload: any): Promise<UserAccessTokenClaims> {
     // Passport automatically creates a user object, based on the value we return from the validate() method,
     // and assigns it to the Request object as req.user
-    return {
+    
+    // Criar o objeto de claims básico
+    const claims: UserAccessTokenClaims = {
       id: payload.sub,
       username: payload.username,
       roles: payload.roles,
     };
+    
+    // Extrair permissões se presentes no payload
+    if (payload.permissions) {
+      claims.permissions = payload.permissions;
+    }
+    
+    // Extrair escopos de permissões se presentes no payload
+    if (payload.permissionScopes) {
+      claims.permissionScopes = payload.permissionScopes;
+    }
+    
+    return claims;
   }
 }

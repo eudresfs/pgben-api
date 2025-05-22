@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { AuthModule } from '@/auth/auth.module'
 import { 
   ParametroService, 
   TemplateService, 
@@ -39,7 +40,9 @@ import {
       Template,
       WorkflowBeneficio,
       ConfiguracaoIntegracao
-    ])
+    ]),
+    // Importa o módulo compartilhado de autenticação
+    AuthModule
   ],
   controllers: [
     ParametroController,

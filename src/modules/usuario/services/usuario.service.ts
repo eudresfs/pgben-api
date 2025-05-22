@@ -129,6 +129,8 @@ export class UsuarioService {
       // Usar transação para garantir consistência
       return await this.dataSource.transaction(async (manager) => {
         const usuarioRepo = manager.getRepository('usuario');
+        const unidadeRepo = manager.getRepository('unidade');
+        const setorRepo = manager.getRepository('setor');
 
         // Verificar se email já existe
         const emailExistente = await usuarioRepo.findOne({
@@ -139,27 +141,48 @@ export class UsuarioService {
           throw new ConflictException('Email já está em uso');
         }
 
-        // Verificar se CPF já existe (se fornecido)
-        if (createUsuarioDto.cpf) {
-          const cpfExistente = await usuarioRepo.findOne({
-            where: { cpf: createUsuarioDto.cpf },
-          });
-          if (cpfExistente) {
-            this.logger.warn(`CPF já está em uso: ${createUsuarioDto.cpf}`);
-            throw new ConflictException('CPF já está em uso');
-          }
+        // Verificar se CPF já existe
+        const cpfExistente = await usuarioRepo.findOne({
+          where: { cpf: createUsuarioDto.cpf },
+        });
+        if (cpfExistente) {
+          this.logger.warn(`CPF já está em uso: ${createUsuarioDto.cpf}`);
+          throw new ConflictException('CPF já está em uso');
         }
 
-        // Verificar se matrícula já existe (se fornecida)
-        if (createUsuarioDto.matricula) {
-          const matriculaExistente = await usuarioRepo.findOne({
-            where: { matricula: createUsuarioDto.matricula },
+        // Verificar se matrícula já existe
+        const matriculaExistente = await usuarioRepo.findOne({
+          where: { matricula: createUsuarioDto.matricula },
+        });
+        if (matriculaExistente) {
+          this.logger.warn(
+            `Matrícula já está em uso: ${createUsuarioDto.matricula}`,
+          );
+          throw new ConflictException('Matrícula já está em uso');
+        }
+
+        // Verificar se a unidade existe
+        if (createUsuarioDto.unidadeId) {
+          const unidade = await unidadeRepo.findOne({
+            where: { id: createUsuarioDto.unidadeId },
           });
-          if (matriculaExistente) {
-            this.logger.warn(
-              `Matrícula já está em uso: ${createUsuarioDto.matricula}`,
-            );
-            throw new ConflictException('Matrícula já está em uso');
+          if (!unidade) {
+            this.logger.warn(`Unidade não encontrada: ${createUsuarioDto.unidadeId}`);
+            throw new BadRequestException('Unidade não encontrada');
+          }
+
+          // Verificar se o setor existe e pertence à unidade
+          if (createUsuarioDto.setorId) {
+            const setor = await setorRepo.findOne({
+              where: { 
+                id: createUsuarioDto.setorId,
+                unidadeId: createUsuarioDto.unidadeId 
+              },
+            });
+            if (!setor) {
+              this.logger.warn(`Setor não encontrado para a unidade: ${createUsuarioDto.setorId}`);
+              throw new BadRequestException('Setor não encontrado para a unidade');
+            }
           }
         }
 
@@ -191,11 +214,15 @@ export class UsuarioService {
         // Remover campos sensíveis
         const { senhaHash: _, ...usuarioSemSenha } = usuarioSalvo;
 
-        return usuarioSemSenha;
+        return {
+          data: usuarioSemSenha,
+          meta: null,
+          message: null
+        };
       });
     } catch (error) {
       this.logger.error(`Erro ao criar usuário: ${error.message}`, error.stack);
-      if (error instanceof ConflictException) {
+      if (error instanceof ConflictException || error instanceof BadRequestException) {
         throw error;
       }
       throw new InternalServerErrorException(

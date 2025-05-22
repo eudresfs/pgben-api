@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { AuthModule } from '@/auth/auth.module'
 import { SolicitacaoController } from './controllers/solicitacao.controller';
 import { SolicitacaoService } from './services/solicitacao.service';
 import { Solicitacao } from './entities/solicitacao.entity';
@@ -15,6 +16,8 @@ import { Pendencia } from './entities/pendencia.entity';
 @Module({
   imports: [
     TypeOrmModule.forFeature([Solicitacao, HistoricoSolicitacao, Pendencia]),
+    // Importa o módulo compartilhado de autenticação
+    AuthModule,
   ],
   controllers: [SolicitacaoController],
   providers: [SolicitacaoService],

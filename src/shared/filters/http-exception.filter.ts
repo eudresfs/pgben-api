@@ -5,15 +5,19 @@ import {
   HttpException,
   HttpStatus,
   Logger,
+  BadRequestException,
+  ValidationPipe,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { ApiErrorResponse } from '../dtos/api-error-response.dto';
+import { ValidationError } from 'class-validator';
 
 interface ValidationErrorResponse {
   property: string;
   constraints: {
     [type: string]: string;
   };
+  children?: ValidationErrorResponse[];
 }
 
 /**
@@ -22,6 +26,78 @@ interface ValidationErrorResponse {
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(HttpExceptionFilter.name);
+
+  /**
+   * Extrai a primeira mensagem de erro de validação para usar como mensagem principal
+   */
+  private getFirstValidationErrorMessage(validationErrors: ValidationError[] | Array<{ field: string; messages: string[] }>): string {
+    if (!validationErrors || validationErrors.length === 0) {
+      return 'Erro de validação';
+    }
+    
+    // Verifica se é um array de ValidationError (class-validator)
+    if ('property' in validationErrors[0] || 'constraints' in validationErrors[0]) {
+      const errors = validationErrors as ValidationError[];
+      for (const error of errors) {
+        if (error.constraints) {
+          const constraintMessage = Object.values(error.constraints)[0];
+          if (constraintMessage) {
+            return constraintMessage;
+          }
+        }
+        
+        // Se não encontrou nas constraints, verifica os filhos
+        if (error.children && error.children.length > 0) {
+          const childMessage = this.getFirstValidationErrorMessage(error.children);
+          if (childMessage && childMessage !== 'Erro de validação') {
+            return childMessage;
+          }
+        }
+      }
+    } 
+    // Se for o formato interno { field: string; messages: string[] }
+    else if ('field' in validationErrors[0] && 'messages' in validationErrors[0]) {
+      const errors = validationErrors as Array<{ field: string; messages: string[] }>;
+      for (const error of errors) {
+        if (error.messages && error.messages.length > 0) {
+          return error.messages[0];
+        }
+      }
+    }
+    
+    return 'Erro de validação';
+  }
+  
+  /**
+   * Processa os erros de validação em um formato estruturado
+   */
+  private processValidationErrors(
+    validationErrors: ValidationError[],
+    parentProperty: string = ''
+  ): Array<{ field: string; messages: string[] }> {
+    const result: Array<{ field: string; messages: string[] }> = [];
+    
+    for (const error of validationErrors) {
+      const property = parentProperty ? `${parentProperty}.${error.property}` : error.property;
+      
+      if (error.constraints) {
+        const messages = Object.values(error.constraints);
+        if (messages.length > 0) {
+          result.push({
+            field: property,
+            messages,
+          });
+        }
+      }
+      
+      if (error.children && error.children.length > 0) {
+        const childErrors = this.processValidationErrors(error.children, property);
+        result.push(...childErrors);
+      }
+    }
+    
+    return result;
+  }
 
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
@@ -42,28 +118,44 @@ export class HttpExceptionFilter implements ExceptionFilter {
         const responseObj = exceptionResponse as any;
 
         // Trata erros de validação
-        if (Array.isArray(responseObj.message)) {
+        if (exception instanceof BadRequestException) {
           code = 'VALIDATION_ERROR';
-          message = 'Erro de validação';
-          validationErrors = responseObj.message.reduce(
-            (
-              acc: Array<{ field: string; messages: string[] }>,
-              error: string,
-            ) => {
-              const [field, ...errorMsgs] = error.split(' ');
-              const fieldName = field.replace(/^\w+\.(\w+)$/, '$1');
-              const errorMessage = errorMsgs.join(' ').replace(/(^"|"$)/g, '');
-
-              const existingError = acc.find((e) => e.field === fieldName);
-              if (existingError) {
-                existingError.messages.push(errorMessage);
-              } else {
-                acc.push({ field: fieldName, messages: [errorMessage] });
-              }
-              return acc;
-            },
-            [],
-          );
+          
+          // Caso o erro já venha formatado pelo ValidationPipe
+          if (responseObj.errors && Array.isArray(responseObj.errors)) {
+            validationErrors = responseObj.errors.map((err: any) => ({
+              field: err.field || 'geral',
+              messages: [err.message],
+            }));
+            // Converte para o formato ValidationError para usar com getFirstValidationErrorMessage
+            const validationErrorObjects = responseObj.errors.map((err: any) => ({
+              property: err.field || 'geral',
+              constraints: {
+                custom: err.message
+              },
+              children: []
+            }));
+            message = this.getFirstValidationErrorMessage(validationErrorObjects);
+          }
+          // Caso seja um erro de validação do class-validator
+          else if (responseObj.message && Array.isArray(responseObj.message)) {
+            if (responseObj.message[0] && typeof responseObj.message[0] === 'object' && responseObj.message[0].property) {
+              // É um erro de validação do class-validator
+              message = this.getFirstValidationErrorMessage(responseObj.message);
+              validationErrors = this.processValidationErrors(responseObj.message);
+            } else {
+              // É uma lista de mensagens de erro
+              message = responseObj.message[0] || 'Erro de validação';
+              validationErrors = responseObj.message.map((msg: string) => ({
+                field: 'geral',
+                messages: [msg],
+              }));
+            }
+          }
+          // Outros tipos de BadRequest
+          else if (responseObj.message) {
+            message = responseObj.message;
+          }
         } else if (responseObj.message) {
           message = responseObj.message;
           code = responseObj.code || code;

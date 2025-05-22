@@ -27,7 +27,9 @@ import { CreateCidadaoDto } from '../dto/create-cidadao.dto';
 import { UpdateCidadaoDto } from '../dto/update-cidadao.dto';
 import { CreateComposicaoFamiliarDto } from '../dto/create-composicao-familiar.dto';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../../../auth/guards/roles.guard';
+import { PermissionGuard } from '../../../auth/guards/permission.guard';
+import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
+import { ScopeType } from '../../../auth/entities/user-permission.entity';
 import {
   CidadaoResponseDto,
   CidadaoPaginatedResponseDto,
@@ -41,7 +43,7 @@ import { ApiErrorResponse } from '../../../shared/dtos/api-error-response.dto';
  */
 @ApiTags('Cidadão')
 @Controller('v1/cidadao')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, PermissionGuard)
 @ApiBearerAuth()
 export class CidadaoController {
   constructor(private readonly cidadaoService: CidadaoService) {}
@@ -50,6 +52,11 @@ export class CidadaoController {
    * Lista todos os cidadãos com filtros e paginação
    */
   @Get()
+  @RequiresPermission({
+    permissionName: 'cidadao.listar',
+    scopeType: ScopeType.UNIT,
+    scopeIdExpression: 'user.unidadeId',
+  })
   @ApiOperation({
     summary: 'Listar cidadãos',
     description: 'Retorna uma lista paginada de cidadãos com opções de filtro.',
@@ -125,6 +132,11 @@ export class CidadaoController {
    * Obtém detalhes de um cidadão específico
    */
   @Get(':id')
+  @RequiresPermission({
+    permissionName: 'cidadao.visualizar',
+    scopeType: ScopeType.UNIT,
+    scopeIdExpression: 'cidadao.unidadeId',
+  })
   @ApiOperation({
     summary: 'Obter detalhes de um cidadão',
     description: 'Retorna os detalhes completos de um cidadão pelo seu ID.',
@@ -159,6 +171,11 @@ export class CidadaoController {
    * Cria um novo cidadão
    */
   @Post()
+  @RequiresPermission({
+    permissionName: 'cidadao.criar',
+    scopeType: ScopeType.UNIT,
+    scopeIdExpression: 'user.unidadeId',
+  })
   @ApiOperation({
     summary: 'Criar cidadão',
     description: 'Cadastra um novo cidadão no sistema.',
@@ -209,6 +226,11 @@ export class CidadaoController {
    * Atualiza um cidadão existente
    */
   @Put(':id')
+  @RequiresPermission({
+    permissionName: 'cidadao.editar',
+    scopeType: ScopeType.UNIT,
+    scopeIdExpression: 'cidadao.unidadeId',
+  })
   @ApiOperation({
     summary: 'Atualizar cidadão existente',
     description: 'Atualiza os dados de um cidadão existente.',
@@ -261,6 +283,7 @@ export class CidadaoController {
    * Busca cidadão por CPF
    */
   @Get('cpf/:cpf')
+  @RequiresPermission({ permissionName: 'cidadao.buscar.cpf' })
   @ApiOperation({
     summary: 'Buscar cidadão por CPF',
     description: 'Busca um cidadão pelo número do CPF (com ou sem formatação).',
@@ -293,6 +316,7 @@ export class CidadaoController {
    * Busca cidadão por NIS
    */
   @Get('nis/:nis')
+  @RequiresPermission({ permissionName: 'cidadao.buscar.nis' })
   @ApiOperation({
     summary: 'Buscar cidadão por NIS',
     description: 'Busca um cidadão pelo número do NIS (PIS/PASEP).',
@@ -328,6 +352,12 @@ export class CidadaoController {
   @ApiOperation({ summary: 'Histórico de solicitações' })
   @ApiResponse({ status: 200, description: 'Histórico retornado com sucesso' })
   @ApiResponse({ status: 404, description: 'Cidadão não encontrado' })
+  @RequiresPermission({
+    permissionName: 'cidadao.visualizar',
+    scopeType: ScopeType.UNIT,
+    scopeIdExpression: 'cidadao.unidadeId',
+  })
+  @RequiresPermission({ permissionName: 'solicitacao.listar' })
   async findSolicitacoes(@Param('id') id: string) {
     return this.cidadaoService.findSolicitacoesByCidadaoId(id);
   }
@@ -340,6 +370,11 @@ export class CidadaoController {
   @ApiResponse({ status: 201, description: 'Membro adicionado com sucesso' })
   @ApiResponse({ status: 400, description: 'Dados inválidos' })
   @ApiResponse({ status: 404, description: 'Cidadão não encontrado' })
+  @RequiresPermission({
+    permissionName: 'cidadao.editar',
+    scopeType: ScopeType.UNIT,
+    scopeIdExpression: 'cidadao.unidadeId',
+  })
   async addComposicaoFamiliar(
     @Param('id') id: string,
     @Body() createComposicaoFamiliarDto: CreateComposicaoFamiliarDto,

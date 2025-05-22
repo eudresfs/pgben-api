@@ -21,6 +21,7 @@ import {
 } from 'class-validator';
 import { CPFValidator } from '../validators/cpf-validator';
 import { NISValidator } from '../validators/nis-validator';
+import { TelefoneValidator } from '../validators/telefone-validator';
 import { PapelCidadao } from './papel-cidadao.entity';
 import { ComposicaoFamiliar } from './composicao-familiar.entity';
 
@@ -106,6 +107,7 @@ export class Cidadao {
 
   @Column({ nullable: false })
   @IsNotEmpty({ message: 'Telefone é obrigatório' })
+  @Validate(TelefoneValidator, { message: 'Telefone inválido' })
   telefone: string;
 
   @Column({ nullable: true })

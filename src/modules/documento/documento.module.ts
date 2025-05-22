@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MulterModule } from '@nestjs/platform-express';
+import { AuthModule } from '@/auth/auth.module'
 import { DocumentoController } from './controllers/documento.controller';
 import { DocumentoService } from './services/documento.service';
 import { MalwareScanService } from './services/malware-scan.service';
@@ -32,8 +33,8 @@ import * as crypto from 'crypto';
     TypeOrmModule.forFeature([Documento, DocumentoEnviado]),
     SharedModule,
     SolicitacaoModule,
-    // AuditoriaModule removido - agora é global
     ConfigModule,
+    AuthModule,
     MulterModule.register({
       storage: diskStorage({
         destination: (req, file, cb) => {

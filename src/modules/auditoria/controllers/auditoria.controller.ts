@@ -20,9 +20,9 @@ import { AuditoriaService } from '../services/auditoria.service';
 import { CreateLogAuditoriaDto } from '../dto/create-log-auditoria.dto';
 import { QueryLogAuditoriaDto } from '../dto/query-log-auditoria.dto';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../../../auth/guards/roles.guard';
-import { Roles } from '../../../auth/decorators/role.decorator';
-import { Role } from '../../../shared/enums/role.enum';
+import { PermissionGuard } from '../../../auth/guards/permission.guard';
+import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
+import { ScopeType } from '../../../auth/entities/user-permission.entity';
 
 /**
  * Controlador de Auditoria
@@ -32,7 +32,7 @@ import { Role } from '../../../shared/enums/role.enum';
  */
 @ApiTags('Auditoria')
 @Controller('v1/auditoria')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, PermissionGuard)
 @ApiBearerAuth()
 export class AuditoriaController {
   constructor(private readonly auditoriaService: AuditoriaService) {}
@@ -42,7 +42,10 @@ export class AuditoriaController {
    * Normalmente os logs são criados automaticamente pelo middleware
    */
   @Post()
-  @Roles(Role.ADMIN)
+  @RequiresPermission({
+    permissionName: 'auditoria.log.criar',
+    scopeType: ScopeType.GLOBAL
+  })
   @ApiOperation({ summary: 'Cria um novo log de auditoria manualmente' })
   @ApiResponse({
     status: 201,
@@ -71,7 +74,10 @@ export class AuditoriaController {
    * Busca logs de auditoria com base nos filtros fornecidos
    */
   @Get()
-  @Roles(Role.ADMIN)
+  @RequiresPermission({
+    permissionName: 'auditoria.log.listar',
+    scopeType: ScopeType.GLOBAL
+  })
   @ApiOperation({ summary: 'Busca logs de auditoria' })
   @ApiResponse({ status: 200, description: 'Lista de logs de auditoria' })
   @ApiResponse({ status: 403, description: 'Acesso negado' })
@@ -83,7 +89,10 @@ export class AuditoriaController {
    * Busca um log de auditoria pelo ID
    */
   @Get(':id')
-  @Roles(Role.ADMIN)
+  @RequiresPermission({
+    permissionName: 'auditoria.log.visualizar',
+    scopeType: ScopeType.GLOBAL
+  })
   @ApiOperation({ summary: 'Busca um log de auditoria pelo ID' })
   @ApiParam({ name: 'id', description: 'ID do log de auditoria' })
   @ApiResponse({ status: 200, description: 'Log de auditoria encontrado' })
@@ -97,7 +106,10 @@ export class AuditoriaController {
    * Busca logs de auditoria por entidade
    */
   @Get('entidade/:entidade/:id')
-  @Roles(Role.ADMIN)
+  @RequiresPermission({
+    permissionName: 'auditoria.log.entidade.visualizar',
+    scopeType: ScopeType.GLOBAL
+  })
   @ApiOperation({ summary: 'Busca logs de auditoria por entidade' })
   @ApiParam({ name: 'entidade', description: 'Nome da entidade' })
   @ApiParam({ name: 'id', description: 'ID da entidade' })
@@ -114,7 +126,10 @@ export class AuditoriaController {
    * Busca logs de auditoria por usuário
    */
   @Get('usuario/:id')
-  @Roles(Role.ADMIN)
+  @RequiresPermission({
+    permissionName: 'auditoria.log.usuario.visualizar',
+    scopeType: ScopeType.GLOBAL
+  })
   @ApiOperation({ summary: 'Busca logs de auditoria por usuário' })
   @ApiParam({ name: 'id', description: 'ID do usuário' })
   @ApiResponse({
@@ -130,7 +145,10 @@ export class AuditoriaController {
    * Gera relatório de acessos a dados sensíveis por período
    */
   @Get('relatorios/dados-sensiveis')
-  @Roles(Role.ADMIN)
+  @RequiresPermission({
+    permissionName: 'auditoria.relatorio.dados-sensiveis',
+    scopeType: ScopeType.GLOBAL
+  })
   @ApiOperation({
     summary: 'Gera relatório de acessos a dados sensíveis por período',
   })
