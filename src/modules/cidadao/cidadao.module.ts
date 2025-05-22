@@ -22,7 +22,6 @@ import { AuthModule } from '@/auth/auth.module'
   imports: [
     TypeOrmModule.forFeature([Cidadao, PapelCidadao]),
     CacheModule,
-    // Importa o módulo compartilhado de autenticação
     AuthModule,
   ],
   controllers: [CidadaoController, PapelCidadaoController],

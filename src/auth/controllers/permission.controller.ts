@@ -56,9 +56,9 @@ class AtribuirPermissaoDto {
  * Este controlador fornece endpoints para gerenciar permissões de usuários,
  * incluindo verificação, atribuição e revogação de permissões.
  */
-@ApiTags('Permissões')
+@ApiTags('Usuários')
 @ApiBearerAuth()
-@Controller('permissoes')
+@Controller('v1/permissoes')
 @UseGuards(JwtAuthGuard, PermissionGuard)
 export class PermissionController {
   constructor(private readonly permissionService: PermissionService) {}

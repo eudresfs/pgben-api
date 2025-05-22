@@ -1,4 +1,4 @@
-import { Module, Global } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { TerminusModule } from '@nestjs/terminus';
 import { HttpModule } from '@nestjs/axios';
 import { HealthController } from './health.controller';
@@ -15,7 +15,7 @@ import { EnhancedMetricsInterceptor } from './enhanced-metrics.interceptor';
  * Configura o sistema de monitoramento para toda a aplicação
  * incluindo health checks e métricas
  */
-@Global()
+// Módulo NÃO global para evitar problemas com interceptors
 @Module({
   imports: [TerminusModule, HttpModule],
   controllers: [HealthController, MetricsController, EnhancedMetricsController],

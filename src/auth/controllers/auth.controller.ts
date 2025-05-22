@@ -2,6 +2,7 @@ import {
   Body,
   ClassSerializerInterceptor,
   Controller,
+  Get,
   HttpCode,
   HttpStatus,
   Post,
@@ -26,6 +27,7 @@ import { AuthTokenOutput } from '../dtos/auth-token-output.dto';
 import { JwtRefreshGuard } from '../guards/jwt-refresh.guard';
 import { LocalAuthGuard } from '../guards/local-auth.guard';
 import { AuthService } from '../services/auth.service';
+import { Public } from '../decorators/public.decorator';
 
 @ApiTags('Autenticação')
 @Controller('v1/auth') 
@@ -37,6 +39,7 @@ export class AuthController {
     this.logger.setContext(AuthController.name);
   }
   @Post('login')
+  @Public()
   @ApiOperation({
     summary: 'User login API',
   })
@@ -112,5 +115,30 @@ export class AuthController {
     response.meta = {};
 
     return response;
+  }
+  
+  @Get('status')
+  @Public()
+  @ApiOperation({
+    summary: 'Verificar status do serviço de autenticação',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    schema: {
+      type: 'object',
+      properties: {
+        status: { type: 'string', example: 'online' },
+        message: { type: 'string', example: 'Serviço de autenticação está funcionando' },
+        timestamp: { type: 'string', format: 'date-time', example: '2023-01-01T00:00:00.000Z' },
+      },
+    },
+  })
+  @HttpCode(HttpStatus.OK)
+  getStatus(): { status: string; message: string; timestamp: string } {
+    return {
+      status: 'online',
+      message: 'Serviço de autenticação está funcionando',
+      timestamp: new Date().toISOString(),
+    };
   }
 }

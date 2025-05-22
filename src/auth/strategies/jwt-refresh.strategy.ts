@@ -12,10 +12,30 @@ export class JwtRefreshStrategy extends PassportStrategy(
   STRATEGY_JWT_REFRESH,
 ) {
   constructor(private readonly configService: ConfigService) {
+    // Obter a chave pública do ambiente
+    const publicKeyBase64 = configService.get<string>('JWT_PUBLIC_KEY_BASE64');
+
+    if (!publicKeyBase64) {
+      throw new Error('JWT_PUBLIC_KEY_BASE64 não está configurado');
+    }
+
+    // Decodificar a chave pública
+    const publicKey = Buffer.from(publicKeyBase64, 'base64')
+      .toString('utf8')
+      .trim();
+
+    console.log(
+      'Configurando JWT Refresh Strategy com chave pública',
+    );
+
     super({
       jwtFromRequest: ExtractJwt.fromBodyField('refreshToken'),
-      secretOrKey: configService.get<string>('jwt.publicKey'),
+      ignoreExpiration: false,
+      secretOrKey: publicKey,
       algorithms: ['RS256'],
+      jsonWebTokenOptions: {
+        algorithms: ['RS256'],
+      },
     });
   }
 

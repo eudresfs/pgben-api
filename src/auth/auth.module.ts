@@ -3,7 +3,7 @@ import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { PermissionModule } from './permission.module'; // Restaurado após correção
+import { PermissionModule } from './permission.module'; 
 
 import { AuthController } from './controllers/auth.controller';
 import { PermissionManagementController } from './controllers/permission-management.controller';
@@ -18,7 +18,7 @@ import { UsuarioModule } from '../modules/usuario/usuario.module';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { AppLoggerModule } from '../shared/logger/logger.module';
-import { AuditoriaModule } from '../modules/auditoria/auditoria.module';
+// import { AuditoriaModule } from '../modules/auditoria/auditoria.module';
 
 @Module({
   imports: [
@@ -42,7 +42,7 @@ import { AuditoriaModule } from '../modules/auditoria/auditoria.module';
     // ← SOLUÇÃO: forwardRef nos dois módulos que se referenciam
     forwardRef(() => UsuarioModule),
     AppLoggerModule,
-    forwardRef(() => AuditoriaModule),
+    // forwardRef(() => AuditoriaModule),
   ],
   controllers: [
     AuthController,

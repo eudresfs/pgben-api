@@ -60,7 +60,7 @@ import { LogAuditoriaRepository } from './repositories/log-auditoria.repository'
 @Global()
 @Module({
   imports: [
-    PermissionModule, // Restaurado após correção
+    // PermissionModule, // Restaurado após correção
     
     // Configuração do TypeORM para entidades do módulo
     TypeOrmModule.forFeature([LogAuditoria]),

@@ -11,7 +11,7 @@ import { ApiTags } from '@nestjs/swagger';
  * no formato do Prometheus
  */
 @ApiTags('Métricas')
-@Controller('metricas')
+@Controller({ path: 'metrics', version: '1' })
 export class MetricsController {
   constructor(private readonly metricsService: MetricsService) {}
 

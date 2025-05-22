@@ -17,7 +17,7 @@ import { ApiTags } from '@nestjs/swagger';
  * e seus componentes (banco de dados, memória, disco, etc.)
  */
 @ApiTags('Métricas')
-@Controller('health')
+@Controller({ path: 'health', version: '1' })
 export class HealthController {
   constructor(
     private health: HealthCheckService,
@@ -25,7 +25,10 @@ export class HealthController {
     private db: TypeOrmHealthIndicator,
     private memory: MemoryHealthIndicator,
     private disk: DiskHealthIndicator,
-  ) {}
+  ) {
+    console.log('🔥 DEBUG: HealthController inicializado');
+    console.log('🔥 DEBUG: Caminho do controller:', '/health');
+  }
 
   /**
    * Endpoint principal de health check
@@ -35,6 +38,7 @@ export class HealthController {
   @Public()
   @HealthCheck()
   check() {
+    console.log('🔥 HEALTH CONTROLLER: check() foi chamado!');
     return this.health.check([
       // Verificar se o banco de dados está funcionando
       () => this.db.pingCheck('database'),
@@ -61,6 +65,7 @@ export class HealthController {
   @Get('ping')
   @Public()
   ping() {
+    console.log('🔥 HEALTH CONTROLLER: ping() foi chamado!');
     return {
       status: 'ok',
       timestamp: new Date().toISOString(),
