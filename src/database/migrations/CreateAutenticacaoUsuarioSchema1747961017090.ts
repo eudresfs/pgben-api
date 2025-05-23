@@ -48,11 +48,13 @@ export class CreateAutenticacaoUsuarioSchema1747961017090 implements MigrationIn
         END;
         $$ LANGUAGE plpgsql;
       `);
-      
+
       // 3. Criar tipos enumerados 
       await queryRunner.query(`
-        -- Enum para roles do sistema (baseado no Role enum)
-          CREATE TYPE role AS ENUM (
+        DO $$
+        BEGIN
+          IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'role') THEN
+            CREATE TYPE role AS ENUM (
               'admin',
               'gestor',
               'coordenador',
@@ -61,6 +63,8 @@ export class CreateAutenticacaoUsuarioSchema1747961017090 implements MigrationIn
               'cidadao',
               'auditor'
             );
+          END IF;
+        END$$;
       `);
 
       // 4. Criar tabela de permissões (baseado na entidade Permissao)
@@ -78,14 +82,19 @@ export class CreateAutenticacaoUsuarioSchema1747961017090 implements MigrationIn
         );
 
         -- Índices para campos frequentemente consultados
-        CREATE INDEX "IDX_PERMISSAO_MODULO" ON "permissao" ("modulo");
-        CREATE INDEX "IDX_PERMISSAO_NOME" ON "permissao" ("nome");
+        CREATE INDEX IF NOT EXISTS "IDX_PERMISSAO_MODULO" ON "permissao" ("modulo");
+        CREATE INDEX IF NOT EXISTS "IDX_PERMISSAO_NOME" ON "permissao" ("nome");
 
         -- Trigger para atualização automática do timestamp
-        CREATE TRIGGER update_permissao_timestamp
-        BEFORE UPDATE ON permissao
-        FOR EACH ROW
-        EXECUTE FUNCTION update_timestamp();
+        DO $$
+        BEGIN
+          IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_permissao_timestamp') THEN
+            CREATE TRIGGER update_permissao_timestamp
+            BEFORE UPDATE ON permissao
+            FOR EACH ROW
+            EXECUTE FUNCTION update_timestamp();
+          END IF;
+        END$$;
       `);
 
       // 5. Criar tabela de usuários (baseado na entidade Usuario)
@@ -109,19 +118,65 @@ export class CreateAutenticacaoUsuarioSchema1747961017090 implements MigrationIn
         );
 
         -- Índices para campos frequentemente consultados
-        CREATE UNIQUE INDEX "IDX_USUARIO_EMAIL" ON "usuario" ("email");
-        CREATE UNIQUE INDEX "IDX_USUARIO_CPF" ON "usuario" ("cpf");
-        CREATE UNIQUE INDEX "IDX_USUARIO_MATRICULA" ON "usuario" ("matricula");
-        CREATE INDEX "IDX_USUARIO_UNIDADE" ON "usuario" ("unidade_id");
-        CREATE INDEX "IDX_USUARIO_SETOR" ON "usuario" ("setor_id");
-        CREATE INDEX "IDX_USUARIO_ROLE" ON "usuario" ("role");
-        CREATE INDEX "IDX_USUARIO_STATUS" ON "usuario" ("status");
+        DO $$
+        BEGIN
+          IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'IDX_USUARIO_EMAIL') THEN
+            CREATE UNIQUE INDEX "IDX_USUARIO_EMAIL" ON "usuario" ("email");
+          END IF;
+        END$$;
+
+        DO $$
+        BEGIN
+          IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'IDX_USUARIO_CPF') THEN
+            CREATE UNIQUE INDEX "IDX_USUARIO_CPF" ON "usuario" ("cpf");
+          END IF;
+        END$$;
+
+        DO $$
+        BEGIN
+          IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'IDX_USUARIO_MATRICULA') THEN
+            CREATE UNIQUE INDEX "IDX_USUARIO_MATRICULA" ON "usuario" ("matricula");
+          END IF;
+        END$$;
+
+        DO $$
+        BEGIN
+          IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'IDX_USUARIO_UNIDADE') THEN
+            CREATE INDEX "IDX_USUARIO_UNIDADE" ON "usuario" ("unidade_id");
+          END IF;
+        END$$;
+
+        DO $$
+        BEGIN
+          IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'IDX_USUARIO_SETOR') THEN
+            CREATE INDEX "IDX_USUARIO_SETOR" ON "usuario" ("setor_id");
+          END IF;
+        END$$;
+
+        DO $$
+        BEGIN
+          IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'IDX_USUARIO_ROLE') THEN
+            CREATE INDEX "IDX_USUARIO_ROLE" ON "usuario" ("role");
+          END IF;
+        END$$;
+
+        DO $$
+        BEGIN
+          IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'IDX_USUARIO_STATUS') THEN
+            CREATE INDEX "IDX_USUARIO_STATUS" ON "usuario" ("status");
+          END IF;
+        END$$;
 
         -- Trigger para atualização automática do timestamp
-        CREATE TRIGGER update_usuario_timestamp
-        BEFORE UPDATE ON usuario
-        FOR EACH ROW
-        EXECUTE FUNCTION update_timestamp();
+        DO $$
+        BEGIN
+          IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_usuario_timestamp') THEN
+            CREATE TRIGGER update_usuario_timestamp
+            BEFORE UPDATE ON usuario
+            FOR EACH ROW
+            EXECUTE FUNCTION update_timestamp();
+          END IF;
+        END$$;
 
       `);
 
@@ -139,14 +194,19 @@ export class CreateAutenticacaoUsuarioSchema1747961017090 implements MigrationIn
         );
 
         -- Índices para campos frequentemente consultados
-        CREATE INDEX "IDX_ROLE_PERMISSAO_ROLE" ON "role_permissao" ("role");
-        CREATE INDEX "IDX_ROLE_PERMISSAO_PERMISSAO" ON "role_permissao" ("permissao_id");
+        CREATE INDEX IF NOT EXISTS "IDX_ROLE_PERMISSAO_ROLE" ON "role_permissao" ("role");
+        CREATE INDEX IF NOT EXISTS "IDX_ROLE_PERMISSAO_PERMISSAO" ON "role_permissao" ("permissao_id");
 
         -- Trigger para atualização automática do timestamp
-        CREATE TRIGGER update_role_permissao_timestamp
-        BEFORE UPDATE ON role_permissao
-        FOR EACH ROW
-        EXECUTE FUNCTION update_timestamp();
+        DO $$
+        BEGIN
+          IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_role_permissao_timestamp') THEN
+            CREATE TRIGGER update_role_permissao_timestamp
+            BEFORE UPDATE ON role_permissao
+            FOR EACH ROW
+            EXECUTE FUNCTION update_timestamp();
+          END IF;
+        END$$;
       `);
 
       // 7. Criar tabela de tokens de refresh para autenticação (baseado na entidade RefreshToken)
@@ -167,38 +227,48 @@ export class CreateAutenticacaoUsuarioSchema1747961017090 implements MigrationIn
         );
 
         -- Índices para campos frequentemente consultados
-        CREATE INDEX "IDX_REFRESH_TOKEN_USUARIO" ON "refresh_tokens" ("usuario_id");
-        CREATE INDEX "IDX_REFRESH_TOKEN_TOKEN" ON "refresh_tokens" ("token");
-        CREATE INDEX "IDX_REFRESH_TOKEN_EXPIRES" ON "refresh_tokens" ("expires_at");
+        CREATE INDEX IF NOT EXISTS "IDX_REFRESH_TOKEN_USUARIO" ON "refresh_tokens" ("usuario_id");
+        CREATE INDEX IF NOT EXISTS "IDX_REFRESH_TOKEN_TOKEN" ON "refresh_tokens" ("token");
+        CREATE INDEX IF NOT EXISTS "IDX_REFRESH_TOKEN_EXPIRES" ON "refresh_tokens" ("expires_at");
 
         -- Trigger para atualização automática do timestamp
-        CREATE TRIGGER update_refresh_token_timestamp
-        BEFORE UPDATE ON refresh_tokens
-        FOR EACH ROW
-        EXECUTE FUNCTION update_timestamp();
+        DO $$
+        BEGIN
+          IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_refresh_token_timestamp') THEN
+            CREATE TRIGGER update_refresh_token_timestamp
+            BEFORE UPDATE ON refresh_tokens
+            FOR EACH ROW
+            EXECUTE FUNCTION update_timestamp();
+          END IF;
+        END$$;
       `);
-      
+
       // 8. Inserir usuário administrador padrão
       await queryRunner.query(`
-        INSERT INTO "usuario" (
-          "id",
-          "nome",
-          "email",
-          "senha_hash",
-          "role",
-          "status",
-          "primeiro_acesso"
-        ) VALUES (
-          '00000000-0000-0000-0000-000000000000',
-          'Administrador do Sistema',
-          'admin@natal.pgben.gov.br',
-          '$2b$10$IObmeMKebVcMlY8BzrHf1ebGncJ.5SBnWhxVKgXAQULGPs568CiAO',
-          'admin',
-          'ativo',
-          false
-        ) ON CONFLICT (id) DO NOTHING;
+        DO $$
+        BEGIN
+          IF NOT EXISTS (SELECT 1 FROM "usuario" WHERE "email" = 'admin@natal.pgben.gov.br') THEN
+            INSERT INTO "usuario" (
+              "id",
+              "nome",
+              "email",
+              "senha_hash",
+              "role",
+              "status",
+              "primeiro_acesso"
+            ) VALUES (
+              '00000000-0000-0000-0000-000000000000',
+              'Administrador do Sistema',
+              'admin@natal.pgben.gov.br',
+              '$2b$10$IObmeMKebVcMlY8BzrHf1ebGncJ.5SBnWhxVKgXAQULGPs568CiAO',
+              'admin',
+              'ativo',
+              false
+            );
+          END IF;
+        END$$;
       `);
-      
+
       console.log('Usuário administrador padrão criado com sucesso.');
       console.log('Migration 1000000-CreateAutenticacaoUsuarioSchema executada com sucesso.');
     } catch (error) {
@@ -213,7 +283,7 @@ export class CreateAutenticacaoUsuarioSchema1747961017090 implements MigrationIn
   public async down(queryRunner: QueryRunner): Promise<void> {
     try {
       console.log('Iniciando rollback da migration 1000000-CreateAutenticacaoUsuarioSchema...');
-      
+
       // 1. Remover tabelas na ordem inversa da criação
       await queryRunner.query(`DROP TABLE IF EXISTS "refresh_tokens";`);
       await queryRunner.query(`DROP TABLE IF EXISTS "role_permissao";`);

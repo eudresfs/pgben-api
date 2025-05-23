@@ -21,66 +21,101 @@ export class CreateCidadaoSchema1747961017126 implements MigrationInterface {
     
     // Criação dos tipos enumerados
     await queryRunner.query(`
-      CREATE TYPE "sexo" AS ENUM ('masculino', 'feminino', 'outro');
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'sexo') THEN
+          CREATE TYPE "sexo" AS ENUM ('masculino', 'feminino', 'outro');
+        END IF;
+      END$$;
       
-      CREATE TYPE "escolaridade_enum" AS ENUM (
-        'analfabeto', 
-        'fundamental_incompleto', 
-        'fundamental_completo', 
-        'medio_incompleto', 
-        'medio_completo',
-        'superior_incompleto',
-        'superior_completo',
-        'pos_graduacao'
-      );
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'escolaridade_enum') THEN
+          CREATE TYPE "escolaridade_enum" AS ENUM (
+            'analfabeto', 
+            'fundamental_incompleto', 
+            'fundamental_completo', 
+            'medio_incompleto', 
+            'medio_completo',
+            'superior_incompleto',
+            'superior_completo',
+            'pos_graduacao'
+          );
+        END IF;
+      END$$;
       
-      CREATE TYPE "situacao_trabalho_enum" AS ENUM (
-        'desempregado',
-        'empregado_formal',
-        'empregado_informal',
-        'autonomo',
-        'aposentado',
-        'pensionista',
-        'beneficiario_bpc',
-        'outro'
-      );
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'situacao_trabalho_enum') THEN
+          CREATE TYPE "situacao_trabalho_enum" AS ENUM (
+            'desempregado',
+            'empregado_formal',
+            'empregado_informal',
+            'autonomo',
+            'aposentado',
+            'pensionista',
+            'beneficiario_bpc',
+            'outro'
+          );
+        END IF;
+      END$$;
       
-      CREATE TYPE "tipo_trabalho_enum" AS ENUM (
-        'formal',
-        'informal',
-        'autonomo',
-        'empregador',
-        'nao_trabalha'
-      );
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'tipo_trabalho_enum') THEN
+          CREATE TYPE "tipo_trabalho_enum" AS ENUM (
+            'formal',
+            'informal',
+            'autonomo',
+            'empregador',
+            'nao_trabalha'
+          );
+        END IF;
+      END$$;
       
-      CREATE TYPE "tipo_moradia_enum" AS ENUM (
-        'propria',
-        'alugada',
-        'cedida',
-        'ocupacao',
-        'situacao_rua',
-        'abrigo',
-        'outro'
-      );
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'tipo_moradia_enum') THEN
+          CREATE TYPE "tipo_moradia_enum" AS ENUM (
+            'propria',
+            'alugada',
+            'cedida',
+            'ocupacao',
+            'situacao_rua',
+            'abrigo',
+            'outro'
+          );
+        END IF;
+      END$$;
       
-      CREATE TYPE "parentesco" AS ENUM (
-        'conjuge',
-        'filho',
-        'pai',
-        'mae',
-        'irmao',
-        'avo',
-        'neto',
-        'tio',
-        'sobrinho',
-        'outro'
-      );
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'parentesco') THEN
+          CREATE TYPE "parentesco" AS ENUM (
+            'conjuge',
+            'filho',
+            'pai',
+            'mae',
+            'irmao',
+            'avo',
+            'neto',
+            'tio',
+            'sobrinho',
+            'outro'
+          );
+        END IF;
+      END$$;
       
-      CREATE TYPE "tipo_papel" AS ENUM (
-        'beneficiario',
-        'requerente',
-        'representante_legal'
-      );
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'tipo_papel') THEN
+          CREATE TYPE "tipo_papel" AS ENUM (
+            'beneficiario',
+            'requerente',
+            'representante_legal'
+          );
+        END IF;
+      END$$;
     `);
     
     // Tabela principal de cidadão
@@ -110,18 +145,43 @@ export class CreateCidadaoSchema1747961017126 implements MigrationInterface {
       );
       
       -- Índices para otimização de consultas
-      CREATE INDEX "IDX_cidadao_nome_ativo" ON "cidadao" ("nome", "ativo");
-      CREATE INDEX "IDX_cidadao_cpf" ON "cidadao" ("cpf");
-      CREATE INDEX "IDX_cidadao_nis" ON "cidadao" ("nis");
-      CREATE INDEX "IDX_cidadao_nome_mae" ON "cidadao" ("nome_mae");
-      CREATE INDEX "IDX_cidadao_created_at_ativo" ON "cidadao" ("created_at", "ativo");
-      CREATE INDEX "IDX_cidadao_endereco" ON "cidadao" USING GIN ("endereco");
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'IDX_cidadao_nome_ativo') THEN
+          CREATE INDEX "IDX_cidadao_nome_ativo" ON "cidadao" ("nome", "ativo");
+        END IF;
+        
+        IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'IDX_cidadao_cpf') THEN
+          CREATE INDEX "IDX_cidadao_cpf" ON "cidadao" ("cpf");
+        END IF;
+        
+        IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'IDX_cidadao_nis') THEN
+          CREATE INDEX "IDX_cidadao_nis" ON "cidadao" ("nis");
+        END IF;
+        
+        IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'IDX_cidadao_nome_mae') THEN
+          CREATE INDEX "IDX_cidadao_nome_mae" ON "cidadao" ("nome_mae");
+        END IF;
+        
+        IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'IDX_cidadao_created_at_ativo') THEN
+          CREATE INDEX "IDX_cidadao_created_at_ativo" ON "cidadao" ("created_at", "ativo");
+        END IF;
+        
+        IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'IDX_cidadao_endereco') THEN
+          CREATE INDEX "IDX_cidadao_endereco" ON "cidadao" USING GIN ("endereco");
+        END IF;
+      END$$;
       
       -- Trigger para atualização automática de timestamp
-      CREATE TRIGGER trigger_cidadao_update_timestamp
-      BEFORE UPDATE ON "cidadao"
-      FOR EACH ROW
-      EXECUTE PROCEDURE update_timestamp();
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'trigger_cidadao_update_timestamp') THEN
+          CREATE TRIGGER trigger_cidadao_update_timestamp
+          BEFORE UPDATE ON "cidadao"
+          FOR EACH ROW
+          EXECUTE PROCEDURE update_timestamp();
+        END IF;
+      END$$;
     `);
     
     // Tabela de papel do cidadão
@@ -281,25 +341,50 @@ export class CreateCidadaoSchema1747961017126 implements MigrationInterface {
       ALTER TABLE "dados_sociais" ENABLE ROW LEVEL SECURITY;
       ALTER TABLE "situacao_moradia" ENABLE ROW LEVEL SECURITY;
       
-      CREATE POLICY cidadao_policy ON "cidadao" 
-        USING (TRUE) 
-        WITH CHECK (TRUE);
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE polname = 'cidadao_policy') THEN
+          CREATE POLICY cidadao_policy ON "cidadao" 
+            USING (TRUE) 
+            WITH CHECK (TRUE);
+        END IF;
+      END$$;
       
-      CREATE POLICY papel_cidadao_policy ON "papel_cidadao" 
-        USING (TRUE) 
-        WITH CHECK (TRUE);
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE polname = 'papel_cidadao_policy') THEN
+          CREATE POLICY papel_cidadao_policy ON "papel_cidadao" 
+            USING (TRUE) 
+            WITH CHECK (TRUE);
+        END IF;
+      END$$;
       
-      CREATE POLICY composicao_familiar_policy ON "composicao_familiar" 
-        USING (TRUE) 
-        WITH CHECK (TRUE);
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE polname = 'composicao_familiar_policy') THEN
+          CREATE POLICY composicao_familiar_policy ON "composicao_familiar" 
+            USING (TRUE) 
+            WITH CHECK (TRUE);
+        END IF;
+      END$$;
       
-      CREATE POLICY dados_sociais_policy ON "dados_sociais" 
-        USING (TRUE) 
-        WITH CHECK (TRUE);
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE polname = 'dados_sociais_policy') THEN
+          CREATE POLICY dados_sociais_policy ON "dados_sociais" 
+            USING (TRUE) 
+            WITH CHECK (TRUE);
+        END IF;
+      END$$;
       
-      CREATE POLICY situacao_moradia_policy ON "situacao_moradia" 
-        USING (TRUE) 
-        WITH CHECK (TRUE);
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE polname = 'situacao_moradia_policy') THEN
+          CREATE POLICY situacao_moradia_policy ON "situacao_moradia" 
+            USING (TRUE) 
+            WITH CHECK (TRUE);
+        END IF;
+      END$$;
     `);
     
     console.log('Migration 1020000-CreateCidadaoSchema executada com sucesso.');

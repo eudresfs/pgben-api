@@ -25,19 +25,29 @@ export class CreateUnidadeSchema1747961017121 implements MigrationInterface {
       // 1. Criar tipos enumerados para o módulo
       await queryRunner.query(`
         -- Enum para tipos de unidades
-        CREATE TYPE "tipo_unidade" AS ENUM (
-          'cras',
-          'creas',
-          'centro_pop',
-          'semtas',
-          'outro'
-        );
+        DO $$
+        BEGIN
+          IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'tipo_unidade') THEN
+            CREATE TYPE "tipo_unidade" AS ENUM (
+              'cras',
+              'creas',
+              'centro_pop',
+              'semtas',
+              'outro'
+            );
+          END IF;
+        END$$;
 
         -- Enum para status de unidade
-        CREATE TYPE "status_unidade" AS ENUM (
-          'ativo',
-          'inativo'
-        );
+        DO $$
+        BEGIN
+          IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'status_unidade') THEN
+            CREATE TYPE "status_unidade" AS ENUM (
+              'ativo',
+              'inativo'
+            );
+          END IF;
+        END$$;
       `);
 
       // 2. Criar tabela de unidades (baseado na entidade Unidade)
@@ -59,16 +69,35 @@ export class CreateUnidadeSchema1747961017121 implements MigrationInterface {
         );
 
         -- Índices para otimização de consultas
-        CREATE INDEX "IDX_UNIDADE_NOME" ON "unidade" ("nome");
-        CREATE UNIQUE INDEX "IDX_UNIDADE_CODIGO" ON "unidade" ("codigo");
-        CREATE INDEX "IDX_UNIDADE_TIPO" ON "unidade" ("tipo");
-        CREATE INDEX "IDX_UNIDADE_STATUS" ON "unidade" ("status");
+        DO $$
+        BEGIN
+          IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'IDX_UNIDADE_NOME') THEN
+            CREATE INDEX "IDX_UNIDADE_NOME" ON "unidade" ("nome");
+          END IF;
+          
+          IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'IDX_UNIDADE_CODIGO') THEN
+            CREATE UNIQUE INDEX "IDX_UNIDADE_CODIGO" ON "unidade" ("codigo");
+          END IF;
+          
+          IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'IDX_UNIDADE_TIPO') THEN
+            CREATE INDEX "IDX_UNIDADE_TIPO" ON "unidade" ("tipo");
+          END IF;
+          
+          IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'IDX_UNIDADE_STATUS') THEN
+            CREATE INDEX "IDX_UNIDADE_STATUS" ON "unidade" ("status");
+          END IF;
+        END$$;
 
         -- Trigger para atualização automática do timestamp
-        CREATE TRIGGER update_unidade_timestamp
-        BEFORE UPDATE ON unidade
-        FOR EACH ROW
-        EXECUTE FUNCTION update_timestamp();
+        DO $$
+        BEGIN
+          IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_unidade_timestamp') THEN
+            CREATE TRIGGER update_unidade_timestamp
+            BEFORE UPDATE ON unidade
+            FOR EACH ROW
+            EXECUTE FUNCTION update_timestamp();
+          END IF;
+        END$$;
       `);
 
       // 3. Criar tabela de setores (baseado na entidade Setor)
@@ -88,30 +117,56 @@ export class CreateUnidadeSchema1747961017121 implements MigrationInterface {
         );
 
         -- Índices para otimização de consultas
-        CREATE INDEX "IDX_SETOR_NOME" ON "setor" ("nome");
-        CREATE INDEX "IDX_SETOR_UNIDADE_ID" ON "setor" ("unidade_id");
-        CREATE INDEX "IDX_SETOR_STATUS" ON "setor" ("status");
+        DO $$
+        BEGIN
+          IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'IDX_SETOR_NOME') THEN
+            CREATE INDEX "IDX_SETOR_NOME" ON "setor" ("nome");
+          END IF;
+          
+          IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'IDX_SETOR_UNIDADE_ID') THEN
+            CREATE INDEX "IDX_SETOR_UNIDADE_ID" ON "setor" ("unidade_id");
+          END IF;
+          
+          IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'IDX_SETOR_STATUS') THEN
+            CREATE INDEX "IDX_SETOR_STATUS" ON "setor" ("status");
+          END IF;
+        END$$;
 
         -- Trigger para atualização automática do timestamp
-        CREATE TRIGGER update_setor_timestamp
-        BEFORE UPDATE ON setor
-        FOR EACH ROW
-        EXECUTE FUNCTION update_timestamp();
+        DO $$
+        BEGIN
+          IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_setor_timestamp') THEN
+            CREATE TRIGGER update_setor_timestamp
+            BEFORE UPDATE ON setor
+            FOR EACH ROW
+            EXECUTE FUNCTION update_timestamp();
+          END IF;
+        END$$;
       `);
 
       // 4. Atualizar a tabela de usuário para adicionar as foreign keys para unidade e setor
       await queryRunner.query(`
         -- Adicionar chave estrangeira para unidade na tabela de usuários
-        ALTER TABLE "usuario" 
-        ADD CONSTRAINT "FK_USUARIO_UNIDADE" 
-        FOREIGN KEY ("unidade_id") REFERENCES "unidade" ("id") 
-        ON DELETE SET NULL;
+        DO $$
+        BEGIN
+          IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'FK_USUARIO_UNIDADE') THEN
+            ALTER TABLE "usuario" 
+            ADD CONSTRAINT "FK_USUARIO_UNIDADE" 
+            FOREIGN KEY ("unidade_id") REFERENCES "unidade" ("id") 
+            ON DELETE SET NULL;
+          END IF;
+        END$$;
 
         -- Adicionar chave estrangeira para setor na tabela de usuários
-        ALTER TABLE "usuario" 
-        ADD CONSTRAINT "FK_USUARIO_SETOR" 
-        FOREIGN KEY ("setor_id") REFERENCES "setor" ("id") 
-        ON DELETE SET NULL;
+        DO $$
+        BEGIN
+          IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'FK_USUARIO_SETOR') THEN
+            ALTER TABLE "usuario" 
+            ADD CONSTRAINT "FK_USUARIO_SETOR" 
+            FOREIGN KEY ("setor_id") REFERENCES "setor" ("id") 
+            ON DELETE SET NULL;
+          END IF;
+        END$$;
       `);
 
       console.log('Migration 1010000-CreateUnidadeSchema executada com sucesso.');

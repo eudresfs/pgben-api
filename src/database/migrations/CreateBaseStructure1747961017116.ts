@@ -87,13 +87,28 @@ export class CreateBaseStructure1747961017116 implements MigrationInterface {
       // 4. Criar tipos enumerados globais
       await queryRunner.query(`
         -- Enum para sexo usado em várias entidades
-        CREATE TYPE "sexo_enum" AS ENUM ('masculino', 'feminino', 'outro');
+        DO $$
+        BEGIN
+          IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'sexo_enum') THEN
+            CREATE TYPE "sexo_enum" AS ENUM ('masculino', 'feminino', 'outro');
+          END IF;
+        END$$;
         
         -- Enum para status de ativo/inativo
-        CREATE TYPE "status_ativo_enum" AS ENUM ('ativo', 'inativo');
+        DO $$
+        BEGIN
+          IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'status_ativo_enum') THEN
+            CREATE TYPE "status_ativo_enum" AS ENUM ('ativo', 'inativo');
+          END IF;
+        END$$;
         
         -- Enum para sim/não
-        CREATE TYPE "sim_nao_enum" AS ENUM ('sim', 'nao');
+        DO $$
+        BEGIN
+          IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'sim_nao_enum') THEN
+            CREATE TYPE "sim_nao_enum" AS ENUM ('sim', 'nao');
+          END IF;
+        END$$;
       `);
 
       // 5. Criar tabela de configuração global do sistema
@@ -108,10 +123,15 @@ export class CreateBaseStructure1747961017116 implements MigrationInterface {
           "removed_at" TIMESTAMP
         );
 
-        CREATE TRIGGER update_configuracao_timestamp
-        BEFORE UPDATE ON configuracao_sistema
-        FOR EACH ROW
-        EXECUTE FUNCTION update_timestamp();
+        DO $$
+        BEGIN
+          IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_configuracao_timestamp') THEN
+            CREATE TRIGGER update_configuracao_timestamp
+            BEFORE UPDATE ON configuracao_sistema
+            FOR EACH ROW
+            EXECUTE FUNCTION update_timestamp();
+          END IF;
+        END$$;
       `);
 
       // 6. Criar tabela básica de parâmetros do sistema
@@ -130,15 +150,29 @@ export class CreateBaseStructure1747961017116 implements MigrationInterface {
           "removed_at" TIMESTAMP
         );
 
-        CREATE TRIGGER update_parametro_timestamp
-        BEFORE UPDATE ON parametro_sistema
-        FOR EACH ROW
-        EXECUTE FUNCTION update_timestamp();
+        DO $$
+        BEGIN
+          IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_parametro_timestamp') THEN
+            CREATE TRIGGER update_parametro_timestamp
+            BEFORE UPDATE ON parametro_sistema
+            FOR EACH ROW
+            EXECUTE FUNCTION update_timestamp();
+          END IF;
+        END$$;
         
-        -- Índice para pesquisa por grupo
-        CREATE INDEX "IDX_PARAMETRO_GRUPO" ON "parametro_sistema" ("grupo");
-        -- Índice para pesquisa por código
-        CREATE INDEX "IDX_PARAMETRO_CODIGO" ON "parametro_sistema" ("codigo");
+        -- Índices para pesquisa
+        DO $$
+        BEGIN
+          -- Índice para pesquisa por grupo
+          IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'IDX_PARAMETRO_GRUPO') THEN
+            CREATE INDEX "IDX_PARAMETRO_GRUPO" ON "parametro_sistema" ("grupo");
+          END IF;
+          
+          -- Índice para pesquisa por código
+          IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'IDX_PARAMETRO_CODIGO') THEN
+            CREATE INDEX "IDX_PARAMETRO_CODIGO" ON "parametro_sistema" ("codigo");
+          END IF;
+        END$$;
       `);
 
       console.log('Migration 1000000-CreateBaseStructure executada com sucesso.');
