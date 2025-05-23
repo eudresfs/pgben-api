@@ -11,13 +11,13 @@ import {
   Index,
 } from 'typeorm';
 import { Exclude } from 'class-transformer';
-import { Role } from '../../../shared/enums/role.enum';
 import { RefreshToken } from '../../../auth/entities/refresh-token.entity';
 import { Unidade } from '../../unidade/entities/unidade.entity';
 import { Setor } from '../../unidade/entities/setor.entity';
 import { IsCPF, IsTelefone } from '@/shared/validators/br-validators';
 import { IsNotEmpty, IsString, Length, MaxLength, MinLength, Validate } from 'class-validator';
 import { IsStrongPassword } from '@/shared/validators/strong-password.validator';
+import { Role } from './role.entity';
 
 /**
  * Entidade de usuário
@@ -30,7 +30,7 @@ import { IsStrongPassword } from '@/shared/validators/strong-password.validator'
 @Index(['matricula'], { unique: true })
 @Index(['unidadeId'])
 @Index(['setorId'])
-@Index(['role'])
+@Index(['role_id'])
 @Index(['status'])
 export class Usuario {
   [x: string]: any;
@@ -69,12 +69,11 @@ export class Usuario {
   @MinLength(5, { message: 'Matrícula deve ter no mínimo 5 caracteres' })
   matricula: string;
 
-  @Column({
-    type: 'enum',
-    enum: Role,
-    enumName: 'role',
-    default: Role.TECNICO,
-  })
+  @Column({ name: 'role_id', nullable: true })
+  role_id: string;
+
+  @ManyToOne(() => Role, (role) => role.usuarios)
+  @JoinColumn({ name: 'role_id' })
   role: Role;
 
   @Column({ name: 'unidade_id', nullable: true })

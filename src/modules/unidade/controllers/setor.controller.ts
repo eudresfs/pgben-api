@@ -20,7 +20,7 @@ import { UpdateSetorDto } from '../dto/update-setor.dto';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../auth/guards/roles.guard';
 import { Roles } from '../../../auth/decorators/role.decorator';
-import { Role } from '../../../shared/enums/role.enum';
+import { ROLES } from '../../../shared/constants/roles.constants';
 
 /**
  * Controlador de setores
@@ -40,7 +40,7 @@ export class SetorController {
    * Cria um novo setor
    */
   @Post()
-  @Roles(Role.ADMIN, Role.GESTOR)
+  @Roles(ROLES.ADMIN, ROLES.GESTOR)
   @ApiOperation({ summary: 'Criar novo setor' })
   @ApiResponse({ status: 201, description: 'Setor criado com sucesso' })
   @ApiResponse({ status: 400, description: 'Dados inválidos' })
@@ -62,7 +62,7 @@ export class SetorController {
    * Atualiza um setor existente
    */
   @Put(':id')
-  @Roles(Role.ADMIN, Role.GESTOR)
+  @Roles(ROLES.ADMIN, ROLES.GESTOR)
   @ApiOperation({ summary: 'Atualizar setor existente' })
   @ApiResponse({ status: 200, description: 'Setor atualizado com sucesso' })
   @ApiResponse({ status: 400, description: 'Dados inválidos' })

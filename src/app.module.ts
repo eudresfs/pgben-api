@@ -77,7 +77,7 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
     UnidadeModule,
 
     // Módulo de cidadãos
-    CidadaoModule, // Reativado com a solução de dependência circular
+    CidadaoModule,
 
     // Módulo de benefícios
     BeneficioModule,

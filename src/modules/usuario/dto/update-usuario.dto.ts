@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEmail, IsString, IsOptional, IsEnum, IsUUID } from 'class-validator';
-import { Role } from '../../../shared/enums/role.enum';
+import { ROLES, RoleType } from '../../../shared/constants/roles.constants';
 
 /**
  * DTO para atualização de usuário
@@ -51,15 +51,15 @@ export class UpdateUsuarioDto {
   })
   matricula?: string;
 
-  @IsEnum(Role, { message: 'Papel inválido' })
+  @IsEnum(ROLES, { message: 'Papel inválido' })
   @IsOptional()
   @ApiProperty({
-    enum: Role,
-    example: Role.TECNICO,
+    enum: ROLES,
+    example: ROLES.TECNICO,
     description: 'Papel do usuário no sistema',
     required: false,
   })
-  role?: Role;
+  role_id?: string;
 
   @IsUUID(undefined, { message: 'ID da unidade inválido' })
   @IsOptional()

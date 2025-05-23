@@ -12,7 +12,7 @@ import { Pendencia, StatusPendencia } from '../entities/pendencia.entity';
 import { CreateSolicitacaoDto } from '../dto/create-solicitacao.dto';
 import { UpdateSolicitacaoDto } from '../dto/update-solicitacao.dto';
 import { AvaliarSolicitacaoDto } from '../dto/avaliar-solicitacao.dto';
-import { Role } from '../../../shared/enums/role.enum';
+import { ROLES } from '../../../shared/constants/roles.constants';
 
 /**
  * Serviço de Solicitações
@@ -80,7 +80,7 @@ export class SolicitacaoService {
       queryBuilder.andWhere('solicitacao.unidade_id = :unidade_id', {
         unidade_id,
       });
-    } else if (![Role.ADMIN, Role.GESTOR].includes(user.role)) {
+    } else if (![ROLES.ADMIN, ROLES.GESTOR].includes(user.role)) {
       // Usuários que não são admin ou gestor SEMTAS só podem ver solicitações da sua unidade
       queryBuilder.andWhere('solicitacao.unidade_id = :unidade_id', {
         unidade_id: user.unidade_id,
@@ -162,8 +162,8 @@ export class SolicitacaoService {
    * Verifica se um usuário tem permissão para acessar uma solicitação
    */
   canAccessSolicitacao(solicitacao: Solicitacao, user: any): boolean {
-    // Administradores e gestores SEMTAS podem acessar qualquer solicitação
-    if ([Role.ADMIN, Role.GESTOR].includes(user.role)) {
+    // Admins e gestores podem acessar qualquer solicitação
+    if ([ROLES.ADMIN, ROLES.GESTOR].includes(user.role)) {
       return true;
     }
 
@@ -393,7 +393,7 @@ export class SolicitacaoService {
       const solicitacao = await this.findById(id);
 
       // Verificar se o usuário tem permissão
-      if (![Role.ADMIN, Role.GESTOR].includes(user.role)) {
+      if (![ROLES.ADMIN, ROLES.GESTOR].includes(user.role)) {
         throw new UnauthorizedException(
           'Você não tem permissão para liberar benefícios',
         );
@@ -435,11 +435,7 @@ export class SolicitacaoService {
       const solicitacao = await this.findById(id);
 
       // Verificar se o usuário tem permissão
-      if (
-        ![Role.ADMIN, Role.GESTOR, Role.TECNICO].includes(
-          user.role,
-        )
-      ) {
+      if (![ROLES.ADMIN, ROLES.GESTOR, ROLES.TECNICO].includes(user.role)) {
         throw new UnauthorizedException(
           'Você não tem permissão para cancelar solicitações',
         );

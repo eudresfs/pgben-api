@@ -21,6 +21,7 @@ import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../auth/guards/roles.guard';
 import { Roles } from '../../../auth/decorators/role.decorator';
 import { Role } from '../../../shared/enums/role.enum';
+import { ROLES } from '../../../shared/constants/roles.constants';
 
 /**
  * Controlador para gerenciamento de especificações do Auxílio Natalidade
@@ -61,7 +62,7 @@ export class EspecificacaoNatalidadeController {
    * Cria uma nova especificação de natalidade
    */
   @Post()
-  @Roles(Role.ADMIN, Role.GESTOR)
+  @Roles(ROLES.ADMIN, ROLES.GESTOR)
   @ApiOperation({
     summary: 'Criar especificação de Auxílio Natalidade',
     description: 'Cria uma nova configuração específica para o benefício de Auxílio Natalidade',
@@ -91,7 +92,7 @@ export class EspecificacaoNatalidadeController {
    * Atualiza uma especificação de natalidade existente
    */
   @Put()
-  @Roles(Role.ADMIN, Role.GESTOR)
+  @Roles(ROLES.ADMIN, ROLES.GESTOR)
   @ApiOperation({
     summary: 'Atualizar especificação de Auxílio Natalidade',
     description: 'Atualiza as configurações específicas existentes do Auxílio Natalidade',
@@ -119,7 +120,7 @@ export class EspecificacaoNatalidadeController {
    * Remove uma especificação de natalidade
    */
   @Delete()
-  @Roles(Role.ADMIN)
+  @Roles(ROLES.ADMIN)
   @ApiOperation({
     summary: 'Remover especificação de Auxílio Natalidade',
     description: 'Remove as configurações específicas do Auxílio Natalidade',

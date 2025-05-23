@@ -19,7 +19,7 @@ import {
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../auth/guards/roles.guard';
 import { Roles } from '../../../auth/decorators/role.decorator';
-import { Role } from '../../../shared/enums/role.enum';
+import { ROLES } from '../../../shared/constants/roles.constants';
 import { StatusNotificacaoProcessamento } from '../entities/notification.entity';
 import { NotificacaoService } from '../services/notificacao.service';
 import { NotificationManagerService } from '../services/notification-manager.service';
@@ -45,10 +45,10 @@ export class NotificationController {
    */
   @Post()
   @Roles(
-    Role.ADMIN,
-    Role.GESTOR,
-    Role.COORDENADOR,
-    Role.TECNICO,
+    ROLES.ADMIN,
+    ROLES.GESTOR,
+    ROLES.COORDENADOR,
+    ROLES.TECNICO,
   )
   @ApiOperation({ summary: 'Criar e enviar uma nova notificação' })
   @ApiResponse({

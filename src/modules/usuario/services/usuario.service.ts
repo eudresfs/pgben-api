@@ -200,7 +200,7 @@ export class UsuarioService {
           cpf: createUsuarioDto.cpf,
           telefone: createUsuarioDto.telefone,
           matricula: createUsuarioDto.matricula,
-          role: createUsuarioDto.role,
+          role_id: createUsuarioDto.role_id,
           unidadeId: createUsuarioDto.unidadeId,
           setorId: createUsuarioDto.setorId,
           primeiro_acesso: true,

@@ -21,6 +21,7 @@ import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../auth/guards/roles.guard';
 import { Roles } from '../../../auth/decorators/role.decorator';
 import { Role } from '../../../shared/enums/role.enum';
+import { ROLES } from '../../../shared/constants/roles.constants';
 
 /**
  * Controlador para gerenciamento de especificações do Aluguel Social
@@ -61,7 +62,7 @@ export class EspecificacaoAluguelSocialController {
    * Cria uma nova especificação de aluguel social
    */
   @Post()
-  @Roles(Role.ADMIN, Role.GESTOR)
+  @Roles(ROLES.ADMIN, ROLES.GESTOR)
   @ApiOperation({
     summary: 'Criar especificação de Aluguel Social',
     description: 'Cria uma nova configuração específica para o benefício de Aluguel Social',
@@ -91,7 +92,7 @@ export class EspecificacaoAluguelSocialController {
    * Atualiza uma especificação de aluguel social existente
    */
   @Put()
-  @Roles(Role.ADMIN, Role.GESTOR)
+  @Roles(ROLES.ADMIN, ROLES.GESTOR)
   @ApiOperation({
     summary: 'Atualizar especificação de Aluguel Social',
     description: 'Atualiza as configurações específicas existentes do Aluguel Social',
@@ -119,7 +120,7 @@ export class EspecificacaoAluguelSocialController {
    * Remove uma especificação de aluguel social
    */
   @Delete()
-  @Roles(Role.ADMIN)
+  @Roles(ROLES.ADMIN)
   @ApiOperation({
     summary: 'Remover especificação de Aluguel Social',
     description: 'Remove as configurações específicas do Aluguel Social',

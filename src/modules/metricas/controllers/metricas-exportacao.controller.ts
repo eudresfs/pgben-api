@@ -4,7 +4,7 @@ import { Response } from 'express';
 import { JwtAuthGuard } from '../../../shared/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../auth/guards/roles.guard';
 import { Roles } from '../../../auth/decorators/role.decorator';
-import { Role } from '../../../shared/enums/role.enum';
+import { ROLES } from '../../../shared/constants/roles.constants';
 
 import { MetricasService } from '../services/metricas.service';
 
@@ -28,7 +28,7 @@ export class MetricasExportacaoController {
    * Exporta dados de uma métrica específica em formato CSV ou JSON
    */
   @Get(':codigo')
-  @Roles(Role.ADMIN, Role.GESTOR, Role.TECNICO)
+  @Roles(ROLES.ADMIN, ROLES.GESTOR, ROLES.TECNICO)
   @ApiOperation({ summary: 'Exporta dados de uma métrica (CSV/JSON)' })
   @ApiResponse({ status: 200, description: 'Dados exportados com sucesso' })
   @ApiResponse({ status: 404, description: 'Métrica não encontrada' })
@@ -70,7 +70,7 @@ export class MetricasExportacaoController {
    * Gera relatório completo de métricas para análise externa
    */
   @Get('relatorio')
-  @Roles(Role.ADMIN, Role.GESTOR)
+  @Roles(ROLES.ADMIN, ROLES.GESTOR)
   @ApiOperation({ summary: 'Gera relatório completo de métricas' })
   @ApiResponse({ status: 200, description: 'Relatório gerado com sucesso' })
   async gerarRelatorioCompleto(

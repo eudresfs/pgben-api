@@ -45,7 +45,7 @@ export class ExemploAuditoriaController {
    * Registra automaticamente a operação de criação no sistema de auditoria.
    */
   @Post()
-  @Roles(Role.ADMIN)
+  @Roles(ROLES.ADMIN)
   @AuditCreate('ExemploEntidade', 'Criação de exemplo de entidade')
   @ApiOperation({ summary: 'Cria um novo exemplo' })
   @ApiResponse({ status: 201, description: 'Exemplo criado com sucesso' })
@@ -60,7 +60,7 @@ export class ExemploAuditoriaController {
    * Registra automaticamente a operação de leitura no sistema de auditoria.
    */
   @Get()
-  @Roles(Role.ADMIN)
+  @Roles(ROLES.ADMIN)
   @AuditRead('ExemploEntidade', 'Listagem de exemplos')
   @ApiOperation({ summary: 'Lista todos os exemplos' })
   @ApiResponse({ status: 200, description: 'Lista de exemplos' })
@@ -87,7 +87,7 @@ export class ExemploAuditoriaController {
    * Registra automaticamente a operação de leitura no sistema de auditoria.
    */
   @Get(':id')
-  @Roles(Role.ADMIN)
+  @Roles(ROLES.ADMIN)
   @AuditRead('ExemploEntidade', 'Consulta de exemplo específico')
   @ApiOperation({ summary: 'Busca um exemplo pelo ID' })
   @ApiResponse({ status: 200, description: 'Exemplo encontrado' })
@@ -103,7 +103,7 @@ export class ExemploAuditoriaController {
    * Registra automaticamente a operação de atualização no sistema de auditoria.
    */
   @Put(':id')
-  @Roles(Role.ADMIN)
+  @Roles(ROLES.ADMIN)
   @AuditUpdate('ExemploEntidade', 'Atualização de exemplo')
   @ApiOperation({ summary: 'Atualiza um exemplo' })
   @ApiResponse({ status: 200, description: 'Exemplo atualizado com sucesso' })
@@ -123,7 +123,7 @@ export class ExemploAuditoriaController {
    * Registra automaticamente a operação de exclusão no sistema de auditoria.
    */
   @Delete(':id')
-  @Roles(Role.ADMIN)
+  @Roles(ROLES.ADMIN)
   @AuditDelete('ExemploEntidade', 'Exclusão de exemplo')
   @ApiOperation({ summary: 'Remove um exemplo' })
   @ApiResponse({ status: 200, description: 'Exemplo removido com sucesso' })
@@ -140,7 +140,7 @@ export class ExemploAuditoriaController {
    * Importante para compliance com LGPD.
    */
   @Get(':id/dados-sensiveis')
-  @Roles(Role.ADMIN)
+  @Roles(ROLES.ADMIN)
   @AuditSensitiveAccess(
     'ExemploEntidade',
     'Acesso a dados sensíveis do exemplo',

@@ -11,7 +11,7 @@ import { ColetaManualMetricaDto, ConsultaValorMetricaDto, ConsultaSerieTemporalD
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../auth/guards/roles.guard';
 import { Roles } from '../../../auth/decorators/role.decorator';
-import { Role } from '../../../shared/enums/role.enum';
+import { ROLES } from '../../../shared/constants/roles.constants';
 
 /**
  * Controlador para gerenciamento de métricas
@@ -31,7 +31,7 @@ export class MetricasDefinicaoController {
    * Cria uma nova definição de métrica
    */
   @Post()
-  @Roles(Role.ADMIN, Role.GESTOR)
+  @Roles(ROLES.ADMIN, ROLES.GESTOR)
   @ApiOperation({ summary: 'Criar nova métrica' })
   @ApiResponse({ status: HttpStatus.CREATED, description: 'Métrica criada com sucesso' })
   @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Dados inválidos' })
@@ -52,7 +52,7 @@ export class MetricasDefinicaoController {
    * Atualiza uma definição de métrica existente
    */
   @Put(':id')
-  @Roles(Role.ADMIN, Role.GESTOR)
+  @Roles(ROLES.ADMIN, ROLES.GESTOR)
   @ApiOperation({ summary: 'Atualizar métrica existente' })
   @ApiParam({ name: 'id', description: 'ID da métrica' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Métrica atualizada com sucesso' })
@@ -76,7 +76,7 @@ export class MetricasDefinicaoController {
    * Busca uma métrica pelo ID
    */
   @Get(':id')
-  @Roles(Role.ADMIN, Role.GESTOR, Role.COORDENADOR)
+  @Roles(ROLES.ADMIN, ROLES.GESTOR, ROLES.COORDENADOR)
   @ApiOperation({ summary: 'Buscar métrica por ID' })
   @ApiParam({ name: 'id', description: 'ID da métrica' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Métrica encontrada' })
@@ -97,7 +97,7 @@ export class MetricasDefinicaoController {
    * Busca uma métrica pelo código
    */
   @Get('codigo/:codigo')
-  @Roles(Role.ADMIN, Role.GESTOR, Role.COORDENADOR)
+  @Roles(ROLES.ADMIN, ROLES.GESTOR, ROLES.COORDENADOR)
   @ApiOperation({ summary: 'Buscar métrica por código' })
   @ApiParam({ name: 'codigo', description: 'Código da métrica' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Métrica encontrada' })
@@ -118,7 +118,7 @@ export class MetricasDefinicaoController {
    * Lista métricas com filtros e paginação
    */
   @Get()
-  @Roles(Role.ADMIN, Role.GESTOR, Role.COORDENADOR)
+  @Roles(ROLES.ADMIN, ROLES.GESTOR, ROLES.COORDENADOR)
   @ApiOperation({ summary: 'Listar métricas com filtros' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Lista de métricas' })
   @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Não autorizado' })
@@ -131,7 +131,7 @@ export class MetricasDefinicaoController {
    * Remove uma métrica (exclusão lógica)
    */
   @Delete(':id')
-  @Roles(Role.ADMIN)
+  @Roles(ROLES.ADMIN)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Remover métrica' })
   @ApiParam({ name: 'id', description: 'ID da métrica' })
@@ -147,7 +147,7 @@ export class MetricasDefinicaoController {
    * Cria configuração para uma métrica
    */
   @Post('configuracao')
-  @Roles(Role.ADMIN, Role.GESTOR)
+  @Roles(ROLES.ADMIN, ROLES.GESTOR)
   @ApiOperation({ summary: 'Criar configuração para métrica' })
   @ApiResponse({ status: HttpStatus.CREATED, description: 'Configuração criada com sucesso' })
   @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Dados inválidos' })
@@ -168,7 +168,7 @@ export class MetricasDefinicaoController {
    * Atualiza configuração de uma métrica
    */
   @Put('configuracao/:id')
-  @Roles(Role.ADMIN, Role.GESTOR)
+  @Roles(ROLES.ADMIN, ROLES.GESTOR)
   @ApiOperation({ summary: 'Atualizar configuração de métrica' })
   @ApiParam({ name: 'id', description: 'ID da configuração' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Configuração atualizada com sucesso' })
@@ -192,7 +192,7 @@ export class MetricasDefinicaoController {
    * Busca configuração de uma métrica
    */
   @Get('configuracao/metrica/:metricaId')
-  @Roles(Role.ADMIN, Role.GESTOR, Role.COORDENADOR)
+  @Roles(ROLES.ADMIN, ROLES.GESTOR, ROLES.COORDENADOR)
   @ApiOperation({ summary: 'Buscar configuração de uma métrica' })
   @ApiParam({ name: 'metricaId', description: 'ID da métrica' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Configuração encontrada' })
@@ -213,7 +213,7 @@ export class MetricasDefinicaoController {
    * Coleta manualmente uma métrica específica
    */
   @Post('coleta')
-  @Roles(Role.ADMIN, Role.GESTOR)
+  @Roles(ROLES.ADMIN, ROLES.GESTOR)
   @ApiOperation({ summary: 'Coletar métrica manualmente' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Métrica coletada com sucesso' })
   @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Dados inválidos' })
@@ -228,7 +228,7 @@ export class MetricasDefinicaoController {
    * Consulta o valor atual de uma métrica
    */
   @Post('valor')
-  @Roles(Role.ADMIN, Role.GESTOR, Role.COORDENADOR, Role.TECNICO)
+  @Roles(ROLES.ADMIN, ROLES.GESTOR, ROLES.COORDENADOR, ROLES.TECNICO)
   @ApiOperation({ summary: 'Consultar valor atual de uma métrica' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Valor da métrica' })
   @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Dados inválidos' })
@@ -275,7 +275,7 @@ export class MetricasDefinicaoController {
    * Consulta série temporal de uma métrica
    */
   @Post('serie-temporal')
-  @Roles(Role.ADMIN, Role.GESTOR, Role.COORDENADOR)
+  @Roles(ROLES.ADMIN, ROLES.GESTOR, ROLES.COORDENADOR)
   @ApiOperation({ summary: 'Consultar série temporal de uma métrica' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Série temporal da métrica' })
   @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Dados inválidos' })
@@ -326,7 +326,7 @@ export class MetricasDefinicaoController {
    * Limpa o cache de métricas
    */
   @Post('cache/limpar')
-  @Roles(Role.ADMIN)
+  @Roles(ROLES.ADMIN)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Limpar cache de métricas' })
   @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'Cache limpo com sucesso' })
@@ -340,7 +340,7 @@ export class MetricasDefinicaoController {
    * Obtém estatísticas de uso do cache
    */
   @Get('cache/estatisticas')
-  @Roles(Role.ADMIN, Role.GESTOR)
+  @Roles(ROLES.ADMIN, ROLES.GESTOR)
   @ApiOperation({ summary: 'Obter estatísticas do cache de métricas' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Estatísticas do cache' })
   @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Não autorizado' })

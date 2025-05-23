@@ -4,7 +4,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBearerAuth }
 import { MetricasAnomaliasService, NivelConfiancaAnomalia } from '../services';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../auth/guards/roles.guard';
-import { Role } from '../../../shared/enums/role.enum'
+import { ROLES } from '../../../shared/constants/roles.constants';
 import { Roles } from '@/auth';
 
 /**
@@ -23,7 +23,7 @@ export class MetricasAnomaliasController {
    * Detecta anomalias para um snapshot específico
    */
   @Post('anomalias/snapshot/:id')
-  @Roles(Role.ADMIN, Role.GESTOR, Role.COORDENADOR)
+  @Roles(ROLES.ADMIN, ROLES.GESTOR, ROLES.COORDENADOR)
   @ApiOperation({ summary: 'Detectar anomalias para um snapshot específico' })
   @ApiParam({ name: 'id', description: 'ID do snapshot' })
   @ApiQuery({ 
@@ -57,7 +57,7 @@ export class MetricasAnomaliasController {
    * Executa detecção de anomalias em lote para todas as métricas
    */
   @Post('anomalias/batch')
-  @Roles(Role.ADMIN, Role.COORDENADOR)
+  @Roles(ROLES.ADMIN, ROLES.COORDENADOR)
   @ApiOperation({ summary: 'Detectar anomalias em lote para todas as métricas' })
   @ApiQuery({ 
     name: 'nivel_confianca', 
@@ -87,7 +87,7 @@ export class MetricasAnomaliasController {
    * Analisa tendências para uma métrica
    */
   @Post('tendencias/metrica/:id')
-  @Roles(Role.ADMIN, Role.GESTOR, Role.COORDENADOR)
+  @Roles(ROLES.ADMIN, ROLES.GESTOR, ROLES.COORDENADOR)
   @ApiOperation({ summary: 'Analisar tendências para uma métrica' })
   @ApiParam({ name: 'id', description: 'ID da métrica' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Resultado da análise de tendências' })

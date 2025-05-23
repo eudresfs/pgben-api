@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { plainToClass } from 'class-transformer';
 import { Request } from 'express';
-import { Role } from '../../shared/enums/role.enum';
+import { RoleType } from '../../shared/constants/roles.constants';
 
 import { AppLogger } from '../../shared/logger/logger.service';
 import { RequestContext } from '../../shared/request-context/request-context.dto';
@@ -184,34 +184,6 @@ export class AuthService {
       ...tokens,
       refreshToken: refreshToken.token,
     };
-  }
-
-  async register(
-    ctx: RequestContext,
-    input: RegisterInput,
-  ): Promise<RegisterOutput> {
-    this.logger.log(ctx, `${this.register.name} foi chamado`);
-
-    // Adaptar o input para o formato esperado pelo UsuarioService
-    const createUsuarioDto = {
-      nome: input.name,
-      email: input.username,
-      senha: input.password,
-      role: (input.roles?.[0] as unknown as Role) || Role.TECNICO,
-      cpf: input.cpf,
-      telefone: input.telefone,
-      matricula: input.matricula,
-    };
-
-    // Criar o usuário
-    const registeredUser = await this.usuarioService.create(createUsuarioDto);
-
-    // Converter para o formato esperado
-    const userOutput = UsuarioAdapter.toUserOutput(registeredUser as any);
-
-    return plainToClass(RegisterOutput, userOutput, {
-      excludeExtraneousValues: true,
-    });
   }
 
   async refreshToken(

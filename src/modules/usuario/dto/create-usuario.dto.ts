@@ -13,7 +13,7 @@ import {
 } from 'class-validator';
 import { IsCPF } from '../../../shared/validators/cpf.validator';
 import { IsStrongPassword } from '../../../shared/validators/strong-password.validator';
-import { Role } from '../../../shared/enums/role.enum';
+import { ROLES, RoleType } from '../../../shared/constants/roles.constants';
 
 /**
  * DTO para criação de usuário
@@ -102,13 +102,13 @@ export class CreateUsuarioDto {
   })
   matricula: string;
 
-  @IsEnum(Role, { message: `Cargo não existe, os cargos possíveis são: ${Object.values(Role).join(', ')}` })
+  @IsEnum(ROLES, { message: `Cargo não existe, os cargos possíveis são: ${Object.values(ROLES).join(', ')}` })
   @ApiProperty({
-    enum: Role,
-    example: Role.TECNICO,
+    enum: ROLES,
+    example: ROLES.TECNICO,
     description: 'Papel do usuário no sistema',
   })
-  role: Role;
+  role_id: string;
 
   @IsUUID(undefined, { message: 'ID da unidade inválido' })
   @IsOptional()

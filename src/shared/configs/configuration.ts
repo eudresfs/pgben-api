@@ -1,27 +1,41 @@
+import { readFileSync } from 'fs';
+import { join } from 'path';
+
 const loadJwtKeys = () => {
   try {
-    const publicKeyBase64 = process.env.JWT_PUBLIC_KEY_BASE64;
-    const privateKeyBase64 = process.env.JWT_PRIVATE_KEY_BASE64;
+    const publicKeyPath = process.env.JWT_PUBLIC_KEY_PATH;
+    const privateKeyPath = process.env.JWT_PRIVATE_KEY_PATH;
 
-    if (!publicKeyBase64 || !privateKeyBase64) {
-      throw new Error('JWT keys are not properly configured');
+    if (!publicKeyPath || !privateKeyPath) {
+      throw new Error('Caminhos das chaves JWT não configurados');
     }
 
-    const publicKey = Buffer.from(publicKeyBase64, 'base64')
-      .toString('utf8')
-      .trim();
-    const privateKey = Buffer.from(privateKeyBase64, 'base64')
-      .toString('utf8')
-      .trim();
+    // Obter o caminho absoluto para as chaves
+    const projectRoot = process.cwd();
+    const fullPublicKeyPath = join(projectRoot, publicKeyPath);
+    const fullPrivateKeyPath = join(projectRoot, privateKeyPath);
+
+    // Ler as chaves dos arquivos
+    const publicKey = readFileSync(fullPublicKeyPath, 'utf8').trim();
+    const privateKey = readFileSync(fullPrivateKeyPath, 'utf8').trim();
+
+    // Validar formato das chaves
+    if (!publicKey.includes('BEGIN PUBLIC KEY') && !publicKey.includes('BEGIN RSA PUBLIC KEY')) {
+      throw new Error('Formato inválido para chave pública');
+    }
+
+    if (!privateKey.includes('BEGIN PRIVATE KEY') && !privateKey.includes('BEGIN RSA PRIVATE KEY')) {
+      throw new Error('Formato inválido para chave privada');
+    }
 
     return {
       publicKey,
       privateKey,
     };
   } catch (error) {
-    console.error('Failed to load JWT keys:', error);
+    console.error('Falha ao carregar as chaves JWT:', error);
     throw new Error(
-      'Failed to load JWT keys. Please check your configuration.',
+      `Falha ao carregar as chaves JWT: ${error.message}. Verifique se os caminhos estão corretos e as permissões de leitura.`,
     );
   }
 };

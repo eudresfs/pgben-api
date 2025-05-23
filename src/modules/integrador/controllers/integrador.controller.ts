@@ -30,6 +30,7 @@ import { Roles } from '../../../auth/decorators/role.decorator';
 import { Role } from '../../../auth/enums/role.enum';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../auth/guards/roles.guard';
+import { ROLES } from '../../../shared/constants/roles.constants';
 
 /**
  * Controller para gerenciamento de integradores e seus tokens.
@@ -49,7 +50,7 @@ export class IntegradorController {
    * Cria um novo integrador.
    */
   @Post()
-  @Roles(Role.ADMIN)
+  @Roles(ROLES.ADMIN)
   @ApiOperation({ summary: 'Cria um novo integrador' })
   @ApiResponse({ 
     status: 201, 
@@ -66,7 +67,7 @@ export class IntegradorController {
    * Lista todos os integradores cadastrados.
    */
   @Get()
-  @Roles(Role.ADMIN)
+  @Roles(ROLES.ADMIN)
   @ApiOperation({ summary: 'Lista todos os integradores' })
   @ApiResponse({ 
     status: 200, 
@@ -81,7 +82,7 @@ export class IntegradorController {
    * Obtém detalhes de um integrador específico.
    */
   @Get(':id')
-  @Roles(Role.ADMIN)
+  @Roles(ROLES.ADMIN)
   @ApiOperation({ summary: 'Obtém um integrador pelo ID' })
   @ApiParam({ name: 'id', description: 'ID do integrador', type: 'string' })
   @ApiResponse({ 
@@ -98,7 +99,7 @@ export class IntegradorController {
    * Atualiza dados de um integrador.
    */
   @Patch(':id')
-  @Roles(Role.ADMIN)
+  @Roles(ROLES.ADMIN)
   @ApiOperation({ summary: 'Atualiza um integrador' })
   @ApiParam({ name: 'id', description: 'ID do integrador', type: 'string' })
   @ApiResponse({ 
@@ -119,7 +120,7 @@ export class IntegradorController {
    * Remove um integrador do sistema.
    */
   @Delete(':id')
-  @Roles(Role.ADMIN)
+  @Roles(ROLES.ADMIN)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Remove um integrador' })
   @ApiParam({ name: 'id', description: 'ID do integrador', type: 'string' })
@@ -133,7 +134,7 @@ export class IntegradorController {
    * Ativa ou desativa um integrador.
    */
   @Patch(':id/status')
-  @Roles(Role.ADMIN)
+  @Roles(ROLES.ADMIN)
   @ApiOperation({ summary: 'Ativa ou desativa um integrador' })
   @ApiParam({ name: 'id', description: 'ID do integrador', type: 'string' })
   @ApiResponse({ 
@@ -153,7 +154,7 @@ export class IntegradorController {
    * Lista todos os tokens de um integrador.
    */
   @Get(':id/tokens')
-  @Roles(Role.ADMIN)
+  @Roles(ROLES.ADMIN)
   @ApiOperation({ summary: 'Lista todos os tokens de um integrador' })
   @ApiParam({ name: 'id', description: 'ID do integrador', type: 'string' })
   @ApiResponse({ 
@@ -170,7 +171,7 @@ export class IntegradorController {
    * Cria um novo token para um integrador.
    */
   @Post(':id/tokens')
-  @Roles(Role.ADMIN)
+  @Roles(ROLES.ADMIN)
   @ApiOperation({ summary: 'Cria um novo token para um integrador' })
   @ApiParam({ name: 'id', description: 'ID do integrador', type: 'string' })
   @ApiResponse({ 
@@ -207,7 +208,7 @@ export class IntegradorController {
    * Revoga um token existente.
    */
   @Patch(':id/tokens/:tokenId/revogar')
-  @Roles(Role.ADMIN)
+  @Roles(ROLES.ADMIN)
   @ApiOperation({ summary: 'Revoga um token' })
   @ApiParam({ name: 'id', description: 'ID do integrador', type: 'string' })
   @ApiParam({ name: 'tokenId', description: 'ID do token', type: 'string' })

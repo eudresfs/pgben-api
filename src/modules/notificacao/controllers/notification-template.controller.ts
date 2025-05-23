@@ -20,7 +20,7 @@ import { RolesGuard } from '../../../auth/guards/roles.guard';
 import { Roles } from '../../../auth/decorators/role.decorator';
 import { NotificationManagerService } from '../services/notification-manager.service';
 import { CreateNotificationTemplateDto } from '../dtos/create-notification-template.dto';
-import { Role } from '../../../shared/enums/role.enum';
+import { ROLES } from '../../../shared/constants/roles.constants';
 
 /**
  * Controlador para gerenciamento de templates de notificação
@@ -40,7 +40,7 @@ export class NotificationTemplateController {
    * Cria um novo template de notificação
    */
   @Post()
-  @Roles(Role.ADMIN)
+  @Roles(ROLES.ADMIN)
   @ApiOperation({ summary: 'Criar um novo template de notificação' })
   @ApiResponse({
     status: 201,
@@ -57,7 +57,7 @@ export class NotificationTemplateController {
    * Lista todos os templates de notificação com paginação e filtros
    */
   @Get()
-  @Roles(Role.ADMIN, Role.GESTOR)
+  @Roles(ROLES.ADMIN, ROLES.GESTOR)
   @ApiOperation({ summary: 'Listar templates de notificação' })
   @ApiResponse({
     status: 200,
@@ -79,7 +79,7 @@ export class NotificationTemplateController {
    * Obtém um template de notificação pelo ID
    */
   @Get(':id')
-  @Roles(Role.ADMIN, Role.GESTOR)
+  @Roles(ROLES.ADMIN, ROLES.GESTOR)
   @ApiOperation({ summary: 'Obter template por ID' })
   @ApiResponse({
     status: 200,
@@ -97,7 +97,7 @@ export class NotificationTemplateController {
    * Ativa um template de notificação
    */
   @Put(':id/ativar')
-  @Roles(Role.ADMIN)
+  @Roles(ROLES.ADMIN)
   @ApiOperation({ summary: 'Ativar template de notificação' })
   @ApiResponse({
     status: 200,
@@ -112,7 +112,7 @@ export class NotificationTemplateController {
    * Desativa um template de notificação
    */
   @Put(':id/desativar')
-  @Roles(Role.ADMIN)
+  @Roles(ROLES.ADMIN)
   @ApiOperation({ summary: 'Desativar template de notificação' })
   @ApiResponse({
     status: 200,

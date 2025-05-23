@@ -20,6 +20,7 @@ import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../auth/guards/roles.guard';
 import { Roles } from '../../../auth/decorators/role.decorator';
 import { Role } from '../../../shared/enums/role.enum';
+import { ROLES } from '../../../shared/constants/roles.constants';
 
 /**
  * Controlador de campos dinâmicos de benefícios
@@ -52,7 +53,7 @@ export class CampoDinamicoController {
    * Cria um novo campo dinâmico para um tipo de benefício
    */
   @Post()
-  @Roles(Role.ADMIN, Role.GESTOR)
+  @Roles(ROLES.ADMIN, ROLES.GESTOR)
   @ApiOperation({ summary: 'Criar novo campo dinâmico' })
   @ApiResponse({
     status: 201,
@@ -75,7 +76,7 @@ export class CampoDinamicoController {
    * Atualiza um campo dinâmico existente
    */
   @Put(':id')
-  @Roles(Role.ADMIN, Role.GESTOR)
+  @Roles(ROLES.ADMIN, ROLES.GESTOR)
   @ApiOperation({ summary: 'Atualizar campo dinâmico existente' })
   @ApiResponse({
     status: 200,
@@ -95,7 +96,7 @@ export class CampoDinamicoController {
    * Remove um campo dinâmico
    */
   @Delete(':id')
-  @Roles(Role.ADMIN, Role.GESTOR)
+  @Roles(ROLES.ADMIN, ROLES.GESTOR)
   @ApiOperation({ summary: 'Remover campo dinâmico' })
   @ApiResponse({
     status: 200,
@@ -121,7 +122,7 @@ export class CampoDinamicoController {
    * Obtém o histórico de versões do schema de um tipo de benefício
    */
   @Get('schema/historico')
-  @Roles(Role.ADMIN, Role.GESTOR)
+  @Roles(ROLES.ADMIN, ROLES.GESTOR)
   @ApiOperation({ summary: 'Obter histórico de versões do schema' })
   @ApiResponse({ status: 200, description: 'Histórico retornado com sucesso' })
   @ApiResponse({ status: 404, description: 'Tipo de benefício não encontrado' })

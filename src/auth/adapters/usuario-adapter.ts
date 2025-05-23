@@ -1,6 +1,6 @@
 import { Expose } from 'class-transformer';
 import { Usuario } from '../../modules/usuario/entities/usuario.entity';
-import { Role } from '../../shared/enums/role.enum';
+import { RoleType } from '../../shared/constants/roles.constants';
 import { Permission } from '../entities/permission.entity';
 import { ScopeType } from '../entities/user-permission.entity';
 
@@ -30,7 +30,7 @@ export class UserOutput {
   updated_at: string;
 
   @Expose()
-  roles: Role[];
+  roles: RoleType[];
 }
 
 /**
@@ -39,7 +39,7 @@ export class UserOutput {
 export interface UserAccessTokenClaims {
   id: string | number;
   username: string;
-  roles: Role[];
+  roles: RoleType[];
   permissions?: string[];
   permissionScopes?: Record<string, string>;
 }
@@ -62,7 +62,8 @@ export class UsuarioAdapter {
       usuario.created_at?.toISOString() || new Date().toISOString();
     userOutput.updated_at =
       usuario.updated_at?.toISOString() || new Date().toISOString();
-    userOutput.roles = [usuario.role as unknown as Role];
+    // Obter o nome da role a partir da entidade Role
+    userOutput.roles = usuario.role ? [usuario.role.nome as RoleType] : [];
 
     return userOutput;
   }
@@ -83,7 +84,7 @@ export class UsuarioAdapter {
     const claims: UserAccessTokenClaims = {
       id: usuario.id,
       username: usuario.email, // Usando email como username
-      roles: [usuario.role as unknown as Role],
+      roles: usuario.role ? [usuario.role.nome as RoleType] : [],
     };
 
     // Adiciona permissões se disponíveis

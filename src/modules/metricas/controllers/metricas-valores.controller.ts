@@ -3,7 +3,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagg
 import { JwtAuthGuard } from '../../../shared/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../auth/guards/roles.guard';
 import { Roles } from '../../../auth/decorators/role.decorator';
-import { Role } from '../../../shared/enums/role.enum';
+import { ROLES } from '../../../shared/constants/roles.constants';
 
 import { MetricasService } from '../services/metricas.service';
 import { MetricasColetaService } from '../services/metricas-coleta.service';
@@ -36,7 +36,7 @@ export class MetricasValoresController {
    * Obtém o valor atual de uma métrica específica
    */
   @Get(':codigo')
-  @Roles(Role.ADMIN, Role.GESTOR, Role.TECNICO)
+  @Roles(ROLES.ADMIN, ROLES.GESTOR, ROLES.TECNICO)
   @ApiOperation({ summary: 'Obtém o valor atual de uma métrica' })
   @ApiResponse({ status: 200, description: 'Valor da métrica retornado com sucesso' })
   @ApiResponse({ status: 404, description: 'Métrica não encontrada' })
@@ -58,7 +58,7 @@ export class MetricasValoresController {
    * Obtém a série histórica de valores de uma métrica
    */
   @Get(':codigo/historico')
-  @Roles(Role.ADMIN, Role.GESTOR, Role.TECNICO)
+  @Roles(ROLES.ADMIN, ROLES.GESTOR, ROLES.TECNICO)
   @ApiOperation({ summary: 'Obtém série histórica de valores de uma métrica' })
   @ApiResponse({ status: 200, description: 'Série histórica retornada com sucesso' })
   @ApiResponse({ status: 404, description: 'Métrica não encontrada' })
@@ -85,7 +85,7 @@ export class MetricasValoresController {
    * Compara valores de uma métrica entre períodos
    */
   @Get(':codigo/comparativo')
-  @Roles(Role.ADMIN, Role.GESTOR, Role.TECNICO)
+  @Roles(ROLES.ADMIN, ROLES.GESTOR, ROLES.TECNICO)
   @ApiOperation({ summary: 'Compara valores de uma métrica entre períodos' })
   @ApiResponse({ status: 200, description: 'Comparativo retornado com sucesso' })
   @ApiResponse({ status: 404, description: 'Métrica não encontrada' })
@@ -122,7 +122,7 @@ export class MetricasValoresController {
    * Executa coleta manual de uma métrica
    */
   @Post('coleta-manual')
-  @Roles(Role.ADMIN, Role.GESTOR)
+  @Roles(ROLES.ADMIN, ROLES.GESTOR)
   @ApiOperation({ summary: 'Executa coleta manual de uma métrica' })
   @ApiResponse({ status: 201, description: 'Coleta executada com sucesso' })
   @ApiResponse({ status: 404, description: 'Métrica não encontrada' })

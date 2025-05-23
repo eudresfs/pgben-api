@@ -14,7 +14,7 @@ import { LocalStrategy } from './strategies/local.strategy';
 import { UsuarioModule } from '../modules/usuario/usuario.module';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
-import { Role } from '../shared/enums/role.enum';
+import { createJwtConfig } from '../config/jwt.config';
 
 @Module({
   imports: [
@@ -22,12 +22,7 @@ import { Role } from '../shared/enums/role.enum';
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        secret: configService.get('JWT_SECRET'),
-        signOptions: {
-          expiresIn: configService.get('JWT_ACCESS_TOKEN_EXPIRES_IN'),
-        },
-      }),
+      useFactory: createJwtConfig,
     }),
     UsuarioModule,
   ],

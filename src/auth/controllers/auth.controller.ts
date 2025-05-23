@@ -21,8 +21,6 @@ import { ReqContext } from '../../shared/request-context/req-context.decorator';
 import { RequestContext } from '../../shared/request-context/request-context.dto';
 import { LoginInput } from '../dtos/auth-login-input.dto';
 import { RefreshTokenInput } from '../dtos/auth-refresh-token-input.dto';
-import { RegisterInput } from '../dtos/auth-register-input.dto';
-import { RegisterOutput } from '../dtos/auth-register-output.dto';
 import { AuthTokenOutput } from '../dtos/auth-token-output.dto';
 import { JwtRefreshGuard } from '../guards/jwt-refresh.guard';
 import { LocalAuthGuard } from '../guards/local-auth.guard';
@@ -68,22 +66,6 @@ export class AuthController {
     response.meta = {};
 
     return response;
-  }
-
-  @Post('register')
-  @ApiOperation({
-    summary: 'User registration API',
-  })
-  @ApiResponse({
-    status: HttpStatus.CREATED,
-    type: SwaggerBaseApiResponse(RegisterOutput),
-  })
-  async registerLocal(
-    @ReqContext() ctx: RequestContext,
-    @Body() input: RegisterInput,
-  ): Promise<BaseApiResponse<RegisterOutput>> {
-    const registeredUser = await this.authService.register(ctx, input);
-    return { data: registeredUser, meta: {} };
   }
 
   @Post('refresh-token')

@@ -31,17 +31,7 @@ As vulnerabilidades identificadas representam riscos significativos:
 ### Fase 1: Correções Críticas (Semana 1)
 **Objetivo**: Eliminar vulnerabilidades que impedem deploy em produção
 
-#### 1.1 Segurança de Chaves JWT
-**Problema**: Chave privada RSA exposta no arquivo .env.example
-**Solução**: Geração de novas chaves e implementação de rotação
-
-**Ações**:
-- Gerar novo par de chaves RSA 2048 bits
-- Remover chaves do .env.example
-- Implementar carregamento seguro via Azure Key Vault
-- Configurar rotação automática de chaves
-
-#### 1.2 Implementação de Rate Limiting
+#### 1.1 Implementação de Rate Limiting
 **Problema**: Ausência de proteção contra ataques de força bruta
 **Solução**: Implementação de throttling granular
 
@@ -51,7 +41,7 @@ As vulnerabilidades identificadas representam riscos significativos:
 - Configurar limites diferenciados por tipo de operação
 - Implementar blacklist temporário para IPs suspeitos
 
-#### 1.3 Configuração de Cookies Seguros
+#### 1.2 Configuração de Cookies Seguros
 **Problema**: Tokens armazenados como Bearer (vulnerável a XSS)
 **Solução**: Migração para cookies HttpOnly
 
@@ -113,9 +103,6 @@ As vulnerabilidades identificadas representam riscos significativos:
 
 #### Segurança de Chaves
 - [ ] Gerar novo par de chaves RSA 2048 bits
-- [ ] Configurar Azure Key Vault para armazenamento seguro
-- [ ] Remover chaves do .env.example
-- [ ] Atualizar configuração de JWT para usar Key Vault
 - [ ] Implementar rotação automática de chaves (30 dias)
 - [ ] Testar carregamento de chaves em ambiente de desenvolvimento
 - [ ] Documentar processo de rotação de chaves
@@ -124,7 +111,6 @@ As vulnerabilidades identificadas representam riscos significativos:
 - [ ] Instalar dependência @nestjs/throttler
 - [ ] Configurar ThrottlerModule no app.module.ts
 - [ ] Implementar rate limiting no endpoint de login (5 tentativas/minuto)
-- [ ] Implementar rate limiting no endpoint de registro (3 tentativas/hora)
 - [ ] Configurar rate limiting global (100 requests/minuto)
 - [ ] Implementar blacklist temporário para IPs suspeitos
 - [ ] Configurar Redis para armazenamento de contadores
@@ -149,7 +135,7 @@ As vulnerabilidades identificadas representam riscos significativos:
 - [ ] Implementar PasswordResetService
 - [ ] Criar endpoints POST /auth/forgot-password
 - [ ] Criar endpoints POST /auth/reset-password
-- [ ] Configurar serviço de email (Azure Communication Services)
+- [ ] Configurar serviço de email (SMTP)
 - [ ] Implementar templates de email seguros
 - [ ] Configurar rate limiting específico (3 tentativas/hora)
 - [ ] Implementar proteção contra timing attacks
@@ -236,48 +222,6 @@ As vulnerabilidades identificadas representam riscos significativos:
 - [ ] Documentação de API atualizada
 - [ ] Guias de troubleshooting criados
 
-## Recursos Necessários
-
-### Humanos
-- **Tech Lead/Arquiteto**: 40h (coordenação e revisões)
-- **Desenvolvedor Senior**: 80h (implementação principal)
-- **Desenvolvedor Pleno**: 40h (testes e documentação)
-- **DevOps Engineer**: 20h (configuração de infraestrutura)
-
-### Infraestrutura
-- **Azure Key Vault**: Armazenamento seguro de chaves
-- **Redis Cluster**: Cache distribuído e rate limiting
-- **Azure Communication Services**: Envio de emails
-- **Application Insights**: Monitoramento e logs
-
-### Ferramentas
-- **OWASP ZAP**: Testes de segurança automatizados
-- **SonarQube**: Análise estática de código
-- **Jest**: Testes unitários e de integração
-- **Postman/Newman**: Testes de API automatizados
-
-## Cronograma Detalhado
-
-### Semana 1 (Correções Críticas)
-- **Dias 1-2**: Segurança de chaves e configuração Key Vault
-- **Dias 3-4**: Implementação de rate limiting
-- **Dias 5-7**: Configuração de cookies seguros e testes
-
-### Semana 2 (Recuperação de Senha)
-- **Dias 1-3**: Implementação do backend de recuperação
-- **Dias 4-5**: Configuração de serviço de email
-- **Dias 6-7**: Testes e ajustes de segurança
-
-### Semana 3 (Blacklist e Auditoria)
-- **Dias 1-3**: Sistema de blacklist de tokens
-- **Dias 4-5**: Implementação de auditoria e logging
-- **Dias 6-7**: Integração e testes completos
-
-### Semana 4 (Otimizações e Deploy)
-- **Dias 1-2**: Cache distribuído e otimizações
-- **Dias 3-4**: Monitoramento e alertas
-- **Dias 5-7**: Testes finais e preparação para produção
-
 ## Métricas de Sucesso
 
 ### Segurança
@@ -319,7 +263,7 @@ As vulnerabilidades identificadas representam riscos significativos:
 ### Riscos de Cronograma
 
 #### Alto Risco
-- **Dependências externas**: Configuração de serviços Azure
+- **Dependências externas**: Configuração de serviços 
   - *Mitigação*: Configuração antecipada e testes paralelos
   - *Contingência*: Uso de serviços alternativos (SendGrid, etc.)
 
@@ -352,11 +296,3 @@ As vulnerabilidades identificadas representam riscos significativos:
 Este plano de ação aborda sistematicamente as vulnerabilidades identificadas no módulo de autenticação, priorizando correções críticas que impedem o deploy em produção. A implementação seguirá uma abordagem incremental, permitindo validação contínua e minimizando riscos.
 
 O sucesso deste plano resultará em um sistema de autenticação robusto, seguro e em conformidade com as melhores práticas de segurança, estabelecendo uma base sólida para o crescimento futuro do Sistema SEMTAS.
-
----
-
-**Próximos Passos**:
-1. Aprovação do plano pelos stakeholders
-2. Configuração do ambiente de desenvolvimento
-3. Início da Fase 1 - Correções Críticas
-4. Acompanhamento semanal do progresso

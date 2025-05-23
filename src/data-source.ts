@@ -9,6 +9,7 @@ import { config as dotenvConfig } from 'dotenv';
 
 // Importar entidades explicitamente para evitar problemas de carregamento
 import { Usuario } from './modules/usuario/entities/usuario.entity';
+import { Role } from './modules/usuario/entities/role.entity';
 import { Unidade } from './modules/unidade/entities/unidade.entity';
 import { Setor } from './modules/unidade/entities/setor.entity';
 import { SetorUnidade } from './modules/unidade/entities/setor-unidade.entity';
@@ -57,6 +58,7 @@ export const AppDataSource = new DataSource({
   password: process.env.DB_PASS || 'postgres',
   database: process.env.DB_NAME || 'pgben',
   entities: [
+    Role,
     Usuario,
     Cidadao,
     LogAuditoria,
