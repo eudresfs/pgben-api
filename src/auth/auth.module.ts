@@ -1,14 +1,11 @@
 // src/auth/auth.module.ts
-import { Module, forwardRef } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { PermissionSharedModule } from '../shared/permission/permission-shared.module'; 
 
 import { AuthController } from './controllers/auth.controller';
-import { PermissionManagementController } from './controllers/permission-management.controller';
 import { AuthService } from './services/auth.service';
-import { AuthorizationService } from './services/authorization.service';
 import { RefreshTokenService } from './services/refresh-token.service';
 import { RefreshToken } from './entities/refresh-token.entity';
 import { JwtAuthStrategy } from './strategies/jwt-auth.strategy';
@@ -17,53 +14,27 @@ import { LocalStrategy } from './strategies/local.strategy';
 import { UsuarioModule } from '../modules/usuario/usuario.module';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
-import { AppLoggerModule } from '../shared/logger/logger.module';
+import { Role } from '../shared/enums/role.enum';
 
 @Module({
   imports: [
-    // Importa o módulo compartilhado de permissões
-    PermissionSharedModule,
-    
-    // Configuração do TypeORM para entidades específicas do AuthModule
     TypeOrmModule.forFeature([RefreshToken]),
-    
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => {
-        // Obter a chave privada em Base64 do arquivo .env
-        const privateKeyBase64 = configService.get<string>('JWT_PRIVATE_KEY_BASE64');
-        // Decodificar a chave privada de Base64 para formato PEM
-        const privateKey = Buffer.from(privateKeyBase64 || '', 'base64').toString('utf8');
-        
-        return {
-          // Usar a chave privada para assinar tokens
-          privateKey,
-          // Usar a chave pública para verificar tokens
-          publicKey: Buffer.from(
-            configService.get<string>('JWT_PUBLIC_KEY_BASE64', ''),
-            'base64'
-          ).toString('utf8'),
-          signOptions: {
-            algorithm: 'RS256',
-            expiresIn: configService.get('JWT_ACCESS_TOKEN_EXPIRES_IN'),
-          },
-        };
-      },
+      useFactory: (configService: ConfigService) => ({
+        secret: configService.get('JWT_SECRET'),
+        signOptions: {
+          expiresIn: configService.get('JWT_ACCESS_TOKEN_EXPIRES_IN'),
+        },
+      }),
     }),
-    
-    forwardRef(() => UsuarioModule),
-    AppLoggerModule,
-    // AuditoriaModule removido para evitar dependência circular
+    UsuarioModule,
   ],
-  controllers: [
-    AuthController,
-    PermissionManagementController,
-  ],
+  controllers: [AuthController],
   providers: [
     AuthService,
     RefreshTokenService,
-    AuthorizationService,
     JwtAuthStrategy,
     JwtRefreshStrategy,
     LocalStrategy,
@@ -73,7 +44,7 @@ import { AppLoggerModule } from '../shared/logger/logger.module';
   exports: [
     AuthService,
     JwtAuthGuard,
-    RolesGuard
+    RolesGuard,
   ],
 })
 export class AuthModule {}

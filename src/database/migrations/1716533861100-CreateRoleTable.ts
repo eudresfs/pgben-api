@@ -105,8 +105,11 @@ export class CreateRoleTable1716533861100 implements MigrationInterface {
             VALUES 
             ('ADMIN', 'Administrador do sistema'),
             ('GESTOR', 'Gestor de unidade'),
+            ('COORDENADOR', 'Coordenador de unidade'),
+            ('AUDITOR', 'Responsável por auditoria do sistema'),
+            ('ASSISTENTE_SOCIAL', 'Assistente social'),
             ('TECNICO', 'Técnico responsável por análises'),
-            ('ATENDENTE', 'Atendente de balcão')
+            ('CIDADAO', 'Beneficiário ou requerente')
         `);
         
         console.log('\n✅ Tabela role_table criada com sucesso');

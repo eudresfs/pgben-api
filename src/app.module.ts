@@ -56,7 +56,7 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
         password: configService.get('DB_PASS', 'postgres'),
         database: configService.get('DB_NAME', 'pgben'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: true, // Temporariamente habilitado para criar as tabelas
+        synchronize: false,
         logging: configService.get('NODE_ENV') === 'development',
       }),
     }),

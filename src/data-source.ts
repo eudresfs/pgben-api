@@ -91,9 +91,10 @@ export const AppDataSource = new DataSource({
   ],
   migrations: [__dirname + '/database/migrations/**/*{.ts,.js}'],
   migrationsTableName: 'migrations',
-  migrationsRun: false,
-  synchronize: false,
-  logging: ['error', 'schema', 'warn', 'migration'],
+  synchronize: false,        // CRÍTICO: Desabilitar
+  dropSchema: false,         // CRÍTICO: Nunca true
+  migrationsRun: false,      // Controle manual
+  logging: ['error', 'warn', 'migration'], // Log migrations
   logger: 'file',
   maxQueryExecutionTime: 500,
   extra: {
