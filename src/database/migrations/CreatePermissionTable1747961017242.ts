@@ -1,16 +1,16 @@
 import { MigrationInterface, QueryRunner, Table, TableIndex } from 'typeorm';
 
 /**
- * Migração para criar a tabela de grupos de permissões.
+ * Migração para criar a tabela de permissões.
  * 
- * Esta tabela armazena os grupos lógicos de permissões, facilitando a organização
- * e atribuição de permissões relacionadas.
+ * Esta tabela armazena todas as permissões do sistema no formato `modulo.recurso.operacao`.
  */
-export class CreatePermissionGroupTable1715525400001 implements MigrationInterface {
+export class CreatePermissionTable1747961017242 implements MigrationInterface {
+  name = 'CreatePermissionTable1747961017242';
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.createTable(
       new Table({
-        name: 'permission_group',
+        name: 'permission',
         columns: [
           {
             name: 'id',
@@ -28,6 +28,16 @@ export class CreatePermissionGroupTable1715525400001 implements MigrationInterfa
             name: 'description',
             type: 'varchar',
             length: '255',
+          },
+          {
+            name: 'is_composite',
+            type: 'boolean',
+            default: false,
+          },
+          {
+            name: 'parent_id',
+            type: 'uuid',
+            isNullable: true,
           },
           {
             name: 'created_at',
@@ -52,6 +62,12 @@ export class CreatePermissionGroupTable1715525400001 implements MigrationInterfa
         ],
         foreignKeys: [
           {
+            columnNames: ['parent_id'],
+            referencedTableName: 'permission',
+            referencedColumnNames: ['id'],
+            onDelete: 'SET NULL',
+          },
+          {
             columnNames: ['created_by'],
             referencedTableName: 'usuario',
             referencedColumnNames: ['id'],
@@ -69,15 +85,15 @@ export class CreatePermissionGroupTable1715525400001 implements MigrationInterfa
     );
 
     await queryRunner.createIndex(
-      'permission_group',
+      'permission',
       new TableIndex({
-        name: 'IDX_PERMISSION_GROUP_NAME',
+        name: 'IDX_PERMISSION_NAME',
         columnNames: ['name'],
       })
     );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.dropTable('permission_group');
+    await queryRunner.dropTable('permission');
   }
 }

@@ -10,8 +10,8 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * @author Engenheiro de Dados
  * @date 19/05/2025
  */
-export class CreateBeneficioSchema1685468879184 implements MigrationInterface {
-  name = 'CreateBeneficioSchema1685468879184';
+export class CreateBeneficioSchema1747961017133 implements MigrationInterface {
+  name = 'CreateBeneficioSchema1747961017133';
 
   /**
    * Cria as estruturas relacionadas ao benefício

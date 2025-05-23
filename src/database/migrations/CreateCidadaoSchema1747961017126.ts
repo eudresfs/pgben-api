@@ -10,8 +10,8 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * @author Engenheiro de Dados
  * @date 19/05/2025
  */
-export class CreateCidadaoSchema1685468879183 implements MigrationInterface {
-  name = 'CreateCidadaoSchema1685468879183';
+export class CreateCidadaoSchema1747961017126 implements MigrationInterface {
+  name = 'CreateCidadaoSchema1747961017126';
 
   /**
    * Cria as estruturas relacionadas ao cidadão

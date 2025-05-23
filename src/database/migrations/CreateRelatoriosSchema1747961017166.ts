@@ -9,8 +9,8 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * @author Engenheiro de Dados
  * @date 19/05/2025
  */
-export class CreateRelatoriosSchema1685468879188 implements MigrationInterface {
-  name = 'CreateRelatoriosSchema1685468879188';
+export class CreateRelatoriosSchema1747961017166 implements MigrationInterface {
+  name = 'CreateRelatoriosSchema1747961017166';
 
   /**
    * Cria as estruturas relacionadas aos relatórios

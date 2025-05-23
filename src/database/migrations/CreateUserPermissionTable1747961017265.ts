@@ -7,7 +7,8 @@ import { MigrationInterface, QueryRunner, Table, TableIndex } from 'typeorm';
  * que podem sobrepor-se às permissões da role do usuário. Também suporta
  * permissões com escopo e validade temporal.
  */
-export class CreateUserPermissionTable1715525400004 implements MigrationInterface {
+export class CreateUserPermissionTable1747961017265 implements MigrationInterface {
+  name = 'CreateUserPermissionTable1747961017265';
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.createTable(
       new Table({

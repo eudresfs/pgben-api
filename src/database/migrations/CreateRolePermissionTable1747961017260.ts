@@ -1,16 +1,17 @@
 import { MigrationInterface, QueryRunner, Table, TableIndex } from 'typeorm';
 
 /**
- * Migração para criar a tabela de escopos padrão para permissões.
+ * Migração para criar a tabela de mapeamento entre roles e permissões.
  * 
- * Esta tabela define o tipo de escopo padrão para cada permissão,
- * facilitando a atribuição de permissões com escopo adequado.
+ * Esta tabela implementa o relacionamento entre as roles existentes e as novas permissões granulares,
+ * facilitando a transição do modelo baseado em roles para o modelo de permissões granulares.
  */
-export class CreatePermissionScopeTable1715525400005 implements MigrationInterface {
+export class CreateRolePermissionTable1747961017260 implements MigrationInterface {
+  name = 'CreateRolePermissionTable1747961017260';
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.createTable(
       new Table({
-        name: 'permission_scope',
+        name: 'role_permission',
         columns: [
           {
             name: 'id',
@@ -19,14 +20,12 @@ export class CreatePermissionScopeTable1715525400005 implements MigrationInterfa
             default: 'uuid_generate_v4()',
           },
           {
-            name: 'permission_id',
+            name: 'role_id',
             type: 'uuid',
           },
           {
-            name: 'default_scope_type',
-            type: 'varchar',
-            length: '20',
-            default: "'GLOBAL'",
+            name: 'permission_id',
+            type: 'uuid',
           },
           {
             name: 'created_at',
@@ -34,17 +33,7 @@ export class CreatePermissionScopeTable1715525400005 implements MigrationInterfa
             default: 'now()',
           },
           {
-            name: 'updated_at',
-            type: 'timestamp',
-            default: 'now()',
-          },
-          {
             name: 'created_by',
-            type: 'uuid',
-            isNullable: true,
-          },
-          {
-            name: 'updated_by',
             type: 'uuid',
             isNullable: true,
           },
@@ -62,36 +51,38 @@ export class CreatePermissionScopeTable1715525400005 implements MigrationInterfa
             referencedColumnNames: ['id'],
             onDelete: 'SET NULL',
           },
-          {
-            columnNames: ['updated_by'],
-            referencedTableName: 'usuario',
-            referencedColumnNames: ['id'],
-            onDelete: 'SET NULL',
-          },
         ],
       }),
       true
     );
 
     await queryRunner.createIndex(
-      'permission_scope',
+      'role_permission',
       new TableIndex({
-        name: 'IDX_PERMISSION_SCOPE_PERMISSION',
-        columnNames: ['permission_id'],
-        isUnique: true,
+        name: 'IDX_ROLE_PERMISSION_ROLE',
+        columnNames: ['role_id'],
       })
     );
 
     await queryRunner.createIndex(
-      'permission_scope',
+      'role_permission',
       new TableIndex({
-        name: 'IDX_PERMISSION_SCOPE_TYPE',
-        columnNames: ['default_scope_type'],
+        name: 'IDX_ROLE_PERMISSION_PERMISSION',
+        columnNames: ['permission_id'],
+      })
+    );
+
+    await queryRunner.createIndex(
+      'role_permission',
+      new TableIndex({
+        name: 'IDX_ROLE_PERMISSION_UNIQUE',
+        columnNames: ['role_id', 'permission_id'],
+        isUnique: true,
       })
     );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.dropTable('permission_scope');
+    await queryRunner.dropTable('role_permission');
   }
 }

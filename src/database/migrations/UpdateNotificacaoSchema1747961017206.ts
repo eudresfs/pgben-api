@@ -9,8 +9,8 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * @author Engenheiro de Dados
  * @date 20/05/2025
  */
-export class UpdateNotificacaoSchema1685555123456 implements MigrationInterface {
-  name = 'UpdateNotificacaoSchema1685555123456';
+export class UpdateNotificacaoSchema1747961017206 implements MigrationInterface {
+  name = 'UpdateNotificacaoSchema1747961017206';
 
   /**
    * Adiciona colunas necessárias na tabela de notificações

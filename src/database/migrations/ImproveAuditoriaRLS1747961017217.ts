@@ -9,8 +9,8 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * @author Engenheiro de Dados
  * @date 20/05/2025
  */
-export class ImproveAuditoriaRLS1685556677889 implements MigrationInterface {
-  name = 'ImproveAuditoriaRLS1685556677889';
+export class ImproveAuditoriaRLS1747961017217 implements MigrationInterface {
+  name = 'ImproveAuditoriaRLS1747961017217';
 
   /**
    * Aplica políticas de segurança RLS mais robustas para o módulo de auditoria

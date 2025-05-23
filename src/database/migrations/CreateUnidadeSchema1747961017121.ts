@@ -12,8 +12,8 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * @author Engenheiro de Dados
  * @date 19/05/2025
  */
-export class CreateUnidadeSchema1685468879183 implements MigrationInterface {
-  name = 'CreateUnidadeSchema1685468879183';
+export class CreateUnidadeSchema1747961017121 implements MigrationInterface {
+  name = 'CreateUnidadeSchema1747961017121';
 
   /**
    * Cria as estruturas do módulo de unidades e setores

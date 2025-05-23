@@ -7,7 +7,8 @@ import { MigrationInterface, QueryRunner, TableColumn } from 'typeorm';
  * - especificacao_funeral: campos adicionais para o Auxílio Funeral
  * - especificacao_cesta_basica: campos adicionais para a Cesta Básica
  */
-export class UpdateEspecificacoesBeneficio1621500001 implements MigrationInterface {
+export class UpdateEspecificacoesBeneficio1747961017237 implements MigrationInterface {
+  name = 'UpdateEspecificacoesBeneficio1747961017237';
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Criar enum para tipos de urna funerária
     await queryRunner.query(`

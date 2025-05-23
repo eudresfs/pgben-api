@@ -9,8 +9,8 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * @author Engenheiro de Dados
  * @date 19/05/2025
  */
-export class CreatePagamentoSchema1685468879186 implements MigrationInterface {
-  name = 'CreatePagamentoSchema1685468879186';
+export class CreatePagamentoSchema1747961017152 implements MigrationInterface {
+  name = 'CreatePagamentoSchema1747961017152';
 
   /**
    * Cria as estruturas relacionadas ao pagamento

@@ -7,7 +7,8 @@ import { MigrationInterface, QueryRunner, Table, TableIndex } from 'typeorm';
  * permitindo que uma permissão pertença a múltiplos grupos e que um grupo contenha
  * múltiplas permissões.
  */
-export class CreatePermissionGroupMappingTable1715525400002 implements MigrationInterface {
+export class CreatePermissionGroupMappingTable1747961017255 implements MigrationInterface {
+  name = 'CreatePermissionGroupMappingTable1747961017255';
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.createTable(
       new Table({

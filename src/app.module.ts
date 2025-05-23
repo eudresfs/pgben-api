@@ -7,6 +7,8 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { MonitoringModule } from './shared/monitoring/monitoring.module';
 import { AuthModule } from './auth/auth.module';
+import { PermissionSharedModule } from './shared/permission/permission-shared.module';
+import { AuditoriaSharedModule } from './shared/auditoria/auditoria-shared.module';
 import { UsuarioModule } from './modules/usuario/usuario.module';
 import { UnidadeModule } from './modules/unidade/unidade.module';
 import { CidadaoModule } from './modules/cidadao/cidadao.module';
@@ -54,12 +56,16 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
         password: configService.get('DB_PASS', 'postgres'),
         database: configService.get('DB_NAME', 'pgben'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: false,
+        synchronize: true, // Temporariamente habilitado para criar as tabelas
         logging: configService.get('NODE_ENV') === 'development',
       }),
     }),
     // Módulo de monitoramento
     MonitoringModule,
+    
+    // Módulos compartilhados
+    PermissionSharedModule,
+    AuditoriaSharedModule,
 
     // Módulo de autenticação
     AuthModule,
@@ -71,16 +77,13 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
     UnidadeModule,
 
     // Módulo de cidadãos
-    CidadaoModule, // <--- REVISAR
+    CidadaoModule, // Reativado com a solução de dependência circular
 
     // Módulo de benefícios
     BeneficioModule,
 
     // Módulo de docuentos
     DocumentoModule,
-
-    // Módulo de auditoria
-    // AuditoriaModule,  // <--- REVISAR
 
     // Módulo de métricas
     MetricasModule
@@ -104,4 +107,4 @@ export class AppModule {
   constructor() {
     console.log('✅ AppModule inicializado - com autenticação');
   }
-}
+}// 

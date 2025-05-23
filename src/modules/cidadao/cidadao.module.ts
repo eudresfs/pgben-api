@@ -10,7 +10,8 @@ import { CacheModule } from '../../shared/cache';
 import { CidadaoAuditInterceptor } from './interceptors/cidadao-audit.interceptor';
 import { PapelCidadaoService } from './services/papel-cidadao.service';
 import { PapelCidadaoController } from './controllers/papel-cidadao.controller';
-import { AuthModule } from '@/auth/auth.module'
+import { AuthModule } from '@/auth/auth.module';
+// Usando o módulo compartilhado para evitar dependência circular
 
 /**
  * Módulo de cidadãos
@@ -23,6 +24,7 @@ import { AuthModule } from '@/auth/auth.module'
     TypeOrmModule.forFeature([Cidadao, PapelCidadao]),
     CacheModule,
     AuthModule,
+    // AuditoriaSharedModule é global, não precisa ser importado
   ],
   controllers: [CidadaoController, PapelCidadaoController],
   providers: [

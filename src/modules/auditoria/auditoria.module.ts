@@ -5,6 +5,7 @@ import {
   MiddlewareConsumer,
   RequestMethod,
   Logger,
+  forwardRef
 } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { BullModule } from '@nestjs/bull';
@@ -12,8 +13,6 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ScheduleAdapterModule } from '../../shared/schedule/schedule-adapter.module';
 
-// Restaurado após a correção do PermissionModule
-import { PermissionModule } from '../../auth/permission.module';
 
 // Entidades
 import { LogAuditoria } from './entities/log-auditoria.entity';
@@ -60,8 +59,6 @@ import { LogAuditoriaRepository } from './repositories/log-auditoria.repository'
 @Global()
 @Module({
   imports: [
-    // PermissionModule, // Restaurado após correção
-    
     // Configuração do TypeORM para entidades do módulo
     TypeOrmModule.forFeature([LogAuditoria]),
     

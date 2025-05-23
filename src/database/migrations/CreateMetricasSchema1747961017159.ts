@@ -9,8 +9,8 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * @author Engenheiro de Dados
  * @date 19/05/2025
  */
-export class CreateMetricasSchema1685468879187 implements MigrationInterface {
-  name = 'CreateMetricasSchema1685468879187';
+export class CreateMetricasSchema1747961017159 implements MigrationInterface {
+  name = 'CreateMetricasSchema1747961017159';
 
   /**
    * Cria as estruturas relacionadas às métricas

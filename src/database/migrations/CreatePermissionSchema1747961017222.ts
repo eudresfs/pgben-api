@@ -11,7 +11,8 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * - user_permission: Associa permissões diretamente a usuários
  * - permission_scope: Define o escopo de uma permissão
  */
-export class CreatePermissionSchema1160000 implements MigrationInterface {
+export class CreatePermissionSchema1747961017222 implements MigrationInterface {
+  name = 'CreatePermissionSchema1747961017222';
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Criar tabela de permissões
     await queryRunner.query(`

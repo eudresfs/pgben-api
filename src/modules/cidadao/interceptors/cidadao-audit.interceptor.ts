@@ -21,7 +21,7 @@ import { CreateLogAuditoriaDto } from '../../auditoria/dto/create-log-auditoria.
 export class CidadaoAuditInterceptor implements NestInterceptor {
   private readonly logger = new Logger(CidadaoAuditInterceptor.name);
 
-  // constructor(private readonly auditoriaQueueService: AuditoriaQueueService) {}
+  constructor(private readonly auditoriaQueueService: AuditoriaQueueService) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const request = context.switchToHttp().getRequest<Request>();
@@ -280,7 +280,7 @@ export class CidadaoAuditInterceptor implements NestInterceptor {
       logAuditoriaDto.descricao = `Acesso a dados de cidadão via ${event.method} ${event.url}`;
 
       // Se houver dados sensíveis, registrar acesso a dados sensíveis
-/*       if (event.body && this.containsSensitiveData(event.body)) {
+      if (event.body && this.containsSensitiveData(event.body)) {
         const camposSensiveis = this.extractSensitiveFields(event.body);
 
         await this.auditoriaQueueService.enfileirarAcessoDadosSensiveis(
@@ -298,7 +298,7 @@ export class CidadaoAuditInterceptor implements NestInterceptor {
         await this.auditoriaQueueService.enfileirarLogAuditoria(
           logAuditoriaDto,
         );
-      } */
+      }
 
       this.logger.debug(
         `Evento de auditoria registrado: ${event.method} ${event.url}`,

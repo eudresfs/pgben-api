@@ -12,8 +12,8 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * @author Engenheiro de Dados
  * @date 19/05/2025
  */
-export class CreateAutenticacaoUsuarioSchema1685468879182 implements MigrationInterface {
-  name = 'CreateAutenticacaoUsuarioSchema1685468879182';
+export class CreateAutenticacaoUsuarioSchema1747961017090 implements MigrationInterface {
+  name = 'CreateAutenticacaoUsuarioSchema1747961017090';
 
   /**
    * Cria as estruturas do módulo de autenticação e usuário

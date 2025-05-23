@@ -12,8 +12,8 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * @author Engenheiro de Dados
  * @date 19/05/2025
  */
-export class CreateBaseStructure1685468879181 implements MigrationInterface {
-  name = 'CreateBaseStructure1685468879181';
+export class CreateBaseStructure1747961017116 implements MigrationInterface {
+  name = 'CreateBaseStructure1747961017116';
 
   /**
    * Cria as estruturas de banco de dados base

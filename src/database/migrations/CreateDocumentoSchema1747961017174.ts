@@ -9,8 +9,8 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * @author Engenheiro de Dados
  * @date 19/05/2025
  */
-export class CreateDocumentoSchema1685468879189 implements MigrationInterface {
-  name = 'CreateDocumentoSchema1685468879189';
+export class CreateDocumentoSchema1747961017174 implements MigrationInterface {
+  name = 'CreateDocumentoSchema1747961017174';
 
   /**
    * Cria as estruturas relacionadas a documentos

@@ -11,7 +11,8 @@ import { TipoEntregaCestaBasica, PeriodicidadeCestaBasica } from '../../modules/
  * - especificacao_funeral: para o Auxílio Funeral
  * - especificacao_cesta_basica: para a Cesta Básica
  */
-export class CreateEspecificacoesBeneficio1621500000 implements MigrationInterface {
+export class CreateEspecificacoesBeneficio1747961017229 implements MigrationInterface {
+  name = 'CreateEspecificacoesBeneficio1747961017229';  
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Criar enums para os diferentes tipos de benefícios
     
