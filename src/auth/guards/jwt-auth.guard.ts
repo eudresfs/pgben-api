@@ -52,10 +52,12 @@ export class JwtAuthGuard extends AuthGuard(STRATEGY_JWT_AUTH) {
         throw new UnauthorizedException('Token inválido - JTI não encontrado');
       }
 
-      // Verificar se o token está na blacklist
-      const isBlacklisted = await this.jwtBlacklistService.isTokenBlacklisted(decodedToken.jti);
+      // Verificar se o token está na blacklist, usando o formato correto
+      const checkBlacklistResult = await this.jwtBlacklistService.isTokenBlacklisted({
+        jti: decodedToken.jti
+      });
       
-      if (isBlacklisted) {
+      if (checkBlacklistResult.is_blacklisted) {
         throw new UnauthorizedException('Token foi revogado');
       }
     } catch (error) {

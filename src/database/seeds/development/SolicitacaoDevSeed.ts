@@ -33,7 +33,7 @@ export class SolicitacaoDevSeed {
     // Obter usuários disponíveis (técnicos)
     const usuarios = await dataSource.query(`
       SELECT u.id FROM usuario u
-      JOIN perfil p ON u.perfil_id = p.id
+      JOIN role p ON u.role_id = p.id
       WHERE p.nome IN ('tecnico_semtas', 'tecnico_unidade')
     `);
     if (usuarios.length === 0) {

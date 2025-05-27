@@ -9,10 +9,10 @@ export class CreateUsuarioRoleTable1747961017280 implements MigrationInterface {
       return;
     }
 
-    // Verificar se a tabela role_table existe
-    const roleTableExists = await queryRunner.hasTable('role_table');
+    // Verificar se a tabela role existe
+    const roleTableExists = await queryRunner.hasTable('role');
     if (!roleTableExists) {
-      console.log('Tabela role_table não existe, verificando tabela role');
+      console.log('Tabela role não existe, verificando tabela role');
       
       // Verificar se a tabela role existe
       const roleExists = await queryRunner.hasTable('role');
@@ -23,7 +23,7 @@ export class CreateUsuarioRoleTable1747961017280 implements MigrationInterface {
     }
 
     // Determinar o nome correto da tabela de roles
-    const roleTableName = roleTableExists ? 'role_table' : 'role';
+    const roleTableName = roleTableExists ? 'role' : 'role';
     
     await queryRunner.query(`
       CREATE TABLE "usuario_role" (

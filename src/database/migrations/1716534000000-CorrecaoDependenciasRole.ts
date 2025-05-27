@@ -5,7 +5,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * deixadas pela migração que transformou o enum 'role' em tabela.
  * 
  * Esta migration verifica se o enum 'role' ainda existe e, caso exista,
- * migra todas as suas dependências para usar a nova tabela 'role_table'.
+ * migra todas as suas dependências para usar a nova tabela 'role'.
  */
 export class CorrecaoDependenciasRole1716534000000 implements MigrationInterface {
     name = 'CorrecaoDependenciasRole1716534000000';
@@ -40,7 +40,7 @@ export class CorrecaoDependenciasRole1716534000000 implements MigrationInterface
                 console.log(`\n⚠️ Encontradas ${checkDependencies.length} dependências para o enum role:`);
                 
                 // 3. Para cada tabela que depende do enum 'role', migrar a coluna para VARCHAR
-                // e associá-la à tabela 'role_table'
+                // e associá-la à tabela 'role'
                 for (const dep of checkDependencies) {
                     const tableName = dep.table_name;
                     const columnName = dep.column_name;
@@ -60,17 +60,17 @@ export class CorrecaoDependenciasRole1716534000000 implements MigrationInterface
                         WHERE "${columnName}" IS NOT NULL
                     `);
                     
-                    // 3.3 Adicionar coluna para FK para role_table
+                    // 3.3 Adicionar coluna para FK para role
                     await queryRunner.query(`
                         ALTER TABLE "${tableName}"
                         ADD COLUMN "${columnName}_id" UUID NULL
                     `);
                     
-                    // 3.4 Associar valores à tabela role_table
+                    // 3.4 Associar valores à tabela role
                     await queryRunner.query(`
                         UPDATE "${tableName}" t
                         SET "${columnName}_id" = rt.id
-                        FROM "role_table" rt
+                        FROM "role" rt
                         WHERE t."${columnName}_temp" = rt.nome
                     `);
                     
@@ -91,7 +91,7 @@ export class CorrecaoDependenciasRole1716534000000 implements MigrationInterface
                         ALTER TABLE "${tableName}"
                         ADD CONSTRAINT "FK_${tableName}_${columnName}"
                         FOREIGN KEY ("${columnName}")
-                        REFERENCES "role_table" ("id")
+                        REFERENCES "role" ("id")
                         ON DELETE SET NULL
                     `);
                     
@@ -107,27 +107,18 @@ export class CorrecaoDependenciasRole1716534000000 implements MigrationInterface
                 console.log('\n✅ Não há dependências para o enum role.');
             }
             
-            // 4. Remover o enum 'role' após resolver todas as dependências
-            try {
-                await queryRunner.query(`
-                    DROP TYPE IF EXISTS "role" CASCADE
-                `);
-                console.log('\n✅ Enum role removido com sucesso!');
-            } catch (error) {
-                console.log(`\n⚠️ Não foi possível remover o enum role: ${error.message}`);
-            }
         } else {
             console.log('\n✅ O enum role não existe mais, nada a fazer.');
         }
         
-        // 5. Verificar se a tabela role_table existe e está configurada corretamente
+        // 5. Verificar se a tabela role existe e está configurada corretamente
         const checkRoleTable = await queryRunner.query(`
             SELECT 1 FROM information_schema.tables 
-            WHERE table_name = 'role_table'
+            WHERE table_name = 'role'
         `);
         
         if (checkRoleTable && checkRoleTable.length > 0) {
-            console.log('\n✅ Tabela role_table existe.');
+            console.log('\n✅ Tabela role existe.');
             
             // 5.1 Verificar se a tabela role_permissao existe
             const checkRolePermissionTable = await queryRunner.query(`
@@ -151,7 +142,7 @@ export class CorrecaoDependenciasRole1716534000000 implements MigrationInterface
                         ALTER TABLE "role_permissao"
                         ADD CONSTRAINT "FK_ROLE_PERMISSAO_ROLE"
                         FOREIGN KEY ("role_id")
-                        REFERENCES "role_table" ("id")
+                        REFERENCES "role" ("id")
                         ON DELETE CASCADE
                     `);
                     
@@ -163,7 +154,7 @@ export class CorrecaoDependenciasRole1716534000000 implements MigrationInterface
                 console.log('\n⚠️ Tabela role_permissao ainda não existe. A constraint será adicionada quando a tabela for criada.');
             }
         } else {
-            console.log('\n⚠️ Tabela role_table não encontrada!');
+            console.log('\n⚠️ Tabela role não encontrada!');
         }
         
         console.log('\n✅ Migration corretiva concluída com sucesso!');

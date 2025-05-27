@@ -97,7 +97,7 @@ async function testarPoliticasRLS() {
       '\nTestando políticas RLS para diferentes perfis de usuário...',
     );
 
-    // 1. Criar usuários de teste para cada perfil
+    // 1. Criar usuários de teste para cada role
     const perfisUsuario = [
       'administrador',
       'gestor_semtas',
@@ -106,27 +106,27 @@ async function testarPoliticasRLS() {
     ];
     const usuariosIds = {};
 
-    for (const perfil of perfisUsuario) {
-      // Buscar o ID do perfil
-      const perfilResult = await dataSource.query(
-        'SELECT id FROM perfil WHERE nome = $1',
-        [perfil],
+    for (const role of perfisUsuario) {
+      // Buscar o ID do role
+      const roleResult = await dataSource.query(
+        'SELECT id FROM role WHERE nome = $1',
+        [role],
       );
 
-      if (perfilResult.length === 0) {
-        console.log(`Perfil ${perfil} não encontrado, pulando...`);
+      if (roleResult.length === 0) {
+        console.log(`Perfil ${role} não encontrado, pulando...`);
         continue;
       }
 
-      const perfilId = perfilResult[0].id;
+      const roleId = roleResult[0].id;
 
-      // Criar usuário de teste para o perfil
+      // Criar usuário de teste para o role
       const usuarioResult = await dataSource.query(
         `INSERT INTO usuario (
           nome, 
           email, 
           senha, 
-          perfil_id, 
+          role_id, 
           ativo, 
           ultimo_acesso, 
           falhas_login, 
@@ -135,10 +135,10 @@ async function testarPoliticasRLS() {
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
         RETURNING id`,
         [
-          `Usuário Teste ${perfil}`,
-          `teste.${perfil}@pgben.gov.br`,
+          `Usuário Teste ${role}`,
+          `teste.${role}@pgben.gov.br`,
           'senha_teste_hash',
-          perfilId,
+          roleId,
           true,
           new Date(),
           0,
@@ -146,14 +146,14 @@ async function testarPoliticasRLS() {
         ],
       );
 
-      usuariosIds[perfil] = usuarioResult[0].id;
+      usuariosIds[role] = usuarioResult[0].id;
       console.log(
-        `Usuário de teste criado para perfil ${perfil}: ${usuariosIds[perfil]}`,
+        `Usuário de teste criado para role ${role}: ${usuariosIds[role]}`,
       );
     }
 
-    // 2. Testar acesso para cada perfil
-    console.log('\nTestando acesso para cada perfil...');
+    // 2. Testar acesso para cada role
+    console.log('\nTestando acesso para cada role...');
 
     // Tabelas a serem testadas
     const tabelasTeste = [
@@ -164,13 +164,13 @@ async function testarPoliticasRLS() {
       'avaliacao_solicitacao',
     ];
 
-    for (const perfil in usuariosIds) {
-      console.log(`\nTestando acesso para perfil: ${perfil}`);
+    for (const role in usuariosIds) {
+      console.log(`\nTestando acesso para role: ${role}`);
 
       // Configurar variáveis de sessão para o usuário
       await dataSource.query(`
-        SET LOCAL app.current_user_id = '${usuariosIds[perfil]}';
-        SET LOCAL app.current_user_role = '${perfil}';
+        SET LOCAL app.current_user_id = '${usuariosIds[role]}';
+        SET LOCAL app.current_user_role = '${role}';
       `);
 
       for (const tabela of tabelasTeste) {
@@ -181,11 +181,11 @@ async function testarPoliticasRLS() {
           `);
 
           console.log(
-            `✅ ${perfil} pode acessar ${tabela}: ${result[0].count} registros`,
+            `✅ ${role} pode acessar ${tabela}: ${result[0].count} registros`,
           );
         } catch (error) {
           console.log(
-            `❌ ${perfil} não pode acessar ${tabela}: ${error.message}`,
+            `❌ ${role} não pode acessar ${tabela}: ${error.message}`,
           );
         }
       }
@@ -197,16 +197,16 @@ async function testarPoliticasRLS() {
       `);
     }
 
-    // 3. Testar inserção para cada perfil
-    console.log('\nTestando inserção para cada perfil...');
+    // 3. Testar inserção para cada role
+    console.log('\nTestando inserção para cada role...');
 
-    for (const perfil in usuariosIds) {
-      console.log(`\nTestando inserção para perfil: ${perfil}`);
+    for (const role in usuariosIds) {
+      console.log(`\nTestando inserção para role: ${role}`);
 
       // Configurar variáveis de sessão para o usuário
       await dataSource.query(`
-        SET LOCAL app.current_user_id = '${usuariosIds[perfil]}';
-        SET LOCAL app.current_user_role = '${perfil}';
+        SET LOCAL app.current_user_id = '${usuariosIds[role]}';
+        SET LOCAL app.current_user_role = '${role}';
       `);
 
       // Tentar inserir um cidadão
@@ -230,10 +230,10 @@ async function testarPoliticasRLS() {
           )
         `);
 
-        console.log(`✅ ${perfil} pode inserir em cidadao`);
+        console.log(`✅ ${role} pode inserir em cidadao`);
       } catch (error) {
         console.log(
-          `❌ ${perfil} não pode inserir em cidadao: ${error.message}`,
+          `❌ ${role} não pode inserir em cidadao: ${error.message}`,
         );
       }
 
@@ -246,9 +246,9 @@ async function testarPoliticasRLS() {
 
     // Limpar dados de teste
     console.log('\nLimpando dados de teste...');
-    for (const perfil in usuariosIds) {
+    for (const role in usuariosIds) {
       await dataSource.query('DELETE FROM usuario WHERE id = $1', [
-        usuariosIds[perfil],
+        usuariosIds[role],
       ]);
     }
 

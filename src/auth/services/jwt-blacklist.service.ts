@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, LessThan, In } from 'typeorm';
+import { Repository, LessThan, MoreThan, In } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { JwtBlacklist } from '../entities/jwt-blacklist.entity';
@@ -353,13 +353,13 @@ export class JwtBlacklistService {
     try {
       const now = new Date();
 
-      const [total, active, expired, accessTokens, refreshTokens, reasonStats] = await Promise.all([
+      const [total, expired, active, accessTokens, refreshTokens, reasonStats] = await Promise.all([
         this.jwtBlacklistRepository.count(),
         this.jwtBlacklistRepository.count({
           where: { expires_at: LessThan(now) },
         }),
         this.jwtBlacklistRepository.count({
-          where: { expires_at: LessThan(now) },
+          where: { expires_at: MoreThan(now) },
         }),
         this.jwtBlacklistRepository.count({
           where: { token_type: 'access' },

@@ -28,9 +28,18 @@ export class Permission {
   descricao: string;
 
   /**
-   * Indica se é uma permissão composta (ex: `modulo.*`)
+   * Módulo ao qual a permissão pertence
    */
-  @Column({ type: 'boolean', default: false, name: 'composta' })
+  @Column({ type: 'varchar', length: 50, nullable: true, name: 'modulo' })
+  modulo: string | null;
+
+  /**
+   * Ação permitida pela permissão
+   */
+  @Column({ type: 'varchar', length: 50, nullable: true, name: 'acao' })
+  acao: string | null;
+  
+  // Propriedade virtual para compatibilidade com código existente
   composta: boolean;
 
   /**
@@ -51,18 +60,6 @@ export class Permission {
    */
   @OneToMany(() => Permission, permissao => permissao.permissao_pai)
   permissoes_filhas: Permission[];
-
-  /**
-   * Data de criação
-   */
-  @CreateDateColumn({ name: 'created_at' })
-  created_at: Date;
-
-  /**
-   * Data de última atualização
-   */
-  @UpdateDateColumn({ name: 'updated_at' })
-  updated_at: Date;
 
   /**
    * Usuário que criou a permissão
@@ -90,6 +87,18 @@ export class Permission {
   @JoinColumn({ name: 'atualizado_por' })
   usuario_atualizador: Usuario | null;
 
+  /**
+   * Data de criação
+   */
+  @CreateDateColumn({ name: 'created_at' })
+  created_at: Date;
+
+  /**
+   * Data de última atualização
+   */
+  @UpdateDateColumn({ name: 'updated_at' })
+  updated_at: Date;
+
   // Getters e setters para compatibilidade com código existente
   get name(): string {
     return this.nome;
@@ -108,10 +117,12 @@ export class Permission {
   }
 
   get isComposite(): boolean {
-    return this.composta;
+    // Determinar se é uma permissão composta pelo nome (contendo '*')
+    return this.nome ? this.nome.includes('*') : false;
   }
 
   set isComposite(value: boolean) {
+    // Propriedade virtual apenas para compatibilidade
     this.composta = value;
   }
 

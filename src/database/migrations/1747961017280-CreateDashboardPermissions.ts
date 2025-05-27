@@ -29,7 +29,7 @@ export class CreateDashboardPermissions1747961017280 implements MigrationInterfa
 
     // Obter IDs dos papéis
     const roles = await queryRunner.query(`
-      SELECT id, nome FROM role_table
+      SELECT id, nome FROM role
       WHERE nome IN ('ADMIN', 'GESTOR', 'TECNICO')
     `);
 

@@ -29,7 +29,7 @@ export class CreateLogsPermissions1747961017285 implements MigrationInterface {
     // Adicionar permissões aos papéis existentes
     // 1. Obter os papéis (roles)
     const roles = await queryRunner.query(
-      `SELECT id, nome FROM role_table WHERE nome IN ('ADMIN', 'GESTOR')`
+      `SELECT id, nome FROM role WHERE nome IN ('ADMIN', 'GESTOR')`
     );
 
     // 2. Obter as permissões de logs
@@ -75,7 +75,7 @@ export class CreateLogsPermissions1747961017285 implements MigrationInterface {
         SELECT id FROM permissao
         WHERE nome LIKE 'log.%'
       ) AND role_id NOT IN (
-        SELECT id FROM role_table
+        SELECT id FROM role
         WHERE nome IN ('ADMIN', 'GESTOR')
       );
     `);

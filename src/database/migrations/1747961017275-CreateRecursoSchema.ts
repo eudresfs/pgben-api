@@ -94,7 +94,7 @@ export class CreateRecursoSchema1747961017275 implements MigrationInterface {
     // Adicionar permissões aos papéis existentes
     // 1. Obter os papéis (roles)
     const roles = await queryRunner.query(
-      `SELECT id, nome FROM role_table WHERE nome IN ('ADMIN', 'GESTOR', 'TECNICO')`
+      `SELECT id, nome FROM role WHERE nome IN ('ADMIN', 'GESTOR', 'TECNICO')`
     );
 
     // 2. Obter as permissões de recurso
@@ -152,7 +152,7 @@ export class CreateRecursoSchema1747961017275 implements MigrationInterface {
         SELECT id FROM permissao
         WHERE nome LIKE 'recurso.%'
       ) AND role_id NOT IN (
-        SELECT id FROM role_table
+        SELECT id FROM role
         WHERE nome IN ('ADMIN', 'GESTOR', 'TECNICO')
       );
     `);

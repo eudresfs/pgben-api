@@ -2,7 +2,7 @@
  * Constantes para os papéis (roles) do sistema
  * 
  * Este arquivo substitui o antigo enum Role, fornecendo constantes
- * que correspondem aos valores na tabela role_table.
+ * que correspondem aos valores na tabela role.
  */
 export const ROLES = {
   SUPER_ADMIN: 'SUPER_ADMIN',

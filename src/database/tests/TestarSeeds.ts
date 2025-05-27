@@ -54,7 +54,7 @@ async function testarSeeds() {
 
     // Verificar dados essenciais
     console.log('\nVerificando dados essenciais...');
-    const perfis = await dataSource.query('SELECT COUNT(*) FROM perfil');
+    const perfis = await dataSource.query('SELECT COUNT(*) FROM role');
     console.log(`- Perfis: ${perfis[0].count}`);
 
     const setores = await dataSource.query('SELECT COUNT(*) FROM setor');
@@ -127,18 +127,18 @@ async function testarSeeds() {
     // 3. Verificar se os perfis têm permissões válidas (formato JSON)
     try {
       const perfisComPermissoes = await dataSource.query(
-        'SELECT nome, permissoes FROM perfil',
+        'SELECT nome, permissoes FROM role',
       );
       let perfisInvalidos = 0;
 
-      for (const perfil of perfisComPermissoes) {
+      for (const role of perfisComPermissoes) {
         try {
-          if (typeof perfil.permissoes === 'string') {
-            JSON.parse(perfil.permissoes);
+          if (typeof role.permissoes === 'string') {
+            JSON.parse(role.permissoes);
           }
         } catch (e) {
           perfisInvalidos++;
-          console.log(`Perfil com permissões inválidas: ${perfil.nome}`);
+          console.log(`Perfil com permissões inválidas: ${role.nome}`);
         }
       }
 

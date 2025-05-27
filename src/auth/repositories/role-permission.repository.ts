@@ -110,14 +110,33 @@ export class RolePermissionRepository extends Repository<RolePermission> {
    * @returns Lista de permissões associadas às roles do usuário
    */
   async findPermissionsByUserRoles(userId: string): Promise<Permission[]> {
-    // Busca as permissões associadas às roles do usuário
-    const permissions = await this.createQueryBuilder('role_permissao')
-      .innerJoin('usuario_role', 'ur', 'ur.role_id = role_permissao.role_id')
-      .innerJoinAndSelect('role_permissao.permissao', 'permissao')
-      .where('ur.usuario_id = :userId', { userId })
-      .getMany();
-
-    // Retorna apenas as permissões
-    return permissions.map(rp => rp.permission);
+    try {
+      // Usar o EntityManager diretamente para obter as permissões com uma query mais simples
+      const queryResult = await this.dataSource.manager.query(`
+        SELECT DISTINCT p.*
+        FROM permissao p
+        INNER JOIN role_permissao rp ON p.id = rp.permissao_id
+        INNER JOIN usuario_role ur ON ur.role_id = rp.role_id
+        WHERE ur.usuario_id = $1
+      `, [userId]);
+      
+      // Converter os resultados brutos para entidades Permission
+      return queryResult.map(row => {
+        const permission = new Permission();
+        permission.id = row.id;
+        permission.nome = row.nome;
+        permission.descricao = row.descricao;
+        permission.composta = row.composta;
+        permission.permissao_pai_id = row.permissao_pai_id;
+        permission.created_at = row.created_at;
+        permission.updated_at = row.updated_at;
+        permission.criado_por = row.criado_por;
+        permission.atualizado_por = row.atualizado_por;
+        return permission;
+      });
+    } catch (error) {
+      console.error('Erro ao buscar permissões do usuário:', error);
+      return [];
+    }
   }
 }

@@ -131,7 +131,7 @@ export class CreatePermissionSchema1747961017222 implements MigrationInterface {
           "criado_em" TIMESTAMP NOT NULL DEFAULT now(),
           "criado_por" UUID NULL,
           CONSTRAINT "fk_role_permissao_role" FOREIGN KEY ("role_id") 
-            REFERENCES "role_table" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+            REFERENCES "role" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
           CONSTRAINT "fk_role_permissao_permissao" FOREIGN KEY ("permissao_id") 
             REFERENCES "permissao" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
           CONSTRAINT "fk_role_permissao_criado_por" FOREIGN KEY ("criado_por") 
@@ -206,7 +206,7 @@ export class CreatePermissionSchema1747961017222 implements MigrationInterface {
           CONSTRAINT "fk_role_usuario_usuario" FOREIGN KEY ("usuario_id") 
             REFERENCES "usuario" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
           CONSTRAINT "fk_role_usuario_role" FOREIGN KEY ("role_id") 
-            REFERENCES "role_table" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+            REFERENCES "role" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
           CONSTRAINT "fk_role_usuario_criado_por" FOREIGN KEY ("criado_por") 
             REFERENCES "usuario" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
           CONSTRAINT "uq_role_usuario" UNIQUE ("usuario_id", "role_id", "tipo_escopo", "escopo_id")

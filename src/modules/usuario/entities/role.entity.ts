@@ -15,7 +15,7 @@ import { Usuario } from './usuario.entity';
  * substituindo o antigo enum Role. Esta entidade permite relacionamentos
  * com permissões e outros recursos do sistema.
  */
-@Entity('role_table')
+@Entity('role')
 export class Role {
   @PrimaryGeneratedColumn('uuid')
   id: string;

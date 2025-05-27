@@ -2,7 +2,8 @@ import { Injectable, CanActivate, ExecutionContext, Logger, UnauthorizedExceptio
 import { Reflector } from '@nestjs/core';
 import { PERMISSION_REQUIREMENTS_KEY, PermissionRequirement } from '../decorators/requires-permission.decorator';
 import { PermissionService } from '../services/permission.service';
-import { ScopeType } from '../entities/user-permission.entity';
+import { TipoEscopo } from '../entities/user-permission.entity';
+import { PermissionDeniedException } from '../exceptions/permission-denied.exception';
 
 /**
  * Guard para verificar permissões granulares.
@@ -58,11 +59,11 @@ export class PermissionGuard implements CanActivate {
 
     // Verifica cada requisito de permissão
     for (const requirement of requirements) {
-      const { permissionName, scopeType = ScopeType.GLOBAL, scopeIdExpression } = requirement;
+      const { permissionName, scopeType = TipoEscopo.GLOBAL, scopeIdExpression } = requirement;
 
       // Obtém o ID do escopo a partir da expressão
       let scopeId: string | undefined;
-      if (scopeType === ScopeType.UNIT && scopeIdExpression) {
+      if (scopeType === TipoEscopo.UNIDADE && scopeIdExpression) {
         scopeId = this.evaluateScopeIdExpression(scopeIdExpression, request);
       }
 
@@ -80,7 +81,9 @@ export class PermissionGuard implements CanActivate {
             scopeId ? ` e ID ${scopeId}` : ''
           }`,
         );
-        return false;
+        
+        // Lançar exceção personalizada em vez de retornar false
+        throw new PermissionDeniedException(permissionName, scopeType, scopeId);
       }
     }
 

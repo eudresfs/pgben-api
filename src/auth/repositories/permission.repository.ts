@@ -22,8 +22,23 @@ export class PermissionRepository extends Repository<Permission> {
    * @returns A permissão encontrada ou null
    */
   async findByName(name: string): Promise<Permission | null> {
-    // Usar o campo 'nome' da entidade Permission, não 'name'
-    return this.findOne({ where: { nome: name } });
+    try {
+      // Usar SQL nativo para evitar problemas com nomes de colunas
+      const result = await this.dataSource.manager.query(
+        `SELECT * FROM permissao WHERE nome = $1 LIMIT 1`,
+        [name]
+      );
+
+      if (!result || result.length === 0) {
+        return null;
+      }
+
+      // Converter o resultado para uma entidade Permission usando o método auxiliar
+      return this.toEntity(result[0]);
+    } catch (error) {
+      console.error('Erro ao buscar permissão por nome:', error);
+      return null;
+    }
   }
 
   /**
@@ -34,9 +49,23 @@ export class PermissionRepository extends Repository<Permission> {
    * @returns Lista de permissões que correspondem ao padrão
    */
   async findByPattern(pattern: string): Promise<Permission[]> {
-    return this.createQueryBuilder('permissao')
-      .where('permissao.nome LIKE :pattern', { pattern })
-      .getMany();
+    try {
+      // Usar SQL nativo para evitar problemas com nomes de colunas
+      const result = await this.dataSource.manager.query(
+        `SELECT * FROM permissao WHERE nome LIKE $1`,
+        [pattern]
+      );
+
+      if (!result || result.length === 0) {
+        return [];
+      }
+
+      // Converter o resultado para entidades Permission usando o método auxiliar
+      return result.map(row => this.toEntity(row));
+    } catch (error) {
+      console.error('Erro ao buscar permissões por padrão:', error);
+      return [];
+    }
   }
 
   /**
@@ -45,7 +74,22 @@ export class PermissionRepository extends Repository<Permission> {
    * @returns Lista de permissões compostas
    */
   async findAllComposite(): Promise<Permission[]> {
-    return this.find({ where: { composta: true } });
+    try {
+      // Usar SQL nativo para evitar problemas com nomes de colunas
+      const result = await this.dataSource.manager.query(
+        `SELECT * FROM permissao WHERE composta = true`
+      );
+
+      if (!result || result.length === 0) {
+        return [];
+      }
+
+      // Converter o resultado para entidades Permission usando o método auxiliar
+      return result.map(row => this.toEntity(row));
+    } catch (error) {
+      console.error('Erro ao buscar permissões compostas:', error);
+      return [];
+    }
   }
 
   /**
@@ -55,7 +99,23 @@ export class PermissionRepository extends Repository<Permission> {
    * @returns Lista de permissões filhas
    */
   async findChildrenByParentId(parentId: string): Promise<Permission[]> {
-    return this.find({ where: { permissao_pai_id: parentId } });
+    try {
+      // Usar SQL nativo para evitar problemas com nomes de colunas
+      const result = await this.dataSource.manager.query(
+        `SELECT * FROM permissao WHERE permissao_pai_id = $1`,
+        [parentId]
+      );
+
+      if (!result || result.length === 0) {
+        return [];
+      }
+
+      // Converter o resultado para entidades Permission usando o método auxiliar
+      return result.map(row => this.toEntity(row));
+    } catch (error) {
+      console.error('Erro ao buscar permissões filhas:', error);
+      return [];
+    }
   }
 
   /**
@@ -98,12 +158,47 @@ export class PermissionRepository extends Repository<Permission> {
    * @param ids Lista de IDs das permissões
    * @returns Lista de permissões encontradas
    */
+  /**
+   * Converte um objeto de resultado de consulta SQL em uma entidade Permission
+   * 
+   * @param row Linha de resultado da consulta SQL
+   * @returns Entidade Permission
+   */
+  private toEntity(row: any): Permission {
+    const permission = new Permission();
+    permission.id = row.id;
+    permission.nome = row.nome;
+    permission.descricao = row.descricao;
+    permission.composta = row.composta;
+    permission.permissao_pai_id = row.permissao_pai_id;
+    permission.created_at = row.created_at;
+    permission.updated_at = row.updated_at;
+    permission.criado_por = row.criado_por;
+    permission.atualizado_por = row.atualizado_por;
+    return permission;
+  }
+
   async findByIds(ids: string[]): Promise<Permission[]> {
     if (!ids || ids.length === 0) {
       return [];
     }
-    return this.createQueryBuilder('permissao')
-      .where('permissao.id IN (:...ids)', { ids })
-      .getMany();
+    
+    try {
+      // Usar SQL nativo para evitar problemas com nomes de colunas
+      const result = await this.dataSource.manager.query(
+        `SELECT * FROM permissao WHERE id = ANY($1)`,
+        [ids]
+      );
+
+      if (!result || result.length === 0) {
+        return [];
+      }
+
+      // Converter o resultado para entidades Permission usando o método auxiliar
+      return result.map(row => this.toEntity(row));
+    } catch (error) {
+      console.error('Erro ao buscar permissões por IDs:', error);
+      return [];
+    }
   }
 }

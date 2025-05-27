@@ -6,7 +6,7 @@ import { MigrationInterface, QueryRunner, Table, TableIndex } from 'typeorm';
  * Esta migração transforma o enum 'role' em uma tabela para permitir
  * relacionamentos com as entidades de permissão.
  * 
- * IMPORTANTE: Primeiro removemos o enum 'role' existente e depois criamos a tabela 'role_table'
+ * IMPORTANTE: Primeiro removemos o enum 'role' existente e depois criamos a tabela 'role'
  * para evitar conflitos de nome. Depois atualizamos as referências nas outras tabelas.
  */
 export class CreateRoleTable1716533861100 implements MigrationInterface {
@@ -51,7 +51,7 @@ export class CreateRoleTable1716533861100 implements MigrationInterface {
         console.log('\n🔄 Criando tabela de roles...');
         await queryRunner.createTable(
             new Table({
-                name: 'role_table',
+                name: 'role',
                 columns: [
                     {
                         name: 'id',
@@ -91,9 +91,9 @@ export class CreateRoleTable1716533861100 implements MigrationInterface {
 
         // 3. Criar índices
         await queryRunner.createIndex(
-            'role_table',
+            'role',
             new TableIndex({
-                name: 'IDX_ROLE_TABLE_NOME',
+                name: 'IDX_role_NOME',
                 columnNames: ['nome'],
                 isUnique: true,
             })
@@ -101,7 +101,7 @@ export class CreateRoleTable1716533861100 implements MigrationInterface {
 
         // 4. Inserir os valores padrão na tabela
         await queryRunner.query(`
-            INSERT INTO "role_table" (id, nome, descricao)
+            INSERT INTO "role" (id, nome, descricao)
             VALUES 
             ('00000000-0000-0000-0000-000000000000', 'SUPER_ADMIN', 'Super Administrador do sistema com acesso total'),
             (uuid_generate_v4(), 'ADMIN', 'Administrador do sistema'),
@@ -113,7 +113,7 @@ export class CreateRoleTable1716533861100 implements MigrationInterface {
             (uuid_generate_v4(), 'CIDADAO', 'Cidadão com acesso limitado')
         `);
         
-        console.log('\n✅ Tabela role_table criada com sucesso');
+        console.log('\n✅ Tabela role criada com sucesso');
 
         // 5. Se o enum existir e a tabela usuario tiver a coluna role, migrar os dados
         if (checkEnum && checkEnum.length > 0 && checkUsuarioRole && checkUsuarioRole.length > 0) {
@@ -127,7 +127,7 @@ export class CreateRoleTable1716533861100 implements MigrationInterface {
             await queryRunner.query(`
                 UPDATE "usuario" u
                 SET role_id = r.id
-                FROM "role_table" r, "temp_role_values" t
+                FROM "role" r, "temp_role_values" t
                 WHERE u.id = t.usuario_id AND t.role_value = r.nome
             `);
 
@@ -136,7 +136,7 @@ export class CreateRoleTable1716533861100 implements MigrationInterface {
                 ALTER TABLE "usuario"
                 ADD CONSTRAINT "FK_USUARIO_ROLE"
                 FOREIGN KEY ("role_id")
-                REFERENCES "role_table" ("id")
+                REFERENCES "role" ("id")
                 ON DELETE SET NULL
             `);
 
@@ -179,7 +179,7 @@ export class CreateRoleTable1716533861100 implements MigrationInterface {
                     ALTER TABLE "role_permissao"
                     ADD CONSTRAINT "FK_ROLE_PERMISSAO_ROLE"
                     FOREIGN KEY ("role_id")
-                    REFERENCES "role_table" ("id")
+                    REFERENCES "role" ("id")
                     ON DELETE CASCADE
                 `);
                 
@@ -297,7 +297,7 @@ export class CreateRoleTable1716533861100 implements MigrationInterface {
                 INSERT INTO "temp_role_values" ("usuario_id", "role_value")
                 SELECT u.id, r.nome 
                 FROM "usuario" u 
-                JOIN "role_table" r ON u.role_id = r.id 
+                JOIN "role" r ON u.role_id = r.id 
                 WHERE u.role_id IS NOT NULL
             `);
             
@@ -348,8 +348,8 @@ export class CreateRoleTable1716533861100 implements MigrationInterface {
             `);
         }
 
-        // 12. Remover a tabela role_table
-        await queryRunner.dropTable('role_table', true);
+        // 12. Remover a tabela role
+        await queryRunner.dropTable('role', true);
         
         console.log('\n✅ Migration revertida com sucesso!');
     }

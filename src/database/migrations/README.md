@@ -33,7 +33,7 @@ As migrations estão organizadas no diretório `/nova-estrutura` e seguem uma nu
 - Configura variáveis de ambiente para RLS (Row Level Security)
 
 #### 2. Auth Schema (1010000)
-- Cria tabelas de autenticação (`usuario`, `perfil`, `sessao`)
+- Cria tabelas de autenticação (`usuario`, `role`, `sessao`)
 - Implementa políticas RLS para controle de acesso
 - Configura índices para otimização de consultas de autenticação
 
