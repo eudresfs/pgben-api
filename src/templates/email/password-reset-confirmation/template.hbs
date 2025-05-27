@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Senha Alterada com Sucesso - SEMTAS</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e9ecef;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #6c757d;
+            font-size: 14px;
+        }
+        .success-icon {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .success-icon .icon {
+            font-size: 48px;
+            color: #28a745;
+        }
+        .content {
+            margin-bottom: 30px;
+        }
+        .greeting {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+        .message {
+            margin-bottom: 25px;
+            line-height: 1.8;
+        }
+        .success-message {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 5px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .success-message h3 {
+            color: #155724;
+            margin-top: 0;
+        }
+        .success-message p {
+            color: #155724;
+            margin-bottom: 0;
+        }
+        .security-info {
+            background-color: #e2e3e5;
+            border: 1px solid #d6d8db;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .security-info h4 {
+            color: #383d41;
+            margin-top: 0;
+        }
+        .security-info p {
+            color: #383d41;
+            margin-bottom: 5px;
+        }
+        .login-button {
+            display: inline-block;
+            background-color: #28a745;
+            color: #ffffff;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .login-button:hover {
+            background-color: #218838;
+        }
+        .button-container {
+            text-align: center;
+            margin: 30px 0;
+        }
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e9ecef;
+            font-size: 12px;
+            color: #6c757d;
+            text-align: center;
+        }
+        .footer a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        .timestamp {
+            background-color: #f8f9fa;
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+        .timestamp strong {
+            color: #28a745;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">SEMTAS</div>
+            <div class="subtitle">Secretaria Municipal do Trabalho e Assistência Social</div>
+        </div>
+        
+        <div class="success-icon">
+            <div class="icon">✅</div>
+        </div>
+        
+        <div class="content">
+            <div class="greeting">Olá, {{name}}!</div>
+            
+            <div class="success-message">
+                <h3>Senha Alterada com Sucesso!</h3>
+                <p>Sua senha foi redefinida com sucesso no Sistema de Gestão de Benefícios Eventuais da SEMTAS.</p>
+            </div>
+            
+            <div class="timestamp">
+                <p><strong>📅 Data e Hora:</strong> {{changedAt}}</p>
+                <p><strong>🌐 IP de Origem:</strong> {{ipAddress}}</p>
+                <p><strong>🖥️ Navegador:</strong> {{userAgent}}</p>
+            </div>
+            
+            <div class="message">
+                <p>Agora você pode fazer login no sistema usando sua nova senha.</p>
+            </div>
+            
+            <div class="button-container">
+                <a href="{{loginUrl}}" class="login-button">Fazer Login</a>
+            </div>
+            
+            <div class="security-info">
+                <h4>🔒 Informações de Segurança</h4>
+                <p><strong>Se você não fez esta alteração:</strong></p>
+                <ul>
+                    <li>Entre em contato conosco imediatamente</li>
+                    <li>Sua conta pode ter sido comprometida</li>
+                    <li>Recomendamos alterar sua senha novamente</li>
+                </ul>
+                <p><strong>Dicas de segurança:</strong></p>
+                <ul>
+                    <li>Use senhas fortes e únicas</li>
+                    <li>Não compartilhe suas credenciais</li>
+                    <li>Faça logout ao sair do sistema</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>Este é um email automático, não responda a esta mensagem.</p>
+            <p>Para suporte técnico, entre em contato: <a href="mailto:{{supportEmail}}">{{supportEmail}}</a></p>
+            <p>© {{year}} SEMTAS - Secretaria Municipal do Trabalho e Assistência Social</p>
+        </div>
+    </div>
+</body>
+</html>

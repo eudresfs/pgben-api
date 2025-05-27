@@ -1,0 +1,27 @@
+{
+  "subject": "⚠️ Atividade Suspeita Detectada - SEMTAS",
+  "description": "Template para notificação de atividades suspeitas na conta",
+  "variables": {
+    "name": "Nome do usuário",
+    "activityType": "Tipo de atividade suspeita",
+    "severity": "Nível de severidade (high, medium, low)",
+    "detectedAt": "Data e hora da detecção",
+    "ipAddress": "Endereço IP de origem",
+    "location": "Localização geográfica estimada",
+    "userAgent": "Informações do navegador",
+    "action": "Ação específica realizada",
+    "description": "Descrição adicional (opcional)",
+    "changePasswordUrl": "URL para alterar senha",
+    "reviewActivityUrl": "URL para revisar atividades",
+    "supportEmail": "Email de suporte técnico",
+    "year": "Ano atual"
+  },
+  "severityLevels": {
+    "high": "Atividade de alto risco",
+    "medium": "Atividade de risco moderado",
+    "low": "Atividade de baixo risco"
+  },
+  "version": "1.0.0",
+  "author": "Tech Lead SEMTAS",
+  "lastModified": "2024-01-15"
+}

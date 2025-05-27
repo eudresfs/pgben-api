@@ -11,7 +11,7 @@ import { SolicitacaoService } from '../../solicitacao/services/solicitacao.servi
 import { UploadDocumentoDto } from '../dto/upload-documento.dto';
 import { MimeTypeValidator } from '../validators/mime-type.validator';
 import { MetadadosValidator } from '../validators/metadados.validator';
-import { CriptografiaService } from './criptografia.service';
+import { CriptografiaService } from '../../../shared/services/criptografia.service';
 import { ThumbnailService } from './thumbnail.service';
 import { StorageProviderFactory } from '../factories/storage-provider.factory';
 import { ALLOWED_MIME_TYPES } from '../constants/mime-types.constant';

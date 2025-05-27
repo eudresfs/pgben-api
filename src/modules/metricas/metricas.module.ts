@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ScheduleAdapterModule } from '../../shared/schedule/schedule-adapter.module';
 import { AuthModule } from '@/auth/auth.module'
+import { HealthCheckService } from '../../shared/services/health-check.service';
 
 // Controladores
 import { MetricasController } from './controllers/metricas.controller';
@@ -20,6 +21,7 @@ import { HealthService } from './services/health.service';
 import { MetricasColetaService } from './services/metricas-coleta.service';
 import { MetricaCalculoService } from './services/metrica-calculo.service';
 import { MetricasCacheService } from './services/metricas-cache.service';
+import { DashboardService } from './services/dashboard.service';
 import { MetricasAnomaliasService } from './services/metricas-anomalia.service';
 
 // Middleware
@@ -30,6 +32,11 @@ import { LogAuditoria } from '../auditoria/entities/log-auditoria.entity';
 import { MetricaDefinicao } from './entities/metrica-definicao.entity';
 import { MetricaSnapshot } from './entities/metrica-snapshot.entity';
 import { MetricaConfiguracao } from './entities/metrica-configuracao.entity';
+import { Solicitacao } from '../solicitacao/entities/solicitacao.entity';
+import { Recurso } from '../recurso/entities/recurso.entity';
+import { TipoBeneficio } from '../beneficio/entities/tipo-beneficio.entity';
+import { Unidade } from '../unidade/entities/unidade.entity';
+import { Usuario } from '../usuario/entities/usuario.entity';
 
 // Módulos externos
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';
@@ -65,7 +72,13 @@ import { PrometheusModule } from '@willsoto/nestjs-prometheus';
       LogAuditoria,
       MetricaDefinicao,
       MetricaSnapshot,
-      MetricaConfiguracao
+      MetricaConfiguracao,
+      // Entidades para dashboard
+      Solicitacao,
+      Recurso,
+      TipoBeneficio,
+      Unidade,
+      Usuario
     ]),
     
     // Importa o módulo compartilhado de autenticação
@@ -94,7 +107,11 @@ import { PrometheusModule } from '@willsoto/nestjs-prometheus';
     MetricasColetaService,
     MetricaCalculoService,
     MetricasCacheService,
-    MetricasAnomaliasService
+    MetricasAnomaliasService,
+    DashboardService,
+    
+    // Serviço de health check compartilhado
+    HealthCheckService
   ],
   
   // Serviços exportados para outros módulos

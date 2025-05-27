@@ -22,7 +22,8 @@ export class PermissionRepository extends Repository<Permission> {
    * @returns A permissão encontrada ou null
    */
   async findByName(name: string): Promise<Permission | null> {
-    return this.findOne({ where: { name } });
+    // Usar o campo 'nome' da entidade Permission, não 'name'
+    return this.findOne({ where: { nome: name } });
   }
 
   /**
@@ -33,8 +34,8 @@ export class PermissionRepository extends Repository<Permission> {
    * @returns Lista de permissões que correspondem ao padrão
    */
   async findByPattern(pattern: string): Promise<Permission[]> {
-    return this.createQueryBuilder('permission')
-      .where('permission.name LIKE :pattern', { pattern })
+    return this.createQueryBuilder('permissao')
+      .where('permissao.nome LIKE :pattern', { pattern })
       .getMany();
   }
 
@@ -44,7 +45,7 @@ export class PermissionRepository extends Repository<Permission> {
    * @returns Lista de permissões compostas
    */
   async findAllComposite(): Promise<Permission[]> {
-    return this.find({ where: { isComposite: true } });
+    return this.find({ where: { composta: true } });
   }
 
   /**
@@ -54,7 +55,7 @@ export class PermissionRepository extends Repository<Permission> {
    * @returns Lista de permissões filhas
    */
   async findChildrenByParentId(parentId: string): Promise<Permission[]> {
-    return this.find({ where: { parentId } });
+    return this.find({ where: { permissao_pai_id: parentId } });
   }
 
   /**
@@ -101,8 +102,8 @@ export class PermissionRepository extends Repository<Permission> {
     if (!ids || ids.length === 0) {
       return [];
     }
-    return this.createQueryBuilder('permission')
-      .where('permission.id IN (:...ids)', { ids })
+    return this.createQueryBuilder('permissao')
+      .where('permissao.id IN (:...ids)', { ids })
       .getMany();
   }
 }

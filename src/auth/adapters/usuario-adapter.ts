@@ -2,7 +2,7 @@ import { Expose } from 'class-transformer';
 import { Usuario } from '../../modules/usuario/entities/usuario.entity';
 import { RoleType } from '../../shared/constants/roles.constants';
 import { Permission } from '../entities/permission.entity';
-import { ScopeType } from '../entities/user-permission.entity';
+import { ScopeType, TipoEscopo } from '../entities/user-permission.entity';
 
 /**
  * DTO para saída de usuário compatível com o serviço de autenticação
@@ -79,7 +79,7 @@ export class UsuarioAdapter {
   static toUserAccessTokenClaims(
     usuario: Usuario,
     permissions?: Permission[],
-    permissionScopes?: Record<string, ScopeType | string>
+    permissionScopes?: Record<string, TipoEscopo | string>
   ): UserAccessTokenClaims {
     const claims: UserAccessTokenClaims = {
       id: usuario.id,

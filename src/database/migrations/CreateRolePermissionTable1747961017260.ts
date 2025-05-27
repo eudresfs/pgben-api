@@ -11,7 +11,7 @@ export class CreateRolePermissionTable1747961017260 implements MigrationInterfac
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.createTable(
       new Table({
-        name: 'role_permission',
+        name: 'role_permissao',
         columns: [
           {
             name: 'id',
@@ -24,7 +24,7 @@ export class CreateRolePermissionTable1747961017260 implements MigrationInterfac
             type: 'uuid',
           },
           {
-            name: 'permission_id',
+            name: 'permissao_id',
             type: 'uuid',
           },
           {
@@ -33,20 +33,20 @@ export class CreateRolePermissionTable1747961017260 implements MigrationInterfac
             default: 'now()',
           },
           {
-            name: 'created_by',
+            name: 'criado_por',
             type: 'uuid',
             isNullable: true,
           },
         ],
         foreignKeys: [
           {
-            columnNames: ['permission_id'],
-            referencedTableName: 'permission',
+            columnNames: ['permissao_id'],
+            referencedTableName: 'permissao',
             referencedColumnNames: ['id'],
             onDelete: 'CASCADE',
           },
           {
-            columnNames: ['created_by'],
+            columnNames: ['criado_por'],
             referencedTableName: 'usuario',
             referencedColumnNames: ['id'],
             onDelete: 'SET NULL',
@@ -57,32 +57,16 @@ export class CreateRolePermissionTable1747961017260 implements MigrationInterfac
     );
 
     await queryRunner.createIndex(
-      'role_permission',
+      'role_permissao',
       new TableIndex({
-        name: 'IDX_ROLE_PERMISSION_ROLE',
-        columnNames: ['role_id'],
-      })
-    );
-
-    await queryRunner.createIndex(
-      'role_permission',
-      new TableIndex({
-        name: 'IDX_ROLE_PERMISSION_PERMISSION',
-        columnNames: ['permission_id'],
-      })
-    );
-
-    await queryRunner.createIndex(
-      'role_permission',
-      new TableIndex({
-        name: 'IDX_ROLE_PERMISSION_UNIQUE',
-        columnNames: ['role_id', 'permission_id'],
+        name: 'IDX_ROLE_PERMISSAO_UNICO',
+        columnNames: ['role_id', 'permissao_id'],
         isUnique: true,
       })
     );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.dropTable('role_permission');
+    await queryRunner.dropTable('role_permissao');
   }
 }

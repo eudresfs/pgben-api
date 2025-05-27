@@ -24,7 +24,7 @@ import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { PermissionGuard } from '../guards/permission.guard';
 import { RequiresPermission } from '../decorators/requires-permission.decorator';
 import { PermissionService } from '../services/permission.service';
-import { ScopeType } from '../entities/user-permission.entity';
+import { TipoEscopo } from '../entities/user-permission.entity';
 import { AuthorizationService } from '../services/authorization.service';
 
 /**
@@ -44,7 +44,7 @@ class GrantPermissionDto {
   /**
    * Tipo de escopo
    */
-  scopeType: ScopeType;
+  scopeType: TipoEscopo;
 
   /**
    * ID do escopo (opcional)
@@ -74,7 +74,7 @@ class RevokePermissionDto {
   /**
    * Tipo de escopo
    */
-  scopeType: ScopeType;
+  scopeType: TipoEscopo;
 
   /**
    * ID do escopo (opcional)
@@ -99,7 +99,7 @@ class TestPermissionDto {
   /**
    * Tipo de escopo
    */
-  scopeType: ScopeType;
+  scopeType: TipoEscopo;
 
   /**
    * ID do escopo (opcional)
@@ -128,7 +128,7 @@ export class PermissionManagementController {
   @Get()
   @RequiresPermission({
     permissionName: 'usuario.permissao.listar',
-    scopeType: ScopeType.GLOBAL,
+    scopeType: TipoEscopo.GLOBAL,
   })
   @ApiOperation({ summary: 'Listar todas as permissões' })
   @ApiResponse({
@@ -145,7 +145,7 @@ export class PermissionManagementController {
   @Get('user/:userId')
   @RequiresPermission({
     permissionName: 'usuario.permissao.visualizar',
-    scopeType: ScopeType.GLOBAL,
+    scopeType: TipoEscopo.GLOBAL,
   })
   @ApiOperation({ summary: 'Listar permissões de um usuário' })
   @ApiParam({ name: 'userId', description: 'ID do usuário' })
@@ -163,7 +163,7 @@ export class PermissionManagementController {
   @Get('role/:roleId')
   @RequiresPermission({
     permissionName: 'usuario.permissao.visualizar',
-    scopeType: ScopeType.GLOBAL,
+    scopeType: TipoEscopo.GLOBAL,
   })
   @ApiOperation({ summary: 'Listar permissões de uma role' })
   @ApiParam({ name: 'roleId', description: 'ID da role' })
@@ -178,10 +178,10 @@ export class PermissionManagementController {
   /**
    * Atribui uma permissão a um usuário
    */
-  @Post('grant')
+  @Post('atribuir')
   @RequiresPermission({
     permissionName: 'usuario.permissao.atribuir',
-    scopeType: ScopeType.UNIT,
+    scopeType: TipoEscopo.UNIDADE,
   })
   @ApiOperation({ summary: 'Atribuir permissão a um usuário' })
   @ApiResponse({
@@ -212,10 +212,10 @@ export class PermissionManagementController {
   /**
    * Revoga uma permissão de um usuário
    */
-  @Post('revoke')
+  @Post('revogar')
   @RequiresPermission({
     permissionName: 'usuario.permissao.revogar',
-    scopeType: ScopeType.UNIT,
+    scopeType: TipoEscopo.UNIDADE,
   })
   @ApiOperation({ summary: 'Revogar permissão de um usuário' })
   @ApiResponse({
@@ -245,10 +245,10 @@ export class PermissionManagementController {
   /**
    * Testa se um usuário possui uma permissão específica
    */
-  @Post('test')
+  @Post('testar')
   @RequiresPermission({
     permissionName: 'usuario.permissao.visualizar',
-    scopeType: ScopeType.GLOBAL,
+    scopeType: TipoEscopo.GLOBAL,
   })
   @ApiOperation({ summary: 'Testar se um usuário possui uma permissão' })
   @ApiResponse({

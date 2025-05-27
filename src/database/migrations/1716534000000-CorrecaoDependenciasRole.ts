@@ -129,28 +129,38 @@ export class CorrecaoDependenciasRole1716534000000 implements MigrationInterface
         if (checkRoleTable && checkRoleTable.length > 0) {
             console.log('\n✅ Tabela role_table existe.');
             
-            // 5.1 Verificar se role_permission está corretamente configurada
-            const checkRolePermission = await queryRunner.query(`
-                SELECT 1 FROM information_schema.table_constraints
-                WHERE table_name = 'role_permission' 
-                AND constraint_name = 'FK_ROLE_PERMISSION_ROLE'
+            // 5.1 Verificar se a tabela role_permissao existe
+            const checkRolePermissionTable = await queryRunner.query(`
+                SELECT 1 FROM information_schema.tables 
+                WHERE table_name = 'role_permissao'
             `);
             
-            if (checkRolePermission && checkRolePermission.length === 0) {
-                console.log('\n⚠️ FK constraint não encontrada em role_permission. Adicionando...');
-                
-                // 5.2 Adicionar FK constraint se não existir
-                await queryRunner.query(`
-                    ALTER TABLE "role_permission"
-                    ADD CONSTRAINT "FK_ROLE_PERMISSION_ROLE"
-                    FOREIGN KEY ("role_id")
-                    REFERENCES "role_table" ("id")
-                    ON DELETE CASCADE
+            if (checkRolePermissionTable && checkRolePermissionTable.length > 0) {
+                // 5.2 Verificar se role_permissao está corretamente configurada
+                const checkRolePermission = await queryRunner.query(`
+                    SELECT 1 FROM information_schema.table_constraints
+                    WHERE table_name = 'role_permissao' 
+                    AND constraint_name = 'FK_ROLE_PERMISSAO_ROLE'
                 `);
                 
-                console.log('✅ FK constraint adicionada à tabela role_permission.');
+                if (checkRolePermission && checkRolePermission.length === 0) {
+                    console.log('\n⚠️ FK constraint não encontrada em role_permissao. Adicionando...');
+                    
+                    // 5.3 Adicionar FK constraint se não existir
+                    await queryRunner.query(`
+                        ALTER TABLE "role_permissao"
+                        ADD CONSTRAINT "FK_ROLE_PERMISSAO_ROLE"
+                        FOREIGN KEY ("role_id")
+                        REFERENCES "role_table" ("id")
+                        ON DELETE CASCADE
+                    `);
+                    
+                    console.log('✅ FK constraint adicionada à tabela role_permissao.');
+                } else {
+                    console.log('\n✅ FK constraint já existe em role_permissao.');
+                }
             } else {
-                console.log('\n✅ FK constraint já existe em role_permission.');
+                console.log('\n⚠️ Tabela role_permissao ainda não existe. A constraint será adicionada quando a tabela for criada.');
             }
         } else {
             console.log('\n⚠️ Tabela role_table não encontrada!');

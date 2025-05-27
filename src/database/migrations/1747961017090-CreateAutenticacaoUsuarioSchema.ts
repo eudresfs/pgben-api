@@ -107,7 +107,7 @@ export class CreateAutenticacaoUsuarioSchema1747961017090 implements MigrationIn
           "cpf" VARCHAR(14) UNIQUE,
           "telefone" VARCHAR(20),
           "matricula" VARCHAR(50) UNIQUE,
-          "role" "role" NOT NULL DEFAULT 'tecnico',
+          "role_id" UUID NOT NULL,
           "unidade_id" UUID,
           "setor_id" UUID,
           "status" VARCHAR(20) DEFAULT 'ativo',
@@ -156,7 +156,7 @@ export class CreateAutenticacaoUsuarioSchema1747961017090 implements MigrationIn
         DO $$
         BEGIN
           IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'IDX_USUARIO_ROLE') THEN
-            CREATE INDEX "IDX_USUARIO_ROLE" ON "usuario" ("role");
+            CREATE INDEX "IDX_USUARIO_ROLE" ON "usuario" ("role_id");
           END IF;
         END$$;
 
@@ -184,7 +184,7 @@ export class CreateAutenticacaoUsuarioSchema1747961017090 implements MigrationIn
       await queryRunner.query(`
         CREATE TABLE IF NOT EXISTS "role_permissao" (
           "id" UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-          "role" "role" NOT NULL,
+          "role_id" UUID NOT NULL,
           "permissao_id" UUID NOT NULL,
           "created_at" TIMESTAMP WITH TIME ZONE DEFAULT now(),
           "updated_at" TIMESTAMP WITH TIME ZONE DEFAULT now(),
@@ -194,7 +194,7 @@ export class CreateAutenticacaoUsuarioSchema1747961017090 implements MigrationIn
         );
 
         -- Índices para campos frequentemente consultados
-        CREATE INDEX IF NOT EXISTS "IDX_ROLE_PERMISSAO_ROLE" ON "role_permissao" ("role");
+        CREATE INDEX IF NOT EXISTS "IDX_ROLE_PERMISSAO_ROLE" ON "role_permissao" ("role_id");
         CREATE INDEX IF NOT EXISTS "IDX_ROLE_PERMISSAO_PERMISSAO" ON "role_permissao" ("permissao_id");
 
         -- Trigger para atualização automática do timestamp
@@ -253,7 +253,7 @@ export class CreateAutenticacaoUsuarioSchema1747961017090 implements MigrationIn
               "nome",
               "email",
               "senha_hash",
-              "role",
+              "role_id",
               "status",
               "primeiro_acesso"
             ) VALUES (
@@ -261,7 +261,7 @@ export class CreateAutenticacaoUsuarioSchema1747961017090 implements MigrationIn
               'Administrador do Sistema',
               'admin@natal.pgben.gov.br',
               '$2b$10$IObmeMKebVcMlY8BzrHf1ebGncJ.5SBnWhxVKgXAQULGPs568CiAO',
-              'admin',
+              '00000000-0000-0000-0000-000000000000',
               'ativo',
               false
             );

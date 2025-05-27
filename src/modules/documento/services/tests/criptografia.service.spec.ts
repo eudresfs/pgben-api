@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { CriptografiaService } from '../criptografia.service';
+import { CriptografiaService } from '../../../../shared/services/criptografia.service';
+import { ChaveMonitorService } from '../../../../shared/services/chave-monitor.service';
 import { ConfigService } from '@nestjs/config';
 import { Logger } from '@nestjs/common';
 import * as crypto from 'crypto';
@@ -56,6 +57,12 @@ describe('CriptografiaService', () => {
       return config[key] || defaultValue;
     }),
   };
+  
+  // Mock para o ChaveMonitorService
+  const mockChaveMonitorService = {
+    verificarIntegridade: jest.fn().mockReturnValue(true),
+    criarBackup: jest.fn(),
+  };
 
   // Mocks para objetos do crypto
   const mockCipher = {
@@ -99,6 +106,10 @@ describe('CriptografiaService', () => {
         {
           provide: ConfigService,
           useValue: mockConfigService,
+        },
+        {
+          provide: ChaveMonitorService,
+          useValue: mockChaveMonitorService,
         },
         {
           provide: Logger,

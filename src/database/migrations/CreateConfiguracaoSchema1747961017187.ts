@@ -18,42 +18,6 @@ export class CreateConfiguracaoSchema1747961017187 implements MigrationInterface
   public async up(queryRunner: QueryRunner): Promise<void> {
     console.log('Iniciando migration 1100000-CreateConfiguracaoSchema...');
     
-    // Criação dos tipos enumerados
-    await queryRunner.query(`
-      CREATE TYPE "integracao_tipo_enum" AS ENUM (
-        'email',
-        'sms',
-        'storage',
-        'pagamento',
-        'api_externa',
-        'autenticacao',
-        'blockchain',
-        'geolocation',
-        'backup',
-        'monitoramento'
-      );
-      
-      CREATE TYPE "tipo_configuracao_enum" AS ENUM (
-        'sistema',
-        'modulo',
-        'relatorio',
-        'notificacao',
-        'seguranca',
-        'integracao',
-        'interface',
-        'personalizada'
-      );
-      
-      CREATE TYPE "visibilidade_configuracao_enum" AS ENUM (
-        'publica',
-        'restrita',
-        'admin',
-        'sistema'
-      );
-    `);
-    
-    console.log('Tipos enumerados criados com sucesso.');
-    
     // Tabela de configurações de integração
     const configuracaoIntegracaoExists = await queryRunner.query(`
       SELECT EXISTS (

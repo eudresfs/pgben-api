@@ -20,29 +20,20 @@ export class MinioService implements OnModuleInit {
   private readonly bucketName: string;
   private readonly tempDir: string;
 
-  // Lista de tipos de documentos considerados sensíveis
-  private readonly documentosSensiveis = [
-    'CPF',
-    'RG',
-    'COMPROVANTE_RENDA',
-    'COMPROVANTE_RESIDENCIA',
-    'LAUDO_MEDICO',
-    'CERTIDAO_NASCIMENTO',
-    'CERTIDAO_CASAMENTO',
-    'CARTAO_NIS',
-    'CARTAO_BOLSA_FAMILIA',
-    'DECLARACAO_VULNERABILIDADE',
-  ];
+  // Removida lista de documentos sensíveis - agora usa a lista centralizada no CriptografiaService
 
   constructor(
     private configService: ConfigService,
     private criptografiaService: CriptografiaService,
   ) {
     // Configuração do cliente MinIO
+    const useSSL = this.configService.get('MINIO_USE_SSL') === 'true';
+    this.logger.log(`Configurando MinIO com SSL: ${useSSL}`);
+    
     this.minioClient = new Minio.Client({
       endPoint: this.configService.get<string>('MINIO_ENDPOINT', 'localhost'),
       port: this.configService.get<number>('MINIO_PORT', 9000),
-      useSSL: this.configService.get<boolean>('MINIO_USE_SSL', false),
+      useSSL: useSSL,
       accessKey: this.configService.get<string>(
         'MINIO_ACCESS_KEY',
         'minioadmin',
@@ -55,9 +46,10 @@ export class MinioService implements OnModuleInit {
 
     // Nome do bucket para armazenamento de documentos
     this.bucketName = this.configService.get<string>(
-      'MINIO_BUCKET',
-      'documents',
+      'MINIO_BUCKET_NAME',
+      'pgben-documentos',
     );
+    this.logger.log(`Usando bucket: ${this.bucketName}`);
 
     // Diretório temporário para arquivos em processamento
     this.tempDir = path.join(os.tmpdir(), 'pgben-temp');
@@ -90,7 +82,7 @@ export class MinioService implements OnModuleInit {
    * @returns true se o documento deve ser criptografado, false caso contrário
    */
   private documentoRequerCriptografia(tipoDocumento: string): boolean {
-    return this.documentosSensiveis.includes(tipoDocumento);
+    return this.criptografiaService.deveSerCriptografado(tipoDocumento);
   }
 
   /**

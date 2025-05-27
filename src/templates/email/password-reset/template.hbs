@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recuperação de Senha - SEMTAS</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e9ecef;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #6c757d;
+            font-size: 14px;
+        }
+        .content {
+            margin-bottom: 30px;
+        }
+        .greeting {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+        .message {
+            margin-bottom: 25px;
+            line-height: 1.8;
+        }
+        .reset-button {
+            display: inline-block;
+            background-color: #007bff;
+            color: #ffffff;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .reset-button:hover {
+            background-color: #0056b3;
+        }
+        .button-container {
+            text-align: center;
+            margin: 30px 0;
+        }
+        .security-info {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .security-info h4 {
+            color: #856404;
+            margin-top: 0;
+        }
+        .security-info p {
+            color: #856404;
+            margin-bottom: 0;
+        }
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e9ecef;
+            font-size: 12px;
+            color: #6c757d;
+            text-align: center;
+        }
+        .footer a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        .expiry-info {
+            background-color: #f8f9fa;
+            border-left: 4px solid #007bff;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .expiry-info strong {
+            color: #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">SEMTAS</div>
+            <div class="subtitle">Secretaria Municipal do Trabalho e Assistência Social</div>
+        </div>
+        
+        <div class="content">
+            <div class="greeting">Olá, {{name}}!</div>
+            
+            <div class="message">
+                <p>Recebemos uma solicitação para redefinir a senha da sua conta no Sistema de Gestão de Benefícios Eventuais da SEMTAS.</p>
+                
+                <p>Se você fez esta solicitação, clique no botão abaixo para criar uma nova senha:</p>
+            </div>
+            
+            <div class="button-container">
+                <a href="{{resetUrl}}" class="reset-button">Redefinir Senha</a>
+            </div>
+            
+            <div class="expiry-info">
+                <p><strong>⏰ Importante:</strong> Este link é válido por {{expiresInMinutes}} minutos e expira em {{expiresAt}}.</p>
+            </div>
+            
+            <div class="security-info">
+                <h4>🔒 Informações de Segurança</h4>
+                <p><strong>Se você não solicitou esta redefinição:</strong></p>
+                <ul>
+                    <li>Ignore este email - sua senha permanecerá inalterada</li>
+                    <li>Considere alterar sua senha por precaução</li>
+                    <li>Entre em contato conosco se suspeitar de atividade não autorizada</li>
+                </ul>
+            </div>
+            
+            <div class="message">
+                <p><strong>Não consegue clicar no botão?</strong> Copie e cole o link abaixo no seu navegador:</p>
+                <p style="word-break: break-all; background-color: #f8f9fa; padding: 10px; border-radius: 3px; font-family: monospace; font-size: 12px;">{{resetUrl}}</p>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>Este é um email automático, não responda a esta mensagem.</p>
+            <p>Para suporte técnico, entre em contato: <a href="mailto:{{supportEmail}}">{{supportEmail}}</a></p>
+            <p>© {{year}} SEMTAS - Secretaria Municipal do Trabalho e Assistência Social</p>
+        </div>
+    </div>
+</body>
+</html>

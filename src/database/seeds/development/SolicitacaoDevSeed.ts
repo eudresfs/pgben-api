@@ -219,6 +219,7 @@ export class SolicitacaoDevSeed {
     solicitacaoId: string,
     tipoBeneficio: any,
   ): Promise<void> {
+    // Método mantém o nome original para compatibilidade, mas trabalha com a entidade DadosSolicitacaoBeneficio
     // Inserir dados específicos do benefício
     await dataSource.query(
       `INSERT INTO dados_beneficios (

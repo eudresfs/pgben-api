@@ -1,5 +1,5 @@
 import { SetMetadata } from '@nestjs/common';
-import { ScopeType } from '../entities/user-permission.entity';
+import { TipoEscopo } from '../entities/user-permission.entity';
 
 /**
  * Interface para definição de requisitos de permissão.
@@ -13,7 +13,7 @@ export interface PermissionRequirement {
   /**
    * Tipo de escopo (opcional, padrão é GLOBAL)
    */
-  scopeType?: ScopeType;
+  scopeType?: TipoEscopo;
   
   /**
    * Expressão para obter o ID do escopo a partir dos parâmetros da requisição
@@ -46,7 +46,7 @@ export const PERMISSION_REQUIREMENTS_KEY = 'permission_requirements';
  * // Requer permissão para visualizar um cidadão específico na unidade
  * @RequiresPermission({ 
  *   permissionName: 'cidadao.visualizar',
- *   scopeType: ScopeType.UNIT,
+ *   scopeType: TipoEscopo.UNIDADE, (GLOBAL, UNIDADE, PROPRIO)
  *   scopeIdExpression: 'params.unidadeId'
  * })
  */

@@ -22,7 +22,7 @@ export class RolePermissionRepository extends Repository<RolePermission> {
    * @returns Lista de mapeamentos encontrados
    */
   async findByRoleId(roleId: string): Promise<RolePermission[]> {
-    return this.find({ where: { roleId } });
+    return this.find({ where: { role_id: roleId } });
   }
 
   /**
@@ -32,7 +32,7 @@ export class RolePermissionRepository extends Repository<RolePermission> {
    * @returns Lista de mapeamentos encontrados
    */
   async findByPermissionId(permissionId: string): Promise<RolePermission[]> {
-    return this.find({ where: { permissionId } });
+    return this.find({ where: { permissao_id: permissionId } });
   }
 
   /**
@@ -43,7 +43,7 @@ export class RolePermissionRepository extends Repository<RolePermission> {
    * @returns O mapeamento encontrado ou null
    */
   async findByRoleAndPermission(roleId: string, permissionId: string): Promise<RolePermission | null> {
-    return this.findOne({ where: { roleId, permissionId } });
+    return this.findOne({ where: { role_id: roleId, permissao_id: permissionId } });
   }
 
   /**
@@ -53,9 +53,9 @@ export class RolePermissionRepository extends Repository<RolePermission> {
    * @returns Lista de mapeamentos encontrados com permissões relacionadas
    */
   async findByRoleIdWithPermissions(roleId: string): Promise<RolePermission[]> {
-    return this.createQueryBuilder('rolePermission')
-      .leftJoinAndSelect('rolePermission.permission', 'permission')
-      .where('rolePermission.roleId = :roleId', { roleId })
+    return this.createQueryBuilder('role_permissao')
+      .leftJoinAndSelect('role_permissao.permissao', 'permissao')
+      .where('role_permissao.role_id = :roleId', { roleId })
       .getMany();
   }
 
@@ -111,10 +111,10 @@ export class RolePermissionRepository extends Repository<RolePermission> {
    */
   async findPermissionsByUserRoles(userId: string): Promise<Permission[]> {
     // Busca as permissões associadas às roles do usuário
-    const permissions = await this.createQueryBuilder('rolePermission')
-      .innerJoin('usuario_role', 'ur', 'ur.role_id = rolePermission.role_id')
-      .innerJoinAndSelect('rolePermission.permission', 'permission')
-      .where('ur.user_id = :userId', { userId })
+    const permissions = await this.createQueryBuilder('role_permissao')
+      .innerJoin('usuario_role', 'ur', 'ur.role_id = role_permissao.role_id')
+      .innerJoinAndSelect('role_permissao.permissao', 'permissao')
+      .where('ur.usuario_id = :userId', { userId })
       .getMany();
 
     // Retorna apenas as permissões

@@ -3,6 +3,9 @@ import {
   NotFoundException,
   BadRequestException,
   UnauthorizedException,
+  ConflictException,
+  InternalServerErrorException,
+  Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, ILike, Connection } from 'typeorm';
@@ -12,6 +15,11 @@ import { Pendencia, StatusPendencia } from '../entities/pendencia.entity';
 import { CreateSolicitacaoDto } from '../dto/create-solicitacao.dto';
 import { UpdateSolicitacaoDto } from '../dto/update-solicitacao.dto';
 import { AvaliarSolicitacaoDto } from '../dto/avaliar-solicitacao.dto';
+import { VincularProcessoJudicialDto } from '../dto/vincular-processo-judicial.dto';
+import { VincularDeterminacaoJudicialDto } from '../dto/vincular-determinacao-judicial.dto';
+import { ProcessoJudicial } from '../../judicial/entities/processo-judicial.entity';
+import { ProcessoJudicialRepository } from '../../judicial/repositories/processo-judicial.repository';
+import { DeterminacaoJudicial } from '../../judicial/entities/determinacao-judicial.entity';
 import { ROLES } from '../../../shared/constants/roles.constants';
 
 /**
@@ -21,6 +29,8 @@ import { ROLES } from '../../../shared/constants/roles.constants';
  */
 @Injectable()
 export class SolicitacaoService {
+  private readonly logger = new Logger(SolicitacaoService.name);
+
   constructor(
     @InjectRepository(Solicitacao)
     private solicitacaoRepository: Repository<Solicitacao>,
@@ -30,6 +40,11 @@ export class SolicitacaoService {
 
     @InjectRepository(Pendencia)
     private pendenciaRepository: Repository<Pendencia>,
+
+    private processoJudicialRepository: ProcessoJudicialRepository,
+
+    @InjectRepository(DeterminacaoJudicial)
+    private determinacaoJudicialRepository: Repository<DeterminacaoJudicial>,
 
     private connection: Connection,
   ) {}
@@ -492,6 +507,326 @@ export class SolicitacaoService {
     return this.pendenciaRepository.find({
       where: { solicitacao_id: solicitacaoId },
       order: { created_at: 'DESC' },
+    });
+  }
+
+  /**
+   * Vincula um processo judicial a uma solicitação
+   * @param solicitacaoId ID da solicitação
+   * @param vincularDto Dados do vínculo
+   * @param user Usuário que está realizando a operação
+   * @returns Solicitação atualizada
+   */
+  async vincularProcessoJudicial(
+    solicitacaoId: string,
+    vincularDto: VincularProcessoJudicialDto,
+    user: any,
+  ): Promise<Solicitacao> {
+    return this.connection.transaction(async (manager) => {
+      try {
+        // Verificar se a solicitação existe
+        const solicitacao = await this.findById(solicitacaoId);
+
+        // Verificar se o usuário tem permissão
+        if (![ROLES.ADMIN, ROLES.GESTOR, ROLES.TECNICO].includes(user.role)) {
+          throw new UnauthorizedException(
+            'Você não tem permissão para vincular processos judiciais',
+          );
+        }
+
+        // Verificar se o processo judicial existe
+        const processoJudicial = await this.processoJudicialRepository.findOne({
+          where: { id: vincularDto.processo_judicial_id },
+        });
+
+        if (!processoJudicial) {
+          throw new NotFoundException('Processo judicial não encontrado');
+        }
+
+        // Verificar se a solicitação já tem este processo vinculado
+        if (solicitacao.processo_judicial_id === vincularDto.processo_judicial_id) {
+          throw new ConflictException('Este processo judicial já está vinculado à solicitação');
+        }
+
+        // Atualizar a solicitação
+        solicitacao.processo_judicial_id = vincularDto.processo_judicial_id;
+        
+        // Registrar no histórico
+        const historicoEntry = this.historicoRepository.create({
+          solicitacao_id: solicitacaoId,
+          status_anterior: solicitacao.status,
+          status_atual: solicitacao.status,
+          usuario_id: user.id,
+          observacao: vincularDto.observacao || 'Processo judicial vinculado',
+          dados_alterados: {
+            processo_judicial: {
+              id: vincularDto.processo_judicial_id,
+              numero: processoJudicial.numero_processo,
+            },
+          },
+          ip_usuario: user.ip || '0.0.0.0',
+        });
+
+        // Salvar as alterações
+        await manager.save(solicitacao);
+        await manager.save(historicoEntry);
+
+        return this.findById(solicitacaoId);
+      } catch (error) {
+        if (
+          error instanceof NotFoundException ||
+          error instanceof UnauthorizedException ||
+          error instanceof ConflictException
+        ) {
+          throw error;
+        }
+
+        this.logger.error(
+          `Erro ao vincular processo judicial: ${error.message}`,
+          error.stack,
+        );
+        throw new InternalServerErrorException(
+          'Erro ao vincular processo judicial à solicitação',
+        );
+      }
+    });
+  }
+
+  /**
+   * Desvincula um processo judicial de uma solicitação
+   * @param solicitacaoId ID da solicitação
+   * @param user Usuário que está realizando a operação
+   * @returns Solicitação atualizada
+   */
+  async desvincularProcessoJudicial(
+    solicitacaoId: string,
+    user: any,
+  ): Promise<Solicitacao> {
+    return this.connection.transaction(async (manager) => {
+      try {
+        // Verificar se a solicitação existe
+        const solicitacao = await this.findById(solicitacaoId);
+
+        // Verificar se o usuário tem permissão
+        if (![ROLES.ADMIN, ROLES.GESTOR].includes(user.role)) {
+          throw new UnauthorizedException(
+            'Você não tem permissão para desvincular processos judiciais',
+          );
+        }
+
+        // Verificar se a solicitação tem processo vinculado
+        if (!solicitacao.processo_judicial_id) {
+          throw new BadRequestException('Esta solicitação não possui processo judicial vinculado');
+        }
+
+        // Guardar informação do processo para o histórico
+        const processoJudicialId = solicitacao.processo_judicial_id;
+        const processoJudicial = await this.processoJudicialRepository.findOne({
+          where: { id: processoJudicialId },
+        });
+
+        // Atualizar a solicitação
+        solicitacao.processo_judicial_id = null as unknown as string;
+        
+        // Registrar no histórico
+        const historicoEntry = this.historicoRepository.create({
+          solicitacao_id: solicitacaoId,
+          status_anterior: solicitacao.status,
+          status_atual: solicitacao.status,
+          usuario_id: user.id,
+          observacao: 'Processo judicial desvinculado',
+          dados_alterados: {
+            processo_judicial: {
+              id: processoJudicialId,
+              numero: processoJudicial ? processoJudicial.numero_processo : 'Desconhecido',
+              acao: 'removido',
+            },
+          },
+          ip_usuario: user.ip || '0.0.0.0',
+        });
+
+        // Salvar as alterações
+        await manager.save(solicitacao);
+        await manager.save(historicoEntry);
+
+        return this.findById(solicitacaoId);
+      } catch (error) {
+        if (
+          error instanceof NotFoundException ||
+          error instanceof UnauthorizedException ||
+          error instanceof BadRequestException
+        ) {
+          throw error;
+        }
+
+        this.logger.error(
+          `Erro ao desvincular processo judicial: ${error.message}`,
+          error.stack,
+        );
+        throw new InternalServerErrorException(
+          'Erro ao desvincular processo judicial da solicitação',
+        );
+      }
+    });
+  }
+
+  /**
+   * Vincula uma determinação judicial a uma solicitação
+   * @param solicitacaoId ID da solicitação
+   * @param vincularDto Dados do vínculo
+   * @param user Usuário que está realizando a operação
+   * @returns Solicitação atualizada
+   */
+  async vincularDeterminacaoJudicial(
+    solicitacaoId: string,
+    vincularDto: VincularDeterminacaoJudicialDto,
+    user: any,
+  ): Promise<Solicitacao> {
+    return this.connection.transaction(async (manager) => {
+      try {
+        // Verificar se a solicitação existe
+        const solicitacao = await this.findById(solicitacaoId);
+
+        // Verificar se o usuário tem permissão
+        if (![ROLES.ADMIN, ROLES.GESTOR, ROLES.TECNICO].includes(user.role)) {
+          throw new UnauthorizedException(
+            'Você não tem permissão para vincular determinações judiciais',
+          );
+        }
+
+        // Verificar se a determinação judicial existe
+        const determinacaoJudicial = await this.determinacaoJudicialRepository.findOne({
+          where: { id: vincularDto.determinacao_judicial_id },
+        });
+
+        if (!determinacaoJudicial) {
+          throw new NotFoundException('Determinação judicial não encontrada');
+        }
+
+        // Verificar se a solicitação já tem esta determinação vinculada
+        if (solicitacao.determinacao_judicial_id === vincularDto.determinacao_judicial_id) {
+          throw new ConflictException('Esta determinação judicial já está vinculada à solicitação');
+        }
+
+        // Atualizar a solicitação
+        solicitacao.determinacao_judicial_id = vincularDto.determinacao_judicial_id;
+        
+        // Registrar no histórico
+        const historicoEntry = this.historicoRepository.create({
+          solicitacao_id: solicitacaoId,
+          status_anterior: solicitacao.status,
+          status_atual: solicitacao.status,
+          usuario_id: user.id,
+          observacao: vincularDto.observacao || 'Determinação judicial vinculada',
+          dados_alterados: {
+            determinacao_judicial: {
+              id: vincularDto.determinacao_judicial_id,
+              numero: determinacaoJudicial.numero_determinacao,
+            },
+          },
+          ip_usuario: user.ip || '0.0.0.0',
+        });
+
+        // Salvar as alterações
+        await manager.save(solicitacao);
+        await manager.save(historicoEntry);
+
+        return this.findById(solicitacaoId);
+      } catch (error) {
+        if (
+          error instanceof NotFoundException ||
+          error instanceof UnauthorizedException ||
+          error instanceof ConflictException
+        ) {
+          throw error;
+        }
+
+        this.logger.error(
+          `Erro ao vincular determinação judicial: ${error.message}`,
+          error.stack,
+        );
+        throw new InternalServerErrorException(
+          'Erro ao vincular determinação judicial à solicitação',
+        );
+      }
+    });
+  }
+
+  /**
+   * Desvincula uma determinação judicial de uma solicitação
+   * @param solicitacaoId ID da solicitação
+   * @param user Usuário que está realizando a operação
+   * @returns Solicitação atualizada
+   */
+  async desvincularDeterminacaoJudicial(
+    solicitacaoId: string,
+    user: any,
+  ): Promise<Solicitacao> {
+    return this.connection.transaction(async (manager) => {
+      try {
+        // Verificar se a solicitação existe
+        const solicitacao = await this.findById(solicitacaoId);
+
+        // Verificar se o usuário tem permissão
+        if (![ROLES.ADMIN, ROLES.GESTOR].includes(user.role)) {
+          throw new UnauthorizedException(
+            'Você não tem permissão para desvincular determinações judiciais',
+          );
+        }
+
+        // Verificar se a solicitação tem determinação vinculada
+        if (!solicitacao.determinacao_judicial_id) {
+          throw new BadRequestException('Esta solicitação não possui determinação judicial vinculada');
+        }
+
+        // Guardar informação da determinação para o histórico
+        const determinacaoJudicialId = solicitacao.determinacao_judicial_id;
+        const determinacaoJudicial = await this.determinacaoJudicialRepository.findOne({
+          where: { id: determinacaoJudicialId },
+        });
+
+        // Atualizar a solicitação
+        solicitacao.determinacao_judicial_id = null as unknown as string;
+        
+        // Registrar no histórico
+        const historicoEntry = this.historicoRepository.create({
+          solicitacao_id: solicitacaoId,
+          status_anterior: solicitacao.status,
+          status_atual: solicitacao.status,
+          usuario_id: user.id,
+          observacao: 'Determinação judicial desvinculada',
+          dados_alterados: {
+            determinacao_judicial: {
+              id: determinacaoJudicialId,
+              numero: determinacaoJudicial ? determinacaoJudicial.numero_determinacao : 'Desconhecida',
+              acao: 'removida',
+            },
+          },
+          ip_usuario: user.ip || '0.0.0.0',
+        });
+
+        // Salvar as alterações
+        await manager.save(solicitacao);
+        await manager.save(historicoEntry);
+
+        return this.findById(solicitacaoId);
+      } catch (error) {
+        if (
+          error instanceof NotFoundException ||
+          error instanceof UnauthorizedException ||
+          error instanceof BadRequestException
+        ) {
+          throw error;
+        }
+
+        this.logger.error(
+          `Erro ao desvincular determinação judicial: ${error.message}`,
+          error.stack,
+        );
+        throw new InternalServerErrorException(
+          'Erro ao desvincular determinação judicial da solicitação',
+        );
+      }
     });
   }
 }

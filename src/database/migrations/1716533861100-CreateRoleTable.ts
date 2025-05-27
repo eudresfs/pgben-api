@@ -75,12 +75,12 @@ export class CreateRoleTable1716533861100 implements MigrationInterface {
                         default: true,
                     },
                     {
-                        name: 'created_at',
+                        name: 'criado_em',
                         type: 'timestamp',
                         default: 'now()',
                     },
                     {
-                        name: 'updated_at',
+                        name: 'atualizado_em',
                         type: 'timestamp',
                         default: 'now()',
                     },
@@ -101,15 +101,16 @@ export class CreateRoleTable1716533861100 implements MigrationInterface {
 
         // 4. Inserir os valores padrão na tabela
         await queryRunner.query(`
-            INSERT INTO "role_table" (nome, descricao)
+            INSERT INTO "role_table" (id, nome, descricao)
             VALUES 
-            ('ADMIN', 'Administrador do sistema'),
-            ('GESTOR', 'Gestor de unidade'),
-            ('COORDENADOR', 'Coordenador de unidade'),
-            ('AUDITOR', 'Responsável por auditoria do sistema'),
-            ('ASSISTENTE_SOCIAL', 'Assistente social'),
-            ('TECNICO', 'Técnico responsável por análises'),
-            ('CIDADAO', 'Beneficiário ou requerente')
+            ('00000000-0000-0000-0000-000000000000', 'SUPER_ADMIN', 'Super Administrador do sistema com acesso total'),
+            (uuid_generate_v4(), 'ADMIN', 'Administrador do sistema'),
+            (uuid_generate_v4(), 'GESTOR', 'Gestor de departamento ou setor'),
+            (uuid_generate_v4(), 'COORDENADOR', 'Coordenador de equipe'),
+            (uuid_generate_v4(), 'TECNICO', 'Técnico operacional'),
+            (uuid_generate_v4(), 'ASSISTENTE_SOCIAL', 'Profissional de assistência social'),
+            (uuid_generate_v4(), 'AUDITOR', 'Auditor do sistema'),
+            (uuid_generate_v4(), 'CIDADAO', 'Cidadão com acesso limitado')
         `);
         
         console.log('\n✅ Tabela role_table criada com sucesso');
@@ -157,32 +158,32 @@ export class CreateRoleTable1716533861100 implements MigrationInterface {
             console.log('\n✅ Dados migrados da coluna enum para a nova tabela');
         }
 
-        // 6. Atualizar a tabela role_permission para usar a FK correta
+        // 6. Atualizar a tabela role_permissao para usar a FK correta
         const checkRolePermission = await queryRunner.query(`
             SELECT 1 FROM information_schema.tables 
-            WHERE table_name = 'role_permission'
+            WHERE table_name = 'role_permissao'
         `);
 
         if (checkRolePermission && checkRolePermission.length > 0) {
-            console.log('\n🔄 Atualizando tabela role_permission...');
+            console.log('\n🔄 Atualizando tabela role_permissao...');
             
             // 6.1 Verificar se já existe a constraint
             const checkConstraint = await queryRunner.query(`
                 SELECT 1 FROM information_schema.table_constraints
-                WHERE table_name = 'role_permission' AND constraint_name = 'FK_ROLE_PERMISSION_ROLE'
+                WHERE table_name = 'role_permissao' AND constraint_name = 'FK_ROLE_PERMISSAO_ROLE'
             `);
             
             if (checkConstraint && checkConstraint.length === 0) {
                 // 6.2 Adicionar a FK constraint
                 await queryRunner.query(`
-                    ALTER TABLE "role_permission"
-                    ADD CONSTRAINT "FK_ROLE_PERMISSION_ROLE"
+                    ALTER TABLE "role_permissao"
+                    ADD CONSTRAINT "FK_ROLE_PERMISSAO_ROLE"
                     FOREIGN KEY ("role_id")
                     REFERENCES "role_table" ("id")
                     ON DELETE CASCADE
                 `);
                 
-                console.log('\n✅ Constraint adicionada à tabela role_permission');
+                console.log('\n✅ Constraint adicionada à tabela role_permissao');
             }
         }
 
@@ -271,9 +272,9 @@ export class CreateRoleTable1716533861100 implements MigrationInterface {
     public async down(queryRunner: QueryRunner): Promise<void> {
         console.log('\n🔄 Revertendo migration...');
         
-        // 1. Remover a FK constraint da tabela role_permission
+        // 1. Remover a FK constraint da tabela role_permissao
         await queryRunner.query(`
-            ALTER TABLE "role_permission" DROP CONSTRAINT IF EXISTS "FK_ROLE_PERMISSION_ROLE"
+            ALTER TABLE "role_permissao" DROP CONSTRAINT IF EXISTS "FK_ROLE_PERMISSAO_ROLE"
         `);
 
         // 2. Verificar se a tabela usuario tem a coluna role_id
@@ -313,6 +314,7 @@ export class CreateRoleTable1716533861100 implements MigrationInterface {
             // 7. Recriar o enum 'role'
             await queryRunner.query(`
                 CREATE TYPE "role" AS ENUM (
+                    'SUPER_ADMIN',
                     'ADMIN', 
                     'GESTOR', 
                     'COORDENADOR', 

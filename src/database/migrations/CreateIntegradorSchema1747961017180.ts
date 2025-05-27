@@ -1,356 +1,469 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * Migration para criar o schema relacionado ao módulo de integradores
+ * Migration unificada para criar o schema relacionado às métricas
  * 
- * Esta migration cria as tabelas, enumerações e restrições para o módulo de integradores,
- * permitindo que sistemas externos se conectem ao PGBen através de APIs seguras.
+ * Esta migration cria as tabelas e restrições para o módulo de métricas,
+ * incluindo estruturas para monitoramento, alertas, registro de métricas do sistema,
+ * definições de métricas, configurações e valores históricos.
+ * 
+ * Os enums necessários são criados na migration CreateAllEnums
  * 
  * @author Engenheiro de Dados
  * @date 19/05/2025
  */
-export class CreateIntegradorSchema1747961017180 implements MigrationInterface {
-  name = 'CreateIntegradorSchema1747961017180';
+export class CreateMetricasSchema1747961017159 implements MigrationInterface {
+  name = 'CreateMetricasSchema1747961017159';
 
   /**
-   * Cria as estruturas relacionadas aos integradores
+   * Cria as estruturas relacionadas às métricas
    */
   public async up(queryRunner: QueryRunner): Promise<void> {
-    console.log('Iniciando migration 1090000-CreateIntegradorSchema...');
+    console.log('Iniciando migration CreateMetricasSchema...');
     
-    // Criação dos tipos enumerados
+    // Tabela de definições de métricas
     await queryRunner.query(`
-      CREATE TYPE "escopo_acesso_enum" AS ENUM (
-        'leitura',
-        'escrita',
-        'admin'
-      );
-      
-      CREATE TYPE "tipo_evento_integracao_enum" AS ENUM (
-        'acesso',
-        'operacao',
-        'erro',
-        'seguranca'
+      CREATE TABLE IF NOT EXISTS "metrica_definicao" (
+        "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
+        "codigo" character varying(100) NOT NULL,
+        "nome" character varying(200) NOT NULL,
+        "descricao" text,
+        "tipo" "tipo_metrica_enum" NOT NULL DEFAULT 'GAUGE',
+        "categoria" "categoria_metrica_enum" NOT NULL DEFAULT 'NEGOCIO',
+        "unidade" character varying(50),
+        "prefixo" character varying(10),
+        "sufixo" character varying(10),
+        "casas_decimais" integer DEFAULT 2,
+        "sql_consulta" text,
+        "formula_calculo" text,
+        "fonte_dados" character varying(100),
+        "agregacao_temporal" character varying(50),
+        "granularidade" character varying(50),
+        "metricas_dependentes" jsonb,
+        "ativa" boolean NOT NULL DEFAULT true,
+        "parametros_especificos" jsonb,
+        "tags" text[],
+        "versao" integer NOT NULL DEFAULT 1,
+        "ultima_coleta" timestamp without time zone,
+        "calculo_tempo_real" boolean NOT NULL DEFAULT false,
+        "criado_por" uuid,
+        "atualizado_por" uuid,
+        "created_at" timestamp without time zone NOT NULL DEFAULT now(),
+        "updated_at" timestamp without time zone NOT NULL DEFAULT now(),
+        CONSTRAINT "UQ_metrica_definicao_codigo" UNIQUE ("codigo"),
+        CONSTRAINT "PK_metrica_definicao" PRIMARY KEY ("id")
       );
     `);
     
-    console.log('Tipos enumerados criados com sucesso.');
+    // Índices para metrica_definicao
+    await queryRunner.query(`
+      CREATE INDEX IF NOT EXISTS "IDX_metrica_definicao_codigo" ON "metrica_definicao" ("codigo");
+      CREATE INDEX IF NOT EXISTS "IDX_metrica_definicao_tipo" ON "metrica_definicao" ("tipo");
+      CREATE INDEX IF NOT EXISTS "IDX_metrica_definicao_categoria" ON "metrica_definicao" ("categoria");
+      CREATE INDEX IF NOT EXISTS "IDX_metrica_definicao_ativa" ON "metrica_definicao" ("ativa");
+      CREATE INDEX IF NOT EXISTS "IDX_metrica_definicao_tags" ON "metrica_definicao" USING GIN ("tags");
+    `);
     
-    // Tabela principal de integradores
-    const integradoresExists = await queryRunner.query(`
-      SELECT EXISTS (
-        SELECT 1 FROM information_schema.tables WHERE table_name = 'integradores'
+    // Trigger para metrica_definicao
+    await queryRunner.query(`
+      DROP TRIGGER IF EXISTS trigger_metrica_definicao_update_timestamp ON "metrica_definicao";
+      CREATE TRIGGER trigger_metrica_definicao_update_timestamp
+        BEFORE UPDATE ON "metrica_definicao"
+        FOR EACH ROW
+        EXECUTE PROCEDURE update_timestamp();
+    `);
+    
+    console.log('Tabela de definições de métricas criada com sucesso.');
+    
+    // Tabela de configuração de métricas
+    await queryRunner.query(`
+      CREATE TABLE IF NOT EXISTS "metrica_configuracao" (
+        "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
+        "metrica_id" uuid NOT NULL,
+        "coleta_automatica" boolean NOT NULL DEFAULT true,
+        "tipo_agendamento" "tipo_agendamento_enum" NOT NULL DEFAULT 'UNICO',
+        "intervalo_segundos" integer DEFAULT 3600,
+        "expressao_cron" character varying(100),
+        "nome_evento" character varying(100),
+        "max_snapshots" integer DEFAULT 1000,
+        "periodo_retencao_dias" integer DEFAULT 365,
+        "estrategia_amostragem" "estrategia_amostragem_enum" DEFAULT 'COMPLETA',
+        "tamanho_amostra" integer,
+        "cacheamento_habilitado" boolean DEFAULT false,
+        "cache_ttl" integer DEFAULT 300,
+        "alertas" jsonb,
+        "visualizacao" jsonb,
+        "exibir_dashboard" boolean DEFAULT false,
+        "prioridade_dashboard" integer DEFAULT 0,
+        "criado_por" uuid,
+        "atualizado_por" uuid,
+        "created_at" timestamp without time zone NOT NULL DEFAULT now(),
+        "updated_at" timestamp without time zone NOT NULL DEFAULT now(),
+        CONSTRAINT "UQ_metrica_configuracao_metrica" UNIQUE ("metrica_id"),
+        CONSTRAINT "PK_metrica_configuracao" PRIMARY KEY ("id")
       );
     `);
     
-    if (!integradoresExists[0].exists) {
-      await queryRunner.query(`
-        CREATE TABLE "integradores" (
+    // Índices para metrica_configuracao
+    await queryRunner.query(`
+      CREATE INDEX IF NOT EXISTS "IDX_metrica_configuracao_metrica_id" ON "metrica_configuracao" ("metrica_id");
+      CREATE INDEX IF NOT EXISTS "IDX_metrica_configuracao_coleta_automatica" ON "metrica_configuracao" ("coleta_automatica");
+      CREATE INDEX IF NOT EXISTS "IDX_metrica_configuracao_tipo_agendamento" ON "metrica_configuracao" ("tipo_agendamento");
+    `);
+    
+    // Trigger para metrica_configuracao
+    await queryRunner.query(`
+      DROP TRIGGER IF EXISTS trigger_metrica_configuracao_update_timestamp ON "metrica_configuracao";
+      CREATE TRIGGER trigger_metrica_configuracao_update_timestamp
+        BEFORE UPDATE ON "metrica_configuracao"
+        FOR EACH ROW
+        EXECUTE PROCEDURE update_timestamp();
+    `);
+    
+    console.log('Tabela de configuração de métricas criada com sucesso.');
+    
+    // Tabela de valores de métricas
+    await queryRunner.query(`
+      CREATE TABLE IF NOT EXISTS "metrica_valor" (
+        "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
+        "metrica_id" uuid NOT NULL,
+        "timestamp" timestamp without time zone NOT NULL DEFAULT now(),
+        "valor" numeric(20,5),
+        "valor_texto" text,
+        "valor_json" jsonb,
+        "parametros_coleta" jsonb,
+        "created_at" timestamp without time zone NOT NULL DEFAULT now(),
+        CONSTRAINT "PK_metrica_valor" PRIMARY KEY ("id")
+      );
+    `);
+    
+    // Índices para metrica_valor
+    await queryRunner.query(`
+      CREATE INDEX IF NOT EXISTS "IDX_metrica_valor_metrica_id" ON "metrica_valor" ("metrica_id");
+      CREATE INDEX IF NOT EXISTS "IDX_metrica_valor_timestamp" ON "metrica_valor" ("timestamp");
+      CREATE INDEX IF NOT EXISTS "IDX_metrica_valor_metrica_timestamp" ON "metrica_valor" ("metrica_id", "timestamp");
+    `);
+    
+    console.log('Tabela de valores de métricas criada com sucesso.');
+    
+    // Tabela de registros de métricas (legacy - para compatibilidade)
+    await queryRunner.query(`
+      CREATE TABLE IF NOT EXISTS "registros_metricas" (
+        "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
+        "metrica_id" uuid NOT NULL,
+        "valor" numeric(15,2) NOT NULL,
+        "timestamp" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "detalhes" jsonb,
+        "ip_origem" character varying(45),
+        "usuario_id" uuid,
+        "endpoint" character varying(255),
+        CONSTRAINT "PK_registros_metricas" PRIMARY KEY ("id")
+      );
+    `);
+    
+    // Índices para registros_metricas
+    await queryRunner.query(`
+      CREATE INDEX IF NOT EXISTS "IDX_registros_metricas_metrica_id" ON "registros_metricas" ("metrica_id");
+      CREATE INDEX IF NOT EXISTS "IDX_registros_metricas_timestamp" ON "registros_metricas" ("timestamp");
+      CREATE INDEX IF NOT EXISTS "IDX_registros_metricas_usuario_id" ON "registros_metricas" ("usuario_id");
+      CREATE INDEX IF NOT EXISTS "IDX_registros_metricas_detalhes" ON "registros_metricas" USING GIN ("detalhes");
+    `);
+    
+    console.log('Tabela de registros de métricas criada com sucesso.');
+    
+    // Tabela de regras de alerta
+    await queryRunner.query(`
+      CREATE TABLE IF NOT EXISTS "regras_alerta" (
         "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
         "nome" character varying(100) NOT NULL,
-        "descricao" character varying(500),
-        "responsavel" character varying(100),
-        "emailContato" character varying(255),
-        "telefoneContato" character varying(20),
+        "metrica_id" uuid NOT NULL,
+        "nivel" "nivel_alerta_enum" NOT NULL,
+        "operador" character varying(10) NOT NULL,
+        "valor_limiar" numeric(15,2) NOT NULL,
+        "mensagem_alerta" text NOT NULL,
+        "canais_notificacao" jsonb,
         "ativo" boolean NOT NULL DEFAULT true,
-        "permissoesEscopo" text[],
-        "ipPermitidos" text[],
-        "ultimoAcesso" TIMESTAMP WITH TIME ZONE,
-        "dataCriacao" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-        "dataAtualizacao" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-        CONSTRAINT "UQ_integradores_nome" UNIQUE ("nome"),
-        CONSTRAINT "PK_integradores" PRIMARY KEY ("id")
-      );
-      
-      -- Índices para otimização de consultas
-      DO $$ 
-      BEGIN
-        IF NOT EXISTS (SELECT 1 FROM pg_class WHERE relname = 'idx_integradores_ativo') THEN
-          CREATE INDEX "IDX_integradores_ativo" ON "integradores" ("ativo");
-        END IF;
-        
-        IF NOT EXISTS (SELECT 1 FROM pg_class WHERE relname = 'idx_integradores_data_criacao') THEN
-          CREATE INDEX "IDX_integradores_data_criacao" ON "integradores" ("dataCriacao");
-        END IF;
-      END $$;
-      
-      -- Trigger para atualização automática de timestamp
-      CREATE TRIGGER trigger_integradores_update_timestamp
-      BEFORE UPDATE ON "integradores"
-      FOR EACH ROW
-      EXECUTE PROCEDURE update_timestamp();
-      `);
-    } else {
-      console.log('Tabela integradores já existe, pulando criação.');
-    }
-    
-    console.log('Tabela de integradores criada com sucesso.');
-    
-    // Tabela de tokens de acesso para integradores
-    const integradorTokensExists = await queryRunner.query(`
-      SELECT EXISTS (
-        SELECT 1 FROM information_schema.tables WHERE table_name = 'integrador_tokens'
-      );
-    `);
-    
-    if (!integradorTokensExists[0].exists) {
-      await queryRunner.query(`
-        CREATE TABLE "integrador_tokens" (
-        "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
-        "integrador_id" uuid NOT NULL,
-        "nome" character varying(100) NOT NULL,
-        "descricao" character varying(500),
-        "tokenHash" character varying(64) NOT NULL,
-        "escopos" text[],
-        "dataExpiracao" TIMESTAMP WITH TIME ZONE,
-        "revogado" boolean NOT NULL DEFAULT false,
-        "dataRevogacao" TIMESTAMP WITH TIME ZONE,
-        "motivoRevogacao" character varying(255),
-        "ultimoUso" TIMESTAMP WITH TIME ZONE,
-        "dataCriacao" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-        CONSTRAINT "PK_integrador_tokens" PRIMARY KEY ("id")
-      );
-      
-      CREATE INDEX IF NOT EXISTS "IDX_integrador_tokens_integrador" ON "integrador_tokens" ("integrador_id");
-      CREATE INDEX IF NOT EXISTS "IDX_integrador_tokens_revogado" ON "integrador_tokens" ("revogado");
-      CREATE INDEX IF NOT EXISTS "IDX_integrador_tokens_token_hash" ON "integrador_tokens" ("tokenHash");
-      CREATE INDEX IF NOT EXISTS "IDX_integrador_tokens_data_expiracao" ON "integrador_tokens" ("dataExpiracao");
-      `);
-    } else {
-      console.log('Tabela integrador_tokens já existe, pulando criação.');
-    }
-    
-    console.log('Tabela de tokens de integradores criada com sucesso.');
-    
-    // Tabela de logs de acesso dos integradores
-    const integradorLogsExists = await queryRunner.query(`
-      SELECT EXISTS (
-        SELECT 1 FROM information_schema.tables WHERE table_name = 'integrador_logs'
-      );
-    `);
-    
-    if (!integradorLogsExists[0].exists) {
-      await queryRunner.query(`
-        CREATE TABLE "integrador_logs" (
-        "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
-        "integrador_id" uuid NOT NULL,
-        "token_id" uuid NOT NULL,
-        "endpoint" character varying(255) NOT NULL,
-        "metodo" character varying(10) NOT NULL,
-        "ip_origem" character varying(45) NOT NULL,
-        "user_agent" character varying(255),
-        "data_acesso" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-        "status_resposta" integer NOT NULL,
-        "tempo_resposta_ms" integer NOT NULL,
-        "payload_requisicao" jsonb,
-        "detalhes_erro" jsonb,
-        CONSTRAINT "PK_integrador_logs" PRIMARY KEY ("id")
-      );
-      
-      CREATE INDEX IF NOT EXISTS "IDX_log_integrador" ON "integrador_logs" ("integrador_id");
-      CREATE INDEX IF NOT EXISTS "IDX_log_token" ON "integrador_logs" ("token_id");
-      CREATE INDEX IF NOT EXISTS "IDX_log_data" ON "integrador_logs" ("data_acesso");
-      CREATE INDEX IF NOT EXISTS "IDX_log_status" ON "integrador_logs" ("status_resposta");
-      CREATE INDEX IF NOT EXISTS "IDX_log_endpoint" ON "integrador_logs" ("endpoint");
-      `);
-    } else {
-      console.log('Tabela integrador_logs já existe, pulando criação.');
-    }
-    
-    console.log('Tabela de logs de integradores criada com sucesso.');
-    
-    // Tabela de permissões específicas para integradores
-    const integradorPermissoesExists = await queryRunner.query(`
-      SELECT EXISTS (
-        SELECT 1 FROM information_schema.tables WHERE table_name = 'integrador_permissoes'
-      );
-    `);
-    
-    if (!integradorPermissoesExists[0].exists) {
-      await queryRunner.query(`
-        CREATE TABLE "integrador_permissoes" (
-        "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
-        "integrador_id" uuid NOT NULL,
-        "recurso" character varying(100) NOT NULL,
-        "escopo" "escopo_acesso_enum" NOT NULL DEFAULT 'leitura',
-        "condicoes" jsonb,
-        "criado_por" uuid NOT NULL,
         "created_at" TIMESTAMP NOT NULL DEFAULT now(),
         "updated_at" TIMESTAMP NOT NULL DEFAULT now(),
-        CONSTRAINT "PK_integrador_permissoes" PRIMARY KEY ("id"),
-        CONSTRAINT "UQ_integrador_permissoes_recurso" UNIQUE ("integrador_id", "recurso")
-      );
-      
-      CREATE INDEX IF NOT EXISTS "IDX_permissao_integrador" ON "integrador_permissoes" ("integrador_id");
-      CREATE INDEX IF NOT EXISTS "IDX_permissao_recurso" ON "integrador_permissoes" ("recurso");
-      CREATE INDEX IF NOT EXISTS "IDX_permissao_escopo" ON "integrador_permissoes" ("escopo");
-      
-      -- Trigger para atualização automática de timestamp
-      CREATE TRIGGER trigger_integrador_permissoes_update_timestamp
-      BEFORE UPDATE ON "integrador_permissoes"
-      FOR EACH ROW
-      EXECUTE PROCEDURE update_timestamp();
-      `);
-    } else {
-      console.log('Tabela integrador_permissoes já existe, pulando criação.');
-    }
-    
-    console.log('Tabela de permissões de integradores criada com sucesso.');
-    
-    // Tabela de eventos de integração
-    const integradorEventosExists = await queryRunner.query(`
-      SELECT EXISTS (
-        SELECT 1 FROM information_schema.tables WHERE table_name = 'integrador_eventos'
+        CONSTRAINT "PK_regras_alerta" PRIMARY KEY ("id")
       );
     `);
     
-    if (!integradorEventosExists[0].exists) {
-      await queryRunner.query(`
-        CREATE TABLE "integrador_eventos" (
-        "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
-        "integrador_id" uuid NOT NULL,
-        "token_id" uuid,
-        "tipo" "tipo_evento_integracao_enum" NOT NULL,
-        "descricao" text NOT NULL,
-        "dados" jsonb,
-        "ip_origem" character varying(45),
-        "data_evento" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-        "severidade" integer NOT NULL DEFAULT 0,
-        "notificado" boolean NOT NULL DEFAULT false,
-        CONSTRAINT "PK_integrador_eventos" PRIMARY KEY ("id")
-      );
-      
-      CREATE INDEX IF NOT EXISTS "IDX_evento_integrador" ON "integrador_eventos" ("integrador_id");
-      CREATE INDEX IF NOT EXISTS "IDX_evento_tipo" ON "integrador_eventos" ("tipo");
-      CREATE INDEX IF NOT EXISTS "IDX_evento_data" ON "integrador_eventos" ("data_evento");
-      CREATE INDEX IF NOT EXISTS "IDX_evento_severidade" ON "integrador_eventos" ("severidade");
-      CREATE INDEX IF NOT EXISTS "IDX_evento_dados" ON "integrador_eventos" USING GIN ("dados");
-      `);
-    } else {
-      console.log('Tabela integrador_eventos já existe, pulando criação.');
-    }
+    // Índices para regras_alerta
+    await queryRunner.query(`
+      CREATE INDEX IF NOT EXISTS "IDX_regras_alerta_metrica" ON "regras_alerta" ("metrica_id");
+      CREATE INDEX IF NOT EXISTS "IDX_regras_alerta_nivel" ON "regras_alerta" ("nivel");
+      CREATE INDEX IF NOT EXISTS "IDX_regras_alerta_ativo" ON "regras_alerta" ("ativo");
+      CREATE INDEX IF NOT EXISTS "IDX_regras_alerta_canais" ON "regras_alerta" USING GIN ("canais_notificacao");
+    `);
     
-    console.log('Tabela de eventos de integradores criada com sucesso.');
+    // Trigger para regras_alerta
+    await queryRunner.query(`
+      DROP TRIGGER IF EXISTS trigger_regras_alerta_update_timestamp ON "regras_alerta";
+      CREATE TRIGGER trigger_regras_alerta_update_timestamp
+        BEFORE UPDATE ON "regras_alerta"
+        FOR EACH ROW
+        EXECUTE PROCEDURE update_timestamp();
+    `);
+    
+    console.log('Tabela de regras de alerta criada com sucesso.');
+    
+    // Tabela de alertas de métricas
+    await queryRunner.query(`
+      CREATE TABLE IF NOT EXISTS "alertas_metrica" (
+        "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
+        "metrica_id" uuid NOT NULL,
+        "regra_id" uuid NOT NULL,
+        "valor_detectado" numeric(15,2) NOT NULL,
+        "timestamp" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "mensagem" text NOT NULL,
+        "resolvido" boolean NOT NULL DEFAULT false,
+        "resolvido_por" uuid,
+        "timestamp_resolucao" TIMESTAMP WITH TIME ZONE,
+        "observacao_resolucao" text,
+        "detalhes" jsonb,
+        "notificacoes_enviadas" jsonb,
+        "created_at" TIMESTAMP NOT NULL DEFAULT now(),
+        "updated_at" TIMESTAMP NOT NULL DEFAULT now(),
+        CONSTRAINT "PK_alertas_metrica" PRIMARY KEY ("id")
+      );
+    `);
+    
+    // Índices para alertas_metrica
+    await queryRunner.query(`
+      CREATE INDEX IF NOT EXISTS "IDX_alertas_metrica_id" ON "alertas_metrica" ("metrica_id");
+      CREATE INDEX IF NOT EXISTS "IDX_alertas_regra_id" ON "alertas_metrica" ("regra_id");
+      CREATE INDEX IF NOT EXISTS "IDX_alertas_timestamp" ON "alertas_metrica" ("timestamp");
+      CREATE INDEX IF NOT EXISTS "IDX_alertas_resolvido" ON "alertas_metrica" ("resolvido");
+      CREATE INDEX IF NOT EXISTS "IDX_alertas_detalhes" ON "alertas_metrica" USING GIN ("detalhes");
+    `);
+    
+    // Trigger para alertas_metrica
+    await queryRunner.query(`
+      DROP TRIGGER IF EXISTS trigger_alertas_metrica_update_timestamp ON "alertas_metrica";
+      CREATE TRIGGER trigger_alertas_metrica_update_timestamp
+        BEFORE UPDATE ON "alertas_metrica"
+        FOR EACH ROW
+        EXECUTE PROCEDURE update_timestamp();
+    `);
+    
+    console.log('Tabela de alertas de métricas criada com sucesso.');
+    
+    // Tabela de configuração de notificação
+    await queryRunner.query(`
+      CREATE TABLE IF NOT EXISTS "configuracao_notificacao" (
+        "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
+        "usuario_id" uuid NOT NULL,
+        "canal" "canal_notificacao_enum" NOT NULL,
+        "configuracao" jsonb NOT NULL,
+        "ativo" boolean NOT NULL DEFAULT true,
+        "created_at" TIMESTAMP NOT NULL DEFAULT now(),
+        "updated_at" TIMESTAMP NOT NULL DEFAULT now(),
+        CONSTRAINT "PK_configuracao_notificacao" PRIMARY KEY ("id"),
+        CONSTRAINT "UQ_configuracao_notificacao_usuario_canal" UNIQUE ("usuario_id", "canal")
+      );
+    `);
+    
+    // Índices para configuracao_notificacao
+    await queryRunner.query(`
+      CREATE INDEX IF NOT EXISTS "IDX_configuracao_usuario" ON "configuracao_notificacao" ("usuario_id");
+      CREATE INDEX IF NOT EXISTS "IDX_configuracao_canal" ON "configuracao_notificacao" ("canal");
+      CREATE INDEX IF NOT EXISTS "IDX_configuracao_ativo" ON "configuracao_notificacao" ("ativo");
+    `);
+    
+    // Trigger para configuracao_notificacao
+    await queryRunner.query(`
+      DROP TRIGGER IF EXISTS trigger_configuracao_notificacao_update_timestamp ON "configuracao_notificacao";
+      CREATE TRIGGER trigger_configuracao_notificacao_update_timestamp
+        BEFORE UPDATE ON "configuracao_notificacao"
+        FOR EACH ROW
+        EXECUTE PROCEDURE update_timestamp();
+    `);
+    
+    console.log('Tabela de configuração de notificação criada com sucesso.');
+    
+    // Tabela de snapshot de métricas
+    await queryRunner.query(`
+      CREATE TABLE IF NOT EXISTS "metrica_snapshot" (
+        "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
+        "metrica_id" uuid NOT NULL,
+        "valor" numeric(15,2) NOT NULL,
+        "periodo" character varying(20) NOT NULL,
+        "data_inicio" TIMESTAMP WITH TIME ZONE NOT NULL,
+        "data_fim" TIMESTAMP WITH TIME ZONE NOT NULL,
+        "metadados" jsonb,
+        "created_at" TIMESTAMP NOT NULL DEFAULT now(),
+        CONSTRAINT "PK_metrica_snapshot" PRIMARY KEY ("id"),
+        CONSTRAINT "UQ_metrica_snapshot_periodo" UNIQUE ("metrica_id", "periodo", "data_inicio")
+      );
+    `);
+    
+    // Índices para metrica_snapshot
+    await queryRunner.query(`
+      CREATE INDEX IF NOT EXISTS "IDX_snapshot_metrica" ON "metrica_snapshot" ("metrica_id");
+      CREATE INDEX IF NOT EXISTS "IDX_snapshot_periodo" ON "metrica_snapshot" ("periodo");
+      CREATE INDEX IF NOT EXISTS "IDX_snapshot_data" ON "metrica_snapshot" ("data_inicio", "data_fim");
+    `);
+    
+    console.log('Tabela de snapshot de métricas criada com sucesso.');
     
     // Adicionar as chaves estrangeiras
     await queryRunner.query(`
-      -- Relacionamentos da tabela de tokens
-      ALTER TABLE "integrador_tokens" ADD CONSTRAINT "FK_integrador_tokens_integrador"
-      FOREIGN KEY ("integrador_id") REFERENCES "integradores" ("id") ON DELETE CASCADE;
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.table_constraints 
+          WHERE constraint_name = 'FK_metrica_configuracao_metrica'
+        ) THEN
+          ALTER TABLE "metrica_configuracao" ADD CONSTRAINT "FK_metrica_configuracao_metrica"
+          FOREIGN KEY ("metrica_id") REFERENCES "metrica_definicao" ("id") ON DELETE CASCADE;
+        END IF;
+      END $$;
       
-      -- Relacionamentos da tabela de logs
-      ALTER TABLE "integrador_logs" ADD CONSTRAINT "FK_integrador_logs_integrador"
-      FOREIGN KEY ("integrador_id") REFERENCES "integradores" ("id") ON DELETE CASCADE;
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.table_constraints 
+          WHERE constraint_name = 'FK_metrica_valor_metrica'
+        ) THEN
+          ALTER TABLE "metrica_valor" ADD CONSTRAINT "FK_metrica_valor_metrica"
+          FOREIGN KEY ("metrica_id") REFERENCES "metrica_definicao" ("id") ON DELETE CASCADE;
+        END IF;
+      END $$;
       
-      ALTER TABLE "integrador_logs" ADD CONSTRAINT "FK_integrador_logs_token"
-      FOREIGN KEY ("token_id") REFERENCES "integrador_tokens" ("id") ON DELETE CASCADE;
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.table_constraints 
+          WHERE constraint_name = 'FK_registros_metrica'
+        ) THEN
+          ALTER TABLE "registros_metricas" ADD CONSTRAINT "FK_registros_metrica"
+          FOREIGN KEY ("metrica_id") REFERENCES "metrica_definicao" ("id") ON DELETE CASCADE;
+        END IF;
+      END $$;
       
-      -- Relacionamentos da tabela de permissões
-      ALTER TABLE "integrador_permissoes" ADD CONSTRAINT "FK_integrador_permissoes_integrador"
-      FOREIGN KEY ("integrador_id") REFERENCES "integradores" ("id") ON DELETE CASCADE;
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.table_constraints 
+          WHERE constraint_name = 'FK_registros_usuario'
+        ) THEN
+          ALTER TABLE "registros_metricas" ADD CONSTRAINT "FK_registros_usuario"
+          FOREIGN KEY ("usuario_id") REFERENCES "usuario" ("id") ON DELETE SET NULL;
+        END IF;
+      END $$;
       
-      ALTER TABLE "integrador_permissoes" ADD CONSTRAINT "FK_integrador_permissoes_criado_por"
-      FOREIGN KEY ("criado_por") REFERENCES "usuario" ("id") ON DELETE RESTRICT;
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.table_constraints 
+          WHERE constraint_name = 'FK_regras_metrica'
+        ) THEN
+          ALTER TABLE "regras_alerta" ADD CONSTRAINT "FK_regras_metrica"
+          FOREIGN KEY ("metrica_id") REFERENCES "metrica_definicao" ("id") ON DELETE CASCADE;
+        END IF;
+      END $$;
       
-      -- Relacionamentos da tabela de eventos
-      ALTER TABLE "integrador_eventos" ADD CONSTRAINT "FK_integrador_eventos_integrador"
-      FOREIGN KEY ("integrador_id") REFERENCES "integradores" ("id") ON DELETE CASCADE;
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.table_constraints 
+          WHERE constraint_name = 'FK_alertas_metrica'
+        ) THEN
+          ALTER TABLE "alertas_metrica" ADD CONSTRAINT "FK_alertas_metrica"
+          FOREIGN KEY ("metrica_id") REFERENCES "metrica_definicao" ("id") ON DELETE CASCADE;
+        END IF;
+      END $$;
       
-      ALTER TABLE "integrador_eventos" ADD CONSTRAINT "FK_integrador_eventos_token"
-      FOREIGN KEY ("token_id") REFERENCES "integrador_tokens" ("id") ON DELETE SET NULL;
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.table_constraints 
+          WHERE constraint_name = 'FK_alertas_regra'
+        ) THEN
+          ALTER TABLE "alertas_metrica" ADD CONSTRAINT "FK_alertas_regra"
+          FOREIGN KEY ("regra_id") REFERENCES "regras_alerta" ("id") ON DELETE CASCADE;
+        END IF;
+      END $$;
+      
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.table_constraints 
+          WHERE constraint_name = 'FK_alertas_usuario'
+        ) THEN
+          ALTER TABLE "alertas_metrica" ADD CONSTRAINT "FK_alertas_usuario"
+          FOREIGN KEY ("resolvido_por") REFERENCES "usuario" ("id") ON DELETE SET NULL;
+        END IF;
+      END $$;
+      
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.table_constraints 
+          WHERE constraint_name = 'FK_configuracao_usuario'
+        ) THEN
+          ALTER TABLE "configuracao_notificacao" ADD CONSTRAINT "FK_configuracao_usuario"
+          FOREIGN KEY ("usuario_id") REFERENCES "usuario" ("id") ON DELETE CASCADE;
+        END IF;
+      END $$;
+      
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.table_constraints 
+          WHERE constraint_name = 'FK_snapshot_metrica'
+        ) THEN
+          ALTER TABLE "metrica_snapshot" ADD CONSTRAINT "FK_snapshot_metrica"
+          FOREIGN KEY ("metrica_id") REFERENCES "metrica_definicao" ("id") ON DELETE CASCADE;
+        END IF;
+      END $$;
     `);
     
-    // Adicionar políticas RLS (Row-Level Security)
-    await queryRunner.query(`
-      ALTER TABLE "integradores" ENABLE ROW LEVEL SECURITY;
-      ALTER TABLE "integrador_tokens" ENABLE ROW LEVEL SECURITY;
-      ALTER TABLE "integrador_logs" ENABLE ROW LEVEL SECURITY;
-      ALTER TABLE "integrador_permissoes" ENABLE ROW LEVEL SECURITY;
-      ALTER TABLE "integrador_eventos" ENABLE ROW LEVEL SECURITY;
-      
-      CREATE POLICY integradores_policy ON "integradores" 
-        USING (TRUE) 
-        WITH CHECK (TRUE);
-      
-      CREATE POLICY integrador_tokens_policy ON "integrador_tokens" 
-        USING (TRUE) 
-        WITH CHECK (TRUE);
-      
-      CREATE POLICY integrador_logs_policy ON "integrador_logs" 
-        USING (TRUE) 
-        WITH CHECK (TRUE);
-      
-      CREATE POLICY integrador_permissoes_policy ON "integrador_permissoes" 
-        USING (TRUE) 
-        WITH CHECK (TRUE);
-      
-      CREATE POLICY integrador_eventos_policy ON "integrador_eventos" 
-        USING (TRUE) 
-        WITH CHECK (TRUE);
-    `);
-    
-    // Criar log de auditoria para tabelas importantes
-    /*
-    await queryRunner.query(`
-      SELECT create_audit_log_trigger('integradores');
-      SELECT create_audit_log_trigger('integrador_tokens');
-      SELECT create_audit_log_trigger('integrador_permissoes');
-    `);
-    */
-    
-    console.log('Migration 1090000-CreateIntegradorSchema executada com sucesso.');
+    console.log('Migration CreateMetricasSchema executada com sucesso.');
   }
 
   /**
    * Reverte todas as alterações realizadas no método up
    */
   public async down(queryRunner: QueryRunner): Promise<void> {
-    console.log('Revertendo migration 1090000-CreateIntegradorSchema...');
-    
-    // Remover políticas RLS
-    await queryRunner.query(`
-      DROP POLICY IF EXISTS integradores_policy ON "integradores";
-      DROP POLICY IF EXISTS integrador_tokens_policy ON "integrador_tokens";
-      DROP POLICY IF EXISTS integrador_logs_policy ON "integrador_logs";
-      DROP POLICY IF EXISTS integrador_permissoes_policy ON "integrador_permissoes";
-      DROP POLICY IF EXISTS integrador_eventos_policy ON "integrador_eventos";
-    `);
+    console.log('Revertendo migration CreateMetricasSchema...');
     
     // Remover chaves estrangeiras
     await queryRunner.query(`
-      ALTER TABLE "integrador_tokens" DROP CONSTRAINT IF EXISTS "FK_integrador_tokens_integrador";
-      
-      ALTER TABLE "integrador_logs" DROP CONSTRAINT IF EXISTS "FK_integrador_logs_integrador";
-      ALTER TABLE "integrador_logs" DROP CONSTRAINT IF EXISTS "FK_integrador_logs_token";
-      
-      ALTER TABLE "integrador_permissoes" DROP CONSTRAINT IF EXISTS "FK_integrador_permissoes_integrador";
-      ALTER TABLE "integrador_permissoes" DROP CONSTRAINT IF EXISTS "FK_integrador_permissoes_criado_por";
-      
-      ALTER TABLE "integrador_eventos" DROP CONSTRAINT IF EXISTS "FK_integrador_eventos_integrador";
-      ALTER TABLE "integrador_eventos" DROP CONSTRAINT IF EXISTS "FK_integrador_eventos_token";
+      ALTER TABLE "metrica_configuracao" DROP CONSTRAINT IF EXISTS "FK_metrica_configuracao_metrica";
+      ALTER TABLE "metrica_valor" DROP CONSTRAINT IF EXISTS "FK_metrica_valor_metrica";
+      ALTER TABLE "registros_metricas" DROP CONSTRAINT IF EXISTS "FK_registros_metrica";
+      ALTER TABLE "registros_metricas" DROP CONSTRAINT IF EXISTS "FK_registros_usuario";
+      ALTER TABLE "regras_alerta" DROP CONSTRAINT IF EXISTS "FK_regras_metrica";
+      ALTER TABLE "alertas_metrica" DROP CONSTRAINT IF EXISTS "FK_alertas_metrica";
+      ALTER TABLE "alertas_metrica" DROP CONSTRAINT IF EXISTS "FK_alertas_regra";
+      ALTER TABLE "alertas_metrica" DROP CONSTRAINT IF EXISTS "FK_alertas_usuario";
+      ALTER TABLE "configuracao_notificacao" DROP CONSTRAINT IF EXISTS "FK_configuracao_usuario";
+      ALTER TABLE "metrica_snapshot" DROP CONSTRAINT IF EXISTS "FK_snapshot_metrica";
     `);
     
-    // Remover triggers
+    // Remover triggers de atualização automática de timestamp
     await queryRunner.query(`
-      DROP TRIGGER IF EXISTS trigger_integradores_update_timestamp ON "integradores";
-      DROP TRIGGER IF EXISTS trigger_integrador_permissoes_update_timestamp ON "integrador_permissoes";
+      DROP TRIGGER IF EXISTS trigger_metrica_definicao_update_timestamp ON "metrica_definicao";
+      DROP TRIGGER IF EXISTS trigger_metrica_configuracao_update_timestamp ON "metrica_configuracao";
+      DROP TRIGGER IF EXISTS trigger_regras_alerta_update_timestamp ON "regras_alerta";
+      DROP TRIGGER IF EXISTS trigger_alertas_metrica_update_timestamp ON "alertas_metrica";
+      DROP TRIGGER IF EXISTS trigger_configuracao_notificacao_update_timestamp ON "configuracao_notificacao";
     `);
     
-    // Remover tabelas
+    // Remover tabelas em ordem reversa (para respeitar constraints)
     await queryRunner.query(`
-      DROP TABLE IF EXISTS "integrador_eventos";
-      DROP TABLE IF EXISTS "integrador_permissoes";
-      DROP TABLE IF EXISTS "integrador_logs";
-      DROP TABLE IF EXISTS "integrador_tokens";
-      DROP TABLE IF EXISTS "integradores";
+      DROP TABLE IF EXISTS "metrica_snapshot";
+      DROP TABLE IF EXISTS "configuracao_notificacao";
+      DROP TABLE IF EXISTS "alertas_metrica";
+      DROP TABLE IF EXISTS "regras_alerta";
+      DROP TABLE IF EXISTS "registros_metricas";
+      DROP TABLE IF EXISTS "metrica_valor";
+      DROP TABLE IF EXISTS "metrica_configuracao";
+      DROP TABLE IF EXISTS "metrica_definicao";
     `);
     
-    // Remover tipos enumerados
-    await queryRunner.query(`
-      DROP TYPE IF EXISTS "escopo_acesso_enum";
-      DROP TYPE IF EXISTS "tipo_evento_integracao_enum";
-    `);
-    
-    console.log('Migration 1090000-CreateIntegradorSchema revertida com sucesso.');
+    console.log('Migration CreateMetricasSchema revertida com sucesso.');
   }
 }

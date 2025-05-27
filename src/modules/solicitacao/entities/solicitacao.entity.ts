@@ -11,6 +11,7 @@ import {
   Index,
   BeforeInsert,
   AfterUpdate,
+  VersionColumn,
 } from 'typeorm';
 import { IsNotEmpty, IsOptional } from 'class-validator';
 import { Cidadao } from '../../cidadao/entities/cidadao.entity';
@@ -19,6 +20,8 @@ import { Usuario } from '../../usuario/entities/usuario.entity';
 import { Unidade } from '../../unidade/entities/unidade.entity';
 import { Documento } from '../../documento/entities/documento.entity';
 import { HistoricoSolicitacao } from './historico-solicitacao.entity';
+import { ProcessoJudicial } from '../../judicial/entities/processo-judicial.entity';
+import { DeterminacaoJudicial } from '../../judicial/entities/determinacao-judicial.entity';
 
 export enum StatusSolicitacao {
   RASCUNHO = 'rascunho',
@@ -29,6 +32,9 @@ export enum StatusSolicitacao {
   REPROVADA = 'reprovada',
   LIBERADA = 'liberada',
   CANCELADA = 'cancelada',
+  EM_PROCESSAMENTO = 'em_processamento',
+  CONCLUIDA = 'concluida',
+  ARQUIVADA = 'arquivada',
 }
 
 @Entity('solicitacao')
@@ -37,6 +43,8 @@ export enum StatusSolicitacao {
 @Index(['status', 'tipo_beneficio_id'])
 @Index(['data_abertura', 'status'])
 @Index(['status'], { where: "status IN ('pendente', 'em_analise')" })
+@Index(['processo_judicial_id'], { where: 'processo_judicial_id IS NOT NULL' })
+@Index(['determinacao_judicial_id'], { where: 'determinacao_judicial_id IS NOT NULL' })
 export class Solicitacao {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -198,6 +206,91 @@ export class Solicitacao {
     onDelete: 'RESTRICT',
   })
   documentos: Documento[];
+
+  /**
+   * Controle de versão para detectar e prevenir atualizações concorrentes
+   * Este campo é incrementado automaticamente a cada atualização
+   */
+  @VersionColumn()
+  version: number;
+
+  /**
+   * Relação com processo judicial
+   * Esta relação é gerenciada pelo módulo de solicitação, não pelo módulo judicial
+   */
+  @Column({ nullable: true })
+  processo_judicial_id: string;
+
+  @ManyToOne(() => ProcessoJudicial, { nullable: true })
+  @JoinColumn({ name: 'processo_judicial_id' })
+  processo_judicial: ProcessoJudicial;
+
+  /**
+   * Relação com determinação judicial
+   * Esta relação é gerenciada pelo módulo de solicitação, não pelo módulo judicial
+   */
+  @Column({ nullable: true })
+  determinacao_judicial_id: string;
+
+  @ManyToOne(() => DeterminacaoJudicial, { nullable: true })
+  @JoinColumn({ name: 'determinacao_judicial_id' })
+  determinacao_judicial: DeterminacaoJudicial;
+  
+  /**
+   * Flag que indica se a solicitação tem determinação judicial
+   */
+  @Column({ name: 'determinacao_judicial_flag', type: 'boolean', default: false })
+  determinacao_judicial_flag: boolean;
+
+  /**
+   * Relação com solicitação original (auto-relacionamento)
+   * Usado para renovações, revisões ou outras solicitações derivadas
+   */
+  @Column({ nullable: true })
+  solicitacao_original_id: string;
+
+  @ManyToOne(() => Solicitacao, { nullable: true })
+  @JoinColumn({ name: 'solicitacao_original_id' })
+  solicitacao_original: Solicitacao;
+  
+  /**
+   * Campos para suporte a renovação automática
+   */
+  @Column({ name: 'renovacao_automatica', type: 'boolean', default: false })
+  renovacao_automatica: boolean;
+
+  @Column({ name: 'contador_renovacoes', type: 'integer', default: 0 })
+  contador_renovacoes: number;
+
+  @Column({ name: 'data_proxima_renovacao', type: 'timestamp', nullable: true })
+  data_proxima_renovacao: Date;
+  
+  /**
+   * Dados dinâmicos específicos para cada tipo de benefício
+   */
+  @Column({ name: 'dados_dinamicos', type: 'jsonb', nullable: true })
+  dados_dinamicos: Record<string, any>;
+  
+  /**
+   * Data limite para conclusão da análise da solicitação
+   * Utilizado para controle de SLA do processo de análise
+   */
+  @Column({ name: 'prazo_analise', type: 'timestamp', nullable: true })
+  prazo_analise: Date | null;
+  
+  /**
+   * Data limite para envio de documentos pelo cidadão
+   * Utilizado quando a solicitação está no estado AGUARDANDO_DOCUMENTOS
+   */
+  @Column({ name: 'prazo_documentos', type: 'timestamp', nullable: true })
+  prazo_documentos: Date | null;
+  
+  /**
+   * Data limite para conclusão do processamento da solicitação
+   * Utilizado quando a solicitação está no estado EM_PROCESSAMENTO
+   */
+  @Column({ name: 'prazo_processamento', type: 'timestamp', nullable: true })
+  prazo_processamento: Date | null;
 
   @CreateDateColumn()
   created_at: Date;

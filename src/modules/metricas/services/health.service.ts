@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { LogAuditoria } from '../../auditoria/entities/log-auditoria.entity';
+import { HealthCheckService } from '../../../shared/services/health-check.service';
 
 /**
  * Serviço responsável por verificar a saúde dos componentes do sistema
@@ -15,6 +16,7 @@ export class HealthService {
     private readonly configService: ConfigService,
     @InjectRepository(LogAuditoria)
     private readonly logAuditoriaRepository: Repository<LogAuditoria>,
+    private readonly healthCheckService: HealthCheckService,
   ) {}
 
   /**
@@ -78,13 +80,34 @@ export class HealthService {
    */
   private async checkRedis(): Promise<any> {
     try {
-      // Aqui seria ideal ter uma injeção do serviço Redis para verificar a conexão
-      // Como estamos apenas simulando, retornamos um status positivo
-
-      return {
-        status: 'up',
-        responseTime: 0,
-      };
+      // Utilizamos o serviço de health check para verificar a disponibilidade do Redis
+      const startTime = Date.now();
+      const isAvailable = await this.healthCheckService.isRedisAvailable();
+      const responseTime = Date.now() - startTime;
+      
+      // Verificar se o Redis está desabilitado por configuração
+      const disableRedis = this.configService.get('DISABLE_REDIS') === 'true';
+      
+      if (disableRedis) {
+        return {
+          status: 'disabled',
+          message: 'Redis desabilitado por configuração',
+          responseTime: 0,
+        };
+      }
+      
+      if (isAvailable) {
+        return {
+          status: 'up',
+          responseTime,
+        };
+      } else {
+        return {
+          status: 'down',
+          message: 'Não foi possível conectar ao Redis',
+          responseTime,
+        };
+      }
     } catch (error) {
       this.logger.error(
         `Erro ao verificar conexão com Redis: ${error.message}`,

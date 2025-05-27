@@ -1,0 +1,16 @@
+{
+  "subject": "Senha Alterada com Sucesso - SEMTAS",
+  "description": "Template de confirmação após alteração de senha",
+  "variables": {
+    "name": "Nome do usuário",
+    "changedAt": "Data e hora da alteração",
+    "ipAddress": "Endereço IP de origem",
+    "userAgent": "Informações do navegador",
+    "loginUrl": "URL para fazer login no sistema",
+    "supportEmail": "Email de suporte técnico",
+    "year": "Ano atual"
+  },
+  "version": "1.0.0",
+  "author": "Tech Lead SEMTAS",
+  "lastModified": "2024-01-15"
+}

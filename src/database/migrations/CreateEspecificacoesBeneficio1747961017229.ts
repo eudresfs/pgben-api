@@ -8,47 +8,12 @@ import { TipoEntregaCestaBasica, PeriodicidadeCestaBasica } from '../../modules/
  * Cria as tabelas para armazenar configurações específicas por tipo de benefício:
  * - especificacao_natalidade: para o Auxílio Natalidade
  * - especificacao_aluguel_social: para o Aluguel Social
- * - especificacao_funeral: para o Auxílio Funeral
- * - especificacao_cesta_basica: para a Cesta Básica
+ * - especificacao_funeral: para o Auxílio Funeral (com campos adicionais)
+ * - especificacao_cesta_basica: para a Cesta Básica (com campos adicionais)
  */
 export class CreateEspecificacoesBeneficio1747961017229 implements MigrationInterface {
   name = 'CreateEspecificacoesBeneficio1747961017229';  
   public async up(queryRunner: QueryRunner): Promise<void> {
-    // Criar enums para os diferentes tipos de benefícios
-    
-    // Enum para motivos de aluguel social
-    await queryRunner.query(`
-      CREATE TYPE motivo_aluguel_social_enum AS ENUM (
-        'calamidade', 
-        'desastre', 
-        'vulnerabilidade', 
-        'despejo', 
-        'violencia', 
-        'area_risco', 
-        'outro'
-      )
-    `);
-    
-    // Enum para tipo de entrega da cesta básica
-    await queryRunner.query(`
-      CREATE TYPE tipo_entrega_cesta_basica_enum AS ENUM (
-        'presencial',
-        'entrega_domicilio',
-        'cartao_alimentacao',
-        'vale_alimentacao'
-      )
-    `);
-    
-    // Enum para periodicidade da cesta básica
-    await queryRunner.query(`
-      CREATE TYPE periodicidade_cesta_basica_enum AS ENUM (
-        'unica',
-        'mensal',
-        'bimestral',
-        'trimestral',
-        'semestral'
-      )
-    `);
 
     // Criar tabela de especificação de Auxílio Natalidade
     await queryRunner.createTable(
@@ -277,6 +242,42 @@ export class CreateEspecificacoesBeneficio1747961017229 implements MigrationInte
             default: false,
           },
           {
+            name: 'limitado_ao_municipio',
+            type: 'boolean',
+            default: true,
+            isNullable: false,
+          },
+          {
+            name: 'inclui_urna_funeraria',
+            type: 'boolean',
+            default: true,
+            isNullable: false,
+          },
+          {
+            name: 'tipo_urna',
+            type: 'tipo_urna_funeraria_enum',
+            default: "'PADRAO'",
+            isNullable: true,
+          },
+          {
+            name: 'inclui_edredom_funebre',
+            type: 'boolean',
+            default: true,
+            isNullable: false,
+          },
+          {
+            name: 'inclui_despesas_sepultamento',
+            type: 'boolean',
+            default: true,
+            isNullable: false,
+          },
+          {
+            name: 'servico_sobreaviso',
+            type: 'varchar',
+            length: '255',
+            isNullable: true,
+          },
+          {
             name: 'created_at',
             type: 'timestamp',
             default: 'now()',
@@ -316,12 +317,13 @@ export class CreateEspecificacoesBeneficio1747961017229 implements MigrationInte
           {
             name: 'tipo_entrega',
             type: 'tipo_entrega_cesta_basica_enum',
-            default: `'presencial'`,
+            default: `'DOMICILIAR'`,
           },
           {
             name: 'periodicidade',
-            type: 'periodicidade_cesta_basica_enum',
-            default: `'unica'`,
+            type: 'periodicidade_entrega_enum',
+            default: "'UNICA'",
+            isNullable: false,
           },
           {
             name: 'quantidade_entregas',
@@ -329,9 +331,49 @@ export class CreateEspecificacoesBeneficio1747961017229 implements MigrationInte
             default: 1,
           },
           {
-            name: 'requer_comprovante_residencia',
+            name: 'exige_comprovante_residencia',
             type: 'boolean',
             default: true,
+          },
+          {
+            name: 'exige_comprovacao_vulnerabilidade',
+            type: 'boolean',
+            default: false,
+            isNullable: false,
+          },
+          {
+            name: 'permite_substituicao_itens',
+            type: 'boolean',
+            default: false,
+            isNullable: false,
+          },
+          {
+            name: 'itens_obrigatorios',
+            type: 'jsonb',
+            isNullable: true,
+          },
+          {
+            name: 'itens_opcionais',
+            type: 'jsonb',
+            isNullable: true,
+          },
+          {
+            name: 'local_entrega',
+            type: 'varchar',
+            length: '255',
+            isNullable: true,
+          },
+          {
+            name: 'horario_entrega',
+            type: 'varchar',
+            length: '255',
+            isNullable: true,
+          },
+          {
+            name: 'exige_agendamento',
+            type: 'boolean',
+            default: false,
+            isNullable: false,
           },
           {
             name: 'requer_comprovante_renda',
@@ -372,16 +414,7 @@ export class CreateEspecificacoesBeneficio1747961017229 implements MigrationInte
             scale: 2,
             isNullable: true,
           },
-          {
-            name: 'itens_obrigatorios',
-            type: 'text',
-            isNullable: true,
-          },
-          {
-            name: 'permite_substituicao_itens',
-            type: 'boolean',
-            default: false,
-          },
+
           {
             name: 'created_at',
             type: 'timestamp',
@@ -533,10 +566,26 @@ export class CreateEspecificacoesBeneficio1747961017229 implements MigrationInte
     await queryRunner.dropTable('especificacao_aluguel_social');
     await queryRunner.dropTable('especificacao_funeral');
     await queryRunner.dropTable('especificacao_cesta_basica');
-
-    // Remover enums
-    await queryRunner.query(`DROP TYPE motivo_aluguel_social_enum`);
-    await queryRunner.query(`DROP TYPE tipo_entrega_cesta_basica_enum`);
-    await queryRunner.query(`DROP TYPE periodicidade_cesta_basica_enum`);
+    
+    // Função auxiliar para verificar se um enum existe
+    const enumExists = async (enumName: string): Promise<boolean> => {
+      const result = await queryRunner.query(`
+        SELECT 1 FROM pg_type t 
+        JOIN pg_namespace n ON n.oid = t.typnamespace 
+        WHERE t.typname = '${enumName}' AND n.nspname = 'public'
+      `);
+      return result.length > 0;
+    };
+    
+    // Remover enums se existirem
+    const dropEnumIfExists = async (enumName: string) => {
+      if (await enumExists(enumName)) {
+        try {
+          await queryRunner.query(`DROP TYPE IF EXISTS ${enumName}`);
+        } catch (error) {
+          console.log(`Erro ao remover enum ${enumName}: ${error.message}`);
+        }
+      }
+    };
   }
 }

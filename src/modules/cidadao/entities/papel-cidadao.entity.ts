@@ -19,6 +19,7 @@ export enum TipoPapel {
   BENEFICIARIO = 'beneficiario',
   REQUERENTE = 'requerente',
   REPRESENTANTE_LEGAL = 'representante_legal',
+  MEMBRO_COMPOSICAO = 'membro_composicao'
 }
 
 /**

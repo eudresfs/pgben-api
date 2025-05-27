@@ -1,7 +1,7 @@
 import { DataSource } from 'typeorm';
 import { Permission } from '../../../auth/entities/permission.entity';
 import { PermissionScope } from '../../../auth/entities/permission-scope.entity';
-import { ScopeType } from '../../../auth/entities/user-permission.entity';
+import { TipoEscopo } from '../../../auth/entities/user-permission.entity';
 
 /**
  * Script de seed para popular as permissões do módulo de solicitação.
@@ -22,128 +22,128 @@ export class PermissionSolicitacaoSeed {
 
     // Permissão composta para todas as operações do módulo de solicitação
     const solicitacaoAllPermission = permissionRepository.create({
-      name: 'solicitacao.*',
-      description: 'Todas as permissões do módulo de solicitação',
-      isComposite: true,
+      nome: 'solicitacao.*',
+      descricao: 'Todas as permissões do módulo de solicitação',
+      composta: true,
     });
     await permissionRepository.save(solicitacaoAllPermission);
 
     // Permissões individuais do módulo de solicitação
     const permissions = [
       {
-        name: 'solicitacao.listar',
-        description: 'Listar solicitações com filtros e paginação',
-        scopeType: ScopeType.UNIT,
+        nome: 'solicitacao.listar',
+        descricao: 'Listar solicitações com filtros e paginação',
+        scopeType: TipoEscopo.UNIDADE,
       },
       {
-        name: 'solicitacao.visualizar',
-        description: 'Visualizar detalhes de uma solicitação específica',
-        scopeType: ScopeType.UNIT,
+        nome: 'solicitacao.visualizar',
+        descricao: 'Visualizar detalhes de uma solicitação específica',
+        scopeType: TipoEscopo.UNIDADE,
       },
       {
-        name: 'solicitacao.criar',
-        description: 'Criar uma nova solicitação no sistema',
-        scopeType: ScopeType.UNIT,
+        nome: 'solicitacao.criar',
+        descricao: 'Criar uma nova solicitação no sistema',
+        scopeType: TipoEscopo.UNIDADE,
       },
       {
-        name: 'solicitacao.editar',
-        description: 'Editar informações de uma solicitação existente',
-        scopeType: ScopeType.UNIT,
+        nome: 'solicitacao.editar',
+        descricao: 'Editar informações de uma solicitação existente',
+        scopeType: TipoEscopo.UNIDADE,
       },
       {
-        name: 'solicitacao.excluir',
-        description: 'Excluir uma solicitação do sistema',
-        scopeType: ScopeType.UNIT,
+        nome: 'solicitacao.excluir',
+        descricao: 'Excluir uma solicitação do sistema',
+        scopeType: TipoEscopo.UNIDADE,
       },
       {
-        name: 'solicitacao.status.visualizar',
-        description: 'Visualizar histórico de status de uma solicitação',
-        scopeType: ScopeType.UNIT,
+        nome: 'solicitacao.status.visualizar',
+        descricao: 'Visualizar histórico de status de uma solicitação',
+        scopeType: TipoEscopo.UNIDADE,
       },
       {
-        name: 'solicitacao.status.atualizar',
-        description: 'Atualizar o status de uma solicitação',
-        scopeType: ScopeType.UNIT,
+        nome: 'solicitacao.status.atualizar',
+        descricao: 'Atualizar o status de uma solicitação',
+        scopeType: TipoEscopo.UNIDADE,
       },
       {
-        name: 'solicitacao.status.aprovar',
-        description: 'Aprovar uma solicitação (transição de status específica)',
-        scopeType: ScopeType.UNIT,
+        nome: 'solicitacao.status.aprovar',
+        descricao: 'Aprovar uma solicitação (transição de status específica)',
+        scopeType: TipoEscopo.UNIDADE,
       },
       {
-        name: 'solicitacao.status.rejeitar',
-        description: 'Rejeitar uma solicitação (transição de status específica)',
-        scopeType: ScopeType.UNIT,
+        nome: 'solicitacao.status.rejeitar',
+        descricao: 'Rejeitar uma solicitação (transição de status específica)',
+        scopeType: TipoEscopo.UNIDADE,
       },
       {
-        name: 'solicitacao.status.cancelar',
-        description: 'Cancelar uma solicitação (transição de status específica)',
-        scopeType: ScopeType.UNIT,
+        nome: 'solicitacao.status.cancelar',
+        descricao: 'Cancelar uma solicitação (transição de status específica)',
+        scopeType: TipoEscopo.UNIDADE,
       },
       {
-        name: 'solicitacao.status.suspender',
-        description: 'Suspender uma solicitação (transição de status específica)',
-        scopeType: ScopeType.UNIT,
+        nome: 'solicitacao.status.suspender',
+        descricao: 'Suspender uma solicitação (transição de status específica)',
+        scopeType: TipoEscopo.UNIDADE,
       },
       {
-        name: 'solicitacao.status.reativar',
-        description: 'Reativar uma solicitação suspensa (transição de status específica)',
-        scopeType: ScopeType.UNIT,
+        nome: 'solicitacao.status.reativar',
+        descricao: 'Reativar uma solicitação suspensa (transição de status específica)',
+        scopeType: TipoEscopo.UNIDADE,
       },
       {
-        name: 'solicitacao.observacao.adicionar',
-        description: 'Adicionar observação a uma solicitação',
-        scopeType: ScopeType.UNIT,
+        nome: 'solicitacao.observacao.adicionar',
+        descricao: 'Adicionar observação a uma solicitação',
+        scopeType: TipoEscopo.UNIDADE,
       },
       {
-        name: 'solicitacao.observacao.editar',
-        description: 'Editar observação de uma solicitação',
-        scopeType: ScopeType.UNIT,
+        nome: 'solicitacao.observacao.editar',
+        descricao: 'Editar observação de uma solicitação',
+        scopeType: TipoEscopo.UNIDADE,
       },
       {
-        name: 'solicitacao.observacao.excluir',
-        description: 'Excluir observação de uma solicitação',
-        scopeType: ScopeType.UNIT,
+        nome: 'solicitacao.observacao.excluir',
+        descricao: 'Excluir observação de uma solicitação',
+        scopeType: TipoEscopo.UNIDADE,
       },
       {
-        name: 'solicitacao.exportar',
-        description: 'Exportar lista de solicitações em formato CSV ou Excel',
-        scopeType: ScopeType.UNIT,
+        nome: 'solicitacao.exportar',
+        descricao: 'Exportar lista de solicitações em formato CSV ou Excel',
+        scopeType: TipoEscopo.UNIDADE,
       },
       {
-        name: 'solicitacao.relatorio',
-        description: 'Gerar relatórios de solicitações',
-        scopeType: ScopeType.UNIT,
+        nome: 'solicitacao.relatorio',
+        descricao: 'Gerar relatórios de solicitações',
+        scopeType: TipoEscopo.UNIDADE,
       },
       {
-        name: 'solicitacao.atribuir',
-        description: 'Atribuir solicitação a um técnico ou assistente social',
-        scopeType: ScopeType.UNIT,
+        nome: 'solicitacao.atribuir',
+        descricao: 'Atribuir solicitação a um técnico ou assistente social',
+        scopeType: TipoEscopo.UNIDADE,
       },
       {
-        name: 'solicitacao.priorizar',
-        description: 'Alterar a prioridade de uma solicitação',
-        scopeType: ScopeType.UNIT,
+        nome: 'solicitacao.priorizar',
+        descricao: 'Alterar a prioridade de uma solicitação',
+        scopeType: TipoEscopo.UNIDADE,
       },
     ];
 
     // Cria as permissões individuais e configura o escopo padrão
     for (const permissionData of permissions) {
-      const { name, description, scopeType } = permissionData;
+      const { nome, descricao, scopeType } = permissionData;
       
       // Cria a permissão
       const permission = permissionRepository.create({
-        name,
-        description,
-        isComposite: false,
-        parentId: solicitacaoAllPermission.id,
+        nome,
+        descricao,
+        composta: false,
+        permissao_pai_id: solicitacaoAllPermission.id,
       });
       await permissionRepository.save(permission);
       
       // Configura o escopo padrão
       const permissionScope = permissionScopeRepository.create({
-        permissionId: permission.id,
-        defaultScopeType: scopeType,
+        permissao_id: permission.id,
+        tipo_escopo_padrao: scopeType,
       });
       await permissionScopeRepository.save(permissionScope);
     }

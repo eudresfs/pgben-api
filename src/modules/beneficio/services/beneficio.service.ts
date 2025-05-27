@@ -15,7 +15,7 @@ import { CreateRequisitoDocumentoDto } from '../dto/create-requisito-documento.d
 import { TipoDocumento } from '../entities/requisito-documento.entity';
 import { TipoEtapa } from '../entities/fluxo-beneficio.entity';
 import { ConfigurarFluxoDto } from '../dto/configurar-fluxo.dto';
-import { Role as PerfilResponsavel } from '@/shared/enums/role.enum';
+import { Role as PerfilResponsavel } from '../../../shared/enums/role.enum';
 
 
 /**

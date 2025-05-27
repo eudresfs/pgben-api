@@ -288,4 +288,71 @@ export class NotificacaoService {
       tipo: TipoNotificacao.ALERTA,
     });
   }
+
+  /**
+   * Envia uma notificação com base no tipo fornecido
+   * @param dados Dados da notificação a ser enviada
+   */
+  async enviarNotificacao(dados: {
+    destinatario_id: string;
+    tipo: TipoNotificacao | string;
+    titulo: string;
+    conteudo: string;
+    dados?: Record<string, any>;
+    entidade_relacionada_id?: string;
+    entidade_tipo?: string;
+    link?: string;
+  }) {
+    // Extrair entidade relacionada dos dados, se fornecida
+    const entidadeRelacionadaId = dados.entidade_relacionada_id || 
+      (dados.dados && dados.dados.historico_id) || 
+      (dados.dados && dados.dados.solicitacao_id);
+    
+    const entidadeTipo = dados.entidade_tipo || 
+      (dados.dados && dados.dados.historico_id ? 'historico' : undefined) || 
+      (dados.dados && dados.dados.solicitacao_id ? 'solicitacao' : undefined);
+
+    // Determinar o tipo de notificação
+    let tipoNotificacao: TipoNotificacao;
+    if (typeof dados.tipo === 'string') {
+      switch (dados.tipo.toUpperCase()) {
+        case 'SISTEMA':
+          tipoNotificacao = TipoNotificacao.SISTEMA;
+          break;
+        case 'SOLICITACAO':
+          tipoNotificacao = TipoNotificacao.SOLICITACAO;
+          break;
+        case 'PENDENCIA':
+          tipoNotificacao = TipoNotificacao.PENDENCIA;
+          break;
+        case 'APROVACAO':
+          tipoNotificacao = TipoNotificacao.APROVACAO;
+          break;
+        case 'LIBERACAO':
+          tipoNotificacao = TipoNotificacao.LIBERACAO;
+          break;
+        case 'ALERTA':
+          tipoNotificacao = TipoNotificacao.ALERTA;
+          break;
+        case 'CONVERSAO_PAPEL':
+          tipoNotificacao = TipoNotificacao.ALERTA;
+          break;
+        default:
+          tipoNotificacao = TipoNotificacao.SISTEMA;
+      }
+    } else {
+      tipoNotificacao = dados.tipo;
+    }
+
+    // Criar a notificação usando o método genérico
+    return this.criar({
+      destinatario_id: dados.destinatario_id,
+      tipo: tipoNotificacao,
+      titulo: dados.titulo,
+      conteudo: dados.conteudo,
+      entidade_relacionada_id: entidadeRelacionadaId,
+      entidade_tipo: entidadeTipo,
+      link: dados.link,
+    });
+  }
 }

@@ -5,6 +5,7 @@
  * que correspondem aos valores na tabela role_table.
  */
 export const ROLES = {
+  SUPER_ADMIN: 'SUPER_ADMIN',
   ADMIN: 'ADMIN',
   GESTOR: 'GESTOR',
   TECNICO: 'TECNICO',

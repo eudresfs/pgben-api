@@ -6,7 +6,7 @@ export * from './beneficio.service';
 export * from './campo-dinamico.service';
 export * from './validacao-dinamica.service';
 export * from './dados-dinamicos.service';
-export * from './exportacao.service';
+export * from '../../solicitacao/services/exportacao.service';
 export * from './formulario-condicional.service';
 export * from './especificacao-natalidade.service';
 export * from './especificacao-aluguel-social.service';

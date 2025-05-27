@@ -21,6 +21,12 @@ export class EnhancedMetricsService {
   private databaseQueryDuration!: client.Histogram;
   private databaseConnectionsActive!: client.Gauge;
 
+  // Métricas de Cache/Redis
+  private cacheOperationsTotal!: client.Counter;
+  private cacheHitRatio!: client.Gauge;
+  private cacheSize!: client.Gauge;
+  private cacheOperationDuration!: client.Histogram;
+
   // Métricas de Segurança e Compliance
   private securityEventsTotal!: client.Counter;
   private lgpdDataAccessTotal!: client.Counter;
@@ -49,6 +55,9 @@ export class EnhancedMetricsService {
 
     // Inicializar métricas de banco de dados
     this.initDatabaseMetrics();
+
+    // Inicializar métricas de cache/Redis
+    this.initCacheMetrics();
 
     // Inicializar métricas de segurança e compliance
     this.initSecurityMetrics();
@@ -115,6 +124,44 @@ export class EnhancedMetricsService {
     this.databaseConnectionsActive = new client.Gauge({
       name: 'database_connections_active',
       help: 'Número de conexões ativas com o banco de dados',
+      registers: [this.register],
+    });
+  }
+
+  /**
+   * Inicializa métricas relacionadas ao cache distribuído (Redis)
+   */
+  private initCacheMetrics(): void {
+    // Contador de operações de cache
+    this.cacheOperationsTotal = new client.Counter({
+      name: 'cache_operations_total',
+      help: 'Total de operações de cache',
+      labelNames: ['operation', 'success', 'cache_type'],
+      registers: [this.register],
+    });
+
+    // Gauge de taxa de acertos do cache
+    this.cacheHitRatio = new client.Gauge({
+      name: 'cache_hit_ratio',
+      help: 'Taxa de acertos do cache (0-1)',
+      labelNames: ['cache_type'],
+      registers: [this.register],
+    });
+
+    // Gauge de tamanho do cache
+    this.cacheSize = new client.Gauge({
+      name: 'cache_size_bytes',
+      help: 'Tamanho do cache em bytes',
+      labelNames: ['cache_type'],
+      registers: [this.register],
+    });
+
+    // Histograma de duração das operações de cache
+    this.cacheOperationDuration = new client.Histogram({
+      name: 'cache_operation_duration_seconds',
+      help: 'Duração das operações de cache em segundos',
+      labelNames: ['operation', 'cache_type'],
+      buckets: [0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1],
       registers: [this.register],
     });
   }
@@ -454,6 +501,49 @@ export class EnhancedMetricsService {
    */
   updateCpuUsage(cpuPercent: number): void {
     this.systemCpuUsage.set(cpuPercent);
+  }
+
+  /**
+   * Registra uma operação de cache
+   */
+  recordCacheOperation(
+    operation: string,
+    success: boolean,
+    cacheType: string = 'redis',
+  ): void {
+    this.cacheOperationsTotal.inc({
+      operation,
+      success: success.toString(),
+      cache_type: cacheType,
+    });
+  }
+
+  /**
+   * Registra a duração de uma operação de cache
+   */
+  recordCacheOperationDuration(
+    operation: string,
+    durationSeconds: number,
+    cacheType: string = 'redis',
+  ): void {
+    this.cacheOperationDuration.observe(
+      { operation, cache_type: cacheType },
+      durationSeconds,
+    );
+  }
+
+  /**
+   * Atualiza a taxa de acertos do cache
+   */
+  updateCacheHitRatio(ratio: number, cacheType: string = 'redis'): void {
+    this.cacheHitRatio.set({ cache_type: cacheType }, ratio);
+  }
+
+  /**
+   * Atualiza o tamanho do cache
+   */
+  updateCacheSize(sizeBytes: number, cacheType: string = 'redis'): void {
+    this.cacheSize.set({ cache_type: cacheType }, sizeBytes);
   }
 
   /**

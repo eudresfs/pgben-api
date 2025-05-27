@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atividade Suspeita Detectada - SEMTAS</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e9ecef;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #6c757d;
+            font-size: 14px;
+        }
+        .alert-icon {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .alert-icon .icon {
+            font-size: 48px;
+            color: #dc3545;
+        }
+        .content {
+            margin-bottom: 30px;
+        }
+        .greeting {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+        .message {
+            margin-bottom: 25px;
+            line-height: 1.8;
+        }
+        .alert-message {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 5px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .alert-message h3 {
+            color: #721c24;
+            margin-top: 0;
+        }
+        .alert-message p {
+            color: #721c24;
+            margin-bottom: 10px;
+        }
+        .activity-details {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .activity-details h4 {
+            color: #495057;
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+        .detail-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .detail-item:last-child {
+            border-bottom: none;
+        }
+        .detail-label {
+            font-weight: bold;
+            color: #495057;
+        }
+        .detail-value {
+            color: #6c757d;
+            word-break: break-all;
+        }
+        .security-actions {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .security-actions h4 {
+            color: #856404;
+            margin-top: 0;
+        }
+        .security-actions p {
+            color: #856404;
+            margin-bottom: 5px;
+        }
+        .action-button {
+            display: inline-block;
+            background-color: #dc3545;
+            color: #ffffff;
+            padding: 12px 25px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            margin: 10px 5px;
+            text-align: center;
+            font-size: 14px;
+        }
+        .action-button:hover {
+            background-color: #c82333;
+        }
+        .action-button.secondary {
+            background-color: #6c757d;
+        }
+        .action-button.secondary:hover {
+            background-color: #5a6268;
+        }
+        .button-container {
+            text-align: center;
+            margin: 30px 0;
+        }
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e9ecef;
+            font-size: 12px;
+            color: #6c757d;
+            text-align: center;
+        }
+        .footer a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        .severity-high {
+            border-left: 4px solid #dc3545;
+        }
+        .severity-medium {
+            border-left: 4px solid #ffc107;
+        }
+        .severity-low {
+            border-left: 4px solid #28a745;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">SEMTAS</div>
+            <div class="subtitle">Secretaria Municipal do Trabalho e Assistência Social</div>
+        </div>
+        
+        <div class="alert-icon">
+            <div class="icon">⚠️</div>
+        </div>
+        
+        <div class="content">
+            <div class="greeting">Olá, {{name}}!</div>
+            
+            <div class="alert-message severity-{{severity}}">
+                <h3>🚨 Atividade Suspeita Detectada</h3>
+                <p>Detectamos uma atividade suspeita em sua conta no Sistema de Gestão de Benefícios Eventuais da SEMTAS.</p>
+                <p><strong>Tipo de Atividade:</strong> {{activityType}}</p>
+            </div>
+            
+            <div class="activity-details">
+                <h4>📋 Detalhes da Atividade</h4>
+                <div class="detail-item">
+                    <span class="detail-label">Data e Hora:</span>
+                    <span class="detail-value">{{detectedAt}}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Endereço IP:</span>
+                    <span class="detail-value">{{ipAddress}}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Localização:</span>
+                    <span class="detail-value">{{location}}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Navegador:</span>
+                    <span class="detail-value">{{userAgent}}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Ação Realizada:</span>
+                    <span class="detail-value">{{action}}</span>
+                </div>
+                {{#if description}}
+                <div class="detail-item">
+                    <span class="detail-label">Descrição:</span>
+                    <span class="detail-value">{{description}}</span>
+                </div>
+                {{/if}}
+            </div>
+            
+            <div class="message">
+                <p><strong>Se foi você:</strong> Não é necessário tomar nenhuma ação. Este é apenas um alerta de segurança.</p>
+                <p><strong>Se não foi você:</strong> Sua conta pode ter sido comprometida. Tome as medidas de segurança abaixo imediatamente.</p>
+            </div>
+            
+            <div class="button-container">
+                <a href="{{changePasswordUrl}}" class="action-button">Alterar Senha</a>
+                <a href="{{reviewActivityUrl}}" class="action-button secondary">Revisar Atividade</a>
+            </div>
+            
+            <div class="security-actions">
+                <h4>🔒 Medidas de Segurança Recomendadas</h4>
+                <ul>
+                    <li><strong>Altere sua senha imediatamente</strong> se você não reconhece esta atividade</li>
+                    <li>Revise todas as atividades recentes em sua conta</li>
+                    <li>Verifique se não há alterações não autorizadas em seus dados</li>
+                    <li>Entre em contato conosco se suspeitar de acesso não autorizado</li>
+                    <li>Considere usar um dispositivo confiável para acessar o sistema</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>Este é um email automático de segurança, não responda a esta mensagem.</p>
+            <p>Para suporte técnico urgente, entre em contato: <a href="mailto:{{supportEmail}}">{{supportEmail}}</a></p>
+            <p>© {{year}} SEMTAS - Secretaria Municipal do Trabalho e Assistência Social</p>
+        </div>
+    </div>
+</body>
+</html>

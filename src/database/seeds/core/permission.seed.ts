@@ -38,24 +38,24 @@ export class PermissionSeeder implements Seeder {
     
     // Permissões raiz para cada módulo (permissões compostas)
     const moduleRoots = [
-      { name: 'usuario.*', description: 'Todas as permissões do módulo de usuários' },
-      { name: 'cidadao.*', description: 'Todas as permissões do módulo de cidadãos' },
-      { name: 'beneficio.*', description: 'Todas as permissões do módulo de benefícios' },
-      { name: 'solicitacao.*', description: 'Todas as permissões do módulo de solicitações' },
-      { name: 'documento.*', description: 'Todas as permissões do módulo de documentos' },
-      { name: 'auditoria.*', description: 'Todas as permissões do módulo de auditoria' },
-      { name: 'unidade.*', description: 'Todas as permissões do módulo de unidades' },
-      { name: 'relatorio.*', description: 'Todas as permissões do módulo de relatórios' },
-      { name: 'configuracao.*', description: 'Todas as permissões do módulo de configurações' },
-      { name: 'notificacao.*', description: 'Todas as permissões do módulo de notificações' },
-      { name: 'metrica.*', description: 'Todas as permissões do módulo de métricas' },
+      { nome: 'usuario.*', descricao: 'Todas as permissões do módulo de usuários' },
+      { nome: 'cidadao.*', descricao: 'Todas as permissões do módulo de cidadãos' },
+      { nome: 'beneficio.*', descricao: 'Todas as permissões do módulo de benefícios' },
+      { nome: 'solicitacao.*', descricao: 'Todas as permissões do módulo de solicitações' },
+      { nome: 'documento.*', descricao: 'Todas as permissões do módulo de documentos' },
+      { nome: 'auditoria.*', descricao: 'Todas as permissões do módulo de auditoria' },
+      { nome: 'unidade.*', descricao: 'Todas as permissões do módulo de unidades' },
+      { nome: 'relatorio.*', descricao: 'Todas as permissões do módulo de relatórios' },
+      { nome: 'configuracao.*', descricao: 'Todas as permissões do módulo de configurações' },
+      { nome: 'notificacao.*', descricao: 'Todas as permissões do módulo de notificações' },
+      { nome: 'metrica.*', descricao: 'Todas as permissões do módulo de métricas' },
     ];
     
     for (const rootPerm of moduleRoots) {
       await this.createPermission(
         permissionRepository,
-        rootPerm.name,
-        rootPerm.description,
+        rootPerm.nome,
+        rootPerm.descricao,
         true,
       );
     }
@@ -83,24 +83,24 @@ export class PermissionSeeder implements Seeder {
    */
   private async createPermission(
     permissionRepository: PermissionRepository,
-    name: string,
-    description: string,
-    isComposite: boolean,
-    parentId?: string,
+    nome: string,
+    descricao: string,
+    composta: boolean,
+    permissao_pai_id?: string,
   ): Promise<Permission> {
-    const existingPermission = await permissionRepository.findOneBy({ name });
+    const existingPermission = await permissionRepository.findOneBy({ nome });
     
     if (existingPermission) {
       return existingPermission;
     }
     
     const permission = new Permission();
-    permission.name = name;
-    permission.description = description;
-    permission.isComposite = isComposite;
+    permission.nome = nome;
+    permission.descricao = descricao;
+    permission.composta = composta;
     
-    if (parentId) {
-      permission.parentId = parentId;
+    if (permissao_pai_id) {
+      permission.permissao_pai_id = permissao_pai_id;
     }
     
     return await permissionRepository.save(permission);

@@ -1,9 +1,0 @@
-export enum ROLE {
-  ADMIN = 'ADMIN',
-  TECNICO = 'TECNICO',
-  GESTOR_UNIDADE = 'GESTOR_UNIDADE',
-  GESTOR_MUNICIPAL = 'GESTOR_MUNICIPAL',
-  CIDADAO = 'CIDADAO',
-}
-
-export const ROLES_KEY = 'roles';

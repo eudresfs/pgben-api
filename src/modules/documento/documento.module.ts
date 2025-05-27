@@ -5,7 +5,6 @@ import { AuthModule } from '@/auth/auth.module'
 import { DocumentoController } from './controllers/documento.controller';
 import { DocumentoService } from './services/documento.service';
 import { MalwareScanService } from './services/malware-scan.service';
-import { CriptografiaService } from './services/criptografia.service';
 import { ThumbnailService } from './services/thumbnail.service';
 import { Documento } from './entities/documento.entity';
 import { DocumentoEnviado } from './entities/documento-enviado.entity';
@@ -94,7 +93,6 @@ import * as crypto from 'crypto';
   providers: [
     DocumentoService,
     MalwareScanService,
-    CriptografiaService,
     ThumbnailService,
     S3StorageAdapter,
     LocalStorageAdapter,
@@ -112,7 +110,6 @@ import * as crypto from 'crypto';
   exports: [
     DocumentoService,
     MalwareScanService,
-    CriptografiaService,
     ThumbnailService,
     S3StorageAdapter,
     LocalStorageAdapter,

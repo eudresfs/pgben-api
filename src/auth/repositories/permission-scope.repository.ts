@@ -1,7 +1,7 @@
 import { DataSource, Repository } from 'typeorm';
 import { Injectable } from '@nestjs/common';
 import { PermissionScope } from '../entities/permission-scope.entity';
-import { ScopeType } from '../entities/user-permission.entity';
+import { TipoEscopo } from '../entities/user-permission.entity';
 
 /**
  * Repositório para a entidade PermissionScope.
@@ -22,7 +22,7 @@ export class PermissionScopeRepository extends Repository<PermissionScope> {
    * @returns O escopo encontrado ou null
    */
   async findByPermissionId(permissionId: string): Promise<PermissionScope | null> {
-    return this.findOne({ where: { permissionId } });
+    return this.findOne({ where: { permissao_id: permissionId } });
   }
 
   /**
@@ -31,8 +31,8 @@ export class PermissionScopeRepository extends Repository<PermissionScope> {
    * @param defaultScopeType Tipo de escopo padrão
    * @returns Lista de escopos encontrados
    */
-  async findByDefaultScopeType(defaultScopeType: ScopeType): Promise<PermissionScope[]> {
-    return this.find({ where: { defaultScopeType } });
+  async findByDefaultScopeType(defaultScopeType: TipoEscopo): Promise<PermissionScope[]> {
+    return this.find({ where: { tipo_escopo_padrao: defaultScopeType } });
   }
 
   /**
@@ -41,10 +41,10 @@ export class PermissionScopeRepository extends Repository<PermissionScope> {
    * @param defaultScopeType Tipo de escopo padrão
    * @returns Lista de escopos encontrados com permissões relacionadas
    */
-  async findByDefaultScopeTypeWithPermissions(defaultScopeType: ScopeType): Promise<PermissionScope[]> {
-    return this.createQueryBuilder('permissionScope')
-      .leftJoinAndSelect('permissionScope.permission', 'permission')
-      .where('permissionScope.defaultScopeType = :defaultScopeType', { defaultScopeType })
+  async findByDefaultScopeTypeWithPermissions(defaultScopeType: TipoEscopo): Promise<PermissionScope[]> {
+    return this.createQueryBuilder('escopo_permissao')
+      .leftJoinAndSelect('escopo_permissao.permissao', 'permissao')
+      .where('escopo_permissao.tipo_escopo_padrao = :defaultScopeType', { defaultScopeType })
       .getMany();
   }
 
@@ -89,7 +89,7 @@ export class PermissionScopeRepository extends Repository<PermissionScope> {
    * @returns true se os escopos foram removidos, false caso contrário
    */
   async removePermissionScopesByPermissionId(permissionId: string): Promise<boolean> {
-    const result = await this.delete({ permissionId });
+    const result = await this.delete({ permissao_id: permissionId });
     return result.affected !== null && result.affected !== undefined && result.affected > 0;
   }
 }

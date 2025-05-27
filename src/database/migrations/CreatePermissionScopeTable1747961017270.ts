@@ -11,7 +11,7 @@ export class CreatePermissionScopeTable1747961017270 implements MigrationInterfa
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.createTable(
       new Table({
-        name: 'permission_scope',
+        name: 'escopo_permissao',
         columns: [
           {
             name: 'id',
@@ -20,11 +20,11 @@ export class CreatePermissionScopeTable1747961017270 implements MigrationInterfa
             default: 'uuid_generate_v4()',
           },
           {
-            name: 'permission_id',
+            name: 'permissao_id',
             type: 'uuid',
           },
           {
-            name: 'default_scope_type',
+            name: 'tipo_escopo_padrao',
             type: 'varchar',
             length: '20',
             default: "'GLOBAL'",
@@ -40,31 +40,31 @@ export class CreatePermissionScopeTable1747961017270 implements MigrationInterfa
             default: 'now()',
           },
           {
-            name: 'created_by',
+            name: 'criado_por',
             type: 'uuid',
             isNullable: true,
           },
           {
-            name: 'updated_by',
+            name: 'atualizado_por',
             type: 'uuid',
             isNullable: true,
           },
         ],
         foreignKeys: [
           {
-            columnNames: ['permission_id'],
-            referencedTableName: 'permission',
+            columnNames: ['permissao_id'],
+            referencedTableName: 'permissao',
             referencedColumnNames: ['id'],
             onDelete: 'CASCADE',
           },
           {
-            columnNames: ['created_by'],
+            columnNames: ['criado_por'],
             referencedTableName: 'usuario',
             referencedColumnNames: ['id'],
             onDelete: 'SET NULL',
           },
           {
-            columnNames: ['updated_by'],
+            columnNames: ['atualizado_por'],
             referencedTableName: 'usuario',
             referencedColumnNames: ['id'],
             onDelete: 'SET NULL',
@@ -75,24 +75,16 @@ export class CreatePermissionScopeTable1747961017270 implements MigrationInterfa
     );
 
     await queryRunner.createIndex(
-      'permission_scope',
+      'escopo_permissao',
       new TableIndex({
-        name: 'IDX_PERMISSION_SCOPE_PERMISSION',
-        columnNames: ['permission_id'],
+        name: 'IDX_ESCOPO_PERMISSAO_PERMISSAO',
+        columnNames: ['permissao_usuario_id'],
         isUnique: true,
-      })
-    );
-
-    await queryRunner.createIndex(
-      'permission_scope',
-      new TableIndex({
-        name: 'IDX_PERMISSION_SCOPE_TYPE',
-        columnNames: ['default_scope_type'],
       })
     );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.dropTable('permission_scope');
+    await queryRunner.dropTable('escopo_permissao');
   }
 }

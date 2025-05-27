@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CacheModule } from '@nestjs/cache-manager';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { createThrottlerConfig } from './config/throttler.config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { MonitoringModule } from './shared/monitoring/monitoring.module';
@@ -14,8 +15,10 @@ import { UnidadeModule } from './modules/unidade/unidade.module';
 import { CidadaoModule } from './modules/cidadao/cidadao.module';
 import { BeneficioModule } from './modules/beneficio/beneficio.module';
 import { DocumentoModule } from './modules/documento/documento.module';
-import { AuditoriaModule } from './modules/auditoria/auditoria.module';
-import { MetricasModule } from './modules/metricas/metricas.module'; 
+import { MetricasModule } from './modules/metricas/metricas.module';
+import { AuditModule } from './audit/audit.module';
+import { RecursoModule } from './modules/recurso/recurso.module';
+import { LogsModule } from './modules/logs/logs.module';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 
@@ -31,18 +34,11 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
       ttl: 3600, // tempo de vida do cache: 1 hora
       max: 100, // máximo de 100 itens no cache
     }),
-    // Rate limiting - configuração atualizada para compatibilidade com versões recentes
+    // Rate limiting - configuração robusta com múltiplos throttlers
     ThrottlerModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        throttlers: [
-          {
-            ttl: config.get<number>('THROTTLE_TTL', 60),
-            limit: config.get<number>('THROTTLE_LIMIT', 10),
-          },
-        ],
-      }),
+      useFactory: createThrottlerConfig,
     }),
     // Configuração do TypeORM
     TypeOrmModule.forRootAsync({
@@ -85,8 +81,17 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
     // Módulo de docuentos
     DocumentoModule,
 
+    // Módulo de auditoria e logging
+    AuditModule,
+
     // Módulo de métricas
-    MetricasModule
+    MetricasModule,
+
+    // Módulo de recursos de primeira instância
+    RecursoModule,
+
+    // Módulo de logs de auditoria
+    LogsModule
   ],
   controllers: [AppController],
   providers: [
@@ -97,14 +102,16 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
       useClass: ThrottlerGuard,
     },
     // Aplicar autenticação JWT globalmente
-    {
-      provide: APP_GUARD,
-      useClass: JwtAuthGuard,
-    },
+    // Removendo a injeção global do JwtAuthGuard para evitar problemas de injeção
+    // O JwtAuthGuard será usado diretamente nos controladores que precisam dele
+    // {
+    //   provide: APP_GUARD,
+    //   useClass: JwtAuthGuard,
+    // },
   ],
 })
 export class AppModule {
   constructor() {
     console.log('✅ AppModule inicializado - com autenticação');
   }
-}// 
+}//

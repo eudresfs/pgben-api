@@ -1,7 +1,7 @@
 import { DataSource } from 'typeorm';
 import { Permission } from '../../../auth/entities/permission.entity';
 import { PermissionScope } from '../../../auth/entities/permission-scope.entity';
-import { ScopeType } from '../../../auth/entities/user-permission.entity';
+import { ScopeType, TipoEscopo } from '../../../auth/entities/user-permission.entity';
 
 /**
  * Seed para as permissões do módulo de documento.
@@ -294,7 +294,7 @@ export class PermissionDocumentoSeed {
   private static async createPermissionScope(
     repository: any,
     permissionId: string,
-    defaultScopeType: ScopeType,
+    defaultScopeType: TipoEscopo,
   ): Promise<PermissionScope> {
     const existingScope = await repository.findOne({
       where: { permissionId },

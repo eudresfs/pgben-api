@@ -126,4 +126,30 @@ export class EnhancedMetricsController {
     response.setHeader('Content-Type', 'text/plain');
     return response.send(systemMetrics);
   }
+
+  /**
+   * Retorna métricas específicas de cache
+   */
+  @Get('cache')
+  @Public()
+  @ApiOperation({
+    summary: 'Obter métricas de cache',
+    description: 'Retorna métricas relacionadas ao cache (Redis ou em memória)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Métricas de cache retornadas com sucesso',
+  })
+  async getCacheMetrics(@Res() response: Response) {
+    const metrics = await this.metricsService.getMetrics();
+
+    // Filtrar apenas métricas de cache
+    const cacheMetrics = metrics
+      .split('\n')
+      .filter((line) => line.includes('cache_'))
+      .join('\n');
+
+    response.setHeader('Content-Type', 'text/plain');
+    return response.send(cacheMetrics);
+  }
 }

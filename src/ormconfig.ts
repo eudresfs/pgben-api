@@ -14,12 +14,12 @@ import { TipoBeneficio } from './modules/beneficio/entities/tipo-beneficio.entit
 import { RequisitoDocumento } from './modules/beneficio/entities/requisito-documento.entity';
 import { FluxoBeneficio } from './modules/beneficio/entities/fluxo-beneficio.entity';
 import { Solicitacao } from './modules/solicitacao/entities/solicitacao.entity';
-import { DadosBeneficios } from './modules/solicitacao/entities/dados-beneficios.entity';
+import { DadosSolicitacaoBeneficio } from './modules/solicitacao/entities/dados-beneficios.entity';
 import { Pendencia } from './modules/solicitacao/entities/pendencia.entity';
 import { Documento } from './modules/documento/entities/documento.entity';
 import { DocumentoEnviado } from './modules/documento/entities/documento-enviado.entity';
 import { HistoricoSolicitacao } from './modules/solicitacao/entities/historico-solicitacao.entity';
-import { HistoricoSolicitacaoBeneficio } from './modules/beneficio/entities/historico-solicitacao.entity';
+import { HistoricoSolicitacao as HistoricoSolicitacaoBeneficio } from './modules/solicitacao/entities/historico-solicitacao.entity';
 import { LogAuditoria } from './modules/auditoria/entities/log-auditoria.entity';
 import { NotificacaoSistema } from './modules/notificacao/entities/notification.entity';
 import { NotificationTemplate } from './modules/notificacao/entities/notification-template.entity';
@@ -48,7 +48,7 @@ export default new DataSource({
     RequisitoDocumento,
     FluxoBeneficio,
     Solicitacao,
-    DadosBeneficios,
+    DadosSolicitacaoBeneficio,
     Pendencia,
     Documento,
     DocumentoEnviado,

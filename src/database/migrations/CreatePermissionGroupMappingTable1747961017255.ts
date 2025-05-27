@@ -12,7 +12,7 @@ export class CreatePermissionGroupMappingTable1747961017255 implements Migration
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.createTable(
       new Table({
-        name: 'permission_group_mapping',
+        name: 'mapeamento_grupo_permissao',
         columns: [
           {
             name: 'id',
@@ -21,11 +21,11 @@ export class CreatePermissionGroupMappingTable1747961017255 implements Migration
             default: 'uuid_generate_v4()',
           },
           {
-            name: 'permission_id',
+            name: 'permissao_id',
             type: 'uuid',
           },
           {
-            name: 'group_id',
+            name: 'grupo_id',
             type: 'uuid',
           },
           {
@@ -34,26 +34,26 @@ export class CreatePermissionGroupMappingTable1747961017255 implements Migration
             default: 'now()',
           },
           {
-            name: 'created_by',
+            name: 'criado_por',
             type: 'uuid',
             isNullable: true,
           },
         ],
         foreignKeys: [
           {
-            columnNames: ['permission_id'],
-            referencedTableName: 'permission',
+            columnNames: ['permissao_id'],
+            referencedTableName: 'permissao',
             referencedColumnNames: ['id'],
             onDelete: 'CASCADE',
           },
           {
-            columnNames: ['group_id'],
-            referencedTableName: 'permission_group',
+            columnNames: ['grupo_id'],
+            referencedTableName: 'grupo_permissao',
             referencedColumnNames: ['id'],
             onDelete: 'CASCADE',
           },
           {
-            columnNames: ['created_by'],
+            columnNames: ['criado_por'],
             referencedTableName: 'usuario',
             referencedColumnNames: ['id'],
             onDelete: 'SET NULL',
@@ -64,32 +64,32 @@ export class CreatePermissionGroupMappingTable1747961017255 implements Migration
     );
 
     await queryRunner.createIndex(
-      'permission_group_mapping',
+      'mapeamento_grupo_permissao',
       new TableIndex({
-        name: 'IDX_PERMISSION_GROUP_MAPPING_PERMISSION',
-        columnNames: ['permission_id'],
+        name: 'IDX_MAPEAMENTO_GRUPO_PERMISSAO_PERMISSAO',
+        columnNames: ['permissao_id'],
       })
     );
 
     await queryRunner.createIndex(
-      'permission_group_mapping',
+      'mapeamento_grupo_permissao',
       new TableIndex({
-        name: 'IDX_PERMISSION_GROUP_MAPPING_GROUP',
-        columnNames: ['group_id'],
+        name: 'IDX_MAPEAMENTO_GRUPO_PERMISSAO_GRUPO',
+        columnNames: ['grupo_id'],
       })
     );
 
     await queryRunner.createIndex(
-      'permission_group_mapping',
+      'mapeamento_grupo_permissao',
       new TableIndex({
-        name: 'IDX_PERMISSION_GROUP_MAPPING_UNIQUE',
-        columnNames: ['permission_id', 'group_id'],
+        name: 'IDX_MAPEAMENTO_GRUPO_PERMISSAO_UNICO',
+        columnNames: ['permissao_id', 'grupo_id'],
         isUnique: true,
       })
     );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.dropTable('permission_group_mapping');
+    await queryRunner.dropTable('mapeamento_grupo_permissao');
   }
 }

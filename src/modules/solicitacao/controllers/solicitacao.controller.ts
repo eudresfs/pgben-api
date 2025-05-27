@@ -5,6 +5,7 @@ import {
   Body,
   Param,
   Put,
+  Delete,
   Query,
   UseGuards,
   Req,
@@ -25,6 +26,8 @@ import { SolicitacaoService } from '../services/solicitacao.service';
 import { CreateSolicitacaoDto } from '../dto/create-solicitacao.dto';
 import { UpdateSolicitacaoDto } from '../dto/update-solicitacao.dto';
 import { AvaliarSolicitacaoDto } from '../dto/avaliar-solicitacao.dto';
+import { VincularProcessoJudicialDto } from '../dto/vincular-processo-judicial.dto';
+import { VincularDeterminacaoJudicialDto } from '../dto/vincular-determinacao-judicial.dto';
 import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../../../auth/guards/permission.guard';
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
@@ -443,5 +446,131 @@ export class SolicitacaoController {
     }
 
     return this.solicitacaoService.getPendencias(id);
+  }
+
+  /**
+   * Vincula um processo judicial a uma solicitação
+   */
+  @Post(':id/processo-judicial')
+  @RequiresPermission({
+    permissionName: 'solicitacao.processo_judicial.vincular',
+    scopeType: ScopeType.UNIT,
+    scopeIdExpression: 'solicitacao.unidadeId',
+  })
+  @ApiOperation({ summary: 'Vincular processo judicial a uma solicitação' })
+  @ApiResponse({
+    status: 200,
+    description: 'Processo judicial vinculado com sucesso',
+  })
+  @ApiResponse({ status: 404, description: 'Solicitação ou processo não encontrado' })
+  @ApiResponse({ status: 409, description: 'Processo já vinculado a esta solicitação' })
+  @ApiBody({ type: VincularProcessoJudicialDto })
+  async vincularProcessoJudicial(
+    @Param('id') id: string,
+    @Body() vincularDto: VincularProcessoJudicialDto,
+    @Req() req: Request,
+  ) {
+    const user = req.user;
+    const solicitacao = await this.solicitacaoService.findById(id);
+
+    if (!this.solicitacaoService.canAccessSolicitacao(solicitacao, user)) {
+      throw new UnauthorizedException(
+        'Você não tem permissão para acessar esta solicitação',
+      );
+    }
+
+    return this.solicitacaoService.vincularProcessoJudicial(id, vincularDto, user);
+  }
+
+  /**
+   * Desvincula um processo judicial de uma solicitação
+   */
+  @Delete(':id/processo-judicial')
+  @RequiresPermission({
+    permissionName: 'solicitacao.processo_judicial.desvincular',
+    scopeType: ScopeType.UNIT,
+    scopeIdExpression: 'solicitacao.unidadeId',
+  })
+  @ApiOperation({ summary: 'Desvincular processo judicial de uma solicitação' })
+  @ApiResponse({
+    status: 200,
+    description: 'Processo judicial desvinculado com sucesso',
+  })
+  @ApiResponse({ status: 404, description: 'Solicitação não encontrada' })
+  @ApiResponse({ status: 400, description: 'Solicitação não possui processo judicial vinculado' })
+  async desvincularProcessoJudicial(@Param('id') id: string, @Req() req: Request) {
+    const user = req.user;
+    const solicitacao = await this.solicitacaoService.findById(id);
+
+    if (!this.solicitacaoService.canAccessSolicitacao(solicitacao, user)) {
+      throw new UnauthorizedException(
+        'Você não tem permissão para acessar esta solicitação',
+      );
+    }
+
+    return this.solicitacaoService.desvincularProcessoJudicial(id, user);
+  }
+
+  /**
+   * Vincula uma determinação judicial a uma solicitação
+   */
+  @Post(':id/determinacao-judicial')
+  @RequiresPermission({
+    permissionName: 'solicitacao.determinacao_judicial.vincular',
+    scopeType: ScopeType.UNIT,
+    scopeIdExpression: 'solicitacao.unidadeId',
+  })
+  @ApiOperation({ summary: 'Vincular determinação judicial a uma solicitação' })
+  @ApiResponse({
+    status: 200,
+    description: 'Determinação judicial vinculada com sucesso',
+  })
+  @ApiResponse({ status: 404, description: 'Solicitação ou determinação não encontrada' })
+  @ApiResponse({ status: 409, description: 'Determinação já vinculada a esta solicitação' })
+  @ApiBody({ type: VincularDeterminacaoJudicialDto })
+  async vincularDeterminacaoJudicial(
+    @Param('id') id: string,
+    @Body() vincularDto: VincularDeterminacaoJudicialDto,
+    @Req() req: Request,
+  ) {
+    const user = req.user;
+    const solicitacao = await this.solicitacaoService.findById(id);
+
+    if (!this.solicitacaoService.canAccessSolicitacao(solicitacao, user)) {
+      throw new UnauthorizedException(
+        'Você não tem permissão para acessar esta solicitação',
+      );
+    }
+
+    return this.solicitacaoService.vincularDeterminacaoJudicial(id, vincularDto, user);
+  }
+
+  /**
+   * Desvincula uma determinação judicial de uma solicitação
+   */
+  @Delete(':id/determinacao-judicial')
+  @RequiresPermission({
+    permissionName: 'solicitacao.determinacao_judicial.desvincular',
+    scopeType: ScopeType.UNIT,
+    scopeIdExpression: 'solicitacao.unidadeId',
+  })
+  @ApiOperation({ summary: 'Desvincular determinação judicial de uma solicitação' })
+  @ApiResponse({
+    status: 200,
+    description: 'Determinação judicial desvinculada com sucesso',
+  })
+  @ApiResponse({ status: 404, description: 'Solicitação não encontrada' })
+  @ApiResponse({ status: 400, description: 'Solicitação não possui determinação judicial vinculada' })
+  async desvincularDeterminacaoJudicial(@Param('id') id: string, @Req() req: Request) {
+    const user = req.user;
+    const solicitacao = await this.solicitacaoService.findById(id);
+
+    if (!this.solicitacaoService.canAccessSolicitacao(solicitacao, user)) {
+      throw new UnauthorizedException(
+        'Você não tem permissão para acessar esta solicitação',
+      );
+    }
+
+    return this.solicitacaoService.desvincularDeterminacaoJudicial(id, user);
   }
 }

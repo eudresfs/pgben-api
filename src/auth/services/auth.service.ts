@@ -25,6 +25,17 @@ export class AuthService {
   // Valores padrão no formato semântico
   private readonly DEFAULT_ACCESS_TOKEN_EXPIRES_IN = '1h';
   private readonly DEFAULT_REFRESH_TOKEN_EXPIRES_IN = '7d';
+  
+  /**
+   * Gera um JTI (JWT ID) único
+   * @returns string - JTI único
+   */
+  private generateJti(): string {
+    // Combinar timestamp, número aleatório e hash para garantir unicidade
+    const timestamp = Date.now().toString(36);
+    const randomPart = Math.random().toString(36).substring(2, 15);
+    return `${timestamp}-${randomPart}`;
+  }
 
   constructor(
     private usuarioService: UsuarioService,
@@ -207,15 +218,17 @@ export class AuthService {
       throw new UnauthorizedException('Token de refresh expirado');
     }
 
-    // Revogar o token atual
+    // Revogar apenas o token de refresh atual
+    // Não adicionamos o access token à blacklist, pois isso causaria problemas
+    // com requisições subsequentes
     const ipAddress = (ctx as any).req?.ip || '0.0.0.0';
     await this.refreshTokenService.revokeToken(refreshToken.token, ipAddress);
 
-    // Revogar tokens descendentes
-    await this.refreshTokenService.revokeDescendantTokens(
-      refreshToken,
-      ipAddress,
-    );
+    // Não revogar tokens descendentes para evitar problemas com a blacklist
+    // await this.refreshTokenService.revokeDescendantTokens(
+    //   refreshToken,
+    //   ipAddress,
+    // );
 
     // Obter o usuário
     const usuario = await this.usuarioService.findById(refreshToken.usuario.id);
@@ -253,6 +266,9 @@ export class AuthService {
   ): AuthTokenOutput {
     this.logger.log(ctx, `${this.getAuthToken.name} was called`);
 
+    // Gerar um JTI (JWT ID) único para cada token
+    const jti = this.generateJti();
+    
     const subject = { sub: user.id };
     const payload = {
       username: user.username,
@@ -294,16 +310,26 @@ export class AuthService {
         secret: privateKey,
         algorithm: 'RS256',
         expiresIn: accessTokenExpiresIn,
+        jwtid: jti, 
       },
     );
 
     // Para o refreshToken, usamos o mesmo JwtService, mas com opções diferentes de expiração
-    const refreshTokenJwt = this.jwtService.sign(subject, {
-      secret: privateKey,
-      algorithm: 'RS256',
-      expiresIn: refreshTokenExpiresIn,
-    });
-
+    // Gerar um JTI diferente para o refresh token
+    const refreshJti = this.generateJti();
+    
+    const refreshTokenJwt = this.jwtService.sign(
+      {
+        ...subject,
+      }, 
+      {
+        secret: privateKey,
+        algorithm: 'RS256',
+        expiresIn: refreshTokenExpiresIn,
+        jwtid: refreshJti, 
+      },
+    );
+    
     const authToken = {
       accessToken,
       refreshToken: refreshTokenJwt,

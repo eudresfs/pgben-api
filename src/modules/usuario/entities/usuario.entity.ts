@@ -14,9 +14,9 @@ import { Exclude } from 'class-transformer';
 import { RefreshToken } from '../../../auth/entities/refresh-token.entity';
 import { Unidade } from '../../unidade/entities/unidade.entity';
 import { Setor } from '../../unidade/entities/setor.entity';
-import { IsCPF, IsTelefone } from '@/shared/validators/br-validators';
+import { IsCPF, IsTelefone } from '../../../shared/validators/br-validators';
 import { IsNotEmpty, IsString, Length, MaxLength, MinLength, Validate } from 'class-validator';
-import { IsStrongPassword } from '@/shared/validators/strong-password.validator';
+import { IsStrongPassword } from '../../../shared/validators/strong-password.validator';
 import { Role } from './role.entity';
 
 /**

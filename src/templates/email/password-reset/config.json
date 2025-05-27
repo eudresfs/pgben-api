@@ -1,0 +1,15 @@
+{
+  "subject": "Recuperação de Senha - SEMTAS",
+  "description": "Template para envio de link de recuperação de senha",
+  "variables": {
+    "name": "Nome do usuário",
+    "resetUrl": "URL para redefinição de senha",
+    "expiresAt": "Data e hora de expiração do token",
+    "expiresInMinutes": "Tempo em minutos até a expiração",
+    "supportEmail": "Email de suporte técnico",
+    "year": "Ano atual"
+  },
+  "version": "1.0.0",
+  "author": "Tech Lead SEMTAS",
+  "lastModified": "2024-01-15"
+}

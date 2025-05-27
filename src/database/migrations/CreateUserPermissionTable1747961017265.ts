@@ -12,7 +12,7 @@ export class CreateUserPermissionTable1747961017265 implements MigrationInterfac
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.createTable(
       new Table({
-        name: 'user_permission',
+        name: 'usuario_permissao',
         columns: [
           {
             name: 'id',
@@ -21,31 +21,31 @@ export class CreateUserPermissionTable1747961017265 implements MigrationInterfac
             default: 'uuid_generate_v4()',
           },
           {
-            name: 'user_id',
+            name: 'usuario_id',
             type: 'uuid',
           },
           {
-            name: 'permission_id',
+            name: 'permissao_id',
             type: 'uuid',
           },
           {
-            name: 'granted',
+            name: 'concedida',
             type: 'boolean',
             default: true,
           },
           {
-            name: 'scope_type',
+            name: 'tipo_escopo',
             type: 'varchar',
             length: '20',
             default: "'GLOBAL'",
           },
           {
-            name: 'scope_id',
+            name: 'escopo_id',
             type: 'uuid',
             isNullable: true,
           },
           {
-            name: 'valid_until',
+            name: 'valido_ate',
             type: 'timestamp',
             isNullable: true,
           },
@@ -60,37 +60,37 @@ export class CreateUserPermissionTable1747961017265 implements MigrationInterfac
             default: 'now()',
           },
           {
-            name: 'created_by',
+            name: 'criado_por',
             type: 'uuid',
             isNullable: true,
           },
           {
-            name: 'updated_by',
+            name: 'atualizado_por',
             type: 'uuid',
             isNullable: true,
           },
         ],
         foreignKeys: [
           {
-            columnNames: ['user_id'],
+            columnNames: ['usuario_id'],
             referencedTableName: 'usuario',
             referencedColumnNames: ['id'],
             onDelete: 'CASCADE',
           },
           {
-            columnNames: ['permission_id'],
-            referencedTableName: 'permission',
+            columnNames: ['permissao_id'],
+            referencedTableName: 'permissao',
             referencedColumnNames: ['id'],
             onDelete: 'CASCADE',
           },
           {
-            columnNames: ['created_by'],
+            columnNames: ['criado_por'],
             referencedTableName: 'usuario',
             referencedColumnNames: ['id'],
             onDelete: 'SET NULL',
           },
           {
-            columnNames: ['updated_by'],
+            columnNames: ['atualizado_por'],
             referencedTableName: 'usuario',
             referencedColumnNames: ['id'],
             onDelete: 'SET NULL',
@@ -101,59 +101,59 @@ export class CreateUserPermissionTable1747961017265 implements MigrationInterfac
     );
 
     await queryRunner.createIndex(
-      'user_permission',
+      'usuario_permissao',
       new TableIndex({
-        name: 'IDX_USER_PERMISSION_USER',
-        columnNames: ['user_id'],
+        name: 'IDX_USUARIO_PERMISSAO_USUARIO',
+        columnNames: ['usuario_id'],
       })
     );
 
     await queryRunner.createIndex(
-      'user_permission',
+      'usuario_permissao',
       new TableIndex({
-        name: 'IDX_USER_PERMISSION_PERMISSION',
-        columnNames: ['permission_id'],
+        name: 'IDX_USUARIO_PERMISSAO_PERMISSAO',
+        columnNames: ['permissao_id'],
       })
     );
 
     await queryRunner.createIndex(
-      'user_permission',
+      'usuario_permissao',
       new TableIndex({
-        name: 'IDX_USER_PERMISSION_SCOPE',
-        columnNames: ['scope_type', 'scope_id'],
+        name: 'IDX_USUARIO_PERMISSAO_ESCOPO',
+        columnNames: ['tipo_escopo', 'escopo_id'],
       })
     );
 
     await queryRunner.createIndex(
-      'user_permission',
+      'usuario_permissao',
       new TableIndex({
-        name: 'IDX_USER_PERMISSION_VALID_UNTIL',
-        columnNames: ['valid_until'],
+        name: 'IDX_USUARIO_PERMISSAO_VALIDADE',
+        columnNames: ['valido_ate'],
       })
     );
 
     await queryRunner.createIndex(
-      'user_permission',
+      'usuario_permissao',
       new TableIndex({
-        name: 'IDX_USER_PERMISSION_UNIQUE',
-        columnNames: ['user_id', 'permission_id', 'scope_type', 'scope_id'],
+        name: 'IDX_USUARIO_PERMISSAO_UNICO',
+        columnNames: ['usuario_id', 'permissao_id', 'tipo_escopo', 'escopo_id'],
         isUnique: true,
-        where: 'scope_id IS NOT NULL',
+        where: 'escopo_id IS NOT NULL',
       })
     );
 
     await queryRunner.createIndex(
-      'user_permission',
+      'usuario_permissao',
       new TableIndex({
-        name: 'IDX_USER_PERMISSION_UNIQUE_NULL_SCOPE',
-        columnNames: ['user_id', 'permission_id', 'scope_type'],
+        name: 'IDX_USUARIO_PERMISSAO_UNICO_SEM_ESCOPO',
+        columnNames: ['usuario_id', 'permissao_id', 'tipo_escopo'],
         isUnique: true,
-        where: 'scope_id IS NULL',
+        where: 'escopo_id IS NULL',
       })
     );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.dropTable('user_permission');
+    await queryRunner.dropTable('usuario_permissao');
   }
 }

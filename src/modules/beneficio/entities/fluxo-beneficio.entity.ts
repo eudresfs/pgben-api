@@ -11,7 +11,7 @@ import {
 } from 'typeorm';
 import { IsNotEmpty, IsOptional, IsNumber, Min, IsEnum } from 'class-validator';
 import { TipoBeneficio } from './tipo-beneficio.entity';
-import { Role } from '@/shared/enums/role.enum'
+import { Role } from '../../../shared/enums/role.enum'
 
 export enum TipoEtapa {
   ABERTURA = 'abertura',

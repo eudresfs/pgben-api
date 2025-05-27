@@ -15,7 +15,7 @@ import { Solicitacao } from './solicitacao.entity';
 
 @Entity('dados_beneficios')
 @Index(['solicitacao_id'], { unique: true })
-export class DadosBeneficios {
+export class DadosSolicitacaoBeneficio {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 

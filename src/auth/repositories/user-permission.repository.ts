@@ -1,6 +1,6 @@
 import { DataSource, Repository } from 'typeorm';
 import { Injectable } from '@nestjs/common';
-import { UserPermission, ScopeType } from '../entities/user-permission.entity';
+import { UserPermission, ScopeType, TipoEscopo } from '../entities/user-permission.entity';
 
 /**
  * Repositório para a entidade UserPermission.
@@ -21,7 +21,7 @@ export class UserPermissionRepository extends Repository<UserPermission> {
    * @returns Lista de permissões encontradas
    */
   async findByUserId(userId: string): Promise<UserPermission[]> {
-    return this.find({ where: { userId } });
+    return this.find({ where: { usuario_id: userId } });
   }
 
   /**
@@ -31,9 +31,9 @@ export class UserPermissionRepository extends Repository<UserPermission> {
    * @returns Lista de permissões encontradas com permissões relacionadas
    */
   async findByUserIdWithPermissions(userId: string): Promise<UserPermission[]> {
-    return this.createQueryBuilder('userPermission')
-      .leftJoinAndSelect('userPermission.permission', 'permission')
-      .where('userPermission.userId = :userId', { userId })
+    return this.createQueryBuilder('permissao_usuario')
+      .leftJoinAndSelect('permissao_usuario.permissao', 'permissao')
+      .where('permissao_usuario.usuario_id = :userId', { userId })
       .getMany();
   }
 
@@ -44,7 +44,7 @@ export class UserPermissionRepository extends Repository<UserPermission> {
    * @returns Lista de permissões encontradas
    */
   async findByPermissionId(permissionId: string): Promise<UserPermission[]> {
-    return this.find({ where: { permissionId } });
+    return this.find({ where: { permissao_id: permissionId } });
   }
 
   /**
@@ -59,15 +59,15 @@ export class UserPermissionRepository extends Repository<UserPermission> {
   async findByUserAndPermission(
     userId: string,
     permissionId: string,
-    scopeType: ScopeType,
+    scopeType: TipoEscopo,
     scopeId?: string
   ): Promise<UserPermission | null> {
     return this.findOne({
       where: {
-        userId,
-        permissionId,
-        scopeType,
-        ...(scopeId && { scopeId })
+        usuario_id: userId,
+        permissao_id: permissionId,
+        tipo_escopo: scopeType,
+        ...(scopeId && { escopo_id: scopeId })
       }
     });
   }
@@ -79,8 +79,8 @@ export class UserPermissionRepository extends Repository<UserPermission> {
    * @param scopeType Tipo de escopo
    * @returns Lista de permissões encontradas
    */
-  async findByUserIdAndScopeType(userId: string, scopeType: ScopeType): Promise<UserPermission[]> {
-    return this.find({ where: { userId, scopeType } });
+  async findByUserIdAndScopeType(userId: string, scopeType: TipoEscopo): Promise<UserPermission[]> {
+    return this.find({ where: { usuario_id: userId, tipo_escopo: scopeType } });
   }
 
   /**
@@ -91,8 +91,8 @@ export class UserPermissionRepository extends Repository<UserPermission> {
    * @param scopeId ID do escopo
    * @returns Lista de permissões encontradas
    */
-  async findByUserIdAndScope(userId: string, scopeType: ScopeType, scopeId: string): Promise<UserPermission[]> {
-    return this.find({ where: { userId, scopeType, scopeId } });
+  async findByUserIdAndScope(userId: string, scopeType: TipoEscopo, scopeId: string): Promise<UserPermission[]> {
+    return this.find({ where: { usuario_id: userId, tipo_escopo: scopeType, escopo_id: scopeId } });
   }
 
   /**
@@ -103,10 +103,10 @@ export class UserPermissionRepository extends Repository<UserPermission> {
    */
   async findValidByUserId(userId: string): Promise<UserPermission[]> {
     const now = new Date();
-    return this.createQueryBuilder('userPermission')
-      .leftJoinAndSelect('userPermission.permission', 'permission')
-      .where('userPermission.userId = :userId', { userId })
-      .andWhere('(userPermission.validUntil IS NULL OR userPermission.validUntil > :now)', { now })
+    return this.createQueryBuilder('permissao_usuario')
+      .leftJoinAndSelect('permissao_usuario.permissao', 'permissao')
+      .where('permissao_usuario.usuario_id = :userId', { userId })
+      .andWhere('(permissao_usuario.valido_ate IS NULL OR permissao_usuario.valido_ate > :now)', { now })
       .getMany();
   }
 
@@ -151,7 +151,7 @@ export class UserPermissionRepository extends Repository<UserPermission> {
    * @returns true se as permissões foram removidas, false caso contrário
    */
   async removeUserPermissionsByUserId(userId: string): Promise<boolean> {
-    const result = await this.delete({ userId });
+    const result = await this.delete({ usuario_id: userId });
     return result.affected !== null && result.affected !== undefined && result.affected > 0;
   }
 
@@ -162,7 +162,7 @@ export class UserPermissionRepository extends Repository<UserPermission> {
    * @returns true se as permissões foram removidas, false caso contrário
    */
   async removeUserPermissionsByPermissionId(permissionId: string): Promise<boolean> {
-    const result = await this.delete({ permissionId });
+    const result = await this.delete({ permissao_id: permissionId });
     return result.affected !== null && result.affected !== undefined && result.affected > 0;
   }
 
@@ -173,8 +173,8 @@ export class UserPermissionRepository extends Repository<UserPermission> {
    * @param scopeId ID do escopo
    * @returns true se as permissões foram removidas, false caso contrário
    */
-  async removeUserPermissionsByScope(scopeType: ScopeType, scopeId: string): Promise<boolean> {
-    const result = await this.delete({ scopeType, scopeId });
+  async removeUserPermissionsByScope(scopeType: TipoEscopo, scopeId: string): Promise<boolean> {
+    const result = await this.delete({ tipo_escopo: scopeType, escopo_id: scopeId });
     return result.affected !== null && result.affected !== undefined && result.affected > 0;
   }
 }

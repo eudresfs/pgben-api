@@ -1,7 +1,7 @@
 import { DataSource } from 'typeorm';
 import { Permission } from '../../../auth/entities/permission.entity';
 import { PermissionScope } from '../../../auth/entities/permission-scope.entity';
-import { ScopeType } from '../../../auth/entities/user-permission.entity';
+import { TipoEscopo } from '../../../auth/entities/user-permission.entity';
 
 /**
  * Seed para as permissões do módulo de auditoria.
@@ -114,73 +114,73 @@ export class PermissionAuditoriaSeed {
     await this.createPermissionScope(
       permissionScopeRepository,
       auditoriaAll.id,
-      ScopeType.GLOBAL,
+      TipoEscopo.GLOBAL,
     );
 
     await this.createPermissionScope(
       permissionScopeRepository,
       auditoriaListar.id,
-      ScopeType.GLOBAL,
+      TipoEscopo.GLOBAL,
     );
 
     await this.createPermissionScope(
       permissionScopeRepository,
       auditoriaVisualizar.id,
-      ScopeType.GLOBAL,
+      TipoEscopo.GLOBAL,
     );
 
     await this.createPermissionScope(
       permissionScopeRepository,
       auditoriaBuscarPorUsuario.id,
-      ScopeType.GLOBAL,
+      TipoEscopo.GLOBAL,
     );
 
     await this.createPermissionScope(
       permissionScopeRepository,
       auditoriaBuscarPorEntidade.id,
-      ScopeType.GLOBAL,
+      TipoEscopo.GLOBAL,
     );
 
     await this.createPermissionScope(
       permissionScopeRepository,
       auditoriaBuscarPorOperacao.id,
-      ScopeType.GLOBAL,
+      TipoEscopo.GLOBAL,
     );
 
     await this.createPermissionScope(
       permissionScopeRepository,
       auditoriaBuscarPorData.id,
-      ScopeType.GLOBAL,
+      TipoEscopo.GLOBAL,
     );
 
     await this.createPermissionScope(
       permissionScopeRepository,
       auditoriaExportar.id,
-      ScopeType.GLOBAL,
+      TipoEscopo.GLOBAL,
     );
 
     await this.createPermissionScope(
       permissionScopeRepository,
       auditoriaConfiguracaoListar.id,
-      ScopeType.GLOBAL,
+      TipoEscopo.GLOBAL,
     );
 
     await this.createPermissionScope(
       permissionScopeRepository,
       auditoriaConfiguracaoEditar.id,
-      ScopeType.GLOBAL,
+      TipoEscopo.GLOBAL,
     );
 
     await this.createPermissionScope(
       permissionScopeRepository,
       auditoriaRelatorioGerar.id,
-      ScopeType.GLOBAL,
+      TipoEscopo.GLOBAL,
     );
 
     await this.createPermissionScope(
       permissionScopeRepository,
       auditoriaRelatorioAgendamento.id,
-      ScopeType.GLOBAL,
+      TipoEscopo.GLOBAL,
     );
 
     console.log('Seed de permissões do módulo de auditoria concluído com sucesso!');
@@ -229,7 +229,7 @@ export class PermissionAuditoriaSeed {
   private static async createPermissionScope(
     repository: any,
     permissionId: string,
-    defaultScopeType: ScopeType,
+    defaultScopeType: TipoEscopo,
   ): Promise<PermissionScope> {
     const existingScope = await repository.findOne({
       where: { permissionId },

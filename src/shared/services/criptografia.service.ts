@@ -24,6 +24,7 @@ export class CriptografiaService {
   private readonly authTagLength = 16; // 128 bits
   private readonly masterKey: Buffer;
   private readonly keyPath: string;
+  private readonly tiposSensiveis: string[];
 
   constructor(
     private configService: ConfigService,
@@ -31,6 +32,20 @@ export class CriptografiaService {
   ) {
     // Obter a chave da variável de ambiente ou do arquivo
     const envKey = this.configService.get<string>('ENCRYPTION_KEY');
+    
+    // Inicializar a lista de tipos sensíveis
+    this.tiposSensiveis = this.configService.get<string[]>(
+      'TIPOS_DOCUMENTOS_SENSIVEIS',
+      [
+        'ATESTADO_MEDICO',
+        'LAUDO_MEDICO',
+        'DOCUMENTO_IDENTIDADE',
+        'CPF',
+        'CARTAO_NIS',
+        'DECLARACAO_SAUDE',
+        'PRONTUARIO_MEDICO',
+      ],
+    );
     
     if (envKey) {
       // Usar a chave da variável de ambiente
@@ -70,11 +85,6 @@ export class CriptografiaService {
           this.chaveMonitorService.criarBackup();
         }
       }
-    }
-
-    // Verificar o tamanho da chave
-    if (this.masterKey.length !== this.keyLength) {
-      throw new Error(`A chave de criptografia deve ter ${this.keyLength} bytes (${this.keyLength * 8} bits)`);
     }
   }
 
@@ -285,5 +295,84 @@ export class CriptografiaService {
   verificarHash(data: Buffer, hash: string): boolean {
     const calculatedHash = this.gerarHash(data);
     return calculatedHash === hash;
+  }
+
+  /**
+   * Verifica se um tipo de documento deve ser criptografado
+   * @param tipoDocumento Tipo de documento
+   * @returns true se o documento deve ser criptografado, false caso contrário
+   */
+  deveSerCriptografado(tipoDocumento: string): boolean {
+    return this.tiposSensiveis.includes(tipoDocumento);
+  }
+
+  /**
+   * Converte o formato dos dados criptografados para compatibilidade com a implementação anterior
+   * @param resultado Resultado da criptografia no formato do serviço compartilhado
+   * @returns Resultado formatado no estilo do serviço específico de documento
+   */
+  formatarParaLegado(resultado: {
+    dadosCriptografados: Buffer;
+    iv: Buffer;
+    authTag: Buffer;
+  }): {
+    bufferCriptografado: Buffer;
+    iv: string;
+    authTag: string;
+  } {
+    return {
+      bufferCriptografado: resultado.dadosCriptografados,
+      iv: resultado.iv.toString('hex'),
+      authTag: resultado.authTag.toString('hex'),
+    };
+  }
+
+  /**
+   * Criptografa um buffer (método legado para compatibilidade)
+   * @param buffer Buffer a ser criptografado
+   * @returns Objeto com o buffer criptografado e os metadados necessários para descriptografia
+   */
+  criptografar(buffer: Buffer): {
+    bufferCriptografado: Buffer;
+    iv: string;
+    authTag: string;
+  } {
+    try {
+      // Usar o método interno e converter o formato
+      const resultado = this.criptografarBuffer(buffer);
+      return this.formatarParaLegado(resultado);
+    } catch (error) {
+      this.logger.error(`Erro ao criptografar documento: ${error.message}`);
+      throw new Error(`Erro ao criptografar documento: ${error.message}`);
+    }
+  }
+
+  /**
+   * Descriptografa um buffer (método legado para compatibilidade)
+   * @param bufferCriptografado Buffer criptografado
+   * @param iv Vetor de inicialização usado na criptografia (em formato hexadecimal)
+   * @param authTag Tag de autenticação gerada na criptografia (em formato hexadecimal)
+   * @returns Buffer descriptografado
+   */
+  descriptografar(
+    bufferCriptografado: Buffer,
+    iv: string,
+    authTag: string,
+  ): Buffer {
+    try {
+      // Converter IV e authTag de hex para Buffer
+      const ivBuffer = Buffer.from(iv, 'hex');
+      const authTagBuffer = Buffer.from(authTag, 'hex');
+
+      // Usar o método interno para descriptografar
+      return this.descriptografarBuffer(
+        bufferCriptografado,
+        ivBuffer,
+        authTagBuffer,
+      );
+    } catch (error) {
+      this.logger.error(`Erro ao descriptografar documento: ${error.message}`);
+      throw new Error(`Erro ao descriptografar documento: ${error.message}`);
+    }
   }
 }

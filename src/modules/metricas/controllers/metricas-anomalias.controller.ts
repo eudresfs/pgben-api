@@ -5,7 +5,7 @@ import { MetricasAnomaliasService, NivelConfiancaAnomalia } from '../services';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../auth/guards/roles.guard';
 import { ROLES } from '../../../shared/constants/roles.constants';
-import { Roles } from '@/auth';
+import { Roles } from '../../../auth/decorators/role.decorator';
 
 /**
  * Controlador para detecção de anomalias e análise de tendências

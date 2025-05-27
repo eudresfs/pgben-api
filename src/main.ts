@@ -4,7 +4,8 @@ import { Logger, RequestMethod, ValidationPipe } from '@nestjs/common';
 import { ResponseInterceptor } from './shared/interceptors/response.interceptor';
 import { HttpExceptionFilter } from './shared/filters/http-exception.filter';
 import { setupSwagger } from './shared/configs/swagger/index';
-import helmet from 'helmet';
+import { applySecurity } from './config/security.config';
+import { ConfigService } from '@nestjs/config';
 import compression from 'compression';
 
 async function bootstrap() {
@@ -25,8 +26,11 @@ async function bootstrap() {
     // Configurando middlewares de segurança
     logger.log('🚀 Configurando middlewares de segurança...');
     
-    // Helmet para proteção de cabeçalhos HTTP
-    app.use(helmet());
+    // Obter ConfigService para configurações de segurança
+    const configService = app.get(ConfigService);
+    
+    // Aplicar todas as configurações de segurança
+    applySecurity(app, configService);
     
     // Compressão de resposta para melhorar performance
     app.use(compression());

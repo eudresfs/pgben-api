@@ -395,16 +395,22 @@ export class NotificationManagerService implements OnModuleInit {
       // Esta é uma abordagem mais dinâmica, mas na maioria dos casos você
       // faria o registro explícito de cada canal no NotificacaoModule
 
-      // Exemplo com o canal de e-mail (para demonstração)
-      const emailChannel = this.moduleRef.get('EmailChannelService', {
-        strict: false,
-      });
-      
-      if (emailChannel && 'canal_id' in emailChannel) {
-        this.canaisNotificacao.set(emailChannel.canal_id, emailChannel);
-        this.logger.log(
-          `Canal de notificação registrado: ${emailChannel.canal_id}`,
-        );
+      // Verificar se o EmailChannelService está disponível
+      try {
+        // Registrar canal de email
+        const emailChannel = this.moduleRef.get('EmailChannelService', {
+          strict: false,
+        });
+        
+        if (emailChannel && 'canal_id' in emailChannel) {
+          this.canaisNotificacao.set(emailChannel.canal_id, emailChannel);
+          this.logger.log(
+            `Canal de notificação registrado: ${emailChannel.canal_id}`,
+          );
+        }
+      } catch (e) {
+        // O EmailChannelService não está disponível, mas isso não deve impedir o funcionamento
+        this.logger.warn('EmailChannelService não está disponível. Notificações por email não serão enviadas.');
       }
 
       // Você registraria outros canais aqui da mesma forma

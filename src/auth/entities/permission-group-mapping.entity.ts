@@ -9,7 +9,7 @@ import { Usuario } from '../../modules/usuario/entities/usuario.entity';
  * Esta entidade permite associar permissões a grupos, facilitando a organização
  * e atribuição de permissões relacionadas.
  */
-@Entity('permission_group_mapping')
+@Entity('mapeamento_grupo_permissao')
 export class PermissionGroupMapping {
   /**
    * Identificador único do mapeamento
@@ -20,45 +20,98 @@ export class PermissionGroupMapping {
   /**
    * Referência à permissão
    */
-  @Column({ type: 'uuid', name: 'permission_id' })
-  permissionId: string;
+  @Column({ type: 'uuid', name: 'permissao_id' })
+  permissao_id: string;
 
   /**
    * Relação com a permissão
    */
   @ManyToOne(() => Permission, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'permission_id' })
-  permission: Permission;
+  @JoinColumn({ name: 'permissao_id' })
+  permissao: Permission;
 
   /**
    * Referência ao grupo
    */
-  @Column({ type: 'uuid', name: 'group_id' })
-  groupId: string;
+  @Column({ type: 'uuid', name: 'grupo_id' })
+  grupo_id: string;
 
   /**
    * Relação com o grupo
    */
   @ManyToOne(() => PermissionGroup, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'group_id' })
-  group: PermissionGroup;
+  @JoinColumn({ name: 'grupo_id' })
+  grupo: PermissionGroup;
 
   /**
    * Data de criação
    */
   @CreateDateColumn({ name: 'created_at' })
-  createdAt: Date;
+  created_at: Date;
 
   /**
    * Usuário que criou o mapeamento
    */
-  @Column({ type: 'uuid', nullable: true, name: 'created_by' })
-  createdBy: string | null;
+  @Column({ type: 'uuid', nullable: true, name: 'criado_por' })
+  criado_por: string | null;
 
   /**
    * Relação com o usuário que criou o mapeamento
    */
   @ManyToOne(() => Usuario, { nullable: true })
-  @JoinColumn({ name: 'created_by' })
-  creator: Usuario | null;
+  @JoinColumn({ name: 'criado_por' })
+  usuario_criador: Usuario | null;
+
+  // Getters e setters para compatibilidade com código existente
+  get permissionId(): string {
+    return this.permissao_id;
+  }
+
+  set permissionId(value: string) {
+    this.permissao_id = value;
+  }
+
+  get permission(): Permission {
+    return this.permissao;
+  }
+
+  set permission(value: Permission) {
+    this.permissao = value;
+  }
+
+  get groupId(): string {
+    return this.grupo_id;
+  }
+
+  set groupId(value: string) {
+    this.grupo_id = value;
+  }
+
+  get group(): PermissionGroup {
+    return this.grupo;
+  }
+
+  set group(value: PermissionGroup) {
+    this.grupo = value;
+  }
+
+  get createdAt(): Date {
+    return this.created_at;
+  }
+
+  get createdBy(): string | null {
+    return this.criado_por;
+  }
+
+  set createdBy(value: string | null) {
+    this.criado_por = value;
+  }
+
+  get creator(): Usuario | null {
+    return this.usuario_criador;
+  }
+
+  set creator(value: Usuario | null) {
+    this.usuario_criador = value;
+  }
 }

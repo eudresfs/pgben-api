@@ -202,7 +202,7 @@ function generateReport(results: Record<string, autocannon.Result>) {
       ),
       jwtImpact: calculateJwtImpact(results.auth, results.protectedGlobal),
     },
-    recommendations: [],
+    recommendations: [] as string[],
   };
   
   // Adicionar recomendações com base na análise

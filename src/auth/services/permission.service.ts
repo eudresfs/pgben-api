@@ -5,7 +5,7 @@ import { PermissionRepository } from '../repositories/permission.repository';
 import { RolePermissionRepository } from '../repositories/role-permission.repository';
 import { UserPermissionRepository } from '../repositories/user-permission.repository';
 import { PermissionScopeRepository } from '../repositories/permission-scope.repository';
-import { ScopeType } from '../entities/user-permission.entity';
+import { TipoEscopo } from '../entities/user-permission.entity';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 
@@ -26,7 +26,7 @@ export interface PermissionCheckOptions {
   /**
    * Tipo de escopo (opcional, padrão é GLOBAL)
    */
-  scopeType?: ScopeType;
+  scopeType?: TipoEscopo;
   
   /**
    * ID do escopo (opcional, necessário apenas para scopeType UNIT)
@@ -74,7 +74,7 @@ export class PermissionService {
    */
   async hasPermission(options: PermissionCheckOptions): Promise<boolean> {
     try {
-      const { userId, permissionName, scopeType = ScopeType.GLOBAL, scopeId } = options;
+      const { userId, permissionName, scopeType = TipoEscopo.GLOBAL, scopeId } = options;
       
       // Validação de parâmetros
       if (!userId || !permissionName) {
@@ -83,7 +83,7 @@ export class PermissionService {
       }
       
       // Validação de escopo
-      if (scopeType === ScopeType.UNIT && !scopeId) {
+      if (scopeType === TipoEscopo.UNIDADE && !scopeId) {
         this.logger.warn(`Tentativa de verificar permissão com escopo UNIT sem fornecer scopeId: userId=${userId}, permissionName=${permissionName}`);
         return false;
       }
@@ -172,10 +172,10 @@ export class PermissionService {
    * @param scopeId ID do escopo (opcional para escopo GLOBAL)
    * @returns true se o usuário tem a permissão direta, false caso contrário
    */
-  async checkDirectPermission(
+  private async checkDirectPermission(
     userId: string,
     permissionName: string,
-    scopeType: ScopeType,
+    scopeType: TipoEscopo,
     scopeId?: string | null | undefined,
   ): Promise<boolean> {
     try {
@@ -261,7 +261,7 @@ export class PermissionService {
   async checkCompositePermission(
     userId: string,
     permissionName: string,
-    scopeType: ScopeType,
+    scopeType: TipoEscopo,
     scopeId?: string | null | undefined,
   ): Promise<boolean> {
     try {
@@ -322,7 +322,7 @@ export class PermissionService {
   generateCacheKey(
     userId: string,
     permissionName: string,
-    scopeType: ScopeType,
+    scopeType: TipoEscopo,
     scopeId?: string | null | undefined,
   ): string {
     return `permission:${userId}:${permissionName}:${scopeType}:${scopeId || 'global'}`;
@@ -428,13 +428,15 @@ export class PermissionService {
    */
   async getAllPermissions(): Promise<Permission[]> {
     try {
-      return this.permissionRepository.find({
-        order: {
-          name: 'ASC'
-        }
-      });
+      // Busca todas as permissões no banco, usando a query builder para ter mais controle
+      // e evitar problemas com nomes de propriedades
+      const permissions = await this.permissionRepository
+        .createQueryBuilder('permission')
+        .select(['permission.id', 'permission.nome', 'permission.descricao'])
+        .getMany();
+      return permissions;
     } catch (error) {
-      this.logger.error(`Erro ao obter todas as permissões: ${error.message}`, {
+      this.logger.error(`Erro ao buscar todas as permissões: ${error.message}`, {
         stack: error.stack
       });
       return [];
@@ -470,9 +472,9 @@ export class PermissionService {
       
       // Cria a nova permissão
       const newPermission = this.permissionRepository.create({
-        name,
-        description: description || `Permissão ${name}`,
-        createdBy
+        nome: name,
+        descricao: description || `Permissão ${name}`,
+        criado_por: createdBy
       });
       
       // Salva a permissão no banco de dados
@@ -538,7 +540,7 @@ export class PermissionService {
   async revokePermission(
     userId: string,
     permissionName: string,
-    scopeType: ScopeType,
+    scopeType: TipoEscopo,
     scopeId: string | null | undefined,
     createdBy: string,
   ): Promise<boolean> {
@@ -550,7 +552,7 @@ export class PermissionService {
       }
       
       // Validação de escopo
-      if (scopeType === ScopeType.UNIT && !scopeId) {
+      if (scopeType === TipoEscopo.UNIDADE && !scopeId) {
         this.logger.warn(`Tentativa de revogar permissão com escopo UNIT sem fornecer scopeId: userId=${userId}, permissionName=${permissionName}`);
         return false;
       }
@@ -623,7 +625,7 @@ export class PermissionService {
   async grantPermission(
     userId: string,
     permissionName: string,
-    scopeType: ScopeType,
+    scopeType: TipoEscopo,
     scopeId: string | null | undefined,
     validUntil: Date | null | undefined,
     createdBy: string,
@@ -636,7 +638,7 @@ export class PermissionService {
       }
       
       // Validação de escopo
-      if (scopeType === ScopeType.UNIT && !scopeId) {
+      if (scopeType === TipoEscopo.UNIDADE && !scopeId) {
         this.logger.warn(`Tentativa de conceder permissão com escopo UNIT sem fornecer scopeId: userId=${userId}, permissionName=${permissionName}`);
         return false;
       }

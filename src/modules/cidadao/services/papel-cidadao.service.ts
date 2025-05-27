@@ -297,4 +297,24 @@ export class PapelCidadaoService {
         break;
     }
   }
+
+  /**
+   * Cria um novo papel para um cidadão (alias para o método create)
+   * @param createPapelCidadaoDto Dados do papel a ser criado
+   * @returns Papel criado
+   */
+  async criarPapel(
+createPapelCidadaoDto: CreatePapelCidadaoDto, usuarioId: string, manager: unknown,
+  ): Promise<PapelCidadao> {
+    return this.create(createPapelCidadaoDto);
+  }
+
+  /**
+   * Inativa um papel de cidadão (alias para o método desativar)
+   * @param papelId ID do papel a ser inativado
+   * @returns Papel inativado
+   */
+  async inativarPapel(papelId: string): Promise<PapelCidadao> {
+    return this.desativar(papelId);
+  }
 }

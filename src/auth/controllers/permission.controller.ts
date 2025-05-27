@@ -16,7 +16,7 @@ import {
 import { PermissionService } from '../services/permission.service';
 import { RequiresPermission } from '../decorators/requires-permission.decorator';
 import { PermissionGuard } from '../guards/permission.guard';
-import { ScopeType } from '../entities/user-permission.entity';
+import { TipoEscopo } from '../entities/user-permission.entity';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 
@@ -37,7 +37,7 @@ class AtribuirPermissaoDto {
   /**
    * Tipo de escopo
    */
-  scopeType: ScopeType;
+  scopeType: TipoEscopo;
 
   /**
    * ID do escopo (opcional)
@@ -78,7 +78,7 @@ export class PermissionController {
   @RequiresPermission({ permissionName: 'usuario.permissao.visualizar' })
   async verificarPermissao(
     @Query('permissionName') permissionName: string,
-    @Query('scopeType') scopeType: ScopeType = ScopeType.GLOBAL,
+    @Query('scopeType') scopeType: TipoEscopo = TipoEscopo.GLOBAL,
     @Req() req: any,
     @Query('scopeId') scopeId?: string
   ) {
@@ -140,7 +140,7 @@ export class PermissionController {
       throw new BadRequestException('Dados incompletos');
     }
 
-    if (dto.scopeType === ScopeType.UNIT && !dto.scopeId) {
+    if (dto.scopeType === TipoEscopo.UNIDADE && !dto.scopeId) {
       throw new BadRequestException('ID do escopo é obrigatório para escopo UNIT');
     }
 
@@ -182,7 +182,7 @@ export class PermissionController {
       throw new BadRequestException('Dados incompletos');
     }
 
-    if (dto.scopeType === ScopeType.UNIT && !dto.scopeId) {
+    if (dto.scopeType === TipoEscopo.UNIDADE && !dto.scopeId) {
       throw new BadRequestException('ID do escopo é obrigatório para escopo UNIT');
     }
 

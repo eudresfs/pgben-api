@@ -1,7 +1,7 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * Migration para criar o schema relacionado ao módulo de métricas
+ * Migration para criar o schema relacionado ao módulo de métricas 
  * 
  * Esta migration cria as tabelas, enumerações e restrições para o módulo de métricas,
  * permitindo o registro e acompanhamento de métricas do sistema para analytics e monitoring.

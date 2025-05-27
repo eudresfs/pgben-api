@@ -1,8 +1,8 @@
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { StatusPagamentoEnum } from '../enums/status-pagamento.enum';
 import { MetodoPagamentoEnum } from '../enums/metodo-pagamento.enum';
-import { Usuario } from '@/modules/usuario/entities/usuario.entity';
-import { Solicitacao } from '@/modules/solicitacao/entities/solicitacao.entity';
+import { Usuario } from '../../../modules/usuario/entities/usuario.entity';
+import { Solicitacao } from '../../../modules/solicitacao/entities/solicitacao.entity';
 
 /**
  * Entidade que representa um pagamento de benefício no sistema.

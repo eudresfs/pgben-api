@@ -65,20 +65,20 @@ O sistema visa automatizar e gerenciar todo o ciclo de vida das solicitações d
 
 #### 2.2.2 Perfis de Usuário (FR-002.2)
 
-- O sistema deve suportar 4 perfis: Administrador, Gestor (SEMTAS), Técnico (SEMTAS), Técnico (Unidade)
+- O sistema deve suportar 4 perfis: Administrador, Gestor, Técnico, Assistente Social, Auditor
 - Cada perfil deve ter permissões específicas conforme matriz de permissões:
 
-|Funcionalidade|Administrador|Gestor (SEMTAS)|Técnico (SEMTAS)|Técnico (Unidade)|
-|---|---|---|---|---|
-|Gestão de unidade|CRUD|R|R|R|
-|Gestão de Usuários|CRUD|R|R|R|
-|Gestão de Benefícios|CRUD|CRUD|R|R|
-|Cadastro de Beneficiários|CRUD|CRUD|CRUD|CRUD|
-|Solicitações|CRUD|CRUD|CRUD|CRU|
-|Aprovação de Solicitações|Sim|Sim|Não|Não|
-|Liberação de Benefícios|Sim|Sim|Não|Sim|
-|Relatórios|Todos|Todos|Consulta|Apenas próprios|
-|Configurações do Sistema|Sim|Não|Não|Não|
+|Funcionalidade|Administrador|Gestor|Técnico|Assistente Social|Auditor|
+|---|---|---|---|---|---|
+|Gestão de unidade|CRUD|R|R|R|R|
+|Gestão de Usuários|CRUD|R|R|R|R|
+|Gestão de Benefícios|CRUD|CRUD|R|R|R|
+|Cadastro de Beneficiários|CRUD|CRUD|CRUD|CRUD|R|
+|Solicitações|CRUD|CRUD|CRUD|CRUD|CRUD|
+|Aprovação de Solicitações|Sim|Sim|Não|Não|Não|
+|Liberação de Benefícios|Sim|Sim|Não|Sim|Não|
+|Relatórios|Todos|Todos|Consulta|Consulta|Consulta|
+|Configurações do Sistema|Sim|Não|Não|Não|Não|
 
 #### 2.2.3 Gestão de Senhas (FR-002.3)
 
@@ -169,6 +169,7 @@ O sistema visa automatizar e gerenciar todo o ciclo de vida das solicitações d
     - Validar se o solicitante já está cadastrado no sistema
     - Registrar o vínculo entre solicitante e beneficiário
     - Verificar obrigatoriedade de parentesco de 1° grau para beneficiários menores de idade
+
 #### 2.5.2 Abertura de Solicitação (FR-005.2)
 
 - O sistema deve permitir criação de solicitações associadas a um beneficiário
@@ -181,7 +182,7 @@ O sistema visa automatizar e gerenciar todo o ciclo de vida das solicitações d
 - Para Auxílio Natalidade:
     - Data prevista para o parto
     - Comprovação de realização de pré-natal
-    - Composição do kit solicitado
+    - PIX obrigatoriamente no CPF do beneficiário ou representante
 - Para Aluguel Social:
     - Motivo da solicitação (categorias previstas na lei)
     - Valor solicitado

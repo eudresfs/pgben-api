@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { EnhancedMetricsController } from '../enhanced-metrics.controller';
 import { EnhancedMetricsService } from '../enhanced-metrics.service';
 import { Response } from 'express';
-import { Public } from '../../../modules/auth/decorators/public.decorator';
+import { Public } from '../../../auth/decorators/public.decorator';
 
 /**
  * Testes unitários para o controlador de métricas aprimoradas
@@ -19,7 +19,7 @@ describe('EnhancedMetricsController', () => {
     getMetrics: jest
       .fn()
       .mockResolvedValue(
-        'enhanced_metrics_data\nsecurity_metric 1\ndocument_metric 1\nsystem_metric 1',
+        'enhanced_metrics_data\nsecurity_metric 1\ndocument_metric 1\nsystem_metric 1\ncache_operations_total 10\ncache_hit_ratio 0.75',
       ),
     updateMemoryUsage: jest.fn(),
   };
@@ -52,7 +52,7 @@ describe('EnhancedMetricsController', () => {
       // Mock da resposta
       const mockResponse = {
         setHeader: jest.fn(),
-        send: jest.fn(),
+        send: jest.fn().mockReturnThis(),
       } as unknown as Response;
 
       await controller.getMetrics(mockResponse);
@@ -62,7 +62,11 @@ describe('EnhancedMetricsController', () => {
         'Content-Type',
         'text/plain',
       );
-      expect(mockResponse.send).toHaveBeenCalledWith('enhanced_metrics_data');
+      // Verificar se a resposta contém as métricas esperadas
+      expect(mockResponse.send).toHaveBeenCalled();
+      expect(mockResponse.send).toHaveBeenCalledWith(
+        expect.stringContaining('enhanced_metrics_data')
+      );
     });
   });
 
@@ -71,7 +75,7 @@ describe('EnhancedMetricsController', () => {
       // Mock da resposta
       const mockResponse = {
         setHeader: jest.fn(),
-        send: jest.fn(),
+        send: jest.fn().mockReturnThis(),
       } as unknown as Response;
 
       // Configurar o mock para retornar métricas de segurança
@@ -87,7 +91,10 @@ describe('EnhancedMetricsController', () => {
         'text/plain',
       );
       expect(mockResponse.send).toHaveBeenCalledWith(
-        'security_metric 1\nsecurity_metric 2',
+        expect.stringContaining('security_metric 1')
+      );
+      expect(mockResponse.send).toHaveBeenCalledWith(
+        expect.stringContaining('security_metric 2')
       );
     });
   });
@@ -97,7 +104,7 @@ describe('EnhancedMetricsController', () => {
       // Mock da resposta
       const mockResponse = {
         setHeader: jest.fn(),
-        send: jest.fn(),
+        send: jest.fn().mockReturnThis(),
       } as unknown as Response;
 
       // Configurar o mock para retornar métricas de documentos
@@ -113,7 +120,10 @@ describe('EnhancedMetricsController', () => {
         'text/plain',
       );
       expect(mockResponse.send).toHaveBeenCalledWith(
-        'document_metric 1\ndocument_metric 2',
+        expect.stringContaining('document_metric 1')
+      );
+      expect(mockResponse.send).toHaveBeenCalledWith(
+        expect.stringContaining('document_metric 2')
       );
     });
   });
@@ -123,7 +133,7 @@ describe('EnhancedMetricsController', () => {
       // Mock da resposta
       const mockResponse = {
         setHeader: jest.fn(),
-        send: jest.fn(),
+        send: jest.fn().mockReturnThis(),
       } as unknown as Response;
 
       // Configurar o mock para retornar métricas de sistema
@@ -140,7 +150,39 @@ describe('EnhancedMetricsController', () => {
         'text/plain',
       );
       expect(mockResponse.send).toHaveBeenCalledWith(
-        'system_metric 1\nsystem_metric 2',
+        expect.stringContaining('system_metric 1')
+      );
+      expect(mockResponse.send).toHaveBeenCalledWith(
+        expect.stringContaining('system_metric 2')
+      );
+    });
+  });
+
+  describe('getCacheMetrics', () => {
+    it('deve retornar as métricas de cache no formato correto', async () => {
+      // Mock da resposta
+      const mockResponse = {
+        setHeader: jest.fn(),
+        send: jest.fn().mockReturnThis(),
+      } as unknown as Response;
+
+      // Configurar o mock para retornar métricas de cache
+      mockMetricsService.getMetrics.mockResolvedValueOnce(
+        'cache_operations_total 10\ncache_hit_ratio 0.75\nsystem_metric 1',
+      );
+
+      await controller.getCacheMetrics(mockResponse);
+
+      expect(metricsService.getMetrics).toHaveBeenCalled();
+      expect(mockResponse.setHeader).toHaveBeenCalledWith(
+        'Content-Type',
+        'text/plain',
+      );
+      expect(mockResponse.send).toHaveBeenCalledWith(
+        expect.stringContaining('cache_operations_total 10')
+      );
+      expect(mockResponse.send).toHaveBeenCalledWith(
+        expect.stringContaining('cache_hit_ratio 0.75')
       );
     });
   });

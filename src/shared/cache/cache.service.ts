@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
+import { CacheMetricsProvider } from './cache-metrics.provider';
 
 /**
  * Serviço de cache
@@ -13,7 +14,10 @@ export class CacheService {
   private readonly logger = new Logger(CacheService.name);
   private readonly defaultTTL = 3600; // 1 hora em segundos
 
-  constructor(@InjectQueue('cache') private readonly cacheQueue: Queue) {}
+  constructor(
+    @InjectQueue('cache') private readonly cacheQueue: Queue,
+    private readonly metricsProvider: CacheMetricsProvider,
+  ) {}
 
   /**
    * Obtém um valor do cache
@@ -25,6 +29,8 @@ export class CacheService {
       const job = await this.cacheQueue.getJob(key);
 
       if (!job) {
+        // Cache miss
+        this.metricsProvider.registerCacheMiss();
         return null;
       }
 
@@ -33,15 +39,19 @@ export class CacheService {
       // Verificar se o job expirou
       if (job.finishedOn && Date.now() > job.finishedOn) {
         await job.remove();
+        this.metricsProvider.registerCacheMiss();
         return null;
       }
 
+      // Cache hit
+      this.metricsProvider.registerCacheHit();
       return jobData.value as T;
     } catch (error) {
       this.logger.error(
         `Erro ao obter valor do cache: ${error.message}`,
         error.stack,
       );
+      this.metricsProvider.registerCacheMiss();
       return null;
     }
   }
@@ -73,6 +83,9 @@ export class CacheService {
           removeOnFail: true,
         },
       );
+      
+      // Registrar operação de set no cache
+      this.metricsProvider.registerCacheSet();
     } catch (error) {
       this.logger.error(
         `Erro ao armazenar valor no cache: ${error.message}`,
@@ -91,6 +104,8 @@ export class CacheService {
 
       if (job) {
         await job.remove();
+        // Registrar operação de delete no cache
+        this.metricsProvider.registerCacheDelete();
       }
     } catch (error) {
       this.logger.error(
@@ -124,6 +139,8 @@ export class CacheService {
   async clear(): Promise<void> {
     try {
       await this.cacheQueue.empty();
+      // Registrar operação de clear no cache
+      this.metricsProvider.registerCacheClear();
     } catch (error) {
       this.logger.error(`Erro ao limpar cache: ${error.message}`, error.stack);
     }

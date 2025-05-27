@@ -10,9 +10,10 @@ import {
   Index,
   OneToOne,
 } from 'typeorm';
-import { IsNotEmpty, IsOptional, IsNumber, Min, IsEnum } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsNumber, Min, IsEnum, Length, Validate } from 'class-validator';
 import { Cidadao } from './cidadao.entity';
 import { EscolaridadeEnum } from './dados-sociais.entity';
+import { CPFValidator } from '../validators/cpf-validator';
 
 export enum Parentesco {
   CONJUGE = 'conjuge',
@@ -44,6 +45,12 @@ export class ComposicaoFamiliar {
   @Column()
   @IsNotEmpty({ message: 'Nome é obrigatório' })
   nome: string;
+
+  @Column({ nullable: false })
+  @IsNotEmpty({ message: 'CPF é obrigatório' })
+  @Length(11, 14, { message: 'CPF deve ter entre 11 e 14 caracteres' })
+  @Validate(CPFValidator, { message: 'CPF inválido' })
+  cpf: string;
 
   @Column({ nullable: true })
   @IsNotEmpty({ message: 'NIS do parente é obrigatório' })

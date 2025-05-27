@@ -32,7 +32,6 @@ import {
 } from '@nestjs/swagger';
 import { DocumentoService } from '../services/documento.service';
 import { MalwareScanService } from '../services/malware-scan.service';
-import { CriptografiaService } from '../services/criptografia.service';
 import { ThumbnailService } from '../services/thumbnail.service';
 import { StorageProviderFactory } from '../factories/storage-provider.factory';
 import { UploadDocumentoDto } from '../dto/upload-documento.dto';
@@ -75,7 +74,6 @@ export class DocumentoController {
   constructor(
     private readonly documentoService: DocumentoService,
     private readonly malwareScanService: MalwareScanService,
-    private readonly criptografiaService: CriptografiaService,
     private readonly thumbnailService: ThumbnailService,
     private readonly storageProviderFactory: StorageProviderFactory,
   ) {}

@@ -6,16 +6,22 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
+import { JwtService } from '@nestjs/jwt';
 import { STRATEGY_JWT_AUTH } from '../constants/strategy.constant';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
+import { JwtBlacklistService } from '../services/jwt-blacklist.service';
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard(STRATEGY_JWT_AUTH) {
-  constructor(private reflector: Reflector) {
+  constructor(
+    private reflector: Reflector,
+    private jwtService: JwtService,
+    private jwtBlacklistService: JwtBlacklistService,
+  ) {
     super();
   }
 
-  canActivate(context: ExecutionContext) {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     // Verificar se a rota está marcada como pública
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
       context.getHandler(),
@@ -35,7 +41,33 @@ export class JwtAuthGuard extends AuthGuard(STRATEGY_JWT_AUTH) {
       throw new UnauthorizedException('Token de autenticação não fornecido');
     }
 
-    return super.canActivate(context);
+    // Extrair o token do cabeçalho
+    const token = authHeader.substring(7);
+
+    try {
+      // Decodificar o token para obter o JTI
+      const decodedToken = this.jwtService.decode(token) as any;
+      
+      if (!decodedToken || !decodedToken.jti) {
+        throw new UnauthorizedException('Token inválido - JTI não encontrado');
+      }
+
+      // Verificar se o token está na blacklist
+      const isBlacklisted = await this.jwtBlacklistService.isTokenBlacklisted(decodedToken.jti);
+      
+      if (isBlacklisted) {
+        throw new UnauthorizedException('Token foi revogado');
+      }
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      // Se houver erro na decodificação, deixar o passport lidar com isso
+    }
+
+    // Continuar com a validação padrão do passport
+    const result = await super.canActivate(context);
+    return result as boolean;
   }
 
   handleRequest(err: any, user: any, info: any) {

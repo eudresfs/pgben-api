@@ -82,7 +82,7 @@ export class PermissionRoleMappingSeed {
 
     await this.mapRoleToPermissions(
       dataSource,
-      'ANALISTA',
+      'TECNICO',
       [
         'cidadao.listar',
         'cidadao.visualizar',
@@ -128,7 +128,7 @@ export class PermissionRoleMappingSeed {
 
     await this.mapRoleToPermissions(
       dataSource,
-      'ATENDENTE',
+      'ASSISTENTE_SOCIAL',
       [
         'cidadao.listar',
         'cidadao.visualizar',

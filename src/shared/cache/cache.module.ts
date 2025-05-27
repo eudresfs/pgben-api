@@ -1,7 +1,9 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { CacheService } from './cache.service';
+import { CacheMetricsProvider } from './cache-metrics.provider';
 import { BullModule } from '@nestjs/bull';
+import { MonitoringModule } from '../monitoring/monitoring.module';
 
 @Module({
   imports: [
@@ -9,8 +11,10 @@ import { BullModule } from '@nestjs/bull';
     BullModule.registerQueue({
       name: 'cache',
     }),
+    // Importamos o módulo de monitoramento para ter acesso ao serviço de métricas
+    MonitoringModule,
   ],
-  providers: [CacheService],
-  exports: [CacheService],
+  providers: [CacheService, CacheMetricsProvider],
+  exports: [CacheService, CacheMetricsProvider],
 })
 export class CacheModule {}
