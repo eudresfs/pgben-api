@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CacheModule } from '@nestjs/cache-manager';
 import { APP_INTERCEPTOR } from '@nestjs/core';
-import { AuthModule } from '@/auth/auth.module'
+import { AuthModule } from '../../auth/auth.module'
 
 // Entidades
 import { Solicitacao } from '../solicitacao/entities/solicitacao.entity';

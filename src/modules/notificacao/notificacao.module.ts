@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleAdapterModule } from '../../shared/schedule/schedule-adapter.module';
-import { AuthModule } from '@/auth/auth.module'
+import { AuthModule } from '../../auth/auth.module'
 
 // Controladores
 import { NotificacaoController } from './controllers/notificacao.controller';

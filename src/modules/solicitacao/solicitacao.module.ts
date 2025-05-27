@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { EventEmitterModule } from '@nestjs/event-emitter';
-import { AuthModule } from '@/auth/auth.module';
+import { AuthModule } from '../../auth/auth.module';
 import { JudicialModule } from '../judicial/judicial.module'
 import { SolicitacaoController } from './controllers/solicitacao.controller';
 import { SolicitacaoService } from './services/solicitacao.service';

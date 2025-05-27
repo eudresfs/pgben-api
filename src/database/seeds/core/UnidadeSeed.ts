@@ -73,6 +73,7 @@ export class UnidadeSeed {
       // Inserção de unidades no banco de dados
       for (const unidade of unidadesEssenciais) {
         try {
+          // Verificar se a unidade já existe
           const unidadeExistente = await dataSource.query(
             `SELECT id FROM unidade WHERE codigo = $1`,
             [unidade.codigo],
@@ -80,39 +81,120 @@ export class UnidadeSeed {
 
           if (unidadeExistente.length === 0) {
             // Construir a query INSERT dinamicamente com base nas colunas existentes
-            await dataSource.query(
-              `INSERT INTO unidade (nome, codigo, endereco, telefone, email, responsavel_matricula, tipo, ${statusColumnName})
-               VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-              [
-                unidade.nome,
-                unidade.codigo,
-                unidade.endereco,
-                unidade.telefone,
-                unidade.email,
-                unidade.responsavel_matricula,
-                unidade.tipo,
-                unidade.ativo,
-              ],
-            );
-            console.log(`Unidade ${unidade.nome} criada com sucesso`);
+            // Primeiro, vamos construir a lista de colunas e valores
+            const colunas: string[] = [];
+            const valores: any[] = [];
+            let placeholderIndex = 1;
+            const placeholders: string[] = [];
+            
+            // Adicionar colunas obrigatórias
+            if (columnNames.includes('nome')) {
+              colunas.push('nome');
+              valores.push(unidade.nome);
+              placeholders.push(`$${placeholderIndex++}`);
+            }
+            
+            if (columnNames.includes('codigo')) {
+              colunas.push('codigo');
+              valores.push(unidade.codigo);
+              placeholders.push(`$${placeholderIndex++}`);
+            }
+            
+            // Adicionar colunas opcionais se existirem
+            if (columnNames.includes('endereco')) {
+              colunas.push('endereco');
+              valores.push(unidade.endereco);
+              placeholders.push(`$${placeholderIndex++}`);
+            }
+            
+            if (columnNames.includes('telefone')) {
+              colunas.push('telefone');
+              valores.push(unidade.telefone);
+              placeholders.push(`$${placeholderIndex++}`);
+            }
+            
+            if (columnNames.includes('email')) {
+              colunas.push('email');
+              valores.push(unidade.email);
+              placeholders.push(`$${placeholderIndex++}`);
+            }
+            
+            if (columnNames.includes('responsavel_matricula')) {
+              colunas.push('responsavel_matricula');
+              valores.push(unidade.responsavel_matricula);
+              placeholders.push(`$${placeholderIndex++}`);
+            }
+            
+            if (columnNames.includes('tipo')) {
+              colunas.push('tipo');
+              valores.push(unidade.tipo);
+              placeholders.push(`$${placeholderIndex++}`);
+            }
+            
+            // Adicionar coluna de status (ativo ou status)
+            colunas.push(statusColumnName);
+            valores.push(unidade.ativo);
+            placeholders.push(`$${placeholderIndex++}`);
+            
+            // Construir e executar a query
+            const insertQuery = `INSERT INTO unidade (${colunas.join(', ')}) VALUES (${placeholders.join(', ')}) RETURNING id`;
+            console.log(`Executando query: ${insertQuery}`);
+            console.log(`Valores: ${JSON.stringify(valores)}`);
+            
+            const result = await dataSource.query(insertQuery, valores);
+            console.log(`Unidade ${unidade.nome} criada com sucesso. ID: ${result[0]?.id || 'N/A'}`);
           } else {
             console.log(`Unidade ${unidade.nome} já existe, atualizando...`);
-            // Corrigir a ordem dos parâmetros na query UPDATE
-            await dataSource.query(
-              `UPDATE unidade 
-               SET nome = $1, endereco = $2, telefone = $3, email = $4, responsavel_matricula = $5, tipo = $6, ${statusColumnName} = $7
-               WHERE codigo = $8`,
-              [
-                unidade.nome,
-                unidade.endereco,
-                unidade.telefone,
-                unidade.email,
-                unidade.responsavel_matricula,
-                unidade.tipo,
-                unidade.ativo,
-                unidade.codigo,
-              ],
-            );
+            
+            // Construir a query UPDATE dinamicamente
+            const updateColumns: string[] = [];
+            const updateValues: any[] = [];
+            let paramIndex = 1;
+            
+            // Adicionar colunas para atualização
+            if (columnNames.includes('nome')) {
+              updateColumns.push(`nome = $${paramIndex++}`);
+              updateValues.push(unidade.nome);
+            }
+            
+            if (columnNames.includes('endereco')) {
+              updateColumns.push(`endereco = $${paramIndex++}`);
+              updateValues.push(unidade.endereco);
+            }
+            
+            if (columnNames.includes('telefone')) {
+              updateColumns.push(`telefone = $${paramIndex++}`);
+              updateValues.push(unidade.telefone);
+            }
+            
+            if (columnNames.includes('email')) {
+              updateColumns.push(`email = $${paramIndex++}`);
+              updateValues.push(unidade.email);
+            }
+            
+            if (columnNames.includes('responsavel_matricula')) {
+              updateColumns.push(`responsavel_matricula = $${paramIndex++}`);
+              updateValues.push(unidade.responsavel_matricula);
+            }
+            
+            if (columnNames.includes('tipo')) {
+              updateColumns.push(`tipo = $${paramIndex++}`);
+              updateValues.push(unidade.tipo);
+            }
+            
+            // Adicionar coluna de status
+            updateColumns.push(`${statusColumnName} = $${paramIndex++}`);
+            updateValues.push(unidade.ativo);
+            
+            // Adicionar o código para a cláusula WHERE
+            updateValues.push(unidade.codigo);
+            
+            // Construir e executar a query
+            const updateQuery = `UPDATE unidade SET ${updateColumns.join(', ')} WHERE codigo = $${paramIndex}`;
+            console.log(`Executando query: ${updateQuery}`);
+            console.log(`Valores: ${JSON.stringify(updateValues)}`);
+            
+            await dataSource.query(updateQuery, updateValues);
             console.log(`Unidade ${unidade.nome} atualizada com sucesso`);
           }
         } catch (error) {

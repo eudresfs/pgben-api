@@ -34,7 +34,7 @@ import {
   ConversaoParaComposicaoFamiliarDto, 
   ConversaoPapelResponseDto 
 } from '../dto/conversao-papel.dto';
-import { TipoEscopo } from '@/auth/entities/user-permission.entity';
+import { TipoEscopo } from '../../../auth/entities/user-permission.entity';
 import { Sexo } from '../entities/cidadao.entity';
 import { EnderecoDto } from '../dto/create-cidadao.dto';
 

@@ -8,7 +8,7 @@ import { UnidadeRepository } from './repositories/unidade.repository';
 import { SetorRepository } from './repositories/setor.repository';
 import { Unidade } from './entities/unidade.entity';
 import { Setor } from './entities/setor.entity';
-import { AuthModule } from '@/auth/auth.module'
+import { AuthModule } from '../../auth/auth.module'
 
 /**
  * Módulo de unidades

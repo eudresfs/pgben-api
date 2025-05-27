@@ -94,21 +94,88 @@ export class SetorSeed {
 
           if (setorExistente.length === 0) {
             // Construir a query INSERT dinamicamente com base nas colunas existentes
-            await dataSource.query(
-              `INSERT INTO setor (nome, sigla, descricao, ${statusColumnName}, unidade_id)
-               VALUES ($1, $2, $3, $4, $5)`,
-              [setor.nome, setor.sigla, setor.descricao, setor.ativo, unidadeId],
-            );
-            console.log(`Setor ${setor.nome} criado com sucesso`);
+            const colunas: string[] = [];
+            const valores: any[] = [];
+            let placeholderIndex = 1;
+            const placeholders: string[] = [];
+            
+            // Adicionar colunas obrigatórias
+            if (columnNames.includes('nome')) {
+              colunas.push('nome');
+              valores.push(setor.nome);
+              placeholders.push(`$${placeholderIndex++}`);
+            }
+            
+            if (columnNames.includes('sigla')) {
+              colunas.push('sigla');
+              valores.push(setor.sigla);
+              placeholders.push(`$${placeholderIndex++}`);
+            }
+            
+            // Adicionar colunas opcionais se existirem
+            if (columnNames.includes('descricao')) {
+              colunas.push('descricao');
+              valores.push(setor.descricao);
+              placeholders.push(`$${placeholderIndex++}`);
+            }
+            
+            // Adicionar coluna de status (ativo ou status)
+            colunas.push(statusColumnName);
+            valores.push(setor.ativo);
+            placeholders.push(`$${placeholderIndex++}`);
+            
+            // Adicionar unidade_id
+            if (columnNames.includes('unidade_id')) {
+              colunas.push('unidade_id');
+              valores.push(unidadeId);
+              placeholders.push(`$${placeholderIndex++}`);
+            }
+            
+            // Construir e executar a query
+            const insertQuery = `INSERT INTO setor (${colunas.join(', ')}) VALUES (${placeholders.join(', ')}) RETURNING id`;
+            console.log(`Executando query: ${insertQuery}`);
+            console.log(`Valores: ${JSON.stringify(valores)}`);
+            
+            const result = await dataSource.query(insertQuery, valores);
+            console.log(`Setor ${setor.nome} criado com sucesso. ID: ${result[0]?.id || 'N/A'}`);
           } else {
             console.log(`Setor ${setor.nome} já existe, atualizando...`);
-            // Construir a query UPDATE dinamicamente com base nas colunas existentes
-            await dataSource.query(
-              `UPDATE setor 
-               SET nome = $1, descricao = $2, ${statusColumnName} = $3, unidade_id = $4
-               WHERE sigla = $5`,
-              [setor.nome, setor.descricao, setor.ativo, unidadeId, setor.sigla],
-            );
+            
+            // Construir a query UPDATE dinamicamente
+            const updateColumns: string[] = [];
+            const updateValues: any[] = [];
+            let paramIndex = 1;
+            
+            // Adicionar colunas para atualização
+            if (columnNames.includes('nome')) {
+              updateColumns.push(`nome = $${paramIndex++}`);
+              updateValues.push(setor.nome);
+            }
+            
+            if (columnNames.includes('descricao')) {
+              updateColumns.push(`descricao = $${paramIndex++}`);
+              updateValues.push(setor.descricao);
+            }
+            
+            // Adicionar coluna de status
+            updateColumns.push(`${statusColumnName} = $${paramIndex++}`);
+            updateValues.push(setor.ativo);
+            
+            // Adicionar unidade_id
+            if (columnNames.includes('unidade_id')) {
+              updateColumns.push(`unidade_id = $${paramIndex++}`);
+              updateValues.push(unidadeId);
+            }
+            
+            // Adicionar a sigla para a cláusula WHERE
+            updateValues.push(setor.sigla);
+            
+            // Construir e executar a query
+            const updateQuery = `UPDATE setor SET ${updateColumns.join(', ')} WHERE sigla = $${paramIndex}`;
+            console.log(`Executando query: ${updateQuery}`);
+            console.log(`Valores: ${JSON.stringify(updateValues)}`);
+            
+            await dataSource.query(updateQuery, updateValues);
             console.log(`Setor ${setor.nome} atualizado com sucesso`);
           }
         } catch (error) {

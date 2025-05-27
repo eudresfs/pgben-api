@@ -1,0 +1,35 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 14
+    },
+    "auditLog": "C:\\Users\\eudre\\OneDrive\\Desktop\\Projetos\\pgben\\pgben-server\\logs\\.6f4dd047315389fe49a86b9a3ad00c97e7742090-audit.json",
+    "files": [
+        {
+            "date": 1747191321090,
+            "name": "C:\\Users\\eudre\\OneDrive\\Desktop\\Projetos\\pgben\\pgben-server\\logs\\application-2025-05-13.log",
+            "hash": "c68f355cdf1586a08334dd5a6b0bb23c86e0d9e83038c1d683b49421f41943a8"
+        },
+        {
+            "date": 1747191656307,
+            "name": "C:\\Users\\eudre\\OneDrive\\Desktop\\Projetos\\pgben\\pgben-server\\logs\\application-2025-05-14.log",
+            "hash": "c1cd4bd75d22e54cf87349d0ee56bade4866f8760c5595b8a7e81824fd855154"
+        },
+        {
+            "date": 1747303982752,
+            "name": "C:\\Users\\eudre\\OneDrive\\Desktop\\Projetos\\pgben\\pgben-server\\logs\\application-2025-05-15.log",
+            "hash": "4997830e8996490585a7849119dae6b8006c910452b76fadd2189c1f67a4d7d7"
+        },
+        {
+            "date": 1747394154869,
+            "name": "C:\\Users\\eudre\\OneDrive\\Desktop\\Projetos\\pgben\\pgben-server\\logs\\application-2025-05-16.log",
+            "hash": "38dd91bcb8371c42aa3e9c5c2c801fbfd84b3f5ac9d339a6df2a146815886bbd"
+        },
+        {
+            "date": 1747504827942,
+            "name": "C:\\Users\\eudre\\OneDrive\\Desktop\\Projetos\\pgben\\pgben-server\\logs\\application-2025-05-17.log",
+            "hash": "0dc824f3c226dcebe091fca240fa651e2f5354434ab16ad3e2b0278a69e5b458"
+        }
+    ],
+    "hashType": "sha256"
+}

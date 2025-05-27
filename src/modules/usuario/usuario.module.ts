@@ -5,7 +5,7 @@ import { UsuarioService } from './services/usuario.service';
 import { UsuarioRepository } from './repositories/usuario.repository';
 import { Usuario } from './entities/usuario.entity';
 import { Role } from './entities/role.entity';
-import { AuthModule } from '@/auth/auth.module';
+import { AuthModule } from '../../auth/auth.module';
 
 /**
  * Módulo de usuários

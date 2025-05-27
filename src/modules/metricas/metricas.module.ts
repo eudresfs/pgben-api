@@ -2,7 +2,7 @@ import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ScheduleAdapterModule } from '../../shared/schedule/schedule-adapter.module';
-import { AuthModule } from '@/auth/auth.module'
+import { AuthModule } from '../../auth/auth.module'
 import { HealthCheckService } from '../../shared/services/health-check.service';
 
 // Controladores

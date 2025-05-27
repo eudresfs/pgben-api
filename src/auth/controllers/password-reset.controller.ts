@@ -37,7 +37,7 @@ import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { RolesGuard } from '../guards/roles.guard';
 import { Roles } from '../decorators/role.decorator';
 import { Role } from '../enums/role.enum';
-import { ROLES } from '@/shared/constants/roles.constants';
+import { ROLES } from '../../shared/constants/roles.constants';
 
 // Usando DTOs do arquivo password-reset.dto.ts
 

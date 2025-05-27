@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MulterModule } from '@nestjs/platform-express';
-import { AuthModule } from '@/auth/auth.module'
+import { AuthModule } from '../../auth/auth.module'
 import { DocumentoController } from './controllers/documento.controller';
 import { DocumentoService } from './services/documento.service';
 import { MalwareScanService } from './services/malware-scan.service';

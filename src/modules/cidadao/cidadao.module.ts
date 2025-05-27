@@ -19,9 +19,8 @@ import { HistoricoConversaoPapelService } from './services/historico-conversao-p
 import { VerificacaoPapelController } from './controllers/verificacao-papel.controller';
 import { PapelConflitoController } from './controllers/papel-conflito.controller';
 import { RegraConflitoPapelController } from './controllers/regra-conflito-papel.controller';
-import { AuthModule } from '@/auth/auth.module';
+import { AuthModule } from '../../auth/auth.module';
 import { NotificacaoModule } from '../notificacao/notificacao.module';
-// Usando o módulo compartilhado para evitar dependência circular
 
 /**
  * Módulo de cidadãos

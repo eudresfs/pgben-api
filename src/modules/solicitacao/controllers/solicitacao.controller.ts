@@ -28,7 +28,7 @@ import { UpdateSolicitacaoDto } from '../dto/update-solicitacao.dto';
 import { AvaliarSolicitacaoDto } from '../dto/avaliar-solicitacao.dto';
 import { VincularProcessoJudicialDto } from '../dto/vincular-processo-judicial.dto';
 import { VincularDeterminacaoJudicialDto } from '../dto/vincular-determinacao-judicial.dto';
-import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../../../auth/guards/permission.guard';
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
 import { ScopeType } from '../../../auth/entities/user-permission.entity';
