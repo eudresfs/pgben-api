@@ -11,16 +11,7 @@ import {
 } from 'typeorm';
 import { Cidadao } from './cidadao.entity';
 import { ComposicaoFamiliar } from './composicao-familiar.entity';
-
-/**
- * Enum para tipos de papéis que um cidadão pode assumir
- */
-export enum TipoPapel {
-  BENEFICIARIO = 'beneficiario',
-  REQUERENTE = 'requerente',
-  REPRESENTANTE_LEGAL = 'representante_legal',
-  MEMBRO_COMPOSICAO = 'membro_composicao'
-}
+import { TipoPapel, PaperType } from '../enums/tipo-papel.enum';
 
 /**
  * Entidade de Papel do Cidadão
@@ -54,7 +45,7 @@ export class PapelCidadao {
     enum: TipoPapel,
     enumName: 'tipo_papel',
   })
-  tipo_papel: TipoPapel;
+  tipo_papel: PaperType;
 
   @Column({ type: 'jsonb', nullable: true })
   metadados: {

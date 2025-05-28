@@ -42,50 +42,11 @@ export class Permission {
   // Propriedade virtual para compatibilidade com código existente
   composta: boolean;
 
-  /**
-   * Referência à permissão pai (para permissões compostas)
-   */
-  @Column({ type: 'uuid', nullable: true, name: 'permissao_pai_id' })
-  permissao_pai_id: string | null;
+  // Nota: As propriedades e relacionamentos hierárquicos foram removidos
+  // pois não existem no banco de dados.
 
-  /**
-   * Relação com a permissão pai
-   */
-  @ManyToOne(() => Permission, { nullable: true })
-  @JoinColumn({ name: 'permissao_pai_id' })
-  permissao_pai: Permission | null;
-
-  /**
-   * Permissões filhas (para permissões compostas)
-   */
-  @OneToMany(() => Permission, permissao => permissao.permissao_pai)
-  permissoes_filhas: Permission[];
-
-  /**
-   * Usuário que criou a permissão
-   */
-  @Column({ type: 'uuid', nullable: true, name: 'criado_por' })
-  criado_por: string | null;
-
-  /**
-   * Relação com o usuário que criou a permissão
-   */
-  @ManyToOne(() => Usuario, { nullable: true })
-  @JoinColumn({ name: 'criado_por' })
-  usuario_criador: Usuario | null;
-
-  /**
-   * Usuário que atualizou a permissão por último
-   */
-  @Column({ type: 'uuid', nullable: true, name: 'atualizado_por' })
-  atualizado_por: string | null;
-
-  /**
-   * Relação com o usuário que atualizou a permissão por último
-   */
-  @ManyToOne(() => Usuario, { nullable: true })
-  @JoinColumn({ name: 'atualizado_por' })
-  usuario_atualizador: Usuario | null;
+  // Nota: As colunas criado_por e atualizado_por foram removidas 
+  // pois não existem no banco de dados atual.
 
   /**
    * Data de criação
@@ -126,28 +87,22 @@ export class Permission {
     this.composta = value;
   }
 
-  get parentId(): string | null {
-    return this.permissao_pai_id;
+  // Getters e setters para hierarquia foram removidos pois não existem no banco de dados
+  // Método para determinar se é uma permissão composta pelo nome
+  isHierarchical(): boolean {
+    return this.nome ? this.nome.includes('.*') : false;
   }
-
-  set parentId(value: string | null) {
-    this.permissao_pai_id = value;
+  
+  // Método para obter o módulo de uma permissão pelo nome
+  getModule(): string {
+    if (!this.nome) return '';
+    const parts = this.nome.split('.');
+    return parts.length > 0 ? parts[0] : '';
   }
-
-  get parent(): Permission | null {
-    return this.permissao_pai;
-  }
-
-  set parent(value: Permission | null) {
-    this.permissao_pai = value;
-  }
-
-  get children(): Permission[] {
-    return this.permissoes_filhas;
-  }
-
-  set children(value: Permission[]) {
-    this.permissoes_filhas = value;
+  
+  // Método para verificar se uma permissão é parte de um módulo
+  isPartOfModule(moduleName: string): boolean {
+    return this.nome ? this.nome.startsWith(`${moduleName}.`) : false;
   }
 
   get createdAt(): Date {
@@ -158,35 +113,6 @@ export class Permission {
     return this.updated_at;
   }
 
-  get createdBy(): string | null {
-    return this.criado_por;
-  }
-
-  set createdBy(value: string | null) {
-    this.criado_por = value;
-  }
-
-  get creator(): Usuario | null {
-    return this.usuario_criador;
-  }
-
-  set creator(value: Usuario | null) {
-    this.usuario_criador = value;
-  }
-
-  get updatedBy(): string | null {
-    return this.atualizado_por;
-  }
-
-  set updatedBy(value: string | null) {
-    this.atualizado_por = value;
-  }
-
-  get updater(): Usuario | null {
-    return this.usuario_atualizador;
-  }
-
-  set updater(value: Usuario | null) {
-    this.usuario_atualizador = value;
-  }
+  // Métodos getters e setters para criado_por e atualizado_por foram removidos
+  // pois as colunas não existem no banco de dados atual.
 }

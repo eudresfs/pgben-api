@@ -24,7 +24,7 @@ import { RequiresPermission } from '../../../auth/decorators/requires-permission
 import { ScopeType } from '../../../auth/entities/user-permission.entity';
 import { PapelCidadaoService } from '../services/papel-cidadao.service';
 import { CreatePapelCidadaoDto } from '../dto/create-papel-cidadao.dto';
-import { TipoPapel } from '../entities/papel-cidadao.entity';
+import { TipoPapel, PaperType } from '../enums/tipo-papel.enum';
 
 /**
  * Controlador de Papéis de Cidadão
@@ -101,15 +101,13 @@ export class PapelCidadaoController {
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'search', required: false, type: String })
   async findCidadaosByTipoPapel(
-    @Param('tipoPapel') tipoPapel: TipoPapel,
+    @Param('tipoPapel') tipoPapel: PaperType,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
-    @Query('search') search?: string,
   ) {
     return this.papelCidadaoService.findCidadaosByTipoPapel(tipoPapel, {
       page: page ? Number(page) : undefined,
       limit: limit ? Number(limit) : undefined,
-      search,
     });
   }
 
@@ -131,7 +129,7 @@ export class PapelCidadaoController {
   })
   async verificarPapel(
     @Param('cidadaoId') cidadaoId: string,
-    @Param('tipoPapel') tipoPapel: TipoPapel,
+    @Param('tipoPapel') tipoPapel: PaperType,
   ) {
     const temPapel = await this.papelCidadaoService.verificarPapel(
       cidadaoId,

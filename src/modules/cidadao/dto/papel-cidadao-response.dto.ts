@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { TipoPapel } from '../entities/papel-cidadao.entity';
+import { Expose } from 'class-transformer';
+import { TipoPapel, PaperType } from '../enums/tipo-papel.enum';
 
 /**
  * DTO de resposta para papel de cidadão
@@ -11,12 +12,14 @@ export class PapelCidadaoResponseDto {
     example: '550e8400-e29b-41d4-a716-446655440000',
     description: 'ID único do papel',
   })
+  @Expose()
   id: string;
 
   @ApiProperty({
     example: '550e8400-e29b-41d4-a716-446655440000',
     description: 'ID do cidadão associado ao papel',
   })
+  @Expose()
   cidadao_id: string;
 
   @ApiProperty({
@@ -25,7 +28,8 @@ export class PapelCidadaoResponseDto {
     example: TipoPapel.BENEFICIARIO,
     description: 'Tipo de papel do cidadão',
   })
-  tipo_papel: TipoPapel;
+  @Expose()
+  tipo_papel: PaperType;
 
   @ApiPropertyOptional({
     type: 'object',
@@ -37,6 +41,7 @@ export class PapelCidadaoResponseDto {
     },
     description: 'Metadados específicos do papel (varia conforme o tipo)',
   })
+  @Expose()
   metadados?: {
     grau_parentesco?: string;
     documento_representacao?: string;
@@ -48,17 +53,20 @@ export class PapelCidadaoResponseDto {
     example: true,
     description: 'Indica se o papel está ativo',
   })
+  @Expose()
   ativo: boolean;
 
   @ApiProperty({
     example: '2023-01-01T00:00:00.000Z',
     description: 'Data de criação do papel',
   })
+  @Expose()
   created_at: Date;
 
   @ApiProperty({
     example: '2023-01-01T00:00:00.000Z',
     description: 'Data da última atualização do papel',
   })
+  @Expose()
   updated_at: Date;
 }

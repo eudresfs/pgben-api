@@ -51,13 +51,13 @@ export class HistoricoSolicitacao {
   usuario: Usuario;
 
   @Column('text', { nullable: true })
-  observacao: string;
+  observacao: string | null;
 
   @Column('jsonb', { nullable: true })
-  dados_alterados: Record<string, any>;
+  dados_alterados: Record<string, any> | null;
 
-  @Column({ nullable: true })
-  ip_usuario: string;
+  @Column({ type: 'varchar', length: 45, nullable: true })
+  ip_usuario: string | null;
 
   @CreateDateColumn()
   created_at: Date;

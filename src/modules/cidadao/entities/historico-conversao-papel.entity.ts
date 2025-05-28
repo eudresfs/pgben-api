@@ -8,7 +8,7 @@ import {
   Index,
 } from 'typeorm';
 import { Cidadao } from './cidadao.entity';
-import { TipoPapel } from './papel-cidadao.entity';
+import { TipoPapel, PaperType } from '../enums/tipo-papel.enum';
 
 /**
  * Entidade de Histórico de Conversão de Papel
@@ -35,7 +35,7 @@ export class HistoricoConversaoPapel {
     enum: TipoPapel,
     enumName: 'tipo_papel',
   })
-  papel_anterior: TipoPapel;
+  papel_anterior: PaperType;
 
   @Column({
     name: 'papel_novo',
@@ -43,7 +43,7 @@ export class HistoricoConversaoPapel {
     enum: TipoPapel,
     enumName: 'tipo_papel',
   })
-  papel_novo: TipoPapel;
+  papel_novo: PaperType;
 
   @Column({ name: 'composicao_familiar_id', type: 'uuid', nullable: true })
   composicao_familiar_id: string;

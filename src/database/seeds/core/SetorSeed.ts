@@ -43,44 +43,45 @@ export class SetorSeed {
       console.log(`Unidade SEMTAS encontrada com ID: ${unidadeId}`);
 
       // Lista de setores básicos para o funcionamento do sistema
+      // A coluna status na tabela setor é do tipo boolean
       const setoresEssenciais = [
         {
           nome: 'Cadastro Único',
           sigla: 'CADUN',
           descricao: 'Setor responsável pelo cadastro de cidadãos e famílias',
-          ativo: true,
+          status: true, // Boolean para a coluna status
         },
         {
           nome: 'Assistência Social',
           sigla: 'ASSSOC',
           descricao: 'Setor responsável pela avaliação social das solicitações',
-          ativo: true,
+          status: true, // Boolean para a coluna status
         },
         {
           nome: 'Análise Técnica',
           sigla: 'ANTEC',
           descricao: 'Setor responsável pela análise técnica das solicitações',
-          ativo: true,
+          status: true, // Boolean para a coluna status
         },
         {
           nome: 'Diretoria de Benefícios',
           sigla: 'DIRBEN',
           descricao: 'Diretoria responsável pela aprovação final de benefícios',
-          ativo: true,
+          status: true, // Boolean para a coluna status
         },
         {
           nome: 'Financeiro',
           sigla: 'FINAN',
           descricao:
             'Setor responsável pelo pagamento e gestão financeira dos benefícios',
-          ativo: true,
+          status: true, // Boolean para a coluna status
         },
         {
           nome: 'Ouvidoria',
           sigla: 'OUVID',
           descricao:
             'Setor responsável pelo atendimento de reclamações e sugestões',
-          ativo: true,
+          status: true, // Boolean para a coluna status
         },
       ];
 
@@ -119,9 +120,9 @@ export class SetorSeed {
               placeholders.push(`$${placeholderIndex++}`);
             }
             
-            // Adicionar coluna de status (ativo ou status)
-            colunas.push(statusColumnName);
-            valores.push(setor.ativo);
+            // Adicionar coluna de status (sempre status, pois é um booleano)
+            colunas.push('status');
+            valores.push(setor.status);
             placeholders.push(`$${placeholderIndex++}`);
             
             // Adicionar unidade_id
@@ -158,8 +159,8 @@ export class SetorSeed {
             }
             
             // Adicionar coluna de status
-            updateColumns.push(`${statusColumnName} = $${paramIndex++}`);
-            updateValues.push(setor.ativo);
+            updateColumns.push(`status = $${paramIndex++}`);
+            updateValues.push(setor.status);
             
             // Adicionar unidade_id
             if (columnNames.includes('unidade_id')) {

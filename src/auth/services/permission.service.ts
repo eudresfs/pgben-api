@@ -473,8 +473,7 @@ export class PermissionService {
       // Cria a nova permissão
       const newPermission = this.permissionRepository.create({
         nome: name,
-        descricao: description || `Permissão ${name}`,
-        criado_por: createdBy
+        descricao: description || `Permissão ${name}`
       });
       
       // Salva a permissão no banco de dados

@@ -61,15 +61,15 @@ export class Pendencia {
   resolvido_por: Usuario;
 
   @Column({ type: 'timestamp', nullable: true })
-  data_resolucao: Date;
+  data_resolucao: Date | null;
 
   @Column('text', { nullable: true })
   @IsOptional()
-  observacao_resolucao: string;
+  observacao_resolucao: string | null;
 
   @Column({ type: 'date', nullable: true })
   @IsOptional()
-  prazo_resolucao: Date;
+  prazo_resolucao: Date | null;
 
   @CreateDateColumn()
   created_at: Date;

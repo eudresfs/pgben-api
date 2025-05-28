@@ -21,12 +21,23 @@ export class PermissionSolicitacaoSeed {
     const permissionScopeRepository = dataSource.getRepository(PermissionScope);
 
     // Permissão composta para todas as operações do módulo de solicitação
-    const solicitacaoAllPermission = permissionRepository.create({
-      nome: 'solicitacao.*',
-      descricao: 'Todas as permissões do módulo de solicitação',
-      composta: true,
-    });
-    await permissionRepository.save(solicitacaoAllPermission);
+    // Usamos SQL direto para evitar problemas com campos que não existem na entidade
+    let solicitacaoAllPermission = await permissionRepository.findOne({ where: { nome: 'solicitacao.*' } });
+    
+    if (!solicitacaoAllPermission) {
+      // Inserir diretamente no banco de dados
+      const result = await dataSource.query(
+        `INSERT INTO permissao (nome, descricao, modulo, acao, ativo) 
+         VALUES ($1, $2, $3, $4, $5) 
+         RETURNING id`,
+        ['solicitacao.*', 'Todas as permissões do módulo de solicitação', 'solicitacao', '*', true]
+      );
+      
+      solicitacaoAllPermission = new Permission();
+      solicitacaoAllPermission.id = result[0].id;
+      solicitacaoAllPermission.nome = 'solicitacao.*';
+      solicitacaoAllPermission.descricao = 'Todas as permissões do módulo de solicitação';
+    }
 
     // Permissões individuais do módulo de solicitação
     const permissions = [
@@ -131,14 +142,28 @@ export class PermissionSolicitacaoSeed {
     for (const permissionData of permissions) {
       const { nome, descricao, scopeType } = permissionData;
       
-      // Cria a permissão
-      const permission = permissionRepository.create({
-        nome,
-        descricao,
-        composta: false,
-        permissao_pai_id: solicitacaoAllPermission.id,
-      });
-      await permissionRepository.save(permission);
+      // Verificar se a permissão já existe
+      let permission = await permissionRepository.findOne({ where: { nome } });
+      
+      if (!permission) {
+        // Extrair módulo e ação do nome
+        const parts = nome.split('.');
+        const modulo = parts[0];
+        const acao = parts.slice(1).join('.');
+        
+        // Inserir diretamente no banco de dados para evitar problemas com campos não existentes na entidade
+        const result = await dataSource.query(
+          `INSERT INTO permissao (nome, descricao, modulo, acao, ativo) 
+           VALUES ($1, $2, $3, $4, $5) 
+           RETURNING id`,
+          [nome, descricao, modulo, acao, true]
+        );
+        
+        permission = new Permission();
+        permission.id = result[0].id;
+        permission.nome = nome;
+        permission.descricao = descricao;
+      }
       
       // Configura o escopo padrão
       const permissionScope = permissionScopeRepository.create({

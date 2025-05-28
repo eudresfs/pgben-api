@@ -5,11 +5,14 @@ import {
   BadRequestException,
   InternalServerErrorException,
   Logger,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { Cidadao } from '../entities/cidadao.entity';
-import { PapelCidadao, TipoPapel } from '../entities/papel-cidadao.entity';
+import { PapelCidadao } from '../entities/papel-cidadao.entity';
+import { TipoPapel, PaperType } from '../enums/tipo-papel.enum';
 import { ComposicaoFamiliar } from '../entities/composicao-familiar.entity';
 import { HistoricoConversaoPapelService } from './historico-conversao-papel.service';
 import { PapelCidadaoService } from './papel-cidadao.service';
@@ -20,7 +23,7 @@ import { CreateCidadaoDto } from '../dto/create-cidadao.dto';
  */
 export interface ResultadoVerificacaoConflito {
   temConflito: boolean;
-  tipoPapelAtual?: TipoPapel;
+  tipoPapelAtual?: PaperType;
   composicaoFamiliarId?: string;
   cidadaoId?: string;
   detalhes?: string;
@@ -83,103 +86,100 @@ export class VerificacaoPapelService {
     @InjectRepository(ComposicaoFamiliar)
     private readonly composicaoFamiliarRepository: Repository<ComposicaoFamiliar>,
     private readonly historicoService: HistoricoConversaoPapelService,
+    @Inject(forwardRef(() => PapelCidadaoService))
     private readonly papelCidadaoService: PapelCidadaoService,
     private readonly dataSource: DataSource,
   ) {}
 
-  /**
-   * Verifica se um cidadão possui conflito de papéis
-   * @param cpf CPF do cidadão
-   * @returns Resultado da verificação
-   */
-  async verificarConflitoPapeis(cpf: string): Promise<ResultadoVerificacaoConflito> {
-    try {
-      // Remover formatação do CPF
-      const cpfLimpo = cpf.replace(/\D/g, '');
 
+
+  /**
+   * Converte um cidadão para beneficiário
+   * @param cidadaoId ID do cidadão
+   * @param motivoConversao Motivo da conversão
+   * @returns Resultado da conversão
+   */
+  async converterParaBeneficiario(
+    cidadaoId: string,
+    motivoConversao: string,
+  ): Promise<ResultadoConversaoPapel> {
+    this.logger.log(`Iniciando conversão para beneficiário: ${cidadaoId}`);
+
+    return this.dataSource.transaction(async (manager) => {
       // Verificar se o cidadão existe
-      const cidadao = await this.cidadaoRepository.findOne({
-        where: { cpf: cpfLimpo },
+      const cidadao = await manager.findOne(Cidadao, {
+        where: { id: cidadaoId },
+        relations: ['papeis'],
       });
 
       if (!cidadao) {
+        throw new NotFoundException('Cidadão não encontrado');
+      }
+
+      // Verificar se já é beneficiário
+      const jaBeneficiario = cidadao.papeis?.some(
+        (papel) => papel.tipo_papel === 'beneficiario' && papel.ativo,
+      );
+
+      if (jaBeneficiario) {
+        throw new ConflictException('Cidadão já é beneficiário');
+      }
+
+      // Verificar conflitos
+      const conflitos = await this.verificarConflitoPapeis(
+        cidadao.cpf,
+      );
+
+      if (conflitos.temConflito) {
+        // Registrar histórico de tentativa de conversão
+        await this.historicoService.criarHistorico({
+          cidadao_id: cidadaoId,
+          papel_anterior: conflitos.tipoPapelAtual || 'membro_composicao',
+          papel_novo: 'beneficiario',
+          justificativa: `Conversão bloqueada: ${conflitos.detalhes}`,
+        }, 'sistema');
+
         return {
-          temConflito: false,
-          detalhes: 'Cidadão não encontrado',
+          sucesso: false,
+          mensagem: conflitos.detalhes || 'Conflito de papel detectado',
         };
       }
 
-      // Verificar se o cidadão é beneficiário
-      const papelBeneficiario = await this.papelCidadaoRepository.findOne({
-        where: {
-          cidadao_id: cidadao.id,
-          tipo_papel: TipoPapel.BENEFICIARIO,
-          ativo: true,
-        },
+      // Desativar papéis conflitantes se necessário
+      const papeisAtivos = cidadao.papeis?.filter((papel) => papel.ativo) || [];
+      for (const papel of papeisAtivos) {
+        if (papel.tipo_papel === 'membro_composicao') {
+          papel.ativo = false;
+          await manager.save(papel);
+        }
+      }
+
+      // Criar papel de beneficiário
+      const novoPapel = manager.create(PapelCidadao, {
+        cidadao_id: cidadaoId,
+        tipo_papel: 'beneficiario',
+        ativo: true,
+        metadados: {},
       });
 
-      // Verificar se o cidadão está em alguma composição familiar
-      const composicaoFamiliar = await this.composicaoFamiliarRepository.findOne({
-        where: { cpf: cpfLimpo },
-        relations: ['cidadao'],
-      });
+      await manager.save(novoPapel);
 
-      // Se for beneficiário e estiver em composição familiar, há conflito
-      if (papelBeneficiario && composicaoFamiliar) {
-        return {
-          temConflito: true,
-          tipoPapelAtual: TipoPapel.BENEFICIARIO,
-          composicaoFamiliarId: composicaoFamiliar.id,
-          cidadaoId: cidadao.id,
-          detalhes: `Cidadão é beneficiário e também está na composição familiar do cidadão ${composicaoFamiliar.cidadao.nome}`,
-        };
-      }
+      // Registrar no histórico
+      const historico = await this.historicoService.criarHistorico({
+        cidadao_id: cidadaoId,
+        papel_anterior: conflitos.tipoPapelAtual || 'membro_composicao',
+        papel_novo: 'beneficiario',
+        justificativa: motivoConversao,
+      }, 'sistema');
 
-      // Se não for beneficiário, mas estiver em composição familiar
-      if (!papelBeneficiario && composicaoFamiliar) {
-        return {
-          temConflito: false,
-          composicaoFamiliarId: composicaoFamiliar.id,
-          cidadaoId: cidadao.id,
-          detalhes: `Cidadão está na composição familiar do cidadão ${composicaoFamiliar.cidadao.nome}`,
-        };
-      }
-
-      // Se for beneficiário, mas não estiver em composição familiar
-      if (papelBeneficiario && !composicaoFamiliar) {
-        return {
-          temConflito: false,
-          tipoPapelAtual: TipoPapel.BENEFICIARIO,
-          cidadaoId: cidadao.id,
-          detalhes: 'Cidadão é beneficiário',
-        };
-      }
-
-      // Se não for beneficiário e não estiver em composição familiar
       return {
-        temConflito: false,
-        cidadaoId: cidadao.id,
-        detalhes: 'Cidadão não possui papéis conflitantes',
+        sucesso: true,
+        mensagem: 'Conversão para beneficiário realizada com sucesso',
+        historicoId: historico.id,
       };
-    } catch (error) {
-      this.logger.error(
-        `Erro ao verificar conflito de papéis: ${error.message}`,
-        error.stack,
-      );
-      throw new InternalServerErrorException(
-        'Erro ao verificar conflito de papéis',
-      );
-    }
+    });
   }
 
-  /**
-   * Converte um membro de composição familiar para cidadão beneficiário
-   * @param cpf CPF do membro de composição familiar
-   * @param dadosCidadao Dados para criação do novo cidadão
-   * @param justificativa Justificativa para a conversão
-   * @param usuarioId ID do usuário que está realizando a conversão
-   * @returns Resultado da conversão
-   */
   /**
    * Converte um membro de composição familiar para cidadão beneficiário
    * @param cpf CPF do membro de composição familiar
@@ -192,7 +192,7 @@ export class VerificacaoPapelService {
    * @throws NotFoundException se o membro não for encontrado
    * @throws InternalServerErrorException se ocorrer um erro durante a conversão
    */
-  async converterParaBeneficiario(
+  async converterMembroParaBeneficiario(
     cpf: string,
     dadosCidadao: CreateCidadaoDto,
     justificativa: string,
@@ -690,6 +690,72 @@ export class VerificacaoPapelService {
       );
       throw new InternalServerErrorException(
         'Erro ao listar regras de conflito',
+      );
+    }
+  }
+
+  /**
+   * Verifica se há conflito entre papéis de um cidadão
+   * @param cpf CPF do cidadão
+   * @returns Resultado da verificação
+   */
+  async verificarConflitoPapeis(
+    cpf: string,
+  ): Promise<ResultadoVerificacaoConflito> {
+    try {
+      // Buscar cidadão pelo CPF
+      const cidadao = await this.cidadaoRepository.findOne({
+        where: { cpf },
+        relations: ['papeis'],
+      });
+
+      if (!cidadao) {
+        return {
+          temConflito: false,
+          detalhes: 'Cidadão não encontrado',
+        };
+      }
+
+      // Verificar papéis ativos
+      const papeisAtivos = cidadao.papeis?.filter((papel) => papel.ativo) || [];
+
+      if (papeisAtivos.length === 0) {
+        return {
+          temConflito: false,
+          detalhes: 'Nenhum papel ativo encontrado',
+        };
+      }
+
+      // Verificar se há conflito (exemplo: beneficiário não pode ser requerente)
+      const temBeneficiario = papeisAtivos.some(
+        (papel) => papel.tipo_papel === 'beneficiario',
+      );
+      const temRequerente = papeisAtivos.some(
+        (papel) => papel.tipo_papel === 'requerente',
+      );
+
+      if (temBeneficiario && temRequerente) {
+        return {
+          temConflito: true,
+          tipoPapelAtual: 'beneficiario',
+          cidadaoId: cidadao.id,
+          detalhes: 'Cidadão não pode ser beneficiário e requerente simultaneamente',
+        };
+      }
+
+      return {
+        temConflito: false,
+        tipoPapelAtual: papeisAtivos[0]?.tipo_papel,
+        cidadaoId: cidadao.id,
+        detalhes: 'Nenhum conflito detectado',
+      };
+    } catch (error) {
+      this.logger.error(
+        `Erro ao verificar conflito de papéis: ${error.message}`,
+        error.stack,
+      );
+      throw new InternalServerErrorException(
+        'Erro ao verificar conflito de papéis',
       );
     }
   }

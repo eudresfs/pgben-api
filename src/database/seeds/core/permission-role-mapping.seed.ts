@@ -249,42 +249,36 @@ export class PermissionRoleMappingSeed {
       // Busca as permissões pelos nomes
       for (const permissionName of permissionNames) {
         try {
-          // Buscar permissão pelo nome
-          const permission = await dataSource
-            .getRepository(Permission)
-            .findOne({ 
-              where: { nome: permissionName }
-            });
+          // Buscar permissão pelo nome usando query SQL direta para evitar problemas com orm
+          const permission = await dataSource.query(
+            'SELECT id FROM permissao WHERE nome = $1',
+            [permissionName],
+          );
 
-          if (!permission) {
+          if (!permission || permission.length === 0) {
             console.log(`Permissão '${permissionName}' não encontrada, pulando...`);
             continue;
           }
-
-          const permissionId = permission.id;
+          
+          const permissionId = permission[0].id;
           console.log(`Permissão '${permissionName}' encontrada com ID: ${permissionId}`);
 
-          // Verifica se o mapeamento já existe
-          const existingMapping = await dataSource
-            .getRepository(RolePermission)
-            .findOne({
-              where: {
-                role_id: roleId,
-                permissao_id: permissionId,
-              },
-            });
+          // Verifica se o mapeamento já existe usando query SQL direta
+          const existingMapping = await dataSource.query(
+            'SELECT id FROM role_permissao WHERE role_id = $1 AND permissao_id = $2',
+            [roleId, permissionId]
+          );
 
-          if (existingMapping) {
+          if (existingMapping && existingMapping.length > 0) {
             console.log(`Mapeamento entre role '${roleName}' e permissão '${permissionName}' já existe, pulando...`);
             continue;
           }
 
-          // Cria o mapeamento
-          const rolePermission = new RolePermission();
-          rolePermission.role_id = roleId;
-          rolePermission.permissao_id = permissionId;
-
-          await dataSource.getRepository(RolePermission).save(rolePermission);
+          // Cria o mapeamento usando SQL direto para evitar problemas com o ORM
+          await dataSource.query(
+            'INSERT INTO role_permissao (role_id, permissao_id) VALUES ($1, $2)',
+            [roleId, permissionId]
+          );
           console.log(`Mapeamento entre role '${roleName}' e permissão '${permissionName}' criado com sucesso!`);
         } catch (error) {
           console.error(`Erro ao processar permissão '${permissionName}' para role '${roleName}': ${error.message}`);

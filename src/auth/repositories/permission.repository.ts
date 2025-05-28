@@ -69,15 +69,16 @@ export class PermissionRepository extends Repository<Permission> {
   }
 
   /**
-   * Busca todas as permissões compostas.
+   * Busca todas as permissões compostas (aquelas com nomes que contém '*').
    * 
    * @returns Lista de permissões compostas
    */
   async findAllComposite(): Promise<Permission[]> {
     try {
       // Usar SQL nativo para evitar problemas com nomes de colunas
+      // Identificamos permissões compostas pelo padrão do nome (contendo '*')
       const result = await this.dataSource.manager.query(
-        `SELECT * FROM permissao WHERE composta = true`
+        `SELECT * FROM permissao WHERE nome LIKE '%.*%'`
       );
 
       if (!result || result.length === 0) {
@@ -93,17 +94,17 @@ export class PermissionRepository extends Repository<Permission> {
   }
 
   /**
-   * Busca todas as permissões filhas de uma permissão composta.
+   * Busca todas as permissões de um módulo específico.
    * 
-   * @param parentId ID da permissão pai
-   * @returns Lista de permissões filhas
+   * @param moduleName Nome do módulo
+   * @returns Lista de permissões do módulo
    */
-  async findChildrenByParentId(parentId: string): Promise<Permission[]> {
+  async findByModule(moduleName: string): Promise<Permission[]> {
     try {
       // Usar SQL nativo para evitar problemas com nomes de colunas
       const result = await this.dataSource.manager.query(
-        `SELECT * FROM permissao WHERE permissao_pai_id = $1`,
-        [parentId]
+        `SELECT * FROM permissao WHERE modulo = $1`,
+        [moduleName]
       );
 
       if (!result || result.length === 0) {
@@ -113,7 +114,7 @@ export class PermissionRepository extends Repository<Permission> {
       // Converter o resultado para entidades Permission usando o método auxiliar
       return result.map(row => this.toEntity(row));
     } catch (error) {
-      console.error('Erro ao buscar permissões filhas:', error);
+      console.error(`Erro ao buscar permissões do módulo ${moduleName}:`, error);
       return [];
     }
   }
@@ -169,12 +170,15 @@ export class PermissionRepository extends Repository<Permission> {
     permission.id = row.id;
     permission.nome = row.nome;
     permission.descricao = row.descricao;
-    permission.composta = row.composta;
-    permission.permissao_pai_id = row.permissao_pai_id;
+    
+    // Campos adicionais que existem no banco mas não na entidade
+    // usamos casting para any para evitar erros de typescript
+    (permission as any).modulo = row.modulo;
+    (permission as any).acao = row.acao;
+    (permission as any).ativo = row.ativo;
+    
     permission.created_at = row.created_at;
     permission.updated_at = row.updated_at;
-    permission.criado_por = row.criado_por;
-    permission.atualizado_por = row.atualizado_por;
     return permission;
   }
 

@@ -256,7 +256,7 @@ export class PermissionCidadaoSeed {
    * @param repository Repositório de permissões
    * @param nome Nome da permissão
    * @param descricao Descrição da permissão
-   * @param composta Indica se a permissão é composta
+   * @param composta Flag para identificar permissões compostas (não existe mais na entidade, mas mantido para compatibilidade)
    * @returns Permissão criada
    */
   private static async createPermission(
@@ -271,16 +271,34 @@ export class PermissionCidadaoSeed {
     if (existingPermission) {
       console.log(`Permissão '${nome}' já existe, atualizando...`);
       existingPermission.descricao = descricao;
-      existingPermission.composta = composta;
       return await repository.save(existingPermission);
     }
     
     console.log(`Criando permissão '${nome}'...`);
+    
+    // Extrair módulo e ação do nome
+    const parts = nome.split('.');
+    const modulo = parts[0];
+    const acao = parts.slice(1).join('.');
+    
+    // Usar SQL direto para inserir a permissão com os campos corretos
+    const dataSource = repository.manager.connection;
+    const result = await dataSource.query(
+      `INSERT INTO permissao (nome, descricao, modulo, acao, ativo) 
+       VALUES ($1, $2, $3, $4, $5) 
+       RETURNING id`,
+      [nome, descricao, modulo, acao, true]
+    );
+    
+    // Criar objeto Permission para retornar
     const permission = new Permission();
+    permission.id = result[0].id;
     permission.nome = nome;
     permission.descricao = descricao;
-    permission.composta = composta;
-    return await repository.save(permission);
+    permission.modulo = modulo;
+    permission.acao = acao;
+    
+    return permission;
   }
   
   /**

@@ -9,7 +9,7 @@ import { Repository } from 'typeorm';
 import { HistoricoConversaoPapel } from '../entities/historico-conversao-papel.entity';
 import { CreateHistoricoConversaoPapelDto } from '../dto/create-historico-conversao-papel.dto';
 import { NotificacaoService } from '../../notificacao/services/notificacao.service';
-import { TipoPapel } from '../entities/papel-cidadao.entity';
+import { TipoPapel, PaperType } from '../enums/tipo-papel.enum';
 
 /**
  * Serviço de Histórico de Conversão de Papel
@@ -165,8 +165,8 @@ export class HistoricoConversaoPapelService {
     dataFim: Date,
     options?: {
       cidadaoId?: string;
-      papelAnterior?: TipoPapel;
-      papelNovo?: TipoPapel;
+      papelAnterior?: PaperType;
+      papelNovo?: PaperType;
       page?: number;
       limit?: number;
     },

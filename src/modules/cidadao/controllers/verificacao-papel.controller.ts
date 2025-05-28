@@ -7,6 +7,7 @@ import {
   HttpCode,
   HttpStatus,
   BadRequestException,
+  NotFoundException,
   Logger,
   ParseUUIDPipe,
   ValidationPipe,
@@ -25,6 +26,7 @@ import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../../../auth/guards/permission.guard';
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
 import { VerificacaoPapelService } from '../services/verificacao-papel.service';
+import { CidadaoService } from '../services/cidadao.service';
 import { 
   VerificacaoConflitoPapelDto, 
   VerificacaoConflitoPapelResponseDto 
@@ -61,7 +63,10 @@ interface AuthenticatedRequest extends Request {
 export class VerificacaoPapelController {
   private readonly logger = new Logger(VerificacaoPapelController.name);
 
-  constructor(private readonly verificacaoPapelService: VerificacaoPapelService) {}
+  constructor(
+    private readonly verificacaoPapelService: VerificacaoPapelService,
+    private readonly cidadaoService: CidadaoService,
+  ) {}
 
   /**
    * Verifica se um cidadão possui conflito de papéis
@@ -159,11 +164,15 @@ export class VerificacaoPapelController {
       
       const dadosCidadao = this.buildDadosCidadao(conversaoDto);
       
+      // Buscar cidadão pelo CPF para obter o ID
+      const cidadao = await this.cidadaoService.findByCpf(conversaoDto.cpf);
+      if (!cidadao) {
+        throw new NotFoundException('Cidadão não encontrado');
+      }
+      
       const resultado = await this.verificacaoPapelService.converterParaBeneficiario(
-        conversaoDto.cpf,
-        dadosCidadao,
+        cidadao.id,
         conversaoDto.justificativa,
-        usuarioId,
       );
       
       this.logger.log(`Conversão para beneficiário concluída - CPF: ${cpfMasked}`);

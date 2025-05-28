@@ -42,10 +42,10 @@ export class BeneficioController {
    * Lista todos os tipos de benefícios
    */
   @Get()
-  @RequiresPermission({
-    permissionName: 'beneficio.listar',
-    scopeType: ScopeType.GLOBAL
-  })
+  @RequiresPermission(
+  { permissionName: '*.*' },
+  { permissionName: 'beneficio.listar',  scopeType: ScopeType.GLOBAL }
+  )
   @ApiOperation({ 
     summary: 'Listar tipos de benefícios',
     description: 'Retorna uma lista paginada de todos os tipos de benefícios cadastrados no sistema.'
@@ -101,9 +101,9 @@ export class BeneficioController {
    * Obtém detalhes de um tipo de benefício específico
    */
   @Get(':id')
-  @RequiresPermission({
-    permissionName: 'beneficio.visualizar',
-    scopeType: ScopeType.GLOBAL
+  @RequiresPermission(
+  { permissionName: '*.*' },
+  { permissionName: 'beneficio.visualizar', scopeType: ScopeType.GLOBAL
   })
   @ApiOperation({ 
     summary: 'Obter detalhes de um benefício',

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { Repository, DataSource } from 'typeorm';
 import { Cidadao } from '../entities/cidadao.entity';
 
@@ -42,40 +42,61 @@ export class CidadaoRepository {
   }
 
   /**
-   * Busca um cidadão pelo ID
+   * Busca um cidadão pelo ID com relacionamentos
    * @param id ID do cidadão
+   * @param includeRelations Se deve incluir relacionamentos (papéis, composição familiar)
    * @returns Cidadão encontrado ou null
    */
-  async findById(id: string): Promise<Cidadao | null> {
-    return this.repository.findOne({ where: { id } });
+  async findById(id: string, includeRelations = true): Promise<Cidadao | null> {
+    const options: any = { where: { id } };
+    
+    if (includeRelations) {
+      options.relations = ['papeis', 'composicao_familiar'];
+    }
+    
+    return this.repository.findOne(options);
   }
 
   /**
    * Busca um cidadão pelo CPF
    * @param cpf CPF do cidadão
+   * @param includeRelations Se deve incluir relacionamentos (papéis, composição familiar)
    * @returns Cidadão encontrado ou null
    */
-  async findByCpf(cpf: string): Promise<Cidadao | null> {
+  async findByCpf(cpf: string, includeRelations = false): Promise<Cidadao | null> {
     // Normaliza o CPF removendo caracteres não numéricos
     const cpfNormalizado = cpf.replace(/\D/g, '');
 
-    return this.repository.findOne({
-      where: [{ cpf: cpfNormalizado }, { cpf }],
-    });
+    const options: any = {
+      where: { cpf: cpfNormalizado },
+    };
+    
+    if (includeRelations) {
+      options.relations = ['papeis', 'composicao_familiar'];
+    }
+
+    return this.repository.findOne(options);
   }
 
   /**
    * Busca um cidadão pelo NIS
    * @param nis NIS do cidadão
+   * @param includeRelations Se deve incluir relacionamentos (papéis, composição familiar)
    * @returns Cidadão encontrado ou null
    */
-  async findByNis(nis: string): Promise<Cidadao | null> {
+  async findByNis(nis: string, includeRelations = false): Promise<Cidadao | null> {
     // Normaliza o NIS removendo caracteres não numéricos
     const nisNormalizado = nis.replace(/\D/g, '');
 
-    return this.repository.findOne({
-      where: [{ nis: nisNormalizado }, { nis }],
-    });
+    const options: any = {
+      where: { nis: nisNormalizado },
+    };
+    
+    if (includeRelations) {
+      options.relations = ['papeis', 'composicao_familiar'];
+    }
+
+    return this.repository.findOne(options);
   }
 
   /**
@@ -103,17 +124,28 @@ export class CidadaoRepository {
    * @param id ID do cidadão
    * @param data Dados a serem atualizados
    * @returns Cidadão atualizado
+   * @throws NotFoundException se o cidadão não for encontrado
    */
   async update(id: string, data: Partial<Cidadao>): Promise<Cidadao> {
+    // Normaliza o CPF removendo caracteres não numéricos
+    if (data.cpf) {
+      data.cpf = data.cpf.replace(/\D/g, '');
+    }
+    
     // Normaliza o NIS removendo caracteres não numéricos
     if (data.nis) {
       data.nis = data.nis.replace(/\D/g, '');
     }
 
-    await this.repository.update(id, data);
-    const cidadao = await this.findById(id);
+    const updateResult = await this.repository.update(id, data);
+    
+    if (updateResult.affected === 0) {
+      throw new NotFoundException('Cidadão não encontrado');
+    }
+    
+    const cidadao = await this.findById(id, true);
     if (!cidadao) {
-      throw new Error('Cidadão não encontrado após atualização');
+      throw new NotFoundException('Cidadão não encontrado após atualização');
     }
     return cidadao;
   }

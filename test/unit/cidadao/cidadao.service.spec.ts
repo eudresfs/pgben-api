@@ -12,15 +12,19 @@ import { CidadaoRepository } from '@modules/cidadao/repositories/cidadao.reposit
 import {
   Cidadao,
   Sexo,
-  TipoCidadao,
 } from '@modules/cidadao/entities/cidadao.entity';
+import { TipoPapel, PaperType } from '@modules/cidadao/enums/tipo-papel.enum';
 import { CreateCidadaoDto } from '@modules/cidadao/dto/create-cidadao.dto';
 import { UpdateCidadaoDto } from '@modules/cidadao/dto/update-cidadao.dto';
 import { CidadaoResponseDto } from '@modules/cidadao/dto/cidadao-response.dto';
+import { CacheService } from '@/shared/cache/cache.service';
+import { PapelCidadaoService } from '@modules/cidadao/services/papel-cidadao.service';
 
 describe('CidadaoService', () => {
   let service: CidadaoService;
   let repository: CidadaoRepository;
+  let cacheService: CacheService;
+  let papelCidadaoService: PapelCidadaoService;
 
   const mockCidadaoRepository = {
     create: jest.fn(),
@@ -34,6 +38,23 @@ describe('CidadaoService', () => {
     findByNis: jest.fn(),
     findById: jest.fn(),
     findAll: jest.fn(),
+  };
+
+  const mockCacheService = {
+    get: jest.fn(),
+    set: jest.fn(),
+    del: jest.fn(),
+    clear: jest.fn(),
+  };
+
+  const mockPapelCidadaoService = {
+    create: jest.fn(),
+    createMany: jest.fn(),
+    findAll: jest.fn(),
+    findOne: jest.fn(),
+    update: jest.fn(),
+    remove: jest.fn(),
+    findByTipo: jest.fn(),
   };
 
   const mockCidadao: Cidadao = {
@@ -57,9 +78,13 @@ describe('CidadaoService', () => {
     },
     created_at: new Date(),
     updated_at: new Date(),
-    tipo_cidadao: TipoCidadao.BENEFICIARIO,
-    renda: 0,
     composicao_familiar: [],
+    papeis: [],
+    nome_social: '',
+    nome_mae: 'nome da mãoe do cidadão',
+    naturalidade: 'Natal',
+    prontuario_suas: 'CD651651',
+    ativo: false,
     removed_at: null as unknown as Date,
   };
 
@@ -75,11 +100,21 @@ describe('CidadaoService', () => {
           provide: CidadaoRepository,
           useValue: mockCidadaoRepository,
         },
+        {
+          provide: CacheService,
+          useValue: mockCacheService,
+        },
+        {
+          provide: PapelCidadaoService,
+          useValue: mockPapelCidadaoService,
+        },
       ],
     }).compile();
 
     service = module.get<CidadaoService>(CidadaoService);
     repository = module.get<CidadaoRepository>(CidadaoRepository);
+    cacheService = module.get<CacheService>(CacheService);
+    papelCidadaoService = module.get<PapelCidadaoService>(PapelCidadaoService);
 
     // Resetar mocks
     jest.clearAllMocks();
@@ -102,16 +137,16 @@ describe('CidadaoService', () => {
       });
 
       expect(result).toEqual({
-        data: plainToInstance(CidadaoResponseDto, mockCidadaoList, {
+        items: plainToInstance(CidadaoResponseDto, mockCidadaoList, {
           excludeExtraneousValues: true,
         }),
         meta: {
           total,
           page: 1,
           limit: 10,
-          totalPages: 1,
-          hasNextPage: false,
-          hasPreviousPage: false,
+          pages: 1,
+          hasNext: false,
+          hasPrev: false,
         },
       });
 
@@ -119,7 +154,7 @@ describe('CidadaoService', () => {
         skip: 0,
         take: 10,
         where: {},
-        order: { created_at: 'DESC' },
+        order: { nome: 'ASC' },
       });
     });
 
@@ -141,12 +176,16 @@ describe('CidadaoService', () => {
         skip: 0,
         take: 10,
         where: expect.objectContaining({
-          nome: expect.any(Object),
-          bairro: filters.bairro,
+          $or: expect.arrayContaining([
+            { nome: { $iLike: '%João%' } },
+            { cpf: { $iLike: '%%' } },
+            { nis: { $iLike: '%%' } },
+          ]),
+          'endereco.bairro': { $iLike: '%Centro%' },
           unidadeId: filters.unidadeId,
-          ativo: filters.ativo,
+          ativo: true,
         }),
-        order: { created_at: 'DESC' },
+        order: { nome: 'ASC' },
       });
     });
 
@@ -155,7 +194,7 @@ describe('CidadaoService', () => {
 
       const result = await service.findAll({});
 
-      expect(result.data).toHaveLength(0);
+      expect(result.items).toHaveLength(0);
       expect(result.meta.total).toBe(0);
     });
 
@@ -175,15 +214,15 @@ describe('CidadaoService', () => {
         total: totalItems,
         page,
         limit,
-        totalPages: 3,
-        hasNextPage: true,
-        hasPreviousPage: true,
+        pages: 3,
+        hasNext: true,
+        hasPrev: true,
       });
       expect(mockCidadaoRepository.findAll).toHaveBeenCalledWith({
         skip: 10, // (page - 1) * limit
         take: limit,
         where: {},
-        order: { created_at: 'DESC' },
+        order: { nome: 'ASC' },
       });
     });
   });
@@ -194,32 +233,48 @@ describe('CidadaoService', () => {
 
       const result = await service.findById(mockCidadao.id);
 
-      expect(result).toEqual(plainToInstance(CidadaoResponseDto, mockCidadao));
-      expect(repository.findById).toHaveBeenCalledWith(mockCidadao.id);
+      expect(result).toEqual(plainToInstance(CidadaoResponseDto, mockCidadao, {
+        excludeExtraneousValues: true,
+        enableImplicitConversion: false,
+      }));
+      expect(mockCidadaoRepository.findById).toHaveBeenCalledWith(mockCidadao.id, true);
+    });
+
+    it('deve retornar cidadão sem relacionamentos quando includeRelations for false', async () => {
+      mockCidadaoRepository.findById.mockResolvedValue(mockCidadao);
+
+      const result = await service.findById(mockCidadao.id, false);
+
+      expect(result).toEqual(plainToInstance(CidadaoResponseDto, mockCidadao, {
+        excludeExtraneousValues: true,
+        enableImplicitConversion: false,
+      }));
+      expect(mockCidadaoRepository.findById).toHaveBeenCalledWith(mockCidadao.id, false);
     });
 
     it('deve retornar os dados corretos no DTO de resposta', async () => {
       const cidadaoCompleto = {
         ...mockCidadao,
-        dataNascimento: new Date('1990-01-01'),
+        data_nascimento: new Date('1990-01-01'),
         sexo: Sexo.MASCULINO,
-        nomeMae: 'Maria da Silva',
-        nomePai: 'João Silva',
+        nome_mae: 'Maria da Silva',
+        nome_pai: 'João Silva',
         email: 'joao@example.com',
         telefone: '11999999999',
-        cep: '12345678',
-        logradouro: 'Rua Exemplo',
-        numero: '123',
-        complemento: 'Apto 101',
-        bairro: 'Centro',
-        cidade: 'São Paulo',
-        uf: 'SP',
         nis: '12345678901',
         cns: '123456789012345',
-        fotoUrl: 'http://example.com/foto.jpg',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        updatedBy: 'user-1',
+        foto_url: 'http://example.com/foto.jpg',
+        endereco: {
+          cep: '12345678',
+          logradouro: 'Rua Exemplo',
+          numero: '123',
+          complemento: 'Apto 101',
+          bairro: 'Centro',
+          cidade: 'São Paulo',
+          estado: 'SP',
+        },
+        created_at: new Date(),
+        updated_at: new Date(),
       };
 
       mockCidadaoRepository.findById.mockResolvedValue(cidadaoCompleto);
@@ -249,7 +304,6 @@ describe('CidadaoService', () => {
         fotoUrl: 'http://example.com/foto.jpg',
         createdAt: expect.any(String),
         updatedAt: expect.any(String),
-        updatedBy: 'user-1',
       });
     });
 
@@ -280,18 +334,33 @@ describe('CidadaoService', () => {
     it('deve retornar um cidadão pelo CPF', async () => {
       mockCidadaoRepository.findByCpf.mockResolvedValue(mockCidadao);
 
-      const result = await service.findByCpf('123.456.789-01');
+      const result = await service.findByCpf('123.456.789-09');
 
-      expect(result).toEqual(plainToInstance(CidadaoResponseDto, mockCidadao));
-      expect(repository.findByCpf).toHaveBeenCalledWith('12345678901');
+      expect(result).toEqual(plainToInstance(CidadaoResponseDto, mockCidadao, {
+        excludeExtraneousValues: true,
+        enableImplicitConversion: false,
+      }));
+      expect(mockCidadaoRepository.findByCpf).toHaveBeenCalledWith('12345678909', false);
+    });
+
+    it('deve retornar cidadão sem relacionamentos quando includeRelations for false', async () => {
+      mockCidadaoRepository.findByCpf.mockResolvedValue(mockCidadao);
+
+      const result = await service.findByCpf('123.456.789-09', false);
+
+      expect(result).toEqual(plainToInstance(CidadaoResponseDto, mockCidadao, {
+        excludeExtraneousValues: true,
+        enableImplicitConversion: false,
+      }));
+      expect(mockCidadaoRepository.findByCpf).toHaveBeenCalledWith('12345678909', false);
     });
 
     it('deve formatar o CPF removendo caracteres não numéricos', async () => {
       mockCidadaoRepository.findByCpf.mockResolvedValue(mockCidadao);
 
-      await service.findByCpf('123.456.789-01');
+      await service.findByCpf('123.456.789-09');
 
-      expect(repository.findByCpf).toHaveBeenCalledWith('12345678901');
+      expect(mockCidadaoRepository.findByCpf).toHaveBeenCalledWith('12345678909', false);
     });
 
     it('deve lançar BadRequestException para CPF vazio', async () => {
@@ -332,7 +401,7 @@ describe('CidadaoService', () => {
     it('deve lançar NotFoundException quando o cidadão não for encontrado', async () => {
       mockCidadaoRepository.findByCpf.mockResolvedValue(null);
 
-      await expect(service.findByCpf('111.222.333-44')).rejects.toThrow(
+      await expect(service.findByCpf('123.456.789-09')).rejects.toThrow(
         NotFoundException,
       );
     });
@@ -344,8 +413,23 @@ describe('CidadaoService', () => {
 
       const result = await service.findByNis('12345678901');
 
-      expect(result).toEqual(plainToInstance(CidadaoResponseDto, mockCidadao));
-      expect(repository.findByNis).toHaveBeenCalledWith('12345678901');
+      expect(result).toEqual(plainToInstance(CidadaoResponseDto, mockCidadao, {
+        excludeExtraneousValues: true,
+        enableImplicitConversion: false,
+      }));
+      expect(mockCidadaoRepository.findByNis).toHaveBeenCalledWith('12345678901', false);
+    });
+
+    it('deve retornar cidadão sem relacionamentos quando includeRelations for false', async () => {
+      mockCidadaoRepository.findByNis.mockResolvedValue(mockCidadao);
+
+      const result = await service.findByNis('12345678901', false);
+
+      expect(result).toEqual(plainToInstance(CidadaoResponseDto, mockCidadao, {
+        excludeExtraneousValues: true,
+        enableImplicitConversion: false,
+      }));
+      expect(mockCidadaoRepository.findByNis).toHaveBeenCalledWith('12345678901', false);
     });
 
     it('deve formatar o NIS removendo caracteres não numéricos', async () => {
@@ -353,7 +437,7 @@ describe('CidadaoService', () => {
 
       await service.findByNis('123.456.789-01');
 
-      expect(repository.findByNis).toHaveBeenCalledWith('12345678901');
+      expect(mockCidadaoRepository.findByNis).toHaveBeenCalledWith('12345678901', false);
     });
 
     it('deve lançar BadRequestException para NIS vazio', async () => {
@@ -391,7 +475,7 @@ describe('CidadaoService', () => {
 
       await service.findByNis('123.456.789-01');
 
-      expect(repository.findByNis).toHaveBeenCalledWith('12345678901');
+      expect(mockCidadaoRepository.findByNis).toHaveBeenCalledWith('12345678901', false);
     });
   });
 
@@ -425,6 +509,7 @@ describe('CidadaoService', () => {
       mockCidadaoRepository.findByCpf.mockResolvedValue(null);
       mockCidadaoRepository.findByNis.mockResolvedValue(null);
       mockCidadaoRepository.create.mockResolvedValue(mockCidadao);
+      mockCidadaoRepository.findById.mockResolvedValue(mockCidadao);
 
       const result = await service.create(
         createCidadaoDto,
@@ -432,14 +517,14 @@ describe('CidadaoService', () => {
         'user-1',
       );
 
-      expect(result).toEqual(plainToInstance(CidadaoResponseDto, mockCidadao));
-      expect(repository.create).toHaveBeenCalledWith({
+      expect(result).toEqual(plainToInstance(CidadaoResponseDto, mockCidadao, {
+        excludeExtraneousValues: true,
+        enableImplicitConversion: false,
+      }));
+      expect(mockCidadaoRepository.create).toHaveBeenCalledWith({
         ...createCidadaoDto,
         cpf: '12345678901',
         nis: '12345678901',
-        unidadeId: 'unidade-1',
-        createdBy: 'user-1',
-        updatedBy: 'user-1',
       });
     });
 
@@ -447,6 +532,7 @@ describe('CidadaoService', () => {
       mockCidadaoRepository.findByCpf.mockResolvedValue(null);
       mockCidadaoRepository.findByNis.mockResolvedValue(null);
       mockCidadaoRepository.create.mockResolvedValue(mockCidadao);
+      mockCidadaoRepository.findById.mockResolvedValue(mockCidadao);
 
       await service.create(
         {
@@ -458,7 +544,7 @@ describe('CidadaoService', () => {
         'user-1',
       );
 
-      expect(repository.create).toHaveBeenCalledWith(
+      expect(mockCidadaoRepository.create).toHaveBeenCalledWith(
         expect.objectContaining({
           cpf: '12345678901',
           nis: '12345678901',
@@ -523,6 +609,7 @@ describe('CidadaoService', () => {
       const { nis, ...dtoSemNis } = createCidadaoDto;
       mockCidadaoRepository.findByCpf.mockResolvedValue(null);
       mockCidadaoRepository.create.mockResolvedValue(mockCidadao);
+      mockCidadaoRepository.findById.mockResolvedValue(mockCidadao);
 
       await service.create(
         dtoSemNis as CreateCidadaoDto,
@@ -530,9 +617,9 @@ describe('CidadaoService', () => {
         'user-1',
       );
 
-      expect(repository.create).toHaveBeenCalledWith(
+      expect(mockCidadaoRepository.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          nis: null,
+          nis: undefined,
         }),
       );
     });
@@ -624,7 +711,8 @@ describe('CidadaoService', () => {
       );
 
       expect(result.composicao_familiar).toHaveLength(1);
-      expect(result.composicao_familiar[0]).toMatchObject({
+      expect(result.composicao_familiar).toBeDefined();
+      expect(result.composicao_familiar![0]).toMatchObject({
         nome: mockComposicao.nome,
         parentesco: mockComposicao.parentesco,
       });
@@ -691,9 +779,8 @@ describe('CidadaoService', () => {
 
       await service.remove(mockCidadao.id, 'user-1');
 
-      expect(repository.update).toHaveBeenCalledWith(mockCidadao.id, {
+      expect(mockCidadaoRepository.update).toHaveBeenCalledWith(mockCidadao.id, {
         removed_at: expect.any(Date),
-        updatedBy: 'user-1',
       });
     });
 
@@ -732,7 +819,7 @@ describe('CidadaoService', () => {
       await service.remove(mockCidadao.id, 'user-1');
 
       // Verifica se o update foi chamado mesmo para um cidadão já removido
-      expect(repository.update).toHaveBeenCalled();
+      expect(mockCidadaoRepository.update).toHaveBeenCalled();
     });
   });
 });

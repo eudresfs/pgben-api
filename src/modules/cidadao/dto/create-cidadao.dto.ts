@@ -15,7 +15,7 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { Sexo } from '../entities/cidadao.entity';
-import { TipoPapel } from '../entities/papel-cidadao.entity';
+import { TipoPapel, PaperType } from '../enums/tipo-papel.enum';
 import { CPFValidator } from '../validators/cpf-validator';
 import { NISValidator } from '../validators/nis-validator';
 import { TelefoneValidator } from '../validators/telefone-validator';
@@ -103,7 +103,7 @@ export class PapelCidadaoCreateDto {
     example: TipoPapel.BENEFICIARIO,
     description: 'Tipo de papel do cidadão',
   })
-  tipo_papel: TipoPapel;
+  tipo_papel: PaperType;
 
   @ApiPropertyOptional({
     type: 'object',

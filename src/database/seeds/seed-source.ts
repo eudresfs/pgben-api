@@ -34,6 +34,8 @@ const options: DataSourceOptions & SeederOptions = {
   database: config.database.database,
   synchronize: false,
   logging: config.database.logging,
+  // Desativar construtores de entidades para evitar problemas de validação
+  entitySkipConstructor: true,
   entities: [__dirname + '/../../**/*.entity{.ts,.js}'],
   migrations: [__dirname + '/../migrations/*{.ts,.js}'],
   seeds: [

@@ -9,7 +9,7 @@ import {
   IsDate,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { TipoPapel } from '../entities/papel-cidadao.entity';
+import { TipoPapel, PaperType } from '../enums/tipo-papel.enum';
 
 /**
  * DTO para criação de papel de cidadão
@@ -24,7 +24,7 @@ export class CreatePapelCidadaoDto {
     example: TipoPapel.BENEFICIARIO,
     description: 'Tipo de papel que o cidadão irá assumir',
   })
-  tipo_papel: TipoPapel;
+  tipo_papel: PaperType;
 
   @IsUUID('4', { message: 'ID do cidadão deve ser um UUID válido' })
   @IsNotEmpty({ message: 'ID do cidadão é obrigatório' })

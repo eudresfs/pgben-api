@@ -27,6 +27,8 @@ export class UnidadeSeed {
       console.log(`Utilizando coluna de status: ${statusColumnName}`);
 
       // Lista de unidades básicas para o funcionamento do sistema
+      // Valores válidos para tipo_unidade: "cras", "creas", "centro_pop", "semtas", "outro"
+      // Valores válidos para status_unidade: "ativo", "inativo"
       const unidadesEssenciais = [
         {
           nome: 'Secretaria',
@@ -35,8 +37,8 @@ export class UnidadeSeed {
           telefone: '(00) 0000-0000',
           email: 'semtas@pgben.gov.br',
           responsavel_matricula: 'CG001',
-          tipo: 'administrativa',
-          ativo: true,
+          tipo: 'semtas', // Corrigido para um valor válido do enum tipo_unidade
+          status: 'ativo', // Corrigido para um valor válido do enum status_unidade
         },
         {
           nome: 'CRAS Central',
@@ -46,7 +48,7 @@ export class UnidadeSeed {
           email: 'cras.central@pgben.gov.br',
           responsavel_matricula: 'CR001',
           tipo: 'cras',
-          ativo: true,
+          status: 'ativo', // Corrigido para um valor válido do enum status_unidade
         },
         {
           nome: 'CREAS Regional',
@@ -56,7 +58,7 @@ export class UnidadeSeed {
           email: 'creas.regional@pgben.gov.br',
           responsavel_matricula: 'CE001',
           tipo: 'creas',
-          ativo: true,
+          status: 'ativo', // Corrigido para um valor válido do enum status_unidade
         },
         {
           nome: 'Centro de Referência',
@@ -65,8 +67,8 @@ export class UnidadeSeed {
           telefone: '(00) 0000-0003',
           email: 'centro.referencia@pgben.gov.br',
           responsavel_matricula: 'CF001',
-          tipo: 'centro_referencia',
-          ativo: true,
+          tipo: 'outro', // Corrigido para um valor válido do enum tipo_unidade (não existe centro_referencia)
+          status: 'ativo', // Corrigido para um valor válido do enum status_unidade
         },
       ];
 
@@ -131,9 +133,9 @@ export class UnidadeSeed {
               placeholders.push(`$${placeholderIndex++}`);
             }
             
-            // Adicionar coluna de status (ativo ou status)
-            colunas.push(statusColumnName);
-            valores.push(unidade.ativo);
+            // Adicionar coluna de status (sempre usamos 'status' pois a coluna é do tipo enum)
+            colunas.push('status');
+            valores.push(unidade.status);
             placeholders.push(`$${placeholderIndex++}`);
             
             // Construir e executar a query
@@ -183,8 +185,8 @@ export class UnidadeSeed {
             }
             
             // Adicionar coluna de status
-            updateColumns.push(`${statusColumnName} = $${paramIndex++}`);
-            updateValues.push(unidade.ativo);
+            updateColumns.push(`status = $${paramIndex++}`);
+            updateValues.push(unidade.status);
             
             // Adicionar o código para a cláusula WHERE
             updateValues.push(unidade.codigo);

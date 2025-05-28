@@ -56,12 +56,28 @@ export class CoreSeedRunner {
 
     // Executando os seeds na ordem correta com tratamento de erros
     // Importante: UnidadeSeed deve ser executado antes do SetorSeed
-    await executarSeedComTratamento('UnidadeSeed', () => UnidadeSeed.run(dataSource));
-    await executarSeedComTratamento('SetorSeed', () => SetorSeed.run(dataSource));
+    console.log('\nExecutando seeds em ordem sequencial com dependências...');
+    
+    // Executar UnidadeSeed e verificar sucesso
+    const unidadeSeedSuccessful = await executarSeedComTratamento('UnidadeSeed', () => UnidadeSeed.run(dataSource));
+    
+    // Só executar SetorSeed se UnidadeSeed foi bem-sucedido
+    if (unidadeSeedSuccessful) {
+      await executarSeedComTratamento('SetorSeed', () => SetorSeed.run(dataSource));
+    } else {
+      console.error('\nSETORSEED NÃO EXECUTADO: UnidadeSeed falhou, que é uma dependência.');
+      erros.push({
+        seed: 'SetorSeed',
+        erro: 'Não executado porque UnidadeSeed falhou (dependência)'
+      });
+    }
+    
+    // Continuar com os outros seeds
     await executarSeedComTratamento('UsuarioPerfilSeed', async () => {
       const usuarioPerfilSeed = new UsuarioPerfilSeed();
       await usuarioPerfilSeed.run(dataSource);
     });
+    
     await executarSeedComTratamento('TipoBeneficioSeed', () => TipoBeneficioSeed.run(dataSource));
     
     // Executando os seeds de permissões

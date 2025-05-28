@@ -20,7 +20,6 @@ import { AuditModule } from './audit/audit.module';
 import { RecursoModule } from './modules/recurso/recurso.module';
 import { LogsModule } from './modules/logs/logs.module';
 import { APP_GUARD } from '@nestjs/core';
-import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 
 @Module({
   imports: [
@@ -101,13 +100,6 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
     },
-    // Aplicar autenticação JWT globalmente
-    // Removendo a injeção global do JwtAuthGuard para evitar problemas de injeção
-    // O JwtAuthGuard será usado diretamente nos controladores que precisam dele
-    // {
-    //   provide: APP_GUARD,
-    //   useClass: JwtAuthGuard,
-    // },
   ],
 })
 export class AppModule {

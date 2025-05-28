@@ -5,6 +5,8 @@ import {
   BadRequestException,
   InternalServerErrorException,
   Logger,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { CacheService } from '../../../shared/cache';
 import { CidadaoRepository } from '../repositories/cidadao.repository';
@@ -16,6 +18,7 @@ import {
 } from '../dto/cidadao-response.dto';
 import { plainToInstance } from 'class-transformer';
 import { PapelCidadaoService } from './papel-cidadao.service';
+import { CPFValidator } from '../validators/cpf-validator';
 
 /**
  * Serviço de cidadãos
@@ -31,6 +34,7 @@ export class CidadaoService {
   constructor(
     private readonly cidadaoRepository: CidadaoRepository,
     private readonly cacheService: CacheService,
+    @Inject(forwardRef(() => PapelCidadaoService))
     private readonly papelCidadaoService: PapelCidadaoService,
   ) {}
 
@@ -104,7 +108,7 @@ export class CidadaoService {
       const items = cidadaos.map((cidadao) =>
         plainToInstance(CidadaoResponseDto, cidadao, {
           excludeExtraneousValues: true,
-          enableImplicitConversion: true,
+          enableImplicitConversion: false,
         }),
       );
 
@@ -127,13 +131,18 @@ export class CidadaoService {
   /**
    * Busca um cidadão pelo ID
    * @param id ID do cidadão
+   * @param includeRelations Se deve incluir relacionamentos
    * @returns Dados do cidadão
    * @throws NotFoundException se o cidadão não for encontrado
    */
-  async findById(id: string): Promise<CidadaoResponseDto> {
+  async findById(id: string, includeRelations = true): Promise<CidadaoResponseDto> {
+    if (!id || id.trim() === '') {
+      throw new BadRequestException('ID é obrigatório');
+    }
+
     try {
       // Verificar cache
-      const cacheKey = `${this.CACHE_PREFIX}id:${id}`;
+      const cacheKey = `${this.CACHE_PREFIX}id:${id}:${includeRelations ? 'full' : 'basic'}`;
       const cachedCidadao =
         await this.cacheService.get<CidadaoResponseDto>(cacheKey);
 
@@ -143,16 +152,16 @@ export class CidadaoService {
       }
 
       this.logger.debug(`Cache miss para cidadão ID: ${id}`);
-      const cidadao = await this.cidadaoRepository.findById(id);
+      const cidadao = await this.cidadaoRepository.findById(id, includeRelations);
 
       if (!cidadao) {
         throw new NotFoundException('Cidadão não encontrado');
       }
 
       const cidadaoDto = plainToInstance(CidadaoResponseDto, cidadao, {
-        excludeExtraneousValues: true,
-        enableImplicitConversion: true,
-      });
+         excludeExtraneousValues: true,
+         enableImplicitConversion: false,
+       });
 
       // Armazenar no cache
       await this.cacheService.set(cacheKey, cidadaoDto, this.CACHE_TTL);
@@ -171,22 +180,28 @@ export class CidadaoService {
   /**
    * Busca um cidadão pelo CPF
    * @param cpf CPF do cidadão (com ou sem formatação)
+   * @param includeRelations Se deve incluir relacionamentos
    * @returns Dados do cidadão
    * @throws BadRequestException se o CPF for inválido
    * @throws NotFoundException se o cidadão não for encontrado
    */
-  async findByCpf(cpf: string): Promise<CidadaoResponseDto> {
+  async findByCpf(cpf: string, includeRelations = false): Promise<CidadaoResponseDto> {
+    if (!cpf || cpf.trim() === '') {
+      throw new BadRequestException('CPF é obrigatório');
+    }
+
     // Remover formatação do CPF
     const cpfLimpo = cpf.replace(/\D/g, '');
 
-    // Validar CPF
-    if (cpfLimpo.length !== 11 || !/^\d{11}$/.test(cpfLimpo)) {
+    // Validar CPF usando o CPFValidator
+    const cpfValidator = new CPFValidator();
+    if (!cpfValidator.validate(cpfLimpo, {} as any)) {
       throw new BadRequestException('CPF inválido');
     }
 
     try {
       // Verificar cache
-      const cacheKey = `${this.CACHE_PREFIX}cpf:${cpfLimpo}`;
+      const cacheKey = `${this.CACHE_PREFIX}cpf:${cpfLimpo}:${includeRelations ? 'full' : 'basic'}`;
       const cachedCidadao =
         await this.cacheService.get<CidadaoResponseDto>(cacheKey);
 
@@ -196,22 +211,22 @@ export class CidadaoService {
       }
 
       this.logger.debug(`Cache miss para cidadão CPF: ${cpfLimpo}`);
-      const cidadao = await this.cidadaoRepository.findByCpf(cpfLimpo);
+      const cidadao = await this.cidadaoRepository.findByCpf(cpfLimpo, includeRelations);
 
       if (!cidadao) {
         throw new NotFoundException('Cidadão não encontrado');
       }
 
       const cidadaoDto = plainToInstance(CidadaoResponseDto, cidadao, {
-        excludeExtraneousValues: true,
-        enableImplicitConversion: true,
-      });
+         excludeExtraneousValues: true,
+         enableImplicitConversion: false,
+       });
 
       // Armazenar no cache
       await this.cacheService.set(cacheKey, cidadaoDto, this.CACHE_TTL);
       // Também armazenar por ID para referência cruzada
       await this.cacheService.set(
-        `${this.CACHE_PREFIX}id:${cidadao.id}`,
+        `${this.CACHE_PREFIX}id:${cidadao.id}:${includeRelations ? 'full' : 'basic'}`,
         cidadaoDto,
         this.CACHE_TTL,
       );
@@ -234,22 +249,27 @@ export class CidadaoService {
   /**
    * Busca um cidadão pelo NIS
    * @param nis Número do NIS (PIS/PASEP)
+   * @param includeRelations Se deve incluir relacionamentos
    * @returns Dados do cidadão
    * @throws BadRequestException se o NIS for inválido
    * @throws NotFoundException se o cidadão não for encontrado
    */
-  async findByNis(nis: string): Promise<CidadaoResponseDto> {
+  async findByNis(nis: string, includeRelations = false): Promise<CidadaoResponseDto> {
+    if (!nis || nis.trim() === '') {
+      throw new BadRequestException('NIS é obrigatório');
+    }
+
     // Remover formatação do NIS
     const nisLimpo = nis.replace(/\D/g, '');
 
     // Validar NIS
     if (nisLimpo.length !== 11 || !/^\d{11}$/.test(nisLimpo)) {
-      throw new BadRequestException('NIS inválido');
+      throw new BadRequestException('NIS deve ter 11 dígitos');
     }
 
     try {
       // Verificar cache
-      const cacheKey = `${this.CACHE_PREFIX}nis:${nisLimpo}`;
+      const cacheKey = `${this.CACHE_PREFIX}nis:${nisLimpo}:${includeRelations ? 'full' : 'basic'}`;
       const cachedCidadao =
         await this.cacheService.get<CidadaoResponseDto>(cacheKey);
 
@@ -259,32 +279,32 @@ export class CidadaoService {
       }
 
       this.logger.debug(`Cache miss para cidadão NIS: ${nisLimpo}`);
-      const cidadao = await this.cidadaoRepository.findByNis(nisLimpo);
+      const cidadao = await this.cidadaoRepository.findByNis(nisLimpo, includeRelations);
 
       if (!cidadao) {
         throw new NotFoundException('Cidadão não encontrado');
       }
 
       const cidadaoDto = plainToInstance(CidadaoResponseDto, cidadao, {
-        excludeExtraneousValues: true,
-        enableImplicitConversion: true,
-      });
+         excludeExtraneousValues: true,
+         enableImplicitConversion: false,
+       });
 
       // Armazenar no cache
       await this.cacheService.set(
-        `${this.CACHE_PREFIX}id:${cidadao.id}`,
+        `${this.CACHE_PREFIX}id:${cidadao.id}:${includeRelations ? 'full' : 'basic'}`,
         cidadaoDto,
         this.CACHE_TTL,
       );
       await this.cacheService.set(
-        `${this.CACHE_PREFIX}cpf:${cidadao.cpf}`,
+        `${this.CACHE_PREFIX}cpf:${cidadao.cpf}:${includeRelations ? 'full' : 'basic'}`,
         cidadaoDto,
         this.CACHE_TTL,
       );
 
       if (cidadao.nis) {
         await this.cacheService.set(
-          `${this.CACHE_PREFIX}nis:${cidadao.nis}`,
+          `${this.CACHE_PREFIX}nis:${cidadao.nis}:${includeRelations ? 'full' : 'basic'}`,
           cidadaoDto,
           this.CACHE_TTL,
         );
@@ -312,24 +332,32 @@ export class CidadaoService {
   /**
    * Invalida o cache para um cidadão específico
    * @param cidadao Dados do cidadão
+   * @param cpf CPF do cidadão (opcional)
+   * @param nis NIS do cidadão (opcional)
    */
-  private async invalidateCache(cidadao: any): Promise<void> {
+  private async invalidateCache(cidadao: any, cpf?: string, nis?: string): Promise<void> {
     try {
-      // Invalidar cache por ID
-      await this.cacheService.del(`${this.CACHE_PREFIX}id:${cidadao.id}`);
+      const keys = [
+        `${this.CACHE_PREFIX}id:${cidadao.id}:basic`,
+        `${this.CACHE_PREFIX}id:${cidadao.id}:full`,
+        `${this.CACHE_PREFIX}list:*`,
+      ];
 
       // Invalidar cache por CPF
-      if (cidadao.cpf) {
-        await this.cacheService.del(`${this.CACHE_PREFIX}cpf:${cidadao.cpf}`);
+      if (cidadao.cpf || cpf) {
+        const cpfNormalizado = (cidadao.cpf || cpf).replace(/\D/g, '');
+        keys.push(`${this.CACHE_PREFIX}cpf:${cpfNormalizado}:basic`);
+        keys.push(`${this.CACHE_PREFIX}cpf:${cpfNormalizado}:full`);
       }
 
       // Invalidar cache por NIS
-      if (cidadao.nis) {
-        await this.cacheService.del(`${this.CACHE_PREFIX}nis:${cidadao.nis}`);
+      if (cidadao.nis || nis) {
+        const nisNormalizado = (cidadao.nis || nis).replace(/\D/g, '');
+        keys.push(`${this.CACHE_PREFIX}nis:${nisNormalizado}:basic`);
+        keys.push(`${this.CACHE_PREFIX}nis:${nisNormalizado}:full`);
       }
 
-      // Invalidar cache de listagens
-      await this.cacheService.del(`${this.CACHE_PREFIX}list:*`);
+      await Promise.all(keys.map((key) => this.cacheService.del(key)));
     } catch (error) {
       this.logger.error(
         `Erro ao invalidar cache: ${error.message}`,
@@ -343,9 +371,26 @@ export class CidadaoService {
     unidadeId: string,
     userId: string,
   ): Promise<CidadaoResponseDto> {
+    // Validar CPF
+    if (!createCidadaoDto.cpf || createCidadaoDto.cpf.trim() === '') {
+      throw new BadRequestException('CPF é obrigatório');
+    }
+
     // Remover formatação do CPF e NIS
     const cpfLimpo = createCidadaoDto.cpf.replace(/\D/g, '');
     const nisLimpo = createCidadaoDto.nis?.replace(/\D/g, '') || null;
+
+    // Validar formato do CPF
+    if (cpfLimpo.length !== 11 || !/^\d{11}$/.test(cpfLimpo)) {
+      throw new BadRequestException('CPF deve ter 11 dígitos');
+    }
+
+    // Validar formato do NIS se fornecido
+    if (createCidadaoDto.nis && nisLimpo) {
+      if (nisLimpo.length !== 11 || !/^\d{11}$/.test(nisLimpo)) {
+        throw new BadRequestException('NIS deve ter 11 dígitos');
+      }
+    }
 
     try {
       // Verificar se já existe cidadão com o mesmo CPF
@@ -396,10 +441,15 @@ export class CidadaoService {
 
       return plainToInstance(CidadaoResponseDto, cidadaoCompleto, {
         excludeExtraneousValues: true,
-        enableImplicitConversion: true,
+        enableImplicitConversion: false,
       });
     } catch (error) {
       if (error instanceof ConflictException) throw error;
+      if (error instanceof BadRequestException) throw error;
+      this.logger.error(
+        `Erro ao criar cidadão: ${error.message}`,
+        error.stack,
+      );
       throw new InternalServerErrorException('Erro ao criar cidadão');
     }
   }
@@ -468,8 +518,7 @@ export class CidadaoService {
         }
       }
 
-      // Adicionar informações de auditoria
-      updateData.updatedBy = userId;
+      // Informações de auditoria são gerenciadas automaticamente pelo TypeORM
 
       // Atualizar o cidadão
       const cidadaoAtualizado = await this.cidadaoRepository.update(
@@ -527,6 +576,10 @@ export class CidadaoService {
    * @throws NotFoundException se o cidadão não for encontrado
    */
   async remove(id: string, userId: string): Promise<void> {
+    if (!id || id.trim() === '') {
+      throw new BadRequestException('ID é obrigatório');
+    }
+
     try {
       // Verificar se o cidadão existe
       const cidadao = await this.cidadaoRepository.findById(id);

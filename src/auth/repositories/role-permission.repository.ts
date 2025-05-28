@@ -127,11 +127,8 @@ export class RolePermissionRepository extends Repository<RolePermission> {
         permission.nome = row.nome;
         permission.descricao = row.descricao;
         permission.composta = row.composta;
-        permission.permissao_pai_id = row.permissao_pai_id;
         permission.created_at = row.created_at;
         permission.updated_at = row.updated_at;
-        permission.criado_por = row.criado_por;
-        permission.atualizado_por = row.atualizado_por;
         return permission;
       });
     } catch (error) {

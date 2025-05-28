@@ -61,8 +61,7 @@ export class Cidadao {
   @IsNotEmpty({ message: 'RG é obrigatório' })
   rg: string;
 
-  @Column({ unique: true })
-  @IsNotEmpty({ message: 'NIS é obrigatório' })
+  @Column({ unique: true, nullable: false })
   @Length(11, 11, { message: 'NIS deve ter 11 caracteres' })
   @Validate(NISValidator, { message: 'NIS inválido' })
   nis: string;

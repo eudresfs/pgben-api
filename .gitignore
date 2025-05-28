@@ -11,6 +11,7 @@ pnpm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
+ormlogs.log*
 
 # OS
 .DS_Store
@@ -78,6 +79,7 @@ dump.gz
 
 # MinIO / storage
 /minio_data
+/uplado
 /minio-data
 /data
 /uploads
@@ -136,3 +138,8 @@ terraform.tfstate.backup
 **/zap-report
 **/sonarqube_data
 audit-results/
+
+
+# Project IDE Configs
+.trae
+.windsurf

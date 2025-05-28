@@ -43,20 +43,48 @@ export class PermissionSeeder implements Seeder {
       const columnNames = tableInfo.map(col => col.column_name);
       this.logger.log(`Colunas encontradas na tabela permissao: ${columnNames.join(', ')}`);
       
-      // Verificar se a coluna composta existe
-      const hasCompostaColumn = columnNames.includes('composta');
-      if (!hasCompostaColumn) {
-        this.logger.warn('Coluna "composta" não encontrada na tabela permissao. Usando valor padrão FALSE.');
+      // Criar permissões raiz para cada módulo diretamente com SQL
+      this.logger.log('Criando permissões raiz dos módulos usando SQL direto...');
+      
+      // Lista de permissões raiz para os módulos
+      const moduleRoots = [
+        { nome: 'usuario.*', descricao: 'Todas as permissões do módulo de usuários', modulo: 'usuario', acao: '*' },
+        { nome: 'cidadao.*', descricao: 'Todas as permissões do módulo de cidadãos', modulo: 'cidadao', acao: '*' },
+        { nome: 'beneficio.*', descricao: 'Todas as permissões do módulo de benefícios', modulo: 'beneficio', acao: '*' },
+        { nome: 'solicitacao.*', descricao: 'Todas as permissões do módulo de solicitações', modulo: 'solicitacao', acao: '*' },
+        { nome: 'documento.*', descricao: 'Todas as permissões do módulo de documentos', modulo: 'documento', acao: '*' },
+        { nome: 'auditoria.*', descricao: 'Todas as permissões do módulo de auditoria', modulo: 'auditoria', acao: '*' },
+        { nome: 'unidade.*', descricao: 'Todas as permissões do módulo de unidades', modulo: 'unidade', acao: '*' },
+        { nome: 'relatorio.*', descricao: 'Todas as permissões do módulo de relatórios', modulo: 'relatorio', acao: '*' },
+        { nome: 'configuracao.*', descricao: 'Todas as permissões do módulo de configurações', modulo: 'configuracao', acao: '*' },
+        { nome: 'notificacao.*', descricao: 'Todas as permissões do módulo de notificações', modulo: 'notificacao', acao: '*' },
+        { nome: 'metrica.*', descricao: 'Todas as permissões do módulo de métricas', modulo: 'metrica', acao: '*' },
+      ];
+      
+      for (const rootPerm of moduleRoots) {
+        // Verificar se já existe
+        const existingResult = await dataSource.query(
+          `SELECT id FROM permissao WHERE nome = $1`,
+          [rootPerm.nome]
+        );
+        
+        if (existingResult && existingResult.length > 0) {
+          this.logger.log(`Permissão '${rootPerm.nome}' já existe, pulando...`);
+          continue;
+        }
+        
+        // Inserir nova permissão
+        await dataSource.query(
+          `INSERT INTO permissao (nome, descricao, modulo, acao, ativo) 
+           VALUES ($1, $2, $3, $4, $5)`,
+          [rootPerm.nome, rootPerm.descricao, rootPerm.modulo, rootPerm.acao, true]
+        );
+        
+        this.logger.log(`Permissão '${rootPerm.nome}' criada com sucesso.`);
       }
       
-      // Criar repositório de permissões personalizado usando o DataSource
+      // Criar repositório de permissões personalizado para passar aos seeders de módulos
       const permissionRepository = new PermissionRepository(dataSource);
-      
-      // Armazenar a informação sobre a coluna composta para uso posterior
-      (permissionRepository as any).hasCompostaColumn = hasCompostaColumn;
-
-      // Criar permissão raiz para cada módulo
-      await this.createModuleRootPermissions(permissionRepository);
       
       // Executar os seeders específicos de cada módulo
       await this.runModuleSeeders(dataSource, permissionRepository);
@@ -68,38 +96,8 @@ export class PermissionSeeder implements Seeder {
     }
   }
 
-  /**
-   * Cria as permissões raiz para cada módulo do sistema
-   */
-  private async createModuleRootPermissions(
-    permissionRepository: PermissionRepository
-  ): Promise<void> {
-    this.logger.log('Criando permissões raiz dos módulos...');
-    
-    // Permissões raiz para cada módulo (permissões compostas)
-    const moduleRoots = [
-      { nome: 'usuario.*', descricao: 'Todas as permissões do módulo de usuários' },
-      { nome: 'cidadao.*', descricao: 'Todas as permissões do módulo de cidadãos' },
-      { nome: 'beneficio.*', descricao: 'Todas as permissões do módulo de benefícios' },
-      { nome: 'solicitacao.*', descricao: 'Todas as permissões do módulo de solicitações' },
-      { nome: 'documento.*', descricao: 'Todas as permissões do módulo de documentos' },
-      { nome: 'auditoria.*', descricao: 'Todas as permissões do módulo de auditoria' },
-      { nome: 'unidade.*', descricao: 'Todas as permissões do módulo de unidades' },
-      { nome: 'relatorio.*', descricao: 'Todas as permissões do módulo de relatórios' },
-      { nome: 'configuracao.*', descricao: 'Todas as permissões do módulo de configurações' },
-      { nome: 'notificacao.*', descricao: 'Todas as permissões do módulo de notificações' },
-      { nome: 'metrica.*', descricao: 'Todas as permissões do módulo de métricas' },
-    ];
-    
-    for (const rootPerm of moduleRoots) {
-      await this.createPermission(
-        permissionRepository,
-        rootPerm.nome,
-        rootPerm.descricao,
-        true,
-      );
-    }
-  }
+  // O método createModuleRootPermissions foi removido pois as permissões raiz
+  // agora são criadas diretamente no método run usando SQL nativo
 
   /**
    * Executa os seeders específicos de cada módulo
@@ -154,28 +152,62 @@ export class PermissionSeeder implements Seeder {
     nome: string,
     descricao: string,
     composta: boolean,
-    permissao_pai_id?: string,
   ): Promise<Permission> {
-    const existingPermission = await permissionRepository.findOneBy({ nome });
-    
-    if (existingPermission) {
-      return existingPermission;
+    try {
+      // Usar SQL nativo para todas as operações para evitar problemas com mapeamento de colunas
+      const dataSource = permissionRepository.manager.connection;
+      
+      // Verificar se a permissão já existe
+      const existingPermissionResult = await dataSource.query(
+        `SELECT * FROM permissao WHERE nome = $1 LIMIT 1`,
+        [nome]
+      );
+      
+      if (existingPermissionResult && existingPermissionResult.length > 0) {
+        // Converter o resultado para uma entidade Permission
+        const permission = new Permission();
+        const row = existingPermissionResult[0];
+        permission.id = row.id;
+        permission.nome = row.nome;
+        permission.descricao = row.descricao;
+        permission.modulo = row.modulo;
+        permission.acao = row.acao;
+        permission.created_at = row.created_at;
+        permission.updated_at = row.updated_at;
+        return permission;
+      }
+      
+      // Extrair módulo e ação do nome da permissão
+      const parts = nome.split('.');
+      const modulo = parts[0];
+      const acao = parts.length > 1 ? parts.slice(1).join('.') : null;
+      
+      // Inserir nova permissão diretamente no banco de dados
+      const result = await dataSource.query(
+        `INSERT INTO permissao (nome, descricao, modulo, acao, ativo) 
+         VALUES ($1, $2, $3, $4, $5) 
+         RETURNING id, nome, descricao, modulo, acao, created_at, updated_at`,
+        [nome, descricao, modulo, acao, true]
+      );
+      
+      if (!result || result.length === 0) {
+        throw new Error(`Falha ao inserir permissão: ${nome}`);
+      }
+      
+      // Converter o resultado para uma entidade Permission
+      const permission = new Permission();
+      const row = result[0];
+      permission.id = row.id;
+      permission.nome = row.nome;
+      permission.descricao = row.descricao;
+      permission.modulo = row.modulo;
+      permission.acao = row.acao;
+      permission.created_at = row.created_at;
+      permission.updated_at = row.updated_at;
+      return permission;
+    } catch (error) {
+      this.logger.error(`Erro ao criar permissão ${nome}: ${error.message}`);
+      throw error;
     }
-    
-    const permission = new Permission();
-    permission.nome = nome;
-    permission.descricao = descricao;
-    
-    // Verificar se a coluna composta existe antes de atribuir o valor
-    const hasCompostaColumn = (permissionRepository as any).hasCompostaColumn;
-    if (hasCompostaColumn !== false) {
-      permission.composta = composta;
-    }
-    
-    if (permissao_pai_id) {
-      permission.permissao_pai_id = permissao_pai_id;
-    }
-    
-    return await permissionRepository.save(permission);
   }
 }
