@@ -65,6 +65,8 @@ async function bootstrap() {
         { path: '', method: RequestMethod.ALL },  // Rota raiz
         { path: 'health', method: RequestMethod.ALL },
         { path: 'health/ping', method: RequestMethod.ALL },
+        { path: 'openapi.json', method: RequestMethod.GET },  // Rota pública para ApiDog
+        { path: 'v2/swagger.json', method: RequestMethod.GET },  // Rota pública para ApiDog (compatibilidade)
       ],
     });
     
@@ -86,6 +88,8 @@ async function bootstrap() {
     logger.log(`   - GET  /health/ping`);
     logger.log(`   - GET  /api/test`);
     logger.log(`   - GET  /api-docs (Swagger UI)`);
+    logger.log(`   - GET  /openapi.json (OpenAPI 3.0 para ApiDog)`);
+    logger.log(`   - GET  /v2/swagger.json (Swagger 2.0 para ApiDog)`);
     
   } catch (error) {
     logger.error('❌ Erro ao iniciar o servidor:', error);

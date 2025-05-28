@@ -29,7 +29,7 @@ import { ROLES } from '../../../shared/constants/roles.constants';
  * Fornece endpoints para acesso e manipulação das configurações específicas
  * do benefício de Auxílio Natalidade.
  */
-@ApiTags('Benefícios - Auxílio Natalidade')
+@ApiTags('Benefícios')
 @Controller('v1/beneficio/tipos/:tipoBeneficioId/natalidade')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()

@@ -12,7 +12,7 @@ import { ParametroResponseDto } from '../dtos/parametro/parametro-response.dto';
 /**
  * Controlador responsável pelas operações de parâmetros do sistema
  */
-@ApiTags('Configuração - Parâmetros')
+@ApiTags('Configuração')
 @ApiBearerAuth()
 @Controller('configuracao/parametros')
 @UseGuards(JwtAuthGuard, PermissionGuard)
@@ -25,10 +25,13 @@ export class ParametroController {
    * @returns Lista de parâmetros
    */
   @Get()
-  @RequiresPermission({
-    permissionName: 'configuracao.parametro.listar',
-    scopeType: ScopeType.GLOBAL
-  })
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    {
+      permissionName: 'configuracao.parametro.listar',
+      scopeType: ScopeType.GLOBAL
+    }
+  )
   @ApiOperation({ summary: 'Buscar todos os parâmetros do sistema' })
   @ApiQuery({ 
     name: 'categoria', 
@@ -52,10 +55,13 @@ export class ParametroController {
    * @returns Parâmetro encontrado
    */
   @Get(':chave')
-  @RequiresPermission({
-    permissionName: 'configuracao.parametro.visualizar',
-    scopeType: ScopeType.GLOBAL
-  })
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    {
+      permissionName: 'configuracao.parametro.visualizar',
+      scopeType: ScopeType.GLOBAL
+    }
+  )
   @ApiOperation({ summary: 'Buscar parâmetro por chave' })
   @ApiParam({ 
     name: 'chave', 
@@ -83,10 +89,13 @@ export class ParametroController {
    * @returns Parâmetro criado
    */
   @Post()
-  @RequiresPermission({
-    permissionName: 'configuracao.parametro.criar',
-    scopeType: ScopeType.GLOBAL
-  })
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    {
+      permissionName: 'configuracao.parametro.criar',
+      scopeType: ScopeType.GLOBAL
+    }
+  )
   @ApiOperation({ summary: 'Criar novo parâmetro' })
   @ApiResponse({ 
     status: 201, 
@@ -110,10 +119,13 @@ export class ParametroController {
    * @returns Parâmetro atualizado
    */
   @Put(':chave')
-  @RequiresPermission({
-    permissionName: 'configuracao.parametro.editar',
-    scopeType: ScopeType.GLOBAL
-  })
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    {
+      permissionName: 'configuracao.parametro.editar',
+      scopeType: ScopeType.GLOBAL
+    }
+  )
   @ApiOperation({ summary: 'Atualizar parâmetro existente' })
   @ApiParam({ 
     name: 'chave', 
@@ -145,10 +157,13 @@ export class ParametroController {
    * @param chave Chave do parâmetro
    */
   @Delete(':chave')
-  @RequiresPermission({
-    permissionName: 'configuracao.parametro.remover',
-    scopeType: ScopeType.GLOBAL
-  })
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    {
+      permissionName: 'configuracao.parametro.remover',
+      scopeType: ScopeType.GLOBAL
+    }
+  )
   @ApiOperation({ summary: 'Remover parâmetro' })
   @ApiParam({ 
     name: 'chave', 
@@ -177,10 +192,13 @@ export class ParametroController {
    * Limpa o cache de parâmetros
    */
   @Post('cache/limpar')
-  @RequiresPermission({
-    permissionName: 'configuracao.parametro.cache.limpar',
-    scopeType: ScopeType.GLOBAL
-  })
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    {
+      permissionName: 'configuracao.parametro.cache.limpar',
+      scopeType: ScopeType.GLOBAL
+    }
+  )
   @ApiOperation({ summary: 'Limpar cache de parâmetros' })
   @ApiResponse({ 
     status: 200, 

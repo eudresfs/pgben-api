@@ -1,5 +1,5 @@
-import { Injectable } from '@nestjs/common';
-import { Repository, DataSource } from 'typeorm';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { Repository, DataSource, DeepPartial } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Usuario } from '../entities/usuario.entity';
 
@@ -45,10 +45,20 @@ export class UsuarioRepository {
   /**
    * Busca um usuário pelo ID
    * @param id ID do usuário
-   * @returns Usuário encontrado ou null
+   * @returns Usuário encontrado
+   * @throws NotFoundException quando usuário não encontrado
    */
-  async findById(id: string): Promise<Usuario | null> {
-    return this.repository.findOne({ where: { id } });
+  async findById(id: string): Promise<Usuario> {
+    const usuario = await this.repository.findOne({ 
+      where: { id },
+      relations: ['unidade', 'setor']
+    });
+    
+    if (!usuario) {
+      throw new NotFoundException(`Usuário com ID ${id} não encontrado`);
+    }
+    
+    return usuario;
   }
 
   /**
@@ -95,10 +105,13 @@ export class UsuarioRepository {
    * @returns Usuário atualizado
    */
   async update(id: string, data: Partial<Usuario>): Promise<Usuario> {
-    await this.repository.update(id, data);
+    const result = await this.repository.update(id, data);
+    if (result.affected === 0) {
+      throw new NotFoundException(`Usuário com ID ${id} não encontrado`);
+    }
     const usuario = await this.findById(id);
     if (!usuario) {
-      throw new Error(`Usuário com ID ${id} não encontrado`);
+      throw new NotFoundException(`Usuário com ID ${id} não encontrado`);
     }
     return usuario;
   }
@@ -110,8 +123,7 @@ export class UsuarioRepository {
    * @returns Usuário atualizado
    */
   async updateStatus(id: string, status: string): Promise<Usuario> {
-    // Usando a mesma abordagem do updateSenha para evitar erro de tipagem
-    const dadosAtualizacao = { status } as unknown as Partial<Usuario>;
+    const dadosAtualizacao: DeepPartial<Usuario> = { status };
     
     await this.repository.update(id, dadosAtualizacao);
     const usuario = await this.findById(id);
@@ -128,11 +140,10 @@ export class UsuarioRepository {
    * @returns Usuário atualizado
    */
   async updateSenha(id: string, senhaHash: string): Promise<Usuario> {
-    // Usando DeepPartial do TypeORM para evitar erro de tipagem
-    const dadosAtualizacao = { 
+    const dadosAtualizacao: DeepPartial<Usuario> = { 
       senhaHash, 
       primeiro_acesso: false 
-    } as unknown as Partial<Usuario>;
+    };
     
     await this.repository.update(id, dadosAtualizacao);
     const usuario = await this.findById(id);
@@ -148,6 +159,18 @@ export class UsuarioRepository {
    * @returns Resultado da operação
    */
   async remove(id: string): Promise<void> {
-    await this.repository.softDelete(id);
+    const result = await this.repository.softDelete(id);
+    if (result.affected === 0) {
+      throw new NotFoundException(`Usuário com ID ${id} não encontrado`);
+    }
+  }
+
+  /**
+   * Conta o total de usuários
+   * @param where Condições de filtro
+   * @returns Número total de usuários
+   */
+  async count(where?: any): Promise<number> {
+    return this.repository.count({ where });
   }
 }

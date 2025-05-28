@@ -110,8 +110,8 @@ class TestPermissionDto {
 /**
  * Controlador para gerenciamento de permissões
  */
-@ApiTags('Gerenciamento de Permissões')
-@Controller('v1/permissions')
+@ApiTags('Usuários')
+@Controller('v1/permissoes')
 @UseGuards(JwtAuthGuard, PermissionGuard)
 @ApiBearerAuth()
 export class PermissionManagementController {

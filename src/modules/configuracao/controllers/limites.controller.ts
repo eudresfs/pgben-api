@@ -8,7 +8,7 @@ import { LimitesUploadResponseDto } from '../dtos/limites/limites-upload-respons
 /**
  * Controlador responsável pelas operações de limites operacionais do sistema
  */
-@ApiTags('Configuração - Limites')
+@ApiTags('Configuração')
 @ApiBearerAuth()
 @Controller('configuracao/limites')
 export class LimitesController {

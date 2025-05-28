@@ -38,10 +38,13 @@ export class LogsController {
    * Lista logs com filtros e paginação
    */
   @Get()
-  @RequiresPermission({
-    permissionName: 'log.ler',
-    scopeType: TipoEscopo.GLOBAL,
-  })
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    {
+      permissionName: 'log.ler',
+      scopeType: TipoEscopo.GLOBAL,
+    }
+  )
   @ApiOperation({ summary: 'Listar logs de auditoria' })
   @ApiResponse({
     status: 200,
@@ -117,10 +120,13 @@ export class LogsController {
    * Obtém detalhes de um log específico
    */
   @Get(':id')
-  @RequiresPermission({
-    permissionName: 'log.ler',
-    scopeType: TipoEscopo.GLOBAL,
-  })
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    {
+      permissionName: 'log.ler',
+      scopeType: TipoEscopo.GLOBAL,
+    }
+  )
   @ApiOperation({ summary: 'Obter detalhes de um log' })
   @ApiResponse({
     status: 200,
@@ -155,10 +161,13 @@ export class LogsController {
    * Lista módulos disponíveis para filtro
    */
   @Get('modulos/listar')
-  @RequiresPermission({
-    permissionName: 'log.ler',
-    scopeType: TipoEscopo.GLOBAL,
-  })
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    {
+      permissionName: 'log.ler',
+      scopeType: TipoEscopo.GLOBAL,
+    }
+  )
   @ApiOperation({ summary: 'Listar módulos disponíveis para filtro' })
   @ApiResponse({
     status: 200,
@@ -174,10 +183,13 @@ export class LogsController {
    * Lista ações disponíveis para filtro
    */
   @Get('acoes/listar')
-  @RequiresPermission({
-    permissionName: 'log.ler',
-    scopeType: TipoEscopo.GLOBAL,
-  })
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    {
+      permissionName: 'log.ler',
+      scopeType: TipoEscopo.GLOBAL,
+    }
+  )
   @ApiOperation({ summary: 'Listar ações disponíveis para filtro' })
   @ApiResponse({
     status: 200,
@@ -193,10 +205,13 @@ export class LogsController {
    * Lista criticidades disponíveis para filtro
    */
   @Get('criticidades/listar')
-  @RequiresPermission({
-    permissionName: 'log.ler',
-    scopeType: TipoEscopo.GLOBAL,
-  })
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    {
+      permissionName: 'log.ler',
+      scopeType: TipoEscopo.GLOBAL,
+    }
+  )
   @ApiOperation({ summary: 'Listar criticidades disponíveis para filtro' })
   @ApiResponse({
     status: 200,
@@ -212,10 +227,13 @@ export class LogsController {
    * Exporta logs para CSV
    */
   @Get('exportar/csv')
-  @RequiresPermission({
-    permissionName: 'log.exportar',
-    scopeType: TipoEscopo.GLOBAL,
-  })
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    {
+      permissionName: 'log.exportar',
+      scopeType: TipoEscopo.GLOBAL,
+    }
+  )
   @ApiOperation({ summary: 'Exportar logs para CSV' })
   @ApiResponse({
     status: 200,

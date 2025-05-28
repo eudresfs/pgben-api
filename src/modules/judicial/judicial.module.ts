@@ -7,6 +7,7 @@ import { AuthModule } from '../../auth/auth.module';
 // Entidades
 import { ProcessoJudicial } from './entities/processo-judicial.entity';
 import { DeterminacaoJudicial } from './entities/determinacao-judicial.entity';
+import { Solicitacao } from '../solicitacao/entities/solicitacao.entity';
 
 // Repositories
 import { DeterminacaoJudicialRepository } from './repositories/determinacao-judicial.repository';
@@ -19,6 +20,7 @@ import { ProcessoJudicialController } from './controllers/processo-judicial.cont
 // Serviços
 import { ProcessoJudicialService } from './services/processo-judicial.service';
 import { DeterminacaoJudicialService } from './services/determinacao-judicial.service';
+import { DeterminacaoJudicialConsolidadoService } from './services/determinacao-judicial-consolidado.service';
 
 /**
  * Módulo Judicial
@@ -31,6 +33,7 @@ import { DeterminacaoJudicialService } from './services/determinacao-judicial.se
     TypeOrmModule.forFeature([
       ProcessoJudicial,
       DeterminacaoJudicial,
+      Solicitacao,
     ]),
     AuthModule,
   ],
@@ -43,12 +46,14 @@ import { DeterminacaoJudicialService } from './services/determinacao-judicial.se
     ProcessoJudicialRepository,
     ProcessoJudicialService,
     DeterminacaoJudicialService,
+    DeterminacaoJudicialConsolidadoService,
   ],
   exports: [
     DeterminacaoJudicialRepository,
     ProcessoJudicialRepository,
     ProcessoJudicialService,
     DeterminacaoJudicialService,
+    DeterminacaoJudicialConsolidadoService,
   ],
 })
 export class JudicialModule {}

@@ -48,7 +48,6 @@ import { LoggingInterceptor } from '../../common/interceptors/logging.intercepto
  * Gerencia tokens JWT invalidados para prevenir reutilização
  * de tokens comprometidos ou revogados
  */
-@ApiTags('JWT Blacklist')
 @Controller('auth/blacklist')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @UseInterceptors(LoggingInterceptor)

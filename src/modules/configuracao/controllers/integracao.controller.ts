@@ -9,7 +9,7 @@ import { IntegracaoTipoEnum } from '../enums/integracao-tipo.enum';
 /**
  * Controlador responsável pelas operações de configurações de integração externa
  */
-@ApiTags('Configuração - Integrações')
+@ApiTags('Configuração')
 @Controller('configuracao/integracoes')
 export class IntegracaoController {
   constructor(private readonly integracaoService: IntegracaoService) {}

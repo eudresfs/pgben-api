@@ -112,4 +112,25 @@ export function setupSwagger(app: INestApplication) {
   
   // Configurar rota padrão para a documentação
   SwaggerModule.setup('api-docs', app, document, swaggerSetupOptions);
+  
+  // Adicionar rotas públicas para sincronização com ApiDog
+  const httpAdapter = app.getHttpAdapter();
+  
+  // Rota para openapi.json (formato OpenAPI 3.0)
+  httpAdapter.get('/openapi.json', (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.send(JSON.stringify(document, null, 2));
+  });
+  
+  // Rota para v2/swagger.json (compatibilidade com Swagger 2.0/OpenAPI 2.0)
+  httpAdapter.get('/v2/swagger.json', (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.send(JSON.stringify(document, null, 2));
+  });
 }

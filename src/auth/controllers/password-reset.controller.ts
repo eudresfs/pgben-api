@@ -187,4 +187,83 @@ export class PasswordResetController {
       uniqueUsersLast24h: stats.requestsLast24h || 0
     };
   }
+
+  @Post('cleanup-expired')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(ROLES.ADMIN, ROLES.SUPER_ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Limpar tokens expirados',
+    description: 'Remove manualmente tokens de recuperação expirados (apenas admins)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Tokens expirados removidos com sucesso',
+    schema: {
+      type: 'object',
+      properties: {
+        message: { type: 'string', example: 'Tokens expirados removidos com sucesso' },
+        deletedCount: { type: 'number', example: 15 },
+        timestamp: { type: 'string', example: '2024-01-15T10:30:00Z' },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Token de autenticação inválido',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Acesso negado - permissões insuficientes',
+  })
+  async cleanupExpiredTokens(): Promise<{
+    message: string;
+    deletedCount: number;
+    timestamp: string;
+  }> {
+    const deletedCount = await this.passwordResetService.cleanupExpiredTokens();
+    return {
+      message: 'Tokens expirados removidos com sucesso',
+      deletedCount,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  @Get('token-stats')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(ROLES.ADMIN, ROLES.SUPER_ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Estatísticas detalhadas de tokens',
+    description: 'Obtém estatísticas detalhadas sobre tokens de recuperação (apenas admins)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Estatísticas obtidas com sucesso',
+    schema: {
+      type: 'object',
+      properties: {
+        total: { type: 'number', example: 100 },
+        active: { type: 'number', example: 5 },
+        expired: { type: 'number', example: 80 },
+        used: { type: 'number', example: 15 },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Token de autenticação inválido',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Acesso negado - permissões insuficientes',
+  })
+  async getTokenStats(): Promise<{
+    total: number;
+    active: number;
+    expired: number;
+    used: number;
+  }> {
+    return this.passwordResetService.getTokenStats();
+  }
 }

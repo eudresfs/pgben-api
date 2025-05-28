@@ -20,7 +20,7 @@ import { VerificacaoPapelConflitoResponseDto, RegraConflitoDto } from '../dto/ve
  * Responsável por expor os endpoints de verificação de papéis conflitantes
  * para cidadãos, garantindo a integridade das regras de negócio.
  */
-@ApiTags('Verificação de Papéis')
+@ApiTags('Cidadão')
 @Controller('v1/cidadao/papel-conflito')
 @UseGuards(JwtAuthGuard, PermissionGuard)
 @ApiBearerAuth()

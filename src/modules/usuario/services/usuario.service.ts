@@ -7,7 +7,7 @@ import {
   InternalServerErrorException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { DataSource } from 'typeorm';
+import { DataSource, DeepPartial } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { UsuarioRepository } from '../repositories/usuario.repository';
 import { CreateUsuarioDto } from '../dto/create-usuario.dto';
@@ -25,6 +25,8 @@ import { Usuario } from '../entities/usuario.entity';
 export class UsuarioService {
   private readonly logger = new Logger(UsuarioService.name);
   private readonly SALT_ROUNDS = 12; // Aumentando a segurança do hash
+  private readonly MAX_LOGIN_ATTEMPTS = 5; // Máximo de tentativas de login
+  private readonly LOCKOUT_DURATION = 15 * 60 * 1000; // 15 minutos em ms
 
   constructor(
     private readonly dataSource: DataSource,
@@ -470,7 +472,8 @@ export class UsuarioService {
 
       if (!usuario) {
         this.logger.warn(
-          `Usuário não encontrado para o email: ${normalizedEmail}`,
+          `Tentativa de login com email inexistente: ${normalizedEmail}`,
+          { context: 'SECURITY_LOGIN_ATTEMPT', email: normalizedEmail }
         );
       }
 
@@ -481,6 +484,162 @@ export class UsuarioService {
         error.stack,
       );
       return null;
+    }
+  }
+
+  /**
+   * Verifica se o usuário está bloqueado por excesso de tentativas
+   * @param usuario Usuário a ser verificado
+   * @returns true se estiver bloqueado
+   */
+  private isUserLocked(usuario: Usuario): boolean {
+    if (!usuario.tentativas_login || usuario.tentativas_login < this.MAX_LOGIN_ATTEMPTS) {
+      return false;
+    }
+
+    const lastAttempt = usuario.ultimo_login || new Date(0);
+    const timeSinceLastAttempt = Date.now() - lastAttempt.getTime();
+    
+    return timeSinceLastAttempt < this.LOCKOUT_DURATION;
+  }
+
+  /**
+   * Incrementa o contador de tentativas de login
+   * @param userId ID do usuário
+   */
+  private async incrementLoginAttempts(userId: string): Promise<void> {
+    try {
+      await this.dataSource.transaction(async (manager) => {
+        const usuarioRepo = manager.getRepository(Usuario);
+        await usuarioRepo.increment(
+          { id: userId },
+          'tentativas_login',
+          1
+        );
+        await usuarioRepo.update(userId, {
+          ultimo_login: new Date()
+        } as DeepPartial<Usuario>);
+      });
+
+      this.logger.warn(
+        `Tentativa de login falhada incrementada para usuário: ${userId}`,
+        { context: 'SECURITY_LOGIN_FAILED', userId }
+      );
+    } catch (error) {
+      this.logger.error(
+        `Erro ao incrementar tentativas de login: ${error.message}`,
+        error.stack
+      );
+    }
+  }
+
+  /**
+   * Reseta o contador de tentativas de login
+   * @param userId ID do usuário
+   */
+  private async resetLoginAttempts(userId: string): Promise<void> {
+    try {
+      await this.usuarioRepository.updateStatus(userId, 'ativo');
+      await this.dataSource.transaction(async (manager) => {
+        const usuarioRepo = manager.getRepository(Usuario);
+        await usuarioRepo.update(userId, {
+          tentativas_login: 0,
+          ultimo_login: new Date()
+        } as DeepPartial<Usuario>);
+      });
+
+      this.logger.log(
+        `Login bem-sucedido - tentativas resetadas para usuário: ${userId}`,
+        { context: 'SECURITY_LOGIN_SUCCESS', userId }
+      );
+    } catch (error) {
+      this.logger.error(
+        `Erro ao resetar tentativas de login: ${error.message}`,
+        error.stack
+      );
+    }
+  }
+
+  /**
+   * Valida credenciais de login com controle de tentativas
+   * @param email Email do usuário
+   * @param senha Senha do usuário
+   * @returns Usuário se credenciais válidas, null caso contrário
+   */
+  async validateUserCredentials(email: string, senha: string): Promise<Usuario | null> {
+    const usuario = await this.findByEmail(email);
+    
+    if (!usuario) {
+      return null;
+    }
+
+    // Verificar se usuário está bloqueado
+    if (this.isUserLocked(usuario)) {
+      this.logger.warn(
+        `Tentativa de login em conta bloqueada: ${usuario.id}`,
+        { 
+          context: 'SECURITY_BLOCKED_LOGIN_ATTEMPT', 
+          userId: usuario.id, 
+          email: usuario.email,
+          attempts: usuario.tentativas_login
+        }
+      );
+      throw new UnauthorizedException(
+        `Conta temporariamente bloqueada devido a muitas tentativas de login. Tente novamente em ${Math.ceil(this.LOCKOUT_DURATION / 60000)} minutos.`
+      );
+    }
+
+    // Verificar senha
+    const senhaValida = await bcrypt.compare(senha, usuario.senhaHash);
+    
+    if (!senhaValida) {
+      await this.incrementLoginAttempts(usuario.id);
+      
+      this.logger.warn(
+        `Tentativa de login com senha incorreta: ${usuario.id}`,
+        { 
+          context: 'SECURITY_INVALID_PASSWORD', 
+          userId: usuario.id, 
+          email: usuario.email,
+          attempts: (usuario.tentativas_login || 0) + 1
+        }
+      );
+      
+      return null;
+    }
+
+    // Login bem-sucedido - resetar tentativas
+    await this.resetLoginAttempts(usuario.id);
+    
+    return usuario;
+  }
+
+  /**
+   * Remove um usuário (soft delete)
+   * @param id - ID do usuário a ser removido
+   * @returns Promise<void>
+   */
+  async remove(id: string): Promise<void> {
+    this.logger.log(`Iniciando remoção do usuário: ${id}`);
+
+    try {
+      // Verifica se o usuário existe
+      const usuario = await this.usuarioRepository.findById(id);
+      if (!usuario) {
+        this.logger.warn(`Usuário não encontrado para remoção: ${id}`);
+        throw new NotFoundException('Usuário não encontrado');
+      }
+
+      // Realiza o soft delete
+      await this.usuarioRepository.remove(id);
+
+      this.logger.log(`Usuário removido com sucesso: ${id}`);
+    } catch (error) {
+      this.logger.error(
+        `Erro ao remover usuário ${id}: ${error.message}`,
+        error.stack,
+      );
+      throw error;
     }
   }
 }

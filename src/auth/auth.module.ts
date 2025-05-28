@@ -8,14 +8,14 @@ import { PassportModule } from '@nestjs/passport';
 
 // Controllers
 import { AuthController } from './controllers/auth.controller';
-import { PasswordRecoveryController } from './controllers/password-recovery.controller';
+// PasswordRecoveryController removido - funcionalidades consolidadas no PasswordResetController
 import { PasswordResetController } from './controllers/password-reset.controller';
 import { JwtBlacklistController } from './controllers/jwt-blacklist.controller';
 
 // Services
 import { AuthService } from './services/auth.service';
 import { RefreshTokenService } from './services/refresh-token.service';
-import { PasswordRecoveryService } from './services/password-recovery.service';
+// PasswordRecoveryService removido - funcionalidades consolidadas no PasswordResetService
 import { PasswordResetService } from './services/password-reset.service';
 import { JwtBlacklistService } from './services/jwt-blacklist.service';
 import { PermissionService } from './services/permission.service';
@@ -103,7 +103,6 @@ import { PermissionModule } from './permission.module';
 
   controllers: [
     AuthController,
-    PasswordRecoveryController,
     PasswordResetController,
     JwtBlacklistController,
   ],
@@ -122,7 +121,6 @@ import { PermissionModule } from './permission.module';
     // Serviços principais
     AuthService,
     RefreshTokenService,
-    PasswordRecoveryService,
     PasswordResetService,
     JwtBlacklistService,
     PermissionService,

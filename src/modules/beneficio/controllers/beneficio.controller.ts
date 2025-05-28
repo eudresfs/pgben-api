@@ -135,10 +135,13 @@ export class BeneficioController {
    * Cria um novo tipo de benefício
    */
   @Post()
-  @RequiresPermission({
-    permissionName: 'beneficio.criar',
-    scopeType: ScopeType.GLOBAL
-  })
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    {
+      permissionName: 'beneficio.criar',
+      scopeType: ScopeType.GLOBAL
+    }
+  )
   @ApiOperation({ 
     summary: 'Criar novo tipo de benefício',
     description: 'Cria um novo tipo de benefício no sistema.'
@@ -186,10 +189,13 @@ export class BeneficioController {
    * Atualiza um tipo de benefício existente
    */
   @Put(':id')
-  @RequiresPermission({
-    permissionName: 'beneficio.editar',
-    scopeType: ScopeType.GLOBAL
-  })
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    {
+      permissionName: 'beneficio.editar',
+      scopeType: ScopeType.GLOBAL
+    }
+  )
   @ApiOperation({ 
     summary: 'Atualizar tipo de benefício existente',
     description: 'Atualiza os dados de um tipo de benefício existente.'
@@ -249,10 +255,13 @@ export class BeneficioController {
    * Lista requisitos documentais de um benefício
    */
   @Get(':id/requisitos')
-  @RequiresPermission({
-    permissionName: 'beneficio.requisito.listar',
-    scopeType: ScopeType.GLOBAL
-  })
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    {
+      permissionName: 'beneficio.requisito.listar',
+      scopeType: ScopeType.GLOBAL
+    }
+  )
   @ApiOperation({ summary: 'Listar requisitos documentais' })
   @ApiResponse({
     status: 200,
@@ -267,10 +276,13 @@ export class BeneficioController {
    * Adiciona requisito documental a um benefício
    */
   @Post(':id/requisitos')
-  @RequiresPermission({
-    permissionName: 'beneficio.requisito.adicionar',
-    scopeType: ScopeType.GLOBAL
-  })
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    {
+      permissionName: 'beneficio.requisito.adicionar',
+      scopeType: ScopeType.GLOBAL
+    }
+  )
   @ApiOperation({ summary: 'Adicionar requisito documental' })
   @ApiResponse({ status: 201, description: 'Requisito adicionado com sucesso' })
   @ApiResponse({ status: 400, description: 'Dados inválidos' })
@@ -286,10 +298,13 @@ export class BeneficioController {
    * Configura fluxo de aprovação de um benefício
    */
   @Put(':id/fluxo')
-  @RequiresPermission({
-    permissionName: 'beneficio.fluxo.configurar',
-    scopeType: ScopeType.GLOBAL
-  })
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    {
+      permissionName: 'beneficio.fluxo.configurar',
+      scopeType: ScopeType.GLOBAL
+    }
+  )
   @ApiOperation({ summary: 'Configurar fluxo de aprovação' })
   @ApiResponse({ status: 200, description: 'Fluxo configurado com sucesso' })
   @ApiResponse({ status: 400, description: 'Dados inválidos' })

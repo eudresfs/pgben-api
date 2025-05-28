@@ -7,6 +7,7 @@ import { SolicitacaoController } from './controllers/solicitacao.controller';
 import { SolicitacaoService } from './services/solicitacao.service';
 import { DeterminacaoJudicialController } from './controllers/determinacao-judicial.controller';
 import { DeterminacaoJudicialService } from './services/determinacao-judicial.service';
+import { DeterminacaoJudicialAdapterService } from './services/determinacao-judicial-adapter.service';
 import { WorkflowSolicitacaoController } from './controllers/workflow-solicitacao.controller';
 import { WorkflowSolicitacaoService } from './services/workflow-solicitacao.service';
 import { TransicaoEstadoService } from './services/transicao-estado.service';
@@ -50,6 +51,7 @@ import { DeterminacaoJudicial } from '../judicial/entities/determinacao-judicial
   providers: [
     SolicitacaoService,
     DeterminacaoJudicialService,
+    DeterminacaoJudicialAdapterService,
     WorkflowSolicitacaoService,
     TransicaoEstadoService,
     ValidacaoSolicitacaoService,
@@ -62,6 +64,7 @@ import { DeterminacaoJudicial } from '../judicial/entities/determinacao-judicial
   exports: [
     SolicitacaoService,
     DeterminacaoJudicialService,
+    DeterminacaoJudicialAdapterService,
     WorkflowSolicitacaoService,
     PrazoSolicitacaoService,
     PriorizacaoSolicitacaoService,

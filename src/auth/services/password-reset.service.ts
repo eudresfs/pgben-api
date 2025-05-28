@@ -7,9 +7,10 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, LessThan } from 'typeorm';
+import { Repository, LessThan, DataSource } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { JwtService } from '@nestjs/jwt';
 import * as crypto from 'crypto';
 import * as bcrypt from 'bcrypt';
 import { PasswordResetToken } from '../entities/password-reset-token.entity';
@@ -53,6 +54,8 @@ export class PasswordResetService {
     private readonly emailService: EmailService,
     private readonly auditService: AuditService,
     private readonly configService: ConfigService,
+    private readonly jwtService: JwtService,
+    private readonly dataSource: DataSource,
   ) {
     this.tokenExpirationMinutes = this.configService.get<number>(
       'PASSWORD_RESET_EXPIRATION_MINUTES',
@@ -66,6 +69,9 @@ export class PasswordResetService {
       'PASSWORD_RESET_MAX_REQUESTS_PER_HOUR',
       5,
     );
+    
+    // Iniciar limpeza automática de tokens expirados
+    this.startTokenCleanup();
   }
 
   /**
@@ -371,7 +377,7 @@ export class PasswordResetService {
    * Limpeza automática de tokens expirados (executa a cada hora)
    */
   @Cron(CronExpression.EVERY_HOUR)
-  async cleanupExpiredTokens(): Promise<void> {
+  async cleanupExpiredTokens(): Promise<number> {
     try {
       const now = new Date();
       const result = await this.passwordResetTokenRepository.delete({
@@ -382,8 +388,11 @@ export class PasswordResetService {
       if (result.affected && result.affected > 0) {
         this.logger.log(`Removidos ${result.affected} tokens de recuperação expirados`);
       }
+      
+      return result.affected || 0;
     } catch (error) {
       this.logger.error('Erro na limpeza de tokens expirados', error.stack);
+      return 0;
     }
   }
 
@@ -391,7 +400,7 @@ export class PasswordResetService {
    * Limpeza de tokens antigos usados (executa diariamente)
    */
   @Cron(CronExpression.EVERY_DAY_AT_2AM)
-  async cleanupOldUsedTokens(): Promise<void> {
+  async cleanupOldUsedTokens(): Promise<number> {
     try {
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
       const result = await this.passwordResetTokenRepository.delete({
@@ -402,8 +411,11 @@ export class PasswordResetService {
       if (result.affected && result.affected > 0) {
         this.logger.log(`Removidos ${result.affected} tokens de recuperação antigos`);
       }
+      
+      return result.affected || 0;
     } catch (error) {
       this.logger.error('Erro na limpeza de tokens antigos', error.stack);
+      return 0;
     }
   }
 
@@ -516,5 +528,69 @@ export class PasswordResetService {
       usuario.email,
       usuario.nome
     );
+  }
+
+  /**
+   * Inicia a limpeza automática de tokens expirados
+   * Migrado do PasswordRecoveryService
+   */
+  private startTokenCleanup(): void {
+    const CLEANUP_INTERVAL = 24 * 60 * 60 * 1000; // 24 horas
+    
+    // Executar limpeza a cada 24 horas
+    setInterval(async () => {
+      try {
+        await this.cleanupExpiredTokens();
+      } catch (error) {
+        this.logger.error(`Erro na limpeza automática de tokens: ${error.message}`);
+      }
+    }, CLEANUP_INTERVAL);
+    
+    // Executar limpeza de tokens usados a cada 24 horas
+    setInterval(async () => {
+      try {
+        await this.cleanupOldUsedTokens();
+      } catch (error) {
+        this.logger.error(`Erro na limpeza de tokens usados: ${error.message}`);
+      }
+    }, CLEANUP_INTERVAL);
+  }
+  
+
+
+  /**
+   * Obtém estatísticas de tokens de recuperação
+   * Migrado do PasswordRecoveryService
+   * @returns Estatísticas dos tokens
+   */
+  async getTokenStats(): Promise<{
+    total: number;
+    active: number;
+    expired: number;
+    used: number;
+  }> {
+    const now = new Date();
+    
+    const [total, active, expired, used] = await Promise.all([
+      this.passwordResetTokenRepository.count(),
+      this.passwordResetTokenRepository.count({
+        where: {
+          is_used: false,
+          expires_at: LessThan(now),
+        },
+      }),
+      this.passwordResetTokenRepository.count({
+        where: {
+          expires_at: LessThan(now),
+        },
+      }),
+      this.passwordResetTokenRepository.count({
+        where: {
+          is_used: true,
+        },
+      }),
+    ]);
+
+    return { total, active, expired, used };
   }
 }

@@ -21,6 +21,8 @@ import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../auth/guards/roles.guard';
 import { Roles } from '../../../auth/decorators/role.decorator';
 import { ROLES } from '../../../shared/constants/roles.constants';
+import { RequiresPermission } from '@/auth/decorators/requires-permission.decorator';
+import { ScopeType } from '@/auth/entities/user-permission.entity';
 
 /**
  * Controlador de setores
@@ -40,7 +42,13 @@ export class SetorController {
    * Cria um novo setor
    */
   @Post()
-  @Roles(ROLES.ADMIN, ROLES.GESTOR)
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    {
+      permissionName: 'setor.criar',
+      scopeType: ScopeType.GLOBAL
+    }
+  )
   @ApiOperation({ summary: 'Criar novo setor' })
   @ApiResponse({ status: 201, description: 'Setor criado com sucesso' })
   @ApiResponse({ status: 400, description: 'Dados inválidos' })
@@ -62,7 +70,13 @@ export class SetorController {
    * Atualiza um setor existente
    */
   @Put(':id')
-  @Roles(ROLES.ADMIN, ROLES.GESTOR)
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    {
+      permissionName: 'setor.atualizar',
+      scopeType: ScopeType.GLOBAL
+    }
+  )
   @ApiOperation({ summary: 'Atualizar setor existente' })
   @ApiResponse({ status: 200, description: 'Setor atualizado com sucesso' })
   @ApiResponse({ status: 400, description: 'Dados inválidos' })
@@ -78,6 +92,13 @@ export class SetorController {
    * Obtém detalhes de um setor específico
    */
   @Get(':id')
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    {
+      permissionName: 'setor.listar',
+      scopeType: ScopeType.GLOBAL
+    }
+  )
   @ApiOperation({ summary: 'Obter detalhes de um setor' })
   @ApiResponse({ status: 200, description: 'Setor encontrado com sucesso' })
   @ApiResponse({ status: 404, description: 'Setor não encontrado' })

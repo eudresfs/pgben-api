@@ -29,7 +29,7 @@ import { ROLES } from '../../../shared/constants/roles.constants';
  * Fornece endpoints para acesso e manipulação das configurações específicas
  * do benefício de Aluguel Social.
  */
-@ApiTags('Benefícios - Aluguel Social')
+@ApiTags('Benefícios')
 @Controller('v1/beneficio/tipos/:tipoBeneficioId/aluguel-social')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()

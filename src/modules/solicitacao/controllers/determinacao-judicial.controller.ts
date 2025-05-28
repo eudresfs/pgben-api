@@ -16,7 +16,7 @@ import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../../../auth/guards/permission.guard';
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
 import { ScopeType } from '../../../auth/entities/user-permission.entity';
-import { DeterminacaoJudicialService } from '../services/determinacao-judicial.service';
+import { DeterminacaoJudicialAdapterService } from '../services/determinacao-judicial-adapter.service';
 import { SolicitacaoCreateDeterminacaoJudicialDto } from '../dto/create-determinacao-judicial.dto';
 import { SolicitacaoUpdateDeterminacaoJudicialDto } from '../dto/update-determinacao-judicial.dto';
 import { DeterminacaoJudicial } from '../../judicial/entities/determinacao-judicial.entity';
@@ -27,12 +27,11 @@ import { DeterminacaoJudicial } from '../../judicial/entities/determinacao-judic
  * Responsável por expor os endpoints de gerenciamento de determinações judiciais
  * relacionadas às solicitações de benefício.
  */
-@ApiTags('Determinação Judicial')
 @Controller('v1/solicitacao/determinacao-judicial')
 @UseGuards(JwtAuthGuard, PermissionGuard)
 @ApiBearerAuth()
 export class DeterminacaoJudicialController {
-  constructor(private readonly determinacaoService: DeterminacaoJudicialService) {}
+  constructor(private readonly determinacaoService: DeterminacaoJudicialAdapterService) {}
 
   /**
    * Cria uma nova determinação judicial

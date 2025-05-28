@@ -274,6 +274,9 @@ export class PermissionService {
       // Constrói os wildcards possíveis
       const wildcards: string[] = [];
       
+      // Permissão super admin - verifica primeiro para otimização
+      wildcards.push('*.*');
+      
       // Wildcard para módulo (ex: 'modulo.*')
       wildcards.push(`${parts[0]}.*`);
       
@@ -282,17 +285,24 @@ export class PermissionService {
         wildcards.push(`${parts[0]}.${parts[1]}.*`);
       }
       
+      // Wildcard para operação (ex: '*.operacao')
+      if (parts.length >= 2) {
+        wildcards.push(`*.${parts[parts.length - 1]}`);
+      }
+      
       // Verifica cada wildcard
       for (const wildcard of wildcards) {
         // Verifica permissão direta
         const hasDirectWildcard = await this.checkDirectPermission(userId, wildcard, scopeType, scopeId);
         if (hasDirectWildcard) {
+          this.logger.debug(`Usuário ${userId} tem permissão wildcard direta: ${wildcard}`);
           return true;
         }
         
         // Verifica permissão de role
         const hasRoleWildcard = await this.checkRolePermission(userId, wildcard);
         if (hasRoleWildcard) {
+          this.logger.debug(`Usuário ${userId} tem permissão wildcard via role: ${wildcard}`);
           return true;
         }
       }

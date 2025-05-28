@@ -40,7 +40,7 @@ import { Request } from 'express';
  *
  * Responsável por gerenciar as rotas relacionadas às solicitações de benefícios
  */
-@ApiTags('Solicitações')
+@ApiTags('Solicitação')
 @Controller('v1/solicitacao')
 @UseGuards(JwtAuthGuard, PermissionGuard)
 @ApiBearerAuth()
@@ -51,11 +51,14 @@ export class SolicitacaoController {
    * Lista todas as solicitações com filtros e paginação
    */
   @Get()
-  @RequiresPermission({
-    permissionName: 'solicitacao.listar',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'query.unidade_id',
-  })
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    {
+      permissionName: 'solicitacao.listar',
+      scopeType: ScopeType.UNIT,
+      scopeIdExpression: 'query.unidade_id',
+    }
+  )
   @ApiOperation({ summary: 'Listar solicitações' })
   @ApiResponse({
     status: 200,
@@ -140,11 +143,14 @@ export class SolicitacaoController {
    * Obtém detalhes de uma solicitação específica
    */
   @Get(':id')
-  @RequiresPermission({
-    permissionName: 'solicitacao.visualizar',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'solicitacao.unidadeId',
-  })
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    {
+      permissionName: 'solicitacao.visualizar',
+      scopeType: ScopeType.UNIT,
+      scopeIdExpression: 'solicitacao.unidadeId',
+    }
+  )
   @ApiOperation({ summary: 'Obter detalhes de uma solicitação' })
   @ApiResponse({
     status: 200,
@@ -170,11 +176,14 @@ export class SolicitacaoController {
    * Cria uma nova solicitação de benefício
    */
   @Post()
-  @RequiresPermission({
-    permissionName: 'solicitacao.criar',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'body.unidadeId',
-  })
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    {
+      permissionName: 'solicitacao.criar',
+      scopeType: ScopeType.UNIT,
+      scopeIdExpression: 'body.unidadeId',
+    }
+  )
   @ApiOperation({ summary: 'Criar nova solicitação de benefício' })
   @ApiResponse({ status: 201, description: 'Solicitação criada com sucesso' })
   @ApiResponse({ status: 400, description: 'Dados inválidos' })
@@ -190,11 +199,14 @@ export class SolicitacaoController {
    * Atualiza uma solicitação existente
    */
   @Put(':id')
-  @RequiresPermission({
-    permissionName: 'solicitacao.editar',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'solicitacao.unidadeId',
-  })
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    {
+      permissionName: 'solicitacao.editar',
+      scopeType: ScopeType.UNIT,
+      scopeIdExpression: 'solicitacao.unidadeId',
+    }
+  )
   @ApiOperation({ summary: 'Atualizar solicitação existente' })
   @ApiBody({
     description: 'Dados da solicitação atualizada',
@@ -267,11 +279,14 @@ export class SolicitacaoController {
    * Submete uma solicitação para análise
    */
   @Put(':id/submeter')
-  @RequiresPermission({
-    permissionName: 'solicitacao.status.transicao.RASCUNHO.ENVIADA',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'solicitacao.unidadeId',
-  })
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    {
+      permissionName: 'solicitacao.status.transicao.RASCUNHO.ENVIADA',
+      scopeType: ScopeType.UNIT,
+      scopeIdExpression: 'solicitacao.unidadeId',
+    }
+  )
   @ApiOperation({ summary: 'Submeter solicitação para análise' })
   @ApiResponse({
     status: 200,
@@ -291,21 +306,30 @@ export class SolicitacaoController {
    * Avalia uma solicitação (aprovar/reprovar)
    */
   @Put(':id/avaliar')
-  @RequiresPermission({
-    permissionName: 'solicitacao.status.transicao.ENVIADA.EM_ANALISE',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'solicitacao.unidadeId',
-  })
-  @RequiresPermission({
-    permissionName: 'solicitacao.status.transicao.EM_ANALISE.APROVADA',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'solicitacao.unidadeId',
-  })
-  @RequiresPermission({
-    permissionName: 'solicitacao.status.transicao.EM_ANALISE.REJEITADA',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'solicitacao.unidadeId',
-  })
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    {
+      permissionName: 'solicitacao.status.transicao.ENVIADA.EM_ANALISE',
+      scopeType: ScopeType.UNIT,
+      scopeIdExpression: 'solicitacao.unidadeId',
+    }
+  )
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    {
+      permissionName: 'solicitacao.status.transicao.EM_ANALISE.APROVADA',
+      scopeType: ScopeType.UNIT,
+      scopeIdExpression: 'solicitacao.unidadeId',
+    }
+  )
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    {
+      permissionName: 'solicitacao.status.transicao.EM_ANALISE.REJEITADA',
+      scopeType: ScopeType.UNIT,
+      scopeIdExpression: 'solicitacao.unidadeId',
+    }
+  )
   @ApiOperation({ summary: 'Avaliar solicitação (aprovar/reprovar)' })
   @ApiBody({
     description: 'Dados da avaliação da solicitação',
@@ -342,16 +366,22 @@ export class SolicitacaoController {
    * Libera um benefício aprovado
    */
   @Put(':id/liberar')
-  @RequiresPermission({
-    permissionName: 'solicitacao.status.transicao.APROVADA.CONCEDIDA',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'solicitacao.unidadeId',
-  })
-  @RequiresPermission({
-    permissionName: 'beneficio.conceder',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'solicitacao.unidadeId',
-  })
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    {
+      permissionName: 'solicitacao.status.transicao.APROVADA.CONCEDIDA',
+      scopeType: ScopeType.UNIT,
+      scopeIdExpression: 'solicitacao.unidadeId',
+    }
+  )
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    {
+      permissionName: 'beneficio.conceder',
+      scopeType: ScopeType.UNIT,
+      scopeIdExpression: 'solicitacao.unidadeId',
+    }
+  )
   @ApiOperation({ summary: 'Liberar benefício aprovado' })
   @ApiResponse({ status: 200, description: 'Benefício liberado com sucesso' })
   @ApiResponse({ status: 400, description: 'Benefício não pode ser liberado' })
@@ -365,11 +395,14 @@ export class SolicitacaoController {
    * Cancela uma solicitação
    */
   @Put(':id/cancelar')
-  @RequiresPermission({
-    permissionName: 'solicitacao.status.transicao.*.CANCELADA',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'solicitacao.unidadeId',
-  })
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    {
+      permissionName: 'solicitacao.status.transicao.*.CANCELADA',
+      scopeType: ScopeType.UNIT,
+      scopeIdExpression: 'solicitacao.unidadeId',
+    }
+  )
   @ApiOperation({ summary: 'Cancelar solicitação' })
   @ApiResponse({
     status: 200,
@@ -389,16 +422,22 @@ export class SolicitacaoController {
    * Lista o histórico de uma solicitação
    */
   @Get(':id/historico')
-  @RequiresPermission({
-    permissionName: 'solicitacao.visualizar',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'solicitacao.unidadeId',
-  })
-  @RequiresPermission({
-    permissionName: 'solicitacao.historico.visualizar',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'solicitacao.unidadeId',
-  })
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    {
+      permissionName: 'solicitacao.visualizar',
+      scopeType: ScopeType.UNIT,
+      scopeIdExpression: 'solicitacao.unidadeId',
+    }
+  )
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    {
+      permissionName: 'solicitacao.historico.visualizar',
+      scopeType: ScopeType.UNIT,
+      scopeIdExpression: 'solicitacao.unidadeId',
+    }
+  )
   @ApiOperation({ summary: 'Listar histórico de uma solicitação' })
   @ApiResponse({ status: 200, description: 'Histórico retornado com sucesso' })
   @ApiResponse({ status: 404, description: 'Solicitação não encontrada' })
@@ -419,16 +458,22 @@ export class SolicitacaoController {
    * Lista as pendências de uma solicitação
    */
   @Get(':id/pendencias')
-  @RequiresPermission({
-    permissionName: 'solicitacao.visualizar',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'solicitacao.unidadeId',
-  })
-  @RequiresPermission({
-    permissionName: 'solicitacao.pendencia.visualizar',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'solicitacao.unidadeId',
-  })
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    {
+      permissionName: 'solicitacao.visualizar',
+      scopeType: ScopeType.UNIT,
+      scopeIdExpression: 'solicitacao.unidadeId',
+    }
+  )
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    {
+      permissionName: 'solicitacao.pendencia.visualizar',
+      scopeType: ScopeType.UNIT,
+      scopeIdExpression: 'solicitacao.unidadeId',
+    }
+  )
   @ApiOperation({ summary: 'Listar pendências de uma solicitação' })
   @ApiResponse({
     status: 200,
@@ -452,11 +497,14 @@ export class SolicitacaoController {
    * Vincula um processo judicial a uma solicitação
    */
   @Post(':id/processo-judicial')
-  @RequiresPermission({
-    permissionName: 'solicitacao.processo_judicial.vincular',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'solicitacao.unidadeId',
-  })
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    {
+      permissionName: 'solicitacao.processo_judicial.vincular',
+      scopeType: ScopeType.UNIT,
+      scopeIdExpression: 'solicitacao.unidadeId',
+    }
+  )
   @ApiOperation({ summary: 'Vincular processo judicial a uma solicitação' })
   @ApiResponse({
     status: 200,
@@ -486,11 +534,14 @@ export class SolicitacaoController {
    * Desvincula um processo judicial de uma solicitação
    */
   @Delete(':id/processo-judicial')
-  @RequiresPermission({
-    permissionName: 'solicitacao.processo_judicial.desvincular',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'solicitacao.unidadeId',
-  })
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    {
+      permissionName: 'solicitacao.processo_judicial.desvincular',
+      scopeType: ScopeType.UNIT,
+      scopeIdExpression: 'solicitacao.unidadeId',
+    }
+  )
   @ApiOperation({ summary: 'Desvincular processo judicial de uma solicitação' })
   @ApiResponse({
     status: 200,
@@ -515,11 +566,14 @@ export class SolicitacaoController {
    * Vincula uma determinação judicial a uma solicitação
    */
   @Post(':id/determinacao-judicial')
-  @RequiresPermission({
-    permissionName: 'solicitacao.determinacao_judicial.vincular',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'solicitacao.unidadeId',
-  })
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    {
+      permissionName: 'solicitacao.determinacao_judicial.vincular',
+      scopeType: ScopeType.UNIT,
+      scopeIdExpression: 'solicitacao.unidadeId',
+    }
+  )
   @ApiOperation({ summary: 'Vincular determinação judicial a uma solicitação' })
   @ApiResponse({
     status: 200,
@@ -549,11 +603,14 @@ export class SolicitacaoController {
    * Desvincula uma determinação judicial de uma solicitação
    */
   @Delete(':id/determinacao-judicial')
-  @RequiresPermission({
-    permissionName: 'solicitacao.determinacao_judicial.desvincular',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'solicitacao.unidadeId',
-  })
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    {
+      permissionName: 'solicitacao.determinacao_judicial.desvincular',
+      scopeType: ScopeType.UNIT,
+      scopeIdExpression: 'solicitacao.unidadeId',
+    }
+  )
   @ApiOperation({ summary: 'Desvincular determinação judicial de uma solicitação' })
   @ApiResponse({
     status: 200,

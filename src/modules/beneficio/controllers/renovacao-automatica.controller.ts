@@ -35,7 +35,7 @@ import { ConfiguracaoRenovacaoResponseDto } from '../dto/configuracao-renovacao-
  * Responsável por expor os endpoints de gerenciamento das configurações de renovação
  * automática e do processo de renovação automática mensal.
  */
-@ApiTags('Renovação Automática')
+@ApiTags('Benefícios')
 @Controller('v1/beneficio/renovacao-automatica')
 @UseGuards(JwtAuthGuard, PermissionGuard)
 @ApiBearerAuth()
@@ -49,7 +49,10 @@ export class RenovacaoAutomaticaController {
    * @returns Configuração criada
    */
   @Post('configuracao')
-  @RequiresPermission({ permissionName: 'beneficio.configuracao.criar' })
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    { permissionName: 'beneficio.configuracao.criar' }
+  )
   @ApiOperation({
     summary: 'Cria uma nova configuração de renovação automática',
     description: 'Cria uma configuração de renovação automática para um tipo de benefício.',
@@ -71,7 +74,10 @@ export class RenovacaoAutomaticaController {
    * @returns Lista de configurações
    */
   @Get('configuracao')
-  @RequiresPermission({ permissionName: 'beneficio.configuracao.listar' })
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    { permissionName: 'beneficio.configuracao.listar' }
+  )
   @ApiOperation({
     summary: 'Busca todas as configurações de renovação',
     description: 'Retorna a lista de todas as configurações de renovação automática.',
@@ -91,7 +97,10 @@ export class RenovacaoAutomaticaController {
    * @returns Configuração
    */
   @Get('configuracao/:id')
-  @RequiresPermission({ permissionName: 'beneficio.configuracao.visualizar' })
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    { permissionName: 'beneficio.configuracao.visualizar' }
+  )
   @ApiOperation({
     summary: 'Busca uma configuração de renovação pelo ID',
     description: 'Retorna os detalhes de uma configuração de renovação específica.',
@@ -111,7 +120,10 @@ export class RenovacaoAutomaticaController {
    * @returns Configuração
    */
   @Get('configuracao/tipo-beneficio/:tipoBeneficioId')
-  @RequiresPermission({ permissionName: 'beneficio.configuracao.visualizar' })
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    { permissionName: 'beneficio.configuracao.visualizar' }
+  )
   @ApiOperation({
     summary: 'Busca uma configuração de renovação pelo tipo de benefício',
     description: 'Retorna a configuração de renovação para um tipo de benefício específico.',
@@ -134,7 +146,10 @@ export class RenovacaoAutomaticaController {
    * @returns Configuração atualizada
    */
   @Patch('configuracao/:id')
-  @RequiresPermission({ permissionName: 'beneficio.configuracao.atualizar' })
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    { permissionName: 'beneficio.configuracao.atualizar' }
+  )
   @ApiOperation({
     summary: 'Atualiza uma configuração de renovação',
     description: 'Atualiza os dados de uma configuração de renovação existente.',
@@ -158,7 +173,10 @@ export class RenovacaoAutomaticaController {
    */
   @Delete('configuracao/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @RequiresPermission({ permissionName: 'beneficio.configuracao.remover' })
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    { permissionName: 'beneficio.configuracao.remover' }
+  )
   @ApiOperation({
     summary: 'Remove uma configuração de renovação',
     description: 'Remove permanentemente uma configuração de renovação.',
@@ -178,7 +196,10 @@ export class RenovacaoAutomaticaController {
    * @returns Configuração atualizada
    */
   @Patch('configuracao/:id/ativar')
-  @RequiresPermission({ permissionName: 'beneficio.configuracao.atualizar' })
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    { permissionName: 'beneficio.configuracao.atualizar' }
+  )
   @ApiOperation({
     summary: 'Ativa ou desativa uma configuração de renovação',
     description: 'Altera o status de ativação de uma configuração de renovação.',
@@ -201,11 +222,14 @@ export class RenovacaoAutomaticaController {
    * @returns Informações sobre a configuração de renovação da solicitação
    */
   @Get('solicitacao/:solicitacaoId/verificar')
-  @RequiresPermission({ 
-    permissionName: 'solicitacao.visualizar',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'solicitacao.unidadeId'
-  })
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    { 
+      permissionName: 'solicitacao.visualizar',
+      scopeType: ScopeType.UNIT,
+      scopeIdExpression: 'solicitacao.unidadeId'
+    }
+  )
   @ApiOperation({
     summary: 'Verifica a configuração de renovação automática de uma solicitação',
     description: 'Retorna informações sobre a configuração de renovação automática de uma solicitação específica.',
@@ -229,11 +253,14 @@ export class RenovacaoAutomaticaController {
    * @returns Solicitação atualizada
    */
   @Patch('solicitacao/:solicitacaoId')
-  @RequiresPermission({ 
-    permissionName: 'solicitacao.configurar-renovacao',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'solicitacao.unidadeId'
-  })
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    { 
+      permissionName: 'solicitacao.configurar-renovacao',
+      scopeType: ScopeType.UNIT,
+      scopeIdExpression: 'solicitacao.unidadeId'
+    }
+  )
   @ApiOperation({
     summary: 'Configura a renovação automática para uma solicitação',
     description: 'Ativa ou desativa a renovação automática para uma solicitação específica.',
@@ -261,7 +288,10 @@ export class RenovacaoAutomaticaController {
    * @returns Número de solicitações renovadas
    */
   @Post('verificar-pendentes')
-  @RequiresPermission({ permissionName: 'beneficio.renovacao.verificar' })
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    { permissionName: 'beneficio.renovacao.verificar' }
+  )
   @ApiOperation({
     summary: 'Verifica e processa manualmente as renovações pendentes',
     description: 'Executa manualmente o processo de verificação e renovação automática.',

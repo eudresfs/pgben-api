@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { JwtBlacklistService } from '../auth/services/jwt-blacklist.service';
 import { PasswordResetService } from '../auth/services/password-reset.service';
-import { PasswordRecoveryService } from '../auth/services/password-recovery.service';
+// PasswordRecoveryService removido - usando PasswordResetService
 
 /**
  * Serviço responsável pela limpeza automática de tokens expirados
@@ -16,7 +16,6 @@ export class CleanupTokensTask {
   constructor(
     private readonly jwtBlacklistService: JwtBlacklistService,
     private readonly passwordResetService: PasswordResetService,
-    private readonly passwordRecoveryService: PasswordRecoveryService,
   ) {}
 
   /**
@@ -38,11 +37,11 @@ export class CleanupTokensTask {
       this.logger.log('Tokens de reset de senha expirados removidos');
 
       // Limpeza de tokens de recuperação de senha
-      const deletedRecoveryTokens = await this.passwordRecoveryService.cleanupExpiredTokens();
+      const deletedRecoveryTokens = await this.passwordResetService.cleanupExpiredTokens();
       this.logger.log(`Removidos ${deletedRecoveryTokens} tokens de recuperação expirados`);
 
       // Limpeza de tokens de recuperação usados (mais antigos que 7 dias)
-      await this.passwordRecoveryService.cleanupOldUsedTokens();
+      await this.passwordResetService.cleanupOldUsedTokens();
       this.logger.log('Tokens de recuperação usados antigos removidos');
 
       this.logger.log('Limpeza automática de tokens concluída com sucesso');
@@ -66,8 +65,8 @@ export class CleanupTokensTask {
     try {
       const deletedJwtTokens = await this.jwtBlacklistService.cleanupExpiredTokens();
       await this.passwordResetService.cleanupExpiredTokens();
-      const deletedRecoveryTokens = await this.passwordRecoveryService.cleanupExpiredTokens();
-      await this.passwordRecoveryService.cleanupOldUsedTokens();
+      const deletedRecoveryTokens = await this.passwordResetService.cleanupExpiredTokens();
+      await this.passwordResetService.cleanupOldUsedTokens();
 
       this.logger.log('Limpeza manual de tokens concluída com sucesso');
       

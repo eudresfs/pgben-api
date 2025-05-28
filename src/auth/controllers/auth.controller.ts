@@ -39,7 +39,7 @@ export class AuthController {
   @Post('login')
   @Public()
   @ApiOperation({
-    summary: 'User login API',
+    summary: 'Fazer login',
   })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -70,7 +70,7 @@ export class AuthController {
 
   @Post('refresh-token')
   @ApiOperation({
-    summary: 'Refresh access token API',
+    summary: 'Atualizar token da api',
   })
   @ApiResponse({
     status: HttpStatus.OK,

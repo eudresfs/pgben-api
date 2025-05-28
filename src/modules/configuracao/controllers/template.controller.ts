@@ -10,7 +10,7 @@ import { TemplateTipoEnum } from '../enums/template-tipo.enum';
 /**
  * Controlador responsável pelas operações de templates do sistema
  */
-@ApiTags('Configuração - Templates')
+@ApiTags('Configuração')
 @Controller('configuracao/templates')
 export class TemplateController {
   constructor(private readonly templateService: TemplateService) {}

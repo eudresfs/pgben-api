@@ -11,13 +11,12 @@ import {
   HttpCode,
   HttpStatus,
   Query,
-  NotFoundException,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../../../auth/guards/permission.guard';
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
-import { DeterminacaoJudicialRepository } from '../repositories/determinacao-judicial.repository';
+import { DeterminacaoJudicialConsolidadoService } from '../services/determinacao-judicial-consolidado.service';
 import { DeterminacaoJudicial } from '../entities/determinacao-judicial.entity';
 import { CreateDeterminacaoJudicialDto, UpdateDeterminacaoJudicialDto } from '../dtos/determinacao-judicial.dto';
 
@@ -34,12 +33,12 @@ class CumprimentoDeterminacaoDto {
  * Responsável por expor os endpoints de gerenciamento das determinações judiciais
  * relacionadas a processos e solicitações de benefício.
  */
-@ApiTags('Determinações Judiciais')
+@ApiTags('Solicitação')
 @Controller('v1/judicial/determinacoes')
 @UseGuards(JwtAuthGuard, PermissionGuard)
 @ApiBearerAuth()
 export class DeterminacaoJudicialController {
-  constructor(private readonly determinacaoRepository: DeterminacaoJudicialRepository) {}
+  constructor(private readonly determinacaoJudicialService: DeterminacaoJudicialConsolidadoService) {}
 
   /**
    * Cria uma nova determinação judicial
@@ -62,7 +61,7 @@ export class DeterminacaoJudicialController {
     @Body() createDeterminacaoDto: CreateDeterminacaoJudicialDto,
     @Req() req: any,
   ): Promise<DeterminacaoJudicial> {
-    return this.determinacaoRepository.create(createDeterminacaoDto, req.user.id);
+    return this.determinacaoJudicialService.create(createDeterminacaoDto, req.user.id);
   }
 
   /**
@@ -81,8 +80,26 @@ export class DeterminacaoJudicialController {
     description: 'Lista de determinações retornada com sucesso',
     type: [DeterminacaoJudicial],
   })
-  async findAll(@Query('includeInactive') includeInactive: boolean): Promise<DeterminacaoJudicial[]> {
-    return this.determinacaoRepository.findAll(includeInactive);
+  async findAll(
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+    @Query('processoJudicialId') processoJudicialId?: string,
+    @Query('solicitacaoId') solicitacaoId?: string,
+    @Query('cidadaoId') cidadaoId?: string,
+    @Query('tipo') tipo?: string,
+    @Query('cumprida') cumprida?: boolean,
+    @Query('termo') termo?: string,
+  ) {
+    return this.determinacaoJudicialService.findAll({
+      page,
+      limit,
+      processoJudicialId,
+      solicitacaoId,
+      cidadaoId,
+      tipo: tipo as any,
+      cumprida,
+      termo,
+    });
   }
 
   /**
@@ -102,11 +119,7 @@ export class DeterminacaoJudicialController {
     type: DeterminacaoJudicial,
   })
   async findById(@Param('id') id: string): Promise<DeterminacaoJudicial> {
-    const determinacao = await this.determinacaoRepository.findById(id);
-    if (!determinacao) {
-      throw new NotFoundException(`Determinação judicial com ID ${id} não encontrada`);
-    }
-    return determinacao;
+    return this.determinacaoJudicialService.findById(id);
   }
 
   /**
@@ -128,9 +141,8 @@ export class DeterminacaoJudicialController {
   })
   async findByProcesso(
     @Param('processoId') processoId: string,
-    @Query('includeInactive') includeInactive: boolean,
   ): Promise<DeterminacaoJudicial[]> {
-    return this.determinacaoRepository.findByProcesso(processoId, includeInactive);
+    return this.determinacaoJudicialService.findByProcessoJudicial(processoId);
   }
 
   /**
@@ -152,9 +164,8 @@ export class DeterminacaoJudicialController {
   })
   async findByCidadao(
     @Param('cidadaoId') cidadaoId: string,
-    @Query('includeInactive') includeInactive: boolean,
   ): Promise<DeterminacaoJudicial[]> {
-    return this.determinacaoRepository.findByCidadao(cidadaoId, includeInactive);
+    return this.determinacaoJudicialService.findByCidadao(cidadaoId);
   }
 
   /**
@@ -176,29 +187,15 @@ export class DeterminacaoJudicialController {
   })
   async findBySolicitacao(
     @Param('solicitacaoId') solicitacaoId: string,
-    @Query('includeInactive') includeInactive: boolean,
   ): Promise<DeterminacaoJudicial[]> {
-    return this.determinacaoRepository.findBySolicitacao(solicitacaoId, includeInactive);
+    return this.determinacaoJudicialService.findBySolicitacao(solicitacaoId);
   }
 
-  /**
-   * Busca determinações pendentes de cumprimento
-   * @param includeInactive Se deve incluir determinações inativas
-   * @returns Lista de determinações
-   */
   @Get('pendentes')
-  @RequiresPermission({ permissionName: 'judicial.listar-determinacao' })
-  @ApiOperation({
-    summary: 'Busca determinações pendentes de cumprimento',
-    description: 'Retorna a lista de determinações judiciais que ainda não foram cumpridas.',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Lista de determinações pendentes retornada com sucesso',
-    type: [DeterminacaoJudicial],
-  })
-  async findPendentes(@Query('includeInactive') includeInactive: boolean): Promise<DeterminacaoJudicial[]> {
-    return this.determinacaoRepository.findPendentes(includeInactive);
+  @ApiOperation({ summary: 'Buscar determinações pendentes de cumprimento' })
+  @ApiResponse({ status: 200, description: 'Lista de determinações pendentes', type: [DeterminacaoJudicial] })
+  async findPendentes(): Promise<DeterminacaoJudicial[]> {
+    return this.determinacaoJudicialService.findPendentes();
   }
 
   /**
@@ -224,7 +221,7 @@ export class DeterminacaoJudicialController {
     @Body() updateDeterminacaoDto: UpdateDeterminacaoJudicialDto,
     @Req() req: any,
   ): Promise<DeterminacaoJudicial> {
-    return this.determinacaoRepository.update(id, updateDeterminacaoDto, req.user.id);
+    return this.determinacaoJudicialService.update(id, updateDeterminacaoDto, req.user.id);
   }
 
   /**
@@ -247,40 +244,22 @@ export class DeterminacaoJudicialController {
   })
   async marcarComoCumprida(
     @Param('id') id: string,
-    @Body() cumprimentoDto: CumprimentoDeterminacaoDto,
+    @Body() body: CumprimentoDeterminacaoDto,
     @Req() req: any,
   ): Promise<DeterminacaoJudicial> {
-    return this.determinacaoRepository.marcarComoCumprida(
-      id,
-      cumprimentoDto.observacao,
-      req.user.id,
-    );
+    return this.determinacaoJudicialService.marcarComoCumprida(id, body.observacao, req.user.id);
   }
 
-  /**
-   * Ativa ou desativa uma determinação
-   * @param id ID da determinação
-   * @param body Corpo da requisição
-   * @param req Requisição
-   * @returns Determinação atualizada
-   */
   @Patch(':id/ativar')
-  @RequiresPermission({ permissionName: 'judicial.atualizar-determinacao' })
-  @ApiOperation({
-    summary: 'Ativa ou desativa uma determinação',
-    description: 'Altera o status de ativação de uma determinação judicial.',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Status de ativação atualizado com sucesso',
-    type: DeterminacaoJudicial,
-  })
+  @ApiOperation({ summary: 'Ativar ou desativar uma determinação judicial' })
+  @ApiParam({ name: 'id', description: 'ID da determinação judicial' })
+  @ApiResponse({ status: 200, description: 'Determinação judicial atualizada', type: DeterminacaoJudicial })
+  @ApiResponse({ status: 404, description: 'Determinação judicial não encontrada' })
   async toggleAtivo(
     @Param('id') id: string,
-    @Body() body: { ativo: boolean },
     @Req() req: any,
   ): Promise<DeterminacaoJudicial> {
-    return this.determinacaoRepository.toggleAtivo(id, body.ativo, req.user.id);
+    return this.determinacaoJudicialService.toggleAtivo(id, req.user.id);
   }
 
   /**
@@ -300,6 +279,6 @@ export class DeterminacaoJudicialController {
     description: 'Determinação removida com sucesso',
   })
   async remove(@Param('id') id: string): Promise<void> {
-    return this.determinacaoRepository.remove(id);
+    return this.determinacaoJudicialService.remove(id);
   }
 }

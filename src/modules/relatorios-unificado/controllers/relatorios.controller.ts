@@ -53,11 +53,14 @@ export class RelatoriosController {
    * @returns Stream do relatório no formato solicitado
    */
   @Get('beneficios-concedidos')
-  @RequiresPermission({
-    permissionName: 'relatorio.beneficios.concedidos',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'query.unidade_id'
-  })
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    {
+      permissionName: 'relatorio.beneficios.concedidos',
+      scopeType: ScopeType.UNIT,
+      scopeIdExpression: 'query.unidade_id'
+    }
+  )
   @ApiOperation({
     summary: 'Gera relatório de benefícios concedidos',
     description:
@@ -148,11 +151,14 @@ export class RelatoriosController {
    * @returns Stream do relatório no formato solicitado
    */
   @Get('solicitacoes-por-status')
-  @RequiresPermission({
-    permissionName: 'relatorio.solicitacoes.status',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'query.unidade_id'
-  })
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    {
+      permissionName: 'relatorio.solicitacoes.status',
+      scopeType: ScopeType.UNIT,
+      scopeIdExpression: 'query.unidade_id'
+    }
+  )
   @ApiOperation({
     summary: 'Gera relatório de solicitações por status',
     description:
@@ -242,10 +248,13 @@ export class RelatoriosController {
    * @returns Stream do relatório no formato solicitado
    */
   @Get('atendimentos-por-unidade')
-  @RequiresPermission({
-    permissionName: 'relatorio.atendimentos.unidade',
-    scopeType: ScopeType.GLOBAL
-  })
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    {
+      permissionName: 'relatorio.atendimentos.unidade',
+      scopeType: ScopeType.GLOBAL
+    }
+  )
   @ApiOperation({
     summary: 'Gera relatório de atendimentos por unidade',
     description:

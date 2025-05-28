@@ -41,10 +41,13 @@ export class UnidadeController {
    * Lista todas as unidades com filtros e paginação
    */
   @Get()
-  @RequiresPermission({
-    permissionName: 'unidade.listar',
-    scopeType: ScopeType.GLOBAL
-  })
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    {
+      permissionName: 'unidade.listar',
+      scopeType: ScopeType.GLOBAL
+    }
+  )
   @ApiOperation({ summary: 'Listar unidades' })
   @ApiResponse({
     status: 200,
@@ -100,10 +103,13 @@ export class UnidadeController {
    * Obtém detalhes de uma unidade específica
    */
   @Get(':id')
-  @RequiresPermission({
-    permissionName: 'unidade.visualizar',
-    scopeType: ScopeType.GLOBAL
-  })
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    {
+      permissionName: 'unidade.visualizar',
+      scopeType: ScopeType.GLOBAL
+    }
+  )
   @ApiOperation({ summary: 'Obter detalhes de uma unidade' })
   @ApiResponse({ status: 200, description: 'Unidade encontrada com sucesso' })
   @ApiResponse({ status: 404, description: 'Unidade não encontrada' })
@@ -115,10 +121,13 @@ export class UnidadeController {
    * Cria uma nova unidade
    */
   @Post()
-  @RequiresPermission({
-    permissionName: 'unidade.criar',
-    scopeType: ScopeType.GLOBAL
-  })
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    {
+      permissionName: 'unidade.criar',
+      scopeType: ScopeType.GLOBAL
+    }
+  )
   @ApiOperation({ summary: 'Criar nova unidade' })
   @ApiResponse({ status: 201, description: 'Unidade criada com sucesso' })
   @ApiResponse({ status: 400, description: 'Dados inválidos' })
@@ -131,10 +140,13 @@ export class UnidadeController {
    * Atualiza uma unidade existente
    */
   @Put(':id')
-  @RequiresPermission({
-    permissionName: 'unidade.editar',
-    scopeType: ScopeType.GLOBAL
-  })
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    {
+      permissionName: 'unidade.editar',
+      scopeType: ScopeType.GLOBAL
+    }
+  )
   @ApiOperation({ summary: 'Atualizar unidade existente' })
   @ApiResponse({ status: 200, description: 'Unidade atualizada com sucesso' })
   @ApiResponse({ status: 400, description: 'Dados inválidos' })
@@ -151,10 +163,13 @@ export class UnidadeController {
    * Atualiza o status de uma unidade
    */
   @Patch(':id/status')
-  @RequiresPermission({
-    permissionName: 'unidade.status.alterar',
-    scopeType: ScopeType.GLOBAL
-  })
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    {
+      permissionName: 'unidade.status.alterar',
+      scopeType: ScopeType.GLOBAL
+    }
+  )
   @ApiOperation({ summary: 'Ativar/inativar unidade' })
   @ApiResponse({ status: 200, description: 'Status atualizado com sucesso' })
   @ApiResponse({ status: 404, description: 'Unidade não encontrada' })
@@ -169,10 +184,13 @@ export class UnidadeController {
    * Lista os setores de uma unidade específica
    */
   @Get(':id/setor')
-  @RequiresPermission({
-    permissionName: 'unidade.setor.listar',
-    scopeType: ScopeType.GLOBAL
-  })
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    {
+      permissionName: 'unidade.setor.listar',
+      scopeType: ScopeType.GLOBAL
+    }
+  )
   @ApiOperation({ summary: 'Listar setores de uma unidade' })
   @ApiResponse({
     status: 200,

@@ -33,10 +33,13 @@ export class MetricasDashboardController {
    * Obtém resumo das métricas principais para dashboard
    */
   @Get('resumo')
-  @RequiresPermission({
-    permissionName: 'dashboard.visualizar',
-    scopeType: ScopeType.GLOBAL,
-  })
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    {
+      permissionName: 'dashboard.visualizar',
+      scopeType: ScopeType.GLOBAL,
+    }
+  )
   @ApiOperation({ summary: 'Obtém resumo das métricas principais' })
   @ApiResponse({ status: 200, description: 'Resumo obtido com sucesso' })
   async obterResumo() {
@@ -47,10 +50,13 @@ export class MetricasDashboardController {
    * Obtém KPIs para o dashboard
    */
   @Get('kpis')
-  @RequiresPermission({
-    permissionName: 'dashboard.visualizar',
-    scopeType: ScopeType.GLOBAL,
-  })
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    {
+      permissionName: 'dashboard.visualizar',
+      scopeType: ScopeType.GLOBAL,
+    }
+  )
   @ApiOperation({ summary: 'Obtém KPIs para o dashboard' })
   @ApiResponse({ status: 200, description: 'KPIs obtidos com sucesso' })
   async obterKPIs() {
@@ -61,10 +67,13 @@ export class MetricasDashboardController {
    * Obtém dados para gráficos do dashboard
    */
   @Get('graficos')
-  @RequiresPermission({
-    permissionName: 'dashboard.visualizar',
-    scopeType: ScopeType.GLOBAL,
-  })
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    {
+      permissionName: 'dashboard.visualizar',
+      scopeType: ScopeType.GLOBAL,
+    }
+  )
   @ApiOperation({ summary: 'Obtém dados para gráficos do dashboard' })
   @ApiResponse({ status: 200, description: 'Dados obtidos com sucesso' })
   @ApiQuery({
@@ -81,10 +90,13 @@ export class MetricasDashboardController {
    * Lista alertas ativos de anomalias
    */
   @Get('alertas')
-  @RequiresPermission({
-    permissionName: 'dashboard.visualizar',
-    scopeType: ScopeType.GLOBAL,
-  })
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    {
+      permissionName: 'dashboard.visualizar',
+      scopeType: ScopeType.GLOBAL,
+    }
+  )
   @ApiOperation({ summary: 'Lista alertas ativos de anomalias' })
   @ApiResponse({ status: 200, description: 'Alertas listados com sucesso' })
   @ApiQuery({

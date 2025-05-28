@@ -7,7 +7,7 @@ import { WorkflowResponseDto } from '../dtos/workflow/workflow-response.dto';
 /**
  * Controlador responsável pelas operações de workflows de benefícios
  */
-@ApiTags('Configuração - Workflows')
+@ApiTags('Configuração')
 @Controller('configuracao/workflows')
 export class WorkflowController {
   constructor(private readonly workflowService: WorkflowService) {}

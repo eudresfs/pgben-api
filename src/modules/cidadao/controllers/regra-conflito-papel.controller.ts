@@ -44,7 +44,7 @@ class UpdateRegraConflitoDto {
  * Responsável por expor os endpoints de gerenciamento das regras de conflito
  * entre papéis de cidadãos no sistema.
  */
-@ApiTags('Regras de Conflito de Papéis')
+@ApiTags('Cidadão')
 @Controller('v1/cidadao/regra-conflito')
 @UseGuards(JwtAuthGuard, PermissionGuard)
 @ApiBearerAuth()
@@ -58,7 +58,10 @@ export class RegraConflitoPapelController {
    * @returns Regra criada
    */
   @Post()
-  @RequiresPermission({ permissionName: 'cidadao.criar-regra-conflito' })
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    { permissionName: 'cidadao.criar-regra-conflito' }
+  )
   @ApiOperation({
     summary: 'Cria uma nova regra de conflito',
     description: 'Cria uma regra que define conflito entre dois papéis no sistema.',
@@ -85,7 +88,10 @@ export class RegraConflitoPapelController {
    * @returns Lista de regras
    */
   @Get()
-  @RequiresPermission({ permissionName: 'cidadao.listar-regra-conflito' })
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    { permissionName: 'cidadao.listar-regra-conflito' }
+  )
   @ApiOperation({
     summary: 'Busca todas as regras de conflito',
     description: 'Retorna a lista de todas as regras de conflito entre papéis.',
@@ -106,7 +112,10 @@ export class RegraConflitoPapelController {
    * @returns Regra
    */
   @Get(':id')
-  @RequiresPermission({ permissionName: 'cidadao.visualizar-regra-conflito' })
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    { permissionName: 'cidadao.visualizar-regra-conflito' }
+  )
   @ApiOperation({
     summary: 'Busca uma regra pelo ID',
     description: 'Retorna os detalhes de uma regra de conflito específica.',
@@ -131,7 +140,10 @@ export class RegraConflitoPapelController {
    * @returns Lista de regras
    */
   @Get('papel-origem/:papelOrigemId')
-  @RequiresPermission({ permissionName: 'cidadao.listar-regra-conflito' })
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    { permissionName: 'cidadao.listar-regra-conflito' }
+  )
   @ApiOperation({
     summary: 'Busca regras por papel de origem',
     description: 'Retorna a lista de regras de conflito que têm o papel especificado como origem.',
@@ -156,7 +168,10 @@ export class RegraConflitoPapelController {
    * @returns Lista de regras
    */
   @Get('papel-destino/:papelDestinoId')
-  @RequiresPermission({ permissionName: 'cidadao.listar-regra-conflito' })
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    { permissionName: 'cidadao.listar-regra-conflito' }
+  )
   @ApiOperation({
     summary: 'Busca regras por papel de destino',
     description: 'Retorna a lista de regras de conflito que têm o papel especificado como destino.',
@@ -181,7 +196,10 @@ export class RegraConflitoPapelController {
    * @returns Resultado da verificação
    */
   @Get('verificar/:papelOrigemId/:papelDestinoId')
-  @RequiresPermission({ permissionName: 'cidadao.verificar-regra-conflito' })
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    { permissionName: 'cidadao.verificar-regra-conflito' }
+  )
   @ApiOperation({
     summary: 'Verifica se existe conflito entre dois papéis',
     description: 'Verifica se existe uma regra de conflito entre os papéis especificados.',
@@ -213,7 +231,10 @@ export class RegraConflitoPapelController {
    * @returns Regra atualizada
    */
   @Patch(':id')
-  @RequiresPermission({ permissionName: 'cidadao.atualizar-regra-conflito' })
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    { permissionName: 'cidadao.atualizar-regra-conflito' }
+  )
   @ApiOperation({
     summary: 'Atualiza uma regra',
     description: 'Atualiza os dados de uma regra de conflito existente.',
@@ -242,7 +263,10 @@ export class RegraConflitoPapelController {
    * @returns Regra atualizada
    */
   @Patch(':id/ativar')
-  @RequiresPermission({ permissionName: 'cidadao.atualizar-regra-conflito' })
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    { permissionName: 'cidadao.atualizar-regra-conflito' }
+  )
   @ApiOperation({
     summary: 'Ativa ou desativa uma regra',
     description: 'Altera o status de ativação de uma regra de conflito.',
@@ -268,7 +292,10 @@ export class RegraConflitoPapelController {
    */
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @RequiresPermission({ permissionName: 'cidadao.remover-regra-conflito' })
+  @RequiresPermission(
+    { permissionName: '*.*' },
+    { permissionName: 'cidadao.remover-regra-conflito' }
+  )
   @ApiOperation({
     summary: 'Remove uma regra',
     description: 'Remove permanentemente uma regra de conflito.',
