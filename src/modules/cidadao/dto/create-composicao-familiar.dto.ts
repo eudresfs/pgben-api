@@ -5,8 +5,16 @@ import {
   IsNotEmpty,
   IsDate,
   IsNumber,
+  IsEnum,
+  Length,
+  Min,
+  Validate,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import { EscolaridadeEnum } from '../enums/escolaridade.enum';
+import { Column } from 'typeorm';
+import { Parentesco } from '../enums/parentesco.enum';
+import { CPFValidator } from '../validators/cpf-validator';
 
 /**
  * DTO para adicionar membro à composição familiar
@@ -20,29 +28,53 @@ export class CreateComposicaoFamiliarDto {
   })
   nome: string;
 
-  @IsString({ message: 'Parentesco deve ser uma string' })
+  @Column({ nullable: false })
+  @IsNotEmpty({ message: 'CPF é obrigatório' })
+  @Length(11, 14, { message: 'CPF deve ter entre 11 e 14 caracteres' })
+  @Validate(CPFValidator, { message: 'CPF inválido' })
+  cpf: string;
+
+  @Column({ nullable: true })
+  @IsNotEmpty({ message: 'NIS do parente é obrigatório' })
+  nis: string;
+
+  @Column('integer')
+  @IsNotEmpty({ message: 'Idade do parente é obrigatório' })
+  @IsNumber({}, { message: 'Idade deve ser um número' })
+  @Min(0, { message: 'Idade não pode ser negativa' })
+  idade: number;
+
+  @Column()
+  @IsString({ message: 'Ocupação deve ser uma string' })
+  @IsNotEmpty({ message: 'Ocupação é obrigatória' })
+  ocupacao: string;
+
+  @Column({
+    type: 'enum',
+    enum: EscolaridadeEnum,
+    enumName: 'escolaridade_enum',
+    nullable: false,
+  })
+  @IsNotEmpty({ message: 'Escolaridade é obrigatória' })
+  @IsEnum(EscolaridadeEnum, { message: 'Escolaridade inválida' })
+  escolaridade: EscolaridadeEnum;
+
+  @Column({
+    type: 'enum',
+    enum: Parentesco,
+    enumName: 'parentesco',
+    default: Parentesco.OUTRO,
+  })
   @IsNotEmpty({ message: 'Parentesco é obrigatório' })
-  @ApiProperty({
-    example: 'filho',
-    description: 'Relação de parentesco com o cidadão',
-  })
-  parentesco: string;
+  parentesco: Parentesco;
 
-  @IsDate()
-  @Type(() => Date)
-  @IsNotEmpty({ message: 'Data de nascimento é obrigatória' })
-  @ApiProperty({
-    example: '2010-05-20',
-    description: 'Data de nascimento do membro familiar',
-  })
-  data_nascimento: Date;
-
-  @IsNumber({}, { message: 'Renda deve ser um número' })
+  @Column('decimal', { precision: 10, scale: 2, nullable: true })
   @IsOptional()
-  @ApiProperty({
-    example: 0,
-    description: 'Renda mensal do membro familiar',
-    required: false,
-  })
-  renda?: number;
+  @IsNumber({}, { message: 'Renda deve ser um número' })
+  @Min(0, { message: 'Renda não pode ser negativa' })
+  renda: number;
+
+  @Column({ nullable: true })
+  @IsOptional()
+  observacoes: string;
 }

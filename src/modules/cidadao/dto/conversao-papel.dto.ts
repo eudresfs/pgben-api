@@ -1,8 +1,8 @@
 import { IsNotEmpty, IsString, Length, Validate, IsUUID, IsOptional, IsEnum, ValidateNested, IsNumber, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 import { CPFValidator } from '../validators/cpf-validator';
-import { Parentesco } from '../entities/composicao-familiar.entity';
-import { EscolaridadeEnum } from '../entities/dados-sociais.entity';
+import { Parentesco } from '../enums/parentesco.enum';
+import { EscolaridadeEnum } from '../enums/escolaridade.enum';
 import { Sexo } from '../entities/cidadao.entity'; 
 
 /**

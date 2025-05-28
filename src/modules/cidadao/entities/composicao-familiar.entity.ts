@@ -12,21 +12,9 @@ import {
 } from 'typeorm';
 import { IsNotEmpty, IsOptional, IsNumber, Min, IsEnum, Length, Validate } from 'class-validator';
 import { Cidadao } from './cidadao.entity';
-import { EscolaridadeEnum } from './dados-sociais.entity';
+import { EscolaridadeEnum } from '../enums/escolaridade.enum';
 import { CPFValidator } from '../validators/cpf-validator';
-
-export enum Parentesco {
-  CONJUGE = 'conjuge',
-  FILHO = 'filho',
-  PAI = 'pai',
-  MAE = 'mae',
-  IRMAO = 'irmao',
-  AVO = 'avo',
-  NETO = 'neto',
-  TIO = 'tio',
-  SOBRINHO = 'sobrinho',
-  OUTRO = 'outro',
-}
+import { Parentesco } from '../enums/parentesco.enum';
 
 @Entity('composicao_familiar')
 @Index(['cidadao_id', 'nome'], { unique: true })

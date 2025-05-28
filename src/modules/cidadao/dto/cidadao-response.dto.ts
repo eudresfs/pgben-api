@@ -2,7 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Expose, Transform, Type } from 'class-transformer';
 import { Sexo } from '../entities/cidadao.entity';
 import { PapelCidadaoResponseDto } from './papel-cidadao-response.dto';
-import { Parentesco } from '../entities/composicao-familiar.entity';
+import { Parentesco } from '../enums/parentesco.enum';
 
 export class ComposicaoFamiliarResponseDto {
   @ApiProperty({
@@ -75,7 +75,7 @@ export class ComposicaoFamiliarResponseDto {
     }
     return dateValue;
   })
-  createdAt: string;
+  created_at: string;
 
   @ApiProperty({
     example: '2023-01-01T00:00:00.000Z',
@@ -89,9 +89,7 @@ export class ComposicaoFamiliarResponseDto {
     }
     return dateValue;
   })
-  updatedAt: string;
-
-
+  updated_at: string;
 }
 
 export class EnderecoResponseDto {
@@ -170,7 +168,7 @@ export class EnderecoResponseDto {
     }
     return dateValue;
   })
-  createdAt: string;
+  created_at: string;
 
   @ApiProperty({
     example: '2023-01-01T00:00:00.000Z',
@@ -184,7 +182,7 @@ export class EnderecoResponseDto {
     }
     return dateValue;
   })
-  updatedAt: string;
+  updated_at: string;
 
 
 }
@@ -223,7 +221,7 @@ export class CidadaoResponseDto {
     description: 'Órgão emissor do RG',
   })
   @Expose()
-  orgaoEmissor: string;
+  orgao_emissor: string;
 
   @ApiProperty({
     example: '1990-01-01',
@@ -237,7 +235,7 @@ export class CidadaoResponseDto {
     }
     return dateValue;
   })
-  dataNascimento: string;
+  data_nascimento: string;
 
   @ApiProperty({
     enum: Sexo,
@@ -254,7 +252,7 @@ export class CidadaoResponseDto {
   })
   @Expose()
   @Transform(({ value, obj }) => value || obj.nome_mae)
-  nomeMae: string;
+  nome_mae: string;
 
   @ApiProperty({
     example: 'João Silva',
@@ -262,7 +260,7 @@ export class CidadaoResponseDto {
   })
   @Expose()
   @Transform(({ value, obj }) => value || obj.nome_pai)
-  nomePai: string;
+  nome_pai: string;
 
   @ApiProperty({
     example: 'joao@email.com',
@@ -298,21 +296,21 @@ export class CidadaoResponseDto {
   })
   @Expose()
   @Transform(({ value, obj }) => value || obj.foto_url)
-  fotoUrl: string;
+  foto_url: string;
 
   @ApiProperty({
-    example: 'Brasileira',
-    description: 'Nacionalidade do cidadão',
+    example: 'Natal',
+    description: 'Naturalidade do cidadão',
   })
   @Expose()
-  nacionalidade: string;
+  naturalidade: string;
 
   @ApiProperty({
     example: 'Solteiro',
     description: 'Estado civil do cidadão',
   })
   @Expose()
-  estadoCivil: string;
+  estado_civil: string;
 
   @ApiProperty({
     example: 'Ensino Médio Completo',
@@ -340,7 +338,7 @@ export class CidadaoResponseDto {
     description: 'Renda mensal do cidadão',
   })
   @Expose()
-  rendaMensal: number;
+  renda_mensal: number;
 
   @ApiPropertyOptional({
     example: 'Observações importantes sobre o cidadão',
@@ -432,7 +430,7 @@ export class CidadaoResponseDto {
     }
     return dateValue;
   })
-  createdAt: string;
+  created_at: string;
 
   @ApiProperty({
     example: '2023-01-01T00:00:00.000Z',
@@ -446,9 +444,7 @@ export class CidadaoResponseDto {
     }
     return dateValue;
   })
-  updatedAt: string;
-
-
+  updated_at: string;
 
   @ApiPropertyOptional({
     example: null,

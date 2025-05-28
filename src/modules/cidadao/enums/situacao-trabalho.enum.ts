@@ -1,0 +1,10 @@
+export enum SituacaoTrabalhoEnum {
+   DESEMPREGADO = 'desempregado',
+   EMPREGADO_FORMAL = 'empregado_formal',
+   EMPREGADO_INFORMAL = 'empregado_informal',
+   AUTONOMO = 'autonomo',
+   APOSENTADO = 'aposentado',
+   PENSIONISTA = 'pensionista',
+   BENEFICIARIO_BPC = 'beneficiario_bpc',
+   OUTRO = 'outro',
+ }

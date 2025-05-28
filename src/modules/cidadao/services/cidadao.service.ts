@@ -91,12 +91,13 @@ export class CidadaoService {
     const skip = (page - 1) * limit;
 
     try {
-      // Buscar cidadãos
+      // Buscar cidadãos sem relacionamentos para melhor performance
       const [cidadaos, total] = await this.cidadaoRepository.findAll({
         where,
         skip,
         take: limit,
         order: { nome: 'ASC' },
+        includeRelations: false, // Não carregar relacionamentos na listagem
       });
 
       // Calcular totais para paginação
@@ -613,11 +614,11 @@ export class CidadaoService {
   }
 
   /**
-   * Adiciona membro à composição familiar
+   * Adiciona um membro à composição familiar do cidadão
    * @param cidadaoId ID do cidadão
    * @param createComposicaoFamiliarDto Dados do membro familiar
+   * @param userId ID do usuário que está fazendo a operação
    * @returns Cidadão atualizado
-   * @throws NotFoundException se o cidadão não for encontrado
    */
   async addComposicaoFamiliar(
     cidadaoId: string,
@@ -632,25 +633,11 @@ export class CidadaoService {
         throw new NotFoundException('Cidadão não encontrado');
       }
 
-      // Atualizar a composição familiar
-      const composicaoAtual = Array.isArray(cidadao.composicao_familiar)
-        ? cidadao.composicao_familiar
-        : [];
-
-      const novaComposicao = [
-        ...composicaoAtual,
-        {
-          ...createComposicaoFamiliarDto,
-          id: Date.now().toString(), // ID temporário
-          criadoEm: new Date(),
-          criadoPor: userId,
-        },
-      ];
-
-      // Atualizar o cidadão com a nova composição familiar
-      const cidadaoAtualizado = await this.cidadaoRepository.update(cidadaoId, {
-        composicao_familiar: novaComposicao,
-      });
+      // Adicionar membro à composição familiar usando o repositório
+      const cidadaoAtualizado = await this.cidadaoRepository.addComposicaoFamiliar(
+        cidadaoId,
+        createComposicaoFamiliarDto,
+      );
 
       // Invalidar cache
       await this.invalidateCache(cidadaoAtualizado);
@@ -674,6 +661,10 @@ export class CidadaoService {
       return cidadaoDto;
     } catch (error) {
       if (error instanceof NotFoundException) throw error;
+      this.logger.error(
+        `Erro ao adicionar membro à composição familiar: ${error.message}`,
+        error.stack,
+      );
       throw new InternalServerErrorException(
         'Erro ao adicionar membro à composição familiar',
       );

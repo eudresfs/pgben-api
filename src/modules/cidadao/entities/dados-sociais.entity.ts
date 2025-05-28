@@ -11,36 +11,8 @@ import {
 } from 'typeorm';
 import { IsNotEmpty, IsOptional, IsNumber, Min, IsEnum, ValidateIf, IsString, IsBoolean } from 'class-validator';
 import { Cidadao } from './cidadao.entity';
-
-export enum EscolaridadeEnum {
-  ANALFABETO = 'analfabeto',
-  FUNDAMENTAL_INCOMPLETO = 'fundamental_incompleto',
-  FUNDAMENTAL_COMPLETO = 'fundamental_completo',
-  MEDIO_INCOMPLETO = 'medio_incompleto',
-  MEDIO_COMPLETO = 'medio_completo',
-  SUPERIOR_INCOMPLETO = 'superior_incompleto',
-  SUPERIOR_COMPLETO = 'superior_completo',
-  POS_GRADUACAO = 'pos_graduacao',
-}
-
-export enum SituacaoTrabalhoEnum {
-  DESEMPREGADO = 'desempregado',
-  EMPREGADO_FORMAL = 'empregado_formal',
-  EMPREGADO_INFORMAL = 'empregado_informal',
-  AUTONOMO = 'autonomo',
-  APOSENTADO = 'aposentado',
-  PENSIONISTA = 'pensionista',
-  BENEFICIARIO_BPC = 'beneficiario_bpc',
-  OUTRO = 'outro',
-}
-
-export enum TipoTrabalhoEnum {
-  FORMAL = 'formal',
-  INFORMAL = 'informal',
-  AUTONOMO = 'autonomo',
-  EMPREGADOR = 'empregador',
-  NAO_TRABALHA = 'nao_trabalha',
-}
+import { EscolaridadeEnum } from '../enums/escolaridade.enum';
+import { SituacaoTrabalhoEnum } from '../enums/situacao-trabalho.enum';
 
 @Entity('dados_sociais')
 @Index(['cidadao_id'], { unique: true })

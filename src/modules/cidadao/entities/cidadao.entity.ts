@@ -24,12 +24,8 @@ import { NISValidator } from '../validators/nis-validator';
 import { TelefoneValidator } from '../validators/telefone-validator';
 import { PapelCidadao } from './papel-cidadao.entity';
 import { ComposicaoFamiliar } from './composicao-familiar.entity';
+import { Sexo } from '../enums/sexo.enum'
 
-export enum Sexo {
-  MASCULINO = 'MASCULINO',
-  FEMININO = 'FEMININO',
-  OUTRO = 'OUTRO',
-}
 
 @Entity('cidadao')
 @Index(['cpf'], { unique: true })
@@ -85,14 +81,10 @@ export class Cidadao {
   @IsNotEmpty({ message: 'Data de nascimento é obrigatória' })
   data_nascimento: Date;
 
-  @OneToMany(() => PapelCidadao, (papelCidadao) => papelCidadao.cidadao, {
-    eager: true,
-  })
+  @OneToMany(() => PapelCidadao, (papelCidadao) => papelCidadao.cidadao)
   papeis: PapelCidadao[];
 
-  @OneToMany(() => ComposicaoFamiliar, (composicaoFamiliar) => composicaoFamiliar.cidadao, {
-    eager: true,
-  })
+  @OneToMany(() => ComposicaoFamiliar, (composicaoFamiliar) => composicaoFamiliar.cidadao)
   composicao_familiar: ComposicaoFamiliar[];
 
   @Column({

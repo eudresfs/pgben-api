@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Repository, DataSource } from 'typeorm';
 import { Cidadao } from '../entities/cidadao.entity';
+import { ComposicaoFamiliar } from '../entities/composicao-familiar.entity';
 import { EntityNotFoundException } from '../../../shared/exceptions';
 
 /**
@@ -26,20 +27,71 @@ export class CidadaoRepository {
     take?: number;
     where?: any;
     order?: any;
+    includeRelations?: boolean;
   }): Promise<[Cidadao[], number]> {
     const {
       skip = 0,
       take = 10,
       where = {},
       order = { created_at: 'DESC' },
+      includeRelations = false,
     } = options || {};
 
-    return this.repository.findAndCount({
-      skip,
-      take,
-      where,
-      order,
+    const queryBuilder = this.repository.createQueryBuilder('cidadao');
+
+    // Aplicar filtros de busca otimizados
+    if (where.$or) {
+      const searchConditions = where.$or.map((condition: any, index: number) => {
+        const paramKey = `search_${index}`;
+        if (condition.nome) {
+          queryBuilder.setParameter(paramKey, condition.nome.$iLike.replace(/%/g, ''));
+          return `cidadao.nome ILIKE '%' || :${paramKey} || '%'`;
+        }
+        if (condition.cpf) {
+          queryBuilder.setParameter(paramKey, condition.cpf.$iLike.replace(/%/g, ''));
+          return `cidadao.cpf ILIKE '%' || :${paramKey} || '%'`;
+        }
+        if (condition.nis) {
+          queryBuilder.setParameter(paramKey, condition.nis.$iLike.replace(/%/g, ''));
+          return `cidadao.nis ILIKE '%' || :${paramKey} || '%'`;
+        }
+        return '1=0';
+      });
+      queryBuilder.andWhere(`(${searchConditions.join(' OR ')})`);
+      delete where.$or;
+    }
+
+    // Aplicar filtros de endereço
+    if (where['endereco.bairro']) {
+      queryBuilder.andWhere("cidadao.endereco->>'bairro' ILIKE :bairro", {
+        bairro: `%${where['endereco.bairro'].$iLike.replace(/%/g, '')}%`
+      });
+      delete where['endereco.bairro'];
+    }
+
+    // Aplicar outros filtros
+    Object.keys(where).forEach(key => {
+      if (where[key] !== undefined) {
+        queryBuilder.andWhere(`cidadao.${key} = :${key}`, { [key]: where[key] });
+      }
     });
+
+    // Incluir relacionamentos apenas se necessário
+    if (includeRelations) {
+      queryBuilder
+        .leftJoinAndSelect('cidadao.papeis', 'papeis')
+        .leftJoinAndSelect('cidadao.composicao_familiar', 'composicao_familiar');
+    }
+
+    // Aplicar ordenação
+    Object.keys(order).forEach(key => {
+      queryBuilder.addOrderBy(`cidadao.${key}`, order[key]);
+    });
+
+    // Aplicar paginação
+    queryBuilder.skip(skip).take(take);
+
+    return queryBuilder.getManyAndCount();
   }
 
   /**
@@ -164,20 +216,26 @@ export class CidadaoRepository {
       throw new EntityNotFoundException('Cidadão', id);
     }
 
-    // Inicializa a composição familiar se não existir
-    if (!cidadao.composicao_familiar) {
-      cidadao.composicao_familiar = [];
-    }
-
-    // Adiciona o novo membro
-    cidadao.composicao_familiar.push(membro);
-
-    // Atualiza o cidadão
-    await this.repository.update(id, {
-      composicao_familiar: cidadao.composicao_familiar,
+    // Criar nova entrada na tabela composicao_familiar
+    const composicaoFamiliarRepository = this.dataSource.getRepository(ComposicaoFamiliar);
+    
+    const novoMembro = composicaoFamiliarRepository.create({
+      cidadao_id: id,
+      nome: membro.nome,
+      cpf: membro.cpf?.replace(/\D/g, ''),
+      nis: membro.nis?.replace(/\D/g, ''),
+      idade: membro.idade,
+      ocupacao: membro.ocupacao,
+      escolaridade: membro.escolaridade,
+      parentesco: membro.parentesco,
+      renda: membro.renda || 0,
+      observacoes: membro.observacoes,
     });
 
-    const cidadaoAtualizado = await this.findById(id);
+    await composicaoFamiliarRepository.save(novoMembro);
+
+    // Retornar cidadão atualizado com relacionamentos
+    const cidadaoAtualizado = await this.findById(id, true);
     if (!cidadaoAtualizado) {
       throw new EntityNotFoundException('Cidadão', id);
     }
