@@ -5,6 +5,7 @@ import {
   Body,
   Put,
   Param,
+  ParseUUIDPipe,
   UseGuards,
   Logger,
 } from '@nestjs/common';
@@ -43,7 +44,7 @@ export class SetorController {
    */
   @Post()
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     {
       permissionName: 'setor.criar',
       scopeType: ScopeType.GLOBAL
@@ -71,7 +72,7 @@ export class SetorController {
    */
   @Put(':id')
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     {
       permissionName: 'setor.atualizar',
       scopeType: ScopeType.GLOBAL
@@ -82,7 +83,7 @@ export class SetorController {
   @ApiResponse({ status: 400, description: 'Dados inválidos' })
   @ApiResponse({ status: 404, description: 'Setor não encontrado' })
   async update(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() updateSetorDto: UpdateSetorDto,
   ) {
     return this.setorService.update(id, updateSetorDto);
@@ -93,7 +94,7 @@ export class SetorController {
    */
   @Get(':id')
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     {
       permissionName: 'setor.listar',
       scopeType: ScopeType.GLOBAL
@@ -102,7 +103,7 @@ export class SetorController {
   @ApiOperation({ summary: 'Obter detalhes de um setor' })
   @ApiResponse({ status: 200, description: 'Setor encontrado com sucesso' })
   @ApiResponse({ status: 404, description: 'Setor não encontrado' })
-  async findOne(@Param('id') id: string) {
+  async findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.setorService.findById(id);
   }
 }

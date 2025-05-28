@@ -5,6 +5,7 @@ import {
   Body,
   Put,
   Param,
+  ParseUUIDPipe,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -42,10 +43,10 @@ export class BeneficioController {
    * Lista todos os tipos de benefícios
    */
   @Get()
-  @RequiresPermission(
-  { permissionName: '*.*' },
-  { permissionName: 'beneficio.listar',  scopeType: ScopeType.GLOBAL }
-  )
+  @RequiresPermission({ 
+    permissionName: 'beneficio.listar',  
+    scopeType: ScopeType.GLOBAL 
+  })
   @ApiOperation({ 
     summary: 'Listar tipos de benefícios',
     description: 'Retorna uma lista paginada de todos os tipos de benefícios cadastrados no sistema.'
@@ -102,7 +103,7 @@ export class BeneficioController {
    */
   @Get(':id')
   @RequiresPermission(
-  { permissionName: '*.*' },
+  
   { permissionName: 'beneficio.visualizar', scopeType: ScopeType.GLOBAL
   })
   @ApiOperation({ 
@@ -127,7 +128,7 @@ export class BeneficioController {
       }
     }
   })
-  async findOne(@Param('id') id: string) {
+  async findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.beneficioService.findById(id);
   }
 
@@ -136,7 +137,7 @@ export class BeneficioController {
    */
   @Post()
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     {
       permissionName: 'beneficio.criar',
       scopeType: ScopeType.GLOBAL
@@ -190,7 +191,7 @@ export class BeneficioController {
    */
   @Put(':id')
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     {
       permissionName: 'beneficio.editar',
       scopeType: ScopeType.GLOBAL
@@ -245,7 +246,7 @@ export class BeneficioController {
     }
   })
   async update(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() updateTipoBeneficioDto: UpdateTipoBeneficioDto,
   ) {
     return this.beneficioService.update(id, updateTipoBeneficioDto);
@@ -256,7 +257,7 @@ export class BeneficioController {
    */
   @Get(':id/requisitos')
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     {
       permissionName: 'beneficio.requisito.listar',
       scopeType: ScopeType.GLOBAL
@@ -268,7 +269,7 @@ export class BeneficioController {
     description: 'Lista de requisitos retornada com sucesso',
   })
   @ApiResponse({ status: 404, description: 'Benefício não encontrado' })
-  async findRequisitos(@Param('id') id: string) {
+  async findRequisitos(@Param('id', ParseUUIDPipe) id: string) {
     return this.beneficioService.findRequisitosByBeneficioId(id);
   }
 
@@ -277,7 +278,7 @@ export class BeneficioController {
    */
   @Post(':id/requisitos')
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     {
       permissionName: 'beneficio.requisito.adicionar',
       scopeType: ScopeType.GLOBAL
@@ -288,7 +289,7 @@ export class BeneficioController {
   @ApiResponse({ status: 400, description: 'Dados inválidos' })
   @ApiResponse({ status: 404, description: 'Benefício não encontrado' })
   async addRequisito(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() createRequisitoDocumentoDto: CreateRequisitoDocumentoDto,
   ) {
     return this.beneficioService.addRequisito(id, createRequisitoDocumentoDto);
@@ -299,7 +300,7 @@ export class BeneficioController {
    */
   @Put(':id/fluxo')
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     {
       permissionName: 'beneficio.fluxo.configurar',
       scopeType: ScopeType.GLOBAL
@@ -310,7 +311,7 @@ export class BeneficioController {
   @ApiResponse({ status: 400, description: 'Dados inválidos' })
   @ApiResponse({ status: 404, description: 'Benefício não encontrado' })
   async configurarFluxo(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() configurarFluxoDto: ConfigurarFluxoDto,
   ) {
     return this.beneficioService.configurarFluxo(id, configurarFluxoDto);

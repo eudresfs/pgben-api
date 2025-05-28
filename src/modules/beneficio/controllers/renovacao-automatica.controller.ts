@@ -50,7 +50,7 @@ export class RenovacaoAutomaticaController {
    */
   @Post('configuracao')
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     { permissionName: 'beneficio.configuracao.criar' }
   )
   @ApiOperation({
@@ -75,7 +75,7 @@ export class RenovacaoAutomaticaController {
    */
   @Get('configuracao')
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     { permissionName: 'beneficio.configuracao.listar' }
   )
   @ApiOperation({
@@ -98,7 +98,7 @@ export class RenovacaoAutomaticaController {
    */
   @Get('configuracao/:id')
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     { permissionName: 'beneficio.configuracao.visualizar' }
   )
   @ApiOperation({
@@ -121,7 +121,7 @@ export class RenovacaoAutomaticaController {
    */
   @Get('configuracao/tipo-beneficio/:tipoBeneficioId')
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     { permissionName: 'beneficio.configuracao.visualizar' }
   )
   @ApiOperation({
@@ -147,7 +147,7 @@ export class RenovacaoAutomaticaController {
    */
   @Patch('configuracao/:id')
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     { permissionName: 'beneficio.configuracao.atualizar' }
   )
   @ApiOperation({
@@ -174,7 +174,7 @@ export class RenovacaoAutomaticaController {
   @Delete('configuracao/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     { permissionName: 'beneficio.configuracao.remover' }
   )
   @ApiOperation({
@@ -197,7 +197,7 @@ export class RenovacaoAutomaticaController {
    */
   @Patch('configuracao/:id/ativar')
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     { permissionName: 'beneficio.configuracao.atualizar' }
   )
   @ApiOperation({
@@ -223,7 +223,7 @@ export class RenovacaoAutomaticaController {
    */
   @Get('solicitacao/:solicitacaoId/verificar')
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     { 
       permissionName: 'solicitacao.visualizar',
       scopeType: ScopeType.UNIT,
@@ -254,7 +254,7 @@ export class RenovacaoAutomaticaController {
    */
   @Patch('solicitacao/:solicitacaoId')
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     { 
       permissionName: 'solicitacao.configurar-renovacao',
       scopeType: ScopeType.UNIT,
@@ -289,7 +289,7 @@ export class RenovacaoAutomaticaController {
    */
   @Post('verificar-pendentes')
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     { permissionName: 'beneficio.renovacao.verificar' }
   )
   @ApiOperation({

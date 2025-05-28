@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Solicitacao, StatusSolicitacao } from '../entities/solicitacao.entity';
+import { EntityNotFoundException } from '../../../shared/exceptions';
 import { ConfigService } from '@nestjs/config';
 
 /**
@@ -53,7 +54,7 @@ export class PrazoSolicitacaoService {
     });
 
     if (!solicitacao) {
-      throw new Error('Solicitação não encontrada');
+      throw new EntityNotFoundException('Solicitação', solicitacaoId);
     }
 
     // Calcular prazo com base na configuração
@@ -87,7 +88,7 @@ export class PrazoSolicitacaoService {
     });
 
     if (!solicitacao) {
-      throw new Error('Solicitação não encontrada');
+      throw new EntityNotFoundException('Solicitação', solicitacaoId);
     }
 
     // Calcular prazo com base na configuração
@@ -121,7 +122,7 @@ export class PrazoSolicitacaoService {
     });
 
     if (!solicitacao) {
-      throw new Error('Solicitação não encontrada');
+      throw new EntityNotFoundException('Solicitação', solicitacaoId);
     }
 
     // Calcular prazo com base na configuração
@@ -222,7 +223,7 @@ export class PrazoSolicitacaoService {
     });
 
     if (!solicitacao) {
-      throw new Error('Solicitação não encontrada');
+      throw new EntityNotFoundException('Solicitação', solicitacaoId);
     }
 
     const agora = new Date();

@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Repository, DataSource } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Pendencia, StatusPendencia } from '../entities/pendencia.entity';
+import { EntityNotFoundException, InvalidOperationException } from '../../../shared/exceptions';
 
 /**
  * Interface para filtros de busca de pendências
@@ -140,11 +141,16 @@ export class PendenciaRepository {
     });
 
     if (!pendencia) {
-      throw new Error('Pendência não encontrada');
+      throw new EntityNotFoundException('Pendência', pendenciaId);
     }
 
     if (pendencia.status !== StatusPendencia.ABERTA) {
-      throw new Error('Apenas pendências abertas podem ser resolvidas');
+      throw new InvalidOperationException(
+        'resolver pendência',
+        'Apenas pendências abertas podem ser resolvidas',
+        pendencia.status,
+        StatusPendencia.ABERTA
+      );
     }
 
     pendencia.status = StatusPendencia.RESOLVIDA;
@@ -172,11 +178,16 @@ export class PendenciaRepository {
     });
 
     if (!pendencia) {
-      throw new Error('Pendência não encontrada');
+      throw new EntityNotFoundException('Pendência', pendenciaId);
     }
 
     if (pendencia.status !== StatusPendencia.ABERTA) {
-      throw new Error('Apenas pendências abertas podem ser canceladas');
+      throw new InvalidOperationException(
+        'cancelar pendência',
+        'Apenas pendências abertas podem ser canceladas',
+        pendencia.status,
+        StatusPendencia.ABERTA
+      );
     }
 
     pendencia.status = StatusPendencia.CANCELADA;

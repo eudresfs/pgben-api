@@ -4,6 +4,7 @@ import {
   Post,
   Body,
   Param,
+  ParseUUIDPipe,
   Put,
   Query,
   UseGuards,
@@ -138,7 +139,7 @@ export class RecursoController {
     description: 'Recurso encontrado com sucesso',
   })
   @ApiResponse({ status: 404, description: 'Recurso não encontrado' })
-  async findOne(@Param('id') id: string, @Req() req: Request) {
+  async findOne(@Param('id', ParseUUIDPipe) id: string, @Req() req: Request) {
     const user = req.user;
     const recurso = await this.recursoService.findById(id);
 
@@ -220,7 +221,7 @@ export class RecursoController {
     description: 'Recurso não pode ser analisado',
   })
   @ApiResponse({ status: 404, description: 'Recurso não encontrado' })
-  async iniciarAnalise(@Param('id') id: string, @Req() req: Request) {
+  async iniciarAnalise(@Param('id', ParseUUIDPipe) id: string, @Req() req: Request) {
     const user = req.user;
     return this.recursoService.iniciarAnalise(id, user);
   }
@@ -243,7 +244,7 @@ export class RecursoController {
   @ApiResponse({ status: 404, description: 'Recurso não encontrado' })
   @ApiBody({ type: AnalisarRecursoDto })
   async analisarRecurso(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() analisarRecursoDto: AnalisarRecursoDto,
     @Req() req: Request,
   ) {
@@ -267,7 +268,7 @@ export class RecursoController {
     description: 'Recurso não pode ser cancelado',
   })
   @ApiResponse({ status: 404, description: 'Recurso não encontrado' })
-  async cancelarRecurso(@Param('id') id: string, @Req() req: Request) {
+  async cancelarRecurso(@Param('id', ParseUUIDPipe) id: string, @Req() req: Request) {
     const user = req.user;
     return this.recursoService.cancelarRecurso(id, user);
   }
@@ -289,7 +290,7 @@ export class RecursoController {
   @ApiOperation({ summary: 'Listar histórico de um recurso' })
   @ApiResponse({ status: 200, description: 'Histórico retornado com sucesso' })
   @ApiResponse({ status: 404, description: 'Recurso não encontrado' })
-  async getHistorico(@Param('id') id: string, @Req() req: Request) {
+  async getHistorico(@Param('id', ParseUUIDPipe) id: string, @Req() req: Request) {
     const user = req.user;
     const recurso = await this.recursoService.findById(id);
 

@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Repository, DataSource } from 'typeorm';
 import { Cidadao } from '../entities/cidadao.entity';
+import { EntityNotFoundException } from '../../../shared/exceptions';
 
 /**
  * Repositório de cidadãos
@@ -160,7 +161,7 @@ export class CidadaoRepository {
     const cidadao = await this.findById(id);
 
     if (!cidadao) {
-      throw new Error('Cidadão não encontrado');
+      throw new EntityNotFoundException('Cidadão', id);
     }
 
     // Inicializa a composição familiar se não existir
@@ -178,7 +179,7 @@ export class CidadaoRepository {
 
     const cidadaoAtualizado = await this.findById(id);
     if (!cidadaoAtualizado) {
-      throw new Error('Cidadão não encontrado após atualização');
+      throw new EntityNotFoundException('Cidadão', id);
     }
     return cidadaoAtualizado;
   }

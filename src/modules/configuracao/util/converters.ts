@@ -24,7 +24,7 @@ export class ParametroConverter {
         case ParametroTipoEnum.NUMBER:
           const numero = Number(valor);
           if (isNaN(numero)) {
-            throw new Error('Valor não é um número válido');
+            throw new ParametroTipoInvalidoException(chave, valor, tipo);
           }
           return numero;
         
@@ -33,7 +33,7 @@ export class ParametroConverter {
           if (valor.toLowerCase() === 'false') return false;
           if (valor === '1') return true;
           if (valor === '0') return false;
-          throw new Error('Valor não é um booleano válido');
+          throw new ParametroTipoInvalidoException(chave, valor, tipo);
         
         case ParametroTipoEnum.JSON:
           return JSON.parse(valor);
@@ -41,12 +41,12 @@ export class ParametroConverter {
         case ParametroTipoEnum.DATE:
           const data = new Date(valor);
           if (isNaN(data.getTime())) {
-            throw new Error('Valor não é uma data válida');
+            throw new ParametroTipoInvalidoException(chave, valor, tipo);
           }
           return data;
         
         default:
-          throw new Error(`Tipo de parâmetro não suportado: ${tipo}`);
+          throw new ParametroTipoInvalidoException(chave, valor, tipo);
       }
     } catch (error) {
       throw new ParametroTipoInvalidoException(chave, valor, tipo);

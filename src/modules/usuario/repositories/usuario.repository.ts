@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { Repository, DataSource, DeepPartial } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Usuario } from '../entities/usuario.entity';
+import { EntityNotFoundException } from '../../../shared/exceptions';
 
 /**
  * Repositório de usuários
@@ -128,7 +129,7 @@ export class UsuarioRepository {
     await this.repository.update(id, dadosAtualizacao);
     const usuario = await this.findById(id);
     if (!usuario) {
-      throw new Error(`Usuário com ID ${id} não encontrado`);
+      throw new EntityNotFoundException('Usuário', id);
     }
     return usuario;
   }
@@ -148,7 +149,7 @@ export class UsuarioRepository {
     await this.repository.update(id, dadosAtualizacao);
     const usuario = await this.findById(id);
     if (!usuario) {
-      throw new Error(`Usuário com ID ${id} não encontrado`);
+      throw new EntityNotFoundException('Usuário', id);
     }
     return usuario;
   }

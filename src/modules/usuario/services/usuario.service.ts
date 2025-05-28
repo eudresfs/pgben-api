@@ -44,7 +44,7 @@ export class UsuarioService {
     search?: string;
     role?: string;
     status?: string;
-    unidadeId?: string;
+    unidade_id?: string;
   }) {
     const {
       page = 1,
@@ -52,7 +52,7 @@ export class UsuarioService {
       search,
       role,
       status,
-      unidadeId,
+      unidade_id,
     } = options || {};
 
     // Construir filtros
@@ -70,8 +70,8 @@ export class UsuarioService {
       where.status = status;
     }
 
-    if (unidadeId) {
-      where.unidadeId = unidadeId;
+    if (unidade_id) {
+      where.unidade_id = unidade_id;
     }
 
     // Calcular skip para paginação
@@ -164,25 +164,25 @@ export class UsuarioService {
         }
 
         // Verificar se a unidade existe
-        if (createUsuarioDto.unidadeId) {
+        if (createUsuarioDto.unidade_id) {
           const unidade = await unidadeRepo.findOne({
-            where: { id: createUsuarioDto.unidadeId },
+            where: { id: createUsuarioDto.unidade_id },
           });
           if (!unidade) {
-            this.logger.warn(`Unidade não encontrada: ${createUsuarioDto.unidadeId}`);
+            this.logger.warn(`Unidade não encontrada: ${createUsuarioDto.unidade_id}`);
             throw new BadRequestException('Unidade não encontrada');
           }
 
           // Verificar se o setor existe e pertence à unidade
-          if (createUsuarioDto.setorId) {
+          if (createUsuarioDto.setor_id) {
             const setor = await setorRepo.findOne({
               where: { 
-                id: createUsuarioDto.setorId,
-                unidadeId: createUsuarioDto.unidadeId 
+                id: createUsuarioDto.setor_id,
+                unidade_id: createUsuarioDto.unidade_id 
               },
             });
             if (!setor) {
-              this.logger.warn(`Setor não encontrado para a unidade: ${createUsuarioDto.setorId}`);
+              this.logger.warn(`Setor não encontrado para a unidade: ${createUsuarioDto.setor_id}`);
               throw new BadRequestException('Setor não encontrado para a unidade');
             }
           }
@@ -203,8 +203,8 @@ export class UsuarioService {
           telefone: createUsuarioDto.telefone,
           matricula: createUsuarioDto.matricula,
           role_id: createUsuarioDto.role_id,
-          unidadeId: createUsuarioDto.unidadeId,
-          setorId: createUsuarioDto.setorId,
+          unidade_id: createUsuarioDto.unidade_id,
+          setor_id: createUsuarioDto.setor_id,
           primeiro_acesso: true,
           ultimo_login: null,
           tentativas_login: 0,

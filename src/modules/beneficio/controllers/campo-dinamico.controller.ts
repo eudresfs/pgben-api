@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   UseGuards,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -45,7 +46,7 @@ export class CampoDinamicoController {
     description: 'Lista de campos dinâmicos retornada com sucesso',
   })
   @ApiResponse({ status: 404, description: 'Tipo de benefício não encontrado' })
-  async findAll(@Param('tipoBeneficioId') tipoBeneficioId: string) {
+  async findAll(@Param('tipoBeneficioId', ParseUUIDPipe) tipoBeneficioId: string) {
     return this.campoDinamicoService.findByTipoBeneficio(tipoBeneficioId);
   }
 
@@ -63,7 +64,7 @@ export class CampoDinamicoController {
   @ApiResponse({ status: 404, description: 'Tipo de benefício não encontrado' })
   @ApiResponse({ status: 409, description: 'Nome já em uso' })
   async create(
-    @Param('tipoBeneficioId') tipoBeneficioId: string,
+    @Param('tipoBeneficioId', ParseUUIDPipe) tipoBeneficioId: string,
     @Body() createCampoDinamicoDto: CreateCampoDinamicoDto,
   ) {
     return this.campoDinamicoService.create(
@@ -114,7 +115,7 @@ export class CampoDinamicoController {
   @ApiOperation({ summary: 'Obter schema ativo de um benefício' })
   @ApiResponse({ status: 200, description: 'Schema retornado com sucesso' })
   @ApiResponse({ status: 404, description: 'Tipo de benefício não encontrado' })
-  async getSchemaAtivo(@Param('tipoBeneficioId') tipoBeneficioId: string) {
+  async getSchemaAtivo(@Param('tipoBeneficioId', ParseUUIDPipe) tipoBeneficioId: string) {
     return this.campoDinamicoService.getSchemaAtivo(tipoBeneficioId);
   }
 
@@ -126,7 +127,7 @@ export class CampoDinamicoController {
   @ApiOperation({ summary: 'Obter histórico de versões do schema' })
   @ApiResponse({ status: 200, description: 'Histórico retornado com sucesso' })
   @ApiResponse({ status: 404, description: 'Tipo de benefício não encontrado' })
-  async getHistoricoVersoes(@Param('tipoBeneficioId') tipoBeneficioId: string) {
+  async getHistoricoVersoes(@Param('tipoBeneficioId', ParseUUIDPipe) tipoBeneficioId: string) {
     return this.campoDinamicoService.getHistoricoVersoes(tipoBeneficioId);
   }
 }

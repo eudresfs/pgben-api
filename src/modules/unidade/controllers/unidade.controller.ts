@@ -6,6 +6,7 @@ import {
   Put,
   Patch,
   Param,
+  ParseUUIDPipe,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -42,7 +43,7 @@ export class UnidadeController {
    */
   @Get()
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     {
       permissionName: 'unidade.listar',
       scopeType: ScopeType.GLOBAL
@@ -104,7 +105,7 @@ export class UnidadeController {
    */
   @Get(':id')
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     {
       permissionName: 'unidade.visualizar',
       scopeType: ScopeType.GLOBAL
@@ -113,7 +114,7 @@ export class UnidadeController {
   @ApiOperation({ summary: 'Obter detalhes de uma unidade' })
   @ApiResponse({ status: 200, description: 'Unidade encontrada com sucesso' })
   @ApiResponse({ status: 404, description: 'Unidade não encontrada' })
-  async findOne(@Param('id') id: string) {
+  async findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.unidadeService.findById(id);
   }
 
@@ -122,7 +123,7 @@ export class UnidadeController {
    */
   @Post()
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     {
       permissionName: 'unidade.criar',
       scopeType: ScopeType.GLOBAL
@@ -141,7 +142,7 @@ export class UnidadeController {
    */
   @Put(':id')
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     {
       permissionName: 'unidade.editar',
       scopeType: ScopeType.GLOBAL
@@ -153,7 +154,7 @@ export class UnidadeController {
   @ApiResponse({ status: 404, description: 'Unidade não encontrada' })
   @ApiResponse({ status: 409, description: 'Código já em uso' })
   async update(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() updateUnidadeDto: UpdateUnidadeDto,
   ) {
     return this.unidadeService.update(id, updateUnidadeDto);
@@ -164,7 +165,7 @@ export class UnidadeController {
    */
   @Patch(':id/status')
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     {
       permissionName: 'unidade.status.alterar',
       scopeType: ScopeType.GLOBAL
@@ -174,7 +175,7 @@ export class UnidadeController {
   @ApiResponse({ status: 200, description: 'Status atualizado com sucesso' })
   @ApiResponse({ status: 404, description: 'Unidade não encontrada' })
   async updateStatus(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() updateStatusUnidadeDto: UpdateStatusUnidadeDto,
   ) {
     return this.unidadeService.updateStatus(id, updateStatusUnidadeDto);
@@ -185,7 +186,7 @@ export class UnidadeController {
    */
   @Get(':id/setor')
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     {
       permissionName: 'unidade.setor.listar',
       scopeType: ScopeType.GLOBAL
@@ -197,7 +198,7 @@ export class UnidadeController {
     description: 'Lista de setores retornada com sucesso',
   })
   @ApiResponse({ status: 404, description: 'Unidade não encontrada' })
-  async findSetores(@Param('id') id: string) {
+  async findSetores(@Param('id', ParseUUIDPipe) id: string) {
     return this.unidadeService.findSetoresByUnidadeId(id);
   }
 }

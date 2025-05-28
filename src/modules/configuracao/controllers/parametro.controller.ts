@@ -26,7 +26,7 @@ export class ParametroController {
    */
   @Get()
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     {
       permissionName: 'configuracao.parametro.listar',
       scopeType: ScopeType.GLOBAL
@@ -56,7 +56,7 @@ export class ParametroController {
    */
   @Get(':chave')
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     {
       permissionName: 'configuracao.parametro.visualizar',
       scopeType: ScopeType.GLOBAL
@@ -90,7 +90,7 @@ export class ParametroController {
    */
   @Post()
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     {
       permissionName: 'configuracao.parametro.criar',
       scopeType: ScopeType.GLOBAL
@@ -120,7 +120,7 @@ export class ParametroController {
    */
   @Put(':chave')
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     {
       permissionName: 'configuracao.parametro.editar',
       scopeType: ScopeType.GLOBAL
@@ -158,7 +158,7 @@ export class ParametroController {
    */
   @Delete(':chave')
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     {
       permissionName: 'configuracao.parametro.remover',
       scopeType: ScopeType.GLOBAL
@@ -193,7 +193,7 @@ export class ParametroController {
    */
   @Post('cache/limpar')
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     {
       permissionName: 'configuracao.parametro.cache.limpar',
       scopeType: ScopeType.GLOBAL

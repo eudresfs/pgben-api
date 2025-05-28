@@ -27,7 +27,7 @@ export class CidadaoAuditInterceptor implements NestInterceptor {
     const request = context.switchToHttp().getRequest<Request>();
     const { method, url, params, query, body, user } = request;
     const userId = user ? user['id'] : 'anônimo';
-    const userRole = user ? user['role'] : 'não autenticado';
+    const userRole = user ? user['role_id'] : 'não autenticado';
 
     // Identificar operação sensível
     const isSensitiveOperation = this.isSensitiveOperation(method, url);

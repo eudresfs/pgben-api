@@ -22,7 +22,7 @@ Com base na análise técnica realizada, apresento um plano estruturado para imp
  */
 @Get('me')
 @RequiresPermission(
-  { permissionName: '*.*' },
+  
   {
     permissionName: 'usuario.perfil.visualizar',
     scopeType: ScopeType.SELF
@@ -54,7 +54,7 @@ async getProfile(@Request() req) {
  */
 @Delete(':id')
 @RequiresPermission(
-  { permissionName: '*.*' },
+  
   {
     permissionName: 'usuario.remover',
     scopeType: ScopeType.UNIT,

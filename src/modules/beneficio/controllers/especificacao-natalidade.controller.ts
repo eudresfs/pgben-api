@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   UseGuards,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -54,7 +55,7 @@ export class EspecificacaoNatalidadeController {
     status: 404,
     description: 'Tipo de benefício ou especificação não encontrada',
   })
-  async findOne(@Param('tipoBeneficioId') tipoBeneficioId: string) {
+  async findOne(@Param('tipoBeneficioId', ParseUUIDPipe) tipoBeneficioId: string) {
     return this.especificacaoService.findByTipoBeneficio(tipoBeneficioId);
   }
 
@@ -80,7 +81,7 @@ export class EspecificacaoNatalidadeController {
     description: 'Já existe uma especificação para este tipo de benefício',
   })
   async create(
-    @Param('tipoBeneficioId') tipoBeneficioId: string,
+    @Param('tipoBeneficioId', ParseUUIDPipe) tipoBeneficioId: string,
     @Body() createDto: CreateEspecificacaoNatalidadeDto,
   ) {
     // Garantir que o tipoBeneficioId do path seja o mesmo do dto
@@ -110,7 +111,7 @@ export class EspecificacaoNatalidadeController {
     description: 'Tipo de benefício ou especificação não encontrada',
   })
   async update(
-    @Param('tipoBeneficioId') tipoBeneficioId: string,
+    @Param('tipoBeneficioId', ParseUUIDPipe) tipoBeneficioId: string,
     @Body() updateDto: UpdateEspecificacaoNatalidadeDto,
   ) {
     return this.especificacaoService.update(tipoBeneficioId, updateDto);
@@ -133,7 +134,7 @@ export class EspecificacaoNatalidadeController {
     status: 404,
     description: 'Tipo de benefício ou especificação não encontrada',
   })
-  async remove(@Param('tipoBeneficioId') tipoBeneficioId: string) {
+  async remove(@Param('tipoBeneficioId', ParseUUIDPipe) tipoBeneficioId: string) {
     return this.especificacaoService.remove(tipoBeneficioId);
   }
 }

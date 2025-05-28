@@ -147,6 +147,7 @@ export class CreateCidadaoDto {
       'Para beneficiários com renda superior a R$ 1.500,00, a composição familiar é obrigatória',
   })
   composicao_familiar?: any[];
+
   @IsString({ message: 'Nome deve ser uma string' })
   @IsNotEmpty({ message: 'Nome é obrigatório' })
   @ApiProperty({
@@ -171,6 +172,21 @@ export class CreateCidadaoDto {
     description: 'RG do cidadão',
   })
   rg: string;
+
+  @IsNotEmpty({ message: 'Prontuario SUAS é obrigatório' })
+    @ApiProperty({
+    example: 'SUAS1234567',
+    description: 'Nº do Prontuário SUAS do cidadão',
+  })
+  prontuario_suas: string;
+
+  @IsString({ message: 'Naturalidade deve ser uma string' })
+  @IsNotEmpty({ message: 'Naturalidade é obrigatória' })
+  @ApiProperty({
+    example: 'Natal',
+    description: 'Cidade de Naturalidade',
+  })
+  naturalidade: string;
 
   @IsDate()
   @Type(() => Date)
@@ -209,10 +225,18 @@ export class CreateCidadaoDto {
   @ApiPropertyOptional({
     example: 'Maria Santos',
     description:
-      'Nome social do cidadão (usado para pessoas trans e travestis)',
+      'Nome social do cidadão (usado para pessoas trans)',
     required: false,
   })
   nome_social?: string;
+
+  @IsString({ message: 'Nome da mãe deve ser uma string' })
+  @IsNotEmpty({ message: 'Nome da mãe é obrigatório' })
+  @ApiProperty({
+    example: 'Maria da Silva',
+    description: 'Nome completo da mãe do cidadão',
+  })
+  nome_mae: string;
 
   @IsString({ message: 'Telefone deve ser uma string' })
   @IsOptional()

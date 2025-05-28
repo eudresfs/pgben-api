@@ -7,6 +7,7 @@ import {
   Patch,
   Delete,
   Param,
+  ParseUUIDPipe,
   Query,
   UseGuards,
   Request,
@@ -45,7 +46,7 @@ export class UsuarioController {
    */
   @Get()
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     {
       permissionName: 'usuario.listar',
       scopeType: ScopeType.UNIT,
@@ -99,7 +100,7 @@ export class UsuarioController {
     @Query('search') search?: string,
     @Query('role') role?: string,
     @Query('status') status?: string,
-    @Query('unidadeId') unidadeId?: string,
+    @Query('unidade_id') unidade_id?: string,
   ) {
     return this.usuarioService.findAll({
       page: page ? +page : undefined,
@@ -107,7 +108,7 @@ export class UsuarioController {
       search,
       role,
       status,
-      unidadeId,
+      unidade_id,
     });
   }
 
@@ -116,7 +117,7 @@ export class UsuarioController {
    */
   @Get('me')
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     {
       permissionName: 'usuario.perfil.visualizar',
       scopeType: ScopeType.SELF
@@ -133,7 +134,7 @@ export class UsuarioController {
    */
   @Get(':id')
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     {
       permissionName: 'usuario.visualizar',
       scopeType: ScopeType.UNIT,
@@ -143,7 +144,7 @@ export class UsuarioController {
   @ApiOperation({ summary: 'Obter detalhes de um usuário' })
   @ApiResponse({ status: 200, description: 'Usuário encontrado com sucesso' })
   @ApiResponse({ status: 404, description: 'Usuário não encontrado' })
-  async findOne(@Param('id') id: string) {
+  async findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.usuarioService.findById(id);
   }
 
@@ -152,7 +153,7 @@ export class UsuarioController {
    */
   @Post()
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     {
       permissionName: 'usuario.criar',
       scopeType: ScopeType.UNIT,
@@ -175,7 +176,7 @@ export class UsuarioController {
    */
   @Put(':id')
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     {
       permissionName: 'usuario.editar',
       scopeType: ScopeType.UNIT,
@@ -191,7 +192,7 @@ export class UsuarioController {
     description: 'Email, CPF ou matrícula já em uso',
   })
   async update(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() updateUsuarioDto: UpdateUsuarioDto,
   ) {
     return this.usuarioService.update(id, updateUsuarioDto);
@@ -202,7 +203,7 @@ export class UsuarioController {
    */
   @Patch(':id/status')
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     {
       permissionName: 'usuario.status.alterar',
       scopeType: ScopeType.UNIT,
@@ -213,7 +214,7 @@ export class UsuarioController {
   @ApiResponse({ status: 200, description: 'Status atualizado com sucesso' })
   @ApiResponse({ status: 404, description: 'Usuário não encontrado' })
   async updateStatus(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() updateStatusUsuarioDto: UpdateStatusUsuarioDto,
   ) {
     return this.usuarioService.updateStatus(id, updateStatusUsuarioDto);
@@ -224,7 +225,7 @@ export class UsuarioController {
    */
   @Put(':id/senha')
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     {
       permissionName: 'usuario.senha.alterar',
       scopeType: ScopeType.SELF,
@@ -239,7 +240,7 @@ export class UsuarioController {
   })
   @ApiResponse({ status: 404, description: 'Usuário não encontrado' })
   async updateSenha(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() updateSenhaDto: UpdateSenhaDto,
     @Request() req,
   ) {
@@ -253,7 +254,7 @@ export class UsuarioController {
    */
   @Delete(':id')
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     {
       permissionName: 'usuario.remover',
       scopeType: ScopeType.UNIT,
@@ -263,7 +264,7 @@ export class UsuarioController {
   @ApiOperation({ summary: 'Remover usuário (soft delete)' })
   @ApiResponse({ status: 200, description: 'Usuário removido com sucesso' })
   @ApiResponse({ status: 404, description: 'Usuário não encontrado' })
-  async remove(@Param('id') id: string) {
+  async remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.usuarioService.remove(id);
   }
 }

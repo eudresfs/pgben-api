@@ -26,9 +26,9 @@ import { PapelCidadao } from './papel-cidadao.entity';
 import { ComposicaoFamiliar } from './composicao-familiar.entity';
 
 export enum Sexo {
-  MASCULINO = 'masculino',
-  FEMININO = 'feminino',
-  OUTRO = 'outro',
+  MASCULINO = 'MASCULINO',
+  FEMININO = 'FEMININO',
+  OUTRO = 'OUTRO',
 }
 
 @Entity('cidadao')
@@ -98,7 +98,7 @@ export class Cidadao {
   @Column({
     type: 'enum',
     enum: Sexo,
-    enumName: 'sexo',
+    enumName: 'sexo_enum',
   })
   @IsEnum(Sexo, { message: 'Sexo inválido' })
   @IsNotEmpty({ message: 'Sexo é obrigatório' })

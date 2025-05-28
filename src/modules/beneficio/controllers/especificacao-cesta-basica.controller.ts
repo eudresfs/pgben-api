@@ -8,6 +8,7 @@ import {
   Delete,
   HttpCode,
   HttpStatus,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -93,7 +94,7 @@ export class EspecificacaoCestaBasicaController {
     status: HttpStatus.NOT_FOUND,
     description: 'Especificação não encontrada',
   })
-  async findByTipoBeneficio(@Param('tipoBeneficioId') tipoBeneficioId: string): Promise<EspecificacaoCestaBasica> {
+  async findByTipoBeneficio(@Param('tipoBeneficioId', ParseUUIDPipe) tipoBeneficioId: string): Promise<EspecificacaoCestaBasica> {
     return this.especificacaoCestaBasicaService.findByTipoBeneficio(tipoBeneficioId);
   }
 
@@ -122,7 +123,7 @@ export class EspecificacaoCestaBasicaController {
     description: 'Dados inválidos',
   })
   async update(
-    @Param('tipoBeneficioId') tipoBeneficioId: string,
+    @Param('tipoBeneficioId', ParseUUIDPipe) tipoBeneficioId: string,
     @Body() updateDto: UpdateEspecificacaoCestaBasicaDto,
   ): Promise<EspecificacaoCestaBasica> {
     return this.especificacaoCestaBasicaService.update(tipoBeneficioId, updateDto);
@@ -151,7 +152,7 @@ export class EspecificacaoCestaBasicaController {
     status: HttpStatus.NOT_FOUND,
     description: 'Especificação não encontrada',
   })
-  async remove(@Param('tipoBeneficioId') tipoBeneficioId: string) {
+  async remove(@Param('tipoBeneficioId', ParseUUIDPipe) tipoBeneficioId: string) {
     return this.especificacaoCestaBasicaService.remove(tipoBeneficioId);
   }
 }

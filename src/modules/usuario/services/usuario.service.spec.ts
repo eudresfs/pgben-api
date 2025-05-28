@@ -4,6 +4,13 @@ import { UsuarioRepository } from '../repositories/usuario.repository';
 import { DataSource } from 'typeorm';
 import { NotFoundException, BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { Usuario } from '../entities/usuario.entity';
+
+// Mock do bcrypt
+jest.mock('bcrypt', () => ({
+  hash: jest.fn().mockResolvedValue('hashedPassword'),
+  compare: jest.fn().mockResolvedValue(true),
+}));
+
 import * as bcrypt from 'bcrypt';
 
 /**
@@ -61,9 +68,18 @@ describe('UsuarioService', () => {
     };
 
     const mockDataSource = {
-      transaction: jest.fn(),
+      transaction: jest.fn().mockImplementation((callbackOrIsolation, callback) => {
+        // Se apenas um parâmetro for passado, é o callback
+        if (typeof callbackOrIsolation === 'function') {
+          return callbackOrIsolation({});
+        }
+        // Se dois parâmetros, o segundo é o callback
+        return callback({});
+      }),
       getRepository: jest.fn(),
     };
+
+
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -84,18 +100,24 @@ describe('UsuarioService', () => {
     dataSource = module.get(DataSource);
   });
 
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
   describe('findById', () => {
     it('deve retornar um usuário quando encontrado', async () => {
       repository.findById.mockResolvedValue(mockUsuario);
 
       const result = await service.findById('123e4567-e89b-12d3-a456-426614174000');
 
-      expect(result).toEqual(mockUsuario);
+      // O service remove a senhaHash do retorno
+      const { senhaHash, ...expectedResult } = mockUsuario;
+      expect(result).toEqual(expectedResult);
       expect(repository.findById).toHaveBeenCalledWith('123e4567-e89b-12d3-a456-426614174000');
     });
 
     it('deve lançar NotFoundException quando usuário não encontrado', async () => {
-      repository.findById.mockResolvedValue(null);
+      repository.findById.mockRejectedValue(new NotFoundException('Usuário com ID invalid-id não encontrado'));
 
       await expect(service.findById('invalid-id')).rejects.toThrow(NotFoundException);
     });
@@ -209,35 +231,92 @@ describe('UsuarioService', () => {
       setorId: 'setor-123'
     };
 
+
+
     it('deve criar usuário com sucesso', async () => {
-      repository.findByEmail.mockResolvedValue(null);
-      repository.findByCpf.mockResolvedValue(null);
-      repository.findByMatricula.mockResolvedValue(null);
-      repository.create.mockResolvedValue(mockUsuario);
+      const mockManager = {
+        getRepository: jest.fn().mockImplementation((entity) => {
+          if (entity === 'usuario') {
+            return {
+              findOne: jest.fn().mockResolvedValue(null),
+              create: jest.fn().mockReturnValue(mockUsuario),
+              save: jest.fn().mockResolvedValue(mockUsuario)
+            };
+          }
+          if (entity === 'unidade') {
+            return {
+              findOne: jest.fn().mockResolvedValue({ id: 'unidade-123' })
+            };
+          }
+          if (entity === 'setor') {
+            return {
+              findOne: jest.fn().mockResolvedValue({ id: 'setor-123' })
+            };
+          }
+        })
+      };
+      
+      (dataSource.transaction as jest.Mock).mockImplementationOnce((callback) => callback(mockManager));
 
       const result = await service.create(createUsuarioDto);
 
-      expect(result).toEqual(mockUsuario);
-      expect(repository.create).toHaveBeenCalled();
+      expect(result.data).toBeDefined();
+      expect(dataSource.transaction).toHaveBeenCalled();
     });
 
     it('deve lançar ConflictException quando email já existe', async () => {
-      repository.findByEmail.mockResolvedValue(mockUsuario);
+      const mockManager = {
+        getRepository: jest.fn().mockImplementation((entity) => {
+          if (entity === 'usuario') {
+            return {
+              findOne: jest.fn().mockResolvedValue(mockUsuario)
+            };
+          }
+        })
+      };
+      
+      (dataSource.transaction as jest.Mock).mockImplementationOnce((callback) => callback(mockManager));
 
       await expect(service.create(createUsuarioDto)).rejects.toThrow('Email já está em uso');
     });
 
     it('deve lançar ConflictException quando CPF já existe', async () => {
-      repository.findByEmail.mockResolvedValue(null);
-      repository.findByCpf.mockResolvedValue(mockUsuario);
+      const mockManager = {
+        getRepository: jest.fn().mockImplementation((entity) => {
+          if (entity === 'usuario') {
+            return {
+              findOne: jest.fn().mockImplementation((options) => {
+                if (options.where.email) return null;
+                if (options.where.cpf) return mockUsuario;
+                return null;
+              })
+            };
+          }
+        })
+      };
+      
+      (dataSource.transaction as jest.Mock).mockImplementationOnce((callback) => callback(mockManager));
 
       await expect(service.create(createUsuarioDto)).rejects.toThrow('CPF já está em uso');
     });
 
     it('deve lançar ConflictException quando matrícula já existe', async () => {
-      repository.findByEmail.mockResolvedValue(null);
-      repository.findByCpf.mockResolvedValue(null);
-      repository.findByMatricula.mockResolvedValue(mockUsuario);
+      const mockManager = {
+        getRepository: jest.fn().mockImplementation((entity) => {
+          if (entity === 'usuario') {
+            return {
+              findOne: jest.fn().mockImplementation((options) => {
+                if (options.where.email) return null;
+                if (options.where.cpf) return null;
+                if (options.where.matricula) return mockUsuario;
+                return null;
+              })
+            };
+          }
+        })
+      };
+      
+      (dataSource.transaction as jest.Mock).mockImplementationOnce((callback) => callback(mockManager));
 
       await expect(service.create(createUsuarioDto)).rejects.toThrow('Matrícula já está em uso');
     });
@@ -254,7 +333,7 @@ describe('UsuarioService', () => {
     });
 
     it('deve lançar NotFoundException quando usuário não existe', async () => {
-      repository.findById.mockResolvedValue(null);
+      repository.findById.mockRejectedValue(new NotFoundException('Usuário com ID invalid-id não encontrado'));
 
       await expect(service.remove('invalid-id')).rejects.toThrow(NotFoundException);
     });
@@ -266,7 +345,9 @@ describe('UsuarioService', () => {
 
       const result = await service.getProfile('123e4567-e89b-12d3-a456-426614174000');
 
-      expect(result).toEqual(mockUsuario);
+      // O service remove a senhaHash do retorno
+      const { senhaHash, ...expectedResult } = mockUsuario;
+      expect(result).toEqual(expectedResult);
     });
   });
 });

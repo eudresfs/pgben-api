@@ -12,6 +12,7 @@ import {
   NotFoundException,
   BadRequestException,
   UnauthorizedException,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -51,14 +52,11 @@ export class SolicitacaoController {
    * Lista todas as solicitações com filtros e paginação
    */
   @Get()
-  @RequiresPermission(
-    { permissionName: '*.*' },
-    {
-      permissionName: 'solicitacao.listar',
-      scopeType: ScopeType.UNIT,
-      scopeIdExpression: 'query.unidade_id',
-    }
-  )
+  @RequiresPermission({
+    permissionName: 'solicitacao.listar',
+    scopeType: ScopeType.UNIT,
+    scopeIdExpression: 'query.unidade_id',
+  })
   @ApiOperation({ summary: 'Listar solicitações' })
   @ApiResponse({
     status: 200,
@@ -144,7 +142,7 @@ export class SolicitacaoController {
    */
   @Get(':id')
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     {
       permissionName: 'solicitacao.visualizar',
       scopeType: ScopeType.UNIT,
@@ -157,7 +155,7 @@ export class SolicitacaoController {
     description: 'Solicitação encontrada com sucesso',
   })
   @ApiResponse({ status: 404, description: 'Solicitação não encontrada' })
-  async findOne(@Param('id') id: string, @Req() req: Request) {
+  async findOne(@Param('id', ParseUUIDPipe) id: string, @Req() req: Request) {
     const solicitacao = await this.solicitacaoService.findById(id);
 
     // Verificar se o usuário tem permissão para acessar esta solicitação
@@ -177,7 +175,7 @@ export class SolicitacaoController {
    */
   @Post()
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     {
       permissionName: 'solicitacao.criar',
       scopeType: ScopeType.UNIT,
@@ -200,7 +198,7 @@ export class SolicitacaoController {
    */
   @Put(':id')
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     {
       permissionName: 'solicitacao.editar',
       scopeType: ScopeType.UNIT,
@@ -267,7 +265,7 @@ export class SolicitacaoController {
   @ApiResponse({ status: 400, description: 'Dados inválidos' })
   @ApiResponse({ status: 404, description: 'Solicitação não encontrada' })
   async update(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() updateSolicitacaoDto: UpdateSolicitacaoDto,
     @Req() req: Request,
   ) {
@@ -280,7 +278,7 @@ export class SolicitacaoController {
    */
   @Put(':id/submeter')
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     {
       permissionName: 'solicitacao.status.transicao.RASCUNHO.ENVIADA',
       scopeType: ScopeType.UNIT,
@@ -297,7 +295,7 @@ export class SolicitacaoController {
     description: 'Solicitação não pode ser submetida',
   })
   @ApiResponse({ status: 404, description: 'Solicitação não encontrada' })
-  async submeterSolicitacao(@Param('id') id: string, @Req() req: Request) {
+  async submeterSolicitacao(@Param('id', ParseUUIDPipe) id: string, @Req() req: Request) {
     const user = req.user;
     return this.solicitacaoService.submeterSolicitacao(id, user);
   }
@@ -307,7 +305,7 @@ export class SolicitacaoController {
    */
   @Put(':id/avaliar')
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     {
       permissionName: 'solicitacao.status.transicao.ENVIADA.EM_ANALISE',
       scopeType: ScopeType.UNIT,
@@ -315,7 +313,7 @@ export class SolicitacaoController {
     }
   )
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     {
       permissionName: 'solicitacao.status.transicao.EM_ANALISE.APROVADA',
       scopeType: ScopeType.UNIT,
@@ -323,7 +321,7 @@ export class SolicitacaoController {
     }
   )
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     {
       permissionName: 'solicitacao.status.transicao.EM_ANALISE.REJEITADA',
       scopeType: ScopeType.UNIT,
@@ -350,7 +348,7 @@ export class SolicitacaoController {
   })
   @ApiResponse({ status: 404, description: 'Solicitação não encontrada' })
   async avaliarSolicitacao(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() avaliarSolicitacaoDto: AvaliarSolicitacaoDto,
     @Req() req: Request,
   ) {
@@ -367,7 +365,7 @@ export class SolicitacaoController {
    */
   @Put(':id/liberar')
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     {
       permissionName: 'solicitacao.status.transicao.APROVADA.CONCEDIDA',
       scopeType: ScopeType.UNIT,
@@ -375,7 +373,7 @@ export class SolicitacaoController {
     }
   )
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     {
       permissionName: 'beneficio.conceder',
       scopeType: ScopeType.UNIT,
@@ -386,7 +384,7 @@ export class SolicitacaoController {
   @ApiResponse({ status: 200, description: 'Benefício liberado com sucesso' })
   @ApiResponse({ status: 400, description: 'Benefício não pode ser liberado' })
   @ApiResponse({ status: 404, description: 'Solicitação não encontrada' })
-  async liberarBeneficio(@Param('id') id: string, @Req() req: Request) {
+  async liberarBeneficio(@Param('id', ParseUUIDPipe) id: string, @Req() req: Request) {
     const user = req.user;
     return this.solicitacaoService.liberarBeneficio(id, user);
   }
@@ -396,7 +394,7 @@ export class SolicitacaoController {
    */
   @Put(':id/cancelar')
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     {
       permissionName: 'solicitacao.status.transicao.*.CANCELADA',
       scopeType: ScopeType.UNIT,
@@ -413,7 +411,7 @@ export class SolicitacaoController {
     description: 'Solicitação não pode ser cancelada',
   })
   @ApiResponse({ status: 404, description: 'Solicitação não encontrada' })
-  async cancelarSolicitacao(@Param('id') id: string, @Req() req: Request) {
+  async cancelarSolicitacao(@Param('id', ParseUUIDPipe) id: string, @Req() req: Request) {
     const user = req.user;
     return this.solicitacaoService.cancelarSolicitacao(id, user);
   }
@@ -423,7 +421,7 @@ export class SolicitacaoController {
    */
   @Get(':id/historico')
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     {
       permissionName: 'solicitacao.visualizar',
       scopeType: ScopeType.UNIT,
@@ -431,7 +429,7 @@ export class SolicitacaoController {
     }
   )
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     {
       permissionName: 'solicitacao.historico.visualizar',
       scopeType: ScopeType.UNIT,
@@ -441,7 +439,7 @@ export class SolicitacaoController {
   @ApiOperation({ summary: 'Listar histórico de uma solicitação' })
   @ApiResponse({ status: 200, description: 'Histórico retornado com sucesso' })
   @ApiResponse({ status: 404, description: 'Solicitação não encontrada' })
-  async getHistorico(@Param('id') id: string, @Req() req: Request) {
+  async getHistorico(@Param('id', ParseUUIDPipe) id: string, @Req() req: Request) {
     const user = req.user;
     const solicitacao = await this.solicitacaoService.findById(id);
 
@@ -459,7 +457,7 @@ export class SolicitacaoController {
    */
   @Get(':id/pendencias')
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     {
       permissionName: 'solicitacao.visualizar',
       scopeType: ScopeType.UNIT,
@@ -467,7 +465,7 @@ export class SolicitacaoController {
     }
   )
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     {
       permissionName: 'solicitacao.pendencia.visualizar',
       scopeType: ScopeType.UNIT,
@@ -480,7 +478,7 @@ export class SolicitacaoController {
     description: 'Pendências retornadas com sucesso',
   })
   @ApiResponse({ status: 404, description: 'Solicitação não encontrada' })
-  async getPendencias(@Param('id') id: string, @Req() req: Request) {
+  async getPendencias(@Param('id', ParseUUIDPipe) id: string, @Req() req: Request) {
     const user = req.user;
     const solicitacao = await this.solicitacaoService.findById(id);
 
@@ -498,7 +496,7 @@ export class SolicitacaoController {
    */
   @Post(':id/processo-judicial')
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     {
       permissionName: 'solicitacao.processo_judicial.vincular',
       scopeType: ScopeType.UNIT,
@@ -514,7 +512,7 @@ export class SolicitacaoController {
   @ApiResponse({ status: 409, description: 'Processo já vinculado a esta solicitação' })
   @ApiBody({ type: VincularProcessoJudicialDto })
   async vincularProcessoJudicial(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() vincularDto: VincularProcessoJudicialDto,
     @Req() req: Request,
   ) {
@@ -535,7 +533,7 @@ export class SolicitacaoController {
    */
   @Delete(':id/processo-judicial')
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     {
       permissionName: 'solicitacao.processo_judicial.desvincular',
       scopeType: ScopeType.UNIT,
@@ -549,7 +547,7 @@ export class SolicitacaoController {
   })
   @ApiResponse({ status: 404, description: 'Solicitação não encontrada' })
   @ApiResponse({ status: 400, description: 'Solicitação não possui processo judicial vinculado' })
-  async desvincularProcessoJudicial(@Param('id') id: string, @Req() req: Request) {
+  async desvincularProcessoJudicial(@Param('id', ParseUUIDPipe) id: string, @Req() req: Request) {
     const user = req.user;
     const solicitacao = await this.solicitacaoService.findById(id);
 
@@ -567,7 +565,7 @@ export class SolicitacaoController {
    */
   @Post(':id/determinacao-judicial')
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     {
       permissionName: 'solicitacao.determinacao_judicial.vincular',
       scopeType: ScopeType.UNIT,
@@ -583,7 +581,7 @@ export class SolicitacaoController {
   @ApiResponse({ status: 409, description: 'Determinação já vinculada a esta solicitação' })
   @ApiBody({ type: VincularDeterminacaoJudicialDto })
   async vincularDeterminacaoJudicial(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() vincularDto: VincularDeterminacaoJudicialDto,
     @Req() req: Request,
   ) {
@@ -604,7 +602,7 @@ export class SolicitacaoController {
    */
   @Delete(':id/determinacao-judicial')
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     {
       permissionName: 'solicitacao.determinacao_judicial.desvincular',
       scopeType: ScopeType.UNIT,
@@ -618,7 +616,7 @@ export class SolicitacaoController {
   })
   @ApiResponse({ status: 404, description: 'Solicitação não encontrada' })
   @ApiResponse({ status: 400, description: 'Solicitação não possui determinação judicial vinculada' })
-  async desvincularDeterminacaoJudicial(@Param('id') id: string, @Req() req: Request) {
+  async desvincularDeterminacaoJudicial(@Param('id', ParseUUIDPipe) id: string, @Req() req: Request) {
     const user = req.user;
     const solicitacao = await this.solicitacaoService.findById(id);
 

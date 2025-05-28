@@ -38,6 +38,14 @@ export class UpdateCidadaoDto {
   })
   rg?: string;
 
+  @IsString({ message: 'Prontuario SUAS é obrigatório' })
+  @IsOptional()
+  @ApiProperty({
+    example: 'SUAS1234567',
+    description: 'Nº do Prontuário SUAS do cidadão',
+  })
+  prontuario_suas?: string;
+
   @IsDate()
   @Type(() => Date)
   @IsOptional()

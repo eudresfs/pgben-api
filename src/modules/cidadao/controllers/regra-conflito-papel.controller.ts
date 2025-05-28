@@ -59,7 +59,7 @@ export class RegraConflitoPapelController {
    */
   @Post()
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     { permissionName: 'cidadao.criar-regra-conflito' }
   )
   @ApiOperation({
@@ -89,7 +89,7 @@ export class RegraConflitoPapelController {
    */
   @Get()
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     { permissionName: 'cidadao.listar-regra-conflito' }
   )
   @ApiOperation({
@@ -113,7 +113,7 @@ export class RegraConflitoPapelController {
    */
   @Get(':id')
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     { permissionName: 'cidadao.visualizar-regra-conflito' }
   )
   @ApiOperation({
@@ -141,7 +141,7 @@ export class RegraConflitoPapelController {
    */
   @Get('papel-origem/:papelOrigemId')
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     { permissionName: 'cidadao.listar-regra-conflito' }
   )
   @ApiOperation({
@@ -169,7 +169,7 @@ export class RegraConflitoPapelController {
    */
   @Get('papel-destino/:papelDestinoId')
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     { permissionName: 'cidadao.listar-regra-conflito' }
   )
   @ApiOperation({
@@ -197,7 +197,7 @@ export class RegraConflitoPapelController {
    */
   @Get('verificar/:papelOrigemId/:papelDestinoId')
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     { permissionName: 'cidadao.verificar-regra-conflito' }
   )
   @ApiOperation({
@@ -232,7 +232,7 @@ export class RegraConflitoPapelController {
    */
   @Patch(':id')
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     { permissionName: 'cidadao.atualizar-regra-conflito' }
   )
   @ApiOperation({
@@ -264,7 +264,7 @@ export class RegraConflitoPapelController {
    */
   @Patch(':id/ativar')
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     { permissionName: 'cidadao.atualizar-regra-conflito' }
   )
   @ApiOperation({
@@ -293,7 +293,7 @@ export class RegraConflitoPapelController {
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     { permissionName: 'cidadao.remover-regra-conflito' }
   )
   @ApiOperation({

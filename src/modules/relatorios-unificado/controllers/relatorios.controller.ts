@@ -54,7 +54,7 @@ export class RelatoriosController {
    */
   @Get('beneficios-concedidos')
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     {
       permissionName: 'relatorio.beneficios.concedidos',
       scopeType: ScopeType.UNIT,
@@ -152,7 +152,7 @@ export class RelatoriosController {
    */
   @Get('solicitacoes-por-status')
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     {
       permissionName: 'relatorio.solicitacoes.status',
       scopeType: ScopeType.UNIT,
@@ -249,7 +249,7 @@ export class RelatoriosController {
    */
   @Get('atendimentos-por-unidade')
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     {
       permissionName: 'relatorio.atendimentos.unidade',
       scopeType: ScopeType.GLOBAL

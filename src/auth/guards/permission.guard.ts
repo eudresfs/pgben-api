@@ -57,7 +57,24 @@ export class PermissionGuard implements CanActivate {
 
     const userId = request.user.id;
 
-    // Verifica cada requisito de permissão
+    // BYPASS PARA SUPER ADMIN: Verifica se o usuário possui permissão de super admin (*.*)
+    // Se sim, permite acesso a qualquer endpoint sem verificar outras permissões
+    const hasSuperAdminPermission = await this.permissionService.hasPermission({
+      userId,
+      permissionName: '*.*',
+      scopeType: TipoEscopo.GLOBAL,
+    });
+
+    if (hasSuperAdminPermission) {
+      this.logger.debug(`Acesso concedido via super admin: usuário ${userId} possui permissão '*.*'`);
+      return true;
+    }
+
+    // Verifica se o usuário tem pelo menos uma das permissões requeridas (OR lógico)
+    const permissionChecks: Promise<boolean>[] = [];
+    const requirementDetails: Array<{ requirement: PermissionRequirement; scopeId?: string }> = [];
+
+    // Prepara todas as verificações de permissão
     for (const requirement of requirements) {
       const { permissionName, scopeType = TipoEscopo.GLOBAL, scopeIdExpression } = requirement;
 
@@ -67,23 +84,42 @@ export class PermissionGuard implements CanActivate {
         scopeId = this.evaluateScopeIdExpression(scopeIdExpression, request);
       }
 
-      // Verifica se o usuário tem a permissão
-      const hasPermission = await this.permissionService.hasPermission({
+      // Adiciona a verificação de permissão à lista
+      const permissionCheck = this.permissionService.hasPermission({
         userId,
         permissionName,
         scopeType,
         scopeId,
       });
 
-      if (!hasPermission) {
-        this.logger.warn(
-          `Acesso negado: usuário ${userId} não tem a permissão ${permissionName} com escopo ${scopeType}${
-            scopeId ? ` e ID ${scopeId}` : ''
-          }`,
-        );
-        
-        // Lançar exceção personalizada em vez de retornar false
-        throw new PermissionDeniedException(permissionName, scopeType, scopeId);
+      permissionChecks.push(permissionCheck);
+      requirementDetails.push({ requirement, scopeId });
+    }
+
+    // Executa todas as verificações em paralelo
+    const results = await Promise.all(permissionChecks);
+
+    // Verifica se pelo menos uma permissão foi concedida
+    const hasAnyPermission = results.some(result => result === true);
+
+    if (!hasAnyPermission) {
+      // Log detalhado de todas as permissões que falharam
+      const failedPermissions = requirementDetails
+        .filter((_, index) => !results[index])
+        .map(({ requirement, scopeId }) => {
+          const { permissionName, scopeType = TipoEscopo.GLOBAL } = requirement;
+          return `${permissionName} (escopo: ${scopeType}${scopeId ? `, ID: ${scopeId}` : ''})`;
+        });
+
+      this.logger.warn(
+        `Acesso negado: usuário ${userId} não possui nenhuma das permissões requeridas: ${failedPermissions.join(', ')}`,
+      );
+
+      // Lança exceção com a primeira permissão que falhou (para compatibilidade)
+      const firstFailedRequirement = requirementDetails.find((_, index) => !results[index]);
+      if (firstFailedRequirement) {
+        const { permissionName, scopeType = TipoEscopo.GLOBAL } = firstFailedRequirement.requirement;
+        throw new PermissionDeniedException(permissionName, scopeType, firstFailedRequirement.scopeId);
       }
     }
 

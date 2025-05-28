@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Repository, DataSource } from 'typeorm';
 import { StatusUnidade, Unidade } from '../entities/unidade.entity';
+import { EntityNotFoundException } from '../../../shared/exceptions';
 
 /**
  * Repositório de unidades
@@ -79,7 +80,7 @@ export class UnidadeRepository {
     await this.repository.update(id, data);
     const unidade = await this.findById(id);
     if (!unidade) {
-      throw new Error('Unidade não encontrada');
+      throw new EntityNotFoundException('Unidade', id);
     }
     return unidade;
   }
@@ -94,7 +95,7 @@ export class UnidadeRepository {
     await this.repository.update(id, { status });
     const unidade = await this.findById(id);
     if (!unidade) {
-      throw new Error('Unidade não encontrada');
+      throw new EntityNotFoundException('Unidade', id);
     }
     return unidade;
   }

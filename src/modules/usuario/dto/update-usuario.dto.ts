@@ -98,7 +98,7 @@ export class UpdateUsuarioDto {
     description: 'ID da unidade do usuário',
     required: false,
   })
-  unidadeId?: string;
+  unidade_id?: string;
 
   @IsUUID(undefined, { message: 'ID do setor inválido' })
   @IsOptional()
@@ -107,5 +107,5 @@ export class UpdateUsuarioDto {
     description: 'ID do setor do usuário',
     required: false,
   })
-  setorId?: string;
+  setor_id?: string;
 }

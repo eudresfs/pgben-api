@@ -53,7 +53,7 @@ export class CidadaoController {
    */
   @Get()
   @RequiresPermission(
-  { permissionName: '*.*' },
+  
   {
     permissionName: 'cidadao.listar',
     scopeType: ScopeType.UNIT,
@@ -135,7 +135,7 @@ export class CidadaoController {
    */
   @Get(':id')
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     {
       permissionName: 'cidadao.visualizar',
       scopeType: ScopeType.UNIT,
@@ -176,14 +176,11 @@ export class CidadaoController {
    * Cria um novo cidadão
    */
   @Post()
-  @RequiresPermission(
-    { permissionName: '*.*' },
-    {
-      permissionName: 'cidadao.criar',
-      scopeType: ScopeType.UNIT,
-      scopeIdExpression: 'user.unidadeId',
-    }
-  )
+  @RequiresPermission({
+    permissionName: 'cidadao.criar',
+    scopeType: ScopeType.UNIT,
+    scopeIdExpression: 'user.unidadeId',
+  })
   @ApiOperation({
     summary: 'Criar cidadão',
     description: 'Cadastra um novo cidadão no sistema.',
@@ -234,14 +231,11 @@ export class CidadaoController {
    * Atualiza um cidadão existente
    */
   @Put(':id')
-  @RequiresPermission(
-    { permissionName: '*.*' },
-    {
-      permissionName: 'cidadao.editar',
-      scopeType: ScopeType.UNIT,
-      scopeIdExpression: 'cidadao.unidadeId',
-    }
-  )
+  @RequiresPermission({
+    permissionName: 'cidadao.editar',
+    scopeType: ScopeType.UNIT,
+    scopeIdExpression: 'cidadao.unidadeId',
+  })
   @ApiOperation({
     summary: 'Atualizar cidadão existente',
     description: 'Atualiza os dados de um cidadão existente.',
@@ -294,10 +288,7 @@ export class CidadaoController {
    * Busca cidadão por CPF
    */
   @Get('cpf/:cpf')
-  @RequiresPermission(
-    { permissionName: '*.*' },
-    { permissionName: 'cidadao.buscar.cpf' }
-  )
+  @RequiresPermission({ permissionName: 'cidadao.buscar.cpf' })
   @ApiOperation({
     summary: 'Buscar cidadão por CPF',
     description: 'Busca um cidadão pelo número do CPF (com ou sem formatação).',
@@ -330,10 +321,7 @@ export class CidadaoController {
    * Busca cidadão por NIS
    */
   @Get('nis/:nis')
-  @RequiresPermission(
-    { permissionName: '*.*' },
-    { permissionName: 'cidadao.buscar.nis' }
-  )
+  @RequiresPermission({ permissionName: 'cidadao.buscar.nis' })
   @ApiOperation({
     summary: 'Buscar cidadão por NIS',
     description: 'Busca um cidadão pelo número do NIS (PIS/PASEP).',
@@ -370,15 +358,11 @@ export class CidadaoController {
   @ApiResponse({ status: 200, description: 'Histórico retornado com sucesso' })
   @ApiResponse({ status: 404, description: 'Cidadão não encontrado' })
   @RequiresPermission(
-    { permissionName: '*.*' },
     {
       permissionName: 'cidadao.visualizar',
       scopeType: ScopeType.UNIT,
       scopeIdExpression: 'cidadao.unidadeId',
-    }
-  )
-  @RequiresPermission(
-    { permissionName: '*.*' },
+    },
     { permissionName: 'solicitacao.listar' }
   )
   async findSolicitacoes(@Param('id') id: string) {
@@ -393,14 +377,11 @@ export class CidadaoController {
   @ApiResponse({ status: 201, description: 'Membro adicionado com sucesso' })
   @ApiResponse({ status: 400, description: 'Dados inválidos' })
   @ApiResponse({ status: 404, description: 'Cidadão não encontrado' })
-  @RequiresPermission(
-    { permissionName: '*.*' },
-    {
-      permissionName: 'cidadao.editar',
-      scopeType: ScopeType.UNIT,
-      scopeIdExpression: 'cidadao.unidadeId',
-    }
-  )
+  @RequiresPermission({
+    permissionName: 'cidadao.editar',
+    scopeType: ScopeType.UNIT,
+    scopeIdExpression: 'cidadao.unidadeId',
+  })
   async addComposicaoFamiliar(
     @Param('id') id: string,
     @Body() createComposicaoFamiliarDto: CreateComposicaoFamiliarDto,

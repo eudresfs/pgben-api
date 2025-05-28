@@ -1,10 +1,14 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query, Put } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { IntegracaoService } from '../services/integracao.service';
 import { IntegracaoUpdateDto } from '../dtos/integracao/integracao-update.dto';
 import { IntegracaoTestDto } from '../dtos/integracao/integracao-test.dto';
 import { IntegracaoResponseDto } from '../dtos/integracao/integracao-response.dto';
 import { IntegracaoTipoEnum } from '../enums/integracao-tipo.enum';
+import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
+import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
+import { ApiErrorResponse } from '../../../shared/dtos/api-error-response.dto';
+import { EntityNotFoundException } from '../../../shared/exceptions';
 
 /**
  * Controlador responsável pelas operações de configurações de integração externa
@@ -202,7 +206,7 @@ export class IntegracaoController {
   ): Promise<IntegracaoResponseDto> {
     const config = await this.integracaoService.buscarConfigAtiva(tipo);
     if (!config) {
-      throw new Error(`Nenhuma configuração ativa encontrada para o tipo '${tipo}'`);
+      throw new EntityNotFoundException('Configuração de integração', tipo, 'tipo');
     }
     return config;
   }

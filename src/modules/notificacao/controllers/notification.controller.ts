@@ -4,6 +4,7 @@ import {
   Post,
   Body,
   Param,
+  ParseUUIDPipe,
   Query,
   Put,
   UseGuards,
@@ -102,7 +103,7 @@ export class NotificationController {
     status: 404,
     description: 'Notificação não encontrada',
   })
-  async buscarNotificacaoPorId(@Param('id') id: string, @Request() req) {
+  async buscarNotificacaoPorId(@Param('id', ParseUUIDPipe) id: string, @Request() req) {
     const userId = req.user.id;
     return this.notificacaoService.findById(id, userId);
   }
@@ -116,7 +117,7 @@ export class NotificationController {
     status: 200,
     description: 'Notificação marcada como lida com sucesso',
   })
-  async marcarComoLida(@Param('id') id: string, @Request() req) {
+  async marcarComoLida(@Param('id', ParseUUIDPipe) id: string, @Request() req) {
     const userId = req.user.id;
     this.logger.log(
       `Marcando notificação ${id} como lida para usuário ${userId}`,
@@ -133,7 +134,7 @@ export class NotificationController {
     status: 200,
     description: 'Notificação arquivada com sucesso',
   })
-  async arquivarNotificacao(@Param('id') id: string, @Request() req) {
+  async arquivarNotificacao(@Param('id', ParseUUIDPipe) id: string, @Request() req) {
     const userId = req.user.id;
     this.logger.log(`Arquivando notificação ${id} para usuário ${userId}`);
     return this.notificacaoService.arquivar(id, userId);

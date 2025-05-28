@@ -8,6 +8,7 @@ import { ParametroNaoEncontradoException } from '../exceptions/parametro-nao-enc
 import { ParametroTipoInvalidoException } from '../exceptions/parametro-tipo-invalido.exception';
 import { ParametroTipoEnum } from '../enums/parametro-tipo.enum';
 import { ParametroConverter } from '../util/converters';
+import { ValidationErrorException, InvalidOperationException } from '../../../shared/exceptions';
 
 /**
  * Serviço para gerenciamento de parâmetros do sistema
@@ -80,7 +81,12 @@ export class ParametroService {
     // Verificar se já existe parâmetro com mesma chave
     const existente = await this.parametroRepository.existsByChave(dto.chave);
     if (existente) {
-      throw new Error(`Parâmetro com chave '${dto.chave}' já existe`);
+      throw new ValidationErrorException(
+        'chave',
+        dto.chave,
+        'string',
+        `Parâmetro com chave '${dto.chave}' já existe`
+      );
     }
 
     // Converter valor para string antes de salvar
@@ -114,7 +120,12 @@ export class ParametroService {
     // Verificar se o parâmetro é editável (implementação futura)
     const editavel = true; // Placeholder para implementação futura
     if (!editavel) {
-      throw new Error(`Parâmetro '${chave}' não é editável`);
+      throw new InvalidOperationException(
+        'editar parâmetro',
+        `Parâmetro '${chave}' não é editável`,
+        'não editável',
+        'editável'
+      );
     }
 
     // Converter valor para string antes de salvar (se fornecido)
@@ -157,7 +168,12 @@ export class ParametroService {
     // Verificar se o parâmetro é editável (implementação futura)
     const editavel = true; // Placeholder para implementação futura
     if (!editavel) {
-      throw new Error(`Parâmetro '${chave}' não pode ser removido pois não é editável`);
+      throw new InvalidOperationException(
+        'remover parâmetro',
+        `Parâmetro '${chave}' não pode ser removido pois não é editável`,
+        'não editável',
+        'editável'
+      );
     }
 
     await this.parametroRepository.remove(parametro.id as unknown as number);
@@ -284,7 +300,12 @@ export class ParametroService {
    */
   definirTempoCacheMs(ttlMs: number): void {
     if (ttlMs <= 0) {
-      throw new Error('Tempo de cache deve ser maior que zero');
+      throw new ValidationErrorException(
+        'ttlMs',
+        ttlMs,
+        'number',
+        'Tempo de cache deve ser maior que zero'
+      );
     }
     this.logger.log(`Tempo de cache alterado para ${ttlMs}ms`);
   }

@@ -4,6 +4,7 @@ import {
   Post,
   Body,
   Param,
+  ParseUUIDPipe,
   Query,
   UseGuards,
   Req,
@@ -98,7 +99,7 @@ export class AuditoriaController {
   @ApiResponse({ status: 200, description: 'Log de auditoria encontrado' })
   @ApiResponse({ status: 404, description: 'Log de auditoria não encontrado' })
   @ApiResponse({ status: 403, description: 'Acesso negado' })
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.auditoriaService.findOne(id);
   }
 
@@ -118,7 +119,7 @@ export class AuditoriaController {
     description: 'Lista de logs de auditoria da entidade',
   })
   @ApiResponse({ status: 403, description: 'Acesso negado' })
-  findByEntidade(@Param('entidade') entidade: string, @Param('id') id: string) {
+  findByEntidade(@Param('entidade') entidade: string, @Param('id', ParseUUIDPipe) id: string) {
     return this.auditoriaService.findByEntidade(entidade, id);
   }
 
@@ -137,7 +138,7 @@ export class AuditoriaController {
     description: 'Lista de logs de auditoria do usuário',
   })
   @ApiResponse({ status: 403, description: 'Acesso negado' })
-  findByUsuario(@Param('id') id: string) {
+  findByUsuario(@Param('id', ParseUUIDPipe) id: string) {
     return this.auditoriaService.findByUsuario(id);
   }
 

@@ -2,6 +2,7 @@ import {
   Controller,
   Post,
   Param,
+  ParseUUIDPipe,
   Body,
   UseGuards,
   Req,
@@ -54,7 +55,7 @@ export class WorkflowSolicitacaoController {
     description: 'Lista de estados possíveis retornada com sucesso',
   })
   async getEstadosPossiveis(
-    @Param('solicitacaoId') solicitacaoId: string,
+    @Param('solicitacaoId', ParseUUIDPipe) solicitacaoId: string,
   ): Promise<StatusSolicitacao[]> {
     return this.workflowService.getEstadosPossiveis(solicitacaoId);
   }
@@ -80,7 +81,7 @@ export class WorkflowSolicitacaoController {
     description: 'Rascunho submetido com sucesso',
   })
   async submeterRascunho(
-    @Param('solicitacaoId') solicitacaoId: string,
+    @Param('solicitacaoId', ParseUUIDPipe) solicitacaoId: string,
     @Req() req: any,
   ): Promise<ResultadoTransicaoEstado> {
     return this.workflowService.submeterRascunho(solicitacaoId, req.user.id);
@@ -107,7 +108,7 @@ export class WorkflowSolicitacaoController {
     description: 'Solicitação enviada para análise com sucesso',
   })
   async enviarParaAnalise(
-    @Param('solicitacaoId') solicitacaoId: string,
+    @Param('solicitacaoId', ParseUUIDPipe) solicitacaoId: string,
     @Req() req: any,
   ): Promise<ResultadoTransicaoEstado> {
     return this.workflowService.enviarParaAnalise(solicitacaoId, req.user.id);
@@ -134,7 +135,7 @@ export class WorkflowSolicitacaoController {
     description: 'Análise iniciada com sucesso',
   })
   async iniciarAnalise(
-    @Param('solicitacaoId') solicitacaoId: string,
+    @Param('solicitacaoId', ParseUUIDPipe) solicitacaoId: string,
     @Req() req: any,
   ): Promise<ResultadoTransicaoEstado> {
     return this.workflowService.iniciarAnalise(solicitacaoId, req.user.id);
@@ -162,7 +163,7 @@ export class WorkflowSolicitacaoController {
     description: 'Solicitação aprovada com sucesso',
   })
   async aprovarSolicitacao(
-    @Param('solicitacaoId') solicitacaoId: string,
+    @Param('solicitacaoId', ParseUUIDPipe) solicitacaoId: string,
     @Body() body: ObservacaoTransicaoDto,
     @Req() req: any,
   ): Promise<ResultadoTransicaoEstado> {
@@ -194,7 +195,7 @@ export class WorkflowSolicitacaoController {
     description: 'Solicitação liberada com sucesso',
   })
   async liberarSolicitacao(
-    @Param('solicitacaoId') solicitacaoId: string,
+    @Param('solicitacaoId', ParseUUIDPipe) solicitacaoId: string,
     @Req() req: any,
   ): Promise<ResultadoTransicaoEstado> {
     return this.workflowService.liberarSolicitacao(solicitacaoId, req.user.id);
@@ -222,7 +223,7 @@ export class WorkflowSolicitacaoController {
     description: 'Solicitação rejeitada com sucesso',
   })
   async rejeitarSolicitacao(
-    @Param('solicitacaoId') solicitacaoId: string,
+    @Param('solicitacaoId', ParseUUIDPipe) solicitacaoId: string,
     @Body() body: ObservacaoTransicaoDto,
     @Req() req: any,
   ): Promise<ResultadoTransicaoEstado> {
@@ -255,7 +256,7 @@ export class WorkflowSolicitacaoController {
     description: 'Solicitação cancelada com sucesso',
   })
   async cancelarSolicitacao(
-    @Param('solicitacaoId') solicitacaoId: string,
+    @Param('solicitacaoId', ParseUUIDPipe) solicitacaoId: string,
     @Body() body: ObservacaoTransicaoDto,
     @Req() req: any,
   ): Promise<ResultadoTransicaoEstado> {
@@ -287,7 +288,7 @@ export class WorkflowSolicitacaoController {
     description: 'Processamento iniciado com sucesso',
   })
   async iniciarProcessamento(
-    @Param('solicitacaoId') solicitacaoId: string,
+    @Param('solicitacaoId', ParseUUIDPipe) solicitacaoId: string,
     @Req() req: any,
   ): Promise<ResultadoTransicaoEstado> {
     return this.workflowService.iniciarProcessamento(solicitacaoId, req.user.id);
@@ -314,7 +315,7 @@ export class WorkflowSolicitacaoController {
     description: 'Solicitação concluída com sucesso',
   })
   async concluirSolicitacao(
-    @Param('solicitacaoId') solicitacaoId: string,
+    @Param('solicitacaoId', ParseUUIDPipe) solicitacaoId: string,
     @Req() req: any,
   ): Promise<ResultadoTransicaoEstado> {
     return this.workflowService.concluirSolicitacao(solicitacaoId, req.user.id);
@@ -341,7 +342,7 @@ export class WorkflowSolicitacaoController {
     description: 'Solicitação arquivada com sucesso',
   })
   async arquivarSolicitacao(
-    @Param('solicitacaoId') solicitacaoId: string,
+    @Param('solicitacaoId', ParseUUIDPipe) solicitacaoId: string,
     @Req() req: any,
   ): Promise<ResultadoTransicaoEstado> {
     return this.workflowService.arquivarSolicitacao(solicitacaoId, req.user.id);
@@ -370,7 +371,7 @@ export class WorkflowSolicitacaoController {
     description: 'Transição realizada com sucesso',
   })
   async realizarTransicao(
-    @Param('solicitacaoId') solicitacaoId: string,
+    @Param('solicitacaoId', ParseUUIDPipe) solicitacaoId: string,
     @Param('novoEstado') novoEstado: StatusSolicitacao,
     @Body() body: ObservacaoTransicaoDto,
     @Req() req: any,
@@ -415,7 +416,7 @@ export class WorkflowSolicitacaoController {
   })
   @HttpCode(HttpStatus.OK)
   async atualizarStatus(
-    @Param('solicitacaoId') solicitacaoId: string,
+    @Param('solicitacaoId', ParseUUIDPipe) solicitacaoId: string,
     @Body() updateStatusDto: UpdateStatusSolicitacaoDto,
     @Req() req: any,
   ): Promise<ResultadoTransicaoEstado> {

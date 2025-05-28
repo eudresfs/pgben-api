@@ -8,6 +8,7 @@ import { UpdateUsuarioDto } from '../dto/update-usuario.dto';
 import { UpdateStatusUsuarioDto } from '../dto/update-status-usuario.dto';
 import { UpdateSenhaDto } from '../dto/update-senha.dto';
 import { Usuario } from '../entities/usuario.entity';
+import { TipoUnidade, StatusUnidade } from '../../unidade/entities/unidade.entity';
 
 /**
  * Testes unitários para o UsuarioController
@@ -37,18 +38,64 @@ describe('UsuarioController', () => {
     role_id: 'ASSISTENTE_SOCIAL',
     status: 'ativo',
     primeiro_acesso: false,
-    tentativas_login: 0,
-    ultimo_login: new Date(),
     unidadeId: 'unidade-123',
     setorId: 'setor-123',
     created_at: new Date(),
     updated_at: new Date(),
-    deleted_at: null,
-    unidade_id: null,
-    setor_id: null,
-    solicitacoes: [],
-    auditoriasCreated: [],
-    auditoriasUpdated: [],
+    // Relacionamentos obrigatórios
+    role: {
+      id: 'role-123',
+      nome: 'admin',
+      descricao: 'Administrador',
+      ativo: true,
+      usuarios: [],
+      created_at: new Date(),
+      updated_at: new Date()
+    },
+    unidade: {
+      id: 'unidade-123',
+      nome: 'Unidade Teste',
+      codigo: 'UN001',
+      sigla: 'UT',
+      tipo: TipoUnidade.CRAS,
+      endereco: 'Endereço Teste',
+      telefone: '(84) 99999-9999',
+      email: 'unidade@teste.com',
+      responsavel_matricula: '12345',
+      status: StatusUnidade.ATIVO,
+      usuarios: [],
+      setores: [],
+      created_at: new Date(),
+      updated_at: new Date(),
+      removed_at: null
+    },
+    setor: {
+      id: 'setor-123',
+      nome: 'Setor Teste',
+      descricao: 'Setor de Teste',
+      unidade_id: 'unidade-123',
+      unidade: {
+        id: 'unidade-123',
+        nome: 'Unidade Teste',
+        codigo: 'UN001',
+        sigla: 'UT',
+        tipo: TipoUnidade.CRAS,
+        endereco: 'Rua Teste, 123',
+        telefone: '(84) 99999-9999',
+        email: 'unidade@teste.com',
+        responsavel_matricula: '12345',
+        status: StatusUnidade.ATIVO,
+        usuarios: [],
+          setores: [],
+          created_at: new Date(),
+          updated_at: new Date(),
+          removed_at: null
+       },
+      usuarios: [],
+      created_at: new Date(),
+      updated_at: new Date()
+    },
+    refreshTokens: []
   };
 
   const mockRequest = {
@@ -93,12 +140,15 @@ describe('UsuarioController', () => {
   describe('findAll', () => {
     it('deve retornar lista de usuários com paginação', async () => {
       const mockResult = {
-        data: [mockUsuario],
-        total: 1,
-        page: 1,
-        limit: 10,
-        totalPages: 1
+        items: [mockUsuario],
+        meta: {
+          total: 1,
+          page: 1,
+          limit: 10,
+          totalPages: 1
+        }
       };
+
       service.findAll.mockResolvedValue(mockResult);
 
       const result = await controller.findAll(1, 10, 'João', 'ASSISTENTE_SOCIAL', 'ativo', 'unidade-123');
@@ -109,18 +159,20 @@ describe('UsuarioController', () => {
         limit: 10,
         search: 'João',
         role: 'ASSISTENTE_SOCIAL',
-        status: 'ativo',
+        status: StatusUnidade.ATIVO,
         unidadeId: 'unidade-123'
       });
     });
 
     it('deve usar valores padrão quando parâmetros não fornecidos', async () => {
       const mockResult = {
-        data: [mockUsuario],
-        total: 1,
-        page: 1,
-        limit: 10,
-        totalPages: 1
+        items: [mockUsuario],
+        meta: {
+          total: 1,
+          page: 1,
+          limit: 10,
+          totalPages: 1
+        }
       };
       service.findAll.mockResolvedValue(mockResult);
 
@@ -164,18 +216,26 @@ describe('UsuarioController', () => {
       const createDto: CreateUsuarioDto = {
         nome: 'João da Silva',
         email: 'joao.silva@semtas.natal.gov.br',
+        senha: 'Senha@123',
         cpf: '123.456.789-00',
         telefone: '(84) 99999-9999',
         matricula: '12345',
-        role: 'ASSISTENTE_SOCIAL',
-        unidadeId: 'unidade-123',
-        setorId: 'setor-123'
+        role_id: 'ASSISTENTE_SOCIAL',
+        unidade_id: 'unidade-123',
+        setor_id: 'setor-123'
       };
-      service.create.mockResolvedValue(mockUsuario);
+      
+      const mockResponse = {
+        data: mockUsuario,
+        meta: null,
+        message: null
+      };
+      
+      service.create.mockResolvedValue(mockResponse);
 
       const result = await controller.create(createDto);
 
-      expect(result).toEqual(mockUsuario);
+      expect(result).toEqual(mockResponse);
       expect(service.create).toHaveBeenCalledWith(createDto);
     });
   });
@@ -184,14 +244,21 @@ describe('UsuarioController', () => {
     it('deve atualizar usuário', async () => {
       const updateDto: UpdateUsuarioDto = {
         nome: 'João Silva Santos',
+        cpf: '123.456.789-00',
         telefone: '(84) 88888-8888'
       };
-      const usuarioAtualizado = { ...mockUsuario, ...updateDto };
-      service.update.mockResolvedValue(usuarioAtualizado);
+      
+      const mockResponse = {
+        data: { ...mockUsuario, ...updateDto },
+        meta: null,
+        message: null
+      };
+      
+      service.update.mockResolvedValue(mockResponse);
 
       const result = await controller.update('123e4567-e89b-12d3-a456-426614174000', updateDto);
 
-      expect(result).toEqual(usuarioAtualizado);
+      expect(result).toEqual(mockResponse);
       expect(service.update).toHaveBeenCalledWith('123e4567-e89b-12d3-a456-426614174000', updateDto);
     });
   });
@@ -201,7 +268,9 @@ describe('UsuarioController', () => {
       const updateStatusDto: UpdateStatusUsuarioDto = {
         status: 'inativo'
       };
-      const usuarioAtualizado = { ...mockUsuario, status: 'inativo' };
+      
+      const { senhaHash, ...usuarioAtualizado } = { ...mockUsuario, status: 'inativo' };
+      
       service.updateStatus.mockResolvedValue(usuarioAtualizado);
 
       const result = await controller.updateStatus('123e4567-e89b-12d3-a456-426614174000', updateStatusDto);
@@ -216,12 +285,12 @@ describe('UsuarioController', () => {
       const updateSenhaDto: UpdateSenhaDto = {
         senhaAtual: 'senhaAtual123',
         novaSenha: 'novaSenha123',
-        confirmarSenha: 'novaSenha123'
+        confirmacaoSenha: 'novaSenha123'
       };
       const mockResponse = { message: 'Senha atualizada com sucesso' };
       service.updateSenha.mockResolvedValue(mockResponse);
 
-      const result = await controller.updateSenha('123e4567-e89b-12d3-a456-426614174000', updateSenhaDto);
+      const result = await controller.updateSenha('123e4567-e89b-12d3-a456-426614174000', updateSenhaDto, mockRequest);
 
       expect(result).toEqual(mockResponse);
       expect(service.updateSenha).toHaveBeenCalledWith('123e4567-e89b-12d3-a456-426614174000', updateSenhaDto);

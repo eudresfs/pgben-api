@@ -3,6 +3,7 @@ import { ParametroService } from './parametro.service';
 import { LimitesUploadDto } from '../dtos/limites/limites-upload.dto';
 import { PrazoUpdateDto } from '../dtos/limites/prazo-update.dto';
 import { LimitesUploadResponseDto } from '../dtos/limites/limites-upload-response.dto';
+import { ValidationErrorException } from '../../../shared/exceptions';
 
 /**
  * Serviço para gerenciamento de limites operacionais do sistema
@@ -134,7 +135,12 @@ export class LimitesService {
     const chave = this.obterChavePrazo(tipo);
     
     if (dto.dias === undefined || dto.dias < 1) {
-      throw new Error('Prazo deve ser pelo menos 1 dia');
+      throw new ValidationErrorException(
+        'dias',
+        dto.dias,
+        'number',
+        'Prazo deve ser pelo menos 1 dia'
+      );
     }
     
     const descricao = this.obterDescricaoPrazo(tipo);
@@ -164,7 +170,12 @@ export class LimitesService {
       case 'validade':
         return this.KEY_PRAZO_VALIDADE;
       default:
-        throw new Error(`Tipo de prazo não reconhecido: ${tipo}`);
+        throw new ValidationErrorException(
+          'tipo',
+          tipo,
+          'string',
+          `Tipo de prazo não reconhecido: ${tipo}`
+        );
     }
   }
 

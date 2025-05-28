@@ -34,7 +34,7 @@ export class MetricasDashboardController {
    */
   @Get('resumo')
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     {
       permissionName: 'dashboard.visualizar',
       scopeType: ScopeType.GLOBAL,
@@ -51,7 +51,7 @@ export class MetricasDashboardController {
    */
   @Get('kpis')
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     {
       permissionName: 'dashboard.visualizar',
       scopeType: ScopeType.GLOBAL,
@@ -68,7 +68,7 @@ export class MetricasDashboardController {
    */
   @Get('graficos')
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     {
       permissionName: 'dashboard.visualizar',
       scopeType: ScopeType.GLOBAL,
@@ -91,7 +91,7 @@ export class MetricasDashboardController {
    */
   @Get('alertas')
   @RequiresPermission(
-    { permissionName: '*.*' },
+    
     {
       permissionName: 'dashboard.visualizar',
       scopeType: ScopeType.GLOBAL,

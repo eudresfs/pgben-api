@@ -4,6 +4,7 @@ import {
   Post,
   Body,
   Param,
+  ParseUUIDPipe,
   Patch,
   Delete,
   Query,
@@ -78,7 +79,7 @@ export class ProcessoJudicialController {
   @ApiResponse({ status: HttpStatus.OK, description: 'Processo judicial encontrado', type: ProcessoJudicial })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Processo judicial não encontrado' })
   @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Não autorizado' })
-  async findOne(@Param('id') id: string): Promise<ProcessoJudicial> {
+  async findOne(@Param('id', ParseUUIDPipe) id: string): Promise<ProcessoJudicial> {
     return this.processoJudicialService.findById(id);
   }
 
@@ -103,7 +104,7 @@ export class ProcessoJudicialController {
   @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Dados inválidos' })
   @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Não autorizado' })
   async update(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() updateProcessoJudicialDto: UpdateProcessoJudicialDto,
     @Request() req
   ): Promise<ProcessoJudicial> {
@@ -120,7 +121,7 @@ export class ProcessoJudicialController {
   @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Status inválido' })
   @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Não autorizado' })
   async updateStatus(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() updateStatusDto: UpdateStatusProcessoJudicialDto,
     @Request() req
   ): Promise<ProcessoJudicial> {
@@ -136,7 +137,7 @@ export class ProcessoJudicialController {
   @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'Processo judicial desativado com sucesso' })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Processo judicial não encontrado' })
   @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Não autorizado' })
-  async remove(@Param('id') id: string, @Request() req): Promise<void> {
+  async remove(@Param('id', ParseUUIDPipe) id: string, @Request() req): Promise<void> {
     await this.processoJudicialService.desativar(id, req.user.id);
   }
 }

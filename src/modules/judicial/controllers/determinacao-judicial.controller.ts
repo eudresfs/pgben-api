@@ -4,6 +4,7 @@ import {
   Post,
   Body,
   Param,
+  ParseUUIDPipe,
   Patch,
   Delete,
   UseGuards,
@@ -118,7 +119,7 @@ export class DeterminacaoJudicialController {
     description: 'Determinação encontrada com sucesso',
     type: DeterminacaoJudicial,
   })
-  async findById(@Param('id') id: string): Promise<DeterminacaoJudicial> {
+  async findById(@Param('id', ParseUUIDPipe) id: string): Promise<DeterminacaoJudicial> {
     return this.determinacaoJudicialService.findById(id);
   }
 
@@ -217,7 +218,7 @@ export class DeterminacaoJudicialController {
     type: DeterminacaoJudicial,
   })
   async update(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDeterminacaoDto: UpdateDeterminacaoJudicialDto,
     @Req() req: any,
   ): Promise<DeterminacaoJudicial> {
@@ -243,7 +244,7 @@ export class DeterminacaoJudicialController {
     type: DeterminacaoJudicial,
   })
   async marcarComoCumprida(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() body: CumprimentoDeterminacaoDto,
     @Req() req: any,
   ): Promise<DeterminacaoJudicial> {
@@ -256,7 +257,7 @@ export class DeterminacaoJudicialController {
   @ApiResponse({ status: 200, description: 'Determinação judicial atualizada', type: DeterminacaoJudicial })
   @ApiResponse({ status: 404, description: 'Determinação judicial não encontrada' })
   async toggleAtivo(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Req() req: any,
   ): Promise<DeterminacaoJudicial> {
     return this.determinacaoJudicialService.toggleAtivo(id, req.user.id);
@@ -278,7 +279,7 @@ export class DeterminacaoJudicialController {
     status: 204,
     description: 'Determinação removida com sucesso',
   })
-  async remove(@Param('id') id: string): Promise<void> {
+  async remove(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
     return this.determinacaoJudicialService.remove(id);
   }
 }

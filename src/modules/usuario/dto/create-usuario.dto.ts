@@ -102,11 +102,11 @@ export class CreateUsuarioDto {
   })
   matricula: string;
 
-  @IsEnum(ROLES, { message: `Cargo não existe, os cargos possíveis são: ${Object.values(ROLES).join(', ')}` })
+  @IsUUID(undefined, { message: 'ID da role inválido' })
   @ApiProperty({
-    enum: ROLES,
-    example: ROLES.TECNICO,
-    description: 'Papel do usuário no sistema',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+    description: 'ID do perfil do nível de acesso do usuário',
+    required: false,
   })
   role_id: string;
 
@@ -117,7 +117,7 @@ export class CreateUsuarioDto {
     description: 'ID da unidade do usuário',
     required: false,
   })
-  unidadeId?: string;
+  unidade_id?: string;
 
   @IsUUID(undefined, { message: 'ID do setor inválido' })
   @IsOptional()
@@ -126,5 +126,5 @@ export class CreateUsuarioDto {
     description: 'ID do setor do usuário',
     required: false,
   })
-  setorId?: string;
+  setor_id?: string;
 }
