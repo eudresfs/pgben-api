@@ -5,7 +5,7 @@
 -- Limpar dados existentes (opcional, descomente se necessário)
 -- DELETE FROM usuario_permissao;
 -- DELETE FROM role_permission WHERE permissao_id IN (SELECT id FROM permissao WHERE nome LIKE '%.%');
--- DELETE FROM permission_scope WHERE permissao_id IN (SELECT id FROM permissao WHERE nome LIKE '%.%');
+-- DELETE FROM escopo_permissao WHERE permissao_id IN (SELECT id FROM permissao WHERE nome LIKE '%.%');
 -- DELETE FROM permissao WHERE nome LIKE '%.%';
 
 -- Função auxiliar para criar permissões
@@ -28,7 +28,7 @@ BEGIN
     RETURNING id INTO v_permission_id;
     
     -- Cria o escopo para a permissão
-    INSERT INTO permission_scope (id, permissao_id, tipo_escopo_padrao, created_at, updated_at)
+    INSERT INTO escopo_permissao (id, permissao_id, tipo_escopo_padrao, created_at, updated_at)
     VALUES (gen_random_uuid(), v_permission_id, p_tipo_escopo, NOW(), NOW());
     
     RAISE NOTICE 'Permissão criada: % (ID: %)', p_nome, v_permission_id;
@@ -39,7 +39,7 @@ BEGIN
     WHERE id = v_permission_id;
     
     -- Atualiza ou cria escopo
-    INSERT INTO permission_scope (id, permissao_id, tipo_escopo_padrao, created_at, updated_at)
+    INSERT INTO escopo_permissao (id, permissao_id, tipo_escopo_padrao, created_at, updated_at)
     VALUES (gen_random_uuid(), v_permission_id, p_tipo_escopo, NOW(), NOW())
     ON CONFLICT (permissao_id) 
     DO UPDATE SET tipo_escopo_padrao = p_tipo_escopo, updated_at = NOW();

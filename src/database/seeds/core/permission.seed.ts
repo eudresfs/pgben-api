@@ -14,6 +14,15 @@ import { PermissionRelatorioSeed } from './permission-relatorio.seed';
 import { PermissionSolicitacaoSeed } from './permission-solicitacao.seed';
 import { PermissionUnidadeSeed } from './permission-unidade.seed';
 import { PermissionUsuarioSeed } from './permission-usuario.seed';
+// Novos seeders de permissão
+import { PermissionNotificacaoSeed } from './permission-notificacao.seed';
+import { PermissionMetricasSeed } from './permission-metricas.seed';
+import { PermissionIntegradorSeed } from './permission-integrador.seed';
+import { PermissionJudicialSeed } from './permission-judicial.seed';
+import { PermissionOcorrenciaSeed } from './permission-ocorrencia.seed';
+import { PermissionPagamentoSeed } from './permission-pagamento.seed';
+import { PermissionRecursoSeed } from './permission-recurso.seed';
+import { PermissionRelatoriosUnificadoSeed } from './permission-relatorios-unificado.seed';
 
 /**
  * Seeder para permissões do sistema
@@ -59,6 +68,12 @@ export class PermissionSeeder implements Seeder {
         { nome: 'configuracao.*', descricao: 'Todas as permissões do módulo de configurações', modulo: 'configuracao', acao: '*' },
         { nome: 'notificacao.*', descricao: 'Todas as permissões do módulo de notificações', modulo: 'notificacao', acao: '*' },
         { nome: 'metrica.*', descricao: 'Todas as permissões do módulo de métricas', modulo: 'metrica', acao: '*' },
+        { nome: 'integrador.*', descricao: 'Todas as permissões do módulo de integrador', modulo: 'integrador', acao: '*' },
+        { nome: 'judicial.*', descricao: 'Todas as permissões do módulo judicial', modulo: 'judicial', acao: '*' },
+        { nome: 'ocorrencia.*', descricao: 'Todas as permissões do módulo de ocorrências', modulo: 'ocorrencia', acao: '*' },
+        { nome: 'pagamento.*', descricao: 'Todas as permissões do módulo de pagamentos', modulo: 'pagamento', acao: '*' },
+        { nome: 'recurso.*', descricao: 'Todas as permissões do módulo de recursos', modulo: 'recurso', acao: '*' },
+        { nome: 'relatorios-unificado.*', descricao: 'Todas as permissões do módulo de relatórios unificado', modulo: 'relatorios-unificado', acao: '*' },
       ];
       
       for (const rootPerm of moduleRoots) {
@@ -136,6 +151,31 @@ export class PermissionSeeder implements Seeder {
       
       this.logger.log('Executando seed de permissões de configuração');
       await PermissionConfiguracaoSeed.run(dataSource);
+      
+      // Executar os novos seeders de permissão
+      this.logger.log('Executando seed de permissões de notificação');
+      await PermissionNotificacaoSeed.run(dataSource);
+      
+      this.logger.log('Executando seed de permissões de métricas');
+      await PermissionMetricasSeed.run(dataSource);
+      
+      this.logger.log('Executando seed de permissões de integrador');
+      await PermissionIntegradorSeed.run(dataSource);
+      
+      this.logger.log('Executando seed de permissões judicial');
+      await PermissionJudicialSeed.run(dataSource);
+      
+      this.logger.log('Executando seed de permissões de ocorrência');
+      await PermissionOcorrenciaSeed.run(dataSource);
+      
+      this.logger.log('Executando seed de permissões de pagamento');
+      await PermissionPagamentoSeed.run(dataSource);
+      
+      this.logger.log('Executando seed de permissões de recurso');
+      await PermissionRecursoSeed.run(dataSource);
+      
+      this.logger.log('Executando seed de permissões de relatórios unificado');
+      await PermissionRelatoriosUnificadoSeed.run(dataSource);
       
       this.logger.log('Todos os seeders de módulos executados com sucesso!');
     } catch (error) {

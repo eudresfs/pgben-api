@@ -118,7 +118,7 @@ Permissões atribuídas diretamente a usuários (sobrepõe-se às permissões da
 - Índice composto: `(user_id, permission_id, scope_type, scope_id)`
 - Índice: `valid_until`
 
-### 7. Permissão-Escopo (`permission_scope`)
+### 7. Permissão-Escopo (`escopo_permissao`)
 
 Define regras de escopo padrão para permissões.
 

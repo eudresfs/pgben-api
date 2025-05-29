@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: alertmanager-config
+data:
+  alertmanager.yml: |
+    global:
+      resolve_timeout: 5m
+      smtp_from: 'alertmanager@pgben.gov.br'
+      smtp_smarthost: 'smtp.example.com:587'
+      smtp_auth_username: '{{ .SMTP_USERNAME }}'
+      smtp_auth_password: '{{ .SMTP_PASSWORD }}'
+      smtp_require_tls: true
+    
+    templates:
+    - '/etc/alertmanager/template/*.tmpl'
+    
+    route:
+      group_by: ['alertname', 'job']
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 4h
+      receiver: 'email-notifications'
+    
+    receivers:
+    - name: 'email-notifications'
+      email_configs:
+      - to: 'admin@pgben.gov.br'
+        send_resolved: true
+    
+    inhibit_rules:
+    - source_match:
+        severity: 'critical'
+      target_match:
+        severity: 'warning'
+      equal: ['alertname', 'instance']

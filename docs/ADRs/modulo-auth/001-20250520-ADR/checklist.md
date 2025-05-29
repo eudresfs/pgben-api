@@ -78,7 +78,7 @@
 - ✅ Criar migration para tabela permission_group_mapping
 - ✅ Criar migration para tabela role_permission
 - ✅ Criar migration para tabela user_permission
-- ✅ Criar migration para tabela permission_scope
+- ✅ Criar migration para tabela escopo_permissao
 - ⬜ Testar execução das migrations
 - ⬜ Verificar rollback das migrations
 

@@ -1,0 +1,61 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: postgres-backup
+  labels:
+    app: pgben-backup
+spec:
+  schedule: "0 1 * * *"  # Executa todos os dias à 1h da manhã
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        spec:
+          containers:
+          - name: postgres-backup
+            image: postgres:14-alpine
+            command:
+            - /bin/bash
+            - /scripts/postgres-backup.sh
+            env:
+            - name: POSTGRES_HOST
+              value: postgres
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: pgben-database-secrets
+                  key: username
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: pgben-database-secrets
+                  key: password
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: pgben-database-secrets
+                  key: database
+            volumeMounts:
+            - name: backup-volume
+              mountPath: /backups
+            - name: backup-scripts
+              mountPath: /scripts
+            resources:
+              requests:
+                cpu: "100m"
+                memory: "128Mi"
+              limits:
+                cpu: "200m"
+                memory: "256Mi"
+          restartPolicy: OnFailure
+          volumes:
+          - name: backup-volume
+            persistentVolumeClaim:
+              claimName: backup-pvc
+          - name: backup-scripts
+            configMap:
+              name: backup-scripts-configmap
+              defaultMode: 0755

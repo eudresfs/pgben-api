@@ -78,7 +78,7 @@ export class CreatePermissionScopeTable1747961017270 implements MigrationInterfa
       'escopo_permissao',
       new TableIndex({
         name: 'IDX_ESCOPO_PERMISSAO_PERMISSAO',
-        columnNames: ['permissao_usuario_id'],
+        columnNames: ['permissao_id'],
         isUnique: true,
       })
     );

@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backup-scripts-configmap
+data:
+  postgres-backup.sh: |
+    #!/bin/bash
+    
+    # Script simplificado para backup do PostgreSQL
+    
+    # Configurações
+    BACKUP_DIR="/backups/postgres"
+    TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+    BACKUP_FILE="$BACKUP_DIR/pgben-backup-$TIMESTAMP.sql.gz"
+    RETENTION_DAYS=7
+    
+    # Criar diretório de backup se não existir
+    mkdir -p $BACKUP_DIR
+    
+    # Executar backup do PostgreSQL
+    echo "[INFO] Iniciando backup do PostgreSQL em $TIMESTAMP"
+    PGPASSWORD=$POSTGRES_PASSWORD pg_dump -h $POSTGRES_HOST -U $POSTGRES_USER -d $POSTGRES_DB -F p | gzip > $BACKUP_FILE
+    
+    if [ $? -eq 0 ]; then
+      echo "[INFO] Backup concluído com sucesso: $BACKUP_FILE"
+      # Registrar tamanho do backup
+      BACKUP_SIZE=$(du -h $BACKUP_FILE | cut -f1)
+      echo "[INFO] Tamanho do backup: $BACKUP_SIZE"
+    else
+      echo "[ERRO] Falha ao realizar backup do PostgreSQL"
+      exit 1
+    fi
+    
+    # Remover backups antigos (retenção)
+    echo "[INFO] Removendo backups com mais de $RETENTION_DAYS dias"
+    find $BACKUP_DIR -name "pgben-backup-*.sql.gz" -type f -mtime +$RETENTION_DAYS -delete
+    
+    echo "[INFO] Processo de backup concluído em $(date)"
+    exit 0

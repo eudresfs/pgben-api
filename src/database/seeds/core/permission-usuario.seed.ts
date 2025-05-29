@@ -344,20 +344,22 @@ export class PermissionUsuarioSeed {
     description: string,
     isComposite: boolean,
   ): Promise<Permission> {
-    const existingPermission = await repository.findOne({ where: { name } });
+    const existingPermission = await repository.findOne({ where: { nome: name } });
 
     if (existingPermission) {
       console.log(`Permissão '${name}' já existe, atualizando...`);
-      existingPermission.description = description;
-      existingPermission.isComposite = isComposite;
+      existingPermission.descricao = description;
       return repository.save(existingPermission);
     }
 
     console.log(`Criando permissão '${name}'...`);
     const permission = new Permission();
-    permission.name = name;
-    permission.description = description;
-    permission.isComposite = isComposite;
+    permission.nome = name;
+    permission.descricao = description;
+    // Determinar módulo e ação a partir do nome
+    const parts = name.split('.');
+    permission.modulo = parts.length > 0 ? parts[0] : 'sistema';
+    permission.acao = parts.length > 1 ? parts.slice(1).join('.') : null;
     return repository.save(permission);
   }
 
@@ -375,19 +377,19 @@ export class PermissionUsuarioSeed {
     defaultScopeType: TipoEscopo,
   ): Promise<PermissionScope> {
     const existingScope = await repository.findOne({
-      where: { permissionId },
+      where: { permissao_id: permissionId },
     });
 
     if (existingScope) {
       console.log(`Escopo para permissão '${permissionId}' já existe, atualizando...`);
-      existingScope.defaultScopeType = defaultScopeType;
+      existingScope.tipo_escopo_padrao = defaultScopeType;
       return repository.save(existingScope);
     }
 
     console.log(`Criando escopo para permissão '${permissionId}'...`);
     const scope = new PermissionScope();
-    scope.permissionId = permissionId;
-    scope.defaultScopeType = defaultScopeType;
+    scope.permissao_id = permissionId;
+    scope.tipo_escopo_padrao = defaultScopeType;
     return repository.save(scope);
   }
 }

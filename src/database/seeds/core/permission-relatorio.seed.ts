@@ -253,7 +253,7 @@ export class PermissionRelatorioSeed {
     description: string,
     isComposite: boolean,
   ): Promise<Permission> {
-    const existingPermission = await repository.findOne({ where: { name } });
+    const existingPermission = await repository.findOne({ where: { nome: name } });
 
     if (existingPermission) {
       console.log(`Permissão '${name}' já existe, atualizando...`);
@@ -264,9 +264,20 @@ export class PermissionRelatorioSeed {
 
     console.log(`Criando permissão '${name}'...`);
     const permission = new Permission();
-    permission.name = name;
+    permission.nome = name;
     permission.description = description;
     permission.isComposite = isComposite;
+    
+    // Extrair módulo e ação do nome da permissão
+    const parts = name.split('.');
+    if (parts.length >= 1) {
+      permission.modulo = parts[0];
+    }
+    if (parts.length > 1) {
+      permission.acao = parts.slice(1).join('.');
+    } else {
+      permission.acao = 'default';
+    }
     return repository.save(permission);
   }
 
@@ -284,7 +295,7 @@ export class PermissionRelatorioSeed {
     defaultScopeType: TipoEscopo,
   ): Promise<PermissionScope> {
     const existingScope = await repository.findOne({
-      where: { permissionId },
+      where: { permissao_id: permissionId },
     });
 
     if (existingScope) {
@@ -295,7 +306,7 @@ export class PermissionRelatorioSeed {
 
     console.log(`Criando escopo para permissão '${permissionId}'...`);
     const scope = new PermissionScope();
-    scope.permissionId = permissionId;
+    scope.permissao_id = permissionId;
     scope.defaultScopeType = defaultScopeType;
     return repository.save(scope);
   }

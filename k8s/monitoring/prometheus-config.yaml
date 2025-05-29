@@ -1,0 +1,76 @@
+apiVersion: v1
+
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+      evaluation_interval: 15s
+      external_labels:
+        monitor: 'pgben-monitor'
+
+    scrape_configs:
+      # Endpoint principal da API PGBen
+      - job_name: 'pgben-api'
+        metrics_path: '/metrics'
+        static_configs:
+          - targets: ['pgben-api:80']
+        
+      # Monitoramento do PostgreSQL
+      - job_name: 'postgres'
+        static_configs:
+          - targets: ['postgres-exporter:9187']
+        
+      # Monitoramento de nós Kubernetes
+      - job_name: 'kubernetes-nodes'
+        kubernetes_sd_configs:
+          - role: node
+        relabel_configs:
+          - source_labels: [__address__]
+            regex: '(.*):10250'
+            replacement: '${1}:9100'
+            target_label: __address__
+            action: replace
+          - action: labelmap
+            regex: __meta_kubernetes_node_label_(.+)
+            
+    alerting:
+      alertmanagers:
+        - static_configs:
+            - targets: ['alertmanager:9093']
+
+  rules.yml: |
+    groups:
+    - name: pgben-alerts
+      rules:
+      # Alerta quando a API estiver fora do ar
+      - alert: PGBenAPIDown
+        expr: up{job="pgben-api"} == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "API PGBen indisponível"
+          description: "A API do PGBen está fora do ar há 5 minutos"
+      
+      # Alerta para alta taxa de erros
+      - alert: PGBenHighErrorRate
+        expr: sum(rate(http_request_duration_seconds_count{job="pgben-api",status_code=~"5.."}[5m])) / sum(rate(http_request_duration_seconds_count{job="pgben-api"}[5m])) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Alta taxa de erros na API PGBen"
+          description: "A API do PGBen está com mais de 10% de requisições com erro 5xx nos últimos 5 minutos"
+      
+      # Alerta para banco de dados indisponível
+      - alert: PostgreSQLDown
+        expr: up{job="postgres"} == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PostgreSQL indisponível"
+          description: "O PostgreSQL está fora do ar há 5 minutos"

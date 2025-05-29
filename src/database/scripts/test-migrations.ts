@@ -52,7 +52,7 @@ async function testMigrations() {
         'permission_group_mapping',
         'role_permission',
         'user_permission',
-        'permission_scope'
+        'escopo_permissao'
       )
     `);
 
@@ -83,7 +83,7 @@ async function testMigrations() {
         'permission_group_mapping',
         'role_permission',
         'user_permission',
-        'permission_scope'
+        'escopo_permissao'
       )
     `);
 
