@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleAdapterModule } from '../../shared/schedule/schedule-adapter.module';
@@ -31,7 +31,7 @@ import { NotificationTemplate } from './entities/notification-template.entity';
     ScheduleAdapterModule,
     ConfigModule,
     // Importa o módulo compartilhado de autenticação
-    AuthModule,
+    forwardRef(() => AuthModule),
   ],
   controllers: [
     NotificacaoController,

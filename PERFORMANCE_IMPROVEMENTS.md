@@ -125,6 +125,131 @@ EXPLAIN ANALYZE SELECT * FROM cidadao WHERE nome ILIKE '%joão%';
 - Uso de CPU do banco > 80%
 - Cache hit rate < 70%
 
+## 📋 Resumo das Melhorias Implementadas
+
+### 🔧 Correções de Bugs
+1. **Erro 500 no endpoint de composição familiar**
+   - **Problema**: Tentativa de obter repositório usando string ao invés da entidade
+   - **Solução**: Correção da importação e uso correto da entidade `ComposicaoFamiliar`
+   - **Arquivo**: `src/modules/cidadao/repositories/cidadao.repository.ts`
+
+### 🚀 Novo Endpoint de Busca Unificada
+2. **Unificação dos endpoints de busca**
+   - **Funcionalidade**: Endpoint único `/v1/cidadao/busca` para buscar por ID, CPF, NIS, telefone ou nome
+   - **Validação**: Permite apenas um parâmetro por vez para garantir clareza
+   - **Segurança**: Rate limiting e logs de auditoria implementados
+   - **Arquivos**: 
+     - `src/modules/cidadao/dto/busca-cidadao.dto.ts` (novo)
+     - `src/modules/cidadao/services/cidadao.service.ts` (método `buscarCidadao`)
+     - `src/modules/cidadao/controllers/cidadao.controller.ts` (endpoint `/busca`)
+     - `src/modules/cidadao/repositories/cidadao.repository.ts` (métodos `findByTelefone` e `findByNome`)
+
+### 🗄️ Otimizações de Banco de Dados
+
+#### Índices de Performance Adicionados
+
+**Migração 1732825472000 - Índices Básicos de Performance**
+- **Índice GIN para busca textual**: `nome` e `endereco->>'bairro'`
+- **Índices parciais**: `cpf` e `nis` (apenas registros ativos)
+- **Índice composto**: `ativo` + `created_at` (otimiza paginação)
+- **Índice de relacionamento**: `unidade_id` + `ativo`
+
+**Migração 1732826000000 - Índices para Busca Unificada**
+- **Índice UNIQUE para telefone**: Busca rápida e garantia de unicidade
+- **Índice GIN com pg_trgm**: Busca textual avançada no nome (fuzzy search)
+- **Índice composto nome + ativo**: Otimiza filtros combinados
+- **Índice case-insensitive**: Fallback para busca no nome
+
+**Arquivos de migração**: 
+- `src/database/migrations/1732825472000-AddCidadaoPerformanceIndexes.ts`
+- `src/database/migrations/1732826000000-AddUnifiedSearchIndexes.ts`
+
+## 🧪 Como Testar as Melhorias
+
+### 1. Aplicar as Migrações
+```bash
+npm run migration:run
+```
+
+### 2. Verificar Índices Criados
+```sql
+-- Verificar índices na tabela cidadao
+SELECT indexname, indexdef 
+FROM pg_indexes 
+WHERE tablename = 'cidadao';
+
+-- Verificar extensão pg_trgm
+SELECT * FROM pg_extension WHERE extname = 'pg_trgm';
+
+-- Verificar índice único do telefone
+SELECT * FROM pg_indexes WHERE indexname = 'idx_cidadao_telefone_unique';
+```
+
+### 3. Testar Endpoint de Busca Unificada
+```bash
+# Busca por ID
+curl -H "Authorization: Bearer <token>" \
+  "http://localhost:3000/v1/cidadao/busca?id=550e8400-e29b-41d4-a716-446655440000"
+
+# Busca por CPF (com e sem formatação)
+curl -H "Authorization: Bearer <token>" \
+  "http://localhost:3000/v1/cidadao/busca?cpf=12345678901"
+curl -H "Authorization: Bearer <token>" \
+  "http://localhost:3000/v1/cidadao/busca?cpf=123.456.789-01"
+
+# Busca por NIS
+curl -H "Authorization: Bearer <token>" \
+  "http://localhost:3000/v1/cidadao/busca?nis=12345678901"
+
+# Busca por telefone (com e sem formatação)
+curl -H "Authorization: Bearer <token>" \
+  "http://localhost:3000/v1/cidadao/busca?telefone=11987654321"
+curl -H "Authorization: Bearer <token>" \
+  "http://localhost:3000/v1/cidadao/busca?telefone=(11)98765-4321"
+
+# Busca por nome (busca parcial)
+curl -H "Authorization: Bearer <token>" \
+  "http://localhost:3000/v1/cidadao/busca?nome=João"
+
+# Busca com relacionamentos
+curl -H "Authorization: Bearer <token>" \
+  "http://localhost:3000/v1/cidadao/busca?cpf=12345678901&includeRelations=true"
+```
+
+### 4. Testar Validações do Endpoint Unificado
+```bash
+# Erro: Nenhum parâmetro (deve retornar 400)
+curl -H "Authorization: Bearer <token>" \
+  "http://localhost:3000/v1/cidadao/busca"
+
+# Erro: Múltiplos parâmetros (deve retornar 400)
+curl -H "Authorization: Bearer <token>" \
+  "http://localhost:3000/v1/cidadao/busca?cpf=12345678901&nome=João"
+
+# Erro: CPF inválido (deve retornar 400)
+curl -H "Authorization: Bearer <token>" \
+  "http://localhost:3000/v1/cidadao/busca?cpf=123"
+```
+
+### 5. Testar Performance dos Endpoints Legados
+```bash
+# Busca por ID (deve ser rápida)
+curl -H "Authorization: Bearer <token>" \
+  "http://localhost:3000/v1/cidadao/{id}"
+
+# Busca por CPF (deve usar índice)
+curl -H "Authorization: Bearer <token>" \
+  "http://localhost:3000/v1/cidadao/cpf/12345678901"
+
+# Busca por NIS (deve usar índice)
+curl -H "Authorization: Bearer <token>" \
+  "http://localhost:3000/v1/cidadao/nis/12345678901"
+
+# Listagem com paginação (deve ser otimizada)
+curl -H "Authorization: Bearer <token>" \
+  "http://localhost:3000/v1/cidadao?page=1&limit=10"
+```
+
 ## Próximos Passos
 
 1. **Implementar Paginação Cursor-based** para listas muito grandes

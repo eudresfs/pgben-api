@@ -3,7 +3,7 @@ import { Type } from 'class-transformer';
 import { CPFValidator } from '../validators/cpf-validator';
 import { Parentesco } from '../enums/parentesco.enum';
 import { EscolaridadeEnum } from '../enums/escolaridade.enum';
-import { Sexo } from '../entities/cidadao.entity'; 
+import { Sexo } from '../enums/sexo.enum'; 
 
 /**
  * DTO para dados básicos do cidadão

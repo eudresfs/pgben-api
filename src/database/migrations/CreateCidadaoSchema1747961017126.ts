@@ -49,13 +49,14 @@ export class CreateCidadaoSchema1747961017126 implements MigrationInterface {
         "telefone" character varying NOT NULL,
         "email" character varying,
         "endereco" jsonb NOT NULL,
-        "ativo" boolean NOT NULL DEFAULT true,
+        "unidade_id" UUID NOT NULL,
         "created_at" TIMESTAMP NOT NULL DEFAULT now(),
         "updated_at" TIMESTAMP NOT NULL DEFAULT now(),
         "removed_at" TIMESTAMP,
         CONSTRAINT "UQ_cidadao_cpf" UNIQUE ("cpf"),
         CONSTRAINT "UQ_cidadao_nis" UNIQUE ("nis"),
         CONSTRAINT "PK_cidadao" PRIMARY KEY ("id")
+        CONSTRAINT "FK_cidadao_unidade" FOREIGN KEY ("unidade_id") REFERENCES "unidade"("id")
       );
     `);
     
@@ -64,6 +65,7 @@ export class CreateCidadaoSchema1747961017126 implements MigrationInterface {
       CREATE INDEX IF NOT EXISTS "IDX_cidadao_nome_ativo" ON "cidadao" ("nome", "ativo");
       CREATE INDEX IF NOT EXISTS "IDX_cidadao_cpf" ON "cidadao" ("cpf");
       CREATE INDEX IF NOT EXISTS "IDX_cidadao_nis" ON "cidadao" ("nis");
+      CREATE INDEX IF NOT EXISTS "IDX_cidadao_nis" ON "cidadao" ("telefone");
       CREATE INDEX IF NOT EXISTS "IDX_cidadao_nome_mae" ON "cidadao" ("nome_mae");
       CREATE INDEX IF NOT EXISTS "IDX_cidadao_created_at_ativo" ON "cidadao" ("created_at", "ativo");
       CREATE INDEX IF NOT EXISTS "IDX_cidadao_endereco" ON "cidadao" USING GIN ("endereco");

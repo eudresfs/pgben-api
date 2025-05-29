@@ -5,6 +5,7 @@ import { UnidadeSeed } from './UnidadeSeed';
 import { TipoBeneficioSeed } from './TipoBeneficioSeed';
 import { PermissionSeeder } from './permission.seed';
 import { PermissionRoleMappingSeed } from './permission-role-mapping.seed';
+import { NotificationTemplateSeed } from './NotificationTemplateSeed';
 
 /**
  * Executa todos os seeds essenciais (core) do sistema
@@ -91,6 +92,12 @@ export class CoreSeedRunner {
     console.log('Iniciando mapeamento de permissões para roles...');
     await executarSeedComTratamento('PermissionRoleMappingSeed', () => 
       PermissionRoleMappingSeed.run(dataSource)
+    );
+    
+    // Templates de notificação
+    console.log('Iniciando seed de templates de notificação...');
+    await executarSeedComTratamento('NotificationTemplateSeed', () => 
+      NotificationTemplateSeed.run(dataSource)
     );
 
     console.log('======================================================');

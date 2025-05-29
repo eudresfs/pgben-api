@@ -1,0 +1,18 @@
+{
+  "codigo": "usuario-credenciais-acesso",
+  "subject": "Credenciais de Acesso - SEMTAS",
+  "description": "Template para envio de credenciais de acesso para novos usuários",
+  "variables": {
+    "nome": "Nome do usuário",
+    "email": "Email do usuário",
+    "senha": "Senha temporária gerada",
+    "matricula": "Matrícula do usuário",
+    "sistema_url": "URL do sistema",
+    "data_criacao": "Data de criação da conta",
+    "supportEmail": "Email de suporte técnico",
+    "year": "Ano atual"
+  },
+  "version": "1.0.0",
+  "author": "Tech Lead SEMTAS",
+  "lastModified": "2024-12-19"
+}

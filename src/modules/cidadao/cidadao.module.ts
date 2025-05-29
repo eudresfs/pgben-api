@@ -19,6 +19,7 @@ import { HistoricoConversaoPapelService } from './services/historico-conversao-p
 import { VerificacaoPapelController } from './controllers/verificacao-papel.controller';
 import { PapelConflitoController } from './controllers/papel-conflito.controller';
 import { RegraConflitoPapelController } from './controllers/regra-conflito-papel.controller';
+// import { DiagnosticoController } from './controllers/diagnostico.controller'; // Movido para módulo separado
 import { AuthModule } from '../../auth/auth.module';
 import { NotificacaoModule } from '../notificacao/notificacao.module';
 
@@ -47,7 +48,8 @@ import { NotificacaoModule } from '../notificacao/notificacao.module';
     PapelCidadaoController, 
     VerificacaoPapelController,
     PapelConflitoController,
-    RegraConflitoPapelController
+    RegraConflitoPapelController,
+    // DiagnosticoController // Movido para módulo separado
   ],
   providers: [
     CidadaoService,

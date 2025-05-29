@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Expose, Transform, Type } from 'class-transformer';
-import { Sexo } from '../entities/cidadao.entity';
+import { Sexo } from '../enums/sexo.enum';
 import { PapelCidadaoResponseDto } from './papel-cidadao-response.dto';
 import { Parentesco } from '../enums/parentesco.enum';
 
@@ -412,11 +412,11 @@ export class CidadaoResponseDto {
   endereco: EnderecoResponseDto;
 
   @ApiProperty({
-    example: true,
-    description: 'Indica se o cidadão está ativo',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+    description: 'ID da unidade onde o cidadão está cadastrado',
   })
   @Expose()
-  ativo: boolean;
+  unidade_id: string;
 
   @ApiProperty({
     example: '2023-01-01T00:00:00.000Z',

@@ -94,7 +94,7 @@ import { PermissionModule } from './permission.module';
 
     // Módulos da aplicação
     ConfigModule,
-    UsuarioModule,
+    forwardRef(() => UsuarioModule),
     forwardRef(() => AuditModule),
     CommonModule,
     AppLoggerModule,

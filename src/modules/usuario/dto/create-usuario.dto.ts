@@ -44,7 +44,7 @@ export class CreateUsuarioDto {
   email: string;
 
   @IsString({ message: 'Senha deve ser uma string' })
-  @IsNotEmpty({ message: 'Senha é obrigatória' })
+  @IsOptional()
   @MinLength(8, { message: 'Senha deve ter no mínimo 8 caracteres' })
   @MaxLength(30, { message: 'Senha deve ter no máximo 30 caracteres' })
   @Matches(
@@ -59,9 +59,10 @@ export class CreateUsuarioDto {
   })
   @ApiProperty({
     example: 'Senha@123',
-    description: 'Senha do usuário',
+    description: 'Senha do usuário (opcional - se não fornecida, será gerada automaticamente)',
+    required: false,
   })
-  senha: string;
+  senha?: string;
 
   @IsString({ message: 'CPF deve ser uma string' })
   @IsNotEmpty({ message: 'CPF é obrigatório' })

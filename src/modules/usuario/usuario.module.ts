@@ -6,6 +6,8 @@ import { UsuarioRepository } from './repositories/usuario.repository';
 import { Usuario } from './entities/usuario.entity';
 import { Role } from './entities/role.entity';
 import { AuthModule } from '../../auth/auth.module';
+import { NotificacaoModule } from '../notificacao/notificacao.module';
+import { NotificationTemplate } from '../notificacao/entities/notification-template.entity';
 
 /**
  * Módulo de usuários
@@ -15,8 +17,9 @@ import { AuthModule } from '../../auth/auth.module';
  */
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Usuario, Role]),
+    TypeOrmModule.forFeature([Usuario, Role, NotificationTemplate]),
     forwardRef(() => AuthModule),
+    NotificacaoModule,
   ],
   controllers: [UsuarioController],
   providers: [UsuarioService, UsuarioRepository],

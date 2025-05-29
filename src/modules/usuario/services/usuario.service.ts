@@ -7,14 +7,18 @@ import {
   InternalServerErrorException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { DataSource, DeepPartial } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
+import { DataSource, DeepPartial, Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { UsuarioRepository } from '../repositories/usuario.repository';
 import { CreateUsuarioDto } from '../dto/create-usuario.dto';
 import { UpdateUsuarioDto } from '../dto/update-usuario.dto';
 import { UpdateStatusUsuarioDto } from '../dto/update-status-usuario.dto';
 import { UpdateSenhaDto } from '../dto/update-senha.dto';
+import { AlterarSenhaPrimeiroAcessoDto } from '../dto/alterar-senha-primeiro-acesso.dto';
 import { Usuario } from '../entities/usuario.entity';
+import { NotificationManagerService } from '../../notificacao/services/notification-manager.service';
+import { NotificationTemplate } from '../../notificacao/entities/notification-template.entity';
 
 /**
  * Serviço de usuários
@@ -31,7 +35,78 @@ export class UsuarioService {
   constructor(
     private readonly dataSource: DataSource,
     private readonly usuarioRepository: UsuarioRepository,
+    private readonly notificationManager: NotificationManagerService,
+    @InjectRepository(NotificationTemplate)
+    private readonly templateRepository: Repository<NotificationTemplate>,
   ) {}
+
+  /**
+   * Gera uma senha aleatória segura que atende aos critérios de validação
+   * @returns Senha aleatória de 12 caracteres
+   */
+  private generateRandomPassword(): string {
+    const lowercase = 'abcdefghijklmnopqrstuvwxyz';
+    const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const numbers = '0123456789';
+    const symbols = '@$!%*?&#';
+    
+    // Garantir pelo menos um caractere de cada tipo obrigatório
+    let password = '';
+    password += lowercase[Math.floor(Math.random() * lowercase.length)];
+    password += uppercase[Math.floor(Math.random() * uppercase.length)];
+    password += numbers[Math.floor(Math.random() * numbers.length)];
+    password += symbols[Math.floor(Math.random() * symbols.length)];
+    
+    // Completar com caracteres aleatórios até 12 caracteres
+    const allChars = lowercase + uppercase + numbers + symbols;
+    for (let i = 4; i < 12; i++) {
+      password += allChars[Math.floor(Math.random() * allChars.length)];
+    }
+    
+    // Embaralhar a senha para evitar padrões previsíveis
+    return password.split('').sort(() => Math.random() - 0.5).join('');
+  }
+
+  /**
+   * Envia credenciais por email para usuário recém-criado
+   * @param usuario Usuário criado
+   * @param senha Senha em texto plano
+   */
+  private async enviarCredenciaisPorEmail(usuario: Usuario, senha: string): Promise<void> {
+    try {
+      // Buscar template de credenciais
+      const template = await this.templateRepository.findOne({
+        where: { nome: 'Credenciais de Acesso - Novo Usuário' }
+      });
+
+      if (!template) {
+        this.logger.error('Template de credenciais não encontrado');
+        return;
+      }
+
+      // Dados para o template
+      const dadosTemplate = {
+        nome: usuario.nome,
+        email: usuario.email,
+        senha: senha,
+        matricula: usuario.matricula,
+        sistema_url: process.env.FRONTEND_URL || 'https://pgben.natal.rn.gov.br',
+        data_criacao: new Date().toLocaleDateString('pt-BR')
+      };
+
+      // Criar notificação
+      await this.notificationManager.criarNotificacao({
+        template_id: template.id,
+        destinatario_id: usuario.id,
+        dados_contexto: dadosTemplate
+      });
+
+      this.logger.log(`Credenciais enviadas por email para: ${usuario.email}`);
+    } catch (error) {
+      this.logger.error(`Erro ao enviar credenciais por email: ${error.message}`);
+      // Não falhar a criação do usuário por erro no envio do email
+    }
+  }
 
   /**
    * Busca todos os usuários com filtros e paginação
@@ -188,9 +263,21 @@ export class UsuarioService {
           }
         }
 
+        // Determinar senha a ser usada
+        let senhaParaUso: string;
+        let senhaGerada = false;
+        
+        if (createUsuarioDto.senha) {
+          senhaParaUso = createUsuarioDto.senha;
+        } else {
+          senhaParaUso = this.generateRandomPassword();
+          senhaGerada = true;
+          this.logger.log(`Senha gerada automaticamente para usuário: ${createUsuarioDto.email}`);
+        }
+
         // Gerar hash da senha com maior segurança
         const senhaHash = await bcrypt.hash(
-          createUsuarioDto.senha,
+          senhaParaUso,
           this.SALT_ROUNDS,
         );
 
@@ -205,12 +292,18 @@ export class UsuarioService {
           role_id: createUsuarioDto.role_id,
           unidade_id: createUsuarioDto.unidade_id,
           setor_id: createUsuarioDto.setor_id,
-          primeiro_acesso: true,
+          primeiro_acesso: true, // Sempre true para novos usuários
           ultimo_login: null,
           tentativas_login: 0,
         });
 
         const usuarioSalvo = await usuarioRepo.save(novoUsuario);
+        
+        // Enviar credenciais por email se senha foi gerada
+        if (senhaGerada) {
+          await this.enviarCredenciaisPorEmail(usuarioSalvo as Usuario, senhaParaUso);
+        }
+
         this.logger.log(`Usuário criado com sucesso: ${usuarioSalvo.id}`);
 
         // Remover campos sensíveis
@@ -219,7 +312,9 @@ export class UsuarioService {
         return {
           data: usuarioSemSenha,
           meta: null,
-          message: null
+          message: senhaGerada 
+            ? 'Usuário criado com sucesso. Credenciais enviadas por email.'
+            : 'Usuário criado com sucesso.'
         };
       });
     } catch (error) {
@@ -640,6 +735,73 @@ export class UsuarioService {
         error.stack,
       );
       throw error;
+    }
+  }
+
+  /**
+   * Altera a senha do usuário no primeiro acesso
+   * @param userId ID do usuário
+   * @param alterarSenhaDto Dados da nova senha
+   * @returns Resultado da operação
+   */
+  async alterarSenhaPrimeiroAcesso(
+    userId: string,
+    alterarSenhaDto: AlterarSenhaPrimeiroAcessoDto,
+  ) {
+    this.logger.log(`Iniciando alteração de senha no primeiro acesso para usuário ${userId}`);
+
+    try {
+      // Verificar se as senhas coincidem
+      if (alterarSenhaDto.novaSenha !== alterarSenhaDto.confirmarSenha) {
+        throw new BadRequestException('As senhas não coincidem');
+      }
+
+      // Usar transação para garantir consistência
+      return await this.dataSource.transaction(async (manager) => {
+        const usuarioRepo = manager.getRepository('usuario');
+
+        // Buscar usuário
+        const usuario = await usuarioRepo.findOne({ where: { id: userId } });
+        if (!usuario) {
+          this.logger.warn(`Usuário não encontrado: ${userId}`);
+          throw new NotFoundException('Usuário não encontrado');
+        }
+
+        // Verificar se está em primeiro acesso
+        if (!usuario.primeiro_acesso) {
+          this.logger.warn(`Usuário ${userId} não está em primeiro acesso`);
+          throw new BadRequestException('Usuário não está em primeiro acesso');
+        }
+
+        // Gerar hash da nova senha
+        const novoHash = await bcrypt.hash(alterarSenhaDto.novaSenha, 12);
+
+        // Atualizar senha e marcar como não sendo mais primeiro acesso
+        await usuarioRepo.update(userId, {
+          senhaHash: novoHash,
+          primeiro_acesso: false,
+          updatedAt: new Date(),
+        });
+
+        this.logger.log(`Senha alterada com sucesso no primeiro acesso para usuário ${userId}`);
+
+        return {
+          data: null,
+          meta: null,
+          message: 'Senha alterada com sucesso. Você pode agora acessar o sistema normalmente.',
+        };
+      });
+    } catch (error) {
+      this.logger.error(
+        `Erro ao alterar senha no primeiro acesso para usuário ${userId}: ${error.message}`,
+        error.stack,
+      );
+      if (error instanceof BadRequestException || error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'Falha ao alterar senha. Por favor, tente novamente.',
+      );
     }
   }
 }

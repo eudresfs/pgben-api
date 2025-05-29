@@ -19,6 +19,7 @@ import { MetricasModule } from './modules/metricas/metricas.module';
 import { AuditModule } from './audit/audit.module';
 import { RecursoModule } from './modules/recurso/recurso.module';
 import { LogsModule } from './modules/logs/logs.module';
+import { DiagnosticoModule } from './modules/diagnostico/diagnostico.module';
 import { APP_GUARD } from '@nestjs/core';
 
 @Module({
@@ -53,6 +54,14 @@ import { APP_GUARD } from '@nestjs/core';
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
         synchronize: false,
         logging: configService.get('NODE_ENV') === 'development',
+        maxQueryExecutionTime: 10000,
+        extra: {
+          max: parseInt(configService.get('DB_POOL_MAX', '20')),
+          min: parseInt(configService.get('DB_POOL_MIN', '5')),
+          idleTimeoutMillis: parseInt(configService.get('DB_POOL_IDLE', '30000')),
+          connectionTimeoutMillis: parseInt(configService.get('DB_POOL_CONN_TIMEOUT', '5000')),
+          allowExitOnIdle: false,
+        },
       }),
     }),
     // Módulo de monitoramento
@@ -90,7 +99,10 @@ import { APP_GUARD } from '@nestjs/core';
     RecursoModule,
 
     // Módulo de logs de auditoria
-    LogsModule
+    LogsModule,
+
+    // Módulo de diagnóstico de performance
+    DiagnosticoModule
   ],
   controllers: [AppController],
   providers: [

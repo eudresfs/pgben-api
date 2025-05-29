@@ -7,6 +7,8 @@ import {
   DeleteDateColumn,
   Index,
   OneToMany,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
 import {
   IsEmail,
@@ -24,14 +26,20 @@ import { NISValidator } from '../validators/nis-validator';
 import { TelefoneValidator } from '../validators/telefone-validator';
 import { PapelCidadao } from './papel-cidadao.entity';
 import { ComposicaoFamiliar } from './composicao-familiar.entity';
-import { Sexo } from '../enums/sexo.enum'
+import { Sexo } from '../enums/sexo.enum';
+import { Unidade } from '../../unidade/entities/unidade.entity';
 
 
 @Entity('cidadao')
 @Index(['cpf'], { unique: true })
 @Index(['nis'], { unique: true, where: 'nis IS NOT NULL' })
-@Index(['nome', 'ativo'])
-@Index(['created_at', 'ativo'])
+@Index(['nome'])
+@Index(['telefone'])
+@Index(['created_at'])
+@Index(['unidade_id'])
+@Index('idx_cidadao_endereco_bairro', { synchronize: false }) // Criado via migração
+@Index('idx_cidadao_endereco_cidade', { synchronize: false }) // Criado via migração
+@Index('idx_cidadao_nome_trgm', { synchronize: false }) // Criado via migração
 export class Cidadao {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -119,8 +127,12 @@ export class Cidadao {
     cep: string;
   };
 
-  @Column({ default: true })
-  ativo: boolean;
+  @Column({ type: 'uuid', nullable: false })
+  unidade_id: string;
+
+  @ManyToOne(() => Unidade, { nullable: false })
+  @JoinColumn({ name: 'unidade_id' })
+  unidade: Unidade;
 
   @CreateDateColumn()
   created_at: Date;

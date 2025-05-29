@@ -24,9 +24,12 @@ import { CreateUsuarioDto } from '../dto/create-usuario.dto';
 import { UpdateUsuarioDto } from '../dto/update-usuario.dto';
 import { UpdateStatusUsuarioDto } from '../dto/update-status-usuario.dto';
 import { UpdateSenhaDto } from '../dto/update-senha.dto';
+import { AlterarSenhaPrimeiroAcessoDto } from '../dto/alterar-senha-primeiro-acesso.dto';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../../../auth/guards/permission.guard';
+import { PrimeiroAcessoGuard } from '../../../auth/guards/primeiro-acesso.guard';
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
+import { AllowPrimeiroAcesso } from '../../../auth/decorators/allow-primeiro-acesso.decorator';
 import { ScopeType } from '../../../auth/entities/user-permission.entity';
 
 /**
@@ -36,7 +39,7 @@ import { ScopeType } from '../../../auth/entities/user-permission.entity';
  */
 @ApiTags('Usuários')
 @Controller('v1/usuario')
-@UseGuards(JwtAuthGuard) // PermissionGuard removido temporariamente para teste 1.1
+@UseGuards(JwtAuthGuard, PrimeiroAcessoGuard) // PermissionGuard removido temporariamente para teste 1.1
 @ApiBearerAuth()
 export class UsuarioController {
   constructor(private readonly usuarioService: UsuarioService) {}
@@ -247,6 +250,26 @@ export class UsuarioController {
     // A verificação agora é feita pelo sistema de permissões granulares
 
     return this.usuarioService.updateSenha(id, updateSenhaDto);
+  }
+
+  /**
+   * Altera a senha no primeiro acesso
+   */
+  @Put('/primeiro-acesso/alterar-senha')
+  @AllowPrimeiroAcesso()
+  @ApiOperation({ summary: 'Alterar senha no primeiro acesso' })
+  @ApiResponse({ status: 200, description: 'Senha alterada com sucesso' })
+  @ApiResponse({
+    status: 400,
+    description: 'Dados inválidos ou usuário não está em primeiro acesso',
+  })
+  @ApiResponse({ status: 404, description: 'Usuário não encontrado' })
+  async alterarSenhaPrimeiroAcesso(
+    @Body() alterarSenhaDto: AlterarSenhaPrimeiroAcessoDto,
+    @Request() req,
+  ) {
+    const userId = req.user.sub;
+    return this.usuarioService.alterarSenhaPrimeiroAcesso(userId, alterarSenhaDto);
   }
 
   /**
