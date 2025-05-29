@@ -17,9 +17,6 @@ COPY . .
 # Compila a aplicação
 RUN npm run build
 
-# Remove dependências de desenvolvimento (comentado temporariamente para debug)
-# RUN npm prune --production
-
 # Estágio de produção
 FROM node:20-alpine AS production
 
