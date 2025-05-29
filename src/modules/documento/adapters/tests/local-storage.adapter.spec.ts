@@ -294,9 +294,9 @@ describe('LocalStorageAdapter', () => {
       // Mock para path.relative e path.dirname
       (path.relative as jest.Mock).mockImplementation((base, file) => {
         if (file.includes('arquivo1.txt'))
-          return 'documentos/2023/01/arquivo1.txt';
+          {return 'documentos/2023/01/arquivo1.txt';}
         if (file.includes('arquivo2.txt'))
-          return 'documentos/2023/01/arquivo2.txt';
+          {return 'documentos/2023/01/arquivo2.txt';}
         return '';
       });
       (path.dirname as jest.Mock).mockReturnValue(

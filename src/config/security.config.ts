@@ -487,7 +487,7 @@ export const SecurityHelpers = {
    * Valida um token CSRF
    */
   validateCSRFToken: (token: string, storedToken: string): boolean => {
-    if (!token || !storedToken) return false;
+    if (!token || !storedToken) {return false;}
     
     // Comparação timing-safe
     return crypto.timingSafeEqual(
@@ -510,7 +510,7 @@ export const SecurityHelpers = {
    */
   verifyPassword: async (password: string, hashedPassword: string): Promise<boolean> => {
     const [salt, hash] = hashedPassword.split(':');
-    if (!salt || !hash) return false;
+    if (!salt || !hash) {return false;}
     
     const verifyHash = crypto.pbkdf2Sync(password, salt, 10000, 64, 'sha512').toString('hex');
     

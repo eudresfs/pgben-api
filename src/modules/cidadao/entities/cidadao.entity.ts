@@ -143,3 +143,5 @@ export class Cidadao {
   @DeleteDateColumn()
   removed_at: Date;
 }
+
+export { Sexo };

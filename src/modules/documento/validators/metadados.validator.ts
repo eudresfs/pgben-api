@@ -165,14 +165,14 @@ export class MetadadosValidator implements ValidatorConstraintInterface {
    * @returns Mensagem de erro
    */
   defaultMessage(args: ValidationArguments): string {
-    if (!args.value) return 'Metadados inválidos';
+    if (!args.value) {return 'Metadados inválidos';}
 
     const { error } = this.schema.validate(args.value, {
       abortEarly: false,
       allowUnknown: false,
     });
 
-    if (!error) return 'Metadados inválidos';
+    if (!error) {return 'Metadados inválidos';}
 
     // Retornar todos os erros de validação em uma única mensagem
     return `Metadados inválidos: ${error.details.map((detail) => detail.message).join('; ')}`;

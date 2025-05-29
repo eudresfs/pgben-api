@@ -213,10 +213,10 @@ export class CidadaoService {
    */
   private isValidCPF(cpfLimpo: string): boolean {
     // CPF deve ter 11 dígitos
-    if (cpfLimpo.length !== 11) return false;
+    if (cpfLimpo.length !== 11) {return false;}
     
     // Verificação básica de dígitos iguais
-    if (/^(\d)\1{10}$/.test(cpfLimpo)) return false;
+    if (/^(\d)\1{10}$/.test(cpfLimpo)) {return false;}
     
     // Para diagnóstico, vamos aceitar qualquer CPF bem formado
     // A validação completa será restaurada após a resolução do problema
@@ -346,7 +346,7 @@ export class CidadaoService {
         error instanceof NotFoundException ||
         error instanceof BadRequestException
       )
-        throw error;
+        {throw error;}
       this.logger.error(
         `Erro ao buscar cidadão por CPF [${cpfLimpo}]: ${error.message}`,
         error.stack,
@@ -829,8 +829,8 @@ export class CidadaoService {
         enableImplicitConversion: false,
       });
     } catch (error) {
-      if (error instanceof ConflictException) throw error;
-      if (error instanceof BadRequestException) throw error;
+      if (error instanceof ConflictException) {throw error;}
+      if (error instanceof BadRequestException) {throw error;}
       this.logger.error(
         `Erro ao criar cidadão: ${error.message}`,
         error.stack,
@@ -949,7 +949,7 @@ export class CidadaoService {
         error instanceof NotFoundException ||
         error instanceof ConflictException
       )
-        throw error;
+        {throw error;}
       throw new InternalServerErrorException('Erro ao atualizar cidadão');
     }
   }
@@ -981,7 +981,7 @@ export class CidadaoService {
       // Invalidar cache
       await this.invalidateCache(cidadao);
     } catch (error) {
-      if (error instanceof NotFoundException) throw error;
+      if (error instanceof NotFoundException) {throw error;}
       throw new InternalServerErrorException('Erro ao remover cidadão');
     }
   }
@@ -1134,7 +1134,7 @@ export class CidadaoService {
 
       return cidadaoDto;
     } catch (error) {
-      if (error instanceof NotFoundException) throw error;
+      if (error instanceof NotFoundException) {throw error;}
       this.logger.error(
         `Erro ao adicionar membro à composição familiar: ${error.message}`,
         error.stack,

@@ -95,7 +95,7 @@ export class Permission {
   
   // Método para obter o módulo de uma permissão pelo nome
   getModule(): string {
-    if (!this.nome) return '';
+    if (!this.nome) {return '';}
     const parts = this.nome.split('.');
     return parts.length > 0 ? parts[0] : '';
   }

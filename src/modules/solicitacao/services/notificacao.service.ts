@@ -167,7 +167,7 @@ export class NotificacaoService {
     tipoPrazo: 'analise' | 'documentos' | 'processamento',
   ): void {
     const prazoData = solicitacao[`prazo_${tipoPrazo}`] as Date;
-    if (!prazoData) return;
+    if (!prazoData) {return;}
     
     const diasAtraso = Math.floor(
       (new Date().getTime() - prazoData.getTime()) / (1000 * 60 * 60 * 24)
@@ -245,7 +245,7 @@ export class NotificacaoService {
    * @param solicitacao Solicitação com determinação judicial
    */
   notificarDeterminacaoJudicial(solicitacao: Solicitacao): void {
-    if (!solicitacao.determinacao_judicial_flag) return;
+    if (!solicitacao.determinacao_judicial_flag) {return;}
     
     // Construir a mensagem da notificação
     const mensagem = `ATENÇÃO: A solicitação ${solicitacao.protocolo} está associada a uma determinação judicial e requer tratamento prioritário. Estado atual: ${solicitacao.status}.`;

@@ -89,12 +89,12 @@ export class AuditService {
     const where: FindOptionsWhere<AuditLog> = {};
 
     // Aplicar filtros
-    if (usuario_id) where.usuario_id = usuario_id;
-    if (action) where.action = action;
-    if (resource_type) where.resource_type = resource_type;
-    if (resource_id) where.resource_id = resource_id;
-    if (severity) where.severity = severity;
-    if (client_ip) where.client_ip = client_ip;
+    if (usuario_id) {where.usuario_id = usuario_id;}
+    if (action) {where.action = action;}
+    if (resource_type) {where.resource_type = resource_type;}
+    if (resource_id) {where.resource_id = resource_id;}
+    if (severity) {where.severity = severity;}
+    if (client_ip) {where.client_ip = client_ip;}
 
     // Filtro de data
     if (start_date || end_date) {

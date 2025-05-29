@@ -6,7 +6,7 @@ export class EstatisticaUtils {
      * Calcula a média de um array de valores
      */
     static calcularMedia(valores: number[]): number {
-      if (valores.length === 0) return 0;
+      if (valores.length === 0) {return 0;}
       const soma = valores.reduce((acc, val) => acc + val, 0);
       return soma / valores.length;
     }
@@ -15,7 +15,7 @@ export class EstatisticaUtils {
      * Calcula o desvio padrão de um array de valores
      */
     static calcularDesvioPadrao(valores: number[], media?: number): number {
-      if (valores.length <= 1) return 0;
+      if (valores.length <= 1) {return 0;}
       
       const mediaValores = media !== undefined ? media : this.calcularMedia(valores);
       
@@ -32,7 +32,7 @@ export class EstatisticaUtils {
      * @param valores Array de valores (deve estar ordenado)
      */
     static calcularMediana(valores: number[]): number {
-      if (valores.length === 0) return 0;
+      if (valores.length === 0) {return 0;}
       
       // Verificar se valores está ordenado
       const valoresOrdenados = [...valores].sort((a, b) => a - b);

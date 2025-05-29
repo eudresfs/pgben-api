@@ -1037,21 +1037,21 @@ describe('PermissionService', () => {
       
       // Mock para o cache
       mockCacheManager.get.mockImplementation((key) => {
-        if (key.includes('usuario.*')) return null;
-        if (key.includes(permissionName)) return null;
+        if (key.includes('usuario.*')) {return null;}
+        if (key.includes(permissionName)) {return null;}
         return null;
       });
       
       // Mock para encontrar a permissão wildcard
       mockPermissionRepository.findByName.mockImplementation((name) => {
-        if (name === 'usuario.*') return null;
-        if (name === '*.detalhes') return wildcardPermission;
+        if (name === 'usuario.*') {return null;}
+        if (name === '*.detalhes') {return wildcardPermission;}
         return null;
       });
       
       // Mock para encontrar as permissões do usuário
       mockUserPermissionRepository.findByUserAndPermission.mockImplementation((uid, permId, scopeT, scopeI) => {
-        if (permId === wildcardPermission.id) return userPermission;
+        if (permId === wildcardPermission.id) {return userPermission;}
         return null;
       });
       
@@ -1091,23 +1091,23 @@ describe('PermissionService', () => {
       
       // Mock para o cache
       mockCacheManager.get.mockImplementation((key) => {
-        if (key.includes('usuario.*')) return null;
-        if (key.includes('*.detalhes')) return null;
-        if (key.includes(permissionName)) return null;
+        if (key.includes('usuario.*')) {return null;}
+        if (key.includes('*.detalhes')) {return null;}
+        if (key.includes(permissionName)) {return null;}
         return null;
       });
       
       // Mock para encontrar a permissão wildcard
       mockPermissionRepository.findByName.mockImplementation((name) => {
-        if (name === 'usuario.*') return null;
-        if (name === '*.detalhes') return null;
-        if (name === '*.*') return wildcardPermission;
+        if (name === 'usuario.*') {return null;}
+        if (name === '*.detalhes') {return null;}
+        if (name === '*.*') {return wildcardPermission;}
         return null;
       });
       
       // Mock para encontrar as permissões do usuário
       mockUserPermissionRepository.findByUserAndPermission.mockImplementation((uid, permId, scopeT, scopeI) => {
-        if (permId === wildcardPermission.id) return userPermission;
+        if (permId === wildcardPermission.id) {return userPermission;}
         return null;
       });
       

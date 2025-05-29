@@ -29,8 +29,8 @@ describe('AuditoriaPagamentoService', () => {
   // Mock do ConfigService
   const mockConfigService = {
     get: jest.fn().mockImplementation((key) => {
-      if (key === 'auditoria.nivel') return 'completo';
-      if (key === 'auditoria.mascaraDados') return true;
+      if (key === 'auditoria.nivel') {return 'completo';}
+      if (key === 'auditoria.mascaraDados') {return true;}
       return null;
     })
   };
@@ -91,8 +91,8 @@ describe('AuditoriaPagamentoService', () => {
     it('deve registrar log sem mascaramento quando configurado', () => {
       // Alterar configuração para não mascarar dados
       mockConfigService.get.mockImplementation((key) => {
-        if (key === 'auditoria.nivel') return 'completo';
-        if (key === 'auditoria.mascaraDados') return false;
+        if (key === 'auditoria.nivel') {return 'completo';}
+        if (key === 'auditoria.mascaraDados') {return false;}
         return null;
       });
 

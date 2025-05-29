@@ -221,7 +221,7 @@ export function IsPasswordStrong(
   options?: PasswordStrengthOptions,
   validationOptions?: ValidationOptions,
 ) {
-  return function (object: Object, propertyName: string) {
+  return function (object: object, propertyName: string) {
     registerDecorator({
       target: object.constructor,
       propertyName: propertyName,
@@ -238,7 +238,7 @@ export function IsPasswordStrong(
  * @returns Score de 0 a 100
  */
 export function calculatePasswordStrength(password: string): number {
-  if (!password) return 0;
+  if (!password) {return 0;}
 
   let score = 0;
   
@@ -246,19 +246,19 @@ export function calculatePasswordStrength(password: string): number {
   score += Math.min(password.length * 2, 25);
   
   // Variedade de caracteres (máximo 25 pontos)
-  if (/[a-z]/.test(password)) score += 5;
-  if (/[A-Z]/.test(password)) score += 5;
-  if (/\d/.test(password)) score += 5;
-  if (/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) score += 10;
+  if (/[a-z]/.test(password)) {score += 5;}
+  if (/[A-Z]/.test(password)) {score += 5;}
+  if (/\d/.test(password)) {score += 5;}
+  if (/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {score += 10;}
   
   // Complexidade (máximo 25 pontos)
   const uniqueChars = new Set(password).size;
   score += Math.min(uniqueChars * 2, 25);
   
   // Penalidades
-  if (COMMON_PASSWORDS.includes(password.toLowerCase())) score -= 50;
-  if (PasswordStrengthConstraint.hasSequentialPattern(password)) score -= 25;
-  if (PasswordStrengthConstraint.hasExcessiveRepetition(password)) score -= 25;
+  if (COMMON_PASSWORDS.includes(password.toLowerCase())) {score -= 50;}
+  if (PasswordStrengthConstraint.hasSequentialPattern(password)) {score -= 25;}
+  if (PasswordStrengthConstraint.hasExcessiveRepetition(password)) {score -= 25;}
   
   // Bônus por comprimento extra (máximo 25 pontos)
   if (password.length > 12) {

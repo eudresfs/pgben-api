@@ -33,7 +33,7 @@ export class IsStrongPassword implements ValidatorConstraintInterface {
   ];
 
   validate(password: string, args: ValidationArguments): boolean {
-    if (!password) return false;
+    if (!password) {return false;}
 
     // Verifica se a senha está na lista de senhas comuns
     if (this.commonPasswords.includes(password.toLowerCase())) {

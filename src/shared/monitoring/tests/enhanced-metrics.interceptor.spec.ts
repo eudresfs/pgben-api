@@ -205,7 +205,7 @@ describe('EnhancedMetricsInterceptor', () => {
 
       // Mock do reflector - não é usado em caso de erro
       mockReflector.get.mockImplementation((key: string) => {
-        if (key === 'isPublic') return false;
+        if (key === 'isPublic') {return false;}
         return undefined;
       });
 
@@ -284,7 +284,7 @@ describe('EnhancedMetricsInterceptor', () => {
       // O interceptor não verifica isPublic, apenas registra métricas
       // A verificação de rotas públicas é feita por outros middlewares/guards
       mockReflector.get.mockImplementation((key: string) => {
-        if (key === 'isPublic') return true;
+        if (key === 'isPublic') {return true;}
         return undefined;
       });
 
@@ -363,9 +363,9 @@ describe('EnhancedMetricsInterceptor', () => {
 
       // Mock do reflector para o teste de autorização
       mockReflector.get.mockImplementation((key: string) => {
-        if (key === 'isPublic') return false;
-        if (key === 'roles') return ['admin'];
-        if (key === 'lgpdDataTypes') return [];
+        if (key === 'isPublic') {return false;}
+        if (key === 'roles') {return ['admin'];}
+        if (key === 'lgpdDataTypes') {return [];}
         return undefined;
       });
 

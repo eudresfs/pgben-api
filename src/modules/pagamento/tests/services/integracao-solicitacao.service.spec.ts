@@ -30,11 +30,11 @@ describe('IntegracaoSolicitacaoService', () => {
   // Mock do ConfigService
   const mockConfigService = {
     get: jest.fn().mockImplementation((key) => {
-      if (key === 'solicitacao.apiUrl') return 'http://api-solicitacao.pgben.local';
-      if (key === 'solicitacao.apiKey') return 'api-key-mock';
-      if (key === 'solicitacao.statusPagamentoPendente') return 'PAGAMENTO_PENDENTE';
-      if (key === 'solicitacao.statusPagamentoRealizado') return 'PAGAMENTO_REALIZADO';
-      if (key === 'solicitacao.statusPagamentoCancelado') return 'PAGAMENTO_CANCELADO';
+      if (key === 'solicitacao.apiUrl') {return 'http://api-solicitacao.pgben.local';}
+      if (key === 'solicitacao.apiKey') {return 'api-key-mock';}
+      if (key === 'solicitacao.statusPagamentoPendente') {return 'PAGAMENTO_PENDENTE';}
+      if (key === 'solicitacao.statusPagamentoRealizado') {return 'PAGAMENTO_REALIZADO';}
+      if (key === 'solicitacao.statusPagamentoCancelado') {return 'PAGAMENTO_CANCELADO';}
       return null;
     })
   };

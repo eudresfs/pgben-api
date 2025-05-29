@@ -311,7 +311,7 @@ export class LogAuditoriaRepository {
    * @param log Log de auditoria
    */
   private async compressLogDataIfNeeded(log: LogAuditoria): Promise<void> {
-    if (!this.compressionEnabled) return;
+    if (!this.compressionEnabled) {return;}
 
     try {
       // Comprimir dados_anteriores se for grande
@@ -351,7 +351,7 @@ export class LogAuditoriaRepository {
    * @param log Log de auditoria
    */
   private async decompressLogDataIfNeeded(log: LogAuditoria): Promise<void> {
-    if (!this.compressionEnabled) return;
+    if (!this.compressionEnabled) {return;}
 
     try {
       // Descomprimir dados_anteriores se estiver comprimido

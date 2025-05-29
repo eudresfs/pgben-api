@@ -181,7 +181,7 @@ export class MetricasColetaService implements OnModuleInit {
    */
   @OnEvent('*')
   async handleEvento(payload: any): Promise<void> {
-    if (!payload || !payload.evento) return;
+    if (!payload || !payload.evento) {return;}
     
     const nomeEvento = payload.evento;
     this.logger.debug(`Evento recebido: ${nomeEvento}`);
@@ -197,7 +197,7 @@ export class MetricasColetaService implements OnModuleInit {
         relations: ['metrica'],
       });
       
-      if (configuracoes.length === 0) return;
+      if (configuracoes.length === 0) {return;}
       
       this.logger.debug(`Encontradas ${configuracoes.length} métricas para coleta baseada no evento: ${nomeEvento}`);
       
@@ -414,7 +414,7 @@ export class MetricasColetaService implements OnModuleInit {
     config: MetricaConfiguracao, 
     valor: number
   ): Promise<void> {
-    if (!config.alertas || config.alertas.length === 0) return;
+    if (!config.alertas || config.alertas.length === 0) {return;}
     
     for (const alerta of config.alertas) {
       let condicaoAtivada = false;

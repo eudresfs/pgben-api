@@ -129,7 +129,7 @@ export class HistoricoConversaoPapelService {
 
       return historico;
     } catch (error) {
-      if (error instanceof NotFoundException) throw error;
+      if (error instanceof NotFoundException) {throw error;}
       this.logger.error(
         `Erro ao buscar histórico de conversão: ${error.message}`,
         error.stack,

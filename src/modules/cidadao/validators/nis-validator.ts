@@ -7,16 +7,16 @@ import {
 @ValidatorConstraint({ name: 'nisValidator', async: false })
 export class NISValidator implements ValidatorConstraintInterface {
   validate(nis: string, args: ValidationArguments) {
-    if (!nis) return false;
+    if (!nis) {return false;}
 
     // Remove caracteres especiais
     nis = nis.replace(/[^\d]/g, '');
 
     // Verifica se tem 11 dígitos
-    if (nis.length !== 11) return false;
+    if (nis.length !== 11) {return false;}
 
     // Verifica se todos os dígitos são iguais
-    if (/^(\d)\1+$/.test(nis)) return false;
+    if (/^(\d)\1+$/.test(nis)) {return false;}
 
     // Validação do dígito verificador (algoritmo do PIS/PASEP/NIS)
     const multiplicadores = [3, 2, 9, 8, 7, 6, 5, 4, 3, 2];

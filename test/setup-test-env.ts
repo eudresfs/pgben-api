@@ -147,19 +147,19 @@ jest.mock('../src/modules/criptografia/services/criptografia.service', () => {
   return {
     CriptografiaService: jest.fn().mockImplementation(() => ({
       criptografar: jest.fn().mockImplementation((texto) => {
-        if (texto === null || texto === undefined) return '';
+        if (texto === null || texto === undefined) {return '';}
         return `CRIPTOGRAFADO:${typeof texto === 'object' ? JSON.stringify(texto) : texto}`;
       }),
       descriptografar: jest.fn().mockImplementation((textoCriptografado) => {
         if (textoCriptografado === null || textoCriptografado === undefined)
-          return '';
+          {return '';}
         return textoCriptografado.replace('CRIPTOGRAFADO:', '');
       }),
       descriptografarParaObjeto: jest
         .fn()
         .mockImplementation((textoCriptografado) => {
           if (textoCriptografado === null || textoCriptografado === undefined)
-            return {};
+            {return {};}
           const texto = textoCriptografado.replace('CRIPTOGRAFADO:', '');
           try {
             return JSON.parse(texto);
@@ -168,19 +168,19 @@ jest.mock('../src/modules/criptografia/services/criptografia.service', () => {
           }
         }),
       criptografarArquivo: jest.fn().mockImplementation((buffer) => {
-        if (buffer === null || buffer === undefined) return Buffer.from([]);
+        if (buffer === null || buffer === undefined) {return Buffer.from([]);}
         return Buffer.from(`CRIPTOGRAFADO:${buffer.toString()}`);
       }),
       descriptografarArquivo: jest.fn().mockImplementation((buffer) => {
-        if (buffer === null || buffer === undefined) return Buffer.from([]);
+        if (buffer === null || buffer === undefined) {return Buffer.from([]);}
         return Buffer.from(buffer.toString().replace('CRIPTOGRAFADO:', ''));
       }),
       gerarHash: jest.fn().mockImplementation((texto) => {
-        if (texto === null || texto === undefined) return '';
+        if (texto === null || texto === undefined) {return '';}
         return `HASH:${texto}`;
       }),
       verificarHash: jest.fn().mockImplementation((texto, hash) => {
-        if (texto === null || texto === undefined) return false;
+        if (texto === null || texto === undefined) {return false;}
         return hash === `HASH:${texto}`;
       }),
     })),

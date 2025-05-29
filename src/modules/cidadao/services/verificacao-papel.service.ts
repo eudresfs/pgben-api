@@ -550,7 +550,7 @@ export class VerificacaoPapelService {
 
       // Verificar cada regra de conflito
       for (const regra of regrasConflito) {
-        if (!regra.ativo) continue;
+        if (!regra.ativo) {continue;}
 
         // Verificar se a regra se aplica aos papéis do cidadão
         const temPapelOrigem = todosPapeis.includes(regra.papel_origem_id);
@@ -613,7 +613,7 @@ export class VerificacaoPapelService {
 
       // Verificar cada regra de conflito
       for (const regra of regrasConflito) {
-        if (!regra.ativo) continue;
+        if (!regra.ativo) {continue;}
 
         // Verificar se a regra se aplica aos papéis do cidadão
         const temPapelOrigem = papeisCidadao.some(p => p.id === regra.papel_origem_id);

@@ -60,10 +60,10 @@ export class TemplateEngine {
   static inicializar(): void {
     // Helper para formatação de data
     Handlebars.registerHelper('formatarData', function(data: Date | string, formato: string) {
-      if (!data) return '';
+      if (!data) {return '';}
       
       const dataObj = data instanceof Date ? data : new Date(data);
-      if (isNaN(dataObj.getTime())) return data;
+      if (isNaN(dataObj.getTime())) {return data;}
 
       // Formato padrão DD/MM/YYYY
       if (!formato || formato === 'data') {
@@ -80,7 +80,7 @@ export class TemplateEngine {
 
     // Helper para formatação de moeda
     Handlebars.registerHelper('formatarMoeda', function(valor: number) {
-      if (valor === undefined || valor === null) return '';
+      if (valor === undefined || valor === null) {return '';}
       
       return new Intl.NumberFormat('pt-BR', {
         style: 'currency',
@@ -90,13 +90,13 @@ export class TemplateEngine {
 
     // Helper para formatação de CPF: XXX.XXX.XXX-XX
     Handlebars.registerHelper('formatarCpf', function(cpf: string) {
-      if (!cpf || typeof cpf !== 'string') return cpf;
+      if (!cpf || typeof cpf !== 'string') {return cpf;}
       
       // Remove caracteres não numéricos
       const cpfNumerico = cpf.replace(/\D/g, '');
       
       // Verifica se tem 11 dígitos
-      if (cpfNumerico.length !== 11) return cpf;
+      if (cpfNumerico.length !== 11) {return cpf;}
       
       // Formato: XXX.XXX.XXX-XX
       return `${cpfNumerico.substring(0, 3)}.${cpfNumerico.substring(3, 6)}.${cpfNumerico.substring(6, 9)}-${cpfNumerico.substring(9, 11)}`;
@@ -104,19 +104,19 @@ export class TemplateEngine {
 
     // Helper para formatação de texto maiúsculo
     Handlebars.registerHelper('maiusculo', function(texto: string) {
-      if (!texto) return '';
+      if (!texto) {return '';}
       return texto.toUpperCase();
     });
 
     // Helper para formatação de texto minúsculo
     Handlebars.registerHelper('minusculo', function(texto: string) {
-      if (!texto) return '';
+      if (!texto) {return '';}
       return texto.toLowerCase();
     });
 
     // Helper para formatação de primeira letra maiúscula
     Handlebars.registerHelper('capitalizar', function(texto: string) {
-      if (!texto) return '';
+      if (!texto) {return '';}
       return texto.charAt(0).toUpperCase() + texto.slice(1).toLowerCase();
     });
   }

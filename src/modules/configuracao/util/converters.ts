@@ -29,10 +29,10 @@ export class ParametroConverter {
           return numero;
         
         case ParametroTipoEnum.BOOLEAN:
-          if (valor.toLowerCase() === 'true') return true;
-          if (valor.toLowerCase() === 'false') return false;
-          if (valor === '1') return true;
-          if (valor === '0') return false;
+          if (valor.toLowerCase() === 'true') {return true;}
+          if (valor.toLowerCase() === 'false') {return false;}
+          if (valor === '1') {return true;}
+          if (valor === '0') {return false;}
           throw new ParametroTipoInvalidoException(chave, valor, tipo);
         
         case ParametroTipoEnum.JSON:

@@ -87,7 +87,7 @@ describe('CriptografiaService', () => {
 
     // Mock para crypto.randomBytes
     (crypto.randomBytes as jest.Mock).mockImplementation((size) => {
-      if (size === 16) return mockIv;
+      if (size === 16) {return mockIv;}
       return Buffer.alloc(size);
     });
 

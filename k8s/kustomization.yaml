@@ -1,0 +1,128 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Metadata
+metadata:
+  name: pgben-server
+  annotations:
+    config.kubernetes.io/local-config: "true"
+
+# Namespace para todos os recursos
+namespace: pgben
+
+# Labels comuns aplicados a todos os recursos
+commonLabels:
+  app: pgben-server
+  version: v1.0.0
+  component: backend
+  part-of: pgben-system
+  managed-by: kustomize
+
+# Anotações comuns aplicadas a todos os recursos
+commonAnnotations:
+  app.kubernetes.io/name: pgben-server
+  app.kubernetes.io/instance: pgben-server
+  app.kubernetes.io/version: "1.0.0"
+  app.kubernetes.io/component: backend
+  app.kubernetes.io/part-of: pgben-system
+  app.kubernetes.io/managed-by: kustomize
+
+# Recursos a serem aplicados
+resources:
+  - configmap.yaml
+  - deployment.yaml
+  - hpa.yaml
+  - pod-disruption-budget.yaml
+  - network-policy.yaml
+  - service-monitor.yaml
+  - ingress.yaml
+
+# Imagens a serem substituídas
+images:
+  - name: pgben-server
+    newName: pgben-server
+    newTag: latest
+
+# Patches para customizações
+patchesStrategicMerge:
+  - |-
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: pgben-server
+    spec:
+      template:
+        metadata:
+          annotations:
+            prometheus.io/scrape: "true"
+            prometheus.io/port: "3000"
+            prometheus.io/path: "/api/v1/metrics"
+
+# Configurações específicas
+configMapGenerator:
+  - name: pgben-config-extra
+    literals:
+      - KUSTOMIZE_VERSION=v1.0.0
+      - DEPLOYMENT_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+      - ENVIRONMENT=production
+
+# Gerador de secrets (para desenvolvimento)
+secretGenerator:
+  - name: pgben-dev-secrets
+    literals:
+      - DEV_MODE=false
+    options:
+      disableNameSuffixHash: true
+
+# Transformações
+transformers:
+  - |-
+    apiVersion: builtin
+    kind: NamespaceTransformer
+    metadata:
+      name: namespace-transformer
+    namespace: pgben
+    setRoleBindingSubjects: true
+    unsetOnly: false
+
+# Validações
+validations:
+  - |-
+    apiVersion: builtin
+    kind: ValidateAnnotations
+    metadata:
+      name: validate-annotations
+    annotations:
+      - app.kubernetes.io/name
+      - app.kubernetes.io/version
+
+# Configurações de build
+buildMetadata:
+  - originAnnotations
+  - transformerAnnotations
+  - managedByLabel
+
+# Opções de load restrictor
+loadRestrictors:
+  - LoadRestrictionsNone
+
+# Configurações de ordenação
+sortOptions:
+  order: legacy
+  legacySortOptions:
+    orderFirst:
+      - Namespace
+      - ResourceQuota
+      - StorageClass
+      - CustomResourceDefinition
+      - ServiceAccount
+      - PodSecurityPolicy
+      - Role
+      - ClusterRole
+      - RoleBinding
+      - ClusterRoleBinding
+      - ConfigMap
+      - Secret
+    orderLast:
+      - MutatingWebhookConfiguration
+      - ValidatingWebhookConfiguration

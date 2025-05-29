@@ -100,7 +100,7 @@ export class CacheService {
    */
   private getLocalCache<T>(key: string): T | null {
     const cached = this.inMemoryCache.get(key);
-    if (!cached) return null;
+    if (!cached) {return null;}
     
     if (Date.now() > cached.expiry) {
       this.inMemoryCache.delete(key);

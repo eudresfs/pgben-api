@@ -32,8 +32,8 @@ describe('IntegracaoCidadaoService', () => {
   // Mock do ConfigService
   const mockConfigService = {
     get: jest.fn().mockImplementation((key) => {
-      if (key === 'cidadao.apiUrl') return 'http://api-cidadao.pgben.local';
-      if (key === 'cidadao.apiKey') return 'api-key-mock';
+      if (key === 'cidadao.apiUrl') {return 'http://api-cidadao.pgben.local';}
+      if (key === 'cidadao.apiKey') {return 'api-key-mock';}
       return null;
     })
   };

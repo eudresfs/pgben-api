@@ -193,7 +193,7 @@ export class CidadaoAuditInterceptor implements NestInterceptor {
    * Verifica se o corpo da requisição contém dados sensíveis
    */
   private containsSensitiveData(body: any): boolean {
-    if (!body) return false;
+    if (!body) {return false;}
 
     const sensitiveFields = [
       'cpf',
@@ -211,7 +211,7 @@ export class CidadaoAuditInterceptor implements NestInterceptor {
    * Extrai os campos sensíveis do corpo da requisição
    */
   private extractSensitiveFields(body: any): string[] {
-    if (!body) return [];
+    if (!body) {return [];}
 
     const sensitiveFields = [
       'cpf',
@@ -232,7 +232,7 @@ export class CidadaoAuditInterceptor implements NestInterceptor {
    * Remove dados sensíveis do corpo da requisição para o log de auditoria
    */
   private sanitizeBody(body: any): any {
-    if (!body) return null;
+    if (!body) {return null;}
 
     const sanitized = { ...body };
 
@@ -264,10 +264,10 @@ export class CidadaoAuditInterceptor implements NestInterceptor {
    * Mascara o CPF para exibir apenas os primeiros e últimos dígitos
    */
   private maskCPF(cpf: string): string {
-    if (!cpf) return '';
+    if (!cpf) {return '';}
 
     const cpfLimpo = cpf.replace(/\D/g, '');
-    if (cpfLimpo.length !== 11) return '***INVALID***';
+    if (cpfLimpo.length !== 11) {return '***INVALID***';}
 
     return `${cpfLimpo.substring(0, 3)}.***.${cpfLimpo.substring(9)}`;
   }
@@ -276,10 +276,10 @@ export class CidadaoAuditInterceptor implements NestInterceptor {
    * Mascara o NIS para exibir apenas os primeiros e últimos dígitos
    */
   private maskNIS(nis: string): string {
-    if (!nis) return '';
+    if (!nis) {return '';}
 
     const nisLimpo = nis.replace(/\D/g, '');
-    if (nisLimpo.length !== 11) return '***INVALID***';
+    if (nisLimpo.length !== 11) {return '***INVALID***';}
 
     return `${nisLimpo.substring(0, 3)}.***.${nisLimpo.substring(9)}`;
   }

@@ -246,7 +246,7 @@ export class SolicitacaoDevSeed {
     avaliadorId: string | null,
   ): Promise<void> {
     // Se não houver avaliador, não criar avaliação
-    if (!avaliadorId) return;
+    if (!avaliadorId) {return;}
 
     const tiposAvaliacao = ['tecnica', 'social'];
     const resultadosAvaliacao = ['aprovado', 'reprovado', 'pendente'];

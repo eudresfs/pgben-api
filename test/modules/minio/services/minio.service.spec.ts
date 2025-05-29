@@ -82,12 +82,12 @@ describe('MinioService', () => {
           provide: ConfigService,
           useValue: {
             get: jest.fn((key: string) => {
-              if (key === 'MINIO_ENDPOINT') return 'localhost';
-              if (key === 'MINIO_PORT') return 9000;
-              if (key === 'MINIO_ACCESS_KEY') return 'minioadmin';
-              if (key === 'MINIO_SECRET_KEY') return 'minioadmin';
-              if (key === 'MINIO_DEFAULT_BUCKET') return 'pgben-documentos';
-              if (key === 'MINIO_USE_SSL') return false;
+              if (key === 'MINIO_ENDPOINT') {return 'localhost';}
+              if (key === 'MINIO_PORT') {return 9000;}
+              if (key === 'MINIO_ACCESS_KEY') {return 'minioadmin';}
+              if (key === 'MINIO_SECRET_KEY') {return 'minioadmin';}
+              if (key === 'MINIO_DEFAULT_BUCKET') {return 'pgben-documentos';}
+              if (key === 'MINIO_USE_SSL') {return false;}
               return null;
             }),
           },

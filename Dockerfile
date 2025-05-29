@@ -14,18 +14,12 @@ RUN npm ci
 # Copia o código-fonte
 COPY . .
 
-# Gerar chaves JWT durante o build
-RUN node scripts/gerar-chaves-jwt.js
-
 # Gera as chaves JWT antes do build
 RUN echo "🔑 Gerando chaves JWT..." && \
     node scripts/gerar-chaves-jwt.js
 
 # Compila a aplicação
 RUN npm run build
-
-# Remove dependências de desenvolvimento
-RUN npm prune --production
 
 # Estágio de produção
 FROM node:20-alpine AS production

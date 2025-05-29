@@ -124,9 +124,9 @@ export class IntegracaoDocumentoService {
     const extensao = path.extname(nomeArquivo).toLowerCase();
     let mimeType = 'application/octet-stream';
     
-    if (extensao === '.pdf') mimeType = 'application/pdf';
-    else if (extensao === '.jpg' || extensao === '.jpeg') mimeType = 'image/jpeg';
-    else if (extensao === '.png') mimeType = 'image/png';
+    if (extensao === '.pdf') {mimeType = 'application/pdf';}
+    else if (extensao === '.jpg' || extensao === '.jpeg') {mimeType = 'image/jpeg';}
+    else if (extensao === '.png') {mimeType = 'image/png';}
     
     return {
       buffer,

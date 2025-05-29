@@ -760,7 +760,7 @@ export class MetricasAnomaliasService {
     // Gerar previsões
     const previsao: PontoPrevisao[] = [];
     
-    let valoresPrevistos = [...valores];
+    const valoresPrevistos = [...valores];
 
     for (let i = 1; i <= horizonte; i++) {
       // Usar os últimos 'tamanhoJanela' valores para prever o próximo

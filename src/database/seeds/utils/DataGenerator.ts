@@ -30,7 +30,7 @@ export class DataGenerator {
       n2 * 9 +
       n1 * 10;
     d1 = 11 - (d1 % 11);
-    if (d1 >= 10) d1 = 0;
+    if (d1 >= 10) {d1 = 0;}
 
     let d2 =
       d1 * 2 +
@@ -44,7 +44,7 @@ export class DataGenerator {
       n2 * 10 +
       n1 * 11;
     d2 = 11 - (d2 % 11);
-    if (d2 >= 10) d2 = 0;
+    if (d2 >= 10) {d2 = 0;}
 
     return `${n1}${n2}${n3}${n4}${n5}${n6}${n7}${n8}${n9}${d1}${d2}`;
   }

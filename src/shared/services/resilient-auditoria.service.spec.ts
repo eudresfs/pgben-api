@@ -374,7 +374,7 @@ describe('ResilientAuditoriaService', () => {
     it('deve respeitar configuração de fallback síncrono desabilitado', async () => {
       // Arrange
       configService.get.mockImplementation((key: string, defaultValue?: any) => {
-        if (key === 'AUDITORIA_ENABLE_SYNC_FALLBACK') return 'false';
+        if (key === 'AUDITORIA_ENABLE_SYNC_FALLBACK') {return 'false';}
         return defaultValue;
       });
 
@@ -404,8 +404,8 @@ describe('ResilientAuditoriaService', () => {
     it('deve respeitar configuração de backup em arquivo desabilitado', async () => {
       // Arrange
       configService.get.mockImplementation((key: string, defaultValue?: any) => {
-        if (key === 'AUDITORIA_ENABLE_FILE_BACKUP') return 'false';
-        if (key === 'AUDITORIA_ENABLE_SYNC_FALLBACK') return 'true';
+        if (key === 'AUDITORIA_ENABLE_FILE_BACKUP') {return 'false';}
+        if (key === 'AUDITORIA_ENABLE_SYNC_FALLBACK') {return 'true';}
         return defaultValue;
       });
 

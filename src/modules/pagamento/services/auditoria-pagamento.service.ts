@@ -267,7 +267,7 @@ export class AuditoriaPagamentoService {
    * @returns Agência mascarada
    */
   private mascaraAgencia(agencia: string): string {
-    if (!agencia) return '';
+    if (!agencia) {return '';}
     
     const agenciaLimpa = agencia.replace(/\D/g, '');
     
@@ -290,7 +290,7 @@ export class AuditoriaPagamentoService {
    * @returns Conta mascarada
    */
   private mascaraConta(conta: string): string {
-    if (!conta) return '';
+    if (!conta) {return '';}
     
     const contaLimpa = conta.replace(/[^\dXx]/g, '');
     
@@ -314,20 +314,20 @@ export class AuditoriaPagamentoService {
    * @returns Chave PIX mascarada
    */
   private mascaraPixChave(chave: string, tipo: string): string {
-    if (!chave) return '';
+    if (!chave) {return '';}
     
     switch (tipo?.toLowerCase()) {
       case 'cpf':
         // Formato: ***.123.456-**
         const cpfLimpo = chave.replace(/\D/g, '');
-        if (cpfLimpo.length !== 11) return '***.***.***-**';
+        if (cpfLimpo.length !== 11) {return '***.***.***-**';}
         
         return `***.${cpfLimpo.substr(3, 3)}.${cpfLimpo.substr(6, 3)}-**`;
         
       case 'email':
         // Formato: a***@d***.com
         const partes = chave.split('@');
-        if (partes.length !== 2) return chave.substring(0, 1) + '***@***';
+        if (partes.length !== 2) {return chave.substring(0, 1) + '***@***';}
         
         const usuario = partes[0];
         const dominio = partes[1];
@@ -345,19 +345,19 @@ export class AuditoriaPagamentoService {
       case 'telefone':
         // Formato: (00) *****-6789
         const telLimpo = chave.replace(/\D/g, '');
-        if (telLimpo.length < 8) return '(**) *****-****';
+        if (telLimpo.length < 8) {return '(**) *****-****';}
         
         return `(**) *****-${telLimpo.slice(-4)}`;
         
       case 'aleatoria':
         // Formato: ********-****-****-****-************
-        if (chave.length < 8) return '********';
+        if (chave.length < 8) {return '********';}
         
         return chave.substring(0, 8) + '****' + '*'.repeat(chave.length - 12);
         
       default:
         // Mascaramento genérico
-        if (chave.length <= 4) return '****';
+        if (chave.length <= 4) {return '****';}
         
         return chave.substring(0, 2) + '*'.repeat(chave.length - 4) + chave.slice(-2);
     }

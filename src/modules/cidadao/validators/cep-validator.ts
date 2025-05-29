@@ -14,7 +14,7 @@ import {
 @ValidatorConstraint({ name: 'cepValidator', async: false })
 export class CEPValidator implements ValidatorConstraintInterface {
   validate(text: string, args: ValidationArguments) {
-    if (!text) return true; // Permite valores vazios (use @IsNotEmpty se quiser tornar obrigatório)
+    if (!text) {return true;} // Permite valores vazios (use @IsNotEmpty se quiser tornar obrigatório)
 
     // Remove todos os caracteres não numéricos
     const cepLimpo = text.replace(/\D/g, '');

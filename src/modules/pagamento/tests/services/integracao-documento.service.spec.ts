@@ -30,9 +30,9 @@ describe('IntegracaoDocumentoService', () => {
   // Mock do ConfigService
   const mockConfigService = {
     get: jest.fn().mockImplementation((key) => {
-      if (key === 'documento.apiUrl') return 'http://api-documento.pgben.local';
-      if (key === 'documento.apiKey') return 'api-key-mock';
-      if (key === 'documento.categoriaComprovante') return 'COMPROVANTE_PAGAMENTO';
+      if (key === 'documento.apiUrl') {return 'http://api-documento.pgben.local';}
+      if (key === 'documento.apiKey') {return 'api-key-mock';}
+      if (key === 'documento.categoriaComprovante') {return 'COMPROVANTE_PAGAMENTO';}
       return null;
     })
   };

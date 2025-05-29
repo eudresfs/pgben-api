@@ -12,6 +12,7 @@ import {
 } from 'typeorm';
 import { IsNotEmpty, IsOptional, IsNumber, Min } from 'class-validator';
 import { Solicitacao } from './solicitacao.entity';
+import { TipoBeneficio } from '../../beneficio/enums/tipo-beneficio.enum';
 
 @Entity('dados_beneficios')
 @Index(['solicitacao_id'], { unique: true })
@@ -27,9 +28,13 @@ export class DadosSolicitacaoBeneficio {
   @JoinColumn({ name: 'solicitacao_id' })
   solicitacao: Solicitacao;
 
-  @Column('enum', { name: 'tipo_beneficio', enum: 'tipo_beneficio_enum' })
+  @Column('enum', { 
+    name: 'tipo_beneficio', 
+    enum: TipoBeneficio,
+    default: TipoBeneficio.AUXILIO_NATALIDADE
+  })
   @IsNotEmpty({ message: 'Tipo de benefício é obrigatório' })
-  tipo_beneficio: string;
+  tipo_beneficio: TipoBeneficio;
 
   @Column('decimal', { precision: 10, scale: 2, nullable: true })
   @IsOptional()

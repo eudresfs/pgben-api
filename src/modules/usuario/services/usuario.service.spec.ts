@@ -286,8 +286,8 @@ describe('UsuarioService', () => {
           if (entity === 'usuario') {
             return {
               findOne: jest.fn().mockImplementation((options) => {
-                if (options.where.email) return null;
-                if (options.where.cpf) return mockUsuario;
+                if (options.where.email) {return null;}
+                if (options.where.cpf) {return mockUsuario;}
                 return null;
               })
             };
@@ -306,9 +306,9 @@ describe('UsuarioService', () => {
           if (entity === 'usuario') {
             return {
               findOne: jest.fn().mockImplementation((options) => {
-                if (options.where.email) return null;
-                if (options.where.cpf) return null;
-                if (options.where.matricula) return mockUsuario;
+                if (options.where.email) {return null;}
+                if (options.where.cpf) {return null;}
+                if (options.where.matricula) {return mockUsuario;}
                 return null;
               })
             };

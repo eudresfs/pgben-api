@@ -317,10 +317,10 @@ export class VerificacaoPapelController {
    * @private
    */
   private maskCpf(cpf: string): string {
-    if (!cpf || cpf.length < 11) return '***';
+    if (!cpf || cpf.length < 11) {return '***';}
     
     const cleanCpf = cpf.replace(/\D/g, '');
-    if (cleanCpf.length !== 11) return '***';
+    if (cleanCpf.length !== 11) {return '***';}
     
     return `${cleanCpf.substring(0, 3)}*****${cleanCpf.substring(9)}`;
   }

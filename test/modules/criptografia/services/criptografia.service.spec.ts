@@ -21,8 +21,8 @@ describe('CriptografiaService', () => {
           useValue: {
             get: jest.fn((key: string) => {
               if (key === 'ENCRYPTION_KEY')
-                return 'chave-de-criptografia-de-32-caracteres';
-              if (key === 'ENCRYPTION_IV') return 'vetor-de-16-chars';
+                {return 'chave-de-criptografia-de-32-caracteres';}
+              if (key === 'ENCRYPTION_IV') {return 'vetor-de-16-chars';}
               return null;
             }),
           },

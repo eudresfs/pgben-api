@@ -1,31 +1,185 @@
-# Imagem base para desenvolvimento
-FROM node:20-alpine
+# Multi-stage Dockerfile para PGBEN Server
+# Otimizado para produção com foco em segurança e performance
 
-# Diretório de trabalho
+# =============================================================================
+# Stage 1: Base image com dependências do sistema
+# =============================================================================
+FROM node:20-alpine AS base
+
+# Metadados da imagem
+LABEL maintainer="Kemo DevOps Team"
+LABEL description="PGBEN Server - Plataforma de Gestão de Benefícios Eventuais"
+LABEL version="1.0.0"
+LABEL org.opencontainers.image.source="https://github.com/kemosoft-team/pgben-server"
+LABEL org.opencontainers.image.description="Backend API para Plataforma de Gestão de Benefícios Eventuais"
+LABEL org.opencontainers.image.licenses="MIT"
+
+# Argumentos de build
+ARG NODE_ENV=production
+ARG BUILD_DATE
+ARG VCS_REF
+
+# Labels dinâmicos
+LABEL org.opencontainers.image.created=$BUILD_DATE
+LABEL org.opencontainers.image.revision=$VCS_REF
+
+# Instalar dependências do sistema necessárias
+RUN apk add --no-cache \
+    dumb-init \
+    curl \
+    ca-certificates \
+    tzdata \
+    && rm -rf /var/cache/apk/*
+
+# Configurar timezone
+ENV TZ=America/Sao_Paulo
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+# Criar usuário não-root para segurança
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nextjs -u 1001 -G nodejs
+
+# Definir diretório de trabalho
 WORKDIR /app
 
-# Instalar dependências necessárias para desenvolvimento
-RUN apk add --no-cache curl wget netcat-openbsd
+# Configurar npm para produção
+RUN npm config set fund false && \
+    npm config set audit-level moderate
 
-# Instalar nodemon globalmente para hot reload
-RUN npm install -g nodemon ts-node
+# =============================================================================
+# Stage 2: Dependências de desenvolvimento
+# =============================================================================
+FROM base AS deps
 
-# Copia os arquivos de configuração do projeto
+# Copiar arquivos de dependências
 COPY package*.json ./
 
-# Instala as dependências (incluindo as de desenvolvimento)
-RUN npm install
+# Instalar todas as dependências (dev + prod)
+RUN npm ci --include=dev && \
+    npm cache clean --force
 
-# Script de inicialização para verificar dependências e iniciar em modo de desenvolvimento
-COPY docker-entrypoint.dev.sh /docker-entrypoint.dev.sh
-RUN chmod +x /docker-entrypoint.dev.sh
+# =============================================================================
+# Stage 3: Build da aplicação
+# =============================================================================
+FROM base AS builder
 
-# Portas expostas
+# Copiar dependências do stage anterior
+COPY --from=deps /app/node_modules ./node_modules
+
+# Copiar código fonte
+COPY . .
+
+# Executar build
+RUN npm run build && \
+    npm prune --omit=dev && \
+    npm cache clean --force
+
+# =============================================================================
+# Stage 4: Imagem de produção
+# =============================================================================
+FROM base AS production
+
+# Definir variáveis de ambiente
+ENV NODE_ENV=production
+ENV PORT=3000
+ENV NPM_CONFIG_LOGLEVEL=warn
+ENV NODE_OPTIONS="--max-old-space-size=512"
+
+# Criar diretórios necessários
+RUN mkdir -p /app/logs /app/uploads /app/temp && \
+    chown -R nextjs:nodejs /app
+
+# Copiar apenas os arquivos necessários para produção
+COPY --from=builder --chown=nextjs:nodejs /app/dist ./dist
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=nextjs:nodejs /app/package*.json ./
+
+# Copiar arquivos de configuração necessários
+COPY --chown=nextjs:nodejs tsconfig.json ./
+COPY --chown=nextjs:nodejs .env.example ./
+
+# Mudar para usuário não-root
+USER nextjs
+
+# Expor porta da aplicação
 EXPOSE 3000
 
-# Verificação de saúde
-HEALTHCHECK --interval=10s --timeout=5s --start-period=30s --retries=3 \
-  CMD wget -q -O - http://localhost:3000/api/v1/health || exit 1
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:3000/api/v1/health || exit 1
 
-# Comando de inicialização para desenvolvimento
-CMD ["/docker-entrypoint.dev.sh"]
+# Comando de inicialização com dumb-init para proper signal handling
+ENTRYPOINT ["dumb-init", "--"]
+CMD ["node", "dist/main.js"]
+
+# =============================================================================
+# Stage 5: Imagem de desenvolvimento (opcional)
+# =============================================================================
+FROM base AS development
+
+# Instalar dependências de desenvolvimento
+RUN apk add --no-cache git
+
+# Copiar dependências completas
+COPY --from=deps /app/node_modules ./node_modules
+
+# Copiar código fonte
+COPY --chown=nextjs:nodejs . .
+
+# Mudar para usuário não-root
+USER nextjs
+
+# Expor porta da aplicação e porta de debug
+EXPOSE 3000 9229
+
+# Comando para desenvolvimento com hot reload
+CMD ["npm", "run", "start:dev"]
+
+# =============================================================================
+# Stage 6: Imagem para testes (opcional)
+# =============================================================================
+FROM development AS test
+
+# Definir ambiente de teste
+ENV NODE_ENV=test
+
+# Executar testes
+RUN npm run test:unit
+
+# Comando padrão para testes
+CMD ["npm", "run", "test"]
+
+# =============================================================================
+# Configurações de segurança adicionais
+# =============================================================================
+
+# Remover informações sensíveis
+RUN rm -rf /tmp/* /var/tmp/* /root/.npm /home/nextjs/.npm
+
+# Configurar permissões restritivas
+RUN chmod -R 755 /app && \
+    chmod -R 700 /app/logs /app/uploads /app/temp
+
+# Adicionar labels de segurança
+LABEL security.scan="enabled"
+LABEL security.non-root="true"
+LABEL security.readonly-rootfs="false"
+
+# =============================================================================
+# Documentação de uso
+# =============================================================================
+
+# Para build de produção:
+# docker build --target production -t pgben-server:latest .
+
+# Para build de desenvolvimento:
+# docker build --target development -t pgben-server:dev .
+
+# Para build com testes:
+# docker build --target test -t pgben-server:test .
+
+# Para executar:
+# docker run -p 3000:3000 --env-file .env pgben-server:latest
+
+# Para executar com health check:
+# docker run -p 3000:3000 --health-cmd="curl -f http://localhost:3000/api/v1/health" pgben-server:latest

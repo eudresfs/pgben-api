@@ -1,6 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { Logger, RequestMethod, ValidationPipe } from '@nestjs/common';
+import { INestApplication, Logger, RequestMethod, ValidationPipe } from '@nestjs/common';
 import { ResponseInterceptor } from './shared/interceptors/response.interceptor';
 import { AllExceptionsFilter } from './shared/filters/all-exceptions.filter';
 import { setupSwagger } from './shared/configs/swagger/index';
@@ -8,7 +8,7 @@ import { applySecurity } from './config/security.config';
 import { ConfigService } from '@nestjs/config';
 import compression from 'compression';
 
-async function bootstrap() {
+async function bootstrap(): Promise<INestApplication> {
   const logger = new Logger('Bootstrap');
   
   try {
@@ -86,11 +86,12 @@ async function bootstrap() {
     logger.log('🔍 Rotas disponíveis:');
     logger.log(`   - GET  / (raiz)`);
     logger.log(`   - GET  /health`);
-    logger.log(`   - GET  /health/ping`);
-    logger.log(`   - GET  /api/test`);
     logger.log(`   - GET  /api-docs (Swagger UI)`);
     logger.log(`   - GET  /openapi.json (OpenAPI 3.0 para ApiDog)`);
     logger.log(`   - GET  /v2/swagger.json (Swagger 2.0 para ApiDog)`);
+    
+    // Retornar a instância da aplicação para uso no graceful shutdown
+    return app;
     
   } catch (error) {
     logger.error('❌ Erro ao iniciar o servidor:', error);
@@ -98,8 +99,46 @@ async function bootstrap() {
   }
 }
 
+// Graceful shutdown handler
+function setupGracefulShutdown(app: INestApplication) {
+  const logger = new Logger('GracefulShutdown');
+  
+  const shutdown = async (signal: string) => {
+    logger.log(`Recebido sinal ${signal}. Iniciando graceful shutdown...`);
+    
+    try {
+      // Para de aceitar novas conexões
+      await app.close();
+      logger.log('Aplicação fechada com sucesso');
+      process.exit(0);
+    } catch (error) {
+      logger.error('Erro durante o shutdown:', error);
+      process.exit(1);
+    }
+  };
+  
+  // Captura sinais de shutdown
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT', () => shutdown('SIGINT'));
+  
+  // Captura exceções não tratadas
+  process.on('uncaughtException', (error) => {
+    logger.error('Uncaught Exception:', error);
+    shutdown('uncaughtException');
+  });
+  
+  process.on('unhandledRejection', (reason, promise) => {
+    logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
+    shutdown('unhandledRejection');
+  });
+}
+
 // Iniciar a aplicação
-bootstrap().catch(err => {
-  console.error('Falha ao iniciar a aplicação:', err);
-  process.exit(1);
-});
+bootstrap()
+  .then(app => {
+    setupGracefulShutdown(app);
+  })
+  .catch(err => {
+    console.error('Falha ao iniciar a aplicação:', err);
+    process.exit(1);
+  });
