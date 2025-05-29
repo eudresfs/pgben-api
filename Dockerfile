@@ -17,9 +17,12 @@ COPY . .
 # Gerar chaves JWT durante o build
 RUN node scripts/gerar-chaves-jwt.js
 
+# Gera as chaves JWT antes do build
+RUN echo "🔑 Gerando chaves JWT..." && \
+    node scripts/gerar-chaves-jwt.js
+
 # Compila a aplicação
 RUN npm run build
-
 
 # Remove dependências de desenvolvimento
 RUN npm prune --production
@@ -34,16 +37,15 @@ ENV NODE_ENV=production
 WORKDIR /app
 
 # Instala dependências necessárias para produção
-RUN apk add --no-cache curl wget netcat-openbsd
+RUN apk add --no-cache curl wget
 
 # Copia arquivos da etapa de build
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/package*.json ./
 
-# Script de inicialização para verificar dependências
-COPY docker-entrypoint.sh /docker-entrypoint.sh
-RUN chmod +x /docker-entrypoint.sh
+# Copia as chaves JWT geradas no estágio de build
+COPY --from=build /app/keys ./keys
 
 # Portas expostas
 EXPOSE 3000
@@ -52,5 +54,5 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
   CMD wget -q -O - http://localhost:3000/api/v1/health || exit 1
 
-# Comando de inicialização
-CMD ["/docker-entrypoint.sh"]
+# Comando de inicialização direto
+CMD ["node", "dist/main"]
