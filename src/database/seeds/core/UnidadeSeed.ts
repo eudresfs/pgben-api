@@ -138,6 +138,19 @@ export class UnidadeSeed {
             valores.push(unidade.status);
             placeholders.push(`$${placeholderIndex++}`);
             
+            // Adicionar timestamps obrigatórios
+            if (columnNames.includes('created_at')) {
+              colunas.push('created_at');
+              valores.push(new Date().toISOString());
+              placeholders.push(`$${placeholderIndex++}`);
+            }
+            
+            if (columnNames.includes('updated_at')) {
+              colunas.push('updated_at');
+              valores.push(new Date().toISOString());
+              placeholders.push(`$${placeholderIndex++}`);
+            }
+            
             // Construir e executar a query
             const insertQuery = `INSERT INTO unidade (${colunas.join(', ')}) VALUES (${placeholders.join(', ')}) RETURNING id`;
             console.log(`Executando query: ${insertQuery}`);

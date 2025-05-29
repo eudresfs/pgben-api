@@ -90,9 +90,9 @@ export class PermissionSeeder implements Seeder {
         
         // Inserir nova permissão
         await dataSource.query(
-          `INSERT INTO permissao (nome, descricao, modulo, acao, ativo) 
-           VALUES ($1, $2, $3, $4, $5)`,
-          [rootPerm.nome, rootPerm.descricao, rootPerm.modulo, rootPerm.acao, true]
+          `INSERT INTO permissao (nome, descricao, modulo, acao, ativo, created_at, updated_at) 
+           VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+          [rootPerm.nome, rootPerm.descricao, rootPerm.modulo, rootPerm.acao, true, new Date().toISOString(), new Date().toISOString()]
         );
         
         this.logger.log(`Permissão '${rootPerm.nome}' criada com sucesso.`);

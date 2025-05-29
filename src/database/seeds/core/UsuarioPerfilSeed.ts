@@ -88,6 +88,17 @@ export class UsuarioPerfilSeed extends BaseSeed {
             const colunasInsercao = ['nome', 'descricao', statusColumnName];
             const valoresInsercao = [role.nome, role.descricao, role.ativo];
             
+            // Adicionar timestamps obrigatórios
+          if (colunas.includes('created_at')) {
+            colunasInsercao.push('created_at');
+            valoresInsercao.push(new Date().toISOString());
+          }
+          
+          if (colunas.includes('updated_at')) {
+            colunasInsercao.push('updated_at');
+            valoresInsercao.push(new Date().toISOString());
+          }
+            
             // Construir e executar a query de inserção
             const { query, params } = this.construirQueryInsercao('role', colunasInsercao, valoresInsercao);
             await dataSource.query(query, params);
@@ -167,6 +178,17 @@ export class UsuarioPerfilSeed extends BaseSeed {
             admin.matricula,
             admin.cpf
           ];
+          
+          // Adicionar timestamps obrigatórios
+          if (colunas.includes('created_at')) {
+            colunasInsercao.push('created_at');
+            valoresInsercao.push(new Date().toISOString());
+          }
+          
+          if (colunas.includes('updated_at')) {
+            colunasInsercao.push('updated_at');
+            valoresInsercao.push(new Date().toISOString());
+          }
           
           // Construir e executar a query de inserção
           const { query, params } = this.construirQueryInsercao('usuario', colunasInsercao, valoresInsercao);

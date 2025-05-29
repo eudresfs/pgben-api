@@ -37,7 +37,7 @@ export class TipoBeneficioSeed {
         descricao:
           'Benefício destinado à segurança alimentar das famílias em situação de vulnerabilidade',
         valor_referencia: 150.0,
-        periodicidade: 'MENSAL',
+        periodicidade: 'mensal',
         duracao_maxima: 12,
         duracao_padrao: 6,
         teto_renda_per_capita: 0.5, // meio salário mínimo per capita
@@ -50,7 +50,7 @@ export class TipoBeneficioSeed {
         descricao:
           'Benefício destinado a famílias que perderam suas residências ou estão em situação de risco habitacional',
         valor_referencia: 300.0,
-        periodicidade: 'MENSAL',
+        periodicidade: 'mensal',
         duracao_maxima: 24,
         duracao_padrao: 12,
         teto_renda_per_capita: 0.75, // 3/4 do salário mínimo per capita
@@ -63,7 +63,7 @@ export class TipoBeneficioSeed {
         descricao:
           'Benefício destinado a auxiliar nas despesas funerárias de famílias em situação de vulnerabilidade',
         valor_referencia: 1100.0,
-        periodicidade: 'UNICA',
+        periodicidade: 'unico',
         duracao_maxima: 1,
         duracao_padrao: 1,
         teto_renda_per_capita: 1.0, // um salário mínimo per capita
@@ -76,7 +76,7 @@ export class TipoBeneficioSeed {
         descricao:
           'Benefício destinado a auxiliar gestantes em situação de vulnerabilidade com despesas pré-natais e pós-parto',
         valor_referencia: 1000.0,
-        periodicidade: 'UNICA',
+        periodicidade: 'unico',
         duracao_maxima: 1,
         duracao_padrao: 1,
         teto_renda_per_capita: 1.0, // um salário mínimo per capita
@@ -89,7 +89,7 @@ export class TipoBeneficioSeed {
         descricao:
           'Benefício destinado a famílias afetadas por desastres, calamidades ou emergências',
         valor_referencia: 1200.0,
-        periodicidade: 'UNICA',
+        periodicidade: 'unico',
         duracao_maxima: 1,
         duracao_padrao: 1,
         teto_renda_per_capita: 2.0, // dois salários mínimos per capita
@@ -120,6 +120,15 @@ export class TipoBeneficioSeed {
             'recorrente', 
             statusColumnName
           ];
+          
+          // Adicionar timestamps se existirem
+          if (columnNames.includes('created_at')) {
+            colunas.push('created_at');
+          }
+          
+          if (columnNames.includes('updated_at')) {
+            colunas.push('updated_at');
+          }
           
           // Verificar se todas as colunas existem na tabela
           const colunasExistentes: string[] = colunas.filter(col => 
@@ -152,6 +161,10 @@ export class TipoBeneficioSeed {
               valores.push(tipoBeneficio.teto_renda_per_capita);
             } else if (coluna === 'recorrente') {
               valores.push(tipoBeneficio.recorrente);
+            } else if (coluna === 'created_at') {
+              valores.push(new Date().toISOString());
+            } else if (coluna === 'updated_at') {
+              valores.push(new Date().toISOString());
             }
           });
           

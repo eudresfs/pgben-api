@@ -92,8 +92,8 @@ export class InitialSchemaFixed1748544953621 implements MigrationInterface {
     "descricao" TEXT,
     "unidade_id" UUID NOT NULL,
     "status" BOOLEAN NOT NULL DEFAULT true,
-    "created_at" TIMESTAMP NOT NULL,
-    "updated_at" TIMESTAMP NOT NULL,
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "removed_at" TIMESTAMP
 );`);
         await queryRunner.query(`CREATE INDEX "IDX_4095c1294fca5deaef67242e93" ON "setor" ("status");`);
@@ -110,8 +110,8 @@ export class InitialSchemaFixed1748544953621 implements MigrationInterface {
     "email" TEXT,
     "responsavel_matricula" TEXT,
     "status" "unidade_status_enum" NOT NULL DEFAULT 'ativo',
-    "created_at" TIMESTAMP NOT NULL,
-    "updated_at" TIMESTAMP NOT NULL,
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "removed_at" TIMESTAMP
 );`);
         await queryRunner.query(`CREATE INDEX "IDX_d4597b9996d51d2d3afaa9140e" ON "unidade" ("status");`);
@@ -123,8 +123,8 @@ export class InitialSchemaFixed1748544953621 implements MigrationInterface {
     "nome" TEXT NOT NULL,
     "descricao" TEXT,
     "ativo" BOOLEAN NOT NULL DEFAULT true,
-    "created_at" TIMESTAMP NOT NULL,
-    "updated_at" TIMESTAMP NOT NULL
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );`);
         await queryRunner.query(`CREATE TABLE "usuario" (
     "id" UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -139,8 +139,8 @@ export class InitialSchemaFixed1748544953621 implements MigrationInterface {
     "setor_id" UUID,
     "status" "usuario_status_enum" NOT NULL DEFAULT 'ativo',
     "primeiro_acesso" BOOLEAN NOT NULL DEFAULT true,
-    "created_at" TIMESTAMP NOT NULL,
-    "updated_at" TIMESTAMP NOT NULL,
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "removed_at" TIMESTAMP
 );`);
         await queryRunner.query(`CREATE INDEX "IDX_df0630b069ecca09c829b53700" ON "usuario" ("status");`);
@@ -164,8 +164,8 @@ export class InitialSchemaFixed1748544953621 implements MigrationInterface {
     "last_attempt_at" TIMESTAMP,
     "invalidation_reason" VARCHAR(50),
     "metadata" JSONB,
-    "created_at" TIMESTAMP NOT NULL,
-    "updated_at" TIMESTAMP NOT NULL
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );`);
         await queryRunner.query(`CREATE INDEX "IDX_7c038e5a589b06cbe4320cc88b" ON "password_reset_tokens" ("expires_at");`);
         await queryRunner.query(`CREATE INDEX "IDX_2723bda24c4145021e54e269c2" ON "password_reset_tokens" ("usuario_id", "is_used");`);
@@ -174,8 +174,8 @@ export class InitialSchemaFixed1748544953621 implements MigrationInterface {
     "id" UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     "role" "role_permissao_role_enum" NOT NULL,
     "permissao_id" UUID NOT NULL,
-    "created_at" TIMESTAMP NOT NULL,
-    "updated_at" TIMESTAMP NOT NULL,
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "removed_at" TIMESTAMP
 );`);
         await queryRunner.query(`CREATE INDEX "IDX_f80fcdc74b632b76c8a8300698" ON "role_permissao" ("permissao_id");`);
@@ -187,8 +187,8 @@ export class InitialSchemaFixed1748544953621 implements MigrationInterface {
     "modulo" TEXT NOT NULL,
     "acao" TEXT NOT NULL,
     "ativo" BOOLEAN NOT NULL DEFAULT true,
-    "created_at" TIMESTAMP NOT NULL,
-    "updated_at" TIMESTAMP NOT NULL,
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "removed_at" TIMESTAMP
 );`);
         await queryRunner.query(`CREATE INDEX "IDX_63f232965c4f68044255ae83a9" ON "permissao" ("nome");`);
@@ -197,8 +197,8 @@ export class InitialSchemaFixed1748544953621 implements MigrationInterface {
     "id" UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     "nome" VARCHAR(100) NOT NULL,
     "descricao" VARCHAR(255) NOT NULL,
-    "created_at" TIMESTAMP NOT NULL,
-    "updated_at" TIMESTAMP NOT NULL,
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "criado_por" UUID,
     "atualizado_por" UUID
 );`);
@@ -207,7 +207,7 @@ export class InitialSchemaFixed1748544953621 implements MigrationInterface {
     "id" UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     "permissao_id" UUID NOT NULL,
     "grupo_id" UUID NOT NULL,
-    "created_at" TIMESTAMP NOT NULL,
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "criado_por" UUID
 );`);
         await queryRunner.query(`CREATE TABLE "usuario_permissao" (
@@ -218,8 +218,8 @@ export class InitialSchemaFixed1748544953621 implements MigrationInterface {
     "tipo_escopo" VARCHAR(20) NOT NULL DEFAULT 'GLOBAL',
     "escopo_id" UUID,
     "valido_ate" TIMESTAMP,
-    "created_at" TIMESTAMP NOT NULL,
-    "updated_at" TIMESTAMP NOT NULL,
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "criado_por" UUID,
     "atualizado_por" UUID
 );`);
@@ -227,8 +227,8 @@ export class InitialSchemaFixed1748544953621 implements MigrationInterface {
     "id" UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     "permissao_id" UUID NOT NULL,
     "tipo_escopo_padrao" VARCHAR(20) NOT NULL DEFAULT 'GLOBAL',
-    "created_at" TIMESTAMP NOT NULL,
-    "updated_at" TIMESTAMP NOT NULL,
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "criado_por" UUID,
     "atualizado_por" UUID
 );`);
@@ -253,7 +253,7 @@ export class InitialSchemaFixed1748544953621 implements MigrationInterface {
     "metadata" JSONB,
     "error_message" TEXT,
     "stack_trace" TEXT,
-    "created_at" TIMESTAMP NOT NULL
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );`);
         await queryRunner.query(`CREATE INDEX "IDX_d4e5a2ad76a3dfc8ac639068d4" ON "audit_logs" ("client_ip", "created_at");`);
         await queryRunner.query(`CREATE INDEX "IDX_3d04b6f2b05825501c1427f0d9" ON "audit_logs" ("resource_type", "resource_id");`);
@@ -265,8 +265,8 @@ export class InitialSchemaFixed1748544953621 implements MigrationInterface {
     "nome" VARCHAR(100) NOT NULL,
     "descricao" TEXT,
     "cor" VARCHAR(7) NOT NULL DEFAULT '#CCCCCC',
-    "created_at" TIMESTAMP NOT NULL,
-    "updated_at" TIMESTAMP NOT NULL
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );`);
         await queryRunner.query(`CREATE TABLE "logs_auditoria" (
     "id" UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -293,8 +293,8 @@ export class InitialSchemaFixed1748544953621 implements MigrationInterface {
     "id" UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     "setor_id" UUID NOT NULL,
     "unidade_id" UUID NOT NULL,
-    "created_at" TIMESTAMP NOT NULL,
-    "updated_at" TIMESTAMP NOT NULL
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );`);
         await queryRunner.query(`CREATE TABLE "composicao_familiar" (
     "id" UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -308,8 +308,8 @@ export class InitialSchemaFixed1748544953621 implements MigrationInterface {
     "parentesco" "composicao_familiar_parentesco_enum" NOT NULL DEFAULT 'OUTRO',
     "renda" DECIMAL(10, 2),
     "observacoes" TEXT,
-    "created_at" TIMESTAMP NOT NULL,
-    "updated_at" TIMESTAMP NOT NULL,
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "removed_at" TIMESTAMP
 );`);
         await queryRunner.query(`CREATE UNIQUE INDEX "IDX_4678b12c2b834c458b252733ff" ON "composicao_familiar" ("cidadao_id", "nome");`);
@@ -320,8 +320,8 @@ export class InitialSchemaFixed1748544953621 implements MigrationInterface {
     "tipo_papel" "papel_cidadao_tipo_papel_enum" NOT NULL,
     "metadados" JSONB,
     "ativo" BOOLEAN NOT NULL DEFAULT true,
-    "created_at" TIMESTAMP NOT NULL,
-    "updated_at" TIMESTAMP NOT NULL,
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "removed_at" TIMESTAMP
 );`);
         await queryRunner.query(`CREATE UNIQUE INDEX "IDX_12c613386fe90593e8ce0cac59" ON "papel_cidadao" ("cidadao_id", "tipo_papel");`);
@@ -341,8 +341,8 @@ export class InitialSchemaFixed1748544953621 implements MigrationInterface {
     "email" TEXT,
     "endereco" JSONB NOT NULL,
     "unidade_id" UUID NOT NULL,
-    "created_at" TIMESTAMP NOT NULL,
-    "updated_at" TIMESTAMP NOT NULL,
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "removed_at" TIMESTAMP
 );`);
         await queryRunner.query(`CREATE INDEX "IDX_859e5af984f5d9f57c3a641682" ON "cidadao" ("endereco");`);
@@ -374,8 +374,8 @@ export class InitialSchemaFixed1748544953621 implements MigrationInterface {
     "familiar_apto_trabalho" BOOLEAN,
     "area_interesse_familiar" TEXT,
     "observacoes" TEXT,
-    "created_at" TIMESTAMP NOT NULL,
-    "updated_at" TIMESTAMP NOT NULL,
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "removed_at" TIMESTAMP
 );`);
         await queryRunner.query(`CREATE UNIQUE INDEX "IDX_7883370d870f6998b58c40888e" ON "dados_sociais" ("cidadao_id");`);
@@ -391,8 +391,8 @@ export class InitialSchemaFixed1748544953621 implements MigrationInterface {
     "possui_agua_encanada" BOOLEAN,
     "possui_coleta_lixo" BOOLEAN,
     "observacoes" TEXT,
-    "created_at" TIMESTAMP NOT NULL,
-    "updated_at" TIMESTAMP NOT NULL,
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "removed_at" TIMESTAMP
 );`);
         await queryRunner.query(`CREATE UNIQUE INDEX "IDX_79c329a5139ffcd20a38fd641a" ON "situacao_moradia" ("cidadao_id");`);
@@ -406,7 +406,7 @@ export class InitialSchemaFixed1748544953621 implements MigrationInterface {
     "justificativa" TEXT NOT NULL,
     "notificacao_enviada" BOOLEAN NOT NULL DEFAULT false,
     "tecnico_notificado_id" UUID,
-    "created_at" TIMESTAMP NOT NULL
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );`);
         await queryRunner.query(`CREATE INDEX "IDX_8d02b2dedb65806a31029c1963" ON "historico_conversao_papel" ("cidadao_id", "created_at");`);
         await queryRunner.query(`CREATE TABLE "regra_conflito_papel" (
@@ -415,8 +415,8 @@ export class InitialSchemaFixed1748544953621 implements MigrationInterface {
     "papel_destino_id" UUID NOT NULL,
     "descricao" VARCHAR(255) NOT NULL,
     "ativo" BOOLEAN NOT NULL DEFAULT true,
-    "created_at" TIMESTAMP NOT NULL,
-    "updated_at" TIMESTAMP NOT NULL,
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "created_by" UUID,
     "updated_by" UUID
 );`);
@@ -427,8 +427,8 @@ export class InitialSchemaFixed1748544953621 implements MigrationInterface {
     "obrigatorio" BOOLEAN NOT NULL DEFAULT true,
     "descricao" TEXT,
     "validacoes" JSONB,
-    "created_at" TIMESTAMP NOT NULL,
-    "updated_at" TIMESTAMP NOT NULL,
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "removed_at" TIMESTAMP
 );`);
         await queryRunner.query(`CREATE UNIQUE INDEX "IDX_5614b2f577c7cefded0e4bf13b" ON "requisitos_documento" ("tipo_beneficio_id", "tipo_documento");`);
@@ -450,8 +450,8 @@ export class InitialSchemaFixed1748544953621 implements MigrationInterface {
     "usuario_verificacao" TEXT,
     "observacoes_verificacao" TEXT,
     "metadados" JSONB,
-    "created_at" TIMESTAMP NOT NULL,
-    "updated_at" TIMESTAMP NOT NULL,
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "removed_at" TIMESTAMP
 );`);
         await queryRunner.query(`CREATE INDEX "IDX_3bfbfff4ab942ab46ec78cc9e3" ON "documentos" ("verificado");`);
@@ -467,7 +467,7 @@ export class InitialSchemaFixed1748544953621 implements MigrationInterface {
     "observacao" TEXT,
     "dados_alterados" JSONB,
     "ip_usuario" VARCHAR(45),
-    "created_at" TIMESTAMP NOT NULL
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );`);
         await queryRunner.query(`CREATE INDEX "IDX_918f391d9f3e55a53b1502e30b" ON "historico_solicitacao" ("solicitacao_id", "created_at");`);
         await queryRunner.query(`CREATE TABLE "processo_judicial" (
@@ -483,8 +483,8 @@ export class InitialSchemaFixed1748544953621 implements MigrationInterface {
     "observacao" TEXT,
     "cidadao_id" UUID,
     "ativo" BOOLEAN NOT NULL DEFAULT true,
-    "created_at" TIMESTAMP NOT NULL,
-    "updated_at" TIMESTAMP NOT NULL,
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "created_by" UUID,
     "updated_by" UUID
 );`);
@@ -508,8 +508,8 @@ export class InitialSchemaFixed1748544953621 implements MigrationInterface {
     "documento_url" VARCHAR(255),
     "ativo" BOOLEAN NOT NULL DEFAULT true,
     "usuario_id" UUID,
-    "created_at" TIMESTAMP NOT NULL,
-    "updated_at" TIMESTAMP NOT NULL,
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "created_by" UUID,
     "updated_by" UUID
 );`);
@@ -549,8 +549,8 @@ export class InitialSchemaFixed1748544953621 implements MigrationInterface {
     "prazo_analise" TIMESTAMP,
     "prazo_documentos" TIMESTAMP,
     "prazo_processamento" TIMESTAMP,
-    "created_at" TIMESTAMP NOT NULL,
-    "updated_at" TIMESTAMP NOT NULL,
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "removed_at" TIMESTAMP
 );`);
         await queryRunner.query(`CREATE INDEX "IDX_decb6f4f02bef1985afb9de824" ON "solicitacao" ("determinacao_judicial_id");`);
@@ -571,8 +571,8 @@ export class InitialSchemaFixed1748544953621 implements MigrationInterface {
     "validacoes" JSONB,
     "ordem" TEXT NOT NULL DEFAULT 1,
     "ativo" BOOLEAN NOT NULL DEFAULT true,
-    "created_at" TIMESTAMP NOT NULL,
-    "updated_at" TIMESTAMP NOT NULL,
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "removed_at" TIMESTAMP
 );`);
         await queryRunner.query(`CREATE UNIQUE INDEX "IDX_45d57d728a7eaf0460aafadbc3" ON "campos_dinamicos_beneficio" ("tipo_beneficio_id", "nome");`);
@@ -584,8 +584,8 @@ export class InitialSchemaFixed1748544953621 implements MigrationInterface {
     "valor" DECIMAL(10, 2) NOT NULL,
     "ativo" BOOLEAN NOT NULL DEFAULT true,
     "criterios_elegibilidade" JSONB,
-    "created_at" TIMESTAMP NOT NULL,
-    "updated_at" TIMESTAMP NOT NULL,
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "removed_at" TIMESTAMP
 );`);
         await queryRunner.query(`CREATE UNIQUE INDEX "IDX_eeebd551e2fdb3e68d8abe747c" ON "tipo_beneficio" ("nome");`);
@@ -599,8 +599,8 @@ export class InitialSchemaFixed1748544953621 implements MigrationInterface {
     "ativo" BOOLEAN NOT NULL DEFAULT true,
     "usuario_id" UUID NOT NULL,
     "observacoes" TEXT,
-    "created_at" TIMESTAMP NOT NULL,
-    "updated_at" TIMESTAMP NOT NULL
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );`);
         await queryRunner.query(`CREATE INDEX "IDX_459f2c63cfff01126699900e4e" ON "configuracao_renovacao" ("tipo_beneficio_id");`);
         await queryRunner.query(`CREATE TABLE "especificacao_aluguel_social" (
@@ -615,8 +615,8 @@ export class InitialSchemaFixed1748544953621 implements MigrationInterface {
     "requer_vistoria" BOOLEAN NOT NULL DEFAULT false,
     "pago_diretamente_locador" BOOLEAN NOT NULL DEFAULT false,
     "percentual_maximo_renda" DECIMAL(10, 2),
-    "created_at" TIMESTAMP NOT NULL,
-    "updated_at" TIMESTAMP NOT NULL,
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "removed_at" TIMESTAMP
 );`);
         await queryRunner.query(`CREATE UNIQUE INDEX "IDX_51dfaacd8461bea0fd2c741941" ON "especificacao_aluguel_social" ("tipo_beneficio_id");`);
@@ -642,8 +642,8 @@ export class InitialSchemaFixed1748544953621 implements MigrationInterface {
     "prioriza_idosos" BOOLEAN NOT NULL DEFAULT false,
     "prioriza_pcd" BOOLEAN NOT NULL DEFAULT false,
     "valor_cesta" DECIMAL(10, 2),
-    "created_at" TIMESTAMP NOT NULL,
-    "updated_at" TIMESTAMP NOT NULL,
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "removed_at" TIMESTAMP
 );`);
         await queryRunner.query(`CREATE UNIQUE INDEX "IDX_8a8272603a6e783b87cbe6f39a" ON "especificacao_cesta_basica" ("tipo_beneficio_id");`);
@@ -669,8 +669,8 @@ export class InitialSchemaFixed1748544953621 implements MigrationInterface {
     "permite_cremacao" BOOLEAN NOT NULL DEFAULT true,
     "permite_sepultamento" BOOLEAN NOT NULL DEFAULT true,
     "documentos_necessarios" TEXT,
-    "created_at" TIMESTAMP NOT NULL,
-    "updated_at" TIMESTAMP NOT NULL,
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "removed_at" TIMESTAMP
 );`);
         await queryRunner.query(`CREATE UNIQUE INDEX "IDX_70062900aed393e99021dafa39" ON "especificacao_funeral" ("tipo_beneficio_id");`);
@@ -683,8 +683,8 @@ export class InitialSchemaFixed1748544953621 implements MigrationInterface {
     "requer_comprovante_residencia" BOOLEAN NOT NULL DEFAULT false,
     "numero_maximo_filhos" INTEGER,
     "valor_complementar" DECIMAL(10, 2),
-    "created_at" TIMESTAMP NOT NULL,
-    "updated_at" TIMESTAMP NOT NULL,
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "removed_at" TIMESTAMP
 );`);
         await queryRunner.query(`CREATE UNIQUE INDEX "IDX_2c21869318167ff370136e1e20" ON "especificacao_natalidade" ("tipo_beneficio_id");`);
@@ -699,8 +699,8 @@ export class InitialSchemaFixed1748544953621 implements MigrationInterface {
     "descricao" TEXT,
     "obrigatorio" BOOLEAN NOT NULL DEFAULT true,
     "permite_retorno" BOOLEAN NOT NULL DEFAULT false,
-    "created_at" TIMESTAMP NOT NULL,
-    "updated_at" TIMESTAMP NOT NULL,
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "removed_at" TIMESTAMP
 );`);
         await queryRunner.query(`CREATE UNIQUE INDEX "IDX_fdcd9333fee6a1b1cb6fd43ac0" ON "fluxo_beneficio" ("tipo_beneficio_id", "ordem");`);
@@ -711,8 +711,8 @@ export class InitialSchemaFixed1748544953621 implements MigrationInterface {
     "schema" JSONB NOT NULL,
     "descricao_mudancas" TEXT,
     "ativo" BOOLEAN NOT NULL DEFAULT false,
-    "created_at" TIMESTAMP NOT NULL,
-    "updated_at" TIMESTAMP NOT NULL
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );`);
         await queryRunner.query(`CREATE UNIQUE INDEX "IDX_707389f7bd340d8200a104d70b" ON "versoes_schema_beneficio" ("tipo_beneficio_id", "versao");`);
         await queryRunner.query(`CREATE TABLE "dados_beneficios" (
@@ -738,8 +738,8 @@ export class InitialSchemaFixed1748544953621 implements MigrationInterface {
     "banco_proprietario" VARCHAR(100),
     "agencia_proprietario" VARCHAR(10),
     "conta_proprietario" VARCHAR(20),
-    "created_at" TIMESTAMP NOT NULL,
-    "updated_at" TIMESTAMP NOT NULL,
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "removed_at" TIMESTAMP
 );`);
         await queryRunner.query(`CREATE UNIQUE INDEX "IDX_b644080d63183daaaa8989eae4" ON "dados_beneficios" ("solicitacao_id");`);
@@ -753,8 +753,8 @@ export class InitialSchemaFixed1748544953621 implements MigrationInterface {
     "data_resolucao" TIMESTAMP,
     "observacao_resolucao" TEXT,
     "prazo_resolucao" DATE,
-    "created_at" TIMESTAMP NOT NULL,
-    "updated_at" TIMESTAMP NOT NULL,
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "removed_at" TIMESTAMP
 );`);
         await queryRunner.query(`CREATE INDEX "IDX_81d2bbea84d4582d06ddfc6d03" ON "pendencias" ("solicitacao_id", "created_at");`);
@@ -771,8 +771,8 @@ export class InitialSchemaFixed1748544953621 implements MigrationInterface {
     "verificado_por_id" UUID,
     "data_verificacao" TIMESTAMP,
     "observacoes" TEXT,
-    "created_at" TIMESTAMP NOT NULL,
-    "updated_at" TIMESTAMP NOT NULL,
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "removed_at" TIMESTAMP
 );`);
         await queryRunner.query(`CREATE INDEX "IDX_17685e8f599fe57053c9f928b2" ON "documentos_enviados" ("documento_id");`);
@@ -814,8 +814,8 @@ export class InitialSchemaFixed1748544953621 implements MigrationInterface {
     "nome" TEXT NOT NULL,
     "descricao" TEXT,
     "ativo" BOOLEAN NOT NULL DEFAULT true,
-    "created_at" TIMESTAMP NOT NULL,
-    "updated_at" TIMESTAMP NOT NULL,
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "removed_at" TIMESTAMP
 );`);
         await queryRunner.query(`CREATE UNIQUE INDEX "IDX_07b71a7ca343f40ac8394e34d9" ON "demanda_motivos" ("tipo", "nome");`);
@@ -833,8 +833,8 @@ export class InitialSchemaFixed1748544953621 implements MigrationInterface {
     "parecer" TEXT,
     "data_resolucao" TIMESTAMP,
     "prioridade" TEXT,
-    "created_at" TIMESTAMP NOT NULL,
-    "updated_at" TIMESTAMP NOT NULL,
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "removed_at" TIMESTAMP
 );`);
         await queryRunner.query(`CREATE INDEX "IDX_a5a61318966f91f30ce13146e4" ON "ocorrencia" ("status", "created_at");`);
@@ -848,8 +848,8 @@ export class InitialSchemaFixed1748544953621 implements MigrationInterface {
     "ativo" BOOLEAN NOT NULL DEFAULT true,
     "parametros" JSONB NOT NULL DEFAULT '{}',
     "credenciais" TEXT,
-    "created_at" TIMESTAMP NOT NULL,
-    "updated_at" TIMESTAMP NOT NULL,
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_by" UUID
 );`);
         await queryRunner.query(`CREATE INDEX "idx_integracao_codigo" ON "configuracao_integracao" ("codigo");`);
@@ -861,8 +861,8 @@ export class InitialSchemaFixed1748544953621 implements MigrationInterface {
     "tipo" "configuracao_parametro_tipo_enum" NOT NULL DEFAULT 'string',
     "descricao" VARCHAR(500) NOT NULL,
     "categoria" VARCHAR(100) NOT NULL,
-    "created_at" TIMESTAMP NOT NULL,
-    "updated_at" TIMESTAMP NOT NULL,
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_by" UUID
 );`);
         await queryRunner.query(`CREATE INDEX "idx_parametro_chave" ON "configuracao_parametro" ("chave");`);
@@ -876,8 +876,8 @@ export class InitialSchemaFixed1748544953621 implements MigrationInterface {
     "conteudo" TEXT NOT NULL,
     "variaveis" JSONB NOT NULL DEFAULT '[]',
     "ativo" BOOLEAN NOT NULL DEFAULT true,
-    "created_at" TIMESTAMP NOT NULL,
-    "updated_at" TIMESTAMP NOT NULL,
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_by" UUID
 );`);
         await queryRunner.query(`CREATE INDEX "idx_template_codigo" ON "configuracao_template" ("codigo");`);
@@ -891,8 +891,8 @@ export class InitialSchemaFixed1748544953621 implements MigrationInterface {
     "version" INTEGER NOT NULL DEFAULT 1,
     "sla_total" REAL NOT NULL DEFAULT 0,
     "ativo" BOOLEAN NOT NULL DEFAULT true,
-    "created_at" TIMESTAMP NOT NULL,
-    "updated_at" TIMESTAMP NOT NULL,
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_by" UUID
 );`);
         await queryRunner.query(`CREATE INDEX "idx_workflow_tipo_beneficio" ON "configuracao_workflow_beneficio" ("tipo_beneficio_id");`);
@@ -945,8 +945,8 @@ export class InitialSchemaFixed1748544953621 implements MigrationInterface {
     "metodo_pagamento" "pagamento_metodoPagamento_enum" NOT NULL,
     "liberado_por" UUID NOT NULL,
     "observacoes" TEXT,
-    "created_at" TIMESTAMP NOT NULL,
-    "updated_at" TIMESTAMP NOT NULL,
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "removed_at" TIMESTAMP
 );`);
         await queryRunner.query(`CREATE TABLE "comprovante_pagamento" (
@@ -959,8 +959,8 @@ export class InitialSchemaFixed1748544953621 implements MigrationInterface {
     "mime_type" TEXT NOT NULL,
     "data_upload" TIMESTAMP NOT NULL,
     "uploaded_por" TEXT NOT NULL,
-    "created_at" TIMESTAMP NOT NULL,
-    "updated_at" TIMESTAMP NOT NULL
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );`);
         await queryRunner.query(`CREATE TABLE "confirmacao_recebimento" (
     "id" UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -970,8 +970,8 @@ export class InitialSchemaFixed1748544953621 implements MigrationInterface {
     "confirmado_por" TEXT NOT NULL,
     "destinatario_id" TEXT,
     "observacoes" TEXT,
-    "created_at" TIMESTAMP NOT NULL,
-    "updated_at" TIMESTAMP NOT NULL
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );`);
         await queryRunner.query(`CREATE TABLE "registros_metricas" (
     "id" UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -1014,8 +1014,8 @@ export class InitialSchemaFixed1748544953621 implements MigrationInterface {
     "mensagem_alerta" TEXT NOT NULL,
     "canais_notificacao" JSONB,
     "ativo" BOOLEAN NOT NULL DEFAULT true,
-    "created_at" TIMESTAMP NOT NULL,
-    "updated_at" TIMESTAMP NOT NULL
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );`);
         await queryRunner.query(`CREATE INDEX "idx_regras_alerta_metrica" ON "regras_alerta" ("metrica_id");`);
         await queryRunner.query(`CREATE INDEX "idx_regras_alerta_nivel" ON "regras_alerta" ("nivel");`);
@@ -1031,8 +1031,8 @@ export class InitialSchemaFixed1748544953621 implements MigrationInterface {
     "limiar_alerta" DECIMAL(15, 2),
     "limiar_critico" DECIMAL(15, 2),
     "tags" JSONB,
-    "created_at" TIMESTAMP NOT NULL,
-    "updated_at" TIMESTAMP NOT NULL,
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "removed_at" TIMESTAMP
 );`);
         await queryRunner.query(`CREATE TABLE "alertas_metricas" (
@@ -1059,8 +1059,8 @@ export class InitialSchemaFixed1748544953621 implements MigrationInterface {
     "configuracao" JSONB NOT NULL,
     "niveis_alerta" "configuracoes_notificacao_niveis_alerta_enum" NOT NULL,
     "ativo" BOOLEAN NOT NULL DEFAULT true,
-    "created_at" TIMESTAMP NOT NULL,
-    "updated_at" TIMESTAMP NOT NULL
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );`);
         await queryRunner.query(`CREATE TABLE "metrica_snapshot" (
     "id" UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -1075,7 +1075,7 @@ export class InitialSchemaFixed1748544953621 implements MigrationInterface {
     "metadados" JSONB,
     "validado" BOOLEAN NOT NULL DEFAULT true,
     "versao_definicao" TEXT NOT NULL DEFAULT 1,
-    "created_at" TIMESTAMP NOT NULL,
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "duracao_processamento_ms" TEXT NOT NULL DEFAULT 0,
     "status_coleta" VARCHAR(20) NOT NULL DEFAULT 'sucesso',
     "mensagem_status" TEXT
@@ -1107,8 +1107,8 @@ export class InitialSchemaFixed1748544953621 implements MigrationInterface {
     "calculo_tempo_real" BOOLEAN NOT NULL DEFAULT false,
     "criado_por" VARCHAR(100),
     "atualizado_por" VARCHAR(100),
-    "created_at" TIMESTAMP NOT NULL,
-    "updated_at" TIMESTAMP NOT NULL
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );`);
         await queryRunner.query(`CREATE UNIQUE INDEX "IDX_269ed6729550ddf867490ed8bf" ON "metrica_definicao" ("codigo");`);
         await queryRunner.query(`CREATE TABLE "metrica_configuracao" (
@@ -1131,8 +1131,8 @@ export class InitialSchemaFixed1748544953621 implements MigrationInterface {
     "prioridade_dashboard" TEXT NOT NULL DEFAULT 100,
     "criado_por" VARCHAR(100),
     "atualizado_por" VARCHAR(100),
-    "created_at" TIMESTAMP NOT NULL,
-    "updated_at" TIMESTAMP NOT NULL
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );`);
         await queryRunner.query(`CREATE INDEX "IDX_c84d77e09e9396ec6c330624d7" ON "metrica_configuracao" ("metrica_id");`);
         await queryRunner.query(`CREATE TABLE "metricas_documentos" (
