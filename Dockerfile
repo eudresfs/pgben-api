@@ -14,6 +14,10 @@ RUN npm ci
 # Copia o código-fonte
 COPY . .
 
+# Gera as chaves JWT antes do build
+RUN echo "🔑 Gerando chaves JWT..." && \
+    node scripts/gerar-chaves-jwt.js
+
 # Compila a aplicação
 RUN npm run build
 
@@ -33,6 +37,9 @@ RUN apk add --no-cache curl wget
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/package*.json ./
+
+# Copia as chaves JWT geradas no estágio de build
+COPY --from=build /app/keys ./keys
 
 # Portas expostas
 EXPOSE 3000
