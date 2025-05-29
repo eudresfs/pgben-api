@@ -1,0 +1,157 @@
+# =============================================================================
+# CONFIGURAÇÃO DO PROMETHEUS - SISTEMA SEMTAS
+# =============================================================================
+# Configuração para coleta de métricas de resiliência, incluindo:
+# - Métricas da aplicação Node.js
+# - Métricas do Redis
+# - Métricas do sistema (Node Exporter)
+# - Métricas de containers (cAdvisor)
+# =============================================================================
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: 'semtas-monitor'
+    environment: '${ENVIRONMENT:-development}'
+
+# Configuração de regras de alerta
+rule_files:
+  - "rules/*.yml"
+
+# Configuração do Alertmanager
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093
+
+# Configuração de scraping
+scrape_configs:
+  # =============================================================================
+  # MÉTRICAS DO PROMETHEUS (SELF-MONITORING)
+  # =============================================================================
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+    scrape_interval: 30s
+    metrics_path: /metrics
+
+  # =============================================================================
+  # MÉTRICAS DA APLICAÇÃO SEMTAS
+  # =============================================================================
+  - job_name: 'semtas-app'
+    static_configs:
+      - targets: ['host.docker.internal:3000']
+    scrape_interval: 10s
+    metrics_path: /api/v1/metrics
+    scrape_timeout: 5s
+    honor_labels: true
+    params:
+      format: ['prometheus']
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: host.docker.internal:3000
+
+  # =============================================================================
+  # MÉTRICAS DE RESILIÊNCIA (CACHE, AUDITORIA)
+  # =============================================================================
+  - job_name: 'semtas-resilience'
+    static_configs:
+      - targets: ['host.docker.internal:3000']
+    scrape_interval: 5s
+    metrics_path: /api/v1/resilience/metrics/prometheus
+    scrape_timeout: 3s
+    honor_labels: true
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: 'semtas_(.*)'
+        target_label: __name__
+        replacement: '${1}'
+      - source_labels: [service]
+        target_label: service_name
+
+  # =============================================================================
+  # MÉTRICAS DO REDIS
+  # =============================================================================
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+    scrape_interval: 15s
+    metrics_path: /metrics
+    scrape_timeout: 10s
+
+  # =============================================================================
+  # MÉTRICAS DO SISTEMA (NODE EXPORTER)
+  # =============================================================================
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+    scrape_interval: 15s
+    metrics_path: /metrics
+    scrape_timeout: 10s
+
+  # =============================================================================
+  # MÉTRICAS DE CONTAINERS (CADVISOR)
+  # =============================================================================
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+    scrape_interval: 15s
+    metrics_path: /metrics
+    scrape_timeout: 10s
+
+  # =============================================================================
+  # MÉTRICAS DO POSTGRESQL
+  # =============================================================================
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['host.docker.internal:9187']
+    scrape_interval: 30s
+    metrics_path: /metrics
+    scrape_timeout: 10s
+
+  # =============================================================================
+  # HEALTH CHECKS DA APLICAÇÃO
+  # =============================================================================
+  - job_name: 'semtas-health'
+    static_configs:
+      - targets: ['host.docker.internal:3000']
+    scrape_interval: 30s
+    metrics_path: /api/v1/health
+    scrape_timeout: 5s
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: 'up'
+        target_label: __name__
+        replacement: 'semtas_health_up'
+
+# =============================================================================
+# CONFIGURAÇÕES DE ARMAZENAMENTO
+# =============================================================================
+storage:
+  tsdb:
+    path: /prometheus
+    retention.time: 30d
+    retention.size: 10GB
+    wal-compression: true
+
+# =============================================================================
+# CONFIGURAÇÕES DE PERFORMANCE
+# =============================================================================
+remote_write:
+  - url: "http://localhost:9090/api/v1/write"
+    queue_config:
+      max_samples_per_send: 1000
+      max_shards: 200
+      capacity: 2500
+
+# =============================================================================
+# CONFIGURAÇÕES DE LOGGING
+# =============================================================================
+log_level: info
+log_format: logfmt

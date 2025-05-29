@@ -19,8 +19,10 @@ import { MetricasModule } from './modules/metricas/metricas.module';
 import { AuditModule } from './audit/audit.module';
 import { RecursoModule } from './modules/recurso/recurso.module';
 import { LogsModule } from './modules/logs/logs.module';
-import { DiagnosticoModule } from './modules/diagnostico/diagnostico.module';
 import { APP_GUARD } from '@nestjs/core';
+import { AllExceptionsFilter } from './shared/filters/all-exceptions.filter';
+import { UnifiedLoggerModule } from './shared/logging/unified-logger.module';
+import { ResilienceModule } from './shared/modules/resilience.module';
 
 @Module({
   imports: [
@@ -68,8 +70,10 @@ import { APP_GUARD } from '@nestjs/core';
     MonitoringModule,
     
     // Módulos compartilhados
+    UnifiedLoggerModule,
     PermissionSharedModule,
     AuditoriaSharedModule,
+    ResilienceModule, // Reabilitado após correções no Redis/Cache
 
     // Módulo de autenticação
     AuthModule,
@@ -100,13 +104,11 @@ import { APP_GUARD } from '@nestjs/core';
 
     // Módulo de logs de auditoria
     LogsModule,
-
-    // Módulo de diagnóstico de performance
-    DiagnosticoModule
   ],
   controllers: [AppController],
   providers: [
     AppService,
+    AllExceptionsFilter,
     // Aplicar rate limiting globalmente
     {
       provide: APP_GUARD,

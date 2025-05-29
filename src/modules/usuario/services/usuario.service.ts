@@ -17,6 +17,7 @@ import { UpdateStatusUsuarioDto } from '../dto/update-status-usuario.dto';
 import { UpdateSenhaDto } from '../dto/update-senha.dto';
 import { AlterarSenhaPrimeiroAcessoDto } from '../dto/alterar-senha-primeiro-acesso.dto';
 import { Usuario } from '../entities/usuario.entity';
+import { Role } from '../entities/role.entity';
 import { NotificationManagerService } from '../../notificacao/services/notification-manager.service';
 import { NotificationTemplate } from '../../notificacao/entities/notification-template.entity';
 
@@ -38,6 +39,8 @@ export class UsuarioService {
     private readonly notificationManager: NotificationManagerService,
     @InjectRepository(NotificationTemplate)
     private readonly templateRepository: Repository<NotificationTemplate>,
+    @InjectRepository(Role)
+    private readonly roleRepository: Repository<Role>,
   ) {}
 
   /**
@@ -744,6 +747,36 @@ export class UsuarioService {
    * @param alterarSenhaDto Dados da nova senha
    * @returns Resultado da operação
    */
+  /**
+   * Busca todas as roles disponíveis no sistema
+   * @returns Lista de roles com id, nome e descrição
+   */
+  async findAllRoles() {
+    this.logger.log('Buscando todas as roles disponíveis');
+    
+    try {
+      const roles = await this.roleRepository.find({
+        select: ['id', 'nome', 'descricao', 'ativo'],
+        where: { ativo: true },
+        order: { nome: 'ASC' }
+      });
+      
+      return {
+        data: roles,
+        meta: { total: roles.length },
+        message: 'Roles retornadas com sucesso'
+      };
+    } catch (error) {
+      this.logger.error(
+        `Erro ao buscar roles: ${error.message}`,
+        error.stack,
+      );
+      throw new InternalServerErrorException(
+        'Falha ao buscar roles. Por favor, tente novamente.'
+      );
+    }
+  }
+
   async alterarSenhaPrimeiroAcesso(
     userId: string,
     alterarSenhaDto: AlterarSenhaPrimeiroAcessoDto,

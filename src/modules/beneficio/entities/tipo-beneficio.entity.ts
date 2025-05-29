@@ -44,10 +44,6 @@ export class TipoBeneficio {
   })
   periodicidade: Periodicidade;
 
-  @Column('text')
-  @IsNotEmpty({ message: 'Base legal é obrigatória' })
-  base_legal: string;
-
   @Column('decimal', { precision: 10, scale: 2 })
   @IsNumber({}, { message: 'Valor deve ser um número' })
   @Min(0, { message: 'Valor não pode ser negativo' })

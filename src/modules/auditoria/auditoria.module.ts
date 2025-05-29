@@ -12,6 +12,7 @@ import { BullModule } from '@nestjs/bull';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ScheduleAdapterModule } from '../../shared/schedule/schedule-adapter.module';
+import { AuthModule } from '../../auth/auth.module';
 
 
 // Entidades
@@ -77,6 +78,9 @@ import { LogAuditoriaRepository } from './repositories/log-auditoria.repository'
     
     // Módulo de agendamento de tarefas
     ScheduleAdapterModule,
+    
+    // Módulo de autenticação (para JwtAuthGuard e JwtBlacklistService)
+    forwardRef(() => AuthModule),
     
     // Configuração assíncrona do JwtModule
     JwtModule.registerAsync({

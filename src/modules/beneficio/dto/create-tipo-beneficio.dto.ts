@@ -79,11 +79,6 @@ export class CreateTipoBeneficioDto {
   @IsEnum(Periodicidade, { message: 'Periodicidade inválida' })
   periodicidade: Periodicidade;
 
-  @ApiProperty({ description: 'Base jurídica que fundamenta o benefício' })
-  @IsNotEmpty({ message: 'Base jurídica é obrigatória' })
-  @IsString({ message: 'Base jurídica deve ser um texto' })
-  base_juridica: string;
-
   @ApiProperty({ description: 'Valor do benefício', example: 400.0 })
   @IsNotEmpty({ message: 'Valor é obrigatório' })
   @IsNumber({}, { message: 'Valor deve ser um número' })

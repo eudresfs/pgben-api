@@ -53,7 +53,7 @@ export class UsuarioController {
     {
       permissionName: 'usuario.listar',
       scopeType: ScopeType.UNIT,
-      scopeIdExpression: 'query.unidadeId'
+      scopeIdExpression: 'query.unidade_id'
     }
   )
   @ApiOperation({ summary: 'Listar usuários' })
@@ -92,7 +92,7 @@ export class UsuarioController {
     description: 'Filtro por status',
   })
   @ApiQuery({
-    name: 'unidadeId',
+    name: 'unidade_id',
     required: false,
     type: String,
     description: 'Filtro por unidade',
@@ -113,6 +113,25 @@ export class UsuarioController {
       status,
       unidade_id,
     });
+  }
+
+  /**
+   * Retorna todas as roles (papéis) disponíveis no sistema
+   */
+  @Get('roles')
+  @RequiresPermission(
+    {
+      permissionName: 'usuario.listar',
+      scopeType: ScopeType.GLOBAL
+    }
+  )
+  @ApiOperation({ summary: 'Listar todas as roles disponíveis' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de roles retornada com sucesso',
+  })
+  async findAllRoles() {
+    return this.usuarioService.findAllRoles();
   }
 
   /**
@@ -141,7 +160,7 @@ export class UsuarioController {
     {
       permissionName: 'usuario.visualizar',
       scopeType: ScopeType.UNIT,
-      scopeIdExpression: 'usuario.unidadeId'
+      scopeIdExpression: 'usuario.unidade_id'
     }
   )
   @ApiOperation({ summary: 'Obter detalhes de um usuário' })
@@ -160,7 +179,7 @@ export class UsuarioController {
     {
       permissionName: 'usuario.criar',
       scopeType: ScopeType.UNIT,
-      scopeIdExpression: 'body.unidadeId'
+      scopeIdExpression: 'body.unidade_id'
     }
   )
   @ApiOperation({ summary: 'Criar novo usuário' })
@@ -183,7 +202,7 @@ export class UsuarioController {
     {
       permissionName: 'usuario.editar',
       scopeType: ScopeType.UNIT,
-      scopeIdExpression: 'usuario.unidadeId'
+      scopeIdExpression: 'usuario.unidade_id'
     }
   )
   @ApiOperation({ summary: 'Atualizar usuário existente' })
@@ -210,7 +229,7 @@ export class UsuarioController {
     {
       permissionName: 'usuario.status.alterar',
       scopeType: ScopeType.UNIT,
-      scopeIdExpression: 'usuario.unidadeId'
+      scopeIdExpression: 'usuario.unidade_id'
     }
   )
   @ApiOperation({ summary: 'Ativar/inativar usuário' })
@@ -281,7 +300,7 @@ export class UsuarioController {
     {
       permissionName: 'usuario.remover',
       scopeType: ScopeType.UNIT,
-      scopeIdExpression: 'usuario.unidadeId'
+      scopeIdExpression: 'usuario.unidade_id'
     }
   )
   @ApiOperation({ summary: 'Remover usuário (soft delete)' })

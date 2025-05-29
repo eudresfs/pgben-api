@@ -23,7 +23,7 @@ export class SetorUnidade {
   setor: Setor;
 
   @Column({ name: 'unidade_id' })
-  unidadeId: string;
+  unidade_id: string;
 
   @ManyToOne(() => Unidade, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'unidade_id' })

@@ -28,8 +28,8 @@ import { Role } from './role.entity';
 @Index(['email'], { unique: true })
 @Index(['cpf'], { unique: true })
 @Index(['matricula'], { unique: true })
-@Index(['unidadeId'])
-@Index(['setorId'])
+@Index(['unidade_id'])
+@Index(['setor_id'])
 @Index(['role_id'])
 @Index(['status'])
 export class Usuario {
@@ -77,14 +77,14 @@ export class Usuario {
   role: Role;
 
   @Column({ name: 'unidade_id', nullable: true })
-  unidadeId: string;
+  unidade_id: string;
 
   @ManyToOne(() => Unidade, (unidade) => unidade.usuarios)
   @JoinColumn({ name: 'unidade_id' })
   unidade: Unidade;
 
   @Column({ name: 'setor_id', nullable: true })
-  setorId: string;
+  setor_id: string;
 
   @ManyToOne(() => Setor, (setor) => setor.usuarios)
   @JoinColumn({ name: 'setor_id' })
@@ -101,7 +101,7 @@ export class Usuario {
   primeiro_acesso: boolean;
 
   @OneToMany(() => RefreshToken, (refreshToken) => refreshToken.usuario)
-  refreshTokens: RefreshToken[];
+  refresh_tokens: RefreshToken[];
 
   @CreateDateColumn()
   created_at: Date;

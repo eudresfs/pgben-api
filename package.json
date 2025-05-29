@@ -20,13 +20,11 @@
     "start:pm2": "pm2 start dist/main.js --no-daemon --name pgben-server",
     "start:prod": "node dist/main",
     "typeorm": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js -d ./src/data-source.ts",
-    
     "migration:create": "npm run typeorm -- migration:create ./src/database/migrations/%npm_config_name%",
     "migration:generate": "npm run typeorm -- migration:generate ./src/database/migrations/%npm_config_name%",
     "migration:run": "npm run typeorm -- migration:run",
     "migration:revert": "npm run typeorm -- migration:revert",
     "migration:show": "npm run typeorm -- migration:show",
-    
     "seed": "ts-node -r tsconfig-paths/register ./node_modules/typeorm-extension/dist/cli/index.js seed -d ./src/database/seeds/seed-source.ts",
     "seed:run": "npm run seed",
     "seed:run:initial": "npm run seed -- -s InitialDataSeed",
@@ -35,12 +33,10 @@
     "seed:diagnose": "ts-node -r tsconfig-paths/register ./src/database/scripts/diagnose-seeds.ts",
     "seed:direct": "ts-node -r tsconfig-paths/register ./src/database/seeds/run-seeds.ts",
     "seed:permissions": "psql -U %npm_config_user% -d %npm_config_db% -h %npm_config_host% -f ./src/database/scripts/permission-seed.sql",
-    
     "db:drop": "npm run typeorm -- schema:drop",
     "db:setup": "npm run migration:run && npm run seed:direct",
     "db:reset": "npm run typeorm -- schema:drop && npm run db:setup",
     "db:setup:test": "npm run migration:run && npm run seed:run:initial && npm run seed:run:test",
-    
     "db:fix:generate": "ts-node scripts/database/fix-migrations.ts generate",
     "db:fix:run": "ts-node scripts/database/fix-migrations.ts run",
     "db:fix:revert": "ts-node scripts/database/fix-migrations.ts revert",
@@ -50,7 +46,6 @@
     "db:check": "ts-node scripts/database/check-connection.ts",
     "db:dev": "docker-compose -f docker-compose.dev.yml up -d postgres pgadmin",
     "db:dev:down": "docker-compose -f docker-compose.dev.yml down",
-    
     "test": "jest",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
@@ -69,7 +64,6 @@
     "test:pagamento:integration": "jest --config src/modules/pagamento/tests/jest.config.js src/modules/pagamento/tests/integration",
     "test:pagamento:e2e": "jest --config src/modules/pagamento/tests/jest.config.js test/pagamento",
     "test:pagamento:coverage": "jest --config src/modules/pagamento/tests/jest.config.js --coverage",
-    
     "docker:dev": "docker-compose --env-file .env up",
     "docker:dev:build": "docker-compose --env-file .env up --build",
     "docker:prod": "docker-compose -f docker-compose.yml --env-file .env.prod up",
@@ -103,6 +97,7 @@
     "@nestjs/typeorm": "^11.0.0",
     "@types/faker": "^6.6.8",
     "@types/handlebars": "^4.0.40",
+    "@types/ioredis": "^4.28.10",
     "@willsoto/nestjs-prometheus": "^6.0.2",
     "axios": "^1.9.0",
     "bcrypt": "^6.0.0",

@@ -2,7 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { Logger, RequestMethod, ValidationPipe } from '@nestjs/common';
 import { ResponseInterceptor } from './shared/interceptors/response.interceptor';
-import { HttpExceptionFilter } from './shared/filters/http-exception.filter';
+import { AllExceptionsFilter } from './shared/filters/all-exceptions.filter';
 import { setupSwagger } from './shared/configs/swagger/index';
 import { applySecurity } from './config/security.config';
 import { ConfigService } from '@nestjs/config';
@@ -52,8 +52,9 @@ async function bootstrap() {
     // Interceptor de resposta para padronizar a estrutura de resposta da API
     app.useGlobalInterceptors(new ResponseInterceptor());
     
-    // Filtro de exceções HTTP para padronizar o tratamento de erros
-    app.useGlobalFilters(new HttpExceptionFilter());
+    // Filtro de exceções unificado para padronizar o tratamento de erros
+    const allExceptionsFilter = app.get(AllExceptionsFilter);
+    app.useGlobalFilters(allExceptionsFilter);
     
     logger.log('✅ Interceptors e filtros globais configurados com sucesso');
     

@@ -17,6 +17,12 @@ export class HealthCheckService {
    * @returns true se o Redis estiver disponível, false caso contrário
    */
   async isRedisAvailable(): Promise<boolean> {
+    // TEMPORÁRIO: Desabilitando verificação do Redis para evitar travamento
+    this.logger.warn('⚠️ Verificação do Redis desabilitada temporariamente para evitar travamento');
+    return false;
+    
+    // TODO: Reabilitar após resolver problemas de conectividade
+    /*
     // Verificar se o Redis está desabilitado por configuração
     const disableRedis = this.configService.get('DISABLE_REDIS') === 'true';
     
@@ -51,13 +57,14 @@ export class HealthCheckService {
       } catch {}
       return false;
     }
+    */
   }
 
   /**
    * Imprime informações sobre o status dos serviços externos
    * @param redisAvailable Status da disponibilidade do Redis
    */
-  logServicesStatus(redisAvailable: boolean): void {
+  private logServicesStatus(redisAvailable: boolean): void {
     this.logger.log('========== Status dos Serviços Externos ==========');
     
     // Verificar se o Redis está desabilitado por configuração

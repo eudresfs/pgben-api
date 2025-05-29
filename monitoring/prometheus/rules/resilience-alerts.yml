@@ -1,0 +1,295 @@
+# =============================================================================
+# REGRAS DE ALERTA - RESILIÊNCIA DO SISTEMA SEMTAS
+# =============================================================================
+# Alertas para monitorar a saúde e resiliência dos componentes críticos:
+# - Cache (L1 e L2)
+# - Auditoria
+# - Redis
+# - Circuit Breakers
+# - Performance geral
+# =============================================================================
+
+groups:
+  # =============================================================================
+  # ALERTAS DE CACHE
+  # =============================================================================
+  - name: cache_resilience
+    interval: 30s
+    rules:
+      # Cache L1 com alta taxa de miss
+      - alert: CacheL1HighMissRate
+        expr: |
+          (
+            rate(semtas_cache_l1_misses_total[5m]) / 
+            rate(semtas_cache_l1_requests_total[5m])
+          ) > 0.8
+        for: 2m
+        labels:
+          severity: warning
+          component: cache
+          layer: l1
+        annotations:
+          summary: "Cache L1 com alta taxa de miss ({{ $value | humanizePercentage }})"
+          description: |
+            O cache L1 está apresentando uma taxa de miss de {{ $value | humanizePercentage }} 
+            nos últimos 5 minutos, indicando possível problema de eficiência ou 
+            configuração inadequada.
+          runbook_url: "https://docs.semtas.local/runbooks/cache-l1-high-miss"
+
+      # Cache L2 (Redis) indisponível
+      - alert: CacheL2Unavailable
+        expr: semtas_cache_l2_available == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: cache
+          layer: l2
+        annotations:
+          summary: "Cache L2 (Redis) indisponível"
+          description: |
+            O cache L2 (Redis) está indisponível há mais de 1 minuto. 
+            O sistema está operando apenas com cache L1 em memória.
+          runbook_url: "https://docs.semtas.local/runbooks/cache-l2-unavailable"
+
+      # Circuit Breaker aberto
+      - alert: CacheCircuitBreakerOpen
+        expr: semtas_cache_circuit_breaker_state == 2
+        for: 30s
+        labels:
+          severity: warning
+          component: cache
+          circuit_breaker: redis
+        annotations:
+          summary: "Circuit Breaker do cache está aberto"
+          description: |
+            O Circuit Breaker do cache Redis está no estado OPEN, 
+            indicando falhas consecutivas na comunicação com o Redis.
+          runbook_url: "https://docs.semtas.local/runbooks/cache-circuit-breaker"
+
+      # Cache L1 próximo do limite de memória
+      - alert: CacheL1MemoryHigh
+        expr: |
+          (
+            semtas_cache_l1_memory_usage_bytes / 
+            semtas_cache_l1_memory_limit_bytes
+          ) > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          component: cache
+          layer: l1
+        annotations:
+          summary: "Cache L1 próximo do limite de memória ({{ $value | humanizePercentage }})"
+          description: |
+            O cache L1 está usando {{ $value | humanizePercentage }} da memória 
+            disponível. Considere aumentar o limite ou revisar a estratégia de eviction.
+
+  # =============================================================================
+  # ALERTAS DE AUDITORIA
+  # =============================================================================
+  - name: auditoria_resilience
+    interval: 30s
+    rules:
+      # Fila de auditoria com muitos itens pendentes
+      - alert: AuditoriaQueueHigh
+        expr: semtas_auditoria_queue_pending > 1000
+        for: 5m
+        labels:
+          severity: warning
+          component: auditoria
+          queue: bull
+        annotations:
+          summary: "Fila de auditoria com {{ $value }} itens pendentes"
+          description: |
+            A fila de auditoria tem {{ $value }} itens pendentes há mais de 5 minutos. 
+            Isso pode indicar problemas de performance ou falhas no processamento.
+          runbook_url: "https://docs.semtas.local/runbooks/auditoria-queue-high"
+
+      # Falhas na auditoria assíncrona
+      - alert: AuditoriaAsyncFailures
+        expr: |
+          rate(semtas_auditoria_async_failures_total[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: critical
+          component: auditoria
+          type: async
+        annotations:
+          summary: "Alta taxa de falhas na auditoria assíncrona"
+          description: |
+            A auditoria assíncrona está falhando a uma taxa de {{ $value }} falhas/segundo 
+            nos últimos 5 minutos. Verifique a conectividade com o banco de dados.
+
+      # Fallback para auditoria síncrona ativo
+      - alert: AuditoriaSyncFallbackActive
+        expr: semtas_auditoria_sync_fallback_active == 1
+        for: 10m
+        labels:
+          severity: warning
+          component: auditoria
+          type: sync_fallback
+        annotations:
+          summary: "Fallback para auditoria síncrona ativo"
+          description: |
+            O sistema está usando o fallback síncrono para auditoria há mais de 10 minutos. 
+            Isso pode impactar a performance da aplicação.
+
+      # Logs de auditoria sendo salvos em arquivo
+      - alert: AuditoriaFileBackupActive
+        expr: semtas_auditoria_file_backup_active == 1
+        for: 5m
+        labels:
+          severity: critical
+          component: auditoria
+          type: file_backup
+        annotations:
+          summary: "Logs de auditoria sendo salvos em arquivo"
+          description: |
+            O sistema está salvando logs de auditoria em arquivo há mais de 5 minutos, 
+            indicando falhas tanto na fila quanto no fallback síncrono.
+
+  # =============================================================================
+  # ALERTAS DE REDIS
+  # =============================================================================
+  - name: redis_resilience
+    interval: 30s
+    rules:
+      # Redis com alta utilização de memória
+      - alert: RedisMemoryHigh
+        expr: |
+          (
+            redis_memory_used_bytes / 
+            redis_memory_max_bytes
+          ) > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          component: redis
+        annotations:
+          summary: "Redis com alta utilização de memória ({{ $value | humanizePercentage }})"
+          description: |
+            O Redis está usando {{ $value | humanizePercentage }} da memória disponível. 
+            Considere aumentar a memória ou revisar a política de eviction.
+
+      # Redis com muitas conexões
+      - alert: RedisConnectionsHigh
+        expr: redis_connected_clients > 100
+        for: 2m
+        labels:
+          severity: warning
+          component: redis
+        annotations:
+          summary: "Redis com {{ $value }} conexões ativas"
+          description: |
+            O Redis tem {{ $value }} conexões ativas, que pode indicar 
+            vazamento de conexões ou alta carga.
+
+      # Redis com alta latência
+      - alert: RedisLatencyHigh
+        expr: redis_slowlog_length > 10
+        for: 1m
+        labels:
+          severity: warning
+          component: redis
+        annotations:
+          summary: "Redis com alta latência"
+          description: |
+            O Redis tem {{ $value }} comandos no slowlog, indicando 
+            possíveis problemas de performance.
+
+  # =============================================================================
+  # ALERTAS DE PERFORMANCE GERAL
+  # =============================================================================
+  - name: performance_resilience
+    interval: 30s
+    rules:
+      # Alta latência nas operações de cache
+      - alert: CacheOperationLatencyHigh
+        expr: |
+          histogram_quantile(0.95, 
+            rate(semtas_cache_operation_duration_seconds_bucket[5m])
+          ) > 0.1
+        for: 2m
+        labels:
+          severity: warning
+          component: cache
+        annotations:
+          summary: "Alta latência nas operações de cache (P95: {{ $value }}s)"
+          description: |
+            O percentil 95 da latência das operações de cache é {{ $value }}s, 
+            acima do limite aceitável de 100ms.
+
+      # Alta latência nas operações de auditoria
+      - alert: AuditoriaOperationLatencyHigh
+        expr: |
+          histogram_quantile(0.95, 
+            rate(semtas_auditoria_operation_duration_seconds_bucket[5m])
+          ) > 0.5
+        for: 2m
+        labels:
+          severity: warning
+          component: auditoria
+        annotations:
+          summary: "Alta latência nas operações de auditoria (P95: {{ $value }}s)"
+          description: |
+            O percentil 95 da latência das operações de auditoria é {{ $value }}s, 
+            acima do limite aceitável de 500ms.
+
+  # =============================================================================
+  # ALERTAS DE SAÚDE GERAL
+  # =============================================================================
+  - name: health_resilience
+    interval: 30s
+    rules:
+      # Aplicação indisponível
+      - alert: SemtasAppDown
+        expr: up{job="semtas-app"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: application
+        annotations:
+          summary: "Aplicação SEMTAS indisponível"
+          description: |
+            A aplicação SEMTAS está indisponível há mais de 1 minuto.
+          runbook_url: "https://docs.semtas.local/runbooks/app-down"
+
+      # Health check falhando
+      - alert: SemtasHealthCheckFailing
+        expr: semtas_health_check_status != 1
+        for: 2m
+        labels:
+          severity: warning
+          component: health_check
+        annotations:
+          summary: "Health check da aplicação falhando"
+          description: |
+            O health check da aplicação está falhando há mais de 2 minutos.
+
+      # Muitos erros HTTP 5xx
+      - alert: HighErrorRate
+        expr: |
+          (
+            rate(http_requests_total{status=~"5.."}[5m]) / 
+            rate(http_requests_total[5m])
+          ) > 0.05
+        for: 2m
+        labels:
+          severity: critical
+          component: application
+        annotations:
+          summary: "Alta taxa de erros HTTP 5xx ({{ $value | humanizePercentage }})"
+          description: |
+            A aplicação está retornando {{ $value | humanizePercentage }} de erros HTTP 5xx 
+            nos últimos 5 minutos.
+
+# =============================================================================
+# CONFIGURAÇÕES GLOBAIS DE ALERTAS
+# =============================================================================
+# Todas as regras acima usam as seguintes configurações:
+# - interval: Frequência de avaliação das regras
+# - for: Tempo que a condição deve persistir antes de disparar o alerta
+# - severity: Nível de criticidade (critical, warning, info)
+# - component: Componente do sistema afetado
+# - runbook_url: Link para documentação de resolução
+# =============================================================================

@@ -39,7 +39,7 @@ export class UpdateSetorDto {
     description: 'ID da unidade à qual o setor pertence',
     required: false,
   })
-  unidadeId?: string;
+  unidade_id?: string;
 
   @IsBoolean({ message: 'Status deve ser um booleano' })
   @IsOptional()

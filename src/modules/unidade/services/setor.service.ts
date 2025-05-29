@@ -39,7 +39,7 @@ export class SetorService {
     );
 
     // Validações iniciais
-    if (!createSetorDto.unidadeId) {
+    if (!createSetorDto.unidade_id) {
       this.logger.error('ID da unidade não fornecido');
       throw new BadRequestException('ID da unidade é obrigatório');
     }
@@ -51,16 +51,16 @@ export class SetorService {
         const setorRepo = manager.getRepository('setor');
 
         // Verificar se a unidade existe
-        this.logger.log(`Buscando unidade com ID: ${createSetorDto.unidadeId}`);
+        this.logger.log(`Buscando unidade com ID: ${createSetorDto.unidade_id}`);
         const unidade = await unidadeRepo.findOne({
-          where: { id: createSetorDto.unidadeId },
+          where: { id: createSetorDto.unidade_id },
         });
         if (!unidade) {
           this.logger.error(
-            `Unidade não encontrada: ${createSetorDto.unidadeId}`,
+            `Unidade não encontrada: ${createSetorDto.unidade_id}`,
           );
           throw new NotFoundException(
-            `Unidade com ID ${createSetorDto.unidadeId} não encontrada`,
+            `Unidade com ID ${createSetorDto.unidade_id} não encontrada`,
           );
         }
 
@@ -69,7 +69,7 @@ export class SetorService {
           const setorExistente = await setorRepo.findOne({
             where: {
               nome: createSetorDto.nome,
-              unidade_id: createSetorDto.unidadeId,
+              unidade_id: createSetorDto.unidade_id,
             },
           });
 
@@ -88,7 +88,7 @@ export class SetorService {
           const setorExistente = await setorRepo.findOne({
             where: {
               sigla: createSetorDto.sigla,
-              unidade_id: createSetorDto.unidadeId,
+              unidade_id: createSetorDto.unidade_id,
             },
           });
 
@@ -103,12 +103,12 @@ export class SetorService {
         }
 
         // Mapear DTO para a entidade
-        const { unidadeId, ...setorData } = createSetorDto;
+        const { unidade_id, ...setorData } = createSetorDto;
 
         // Criar o objeto do setor com os dados básicos
         const setor = new Setor();
         Object.assign(setor, setorData);
-        setor.unidade_id = unidadeId;
+        setor.unidade_id = unidade_id;
 
         this.logger.log(`Dados do setor mapeados: ${JSON.stringify(setor)}`);
 
@@ -173,24 +173,24 @@ export class SetorService {
         // Verificar se a unidade existe (se fornecida)
         let novaUnidadeId = setorExistente.unidade_id;
         if (
-          updateSetorDto.unidadeId &&
-          updateSetorDto.unidadeId !== setorExistente.unidade_id
+          updateSetorDto.unidade_id &&
+          updateSetorDto.unidade_id !== setorExistente.unidade_id
         ) {
           this.logger.log(
-            `Validando unidade com ID: ${updateSetorDto.unidadeId}`,
+            `Validando unidade com ID: ${updateSetorDto.unidade_id}`,
           );
           const unidade = await unidadeRepo.findOne({
-            where: { id: updateSetorDto.unidadeId },
+            where: { id: updateSetorDto.unidade_id },
           });
           if (!unidade) {
             this.logger.error(
-              `Unidade não encontrada: ${updateSetorDto.unidadeId}`,
+              `Unidade não encontrada: ${updateSetorDto.unidade_id}`,
             );
             throw new NotFoundException(
-              `Unidade com ID ${updateSetorDto.unidadeId} não encontrada`,
+              `Unidade com ID ${updateSetorDto.unidade_id} não encontrada`,
             );
           }
-          novaUnidadeId = updateSetorDto.unidadeId;
+          novaUnidadeId = updateSetorDto.unidade_id;
         }
 
         // Verificar se já existe um setor com o mesmo nome na mesma unidade (se o nome for alterado)
@@ -240,7 +240,7 @@ export class SetorService {
         }
 
         // Atualizar os demais campos
-        const { unidadeId, ...setorData } = updateSetorDto;
+        const { unidade_id, ...setorData } = updateSetorDto;
 
         // Atualizar setor
         await setorRepo.update(id, {

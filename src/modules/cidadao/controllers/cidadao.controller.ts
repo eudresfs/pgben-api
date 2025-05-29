@@ -63,8 +63,6 @@ export class CidadaoController {
   
   constructor(
     private readonly cidadaoService: CidadaoService,
-    // private readonly fileService: FileService,
-    // private readonly uploader: MulterUploader,
     private readonly cidadaoRepository: CidadaoRepository,
   ) {}
 
@@ -73,7 +71,6 @@ export class CidadaoController {
    */
   @Get()
   @RequiresPermission(
-  
   {
     permissionName: 'cidadao.listar',
     scopeType: ScopeType.UNIT,
@@ -322,71 +319,7 @@ export class CidadaoController {
     return this.cidadaoService.buscarCidadao(query);
   }
   
-  /**
-   * Endpoint para diagnóstico de performance - Sem interceptors e validações pesadas
-   * Este endpoint é usado apenas para diagnóstico de problemas de performance
-   * e será removido após a resolução dos problemas
-   */
-  @Get('diagnostico/busca-rapida')
-  @ApiOperation({
-    summary: 'Diagnóstico - Busca rápida de cidadão',
-    description: 'Endpoint simplificado para diagnóstico de performance',
-  })
-  @ApiQuery({
-    name: 'cpf',
-    required: true,
-    type: String,
-    description: 'CPF do cidadão (com ou sem formatação)',
-    example: '12345678901',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Cidadão encontrado',
-    type: Object,
-  })
-  // @SkipInterceptors() // Removido temporariamente
-  async diagnosticoBuscaRapida(
-    @Query('cpf') cpf: string,
-    @Res() response,
-  ): Promise<void> {
-    console.time(`DIAG-${cpf.substr(-4)}`);
-    try {
-      // Consulta direta ao repositório sem cache para diagnóstico
-      const cpfLimpo = cpf.replace(/\D/g, '');
-      
-      // Usar o repositório diretamente para eliminar sobrecarga
-      // Código comentado temporariamente para permitir compilação
-      /*const cidadao = await this.cidadaoRepository.findByCpf(cpfLimpo, false, [
-        'id', 'nome', 'cpf', 'nis', 'telefone', 'data_nascimento',
-        'endereco', 'created_at', 'updated_at'
-      ]);
-      
-      console.timeEnd(`DIAG-${cpf.substr(-4)}`);
-      return response.status(HttpStatus.OK).json({
-        success: true,
-        diagnostico: true,
-        data: cidadao,
-        tempoProcessamento: new Date().toISOString(),
-      });*/
-      
-      // Solução temporária para permitir compilação
-      console.timeEnd(`DIAG-${cpf.substr(-4)}`);
-      return response.status(200).json({
-        success: true,
-        diagnostico: true,
-        mensagem: 'Endpoint comentado para permitir compilação. Use o módulo de diagnóstico separado',
-        tempoProcessamento: new Date().toISOString(),
-      });
-    } catch (error) {
-      console.timeEnd(`DIAG-${cpf.substr(-4)}`);
-      return response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
-        success: false,
-        diagnostico: true,
-        error: error.message,
-        tempoProcessamento: new Date().toISOString(),
-      });
-    }
-  }
+
 
   /**
    * Obtém detalhes de um cidadão específico
@@ -473,14 +406,36 @@ export class CidadaoController {
   })
   async create(
     @Body() createCidadaoDto: CreateCidadaoDto,
+    @Request() req,
   ): Promise<any> {
-    return { message: 'Endpoint desativado temporariamente para diagnóstico' };
-    // Código original comentado para permitir compilação
-    /*return this.cidadaoService.create(
-      createCidadaoDto,
-      req?.user?.id,
-      req?.user?.unidade_id,
-    );*/
+    // Inicia medição de tempo para performance
+    const startTime = Date.now();
+    const requestId = `CREATE-${createCidadaoDto.cpf?.substring(Math.max(0, (createCidadaoDto.cpf?.length || 0) - 4)) || Date.now()}-${Date.now()}`;
+    this.logger.log(`[${requestId}] Início de processamento de criação de cidadão`);
+    
+    try {
+      // Restaurando o código original com monitoramento de performance
+      const result = await this.cidadaoService.create(
+        createCidadaoDto,
+        req?.user?.id,
+        req?.user?.unidade_id,
+      );
+      
+      // Registra tempo total da operação para monitoramento
+      const totalTime = Date.now() - startTime;
+      if (totalTime > 500) {
+        this.logger.warn(`[${requestId}] Operação lenta (create): ${totalTime}ms`);
+      } else {
+        this.logger.log(`[${requestId}] Operação concluída em ${totalTime}ms`);
+      }
+      
+      return result;
+    } catch (error) {
+      // Registra erro para diagnóstico
+      const totalTime = Date.now() - startTime;
+      this.logger.error(`[${requestId}] Erro em ${totalTime}ms: ${error.message}`);
+      throw error;
+    }
   }
 
   /**
@@ -535,11 +490,32 @@ export class CidadaoController {
   async update(
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
     @Body() updateCidadaoDto: UpdateCidadaoDto,
-    // @Request() req, // Comentado para permitir compilação
+    @Request() req,
   ): Promise<any> {
-    return { message: 'Endpoint desativado temporariamente para diagnóstico' };
-    // Código original comentado para permitir compilação
-    // return this.cidadaoService.update(id, updateCidadaoDto, req.user.id);
+    // Inicia medição de tempo para performance
+    const startTime = Date.now();
+    const requestId = `UPDATE-${id.substring(0, 8)}-${Date.now()}`;
+    this.logger.log(`[${requestId}] Início de processamento de atualização de cidadão`);
+    
+    try {
+      // Restaurando o código original com monitoramento de performance
+      const result = await this.cidadaoService.update(id, updateCidadaoDto, req.user.id);
+      
+      // Registra tempo total da operação para monitoramento
+      const totalTime = Date.now() - startTime;
+      if (totalTime > 500) {
+        this.logger.warn(`[${requestId}] Operação lenta (update): ${totalTime}ms`);
+      } else {
+        this.logger.log(`[${requestId}] Operação concluída em ${totalTime}ms`);
+      }
+      
+      return result;
+    } catch (error) {
+      // Registra erro para diagnóstico
+      const totalTime = Date.now() - startTime;
+      this.logger.error(`[${requestId}] Erro em ${totalTime}ms: ${error.message}`);
+      throw error;
+    }
   }
 
   /**
@@ -563,6 +539,11 @@ export class CidadaoController {
     status: 200,
     description: 'Cidadão encontrado',
     type: CidadaoResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'CPF inválido',
+    type: ApiErrorResponse,
   })
   @ApiResponse({
     status: 404,
@@ -687,16 +668,35 @@ export class CidadaoController {
   async addComposicaoFamiliar(
     @Param('id') id: string,
     @Body() createComposicaoFamiliarDto: CreateComposicaoFamiliarDto,
-    // @Request() req, // Comentado para permitir compilação
+    @Request() req,
   ) {
-    return { message: 'Endpoint desativado temporariamente para diagnóstico' };
-    // Código original comentado para permitir compilação
-    /*return this.cidadaoService.addComposicaoFamiliar(
-      id,
-      createComposicaoFamiliarDto,
-      req?.user?.id,
-    );*/
+    // Inicia medição de tempo para performance
+    const startTime = Date.now();
+    const requestId = `COMP-${id.substring(0, 8)}-${Date.now()}`;
+    this.logger.log(`[${requestId}] Início de processamento de adição na composição familiar`);
+    
+    try {
+      // Restaurando o código original com monitoramento de performance
+      const result = await this.cidadaoService.addComposicaoFamiliar(
+        id,
+        createComposicaoFamiliarDto,
+        req?.user?.id,
+      );
+      
+      // Registra tempo total da operação para monitoramento
+      const totalTime = Date.now() - startTime;
+      if (totalTime > 500) {
+        this.logger.warn(`[${requestId}] Operação lenta (addComposicaoFamiliar): ${totalTime}ms`);
+      } else {
+        this.logger.log(`[${requestId}] Operação concluída em ${totalTime}ms`);
+      }
+      
+      return result;
+    } catch (error) {
+      // Registra erro para diagnóstico
+      const totalTime = Date.now() - startTime;
+      this.logger.error(`[${requestId}] Erro em ${totalTime}ms: ${error.message}`);
+      throw error;
+    }
   }
 }
-
-// Removido para corrigir erros de compilação

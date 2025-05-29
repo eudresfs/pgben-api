@@ -258,8 +258,9 @@ export class AuditService {
 
   /**
    * Remove logs antigos (executado automaticamente)
+   * TEMPORARIAMENTE DESABILITADO - pode estar causando travamento na inicialização
    */
-  @Cron(CronExpression.EVERY_DAY_AT_2AM)
+  // @Cron(CronExpression.EVERY_DAY_AT_2AM)
   async cleanupOldLogs(): Promise<void> {
     try {
       // Remove logs com mais de 1 ano (exceto críticos)

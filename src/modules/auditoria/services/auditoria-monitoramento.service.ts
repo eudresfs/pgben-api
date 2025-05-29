@@ -116,8 +116,7 @@ export class AuditoriaMonitoramentoService implements OnModuleInit {
       dataAtualizacao: new Date(),
     };
 
-    // Atualizar estatísticas iniciais
-    this.atualizarEstatisticas();
+    // Estatísticas serão atualizadas pelo agendamento configurado no onModuleInit
   }
 
   /**
@@ -171,12 +170,23 @@ export class AuditoriaMonitoramentoService implements OnModuleInit {
    * Configura o agendamento quando o módulo é inicializado
    */
   async onModuleInit(): Promise<void> {
-    // Configurar a atualização de estatísticas a cada 5 minutos
-    this.scheduleAdapter.scheduleInterval(
-      'atualizar_estatisticas_auditoria',
-      5 * 60 * 1000, // 5 minutos em milissegundos
-      () => this.atualizarEstatisticas()
-    );
+    try {
+      // TEMPORARIAMENTE DESABILITADO: Executar uma vez inicialmente (sem await para não bloquear a inicialização)
+      // this.atualizarEstatisticas().catch(error => {
+      //   this.logger.error(`Erro na atualização inicial de estatísticas: ${error.message}`);
+      // });
+      
+      // Configurar a atualização de estatísticas a cada 15 minutos (reduzir frequência)
+      this.scheduleAdapter.scheduleInterval(
+        'atualizar_estatisticas_auditoria',
+        15 * 60 * 1000, // 15 minutos em milissegundos
+        () => this.atualizarEstatisticas()
+      );
+      
+      this.logger.log('Agendamento de estatísticas de auditoria configurado com sucesso (execução inicial desabilitada)');
+    } catch (error) {
+      this.logger.error(`Erro ao configurar agendamento de estatísticas: ${error.message}`);
+    }
   }
 
   /**

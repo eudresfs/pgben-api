@@ -1,0 +1,309 @@
+# =============================================================================
+# CONFIGURAÇÃO DO ALERTMANAGER - SISTEMA SEMTAS
+# =============================================================================
+# Configuração para gerenciamento e roteamento de alertas de resiliência.
+# Inclui notificações por email, Slack e webhook para diferentes severidades.
+# =============================================================================
+
+global:
+  # Configurações SMTP para notificações por email
+  smtp_smarthost: '${SMTP_HOST:-localhost:587}'
+  smtp_from: '${SMTP_FROM:-alertas@semtas.local}'
+  smtp_auth_username: '${SMTP_USERNAME:-}'
+  smtp_auth_password: '${SMTP_PASSWORD:-}'
+  smtp_require_tls: true
+  
+  # URLs de resolução
+  resolve_timeout: 5m
+  
+  # Headers HTTP globais
+  http_config:
+    tls_config:
+      insecure_skip_verify: false
+
+# =============================================================================
+# TEMPLATES DE NOTIFICAÇÃO
+# =============================================================================
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
+
+# =============================================================================
+# CONFIGURAÇÃO DE ROTEAMENTO
+# =============================================================================
+route:
+  # Configurações padrão
+  group_by: ['alertname', 'component', 'severity']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  receiver: 'default-receiver'
+  
+  # Rotas específicas por severidade e componente
+  routes:
+    # Alertas críticos - notificação imediata
+    - match:
+        severity: critical
+      receiver: 'critical-alerts'
+      group_wait: 10s
+      group_interval: 2m
+      repeat_interval: 30m
+      continue: true
+    
+    # Alertas de cache - equipe de infraestrutura
+    - match:
+        component: cache
+      receiver: 'cache-alerts'
+      group_wait: 1m
+      group_interval: 10m
+      repeat_interval: 2h
+    
+    # Alertas de auditoria - equipe de segurança
+    - match:
+        component: auditoria
+      receiver: 'auditoria-alerts'
+      group_wait: 1m
+      group_interval: 5m
+      repeat_interval: 1h
+    
+    # Alertas de Redis - equipe de banco de dados
+    - match:
+        component: redis
+      receiver: 'redis-alerts'
+      group_wait: 2m
+      group_interval: 10m
+      repeat_interval: 2h
+    
+    # Alertas de aplicação - equipe de desenvolvimento
+    - match:
+        component: application
+      receiver: 'app-alerts'
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 1h
+    
+    # Alertas durante horário de manutenção - silenciar
+    - match:
+        severity: warning
+      active_time_intervals:
+        - maintenance-window
+      receiver: 'null-receiver'
+
+# =============================================================================
+# CONFIGURAÇÃO DE INIBIÇÃO
+# =============================================================================
+inhibit_rules:
+  # Se a aplicação está down, inibir outros alertas relacionados
+  - source_match:
+      alertname: SemtasAppDown
+    target_match_re:
+      component: (cache|auditoria|health_check)
+    equal: ['instance']
+  
+  # Se o Redis está indisponível, inibir alertas de cache L2
+  - source_match:
+      alertname: CacheL2Unavailable
+    target_match:
+      component: cache
+      layer: l2
+    equal: ['instance']
+  
+  # Alertas críticos inibem warnings do mesmo componente
+  - source_match:
+      severity: critical
+    target_match:
+      severity: warning
+    equal: ['component', 'instance']
+
+# =============================================================================
+# CONFIGURAÇÃO DE RECEIVERS
+# =============================================================================
+receivers:
+  # Receiver padrão
+  - name: 'default-receiver'
+    email_configs:
+      - to: '${DEFAULT_EMAIL:-admin@semtas.local}'
+        subject: '[SEMTAS] Alerta: {{ .GroupLabels.alertname }}'
+        body: |
+          {{ range .Alerts }}
+          **Alerta:** {{ .Annotations.summary }}
+          **Descrição:** {{ .Annotations.description }}
+          **Severidade:** {{ .Labels.severity }}
+          **Componente:** {{ .Labels.component }}
+          **Horário:** {{ .StartsAt.Format "2006-01-02 15:04:05" }}
+          {{ if .Annotations.runbook_url }}
+          **Runbook:** {{ .Annotations.runbook_url }}
+          {{ end }}
+          {{ end }}
+        headers:
+          Subject: '[SEMTAS] Alerta de Resiliência'
+  
+  # Alertas críticos - múltiplos canais
+  - name: 'critical-alerts'
+    email_configs:
+      - to: '${CRITICAL_EMAIL:-admin@semtas.local,ops@semtas.local}'
+        subject: '🚨 [SEMTAS CRÍTICO] {{ .GroupLabels.alertname }}'
+        body: |
+          🚨 **ALERTA CRÍTICO NO SISTEMA SEMTAS** 🚨
+          
+          {{ range .Alerts }}
+          **Alerta:** {{ .Annotations.summary }}
+          **Descrição:** {{ .Annotations.description }}
+          **Componente:** {{ .Labels.component }}
+          **Horário:** {{ .StartsAt.Format "2006-01-02 15:04:05" }}
+          **Status:** {{ .Status }}
+          {{ if .Annotations.runbook_url }}
+          **Runbook:** {{ .Annotations.runbook_url }}
+          {{ end }}
+          
+          **Ação Requerida:** Investigação imediata necessária!
+          {{ end }}
+        headers:
+          Priority: 'high'
+          X-Priority: '1'
+    
+    slack_configs:
+      - api_url: '${SLACK_WEBHOOK_URL:-}'
+        channel: '#alerts-critical'
+        title: '🚨 Alerta Crítico SEMTAS'
+        text: |
+          {{ range .Alerts }}
+          *{{ .Annotations.summary }}*
+          {{ .Annotations.description }}
+          
+          *Componente:* {{ .Labels.component }}
+          *Severidade:* {{ .Labels.severity }}
+          {{ if .Annotations.runbook_url }}
+          *Runbook:* {{ .Annotations.runbook_url }}
+          {{ end }}
+          {{ end }}
+        color: 'danger'
+        send_resolved: true
+  
+  # Alertas de cache
+  - name: 'cache-alerts'
+    email_configs:
+      - to: '${INFRA_EMAIL:-infra@semtas.local}'
+        subject: '[SEMTAS Cache] {{ .GroupLabels.alertname }}'
+        body: |
+          **Alerta de Cache - Sistema SEMTAS**
+          
+          {{ range .Alerts }}
+          **Problema:** {{ .Annotations.summary }}
+          **Detalhes:** {{ .Annotations.description }}
+          **Layer:** {{ .Labels.layer | default "N/A" }}
+          **Horário:** {{ .StartsAt.Format "2006-01-02 15:04:05" }}
+          {{ if .Annotations.runbook_url }}
+          **Runbook:** {{ .Annotations.runbook_url }}
+          {{ end }}
+          {{ end }}
+  
+  # Alertas de auditoria
+  - name: 'auditoria-alerts'
+    email_configs:
+      - to: '${SECURITY_EMAIL:-security@semtas.local}'
+        subject: '[SEMTAS Auditoria] {{ .GroupLabels.alertname }}'
+        body: |
+          **Alerta de Auditoria - Sistema SEMTAS**
+          
+          ⚠️ **ATENÇÃO:** Possível impacto na trilha de auditoria!
+          
+          {{ range .Alerts }}
+          **Problema:** {{ .Annotations.summary }}
+          **Detalhes:** {{ .Annotations.description }}
+          **Tipo:** {{ .Labels.type | default "N/A" }}
+          **Horário:** {{ .StartsAt.Format "2006-01-02 15:04:05" }}
+          {{ if .Annotations.runbook_url }}
+          **Runbook:** {{ .Annotations.runbook_url }}
+          {{ end }}
+          {{ end }}
+          
+          **Impacto:** Logs de auditoria podem estar sendo perdidos ou atrasados.
+        headers:
+          X-Priority: '2'
+  
+  # Alertas de Redis
+  - name: 'redis-alerts'
+    email_configs:
+      - to: '${DBA_EMAIL:-dba@semtas.local}'
+        subject: '[SEMTAS Redis] {{ .GroupLabels.alertname }}'
+        body: |
+          **Alerta de Redis - Sistema SEMTAS**
+          
+          {{ range .Alerts }}
+          **Problema:** {{ .Annotations.summary }}
+          **Detalhes:** {{ .Annotations.description }}
+          **Horário:** {{ .StartsAt.Format "2006-01-02 15:04:05" }}
+          {{ if .Annotations.runbook_url }}
+          **Runbook:** {{ .Annotations.runbook_url }}
+          {{ end }}
+          {{ end }}
+  
+  # Alertas de aplicação
+  - name: 'app-alerts'
+    email_configs:
+      - to: '${DEV_EMAIL:-dev@semtas.local}'
+        subject: '[SEMTAS App] {{ .GroupLabels.alertname }}'
+        body: |
+          **Alerta de Aplicação - Sistema SEMTAS**
+          
+          {{ range .Alerts }}
+          **Problema:** {{ .Annotations.summary }}
+          **Detalhes:** {{ .Annotations.description }}
+          **Horário:** {{ .StartsAt.Format "2006-01-02 15:04:05" }}
+          {{ if .Annotations.runbook_url }}
+          **Runbook:** {{ .Annotations.runbook_url }}
+          {{ end }}
+          {{ end }}
+    
+    webhook_configs:
+      - url: '${WEBHOOK_URL:-http://localhost:3000/api/v1/webhooks/alerts}'
+        http_config:
+          basic_auth:
+            username: '${WEBHOOK_USERNAME:-semtas}'
+            password: '${WEBHOOK_PASSWORD:-}'
+        send_resolved: true
+  
+  # Receiver nulo para silenciar alertas
+  - name: 'null-receiver'
+
+# =============================================================================
+# INTERVALOS DE TEMPO ATIVOS
+# =============================================================================
+time_intervals:
+  # Janela de manutenção (sábados 02:00-06:00)
+  - name: maintenance-window
+    time_intervals:
+      - times:
+          - start_time: '02:00'
+            end_time: '06:00'
+        weekdays: ['saturday']
+        location: 'America/Sao_Paulo'
+  
+  # Horário comercial (segunda a sexta, 08:00-18:00)
+  - name: business-hours
+    time_intervals:
+      - times:
+          - start_time: '08:00'
+            end_time: '18:00'
+        weekdays: ['monday:friday']
+        location: 'America/Sao_Paulo'
+
+# =============================================================================
+# CONFIGURAÇÕES GLOBAIS DE NOTIFICAÇÃO
+# =============================================================================
+# Variáveis de ambiente esperadas:
+# - SMTP_HOST: Servidor SMTP
+# - SMTP_FROM: Email remetente
+# - SMTP_USERNAME: Usuário SMTP
+# - SMTP_PASSWORD: Senha SMTP
+# - DEFAULT_EMAIL: Email padrão para alertas
+# - CRITICAL_EMAIL: Emails para alertas críticos
+# - INFRA_EMAIL: Email da equipe de infraestrutura
+# - SECURITY_EMAIL: Email da equipe de segurança
+# - DBA_EMAIL: Email da equipe de banco de dados
+# - DEV_EMAIL: Email da equipe de desenvolvimento
+# - SLACK_WEBHOOK_URL: URL do webhook do Slack
+# - WEBHOOK_URL: URL do webhook personalizado
+# - WEBHOOK_USERNAME: Usuário do webhook
+# - WEBHOOK_PASSWORD: Senha do webhook
+# =============================================================================
