@@ -7,8 +7,29 @@
  * ser usado na autenticação JWT, com suporte para ambientes
  * containerizados (Kubernetes) e desenvolvimento local.
  * 
+ * @fileoverview Gerador de chaves JWT RSA para o Sistema SEMTAS
+ * @author Sistema SEMTAS - PGBEN
+ * @version 1.0.0
+ * @since 2024
+ * 
+ * @tags jwt, rsa, keys, security, authentication, kubernetes, docker
+ * @category Security
+ * @subcategory Authentication
+ * 
  * Uso:
  *   node scripts/gerar-chaves-jwt.js [--output-format=files|base64|env] [--key-size=2048]
+ * 
+ * @example
+ * // Gerar chaves em arquivos (desenvolvimento local)
+ * node scripts/gerar-chaves-jwt.js
+ * 
+ * @example
+ * // Gerar chaves em base64 (Kubernetes)
+ * node scripts/gerar-chaves-jwt.js --output-format=base64
+ * 
+ * @example
+ * // Gerar chaves como variáveis de ambiente
+ * node scripts/gerar-chaves-jwt.js --output-format=env --key-size=4096
  */
 
 const fs = require('fs');
@@ -18,13 +39,28 @@ const crypto = require('crypto');
 // Configurações padrão
 const DEFAULT_CONFIG = {
   keySize: 2048,
-  outputFormat: 'files', // files, base64, env
+  outputFormat: 'files', // files, base64, env, k8s
   keysDir: path.join(__dirname, '..', 'keys'),
-  algorithm: 'RS256'
+  algorithm: 'RS256',
+  force: false
 };
 
 /**
  * Processa argumentos da linha de comando
+ * 
+ * @function parseArgs
+ * @description Analisa e valida os argumentos passados via linha de comando
+ * @returns {Object} Configuração processada com os parâmetros validados
+ * @throws {Error} Quando argumentos inválidos são fornecidos
+ * 
+ * @tags cli, arguments, validation, configuration
+ * @category Utilities
+ * @subcategory CLI
+ * 
+ * @example
+ * // Retorna configuração padrão se nenhum argumento for passado
+ * const config = parseArgs();
+ * // { keySize: 2048, outputFormat: 'files', keysDir: './keys', algorithm: 'RS256' }
  */
 function parseArgs() {
   const args = process.argv.slice(2);
@@ -33,11 +69,15 @@ function parseArgs() {
   args.forEach(arg => {
     if (arg.startsWith('--output-format=')) {
       const format = arg.split('=')[1];
-      if (!['files', 'base64', 'env'].includes(format)) {
-        console.error('❌ Formato inválido. Use: files, base64 ou env');
+      if (!['files', 'base64', 'env', 'k8s'].includes(format)) {
+        console.error('❌ Formato inválido. Use: files, base64, env ou k8s');
         process.exit(1);
       }
       config.outputFormat = format;
+    }
+    
+    if (arg === '--force') {
+      config.force = true;
     }
     
     if (arg.startsWith('--key-size=')) {
@@ -74,11 +114,16 @@ Formatos de saída:
   files   - Salva chaves em arquivos (desenvolvimento local)
   base64  - Exibe chaves em base64 (para Kubernetes Secrets)
   env     - Exibe variáveis de ambiente (para .env)
+  k8s     - Gera manifesto Kubernetes completo
+
+Opções:
+  --force - Força regeneração sem confirmação
 
 Exemplos:
   node scripts/gerar-chaves-jwt.js
   node scripts/gerar-chaves-jwt.js --output-format=base64
   node scripts/gerar-chaves-jwt.js --output-format=env --key-size=4096
+  node scripts/gerar-chaves-jwt.js --output-format=k8s --force
   `);
 }
 
@@ -88,18 +133,13 @@ Exemplos:
 function checkExistingKeys(keysDir) {
   const privateKeyPath = path.join(keysDir, 'private.key');
   const publicKeyPath = path.join(keysDir, 'public.key');
-  const privateKeyPemPath = path.join(keysDir, 'private.pem');
-  const publicKeyPemPath = path.join(keysDir, 'public.pem');
   
   const keyFilesExist = fs.existsSync(privateKeyPath) || fs.existsSync(publicKeyPath);
-  const pemFilesExist = fs.existsSync(privateKeyPemPath) || fs.existsSync(publicKeyPemPath);
   
-  if (keyFilesExist || pemFilesExist) {
+  if (keyFilesExist) {
     return { 
       privateKeyPath, 
       publicKeyPath, 
-      privateKeyPemPath,
-      publicKeyPemPath,
       exists: true 
     };
   }
@@ -107,14 +147,29 @@ function checkExistingKeys(keysDir) {
   return { 
     privateKeyPath, 
     publicKeyPath, 
-    privateKeyPemPath,
-    publicKeyPemPath,
     exists: false 
   };
 }
 
 /**
  * Valida as chaves geradas
+ * 
+ * @function validateKeys
+ * @description Testa se as chaves RSA geradas funcionam corretamente através de assinatura e verificação
+ * @param {string} privateKey - Chave privada RSA em formato PEM
+ * @param {string} publicKey - Chave pública RSA em formato PEM
+ * @returns {boolean} true se as chaves são válidas, false caso contrário
+ * 
+ * @tags validation, cryptography, rsa, testing, security
+ * @category Security
+ * @subcategory Validation
+ * 
+ * @example
+ * // Validar um par de chaves geradas
+ * const isValid = validateKeys(privateKey, publicKey);
+ * if (isValid) {
+ *   console.log('Chaves válidas!');
+ * }
  */
 function validateKeys(privateKey, publicKey) {
   try {
@@ -139,6 +194,24 @@ function validateKeys(privateKey, publicKey) {
 
 /**
  * Gera as chaves RSA
+ * 
+ * @function generateKeyPair
+ * @description Gera um par de chaves RSA (privada e pública) para autenticação JWT
+ * @param {number} keySize - Tamanho da chave RSA em bits (2048, 3072 ou 4096)
+ * @returns {Object} Objeto contendo privateKey e publicKey em formato PEM
+ * @throws {Error} Quando falha na geração ou validação das chaves
+ * 
+ * @tags rsa, cryptography, key-generation, jwt, security
+ * @category Security
+ * @subcategory Cryptography
+ * 
+ * @example
+ * // Gerar chaves RSA de 2048 bits
+ * const { privateKey, publicKey } = generateKeyPair(2048);
+ * 
+ * @example
+ * // Gerar chaves RSA de 4096 bits para maior segurança
+ * const { privateKey, publicKey } = generateKeyPair(4096);
  */
 function generateKeyPair(keySize) {
   console.log(`🔑 Gerando par de chaves RSA ${keySize} bits...`);
@@ -181,26 +254,16 @@ function saveToFiles(privateKey, publicKey, keysDir) {
       fs.mkdirSync(keysDir, { recursive: true });
     }
     
-    // Caminhos para arquivos .key
+    // Caminhos para arquivos .key (formato principal para desenvolvimento)
     const privateKeyPath = path.join(keysDir, 'private.key');
     const publicKeyPath = path.join(keysDir, 'public.key');
-    
-    // Caminhos para arquivos .pem
-    const privateKeyPemPath = path.join(keysDir, 'private.pem');
-    const publicKeyPemPath = path.join(keysDir, 'public.pem');
     
     // Salvar chaves .key
     fs.writeFileSync(privateKeyPath, privateKey, { mode: 0o600 }); // Somente owner read/write
     fs.writeFileSync(publicKeyPath, publicKey, { mode: 0o644 });   // Owner read/write, others read
     
-    // Salvar chaves .pem (mesmo conteúdo, formato PEM)
-    fs.writeFileSync(privateKeyPemPath, privateKey, { mode: 0o600 }); // Somente owner read/write
-    fs.writeFileSync(publicKeyPemPath, publicKey, { mode: 0o644 });   // Owner read/write, others read
-    
     console.log(`✅ Chave privada salva em: ${privateKeyPath}`);
     console.log(`✅ Chave pública salva em: ${publicKeyPath}`);
-    console.log(`✅ Chave privada PEM salva em: ${privateKeyPemPath}`);
-    console.log(`✅ Chave pública PEM salva em: ${publicKeyPemPath}`);
     
     // Adicionar ao .gitignore se não estiver lá
     addToGitignore(keysDir);
@@ -211,9 +274,6 @@ function saveToFiles(privateKey, publicKey, keysDir) {
     console.log(`JWT_ALGORITHM=${DEFAULT_CONFIG.algorithm}`);
     console.log(`JWT_PRIVATE_KEY_PATH=keys/private.key`);
     console.log(`JWT_PUBLIC_KEY_PATH=keys/public.key`);
-    console.log('# Ou use os arquivos .pem:');
-    console.log(`# JWT_PRIVATE_KEY_PATH=keys/private.pem`);
-    console.log(`# JWT_PUBLIC_KEY_PATH=keys/public.pem`);
     console.log('JWT_ACCESS_TOKEN_EXPIRES_IN=1h');
     console.log('JWT_REFRESH_TOKEN_EXPIRES_IN=7d');
     
@@ -236,8 +296,8 @@ function outputBase64(privateKey, publicKey) {
   console.log('apiVersion: v1');
   console.log('kind: Secret');
   console.log('metadata:');
-  console.log('  name: jwt-keys');
-  console.log('  namespace: your-namespace');
+  console.log('  name: pgben-jwt-keys');
+  console.log('  namespace: default');
   console.log('type: Opaque');
   console.log('data:');
   console.log(`  private.key: ${privateKeyBase64}`);
@@ -245,16 +305,16 @@ function outputBase64(privateKey, publicKey) {
   console.log('```');
   
   console.log('\nOu via kubectl:');
-  console.log(`kubectl create secret generic jwt-keys \\`);
+  console.log(`kubectl create secret generic pgben-jwt-keys \\`);
   console.log(`  --from-literal=private.key="${privateKeyBase64}" \\`);
   console.log(`  --from-literal=public.key="${publicKeyBase64}" \\`);
-  console.log(`  --namespace=your-namespace`);
+  console.log(`  --namespace=default`);
   
   console.log('\n📝 CONFIGURAÇÃO PARA KUBERNETES:');
   console.log('Variáveis de ambiente no Deployment:');
   console.log(`JWT_ALGORITHM=${DEFAULT_CONFIG.algorithm}`);
-  console.log('JWT_PRIVATE_KEY=/etc/secrets/private.key');
-  console.log('JWT_PUBLIC_KEY=/etc/secrets/public.key');
+  console.log('JWT_PRIVATE_KEY_PATH=/etc/secrets/private.key');
+  console.log('JWT_PUBLIC_KEY_PATH=/etc/secrets/public.key');
   console.log('JWT_ACCESS_TOKEN_EXPIRES_IN=1h');
   console.log('JWT_REFRESH_TOKEN_EXPIRES_IN=7d');
 }
@@ -283,6 +343,61 @@ function outputEnv(privateKey, publicKey) {
 }
 
 /**
+ * Exibe chaves em formato Kubernetes Secret YAML
+ */
+function outputK8s(privateKey, publicKey) {
+  const privateKeyBase64 = Buffer.from(privateKey).toString('base64');
+  const publicKeyBase64 = Buffer.from(publicKey).toString('base64');
+  
+  console.log('\n☸️  KUBERNETES SECRET YAML:');
+  console.log('---');
+  console.log('apiVersion: v1');
+  console.log('kind: Secret');
+  console.log('metadata:');
+  console.log('  name: pgben-jwt-keys');
+  console.log('  namespace: default');
+  console.log('type: Opaque');
+  console.log('data:');
+  console.log(`  private.key: ${privateKeyBase64}`);
+  console.log(`  public.key: ${publicKeyBase64}`);
+  console.log('---');
+  
+  console.log('\n📝 APLICAR NO KUBERNETES:');
+  console.log('kubectl apply -f - <<EOF');
+  console.log('apiVersion: v1');
+  console.log('kind: Secret');
+  console.log('metadata:');
+  console.log('  name: pgben-jwt-keys');
+  console.log('  namespace: default');
+  console.log('type: Opaque');
+  console.log('data:');
+  console.log(`  private.key: ${privateKeyBase64}`);
+  console.log(`  public.key: ${publicKeyBase64}`);
+  console.log('EOF');
+  
+  console.log('\n📝 CONFIGURAÇÃO NO DEPLOYMENT:');
+  console.log('env:');
+  console.log(`- name: JWT_ALGORITHM`);
+  console.log(`  value: "${DEFAULT_CONFIG.algorithm}"`);
+  console.log('- name: JWT_PRIVATE_KEY_PATH');
+  console.log('  value: "/etc/secrets/private.key"');
+  console.log('- name: JWT_PUBLIC_KEY_PATH');
+  console.log('  value: "/etc/secrets/public.key"');
+  console.log('- name: JWT_ACCESS_TOKEN_EXPIRES_IN');
+  console.log('  value: "1h"');
+  console.log('- name: JWT_REFRESH_TOKEN_EXPIRES_IN');
+  console.log('  value: "7d"');
+  console.log('\nvolumeMounts:');
+  console.log('- name: jwt-keys');
+  console.log('  mountPath: "/etc/secrets"');
+  console.log('  readOnly: true');
+  console.log('\nvolumes:');
+  console.log('- name: jwt-keys');
+  console.log('  secret:');
+  console.log('    secretName: pgben-jwt-keys');
+}
+
+/**
  * Adiciona o diretório keys ao .gitignore
  */
 function addToGitignore(keysDir) {
@@ -301,6 +416,26 @@ function addToGitignore(keysDir) {
 
 /**
  * Função principal
+ * 
+ * @function main
+ * @description Ponto de entrada principal do script, coordena todo o processo de geração de chaves
+ * @returns {void}
+ * 
+ * @tags main, entry-point, orchestration, cli
+ * @category Core
+ * @subcategory Entry Point
+ * 
+ * @example
+ * // Executar o script diretamente
+ * main();
+ * 
+ * @workflow
+ * 1. Processa argumentos da linha de comando
+ * 2. Verifica se chaves já existem (modo files)
+ * 3. Solicita confirmação para sobrescrever se necessário
+ * 4. Gera e valida as chaves RSA
+ * 5. Salva ou exibe as chaves conforme formato solicitado
+ * 6. Exibe instruções de configuração e segurança
  */
 function main() {
   console.log('🔐 Gerador de Chaves JWT RSA\n');
@@ -308,15 +443,13 @@ function main() {
   const config = parseArgs();
   
   // Verificar se as chaves já existem (apenas para formato files)
-  if (config.outputFormat === 'files') {
-    const { exists, privateKeyPath, publicKeyPath, privateKeyPemPath, publicKeyPemPath } = checkExistingKeys(config.keysDir);
+  if (config.outputFormat === 'files' && !config.force) {
+    const { exists, privateKeyPath, publicKeyPath } = checkExistingKeys(config.keysDir);
     
     if (exists) {
       console.log('⚠️  Chaves já existem:');
       if (fs.existsSync(privateKeyPath)) console.log(`   ${privateKeyPath}`);
       if (fs.existsSync(publicKeyPath)) console.log(`   ${publicKeyPath}`);
-      if (fs.existsSync(privateKeyPemPath)) console.log(`   ${privateKeyPemPath}`);
-      if (fs.existsSync(publicKeyPemPath)) console.log(`   ${publicKeyPemPath}`);
       console.log('\nDeseja sobrescrever? (y/N)');
       
       const readline = require('readline');
@@ -355,6 +488,9 @@ function generateAndOutput(config) {
       break;
     case 'env':
       outputEnv(privateKey, publicKey);
+      break;
+    case 'k8s':
+      outputK8s(privateKey, publicKey);
       break;
   }
   

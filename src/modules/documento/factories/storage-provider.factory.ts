@@ -197,13 +197,30 @@ export class StorageProviderFactory {
       },
 
       list: async (prefix: string, maxKeys?: number): Promise<string[]> => {
-        // Não há método direto para listar arquivos no MinioService
-        // Implementar usando o cliente Minio diretamente seria mais adequado
-        // Por enquanto, retornar array vazio
-        this.logger.warn(
-          'Método list não implementado completamente no adaptador MinIO',
-        );
-        return [];
+        try {
+          // Implementação básica usando cliente Minio diretamente
+          const client = (MinioService as any).client;
+          if (client && typeof client.listObjects === 'function') {
+            const objects: string[] = [];
+            const stream = client.listObjects(process.env.MINIO_BUCKET_NAME || 'documents', prefix, true);
+            
+            return new Promise((resolve, reject) => {
+              stream.on('data', (obj: any) => {
+                if (obj.name && (!maxKeys || objects.length < maxKeys)) {
+                  objects.push(obj.name);
+                }
+              });
+              stream.on('end', () => resolve(objects));
+              stream.on('error', reject);
+            });
+          }
+          
+          this.logger.warn('Cliente MinIO não disponível para listagem');
+          return [];
+        } catch (error) {
+          this.logger.error('Erro ao listar arquivos no MinIO:', error);
+          return [];
+        }
       },
     };
   }

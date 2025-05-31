@@ -11,6 +11,7 @@ import { ComposicaoFamiliar } from './entities/composicao-familiar.entity';
 import { HistoricoConversaoPapel } from './entities/historico-conversao-papel.entity';
 import { RegraConflitoPapel } from './entities/regra-conflito-papel.entity';
 import { InfoBancaria } from './entities/info-bancaria.entity';
+import { DadosSociais } from './entities/dados-sociais.entity';
 import { CacheModule } from '../../shared/cache';
 import { CidadaoAuditInterceptor } from './interceptors/cidadao-audit.interceptor';
 import { PapelCidadaoService } from './services/papel-cidadao.service';
@@ -23,6 +24,10 @@ import { RegraConflitoPapelController } from './controllers/regra-conflito-papel
 import { InfoBancariaController } from './controllers/info-bancaria.controller';
 import { InfoBancariaService } from './services/info-bancaria.service';
 import { InfoBancariaRepository } from './repositories/info-bancaria.repository';
+import { DadosSociaisController } from './controllers/dados-sociais.controller';
+import { DadosSociaisService } from './services/dados-sociais.service';
+import { ComposicaoFamiliarController } from './controllers/composicao-familiar.controller';
+import { ComposicaoFamiliarService } from './services/composicao-familiar.service';
 // import { DiagnosticoController } from './controllers/diagnostico.controller'; // Movido para módulo separado
 import { AuthModule } from '../../auth/auth.module';
 import { NotificacaoModule } from '../notificacao/notificacao.module';
@@ -41,7 +46,8 @@ import { NotificacaoModule } from '../notificacao/notificacao.module';
       ComposicaoFamiliar, 
       HistoricoConversaoPapel,
       RegraConflitoPapel,
-      InfoBancaria
+      InfoBancaria,
+      DadosSociais
     ]),
     CacheModule,
     AuthModule,
@@ -55,6 +61,8 @@ import { NotificacaoModule } from '../notificacao/notificacao.module';
     PapelConflitoController,
     RegraConflitoPapelController,
     InfoBancariaController,
+    DadosSociaisController,
+    ComposicaoFamiliarController,
     // DiagnosticoController // Movido para módulo separado
   ],
   providers: [
@@ -66,6 +74,8 @@ import { NotificacaoModule } from '../notificacao/notificacao.module';
     RegraConflitoPapelRepository,
     InfoBancariaService,
     InfoBancariaRepository,
+    DadosSociaisService,
+    ComposicaoFamiliarService,
     {
       provide: APP_INTERCEPTOR,
       useClass: CidadaoAuditInterceptor,
@@ -79,7 +89,9 @@ import { NotificacaoModule } from '../notificacao/notificacao.module';
     HistoricoConversaoPapelService,
     RegraConflitoPapelRepository,
     InfoBancariaService,
-    InfoBancariaRepository
+    InfoBancariaRepository,
+    DadosSociaisService,
+    ComposicaoFamiliarService
   ],
 })
 export class CidadaoModule {}

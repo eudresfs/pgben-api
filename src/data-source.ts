@@ -10,13 +10,11 @@ import { config as dotenvConfig } from 'dotenv';
 // Entidades do módulo de autenticação
 import { JwtBlacklist } from './auth/entities/jwt-blacklist.entity';
 import { PasswordResetToken } from './auth/entities/password-reset-token.entity';
-import { Permissao } from './auth/entities/permissao.entity';
 import { PermissionGroup } from './auth/entities/permission-group.entity';
 import { PermissionGroupMapping } from './auth/entities/permission-group-mapping.entity';
 import { Permission } from './auth/entities/permission.entity';
 import { PermissionScope } from './auth/entities/permission-scope.entity';
 import { RefreshToken } from './auth/entities/refresh-token.entity';
-import { RolePermissao } from './auth/entities/role-permissao.entity';
 import { RolePermission } from './auth/entities/role-permission.entity';
 import { UserPermission } from './auth/entities/user-permission.entity';
 
@@ -66,7 +64,7 @@ import { DeterminacaoJudicial } from './modules/judicial/entities/determinacao-j
 
 // Entidades do módulo de documento
 import { Documento } from './modules/documento/entities/documento.entity';
-import { DocumentoEnviado } from './modules/documento/entities/documento-enviado.entity';
+// DocumentoEnviado removida - funcionalidade consolidada na entidade Documento
 
 // Entidades do módulo de notificação
 import { Notificacao } from './modules/notificacao/entities/notificacao.entity';
@@ -128,13 +126,11 @@ export const AppDataSource = new DataSource({
     // Entidades de autenticação
     JwtBlacklist,
     PasswordResetToken,
-    Permissao,
     PermissionGroup,
     PermissionGroupMapping,
     Permission,
     PermissionScope,
     RefreshToken,
-    RolePermissao,
     RolePermission,
     UserPermission,
     
@@ -181,7 +177,6 @@ export const AppDataSource = new DataSource({
     
     // Entidades de documento
     Documento,
-    DocumentoEnviado,
     
     // Entidades de notificação
     Notificacao,

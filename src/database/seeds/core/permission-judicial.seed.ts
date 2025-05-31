@@ -2,6 +2,7 @@ import { DataSource } from 'typeorm';
 import { Permission } from '../../../auth/entities/permission.entity';
 import { PermissionScope } from '../../../auth/entities/permission-scope.entity';
 import { Logger } from '@nestjs/common';
+import { Status } from '@/shared/enums/status.enum';
 
 /**
  * Seed de permissões para o módulo judicial
@@ -73,14 +74,14 @@ export class PermissionJudicialSeed {
     
     // Inserir permissão composta
     await dataSource.query(
-      `INSERT INTO permissao (nome, descricao, modulo, acao, ativo) 
+      `INSERT INTO permissao (nome, descricao, modulo, acao, status) 
        VALUES ($1, $2, $3, $4, $5)`,
       [
         'judicial.*',
         'Todas as permissões do módulo judicial',
         'judicial',
         '*',
-        true
+        Status.ATIVO
       ]
     );
     
@@ -407,10 +408,10 @@ export class PermissionJudicialSeed {
       
       // Inserir nova permissão
       const result = await dataSource.query(
-        `INSERT INTO permissao (nome, descricao, modulo, acao, ativo) 
+        `INSERT INTO permissao (nome, descricao, modulo, acao, status) 
          VALUES ($1, $2, $3, $4, $5) 
          RETURNING id`,
-        [nome, descricao, 'judicial', acao, true]
+        [nome, descricao, 'judicial', acao, Status.ATIVO]
       );
       
       if (!result || result.length === 0) {

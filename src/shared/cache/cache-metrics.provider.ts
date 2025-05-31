@@ -21,6 +21,9 @@ export class CacheMetricsProvider implements OnModuleInit {
   // Contadores para cálculo de métricas
   private cacheHits = 0;
   private cacheMisses = 0;
+  private cacheFailures = 0;
+  private cacheRecoveryAttempts = 0;
+  private responseTimesMs: Map<string, number[]> = new Map();
   private cacheOperations = {
     get: 0,
     set: 0,
@@ -109,6 +112,26 @@ export class CacheMetricsProvider implements OnModuleInit {
         }
       });
 
+      // Registrar falhas e tentativas de recuperação
+      if (this.cacheFailures > 0) {
+        this.metricsService.recordCacheFailures(this.cacheFailures, this.cacheType);
+        this.cacheFailures = 0;
+      }
+      
+      if (this.cacheRecoveryAttempts > 0) {
+        this.metricsService.recordCacheRecoveryAttempts(this.cacheRecoveryAttempts, this.cacheType);
+        this.cacheRecoveryAttempts = 0;
+      }
+      
+      // Registrar tempos de resposta
+      this.responseTimesMs.forEach((times, key) => {
+        if (times.length > 0) {
+          const avgTime = times.reduce((sum, time) => sum + time, 0) / times.length;
+          this.metricsService.recordCacheResponseTime(avgTime, key, this.cacheType);
+        }
+      });
+      this.responseTimesMs.clear();
+      
       // Resetar contadores
       this.cacheHits = 0;
       this.cacheMisses = 0;
@@ -167,5 +190,37 @@ export class CacheMetricsProvider implements OnModuleInit {
    */
   registerCacheClear(): void {
     this.cacheOperations.clear++;
+  }
+  
+  /**
+   * Registra uma falha no cache
+   */
+  registerCacheFailure(): void {
+    this.cacheFailures++;
+    this.metricsService.recordCacheOperation('failure', false, this.cacheType);
+  }
+  
+  /**
+   * Registra uma tentativa de recuperação do circuit breaker
+   */
+  registerCacheRecoveryAttempt(): void {
+    this.cacheRecoveryAttempts++;
+    this.metricsService.recordCacheOperation('recovery', true, this.cacheType);
+  }
+  
+  /**
+   * Registra o tempo de resposta de uma operação de cache
+   * @param key Chave do cache
+   * @param timeMs Tempo em milissegundos (opcional)
+   */
+  registerCacheResponseTime(key: string, timeMs?: number): void {
+    const time = timeMs || 0;
+    if (!this.responseTimesMs.has(key)) {
+      this.responseTimesMs.set(key, []);
+    }
+    const times = this.responseTimesMs.get(key);
+    if (times) {
+      times.push(time);
+    }
   }
 }

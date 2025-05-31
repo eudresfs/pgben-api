@@ -2,7 +2,7 @@
  * Interface para provedores de armazenamento
  *
  * Define os métodos que devem ser implementados por qualquer
- * provedor de armazenamento de documentos (local, S3, Azure, etc.)
+ * provedor de armazenamento de documentos (local, S3, MinIO, etc.)
  */
 export interface StorageProvider {
   /**

@@ -1,15 +1,16 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEnum } from 'class-validator';
+import { Status } from '../../../shared/enums/status.enum';
 
 /**
  * DTO para atualização de status do usuário
  */
 export class UpdateStatusUsuarioDto {
-  @IsEnum(['ativo', 'inativo'], { message: 'Status deve ser ativo ou inativo' })
+  @IsEnum(Status, { message: 'Status deve ser ativo ou inativo' })
   @ApiProperty({
-    enum: ['ativo', 'inativo'],
-    example: 'ativo',
+    enum: Status,
+    example: Status.ATIVO,
     description: 'Status do usuário',
   })
-  status: string;
+  status: Status;
 }

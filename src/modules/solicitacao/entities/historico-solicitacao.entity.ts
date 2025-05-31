@@ -10,7 +10,7 @@ import {
 import { IsNotEmpty } from 'class-validator';
 import { Solicitacao } from './solicitacao.entity';
 import { Usuario } from '../../usuario/entities/usuario.entity';
-import { StatusSolicitacao } from './solicitacao.entity';
+import { StatusSolicitacao } from '../enums/status-solicitacao.enum';
 
 @Entity('historico_solicitacao')
 @Index(['solicitacao_id', 'created_at'])
@@ -29,7 +29,7 @@ export class HistoricoSolicitacao {
   @Column({
     type: 'enum',
     enum: StatusSolicitacao,
-    enumName: 'status_solicitacao',
+    enumName: 'status_historico_solicitacao_anterior',
   })
   @IsNotEmpty({ message: 'Status anterior é obrigatório' })
   status_anterior: StatusSolicitacao;
@@ -37,7 +37,7 @@ export class HistoricoSolicitacao {
   @Column({
     type: 'enum',
     enum: StatusSolicitacao,
-    enumName: 'status_solicitacao',
+    enumName: 'status_historico_solicitacao_atual',
   })
   @IsNotEmpty({ message: 'Status atual é obrigatório' })
   status_atual: StatusSolicitacao;

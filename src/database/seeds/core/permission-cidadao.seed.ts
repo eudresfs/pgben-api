@@ -2,6 +2,7 @@ import { DataSource } from 'typeorm';
 import { Permission } from '../../../auth/entities/permission.entity';
 import { PermissionScope } from '../../../auth/entities/permission-scope.entity';
 import { TipoEscopo } from '../../../auth/entities/user-permission.entity';
+import { Status } from '@/shared/enums/status.enum';
 
 /**
  * Script de seed para popular as permissões do módulo de cidadão.
@@ -284,10 +285,10 @@ export class PermissionCidadaoSeed {
     // Usar SQL direto para inserir a permissão com os campos corretos
     const dataSource = repository.manager.connection;
     const result = await dataSource.query(
-      `INSERT INTO permissao (nome, descricao, modulo, acao, ativo) 
+      `INSERT INTO permissao (nome, descricao, modulo, acao, status) 
        VALUES ($1, $2, $3, $4, $5) 
        RETURNING id`,
-      [nome, descricao, modulo, acao, true]
+      [nome, descricao, modulo, acao, Status.ATIVO]
     );
     
     // Criar objeto Permission para retornar

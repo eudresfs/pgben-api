@@ -22,20 +22,7 @@ import { Documento } from '../../documento/entities/documento.entity';
 import { HistoricoSolicitacao } from './historico-solicitacao.entity';
 import { ProcessoJudicial } from '../../judicial/entities/processo-judicial.entity';
 import { DeterminacaoJudicial } from '../../judicial/entities/determinacao-judicial.entity';
-
-export enum StatusSolicitacao {
-  RASCUNHO = 'rascunho',
-  PENDENTE = 'pendente',
-  EM_ANALISE = 'em_analise',
-  AGUARDANDO_DOCUMENTOS = 'aguardando_documentos',
-  APROVADA = 'aprovada',
-  REPROVADA = 'reprovada',
-  LIBERADA = 'liberada',
-  CANCELADA = 'cancelada',
-  EM_PROCESSAMENTO = 'em_processamento',
-  CONCLUIDA = 'concluida',
-  ARQUIVADA = 'arquivada',
-}
+import { StatusSolicitacao } from '../enums/status-solicitacao.enum';
 
 @Entity('solicitacao')
 @Index(['protocolo'], { unique: true })
@@ -301,3 +288,5 @@ export class Solicitacao {
   @DeleteDateColumn()
   removed_at: Date;
 }
+
+export { StatusSolicitacao };

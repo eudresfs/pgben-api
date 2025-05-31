@@ -25,9 +25,9 @@ export class RefreshTokenService {
 
     const refreshToken = this.refreshTokenRepository.create({
       usuario: user,
-      usuarioId: user.id, 
+      usuario_id: user.id, 
       token: this.generateToken(),
-      expiresAt,
+      expires_at: expiresAt,
     });
 
     return this.refreshTokenRepository.save(refreshToken);
@@ -53,9 +53,9 @@ export class RefreshTokenService {
   async findActiveTokensByUserId(usuarioId: string): Promise<RefreshToken[]> {
     return this.refreshTokenRepository.find({
       where: {
-        usuarioId,
+        usuario_id: usuarioId,
         revoked: false,
-        expiresAt: MoreThan(new Date()) // Apenas tokens não expirados
+        expires_at: MoreThan(new Date()) // Apenas tokens não expirados
       }
     });
   }
@@ -71,9 +71,9 @@ export class RefreshTokenService {
       { token },
       {
         revoked: true,
-        revokedAt: new Date(),
+        revoked_at: new Date(),
         revokedByIp: ipAddress,
-        replacedByToken,
+        replacedByToken: replacedByToken,
       },
     );
   }

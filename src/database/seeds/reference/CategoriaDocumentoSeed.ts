@@ -62,7 +62,7 @@ export class CategoriaDocumentoSeed {
     ];
 
     // Inserção das categorias de documentos no banco de dados
-    for (const categoria of categoriasDocumentos) {
+/*     for (const categoria of categoriasDocumentos) {
       const categoriaExistente = await dataSource.query(
         `SELECT id FROM categoria_documento WHERE nome = $1`,
         [categoria.nome],
@@ -98,7 +98,7 @@ export class CategoriaDocumentoSeed {
           ],
         );
       }
-    }
+    } */
 
     console.log('Seed de categorias de documentos de referência concluído');
   }

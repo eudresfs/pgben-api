@@ -6,7 +6,6 @@ import { AuthModule } from '../../auth/auth.module'
 
 // Controladores
 import { NotificacaoController } from './controllers/notificacao.controller';
-import { NotificationController } from './controllers/notification.controller';
 import { NotificationTemplateController } from './controllers/notification-template.controller';
 
 // Serviços
@@ -14,6 +13,8 @@ import { NotificacaoService } from './services/notificacao.service';
 import { NotificationManagerService } from './services/notification-manager.service';
 import { TemplateRendererService } from './services/template-renderer.service';
 import { EmailChannelService } from './channels/email-channel.service';
+import { SseService } from './services/sse.service';
+import { SseGuard } from './guards/sse.guard';
 
 // Entidades
 import { NotificacaoSistema } from './entities/notification.entity';
@@ -35,7 +36,6 @@ import { NotificationTemplate } from './entities/notification-template.entity';
   ],
   controllers: [
     NotificacaoController,
-    NotificationController,
     NotificationTemplateController,
   ],
   providers: [
@@ -43,7 +43,9 @@ import { NotificationTemplate } from './entities/notification-template.entity';
     NotificationManagerService,
     TemplateRendererService,
     EmailChannelService,
+    SseService,
+    SseGuard,
   ],
-  exports: [NotificacaoService, NotificationManagerService],
+  exports: [NotificacaoService, NotificationManagerService, SseService],
 })
 export class NotificacaoModule {}

@@ -68,7 +68,7 @@ describe('IntegracaoDocumentoService', () => {
       mimetype: 'application/pdf',
       buffer: Buffer.from('conteúdo do arquivo'),
       size: 1024
-    } as Express.Multer.File;
+    } as any;
 
     const mockResposta = {
       id: 'documento-id',

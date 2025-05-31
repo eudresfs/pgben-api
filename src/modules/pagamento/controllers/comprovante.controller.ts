@@ -54,14 +54,14 @@ export class ComprovanteController {
     // Mapear para DTO de resposta
     return comprovantes.map(comprovante => ({
       id: comprovante.id,
-      pagamentoId: comprovante.pagamentoId,
-      tipoDocumento: comprovante.tipoDocumento,
-      nomeArquivo: comprovante.nomeArquivo,
+      pagamentoId: comprovante.pagamento_id,
+      tipoDocumento: comprovante.tipo_documento,
+      nomeArquivo: comprovante.nome_arquivo,
       tamanho: comprovante.tamanho,
-      mimeType: comprovante.mimeType,
-      dataUpload: comprovante.dataUpload,
+      mimeType: comprovante.mime_type,
+      dataUpload: comprovante.data_upload,
       uploadedPor: {
-        id: comprovante.uploadedPor,
+        id: comprovante.uploaded_por,
         nome: 'Usuário Responsável' // seria obtido da entidade Usuario
       }
     }));
@@ -83,7 +83,7 @@ export class ComprovanteController {
   // @Roles('admin', 'gestor_semtas', 'tecnico')
   async uploadComprovante(
     @Param('pagamentoId', ParseUUIDPipe) pagamentoId: string,
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFile() file: any,
     @Body() uploadDto: ComprovanteUploadDto,
     // @CurrentUser() usuario: Usuario
   ) {
@@ -104,12 +104,12 @@ export class ComprovanteController {
     // Mapear para DTO de resposta
     return {
       id: comprovante.id,
-      pagamentoId: comprovante.pagamentoId,
-      tipoDocumento: comprovante.tipoDocumento,
-      nomeArquivo: comprovante.nomeArquivo,
+      pagamentoId: comprovante.pagamento_id,
+      tipoDocumento: comprovante.tipo_documento,
+      nomeArquivo: comprovante.nome_arquivo,
       tamanho: comprovante.tamanho,
-      mimeType: comprovante.mimeType,
-      dataUpload: comprovante.dataUpload,
+      mimeType: comprovante.mime_type,
+      dataUpload: comprovante.data_upload,
       uploadedPor: {
         id: usuarioId,
         nome: 'Usuário Responsável' // seria obtido da entidade Usuario
@@ -166,14 +166,14 @@ export class ComprovanteController {
     // Mapear para DTO de resposta
     return {
       id: comprovante.id,
-      pagamentoId: comprovante.pagamentoId,
-      tipoDocumento: comprovante.tipoDocumento,
-      nomeArquivo: comprovante.nomeArquivo,
+      pagamentoId: comprovante.pagamento_id,
+      tipoDocumento: comprovante.tipo_documento,
+      nomeArquivo: comprovante.nome_arquivo,
       tamanho: comprovante.tamanho,
-      mimeType: comprovante.mimeType,
-      dataUpload: comprovante.dataUpload,
+      mimeType: comprovante.mime_type,
+      dataUpload: comprovante.data_upload,
       uploadedPor: {
-        id: comprovante.uploadedPor,
+        id: comprovante.uploaded_por,
         nome: 'Usuário Responsável' // seria obtido da entidade Usuario
       }
     };

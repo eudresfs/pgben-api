@@ -266,7 +266,7 @@ export class PermissionRelatorioSeed {
     const permission = new Permission();
     permission.nome = name;
     permission.description = description;
-    permission.isComposite = isComposite;
+
     
     // Extrair módulo e ação do nome da permissão
     const parts = name.split('.');

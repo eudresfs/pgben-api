@@ -21,6 +21,7 @@ import { CPFValidator } from '../validators/cpf-validator';
 import { NISValidator } from '../validators/nis-validator';
 import { TelefoneValidator } from '../validators/telefone-validator';
 import { CEPValidator } from '../validators/cep-validator';
+import { CreateComposicaoFamiliarDto } from './create-composicao-familiar.dto';
 
 /**
  * DTO para endereço do cidadão
@@ -135,19 +136,15 @@ export class CreateCidadaoDto {
   })
   papeis?: PapelCidadaoCreateDto[];
 
-  /**
-   * Validador personalizado para verificar regras de negócio específicas
-   */
-  @ValidateIf(
-    (o) =>
-      o.papeis?.some((p) => p.tipo_papel === TipoPapel.BENEFICIARIO) &&
-      (!o.renda || o.renda > 1500),
-  )
-  @IsNotEmpty({
-    message:
-      'Para beneficiários com renda superior a R$ 1.500,00, a composição familiar é obrigatória',
+  @IsArray()
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => CreateComposicaoFamiliarDto)
+  @ApiPropertyOptional({
+    type: [CreateComposicaoFamiliarDto],
+    description: 'Composição familiar do cidadão',
   })
-  composicao_familiar?: any[];
+  composicao_familiar?: CreateComposicaoFamiliarDto[];
 
   @IsString({ message: 'Nome deve ser uma string' })
   @IsNotEmpty({ message: 'Nome é obrigatório' })
@@ -266,15 +263,6 @@ export class CreateCidadaoDto {
     description: 'Endereço do cidadão',
   })
   endereco: EnderecoDto;
-
-  @IsNumber({}, { message: 'Renda deve ser um número' })
-  @IsOptional()
-  @ApiPropertyOptional({
-    example: 1200.5,
-    description: 'Renda mensal do cidadão em reais (R$)',
-    required: false,
-  })
-  renda?: number;
 
   @IsUUID('4', { message: 'ID da unidade deve ser um UUID válido' })
   @IsNotEmpty({ message: 'ID da unidade é obrigatório' })

@@ -2,6 +2,7 @@ import { DataSource } from 'typeorm';
 import { Permission } from '../../../auth/entities/permission.entity';
 import { PermissionScope } from '../../../auth/entities/permission-scope.entity';
 import { ScopeType, TipoEscopo } from '../../../auth/entities/user-permission.entity';
+import { Status } from '../../../shared/enums/status.enum';
 
 /**
  * Seed para as permissões do módulo de usuários.
@@ -187,6 +188,13 @@ export class PermissionUsuarioSeed {
       false,
     );
 
+    const permissaoAllPermissions = await this.createPermission(
+      permissionRepository,
+      '*.*',
+      'Todas as permissões',
+      false,
+    );
+
     // Configuração de escopo para as permissões
     await this.createPermissionScope(
       permissionScopeRepository,
@@ -326,6 +334,12 @@ export class PermissionUsuarioSeed {
       ScopeType.GLOBAL,
     );
 
+    await this.createPermissionScope(
+      permissionScopeRepository,
+      permissaoAllPermissions.id,
+      ScopeType.GLOBAL,
+    );
+
     console.log('Seed de permissões do módulo de usuários concluído com sucesso!');
   }
 
@@ -344,23 +358,64 @@ export class PermissionUsuarioSeed {
     description: string,
     isComposite: boolean,
   ): Promise<Permission> {
-    const existingPermission = await repository.findOne({ where: { nome: name } });
+    // Usar SQL nativo para evitar problemas com mapeamento de colunas
+    const dataSource = repository.manager.connection;
+    
+    // Verificar se a permissão já existe
+    const existingPermission = await dataSource.query(
+      `SELECT * FROM permissao WHERE nome = $1 LIMIT 1`,
+      [name]
+    );
 
-    if (existingPermission) {
+    if (existingPermission && existingPermission.length > 0) {
       console.log(`Permissão '${name}' já existe, atualizando...`);
-      existingPermission.descricao = description;
-      return repository.save(existingPermission);
+      const row = existingPermission[0];
+      
+      // Atualizar a descrição
+      await dataSource.query(
+        `UPDATE permissao SET descricao = $1 WHERE id = $2`,
+        [description, row.id]
+      );
+      
+      // Converter para objeto Permission
+      const permission = new Permission();
+      permission.id = row.id;
+      permission.nome = row.nome;
+      permission.descricao = description;
+      permission.modulo = row.modulo;
+      permission.acao = row.acao;
+      permission.status = row.status ? Status.ATIVO : Status.INATIVO;
+      permission.created_at = row.created_at;
+      permission.updated_at = row.updated_at;
+      return permission;
     }
 
     console.log(`Criando permissão '${name}'...`);
-    const permission = new Permission();
-    permission.nome = name;
-    permission.descricao = description;
     // Determinar módulo e ação a partir do nome
     const parts = name.split('.');
-    permission.modulo = parts.length > 0 ? parts[0] : 'sistema';
-    permission.acao = parts.length > 1 ? parts.slice(1).join('.') : null;
-    return repository.save(permission);
+    const modulo = parts.length > 0 ? parts[0] : 'sistema';
+    const acao = parts.length > 1 ? parts.slice(1).join('.') : null;
+    
+    // Inserir nova permissão usando SQL nativo
+    const result = await dataSource.query(
+      `INSERT INTO permissao (nome, descricao, modulo, acao, status) 
+       VALUES ($1, $2, $3, $4, $5) 
+       RETURNING id, nome, descricao, modulo, acao, status, created_at, updated_at`,
+      [name, description, modulo, acao, Status.ATIVO]
+    );
+    
+    // Converter para objeto Permission
+    const permission = new Permission();
+    const row = result[0];
+    permission.id = row.id;
+    permission.nome = row.nome;
+    permission.descricao = row.descricao;
+    permission.modulo = row.modulo;
+    permission.acao = row.acao;
+    permission.status = row.status ? Status.ATIVO : Status.INATIVO;
+    permission.created_at = row.created_at;
+    permission.updated_at = row.updated_at;
+    return permission;
   }
 
   /**

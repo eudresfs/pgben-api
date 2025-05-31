@@ -1,25 +1,21 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MulterModule } from '@nestjs/platform-express';
-import { AuthModule } from '../../auth/auth.module'
 import { DocumentoController } from './controllers/documento.controller';
 import { DocumentoService } from './services/documento.service';
-import { MalwareScanService } from './services/malware-scan.service';
-import { ThumbnailService } from './services/thumbnail.service';
-import { Documento } from './entities/documento.entity';
-import { DocumentoEnviado } from './entities/documento-enviado.entity';
-import { SolicitacaoModule } from '../solicitacao/solicitacao.module';
-import { SharedModule } from '../../shared/shared.module';
-import { S3StorageAdapter } from './adapters/s3-storage.adapter';
-import { LocalStorageAdapter } from './adapters/local-storage.adapter';
 import { StorageProviderFactory } from './factories/storage-provider.factory';
+import { LocalStorageAdapter } from './adapters/local-storage.adapter';
+import { S3StorageAdapter } from './adapters/s3-storage.adapter';
 import { MimeTypeValidator } from './validators/mime-type.validator';
-import { MetadadosValidator } from './validators/metadados.validator';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { InputSanitizerValidator } from './validators/input-sanitizer.validator';
+import { TODOS_MIME_TYPES_PERMITIDOS } from './config/documento.config';
 import { diskStorage } from 'multer';
-import * as path from 'path';
-import * as fs from 'fs';
-import * as crypto from 'crypto';
+import { extname } from 'path';
+import { v4 as uuidv4 } from 'uuid';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { Documento } from './entities/documento.entity';
+import { SharedModule } from '../../shared/shared.module';
+import { AuthModule } from '../../auth/auth.module';
 
 /**
  * Módulo de Documentos
@@ -29,93 +25,59 @@ import * as crypto from 'crypto';
  */
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Documento, DocumentoEnviado]),
-    SharedModule,
-    SolicitacaoModule,
+    TypeOrmModule.forFeature([Documento]),
     ConfigModule,
+    SharedModule,
     AuthModule,
-    MulterModule.register({
-      storage: diskStorage({
-        destination: (req, file, cb) => {
-          // A pasta de destino será definida dinamicamente no serviço
-          const tempDir = path.join(process.cwd(), 'uploads', 'temp');
-          if (!fs.existsSync(tempDir)) {
-            fs.mkdirSync(tempDir, { recursive: true });
-          }
-          cb(null, tempDir);
-        },
-        filename: (req, file, cb) => {
-          // Gerar nome único para o arquivo
-          const uniqueSuffix = `${Date.now()}-${crypto.randomBytes(8).toString('hex')}`;
-          const fileExtension = path.extname(file.originalname);
-          cb(null, `${uniqueSuffix}${fileExtension}`);
-        },
-      }),
-      limits: {
-        fileSize: 10 * 1024 * 1024, // 10MB
-      },
-      fileFilter: (req, file, cb) => {
-        // Verificar tipos de arquivo permitidos
-        // Agora usamos a constante TODOS_MIME_TYPES_PERMITIDOS do arquivo constants/mime-types.constant.ts
-        // Mas mantemos a verificação básica aqui para compatibilidade
-        const allowedMimes = [
-          'application/pdf',
-          'image/jpeg',
-          'image/png',
-          'image/gif',
-          'image/bmp',
-          'image/tiff',
-          'image/webp',
-          'application/msword',
-          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-          'application/vnd.ms-excel',
-          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-          'text/csv',
-          'application/vnd.oasis.opendocument.spreadsheet',
-          'application/vnd.ms-powerpoint',
-          'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-          'text/plain',
-          'text/markdown',
-        ];
+    MulterModule.registerAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => {
+        const uploadDir = configService.get<string>(
+          'UPLOAD_TEMP_DIR',
+          './uploads/temp',
+        );
 
-        if (allowedMimes.includes(file.mimetype)) {
-          cb(null, true);
-        } else {
-          cb(
-            new Error(`Tipo de arquivo não permitido: ${file.mimetype}`),
-            false,
-          );
-        }
+        return {
+          storage: diskStorage({
+            destination: uploadDir,
+            filename: (req, file, callback) => {
+              // Gerar nome único para o arquivo
+              const uniqueSuffix = `${Date.now()}-${uuidv4()}`;
+              const extension = extname(file.originalname);
+              const filename = `${uniqueSuffix}${extension}`;
+              callback(null, filename);
+            },
+          }),
+          fileFilter: (req, file, callback) => {
+            // Verificar se o tipo MIME é permitido
+            if (TODOS_MIME_TYPES_PERMITIDOS.includes(file.mimetype)) {
+              callback(null, true);
+            } else {
+              callback(
+                new Error(
+                  `Tipo de arquivo não permitido: ${file.mimetype}`,
+                ),
+                false,
+              );
+            }
+          },
+          limits: {
+            fileSize: 10 * 1024 * 1024, // 10MB
+          },
+        };
       },
+      inject: [ConfigService],
     }),
   ],
   controllers: [DocumentoController],
   providers: [
     DocumentoService,
-    MalwareScanService,
-    ThumbnailService,
-    S3StorageAdapter,
-    LocalStorageAdapter,
     StorageProviderFactory,
-    MimeTypeValidator,
-    MetadadosValidator,
-    {
-      provide: 'STORAGE_PROVIDER',
-      useFactory: (factory: StorageProviderFactory) => {
-        return factory.createProvider();
-      },
-      inject: [StorageProviderFactory],
-    },
-  ],
-  exports: [
-    DocumentoService,
-    MalwareScanService,
-    ThumbnailService,
-    S3StorageAdapter,
     LocalStorageAdapter,
-    StorageProviderFactory,
+    S3StorageAdapter,
     MimeTypeValidator,
-    MetadadosValidator,
+    InputSanitizerValidator,
   ],
+  exports: [DocumentoService, StorageProviderFactory],
 })
 export class DocumentoModule {}

@@ -1,268 +1,287 @@
-import {
-  ValidatorConstraint,
-  ValidatorConstraintInterface,
-  ValidationArguments,
-} from 'class-validator';
-import { Injectable, Logger } from '@nestjs/common';
-import * as fileType from 'file-type';
-import {
-  TODOS_MIME_TYPES_PERMITIDOS,
-  getCategoriaMimeType,
-  getExtensoesParaMimeType,
-} from '../constants/mime-types.constant';
+import { Injectable } from '@nestjs/common';
+import fileType from 'file-type';
+import { 
+  MIME_TYPE_CONFIGS, 
+  BLOCKED_MIME_TYPES, 
+  BLOCKED_EXTENSIONS,
+  SECURITY_CONFIG,
+  isMimeTypePermitido,
+  getMaxFileSize,
+  requiresEncryption,
+  allowsThumbnail
+} from '../config/documento.config';
+import * as crypto from 'crypto';
 
-/**
- * Interface para o resultado da validação de tipo MIME
- */
 export interface MimeTypeValidationResult {
   isValid: boolean;
-  message: string;
-  detectedMimeType: string;
-  detectedExtension: string;
-  category?: string;
+  detectedMimeType?: string;
+  declaredMimeType?: string;
+  fileExtension?: string;
+  fileSize?: number;
+  securityFlags?: SecurityFlags;
+  message?: string;
 }
 
-/**
- * Validador personalizado para tipos MIME
- *
- * Verifica se o tipo MIME de um arquivo está na lista de tipos permitidos
- * e se o conteúdo real do arquivo corresponde ao tipo MIME declarado
- */
-@ValidatorConstraint({ name: 'mimeTypeValidator', async: true })
+export interface SecurityFlags {
+  isSuspicious: boolean;
+  hasEmbeddedContent: boolean;
+  exceedsMaxSize: boolean;
+  hasDangerousExtension: boolean;
+  isBlockedMimeType: boolean;
+  magicNumberMismatch: boolean;
+}
+
 @Injectable()
-export class MimeTypeValidator implements ValidatorConstraintInterface {
-  private readonly logger = new Logger(MimeTypeValidator.name);
+export class MimeTypeValidator {
   /**
-   * Valida o tipo MIME de um arquivo
-   * @param buffer Buffer do arquivo a ser validado
-   * @param declaredMimeType Tipo MIME declarado
-   * @returns Objeto com o resultado da validação
-   */
-  /**
-   * Método interno para validação de tipo MIME
-   * @param buffer Buffer do arquivo a ser validado
-   * @param declaredMimeType Tipo MIME declarado
-   * @returns Objeto com o resultado da validação
+   * Valida o tipo MIME de um arquivo com verificações de segurança avançadas
    */
   async validateMimeType(
-    buffer: Buffer,
-    declaredMimeType: string,
+    buffer: Buffer, 
+    declaredMimeType: string, 
+    originalFilename: string,
+    fileSize: number
   ): Promise<MimeTypeValidationResult> {
-    if (!buffer) {
-      return {
-        isValid: false,
-        message: 'Arquivo não fornecido',
-        detectedMimeType: '',
-        detectedExtension: '',
-      };
-    }
-
-    // Verificar se o tipo MIME declarado está na lista de tipos permitidos
-    if (!TODOS_MIME_TYPES_PERMITIDOS.includes(declaredMimeType)) {
-      return {
-        isValid: false,
-        message: `Tipo de arquivo não permitido: ${declaredMimeType}. Tipos permitidos: ${this.getPermittedTypesMessage()}`,
-        detectedMimeType: declaredMimeType,
-        detectedExtension: '',
-      };
-    }
-
-    // Verificar o conteúdo real do arquivo
     try {
-      const sampleBuffer = buffer.slice(0, 4100); // Usar apenas os primeiros bytes para detecção
-      const detectedType = await fileType.fileTypeFromBuffer(sampleBuffer);
+      const fileExtension = this.extractFileExtension(originalFilename);
+      const securityFlags: SecurityFlags = {
+        isSuspicious: false,
+        hasEmbeddedContent: false,
+        exceedsMaxSize: false,
+        hasDangerousExtension: false,
+        isBlockedMimeType: false,
+        magicNumberMismatch: false,
+      };
 
-      // Se não foi possível detectar o tipo, verificar se é um tipo de texto
-      if (!detectedType) {
-        // Para arquivos de texto, que podem não ser detectados corretamente
-        if (declaredMimeType.startsWith('text/')) {
-          // Verificar se o conteúdo parece ser texto
-          const isText = this.isTextFile(sampleBuffer);
-          if (isText) {
+      // 1. Verificar extensão perigosa
+      if (BLOCKED_EXTENSIONS.includes(fileExtension)) {
+        securityFlags.hasDangerousExtension = true;
+        return {
+          isValid: false,
+          declaredMimeType,
+          fileExtension,
+          fileSize,
+          securityFlags,
+          message: `Extensão de arquivo não permitida: .${fileExtension}`,
+        };
+      }
+
+      // 2. Verificar tipo MIME bloqueado
+      if (BLOCKED_MIME_TYPES.includes(declaredMimeType)) {
+        securityFlags.isBlockedMimeType = true;
+        return {
+          isValid: false,
+          declaredMimeType,
+          fileExtension,
+          fileSize,
+          securityFlags,
+          message: `Tipo MIME bloqueado por motivos de segurança: ${declaredMimeType}`,
+        };
+      }
+
+      // 3. Detectar o tipo real do arquivo usando magic numbers
+      const fileTypeResult = await fileType.fromBuffer(buffer);
+      
+      if (!fileTypeResult && SECURITY_CONFIG.VERIFY_MAGIC_NUMBERS) {
+        // Para alguns tipos como text/plain, file-type pode não detectar
+        if (declaredMimeType !== 'text/plain') {
+          return {
+            isValid: false,
+            declaredMimeType,
+            fileExtension,
+            fileSize,
+            securityFlags,
+            message: 'Não foi possível verificar a assinatura do arquivo',
+          };
+        }
+      }
+
+      const detectedMimeType = fileTypeResult?.mime || declaredMimeType;
+
+      // 4. Verificar se o tipo detectado está na lista de permitidos
+      if (!isMimeTypePermitido(detectedMimeType)) {
+        return {
+          isValid: false,
+          detectedMimeType,
+          declaredMimeType,
+          fileExtension,
+          fileSize,
+          securityFlags,
+          message: `Tipo de arquivo não permitido: ${detectedMimeType}`,
+        };
+      }
+
+      // 5. Verificar correspondência entre tipo declarado e detectado
+      if (fileTypeResult && declaredMimeType !== detectedMimeType) {
+        securityFlags.magicNumberMismatch = true;
+        return {
+          isValid: false,
+          detectedMimeType,
+          declaredMimeType,
+          fileExtension,
+          fileSize,
+          securityFlags,
+          message: `Tipo declarado (${declaredMimeType}) não corresponde ao tipo real (${detectedMimeType})`,
+        };
+      }
+
+      // 6. Verificar tamanho do arquivo
+      const maxSize = getMaxFileSize(detectedMimeType);
+      if (fileSize > maxSize) {
+        securityFlags.exceedsMaxSize = true;
+        return {
+          isValid: false,
+          detectedMimeType,
+          declaredMimeType,
+          fileExtension,
+          fileSize,
+          securityFlags,
+          message: `Arquivo excede o tamanho máximo permitido: ${fileSize} bytes > ${maxSize} bytes`,
+        };
+      }
+
+      // 7. Verificar tamanho global
+      if (fileSize > SECURITY_CONFIG.MAX_FILE_SIZE) {
+        securityFlags.exceedsMaxSize = true;
+        return {
+          isValid: false,
+          detectedMimeType,
+          declaredMimeType,
+          fileExtension,
+          fileSize,
+          securityFlags,
+          message: `Arquivo excede o tamanho máximo global: ${fileSize} bytes > ${SECURITY_CONFIG.MAX_FILE_SIZE} bytes`,
+        };
+      }
+
+      // 8. Verificações de conteúdo suspeito
+      if (SECURITY_CONFIG.SCAN_CONTENT) {
+        const contentAnalysis = this.analyzeFileContent(buffer, detectedMimeType);
+        if (contentAnalysis.isSuspicious) {
+          securityFlags.isSuspicious = true;
+          securityFlags.hasEmbeddedContent = contentAnalysis.hasEmbeddedContent;
+          
+          if (SECURITY_CONFIG.QUARANTINE_SUSPICIOUS) {
             return {
-              isValid: true,
-              message: 'Arquivo de texto válido',
-              detectedMimeType: declaredMimeType,
-              detectedExtension:
-                getExtensoesParaMimeType(declaredMimeType)[0] || '',
-              category: getCategoriaMimeType(declaredMimeType),
+              isValid: false,
+              detectedMimeType,
+              declaredMimeType,
+              fileExtension,
+              fileSize,
+              securityFlags,
+              message: `Arquivo contém conteúdo suspeito: ${contentAnalysis.reason}`,
             };
           }
         }
-
-        return {
-          isValid: false,
-          message: 'Não foi possível detectar o tipo de arquivo',
-          detectedMimeType: 'application/octet-stream',
-          detectedExtension: '.bin',
-        };
       }
 
-      // Verificar se o tipo detectado está na lista de tipos permitidos
-      const isDetectedTypeAllowed = TODOS_MIME_TYPES_PERMITIDOS.includes(
-        detectedType.mime,
-      );
-
-      if (!isDetectedTypeAllowed) {
-        return {
-          isValid: false,
-          message: `Tipo de arquivo detectado não permitido: ${detectedType.mime}`,
-          detectedMimeType: detectedType.mime,
-          detectedExtension: `.${detectedType.ext}`,
-        };
-      }
-
-      // Verificar se o tipo detectado corresponde ao tipo declarado
-      const isTypeMatching = detectedType.mime === declaredMimeType;
-
-      // Para alguns tipos relacionados, podemos considerar válido mesmo se não for exatamente o mesmo
-      const isRelatedType = this.areRelatedTypes(
-        detectedType.mime,
+      return {
+        isValid: true,
+        detectedMimeType,
         declaredMimeType,
-      );
+        fileExtension,
+        fileSize,
+        securityFlags,
+      };
+    } catch (error) {
+      return {
+        isValid: false,
+        declaredMimeType,
+        fileExtension: this.extractFileExtension(originalFilename),
+        fileSize,
+        message: `Erro na validação do tipo MIME: ${error.message}`,
+      };
+    }
+  }
 
-      if (isTypeMatching || isRelatedType) {
+  /**
+   * Extrai a extensão do arquivo
+   */
+  private extractFileExtension(filename: string): string {
+    const parts = filename.toLowerCase().split('.');
+    return parts.length > 1 ? parts[parts.length - 1] : '';
+  }
+
+  /**
+   * Analisa o conteúdo do arquivo em busca de padrões suspeitos
+   */
+  private analyzeFileContent(buffer: Buffer, mimeType: string): {
+    isSuspicious: boolean;
+    hasEmbeddedContent: boolean;
+    reason?: string;
+  } {
+    const content = buffer.toString('utf8', 0, Math.min(buffer.length, 1024)); // Primeiros 1KB
+    
+    // Padrões suspeitos comuns
+    const suspiciousPatterns = [
+      /<script[^>]*>/i,           // Tags de script
+      /javascript:/i,             // URLs javascript
+      /vbscript:/i,              // URLs vbscript
+      /on\w+\s*=/i,              // Event handlers (onclick, onload, etc.)
+      /%3Cscript/i,              // Script tags codificados
+      /\x00/,                    // Null bytes
+      /\\x[0-9a-f]{2}/i,         // Sequências de escape hexadecimal
+    ];
+
+    // Verificar padrões suspeitos
+    for (const pattern of suspiciousPatterns) {
+      if (pattern.test(content)) {
         return {
-          isValid: true,
-          message: isTypeMatching
-            ? 'Tipo MIME válido'
-            : 'Tipo MIME relacionado válido',
-          detectedMimeType: detectedType.mime,
-          detectedExtension: `.${detectedType.ext}`,
-          category: getCategoriaMimeType(detectedType.mime),
+          isSuspicious: true,
+          hasEmbeddedContent: true,
+          reason: `Padrão suspeito detectado: ${pattern.source}`,
         };
       }
-
-      return {
-        isValid: false,
-        message: `O tipo de arquivo detectado (${detectedType.mime}) não corresponde ao tipo declarado (${declaredMimeType})`,
-        detectedMimeType: detectedType.mime,
-        detectedExtension: `.${detectedType.ext}`,
-      };
-    } catch (error) {
-      this.logger.error(
-        `Erro ao validar tipo MIME: ${error.message}`,
-        error.stack,
-      );
-      return {
-        isValid: false,
-        message: `Erro ao validar tipo MIME: ${error.message}`,
-        detectedMimeType: '',
-        detectedExtension: '',
-      };
     }
-  }
 
-  /**
-   * Implementação da interface ValidatorConstraintInterface
-   * @param value Valor a ser validado (deve ser um objeto Express.Multer.File)
-   * @param args Argumentos de validação
-   * @returns true se o tipo MIME é válido, false caso contrário
-   */
-  async validate(value: any, args?: ValidationArguments): Promise<boolean> {
-    try {
-      if (!value || !value.buffer || !value.mimetype) {
-        return false;
+    // Verificações específicas por tipo MIME
+    if (mimeType === 'application/pdf') {
+      // PDFs podem conter JavaScript
+      if (content.includes('/JavaScript') || content.includes('/JS')) {
+        return {
+          isSuspicious: true,
+          hasEmbeddedContent: true,
+          reason: 'PDF contém JavaScript incorporado',
+        };
       }
-
-      const result = await this.validateMimeType(value.buffer, value.mimetype);
-      return result.isValid;
-    } catch (error) {
-      this.logger.error(
-        `Erro ao validar tipo MIME: ${error.message}`,
-        error.stack,
-      );
-      return false;
-    }
-  }
-
-  /**
-   * Mensagem de erro personalizada
-   * @param args Argumentos de validação
-   * @returns Mensagem de erro
-   */
-  defaultMessage(args: ValidationArguments): string {
-    const file = args.value as Express.Multer.File;
-
-    if (!file) {
-      return 'Arquivo não fornecido';
     }
 
-    if (!TODOS_MIME_TYPES_PERMITIDOS.includes(file.mimetype)) {
-      return `Tipo de arquivo não permitido: ${file.mimetype}. Tipos permitidos: ${this.getPermittedTypesMessage()}`;
+    // Verificar densidade de caracteres não-ASCII (possível ofuscação)
+    const nonAsciiCount = (content.match(/[\x80-\xFF]/g) || []).length;
+    const nonAsciiRatio = nonAsciiCount / content.length;
+    
+    if (nonAsciiRatio > 0.3 && mimeType.startsWith('text/')) {
+      return {
+        isSuspicious: true,
+        hasEmbeddedContent: false,
+        reason: 'Alta densidade de caracteres não-ASCII em arquivo de texto',
+      };
     }
 
-    return 'O conteúdo do arquivo não corresponde ao tipo MIME declarado ou não é um tipo permitido';
-  }
-
-  /**
-   * Verifica se dois tipos MIME são relacionados
-   * @param detectedType Tipo MIME detectado
-   * @param declaredType Tipo MIME declarado
-   * @returns true se os tipos são relacionados, false caso contrário
-   */
-  private areRelatedTypes(detectedType: string, declaredType: string): boolean {
-    // Relações conhecidas entre tipos MIME
-    const relatedTypes: Record<string, string[]> = {
-      'application/pdf': ['application/x-pdf'],
-      'image/jpeg': ['image/jpg', 'image/pjpeg'],
-      'image/png': ['image/x-png'],
-      'application/msword': ['application/vnd.ms-word'],
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
-        ['application/msword'],
-      'application/vnd.ms-excel': ['application/excel', 'application/x-excel'],
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': [
-        'application/vnd.ms-excel',
-      ],
-      'text/plain': ['text/x-plain'],
+    return {
+      isSuspicious: false,
+      hasEmbeddedContent: false,
     };
-
-    // Verificar se o tipo detectado é relacionado ao tipo declarado
-    if (
-      relatedTypes[declaredType] &&
-      relatedTypes[declaredType].includes(detectedType)
-    ) {
-      return true;
-    }
-
-    // Verificar a relação inversa
-    for (const [type, related] of Object.entries(relatedTypes)) {
-      if (type === detectedType && related.includes(declaredType)) {
-        return true;
-      }
-    }
-
-    return false;
   }
 
   /**
-   * Verifica se um buffer contém texto
-   * @param buffer Buffer a ser verificado
-   * @returns true se o buffer parece conter texto, false caso contrário
+   * Gera hash do arquivo para detecção de duplicatas e verificação de integridade
    */
-  private isTextFile(buffer: Buffer): boolean {
-    // Verificar se o buffer contém caracteres não imprimíveis (exceto quebras de linha, tabs, etc.)
-    for (let i = 0; i < buffer.length; i++) {
-      const byte = buffer[i];
-      // Permitir caracteres ASCII imprimíveis e alguns caracteres de controle comuns
-      if (byte < 9 || (byte > 13 && byte < 32) || byte > 126) {
-        return false;
-      }
-    }
-    return true;
+  generateFileHash(buffer: Buffer): string {
+    return crypto.createHash('sha256').update(buffer).digest('hex');
   }
 
   /**
-   * Obtém uma mensagem com os tipos MIME permitidos agrupados por categoria
-   * @returns Mensagem formatada com os tipos permitidos
+   * Verifica se o arquivo requer criptografia
    */
-  private getPermittedTypesMessage(): string {
-    const categories = Object.keys(getCategoriaMimeType);
-    return categories
-      .map(
-        (category) =>
-          `${category}: ${TODOS_MIME_TYPES_PERMITIDOS.filter((mime) => getCategoriaMimeType(mime) === category).join(', ')}`,
-      )
-      .join('; ');
+  requiresEncryption(mimeType: string): boolean {
+    return requiresEncryption(mimeType);
+  }
+
+  /**
+   * Verifica se é possível gerar thumbnail
+   */
+  allowsThumbnail(mimeType: string): boolean {
+    return allowsThumbnail(mimeType);
   }
 }

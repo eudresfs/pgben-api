@@ -214,7 +214,7 @@ export class PasswordResetService {
       }
 
       // Verificar se a nova senha é diferente da atual
-      const isSamePassword = await bcrypt.compare(newPassword, usuario.senha);
+      const isSamePassword = await bcrypt.compare(newPassword, usuario.senhaHash);
       if (isSamePassword) {
         throw new BadRequestException(
           'A nova senha deve ser diferente da senha atual',

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { Repository, DataSource } from 'typeorm';
 import { Cidadao } from '../entities/cidadao.entity';
 import { ComposicaoFamiliar } from '../entities/composicao-familiar.entity';
@@ -458,13 +458,39 @@ export class CidadaoRepository {
       throw new EntityNotFoundException('Cidadão', id);
     }
 
-    // Criar nova entrada na tabela composicao_familiar
+    // Verificar se já existe membro com o mesmo nome na composição familiar
     const composicaoFamiliarRepository = this.dataSource.getRepository(ComposicaoFamiliar);
-    
+    const membroExistente = await composicaoFamiliarRepository.findOne({
+      where: {
+        cidadao_id: id,
+        nome: membro.nome
+      }
+    });
+
+    if (membroExistente) {
+      throw new BadRequestException(`Já existe um membro com o nome '${membro.nome}' na composição familiar deste cidadão`);
+    }
+
+    // Verificar se já existe membro com o mesmo CPF na composição familiar
+    const cpfFormatado = membro.cpf?.replace(/\D/g, '');
+    if (cpfFormatado) {
+      const membroComMesmoCpf = await composicaoFamiliarRepository.findOne({
+        where: {
+          cidadao_id: id,
+          cpf: cpfFormatado
+        }
+      });
+
+      if (membroComMesmoCpf) {
+        throw new BadRequestException(`Já existe um membro com o CPF '${cpfFormatado}' na composição familiar deste cidadão`);
+      }
+    }
+  
+    // Criar nova entrada na tabela composicao_familiar
     const novoMembro = composicaoFamiliarRepository.create({
       cidadao_id: id,
       nome: membro.nome,
-      cpf: membro.cpf?.replace(/\D/g, ''),
+      cpf: cpfFormatado,
       nis: membro.nis?.replace(/\D/g, ''),
       idade: membro.idade,
       ocupacao: membro.ocupacao,
@@ -474,7 +500,15 @@ export class CidadaoRepository {
       observacoes: membro.observacoes,
     });
 
-    await composicaoFamiliarRepository.save(novoMembro);
+    try {
+      await composicaoFamiliarRepository.save(novoMembro);
+    } catch (error) {
+      // Capturar erros de violação de restrição de unicidade
+      if (error.code === '23505') { // Código PostgreSQL para violação de restrição única
+        throw new BadRequestException(`Não foi possível adicionar o membro à composição familiar. Já existe um membro com o mesmo nome ou CPF.`);
+      }
+      throw error;
+    }
 
     // Retornar cidadão atualizado com relacionamentos
     const cidadaoAtualizado = await this.findById(id, true);

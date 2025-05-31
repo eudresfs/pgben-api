@@ -31,6 +31,7 @@ import {
   ApiConflictResponse,
   ApiNotFoundResponse,
   ApiBadRequestResponse,
+  ApiExtraModels,
 } from '@nestjs/swagger';
 import { CreateCidadaoDto } from '../dto/create-cidadao.dto';
 import { UpdateCidadaoDto } from '../dto/update-cidadao.dto';
@@ -46,6 +47,7 @@ import { ScopeType } from '../../../auth/entities/user-permission.entity';
 import {
   CidadaoResponseDto,
   CidadaoPaginatedResponseDto,
+  CidadaoComposicaoFamiliarDto,
 } from '../dto/cidadao-response.dto';
 import { ApiErrorResponse } from '../../../shared/dtos/api-error-response.dto';
 
@@ -55,6 +57,7 @@ import { ApiErrorResponse } from '../../../shared/dtos/api-error-response.dto';
  * Responsável por gerenciar as rotas relacionadas a cidadãos/beneficiários
  */
 @ApiTags('Cidadão')
+@ApiExtraModels(CidadaoResponseDto, CidadaoComposicaoFamiliarDto)
 @Controller('v1/cidadao')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()

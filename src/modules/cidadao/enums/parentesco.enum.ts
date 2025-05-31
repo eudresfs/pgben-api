@@ -1,4 +1,4 @@
-export enum Parentesco {
+export enum ParentescoEnum {
    CONJUGE = 'CONJUGE',
    FILHO = 'FILHO',
    PAI = 'PAI',

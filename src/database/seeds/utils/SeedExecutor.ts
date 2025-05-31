@@ -1,7 +1,6 @@
 import { DataSource } from 'typeorm';
 import { CoreSeedRunner } from '../core/CoreSeedRunner';
 import { ReferenceSeedRunner } from '../reference/ReferenceSeedRunner';
-import { DevelopmentSeedRunner } from '../development/DevelopmentSeedRunner';
 
 /**
  * Utilidade para execução organizada dos seeds
@@ -95,13 +94,6 @@ export class SeedExecutor {
       throw new Error(
         'Seeds de desenvolvimento não devem ser executados em ambiente de produção',
       );
-    }
-
-    try {
-      await DevelopmentSeedRunner.run(this.dataSource);
-    } catch (error) {
-      console.error('Erro ao executar seeds de desenvolvimento:', error);
-      throw error;
     }
   }
 

@@ -1,6 +1,17 @@
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
+import { IsNotEmpty, IsUUID, IsOptional, IsEnum, IsString, MaxLength } from 'class-validator';
 import { Pagamento } from './pagamento.entity';
+import { Usuario } from '../../usuario/entities/usuario.entity';
 import { MetodoConfirmacaoEnum } from '../enums/metodo-confirmacao.enum';
+import { Cidadao } from '@/modules/cidadao/entities/cidadao.entity';
 
 /**
  * Entidade que representa uma confirmação de recebimento de pagamento.
@@ -22,13 +33,16 @@ export class ConfirmacaoRecebimento {
    * Referência ao pagamento confirmado
    */
   @Column({ name: 'pagamento_id' })
-  pagamentoId: string;
+  @IsNotEmpty({ message: 'ID do pagamento é obrigatório' })
+  @IsUUID('4', { message: 'ID do pagamento deve ser um UUID válido' })
+  pagamento_id: string;
 
   /**
    * Data em que a confirmação foi registrada
    */
   @Column({ name: 'data_confirmacao', type: 'timestamp' })
-  dataConfirmacao: Date;
+  @IsNotEmpty({ message: 'Data de confirmação é obrigatória' })
+  data_confirmacao: Date;
 
   /**
    * Método utilizado para confirmar o recebimento
@@ -38,37 +52,46 @@ export class ConfirmacaoRecebimento {
     type: 'enum',
     enum: MetodoConfirmacaoEnum
   })
-  metodoConfirmacao: MetodoConfirmacaoEnum;
+  @IsNotEmpty({ message: 'Método de confirmação é obrigatório' })
+  @IsEnum(MetodoConfirmacaoEnum, { message: 'Método de confirmação inválido' })
+  metodo_confirmacao: MetodoConfirmacaoEnum;
 
   /**
    * Referência ao usuário (técnico ou beneficiário) que registrou a confirmação
    */
   @Column({ name: 'confirmado_por' })
-  confirmadoPor: string;
+  @IsNotEmpty({ message: 'ID do usuário que confirmou é obrigatório' })
+  @IsUUID('4', { message: 'ID do usuário deve ser um UUID válido' })
+  confirmado_por: string;
 
   /**
    * Referência ao cidadão que recebeu o benefício, se diferente do beneficiário original
    */
   @Column({ name: 'destinatario_id', nullable: true })
-  destinatarioId: string;
+  @IsOptional()
+  @IsUUID('4', { message: 'ID do destinatário deve ser um UUID válido' })
+  destinatario_id: string;
 
   /**
    * Observações adicionais sobre a confirmação
    */
   @Column({ type: 'text', nullable: true })
+  @IsOptional()
+  @IsString({ message: 'Observações devem ser uma string' })
+  @MaxLength(1000, { message: 'Observações devem ter no máximo 1000 caracteres' })
   observacoes: string;
 
   /**
    * Data de criação do registro
    */
-  @Column({ name: 'created_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
-  createdAt: Date;
+  @CreateDateColumn({ name: 'created_at' })
+  created_at: Date;
 
   /**
    * Data da última atualização do registro
    */
-  @Column({ name: 'updated_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', onUpdate: 'CURRENT_TIMESTAMP' })
-  updatedAt: Date;
+  @UpdateDateColumn({ name: 'updated_at' })
+  updated_at: Date;
 
   /**
    * Relacionamento com a entidade Pagamento
@@ -80,11 +103,12 @@ export class ConfirmacaoRecebimento {
   /**
    * Relacionamentos com outras entidades serão implementados após a criação das entidades relacionadas
    */
-  // @ManyToOne(() => Usuario)
-  // @JoinColumn({ name: 'confirmado_por' })
-  // responsavelConfirmacao: Usuario;
+  @ManyToOne(() => Usuario)
+  @JoinColumn({ name: 'confirmado_por' })
+ @ JoinColumn({ name: 'confirmado_por' })
+  responsavel_confirmacao: Usuario;
 
-  // @ManyToOne(() => Cidadao)
-  // @JoinColumn({ name: 'destinatario_id' })
-  // destinatario: Cidadao;
+  @ManyToOne(() => Cidadao)
+  @JoinColumn({ name: 'destinatario_id' })
+  destinatario: Cidadao;
 }

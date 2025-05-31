@@ -8,6 +8,7 @@ import {
   UpdateDateColumn,
   Index,
 } from 'typeorm';
+import { IsNotEmpty, IsUUID, IsBoolean, IsOptional, IsString, IsNumber, Length, Min, Max } from 'class-validator';
 import { Usuario } from '../../modules/usuario/entities/usuario.entity';
 
 /**
@@ -39,6 +40,9 @@ export class PasswordResetToken {
     nullable: false,
     comment: 'Token único para recuperação de senha',
   })
+  @IsNotEmpty({ message: 'Token é obrigatório' })
+  @IsString({ message: 'Token deve ser uma string' })
+  @Length(10, 255, { message: 'Token deve ter entre 10 e 255 caracteres' })
   token: string;
 
   /**
@@ -51,6 +55,9 @@ export class PasswordResetToken {
     nullable: false,
     comment: 'Hash do token para verificação segura',
   })
+  @IsNotEmpty({ message: 'Hash do token é obrigatório' })
+  @IsString({ message: 'Hash do token deve ser uma string' })
+  @Length(32, 255, { message: 'Hash do token deve ter entre 32 e 255 caracteres' })
   token_hash: string;
 
   /**
@@ -65,6 +72,8 @@ export class PasswordResetToken {
     nullable: false,
     comment: 'ID do usuário associado ao token',
   })
+  @IsNotEmpty({ message: 'ID do usuário é obrigatório' })
+  @IsUUID('4', { message: 'ID do usuário inválido' })
   usuario_id: string;
 
   /**
@@ -88,6 +97,7 @@ export class PasswordResetToken {
     nullable: false,
     comment: 'Indica se o token já foi utilizado',
   })
+  @IsBoolean({ message: 'Campo is_used deve ser um boolean' })
   is_used: boolean;
 
   /**
@@ -110,6 +120,9 @@ export class PasswordResetToken {
     nullable: true,
     comment: 'IP do cliente que solicitou o token',
   })
+  @IsOptional()
+  @IsString({ message: 'IP do cliente deve ser uma string' })
+  @Length(7, 45, { message: 'IP do cliente deve ter entre 7 e 45 caracteres' })
   client_ip: string;
 
   /**
@@ -121,6 +134,8 @@ export class PasswordResetToken {
     nullable: true,
     comment: 'User Agent do cliente que solicitou o token',
   })
+  @IsOptional()
+  @IsString({ message: 'User Agent deve ser uma string' })
   user_agent: string;
 
   /**
@@ -133,6 +148,9 @@ export class PasswordResetToken {
     nullable: false,
     comment: 'Número de tentativas de uso do token',
   })
+  @IsNumber({}, { message: 'Número de tentativas deve ser um número' })
+  @Min(0, { message: 'Número de tentativas não pode ser negativo' })
+  @Max(100, { message: 'Número de tentativas não pode exceder 100' })
   attempts: number;
 
   /**
@@ -155,6 +173,9 @@ export class PasswordResetToken {
     nullable: true,
     comment: 'Motivo da invalidação do token',
   })
+  @IsOptional()
+  @IsString({ message: 'Motivo da invalidação deve ser uma string' })
+  @Length(3, 50, { message: 'Motivo da invalidação deve ter entre 3 e 50 caracteres' })
   invalidation_reason: string;
 
   /**
@@ -229,5 +250,240 @@ export class PasswordResetToken {
       return 0;
     }
     return Math.ceil((this.expires_at.getTime() - now.getTime()) / (1000 * 60));
+  }
+
+  /**
+   * Verifica se o token pertence a um usuário específico
+   * @param usuarioId ID do usuário
+   * @returns true se pertence ao usuário
+   */
+  belongsToUser(usuarioId: string): boolean {
+    return this.usuario_id === usuarioId;
+  }
+
+  /**
+   * Verifica se o token foi criado recentemente (últimas 24 horas)
+   * @returns true se foi criado recentemente
+   */
+  isRecentlyCreated(): boolean {
+    const now = new Date();
+    const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    return this.created_at > oneDayAgo;
+  }
+
+  /**
+   * Verifica se há muitas tentativas de uso (possível ataque)
+   * @param maxAttempts Número máximo de tentativas permitidas
+   * @returns true se excedeu o limite
+   */
+  hasTooManyAttempts(maxAttempts: number = 5): boolean {
+    return this.attempts >= maxAttempts;
+  }
+
+  /**
+   * Verifica se o token expira em breve (próximos 5 minutos)
+   * @param minutes Minutos para considerar como "em breve"
+   * @returns true se expira em breve
+   */
+  expiresWithin(minutes: number = 5): boolean {
+    const now = new Date();
+    const futureTime = new Date(now.getTime() + minutes * 60 * 1000);
+    return this.expires_at <= futureTime;
+  }
+
+  /**
+   * Calcula há quantos minutos o token foi criado
+   * @returns minutos desde a criação
+   */
+  getMinutesSinceCreation(): number {
+    const now = new Date();
+    const diffMs = now.getTime() - this.created_at.getTime();
+    return Math.floor(diffMs / (1000 * 60));
+  }
+
+  /**
+   * Obtém o status atual do token
+   * @returns status do token
+   */
+  getStatus(): 'valid' | 'expired' | 'used' | 'too_many_attempts' {
+    if (this.is_used) return 'used';
+    if (this.isExpired()) return 'expired';
+    if (this.hasTooManyAttempts()) return 'too_many_attempts';
+    return 'valid';
+  }
+
+  /**
+   * Verifica se tem informações de cliente (IP e User Agent)
+   * @returns true se tem informações de cliente
+   */
+  hasClientInfo(): boolean {
+    return !!(this.client_ip || this.user_agent);
+  }
+
+  /**
+   * Adiciona metadados ao token
+   * @param key Chave do metadado
+   * @param value Valor do metadado
+   */
+  addMetadata(key: string, value: any): void {
+    if (!this.metadata) {
+      this.metadata = {};
+    }
+    this.metadata[key] = value;
+  }
+
+  /**
+   * Obtém um metadado específico
+   * @param key Chave do metadado
+   * @returns Valor do metadado ou undefined
+   */
+  getMetadata(key: string): any {
+    return this.metadata?.[key];
+  }
+
+  /**
+   * Obtém informações resumidas do token
+   * @returns objeto com informações resumidas
+   */
+  getSummary(): {
+    id: string;
+    usuario_id: string;
+    is_used: boolean;
+    expires_at: Date;
+    created_at: Date;
+    attempts: number;
+    status: string;
+    minutesUntilExpiration: number;
+    hasClientInfo: boolean;
+  } {
+    return {
+      id: this.id,
+      usuario_id: this.usuario_id,
+      is_used: this.is_used,
+      expires_at: this.expires_at,
+      created_at: this.created_at,
+      attempts: this.attempts,
+      status: this.getStatus(),
+      minutesUntilExpiration: this.getMinutesUntilExpiration(),
+      hasClientInfo: this.hasClientInfo()
+    };
+  }
+
+  /**
+   * Invalida o token com um motivo específico
+   * @param reason Motivo da invalidação
+   */
+  invalidate(reason: string): void {
+    this.is_used = true;
+    this.used_at = new Date();
+    this.invalidation_reason = reason;
+  }
+
+  /**
+   * Verifica se o token foi invalidado por motivos de segurança
+   * @returns true se foi invalidado por segurança
+   */
+  isSecurityInvalidated(): boolean {
+    const securityReasons = [
+      'suspicious_activity',
+      'too_many_attempts',
+      'security_breach',
+      'admin_revoke'
+    ];
+    
+    return securityReasons.includes(this.invalidation_reason);
+  }
+
+  /**
+   * Gera uma chave única para o token
+   * @returns chave única
+   */
+  getUniqueKey(): string {
+    return `password_reset_${this.usuario_id}_${this.id}`;
+  }
+
+  /**
+   * Verifica se o token está em estado consistente
+   * @returns true se está consistente
+   */
+  isConsistent(): boolean {
+    return (
+      !!this.id &&
+      !!this.token &&
+      !!this.token_hash &&
+      !!this.usuario_id &&
+      !!this.expires_at &&
+      !!this.created_at &&
+      typeof this.is_used === 'boolean' &&
+      typeof this.attempts === 'number'
+    );
+  }
+
+  /**
+   * Remove informações sensíveis para logs
+   * @returns objeto sanitizado
+   */
+  toSafeLog(): {
+    id: string;
+    usuario_id: string;
+    token_preview: string;
+    is_used: boolean;
+    expires_at: Date;
+    created_at: Date;
+    attempts: number;
+    status: string;
+    hasClientInfo: boolean;
+  } {
+    return {
+      id: this.id,
+      usuario_id: this.usuario_id,
+      token_preview: this.token.substring(0, 8) + '...',
+      is_used: this.is_used,
+      expires_at: this.expires_at,
+      created_at: this.created_at,
+      attempts: this.attempts,
+      status: this.getStatus(),
+      hasClientInfo: this.hasClientInfo()
+    };
+  }
+
+  /**
+   * Formata a data de expiração para exibição
+   * @returns data formatada
+   */
+  getExpiracaoFormatada(): string {
+    return this.expires_at.toLocaleString('pt-BR', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }
+
+  /**
+   * Formata a data de criação para exibição
+   * @returns data formatada
+   */
+  getCriacaoFormatada(): string {
+    return this.created_at.toLocaleString('pt-BR', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }
+
+  /**
+   * Verifica se o token pode ser usado para reset de senha
+   * @returns true se pode ser usado
+   */
+  canBeUsedForReset(): boolean {
+    return (
+      this.isValid() &&
+      !this.hasTooManyAttempts() &&
+      !this.isSecurityInvalidated()
+    );
   }
 }

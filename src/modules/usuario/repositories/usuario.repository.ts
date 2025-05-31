@@ -1,8 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Repository, DataSource, DeepPartial } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Usuario } from '../entities/usuario.entity';
 import { EntityNotFoundException } from '../../../shared/exceptions';
+import { Status } from '../../../shared/enums/status.enum';
 
 /**
  * Repositório de usuários
@@ -56,7 +57,7 @@ export class UsuarioRepository {
     });
     
     if (!usuario) {
-      throw new NotFoundException(`Usuário com ID ${id} não encontrado`);
+      throw new EntityNotFoundException('Usuário', id);
     }
     
     return usuario;
@@ -108,11 +109,11 @@ export class UsuarioRepository {
   async update(id: string, data: Partial<Usuario>): Promise<Usuario> {
     const result = await this.repository.update(id, data);
     if (result.affected === 0) {
-      throw new NotFoundException(`Usuário com ID ${id} não encontrado`);
+      throw new EntityNotFoundException('Usuário', id);
     }
     const usuario = await this.findById(id);
     if (!usuario) {
-      throw new NotFoundException(`Usuário com ID ${id} não encontrado`);
+      throw new EntityNotFoundException('Usuário', id);
     }
     return usuario;
   }
@@ -123,7 +124,7 @@ export class UsuarioRepository {
    * @param status Novo status
    * @returns Usuário atualizado
    */
-  async updateStatus(id: string, status: string): Promise<Usuario> {
+  async updateStatus(id: string, status: Status): Promise<Usuario> {
     const dadosAtualizacao: DeepPartial<Usuario> = { status };
     
     await this.repository.update(id, dadosAtualizacao);
@@ -162,7 +163,7 @@ export class UsuarioRepository {
   async remove(id: string): Promise<void> {
     const result = await this.repository.softDelete(id);
     if (result.affected === 0) {
-      throw new NotFoundException(`Usuário com ID ${id} não encontrado`);
+      throw new EntityNotFoundException('Usuário', id);
     }
   }
 

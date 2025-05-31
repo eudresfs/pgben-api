@@ -49,9 +49,9 @@ export class NotificationTemplate {
   @Column({ default: true })
   ativo: boolean;
 
-  @CreateDateColumn({ name: 'criado_em' })
-  criado_em: Date;
+  @CreateDateColumn({ name: 'created_at' })
+  created_at: Date;
 
-  @UpdateDateColumn({ name: 'atualizado_em' })
-  atualizado_em: Date;
+  @UpdateDateColumn({ name: 'updated_at' })
+  updated_at: Date;
 }

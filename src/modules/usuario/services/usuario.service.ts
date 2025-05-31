@@ -18,6 +18,7 @@ import { UpdateSenhaDto } from '../dto/update-senha.dto';
 import { AlterarSenhaPrimeiroAcessoDto } from '../dto/alterar-senha-primeiro-acesso.dto';
 import { Usuario } from '../entities/usuario.entity';
 import { Role } from '../entities/role.entity';
+import { Status } from '../../../shared/enums/status.enum';
 import { NotificationManagerService } from '../../notificacao/services/notification-manager.service';
 import { NotificationTemplate } from '../../notificacao/entities/notification-template.entity';
 
@@ -637,7 +638,7 @@ export class UsuarioService {
    */
   private async resetLoginAttempts(userId: string): Promise<void> {
     try {
-      await this.usuarioRepository.updateStatus(userId, 'ativo');
+      await this.usuarioRepository.updateStatus(userId, Status.ATIVO);
       await this.dataSource.transaction(async (manager) => {
         const usuarioRepo = manager.getRepository(Usuario);
         await usuarioRepo.update(userId, {
@@ -757,7 +758,7 @@ export class UsuarioService {
     try {
       const roles = await this.roleRepository.find({
         select: ['id', 'nome', 'descricao', 'ativo'],
-        where: { ativo: true },
+        where: { ativo: Status.ATIVO },
         order: { nome: 'ASC' }
       });
       

@@ -1,16 +1,19 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
-import * as request from 'supertest';
+import request from 'supertest';
 import { AppModule } from '../../src/app.module';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Documento } from '../../src/modules/documento/entities/documento.entity';
+import { TipoDocumento } from '../../src/modules/beneficio/entities/requisito-documento.entity';
 import { JwtService } from '@nestjs/jwt';
 import { MinioService } from '../../src/shared/services/minio.service';
+import { Solicitacao, StatusSolicitacao } from '../../src/modules/solicitacao/entities/solicitacao.entity';
 
 describe('Documento (Integração)', () => {
   let app: INestApplication;
   let documentoRepository: Repository<Documento>;
+  let solicitacaoRepository: Repository<Solicitacao>;
   let jwtService: JwtService;
   let minioService: MinioService;
   let authToken: string;
@@ -37,6 +40,9 @@ describe('Documento (Integração)', () => {
     documentoRepository = moduleFixture.get<Repository<Documento>>(
       getRepositoryToken(Documento),
     );
+    solicitacaoRepository = moduleFixture.get<Repository<Solicitacao>>(
+      getRepositoryToken(Solicitacao),
+    );
     jwtService = moduleFixture.get<JwtService>(JwtService);
 
     // Gerar token de autenticação para testes
@@ -50,7 +56,38 @@ describe('Documento (Integração)', () => {
 
   beforeEach(async () => {
     // Limpar documentos antes de cada teste
-    await documentoRepository.clear();
+    const documentos = await documentoRepository.find();
+    if (documentos.length > 0) {
+      await documentoRepository.remove(documentos);
+    }
+
+    // Criar solicitações de teste usando o método create para evitar problemas com campos especiais
+    const solicitacao1 = solicitacaoRepository.create({
+       id: '550e8400-e29b-41d4-a716-446655440000',
+       protocolo: 'SOL202400001',
+       status: StatusSolicitacao.PENDENTE,
+       beneficiario_id: '550e8400-e29b-41d4-a716-446655440002',
+       tipo_beneficio_id: '550e8400-e29b-41d4-a716-446655440003',
+       unidade_id: '550e8400-e29b-41d4-a716-446655440004',
+       tecnico_id: '550e8400-e29b-41d4-a716-446655440005',
+       data_abertura: new Date(),
+       observacoes: 'Teste 1'
+     });
+     await solicitacaoRepository.save(solicitacao1);
+
+     const solicitacao2 = solicitacaoRepository.create({
+       id: '550e8400-e29b-41d4-a716-446655440001',
+       protocolo: 'SOL202400002',
+       status: StatusSolicitacao.EM_ANALISE,
+       beneficiario_id: '550e8400-e29b-41d4-a716-446655440002',
+       tipo_beneficio_id: '550e8400-e29b-41d4-a716-446655440003',
+       unidade_id: '550e8400-e29b-41d4-a716-446655440004',
+       tecnico_id: '550e8400-e29b-41d4-a716-446655440005',
+       data_abertura: new Date(),
+       observacoes: 'Teste 2'
+     });
+     await solicitacaoRepository.save(solicitacao2);
+
     jest.clearAllMocks();
   });
 
@@ -63,10 +100,12 @@ describe('Documento (Integração)', () => {
       // Arrange
       const mockFile = Buffer.from('conteúdo do arquivo de teste');
       const mockUploadResult = {
-        nomeArquivo: 'solicitacao-123/comprovante/documento-123.pdf',
+        nomeArquivo: '550e8400-e29b-41d4-a716-446655440000/comprovante/documento-123.pdf',
         tamanho: mockFile.length,
         hash: 'hash-do-arquivo',
-        criptografado: false,
+        metadados: {
+          criptografado: false
+        },
         etag: 'etag-do-arquivo',
       };
 
@@ -76,7 +115,7 @@ describe('Documento (Integração)', () => {
       const response = await request(app.getHttpServer())
         .post('/api/documentos/upload')
         .set('Authorization', `Bearer ${authToken}`)
-        .field('solicitacao_id', 'solicitacao-123')
+        .field('solicitacao_id', '550e8400-e29b-41d4-a716-446655440000')
         .field('tipo_documento', 'comprovante')
         .field('descricao', 'Comprovante de residência')
         .field('sensivel', 'false')
@@ -87,7 +126,7 @@ describe('Documento (Integração)', () => {
       expect(mockMinioService.uploadArquivo).toHaveBeenCalledWith(
         expect.any(Buffer),
         'documento.pdf',
-        'solicitacao-123',
+        '550e8400-e29b-41d4-a716-446655440000',
         'comprovante',
         false,
       );
@@ -97,7 +136,9 @@ describe('Documento (Integração)', () => {
           nome_arquivo: mockUploadResult.nomeArquivo,
           tamanho: mockUploadResult.tamanho,
           hash: mockUploadResult.hash,
-          criptografado: false,
+          metadados: {
+          criptografado: false
+        },
         }),
       );
 
@@ -105,20 +146,25 @@ describe('Documento (Integração)', () => {
         where: { nome_arquivo: mockUploadResult.nomeArquivo },
       });
       expect(savedDocumento).toBeDefined();
-      expect(savedDocumento.criptografado).toBe(false);
+      expect(savedDocumento!.metadados.criptografado).toBe(false);
     });
 
     it('deve permitir upload de documento sensível com criptografia', async () => {
       // Arrange
       const mockFile = Buffer.from('conteúdo do arquivo sensível');
       const mockUploadResult = {
-        nomeArquivo: 'solicitacao-123/laudo/documento-123.pdf',
+        nomeArquivo: '550e8400-e29b-41d4-a716-446655440000/laudo/documento-123.pdf',
         tamanho: mockFile.length,
-        hash: 'hash-do-arquivo-sensivel',
-        criptografado: true,
         etag: 'etag-do-arquivo-sensivel',
-        iv: 'iv-base64',
-        authTag: 'auth-tag-base64',
+        metadados: {
+          hash: 'hash-do-arquivo-sensivel',
+          criptografado: true,
+          criptografia: {
+            iv: 'iv-base64',
+            authTag: 'auth-tag-base64',
+            algoritmo: 'aes-256-gcm'
+          }
+        },
       };
 
       mockMinioService.uploadArquivo.mockResolvedValue(mockUploadResult);
@@ -127,7 +173,7 @@ describe('Documento (Integração)', () => {
       const response = await request(app.getHttpServer())
         .post('/api/documentos/upload')
         .set('Authorization', `Bearer ${authToken}`)
-        .field('solicitacao_id', 'solicitacao-123')
+        .field('solicitacao_id', '550e8400-e29b-41d4-a716-446655440000')
         .field('tipo_documento', 'laudo')
         .field('descricao', 'Laudo médico')
         .field('sensivel', 'true')
@@ -138,7 +184,7 @@ describe('Documento (Integração)', () => {
       expect(mockMinioService.uploadArquivo).toHaveBeenCalledWith(
         expect.any(Buffer),
         'laudo.pdf',
-        'solicitacao-123',
+        '550e8400-e29b-41d4-a716-446655440000',
         'laudo',
         true,
       );
@@ -147,10 +193,14 @@ describe('Documento (Integração)', () => {
         expect.objectContaining({
           nome_arquivo: mockUploadResult.nomeArquivo,
           tamanho: mockUploadResult.tamanho,
-          hash: mockUploadResult.hash,
-          criptografado: true,
-          iv: mockUploadResult.iv,
-          auth_tag: mockUploadResult.authTag,
+          metadados: expect.objectContaining({
+            hash: mockUploadResult.metadados.hash,
+            criptografado: true,
+            criptografia: expect.objectContaining({
+              iv: mockUploadResult.metadados.criptografia.iv,
+              authTag: mockUploadResult.metadados.criptografia.authTag,
+            })
+          }),
         }),
       );
 
@@ -158,9 +208,9 @@ describe('Documento (Integração)', () => {
         where: { nome_arquivo: mockUploadResult.nomeArquivo },
       });
       expect(savedDocumento).toBeDefined();
-      expect(savedDocumento.criptografado).toBe(true);
-      expect(savedDocumento.iv).toBe(mockUploadResult.iv);
-      expect(savedDocumento.auth_tag).toBe(mockUploadResult.authTag);
+      expect(savedDocumento!.metadados.criptografado).toBe(true);
+      expect(savedDocumento!.metadados.criptografia?.iv).toBe(mockUploadResult.metadados.criptografia.iv);
+      expect(savedDocumento!.metadados.criptografia?.authTag).toBe(mockUploadResult.metadados.criptografia.authTag);
     });
   });
 
@@ -168,15 +218,20 @@ describe('Documento (Integração)', () => {
     it('deve permitir download de documento não sensível', async () => {
       // Arrange
       const documento = documentoRepository.create({
-        nome_arquivo: 'solicitacao-123/comprovante/documento-123.pdf',
+        nome_arquivo: '550e8400-e29b-41d4-a716-446655440000/comprovante/documento-123.pdf',
         nome_original: 'comprovante.pdf',
-        tipo_documento: 'comprovante',
+        caminho: '/uploads/550e8400-e29b-41d4-a716-446655440000/comprovante/documento-123.pdf',
+        tipo: TipoDocumento.COMPROVANTE_RESIDENCIA,
         descricao: 'Comprovante de residência',
-        solicitacao_id: 'solicitacao-123',
+        solicitacao_id: '550e8400-e29b-41d4-a716-446655440000',
         tamanho: 1024,
-        hash: 'hash-do-arquivo',
-        criptografado: false,
-        usuario_id: 'test-user-id',
+        mimetype: 'application/pdf',
+        data_upload: new Date(),
+        metadados: {
+          hash: 'hash-do-arquivo',
+          criptografado: false
+        },
+        usuario_upload: 'test-user-id',
       });
       await documentoRepository.save(documento);
 
@@ -184,7 +239,9 @@ describe('Documento (Integração)', () => {
         buffer: Buffer.from('conteúdo do arquivo de teste'),
         nomeOriginal: 'comprovante.pdf',
         tamanho: 1024,
-        criptografado: false,
+        metadados: {
+          criptografado: false
+        },
       };
 
       mockMinioService.downloadArquivo.mockResolvedValue(mockDownloadResult);
@@ -210,17 +267,25 @@ describe('Documento (Integração)', () => {
     it('deve permitir download de documento sensível criptografado', async () => {
       // Arrange
       const documento = documentoRepository.create({
-        nome_arquivo: 'solicitacao-123/laudo/documento-123.pdf',
+        nome_arquivo: '550e8400-e29b-41d4-a716-446655440000/laudo/documento-123.pdf',
         nome_original: 'laudo.pdf',
-        tipo_documento: 'laudo',
+        caminho: '/uploads/550e8400-e29b-41d4-a716-446655440000/laudo/documento-123.pdf',
+        tipo: TipoDocumento.DECLARACAO_MEDICA,
         descricao: 'Laudo médico',
-        solicitacao_id: 'solicitacao-123',
+        solicitacao_id: '550e8400-e29b-41d4-a716-446655440000',
         tamanho: 1024,
-        hash: 'hash-do-arquivo-sensivel',
-        criptografado: true,
-        iv: 'iv-base64',
-        auth_tag: 'auth-tag-base64',
-        usuario_id: 'test-user-id',
+        mimetype: 'application/pdf',
+        data_upload: new Date(),
+        metadados: {
+          hash: 'hash-do-arquivo-sensivel',
+          criptografado: true,
+          criptografia: {
+            iv: 'iv-base64',
+            authTag: 'auth-tag-base64',
+            algoritmo: 'aes-256-gcm'
+          }
+        },
+        usuario_upload: 'test-user-id',
       });
       await documentoRepository.save(documento);
 
@@ -228,7 +293,9 @@ describe('Documento (Integração)', () => {
         buffer: Buffer.from('conteúdo descriptografado do arquivo sensível'),
         nomeOriginal: 'laudo.pdf',
         tamanho: 1024,
-        criptografado: true,
+        metadados: {
+          criptografado: true
+        },
       };
 
       mockMinioService.downloadArquivo.mockResolvedValue(mockDownloadResult);
@@ -257,28 +324,41 @@ describe('Documento (Integração)', () => {
       // Arrange
       const documentos = [
         documentoRepository.create({
-          nome_arquivo: 'solicitacao-123/comprovante/documento-1.pdf',
+          nome_arquivo: '550e8400-e29b-41d4-a716-446655440000/comprovante/documento-1.pdf',
           nome_original: 'comprovante.pdf',
-          tipo_documento: 'comprovante',
+          caminho: '/uploads/550e8400-e29b-41d4-a716-446655440000/comprovante/documento-1.pdf',
+          tipo: TipoDocumento.COMPROVANTE_RESIDENCIA,
           descricao: 'Comprovante de residência',
-          solicitacao_id: 'solicitacao-123',
+          solicitacao_id: '550e8400-e29b-41d4-a716-446655440000',
           tamanho: 1024,
+          mimetype: 'application/pdf',
+          data_upload: new Date(),
+        metadados: {
           hash: 'hash-1',
-          criptografado: false,
-          usuario_id: 'test-user-id',
+          criptografado: false
+        },
+        usuario_upload: 'test-user-id',
         }),
         documentoRepository.create({
-          nome_arquivo: 'solicitacao-123/laudo/documento-2.pdf',
+          nome_arquivo: '550e8400-e29b-41d4-a716-446655440000/laudo/documento-2.pdf',
           nome_original: 'laudo.pdf',
-          tipo_documento: 'laudo',
+          caminho: '/uploads/550e8400-e29b-41d4-a716-446655440000/laudo/documento-2.pdf',
+          tipo: TipoDocumento.DECLARACAO_MEDICA,
           descricao: 'Laudo médico',
-          solicitacao_id: 'solicitacao-123',
+          solicitacao_id: '550e8400-e29b-41d4-a716-446655440000',
           tamanho: 2048,
+          mimetype: 'application/pdf',
+          data_upload: new Date(),
+        metadados: {
           hash: 'hash-2',
           criptografado: true,
-          iv: 'iv-base64',
-          auth_tag: 'auth-tag-base64',
-          usuario_id: 'test-user-id',
+          criptografia: {
+            iv: 'iv-base64',
+            authTag: 'auth-tag-base64',
+            algoritmo: 'aes-256-gcm'
+          }
+        },
+        usuario_upload: 'test-user-id',
         }),
       ];
       await documentoRepository.save(documentos);
@@ -287,41 +367,51 @@ describe('Documento (Integração)', () => {
       const response = await request(app.getHttpServer())
         .get('/api/documentos')
         .set('Authorization', `Bearer ${authToken}`)
-        .query({ solicitacao_id: 'solicitacao-123' })
+        .query({ solicitacao_id: '550e8400-e29b-41d4-a716-446655440000' })
         .expect(200);
 
       // Assert
       expect(response.body.data).toHaveLength(2);
-      expect(response.body.data[0].solicitacao_id).toBe('solicitacao-123');
-      expect(response.body.data[1].solicitacao_id).toBe('solicitacao-123');
+      expect(response.body.data[0].solicitacao_id).toBe('550e8400-e29b-41d4-a716-446655440000');
+      expect(response.body.data[1].solicitacao_id).toBe('550e8400-e29b-41d4-a716-446655440000');
     });
 
     it('deve listar documentos por tipo', async () => {
       // Arrange
       const documentos = [
-        documentoRepository.create({
-          nome_arquivo: 'solicitacao-123/comprovante/documento-1.pdf',
-          nome_original: 'comprovante.pdf',
-          tipo_documento: 'comprovante',
-          descricao: 'Comprovante de residência',
-          solicitacao_id: 'solicitacao-123',
-          tamanho: 1024,
-          hash: 'hash-1',
-          criptografado: false,
-          usuario_id: 'test-user-id',
-        }),
-        documentoRepository.create({
-          nome_arquivo: 'solicitacao-456/comprovante/documento-3.pdf',
-          nome_original: 'comprovante2.pdf',
-          tipo_documento: 'comprovante',
-          descricao: 'Comprovante de renda',
-          solicitacao_id: 'solicitacao-456',
-          tamanho: 1536,
-          hash: 'hash-3',
-          criptografado: false,
-          usuario_id: 'test-user-id',
-        }),
-      ];
+          documentoRepository.create({
+            nome_arquivo: '550e8400-e29b-41d4-a716-446655440000/comprovante/documento-1.pdf',
+            nome_original: 'comprovante.pdf',
+            caminho: '/uploads/550e8400-e29b-41d4-a716-446655440000/comprovante/documento-1.pdf',
+            tipo: TipoDocumento.COMPROVANTE_RESIDENCIA,
+            descricao: 'Comprovante de residência',
+            solicitacao_id: '550e8400-e29b-41d4-a716-446655440000',
+            tamanho: 1024,
+            mimetype: 'application/pdf',
+            data_upload: new Date(),
+          metadados: {
+            hash: 'hash-1',
+            criptografado: false
+          },
+          usuario_upload: 'test-user-id',
+          }),
+          documentoRepository.create({
+            nome_arquivo: '550e8400-e29b-41d4-a716-446655440001/comprovante/documento-3.pdf',
+             nome_original: 'comprovante2.pdf',
+            caminho: '/uploads/550e8400-e29b-41d4-a716-446655440001/comprovante/documento-3.pdf',
+             tipo: TipoDocumento.COMPROVANTE_RENDA,
+             descricao: 'Comprovante de renda',
+           solicitacao_id: '550e8400-e29b-41d4-a716-446655440001',
+           tamanho: 1536,
+           mimetype: 'application/pdf',
+           data_upload: new Date(),
+          metadados: {
+            hash: 'hash-3',
+            criptografado: false
+          },
+          usuario_upload: 'test-user-id',
+          }),
+        ];
       await documentoRepository.save(documentos);
 
       // Act
@@ -333,8 +423,8 @@ describe('Documento (Integração)', () => {
 
       // Assert
       expect(response.body.data).toHaveLength(2);
-      expect(response.body.data[0].tipo_documento).toBe('comprovante');
-      expect(response.body.data[1].tipo_documento).toBe('comprovante');
+      expect(response.body.data[0].tipo).toBe(TipoDocumento.COMPROVANTE_RESIDENCIA);
+      expect(response.body.data[1].tipo).toBe(TipoDocumento.COMPROVANTE_RENDA);
     });
   });
 
@@ -342,15 +432,20 @@ describe('Documento (Integração)', () => {
     it('deve permitir excluir um documento', async () => {
       // Arrange
       const documento = documentoRepository.create({
-        nome_arquivo: 'solicitacao-123/comprovante/documento-1.pdf',
+        nome_arquivo: '550e8400-e29b-41d4-a716-446655440000/comprovante/documento-1.pdf',
         nome_original: 'comprovante.pdf',
-        tipo_documento: 'comprovante',
+        caminho: '/uploads/550e8400-e29b-41d4-a716-446655440000/comprovante/documento-1.pdf',
+        tipo: TipoDocumento.COMPROVANTE_RESIDENCIA,
         descricao: 'Comprovante de residência',
-        solicitacao_id: 'solicitacao-123',
+        solicitacao_id: '550e8400-e29b-41d4-a716-446655440000',
         tamanho: 1024,
-        hash: 'hash-1',
-        criptografado: false,
-        usuario_id: 'test-user-id',
+        mimetype: 'application/pdf',
+        data_upload: new Date(),
+        metadados: {
+          hash: 'hash-1',
+          criptografado: false
+        },
+        usuario_upload: 'test-user-id',
       });
       await documentoRepository.save(documento);
 

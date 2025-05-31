@@ -214,7 +214,7 @@ export class AuthService {
     }
 
     // Verificar se o token expirou
-    if (new Date() > refreshToken.expiresAt) {
+    if (new Date() > refreshToken.expires_at) {
       throw new UnauthorizedException('Token de refresh expirado');
     }
 

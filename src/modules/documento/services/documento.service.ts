@@ -1,386 +1,317 @@
-import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Documento } from '../entities/documento.entity';
-import { SolicitacaoService } from '../../solicitacao/services/solicitacao.service';
-import { UploadDocumentoDto } from '../dto/upload-documento.dto';
 import { MimeTypeValidator } from '../validators/mime-type.validator';
-import { MetadadosValidator } from '../validators/metadados.validator';
-import { CriptografiaService } from '../../../shared/services/criptografia.service';
-import { ThumbnailService } from './thumbnail.service';
+import { InputSanitizerValidator } from '../validators/input-sanitizer.validator';
 import { StorageProviderFactory } from '../factories/storage-provider.factory';
-import { ALLOWED_MIME_TYPES } from '../constants/mime-types.constant';
-import * as fs from 'fs';
-import * as path from 'path';
+import { UploadDocumentoDto } from '../dto/upload-documento.dto';
+import { TipoDocumento } from '../../beneficio/entities/requisito-documento.entity';
+import { createHash } from 'crypto';
+import { extname } from 'path';
 import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class DocumentoService {
   constructor(
     @InjectRepository(Documento)
-    private documentoRepository: Repository<Documento>,
-    private solicitacaoService: SolicitacaoService,
-    private mimeTypeValidator: MimeTypeValidator,
-    private metadadosValidator: MetadadosValidator,
-    private criptografiaService: CriptografiaService,
-    private thumbnailService: ThumbnailService,
-    private storageProviderFactory: StorageProviderFactory,
+    private readonly documentoRepository: Repository<Documento>,
+    private readonly mimeTypeValidator: MimeTypeValidator,
+    private readonly inputSanitizer: InputSanitizerValidator,
+    private readonly storageProviderFactory: StorageProviderFactory,
   ) {}
 
   /**
-   * Lista todos os documentos de uma solicitação
+   * Lista documentos por cidadão
    */
-  async findBySolicitacao(solicitacaoId: string, user: any, tipo?: string) {
-    const solicitacao = await this.solicitacaoService.findById(solicitacaoId);
-    if (!this.solicitacaoService.canAccessSolicitacao(solicitacao, user)) {
-      throw new UnauthorizedException(
-        'Você não tem permissão para acessar os documentos desta solicitação',
-      );
-    }
+  async findByCidadao(cidadaoId: string, tipo?: string, reutilizavel?: boolean) {
+    const queryBuilder = this.documentoRepository
+      .createQueryBuilder('documento')
+      .leftJoinAndSelect('documento.usuario_upload', 'usuario_upload')
+      .leftJoinAndSelect('documento.usuario_verificacao', 'usuario_verificacao')
+      .where('documento.cidadao_id = :cidadaoId', { cidadaoId })
+      .andWhere('documento.removed_at IS NULL')
+      .orderBy('documento.data_upload', 'DESC');
 
-    const whereClause: any = { solicitacao_id: solicitacaoId };
-
-    // Adicionar filtro por tipo se fornecido
     if (tipo) {
-      whereClause.tipo = tipo;
+      queryBuilder.andWhere('documento.tipo = :tipo', { tipo });
     }
 
-    return this.documentoRepository.find({
-      where: whereClause,
-      order: { data_upload: 'DESC' },
-    });
+
+
+    return queryBuilder.getMany();
+  }
+
+  /**
+   * Lista documentos por solicitação
+   */
+  async findBySolicitacao(solicitacaoId: string, tipo?: string) {
+    const queryBuilder = this.documentoRepository
+      .createQueryBuilder('documento')
+      .leftJoinAndSelect('documento.usuario_upload', 'usuario_upload')
+      .leftJoinAndSelect('documento.usuario_verificacao', 'usuario_verificacao')
+      .where('documento.solicitacao_id = :solicitacaoId', { solicitacaoId })
+      .andWhere('documento.removed_at IS NULL')
+      .orderBy('documento.data_upload', 'DESC');
+
+    if (tipo) {
+      queryBuilder.andWhere('documento.tipo = :tipo', { tipo });
+    }
+
+    return queryBuilder.getMany();
   }
 
   /**
    * Busca um documento pelo ID
    */
-  async findById(id: string, user: any) {
-    const documento = await this.documentoRepository.findOne({ where: { id } });
-    if (!documento) {
-      throw new NotFoundException(`Documento com ID ${id} não encontrado`);
-    }
+  async findById(id: string) {
+    const documento = await this.documentoRepository
+      .createQueryBuilder('documento')
+      .leftJoinAndSelect('documento.usuario_upload', 'usuario_upload')
+      .leftJoinAndSelect('documento.usuario_verificacao', 'usuario_verificacao')
+      .where('documento.id = :id', { id })
+      .andWhere('documento.removed_at IS NULL')
+      .getOne();
 
-    // Verificar se o usuário tem permissão para acessar o documento
-    const solicitacao = await this.solicitacaoService.findById(
-      documento.solicitacao_id,
-    );
-    if (!this.solicitacaoService.canAccessSolicitacao(solicitacao, user)) {
-      throw new UnauthorizedException(
-        'Você não tem permissão para acessar este documento',
-      );
+    if (!documento) {
+      throw new NotFoundException('Documento não encontrado');
     }
 
     return documento;
-  }
+   }
 
   /**
    * Faz o download de um documento
    */
-  async download(
-    id: string,
-    user: any,
-  ): Promise<{ buffer: Buffer; mimetype: string; nomeOriginal: string }> {
-    const documento = await this.findById(id, user);
-
-    // Obter o provedor de armazenamento configurado
+  async download(id: string): Promise<{ buffer: Buffer; mimetype: string; nomeOriginal: string }> {
+    const documento = await this.findById(id);
     const storageProvider = this.storageProviderFactory.getProvider();
 
-    // Obter o buffer do arquivo do provedor de armazenamento
-    let buffer = await storageProvider.obterArquivo(documento.caminho);
-
-    // Verificar se o documento está criptografado e descriptografá-lo se necessário
-    if (documento.metadados?.criptografia) {
-      const dadosCriptografia = documento.metadados.criptografia;
-      buffer = this.criptografiaService.descriptografar(
+    try {
+      const buffer = await storageProvider.obterArquivo(documento.caminho);
+      
+      return {
         buffer,
-        dadosCriptografia.iv,
-        dadosCriptografia.authTag,
-      );
+        mimetype: documento.mimetype,
+        nomeOriginal: documento.nome_original,
+      };
+    } catch (error) {
+      throw new InternalServerErrorException('Erro ao fazer download do documento');
     }
-
-    return {
-      buffer,
-      mimetype: documento.mimetype,
-      nomeOriginal: documento.nome_original,
-    };
   }
 
   /**
-   * Obtém a miniatura de um documento de imagem
-   */
-  async getThumbnail(
-    id: string,
-    size: 'pequena' | 'media' | 'grande',
-    user: any,
-  ): Promise<{ buffer: Buffer }> {
-    const documento = await this.findById(id, user);
-
-    // Verificar se o documento é uma imagem
-    if (!documento.mimetype.startsWith('image/')) {
-      throw new BadRequestException('Este documento não é uma imagem');
-    }
-
-    // Verificar se já existe uma miniatura armazenada
-    if (documento.thumbnail) {
-      const storageProvider = this.storageProviderFactory.getProvider();
-      try {
-        const thumbnailBuffer = await storageProvider.obterArquivo(
-          documento.thumbnail,
-        );
-        return { buffer: thumbnailBuffer };
-      } catch (error) {
-        console.error('Erro ao obter thumbnail armazenado:', error);
-        // Se falhar, continuar e gerar um novo
-      }
-    }
-
-    // Se não existir thumbnail ou falhar ao obter, gerar um novo
-    const arquivoBuffer = await this.download(id, user);
-    const thumbnailBuffer = await this.thumbnailService.gerarThumbnail(
-      arquivoBuffer.buffer,
-      size,
-    );
-
-    // Salvar o novo thumbnail para uso futuro
-    if (!documento.thumbnail) {
-      const storageProvider = this.storageProviderFactory.getProvider();
-      const uniqueFilename = `thumb_${documento.nome_arquivo}`;
-      const thumbnailPath = await storageProvider.salvarArquivo(
-        thumbnailBuffer,
-        uniqueFilename,
-        'image/jpeg',
-      );
-
-      // Atualizar o documento com o caminho do thumbnail
-      documento.thumbnail = thumbnailPath === null ? undefined : thumbnailPath;
-      await this.documentoRepository.save(documento);
-    }
-
-    return { buffer: thumbnailBuffer };
-  }
-
-  /**
-   * Faz upload de um novo documento para uma solicitação
+   * Faz upload de um novo documento
    */
   async upload(
-    arquivo: Express.Multer.File,
+    arquivo: any,
     uploadDocumentoDto: UploadDocumentoDto,
-    user: any,
+    usuarioId: string,
   ) {
-    // Verificar se a solicitação existe e se o usuário tem permissão
-    const solicitacao = await this.solicitacaoService.findById(
-      uploadDocumentoDto.solicitacao_id,
-    );
-
-    if (!this.solicitacaoService.canAccessSolicitacao(solicitacao, user)) {
-      throw new UnauthorizedException(
-        'Você não tem permissão para adicionar documentos a esta solicitação',
-      );
-    }
-
-    // Validar o tipo MIME do arquivo
-    const mimeTypeValidationResult = await this.mimeTypeValidator.validateMimeType(
-      arquivo.buffer,
-      arquivo.mimetype,
-    );
-
-    if (!mimeTypeValidationResult.isValid) {
-      throw new BadRequestException(
-        `Tipo de arquivo inválido: ${mimeTypeValidationResult.message}`,
-      );
-    }
-
-    // Validar os metadados, se fornecidos
-    const metadados = uploadDocumentoDto.metadados || {};
-    const metadadosValidationResult =
-      this.metadadosValidator.validateMetadados(metadados);
-
-    if (!metadadosValidationResult.isValid) {
-      throw new BadRequestException(
-        `Metadados inválidos: ${metadadosValidationResult.message}`,
-      );
-    }
-
-    // Gerar um nome de arquivo único
-    const uniqueFilename = `${uuidv4()}${path.extname(arquivo.originalname)}`;
-    let thumbnailPath: string | null = null;
-
-    // Obter o provedor de armazenamento configurado
+    let caminhoArmazenamento: string | null = null;
     const storageProvider = this.storageProviderFactory.getProvider();
 
-    // Preparar o buffer para armazenamento
-    let bufferToStore = arquivo.buffer;
+    try {
+      // Validar entrada - sanitização será feita automaticamente pelos decorators
 
-    // Verificar se o documento deve ser criptografado
-    const tiposSensiveis = ['DOCUMENTO_PESSOAL', 'LAUDO_MEDICO', 'COMPROVANTE_RENDA'];
-    const isSensivel =
-      tiposSensiveis.includes(uploadDocumentoDto.tipo_documento) ||
-      (metadados && metadados.sensivel === true);
+      // Validar tipo MIME
+      const mimeTypeValidationResult = await this.mimeTypeValidator.validateMimeType(
+        arquivo.buffer,
+        arquivo.mimetype,
+        arquivo.originalname,
+        arquivo.size,
+      );
 
-    // Criptografar o documento se necessário
-    let dadosCriptografia: { iv: string; authTag: string; algoritmo: string } | null = null;
-    if (isSensivel) {
-      const resultado = this.criptografiaService.criptografar(arquivo.buffer);
-      bufferToStore = resultado.bufferCriptografado;
-      dadosCriptografia = {
-        iv: resultado.iv,
-        authTag: resultado.authTag,
-        algoritmo: 'aes-256-gcm', // Algoritmo padrão usado pelo serviço de criptografia
+      if (!mimeTypeValidationResult.isValid) {
+        throw new BadRequestException(
+          `Arquivo rejeitado: ${mimeTypeValidationResult.message}`,
+        );
+      }
+
+      // Gerar hash do arquivo
+      const hashArquivo = createHash('sha256').update(arquivo.buffer).digest('hex');
+
+      // Verificar se já existe um documento com o mesmo hash (reutilização)
+      if (uploadDocumentoDto.reutilizavel) {
+        const documentoExistente = await this.documentoRepository
+          .createQueryBuilder('documento')
+          .leftJoinAndSelect('documento.usuario_upload', 'usuario_upload')
+          .where('documento.hash_arquivo = :hashArquivo', { hashArquivo })
+          .andWhere('documento.tipo = :tipo', { tipo: uploadDocumentoDto.tipo })
+          .andWhere('documento.cidadao_id = :cidadaoId', { cidadaoId: uploadDocumentoDto.cidadao_id })
+          .andWhere('documento.removed_at IS NULL')
+          .getOne();
+
+        if (documentoExistente) {
+          // Retornar documento existente se for reutilizável
+          if (uploadDocumentoDto.solicitacao_id) {
+            // Atualizar para associar à nova solicitação se necessário
+            documentoExistente.solicitacao_id = uploadDocumentoDto.solicitacao_id;
+            return this.documentoRepository.save(documentoExistente);
+          }
+          return documentoExistente;
+        }
+      }
+
+      // Gerar nome único para o arquivo
+      const extensao = extname(arquivo.originalname);
+      const nomeArquivo = `${uuidv4()}${extensao}`;
+
+      // Salvar arquivo no storage
+      caminhoArmazenamento = await storageProvider.salvarArquivo(
+        arquivo.buffer,
+        nomeArquivo,
+        arquivo.mimetype,
+      );
+
+      if (!caminhoArmazenamento) {
+        throw new InternalServerErrorException('Falha ao salvar arquivo no storage');
+      }
+
+      // Criar metadados simplificados
+      const metadados = {
+        upload_info: {
+          ip: 'unknown', // Pode ser obtido do request se necessário
+          user_agent: 'unknown', // Pode ser obtido do request se necessário
+        },
       };
 
-      // Adicionar informações de criptografia aos metadados
-      metadados.criptografado = true;
-    }
+      // Salvar documento no banco de dados
+      const novoDocumento = new Documento();
+      novoDocumento.cidadao_id = uploadDocumentoDto.cidadao_id;
+      novoDocumento.solicitacao_id = uploadDocumentoDto.solicitacao_id;
+      novoDocumento.tipo = uploadDocumentoDto.tipo;
+      novoDocumento.nome_arquivo = nomeArquivo;
+      novoDocumento.nome_original = arquivo.originalname;
+      novoDocumento.caminho = caminhoArmazenamento;
+      novoDocumento.tamanho = arquivo.size;
+      novoDocumento.mimetype = arquivo.mimetype;
+      novoDocumento.hash_arquivo = hashArquivo;
+      novoDocumento.reutilizavel = uploadDocumentoDto.reutilizavel || false;
+      novoDocumento.descricao = uploadDocumentoDto.descricao;
+      novoDocumento.usuario_upload_id = usuarioId;
+      novoDocumento.data_upload = new Date();
+      novoDocumento.metadados = metadados;
 
-    // Gerar thumbnail se for uma imagem
-    if (mimeTypeValidationResult.detectedMimeType.startsWith('image/')) {
-      try {
-        const thumbnailBuffer = await this.thumbnailService.gerarThumbnail(
-          bufferToStore,
-          'media', // Tamanho médio para o thumbnail
-        );
-        // Armazenar o caminho da miniatura
-        thumbnailPath = await storageProvider.salvarArquivo(
-          thumbnailBuffer,
-          `thumb_${uniqueFilename}`,
-          'image/jpeg',
-        );
-      } catch (error) {
-        console.error('Erro ao gerar thumbnail:', error);
-        // Continuar mesmo se falhar a geração do thumbnail
-      }
-    }
+      const resultado = await this.documentoRepository.save(novoDocumento);
+      const documentoId = (resultado as unknown as Documento).id;
+      
+      // Buscar o documento com as relações
+      const documentoComRelacoes = await this.documentoRepository
+        .createQueryBuilder('documento')
+        .leftJoinAndSelect('documento.usuario_upload', 'usuario_upload')
+        .where('documento.id = :id', { id: documentoId })
+        .getOne();
 
-    // Salvar o arquivo no provedor de armazenamento
-    const caminhoArmazenamento = await storageProvider.salvarArquivo(
-      bufferToStore,
-      uniqueFilename,
-      mimeTypeValidationResult.detectedMimeType,
-    );
-
-    // Criar o registro do documento no banco de dados
-    const documento = new Documento();
-    documento.solicitacao_id = uploadDocumentoDto.solicitacao_id;
-    documento.nome_arquivo = uniqueFilename;
-    documento.nome_original = arquivo.originalname;
-    documento.mimetype = mimeTypeValidationResult.detectedMimeType;
-    documento.tamanho = arquivo.size;
-    documento.caminho = caminhoArmazenamento;
-    documento.thumbnail = thumbnailPath === null ? undefined : thumbnailPath;
-    documento.tipo = uploadDocumentoDto.tipo_documento;
-    documento.descricao = uploadDocumentoDto.observacoes || '';
-    documento.data_upload = new Date();
-    documento.usuario_upload = user.id;
-    // Construir metadados compatíveis com a estrutura da entidade Documento
-    // Filtramos o objeto metadados para garantir que só contenha propriedades esperadas
-    const metadadosFiltrados = {};
-    
-    // Adicionar campos específicos
-    const metadadosDocumento = {
-      ...metadadosFiltrados,
-      criptografado: isSensivel,
-      criptografia: dadosCriptografia === null ? undefined : dadosCriptografia,
-      deteccao_mime: {
-        mime_declarado: arquivo.mimetype,
-        mime_detectado: mimeTypeValidationResult.detectedMimeType,
-        extensao_detectada: mimeTypeValidationResult.detectedExtension,
-      },
-      upload_info: {
-        data: new Date().toISOString(),
-        usuario_id: user.id,
-        ip: user.ip || 'não registrado',
-        user_agent: user.userAgent || 'não registrado',
-      },
-    };
-    
-    documento.metadados = metadadosDocumento;
-
-    return this.documentoRepository.save(documento);
-  }
-
-  /**
-   * Remove um documento de uma solicitação
-   */
-  async remove(id: string, user: any) {
-    const documento = await this.findById(id, user);
-
-    // Verificar se o usuário tem permissão para remover o documento
-    // Aqui podemos adicionar lógicas adicionais de permissão se necessário
-
-    // Obter o provedor de armazenamento configurado
-    const storageProvider = this.storageProviderFactory.getProvider();
-
-    // Remover o arquivo do armazenamento
-    try {
-      await storageProvider.removerArquivo(documento.caminho);
-
-      // Remover o thumbnail se existir
-      if (documento.thumbnail) {
-        await storageProvider.removerArquivo(documento.thumbnail);
-      }
+      return documentoComRelacoes;
     } catch (error) {
-      console.error(`Erro ao remover arquivo: ${error.message}`);
-      // Continuar mesmo se falhar a remoção do arquivo
-    }
+      // Limpar arquivo do storage em caso de erro
+      if (caminhoArmazenamento) {
+        try {
+          await storageProvider.removerArquivo(caminhoArmazenamento);
+        } catch (cleanupError) {
+          console.error('Erro ao limpar arquivo após falha:', cleanupError);
+        }
+      }
 
-    // Remover o registro do banco de dados
-    return this.documentoRepository.remove(documento);
+      if (error instanceof BadRequestException || error instanceof NotFoundException) {
+        throw error;
+      }
+
+      console.error('Erro no upload de documento:', error);
+      throw new InternalServerErrorException('Erro interno no upload do documento');
+    }
   }
 
   /**
-   * Verifica um documento
+   * Marca um documento como verificado
    */
-  async verificarDocumento(id: string, observacoes: string, user: any) {
-    const documento = await this.findById(id, user);
+  async verificar(id: string, usuarioId: string, observacoes?: string) {
+    const documento = await this.findById(id);
 
-    // Atualizar o status do documento para verificado
+    if (documento.verificado) {
+      throw new BadRequestException('Documento já foi verificado');
+    }
+
     documento.verificado = true;
     documento.data_verificacao = new Date();
-    documento.usuario_verificacao = user.id;
+    documento.usuario_verificacao_id = usuarioId;
     documento.observacoes_verificacao = observacoes;
 
-    // Adicionar informações de verificação aos metadados
-    const metadados = documento.metadados || {};
-    metadados.verificacao = {
-      data: new Date().toISOString(),
-      usuario_id: user.id,
-      observacoes: observacoes,
-    };
-    documento.metadados = metadados;
+    const documentoAtualizado = await this.documentoRepository.save(documento);
+
+    return this.documentoRepository
+      .createQueryBuilder('documento')
+      .leftJoinAndSelect('documento.usuario_upload', 'usuario_upload')
+      .leftJoinAndSelect('documento.usuario_verificacao', 'usuario_verificacao')
+      .where('documento.id = :id', { id: documentoAtualizado.id })
+      .getOne();
+  }
+
+  /**
+   * Remove um documento (soft delete)
+   */
+  async remover(id: string, usuarioId: string) {
+    const documento = await this.findById(id);
+
+    documento.removed_at = new Date();
+     // Nota: removed_by não está definido na entidade, seria necessário adicionar se precisar
 
     return this.documentoRepository.save(documento);
   }
 
   /**
-   * Atualiza os metadados de um documento
+   * Busca documentos reutilizáveis por tipo e cidadão
    */
-  async atualizarMetadados(id: string, novoMetadados: any, user: any) {
-    const documento = await this.findById(id, user);
+  async findReutilizaveis(cidadaoId?: string, tipo?: string) {
+    const queryBuilder = this.documentoRepository
+      .createQueryBuilder('documento')
+      .leftJoinAndSelect('documento.usuario_upload', 'usuario_upload')
+      .leftJoinAndSelect('documento.usuario_verificacao', 'usuario_verificacao')
+      .where('documento.reutilizavel = :reutilizavel', { reutilizavel: true })
+      .andWhere('documento.verificado = :verificado', { verificado: true })
+      .andWhere('documento.removed_at IS NULL')
+      .andWhere(
+        '(documento.data_validade IS NULL OR documento.data_validade >= :now)',
+        { now: new Date() }
+      )
+      .orderBy('documento.data_upload', 'DESC');
 
-    // Validar os novos metadados
-    const metadadosValidationResult =
-      this.metadadosValidator.validateMetadados(novoMetadados);
-    if (!metadadosValidationResult.isValid) {
-      throw new BadRequestException(
-        `Metadados inválidos: ${metadadosValidationResult.message}`,
-      );
+    if (cidadaoId) {
+      queryBuilder.andWhere('documento.cidadao_id = :cidadaoId', { cidadaoId });
     }
 
-    // Mesclar os metadados existentes com os novos
-    documento.metadados = {
-      ...(documento.metadados || {}),
-      ...novoMetadados,
-      ultima_atualizacao: {
-        data: new Date().toISOString(),
-        usuario_id: user.id,
-      },
-    };
+    if (tipo) {
+      queryBuilder.andWhere('documento.tipo = :tipo', { tipo });
+    }
 
-    return this.documentoRepository.save(documento);
+    return queryBuilder.getMany();
+  }
+
+  /**
+   * Obtém estatísticas de documentos
+   */
+  async getEstatisticas(cidadaoId?: string) {
+    const baseQuery = this.documentoRepository
+      .createQueryBuilder('documento')
+      .where('documento.removed_at IS NULL');
+
+    if (cidadaoId) {
+      baseQuery.andWhere('documento.cidadao_id = :cidadaoId', { cidadaoId });
+    }
+
+    const [total, verificados, pendentes, reutilizaveis] = await Promise.all([
+      baseQuery.getCount(),
+      baseQuery.clone().andWhere('documento.verificado = :verificado', { verificado: true }).getCount(),
+      baseQuery.clone().andWhere('documento.verificado = :verificado', { verificado: false }).getCount(),
+      baseQuery.clone().andWhere('documento.reutilizavel = :reutilizavel', { reutilizavel: true }).getCount(),
+    ]);
+
+    return {
+      total,
+      verificados,
+      pendentes,
+      reutilizaveis,
+    };
   }
 }

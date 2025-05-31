@@ -5,29 +5,37 @@ import {
   IsUUID,
   IsOptional,
   IsEnum,
+  IsBoolean,
   Validate,
-  IsObject,
+  MaxLength,
 } from 'class-validator';
 import { TipoDocumento } from '../../beneficio/entities/requisito-documento.entity';
 import { MimeTypeValidator } from '../validators/mime-type.validator';
-import { MetadadosValidator } from '../validators/metadados.validator';
-import { MetadadosDocumento } from '../interfaces/metadados.interface';
-import { Type } from 'class-transformer';
+import { InputSanitizerValidator } from '../validators/input-sanitizer.validator';
+import { Transform } from 'class-transformer';
 
 /**
  * DTO para upload de documento
  *
  * Define os dados necessários para fazer upload de um documento
- * anexado a uma solicitação de benefício
+ * que pode estar vinculado a uma solicitação específica ou ser um documento geral do cidadão
  */
 export class UploadDocumentoDto {
   @ApiProperty({
-    description: 'ID da solicitação à qual o documento pertence',
+    description: 'ID do cidadão proprietário do documento',
     example: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
   })
-  @IsNotEmpty({ message: 'ID da solicitação é obrigatório' })
+  @IsNotEmpty({ message: 'ID do cidadão é obrigatório' })
+  @IsUUID('4', { message: 'ID do cidadão inválido' })
+  cidadao_id: string;
+
+  @ApiPropertyOptional({
+    description: 'ID da solicitação à qual o documento pertence (opcional para documentos reutilizáveis)',
+    example: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
+  })
+  @IsOptional()
   @IsUUID('4', { message: 'ID da solicitação inválido' })
-  solicitacao_id: string;
+  solicitacao_id?: string;
 
   @ApiProperty({
     description: 'Tipo do documento',
@@ -36,7 +44,7 @@ export class UploadDocumentoDto {
   })
   @IsNotEmpty({ message: 'Tipo do documento é obrigatório' })
   @IsEnum(TipoDocumento, { message: 'Tipo de documento inválido' })
-  tipo_documento: TipoDocumento;
+  tipo: TipoDocumento;
 
   @ApiProperty({
     description: 'Arquivo do documento',
@@ -45,35 +53,39 @@ export class UploadDocumentoDto {
   })
   @Validate(MimeTypeValidator, {
     message:
-      'Tipo de arquivo não permitido. Apenas documentos, imagens e planilhas são aceitos.',
+      'Arquivo inválido. Verifique o tipo, tamanho e integridade do arquivo.',
   })
-  arquivo: Express.Multer.File;
+  arquivo: any; // Arquivo será validado no controller
 
   @ApiPropertyOptional({
-    description: 'Observações sobre o documento',
-    example: 'Documento atualizado conforme solicitado',
+    description: 'Descrição do documento',
+    example: 'Comprovante de residência atualizado',
+    maxLength: 500,
   })
   @IsOptional()
-  @IsString({ message: 'Observações devem ser um texto' })
-  observacoes?: string;
+  @IsString({ message: 'Descrição deve ser um texto' })
+  @MaxLength(500, { 
+    message: 'Descrição não pode exceder 500 caracteres' 
+  })
+  @Validate(InputSanitizerValidator, {
+    message: 'Descrição contém conteúdo não permitido por motivos de segurança',
+  })
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      return value.trim();
+    }
+    return value;
+  })
+  descricao?: string;
 
   @ApiPropertyOptional({
-    description: 'Metadados adicionais do documento',
-    example: {
-      titulo: 'Comprovante de Residência',
-      descricao: 'Conta de luz referente ao mês de janeiro/2025',
-      autor: 'Companhia Energética',
-      data_documento: '2025-01-15',
-      tags: ['residência', 'conta', 'luz'],
-    },
+    description: 'Indica se o documento pode ser reutilizado em outras solicitações',
+    example: true,
+    default: false,
   })
   @IsOptional()
-  @IsObject({ message: 'Metadados devem ser um objeto válido' })
-  @Validate(MetadadosValidator, {
-    message: 'Formato de metadados inválido',
-  })
-  @Type(() => Object)
-  metadados?: MetadadosDocumento;
+  @IsBoolean({ message: 'Reutilizável deve ser um valor booleano' })
+  reutilizavel?: boolean = false;
 
   @ApiPropertyOptional({
     description:

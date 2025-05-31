@@ -46,7 +46,7 @@ export class ComprovanteService {
    */
   async uploadComprovante(
     pagamentoId: string,
-    file: Express.Multer.File,
+    file: any,
     createDto: ComprovanteUploadDto,
     usuarioId: string
   ): Promise<ComprovantePagamento> {
@@ -84,14 +84,14 @@ export class ComprovanteService {
 
     // Criar registro do comprovante
     const comprovante = this.comprovanteRepository.create({
-      pagamentoId,
-      tipoDocumento: createDto.tipoDocumento,
-      nomeArquivo: sanitizedFileName,
-      caminhoArquivo: 'placeholder', // uploadResult.path,
+      pagamento_id: pagamentoId,
+      tipo_documento: createDto.tipoDocumento,
+      nome_arquivo: sanitizedFileName,
+      caminho_arquivo: 'placeholder', // uploadResult.path,
       tamanho: file.size,
-      mimeType: file.mimetype,
-      dataUpload: new Date(),
-      uploadedPor: usuarioId
+      mime_type: file.mimetype,
+      data_upload: new Date(),
+      uploaded_por: usuarioId
     });
 
     // Salvar o registro
@@ -135,8 +135,8 @@ export class ComprovanteService {
    */
   async findAllByPagamento(pagamentoId: string): Promise<ComprovantePagamento[]> {
     return this.comprovanteRepository.find({
-      where: { pagamentoId },
-      order: { dataUpload: 'DESC' }
+      where: { pagamento_id: pagamentoId },
+      order: { data_upload: 'DESC' }
     });
   }
 
@@ -162,8 +162,8 @@ export class ComprovanteService {
     
     return {
       buffer: Buffer.from(''), // file.content,
-      fileName: comprovante.nomeArquivo,
-      mimeType: comprovante.mimeType
+      fileName: comprovante.nome_arquivo,
+      mimeType: comprovante.mime_type
     };
   }
 
@@ -220,7 +220,7 @@ export class ComprovanteService {
    */
   async hasComprovantes(pagamentoId: string): Promise<boolean> {
     const count = await this.comprovanteRepository.count({
-      where: { pagamentoId }
+      where: { pagamento_id: pagamentoId }
     });
     
     return count > 0;
@@ -232,7 +232,7 @@ export class ComprovanteService {
    * @param file Arquivo a ser validado
    * @throws BadRequestException se o arquivo não atender aos requisitos
    */
-  private validateFile(file: Express.Multer.File): void {
+  private validateFile(file: any): void {
     // Verificar se o arquivo existe
     if (!file) {
       throw new BadRequestException('Nenhum arquivo foi enviado');

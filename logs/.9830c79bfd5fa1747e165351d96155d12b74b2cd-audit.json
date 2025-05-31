@@ -59,6 +59,16 @@
             "date": 1748511269613,
             "name": "C:\\Users\\eudre\\OneDrive\\Desktop\\Projetos\\pgben\\pgben-server\\logs\\application-2025-05-29.log",
             "hash": "68f7564d880600dc6ee05b74efb70768da8cf62e1555956f9babf3922021c349"
+        },
+        {
+            "date": 1748605982705,
+            "name": "C:\\Users\\eudre\\OneDrive\\Desktop\\Projetos\\pgben\\pgben-server\\logs\\application-2025-05-30.log",
+            "hash": "8cbbf32a0180c5980591bc4a4b88eb4ab5c496b4f259e0ad9465f0c73cfb496a"
+        },
+        {
+            "date": 1748660408033,
+            "name": "C:\\Users\\eudre\\OneDrive\\Desktop\\Projetos\\pgben\\pgben-server\\logs\\application-2025-05-31.log",
+            "hash": "ef9bbef1989e2f2e9cd157fc1c2a8bb82d46b04e6e210bb01ce0378bfa38a20d"
         }
     ],
     "hashType": "sha256"

@@ -1,4 +1,5 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn, Index } from 'typeorm';
+import { IsNotEmpty, IsUUID, IsEnum, IsOptional, IsString, Length } from 'class-validator';
 import { Permission } from './permission.entity';
 import { Usuario } from '../../modules/usuario/entities/usuario.entity';
 
@@ -36,6 +37,13 @@ export const ScopeType = {
  * permitindo conceder ou revogar permissões específicas.
  */
 @Entity('usuario_permissao')
+@Index(['usuario_id', 'permissao_id'], { unique: true })
+@Index(['usuario_id'])
+@Index(['permissao_id'])
+@Index(['tipo_escopo'])
+@Index(['escopo_id'])
+@Index(['criado_por'])
+@Index(['created_at'])
 export class UserPermission {
   /**
    * Identificador único do mapeamento
@@ -47,6 +55,8 @@ export class UserPermission {
    * Referência ao usuário
    */
   @Column({ type: 'uuid', name: 'usuario_id' })
+  @IsNotEmpty({ message: 'ID do usuário é obrigatório' })
+  @IsUUID('4', { message: 'ID do usuário inválido' })
   usuario_id: string;
 
   /**
@@ -60,6 +70,8 @@ export class UserPermission {
    * Referência à permissão
    */
   @Column({ type: 'uuid', name: 'permissao_id' })
+  @IsNotEmpty({ message: 'ID da permissão é obrigatório' })
+  @IsUUID('4', { message: 'ID da permissão inválido' })
   permissao_id: string;
 
   /**
@@ -84,12 +96,15 @@ export class UserPermission {
     name: 'tipo_escopo',
     default: TipoEscopo.GLOBAL
   })
+  @IsEnum(TipoEscopo, { message: 'Tipo de escopo inválido' })
   tipo_escopo: TipoEscopo;
 
   /**
    * ID do escopo (ex: ID da unidade)
    */
   @Column({ type: 'uuid', nullable: true, name: 'escopo_id' })
+  @IsOptional()
+  @IsUUID('4', { message: 'ID do escopo inválido' })
   escopo_id: string | null;
 
   /**
@@ -114,6 +129,8 @@ export class UserPermission {
    * Usuário que criou o mapeamento
    */
   @Column({ type: 'uuid', nullable: true, name: 'criado_por' })
+  @IsOptional()
+  @IsUUID('4', { message: 'ID do criador inválido' })
   criado_por: string | null;
 
   /**
@@ -127,6 +144,8 @@ export class UserPermission {
    * Usuário que atualizou o mapeamento por último
    */
   @Column({ type: 'uuid', nullable: true, name: 'atualizado_por' })
+  @IsOptional()
+  @IsUUID('4', { message: 'ID do atualizador inválido' })
   atualizado_por: string | null;
 
   /**
@@ -239,5 +258,143 @@ export class UserPermission {
 
   set updater(value: Usuario | null) {
     this.usuario_atualizador = value;
+  }
+
+  /**
+   * Verifica se a permissão foi criada por um usuário específico
+   * @param usuarioId ID do usuário
+   * @returns true se foi criada pelo usuário
+   */
+  foiCriadaPor(usuarioId: string): boolean {
+    return this.criado_por === usuarioId;
+  }
+
+  /**
+   * Verifica se a permissão foi atualizada por um usuário específico
+   * @param usuarioId ID do usuário
+   * @returns true se foi atualizada pelo usuário
+   */
+  foiAtualizadaPor(usuarioId: string): boolean {
+    return this.atualizado_por === usuarioId;
+  }
+
+  /**
+   * Verifica se a permissão ainda é válida (não expirou)
+   * @returns true se ainda é válida
+   */
+  isValida(): boolean {
+    if (!this.valido_ate) return true;
+    return new Date() <= this.valido_ate;
+  }
+
+  /**
+   * Verifica se a permissão expirou
+   * @returns true se expirou
+   */
+  isExpirada(): boolean {
+    return !this.isValida();
+  }
+
+  /**
+   * Verifica se a permissão tem escopo global
+   * @returns true se é global
+   */
+  isGlobal(): boolean {
+    return this.tipo_escopo === TipoEscopo.GLOBAL;
+  }
+
+  /**
+   * Verifica se a permissão tem escopo de unidade
+   * @returns true se é por unidade
+   */
+  isPorUnidade(): boolean {
+    return this.tipo_escopo === TipoEscopo.UNIDADE;
+  }
+
+  /**
+   * Verifica se a permissão tem escopo próprio
+   * @returns true se é própria
+   */
+  isPropria(): boolean {
+    return this.tipo_escopo === TipoEscopo.PROPRIO;
+  }
+
+  /**
+   * Verifica se a permissão pertence a um usuário específico
+   * @param usuarioId ID do usuário
+   * @returns true se pertence ao usuário
+   */
+  pertenceAoUsuario(usuarioId: string): boolean {
+    return this.usuario_id === usuarioId;
+  }
+
+  /**
+   * Verifica se a permissão é para uma permissão específica
+   * @param permissaoId ID da permissão
+   * @returns true se é para a permissão
+   */
+  isParaPermissao(permissaoId: string): boolean {
+    return this.permissao_id === permissaoId;
+  }
+
+  /**
+   * Verifica se a permissão tem escopo específico
+   * @param escopoId ID do escopo
+   * @returns true se tem o escopo
+   */
+  temEscopo(escopoId: string): boolean {
+    return this.escopo_id === escopoId;
+  }
+
+  /**
+   * Define a data de validade da permissão
+   * @param data Data de validade
+   */
+  definirValidade(data: Date): void {
+    this.valido_ate = data;
+  }
+
+  /**
+   * Remove a data de validade (torna permanente)
+   */
+  tornarPermanente(): void {
+    this.valido_ate = null;
+  }
+
+  /**
+   * Atualiza o usuário que modificou a permissão
+   * @param usuarioId ID do usuário
+   */
+  atualizarPor(usuarioId: string): void {
+    this.atualizado_por = usuarioId;
+  }
+
+  /**
+   * Obtém uma chave única para a permissão
+   * @returns chave única baseada em usuário e permissão
+   */
+  getUniqueKey(): string {
+    return `${this.usuario_id}:${this.permissao_id}`;
+  }
+
+  /**
+   * Obtém o tempo restante até a expiração em dias
+   * @returns dias até expiração ou null se permanente
+   */
+  getDiasAteExpiracao(): number | null {
+    if (!this.valido_ate) return null;
+    const now = new Date();
+    const diffMs = this.valido_ate.getTime() - now.getTime();
+    return Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+  }
+
+  /**
+   * Verifica se a permissão expira em breve
+   * @param dias Número de dias para considerar "em breve"
+   * @returns true se expira em breve
+   */
+  expiraEmBreve(dias: number = 7): boolean {
+    const diasRestantes = this.getDiasAteExpiracao();
+    return diasRestantes !== null && diasRestantes <= dias;
   }
 }

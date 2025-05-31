@@ -199,7 +199,7 @@ export class PermissionUnidadeSeed {
     const permission = new Permission();
     permission.nome = nome;
     permission.descricao = descricao;
-    permission.composta = composta;
+
     // Determinar módulo e ação a partir do nome
     const parts = nome.split('.');
     permission.modulo = parts.length > 0 ? parts[0] : 'sistema';

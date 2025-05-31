@@ -29,6 +29,7 @@ import { UpdateSolicitacaoDto } from '../dto/update-solicitacao.dto';
 import { AvaliarSolicitacaoDto } from '../dto/avaliar-solicitacao.dto';
 import { VincularProcessoJudicialDto } from '../dto/vincular-processo-judicial.dto';
 import { VincularDeterminacaoJudicialDto } from '../dto/vincular-determinacao-judicial.dto';
+import { ConverterPapelDto } from '../dto/converter-papel.dto';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../../../auth/guards/permission.guard';
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
@@ -616,6 +617,30 @@ export class SolicitacaoController {
   })
   @ApiResponse({ status: 404, description: 'Solicitação não encontrada' })
   @ApiResponse({ status: 400, description: 'Solicitação não possui determinação judicial vinculada' })
+  /**
+   * Converte um cidadão da composição familiar para beneficiário principal
+   */
+  @Post('converter-papel')
+  @RequiresPermission({
+    permissionName: 'solicitacao.converter_papel',
+    scopeType: ScopeType.UNIT,
+    scopeIdExpression: 'solicitacao.unidadeId',
+  })
+  @ApiOperation({ summary: 'Converter cidadão da composição familiar para beneficiário principal' })
+  @ApiResponse({
+    status: 201,
+    description: 'Cidadão convertido com sucesso e nova solicitação criada',
+  })
+  @ApiResponse({ status: 400, description: 'Cidadão não encontrado na composição familiar' })
+  @ApiResponse({ status: 404, description: 'Solicitação de origem não encontrada' })
+  @ApiBody({ type: ConverterPapelDto })
+  async converterPapel(
+    @Body() converterPapelDto: ConverterPapelDto,
+    @Req() req: Request,
+  ) {
+    return this.solicitacaoService.converterPapel(converterPapelDto, req.user);
+  }
+
   async desvincularDeterminacaoJudicial(@Param('id', ParseUUIDPipe) id: string, @Req() req: Request) {
     const user = req.user;
     const solicitacao = await this.solicitacaoService.findById(id);

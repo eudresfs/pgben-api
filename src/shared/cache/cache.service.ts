@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
+import { ConfigService } from '@nestjs/config';
 import { CacheMetricsProvider } from './cache-metrics.provider';
 
 // Estados do Circuit Breaker
@@ -24,22 +25,56 @@ export class CacheService {
   // Circuit Breaker configurações
   private circuitState: CircuitState = CircuitState.CLOSED;
   private failureCount: number = 0;
-  private readonly failureThreshold: number = 5; // Número de falhas para abrir o circuito
-  private readonly resetTimeout: number = 30000; // 30 segundos para tentar recuperar
+  private readonly failureThreshold: number = 3; // Reduzido para 3 falhas para abrir o circuito mais rapidamente
+  private readonly resetTimeout: number = 10000; // 10 segundos para tentar recuperar (reduzido para resposta mais rápida)
   private lastFailureTime: number = 0;
   private inMemoryCache: Map<string, { value: any; expiry: number }> = new Map();
-  private readonly localCacheTTL = 300; // 5 minutos (valor padrão para cache local)
-
+  private readonly localCacheTTL: number;
+  
   constructor(
     @InjectQueue('cache') private readonly cacheQueue: Queue,
     private readonly metricsProvider: CacheMetricsProvider,
-  ) {}
-
+    private readonly configService: ConfigService,
+  ) {
+    // Verificar se o Redis está desabilitado via configuração
+    const disableRedis = this.configService.get('DISABLE_REDIS') === 'true';
+    
+    // Carregar configurações do circuit breaker
+    this.failureThreshold = this.configService.get<number>('CACHE_CIRCUIT_BREAKER_THRESHOLD', 3);
+    this.resetTimeout = this.configService.get<number>('CACHE_CIRCUIT_BREAKER_RESET', 10000);
+    this.localCacheTTL = this.configService.get<number>('CACHE_LOCAL_TTL', 600);
+    
+    if (disableRedis) {
+      this.logger.warn('Redis está desabilitado. Usando apenas cache local.');
+      this.circuitState = CircuitState.OPEN; // Forçar uso do cache local
+    }
+    
+    // Verificar conexão com Redis na inicialização
+    this.checkRedisConnection();
+  }
+  
   /**
-   * Obtém um valor do cache
-   * @param key Chave do valor no cache
-   * @returns O valor armazenado ou null se não existir
+   * Verifica a conexão com o Redis na inicialização
+   * @private
    */
+  private async checkRedisConnection(): Promise<void> {
+    try {
+      // Definir um timeout para evitar bloqueio
+      const timeoutPromise = new Promise<void>((_, reject) => {
+        setTimeout(() => reject(new Error('Timeout ao verificar conexão com Redis')), 2000);
+      });
+      
+      const pingPromise = this.cacheQueue.client.ping();
+      
+      await Promise.race([pingPromise, timeoutPromise]);
+      this.logger.log('Conexão com Redis estabelecida com sucesso');
+    } catch (error) {
+      this.logger.error(`Erro ao conectar com Redis: ${error.message}. Usando cache local.`, error.stack);
+      // Abrir o circuit breaker para usar cache local
+      this.circuitState = CircuitState.OPEN;
+    }
+  }
+  
   /**
    * Verifica o estado do circuit breaker e atualiza conforme necessário
    * @private
@@ -52,6 +87,11 @@ export class CacheService {
       if (now - this.lastFailureTime > this.resetTimeout) {
         this.logger.log('Circuit Breaker mudando para estado HALF_OPEN, tentando recuperar');
         this.circuitState = CircuitState.HALF_OPEN;
+        // Resetar contador de falhas ao tentar recuperar
+        this.failureCount = 0;
+        
+        // Registrar métrica de recuperação
+        this.metricsProvider.registerCacheRecoveryAttempt();
       }
     }
   }
@@ -63,9 +103,43 @@ export class CacheService {
   private registerFailure(): void {
     this.failureCount++;
     this.lastFailureTime = Date.now();
+     
+    // Registrar métrica de falha
+    this.metricsProvider.registerCacheFailure();
     
     if (this.failureCount >= this.failureThreshold && this.circuitState === CircuitState.CLOSED) {
       this.logger.warn(`Circuit Breaker mudando para estado OPEN após ${this.failureCount} falhas`);
+      this.circuitState = CircuitState.OPEN;
+      
+      // Limpar fila de cache quando o circuito abrir para evitar acumular operações pendentes
+      this.clearCacheQueue().catch(err => {
+        this.logger.error(`Erro ao limpar fila de cache: ${err.message}`, err.stack);
+      });
+    }
+  }
+  
+  /**
+   * Limpa a fila de cache para evitar acumular operações pendentes
+   * @private
+   */
+  private async clearCacheQueue(): Promise<void> {
+    try {
+      // Definir um timeout para evitar bloqueio
+      const timeoutPromise = new Promise<void>((_, reject) => {
+        setTimeout(() => reject(new Error('Timeout ao limpar fila de cache')), 1000);
+      });
+      
+      const cleanPromise = Promise.all([
+        this.cacheQueue.clean(0, 'delayed'),
+        this.cacheQueue.clean(0, 'wait')
+      ]);
+      
+      await Promise.race([cleanPromise, timeoutPromise]);
+      this.logger.log('Fila de cache limpa com sucesso');
+    } catch (error) {
+      this.logger.error(`Erro ao limpar fila de cache: ${error.message}`, error.stack);
+      // Forçar o fechamento do circuito em caso de erro ao limpar a fila
+      // Isso é importante para evitar que o sistema continue tentando usar o Redis
       this.circuitState = CircuitState.OPEN;
     }
   }
@@ -121,8 +195,9 @@ export class CacheService {
     // Verificar o estado do circuit breaker
     this.checkCircuitState();
     
-    // Se o circuit breaker estiver aberto, não tentar Redis
+    // Se o circuit breaker estiver aberto, não tentar Redis e retornar null
     if (this.circuitState === CircuitState.OPEN) {
+      this.logger.debug(`Circuit breaker aberto, não tentando Redis para chave: ${key}`);
       this.metricsProvider.registerCacheMiss();
       return null;
     }
@@ -160,6 +235,17 @@ export class CacheService {
       );
       this.registerFailure(); // Registrar falha para o circuit breaker
       this.metricsProvider.registerCacheMiss();
+      
+      // Se for um erro de timeout, tentar obter o valor do cache local novamente
+      // Isso pode acontecer se o valor for adicionado ao cache local por outra thread
+      if (error.message && error.message.includes('Timeout')) {
+        const retryLocalValue = this.getLocalCache<T>(key);
+        if (retryLocalValue !== null) {
+          this.logger.debug(`Valor encontrado no cache local após timeout: ${key}`);
+          return retryLocalValue;
+        }
+      }
+      
       return null;
     }
   }
@@ -175,14 +261,15 @@ export class CacheService {
     value: T,
     ttl: number = this.defaultTTL,
   ): Promise<void> {
-    // Sempre armazenar no cache local, independente do estado do Redis
-    this.setLocalCache(key, value, Math.min(ttl, this.localCacheTTL));
+    // Armazenar no cache local primeiro (mais rápido e sem dependência do Redis)
+    this.setLocalCache(key, value, ttl);
     
     // Verificar o estado do circuit breaker
     this.checkCircuitState();
     
     // Se o circuit breaker estiver aberto, não tentar Redis
     if (this.circuitState === CircuitState.OPEN) {
+      this.logger.debug(`Circuit breaker aberto, não tentando Redis para chave: ${key}`);
       return;
     }
     
@@ -353,6 +440,15 @@ export class CacheService {
       default:
         return 'UNKNOWN';
     }
+  }
+  
+  /**
+   * Força o fechamento do circuit breaker, útil para recuperação manual
+   */
+  forceCloseCircuit(): void {
+    this.circuitState = CircuitState.CLOSED;
+    this.failureCount = 0;
+    this.logger.log('Circuit Breaker forçado para estado CLOSED manualmente');
   }
   
   /**

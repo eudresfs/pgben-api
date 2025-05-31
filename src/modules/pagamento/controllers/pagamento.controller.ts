@@ -93,8 +93,8 @@ export class PagamentoController {
         },
         quantidadeComprovantes: 0, // seria calculado pela relação
         observacoes: pagamento.observacoes,
-        createdAt: pagamento.createdAt,
-        updatedAt: pagamento.updatedAt
+        createdAt: pagamento.created_at,
+        updatedAt: pagamento.updated_at
       } as PagamentoResponseDto;
     });
 
@@ -150,8 +150,8 @@ export class PagamentoController {
         }
       } : undefined,
       observacoes: pagamento.observacoes,
-      createdAt: pagamento.createdAt,
-      updatedAt: pagamento.updatedAt
+      createdAt: pagamento.created_at,
+      updatedAt: pagamento.updated_at
     } as PagamentoResponseDto;
   }
 
@@ -197,8 +197,8 @@ export class PagamentoController {
       },
       quantidadeComprovantes: 0,
       observacoes: pagamento.observacoes,
-      createdAt: pagamento.createdAt,
-      updatedAt: pagamento.updatedAt
+      createdAt: pagamento.created_at,
+      updatedAt: pagamento.updated_at
     } as PagamentoResponseDto;
   }
 
@@ -245,8 +245,8 @@ export class PagamentoController {
       },
       quantidadeComprovantes: 0,
       observacoes: pagamento.observacoes,
-      createdAt: pagamento.createdAt,
-      updatedAt: pagamento.updatedAt
+      createdAt: pagamento.created_at,
+      updatedAt: pagamento.updated_at
     } as PagamentoResponseDto;
   }
 
@@ -309,8 +309,8 @@ export class PagamentoController {
         },
         quantidadeComprovantes: 0,
         observacoes: pagamento.observacoes,
-        createdAt: pagamento.createdAt,
-        updatedAt: pagamento.updatedAt
+        createdAt: pagamento.created_at,
+        updatedAt: pagamento.updated_at
       } as PagamentoResponseDto;
     });
 

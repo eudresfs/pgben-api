@@ -51,7 +51,7 @@ describe('Auditoria (Integração)', () => {
       const documentoDto = {
         nome: 'Documento de Teste',
         tipo: 'PDF',
-        solicitacao_id: 'solicitacao-123',
+        solicitacao_id: '550e8400-e29b-41d4-a716-446655440000',
       };
 
       // Act

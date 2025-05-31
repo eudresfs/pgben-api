@@ -2,6 +2,7 @@ import { DataSource } from 'typeorm';
 import { Permission } from '../../../auth/entities/permission.entity';
 import { PermissionScope } from '../../../auth/entities/permission-scope.entity';
 import { TipoEscopo } from '../../../auth/entities/user-permission.entity';
+import { Status } from '@/shared/enums/status.enum';
 
 /**
  * Script de seed para popular as permissões do módulo de benefício.
@@ -27,10 +28,10 @@ export class PermissionBeneficioSeed {
     if (!beneficioAllPermission) {
       // Inserir diretamente no banco de dados
       const result = await dataSource.query(
-        `INSERT INTO permissao (nome, descricao, modulo, acao, ativo) 
+        `INSERT INTO permissao (nome, descricao, modulo, acao, status) 
          VALUES ($1, $2, $3, $4, $5) 
          RETURNING id`,
-        ['beneficio.*', 'Todas as permissões do módulo de benefício', 'beneficio', '*', true]
+        ['beneficio.*', 'Todas as permissões do módulo de benefício', 'beneficio', '*', Status.ATIVO]
       );
       
       beneficioAllPermission = new Permission();
@@ -153,10 +154,10 @@ export class PermissionBeneficioSeed {
         
         // Inserir diretamente no banco de dados para evitar problemas com campos não existentes na entidade
         const result = await dataSource.query(
-          `INSERT INTO permissao (nome, descricao, modulo, acao, ativo) 
+          `INSERT INTO permissao (nome, descricao, modulo, acao, status) 
            VALUES ($1, $2, $3, $4, $5) 
            RETURNING id`,
-          [nome, descricao, modulo, acao, true]
+          [nome, descricao, modulo, acao, Status.ATIVO]
         );
         
         permission = new Permission();

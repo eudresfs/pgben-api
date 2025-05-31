@@ -322,7 +322,10 @@ CREATE TABLE documento (
   removed_at TIMESTAMP
 );
 
--- Tabela de documentos enviados (relação entre requisitos e documentos)
+-- TABELA REMOVIDA: documento_enviado
+-- Funcionalidade consolidada na tabela 'documento'
+-- Migração realizada em Dezembro 2024
+/*
 CREATE TABLE documento_enviado (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   solicitacao_id UUID NOT NULL REFERENCES solicitacao(id),
@@ -338,6 +341,7 @@ CREATE TABLE documento_enviado (
   
   CONSTRAINT uk_documento_requisito UNIQUE (solicitacao_id, requisito_documento_id)
 );
+*/
 ```
 
   
@@ -468,10 +472,13 @@ ALTER TABLE documento ADD CONSTRAINT fk_documento_solicitacao FOREIGN KEY (solic
 ALTER TABLE documento ADD CONSTRAINT fk_documento_uploader FOREIGN KEY (uploader_id) REFERENCES users(id);
 
 -- Documento Enviado
+-- CONSTRAINTS REMOVIDAS: documento_enviado (tabela removida)
+/*
 ALTER TABLE documento_enviado ADD CONSTRAINT fk_documento_enviado_solicitacao FOREIGN KEY (solicitacao_id) REFERENCES solicitacao(id);
 ALTER TABLE documento_enviado ADD CONSTRAINT fk_documento_enviado_requisito FOREIGN KEY (requisito_documento_id) REFERENCES requisito_documento(id);
 ALTER TABLE documento_enviado ADD CONSTRAINT fk_documento_enviado_documento FOREIGN KEY (documento_id) REFERENCES documento(id);
 ALTER TABLE documento_enviado ADD CONSTRAINT fk_documento_enviado_verificador FOREIGN KEY (verificador_id) REFERENCES users(id);
+*/
 
 -- Pendências
 ALTER TABLE pendencia ADD CONSTRAINT fk_pendencia_solicitacao FOREIGN KEY (solicitacao_id) REFERENCES solicitacao(id);
@@ -584,10 +591,12 @@ CREATE INDEX idx_dados_beneficios_tipo ON dados_beneficios(tipo_beneficio);
 CREATE INDEX idx_documento_solicitacao ON documento(solicitacao_id);
 CREATE INDEX idx_documento_uploader ON documento(uploader_id);
 
--- Índice para tabela documento_enviado
+-- ÍNDICES REMOVIDOS: documento_enviado (tabela removida)
+/*
 CREATE INDEX idx_documento_enviado_requisito ON documento_enviado(requisito_documento_id);
 CREATE INDEX idx_documento_enviado_documento ON documento_enviado(documento_id);
 CREATE INDEX idx_documento_enviado_status ON documento_enviado(status);
+*/
 
 -- Índice para tabela pendencia
 CREATE INDEX idx_pendencia_solicitacao ON pendencia(solicitacao_id);
@@ -735,7 +744,9 @@ FROM
     JOIN tipos_beneficio tb ON s.tipo_beneficio_id = tb.id
     JOIN unidade u ON s.unidade_id = u.id
     JOIN requisito_documento r ON r.tipo_beneficio_id = tb.id
-    LEFT JOIN documento_enviado de ON de.solicitacao_id = s.id AND de.requisito_documento_id = r.id
+    -- LEFT JOIN documento_enviado de ON de.solicitacao_id = s.id AND de.requisito_documento_id = r.id
+    -- NOTA: Tabela documento_enviado foi removida. Usar JOIN direto com tabela 'documento'
+    LEFT JOIN documento d ON d.solicitacao_id = s.id
 WHERE 
     s.status IN ('aberta', 'em_analise', 'pendente')
     AND r.obrigatorio = TRUE

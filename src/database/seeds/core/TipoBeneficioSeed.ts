@@ -32,12 +32,12 @@ export class TipoBeneficioSeed {
     // Lista de tipos de benefícios básicos
     const tiposBeneficiosEssenciais = [
       {
-        nome: 'Auxílio Alimentação',
-        codigo: 'AUX_ALIM',
+        nome: 'Benefício Alimentação',
+        codigo: 'BEN_ALIM',
         descricao:
           'Benefício destinado à segurança alimentar das famílias em situação de vulnerabilidade',
         valor_referencia: 150.0,
-        periodicidade: 'mensal',
+        periodicidade: 'MENSAL',
         duracao_maxima: 12,
         duracao_padrao: 6,
         teto_renda_per_capita: 0.5, // meio salário mínimo per capita
@@ -45,12 +45,12 @@ export class TipoBeneficioSeed {
         ativo: true,
       },
       {
-        nome: 'Auxílio Moradia',
-        codigo: 'AUX_MOR',
+        nome: 'Benefício Moradia',
+        codigo: 'BEN_MOR',
         descricao:
           'Benefício destinado a famílias que perderam suas residências ou estão em situação de risco habitacional',
         valor_referencia: 300.0,
-        periodicidade: 'mensal',
+        periodicidade: 'MENSAL',
         duracao_maxima: 24,
         duracao_padrao: 12,
         teto_renda_per_capita: 0.75, // 3/4 do salário mínimo per capita
@@ -58,12 +58,12 @@ export class TipoBeneficioSeed {
         ativo: true,
       },
       {
-        nome: 'Auxílio Funeral',
-        codigo: 'AUX_FUN',
+        nome: 'Benefício Funeral',
+        codigo: 'BEN_FUN',
         descricao:
           'Benefício destinado a auxiliar nas despesas funerárias de famílias em situação de vulnerabilidade',
         valor_referencia: 1100.0,
-        periodicidade: 'unico',
+        periodicidade: 'UNICA',
         duracao_maxima: 1,
         duracao_padrao: 1,
         teto_renda_per_capita: 1.0, // um salário mínimo per capita
@@ -71,12 +71,12 @@ export class TipoBeneficioSeed {
         ativo: true,
       },
       {
-        nome: 'Auxílio Natalidade',
-        codigo: 'AUX_NAT',
+        nome: 'Benefício Natalidade',
+        codigo: 'BEN_NAT',
         descricao:
           'Benefício destinado a auxiliar gestantes em situação de vulnerabilidade com despesas pré-natais e pós-parto',
         valor_referencia: 1000.0,
-        periodicidade: 'unico',
+        periodicidade: 'UNICA',
         duracao_maxima: 1,
         duracao_padrao: 1,
         teto_renda_per_capita: 1.0, // um salário mínimo per capita
@@ -84,12 +84,12 @@ export class TipoBeneficioSeed {
         ativo: true,
       },
       {
-        nome: 'Auxílio Calamidade',
-        codigo: 'AUX_CAL',
+        nome: 'Benefício Calamidade',
+        codigo: 'BEN_CAL',
         descricao:
           'Benefício destinado a famílias afetadas por desastres, calamidades ou emergências',
         valor_referencia: 1200.0,
-        periodicidade: 'unico',
+        periodicidade: 'UNICA',
         duracao_maxima: 1,
         duracao_padrao: 1,
         teto_renda_per_capita: 2.0, // dois salários mínimos per capita
@@ -110,7 +110,7 @@ export class TipoBeneficioSeed {
           // Verificar quais colunas existem e construir a query dinamicamente
           const colunas: string[] = [
             'nome', 
-            'codigo', // Adicionando o campo código que é obrigatório
+            'codigo', 
             'descricao', 
             'valor_referencia', 
             'periodicidade', 

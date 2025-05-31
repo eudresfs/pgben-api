@@ -1,0 +1,125 @@
+{
+  "$schema": "./jwt-automation.schema.json",
+  "version": "1.0.0",
+  "description": "Configuração para automação de JWT no Sistema SEMTAS PGBEN",
+  "environments": {
+    "development": {
+      "enabled": true,
+      "autoDetect": true,
+      "keySize": 2048,
+      "outputFormat": "files",
+      "envFile": ".env",
+      "createEnvIfMissing": true,
+      "backupExisting": true,
+      "validateKeys": true
+    },
+    "docker": {
+      "enabled": true,
+      "autoDetect": true,
+      "keySize": 2048,
+      "outputFormat": "compose",
+      "envFile": ".env",
+      "createOverride": true,
+      "backupExisting": true,
+      "validateKeys": true
+    },
+    "kubernetes": {
+      "enabled": true,
+      "autoDetect": true,
+      "keySize": 2048,
+      "outputFormat": "base64",
+      "namespace": "default",
+      "secretName": "pgben-jwt-secrets",
+      "createNamespace": false,
+      "backupExisting": true,
+      "validateKeys": true,
+      "validateCluster": true
+    },
+    "production": {
+      "enabled": true,
+      "autoDetect": false,
+      "keySize": 4096,
+      "outputFormat": "base64",
+      "namespace": "production",
+      "secretName": "pgben-jwt-secrets",
+      "createNamespace": false,
+      "backupExisting": true,
+      "validateKeys": true,
+      "validateCluster": true,
+      "requireConfirmation": true
+    }
+  },
+  "security": {
+    "algorithm": "RS256",
+    "minKeySize": 2048,
+    "maxKeySize": 4096,
+    "keyFormat": "PEM",
+    "privateKeyPermissions": "600",
+    "publicKeyPermissions": "644",
+    "excludeFromGit": true,
+    "validateKeyPair": true,
+    "rotationWarningDays": 90
+  },
+  "jwt": {
+    "accessTokenExpiry": "1h",
+    "refreshTokenExpiry": "7d",
+    "issuer": "pgben-server",
+    "audience": "pgben-client"
+  },
+  "paths": {
+    "keysDirectory": "keys",
+    "privateKeyFile": "private.key",
+    "publicKeyFile": "public.key",
+    "privateKeyPem": "private.pem",
+    "publicKeyPem": "public.pem",
+    "envFile": ".env",
+    "dockerOverride": "docker-compose.override.yml",
+    "gitignore": ".gitignore"
+  },
+  "logging": {
+    "level": "info",
+    "colorOutput": true,
+    "saveToFile": true,
+    "logFile": "logs/jwt-automation.log",
+    "maxLogSize": "10MB",
+    "maxLogFiles": 5
+  },
+  "validation": {
+    "checkDependencies": true,
+    "validateEnvironment": true,
+    "testKeyGeneration": true,
+    "verifyPermissions": true,
+    "checkClusterAccess": true
+  },
+  "automation": {
+    "runOnBuild": false,
+    "runOnDeploy": true,
+    "runOnStart": false,
+    "skipIfExists": true,
+    "forceRegeneration": false,
+    "confirmBeforeOverwrite": true
+  },
+  "cicd": {
+    "githubActions": {
+      "enabled": true,
+      "workflowFile": ".github/workflows/jwt-setup.yml",
+      "runOnPush": false,
+      "runOnPR": false,
+      "runOnRelease": true
+    },
+    "azureDevOps": {
+      "enabled": false,
+      "pipelineFile": "azure-pipelines.yml",
+      "runOnBuild": true,
+      "runOnDeploy": true
+    }
+  },
+  "monitoring": {
+    "enabled": true,
+    "checkKeyExpiry": true,
+    "alertBeforeExpiry": true,
+    "alertDays": 30,
+    "healthCheck": true,
+    "metricsCollection": false
+  }
+}

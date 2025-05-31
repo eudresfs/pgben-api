@@ -1,4 +1,5 @@
-import { Entity, Column, PrimaryGeneratedColumn, Index } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, Index, CreateDateColumn } from 'typeorm';
+import { IsNotEmpty, IsOptional, IsUUID, IsString, MaxLength, IsIP, IsEnum } from 'class-validator';
 
 /**
  * Níveis de alerta para métricas de segurança
@@ -24,27 +25,42 @@ export class MetricaSeguranca {
 
   @Column({ length: 100 })
   @Index('idx_metricas_seguranca_tipo')
+  @IsNotEmpty({ message: 'Tipo de evento é obrigatório' })
+  @IsString({ message: 'Tipo de evento deve ser uma string' })
+  @MaxLength(100, { message: 'Tipo de evento deve ter no máximo 100 caracteres' })
   tipo_evento: string;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @CreateDateColumn({ name: 'created_at' })
   @Index('idx_metricas_seguranca_timestamp')
-  timestamp: Date;
+  created_at: Date;
 
   @Column({ type: 'uuid', nullable: true })
   @Index('idx_metricas_seguranca_usuario')
+  @IsOptional()
+  @IsUUID('4', { message: 'ID do usuário inválido' })
   usuario_id: string;
 
   @Column({ length: 50, nullable: true })
+  @IsOptional()
+  @IsString({ message: 'Perfil do usuário deve ser uma string' })
+  @MaxLength(50, { message: 'Perfil do usuário deve ter no máximo 50 caracteres' })
   perfil_usuario: string;
 
   @Column({ length: 45, nullable: true })
   @Index('idx_metricas_seguranca_ip')
+  @IsOptional()
+  @IsIP(undefined, { message: 'IP de origem inválido' })
   ip_origem: string;
 
   @Column({ type: 'text', nullable: true })
+  @IsOptional()
+  @IsString({ message: 'User agent deve ser uma string' })
   user_agent: string;
 
   @Column({ length: 255, nullable: true })
+  @IsOptional()
+  @IsString({ message: 'Endpoint deve ser uma string' })
+  @MaxLength(255, { message: 'Endpoint deve ter no máximo 255 caracteres' })
   endpoint: string;
 
   @Column({ type: 'jsonb', nullable: true })
@@ -59,5 +75,6 @@ export class MetricaSeguranca {
     default: NivelAlertaEnum.INFO
   })
   @Index('idx_metricas_seguranca_nivel')
+  @IsEnum(NivelAlertaEnum, { message: 'Nível de alerta inválido' })
   nivel: NivelAlertaEnum;
 }

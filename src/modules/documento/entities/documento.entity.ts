@@ -20,24 +20,46 @@ import {
   IsDate,
 } from 'class-validator';
 import { Solicitacao } from '../../solicitacao/entities/solicitacao.entity';
+import { Usuario } from '../../usuario/entities/usuario.entity';
+import { Cidadao } from '../../cidadao/entities/cidadao.entity';
 import { TipoDocumento } from '../../beneficio/entities/requisito-documento.entity';
 
+/**
+ * Entidade Documento
+ * 
+ * Representa documentos anexados pelos cidadãos, podendo estar vinculados
+ * a uma solicitação específica ou serem documentos gerais reutilizáveis.
+ * Todos os documentos são sempre vinculados a um cidadão.
+ */
 @Entity('documentos')
-@Index(['solicitacao_id', 'tipo'])
-@Index(['usuario_upload'])
+@Index(['cidadao_id'])
+@Index(['solicitacao_id'])
+@Index(['tipo'])
+@Index(['usuario_upload_id'])
 @Index(['data_upload'])
 @Index(['verificado'])
+@Index(['reutilizavel'])
 export class Documento {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column()
-  @IsNotEmpty({ message: 'Solicitação é obrigatória' })
-  solicitacao_id: string;
+  @Column({ nullable: true })
+  @IsOptional()
+  @IsUUID('4', { message: 'ID da solicitação deve ser um UUID válido' })
+  solicitacao_id?: string;
 
-  @ManyToOne(() => Solicitacao, (solicitacao) => solicitacao.documentos)
+  @ManyToOne(() => Solicitacao, (solicitacao) => solicitacao.documentos, { nullable: true })
   @JoinColumn({ name: 'solicitacao_id' })
-  solicitacao: Solicitacao;
+  solicitacao?: Solicitacao;
+
+  @Column()
+  @IsNotEmpty({ message: 'Cidadão é obrigatório' })
+  @IsUUID('4', { message: 'ID do cidadão deve ser um UUID válido' })
+  cidadao_id: string;
+
+  @ManyToOne(() => Cidadao, { nullable: false })
+  @JoinColumn({ name: 'cidadao_id' })
+  cidadao: Cidadao;
 
   @Column({
     type: 'enum',
@@ -65,7 +87,7 @@ export class Documento {
 
   @Column({ nullable: true })
   @IsOptional()
-  descricao: string;
+  descricao?: string;
 
   @Column()
   @IsNumber({}, { message: 'Tamanho deve ser um número' })
@@ -82,12 +104,12 @@ export class Documento {
 
   @Column()
   @IsNotEmpty({ message: 'Usuário que fez upload é obrigatório' })
-  usuario_upload: string;
+  @IsUUID('4', { message: 'ID do usuário deve ser um UUID válido' })
+  usuario_upload_id: string;
 
-  // Temporariamente comentado até que a entidade User seja criada
-  // @ManyToOne(() => User)
-  // @JoinColumn({ name: 'usuario_upload' })
-  // uploader: User;
+  @ManyToOne(() => Usuario, { nullable: false })
+  @JoinColumn({ name: 'usuario_upload_id' })
+  usuario_upload: Usuario;
 
   @Column({ default: false })
   @IsBoolean()
@@ -100,50 +122,42 @@ export class Documento {
 
   @Column({ nullable: true })
   @IsOptional()
-  @IsUUID()
-  usuario_verificacao: string;
+  @IsUUID('4', { message: 'ID do usuário de verificação deve ser um UUID válido' })
+  usuario_verificacao_id?: string;
+
+  @ManyToOne(() => Usuario, { nullable: true })
+  @JoinColumn({ name: 'usuario_verificacao_id' })
+  usuario_verificacao?: Usuario;
 
   @Column({ nullable: true })
   @IsOptional()
   @IsString()
-  observacoes_verificacao: string;
+  observacoes_verificacao?: string;
+
+  @Column({ default: false })
+  @IsBoolean()
+  reutilizavel: boolean;
+
+  @Column({ nullable: true })
+  @IsOptional()
+  @IsString()
+  hash_arquivo?: string;
+
+  @Column({ nullable: true, type: 'date' })
+  @IsOptional()
+  @IsDate()
+  data_validade?: Date;
 
   @Column('jsonb', { nullable: true })
-  metadados: {
-    hash?: string;
-    validade?: Date | string;
-    verificado?: boolean;
-    observacoes?: string;
-    criptografado?: boolean;
-    criptografia?: {
-      iv: string;
-      authTag: string;
-      algoritmo: string;
-    };
+  metadados?: {
     deteccao_mime?: {
       mime_declarado: string;
       mime_detectado: string;
       extensao_detectada: string;
     };
     upload_info?: {
-      data: string;
-      usuario_id: string;
       ip: string;
       user_agent: string;
-    };
-    verificacao?: {
-      data: string;
-      usuario_id: string;
-      observacoes: string;
-    };
-    verificacao_malware?: {
-      verificado_em?: string;
-      resultado?: string;
-      detalhes?: string;
-    };
-    ultima_atualizacao?: {
-      data: string;
-      usuario_id: string;
     };
   };
 

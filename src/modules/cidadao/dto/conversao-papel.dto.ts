@@ -1,7 +1,7 @@
 import { IsNotEmpty, IsString, Length, Validate, IsUUID, IsOptional, IsEnum, ValidateNested, IsNumber, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 import { CPFValidator } from '../validators/cpf-validator';
-import { Parentesco } from '../enums/parentesco.enum';
+import { ParentescoEnum } from '../enums/parentesco.enum';
 import { EscolaridadeEnum } from '../enums/escolaridade.enum';
 import { Sexo } from '../enums/sexo.enum'; 
 
@@ -88,8 +88,8 @@ export class DadosComposicaoFamiliarDto {
   escolaridade: EscolaridadeEnum;
 
   @IsNotEmpty({ message: 'Parentesco é obrigatório' })
-  @IsEnum(Parentesco, { message: 'Parentesco inválido' })
-  parentesco: Parentesco;
+  @IsEnum(ParentescoEnum, { message: 'Parentesco inválido' })
+  parentesco: ParentescoEnum;
 
   @IsOptional()
   @IsNumber({}, { message: 'Renda deve ser um número' })

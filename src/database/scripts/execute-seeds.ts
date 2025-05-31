@@ -3,7 +3,6 @@ import { config } from 'dotenv';
 import { AppDataSource } from '../../data-source';
 import { CoreSeedRunner } from '../seeds/core/CoreSeedRunner';
 import { ReferenceSeedRunner } from '../seeds/reference/ReferenceSeedRunner';
-import { DevelopmentSeedRunner } from '../seeds/development/DevelopmentSeedRunner';
 
 // Carrega as variáveis de ambiente
 config();
@@ -31,11 +30,6 @@ async function main() {
 
     // Executa os seeds de referência
     await ReferenceSeedRunner.run(AppDataSource);
-
-    // Executa os seeds de desenvolvimento apenas em ambientes não produtivos
-    if (process.env.NODE_ENV !== 'production') {
-      await DevelopmentSeedRunner.run(AppDataSource);
-    }
 
     console.log('======================================================');
     console.log('Todos os seeds foram executados com sucesso!');

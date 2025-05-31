@@ -79,7 +79,7 @@ export class ModeloDocumentoSeed {
     ];
 
     // Inserção dos modelos de documentos no banco de dados
-    for (const modelo of modelosDocumentos) {
+  /*   for (const modelo of modelosDocumentos) {
       // Buscar o ID da categoria pelo nome
       const categoriaResult = await dataSource.query(
         `SELECT id FROM categoria_documento WHERE nome = $1`,
@@ -147,7 +147,7 @@ export class ModeloDocumentoSeed {
           ],
         );
       }
-    }
+    } */
 
     console.log('Seed de modelos de documentos de referência concluído');
   }

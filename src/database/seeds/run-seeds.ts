@@ -7,7 +7,6 @@
 import { AppDataSource } from './seed-source';
 import { CoreSeedRunner } from './core/CoreSeedRunner';
 import { ReferenceSeedRunner } from './reference/ReferenceSeedRunner';
-import { DevelopmentSeedRunner } from './development/DevelopmentSeedRunner';
 
 async function runSeeds() {
   try {
@@ -20,12 +19,6 @@ async function runSeeds() {
     
     console.log('\n===== EXECUTANDO SEEDS DE REFERÊNCIA =====');
     await ReferenceSeedRunner.run(AppDataSource);
-    
-    // Executar seeds de desenvolvimento apenas em ambiente não-produtivo
-    if (process.env.NODE_ENV !== 'production') {
-      console.log('\n===== EXECUTANDO SEEDS DE DESENVOLVIMENTO =====');
-      await DevelopmentSeedRunner.run(AppDataSource);
-    }
     
     console.log('\n===== TODOS OS SEEDS FORAM EXECUTADOS COM SUCESSO =====');
   } catch (error) {

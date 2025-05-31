@@ -3,6 +3,8 @@ import {
   NotFoundException,
   BadRequestException,
   UnauthorizedException,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -11,6 +13,8 @@ import {
   StatusNotificacaoProcessamento,
   TipoNotificacao,
 } from '../entities/notification.entity';
+import { SseService } from './sse.service';
+import { SseNotification } from '../interfaces/sse-notification.interface';
 
 /**
  * Serviço de Notificações
@@ -23,6 +27,8 @@ export class NotificacaoService {
   constructor(
     @InjectRepository(NotificacaoSistema)
     private notificacaoRepository: Repository<NotificacaoSistema>,
+    @Inject(forwardRef(() => SseService))
+    private readonly sseService: SseService,
   ) {}
 
   /**
@@ -354,5 +360,140 @@ export class NotificacaoService {
       entidade_tipo: entidadeTipo,
       link: dados.link,
     });
+  }
+
+  /**
+   * Cria notificação e envia via SSE em tempo real
+   * @param dados Dados da notificação
+   * @returns Notificação criada
+   */
+  async criarEBroadcast(dados: {
+    destinatario_id: string;
+    tipo: TipoNotificacao | string;
+    titulo: string;
+    conteudo: string;
+    dados?: Record<string, any>;
+    entidade_relacionada_id?: string;
+    entidade_tipo?: string;
+    link?: string;
+    prioridade?: 'low' | 'medium' | 'high';
+  }): Promise<NotificacaoSistema> {
+    // Cria a notificação no banco de dados
+    const notificacao = await this.criar({
+      destinatario_id: dados.destinatario_id,
+      tipo: dados.tipo as TipoNotificacao,
+      titulo: dados.titulo,
+      conteudo: dados.conteudo,
+      entidade_relacionada_id: dados.entidade_relacionada_id,
+      entidade_tipo: dados.entidade_tipo,
+      link: dados.link,
+    });
+
+    // Envia via SSE se o usuário estiver conectado
+    const sseNotification: SseNotification = {
+      id: notificacao.id,
+      userId: notificacao.destinatario_id,
+      type: dados.tipo as TipoNotificacao,
+      title: dados.titulo,
+      message: dados.conteudo,
+      data: notificacao.dados_contexto,
+      timestamp: notificacao.created_at,
+      priority: dados.prioridade ?? 'medium',
+    };
+
+    this.sseService.sendToUser(notificacao.destinatario_id, sseNotification);
+
+    return notificacao;
+  }
+
+  /**
+   * Envia notificação em massa via SSE
+   * @param userIds Lista de IDs dos usuários
+   * @param dados Dados da notificação
+   * @returns Lista de notificações criadas
+   */
+  async broadcastParaUsuarios(
+    userIds: string[],
+    dados: {
+      tipo: TipoNotificacao | string;
+      titulo: string;
+      conteudo: string;
+      dados?: Record<string, any>;
+      entidade_relacionada_id?: string;
+      entidade_tipo?: string;
+      link?: string;
+      prioridade?: 'low' | 'medium' | 'high';
+    }
+  ): Promise<NotificacaoSistema[]> {
+    // Cria notificações no banco para todos os usuários
+    const notificacoes = await Promise.all(
+      userIds.map(userId =>
+        this.criar({
+          destinatario_id: userId,
+          tipo: dados.tipo as TipoNotificacao,
+          titulo: dados.titulo,
+          conteudo: dados.conteudo,
+          entidade_relacionada_id: dados.entidade_relacionada_id,
+          entidade_tipo: dados.entidade_tipo,
+          link: dados.link,
+        })
+      )
+    );
+
+    // Envia via SSE para usuários conectados
+    const sseNotification = {
+      id: `broadcast-${Date.now()}`, // ID único para broadcast
+      type: dados.tipo as TipoNotificacao,
+      title: dados.titulo,
+      message: dados.conteudo,
+      data: dados.dados,
+      timestamp: new Date(),
+      priority: dados.prioridade ?? 'medium',
+    };
+
+    this.sseService.sendToUsers(userIds, sseNotification);
+
+    return notificacoes;
+  }
+
+  /**
+   * Envia notificação broadcast para todos os usuários conectados
+   * @param dados Dados da notificação
+   */
+  async broadcastGeral(dados: {
+    tipo: TipoNotificacao | string;
+    titulo: string;
+    conteudo: string;
+    dados?: Record<string, any>;
+    prioridade?: 'low' | 'medium' | 'high';
+  }): Promise<void> {
+    const sseNotification = {
+      id: `broadcast-geral-${Date.now()}`,
+      type: dados.tipo as TipoNotificacao,
+      title: dados.titulo,
+      message: dados.conteudo,
+      data: dados.dados,
+      timestamp: new Date(),
+      priority: dados.prioridade ?? 'medium',
+    };
+
+    this.sseService.broadcastToAll(sseNotification);
+  }
+
+  /**
+   * Verifica se um usuário tem conexões SSE ativas
+   * @param userId ID do usuário
+   * @returns true se o usuário está conectado via SSE
+   */
+  isUserConnectedSSE(userId: string): boolean {
+    return this.sseService.hasActiveConnections(userId);
+  }
+
+  /**
+   * Obtém estatísticas das conexões SSE
+   * @returns Estatísticas das conexões
+   */
+  getSSEStats() {
+    return this.sseService.getConnectionStats();
   }
 }

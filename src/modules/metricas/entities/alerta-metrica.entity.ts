@@ -1,4 +1,5 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn, Index } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, Index, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { IsNotEmpty, IsUUID, IsOptional, IsNumber, Min, IsEnum, IsString } from 'class-validator';
 import { Metrica } from './metrica.entity';
 import { NivelAlertaEnum } from './metrica-seguranca.entity';
 
@@ -14,32 +15,41 @@ export class AlertaMetrica {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column()
-  @Index('idx_alertas_metricas_metrica')
+  @Column({ type: 'uuid' })
+  @Index('idx_alertas_metricas_metrica_id')
+  @IsNotEmpty({ message: 'ID da métrica é obrigatório' })
+  @IsUUID('4', { message: 'ID da métrica inválido' })
   metrica_id: string;
 
   @ManyToOne(() => Metrica)
   @JoinColumn({ name: 'metrica_id' })
   metrica: Metrica;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @CreateDateColumn({ name: 'created_at' })
   @Index('idx_alertas_metricas_timestamp')
-  timestamp: Date;
+  created_at: Date;
 
   @Column({
     type: 'enum',
     enum: NivelAlertaEnum
   })
   @Index('idx_alertas_metricas_nivel')
+  @IsEnum(NivelAlertaEnum, { message: 'Nível de alerta inválido' })
   nivel: NivelAlertaEnum;
 
   @Column({ type: 'numeric', precision: 15, scale: 2 })
+  @IsNotEmpty({ message: 'Valor atual é obrigatório' })
+  @IsNumber({}, { message: 'Valor atual deve ser um número' })
   valor_atual: number;
 
   @Column({ type: 'numeric', precision: 15, scale: 2 })
+  @IsNotEmpty({ message: 'Limiar violado é obrigatório' })
+  @IsNumber({}, { message: 'Limiar violado deve ser um número' })
   limiar_violado: number;
 
-  @Column({ type: 'text' })
+  @Column({ type: 'text', nullable: true })
+  @IsOptional()
+  @IsString({ message: 'Mensagem deve ser uma string' })
   mensagem: string;
 
   @Column({ type: 'jsonb', nullable: true })

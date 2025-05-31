@@ -435,7 +435,7 @@ export class NotificationManagerService implements OnModuleInit {
       // Buscar todas as notificações pendentes antigas que não foram processadas
       const notificacoesPendentes = await this.notificacaoRepository.find({
         where: { status: StatusNotificacaoProcessamento.PENDENTE },
-        order: { criado_em: 'ASC' },
+        order: { created_at: 'ASC' },
       });
 
       this.logger.log(
@@ -493,7 +493,7 @@ export class NotificationManagerService implements OnModuleInit {
             data_agendamento: LessThanOrEqual(agora),
           },
         ],
-        order: { criado_em: 'ASC' },
+        order: { created_at: 'ASC' },
         take: 50, // Limitar quantidade para não sobrecarregar
       });
 

@@ -1425,39 +1425,30 @@ export class Documento {
 }
 ```
 
-### 4.2.17 Entidade DocumentoEnviado
+### 4.2.17 Entidade DocumentoEnviado (REMOVIDA)
 
-```plain
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  CreateDateColumn,
-  UpdateDateColumn,
-  DeleteDateColumn,
-  ManyToOne,
-  JoinColumn,
-  Unique
-} from 'typeorm';
-import { Solicitacao } from '../solicitacao/entities/solicitacao.entity';
-import { RequisitoDocumento } from '../beneficio/entities/requisito-documento.entity';
-import { Documento } from './documento.entity';
-import { User } from '../users/entities/user.entity';
+> **NOTA IMPORTANTE**: A entidade `DocumentoEnviado` foi removida e sua funcionalidade foi consolidada na entidade `Documento`. 
+> Os campos de controle de status, verificação e relacionamentos foram integrados diretamente na entidade `Documento` 
+> através do campo `metadados` (JSONB) e campos específicos como `status`, `data_verificacao`, etc.
 
-export enum StatusDocumentoEnum {
-  ENVIADO = 'enviado',
-  APROVADO = 'aprovado',
-  REJEITADO = 'rejeitado',
-}
+**Migração realizada em**: Dezembro 2024  
+**Motivo**: Simplificação da arquitetura e eliminação de redundância de dados.
 
-@Entity('documento_enviado')
-@Unique(['solicitacao_id', 'requisito_documento_id'])
-export class DocumentoEnviado {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+**Campos migrados para a entidade Documento**:
+- Status do documento → `Documento.status`
+- Data de verificação → `Documento.data_verificacao` 
+- Usuário verificador → `Documento.usuario_verificacao`
+- Observações → `Documento.observacoes_verificacao`
+- Metadados adicionais → `Documento.metadados` (JSONB)
 
-  @Column()
-  solicitacao_id: string;
+```typescript
+// ANTES (DocumentoEnviado - REMOVIDA)
+// @Entity('documento_enviado')
+// export class DocumentoEnviado {
+//   @PrimaryGeneratedColumn('uuid')
+//   id: string;
+//   @Column()
+//   solicitacao_id: string;
 
   @ManyToOne(() => Solicitacao, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'solicitacao_id' })

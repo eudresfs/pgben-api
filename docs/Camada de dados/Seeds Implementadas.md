@@ -124,7 +124,7 @@ Para completar o conjunto de seeds para o sistema, seria necessário implementar
 
 1. **CidadaoSeed**: Cidadãos e beneficiários
 2. **SolicitacaoSeed**: Solicitações de benefícios
-3. **DocumentoEnviadoSeed**: Documentos enviados para solicitações
+3. **DocumentoEnviadoSeed**: ~~Documentos enviados para solicitações~~ (REMOVIDO - funcionalidade consolidada na entidade Documento)
 4. **HistoricoSolicitacaoSeed**: Histórico de solicitações
 
 Estas seeds dependeriam de dados mais complexos e específicos do domínio, que poderiam ser implementados em uma fase posterior do projeto, conforme necessidade.

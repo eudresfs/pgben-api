@@ -7,4 +7,6 @@ export enum SituacaoTrabalhoEnum {
    PENSIONISTA = 'pensionista',
    BENEFICIARIO_BPC = 'beneficiario_bpc',
    OUTRO = 'outro',
+   ESTUDANTE = "estudante",
+   DO_LAR = "do_lar",
  }

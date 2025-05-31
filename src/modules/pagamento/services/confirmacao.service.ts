@@ -72,11 +72,11 @@ export class ConfirmacaoService {
 
     // Criar nova confirmação
     const confirmacao = this.confirmacaoRepository.create({
-      pagamentoId,
-      dataConfirmacao: createDto.dataConfirmacao,
-      metodoConfirmacao: createDto.metodoConfirmacao,
-      confirmadoPor: usuarioId,
-      destinatarioId: createDto.destinatarioId,
+      pagamento_id: pagamentoId,
+      data_confirmacao: createDto.dataConfirmacao,
+      metodo_confirmacao: createDto.metodoConfirmacao,
+      confirmado_por: usuarioId,
+      destinatario_id: createDto.destinatarioId,
       observacoes: createDto.observacoes
     });
 
@@ -121,8 +121,8 @@ export class ConfirmacaoService {
    */
   async findByPagamento(pagamentoId: string): Promise<ConfirmacaoRecebimento[]> {
     return this.confirmacaoRepository.find({
-      where: { pagamentoId },
-      order: { dataConfirmacao: 'DESC' }
+      where: { pagamento_id: pagamentoId },
+      order: { data_confirmacao: 'DESC' }
     });
   }
 
@@ -147,7 +147,7 @@ export class ConfirmacaoService {
    */
   async temConfirmacao(pagamentoId: string): Promise<boolean> {
     const count = await this.confirmacaoRepository.count({
-      where: { pagamentoId }
+      where: { pagamento_id: pagamentoId }
     });
     
     return count > 0;

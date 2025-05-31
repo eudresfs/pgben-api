@@ -798,15 +798,16 @@ export class CidadaoService {
         }
       }
 
-      // Extrair papéis do DTO para processar separadamente
-      const { papeis, ...cidadaoData } = createCidadaoDto;
+      // Extrair papéis e composição familiar do DTO para processar separadamente
+      const { papeis, composicao_familiar, ...cidadaoData } = createCidadaoDto;
 
       // Criar o cidadão
-      const cidadaoCriado = await this.cidadaoRepository.create({
+      const dadosParaCriacao = {
         ...cidadaoData,
         cpf: cpfLimpo,
-        nis: nisLimpo || undefined,
-      });
+        ...(nisLimpo && { nis: nisLimpo }),
+      };
+      const cidadaoCriado = await this.cidadaoRepository.create(dadosParaCriacao);
 
       // Criar papéis para o cidadão, se fornecidos
       if (papeis && papeis.length > 0) {

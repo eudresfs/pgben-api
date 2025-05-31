@@ -39,15 +39,15 @@ export class ConfirmacaoController {
     // Mapear para DTO de resposta
     return confirmacoes.map(confirmacao => ({
       id: confirmacao.id,
-      pagamentoId: confirmacao.pagamentoId,
-      dataConfirmacao: confirmacao.dataConfirmacao,
-      metodoConfirmacao: confirmacao.metodoConfirmacao,
+      pagamentoId: confirmacao.pagamento_id,
+      dataConfirmacao: confirmacao.data_confirmacao,
+      metodoConfirmacao: confirmacao.metodo_confirmacao,
       responsavel: {
-        id: confirmacao.confirmadoPor,
+        id: confirmacao.confirmado_por,
         nome: 'Responsável Confirmação' // seria obtido da entidade Usuario
       },
-      destinatario: confirmacao.destinatarioId ? {
-        id: confirmacao.destinatarioId,
+      destinatario: confirmacao.destinatario_id ? {
+        id: confirmacao.destinatario_id,
         nome: 'Nome do Destinatário' // seria obtido da entidade Cidadao
       } : undefined,
       observacoes: confirmacao.observacoes
@@ -76,15 +76,15 @@ export class ConfirmacaoController {
     // Mapear para DTO de resposta
     return {
       id: confirmacao.id,
-      pagamentoId: confirmacao.pagamentoId,
-      dataConfirmacao: confirmacao.dataConfirmacao,
-      metodoConfirmacao: confirmacao.metodoConfirmacao,
+      pagamentoId: confirmacao.pagamento_id,
+      dataConfirmacao: confirmacao.data_confirmacao,
+      metodoConfirmacao: confirmacao.metodo_confirmacao,
       responsavel: {
-        id: confirmacao.confirmadoPor,
+        id: confirmacao.confirmado_por,
         nome: 'Responsável Confirmação' // seria obtido da entidade Usuario
       },
-      destinatario: confirmacao.destinatarioId ? {
-        id: confirmacao.destinatarioId,
+      destinatario: confirmacao.destinatario_id ? {
+        id: confirmacao.destinatario_id,
         nome: 'Nome do Destinatário' // seria obtido da entidade Cidadao
       } : undefined,
       pagamento: confirmacao.pagamento ? {
@@ -127,15 +127,15 @@ export class ConfirmacaoController {
     // Mapear para DTO de resposta
     return {
       id: confirmacao.id,
-      pagamentoId: confirmacao.pagamentoId,
-      dataConfirmacao: confirmacao.dataConfirmacao,
-      metodoConfirmacao: confirmacao.metodoConfirmacao,
+      pagamentoId: confirmacao.pagamento_id,
+      dataConfirmacao: confirmacao.data_confirmacao,
+      metodoConfirmacao: confirmacao.metodo_confirmacao,
       responsavel: {
         id: usuarioId,
         nome: 'Responsável Confirmação' // seria obtido da entidade Usuario
       },
-      destinatario: confirmacao.destinatarioId ? {
-        id: confirmacao.destinatarioId,
+      destinatario: confirmacao.destinatario_id ? {
+        id: confirmacao.destinatario_id,
         nome: 'Nome do Destinatário' // seria obtido da entidade Cidadao
       } : undefined,
       observacoes: confirmacao.observacoes

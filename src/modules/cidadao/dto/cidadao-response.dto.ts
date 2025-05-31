@@ -2,9 +2,9 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Expose, Transform, Type } from 'class-transformer';
 import { Sexo } from '../enums/sexo.enum';
 import { PapelCidadaoResponseDto } from './papel-cidadao-response.dto';
-import { Parentesco } from '../enums/parentesco.enum';
+import { ParentescoEnum } from '../enums/parentesco.enum';
 
-export class ComposicaoFamiliarResponseDto {
+export class CidadaoComposicaoFamiliarDto {
   @ApiProperty({
     example: '550e8400-e29b-41d4-a716-446655440000',
     description: 'ID único da composição familiar',
@@ -27,13 +27,13 @@ export class ComposicaoFamiliarResponseDto {
   cpf: string;
 
   @ApiProperty({
-    enum: Parentesco,
+    enum: ParentescoEnum,
     enumName: 'Parentesco',
-    example: Parentesco.FILHO,
+    example: ParentescoEnum.FILHO,
     description: 'Parentesco com o cidadão',
   })
   @Expose()
-  parentesco: Parentesco;
+  parentesco: ParentescoEnum;
 
   @ApiProperty({
     example: 25,
@@ -462,12 +462,12 @@ export class CidadaoResponseDto {
   papeis?: PapelCidadaoResponseDto[];
 
   @ApiPropertyOptional({
-    type: [ComposicaoFamiliarResponseDto],
+    type: [CidadaoComposicaoFamiliarDto],
     description: 'Composição familiar do cidadão',
   })
   @Expose()
-  @Type(() => ComposicaoFamiliarResponseDto)
-  composicao_familiar?: ComposicaoFamiliarResponseDto[];
+  @Type(() => CidadaoComposicaoFamiliarDto)
+  composicao_familiar?: CidadaoComposicaoFamiliarDto[];
 }
 
 export class CidadaoPaginatedResponseDto {

@@ -23,6 +23,7 @@ import { PermissionOcorrenciaSeed } from './permission-ocorrencia.seed';
 import { PermissionPagamentoSeed } from './permission-pagamento.seed';
 import { PermissionRecursoSeed } from './permission-recurso.seed';
 import { PermissionRelatoriosUnificadoSeed } from './permission-relatorios-unificado.seed';
+import { Status } from '../../../shared/enums/status.enum';
 
 /**
  * Seeder para permissões do sistema
@@ -90,9 +91,9 @@ export class PermissionSeeder implements Seeder {
         
         // Inserir nova permissão
         await dataSource.query(
-          `INSERT INTO permissao (nome, descricao, modulo, acao, ativo, created_at, updated_at) 
+          `INSERT INTO permissao (nome, descricao, modulo, acao, status, created_at, updated_at) 
            VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-          [rootPerm.nome, rootPerm.descricao, rootPerm.modulo, rootPerm.acao, true, new Date().toISOString(), new Date().toISOString()]
+          [rootPerm.nome, rootPerm.descricao, rootPerm.modulo, rootPerm.acao, Status.ATIVO, new Date().toISOString(), new Date().toISOString()]
         );
         
         this.logger.log(`Permissão '${rootPerm.nome}' criada com sucesso.`);
@@ -212,6 +213,7 @@ export class PermissionSeeder implements Seeder {
         permission.descricao = row.descricao;
         permission.modulo = row.modulo;
         permission.acao = row.acao;
+        permission.status = row.status ? Status.ATIVO : Status.INATIVO;
         permission.created_at = row.created_at;
         permission.updated_at = row.updated_at;
         return permission;
@@ -224,9 +226,9 @@ export class PermissionSeeder implements Seeder {
       
       // Inserir nova permissão diretamente no banco de dados
       const result = await dataSource.query(
-        `INSERT INTO permissao (nome, descricao, modulo, acao, ativo) 
+        `INSERT INTO permissao (nome, descricao, modulo, acao, status) 
          VALUES ($1, $2, $3, $4, $5) 
-         RETURNING id, nome, descricao, modulo, acao, created_at, updated_at`,
+         RETURNING id, nome, descricao, modulo, acao, status, created_at, updated_at`,
         [nome, descricao, modulo, acao, true]
       );
       
@@ -242,6 +244,7 @@ export class PermissionSeeder implements Seeder {
       permission.descricao = row.descricao;
       permission.modulo = row.modulo;
       permission.acao = row.acao;
+      permission.status = row.status ? Status.ATIVO : Status.INATIVO;
       permission.created_at = row.created_at;
       permission.updated_at = row.updated_at;
       return permission;

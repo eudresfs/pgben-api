@@ -1,15 +1,10 @@
 /**
  * Interface para metadados de documentos
  *
- * Define a estrutura dos metadados que podem ser armazenados
+ * Define a estrutura simplificada dos metadados que podem ser armazenados
  * junto com os documentos no sistema
  */
 export interface MetadadosDocumento {
-  /**
-   * Indica se o documento contém dados sensíveis
-   */
-  sensivel?: boolean;
-
   /**
    * Título do documento
    */
@@ -36,129 +31,75 @@ export interface MetadadosDocumento {
   tags?: string[];
 
   /**
-   * Indica se o documento está criptografado
+   * Categoria do documento
    */
-  criptografado?: boolean;
+  categoria?: string;
 
   /**
-   * Dados de criptografia
-   */
-  criptografia?: {
-    iv: string;
-    authTag: string;
-    algoritmo: string;
-  };
-  
-  /**
-   * Vetor de inicialização para criptografia (legado)
-   */
-  iv?: string;
-
-  /**
-   * Tag de autenticação para criptografia (legado)
-   */
-  authTag?: string;
-
-  /**
-   * Hash do conteúdo do documento (para verificação de integridade)
-   */
-  hash?: string;
-
-  /**
-   * Data de validade do documento
-   */
-  validade?: string;
-
-  /**
-   * Indica se o documento foi verificado por um usuário autorizado
-   */
-  verificado?: boolean;
-
-  /**
-   * Observações sobre o documento
+   * Observações adicionais
    */
   observacoes?: string;
 
   /**
-   * Versão do esquema de metadados
+   * Dados técnicos do arquivo
    */
-  schema_version?: string;
+  arquivo?: {
+    /**
+     * Tamanho original do arquivo em bytes
+     */
+    tamanho_original?: number;
 
-  /**
-   * Localização geográfica onde o documento foi criado
-   */
-  localizacao?: {
-    latitude?: number;
-    longitude?: number;
-    endereco?: string;
-  };
+    /**
+     * Hash do arquivo para verificação de integridade
+     */
+    hash?: string;
 
-  /**
-   * Dispositivo usado para criar o documento
-   */
-  dispositivo?: {
-    tipo?: string;
-    sistema_operacional?: string;
-    navegador?: string;
-  };
+    /**
+     * Resolução da imagem (se aplicável)
+     */
+    resolucao?: {
+      largura: number;
+      altura: number;
+    };
 
-  /**
-   * Informações de verificação de malware
-   */
-  verificacao_malware?: {
-    verificado_em?: string;
-    resultado?: 'limpo' | 'infectado' | 'suspeito' | string;
-    detalhes?: string;
-  };
-  
-  /**
-   * Informações de upload
-   */
-  upload_info?: {
-    data: string;
-    usuario_id: string;
-    ip: string;
-    user_agent: string;
-  };
-  
-  /**
-   * Informações de detecção de tipo MIME
-   */
-  deteccao_mime?: {
-    mime_declarado: string;
-    mime_detectado: string;
-    extensao_detectada: string;
-  };
-  
-  /**
-   * Informações de verificação do documento
-   */
-  verificacao?: {
-    data: string;
-    usuario_id: string;
-    observacoes: string;
-  };
-  
-  /**
-   * Informações de última atualização
-   */
-  ultima_atualizacao?: {
-    data: string;
-    usuario_id: string;
+    /**
+     * Duração do vídeo/áudio (se aplicável)
+     */
+    duracao?: number;
   };
 
   /**
-   * Informações sobre miniaturas geradas
+   * Metadados customizados específicos do tipo de documento
    */
-  miniaturas?: {
-    pequena?: string;
-    media?: string;
-    grande?: string;
-    gerado_em?: string;
-  };
+  customizados?: Record<string, any>;
+}
 
-  /**
-   * Campos personalizados específicos para cada tipo de documento
-   */
-  campos_personalizados?: Record<string, any>;
+/**
+ * Interface para resultado de validação de metadados
+ */
+export interface MetadadosValidationResult {
+  isValid: boolean;
+  message: string;
+  errors?: string[];
+}
+
+/**
+ * Tipos de categoria de documentos
+ */
+export enum CategoriaDocumento {
+  DOCUMENTOS = 'DOCUMENTOS',
+  IMAGENS = 'IMAGENS',
+  PLANILHAS = 'PLANILHAS',
+  TEXTO = 'TEXTO',
+}
+
+/**
+ * Tipos de documento suportados
+ */
+export enum TipoDocumento {
+  RG = 'RG',
+  CPF = 'CPF',
+  COMPROVANTE_RESIDENCIA = 'COMPROVANTE_RESIDENCIA',
+  COMPROVANTE_RENDA = 'COMPROVANTE_RENDA',
+  OUTROS = 'OUTROS',
 }

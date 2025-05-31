@@ -1,0 +1,82 @@
+services:
+  # Sobrescreve as configurações do serviço api para desenvolvimento
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev  # Usa o Dockerfile de desenvolvimento
+    container_name: ${COMPOSE_PROJECT_NAME}_api
+    environment:
+      NODE_ENV: development
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_USER: ${DB_USER:-postgres}
+      DATABASE_PASSWORD: ${DB_PASS:-postgres}
+      DATABASE_NAME: ${DB_NAME:-pgben}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+      ENCRYPTION_KEY: "${ENCRYPTION_KEY}"
+      MAIL_HOST: mailhog
+      MAIL_PORT: 1025
+      RUN_MIGRATIONS: "true"
+      RUN_SEEDS: "false"
+    volumes:
+      - .:/app                # Monta o código fonte para permitir hot reload
+      - /app/node_modules     # Volume anônimo para não sobrescrever node_modules
+    ports:
+      - "13000:3000"          # Usando porta alternativa 13000 para a API
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:13000/api/v1/health"]
+      interval: 10s           # Verificação mais frequente em desenvolvimento
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - pgben_network
+
+  # Expõe todas as portas localmente para facilitar o desenvolvimento
+  postgres:
+    container_name: ${COMPOSE_PROJECT_NAME}_postgres
+    ports:
+      - "15432:5432"          # Usando porta alternativa 15432 para PostgreSQL
+
+  redis:
+    container_name: ${COMPOSE_PROJECT_NAME}_redis
+    ports:
+      - "16379:6379"          # Usando porta alternativa 16379 para Redis
+
+  minio:
+    container_name: ${COMPOSE_PROJECT_NAME}_minio
+    ports:
+      - "19000:9000"          # Usando porta alternativa 19000 para MinIO API
+      - "19001:9001"          # Usando porta alternativa 19001 para MinIO Console
+
+  mailhog:
+    container_name: ${COMPOSE_PROJECT_NAME}_mailhog
+    ports:
+      - "11025:1025"          # Usando porta alternativa 11025 para SMTP
+      - "18025:8025"          # Usando porta alternativa 18025 para Interface web
+      
+  createbuckets:
+    container_name: ${COMPOSE_PROJECT_NAME}_createbuckets
+
+# Configuração de volumes e redes
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:
+
+networks:
+  pgben_network:
+    name: ${COMPOSE_PROJECT_NAME}_network

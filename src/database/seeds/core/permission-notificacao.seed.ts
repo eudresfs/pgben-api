@@ -2,6 +2,7 @@ import { DataSource } from 'typeorm';
 import { Permission } from '../../../auth/entities/permission.entity';
 import { PermissionScope } from '../../../auth/entities/permission-scope.entity';
 import { Logger } from '@nestjs/common';
+import { Status } from '@/shared/enums/status.enum';
 
 /**
  * Seed de permissões para o módulo de notificações
@@ -73,14 +74,14 @@ export class PermissionNotificacaoSeed {
     
     // Inserir permissão composta
     await dataSource.query(
-      `INSERT INTO permissao (nome, descricao, modulo, acao, ativo) 
+      `INSERT INTO permissao (nome, descricao, modulo, acao, status) 
        VALUES ($1, $2, $3, $4, $5)`,
       [
         'notificacao.*',
         'Todas as permissões do módulo de notificações',
         'notificacao',
         '*',
-        true
+        Status.ATIVO
       ]
     );
     
@@ -259,10 +260,10 @@ export class PermissionNotificacaoSeed {
       
       // Inserir nova permissão
       const result = await dataSource.query(
-        `INSERT INTO permissao (nome, descricao, modulo, acao, ativo) 
+        `INSERT INTO permissao (nome, descricao, modulo, acao, status) 
          VALUES ($1, $2, $3, $4, $5) 
          RETURNING id`,
-        [nome, descricao, 'notificacao', acao, true]
+        [nome, descricao, 'notificacao', acao, Status.ATIVO]
       );
       
       if (!result || result.length === 0) {
