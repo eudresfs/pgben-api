@@ -9,7 +9,7 @@ import { Repository } from 'typeorm';
 import { CampoDinamicoBeneficio } from '../../../entities/campo-dinamico-beneficio.entity';
 import { TipoBeneficio } from '../../../entities/tipo-beneficio.entity';
 import { CreateCampoDinamicoDto } from '../dto/create-campo-dinamico.dto';
-import { VersaoSchemaBeneficio } from '../../../entities/versao-schema-beneficio.entity';
+import { TipoBeneficioSchema } from '../../../entities/tipo-beneficio-schema.entity';
 
 /**
  * Serviço de Campos Dinâmicos
@@ -26,8 +26,8 @@ export class CampoDinamicoService {
     @InjectRepository(TipoBeneficio)
     private tipoBeneficioRepository: Repository<TipoBeneficio>,
 
-    @InjectRepository(VersaoSchemaBeneficio)
-    private versaoSchemaRepository: Repository<VersaoSchemaBeneficio>,
+    @InjectRepository(TipoBeneficioSchema)
+    private tipoBeneficioSchemaRepository: Repository<TipoBeneficioSchema>,
   ) {}
 
   /**
@@ -210,43 +210,157 @@ export class CampoDinamicoService {
     });
 
     // Buscar última versão do schema
-    const ultimaVersao = await this.versaoSchemaRepository.findOne({
+    const ultimaVersao = await this.tipoBeneficioSchemaRepository.findOne({
       where: { tipo_beneficio_id: tipoBeneficioId },
       order: { versao: 'DESC' },
     });
 
     const novaVersao = ultimaVersao ? ultimaVersao.versao + 1 : 1;
 
-    // Construir schema
-    const schema = campos.map((campo) => ({
-      id: campo.id,
-      label: campo.label,
-      nome: campo.nome,
-      tipo: campo.tipo,
-      obrigatorio: campo.obrigatorio,
-      descricao: campo.descricao,
-      validacoes: campo.validacoes,
-      ordem: campo.ordem,
-    }));
+    // Construir estrutura de campos
+    const camposEstrutura = campos.map((campo) => {
+      // Mapear TipoDado para os tipos aceitos por CampoEstrutura
+      let tipoMapeado: 'string' | 'number' | 'boolean' | 'date' | 'enum' | 'array';
+      switch (campo.tipo) {
+        case 'string':
+          tipoMapeado = 'string';
+          break;
+        case 'number':
+          tipoMapeado = 'number';
+          break;
+        case 'boolean':
+          tipoMapeado = 'boolean';
+          break;
+        case 'date':
+          tipoMapeado = 'date';
+          break;
+        case 'array':
+          tipoMapeado = 'array';
+          break;
+        case 'object':
+        default:
+          tipoMapeado = 'string'; // Fallback para string
+          break;
+      }
+      
+      return {
+        nome: campo.nome,
+        tipo: tipoMapeado,
+        obrigatorio: campo.obrigatorio,
+        label: campo.label,
+        descricao: campo.descricao,
+        validacoes: campo.validacoes
+      };
+    });
 
     // Desativar versões anteriores
     if (ultimaVersao) {
-      await this.versaoSchemaRepository.update(
+      await this.tipoBeneficioSchemaRepository.update(
         { tipo_beneficio_id: tipoBeneficioId },
         { ativo: false },
       );
     }
 
     // Criar nova versão
-    const novaVersaoSchema = this.versaoSchemaRepository.create({
+    const novaVersaoSchema = this.tipoBeneficioSchemaRepository.create({
       tipo_beneficio_id: tipoBeneficioId,
-      versao: novaVersao,
-      schema,
-      descricao_mudancas: `Versão ${novaVersao} - Atualização automática`,
+      entidade_dados: 'DadosDinamicos',
+      schema_estrutura: {
+        campos: camposEstrutura,
+        metadados: {
+          versao: `${novaVersao}.0.0`,
+          descricao: `Versão ${novaVersao} - Atualização automática`,
+          categoria: 'beneficio_eventual',
+          tags: ['dinamico']
+        }
+      },
+      versao: `${novaVersao}.0.0`,
       ativo: true,
     });
 
-    return this.versaoSchemaRepository.save(novaVersaoSchema);
+    return this.tipoBeneficioSchemaRepository.save(novaVersaoSchema);
+  }
+
+  /**
+   * Cria um novo schema baseado nos campos dinâmicos ativos
+   *
+   * @param tipoBeneficioId ID do tipo de benefício
+   * @returns Novo schema
+   */
+  private async criarNovoSchema(tipoBeneficioId: string) {
+    // Buscar campos dinâmicos ativos
+    const campos = await this.campoDinamicoRepository.find({
+      where: { tipo_beneficio_id: tipoBeneficioId, ativo: true },
+      order: { ordem: 'ASC' },
+    });
+
+    // Buscar schema existente
+    const schemaExistente = await this.tipoBeneficioSchemaRepository.findOne({
+      where: { tipo_beneficio_id: tipoBeneficioId },
+    });
+
+    // Desativar schema anterior se existir
+    if (schemaExistente) {
+      await this.tipoBeneficioSchemaRepository.update(
+        { tipo_beneficio_id: tipoBeneficioId },
+        { ativo: false },
+      );
+    }
+
+    // Construir estrutura de campos
+    const camposEstrutura = campos.map((campo) => {
+      // Mapear TipoDado para os tipos aceitos por CampoEstrutura
+      let tipoMapeado: 'string' | 'number' | 'boolean' | 'date' | 'enum' | 'array';
+      switch (campo.tipo) {
+        case 'string':
+          tipoMapeado = 'string';
+          break;
+        case 'number':
+          tipoMapeado = 'number';
+          break;
+        case 'boolean':
+          tipoMapeado = 'boolean';
+          break;
+        case 'date':
+          tipoMapeado = 'date';
+          break;
+        case 'array':
+          tipoMapeado = 'array';
+          break;
+        case 'object':
+        default:
+          tipoMapeado = 'string'; // Fallback para string
+          break;
+      }
+      
+      return {
+        nome: campo.nome,
+        tipo: tipoMapeado,
+        obrigatorio: campo.obrigatorio,
+        label: campo.label,
+        descricao: campo.descricao,
+        validacoes: campo.validacoes
+      };
+    });
+
+    // Criar novo schema
+    const novoSchema = this.tipoBeneficioSchemaRepository.create({
+      tipo_beneficio_id: tipoBeneficioId,
+      entidade_dados: 'DadosDinamicos',
+      schema_estrutura: {
+        campos: camposEstrutura,
+        metadados: {
+          versao: '1.0.0',
+          descricao: 'Schema gerado automaticamente a partir de campos dinâmicos',
+          categoria: 'beneficio_eventual',
+          tags: ['dinamico']
+        }
+      },
+      versao: '1.0.0',
+      ativo: true,
+    });
+
+    return this.tipoBeneficioSchemaRepository.save(novoSchema);
   }
 
   /**
@@ -267,17 +381,17 @@ export class CampoDinamicoService {
       );
     }
 
-    // Buscar versão ativa do schema
-    const versaoAtiva = await this.versaoSchemaRepository.findOne({
+    // Buscar schema ativo
+    const schemaAtivo = await this.tipoBeneficioSchemaRepository.findOne({
       where: { tipo_beneficio_id: tipoBeneficioId, ativo: true },
     });
 
-    if (!versaoAtiva) {
-      // Se não houver versão ativa, criar uma
-      return this.criarNovaVersaoSchema(tipoBeneficioId);
+    if (!schemaAtivo) {
+      // Se não houver schema ativo, criar um
+      return this.criarNovoSchema(tipoBeneficioId);
     }
 
-    return versaoAtiva;
+    return schemaAtivo;
   }
 
   /**
@@ -299,7 +413,7 @@ export class CampoDinamicoService {
     }
 
     // Buscar versões do schema
-    return this.versaoSchemaRepository.find({
+    return this.tipoBeneficioSchemaRepository.find({
       where: { tipo_beneficio_id: tipoBeneficioId },
       order: { versao: 'DESC' },
     });

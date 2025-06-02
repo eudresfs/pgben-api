@@ -2,7 +2,7 @@ import { DataSource } from 'typeorm';
 import { Permission } from '../../../entities/permission.entity';
 import { PermissionScope } from '../../../entities/permission-scope.entity';
 import { TipoEscopo } from '../../../entities/user-permission.entity';
-import { Status } from '@/enums/status.enum';
+import { Status } from '../../../enums/status.enum';
 
 /**
  * Script de seed para popular as permissões do módulo de benefício.
@@ -18,8 +18,18 @@ export class PermissionBeneficioSeed {
    * @param dataSource Conexão com o banco de dados
    */
   public static async run(dataSource: DataSource): Promise<void> {
+    console.log('Executando seed de permissões do módulo de benefício...');
+    
     const permissionRepository = dataSource.getRepository(Permission);
     const permissionScopeRepository = dataSource.getRepository(PermissionScope);
+    
+    // Remove todos os escopos de permissão existentes para benefício para evitar conflitos
+    await dataSource.query(`
+      DELETE FROM escopo_permissao 
+      WHERE permissao_id IN (
+        SELECT id FROM permissao WHERE modulo = 'beneficio'
+      )
+    `);
 
     // Permissão composta para todas as operações do módulo de benefício
     // Usamos SQL direto para evitar problemas com campos que não existem na entidade
@@ -39,6 +49,13 @@ export class PermissionBeneficioSeed {
       beneficioAllPermission.nome = 'beneficio.*';
       beneficioAllPermission.descricao = 'Todas as permissões do módulo de benefício';
     }
+
+    // Configura o escopo padrão para a permissão composta
+    const compositePermissionScope = permissionScopeRepository.create({
+      permissao_id: beneficioAllPermission.id,
+      tipo_escopo_padrao: TipoEscopo.GLOBAL,
+    });
+    await permissionScopeRepository.save(compositePermissionScope);
 
     // Permissões individuais do módulo de benefício
     const permissions = [

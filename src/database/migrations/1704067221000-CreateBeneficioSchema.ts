@@ -66,26 +66,26 @@ export class CreateBeneficioSchema1704067215000 implements MigrationInterface {
       CREATE TABLE IF NOT EXISTS "requisito_documento" (
         "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
         "tipo_beneficio_id" uuid NOT NULL,
-        "nome" character varying NOT NULL,
-        "descricao" character varying NOT NULL,
+        "tipo_documento" "tipo_documento_enum" NOT NULL,
+        "nome" character varying(255) NOT NULL,
         "obrigatorio" boolean NOT NULL DEFAULT true,
-        "fase" "fase_requisito_enum" NOT NULL DEFAULT 'INSCRICAO',
-        "ativo" boolean NOT NULL DEFAULT true,
-        "regras_validacao" jsonb,
+        "descricao" text,
+        "validacoes" jsonb,
         "created_at" TIMESTAMP NOT NULL DEFAULT now(),
         "updated_at" TIMESTAMP NOT NULL DEFAULT now(),
         "removed_at" TIMESTAMP,
         CONSTRAINT "PK_requisito_documento" PRIMARY KEY ("id"),
-        CONSTRAINT "UK_requisito_documento_tipo_beneficio_nome" UNIQUE ("tipo_beneficio_id", "nome")
+        CONSTRAINT "UK_requisito_documento_tipo_beneficio_tipo_documento" UNIQUE ("tipo_beneficio_id", "tipo_documento")
       );
     `);
     
     // Índices para otimização de consultas
     await queryRunner.query(`
       CREATE INDEX IF NOT EXISTS "IDX_requisito_documento_tipo_beneficio" ON "requisito_documento" ("tipo_beneficio_id");
-      CREATE INDEX IF NOT EXISTS "IDX_requisito_documento_fase" ON "requisito_documento" ("fase");
+      CREATE INDEX IF NOT EXISTS "IDX_requisito_documento_tipo_documento" ON "requisito_documento" ("tipo_documento");
+      CREATE INDEX IF NOT EXISTS "IDX_requisito_documento_nome" ON "requisito_documento" ("nome");
       CREATE INDEX IF NOT EXISTS "IDX_requisito_documento_obrigatorio" ON "requisito_documento" ("obrigatorio");
-      CREATE INDEX IF NOT EXISTS "IDX_requisito_documento_regras" ON "requisito_documento" USING GIN ("regras_validacao");
+      CREATE INDEX IF NOT EXISTS "IDX_requisito_documento_validacoes" ON "requisito_documento" USING GIN ("validacoes");
     `);
     
     // Trigger para atualização automática de timestamp

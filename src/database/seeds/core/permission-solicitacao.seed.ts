@@ -2,7 +2,7 @@ import { DataSource } from 'typeorm';
 import { Permission } from '../../../entities/permission.entity';
 import { PermissionScope } from '../../../entities/permission-scope.entity';
 import { TipoEscopo } from '../../../entities/user-permission.entity';
-import { Status } from '@/enums/status.enum';
+import { Status } from '../../../enums/status.enum';
 
 /**
  * Script de seed para popular as permissões do módulo de solicitação.

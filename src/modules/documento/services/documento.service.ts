@@ -6,7 +6,7 @@ import { MimeTypeValidator } from '../validators/mime-type.validator';
 import { InputSanitizerValidator } from '../validators/input-sanitizer.validator';
 import { StorageProviderFactory } from '../factories/storage-provider.factory';
 import { UploadDocumentoDto } from '../dto/upload-documento.dto';
-import { TipoDocumento } from '../../../entities/requisito-documento.entity';
+import { TipoDocumento } from '@/enums';
 import { createHash } from 'crypto';
 import { extname } from 'path';
 import { v4 as uuidv4 } from 'uuid';

@@ -11,7 +11,7 @@ import { IsNotEmpty, IsUUID, IsOptional, IsEnum, IsString, MaxLength } from 'cla
 import { Pagamento } from './pagamento.entity';
 import { Usuario } from './usuario.entity';
 import { MetodoConfirmacaoEnum } from '../enums/metodo-confirmacao.enum';
-import { Cidadao } from '@/entities/cidadao.entity';
+import { Cidadao } from './cidadao.entity';
 
 /**
  * Entidade que representa uma confirmação de recebimento de pagamento.

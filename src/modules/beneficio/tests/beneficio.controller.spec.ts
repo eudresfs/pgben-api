@@ -247,6 +247,7 @@ describe('BeneficioController', () => {
     it('deve adicionar um requisito documental a um benefício', async () => {
       const createRequisitoDto = {
         tipo_documento: TipoDocumento.CPF,
+        nome: 'CPF do Solicitante',
         descricao: 'Documento de identificação',
         obrigatorio: true,
       };

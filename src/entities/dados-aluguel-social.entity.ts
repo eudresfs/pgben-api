@@ -17,7 +17,7 @@ import {
   IsArray,
 } from 'class-validator';
 import { Solicitacao } from './solicitacao.entity';
-import { PublicoPrioritarioAluguel, EspecificacaoAluguel } from '@/enums';
+import { PublicoPrioritarioAluguel, EspecificacaoAluguel } from '../enums';
 
 /**
  * Entidade para armazenar dados específicos do cidadão para Aluguel Social

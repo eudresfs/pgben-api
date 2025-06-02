@@ -367,7 +367,7 @@ services:
     environment:
       - POSTGRES_USER=${DB_DEV_USER:-devuser}
       - POSTGRES_PASSWORD=${DB_DEV_PASSWORD:-devpass}
-      - POSTGRES_DB=${DB_DEV_NAME:-pgben_dev}
+      - POSTGRES_DB=${DB_DEV_NAME:-pgben}
     volumes:
       - ./docker/scripts/init-dev-db.sh:/docker-entrypoint-initdb.d/init-dev-db.sh
 

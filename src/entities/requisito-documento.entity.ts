@@ -11,19 +11,9 @@ import {
 } from 'typeorm';
 import { IsNotEmpty } from 'class-validator';
 import { TipoBeneficio } from './tipo-beneficio.entity';
+import { TipoDocumento } from '../enums';
 
-export enum TipoDocumento {
-  RG = 'rg',
-  CPF = 'cpf',
-  COMPROVANTE_RESIDENCIA = 'comprovante_residencia',
-  COMPROVANTE_RENDA = 'comprovante_renda',
-  CERTIDAO_NASCIMENTO = 'certidao_nascimento',
-  DECLARACAO_MEDICA = 'declaracao_medica',
-  CONTRATO_ALUGUEL = 'contrato_aluguel',
-  OUTRO = 'outro',
-}
-
-@Entity('requisitos_documento')
+@Entity('requisito_documento')
 @Index(['tipo_beneficio_id', 'tipo_documento'], { unique: true })
 export class RequisitoDocumento {
   @PrimaryGeneratedColumn('uuid')
@@ -35,7 +25,7 @@ export class RequisitoDocumento {
 
   @ManyToOne(
     () => TipoBeneficio,
-    (tipoBeneficio) => tipoBeneficio.requisitos_documentos,
+    (tipoBeneficio) => tipoBeneficio.requisito_documento,
   )
   @JoinColumn({ name: 'tipo_beneficio_id' })
   tipo_beneficio: TipoBeneficio;
@@ -43,10 +33,14 @@ export class RequisitoDocumento {
   @Column({
     type: 'enum',
     enum: TipoDocumento,
-    enumName: 'tipo_documento',
+    enumName: 'tipo_documento_enum',
   })
   @IsNotEmpty({ message: 'Tipo de documento é obrigatório' })
   tipo_documento: TipoDocumento;
+
+  @Column({ type: 'varchar', length: 255 })
+  @IsNotEmpty({ message: 'Nome do documento é obrigatório' })
+  nome: string;
 
   @Column({ default: true })
   obrigatorio: boolean;

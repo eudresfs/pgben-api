@@ -12,11 +12,12 @@ import { FluxoBeneficio } from '../../../entities/fluxo-beneficio.entity';
 import { CreateTipoBeneficioDto } from '../dto/create-tipo-beneficio.dto';
 import { UpdateTipoBeneficioDto } from '../dto/update-tipo-beneficio.dto';
 import { CreateRequisitoDocumentoDto } from '../dto/create-requisito-documento.dto';
-import { TipoDocumento } from '../../../entities/requisito-documento.entity';
+import { TipoDocumento } from '@/enums';
 import { TipoEtapa } from '../../../entities/fluxo-beneficio.entity';
 import { ConfigurarFluxoDto } from '../dto/configurar-fluxo.dto';
 import { Role as PerfilResponsavel } from '../../../enums/role.enum';
 import { normalizeEnumFields } from '../../../shared/utils/enum-normalizer.util';
+import { CampoDinamicoService } from './campo-dinamico.service';
 
 
 /**
@@ -36,6 +37,8 @@ export class BeneficioService {
 
     @InjectRepository(FluxoBeneficio)
     private fluxoBeneficioRepository: Repository<FluxoBeneficio>,
+
+    private readonly campoDinamicoService: CampoDinamicoService,
   ) {}
 
   /**
@@ -87,12 +90,12 @@ export class BeneficioService {
   }
 
   /**
-   * Busca um tipo de benefício pelo ID
+   * Busca um tipo de benefício por ID com schema
    */
   async findById(id: string) {
     const tipoBeneficio = await this.tipoBeneficioRepository.findOne({
       where: { id },
-      relations: ['requisitos_documentos'],
+      relations: ['requisito_documento'],
     });
 
     if (!tipoBeneficio) {
@@ -101,7 +104,13 @@ export class BeneficioService {
       );
     }
 
-    return tipoBeneficio;
+    // Obter schema ativo do benefício
+    const schema = await this.campoDinamicoService.getSchemaAtivo(id);
+
+    return {
+      ...tipoBeneficio,
+      schema: { ...schema.schema_estrutura }
+    };
   }
 
   /**

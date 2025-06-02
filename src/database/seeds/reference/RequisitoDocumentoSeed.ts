@@ -177,18 +177,18 @@ export class RequisitoDocumentoSeed {
           await dataSource.query(
             `INSERT INTO requisito_documento (
               tipo_beneficio_id,
+              tipo_documento,
+              nome,
               descricao,
-              obrigatorio,
-              fase,
-              ordem
+              obrigatorio
             )
             VALUES ($1, $2, $3, $4, $5)`,
             [
               tipoBeneficioId,
+              'OUTROS', // Valor padrão para tipo_documento
+              requisito.descricao, // Usando descrição como nome temporariamente
               requisito.descricao,
               requisito.obrigatorio,
-              requisito.fase,
-              requisito.ordem,
             ],
           );
           console.log(
@@ -200,14 +200,13 @@ export class RequisitoDocumentoSeed {
           );
           await dataSource.query(
             `UPDATE requisito_documento 
-             SET obrigatorio = $3, fase = $4, ordem = $5
+             SET obrigatorio = $3, nome = $4
              WHERE tipo_beneficio_id = $1 AND descricao = $2`,
             [
               tipoBeneficioId,
               requisito.descricao,
               requisito.obrigatorio,
-              requisito.fase,
-              requisito.ordem,
+              requisito.descricao, // Usando descrição como nome
             ],
           );
         }

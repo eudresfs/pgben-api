@@ -96,7 +96,7 @@ export class TipoBeneficio {
   };
 
   @OneToMany(() => RequisitoDocumento, (requisito) => requisito.tipo_beneficio)
-  requisitos_documentos: RequisitoDocumento[];
+  requisito_documento: RequisitoDocumento[];
 
   @OneToMany(() => CampoDinamicoBeneficio, (campo) => campo.tipo_beneficio)
   campos_dinamicos: CampoDinamicoBeneficio[];
@@ -354,7 +354,7 @@ export class TipoBeneficio {
    * Verifica se tem requisitos de documentos
    */
   temRequisitosDocumentos(): boolean {
-    return this.requisitos_documentos && this.requisitos_documentos.length > 0;
+    return this.requisito_documento && this.requisito_documento.length > 0;
   }
 
   /**
@@ -362,7 +362,7 @@ export class TipoBeneficio {
    */
   getNumeroRequisitosObrigatorios(): number {
     if (!this.temRequisitosDocumentos()) return 0;
-    return this.requisitos_documentos.filter(req => req.obrigatorio).length;
+    return this.requisito_documento.filter(req => req.obrigatorio).length;
   }
 
   /**
@@ -486,7 +486,7 @@ export class TipoBeneficio {
     
     // Requisitos de documentos
     if (this.temRequisitosDocumentos()) {
-      pontos += this.requisitos_documentos.length;
+      pontos += this.requisito_documento.length;
     }
     
     // Campos dinâmicos
@@ -580,7 +580,7 @@ export class TipoBeneficio {
       criteriosElegibilidade: this.temCriteriosElegibilidade() ? 
         Object.keys(this.criterios_elegibilidade).length : 0,
       requisitosDocumentos: this.temRequisitosDocumentos() ? 
-        this.requisitos_documentos.length : 0,
+        this.requisito_documento.length : 0,
       camposDinamicos: this.temCamposDinamicos() ? 
         this.campos_dinamicos.length : 0,
     };

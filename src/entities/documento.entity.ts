@@ -22,7 +22,7 @@ import {
 import { Solicitacao } from './solicitacao.entity';
 import { Usuario } from './usuario.entity';
 import { Cidadao } from './cidadao.entity';
-import { TipoDocumento } from './requisito-documento.entity';
+import { TipoDocumento } from '../enums';
 
 /**
  * Entidade Documento
@@ -64,7 +64,7 @@ export class Documento {
   @Column({
     type: 'enum',
     enum: TipoDocumento,
-    enumName: 'tipo_documento',
+    enumName: 'tipo_documento_enum',
   })
   @IsNotEmpty({ message: 'Tipo de documento é obrigatório' })
   tipo: TipoDocumento;

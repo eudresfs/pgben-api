@@ -6,10 +6,10 @@ import { SolicitacaoModule } from '../solicitacao/solicitacao.module'
 // Entidades
 import { 
   TipoBeneficio, 
+  TipoBeneficioSchema,
   RequisitoDocumento, 
   FluxoBeneficio, 
   CampoDinamicoBeneficio, 
-  VersaoSchemaBeneficio, 
   DadosNatalidade, 
   DadosAluguelSocial, 
   DadosFuneral, 
@@ -21,22 +21,19 @@ import {
 // Controladores
 import { BeneficioController } from './controllers/beneficio.controller';
 import { CampoDinamicoController } from './controllers/campo-dinamico.controller';
-import { FormularioDinamicoController } from './controllers/formulario-dinamico.controller';
 import { ExportacaoController } from '../solicitacao/controllers/exportacao.controller';
 import { DadosNatalidadeController } from './controllers/dados-natalidade.controller';
 import { DadosAluguelSocialController } from './controllers/dados-aluguel-social.controller';
 import { DadosFuneralController } from './controllers/dados-funeral.controller';
 import { DadosCestaBasicaController } from './controllers/dados-cesta-basica.controller';
-import { FormularioCondicionalController } from './controllers/formulario-condicional.controller';
 import { RenovacaoAutomaticaController } from './controllers/renovacao-automatica.controller';
 
 // Serviços
 import { BeneficioService } from './services/beneficio.service';
 import { CampoDinamicoService } from './services/campo-dinamico.service';
 import { ValidacaoDinamicaService } from './services/validacao-dinamica.service';
-import { DadosDinamicosService } from './services/dados-dinamicos.service';
 import { ExportacaoService } from '../solicitacao/services/exportacao.service';
-import { FormularioCondicionalService } from './services/formulario-condicional.service';
+import { EstruturaEntidadeService } from './services/estrutura-entidade.service';
 import { DadosNatalidadeService } from './services/dados-natalidade.service';
 import { DadosAluguelSocialService } from './services/dados-aluguel-social.service';
 import { DadosFuneralService } from './services/dados-funeral.service';
@@ -46,6 +43,7 @@ import { NotificacaoRenovacaoService } from './services/notificacao-renovacao.se
 
 // Repositórios
 import { TipoBeneficioRepository } from './repositories/tipo-beneficio.repository';
+import { TipoBeneficioSchemaRepository } from './repositories/tipo-beneficio-schema.repository';
 import { CampoDinamicoRepository } from './repositories/campo-dinamico.repository';
 import { DadosNatalidadeRepository } from './repositories/dados-natalidade.repository';
 import { DadosAluguelSocialRepository } from './repositories/dados-aluguel-social.repository';
@@ -63,10 +61,10 @@ import { ConfiguracaoRenovacaoRepository } from './repositories/configuracao-ren
   imports: [
     TypeOrmModule.forFeature([
       TipoBeneficio,
+      TipoBeneficioSchema,
       RequisitoDocumento,
       FluxoBeneficio,
       CampoDinamicoBeneficio,
-      VersaoSchemaBeneficio,
       DadosNatalidade,
       DadosAluguelSocial,
       DadosFuneral,
@@ -80,29 +78,28 @@ import { ConfiguracaoRenovacaoRepository } from './repositories/configuracao-ren
   controllers: [
     BeneficioController,
     CampoDinamicoController,
-    FormularioDinamicoController,
     ExportacaoController,
     DadosNatalidadeController,
     DadosAluguelSocialController,
     DadosFuneralController,
     DadosCestaBasicaController,
-    FormularioCondicionalController,
     RenovacaoAutomaticaController,
   ],
   providers: [
     BeneficioService,
     CampoDinamicoService,
     ValidacaoDinamicaService,
-    DadosDinamicosService,
+    // Serviços de formulário dinâmico removidos
     ExportacaoService,
     DadosNatalidadeService,
     DadosAluguelSocialService,
     DadosFuneralService,
     DadosCestaBasicaService,
-    FormularioCondicionalService,
+    EstruturaEntidadeService,
     RenovacaoAutomaticaService,
     NotificacaoRenovacaoService,
     TipoBeneficioRepository,
+    TipoBeneficioSchemaRepository,
     CampoDinamicoRepository,
     DadosNatalidadeRepository,
     DadosAluguelSocialRepository,
@@ -114,12 +111,10 @@ import { ConfiguracaoRenovacaoRepository } from './repositories/configuracao-ren
     BeneficioService,
     CampoDinamicoService,
     ValidacaoDinamicaService,
-    DadosDinamicosService,
     DadosNatalidadeService,
     DadosAluguelSocialService,
     DadosFuneralService,
     DadosCestaBasicaService,
-    FormularioCondicionalService,
     RenovacaoAutomaticaService,
     NotificacaoRenovacaoService,
   ],

@@ -1,13 +1,17 @@
-import { EntityRepository, Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { TipoBeneficio } from '../../../entities/tipo-beneficio.entity';
+import { Injectable } from '@nestjs/common';
+import { FindManyOptions, FindOneOptions } from 'typeorm';
 
 /**
- * Repository customizado para TipoBeneficio
- *
- * Implementa consultas otimizadas para campos JSON
+ * Repositório customizado para TipoBeneficio
+ * Fornece métodos otimizados para consultas específicas
  */
-@EntityRepository(TipoBeneficio)
+@Injectable()
 export class TipoBeneficioRepository extends Repository<TipoBeneficio> {
+  constructor(private dataSource: DataSource) {
+    super(TipoBeneficio, dataSource.createEntityManager());
+  }
   /**
    * Busca tipos de benefício por critérios em campos JSON
    *

@@ -46,7 +46,6 @@ import {
   CampoDinamicoBeneficio,
   DadosBeneficios,
   FluxoBeneficio,
-  VersaoSchemaBeneficio,
   WorkflowBeneficio,
   
   // Entidades de Dados Específicos de Benefícios
@@ -180,7 +179,6 @@ export const AppDataSource = new DataSource({
     DadosFuneral,
     DadosNatalidade,
     FluxoBeneficio,
-    VersaoSchemaBeneficio,
     WorkflowBeneficio,
 
     // Entidades de solicitação

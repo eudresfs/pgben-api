@@ -18,7 +18,7 @@ import {
   Max,
 } from 'class-validator';
 import { Solicitacao } from './solicitacao.entity';
-import { PeriodicidadeEnum, OrigemAtendimentoEnum } from '@/enums'
+import { PeriodicidadeEnum, OrigemAtendimentoEnum } from '../enums';
 
 
 /**

@@ -2,7 +2,7 @@ import { DataSource } from 'typeorm';
 import { Permission } from '../../../entities/permission.entity';
 import { PermissionScope } from '../../../entities/permission-scope.entity';
 import { Logger } from '@nestjs/common';
-import { Status } from '@/enums/status.enum';
+import { Status } from '../../../enums/status.enum';
 
 /**
  * Seed de permissões para o módulo de recursos

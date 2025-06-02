@@ -39,7 +39,7 @@ DB_HOST=localhost
 DB_PORT=5432
 DB_USER=postgres
 DB_PASS=postgres
-DB_NAME=pgben_dev
+DB_NAME=pgben
 DB_SSL=false
 
 # Configurações do PGAdmin

@@ -23,7 +23,7 @@ import { TipoBeneficio } from './tipo-beneficio.entity';
  * Permite controlar a evolução do schema de campos dinâmicos sem quebrar
  * dados existentes, mantendo um histórico de versões.
  */
-@Entity('versoes_schema_beneficio')
+@Entity('versao_schema_beneficio')
 @Index(['tipo_beneficio_id', 'versao'], { unique: true })
 export class VersaoSchemaBeneficio {
   @PrimaryGeneratedColumn('uuid')
@@ -37,10 +37,9 @@ export class VersaoSchemaBeneficio {
   @JoinColumn({ name: 'tipo_beneficio_id' })
   tipo_beneficio: TipoBeneficio;
 
-  @Column()
-  @IsNumber({}, { message: 'Versão deve ser um número' })
-  @Min(1, { message: 'Versão deve ser maior que zero' })
-  versao: number;
+  @Column('varchar')
+  @IsNotEmpty({ message: 'Versão é obrigatória' })
+  versao: string;
 
   @Column('jsonb')
   @IsNotEmpty({ message: 'Schema é obrigatório' })
@@ -50,9 +49,17 @@ export class VersaoSchemaBeneficio {
   @IsOptional()
   descricao_mudancas: string;
 
-  @Column({ default: false })
+  @Column({ default: true })
   @IsBoolean({ message: 'Ativo deve ser um booleano' })
   ativo: boolean;
+
+  @Column('timestamp')
+  @IsNotEmpty({ message: 'Data de início de vigência é obrigatória' })
+  data_inicio_vigencia: Date;
+
+  @Column('timestamp', { nullable: true })
+  @IsOptional()
+  data_fim_vigencia: Date;
 
   @CreateDateColumn()
   created_at: Date;
@@ -94,20 +101,6 @@ export class VersaoSchemaBeneficio {
    */
   isAtiva(): boolean {
     return this.ativo;
-  }
-
-  /**
-   * Verifica se é a versão mais recente
-   */
-  isVersaoMaisRecente(versaoAtual: number): boolean {
-    return this.versao === versaoAtual;
-  }
-
-  /**
-   * Verifica se é uma versão legada
-   */
-  isVersaoLegada(versaoAtual: number): boolean {
-    return this.versao < versaoAtual;
   }
 
   /**
@@ -194,32 +187,10 @@ export class VersaoSchemaBeneficio {
   }
 
   /**
-   * Verifica se os dados da versão estão consistentes
-   */
-  isConsistente(): boolean {
-    return !!this.tipo_beneficio_id && 
-           this.versao > 0 && 
-           !!this.schema;
-  }
-
-  /**
    * Verifica se a versão pode ser removida
    */
   podeSerRemovida(): boolean {
     return !this.isAtiva();
-  }
-
-  /**
-   * Clona a versão para uma nova versão
-   */
-  clone(novaVersao: number): VersaoSchemaBeneficio {
-    const clone = new VersaoSchemaBeneficio();
-    clone.tipo_beneficio_id = this.tipo_beneficio_id;
-    clone.versao = novaVersao;
-    clone.schema = JSON.parse(JSON.stringify(this.schema));
-    clone.descricao_mudancas = '';
-    clone.ativo = false;
-    return clone;
   }
 
   /**
@@ -294,32 +265,6 @@ export class VersaoSchemaBeneficio {
   precisaAtualizacao(): boolean {
     const idadeEmDias = this.getIdadeRegistroEmDias();
     return idadeEmDias > 365 && this.isAtiva(); // Versões ativas com mais de 1 ano
-  }
-
-  /**
-   * Obtém estatísticas da versão
-   */
-  getEstatisticas(): {
-    versao: number;
-    numeroCampos: number;
-    camposObrigatorios: number;
-    tiposCampos: string[];
-    status: string;
-    idadeEmDias: number;
-    compatibilidade: string;
-  } {
-    const campos = this.schema?.campos || [];
-    const camposObrigatorios = campos.filter((campo: any) => campo.obrigatorio).length;
-    
-    return {
-      versao: this.versao,
-      numeroCampos: this.getNumeroCampos(),
-      camposObrigatorios,
-      tiposCampos: this.getTiposCampos(),
-      status: this.isAtiva() ? 'Ativa' : 'Inativa',
-      idadeEmDias: this.getIdadeRegistroEmDias(),
-      compatibilidade: this.isConsistente() ? 'Válida' : 'Inconsistente'
-    };
   }
 
   /**

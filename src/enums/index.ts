@@ -48,6 +48,9 @@ export { IntegracaoTipoEnum } from './integracao-tipo.enum';
 export { TipoDado } from './tipo-dado.enum';
 export { TipoPapel, type PaperType, ALL_PAPERS } from './tipo-papel.enum';
 
+// Enums de documentos
+export { TipoDocumento } from './tipo-documento.enum';
+
 // Enums de usuário e permissões
 export { Role } from './role.enum';
 export { Role as UserRole } from './role.enum';

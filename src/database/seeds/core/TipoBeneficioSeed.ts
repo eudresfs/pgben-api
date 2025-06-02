@@ -29,84 +29,72 @@ export class TipoBeneficioSeed {
       const statusColumnName = columnNames.includes('ativo') ? 'ativo' : 'status';
       console.log(`Utilizando coluna de status: ${statusColumnName}`);
 
-    // Lista de tipos de benefícios básicos
-    const tiposBeneficiosEssenciais = [
+    // Lista de tipos de benefícios conforme especificação técnica (Lei 7.205/2021)
+    const tiposBeneficio = [
       {
-        nome: 'Benefício Alimentação',
-        codigo: 'BEN_ALIM',
+        nome: 'Benefício Natalidade',
+        codigo: 'BENEFICIO_NATALIDADE',
         descricao:
-          'Benefício destinado à segurança alimentar das famílias em situação de vulnerabilidade',
-        valor_referencia: 150.0,
-        periodicidade: 'MENSAL',
-        duracao_maxima: 12,
-        duracao_padrao: 6,
-        teto_renda_per_capita: 0.5, // meio salário mínimo per capita
-        recorrente: true,
-        ativo: true,
-      },
-      {
-        nome: 'Benefício Moradia',
-        codigo: 'BEN_MOR',
-        descricao:
-          'Benefício destinado a famílias que perderam suas residências ou estão em situação de risco habitacional',
-        valor_referencia: 300.0,
-        periodicidade: 'MENSAL',
-        duracao_maxima: 24,
-        duracao_padrao: 12,
-        teto_renda_per_capita: 0.75, // 3/4 do salário mínimo per capita
-        recorrente: true,
+          'Kit enxoval ou auxílio financeiro para recém-nascidos. Valor em pecúnia: R$ 500,00 (projeto de lei). Prazo: Até 30 dias após o parto.',
+        valor_referencia: 500.0, // Conforme projeto de lei
+        periodicidade: 'UNICA',
+        duracao_maxima: 1,
+        duracao_padrao: 1,
+        teto_renda_per_capita: 0, // Não especificado na documentação
+        recorrente: false,
         ativo: true,
       },
       {
         nome: 'Benefício Funeral',
-        codigo: 'BEN_FUN',
+        codigo: 'BENEFICIO_FUNERAL',
         descricao:
-          'Benefício destinado a auxiliar nas despesas funerárias de famílias em situação de vulnerabilidade',
-        valor_referencia: 1100.0,
+          'Urna funerária com translado. Tipos: Padrão (até 100kg), Obeso (até 150kg), Especial, Infantil (até 50kg). Melhorias previstas: Flores, formol, velas e roupa.',
+        valor_referencia: 0, // Benefício em espécie (urna)
         periodicidade: 'UNICA',
         duracao_maxima: 1,
         duracao_padrao: 1,
-        teto_renda_per_capita: 1.0, // um salário mínimo per capita
+        teto_renda_per_capita: 0, // Não especificado na documentação
         recorrente: false,
         ativo: true,
       },
       {
-        nome: 'Benefício Natalidade',
-        codigo: 'BEN_NAT',
+        nome: 'Cesta Básica',
+        codigo: 'CESTA_BASICA',
         descricao:
-          'Benefício destinado a auxiliar gestantes em situação de vulnerabilidade com despesas pré-natais e pós-parto',
-        valor_referencia: 1000.0,
-        periodicidade: 'UNICA',
-        duracao_maxima: 1,
-        duracao_padrao: 1,
-        teto_renda_per_capita: 1.0, // um salário mínimo per capita
-        recorrente: false,
+          'Gêneros alimentícios ou vale alimentação (R$ 200,00). Periodicidade: Máximo 6 meses, renovável por até 3 meses adicionais.',
+        valor_referencia: 200.0, // Conforme projeto de lei
+        periodicidade: 'MENSAL',
+        duracao_maxima: 9, // 6 meses + 3 meses de renovação
+        duracao_padrao: 6,
+        teto_renda_per_capita: 0, // Não especificado na documentação
+        recorrente: true,
         ativo: true,
       },
       {
-        nome: 'Benefício Calamidade',
-        codigo: 'BEN_CAL',
+        nome: 'Aluguel Social',
+        codigo: 'ALUGUEL_SOCIAL',
         descricao:
-          'Benefício destinado a famílias afetadas por desastres, calamidades ou emergências',
-        valor_referencia: 1200.0,
-        periodicidade: 'UNICA',
-        duracao_maxima: 1,
-        duracao_padrao: 1,
-        teto_renda_per_capita: 2.0, // dois salários mínimos per capita
-        recorrente: false,
+          'R$ 600,00 mensais por até 6 meses (prorrogável por igual período mediante análise profissional). Finalidade exclusiva: locação em Natal.',
+        valor_referencia: 600.0, // Valor fixo conforme especificação
+        periodicidade: 'MENSAL',
+        duracao_maxima: 12, // 6 meses + 6 meses de prorrogação
+        duracao_padrao: 6,
+        teto_renda_per_capita: 0, // Não especificado na documentação
+        recorrente: true,
         ativo: true,
       },
+
     ];
 
     // Inserção dos tipos de benefícios no banco de dados
-    for (const tipoBeneficio of tiposBeneficiosEssenciais) {
+    for (const tipo of tiposBeneficio) {
       try {
-        const tipoBeneficioExistente = await dataSource.query(
-          `SELECT id FROM tipo_beneficio WHERE nome = $1`,
-          [tipoBeneficio.nome],
+        const existingTipo = await dataSource.query(
+          `SELECT id FROM tipo_beneficio WHERE codigo = $1`,
+          [tipo.codigo],
         );
 
-        if (tipoBeneficioExistente.length === 0) {
+        if (existingTipo.length === 0) {
           // Verificar quais colunas existem e construir a query dinamicamente
           const colunas: string[] = [
             'nome', 
@@ -142,25 +130,25 @@ export class TipoBeneficioSeed {
           const valores: (string | number | boolean)[] = [];
           colunasExistentes.forEach(coluna => {
             if (coluna === statusColumnName) {
-              valores.push(tipoBeneficio.ativo);
+              valores.push(tipo.ativo);
             } else if (coluna === 'nome') {
-              valores.push(tipoBeneficio.nome);
+              valores.push(tipo.nome);
             } else if (coluna === 'codigo') {
-              valores.push(tipoBeneficio.codigo);
+              valores.push(tipo.codigo);
             } else if (coluna === 'descricao') {
-              valores.push(tipoBeneficio.descricao);
+              valores.push(tipo.descricao);
             } else if (coluna === 'valor_referencia') {
-              valores.push(tipoBeneficio.valor_referencia);
+              valores.push(tipo.valor_referencia);
             } else if (coluna === 'periodicidade') {
-              valores.push(tipoBeneficio.periodicidade);
+              valores.push(tipo.periodicidade);
             } else if (coluna === 'duracao_maxima') {
-              valores.push(tipoBeneficio.duracao_maxima);
+              valores.push(tipo.duracao_maxima);
             } else if (coluna === 'duracao_padrao') {
-              valores.push(tipoBeneficio.duracao_padrao);
+              valores.push(tipo.duracao_padrao);
             } else if (coluna === 'teto_renda_per_capita') {
-              valores.push(tipoBeneficio.teto_renda_per_capita);
+              valores.push(tipo.teto_renda_per_capita);
             } else if (coluna === 'recorrente') {
-              valores.push(tipoBeneficio.recorrente);
+              valores.push(tipo.recorrente);
             } else if (coluna === 'created_at') {
               valores.push(new Date().toISOString());
             } else if (coluna === 'updated_at') {
@@ -176,72 +164,72 @@ export class TipoBeneficioSeed {
             valores,
           );
           console.log(
-            `Tipo de benefício ${tipoBeneficio.nome} criado com sucesso`,
+            `✓ Tipo de benefício '${tipo.nome}' inserido com sucesso`,
           );
         } else {
           console.log(
-            `Tipo de benefício ${tipoBeneficio.nome} já existe, atualizando...`,
+            `✓ Tipo de benefício '${tipo.nome}' atualizado com sucesso`,
           );
           
           // Construir a query de update dinamicamente
           let updateQuery = `UPDATE tipo_beneficio SET `;
-          const updateValues: (string | number | boolean)[] = [tipoBeneficio.nome]; // O primeiro valor é sempre o nome para o WHERE
+          const updateValues: (string | number | boolean)[] = [tipo.codigo]; // O primeiro valor é sempre o codigo para o WHERE
           let paramIndex = 2; // Começa em 2 porque o $1 é usado no WHERE
           
           // Adicionar cada coluna que existe na tabela
           const updateColumns: string[] = [];
           
-          if (columnNames.includes('codigo')) {
-            updateColumns.push(`codigo = $${paramIndex++}`);
-            updateValues.push(tipoBeneficio.codigo);
+          if (columnNames.includes('nome')) {
+            updateColumns.push(`nome = $${paramIndex++}`);
+            updateValues.push(tipo.nome);
           }
           
           if (columnNames.includes('descricao')) {
             updateColumns.push(`descricao = $${paramIndex++}`);
-            updateValues.push(tipoBeneficio.descricao);
+            updateValues.push(tipo.descricao);
           }
           
           if (columnNames.includes('valor_referencia')) {
             updateColumns.push(`valor_referencia = $${paramIndex++}`);
-            updateValues.push(tipoBeneficio.valor_referencia);
+            updateValues.push(tipo.valor_referencia);
           }
           
           if (columnNames.includes('periodicidade')) {
             updateColumns.push(`periodicidade = $${paramIndex++}`);
-            updateValues.push(tipoBeneficio.periodicidade);
+            updateValues.push(tipo.periodicidade);
           }
           
           if (columnNames.includes('duracao_maxima')) {
             updateColumns.push(`duracao_maxima = $${paramIndex++}`);
-            updateValues.push(tipoBeneficio.duracao_maxima);
+            updateValues.push(tipo.duracao_maxima);
           }
           
           if (columnNames.includes('duracao_padrao')) {
             updateColumns.push(`duracao_padrao = $${paramIndex++}`);
-            updateValues.push(tipoBeneficio.duracao_padrao);
+            updateValues.push(tipo.duracao_padrao);
           }
           
           if (columnNames.includes('teto_renda_per_capita')) {
             updateColumns.push(`teto_renda_per_capita = $${paramIndex++}`);
-            updateValues.push(tipoBeneficio.teto_renda_per_capita);
+            updateValues.push(tipo.teto_renda_per_capita);
           }
           
           if (columnNames.includes('recorrente')) {
             updateColumns.push(`recorrente = $${paramIndex++}`);
-            updateValues.push(tipoBeneficio.recorrente);
+            updateValues.push(tipo.recorrente);
           }
           
           // Adicionar a coluna de status (ativo ou status)
           updateColumns.push(`${statusColumnName} = $${paramIndex++}`);
-          updateValues.push(tipoBeneficio.ativo);
+          updateValues.push(tipo.ativo);
           
           // Finalizar a query
-          updateQuery += updateColumns.join(', ') + ` WHERE nome = $1`;
+          updateQuery += updateColumns.join(', ') + ` WHERE codigo = $1`;
           
           await dataSource.query(updateQuery, updateValues);
         }
       } catch (error) {
-        console.error(`Erro ao processar tipo de benefício ${tipoBeneficio.nome}: ${error.message}`);
+        console.error(`Erro ao processar tipo de benefício ${tipo.nome}: ${error.message}`);
         // Continua para o próximo tipo de benefício
       }
     }

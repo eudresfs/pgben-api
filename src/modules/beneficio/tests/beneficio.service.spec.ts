@@ -173,7 +173,7 @@ describe('BeneficioService', () => {
         descricao: 'Benefício de cesta básica para famílias em vulnerabilidade',
         valor: 150.0,
         ativo: true,
-        requisitos_documentos: [],
+        requisito_documento: [],
       };
 
       mockTipoBeneficioRepository.findOne.mockResolvedValue(mockBeneficio);
@@ -183,7 +183,7 @@ describe('BeneficioService', () => {
       expect(result).toEqual(mockBeneficio);
       expect(mockTipoBeneficioRepository.findOne).toHaveBeenCalledWith({
         where: { id: '1' },
-        relations: ['requisitos_documentos'],
+        relations: ['requisito_documento'],
       });
     });
 
@@ -193,7 +193,7 @@ describe('BeneficioService', () => {
       await expect(service.findById('999')).rejects.toThrow(NotFoundException);
       expect(mockTipoBeneficioRepository.findOne).toHaveBeenCalledWith({
         where: { id: '999' },
-        relations: ['requisitos_documentos'],
+        relations: ['requisito_documento'],
       });
     });
   });
@@ -286,7 +286,7 @@ describe('BeneficioService', () => {
         descricao: 'Benefício de cesta básica para famílias em vulnerabilidade',
         valor: 150.0,
         ativo: true,
-        requisitos_documentos: [],
+        requisito_documento: [],
       };
 
       const mockUpdatedBeneficio = {
@@ -313,7 +313,7 @@ describe('BeneficioService', () => {
       expect(result).toEqual(mockUpdatedBeneficio);
       expect(mockTipoBeneficioRepository.findOne).toHaveBeenCalledWith({
         where: { id: '1' },
-        relations: ['requisitos_documentos'],
+        relations: ['requisito_documento'],
       });
       expect(mockTipoBeneficioRepository.save).toHaveBeenCalledWith({
         ...mockBeneficio,
@@ -334,7 +334,7 @@ describe('BeneficioService', () => {
       );
       expect(mockTipoBeneficioRepository.findOne).toHaveBeenCalledWith({
         where: { id: '999' },
-        relations: ['requisitos_documentos'],
+        relations: ['requisito_documento'],
       });
       expect(mockTipoBeneficioRepository.save).not.toHaveBeenCalled();
     });
@@ -350,7 +350,7 @@ describe('BeneficioService', () => {
         descricao: 'Benefício de cesta básica para famílias em vulnerabilidade',
         valor: 150.0,
         ativo: true,
-        requisitos_documentos: [],
+        requisito_documento: [],
       };
 
       // Buscar o benefício a ser atualizado
@@ -381,7 +381,7 @@ describe('BeneficioService', () => {
       const mockBeneficio = {
         id: '1',
         nome: 'Cesta Básica',
-        requisitos_documentos: [],
+        requisito_documento: [],
       };
 
       const mockRequisitos = [
@@ -410,7 +410,7 @@ describe('BeneficioService', () => {
       expect(result).toEqual(mockRequisitos);
       expect(mockTipoBeneficioRepository.findOne).toHaveBeenCalledWith({
         where: { id: '1' },
-        relations: ['requisitos_documentos'],
+        relations: ['requisito_documento'],
       });
       expect(mockRequisitoDocumentoRepository.find).toHaveBeenCalledWith({
         where: { tipo_beneficio: { id: '1' } },
@@ -424,6 +424,7 @@ describe('BeneficioService', () => {
     it('deve adicionar um requisito documental a um benefício', async () => {
       const createRequisitoDto = {
         tipo_documento: TipoDocumento.CPF,
+        nome: 'CPF do Solicitante',
         descricao: 'Documento de identificação',
         obrigatorio: true,
       };

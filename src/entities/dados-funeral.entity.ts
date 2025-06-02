@@ -16,7 +16,7 @@ import {
   IsOptional,
 } from 'class-validator';
 import { Solicitacao } from './solicitacao.entity';
-import { TipoUrnaEnum, ParentescoEnum } from '@/enums';
+import { TipoUrnaEnum, ParentescoEnum } from '../enums';
 
 
 /**
