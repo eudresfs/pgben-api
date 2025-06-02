@@ -37,7 +37,7 @@ export enum TipoDado {
  * Permite definir campos específicos para cada tipo de benefício,
  * com validações e regras de negócio próprias.
  */
-@Entity('campos_dinamicos_beneficio')
+@Entity('campo_dinamico_beneficio')
 @Index(['tipo_beneficio_id', 'nome'], { unique: true })
 export class CampoDinamicoBeneficio {
   @PrimaryGeneratedColumn('uuid')

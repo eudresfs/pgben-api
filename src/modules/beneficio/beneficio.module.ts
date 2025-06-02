@@ -26,6 +26,7 @@ import { DadosNatalidadeController } from './controllers/dados-natalidade.contro
 import { DadosAluguelSocialController } from './controllers/dados-aluguel-social.controller';
 import { DadosFuneralController } from './controllers/dados-funeral.controller';
 import { DadosCestaBasicaController } from './controllers/dados-cesta-basica.controller';
+import { DadosBeneficioController } from './controllers/dados-beneficio.controller';
 import { RenovacaoAutomaticaController } from './controllers/renovacao-automatica.controller';
 
 // Serviços
@@ -38,6 +39,7 @@ import { DadosNatalidadeService } from './services/dados-natalidade.service';
 import { DadosAluguelSocialService } from './services/dados-aluguel-social.service';
 import { DadosFuneralService } from './services/dados-funeral.service';
 import { DadosCestaBasicaService } from './services/dados-cesta-basica.service';
+import { DadosBeneficioFactoryService } from './services/dados-beneficio-factory.service';
 import { RenovacaoAutomaticaService } from './services/renovacao-automatica.service';
 import { NotificacaoRenovacaoService } from './services/notificacao-renovacao.service';
 
@@ -83,6 +85,7 @@ import { ConfiguracaoRenovacaoRepository } from './repositories/configuracao-ren
     DadosAluguelSocialController,
     DadosFuneralController,
     DadosCestaBasicaController,
+    DadosBeneficioController,
     RenovacaoAutomaticaController,
   ],
   providers: [
@@ -95,6 +98,7 @@ import { ConfiguracaoRenovacaoRepository } from './repositories/configuracao-ren
     DadosAluguelSocialService,
     DadosFuneralService,
     DadosCestaBasicaService,
+    DadosBeneficioFactoryService,
     EstruturaEntidadeService,
     RenovacaoAutomaticaService,
     NotificacaoRenovacaoService,
@@ -115,6 +119,7 @@ import { ConfiguracaoRenovacaoRepository } from './repositories/configuracao-ren
     DadosAluguelSocialService,
     DadosFuneralService,
     DadosCestaBasicaService,
+    DadosBeneficioFactoryService,
     RenovacaoAutomaticaService,
     NotificacaoRenovacaoService,
   ],

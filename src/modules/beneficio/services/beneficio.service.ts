@@ -17,7 +17,7 @@ import { TipoEtapa } from '../../../entities/fluxo-beneficio.entity';
 import { ConfigurarFluxoDto } from '../dto/configurar-fluxo.dto';
 import { Role as PerfilResponsavel } from '../../../enums/role.enum';
 import { normalizeEnumFields } from '../../../shared/utils/enum-normalizer.util';
-import { CampoDinamicoService } from './campo-dinamico.service';
+import { TipoBeneficioSchema } from '../../../entities/tipo-beneficio-schema.entity';
 
 
 /**
@@ -38,11 +38,13 @@ export class BeneficioService {
     @InjectRepository(FluxoBeneficio)
     private fluxoBeneficioRepository: Repository<FluxoBeneficio>,
 
-    private readonly campoDinamicoService: CampoDinamicoService,
+    @InjectRepository(TipoBeneficioSchema)
+    private tipoBeneficioSchemaRepository: Repository<TipoBeneficioSchema>,
   ) {}
 
   /**
    * Lista todos os tipos de benefícios com paginação e filtros
+   * Inclui schema ativo e requisitos de documento para cada benefício
    */
   async findAll(options: {
     page?: number;
@@ -53,7 +55,8 @@ export class BeneficioService {
     const { page = 1, limit = 10, search, ativo } = options;
 
     const queryBuilder =
-      this.tipoBeneficioRepository.createQueryBuilder('tipo_beneficio');
+      this.tipoBeneficioRepository.createQueryBuilder('tipo_beneficio')
+        .leftJoinAndSelect('tipo_beneficio.requisito_documento', 'requisito_documento');
 
     // Aplicar filtros
     if (search) {
@@ -78,8 +81,23 @@ export class BeneficioService {
     const items = result[0];
     const total = result[1];
 
+    // Enriquecer cada item com schema ativo
+    const itemsEnriquecidos = await Promise.all(
+      items.map(async (item) => {
+        // Obter schema ativo para o tipo de benefício
+        const schemaAtivo = await this.tipoBeneficioSchemaRepository.findOne({
+          where: { tipo_beneficio_id: item.id, ativo: true },
+        });
+        
+        return {
+          ...item,
+          schema: schemaAtivo,
+        };
+      })
+    );
+
     return {
-      items,
+      items: itemsEnriquecidos,
       meta: {
         total,
         page,
@@ -105,11 +123,13 @@ export class BeneficioService {
     }
 
     // Obter schema ativo do benefício
-    const schema = await this.campoDinamicoService.getSchemaAtivo(id);
+    const schema = await this.tipoBeneficioSchemaRepository.findOne({
+      where: { tipo_beneficio_id: id, ativo: true },
+    });
 
     return {
       ...tipoBeneficio,
-      schema: { ...schema.schema_estrutura }
+      schema: schema ? { ...schema.schema_estrutura } : null
     };
   }
 

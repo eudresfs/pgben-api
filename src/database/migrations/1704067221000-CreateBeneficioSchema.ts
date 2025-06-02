@@ -25,10 +25,11 @@ export class CreateBeneficioSchema1704067215000 implements MigrationInterface {
     await queryRunner.query(`
       CREATE TABLE IF NOT EXISTS "tipo_beneficio" (
         "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
+        "codigo" varchar(25) NOT
         "nome" character varying NOT NULL,
         "descricao" character varying NOT NULL,
         "codigo" character varying NOT NULL,
-        "ativo" boolean NOT NULL DEFAULT true,
+        "status" "status_ativo_enum" NOT NULL DEFAULT 'ativo',
         "periodicidade" "periodicidade_enum" NOT NULL DEFAULT 'UNICA',
         "valor" decimal(10,2),
         "legislacao" character varying,
@@ -46,7 +47,7 @@ export class CreateBeneficioSchema1704067215000 implements MigrationInterface {
     
     // Índices para otimização de consultas
     await queryRunner.query(`
-      CREATE INDEX IF NOT EXISTS "IDX_tipo_beneficio_nome_ativo" ON "tipo_beneficio" ("nome", "ativo");
+      CREATE INDEX IF NOT EXISTS "IDX_tipo_beneficio_nome_ativo" ON "tipo_beneficio" ("nome", "status");
       CREATE INDEX IF NOT EXISTS "IDX_tipo_beneficio_codigo" ON "tipo_beneficio" ("codigo");
       CREATE INDEX IF NOT EXISTS "IDX_tipo_beneficio_periodicidade" ON "tipo_beneficio" ("periodicidade");
       CREATE INDEX IF NOT EXISTS "IDX_tipo_beneficio_criterios" ON "tipo_beneficio" USING GIN ("criterios_elegibilidade");

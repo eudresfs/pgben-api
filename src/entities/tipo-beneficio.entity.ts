@@ -12,21 +12,18 @@ import { IsNotEmpty, IsNumber, Min } from 'class-validator';
 import { Solicitacao } from './solicitacao.entity';
 import { RequisitoDocumento } from './requisito-documento.entity';
 import { CampoDinamicoBeneficio } from './campo-dinamico-beneficio.entity';
-
-export enum Periodicidade {
-  UNICO = 'unico',
-  MENSAL = 'mensal',
-  BIMESTRAL = 'bimestral',
-  TRIMESTRAL = 'trimestral',
-  SEMESTRAL = 'semestral',
-  ANUAL = 'anual',
-}
+import { PeriodicidadeEnum, Status } from '../enums';
 
 @Entity('tipo_beneficio')
 @Index(['nome'], { unique: true })
+@Index(['codigo'], { unique: true })
 export class TipoBeneficio {
   @PrimaryGeneratedColumn('uuid')
   id: string;
+
+  @Column({ unique: true })
+  @IsNotEmpty({ message: 'Código é obrigatório' })
+  codigo: string;
 
   @Column()
   @IsNotEmpty({ message: 'Nome é obrigatório' })
@@ -38,19 +35,24 @@ export class TipoBeneficio {
 
   @Column({
     type: 'enum',
-    enum: Periodicidade,
+    enum: PeriodicidadeEnum,
     enumName: 'periodicidade',
-    default: Periodicidade.UNICO,
+    default: PeriodicidadeEnum.UNICO,
   })
-  periodicidade: Periodicidade;
+  periodicidade: PeriodicidadeEnum;
 
   @Column('decimal', { precision: 10, scale: 2 })
   @IsNumber({}, { message: 'Valor deve ser um número' })
   @Min(0, { message: 'Valor não pode ser negativo' })
   valor: number;
 
-  @Column({ default: true })
-  ativo: boolean;
+  @Column({
+    type: 'enum',
+    enum: Status,
+    enumName: 'status_enum',
+    default: Status.ATIVO,
+  })
+  status: Status;
 
   @Column('jsonb', { nullable: true })
   criterios_elegibilidade: {
@@ -157,14 +159,14 @@ export class TipoBeneficio {
    * Verifica se o benefício está ativo
    */
   isAtivo(): boolean {
-    return this.ativo && !this.removed_at;
+    return this.status === 'ativo' && !this.removed_at;
   }
 
   /**
    * Verifica se é benefício único
    */
   isBeneficioUnico(): boolean {
-    return this.periodicidade === Periodicidade.UNICO;
+    return this.periodicidade === PeriodicidadeEnum.UNICO;
   }
 
   /**
@@ -178,7 +180,7 @@ export class TipoBeneficio {
    * Verifica se é benefício mensal
    */
   isBeneficioMensal(): boolean {
-    return this.periodicidade === Periodicidade.MENSAL;
+    return this.periodicidade === PeriodicidadeEnum.MENSAL;
   }
 
   /**
@@ -204,12 +206,12 @@ export class TipoBeneficio {
    */
   getDescricaoPeriodicidade(): string {
     const descricoes = {
-      [Periodicidade.UNICO]: 'Único',
-      [Periodicidade.MENSAL]: 'Mensal',
-      [Periodicidade.BIMESTRAL]: 'Bimestral',
-      [Periodicidade.TRIMESTRAL]: 'Trimestral',
-      [Periodicidade.SEMESTRAL]: 'Semestral',
-      [Periodicidade.ANUAL]: 'Anual',
+      [PeriodicidadeEnum.UNICO]: 'Único',
+      [PeriodicidadeEnum.MENSAL]: 'Mensal',
+      [PeriodicidadeEnum.BIMESTRAL]: 'Bimestral',
+      [PeriodicidadeEnum.TRIMESTRAL]: 'Trimestral',
+      [PeriodicidadeEnum.SEMESTRAL]: 'Semestral',
+      [PeriodicidadeEnum.ANUAL]: 'Anual',
     };
     return descricoes[this.periodicidade] || 'Não definido';
   }
@@ -459,7 +461,7 @@ export class TipoBeneficio {
       descricao: this.descricao,
       periodicidade: this.periodicidade,
       valor: this.valor,
-      ativo: this.ativo,
+      status: Status.ATIVO,
       criterios_elegibilidade: this.criterios_elegibilidade ? 
         JSON.parse(JSON.stringify(this.criterios_elegibilidade)) : null,
     };
@@ -521,7 +523,7 @@ export class TipoBeneficio {
       id: this.id,
       nome: this.nome,
       periodicidade: this.periodicidade,
-      ativo: this.ativo,
+      status: Status.ATIVO,
       created_at: this.created_at,
       updated_at: this.updated_at,
     };
@@ -545,7 +547,7 @@ export class TipoBeneficio {
       sugestoes.push('Verificar e corrigir inconsistências nos dados');
     }
     
-    if (!this.ativo) {
+    if (this.status === Status.INATIVO) {
       sugestoes.push('Considerar reativar o benefício se necessário');
     }
     

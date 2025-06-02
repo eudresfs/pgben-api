@@ -12,7 +12,7 @@ import {
   IsObject,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { Periodicidade } from '../../../entities/tipo-beneficio.entity';
+import { PeriodicidadeEnum } from '../../../enums/periodicidade.enum';
 
 /**
  * DTO para critérios de elegibilidade
@@ -72,12 +72,12 @@ export class CreateTipoBeneficioDto {
 
   @ApiProperty({
     description: 'Periodicidade do benefício',
-    enum: Periodicidade,
-    example: Periodicidade.MENSAL,
+    enum: PeriodicidadeEnum,
+    example: PeriodicidadeEnum.MENSAL,
   })
   @IsNotEmpty({ message: 'Periodicidade é obrigatória' })
-  @IsEnum(Periodicidade, { message: 'Periodicidade inválida' })
-  periodicidade: Periodicidade;
+  @IsEnum(PeriodicidadeEnum, { message: 'Periodicidade inválida' })
+  periodicidade: PeriodicidadeEnum;
 
   @ApiProperty({ description: 'Valor do benefício', example: 400.0 })
   @IsNotEmpty({ message: 'Valor é obrigatório' })
