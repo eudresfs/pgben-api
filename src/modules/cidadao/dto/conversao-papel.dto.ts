@@ -1,9 +1,9 @@
 import { IsNotEmpty, IsString, Length, Validate, IsUUID, IsOptional, IsEnum, ValidateNested, IsNumber, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 import { CPFValidator } from '../validators/cpf-validator';
-import { ParentescoEnum } from '../enums/parentesco.enum';
-import { EscolaridadeEnum } from '../enums/escolaridade.enum';
-import { Sexo } from '../enums/sexo.enum'; 
+import { ParentescoEnum } from '../../../enums/parentesco.enum';
+import { EscolaridadeEnum } from '../../../enums/escolaridade.enum';
+import { Sexo } from '../../../enums/sexo.enum'; 
 
 /**
  * DTO para dados básicos do cidadão

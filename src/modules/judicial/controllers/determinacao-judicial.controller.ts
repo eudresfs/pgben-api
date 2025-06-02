@@ -18,7 +18,7 @@ import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../../../auth/guards/permission.guard';
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
 import { DeterminacaoJudicialConsolidadoService } from '../services/determinacao-judicial-consolidado.service';
-import { DeterminacaoJudicial } from '../entities/determinacao-judicial.entity';
+import { DeterminacaoJudicial } from '../../../entities/determinacao-judicial.entity';
 import { CreateDeterminacaoJudicialDto, UpdateDeterminacaoJudicialDto } from '../dtos/determinacao-judicial.dto';
 
 /**

@@ -5,9 +5,11 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
 import { AuthModule } from '../../auth/auth.module'
 
 // Entidades
-import { Solicitacao } from '../solicitacao/entities/solicitacao.entity';
-import { Unidade } from '../unidade/entities/unidade.entity';
-import { TipoBeneficio } from '../beneficio/entities/tipo-beneficio.entity';
+import { 
+  Solicitacao, 
+  Unidade, 
+  TipoBeneficio 
+} from '../../entities';
 
 // Componentes do módulo usando os arquivos de índice
 import { RelatoriosController } from './controllers';

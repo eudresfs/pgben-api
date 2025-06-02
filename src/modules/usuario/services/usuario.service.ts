@@ -16,11 +16,12 @@ import { UpdateUsuarioDto } from '../dto/update-usuario.dto';
 import { UpdateStatusUsuarioDto } from '../dto/update-status-usuario.dto';
 import { UpdateSenhaDto } from '../dto/update-senha.dto';
 import { AlterarSenhaPrimeiroAcessoDto } from '../dto/alterar-senha-primeiro-acesso.dto';
-import { Usuario } from '../entities/usuario.entity';
-import { Role } from '../entities/role.entity';
-import { Status } from '../../../shared/enums/status.enum';
+import { Usuario } from '../../../entities/usuario.entity';
+import { Role } from '../../../entities/role.entity';
+import { Status } from '../../../enums/status.enum';
 import { NotificationManagerService } from '../../notificacao/services/notification-manager.service';
-import { NotificationTemplate } from '../../notificacao/entities/notification-template.entity';
+import { NotificationTemplate } from '../../../entities/notification-template.entity';
+import { normalizeEnumFields } from '../../../shared/utils/enum-normalizer.util';
 
 /**
  * Serviço de usuários
@@ -285,8 +286,8 @@ export class UsuarioService {
           this.SALT_ROUNDS,
         );
 
-        // Criar usuário
-        const novoUsuario = usuarioRepo.create({
+        // Normalizar campos de enum antes de criar
+        const normalizedData = normalizeEnumFields({
           nome: createUsuarioDto.nome,
           email: createUsuarioDto.email.toLowerCase(), // Normalizar email para minúsculas
           senhaHash,
@@ -300,6 +301,9 @@ export class UsuarioService {
           ultimo_login: null,
           tentativas_login: 0,
         });
+        
+        // Criar usuário
+        const novoUsuario = usuarioRepo.create(normalizedData);
 
         const usuarioSalvo = await usuarioRepo.save(novoUsuario);
         
@@ -396,8 +400,11 @@ export class UsuarioService {
           }
         }
 
+        // Normalizar campos de enum antes de atualizar
+        const normalizedData = normalizeEnumFields(updateUsuarioDto);
+        
         // Atualizar usuário
-        await usuarioRepo.update(id, updateUsuarioDto);
+        await usuarioRepo.update(id, normalizedData);
 
         // Buscar usuário atualizado
         const usuarioAtualizado = await usuarioRepo.findOne({ where: { id } });

@@ -1,6 +1,6 @@
 import { DataSource, Repository } from 'typeorm';
 import { Injectable } from '@nestjs/common';
-import { PermissionGroup } from '../entities/permission-group.entity';
+import { PermissionGroup } from '../../entities/permission-group.entity';
 
 /**
  * Repositório para a entidade PermissionGroup.

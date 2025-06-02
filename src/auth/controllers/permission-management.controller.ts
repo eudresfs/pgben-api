@@ -24,7 +24,7 @@ import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { PermissionGuard } from '../guards/permission.guard';
 import { RequiresPermission } from '../decorators/requires-permission.decorator';
 import { PermissionService } from '../services/permission.service';
-import { TipoEscopo } from '../entities/user-permission.entity';
+import { TipoEscopo } from '../../entities/user-permission.entity';
 import { AuthorizationService } from '../services/authorization.service';
 
 /**

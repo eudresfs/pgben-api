@@ -24,7 +24,7 @@ import { UpdateStatusUnidadeDto } from '../dto/update-status-unidade.dto';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../../../auth/guards/permission.guard';
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
-import { ScopeType } from '../../../auth/entities/user-permission.entity';
+import { ScopeType } from '../../../entities/user-permission.entity';
 
 /**
  * Controlador de unidades

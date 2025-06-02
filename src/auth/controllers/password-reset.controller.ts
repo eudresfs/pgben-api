@@ -30,7 +30,7 @@ import {
   ResetPasswordResponseDto,
   ValidateTokenResponseDto,
   PasswordResetStatsDto,
-} from '../dto/password-reset.dto';
+} from '../dtos/password-reset.dto';
 import { GetClientInfo } from '../../common/decorators/get-client-info.decorator';
 import { ClientInfo } from '../../common/interfaces/client-info.interface';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';

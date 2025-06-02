@@ -2,7 +2,7 @@ import { Test } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import { AuditoriaService } from '../services/auditoria.service';
 import { LogAuditoriaRepository } from '../repositories/log-auditoria.repository';
-import { TipoOperacao } from '../enums/tipo-operacao.enum';
+import { TipoOperacao } from '../../../enums/tipo-operacao.enum';
 import { CreateLogAuditoriaDto } from '../dto/create-log-auditoria.dto';
 import { faker } from '@faker-js/faker';
 import { performance } from 'perf_hooks';

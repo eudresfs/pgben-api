@@ -21,4 +21,4 @@ export {
 } from './dtos/auth-token-output.dto';
 
 // Enums
-export { Role } from '../shared/enums/role.enum';
+export { Role } from '../enums/role.enum';

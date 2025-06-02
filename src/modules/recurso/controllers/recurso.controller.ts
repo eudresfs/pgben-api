@@ -27,8 +27,8 @@ import { AnalisarRecursoDto } from '../dto/analisar-recurso.dto';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../../../auth/guards/permission.guard';
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
-import { ScopeType } from '../../../auth/entities/user-permission.entity';
-import { StatusRecurso } from '../entities/recurso.entity';
+import { ScopeType } from '../../../entities/user-permission.entity';
+import { StatusRecurso } from '../../../entities/recurso.entity';
 import { Request } from 'express';
 
 /**
@@ -139,17 +139,8 @@ export class RecursoController {
     description: 'Recurso encontrado com sucesso',
   })
   @ApiResponse({ status: 404, description: 'Recurso não encontrado' })
-  async findOne(@Param('id', ParseUUIDPipe) id: string, @Req() req: Request) {
-    const user = req.user;
-    const recurso = await this.recursoService.findById(id);
-
-    if (!this.recursoService.canAccessRecurso(recurso, user)) {
-      throw new UnauthorizedException(
-        'Você não tem permissão para acessar este recurso',
-      );
-    }
-
-    return recurso;
+  async findOne(@Param('id', ParseUUIDPipe) id: string) {
+    return this.recursoService.findById(id);
   }
 
   /**
@@ -290,16 +281,7 @@ export class RecursoController {
   @ApiOperation({ summary: 'Listar histórico de um recurso' })
   @ApiResponse({ status: 200, description: 'Histórico retornado com sucesso' })
   @ApiResponse({ status: 404, description: 'Recurso não encontrado' })
-  async getHistorico(@Param('id', ParseUUIDPipe) id: string, @Req() req: Request) {
-    const user = req.user;
-    const recurso = await this.recursoService.findById(id);
-
-    if (!this.recursoService.canAccessRecurso(recurso, user)) {
-      throw new UnauthorizedException(
-        'Você não tem permissão para acessar este recurso',
-      );
-    }
-
+  async getHistorico(@Param('id', ParseUUIDPipe) id: string) {
     return this.recursoService.getHistorico(id);
   }
 }

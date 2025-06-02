@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { TipoConta, TipoChavePix } from '../enums/info-bancaria.enum';
+import { TipoConta, TipoChavePix } from '../../../enums/info-bancaria.enum';
 
 /**
  * DTO de resposta para informações bancárias

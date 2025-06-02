@@ -30,7 +30,7 @@ import { PermissionGuard } from '../../../auth/guards/permission.guard';
 import { PrimeiroAcessoGuard } from '../../../auth/guards/primeiro-acesso.guard';
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
 import { AllowPrimeiroAcesso } from '../../../auth/decorators/allow-primeiro-acesso.decorator';
-import { ScopeType } from '../../../auth/entities/user-permission.entity';
+import { ScopeType } from '../../../entities/user-permission.entity';
 
 /**
  * Controlador de usuários

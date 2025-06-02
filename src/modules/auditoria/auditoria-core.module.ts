@@ -2,7 +2,7 @@ import { Global, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { BullModule } from '@nestjs/bull';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { LogAuditoria } from './entities/log-auditoria.entity';
+import { LogAuditoria } from '../../entities';
 import { AuditoriaService } from './services/auditoria.service';
 import { AuditoriaQueueService } from './services/auditoria-queue.service';
 import { LogAuditoriaRepository } from './repositories/log-auditoria.repository';

@@ -1,4 +1,4 @@
-import { ParametroTipoEnum } from '../enums';
+import { ParametroTipoEnum } from '../../../enums';
 import { ParametroTipoInvalidoException } from '../exceptions';
 
 /**

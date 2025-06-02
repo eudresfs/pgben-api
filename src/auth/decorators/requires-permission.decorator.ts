@@ -1,5 +1,5 @@
 import { SetMetadata } from '@nestjs/common';
-import { TipoEscopo } from '../entities/user-permission.entity';
+import { TipoEscopo } from '../../entities/user-permission.entity';
 
 /**
  * Interface para definição de requisitos de permissão.

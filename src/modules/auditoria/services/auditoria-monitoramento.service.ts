@@ -1,9 +1,9 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, Raw, Not, IsNull, MoreThanOrEqual } from 'typeorm';
-import { LogAuditoria } from '../entities/log-auditoria.entity';
+import { LogAuditoria } from '../../../entities/log-auditoria.entity';
 import { ConfigService } from '@nestjs/config';
-import { TipoOperacao } from '../enums/tipo-operacao.enum';
+import { TipoOperacao } from '../../../enums/tipo-operacao.enum';
 import { ScheduleAdapterService } from '../../../shared/schedule/schedule-adapter.service';
 
 /**

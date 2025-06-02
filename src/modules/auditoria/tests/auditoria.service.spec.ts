@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AuditoriaService } from '../services/auditoria.service';
-import { LogAuditoria } from '../entities/log-auditoria.entity';
+import { LogAuditoria } from '../../../entities';
 import { CreateLogAuditoriaDto } from '../dto/create-log-auditoria.dto';
 import { TipoOperacao } from '../../auditoria/enums/tipo-operacao.enum';
 import { QueryLogAuditoriaDto } from '../dto/query-log-auditoria.dto';

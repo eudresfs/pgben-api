@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
-import { StatusSolicitacao } from '../entities/solicitacao.entity';
+import { StatusSolicitacao } from '../../../entities/solicitacao.entity';
 
 /**
  * DTO para atualização de status de solicitação

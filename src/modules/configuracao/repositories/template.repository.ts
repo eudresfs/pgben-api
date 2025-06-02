@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Template } from '../entities/template.entity';
-import { TemplateTipoEnum } from '../enums/template-tipo.enum';
+import { Template } from '../../../entities/template.entity';
+import { TemplateTipoEnum } from '../../../enums/template-tipo.enum';
 
 /**
  * Repositório para gerenciamento de templates do sistema

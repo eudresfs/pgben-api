@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { Repository, DataSource } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { HistoricoSolicitacao } from '../entities/historico-solicitacao.entity';
-import { StatusSolicitacao } from '../entities/solicitacao.entity';
+import { HistoricoSolicitacao } from '../../../entities/historico-solicitacao.entity';
+import { StatusSolicitacao } from '../../../entities/solicitacao.entity';
 
 /**
  * Repository customizado para Histórico de Solicitações

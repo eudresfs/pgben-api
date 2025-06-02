@@ -1,7 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsString, IsEnum, IsNotEmpty, IsOptional, IsNumber, IsBoolean, IsArray, IsUUID, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
-import { TipoAgendamento, EstrategiaAmostragem } from '../entities/metrica-configuracao.entity';
+import { TipoAgendamento, EstrategiaAmostragem } from '../../../entities';
 
 /**
  * DTO para criar configuração de uma métrica

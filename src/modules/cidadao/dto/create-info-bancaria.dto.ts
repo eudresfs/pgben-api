@@ -8,7 +8,7 @@ import {
   Matches,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { TipoConta, TipoChavePix } from '../enums/info-bancaria.enum';
+import { TipoConta, TipoChavePix } from '../../../enums/info-bancaria.enum';
 
 /**
  * DTO para criação de informações bancárias

@@ -1,4 +1,4 @@
-import { StatusRecurso } from '../entities/recurso.entity';
+import { StatusRecurso } from '../../../entities/recurso.entity';
 
 /**
  * DTO de resposta para recursos

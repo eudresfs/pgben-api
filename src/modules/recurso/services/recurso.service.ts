@@ -6,9 +6,9 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Connection } from 'typeorm';
-import { Recurso, StatusRecurso } from '../entities/recurso.entity';
-import { RecursoHistorico } from '../entities/recurso-historico.entity';
-import { Solicitacao, StatusSolicitacao } from '../../solicitacao/entities/solicitacao.entity';
+import { Recurso, StatusRecurso } from '../../../entities/recurso.entity';
+import { RecursoHistorico } from '../../../entities/recurso-historico.entity';
+import { Solicitacao, StatusSolicitacao } from '../../../entities/solicitacao.entity';
 import { CreateRecursoDto } from '../dto/create-recurso.dto';
 import { AnalisarRecursoDto } from '../dto/analisar-recurso.dto';
 import { RecursoResponseDto } from '../dto/recurso-response.dto';
@@ -160,23 +160,7 @@ export class RecursoService {
     return recurso;
   }
 
-  /**
-   * Verifica se um usuário tem permissão para acessar um recurso
-   */
-  canAccessRecurso(recurso: Recurso, user: any): boolean {
-    // Administradores e gestores podem acessar qualquer recurso
-    if ([ROLES.ADMIN, ROLES.GESTOR].includes(user.role)) {
-      return true;
-    }
 
-    // Técnicos só podem acessar recursos de solicitações da sua unidade
-    if (user.role === ROLES.TECNICO) {
-      return recurso.solicitacao.unidade_id === user.unidade_id;
-    }
-
-    // Outros usuários não têm acesso
-    return false;
-  }
 
   /**
    * Cria um novo recurso

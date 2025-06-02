@@ -32,13 +32,13 @@ import {
   CheckBlacklistResponseDto,
   BlacklistQueryDto,
   BlacklistStatsDto,
-} from '../dto/jwt-blacklist.dto';
-import { JwtBlacklist } from '../entities/jwt-blacklist.entity';
+} from '../dtos/jwt-blacklist.dto';
+import { JwtBlacklist } from '../../entities/jwt-blacklist.entity';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { RolesGuard } from '../guards/roles.guard';
 import { Roles } from '../decorators/role.decorator';
 import { GetUser } from '../decorators/get-user.decorator';
-import { Usuario } from '../../modules/usuario/entities/usuario.entity';
+import { Usuario } from '../../entities/usuario.entity';
 import { ThrottleApi, ThrottleCritical } from '../../common/decorators/throttle.decorator';
 import { LoggingInterceptor } from '../../common/interceptors/logging.interceptor'; 
 

@@ -4,27 +4,29 @@ import { AuthModule } from '../../auth/auth.module'
 import { SolicitacaoModule } from '../solicitacao/solicitacao.module'
 
 // Entidades
-import { TipoBeneficio } from './entities/tipo-beneficio.entity';
-import { RequisitoDocumento } from './entities/requisito-documento.entity';
-import { FluxoBeneficio } from './entities/fluxo-beneficio.entity';
-import { CampoDinamicoBeneficio } from './entities/campo-dinamico-beneficio.entity';
-import { VersaoSchemaBeneficio } from './entities/versao-schema-beneficio.entity';
-import { EspecificacaoNatalidade } from './entities/especificacao-natalidade.entity';
-import { EspecificacaoAluguelSocial } from './entities/especificacao-aluguel-social.entity';
-import { EspecificacaoFuneral } from './entities/especificacao-funeral.entity';
-import { EspecificacaoCestaBasica } from './entities/especificacao-cesta-basica.entity';
-import { ConfiguracaoRenovacao } from './entities/configuracao-renovacao.entity';
-import { Solicitacao } from '../solicitacao/entities/solicitacao.entity';
+import { 
+  TipoBeneficio, 
+  RequisitoDocumento, 
+  FluxoBeneficio, 
+  CampoDinamicoBeneficio, 
+  VersaoSchemaBeneficio, 
+  DadosNatalidade, 
+  DadosAluguelSocial, 
+  DadosFuneral, 
+  DadosCestaBasica, 
+  ConfiguracaoRenovacao, 
+  Solicitacao 
+} from '../../entities';
 
 // Controladores
 import { BeneficioController } from './controllers/beneficio.controller';
 import { CampoDinamicoController } from './controllers/campo-dinamico.controller';
 import { FormularioDinamicoController } from './controllers/formulario-dinamico.controller';
 import { ExportacaoController } from '../solicitacao/controllers/exportacao.controller';
-import { EspecificacaoNatalidadeController } from './controllers/especificacao-natalidade.controller';
-import { EspecificacaoAluguelSocialController } from './controllers/especificacao-aluguel-social.controller';
-import { EspecificacaoFuneralController } from './controllers/especificacao-funeral.controller';
-import { EspecificacaoCestaBasicaController } from './controllers/especificacao-cesta-basica.controller';
+import { DadosNatalidadeController } from './controllers/dados-natalidade.controller';
+import { DadosAluguelSocialController } from './controllers/dados-aluguel-social.controller';
+import { DadosFuneralController } from './controllers/dados-funeral.controller';
+import { DadosCestaBasicaController } from './controllers/dados-cesta-basica.controller';
 import { FormularioCondicionalController } from './controllers/formulario-condicional.controller';
 import { RenovacaoAutomaticaController } from './controllers/renovacao-automatica.controller';
 
@@ -35,20 +37,20 @@ import { ValidacaoDinamicaService } from './services/validacao-dinamica.service'
 import { DadosDinamicosService } from './services/dados-dinamicos.service';
 import { ExportacaoService } from '../solicitacao/services/exportacao.service';
 import { FormularioCondicionalService } from './services/formulario-condicional.service';
-import { EspecificacaoNatalidadeService } from './services/especificacao-natalidade.service';
-import { EspecificacaoAluguelSocialService } from './services/especificacao-aluguel-social.service';
-import { EspecificacaoFuneralService } from './services/especificacao-funeral.service';
-import { EspecificacaoCestaBasicaService } from './services/especificacao-cesta-basica.service';
+import { DadosNatalidadeService } from './services/dados-natalidade.service';
+import { DadosAluguelSocialService } from './services/dados-aluguel-social.service';
+import { DadosFuneralService } from './services/dados-funeral.service';
+import { DadosCestaBasicaService } from './services/dados-cesta-basica.service';
 import { RenovacaoAutomaticaService } from './services/renovacao-automatica.service';
 import { NotificacaoRenovacaoService } from './services/notificacao-renovacao.service';
 
 // Repositórios
 import { TipoBeneficioRepository } from './repositories/tipo-beneficio.repository';
 import { CampoDinamicoRepository } from './repositories/campo-dinamico.repository';
-import { EspecificacaoNatalidadeRepository } from './repositories/especificacao-natalidade.repository';
-import { EspecificacaoAluguelSocialRepository } from './repositories/especificacao-aluguel-social.repository';
-import { EspecificacaoFuneralRepository } from './repositories/especificacao-funeral.repository';
-import { EspecificacaoCestaBasicaRepository } from './repositories/especificacao-cesta-basica.repository';
+import { DadosNatalidadeRepository } from './repositories/dados-natalidade.repository';
+import { DadosAluguelSocialRepository } from './repositories/dados-aluguel-social.repository';
+import { DadosFuneralRepository } from './repositories/dados-funeral.repository';
+import { DadosCestaBasicaRepository } from './repositories/dados-cesta-basica.repository';
 import { ConfiguracaoRenovacaoRepository } from './repositories/configuracao-renovacao.repository';
 
 /**
@@ -65,10 +67,10 @@ import { ConfiguracaoRenovacaoRepository } from './repositories/configuracao-ren
       FluxoBeneficio,
       CampoDinamicoBeneficio,
       VersaoSchemaBeneficio,
-      EspecificacaoNatalidade,
-      EspecificacaoAluguelSocial,
-      EspecificacaoFuneral,
-      EspecificacaoCestaBasica,
+      DadosNatalidade,
+      DadosAluguelSocial,
+      DadosFuneral,
+      DadosCestaBasica,
       ConfiguracaoRenovacao,
       Solicitacao,
     ]),
@@ -80,10 +82,10 @@ import { ConfiguracaoRenovacaoRepository } from './repositories/configuracao-ren
     CampoDinamicoController,
     FormularioDinamicoController,
     ExportacaoController,
-    EspecificacaoNatalidadeController,
-    EspecificacaoAluguelSocialController,
-    EspecificacaoFuneralController,
-    EspecificacaoCestaBasicaController,
+    DadosNatalidadeController,
+    DadosAluguelSocialController,
+    DadosFuneralController,
+    DadosCestaBasicaController,
     FormularioCondicionalController,
     RenovacaoAutomaticaController,
   ],
@@ -93,19 +95,19 @@ import { ConfiguracaoRenovacaoRepository } from './repositories/configuracao-ren
     ValidacaoDinamicaService,
     DadosDinamicosService,
     ExportacaoService,
-    EspecificacaoNatalidadeService,
-    EspecificacaoAluguelSocialService,
-    EspecificacaoFuneralService,
-    EspecificacaoCestaBasicaService,
+    DadosNatalidadeService,
+    DadosAluguelSocialService,
+    DadosFuneralService,
+    DadosCestaBasicaService,
     FormularioCondicionalService,
     RenovacaoAutomaticaService,
     NotificacaoRenovacaoService,
     TipoBeneficioRepository,
     CampoDinamicoRepository,
-    EspecificacaoNatalidadeRepository,
-    EspecificacaoAluguelSocialRepository,
-    EspecificacaoFuneralRepository,
-    EspecificacaoCestaBasicaRepository,
+    DadosNatalidadeRepository,
+    DadosAluguelSocialRepository,
+    DadosFuneralRepository,
+    DadosCestaBasicaRepository,
     ConfiguracaoRenovacaoRepository,
   ],
   exports: [
@@ -113,10 +115,10 @@ import { ConfiguracaoRenovacaoRepository } from './repositories/configuracao-ren
     CampoDinamicoService,
     ValidacaoDinamicaService,
     DadosDinamicosService,
-    EspecificacaoNatalidadeService,
-    EspecificacaoAluguelSocialService,
-    EspecificacaoFuneralService,
-    EspecificacaoCestaBasicaService,
+    DadosNatalidadeService,
+    DadosAluguelSocialService,
+    DadosFuneralService,
+    DadosCestaBasicaService,
     FormularioCondicionalService,
     RenovacaoAutomaticaService,
     NotificacaoRenovacaoService,

@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { LogAuditoria } from '../../auditoria/entities/log-auditoria.entity';
+import { LogAuditoria } from '../../../entities/log-auditoria.entity';
 import { HealthCheckService } from '../../../shared/services/health-check.service';
 
 /**

@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PagamentoService } from '../../services/pagamento.service';
-import { Pagamento } from '../../entities/pagamento.entity';
+import { Pagamento } from '../../entities';
 import { StatusPagamentoEnum } from '../../enums/status-pagamento.enum';
 import { MetodoPagamentoEnum } from '../../enums/metodo-pagamento.enum';
 import { StatusTransitionValidator } from '../../validators/status-transition-validator';

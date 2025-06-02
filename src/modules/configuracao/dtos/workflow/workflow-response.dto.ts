@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { WorkflowAcaoEnum } from '../../enums';
+import { WorkflowAcaoEnum } from '../../../../enums';
 
 /**
  * DTO para resposta com informações de uma etapa de workflow.

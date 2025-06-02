@@ -8,104 +8,116 @@ import { DataSource } from 'typeorm';
 import { config as dotenvConfig } from 'dotenv';
 
 // Entidades do módulo de autenticação
-import { JwtBlacklist } from './auth/entities/jwt-blacklist.entity';
-import { PasswordResetToken } from './auth/entities/password-reset-token.entity';
-import { PermissionGroup } from './auth/entities/permission-group.entity';
-import { PermissionGroupMapping } from './auth/entities/permission-group-mapping.entity';
-import { Permission } from './auth/entities/permission.entity';
-import { PermissionScope } from './auth/entities/permission-scope.entity';
-import { RefreshToken } from './auth/entities/refresh-token.entity';
-import { RolePermission } from './auth/entities/role-permission.entity';
-import { UserPermission } from './auth/entities/user-permission.entity';
+import { JwtBlacklist } from './entities/jwt-blacklist.entity';
+import { PasswordResetToken } from './entities/password-reset-token.entity';
+import { PermissionGroup } from './entities/permission-group.entity';
+import { PermissionGroupMapping } from './entities/permission-group-mapping.entity';
+import { Permission } from './entities/permission.entity';
+import { PermissionScope } from './entities/permission-scope.entity';
+import { RefreshToken } from './entities/refresh-token.entity';
+import { RolePermission } from './entities/role-permission.entity';
+import { UserPermission } from './entities/user-permission.entity';
 
-// Entidades do módulo de auditoria
-import { AuditLog } from './audit/entities/audit-log.entity';
-import { CategoriaLog } from './modules/auditoria/entities/categoria-log.entity';
-import { LogAuditoria } from './modules/auditoria/entities/log-auditoria.entity';
+// Entidades de Log e Auditoria
+import { AuditLog } from './entities/audit-log.entity';
 
-// Entidades do módulo de usuário
-import { Usuario } from './modules/usuario/entities/usuario.entity';
-import { Role } from './modules/usuario/entities/role.entity';
+// Entidades de Recurso
+import { Recurso } from './entities/recurso.entity';
+import { RecursoHistorico } from './entities/recurso-historico.entity';
 
-// Entidades do módulo de unidade
-import { Unidade } from './modules/unidade/entities/unidade.entity';
-import { Setor } from './modules/unidade/entities/setor.entity';
-import { SetorUnidade } from './modules/unidade/entities/setor-unidade.entity';
-
-// Entidades do módulo de cidadão
-import { Cidadao } from './modules/cidadao/entities/cidadao.entity';
-import { PapelCidadao } from './modules/cidadao/entities/papel-cidadao.entity';
-import { ComposicaoFamiliar } from './modules/cidadao/entities/composicao-familiar.entity';
-import { DadosSociais } from './modules/cidadao/entities/dados-sociais.entity';
-import { SituacaoMoradia } from './modules/cidadao/entities/situacao-moradia.entity';
-import { HistoricoConversaoPapel } from './modules/cidadao/entities/historico-conversao-papel.entity';
-import { RegraConflitoPapel } from './modules/cidadao/entities/regra-conflito-papel.entity';
-
-// Entidades do módulo de benefício
-import { TipoBeneficio } from './modules/beneficio/entities/tipo-beneficio.entity';
-import { RequisitoDocumento } from './modules/beneficio/entities/requisito-documento.entity';
-import { CampoDinamicoBeneficio } from './modules/beneficio/entities/campo-dinamico-beneficio.entity';
-import { ConfiguracaoRenovacao } from './modules/beneficio/entities/configuracao-renovacao.entity';
-import { EspecificacaoAluguelSocial } from './modules/beneficio/entities/especificacao-aluguel-social.entity';
-import { EspecificacaoCestaBasica } from './modules/beneficio/entities/especificacao-cesta-basica.entity';
-import { EspecificacaoFuneral } from './modules/beneficio/entities/especificacao-funeral.entity';
-import { EspecificacaoNatalidade } from './modules/beneficio/entities/especificacao-natalidade.entity';
-import { FluxoBeneficio } from './modules/beneficio/entities/fluxo-beneficio.entity';
-import { VersaoSchemaBeneficio } from './modules/beneficio/entities/versao-schema-beneficio.entity';
-// Entidades do módulo de solicitação
-import { Solicitacao } from './modules/solicitacao/entities/solicitacao.entity';
-import { DadosSolicitacaoBeneficio } from './modules/solicitacao/entities/dados-beneficios.entity';
-import { Pendencia } from './modules/solicitacao/entities/pendencia.entity';
-import { HistoricoSolicitacao } from './modules/solicitacao/entities/historico-solicitacao.entity';
-
-// Entidades do módulo judicial
-import { ProcessoJudicial } from './modules/judicial/entities/processo-judicial.entity';
-import { DeterminacaoJudicial } from './modules/judicial/entities/determinacao-judicial.entity';
-
-// Entidades do módulo de documento
-import { Documento } from './modules/documento/entities/documento.entity';
-// DocumentoEnviado removida - funcionalidade consolidada na entidade Documento
-
-// Entidades do módulo de notificação
-import { Notificacao } from './modules/notificacao/entities/notificacao.entity';
-import { NotificacaoSistema } from './modules/notificacao/entities/notification.entity';
-import { NotificationTemplate } from './modules/notificacao/entities/notification-template.entity';
-
-// Entidades do módulo de ocorrência
-import { Ocorrencia } from './modules/ocorrencia/entities/ocorrencia.entity';
-import { DemandaMotivo } from './modules/ocorrencia/entities/demanda-motivo.entity';
-
-// Entidades do módulo de configuração
-
-// Entidades do módulo de configuração
-import { ConfiguracaoIntegracao } from './modules/configuracao/entities/configuracao-integracao.entity';
-import { Parametro } from './modules/configuracao/entities/parametro.entity';
-import { Template } from './modules/configuracao/entities/template.entity';
-import { WorkflowBeneficio } from './modules/configuracao/entities/workflow-beneficio.entity';
-
-// Entidades do módulo de integrador
-import { Integrador } from './modules/integrador/entities/integrador.entity';
-import { IntegradorToken } from './modules/integrador/entities/integrador-token.entity';
-import { TokenRevogado } from './modules/integrador/entities/token-revogado.entity';
-
-// Entidades do módulo de pagamento
-import { Pagamento } from './modules/pagamento/entities/pagamento.entity';
-import { ComprovantePagamento } from './modules/pagamento/entities/comprovante-pagamento.entity';
-import { ConfirmacaoRecebimento } from './modules/pagamento/entities/confirmacao-recebimento.entity';
-
-// Entidades do módulo de métricas
-import { AlertaMetrica } from './modules/metricas/entities/alerta-metrica.entity';
-import { ConfiguracaoNotificacao } from './modules/metricas/entities/configuracao-notificacao.entity';
-import { MetricaConfiguracao } from './modules/metricas/entities/metrica-configuracao.entity';
-import { MetricaDefinicao } from './modules/metricas/entities/metrica-definicao.entity';
-import { MetricaDocumento } from './modules/metricas/entities/metrica-documento.entity';
-import { MetricaHttp } from './modules/metricas/entities/metrica-http.entity';
-import { MetricaSeguranca } from './modules/metricas/entities/metrica-seguranca.entity';
-import { MetricaSistema } from './modules/metricas/entities/metrica-sistema.entity';
-import { MetricaSnapshot } from './modules/metricas/entities/metrica-snapshot.entity';
-import { Metrica } from './modules/metricas/entities/metrica.entity';
-import { RegistroMetrica } from './modules/metricas/entities/registro-metrica.entity';
-import { RegraAlerta } from './modules/metricas/entities/regra-alerta.entity';
+// Importação centralizada de todas as entidades
+import {
+  // Entidades de Alertas e Métricas
+  AlertaMetrica,
+  Metrica,
+  Pendencia,
+  MetricaConfiguracao,
+  MetricaDefinicao,
+  MetricaDocumento,
+  MetricaHttp,
+  MetricaSeguranca,
+  MetricaSistema,
+  MetricaSnapshot,
+  RegistroMetrica,
+  RegraAlerta,
+  
+  // Entidades de Benefícios
+  TipoBeneficio,
+  CampoDinamicoBeneficio,
+  DadosBeneficios,
+  FluxoBeneficio,
+  VersaoSchemaBeneficio,
+  WorkflowBeneficio,
+  
+  // Entidades de Dados Específicos de Benefícios
+  DadosAluguelSocial,
+  DadosCestaBasica,
+  DadosFuneral,
+  DadosNatalidade,
+  
+  // Entidades de Cidadão e Família
+  Cidadao,
+  ComposicaoFamiliar,
+  DadosSociais,
+  InfoBancaria,
+  PapelCidadao,
+  SituacaoMoradia,
+  
+  // Entidades de Configuração
+  ConfiguracaoIntegracao,
+  ConfiguracaoNotificacao,
+  ConfiguracaoRenovacao,
+  Parametro,
+  
+  // Entidades de Documentos
+  Documento,
+  RequisitoDocumento,
+  
+  // Entidades de Histórico e Logs
+  CategoriaLog,
+  HistoricoConversaoPapel,
+  HistoricoSolicitacao,
+  LogAuditoria,
+  
+  // Entidades de Integração
+  Integrador,
+  IntegradorToken,
+  
+  // Entidades Judiciais
+  DeterminacaoJudicial,
+  ProcessoJudicial,
+  
+  // Entidades de Notificação
+  Notificacao,
+  Notification,
+  NotificationTemplate,
+  Template,
+  
+  // Entidades de Ocorrências e Demandas
+  DemandaMotivo,
+  Ocorrencia,
+  
+  // Entidades de Pagamento
+  ComprovantePagamento,
+  ConfirmacaoRecebimento,
+  Pagamento,
+  
+  // Entidades de Regras
+  RegraConflitoPapel,
+  
+  // Entidades de Segurança e Autenticação
+  Role,
+  TokenRevogado,
+  Usuario,
+  
+  // Entidades de Setores e Unidades
+  Setor,
+  SetorUnidade,
+  Unidade,
+  
+  // Entidades de Solicitação
+  Solicitacao
+} from './entities';
 
 dotenvConfig();
 
@@ -133,83 +145,88 @@ export const AppDataSource = new DataSource({
     RefreshToken,
     RolePermission,
     UserPermission,
-    
+
     // Entidades de auditoria
     AuditLog,
     CategoriaLog,
     LogAuditoria,
-    
+
     // Entidades de usuário
-    Role,
     Usuario,
-    
+    Role,
+
     // Entidades de unidade
     Unidade,
     Setor,
     SetorUnidade,
-    
+
     // Entidades de cidadão
     Cidadao,
     PapelCidadao,
     ComposicaoFamiliar,
     DadosSociais,
+    InfoBancaria,
     SituacaoMoradia,
     HistoricoConversaoPapel,
     RegraConflitoPapel,
-    
+
     // Entidades de benefício
     TipoBeneficio,
     RequisitoDocumento,
     CampoDinamicoBeneficio,
     ConfiguracaoRenovacao,
-    EspecificacaoAluguelSocial,
-    EspecificacaoCestaBasica,
-    EspecificacaoFuneral,
-    EspecificacaoNatalidade,
+    DadosAluguelSocial,
+    DadosCestaBasica,
+    DadosFuneral,
+    DadosNatalidade,
     FluxoBeneficio,
     VersaoSchemaBeneficio,
-    
+    WorkflowBeneficio,
+
     // Entidades de solicitação
     Solicitacao,
-    DadosSolicitacaoBeneficio,
+    DadosBeneficios,
     Pendencia,
     HistoricoSolicitacao,
-    
-    // Entidades de documento
-    Documento,
-    
-    // Entidades de notificação
-    Notificacao,
-    NotificacaoSistema,
-    NotificationTemplate,
-    
-    // Entidades de ocorrência
-    Ocorrencia,
-    DemandaMotivo,
-    
+
     // Entidades judiciais
     ProcessoJudicial,
     DeterminacaoJudicial,
-    
+
+    // Entidades de documento
+    Documento,
+
+    // Entidades de recurso
+    Recurso,
+    RecursoHistorico,
+
+    // Entidades de notificação
+    Notificacao,
+    Notification,
+    NotificationTemplate,
+    Template,
+
+    // Entidades de ocorrência
+    Ocorrencia,
+    DemandaMotivo,
+
     // Entidades de configuração
     ConfiguracaoIntegracao,
+    ConfiguracaoNotificacao,
     Parametro,
-    Template,
-    WorkflowBeneficio,
-    
-    // Entidades de integrador
+
+    // Entidades de integração
     Integrador,
     IntegradorToken,
     TokenRevogado,
-    
+
     // Entidades de pagamento
     Pagamento,
     ComprovantePagamento,
     ConfirmacaoRecebimento,
-    
+
     // Entidades de métricas
     AlertaMetrica,
-    ConfiguracaoNotificacao,
     MetricaConfiguracao,
     MetricaDefinicao,
     MetricaDocumento,

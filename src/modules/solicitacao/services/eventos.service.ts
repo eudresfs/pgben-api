@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { SolicitacaoEvent, SolicitacaoEventType, SolicitacaoEventUnion } from '../events/solicitacao-events';
-import { Solicitacao, StatusSolicitacao } from '../entities/solicitacao.entity';
+import { Solicitacao, StatusSolicitacao } from '../../../entities/solicitacao.entity';
 
 /**
  * Serviço responsável pelo gerenciamento de eventos do módulo de solicitação

@@ -1,5 +1,5 @@
 import { ForbiddenException } from '@nestjs/common';
-import { TipoEscopo } from '../entities/user-permission.entity';
+import { TipoEscopo } from '../../entities/user-permission.entity';
 
 /**
  * Exceção lançada quando um usuário não tem permissão para acessar um recurso.

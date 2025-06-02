@@ -5,7 +5,7 @@ import { TemplateCreateDto } from '../dtos/template/template-create.dto';
 import { TemplateUpdateDto } from '../dtos/template/template-update.dto';
 import { TemplateTestDto } from '../dtos/template/template-test.dto';
 import { TemplateResponseDto } from '../dtos/template/template-response.dto';
-import { TemplateTipoEnum } from '../enums/template-tipo.enum';
+import { TemplateTipoEnum } from '../../../enums/template-tipo.enum';
 
 /**
  * Controlador responsável pelas operações de templates do sistema

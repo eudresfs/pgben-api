@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, Logger, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, FindOptionsWhere, FindManyOptions, Like } from 'typeorm';
-import { ProcessoJudicial, StatusProcessoJudicial } from '../entities/processo-judicial.entity';
+import { ProcessoJudicial, StatusProcessoJudicial } from '../../../entities/processo-judicial.entity';
 import { PaginatedResult } from '../../../common/interfaces/paginated-result.interface';
 
 /**

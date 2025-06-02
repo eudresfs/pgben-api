@@ -4,7 +4,7 @@ import { AuditoriaService } from '../../services/auditoria.service';
 import { AuditoriaQueueService } from '../../services/auditoria-queue.service';
 import { TipoOperacao } from '../../../auditoria/enums/tipo-operacao.enum';
 import { CreateLogAuditoriaDto } from '../../dto/create-log-auditoria.dto';
-import { LogAuditoria } from '../../entities/log-auditoria.entity';
+import { LogAuditoria } from '../../entities';
 import { Request, Response } from 'express';
 
 // Função auxiliar para criar um mock do objeto Request do Express

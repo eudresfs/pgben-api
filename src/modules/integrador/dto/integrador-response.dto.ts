@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Integrador } from '../entities/integrador.entity';
+import { Integrador } from '../../../entities/integrador.entity';
 
 /**
  * DTO para resposta padronizada de informações de integrador.

@@ -28,15 +28,17 @@ import { MetricasAnomaliasService } from './services/metricas-anomalia.service';
 import { MetricasMiddleware } from './middlewares/metricas.middleware';
 
 // Entidades
-import { LogAuditoria } from '../auditoria/entities/log-auditoria.entity';
-import { MetricaDefinicao } from './entities/metrica-definicao.entity';
-import { MetricaSnapshot } from './entities/metrica-snapshot.entity';
-import { MetricaConfiguracao } from './entities/metrica-configuracao.entity';
-import { Solicitacao } from '../solicitacao/entities/solicitacao.entity';
-import { Recurso } from '../recurso/entities/recurso.entity';
-import { TipoBeneficio } from '../beneficio/entities/tipo-beneficio.entity';
-import { Unidade } from '../unidade/entities/unidade.entity';
-import { Usuario } from '../usuario/entities/usuario.entity';
+import { 
+  LogAuditoria, 
+  MetricaDefinicao, 
+  MetricaSnapshot, 
+  MetricaConfiguracao, 
+  Solicitacao, 
+  Recurso, 
+  TipoBeneficio, 
+  Unidade, 
+  Usuario 
+} from '../../entities';
 
 // Módulos externos
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';

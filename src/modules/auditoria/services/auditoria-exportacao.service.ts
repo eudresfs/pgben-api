@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, ILike } from 'typeorm';
-import { LogAuditoria } from '../entities/log-auditoria.entity';
+import { LogAuditoria } from '../../../entities/log-auditoria.entity';
 import { QueryLogAuditoriaDto } from '../dto/query-log-auditoria.dto';
 import { ConfigService } from '@nestjs/config';
 import * as fs from 'fs';

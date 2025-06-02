@@ -1,1 +1,1 @@
-export { Role } from '../../shared/enums/role.enum'
+export { Role } from '../../enums/role.enum'

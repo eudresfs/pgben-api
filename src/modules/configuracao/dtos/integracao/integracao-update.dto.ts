@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsBoolean, IsEnum, IsNotEmpty, IsObject, IsOptional, IsString, MaxLength } from 'class-validator';
-import { IntegracaoTipoEnum } from '../../enums';
+import { IntegracaoTipoEnum } from '../../../../enums';
 
 /**
  * DTO para atualização de uma configuração de integração.

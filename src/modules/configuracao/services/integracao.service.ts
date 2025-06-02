@@ -1,11 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfiguracaoIntegracaoRepository } from '../repositories/configuracao-integracao.repository';
-import { ConfiguracaoIntegracao } from '../entities/configuracao-integracao.entity';
+import { ConfiguracaoIntegracao } from '../../../entities';
 import { IntegracaoUpdateDto } from '../dtos/integracao/integracao-update.dto';
 import { IntegracaoTestDto } from '../dtos/integracao/integracao-test.dto';
 import { IntegracaoResponseDto } from '../dtos/integracao/integracao-response.dto';
 import { IntegracaoTesteException } from '../exceptions/integracao-teste.exception';
-import { IntegracaoTipoEnum } from '../enums/integracao-tipo.enum';
+import { IntegracaoTipoEnum } from '../../../enums/integracao-tipo.enum';
 
 /**
  * Serviço para gerenciamento de configurações de integração externa

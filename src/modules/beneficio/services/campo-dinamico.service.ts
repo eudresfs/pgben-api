@@ -6,10 +6,10 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { CampoDinamicoBeneficio } from '../entities/campo-dinamico-beneficio.entity';
-import { TipoBeneficio } from '../entities/tipo-beneficio.entity';
+import { CampoDinamicoBeneficio } from '../../../entities/campo-dinamico-beneficio.entity';
+import { TipoBeneficio } from '../../../entities/tipo-beneficio.entity';
 import { CreateCampoDinamicoDto } from '../dto/create-campo-dinamico.dto';
-import { VersaoSchemaBeneficio } from '../entities/versao-schema-beneficio.entity';
+import { VersaoSchemaBeneficio } from '../../../entities/versao-schema-beneficio.entity';
 
 /**
  * Serviço de Campos Dinâmicos

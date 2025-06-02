@@ -6,10 +6,10 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { HistoricoConversaoPapel } from '../entities/historico-conversao-papel.entity';
+import { HistoricoConversaoPapel } from '../../../entities/historico-conversao-papel.entity';
 import { CreateHistoricoConversaoPapelDto } from '../dto/create-historico-conversao-papel.dto';
 import { NotificacaoService } from '../../notificacao/services/notificacao.service';
-import { TipoPapel, PaperType } from '../enums/tipo-papel.enum';
+import { TipoPapel, PaperType } from '../../../enums/tipo-papel.enum';
 
 /**
  * Serviço de Histórico de Conversão de Papel

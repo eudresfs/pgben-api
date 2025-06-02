@@ -9,7 +9,7 @@ import {
   MaxLength,
   Matches,
 } from 'class-validator';
-import { TipoUnidade } from '../entities/unidade.entity';
+import { TipoUnidade } from '../../../entities/unidade.entity';
 
 /**
  * DTO para criação de unidade

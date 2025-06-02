@@ -11,10 +11,10 @@ import { Repository, Between } from 'typeorm';
 import {
   Solicitacao,
   StatusSolicitacao,
-} from '../../solicitacao/entities/solicitacao.entity';
-import { StatusUnidade, Unidade } from '../../unidade/entities/unidade.entity';
-import { TipoBeneficio } from '../../beneficio/entities/tipo-beneficio.entity';
-import { Role } from '../../../shared/enums/role.enum';
+} from '../../../entities/solicitacao.entity';
+import { StatusUnidade, Unidade } from '../../../entities/unidade.entity';
+import { TipoBeneficio } from '../../../entities/tipo-beneficio.entity';
+import { Role } from '../../../enums/role.enum';
 import { RelatorioStrategy } from '../interfaces/relatorio-strategy.interface';
 import { PdfStrategy } from '../strategies/pdf.strategy';
 import { ExcelStrategy } from '../strategies/excel.strategy';

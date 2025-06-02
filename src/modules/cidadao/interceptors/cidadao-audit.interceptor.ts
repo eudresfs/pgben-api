@@ -9,7 +9,7 @@ import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { Request } from 'express';
 import { AuditoriaQueueService } from '../../auditoria/services/auditoria-queue.service';
-import { TipoOperacao } from '../../auditoria/enums/tipo-operacao.enum';
+import { TipoOperacao } from '../../../enums/tipo-operacao.enum';
 import { CreateLogAuditoriaDto } from '../../auditoria/dto/create-log-auditoria.dto';
 
 /**

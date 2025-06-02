@@ -1,11 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { Repository, DataSource, SelectQueryBuilder } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Solicitacao, StatusSolicitacao } from '../entities/solicitacao.entity';
-import { Usuario } from '../../usuario/entities/usuario.entity';
-import { TipoBeneficio } from '../../beneficio/entities/tipo-beneficio.entity';
-import { Unidade } from '../../unidade/entities/unidade.entity';
-import { Cidadao } from '../../cidadao/entities/cidadao.entity';
+import { 
+  Solicitacao, 
+  StatusSolicitacao, 
+  Usuario, 
+  TipoBeneficio, 
+  Unidade, 
+  Cidadao 
+} from '../../../entities';
 
 /**
  * Interface para filtros de busca de solicitações

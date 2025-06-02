@@ -4,7 +4,7 @@ import { IntegracaoService } from '../services/integracao.service';
 import { IntegracaoUpdateDto } from '../dtos/integracao/integracao-update.dto';
 import { IntegracaoTestDto } from '../dtos/integracao/integracao-test.dto';
 import { IntegracaoResponseDto } from '../dtos/integracao/integracao-response.dto';
-import { IntegracaoTipoEnum } from '../enums/integracao-tipo.enum';
+import { IntegracaoTipoEnum } from '../../../enums/integracao-tipo.enum';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
 import { ApiErrorResponse } from '../../../shared/dtos/api-error-response.dto';

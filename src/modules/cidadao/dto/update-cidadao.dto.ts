@@ -11,7 +11,7 @@ import {
   IsUUID,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { Sexo } from '../enums/sexo.enum';
+import { Sexo } from '../../../enums/sexo.enum';
 import { CPFValidator } from '../validators/cpf-validator';
 import { NISValidator } from '../validators/nis-validator';
 import { EnderecoDto } from './create-cidadao.dto';

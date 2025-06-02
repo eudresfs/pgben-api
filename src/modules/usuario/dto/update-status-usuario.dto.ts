@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEnum } from 'class-validator';
-import { Status } from '../../../shared/enums/status.enum';
+import { Status } from '../../../enums/status.enum';
 
 /**
  * DTO para atualização de status do usuário

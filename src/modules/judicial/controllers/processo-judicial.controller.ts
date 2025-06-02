@@ -16,7 +16,7 @@ import {
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { ProcessoJudicialService } from '../services/processo-judicial.service';
-import { ProcessoJudicial } from '../entities/processo-judicial.entity';
+import { ProcessoJudicial } from '../../../entities/processo-judicial.entity';
 import {
   CreateProcessoJudicialDto,
   UpdateProcessoJudicialDto,

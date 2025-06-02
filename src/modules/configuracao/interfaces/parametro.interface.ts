@@ -1,4 +1,4 @@
-import { ParametroTipoEnum } from '../enums';
+import { ParametroTipoEnum } from '../../../enums';
 
 /**
  * Interface que define a estrutura de um parâmetro de configuração.

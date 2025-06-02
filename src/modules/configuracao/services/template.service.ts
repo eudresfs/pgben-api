@@ -1,13 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { TemplateRepository } from '../repositories/template.repository';
-import { Template } from '../entities/template.entity';
+import { Template } from '../../../entities/template.entity';
 import { TemplateCreateDto } from '../dtos/template/template-create.dto';
 import { TemplateUpdateDto } from '../dtos/template/template-update.dto';
 import { TemplateResponseDto } from '../dtos/template/template-response.dto';
 import { TemplateTestDto } from '../dtos/template/template-test.dto';
 import { TemplateInvalidoException } from '../exceptions/template-invalido.exception';
 import { TemplateEngine } from '../util/template-engine';
-import { TemplateTipoEnum } from '../enums/template-tipo.enum';
+import { TemplateTipoEnum } from '../../../enums/template-tipo.enum';
 
 /**
  * Serviço para gerenciamento de templates do sistema

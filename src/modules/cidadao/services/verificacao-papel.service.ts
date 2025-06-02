@@ -10,10 +10,10 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
-import { Cidadao } from '../entities/cidadao.entity';
-import { PapelCidadao } from '../entities/papel-cidadao.entity';
-import { TipoPapel, PaperType } from '../enums/tipo-papel.enum';
-import { ComposicaoFamiliar } from '../entities/composicao-familiar.entity';
+import { Cidadao } from '../../../entities/cidadao.entity';
+import { PapelCidadao } from '../../../entities/papel-cidadao.entity';
+import { TipoPapel, PaperType } from '../../../enums/tipo-papel.enum';
+import { ComposicaoFamiliar } from '../../../entities/composicao-familiar.entity';
 import { HistoricoConversaoPapelService } from './historico-conversao-papel.service';
 import { PapelCidadaoService } from './papel-cidadao.service';
 import { CreateCidadaoDto } from '../dto/create-cidadao.dto';

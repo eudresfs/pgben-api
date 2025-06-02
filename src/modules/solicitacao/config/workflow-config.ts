@@ -1,12 +1,17 @@
-import { StatusSolicitacao } from '../entities/solicitacao.entity';
+import { StatusSolicitacao } from '../../../entities/solicitacao.entity';
 
 /**
  * Configuração de transições de estados para solicitações
  * Define quais transições são permitidas a partir de cada estado
  */
-export const TRANSICOES_PERMITIDAS: Record<StatusSolicitacao, StatusSolicitacao[]> = {
+export const TRANSICOES_PERMITIDAS: Partial<Record<StatusSolicitacao, StatusSolicitacao[]>> = {
   [StatusSolicitacao.RASCUNHO]: [
+    StatusSolicitacao.ABERTA,
     StatusSolicitacao.PENDENTE,
+    StatusSolicitacao.CANCELADA,
+  ],
+  [StatusSolicitacao.ABERTA]: [
+    StatusSolicitacao.EM_ANALISE,
     StatusSolicitacao.CANCELADA,
   ],
   [StatusSolicitacao.PENDENTE]: [
@@ -27,7 +32,6 @@ export const TRANSICOES_PERMITIDAS: Record<StatusSolicitacao, StatusSolicitacao[
   ],
   [StatusSolicitacao.APROVADA]: [
     StatusSolicitacao.LIBERADA,
-    StatusSolicitacao.EM_ANALISE,
     StatusSolicitacao.CANCELADA,
   ],
   [StatusSolicitacao.LIBERADA]: [
@@ -35,6 +39,7 @@ export const TRANSICOES_PERMITIDAS: Record<StatusSolicitacao, StatusSolicitacao[
     StatusSolicitacao.CANCELADA,
   ],
   [StatusSolicitacao.REPROVADA]: [
+    StatusSolicitacao.PENDENTE,
     StatusSolicitacao.EM_ANALISE,
     StatusSolicitacao.ARQUIVADA,
     StatusSolicitacao.CANCELADA, 
@@ -49,7 +54,9 @@ export const TRANSICOES_PERMITIDAS: Record<StatusSolicitacao, StatusSolicitacao[
   [StatusSolicitacao.CONCLUIDA]: [
     StatusSolicitacao.ARQUIVADA,
   ],
-  [StatusSolicitacao.ARQUIVADA]: [],
+  [StatusSolicitacao.ARQUIVADA]: [
+    StatusSolicitacao.ABERTA
+  ],
 };
 
 /**
@@ -57,8 +64,9 @@ export const TRANSICOES_PERMITIDAS: Record<StatusSolicitacao, StatusSolicitacao[
  * Define quais permissões são necessárias para realizar cada transição
  */
 export const PERMISSOES_TRANSICAO: Record<string, string[]> = {
-  'RASCUNHO_PARA_PENDENTE': ['solicitacao.submeter'],
+  'RASCUNHO_PARA_ABERTA': ['solicitacao.submeter'],
   'PENDENTE_PARA_EM_ANALISE': ['solicitacao.enviar-para-analise'],
+  'ABERTA_PARA_EM_ANALISE': ['solicitacao.enviar-para-analise'],
   'EM_ANALISE_PARA_APROVADA': ['solicitacao.aprovar'],
   'EM_ANALISE_PARA_REPROVADA': ['solicitacao.rejeitar'],
   'EM_ANALISE_PARA_AGUARDANDO_DOCUMENTOS': ['solicitacao.solicitar-documentos'],

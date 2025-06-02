@@ -25,7 +25,7 @@ import { ConfigurarFluxoDto } from '../dto/configurar-fluxo.dto';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../../../auth/guards/permission.guard';
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
-import { ScopeType } from '../../../auth/entities/user-permission.entity';
+import { ScopeType } from '../../../entities';
 
 /**
  * Controlador de benefícios

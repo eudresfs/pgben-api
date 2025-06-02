@@ -34,7 +34,7 @@ import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../../../auth/guards/permission.guard';
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
 import { GetUser } from '../../../auth/decorators/get-user.decorator';
-import { Usuario } from '../../usuario/entities/usuario.entity';
+import { Usuario } from '../../../entities/usuario.entity';
 
 /**
  * Controlador de Documentos

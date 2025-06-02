@@ -3,9 +3,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Like, FindOptionsWhere, Not, IsNull } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
-import { MetricaDefinicao, CategoriaMetrica, TipoMetrica } from '../entities/metrica-definicao.entity';
-import { MetricaConfiguracao } from '../entities/metrica-configuracao.entity';
-import { MetricaSnapshot } from '../entities/metrica-snapshot.entity';
+import { MetricaDefinicao, CategoriaMetrica, TipoMetrica } from '../../../entities/metrica-definicao.entity';
+import { MetricaConfiguracao } from '../../../entities/metrica-configuracao.entity';
+import { MetricaSnapshot } from '../../../entities/metrica-snapshot.entity';
 import { CriarMetricaDefinicaoDto, AtualizarMetricaDefinicaoDto, FiltroMetricasDto } from '../dto/metrica-definicao.dto';
 import { CriarMetricaConfiguracaoDto, AtualizarMetricaConfiguracaoDto } from '../dto/metrica-configuracao.dto';
 import { MetricasCacheService } from './metricas-cache.service';

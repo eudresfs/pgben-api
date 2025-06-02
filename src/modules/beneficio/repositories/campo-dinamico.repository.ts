@@ -1,8 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { CampoDinamicoBeneficio } from '../entities/campo-dinamico-beneficio.entity';
-import { TipoBeneficio } from '../entities/tipo-beneficio.entity';
+import { CampoDinamicoBeneficio } from '../../../entities/campo-dinamico-beneficio.entity';
+import { TipoBeneficio } from '../../../entities/tipo-beneficio.entity';
 
 /**
  * Repositório para gerenciamento de campos dinâmicos de benefícios

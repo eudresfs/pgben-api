@@ -8,8 +8,8 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, LessThanOrEqual, IsNull, Not } from 'typeorm';
-import { ConfiguracaoRenovacao } from '../entities/configuracao-renovacao.entity';
-import { Solicitacao, StatusSolicitacao } from '../../solicitacao/entities/solicitacao.entity';
+import { ConfiguracaoRenovacao } from '../../../entities/configuracao-renovacao.entity';
+import { Solicitacao, StatusSolicitacao } from '../../../entities/solicitacao.entity';
 import { CreateConfiguracaoRenovacaoDto } from '../dto/create-configuracao-renovacao.dto';
 import { UpdateConfiguracaoRenovacaoDto } from '../dto/update-configuracao-renovacao.dto';
 import { WorkflowSolicitacaoService } from '../../solicitacao/services/workflow-solicitacao.service';

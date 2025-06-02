@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, Max, Min, MaxLength, IsArray, IsBoolean } from 'class-validator';
-import { WorkflowAcaoEnum } from '../../enums';
+import { WorkflowAcaoEnum } from '../../../../enums';
 
 /**
  * DTO para uma etapa de workflow de benefício.

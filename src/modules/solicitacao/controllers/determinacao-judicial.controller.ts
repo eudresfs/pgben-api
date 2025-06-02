@@ -15,11 +15,11 @@ import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagg
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../../../auth/guards/permission.guard';
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
-import { ScopeType } from '../../../auth/entities/user-permission.entity';
+import { ScopeType } from '../../../entities/user-permission.entity';
 import { DeterminacaoJudicialAdapterService } from '../services/determinacao-judicial-adapter.service';
 import { SolicitacaoCreateDeterminacaoJudicialDto } from '../dto/create-determinacao-judicial.dto';
 import { SolicitacaoUpdateDeterminacaoJudicialDto } from '../dto/update-determinacao-judicial.dto';
-import { DeterminacaoJudicial } from '../../judicial/entities/determinacao-judicial.entity';
+import { DeterminacaoJudicial } from '../../../entities/determinacao-judicial.entity';
 
 /**
  * Controller de Determinação Judicial

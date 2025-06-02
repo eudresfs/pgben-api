@@ -1,10 +1,11 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Pagamento } from '../entities/pagamento.entity';
-import { StatusPagamentoEnum } from '../enums/status-pagamento.enum';
+import { Pagamento } from '../../../entities/pagamento.entity';
+import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
 import { PagamentoCreateDto } from '../dtos/pagamento-create.dto';
 import { StatusTransitionValidator } from '../validators/status-transition-validator';
+import { normalizeEnumFields } from '../../../shared/utils/enum-normalizer.util';
 
 /**
  * Serviço para gerenciamento de operações relacionadas a pagamentos
@@ -60,8 +61,8 @@ export class PagamentoService {
     // Validar limites de valor
     // await this.validarLimitesPagamento(solicitacao.tipoBeneficioId, createDto.valor);
 
-    // Criar nova entidade de pagamento
-    const pagamento = this.pagamentoRepository.create({
+    // Normalizar campos de enum antes de criar a entidade
+    const dadosNormalizados = normalizeEnumFields({
       solicitacaoId,
       infoBancariaId: createDto.infoBancariaId,
       valor: createDto.valor,
@@ -71,6 +72,9 @@ export class PagamentoService {
       liberadoPor: usuarioId,
       observacoes: createDto.observacoes
     });
+
+    // Criar nova entidade de pagamento
+    const pagamento = this.pagamentoRepository.create(dadosNormalizados);
 
     // Salvar o pagamento
     const result = await this.pagamentoRepository.save(pagamento);
@@ -126,8 +130,11 @@ export class PagamentoService {
     // Salvar dados anteriores para auditoria
     const dadosAnteriores = { ...pagamento };
 
+    // Normalizar o novo status antes de atualizar
+    const statusNormalizado = normalizeEnumFields({ status: novoStatus }).status;
+    
     // Atualizar o status
-    pagamento.status = novoStatus;
+    pagamento.status = statusNormalizado;
     
     // Salvar a atualização
     const result = await this.pagamentoRepository.save(pagamento);

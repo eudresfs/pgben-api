@@ -16,7 +16,7 @@ import {
 import { PermissionService } from '../services/permission.service';
 import { RequiresPermission } from '../decorators/requires-permission.decorator';
 import { PermissionGuard } from '../guards/permission.guard';
-import { TipoEscopo } from '../entities/user-permission.entity';
+import { TipoEscopo } from '../../entities/user-permission.entity';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 

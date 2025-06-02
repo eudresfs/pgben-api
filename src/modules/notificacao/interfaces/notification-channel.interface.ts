@@ -1,4 +1,4 @@
-import { NotificacaoSistema } from '../entities/notification.entity';
+import { NotificacaoSistema } from '../../../entities/notification.entity';
 
 /**
  * Interface para implementação de canais de notificação

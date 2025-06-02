@@ -3,7 +3,7 @@ import { PermissionService, PermissionCheckOptions } from './permission.service'
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { Inject } from '@nestjs/common';
-import { ScopeType, TipoEscopo } from '../entities/user-permission.entity';
+import { ScopeType, TipoEscopo } from '../../entities/user-permission.entity';
 
 /**
  * Interface para verificação de autorização

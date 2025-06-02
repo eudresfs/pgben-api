@@ -6,9 +6,9 @@ import { ConfigService } from '@nestjs/config';
 import * as crypto from 'crypto';
 import { ScheduleAdapterService } from '../../../shared/schedule/schedule-adapter.service';
 
-import { MetricaDefinicao, TipoMetrica } from '../entities/metrica-definicao.entity';
-import { MetricaSnapshot } from '../entities/metrica-snapshot.entity';
-import { MetricaConfiguracao, TipoAgendamento } from '../entities/metrica-configuracao.entity';
+import { MetricaDefinicao, TipoMetrica } from '../../../entities/metrica-definicao.entity';
+import { MetricaSnapshot } from '../../../entities/metrica-snapshot.entity';
+import { MetricaConfiguracao, TipoAgendamento } from '../../../entities/metrica-configuracao.entity';
 import { MetricaCalculoService } from './metrica-calculo.service';
 
 /**

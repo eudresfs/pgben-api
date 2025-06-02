@@ -21,9 +21,9 @@ import { JwtBlacklistService } from './services/jwt-blacklist.service';
 import { PermissionService } from './services/permission.service';
 
 // Entities
-import { RefreshToken } from './entities/refresh-token.entity';
-import { PasswordResetToken } from './entities/password-reset-token.entity';
-import { JwtBlacklist } from './entities/jwt-blacklist.entity';
+import { RefreshToken } from '../entities/refresh-token.entity';
+import { PasswordResetToken } from '../entities/password-reset-token.entity';
+import { JwtBlacklist } from '../entities/jwt-blacklist.entity';
 
 // Strategies
 import { JwtAuthStrategy } from './strategies/jwt-auth.strategy';

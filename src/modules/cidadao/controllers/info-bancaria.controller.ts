@@ -28,7 +28,7 @@ import { InfoBancariaResponseDto } from '../dto/info-bancaria-response.dto';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../../../auth/guards/permission.guard';
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
-import { TipoEscopo } from '@/auth/entities/user-permission.entity';
+import { TipoEscopo } from '@/entities/user-permission.entity';
 
 /**
  * Controller para gerenciamento de informações bancárias

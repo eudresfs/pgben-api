@@ -4,12 +4,12 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
 // Entities
-import { Permission } from './entities/permission.entity';
-import { PermissionGroup } from './entities/permission-group.entity';
-import { PermissionGroupMapping } from './entities/permission-group-mapping.entity';
-import { RolePermission } from './entities/role-permission.entity';
-import { UserPermission } from './entities/user-permission.entity';
-import { PermissionScope } from './entities/permission-scope.entity';
+import { Permission } from '../entities/permission.entity';
+import { PermissionGroup } from '../entities/permission-group.entity';
+import { PermissionGroupMapping } from '../entities/permission-group-mapping.entity';
+import { RolePermission } from '../entities/role-permission.entity';
+import { UserPermission } from '../entities/user-permission.entity';
+import { PermissionScope } from '../entities/permission-scope.entity';
 
 // Repositories
 import { PermissionRepository } from './repositories/permission.repository';

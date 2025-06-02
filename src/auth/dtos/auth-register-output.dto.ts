@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
 
-import { Role } from '../../shared/enums/role.enum';
+import { Role } from '../../enums/role.enum';
 
 /**
  * DTO para saída de registro de usuário

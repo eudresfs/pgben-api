@@ -6,7 +6,7 @@ import {
   AuditLog,
   AuditAction,
   AuditSeverity,
-} from '../entities/audit-log.entity';
+} from '../../entities/audit-log.entity';
 import {
   CreateAuditLogDto,
   AuditLogQueryDto,

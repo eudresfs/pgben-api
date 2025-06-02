@@ -20,7 +20,7 @@ import { CreateCampoDinamicoDto } from '../dto/create-campo-dinamico.dto';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../auth/guards/roles.guard';
 import { Roles } from '../../../auth/decorators/role.decorator';
-import { Role } from '../../../shared/enums/role.enum';
+import { Role } from '../../../enums/role.enum';
 import { ROLES } from '../../../shared/constants/roles.constants';
 
 /**

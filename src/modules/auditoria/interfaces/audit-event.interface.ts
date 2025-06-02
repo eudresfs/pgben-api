@@ -1,4 +1,4 @@
-import { TipoOperacao } from '../enums/tipo-operacao.enum';
+import { TipoOperacao } from '../../../enums/tipo-operacao.enum';
 
 /**
  * Interface para eventos de auditoria

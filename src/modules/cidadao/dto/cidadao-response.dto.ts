@@ -1,8 +1,8 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Expose, Transform, Type } from 'class-transformer';
-import { Sexo } from '../enums/sexo.enum';
+import { Sexo } from '../../../enums/sexo.enum';
 import { PapelCidadaoResponseDto } from './papel-cidadao-response.dto';
-import { ParentescoEnum } from '../enums/parentesco.enum';
+import { ParentescoEnum } from '../../../enums/parentesco.enum';
 
 export class CidadaoComposicaoFamiliarDto {
   @ApiProperty({
@@ -71,7 +71,7 @@ export class CidadaoComposicaoFamiliarDto {
   @Transform(({ value, obj }) => {
     const dateValue = value || obj.created_at;
     if (dateValue instanceof Date) {
-      return dateValue.toISOString();
+      return dateValue.getTime();
     }
     return dateValue;
   })
@@ -85,7 +85,7 @@ export class CidadaoComposicaoFamiliarDto {
   @Transform(({ value, obj }) => {
     const dateValue = value || obj.updated_at;
     if (dateValue instanceof Date) {
-      return dateValue.toISOString();
+      return dateValue.getTime();
     }
     return dateValue;
   })
@@ -164,7 +164,7 @@ export class EnderecoResponseDto {
   @Transform(({ value, obj }) => {
     const dateValue = value || obj.created_at;
     if (dateValue instanceof Date) {
-      return dateValue.toISOString();
+      return dateValue.getTime();
     }
     return dateValue;
   })
@@ -178,7 +178,7 @@ export class EnderecoResponseDto {
   @Transform(({ value, obj }) => {
     const dateValue = value || obj.updated_at;
     if (dateValue instanceof Date) {
-      return dateValue.toISOString();
+      return dateValue.getTime();
     }
     return dateValue;
   })
@@ -231,7 +231,7 @@ export class CidadaoResponseDto {
   @Transform(({ value, obj }) => {
     const dateValue = value || obj.data_nascimento;
     if (dateValue instanceof Date) {
-      return dateValue.toISOString().split('T')[0];
+      return dateValue.getTime();
     }
     return dateValue;
   })
@@ -426,7 +426,7 @@ export class CidadaoResponseDto {
   @Transform(({ value, obj }) => {
     const dateValue = value || obj.created_at;
     if (dateValue instanceof Date) {
-      return dateValue.toISOString();
+      return dateValue.getTime();
     }
     return dateValue;
   })
@@ -440,7 +440,7 @@ export class CidadaoResponseDto {
   @Transform(({ value, obj }) => {
     const dateValue = value || obj.updated_at;
     if (dateValue instanceof Date) {
-      return dateValue.toISOString();
+      return dateValue.getTime();
     }
     return dateValue;
   })

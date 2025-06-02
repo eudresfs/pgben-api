@@ -8137,7 +8137,7 @@
             "additionalProperties": true,
             "example": {
               "renda_familiar": 1500,
-              "tempo_residencia": 24,
+              "tempo_de_residencia": 24,
               "possui_dependentes": true,
               "numero_dependentes": 2
             }

@@ -1,11 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between } from 'typeorm';
-import { Solicitacao, StatusSolicitacao } from '../../solicitacao/entities/solicitacao.entity';
-import { Recurso, StatusRecurso } from '../../recurso/entities/recurso.entity';
-import { TipoBeneficio } from '../../beneficio/entities/tipo-beneficio.entity';
-import { Unidade } from '../../unidade/entities/unidade.entity';
-import { Usuario } from '../../usuario/entities/usuario.entity';
+import { Solicitacao, StatusSolicitacao } from '../../../entities/solicitacao.entity';
+import { Recurso, StatusRecurso } from '../../../entities/recurso.entity';
+import { TipoBeneficio } from '../../../entities/tipo-beneficio.entity';
+import { Unidade } from '../../../entities/unidade.entity';
+import { Usuario } from '../../../entities/usuario.entity';
 
 /**
  * Interface para o resumo do dashboard

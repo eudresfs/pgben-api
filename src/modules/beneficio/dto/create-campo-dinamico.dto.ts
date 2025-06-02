@@ -11,7 +11,7 @@ import {
   IsObject,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { TipoDado } from '../entities/campo-dinamico-beneficio.entity';
+import { TipoDado } from '../../../entities/campo-dinamico-beneficio.entity';
 
 /**
  * DTO para validações de campos dinâmicos

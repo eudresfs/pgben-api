@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { IsDate, IsEnum, IsNotEmpty, IsOptional, IsString, IsUUID } from 'class-validator';
-import { MetodoConfirmacaoEnum } from '../enums/metodo-confirmacao.enum';
+import { MetodoConfirmacaoEnum } from '../../../enums/metodo-confirmacao.enum';
 
 /**
  * DTO para registro de confirmação de recebimento de pagamento

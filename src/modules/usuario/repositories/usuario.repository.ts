@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { Repository, DataSource, DeepPartial } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Usuario } from '../entities/usuario.entity';
+import { Usuario } from '../../../entities/usuario.entity';
 import { EntityNotFoundException } from '../../../shared/exceptions';
-import { Status } from '../../../shared/enums/status.enum';
+import { Status } from '../../../enums/status.enum';
 
 /**
  * Repositório de usuários

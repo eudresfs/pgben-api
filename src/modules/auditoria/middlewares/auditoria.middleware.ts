@@ -2,7 +2,7 @@ import { Injectable, NestMiddleware, Logger } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import { AuditoriaService } from '../services/auditoria.service';
 import { AuditoriaQueueService } from '../services/auditoria-queue.service';
-import { TipoOperacao } from '../enums/tipo-operacao.enum';
+import { TipoOperacao } from '../../../enums/tipo-operacao.enum';
 import { CreateLogAuditoriaDto } from '../dto/create-log-auditoria.dto';
 
 /**

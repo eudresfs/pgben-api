@@ -7,9 +7,11 @@ import { JwtModule, JwtService } from '@nestjs/jwt';
 import { HttpModule } from '@nestjs/axios';
 
 import { PagamentoModule } from '../../pagamento.module';
-import { Pagamento } from '../../entities/pagamento.entity';
-import { ComprovantePagamento } from '../../entities/comprovante-pagamento.entity';
-import { ConfirmacaoRecebimento } from '../../entities/confirmacao-recebimento.entity';
+import { 
+  Pagamento, 
+  ComprovantePagamento, 
+  ConfirmacaoRecebimento 
+} from '../../entities';
 import { StatusPagamentoEnum } from '../../enums/status-pagamento.enum';
 import { MetodoPagamentoEnum } from '../../enums/metodo-pagamento.enum';
 import { PagamentoService } from '../../services/pagamento.service';

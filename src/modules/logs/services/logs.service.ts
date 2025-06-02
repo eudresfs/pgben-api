@@ -1,8 +1,8 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { LogAuditoria } from '../../auditoria/entities/log-auditoria.entity';
-import { Usuario } from '../../usuario/entities/usuario.entity';
+import { LogAuditoria } from '../../../entities/log-auditoria.entity';
+import { Usuario } from '../../../entities/usuario.entity';
 import { LogsFilterDto, CriticidadeLog } from '../dto/logs-filter.dto';
 import { LogResponseDto } from '../dto/log-response.dto';
 

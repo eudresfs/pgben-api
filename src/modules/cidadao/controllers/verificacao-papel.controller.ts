@@ -36,8 +36,8 @@ import {
   ConversaoParaComposicaoFamiliarDto, 
   ConversaoPapelResponseDto 
 } from '../dto/conversao-papel.dto';
-import { TipoEscopo } from '../../../auth/entities/user-permission.entity';
-import { Sexo } from '../enums/sexo.enum';
+import { TipoEscopo } from '../../../entities/user-permission.entity';
+import { Sexo } from '../../../enums/sexo.enum';
 import { EnderecoDto } from '../dto/create-cidadao.dto';
 
 interface AuthenticatedUser {

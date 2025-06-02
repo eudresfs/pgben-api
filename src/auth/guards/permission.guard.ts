@@ -2,7 +2,7 @@ import { Injectable, CanActivate, ExecutionContext, Logger, UnauthorizedExceptio
 import { Reflector } from '@nestjs/core';
 import { PERMISSION_REQUIREMENTS_KEY, PermissionRequirement } from '../decorators/requires-permission.decorator';
 import { PermissionService } from '../services/permission.service';
-import { TipoEscopo } from '../entities/user-permission.entity';
+import { TipoEscopo } from '../../entities/user-permission.entity';
 import { PermissionDeniedException } from '../exceptions/permission-denied.exception';
 
 /**

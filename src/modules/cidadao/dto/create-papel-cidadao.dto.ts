@@ -9,7 +9,7 @@ import {
   IsDate,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { TipoPapel, PaperType } from '../enums/tipo-papel.enum';
+import { TipoPapel, PaperType } from '../../../enums/tipo-papel.enum';
 
 /**
  * DTO para criação de papel de cidadão

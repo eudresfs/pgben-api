@@ -1,8 +1,8 @@
 import { DataSource } from 'typeorm';
-import { Permission } from '../../../auth/entities/permission.entity';
-import { PermissionScope } from '../../../auth/entities/permission-scope.entity';
-import { ScopeType, TipoEscopo } from '../../../auth/entities/user-permission.entity';
-import { Status } from '../../../shared/enums/status.enum';
+import { Permission } from '../../../entities/permission.entity';
+import { PermissionScope } from '../../../entities/permission-scope.entity';
+import { ScopeType, TipoEscopo } from '../../../entities/user-permission.entity';
+import { Status } from '../../../enums/status.enum';
 
 /**
  * Seed para as permissões do módulo de usuários.
@@ -194,6 +194,27 @@ export class PermissionUsuarioSeed {
       'Todas as permissões',
       false,
     );
+
+    // Criar relação entre a permissão geral (*.*) e a role super_admin
+    const superAdminRoleId = '00000000-0000-0000-0000-000000000000';
+    const connection = permissionRepository.manager.connection;
+    
+    // Verificar se a relação já existe
+    const existingRolePermission = await connection.query(
+      'SELECT id FROM role_permissao WHERE role_id = $1 AND permissao_id = $2',
+      [superAdminRoleId, permissaoAllPermissions.id]
+    );
+
+    if (!existingRolePermission || existingRolePermission.length === 0) {
+      // Criar a relação role_permissao
+      await connection.query(
+        'INSERT INTO role_permissao (role_id, permissao_id) VALUES ($1, $2)',
+        [superAdminRoleId, permissaoAllPermissions.id]
+      );
+      console.log(`Relação criada entre super_admin e permissão geral (*.*) com sucesso!`);
+    } else {
+      console.log(`Relação entre super_admin e permissão geral (*.*) já existe, pulando...`);
+    }
 
     // Configuração de escopo para as permissões
     await this.createPermissionScope(

@@ -6,13 +6,14 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
-import { DadosSociais } from '../entities/dados-sociais.entity';
-import { Cidadao } from '../entities/cidadao.entity';
-import { ComposicaoFamiliar } from '../entities/composicao-familiar.entity';
+import { DadosSociais } from '../../../entities/dados-sociais.entity';
+import { Cidadao } from '../../../entities/cidadao.entity';
+import { ComposicaoFamiliar } from '../../../entities/composicao-familiar.entity';
 import { CreateDadosSociaisDto } from '../dto/create-dados-sociais.dto';
 import { UpdateDadosSociaisDto } from '../dto/update-dados-sociais.dto';
 import { CacheService } from '../../../shared/cache/cache.service';
 import { Logger } from '@nestjs/common';
+import { normalizeEnumFields } from '../../../shared/utils/enum-normalizer.util';
 
 /**
  * Service responsável pelo gerenciamento dos dados sociais dos cidadãos
@@ -77,11 +78,14 @@ export class DadosSociaisService {
       // Validar dados de benefícios
       this.validateBeneficiosData(createDadosSociaisDto);
 
-      // Criar os dados sociais
-      const dadosSociais = manager.create(DadosSociais, {
+      // Normalizar enums para minúsculo antes de criar
+      const dadosNormalizados = normalizeEnumFields({
         ...createDadosSociaisDto,
         cidadao_id: cidadaoId,
       });
+
+      // Criar os dados sociais
+      const dadosSociais = manager.create(DadosSociais, dadosNormalizados);
 
       const savedDadosSociais = await manager.save(DadosSociais, dadosSociais);
 
@@ -172,8 +176,11 @@ export class DadosSociaisService {
         });
       }
 
+      // Normalizar enums para minúsculo antes de atualizar
+      const dadosNormalizados = normalizeEnumFields(updateDadosSociaisDto);
+
       // Atualizar dados
-      Object.assign(dadosSociais, updateDadosSociaisDto);
+      Object.assign(dadosSociais, dadosNormalizados);
       const updatedDadosSociais = await manager.save(DadosSociais, dadosSociais);
 
       // Recalcular renda per capita se a renda foi alterada

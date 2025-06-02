@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { ConfiguracaoIntegracao } from '../entities/configuracao-integracao.entity';
-import { IntegracaoTipoEnum } from '../enums/integracao-tipo.enum';
+import { ConfiguracaoIntegracao } from '../../../entities/configuracao-integracao.entity';
+import { IntegracaoTipoEnum } from '../../../enums/integracao-tipo.enum';
 
 /**
  * Repositório para gerenciamento de configurações de integração externa

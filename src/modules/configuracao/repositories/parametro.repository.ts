@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Parametro } from '../entities/parametro.entity';
+import { Parametro } from '../../../entities';
 
 /**
  * Repositório para gerenciamento de parâmetros do sistema

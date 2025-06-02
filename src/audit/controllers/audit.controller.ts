@@ -31,7 +31,7 @@ import {
   AuditLogResponseDto,
   AuditLogStatsDto,
 } from '../dto/audit-log.dto';
-import { Usuario } from '../../modules/usuario/entities/usuario.entity';
+import { Usuario } from '../../entities/usuario.entity';
 import { ClientInfo } from '../../common/interfaces/client-info.interface';
 
 @ApiTags('Auditoria')

@@ -46,6 +46,7 @@ export class CreateCidadaoSchema1704067216000 implements MigrationInterface {
         "prontuario_suas" character varying NOT NULL,
         "data_nascimento" date NOT NULL,
         "sexo" "sexo_enum" NOT NULL,
+        "estado_civil" "estado_civil_enum" NOT NULL,
         "telefone" character varying NOT NULL,
         "email" character varying,
         "endereco" jsonb NOT NULL,
@@ -67,6 +68,7 @@ export class CreateCidadaoSchema1704067216000 implements MigrationInterface {
       CREATE INDEX IF NOT EXISTS "IDX_cidadao_telefone" ON "cidadao" ("telefone");
       CREATE INDEX IF NOT EXISTS "IDX_cidadao_nome_mae" ON "cidadao" ("nome_mae");
       CREATE INDEX IF NOT EXISTS "IDX_cidadao_endereco" ON "cidadao" USING GIN ("endereco");
+      CREATE INDEX IF NOT EXISTS "IDX_cidadao_estado_civil" ON "cidadao" USING GIN ("estado_civil");
     `);
     
     // Trigger para atualização automática de timestamp

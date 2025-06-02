@@ -1,13 +1,13 @@
 import { Injectable, Logger, NotFoundException, BadRequestException, ConflictException, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, FindOptionsWhere, FindManyOptions, Like, LessThanOrEqual, MoreThanOrEqual, LessThan, DataSource } from 'typeorm';
-import { DeterminacaoJudicial, TipoDeterminacaoJudicial } from '../entities/determinacao-judicial.entity';
+import { DeterminacaoJudicial, TipoDeterminacaoJudicial } from '../../../entities/determinacao-judicial.entity';
 import { ProcessoJudicialService } from './processo-judicial.service';
 import { PaginatedResult } from '../../../common/interfaces/paginated-result.interface';
 import { CreateDeterminacaoJudicialDto, UpdateDeterminacaoJudicialDto } from '../dtos/determinacao-judicial.dto';
 import { SolicitacaoCreateDeterminacaoJudicialDto } from '../../solicitacao/dto/create-determinacao-judicial.dto';
 import { SolicitacaoUpdateDeterminacaoJudicialDto } from '../../solicitacao/dto/update-determinacao-judicial.dto';
-import { Solicitacao } from '../../solicitacao/entities/solicitacao.entity';
+import { Solicitacao } from '../../../entities/solicitacao.entity';
 
 /**
  * Serviço consolidado para gerenciamento de determinações judiciais

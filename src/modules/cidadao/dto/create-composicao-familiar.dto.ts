@@ -10,31 +10,35 @@ import {
   Validate,
   IsUUID,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
-import { EscolaridadeEnum } from '../enums/escolaridade.enum';
-import { ParentescoEnum } from '../enums/parentesco.enum';
+import { EscolaridadeEnum } from '../../../enums/escolaridade.enum';
+import { ParentescoEnum } from '../../../enums/parentesco.enum';
 import { CPFValidator } from '../validators/cpf-validator';
 
 /**
  * DTO para adicionar membro à composição familiar
+ * O ID do cidadão é obtido do parâmetro da rota, não do body
  */
 export class CreateComposicaoFamiliarDto {
-  @IsString({ message: 'ID do cidadão deve ser uma string' })
-  @IsNotEmpty({ message: 'ID do cidadão é obrigatório' })
-  @IsUUID('4', { message: 'ID do cidadão deve ser um UUID válido' })
   @ApiProperty({
-    example: '123e4567-e89b-12d3-a456-426614174000',
-    description: 'ID do cidadão principal da família',
+    description: 'ID do cidadão responsável pela família',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+    format: 'uuid',
   })
+  @IsUUID(4, { message: 'ID do cidadão deve ser um UUID válido' })
+  @IsNotEmpty({ message: 'ID do cidadão é obrigatório' })
   cidadao_id: string;
 
+  @ApiProperty({
+    description: 'Nome completo do membro da família',
+    example: 'Maria Silva Santos',
+    minLength: 2,
+    maxLength: 255,
+  })
   @IsString({ message: 'Nome deve ser uma string' })
   @IsNotEmpty({ message: 'Nome é obrigatório' })
-  @ApiProperty({
-    example: 'João da Silva',
-    description: 'Nome completo do membro familiar',
-  })
+  @Length(2, 255, { message: 'Nome deve ter entre 2 e 255 caracteres' })
   nome: string;
 
   @IsNotEmpty({ message: 'CPF é obrigatório' })
@@ -72,6 +76,12 @@ export class CreateComposicaoFamiliarDto {
 
   @IsNotEmpty({ message: 'Escolaridade é obrigatória' })
   @IsEnum(EscolaridadeEnum, { message: 'Escolaridade deve ser um valor válido' })
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      return value.toUpperCase();
+    }
+    return value;
+  })
   @ApiProperty({
     example: EscolaridadeEnum.MEDIO_COMPLETO,
     description: 'Nível de escolaridade do membro familiar',
@@ -81,6 +91,12 @@ export class CreateComposicaoFamiliarDto {
 
   @IsNotEmpty({ message: 'Parentesco é obrigatório' })
   @IsEnum(ParentescoEnum, { message: 'Parentesco deve ser um valor válido' })
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      return value.toUpperCase();
+    }
+    return value;
+  })
   @ApiProperty({
     example: ParentescoEnum.FILHO,
     description: 'Grau de parentesco com o cidadão principal',

@@ -21,7 +21,7 @@ import { CreateDadosSociaisDto } from '../dto/create-dados-sociais.dto';
 import { UpdateDadosSociaisDto } from '../dto/update-dados-sociais.dto';
 import { DadosSociaisResponseDto } from '../dto/dados-sociais-response.dto';
 import { CidadaoAuditInterceptor } from '../interceptors/cidadao-audit.interceptor';
-import { DadosSociais } from '../entities/dados-sociais.entity';
+import { DadosSociais } from '../../../entities/dados-sociais.entity';
 
 /**
  * Controller responsável pelo gerenciamento dos dados sociais dos cidadãos

@@ -14,7 +14,7 @@ import {
   IsOptional 
 } from 'class-validator';
 import { IsCPF, IsTelefone } from '../../shared/validators/br-validators';
-import { Role } from '../../shared/enums/role.enum';
+import { Role } from '../../enums/role.enum';
 
 /**
  * DTO para registro de novo usuário

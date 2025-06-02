@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource, Repository } from 'typeorm';
-import { InfoBancaria } from '../entities/info-bancaria.entity';
+import { InfoBancaria } from '../../../entities/info-bancaria.entity';
 import { CreateInfoBancariaDto } from '../dto/create-info-bancaria.dto';
 import { UpdateInfoBancariaDto } from '../dto/update-info-bancaria.dto';
 

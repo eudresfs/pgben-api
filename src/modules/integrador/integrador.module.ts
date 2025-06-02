@@ -3,9 +3,11 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
-import { Integrador } from './entities/integrador.entity';
-import { IntegradorToken } from './entities/integrador-token.entity';
-import { TokenRevogado } from './entities/token-revogado.entity';
+import { 
+  Integrador, 
+  IntegradorToken, 
+  TokenRevogado 
+} from '../../entities';
 
 import { IntegradorService } from './services/integrador.service';
 import { IntegradorTokenService } from './services/integrador-token.service';

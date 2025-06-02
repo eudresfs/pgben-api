@@ -5,9 +5,9 @@ import { ConfigService } from '@nestjs/config';
 import * as crypto from 'crypto';
 import NodeCache from 'node-cache';
 
-import { MetricaDefinicao } from '../entities/metrica-definicao.entity';
-import { MetricaConfiguracao } from '../entities/metrica-configuracao.entity';
-import { MetricaSnapshot } from '../entities/metrica-snapshot.entity';
+import { MetricaDefinicao } from '../../../entities/metrica-definicao.entity';
+import { MetricaConfiguracao } from '../../../entities/metrica-configuracao.entity';
+import { MetricaSnapshot } from '../../../entities/metrica-snapshot.entity';
 
 /**
  * Serviço responsável pelo cacheamento de métricas

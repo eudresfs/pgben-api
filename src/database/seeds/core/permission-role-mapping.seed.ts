@@ -1,6 +1,6 @@
 import { DataSource } from 'typeorm';
-import { RolePermission } from '../../../auth/entities/role-permission.entity';
-import { Permission } from '../../../auth/entities/permission.entity';
+import { RolePermission } from '../../../entities/role-permission.entity';
+import { Permission } from '../../../entities/permission.entity';
 
 /**
  * Seed para mapear as roles existentes para as novas permissões granulares.

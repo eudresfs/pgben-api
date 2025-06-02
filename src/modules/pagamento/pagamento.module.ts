@@ -2,9 +2,11 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 // Entidades
-import { Pagamento } from './entities/pagamento.entity';
-import { ComprovantePagamento } from './entities/comprovante-pagamento.entity';
-import { ConfirmacaoRecebimento } from './entities/confirmacao-recebimento.entity';
+import { 
+  Pagamento, 
+  ComprovantePagamento, 
+  ConfirmacaoRecebimento 
+} from '../../entities';
 
 // Controllers
 import { PagamentoController } from './controllers/pagamento.controller';

@@ -6,7 +6,7 @@ import {
   IsUUID,
   IsDateString,
 } from 'class-validator';
-import { TipoOperacao } from '../enums/tipo-operacao.enum';
+import { TipoOperacao } from '../../../enums/tipo-operacao.enum';
 import { Type } from 'class-transformer';
 
 /**

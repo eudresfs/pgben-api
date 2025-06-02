@@ -17,8 +17,10 @@ import { SseService } from './services/sse.service';
 import { SseGuard } from './guards/sse.guard';
 
 // Entidades
-import { NotificacaoSistema } from './entities/notification.entity';
-import { NotificationTemplate } from './entities/notification-template.entity';
+import { 
+  NotificacaoSistema, 
+  NotificationTemplate 
+} from '../../entities';
 
 /**
  * Módulo de Notificações

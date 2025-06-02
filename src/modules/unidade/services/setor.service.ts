@@ -11,7 +11,7 @@ import { SetorRepository } from '../repositories/setor.repository';
 import { UnidadeRepository } from '../repositories/unidade.repository';
 import { CreateSetorDto } from '../dto/create-setor.dto';
 import { UpdateSetorDto } from '../dto/update-setor.dto';
-import { Setor } from '../entities/setor.entity';
+import { Setor } from '../../../entities/setor.entity';
 
 /**
  * Serviço de setores

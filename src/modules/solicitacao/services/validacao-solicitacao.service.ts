@@ -1,8 +1,8 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Pendencia, StatusPendencia } from '../entities/pendencia.entity';
-import { Solicitacao, StatusSolicitacao } from '../entities/solicitacao.entity';
+import { Pendencia, StatusPendencia } from '../../../entities';
+import { Solicitacao, StatusSolicitacao } from '../../../entities';
 import { TransicaoEstadoService } from './transicao-estado.service';
 
 /**

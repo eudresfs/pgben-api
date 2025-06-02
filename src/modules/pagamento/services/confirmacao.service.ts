@@ -1,8 +1,8 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { ConfirmacaoRecebimento } from '../entities/confirmacao-recebimento.entity';
-import { StatusPagamentoEnum } from '../enums/status-pagamento.enum';
+import { ConfirmacaoRecebimento } from '../../../entities/confirmacao-recebimento.entity';
+import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
 import { ConfirmacaoRecebimentoDto } from '../dtos/confirmacao-recebimento.dto';
 import { ComprovanteService } from './comprovante.service';
 

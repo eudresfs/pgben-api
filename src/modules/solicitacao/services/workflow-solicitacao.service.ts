@@ -8,9 +8,13 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
-import { Solicitacao, StatusSolicitacao } from '../entities/solicitacao.entity';
-import { HistoricoSolicitacao } from '../entities/historico-solicitacao.entity';
-import { Pendencia, StatusPendencia } from '../entities/pendencia.entity';
+import { 
+  Solicitacao, 
+  StatusSolicitacao, 
+  HistoricoSolicitacao,
+  Pendencia,
+  StatusPendencia
+} from '../../../entities';
 import { TransicaoEstadoService } from './transicao-estado.service';
 import { ValidacaoSolicitacaoService } from './validacao-solicitacao.service';
 import { PrazoSolicitacaoService } from './prazo-solicitacao.service';
@@ -268,7 +272,7 @@ export class WorkflowSolicitacaoService {
   ): Promise<ResultadoTransicaoEstado> {
     return this.realizarTransicao(
       solicitacaoId,
-      StatusSolicitacao.PENDENTE,
+      StatusSolicitacao.ABERTA,
       usuarioId,
       'Solicitação submetida',
     );
@@ -321,7 +325,15 @@ export class WorkflowSolicitacaoService {
     solicitacaoId: string,
     usuarioId: string,
     observacao: string,
+    parecerSemtas: string,
   ): Promise<ResultadoTransicaoEstado> {
+    // Primeiro, atualizar o parecer SEMTAS na solicitação
+    await this.solicitacaoRepository.update(solicitacaoId, {
+      parecer_semtas: parecerSemtas,
+      aprovador_id: usuarioId,
+      data_aprovacao: new Date(),
+    });
+
     // Validar se a solicitação pode ser aprovada (regras de negócio)
     await this.validacaoService.validarAprovacao(solicitacaoId);
     

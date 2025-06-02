@@ -1,8 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose, Transform } from 'class-transformer';
-import { DadosSociais } from '../entities/dados-sociais.entity';
-import { EscolaridadeEnum } from '../enums/escolaridade.enum';
-import { SituacaoTrabalhoEnum } from '../enums/situacao-trabalho.enum';
+import { DadosSociais } from '../../../entities/dados-sociais.entity';
+import { EscolaridadeEnum } from '../../../enums/escolaridade.enum';
+import { SituacaoTrabalhoEnum } from '../../../enums/situacao-trabalho.enum';
 
 /**
  * DTO de resposta para dados sociais de um cidadão

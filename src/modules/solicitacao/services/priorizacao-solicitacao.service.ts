@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
-import { Solicitacao, StatusSolicitacao } from '../entities/solicitacao.entity';
+import { Solicitacao, StatusSolicitacao } from '../../../entities/solicitacao.entity';
 import { ConfigService } from '@nestjs/config';
 
 /**

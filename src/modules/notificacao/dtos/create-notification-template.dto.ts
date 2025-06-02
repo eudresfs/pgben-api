@@ -8,7 +8,7 @@ import {
   IsOptional,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { CanalNotificacao } from '../entities/notification-template.entity';
+import { CanalNotificacao } from '../../../entities/notification-template.entity';
 
 /**
  * DTO para criação de templates de notificação

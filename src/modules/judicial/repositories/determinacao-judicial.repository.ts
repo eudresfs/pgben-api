@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { DeterminacaoJudicial } from '../entities/determinacao-judicial.entity';
+import { DeterminacaoJudicial } from '../../../entities/determinacao-judicial.entity';
 import { CreateDeterminacaoJudicialDto, UpdateDeterminacaoJudicialDto } from '../dtos/determinacao-judicial.dto';
 
 /**

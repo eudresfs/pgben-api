@@ -11,18 +11,23 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, ILike, Connection } from 'typeorm';
-import { Solicitacao, StatusSolicitacao } from '../entities/solicitacao.entity';
-import { HistoricoSolicitacao } from '../entities/historico-solicitacao.entity';
-import { Pendencia, StatusPendencia } from '../entities/pendencia.entity';
+import { 
+  Solicitacao, 
+  StatusSolicitacao, 
+  HistoricoSolicitacao, 
+  ProcessoJudicial, 
+  DeterminacaoJudicial, 
+  StatusPendencia,
+  Pendencia
+} from '../../../entities';
 import { CreateSolicitacaoDto } from '../dto/create-solicitacao.dto';
 import { UpdateSolicitacaoDto } from '../dto/update-solicitacao.dto';
 import { AvaliarSolicitacaoDto } from '../dto/avaliar-solicitacao.dto';
 import { VincularProcessoJudicialDto } from '../dto/vincular-processo-judicial.dto';
+import { normalizeEnumFields } from '../../../shared/utils/enum-normalizer.util';
 import { VincularDeterminacaoJudicialDto } from '../dto/vincular-determinacao-judicial.dto';
 import { ConverterPapelDto } from '../dto/converter-papel.dto';
-import { ProcessoJudicial } from '../../judicial/entities/processo-judicial.entity';
 import { ProcessoJudicialRepository } from '../../judicial/repositories/processo-judicial.repository';
-import { DeterminacaoJudicial } from '../../judicial/entities/determinacao-judicial.entity';
 import { ROLES } from '../../../shared/constants/roles.constants';
 import { ValidacaoExclusividadeService } from './validacao-exclusividade.service';
 
@@ -180,18 +185,7 @@ export class SolicitacaoService {
     return solicitacao;
   }
 
-  /**
-   * Verifica se um usuário tem permissão para acessar uma solicitação
-   */
-  canAccessSolicitacao(solicitacao: Solicitacao, user: any): boolean {
-    // Admins e gestores podem acessar qualquer solicitação
-    if ([ROLES.ADMIN, ROLES.GESTOR].includes(user.role)) {
-      return true;
-    }
 
-    // Técnicos só podem acessar solicitações da sua unidade
-    return solicitacao.unidade_id === user.unidade_id;
-  }
 
   /**
    * Cria uma nova solicitação
@@ -218,15 +212,30 @@ export class SolicitacaoService {
       // Criar uma nova instância de Solicitacao
       const solicitacao = new Solicitacao();
 
+      // Determinar a unidade: se usuário não tem unidade, usar do DTO (obrigatório)
+      let unidadeId: string;
+      if (!user.unidade_id) {
+        if (!createSolicitacaoDto.unidade_id) {
+          throw new BadRequestException(
+            'Usuário não possui unidade vinculada. O campo unidade_id é obrigatório.'
+          );
+        }
+        unidadeId = createSolicitacaoDto.unidade_id;
+      } else {
+        unidadeId = user.unidade_id;
+      }
+
       // Preencher os dados básicos
       solicitacao.beneficiario_id = createSolicitacaoDto.beneficiario_id;
       solicitacao.tipo_beneficio_id = createSolicitacaoDto.tipo_beneficio_id;
-      solicitacao.unidade_id = user.unidade_id;
+      solicitacao.unidade_id = unidadeId;
       solicitacao.tecnico_id = user.id;
       solicitacao.status = StatusSolicitacao.RASCUNHO;
       solicitacao.data_abertura = new Date();
-      solicitacao.dados_complementares =
-        createSolicitacaoDto.dados_complementares || {};
+      
+      // Normalizar enums nos dados complementares antes de salvar
+      const dadosComplementares = createSolicitacaoDto.dados_complementares || {};
+      solicitacao.dados_complementares = normalizeEnumFields(dadosComplementares);
 
       // Salvar a solicitação
       const savedSolicitacao = await manager.save(solicitacao);
@@ -235,15 +244,33 @@ export class SolicitacaoService {
       const historico = new HistoricoSolicitacao();
       historico.solicitacao_id = savedSolicitacao.id;
       historico.usuario_id = user.id;
-      historico.status_anterior = StatusSolicitacao.RASCUNHO;
-      historico.status_atual = StatusSolicitacao.RASCUNHO;
+      historico.status_anterior = StatusSolicitacao.ABERTA;
+      historico.status_atual = StatusSolicitacao.ABERTA;
       historico.observacao = 'Solicitação criada';
       historico.dados_alterados = { acao: 'criacao' };
       historico.ip_usuario = user.ip || '0.0.0.0';
 
       await manager.save(historico);
 
-      return this.findById(savedSolicitacao.id);
+      // Buscar a solicitação criada dentro da transação com relações essenciais
+      const solicitacaoCompleta = await manager.findOne(Solicitacao, {
+        where: { id: savedSolicitacao.id },
+        relations: [
+          'beneficiario',
+          'tipo_beneficio',
+          'unidade',
+          'tecnico',
+          'historico'
+        ]
+      });
+
+      if (!solicitacaoCompleta) {
+        throw new NotFoundException(
+          `Solicitação com ID ${savedSolicitacao.id} não encontrada após criação`
+        );
+      }
+
+      return solicitacaoCompleta;
     });
   }
 
@@ -259,18 +286,24 @@ export class SolicitacaoService {
       // Buscar a solicitação
       const solicitacao = await this.findById(id);
 
-      // Verificar se o usuário tem permissão
-      if (!this.canAccessSolicitacao(solicitacao, user)) {
-        throw new UnauthorizedException(
-          'Você não tem permissão para atualizar esta solicitação',
-        );
-      }
-
-      // Verificar se a solicitação está em estado que permite edição
-      if (solicitacao.status !== StatusSolicitacao.RASCUNHO) {
-        throw new BadRequestException(
-          `Não é possível editar uma solicitação com status ${solicitacao.status}`,
-        );
+      // Check if request status allows editing based on business rules
+      const EDITABLE_STATUSES = [
+        StatusSolicitacao.ABERTA,
+        StatusSolicitacao.PENDENTE
+      ];
+      
+      if (!EDITABLE_STATUSES.includes(solicitacao.status)) {
+        const statusMessage = `Status atual: ${solicitacao.status}`;
+        const allowedMessage = `Status disponíveis: ${EDITABLE_STATUSES.join(', ')}`;
+        
+        throw new BadRequestException({
+          message: 'A solicitação não pode ser editado neste status.',
+          detalhes: {
+            statusAtual: solicitacao.status,
+            statusPossiveis: EDITABLE_STATUSES,
+          },
+          contexto: `${statusMessage}. ${allowedMessage}`
+        });
       }
 
       // Atualizar os dados
@@ -281,8 +314,10 @@ export class SolicitacaoService {
       }
 
       if (updateSolicitacaoDto.dados_complementares) {
-        solicitacao.dados_complementares =
-          updateSolicitacaoDto.dados_complementares;
+        // Normalizar enums nos dados complementares antes de salvar
+        solicitacao.dados_complementares = normalizeEnumFields(
+          updateSolicitacaoDto.dados_complementares
+        );
       }
 
       // Salvar a solicitação
@@ -314,13 +349,6 @@ export class SolicitacaoService {
       // Buscar a solicitação
       const solicitacao = await this.findById(id);
 
-      // Verificar se o usuário tem permissão
-      if (!this.canAccessSolicitacao(solicitacao, user)) {
-        throw new UnauthorizedException(
-          'Você não tem permissão para submeter esta solicitação',
-        );
-      }
-
       // Verificar se a solicitação está em estado que permite submissão
       if (solicitacao.status !== StatusSolicitacao.RASCUNHO) {
         throw new BadRequestException(
@@ -330,16 +358,27 @@ export class SolicitacaoService {
 
       // Atualizar o status usando o método preparar
       solicitacao.prepararAlteracaoStatus(
-        StatusSolicitacao.PENDENTE,
+        StatusSolicitacao.EM_ANALISE,
         user.id,
         'Solicitação submetida para análise',
         user.ip || '0.0.0.0',
       );
 
       await manager.save(solicitacao);
-
-      // Não é mais necessário registrar manualmente no histórico
-      // O método logStatusChange fará isso automaticamente através do listener @AfterUpdate
+      
+      // Register in history
+      const historico = new HistoricoSolicitacao();
+      historico.solicitacao_id = id;
+      historico.usuario_id = user.id;
+      historico.status_anterior = StatusSolicitacao.RASCUNHO;
+      historico.status_atual = solicitacao.status;
+      historico.observacao = 'Solicitação submetida para análise';
+      historico.dados_alterados = {
+        campos_alterados: Object.keys(UpdateSolicitacaoDto),
+      };
+      historico.ip_usuario = user.ip || '0.0.0.0';
+      
+      await manager.save(historico);
 
       return this.findById(id);
     });
@@ -356,13 +395,6 @@ export class SolicitacaoService {
     return this.connection.transaction(async (manager) => {
       // Buscar a solicitação
       const solicitacao = await this.findById(id);
-
-      // Verificar se o usuário tem permissão
-      if (!this.canAccessSolicitacao(solicitacao, user)) {
-        throw new UnauthorizedException(
-          'Você não tem permissão para avaliar esta solicitação',
-        );
-      }
 
       // Verificar se a solicitação está em estado que permite avaliação
       if (
@@ -573,7 +605,7 @@ export class SolicitacaoService {
         solicitacao.processo_judicial_id = vincularDto.processo_judicial_id;
         
         // Registrar no histórico
-        const historicoEntry = this.historicoRepository.create({
+        const historicoEntry = this.historicoRepository.create(normalizeEnumFields({
           solicitacao_id: solicitacaoId,
           status_anterior: solicitacao.status,
           status_atual: solicitacao.status,
@@ -586,7 +618,7 @@ export class SolicitacaoService {
             },
           },
           ip_usuario: user.ip || '0.0.0.0',
-        });
+        }));
 
         // Salvar as alterações
         await manager.save(solicitacao);
@@ -650,7 +682,7 @@ export class SolicitacaoService {
         solicitacao.processo_judicial_id = null as unknown as string;
         
         // Registrar no histórico
-        const historicoEntry = this.historicoRepository.create({
+        const historicoEntry = this.historicoRepository.create(normalizeEnumFields({
           solicitacao_id: solicitacaoId,
           status_anterior: solicitacao.status,
           status_atual: solicitacao.status,
@@ -664,7 +696,7 @@ export class SolicitacaoService {
             },
           },
           ip_usuario: user.ip || '0.0.0.0',
-        });
+        }));
 
         // Salvar as alterações
         await manager.save(solicitacao);
@@ -733,7 +765,7 @@ export class SolicitacaoService {
         solicitacao.determinacao_judicial_id = vincularDto.determinacao_judicial_id;
         
         // Registrar no histórico
-        const historicoEntry = this.historicoRepository.create({
+        const historicoEntry = this.historicoRepository.create(normalizeEnumFields({
           solicitacao_id: solicitacaoId,
           status_anterior: solicitacao.status,
           status_atual: solicitacao.status,
@@ -746,7 +778,7 @@ export class SolicitacaoService {
             },
           },
           ip_usuario: user.ip || '0.0.0.0',
-        });
+        }));
 
         // Salvar as alterações
         await manager.save(solicitacao);
@@ -800,13 +832,6 @@ export class SolicitacaoService {
           throw new NotFoundException('Solicitação de origem não encontrada');
         }
         
-        // Verificar se o usuário tem permissão para acessar a solicitação
-        if (!this.canAccessSolicitacao(solicitacaoOrigem, user)) {
-          throw new UnauthorizedException(
-            'Você não tem permissão para acessar a solicitação de origem',
-          );
-        }
-        
         // Verificar se o cidadão está na composição familiar da solicitação
         const composicaoFamiliar = solicitacaoOrigem.dados_complementares?.composicao_familiar || [];
         const membroIndex = composicaoFamiliar.findIndex(
@@ -848,7 +873,7 @@ export class SolicitacaoService {
         await manager.save(novaSolicitacao);
         
         // Registrar no histórico da solicitação de origem
-        const historicoOrigem = this.historicoRepository.create({
+        const historicoOrigem = this.historicoRepository.create(normalizeEnumFields({
           solicitacao_id: solicitacaoOrigem.id,
           status_anterior: solicitacaoOrigem.status,
           status_atual: solicitacaoOrigem.status,
@@ -863,12 +888,12 @@ export class SolicitacaoService {
             },
           },
           ip_usuario: user.ip || '0.0.0.0',
-        });
+        }));
         
         await manager.save(historicoOrigem);
         
         // Registrar no histórico da nova solicitação
-        const historicoNova = this.historicoRepository.create({
+        const historicoNova = this.historicoRepository.create(normalizeEnumFields({
           solicitacao_id: novaSolicitacao.id,
           status_anterior: StatusSolicitacao.RASCUNHO,
           status_atual: StatusSolicitacao.RASCUNHO,
@@ -882,7 +907,7 @@ export class SolicitacaoService {
             },
           },
           ip_usuario: user.ip || '0.0.0.0',
-        });
+        }));
         
         await manager.save(historicoNova);
         
@@ -940,7 +965,7 @@ export class SolicitacaoService {
         solicitacao.determinacao_judicial_id = null as unknown as string;
         
         // Registrar no histórico
-        const historicoEntry = this.historicoRepository.create({
+        const historicoEntry = this.historicoRepository.create(normalizeEnumFields({
           solicitacao_id: solicitacaoId,
           status_anterior: solicitacao.status,
           status_atual: solicitacao.status,
@@ -954,7 +979,7 @@ export class SolicitacaoService {
             },
           },
           ip_usuario: user.ip || '0.0.0.0',
-        });
+        }));
 
         // Salvar as alterações
         await manager.save(solicitacao);

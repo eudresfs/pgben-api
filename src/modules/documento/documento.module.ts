@@ -13,7 +13,7 @@ import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { Documento } from './entities/documento.entity';
+import { Documento } from '../../entities';
 import { SharedModule } from '../../shared/shared.module';
 import { AuthModule } from '../../auth/auth.module';
 

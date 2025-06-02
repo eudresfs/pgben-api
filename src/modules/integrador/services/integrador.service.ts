@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Integrador } from '../entities/integrador.entity';
+import { Integrador } from '../../../entities/integrador.entity';
 import { CreateIntegradorDto } from '../dto/create-integrador.dto';
 import { UpdateIntegradorDto } from '../dto/update-integrador.dto';
 import { IntegradorResponseDto } from '../dto/integrador-response.dto';

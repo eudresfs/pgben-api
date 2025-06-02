@@ -3,9 +3,11 @@ import { ConfigModule } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
 import { ValidationPipe } from '@nestjs/common';
 import { APP_PIPE } from '@nestjs/core';
-import { Pagamento } from './entities/pagamento.entity';
-import { ComprovantePagamento } from './entities/comprovante-pagamento.entity';
-import { ConfirmacaoRecebimento } from './entities/confirmacao-recebimento.entity';
+import { 
+  Pagamento, 
+  ComprovantePagamento, 
+  ConfirmacaoRecebimento 
+} from '../../entities';
 
 /**
  * Cria um módulo de teste para os testes do módulo de pagamento

@@ -9,7 +9,7 @@ import {
   IsUUID,
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
-import { TipoDeterminacaoJudicial } from '../entities/determinacao-judicial.entity';
+import { TipoDeterminacaoJudicial } from '../../../entities/determinacao-judicial.entity';
 
 /**
  * DTO para criação de determinação judicial

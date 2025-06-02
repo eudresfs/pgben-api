@@ -1,5 +1,5 @@
 import { DataSource } from 'typeorm';
-import { NotificationTemplate, CanalNotificacao } from '../../../modules/notificacao/entities/notification-template.entity';
+import { NotificationTemplate, CanalNotificacao } from '../../../entities/notification-template.entity';
 
 /**
  * Seed para templates de notificação do sistema

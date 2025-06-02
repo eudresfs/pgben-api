@@ -1,4 +1,4 @@
-import { TipoNotificacao } from '../entities/notification.entity';
+import { TipoNotificacao } from '../../../entities/notification.entity';
 
 /**
  * Interface para notificações SSE

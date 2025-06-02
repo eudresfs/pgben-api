@@ -5,9 +5,11 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from '../../auth/auth.module';
 
 // Entidades
-import { ProcessoJudicial } from './entities/processo-judicial.entity';
-import { DeterminacaoJudicial } from './entities/determinacao-judicial.entity';
-import { Solicitacao } from '../solicitacao/entities/solicitacao.entity';
+import { 
+  ProcessoJudicial, 
+  DeterminacaoJudicial, 
+  Solicitacao 
+} from '../../entities';
 
 // Repositories
 import { DeterminacaoJudicialRepository } from './repositories/determinacao-judicial.repository';

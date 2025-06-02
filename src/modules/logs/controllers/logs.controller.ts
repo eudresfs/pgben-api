@@ -19,7 +19,7 @@ import {
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../../../auth/guards/permission.guard';
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
-import { TipoEscopo } from '../../../auth/entities/user-permission.entity';
+import { TipoEscopo } from '../../../entities/user-permission.entity';
 import { LogsService } from '../services/logs.service';
 import { LogsFilterDto, CriticidadeLog } from '../dto/logs-filter.dto';
 import { LogResponseDto } from '../dto/log-response.dto';

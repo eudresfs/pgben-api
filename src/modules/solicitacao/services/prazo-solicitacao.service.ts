@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Solicitacao, StatusSolicitacao } from '../entities/solicitacao.entity';
+import { Solicitacao, StatusSolicitacao } from '../../../entities/solicitacao.entity';
 import { EntityNotFoundException } from '../../../shared/exceptions';
 import { ConfigService } from '@nestjs/config';
 

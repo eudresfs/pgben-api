@@ -14,7 +14,7 @@ import {
   WorkflowBeneficioRepository,
   ConfiguracaoIntegracaoRepository
 } from './repositories';
-import { Parametro, Template, WorkflowBeneficio, ConfiguracaoIntegracao } from './entities';
+import { Parametro, Template, WorkflowBeneficio, ConfiguracaoIntegracao } from '../../entities';
 import {
   ParametroController,
   TemplateController,

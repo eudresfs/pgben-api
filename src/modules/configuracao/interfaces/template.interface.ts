@@ -1,4 +1,4 @@
-import { TemplateTipoEnum } from '../enums';
+import { TemplateTipoEnum } from '../../../enums';
 
 /**
  * Interface que define a estrutura de um template do sistema.

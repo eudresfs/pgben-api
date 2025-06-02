@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { RegraConflitoPapel } from '../entities/regra-conflito-papel.entity';
+import { RegraConflitoPapel } from '../../../entities/regra-conflito-papel.entity';
 
 /**
  * Repositório para operações relacionadas às regras de conflito de papéis

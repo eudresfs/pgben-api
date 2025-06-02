@@ -7,7 +7,7 @@ import {
   MaxLength,
   IsEnum,
 } from 'class-validator';
-import { TipoDocumento } from '../entities/requisito-documento.entity';
+import { TipoDocumento } from '../../../entities/requisito-documento.entity';
 
 /**
  * DTO para criação de requisito documental

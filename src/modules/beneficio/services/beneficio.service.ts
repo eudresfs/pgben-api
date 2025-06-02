@@ -6,16 +6,17 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { TipoBeneficio } from '../entities/tipo-beneficio.entity';
-import { RequisitoDocumento } from '../entities/requisito-documento.entity';
-import { FluxoBeneficio } from '../entities/fluxo-beneficio.entity';
+import { TipoBeneficio } from '../../../entities/tipo-beneficio.entity';
+import { RequisitoDocumento } from '../../../entities/requisito-documento.entity';
+import { FluxoBeneficio } from '../../../entities/fluxo-beneficio.entity';
 import { CreateTipoBeneficioDto } from '../dto/create-tipo-beneficio.dto';
 import { UpdateTipoBeneficioDto } from '../dto/update-tipo-beneficio.dto';
 import { CreateRequisitoDocumentoDto } from '../dto/create-requisito-documento.dto';
-import { TipoDocumento } from '../entities/requisito-documento.entity';
-import { TipoEtapa } from '../entities/fluxo-beneficio.entity';
+import { TipoDocumento } from '../../../entities/requisito-documento.entity';
+import { TipoEtapa } from '../../../entities/fluxo-beneficio.entity';
 import { ConfigurarFluxoDto } from '../dto/configurar-fluxo.dto';
-import { Role as PerfilResponsavel } from '../../../shared/enums/role.enum';
+import { Role as PerfilResponsavel } from '../../../enums/role.enum';
+import { normalizeEnumFields } from '../../../shared/utils/enum-normalizer.util';
 
 
 /**
@@ -118,9 +119,12 @@ export class BeneficioService {
       );
     }
 
+    // Normalizar campos de enum antes de criar
+    const normalizedData = normalizeEnumFields(createTipoBeneficioDto);
+    
     // Criar novo tipo de benefício
     const tipoBeneficio = this.tipoBeneficioRepository.create(
-      createTipoBeneficioDto,
+      normalizedData,
     );
     return this.tipoBeneficioRepository.save(tipoBeneficio);
   }
@@ -148,8 +152,11 @@ export class BeneficioService {
       }
     }
 
+    // Normalizar campos de enum antes de atualizar
+    const normalizedData = normalizeEnumFields(updateTipoBeneficioDto);
+    
     // Atualizar e salvar
-    Object.assign(tipoBeneficio, updateTipoBeneficioDto);
+    Object.assign(tipoBeneficio, normalizedData);
     return this.tipoBeneficioRepository.save(tipoBeneficio);
   }
 

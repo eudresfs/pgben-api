@@ -1,11 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { WorkflowBeneficioRepository } from '../repositories/workflow-beneficio.repository';
-import { WorkflowBeneficio } from '../entities/workflow-beneficio.entity';
+import { WorkflowBeneficio } from '../../../entities/workflow-beneficio.entity';
 import { WorkflowUpdateDto } from '../dtos/workflow/workflow-update.dto';
 import { WorkflowResponseDto, WorkflowEtapaResponseDto } from '../dtos/workflow/workflow-response.dto';
 import { WorkflowEtapaDto } from '../dtos/workflow/workflow-etapa.dto';
 import { WorkflowInconsistenteException } from '../exceptions/workflow-inconsistente.exception';
-import { WorkflowAcaoEnum } from '../enums/workflow-acao.enum';
+import { WorkflowAcaoEnum } from '../../../enums/workflow-acao.enum';
 
 /**
  * Serviço para gerenciamento de workflows de benefícios

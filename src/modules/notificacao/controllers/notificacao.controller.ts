@@ -30,7 +30,7 @@ import { RolesGuard } from '../../../auth/guards/roles.guard';
 import { SseGuard } from '../guards/sse.guard';
 import { Roles } from '../../../auth/decorators/role.decorator';
 import { ROLES } from '../../../shared/constants/roles.constants';
-import { StatusNotificacaoProcessamento } from '../entities/notification.entity';
+import { StatusNotificacaoProcessamento } from '../../../entities/notification.entity';
 import { CreateNotificationDto } from '../dtos/create-notification.dto';
 
 /**

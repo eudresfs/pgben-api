@@ -3,8 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, LessThan, MoreThan, Not } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
-import { MetricaDefinicao } from '../entities/metrica-definicao.entity';
-import { MetricaSnapshot } from '../entities/metrica-snapshot.entity';
+import { MetricaDefinicao } from '../../../entities/metrica-definicao.entity';
+import { MetricaSnapshot } from '../../../entities/metrica-snapshot.entity';
 
 import { 
   NivelConfiancaAnomalia, 

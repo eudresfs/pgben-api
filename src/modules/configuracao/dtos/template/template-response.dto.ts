@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { TemplateTipoEnum } from '../../enums';
+import { TemplateTipoEnum } from '../../../../enums';
 
 /**
  * DTO para resposta com informações de um template.

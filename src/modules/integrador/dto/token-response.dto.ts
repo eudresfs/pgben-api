@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IntegradorToken } from '../entities/integrador-token.entity';
+import { IntegradorToken } from '../../../entities/integrador-token.entity';
 
 /**
  * DTO para resposta padronizada de informações de token.

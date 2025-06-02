@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { IsDate, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, Max, Min } from 'class-validator';
-import { MetodoPagamentoEnum } from '../enums/metodo-pagamento.enum';
+import { MetodoPagamentoEnum } from '../../../enums/metodo-pagamento.enum';
 
 /**
  * DTO para criação de um novo pagamento

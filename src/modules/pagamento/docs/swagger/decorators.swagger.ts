@@ -9,8 +9,8 @@ import {
   ApiConsumes,
   ApiOkResponse
 } from '@nestjs/swagger';
-import { StatusPagamentoEnum } from '../../enums/status-pagamento.enum';
-import { MetodoPagamentoEnum } from '../../enums/metodo-pagamento.enum';
+import { StatusPagamentoEnum } from '../../../../enums/status-pagamento.enum';
+import { MetodoPagamentoEnum } from '../../../../enums/metodo-pagamento.enum';
 
 /**
  * Decoradores personalizados para documentação Swagger

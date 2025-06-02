@@ -21,7 +21,7 @@ import { AtualizarVisitaMonitoramentoDto } from '../dto/atualizar-visita-monitor
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
 import { Request } from 'express';
-import { TipoEscopo } from '@/auth/entities/user-permission.entity';
+import { TipoEscopo } from '@/entities/user-permission.entity';
 
 /**
  * Controller para gerenciar o monitoramento de benefícios de Aluguel Social

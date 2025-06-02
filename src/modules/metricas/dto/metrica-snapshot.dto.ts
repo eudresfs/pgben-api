@@ -1,7 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsString, IsEnum, IsNotEmpty, IsOptional, IsNumber, IsBoolean, IsDate, IsObject, IsUUID } from 'class-validator';
 import { Type } from 'class-transformer';
-import { GranularidadeTemporal } from '../entities/metrica-definicao.entity';
+import { GranularidadeTemporal } from '../../../entities';
 
 /**
  * DTO para criar um snapshot de métrica manualmente

@@ -1,5 +1,5 @@
 import { Injectable, BadRequestException, ForbiddenException } from '@nestjs/common';
-import { StatusSolicitacao } from '../entities/solicitacao.entity';
+import { StatusSolicitacao } from '../../../entities/solicitacao.entity';
 import { TRANSICOES_PERMITIDAS, PERMISSOES_TRANSICAO } from '../config/workflow-config';
 
 /**

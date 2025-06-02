@@ -4,8 +4,8 @@ import { Repository, DataSource } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import * as mathjs from 'mathjs';
 
-import { MetricaDefinicao, TipoMetrica } from '../entities/metrica-definicao.entity';
-import { MetricaSnapshot } from '../entities/metrica-snapshot.entity';
+import { MetricaDefinicao, TipoMetrica } from '../../../entities/metrica-definicao.entity';
+import { MetricaSnapshot } from '../../../entities/metrica-snapshot.entity';
 
 /**
  * Serviço responsável pelo cálculo de valores de métricas

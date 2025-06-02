@@ -15,13 +15,14 @@ import {
   IsUUID,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { Sexo } from '../enums/sexo.enum';
-import { TipoPapel, PaperType } from '../enums/tipo-papel.enum';
+import { Sexo } from '../../../enums/sexo.enum';
+import { TipoPapel, PaperType } from '../../../enums/tipo-papel.enum';
 import { CPFValidator } from '../validators/cpf-validator';
 import { NISValidator } from '../validators/nis-validator';
 import { TelefoneValidator } from '../validators/telefone-validator';
 import { CEPValidator } from '../validators/cep-validator';
 import { CreateComposicaoFamiliarDto } from './create-composicao-familiar.dto';
+import { EstadoCivil } from '../../../enums/estado-civil.enum';
 
 /**
  * DTO para endereço do cidadão
@@ -86,6 +87,24 @@ export class EnderecoDto {
     description: 'CEP do endereço',
   })
   cep: string;
+
+  @IsString({ message: 'Ponto de referência deve ser uma string' })
+  @IsOptional()
+  @ApiPropertyOptional({
+    example: 'Próximo ao Corpo de Bombeiros',
+    description: 'Ponto de referência do endereço',
+    required: false,
+  })
+  ponto_referencia?: string;
+
+
+  @IsNumber({}, { message: 'Tempo de residência deve ser um número' })
+  @IsNotEmpty({ message: 'Tempo de residência é obrigatório' })
+  @ApiProperty({
+    example: 2,
+    description: 'O tempo de residência do cidadão em anos',
+  })
+  tempo_de_residencia: number;
 }
 
 /**
@@ -227,6 +246,16 @@ export class CreateCidadaoDto {
     required: false,
   })
   nome_social?: string;
+
+  @IsEnum(EstadoCivil, { message: 'Estado civil inválido' })
+  @IsNotEmpty({ message: 'Estado civil é obrigatório' })
+  @ApiProperty({
+    enum: EstadoCivil,
+    example: EstadoCivil.CASADO,
+    description: 'Estado civil do cidadão',
+  })
+  estado_civil: EstadoCivil
+
 
   @IsString({ message: 'Nome da mãe deve ser uma string' })
   @IsNotEmpty({ message: 'Nome da mãe é obrigatório' })

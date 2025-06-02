@@ -4,7 +4,7 @@ import { BullModule } from '@nestjs/bull';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 
-import { LogAuditoria } from '../../modules/auditoria/entities/log-auditoria.entity';
+import { LogAuditoria } from '../../entities/log-auditoria.entity';
 import { AuditoriaQueueService } from '../../modules/auditoria/services/auditoria-queue.service';
 import { LogAuditoriaRepository } from '../../modules/auditoria/repositories/log-auditoria.repository';
 import { AuditoriaSignatureService } from '../../modules/auditoria/services/auditoria-signature.service';

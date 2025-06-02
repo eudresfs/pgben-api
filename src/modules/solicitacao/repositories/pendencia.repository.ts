@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Repository, DataSource } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Pendencia, StatusPendencia } from '../entities/pendencia.entity';
+import { Pendencia, StatusPendencia } from '../../../entities';
 import { EntityNotFoundException, InvalidOperationException } from '../../../shared/exceptions';
 
 /**
@@ -334,16 +334,16 @@ export class PendenciaRepository {
 
     // Inicializar todos os status com 0
     const contagem = Object.values(StatusPendencia).reduce((acc, status) => {
-      acc[status] = 0;
+      (acc as Record<StatusPendencia, number>)[status] = 0;
       return acc;
     }, {} as Record<StatusPendencia, number>);
 
     // Preencher com os valores reais
     resultados.forEach(resultado => {
-      contagem[resultado.status] = parseInt(resultado.total);
+      (contagem as Record<StatusPendencia, number>)[resultado.status] = parseInt(resultado.total);
     });
 
-    return contagem;
+    return contagem as Record<StatusPendencia, number>;
   }
 
   /**

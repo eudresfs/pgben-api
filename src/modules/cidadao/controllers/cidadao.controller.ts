@@ -42,8 +42,8 @@ import { CidadaoRepository } from '../repositories/cidadao.repository';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 // import { MulterUploader } from '../../common/uploaders/multer.uploader';
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
-import { Cidadao } from '../entities/cidadao.entity';
-import { ScopeType } from '../../../auth/entities/user-permission.entity';
+import { Cidadao } from '../../../entities/cidadao.entity';
+import { ScopeType } from '../../../entities/user-permission.entity';
 import {
   CidadaoResponseDto,
   CidadaoPaginatedResponseDto,

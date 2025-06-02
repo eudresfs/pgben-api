@@ -1,8 +1,8 @@
 import { DataSource } from 'typeorm';
-import { Permission } from '../../../auth/entities/permission.entity';
-import { PermissionScope } from '../../../auth/entities/permission-scope.entity';
-import { TipoEscopo } from '../../../auth/entities/user-permission.entity';
-import { Status } from '@/shared/enums/status.enum';
+import { Permission } from '../../../entities/permission.entity';
+import { PermissionScope } from '../../../entities/permission-scope.entity';
+import { TipoEscopo } from '../../../entities/user-permission.entity';
+import { Status } from '@/enums/status.enum';
 
 /**
  * Script de seed para popular as permissões do módulo de benefício.

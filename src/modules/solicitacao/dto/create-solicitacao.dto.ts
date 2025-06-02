@@ -54,17 +54,22 @@ export class CreateSolicitacaoDto {
   @IsUUID('4', { message: 'ID do beneficiário inválido' })
   beneficiario_id: string;
 
+  @ApiProperty({ description: 'ID do cidadão beneficiário' })
+  @IsOptional()
+  @IsUUID('4', { message: 'ID do beneficiário inválido' })
+  solicitante_id?: string;
+
   @ApiProperty({ description: 'ID do tipo de benefício solicitado' })
   @IsNotEmpty({ message: 'ID do tipo de benefício é obrigatório' })
   @IsUUID('4', { message: 'ID do tipo de benefício inválido' })
   tipo_beneficio_id: string;
 
-  @ApiProperty({
-    description: 'ID da unidade onde a solicitação está sendo feita',
+  @ApiPropertyOptional({
+    description: 'ID da unidade onde a solicitação está sendo feita (obrigatório se usuário não tiver unidade vinculada)',
   })
-  @IsNotEmpty({ message: 'ID da unidade é obrigatório' })
+  @IsOptional()
   @IsUUID('4', { message: 'ID da unidade inválido' })
-  unidade_id: string;
+  unidade_id?: string;
 
   @ApiPropertyOptional({ description: 'Observações sobre a solicitação' })
   @IsOptional()

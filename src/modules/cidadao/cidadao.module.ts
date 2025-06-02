@@ -5,13 +5,15 @@ import { CidadaoController } from './controllers/cidadao.controller';
 import { CidadaoService } from './services/cidadao.service';
 import { CidadaoRepository } from './repositories/cidadao.repository';
 import { RegraConflitoPapelRepository } from './repositories/regra-conflito-papel.repository';
-import { Cidadao } from './entities/cidadao.entity';
-import { PapelCidadao } from './entities/papel-cidadao.entity';
-import { ComposicaoFamiliar } from './entities/composicao-familiar.entity';
-import { HistoricoConversaoPapel } from './entities/historico-conversao-papel.entity';
-import { RegraConflitoPapel } from './entities/regra-conflito-papel.entity';
-import { InfoBancaria } from './entities/info-bancaria.entity';
-import { DadosSociais } from './entities/dados-sociais.entity';
+import { 
+  Cidadao, 
+  PapelCidadao, 
+  ComposicaoFamiliar, 
+  HistoricoConversaoPapel, 
+  RegraConflitoPapel, 
+  InfoBancaria, 
+  DadosSociais 
+} from '../../entities';
 import { CacheModule } from '../../shared/cache';
 import { CidadaoAuditInterceptor } from './interceptors/cidadao-audit.interceptor';
 import { PapelCidadaoService } from './services/papel-cidadao.service';

@@ -12,9 +12,10 @@ import {
   NotificacaoSistema,
   StatusNotificacaoProcessamento,
   TipoNotificacao,
-} from '../entities/notification.entity';
+} from '../../../entities/notification.entity';
 import { SseService } from './sse.service';
 import { SseNotification } from '../interfaces/sse-notification.interface';
+import { normalizeEnumFields } from '../../../shared/utils/enum-normalizer.util';
 
 /**
  * Serviço de Notificações
@@ -103,7 +104,10 @@ export class NotificacaoService {
       return notificacao; // Já está marcada como lida
     }
 
-    notificacao.status = StatusNotificacaoProcessamento.LIDA;
+    // Normalizar o status antes de atualizar
+    const statusNormalizado = normalizeEnumFields({ status: StatusNotificacaoProcessamento.LIDA }).status;
+    
+    notificacao.status = statusNormalizado;
     notificacao.data_leitura = new Date();
 
     return this.notificacaoRepository.save(notificacao);
@@ -119,7 +123,10 @@ export class NotificacaoService {
       return notificacao; // Já está arquivada
     }
 
-    notificacao.status = StatusNotificacaoProcessamento.ARQUIVADA;
+    // Normalizar o status antes de atualizar
+    const statusNormalizado = normalizeEnumFields({ status: StatusNotificacaoProcessamento.ARQUIVADA }).status;
+    
+    notificacao.status = statusNormalizado;
 
     return this.notificacaoRepository.save(notificacao);
   }
@@ -171,10 +178,13 @@ export class NotificacaoService {
     entidade_tipo?: string;
     link?: string;
   }) {
-    const notificacao = this.notificacaoRepository.create({
+    // Normalizar campos de enum antes de criar a notificação
+    const dadosNormalizados = normalizeEnumFields({
       ...dados,
       status: StatusNotificacaoProcessamento.NAO_LIDA,
     });
+
+    const notificacao = this.notificacaoRepository.create(dadosNormalizados);
 
     return this.notificacaoRepository.save(notificacao);
   }

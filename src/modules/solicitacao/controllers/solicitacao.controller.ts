@@ -33,8 +33,8 @@ import { ConverterPapelDto } from '../dto/converter-papel.dto';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../../../auth/guards/permission.guard';
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
-import { ScopeType } from '../../../auth/entities/user-permission.entity';
-import { StatusSolicitacao } from '../entities/solicitacao.entity';
+import { ScopeType } from '../../../entities/user-permission.entity';
+import { StatusSolicitacao } from '../../../entities/solicitacao.entity';
 import { Request } from 'express';
 
 /**
@@ -156,19 +156,8 @@ export class SolicitacaoController {
     description: 'Solicitação encontrada com sucesso',
   })
   @ApiResponse({ status: 404, description: 'Solicitação não encontrada' })
-  async findOne(@Param('id', ParseUUIDPipe) id: string, @Req() req: Request) {
-    const solicitacao = await this.solicitacaoService.findById(id);
-
-    // Verificar se o usuário tem permissão para acessar esta solicitação
-    // (Administradores, gestores SEMTAS, ou usuários da mesma unidade)
-    const user = req.user;
-    if (!this.solicitacaoService.canAccessSolicitacao(solicitacao, user)) {
-      throw new UnauthorizedException(
-        'Você não tem permissão para acessar esta solicitação',
-      );
-    }
-
-    return solicitacao;
+  async findOne(@Param('id', ParseUUIDPipe) id: string) {
+    return await this.solicitacaoService.findById(id);
   }
 
   /**
@@ -183,9 +172,72 @@ export class SolicitacaoController {
       scopeIdExpression: 'body.unidadeId',
     }
   )
-  @ApiOperation({ summary: 'Criar nova solicitação de benefício' })
-  @ApiResponse({ status: 201, description: 'Solicitação criada com sucesso' })
-  @ApiResponse({ status: 400, description: 'Dados inválidos' })
+  @ApiOperation({ 
+    summary: 'Criar nova solicitação de benefício',
+    description: `Cria uma nova solicitação de benefício com validações de exclusividade.
+    
+    **Validações aplicadas:**
+    - Cidadão não pode ser beneficiário principal se já faz parte da composição familiar de outra solicitação ativa
+    - Cidadão não pode ter múltiplas solicitações ativas simultaneamente
+    - Dados da composição familiar devem ser válidos
+    - Enums devem usar valores corretos (case-sensitive)
+    
+    **Status considerados ativos:** pendente, em_analise, aguardando_documentos, aprovada, liberada, em_processamento
+    **Status considerados inativos:** cancelada, reprovada, arquivada, concluida`
+  })
+  @ApiResponse({ 
+    status: 201, 
+    description: 'Solicitação criada com sucesso',
+    schema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', format: 'uuid' },
+        status: { type: 'string', enum: Object.values(StatusSolicitacao) },
+        created_at: { type: 'string', format: 'date-time' },
+        updated_at: { type: 'string', format: 'date-time' }
+      }
+    }
+  })
+  @ApiResponse({ 
+    status: 400, 
+    description: 'Dados inválidos ou violação de regras de negócio',
+    schema: {
+      type: 'object',
+      properties: {
+        statusCode: { type: 'number', example: 400 },
+        message: { 
+          type: 'string', 
+          examples: [
+            'Cidadão não pode ser beneficiário principal pois já faz parte da composição familiar de outra solicitação ativa',
+            'Cidadão já possui uma solicitação ativa',
+            'Escolaridade deve ser um valor válido',
+            'Parentesco deve ser um valor válido'
+          ]
+        },
+        error: { type: 'string', example: 'Bad Request' }
+      }
+    }
+  })
+  @ApiResponse({ 
+    status: 401, 
+    description: 'Não autorizado - Token inválido ou expirado' 
+  })
+  @ApiResponse({ 
+    status: 403, 
+    description: 'Acesso negado - Permissões insuficientes para criar solicitação nesta unidade' 
+  })
+  @ApiResponse({ 
+    status: 500, 
+    description: 'Erro interno do servidor',
+    schema: {
+      type: 'object',
+      properties: {
+        statusCode: { type: 'number', example: 500 },
+        message: { type: 'string', example: 'Erro interno do servidor' },
+        error: { type: 'string', example: 'Internal Server Error' }
+      }
+    }
+  })
   async create(
     @Body() createSolicitacaoDto: CreateSolicitacaoDto,
     @Req() req: Request,
@@ -199,7 +251,6 @@ export class SolicitacaoController {
    */
   @Put(':id')
   @RequiresPermission(
-    
     {
       permissionName: 'solicitacao.editar',
       scopeType: ScopeType.UNIT,
@@ -279,9 +330,8 @@ export class SolicitacaoController {
    */
   @Put(':id/submeter')
   @RequiresPermission(
-    
     {
-      permissionName: 'solicitacao.status.transicao.RASCUNHO.ENVIADA',
+      permissionName: 'solicitacao.status.transicao.ABERTA.EM_ANALISE',
       scopeType: ScopeType.UNIT,
       scopeIdExpression: 'solicitacao.unidadeId',
     }
@@ -306,7 +356,6 @@ export class SolicitacaoController {
    */
   @Put(':id/avaliar')
   @RequiresPermission(
-    
     {
       permissionName: 'solicitacao.status.transicao.ENVIADA.EM_ANALISE',
       scopeType: ScopeType.UNIT,
@@ -314,7 +363,6 @@ export class SolicitacaoController {
     }
   )
   @RequiresPermission(
-    
     {
       permissionName: 'solicitacao.status.transicao.EM_ANALISE.APROVADA',
       scopeType: ScopeType.UNIT,
@@ -322,7 +370,6 @@ export class SolicitacaoController {
     }
   )
   @RequiresPermission(
-    
     {
       permissionName: 'solicitacao.status.transicao.EM_ANALISE.REJEITADA',
       scopeType: ScopeType.UNIT,
@@ -366,7 +413,6 @@ export class SolicitacaoController {
    */
   @Put(':id/liberar')
   @RequiresPermission(
-    
     {
       permissionName: 'solicitacao.status.transicao.APROVADA.CONCEDIDA',
       scopeType: ScopeType.UNIT,
@@ -374,7 +420,6 @@ export class SolicitacaoController {
     }
   )
   @RequiresPermission(
-    
     {
       permissionName: 'beneficio.conceder',
       scopeType: ScopeType.UNIT,
@@ -395,7 +440,6 @@ export class SolicitacaoController {
    */
   @Put(':id/cancelar')
   @RequiresPermission(
-    
     {
       permissionName: 'solicitacao.status.transicao.*.CANCELADA',
       scopeType: ScopeType.UNIT,
@@ -422,7 +466,6 @@ export class SolicitacaoController {
    */
   @Get(':id/historico')
   @RequiresPermission(
-    
     {
       permissionName: 'solicitacao.visualizar',
       scopeType: ScopeType.UNIT,
@@ -430,7 +473,6 @@ export class SolicitacaoController {
     }
   )
   @RequiresPermission(
-    
     {
       permissionName: 'solicitacao.historico.visualizar',
       scopeType: ScopeType.UNIT,
@@ -440,16 +482,7 @@ export class SolicitacaoController {
   @ApiOperation({ summary: 'Listar histórico de uma solicitação' })
   @ApiResponse({ status: 200, description: 'Histórico retornado com sucesso' })
   @ApiResponse({ status: 404, description: 'Solicitação não encontrada' })
-  async getHistorico(@Param('id', ParseUUIDPipe) id: string, @Req() req: Request) {
-    const user = req.user;
-    const solicitacao = await this.solicitacaoService.findById(id);
-
-    if (!this.solicitacaoService.canAccessSolicitacao(solicitacao, user)) {
-      throw new UnauthorizedException(
-        'Você não tem permissão para acessar esta solicitação',
-      );
-    }
-
+  async getHistorico(@Param('id', ParseUUIDPipe) id: string) {
     return this.solicitacaoService.getHistorico(id);
   }
 
@@ -458,7 +491,6 @@ export class SolicitacaoController {
    */
   @Get(':id/pendencias')
   @RequiresPermission(
-    
     {
       permissionName: 'solicitacao.visualizar',
       scopeType: ScopeType.UNIT,
@@ -466,7 +498,6 @@ export class SolicitacaoController {
     }
   )
   @RequiresPermission(
-    
     {
       permissionName: 'solicitacao.pendencia.visualizar',
       scopeType: ScopeType.UNIT,
@@ -479,16 +510,7 @@ export class SolicitacaoController {
     description: 'Pendências retornadas com sucesso',
   })
   @ApiResponse({ status: 404, description: 'Solicitação não encontrada' })
-  async getPendencias(@Param('id', ParseUUIDPipe) id: string, @Req() req: Request) {
-    const user = req.user;
-    const solicitacao = await this.solicitacaoService.findById(id);
-
-    if (!this.solicitacaoService.canAccessSolicitacao(solicitacao, user)) {
-      throw new UnauthorizedException(
-        'Você não tem permissão para acessar esta solicitação',
-      );
-    }
-
+  async getPendencias(@Param('id', ParseUUIDPipe) id: string) {
     return this.solicitacaoService.getPendencias(id);
   }
 
@@ -497,7 +519,6 @@ export class SolicitacaoController {
    */
   @Post(':id/processo-judicial')
   @RequiresPermission(
-    
     {
       permissionName: 'solicitacao.processo_judicial.vincular',
       scopeType: ScopeType.UNIT,
@@ -518,14 +539,6 @@ export class SolicitacaoController {
     @Req() req: Request,
   ) {
     const user = req.user;
-    const solicitacao = await this.solicitacaoService.findById(id);
-
-    if (!this.solicitacaoService.canAccessSolicitacao(solicitacao, user)) {
-      throw new UnauthorizedException(
-        'Você não tem permissão para acessar esta solicitação',
-      );
-    }
-
     return this.solicitacaoService.vincularProcessoJudicial(id, vincularDto, user);
   }
 
@@ -534,7 +547,6 @@ export class SolicitacaoController {
    */
   @Delete(':id/processo-judicial')
   @RequiresPermission(
-    
     {
       permissionName: 'solicitacao.processo_judicial.desvincular',
       scopeType: ScopeType.UNIT,
@@ -550,14 +562,6 @@ export class SolicitacaoController {
   @ApiResponse({ status: 400, description: 'Solicitação não possui processo judicial vinculado' })
   async desvincularProcessoJudicial(@Param('id', ParseUUIDPipe) id: string, @Req() req: Request) {
     const user = req.user;
-    const solicitacao = await this.solicitacaoService.findById(id);
-
-    if (!this.solicitacaoService.canAccessSolicitacao(solicitacao, user)) {
-      throw new UnauthorizedException(
-        'Você não tem permissão para acessar esta solicitação',
-      );
-    }
-
     return this.solicitacaoService.desvincularProcessoJudicial(id, user);
   }
 
@@ -587,14 +591,6 @@ export class SolicitacaoController {
     @Req() req: Request,
   ) {
     const user = req.user;
-    const solicitacao = await this.solicitacaoService.findById(id);
-
-    if (!this.solicitacaoService.canAccessSolicitacao(solicitacao, user)) {
-      throw new UnauthorizedException(
-        'Você não tem permissão para acessar esta solicitação',
-      );
-    }
-
     return this.solicitacaoService.vincularDeterminacaoJudicial(id, vincularDto, user);
   }
 
@@ -643,14 +639,6 @@ export class SolicitacaoController {
 
   async desvincularDeterminacaoJudicial(@Param('id', ParseUUIDPipe) id: string, @Req() req: Request) {
     const user = req.user;
-    const solicitacao = await this.solicitacaoService.findById(id);
-
-    if (!this.solicitacaoService.canAccessSolicitacao(solicitacao, user)) {
-      throw new UnauthorizedException(
-        'Você não tem permissão para acessar esta solicitação',
-      );
-    }
-
     return this.solicitacaoService.desvincularDeterminacaoJudicial(id, user);
   }
 }

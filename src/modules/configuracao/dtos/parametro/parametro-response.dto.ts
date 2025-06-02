@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { ParametroTipoEnum } from '../../enums';
+import { ParametroTipoEnum } from '../../../../enums';
 
 /**
  * DTO para resposta com informações de um parâmetro de configuração.

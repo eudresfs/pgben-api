@@ -8,7 +8,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, LessThan, MoreThan, In } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { JwtBlacklist } from '../entities/jwt-blacklist.entity';
+import { JwtBlacklist } from '../../entities/jwt-blacklist.entity';
 import {
   AddToBlacklistDto,
   CheckBlacklistDto,
@@ -17,7 +17,7 @@ import {
   CheckBlacklistResponseDto,
   BlacklistQueryDto,
   BlacklistStatsDto,
-} from '../dto/jwt-blacklist.dto';
+} from '../dtos/jwt-blacklist.dto';
 
 /**
  * Serviço de Blacklist de Tokens JWT

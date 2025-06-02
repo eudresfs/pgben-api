@@ -1,7 +1,7 @@
 import { IsNotEmpty, IsOptional, IsUUID, IsString, IsDate, IsEnum, IsBoolean } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { StatusProcessoJudicial } from '../entities/processo-judicial.entity';
+import { StatusProcessoJudicial } from '../../../entities/processo-judicial.entity';
 
 /**
  * DTO para criação de um novo processo judicial

@@ -7,7 +7,7 @@ import {
 import { Reflector } from '@nestjs/core';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Usuario } from '../../modules/usuario/entities/usuario.entity';
+import { Usuario } from '../../entities/usuario.entity';
 
 /**
  * Guard para verificar se o usuário está em primeiro acesso

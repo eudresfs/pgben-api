@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import {
   CampoDinamicoBeneficio,
   TipoDado,
-} from '../entities/campo-dinamico-beneficio.entity';
+} from '../../../entities/campo-dinamico-beneficio.entity';
 import { Logger } from '@nestjs/common';
 
 /**

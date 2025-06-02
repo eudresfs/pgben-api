@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IntegracaoTipoEnum } from '../../enums';
+import { IntegracaoTipoEnum } from '@/enums';
 
 /**
  * DTO para resposta com informações de uma configuração de integração.

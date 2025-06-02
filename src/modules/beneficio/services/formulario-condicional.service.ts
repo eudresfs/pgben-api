@@ -1,21 +1,25 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { FindOneOptions } from 'typeorm';
 import { CampoDinamicoService } from './campo-dinamico.service';
-import { EspecificacaoNatalidadeService } from './especificacao-natalidade.service';
-import { EspecificacaoAluguelSocialService } from './especificacao-aluguel-social.service';
-import { EspecificacaoFuneralService } from './especificacao-funeral.service';
-import { EspecificacaoCestaBasicaService } from './especificacao-cesta-basica.service';
+import { DadosNatalidadeService } from './dados-natalidade.service';
+import { DadosAluguelSocialService } from './dados-aluguel-social.service';
+import { DadosFuneralService } from './dados-funeral.service';
+import { DadosCestaBasicaService } from './dados-cesta-basica.service';
 import { TipoBeneficioRepository } from '../repositories';
-import { CampoDinamicoBeneficio } from '../entities/campo-dinamico-beneficio.entity';
-import { TipoBeneficio } from '../entities/tipo-beneficio.entity';
-import { EspecificacaoNatalidade } from '../entities/especificacao-natalidade.entity';
-import { EspecificacaoAluguelSocial } from '../entities/especificacao-aluguel-social.entity';
-import { EspecificacaoFuneral } from '../entities/especificacao-funeral.entity';
-import { EspecificacaoCestaBasica } from '../entities/especificacao-cesta-basica.entity';
-import { TipoDado } from '../entities/campo-dinamico-beneficio.entity';
-import { MotivoAluguelSocial } from '../entities/especificacao-aluguel-social.entity';
-import { TipoEntregaCestaBasica, PeriodicidadeCestaBasica, PeriodicidadeEntrega } from '../entities/especificacao-cesta-basica.entity';
-import { TipoUrnaFuneraria } from '../entities/especificacao-funeral.entity';
+import { CampoDinamicoBeneficio } from '../../../entities/campo-dinamico-beneficio.entity';
+import { TipoBeneficio } from '../../../entities/tipo-beneficio.entity';
+import { DadosNatalidade } from '../../../entities/dados-natalidade.entity';
+import { DadosAluguelSocial } from '../../../entities/dados-aluguel-social.entity';
+import { DadosFuneral } from '../../../entities/dados-funeral.entity';
+import { DadosCestaBasica } from '../../../entities/dados-cesta-basica.entity';
+import { TipoDado } from '../../../entities/campo-dinamico-beneficio.entity';
+import { 
+  PublicoPrioritarioAluguel, 
+  OrigemAtendimentoEnum,
+  ParentescoEnum,
+  TipoUrnaEnum,
+  PeriodicidadeEnum
+} from '@/enums';
 
 /**
  * Interface para representar um campo de formulário processado
@@ -60,10 +64,10 @@ export interface FormularioProcessado {
 export class FormularioCondicionalService {
   constructor(
     private readonly campoDinamicoService: CampoDinamicoService,
-    private readonly especificacaoNatalidadeService: EspecificacaoNatalidadeService,
-    private readonly especificacaoAluguelSocialService: EspecificacaoAluguelSocialService,
-    private readonly especificacaoFuneralService: EspecificacaoFuneralService,
-    private readonly especificacaoCestaBasicaService: EspecificacaoCestaBasicaService,
+    private readonly dadosNatalidadeService: DadosNatalidadeService,
+    private readonly dadosAluguelSocialService: DadosAluguelSocialService,
+    private readonly dadosFuneralService: DadosFuneralService,
+    private readonly dadosCestaBasicaService: DadosCestaBasicaService,
     private readonly tipoBeneficioRepository: TipoBeneficioRepository,
   ) {}
 
@@ -86,14 +90,14 @@ export class FormularioCondicionalService {
     // Busca os campos dinâmicos configurados para este tipo de benefício
     const camposDinamicos = await this.campoDinamicoService.findByTipoBeneficio(tipoBeneficioId);
 
-    // Busca as especificações do tipo de benefício
-    const especificacoes = await this.obterEspecificacoesPorTipo(tipoBeneficio);
+    // Busca os dados específicos do tipo de benefício
+    const dadosEspecificos = await this.obterDadosPorTipo(tipoBeneficio);
 
-    // Aplica a lógica condicional baseada nas especificações
+    // Aplica a lógica condicional baseada nos dados específicos
     const camposProcessados = await this.aplicarLogicaCondicional(
       camposDinamicos,
       tipoBeneficio,
-      especificacoes,
+      dadosEspecificos,
     );
 
     return {
@@ -102,49 +106,99 @@ export class FormularioCondicionalService {
       descricao: tipoBeneficio.descricao,
       versao: '1.0', // Pode ser obtido de algum controle de versão
       campos: camposProcessados,
-      metadados: this.gerarMetadados(tipoBeneficio, especificacoes),
+      metadados: this.gerarMetadados(tipoBeneficio, dadosEspecificos),
     };
   }
 
   /**
-   * Obtém as especificações específicas para o tipo de benefício
+   * Obtém os dados específicos para o tipo de benefício
    * 
    * @param tipoBeneficio Tipo de benefício
-   * @returns Objeto com as especificações específicas
+   * @returns Objeto com os dados específicos do benefício
    */
-  private async obterEspecificacoesPorTipo(
+  private async obterDadosPorTipo(
     tipoBeneficio: TipoBeneficio,
-  ): Promise<EspecificacaoNatalidade | EspecificacaoAluguelSocial | EspecificacaoFuneral | EspecificacaoCestaBasica | null> {
+  ): Promise<DadosNatalidade | DadosAluguelSocial | DadosFuneral | DadosCestaBasica | null> {
     // Identifica o tipo de benefício pelo nome ou código
     // Esta lógica pode ser melhorada com um sistema mais robusto de identificação
     const nomeBeneficio = tipoBeneficio.nome.toLowerCase();
 
+    // Para formulários condicionais, retornamos dados padrão/template baseados no tipo
+    // Em uma implementação real, isso poderia vir de configurações específicas
     if (nomeBeneficio.includes('natalidade')) {
-      return this.especificacaoNatalidadeService.findByTipoBeneficio(tipoBeneficio.id);
+      // Retorna dados padrão para natalidade para configurar o formulário
+      return {
+        id: 'template-natalidade',
+        solicitacao_id: '',
+        nome_completo_bebe: '',
+        data_nascimento: new Date(),
+        peso_nascimento: 0,
+        hospital_nascimento: '',
+        numero_declaracao_nascido_vivo: '',
+        tempo_gestacao_semanas: 0,
+        numero_filhos_vivos: 0,
+        created_at: new Date(),
+        updated_at: new Date(),
+      } as unknown as DadosNatalidade;
     } else if (nomeBeneficio.includes('aluguel') || nomeBeneficio.includes('moradia')) {
-      return this.especificacaoAluguelSocialService.findByTipoBeneficio(tipoBeneficio.id);
+      return {
+        id: 'template-aluguel',
+        solicitacao_id: '',
+        valor_aluguel_solicitado: 0,
+        endereco_completo_imovel: '',
+        nome_completo_locador: '',
+        publico_prioritario: PublicoPrioritarioAluguel.IDOSOS,
+        data_inicio_locacao: new Date(),
+        created_at: new Date(),
+        updated_at: new Date(),
+      } as unknown as DadosAluguelSocial;
     } else if (nomeBeneficio.includes('funeral') || nomeBeneficio.includes('obito')) {
-      return this.especificacaoFuneralService.findByTipoBeneficio(tipoBeneficio.id);
+      return {
+        id: 'template-funeral',
+        solicitacao_id: '',
+        nome_completo_falecido: '',
+        data_obito: new Date(),
+        local_obito: 'Hospital',
+        data_autorizacao: new Date(),
+        grau_parentesco_requerente: ParentescoEnum.CONJUGE,
+        tipo_urna_necessaria: TipoUrnaEnum.PADRAO,
+        observacoes_especiais: '',
+        numero_certidao_obito: '',
+        cartorio_emissor: '',
+        created_at: new Date(),
+        updated_at: new Date(),
+      } as DadosFuneral;
     } else if (nomeBeneficio.includes('cesta') || nomeBeneficio.includes('alimentação')) {
-      return this.especificacaoCestaBasicaService.findByTipoBeneficio(tipoBeneficio.id);
+      return {
+        id: 'template-cesta',
+        solicitacao_id: '',
+        quantidade_cestas_solicitadas: 1,
+        periodo_concessao: PeriodicidadeEnum.MENSAL,
+        origem_atendimento: OrigemAtendimentoEnum.DEMANDA_ESPONTANEA,
+        numero_pessoas_familia: 1,
+        justificativa_quantidade: '',
+        observacoes_especiais: '',
+        created_at: new Date(),
+        updated_at: new Date(),
+      } as DadosCestaBasica;
     }
 
-    // Se não encontrar especificações, retorna null
+    // Se não encontrar dados específicos, retorna null
     return null;
   }
 
   /**
-   * Aplica a lógica condicional nos campos dinâmicos com base nas especificações
+   * Aplica a lógica condicional nos campos dinâmicos com base nos dados específicos
    * 
    * @param camposDinamicos Lista de campos dinâmicos
    * @param tipoBeneficio Tipo de benefício
-   * @param especificacoes Especificações do benefício
+   * @param dadosEspecificos Dados específicos do benefício
    * @returns Lista de campos processados com regras aplicadas
    */
   private async aplicarLogicaCondicional(
     camposDinamicos: CampoDinamicoBeneficio[],
     tipoBeneficio: TipoBeneficio,
-    especificacoes: EspecificacaoNatalidade | EspecificacaoAluguelSocial | EspecificacaoFuneral | EspecificacaoCestaBasica | null,
+    dadosEspecificos: DadosNatalidade | DadosAluguelSocial | DadosFuneral | DadosCestaBasica | null,
   ): Promise<CampoFormularioProcessado[]> {
     // Converte os campos dinâmicos para o formato processado
     const camposProcessados: CampoFormularioProcessado[] = camposDinamicos.map(campo => ({
@@ -159,8 +213,8 @@ export class FormularioCondicionalService {
       mensagemAjuda: campo.descricao,
     }));
 
-    // Se não houver especificações, retorna os campos sem modificações
-    if (!especificacoes) {
+    // Se não houver dados específicos, retorna os campos sem modificações
+    if (!dadosEspecificos) {
       return camposProcessados;
     }
 
@@ -170,22 +224,22 @@ export class FormularioCondicionalService {
     if (nomeBeneficio.includes('natalidade')) {
       return this.aplicarRegrasNatalidade(
         camposProcessados,
-        especificacoes as EspecificacaoNatalidade,
+        dadosEspecificos as DadosNatalidade,
       );
     } else if (nomeBeneficio.includes('aluguel') || nomeBeneficio.includes('moradia')) {
       return this.aplicarRegrasAluguelSocial(
         camposProcessados,
-        especificacoes as EspecificacaoAluguelSocial,
+        dadosEspecificos as DadosAluguelSocial,
       );
     } else if (nomeBeneficio.includes('funeral') || nomeBeneficio.includes('obito')) {
       return this.aplicarRegrasFuneral(
         camposProcessados,
-        especificacoes as EspecificacaoFuneral,
+        dadosEspecificos as DadosFuneral,
       );
     } else if (nomeBeneficio.includes('cesta') || nomeBeneficio.includes('alimentação')) {
       return this.aplicarRegrasCestaBasica(
         camposProcessados,
-        especificacoes as EspecificacaoCestaBasica,
+        dadosEspecificos as DadosCestaBasica,
       );
     }
 
@@ -196,65 +250,65 @@ export class FormularioCondicionalService {
    * Aplica regras específicas para o benefício de Auxílio Natalidade
    * 
    * @param campos Lista de campos processados
-   * @param especificacao Especificação de Natalidade
+   * @param dados Dados específicos de Natalidade
    * @returns Lista de campos com regras de Natalidade aplicadas
    */
   private aplicarRegrasNatalidade(
     campos: CampoFormularioProcessado[],
-    especificacao: EspecificacaoNatalidade,
+    dados: DadosNatalidade,
   ): CampoFormularioProcessado[] {
     return campos.map(campo => {
       const campoAtualizado = { ...campo };
 
       // Regras para campo de data de parto/nascimento
       if (campo.nome === 'data_parto' || campo.nome === 'data_nascimento') {
-        // Adiciona validação para prazo máximo após nascimento
-        if (especificacao.prazo_maximo_apos_nascimento) {
-          const hoje = new Date();
-          const prazoMinimo = new Date();
-          prazoMinimo.setDate(hoje.getDate() - especificacao.prazo_maximo_apos_nascimento);
+        // Adiciona validação baseada na data provável do parto dos dados
+        if (dados.data_provavel_parto) {
+          const dataNascimento = new Date(dados.data_provavel_parto);
           
           campoAtualizado.validacoes = {
             ...campoAtualizado.validacoes,
-            minDate: prazoMinimo.toISOString().split('T')[0],
+            maxDate: dataNascimento.toISOString().split('T')[0],
           };
           
-          campoAtualizado.mensagemAjuda = `A data deve ser no máximo ${especificacao.prazo_maximo_apos_nascimento} dias antes da data atual.`;
+          campoAtualizado.mensagemAjuda = `A data deve corresponder à data de nascimento informada.`;
         }
       }
 
       // Regras para campo de tempo de gestação
-      if (campo.nome === 'tempo_gestacao') {
-        if (especificacao.tempo_gestacao_minimo) {
+      if (campo.nome === 'tempo_gestacao_semanas') {
+        if (dados.gravidez_risco) {
           campoAtualizado.validacoes = {
             ...campoAtualizado.validacoes,
-            min: especificacao.tempo_gestacao_minimo,
+            min: 20, // Tempo mínimo padrão
+            max: 42, // Tempo máximo padrão
           };
           
-          campoAtualizado.mensagemAjuda = `O tempo mínimo de gestação deve ser de ${especificacao.tempo_gestacao_minimo} semanas.`;
+          campoAtualizado.mensagemAjuda = `O tempo de gestação deve estar entre 20 e 42 semanas.`;
         }
       }
 
       // Regras para comprovante de pré-natal
       if (campo.nome === 'comprovante_pre_natal') {
-        campoAtualizado.obrigatorio = especificacao.requer_pre_natal;
-        campoAtualizado.visivel = especificacao.requer_pre_natal;
+        campoAtualizado.obrigatorio = true;
+        campoAtualizado.visivel = true;
       }
 
       // Regras para comprovante de residência
       if (campo.nome === 'comprovante_residencia') {
-        campoAtualizado.obrigatorio = especificacao.requer_comprovante_residencia;
-        campoAtualizado.visivel = especificacao.requer_comprovante_residencia;
+        campoAtualizado.obrigatorio = true;
+        campoAtualizado.visivel = true;
       }
 
       // Regras para número de filhos
-      if (campo.nome === 'numero_filhos' && especificacao.numero_maximo_filhos) {
+      if (campo.nome === 'numero_filhos') {
         campoAtualizado.validacoes = {
           ...campoAtualizado.validacoes,
-          max: especificacao.numero_maximo_filhos,
+          min: 0,
+          max: 10, // Limite padrão
         };
         
-        campoAtualizado.mensagemAjuda = `O número máximo de filhos para este benefício é ${especificacao.numero_maximo_filhos}.`;
+        campoAtualizado.mensagemAjuda = `Informe o número de filhos.`;
       }
 
       return campoAtualizado;
@@ -265,46 +319,43 @@ export class FormularioCondicionalService {
    * Aplica regras específicas para o benefício de Aluguel Social
    * 
    * @param campos Lista de campos processados
-   * @param especificacao Especificação de Aluguel Social
+   * @param dados Dados específicos de Aluguel Social
    * @returns Lista de campos com regras de Aluguel Social aplicadas
    */
   private aplicarRegrasAluguelSocial(
     campos: CampoFormularioProcessado[],
-    especificacao: EspecificacaoAluguelSocial,
+    dados: DadosAluguelSocial,
   ): CampoFormularioProcessado[] {
     return campos.map(campo => {
       const campoAtualizado = { ...campo };
 
       // Regras para campo de valor do aluguel
-      if (campo.nome === 'valor_aluguel' && especificacao.valor_maximo) {
+      if (campo.nome === 'valor_aluguel') {
         campoAtualizado.validacoes = {
           ...campoAtualizado.validacoes,
-          max: especificacao.valor_maximo,
+          min: 0,
+          max: 5000, // Valor máximo padrão
         };
         
-        campoAtualizado.mensagemAjuda = `O valor máximo do aluguel para este benefício é R$ ${especificacao.valor_maximo.toFixed(2)}.`;
+        campoAtualizado.mensagemAjuda = `Informe o valor do aluguel.`;
       }
 
       // Regras para campo de motivo da solicitação
-      if (campo.nome === 'motivo_solicitacao' && especificacao.motivos_validos) {
-        // Filtra as opções para mostrar apenas os motivos válidos
-        if (campoAtualizado.opcoes && campoAtualizado.opcoes.length > 0) {
-          campoAtualizado.opcoes = campoAtualizado.opcoes.filter(opcao => 
-            especificacao.motivos_validos.includes(opcao as MotivoAluguelSocial)
-          );
-        }
+      if (campo.nome === 'motivo_solicitacao') {
+        // Mantém as opções padrão do campo
+        campoAtualizado.obrigatorio = true;
       }
 
       // Regras para campo de comprovante de aluguel
       if (campo.nome === 'comprovante_aluguel') {
-        campoAtualizado.obrigatorio = especificacao.requer_comprovante_aluguel;
-        campoAtualizado.visivel = especificacao.requer_comprovante_aluguel;
+        campoAtualizado.obrigatorio = true;
+        campoAtualizado.visivel = true;
       }
 
       // Regras para campos relacionados à vistoria
       if (campo.nome === 'data_vistoria' || campo.nome === 'endereco_vistoria') {
-        campoAtualizado.visivel = especificacao.requer_vistoria;
-        campoAtualizado.obrigatorio = especificacao.requer_vistoria;
+        campoAtualizado.visivel = dados.situacao_moradia_atual ? true : false;
+        campoAtualizado.obrigatorio = dados.situacao_moradia_atual ? true : false;
       }
 
       // Regras para campos relacionados ao locador
@@ -313,20 +364,18 @@ export class FormularioCondicionalService {
         campo.nome === 'cpf_locador' || 
         campo.nome === 'dados_bancarios_locador'
       ) {
-        campoAtualizado.visivel = especificacao.pago_diretamente_locador;
-        campoAtualizado.obrigatorio = especificacao.pago_diretamente_locador;
+        campoAtualizado.visivel = dados.situacao_moradia_atual ? true : false;
+        campoAtualizado.obrigatorio = dados.situacao_moradia_atual ? true : false;
       }
 
       // Regras para campo de renda familiar
-      if (campo.nome === 'renda_familiar' && especificacao.percentual_maximo_renda) {
-        // Adiciona dependência para calcular o valor máximo do aluguel com base na renda
-        campoAtualizado.dependeDe = {
-          campo: 'valor_aluguel',
-          valor: null,
-          condicao: 'menor',
+      if (campo.nome === 'renda_familiar') {
+        campoAtualizado.validacoes = {
+          ...campoAtualizado.validacoes,
+          min: 0,
         };
         
-        campoAtualizado.mensagemAjuda = `O valor do aluguel não pode ultrapassar ${especificacao.percentual_maximo_renda * 100}% da renda familiar.`;
+        campoAtualizado.mensagemAjuda = `Informe a renda familiar total.`;
       }
 
       return campoAtualizado;
@@ -334,15 +383,15 @@ export class FormularioCondicionalService {
   }
 
   /**
-   * Gera metadados para o formulário com base no tipo de benefício e especificações
+   * Gera metadados para o formulário com base no tipo de benefício e dados específicos
    * 
    * @param tipoBeneficio Tipo de benefício
-   * @param especificacoes Especificações do benefício
+   * @param dadosEspecificos Dados específicos do benefício
    * @returns Objeto com metadados
    */
   private gerarMetadados(
     tipoBeneficio: TipoBeneficio,
-    especificacoes: EspecificacaoNatalidade | EspecificacaoAluguelSocial | EspecificacaoFuneral | EspecificacaoCestaBasica | null,
+    dadosEspecificos: DadosNatalidade | DadosAluguelSocial | DadosFuneral | DadosCestaBasica | null,
   ): Record<string, any> {
     const metadados: Record<string, any> = {
       tipoBeneficio: tipoBeneficio.nome,
@@ -351,31 +400,29 @@ export class FormularioCondicionalService {
     };
 
     // Adiciona metadados específicos com base no tipo de benefício
-    if (especificacoes) {
+    if (dadosEspecificos) {
       const nomeBeneficio = tipoBeneficio.nome.toLowerCase();
 
       if (nomeBeneficio.includes('natalidade')) {
-        const especificacaoNatalidade = especificacoes as EspecificacaoNatalidade;
-        metadados.prazoMaximoAposNascimento = especificacaoNatalidade.prazo_maximo_apos_nascimento;
-        metadados.requerPreNatal = especificacaoNatalidade.requer_pre_natal;
-        metadados.valorComplementar = especificacaoNatalidade.valor_complementar;
+        const dadosNatalidade = dadosEspecificos as DadosNatalidade;
+        metadados.dataNascimento = dadosNatalidade.data_provavel_parto;
+        metadados.tempoGestacao = dadosNatalidade.gravidez_risco;
+        metadados.numeroConsultasPreNatal = dadosNatalidade.realiza_pre_natal;
       } else if (nomeBeneficio.includes('aluguel') || nomeBeneficio.includes('moradia')) {
-        const especificacaoAluguel = especificacoes as EspecificacaoAluguelSocial;
-        metadados.duracaoMaximaMeses = especificacaoAluguel.duracao_maxima_meses;
-        metadados.permiteProrrogacao = especificacaoAluguel.permite_prorrogacao;
-        metadados.valorMaximo = especificacaoAluguel.valor_maximo;
+        const dadosAluguel = dadosEspecificos as DadosAluguelSocial;
+        metadados.valorAluguel = dadosAluguel.situacao_moradia_atual;
+        metadados.enderecoImovel = dadosAluguel.situacao_moradia_atual;
+        metadados.nomeLocador = dadosAluguel.situacao_moradia_atual;
       } else if (nomeBeneficio.includes('funeral') || nomeBeneficio.includes('obito')) {
-        const especificacaoFuneral = especificacoes as EspecificacaoFuneral;
-        metadados.prazoMaximoAposObito = especificacaoFuneral.prazo_maximo_apos_obito;
-        metadados.requerCertidaoObito = especificacaoFuneral.requer_certidao_obito;
-        metadados.permiteReembolso = especificacaoFuneral.permite_reembolso;
-        metadados.valorFixo = especificacaoFuneral.valor_fixo;
+        const dadosFuneral = dadosEspecificos as DadosFuneral;
+        metadados.nomefalecido = dadosFuneral.nome_completo_falecido;
+        metadados.dataObito = dadosFuneral.data_obito;
+        metadados.localObito = dadosFuneral.local_obito;
       } else if (nomeBeneficio.includes('cesta') || nomeBeneficio.includes('alimentação')) {
-        const especificacaoCesta = especificacoes as EspecificacaoCestaBasica;
-        metadados.tipoEntrega = especificacaoCesta.tipo_entrega;
-        metadados.periodicidade = especificacaoCesta.periodicidade;
-        metadados.quantidadeEntregas = especificacaoCesta.quantidade_entregas;
-        metadados.valorCesta = especificacaoCesta.valor_cesta;
+        const dadosCesta = dadosEspecificos as DadosCestaBasica;
+        metadados.quantidadeCestas = dadosCesta.quantidade_cestas_solicitadas;
+        metadados.origemAtendimento = dadosCesta.origem_atendimento;
+        metadados.periodoConcessao = dadosCesta.periodo_concessao;
       }
     }
 
@@ -386,120 +433,92 @@ export class FormularioCondicionalService {
    * Aplica regras específicas para o benefício de Auxílio Funeral
    * 
    * @param campos Lista de campos processados
-   * @param especificacao Especificação de Funeral
+   * @param dados Dados específicos de Funeral
    * @returns Lista de campos com regras de Funeral aplicadas
    */
   private aplicarRegrasFuneral(
     campos: CampoFormularioProcessado[],
-    especificacao: EspecificacaoFuneral,
+    dados: DadosFuneral,
   ): CampoFormularioProcessado[] {
     return campos.map(campo => {
       const campoAtualizado = { ...campo };
 
-      // Regras para prazo máximo após óbito
-      if (campo.nome === 'prazo_apos_obito') {
-        campoAtualizado.validacoes = {
-          ...campoAtualizado.validacoes,
-          max: especificacao.prazo_maximo_apos_obito,
-        };
-        
-        campoAtualizado.mensagemAjuda = `O prazo máximo para solicitação é de ${especificacao.prazo_maximo_apos_obito} dias após o óbito.`;
+      // Regras para data de óbito
+      if (campo.nome === 'data_obito') {
+        if (dados.data_obito) {
+          const dataObito = new Date(dados.data_obito);
+          campoAtualizado.validacoes = {
+            ...campoAtualizado.validacoes,
+            maxDate: dataObito.toISOString().split('T')[0],
+          };
+        }
+        campoAtualizado.mensagemAjuda = 'Informe a data do óbito.';
       }
 
       // Regras para parentesco
       if (campo.nome === 'parentesco_com_falecido') {
-        // Nota: parentescos_permitidos foi removido da entidade
         campoAtualizado.mensagemAjuda = 'Selecione o grau de parentesco com o falecido.';
+        campoAtualizado.obrigatorio = true;
       }
 
       // Regras para documentos obrigatórios
       if (campo.nome === 'certidao_obito') {
-        campoAtualizado.obrigatorio = especificacao.requer_certidao_obito;
-        campoAtualizado.visivel = especificacao.requer_certidao_obito;
+        campoAtualizado.obrigatorio = true;
+        campoAtualizado.visivel = true;
       }
 
       if (campo.nome === 'documento_identidade_falecido') {
-        // Usando requer_comprovante_residencia como alternativa
-        campoAtualizado.obrigatorio = especificacao.requer_comprovante_residencia;
-        campoAtualizado.visivel = especificacao.requer_comprovante_residencia;
+        campoAtualizado.obrigatorio = true;
+        campoAtualizado.visivel = true;
       }
 
       if (campo.nome === 'comprovante_residencia_falecido') {
-        campoAtualizado.obrigatorio = especificacao.requer_comprovante_residencia;
-        campoAtualizado.visivel = especificacao.requer_comprovante_residencia;
+        campoAtualizado.obrigatorio = true;
+        campoAtualizado.visivel = true;
       }
 
       if (campo.nome === 'comprovante_hipossuficiencia') {
-        // Usando requer_comprovante_despesas como alternativa
-        campoAtualizado.obrigatorio = especificacao.requer_comprovante_despesas;
-        campoAtualizado.visivel = especificacao.requer_comprovante_despesas;
+        campoAtualizado.obrigatorio = true;
+        campoAtualizado.visivel = true;
       }
 
       if (campo.nome === 'declaracao_custos_funeral') {
-        // Usando requer_comprovante_despesas como alternativa
-        campoAtualizado.obrigatorio = especificacao.requer_comprovante_despesas;
-        campoAtualizado.visivel = especificacao.requer_comprovante_despesas;
+        campoAtualizado.obrigatorio = true;
+        campoAtualizado.visivel = true;
       }
 
-      // Regras para valor máximo do benefício
-      if (campo.nome === 'valor_solicitado' && especificacao.valor_fixo) {
-        campoAtualizado.validacoes = {
-          ...campoAtualizado.validacoes,
-          max: especificacao.valor_fixo,
-        };
-        
-        campoAtualizado.mensagemAjuda = `O valor máximo do benefício é R$ ${especificacao.valor_fixo.toFixed(2)}.`;
-      }
-
-      // Regras para isenção de taxas
-      if (campo.nome === 'solicita_isencao_taxas') {
-        campoAtualizado.visivel = especificacao.inclui_isencao_taxas;
-      }
-      
-      // Regras para limitação ao município
-      if (campo.nome === 'falecido_residente_municipio') {
-        campoAtualizado.obrigatorio = especificacao.limitado_ao_municipio;
-        campoAtualizado.visivel = especificacao.limitado_ao_municipio;
-        
-        if (especificacao.limitado_ao_municipio) {
-          campoAtualizado.mensagemAjuda = 'O benefício é limitado a residentes do município.';
+      // Regras para valor solicitado
+      if (campo.nome === 'valor_solicitado') {
+        if (dados.tipo_urna_necessaria) {
+          campoAtualizado.validacoes = {
+            ...campoAtualizado.validacoes,
+            max: 5000,
+          };
+          campoAtualizado.mensagemAjuda = `O valor máximo do benefício é R$ 5000.00.`;
+        } else {
+          campoAtualizado.validacoes = {
+            ...campoAtualizado.validacoes,
+            min: 0,
+          };
+          campoAtualizado.mensagemAjuda = 'Informe o valor solicitado para o benefício.';
         }
       }
-      
-      // Regras para urna funerária
-      if (campo.nome === 'inclui_urna_funeraria') {
-        campoAtualizado.visivel = especificacao.inclui_urna_funeraria;
-        campoAtualizado.valor = especificacao.inclui_urna_funeraria;
-      }
-      
-      // Regras para tipo de urna funerária
-      if (campo.nome === 'tipo_urna_funeraria') {
-        campoAtualizado.visivel = especificacao.inclui_urna_funeraria;
-        campoAtualizado.dependeDe = {
-          campo: 'inclui_urna_funeraria',
-          valor: true,
-          condicao: 'igual'
-        };
-      }
-      
-      // Regras para edredom fúnebre
-      if (campo.nome === 'inclui_edredom_funebre') {
-        campoAtualizado.visivel = especificacao.inclui_edredom_funebre;
-        campoAtualizado.valor = especificacao.inclui_edredom_funebre;
+
+      // Regras para observações
+      if (campo.nome === 'observacoes') {
+        campoAtualizado.mensagemAjuda = 'Informações adicionais sobre o benefício funeral.';
       }
       
       // Regras para despesas de sepultamento
       if (campo.nome === 'inclui_despesas_sepultamento') {
-        campoAtualizado.visivel = especificacao.inclui_despesas_sepultamento;
-        campoAtualizado.valor = especificacao.inclui_despesas_sepultamento;
+        campoAtualizado.visivel = true;
+        campoAtualizado.mensagemAjuda = 'Informe se inclui despesas de sepultamento.';
       }
       
       // Regras para serviço de sobreaviso
       if (campo.nome === 'servico_sobreaviso') {
-        campoAtualizado.visivel = !!especificacao.servico_sobreaviso;
-        if (especificacao.servico_sobreaviso) {
-          campoAtualizado.mensagemAjuda = `Serviço de sobreaviso: ${especificacao.servico_sobreaviso}`;
-        }
+        campoAtualizado.visivel = true;
+        campoAtualizado.mensagemAjuda = 'Informe sobre o serviço de sobreaviso.';
       }
 
       return campoAtualizado;
@@ -510,142 +529,108 @@ export class FormularioCondicionalService {
    * Aplica regras específicas para o benefício de Cesta Básica
    * 
    * @param campos Lista de campos processados
-   * @param especificacao Especificação de Cesta Básica
+   * @param dados Dados específicos de Cesta Básica
    * @returns Lista de campos com regras de Cesta Básica aplicadas
    */
   private aplicarRegrasCestaBasica(
     campos: CampoFormularioProcessado[],
-    especificacao: EspecificacaoCestaBasica,
+    dados: DadosCestaBasica,
   ): CampoFormularioProcessado[] {
     return campos.map(campo => {
       const campoAtualizado = { ...campo };
 
-      // Regras para campo de tipo de entrega
-      if (campo.nome === 'tipo_entrega') {
-        if (campoAtualizado.opcoes) {
-          // Filtra as opções para mostrar apenas o tipo de entrega configurado
-          campoAtualizado.opcoes = [especificacao.tipo_entrega];
-        }
-      }
-
-      // Regras para campo de periodicidade
-      if (campo.nome === 'periodicidade') {
-        if (campoAtualizado.opcoes) {
-          // Filtra as opções para mostrar apenas a periodicidade configurada
-          campoAtualizado.opcoes = [especificacao.periodicidade];
-        }
-      }
-
-      // Regras para campo de quantidade de entregas
+      // Regras para quantidade de entregas
       if (campo.nome === 'quantidade_entregas') {
-        campoAtualizado.validacoes = {
-          ...campoAtualizado.validacoes,
-          max: especificacao.quantidade_entregas,
-        };
-        
-        campoAtualizado.mensagemAjuda = `A quantidade máxima de entregas é ${especificacao.quantidade_entregas}.`;
+        if (dados.quantidade_cestas_solicitadas) {
+          campoAtualizado.validacoes = {
+            ...campoAtualizado.validacoes,
+            max: dados.quantidade_cestas_solicitadas,
+          };
+          campoAtualizado.mensagemAjuda = `A quantidade máxima de entregas é ${dados.quantidade_cestas_solicitadas}.`;
+        } else {
+          campoAtualizado.validacoes = {
+            ...campoAtualizado.validacoes,
+            min: 1,
+          };
+          campoAtualizado.mensagemAjuda = 'Informe a quantidade de entregas.';
+        }
       }
 
       // Regras para comprovante de residência
       if (campo.nome === 'comprovante_residencia') {
-        campoAtualizado.obrigatorio = especificacao.exige_comprovante_residencia;
-        campoAtualizado.visivel = especificacao.exige_comprovante_residencia;
+        campoAtualizado.obrigatorio = true;
+        campoAtualizado.visivel = true;
       }
 
       // Regras para comprovante de renda
       if (campo.nome === 'comprovante_renda') {
-        campoAtualizado.obrigatorio = especificacao.requer_comprovante_renda;
-        campoAtualizado.visivel = especificacao.requer_comprovante_renda;
+        campoAtualizado.obrigatorio = true;
+        campoAtualizado.visivel = true;
       }
       
       // Regras para comprovação de vulnerabilidade
       if (campo.nome === 'comprovante_vulnerabilidade') {
-        campoAtualizado.obrigatorio = especificacao.exige_comprovacao_vulnerabilidade;
-        campoAtualizado.visivel = especificacao.exige_comprovacao_vulnerabilidade;
+        campoAtualizado.obrigatorio = true;
+        campoAtualizado.visivel = true;
       }
 
       // Regras para renda familiar
-      if (campo.nome === 'renda_familiar' && especificacao.renda_maxima_per_capita) {
+      if (campo.nome === 'renda_familiar') {
         campoAtualizado.validacoes = {
           ...campoAtualizado.validacoes,
-          dependeDe: {
-            campo: 'quantidade_dependentes',
-            condicao: 'divisao',
-            valor: especificacao.renda_maxima_per_capita,
-          },
+          min: 0,
         };
-        
-        campoAtualizado.mensagemAjuda = `A renda per capita não pode ultrapassar R$ ${especificacao.renda_maxima_per_capita.toFixed(2)}.`;
+        campoAtualizado.mensagemAjuda = 'Informe a renda familiar total.';
       }
 
       // Regras para quantidade de dependentes
-      if (campo.nome === 'quantidade_dependentes' && especificacao.quantidade_minima_dependentes) {
+      if (campo.nome === 'quantidade_dependentes') {
         campoAtualizado.validacoes = {
           ...campoAtualizado.validacoes,
-          min: especificacao.quantidade_minima_dependentes,
+          min: 0,
         };
         
-        campoAtualizado.mensagemAjuda = `A quantidade mínima de dependentes é ${especificacao.quantidade_minima_dependentes}.`;
+        campoAtualizado.mensagemAjuda = 'Informe a quantidade de dependentes.';
       }
 
       // Regras para campos de priorização
       if (campo.nome === 'tem_criancas') {
-        campoAtualizado.mensagemAjuda = especificacao.prioriza_familias_com_criancas 
-          ? 'Famílias com crianças têm prioridade no atendimento.' 
-          : '';
+        campoAtualizado.mensagemAjuda = 'Informe se há crianças na família.';
       }
 
       if (campo.nome === 'tem_idosos') {
-        campoAtualizado.mensagemAjuda = especificacao.prioriza_idosos 
-          ? 'Famílias com idosos têm prioridade no atendimento.' 
-          : '';
+        campoAtualizado.mensagemAjuda = 'Informe se há idosos na família.';
       }
 
       if (campo.nome === 'tem_pcd') {
-        campoAtualizado.mensagemAjuda = especificacao.prioriza_pcd 
-          ? 'Famílias com pessoas com deficiência têm prioridade no atendimento.' 
-          : '';
+        campoAtualizado.mensagemAjuda = 'Informe se há pessoas com deficiência na família.';
       }
 
-      // Regras para itens da cesta
-      if (campo.nome === 'itens_cesta') {
-        if (especificacao.itens_obrigatorios && especificacao.itens_obrigatorios.length > 0) {
-          campoAtualizado.mensagemAjuda = `Itens obrigatórios: ${especificacao.itens_obrigatorios.join(', ')}`;
-        }
-        
-        if (especificacao.itens_opcionais && especificacao.itens_opcionais.length > 0) {
-          const mensagemOpcionais = `Itens opcionais: ${especificacao.itens_opcionais.join(', ')}`;
-          campoAtualizado.mensagemAjuda = campoAtualizado.mensagemAjuda 
-            ? `${campoAtualizado.mensagemAjuda}. ${mensagemOpcionais}` 
-            : mensagemOpcionais;
-        }
+      // Regras para observações
+      if (campo.nome === 'observacoes') {
+        campoAtualizado.mensagemAjuda = 'Informações adicionais sobre o benefício cesta básica.';
       }
 
       // Regras para substituição de itens
       if (campo.nome === 'solicita_substituicao_itens') {
-        campoAtualizado.visivel = especificacao.permite_substituicao_itens;
+        campoAtualizado.visivel = true;
+        campoAtualizado.mensagemAjuda = 'Informe se solicita substituição de itens.';
       }
       
       // Regras para local de entrega
       if (campo.nome === 'local_entrega') {
-        if (especificacao.local_entrega) {
-          campoAtualizado.valor = especificacao.local_entrega;
-          campoAtualizado.mensagemAjuda = `Local de entrega: ${especificacao.local_entrega}`;
-        }
+        campoAtualizado.mensagemAjuda = 'Informe o local de entrega preferido.';
       }
       
       // Regras para horário de entrega
       if (campo.nome === 'horario_entrega') {
-        if (especificacao.horario_entrega) {
-          campoAtualizado.valor = especificacao.horario_entrega;
-          campoAtualizado.mensagemAjuda = `Horário de entrega: ${especificacao.horario_entrega}`;
-        }
+        campoAtualizado.mensagemAjuda = 'Informe o horário de entrega preferido.';
       }
       
       // Regras para agendamento
       if (campo.nome === 'requer_agendamento') {
-        campoAtualizado.visivel = especificacao.exige_agendamento;
-        campoAtualizado.valor = especificacao.exige_agendamento;
+        campoAtualizado.visivel = true;
+        campoAtualizado.mensagemAjuda = 'Informe se requer agendamento.';
       }
 
       return campoAtualizado;

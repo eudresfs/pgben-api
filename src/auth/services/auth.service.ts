@@ -17,7 +17,7 @@ import {
 import { UserOutput, UsuarioAdapter } from '../adapters/usuario-adapter';
 import { RefreshTokenService } from './refresh-token.service';
 import { RefreshTokenInput } from '../dtos/auth-refresh-token-input.dto';
-import { Usuario } from '../../modules/usuario/entities/usuario.entity';
+import { Usuario } from '../../entities/usuario.entity';
 import { PermissionService } from './permission.service';
 
 @Injectable()

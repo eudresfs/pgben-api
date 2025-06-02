@@ -5,7 +5,7 @@
  * Estes eventos são utilizados para comunicação assíncrona entre os diferentes componentes do sistema.
  */
 
-import { StatusSolicitacao } from '../entities/solicitacao.entity';
+import { StatusSolicitacao } from '../../../entities/solicitacao.entity';
 
 /**
  * Tipos de eventos disponíveis no módulo de solicitação

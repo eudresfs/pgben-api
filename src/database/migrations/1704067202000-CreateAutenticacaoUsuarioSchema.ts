@@ -1,4 +1,9 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
+import * as bcrypt from 'bcrypt';
+import * as dotenv from 'dotenv';
+
+// Carrega as variáveis de ambiente
+dotenv.config();
 
 /**
  * Migration: CreateAutenticacaoUsuarioSchema
@@ -368,31 +373,43 @@ export class CreateAutenticacaoUsuarioSchema1704067202000 implements MigrationIn
         END$$;
       `);
 
-      // 8. Inserir usuário administrador padrão
-      await queryRunner.query(`
-        DO $$
-        BEGIN
-          IF NOT EXISTS (SELECT 1 FROM "usuario" WHERE "email" = 'admin@natal.pgben.gov.br') THEN
-            INSERT INTO "usuario" (
-              "id",
-              "nome",
-              "email",
-              "senha_hash",
-              "role_id",
-              "status",
-              "primeiro_acesso"
-            ) VALUES (
-              '00000000-0000-0000-0000-000000000000',
-              'Administrador do Sistema',
-              'admin@natal.pgben.gov.br',
-              '$2b$10$IObmeMKebVcMlY8BzrHf1ebGncJ.5SBnWhxVKgXAQULGPs568CiAO',
-              '00000000-0000-0000-0000-000000000000',
-              'ativo',
-              false
-            );
-          END IF;
-        END$$;
-      `);
+      // 8. Inserir usuário administrador padrão usando variáveis de ambiente
+      const adminEmail = process.env.DEFAULT_ADMIN_USER_EMAIL || 'admin@natal.pgben.gov.br';
+      const adminName = process.env.DEFAULT_ADMIN_USER_NAME || 'Administrador do Sistema';
+      const adminPassword = process.env.DEFAULT_ADMIN_USER_PASSWORD || 'PGBen@2025';
+      
+      // Gera o hash da senha usando bcrypt
+      const saltRounds = 10;
+      const hashedPassword = await bcrypt.hash(adminPassword, saltRounds);
+      
+      // Primeiro verifica se o usuário já existe
+      const existingUser = await queryRunner.query(
+        `SELECT 1 FROM "usuario" WHERE "email" = $1`,
+        [adminEmail]
+      );
+
+      // Se não existe, cria o usuário
+      if (existingUser.length === 0) {
+        await queryRunner.query(`
+          INSERT INTO "usuario" (
+            "id",
+            "nome",
+            "email",
+            "senha_hash",
+            "role_id",
+            "status",
+            "primeiro_acesso"
+          ) VALUES (
+            uuid_generate_v4(),
+            $1,
+            $2,
+            $3,
+            '00000000-0000-0000-0000-000000000000',
+            'ativo',
+            false
+          )
+        `, [adminName, adminEmail, hashedPassword]);
+      }
 
       console.log('Usuário administrador padrão criado com sucesso.');
       console.log('Migration 1000000-CreateAutenticacaoUsuarioSchema executada com sucesso.');

@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { StatusPagamentoEnum } from '../../enums/status-pagamento.enum';
-import { MetodoPagamentoEnum } from '../../enums/metodo-pagamento.enum';
+import { StatusPagamentoEnum } from '../../../../enums/status-pagamento.enum';
+import { MetodoPagamentoEnum } from '../../../../enums/metodo-pagamento.enum';
 
 /**
  * Schemas Swagger para o módulo de pagamento

@@ -9,7 +9,7 @@ import {
   Validate,
   MaxLength,
 } from 'class-validator';
-import { TipoDocumento } from '../../beneficio/entities/requisito-documento.entity';
+import { TipoDocumento } from '../../../entities/requisito-documento.entity';
 import { MimeTypeValidator } from '../validators/mime-type.validator';
 import { InputSanitizerValidator } from '../validators/input-sanitizer.validator';
 import { Transform } from 'class-transformer';

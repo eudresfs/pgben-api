@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource, Repository } from 'typeorm';
-import { ProcessoJudicial } from '../entities/processo-judicial.entity';
+import { ProcessoJudicial } from '../../../entities/processo-judicial.entity';
 
 /**
  * Repositório personalizado para ProcessoJudicial

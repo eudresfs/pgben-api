@@ -1,8 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Solicitacao, StatusSolicitacao } from '../entities/solicitacao.entity';
-import { TipoBeneficio } from '../../beneficio/enums/tipo-beneficio.enum';
+import { Solicitacao, StatusSolicitacao } from '../../../entities/solicitacao.entity';
+import { TipoBeneficio } from '../../../enums/tipo-beneficio.enum';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { NotificacaoService } from './notificacao.service';
 

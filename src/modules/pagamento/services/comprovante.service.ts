@@ -1,9 +1,9 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { ComprovantePagamento } from '../entities/comprovante-pagamento.entity';
+import { ComprovantePagamento } from '../../../entities/comprovante-pagamento.entity';
 import { ComprovanteUploadDto } from '../dtos/comprovante-upload.dto';
-import { StatusPagamentoEnum } from '../enums/status-pagamento.enum';
+import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
 
 /**
  * Serviço para gerenciamento de comprovantes de pagamento

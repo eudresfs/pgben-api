@@ -4,11 +4,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, LessThanOrEqual, IsNull } from 'typeorm';
 import { ModuleRef } from '@nestjs/core';
 import { ScheduleAdapterService } from '../../../shared/schedule/schedule-adapter.service';
-import { NotificationTemplate } from '../entities/notification-template.entity';
+import { NotificationTemplate } from '../../../entities/notification-template.entity';
 import {
   NotificacaoSistema,
   StatusNotificacaoProcessamento,
-} from '../entities/notification.entity';
+} from '../../../entities/notification.entity';
 import { CanalNotificacao } from '../interfaces/notification-channel.interface';
 import { TemplateRendererService } from './template-renderer.service';
 import { CreateNotificationDto } from '../dtos/create-notification.dto';

@@ -1,8 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Solicitacao } from '../entities/solicitacao.entity';
-import { TipoBeneficio } from '../../beneficio/entities/tipo-beneficio.entity';
+import { Solicitacao } from '../../../entities/solicitacao.entity';
+import { TipoBeneficio } from '../../../entities/tipo-beneficio.entity';
 
 /**
  * Serviço de Exportação de Dados

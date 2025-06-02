@@ -3,7 +3,7 @@ import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagg
 import { IntegradorAuthGuard } from '../guards/integrador-auth.guard';
 import { Escopos } from '../decorators/escopos.decorator';
 import { GetIntegrador } from '../decorators/get-integrador.decorator';
-import { Integrador } from '../entities/integrador.entity';
+import { Integrador } from '../../../entities/integrador.entity';
 
 /**
  * Controller de exemplo para demonstrar como proteger endpoints para acesso de integradores.

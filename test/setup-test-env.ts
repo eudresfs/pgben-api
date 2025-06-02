@@ -1,6 +1,6 @@
 // Arquivo de configuração para ambiente de testes
 import 'jest-extended';
-import { TipoOperacao } from '../src/modules/auditoria/enums/tipo-operacao.enum';
+import { TipoOperacao } from '../src/enums/tipo-operacao.enum';
 
 // Configurações de ambiente para testes
 process.env.NODE_ENV = 'test';

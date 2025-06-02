@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { NotificationTemplate } from '../entities/notification-template.entity';
+import { NotificationTemplate } from '../../../entities';
 
 /**
  * Serviço responsável por renderizar templates de notificação

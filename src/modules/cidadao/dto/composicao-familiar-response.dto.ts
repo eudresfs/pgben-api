@@ -1,8 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose, Transform, Type } from 'class-transformer';
 import { IsUUID, IsString, IsNumber, IsEnum, IsOptional, IsDate } from 'class-validator';
-import { EscolaridadeEnum } from '../enums/escolaridade.enum';
-import { ParentescoEnum } from '../enums/parentesco.enum';
+import { EscolaridadeEnum } from '../../../enums/escolaridade.enum';
+import { ParentescoEnum } from '../../../enums/parentesco.enum';
 
 /**
  * DTO de resposta para membro da composição familiar

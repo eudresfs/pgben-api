@@ -2,8 +2,10 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { LogsController } from './controllers/logs.controller';
 import { LogsService } from './services/logs.service';
-import { LogAuditoria } from '../auditoria/entities/log-auditoria.entity';
-import { Usuario } from '../usuario/entities/usuario.entity';
+import { 
+  LogAuditoria, 
+  Usuario 
+} from '../../entities';
 
 /**
  * Módulo de Logs de Auditoria

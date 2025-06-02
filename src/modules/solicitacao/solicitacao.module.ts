@@ -20,10 +20,12 @@ import { NotificacaoService } from './services/notificacao.service';
 import { EventosService } from './services/eventos.service';
 import { ValidacaoExclusividadeService } from './services/validacao-exclusividade.service';
 import { SolicitacaoEventListener } from './listeners/solicitacao-event.listener';
-import { Solicitacao } from './entities/solicitacao.entity';
-import { HistoricoSolicitacao } from './entities/historico-solicitacao.entity';
-import { Pendencia } from './entities/pendencia.entity';
-import { DeterminacaoJudicial } from '../judicial/entities/determinacao-judicial.entity';
+import { 
+  Solicitacao, 
+  HistoricoSolicitacao, 
+  DeterminacaoJudicial,
+  Pendencia 
+} from '../../entities';
 import { MonitoramentoAluguelSocialService } from './services/monitoramento-aluguel-social.service';
 
 /**

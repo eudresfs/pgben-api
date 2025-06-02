@@ -21,6 +21,7 @@ import { PapelCidadaoService } from './papel-cidadao.service';
 import { CPFValidator } from '../validators/cpf-validator';
 import { NISValidator } from '../validators/nis-validator';
 import { isUUID } from 'class-validator';
+import { normalizeEnumFields } from '../../../shared/utils/enum-normalizer.util';
 
 /**
  * Serviço de cidadãos
@@ -801,12 +802,14 @@ export class CidadaoService {
       // Extrair papéis e composição familiar do DTO para processar separadamente
       const { papeis, composicao_familiar, ...cidadaoData } = createCidadaoDto;
 
-      // Criar o cidadão
-      const dadosParaCriacao = {
+      // Normalizar campos de enum antes de criar
+      const dadosParaCriacao = normalizeEnumFields({
         ...cidadaoData,
         cpf: cpfLimpo,
         ...(nisLimpo && { nis: nisLimpo }),
-      };
+      });
+      
+      // Criar o cidadão
       const cidadaoCriado = await this.cidadaoRepository.create(dadosParaCriacao);
 
       // Criar papéis para o cidadão, se fornecidos
@@ -906,10 +909,13 @@ export class CidadaoService {
 
       // Informações de auditoria são gerenciadas automaticamente pelo TypeORM
 
+      // Normalizar campos de enum antes de atualizar
+      const normalizedData = normalizeEnumFields(updateData);
+      
       // Atualizar o cidadão
       const cidadaoAtualizado = await this.cidadaoRepository.update(
         id,
-        updateData,
+        normalizedData,
       );
 
       // Invalidar cache
@@ -1135,7 +1141,13 @@ export class CidadaoService {
 
       return cidadaoDto;
     } catch (error) {
-      if (error instanceof NotFoundException) {throw error;}
+      // Propagar erros específicos sem transformá-los
+      if (error instanceof NotFoundException || 
+          error instanceof BadRequestException || 
+          error instanceof ConflictException) {
+        throw error;
+      }
+      
       this.logger.error(
         `Erro ao adicionar membro à composição familiar: ${error.message}`,
         error.stack,

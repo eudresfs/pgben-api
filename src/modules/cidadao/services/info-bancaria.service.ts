@@ -11,8 +11,9 @@ import { CidadaoService } from './cidadao.service';
 import { CreateInfoBancariaDto } from '../dto/create-info-bancaria.dto';
 import { UpdateInfoBancariaDto } from '../dto/update-info-bancaria.dto';
 import { InfoBancariaResponseDto } from '../dto/info-bancaria-response.dto';
-import { InfoBancaria,  } from '../entities/info-bancaria.entity';
-import { TipoChavePix } from '../enums/info-bancaria.enum';
+import { InfoBancaria,  } from '../../../entities/info-bancaria.entity';
+import { TipoChavePix } from '../../../enums/info-bancaria.enum';
+import { normalizeEnumFields } from '../../../shared/utils/enum-normalizer.util';
 /**
  * Service para gerenciamento de informações bancárias
  * 
@@ -73,7 +74,8 @@ export class InfoBancariaService {
         this.validateBancoBrasil(createInfoBancariaDto);
       }
 
-      const infoBancaria = await this.infoBancariaRepository.create(createInfoBancariaDto);
+      const dadosNormalizados = normalizeEnumFields(createInfoBancariaDto);
+      const infoBancaria = await this.infoBancariaRepository.create(dadosNormalizados);
       
       this.logger.log(`Informação bancária criada com sucesso: ${infoBancaria.id}`);
       return this.mapToResponseDto(infoBancaria);
@@ -199,7 +201,8 @@ export class InfoBancariaService {
         this.validateBancoBrasil(updateInfoBancariaDto);
       }
 
-      const updatedInfo = await this.infoBancariaRepository.update(id, updateInfoBancariaDto);
+      const dadosNormalizados = normalizeEnumFields(updateInfoBancariaDto);
+      const updatedInfo = await this.infoBancariaRepository.update(id, dadosNormalizados);
       if (!updatedInfo) {
         throw new NotFoundException('Informação bancária não encontrada após atualização');
       }

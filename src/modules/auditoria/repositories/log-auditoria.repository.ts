@@ -1,8 +1,8 @@
 import { Injectable, Logger, Inject, Optional } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, FindOptionsWhere, Raw } from 'typeorm';
-import { LogAuditoria } from '../entities/log-auditoria.entity';
-import { TipoOperacao } from '../enums/tipo-operacao.enum';
+import { LogAuditoria } from '../../../entities/log-auditoria.entity';
+import { TipoOperacao } from '../../../enums/tipo-operacao.enum';
 import { CreateLogAuditoriaDto } from '../dto/create-log-auditoria.dto';
 import { QueryLogAuditoriaDto } from '../dto/query-log-auditoria.dto';
 import * as zlib from 'zlib';

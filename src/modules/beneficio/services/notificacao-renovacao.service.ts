@@ -1,8 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Solicitacao } from '../../solicitacao/entities/solicitacao.entity';
-import { ConfiguracaoRenovacao } from '../entities/configuracao-renovacao.entity';
+import { Solicitacao, ConfiguracaoRenovacao } from '../../../entities';
 
 /**
  * Serviço de notificação para renovações automáticas

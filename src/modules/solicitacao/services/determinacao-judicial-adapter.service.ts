@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { DeterminacaoJudicialConsolidadoService } from '../../judicial/services/determinacao-judicial-consolidado.service';
-import { DeterminacaoJudicial } from '../../judicial/entities/determinacao-judicial.entity';
+import { DeterminacaoJudicial } from '../../../entities/determinacao-judicial.entity';
 import { SolicitacaoCreateDeterminacaoJudicialDto } from '../dto/create-determinacao-judicial.dto';
 import { SolicitacaoUpdateDeterminacaoJudicialDto } from '../dto/update-determinacao-judicial.dto';
 

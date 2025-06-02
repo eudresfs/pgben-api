@@ -8,7 +8,7 @@ import { Repository } from 'typeorm';
 import { Logger } from '@nestjs/common';
 import { ValidacaoDinamicaService } from './validacao-dinamica.service';
 import { CampoDinamicoService } from './campo-dinamico.service';
-import { TipoBeneficio } from '../entities/tipo-beneficio.entity';
+import { TipoBeneficio } from '../../../entities/tipo-beneficio.entity';
 
 /**
  * Serviço de Dados Dinâmicos

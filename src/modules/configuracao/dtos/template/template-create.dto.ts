@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsArray, IsBoolean, IsEnum, IsNotEmpty, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
-import { TemplateTipoEnum } from '../../enums';
+import { TemplateTipoEnum } from '@/enums';
 
 /**
  * DTO para criação de um novo template.

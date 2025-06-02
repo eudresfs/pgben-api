@@ -1,5 +1,5 @@
 import { EntityRepository, Repository } from 'typeorm';
-import { TipoBeneficio } from '../entities/tipo-beneficio.entity';
+import { TipoBeneficio } from '../../../entities/tipo-beneficio.entity';
 
 /**
  * Repository customizado para TipoBeneficio

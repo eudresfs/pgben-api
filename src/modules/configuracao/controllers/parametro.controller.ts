@@ -3,7 +3,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBearerAuth }
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../../../auth/guards/permission.guard';
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
-import { ScopeType } from '../../../auth/entities/user-permission.entity';
+import { ScopeType } from '../../../entities/user-permission.entity';
 import { ParametroService } from '../services/parametro.service';
 import { ParametroCreateDto } from '../dtos/parametro/parametro-create.dto';
 import { ParametroUpdateDto } from '../dtos/parametro/parametro-update.dto';

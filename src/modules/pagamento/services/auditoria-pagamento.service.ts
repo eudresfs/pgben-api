@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { StatusPagamentoEnum } from '../enums/status-pagamento.enum';
+import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
 
 /**
  * Serviço para registro de auditoria de operações do módulo de pagamento

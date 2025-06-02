@@ -24,10 +24,10 @@ import {
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../../../auth/guards/permission.guard';
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
-import { ScopeType } from '../../../auth/entities/user-permission.entity';
+import { ScopeType } from '../../../entities/user-permission.entity';
 import { PapelCidadaoService } from '../services/papel-cidadao.service';
 import { CreatePapelCidadaoDto } from '../dto/create-papel-cidadao.dto';
-import { TipoPapel, PaperType } from '../enums/tipo-papel.enum';
+import { TipoPapel, PaperType } from '../../../enums/tipo-papel.enum';
 
 /**
  * Controlador responsável por gerenciar os papéis dos cidadãos no sistema.
@@ -148,12 +148,30 @@ export class PapelCidadaoController {
     } catch (error) {
       this.logger.error(`Erro ao criar papel para cidadão: ${error.message}`, error.stack);
       
+      // Tratamento específico para erros de trigger do banco
+      if (error.message && error.message.includes('Cidadão não pode ser beneficiário, pois já está em uma composição familiar')) {
+        throw new ConflictException(
+          'Cidadão não pode ser beneficiário pois já faz parte de uma composição familiar. ' +
+          'Remova o cidadão da composição familiar antes de atribuir o papel de beneficiário.'
+        );
+      }
+      
       // Tratamento específico para erros de enum
       if (error.message && error.message.includes('valor de entrada é inválido para enum')) {
         throw new BadRequestException(
           `Tipo de papel inválido: ${createPapelCidadaoDto.tipo_papel}. ` +
           `Valores permitidos: BENEFICIARIO, REQUERENTE, REPRESENTANTE_LEGAL`
         );
+      }
+      
+      // Tratamento para erros de violação de restrição de unicidade
+      if (error.code === '23505') {
+        throw new ConflictException('Já existe um papel ativo deste tipo para o cidadão');
+      }
+      
+      // Tratamento para erros de violação de chave estrangeira
+      if (error.code === '23503') {
+        throw new BadRequestException('Cidadão não encontrado ou dados inválidos');
       }
       
       if (

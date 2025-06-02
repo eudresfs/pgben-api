@@ -1,7 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsString, IsEnum, IsNotEmpty, IsOptional, IsNumber, IsBoolean, IsArray, IsUUID, ValidateNested, IsDateString } from 'class-validator';
 import { Type } from 'class-transformer';
-import { TipoMetrica, CategoriaMetrica, GranularidadeTemporal } from '../entities/metrica-definicao.entity';
+import { TipoMetrica, CategoriaMetrica, GranularidadeTemporal } from '../../../entities/metrica-definicao.entity';
 
 /**
  * DTO para criar uma nova definição de métrica

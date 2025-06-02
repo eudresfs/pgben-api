@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { createHash } from 'crypto';
-import { LogAuditoria } from '../entities/log-auditoria.entity';
+import { LogAuditoria } from '../../../entities';
 
 /**
  * Serviço para assinatura e validação de registros de auditoria

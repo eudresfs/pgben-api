@@ -1,6 +1,6 @@
 import { DataSource, Repository } from 'typeorm';
 import { Injectable } from '@nestjs/common';
-import { UserPermission, ScopeType, TipoEscopo } from '../entities/user-permission.entity';
+import { UserPermission, ScopeType, TipoEscopo } from '../../entities/user-permission.entity';
 
 /**
  * Repositório para a entidade UserPermission.

@@ -85,13 +85,15 @@ export class CreateSolicitacaoSchema1704067226000 implements MigrationInterface 
       -- Índices para campos de determinação judicial
       CREATE INDEX IF NOT EXISTS "IDX_solicitacao_processo_judicial" ON "solicitacao" ("processo_judicial_id");
       CREATE INDEX IF NOT EXISTS "IDX_solicitacao_determinacao_judicial" ON "solicitacao" ("determinacao_judicial_id");
-      CREATE INDEX IF NOT EXISTS "IDX_solicitacao_por_determinacao_judicial" ON "solicitacao" ("por_determinacao_judicial") WHERE por_determinacao_judicial = true;
+      CREATE INDEX IF NOT EXISTS "IDX_solicitacao_determinacao_judicial_flag" ON "solicitacao" ("determinacao_judicial_flag") WHERE determinacao_judicial_flag = true;
       
       -- Índices para campos de renovação automática
       CREATE INDEX IF NOT EXISTS "IDX_solicitacao_renovacao_automatica" ON "solicitacao" ("renovacao_automatica") WHERE renovacao_automatica = true;
       CREATE INDEX IF NOT EXISTS "IDX_solicitacao_solicitacao_original" ON "solicitacao" ("solicitacao_original_id");
       CREATE INDEX IF NOT EXISTS "IDX_solicitacao_data_proxima_renovacao" ON "solicitacao" ("data_proxima_renovacao");
-      CREATE INDEX IF NOT EXISTS "IDX_solicitacao_e_renovacao" ON "solicitacao" ("e_renovacao") WHERE e_renovacao = true;
+      CREATE INDEX IF NOT EXISTS "IDX_solicitacao_prazo_analise" ON "solicitacao" ("prazo_analise");
+      CREATE INDEX IF NOT EXISTS "IDX_solicitacao_prazo_documentos" ON "solicitacao" ("prazo_documentos");
+      CREATE INDEX IF NOT EXISTS "IDX_solicitacao_prazo_processamento" ON "solicitacao" ("prazo_processamento");
     `);
     
     // Trigger para atualização automática de timestamp
@@ -575,7 +577,7 @@ export class CreateSolicitacaoSchema1704067226000 implements MigrationInterface 
       SELECT EXISTS (
         SELECT FROM information_schema.tables 
         WHERE table_schema = 'public' 
-        AND table_name = 'determinacao_judicial'
+        AND table_name = 'determinacao_judicial_flag'
       );
     `);
     
@@ -585,7 +587,7 @@ export class CreateSolicitacaoSchema1704067226000 implements MigrationInterface 
     }
     
     if (!determinacaoJudicialExists[0].exists) {
-      console.log('AVISO: A tabela determinacao_judicial não existe. Execute a migração CreateProcessoJudicialSchema1747961017135 primeiro.');
+      console.log('AVISO: A tabela determinacao_judicial_flag não existe. Execute a migração CreateProcessoJudicialSchema1747961017135 primeiro.');
       console.log('Continuando sem adicionar as chaves estrangeiras para determinação judicial...');
     }
     
@@ -678,13 +680,13 @@ export class CreateSolicitacaoSchema1704067226000 implements MigrationInterface 
       -- Remover índices para campos de determinação judicial
       DROP INDEX IF EXISTS "IDX_solicitacao_processo_judicial";
       DROP INDEX IF EXISTS "IDX_solicitacao_determinacao_judicial";
-      DROP INDEX IF EXISTS "IDX_solicitacao_por_determinacao_judicial";
+      DROP INDEX IF EXISTS "IDX_solicitacao_determinacao_judicial_flag";
       
       -- Remover índices para campos de renovação automática
       DROP INDEX IF EXISTS "IDX_solicitacao_renovacao_automatica";
       DROP INDEX IF EXISTS "IDX_solicitacao_solicitacao_original";
       DROP INDEX IF EXISTS "IDX_solicitacao_data_proxima_renovacao";
-      DROP INDEX IF EXISTS "IDX_solicitacao_e_renovacao";
+      DROP INDEX IF EXISTS "IDX_solicitacao_renovacao";
     `);
     
     // Remover triggers de atualização automática de timestamp

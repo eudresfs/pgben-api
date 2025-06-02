@@ -1,7 +1,7 @@
 import { DataSource, Repository } from 'typeorm';
 import { Injectable } from '@nestjs/common';
-import { PermissionScope } from '../entities/permission-scope.entity';
-import { TipoEscopo } from '../entities/user-permission.entity';
+import { PermissionScope } from '../../entities/permission-scope.entity';
+import { TipoEscopo } from '../../entities/user-permission.entity';
 
 /**
  * Repositório para a entidade PermissionScope.

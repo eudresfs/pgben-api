@@ -1,12 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ParametroRepository } from '../repositories/parametro.repository';
-import { Parametro } from '../entities/parametro.entity';
+import { Parametro } from '../../../entities/parametro.entity';
 import { ParametroCreateDto } from '../dtos/parametro/parametro-create.dto';
 import { ParametroUpdateDto } from '../dtos/parametro/parametro-update.dto';
 import { ParametroResponseDto } from '../dtos/parametro/parametro-response.dto';
 import { ParametroNaoEncontradoException } from '../exceptions/parametro-nao-encontrado.exception';
 import { ParametroTipoInvalidoException } from '../exceptions/parametro-tipo-invalido.exception';
-import { ParametroTipoEnum } from '../enums/parametro-tipo.enum';
+import { ParametroTipoEnum } from '../../../enums/parametro-tipo.enum';
 import { ParametroConverter } from '../util/converters';
 import { ValidationErrorException, InvalidOperationException } from '../../../shared/exceptions';
 

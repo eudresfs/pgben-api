@@ -1,5 +1,5 @@
 import { IsNotEmpty, IsUUID, IsEnum, IsOptional, IsString } from 'class-validator';
-import { TipoPapel, PaperType } from '../enums/tipo-papel.enum';
+import { TipoPapel, PaperType } from '../../../enums/tipo-papel.enum';
 
 /**
  * DTO para criação de histórico de conversão de papel

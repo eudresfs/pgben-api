@@ -3,8 +3,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, MoreThan } from 'typeorm';
-import { RefreshToken } from '../entities/refresh-token.entity';
-import { Usuario } from '../../modules/usuario/entities/usuario.entity';
+import { RefreshToken } from '../../entities/refresh-token.entity';
+import { Usuario } from '../../entities/usuario.entity';
 
 @Injectable()
 export class RefreshTokenService {

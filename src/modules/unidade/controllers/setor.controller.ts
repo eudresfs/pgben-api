@@ -23,7 +23,7 @@ import { RolesGuard } from '../../../auth/guards/roles.guard';
 import { Roles } from '../../../auth/decorators/role.decorator';
 import { ROLES } from '../../../shared/constants/roles.constants';
 import { RequiresPermission } from '@/auth/decorators/requires-permission.decorator';
-import { ScopeType } from '@/auth/entities/user-permission.entity';
+import { ScopeType } from '@/entities/user-permission.entity';
 
 /**
  * Controlador de setores

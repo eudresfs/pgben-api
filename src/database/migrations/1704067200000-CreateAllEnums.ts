@@ -11,7 +11,29 @@ export class CreateAllEnums1704067200000 implements MigrationInterface {
         await queryRunner.query(`
             DO $$ BEGIN
                 CREATE TYPE "status_solicitacao_enum" AS ENUM (
-                   'RASCUNHO', 'rascunho', 'ABERTA', 'aberta', 'LIBERADA', 'liberada', 'ARQUIVADA', 'arquivada', 'PENDENTE', 'pendente', 'EM_ANALISE', 'em_analise', 'APROVADO', 'aprovado', 'REJEITADO', 'rejeitado', 'CANCELADO', 'cancelado'
+                   'RASCUNHO', 'rascunho', 
+                   'ABERTA', 'aberta', 
+                   'EM_ANALISE', 'em_analise', 
+                   'PENDENTE', 'pendente', 
+                   'AGUARDANDO_DOCUMENTOS', 'aguardando_documentos'
+                   'APROVADA', 'aprovada', 
+                   'LIBERADA', 'liberada', 
+                   'EM_PROCESSAMENTO', 'em_processamento',
+                   'ARQUIVADA', 'arquivada', 
+                   'REJEITADA', 'rejeitada', 
+                   'CANCELADA', 'cancelada',
+                   'CONCLUIDA', 'concluida'
+                );
+            EXCEPTION
+                WHEN duplicate_object THEN null;
+            END $$;
+        `);
+
+        // Enum para estado civil
+        await queryRunner.query(`
+            DO $$ BEGIN
+                CREATE TYPE "estado_civil_enum" AS ENUM (
+                    'SOLTEIRO', 'solteiro', 'CASADO', 'casado', 'DIVORCIADO', 'divorciado', 'VIUVO', 'viuvo'
                 );
             EXCEPTION
                 WHEN duplicate_object THEN null;

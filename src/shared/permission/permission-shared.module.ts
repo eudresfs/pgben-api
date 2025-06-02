@@ -1,12 +1,12 @@
 import { Global, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Reflector } from '@nestjs/core';
-import { Permission } from '../../auth/entities/permission.entity';
-import { PermissionGroup } from '../../auth/entities/permission-group.entity';
-import { PermissionGroupMapping } from '../../auth/entities/permission-group-mapping.entity';
-import { RolePermission } from '../../auth/entities/role-permission.entity';
-import { UserPermission } from '../../auth/entities/user-permission.entity';
-import { PermissionScope } from '../../auth/entities/permission-scope.entity';
+import { Permission } from '../../entities/permission.entity';
+import { PermissionGroup } from '../../entities/permission-group.entity';
+import { PermissionGroupMapping } from '../../entities/permission-group-mapping.entity';
+import { RolePermission } from '../../entities/role-permission.entity';
+import { UserPermission } from '../../entities/user-permission.entity';
+import { PermissionScope } from '../../entities/permission-scope.entity';
 import { PermissionRepository } from '../../auth/repositories/permission.repository';
 import { PermissionGroupRepository } from '../../auth/repositories/permission-group.repository';
 import { PermissionGroupMappingRepository } from '../../auth/repositories/permission-group-mapping.repository';

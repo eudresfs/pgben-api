@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { WorkflowBeneficio } from '../entities/workflow-beneficio.entity';
+import { WorkflowBeneficio } from '../../../entities';
 
 /**
  * Repositório para gerenciamento de workflows de benefícios

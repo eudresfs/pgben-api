@@ -8,7 +8,4 @@ export * from './formulario-dinamico.controller';
 // Arquivo foi movido para o módulo de solicitação
 export * from '../../solicitacao/controllers/exportacao.controller';
 export * from './formulario-condicional.controller';
-export * from './especificacao-natalidade.controller';
-export * from './especificacao-aluguel-social.controller';
-export * from './especificacao-funeral.controller';
-export * from './especificacao-cesta-basica.controller';
+// Controladores de especificação removidos - não implementados

@@ -1,6 +1,6 @@
 import { DataSource, Repository } from 'typeorm';
 import { Seeder } from '../seeder.interface';
-import { Permission } from '../../../auth/entities/permission.entity';
+import { Permission } from '../../../entities/permission.entity';
 import { PermissionRepository } from '../../../auth/repositories/permission.repository';
 import { Logger } from '@nestjs/common';
 
@@ -23,7 +23,7 @@ import { PermissionOcorrenciaSeed } from './permission-ocorrencia.seed';
 import { PermissionPagamentoSeed } from './permission-pagamento.seed';
 import { PermissionRecursoSeed } from './permission-recurso.seed';
 import { PermissionRelatoriosUnificadoSeed } from './permission-relatorios-unificado.seed';
-import { Status } from '../../../shared/enums/status.enum';
+import { Status } from '../../../enums/status.enum';
 
 /**
  * Seeder para permissões do sistema

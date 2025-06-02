@@ -14,7 +14,7 @@ import {
   IsDate,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { TipoOperacao } from '../enums/tipo-operacao.enum';
+import { TipoOperacao } from '../../../enums/tipo-operacao.enum';
 import { BaseDto } from '../../../shared/dtos/base.dto';
 import {
   CREATE,

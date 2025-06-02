@@ -1,7 +1,7 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Solicitacao } from '../entities/solicitacao.entity';
+import { Solicitacao, StatusSolicitacao } from '../../../entities/solicitacao.entity';
 
 /**
  * Serviço responsável por validar a exclusividade de papéis dos cidadãos
@@ -37,7 +37,9 @@ export class ValidacaoExclusividadeService {
       .where(`solicitacao.dados_complementares->'composicao_familiar' @> :membro`, {
         membro: JSON.stringify([{ cidadao_id: cidadaoId }]),
       })
-      .andWhere(`solicitacao.status NOT IN ('cancelada', 'reprovada', 'arquivada')`)
+      .andWhere(`solicitacao.status NOT IN (:...statusInativos)`, {
+        statusInativos: [StatusSolicitacao.CANCELADA, StatusSolicitacao.REPROVADA, StatusSolicitacao.ARQUIVADA],
+      })
       .getCount();
 
     if (solicitacoesComCidadaoNaComposicao > 0) {
@@ -64,8 +66,10 @@ export class ValidacaoExclusividadeService {
     // Verifica se o cidadão é beneficiário principal em alguma solicitação ativa
     const solicitacoesComCidadaoBeneficiario = await this.solicitacaoRepository
       .createQueryBuilder('solicitacao')
-      .where('solicitacao.cidadao_id = :cidadaoId', { cidadaoId })
-      .andWhere(`solicitacao.status NOT IN ('cancelada', 'reprovada', 'arquivada')`)
+      .where('solicitacao.beneficiario_id = :cidadaoId', { cidadaoId })
+      .andWhere(`solicitacao.status NOT IN (:...statusInativos)`, {
+        statusInativos: [StatusSolicitacao.CANCELADA, StatusSolicitacao.REPROVADA, StatusSolicitacao.ARQUIVADA],
+      })
       .getCount();
 
     if (solicitacoesComCidadaoBeneficiario > 0) {

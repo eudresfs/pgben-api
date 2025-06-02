@@ -3,7 +3,7 @@ import { ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/
 import { PagamentoService } from '../services/pagamento.service';
 import { PagamentoCreateDto } from '../dtos/pagamento-create.dto';
 import { PagamentoResponseDto } from '../dtos/pagamento-response.dto';
-import { StatusPagamentoEnum } from '../enums/status-pagamento.enum';
+import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
 import { PagamentoAccessGuard } from '../guards/pagamento-access.guard';
 import { ApenasAdmin, AuditorOuAdmin, OperadorOuAdmin, VerificarUnidade } from '../decorators/pagamento-access.decorator';
 import { NotFoundException } from '@nestjs/common';

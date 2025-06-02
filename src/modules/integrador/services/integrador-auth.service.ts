@@ -3,7 +3,7 @@ import { Request } from 'express';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { IntegradorTokenService } from './integrador-token.service';
-import { TokenRevogado } from '../entities/token-revogado.entity';
+import { TokenRevogado } from '../../../entities/token-revogado.entity';
 
 /**
  * Serviço responsável pela autenticação e autorização de integradores.

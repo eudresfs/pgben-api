@@ -4,8 +4,7 @@ import {
   CanalNotificacao,
   ResultadoEnvio,
 } from '../interfaces/notification-channel.interface';
-import { NotificacaoSistema } from '../entities/notification.entity';
-import { NotificationTemplate } from '../entities/notification-template.entity';
+import { NotificacaoSistema, NotificationTemplate } from '../../../entities';
 import { TemplateRendererService } from '../services/template-renderer.service';
 
 /**

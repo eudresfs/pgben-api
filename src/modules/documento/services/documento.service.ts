@@ -1,15 +1,16 @@
 import { Injectable, NotFoundException, BadRequestException, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Documento } from '../entities/documento.entity';
+import { Documento } from '../../../entities/documento.entity';
 import { MimeTypeValidator } from '../validators/mime-type.validator';
 import { InputSanitizerValidator } from '../validators/input-sanitizer.validator';
 import { StorageProviderFactory } from '../factories/storage-provider.factory';
 import { UploadDocumentoDto } from '../dto/upload-documento.dto';
-import { TipoDocumento } from '../../beneficio/entities/requisito-documento.entity';
+import { TipoDocumento } from '../../../entities/requisito-documento.entity';
 import { createHash } from 'crypto';
 import { extname } from 'path';
 import { v4 as uuidv4 } from 'uuid';
+import { normalizeEnumFields } from '../../../shared/utils/enum-normalizer.util';
 
 @Injectable()
 export class DocumentoService {
@@ -176,22 +177,27 @@ export class DocumentoService {
         },
       };
 
+      // Normalizar campos de enum antes de salvar
+      const dadosDocumento = normalizeEnumFields({
+        cidadao_id: uploadDocumentoDto.cidadao_id,
+        solicitacao_id: uploadDocumentoDto.solicitacao_id,
+        tipo: uploadDocumentoDto.tipo,
+        nome_arquivo: nomeArquivo,
+        nome_original: arquivo.originalname,
+        caminho: caminhoArmazenamento,
+        tamanho: arquivo.size,
+        mimetype: arquivo.mimetype,
+        hash_arquivo: hashArquivo,
+        reutilizavel: uploadDocumentoDto.reutilizavel || false,
+        descricao: uploadDocumentoDto.descricao,
+        usuario_upload_id: usuarioId,
+        data_upload: new Date(),
+        metadados: metadados
+      });
+
       // Salvar documento no banco de dados
       const novoDocumento = new Documento();
-      novoDocumento.cidadao_id = uploadDocumentoDto.cidadao_id;
-      novoDocumento.solicitacao_id = uploadDocumentoDto.solicitacao_id;
-      novoDocumento.tipo = uploadDocumentoDto.tipo;
-      novoDocumento.nome_arquivo = nomeArquivo;
-      novoDocumento.nome_original = arquivo.originalname;
-      novoDocumento.caminho = caminhoArmazenamento;
-      novoDocumento.tamanho = arquivo.size;
-      novoDocumento.mimetype = arquivo.mimetype;
-      novoDocumento.hash_arquivo = hashArquivo;
-      novoDocumento.reutilizavel = uploadDocumentoDto.reutilizavel || false;
-      novoDocumento.descricao = uploadDocumentoDto.descricao;
-      novoDocumento.usuario_upload_id = usuarioId;
-      novoDocumento.data_upload = new Date();
-      novoDocumento.metadados = metadados;
+      Object.assign(novoDocumento, dadosDocumento);
 
       const resultado = await this.documentoRepository.save(novoDocumento);
       const documentoId = (resultado as unknown as Documento).id;

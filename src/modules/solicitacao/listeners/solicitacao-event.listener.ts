@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Solicitacao } from '../entities/solicitacao.entity';
+import { Solicitacao } from '../../../entities/solicitacao.entity';
 import { NotificacaoService } from '../services/notificacao.service';
 import { PrazoSolicitacaoService } from '../services/prazo-solicitacao.service';
 import { SolicitacaoEventType, SolicitacaoStatusChangedEvent, SolicitacaoDeadlineExpiredEvent } from '../events/solicitacao-events';

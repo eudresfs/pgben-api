@@ -1,6 +1,6 @@
 import { DataSource, Repository } from 'typeorm';
 import { Injectable } from '@nestjs/common';
-import { Permission } from '../entities/permission.entity';
+import { Permission } from '../../entities/permission.entity';
 
 /**
  * Repositório para a entidade Permission.

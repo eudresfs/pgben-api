@@ -1,5 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
-import { ParametroTipoEnum } from '../enums';
+import { ParametroTipoEnum } from '../../../enums';
 
 /**
  * Exceção lançada quando um valor de parâmetro não pode ser convertido para o tipo esperado.

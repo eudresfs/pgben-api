@@ -1,6 +1,6 @@
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
-import { StatusPagamentoEnum } from '../enums/status-pagamento.enum';
-import { MetodoPagamentoEnum } from '../enums/metodo-pagamento.enum';
+import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
+import { MetodoPagamentoEnum } from '../../../enums/metodo-pagamento.enum';
 
 /**
  * Validador de erros para o módulo de pagamento

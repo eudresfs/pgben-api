@@ -1,4 +1,4 @@
-import { IntegracaoTipoEnum } from '../enums';
+import { IntegracaoTipoEnum } from '../../../enums';
 
 /**
  * Interface que define a estrutura de uma configuração de integração.

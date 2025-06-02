@@ -1,12 +1,13 @@
 import { Injectable, Logger, NotFoundException, BadRequestException, ConflictException, InternalServerErrorException, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
-import { PapelCidadao } from '../entities/papel-cidadao.entity';
-import { Cidadao } from '../entities/cidadao.entity';
+import { PapelCidadao } from '../../../entities/papel-cidadao.entity';
+import { Cidadao } from '../../../entities/cidadao.entity';
 import { CreatePapelCidadaoDto } from '../dto/create-papel-cidadao.dto';
-import { TipoPapel, PaperType } from '../enums/tipo-papel.enum';
+import { TipoPapel, PaperType } from '../../../enums/tipo-papel.enum';
 import { CidadaoService } from './cidadao.service';
 import { VerificacaoPapelService } from './verificacao-papel.service';
+import { normalizeEnumFields } from '../../../shared/utils/enum-normalizer.util';
 
 /**
  * Serviço de Papéis de Cidadão
@@ -65,12 +66,15 @@ export class PapelCidadaoService {
       // Validar metadados específicos do tipo de papel
       this.validarMetadados(createPapelCidadaoDto.tipo_papel, createPapelCidadaoDto.metadados);
 
-      const papel = manager.create(PapelCidadao, {
+      // Normalizar campos de enum antes de criar
+      const dadosNormalizados = normalizeEnumFields({
         cidadao_id: createPapelCidadaoDto.cidadao_id,
         tipo_papel: createPapelCidadaoDto.tipo_papel,
         metadados: createPapelCidadaoDto.metadados,
         ativo: true,
       });
+
+      const papel = manager.create(PapelCidadao, dadosNormalizados);
 
       const savedPapel = await manager.save(papel);
 

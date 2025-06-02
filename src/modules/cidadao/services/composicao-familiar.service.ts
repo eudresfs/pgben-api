@@ -9,8 +9,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, IsNull, Not } from 'typeorm';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
-import { ComposicaoFamiliar } from '../entities/composicao-familiar.entity';
-import { Cidadao } from '../entities/cidadao.entity';
+import { ComposicaoFamiliar } from '../../../entities/composicao-familiar.entity';
+import { Cidadao } from '../../../entities/cidadao.entity';
 import { CreateComposicaoFamiliarDto } from '../dto/create-composicao-familiar.dto';
 import { UpdateComposicaoFamiliarDto } from '../dto/update-composicao-familiar.dto';
 import {
@@ -19,6 +19,7 @@ import {
 } from '../dto/composicao-familiar-response.dto';
 import { CacheService } from '../../../shared/cache';
 import { CPFValidator } from '../validators/cpf-validator';
+import { normalizeEnumFields } from '../../../shared/utils/enum-normalizer.util';
 
 /**
  * Serviço de Composição Familiar
@@ -109,11 +110,14 @@ export class ComposicaoFamiliarService {
         );
       }
 
-      // Criar o membro da composição familiar
-      const novoMembro = this.composicaoFamiliarRepository.create({
+      // Normalizar campos de enum antes de criar
+      const dadosNormalizados = normalizeEnumFields({
         ...createComposicaoFamiliarDto,
         cpf: cpfLimpo,
       });
+
+      // Criar o membro da composição familiar
+      const novoMembro = this.composicaoFamiliarRepository.create(dadosNormalizados);
 
       // Validar entidade
       const errors = await validate(novoMembro);
@@ -351,8 +355,11 @@ export class ComposicaoFamiliarService {
         }
       }
 
+      // Normalizar campos de enum antes de atualizar
+      const dadosNormalizados = normalizeEnumFields({ ...updateComposicaoFamiliarDto });
+
       // Atualizar dados
-      Object.assign(membro, updateComposicaoFamiliarDto);
+      Object.assign(membro, dadosNormalizados);
       membro.updated_at = new Date();
 
       // Validar entidade

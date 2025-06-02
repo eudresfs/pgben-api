@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Repository, DataSource } from 'typeorm';
-import { StatusUnidade, Unidade } from '../entities/unidade.entity';
+import { StatusUnidade, Unidade } from '../../../entities/unidade.entity';
 import { EntityNotFoundException } from '../../../shared/exceptions';
 
 /**

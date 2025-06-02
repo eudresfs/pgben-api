@@ -1,7 +1,7 @@
 import { DataSource } from 'typeorm';
-import { Permission } from '../../../auth/entities/permission.entity';
-import { PermissionScope } from '../../../auth/entities/permission-scope.entity';
-import { ScopeType, TipoEscopo } from '../../../auth/entities/user-permission.entity';
+import { Permission } from '../../../entities/permission.entity';
+import { PermissionScope } from '../../../entities/permission-scope.entity';
+import { ScopeType, TipoEscopo } from '../../../entities/user-permission.entity';
 
 /**
  * Seed para as permissões do módulo de unidades.

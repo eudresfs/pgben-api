@@ -15,12 +15,12 @@ import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagg
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../../../auth/guards/permission.guard';
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
-import { ScopeType } from '../../../auth/entities/user-permission.entity';
+import { ScopeType } from '../../../entities/user-permission.entity';
 import { RenovacaoAutomaticaService } from '../services/renovacao-automatica.service';
-import { ConfiguracaoRenovacao } from '../entities/configuracao-renovacao.entity';
+import { ConfiguracaoRenovacao } from '../../../entities/configuracao-renovacao.entity';
 import { CreateConfiguracaoRenovacaoDto } from '../dto/create-configuracao-renovacao.dto';
 import { UpdateConfiguracaoRenovacaoDto } from '../dto/update-configuracao-renovacao.dto';
-import { Solicitacao } from '../../solicitacao/entities/solicitacao.entity';
+import { Solicitacao } from '../../../entities/solicitacao.entity';
 import { VerificacaoRenovacaoResponseDto } from '../dto/verificacao-renovacao-response.dto';
 import { VerificacaoRenovacoesPendentesResponseDto } from '../dto/verificacao-renovacoes-pendentes-response.dto';
 import { ConfigurarRenovacaoSolicitacaoDto } from '../dto/configurar-renovacao-solicitacao.dto';

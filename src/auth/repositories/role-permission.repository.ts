@@ -1,8 +1,8 @@
 import { Repository, DataSource, In } from 'typeorm';
 import { Injectable } from '@nestjs/common';
-import { RolePermission } from '../entities/role-permission.entity';
-import { Permission } from '../entities/permission.entity';
-import { Usuario } from '../../modules/usuario/entities/usuario.entity';
+import { RolePermission } from '../../entities/role-permission.entity';
+import { Permission } from '../../entities/permission.entity';
+import { Usuario } from '../../entities/usuario.entity';
 
 /**
  * Repositório para a entidade RolePermission.

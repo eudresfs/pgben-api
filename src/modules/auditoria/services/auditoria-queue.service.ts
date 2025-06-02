@@ -3,7 +3,7 @@ import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
 import { Logger } from '@nestjs/common';
 import { CreateLogAuditoriaDto } from '../dto/create-log-auditoria.dto';
-import { TipoOperacao } from '../enums/tipo-operacao.enum';
+import { TipoOperacao } from '../../../enums/tipo-operacao.enum';
 
 /**
  * Serviço de Fila de Auditoria - Versão MVP

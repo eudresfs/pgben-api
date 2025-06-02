@@ -5,8 +5,8 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { Repository, DataSource, QueryFailedError } from 'typeorm';
-import { Setor } from '../entities/setor.entity';
-import { Unidade } from '../entities/unidade.entity';
+import { Setor } from '../../../entities/setor.entity';
+import { Unidade } from '../../../entities/unidade.entity';
 
 /**
  * Repositório de setores

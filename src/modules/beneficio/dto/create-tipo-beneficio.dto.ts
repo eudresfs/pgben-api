@@ -12,7 +12,7 @@ import {
   IsObject,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { Periodicidade } from '../entities/tipo-beneficio.entity';
+import { Periodicidade } from '../../../entities/tipo-beneficio.entity';
 
 /**
  * DTO para critérios de elegibilidade

@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEnum, IsNotEmpty, IsString, MaxLength, MinLength } from 'class-validator';
-import { ParametroTipoEnum } from '../../enums';
+import { ParametroTipoEnum } from '../../../../enums';
 
 /**
  * DTO para criação de um novo parâmetro de configuração.

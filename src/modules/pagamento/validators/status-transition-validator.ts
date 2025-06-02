@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { StatusPagamentoEnum } from '../enums/status-pagamento.enum';
+import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
 
 /**
  * Interface que define uma transição de status

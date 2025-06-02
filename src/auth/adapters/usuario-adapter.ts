@@ -1,8 +1,8 @@
 import { Expose } from 'class-transformer';
-import { Usuario } from '../../modules/usuario/entities/usuario.entity';
+import { Usuario } from '../../entities/usuario.entity';
 import { RoleType } from '../../shared/constants/roles.constants';
-import { Permission } from '../entities/permission.entity';
-import { ScopeType, TipoEscopo } from '../entities/user-permission.entity';
+import { Permission } from '../../entities/permission.entity';
+import { ScopeType, TipoEscopo } from '../../entities/user-permission.entity';
 
 /**
  * DTO para saída de usuário compatível com o serviço de autenticação

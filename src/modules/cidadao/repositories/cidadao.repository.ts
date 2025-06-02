@@ -1,7 +1,7 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { Repository, DataSource } from 'typeorm';
-import { Cidadao } from '../entities/cidadao.entity';
-import { ComposicaoFamiliar } from '../entities/composicao-familiar.entity';
+import { Cidadao } from '../../../entities/cidadao.entity';
+import { ComposicaoFamiliar } from '../../../entities/composicao-familiar.entity';
 import { EntityNotFoundException } from '../../../shared/exceptions';
 
 /**
@@ -410,6 +410,11 @@ export class CidadaoRepository {
       data.nis = data.nis.replace(/\D/g, '');
     }
 
+    // Normaliza o enum sexo para minúsculo
+    if (data.sexo) {
+      data.sexo = data.sexo.toLowerCase() as any;
+    }
+
     const cidadao = this.repository.create(data);
     return this.repository.save(cidadao);
   }
@@ -430,6 +435,11 @@ export class CidadaoRepository {
     // Normaliza o NIS removendo caracteres não numéricos
     if (data.nis) {
       data.nis = data.nis.replace(/\D/g, '');
+    }
+
+    // Normaliza o enum sexo para minúsculo
+    if (data.sexo) {
+      data.sexo = data.sexo.toLowerCase() as any;
     }
 
     const updateResult = await this.repository.update(id, data);
@@ -487,6 +497,7 @@ export class CidadaoRepository {
     }
   
     // Criar nova entrada na tabela composicao_familiar
+    // O cidadao_id vem do parâmetro da rota, não do body
     const novoMembro = composicaoFamiliarRepository.create({
       cidadao_id: id,
       nome: membro.nome,
@@ -503,10 +514,23 @@ export class CidadaoRepository {
     try {
       await composicaoFamiliarRepository.save(novoMembro);
     } catch (error) {
+      // Capturar erro específico da trigger de exclusividade de papel
+      if (error.message && error.message.includes('Cidadão não pode ser adicionado à composição familiar, pois já é beneficiário')) {
+        throw new ConflictException(
+          'Cidadão não pode ser adicionado à composição familiar pois já possui papel de beneficiário.'
+        );
+      }
+      
       // Capturar erros de violação de restrição de unicidade
       if (error.code === '23505') { // Código PostgreSQL para violação de restrição única
         throw new BadRequestException(`Não foi possível adicionar o membro à composição familiar. Já existe um membro com o mesmo nome ou CPF.`);
       }
+      
+      // Capturar erros de violação de chave estrangeira
+      if (error.code === '23503') {
+        throw new BadRequestException('Dados inválidos fornecidos para o membro da composição familiar.');
+      }
+      
       throw error;
     }
 

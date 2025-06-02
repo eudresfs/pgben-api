@@ -1,4 +1,4 @@
-import { WorkflowAcaoEnum } from '../enums';
+import { WorkflowAcaoEnum } from '../../../enums';
 
 /**
  * Interface que define uma etapa no workflow de um benefício.

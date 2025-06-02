@@ -1,11 +1,11 @@
 import { Injectable, Logger, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Permission } from '../entities/permission.entity';
+import { Permission } from '../../entities/permission.entity';
 import { PermissionRepository } from '../repositories/permission.repository';
 import { RolePermissionRepository } from '../repositories/role-permission.repository';
 import { UserPermissionRepository } from '../repositories/user-permission.repository';
 import { PermissionScopeRepository } from '../repositories/permission-scope.repository';
-import { TipoEscopo } from '../entities/user-permission.entity';
+import { TipoEscopo } from '../../entities/user-permission.entity';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 

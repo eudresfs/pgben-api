@@ -7,8 +7,8 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
-import { DeterminacaoJudicial } from '../../judicial/entities/determinacao-judicial.entity';
-import { Solicitacao } from '../../solicitacao/entities/solicitacao.entity';
+import { DeterminacaoJudicial } from '../../../entities/determinacao-judicial.entity';
+import { Solicitacao } from '../../../entities/solicitacao.entity';
 import { SolicitacaoCreateDeterminacaoJudicialDto } from '../dto/create-determinacao-judicial.dto';
 import { SolicitacaoUpdateDeterminacaoJudicialDto } from '../dto/update-determinacao-judicial.dto';
 

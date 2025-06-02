@@ -2,9 +2,11 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { RecursoController } from './controllers/recurso.controller';
 import { RecursoService } from './services/recurso.service';
-import { Recurso } from './entities/recurso.entity';
-import { RecursoHistorico } from './entities/recurso-historico.entity';
-import { Solicitacao } from '../solicitacao/entities/solicitacao.entity';
+import { 
+  Recurso, 
+  RecursoHistorico, 
+  Solicitacao 
+} from '../../entities';
 
 /**
  * Módulo de Recursos de Primeira Instância

@@ -14,17 +14,11 @@ import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagg
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../../../auth/guards/permission.guard';
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
-import { ScopeType } from '../../../auth/entities/user-permission.entity';
+import { ScopeType } from '../../../entities/user-permission.entity';
 import { WorkflowSolicitacaoService, ResultadoTransicaoEstado } from '../services/workflow-solicitacao.service';
-import { StatusSolicitacao } from '../entities/solicitacao.entity';
+import { StatusSolicitacao } from '../../../entities';
 import { UpdateStatusSolicitacaoDto } from '../dto/update-status-solicitacao.dto';
-
-/**
- * DTO para observação de transição de estado
- */
-class ObservacaoTransicaoDto {
-  observacao: string;
-}
+import { ObservacaoTransicaoDto, AprovacaoSolicitacaoDto } from '../dto/observacao-transicao.dto';
 
 /**
  * Controller de Workflow de Solicitação
@@ -74,7 +68,7 @@ export class WorkflowSolicitacaoController {
   })
   @ApiOperation({
     summary: 'Submete um rascunho de solicitação',
-    description: 'Altera o estado de uma solicitação de RASCUNHO para PENDENTE.',
+    description: 'Altera o estado de uma solicitação de RASCUNHO para ABERTA.',
   })
   @ApiResponse({
     status: 200,
@@ -164,13 +158,14 @@ export class WorkflowSolicitacaoController {
   })
   async aprovarSolicitacao(
     @Param('solicitacaoId', ParseUUIDPipe) solicitacaoId: string,
-    @Body() body: ObservacaoTransicaoDto,
+    @Body() body: AprovacaoSolicitacaoDto,
     @Req() req: any,
   ): Promise<ResultadoTransicaoEstado> {
     return this.workflowService.aprovarSolicitacao(
       solicitacaoId,
       req.user.id,
-      body.observacao,
+      body.observacao ?? '',
+      body.parecer_semtas,
     );
   }
 
@@ -230,7 +225,7 @@ export class WorkflowSolicitacaoController {
     return this.workflowService.rejeitarSolicitacao(
       solicitacaoId,
       req.user.id,
-      body.observacao,
+      body.observacao  ?? '',
     );
   }
 
@@ -263,7 +258,7 @@ export class WorkflowSolicitacaoController {
     return this.workflowService.cancelarSolicitacao(
       solicitacaoId,
       req.user.id,
-      body.observacao,
+      body.observacao  ?? '',
     );
   }
 

@@ -13,13 +13,13 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { JwtService } from '@nestjs/jwt';
 import * as crypto from 'crypto';
 import * as bcrypt from 'bcrypt';
-import { PasswordResetToken } from '../entities/password-reset-token.entity';
-import { Usuario } from '../../modules/usuario/entities/usuario.entity';
+import { PasswordResetToken } from '../../entities/password-reset-token.entity';
+import { Usuario } from '../../entities/usuario.entity';
 import { UsuarioRepository } from '../../modules/usuario/repositories/usuario.repository';
 import { EmailService } from '../../common/services/email.service';
 import { AuditService } from '../../audit/services/audit.service';
 import { ClientInfo } from '../../common/interfaces/client-info.interface';
-import { AuditAction, AuditSeverity } from '../../audit/entities/audit-log.entity';
+import { AuditAction, AuditSeverity } from '../../entities/audit-log.entity';
 
 export interface RequestPasswordResetDto {
   email: string;

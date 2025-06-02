@@ -15,7 +15,7 @@ import {
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
-import { AuditAction, AuditSeverity } from '../entities/audit-log.entity';
+import { AuditAction, AuditSeverity } from '../../entities/audit-log.entity';
 
 export class CreateAuditLogDto {
   @ApiPropertyOptional({

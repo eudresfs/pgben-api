@@ -11,8 +11,8 @@ import {
   MaxLength,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
-import { EscolaridadeEnum } from '../enums/escolaridade.enum';
-import { SituacaoTrabalhoEnum } from '../enums/situacao-trabalho.enum';
+import { EscolaridadeEnum } from '../../../enums/escolaridade.enum';
+import { SituacaoTrabalhoEnum } from '../../../enums/situacao-trabalho.enum';
 
 /**
  * DTO para atualização de dados sociais de um cidadão

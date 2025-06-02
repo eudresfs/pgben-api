@@ -11,6 +11,7 @@ import { SetorRepository } from '../repositories/setor.repository';
 import { CreateUnidadeDto } from '../dto/create-unidade.dto';
 import { UpdateUnidadeDto } from '../dto/update-unidade.dto';
 import { UpdateStatusUnidadeDto } from '../dto/update-status-unidade.dto';
+import { normalizeEnumFields } from '../../../shared/utils/enum-normalizer.util';
 
 /**
  * Serviço de unidades
@@ -114,9 +115,12 @@ export class UnidadeService {
     try {
       // Usar transação para garantir consistência
       return await this.dataSource.transaction(async (manager) => {
+        // Normalizar campos de enum antes de criar
+        const normalizedData = normalizeEnumFields(createUnidadeDto);
+        
         // Criar unidade usando o manager da transação
         const unidadeRepo = manager.getRepository('unidade');
-        const unidade = unidadeRepo.create(createUnidadeDto);
+        const unidade = unidadeRepo.create(normalizedData);
 
         const unidadeSalva = await unidadeRepo.save(unidade);
         this.logger.log(`Unidade criada com sucesso: ${unidadeSalva.id}`);
@@ -163,9 +167,12 @@ export class UnidadeService {
     try {
       // Usar transação para garantir consistência
       return await this.dataSource.transaction(async (manager) => {
+        // Normalizar campos de enum antes de atualizar
+        const normalizedData = normalizeEnumFields(updateUnidadeDto);
+        
         // Atualizar unidade usando o manager da transação
         const unidadeRepo = manager.getRepository('unidade');
-        await unidadeRepo.update(id, updateUnidadeDto);
+        await unidadeRepo.update(id, normalizedData);
 
         const unidadeAtualizada = await unidadeRepo.findOne({ where: { id } });
         if (!unidadeAtualizada) {

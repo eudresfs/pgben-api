@@ -1,5 +1,5 @@
 import { IsNotEmpty, IsOptional, IsUUID, IsString, IsEnum } from 'class-validator';
-import { StatusRecurso } from '../entities/recurso.entity';
+import { StatusRecurso } from '../../../entities/recurso.entity';
 
 /**
  * DTO para análise de um recurso

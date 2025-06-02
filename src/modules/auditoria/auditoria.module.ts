@@ -16,7 +16,7 @@ import { AuthModule } from '../../auth/auth.module';
 
 
 // Entidades
-import { LogAuditoria } from './entities/log-auditoria.entity';
+import { LogAuditoria } from '../../entities';
 
 // Serviços Core
 import { AuditoriaService } from './services/auditoria.service';

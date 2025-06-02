@@ -1,8 +1,8 @@
 import { DataSource } from 'typeorm';
-import { Permission } from '../../../auth/entities/permission.entity';
-import { PermissionScope } from '../../../auth/entities/permission-scope.entity';
+import { Permission } from '../../../entities/permission.entity';
+import { PermissionScope } from '../../../entities/permission-scope.entity';
 import { Logger } from '@nestjs/common';
-import { Status } from '@/shared/enums/status.enum';
+import { Status } from '@/enums/status.enum';
 
 /**
  * Seed de permissões para o módulo de integrador

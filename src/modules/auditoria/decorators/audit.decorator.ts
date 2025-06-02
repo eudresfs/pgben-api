@@ -1,6 +1,6 @@
 import { SetMetadata, applyDecorators, UseInterceptors } from '@nestjs/common';
 import { AuditInterceptor } from '../interceptors/audit.interceptor';
-import { TipoOperacao } from '../enums/tipo-operacao.enum';
+import { TipoOperacao } from '../../../enums/tipo-operacao.enum';
 import { AuditEvent } from '../interfaces/audit-event.interface';
 
 export const AUDIT_METADATA_KEY = 'audit_metadata';

@@ -29,7 +29,7 @@ import {
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
-import { ScopeType } from '../../../auth/entities/user-permission.entity';
+import { ScopeType } from '../../../entities/user-permission.entity';
 import { ApiErrorResponse } from '../../../shared/dtos/api-error-response.dto';
 import { CreateComposicaoFamiliarDto } from '../dto/create-composicao-familiar.dto';
 import { UpdateComposicaoFamiliarDto } from '../dto/update-composicao-familiar.dto';
