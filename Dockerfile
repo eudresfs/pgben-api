@@ -16,7 +16,7 @@ COPY . .
 
 # Gera as chaves JWT antes do build
 RUN echo "🔑 Gerando chaves JWT..." && \
-    node scripts/gerar-chaves-jwt.js
+    node scripts/gerar-chaves-jwt.js --output-format=base64
 
 # Compila a aplicação
 RUN npm run build
