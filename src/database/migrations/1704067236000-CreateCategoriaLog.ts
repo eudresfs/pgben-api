@@ -95,7 +95,7 @@ export class CreateCategoriaLog1704067226000 implements MigrationInterface {
 
       -- Adicionar coluna de criticidade
       ALTER TABLE log_auditoria 
-      ADD COLUMN IF NOT EXISTS criticidade VARCHAR(20) NOT NULL DEFAULT 'NORMAL';
+      ADD COLUMN IF NOT EXISTS criticidade VARCHAR(20) NOT NULL DEFAULT 'normal';
 
       -- Adicionar coluna de detalhes
       ALTER TABLE log_auditoria 

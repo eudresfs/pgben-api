@@ -112,8 +112,8 @@ export class CreateDocumentoSchema1704067231000 implements MigrationInterface {
       CREATE TABLE IF NOT EXISTS "verificacao_documento" (
         "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
         "documento_id" uuid NOT NULL,
-        "status" "status_verificacao_documento_enum" NOT NULL DEFAULT 'PENDENTE',
-        "resultado_verificacao_malware" "resultado_verificacao_malware_enum" NOT NULL DEFAULT 'SEGURO',
+        "status" "status_verificacao_documento_enum" NOT NULL DEFAULT 'pendente',
+        "resultado_verificacao_malware" "resultado_verificacao_malware_enum" NOT NULL DEFAULT 'seguro',
         "data_verificacao" TIMESTAMP NOT NULL DEFAULT now(),
         "usuario_verificacao_id" uuid NOT NULL,
         "observacoes" text,

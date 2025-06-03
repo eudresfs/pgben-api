@@ -7,65 +7,55 @@ export class CreateDadosBeneficios1704067227000 implements MigrationInterface {
         // Criar ENUM para público prioritário do Aluguel Social
         await queryRunner.query(`
             CREATE TYPE "publico_prioritario_aluguel_enum" AS ENUM (
-                'IDOSO_ACIMA_60',
-                'PESSOA_DEFICIENCIA',
-                'FAMILIA_CRIANCA_0_6',
-                'GESTANTE',
-                'NUTRIZ',
-                'FAMILIA_ADOLESCENTE',
-                'SITUACAO_RUA',
-                'CATADOR_RECICLAVEL',
-                'FAMILIA_INDIGENA',
-                'FAMILIA_QUILOMBOLA',
-                'FAMILIA_CIGANA',
-                'FAMILIA_RIBEIRINHA',
-                'FAMILIA_EXTRATIVISTA',
-                'FAMILIA_PESCADOR',
-                'FAMILIA_PERTENCENTE_COMUNIDADE_TRADICIONAL',
-                'FAMILIA_ASSENTADA_REFORMA_AGRARIA',
-                'FAMILIA_ACAMPADA',
-                'FAMILIA_ATINGIDA_EMPREENDIMENTOS_INFRAESTRUTURA',
-                'FAMILIA_PRISIONAL',
-                'FAMILIA_MEDIDAS_SOCIOEDUCATIVAS'
+                'idoso_acima_60',
+                'pessoa_deficiencia',
+                'familia_crianca_0_6',
+                'gestante',
+                'nutriz',
+                'familia_adolescente',
+                'situacao_rua',
+                'catador_reciclavel',
+                'familia_indigena',
+                'familia_quilombola',
+                'familia_cigana',
+                'familia_ribeirinha',
+                'familia_extrativista',
+                'familia_pescador',
+                'familia_pertencente_comunidade_tradicional',
+                'familia_assentada_reforma_agraria',
+                'familia_acampada',
+                'familia_atingida_empreendimentos_infraestrutura',
+                'familia_prisional',
+                'familia_medidas_socioeducativas'
             )
         `);
 
         // Criar ENUM para especificação do Aluguel Social
         await queryRunner.query(`
             CREATE TYPE "especificacao_aluguel_enum" AS ENUM (
-                'SITUACAO_EMERGENCIAL',
-                'VULNERABILIDADE_TEMPORARIA',
-                'PROCESSO_REASSENTAMENTO',
-                'VIOLENCIA_DOMESTICA',
-                'CALAMIDADE_PUBLICA',
-                'DESPEJO_JUDICIAL',
-                'CONDICOES_INSALUBRES_MORADIA'
-            )
-        `);
-
-        // Criar ENUM para tipo de urna (Auxílio Funeral)
-        await queryRunner.query(`
-            CREATE TYPE "tipo_urna_enum" AS ENUM (
-                'PADRAO',
-                'ESPECIAL',
-                'INFANTIL',
-                'OBESO'
+                'situacao_emergencial',
+                'vulnerabilidade_temporaria',
+                'processo_reassentamento',
+                'violencia_domestica',
+                'calamidade_publica',
+                'despejo_judicial',
+                'condicoes_insalubres_moradia'
             )
         `);
 
         // Criar ENUM para origem do atendimento (Cesta Básica)
         await queryRunner.query(`
             CREATE TYPE "origem_atendimento_enum" AS ENUM (
-                'CRAS',
-                'CREAS',
-                'CENTRO_POP',
-                'UNIDADE_ACOLHIMENTO',
-                'CONSELHO_TUTELAR',
-                'MINISTERIO_PUBLICO',
-                'DEFENSORIA_PUBLICA',
-                'PODER_JUDICIARIO',
-                'ENCAMINHAMENTO_EXTERNO',
-                'DEMANDA_ESPONTANEA'
+                'cras',
+                'creas',
+                'centro_pop',
+                'unidade_acolhimento',
+                'conselho_tutelar',
+                'ministerio_publico',
+                'defensoria_publica',
+                'poder_judiciario',
+                'encaminhamento_externo',
+                'demanda_espontanea'
             )
         `);
 
@@ -126,7 +116,7 @@ export class CreateDadosBeneficios1704067227000 implements MigrationInterface {
                 "local_obito" character varying NOT NULL,
                 "data_autorizacao" date,
                 "grau_parentesco_requerente" "parentesco_enum" NOT NULL,
-                "tipo_urna_necessaria" "tipo_urna_enum" NOT NULL DEFAULT 'PADRAO',
+                "tipo_urna_necessaria" "tipo_urna_enum" NOT NULL DEFAULT 'padrao',
                 "valor_solicitado" decimal(10,2),
                 "declaracao_custos_funeral" text,
                 "observacoes" text,
@@ -146,7 +136,7 @@ export class CreateDadosBeneficios1704067227000 implements MigrationInterface {
                 "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
                 "solicitacao_id" uuid NOT NULL,
                 "quantidade_cestas_solicitadas" integer NOT NULL,
-                "periodo_concessao" "periodicidade_enum" NOT NULL DEFAULT 'UNICA',
+                "periodo_concessao" "periodicidade_enum" NOT NULL DEFAULT 'unica',
                 "origem_atendimento" "origem_atendimento_enum" NOT NULL,
                 "numero_pessoas_familia" integer NOT NULL,
                 "justificativa_quantidade" text,

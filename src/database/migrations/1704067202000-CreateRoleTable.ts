@@ -72,7 +72,7 @@ export class CreateRoleTable1704067202000 implements MigrationInterface {
                     {
                         name: 'status',
                         type: 'varchar',
-                        default: 'ativo',
+                        default: "'ativo'",
                     },
                     {
                         name: 'created_at',

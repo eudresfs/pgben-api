@@ -29,7 +29,7 @@ export class CreateBeneficioSchema1704067215000 implements MigrationInterface {
         "descricao" character varying NOT NULL,
         "codigo" character varying NOT NULL,
         "status" "status_ativo_enum" NOT NULL DEFAULT 'ativo',
-        "periodicidade" "periodicidade_enum" NOT NULL DEFAULT 'UNICA',
+        "periodicidade" "periodicidade_enum" NOT NULL DEFAULT 'unica',
         "valor" decimal(10,2),
         "legislacao" character varying,
         "criterios_elegibilidade" jsonb NOT NULL DEFAULT '{}',

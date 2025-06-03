@@ -28,7 +28,7 @@ export class CreatePagamentoSchema1704067236000 implements MigrationInterface {
         "info_bancaria_id" uuid,
         "valor" decimal(10,2) NOT NULL,
         "data_liberacao" TIMESTAMP NOT NULL,
-        "status" "status_pagamento_enum" NOT NULL DEFAULT 'PENDENTE',
+        "status" "status_pagamento_enum" NOT NULL DEFAULT 'pendente',
         "metodo_pagamento" "metodo_pagamento_enum" NOT NULL,
         "liberado_por" uuid NOT NULL,
         "observacoes" text,

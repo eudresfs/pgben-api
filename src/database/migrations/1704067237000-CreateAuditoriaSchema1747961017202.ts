@@ -24,16 +24,16 @@ export class CreateAuditoriaSchema1704067227000 implements MigrationInterface {
       BEGIN
         IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'tipo_operacao') THEN
           CREATE TYPE "tipo_operacao" AS ENUM (
-            'CREATE',
-            'READ',
-            'UPDATE',
-            'DELETE',
-            'ACCESS',
-            'EXPORT',
-            'ANONYMIZE',
-            'LOGIN',
-            'LOGOUT',
-            'FAILED_LOGIN'
+            'create',
+            'read',
+            'update',
+            'delete',
+            'access',
+            'export',
+            'anonymize',
+            'login',
+            'logout',
+            'failed_login'
           );
         END IF;
       END

@@ -29,10 +29,10 @@ export class CreateInfoBancariaSchema1704067205000 implements MigrationInterface
       if (!tipoContaEnumExists.length) {
         await queryRunner.query(`
           CREATE TYPE "tipo_conta" AS ENUM (
-            'CORRENTE',
-            'POUPANCA',
-            'POUPANCA_SOCIAL',
-            'SALARIO'
+            'corrente',
+            'poupanca',
+            'poupanca_social',
+            'salario'
           )
         `);
         console.log('Enum tipo_conta criado com sucesso');
@@ -42,11 +42,11 @@ export class CreateInfoBancariaSchema1704067205000 implements MigrationInterface
       if (!tipoChavePixEnumExists.length) {
         await queryRunner.query(`
           CREATE TYPE "tipo_chave_pix" AS ENUM (
-            'CPF',
-            'CNPJ',
-            'EMAIL',
-            'TELEFONE',
-            'ALEATORIA'
+            'cpf',
+            'cnpj',
+            'email',
+            'telefone',
+            'aletoria'
           )
         `);
         console.log('Enum tipo_chave_pix criado com sucesso');
@@ -100,7 +100,7 @@ export class CreateInfoBancariaSchema1704067205000 implements MigrationInterface
             {
               name: 'tipo_conta',
               type: 'enum',
-              enum: ['CORRENTE', 'POUPANCA', 'POUPANCA_SOCIAL', 'SALARIO'],
+              enum: ['corrente', 'poupanca', 'poupanca_social', 'salario'],
               enumName: 'tipo_conta',
               isNullable: true,
               comment: 'Tipo da conta bancária',
@@ -115,7 +115,7 @@ export class CreateInfoBancariaSchema1704067205000 implements MigrationInterface
             {
               name: 'tipo_chave_pix',
               type: 'enum',
-              enum: ['CPF', 'CNPJ', 'EMAIL', 'TELEFONE', 'ALEATORIA'],
+              enum: ['cpf', 'cnpj', 'email', 'telefone', 'aleatoria'],
               enumName: 'tipo_chave_pix',
               isNullable: false,
               comment: 'Tipo da chave PIX',
@@ -180,7 +180,7 @@ export class CreateInfoBancariaSchema1704067205000 implements MigrationInterface
           name: 'IDX_info_bancaria_chave_pix',
           columnNames: ['chave_pix'],
           isUnique: true,
-          where: 'chave_pix IS NOT NULL AND deleted_at IS NULL',
+          where: 'chave_pix IS NOT NULL AND removed_at IS NULL',
         }),
       );
 
@@ -195,8 +195,8 @@ export class CreateInfoBancariaSchema1704067205000 implements MigrationInterface
       await queryRunner.createIndex(
         'info_bancaria',
         new TableIndex({
-          name: 'IDX_info_bancaria_deleted_at',
-          columnNames: ['deleted_at'],
+          name: 'IDX_info_bancaria_removed_at',
+          columnNames: ['removed_at'],
         }),
       );
 
@@ -207,7 +207,7 @@ export class CreateInfoBancariaSchema1704067205000 implements MigrationInterface
           name: 'IDX_info_bancaria_cidadao_ativo_unique',
           columnNames: ['cidadao_id'],
           isUnique: true,
-          where: 'ativo = true AND deleted_at IS NULL',
+          where: 'ativo = true AND removed_at IS NULL',
         }),
       );
 

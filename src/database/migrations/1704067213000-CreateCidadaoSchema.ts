@@ -123,7 +123,7 @@ export class CreateCidadaoSchema1704067216000 implements MigrationInterface {
         "idade" integer NOT NULL,
         "ocupacao" character varying NOT NULL,
         "escolaridade" "escolaridade_enum" NOT NULL,
-        "parentesco" "parentesco_enum" NOT NULL DEFAULT 'OUTRO',
+        "parentesco" "parentesco_enum" NOT NULL DEFAULT 'outro',
         "renda" decimal(10,2),
         "observacoes" character varying,
         "created_at" TIMESTAMP NOT NULL DEFAULT now(),

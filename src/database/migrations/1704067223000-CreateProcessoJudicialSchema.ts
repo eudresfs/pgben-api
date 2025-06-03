@@ -21,14 +21,14 @@ export class CreateProcessoJudicialSchema1704067219000 implements MigrationInter
     // Criar enum para status do processo judicial
     await queryRunner.query(`
       CREATE TYPE "public"."status_processo_judicial_enum" AS ENUM(
-        'ABERTO', 'EM_ANDAMENTO', 'SUSPENSO', 'CONCLUIDO', 'ARQUIVADO'
+        'aberto', 'em_andamento', 'suspenso', 'concluido', 'arquivado'
       );
     `);
     
     // Criar enum para tipo de determinação judicial
     await queryRunner.query(`
       CREATE TYPE "public"."tipo_determinacao_judicial_enum" AS ENUM(
-        'CONCESSAO', 'SUSPENSAO', 'CANCELAMENTO', 'ALTERACAO', 'OUTRO'
+        'concessao', 'suspensao', 'cancelamento', 'alteracao', 'outro'
       );
     `);
     
@@ -40,7 +40,7 @@ export class CreateProcessoJudicialSchema1704067219000 implements MigrationInter
         "vara_judicial" varchar(255) NOT NULL,
         "comarca" varchar(255) NOT NULL,
         "juiz" varchar(255),
-        "status" "status_processo_judicial_enum" NOT NULL DEFAULT 'ABERTO',
+        "status" "status_processo_judicial_enum" NOT NULL DEFAULT 'aberto',
         "objeto" text NOT NULL,
         "data_distribuicao" date NOT NULL,
         "data_conclusao" date,
@@ -74,7 +74,7 @@ export class CreateProcessoJudicialSchema1704067219000 implements MigrationInter
         "cidadao_id" uuid,
         "numero_processo" varchar(50) NOT NULL,
         "numero_determinacao" varchar(255) NOT NULL,
-        "tipo" "tipo_determinacao_judicial_enum" NOT NULL DEFAULT 'OUTRO',
+        "tipo" "tipo_determinacao_judicial_enum" NOT NULL DEFAULT 'outro',
         "orgao_judicial" varchar(100),
         "comarca" varchar(100),
         "juiz" varchar(100),

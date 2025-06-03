@@ -37,7 +37,7 @@ export class CreateSolicitacaoSchema1704067226000 implements MigrationInterface 
         "unidade_id" uuid NOT NULL,
         "tecnico_id" uuid NOT NULL,
         "data_abertura" TIMESTAMP NOT NULL,
-        "status" "status_solicitacao_enum" NOT NULL DEFAULT 'PENDENTE',
+        "status" "status_solicitacao_enum" NOT NULL DEFAULT 'pendente',
         "parecer_semtas" text,
         "aprovador_id" uuid,
         "data_aprovacao" TIMESTAMP,
@@ -79,7 +79,7 @@ export class CreateSolicitacaoSchema1704067226000 implements MigrationInterface 
       CREATE INDEX IF NOT EXISTS "IDX_solicitacao_status_unidade" ON "solicitacao" ("status", "unidade_id");
       CREATE INDEX IF NOT EXISTS "IDX_solicitacao_status_tipo" ON "solicitacao" ("status", "tipo_beneficio_id");
       CREATE INDEX IF NOT EXISTS "IDX_solicitacao_data_status" ON "solicitacao" ("data_abertura", "status");
-      CREATE INDEX IF NOT EXISTS "IDX_solicitacao_pendentes" ON "solicitacao" ("status") WHERE status IN ('PENDENTE', 'EM_ANALISE');
+      CREATE INDEX IF NOT EXISTS "IDX_solicitacao_pendentes" ON "solicitacao" ("status") WHERE status IN ('pendente', 'em_analise');
       CREATE INDEX IF NOT EXISTS "IDX_solicitacao_dados" ON "solicitacao" USING GIN ("dados_complementares");
       
       -- Índices para campos de determinação judicial
@@ -190,7 +190,7 @@ export class CreateSolicitacaoSchema1704067226000 implements MigrationInterface 
         "solicitacao_id" uuid NOT NULL,
         "descricao" text NOT NULL,
         "registrado_por_id" uuid NOT NULL,
-        "status" "status_pendencia_enum" NOT NULL DEFAULT 'ABERTA',
+        "status" "status_pendencia_enum" NOT NULL DEFAULT 'aberta',
         "resolvido_por_id" uuid,
         "data_resolucao" TIMESTAMP,
         "observacao_resolucao" text,
@@ -227,7 +227,7 @@ export class CreateSolicitacaoSchema1704067226000 implements MigrationInterface 
         "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
         "solicitacao_id" uuid NOT NULL,
         "tipo_avaliacao" "tipo_avaliacao_enum" NOT NULL,
-        "resultado" "resultado_avaliacao_enum" NOT NULL DEFAULT 'PENDENTE',
+        "resultado" "resultado_avaliacao_enum" NOT NULL DEFAULT 'pendente',
         "avaliador_id" uuid NOT NULL,
         "parecer" text,
         "data_avaliacao" TIMESTAMP NOT NULL,
@@ -310,7 +310,7 @@ export class CreateSolicitacaoSchema1704067226000 implements MigrationInterface 
         "data_pagamento" date,
         "comprovante_id" uuid,
         "observacao" text,
-        "status" character varying NOT NULL DEFAULT 'PENDENTE',
+        "status" character varying NOT NULL DEFAULT 'pendente',
         "created_at" TIMESTAMP NOT NULL DEFAULT now(),
         "updated_at" TIMESTAMP NOT NULL DEFAULT now(),
         "removed_at" TIMESTAMP,

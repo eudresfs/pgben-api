@@ -32,7 +32,7 @@ export class CreateHistoricoConversaoPapel1704067232000 implements MigrationInte
         v_count INTEGER;
       BEGIN
         -- Verificar se o cidadão já está em uma composição familiar
-        IF NEW.tipo_papel = 'BENEFICIARIO' THEN
+        IF NEW.tipo_papel = 'beneficiario' THEN
           SELECT COUNT(*) INTO v_count FROM composicao_familiar 
           WHERE cpf = (SELECT cpf FROM cidadao WHERE id = NEW.cidadao_id) 
             AND removed_at IS NULL;
@@ -67,7 +67,7 @@ export class CreateHistoricoConversaoPapel1704067232000 implements MigrationInte
         -- Verificar se o cidadão já é beneficiário
         SELECT COUNT(*) INTO v_count FROM papel_cidadao p
         JOIN cidadao c ON p.cidadao_id = c.id
-        WHERE c.cpf = NEW.cpf AND p.tipo_papel = 'BENEFICIARIO' AND p.ativo = true;
+        WHERE c.cpf = NEW.cpf AND p.tipo_papel = 'beneficiario' AND p.ativo = true;
         
         IF v_count > 0 THEN
           RAISE EXCEPTION 'Cidadão não pode ser adicionado à composição familiar, pois já é beneficiário';

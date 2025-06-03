@@ -31,7 +31,7 @@ async function verificarSeeds(): Promise<void> {
     // Verificar setores
     const setores = await AppDataSource.query(
       'SELECT COUNT(*) as total FROM setor WHERE status = $1',
-      [true]
+      ['ativo']
     );
     console.log(`✓ Setores ativos: ${setores[0].total}`);
 
@@ -44,15 +44,15 @@ async function verificarSeeds(): Promise<void> {
 
     // Verificar schemas de tipos de benefício
     const schemas = await AppDataSource.query(
-      'SELECT COUNT(*) as total FROM tipo_beneficio_schema WHERE ativo = $1',
-      [true]
+      'SELECT COUNT(*) as total FROM tipo_beneficio_schema WHERE status = $1',
+      ['ativo']
     );
     console.log(`✓ Schemas de tipos de benefício ativos: ${schemas[0].total}`);
 
     // Verificar perfis de usuário
     const perfis = await AppDataSource.query(
-      'SELECT COUNT(*) as total FROM usuario_perfil WHERE ativo = $1',
-      [true]
+      'SELECT COUNT(*) as total FROM usuario WHERE status = $1',
+      ['ativo']
     );
     console.log(`✓ Perfis de usuário ativos: ${perfis[0].total}`);
 

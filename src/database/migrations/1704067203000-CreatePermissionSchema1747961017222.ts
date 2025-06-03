@@ -165,7 +165,7 @@ export class CreatePermissionSchema1704067206000 implements MigrationInterface {
           "id" UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
           "usuario_id" UUID NOT NULL,
           "role_id" UUID NOT NULL,
-          "tipo_escopo" VARCHAR(50) NOT NULL DEFAULT 'GLOBAL',
+          "tipo_escopo" VARCHAR(50) NOT NULL DEFAULT 'global',
           "escopo_id" UUID NULL,
           "criado_em" TIMESTAMP NOT NULL DEFAULT now(),
           "criado_por" UUID NULL,
@@ -212,7 +212,7 @@ export class CreatePermissionSchema1704067206000 implements MigrationInterface {
               name: 'tipo_escopo_padrao',
               type: 'varchar',
               length: '20',
-              default: "'GLOBAL'",
+              default: "'global'",
             },
             {
               name: 'created_at',

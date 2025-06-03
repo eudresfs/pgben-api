@@ -110,7 +110,7 @@ export class CreateRelatoriosSchema1704067240000 implements MigrationInterface {
         "usuario_id" uuid NOT NULL,
         "parametros_utilizados" jsonb NOT NULL,
         "formato" "formato_relatorio_enum" NOT NULL,
-        "status" "status_geracao_enum" NOT NULL DEFAULT 'PENDENTE',
+        "status" "status_geracao_enum" NOT NULL DEFAULT 'pendente',
         "caminho_arquivo" character varying(255),
         "tamanho_bytes" integer,
         "tempo_geracao_ms" integer,

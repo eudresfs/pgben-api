@@ -52,6 +52,7 @@ export class EmailService {
 
   /**
    * Inicializa o transporter do Nodemailer
+   * Configurado para usar STARTTLS na porta 587 (padrão Mailtrap)
    */
   private initializeTransporter(): void {
     const host = this.configService.get<string>('SMTP_HOST');
@@ -59,6 +60,8 @@ export class EmailService {
     const secure = this.configService.get<boolean>('SMTP_SECURE', false);
     const user = this.configService.get<string>('SMTP_USER');
     const pass = this.configService.get<string>('SMTP_PASS');
+    const requireTLS = this.configService.get<boolean>('SMTP_REQUIRE_TLS', true);
+    const rejectUnauthorized = this.configService.get<boolean>('SMTP_REJECT_UNAUTHORIZED', false);
 
     if (!host || !user || !pass) {
       this.logger.error('Configurações SMTP incompletas. Verifique SMTP_HOST, SMTP_USER e SMTP_PASS.');
@@ -68,23 +71,41 @@ export class EmailService {
     this.transporter = nodemailer.createTransport({
       host,
       port,
-      secure,
+      secure, // false para porta 587, true para porta 465
+      requireTLS, // Força uso de STARTTLS para porta 587
       auth: {
         user,
         pass,
+      },
+      tls: {
+        // Configurações TLS mais permissivas para desenvolvimento
+        rejectUnauthorized,
+        ciphers: 'SSLv3',
+        minVersion: 'TLSv1.2', // Versão mínima do TLS
       },
       pool: true, // Usar pool de conexões
       maxConnections: 5,
       maxMessages: 100,
       rateLimit: 10, // Máximo 10 emails por segundo
+      connectionTimeout: 60000, // 60 segundos timeout
+      greetingTimeout: 30000, // 30 segundos para greeting
+      socketTimeout: 60000, // 60 segundos socket timeout
     });
 
-    // Verificar conexão
+    // Verificar conexão com melhor tratamento de erro
     this.transporter.verify((error, success) => {
       if (error) {
-        this.logger.error('Erro na configuração SMTP:', error);
+        this.logger.error('Erro na configuração SMTP:', {
+          error: error.message,
+          code: error.code,
+          command: error.command,
+          host,
+          port,
+          secure,
+          requireTLS,
+        });
       } else {
-        this.logger.log('Servidor SMTP configurado com sucesso');
+        this.logger.log(`Servidor SMTP configurado com sucesso: ${host}:${port} (TLS: ${requireTLS})`);
       }
     });
   }

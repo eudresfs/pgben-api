@@ -4,10 +4,10 @@ export class UpdateSolicitacaoBeneficioStatus1704067245000 implements MigrationI
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Atualizar o tipo enum para incluir os novos valores
     await queryRunner.query(`
-      ALTER TYPE status_solicitacao_enum ADD VALUE IF NOT EXISTS 'RASCUNHO';
-      ALTER TYPE status_solicitacao_enum ADD VALUE IF NOT EXISTS 'ABERTA';
-      ALTER TYPE status_solicitacao_enum ADD VALUE IF NOT EXISTS 'LIBERADA';
-      ALTER TYPE status_solicitacao_enum ADD VALUE IF NOT EXISTS 'ARQUIVADA';
+      ALTER TYPE status_solicitacao_enum ADD VALUE IF NOT EXISTS 'rascunho';
+      ALTER TYPE status_solicitacao_enum ADD VALUE IF NOT EXISTS 'aberta';
+      ALTER TYPE status_solicitacao_enum ADD VALUE IF NOT EXISTS 'liberada';
+      ALTER TYPE status_solicitacao_enum ADD VALUE IF NOT EXISTS 'arquivada';
     `);
   }
 
