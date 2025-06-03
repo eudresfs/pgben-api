@@ -13,6 +13,7 @@ import {
   ValidateIf,
   IsArray,
   IsUUID,
+  IsObject,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { Sexo } from '../../../enums/sexo.enum';
@@ -126,6 +127,8 @@ export class PapelCidadaoCreateDto {
   })
   tipo_papel: PaperType;
 
+  @IsOptional()
+  @IsObject({ message: 'Metadados deve ser um objeto' })
   @ApiPropertyOptional({
     type: 'object',
     additionalProperties: true,

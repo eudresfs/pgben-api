@@ -18,7 +18,7 @@ import { ExportacaoService } from '../services/exportacao.service';
  * de benefícios em diferentes formatos.
  */
 @ApiTags('Solicitação')
-@Controller('v1/solicitacao/exportacao')
+@Controller('solicitacao/exportacao')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
 export class ExportacaoController {

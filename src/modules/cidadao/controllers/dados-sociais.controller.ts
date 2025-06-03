@@ -40,7 +40,7 @@ import { DadosSociais } from '../../../entities/dados-sociais.entity';
  * Todas as operações incluem validações de negócio e auditoria automática.
  */
 @ApiTags('Cidadão')
-@Controller('v1/cidadao')
+@Controller('cidadao')
 @UseGuards(JwtAuthGuard, PermissionGuard)
 @ApiBearerAuth()
 @UseInterceptors(CidadaoAuditInterceptor)

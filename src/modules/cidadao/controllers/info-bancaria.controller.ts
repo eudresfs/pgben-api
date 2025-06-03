@@ -37,7 +37,7 @@ import { TipoEscopo } from '@/entities/user-permission.entity';
  * incluindo contas poupança social do Banco do Brasil e dados PIX.
  */
 @ApiTags('Cidadão')
-@Controller('v1/cidadao/info-bancaria')
+@Controller('cidadao/info-bancaria')
 @UseGuards(JwtAuthGuard, PermissionGuard)
 @ApiBearerAuth()
 export class InfoBancariaController {

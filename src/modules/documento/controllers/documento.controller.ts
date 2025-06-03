@@ -45,7 +45,7 @@ import { Usuario } from '../../../entities/usuario.entity';
  * anexados aos cidadãos e solicitações de benefícios
  */
 @ApiTags('Documentos')
-@Controller('v1/documento')
+@Controller('documento')
 @UseGuards(JwtAuthGuard, PermissionGuard)
 @ApiBearerAuth()
 export class DocumentoController {

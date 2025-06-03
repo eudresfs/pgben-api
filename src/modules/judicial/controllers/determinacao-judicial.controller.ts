@@ -35,7 +35,7 @@ class CumprimentoDeterminacaoDto {
  * relacionadas a processos e solicitações de benefício.
  */
 @ApiTags('Solicitação')
-@Controller('v1/judicial/determinacoes')
+@Controller('judicial/determinacoes')
 @UseGuards(JwtAuthGuard, PermissionGuard)
 @ApiBearerAuth()
 export class DeterminacaoJudicialController {

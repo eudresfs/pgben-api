@@ -38,7 +38,7 @@ import { Request } from 'express';
  * para solicitações de benefícios indeferidas
  */
 @ApiTags('Recursos')
-@Controller('v1/recursos')
+@Controller('recursos')
 @UseGuards(JwtAuthGuard, PermissionGuard)
 @ApiBearerAuth()
 export class RecursoController {

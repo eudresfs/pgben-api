@@ -45,7 +45,7 @@ import { UseInterceptors } from '@nestjs/common';
  */
 @ApiTags('Cidadão')
 @ApiExtraModels(ComposicaoFamiliarResponseDto, ComposicaoFamiliarPaginatedResponseDto)
-@Controller('v1/composicao-familiar')
+@Controller('composicao-familiar')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 @UseInterceptors(CidadaoAuditInterceptor)

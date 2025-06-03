@@ -51,7 +51,7 @@ class SolicitarExportacaoDto {
  * Controlador para exportação de logs de auditoria
  */
 @ApiTags('Auditoria')
-@Controller('v1/auditoria/exportacao')
+@Controller('auditoria/exportacao')
 export class AuditoriaExportacaoController {
   private readonly logger = new Logger(AuditoriaExportacaoController.name);
 

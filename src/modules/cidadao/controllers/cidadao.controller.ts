@@ -58,7 +58,7 @@ import { ApiErrorResponse } from '../../../shared/dtos/api-error-response.dto';
  */
 @ApiTags('Cidadão')
 @ApiExtraModels(CidadaoResponseDto, CidadaoComposicaoFamiliarDto)
-@Controller('v1/cidadao')
+@Controller('cidadao')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class CidadaoController {
@@ -411,7 +411,7 @@ export class CidadaoController {
                   tempo_de_residencia: 2
                 },
                 papeis: [{
-                  tipo_papel: 'BENEFICIARIO',
+                  tipo_papel: 'requerente',
                   metadados: {
                     grau_parentesco: 'Responsável'
                   }
@@ -482,33 +482,29 @@ export class CidadaoController {
   async create(
     @Body() createCidadaoDto: CreateCidadaoDto,
     @Request() req,
-  ): Promise<any> {
-    // Inicia medição de tempo para performance
+  ): Promise<CidadaoResponseDto> {
     const startTime = Date.now();
-    const requestId = `CREATE-${createCidadaoDto.cpf?.substring(Math.max(0, (createCidadaoDto.cpf?.length || 0) - 4)) || Date.now()}-${Date.now()}`;
-    this.logger.log(`[${requestId}] Início de processamento de criação de cidadão`);
-    
+
     try {
-      // Restaurando o código original com monitoramento de performance
       const result = await this.cidadaoService.create(
         createCidadaoDto,
         req?.user?.id,
         req?.user?.unidade_id,
       );
       
-      // Registra tempo total da operação para monitoramento
-      const totalTime = Date.now() - startTime;
-      if (totalTime > 500) {
-        this.logger.warn(`[${requestId}] Operação lenta (create): ${totalTime}ms`);
-      } else {
-        this.logger.log(`[${requestId}] Operação concluída em ${totalTime}ms`);
-      }
+      const duration = Date.now() - startTime;
+      this.logger.log(`✅ Cidadão criado com sucesso em ${duration}ms`, {
+        cidadaoId: result.id,
+        duration
+      });
       
       return result;
     } catch (error) {
-      // Registra erro para diagnóstico
-      const totalTime = Date.now() - startTime;
-      this.logger.error(`[${requestId}] Erro em ${totalTime}ms: ${error.message}`);
+      const duration = Date.now() - startTime;
+      this.logger.error(`❌ Erro ao criar cidadão após ${duration}ms:`, {
+        error: error.message,
+        duration
+      });
       throw error;
     }
   }

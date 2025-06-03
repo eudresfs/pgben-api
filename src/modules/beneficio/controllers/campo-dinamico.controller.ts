@@ -30,7 +30,7 @@ import { ROLES } from '../../../shared/constants/roles.constants';
  * específicos para cada tipo de benefício.
  */
 @ApiTags('Benefícios')
-@Controller('v1/beneficio/:tipoBeneficioId/campos-dinamicos')
+@Controller('beneficio/:tipoBeneficioId/campos-dinamicos')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
 export class CampoDinamicoController {

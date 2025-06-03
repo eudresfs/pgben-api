@@ -1,6 +1,13 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { BadRequestException, INestApplication, Logger, RequestMethod, ValidationPipe } from '@nestjs/common';
+import { 
+  BadRequestException, 
+  INestApplication, 
+  Logger, 
+  RequestMethod, 
+  ValidationPipe,
+  VersioningType 
+} from '@nestjs/common';
 import { ResponseInterceptor } from './shared/interceptors/response.interceptor';
 import { AllExceptionsFilter } from './shared/filters/all-exceptions.filter';
 import { setupSwagger } from './shared/configs/swagger/index';
@@ -8,37 +15,60 @@ import { applySecurity } from './config/security.config';
 import { ConfigService } from '@nestjs/config';
 import compression from 'compression';
 
+/**
+ * Configura e inicializa a aplicação NestJS
+ */
 async function bootstrap(): Promise<INestApplication> {
   const logger = new Logger('Bootstrap');
   
   try {
-    logger.log('Iniciando aplicação com debug detalhado...');
+    logger.log('🚀 Iniciando aplicação SEMTAS...');
     
-    // Criar a aplicação NestJS
+    // Criar a aplicação NestJS com configurações otimizadas
     const app = await NestFactory.create(AppModule, {
-      logger: ['error', 'warn', 'log', 'debug'],
+      logger: process.env.NODE_ENV === 'production' 
+        ? ['error', 'warn', 'log'] 
+        : ['error', 'warn', 'log', 'debug', 'verbose'],
       abortOnError: false,
+      bufferLogs: true, // Melhora performance dos logs
+      autoFlushLogs: true,
     });
     
-    // Configuração básica do servidor
-    const port = process.env.PORT || 3000;
-    
-    // Configurando middlewares de segurança
-    logger.log('Configurando middlewares de segurança...');
-    
-    // Obter ConfigService para configurações de segurança
+    // Obter configurações
     const configService = app.get(ConfigService);
+    const port = configService.get<number>('PORT', 3000);
+    const environment = configService.get<string>('NODE_ENV', 'development');
+    const isDevelopment = environment === 'development';
     
-    // Aplicar todas as configurações de segurança
+    logger.log(`📦 Ambiente: ${environment}`);
+    
+    // === CONFIGURAÇÕES DE SEGURANÇA ===
+    logger.log('🔐 Configurando middlewares de segurança...');
     applySecurity(app, configService);
     
-    // Compressão de resposta para melhorar performance
-    app.use(compression());
+    // Compressão de resposta
+    app.use(compression({
+      filter: (req, res) => {
+        if (req.headers['x-no-compression']) {
+          return false;
+        }
+        return compression.filter(req, res);
+      },
+      level: 6, // Balanceamento entre velocidade e compressão
+      threshold: 1024, // Comprimir apenas arquivos > 1KB
+    }));
     
-    logger.log('Middlewares de segurança configurados com sucesso');
+    logger.log('✅ Middlewares de segurança configurados');
     
-    // Adicionar pipes básicos
-    logger.log('Configurando ValidationPipe global...');
+    // === VERSIONAMENTO DA API ===
+    app.enableVersioning({
+      type: VersioningType.URI,
+      prefix: 'v',
+      defaultVersion: '1',
+    });
+    
+    // === PIPES GLOBAIS ===
+    logger.log('⚙️ Configurando ValidationPipe global...');
     app.useGlobalPipes(new ValidationPipe({
       whitelist: true,
       forbidNonWhitelisted: true,
@@ -47,114 +77,237 @@ async function bootstrap(): Promise<INestApplication> {
         enableImplicitConversion: true,
       },
       errorHttpStatusCode: 400,
+      disableErrorMessages: environment === 'production', // Ocultar detalhes em produção
       exceptionFactory: (errors) => {
-        const formattedErrors = errors.map(error => ({
-          field: error.property,
-          value: error.value,
-          constraints: error.constraints,
-          messages: error.constraints ? Object.values(error.constraints) : ['Erro de validação'],
-        }));
-        
-        return new BadRequestException({
-          message: 'Dados de entrada inválidos',
-          errors: formattedErrors,
-          statusCode: 400,
-        });
+        return createValidationException(errors, isDevelopment);
       },
     }));
-    logger.log('ValidationPipe global configurado com sucesso');
+    logger.log('✅ ValidationPipe configurado');
     
-    // Configurando interceptors e filtros globais
-    logger.log('Configurando interceptors e filtros globais...');
+    // === INTERCEPTORS E FILTROS GLOBAIS ===
+    logger.log('🛡️ Configurando interceptors e filtros...');
     
-    // Interceptor de resposta para padronizar a estrutura de resposta da API
+    // Interceptor de resposta padronizada
     app.useGlobalInterceptors(new ResponseInterceptor());
     
-    // Filtro de exceções unificado para padronizar o tratamento de erros
+    // Filtro de exceções unificado
     const allExceptionsFilter = app.get(AllExceptionsFilter);
     app.useGlobalFilters(allExceptionsFilter);
     
-    logger.log('Interceptors e filtros globais configurados com sucesso');
+    logger.log('✅ Interceptors e filtros configurados');
     
-    // Configuração do prefixo global
-    logger.log('Configurando prefixo global "api"...');
+    // === CONFIGURAÇÃO DE ROTAS ===
+    logger.log('🛣️ Configurando prefixo global e rotas...');
     
     app.setGlobalPrefix('api', {
       exclude: [
-        { path: '', method: RequestMethod.ALL },  // Rota raiz
+        { path: '', method: RequestMethod.ALL },
         { path: 'health', method: RequestMethod.ALL },
         { path: 'health/ping', method: RequestMethod.ALL },
-        { path: 'openapi.json', method: RequestMethod.GET },  // Rota pública para ApiDog
-        { path: 'v2/swagger.json', method: RequestMethod.GET },  // Rota pública para ApiDog (compatibilidade)
+        { path: 'metrics', method: RequestMethod.GET },
+        { path: 'openapi.json', method: RequestMethod.GET },
+        { path: 'v2/swagger.json', method: RequestMethod.GET },
+        { path: 'api-docs', method: RequestMethod.ALL },
+        { path: 'api-docs/*', method: RequestMethod.ALL },
       ],
     });
     
-    logger.log('Prefixo global configurado com sucesso');
+    logger.log('✅ Rotas configuradas');
     
-    // Configurando Swagger para documentação da API
-    logger.log('Configurando Swagger...');
-    setupSwagger(app);
-    logger.log('Swagger configurado com sucesso');
+    // === SWAGGER DOCUMENTATION ===
+    if (isDevelopment || configService.get<boolean>('SWAGGER_ENABLED', false)) {
+      logger.log('📚 Configurando Swagger...');
+      setupSwagger(app);
+      logger.log('✅ Swagger configurado');
+    } else {
+      logger.log('📚 Swagger desabilitado em produção');
+    }
     
-    // Iniciar o servidor
-    await app.listen(port);
+    // === STARTUP DO SERVIDOR ===
+    await app.listen(port, '0.0.0.0');
     
-    // Log de rotas disponíveis
-    logger.log(`Servidor rodando em: http://localhost:${port}`);
-    logger.log('Rotas disponíveis:');
-    logger.log(`   - GET  / (raiz)`);
-    logger.log(`   - GET  /health`);
-    logger.log(`   - GET  /api-docs (Swagger UI)`);
+    // === LOGS DE INICIALIZAÇÃO ===
+    logStartupInfo(port, environment, isDevelopment, configService);
     
-    // Retornar a instância da aplicação para uso no graceful shutdown
     return app;
     
   } catch (error) {
-    logger.error('Erro ao iniciar o servidor:', error);
+    logger.error('❌ Erro crítico ao iniciar aplicação:', {
+      message: error.message,
+      stack: error.stack,
+    });
     process.exit(1);
   }
 }
 
-// Graceful shutdown handler
-function setupGracefulShutdown(app: INestApplication) {
+/**
+ * Cria exceção de validação formatada
+ */
+function createValidationException(errors: any[], isDevelopment: boolean): BadRequestException {
+  const formatError = (error: any, path = ''): any[] => {
+    const currentPath = path ? `${path}.${error.property}` : error.property;
+    
+    if (error.children && error.children.length > 0) {
+      // Processar erros aninhados
+      const childErrors: any[] = [];
+      error.children.forEach((child: any) => {
+        childErrors.push(...formatError(child, currentPath));
+      });
+      return childErrors;
+    } else {
+      // Erro direto
+      return [{
+        field: currentPath,
+        value: error.value,
+        constraints: error.constraints || {},
+        messages: error.constraints 
+          ? Object.values(error.constraints) 
+          : ['Erro de validação'],
+      }];
+    }
+  };
+  
+  const formattedErrors: any[] = [];
+  errors.forEach(error => {
+    formattedErrors.push(...formatError(error));
+  });
+  
+  return new BadRequestException({
+    message: 'Dados de entrada inválidos',
+    errors: formattedErrors,
+    statusCode: 400,
+    timestamp: new Date().toISOString(),
+  });
+}
+
+/**
+ * Exibe informações de inicialização
+ */
+function logStartupInfo(
+  port: number, 
+  environment: string, 
+  isDevelopment: boolean,
+  configService: ConfigService
+): void {
+  const logger = new Logger('Bootstrap');
+  const baseUrl = `http://localhost:${port}`;
+  
+  logger.log('🎉 === SERVIDOR INICIADO COM SUCESSO ===');
+  logger.log(`🌐 Servidor rodando em: ${baseUrl}`);
+  logger.log(`🏷️ Ambiente: ${environment}`);
+  logger.log(`📦 Versão da API: v1`);
+  
+  logger.log('📍 Rotas principais disponíveis:');
+  logger.log(`   ├─ GET  ${baseUrl}/ (health check raiz)`);
+  logger.log(`   ├─ GET  ${baseUrl}/health (health check detalhado)`);
+  logger.log(`   ├─ GET  ${baseUrl}/metrics (métricas do sistema)`);
+  logger.log(`   └─ POST ${baseUrl}/api/auth/login (autenticação)`);
+  
+  if (isDevelopment || configService.get<boolean>('SWAGGER_ENABLED', false)) {
+    logger.log('📚 Documentação disponível:');
+    logger.log(`   ├─ GET  ${baseUrl}/api-docs (Swagger UI)`);
+    logger.log(`   └─ GET  ${baseUrl}/openapi.json (OpenAPI Spec)`);
+  }
+  
+  // Informações de configuração (apenas desenvolvimento)
+  if (isDevelopment) {
+    logger.log('⚙️ Configurações ativas:');
+    logger.log(`   ├─ Database: ${configService.get('DB_TYPE', 'N/A')}`);
+    logger.log(`   ├─ Redis: ${configService.get('REDIS_HOST', 'N/A')}:${configService.get('REDIS_PORT', 'N/A')}`);
+    logger.log(`   ├─ Email: ${configService.get('EMAIL_ENABLED', false) ? 'Habilitado' : 'Desabilitado'}`);
+    logger.log(`   └─ SMTP: ${configService.get('SMTP_HOST', 'N/A')}:${configService.get('SMTP_PORT', 'N/A')}`);
+  }
+  
+  logger.log('🔧 === APLICAÇÃO PRONTA PARA USO ===');
+}
+
+/**
+ * Configura graceful shutdown
+ */
+function setupGracefulShutdown(app: INestApplication): void {
   const logger = new Logger('GracefulShutdown');
   
-  const shutdown = async (signal: string) => {
-    logger.log(`Recebido sinal ${signal}. Iniciando graceful shutdown...`);
+  const shutdown = async (signal: string): Promise<void> => {
+    logger.log(`📴 Recebido sinal ${signal}. Iniciando graceful shutdown...`);
     
     try {
-      // Para de aceitar novas conexões
+      // Aguardar requests em andamento (timeout de 10s)
+      const shutdownTimeout = setTimeout(() => {
+        logger.warn('⏰ Timeout do graceful shutdown. Forçando encerramento...');
+        process.exit(1);
+      }, 10000);
+      
+      // Fechar aplicação
       await app.close();
-      logger.log('Aplicação fechada com sucesso');
+      clearTimeout(shutdownTimeout);
+      
+      logger.log('✅ Aplicação encerrada com sucesso');
       process.exit(0);
     } catch (error) {
-      logger.error('Erro durante o shutdown:', error);
+      logger.error('❌ Erro durante o shutdown:', {
+        message: error.message,
+        stack: error.stack,
+      });
       process.exit(1);
     }
   };
   
-  // Captura sinais de shutdown
+  // Capturar sinais de shutdown
   process.on('SIGTERM', () => shutdown('SIGTERM'));
   process.on('SIGINT', () => shutdown('SIGINT'));
   
-  // Captura exceções não tratadas
+  // Capturar exceções não tratadas
   process.on('uncaughtException', (error) => {
-    logger.error('Uncaught Exception:', error);
+    logger.error('💥 Uncaught Exception:', {
+      message: error.message,
+      stack: error.stack,
+    });
     shutdown('uncaughtException');
   });
   
   process.on('unhandledRejection', (reason, promise) => {
-    logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
+    logger.error('🚫 Unhandled Rejection:', {
+      promise,
+      reason,
+    });
     shutdown('unhandledRejection');
   });
+  
+  // Capturar warnings (apenas em desenvolvimento)
+  if (process.env.NODE_ENV === 'development') {
+    process.on('warning', (warning) => {
+      logger.warn('⚠️ Node.js Warning:', {
+        name: warning.name,
+        message: warning.message,
+        stack: warning.stack,
+      });
+    });
+  }
 }
 
-// Iniciar a aplicação
-bootstrap()
-  .then(app => {
-    setupGracefulShutdown(app);
-  })
-  .catch(err => {
-    console.error('Falha ao iniciar a aplicação:', err);
-    process.exit(1);
-  });
+/**
+ * Health check básico para verificar se o processo está rodando
+ */
+process.on('message', (message) => {
+  if (message === 'health-check') {
+    process.send?.('healthy');
+  }
+});
+
+// === INICIALIZAÇÃO PRINCIPAL ===
+if (require.main === module) {
+  bootstrap()
+    .then(app => {
+      setupGracefulShutdown(app);
+    })
+    .catch(err => {
+      const logger = new Logger('Bootstrap');
+      logger.error('💀 Falha crítica na inicialização:', {
+        message: err.message,
+        stack: err.stack,
+      });
+      process.exit(1);
+    });
+}
+
+export { bootstrap };

@@ -31,7 +31,7 @@ import { PaginatedResult } from '../../../common/interfaces/paginated-result.int
  * Fornece endpoints para operações CRUD e consultas específicas para processos judiciais.
  */
 @ApiTags('Solicitação')
-@Controller('v1/judicial/processos')
+@Controller('judicial/processos')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class ProcessoJudicialController {

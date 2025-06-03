@@ -43,7 +43,7 @@ import { Request } from 'express';
  * Responsável por gerenciar as rotas relacionadas às solicitações de benefícios
  */
 @ApiTags('Solicitação')
-@Controller('v1/solicitacao')
+@Controller('solicitacao')
 @UseGuards(JwtAuthGuard, PermissionGuard)
 @ApiBearerAuth()
 export class SolicitacaoController {

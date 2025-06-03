@@ -32,7 +32,7 @@ import { ScopeType } from '../../../entities/user-permission.entity';
  * Responsável por gerenciar as rotas relacionadas a unidades (CRAS, CREAS, etc.)
  */
 @ApiTags('Unidades')
-@Controller('v1/unidade')
+@Controller('unidade')
 @UseGuards(JwtAuthGuard, PermissionGuard)
 @ApiBearerAuth()
 export class UnidadeController {

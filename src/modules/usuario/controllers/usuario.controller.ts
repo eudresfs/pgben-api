@@ -38,7 +38,7 @@ import { ScopeType } from '../../../entities/user-permission.entity';
  * Responsável por gerenciar as rotas relacionadas a usuários
  */
 @ApiTags('Usuários')
-@Controller('v1/usuario')
+@Controller('usuario')
 @UseGuards(JwtAuthGuard, PrimeiroAcessoGuard) // PermissionGuard removido temporariamente para teste 1.1
 @ApiBearerAuth()
 export class UsuarioController {

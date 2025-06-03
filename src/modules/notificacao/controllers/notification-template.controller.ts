@@ -26,7 +26,7 @@ import { ROLES } from '../../../shared/constants/roles.constants';
  * Controlador para gerenciamento de templates de notificação
  */
 @ApiTags('Notificações')
-@Controller('v1/notificacao/templates')
+@Controller('notificacao/templates')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
 export class NotificationTemplateController {

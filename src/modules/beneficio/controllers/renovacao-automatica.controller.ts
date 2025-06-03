@@ -36,7 +36,7 @@ import { ConfiguracaoRenovacaoResponseDto } from '../dto/configuracao-renovacao-
  * automática e do processo de renovação automática mensal.
  */
 @ApiTags('Benefícios')
-@Controller('v1/beneficio/renovacao-automatica')
+@Controller('beneficio/renovacao-automatica')
 @UseGuards(JwtAuthGuard, PermissionGuard)
 @ApiBearerAuth()
 export class RenovacaoAutomaticaController {

@@ -45,7 +45,7 @@ class UpdateRegraConflitoDto {
  * entre papéis de cidadãos no sistema.
  */
 @ApiTags('Cidadão')
-@Controller('v1/cidadao/regra-conflito')
+@Controller('cidadao/regra-conflito')
 @UseGuards(JwtAuthGuard, PermissionGuard)
 @ApiBearerAuth()
 export class RegraConflitoPapelController {

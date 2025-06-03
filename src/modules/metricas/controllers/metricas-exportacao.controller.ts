@@ -18,7 +18,7 @@ import { MetricasService } from '../services/metricas.service';
 @ApiTags('Métricas e Dashboard')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Controller('v1/metricas/exportacao')
+@Controller('metricas/exportacao')
 export class MetricasExportacaoController {
   constructor(
     private readonly metricasService: MetricasService,

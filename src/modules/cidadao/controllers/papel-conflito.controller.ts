@@ -21,7 +21,7 @@ import { VerificacaoPapelConflitoResponseDto, RegraConflitoDto } from '../dto/ve
  * para cidadãos, garantindo a integridade das regras de negócio.
  */
 @ApiTags('Cidadão')
-@Controller('v1/cidadao/papel-conflito')
+@Controller('cidadao/papel-conflito')
 @UseGuards(JwtAuthGuard, PermissionGuard)
 @ApiBearerAuth()
 export class PapelConflitoController {

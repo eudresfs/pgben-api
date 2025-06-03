@@ -19,7 +19,7 @@ import { MetricasAnomaliasService } from '../services/metricas-anomalia.service'
 @ApiTags('Métricas e Dashboard')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Controller('v1/metricas/analise')
+@Controller('metricas/analise')
 export class MetricasAnaliseController {
   constructor(
     private readonly metricasService: MetricasService,

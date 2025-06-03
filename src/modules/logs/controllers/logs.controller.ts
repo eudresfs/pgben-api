@@ -28,7 +28,7 @@ import { LogResponseDto } from '../dto/log-response.dto';
  * Controlador para gerenciamento de logs de auditoria
  */
 @ApiTags('Logs')
-@Controller('v1/logs')
+@Controller('logs')
 @UseGuards(JwtAuthGuard, PermissionGuard)
 @ApiBearerAuth()
 export class LogsController {

@@ -27,7 +27,7 @@ import { DeterminacaoJudicial } from '../../../entities/determinacao-judicial.en
  * Responsável por expor os endpoints de gerenciamento de determinações judiciais
  * relacionadas às solicitações de benefício.
  */
-@Controller('v1/solicitacao/determinacao-judicial')
+@Controller('solicitacao/determinacao-judicial')
 @UseGuards(JwtAuthGuard, PermissionGuard)
 @ApiBearerAuth()
 export class DeterminacaoJudicialController {

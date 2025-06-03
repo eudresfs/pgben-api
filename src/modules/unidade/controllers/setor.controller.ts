@@ -31,7 +31,7 @@ import { ScopeType } from '@/entities/user-permission.entity';
  * Responsável por gerenciar as rotas relacionadas a setores dentro das unidades
  */
 @ApiTags('Unidades')
-@Controller('v1/setor')
+@Controller('setor')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
 export class SetorController {

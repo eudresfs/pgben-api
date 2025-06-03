@@ -21,7 +21,7 @@ import { DashboardService } from '../services/dashboard.service';
 @ApiTags('Métricas e Dashboard')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, PermissionGuard)
-@Controller('v1/dashboard')
+@Controller('dashboard')
 export class MetricasDashboardController {
   constructor(
     private readonly metricasService: MetricasService,

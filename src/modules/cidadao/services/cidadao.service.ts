@@ -833,13 +833,60 @@ export class CidadaoService {
         enableImplicitConversion: false,
       });
     } catch (error) {
-      if (error instanceof ConflictException) {throw error;}
-      if (error instanceof BadRequestException) {throw error;}
+      // Re-lançar exceções já tratadas
+      if (error instanceof ConflictException || error instanceof BadRequestException) {
+        throw error;
+      }
+
+      // Tratar erros específicos do PostgreSQL
+      if (error.code) {
+        switch (error.code) {
+          case '23503': // Violação de chave estrangeira
+            if (error.constraint === 'FK_cidadao_unidade') {
+              throw new BadRequestException(
+                'A unidade informada não existe ou não está ativa. Verifique se a unidade está corretamente cadastrada.',
+              );
+            }
+            throw new BadRequestException(
+              'Dados de relacionamento inválidos. Verifique se todas as referências existem.',
+            );
+          
+          case '23505': // Violação de restrição única
+            if (error.constraint?.includes('cpf')) {
+              throw new ConflictException('Já existe um cidadão cadastrado com este CPF');
+            }
+            if (error.constraint?.includes('nis')) {
+              throw new ConflictException('Já existe um cidadão cadastrado com este NIS');
+            }
+            throw new ConflictException('Já existe um registro com estes dados');
+          
+          case '23514': // Violação de check constraint
+            throw new BadRequestException(
+              'Dados fornecidos não atendem às regras de validação do sistema',
+            );
+          
+          case '23502': // Violação de NOT NULL
+            throw new BadRequestException(
+              'Campos obrigatórios não foram preenchidos corretamente',
+            );
+        }
+      }
+
+      // Log do erro para debugging
       this.logger.error(
         `Erro ao criar cidadão: ${error.message}`,
-        error.stack,
+        {
+          error: error.message,
+          code: error.code,
+          constraint: error.constraint,
+          detail: error.detail,
+          stack: error.stack,
+        },
       );
-      throw new InternalServerErrorException('Erro ao criar cidadão');
+      
+      throw new InternalServerErrorException(
+        'Erro interno do servidor ao criar cidadão. Tente novamente ou entre em contato com o suporte.',
+      );
     }
   }
 
@@ -952,12 +999,64 @@ export class CidadaoService {
 
       return cidadaoDto;
     } catch (error) {
+      // Re-lançar exceções já tratadas
       if (
         error instanceof NotFoundException ||
-        error instanceof ConflictException
-      )
-        {throw error;}
-      throw new InternalServerErrorException('Erro ao atualizar cidadão');
+        error instanceof ConflictException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
+
+      // Tratar erros específicos do PostgreSQL
+      if (error.code) {
+        switch (error.code) {
+          case '23503': // Violação de chave estrangeira
+            if (error.constraint === 'FK_cidadao_unidade') {
+              throw new BadRequestException(
+                'A unidade informada não existe ou não está ativa. Verifique se a unidade está corretamente cadastrada.',
+              );
+            }
+            throw new BadRequestException(
+              'Dados de relacionamento inválidos. Verifique se todas as referências existem.',
+            );
+          
+          case '23505': // Violação de restrição única
+            if (error.constraint?.includes('cpf')) {
+              throw new ConflictException('Já existe um cidadão cadastrado com este CPF');
+            }
+            if (error.constraint?.includes('nis')) {
+              throw new ConflictException('Já existe um cidadão cadastrado com este NIS');
+            }
+            throw new ConflictException('Já existe um registro com estes dados');
+          
+          case '23514': // Violação de check constraint
+            throw new BadRequestException(
+              'Dados fornecidos não atendem às regras de validação do sistema',
+            );
+          
+          case '23502': // Violação de NOT NULL
+            throw new BadRequestException(
+              'Campos obrigatórios não foram preenchidos corretamente',
+            );
+        }
+      }
+
+      // Log do erro para debugging
+      this.logger.error(
+        `Erro ao atualizar cidadão: ${error.message}`,
+        {
+          error: error.message,
+          code: error.code,
+          constraint: error.constraint,
+          detail: error.detail,
+          stack: error.stack,
+        },
+      );
+      
+      throw new InternalServerErrorException(
+        'Erro interno do servidor ao atualizar cidadão. Tente novamente ou entre em contato com o suporte.',
+      );
     }
   }
 
@@ -988,8 +1087,44 @@ export class CidadaoService {
       // Invalidar cache
       await this.invalidateCache(cidadao);
     } catch (error) {
-      if (error instanceof NotFoundException) {throw error;}
-      throw new InternalServerErrorException('Erro ao remover cidadão');
+      // Re-lançar exceções já tratadas
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
+
+      // Tratar erros específicos do PostgreSQL
+      if (error.code) {
+        switch (error.code) {
+          case '23503': // Violação de chave estrangeira
+            throw new BadRequestException(
+              'Não é possível remover este cidadão pois existem registros relacionados (solicitações, documentos, etc.). Remova primeiro os registros dependentes.',
+            );
+          
+          case '23514': // Violação de check constraint
+            throw new BadRequestException(
+              'Operação não permitida devido às regras de validação do sistema',
+            );
+        }
+      }
+
+      // Log do erro para debugging
+      this.logger.error(
+        `Erro ao remover cidadão: ${error.message}`,
+        {
+          error: error.message,
+          code: error.code,
+          constraint: error.constraint,
+          detail: error.detail,
+          stack: error.stack,
+        },
+      );
+      
+      throw new InternalServerErrorException(
+        'Erro interno do servidor ao remover cidadão. Tente novamente ou entre em contato com o suporte.',
+      );
     }
   }
 

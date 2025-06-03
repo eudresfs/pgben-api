@@ -32,7 +32,7 @@ import { ScopeType } from '../../../entities/user-permission.entity';
  * Permite consultar logs de auditoria e gerar relatórios.
  */
 @ApiTags('Auditoria')
-@Controller('v1/auditoria')
+@Controller('auditoria')
 @UseGuards(JwtAuthGuard, PermissionGuard)
 @ApiBearerAuth()
 export class AuditoriaController {

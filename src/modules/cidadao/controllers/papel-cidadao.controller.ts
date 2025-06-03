@@ -37,7 +37,7 @@ import { TipoPapel, PaperType } from '../../../enums/tipo-papel.enum';
  * metadados associados.
  */
 @ApiTags('Cidadão')
-@Controller('v1/cidadao/papel')
+@Controller('cidadao/papel')
 @UseGuards(JwtAuthGuard, PermissionGuard)
 @ApiBearerAuth()
 export class PapelCidadaoController {

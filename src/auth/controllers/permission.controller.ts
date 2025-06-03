@@ -58,7 +58,7 @@ class AtribuirPermissaoDto {
  */
 @ApiTags('Usuários')
 @ApiBearerAuth()
-@Controller('v1/permissoes')
+@Controller('permissoes')
 @UseGuards(JwtAuthGuard, PermissionGuard)
 export class PermissionController {
   constructor(private readonly permissionService: PermissionService) {}

@@ -40,7 +40,7 @@ import { CreateNotificationDto } from '../dtos/create-notification.dto';
  * enviadas aos usuários do sistema
  */
 @ApiTags('Notificações')
-@Controller('v1/notificacao')
+@Controller('notificacao')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
 export class NotificacaoController {

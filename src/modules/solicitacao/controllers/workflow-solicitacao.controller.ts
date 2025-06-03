@@ -27,7 +27,7 @@ import { ObservacaoTransicaoDto, AprovacaoSolicitacaoDto } from '../dto/observac
  * permitindo a transição entre estados.
  */
 @ApiTags('Solicitação')
-@Controller('v1/solicitacao/workflow')
+@Controller('solicitacao/workflow')
 @UseGuards(JwtAuthGuard, PermissionGuard)
 @ApiBearerAuth()
 export class WorkflowSolicitacaoController {

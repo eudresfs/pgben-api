@@ -33,7 +33,7 @@ import { ScopeType } from '../../../entities';
  * Responsável por gerenciar as rotas relacionadas a tipos de benefícios
  */
 @ApiTags('Benefícios')
-@Controller('v1/beneficio')
+@Controller('beneficio')
 @UseGuards(JwtAuthGuard, PermissionGuard)
 @ApiBearerAuth()
 export class BeneficioController {
