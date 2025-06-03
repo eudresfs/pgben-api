@@ -71,9 +71,9 @@ Para maior clareza, documentamos abaixo a matriz de transições de status permi
 |--------------|-------------------|----------------------|
 | RASCUNHO | SUBMETIDA, CANCELADA | `solicitacao.status.submeter`, `solicitacao.status.cancelar` |
 | SUBMETIDA | EM_ANALISE, CANCELADA | `solicitacao.status.avaliar`, `solicitacao.status.cancelar` |
-| EM_ANALISE | APROVADA, REPROVADA, CANCELADA | `solicitacao.status.avaliar`, `solicitacao.status.cancelar` |
+| EM_ANALISE | APROVADA, INDEFERIDA, CANCELADA | `solicitacao.status.avaliar`, `solicitacao.status.cancelar` |
 | APROVADA | LIBERADA, CANCELADA | `solicitacao.status.liberar`, `solicitacao.status.cancelar` |
-| REPROVADA | EM_ANALISE, CANCELADA | `solicitacao.status.avaliar`, `solicitacao.status.cancelar` |
+| INDEFERIDA | EM_ANALISE, CANCELADA | `solicitacao.status.avaliar`, `solicitacao.status.cancelar` |
 | LIBERADA | CONCLUIDA, CANCELADA | `solicitacao.status.concluir` (não mapeado), `solicitacao.status.cancelar` |
 | CANCELADA | - | Nenhuma transição permitida |
 | CONCLUIDA | - | Nenhuma transição permitida |

@@ -185,7 +185,7 @@ export class ValidacaoSolicitacaoService {
     // Verificar se a solicitação está em um estado que permite arquivamento
     const estadosPermitidos = [
       StatusSolicitacao.CONCLUIDA,
-      StatusSolicitacao.REPROVADA,
+      StatusSolicitacao.INDEFERIDA,
       StatusSolicitacao.CANCELADA
     ];
 

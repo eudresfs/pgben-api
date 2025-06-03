@@ -20,14 +20,14 @@ export const TRANSICOES_PERMITIDAS: Partial<Record<StatusSolicitacao, StatusSoli
   ],
   [StatusSolicitacao.EM_ANALISE]: [
     StatusSolicitacao.APROVADA,
-    StatusSolicitacao.REPROVADA,
+    StatusSolicitacao.INDEFERIDA,
     StatusSolicitacao.AGUARDANDO_DOCUMENTOS,
     StatusSolicitacao.PENDENTE,
     StatusSolicitacao.CANCELADA,
   ],
   [StatusSolicitacao.AGUARDANDO_DOCUMENTOS]: [
     StatusSolicitacao.EM_ANALISE,
-    StatusSolicitacao.REPROVADA, 
+    StatusSolicitacao.INDEFERIDA, 
     StatusSolicitacao.CANCELADA,
   ],
   [StatusSolicitacao.APROVADA]: [
@@ -38,7 +38,7 @@ export const TRANSICOES_PERMITIDAS: Partial<Record<StatusSolicitacao, StatusSoli
     StatusSolicitacao.EM_PROCESSAMENTO,
     StatusSolicitacao.CANCELADA,
   ],
-  [StatusSolicitacao.REPROVADA]: [
+  [StatusSolicitacao.INDEFERIDA]: [
     StatusSolicitacao.PENDENTE,
     StatusSolicitacao.EM_ANALISE,
     StatusSolicitacao.ARQUIVADA,

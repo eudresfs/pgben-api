@@ -37,8 +37,8 @@ async function verificarSeeds(): Promise<void> {
 
     // Verificar tipos de benefício
     const tiposBeneficios = await AppDataSource.query(
-      'SELECT COUNT(*) as total FROM tipo_beneficio WHERE ativo = $1',
-      [true]
+      'SELECT COUNT(*) as total FROM tipo_beneficio WHERE status = $1',
+      ['ativo']
     );
     console.log(`✓ Tipos de benefício ativos: ${tiposBeneficios[0].total}`);
 

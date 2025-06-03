@@ -22,10 +22,10 @@ export class StorageProviderFactory {
   private readonly defaultProvider: TipoStorageProvider;
 
   constructor(
-    private configService: ConfigService,
-    private s3StorageAdapter: S3StorageAdapter,
-    private localStorageAdapter: LocalStorageAdapter,
-    private minioService: MinioService,
+    private readonly configService: ConfigService,
+    private readonly s3StorageAdapter: S3StorageAdapter,
+    private readonly localStorageAdapter: LocalStorageAdapter,
+    private readonly minioService: MinioService,
   ) {
     this.defaultProvider = this.configService.get<TipoStorageProvider>(
       'STORAGE_PROVIDER',
@@ -69,6 +69,10 @@ export class StorageProviderFactory {
 
     switch (providerType) {
       case TipoStorageProvider.S3:
+        if (!this.s3StorageAdapter) {
+          this.logger.warn('S3 não está configurado. Usando armazenamento local como fallback.');
+          return this.localStorageAdapter;
+        }
         return this.s3StorageAdapter;
 
       case TipoStorageProvider.MINIO:
@@ -83,6 +87,10 @@ export class StorageProviderFactory {
         );
         // Evitar recursão infinita usando diretamente o provedor padrão
         if (this.defaultProvider === TipoStorageProvider.S3) {
+          if (!this.s3StorageAdapter) {
+            this.logger.warn('S3 não está configurado. Usando armazenamento local como fallback.');
+            return this.localStorageAdapter;
+          }
           return this.s3StorageAdapter;
         } else if (this.defaultProvider === TipoStorageProvider.MINIO) {
           return this.createMinioAdapter();

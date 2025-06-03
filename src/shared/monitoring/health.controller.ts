@@ -9,7 +9,8 @@ import {
 } from '@nestjs/terminus';
 import { Public } from '../../auth/decorators/public.decorator';
 import { ApiTags } from '@nestjs/swagger';
-import { HealthCheckService as AppHealthCheckService } from '../../shared/services/health-check.service';
+import { HealthCheckService as AppHealthCheckService } from '../services/health-check.service';
+// import { StorageHealthService } from '../../modules/documento/services/storage-health.service';
 
 /**
  * Controlador de Health Check
@@ -27,6 +28,7 @@ export class HealthController {
     private memory: MemoryHealthIndicator,
     private disk: DiskHealthIndicator,
     private appHealthCheck: AppHealthCheckService,
+    // private storageHealth: StorageHealthService,
   ) {
     console.log('🔥 DEBUG: HealthController inicializado');
     console.log('🔥 DEBUG: Caminho do controller:', '/health');
@@ -75,6 +77,20 @@ export class HealthController {
           }
         } as unknown as Record<string, any>; // Forçar tipo compatível com HealthIndicatorResult
       },
+      
+      // Verificar Storage (S3/MinIO) - Temporariamente desabilitado
+      // async () => {
+      //   const storageStatus = await this.storageHealth.checkHealth();
+      //   return {
+      //     storage: {
+      //       status: storageStatus.isHealthy ? 'up' : 'down',
+      //       provider: storageStatus.provider,
+      //       message: storageStatus.details.error || 'OK',
+      //       details: storageStatus.details,
+      //       lastChecked: storageStatus.timestamp,
+      //     }
+      //   } as unknown as Record<string, any>;
+      // },
     ]);
   }
 
@@ -122,6 +138,24 @@ export class HealthController {
     ]);
   }
   
+  /**
+   * Verifica apenas o storage (S3/MinIO) - Temporariamente desabilitado
+   */
+  // @Get('storage')
+  // @Public()
+  // async checkStorage() {
+  //   const storageStatus = await this.storageHealth.checkHealth();
+  //   return {
+  //     storage: {
+  //       status: storageStatus.isHealthy ? 'up' : 'down',
+  //       provider: storageStatus.provider,
+  //       message: storageStatus.details.error || 'OK',
+  //       details: storageStatus.details,
+  //       lastChecked: storageStatus.timestamp,
+  //     }
+  //   };
+  // }
+
   /**
    * Verifica a disponibilidade do Redis
    */

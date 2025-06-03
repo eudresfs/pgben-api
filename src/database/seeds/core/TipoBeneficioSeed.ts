@@ -42,7 +42,7 @@ export class TipoBeneficioSeed {
         duracao_padrao: 1,
         teto_renda_per_capita: 0, // Não especificado na documentação
         recorrente: false,
-        ativo: true,
+        status: 'ativo',
       },
       {
         nome: 'Benefício Funeral',
@@ -55,7 +55,7 @@ export class TipoBeneficioSeed {
         duracao_padrao: 1,
         teto_renda_per_capita: 0, // Não especificado na documentação
         recorrente: false,
-        ativo: true,
+        status: 'ativo',
       },
       {
         nome: 'Cesta Básica',
@@ -68,7 +68,7 @@ export class TipoBeneficioSeed {
         duracao_padrao: 6,
         teto_renda_per_capita: 0, // Não especificado na documentação
         recorrente: true,
-        ativo: true,
+        status: 'ativo',
       },
       {
         nome: 'Aluguel Social',
@@ -81,7 +81,7 @@ export class TipoBeneficioSeed {
         duracao_padrao: 6,
         teto_renda_per_capita: 0, // Não especificado na documentação
         recorrente: true,
-        ativo: true,
+        status: 'ativo',
       },
 
     ];
@@ -130,7 +130,7 @@ export class TipoBeneficioSeed {
           const valores: (string | number | boolean)[] = [];
           colunasExistentes.forEach(coluna => {
             if (coluna === statusColumnName) {
-              valores.push(tipo.ativo);
+              valores.push(tipo.status);
             } else if (coluna === 'nome') {
               valores.push(tipo.nome);
             } else if (coluna === 'codigo') {
@@ -221,7 +221,7 @@ export class TipoBeneficioSeed {
           
           // Adicionar a coluna de status (ativo ou status)
           updateColumns.push(`${statusColumnName} = $${paramIndex++}`);
-          updateValues.push(tipo.ativo);
+          updateValues.push(tipo.status);
           
           // Finalizar a query
           updateQuery += updateColumns.join(', ') + ` WHERE codigo = $1`;

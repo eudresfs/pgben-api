@@ -42,6 +42,16 @@ export class UnifiedLoggerService {
   }
 
   /**
+   * Cria uma nova instância do logger com contexto específico
+   * Compatível com outros loggers que usam child()
+   */
+  public child(options: { context: string }): UnifiedLoggerService {
+    const childLogger = new UnifiedLoggerService(this.winstonLogger);
+    childLogger.setContext(options.context);
+    return childLogger;
+  }
+
+  /**
    * Log de nível error
    * Compatível com AppLogger.error() e LoggingService.error()
    */

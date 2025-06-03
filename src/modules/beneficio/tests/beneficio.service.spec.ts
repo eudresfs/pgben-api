@@ -7,7 +7,7 @@ import {
 } from '../entities/tipo-beneficio.entity';
 import {
   RequisitoDocumento,
-  TipoDocumento,
+  TipoDocumentoEnum,
 } from '../entities/requisito-documento.entity';
 import { FluxoBeneficio } from '../entities/fluxo-beneficio.entity';
 import {
@@ -423,7 +423,7 @@ describe('BeneficioService', () => {
   describe('addRequisito', () => {
     it('deve adicionar um requisito documental a um benefício', async () => {
       const createRequisitoDto = {
-        tipo_documento: TipoDocumento.CPF,
+        tipo_documento: TipoDocumentoEnum.CPF,
         nome: 'CPF do Solicitante',
         descricao: 'Documento de identificação',
         obrigatorio: true,

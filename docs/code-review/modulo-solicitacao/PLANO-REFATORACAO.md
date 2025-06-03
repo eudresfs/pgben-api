@@ -18,7 +18,7 @@ Este documento apresenta um plano detalhado para refatoração do módulo de sol
 
 #### 1.1 Completar Matriz de Transições
 
-**Problema:** Algumas transições importantes estão ausentes, como a transição de AGUARDANDO_DOCUMENTOS para REPROVADA.
+**Problema:** Algumas transições importantes estão ausentes, como a transição de AGUARDANDO_DOCUMENTOS para INDEFERIDA.
 
 **Solução:** Refatorar o serviço `WorkflowSolicitacaoService` para incluir as transições ausentes.
 
@@ -44,10 +44,10 @@ private readonly transicoesPossiveis: Record<StatusSolicitacao, StatusSolicitaca
   ],
   [StatusSolicitacao.AGUARDANDO_DOCUMENTOS]: [
     StatusSolicitacao.EM_ANALISE,
-    StatusSolicitacao.REPROVADA,
+    StatusSolicitacao.INDEFERIDA,
     StatusSolicitacao.CANCELADA,
   ],
-  [StatusSolicitacao.REPROVADA]: [
+  [StatusSolicitacao.INDEFERIDA]: [
     StatusSolicitacao.CANCELADA,
   ],
   // ...

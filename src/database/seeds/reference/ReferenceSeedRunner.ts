@@ -1,7 +1,7 @@
 import { DataSource } from 'typeorm';
 import { CategoriaDocumentoSeed } from './CategoriaDocumentoSeed';
 import { ModeloDocumentoSeed } from './ModeloDocumentoSeed';
-import { RequisitoDocumentoSeed } from './RequisitoDocumentoSeed';
+import { RequisitoDocumentoBeneficioSeed } from './RequisitoDocumentoBeneficioSeed';
 
 /**
  * Executa todos os seeds de referência (reference) do sistema
@@ -19,7 +19,7 @@ export class ReferenceSeedRunner {
       // Executando os seeds na ordem correta
       await CategoriaDocumentoSeed.run(dataSource);
       await ModeloDocumentoSeed.run(dataSource);
-      await RequisitoDocumentoSeed.run(dataSource);
+      await RequisitoDocumentoBeneficioSeed.run(dataSource);
 
       console.log('======================================================');
       console.log('Seeds de referência (reference) executados com sucesso!');

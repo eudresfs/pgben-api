@@ -4,7 +4,7 @@ import { BeneficioService } from '../services/beneficio.service';
 import { NotFoundException, ConflictException } from '@nestjs/common';
 import { Periodicidade } from '../entities/tipo-beneficio.entity';
 import { TipoAprovador } from '../dto/configurar-fluxo.dto';
-import { TipoDocumento } from '../entities/requisito-documento.entity';
+import { TipoDocumentoEnum } from '@/enums';
 
 describe('BeneficioController', () => {
   let controller: BeneficioController;
@@ -246,7 +246,7 @@ describe('BeneficioController', () => {
   describe('addRequisito', () => {
     it('deve adicionar um requisito documental a um benefício', async () => {
       const createRequisitoDto = {
-        tipo_documento: TipoDocumento.CPF,
+        tipo_documento: TipoDocumentoEnum.CPF,
         nome: 'CPF do Solicitante',
         descricao: 'Documento de identificação',
         obrigatorio: true,

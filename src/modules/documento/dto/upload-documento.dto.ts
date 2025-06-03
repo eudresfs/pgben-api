@@ -9,7 +9,7 @@ import {
   Validate,
   MaxLength,
 } from 'class-validator';
-import { TipoDocumento } from '@/enums';
+import { TipoDocumentoEnum } from '@/enums';
 import { MimeTypeValidator } from '../validators/mime-type.validator';
 import { InputSanitizerValidator } from '../validators/input-sanitizer.validator';
 import { Transform } from 'class-transformer';
@@ -39,12 +39,12 @@ export class UploadDocumentoDto {
 
   @ApiProperty({
     description: 'Tipo do documento',
-    enum: TipoDocumento,
+    enum: TipoDocumentoEnum,
     example: 'COMPROVANTE_RESIDENCIA',
   })
   @IsNotEmpty({ message: 'Tipo do documento é obrigatório' })
-  @IsEnum(TipoDocumento, { message: 'Tipo de documento inválido' })
-  tipo: TipoDocumento;
+  @IsEnum(TipoDocumentoEnum, { message: 'Tipo de documento inválido' })
+  tipo: TipoDocumentoEnum;
 
   @ApiProperty({
     description: 'Arquivo do documento',

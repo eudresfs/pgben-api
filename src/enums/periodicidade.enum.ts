@@ -7,5 +7,5 @@ export enum PeriodicidadeEnum {
    TRIMESTRAL = 'trimestral',
    SEMESTRAL = 'semestral',
    UNICO = 'unico',
-   ANUAL = "anaul",
+   ANUAL = 'anual',
  }

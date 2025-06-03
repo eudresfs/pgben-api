@@ -93,13 +93,5 @@ export enum CategoriaDocumento {
   TEXTO = 'TEXTO',
 }
 
-/**
- * Tipos de documento suportados
- */
-export enum TipoDocumento {
-  RG = 'RG',
-  CPF = 'CPF',
-  COMPROVANTE_RESIDENCIA = 'COMPROVANTE_RESIDENCIA',
-  COMPROVANTE_RENDA = 'COMPROVANTE_RENDA',
-  OUTROS = 'OUTROS',
-}
+// Importar TipoDocumentoEnum do arquivo de enums centralizado
+export { TipoDocumentoEnum as TipoDocumento } from '@/enums';

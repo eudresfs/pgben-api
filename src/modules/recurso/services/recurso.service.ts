@@ -179,7 +179,7 @@ export class RecursoService {
       }
 
       // Verificar se a solicitação está reprovada
-      if (solicitacao.status !== StatusSolicitacao.REPROVADA) {
+      if (solicitacao.status !== StatusSolicitacao.INDEFERIDA) {
         throw new BadRequestException(
           'Só é possível criar recursos para solicitações reprovadas',
         );

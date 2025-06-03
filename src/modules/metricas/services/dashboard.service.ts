@@ -117,7 +117,7 @@ export class DashboardService {
       where: { status: StatusSolicitacao.APROVADA },
     });
     const solicitacoesReprovadas = await this.solicitacaoRepository.count({
-      where: { status: StatusSolicitacao.REPROVADA },
+      where: { status: StatusSolicitacao.INDEFERIDA },
     });
     const solicitacoesLiberadas = await this.solicitacaoRepository.count({
       where: { status: StatusSolicitacao.LIBERADA },
@@ -201,7 +201,7 @@ export class DashboardService {
     const tempoMedioAnaliseResult = await this.solicitacaoRepository
       .createQueryBuilder('solicitacao')
       .select('AVG(EXTRACT(EPOCH FROM (solicitacao.data_aprovacao - solicitacao.data_abertura)) / 86400)', 'media')
-      .where('solicitacao.status IN (:...status)', { status: [StatusSolicitacao.APROVADA, StatusSolicitacao.REPROVADA] })
+      .where('solicitacao.status IN (:...status)', { status: [StatusSolicitacao.APROVADA, StatusSolicitacao.INDEFERIDA] })
       .andWhere('solicitacao.data_aprovacao IS NOT NULL')
       .getRawOne();
 
@@ -211,7 +211,7 @@ export class DashboardService {
     const totalAnalisadas = await this.solicitacaoRepository.count({
       where: [
         { status: StatusSolicitacao.APROVADA },
-        { status: StatusSolicitacao.REPROVADA },
+        { status: StatusSolicitacao.INDEFERIDA },
       ],
     });
 
@@ -223,7 +223,7 @@ export class DashboardService {
 
     // Taxa de recurso
     const totalReprovadas = await this.solicitacaoRepository.count({
-      where: { status: StatusSolicitacao.REPROVADA },
+      where: { status: StatusSolicitacao.INDEFERIDA },
     });
 
     const totalRecursos = await this.recursoRepository.count();

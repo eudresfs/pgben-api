@@ -14,7 +14,7 @@ stateDiagram-v2
     
     EM_ANALISE --> AGUARDANDO_DOCUMENTOS: solicitarDocumentos()
     EM_ANALISE --> APROVADA: aprovarSolicitacao()
-    EM_ANALISE --> REPROVADA: rejeitarSolicitacao()
+    EM_ANALISE --> INDEFERIDA: rejeitarSolicitacao()
     EM_ANALISE --> CANCELADA: cancelarSolicitacao()
     
     AGUARDANDO_DOCUMENTOS --> EM_ANALISE: receberDocumentos()
@@ -31,7 +31,7 @@ stateDiagram-v2
     
     CONCLUIDA --> ARQUIVADA: arquivarSolicitacao()
     
-    REPROVADA --> [*]
+    INDEFERIDA --> [*]
     CANCELADA --> [*]
     ARQUIVADA --> [*]
 ```
@@ -172,13 +172,13 @@ graph TD
 |--------------|-------------------|
 | RASCUNHO | PENDENTE, CANCELADA |
 | PENDENTE | EM_ANALISE, CANCELADA |
-| EM_ANALISE | AGUARDANDO_DOCUMENTOS, APROVADA, REPROVADA, CANCELADA |
+| EM_ANALISE | AGUARDANDO_DOCUMENTOS, APROVADA, INDEFERIDA, CANCELADA |
 | AGUARDANDO_DOCUMENTOS | EM_ANALISE, CANCELADA |
 | APROVADA | LIBERADA, CANCELADA |
 | LIBERADA | EM_PROCESSAMENTO, CANCELADA |
 | EM_PROCESSAMENTO | CONCLUIDA, CANCELADA |
 | CONCLUIDA | ARQUIVADA |
-| REPROVADA | - |
+| INDEFERIDA | - |
 | CANCELADA | - |
 | ARQUIVADA | - |
 

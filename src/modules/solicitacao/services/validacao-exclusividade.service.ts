@@ -38,7 +38,7 @@ export class ValidacaoExclusividadeService {
         membro: JSON.stringify([{ cidadao_id: cidadaoId }]),
       })
       .andWhere(`solicitacao.status NOT IN (:...statusInativos)`, {
-        statusInativos: [StatusSolicitacao.CANCELADA, StatusSolicitacao.REPROVADA, StatusSolicitacao.ARQUIVADA],
+        statusInativos: [StatusSolicitacao.CANCELADA, StatusSolicitacao.INDEFERIDA, StatusSolicitacao.ARQUIVADA],
       })
       .getCount();
 
@@ -68,7 +68,7 @@ export class ValidacaoExclusividadeService {
       .createQueryBuilder('solicitacao')
       .where('solicitacao.beneficiario_id = :cidadaoId', { cidadaoId })
       .andWhere(`solicitacao.status NOT IN (:...statusInativos)`, {
-        statusInativos: [StatusSolicitacao.CANCELADA, StatusSolicitacao.REPROVADA, StatusSolicitacao.ARQUIVADA],
+        statusInativos: [StatusSolicitacao.CANCELADA, StatusSolicitacao.INDEFERIDA, StatusSolicitacao.ARQUIVADA],
       })
       .getCount();
 

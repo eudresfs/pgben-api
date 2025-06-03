@@ -13,6 +13,7 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { PeriodicidadeEnum } from '../../../enums/periodicidade.enum';
+import { Status } from '@/enums';
 
 /**
  * DTO para critérios de elegibilidade
@@ -58,12 +59,21 @@ export class CriteriosElegibilidadeDto {
 export class CreateTipoBeneficioDto {
   @ApiProperty({
     description: 'Nome do tipo de benefício',
-    example: 'Auxílio Moradia',
+    example: 'Benefício Natalidade',
   })
   @IsNotEmpty({ message: 'Nome é obrigatório' })
   @IsString({ message: 'Nome deve ser um texto' })
   @MaxLength(100, { message: 'Nome não pode ter mais de 100 caracteres' })
   nome: string;
+
+  @ApiProperty({
+    description: 'Código do tipo de benefício',
+    example: 'BENEFICIO_NATALIDADE',
+  })
+  @IsNotEmpty({ message: 'Código é obrigatório' })
+  @IsString({ message: 'Código deve ser um texto' })
+  @MaxLength(25, { message: 'Código não pode ter mais de 25 caracteres' })
+  codigo: string;
 
   @ApiProperty({ description: 'Descrição detalhada do benefício' })
   @IsNotEmpty({ message: 'Descrição é obrigatória' })
@@ -85,10 +95,15 @@ export class CreateTipoBeneficioDto {
   @Min(0, { message: 'Valor não pode ser negativo' })
   valor: number;
 
-  @ApiPropertyOptional({ description: 'Status do benefício', default: true })
-  @IsOptional()
-  @IsBoolean({ message: 'Ativo deve ser um booleano' })
-  ativo?: boolean;
+  @ApiProperty({
+    description: 'Status do benefício',
+    enum: Status,
+    example: Status.ATIVO,
+    default: 'ativo'
+  })
+  @IsNotEmpty({ message: 'Status é obrigatória' })
+  @IsEnum(Status, { message: 'Status inválida' })
+  status?: Status;
 
   @ApiPropertyOptional({
     description: 'Critérios de elegibilidade para o benefício',
@@ -98,4 +113,5 @@ export class CreateTipoBeneficioDto {
   @ValidateNested()
   @Type(() => CriteriosElegibilidadeDto)
   criterios_elegibilidade?: CriteriosElegibilidadeDto;
+
 }

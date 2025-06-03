@@ -12,7 +12,7 @@ import { FluxoBeneficio } from '../../../entities/fluxo-beneficio.entity';
 import { CreateTipoBeneficioDto } from '../dto/create-tipo-beneficio.dto';
 import { UpdateTipoBeneficioDto } from '../dto/update-tipo-beneficio.dto';
 import { CreateRequisitoDocumentoDto } from '../dto/create-requisito-documento.dto';
-import { TipoDocumento } from '@/enums';
+import { Status, TipoDocumentoEnum } from '@/enums';
 import { TipoEtapa } from '../../../entities/fluxo-beneficio.entity';
 import { ConfigurarFluxoDto } from '../dto/configurar-fluxo.dto';
 import { Role as PerfilResponsavel } from '../../../enums/role.enum';
@@ -150,6 +150,20 @@ export class BeneficioService {
 
     // Normalizar campos de enum antes de criar
     const normalizedData = normalizeEnumFields(createTipoBeneficioDto);
+
+    // Gera um código se não for fornecido
+    if (!normalizedData.codigo) {
+      normalizedData.codigo = normalizedData.nome
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '') // Remove accents
+        .toUpperCase()
+        .replace(/\s+/g, '_'); // Replace spaces with underscore
+    }
+
+    // Define o status como ativo por padrão
+    if (!normalizedData.status) {
+      normalizedData.status = Status.ATIVO;
+    }
     
     // Criar novo tipo de benefício
     const tipoBeneficio = this.tipoBeneficioRepository.create(

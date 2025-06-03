@@ -30,7 +30,9 @@ import {
 } from '@nestjs/swagger';
 import { DocumentoService } from '../services/documento.service';
 import { UploadDocumentoDto } from '../dto/upload-documento.dto';
+import { DocumentoResponseDto } from '../dto/documento-response.dto';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
+import { plainToInstance } from 'class-transformer';
 import { PermissionGuard } from '../../../auth/guards/permission.guard';
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
 import { GetUser } from '../../../auth/decorators/get-user.decorator';
@@ -199,6 +201,7 @@ export class DocumentoController {
   @ApiResponse({
     status: 201,
     description: 'Documento enviado com sucesso',
+    type: DocumentoResponseDto,
   })
   @ApiResponse({ status: 400, description: 'Dados inválidos' })
   async upload(
@@ -210,7 +213,16 @@ export class DocumentoController {
       throw new BadRequestException('Arquivo é obrigatório');
     }
 
-    return this.documentoService.upload(arquivo, uploadDto, usuario.id);
+    const resultado = await this.documentoService.upload(arquivo, uploadDto, usuario.id);
+    
+    // Transformar o resultado para excluir dados sensíveis
+    return {
+      data: plainToInstance(DocumentoResponseDto, resultado, {
+        excludeExtraneousValues: true,
+      }),
+      meta: null,
+      message: null,
+    };
   }
 
   /**

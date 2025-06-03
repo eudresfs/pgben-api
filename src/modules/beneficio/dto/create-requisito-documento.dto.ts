@@ -7,7 +7,7 @@ import {
   MaxLength,
   IsEnum,
 } from 'class-validator';
-import { TipoDocumento } from '@/enums';
+import { TipoDocumentoEnum } from '@/enums';
 
 /**
  * DTO para criação de requisito documental
@@ -17,12 +17,12 @@ import { TipoDocumento } from '@/enums';
 export class CreateRequisitoDocumentoDto {
   @ApiProperty({
     description: 'Tipo do documento requerido',
-    enum: TipoDocumento,
-    example: TipoDocumento.COMPROVANTE_RESIDENCIA,
+    enum: TipoDocumentoEnum,
+    example: TipoDocumentoEnum.COMPROVANTE_RESIDENCIA,
   })
   @IsNotEmpty({ message: 'Tipo de documento é obrigatório' })
-  @IsEnum(TipoDocumento, { message: 'Tipo de documento inválido' })
-  tipo_documento: TipoDocumento;
+  @IsEnum(TipoDocumentoEnum, { message: 'Tipo de documento inválido' })
+  tipo_documento: TipoDocumentoEnum;
 
   @ApiProperty({
     description: 'Nome personalizado do documento',

@@ -11,7 +11,7 @@ import {
 } from 'typeorm';
 import { IsNotEmpty } from 'class-validator';
 import { TipoBeneficio } from './tipo-beneficio.entity';
-import { TipoDocumento } from '../enums';
+import { TipoDocumentoEnum } from '../enums';
 
 @Entity('requisito_documento')
 @Index(['tipo_beneficio_id', 'tipo_documento'], { unique: true })
@@ -32,11 +32,11 @@ export class RequisitoDocumento {
 
   @Column({
     type: 'enum',
-    enum: TipoDocumento,
+    enum: TipoDocumentoEnum,
     enumName: 'tipo_documento_enum',
   })
   @IsNotEmpty({ message: 'Tipo de documento é obrigatório' })
-  tipo_documento: TipoDocumento;
+  tipo_documento: TipoDocumentoEnum;
 
   @Column({ type: 'varchar', length: 255 })
   @IsNotEmpty({ message: 'Nome do documento é obrigatório' })
@@ -129,38 +129,38 @@ export class RequisitoDocumento {
    * Verifica se é documento de identificação
    */
   isDocumentoIdentificacao(): boolean {
-    return this.tipo_documento === TipoDocumento.RG || 
-           this.tipo_documento === TipoDocumento.CPF;
+    return this.tipo_documento === TipoDocumentoEnum.RG ||
+           this.tipo_documento === TipoDocumentoEnum.CPF;
   }
 
   /**
    * Verifica se é documento de comprovação
    */
   isDocumentoComprovacao(): boolean {
-    return this.tipo_documento === TipoDocumento.COMPROVANTE_RESIDENCIA ||
-           this.tipo_documento === TipoDocumento.COMPROVANTE_RENDA;
+    return this.tipo_documento === TipoDocumentoEnum.COMPROVANTE_RESIDENCIA ||
+           this.tipo_documento === TipoDocumentoEnum.COMPROVANTE_RENDA;
   }
 
   /**
    * Verifica se é certidão
    */
   isCertidao(): boolean {
-    return this.tipo_documento === TipoDocumento.CERTIDAO_NASCIMENTO;
+    return this.tipo_documento === TipoDocumentoEnum.CERTIDAO_NASCIMENTO;
   }
 
   /**
    * Verifica se é documento médico
    */
   isDocumentoMedico(): boolean {
-    return this.tipo_documento === TipoDocumento.DECLARACAO_MEDICA;
+    return this.tipo_documento === TipoDocumentoEnum.DECLARACAO_MEDICA;
   }
 
   /**
    * Verifica se é documento de moradia
    */
   isDocumentoMoradia(): boolean {
-    return this.tipo_documento === TipoDocumento.CONTRATO_ALUGUEL ||
-           this.tipo_documento === TipoDocumento.COMPROVANTE_RESIDENCIA;
+    return this.tipo_documento === TipoDocumentoEnum.CONTRATO_ALUGUEL ||
+           this.tipo_documento === TipoDocumentoEnum.COMPROVANTE_RESIDENCIA;
   }
 
   /**
@@ -168,14 +168,96 @@ export class RequisitoDocumento {
    */
   getDescricaoTipoDocumento(): string {
     const descricoes = {
-      [TipoDocumento.RG]: 'Registro Geral (RG)',
-      [TipoDocumento.CPF]: 'Cadastro de Pessoa Física (CPF)',
-      [TipoDocumento.COMPROVANTE_RESIDENCIA]: 'Comprovante de Residência',
-      [TipoDocumento.COMPROVANTE_RENDA]: 'Comprovante de Renda',
-      [TipoDocumento.CERTIDAO_NASCIMENTO]: 'Certidão de Nascimento',
-      [TipoDocumento.DECLARACAO_MEDICA]: 'Declaração Médica',
-      [TipoDocumento.CONTRATO_ALUGUEL]: 'Contrato de Aluguel',
-      [TipoDocumento.OUTRO]: 'Outro Documento',
+      // Documentos de identificação
+      [TipoDocumentoEnum.CPF]: 'Cadastro de Pessoa Física (CPF)',
+      [TipoDocumentoEnum.RG]: 'Registro Geral (RG)',
+      [TipoDocumentoEnum.CNH]: 'Carteira Nacional de Habilitação (CNH)',
+      [TipoDocumentoEnum.PASSAPORTE]: 'Passaporte',
+      
+      // Certidões
+      [TipoDocumentoEnum.CERTIDAO_NASCIMENTO]: 'Certidão de Nascimento',
+      [TipoDocumentoEnum.CERTIDAO_CASAMENTO]: 'Certidão de Casamento',
+      [TipoDocumentoEnum.CERTIDAO_OBITO]: 'Certidão de Óbito',
+      
+      // Comprovantes básicos
+      [TipoDocumentoEnum.COMPROVANTE_RESIDENCIA]: 'Comprovante de Residência',
+      [TipoDocumentoEnum.COMPROVANTE_RENDA]: 'Comprovante de Renda',
+      [TipoDocumentoEnum.COMPROVANTE_ESCOLARIDADE]: 'Comprovante de Escolaridade',
+      
+      // Documentos médicos e de saúde
+      [TipoDocumentoEnum.DECLARACAO_MEDICA]: 'Declaração Médica',
+      [TipoDocumentoEnum.CARTAO_VACINA]: 'Cartão de Vacinação',
+      [TipoDocumentoEnum.CARTAO_SUS]: 'Cartão do SUS',
+      [TipoDocumentoEnum.LAUDO_MEDICO]: 'Laudo Médico',
+      [TipoDocumentoEnum.ATESTADO_MEDICO]: 'Atestado Médico',
+      [TipoDocumentoEnum.EXAME_PRE_NATAL]: 'Exame Pré-Natal',
+      
+      // Documentos habitacionais
+      [TipoDocumentoEnum.CONTRATO_ALUGUEL]: 'Contrato de Aluguel',
+      [TipoDocumentoEnum.ESCRITURA_IMOVEL]: 'Escritura do Imóvel',
+      [TipoDocumentoEnum.IPTU]: 'IPTU',
+      [TipoDocumentoEnum.CONTA_AGUA]: 'Conta de Água',
+      [TipoDocumentoEnum.CONTA_LUZ]: 'Conta de Luz',
+      [TipoDocumentoEnum.CONTA_TELEFONE]: 'Conta de Telefone',
+      
+      // Documentos trabalhistas e previdenciários
+      [TipoDocumentoEnum.CARTEIRA_TRABALHO]: 'Carteira de Trabalho',
+      [TipoDocumentoEnum.COMPROVANTE_DESEMPREGO]: 'Comprovante de Desemprego',
+      [TipoDocumentoEnum.EXTRATO_FGTS]: 'Extrato do FGTS',
+      [TipoDocumentoEnum.COMPROVANTE_APOSENTADORIA]: 'Comprovante de Aposentadoria',
+      [TipoDocumentoEnum.COMPROVANTE_PENSAO]: 'Comprovante de Pensão',
+      [TipoDocumentoEnum.COMPROVANTE_BENEFICIO_INSS]: 'Comprovante de Benefício INSS',
+      
+      // Documentos bancários
+      [TipoDocumentoEnum.EXTRATO_BANCARIO]: 'Extrato Bancário',
+      [TipoDocumentoEnum.COMPROVANTE_PIX]: 'Comprovante PIX',
+      [TipoDocumentoEnum.DADOS_BANCARIOS]: 'Dados Bancários',
+      
+      // Documentos familiares e sociais
+      [TipoDocumentoEnum.DECLARACAO_COMPOSICAO_FAMILIAR]: 'Declaração de Composição Familiar',
+      [TipoDocumentoEnum.DECLARACAO_UNIAO_ESTAVEL]: 'Declaração de União Estável',
+      [TipoDocumentoEnum.GUARDA_MENOR]: 'Termo de Guarda de Menor',
+      [TipoDocumentoEnum.TUTELA]: 'Termo de Tutela',
+      
+      // Documentos específicos para benefícios
+      [TipoDocumentoEnum.BOLETIM_OCORRENCIA]: 'Boletim de Ocorrência',
+      [TipoDocumentoEnum.MEDIDA_PROTETIVA]: 'Medida Protetiva',
+      [TipoDocumentoEnum.TERMO_ACOLHIMENTO]: 'Termo de Acolhimento',
+      [TipoDocumentoEnum.RELATORIO_SOCIAL]: 'Relatório Social',
+      [TipoDocumentoEnum.PARECER_TECNICO]: 'Parecer Técnico',
+      
+      // Documentos de programas sociais
+      [TipoDocumentoEnum.CARTAO_CADUNICO]: 'Cartão CadÚnico',
+      [TipoDocumentoEnum.FOLHA_RESUMO_CADUNICO]: 'Folha Resumo CadÚnico',
+      [TipoDocumentoEnum.COMPROVANTE_BOLSA_FAMILIA]: 'Comprovante Bolsa Família',
+      [TipoDocumentoEnum.COMPROVANTE_BPC]: 'Comprovante BPC',
+      
+      // Documentos educacionais
+      [TipoDocumentoEnum.DECLARACAO_ESCOLAR]: 'Declaração Escolar',
+      [TipoDocumentoEnum.HISTORICO_ESCOLAR]: 'Histórico Escolar',
+      [TipoDocumentoEnum.MATRICULA_ESCOLAR]: 'Comprovante de Matrícula Escolar',
+      
+      // Documentos específicos para mortalidade
+      [TipoDocumentoEnum.DECLARACAO_OBITO]: 'Declaração de Óbito',
+      [TipoDocumentoEnum.AUTORIZACAO_SEPULTAMENTO]: 'Autorização de Sepultamento',
+      [TipoDocumentoEnum.COMPROVANTE_PARENTESCO]: 'Comprovante de Parentesco',
+      
+      // Documentos específicos para natalidade
+      [TipoDocumentoEnum.CARTAO_PRE_NATAL]: 'Cartão Pré-Natal',
+      [TipoDocumentoEnum.DECLARACAO_NASCIDO_VIVO]: 'Declaração de Nascido Vivo',
+      [TipoDocumentoEnum.COMPROVANTE_GESTACAO]: 'Comprovante de Gestação',
+      
+      // Documentos específicos para passagens
+      [TipoDocumentoEnum.COMPROVANTE_VIAGEM]: 'Comprovante de Viagem',
+      [TipoDocumentoEnum.AUTORIZACAO_VIAGEM]: 'Autorização de Viagem',
+      [TipoDocumentoEnum.BILHETE_PASSAGEM]: 'Bilhete de Passagem',
+      
+      // Documentos diversos
+      [TipoDocumentoEnum.PROCURACAO]: 'Procuração',
+      [TipoDocumentoEnum.DECLARACAO_HIPOSSUFICIENCIA]: 'Declaração de Hipossuficiência',
+      [TipoDocumentoEnum.TERMO_RESPONSABILIDADE]: 'Termo de Responsabilidade',
+      [TipoDocumentoEnum.FOTO_3X4]: 'Foto 3x4',
+      [TipoDocumentoEnum.OUTRO]: 'Outro Documento',
     };
     return descricoes[this.tipo_documento] || 'Documento não identificado';
   }
@@ -334,7 +416,7 @@ export class RequisitoDocumento {
     if (!this.tipo_beneficio_id) return false;
     
     // Verifica se tem tipo de documento válido
-    if (!Object.values(TipoDocumento).includes(this.tipo_documento)) return false;
+    if (!Object.values(TipoDocumentoEnum).includes(this.tipo_documento)) return false;
     
     // Verifica validações se existirem
     if (this.temValidacoes()) {

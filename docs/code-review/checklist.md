@@ -24,7 +24,7 @@
 - [ ] **C3.2** - Estado ABERTA para solicitações completas não analisadas
 - [ ] **C3.3** - Estado EM_ANALISE para solicitações em avaliação técnica
 - [ ] **C3.4** - Estado APROVADA para solicitações com parecer favorável
-- [ ] **C3.5** - Estado REPROVADA para solicitações com parecer desfavorável
+- [ ] **C3.5** - Estado INDEFERIDA para solicitações com parecer desfavorável
 - [ ] **C3.6** - Estado CANCELADA para solicitações interrompidas
 - [ ] **C3.7** - Estado CONCLUIDA para benefícios finalizados
 - [ ] **C3.8** - Validação de transições de estado permitidas

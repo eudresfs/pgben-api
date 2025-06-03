@@ -211,7 +211,7 @@ export class WorkflowSolicitacaoController {
   })
   @ApiOperation({
     summary: 'Rejeita uma solicitação',
-    description: 'Altera o estado de uma solicitação de EM_ANALISE para REPROVADA.',
+    description: 'Altera o estado de uma solicitação de EM_ANALISE para INDEFERIDA.',
   })
   @ApiResponse({
     status: 200,

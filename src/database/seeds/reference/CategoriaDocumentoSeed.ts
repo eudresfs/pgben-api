@@ -7,7 +7,7 @@ import { DataSource } from 'typeorm';
  */
 export class CategoriaDocumentoSeed {
   public static async run(dataSource: DataSource): Promise<void> {
-    console.log('Iniciando seed de categorias de documentos de referência');
+    console.log('🌱 Iniciando seed de categorias de documentos de referência');
 
     // Lista de categorias de documentos de referência
     const categoriasDocumentos = [
@@ -61,45 +61,75 @@ export class CategoriaDocumentoSeed {
       },
     ];
 
+    let categoriasProcessadas = 0;
+    let categoriasCriadas = 0;
+    let categoriasAtualizadas = 0;
+    let erros = 0;
+
+    console.log(`📊 Total de categorias para processar: ${categoriasDocumentos.length}`);
+
     // Inserção das categorias de documentos no banco de dados
-/*     for (const categoria of categoriasDocumentos) {
-      const categoriaExistente = await dataSource.query(
-        `SELECT id FROM categoria_documento WHERE nome = $1`,
-        [categoria.nome],
-      );
+    for (const categoria of categoriasDocumentos) {
+      try {
+        // Validação básica dos dados
+        if (!categoria.nome || !categoria.descricao) {
+          console.error(`❌ Erro: Categoria com dados inválidos - Nome: ${categoria.nome}, Descrição: ${categoria.descricao}`);
+          erros++;
+          continue;
+        }
 
-      if (categoriaExistente.length === 0) {
-        await dataSource.query(
-          `INSERT INTO categoria_documento (nome, descricao, ordem, ativo)
-           VALUES ($1, $2, $3, $4)`,
-          [
-            categoria.nome,
-            categoria.descricao,
-            categoria.ordem,
-            categoria.ativo,
-          ],
+        const categoriaExistente = await dataSource.query(
+          `SELECT id FROM categoria_documento WHERE nome = $1`,
+          [categoria.nome],
         );
-        console.log(
-          `Categoria de documento ${categoria.nome} criada com sucesso`,
-        );
-      } else {
-        console.log(
-          `Categoria de documento ${categoria.nome} já existe, atualizando...`,
-        );
-        await dataSource.query(
-          `UPDATE categoria_documento 
-           SET descricao = $2, ordem = $3, ativo = $4
-           WHERE nome = $1`,
-          [
-            categoria.nome,
-            categoria.descricao,
-            categoria.ordem,
-            categoria.ativo,
-          ],
-        );
+
+        if (categoriaExistente.length === 0) {
+          await dataSource.query(
+            `INSERT INTO categoria_documento (nome, descricao, ordem, ativo)
+             VALUES ($1, $2, $3, $4)`,
+            [
+              categoria.nome,
+              categoria.descricao,
+              categoria.ordem,
+              categoria.ativo,
+            ],
+          );
+          console.log(`✅ Categoria '${categoria.nome}' criada com sucesso`);
+          categoriasCriadas++;
+        } else {
+          await dataSource.query(
+            `UPDATE categoria_documento 
+             SET descricao = $2, ordem = $3, ativo = $4
+             WHERE nome = $1`,
+            [
+              categoria.nome,
+              categoria.descricao,
+              categoria.ordem,
+              categoria.ativo,
+            ],
+          );
+          console.log(`🔄 Categoria '${categoria.nome}' atualizada com sucesso`);
+          categoriasAtualizadas++;
+        }
+        
+        categoriasProcessadas++;
+      } catch (error) {
+        console.error(`❌ Erro ao processar categoria '${categoria.nome}':`, error.message);
+        erros++;
       }
-    } */
+    }
 
-    console.log('Seed de categorias de documentos de referência concluído');
+    // Relatório final
+    console.log('📈 Relatório de execução:');
+    console.log(`   • Categorias processadas: ${categoriasProcessadas}/${categoriasDocumentos.length}`);
+    console.log(`   • Categorias criadas: ${categoriasCriadas}`);
+    console.log(`   • Categorias atualizadas: ${categoriasAtualizadas}`);
+    console.log(`   • Erros encontrados: ${erros}`);
+    
+    if (erros > 0) {
+      console.warn(`⚠️  Seed concluído com ${erros} erro(s)`);
+    } else {
+      console.log('✅ Seed de categorias de documentos de referência concluído com sucesso!');
+    }
   }
 }

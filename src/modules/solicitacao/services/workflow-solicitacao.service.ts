@@ -382,7 +382,7 @@ export class WorkflowSolicitacaoService {
   }
 
   /**
-   * Rejeita uma solicitação, alterando seu estado para REPROVADA
+   * Rejeita uma solicitação, alterando seu estado para INDEFERIDA
    * @param solicitacaoId ID da solicitação
    * @param usuarioId ID do usuário que está rejeitando a solicitação
    * @param motivo Motivo da rejeição
@@ -395,7 +395,7 @@ export class WorkflowSolicitacaoService {
   ): Promise<ResultadoTransicaoEstado> {
     return this.realizarTransicao(
       solicitacaoId,
-      StatusSolicitacao.REPROVADA,
+      StatusSolicitacao.INDEFERIDA,
       usuarioId,
       motivo || 'Solicitação reprovada',
     );

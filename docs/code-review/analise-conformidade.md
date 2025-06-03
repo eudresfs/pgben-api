@@ -123,7 +123,7 @@ A análise técnica da API do Sistema de Gestão de Benefícios Eventuais (SOBE)
 **Observações:**
 - Conforme a Especificação Técnica (seção 7.1), o fluxo operacional padrão inclui 13 etapas, desde a solicitação até o encerramento, que devem ser refletidas no workflow de estados.
 - O documento especifica que o sistema deve suportar o "Cadastro direto no sistema (sem ficha física)", o que exige um estado RASCUNHO para solicitações incompletas.
-- A Especificação Técnica também menciona a necessidade de "Elaboração de memorando" e "Parecer técnico (deferimento/indeferimento)", que correspondem aos estados ABERTA e APROVADA/REPROVADA.
+- A Especificação Técnica também menciona a necessidade de "Elaboração de memorando" e "Parecer técnico (deferimento/indeferimento)", que correspondem aos estados ABERTA e APROVADA/INDEFERIDA.
 - O enum `StatusSolicitacaoBeneficio` implementa 7 estados, mas não são os exatos estados exigidos pela especificação.
 - Faltam os estados RASCUNHO, ABERTA e LIBERADA.
 - Há problemas de nomenclatura (falta de acentuação em ANÁLISE e CONCLUÍDA).

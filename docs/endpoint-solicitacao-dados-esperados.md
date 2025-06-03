@@ -177,7 +177,7 @@ Este documento detalha os dados esperados pelo endpoint `POST /api/v1/solicitaca
 - `EM_ANALISE`
 - `AGUARDANDO_DOCUMENTOS`
 - `APROVADA`
-- `REPROVADA`
+- `INDEFERIDA`
 - `LIBERADA`
 - `CANCELADA`
 - `EM_PROCESSAMENTO`
@@ -201,7 +201,7 @@ Este documento detalha os dados esperados pelo endpoint `POST /api/v1/solicitaca
 
 ### Status Considerados Inativos
 - `CANCELADA`
-- `REPROVADA`
+- `INDEFERIDA`
 - `ARQUIVADA`
 - `CONCLUIDA`
 

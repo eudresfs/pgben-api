@@ -99,7 +99,7 @@ export class EventosService {
         });
         break;
       
-      case StatusSolicitacao.REPROVADA:
+      case StatusSolicitacao.INDEFERIDA:
         this.emitirEvento({
           type: SolicitacaoEventType.REJECTED,
           solicitacaoId: solicitacao.id,

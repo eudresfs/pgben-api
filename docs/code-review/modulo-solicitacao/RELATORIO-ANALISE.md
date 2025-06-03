@@ -53,12 +53,12 @@
 ## ANÁLISE FUNCIONAL
 
 ### Completude dos Estados e Transições
-- **Conforme**: O módulo implementa todos os estados obrigatórios (RASCUNHO, PENDENTE, EM_ANALISE, AGUARDANDO_DOCUMENTOS, APROVADA, REPROVADA, LIBERADA, CANCELADA, EM_PROCESSAMENTO, CONCLUIDA, ARQUIVADA).
+- **Conforme**: O módulo implementa todos os estados obrigatórios (RASCUNHO, PENDENTE, EM_ANALISE, AGUARDANDO_DOCUMENTOS, APROVADA, INDEFERIDA, LIBERADA, CANCELADA, EM_PROCESSAMENTO, CONCLUIDA, ARQUIVADA).
 - **Parcialmente conforme**: As transições entre estados estão definidas, mas algumas transições importantes estão ausentes:
-  - Não há transição direta de AGUARDANDO_DOCUMENTOS para REPROVADA.
-  - Não há transição de REPROVADA para CANCELADA.
+  - Não há transição direta de AGUARDANDO_DOCUMENTOS para INDEFERIDA.
+  - Não há transição de INDEFERIDA para CANCELADA.
 - **Conforme**: O estado inicial é sempre RASCUNHO.
-- **Não conforme**: CANCELADA não pode ser atingida de todos os estados (não é possível cancelar a partir de REPROVADA, CONCLUIDA ou ARQUIVADA).
+- **Não conforme**: CANCELADA não pode ser atingida de todos os estados (não é possível cancelar a partir de INDEFERIDA, CONCLUIDA ou ARQUIVADA).
 
 ### Integridade da Gestão de Pendências
 - **Parcialmente conforme**: O módulo implementa a gestão de pendências, mas com algumas limitações:
@@ -80,7 +80,7 @@
 ## GAPS CRÍTICOS IDENTIFICADOS
 
 1. **Ausência de validação de resolução de pendências**: Não há mecanismo para garantir que todas as pendências sejam resolvidas antes de aprovar uma solicitação.
-2. **Transições de estado incompletas**: Algumas transições importantes estão ausentes, como a transição de AGUARDANDO_DOCUMENTOS para REPROVADA.
+2. **Transições de estado incompletas**: Algumas transições importantes estão ausentes, como a transição de AGUARDANDO_DOCUMENTOS para INDEFERIDA.
 3. **Hardcoding de matriz de transições**: A matriz de transições está hardcoded no serviço, dificultando a extensão.
 4. **Ausência de tratamento especial para determinações judiciais**: Apesar de haver flag para determinações judiciais, não há tratamento especial para priorização no fluxo.
 5. **Ausência de controle de prazos**: Não há implementação clara de controle de prazos para cada etapa do fluxo.
@@ -91,7 +91,7 @@
 ## MELHORIAS OBRIGATÓRIAS
 
 1. **Implementar validação de resolução de pendências**: Adicionar mecanismo para garantir que todas as pendências sejam resolvidas antes de aprovar uma solicitação.
-2. **Completar matriz de transições**: Adicionar transições ausentes, como AGUARDANDO_DOCUMENTOS para REPROVADA e REPROVADA para CANCELADA.
+2. **Completar matriz de transições**: Adicionar transições ausentes, como AGUARDANDO_DOCUMENTOS para INDEFERIDA e INDEFERIDA para CANCELADA.
 3. **Refatorar matriz de transições**: Extrair a matriz de transições para uma configuração externa ou um serviço dedicado.
 4. **Implementar tratamento especial para determinações judiciais**: Adicionar mecanismo para priorização de solicitações com determinações judiciais.
 5. **Implementar controle de prazos**: Adicionar campos e lógica para controle de prazos para cada etapa do fluxo.

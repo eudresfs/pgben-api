@@ -171,7 +171,7 @@ export class PrazoSolicitacaoService {
         
         // Para outros estados, os prazos anteriores são mantidos ou podem ser limpos
         case StatusSolicitacao.APROVADA:
-        case StatusSolicitacao.REPROVADA:
+        case StatusSolicitacao.INDEFERIDA:
         case StatusSolicitacao.CANCELADA:
         case StatusSolicitacao.CONCLUIDA:
         case StatusSolicitacao.ARQUIVADA:

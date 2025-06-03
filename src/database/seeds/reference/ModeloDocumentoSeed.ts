@@ -8,7 +8,7 @@ import { DataSource } from 'typeorm';
  */
 export class ModeloDocumentoSeed {
   public static async run(dataSource: DataSource): Promise<void> {
-    console.log('Iniciando seed de modelos de documentos de referência');
+    console.log('🌱 Iniciando seed de modelos de documentos de referência');
 
     // Lista de modelos de documentos de referência
     const modelosDocumentos = [
@@ -78,77 +78,110 @@ export class ModeloDocumentoSeed {
       },
     ];
 
+    let modelosProcessados = 0;
+    let modelosCriados = 0;
+    let modelosAtualizados = 0;
+    let modelosPulados = 0;
+    let erros = 0;
+
+    console.log(`📊 Total de modelos para processar: ${modelosDocumentos.length}`);
+
     // Inserção dos modelos de documentos no banco de dados
-  /*   for (const modelo of modelosDocumentos) {
-      // Buscar o ID da categoria pelo nome
-      const categoriaResult = await dataSource.query(
-        `SELECT id FROM categoria_documento WHERE nome = $1`,
-        [modelo.categoria],
-      );
+    for (const modelo of modelosDocumentos) {
+      try {
+        // Validação básica dos dados
+        if (!modelo.titulo || !modelo.descricao || !modelo.categoria) {
+          console.error(`❌ Erro: Modelo com dados inválidos - Título: ${modelo.titulo}, Categoria: ${modelo.categoria}`);
+          erros++;
+          continue;
+        }
 
-      if (categoriaResult.length === 0) {
-        console.log(
-          `Categoria ${modelo.categoria} não encontrada, pulando modelo ${modelo.titulo}`,
+        // Buscar o ID da categoria pelo nome
+        const categoriaResult = await dataSource.query(
+          `SELECT id FROM categoria_documento WHERE nome = $1`,
+          [modelo.categoria],
         );
-        continue;
+
+        if (categoriaResult.length === 0) {
+          console.warn(`⚠️  Categoria '${modelo.categoria}' não encontrada, pulando modelo '${modelo.titulo}'`);
+          modelosPulados++;
+          continue;
+        }
+
+        const categoriaId = categoriaResult[0].id;
+
+        const modeloExistente = await dataSource.query(
+          `SELECT id FROM modelo_documento WHERE titulo = $1`,
+          [modelo.titulo],
+        );
+
+        if (modeloExistente.length === 0) {
+          await dataSource.query(
+            `INSERT INTO modelo_documento (
+              titulo, 
+              descricao, 
+              categoria_id, 
+              tipo, 
+              formato, 
+              conteudo, 
+              ativo
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+            [
+              modelo.titulo,
+              modelo.descricao,
+              categoriaId,
+              modelo.tipo,
+              modelo.formato,
+              modelo.conteudo,
+              modelo.ativo,
+            ],
+          );
+          console.log(`✅ Modelo '${modelo.titulo}' criado com sucesso`);
+          modelosCriados++;
+        } else {
+          await dataSource.query(
+            `UPDATE modelo_documento 
+             SET descricao = $2, 
+                 categoria_id = $3, 
+                 tipo = $4, 
+                 formato = $5, 
+                 conteudo = $6, 
+                 ativo = $7
+             WHERE titulo = $1`,
+            [
+              modelo.titulo,
+              modelo.descricao,
+              categoriaId,
+              modelo.tipo,
+              modelo.formato,
+              modelo.conteudo,
+              modelo.ativo,
+            ],
+          );
+          console.log(`🔄 Modelo '${modelo.titulo}' atualizado com sucesso`);
+          modelosAtualizados++;
+        }
+        
+        modelosProcessados++;
+      } catch (error) {
+        console.error(`❌ Erro ao processar modelo '${modelo.titulo}':`, error.message);
+        erros++;
       }
+    }
 
-      const categoriaId = categoriaResult[0].id;
-
-      const modeloExistente = await dataSource.query(
-        `SELECT id FROM modelo_documento WHERE titulo = $1`,
-        [modelo.titulo],
-      );
-
-      if (modeloExistente.length === 0) {
-        await dataSource.query(
-          `INSERT INTO modelo_documento (
-            titulo, 
-            descricao, 
-            categoria_id, 
-            tipo, 
-            formato, 
-            conteudo, 
-            ativo
-          )
-          VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-          [
-            modelo.titulo,
-            modelo.descricao,
-            categoriaId,
-            modelo.tipo,
-            modelo.formato,
-            modelo.conteudo,
-            modelo.ativo,
-          ],
-        );
-        console.log(`Modelo de documento ${modelo.titulo} criado com sucesso`);
-      } else {
-        console.log(
-          `Modelo de documento ${modelo.titulo} já existe, atualizando...`,
-        );
-        await dataSource.query(
-          `UPDATE modelo_documento 
-           SET descricao = $2, 
-               categoria_id = $3, 
-               tipo = $4, 
-               formato = $5, 
-               conteudo = $6, 
-               ativo = $7
-           WHERE titulo = $1`,
-          [
-            modelo.titulo,
-            modelo.descricao,
-            categoriaId,
-            modelo.tipo,
-            modelo.formato,
-            modelo.conteudo,
-            modelo.ativo,
-          ],
-        );
-      }
-    } */
-
-    console.log('Seed de modelos de documentos de referência concluído');
+    // Relatório final
+    console.log('📈 Relatório de execução:');
+    console.log(`   • Modelos processados: ${modelosProcessados}/${modelosDocumentos.length}`);
+    console.log(`   • Modelos criados: ${modelosCriados}`);
+    console.log(`   • Modelos atualizados: ${modelosAtualizados}`);
+    console.log(`   • Modelos pulados (categoria não encontrada): ${modelosPulados}`);
+    console.log(`   • Erros encontrados: ${erros}`);
+    
+    if (erros > 0 || modelosPulados > 0) {
+      console.warn(`⚠️  Seed concluído com ${erros} erro(s) e ${modelosPulados} modelo(s) pulado(s)`);
+    } else {
+      console.log('✅ Seed de modelos de documentos de referência concluído com sucesso!');
+    }
   }
 }
