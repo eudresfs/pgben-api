@@ -764,8 +764,8 @@ export class UsuarioService {
     
     try {
       const roles = await this.roleRepository.find({
-        select: ['id', 'nome', 'descricao', 'ativo'],
-        where: { ativo: Status.ATIVO },
+        select: ['id', 'nome', 'descricao', 'status'],
+        where: { status: Status.ATIVO },
         order: { nome: 'ASC' }
       });
       

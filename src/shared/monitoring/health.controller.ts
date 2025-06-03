@@ -18,7 +18,7 @@ import { HealthCheckService as AppHealthCheckService } from '../services/health-
  * Fornece endpoints para verificar a saúde da aplicação
  * e seus componentes (banco de dados, memória, disco, etc.)
  */
-@ApiTags('Métricas')
+@ApiTags('Métricas e Dashboard')
 @Controller({ path: 'health', version: '1' })
 export class HealthController {
   constructor(

@@ -15,7 +15,7 @@ import { MetricasService } from '../services/metricas.service';
  * 1. Exportar dados de uma métrica específica em formato CSV ou JSON
  * 2. Gerar relatório completo de métricas para análise externa
  */
-@ApiTags('Métricas')
+@ApiTags('Métricas e Dashboard')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('v1/metricas/exportacao')

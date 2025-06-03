@@ -11,5 +11,8 @@ export * from './schemas/index';
 // Decorators personalizados
 export * from './decorators/index';
 
+// Tags configuration
+export * from './tags.config';
+
 // Respostas padronizadas
 export * from './responses/index';

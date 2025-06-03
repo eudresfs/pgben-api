@@ -1,159 +1,267 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 /**
- * DTO para criação de tipo de benefício
+ * DTO para criação de novo tipo de benefício no sistema
  */
 export class CreateTipoBeneficioDto {
   @ApiProperty({
-    description: 'Nome do tipo de benefício',
-    example: 'Auxílio Moradia',
+    description: 'Nome oficial do tipo de benefício',
+    example: 'Benefício Natalidade',
+    type: 'string',
+    minLength: 3,
+    maxLength: 100
   })
   nome: string;
 
   @ApiProperty({
-    description: 'Descrição detalhada do benefício',
-    example: 'Auxílio financeiro para famílias em situação de vulnerabilidade social com fim habitacional',
+    description: 'Descrição detalhada do benefício e seus objetivos',
+    example: 'Benefício financeiro destinado a famílias em situação de vulnerabilidade social para despesas relacionadas ao nascimento de criança',
+    type: 'string',
+    minLength: 10,
+    maxLength: 500
   })
   descricao: string;
 
   @ApiProperty({
-    description: 'Base legal que institui o benefício',
-    example: 'Lei Municipal 7.205/2021',
+    description: 'Base legal que fundamenta a concessão do benefício',
+    example: 'Lei Municipal nº 1.234/2023, Art. 15',
+    type: 'string',
+    minLength: 5,
+    maxLength: 200
   })
   baseLegal: string;
 
   @ApiProperty({
-    description: 'Valor do benefício em Reais',
-    example: 400.00,
+    description: 'Valor monetário do benefício em reais (R$)',
+    example: 500.00,
     type: 'number',
     format: 'float',
+    minimum: 0.01,
+    maximum: 50000.00
   })
   valor: number;
 
   @ApiProperty({
-    description: 'Periodicidade do benefício',
-    example: 'MENSAL',
+    description: 'Frequência de pagamento do benefício',
+    example: 'UNICO',
     enum: ['UNICO', 'MENSAL', 'BIMESTRAL', 'TRIMESTRAL', 'SEMESTRAL', 'ANUAL'],
+    type: 'string'
   })
   periodicidade: string;
 
-  @ApiProperty({
-    description: 'Número máximo de parcelas (0 = sem limite)',
-    example: 12,
-    default: 0,
+  @ApiPropertyOptional({
+    description: 'Número máximo de parcelas (aplicável apenas para benefícios recorrentes)',
+    example: 6,
+    type: 'integer',
+    minimum: 1,
+    maximum: 60
   })
-  limiteParcelas: number;
+  limiteParcelas?: number;
 
   @ApiProperty({
-    description: 'Critérios de elegibilidade em formato JSON',
+    description: 'Critérios de elegibilidade estruturados para avaliação automática',
     example: {
-      rendaPerCapita: { max: 178.0 },
-      idade: { min: 18 },
-      tempoResidenciaCidade: { min: 12, unidade: 'meses' },
-    },
-    type: 'object',
-    additionalProperties: true
+      rendaFamiliarMaxima: 1000.00,
+      idadeMinimaRequerente: 18,
+      idadeMaximaRequerente: 65,
+      documentosObrigatorios: ['CPF', 'RG', 'Comprovante de Residência', 'Comprovante de Renda'],
+      situacoesEspeciais: ['gestante', 'lactante', 'deficiencia'],
+      tempoMinimoResidencia: 12
+    }
   })
-  criteriosElegibilidade: Record<string, any>;
+  criteriosElegibilidade: object;
 
   @ApiProperty({
-    description: 'Se o benefício está ativo para solicitações',
+    description: 'Indica se o tipo de benefício está disponível para solicitação',
     example: true,
-    default: true,
+    type: 'boolean',
+    default: true
   })
   ativo: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Categoria do benefício para organização administrativa',
+    example: 'ASSISTENCIA_SOCIAL',
+    enum: ['ASSISTENCIA_SOCIAL', 'AUXILIO_EMERGENCIAL', 'PROMOCAO_SOCIAL', 'HABITACAO', 'ALIMENTACAO'],
+    type: 'string'
+  })
+  categoria?: string;
+
+  @ApiPropertyOptional({
+    description: 'Prazo em dias para análise da solicitação',
+    example: 30,
+    type: 'integer',
+    minimum: 1,
+    maximum: 180
+  })
+  prazoAnalise?: number;
+
+  @ApiPropertyOptional({
+    description: 'Documentos específicos exigidos para este tipo de benefício',
+    example: ['Certidão de Nascimento da Criança', 'Declaração do Hospital'],
+    type: 'array',
+    items: {
+      type: 'string'
+    }
+  })
+  documentosEspecificos?: string[];
 }
 
 /**
- * DTO para resposta de tipo de benefício
+ * DTO para resposta com dados completos do tipo de benefício
  */
 export class TipoBeneficioResponseDto extends CreateTipoBeneficioDto {
   @ApiProperty({
-    description: 'Identificador único do tipo de benefício',
-    example: '5f8d3b4e3b4f3b2d3c2e1d2f',
+    description: 'Identificador único do tipo de benefício no sistema',
+    example: '507f1f77bcf86cd799439011',
+    type: 'string'
   })
   id: string;
 
   @ApiProperty({
     description: 'Data e hora de criação do registro',
-    example: '2025-05-18T12:00:00.000Z',
+    example: '2025-01-18T10:30:00.000Z',
+    type: 'string',
+    format: 'date-time'
   })
-  createdAt: Date;
+  createdAt: string;
 
   @ApiProperty({
     description: 'Data e hora da última atualização do registro',
-    example: '2025-05-18T12:00:00.000Z',
+    example: '2025-01-18T10:30:00.000Z',
+    type: 'string',
+    format: 'date-time'
   })
-  updatedAt: Date;
+  updatedAt: string;
+
+  @ApiPropertyOptional({
+    description: 'Número total de solicitações já realizadas para este tipo de benefício',
+    example: 150,
+    type: 'integer',
+    minimum: 0
+  })
+  totalSolicitacoes?: number;
+
+  @ApiPropertyOptional({
+    description: 'Número de solicitações aprovadas',
+    example: 120,
+    type: 'integer',
+    minimum: 0
+  })
+  solicitacoesAprovadas?: number;
+
+  @ApiPropertyOptional({
+    description: 'Valor total já concedido para este tipo de benefício',
+    example: 60000.00,
+    type: 'number',
+    format: 'float',
+    minimum: 0
+  })
+  valorTotalConcedido?: number;
 }
 
 /**
- * DTO para atualização de tipo de benefício
+ * DTO para atualização de dados do tipo de benefício
  */
 export class UpdateTipoBeneficioDto {
-  @ApiProperty({
-    description: 'Nome do tipo de benefício',
-    example: 'Auxílio Moradia',
-    required: false,
+  @ApiPropertyOptional({
+    description: 'Nome oficial do tipo de benefício',
+    example: 'Benefício Natalidade Especial',
+    type: 'string',
+    minLength: 3,
+    maxLength: 100
   })
   nome?: string;
 
-  @ApiProperty({
-    description: 'Descrição detalhada do benefício',
-    example: 'Auxílio financeiro para famílias em situação de vulnerabilidade social com fim habitacional',
-    required: false,
+  @ApiPropertyOptional({
+    description: 'Descrição detalhada do benefício e seus objetivos',
+    example: 'Benefício financeiro destinado a famílias em situação de extrema vulnerabilidade social',
+    type: 'string',
+    minLength: 10,
+    maxLength: 500
   })
   descricao?: string;
 
-  @ApiProperty({
-    description: 'Base legal que institui o benefício',
-    example: 'Lei Municipal 7.205/2021',
-    required: false,
+  @ApiPropertyOptional({
+    description: 'Base legal que fundamenta a concessão do benefício',
+    example: 'Lei Municipal nº 1.234/2023, Art. 15, alterada pela Lei nº 1.456/2024',
+    type: 'string',
+    minLength: 5,
+    maxLength: 200
   })
   baseLegal?: string;
 
-  @ApiProperty({
-    description: 'Valor do benefício em Reais',
-    example: 400.00,
+  @ApiPropertyOptional({
+    description: 'Valor monetário do benefício em reais (R$)',
+    example: 750.00,
     type: 'number',
     format: 'float',
-    required: false,
+    minimum: 0.01,
+    maximum: 50000.00
   })
   valor?: number;
 
-  @ApiProperty({
-    description: 'Periodicidade do benefício',
+  @ApiPropertyOptional({
+    description: 'Frequência de pagamento do benefício',
     example: 'MENSAL',
     enum: ['UNICO', 'MENSAL', 'BIMESTRAL', 'TRIMESTRAL', 'SEMESTRAL', 'ANUAL'],
-    required: false,
+    type: 'string'
   })
   periodicidade?: string;
 
-  @ApiProperty({
-    description: 'Número máximo de parcelas (0 = sem limite)',
-    example: 12,
-    required: false,
+  @ApiPropertyOptional({
+    description: 'Número máximo de parcelas (aplicável apenas para benefícios recorrentes)',
+    example: 3,
+    type: 'integer',
+    minimum: 1,
+    maximum: 60
   })
   limiteParcelas?: number;
 
-  @ApiProperty({
-    description: 'Critérios de elegibilidade em formato JSON',
+  @ApiPropertyOptional({
+    description: 'Critérios de elegibilidade estruturados para avaliação automática',
     example: {
-      rendaPerCapita: { max: 178.0 },
-      idade: { min: 18 },
-      tempoResidenciaCidade: { min: 12, unidade: 'meses' },
-    },
-    type: 'object',
-    additionalProperties: true
+      rendaFamiliarMaxima: 1500.00,
+      idadeMinimaRequerente: 16,
+      documentosObrigatorios: ['CPF', 'RG', 'Comprovante de Residência'],
+      situacoesEspeciais: ['gestante', 'lactante']
+    }
   })
-  criteriosElegibilidade?: Record<string, any>;
+  criteriosElegibilidade?: object;
 
-  @ApiProperty({
-    description: 'Se o benefício está ativo para solicitações',
-    example: true,
-    required: false,
+  @ApiPropertyOptional({
+    description: 'Indica se o tipo de benefício está disponível para solicitação',
+    example: false,
+    type: 'boolean'
   })
   ativo?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Categoria do benefício para organização administrativa',
+    example: 'AUXILIO_EMERGENCIAL',
+    enum: ['ASSISTENCIA_SOCIAL', 'AUXILIO_EMERGENCIAL', 'PROMOCAO_SOCIAL', 'HABITACAO', 'ALIMENTACAO'],
+    type: 'string'
+  })
+  categoria?: string;
+
+  @ApiPropertyOptional({
+    description: 'Prazo em dias para análise da solicitação',
+    example: 15,
+    type: 'integer',
+    minimum: 1,
+    maximum: 180
+  })
+  prazoAnalise?: number;
+
+  @ApiPropertyOptional({
+    description: 'Documentos específicos exigidos para este tipo de benefício',
+    example: ['Certidão de Nascimento da Criança', 'Declaração Médica', 'Comprovante de Vacinação'],
+    type: 'array',
+    items: {
+      type: 'string'
+    }
+  })
+  documentosEspecificos?: string[];
 }
 
 /**
@@ -179,9 +287,7 @@ export class CreateSolicitacaoBeneficioDto {
       possuiComprovanteResidencia: true,
       rendaFamiliar: 850.00,
       quantidadePessoas: 3,
-    },
-    type: 'object',
-    additionalProperties: true
+    }
   })
   dadosDinamicos: Record<string, any>;
 }

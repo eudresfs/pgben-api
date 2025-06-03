@@ -29,7 +29,7 @@ import { DadosCestaBasica } from '../../../entities/dados-cesta-basica.entity';
 /**
  * Controlador para gerenciar dados específicos da Cesta Básica
  */
-@ApiTags('Dados Cesta Básica')
+@ApiTags('Benefícios')
 @Controller('dados-cesta-basica')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()

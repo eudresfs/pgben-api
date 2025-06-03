@@ -2,16 +2,16 @@
  * Enum que define os possíveis status de uma solicitação de benefício
  */
 export enum StatusSolicitacao {
-  RASCUNHO = 'RASCUNHO',
-  PENDENTE = 'PENDENTE',
-  EM_ANALISE = 'EM_ANALISE',
-  AGUARDANDO_DOCUMENTOS = 'AGUARDANDO_DOCUMENTOS',
-  APROVADA = 'APROVADA',
-  INDEFERIDA = 'INDEFERIDA',
-  LIBERADA = 'LIBERADA',
-  CANCELADA = 'CANCELADA',
-  EM_PROCESSAMENTO = 'EM_PROCESSAMENTO',
-  CONCLUIDA = 'CONCLUIDA',
-  ARQUIVADA = 'ARQUIVADA',
-  ABERTA = "ABERTA",
+  RASCUNHO = 'rascunho',
+  PENDENTE = 'pendente',
+  EM_ANALISE = 'em_analise',
+  AGUARDANDO_DOCUMENTOS = 'aguardando_documentos',
+  APROVADA = 'aprovada',
+  INDEFERIDA = 'indeferida',
+  LIBERADA = 'liberada',
+  CANCELADA = 'cancelada',
+  EM_PROCESSAMENTO = 'em_processamento',
+  CONCLUIDA = 'concluida',
+  ARQUIVADA = 'arquivada',
+  ABERTA = 'aberta',
 }

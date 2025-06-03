@@ -16,7 +16,7 @@ import { ROLES } from '../../../shared/constants/roles.constants';
 /**
  * Controlador para gerenciamento de métricas
  */
-@ApiTags('Métricas')
+@ApiTags('Métricas e Dashboard')
 @Controller('v1/metricas')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()

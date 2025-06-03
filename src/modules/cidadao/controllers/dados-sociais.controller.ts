@@ -11,6 +11,11 @@ import {
   HttpCode,
   ParseUUIDPipe,
   UseInterceptors,
+  BadRequestException,
+  ConflictException,
+  InternalServerErrorException,
+  NotFoundException,
+  Logger,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
@@ -34,13 +39,16 @@ import { DadosSociais } from '../../../entities/dados-sociais.entity';
  * 
  * Todas as operações incluem validações de negócio e auditoria automática.
  */
-@ApiTags('Dados Sociais')
+@ApiTags('Cidadão')
 @Controller('v1/cidadao')
 @UseGuards(JwtAuthGuard, PermissionGuard)
 @ApiBearerAuth()
 @UseInterceptors(CidadaoAuditInterceptor)
 export class DadosSociaisController {
-  constructor(private readonly dadosSociaisService: DadosSociaisService) {}
+  constructor(
+    private readonly dadosSociaisService: DadosSociaisService,
+    private readonly logger: Logger
+  ) {}
 
   /**
    * Cria dados sociais para um cidadão específico
@@ -53,7 +61,7 @@ export class DadosSociaisController {
   @RequiresPermission({ permissionName: 'cidadao:dados-sociais:create' })
   @ApiOperation({ 
     summary: 'Criar dados sociais para um cidadão',
-    description: 'Cria um novo registro de dados sociais para o cidadão especificado. Valida unicidade e calcula renda per capita automaticamente.'
+    description: 'Cria novos dados sociais para um cidadão. Valida automaticamente a consistência dos dados de benefícios (PBF/BPC) e calcula a renda per capita familiar.'
   })
   @ApiParam({ 
     name: 'id', 
@@ -64,22 +72,55 @@ export class DadosSociaisController {
   @ApiResponse({ 
     status: 201, 
     description: 'Dados sociais criados com sucesso',
-    type: DadosSociaisResponseDto
+    type: DadosSociaisResponseDto 
   })
   @ApiResponse({ 
     status: 400, 
-    description: 'Dados inválidos ou cidadão já possui dados sociais'
+    description: 'Dados inválidos - Verifique os campos obrigatórios e valores dos benefícios',
+    schema: {
+      type: 'object',
+      properties: {
+        message: { type: 'string', example: 'Dados de benefícios inválidos' },
+        errors: { 
+          type: 'array', 
+          items: { type: 'string' },
+          example: ['Valor do PBF é obrigatório e deve ser maior que zero quando recebe_pbf é verdadeiro']
+        },
+        statusCode: { type: 'number', example: 400 }
+      }
+    }
   })
+  @ApiResponse({ status: 401, description: 'Token de autenticação inválido ou expirado' })
+  @ApiResponse({ status: 403, description: 'Usuário sem permissão para criar dados sociais' })
   @ApiResponse({ 
     status: 404, 
     description: 'Cidadão não encontrado'
+  })
+  @ApiResponse({ 
+    status: 409, 
+    description: 'Conflito - Dados sociais já existem para este cidadão',
+    schema: {
+      type: 'object',
+      properties: {
+        message: { type: 'string', example: 'Dados sociais já existem para este cidadão' },
+        statusCode: { type: 'number', example: 409 }
+      }
+    }
   })
   async create(
     @Param('id', ParseUUIDPipe) cidadaoId: string,
     @Body() createDadosSociaisDto: CreateDadosSociaisDto,
   ): Promise<DadosSociaisResponseDto> {
-    const dadosSociais = await this.dadosSociaisService.create(cidadaoId, createDadosSociaisDto);
-    return new DadosSociaisResponseDto(dadosSociais);
+    try {
+      const dadosSociais = await this.dadosSociaisService.create(cidadaoId, createDadosSociaisDto);
+      return new DadosSociaisResponseDto(dadosSociais);
+    } catch (error) {
+      if (error instanceof BadRequestException || error instanceof ConflictException || error instanceof NotFoundException) {
+        throw error;
+      }
+      this.logger.error(`Erro ao criar dados sociais para cidadão ${cidadaoId}`, error.stack);
+      throw new InternalServerErrorException('Erro interno do servidor ao criar dados sociais');
+    }
   }
 
   /**
@@ -126,33 +167,62 @@ export class DadosSociaisController {
   @RequiresPermission({ permissionName: 'cidadao:dados-sociais:update' })
   @ApiOperation({ 
     summary: 'Atualizar dados sociais de um cidadão',
-    description: 'Atualiza os dados sociais do cidadão. Recalcula automaticamente valores derivados.'
+    description: 'Atualiza dados sociais existentes. Revalida automaticamente a consistência dos dados de benefícios e recalcula a renda per capita familiar.'
   })
   @ApiParam({ 
     name: 'id', 
-    description: 'ID do cidadão', 
+    description: 'ID único dos dados sociais a serem atualizados',
     type: 'string',
     format: 'uuid'
   })
   @ApiResponse({ 
     status: 200, 
     description: 'Dados sociais atualizados com sucesso',
-    type: DadosSociaisResponseDto
+    type: DadosSociaisResponseDto 
   })
   @ApiResponse({ 
     status: 400, 
-    description: 'Dados inválidos'
+    description: 'Dados inválidos - Verifique os campos e valores dos benefícios',
+    schema: {
+      type: 'object',
+      properties: {
+        message: { type: 'string', example: 'Dados de benefícios inválidos' },
+        errors: { 
+          type: 'array', 
+          items: { type: 'string' },
+          example: ['Valor do BPC não pode exceder R$ 10.000,00']
+        },
+        statusCode: { type: 'number', example: 400 }
+      }
+    }
   })
+  @ApiResponse({ status: 401, description: 'Token de autenticação inválido ou expirado' })
+  @ApiResponse({ status: 403, description: 'Usuário sem permissão para atualizar dados sociais' })
   @ApiResponse({ 
     status: 404, 
-    description: 'Cidadão ou dados sociais não encontrados'
+    description: 'Dados sociais não encontrados',
+    schema: {
+      type: 'object',
+      properties: {
+        message: { type: 'string', example: 'Dados sociais não encontrados' },
+        statusCode: { type: 'number', example: 404 }
+      }
+    }
   })
   async update(
     @Param('id', ParseUUIDPipe) cidadaoId: string,
     @Body() updateDadosSociaisDto: UpdateDadosSociaisDto,
   ): Promise<DadosSociaisResponseDto> {
-    const dadosSociais = await this.dadosSociaisService.update(cidadaoId, updateDadosSociaisDto);
-    return new DadosSociaisResponseDto(dadosSociais);
+    try {
+      const dadosSociais = await this.dadosSociaisService.update(cidadaoId, updateDadosSociaisDto);
+      return new DadosSociaisResponseDto(dadosSociais);
+    } catch (error) {
+      if (error instanceof BadRequestException || error instanceof NotFoundException) {
+        throw error;
+      }
+      this.logger.error(`Erro ao atualizar dados sociais ${cidadaoId}`, error.stack);
+      throw new InternalServerErrorException('Erro interno do servidor ao atualizar dados sociais');
+    }
   }
 
   /**

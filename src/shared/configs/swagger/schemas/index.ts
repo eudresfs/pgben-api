@@ -15,3 +15,12 @@ export * from './cidadao';
 
 // Benefícios
 export * from './beneficio';
+
+// Solicitações
+export * from './solicitacao';
+
+// Documentos
+export * from './documento';
+
+// Relatórios
+export * from './relatorio';

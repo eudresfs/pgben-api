@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, Logger } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { CidadaoController } from './controllers/cidadao.controller';
@@ -68,6 +68,7 @@ import { NotificacaoModule } from '../notificacao/notificacao.module';
     // DiagnosticoController // Movido para módulo separado
   ],
   providers: [
+    Logger,
     CidadaoService,
     CidadaoRepository,
     PapelCidadaoService,

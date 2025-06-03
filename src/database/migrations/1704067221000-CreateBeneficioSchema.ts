@@ -25,7 +25,6 @@ export class CreateBeneficioSchema1704067215000 implements MigrationInterface {
     await queryRunner.query(`
       CREATE TABLE IF NOT EXISTS "tipo_beneficio" (
         "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
-        "codigo" varchar(25) NOT
         "nome" character varying NOT NULL,
         "descricao" character varying NOT NULL,
         "codigo" character varying NOT NULL,

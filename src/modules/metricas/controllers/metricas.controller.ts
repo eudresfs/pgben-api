@@ -8,7 +8,7 @@ import { Public } from '../../../shared/decorators/public.decorator';
  * Controlador responsável por expor endpoints para coleta de métricas
  * pelo Prometheus.
  */
-@ApiTags('Métricas')
+@ApiTags('Métricas e Dashboard')
 @Controller('v1/metricas')
 export class MetricasController {
   constructor(

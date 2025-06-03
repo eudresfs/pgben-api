@@ -1,6 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { INestApplication, Logger, RequestMethod, ValidationPipe } from '@nestjs/common';
+import { BadRequestException, INestApplication, Logger, RequestMethod, ValidationPipe } from '@nestjs/common';
 import { ResponseInterceptor } from './shared/interceptors/response.interceptor';
 import { AllExceptionsFilter } from './shared/filters/all-exceptions.filter';
 import { setupSwagger } from './shared/configs/swagger/index';
@@ -12,7 +12,7 @@ async function bootstrap(): Promise<INestApplication> {
   const logger = new Logger('Bootstrap');
   
   try {
-    logger.log('🚀 Iniciando aplicação com debug detalhado...');
+    logger.log('Iniciando aplicação com debug detalhado...');
     
     // Criar a aplicação NestJS
     const app = await NestFactory.create(AppModule, {
@@ -24,7 +24,7 @@ async function bootstrap(): Promise<INestApplication> {
     const port = process.env.PORT || 3000;
     
     // Configurando middlewares de segurança
-    logger.log('🚀 Configurando middlewares de segurança...');
+    logger.log('Configurando middlewares de segurança...');
     
     // Obter ConfigService para configurações de segurança
     const configService = app.get(ConfigService);
@@ -35,19 +35,37 @@ async function bootstrap(): Promise<INestApplication> {
     // Compressão de resposta para melhorar performance
     app.use(compression());
     
-    logger.log('✅ Middlewares de segurança configurados com sucesso');
+    logger.log('Middlewares de segurança configurados com sucesso');
     
     // Adicionar pipes básicos
-    logger.log('🚀 Configurando ValidationPipe global...');
+    logger.log('Configurando ValidationPipe global...');
     app.useGlobalPipes(new ValidationPipe({
       whitelist: true,
       forbidNonWhitelisted: true,
       transform: true,
+      transformOptions: {
+        enableImplicitConversion: true,
+      },
+      errorHttpStatusCode: 400,
+      exceptionFactory: (errors) => {
+        const formattedErrors = errors.map(error => ({
+          field: error.property,
+          value: error.value,
+          constraints: error.constraints,
+          messages: error.constraints ? Object.values(error.constraints) : ['Erro de validação'],
+        }));
+        
+        return new BadRequestException({
+          message: 'Dados de entrada inválidos',
+          errors: formattedErrors,
+          statusCode: 400,
+        });
+      },
     }));
-    logger.log('✅ ValidationPipe global configurado com sucesso');
+    logger.log('ValidationPipe global configurado com sucesso');
     
     // Configurando interceptors e filtros globais
-    logger.log('🚀 Configurando interceptors e filtros globais...');
+    logger.log('Configurando interceptors e filtros globais...');
     
     // Interceptor de resposta para padronizar a estrutura de resposta da API
     app.useGlobalInterceptors(new ResponseInterceptor());
@@ -56,10 +74,10 @@ async function bootstrap(): Promise<INestApplication> {
     const allExceptionsFilter = app.get(AllExceptionsFilter);
     app.useGlobalFilters(allExceptionsFilter);
     
-    logger.log('✅ Interceptors e filtros globais configurados com sucesso');
+    logger.log('Interceptors e filtros globais configurados com sucesso');
     
     // Configuração do prefixo global
-    logger.log('🚀 Configurando prefixo global "api"...');
+    logger.log('Configurando prefixo global "api"...');
     
     app.setGlobalPrefix('api', {
       exclude: [
@@ -71,30 +89,28 @@ async function bootstrap(): Promise<INestApplication> {
       ],
     });
     
-    logger.log('✅ Prefixo global configurado com sucesso');
+    logger.log('Prefixo global configurado com sucesso');
     
     // Configurando Swagger para documentação da API
-    logger.log('🚀 Configurando Swagger...');
+    logger.log('Configurando Swagger...');
     setupSwagger(app);
-    logger.log('✅ Swagger configurado com sucesso');
+    logger.log('Swagger configurado com sucesso');
     
     // Iniciar o servidor
     await app.listen(port);
     
     // Log de rotas disponíveis
-    logger.log(`✅ Servidor rodando em: http://localhost:${port}`);
-    logger.log('🔍 Rotas disponíveis:');
+    logger.log(`Servidor rodando em: http://localhost:${port}`);
+    logger.log('Rotas disponíveis:');
     logger.log(`   - GET  / (raiz)`);
     logger.log(`   - GET  /health`);
     logger.log(`   - GET  /api-docs (Swagger UI)`);
-    logger.log(`   - GET  /openapi.json (OpenAPI 3.0 para ApiDog)`);
-    logger.log(`   - GET  /v2/swagger.json (Swagger 2.0 para ApiDog)`);
     
     // Retornar a instância da aplicação para uso no graceful shutdown
     return app;
     
   } catch (error) {
-    logger.error('❌ Erro ao iniciar o servidor:', error);
+    logger.error('Erro ao iniciar o servidor:', error);
     process.exit(1);
   }
 }

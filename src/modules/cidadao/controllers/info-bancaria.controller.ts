@@ -36,7 +36,7 @@ import { TipoEscopo } from '@/entities/user-permission.entity';
  * Responsável pelos endpoints relacionados às informações bancárias dos cidadãos,
  * incluindo contas poupança social do Banco do Brasil e dados PIX.
  */
-@ApiTags('Informações Bancárias')
+@ApiTags('Cidadão')
 @Controller('v1/cidadao/info-bancaria')
 @UseGuards(JwtAuthGuard, PermissionGuard)
 @ApiBearerAuth()

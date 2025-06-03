@@ -70,9 +70,9 @@ export class CreateRoleTable1704067202000 implements MigrationInterface {
                         isNullable: true,
                     },
                     {
-                        name: 'ativo',
-                        type: 'boolean',
-                        default: true,
+                        name: 'status',
+                        type: 'varchar',
+                        default: 'ativo',
                     },
                     {
                         name: 'created_at',

@@ -10,7 +10,7 @@ import { Roles } from '../../../auth/decorators/role.decorator';
 /**
  * Controlador para detecção de anomalias e análise de tendências
  */
-@ApiTags('Métricas')
+@ApiTags('Métricas e Dashboard')
 @Controller('v1/metricas/analise')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()

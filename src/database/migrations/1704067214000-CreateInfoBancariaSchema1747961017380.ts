@@ -146,7 +146,7 @@ export class CreateInfoBancariaSchema1704067205000 implements MigrationInterface
               isNullable: false,
             },
             {
-              name: 'deleted_at',
+              name: 'removed_at',
               type: 'timestamp with time zone',
               isNullable: true,
             },

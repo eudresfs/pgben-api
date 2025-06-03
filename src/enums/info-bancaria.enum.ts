@@ -6,21 +6,21 @@
  * Tipos de conta bancária
  */
 export enum TipoConta {
-  CORRENTE = 'CORRENTE',
-  POUPANCA = 'POUPANCA',
-  POUPANCA_SOCIAL = 'POUPANCA_SOCIAL',
-  SALARIO = 'SALARIO',
+  CORRENTE = 'corrente',
+  POUPANCA = 'poupanca',
+  POUPANCA_SOCIAL = 'poupanca_social',
+  SALARIO = 'salario',
 }
 
 /**
  * Tipos de chave PIX
  */
 export enum TipoChavePix {
-  CPF = 'CPF',
-  CNPJ = 'CNPJ',
-  EMAIL = 'EMAIL',
-  TELEFONE = 'TELEFONE',
-  ALEATORIA = 'ALEATORIA',
+  CPF = 'cpf',
+  CNPJ = 'cnpj',
+  EMAIL = 'email',
+  TELEFONE = 'telefone',
+  ALEATORIA = 'aleatoria',
 }
 
 /**

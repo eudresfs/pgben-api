@@ -37,7 +37,7 @@ import {
  * Este controlador unifica o acesso a dados específicos de benefícios,
  * eliminando a necessidade de múltiplos controladores separados.
  */
-@ApiTags('Dados de Benefícios')
+@ApiTags('Benefícios')
 @Controller('dados-beneficio')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()

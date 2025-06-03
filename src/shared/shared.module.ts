@@ -1,23 +1,33 @@
-import { Module } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { JwtModule } from '@nestjs/jwt';
+import { PassportModule } from '@nestjs/passport';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { configModuleOptions } from './configs/module-options';
-import { HttpExceptionFilter } from './filters/http-exception.filter';
-import { LoggingInterceptor as AppLoggingInterceptor } from './interceptors/logging.interceptor';
+
+// Interceptors
+import { LoggingInterceptor } from './interceptors/logging.interceptor';
+import { ResponseInterceptor } from './interceptors/response.interceptor';
+import { ValidationErrorInterceptor, ValidationMessageHelper } from './interceptors/validation-error.interceptor';
 
 // Módulo unificado de logging
 import { UnifiedLoggerModule } from './logging/unified-logger.module';
 
 // Monitoramento
 import { MonitoringModule } from './monitoring/monitoring.module';
-import { LoggingInterceptor } from './logging/logging.interceptor';
-import { MetricsInterceptor } from './monitoring/metrics.interceptor';
+
+// Services
 import { CriptografiaService } from './services/criptografia.service';
 import { MinioService } from './services/minio.service';
 import { ChaveMonitorService } from './services/chave-monitor.service';
 import { HealthCheckService } from './services/health-check.service';
+
+// Validators
+import { IsEnumValueConstraint, EnumValidationHelper } from './validators/enum-validator';
+import { IsCPF } from './validators/cpf.validator';
 
 @Module({
   imports: [
@@ -53,6 +63,11 @@ import { HealthCheckService } from './services/health-check.service';
     MinioService,
     ChaveMonitorService,
     HealthCheckService,
+    // Validators
+    IsCPF,
+    IsEnumValueConstraint,
+    EnumValidationHelper,
+    ValidationMessageHelper,
   ],
   providers: [
     // Serviços compartilhados
@@ -61,16 +76,15 @@ import { HealthCheckService } from './services/health-check.service';
     MinioService,
     HealthCheckService,
 
-    // Interceptores para logging e métricas
-    { provide: APP_INTERCEPTOR, useClass: AppLoggingInterceptor },
-    { provide: APP_INTERCEPTOR, useClass: LoggingInterceptor },
-    { provide: APP_INTERCEPTOR, useClass: MetricsInterceptor },
+    // Validators
+    IsCPF,
+    IsEnumValueConstraint,
+    EnumValidationHelper,
+    ValidationMessageHelper,
 
-    // Filtro de exceção global
-    {
-      provide: APP_FILTER,
-      useClass: HttpExceptionFilter,
-    },
+    // Interceptores para logging e métricas
+    { provide: APP_INTERCEPTOR, useClass: LoggingInterceptor },
+    { provide: APP_INTERCEPTOR, useClass: ValidationErrorInterceptor },
   ],
 })
 export class SharedModule {}

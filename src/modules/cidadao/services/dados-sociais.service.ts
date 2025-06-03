@@ -263,33 +263,64 @@ export class DadosSociaisService {
   }
 
   /**
-   * Valida dados de benefícios (PBF e BPC)
+   * Valida dados de benefícios (PBF e BPC) com validações aprimoradas
    */
   private validateBeneficiosData(data: any): void {
-    // Validar PBF
-    if (data.recebe_pbf && !data.valor_pbf) {
-      throw new BadRequestException(
-        'Valor do PBF é obrigatório quando recebe_pbf é verdadeiro',
-      );
+    const errors: string[] = [];
+
+    // Validar PBF com verificações mais robustas
+    if (data.recebe_pbf === true) {
+      if (!data.valor_pbf || data.valor_pbf <= 0) {
+        errors.push('Valor do PBF é obrigatório e deve ser maior que zero quando recebe_pbf é verdadeiro');
+      } else if (data.valor_pbf > 10000) {
+        errors.push('Valor do PBF não pode exceder R$ 10.000,00');
+      } else if (data.valor_pbf < 50) {
+        errors.push('Valor do PBF parece muito baixo. Verifique se o valor está correto (mínimo R$ 50,00)');
+      }
     }
 
-    if (!data.recebe_pbf && data.valor_pbf) {
-      throw new BadRequestException(
-        'Valor do PBF não deve ser informado quando recebe_pbf é falso',
-      );
+    if (data.recebe_pbf === false && data.valor_pbf) {
+      if (data.valor_pbf > 0) {
+        errors.push('Valor do PBF não deve ser informado quando recebe_pbf é falso');
+      }
     }
 
-    // Validar BPC
-    if (data.recebe_bpc && (!data.valor_bpc || !data.tipo_bpc)) {
-      throw new BadRequestException(
-        'Valor e tipo do BPC são obrigatórios quando recebe_bpc é verdadeiro',
-      );
+    // Validar BPC com verificações mais robustas
+    if (data.recebe_bpc === true) {
+      if (!data.valor_bpc || data.valor_bpc <= 0) {
+        errors.push('Valor do BPC é obrigatório e deve ser maior que zero quando recebe_bpc é verdadeiro');
+      } else if (data.valor_bpc > 10000) {
+        errors.push('Valor do BPC não pode exceder R$ 10.000,00');
+      }
+      
+      if (!data.tipo_bpc || data.tipo_bpc.trim().length === 0) {
+        errors.push('Tipo do BPC é obrigatório quando recebe_bpc é verdadeiro');
+      } else if (data.tipo_bpc.length > 100) {
+        errors.push('Tipo do BPC deve ter no máximo 100 caracteres');
+      }
     }
 
-    if (!data.recebe_bpc && (data.valor_bpc || data.tipo_bpc)) {
-      throw new BadRequestException(
-        'Valor e tipo do BPC não devem ser informados quando recebe_bpc é falso',
-      );
+    if (data.recebe_bpc === false) {
+      if (data.valor_bpc && data.valor_bpc > 0) {
+        errors.push('Valor do BPC não deve ser informado quando recebe_bpc é falso');
+      }
+      if (data.tipo_bpc && data.tipo_bpc.trim().length > 0) {
+        errors.push('Tipo do BPC não deve ser informado quando recebe_bpc é falso');
+      }
+    }
+
+    // Validação de consistência entre benefícios
+    if (data.recebe_pbf === true && data.recebe_bpc === true) {
+      this.logger.warn(`Cidadão recebe tanto PBF quanto BPC - verificar elegibilidade`);
+    }
+
+    // Lançar erro com todas as validações que falharam
+    if (errors.length > 0) {
+      throw new BadRequestException({
+        message: 'Dados de benefícios inválidos',
+        errors: errors,
+        statusCode: 400
+      });
     }
   }
 

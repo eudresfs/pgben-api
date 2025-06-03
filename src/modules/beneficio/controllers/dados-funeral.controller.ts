@@ -29,7 +29,7 @@ import { DadosFuneral } from '../../../entities/dados-funeral.entity';
 /**
  * Controlador para gerenciar dados específicos do Auxílio Funeral
  */
-@ApiTags('Dados Funeral')
+@ApiTags('Benefícios')
 @Controller('dados-funeral')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()

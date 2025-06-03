@@ -183,7 +183,76 @@ export class SolicitacaoController {
     - Enums devem usar valores corretos (case-sensitive)
     
     **Status considerados ativos:** pendente, em_analise, aguardando_documentos, aprovada, liberada, em_processamento
-    **Status considerados inativos:** cancelada, reprovada, arquivada, concluida`
+    **Status considerados inativos:** cancelada, reprovada, arquivada, concluida`,
+    requestBody: {
+      description: 'Dados da solicitação de benefício',
+      required: true,
+      content: {
+        'application/json': {
+          schema: {
+            $ref: '#/components/schemas/CreateSolicitacaoDto',
+          },
+          examples: {
+            'auxilio-natalidade': {
+              summary: 'Solicitação de Auxílio Natalidade',
+              description: 'Exemplo de solicitação para auxílio natalidade',
+              value: {
+                beneficiario_id: '550e8400-e29b-41d4-a716-446655440000',
+                tipo_beneficio_id: '660e8400-e29b-41d4-a716-446655440001',
+                unidade_id: '770e8400-e29b-41d4-a716-446655440002',
+                observacoes: 'Solicitação para auxílio natalidade - primeiro filho',
+                dados_complementares: {
+                  data_nascimento_bebe: '2024-01-15',
+                  peso_nascimento: '3.2kg',
+                  hospital: 'Maternidade Januário Cicco'
+                },
+                documentos: [
+                  {
+                    nome: 'Certidão de Nascimento',
+                    tipo: 'certidao_nascimento',
+                    arquivo_url: '/uploads/documentos/certidao_123.pdf',
+                    observacoes: 'Certidão original do bebê'
+                  },
+                  {
+                    nome: 'Comprovante de Residência',
+                    tipo: 'comprovante_residencia',
+                    arquivo_url: '/uploads/documentos/comprovante_456.pdf'
+                  }
+                ]
+              }
+            },
+            'aluguel-social': {
+              summary: 'Solicitação de Aluguel Social',
+              description: 'Exemplo de solicitação para aluguel social',
+              value: {
+                beneficiario_id: '550e8400-e29b-41d4-a716-446655440003',
+                tipo_beneficio_id: '660e8400-e29b-41d4-a716-446655440004',
+                unidade_id: '770e8400-e29b-41d4-a716-446655440002',
+                observacoes: 'Família em situação de vulnerabilidade habitacional',
+                dados_complementares: {
+                  valor_aluguel_atual: 800.00,
+                  endereco_imovel: 'Rua das Palmeiras, 456 - Cidade Nova',
+                  motivo_solicitacao: 'Despejo por falta de pagamento'
+                },
+                documentos: [
+                  {
+                    nome: 'Contrato de Locação',
+                    tipo: 'contrato_locacao',
+                    arquivo_url: '/uploads/documentos/contrato_789.pdf'
+                  },
+                  {
+                    nome: 'Comprovante de Renda',
+                    tipo: 'comprovante_renda',
+                    arquivo_url: '/uploads/documentos/renda_101.pdf',
+                    observacoes: 'Declaração de renda familiar'
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
   })
   @ApiResponse({ 
     status: 201, 

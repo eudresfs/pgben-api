@@ -29,7 +29,7 @@ import { DadosAluguelSocial } from '../../../entities/dados-aluguel-social.entit
 /**
  * Controlador para gerenciar dados específicos do Aluguel Social
  */
-@ApiTags('Dados Aluguel Social')
+@ApiTags('Benefícios')
 @Controller('dados-aluguel-social')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()

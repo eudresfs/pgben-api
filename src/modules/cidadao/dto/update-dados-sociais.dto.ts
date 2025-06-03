@@ -4,6 +4,7 @@ import {
   IsOptional,
   IsNumber,
   Min,
+  Max,
   IsEnum,
   IsString,
   IsBoolean,
@@ -13,6 +14,7 @@ import {
 import { Transform } from 'class-transformer';
 import { EscolaridadeEnum } from '../../../enums/escolaridade.enum';
 import { SituacaoTrabalhoEnum } from '../../../enums/situacao-trabalho.enum';
+import { IsEnumValue } from '../../../shared/validators/enum-validator';
 
 /**
  * DTO para atualização de dados sociais de um cidadão
@@ -26,9 +28,13 @@ export class UpdateDadosSociaisDto extends PartialType(CreateDadosSociaisDto) {
     enum: EscolaridadeEnum,
     example: EscolaridadeEnum.MEDIO_COMPLETO,
     required: false,
+    enumName: 'EscolaridadeEnum'
   })
   @IsOptional()
-  @IsEnum(EscolaridadeEnum, { message: 'Escolaridade inválida' })
+  @IsEnumValue(EscolaridadeEnum, {
+    enumName: 'Escolaridade',
+    caseSensitive: false,
+  })
   escolaridade?: EscolaridadeEnum;
 
   @ApiProperty({
@@ -50,14 +56,18 @@ export class UpdateDadosSociaisDto extends PartialType(CreateDadosSociaisDto) {
     description: 'Renda mensal do cidadão em reais',
     example: 1500.50,
     minimum: 0,
+    maximum: 50000,
     required: false,
   })
   @IsOptional()
-  @IsNumber({}, { message: 'Renda deve ser um número válido' })
+  @IsNumber({ maxDecimalPlaces: 2 }, { message: 'Renda deve ser um número válido com no máximo 2 casas decimais' })
   @Min(0, { message: 'Renda não pode ser negativa' })
+  @Max(50000, { message: 'Renda não pode exceder R$ 50.000,00' })
   @Transform(({ value }) => {
     if (typeof value === 'string') {
-      return parseFloat(value);
+      // Remove vírgulas e converte para número
+      const cleanValue = value.replace(/,/g, '.');
+      return parseFloat(cleanValue);
     }
     return value;
   })
@@ -92,16 +102,20 @@ export class UpdateDadosSociaisDto extends PartialType(CreateDadosSociaisDto) {
   @ApiProperty({
     description: 'Valor mensal recebido do Programa Bolsa Família',
     example: 400.00,
-    minimum: 0,
+    minimum: 50,
+    maximum: 10000,
     required: false,
   })
   @IsOptional()
   @ValidateIf((o) => o.recebe_pbf === true)
-  @IsNumber({}, { message: 'Valor do PBF deve ser um número válido' })
-  @Min(0, { message: 'Valor do PBF não pode ser negativo' })
+  @IsNumber({ maxDecimalPlaces: 2 }, { message: 'Valor do PBF deve ser um número válido com no máximo 2 casas decimais' })
+  @Min(50, { message: 'Valor do PBF deve ser no mínimo R$ 50,00' })
+  @Max(10000, { message: 'Valor do PBF não pode exceder R$ 10.000,00' })
   @Transform(({ value }) => {
     if (typeof value === 'string') {
-      return parseFloat(value);
+      // Remove vírgulas e espaços, converte para número
+      const cleanValue = value.replace(/[,\s]/g, '.').replace(/\.{2,}/g, '.');
+      return parseFloat(cleanValue) || 0;
     }
     return value;
   })
@@ -137,16 +151,20 @@ export class UpdateDadosSociaisDto extends PartialType(CreateDadosSociaisDto) {
   @ApiProperty({
     description: 'Valor mensal recebido do BPC',
     example: 1320.00,
-    minimum: 0,
+    minimum: 100,
+    maximum: 10000,
     required: false,
   })
   @IsOptional()
   @ValidateIf((o) => o.recebe_bpc === true)
-  @IsNumber({}, { message: 'Valor do BPC deve ser um número válido' })
-  @Min(0, { message: 'Valor do BPC não pode ser negativo' })
+  @IsNumber({ maxDecimalPlaces: 2 }, { message: 'Valor do BPC deve ser um número válido com no máximo 2 casas decimais' })
+  @Min(100, { message: 'Valor do BPC deve ser no mínimo R$ 100,00' })
+  @Max(10000, { message: 'Valor do BPC não pode exceder R$ 10.000,00' })
   @Transform(({ value }) => {
     if (typeof value === 'string') {
-      return parseFloat(value);
+      // Remove vírgulas e espaços, converte para número
+      const cleanValue = value.replace(/[,\s]/g, '.').replace(/\.{2,}/g, '.');
+      return parseFloat(cleanValue) || 0;
     }
     return value;
   })
@@ -183,9 +201,13 @@ export class UpdateDadosSociaisDto extends PartialType(CreateDadosSociaisDto) {
     enum: SituacaoTrabalhoEnum,
     example: SituacaoTrabalhoEnum.DESEMPREGADO,
     required: false,
+    enumName: 'SituacaoTrabalhoEnum'
   })
   @IsOptional()
-  @IsEnum(SituacaoTrabalhoEnum, { message: 'Situação de trabalho inválida' })
+  @IsEnumValue(SituacaoTrabalhoEnum, {
+    enumName: 'Situação de Trabalho',
+    caseSensitive: false,
+  })
   situacao_trabalho?: SituacaoTrabalhoEnum;
 
   @ApiProperty({

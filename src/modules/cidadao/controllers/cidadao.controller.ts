@@ -375,6 +375,78 @@ export class CidadaoController {
   @ApiOperation({
     summary: 'Criar cidadão',
     description: 'Cadastra um novo cidadão no sistema.',
+    requestBody: {
+      description: 'Dados do cidadão a ser criado',
+      required: true,
+      content: {
+        'application/json': {
+          schema: {
+            $ref: '#/components/schemas/CreateCidadaoDto',
+          },
+          examples: {
+            'cidadao-completo': {
+              summary: 'Cidadão com dados completos',
+              description: 'Exemplo de criação de cidadão com todos os dados preenchidos',
+              value: {
+                nome: 'Maria da Silva Santos',
+                cpf: '123.456.789-00',
+                rg: '1234567',
+                prontuario_suas: 'SUAS1234567',
+                naturalidade: 'Natal',
+                data_nascimento: '1985-03-15',
+                sexo: 'FEMININO',
+                estado_civil: 'SOLTEIRA',
+                nis: '12345678901',
+                telefone: '(84) 99999-9999',
+                email: 'maria.silva@email.com',
+                endereco: {
+                  logradouro: 'Rua das Flores',
+                  numero: '123',
+                  complemento: 'Apto 101',
+                  bairro: 'Centro',
+                  cidade: 'Natal',
+                  estado: 'RN',
+                  cep: '59000-000',
+                  ponto_referencia: 'Próximo ao Corpo de Bombeiros',
+                  tempo_de_residencia: 2
+                },
+                papeis: [{
+                  tipo_papel: 'BENEFICIARIO',
+                  metadados: {
+                    grau_parentesco: 'Responsável'
+                  }
+                }]
+              }
+            },
+            'cidadao-minimo': {
+              summary: 'Cidadão com dados mínimos',
+              description: 'Exemplo de criação de cidadão apenas com campos obrigatórios',
+              value: {
+                nome: 'João Santos',
+                cpf: '987.654.321-00',
+                rg: '7654321',
+                prontuario_suas: 'SUAS7654321',
+                naturalidade: 'Natal',
+                data_nascimento: '1990-07-20',
+                sexo: 'MASCULINO',
+                estado_civil: 'SOLTEIRO',
+                nis: '10987654321',
+                telefone: '(84) 88888-8888',
+                endereco: {
+                  logradouro: 'Rua Principal',
+                  numero: '456',
+                  bairro: 'Cidade Nova',
+                  cidade: 'Natal',
+                  estado: 'RN',
+                  cep: '59100-000',
+                  tempo_de_residencia: 5
+                }
+              }
+            }
+          }
+        }
+      }
+    }
   })
   @ApiOkResponse({
     description: 'Cidadão criado com sucesso',

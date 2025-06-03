@@ -13,7 +13,7 @@ import { NotFoundException } from '@nestjs/common';
  * 
  * @author Equipe PGBen
  */
-@ApiTags('Confirmações de Recebimento')
+@ApiTags('Pagamentos')
 @Controller('pagamentos/:pagamentoId/confirmacao')
 export class ConfirmacaoController {
   constructor(private readonly confirmacaoService: ConfirmacaoService) {}

@@ -27,9 +27,9 @@ import { CreateDadosNatalidadeDto, UpdateDadosNatalidadeDto } from '../dto/creat
 import { DadosNatalidade } from '../../../entities/dados-natalidade.entity';
 
 /**
- * Controlador para gerenciar dados específicos do Auxílio Natalidade
+ * Controlador para gerenciar dados específicos do Benefício Natalidade
  */
-@ApiTags('Dados Natalidade')
+@ApiTags('Benefícios')
 @Controller('dados-natalidade')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()

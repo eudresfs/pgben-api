@@ -11,19 +11,9 @@ export class CreateAllEnums1704067200000 implements MigrationInterface {
         await queryRunner.query(`
             DO $$ BEGIN
                 CREATE TYPE "status_solicitacao_enum" AS ENUM (
-                   'RASCUNHO', 'rascunho', 
-                   'ABERTA', 'aberta', 
-                   'EM_ANALISE', 'em_analise', 
-                   'PENDENTE', 'pendente', 
-                   'AGUARDANDO_DOCUMENTOS', 'aguardando_documentos'
-                   'APROVADA', 'aprovada', 
-                   'INDEFERIDA', 'indeferida',
-                   'LIBERADA', 'liberada', 
-                   'EM_PROCESSAMENTO', 'em_processamento',
-                   'ARQUIVADA', 'arquivada', 
-                   'REJEITADA', 'rejeitada', 
-                   'CANCELADA', 'cancelada',
-                   'CONCLUIDA', 'concluida'
+                   'rascunho', 'aberta', 'em_analise', 'pendente', 'aguardando_documentos',
+                   'aprovada', 'indeferida', 'liberada', 'em_processamento',
+                   'arquivada', 'rejeitada', 'cancelada', 'concluida'
                 );
             EXCEPTION
                 WHEN duplicate_object THEN null;
@@ -34,7 +24,7 @@ export class CreateAllEnums1704067200000 implements MigrationInterface {
         await queryRunner.query(`
             DO $$ BEGIN
                 CREATE TYPE "estado_civil_enum" AS ENUM (
-                    'SOLTEIRO', 'solteiro', 'CASADO', 'casado', 'DIVORCIADO', 'divorciado', 'VIUVO', 'viuvo'
+                    'solteiro', 'casado', 'divorciado', 'viuvo'
                 );
             EXCEPTION
                 WHEN duplicate_object THEN null;
@@ -45,7 +35,7 @@ export class CreateAllEnums1704067200000 implements MigrationInterface {
         await queryRunner.query(`
             DO $$ BEGIN
                 CREATE TYPE "tipo_beneficio_enum" AS ENUM (
-                    'NATALIDADE', 'natalidade', 'FUNERAL', 'funeral', 'ALUGUEL_SOCIAL', 'aluguel_social', 'CESTA_BASICA', 'cesta_basica'
+                    'natalidade', 'funeral', 'aluguel_social', 'cesta_basica'
                 );
             EXCEPTION
                 WHEN duplicate_object THEN null;
@@ -56,7 +46,7 @@ export class CreateAllEnums1704067200000 implements MigrationInterface {
         await queryRunner.query(`
             DO $$ BEGIN
                 CREATE TYPE "tipo_unidade_enum" AS ENUM (
-                    'SEDE', 'sede', 'FILIAL', 'filial', 'REGIONAL', 'regional'
+                    'sede', 'filial', 'regional'
                 );
             EXCEPTION
                 WHEN duplicate_object THEN null;
@@ -67,7 +57,7 @@ export class CreateAllEnums1704067200000 implements MigrationInterface {
         await queryRunner.query(`
             DO $$ BEGIN
                 CREATE TYPE "status_unidade_enum" AS ENUM (
-                    'ATIVO', 'ativo', 'INATIVO', 'inativo', 'MANUTENCAO', 'manutencao'
+                    'ativo', 'inativo', 'manutencao'
                 );
             EXCEPTION
                 WHEN duplicate_object THEN null;
@@ -78,7 +68,7 @@ export class CreateAllEnums1704067200000 implements MigrationInterface {
         await queryRunner.query(`
             DO $$ BEGIN
                 CREATE TYPE "sexo_enum" AS ENUM (
-                    'MASCULINO', 'masculino', 'FEMININO', 'feminino', 'OUTRO', 'outro'
+                    'masculino', 'feminino', 'outro'
                 );
             EXCEPTION
                 WHEN duplicate_object THEN null;
@@ -89,9 +79,9 @@ export class CreateAllEnums1704067200000 implements MigrationInterface {
         await queryRunner.query(`
             DO $$ BEGIN
                 CREATE TYPE "escolaridade_enum" AS ENUM (
-                    'ANALFABETO', 'analfabeto', 'FUNDAMENTAL_INCOMPLETO', 'fundamental_incompleto', 'FUNDAMENTAL_COMPLETO', 'fundamental_completo', 
-                    'MEDIO_INCOMPLETO', 'medio_incompleto', 'MEDIO_COMPLETO', 'medio_completo', 'SUPERIOR_INCOMPLETO', 'superior_incompleto', 
-                    'SUPERIOR_COMPLETO', 'superior_completo', 'POS_GRADUACAO', 'pos_graduacao'
+                    'analfabeto', 'fundamental_incompleto', 'fundamental_completo', 
+                    'medio_incompleto', 'medio_completo', 'superior_incompleto', 
+                    'superior_completo', 'pos_graduacao'
                 );
             EXCEPTION
                 WHEN duplicate_object THEN null;
@@ -102,7 +92,7 @@ export class CreateAllEnums1704067200000 implements MigrationInterface {
         await queryRunner.query(`
             DO $$ BEGIN
                 CREATE TYPE "parentesco_enum" AS ENUM (
-                    'PAI', 'pai', 'MAE', 'mae', 'FILHO', 'filho', 'FILHA', 'filha', 'CONJUGE', 'conjuge', 'IRMAO', 'irmao', 'IRMA', 'irma', 'OUTRO', 'outro'
+                    'pai', 'mae', 'filho', 'conjuge', 'irmao', 'avo', 'neto', 'tio', 'sobrinho', 'outro'
                 );
             EXCEPTION
                 WHEN duplicate_object THEN null;
@@ -113,7 +103,7 @@ export class CreateAllEnums1704067200000 implements MigrationInterface {
         await queryRunner.query(`
             DO $$ BEGIN
                 CREATE TYPE "situacao_trabalho_enum" AS ENUM (
-                    'EMPREGADO', 'empregado', 'DESEMPREGADO', 'desempregado', 'AUTONOMO', 'autonomo', 'APOSENTADO', 'aposentado', 'PENSIONISTA', 'pensionista'
+                    'empregado', 'desempregado', 'empregado_formal', 'empregado_informal', 'autonomo', 'aposentado', 'pensionista', 'beneficiario_bpc', 'outro', 'estudante', 'do_lar'
                 );
             EXCEPTION
                 WHEN duplicate_object THEN null;
@@ -124,7 +114,7 @@ export class CreateAllEnums1704067200000 implements MigrationInterface {
         await queryRunner.query(`
             DO $$ BEGIN
                 CREATE TYPE "periodicidade_enum" AS ENUM (
-                    'UNICA', 'unica', 'MENSAL', 'mensal', 'TRIMESTRAL', 'trimestral', 'SEMESTRAL', 'semestral', 'ANUAL', 'anual'
+                    'unica', 'mensal', 'trimestral', 'semestral', 'anual'
                 );
             EXCEPTION
                 WHEN duplicate_object THEN null;
@@ -135,7 +125,7 @@ export class CreateAllEnums1704067200000 implements MigrationInterface {
         await queryRunner.query(`
             DO $$ BEGIN
                 CREATE TYPE "status_pendencia_enum" AS ENUM (
-                    'ABERTA', 'aberta', 'EM_RESOLUCAO', 'em_resolucao', 'RESOLVIDA', 'resolvida', 'CANCELADA', 'cancelada'
+                    'aberta', 'em_resolucao', 'resolvida', 'cancelada'
                 );
             EXCEPTION
                 WHEN duplicate_object THEN null;
@@ -146,7 +136,7 @@ export class CreateAllEnums1704067200000 implements MigrationInterface {
         await queryRunner.query(`
             DO $$ BEGIN
                 CREATE TYPE "metodo_confirmacao_enum" AS ENUM (
-                    'PRESENCIAL', 'presencial', 'TELEFONE', 'telefone', 'EMAIL', 'email', 'SMS', 'sms'
+                    'presencial', 'telefone', 'email', 'sms'
                 );
             EXCEPTION
                 WHEN duplicate_object THEN null;
@@ -157,7 +147,7 @@ export class CreateAllEnums1704067200000 implements MigrationInterface {
         await queryRunner.query(`
             DO $$ BEGIN
                 CREATE TYPE "status_pagamento_enum" AS ENUM (
-                    'PENDENTE', 'pendente', 'PROCESSANDO', 'processando', 'PAGO', 'pago', 'CANCELADO', 'cancelado', 'ESTORNADO', 'estornado'
+                    'pendente', 'processando', 'pago', 'cancelado', 'estornado'
                 );
             EXCEPTION
                 WHEN duplicate_object THEN null;
@@ -168,7 +158,7 @@ export class CreateAllEnums1704067200000 implements MigrationInterface {
         await queryRunner.query(`
             DO $$ BEGIN
                 CREATE TYPE "metodo_pagamento_enum" AS ENUM (
-                    'PIX', 'pix', 'TED', 'ted', 'DINHEIRO', 'dinheiro', 'CARTAO', 'cartao'
+                    'pix', 'ted', 'dinheiro', 'cartao'
                 );
             EXCEPTION
                 WHEN duplicate_object THEN null;
@@ -179,7 +169,7 @@ export class CreateAllEnums1704067200000 implements MigrationInterface {
         await queryRunner.query(`
             DO $$ BEGIN
                 CREATE TYPE "tipo_metrica_enum" AS ENUM (
-                    'COUNTER', 'counter', 'GAUGE', 'gauge', 'HISTOGRAM', 'histogram', 'SUMMARY', 'summary'
+                    'counter', 'gauge', 'histogram', 'summary'
                 );
             EXCEPTION
                 WHEN duplicate_object THEN null;
@@ -190,7 +180,7 @@ export class CreateAllEnums1704067200000 implements MigrationInterface {
         await queryRunner.query(`
             DO $$ BEGIN
                 CREATE TYPE "categoria_metrica_enum" AS ENUM (
-                    'SISTEMA', 'sistema', 'NEGOCIO', 'negocio', 'PERFORMANCE', 'performance', 'SEGURANCA', 'seguranca'
+                    'sistema', 'negocio', 'performance', 'seguranca'
                 );
             EXCEPTION
                 WHEN duplicate_object THEN null;
@@ -201,7 +191,7 @@ export class CreateAllEnums1704067200000 implements MigrationInterface {
         await queryRunner.query(`
             DO $$ BEGIN
                 CREATE TYPE "nivel_alerta_enum" AS ENUM (
-                    'INFO', 'info', 'WARNING', 'warning', 'ERROR', 'error', 'CRITICAL', 'critical'
+                    'info', 'warning', 'error', 'critical'
                 );
             EXCEPTION
                 WHEN duplicate_object THEN null;
@@ -213,52 +203,52 @@ export class CreateAllEnums1704067200000 implements MigrationInterface {
             DO $$ BEGIN
                 CREATE TYPE "tipo_documento_enum" AS ENUM (
                     -- Documentos de identificação
-                    'CPF', 'cpf', 'RG', 'rg', 'CNH', 'cnh', 'PASSAPORTE', 'passaporte',
+                    'cpf', 'rg', 'cnh', 'passaporte',
                     
                     -- Certidões
-                    'CERTIDAO_NASCIMENTO', 'certidao_nascimento', 'CERTIDAO_CASAMENTO', 'certidao_casamento', 'CERTIDAO_OBITO', 'certidao_obito',
+                    'certidao_nascimento', 'certidao_casamento', 'certidao_obito',
                     
                     -- Comprovantes básicos
-                    'COMPROVANTE_RESIDENCIA', 'comprovante_residencia', 'COMPROVANTE_RENDA', 'comprovante_renda', 'COMPROVANTE_ESCOLARIDADE', 'comprovante_escolaridade',
+                    'comprovante_residencia', 'comprovante_renda', 'comprovante_escolaridade',
                     
                     -- Documentos médicos e de saúde
-                    'DECLARACAO_MEDICA', 'declaracao_medica', 'CARTAO_VACINA', 'cartao_vacina', 'CARTAO_SUS', 'cartao_sus', 'LAUDO_MEDICO', 'laudo_medico', 'ATESTADO_MEDICO', 'atestado_medico', 'EXAME_PRE_NATAL', 'exame_pre_natal',
+                    'declaracao_medica', 'cartao_vacina', 'cartao_sus', 'laudo_medico', 'atestado_medico', 'exame_pre_natal',
                     
                     -- Documentos habitacionais
-                    'CONTRATO_ALUGUEL', 'contrato_aluguel', 'ESCRITURA_IMOVEL', 'escritura_imovel', 'IPTU', 'iptu', 'CONTA_AGUA', 'conta_agua', 'CONTA_LUZ', 'conta_luz', 'CONTA_TELEFONE', 'conta_telefone',
+                    'contrato_aluguel', 'escritura_imovel', 'iptu', 'conta_agua', 'conta_luz', 'conta_telefone',
                     
                     -- Documentos trabalhistas e previdenciários
-                    'CARTEIRA_TRABALHO', 'carteira_trabalho', 'COMPROVANTE_DESEMPREGO', 'comprovante_desemprego', 'EXTRATO_FGTS', 'extrato_fgts', 'COMPROVANTE_APOSENTADORIA', 'comprovante_aposentadoria', 'COMPROVANTE_PENSAO', 'comprovante_pensao', 'COMPROVANTE_BENEFICIO_INSS', 'comprovante_beneficio_inss',
+                    'carteira_trabalho', 'comprovante_desemprego', 'extrato_fgts', 'comprovante_aposentadoria', 'comprovante_pensao', 'comprovante_beneficio_inss',
                     
                     -- Documentos bancários
-                    'EXTRATO_BANCARIO', 'extrato_bancario', 'COMPROVANTE_PIX', 'comprovante_pix', 'DADOS_BANCARIOS', 'dados_bancarios',
+                    'extrato_bancario', 'comprovante_pix', 'dados_bancarios',
                     
                     -- Documentos familiares e sociais
-                    'DECLARACAO_COMPOSICAO_FAMILIAR', 'declaracao_composicao_familiar', 'DECLARACAO_UNIAO_ESTAVEL', 'declaracao_uniao_estavel', 'GUARDA_MENOR', 'guarda_menor', 'TUTELA', 'tutela',
+                    'declaracao_composicao_familiar', 'declaracao_uniao_estavel', 'guarda_menor', 'tutela',
                     
                     -- Documentos específicos para benefícios
-                    'BOLETIM_OCORRENCIA', 'boletim_ocorrencia', 'MEDIDA_PROTETIVA', 'medida_protetiva', 'TERMO_ACOLHIMENTO', 'termo_acolhimento', 'RELATORIO_SOCIAL', 'relatorio_social', 'PARECER_TECNICO', 'parecer_tecnico',
+                    'boletim_ocorrencia', 'medida_protetiva', 'termo_acolhimento', 'relatorio_social', 'parecer_tecnico',
                     
                     -- Documentos de programas sociais
-                    'CARTAO_CADUNICO', 'cartao_cadunico', 'FOLHA_RESUMO_CADUNICO', 'folha_resumo_cadunico', 'COMPROVANTE_BOLSA_FAMILIA', 'comprovante_bolsa_familia', 'COMPROVANTE_BPC', 'comprovante_bpc',
+                    'cartao_cadunico', 'folha_resumo_cadunico', 'comprovante_bolsa_familia', 'comprovante_bpc',
                     
                     -- Documentos educacionais
-                    'DECLARACAO_ESCOLAR', 'declaracao_escolar', 'HISTORICO_ESCOLAR', 'historico_escolar', 'MATRICULA_ESCOLAR', 'matricula_escolar',
+                    'declaracao_escolar', 'historico_escolar', 'matricula_escolar',
                     
                     -- Documentos específicos para mortalidade
-                    'DECLARACAO_OBITO', 'declaracao_obito', 'AUTORIZACAO_SEPULTAMENTO', 'autorizacao_sepultamento', 'COMPROVANTE_PARENTESCO', 'comprovante_parentesco',
+                    'declaracao_obito', 'autorizacao_sepultamento', 'comprovante_parentesco',
                     
                     -- Documentos específicos para natalidade
-                    'CARTAO_PRE_NATAL', 'cartao_pre_natal', 'DECLARACAO_NASCIDO_VIVO', 'declaracao_nascido_vivo', 'COMPROVANTE_GESTACAO', 'comprovante_gestacao',
+                    'cartao_pre_natal', 'declaracao_nascido_vivo', 'comprovante_gestacao',
                     
                     -- Documentos específicos para passagens
-                    'COMPROVANTE_VIAGEM', 'comprovante_viagem', 'AUTORIZACAO_VIAGEM', 'autorizacao_viagem', 'BILHETE_PASSAGEM', 'bilhete_passagem',
+                    'comprovante_viagem', 'autorizacao_viagem', 'bilhete_passagem',
                     
                     -- Documentos específicos para hipossuficiência
-                    'DECLARACAO_HIPOSSUFICIENCIA', 'declaracao_hipossuficiencia',
+                    'declaracao_hipossuficiencia',
                     
                     -- Documentos diversos
-                    'PROCURACAO', 'procuracao', 'TERMO_RESPONSABILIDADE', 'termo_responsabilidade', 'FOTO_3X4', 'foto_3x4', 'OUTRO', 'outro'
+                    'procuracao', 'termo_responsabilidade', 'foto_3x4', 'outro'
                 );
             EXCEPTION
                 WHEN duplicate_object THEN null;
@@ -269,7 +259,7 @@ export class CreateAllEnums1704067200000 implements MigrationInterface {
         await queryRunner.query(`
             DO $$ BEGIN
                 CREATE TYPE "tipo_papel_enum" AS ENUM (
-                    'BENEFICIARIO', 'beneficiario', 'REQUERENTE', 'requerente', 'REPRESENTANTE_LEGAL', 'representante_legal'
+                    'beneficiario', 'requerente', 'representante_legal'
                 );
             EXCEPTION
                 WHEN duplicate_object THEN null;
@@ -280,7 +270,7 @@ export class CreateAllEnums1704067200000 implements MigrationInterface {
         await queryRunner.query(`
             DO $$ BEGIN
                 CREATE TYPE "tipo_moradia_enum" AS ENUM (
-                    'PROPRIA', 'propria', 'ALUGADA', 'alugada', 'CEDIDA', 'cedida', 'FINANCIADA', 'financiada', 'OUTROS', 'outros'
+                    'propria', 'alugada', 'cedida', 'financiada', 'outros'
                 );
             EXCEPTION
                 WHEN duplicate_object THEN null;
@@ -291,7 +281,7 @@ export class CreateAllEnums1704067200000 implements MigrationInterface {
         await queryRunner.query(`
             DO $$ BEGIN
                 CREATE TYPE "integracao_tipo_enum" AS ENUM (
-                    'REST', 'rest', 'SOAP', 'soap', 'GRAPHQL', 'graphql', 'WEBHOOK', 'webhook'
+                    'rest', 'soap', 'graphql', 'webhook'
                 );
             EXCEPTION
                 WHEN duplicate_object THEN null;
@@ -301,8 +291,11 @@ export class CreateAllEnums1704067200000 implements MigrationInterface {
         // Enum para tipo de urna funerária
         await queryRunner.query(`
             DO $$ BEGIN
-                CREATE TYPE "tipo_urna_funeraria_enum" AS ENUM (
-                    'PADRAO', 'padrao', 'ESPECIAL', 'especial', 'LUXO', 'luxo', 'SUPER_LUXO', 'super_luxo', 'INFANTIL', 'infantil'
+                CREATE TYPE "tipo_urna_enum" AS ENUM (
+                    'padrao',
+                    'especial',
+                    'infantil',
+                    'obeso'
                 );
             EXCEPTION
                 WHEN duplicate_object THEN null;
@@ -313,7 +306,14 @@ export class CreateAllEnums1704067200000 implements MigrationInterface {
         await queryRunner.query(`
             DO $$ BEGIN
                 CREATE TYPE "periodicidade_entrega_enum" AS ENUM (
-                    'UNICA', 'unica', 'SEMANAL', 'semanal', 'QUINZENAL', 'quinzenal', 'MENSAL', 'mensal', 'BIMESTRAL', 'bimestral', 'TRIMESTRAL', 'trimestral'
+                    'unica',
+                    'semanal',
+                    'quinzenal',
+                    'mensal',
+                    'bimestral',
+                    'trimestral',
+                    'semestral',
+                    'anual'
                 );
             EXCEPTION
                 WHEN duplicate_object THEN null;
@@ -324,7 +324,13 @@ export class CreateAllEnums1704067200000 implements MigrationInterface {
         await queryRunner.query(`
             DO $$ BEGIN
                 CREATE TYPE "tipo_avaliacao_enum" AS ENUM (
-                    'TECNICA', 'tecnica', 'SOCIAL', 'social', 'FINANCEIRA', 'financeira', 'JURIDICA', 'juridica'
+                    'social',
+                    'economica',
+                    'psicologica',
+                    'medica',
+                    'juridica',
+                    'tecnica',
+                    'administrativa'
                 );
             EXCEPTION
                 WHEN duplicate_object THEN null;
@@ -335,7 +341,12 @@ export class CreateAllEnums1704067200000 implements MigrationInterface {
         await queryRunner.query(`
             DO $$ BEGIN
                 CREATE TYPE "resultado_avaliacao_enum" AS ENUM (
-                    'APROVADO', 'aprovado', 'REPROVADO', 'reprovado', 'PENDENTE', 'pendente', 'EM_ANALISE', 'em_analise'
+                    'aprovado',
+                    'reprovado',
+                    'pendente',
+                    'em_analise',
+                    'necessita_complementacao',
+                    'cancelado'
                 );
             EXCEPTION
                 WHEN duplicate_object THEN null;
@@ -346,7 +357,13 @@ export class CreateAllEnums1704067200000 implements MigrationInterface {
         await queryRunner.query(`
             DO $$ BEGIN
                 CREATE TYPE "origem_solicitacao_enum" AS ENUM (
-                    'PRESENCIAL', 'presencial', 'ONLINE', 'online', 'TELEFONE', 'telefone', 'EMAIL', 'email', 'OFICIO', 'oficio'
+                    'presencial',
+                    'online',
+                    'telefone',
+                    'mobile',
+                    'terceiros',
+                    'oficio',
+                    'sistema_integrado'
                 );
             EXCEPTION
                 WHEN duplicate_object THEN null;
@@ -357,7 +374,15 @@ export class CreateAllEnums1704067200000 implements MigrationInterface {
         await queryRunner.query(`
             DO $$ BEGIN
                 CREATE TYPE "tipo_solicitacao_enum" AS ENUM (
-                    'BENEFICIO', 'beneficio', 'SERVICO', 'servico', 'INFORMACAO', 'informacao', 'DENUNCIA', 'denuncia', 'RECLAMACAO', 'reclamacao'
+                    'beneficio_eventual',
+                    'auxilio_natalidade',
+                    'auxilio_funeral',
+                    'auxilio_vulnerabilidade',
+                    'cesta_basica',
+                    'passagem',
+                    'medicamento',
+                    'material_construcao',
+                    'outro'
                 );
             EXCEPTION
                 WHEN duplicate_object THEN null;
@@ -368,7 +393,12 @@ export class CreateAllEnums1704067200000 implements MigrationInterface {
         await queryRunner.query(`
             DO $$ BEGIN
                 CREATE TYPE "formato_relatorio_enum" AS ENUM (
-                    'PDF', 'pdf', 'EXCEL', 'excel', 'CSV', 'csv', 'HTML', 'html', 'JSON', 'json'
+                    'pdf',
+                    'excel',
+                    'csv',
+                    'json',
+                    'xml',
+                    'html'
                 );
             EXCEPTION
                 WHEN duplicate_object THEN null;
@@ -379,7 +409,15 @@ export class CreateAllEnums1704067200000 implements MigrationInterface {
         await queryRunner.query(`
             DO $$ BEGIN
                 CREATE TYPE "tipo_relatorio_enum" AS ENUM (
-                    'GERENCIAL', 'gerencial', 'OPERACIONAL', 'operacional', 'ESTATISTICO', 'estatistico', 'FINANCEIRO', 'financeiro', 'AUDITORIA', 'auditoria'
+                    'beneficiarios',
+                    'beneficios',
+                    'solicitacoes',
+                    'pagamentos',
+                    'estatisticas',
+                    'auditoria',
+                    'financeiro',
+                    'operacional',
+                    'gerencial'
                 );
             EXCEPTION
                 WHEN duplicate_object THEN null;
@@ -390,7 +428,11 @@ export class CreateAllEnums1704067200000 implements MigrationInterface {
         await queryRunner.query(`
             DO $$ BEGIN
                 CREATE TYPE "status_geracao_enum" AS ENUM (
-                    'PENDENTE', 'pendente', 'EM_PROCESSAMENTO', 'em_processamento', 'CONCLUIDO', 'concluido', 'ERRO', 'erro'
+                    'pendente',
+                    'em_processamento',
+                    'concluido',
+                    'erro',
+                    'cancelado'
                 );
             EXCEPTION
                 WHEN duplicate_object THEN null;
@@ -401,7 +443,7 @@ export class CreateAllEnums1704067200000 implements MigrationInterface {
         await queryRunner.query(`
             DO $$ BEGIN
                 CREATE TYPE "estrategia_amostragem_enum" AS ENUM (
-                    'COMPLETA', 'completa', 'ALEATORIA', 'aleatoria', 'INTERVALO', 'intervalo', 'PERCENTUAL', 'percentual'
+                    'completa', 'aleatoria', 'intervalo', 'percentual'
                 );
             EXCEPTION
                 WHEN duplicate_object THEN null;
@@ -412,7 +454,7 @@ export class CreateAllEnums1704067200000 implements MigrationInterface {
         await queryRunner.query(`
             DO $$ BEGIN
                 CREATE TYPE "tipo_agendamento_enum" AS ENUM (
-                    'UNICO', 'unico', 'RECORRENTE', 'recorrente', 'CONDICIONAL', 'condicional'
+                    'unico', 'recorrente', 'condicional'
                 );
             EXCEPTION
                 WHEN duplicate_object THEN null;
@@ -423,7 +465,7 @@ export class CreateAllEnums1704067200000 implements MigrationInterface {
         await queryRunner.query(`
             DO $$ BEGIN
                 CREATE TYPE "canal_notificacao_enum" AS ENUM (
-                    'EMAIL', 'email', 'SMS', 'sms', 'PUSH', 'push', 'WHATSAPP', 'whatsapp', 'INTERNO', 'interno'
+                    'email', 'sms', 'push', 'whatsapp', 'interno'
                 );
             EXCEPTION
                 WHEN duplicate_object THEN null;
@@ -434,7 +476,7 @@ export class CreateAllEnums1704067200000 implements MigrationInterface {
         await queryRunner.query(`
             DO $$ BEGIN
                 CREATE TYPE "tipo_escopo_enum" AS ENUM (
-                    'GLOBAL', 'global', 'UNIDADE', 'unidade', 'SETOR', 'setor', 'USUARIO', 'usuario'
+                    'global', 'unidade', 'setor', 'usuario'
                 );
             EXCEPTION
                 WHEN duplicate_object THEN null;
@@ -445,7 +487,7 @@ export class CreateAllEnums1704067200000 implements MigrationInterface {
         await queryRunner.query(`
             DO $$ BEGIN
                 CREATE TYPE "tipo_evento_integracao_enum" AS ENUM (
-                    'CRIACAO', 'criacao', 'ATUALIZACAO', 'atualizacao', 'EXCLUSAO', 'exclusao', 'CONSULTA', 'consulta'
+                    'criacao', 'atualizacao', 'exclusao', 'consulta'
                 );
             EXCEPTION
                 WHEN duplicate_object THEN null;
@@ -456,8 +498,8 @@ export class CreateAllEnums1704067200000 implements MigrationInterface {
         await queryRunner.query(`
             DO $$ BEGIN
                 CREATE TYPE "motivo_aluguel_social_enum" AS ENUM (
-                    'DESASTRE_NATURAL', 'desastre_natural', 'INCENDIO', 'incendio', 'DESABAMENTO', 'desabamento', 'RISCO_ESTRUTURAL', 'risco_estrutural', 
-                    'REMOCAO_AREA_RISCO', 'remocao_area_risco', 'VIOLENCIA_DOMESTICA', 'violencia_domestica', 'VULNERABILIDADE_EXTREMA', 'vulnerabilidade_extrema'
+                    'desastre_natural', 'incendio', 'desabamento', 'risco_estrutural', 
+                    'remocao_area_risco', 'violencia_domestica', 'vulnerabilidade_extrema'
                 );
             EXCEPTION
                 WHEN duplicate_object THEN null;
@@ -468,7 +510,7 @@ export class CreateAllEnums1704067200000 implements MigrationInterface {
         await queryRunner.query(`
             DO $$ BEGIN
                 CREATE TYPE "tipo_entrega_cesta_basica_enum" AS ENUM (
-                    'PRESENCIAL', 'presencial', 'DOMICILIAR', 'domiciliar', 'PONTO_COLETA', 'ponto_coleta', 'PARCEIRO', 'parceiro'
+                    'presencial', 'domiciliar', 'ponto_coleta', 'parceiro'
                 );
             EXCEPTION
                 WHEN duplicate_object THEN null;
@@ -479,7 +521,7 @@ export class CreateAllEnums1704067200000 implements MigrationInterface {
         await queryRunner.query(`
             DO $$ BEGIN
                 CREATE TYPE "periodicidade_cesta_basica_enum" AS ENUM (
-                    'UNICA', 'unica', 'SEMANAL', 'semanal', 'QUINZENAL', 'quinzenal', 'MENSAL', 'mensal'
+                    'unica', 'semanal', 'quinzenal', 'mensal'
                 );
             EXCEPTION
                 WHEN duplicate_object THEN null;
@@ -490,7 +532,7 @@ export class CreateAllEnums1704067200000 implements MigrationInterface {
         await queryRunner.query(`
             DO $$ BEGIN
                 CREATE TYPE "status_verificacao_documento_enum" AS ENUM (
-                    'PENDENTE', 'pendente', 'EM_ANALISE', 'em_analise', 'VERIFICADO', 'verificado', 'REJEITADO', 'rejeitado'
+                    'pendente', 'em_analise', 'verificado', 'rejeitado'
                 );
             EXCEPTION
                 WHEN duplicate_object THEN null;
@@ -501,7 +543,7 @@ export class CreateAllEnums1704067200000 implements MigrationInterface {
         await queryRunner.query(`
             DO $$ BEGIN
                 CREATE TYPE "resultado_verificacao_malware_enum" AS ENUM (
-                    'SEGURO', 'seguro', 'SUSPEITO', 'suspeito', 'INFECTADO', 'infectado', 'ERRO_VERIFICACAO', 'erro_verificacao'
+                    'seguro', 'suspeito', 'infectado', 'erro_verificacao'
                 );
             EXCEPTION
                 WHEN duplicate_object THEN null;
@@ -512,7 +554,7 @@ export class CreateAllEnums1704067200000 implements MigrationInterface {
         await queryRunner.query(`
             DO $$ BEGIN
                 CREATE TYPE "tipo_documento_enviado_enum" AS ENUM (
-                    'IDENTIFICACAO', 'identificacao', 'COMPROVANTE', 'comprovante', 'DECLARACAO', 'declaracao', 'LAUDO', 'laudo', 'FORMULARIO', 'formulario'
+                    'identificacao', 'comprovante', 'declaracao', 'laudo', 'formulario'
                 );
             EXCEPTION
                 WHEN duplicate_object THEN null;
@@ -523,7 +565,7 @@ export class CreateAllEnums1704067200000 implements MigrationInterface {
         await queryRunner.query(`
             DO $$ BEGIN
                 CREATE TYPE "tipo_configuracao_enum" AS ENUM (
-                    'SISTEMA', 'sistema', 'MODULO', 'modulo', 'FUNCIONALIDADE', 'funcionalidade', 'INTEGRACAO', 'integracao', 'NOTIFICACAO', 'notificacao'
+                    'sistema', 'modulo', 'funcionalidade', 'integracao', 'notificacao'
                 );
             EXCEPTION
                 WHEN duplicate_object THEN null;
@@ -534,7 +576,7 @@ export class CreateAllEnums1704067200000 implements MigrationInterface {
         await queryRunner.query(`
             DO $$ BEGIN
                 CREATE TYPE "visibilidade_configuracao_enum" AS ENUM (
-                    'PUBLICA', 'publica', 'PRIVADA', 'privada', 'RESTRITA', 'restrita', 'ADMIN', 'admin'
+                    'publica', 'privada', 'restrita', 'admin'
                 );
             EXCEPTION
                 WHEN duplicate_object THEN null;
@@ -545,7 +587,7 @@ export class CreateAllEnums1704067200000 implements MigrationInterface {
         await queryRunner.query(`
             DO $$ BEGIN
                 CREATE TYPE "tipo_trabalho_enum" AS ENUM (
-                    'CLT', 'clt', 'AUTONOMO', 'autonomo', 'SERVIDOR_PUBLICO', 'servidor_publico', 'EMPRESARIO', 'empresario', 'INFORMAL', 'informal', 'OUTRO', 'outro'
+                    'clt', 'autonomo', 'servidor_publico', 'empresario', 'informal', 'outro'
                 );
             EXCEPTION
                 WHEN duplicate_object THEN null;
@@ -556,7 +598,7 @@ export class CreateAllEnums1704067200000 implements MigrationInterface {
         await queryRunner.query(`
             DO $$ BEGIN
                 CREATE TYPE "fase_requisito_enum" AS ENUM (
-                    'INSCRICAO', 'inscricao', 'ANALISE', 'analise', 'APROVACAO', 'aprovacao', 'CONCESSAO', 'concessao'
+                    'inscricao', 'analise', 'aprovacao', 'concessao'
                 );
             EXCEPTION
                 WHEN duplicate_object THEN null;
@@ -567,7 +609,7 @@ export class CreateAllEnums1704067200000 implements MigrationInterface {
         await queryRunner.query(`
             DO $$ BEGIN
                 CREATE TYPE "tipo_campo_enum" AS ENUM (
-                    'TEXTO', 'texto', 'NUMERO', 'numero', 'DATA', 'data', 'BOOLEANO', 'booleano', 'SELECAO', 'selecao', 'MULTIPLA_ESCOLHA', 'multipla_escolha', 'ARQUIVO', 'arquivo'
+                    'texto', 'numero', 'data', 'booleano', 'selecao', 'multipla_escolha', 'arquivo'
                 );
             EXCEPTION
                 WHEN duplicate_object THEN null;
@@ -578,7 +620,7 @@ export class CreateAllEnums1704067200000 implements MigrationInterface {
         await queryRunner.query(`
             DO $$ BEGIN
                 CREATE TYPE "tipo_operacao_enum" AS ENUM (
-                    'CRIACAO', 'criacao', 'LEITURA', 'leitura', 'ATUALIZACAO', 'atualizacao', 'EXCLUSAO', 'exclusao', 'AUTENTICACAO', 'autenticacao'
+                    'criacao', 'leitura', 'atualizacao', 'exclusao', 'autenticacao'
                 );
             EXCEPTION
                 WHEN duplicate_object THEN null;
@@ -589,7 +631,7 @@ export class CreateAllEnums1704067200000 implements MigrationInterface {
         await queryRunner.query(`
             DO $$ BEGIN
                 CREATE TYPE "status_ativo_enum" AS ENUM (
-                    'ATIVO', 'ativo', 'INATIVO', 'inativo'
+                    'ativo', 'inativo'
                 );
             EXCEPTION
                 WHEN duplicate_object THEN null;
@@ -600,7 +642,7 @@ export class CreateAllEnums1704067200000 implements MigrationInterface {
         await queryRunner.query(`
             DO $$ BEGIN
                 CREATE TYPE "status_usuario_enum" AS ENUM (
-                    'ATIVO', 'ativo', 'INATIVO', 'inativo', 'SUSPENSO', 'suspenso', 'BLOQUEADO', 'bloqueado'
+                    'ativo', 'inativo', 'suspenso', 'bloqueado'
                 );
             EXCEPTION
                 WHEN duplicate_object THEN null;
@@ -611,7 +653,7 @@ export class CreateAllEnums1704067200000 implements MigrationInterface {
         await queryRunner.query(`
             DO $$ BEGIN
                 CREATE TYPE "prioridade_enum" AS ENUM (
-                    'BAIXA', 'baixa', 'MEDIA', 'media', 'ALTA', 'alta', 'CRITICA', 'critica'
+                    'baixa', 'media', 'alta', 'critica'
                 );
             EXCEPTION
                 WHEN duplicate_object THEN null;
@@ -622,7 +664,7 @@ export class CreateAllEnums1704067200000 implements MigrationInterface {
         await queryRunner.query(`
             DO $$ BEGIN
                 CREATE TYPE "status_notificacao_enum" AS ENUM (
-                    'PENDENTE', 'pendente', 'ENVIADA', 'enviada', 'ENTREGUE', 'entregue', 'LIDA', 'lida', 'ERRO', 'erro', 'CANCELADA', 'cancelada'
+                    'pendente', 'enviada', 'entregue', 'lida', 'erro', 'cancelada'
                 );
             EXCEPTION
                 WHEN duplicate_object THEN null;

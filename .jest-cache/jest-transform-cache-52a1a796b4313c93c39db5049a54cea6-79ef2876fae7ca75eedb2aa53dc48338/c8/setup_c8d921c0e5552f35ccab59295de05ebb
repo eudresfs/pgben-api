@@ -1,0 +1,61 @@
+fe21dd14015f8e10c0a1f93c41f0092b
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+// Configurações globais para os testes
+require("reflect-metadata");
+const dotenv_1 = require("dotenv");
+const tsconfig_paths_1 = require("tsconfig-paths");
+const path = __importStar(require("path"));
+// Carrega as variáveis de ambiente do arquivo .env
+(0, dotenv_1.config)({ path: '.env.test' });
+// Configura os aliases do TypeScript
+const tsConfig = require('../tsconfig.json');
+const baseUrl = path.resolve(__dirname, '..');
+const cleanup = (0, tsconfig_paths_1.register)({
+    baseUrl,
+    paths: tsConfig.compilerOptions.paths,
+});
+// Garante que os aliases sejam limpos após os testes
+if (process.env.TS_NODE_DEV === 'true') {
+    process.on('beforeExit', () => {
+        cleanup();
+    });
+}
+// Configurações adicionais podem ser adicionadas aqui
+// Por exemplo, mocks globais, configurações de timezone, etc.
+// Configura o timezone para testes
+process.env.TZ = 'UTC';
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFx0ZXN0XFxzZXR1cC50cyIsIm1hcHBpbmdzIjoiOzs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7OztBQUFBLHVDQUF1QztBQUN2Qyw0QkFBMEI7QUFDMUIsbUNBQWdDO0FBQ2hDLG1EQUEwQztBQUMxQywyQ0FBNkI7QUFFN0IsbURBQW1EO0FBQ25ELElBQUEsZUFBTSxFQUFDLEVBQUUsSUFBSSxFQUFFLFdBQVcsRUFBRSxDQUFDLENBQUM7QUFFOUIscUNBQXFDO0FBQ3JDLE1BQU0sUUFBUSxHQUFHLE9BQU8sQ0FBQyxrQkFBa0IsQ0FBQyxDQUFDO0FBQzdDLE1BQU0sT0FBTyxHQUFHLElBQUksQ0FBQyxPQUFPLENBQUMsU0FBUyxFQUFFLElBQUksQ0FBQyxDQUFDO0FBQzlDLE1BQU0sT0FBTyxHQUFHLElBQUEseUJBQVEsRUFBQztJQUN2QixPQUFPO0lBQ1AsS0FBSyxFQUFFLFFBQVEsQ0FBQyxlQUFlLENBQUMsS0FBSztDQUN0QyxDQUFDLENBQUM7QUFFSCxxREFBcUQ7QUFDckQsSUFBSSxPQUFPLENBQUMsR0FBRyxDQUFDLFdBQVcsS0FBSyxNQUFNLEVBQUUsQ0FBQztJQUN2QyxPQUFPLENBQUMsRUFBRSxDQUFDLFlBQVksRUFBRSxHQUFHLEVBQUU7UUFDNUIsT0FBTyxFQUFFLENBQUM7SUFDWixDQUFDLENBQUMsQ0FBQztBQUNMLENBQUM7QUFFRCxzREFBc0Q7QUFDdEQsOERBQThEO0FBRTlELG1DQUFtQztBQUNuQyxPQUFPLENBQUMsR0FBRyxDQUFDLEVBQUUsR0FBRyxLQUFLLENBQUMiLCJuYW1lcyI6W10sInNvdXJjZXMiOlsiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFx0ZXN0XFxzZXR1cC50cyJdLCJzb3VyY2VzQ29udGVudCI6WyIvLyBDb25maWd1cmHDp8O1ZXMgZ2xvYmFpcyBwYXJhIG9zIHRlc3Rlc1xuaW1wb3J0ICdyZWZsZWN0LW1ldGFkYXRhJztcbmltcG9ydCB7IGNvbmZpZyB9IGZyb20gJ2RvdGVudic7XG5pbXBvcnQgeyByZWdpc3RlciB9IGZyb20gJ3RzY29uZmlnLXBhdGhzJztcbmltcG9ydCAqIGFzIHBhdGggZnJvbSAncGF0aCc7XG5cbi8vIENhcnJlZ2EgYXMgdmFyacOhdmVpcyBkZSBhbWJpZW50ZSBkbyBhcnF1aXZvIC5lbnZcbmNvbmZpZyh7IHBhdGg6ICcuZW52LnRlc3QnIH0pO1xuXG4vLyBDb25maWd1cmEgb3MgYWxpYXNlcyBkbyBUeXBlU2NyaXB0XG5jb25zdCB0c0NvbmZpZyA9IHJlcXVpcmUoJy4uL3RzY29uZmlnLmpzb24nKTtcbmNvbnN0IGJhc2VVcmwgPSBwYXRoLnJlc29sdmUoX19kaXJuYW1lLCAnLi4nKTtcbmNvbnN0IGNsZWFudXAgPSByZWdpc3Rlcih7XG4gIGJhc2VVcmwsXG4gIHBhdGhzOiB0c0NvbmZpZy5jb21waWxlck9wdGlvbnMucGF0aHMsXG59KTtcblxuLy8gR2FyYW50ZSBxdWUgb3MgYWxpYXNlcyBzZWphbSBsaW1wb3MgYXDDs3Mgb3MgdGVzdGVzXG5pZiAocHJvY2Vzcy5lbnYuVFNfTk9ERV9ERVYgPT09ICd0cnVlJykge1xuICBwcm9jZXNzLm9uKCdiZWZvcmVFeGl0JywgKCkgPT4ge1xuICAgIGNsZWFudXAoKTtcbiAgfSk7XG59XG5cbi8vIENvbmZpZ3VyYcOnw7VlcyBhZGljaW9uYWlzIHBvZGVtIHNlciBhZGljaW9uYWRhcyBhcXVpXG4vLyBQb3IgZXhlbXBsbywgbW9ja3MgZ2xvYmFpcywgY29uZmlndXJhw6fDtWVzIGRlIHRpbWV6b25lLCBldGMuXG5cbi8vIENvbmZpZ3VyYSBvIHRpbWV6b25lIHBhcmEgdGVzdGVzXG5wcm9jZXNzLmVudi5UWiA9ICdVVEMnO1xuIl0sInZlcnNpb24iOjN9

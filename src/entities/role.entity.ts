@@ -20,7 +20,7 @@ import { Status } from '../enums/status.enum';
  */
 @Entity('role')
 @Index(['nome'], { unique: true })
-@Index(['ativo'])
+@Index(['status'])
 export class Role {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -46,7 +46,7 @@ export class Role {
   })
   @IsOptional()
   @IsBoolean({ message: 'Status deve ser um valor booleano' })
-  ativo: Status;
+  status: Status;
 
   @OneToMany(() => Usuario, (usuario) => usuario.role, {
     cascade: false,
@@ -65,20 +65,20 @@ export class Role {
    * @returns true se a role estiver ativa
    */
   isAtiva(): boolean {
-    return this.ativo === Status.ATIVO;
+    return this.status === Status.ATIVO;
   }
 
   /**
    * Ativa a role
    */
   ativar(): void {
-    this.ativo = Status.ATIVO;
+    this.status = Status.ATIVO;
   }
 
   /**
    * Desativa a role
    */
   desativar(): void {
-    this.ativo = Status.INATIVO;
+    this.status = Status.INATIVO;
   }
 }

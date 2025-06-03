@@ -1,173 +1,344 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 /**
- * DTO básico para endereço
+ * DTO para informações de endereço do cidadão
  */
 export class EnderecoDto {
   @ApiProperty({
-    description: 'CEP no formato 00000000 (apenas números)',
-    example: '59000000',
-    pattern: '^[0-9]{8}$',
+    description: 'CEP do endereço no formato XXXXX-XXX',
+    example: '59000-000',
+    pattern: '^\\d{5}-\\d{3}$',
+    type: 'string',
+    minLength: 9,
+    maxLength: 9
   })
   cep: string;
 
   @ApiProperty({
-    description: 'Logradouro (rua, avenida, etc)',
+    description: 'Logradouro completo (rua, avenida, travessa, etc.)',
     example: 'Rua das Flores',
+    type: 'string',
+    minLength: 5,
+    maxLength: 200
   })
   logradouro: string;
 
-  @ApiProperty({    
-    description: 'Número do imóvel',
-    example: '123',
+  @ApiProperty({
+    description: 'Número do endereço (pode conter letras)',
+    example: '123A',
+    type: 'string',
+    minLength: 1,
+    maxLength: 10
   })
   numero: string;
 
-  @ApiProperty({
-    description: 'Complemento do endereço',
-    example: 'Apto 101',
-    required: false,
+  @ApiPropertyOptional({
+    description: 'Complemento do endereço (apartamento, bloco, etc.)',
+    example: 'Apartamento 101, Bloco B',
+    type: 'string',
+    maxLength: 100
   })
   complemento?: string;
 
   @ApiProperty({
-    description: 'Bairro',
-    example: 'Centro',
+    description: 'Nome do bairro',
+    example: 'Cidade Alta',
+    type: 'string',
+    minLength: 2,
+    maxLength: 100
   })
   bairro: string;
 
   @ApiProperty({
-    description: 'Cidade',
+    description: 'Nome da cidade',
     example: 'Natal',
+    type: 'string',
+    minLength: 2,
+    maxLength: 100
   })
   cidade: string;
 
   @ApiProperty({
-    description: 'UF (estado)',
+    description: 'Sigla do estado (UF)',
     example: 'RN',
-    pattern: '^[A-Z]{2}$',
+    enum: ['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'],
+    type: 'string',
+    minLength: 2,
+    maxLength: 2
   })
-  uf: string;
+  estado: string;
+
+  @ApiPropertyOptional({
+    description: 'Ponto de referência para localização',
+    example: 'Próximo ao mercado central',
+    type: 'string',
+    maxLength: 200
+  })
+  pontoReferencia?: string;
 }
 
 /**
- * DTO para criação de cidadão
+ * DTO para criação de novo cidadão no sistema
  */
 export class CreateCidadaoDto {
   @ApiProperty({
-    description: 'Nome completo do cidadão',
-    example: 'João da Silva',
+    description: 'Nome completo do cidadão (mínimo 2 nomes)',
+    example: 'João Silva Santos',
+    type: 'string',
+    minLength: 5,
+    maxLength: 200,
+    pattern: '^[A-Za-zÀ-ÿ\\s]+$'
   })
   nome: string;
 
   @ApiProperty({
-    description: 'CPF no formato 00000000000 (apenas números)',
-    example: '12345678900',
-    pattern: '^[0-9]{11}$',
+    description: 'CPF do cidadão no formato XXX.XXX.XXX-XX',
+    example: '123.456.789-00',
+    pattern: '^\\d{3}\\.\\d{3}\\.\\d{3}-\\d{2}$',
+    type: 'string',
+    minLength: 14,
+    maxLength: 14
   })
   cpf: string;
 
   @ApiProperty({
-    description: 'NIS (Número de Identificação Social)',
-    example: '12345678901',
-    required: false,
+    description: 'Número do RG do cidadão',
+    example: '1.234.567',
+    type: 'string',
+    minLength: 5,
+    maxLength: 20
   })
-  nis?: string;
+  rg: string;
+
+  @ApiProperty({
+    description: 'Órgão emissor do RG',
+    example: 'SSP/RN',
+    type: 'string',
+    minLength: 3,
+    maxLength: 20
+  })
+  orgaoEmissorRg: string;
 
   @ApiProperty({
     description: 'Data de nascimento no formato YYYY-MM-DD',
-    example: '1990-01-01',
+    example: '1990-05-15',
     type: 'string',
-    format: 'date',
+    format: 'date'
   })
   dataNascimento: string;
 
   @ApiProperty({
-    description: 'Gênero',
+    description: 'Sexo biológico do cidadão',
     example: 'M',
-    enum: ['M', 'F', 'O'],
+    enum: ['M', 'F'],
+    type: 'string'
   })
-  genero: string;
+  sexo: string;
 
   @ApiProperty({
-    description: 'Telefone no formato DDD + número',
-    example: '84999999999',
+    description: 'Estado civil atual do cidadão',
+    example: 'SOLTEIRO',
+    enum: ['SOLTEIRO', 'CASADO', 'DIVORCIADO', 'VIUVO', 'UNIAO_ESTAVEL', 'SEPARADO'],
+    type: 'string'
+  })
+  estadoCivil: string;
+
+  @ApiProperty({
+    description: 'Telefone principal para contato (formato: (XX) XXXXX-XXXX)',
+    example: '(84) 99999-9999',
+    pattern: '^\\(\\d{2}\\)\\s\\d{4,5}-\\d{4}$',
+    type: 'string'
   })
   telefone: string;
 
-  @ApiProperty({
-    description: 'E-mail',
+  @ApiPropertyOptional({
+    description: 'Telefone secundário para contato',
+    example: '(84) 88888-8888',
+    pattern: '^\\(\\d{2}\\)\\s\\d{4,5}-\\d{4}$',
+    type: 'string'
+  })
+  telefoneSecundario?: string;
+
+  @ApiPropertyOptional({
+    description: 'Endereço de email válido',
     example: 'joao.silva@email.com',
-    required: false,
+    type: 'string',
+    format: 'email',
+    maxLength: 100
   })
   email?: string;
 
   @ApiProperty({
-    description: 'Endereço residencial',
-    type: EnderecoDto,
+    description: 'Informações de endereço residencial',
+    type: () => EnderecoDto
   })
   endereco: EnderecoDto;
+
+  @ApiPropertyOptional({
+    description: 'Nome da mãe (para validação de identidade)',
+    example: 'Maria Silva Santos',
+    type: 'string',
+    minLength: 5,
+    maxLength: 200
+  })
+  nomeMae?: string;
+
+  @ApiPropertyOptional({
+    description: 'Nome do pai',
+    example: 'José Santos',
+    type: 'string',
+    minLength: 5,
+    maxLength: 200
+  })
+  nomePai?: string;
+
+  @ApiPropertyOptional({
+    description: 'Número do NIS (Número de Identificação Social)',
+    example: '12345678901',
+    pattern: '^\\d{11}$',
+    type: 'string',
+    minLength: 11,
+    maxLength: 11
+  })
+  nis?: string;
+
+  @ApiPropertyOptional({
+    description: 'Renda familiar mensal declarada em reais',
+    example: 1200.50,
+    type: 'number',
+    format: 'float',
+    minimum: 0
+  })
+  rendaFamiliar?: number;
+
+  @ApiPropertyOptional({
+    description: 'Número de pessoas na composição familiar',
+    example: 4,
+    type: 'integer',
+    minimum: 1,
+    maximum: 20
+  })
+  composicaoFamiliar?: number;
 }
 
 /**
- * DTO para resposta de cidadão
+ * DTO para resposta com dados completos do cidadão
  */
 export class CidadaoResponseDto extends CreateCidadaoDto {
   @ApiProperty({
-    description: 'Identificador único do cidadão',
-    example: '5f8d3b4e3b4f3b2d3c2e1d2f',
+    description: 'Identificador único do cidadão no sistema',
+    example: '507f1f77bcf86cd799439011',
+    type: 'string'
   })
   id: string;
 
   @ApiProperty({
-    description: 'Data e hora de criação do registro',
-    example: '2025-05-18T12:00:00.000Z',
+    description: 'Status do cadastro do cidadão',
+    example: 'ATIVO',
+    enum: ['ATIVO', 'INATIVO', 'PENDENTE', 'BLOQUEADO'],
+    type: 'string'
   })
-  createdAt: Date;
+  status: string;
+
+  @ApiProperty({
+    description: 'Data e hora de criação do registro',
+    example: '2025-01-18T10:30:00.000Z',
+    type: 'string',
+    format: 'date-time'
+  })
+  createdAt: string;
 
   @ApiProperty({
     description: 'Data e hora da última atualização do registro',
-    example: '2025-05-18T12:00:00.000Z',
+    example: '2025-01-18T10:30:00.000Z',
+    type: 'string',
+    format: 'date-time'
   })
-  updatedAt: Date;
+  updatedAt: string;
+
+  @ApiPropertyOptional({
+    description: 'Data da última validação dos dados',
+    example: '2025-01-18T10:30:00.000Z',
+    type: 'string',
+    format: 'date-time'
+  })
+  ultimaValidacao?: string;
+
+  @ApiPropertyOptional({
+    description: 'Observações administrativas sobre o cidadão',
+    example: 'Documentação validada em 18/01/2025',
+    type: 'string',
+    maxLength: 500
+  })
+  observacoes?: string;
 }
 
 /**
- * DTO para atualização de cidadão
+ * DTO para atualização de dados do cidadão
  */
 export class UpdateCidadaoDto {
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'Nome completo do cidadão',
-    example: 'João da Silva',
-    required: false,
+    example: 'João Silva Santos',
+    type: 'string',
+    minLength: 5,
+    maxLength: 200
   })
   nome?: string;
 
-  @ApiProperty({
-    description: 'NIS (Número de Identificação Social)',
-    example: '12345678901',
-    required: false,
-  })
-  nis?: string;
-
-  @ApiProperty({
-    description: 'Telefone no formato DDD + número',
-    example: '84999999999',
-    required: false,
+  @ApiPropertyOptional({
+    description: 'Telefone principal para contato',
+    example: '(84) 99999-9999',
+    pattern: '^\\(\\d{2}\\)\\s\\d{4,5}-\\d{4}$',
+    type: 'string'
   })
   telefone?: string;
 
-  @ApiProperty({
-    description: 'E-mail',
+  @ApiPropertyOptional({
+    description: 'Telefone secundário para contato',
+    example: '(84) 88888-8888',
+    pattern: '^\\(\\d{2}\\)\\s\\d{4,5}-\\d{4}$',
+    type: 'string'
+  })
+  telefoneSecundario?: string;
+
+  @ApiPropertyOptional({
+    description: 'Endereço de email válido',
     example: 'joao.silva@email.com',
-    required: false,
+    type: 'string',
+    format: 'email'
   })
   email?: string;
 
-  @ApiProperty({
-    description: 'Endereço residencial',
-    type: EnderecoDto,
-    required: false,
+  @ApiPropertyOptional({
+    description: 'Informações de endereço residencial',
+    type: () => EnderecoDto
   })
   endereco?: EnderecoDto;
+
+  @ApiPropertyOptional({
+    description: 'Estado civil atual',
+    example: 'CASADO',
+    enum: ['SOLTEIRO', 'CASADO', 'DIVORCIADO', 'VIUVO', 'UNIAO_ESTAVEL', 'SEPARADO'],
+    type: 'string'
+  })
+  estadoCivil?: string;
+
+  @ApiPropertyOptional({
+    description: 'Renda familiar mensal em reais',
+    example: 1500.00,
+    type: 'number',
+    format: 'float',
+    minimum: 0
+  })
+  rendaFamiliar?: number;
+
+  @ApiPropertyOptional({
+    description: 'Número de pessoas na família',
+    example: 3,
+    type: 'integer',
+    minimum: 1,
+    maximum: 20
+  })
+  composicaoFamiliar?: number;
 }

@@ -9,8 +9,7 @@ REGRAS DE OURO:
 ### 1.1 Convenções de Nomenclatura
 - Usar camelCase para nomes de variáveis, funções e propriedades
 - Usar PascalCase para nomes de classes, interfaces e tipos
-- Usar UPPER_SNAKE_CASE para constantes
-- Usar snake_case para propriedades de entidades
+- Usar snake_case para propriedades de entidades e enums
 - Prefixar interfaces com 'I' (ex: IUserService)
 - Sufixar DTOs com 'Dto' (ex: CreateUserDto)
 
@@ -19,6 +18,13 @@ REGRAS DE OURO:
 - Usar ponto e vírgula no final das declarações
 - Limitar linhas a 100 caracteres
 - Usar aspas simples para strings
+- Rodar linters e formatadores de código antes de commitar
+
+### 1.3 Comentários
+- Comentar código complexo
+- Documentar código que não é trivial
+- Usar comentários de linha para explicação rápida
+- Usar comentários de bloco para explicação mais detalhada
 
 ## 2. Framework e Tecnologias
 
@@ -38,11 +44,11 @@ REGRAS DE OURO:
 
 ### 3.1 Organização de Módulos
 - Separar código por domínio em módulos
+- Separar entities e enums em pastas separadas
 - Cada módulo deve ter sua própria pasta
 - Seguir estrutura recomendada do NestJS:
   - controllers/
   - services/
-  - entities/
   - dtos/
   - interfaces/
 
@@ -72,7 +78,7 @@ REGRAS DE OURO:
 ### 5.1 Autenticação e Autorização
 - Implementar JWT para autenticação
 - Usar Guards para proteção de rotas
-- Implementar RBAC (Role-Based Access Control)
+- Implementar ABAC para autorização
 
 ### 5.2 Práticas de Segurança
 - Sanitizar inputs do usuário

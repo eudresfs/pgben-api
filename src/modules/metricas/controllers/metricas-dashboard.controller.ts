@@ -18,7 +18,7 @@ import { DashboardService } from '../services/dashboard.service';
  * 4. Obter dados para gráficos e visualizações
  * 5. Exportar dados para relatórios
  */
-@ApiTags('Dashboard')
+@ApiTags('Métricas e Dashboard')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, PermissionGuard)
 @Controller('v1/dashboard')

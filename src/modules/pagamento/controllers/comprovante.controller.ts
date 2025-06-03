@@ -28,7 +28,7 @@ import { Response } from 'express';
  * 
  * @author Equipe PGBen
  */
-@ApiTags('Comprovantes de Pagamento')
+@ApiTags('Pagamentos')
 @Controller('pagamentos/:pagamentoId/comprovantes')
 export class ComprovanteController {
   constructor(private readonly comprovanteService: ComprovanteService) {}

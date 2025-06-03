@@ -40,6 +40,44 @@ export class AuthController {
   @Public()
   @ApiOperation({
     summary: 'Fazer login',
+    description: 'Autentica um usuário no sistema usando credenciais (username/password)',
+    requestBody: {
+      description: 'Credenciais de login',
+      required: true,
+      content: {
+        'application/json': {
+          schema: {
+            $ref: '#/components/schemas/LoginInput',
+          },
+          examples: {
+            'usuario-admin': {
+              summary: 'Login de Administrador',
+              description: 'Exemplo de login para usuário administrador',
+              value: {
+                username: 'admin@semtas.gov.br',
+                password: 'senha123'
+              }
+            },
+            'usuario-assistente': {
+              summary: 'Login de Assistente Social',
+              description: 'Exemplo de login para assistente social',
+              value: {
+                username: 'maria.silva@semtas.gov.br',
+                password: 'minhasenha456'
+              }
+            },
+            'usuario-coordenador': {
+              summary: 'Login de Coordenador',
+              description: 'Exemplo de login para coordenador de unidade',
+              value: {
+                username: 'joao.santos@semtas.gov.br',
+                password: 'coordenador789'
+              }
+            }
+          }
+        }
+      }
+    }
   })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -71,6 +109,27 @@ export class AuthController {
   @Post('refresh-token')
   @ApiOperation({
     summary: 'Atualizar token da api',
+    description: 'Renova o token de acesso usando um refresh token válido',
+    requestBody: {
+      description: 'Refresh token para renovação',
+      required: true,
+      content: {
+        'application/json': {
+          schema: {
+            $ref: '#/components/schemas/RefreshTokenInput',
+          },
+          examples: {
+            'refresh-token': {
+              summary: 'Renovação de Token',
+              description: 'Exemplo de renovação usando refresh token',
+              value: {
+                refreshToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c'
+              }
+            }
+          }
+        }
+      }
+    }
   })
   @ApiResponse({
     status: HttpStatus.OK,

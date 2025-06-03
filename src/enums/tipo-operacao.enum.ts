@@ -5,14 +5,14 @@
  * seguindo o padrão CRUD com adição de operações específicas para compliance com LGPD.
  */
 export enum TipoOperacao {
-  CREATE = 'CREATE',
-  READ = 'READ',
-  UPDATE = 'UPDATE',
-  DELETE = 'DELETE',
-  ACCESS = 'ACCESS', // Acesso a dados sensíveis (LGPD)
-  EXPORT = 'EXPORT', // Exportação de dados (LGPD)
-  ANONYMIZE = 'ANONYMIZE', // Anonimização de dados (LGPD)
-  LOGIN = 'LOGIN', // Login no sistema
-  LOGOUT = 'LOGOUT', // Logout do sistema
-  FAILED_LOGIN = 'FAILED_LOGIN', // Tentativa de login falha
+  CREATE = 'create',
+  READ = 'read',
+  UPDATE = 'update',
+  DELETE = 'delete',
+  ACCESS = 'access', // Acesso a dados sensíveis (LGPD)
+  EXPORT = 'export', // Exportação de dados (LGPD)
+  ANONYMIZE = 'anonymize', // Anonimização de dados (LGPD)
+  LOGIN = 'login', // Login no sistema
+  LOGOUT = 'logout', // Logout do sistema
+  FAILED_LOGIN = 'failed_login', // Tentativa de login falha
 }

@@ -43,7 +43,7 @@ import { UseInterceptors } from '@nestjs/common';
  *
  * Responsável por gerenciar as rotas relacionadas aos membros da composição familiar dos cidadãos
  */
-@ApiTags('Composição Familiar')
+@ApiTags('Cidadão')
 @ApiExtraModels(ComposicaoFamiliarResponseDto, ComposicaoFamiliarPaginatedResponseDto)
 @Controller('v1/composicao-familiar')
 @UseGuards(JwtAuthGuard)
