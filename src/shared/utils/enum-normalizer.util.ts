@@ -1,7 +1,7 @@
 /**
  * Utilitário para normalização de valores de enums
  * 
- * Este utilitário garante que valores de enums sejam normalizados para uppercase
+ * Este utilitário garante que valores de enums sejam normalizados para lowercase
  * antes de serem salvos no banco de dados, mantendo consistência com os valores
  * definidos nas migrations.
  * 
@@ -144,9 +144,9 @@ const ENUM_FIELDS = [
 ];
 
 /**
- * Normaliza um valor de enum para uppercase
+ * Normaliza um valor de enum para lowercase
  * @param value Valor a ser normalizado
- * @returns Valor normalizado em uppercase ou o valor original se for null/undefined
+ * @returns Valor normalizado em lowercase ou o valor original se for null/undefined
  */
 export function normalizeEnumValue(value: string | null | undefined): string | null | undefined {
   if (value === null || value === undefined) {
@@ -157,7 +157,7 @@ export function normalizeEnumValue(value: string | null | undefined): string | n
     return value;
   }
   
-  return value.toUpperCase();
+  return value.toLowerCase();
 }
 
 /**

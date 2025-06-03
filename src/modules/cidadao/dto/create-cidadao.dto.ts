@@ -286,12 +286,11 @@ export class CreateCidadaoDto {
 
   @ValidateNested()
   @Type(() => EnderecoDto)
-  @IsNotEmpty({ message: 'Endereço é obrigatório' })
   @ApiProperty({
     type: EnderecoDto,
     description: 'Endereço do cidadão',
   })
-  endereco: EnderecoDto;
+  endereco?: EnderecoDto;
 
   @IsUUID('4', { message: 'ID da unidade deve ser um UUID válido' })
   @IsNotEmpty({ message: 'ID da unidade é obrigatório' })

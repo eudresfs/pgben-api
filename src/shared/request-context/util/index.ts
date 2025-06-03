@@ -2,6 +2,15 @@ import { plainToClass } from 'class-transformer';
 import { Request } from 'express';
 
 import { UserAccessTokenClaims } from '../../../auth/dtos/auth-token-output.dto';
+
+// Extend Express Request interface to include user property
+declare global {
+  namespace Express {
+    interface Request {
+      user?: UserAccessTokenClaims;
+    }
+  }
+}
 import {
   FORWARDED_FOR_TOKEN_HEADER,
   REQUEST_ID_TOKEN_HEADER,

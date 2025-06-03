@@ -125,11 +125,11 @@ export class PapelCidadaoController {
     try {
       // Normalizar o tipo de papel para maiúsculas para garantir compatibilidade com o enum do banco
       // Convertemos para string primeiro para garantir que o método toUpperCase() está disponível
-      const tipoPapelUpperCase = String(createPapelCidadaoDto.tipo_papel).toUpperCase();
+      const tipoPapelLowerCase = String(createPapelCidadaoDto.tipo_papel).toLowerCase();
       
       // Verificar se o tipo de papel normalizado é válido
-      const validPaperTypes = Object.values(TipoPapel).map(v => String(v).toUpperCase());
-      if (!validPaperTypes.includes(tipoPapelUpperCase)) {
+      const validPaperTypes = Object.values(TipoPapel).map(v => String(v).toLowerCase());
+      if (!validPaperTypes.includes(tipoPapelLowerCase)) {
         throw new BadRequestException(
           `Tipo de papel inválido: ${createPapelCidadaoDto.tipo_papel}. ` +
           `Valores permitidos: ${Object.keys(TipoPapel).join(', ')}`
@@ -140,7 +140,7 @@ export class PapelCidadaoController {
       // Usamos 'as PaperType' para garantir compatibilidade de tipo
       const normalizedDto: CreatePapelCidadaoDto = {
         ...createPapelCidadaoDto,
-        tipo_papel: tipoPapelUpperCase as PaperType
+        tipo_papel: tipoPapelLowerCase as PaperType
       };
       
       this.logger.debug(`Criando papel ${normalizedDto.tipo_papel} para cidadão ${normalizedDto.cidadao_id}`);
@@ -160,7 +160,7 @@ export class PapelCidadaoController {
       if (error.message && error.message.includes('valor de entrada é inválido para enum')) {
         throw new BadRequestException(
           `Tipo de papel inválido: ${createPapelCidadaoDto.tipo_papel}. ` +
-          `Valores permitidos: BENEFICIARIO, REQUERENTE, REPRESENTANTE_LEGAL`
+          `Valores permitidos: beneficiario, requerente, representante_legal`
         );
       }
       

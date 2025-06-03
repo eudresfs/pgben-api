@@ -10,28 +10,28 @@ import {
 import { Usuario } from './usuario.entity';
 
 export enum AuditAction {
-  CREATE = 'CREATE',
-  READ = 'READ',
-  UPDATE = 'UPDATE',
-  DELETE = 'DELETE',
-  LOGIN = 'LOGIN',
-  LOGOUT = 'LOGOUT',
-  LOGIN_FAILED = 'LOGIN_FAILED',
-  PASSWORD_RESET = 'PASSWORD_RESET',
-  PASSWORD_CHANGE = 'PASSWORD_CHANGE',
-  PERMISSION_DENIED = 'PERMISSION_DENIED',
-  TOKEN_REFRESH = 'TOKEN_REFRESH',
-  TOKEN_REVOKE = 'TOKEN_REVOKE',
-  EXPORT_DATA = 'EXPORT_DATA',
-  IMPORT_DATA = 'IMPORT_DATA',
-  SYSTEM_CONFIG = 'SYSTEM_CONFIG',
+  CREATE = 'create',
+  READ = 'read',
+  UPDATE = 'update',
+  DELETE = 'delete',
+  LOGIN = 'login',
+  LOGOUT = 'logout',
+  LOGIN_FAILED = 'login_failed',
+  PASSWORD_RESET = 'password_reset',
+  PASSWORD_CHANGE = 'password_change',
+  PERMISSION_DENIED = 'permission_denied',
+  TOKEN_REFRESH = 'token_refresh',
+  TOKEN_REVOKE = 'token_revoke',
+  EXPORT_DATA = 'export_data',
+  IMPORT_DATA = 'import_data',
+  SYSTEM_CONFIG = 'system_config',
 }
 
 export enum AuditSeverity {
-  LOW = 'LOW',
-  MEDIUM = 'MEDIUM',
-  HIGH = 'HIGH',
-  CRITICAL = 'CRITICAL',
+  LOW = 'low',
+  MEDIUM = 'medium',
+  HIGH = 'high',
+  CRITICAL = 'critical',
 }
 
 @Entity('audit_logs')

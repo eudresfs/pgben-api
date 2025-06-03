@@ -23,6 +23,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { AllExceptionsFilter } from './shared/filters/all-exceptions.filter';
 import { UnifiedLoggerModule } from './shared/logging/unified-logger.module';
 import { ResilienceModule } from './shared/modules/resilience.module';
+import { EmailModule } from './shared/modules/email.module';
 
 @Module({
   imports: [
@@ -70,6 +71,7 @@ import { ResilienceModule } from './shared/modules/resilience.module';
     MonitoringModule,
     
     // Módulos compartilhados
+    EmailModule, // Módulo de email
     UnifiedLoggerModule,
     PermissionSharedModule,
     AuditoriaSharedModule,

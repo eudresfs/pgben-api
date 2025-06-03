@@ -1,11 +1,14 @@
 import { Module, Global } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { EmailService } from './services/email.service';
 
+/**
+ * Módulo Comum
+ * Módulo global para serviços compartilhados (exceto EmailService que tem seu próprio módulo)
+ */
 @Global()
 @Module({
   imports: [ConfigModule],
-  providers: [EmailService],
-  exports: [EmailService],
+  providers: [],
+  exports: [],
 })
 export class CommonModule {}

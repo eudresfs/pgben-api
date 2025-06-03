@@ -117,6 +117,15 @@ export class PapelCidadaoService {
         throw new BadRequestException('Lista contém papéis duplicados');
       }
 
+      // Buscar CPF do cidadão uma única vez para verificar conflitos
+      const cidadaoParaConflito = await manager.findOne(Cidadao, {
+        where: { id: cidadaoId },
+      });
+
+      if (!cidadaoParaConflito) {
+        throw new NotFoundException('Cidadão não encontrado');
+      }
+
       // Verificar conflitos para cada papel
       for (const papel of papeisParaCriar) {
         // Verificar se já possui o papel
@@ -132,15 +141,6 @@ export class PapelCidadaoService {
           throw new ConflictException(`Cidadão já possui o papel ${papel.tipo_papel} ativo`);
         }
 
-        // Buscar CPF do cidadão para verificar conflitos
-        const cidadaoParaConflito = await manager.findOne(Cidadao, {
-          where: { id: cidadaoId },
-        });
-
-        if (!cidadaoParaConflito) {
-          throw new NotFoundException('Cidadão não encontrado');
-        }
-
         const conflitos = await this.verificacaoPapelService.verificarConflitoPapeis(
           cidadaoParaConflito.cpf,
         );
@@ -153,7 +153,15 @@ export class PapelCidadaoService {
         this.validarMetadados(papel.tipo_papel, papel.metadados);
       }
 
-      const papeisEntities = manager.create(PapelCidadao, papeisParaCriar);
+      // Normalizar campos de enum antes de criar as entidades
+      const papeisNormalizados = papeisParaCriar.map(papel => 
+        normalizeEnumFields({
+          ...papel,
+          ativo: true,
+        })
+      );
+
+      const papeisEntities = manager.create(PapelCidadao, papeisNormalizados);
       return manager.save(papeisEntities);
     });
   }

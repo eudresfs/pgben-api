@@ -8,14 +8,12 @@ import { PassportModule } from '@nestjs/passport';
 
 // Controllers
 import { AuthController } from './controllers/auth.controller';
-// PasswordRecoveryController removido - funcionalidades consolidadas no PasswordResetController
 import { PasswordResetController } from './controllers/password-reset.controller';
 import { JwtBlacklistController } from './controllers/jwt-blacklist.controller';
 
 // Services
 import { AuthService } from './services/auth.service';
 import { RefreshTokenService } from './services/refresh-token.service';
-// PasswordRecoveryService removido - funcionalidades consolidadas no PasswordResetService
 import { PasswordResetService } from './services/password-reset.service';
 import { JwtBlacklistService } from './services/jwt-blacklist.service';
 import { PermissionService } from './services/permission.service';
@@ -42,7 +40,6 @@ import { createJwtConfig } from '../config/jwt.config';
 import { UsuarioModule } from '../modules/usuario/usuario.module';
 import { forwardRef } from '@nestjs/common';
 import { AuditModule } from '../audit/audit.module';
-import { CommonModule } from '../common/common.module';
 import { AppLoggerModule } from '../shared/logger/logger.module';
 import { PermissionModule } from './permission.module';
 
@@ -96,7 +93,6 @@ import { PermissionModule } from './permission.module';
     ConfigModule,
     forwardRef(() => UsuarioModule),
     forwardRef(() => AuditModule),
-    CommonModule,
     AppLoggerModule,
     PermissionModule,
   ],

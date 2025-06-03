@@ -80,23 +80,61 @@ export class CreateAuditLogsTable1704067238000 implements MigrationInterface {
           },
           {
             name: 'user_agent',
-            type: 'text',
+            type: 'varchar',
+            length: '500',
+            isNullable: true,
+          },
+          {
+            name: 'session_id',
+            type: 'varchar',
+            length: '100',
             isNullable: true,
           },
           {
             name: 'request_method',
             type: 'varchar',
-            length: '10',
+            length: '50',
             isNullable: true,
           },
           {
             name: 'request_url',
-            type: 'text',
+            type: 'varchar',
+            length: '500',
+            isNullable: true,
+          },
+          {
+            name: 'response_status',
+            type: 'integer',
+            isNullable: true,
+          },
+          {
+            name: 'response_time_ms',
+            type: 'integer',
+            isNullable: true,
+          },
+          {
+            name: 'old_values',
+            type: 'jsonb',
+            isNullable: true,
+          },
+          {
+            name: 'new_values',
+            type: 'jsonb',
             isNullable: true,
           },
           {
             name: 'metadata',
             type: 'jsonb',
+            isNullable: true,
+          },
+          {
+            name: 'error_message',
+            type: 'text',
+            isNullable: true,
+          },
+          {
+            name: 'stack_trace',
+            type: 'text',
             isNullable: true,
           },
           {
@@ -115,7 +153,7 @@ export class CreateAuditLogsTable1704067238000 implements MigrationInterface {
         foreignKeys: [
           {
             columnNames: ['usuario_id'],
-            referencedTableName: 'usuario',
+            referencedTableName: 'usuarios',
             referencedColumnNames: ['id'],
             onDelete: 'SET NULL',
             onUpdate: 'CASCADE',
@@ -124,6 +162,19 @@ export class CreateAuditLogsTable1704067238000 implements MigrationInterface {
       }),
       true,
     );
+
+    // Criar constraints de validação
+    await queryRunner.query(`
+      ALTER TABLE audit_logs 
+      ADD CONSTRAINT chk_audit_logs_response_status_range 
+      CHECK (response_status IS NULL OR (response_status >= 100 AND response_status <= 599));
+    `);
+
+    await queryRunner.query(`
+      ALTER TABLE audit_logs 
+      ADD CONSTRAINT chk_audit_logs_response_time_positive 
+      CHECK (response_time_ms IS NULL OR response_time_ms >= 0);
+    `);
 
     // Criar índices para otimização de consultas
     await queryRunner.createIndex(
@@ -174,6 +225,14 @@ export class CreateAuditLogsTable1704067238000 implements MigrationInterface {
       }),
     );
 
+    await queryRunner.createIndex(
+      'audit_logs',
+      new TableIndex({
+        name: 'IDX_audit_logs_response_status',
+        columnNames: ['response_status'],
+      }),
+    );
+
     // Índice composto para consultas de auditoria por usuário e período
     await queryRunner.createIndex(
       'audit_logs',
@@ -192,9 +251,17 @@ export class CreateAuditLogsTable1704067238000 implements MigrationInterface {
       }),
     );
 
-    // Índice GIN para consultas em metadata JSONB
+    // Índices GIN para consultas em campos JSONB
     await queryRunner.query(`
       CREATE INDEX IDX_audit_logs_metadata_gin ON audit_logs USING GIN (metadata);
+    `);
+
+    await queryRunner.query(`
+      CREATE INDEX IDX_audit_logs_old_values_gin ON audit_logs USING GIN (old_values);
+    `);
+
+    await queryRunner.query(`
+      CREATE INDEX IDX_audit_logs_new_values_gin ON audit_logs USING GIN (new_values);
     `);
 
     // Trigger para atualizar updated_at automaticamente
@@ -250,15 +317,46 @@ export class CreateAuditLogsTable1704067238000 implements MigrationInterface {
       COMMENT ON COLUMN audit_logs.severity IS 'Nível de severidade do evento';
       COMMENT ON COLUMN audit_logs.client_ip IS 'Endereço IP do cliente';
       COMMENT ON COLUMN audit_logs.user_agent IS 'User Agent do navegador';
+      COMMENT ON COLUMN audit_logs.session_id IS 'Identificador da sessão do usuário';
       COMMENT ON COLUMN audit_logs.request_method IS 'Método HTTP da requisição';
       COMMENT ON COLUMN audit_logs.request_url IS 'URL da requisição';
+      COMMENT ON COLUMN audit_logs.response_status IS 'Status HTTP da resposta';
+      COMMENT ON COLUMN audit_logs.response_time_ms IS 'Tempo de resposta em milissegundos';
+      COMMENT ON COLUMN audit_logs.old_values IS 'Valores anteriores (para operações de UPDATE)';
+      COMMENT ON COLUMN audit_logs.new_values IS 'Novos valores (para operações de CREATE/UPDATE)';
       COMMENT ON COLUMN audit_logs.metadata IS 'Dados adicionais em formato JSON';
+      COMMENT ON COLUMN audit_logs.error_message IS 'Mensagem de erro (se houver)';
+      COMMENT ON COLUMN audit_logs.stack_trace IS 'Stack trace do erro (se houver)';
       COMMENT ON COLUMN audit_logs.created_at IS 'Data e hora de criação do log';
       COMMENT ON COLUMN audit_logs.updated_at IS 'Data e hora da última atualização';
+    `);
+
+    // Criar particionamento por data (opcional para performance em grandes volumes)
+    await queryRunner.query(`
+      -- Função para criar partições mensais automaticamente
+      CREATE OR REPLACE FUNCTION create_audit_logs_partition(partition_date DATE)
+      RETURNS VOID AS $$
+      DECLARE
+        partition_name VARCHAR;
+        start_date DATE;
+        end_date DATE;
+      BEGIN
+        partition_name := 'audit_logs_' || to_char(partition_date, 'YYYY_MM');
+        start_date := date_trunc('month', partition_date);
+        end_date := start_date + interval '1 month';
+        
+        EXECUTE format('CREATE TABLE IF NOT EXISTS %I PARTITION OF audit_logs 
+                       FOR VALUES FROM (%L) TO (%L)', 
+                       partition_name, start_date, end_date);
+      END;
+      $$ LANGUAGE plpgsql;
     `);
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
+    // Remover função de particionamento
+    await queryRunner.query(`DROP FUNCTION IF EXISTS create_audit_logs_partition(DATE);`);
+
     // Remover políticas RLS
     await queryRunner.query(`DROP POLICY IF EXISTS audit_logs_user_policy ON audit_logs;`);
     await queryRunner.query(`DROP POLICY IF EXISTS audit_logs_insert_policy ON audit_logs;`);
@@ -266,6 +364,10 @@ export class CreateAuditLogsTable1704067238000 implements MigrationInterface {
     // Remover trigger e função
     await queryRunner.query(`DROP TRIGGER IF EXISTS trigger_audit_logs_updated_at ON audit_logs;`);
     await queryRunner.query(`DROP FUNCTION IF EXISTS update_audit_logs_updated_at();`);
+
+    // Remover constraints
+    await queryRunner.query(`ALTER TABLE audit_logs DROP CONSTRAINT IF EXISTS chk_audit_logs_response_status_range;`);
+    await queryRunner.query(`ALTER TABLE audit_logs DROP CONSTRAINT IF EXISTS chk_audit_logs_response_time_positive;`);
 
     // Remover tabela
     await queryRunner.dropTable('audit_logs');
