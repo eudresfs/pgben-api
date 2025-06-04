@@ -31,6 +31,9 @@ export class UserOutput {
 
   @Expose()
   roles: RoleType[];
+
+  @Expose()
+  unidade_id?: string;
 }
 
 /**
@@ -42,6 +45,7 @@ export interface UserAccessTokenClaims {
   roles: RoleType[];
   permissions?: string[];
   permissionScopes?: Record<string, string>;
+  unidade_id?: string;
 }
 
 /**
@@ -64,6 +68,8 @@ export class UsuarioAdapter {
       usuario.updated_at?.toISOString() || new Date().toISOString();
     // Obter o nome da role a partir da entidade Role
     userOutput.roles = usuario.role ? [usuario.role.nome as RoleType] : [];
+    // Incluir unidade_id se disponível
+    userOutput.unidade_id = usuario.unidade_id;
 
     return userOutput;
   }
@@ -86,6 +92,11 @@ export class UsuarioAdapter {
       username: usuario.email, // Usando email como username
       roles: usuario.role ? [usuario.role.nome as RoleType] : [],
     };
+
+    // Incluir unidade_id se disponível
+    if (usuario.unidade_id) {
+      claims.unidade_id = usuario.unidade_id;
+    }
 
     // Adiciona permissões se disponíveis
     if (permissions && permissions.length > 0) {

@@ -1,14 +1,26 @@
 import {
   Injectable,
-  NotFoundException,
-  BadRequestException,
-  UnauthorizedException,
-  ConflictException,
-  InternalServerErrorException,
   Logger,
   forwardRef,
   Inject,
 } from '@nestjs/common';
+import {
+  throwSolicitacaoNotFound,
+  throwInvalidStatusTransition,
+  throwAccessDenied,
+  throwSolicitacaoAlreadyExists,
+  throwWorkflowStepRequired,
+  throwApprovalRequired,
+  throwSolicitacaoCannotDelete,
+  throwProcessoJudicialNotFound,
+  throwProcessoJudicialAlreadyLinked,
+  throwProcessoJudicialNotLinked,
+  throwDeterminacaoJudicialNotFound,
+  throwDeterminacaoJudicialAlreadyLinked,
+  throwDeterminacaoJudicialNotLinked,
+  throwCidadaoNotInComposicaoFamiliar,
+  throwInternalError,
+} from '../../../shared/exceptions/error-catalog/domains/solicitacao.errors';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, ILike, Connection } from 'typeorm';
 import {
@@ -179,7 +191,7 @@ export class SolicitacaoService {
     });
 
     if (!solicitacao) {
-      throw new NotFoundException(`Solicitação com ID ${id} não encontrada`);
+      throwSolicitacaoNotFound(id);
     }
 
     return solicitacao;
@@ -222,8 +234,9 @@ export class SolicitacaoService {
       let unidadeId: string;
       if (!user.unidade_id) {
         if (!createSolicitacaoDto.unidade_id) {
-          throw new BadRequestException(
-            'Usuário não possui unidade vinculada. O campo unidade_id é obrigatório.',
+          throwWorkflowStepRequired(
+            'unidade_id',
+            { data: { context: 'unidade_validation' } }
           );
         }
         unidadeId = createSolicitacaoDto.unidade_id;
@@ -273,9 +286,7 @@ export class SolicitacaoService {
       });
 
       if (!solicitacaoCompleta) {
-        throw new NotFoundException(
-          `Solicitação com ID ${savedSolicitacao.id} não encontrada após criação`,
-        );
+        throwSolicitacaoNotFound(savedSolicitacao.id);
       }
 
       return solicitacaoCompleta;
@@ -301,17 +312,17 @@ export class SolicitacaoService {
       ];
 
       if (!EDITABLE_STATUSES.includes(solicitacao.status)) {
-        const statusMessage = `Status atual: ${solicitacao.status}`;
-        const allowedMessage = `Status disponíveis: ${EDITABLE_STATUSES.join(', ')}`;
-
-        throw new BadRequestException({
-          message: 'A solicitação não pode ser editado neste status.',
-          detalhes: {
-            statusAtual: solicitacao.status,
-            statusPossiveis: EDITABLE_STATUSES,
+        throwInvalidStatusTransition(
+          solicitacao.status,
+          'EDITABLE',
+          {
+            data: {
+              solicitacaoId: id,
+              statusAtual: solicitacao.status,
+              statusPossiveis: EDITABLE_STATUSES,
+            },
           },
-          contexto: `${statusMessage}. ${allowedMessage}`,
-        });
+        );
       }
 
       // Atualizar os dados
@@ -359,8 +370,14 @@ export class SolicitacaoService {
 
       // Verificar se a solicitação está em estado que permite submissão
       if (solicitacao.status !== StatusSolicitacao.RASCUNHO) {
-        throw new BadRequestException(
-          `Não é possível submeter uma solicitação com status ${solicitacao.status}`,
+        throwInvalidStatusTransition(
+          solicitacao.status,
+          StatusSolicitacao.EM_ANALISE,
+          {
+            data: {
+              solicitacaoId: id,
+            },
+          },
         );
       }
 
@@ -409,8 +426,15 @@ export class SolicitacaoService {
         solicitacao.status !== StatusSolicitacao.PENDENTE &&
         solicitacao.status !== StatusSolicitacao.EM_ANALISE
       ) {
-        throw new BadRequestException(
-          `Não é possível avaliar uma solicitação com status ${solicitacao.status}`,
+        throwInvalidStatusTransition(
+          solicitacao.status,
+          'AVALIACAO',
+          {
+            data: {
+              solicitacaoId: id,
+              statusesPermitidos: [StatusSolicitacao.PENDENTE, StatusSolicitacao.EM_ANALISE],
+            },
+          },
         );
       }
 
@@ -470,15 +494,30 @@ export class SolicitacaoService {
 
       // Verificar se o usuário tem permissão
       if (![ROLES.ADMIN, ROLES.GESTOR].includes(user.role)) {
-        throw new UnauthorizedException(
-          'Você não tem permissão para liberar benefícios',
+        throwAccessDenied(
+          id,
+          user.id,
+          {
+            data: {
+              acao: 'liberar_beneficio',
+              roleNecessaria: [ROLES.ADMIN, ROLES.GESTOR],
+              roleAtual: user.role,
+            },
+          },
         );
       }
 
       // Verificar se a solicitação está aprovada
       if (solicitacao.status !== StatusSolicitacao.APROVADA) {
-        throw new BadRequestException(
-          'Apenas solicitações aprovadas podem ser liberadas',
+        throwInvalidStatusTransition(
+          solicitacao.status,
+          StatusSolicitacao.LIBERADA,
+          {
+            data: {
+              solicitacaoId: id,
+              statusNecessario: StatusSolicitacao.APROVADA,
+            },
+          },
         );
       }
 
@@ -512,15 +551,29 @@ export class SolicitacaoService {
 
       // Verificar se o usuário tem permissão
       if (![ROLES.ADMIN, ROLES.GESTOR, ROLES.TECNICO].includes(user.role)) {
-        throw new UnauthorizedException(
-          'Você não tem permissão para cancelar solicitações',
+        throwAccessDenied(
+          id,
+          user.id,
+          {
+            data: {
+              acao: 'cancelar_solicitacao',
+              roleNecessaria: [ROLES.ADMIN, ROLES.GESTOR, ROLES.TECNICO],
+              roleAtual: user.role,
+            },
+          },
         );
       }
 
       // Verificar se a solicitação pode ser cancelada
       if (solicitacao.status === StatusSolicitacao.LIBERADA) {
-        throw new BadRequestException(
-          'Não é possível cancelar uma solicitação já liberada',
+        throwSolicitacaoCannotDelete(
+          id,
+          solicitacao.status,
+          {
+            data: {
+              motivo: 'Solicitação já liberada não pode ser cancelada',
+            },
+          },
         );
       }
 
@@ -588,28 +641,34 @@ export class SolicitacaoService {
         // Verificar se a solicitação existe
         const solicitacao = await this.findById(solicitacaoId);
 
-        // Verificar se o usuário tem permissão
-        if (![ROLES.ADMIN, ROLES.GESTOR, ROLES.TECNICO].includes(user.role)) {
-          throw new UnauthorizedException(
-            'Você não tem permissão para vincular processos judiciais',
-          );
-        }
-
         // Verificar se o processo judicial existe
         const processoJudicial = await this.processoJudicialRepository.findOne({
           where: { id: vincularDto.processo_judicial_id },
         });
 
         if (!processoJudicial) {
-          throw new NotFoundException('Processo judicial não encontrado');
+          throwProcessoJudicialNotFound(
+            vincularDto.processo_judicial_id,
+            {
+              data: {
+                solicitacaoId,
+              },
+            },
+          );
         }
 
         // Verificar se a solicitação já tem este processo vinculado
         if (
           solicitacao.processo_judicial_id === vincularDto.processo_judicial_id
         ) {
-          throw new ConflictException(
-            'Este processo judicial já está vinculado à solicitação',
+          throwProcessoJudicialAlreadyLinked(
+            vincularDto.processo_judicial_id,
+            solicitacaoId,
+            {
+              data: {
+                numeroProcesso: processoJudicial.numero_processo,
+              },
+            },
           );
         }
 
@@ -640,11 +699,8 @@ export class SolicitacaoService {
 
         return this.findById(solicitacaoId);
       } catch (error) {
-        if (
-          error instanceof NotFoundException ||
-          error instanceof UnauthorizedException ||
-          error instanceof ConflictException
-        ) {
+        // Se for um erro do catálogo, relançar
+        if (error.name === 'AppError') {
           throw error;
         }
 
@@ -652,8 +708,15 @@ export class SolicitacaoService {
           `Erro ao vincular processo judicial: ${error.message}`,
           error.stack,
         );
-        throw new InternalServerErrorException(
+        throwInternalError(
           'Erro ao vincular processo judicial à solicitação',
+          {
+            data: {
+              solicitacaoId,
+              processoJudicialId: vincularDto.processo_judicial_id,
+              errorMessage: error.message,
+            },
+          },
         );
       }
     });
@@ -676,15 +739,28 @@ export class SolicitacaoService {
 
         // Verificar se o usuário tem permissão
         if (![ROLES.ADMIN, ROLES.GESTOR].includes(user.role)) {
-          throw new UnauthorizedException(
-            'Você não tem permissão para desvincular processos judiciais',
+          throwAccessDenied(
+            solicitacaoId,
+            user.id,
+            {
+              data: {
+                acao: 'desvincular_processo_judicial',
+                roleNecessaria: [ROLES.ADMIN, ROLES.GESTOR],
+                roleAtual: user.role,
+              },
+            },
           );
         }
 
         // Verificar se a solicitação tem processo vinculado
         if (!solicitacao.processo_judicial_id) {
-          throw new BadRequestException(
-            'Esta solicitação não possui processo judicial vinculado',
+          throwProcessoJudicialNotLinked(
+            solicitacaoId,
+            {
+              data: {
+                motivo: 'Solicitação não possui processo judicial vinculado',
+              },
+            },
           );
         }
 
@@ -724,11 +800,8 @@ export class SolicitacaoService {
 
         return this.findById(solicitacaoId);
       } catch (error) {
-        if (
-          error instanceof NotFoundException ||
-          error instanceof UnauthorizedException ||
-          error instanceof BadRequestException
-        ) {
+        // Se for um erro do catálogo, relançar
+        if (error.name === 'AppError') {
           throw error;
         }
 
@@ -736,8 +809,14 @@ export class SolicitacaoService {
           `Erro ao desvincular processo judicial: ${error.message}`,
           error.stack,
         );
-        throw new InternalServerErrorException(
+        throwInternalError(
           'Erro ao desvincular processo judicial da solicitação',
+          {
+            data: {
+              solicitacaoId,
+              errorMessage: error.message,
+            },
+          },
         );
       }
     });
@@ -762,8 +841,16 @@ export class SolicitacaoService {
 
         // Verificar se o usuário tem permissão
         if (![ROLES.ADMIN, ROLES.GESTOR, ROLES.TECNICO].includes(user.role)) {
-          throw new UnauthorizedException(
-            'Você não tem permissão para vincular determinações judiciais',
+          throwAccessDenied(
+            solicitacaoId,
+            user.id,
+            {
+              data: {
+                acao: 'vincular_determinacao_judicial',
+                roleNecessaria: [ROLES.ADMIN, ROLES.GESTOR, ROLES.TECNICO],
+                roleAtual: user.role,
+              },
+            },
           );
         }
 
@@ -774,7 +861,14 @@ export class SolicitacaoService {
           });
 
         if (!determinacaoJudicial) {
-          throw new NotFoundException('Determinação judicial não encontrada');
+          throwDeterminacaoJudicialNotFound(
+            vincularDto.determinacao_judicial_id,
+            {
+              data: {
+                solicitacaoId,
+              },
+            },
+          );
         }
 
         // Verificar se a solicitação já tem esta determinação vinculada
@@ -782,8 +876,14 @@ export class SolicitacaoService {
           solicitacao.determinacao_judicial_id ===
           vincularDto.determinacao_judicial_id
         ) {
-          throw new ConflictException(
-            'Esta determinação judicial já está vinculada à solicitação',
+          throwDeterminacaoJudicialAlreadyLinked(
+            vincularDto.determinacao_judicial_id,
+            solicitacaoId,
+            {
+              data: {
+                numeroDeterminacao: determinacaoJudicial.numero_determinacao,
+              },
+            },
           );
         }
 
@@ -816,11 +916,8 @@ export class SolicitacaoService {
 
         return this.findById(solicitacaoId);
       } catch (error) {
-        if (
-          error instanceof NotFoundException ||
-          error instanceof UnauthorizedException ||
-          error instanceof ConflictException
-        ) {
+        // Se for um erro do catálogo, relançar
+        if (error.name === 'AppError') {
           throw error;
         }
 
@@ -828,8 +925,15 @@ export class SolicitacaoService {
           `Erro ao vincular determinação judicial: ${error.message}`,
           error.stack,
         );
-        throw new InternalServerErrorException(
+        throwInternalError(
           'Erro ao vincular determinação judicial à solicitação',
+          {
+            data: {
+              solicitacaoId,
+              determinacaoJudicialId: vincularDto.determinacao_judicial_id,
+              errorMessage: error.message,
+            },
+          },
         );
       }
     });
@@ -863,7 +967,14 @@ export class SolicitacaoService {
         );
 
         if (!solicitacaoOrigem) {
-          throw new NotFoundException('Solicitação de origem não encontrada');
+          throwSolicitacaoNotFound(
+            converterPapelDto.solicitacao_origem_id,
+            {
+              data: {
+                contexto: 'conversao_papel',
+              },
+            },
+          );
         }
 
         // Verificar se o cidadão está na composição familiar da solicitação
@@ -874,8 +985,14 @@ export class SolicitacaoService {
         );
 
         if (membroIndex === -1) {
-          throw new BadRequestException(
-            'Cidadão não encontrado na composição familiar da solicitação de origem',
+          throwCidadaoNotInComposicaoFamiliar(
+            converterPapelDto.cidadao_id,
+            converterPapelDto.solicitacao_origem_id,
+            {
+              data: {
+                contexto: 'conversao_papel',
+              },
+            },
           );
         }
 
@@ -958,11 +1075,8 @@ export class SolicitacaoService {
 
         return this.findById(novaSolicitacao.id);
       } catch (error) {
-        if (
-          error instanceof NotFoundException ||
-          error instanceof UnauthorizedException ||
-          error instanceof BadRequestException
-        ) {
+        // Se for um erro do catálogo, relançar
+        if (error.name === 'AppError') {
           throw error;
         }
 
@@ -970,8 +1084,15 @@ export class SolicitacaoService {
           `Erro ao converter papel do cidadão: ${error.message}`,
           error.stack,
         );
-        throw new InternalServerErrorException(
+        throwInternalError(
           'Erro ao converter papel do cidadão para beneficiário principal',
+          {
+            data: {
+              cidadaoId: converterPapelDto.cidadao_id,
+              solicitacaoOrigemId: converterPapelDto.solicitacao_origem_id,
+              errorMessage: error.message,
+            },
+          },
         );
       }
     });
@@ -988,15 +1109,28 @@ export class SolicitacaoService {
 
         // Verificar se o usuário tem permissão
         if (![ROLES.ADMIN, ROLES.GESTOR].includes(user.role)) {
-          throw new UnauthorizedException(
-            'Você não tem permissão para desvincular determinações judiciais',
+          throwAccessDenied(
+            solicitacaoId,
+            user.id,
+            {
+              data: {
+                acao: 'desvincular_determinacao_judicial',
+                roleNecessaria: [ROLES.ADMIN, ROLES.GESTOR],
+                roleAtual: user.role,
+              },
+            },
           );
         }
 
         // Verificar se a solicitação tem determinação vinculada
         if (!solicitacao.determinacao_judicial_id) {
-          throw new BadRequestException(
-            'Esta solicitação não possui determinação judicial vinculada',
+          throwDeterminacaoJudicialNotLinked(
+            solicitacaoId,
+            {
+              data: {
+                motivo: 'Solicitação não possui determinação judicial vinculada',
+              },
+            },
           );
         }
 
@@ -1037,11 +1171,8 @@ export class SolicitacaoService {
 
         return this.findById(solicitacaoId);
       } catch (error) {
-        if (
-          error instanceof NotFoundException ||
-          error instanceof UnauthorizedException ||
-          error instanceof BadRequestException
-        ) {
+        // Se for um erro do catálogo, relançar
+        if (error.name === 'AppError') {
           throw error;
         }
 
@@ -1049,8 +1180,14 @@ export class SolicitacaoService {
           `Erro ao desvincular determinação judicial: ${error.message}`,
           error.stack,
         );
-        throw new InternalServerErrorException(
+        throwInternalError(
           'Erro ao desvincular determinação judicial da solicitação',
+          {
+            data: {
+              solicitacaoId,
+              errorMessage: error.message,
+            },
+          },
         );
       }
     });

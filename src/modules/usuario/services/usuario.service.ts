@@ -1,4 +1,4 @@
-import { Injectable, Logger, BadRequestException } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import {
   throwUserNotFound,
   throwDuplicateEmail,
@@ -7,6 +7,7 @@ import {
   throwAccountBlocked,
   throwWeakPassword,
   throwFirstAccessRequired,
+  throwNotInFirstAccess,
   throwEmailSendFailed,
   throwInsufficientPermissions,
   throwPasswordMismatch,
@@ -806,9 +807,7 @@ export class UsuarioService {
         // Verificar se está em primeiro acesso
         if (!usuario.primeiro_acesso) {
           this.logger.warn(`Usuário ${userId} não está em primeiro acesso`);
-          throw new BadRequestException(
-            'Usuário não está em primeiro acesso. Esta operação só é permitida para usuários que ainda não alteraram sua senha inicial.',
-          );
+          throwNotInFirstAccess(userId);
         }
 
         // Gerar hash da nova senha

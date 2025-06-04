@@ -21,6 +21,9 @@ Thumbs.db
 /coverage
 /.nyc_output
 /test-results
+.jest-cache/
+.coverage/
+
 
 # IDEs and editors
 /.idea

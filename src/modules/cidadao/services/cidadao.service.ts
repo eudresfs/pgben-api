@@ -924,11 +924,23 @@ export class CidadaoService {
       // Extrair papéis e composição familiar do DTO para processar separadamente
       const { papeis, composicao_familiar, ...cidadaoData } = createCidadaoDto;
 
+      // Determinar unidade_id: usar do DTO se fornecido, senão usar do usuário
+      const unidadeIdFinal = createCidadaoDto.unidade_id || unidadeId;
+      
+      // Validar se temos uma unidade_id válida
+      if (!unidadeIdFinal) {
+        throw new BadRequestException(
+          'ID da unidade é obrigatório. Forneça no corpo da requisição ou certifique-se de que o usuário possui uma unidade vinculada.'
+        );
+      }
+
       // Normalizar campos de enum antes de criar
       const dadosParaCriacao = normalizeEnumFields({
         ...cidadaoData,
         cpf: cpfLimpo,
         ...(nisLimpo && { nis: nisLimpo }),
+        unidade_id: unidadeIdFinal,
+        usuario_id: userId,
       });
 
       // Criar o cidadão

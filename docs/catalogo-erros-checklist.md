@@ -51,16 +51,18 @@
 **Complexidade**: Alta | **Erros identificados**: 25+ pontos
 
 #### Implementação
-- [ ] Mapear todos os pontos de erro existentes
-- [ ] Migrar `ConflictException` para catálogo (email/CPF/matrícula duplicados)
-- [ ] Padronizar `BadRequestException` para validações
-- [ ] Implementar códigos específicos para bloqueio de conta
-- [ ] Tratar erros de primeiro acesso
-- [ ] Atualizar tratamento de erros de banco PostgreSQL
+- [x] Mapear todos os pontos de erro existentes
+- [x] Migrar `ConflictException` para catálogo (email/CPF/matrícula duplicados)
+- [x] Padronizar `BadRequestException` para validações
+- [x] Implementar códigos específicos para bloqueio de conta
+- [x] Tratar erros de primeiro acesso
+- [x] Atualizar tratamento de erros de banco PostgreSQL
 
 #### Arquivos a Modificar
-- [ ] `src/modules/usuario/services/usuario.service.ts`
-- [ ] `src/modules/usuario/repositories/usuario.repository.ts`
+- [x] `src/modules/usuario/services/usuario.service.ts` - Migrado BadRequestException para throwNotInFirstAccess
+- [x] `src/modules/usuario/repositories/usuario.repository.ts` - Já utilizando throwUserNotFound
+- [x] `src/modules/usuario/dto/*.dto.ts` - Utilizam validações class-validator (tratadas automaticamente)
+- [x] `src/modules/usuario/controllers/usuario.controller.ts` - Não possui exceções HTTP diretas
 
 ### 2. Módulo Solicitacao (Prioridade Alta)
 **Complexidade**: Muito Alta | **Erros identificados**: 40+ pontos

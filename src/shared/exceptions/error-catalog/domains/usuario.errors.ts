@@ -78,6 +78,18 @@ export const USUARIO_ERRORS: Record<string, ErrorDefinition> = {
     },
   },
 
+  USUARIO_NOT_IN_FIRST_ACCESS: {
+    code: 'USUARIO_NOT_IN_FIRST_ACCESS',
+    message: 'Usuário não está em primeiro acesso',
+    httpStatus: HttpStatus.BAD_REQUEST,
+    category: ErrorCategory.OPERATIONAL_FLOW,
+    severity: ErrorSeverity.MEDIUM,
+    localizedMessages: {
+      'pt-BR': 'Usuário não está em primeiro acesso. Esta operação só é permitida para usuários que ainda não alteraram sua senha inicial.',
+      'en-US': 'User is not in first access. This operation is only allowed for users who have not yet changed their initial password.',
+    },
+  },
+
   USUARIO_PASSWORD_EXPIRED: {
     code: 'USUARIO_PASSWORD_EXPIRED',
     message: 'Senha expirada',
@@ -417,6 +429,27 @@ export function throwFirstAccessRequired(
 ): never {
   throw new AppError(
     'USUARIO_FIRST_ACCESS_REQUIRED',
+    {
+      ...context,
+      data: {
+        userId,
+        ...context.data,
+      },
+    },
+    language,
+  );
+}
+
+/**
+ * Lança erro quando usuário não está em primeiro acesso
+ */
+export function throwNotInFirstAccess(
+  userId: string,
+  context: UsuarioErrorContext = {},
+  language: string = 'pt-BR',
+): never {
+  throw new AppError(
+    'USUARIO_NOT_IN_FIRST_ACCESS',
     {
       ...context,
       data: {

@@ -431,32 +431,6 @@ export class CidadaoController {
                 ],
               },
             },
-            'cidadao-minimo': {
-              summary: 'Cidadão com dados mínimos',
-              description:
-                'Exemplo de criação de cidadão apenas com campos obrigatórios',
-              value: {
-                nome: 'João Santos',
-                cpf: '987.654.321-00',
-                rg: '7654321',
-                prontuario_suas: 'SUAS7654321',
-                naturalidade: 'Natal',
-                data_nascimento: '1990-07-20',
-                sexo: 'MASCULINO',
-                estado_civil: 'SOLTEIRO',
-                nis: '10987654321',
-                telefone: '(84) 88888-8888',
-                endereco: {
-                  logradouro: 'Rua Principal',
-                  numero: '456',
-                  bairro: 'Cidade Nova',
-                  cidade: 'Natal',
-                  estado: 'RN',
-                  cep: '59100-000',
-                  tempo_de_residencia: 5,
-                },
-              },
-            },
           },
         },
       },
@@ -502,8 +476,8 @@ export class CidadaoController {
     try {
       const result = await this.cidadaoService.create(
         createCidadaoDto,
-        req?.user?.id,
         req?.user?.unidade_id,
+        req?.user?.id,
       );
 
       const duration = Date.now() - startTime;

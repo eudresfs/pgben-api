@@ -89,6 +89,11 @@ export class JwtAuthStrategy extends PassportStrategy(
       roles: payload.roles,
     };
 
+    // Extrair unidade_id se presente no payload
+    if (payload.unidade_id) {
+      claims.unidade_id = payload.unidade_id;
+    }
+
     // Extrair permissões se presentes no payload
     if (payload.permissions) {
       claims.permissions = payload.permissions;

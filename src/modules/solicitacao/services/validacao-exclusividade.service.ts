@@ -1,10 +1,14 @@
-import { Injectable, Logger, BadRequestException } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
   Solicitacao,
   StatusSolicitacao,
 } from '../../../entities/solicitacao.entity';
+import {
+  throwCidadaoAlreadyBeneficiario,
+  throwCidadaoAlreadyInComposicaoFamiliar,
+} from '../../../shared/exceptions/error-catalog/domains/solicitacao.errors';
 
 /**
  * Serviço responsável por validar a exclusividade de papéis dos cidadãos
@@ -58,8 +62,9 @@ export class ValidacaoExclusividadeService {
       this.logger.warn(
         `Cidadão ${cidadaoId} já faz parte da composição familiar de outra solicitação ativa`,
       );
-      throw new BadRequestException(
-        'Cidadão não pode ser beneficiário principal pois já faz parte da composição familiar de outra solicitação ativa',
+      throwCidadaoAlreadyInComposicaoFamiliar(
+        cidadaoId,
+        { data: { context: 'validacao_exclusividade_beneficiario' } }
       );
     }
 
@@ -98,8 +103,9 @@ export class ValidacaoExclusividadeService {
       this.logger.warn(
         `Cidadão ${cidadaoId} já é beneficiário principal em outra solicitação ativa`,
       );
-      throw new BadRequestException(
-        'Cidadão não pode ser incluído na composição familiar pois já é beneficiário principal em outra solicitação ativa',
+      throwCidadaoAlreadyBeneficiario(
+        cidadaoId,
+        { data: { context: 'validacao_exclusividade_composicao_familiar' } }
       );
     }
 

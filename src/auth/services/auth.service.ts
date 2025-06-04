@@ -282,6 +282,11 @@ export class AuthService {
       roles: user.roles,
     };
 
+    // Adicionar unidade_id ao payload se disponível
+    if ('unidade_id' in user && user.unidade_id) {
+      payload['unidade_id'] = user.unidade_id;
+    }
+
     // Adicionar permissões ao payload se disponíveis
     if ('permissions' in user && user.permissions) {
       payload['permissions'] = user.permissions;

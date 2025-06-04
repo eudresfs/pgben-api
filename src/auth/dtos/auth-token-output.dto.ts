@@ -28,6 +28,7 @@ export interface UserAccessTokenClaims {
   roles: RoleType[];
   permissions?: string[];
   permissionScopes?: Record<string, string>;
+  unidade_id?: string;
 }
 
 export class UserRefreshTokenClaims {

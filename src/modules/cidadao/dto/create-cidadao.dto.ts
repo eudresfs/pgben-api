@@ -185,19 +185,24 @@ export class CreateCidadaoDto {
   cpf: string;
 
   @IsString({ message: 'RG deve ser uma string' })
+  @IsOptional()
   @ApiProperty({
     example: '1234567',
     description: 'RG do cidadão',
   })
   rg?: string;
 
-  @ApiProperty({
+  @IsString({ message: 'Prontuário SUAS deve ser uma string' })
+  @IsOptional()
+  @ApiPropertyOptional({
     example: 'SUAS1234567',
     description: 'Nº do Prontuário SUAS do cidadão',
+    required: false,
   })
   prontuario_suas?: string;
 
   @IsString({ message: 'Naturalidade deve ser uma string' })
+  @IsOptional()
   @ApiProperty({
     example: 'Natal',
     description: 'Cidade de Naturalidade',
@@ -205,6 +210,7 @@ export class CreateCidadaoDto {
   naturalidade?: string;
 
   @IsDate()
+  @IsOptional()
   @Type(() => Date)
   @ApiProperty({
     example: '1985-10-15',
@@ -213,6 +219,7 @@ export class CreateCidadaoDto {
   data_nascimento?: Date;
 
   @IsEnum(Sexo, { message: 'Sexo inválido' })
+  @IsOptional()
   @ApiProperty({
     enum: Sexo,
     example: Sexo.FEMININO,
@@ -224,7 +231,7 @@ export class CreateCidadaoDto {
   @ValidateIf((o) =>
     o.papeis?.some((p) => p.tipo_papel === TipoPapel.BENEFICIARIO),
   )
-  @IsNotEmpty({ message: 'NIS é obrigatório para beneficiários' })
+  @IsOptional()
   @Validate(NISValidator, { message: 'NIS inválido' })
   @ApiPropertyOptional({
     example: '12345678901',
@@ -244,6 +251,7 @@ export class CreateCidadaoDto {
   nome_social?: string;
 
   @IsEnum(EstadoCivil, { message: 'Estado civil inválido' })
+  @IsOptional()
   @ApiProperty({
     enum: EstadoCivil,
     example: EstadoCivil.CASADO,
@@ -252,6 +260,7 @@ export class CreateCidadaoDto {
   estado_civil?: EstadoCivil;
 
   @IsString({ message: 'Nome da mãe deve ser uma string' })
+  @IsOptional()
   @ApiProperty({
     example: 'Maria da Silva',
     description: 'Nome completo da mãe do cidadão',
@@ -278,6 +287,7 @@ export class CreateCidadaoDto {
   email?: string;
 
   @ValidateNested()
+  @IsOptional()
   @Type(() => EnderecoDto)
   @ApiProperty({
     type: EnderecoDto,
@@ -286,9 +296,11 @@ export class CreateCidadaoDto {
   endereco?: EnderecoDto;
 
   @IsUUID('4', { message: 'ID da unidade deve ser um UUID válido' })
-  @ApiProperty({
+  @IsOptional()
+  @ApiPropertyOptional({
     example: '550e8400-e29b-41d4-a716-446655440000',
-    description: 'ID da unidade onde o cidadão será cadastrado',
+    description: 'ID da unidade onde o cidadão será cadastrado. Se não fornecido, será usado o ID da unidade do usuário logado.',
+    required: false,
   })
   unidade_id?: string;
 }
