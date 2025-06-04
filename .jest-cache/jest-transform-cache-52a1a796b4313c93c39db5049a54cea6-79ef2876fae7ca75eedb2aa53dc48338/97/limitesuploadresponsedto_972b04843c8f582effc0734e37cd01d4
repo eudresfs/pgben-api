@@ -1,0 +1,81 @@
+4105140623a449922b3b18a2d0438fe2
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.LimitesUploadResponseDto = void 0;
+const swagger_1 = require("@nestjs/swagger");
+/**
+ * DTO para resposta com informações de limites de upload configurados no sistema.
+ * Inclui também as informações formatadas para exibição ao usuário.
+ */
+class LimitesUploadResponseDto {
+    tamanho_maximo;
+    tamanho_maximo_formatado;
+    formatos_permitidos;
+    quantidade_maxima_arquivos;
+    // Aliases para compatibilidade com o serviço
+    arquivos_maximo;
+    tipos_permitidos;
+    max_por_requisicao;
+}
+exports.LimitesUploadResponseDto = LimitesUploadResponseDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Tamanho máximo de upload em bytes',
+        example: 5242880, // 5MB
+    }),
+    __metadata("design:type", Number)
+], LimitesUploadResponseDto.prototype, "tamanho_maximo", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Tamanho máximo formatado para exibição',
+        example: '5 MB',
+    }),
+    __metadata("design:type", String)
+], LimitesUploadResponseDto.prototype, "tamanho_maximo_formatado", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Lista de formatos permitidos para upload',
+        example: ['pdf', 'jpg', 'jpeg', 'png', 'docx'],
+        type: [String],
+    }),
+    __metadata("design:type", Array)
+], LimitesUploadResponseDto.prototype, "formatos_permitidos", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Quantidade máxima de arquivos por operação de upload',
+        example: 10,
+    }),
+    __metadata("design:type", Number)
+], LimitesUploadResponseDto.prototype, "quantidade_maxima_arquivos", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Quantidade máxima de arquivos permitidos (alias)',
+        example: 100,
+    }),
+    __metadata("design:type", Number)
+], LimitesUploadResponseDto.prototype, "arquivos_maximo", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Tipos de arquivos permitidos (alias)',
+        example: ['pdf', 'jpg', 'jpeg', 'png', 'docx'],
+        type: [String],
+    }),
+    __metadata("design:type", Array)
+], LimitesUploadResponseDto.prototype, "tipos_permitidos", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Máximo de arquivos por requisição (alias)',
+        example: 10,
+    }),
+    __metadata("design:type", Number)
+], LimitesUploadResponseDto.prototype, "max_por_requisicao", void 0);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXGNvbmZpZ3VyYWNhb1xcZHRvc1xcbGltaXRlc1xcbGltaXRlcy11cGxvYWQtcmVzcG9uc2UuZHRvLnRzIiwibWFwcGluZ3MiOiI7Ozs7Ozs7Ozs7OztBQUFBLDZDQUE4QztBQUU5Qzs7O0dBR0c7QUFDSCxNQUFhLHdCQUF3QjtJQUtuQyxjQUFjLENBQVM7SUFNdkIsd0JBQXdCLENBQVM7SUFPakMsbUJBQW1CLENBQVc7SUFNOUIsMEJBQTBCLENBQVM7SUFFbkMsNkNBQTZDO0lBSzdDLGVBQWUsQ0FBUztJQU94QixnQkFBZ0IsQ0FBVztJQU0zQixrQkFBa0IsQ0FBUztDQUM1QjtBQTdDRCw0REE2Q0M7QUF4Q0M7SUFKQyxJQUFBLHFCQUFXLEVBQUM7UUFDWCxXQUFXLEVBQUUsbUNBQW1DO1FBQ2hELE9BQU8sRUFBRSxPQUFPLEVBQUUsTUFBTTtLQUN6QixDQUFDOztnRUFDcUI7QUFNdkI7SUFKQyxJQUFBLHFCQUFXLEVBQUM7UUFDWCxXQUFXLEVBQUUsd0NBQXdDO1FBQ3JELE9BQU8sRUFBRSxNQUFNO0tBQ2hCLENBQUM7OzBFQUMrQjtBQU9qQztJQUxDLElBQUEscUJBQVcsRUFBQztRQUNYLFdBQVcsRUFBRSwwQ0FBMEM7UUFDdkQsT0FBTyxFQUFFLENBQUMsS0FBSyxFQUFFLEtBQUssRUFBRSxNQUFNLEVBQUUsS0FBSyxFQUFFLE1BQU0sQ0FBQztRQUM5QyxJQUFJLEVBQUUsQ0FBQyxNQUFNLENBQUM7S0FDZixDQUFDOztxRUFDNEI7QUFNOUI7SUFKQyxJQUFBLHFCQUFXLEVBQUM7UUFDWCxXQUFXLEVBQUUsc0RBQXNEO1FBQ25FLE9BQU8sRUFBRSxFQUFFO0tBQ1osQ0FBQzs7NEVBQ2lDO0FBT25DO0lBSkMsSUFBQSxxQkFBVyxFQUFDO1FBQ1gsV0FBVyxFQUFFLGtEQUFrRDtRQUMvRCxPQUFPLEVBQUUsR0FBRztLQUNiLENBQUM7O2lFQUNzQjtBQU94QjtJQUxDLElBQUEscUJBQVcsRUFBQztRQUNYLFdBQVcsRUFBRSxzQ0FBc0M7UUFDbkQsT0FBTyxFQUFFLENBQUMsS0FBSyxFQUFFLEtBQUssRUFBRSxNQUFNLEVBQUUsS0FBSyxFQUFFLE1BQU0sQ0FBQztRQUM5QyxJQUFJLEVBQUUsQ0FBQyxNQUFNLENBQUM7S0FDZixDQUFDOztrRUFDeUI7QUFNM0I7SUFKQyxJQUFBLHFCQUFXLEVBQUM7UUFDWCxXQUFXLEVBQUUsMkNBQTJDO1FBQ3hELE9BQU8sRUFBRSxFQUFFO0tBQ1osQ0FBQzs7b0VBQ3lCIiwibmFtZXMiOltdLCJzb3VyY2VzIjpbIkM6XFxVc2Vyc1xcZXVkcmVcXE9uZURyaXZlXFxEZXNrdG9wXFxQcm9qZXRvc1xccGdiZW5cXHBnYmVuLXNlcnZlclxcc3JjXFxtb2R1bGVzXFxjb25maWd1cmFjYW9cXGR0b3NcXGxpbWl0ZXNcXGxpbWl0ZXMtdXBsb2FkLXJlc3BvbnNlLmR0by50cyJdLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQgeyBBcGlQcm9wZXJ0eSB9IGZyb20gJ0BuZXN0anMvc3dhZ2dlcic7XG5cbi8qKlxuICogRFRPIHBhcmEgcmVzcG9zdGEgY29tIGluZm9ybWHDp8O1ZXMgZGUgbGltaXRlcyBkZSB1cGxvYWQgY29uZmlndXJhZG9zIG5vIHNpc3RlbWEuXG4gKiBJbmNsdWkgdGFtYsOpbSBhcyBpbmZvcm1hw6fDtWVzIGZvcm1hdGFkYXMgcGFyYSBleGliacOnw6NvIGFvIHVzdcOhcmlvLlxuICovXG5leHBvcnQgY2xhc3MgTGltaXRlc1VwbG9hZFJlc3BvbnNlRHRvIHtcbiAgQEFwaVByb3BlcnR5KHtcbiAgICBkZXNjcmlwdGlvbjogJ1RhbWFuaG8gbcOheGltbyBkZSB1cGxvYWQgZW0gYnl0ZXMnLFxuICAgIGV4YW1wbGU6IDUyNDI4ODAsIC8vIDVNQlxuICB9KVxuICB0YW1hbmhvX21heGltbzogbnVtYmVyO1xuXG4gIEBBcGlQcm9wZXJ0eSh7XG4gICAgZGVzY3JpcHRpb246ICdUYW1hbmhvIG3DoXhpbW8gZm9ybWF0YWRvIHBhcmEgZXhpYmnDp8OjbycsXG4gICAgZXhhbXBsZTogJzUgTUInLFxuICB9KVxuICB0YW1hbmhvX21heGltb19mb3JtYXRhZG86IHN0cmluZztcblxuICBAQXBpUHJvcGVydHkoe1xuICAgIGRlc2NyaXB0aW9uOiAnTGlzdGEgZGUgZm9ybWF0b3MgcGVybWl0aWRvcyBwYXJhIHVwbG9hZCcsXG4gICAgZXhhbXBsZTogWydwZGYnLCAnanBnJywgJ2pwZWcnLCAncG5nJywgJ2RvY3gnXSxcbiAgICB0eXBlOiBbU3RyaW5nXSxcbiAgfSlcbiAgZm9ybWF0b3NfcGVybWl0aWRvczogc3RyaW5nW107XG5cbiAgQEFwaVByb3BlcnR5KHtcbiAgICBkZXNjcmlwdGlvbjogJ1F1YW50aWRhZGUgbcOheGltYSBkZSBhcnF1aXZvcyBwb3Igb3BlcmHDp8OjbyBkZSB1cGxvYWQnLFxuICAgIGV4YW1wbGU6IDEwLFxuICB9KVxuICBxdWFudGlkYWRlX21heGltYV9hcnF1aXZvczogbnVtYmVyO1xuXG4gIC8vIEFsaWFzZXMgcGFyYSBjb21wYXRpYmlsaWRhZGUgY29tIG8gc2VydmnDp29cbiAgQEFwaVByb3BlcnR5KHtcbiAgICBkZXNjcmlwdGlvbjogJ1F1YW50aWRhZGUgbcOheGltYSBkZSBhcnF1aXZvcyBwZXJtaXRpZG9zIChhbGlhcyknLFxuICAgIGV4YW1wbGU6IDEwMCxcbiAgfSlcbiAgYXJxdWl2b3NfbWF4aW1vOiBudW1iZXI7XG5cbiAgQEFwaVByb3BlcnR5KHtcbiAgICBkZXNjcmlwdGlvbjogJ1RpcG9zIGRlIGFycXVpdm9zIHBlcm1pdGlkb3MgKGFsaWFzKScsXG4gICAgZXhhbXBsZTogWydwZGYnLCAnanBnJywgJ2pwZWcnLCAncG5nJywgJ2RvY3gnXSxcbiAgICB0eXBlOiBbU3RyaW5nXSxcbiAgfSlcbiAgdGlwb3NfcGVybWl0aWRvczogc3RyaW5nW107XG5cbiAgQEFwaVByb3BlcnR5KHtcbiAgICBkZXNjcmlwdGlvbjogJ03DoXhpbW8gZGUgYXJxdWl2b3MgcG9yIHJlcXVpc2nDp8OjbyAoYWxpYXMpJyxcbiAgICBleGFtcGxlOiAxMCxcbiAgfSlcbiAgbWF4X3Bvcl9yZXF1aXNpY2FvOiBudW1iZXI7XG59XG4iXSwidmVyc2lvbiI6M30=

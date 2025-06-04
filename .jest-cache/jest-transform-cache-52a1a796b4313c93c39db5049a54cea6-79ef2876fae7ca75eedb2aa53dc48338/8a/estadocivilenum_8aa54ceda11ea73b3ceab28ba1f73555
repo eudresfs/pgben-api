@@ -1,0 +1,13 @@
+8448c8af3dc6b2bc32d1d4cdc624e2e4
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.EstadoCivil = void 0;
+var EstadoCivil;
+(function (EstadoCivil) {
+    EstadoCivil["SOLTEIRO"] = "solteiro";
+    EstadoCivil["CASADO"] = "casado";
+    EstadoCivil["DIVORCIADO"] = "divorciado";
+    EstadoCivil["VIUVO"] = "viuvo";
+    EstadoCivil["UNIAO_ESTAVEL"] = "uniao_estavel";
+})(EstadoCivil || (exports.EstadoCivil = EstadoCivil = {}));
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXGVudW1zXFxlc3RhZG8tY2l2aWwuZW51bS50cyIsIm1hcHBpbmdzIjoiOzs7QUFBQSxJQUFZLFdBTVg7QUFORCxXQUFZLFdBQVc7SUFDckIsb0NBQXFCLENBQUE7SUFDckIsZ0NBQWlCLENBQUE7SUFDakIsd0NBQXlCLENBQUE7SUFDekIsOEJBQWUsQ0FBQTtJQUNmLDhDQUErQixDQUFBO0FBQ2pDLENBQUMsRUFOVyxXQUFXLDJCQUFYLFdBQVcsUUFNdEIiLCJuYW1lcyI6W10sInNvdXJjZXMiOlsiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXGVudW1zXFxlc3RhZG8tY2l2aWwuZW51bS50cyJdLCJzb3VyY2VzQ29udGVudCI6WyJleHBvcnQgZW51bSBFc3RhZG9DaXZpbCB7XG4gIFNPTFRFSVJPID0gJ3NvbHRlaXJvJyxcbiAgQ0FTQURPID0gJ2Nhc2FkbycsXG4gIERJVk9SQ0lBRE8gPSAnZGl2b3JjaWFkbycsXG4gIFZJVVZPID0gJ3ZpdXZvJyxcbiAgVU5JQU9fRVNUQVZFTCA9ICd1bmlhb19lc3RhdmVsJyxcbn1cbiJdLCJ2ZXJzaW9uIjozfQ==

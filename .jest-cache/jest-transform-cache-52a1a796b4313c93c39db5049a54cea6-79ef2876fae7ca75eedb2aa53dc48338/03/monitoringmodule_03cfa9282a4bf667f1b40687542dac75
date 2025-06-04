@@ -1,0 +1,56 @@
+b42e15f24c24bdb432ac518bde18fae7
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.MonitoringModule = void 0;
+const common_1 = require("@nestjs/common");
+const terminus_1 = require("@nestjs/terminus");
+const axios_1 = require("@nestjs/axios");
+const config_1 = require("@nestjs/config");
+const health_controller_1 = require("./health.controller");
+const metrics_controller_1 = require("./metrics.controller");
+const metrics_service_1 = require("./metrics.service");
+const metrics_interceptor_1 = require("./metrics.interceptor");
+const enhanced_metrics_service_1 = require("./enhanced-metrics.service");
+const enhanced_metrics_controller_1 = require("./enhanced-metrics.controller");
+const enhanced_metrics_interceptor_1 = require("./enhanced-metrics.interceptor");
+const cache_metrics_interceptor_1 = require("./cache-metrics.interceptor");
+const health_check_service_1 = require("../services/health-check.service");
+/**
+ * Módulo Global de Monitoramento
+ *
+ * Configura o sistema de monitoramento para toda a aplicação
+ * incluindo health checks e métricas
+ */
+// Módulo NÃO global para evitar problemas com interceptors
+let MonitoringModule = class MonitoringModule {
+};
+exports.MonitoringModule = MonitoringModule;
+exports.MonitoringModule = MonitoringModule = __decorate([
+    (0, common_1.Module)({
+        imports: [terminus_1.TerminusModule, axios_1.HttpModule, config_1.ConfigModule],
+        controllers: [health_controller_1.HealthController, metrics_controller_1.MetricsController, enhanced_metrics_controller_1.EnhancedMetricsController],
+        providers: [
+            metrics_service_1.MetricsService,
+            metrics_interceptor_1.MetricsInterceptor,
+            enhanced_metrics_service_1.EnhancedMetricsService,
+            enhanced_metrics_interceptor_1.EnhancedMetricsInterceptor,
+            cache_metrics_interceptor_1.CacheMetricsInterceptor,
+            health_check_service_1.HealthCheckService,
+        ],
+        exports: [
+            metrics_service_1.MetricsService,
+            metrics_interceptor_1.MetricsInterceptor,
+            enhanced_metrics_service_1.EnhancedMetricsService,
+            enhanced_metrics_interceptor_1.EnhancedMetricsInterceptor,
+            cache_metrics_interceptor_1.CacheMetricsInterceptor,
+            health_check_service_1.HealthCheckService,
+        ],
+    })
+], MonitoringModule);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXHNoYXJlZFxcbW9uaXRvcmluZ1xcbW9uaXRvcmluZy5tb2R1bGUudHMiLCJtYXBwaW5ncyI6Ijs7Ozs7Ozs7O0FBQUEsMkNBQW9EO0FBQ3BELCtDQUFrRDtBQUNsRCx5Q0FBMkM7QUFDM0MsMkNBQThDO0FBQzlDLDJEQUF1RDtBQUN2RCw2REFBeUQ7QUFDekQsdURBQW1EO0FBQ25ELCtEQUEyRDtBQUMzRCx5RUFBb0U7QUFDcEUsK0VBQTBFO0FBQzFFLGlGQUE0RTtBQUM1RSwyRUFBc0U7QUFDdEUsMkVBQXNFO0FBRXRFOzs7OztHQUtHO0FBQ0gsMkRBQTJEO0FBcUJwRCxJQUFNLGdCQUFnQixHQUF0QixNQUFNLGdCQUFnQjtDQUFHLENBQUE7QUFBbkIsNENBQWdCOzJCQUFoQixnQkFBZ0I7SUFwQjVCLElBQUEsZUFBTSxFQUFDO1FBQ04sT0FBTyxFQUFFLENBQUMseUJBQWMsRUFBRSxrQkFBVSxFQUFFLHFCQUFZLENBQUM7UUFDbkQsV0FBVyxFQUFFLENBQUMsb0NBQWdCLEVBQUUsc0NBQWlCLEVBQUUsdURBQXlCLENBQUM7UUFDN0UsU0FBUyxFQUFFO1lBQ1QsZ0NBQWM7WUFDZCx3Q0FBa0I7WUFDbEIsaURBQXNCO1lBQ3RCLHlEQUEwQjtZQUMxQixtREFBdUI7WUFDdkIseUNBQWtCO1NBQ25CO1FBQ0QsT0FBTyxFQUFFO1lBQ1AsZ0NBQWM7WUFDZCx3Q0FBa0I7WUFDbEIsaURBQXNCO1lBQ3RCLHlEQUEwQjtZQUMxQixtREFBdUI7WUFDdkIseUNBQWtCO1NBQ25CO0tBQ0YsQ0FBQztHQUNXLGdCQUFnQixDQUFHIiwibmFtZXMiOltdLCJzb3VyY2VzIjpbIkM6XFxVc2Vyc1xcZXVkcmVcXE9uZURyaXZlXFxEZXNrdG9wXFxQcm9qZXRvc1xccGdiZW5cXHBnYmVuLXNlcnZlclxcc3JjXFxzaGFyZWRcXG1vbml0b3JpbmdcXG1vbml0b3JpbmcubW9kdWxlLnRzIl0sInNvdXJjZXNDb250ZW50IjpbImltcG9ydCB7IE1vZHVsZSwgZm9yd2FyZFJlZiB9IGZyb20gJ0BuZXN0anMvY29tbW9uJztcbmltcG9ydCB7IFRlcm1pbnVzTW9kdWxlIH0gZnJvbSAnQG5lc3Rqcy90ZXJtaW51cyc7XG5pbXBvcnQgeyBIdHRwTW9kdWxlIH0gZnJvbSAnQG5lc3Rqcy9heGlvcyc7XG5pbXBvcnQgeyBDb25maWdNb2R1bGUgfSBmcm9tICdAbmVzdGpzL2NvbmZpZyc7XG5pbXBvcnQgeyBIZWFsdGhDb250cm9sbGVyIH0gZnJvbSAnLi9oZWFsdGguY29udHJvbGxlcic7XG5pbXBvcnQgeyBNZXRyaWNzQ29udHJvbGxlciB9IGZyb20gJy4vbWV0cmljcy5jb250cm9sbGVyJztcbmltcG9ydCB7IE1ldHJpY3NTZXJ2aWNlIH0gZnJvbSAnLi9tZXRyaWNzLnNlcnZpY2UnO1xuaW1wb3J0IHsgTWV0cmljc0ludGVyY2VwdG9yIH0gZnJvbSAnLi9tZXRyaWNzLmludGVyY2VwdG9yJztcbmltcG9ydCB7IEVuaGFuY2VkTWV0cmljc1NlcnZpY2UgfSBmcm9tICcuL2VuaGFuY2VkLW1ldHJpY3Muc2VydmljZSc7XG5pbXBvcnQgeyBFbmhhbmNlZE1ldHJpY3NDb250cm9sbGVyIH0gZnJvbSAnLi9lbmhhbmNlZC1tZXRyaWNzLmNvbnRyb2xsZXInO1xuaW1wb3J0IHsgRW5oYW5jZWRNZXRyaWNzSW50ZXJjZXB0b3IgfSBmcm9tICcuL2VuaGFuY2VkLW1ldHJpY3MuaW50ZXJjZXB0b3InO1xuaW1wb3J0IHsgQ2FjaGVNZXRyaWNzSW50ZXJjZXB0b3IgfSBmcm9tICcuL2NhY2hlLW1ldHJpY3MuaW50ZXJjZXB0b3InO1xuaW1wb3J0IHsgSGVhbHRoQ2hlY2tTZXJ2aWNlIH0gZnJvbSAnLi4vc2VydmljZXMvaGVhbHRoLWNoZWNrLnNlcnZpY2UnO1xuXG4vKipcbiAqIE3Ds2R1bG8gR2xvYmFsIGRlIE1vbml0b3JhbWVudG9cbiAqXG4gKiBDb25maWd1cmEgbyBzaXN0ZW1hIGRlIG1vbml0b3JhbWVudG8gcGFyYSB0b2RhIGEgYXBsaWNhw6fDo29cbiAqIGluY2x1aW5kbyBoZWFsdGggY2hlY2tzIGUgbcOpdHJpY2FzXG4gKi9cbi8vIE3Ds2R1bG8gTsODTyBnbG9iYWwgcGFyYSBldml0YXIgcHJvYmxlbWFzIGNvbSBpbnRlcmNlcHRvcnNcbkBNb2R1bGUoe1xuICBpbXBvcnRzOiBbVGVybWludXNNb2R1bGUsIEh0dHBNb2R1bGUsIENvbmZpZ01vZHVsZV0sXG4gIGNvbnRyb2xsZXJzOiBbSGVhbHRoQ29udHJvbGxlciwgTWV0cmljc0NvbnRyb2xsZXIsIEVuaGFuY2VkTWV0cmljc0NvbnRyb2xsZXJdLFxuICBwcm92aWRlcnM6IFtcbiAgICBNZXRyaWNzU2VydmljZSxcbiAgICBNZXRyaWNzSW50ZXJjZXB0b3IsXG4gICAgRW5oYW5jZWRNZXRyaWNzU2VydmljZSxcbiAgICBFbmhhbmNlZE1ldHJpY3NJbnRlcmNlcHRvcixcbiAgICBDYWNoZU1ldHJpY3NJbnRlcmNlcHRvcixcbiAgICBIZWFsdGhDaGVja1NlcnZpY2UsXG4gIF0sXG4gIGV4cG9ydHM6IFtcbiAgICBNZXRyaWNzU2VydmljZSxcbiAgICBNZXRyaWNzSW50ZXJjZXB0b3IsXG4gICAgRW5oYW5jZWRNZXRyaWNzU2VydmljZSxcbiAgICBFbmhhbmNlZE1ldHJpY3NJbnRlcmNlcHRvcixcbiAgICBDYWNoZU1ldHJpY3NJbnRlcmNlcHRvcixcbiAgICBIZWFsdGhDaGVja1NlcnZpY2UsXG4gIF0sXG59KVxuZXhwb3J0IGNsYXNzIE1vbml0b3JpbmdNb2R1bGUge31cbiJdLCJ2ZXJzaW9uIjozfQ==

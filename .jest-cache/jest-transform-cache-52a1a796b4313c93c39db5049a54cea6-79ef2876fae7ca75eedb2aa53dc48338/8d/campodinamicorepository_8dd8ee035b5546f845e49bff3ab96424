@@ -1,0 +1,136 @@
+2a487202ddb0b87acfe98bc083650ffb
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var _a;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.CampoDinamicoRepository = void 0;
+const common_1 = require("@nestjs/common");
+const typeorm_1 = require("@nestjs/typeorm");
+const typeorm_2 = require("typeorm");
+const campo_dinamico_beneficio_entity_1 = require("../../../entities/campo-dinamico-beneficio.entity");
+/**
+ * Repositório para gerenciamento de campos dinâmicos de benefícios
+ */
+let CampoDinamicoRepository = class CampoDinamicoRepository {
+    campoDinamicoRepository;
+    constructor(campoDinamicoRepository) {
+        this.campoDinamicoRepository = campoDinamicoRepository;
+    }
+    /**
+     * Encontra todos os campos dinâmicos
+     * @returns Lista de campos dinâmicos
+     */
+    async findAll() {
+        return this.campoDinamicoRepository.find({
+            order: {
+                ordem: 'ASC',
+            },
+        });
+    }
+    /**
+     * Encontra um campo dinâmico pelo ID
+     * @param id ID do campo dinâmico
+     * @returns Campo dinâmico encontrado ou null
+     */
+    async findOne(id) {
+        return this.campoDinamicoRepository.findOne({
+            where: { id },
+        });
+    }
+    /**
+     * Encontra um campo dinâmico pelo ID (alias para findOne)
+     * @param id ID do campo dinâmico
+     * @returns Campo dinâmico encontrado ou null
+     */
+    async findById(id) {
+        return this.findOne(id);
+    }
+    /**
+     * Encontra campos dinâmicos por tipo de benefício
+     * @param tipoBeneficioId ID do tipo de benefício
+     * @returns Lista de campos dinâmicos associados ao tipo de benefício
+     */
+    async findByTipoBeneficio(tipoBeneficioId) {
+        return this.campoDinamicoRepository.find({
+            where: {
+                tipo_beneficio: { id: tipoBeneficioId },
+            },
+            order: {
+                ordem: 'ASC',
+            },
+        });
+    }
+    /**
+     * Encontra campos dinâmicos por tipo de benefício
+     * @param tipoBeneficio Entidade do tipo de benefício
+     * @returns Lista de campos dinâmicos associados ao tipo de benefício
+     */
+    async findByTipoBeneficioEntity(tipoBeneficio) {
+        return this.campoDinamicoRepository.find({
+            where: {
+                tipo_beneficio: { id: tipoBeneficio.id },
+            },
+            order: {
+                ordem: 'ASC',
+            },
+        });
+    }
+    /**
+     * Cria um novo campo dinâmico
+     * @param campoDinamico Dados do campo dinâmico a ser criado
+     * @returns Campo dinâmico criado
+     */
+    async create(campoDinamico) {
+        const novoCampoDinamico = this.campoDinamicoRepository.create(campoDinamico);
+        return this.campoDinamicoRepository.save(novoCampoDinamico);
+    }
+    /**
+     * Atualiza um campo dinâmico existente
+     * @param id ID do campo dinâmico a ser atualizado
+     * @param campoDinamico Dados atualizados do campo dinâmico
+     * @returns Campo dinâmico atualizado
+     * @throws NotFoundException se o campo dinâmico não for encontrado
+     */
+    async update(id, campoDinamico) {
+        const result = await this.campoDinamicoRepository.update(id, campoDinamico);
+        if (result.affected === 0) {
+            throw new common_1.NotFoundException(`Campo dinâmico com ID ${id} não encontrado`);
+        }
+        const updated = await this.findOne(id);
+        if (!updated) {
+            throw new common_1.NotFoundException('Erro ao buscar o campo dinâmico atualizado');
+        }
+        return updated;
+    }
+    /**
+     * Remove um campo dinâmico
+     * @param id ID do campo dinâmico a ser removido
+     * @returns true se removido com sucesso
+     * @throws NotFoundException se o campo dinâmico não for encontrado
+     */
+    async remove(id) {
+        const result = await this.campoDinamicoRepository.softDelete(id);
+        if (result.affected === 0) {
+            throw new common_1.NotFoundException(`Campo dinâmico com ID ${id} não encontrado`);
+        }
+        return result.affected !== undefined && result.affected > 0;
+    }
+};
+exports.CampoDinamicoRepository = CampoDinamicoRepository;
+exports.CampoDinamicoRepository = CampoDinamicoRepository = __decorate([
+    (0, common_1.Injectable)(),
+    __param(0, (0, typeorm_1.InjectRepository)(campo_dinamico_beneficio_entity_1.CampoDinamicoBeneficio)),
+    __metadata("design:paramtypes", [typeof (_a = typeof typeorm_2.Repository !== "undefined" && typeorm_2.Repository) === "function" ? _a : Object])
+], CampoDinamicoRepository);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXGJlbmVmaWNpb1xccmVwb3NpdG9yaWVzXFxjYW1wby1kaW5hbWljby5yZXBvc2l0b3J5LnRzIiwibWFwcGluZ3MiOiI7Ozs7Ozs7Ozs7Ozs7Ozs7QUFBQSwyQ0FBK0Q7QUFDL0QsNkNBQW1EO0FBQ25ELHFDQUFxQztBQUNyQyx1R0FBMkY7QUFHM0Y7O0dBRUc7QUFFSSxJQUFNLHVCQUF1QixHQUE3QixNQUFNLHVCQUF1QjtJQUdmO0lBRm5CLFlBRW1CLHVCQUEyRDtRQUEzRCw0QkFBdUIsR0FBdkIsdUJBQXVCLENBQW9DO0lBQzNFLENBQUM7SUFFSjs7O09BR0c7SUFDSCxLQUFLLENBQUMsT0FBTztRQUNYLE9BQU8sSUFBSSxDQUFDLHVCQUF1QixDQUFDLElBQUksQ0FBQztZQUN2QyxLQUFLLEVBQUU7Z0JBQ0wsS0FBSyxFQUFFLEtBQUs7YUFDYjtTQUNGLENBQUMsQ0FBQztJQUNMLENBQUM7SUFFRDs7OztPQUlHO0lBQ0gsS0FBSyxDQUFDLE9BQU8sQ0FBQyxFQUFVO1FBQ3RCLE9BQU8sSUFBSSxDQUFDLHVCQUF1QixDQUFDLE9BQU8sQ0FBQztZQUMxQyxLQUFLLEVBQUUsRUFBRSxFQUFFLEVBQUU7U0FDZCxDQUFDLENBQUM7SUFDTCxDQUFDO0lBRUQ7Ozs7T0FJRztJQUNILEtBQUssQ0FBQyxRQUFRLENBQUMsRUFBVTtRQUN2QixPQUFPLElBQUksQ0FBQyxPQUFPLENBQUMsRUFBRSxDQUFDLENBQUM7SUFDMUIsQ0FBQztJQUVEOzs7O09BSUc7SUFDSCxLQUFLLENBQUMsbUJBQW1CLENBQ3ZCLGVBQXVCO1FBRXZCLE9BQU8sSUFBSSxDQUFDLHVCQUF1QixDQUFDLElBQUksQ0FBQztZQUN2QyxLQUFLLEVBQUU7Z0JBQ0wsY0FBYyxFQUFFLEVBQUUsRUFBRSxFQUFFLGVBQWUsRUFBRTthQUN4QztZQUNELEtBQUssRUFBRTtnQkFDTCxLQUFLLEVBQUUsS0FBSzthQUNiO1NBQ0YsQ0FBQyxDQUFDO0lBQ0wsQ0FBQztJQUVEOzs7O09BSUc7SUFDSCxLQUFLLENBQUMseUJBQXlCLENBQzdCLGFBQTRCO1FBRTVCLE9BQU8sSUFBSSxDQUFDLHVCQUF1QixDQUFDLElBQUksQ0FBQztZQUN2QyxLQUFLLEVBQUU7Z0JBQ0wsY0FBYyxFQUFFLEVBQUUsRUFBRSxFQUFFLGFBQWEsQ0FBQyxFQUFFLEVBQUU7YUFDekM7WUFDRCxLQUFLLEVBQUU7Z0JBQ0wsS0FBSyxFQUFFLEtBQUs7YUFDYjtTQUNGLENBQUMsQ0FBQztJQUNMLENBQUM7SUFFRDs7OztPQUlHO0lBQ0gsS0FBSyxDQUFDLE1BQU0sQ0FDVixhQUE4QztRQUU5QyxNQUFNLGlCQUFpQixHQUNyQixJQUFJLENBQUMsdUJBQXVCLENBQUMsTUFBTSxDQUFDLGFBQWEsQ0FBQyxDQUFDO1FBQ3JELE9BQU8sSUFBSSxDQUFDLHVCQUF1QixDQUFDLElBQUksQ0FBQyxpQkFBaUIsQ0FBQyxDQUFDO0lBQzlELENBQUM7SUFFRDs7Ozs7O09BTUc7SUFDSCxLQUFLLENBQUMsTUFBTSxDQUNWLEVBQVUsRUFDVixhQUE4QztRQUU5QyxNQUFNLE1BQU0sR0FBRyxNQUFNLElBQUksQ0FBQyx1QkFBdUIsQ0FBQyxNQUFNLENBQUMsRUFBRSxFQUFFLGFBQWEsQ0FBQyxDQUFDO1FBRTVFLElBQUksTUFBTSxDQUFDLFFBQVEsS0FBSyxDQUFDLEVBQUUsQ0FBQztZQUMxQixNQUFNLElBQUksMEJBQWlCLENBQUMseUJBQXlCLEVBQUUsaUJBQWlCLENBQUMsQ0FBQztRQUM1RSxDQUFDO1FBRUQsTUFBTSxPQUFPLEdBQUcsTUFBTSxJQUFJLENBQUMsT0FBTyxDQUFDLEVBQUUsQ0FBQyxDQUFDO1FBQ3ZDLElBQUksQ0FBQyxPQUFPLEVBQUUsQ0FBQztZQUNiLE1BQU0sSUFBSSwwQkFBaUIsQ0FBQyw0Q0FBNEMsQ0FBQyxDQUFDO1FBQzVFLENBQUM7UUFFRCxPQUFPLE9BQU8sQ0FBQztJQUNqQixDQUFDO0lBRUQ7Ozs7O09BS0c7SUFDSCxLQUFLLENBQUMsTUFBTSxDQUFDLEVBQVU7UUFDckIsTUFBTSxNQUFNLEdBQUcsTUFBTSxJQUFJLENBQUMsdUJBQXVCLENBQUMsVUFBVSxDQUFDLEVBQUUsQ0FBQyxDQUFDO1FBRWpFLElBQUksTUFBTSxDQUFDLFFBQVEsS0FBSyxDQUFDLEVBQUUsQ0FBQztZQUMxQixNQUFNLElBQUksMEJBQWlCLENBQUMseUJBQXlCLEVBQUUsaUJBQWlCLENBQUMsQ0FBQztRQUM1RSxDQUFDO1FBRUQsT0FBTyxNQUFNLENBQUMsUUFBUSxLQUFLLFNBQVMsSUFBSSxNQUFNLENBQUMsUUFBUSxHQUFHLENBQUMsQ0FBQztJQUM5RCxDQUFDO0NBQ0YsQ0FBQTtBQS9IWSwwREFBdUI7a0NBQXZCLHVCQUF1QjtJQURuQyxJQUFBLG1CQUFVLEdBQUU7SUFHUixXQUFBLElBQUEsMEJBQWdCLEVBQUMsd0RBQXNCLENBQUMsQ0FBQTt5REFDQyxvQkFBVSxvQkFBVixvQkFBVTtHQUgzQyx1QkFBdUIsQ0ErSG5DIiwibmFtZXMiOltdLCJzb3VyY2VzIjpbIkM6XFxVc2Vyc1xcZXVkcmVcXE9uZURyaXZlXFxEZXNrdG9wXFxQcm9qZXRvc1xccGdiZW5cXHBnYmVuLXNlcnZlclxcc3JjXFxtb2R1bGVzXFxiZW5lZmljaW9cXHJlcG9zaXRvcmllc1xcY2FtcG8tZGluYW1pY28ucmVwb3NpdG9yeS50cyJdLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQgeyBJbmplY3RhYmxlLCBOb3RGb3VuZEV4Y2VwdGlvbiB9IGZyb20gJ0BuZXN0anMvY29tbW9uJztcbmltcG9ydCB7IEluamVjdFJlcG9zaXRvcnkgfSBmcm9tICdAbmVzdGpzL3R5cGVvcm0nO1xuaW1wb3J0IHsgUmVwb3NpdG9yeSB9IGZyb20gJ3R5cGVvcm0nO1xuaW1wb3J0IHsgQ2FtcG9EaW5hbWljb0JlbmVmaWNpbyB9IGZyb20gJy4uLy4uLy4uL2VudGl0aWVzL2NhbXBvLWRpbmFtaWNvLWJlbmVmaWNpby5lbnRpdHknO1xuaW1wb3J0IHsgVGlwb0JlbmVmaWNpbyB9IGZyb20gJy4uLy4uLy4uL2VudGl0aWVzL3RpcG8tYmVuZWZpY2lvLmVudGl0eSc7XG5cbi8qKlxuICogUmVwb3NpdMOzcmlvIHBhcmEgZ2VyZW5jaWFtZW50byBkZSBjYW1wb3MgZGluw6JtaWNvcyBkZSBiZW5lZsOtY2lvc1xuICovXG5ASW5qZWN0YWJsZSgpXG5leHBvcnQgY2xhc3MgQ2FtcG9EaW5hbWljb1JlcG9zaXRvcnkge1xuICBjb25zdHJ1Y3RvcihcbiAgICBASW5qZWN0UmVwb3NpdG9yeShDYW1wb0RpbmFtaWNvQmVuZWZpY2lvKVxuICAgIHByaXZhdGUgcmVhZG9ubHkgY2FtcG9EaW5hbWljb1JlcG9zaXRvcnk6IFJlcG9zaXRvcnk8Q2FtcG9EaW5hbWljb0JlbmVmaWNpbz4sXG4gICkge31cblxuICAvKipcbiAgICogRW5jb250cmEgdG9kb3Mgb3MgY2FtcG9zIGRpbsOibWljb3NcbiAgICogQHJldHVybnMgTGlzdGEgZGUgY2FtcG9zIGRpbsOibWljb3NcbiAgICovXG4gIGFzeW5jIGZpbmRBbGwoKTogUHJvbWlzZTxDYW1wb0RpbmFtaWNvQmVuZWZpY2lvW10+IHtcbiAgICByZXR1cm4gdGhpcy5jYW1wb0RpbmFtaWNvUmVwb3NpdG9yeS5maW5kKHtcbiAgICAgIG9yZGVyOiB7XG4gICAgICAgIG9yZGVtOiAnQVNDJyxcbiAgICAgIH0sXG4gICAgfSk7XG4gIH1cblxuICAvKipcbiAgICogRW5jb250cmEgdW0gY2FtcG8gZGluw6JtaWNvIHBlbG8gSURcbiAgICogQHBhcmFtIGlkIElEIGRvIGNhbXBvIGRpbsOibWljb1xuICAgKiBAcmV0dXJucyBDYW1wbyBkaW7Dom1pY28gZW5jb250cmFkbyBvdSBudWxsXG4gICAqL1xuICBhc3luYyBmaW5kT25lKGlkOiBzdHJpbmcpOiBQcm9taXNlPENhbXBvRGluYW1pY29CZW5lZmljaW8gfCBudWxsPiB7XG4gICAgcmV0dXJuIHRoaXMuY2FtcG9EaW5hbWljb1JlcG9zaXRvcnkuZmluZE9uZSh7XG4gICAgICB3aGVyZTogeyBpZCB9LFxuICAgIH0pO1xuICB9XG5cbiAgLyoqXG4gICAqIEVuY29udHJhIHVtIGNhbXBvIGRpbsOibWljbyBwZWxvIElEIChhbGlhcyBwYXJhIGZpbmRPbmUpXG4gICAqIEBwYXJhbSBpZCBJRCBkbyBjYW1wbyBkaW7Dom1pY29cbiAgICogQHJldHVybnMgQ2FtcG8gZGluw6JtaWNvIGVuY29udHJhZG8gb3UgbnVsbFxuICAgKi9cbiAgYXN5bmMgZmluZEJ5SWQoaWQ6IHN0cmluZyk6IFByb21pc2U8Q2FtcG9EaW5hbWljb0JlbmVmaWNpbyB8IG51bGw+IHtcbiAgICByZXR1cm4gdGhpcy5maW5kT25lKGlkKTtcbiAgfVxuXG4gIC8qKlxuICAgKiBFbmNvbnRyYSBjYW1wb3MgZGluw6JtaWNvcyBwb3IgdGlwbyBkZSBiZW5lZsOtY2lvXG4gICAqIEBwYXJhbSB0aXBvQmVuZWZpY2lvSWQgSUQgZG8gdGlwbyBkZSBiZW5lZsOtY2lvXG4gICAqIEByZXR1cm5zIExpc3RhIGRlIGNhbXBvcyBkaW7Dom1pY29zIGFzc29jaWFkb3MgYW8gdGlwbyBkZSBiZW5lZsOtY2lvXG4gICAqL1xuICBhc3luYyBmaW5kQnlUaXBvQmVuZWZpY2lvKFxuICAgIHRpcG9CZW5lZmljaW9JZDogc3RyaW5nLFxuICApOiBQcm9taXNlPENhbXBvRGluYW1pY29CZW5lZmljaW9bXT4ge1xuICAgIHJldHVybiB0aGlzLmNhbXBvRGluYW1pY29SZXBvc2l0b3J5LmZpbmQoe1xuICAgICAgd2hlcmU6IHtcbiAgICAgICAgdGlwb19iZW5lZmljaW86IHsgaWQ6IHRpcG9CZW5lZmljaW9JZCB9LFxuICAgICAgfSxcbiAgICAgIG9yZGVyOiB7XG4gICAgICAgIG9yZGVtOiAnQVNDJyxcbiAgICAgIH0sXG4gICAgfSk7XG4gIH1cblxuICAvKipcbiAgICogRW5jb250cmEgY2FtcG9zIGRpbsOibWljb3MgcG9yIHRpcG8gZGUgYmVuZWbDrWNpb1xuICAgKiBAcGFyYW0gdGlwb0JlbmVmaWNpbyBFbnRpZGFkZSBkbyB0aXBvIGRlIGJlbmVmw61jaW9cbiAgICogQHJldHVybnMgTGlzdGEgZGUgY2FtcG9zIGRpbsOibWljb3MgYXNzb2NpYWRvcyBhbyB0aXBvIGRlIGJlbmVmw61jaW9cbiAgICovXG4gIGFzeW5jIGZpbmRCeVRpcG9CZW5lZmljaW9FbnRpdHkoXG4gICAgdGlwb0JlbmVmaWNpbzogVGlwb0JlbmVmaWNpbyxcbiAgKTogUHJvbWlzZTxDYW1wb0RpbmFtaWNvQmVuZWZpY2lvW10+IHtcbiAgICByZXR1cm4gdGhpcy5jYW1wb0RpbmFtaWNvUmVwb3NpdG9yeS5maW5kKHtcbiAgICAgIHdoZXJlOiB7XG4gICAgICAgIHRpcG9fYmVuZWZpY2lvOiB7IGlkOiB0aXBvQmVuZWZpY2lvLmlkIH0sXG4gICAgICB9LFxuICAgICAgb3JkZXI6IHtcbiAgICAgICAgb3JkZW06ICdBU0MnLFxuICAgICAgfSxcbiAgICB9KTtcbiAgfVxuXG4gIC8qKlxuICAgKiBDcmlhIHVtIG5vdm8gY2FtcG8gZGluw6JtaWNvXG4gICAqIEBwYXJhbSBjYW1wb0RpbmFtaWNvIERhZG9zIGRvIGNhbXBvIGRpbsOibWljbyBhIHNlciBjcmlhZG9cbiAgICogQHJldHVybnMgQ2FtcG8gZGluw6JtaWNvIGNyaWFkb1xuICAgKi9cbiAgYXN5bmMgY3JlYXRlKFxuICAgIGNhbXBvRGluYW1pY286IFBhcnRpYWw8Q2FtcG9EaW5hbWljb0JlbmVmaWNpbz4sXG4gICk6IFByb21pc2U8Q2FtcG9EaW5hbWljb0JlbmVmaWNpbz4ge1xuICAgIGNvbnN0IG5vdm9DYW1wb0RpbmFtaWNvID1cbiAgICAgIHRoaXMuY2FtcG9EaW5hbWljb1JlcG9zaXRvcnkuY3JlYXRlKGNhbXBvRGluYW1pY28pO1xuICAgIHJldHVybiB0aGlzLmNhbXBvRGluYW1pY29SZXBvc2l0b3J5LnNhdmUobm92b0NhbXBvRGluYW1pY28pO1xuICB9XG5cbiAgLyoqXG4gICAqIEF0dWFsaXphIHVtIGNhbXBvIGRpbsOibWljbyBleGlzdGVudGVcbiAgICogQHBhcmFtIGlkIElEIGRvIGNhbXBvIGRpbsOibWljbyBhIHNlciBhdHVhbGl6YWRvXG4gICAqIEBwYXJhbSBjYW1wb0RpbmFtaWNvIERhZG9zIGF0dWFsaXphZG9zIGRvIGNhbXBvIGRpbsOibWljb1xuICAgKiBAcmV0dXJucyBDYW1wbyBkaW7Dom1pY28gYXR1YWxpemFkb1xuICAgKiBAdGhyb3dzIE5vdEZvdW5kRXhjZXB0aW9uIHNlIG8gY2FtcG8gZGluw6JtaWNvIG7Do28gZm9yIGVuY29udHJhZG9cbiAgICovXG4gIGFzeW5jIHVwZGF0ZShcbiAgICBpZDogc3RyaW5nLFxuICAgIGNhbXBvRGluYW1pY286IFBhcnRpYWw8Q2FtcG9EaW5hbWljb0JlbmVmaWNpbz4sXG4gICk6IFByb21pc2U8Q2FtcG9EaW5hbWljb0JlbmVmaWNpbz4ge1xuICAgIGNvbnN0IHJlc3VsdCA9IGF3YWl0IHRoaXMuY2FtcG9EaW5hbWljb1JlcG9zaXRvcnkudXBkYXRlKGlkLCBjYW1wb0RpbmFtaWNvKTtcblxuICAgIGlmIChyZXN1bHQuYWZmZWN0ZWQgPT09IDApIHtcbiAgICAgIHRocm93IG5ldyBOb3RGb3VuZEV4Y2VwdGlvbihgQ2FtcG8gZGluw6JtaWNvIGNvbSBJRCAke2lkfSBuw6NvIGVuY29udHJhZG9gKTtcbiAgICB9XG5cbiAgICBjb25zdCB1cGRhdGVkID0gYXdhaXQgdGhpcy5maW5kT25lKGlkKTtcbiAgICBpZiAoIXVwZGF0ZWQpIHtcbiAgICAgIHRocm93IG5ldyBOb3RGb3VuZEV4Y2VwdGlvbignRXJybyBhbyBidXNjYXIgbyBjYW1wbyBkaW7Dom1pY28gYXR1YWxpemFkbycpO1xuICAgIH1cblxuICAgIHJldHVybiB1cGRhdGVkO1xuICB9XG5cbiAgLyoqXG4gICAqIFJlbW92ZSB1bSBjYW1wbyBkaW7Dom1pY29cbiAgICogQHBhcmFtIGlkIElEIGRvIGNhbXBvIGRpbsOibWljbyBhIHNlciByZW1vdmlkb1xuICAgKiBAcmV0dXJucyB0cnVlIHNlIHJlbW92aWRvIGNvbSBzdWNlc3NvXG4gICAqIEB0aHJvd3MgTm90Rm91bmRFeGNlcHRpb24gc2UgbyBjYW1wbyBkaW7Dom1pY28gbsOjbyBmb3IgZW5jb250cmFkb1xuICAgKi9cbiAgYXN5bmMgcmVtb3ZlKGlkOiBzdHJpbmcpOiBQcm9taXNlPGJvb2xlYW4+IHtcbiAgICBjb25zdCByZXN1bHQgPSBhd2FpdCB0aGlzLmNhbXBvRGluYW1pY29SZXBvc2l0b3J5LnNvZnREZWxldGUoaWQpO1xuXG4gICAgaWYgKHJlc3VsdC5hZmZlY3RlZCA9PT0gMCkge1xuICAgICAgdGhyb3cgbmV3IE5vdEZvdW5kRXhjZXB0aW9uKGBDYW1wbyBkaW7Dom1pY28gY29tIElEICR7aWR9IG7Do28gZW5jb250cmFkb2ApO1xuICAgIH1cblxuICAgIHJldHVybiByZXN1bHQuYWZmZWN0ZWQgIT09IHVuZGVmaW5lZCAmJiByZXN1bHQuYWZmZWN0ZWQgPiAwO1xuICB9XG59XG4iXSwidmVyc2lvbiI6M30=

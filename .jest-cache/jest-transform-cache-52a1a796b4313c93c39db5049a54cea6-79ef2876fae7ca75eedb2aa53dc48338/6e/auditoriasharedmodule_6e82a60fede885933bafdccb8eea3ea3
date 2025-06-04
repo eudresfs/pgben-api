@@ -1,0 +1,73 @@
+c8b4f62452e49495764ac31bbdd3c726
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.AuditoriaSharedModule = void 0;
+const common_1 = require("@nestjs/common");
+const typeorm_1 = require("@nestjs/typeorm");
+const bull_1 = require("@nestjs/bull");
+const config_1 = require("@nestjs/config");
+const jwt_1 = require("@nestjs/jwt");
+const log_auditoria_entity_1 = require("../../entities/log-auditoria.entity");
+const auditoria_queue_service_1 = require("../../modules/auditoria/services/auditoria-queue.service");
+const log_auditoria_repository_1 = require("../../modules/auditoria/repositories/log-auditoria.repository");
+const auditoria_signature_service_1 = require("../../modules/auditoria/services/auditoria-signature.service");
+/**
+ * Módulo compartilhado de Auditoria
+ *
+ * Este módulo exporta os serviços essenciais de auditoria que podem
+ * ser usados por outros módulos sem criar dependências circulares.
+ *
+ * É usado para quebrar a dependência circular entre os módulos.
+ */
+let AuditoriaSharedModule = class AuditoriaSharedModule {
+};
+exports.AuditoriaSharedModule = AuditoriaSharedModule;
+exports.AuditoriaSharedModule = AuditoriaSharedModule = __decorate([
+    (0, common_1.Global)(),
+    (0, common_1.Module)({
+        imports: [
+            // Configuração do TypeORM para entidades do módulo
+            typeorm_1.TypeOrmModule.forFeature([log_auditoria_entity_1.LogAuditoria]),
+            // Configuração assíncrona do BullModule
+            bull_1.BullModule.registerQueueAsync({
+                name: 'auditoria',
+                imports: [config_1.ConfigModule],
+                useFactory: (configService) => ({
+                    redis: {
+                        host: configService.get('REDIS_HOST', 'localhost'),
+                        port: configService.get('REDIS_PORT', 6379),
+                    },
+                }),
+                inject: [config_1.ConfigService],
+            }),
+            // Configuração assíncrona do JwtModule
+            jwt_1.JwtModule.registerAsync({
+                imports: [config_1.ConfigModule],
+                useFactory: (configService) => ({
+                    secret: configService.get('JWT_SECRET'),
+                    signOptions: { expiresIn: '1d' },
+                }),
+                inject: [config_1.ConfigService],
+            }),
+        ],
+        providers: [
+            // Serviços essenciais
+            auditoria_queue_service_1.AuditoriaQueueService,
+            log_auditoria_repository_1.LogAuditoriaRepository,
+            auditoria_signature_service_1.AuditoriaSignatureService,
+        ],
+        exports: [
+            // Exporta os serviços principais para uso em outros módulos
+            auditoria_queue_service_1.AuditoriaQueueService,
+            log_auditoria_repository_1.LogAuditoriaRepository,
+            auditoria_signature_service_1.AuditoriaSignatureService,
+        ],
+    })
+], AuditoriaSharedModule);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXHNoYXJlZFxcYXVkaXRvcmlhXFxhdWRpdG9yaWEtc2hhcmVkLm1vZHVsZS50cyIsIm1hcHBpbmdzIjoiOzs7Ozs7Ozs7QUFBQSwyQ0FBZ0Q7QUFDaEQsNkNBQWdEO0FBQ2hELHVDQUEwQztBQUMxQywyQ0FBNkQ7QUFDN0QscUNBQXdDO0FBRXhDLDhFQUFtRTtBQUNuRSxzR0FBaUc7QUFDakcsNEdBQXVHO0FBQ3ZHLDhHQUF5RztBQUV6Rzs7Ozs7OztHQU9HO0FBMkNJLElBQU0scUJBQXFCLEdBQTNCLE1BQU0scUJBQXFCO0NBQUcsQ0FBQTtBQUF4QixzREFBcUI7Z0NBQXJCLHFCQUFxQjtJQTFDakMsSUFBQSxlQUFNLEdBQUU7SUFDUixJQUFBLGVBQU0sRUFBQztRQUNOLE9BQU8sRUFBRTtZQUNQLG1EQUFtRDtZQUNuRCx1QkFBYSxDQUFDLFVBQVUsQ0FBQyxDQUFDLG1DQUFZLENBQUMsQ0FBQztZQUV4Qyx3Q0FBd0M7WUFDeEMsaUJBQVUsQ0FBQyxrQkFBa0IsQ0FBQztnQkFDNUIsSUFBSSxFQUFFLFdBQVc7Z0JBQ2pCLE9BQU8sRUFBRSxDQUFDLHFCQUFZLENBQUM7Z0JBQ3ZCLFVBQVUsRUFBRSxDQUFDLGFBQTRCLEVBQUUsRUFBRSxDQUFDLENBQUM7b0JBQzdDLEtBQUssRUFBRTt3QkFDTCxJQUFJLEVBQUUsYUFBYSxDQUFDLEdBQUcsQ0FBUyxZQUFZLEVBQUUsV0FBVyxDQUFDO3dCQUMxRCxJQUFJLEVBQUUsYUFBYSxDQUFDLEdBQUcsQ0FBUyxZQUFZLEVBQUUsSUFBSSxDQUFDO3FCQUNwRDtpQkFDRixDQUFDO2dCQUNGLE1BQU0sRUFBRSxDQUFDLHNCQUFhLENBQUM7YUFDeEIsQ0FBQztZQUVGLHVDQUF1QztZQUN2QyxlQUFTLENBQUMsYUFBYSxDQUFDO2dCQUN0QixPQUFPLEVBQUUsQ0FBQyxxQkFBWSxDQUFDO2dCQUN2QixVQUFVLEVBQUUsQ0FBQyxhQUE0QixFQUFFLEVBQUUsQ0FBQyxDQUFDO29CQUM3QyxNQUFNLEVBQUUsYUFBYSxDQUFDLEdBQUcsQ0FBUyxZQUFZLENBQUM7b0JBQy9DLFdBQVcsRUFBRSxFQUFFLFNBQVMsRUFBRSxJQUFJLEVBQUU7aUJBQ2pDLENBQUM7Z0JBQ0YsTUFBTSxFQUFFLENBQUMsc0JBQWEsQ0FBQzthQUN4QixDQUFDO1NBQ0g7UUFDRCxTQUFTLEVBQUU7WUFDVCxzQkFBc0I7WUFDdEIsK0NBQXFCO1lBQ3JCLGlEQUFzQjtZQUN0Qix1REFBeUI7U0FDMUI7UUFDRCxPQUFPLEVBQUU7WUFDUCw0REFBNEQ7WUFDNUQsK0NBQXFCO1lBQ3JCLGlEQUFzQjtZQUN0Qix1REFBeUI7U0FDMUI7S0FDRixDQUFDO0dBQ1cscUJBQXFCLENBQUciLCJuYW1lcyI6W10sInNvdXJjZXMiOlsiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXHNoYXJlZFxcYXVkaXRvcmlhXFxhdWRpdG9yaWEtc2hhcmVkLm1vZHVsZS50cyJdLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQgeyBNb2R1bGUsIEdsb2JhbCB9IGZyb20gJ0BuZXN0anMvY29tbW9uJztcbmltcG9ydCB7IFR5cGVPcm1Nb2R1bGUgfSBmcm9tICdAbmVzdGpzL3R5cGVvcm0nO1xuaW1wb3J0IHsgQnVsbE1vZHVsZSB9IGZyb20gJ0BuZXN0anMvYnVsbCc7XG5pbXBvcnQgeyBDb25maWdNb2R1bGUsIENvbmZpZ1NlcnZpY2UgfSBmcm9tICdAbmVzdGpzL2NvbmZpZyc7XG5pbXBvcnQgeyBKd3RNb2R1bGUgfSBmcm9tICdAbmVzdGpzL2p3dCc7XG5cbmltcG9ydCB7IExvZ0F1ZGl0b3JpYSB9IGZyb20gJy4uLy4uL2VudGl0aWVzL2xvZy1hdWRpdG9yaWEuZW50aXR5JztcbmltcG9ydCB7IEF1ZGl0b3JpYVF1ZXVlU2VydmljZSB9IGZyb20gJy4uLy4uL21vZHVsZXMvYXVkaXRvcmlhL3NlcnZpY2VzL2F1ZGl0b3JpYS1xdWV1ZS5zZXJ2aWNlJztcbmltcG9ydCB7IExvZ0F1ZGl0b3JpYVJlcG9zaXRvcnkgfSBmcm9tICcuLi8uLi9tb2R1bGVzL2F1ZGl0b3JpYS9yZXBvc2l0b3JpZXMvbG9nLWF1ZGl0b3JpYS5yZXBvc2l0b3J5JztcbmltcG9ydCB7IEF1ZGl0b3JpYVNpZ25hdHVyZVNlcnZpY2UgfSBmcm9tICcuLi8uLi9tb2R1bGVzL2F1ZGl0b3JpYS9zZXJ2aWNlcy9hdWRpdG9yaWEtc2lnbmF0dXJlLnNlcnZpY2UnO1xuXG4vKipcbiAqIE3Ds2R1bG8gY29tcGFydGlsaGFkbyBkZSBBdWRpdG9yaWFcbiAqXG4gKiBFc3RlIG3Ds2R1bG8gZXhwb3J0YSBvcyBzZXJ2acOnb3MgZXNzZW5jaWFpcyBkZSBhdWRpdG9yaWEgcXVlIHBvZGVtXG4gKiBzZXIgdXNhZG9zIHBvciBvdXRyb3MgbcOzZHVsb3Mgc2VtIGNyaWFyIGRlcGVuZMOqbmNpYXMgY2lyY3VsYXJlcy5cbiAqXG4gKiDDiSB1c2FkbyBwYXJhIHF1ZWJyYXIgYSBkZXBlbmTDqm5jaWEgY2lyY3VsYXIgZW50cmUgb3MgbcOzZHVsb3MuXG4gKi9cbkBHbG9iYWwoKVxuQE1vZHVsZSh7XG4gIGltcG9ydHM6IFtcbiAgICAvLyBDb25maWd1cmHDp8OjbyBkbyBUeXBlT1JNIHBhcmEgZW50aWRhZGVzIGRvIG3Ds2R1bG9cbiAgICBUeXBlT3JtTW9kdWxlLmZvckZlYXR1cmUoW0xvZ0F1ZGl0b3JpYV0pLFxuXG4gICAgLy8gQ29uZmlndXJhw6fDo28gYXNzw61uY3JvbmEgZG8gQnVsbE1vZHVsZVxuICAgIEJ1bGxNb2R1bGUucmVnaXN0ZXJRdWV1ZUFzeW5jKHtcbiAgICAgIG5hbWU6ICdhdWRpdG9yaWEnLFxuICAgICAgaW1wb3J0czogW0NvbmZpZ01vZHVsZV0sXG4gICAgICB1c2VGYWN0b3J5OiAoY29uZmlnU2VydmljZTogQ29uZmlnU2VydmljZSkgPT4gKHtcbiAgICAgICAgcmVkaXM6IHtcbiAgICAgICAgICBob3N0OiBjb25maWdTZXJ2aWNlLmdldDxzdHJpbmc+KCdSRURJU19IT1NUJywgJ2xvY2FsaG9zdCcpLFxuICAgICAgICAgIHBvcnQ6IGNvbmZpZ1NlcnZpY2UuZ2V0PG51bWJlcj4oJ1JFRElTX1BPUlQnLCA2Mzc5KSxcbiAgICAgICAgfSxcbiAgICAgIH0pLFxuICAgICAgaW5qZWN0OiBbQ29uZmlnU2VydmljZV0sXG4gICAgfSksXG5cbiAgICAvLyBDb25maWd1cmHDp8OjbyBhc3PDrW5jcm9uYSBkbyBKd3RNb2R1bGVcbiAgICBKd3RNb2R1bGUucmVnaXN0ZXJBc3luYyh7XG4gICAgICBpbXBvcnRzOiBbQ29uZmlnTW9kdWxlXSxcbiAgICAgIHVzZUZhY3Rvcnk6IChjb25maWdTZXJ2aWNlOiBDb25maWdTZXJ2aWNlKSA9PiAoe1xuICAgICAgICBzZWNyZXQ6IGNvbmZpZ1NlcnZpY2UuZ2V0PHN0cmluZz4oJ0pXVF9TRUNSRVQnKSxcbiAgICAgICAgc2lnbk9wdGlvbnM6IHsgZXhwaXJlc0luOiAnMWQnIH0sXG4gICAgICB9KSxcbiAgICAgIGluamVjdDogW0NvbmZpZ1NlcnZpY2VdLFxuICAgIH0pLFxuICBdLFxuICBwcm92aWRlcnM6IFtcbiAgICAvLyBTZXJ2acOnb3MgZXNzZW5jaWFpc1xuICAgIEF1ZGl0b3JpYVF1ZXVlU2VydmljZSxcbiAgICBMb2dBdWRpdG9yaWFSZXBvc2l0b3J5LFxuICAgIEF1ZGl0b3JpYVNpZ25hdHVyZVNlcnZpY2UsXG4gIF0sXG4gIGV4cG9ydHM6IFtcbiAgICAvLyBFeHBvcnRhIG9zIHNlcnZpw6dvcyBwcmluY2lwYWlzIHBhcmEgdXNvIGVtIG91dHJvcyBtw7NkdWxvc1xuICAgIEF1ZGl0b3JpYVF1ZXVlU2VydmljZSxcbiAgICBMb2dBdWRpdG9yaWFSZXBvc2l0b3J5LFxuICAgIEF1ZGl0b3JpYVNpZ25hdHVyZVNlcnZpY2UsXG4gIF0sXG59KVxuZXhwb3J0IGNsYXNzIEF1ZGl0b3JpYVNoYXJlZE1vZHVsZSB7fVxuIl0sInZlcnNpb24iOjN9

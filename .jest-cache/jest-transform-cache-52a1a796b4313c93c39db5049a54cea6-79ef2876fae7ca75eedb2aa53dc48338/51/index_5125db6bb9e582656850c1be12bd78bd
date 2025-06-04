@@ -1,0 +1,22 @@
+52fa8c254b1a47014026540a40ddb493
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __exportStar = (this && this.__exportStar) || function(m, exports) {
+    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+/**
+ * Índice de controladores do módulo de relatórios
+ */
+__exportStar(require("./relatorios.controller"), exports);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXHJlbGF0b3Jpb3MtdW5pZmljYWRvXFxjb250cm9sbGVyc1xcaW5kZXgudHMiLCJtYXBwaW5ncyI6Ijs7Ozs7Ozs7Ozs7Ozs7OztBQUFBOztHQUVHO0FBQ0gsMERBQXdDIiwibmFtZXMiOltdLCJzb3VyY2VzIjpbIkM6XFxVc2Vyc1xcZXVkcmVcXE9uZURyaXZlXFxEZXNrdG9wXFxQcm9qZXRvc1xccGdiZW5cXHBnYmVuLXNlcnZlclxcc3JjXFxtb2R1bGVzXFxyZWxhdG9yaW9zLXVuaWZpY2Fkb1xcY29udHJvbGxlcnNcXGluZGV4LnRzIl0sInNvdXJjZXNDb250ZW50IjpbIi8qKlxuICogw41uZGljZSBkZSBjb250cm9sYWRvcmVzIGRvIG3Ds2R1bG8gZGUgcmVsYXTDs3Jpb3NcbiAqL1xuZXhwb3J0ICogZnJvbSAnLi9yZWxhdG9yaW9zLmNvbnRyb2xsZXInO1xuIl0sInZlcnNpb24iOjN9

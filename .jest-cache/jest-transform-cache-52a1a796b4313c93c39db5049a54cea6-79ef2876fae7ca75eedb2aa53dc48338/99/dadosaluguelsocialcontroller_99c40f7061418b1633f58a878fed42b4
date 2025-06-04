@@ -1,0 +1,182 @@
+5db67156dc1e9ac83679b66bc941dc91
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var _a, _b, _c, _d, _e, _f, _g, _h;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.DadosAluguelSocialController = void 0;
+const common_1 = require("@nestjs/common");
+const swagger_1 = require("@nestjs/swagger");
+const jwt_auth_guard_1 = require("../../../auth/guards/jwt-auth.guard");
+const roles_guard_1 = require("../../../auth/guards/roles.guard");
+const dados_aluguel_social_service_1 = require("../services/dados-aluguel-social.service");
+const create_dados_aluguel_social_dto_1 = require("../dto/create-dados-aluguel-social.dto");
+const dados_aluguel_social_entity_1 = require("../../../entities/dados-aluguel-social.entity");
+/**
+ * Controlador para gerenciar dados específicos do Aluguel Social
+ */
+let DadosAluguelSocialController = class DadosAluguelSocialController {
+    dadosAluguelSocialService;
+    constructor(dadosAluguelSocialService) {
+        this.dadosAluguelSocialService = dadosAluguelSocialService;
+    }
+    /**
+     * Criar dados de aluguel social para uma solicitação
+     */
+    async create(createDto) {
+        return this.dadosAluguelSocialService.create(createDto);
+    }
+    /**
+     * Buscar dados de aluguel social por ID
+     */
+    async findOne(id) {
+        return this.dadosAluguelSocialService.findOne(id);
+    }
+    /**
+     * Buscar dados de aluguel social por solicitação
+     */
+    async findBySolicitacao(solicitacaoId) {
+        return this.dadosAluguelSocialService.findBySolicitacao(solicitacaoId);
+    }
+    /**
+     * Atualizar dados de aluguel social
+     */
+    async update(id, updateDto) {
+        return this.dadosAluguelSocialService.update(id, updateDto);
+    }
+    /**
+     * Remover dados de aluguel social
+     */
+    async remove(id) {
+        return this.dadosAluguelSocialService.remove(id);
+    }
+};
+exports.DadosAluguelSocialController = DadosAluguelSocialController;
+__decorate([
+    (0, common_1.Post)(),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Criar dados de aluguel social',
+        description: 'Cria dados específicos para solicitação de Aluguel Social',
+    }),
+    (0, swagger_1.ApiBody)({ type: create_dados_aluguel_social_dto_1.CreateDadosAluguelSocialDto }),
+    (0, swagger_1.ApiResponse)({
+        status: common_1.HttpStatus.CREATED,
+        description: 'Dados de aluguel social criados com sucesso',
+        type: dados_aluguel_social_entity_1.DadosAluguelSocial,
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: common_1.HttpStatus.BAD_REQUEST,
+        description: 'Dados inválidos fornecidos',
+    }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [typeof (_b = typeof create_dados_aluguel_social_dto_1.CreateDadosAluguelSocialDto !== "undefined" && create_dados_aluguel_social_dto_1.CreateDadosAluguelSocialDto) === "function" ? _b : Object]),
+    __metadata("design:returntype", typeof (_c = typeof Promise !== "undefined" && Promise) === "function" ? _c : Object)
+], DadosAluguelSocialController.prototype, "create", null);
+__decorate([
+    (0, common_1.Get)(':id'),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Buscar dados de aluguel social por ID',
+        description: 'Retorna os dados de aluguel social específicos pelo ID',
+    }),
+    (0, swagger_1.ApiParam)({ name: 'id', description: 'ID dos dados de aluguel social' }),
+    (0, swagger_1.ApiResponse)({
+        status: common_1.HttpStatus.OK,
+        description: 'Dados de aluguel social encontrados',
+        type: dados_aluguel_social_entity_1.DadosAluguelSocial,
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: common_1.HttpStatus.NOT_FOUND,
+        description: 'Dados de aluguel social não encontrados',
+    }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", typeof (_d = typeof Promise !== "undefined" && Promise) === "function" ? _d : Object)
+], DadosAluguelSocialController.prototype, "findOne", null);
+__decorate([
+    (0, common_1.Get)('solicitacao/:solicitacaoId'),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Buscar dados de aluguel social por solicitação',
+        description: 'Retorna os dados de aluguel social de uma solicitação específica',
+    }),
+    (0, swagger_1.ApiParam)({ name: 'solicitacaoId', description: 'ID da solicitação' }),
+    (0, swagger_1.ApiResponse)({
+        status: common_1.HttpStatus.OK,
+        description: 'Dados de aluguel social encontrados',
+        type: dados_aluguel_social_entity_1.DadosAluguelSocial,
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: common_1.HttpStatus.NOT_FOUND,
+        description: 'Dados de aluguel social não encontrados para esta solicitação',
+    }),
+    __param(0, (0, common_1.Param)('solicitacaoId', common_1.ParseUUIDPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", typeof (_e = typeof Promise !== "undefined" && Promise) === "function" ? _e : Object)
+], DadosAluguelSocialController.prototype, "findBySolicitacao", null);
+__decorate([
+    (0, common_1.Patch)(':id'),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Atualizar dados de aluguel social',
+        description: 'Atualiza dados específicos de uma solicitação de Aluguel Social',
+    }),
+    (0, swagger_1.ApiParam)({ name: 'id', description: 'ID dos dados de aluguel social' }),
+    (0, swagger_1.ApiBody)({ type: create_dados_aluguel_social_dto_1.UpdateDadosAluguelSocialDto }),
+    (0, swagger_1.ApiResponse)({
+        status: common_1.HttpStatus.OK,
+        description: 'Dados de aluguel social atualizados com sucesso',
+        type: dados_aluguel_social_entity_1.DadosAluguelSocial,
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: common_1.HttpStatus.NOT_FOUND,
+        description: 'Dados de aluguel social não encontrados',
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: common_1.HttpStatus.BAD_REQUEST,
+        description: 'Dados inválidos fornecidos',
+    }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, typeof (_f = typeof create_dados_aluguel_social_dto_1.UpdateDadosAluguelSocialDto !== "undefined" && create_dados_aluguel_social_dto_1.UpdateDadosAluguelSocialDto) === "function" ? _f : Object]),
+    __metadata("design:returntype", typeof (_g = typeof Promise !== "undefined" && Promise) === "function" ? _g : Object)
+], DadosAluguelSocialController.prototype, "update", null);
+__decorate([
+    (0, common_1.Delete)(':id'),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Remover dados de aluguel social',
+        description: 'Remove dados específicos de aluguel social (apenas administradores)',
+    }),
+    (0, swagger_1.ApiParam)({ name: 'id', description: 'ID dos dados de aluguel social' }),
+    (0, swagger_1.ApiResponse)({
+        status: common_1.HttpStatus.NO_CONTENT,
+        description: 'Dados de aluguel social removidos com sucesso',
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: common_1.HttpStatus.NOT_FOUND,
+        description: 'Dados de aluguel social não encontrados',
+    }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", typeof (_h = typeof Promise !== "undefined" && Promise) === "function" ? _h : Object)
+], DadosAluguelSocialController.prototype, "remove", null);
+exports.DadosAluguelSocialController = DadosAluguelSocialController = __decorate([
+    (0, swagger_1.ApiTags)('Benefícios'),
+    (0, common_1.Controller)('dados-aluguel-social'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, swagger_1.ApiBearerAuth)(),
+    __metadata("design:paramtypes", [typeof (_a = typeof dados_aluguel_social_service_1.DadosAluguelSocialService !== "undefined" && dados_aluguel_social_service_1.DadosAluguelSocialService) === "function" ? _a : Object])
+], DadosAluguelSocialController);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXGJlbmVmaWNpb1xcY29udHJvbGxlcnNcXGRhZG9zLWFsdWd1ZWwtc29jaWFsLmNvbnRyb2xsZXIudHMiLCJtYXBwaW5ncyI6Ijs7Ozs7Ozs7Ozs7Ozs7OztBQUFBLDJDQVd3QjtBQUN4Qiw2Q0FPeUI7QUFDekIsd0VBQW1FO0FBQ25FLGtFQUE4RDtBQUc5RCwyRkFBcUY7QUFDckYsNEZBR2dEO0FBQ2hELCtGQUFtRjtBQUVuRjs7R0FFRztBQUtJLElBQU0sNEJBQTRCLEdBQWxDLE1BQU0sNEJBQTRCO0lBRXBCO0lBRG5CLFlBQ21CLHlCQUFvRDtRQUFwRCw4QkFBeUIsR0FBekIseUJBQXlCLENBQTJCO0lBQ3BFLENBQUM7SUFFSjs7T0FFRztJQWdCRyxBQUFOLEtBQUssQ0FBQyxNQUFNLENBQ0YsU0FBc0M7UUFFOUMsT0FBTyxJQUFJLENBQUMseUJBQXlCLENBQUMsTUFBTSxDQUFDLFNBQVMsQ0FBQyxDQUFDO0lBQzFELENBQUM7SUFFRDs7T0FFRztJQWdCRyxBQUFOLEtBQUssQ0FBQyxPQUFPLENBQ2lCLEVBQVU7UUFFdEMsT0FBTyxJQUFJLENBQUMseUJBQXlCLENBQUMsT0FBTyxDQUFDLEVBQUUsQ0FBQyxDQUFDO0lBQ3BELENBQUM7SUFFRDs7T0FFRztJQWtCRyxBQUFOLEtBQUssQ0FBQyxpQkFBaUIsQ0FDa0IsYUFBcUI7UUFFNUQsT0FBTyxJQUFJLENBQUMseUJBQXlCLENBQUMsaUJBQWlCLENBQUMsYUFBYSxDQUFDLENBQUM7SUFDekUsQ0FBQztJQUVEOztPQUVHO0lBc0JHLEFBQU4sS0FBSyxDQUFDLE1BQU0sQ0FDa0IsRUFBVSxFQUM5QixTQUFzQztRQUU5QyxPQUFPLElBQUksQ0FBQyx5QkFBeUIsQ0FBQyxNQUFNLENBQUMsRUFBRSxFQUFFLFNBQVMsQ0FBQyxDQUFDO0lBQzlELENBQUM7SUFFRDs7T0FFRztJQWdCRyxBQUFO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WSxFQUFFLHdCQUFVLENBQUM7SUFDbkMsSUFBQSx1QkFBYSxHQUFFO3lEQUdnQyx3REFBeUIsb0JBQXpCLHdEQUF5QjtHQUY1RCw0QkFBNEIsQ0FtSXhDIiwibmFtZXMiOltdLCJzb3VyY2VzIjpbIkM6XFxVc2Vyc1xcZXVkcmVcXE9uZURyaXZlXFxEZXNrdG9wXFxQcm9qZXRvc1xccGdiZW5cXHBnYmVuLXNlcnZlclxcc3JjXFxtb2R1bGVzXFxiZW5lZmljaW9cXGNvbnRyb2xsZXJzXFxkYWRvcy1hbHVndWVsLXNvY2lhbC5jb250cm9sbGVyLnRzIl0sInNvdXJjZXNDb250ZW50IjpbImltcG9ydCB7XG4gIENvbnRyb2xsZXIsXG4gIEdldCxcbiAgUG9zdCxcbiAgQm9keSxcbiAgUGF0Y2gsXG4gIFBhcmFtLFxuICBEZWxldGUsXG4gIFBhcnNlVVVJRFBpcGUsXG4gIFVzZUd1YXJkcyxcbiAgSHR0cFN0YXR1cyxcbn0gZnJvbSAnQG5lc3Rqcy9jb21tb24nO1xuaW1wb3J0IHtcbiAgQXBpVGFncyxcbiAgQXBpT3BlcmF0aW9uLFxuICBBcGlSZXNwb25zZSxcbiAgQXBpUGFyYW0sXG4gIEFwaUJvZHksXG4gIEFwaUJlYXJlckF1dGgsXG59IGZyb20gJ0BuZXN0anMvc3dhZ2dlcic7XG5pbXBvcnQgeyBKd3RBdXRoR3VhcmQgfSBmcm9tICcuLi8uLi8uLi9hdXRoL2d1YXJkcy9qd3QtYXV0aC5ndWFyZCc7XG5pbXBvcnQgeyBSb2xlc0d1YXJkIH0gZnJvbSAnLi4vLi4vLi4vYXV0aC9ndWFyZHMvcm9sZXMuZ3VhcmQnO1xuaW1wb3J0IHsgUm9sZXMgfSBmcm9tICcuLi8uLi8uLi9hdXRoL2RlY29yYXRvcnMvcm9sZS5kZWNvcmF0b3InO1xuaW1wb3J0IHsgVXNlclJvbGUgfSBmcm9tICcuLi8uLi8uLi9lbnVtcyc7XG5pbXBvcnQgeyBEYWRvc0FsdWd1ZWxTb2NpYWxTZXJ2aWNlIH0gZnJvbSAnLi4vc2VydmljZXMvZGFkb3MtYWx1Z3VlbC1zb2NpYWwuc2VydmljZSc7XG5pbXBvcnQge1xuICBDcmVhdGVEYWRvc0FsdWd1ZWxTb2NpYWxEdG8sXG4gIFVwZGF0ZURhZG9zQWx1Z3VlbFNvY2lhbER0byxcbn0gZnJvbSAnLi4vZHRvL2NyZWF0ZS1kYWRvcy1hbHVndWVsLXNvY2lhbC5kdG8nO1xuaW1wb3J0IHsgRGFkb3NBbHVndWVsU29jaWFsIH0gZnJvbSAnLi4vLi4vLi4vZW50aXRpZXMvZGFkb3MtYWx1Z3VlbC1zb2NpYWwuZW50aXR5JztcblxuLyoqXG4gKiBDb250cm9sYWRvciBwYXJhIGdlcmVuY2lhciBkYWRvcyBlc3BlY8OtZmljb3MgZG8gQWx1Z3VlbCBTb2NpYWxcbiAqL1xuQEFwaVRhZ3MoJ0JlbmVmw61jaW9zJylcbkBDb250cm9sbGVyKCdkYWRvcy1hbHVndWVsLXNvY2lhbCcpXG5AVXNlR3VhcmRzKEp3dEF1dGhHdWFyZCwgUm9sZXNHdWFyZClcbkBBcGlCZWFyZXJBdXRoKClcbmV4cG9ydCBjbGFzcyBEYWRvc0FsdWd1ZWxTb2NpYWxDb250cm9sbGVyIHtcbiAgY29uc3RydWN0b3IoXG4gICAgcHJpdmF0ZSByZWFkb25seSBkYWRvc0FsdWd1ZWxTb2NpYWxTZXJ2aWNlOiBEYWRvc0FsdWd1ZWxTb2NpYWxTZXJ2aWNlLFxuICApIHt9XG5cbiAgLyoqXG4gICAqIENyaWFyIGRhZG9zIGRlIGFsdWd1ZWwgc29jaWFsIHBhcmEgdW1hIHNvbGljaXRhw6fDo29cbiAgICovXG4gIEBQb3N0KClcbiAgQEFwaU9wZXJhdGlvbih7XG4gICAgc3VtbWFyeTogJ0NyaWFyIGRhZG9zIGRlIGFsdWd1ZWwgc29jaWFsJyxcbiAgICBkZXNjcmlwdGlvbjogJ0NyaWEgZGFkb3MgZXNwZWPDrWZpY29zIHBhcmEgc29saWNpdGHDp8OjbyBkZSBBbHVndWVsIFNvY2lhbCcsXG4gIH0pXG4gIEBBcGlCb2R5KHsgdHlwZTogQ3JlYXRlRGFkb3NBbHVndWVsU29jaWFsRHRvIH0pXG4gIEBBcGlSZXNwb25zZSh7XG4gICAgc3RhdHVzOiBIdHRwU3RhdHVzLkNSRUFURUQsXG4gICAgZGVzY3JpcHRpb246ICdEYWRvcyBkZSBhbHVndWVsIHNvY2lhbCBjcmlhZG9zIGNvbSBzdWNlc3NvJyxcbiAgICB0eXBlOiBEYWRvc0FsdWd1ZWxTb2NpYWwsXG4gIH0pXG4gIEBBcGlSZXNwb25zZSh7XG4gICAgc3RhdHVzOiBIdHRwU3RhdHVzLkJBRF9SRVFVRVNULFxuICAgIGRlc2NyaXB0aW9uOiAnRGFkb3MgaW52w6FsaWRvcyBmb3JuZWNpZG9zJyxcbiAgfSlcbiAgYXN5bmMgY3JlYXRlKFxuICAgIEBCb2R5KCkgY3JlYXRlRHRvOiBDcmVhdGVEYWRvc0FsdWd1ZWxTb2NpYWxEdG8sXG4gICk6IFByb21pc2U8RGFkb3NBbHVndWVsU29jaWFsPiB7XG4gICAgcmV0dXJuIHRoaXMuZGFkb3NBbHVndWVsU29jaWFsU2VydmljZS5jcmVhdGUoY3JlYXRlRHRvKTtcbiAgfVxuXG4gIC8qKlxuICAgKiBCdXNjYXIgZGFkb3MgZGUgYWx1Z3VlbCBzb2NpYWwgcG9yIElEXG4gICAqL1xuICBAR2V0KCc6aWQnKVxuICBAQXBpT3BlcmF0aW9uKHtcbiAgICBzdW1tYXJ5OiAnQnVzY2FyIGRhZG9zIGRlIGFsdWd1ZWwgc29jaWFsIHBvciBJRCcsXG4gICAgZGVzY3JpcHRpb246ICdSZXRvcm5hIG9zIGRhZG9zIGRlIGFsdWd1ZWwgc29jaWFsIGVzcGVjw61maWNvcyBwZWxvIElEJyxcbiAgfSlcbiAgQEFwaVBhcmFtKHsgbmFtZTogJ2lkJywgZGVzY3JpcHRpb246ICdJRCBkb3MgZGFkb3MgZGUgYWx1Z3VlbCBzb2NpYWwnIH0pXG4gIEBBcGlSZXNwb25zZSh7XG4gICAgc3RhdHVzOiBIdHRwU3RhdHVzLk9LLFxuICAgIGRlc2NyaXB0aW9uOiAnRGFkb3MgZGUgYWx1Z3VlbCBzb2NpYWwgZW5jb250cmFkb3MnLFxuICAgIHR5cGU6IERhZG9zQWx1Z3VlbFNvY2lhbCxcbiAgfSlcbiAgQEFwaVJlc3BvbnNlKHtcbiAgICBzdGF0dXM6IEh0dHBTdGF0dXMuTk9UX0ZPVU5ELFxuICAgIGRlc2NyaXB0aW9uOiAnRGFkb3MgZGUgYWx1Z3VlbCBzb2NpYWwgbsOjbyBlbmNvbnRyYWRvcycsXG4gIH0pXG4gIGFzeW5jIGZpbmRPbmUoXG4gICAgQFBhcmFtKCdpZCcsIFBhcnNlVVVJRFBpcGUpIGlkOiBzdHJpbmcsXG4gICk6IFByb21pc2U8RGFkb3NBbHVndWVsU29jaWFsPiB7XG4gICAgcmV0dXJuIHRoaXMuZGFkb3NBbHVndWVsU29jaWFsU2VydmljZS5maW5kT25lKGlkKTtcbiAgfVxuXG4gIC8qKlxuICAgKiBCdXNjYXIgZGFkb3MgZGUgYWx1Z3VlbCBzb2NpYWwgcG9yIHNvbGljaXRhw6fDo29cbiAgICovXG4gIEBHZXQoJ3NvbGljaXRhY2FvLzpzb2xpY2l0YWNhb0lkJylcbiAgQEFwaU9wZXJhdGlvbih7XG4gICAgc3VtbWFyeTogJ0J1c2NhciBkYWRvcyBkZSBhbHVndWVsIHNvY2lhbCBwb3Igc29saWNpdGHDp8OjbycsXG4gICAgZGVzY3JpcHRpb246XG4gICAgICAnUmV0b3JuYSBvcyBkYWRvcyBkZSBhbHVndWVsIHNvY2lhbCBkZSB1bWEgc29saWNpdGHDp8OjbyBlc3BlY8OtZmljYScsXG4gIH0pXG4gIEBBcGlQYXJhbSh7IG5hbWU6ICdzb2xpY2l0YWNhb0lkJywgZGVzY3JpcHRpb246ICdJRCBkYSBzb2xpY2l0YcOnw6NvJyB9KVxuICBAQXBpUmVzcG9uc2Uoe1xuICAgIHN0YXR1czogSHR0cFN0YXR1cy5PSyxcbiAgICBkZXNjcmlwdGlvbjogJ0RhZG9zIGRlIGFsdWd1ZWwgc29jaWFsIGVuY29udHJhZG9zJyxcbiAgICB0eXBlOiBEYWRvc0FsdWd1ZWxTb2NpYWwsXG4gIH0pXG4gIEBBcGlSZXNwb25zZSh7XG4gICAgc3RhdHVzOiBIdHRwU3RhdHVzLk5PVF9GT1VORCxcbiAgICBkZXNjcmlwdGlvbjpcbiAgICAgICdEYWRvcyBkZSBhbHVndWVsIHNvY2lhbCBuw6NvIGVuY29udHJhZG9zIHBhcmEgZXN0YSBzb2xpY2l0YcOnw6NvJyxcbiAgfSlcbiAgYXN5bmMgZmluZEJ5U29saWNpdGFjYW8oXG4gICAgQFBhcmFtKCdzb2xpY2l0YWNhb0lkJywgUGFyc2VVVUlEUGlwZSkgc29saWNpdGFjYW9JZDogc3RyaW5nLFxuICApOiBQcm9taXNlPERhZG9zQWx1Z3VlbFNvY2lhbD4ge1xuICAgIHJldHVybiB0aGlzLmRhZG9zQWx1Z3VlbFNvY2lhbFNlcnZpY2UuZmluZEJ5U29saWNpdGFjYW8oc29saWNpdGFjYW9JZCk7XG4gIH1cblxuICAvKipcbiAgICogQXR1YWxpemFyIGRhZG9zIGRlIGFsdWd1ZWwgc29jaWFsXG4gICAqL1xuICBAUGF0Y2goJzppZCcpXG4gIEBBcGlPcGVyYXRpb24oe1xuICAgIHN1bW1hcnk6ICdBdHVhbGl6YXIgZGFkb3MgZGUgYWx1Z3VlbCBzb2NpYWwnLFxuICAgIGRlc2NyaXB0aW9uOlxuICAgICAgJ0F0dWFsaXphIGRhZG9zIGVzcGVjw61maWNvcyBkZSB1bWEgc29saWNpdGHDp8OjbyBkZSBBbHVndWVsIFNvY2lhbCcsXG4gIH0pXG4gIEBBcGlQYXJhbSh7IG5hbWU6ICdpZCcsIGRlc2NyaXB0aW9uOiAnSUQgZG9zIGRhZG9zIGRlIGFsdWd1ZWwgc29jaWFsJyB9KVxuICBAQXBpQm9keSh7IHR5cGU6IFVwZGF0ZURhZG9zQWx1Z3VlbFNvY2lhbER0byB9KVxuICBAQXBpUmVzcG9uc2Uoe1xuICAgIHN0YXR1czogSHR0cFN0YXR1cy5PSyxcbiAgICBkZXNjcmlwdGlvbjogJ0RhZG9zIGRlIGFsdWd1ZWwgc29jaWFsIGF0dWFsaXphZG9zIGNvbSBzdWNlc3NvJyxcbiAgICB0eXBlOiBEYWRvc0FsdWd1ZWxTb2NpYWwsXG4gIH0pXG4gIEBBcGlSZXNwb25zZSh7XG4gICAgc3RhdHVzOiBIdHRwU3RhdHVzLk5PVF9GT1VORCxcbiAgICBkZXNjcmlwdGlvbjogJ0RhZG9zIGRlIGFsdWd1ZWwgc29jaWFsIG7Do28gZW5jb250cmFkb3MnLFxuICB9KVxuICBAQXBpUmVzcG9uc2Uoe1xuICAgIHN0YXR1czogSHR0cFN0YXR1cy5CQURfUkVRVUVTVCxcbiAgICBkZXNjcmlwdGlvbjogJ0RhZG9zIGludsOhbGlkb3MgZm9ybmVjaWRvcycsXG4gIH0pXG4gIGFzeW5jIHVwZGF0ZShcbiAgICBAUGFyYW0oJ2lkJywgUGFyc2VVVUlEUGlwZSkgaWQ6IHN0cmluZyxcbiAgICBAQm9keSgpIHVwZGF0ZUR0bzogVXBkYXRlRGFkb3NBbHVndWVsU29jaWFsRHRvLFxuICApOiBQcm9taXNlPERhZG9zQWx1Z3VlbFNvY2lhbD4ge1xuICAgIHJldHVybiB0aGlzLmRhZG9zQWx1Z3VlbFNvY2lhbFNlcnZpY2UudXBkYXRlKGlkLCB1cGRhdGVEdG8pO1xuICB9XG5cbiAgLyoqXG4gICAqIFJlbW92ZXIgZGFkb3MgZGUgYWx1Z3VlbCBzb2NpYWxcbiAgICovXG4gIEBEZWxldGUoJzppZCcpXG4gIEBBcGlPcGVyYXRpb24oe1xuICAgIHN1bW1hcnk6ICdSZW1vdmVyIGRhZG9zIGRlIGFsdWd1ZWwgc29jaWFsJyxcbiAgICBkZXNjcmlwdGlvbjpcbiAgICAgICdSZW1vdmUgZGFkb3MgZXNwZWPDrWZpY29zIGRlIGFsdWd1ZWwgc29jaWFsIChhcGVuYXMgYWRtaW5pc3RyYWRvcmVzKScsXG4gIH0pXG4gIEBBcGlQYXJhbSh7IG5hbWU6ICdpZCcsIGRlc2NyaXB0aW9uOiAnSUQgZG9zIGRhZG9zIGRlIGFsdWd1ZWwgc29jaWFsJyB9KVxuICBAQXBpUmVzcG9uc2Uoe1xuICAgIHN0YXR1czogSHR0cFN0YXR1cy5OT19DT05URU5ULFxuICAgIGRlc2NyaXB0aW9uOiAnRGFkb3MgZGUgYWx1Z3VlbCBzb2NpYWwgcmVtb3ZpZG9zIGNvbSBzdWNlc3NvJyxcbiAgfSlcbiAgQEFwaVJlc3BvbnNlKHtcbiAgICBzdGF0dXM6IEh0dHBTdGF0dXMuTk9UX0ZPVU5ELFxuICAgIGRlc2NyaXB0aW9uOiAnRGFkb3MgZGUgYWx1Z3VlbCBzb2NpYWwgbsOjbyBlbmNvbnRyYWRvcycsXG4gIH0pXG4gIGFzeW5jIHJlbW92ZShAUGFyYW0oJ2lkJywgUGFyc2VVVUlEUGlwZSkgaWQ6IHN0cmluZyk6IFByb21pc2U8dm9pZD4ge1xuICAgIHJldHVybiB0aGlzLmRhZG9zQWx1Z3VlbFNvY2lhbFNlcnZpY2UucmVtb3ZlKGlkKTtcbiAgfVxufVxuIl0sInZlcnNpb24iOjN9

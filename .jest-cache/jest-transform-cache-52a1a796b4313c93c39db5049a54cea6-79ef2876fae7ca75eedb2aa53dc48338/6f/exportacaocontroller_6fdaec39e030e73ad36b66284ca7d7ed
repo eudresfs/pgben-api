@@ -1,0 +1,71 @@
+dc6a49e0de1a353c01847d16321d8612
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var _a, _b;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.ExportacaoController = void 0;
+const common_1 = require("@nestjs/common");
+const swagger_1 = require("@nestjs/swagger");
+const express_1 = require("express");
+const jwt_auth_guard_1 = require("../../../auth/guards/jwt-auth.guard");
+const roles_guard_1 = require("../../../auth/guards/roles.guard");
+const exportacao_service_1 = require("../services/exportacao.service");
+/**
+ * Controlador de Exportação de Dados
+ *
+ * Responsável por fornecer endpoints para exportação de dados de solicitações
+ * de benefícios em diferentes formatos.
+ */
+let ExportacaoController = class ExportacaoController {
+    exportacaoService;
+    constructor(exportacaoService) {
+        this.exportacaoService = exportacaoService;
+    }
+    /**
+     * Exporta solicitações de benefício em formato CSV
+     */
+    async exportarCSV(filtros, res) {
+        const csv = await this.exportacaoService.exportarSolicitacoesCSV(filtros);
+        // Configurar cabeçalhos para download
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', 'attachment; filename=solicitacoes.csv');
+        // Enviar CSV como resposta
+        return res.send(csv);
+    }
+};
+exports.ExportacaoController = ExportacaoController;
+__decorate([
+    (0, common_1.Get)('csv'),
+    (0, swagger_1.ApiOperation)({ summary: 'Exportar solicitações de benefício em CSV' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'CSV gerado com sucesso' }),
+    (0, swagger_1.ApiResponse)({ status: 500, description: 'Erro ao gerar CSV' }),
+    (0, swagger_1.ApiQuery)({ name: 'cidadao_id', required: false, type: String }),
+    (0, swagger_1.ApiQuery)({ name: 'tipo_beneficio_id', required: false, type: String }),
+    (0, swagger_1.ApiQuery)({ name: 'status', required: false, type: String }),
+    (0, swagger_1.ApiQuery)({ name: 'data_inicio', required: false, type: String }),
+    (0, swagger_1.ApiQuery)({ name: 'data_fim', required: false, type: String }),
+    __param(0, (0, common_1.Query)()),
+    __param(1, (0, common_1.Res)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, typeof (_b = typeof express_1.Response !== "undefined" && express_1.Response) === "function" ? _b : Object]),
+    __metadata("design:returntype", Promise)
+], ExportacaoController.prototype, "exportarCSV", null);
+exports.ExportacaoController = ExportacaoController = __decorate([
+    (0, swagger_1.ApiTags)('Solicitação'),
+    (0, common_1.Controller)('solicitacao/exportacao'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, swagger_1.ApiBearerAuth)(),
+    __metadata("design:paramtypes", [typeof (_a = typeof exportacao_service_1.ExportacaoService !== "undefined" && exportacao_service_1.ExportacaoService) === "function" ? _a : Object])
+], ExportacaoController);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXHNvbGljaXRhY2FvXFxjb250cm9sbGVyc1xcZXhwb3J0YWNhby5jb250cm9sbGVyLnRzIiwibWFwcGluZ3MiOiI7Ozs7Ozs7Ozs7Ozs7Ozs7QUFBQSwyQ0FBd0U7QUFDeEUsNkNBTXlCO0FBQ3pCLHFDQUFtQztBQUNuQyx3RUFBbUU7QUFDbkUsa0VBQThEO0FBQzlELHVFQUFtRTtBQUVuRTs7Ozs7R0FLRztBQUtJLElBQU0sb0JBQW9CLEdBQTFCLE1BQU0sb0JBQW9CO0lBQ0Y7SUFBN0IsWUFBNkIsaUJBQW9DO1FBQXBDLHNCQUFpQixHQUFqQixpQkFBaUIsQ0FBbUI7SUFBRyxDQUFDO0lBRXJFOztPQUVHO0lBVUcsQUFBTixLQUFLLENBQUMsV0FBVyxDQUFVLE9BQVksRUFBUyxHQUFhO1FBQzNELE1BQU0sR0FBRyxHQUFHLE1BQU0sSUFBSSxDQUFDLGlCQUFpQixDQUFDLHVCQUF1QixDQUFDLE9BQU8sQ0FBQyxDQUFDO1FBRTFFLHNDQUFzQztRQUN0QyxHQUFHLENBQUMsU0FBUyxDQUFDLGNBQWMsRUFBRSxVQUFVLENBQUMsQ0FBQztRQUMxQyxHQUFHLENBQUMsU0FBUyxDQUNYLHFCQUFxQixFQUNyQix1Q0FBdUMsQ0FDeEMsQ0FBQztRQUVGLDJCQUEyQjtRQUMzQixPQUFPLEdBQUcsQ0FBQyxJQUFJLENBQUMsR0FBRyxDQUFDLENBQUM7SUFDdkIsQ0FBQztDQUNGLENBQUE7QUE1Qlksb0RBQW9CO0FBZXpCO0lBVEwsSUFBQSxZQUFHLEVBQUMsS0FBSyxDQUFDO0lBQ1YsSUFBQSxzQkFBWSxFQUFDLEVBQUUsT0FBTyxFQUFFLDJDQUEyQyxFQUFFLENBQUM7SUFDdEUsSUFBQSxxQkFBVyxFQUFDLEVBQUUsTUFBTSxFQUFFLEdBQUcsRUFBRSxXQUFXLEVBQUUsd0JBQXdCLEVBQUUsQ0FBQztJQUNuRSxJQUFBLHFCQUFXLEVBQUMsRUFBRSxNQUFNLEVBQUUsR0FBRyxFQUFFLFdBQVcsRUFBRSxtQkFBbUIsRUFBRSxDQUFDO0lBQzlELElBQUEsa0JBQVEsRUFBQyxFQUFFLElBQUksRUFBRSxZQUFZLEVBQUUsUUFBUSxFQUFFLEtBQUssRUFBRSxJQUFJLEVBQUUsTUFBTSxFQUFFLENBQUM7SUFDL0QsSUFBQSxrQkFBUSxFQUFDLEVBQUUsSUFBSSxFQUFFLG1CQUFtQixFQUFFLFFBQVEsRUFBRSxLQUFLLEVBQUUsSUFBSSxFQUFFLE1BQU0sRUFBRSxDQUFDO0lBQ3RFLElBQUEsa0JBQVEsRUFBQyxFQUFFLElBQUksRUFBRSxRQUFRLEVBQUUsUUFBUSxFQUFFLEtBQUssRUFBRSxJQUFJLEVBQUUsTUFBTSxFQUFFLENBQUM7SUFDM0QsSUFBQSxrQkFBUSxFQUFDLEVBQUUsSUFBSSxFQUFFLGFBQWEsRUFBRSxRQUFRLEVBQUUsS0FBSyxFQUFFLElBQUksRUFBRSxNQUFNLEVBQUUsQ0FBQztJQUNoRSxJQUFBLGtCQUFRLEVBQUMsRUFBRSxJQUFJLEVBQUUsVUFBVSxFQUFFLFFBQVEsRUFBRSxLQUFLLEVBQUUsSUFBSSxFQUFFLE1BQU0sRUFBRSxDQUFDO0lBQzNDLFdBQUEsSUFBQSxjQUFLLEdBQUUsQ0FBQTtJQUFnQixXQUFBLElBQUEsWUFBRyxHQUFFLENBQUE7O2lFQUFNLGtCQUFRLG9CQUFSLGtCQUFROzt1REFZNUQ7K0JBM0JVLG9CQUFvQjtJQUpoQyxJQUFBLGlCQUFPLEVBQUMsYUFBYSxDQUFDO0lBQ3RCLElBQUEsbUJBQVUsRUFBQyx3QkFBd0IsQ0FBQztJQUNwQyxJQUFBLGtCQUFTLEVBQUMsNkJBQVksRUFBRSx3QkFBVSxDQUFDO0lBQ25DLElBQUEsdUJBQWEsR0FBRTt5REFFa0Msc0NBQWlCLG9CQUFqQixzQ0FBaUI7R0FEdEQsb0JBQW9CLENBNEJoQyIsIm5hbWVzIjpbXSwic291cmNlcyI6WyJDOlxcVXNlcnNcXGV1ZHJlXFxPbmVEcml2ZVxcRGVza3RvcFxcUHJvamV0b3NcXHBnYmVuXFxwZ2Jlbi1zZXJ2ZXJcXHNyY1xcbW9kdWxlc1xcc29saWNpdGFjYW9cXGNvbnRyb2xsZXJzXFxleHBvcnRhY2FvLmNvbnRyb2xsZXIudHMiXSwic291cmNlc0NvbnRlbnQiOlsiaW1wb3J0IHsgQ29udHJvbGxlciwgR2V0LCBRdWVyeSwgUmVzLCBVc2VHdWFyZHMgfSBmcm9tICdAbmVzdGpzL2NvbW1vbic7XG5pbXBvcnQge1xuICBBcGlUYWdzLFxuICBBcGlPcGVyYXRpb24sXG4gIEFwaVJlc3BvbnNlLFxuICBBcGlCZWFyZXJBdXRoLFxuICBBcGlRdWVyeSxcbn0gZnJvbSAnQG5lc3Rqcy9zd2FnZ2VyJztcbmltcG9ydCB7IFJlc3BvbnNlIH0gZnJvbSAnZXhwcmVzcyc7XG5pbXBvcnQgeyBKd3RBdXRoR3VhcmQgfSBmcm9tICcuLi8uLi8uLi9hdXRoL2d1YXJkcy9qd3QtYXV0aC5ndWFyZCc7XG5pbXBvcnQgeyBSb2xlc0d1YXJkIH0gZnJvbSAnLi4vLi4vLi4vYXV0aC9ndWFyZHMvcm9sZXMuZ3VhcmQnO1xuaW1wb3J0IHsgRXhwb3J0YWNhb1NlcnZpY2UgfSBmcm9tICcuLi9zZXJ2aWNlcy9leHBvcnRhY2FvLnNlcnZpY2UnO1xuXG4vKipcbiAqIENvbnRyb2xhZG9yIGRlIEV4cG9ydGHDp8OjbyBkZSBEYWRvc1xuICpcbiAqIFJlc3BvbnPDoXZlbCBwb3IgZm9ybmVjZXIgZW5kcG9pbnRzIHBhcmEgZXhwb3J0YcOnw6NvIGRlIGRhZG9zIGRlIHNvbGljaXRhw6fDtWVzXG4gKiBkZSBiZW5lZsOtY2lvcyBlbSBkaWZlcmVudGVzIGZvcm1hdG9zLlxuICovXG5AQXBpVGFncygnU29saWNpdGHDp8OjbycpXG5AQ29udHJvbGxlcignc29saWNpdGFjYW8vZXhwb3J0YWNhbycpXG5AVXNlR3VhcmRzKEp3dEF1dGhHdWFyZCwgUm9sZXNHdWFyZClcbkBBcGlCZWFyZXJBdXRoKClcbmV4cG9ydCBjbGFzcyBFeHBvcnRhY2FvQ29udHJvbGxlciB7XG4gIGNvbnN0cnVjdG9yKHByaXZhdGUgcmVhZG9ubHkgZXhwb3J0YWNhb1NlcnZpY2U6IEV4cG9ydGFjYW9TZXJ2aWNlKSB7fVxuXG4gIC8qKlxuICAgKiBFeHBvcnRhIHNvbGljaXRhw6fDtWVzIGRlIGJlbmVmw61jaW8gZW0gZm9ybWF0byBDU1ZcbiAgICovXG4gIEBHZXQoJ2NzdicpXG4gIEBBcGlPcGVyYXRpb24oeyBzdW1tYXJ5OiAnRXhwb3J0YXIgc29saWNpdGHDp8O1ZXMgZGUgYmVuZWbDrWNpbyBlbSBDU1YnIH0pXG4gIEBBcGlSZXNwb25zZSh7IHN0YXR1czogMjAwLCBkZXNjcmlwdGlvbjogJ0NTViBnZXJhZG8gY29tIHN1Y2Vzc28nIH0pXG4gIEBBcGlSZXNwb25zZSh7IHN0YXR1czogNTAwLCBkZXNjcmlwdGlvbjogJ0Vycm8gYW8gZ2VyYXIgQ1NWJyB9KVxuICBAQXBpUXVlcnkoeyBuYW1lOiAnY2lkYWRhb19pZCcsIHJlcXVpcmVkOiBmYWxzZSwgdHlwZTogU3RyaW5nIH0pXG4gIEBBcGlRdWVyeSh7IG5hbWU6ICd0aXBvX2JlbmVmaWNpb19pZCcsIHJlcXVpcmVkOiBmYWxzZSwgdHlwZTogU3RyaW5nIH0pXG4gIEBBcGlRdWVyeSh7IG5hbWU6ICdzdGF0dXMnLCByZXF1aXJlZDogZmFsc2UsIHR5cGU6IFN0cmluZyB9KVxuICBAQXBpUXVlcnkoeyBuYW1lOiAnZGF0YV9pbmljaW8nLCByZXF1aXJlZDogZmFsc2UsIHR5cGU6IFN0cmluZyB9KVxuICBAQXBpUXVlcnkoeyBuYW1lOiAnZGF0YV9maW0nLCByZXF1aXJlZDogZmFsc2UsIHR5cGU6IFN0cmluZyB9KVxuICBhc3luYyBleHBvcnRhckNTVihAUXVlcnkoKSBmaWx0cm9zOiBhbnksIEBSZXMoKSByZXM6IFJlc3BvbnNlKSB7XG4gICAgY29uc3QgY3N2ID0gYXdhaXQgdGhpcy5leHBvcnRhY2FvU2VydmljZS5leHBvcnRhclNvbGljaXRhY29lc0NTVihmaWx0cm9zKTtcblxuICAgIC8vIENvbmZpZ3VyYXIgY2FiZcOnYWxob3MgcGFyYSBkb3dubG9hZFxuICAgIHJlcy5zZXRIZWFkZXIoJ0NvbnRlbnQtVHlwZScsICd0ZXh0L2NzdicpO1xuICAgIHJlcy5zZXRIZWFkZXIoXG4gICAgICAnQ29udGVudC1EaXNwb3NpdGlvbicsXG4gICAgICAnYXR0YWNobWVudDsgZmlsZW5hbWU9c29saWNpdGFjb2VzLmNzdicsXG4gICAgKTtcblxuICAgIC8vIEVudmlhciBDU1YgY29tbyByZXNwb3N0YVxuICAgIHJldHVybiByZXMuc2VuZChjc3YpO1xuICB9XG59XG4iXSwidmVyc2lvbiI6M30=

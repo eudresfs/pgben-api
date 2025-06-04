@@ -1,0 +1,229 @@
+9884d05a700baca24dc6a05dc4a3e0e4
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var _a, _b, _c, _d, _e, _f, _g, _h;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.LimitesController = void 0;
+const common_1 = require("@nestjs/common");
+const swagger_1 = require("@nestjs/swagger");
+const limites_service_1 = require("../services/limites.service");
+const limites_upload_dto_1 = require("../dtos/limites/limites-upload.dto");
+const prazo_update_dto_1 = require("../dtos/limites/prazo-update.dto");
+const limites_upload_response_dto_1 = require("../dtos/limites/limites-upload-response.dto");
+/**
+ * Controlador responsável pelas operações de limites operacionais do sistema
+ */
+let LimitesController = class LimitesController {
+    limitesService;
+    constructor(limitesService) {
+        this.limitesService = limitesService;
+    }
+    /**
+     * Busca os limites de upload configurados
+     * @returns DTO com os limites de upload
+     */
+    async buscarLimitesUpload() {
+        return this.limitesService.buscarLimitesUpload();
+    }
+    /**
+     * Atualiza os limites de upload
+     * @param dto DTO com os novos limites
+     * @returns DTO com os limites atualizados
+     */
+    async atualizarLimitesUpload(dto) {
+        return this.limitesService.atualizarLimitesUpload(dto);
+    }
+    /**
+     * Busca o prazo configurado para uma etapa específica
+     * @param tipo Tipo do prazo
+     * @returns Prazo em dias
+     */
+    async buscarPrazo(tipo) {
+        const dias = await this.limitesService.buscarPrazo(tipo);
+        return { tipo, dias };
+    }
+    /**
+     * Atualiza o prazo para uma etapa específica
+     * @param tipo Tipo do prazo
+     * @param dto DTO com o novo prazo
+     * @returns Prazo atualizado
+     */
+    async atualizarPrazo(tipo, dto) {
+        const dias = await this.limitesService.atualizarPrazo(tipo, dto);
+        return { tipo, dias };
+    }
+    /**
+     * Calcula a data limite para uma etapa com base no prazo configurado
+     * @param tipo Tipo do prazo
+     * @returns Data limite
+     */
+    async calcularDataLimite(tipo) {
+        const dias = await this.limitesService.buscarPrazo(tipo);
+        const dataLimite = await this.limitesService.calcularDataLimite(tipo);
+        return { tipo, dias, dataLimite };
+    }
+};
+exports.LimitesController = LimitesController;
+__decorate([
+    (0, common_1.Get)('upload'),
+    (0, swagger_1.ApiOperation)({ summary: 'Buscar limites de upload configurados' }),
+    (0, swagger_1.ApiResponse)({
+        status: 200,
+        description: 'Limites de upload encontrados',
+        type: limites_upload_response_dto_1.LimitesUploadResponseDto,
+    }),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", typeof (_b = typeof Promise !== "undefined" && Promise) === "function" ? _b : Object)
+], LimitesController.prototype, "buscarLimitesUpload", null);
+__decorate([
+    (0, common_1.Put)('upload'),
+    (0, swagger_1.ApiOperation)({ summary: 'Atualizar limites de upload' }),
+    (0, swagger_1.ApiResponse)({
+        status: 200,
+        description: 'Limites de upload atualizados com sucesso',
+        type: limites_upload_response_dto_1.LimitesUploadResponseDto,
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: 400,
+        description: 'Dados inválidos',
+    }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [typeof (_c = typeof limites_upload_dto_1.LimitesUploadDto !== "undefined" && limites_upload_dto_1.LimitesUploadDto) === "function" ? _c : Object]),
+    __metadata("design:returntype", typeof (_d = typeof Promise !== "undefined" && Promise) === "function" ? _d : Object)
+], LimitesController.prototype, "atualizarLimitesUpload", null);
+__decorate([
+    (0, common_1.Get)('prazos/:tipo'),
+    (0, swagger_1.ApiOperation)({ summary: 'Buscar prazo configurado para uma etapa' }),
+    (0, swagger_1.ApiParam)({
+        name: 'tipo',
+        description: 'Tipo do prazo (analise, entrevista, recurso, validade)',
+        example: 'analise',
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: 200,
+        description: 'Prazo encontrado',
+        schema: {
+            type: 'object',
+            properties: {
+                tipo: {
+                    type: 'string',
+                    description: 'Tipo do prazo',
+                    example: 'analise',
+                },
+                dias: {
+                    type: 'number',
+                    description: 'Prazo em dias',
+                    example: 15,
+                },
+            },
+        },
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: 400,
+        description: 'Tipo de prazo inválido',
+    }),
+    __param(0, (0, common_1.Param)('tipo')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", typeof (_e = typeof Promise !== "undefined" && Promise) === "function" ? _e : Object)
+], LimitesController.prototype, "buscarPrazo", null);
+__decorate([
+    (0, common_1.Put)('prazos/:tipo'),
+    (0, swagger_1.ApiOperation)({ summary: 'Atualizar prazo para uma etapa' }),
+    (0, swagger_1.ApiParam)({
+        name: 'tipo',
+        description: 'Tipo do prazo (analise, entrevista, recurso, validade)',
+        example: 'analise',
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: 200,
+        description: 'Prazo atualizado com sucesso',
+        schema: {
+            type: 'object',
+            properties: {
+                tipo: {
+                    type: 'string',
+                    description: 'Tipo do prazo',
+                    example: 'analise',
+                },
+                dias: {
+                    type: 'number',
+                    description: 'Prazo em dias',
+                    example: 15,
+                },
+            },
+        },
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: 400,
+        description: 'Dados inválidos ou tipo de prazo inválido',
+    }),
+    __param(0, (0, common_1.Param)('tipo')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, typeof (_f = typeof prazo_update_dto_1.PrazoUpdateDto !== "undefined" && prazo_update_dto_1.PrazoUpdateDto) === "function" ? _f : Object]),
+    __metadata("design:returntype", typeof (_g = typeof Promise !== "undefined" && Promise) === "function" ? _g : Object)
+], LimitesController.prototype, "atualizarPrazo", null);
+__decorate([
+    (0, common_1.Get)('prazos/:tipo/data-limite'),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Calcular data limite com base no prazo configurado',
+    }),
+    (0, swagger_1.ApiParam)({
+        name: 'tipo',
+        description: 'Tipo do prazo (analise, entrevista, recurso, validade)',
+        example: 'analise',
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: 200,
+        description: 'Data limite calculada',
+        schema: {
+            type: 'object',
+            properties: {
+                tipo: {
+                    type: 'string',
+                    description: 'Tipo do prazo',
+                    example: 'analise',
+                },
+                dias: {
+                    type: 'number',
+                    description: 'Prazo em dias',
+                    example: 15,
+                },
+                dataLimite: {
+                    type: 'string',
+                    description: 'Data limite calculada',
+                    example: '2025-06-02T20:00:00.000Z',
+                },
+            },
+        },
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: 400,
+        description: 'Tipo de prazo inválido',
+    }),
+    __param(0, (0, common_1.Param)('tipo')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", typeof (_h = typeof Promise !== "undefined" && Promise) === "function" ? _h : Object)
+], LimitesController.prototype, "calcularDataLimite", null);
+exports.LimitesController = LimitesController = __decorate([
+    (0, swagger_1.ApiTags)('Configuração'),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, common_1.Controller)('configuracao/limites'),
+    __metadata("design:paramtypes", [typeof (_a = typeof limites_service_1.LimitesService !== "undefined" && limites_service_1.LimitesService) === "function" ? _a : Object])
+], LimitesController);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXGNvbmZpZ3VyYWNhb1xcY29udHJvbGxlcnNcXGxpbWl0ZXMuY29udHJvbGxlci50cyIsIm1hcHBpbmdzIjoiOzs7Ozs7Ozs7Ozs7Ozs7O0FBQUEsMkNBQW1FO0FBQ25FLDZDQU15QjtBQUN6QixpRUFBNkQ7QUFDN0QsMkVBQXNFO0FBQ3RFLHVFQUFrRTtBQUNsRSw2RkFBdUY7QUFFdkY7O0dBRUc7QUFJSSxJQUFNLGlCQUFpQixHQUF2QixNQUFNLGlCQUFpQjtJQUNDO0lBQTdCLFlBQTZCLGNBQThCO1FBQTlCLG1CQUFjLEdBQWQsY0FBYyxDQUFnQjtJQUFHLENBQUM7SUFFL0Q7OztPQUdHO0lBUUcsQUFBTixLQUFLLENBQUMsbUJBQW1CO1FBQ3ZCLE9BQU8sSUFBSSxDQUFDLGNBQWMsQ0FBQyxtQkFBbUIsRUFBRSxDQUFDO0lBQ25ELENBQUM7SUFFRDs7OztPQUlHO0lBWUcsQUFBTixLQUFLLENBQUMsc0JBQXNCLENBQ2xCLEdBQXFCO1FBRTdCLE9BQU8sSUFBSSxDQUFDLGNBQWMsQ0FBQyxzQkFBc0IsQ0FBQyxHQUFHLENBQUMsQ0FBQztJQUN6RCxDQUFDO0lBRUQ7Ozs7T0FJRztJQStCRyxBQUFOLEtBQUssQ0FBQyxXQUFXLENBQ0EsSUFBWTtRQUUzQixNQUFNLElBQUksR0FBRyxNQUFNLElBQUksQ0FBQyxjQUFjLENBQUMsV0FBVyxDQUFDLElBQUksQ0FBQyxDQUFDO1FBQ3pELE9BQU8sRUFBRSxJQUFJLEVBQUUsSUFBSSxFQUFFLENBQUM7SUFDeEIsQ0FBQztJQUVEOzs7OztPQUtHO0lBK0JHLEFBQU4sS0FBSyxDQUFDLGNBQWMsQ0FDSCxJQUFZLEVBQ25CLEdBQW1CO1FBRTNCLE1BQU0sSUFBSSxHQUFHLE1BQU0sSUFBSSxDQUFDLGNBQWMsQ0FBQyxjQUFjLENBQUMsSUFBSSxFQUFFLEdBQUcsQ0FBQyxDQUFDO1FBQ2pFLE9BQU8s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VUFBVSxFQUFFO29CQUNWLElBQUksRUFBRSxRQUFRO29CQUNkLFdBQVcsRUFBRSx1QkFBdUI7b0JBQ3BDLE9BQU8sRUFBRSwwQkFBMEI7aUJBQ3BDO2FBQ0Y7U0FDRjtLQUNGLENBQUM7SUFDRCxJQUFBLHFCQUFXLEVBQUM7UUFDWCxNQUFNLEVBQUUsR0FBRztRQUNYLFdBQVcsRUFBRSx3QkFBd0I7S0FDdEMsQ0FBQztJQUVDLFdBQUEsSUFBQSxjQUFLLEVBQUMsTUFBTSxDQUFDLENBQUE7Ozt3REFDYixPQUFPLG9CQUFQLE9BQU87MkRBSVQ7NEJBOUtVLGlCQUFpQjtJQUg3QixJQUFBLGlCQUFPLEVBQUMsY0FBYyxDQUFDO0lBQ3ZCLElBQUEsdUJBQWEsR0FBRTtJQUNmLElBQUEsbUJBQVUsRUFBQyxzQkFBc0IsQ0FBQzt5REFFWSxnQ0FBYyxvQkFBZCxnQ0FBYztHQURoRCxpQkFBaUIsQ0ErSzdCIiwibmFtZXMiOltdLCJzb3VyY2VzIjpbIkM6XFxVc2Vyc1xcZXVkcmVcXE9uZURyaXZlXFxEZXNrdG9wXFxQcm9qZXRvc1xccGdiZW5cXHBnYmVuLXNlcnZlclxcc3JjXFxtb2R1bGVzXFxjb25maWd1cmFjYW9cXGNvbnRyb2xsZXJzXFxsaW1pdGVzLmNvbnRyb2xsZXIudHMiXSwic291cmNlc0NvbnRlbnQiOlsiaW1wb3J0IHsgQ29udHJvbGxlciwgR2V0LCBQdXQsIEJvZHksIFBhcmFtIH0gZnJvbSAnQG5lc3Rqcy9jb21tb24nO1xuaW1wb3J0IHtcbiAgQXBpVGFncyxcbiAgQXBpT3BlcmF0aW9uLFxuICBBcGlSZXNwb25zZSxcbiAgQXBpQmVhcmVyQXV0aCxcbiAgQXBpUGFyYW0sXG59IGZyb20gJ0BuZXN0anMvc3dhZ2dlcic7XG5pbXBvcnQgeyBMaW1pdGVzU2VydmljZSB9IGZyb20gJy4uL3NlcnZpY2VzL2xpbWl0ZXMuc2VydmljZSc7XG5pbXBvcnQgeyBMaW1pdGVzVXBsb2FkRHRvIH0gZnJvbSAnLi4vZHRvcy9saW1pdGVzL2xpbWl0ZXMtdXBsb2FkLmR0byc7XG5pbXBvcnQgeyBQcmF6b1VwZGF0ZUR0byB9IGZyb20gJy4uL2R0b3MvbGltaXRlcy9wcmF6by11cGRhdGUuZHRvJztcbmltcG9ydCB7IExpbWl0ZXNVcGxvYWRSZXNwb25zZUR0byB9IGZyb20gJy4uL2R0b3MvbGltaXRlcy9saW1pdGVzLXVwbG9hZC1yZXNwb25zZS5kdG8nO1xuXG4vKipcbiAqIENvbnRyb2xhZG9yIHJlc3BvbnPDoXZlbCBwZWxhcyBvcGVyYcOnw7VlcyBkZSBsaW1pdGVzIG9wZXJhY2lvbmFpcyBkbyBzaXN0ZW1hXG4gKi9cbkBBcGlUYWdzKCdDb25maWd1cmHDp8OjbycpXG5AQXBpQmVhcmVyQXV0aCgpXG5AQ29udHJvbGxlcignY29uZmlndXJhY2FvL2xpbWl0ZXMnKVxuZXhwb3J0IGNsYXNzIExpbWl0ZXNDb250cm9sbGVyIHtcbiAgY29uc3RydWN0b3IocHJpdmF0ZSByZWFkb25seSBsaW1pdGVzU2VydmljZTogTGltaXRlc1NlcnZpY2UpIHt9XG5cbiAgLyoqXG4gICAqIEJ1c2NhIG9zIGxpbWl0ZXMgZGUgdXBsb2FkIGNvbmZpZ3VyYWRvc1xuICAgKiBAcmV0dXJucyBEVE8gY29tIG9zIGxpbWl0ZXMgZGUgdXBsb2FkXG4gICAqL1xuICBAR2V0KCd1cGxvYWQnKVxuICBAQXBpT3BlcmF0aW9uKHsgc3VtbWFyeTogJ0J1c2NhciBsaW1pdGVzIGRlIHVwbG9hZCBjb25maWd1cmFkb3MnIH0pXG4gIEBBcGlSZXNwb25zZSh7XG4gICAgc3RhdHVzOiAyMDAsXG4gICAgZGVzY3JpcHRpb246ICdMaW1pdGVzIGRlIHVwbG9hZCBlbmNvbnRyYWRvcycsXG4gICAgdHlwZTogTGltaXRlc1VwbG9hZFJlc3BvbnNlRHRvLFxuICB9KVxuICBhc3luYyBidXNjYXJMaW1pdGVzVXBsb2FkKCk6IFByb21pc2U8TGltaXRlc1VwbG9hZFJlc3BvbnNlRHRvPiB7XG4gICAgcmV0dXJuIHRoaXMubGltaXRlc1NlcnZpY2UuYnVzY2FyTGltaXRlc1VwbG9hZCgpO1xuICB9XG5cbiAgLyoqXG4gICAqIEF0dWFsaXphIG9zIGxpbWl0ZXMgZGUgdXBsb2FkXG4gICAqIEBwYXJhbSBkdG8gRFRPIGNvbSBvcyBub3ZvcyBsaW1pdGVzXG4gICAqIEByZXR1cm5zIERUTyBjb20gb3MgbGltaXRlcyBhdHVhbGl6YWRvc1xuICAgKi9cbiAgQFB1dCgndXBsb2FkJylcbiAgQEFwaU9wZXJhdGlvbih7IHN1bW1hcnk6ICdBdHVhbGl6YXIgbGltaXRlcyBkZSB1cGxvYWQnIH0pXG4gIEBBcGlSZXNwb25zZSh7XG4gICAgc3RhdHVzOiAyMDAsXG4gICAgZGVzY3JpcHRpb246ICdMaW1pdGVzIGRlIHVwbG9hZCBhdHVhbGl6YWRvcyBjb20gc3VjZXNzbycsXG4gICAgdHlwZTogTGltaXRlc1VwbG9hZFJlc3BvbnNlRHRvLFxuICB9KVxuICBAQXBpUmVzcG9uc2Uoe1xuICAgIHN0YXR1czogNDAwLFxuICAgIGRlc2NyaXB0aW9uOiAnRGFkb3MgaW52w6FsaWRvcycsXG4gIH0pXG4gIGFzeW5jIGF0dWFsaXphckxpbWl0ZXNVcGxvYWQoXG4gICAgQEJvZHkoKSBkdG86IExpbWl0ZXNVcGxvYWREdG8sXG4gICk6IFByb21pc2U8TGltaXRlc1VwbG9hZFJlc3BvbnNlRHRvPiB7XG4gICAgcmV0dXJuIHRoaXMubGltaXRlc1NlcnZpY2UuYXR1YWxpemFyTGltaXRlc1VwbG9hZChkdG8pO1xuICB9XG5cbiAgLyoqXG4gICAqIEJ1c2NhIG8gcHJhem8gY29uZmlndXJhZG8gcGFyYSB1bWEgZXRhcGEgZXNwZWPDrWZpY2FcbiAgICogQHBhcmFtIHRpcG8gVGlwbyBkbyBwcmF6b1xuICAgKiBAcmV0dXJucyBQcmF6byBlbSBkaWFzXG4gICAqL1xuICBAR2V0KCdwcmF6b3MvOnRpcG8nKVxuICBAQXBpT3BlcmF0aW9uKHsgc3VtbWFyeTogJ0J1c2NhciBwcmF6byBjb25maWd1cmFkbyBwYXJhIHVtYSBldGFwYScgfSlcbiAgQEFwaVBhcmFtKHtcbiAgICBuYW1lOiAndGlwbycsXG4gICAgZGVzY3JpcHRpb246ICdUaXBvIGRvIHByYXpvIChhbmFsaXNlLCBlbnRyZXZpc3RhLCByZWN1cnNvLCB2YWxpZGFkZSknLFxuICAgIGV4YW1wbGU6ICdhbmFsaXNlJyxcbiAgfSlcbiAgQEFwaVJlc3BvbnNlKHtcbiAgICBzdGF0dXM6IDIwMCxcbiAgICBkZXNjcmlwdGlvbjogJ1ByYXpvIGVuY29udHJhZG8nLFxuICAgIHNjaGVtYToge1xuICAgICAgdHlwZTogJ29iamVjdCcsXG4gICAgICBwcm9wZXJ0aWVzOiB7XG4gICAgICAgIHRpcG86IHtcbiAgICAgICAgICB0eXBlOiAnc3RyaW5nJyxcbiAgICAgICAgICBkZXNjcmlwdGlvbjogJ1RpcG8gZG8gcHJhem8nLFxuICAgICAgICAgIGV4YW1wbGU6ICdhbmFsaXNlJyxcbiAgICAgICAgfSxcbiAgICAgICAgZGlhczoge1xuICAgICAgICAgIHR5cGU6ICdudW1iZXInLFxuICAgICAgICAgIGRlc2NyaXB0aW9uOiAnUHJhem8gZW0gZGlhcycsXG4gICAgICAgICAgZXhhbXBsZTogMTUsXG4gICAgICAgIH0sXG4gICAgICB9LFxuICAgIH0sXG4gIH0pXG4gIEBBcGlSZXNwb25zZSh7XG4gICAgc3RhdHVzOiA0MDAsXG4gICAgZGVzY3JpcHRpb246ICdUaXBvIGRlIHByYXpvIGludsOhbGlkbycsXG4gIH0pXG4gIGFzeW5jIGJ1c2NhclByYXpvKFxuICAgIEBQYXJhbSgndGlwbycpIHRpcG86IHN0cmluZyxcbiAgKTogUHJvbWlzZTx7IHRpcG86IHN0cmluZzsgZGlhczogbnVtYmVyIH0+IHtcbiAgICBjb25zdCBkaWFzID0gYXdhaXQgdGhpcy5saW1pdGVzU2VydmljZS5idXNjYXJQcmF6byh0aXBvKTtcbiAgICByZXR1cm4geyB0aXBvLCBkaWFzIH07XG4gIH1cblxuICAvKipcbiAgICogQXR1YWxpemEgbyBwcmF6byBwYXJhIHVtYSBldGFwYSBlc3BlY8OtZmljYVxuICAgKiBAcGFyYW0gdGlwbyBUaXBvIGRvIHByYXpvXG4gICAqIEBwYXJhbSBkdG8gRFRPIGNvbSBvIG5vdm8gcHJhem9cbiAgICogQHJldHVybnMgUHJhem8gYXR1YWxpemFkb1xuICAgKi9cbiAgQFB1dCgncHJhem9zLzp0aXBvJylcbiAgQEFwaU9wZXJhdGlvbih7IHN1bW1hcnk6ICdBdHVhbGl6YXIgcHJhem8gcGFyYSB1bWEgZXRhcGEnIH0pXG4gIEBBcGlQYXJhbSh7XG4gICAgbmFtZTogJ3RpcG8nLFxuICAgIGRlc2NyaXB0aW9uOiAnVGlwbyBkbyBwcmF6byAoYW5hbGlzZSwgZW50cmV2aXN0YSwgcmVjdXJzbywgdmFsaWRhZGUpJyxcbiAgICBleGFtcGxlOiAnYW5hbGlzZScsXG4gIH0pXG4gIEBBcGlSZXNwb25zZSh7XG4gICAgc3RhdHVzOiAyMDAsXG4gICAgZGVzY3JpcHRpb246ICdQcmF6byBhdHVhbGl6YWRvIGNvbSBzdWNlc3NvJyxcbiAgICBzY2hlbWE6IHtcbiAgICAgIHR5cGU6ICdvYmplY3QnLFxuICAgICAgcHJvcGVydGllczoge1xuICAgICAgICB0aXBvOiB7XG4gICAgICAgICAgdHlwZTogJ3N0cmluZycsXG4gICAgICAgICAgZGVzY3JpcHRpb246ICdUaXBvIGRvIHByYXpvJyxcbiAgICAgICAgICBleGFtcGxlOiAnYW5hbGlzZScsXG4gICAgICAgIH0sXG4gICAgICAgIGRpYXM6IHtcbiAgICAgICAgICB0eXBlOiAnbnVtYmVyJyxcbiAgICAgICAgICBkZXNjcmlwdGlvbjogJ1ByYXpvIGVtIGRpYXMnLFxuICAgICAgICAgIGV4YW1wbGU6IDE1LFxuICAgICAgICB9LFxuICAgICAgfSxcbiAgICB9LFxuICB9KVxuICBAQXBpUmVzcG9uc2Uoe1xuICAgIHN0YXR1czogNDAwLFxuICAgIGRlc2NyaXB0aW9uOiAnRGFkb3MgaW52w6FsaWRvcyBvdSB0aXBvIGRlIHByYXpvIGludsOhbGlkbycsXG4gIH0pXG4gIGFzeW5jIGF0dWFsaXphclByYXpvKFxuICAgIEBQYXJhbSgndGlwbycpIHRpcG86IHN0cmluZyxcbiAgICBAQm9keSgpIGR0bzogUHJhem9VcGRhdGVEdG8sXG4gICk6IFByb21pc2U8eyB0aXBvOiBzdHJpbmc7IGRpYXM6IG51bWJlciB9PiB7XG4gICAgY29uc3QgZGlhcyA9IGF3YWl0IHRoaXMubGltaXRlc1NlcnZpY2UuYXR1YWxpemFyUHJhem8odGlwbywgZHRvKTtcbiAgICByZXR1cm4geyB0aXBvLCBkaWFzIH07XG4gIH1cblxuICAvKipcbiAgICogQ2FsY3VsYSBhIGRhdGEgbGltaXRlIHBhcmEgdW1hIGV0YXBhIGNvbSBiYXNlIG5vIHByYXpvIGNvbmZpZ3VyYWRvXG4gICAqIEBwYXJhbSB0aXBvIFRpcG8gZG8gcHJhem9cbiAgICogQHJldHVybnMgRGF0YSBsaW1pdGVcbiAgICovXG4gIEBHZXQoJ3ByYXpvcy86dGlwby9kYXRhLWxpbWl0ZScpXG4gIEBBcGlPcGVyYXRpb24oe1xuICAgIHN1bW1hcnk6ICdDYWxjdWxhciBkYXRhIGxpbWl0ZSBjb20gYmFzZSBubyBwcmF6byBjb25maWd1cmFkbycsXG4gIH0pXG4gIEBBcGlQYXJhbSh7XG4gICAgbmFtZTogJ3RpcG8nLFxuICAgIGRlc2NyaXB0aW9uOiAnVGlwbyBkbyBwcmF6byAoYW5hbGlzZSwgZW50cmV2aXN0YSwgcmVjdXJzbywgdmFsaWRhZGUpJyxcbiAgICBleGFtcGxlOiAnYW5hbGlzZScsXG4gIH0pXG4gIEBBcGlSZXNwb25zZSh7XG4gICAgc3RhdHVzOiAyMDAsXG4gICAgZGVzY3JpcHRpb246ICdEYXRhIGxpbWl0ZSBjYWxjdWxhZGEnLFxuICAgIHNjaGVtYToge1xuICAgICAgdHlwZTogJ29iamVjdCcsXG4gICAgICBwcm9wZXJ0aWVzOiB7XG4gICAgICAgIHRpcG86IHtcbiAgICAgICAgICB0eXBlOiAnc3RyaW5nJyxcbiAgICAgICAgICBkZXNjcmlwdGlvbjogJ1RpcG8gZG8gcHJhem8nLFxuICAgICAgICAgIGV4YW1wbGU6ICdhbmFsaXNlJyxcbiAgICAgICAgfSxcbiAgICAgICAgZGlhczoge1xuICAgICAgICAgIHR5cGU6ICdudW1iZXInLFxuICAgICAgICAgIGRlc2NyaXB0aW9uOiAnUHJhem8gZW0gZGlhcycsXG4gICAgICAgICAgZXhhbXBsZTogMTUsXG4gICAgICAgIH0sXG4gICAgICAgIGRhdGFMaW1pdGU6IHtcbiAgICAgICAgICB0eXBlOiAnc3RyaW5nJyxcbiAgICAgICAgICBkZXNjcmlwdGlvbjogJ0RhdGEgbGltaXRlIGNhbGN1bGFkYScsXG4gICAgICAgICAgZXhhbXBsZTogJzIwMjUtMDYtMDJUMjA6MDA6MDAuMDAwWicsXG4gICAgICAgIH0sXG4gICAgICB9LFxuICAgIH0sXG4gIH0pXG4gIEBBcGlSZXNwb25zZSh7XG4gICAgc3RhdHVzOiA0MDAsXG4gICAgZGVzY3JpcHRpb246ICdUaXBvIGRlIHByYXpvIGludsOhbGlkbycsXG4gIH0pXG4gIGFzeW5jIGNhbGN1bGFyRGF0YUxpbWl0ZShcbiAgICBAUGFyYW0oJ3RpcG8nKSB0aXBvOiBzdHJpbmcsXG4gICk6IFByb21pc2U8eyB0aXBvOiBzdHJpbmc7IGRpYXM6IG51bWJlcjsgZGF0YUxpbWl0ZTogRGF0ZSB9PiB7XG4gICAgY29uc3QgZGlhcyA9IGF3YWl0IHRoaXMubGltaXRlc1NlcnZpY2UuYnVzY2FyUHJhem8odGlwbyk7XG4gICAgY29uc3QgZGF0YUxpbWl0ZSA9IGF3YWl0IHRoaXMubGltaXRlc1NlcnZpY2UuY2FsY3VsYXJEYXRhTGltaXRlKHRpcG8pO1xuICAgIHJldHVybiB7IHRpcG8sIGRpYXMsIGRhdGFMaW1pdGUgfTtcbiAgfVxufVxuIl0sInZlcnNpb24iOjN9

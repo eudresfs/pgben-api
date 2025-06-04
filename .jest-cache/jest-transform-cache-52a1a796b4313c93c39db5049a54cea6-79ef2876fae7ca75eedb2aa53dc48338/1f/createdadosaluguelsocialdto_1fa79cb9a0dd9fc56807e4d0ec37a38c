@@ -1,0 +1,212 @@
+552eade65e0e1f552e75d4eacdc4e21a
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var _a, _b;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.UpdateDadosAluguelSocialDto = exports.CreateDadosAluguelSocialDto = void 0;
+const class_validator_1 = require("class-validator");
+const swagger_1 = require("@nestjs/swagger");
+const class_transformer_1 = require("class-transformer");
+const enums_1 = require("@/enums");
+/**
+ * DTO para criação de dados específicos do cidadão para Aluguel Social
+ */
+class CreateDadosAluguelSocialDto {
+    solicitacao_id;
+    publico_prioritario;
+    especificacoes;
+    situacao_moradia_atual;
+    possui_imovel_interditado;
+    caso_judicializado_maria_penha;
+    observacoes_adicionais;
+}
+exports.CreateDadosAluguelSocialDto = CreateDadosAluguelSocialDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'ID da solicitação de benefício',
+        example: '550e8400-e29b-41d4-a716-446655440000',
+    }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'ID da solicitação é obrigatório' }),
+    (0, class_validator_1.IsUUID)('4', { message: 'ID da solicitação inválido' }),
+    __metadata("design:type", String)
+], CreateDadosAluguelSocialDto.prototype, "solicitacao_id", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Público prioritário (apenas 1 opção)',
+        enum: enums_1.PublicoPrioritarioAluguel,
+        example: enums_1.PublicoPrioritarioAluguel.GESTANTES_NUTRIZES,
+    }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Público prioritário é obrigatório' }),
+    (0, class_validator_1.IsEnum)(enums_1.PublicoPrioritarioAluguel, {
+        message: 'Público prioritário inválido',
+    }),
+    __metadata("design:type", typeof (_a = typeof enums_1.PublicoPrioritarioAluguel !== "undefined" && enums_1.PublicoPrioritarioAluguel) === "function" ? _a : Object)
+], CreateDadosAluguelSocialDto.prototype, "publico_prioritario", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        description: 'Especificações adicionais (até 2 opções)',
+        enum: enums_1.EspecificacaoAluguel,
+        isArray: true,
+        example: [
+            enums_1.EspecificacaoAluguel.VITIMA_VIOLENCIA,
+            enums_1.EspecificacaoAluguel.LGBTQIA,
+        ],
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsArray)({ message: 'Especificações devem ser um array' }),
+    (0, class_validator_1.ArrayMaxSize)(2, { message: 'Máximo de 2 especificações permitidas' }),
+    (0, class_validator_1.IsEnum)(enums_1.EspecificacaoAluguel, {
+        each: true,
+        message: 'Especificação inválida',
+    }),
+    __metadata("design:type", Array)
+], CreateDadosAluguelSocialDto.prototype, "especificacoes", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Descrição detalhada da situação atual da moradia',
+        example: 'Família reside em casa de parentes, sem condições de permanência devido a conflitos familiares.',
+    }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Situação da moradia atual é obrigatória' }),
+    (0, class_validator_1.MinLength)(10, {
+        message: 'Situação da moradia deve ter pelo menos 10 caracteres',
+    }),
+    __metadata("design:type", String)
+], CreateDadosAluguelSocialDto.prototype, "situacao_moradia_atual", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Indica se possui imóvel interditado',
+        example: false,
+    }),
+    (0, class_validator_1.IsBoolean)({ message: 'Possui imóvel interditado deve ser um booleano' }),
+    (0, class_transformer_1.Transform)(({ value }) => {
+        if (typeof value === 'string') {
+            return value.toLowerCase() === 'true';
+        }
+        return value;
+    }),
+    __metadata("design:type", Boolean)
+], CreateDadosAluguelSocialDto.prototype, "possui_imovel_interditado", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Indica se é caso judicializado pela Lei Maria da Penha (Art. 23, inciso VI)',
+        example: false,
+    }),
+    (0, class_validator_1.IsBoolean)({
+        message: 'Caso judicializado Lei Maria da Penha deve ser um booleano',
+    }),
+    (0, class_transformer_1.Transform)(({ value }) => {
+        if (typeof value === 'string') {
+            return value.toLowerCase() === 'true';
+        }
+        return value;
+    }),
+    __metadata("design:type", Boolean)
+], CreateDadosAluguelSocialDto.prototype, "caso_judicializado_maria_penha", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        description: 'Observações adicionais sobre o caso',
+        example: 'Família em situação de extrema vulnerabilidade, necessita acompanhamento psicossocial.',
+    }),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], CreateDadosAluguelSocialDto.prototype, "observacoes_adicionais", void 0);
+/**
+ * DTO para atualização de dados específicos do cidadão para Aluguel Social
+ */
+class UpdateDadosAluguelSocialDto {
+    publico_prioritario;
+    especificacoes;
+    situacao_moradia_atual;
+    possui_imovel_interditado;
+    caso_judicializado_maria_penha;
+    observacoes_adicionais;
+}
+exports.UpdateDadosAluguelSocialDto = UpdateDadosAluguelSocialDto;
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        description: 'Público prioritário (apenas 1 opção)',
+        enum: enums_1.PublicoPrioritarioAluguel,
+        example: enums_1.PublicoPrioritarioAluguel.GESTANTES_NUTRIZES,
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsEnum)(enums_1.PublicoPrioritarioAluguel, {
+        message: 'Público prioritário inválido',
+    }),
+    __metadata("design:type", typeof (_b = typeof enums_1.PublicoPrioritarioAluguel !== "undefined" && enums_1.PublicoPrioritarioAluguel) === "function" ? _b : Object)
+], UpdateDadosAluguelSocialDto.prototype, "publico_prioritario", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        description: 'Especificações adicionais (até 2 opções)',
+        enum: enums_1.EspecificacaoAluguel,
+        isArray: true,
+        example: [enums_1.EspecificacaoAluguel.VITIMA_VIOLENCIA],
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsArray)({ message: 'Especificações devem ser um array' }),
+    (0, class_validator_1.ArrayMaxSize)(2, { message: 'Máximo de 2 especificações permitidas' }),
+    (0, class_validator_1.IsEnum)(enums_1.EspecificacaoAluguel, {
+        each: true,
+        message: 'Especificação inválida',
+    }),
+    __metadata("design:type", Array)
+], UpdateDadosAluguelSocialDto.prototype, "especificacoes", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        description: 'Descrição detalhada da situação atual da moradia',
+        example: 'Situação da moradia foi atualizada após visita técnica.',
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.MinLength)(10, {
+        message: 'Situação da moradia deve ter pelo menos 10 caracteres',
+    }),
+    __metadata("design:type", String)
+], UpdateDadosAluguelSocialDto.prototype, "situacao_moradia_atual", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        description: 'Indica se possui imóvel interditado',
+        example: false,
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsBoolean)({ message: 'Possui imóvel interditado deve ser um booleano' }),
+    (0, class_transformer_1.Transform)(({ value }) => {
+        if (typeof value === 'string') {
+            return value.toLowerCase() === 'true';
+        }
+        return value;
+    }),
+    __metadata("design:type", Boolean)
+], UpdateDadosAluguelSocialDto.prototype, "possui_imovel_interditado", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        description: 'Indica se é caso judicializado pela Lei Maria da Penha',
+        example: false,
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsBoolean)({
+        message: 'Caso judicializado Lei Maria da Penha deve ser um booleano',
+    }),
+    (0, class_transformer_1.Transform)(({ value }) => {
+        if (typeof value === 'string') {
+            return value.toLowerCase() === 'true';
+        }
+        return value;
+    }),
+    __metadata("design:type", Boolean)
+], UpdateDadosAluguelSocialDto.prototype, "caso_judicializado_maria_penha", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        description: 'Observações adicionais sobre o caso',
+        example: 'Observações atualizadas após reavaliação.',
+    }),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], UpdateDadosAluguelSocialDto.prototype, "observacoes_adicionais", void 0);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXGJlbmVmaWNpb1xcZHRvXFxjcmVhdGUtZGFkb3MtYWx1Z3VlbC1zb2NpYWwuZHRvLnRzIiwibWFwcGluZ3MiOiI7Ozs7Ozs7Ozs7Ozs7QUFBQSxxREFTeUI7QUFDekIsNkNBQW1FO0FBQ25FLHlEQUE4QztBQUM5QyxtQ0FBMEU7QUFFMUU7O0dBRUc7QUFDSCxNQUFhLDJCQUEyQjtJQU90QyxjQUFjLENBQVM7SUFXdkIsbUJBQW1CLENBQTRCO0lBa0IvQyxjQUFjLENBQTBCO0lBV3hDLHNCQUFzQixDQUFTO0lBYS9CLHlCQUF5QixDQUFVO0lBZ0JuQyw4QkFBOEIsQ0FBVTtJQVF4QyxzQkFBc0IsQ0FBVTtDQUNqQztBQXJGRCxrRUFxRkM7QUE5RUM7SUFOQyxJQUFBLHFCQUFXLEVBQUM7UUFDWCxXQUFXLEVBQUUsZ0NBQWdDO1FBQzdDLE9BQU8sRUFBRSxzQ0FBc0M7S0FDaEQsQ0FBQztJQUNELElBQUEsNEJBQVUsRUFBQyxFQUFFLE9BQU8sRUFBRSxpQ0FBaUMsRUFBRSxDQUFDO0lBQzFELElBQUEsd0JBQU0sRUFBQyxHQUFHLEVBQUUsRUFBRSxPQUFPLEVBQUUsNEJBQTRCLEVBQUUsQ0FBQzs7bUVBQ2hDO0FBV3ZCO0lBVEMsSUFBQSxxQkFBVyxFQUFDO1FBQ1gsV0FBVyxFQUFFLHNDQUFzQztRQUNuRCxJQUFJLEVBQUUsaUNBQXlCO1FBQy9CLE9BQU8sRUFBRSxpQ0FBeUIsQ0FBQyxrQkFBa0I7S0FDdEQsQ0FBQztJQUNELElBQUEsNEJBQVUsRUFBQyxFQUFFLE9BQU8sRUFBRSxtQ0FBbUMsRUFBRSxDQUFDO0lBQzVELElBQUEsd0JBQU0sRUFBQyxpQ0FBeUIsRUFBRTtRQUNqQyxPQUFPLEVBQUUsOEJBQThCO0tBQ3hDLENBQUM7a0RBQ21CLGlDQUF5QixvQkFBekIsaUNBQXlCO3dFQUFDO0FBa0IvQztJQWhCQyxJQUFBLDZCQUFtQixF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Q25CLFdBQVcsRUFBRSx3REFBd0Q7UUFDckUsT0FBTyxFQUFFLEtBQUs7S0FDZixDQUFDO0lBQ0QsSUFBQSw0QkFBVSxHQUFFO0lBQ1osSUFBQSwyQkFBUyxFQUFDO1FBQ1QsT0FBTyxFQUFFLDREQUE0RDtLQUN0RSxDQUFDO0lBQ0QsSUFBQSw2QkFBUyxFQUFDLENBQUMsRUFBRSxLQUFLLEVBQUUsRUFBRSxFQUFFO1FBQ3ZCLElBQUksT0FBTyxLQUFLLEtBQUssUUFBUSxFQUFFLENBQUM7WUFDOUIsT0FBTyxLQUFLLENBQUMsV0FBVyxFQUFFLEtBQUssTUFBTSxDQUFDO1FBQ3hDLENBQUM7UUFDRCxPQUFPLEtBQUssQ0FBQztJQUNmLENBQUMsQ0FBQzs7bUZBQ3VDO0FBT3pDO0lBTEMsSUFBQSw2QkFBbUIsRUFBQztRQUNuQixXQUFXLEVBQUUscUNBQXFDO1FBQ2xELE9BQU8sRUFBRSwyQ0FBMkM7S0FDckQsQ0FBQztJQUNELElBQUEsNEJBQVUsR0FBRTs7MkVBQ21CIiwibmFtZXMiOltdLCJzb3VyY2VzIjpbIkM6XFxVc2Vyc1xcZXVkcmVcXE9uZURyaXZlXFxEZXNrdG9wXFxQcm9qZXRvc1xccGdiZW5cXHBnYmVuLXNlcnZlclxcc3JjXFxtb2R1bGVzXFxiZW5lZmljaW9cXGR0b1xcY3JlYXRlLWRhZG9zLWFsdWd1ZWwtc29jaWFsLmR0by50cyJdLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQge1xuICBJc05vdEVtcHR5LFxuICBJc0Jvb2xlYW4sXG4gIElzRW51bSxcbiAgSXNPcHRpb25hbCxcbiAgSXNBcnJheSxcbiAgSXNVVUlELFxuICBBcnJheU1heFNpemUsXG4gIE1pbkxlbmd0aCxcbn0gZnJvbSAnY2xhc3MtdmFsaWRhdG9yJztcbmltcG9ydCB7IEFwaVByb3BlcnR5LCBBcGlQcm9wZXJ0eU9wdGlvbmFsIH0gZnJvbSAnQG5lc3Rqcy9zd2FnZ2VyJztcbmltcG9ydCB7IFRyYW5zZm9ybSB9IGZyb20gJ2NsYXNzLXRyYW5zZm9ybWVyJztcbmltcG9ydCB7IFB1YmxpY29Qcmlvcml0YXJpb0FsdWd1ZWwsIEVzcGVjaWZpY2FjYW9BbHVndWVsIH0gZnJvbSAnQC9lbnVtcyc7XG5cbi8qKlxuICogRFRPIHBhcmEgY3JpYcOnw6NvIGRlIGRhZG9zIGVzcGVjw61maWNvcyBkbyBjaWRhZMOjbyBwYXJhIEFsdWd1ZWwgU29jaWFsXG4gKi9cbmV4cG9ydCBjbGFzcyBDcmVhdGVEYWRvc0FsdWd1ZWxTb2NpYWxEdG8ge1xuICBAQXBpUHJvcGVydHkoe1xuICAgIGRlc2NyaXB0aW9uOiAnSUQgZGEgc29saWNpdGHDp8OjbyBkZSBiZW5lZsOtY2lvJyxcbiAgICBleGFtcGxlOiAnNTUwZTg0MDAtZTI5Yi00MWQ0LWE3MTYtNDQ2NjU1NDQwMDAwJyxcbiAgfSlcbiAgQElzTm90RW1wdHkoeyBtZXNzYWdlOiAnSUQgZGEgc29saWNpdGHDp8OjbyDDqSBvYnJpZ2F0w7NyaW8nIH0pXG4gIEBJc1VVSUQoJzQnLCB7IG1lc3NhZ2U6ICdJRCBkYSBzb2xpY2l0YcOnw6NvIGludsOhbGlkbycgfSlcbiAgc29saWNpdGFjYW9faWQ6IHN0cmluZztcblxuICBAQXBpUHJvcGVydHkoe1xuICAgIGRlc2NyaXB0aW9uOiAnUMO6YmxpY28gcHJpb3JpdMOhcmlvIChhcGVuYXMgMSBvcMOnw6NvKScsXG4gICAgZW51bTogUHVibGljb1ByaW9yaXRhcmlvQWx1Z3VlbCxcbiAgICBleGFtcGxlOiBQdWJsaWNvUHJpb3JpdGFyaW9BbHVndWVsLkdFU1RBTlRFU19OVVRSSVpFUyxcbiAgfSlcbiAgQElzTm90RW1wdHkoeyBtZXNzYWdlOiAnUMO6YmxpY28gcHJpb3JpdMOhcmlvIMOpIG9icmlnYXTDs3JpbycgfSlcbiAgQElzRW51bShQdWJsaWNvUHJpb3JpdGFyaW9BbHVndWVsLCB7XG4gICAgbWVzc2FnZTogJ1DDumJsaWNvIHByaW9yaXTDoXJpbyBpbnbDoWxpZG8nLFxuICB9KVxuICBwdWJsaWNvX3ByaW9yaXRhcmlvOiBQdWJsaWNvUHJpb3JpdGFyaW9BbHVndWVsO1xuXG4gIEBBcGlQcm9wZXJ0eU9wdGlvbmFsKHtcbiAgICBkZXNjcmlwdGlvbjogJ0VzcGVjaWZpY2HDp8O1ZXMgYWRpY2lvbmFpcyAoYXTDqSAyIG9ww6fDtWVzKScsXG4gICAgZW51bTogRXNwZWNpZmljYWNhb0FsdWd1ZWwsXG4gICAgaXNBcnJheTogdHJ1ZSxcbiAgICBleGFtcGxlOiBbXG4gICAgICBFc3BlY2lmaWNhY2FvQWx1Z3VlbC5WSVRJTUFfVklPTEVOQ0lBLFxuICAgICAgRXNwZWNpZmljYWNhb0FsdWd1ZWwuTEdCVFFJQSxcbiAgICBdLFxuICB9KVxuICBASXNPcHRpb25hbCgpXG4gIEBJc0FycmF5KHsgbWVzc2FnZTogJ0VzcGVjaWZpY2HDp8O1ZXMgZGV2ZW0gc2VyIHVtIGFycmF5JyB9KVxuICBAQXJyYXlNYXhTaXplKDIsIHsgbWVzc2FnZTogJ03DoXhpbW8gZGUgMiBlc3BlY2lmaWNhw6fDtWVzIHBlcm1pdGlkYXMnIH0pXG4gIEBJc0VudW0oRXNwZWNpZmljYWNhb0FsdWd1ZWwsIHtcbiAgICBlYWNoOiB0cnVlLFxuICAgIG1lc3NhZ2U6ICdFc3BlY2lmaWNhw6fDo28gaW52w6FsaWRhJyxcbiAgfSlcbiAgZXNwZWNpZmljYWNvZXM/OiBFc3BlY2lmaWNhY2FvQWx1Z3VlbFtdO1xuXG4gIEBBcGlQcm9wZXJ0eSh7XG4gICAgZGVzY3JpcHRpb246ICdEZXNjcmnDp8OjbyBkZXRhbGhhZGEgZGEgc2l0dWHDp8OjbyBhdHVhbCBkYSBtb3JhZGlhJyxcbiAgICBleGFtcGxlOlxuICAgICAgJ0ZhbcOtbGlhIHJlc2lkZSBlbSBjYXNhIGRlIHBhcmVudGVzLCBzZW0gY29uZGnDp8O1ZXMgZGUgcGVybWFuw6puY2lhIGRldmlkbyBhIGNvbmZsaXRvcyBmYW1pbGlhcmVzLicsXG4gIH0pXG4gIEBJc05vdEVtcHR5KHsgbWVzc2FnZTogJ1NpdHVhw6fDo28gZGEgbW9yYWRpYSBhdHVhbCDDqSBvYnJpZ2F0w7NyaWEnIH0pXG4gIEBNaW5MZW5ndGgoMTAsIHtcbiAgICBtZXNzYWdlOiAnU2l0dWHDp8OjbyBkYSBtb3JhZGlhIGRldmUgdGVyIHBlbG8gbWVub3MgMTAgY2FyYWN0ZXJlcycsXG4gIH0pXG4gIHNpdHVhY2FvX21vcmFkaWFfYXR1YWw6IHN0cmluZztcblxuICBAQXBpUHJvcGVydHkoe1xuICAgIGRlc2NyaXB0aW9uOiAnSW5kaWNhIHNlIHBvc3N1aSBpbcOzdmVsIGludGVyZGl0YWRvJyxcbiAgICBleGFtcGxlOiBmYWxzZSxcbiAgfSlcbiAgQElzQm9vbGVhbih7IG1lc3NhZ2U6ICdQb3NzdWkgaW3Ds3ZlbCBpbnRlcmRpdGFkbyBkZXZlIHNlciB1bSBib29sZWFubycgfSlcbiAgQFRyYW5zZm9ybSgoeyB2YWx1ZSB9KSA9PiB7XG4gICAgaWYgKHR5cGVvZiB2YWx1ZSA9PT0gJ3N0cmluZycpIHtcbiAgICAgIHJldHVybiB2YWx1ZS50b0xvd2VyQ2FzZSgpID09PSAndHJ1ZSc7XG4gICAgfVxuICAgIHJldHVybiB2YWx1ZTtcbiAgfSlcbiAgcG9zc3VpX2ltb3ZlbF9pbnRlcmRpdGFkbzogYm9vbGVhbjtcblxuICBAQXBpUHJvcGVydHkoe1xuICAgIGRlc2NyaXB0aW9uOlxuICAgICAgJ0luZGljYSBzZSDDqSBjYXNvIGp1ZGljaWFsaXphZG8gcGVsYSBMZWkgTWFyaWEgZGEgUGVuaGEgKEFydC4gMjMsIGluY2lzbyBWSSknLFxuICAgIGV4YW1wbGU6IGZhbHNlLFxuICB9KVxuICBASXNCb29sZWFuKHtcbiAgICBtZXNzYWdlOiAnQ2FzbyBqdWRpY2lhbGl6YWRvIExlaSBNYXJpYSBkYSBQZW5oYSBkZXZlIHNlciB1bSBib29sZWFubycsXG4gIH0pXG4gIEBUcmFuc2Zvcm0oKHsgdmFsdWUgfSkgPT4ge1xuICAgIGlmICh0eXBlb2YgdmFsdWUgPT09ICdzdHJpbmcnKSB7XG4gICAgICByZXR1cm4gdmFsdWUudG9Mb3dlckNhc2UoKSA9PT0gJ3RydWUnO1xuICAgIH1cbiAgICByZXR1cm4gdmFsdWU7XG4gIH0pXG4gIGNhc29fanVkaWNpYWxpemFkb19tYXJpYV9wZW5oYTogYm9vbGVhbjtcblxuICBAQXBpUHJvcGVydHlPcHRpb25hbCh7XG4gICAgZGVzY3JpcHRpb246ICdPYnNlcnZhw6fDtWVzIGFkaWNpb25haXMgc29icmUgbyBjYXNvJyxcbiAgICBleGFtcGxlOlxuICAgICAgJ0ZhbcOtbGlhIGVtIHNpdHVhw6fDo28gZGUgZXh0cmVtYSB2dWxuZXJhYmlsaWRhZGUsIG5lY2Vzc2l0YSBhY29tcGFuaGFtZW50byBwc2ljb3Nzb2NpYWwuJyxcbiAgfSlcbiAgQElzT3B0aW9uYWwoKVxuICBvYnNlcnZhY29lc19hZGljaW9uYWlzPzogc3RyaW5nO1xufVxuXG4vKipcbiAqIERUTyBwYXJhIGF0dWFsaXphw6fDo28gZGUgZGFkb3MgZXNwZWPDrWZpY29zIGRvIGNpZGFkw6NvIHBhcmEgQWx1Z3VlbCBTb2NpYWxcbiAqL1xuZXhwb3J0IGNsYXNzIFVwZGF0ZURhZG9zQWx1Z3VlbFNvY2lhbER0byB7XG4gIEBBcGlQcm9wZXJ0eU9wdGlvbmFsKHtcbiAgICBkZXNjcmlwdGlvbjogJ1DDumJsaWNvIHByaW9yaXTDoXJpbyAoYXBlbmFzIDEgb3DDp8OjbyknLFxuICAgIGVudW06IFB1YmxpY29Qcmlvcml0YXJpb0FsdWd1ZWwsXG4gICAgZXhhbXBsZTogUHVibGljb1ByaW9yaXRhcmlvQWx1Z3VlbC5HRVNUQU5URVNfTlVUUklaRVMsXG4gIH0pXG4gIEBJc09wdGlvbmFsKClcbiAgQElzRW51bShQdWJsaWNvUHJpb3JpdGFyaW9BbHVndWVsLCB7XG4gICAgbWVzc2FnZTogJ1DDumJsaWNvIHByaW9yaXTDoXJpbyBpbnbDoWxpZG8nLFxuICB9KVxuICBwdWJsaWNvX3ByaW9yaXRhcmlvPzogUHVibGljb1ByaW9yaXRhcmlvQWx1Z3VlbDtcblxuICBAQXBpUHJvcGVydHlPcHRpb25hbCh7XG4gICAgZGVzY3JpcHRpb246ICdFc3BlY2lmaWNhw6fDtWVzIGFkaWNpb25haXMgKGF0w6kgMiBvcMOnw7VlcyknLFxuICAgIGVudW06IEVzcGVjaWZpY2FjYW9BbHVndWVsLFxuICAgIGlzQXJyYXk6IHRydWUsXG4gICAgZXhhbXBsZTogW0VzcGVjaWZpY2FjYW9BbHVndWVsLlZJVElNQV9WSU9MRU5DSUFdLFxuICB9KVxuICBASXNPcHRpb25hbCgpXG4gIEBJc0FycmF5KHsgbWVzc2FnZTogJ0VzcGVjaWZpY2HDp8O1ZXMgZGV2ZW0gc2VyIHVtIGFycmF5JyB9KVxuICBAQXJyYXlNYXhTaXplKDIsIHsgbWVzc2FnZTogJ03DoXhpbW8gZGUgMiBlc3BlY2lmaWNhw6fDtWVzIHBlcm1pdGlkYXMnIH0pXG4gIEBJc0VudW0oRXNwZWNpZmljYWNhb0FsdWd1ZWwsIHtcbiAgICBlYWNoOiB0cnVlLFxuICAgIG1lc3NhZ2U6ICdFc3BlY2lmaWNhw6fDo28gaW52w6FsaWRhJyxcbiAgfSlcbiAgZXNwZWNpZmljYWNvZXM/OiBFc3BlY2lmaWNhY2FvQWx1Z3VlbFtdO1xuXG4gIEBBcGlQcm9wZXJ0eU9wdGlvbmFsKHtcbiAgICBkZXNjcmlwdGlvbjogJ0Rlc2NyacOnw6NvIGRldGFsaGFkYSBkYSBzaXR1YcOnw6NvIGF0dWFsIGRhIG1vcmFkaWEnLFxuICAgIGV4YW1wbGU6ICdTaXR1YcOnw6NvIGRhIG1vcmFkaWEgZm9pIGF0dWFsaXphZGEgYXDDs3MgdmlzaXRhIHTDqWNuaWNhLicsXG4gIH0pXG4gIEBJc09wdGlvbmFsKClcbiAgQE1pbkxlbmd0aCgxMCwge1xuICAgIG1lc3NhZ2U6ICdTaXR1YcOnw6NvIGRhIG1vcmFkaWEgZGV2ZSB0ZXIgcGVsbyBtZW5vcyAxMCBjYXJhY3RlcmVzJyxcbiAgfSlcbiAgc2l0dWFjYW9fbW9yYWRpYV9hdHVhbD86IHN0cmluZztcblxuICBAQXBpUHJvcGVydHlPcHRpb25hbCh7XG4gICAgZGVzY3JpcHRpb246ICdJbmRpY2Egc2UgcG9zc3VpIGltw7N2ZWwgaW50ZXJkaXRhZG8nLFxuICAgIGV4YW1wbGU6IGZhbHNlLFxuICB9KVxuICBASXNPcHRpb25hbCgpXG4gIEBJc0Jvb2xlYW4oeyBtZXNzYWdlOiAnUG9zc3VpIGltw7N2ZWwgaW50ZXJkaXRhZG8gZGV2ZSBzZXIgdW0gYm9vbGVhbm8nIH0pXG4gIEBUcmFuc2Zvcm0oKHsgdmFsdWUgfSkgPT4ge1xuICAgIGlmICh0eXBlb2YgdmFsdWUgPT09ICdzdHJpbmcnKSB7XG4gICAgICByZXR1cm4gdmFsdWUudG9Mb3dlckNhc2UoKSA9PT0gJ3RydWUnO1xuICAgIH1cbiAgICByZXR1cm4gdmFsdWU7XG4gIH0pXG4gIHBvc3N1aV9pbW92ZWxfaW50ZXJkaXRhZG8/OiBib29sZWFuO1xuXG4gIEBBcGlQcm9wZXJ0eU9wdGlvbmFsKHtcbiAgICBkZXNjcmlwdGlvbjogJ0luZGljYSBzZSDDqSBjYXNvIGp1ZGljaWFsaXphZG8gcGVsYSBMZWkgTWFyaWEgZGEgUGVuaGEnLFxuICAgIGV4YW1wbGU6IGZhbHNlLFxuICB9KVxuICBASXNPcHRpb25hbCgpXG4gIEBJc0Jvb2xlYW4oe1xuICAgIG1lc3NhZ2U6ICdDYXNvIGp1ZGljaWFsaXphZG8gTGVpIE1hcmlhIGRhIFBlbmhhIGRldmUgc2VyIHVtIGJvb2xlYW5vJyxcbiAgfSlcbiAgQFRyYW5zZm9ybSgoeyB2YWx1ZSB9KSA9PiB7XG4gICAgaWYgKHR5cGVvZiB2YWx1ZSA9PT0gJ3N0cmluZycpIHtcbiAgICAgIHJldHVybiB2YWx1ZS50b0xvd2VyQ2FzZSgpID09PSAndHJ1ZSc7XG4gICAgfVxuICAgIHJldHVybiB2YWx1ZTtcbiAgfSlcbiAgY2Fzb19qdWRpY2lhbGl6YWRvX21hcmlhX3BlbmhhPzogYm9vbGVhbjtcblxuICBAQXBpUHJvcGVydHlPcHRpb25hbCh7XG4gICAgZGVzY3JpcHRpb246ICdPYnNlcnZhw6fDtWVzIGFkaWNpb25haXMgc29icmUgbyBjYXNvJyxcbiAgICBleGFtcGxlOiAnT2JzZXJ2YcOnw7VlcyBhdHVhbGl6YWRhcyBhcMOzcyByZWF2YWxpYcOnw6NvLicsXG4gIH0pXG4gIEBJc09wdGlvbmFsKClcbiAgb2JzZXJ2YWNvZXNfYWRpY2lvbmFpcz86IHN0cmluZztcbn1cbiJdLCJ2ZXJzaW9uIjozfQ==

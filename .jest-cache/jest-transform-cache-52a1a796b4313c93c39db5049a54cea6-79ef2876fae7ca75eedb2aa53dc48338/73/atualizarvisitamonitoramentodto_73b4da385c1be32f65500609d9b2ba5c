@@ -1,0 +1,64 @@
+a0b35c033bdcfb17ff46e0cbfa27301b
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var _a, _b;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.AtualizarVisitaMonitoramentoDto = void 0;
+const swagger_1 = require("@nestjs/swagger");
+const class_validator_1 = require("class-validator");
+const class_transformer_1 = require("class-transformer");
+const is_not_future_date_validator_1 = require("../validators/is-not-future-date.validator");
+const registrar_visita_monitoramento_dto_1 = require("./registrar-visita-monitoramento.dto");
+/**
+ * DTO para atualização parcial de visita de monitoramento
+ */
+class AtualizarVisitaMonitoramentoDto {
+    data_visita;
+    observacoes;
+    dados_adicionais;
+}
+exports.AtualizarVisitaMonitoramentoDto = AtualizarVisitaMonitoramentoDto;
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        description: 'Data da visita no formato ISO 8601 (YYYY-MM-DD)',
+        example: '2025-05-28',
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsISO8601)(),
+    (0, is_not_future_date_validator_1.IsNotFutureDate)({ message: 'A data da visita não pode ser futura' }),
+    (0, class_transformer_1.Type)(() => Date),
+    __metadata("design:type", typeof (_a = typeof Date !== "undefined" && Date) === "function" ? _a : Object)
+], AtualizarVisitaMonitoramentoDto.prototype, "data_visita", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        description: 'Observações sobre a visita de monitoramento',
+        example: 'Beneficiário em situação regular. Imóvel em boas condições.',
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'Observações devem ser um texto' }),
+    __metadata("design:type", String)
+], AtualizarVisitaMonitoramentoDto.prototype, "observacoes", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        description: 'Informações adicionais sobre a visita',
+        example: {
+            situacao_imovel: 'regular',
+            necessidade_reparos: false,
+            presenca_beneficiario: true,
+        },
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsObject)({ message: 'Dados adicionais devem ser um objeto válido' }),
+    (0, class_validator_1.ValidateNested)(),
+    (0, class_transformer_1.Type)(() => registrar_visita_monitoramento_dto_1.DadosAdicionaisVisita),
+    __metadata("design:type", typeof (_b = typeof registrar_visita_monitoramento_dto_1.DadosAdicionaisVisita !== "undefined" && registrar_visita_monitoramento_dto_1.DadosAdicionaisVisita) === "function" ? _b : Object)
+], AtualizarVisitaMonitoramentoDto.prototype, "dados_adicionais", void 0);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXHNvbGljaXRhY2FvXFxkdG9cXGF0dWFsaXphci12aXNpdGEtbW9uaXRvcmFtZW50by5kdG8udHMiLCJtYXBwaW5ncyI6Ijs7Ozs7Ozs7Ozs7OztBQUFBLDZDQUFtRTtBQUNuRSxxREFReUI7QUFDekIseURBQXlDO0FBQ3pDLDZGQUE2RTtBQUM3RSw2RkFBNkU7QUFFN0U7O0dBRUc7QUFDSCxNQUFhLCtCQUErQjtJQVMxQyxXQUFXLENBQVE7SUFRbkIsV0FBVyxDQUFVO0lBY3JCLGdCQUFnQixDQUF5QjtDQUMxQztBQWhDRCwwRUFnQ0M7QUF2QkM7SUFSQyxJQUFBLDZCQUFtQixFQUFDO1FBQ25CLFdBQVcsRUFBRSxpREFBaUQ7UUFDOUQsT0FBTyxFQUFFLFlBQVk7S0FDdEIsQ0FBQztJQUNELElBQUEsNEJBQVUsR0FBRTtJQUNaLElBQUEsMkJBQVMsR0FBRTtJQUNYLElBQUEsOENBQWUsRUFBQyxFQUFFLE9BQU8sRUFBRSxzQ0FBc0MsRUFBRSxDQUFDO0lBQ3BFLElBQUEsd0JBQUksRUFBQyxHQUFHLEVBQUUsQ0FBQyxJQUFJLENBQUM7a0RBQ0gsSUFBSSxvQkFBSixJQUFJO29FQUFDO0FBUW5CO0lBTkMsSUFBQSw2QkFBbUIsRUFBQztRQUNuQixXQUFXLEVBQUUsNkNBQTZDO1FBQzFELE9BQU8sRUFBRSw2REFBNkQ7S0FDdkUsQ0FBQztJQUNELElBQUEsNEJBQVUsR0FBRTtJQUNaLElBQUEsMEJBQVEsRUFBQyxFQUFFLE9BQU8sRUFBRSxnQ0FBZ0MsRUFBRSxDQUFDOztvRUFDbkM7QUFjckI7SUFaQyxJQUFBLDZCQUFtQixFQUFDO1FBQ25CLFdBQVcsRUFBRSx1Q0FBdUM7UUFDcEQsT0FBTyxFQUFFO1lBQ1AsZUFBZSxFQUFFLFNBQVM7WUFDMUIsbUJBQW1CLEVBQUUsS0FBSztZQUMxQixxQkFBcUIsRUFBRSxJQUFJO1NBQzVCO0tBQ0YsQ0FBQztJQUNELElBQUEsNEJBQVUsR0FBRTtJQUNaLElBQUEsMEJBQVEsRUFBQyxFQUFFLE9BQU8sRUFBRSw2Q0FBNkMsRUFBRSxDQUFDO0lBQ3BFLElBQUEsZ0NBQWMsR0FBRTtJQUNoQixJQUFBLHdCQUFJLEVBQUMsR0FBRyxFQUFFLENBQUMsMERBQXFCLENBQUM7a0RBQ2YsMERBQXFCLG9CQUFyQiwwREFBcUI7eUVBQUMiLCJuYW1lcyI6W10sInNvdXJjZXMiOlsiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXHNvbGljaXRhY2FvXFxkdG9cXGF0dWFsaXphci12aXNpdGEtbW9uaXRvcmFtZW50by5kdG8udHMiXSwic291cmNlc0NvbnRlbnQiOlsiaW1wb3J0IHsgQXBpUHJvcGVydHksIEFwaVByb3BlcnR5T3B0aW9uYWwgfSBmcm9tICdAbmVzdGpzL3N3YWdnZXInO1xuaW1wb3J0IHtcbiAgSXNOb3RFbXB0eSxcbiAgSXNTdHJpbmcsXG4gIElzVVVJRCxcbiAgSXNPcHRpb25hbCxcbiAgSXNJU084NjAxLFxuICBJc09iamVjdCxcbiAgVmFsaWRhdGVOZXN0ZWQsXG59IGZyb20gJ2NsYXNzLXZhbGlkYXRvcic7XG5pbXBvcnQgeyBUeXBlIH0gZnJvbSAnY2xhc3MtdHJhbnNmb3JtZXInO1xuaW1wb3J0IHsgSXNOb3RGdXR1cmVEYXRlIH0gZnJvbSAnLi4vdmFsaWRhdG9ycy9pcy1ub3QtZnV0dXJlLWRhdGUudmFsaWRhdG9yJztcbmltcG9ydCB7IERhZG9zQWRpY2lvbmFpc1Zpc2l0YSB9IGZyb20gJy4vcmVnaXN0cmFyLXZpc2l0YS1tb25pdG9yYW1lbnRvLmR0byc7XG5cbi8qKlxuICogRFRPIHBhcmEgYXR1YWxpemHDp8OjbyBwYXJjaWFsIGRlIHZpc2l0YSBkZSBtb25pdG9yYW1lbnRvXG4gKi9cbmV4cG9ydCBjbGFzcyBBdHVhbGl6YXJWaXNpdGFNb25pdG9yYW1lbnRvRHRvIHtcbiAgQEFwaVByb3BlcnR5T3B0aW9uYWwoe1xuICAgIGRlc2NyaXB0aW9uOiAnRGF0YSBkYSB2aXNpdGEgbm8gZm9ybWF0byBJU08gODYwMSAoWVlZWS1NTS1ERCknLFxuICAgIGV4YW1wbGU6ICcyMDI1LTA1LTI4JyxcbiAgfSlcbiAgQElzT3B0aW9uYWwoKVxuICBASXNJU084NjAxKClcbiAgQElzTm90RnV0dXJlRGF0ZSh7IG1lc3NhZ2U6ICdBIGRhdGEgZGEgdmlzaXRhIG7Do28gcG9kZSBzZXIgZnV0dXJhJyB9KVxuICBAVHlwZSgoKSA9PiBEYXRlKVxuICBkYXRhX3Zpc2l0YT86IERhdGU7XG5cbiAgQEFwaVByb3BlcnR5T3B0aW9uYWwoe1xuICAgIGRlc2NyaXB0aW9uOiAnT2JzZXJ2YcOnw7VlcyBzb2JyZSBhIHZpc2l0YSBkZSBtb25pdG9yYW1lbnRvJyxcbiAgICBleGFtcGxlOiAnQmVuZWZpY2nDoXJpbyBlbSBzaXR1YcOnw6NvIHJlZ3VsYXIuIEltw7N2ZWwgZW0gYm9hcyBjb25kacOnw7Vlcy4nLFxuICB9KVxuICBASXNPcHRpb25hbCgpXG4gIEBJc1N0cmluZyh7IG1lc3NhZ2U6ICdPYnNlcnZhw6fDtWVzIGRldmVtIHNlciB1bSB0ZXh0bycgfSlcbiAgb2JzZXJ2YWNvZXM/OiBzdHJpbmc7XG5cbiAgQEFwaVByb3BlcnR5T3B0aW9uYWwoe1xuICAgIGRlc2NyaXB0aW9uOiAnSW5mb3JtYcOnw7VlcyBhZGljaW9uYWlzIHNvYnJlIGEgdmlzaXRhJyxcbiAgICBleGFtcGxlOiB7XG4gICAgICBzaXR1YWNhb19pbW92ZWw6ICdyZWd1bGFyJyxcbiAgICAgIG5lY2Vzc2lkYWRlX3JlcGFyb3M6IGZhbHNlLFxuICAgICAgcHJlc2VuY2FfYmVuZWZpY2lhcmlvOiB0cnVlLFxuICAgIH0sXG4gIH0pXG4gIEBJc09wdGlvbmFsKClcbiAgQElzT2JqZWN0KHsgbWVzc2FnZTogJ0RhZG9zIGFkaWNpb25haXMgZGV2ZW0gc2VyIHVtIG9iamV0byB2w6FsaWRvJyB9KVxuICBAVmFsaWRhdGVOZXN0ZWQoKVxuICBAVHlwZSgoKSA9PiBEYWRvc0FkaWNpb25haXNWaXNpdGEpXG4gIGRhZG9zX2FkaWNpb25haXM/OiBEYWRvc0FkaWNpb25haXNWaXNpdGE7XG59XG4iXSwidmVyc2lvbiI6M30=

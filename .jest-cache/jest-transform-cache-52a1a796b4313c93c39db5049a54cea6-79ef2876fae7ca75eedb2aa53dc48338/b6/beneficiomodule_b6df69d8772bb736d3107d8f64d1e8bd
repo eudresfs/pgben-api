@@ -1,0 +1,125 @@
+73b7bc138b221e649d8ba0201df8bb85
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.BeneficioModule = void 0;
+const common_1 = require("@nestjs/common");
+const typeorm_1 = require("@nestjs/typeorm");
+const auth_module_1 = require("../../auth/auth.module");
+const solicitacao_module_1 = require("../solicitacao/solicitacao.module");
+// Entidades
+const entities_1 = require("../../entities");
+// Controladores
+const beneficio_controller_1 = require("./controllers/beneficio.controller");
+const campo_dinamico_controller_1 = require("./controllers/campo-dinamico.controller");
+const exportacao_controller_1 = require("../solicitacao/controllers/exportacao.controller");
+const dados_natalidade_controller_1 = require("./controllers/dados-natalidade.controller");
+const dados_aluguel_social_controller_1 = require("./controllers/dados-aluguel-social.controller");
+const dados_funeral_controller_1 = require("./controllers/dados-funeral.controller");
+const dados_cesta_basica_controller_1 = require("./controllers/dados-cesta-basica.controller");
+const dados_beneficio_controller_1 = require("./controllers/dados-beneficio.controller");
+const renovacao_automatica_controller_1 = require("./controllers/renovacao-automatica.controller");
+// Serviços
+const beneficio_service_1 = require("./services/beneficio.service");
+const campo_dinamico_service_1 = require("./services/campo-dinamico.service");
+const validacao_dinamica_service_1 = require("./services/validacao-dinamica.service");
+const exportacao_service_1 = require("../solicitacao/services/exportacao.service");
+const estrutura_entidade_service_1 = require("./services/estrutura-entidade.service");
+const dados_natalidade_service_1 = require("./services/dados-natalidade.service");
+const dados_aluguel_social_service_1 = require("./services/dados-aluguel-social.service");
+const dados_funeral_service_1 = require("./services/dados-funeral.service");
+const dados_cesta_basica_service_1 = require("./services/dados-cesta-basica.service");
+const dados_beneficio_factory_service_1 = require("./services/dados-beneficio-factory.service");
+const renovacao_automatica_service_1 = require("./services/renovacao-automatica.service");
+const notificacao_renovacao_service_1 = require("./services/notificacao-renovacao.service");
+// Repositórios
+const tipo_beneficio_repository_1 = require("./repositories/tipo-beneficio.repository");
+const tipo_beneficio_schema_repository_1 = require("./repositories/tipo-beneficio-schema.repository");
+const campo_dinamico_repository_1 = require("./repositories/campo-dinamico.repository");
+const dados_natalidade_repository_1 = require("./repositories/dados-natalidade.repository");
+const dados_aluguel_social_repository_1 = require("./repositories/dados-aluguel-social.repository");
+const dados_funeral_repository_1 = require("./repositories/dados-funeral.repository");
+const dados_cesta_basica_repository_1 = require("./repositories/dados-cesta-basica.repository");
+const configuracao_renovacao_repository_1 = require("./repositories/configuracao-renovacao.repository");
+/**
+ * Módulo de benefícios
+ *
+ * Responsável por gerenciar os benefícios do sistema, incluindo tipos de benefícios,
+ * requisitos documentais, fluxos de aprovação e campos dinâmicos.
+ */
+let BeneficioModule = class BeneficioModule {
+};
+exports.BeneficioModule = BeneficioModule;
+exports.BeneficioModule = BeneficioModule = __decorate([
+    (0, common_1.Module)({
+        imports: [
+            typeorm_1.TypeOrmModule.forFeature([
+                entities_1.TipoBeneficio,
+                entities_1.TipoBeneficioSchema,
+                entities_1.RequisitoDocumento,
+                entities_1.FluxoBeneficio,
+                entities_1.CampoDinamicoBeneficio,
+                entities_1.DadosNatalidade,
+                entities_1.DadosAluguelSocial,
+                entities_1.DadosFuneral,
+                entities_1.DadosCestaBasica,
+                entities_1.ConfiguracaoRenovacao,
+                entities_1.Solicitacao,
+            ]),
+            auth_module_1.AuthModule,
+            solicitacao_module_1.SolicitacaoModule,
+        ],
+        controllers: [
+            beneficio_controller_1.BeneficioController,
+            campo_dinamico_controller_1.CampoDinamicoController,
+            exportacao_controller_1.ExportacaoController,
+            dados_natalidade_controller_1.DadosNatalidadeController,
+            dados_aluguel_social_controller_1.DadosAluguelSocialController,
+            dados_funeral_controller_1.DadosFuneralController,
+            dados_cesta_basica_controller_1.DadosCestaBasicaController,
+            dados_beneficio_controller_1.DadosBeneficioController,
+            renovacao_automatica_controller_1.RenovacaoAutomaticaController,
+        ],
+        providers: [
+            beneficio_service_1.BeneficioService,
+            campo_dinamico_service_1.CampoDinamicoService,
+            validacao_dinamica_service_1.ValidacaoDinamicaService,
+            // Serviços de formulário dinâmico removidos
+            exportacao_service_1.ExportacaoService,
+            dados_natalidade_service_1.DadosNatalidadeService,
+            dados_aluguel_social_service_1.DadosAluguelSocialService,
+            dados_funeral_service_1.DadosFuneralService,
+            dados_cesta_basica_service_1.DadosCestaBasicaService,
+            dados_beneficio_factory_service_1.DadosBeneficioFactoryService,
+            estrutura_entidade_service_1.EstruturaEntidadeService,
+            renovacao_automatica_service_1.RenovacaoAutomaticaService,
+            notificacao_renovacao_service_1.NotificacaoRenovacaoService,
+            tipo_beneficio_repository_1.TipoBeneficioRepository,
+            tipo_beneficio_schema_repository_1.TipoBeneficioSchemaRepository,
+            campo_dinamico_repository_1.CampoDinamicoRepository,
+            dados_natalidade_repository_1.DadosNatalidadeRepository,
+            dados_aluguel_social_repository_1.DadosAluguelSocialRepository,
+            dados_funeral_repository_1.DadosFuneralRepository,
+            dados_cesta_basica_repository_1.DadosCestaBasicaRepository,
+            configuracao_renovacao_repository_1.ConfiguracaoRenovacaoRepository,
+        ],
+        exports: [
+            beneficio_service_1.BeneficioService,
+            campo_dinamico_service_1.CampoDinamicoService,
+            validacao_dinamica_service_1.ValidacaoDinamicaService,
+            dados_natalidade_service_1.DadosNatalidadeService,
+            dados_aluguel_social_service_1.DadosAluguelSocialService,
+            dados_funeral_service_1.DadosFuneralService,
+            dados_cesta_basica_service_1.DadosCestaBasicaService,
+            dados_beneficio_factory_service_1.DadosBeneficioFactoryService,
+            renovacao_automatica_service_1.RenovacaoAutomaticaService,
+            notificacao_renovacao_service_1.NotificacaoRenovacaoService,
+        ],
+    })
+], BeneficioModule);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXGJlbmVmaWNpb1xcYmVuZWZpY2lvLm1vZHVsZS50cyIsIm1hcHBpbmdzIjoiOzs7Ozs7Ozs7QUFBQSwyQ0FBd0M7QUFDeEMsNkNBQWdEO0FBQ2hELHdEQUFvRDtBQUNwRCwwRUFBc0U7QUFFdEUsWUFBWTtBQUNaLDZDQVl3QjtBQUV4QixnQkFBZ0I7QUFDaEIsNkVBQXlFO0FBQ3pFLHVGQUFrRjtBQUNsRiw0RkFBd0Y7QUFDeEYsMkZBQXNGO0FBQ3RGLG1HQUE2RjtBQUM3RixxRkFBZ0Y7QUFDaEYsK0ZBQXlGO0FBQ3pGLHlGQUFvRjtBQUNwRixtR0FBOEY7QUFFOUYsV0FBVztBQUNYLG9FQUFnRTtBQUNoRSw4RUFBeUU7QUFDekUsc0ZBQWlGO0FBQ2pGLG1GQUErRTtBQUMvRSxzRkFBaUY7QUFDakYsa0ZBQTZFO0FBQzdFLDBGQUFvRjtBQUNwRiw0RUFBdUU7QUFDdkUsc0ZBQWdGO0FBQ2hGLGdHQUEwRjtBQUMxRiwwRkFBcUY7QUFDckYsNEZBQXVGO0FBRXZGLGVBQWU7QUFDZix3RkFBbUY7QUFDbkYsc0dBQWdHO0FBQ2hHLHdGQUFtRjtBQUNuRiw0RkFBdUY7QUFDdkYsb0dBQThGO0FBQzlGLHNGQUFpRjtBQUNqRixnR0FBMEY7QUFDMUYsd0dBQW1HO0FBRW5HOzs7OztHQUtHO0FBa0VJLElBQU0sZUFBZSxHQUFyQixNQUFNLGVBQWU7Q0FBRyxDQUFBO0FBQWxCLDBDQUFlOzBCQUFmLGVBQWU7SUFqRTNCLElBQUEsZUFBTSxFQUFDO1FBQ04sT0FBTyxFQUFFO1lBQ1AsdUJBQWEsQ0FBQyxVQUFVLENBQUM7Z0JBQ3ZCLHdCQUFhO2dCQUNiLDhCQUFtQjtnQkFDbkIsNkJBQWtCO2dCQUNsQix5QkFBYztnQkFDZCxpQ0FBc0I7Z0JBQ3RCLDBCQUFlO2dCQUNmLDZCQUFrQjtnQkFDbEIsdUJBQVk7Z0JBQ1osMkJBQWdCO2dCQUNoQixnQ0FBcUI7Z0JBQ3JCLHNCQUFXO2FBQ1osQ0FBQztZQUNGLHdCQUFVO1lBQ1Ysc0NBQWlCO1NBQ2xCO1FBQ0QsV0FBVyxFQUFFO1lBQ1gsMENBQW1CO1lBQ25CLG1EQUF1QjtZQUN2Qiw0Q0FBb0I7WUFDcEIsdURBQXlCO1lBQ3pCLDhEQUE0QjtZQUM1QixpREFBc0I7WUFDdEIsMERBQTBCO1lBQzFCLHFEQUF3QjtZQUN4QiwrREFBNkI7U0FDOUI7UUFDRCxTQUFTLEVBQUU7WUFDVCxvQ0FBZ0I7WUFDaEIsNkNBQW9CO1lBQ3BCLHFEQUF3QjtZQUN4Qiw0Q0FBNEM7WUFDNUMsc0NBQWlCO1lBQ2pCLGlEQUFzQjtZQUN0Qix3REFBeUI7WUFDekIsMkNBQW1CO1lBQ25CLG9EQUF1QjtZQUN2Qiw4REFBNEI7WUFDNUIscURBQXdCO1lBQ3hCLHlEQUEwQjtZQUMxQiwyREFBMkI7WUFDM0IsbURBQXVCO1lBQ3ZCLGdFQUE2QjtZQUM3QixtREFBdUI7WUFDdkIsdURBQXlCO1lBQ3pCLDhEQUE0QjtZQUM1QixpREFBc0I7WUFDdEIsMERBQTBCO1lBQzFCLG1FQUErQjtTQUNoQztRQUNELE9BQU8sRUFBRTtZQUNQLG9DQUFnQjtZQUNoQiw2Q0FBb0I7WUFDcEIscURBQXdCO1lBQ3hCLGlEQUFzQjtZQUN0Qix3REFBeUI7WUFDekIsMkNBQW1CO1lBQ25CLG9EQUF1QjtZQUN2Qiw4REFBNEI7WUFDNUIseURBQTBCO1lBQzFCLDJEQUEyQjtTQUM1QjtLQUNGLENBQUM7R0FDVyxlQUFlLENBQUciLCJuYW1lcyI6W10sInNvdXJjZXMiOlsiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXGJlbmVmaWNpb1xcYmVuZWZpY2lvLm1vZHVsZS50cyJdLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQgeyBNb2R1bGUgfSBmcm9tICdAbmVzdGpzL2NvbW1vbic7XG5pbXBvcnQgeyBUeXBlT3JtTW9kdWxlIH0gZnJvbSAnQG5lc3Rqcy90eXBlb3JtJztcbmltcG9ydCB7IEF1dGhNb2R1bGUgfSBmcm9tICcuLi8uLi9hdXRoL2F1dGgubW9kdWxlJztcbmltcG9ydCB7IFNvbGljaXRhY2FvTW9kdWxlIH0gZnJvbSAnLi4vc29saWNpdGFjYW8vc29saWNpdGFjYW8ubW9kdWxlJztcblxuLy8gRW50aWRhZGVzXG5pbXBvcnQge1xuICBUaXBvQmVuZWZpY2lvLFxuICBUaXBvQmVuZWZpY2lvU2NoZW1hLFxuICBSZXF1aXNpdG9Eb2N1bWVudG8sXG4gIEZsdXhvQmVuZWZpY2lvLFxuICBDYW1wb0RpbmFtaWNvQmVuZWZpY2lvLFxuICBEYWRvc05hdGFsaWRhZGUsXG4gIERhZG9zQWx1Z3VlbFNvY2lhbCxcbiAgRGFkb3NGdW5lcmFsLFxuICBEYWRvc0Nlc3RhQmFzaWNhLFxuICBDb25maWd1cmFjYW9SZW5vdmFjYW8sXG4gIFNvbGljaXRhY2FvLFxufSBmcm9tICcuLi8uLi9lbnRpdGllcyc7XG5cbi8vIENvbnRyb2xhZG9yZXNcbmltcG9ydCB7IEJlbmVmaWNpb0NvbnRyb2xsZXIgfSBmcm9tICcuL2NvbnRyb2xsZXJzL2JlbmVmaWNpby5jb250cm9sbGVyJztcbmltcG9ydCB7IENhbXBvRGluYW1pY29Db250cm9sbGVyIH0gZnJvbSAnLi9jb250cm9sbGVycy9jYW1wby1kaW5hbWljby5jb250cm9sbGVyJztcbmltcG9ydCB7IEV4cG9ydGFjYW9Db250cm9sbGVyIH0gZnJvbSAnLi4vc29saWNpdGFjYW8vY29udHJvbGxlcnMvZXhwb3J0YWNhby5jb250cm9sbGVyJztcbmltcG9ydCB7IERhZG9zTmF0YWxpZGFkZUNvbnRyb2xsZXIgfSBmcm9tICcuL2NvbnRyb2xsZXJzL2RhZG9zLW5hdGFsaWRhZGUuY29udHJvbGxlcic7XG5pbXBvcnQgeyBEYWRvc0FsdWd1ZWxTb2NpYWxDb250cm9sbGVyIH0gZnJvbSAnLi9jb250cm9sbGVycy9kYWRvcy1hbHVndWVsLXNvY2lhbC5jb250cm9sbGVyJztcbmltcG9ydCB7IERhZG9zRnVuZXJhbENvbnRyb2xsZXIgfSBmcm9tICcuL2NvbnRyb2xsZXJzL2RhZG9zLWZ1bmVyYWwuY29udHJvbGxlcic7XG5pbXBvcnQgeyBEYWRvc0Nlc3RhQmFzaWNhQ29udHJvbGxlciB9IGZyb20gJy4vY29udHJvbGxlcnMvZGFkb3MtY2VzdGEtYmFzaWNhLmNvbnRyb2xsZXInO1xuaW1wb3J0IHsgRGFkb3NCZW5lZmljaW9Db250cm9sbGVyIH0gZnJvbSAnLi9jb250cm9sbGVycy9kYWRvcy1iZW5lZmljaW8uY29udHJvbGxlcic7XG5pbXBvcnQgeyBSZW5vdmFjYW9BdXRvbWF0aWNhQ29udHJvbGxlciB9IGZyb20gJy4vY29udHJvbGxlcnMvcmVub3ZhY2FvLWF1dG9tYXRpY2EuY29udHJvbGxlcic7XG5cbi8vIFNlcnZpw6dvc1xuaW1wb3J0IHsgQmVuZWZpY2lvU2VydmljZSB9IGZyb20gJy4vc2VydmljZXMvYmVuZWZpY2lvLnNlcnZpY2UnO1xuaW1wb3J0IHsgQ2FtcG9EaW5hbWljb1NlcnZpY2UgfSBmcm9tICcuL3NlcnZpY2VzL2NhbXBvLWRpbmFtaWNvLnNlcnZpY2UnO1xuaW1wb3J0IHsgVmFsaWRhY2FvRGluYW1pY2FTZXJ2aWNlIH0gZnJvbSAnLi9zZXJ2aWNlcy92YWxpZGFjYW8tZGluYW1pY2Euc2VydmljZSc7XG5pbXBvcnQgeyBFeHBvcnRhY2FvU2VydmljZSB9IGZyb20gJy4uL3NvbGljaXRhY2FvL3NlcnZpY2VzL2V4cG9ydGFjYW8uc2VydmljZSc7XG5pbXBvcnQgeyBFc3RydXR1cmFFbnRpZGFkZVNlcnZpY2UgfSBmcm9tICcuL3NlcnZpY2VzL2VzdHJ1dHVyYS1lbnRpZGFkZS5zZXJ2aWNlJztcbmltcG9ydCB7IERhZG9zTmF0YWxpZGFkZVNlcnZpY2UgfSBmcm9tICcuL3NlcnZpY2VzL2RhZG9zLW5hdGFsaWRhZGUuc2VydmljZSc7XG5pbXBvcnQgeyBEYWRvc0FsdWd1ZWxTb2NpYWxTZXJ2aWNlIH0gZnJvbSAnLi9zZXJ2aWNlcy9kYWRvcy1hbHVndWVsLXNvY2lhbC5zZXJ2aWNlJztcbmltcG9ydCB7IERhZG9zRnVuZXJhbFNlcnZpY2UgfSBmcm9tICcuL3NlcnZpY2VzL2RhZG9zLWZ1bmVyYWwuc2VydmljZSc7XG5pbXBvcnQgeyBEYWRvc0Nlc3RhQmFzaWNhU2VydmljZSB9IGZyb20gJy4vc2VydmljZXMvZGFkb3MtY2VzdGEtYmFzaWNhLnNlcnZpY2UnO1xuaW1wb3J0IHsgRGFkb3NCZW5lZmljaW9GYWN0b3J5U2VydmljZSB9IGZyb20gJy4vc2VydmljZXMvZGFkb3MtYmVuZWZpY2lvLWZhY3Rvcnkuc2VydmljZSc7XG5pbXBvcnQgeyBSZW5vdmFjYW9BdXRvbWF0aWNhU2VydmljZSB9IGZyb20gJy4vc2VydmljZXMvcmVub3ZhY2FvLWF1dG9tYXRpY2Euc2VydmljZSc7XG5pbXBvcnQgeyBOb3RpZmljYWNhb1Jlbm92YWNhb1NlcnZpY2UgfSBmcm9tICcuL3NlcnZpY2VzL25vdGlmaWNhY2FvLXJlbm92YWNhby5zZXJ2aWNlJztcblxuLy8gUmVwb3NpdMOzcmlvc1xuaW1wb3J0IHsgVGlwb0JlbmVmaWNpb1JlcG9zaXRvcnkgfSBmcm9tICcuL3JlcG9zaXRvcmllcy90aXBvLWJlbmVmaWNpby5yZXBvc2l0b3J5JztcbmltcG9ydCB7IFRpcG9CZW5lZmljaW9TY2hlbWFSZXBvc2l0b3J5IH0gZnJvbSAnLi9yZXBvc2l0b3JpZXMvdGlwby1iZW5lZmljaW8tc2NoZW1hLnJlcG9zaXRvcnknO1xuaW1wb3J0IHsgQ2FtcG9EaW5hbWljb1JlcG9zaXRvcnkgfSBmcm9tICcuL3JlcG9zaXRvcmllcy9jYW1wby1kaW5hbWljby5yZXBvc2l0b3J5JztcbmltcG9ydCB7IERhZG9zTmF0YWxpZGFkZVJlcG9zaXRvcnkgfSBmcm9tICcuL3JlcG9zaXRvcmllcy9kYWRvcy1uYXRhbGlkYWRlLnJlcG9zaXRvcnknO1xuaW1wb3J0IHsgRGFkb3NBbHVndWVsU29jaWFsUmVwb3NpdG9yeSB9IGZyb20gJy4vcmVwb3NpdG9yaWVzL2RhZG9zLWFsdWd1ZWwtc29jaWFsLnJlcG9zaXRvcnknO1xuaW1wb3J0IHsgRGFkb3NGdW5lcmFsUmVwb3NpdG9yeSB9IGZyb20gJy4vcmVwb3NpdG9yaWVzL2RhZG9zLWZ1bmVyYWwucmVwb3NpdG9yeSc7XG5pbXBvcnQgeyBEYWRvc0Nlc3RhQmFzaWNhUmVwb3NpdG9yeSB9IGZyb20gJy4vcmVwb3NpdG9yaWVzL2RhZG9zLWNlc3RhLWJhc2ljYS5yZXBvc2l0b3J5JztcbmltcG9ydCB7IENvbmZpZ3VyYWNhb1Jlbm92YWNhb1JlcG9zaXRvcnkgfSBmcm9tICcuL3JlcG9zaXRvcmllcy9jb25maWd1cmFjYW8tcmVub3ZhY2FvLnJlcG9zaXRvcnknO1xuXG4vKipcbiAqIE3Ds2R1bG8gZGUgYmVuZWbDrWNpb3NcbiAqXG4gKiBSZXNwb25zw6F2ZWwgcG9yIGdlcmVuY2lhciBvcyBiZW5lZsOtY2lvcyBkbyBzaXN0ZW1hLCBpbmNsdWluZG8gdGlwb3MgZGUgYmVuZWbDrWNpb3MsXG4gKiByZXF1aXNpdG9zIGRvY3VtZW50YWlzLCBmbHV4b3MgZGUgYXByb3Zhw6fDo28gZSBjYW1wb3MgZGluw6JtaWNvcy5cbiAqL1xuQE1vZHVsZSh7XG4gIGltcG9ydHM6IFtcbiAgICBUeXBlT3JtTW9kdWxlLmZvckZlYXR1cmUoW1xuICAgICAgVGlwb0JlbmVmaWNpbyxcbiAgICAgIFRpcG9CZW5lZmljaW9TY2hlbWEsXG4gICAgICBSZXF1aXNpdG9Eb2N1bWVudG8sXG4gICAgICBGbHV4b0JlbmVmaWNpbyxcbiAgICAgIENhbXBvRGluYW1pY29CZW5lZmljaW8sXG4gICAgICBEYWRvc05hdGFsaWRhZGUsXG4gICAgICBEYWRvc0FsdWd1ZWxTb2NpYWwsXG4gICAgICBEYWRvc0Z1bmVyYWwsXG4gICAgICBEYWRvc0Nlc3RhQmFzaWNhLFxuICAgICAgQ29uZmlndXJhY2FvUmVub3ZhY2FvLFxuICAgICAgU29saWNpdGFjYW8sXG4gICAgXSksXG4gICAgQXV0aE1vZHVsZSxcbiAgICBTb2xpY2l0YWNhb01vZHVsZSxcbiAgXSxcbiAgY29udHJvbGxlcnM6IFtcbiAgICBCZW5lZmljaW9Db250cm9sbGVyLFxuICAgIENhbXBvRGluYW1pY29Db250cm9sbGVyLFxuICAgIEV4cG9ydGFjYW9Db250cm9sbGVyLFxuICAgIERhZG9zTmF0YWxpZGFkZUNvbnRyb2xsZXIsXG4gICAgRGFkb3NBbHVndWVsU29jaWFsQ29udHJvbGxlcixcbiAgICBEYWRvc0Z1bmVyYWxDb250cm9sbGVyLFxuICAgIERhZG9zQ2VzdGFCYXNpY2FDb250cm9sbGVyLFxuICAgIERhZG9zQmVuZWZpY2lvQ29udHJvbGxlcixcbiAgICBSZW5vdmFjYW9BdXRvbWF0aWNhQ29udHJvbGxlcixcbiAgXSxcbiAgcHJvdmlkZXJzOiBbXG4gICAgQmVuZWZpY2lvU2VydmljZSxcbiAgICBDYW1wb0RpbmFtaWNvU2VydmljZSxcbiAgICBWYWxpZGFjYW9EaW5hbWljYVNlcnZpY2UsXG4gICAgLy8gU2VydmnDp29zIGRlIGZvcm11bMOhcmlvIGRpbsOibWljbyByZW1vdmlkb3NcbiAgICBFeHBvcnRhY2FvU2VydmljZSxcbiAgICBEYWRvc05hdGFsaWRhZGVTZXJ2aWNlLFxuICAgIERhZG9zQWx1Z3VlbFNvY2lhbFNlcnZpY2UsXG4gICAgRGFkb3NGdW5lcmFsU2VydmljZSxcbiAgICBEYWRvc0Nlc3RhQmFzaWNhU2VydmljZSxcbiAgICBEYWRvc0JlbmVmaWNpb0ZhY3RvcnlTZXJ2aWNlLFxuICAgIEVzdHJ1dHVyYUVudGlkYWRlU2VydmljZSxcbiAgICBSZW5vdmFjYW9BdXRvbWF0aWNhU2VydmljZSxcbiAgICBOb3RpZmljYWNhb1Jlbm92YWNhb1NlcnZpY2UsXG4gICAgVGlwb0JlbmVmaWNpb1JlcG9zaXRvcnksXG4gICAgVGlwb0JlbmVmaWNpb1NjaGVtYVJlcG9zaXRvcnksXG4gICAgQ2FtcG9EaW5hbWljb1JlcG9zaXRvcnksXG4gICAgRGFkb3NOYXRhbGlkYWRlUmVwb3NpdG9yeSxcbiAgICBEYWRvc0FsdWd1ZWxTb2NpYWxSZXBvc2l0b3J5LFxuICAgIERhZG9zRnVuZXJhbFJlcG9zaXRvcnksXG4gICAgRGFkb3NDZXN0YUJhc2ljYVJlcG9zaXRvcnksXG4gICAgQ29uZmlndXJhY2FvUmVub3ZhY2FvUmVwb3NpdG9yeSxcbiAgXSxcbiAgZXhwb3J0czogW1xuICAgIEJlbmVmaWNpb1NlcnZpY2UsXG4gICAgQ2FtcG9EaW5hbWljb1NlcnZpY2UsXG4gICAgVmFsaWRhY2FvRGluYW1pY2FTZXJ2aWNlLFxuICAgIERhZG9zTmF0YWxpZGFkZVNlcnZpY2UsXG4gICAgRGFkb3NBbHVndWVsU29jaWFsU2VydmljZSxcbiAgICBEYWRvc0Z1bmVyYWxTZXJ2aWNlLFxuICAgIERhZG9zQ2VzdGFCYXNpY2FTZXJ2aWNlLFxuICAgIERhZG9zQmVuZWZpY2lvRmFjdG9yeVNlcnZpY2UsXG4gICAgUmVub3ZhY2FvQXV0b21hdGljYVNlcnZpY2UsXG4gICAgTm90aWZpY2FjYW9SZW5vdmFjYW9TZXJ2aWNlLFxuICBdLFxufSlcbmV4cG9ydCBjbGFzcyBCZW5lZmljaW9Nb2R1bGUge31cbiJdLCJ2ZXJzaW9uIjozfQ==

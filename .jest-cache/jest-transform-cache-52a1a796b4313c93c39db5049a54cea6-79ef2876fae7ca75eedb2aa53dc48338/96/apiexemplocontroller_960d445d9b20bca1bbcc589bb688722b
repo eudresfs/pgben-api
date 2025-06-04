@@ -1,0 +1,146 @@
+26381d695d95a4de755c1c940aaf313c
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var _a, _b;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.ApiExemploController = void 0;
+const common_1 = require("@nestjs/common");
+const swagger_1 = require("@nestjs/swagger");
+const integrador_auth_guard_1 = require("../guards/integrador-auth.guard");
+const escopos_decorator_1 = require("../decorators/escopos.decorator");
+const get_integrador_decorator_1 = require("../decorators/get-integrador.decorator");
+const integrador_entity_1 = require("../../../entities/integrador.entity");
+/**
+ * Controller de exemplo para demonstrar como proteger endpoints para acesso de integradores.
+ * Este controller pode ser usado como referência para implementar outros endpoints protegidos.
+ */
+let ApiExemploController = class ApiExemploController {
+    /**
+     * Endpoint de exemplo que requer escopo de leitura básico.
+     */
+    getDadosBasicos(integrador) {
+        // Usando o decorator @GetIntegrador para obter facilmente os dados do integrador
+        return {
+            message: 'Dados básicos disponíveis',
+            integrador: integrador.nome,
+            timestamp: new Date().toISOString(),
+            dados: {
+                exemplo: 'Estes são dados básicos de exemplo',
+                status: 'ativo',
+                identificacao: '12345',
+            },
+        };
+    }
+    /**
+     * Endpoint de exemplo que requer escopo de leitura avançado.
+     */
+    getDadosAvancados(integrador) {
+        return {
+            message: 'Dados avançados disponíveis',
+            integrador: integrador.nome,
+            timestamp: new Date().toISOString(),
+            dados: {
+                exemplo: 'Estes são dados avançados de exemplo',
+                detalhes: {
+                    tipo: 'detalhado',
+                    nivel: 'avançado',
+                    sensibilidade: 'média',
+                },
+                estatisticas: {
+                    total: 1250,
+                    processados: 1100,
+                    pendentes: 150,
+                },
+            },
+        };
+    }
+    /**
+     * Endpoint de exemplo que demonstra como tratar erros.
+     */
+    getErroExemplo() {
+        // Este é um exemplo de como retornar um erro
+        throw new common_1.HttpException({
+            status: common_1.HttpStatus.BAD_REQUEST,
+            error: 'Exemplo de erro',
+            message: 'Este é um exemplo de como os erros são formatados',
+            timestamp: new Date().toISOString(),
+            path: '/api/exemplo/erro-exemplo',
+        }, common_1.HttpStatus.BAD_REQUEST);
+    }
+};
+exports.ApiExemploController = ApiExemploController;
+__decorate([
+    (0, common_1.Get)('dados-basicos'),
+    (0, escopos_decorator_1.Escopos)('read:dados_basicos'),
+    (0, swagger_1.ApiOperation)({ summary: 'Obtém dados básicos (exemplo)' }),
+    (0, swagger_1.ApiResponse)({
+        status: 200,
+        description: 'Dados básicos retornados com sucesso',
+        schema: {
+            properties: {
+                message: { type: 'string' },
+                integrador: { type: 'string' },
+                timestamp: { type: 'string', format: 'date-time' },
+                dados: { type: 'object' },
+            },
+        },
+    }),
+    (0, swagger_1.ApiResponse)({ status: 401, description: 'Não autorizado' }),
+    (0, swagger_1.ApiResponse)({ status: 403, description: 'Permissão insuficiente' }),
+    __param(0, (0, get_integrador_decorator_1.GetIntegrador)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [typeof (_a = typeof integrador_entity_1.Integrador !== "undefined" && integrador_entity_1.Integrador) === "function" ? _a : Object]),
+    __metadata("design:returntype", void 0)
+], ApiExemploController.prototype, "getDadosBasicos", null);
+__decorate([
+    (0, common_1.Get)('dados-avancados'),
+    (0, escopos_decorator_1.Escopos)('read:dados_avancados'),
+    (0, swagger_1.ApiOperation)({ summary: 'Obtém dados avançados (exemplo)' }),
+    (0, swagger_1.ApiResponse)({
+        status: 200,
+        description: 'Dados avançados retornados com sucesso',
+        schema: {
+            properties: {
+                message: { type: 'string' },
+                integrador: { type: 'string' },
+                timestamp: { type: 'string', format: 'date-time' },
+                dados: { type: 'object' },
+            },
+        },
+    }),
+    (0, swagger_1.ApiResponse)({ status: 401, description: 'Não autorizado' }),
+    (0, swagger_1.ApiResponse)({ status: 403, description: 'Permissão insuficiente' }),
+    __param(0, (0, get_integrador_decorator_1.GetIntegrador)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [typeof (_b = typeof integrador_entity_1.Integrador !== "undefined" && integrador_entity_1.Integrador) === "function" ? _b : Object]),
+    __metadata("design:returntype", void 0)
+], ApiExemploController.prototype, "getDadosAvancados", null);
+__decorate([
+    (0, common_1.Get)('erro-exemplo'),
+    (0, escopos_decorator_1.Escopos)('read:dados_basicos'),
+    (0, swagger_1.ApiOperation)({ summary: 'Demonstração de tratamento de erro (exemplo)' }),
+    (0, swagger_1.ApiResponse)({ status: 400, description: 'Exemplo de erro' }),
+    (0, swagger_1.ApiResponse)({ status: 401, description: 'Não autorizado' }),
+    (0, swagger_1.ApiResponse)({ status: 403, description: 'Permissão insuficiente' }),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], ApiExemploController.prototype, "getErroExemplo", null);
+exports.ApiExemploController = ApiExemploController = __decorate([
+    (0, swagger_1.ApiTags)('api-exemplo'),
+    (0, common_1.Controller)('api/exemplo'),
+    (0, common_1.UseGuards)(integrador_auth_guard_1.IntegradorAuthGuard),
+    (0, swagger_1.ApiBearerAuth)()
+], ApiExemploController);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXGludGVncmFkb3JcXGNvbnRyb2xsZXJzXFxhcGktZXhlbXBsby5jb250cm9sbGVyLnRzIiwibWFwcGluZ3MiOiI7Ozs7Ozs7Ozs7Ozs7Ozs7QUFBQSwyQ0FNd0I7QUFDeEIsNkNBS3lCO0FBQ3pCLDJFQUFzRTtBQUN0RSx1RUFBMEQ7QUFDMUQscUZBQXVFO0FBQ3ZFLDJFQUFpRTtBQUVqRTs7O0dBR0c7QUFLSSxJQUFNLG9CQUFvQixHQUExQixNQUFNLG9CQUFvQjtJQUMvQjs7T0FFRztJQWtCSCxlQUFlLENBQWtCLFVBQXNCO1FBQ3JELGlGQUFpRjtRQUNqRixPQUFPO1lBQ0wsT0FBTyxFQUFFLDJCQUEyQjtZQUNwQyxVQUFVLEVBQUUsVUFBVSxDQUFDLElBQUk7WUFDM0IsU0FBUyxFQUFFLElBQUksSUFBSSxFQUFFLENBQUMsV0FBVyxFQUFFO1lBQ25DLEtBQUssRUFBRTtnQkFDTCxPQUFPLEVBQUUsb0NBQW9DO2dCQUM3QyxNQUFNLEVBQUUsT0FBTztnQkFDZixhQUFhLEVBQUUsT0FBTzthQUN2QjtTQUNGLENBQUM7SUFDSixDQUFDO0lBRUQ7O09BRUc7SUFrQkgsaUJBQWlCLENBQWtCLFVBQXNCO1FBQ3ZELE9BQU87WUFDTCxPQUFPLEVBQUUsNkJBQTZCO1lBQ3RDLFVBQVUsRUFBRSxVQUFVLENBQUMsSUFBSTtZQUMzQixTQUFTLEVBQUUsSUFBSSxJQUFJLEVBQUUsQ0FBQyxXQUFXLEVBQUU7WUFDbkMsS0FBSyxFQUFFO2dCQUNMLE9BQU8sRUFBRSxzQ0FBc0M7Z0JBQy9DLFFBQVEsRUFBRTtvQkFDUixJQUFJLEVBQUUsV0FBVztvQkFDakIsS0FBSyxFQUFFLFVBQVU7b0JBQ2pCLGFBQWEsRUFBRSxPQUFPO2lCQUN2QjtnQkFDRCxZQUFZLEVBQUU7b0JBQ1osS0FBSyxFQUFFLElBQUk7b0JBQ1gsV0FBVyxFQUFFLElBQUk7b0JBQ2pC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LENBQUM7SUFDNUQsSUFBQSxxQkFBVyxFQUFDLEVBQUUsTUFBTSxFQUFFLEdBQUcsRUFBRSxXQUFXLEVBQUUsZ0JBQWdCLEVBQUUsQ0FBQztJQUMzRCxJQUFBLHFCQUFXLEVBQUMsRUFBRSxNQUFNLEVBQUUsR0FBRyxFQUFFLFdBQVcsRUFBRSx3QkFBd0IsRUFBRSxDQUFDOzs7OzBEQWFuRTsrQkFqR1Usb0JBQW9CO0lBSmhDLElBQUEsaUJBQU8sRUFBQyxhQUFhLENBQUM7SUFDdEIsSUFBQSxtQkFBVSxFQUFDLGFBQWEsQ0FBQztJQUN6QixJQUFBLGtCQUFTLEVBQUMsMkNBQW1CLENBQUM7SUFDOUIsSUFBQSx1QkFBYSxHQUFFO0dBQ0gsb0JBQW9CLENBa0doQyIsIm5hbWVzIjpbXSwic291cmNlcyI6WyJDOlxcVXNlcnNcXGV1ZHJlXFxPbmVEcml2ZVxcRGVza3RvcFxcUHJvamV0b3NcXHBnYmVuXFxwZ2Jlbi1zZXJ2ZXJcXHNyY1xcbW9kdWxlc1xcaW50ZWdyYWRvclxcY29udHJvbGxlcnNcXGFwaS1leGVtcGxvLmNvbnRyb2xsZXIudHMiXSwic291cmNlc0NvbnRlbnQiOlsiaW1wb3J0IHtcbiAgQ29udHJvbGxlcixcbiAgR2V0LFxuICBVc2VHdWFyZHMsXG4gIEh0dHBFeGNlcHRpb24sXG4gIEh0dHBTdGF0dXMsXG59IGZyb20gJ0BuZXN0anMvY29tbW9uJztcbmltcG9ydCB7XG4gIEFwaVRhZ3MsXG4gIEFwaUJlYXJlckF1dGgsXG4gIEFwaU9wZXJhdGlvbixcbiAgQXBpUmVzcG9uc2UsXG59IGZyb20gJ0BuZXN0anMvc3dhZ2dlcic7XG5pbXBvcnQgeyBJbnRlZ3JhZG9yQXV0aEd1YXJkIH0gZnJvbSAnLi4vZ3VhcmRzL2ludGVncmFkb3ItYXV0aC5ndWFyZCc7XG5pbXBvcnQgeyBFc2NvcG9zIH0gZnJvbSAnLi4vZGVjb3JhdG9ycy9lc2NvcG9zLmRlY29yYXRvcic7XG5pbXBvcnQgeyBHZXRJbnRlZ3JhZG9yIH0gZnJvbSAnLi4vZGVjb3JhdG9ycy9nZXQtaW50ZWdyYWRvci5kZWNvcmF0b3InO1xuaW1wb3J0IHsgSW50ZWdyYWRvciB9IGZyb20gJy4uLy4uLy4uL2VudGl0aWVzL2ludGVncmFkb3IuZW50aXR5JztcblxuLyoqXG4gKiBDb250cm9sbGVyIGRlIGV4ZW1wbG8gcGFyYSBkZW1vbnN0cmFyIGNvbW8gcHJvdGVnZXIgZW5kcG9pbnRzIHBhcmEgYWNlc3NvIGRlIGludGVncmFkb3Jlcy5cbiAqIEVzdGUgY29udHJvbGxlciBwb2RlIHNlciB1c2FkbyBjb21vIHJlZmVyw6puY2lhIHBhcmEgaW1wbGVtZW50YXIgb3V0cm9zIGVuZHBvaW50cyBwcm90ZWdpZG9zLlxuICovXG5AQXBpVGFncygnYXBpLWV4ZW1wbG8nKVxuQENvbnRyb2xsZXIoJ2FwaS9leGVtcGxvJylcbkBVc2VHdWFyZHMoSW50ZWdyYWRvckF1dGhHdWFyZClcbkBBcGlCZWFyZXJBdXRoKClcbmV4cG9ydCBjbGFzcyBBcGlFeGVtcGxvQ29udHJvbGxlciB7XG4gIC8qKlxuICAgKiBFbmRwb2ludCBkZSBleGVtcGxvIHF1ZSByZXF1ZXIgZXNjb3BvIGRlIGxlaXR1cmEgYsOhc2ljby5cbiAgICovXG4gIEBHZXQoJ2RhZG9zLWJhc2ljb3MnKVxuICBARXNjb3BvcygncmVhZDpkYWRvc19iYXNpY29zJylcbiAgQEFwaU9wZXJhdGlvbih7IHN1bW1hcnk6ICdPYnTDqW0gZGFkb3MgYsOhc2ljb3MgKGV4ZW1wbG8pJyB9KVxuICBAQXBpUmVzcG9uc2Uoe1xuICAgIHN0YXR1czogMjAwLFxuICAgIGRlc2NyaXB0aW9uOiAnRGFkb3MgYsOhc2ljb3MgcmV0b3JuYWRvcyBjb20gc3VjZXNzbycsXG4gICAgc2NoZW1hOiB7XG4gICAgICBwcm9wZXJ0aWVzOiB7XG4gICAgICAgIG1lc3NhZ2U6IHsgdHlwZTogJ3N0cmluZycgfSxcbiAgICAgICAgaW50ZWdyYWRvcjogeyB0eXBlOiAnc3RyaW5nJyB9LFxuICAgICAgICB0aW1lc3RhbXA6IHsgdHlwZTogJ3N0cmluZycsIGZvcm1hdDogJ2RhdGUtdGltZScgfSxcbiAgICAgICAgZGFkb3M6IHsgdHlwZTogJ29iamVjdCcgfSxcbiAgICAgIH0sXG4gICAgfSxcbiAgfSlcbiAgQEFwaVJlc3BvbnNlKHsgc3RhdHVzOiA0MDEsIGRlc2NyaXB0aW9uOiAnTsOjbyBhdXRvcml6YWRvJyB9KVxuICBAQXBpUmVzcG9uc2UoeyBzdGF0dXM6IDQwMywgZGVzY3JpcHRpb246ICdQZXJtaXNzw6NvIGluc3VmaWNpZW50ZScgfSlcbiAgZ2V0RGFkb3NCYXNpY29zKEBHZXRJbnRlZ3JhZG9yKCkgaW50ZWdyYWRvcjogSW50ZWdyYWRvcikge1xuICAgIC8vIFVzYW5kbyBvIGRlY29yYXRvciBAR2V0SW50ZWdyYWRvciBwYXJhIG9idGVyIGZhY2lsbWVudGUgb3MgZGFkb3MgZG8gaW50ZWdyYWRvclxuICAgIHJldHVybiB7XG4gICAgICBtZXNzYWdlOiAnRGFkb3MgYsOhc2ljb3MgZGlzcG9uw612ZWlzJyxcbiAgICAgIGludGVncmFkb3I6IGludGVncmFkb3Iubm9tZSxcbiAgICAgIHRpbWVzdGFtcDogbmV3IERhdGUoKS50b0lTT1N0cmluZygpLFxuICAgICAgZGFkb3M6IHtcbiAgICAgICAgZXhlbXBsbzogJ0VzdGVzIHPDo28gZGFkb3MgYsOhc2ljb3MgZGUgZXhlbXBsbycsXG4gICAgICAgIHN0YXR1czogJ2F0aXZvJyxcbiAgICAgICAgaWRlbnRpZmljYWNhbzogJzEyMzQ1JyxcbiAgICAgIH0sXG4gICAgfTtcbiAgfVxuXG4gIC8qKlxuICAgKiBFbmRwb2ludCBkZSBleGVtcGxvIHF1ZSByZXF1ZXIgZXNjb3BvIGRlIGxlaXR1cmEgYXZhbsOnYWRvLlxuICAgKi9cbiAgQEdldCgnZGFkb3MtYXZhbmNhZG9zJylcbiAgQEVzY29wb3MoJ3JlYWQ6ZGFkb3NfYXZhbmNhZG9zJylcbiAgQEFwaU9wZXJhdGlvbih7IHN1bW1hcnk6ICdPYnTDqW0gZGFkb3MgYXZhbsOnYWRvcyAoZXhlbXBsbyknIH0pXG4gIEBBcGlSZXNwb25zZSh7XG4gICAgc3RhdHVzOiAyMDAsXG4gICAgZGVzY3JpcHRpb246ICdEYWRvcyBhdmFuw6dhZG9zIHJldG9ybmFkb3MgY29tIHN1Y2Vzc28nLFxuICAgIHNjaGVtYToge1xuICAgICAgcHJvcGVydGllczoge1xuICAgICAgICBtZXNzYWdlOiB7IHR5cGU6ICdzdHJpbmcnIH0sXG4gICAgICAgIGludGVncmFkb3I6IHsgdHlwZTogJ3N0cmluZycgfSxcbiAgICAgICAgdGltZXN0YW1wOiB7IHR5cGU6ICdzdHJpbmcnLCBmb3JtYXQ6ICdkYXRlLXRpbWUnIH0sXG4gICAgICAgIGRhZG9zOiB7IHR5cGU6ICdvYmplY3QnIH0sXG4gICAgICB9LFxuICAgIH0sXG4gIH0pXG4gIEBBcGlSZXNwb25zZSh7IHN0YXR1czogNDAxLCBkZXNjcmlwdGlvbjogJ07Do28gYXV0b3JpemFkbycgfSlcbiAgQEFwaVJlc3BvbnNlKHsgc3RhdHVzOiA0MDMsIGRlc2NyaXB0aW9uOiAnUGVybWlzc8OjbyBpbnN1ZmljaWVudGUnIH0pXG4gIGdldERhZG9zQXZhbmNhZG9zKEBHZXRJbnRlZ3JhZG9yKCkgaW50ZWdyYWRvcjogSW50ZWdyYWRvcikge1xuICAgIHJldHVybiB7XG4gICAgICBtZXNzYWdlOiAnRGFkb3MgYXZhbsOnYWRvcyBkaXNwb27DrXZlaXMnLFxuICAgICAgaW50ZWdyYWRvcjogaW50ZWdyYWRvci5ub21lLFxuICAgICAgdGltZXN0YW1wOiBuZXcgRGF0ZSgpLnRvSVNPU3RyaW5nKCksXG4gICAgICBkYWRvczoge1xuICAgICAgICBleGVtcGxvOiAnRXN0ZXMgc8OjbyBkYWRvcyBhdmFuw6dhZG9zIGRlIGV4ZW1wbG8nLFxuICAgICAgICBkZXRhbGhlczoge1xuICAgICAgICAgIHRpcG86ICdkZXRhbGhhZG8nLFxuICAgICAgICAgIG5pdmVsOiAnYXZhbsOnYWRvJyxcbiAgICAgICAgICBzZW5zaWJpbGlkYWRlOiAnbcOpZGlhJyxcbiAgICAgICAgfSxcbiAgICAgICAgZXN0YXRpc3RpY2FzOiB7XG4gICAgICAgICAgdG90YWw6IDEyNTAsXG4gICAgICAgICAgcHJvY2Vzc2Fkb3M6IDExMDAsXG4gICAgICAgICAgcGVuZGVudGVzOiAxNTAsXG4gICAgICAgIH0sXG4gICAgICB9LFxuICAgIH07XG4gIH1cblxuICAvKipcbiAgICogRW5kcG9pbnQgZGUgZXhlbXBsbyBxdWUgZGVtb25zdHJhIGNvbW8gdHJhdGFyIGVycm9zLlxuICAgKi9cbiAgQEdldCgnZXJyby1leGVtcGxvJylcbiAgQEVzY29wb3MoJ3JlYWQ6ZGFkb3NfYmFzaWNvcycpXG4gIEBBcGlPcGVyYXRpb24oeyBzdW1tYXJ5OiAnRGVtb25zdHJhw6fDo28gZGUgdHJhdGFtZW50byBkZSBlcnJvIChleGVtcGxvKScgfSlcbiAgQEFwaVJlc3BvbnNlKHsgc3RhdHVzOiA0MDAsIGRlc2NyaXB0aW9uOiAnRXhlbXBsbyBkZSBlcnJvJyB9KVxuICBAQXBpUmVzcG9uc2UoeyBzdGF0dXM6IDQwMSwgZGVzY3JpcHRpb246ICdOw6NvIGF1dG9yaXphZG8nIH0pXG4gIEBBcGlSZXNwb25zZSh7IHN0YXR1czogNDAzLCBkZXNjcmlwdGlvbjogJ1Blcm1pc3PDo28gaW5zdWZpY2llbnRlJyB9KVxuICBnZXRFcnJvRXhlbXBsbygpIHtcbiAgICAvLyBFc3RlIMOpIHVtIGV4ZW1wbG8gZGUgY29tbyByZXRvcm5hciB1bSBlcnJvXG4gICAgdGhyb3cgbmV3IEh0dHBFeGNlcHRpb24oXG4gICAgICB7XG4gICAgICAgIHN0YXR1czogSHR0cFN0YXR1cy5CQURfUkVRVUVTVCxcbiAgICAgICAgZXJyb3I6ICdFeGVtcGxvIGRlIGVycm8nLFxuICAgICAgICBtZXNzYWdlOiAnRXN0ZSDDqSB1bSBleGVtcGxvIGRlIGNvbW8gb3MgZXJyb3Mgc8OjbyBmb3JtYXRhZG9zJyxcbiAgICAgICAgdGltZXN0YW1wOiBuZXcgRGF0ZSgpLnRvSVNPU3RyaW5nKCksXG4gICAgICAgIHBhdGg6ICcvYXBpL2V4ZW1wbG8vZXJyby1leGVtcGxvJyxcbiAgICAgIH0sXG4gICAgICBIdHRwU3RhdHVzLkJBRF9SRVFVRVNULFxuICAgICk7XG4gIH1cbn1cbiJdLCJ2ZXJzaW9uIjozfQ==

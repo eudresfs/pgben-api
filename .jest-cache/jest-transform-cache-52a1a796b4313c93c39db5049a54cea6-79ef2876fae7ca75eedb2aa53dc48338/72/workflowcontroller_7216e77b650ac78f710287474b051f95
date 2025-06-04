@@ -1,0 +1,181 @@
+f69ea1f1443248ba9ecdbbe692e84820
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var _a, _b, _c, _d, _e, _f, _g;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.WorkflowController = void 0;
+const common_1 = require("@nestjs/common");
+const swagger_1 = require("@nestjs/swagger");
+const workflow_service_1 = require("../services/workflow.service");
+const workflow_update_dto_1 = require("../dtos/workflow/workflow-update.dto");
+const workflow_response_dto_1 = require("../dtos/workflow/workflow-response.dto");
+/**
+ * Controlador responsável pelas operações de workflows de benefícios
+ */
+let WorkflowController = class WorkflowController {
+    workflowService;
+    constructor(workflowService) {
+        this.workflowService = workflowService;
+    }
+    /**
+     * Busca todos os workflows de benefícios
+     * @returns Lista de workflows
+     */
+    async buscarTodos() {
+        return this.workflowService.buscarTodos();
+    }
+    /**
+     * Busca um workflow específico por tipo de benefício
+     * @param tipoBeneficioId ID do tipo de benefício
+     * @returns Workflow encontrado
+     */
+    async buscarPorTipoBeneficio(tipoBeneficioId) {
+        return this.workflowService.buscarPorTipoBeneficio(tipoBeneficioId);
+    }
+    /**
+     * Cria ou atualiza um workflow para um tipo de benefício
+     * @param tipoBeneficioId ID do tipo de benefício
+     * @param dto Dados para atualização
+     * @returns Workflow atualizado
+     */
+    async atualizarOuCriar(tipoBeneficioId, dto) {
+        return this.workflowService.atualizarOuCriar(tipoBeneficioId, dto);
+    }
+    /**
+     * Remove um workflow
+     * @param tipoBeneficioId ID do tipo de benefício
+     */
+    async remover(tipoBeneficioId) {
+        await this.workflowService.remover(tipoBeneficioId);
+    }
+    /**
+     * Ativa ou desativa um workflow
+     * @param tipoBeneficioId ID do tipo de benefício
+     * @param ativo Status de ativação
+     * @returns Workflow atualizado
+     */
+    async alterarStatus(tipoBeneficioId, { ativo }) {
+        return this.workflowService.alterarStatus(tipoBeneficioId, ativo);
+    }
+};
+exports.WorkflowController = WorkflowController;
+__decorate([
+    (0, common_1.Get)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Buscar todos os workflows de benefícios' }),
+    (0, swagger_1.ApiResponse)({
+        status: 200,
+        description: 'Lista de workflows encontrados',
+        type: [workflow_response_dto_1.WorkflowResponseDto],
+    }),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", typeof (_b = typeof Promise !== "undefined" && Promise) === "function" ? _b : Object)
+], WorkflowController.prototype, "buscarTodos", null);
+__decorate([
+    (0, common_1.Get)(':tipoBeneficioId'),
+    (0, swagger_1.ApiOperation)({ summary: 'Buscar workflow por tipo de benefício' }),
+    (0, swagger_1.ApiParam)({
+        name: 'tipoBeneficioId',
+        description: 'ID do tipo de benefício',
+        example: '550e8400-e29b-41d4-a716-446655440000',
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: 200,
+        description: 'Workflow encontrado',
+        type: workflow_response_dto_1.WorkflowResponseDto,
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: 404,
+        description: 'Workflow não encontrado',
+    }),
+    __param(0, (0, common_1.Param)('tipoBeneficioId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", typeof (_c = typeof Promise !== "undefined" && Promise) === "function" ? _c : Object)
+], WorkflowController.prototype, "buscarPorTipoBeneficio", null);
+__decorate([
+    (0, common_1.Put)(':tipoBeneficioId'),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Criar ou atualizar workflow para tipo de benefício',
+    }),
+    (0, swagger_1.ApiParam)({
+        name: 'tipoBeneficioId',
+        description: 'ID do tipo de benefício',
+        example: '550e8400-e29b-41d4-a716-446655440000',
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: 200,
+        description: 'Workflow criado/atualizado com sucesso',
+        type: workflow_response_dto_1.WorkflowResponseDto,
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: 400,
+        description: 'Dados inválidos ou workflow inconsistente',
+    }),
+    __param(0, (0, common_1.Param)('tipoBeneficioId')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, typeof (_d = typeof workflow_update_dto_1.WorkflowUpdateDto !== "undefined" && workflow_update_dto_1.WorkflowUpdateDto) === "function" ? _d : Object]),
+    __metadata("design:returntype", typeof (_e = typeof Promise !== "undefined" && Promise) === "function" ? _e : Object)
+], WorkflowController.prototype, "atualizarOuCriar", null);
+__decorate([
+    (0, common_1.Delete)(':tipoBeneficioId'),
+    (0, swagger_1.ApiOperation)({ summary: 'Remover workflow' }),
+    (0, swagger_1.ApiParam)({
+        name: 'tipoBeneficioId',
+        description: 'ID do tipo de benefício',
+        example: '550e8400-e29b-41d4-a716-446655440000',
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: 204,
+        description: 'Workflow removido com sucesso',
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: 404,
+        description: 'Workflow não encontrado',
+    }),
+    __param(0, (0, common_1.Param)('tipoBeneficioId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", typeof (_f = typeof Promise !== "undefined" && Promise) === "function" ? _f : Object)
+], WorkflowController.prototype, "remover", null);
+__decorate([
+    (0, common_1.Put)(':tipoBeneficioId/status'),
+    (0, swagger_1.ApiOperation)({ summary: 'Ativar ou desativar workflow' }),
+    (0, swagger_1.ApiParam)({
+        name: 'tipoBeneficioId',
+        description: 'ID do tipo de benefício',
+        example: '550e8400-e29b-41d4-a716-446655440000',
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: 200,
+        description: 'Status do workflow atualizado com sucesso',
+        type: workflow_response_dto_1.WorkflowResponseDto,
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: 404,
+        description: 'Workflow não encontrado',
+    }),
+    __param(0, (0, common_1.Param)('tipoBeneficioId')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", typeof (_g = typeof Promise !== "undefined" && Promise) === "function" ? _g : Object)
+], WorkflowController.prototype, "alterarStatus", null);
+exports.WorkflowController = WorkflowController = __decorate([
+    (0, swagger_1.ApiTags)('Configuração'),
+    (0, common_1.Controller)('configuracao/workflows'),
+    __metadata("design:paramtypes", [typeof (_a = typeof workflow_service_1.WorkflowService !== "undefined" && workflow_service_1.WorkflowService) === "function" ? _a : Object])
+], WorkflowController);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXGNvbmZpZ3VyYWNhb1xcY29udHJvbGxlcnNcXHdvcmtmbG93LmNvbnRyb2xsZXIudHMiLCJtYXBwaW5ncyI6Ijs7Ozs7Ozs7Ozs7Ozs7OztBQUFBLDJDQUEyRTtBQUMzRSw2Q0FBK0U7QUFDL0UsbUVBQStEO0FBQy9ELDhFQUF5RTtBQUN6RSxrRkFBNkU7QUFFN0U7O0dBRUc7QUFHSSxJQUFNLGtCQUFrQixHQUF4QixNQUFNLGtCQUFrQjtJQUNBO0lBQTdCLFlBQTZCLGVBQWdDO1FBQWhDLG9CQUFlLEdBQWYsZUFBZSxDQUFpQjtJQUFHLENBQUM7SUFFakU7OztPQUdHO0lBUUcsQUFBTixLQUFLLENBQUMsV0FBVztRQUNmLE9BQU8sSUFBSSxDQUFDLGVBQWUsQ0FBQyxXQUFXLEVBQUUsQ0FBQztJQUM1QyxDQUFDO0lBRUQ7Ozs7T0FJRztJQWlCRyxBQUFOLEtBQUssQ0FBQyxzQkFBc0IsQ0FDQSxlQUF1QjtRQUVqRCxPQUFPLElBQUksQ0FBQyxlQUFlLENBQUMsc0JBQXNCLENBQUMsZUFBZSxDQUFDLENBQUM7SUFDdEUsQ0FBQztJQUVEOzs7OztPQUtHO0lBbUJHLEFBQU4sS0FBSyxDQUFDLGdCQUFnQixDQUNNLGVBQXVCLEVBQ3pDLEdBQXNCO1FBRTlCLE9BQU8sSUFBSSxDQUFDLGVBQWUsQ0FBQyxnQkFBZ0IsQ0FBQyxlQUFlLEVBQUUsR0FBRyxDQUFDLENBQUM7SUFDckUsQ0FBQztJQUVEOzs7T0FHRztJQWdCRyxBQUFOLEtBQUssQ0FBQyxPQUFPLENBQ2UsZUFBdUI7UUFFakQsTUFBTSxJQUFJLENBQUMsZUFBZSxDQUFDLE9BQU8sQ0FBQyxlQUFlLENBQUMsQ0FBQztJQUN0RCxDQUFDO0lBRUQ7Ozs7O09BS0c7SUFpQkcsQUFBTixLQUFLLENBQUMsYUFBYSxDQUNTLGVBQXVCLEVBQ3pDLEVBQUUsS0FBSyxFQUFzQjtRQUVyQyxPQUFPLElBQUksQ0FBQyxlQUFlLENBQUMsYUFBYSxDQUFDLGVBQWUsRUFBRSxLQUFLLENBQUMsQ0FBQztJQUNwRSxDQUFDO0NBQ0YsQ0FBQTtBQWpJWSxnREFBa0I7QUFjdkI7SUFQTCxJQUFBLFlBQUcsR0FBRTtJQUNMLElBQUEsc0JBQVksRUFBQyxFQUFFLE9BQU8sRUFBRSx5Q0FBeUMsRUFBRSxDQUFDO0lBQ3BFLElBQUEscUJBQVcsRUFBQztRQUNYLE1BQU0sRUFBRSxHQUFHO1FBQ1gsV0FBVyxFQUFFLGdDQUFnQztRQUM3QyxJQUFJLEVBQUUsQ0FBQywyQ0FBbUIsQ0FBQztLQUM1QixDQUFDOzs7d0RBQ21CLE9BQU8sb0JBQVAsT0FBTztxREFFM0I7QUF1Qks7SUFoQkwsSUFBQSxZQUFHLEVBQUMsa0JBQWtCLENBQUM7SUFDdkIsSUFBQSxzQkFBWSxFQUFDLEVBQUUsT0FBTyxFQUFFLHVDQUF1QyxFQUFFLENBQUM7SUFDbEUsSUFBQSxrQkFBUSxFQUFDO1FBQ1IsSUFBSSxFQUFFLGlCQUFpQjtRQUN2QixXQUFXLEVBQUUseUJBQXlCO1FBQ3RDLE9BQU8sRUFBRSxzQ0FBc0M7S0FDaEQsQ0FBQztJQUNELElBQUEscUJBQVcsRUFBQztRQUNYLE1BQU0sRUFBRSxHQUFHO1FBQ1gsV0FBVyxFQUFFLHFCQUFxQjtRQUNsQyxJQUFJLEVBQUUsMkNBQW1CO0tBQzFCLENBQUM7SUFDRCxJQUFBLHFCQUFXLEVBQUM7UUFDWCxNQUFNLEVBQUUsR0FBRztRQUNYLFdBQVcsRUFBRSx5QkFBeUI7S0FDdkMsQ0FBQztJQUVDLFdBQUEsSUFBQSxjQUFLLEVBQUMsaUJBQWlCLENBQUMsQ0FBQTs7O3dEQUN4QixPQUFPLG9CQUFQLE9BQU87Z0VBRVQ7QUEwQks7SUFsQkwsSUFBQSxZQUFHLEVBQUMsa0JBQWtCLENBQUM7SUFDdkIsSUFBQSxzQkFBWSxFQUFDO1FBQ1osT0FBTyxFQUFFLG9EQUFvRDtLQUM5RCxDQUFDO0lBQ0QsSUFBQSxrQkFBUSxFQUFDO1FBQ1IsSUFBSSxFQUFFLGlCQUFpQjtRQUN2QixXQUFXLEVBQUUseUJBQXlCO1FBQ3RDLE9BQU8sRUFBRSxzQ0FBc0M7S0FDaEQsQ0FBQztJQUNELElBQUEscUJBQVcsRUFBQztRQUNYLE1BQU0sRUFBRSxHQUFHO1FBQ1gsV0FBVyxFQUFFLHdDQUF3QztRQUNyRCxJQUFJLEVBQUUsMkNBQW1CO0tBQzFCLENBQUM7SUFDRCxJQUFBLHFCQUFXLEVBQUM7UUFDWCxNQUFNLEVBQUUsR0FBRztRQUNYLFdBQVcsRUFBRSwyQ0FBMkM7S0FDekQsQ0FBQztJQUVDLFdBQUEsSUFBQSxjQUFLLEVBQUMsaUJBQWlCLENBQUMsQ0FBQTtJQUN4QixXQUFBLElBQUEsYUFBSSxHQUFFLENBQUE7O2lFQUFNLHVDQUFpQixvQkFBakIsdUNBQWlCO3dEQUM3QixPQUFPLG9CQUFQLE9BQU87MERBRVQ7QUFxQks7SUFmTCxJQUFBLGVBQU0sRUFBQyxrQkFBa0IsQ0FBQztJQUMxQixJQUFBLHNCQUFZLEVBQUMsRUFBRSxPQUFPLEVBQUUsa0JBQWtCLEVBQUUsQ0FBQztJQUM3QyxJQUFBLGtCQUFRLEVBQUM7UUFDUixJQUFJLEVBQUUsaUJBQWlCO1FBQ3ZCLFdBQVcsRUFBRSx5QkFBeUI7UUFDdEMsT0FBTyxFQUFFLHNDQUFzQztLQUNoRCxDQUFDO0lBQ0QsSUFBQSxxQkFBVyxFQUFDO1FBQ1gsTUFBTSxFQUFFLEdBQUc7UUFDWCxXQUFXLEVBQUUsK0JBQStCO0tBQzdDLENBQUM7SUFDRCxJQUFBLHFCQUFXLEVBQUM7UUFDWCxNQUFNLEVBQUUsR0FBRztRQUNYLFdBQVcsRUFBRSx5QkFBeUI7S0FDdkMsQ0FBQztJQUVDLFdBQUEsSUFBQSxjQUFLLEVBQUMsaUJBQWlCLENBQUMsQ0FBQTs7O3dEQUN4QixPQUFPLG9CQUFQLE9BQU87aURBRVQ7QUF3Qks7SUFoQkwsSUFBQSxZQUFHLEVBQUMseUJBQXlCLENBQUM7SUFDOUIsSUFBQSxzQkFBWSxFQUFDLEVBQUUsT0FBTyxFQUFFLDhCQUE4QixFQUFFLENBQUM7SUFDekQsSUFBQSxrQkFBUSxFQUFDO1FBQ1IsSUFBSSxFQUFFLGlCQUFpQjtRQUN2QixXQUFXLEVBQUUseUJBQXlCO1FBQ3RDLE9BQU8sRUFBRSxzQ0FBc0M7S0FDaEQsQ0FBQztJQUNELElBQUEscUJBQVcsRUFBQztRQUNYLE1BQU0sRUFBRSxHQUFHO1FBQ1gsV0FBVyxFQUFFLDJDQUEyQztRQUN4RCxJQUFJLEVBQUUsMkNBQW1CO0tBQzFCLENBQUM7SUFDRCxJQUFBLHFCQUFXLEVBQUM7UUFDWCxNQUFNLEVBQUUsR0FBRztRQUNYLFdBQVcsRUFBRSx5QkFBeUI7S0FDdkMsQ0FBQztJQUVDLFdBQUEsSUFBQSxjQUFLLEVBQUMsaUJBQWlCLENBQUMsQ0FBQTtJQUN4QixXQUFBLElBQUEsYUFBSSxHQUFFLENBQUE7Ozt3REFDTixPQUFPLG9CQUFQLE9BQU87dURBRVQ7NkJBaElVLGtCQUFrQjtJQUY5QixJQUFBLGlCQUFPLEVBQUMsY0FBYyxDQUFDO0lBQ3ZCLElBQUEsbUJBQVUsRUFBQyx3QkFBd0IsQ0FBQzt5REFFVyxrQ0FBZSxvQkFBZixrQ0FBZTtHQURsRCxrQkFBa0IsQ0FpSTlCIiwibmFtZXMiOltdLCJzb3VyY2VzIjpbIkM6XFxVc2Vyc1xcZXVkcmVcXE9uZURyaXZlXFxEZXNrdG9wXFxQcm9qZXRvc1xccGdiZW5cXHBnYmVuLXNlcnZlclxcc3JjXFxtb2R1bGVzXFxjb25maWd1cmFjYW9cXGNvbnRyb2xsZXJzXFx3b3JrZmxvdy5jb250cm9sbGVyLnRzIl0sInNvdXJjZXNDb250ZW50IjpbImltcG9ydCB7IENvbnRyb2xsZXIsIEdldCwgUHV0LCBEZWxldGUsIEJvZHksIFBhcmFtIH0gZnJvbSAnQG5lc3Rqcy9jb21tb24nO1xuaW1wb3J0IHsgQXBpVGFncywgQXBpT3BlcmF0aW9uLCBBcGlSZXNwb25zZSwgQXBpUGFyYW0gfSBmcm9tICdAbmVzdGpzL3N3YWdnZXInO1xuaW1wb3J0IHsgV29ya2Zsb3dTZXJ2aWNlIH0gZnJvbSAnLi4vc2VydmljZXMvd29ya2Zsb3cuc2VydmljZSc7XG5pbXBvcnQgeyBXb3JrZmxvd1VwZGF0ZUR0byB9IGZyb20gJy4uL2R0b3Mvd29ya2Zsb3cvd29ya2Zsb3ctdXBkYXRlLmR0byc7XG5pbXBvcnQgeyBXb3JrZmxvd1Jlc3BvbnNlRHRvIH0gZnJvbSAnLi4vZHRvcy93b3JrZmxvdy93b3JrZmxvdy1yZXNwb25zZS5kdG8nO1xuXG4vKipcbiAqIENvbnRyb2xhZG9yIHJlc3BvbnPDoXZlbCBwZWxhcyBvcGVyYcOnw7VlcyBkZSB3b3JrZmxvd3MgZGUgYmVuZWbDrWNpb3NcbiAqL1xuQEFwaVRhZ3MoJ0NvbmZpZ3VyYcOnw6NvJylcbkBDb250cm9sbGVyKCdjb25maWd1cmFjYW8vd29ya2Zsb3dzJylcbmV4cG9ydCBjbGFzcyBXb3JrZmxvd0NvbnRyb2xsZXIge1xuICBjb25zdHJ1Y3Rvcihwcml2YXRlIHJlYWRvbmx5IHdvcmtmbG93U2VydmljZTogV29ya2Zsb3dTZXJ2aWNlKSB7fVxuXG4gIC8qKlxuICAgKiBCdXNjYSB0b2RvcyBvcyB3b3JrZmxvd3MgZGUgYmVuZWbDrWNpb3NcbiAgICogQHJldHVybnMgTGlzdGEgZGUgd29ya2Zsb3dzXG4gICAqL1xuICBAR2V0KClcbiAgQEFwaU9wZXJhdGlvbih7IHN1bW1hcnk6ICdCdXNjYXIgdG9kb3Mgb3Mgd29ya2Zsb3dzIGRlIGJlbmVmw61jaW9zJyB9KVxuICBAQXBpUmVzcG9uc2Uoe1xuICAgIHN0YXR1czogMjAwLFxuICAgIGRlc2NyaXB0aW9uOiAnTGlzdGEgZGUgd29ya2Zsb3dzIGVuY29udHJhZG9zJyxcbiAgICB0eXBlOiBbV29ya2Zsb3dSZXNwb25zZUR0b10sXG4gIH0pXG4gIGFzeW5jIGJ1c2NhclRvZG9zKCk6IFByb21pc2U8V29ya2Zsb3dSZXNwb25zZUR0b1tdPiB7XG4gICAgcmV0dXJuIHRoaXMud29ya2Zsb3dTZXJ2aWNlLmJ1c2NhclRvZG9zKCk7XG4gIH1cblxuICAvKipcbiAgICogQnVzY2EgdW0gd29ya2Zsb3cgZXNwZWPDrWZpY28gcG9yIHRpcG8gZGUgYmVuZWbDrWNpb1xuICAgKiBAcGFyYW0gdGlwb0JlbmVmaWNpb0lkIElEIGRvIHRpcG8gZGUgYmVuZWbDrWNpb1xuICAgKiBAcmV0dXJucyBXb3JrZmxvdyBlbmNvbnRyYWRvXG4gICAqL1xuICBAR2V0KCc6dGlwb0JlbmVmaWNpb0lkJylcbiAgQEFwaU9wZXJhdGlvbih7IHN1bW1hcnk6ICdCdXNjYXIgd29ya2Zsb3cgcG9yIHRpcG8gZGUgYmVuZWbDrWNpbycgfSlcbiAgQEFwaVBhcmFtKHtcbiAgICBuYW1lOiAndGlwb0JlbmVmaWNpb0lkJyxcbiAgICBkZXNjcmlwdGlvbjogJ0lEIGRvIHRpcG8gZGUgYmVuZWbDrWNpbycsXG4gICAgZXhhbXBsZTogJzU1MGU4NDAwLWUyOWItNDFkNC1hNzE2LTQ0NjY1NTQ0MDAwMCcsXG4gIH0pXG4gIEBBcGlSZXNwb25zZSh7XG4gICAgc3RhdHVzOiAyMDAsXG4gICAgZGVzY3JpcHRpb246ICdXb3JrZmxvdyBlbmNvbnRyYWRvJyxcbiAgICB0eXBlOiBXb3JrZmxvd1Jlc3BvbnNlRHRvLFxuICB9KVxuICBAQXBpUmVzcG9uc2Uoe1xuICAgIHN0YXR1czogNDA0LFxuICAgIGRlc2NyaXB0aW9uOiAnV29ya2Zsb3cgbsOjbyBlbmNvbnRyYWRvJyxcbiAgfSlcbiAgYXN5bmMgYnVzY2FyUG9yVGlwb0JlbmVmaWNpbyhcbiAgICBAUGFyYW0oJ3RpcG9CZW5lZmljaW9JZCcpIHRpcG9CZW5lZmljaW9JZDogc3RyaW5nLFxuICApOiBQcm9taXNlPFdvcmtmbG93UmVzcG9uc2VEdG8+IHtcbiAgICByZXR1cm4gdGhpcy53b3JrZmxvd1NlcnZpY2UuYnVzY2FyUG9yVGlwb0JlbmVmaWNpbyh0aXBvQmVuZWZpY2lvSWQpO1xuICB9XG5cbiAgLyoqXG4gICAqIENyaWEgb3UgYXR1YWxpemEgdW0gd29ya2Zsb3cgcGFyYSB1bSB0aXBvIGRlIGJlbmVmw61jaW9cbiAgICogQHBhcmFtIHRpcG9CZW5lZmljaW9JZCBJRCBkbyB0aXBvIGRlIGJlbmVmw61jaW9cbiAgICogQHBhcmFtIGR0byBEYWRvcyBwYXJhIGF0dWFsaXphw6fDo29cbiAgICogQHJldHVybnMgV29ya2Zsb3cgYXR1YWxpemFkb1xuICAgKi9cbiAgQFB1dCgnOnRpcG9CZW5lZmljaW9JZCcpXG4gIEBBcGlPcGVyYXRpb24oe1xuICAgIHN1bW1hcnk6ICdDcmlhciBvdSBhdHVhbGl6YXIgd29ya2Zsb3cgcGFyYSB0aXBvIGRlIGJlbmVmw61jaW8nLFxuICB9KVxuICBAQXBpUGFyYW0oe1xuICAgIG5hbWU6ICd0aXBvQmVuZWZpY2lvSWQnLFxuICAgIGRlc2NyaXB0aW9uOiAnSUQgZG8gdGlwbyBkZSBiZW5lZsOtY2lvJyxcbiAgICBleGFtcGxlOiAnNTUwZTg0MDAtZTI5Yi00MWQ0LWE3MTYtNDQ2NjU1NDQwMDAwJyxcbiAgfSlcbiAgQEFwaVJlc3BvbnNlKHtcbiAgICBzdGF0dXM6IDIwMCxcbiAgICBkZXNjcmlwdGlvbjogJ1dvcmtmbG93IGNyaWFkby9hdHVhbGl6YWRvIGNvbSBzdWNlc3NvJyxcbiAgICB0eXBlOiBXb3JrZmxvd1Jlc3BvbnNlRHRvLFxuICB9KVxuICBAQXBpUmVzcG9uc2Uoe1xuICAgIHN0YXR1czogNDAwLFxuICAgIGRlc2NyaXB0aW9uOiAnRGFkb3MgaW52w6FsaWRvcyBvdSB3b3JrZmxvdyBpbmNvbnNpc3RlbnRlJyxcbiAgfSlcbiAgYXN5bmMgYXR1YWxpemFyT3VDcmlhcihcbiAgICBAUGFyYW0oJ3RpcG9CZW5lZmljaW9JZCcpIHRpcG9CZW5lZmljaW9JZDogc3RyaW5nLFxuICAgIEBCb2R5KCkgZHRvOiBXb3JrZmxvd1VwZGF0ZUR0byxcbiAgKTogUHJvbWlzZTxXb3JrZmxvd1Jlc3BvbnNlRHRvPiB7XG4gICAgcmV0dXJuIHRoaXMud29ya2Zsb3dTZXJ2aWNlLmF0dWFsaXphck91Q3JpYXIodGlwb0JlbmVmaWNpb0lkLCBkdG8pO1xuICB9XG5cbiAgLyoqXG4gICAqIFJlbW92ZSB1bSB3b3JrZmxvd1xuICAgKiBAcGFyYW0gdGlwb0JlbmVmaWNpb0lkIElEIGRvIHRpcG8gZGUgYmVuZWbDrWNpb1xuICAgKi9cbiAgQERlbGV0ZSgnOnRpcG9CZW5lZmljaW9JZCcpXG4gIEBBcGlPcGVyYXRpb24oeyBzdW1tYXJ5OiAnUmVtb3ZlciB3b3JrZmxvdycgfSlcbiAgQEFwaVBhcmFtKHtcbiAgICBuYW1lOiAndGlwb0JlbmVmaWNpb0lkJyxcbiAgICBkZXNjcmlwdGlvbjogJ0lEIGRvIHRpcG8gZGUgYmVuZWbDrWNpbycsXG4gICAgZXhhbXBsZTogJzU1MGU4NDAwLWUyOWItNDFkNC1hNzE2LTQ0NjY1NTQ0MDAwMCcsXG4gIH0pXG4gIEBBcGlSZXNwb25zZSh7XG4gICAgc3RhdHVzOiAyMDQsXG4gICAgZGVzY3JpcHRpb246ICdXb3JrZmxvdyByZW1vdmlkbyBjb20gc3VjZXNzbycsXG4gIH0pXG4gIEBBcGlSZXNwb25zZSh7XG4gICAgc3RhdHVzOiA0MDQsXG4gICAgZGVzY3JpcHRpb246ICdXb3JrZmxvdyBuw6NvIGVuY29udHJhZG8nLFxuICB9KVxuICBhc3luYyByZW1vdmVyKFxuICAgIEBQYXJhbSgndGlwb0JlbmVmaWNpb0lkJykgdGlwb0JlbmVmaWNpb0lkOiBzdHJpbmcsXG4gICk6IFByb21pc2U8dm9pZD4ge1xuICAgIGF3YWl0IHRoaXMud29ya2Zsb3dTZXJ2aWNlLnJlbW92ZXIodGlwb0JlbmVmaWNpb0lkKTtcbiAgfVxuXG4gIC8qKlxuICAgKiBBdGl2YSBvdSBkZXNhdGl2YSB1bSB3b3JrZmxvd1xuICAgKiBAcGFyYW0gdGlwb0JlbmVmaWNpb0lkIElEIGRvIHRpcG8gZGUgYmVuZWbDrWNpb1xuICAgKiBAcGFyYW0gYXRpdm8gU3RhdHVzIGRlIGF0aXZhw6fDo29cbiAgICogQHJldHVybnMgV29ya2Zsb3cgYXR1YWxpemFkb1xuICAgKi9cbiAgQFB1dCgnOnRpcG9CZW5lZmljaW9JZC9zdGF0dXMnKVxuICBAQXBpT3BlcmF0aW9uKHsgc3VtbWFyeTogJ0F0aXZhciBvdSBkZXNhdGl2YXIgd29ya2Zsb3cnIH0pXG4gIEBBcGlQYXJhbSh7XG4gICAgbmFtZTogJ3RpcG9CZW5lZmljaW9JZCcsXG4gICAgZGVzY3JpcHRpb246ICdJRCBkbyB0aXBvIGRlIGJlbmVmw61jaW8nLFxuICAgIGV4YW1wbGU6ICc1NTBlODQwMC1lMjliLTQxZDQtYTcxNi00NDY2NTU0NDAwMDAnLFxuICB9KVxuICBAQXBpUmVzcG9uc2Uoe1xuICAgIHN0YXR1czogMjAwLFxuICAgIGRlc2NyaXB0aW9uOiAnU3RhdHVzIGRvIHdvcmtmbG93IGF0dWFsaXphZG8gY29tIHN1Y2Vzc28nLFxuICAgIHR5cGU6IFdvcmtmbG93UmVzcG9uc2VEdG8sXG4gIH0pXG4gIEBBcGlSZXNwb25zZSh7XG4gICAgc3RhdHVzOiA0MDQsXG4gICAgZGVzY3JpcHRpb246ICdXb3JrZmxvdyBuw6NvIGVuY29udHJhZG8nLFxuICB9KVxuICBhc3luYyBhbHRlcmFyU3RhdHVzKFxuICAgIEBQYXJhbSgndGlwb0JlbmVmaWNpb0lkJykgdGlwb0JlbmVmaWNpb0lkOiBzdHJpbmcsXG4gICAgQEJvZHkoKSB7IGF0aXZvIH06IHsgYXRpdm86IGJvb2xlYW4gfSxcbiAgKTogUHJvbWlzZTxXb3JrZmxvd1Jlc3BvbnNlRHRvPiB7XG4gICAgcmV0dXJuIHRoaXMud29ya2Zsb3dTZXJ2aWNlLmFsdGVyYXJTdGF0dXModGlwb0JlbmVmaWNpb0lkLCBhdGl2byk7XG4gIH1cbn1cbiJdLCJ2ZXJzaW9uIjozfQ==

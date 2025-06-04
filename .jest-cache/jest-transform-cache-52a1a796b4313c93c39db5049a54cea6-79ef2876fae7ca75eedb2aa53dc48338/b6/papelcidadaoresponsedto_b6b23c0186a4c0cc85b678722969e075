@@ -1,0 +1,97 @@
+26c0571935942299af91b54d69904533
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var _a, _b, _c;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.PapelCidadaoResponseDto = void 0;
+const swagger_1 = require("@nestjs/swagger");
+const class_transformer_1 = require("class-transformer");
+const tipo_papel_enum_1 = require("../../../enums/tipo-papel.enum");
+/**
+ * DTO de resposta para papel de cidadão
+ *
+ * Contém os dados de um papel atribuído a um cidadão
+ */
+class PapelCidadaoResponseDto {
+    id;
+    cidadao_id;
+    tipo_papel;
+    metadados;
+    ativo;
+    created_at;
+    updated_at;
+}
+exports.PapelCidadaoResponseDto = PapelCidadaoResponseDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        example: '550e8400-e29b-41d4-a716-446655440000',
+        description: 'ID único do papel',
+    }),
+    (0, class_transformer_1.Expose)(),
+    __metadata("design:type", String)
+], PapelCidadaoResponseDto.prototype, "id", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        example: '550e8400-e29b-41d4-a716-446655440000',
+        description: 'ID do cidadão associado ao papel',
+    }),
+    (0, class_transformer_1.Expose)(),
+    __metadata("design:type", String)
+], PapelCidadaoResponseDto.prototype, "cidadao_id", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        enum: tipo_papel_enum_1.TipoPapel,
+        enumName: 'TipoPapel',
+        example: tipo_papel_enum_1.TipoPapel.BENEFICIARIO,
+        description: 'Tipo de papel do cidadão',
+    }),
+    (0, class_transformer_1.Expose)(),
+    __metadata("design:type", typeof (_a = typeof tipo_papel_enum_1.PaperType !== "undefined" && tipo_papel_enum_1.PaperType) === "function" ? _a : Object)
+], PapelCidadaoResponseDto.prototype, "tipo_papel", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        type: 'object',
+        additionalProperties: true,
+        example: {
+            grau_parentesco: 'Mãe',
+            documento_representacao: '12345',
+            data_validade_representacao: '2026-01-01',
+        },
+        description: 'Metadados específicos do papel (varia conforme o tipo)',
+    }),
+    (0, class_transformer_1.Expose)(),
+    __metadata("design:type", Object)
+], PapelCidadaoResponseDto.prototype, "metadados", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        example: true,
+        description: 'Indica se o papel está ativo',
+    }),
+    (0, class_transformer_1.Expose)(),
+    __metadata("design:type", Boolean)
+], PapelCidadaoResponseDto.prototype, "ativo", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        example: '2023-01-01T00:00:00.000Z',
+        description: 'Data de criação do papel',
+    }),
+    (0, class_transformer_1.Expose)(),
+    __metadata("design:type", typeof (_b = typeof Date !== "undefined" && Date) === "function" ? _b : Object)
+], PapelCidadaoResponseDto.prototype, "created_at", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        example: '2023-01-01T00:00:00.000Z',
+        description: 'Data da última atualização do papel',
+    }),
+    (0, class_transformer_1.Expose)(),
+    __metadata("design:type", typeof (_c = typeof Date !== "undefined" && Date) === "function" ? _c : Object)
+], PapelCidadaoResponseDto.prototype, "updated_at", void 0);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXGNpZGFkYW9cXGR0b1xccGFwZWwtY2lkYWRhby1yZXNwb25zZS5kdG8udHMiLCJtYXBwaW5ncyI6Ijs7Ozs7Ozs7Ozs7OztBQUFBLDZDQUFtRTtBQUNuRSx5REFBMkM7QUFDM0Msb0VBQXNFO0FBRXRFOzs7O0dBSUc7QUFDSCxNQUFhLHVCQUF1QjtJQU1sQyxFQUFFLENBQVM7SUFPWCxVQUFVLENBQVM7SUFTbkIsVUFBVSxDQUFZO0lBYXRCLFNBQVMsQ0FLUDtJQU9GLEtBQUssQ0FBVTtJQU9mLFVBQVUsQ0FBTztJQU9qQixVQUFVLENBQU87Q0FDbEI7QUE5REQsMERBOERDO0FBeERDO0lBTEMsSUFBQSxxQkFBVyxFQUFDO1FBQ1gsT0FBTyxFQUFFLHNDQUFzQztRQUMvQyxXQUFXLEVBQUUsbUJBQW1CO0tBQ2pDLENBQUM7SUFDRCxJQUFBLDBCQUFNLEdBQUU7O21EQUNFO0FBT1g7SUFMQyxJQUFBLHFCQUFXLEVBQUM7UUFDWCxPQUFPLEVBQUUsc0NBQXNDO1FBQy9DLFdBQVcsRUFBRSxrQ0FBa0M7S0FDaEQsQ0FBQztJQUNELElBQUEsMEJBQU0sR0FBRTs7MkRBQ1U7QUFTbkI7SUFQQyxJQUFBLHFCQUFXLEVBQUM7UUFDWCxJQUFJLEVBQUUsMkJBQVM7UUFDZixRQUFRLEVBQUUsV0FBVztRQUNyQixPQUFPLEVBQUUsMkJBQVMsQ0FBQyxZQUFZO1FBQy9CLFdBQVcsRUFBRSwwQkFBMEI7S0FDeEMsQ0FBQztJQUNELElBQUEsMEJBQU0sR0FBRTtrREFDRywyQkFBUyxvQkFBVCwyQkFBUzsyREFBQztBQWF0QjtJQVhDLElBQUEsNkJBQW1CLEVBQUM7UUFDbkIsSUFBSSxFQUFFLFFBQVE7UUFDZCxvQkFBb0IsRUFBRSxJQUFJO1FBQzFCLE9BQU8sRUFBRTtZQUNQLGVBQWUsRUFBRSxLQUFLO1lBQ3RCLHVCQUF1QixFQUFFLE9BQU87WUFDaEMsMkJBQTJCLEVBQUUsWUFBWTtTQUMxQztRQUNELFdBQVcsRUFBRSx3REFBd0Q7S0FDdEUsQ0FBQztJQUNELElBQUEsMEJBQU0sR0FBRTs7MERBTVA7QUFPRjtJQUxDLElBQUEscUJBQVcsRUFBQztRQUNYLE9BQU8sRUFBRSxJQUFJO1FBQ2IsV0FBVyxFQUFFLDhCQUE4QjtLQUM1QyxDQUFDO0lBQ0QsSUFBQSwwQkFBTSxHQUFFOztzREFDTTtBQU9mO0lBTEMsSUFBQSxxQkFBVyxFQUFDO1FBQ1gsT0FBTyxFQUFFLDBCQUEwQjtRQUNuQyxXQUFXLEVBQUUsMEJBQTBCO0tBQ3hDLENBQUM7SUFDRCxJQUFBLDBCQUFNLEdBQUU7a0RBQ0csSUFBSSxvQkFBSixJQUFJOzJEQUFDO0FBT2pCO0lBTEMsSUFBQSxxQkFBVyxFQUFDO1FBQ1gsT0FBTyxFQUFFLDBCQUEwQjtRQUNuQyxXQUFXLEVBQUUscUNBQXFDO0tBQ25ELENBQUM7SUFDRCxJQUFBLDBCQUFNLEdBQUU7a0RBQ0csSUFBSSxvQkFBSixJQUFJOzJEQUFDIiwibmFtZXMiOltdLCJzb3VyY2VzIjpbIkM6XFxVc2Vyc1xcZXVkcmVcXE9uZURyaXZlXFxEZXNrdG9wXFxQcm9qZXRvc1xccGdiZW5cXHBnYmVuLXNlcnZlclxcc3JjXFxtb2R1bGVzXFxjaWRhZGFvXFxkdG9cXHBhcGVsLWNpZGFkYW8tcmVzcG9uc2UuZHRvLnRzIl0sInNvdXJjZXNDb250ZW50IjpbImltcG9ydCB7IEFwaVByb3BlcnR5LCBBcGlQcm9wZXJ0eU9wdGlvbmFsIH0gZnJvbSAnQG5lc3Rqcy9zd2FnZ2VyJztcbmltcG9ydCB7IEV4cG9zZSB9IGZyb20gJ2NsYXNzLXRyYW5zZm9ybWVyJztcbmltcG9ydCB7IFRpcG9QYXBlbCwgUGFwZXJUeXBlIH0gZnJvbSAnLi4vLi4vLi4vZW51bXMvdGlwby1wYXBlbC5lbnVtJztcblxuLyoqXG4gKiBEVE8gZGUgcmVzcG9zdGEgcGFyYSBwYXBlbCBkZSBjaWRhZMOjb1xuICpcbiAqIENvbnTDqW0gb3MgZGFkb3MgZGUgdW0gcGFwZWwgYXRyaWJ1w61kbyBhIHVtIGNpZGFkw6NvXG4gKi9cbmV4cG9ydCBjbGFzcyBQYXBlbENpZGFkYW9SZXNwb25zZUR0byB7XG4gIEBBcGlQcm9wZXJ0eSh7XG4gICAgZXhhbXBsZTogJzU1MGU4NDAwLWUyOWItNDFkNC1hNzE2LTQ0NjY1NTQ0MDAwMCcsXG4gICAgZGVzY3JpcHRpb246ICdJRCDDum5pY28gZG8gcGFwZWwnLFxuICB9KVxuICBARXhwb3NlKClcbiAgaWQ6IHN0cmluZztcblxuICBAQXBpUHJvcGVydHkoe1xuICAgIGV4YW1wbGU6ICc1NTBlODQwMC1lMjliLTQxZDQtYTcxNi00NDY2NTU0NDAwMDAnLFxuICAgIGRlc2NyaXB0aW9uOiAnSUQgZG8gY2lkYWTDo28gYXNzb2NpYWRvIGFvIHBhcGVsJyxcbiAgfSlcbiAgQEV4cG9zZSgpXG4gIGNpZGFkYW9faWQ6IHN0cmluZztcblxuICBAQXBpUHJvcGVydHkoe1xuICAgIGVudW06IFRpcG9QYXBlbCxcbiAgICBlbnVtTmFtZTogJ1RpcG9QYXBlbCcsXG4gICAgZXhhbXBsZTogVGlwb1BhcGVsLkJFTkVGSUNJQVJJTyxcbiAgICBkZXNjcmlwdGlvbjogJ1RpcG8gZGUgcGFwZWwgZG8gY2lkYWTDo28nLFxuICB9KVxuICBARXhwb3NlKClcbiAgdGlwb19wYXBlbDogUGFwZXJUeXBlO1xuXG4gIEBBcGlQcm9wZXJ0eU9wdGlvbmFsKHtcbiAgICB0eXBlOiAnb2JqZWN0JyxcbiAgICBhZGRpdGlvbmFsUHJvcGVydGllczogdHJ1ZSxcbiAgICBleGFtcGxlOiB7XG4gICAgICBncmF1X3BhcmVudGVzY286ICdNw6NlJyxcbiAgICAgIGRvY3VtZW50b19yZXByZXNlbnRhY2FvOiAnMTIzNDUnLFxuICAgICAgZGF0YV92YWxpZGFkZV9yZXByZXNlbnRhY2FvOiAnMjAyNi0wMS0wMScsXG4gICAgfSxcbiAgICBkZXNjcmlwdGlvbjogJ01ldGFkYWRvcyBlc3BlY8OtZmljb3MgZG8gcGFwZWwgKHZhcmlhIGNvbmZvcm1lIG8gdGlwbyknLFxuICB9KVxuICBARXhwb3NlKClcbiAgbWV0YWRhZG9zPzoge1xuICAgIGdyYXVfcGFyZW50ZXNjbz86IHN0cmluZztcbiAgICBkb2N1bWVudG9fcmVwcmVzZW50YWNhbz86IHN0cmluZztcbiAgICBkYXRhX3ZhbGlkYWRlX3JlcHJlc2VudGFjYW8/OiBEYXRlO1xuICAgIFtrZXk6IHN0cmluZ106IGFueTtcbiAgfTtcblxuICBAQXBpUHJvcGVydHkoe1xuICAgIGV4YW1wbGU6IHRydWUsXG4gICAgZGVzY3JpcHRpb246ICdJbmRpY2Egc2UgbyBwYXBlbCBlc3TDoSBhdGl2bycsXG4gIH0pXG4gIEBFeHBvc2UoKVxuICBhdGl2bzogYm9vbGVhbjtcblxuICBAQXBpUHJvcGVydHkoe1xuICAgIGV4YW1wbGU6ICcyMDIzLTAxLTAxVDAwOjAwOjAwLjAwMFonLFxuICAgIGRlc2NyaXB0aW9uOiAnRGF0YSBkZSBjcmlhw6fDo28gZG8gcGFwZWwnLFxuICB9KVxuICBARXhwb3NlKClcbiAgY3JlYXRlZF9hdDogRGF0ZTtcblxuICBAQXBpUHJvcGVydHkoe1xuICAgIGV4YW1wbGU6ICcyMDIzLTAxLTAxVDAwOjAwOjAwLjAwMFonLFxuICAgIGRlc2NyaXB0aW9uOiAnRGF0YSBkYSDDumx0aW1hIGF0dWFsaXphw6fDo28gZG8gcGFwZWwnLFxuICB9KVxuICBARXhwb3NlKClcbiAgdXBkYXRlZF9hdDogRGF0ZTtcbn1cbiJdLCJ2ZXJzaW9uIjozfQ==

@@ -89,7 +89,7 @@ export class UsuarioAdapter {
 
     // Adiciona permissões se disponíveis
     if (permissions && permissions.length > 0) {
-      claims.permissions = permissions.map((p) => p.name);
+      claims.permissions = permissions.map((p) => p.nome);
     }
 
     // Adiciona escopos de permissões se disponíveis

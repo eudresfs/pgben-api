@@ -1,0 +1,19 @@
+34c8640ca431aa8b1807fa1825d83b5f
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.SituacaoTrabalhoEnum = void 0;
+var SituacaoTrabalhoEnum;
+(function (SituacaoTrabalhoEnum) {
+    SituacaoTrabalhoEnum["EMPREGADO"] = "empregado";
+    SituacaoTrabalhoEnum["DESEMPREGADO"] = "desempregado";
+    SituacaoTrabalhoEnum["EMPREGADO_FORMAL"] = "empregado_formal";
+    SituacaoTrabalhoEnum["EMPREGADO_INFORMAL"] = "empregado_informal";
+    SituacaoTrabalhoEnum["AUTONOMO"] = "autonomo";
+    SituacaoTrabalhoEnum["APOSENTADO"] = "aposentado";
+    SituacaoTrabalhoEnum["PENSIONISTA"] = "pensionista";
+    SituacaoTrabalhoEnum["BENEFICIARIO_BPC"] = "beneficiario_bpc";
+    SituacaoTrabalhoEnum["OUTRO"] = "outro";
+    SituacaoTrabalhoEnum["ESTUDANTE"] = "estudante";
+    SituacaoTrabalhoEnum["DO_LAR"] = "do_lar";
+})(SituacaoTrabalhoEnum || (exports.SituacaoTrabalhoEnum = SituacaoTrabalhoEnum = {}));
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXGVudW1zXFxzaXR1YWNhby10cmFiYWxoby5lbnVtLnRzIiwibWFwcGluZ3MiOiI7OztBQUFBLElBQVksb0JBWVg7QUFaRCxXQUFZLG9CQUFvQjtJQUM5QiwrQ0FBdUIsQ0FBQTtJQUN2QixxREFBNkIsQ0FBQTtJQUM3Qiw2REFBcUMsQ0FBQTtJQUNyQyxpRUFBeUMsQ0FBQTtJQUN6Qyw2Q0FBcUIsQ0FBQTtJQUNyQixpREFBeUIsQ0FBQTtJQUN6QixtREFBMkIsQ0FBQTtJQUMzQiw2REFBcUMsQ0FBQTtJQUNyQyx1Q0FBZSxDQUFBO0lBQ2YsK0NBQXVCLENBQUE7SUFDdkIseUNBQWlCLENBQUE7QUFDbkIsQ0FBQyxFQVpXLG9CQUFvQixvQ0FBcEIsb0JBQW9CLFFBWS9CIiwibmFtZXMiOltdLCJzb3VyY2VzIjpbIkM6XFxVc2Vyc1xcZXVkcmVcXE9uZURyaXZlXFxEZXNrdG9wXFxQcm9qZXRvc1xccGdiZW5cXHBnYmVuLXNlcnZlclxcc3JjXFxlbnVtc1xcc2l0dWFjYW8tdHJhYmFsaG8uZW51bS50cyJdLCJzb3VyY2VzQ29udGVudCI6WyJleHBvcnQgZW51bSBTaXR1YWNhb1RyYWJhbGhvRW51bSB7XG4gIEVNUFJFR0FETyA9ICdlbXByZWdhZG8nLFxuICBERVNFTVBSRUdBRE8gPSAnZGVzZW1wcmVnYWRvJyxcbiAgRU1QUkVHQURPX0ZPUk1BTCA9ICdlbXByZWdhZG9fZm9ybWFsJyxcbiAgRU1QUkVHQURPX0lORk9STUFMID0gJ2VtcHJlZ2Fkb19pbmZvcm1hbCcsXG4gIEFVVE9OT01PID0gJ2F1dG9ub21vJyxcbiAgQVBPU0VOVEFETyA9ICdhcG9zZW50YWRvJyxcbiAgUEVOU0lPTklTVEEgPSAncGVuc2lvbmlzdGEnLFxuICBCRU5FRklDSUFSSU9fQlBDID0gJ2JlbmVmaWNpYXJpb19icGMnLFxuICBPVVRSTyA9ICdvdXRybycsXG4gIEVTVFVEQU5URSA9ICdlc3R1ZGFudGUnLFxuICBET19MQVIgPSAnZG9fbGFyJyxcbn1cbiJdLCJ2ZXJzaW9uIjozfQ==

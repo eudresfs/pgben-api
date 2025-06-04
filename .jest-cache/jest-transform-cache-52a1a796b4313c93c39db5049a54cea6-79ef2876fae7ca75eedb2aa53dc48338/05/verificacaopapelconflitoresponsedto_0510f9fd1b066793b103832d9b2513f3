@@ -1,0 +1,132 @@
+4e0013740c72d205b158393387a3d4fb
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.RegraConflitoDto = exports.VerificacaoPapelConflitoResponseDto = exports.PapelConflitoDto = void 0;
+const swagger_1 = require("@nestjs/swagger");
+/**
+ * DTO para representar um papel conflitante na resposta
+ */
+class PapelConflitoDto {
+    papel_id;
+    nome_papel;
+    regra_conflito;
+}
+exports.PapelConflitoDto = PapelConflitoDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'ID do papel conflitante',
+        example: '123e4567-e89b-12d3-a456-426614174000',
+    }),
+    __metadata("design:type", String)
+], PapelConflitoDto.prototype, "papel_id", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Nome do papel conflitante',
+        example: 'Beneficiário',
+    }),
+    __metadata("design:type", String)
+], PapelConflitoDto.prototype, "nome_papel", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Descrição da regra de conflito',
+        example: 'Um cidadão não pode ser beneficiário e membro de composição familiar ao mesmo tempo',
+    }),
+    __metadata("design:type", String)
+], PapelConflitoDto.prototype, "regra_conflito", void 0);
+/**
+ * DTO para resposta de verificação de papéis conflitantes
+ *
+ * Este DTO é utilizado para retornar o resultado da verificação de conflitos
+ * entre papéis de um cidadão, garantindo a padronização das respostas da API.
+ */
+class VerificacaoPapelConflitoResponseDto {
+    possui_conflito;
+    papeis_conflitantes;
+}
+exports.VerificacaoPapelConflitoResponseDto = VerificacaoPapelConflitoResponseDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Indica se existe conflito entre os papéis',
+        example: true,
+    }),
+    __metadata("design:type", Boolean)
+], VerificacaoPapelConflitoResponseDto.prototype, "possui_conflito", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Lista de papéis conflitantes',
+        type: [PapelConflitoDto],
+    }),
+    __metadata("design:type", Array)
+], VerificacaoPapelConflitoResponseDto.prototype, "papeis_conflitantes", void 0);
+/**
+ * DTO para resposta da listagem de regras de conflito
+ */
+class RegraConflitoDto {
+    id;
+    papel_origem_id;
+    papel_origem_nome;
+    papel_destino_id;
+    papel_destino_nome;
+    descricao;
+    ativo;
+}
+exports.RegraConflitoDto = RegraConflitoDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'ID da regra de conflito',
+        example: '123e4567-e89b-12d3-a456-426614174000',
+    }),
+    __metadata("design:type", String)
+], RegraConflitoDto.prototype, "id", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'ID do papel de origem',
+        example: '123e4567-e89b-12d3-a456-426614174000',
+    }),
+    __metadata("design:type", String)
+], RegraConflitoDto.prototype, "papel_origem_id", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Nome do papel de origem',
+        example: 'Beneficiário',
+    }),
+    __metadata("design:type", String)
+], RegraConflitoDto.prototype, "papel_origem_nome", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'ID do papel de destino',
+        example: '123e4567-e89b-12d3-a456-426614174000',
+    }),
+    __metadata("design:type", String)
+], RegraConflitoDto.prototype, "papel_destino_id", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Nome do papel de destino',
+        example: 'Membro de Composição Familiar',
+    }),
+    __metadata("design:type", String)
+], RegraConflitoDto.prototype, "papel_destino_nome", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Descrição da regra de conflito',
+        example: 'Um cidadão não pode ser beneficiário e membro de composição familiar ao mesmo tempo',
+    }),
+    __metadata("design:type", String)
+], RegraConflitoDto.prototype, "descricao", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Indica se a regra está ativa',
+        example: true,
+    }),
+    __metadata("design:type", Boolean)
+], RegraConflitoDto.prototype, "ativo", void 0);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXGNpZGFkYW9cXGR0b1xcdmVyaWZpY2FjYW8tcGFwZWwtY29uZmxpdG8tcmVzcG9uc2UuZHRvLnRzIiwibWFwcGluZ3MiOiI7Ozs7Ozs7Ozs7OztBQUFBLDZDQUE4QztBQUU5Qzs7R0FFRztBQUNILE1BQWEsZ0JBQWdCO0lBSzNCLFFBQVEsQ0FBUztJQU1qQixVQUFVLENBQVM7SUFPbkIsY0FBYyxDQUFTO0NBQ3hCO0FBbkJELDRDQW1CQztBQWRDO0lBSkMsSUFBQSxxQkFBVyxFQUFDO1FBQ1gsV0FBVyxFQUFFLHlCQUF5QjtRQUN0QyxPQUFPLEVBQUUsc0NBQXNDO0tBQ2hELENBQUM7O2tEQUNlO0FBTWpCO0lBSkMsSUFBQSxxQkFBVyxFQUFDO1FBQ1gsV0FBVyxFQUFFLDJCQUEyQjtRQUN4QyxPQUFPLEVBQUUsY0FBYztLQUN4QixDQUFDOztvREFDaUI7QUFPbkI7SUFMQyxJQUFBLHFCQUFXLEVBQUM7UUFDWCxXQUFXLEVBQUUsZ0NBQWdDO1FBQzdDLE9BQU8sRUFDTCxxRkFBcUY7S0FDeEYsQ0FBQzs7d0RBQ3FCO0FBR3pCOzs7OztHQUtHO0FBQ0gsTUFBYSxtQ0FBbUM7SUFLOUMsZUFBZSxDQUFVO0lBTXpCLG1CQUFtQixDQUFxQjtDQUN6QztBQVpELGtGQVlDO0FBUEM7SUFKQyxJQUFBLHFCQUFXLEVBQUM7UUFDWCxXQUFXLEVBQUUsMkNBQTJDO1FBQ3hELE9BQU8sRUFBRSxJQUFJO0tBQ2QsQ0FBQzs7NEVBQ3VCO0FBTXpCO0lBSkMsSUFBQSxxQkFBVyxFQUFDO1FBQ1gsV0FBVyxFQUFFLDhCQUE4QjtRQUMzQyxJQUFJLEVBQUUsQ0FBQyxnQkFBZ0IsQ0FBQztLQUN6QixDQUFDOztnRkFDc0M7QUFHMUM7O0dBRUc7QUFDSCxNQUFhLGdCQUFnQjtJQUszQixFQUFFLENBQVM7SUFNWCxlQUFlLENBQVM7SUFNeEIsaUJBQWlCLENBQVM7SUFNMUIsZ0JBQWdCLENBQVM7SUFNekIsa0JBQWtCLENBQVM7SUFPM0IsU0FBUyxDQUFTO0lBTWxCLEtBQUssQ0FBVTtDQUNoQjtBQTNDRCw0Q0EyQ0M7QUF0Q0M7SUFKQyxJQUFBLHFCQUFXLEVBQUM7UUFDWCxXQUFXLEVBQUUseUJBQXlCO1FBQ3RDLE9BQU8sRUFBRSxzQ0FBc0M7S0FDaEQsQ0FBQzs7NENBQ1M7QUFNWDtJQUpDLElBQUEscUJBQVcsRUFBQztRQUNYLFdBQVcsRUFBRSx1QkFBdUI7UUFDcEMsT0FBTyxFQUFFLHNDQUFzQztLQUNoRCxDQUFDOzt5REFDc0I7QUFNeEI7SUFKQyxJQUFBLHFCQUFXLEVBQUM7UUFDWCxXQUFXLEVBQUUseUJBQXlCO1FBQ3RDLE9BQU8sRUFBRSxjQUFjO0tBQ3hCLENBQUM7OzJEQUN3QjtBQU0xQjtJQUpDLElBQUEscUJBQVcsRUFBQztRQUNYLFdBQVcsRUFBRSx3QkFBd0I7UUFDckMsT0FBTyxFQUFFLHNDQUFzQztLQUNoRCxDQUFDOzswREFDdUI7QUFNekI7SUFKQyxJQUFBLHFCQUFXLEVBQUM7UUFDWCxXQUFXLEVBQUUsMEJBQTBCO1FBQ3ZDLE9BQU8sRUFBRSwrQkFBK0I7S0FDekMsQ0FBQzs7NERBQ3lCO0FBTzNCO0lBTEMsSUFBQSxxQkFBVyxFQUFDO1FBQ1gsV0FBVyxFQUFFLGdDQUFnQztRQUM3QyxPQUFPLEVBQ0wscUZBQXFGO0tBQ3hGLENBQUM7O21EQUNnQjtBQU1sQjtJQUpDLElBQUEscUJBQVcsRUFBQztRQUNYLFdBQVcsRUFBRSw4QkFBOEI7UUFDM0MsT0FBTyxFQUFFLElBQUk7S0FDZCxDQUFDOzsrQ0FDYSIsIm5hbWVzIjpbXSwic291cmNlcyI6WyJDOlxcVXNlcnNcXGV1ZHJlXFxPbmVEcml2ZVxcRGVza3RvcFxcUHJvamV0b3NcXHBnYmVuXFxwZ2Jlbi1zZXJ2ZXJcXHNyY1xcbW9kdWxlc1xcY2lkYWRhb1xcZHRvXFx2ZXJpZmljYWNhby1wYXBlbC1jb25mbGl0by1yZXNwb25zZS5kdG8udHMiXSwic291cmNlc0NvbnRlbnQiOlsiaW1wb3J0IHsgQXBpUHJvcGVydHkgfSBmcm9tICdAbmVzdGpzL3N3YWdnZXInO1xuXG4vKipcbiAqIERUTyBwYXJhIHJlcHJlc2VudGFyIHVtIHBhcGVsIGNvbmZsaXRhbnRlIG5hIHJlc3Bvc3RhXG4gKi9cbmV4cG9ydCBjbGFzcyBQYXBlbENvbmZsaXRvRHRvIHtcbiAgQEFwaVByb3BlcnR5KHtcbiAgICBkZXNjcmlwdGlvbjogJ0lEIGRvIHBhcGVsIGNvbmZsaXRhbnRlJyxcbiAgICBleGFtcGxlOiAnMTIzZTQ1NjctZTg5Yi0xMmQzLWE0NTYtNDI2NjE0MTc0MDAwJyxcbiAgfSlcbiAgcGFwZWxfaWQ6IHN0cmluZztcblxuICBAQXBpUHJvcGVydHkoe1xuICAgIGRlc2NyaXB0aW9uOiAnTm9tZSBkbyBwYXBlbCBjb25mbGl0YW50ZScsXG4gICAgZXhhbXBsZTogJ0JlbmVmaWNpw6FyaW8nLFxuICB9KVxuICBub21lX3BhcGVsOiBzdHJpbmc7XG5cbiAgQEFwaVByb3BlcnR5KHtcbiAgICBkZXNjcmlwdGlvbjogJ0Rlc2NyacOnw6NvIGRhIHJlZ3JhIGRlIGNvbmZsaXRvJyxcbiAgICBleGFtcGxlOlxuICAgICAgJ1VtIGNpZGFkw6NvIG7Do28gcG9kZSBzZXIgYmVuZWZpY2nDoXJpbyBlIG1lbWJybyBkZSBjb21wb3Npw6fDo28gZmFtaWxpYXIgYW8gbWVzbW8gdGVtcG8nLFxuICB9KVxuICByZWdyYV9jb25mbGl0bzogc3RyaW5nO1xufVxuXG4vKipcbiAqIERUTyBwYXJhIHJlc3Bvc3RhIGRlIHZlcmlmaWNhw6fDo28gZGUgcGFww6lpcyBjb25mbGl0YW50ZXNcbiAqXG4gKiBFc3RlIERUTyDDqSB1dGlsaXphZG8gcGFyYSByZXRvcm5hciBvIHJlc3VsdGFkbyBkYSB2ZXJpZmljYcOnw6NvIGRlIGNvbmZsaXRvc1xuICogZW50cmUgcGFww6lpcyBkZSB1bSBjaWRhZMOjbywgZ2FyYW50aW5kbyBhIHBhZHJvbml6YcOnw6NvIGRhcyByZXNwb3N0YXMgZGEgQVBJLlxuICovXG5leHBvcnQgY2xhc3MgVmVyaWZpY2FjYW9QYXBlbENvbmZsaXRvUmVzcG9uc2VEdG8ge1xuICBAQXBpUHJvcGVydHkoe1xuICAgIGRlc2NyaXB0aW9uOiAnSW5kaWNhIHNlIGV4aXN0ZSBjb25mbGl0byBlbnRyZSBvcyBwYXDDqWlzJyxcbiAgICBleGFtcGxlOiB0cnVlLFxuICB9KVxuICBwb3NzdWlfY29uZmxpdG86IGJvb2xlYW47XG5cbiAgQEFwaVByb3BlcnR5KHtcbiAgICBkZXNjcmlwdGlvbjogJ0xpc3RhIGRlIHBhcMOpaXMgY29uZmxpdGFudGVzJyxcbiAgICB0eXBlOiBbUGFwZWxDb25mbGl0b0R0b10sXG4gIH0pXG4gIHBhcGVpc19jb25mbGl0YW50ZXM6IFBhcGVsQ29uZmxpdG9EdG9bXTtcbn1cblxuLyoqXG4gKiBEVE8gcGFyYSByZXNwb3N0YSBkYSBsaXN0YWdlbSBkZSByZWdyYXMgZGUgY29uZmxpdG9cbiAqL1xuZXhwb3J0IGNsYXNzIFJlZ3JhQ29uZmxpdG9EdG8ge1xuICBAQXBpUHJvcGVydHkoe1xuICAgIGRlc2NyaXB0aW9uOiAnSUQgZGEgcmVncmEgZGUgY29uZmxpdG8nLFxuICAgIGV4YW1wbGU6ICcxMjNlNDU2Ny1lODliLTEyZDMtYTQ1Ni00MjY2MTQxNzQwMDAnLFxuICB9KVxuICBpZDogc3RyaW5nO1xuXG4gIEBBcGlQcm9wZXJ0eSh7XG4gICAgZGVzY3JpcHRpb246ICdJRCBkbyBwYXBlbCBkZSBvcmlnZW0nLFxuICAgIGV4YW1wbGU6ICcxMjNlNDU2Ny1lODliLTEyZDMtYTQ1Ni00MjY2MTQxNzQwMDAnLFxuICB9KVxuICBwYXBlbF9vcmlnZW1faWQ6IHN0cmluZztcblxuICBAQXBpUHJvcGVydHkoe1xuICAgIGRlc2NyaXB0aW9uOiAnTm9tZSBkbyBwYXBlbCBkZSBvcmlnZW0nLFxuICAgIGV4YW1wbGU6ICdCZW5lZmljacOhcmlvJyxcbiAgfSlcbiAgcGFwZWxfb3JpZ2VtX25vbWU6IHN0cmluZztcblxuICBAQXBpUHJvcGVydHkoe1xuICAgIGRlc2NyaXB0aW9uOiAnSUQgZG8gcGFwZWwgZGUgZGVzdGlubycsXG4gICAgZXhhbXBsZTogJzEyM2U0NTY3LWU4OWItMTJkMy1hNDU2LTQyNjYxNDE3NDAwMCcsXG4gIH0pXG4gIHBhcGVsX2Rlc3Rpbm9faWQ6IHN0cmluZztcblxuICBAQXBpUHJvcGVydHkoe1xuICAgIGRlc2NyaXB0aW9uOiAnTm9tZSBkbyBwYXBlbCBkZSBkZXN0aW5vJyxcbiAgICBleGFtcGxlOiAnTWVtYnJvIGRlIENvbXBvc2nDp8OjbyBGYW1pbGlhcicsXG4gIH0pXG4gIHBhcGVsX2Rlc3Rpbm9fbm9tZTogc3RyaW5nO1xuXG4gIEBBcGlQcm9wZXJ0eSh7XG4gICAgZGVzY3JpcHRpb246ICdEZXNjcmnDp8OjbyBkYSByZWdyYSBkZSBjb25mbGl0bycsXG4gICAgZXhhbXBsZTpcbiAgICAgICdVbSBjaWRhZMOjbyBuw6NvIHBvZGUgc2VyIGJlbmVmaWNpw6FyaW8gZSBtZW1icm8gZGUgY29tcG9zacOnw6NvIGZhbWlsaWFyIGFvIG1lc21vIHRlbXBvJyxcbiAgfSlcbiAgZGVzY3JpY2FvOiBzdHJpbmc7XG5cbiAgQEFwaVByb3BlcnR5KHtcbiAgICBkZXNjcmlwdGlvbjogJ0luZGljYSBzZSBhIHJlZ3JhIGVzdMOhIGF0aXZhJyxcbiAgICBleGFtcGxlOiB0cnVlLFxuICB9KVxuICBhdGl2bzogYm9vbGVhbjtcbn1cbiJdLCJ2ZXJzaW9uIjozfQ==

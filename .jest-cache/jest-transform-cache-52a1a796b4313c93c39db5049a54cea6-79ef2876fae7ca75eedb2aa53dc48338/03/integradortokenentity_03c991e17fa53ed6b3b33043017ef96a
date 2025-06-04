@@ -1,0 +1,97 @@
+e7987faac1b4453c8578a31f20ab11b7
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var _a, _b, _c, _d, _e;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.IntegradorToken = void 0;
+const typeorm_1 = require("typeorm");
+const integrador_entity_1 = require("./integrador.entity");
+/**
+ * Entidade que representa um token de acesso para um integrador específico.
+ * Armazena informações sobre o token, seus escopos de permissão e status.
+ */
+let IntegradorToken = class IntegradorToken {
+    id;
+    integrador;
+    integradorId;
+    nome;
+    descricao;
+    // Armazenamos apenas o hash do token para segurança, nunca o token em si
+    tokenHash;
+    escopos;
+    // A coluna pode ser null para tokens sem expiração
+    dataExpiracao;
+    revogado;
+    dataRevogacao;
+    motivoRevogacao;
+    ultimoUso;
+    dataCriacao;
+};
+exports.IntegradorToken = IntegradorToken;
+__decorate([
+    (0, typeorm_1.PrimaryGeneratedColumn)('uuid'),
+    __metadata("design:type", String)
+], IntegradorToken.prototype, "id", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => integrador_entity_1.Integrador, (integrador) => integrador.tokens, {
+        nullable: false,
+    }),
+    (0, typeorm_1.JoinColumn)({ name: 'integrador_id' }),
+    __metadata("design:type", typeof (_a = typeof integrador_entity_1.Integrador !== "undefined" && integrador_entity_1.Integrador) === "function" ? _a : Object)
+], IntegradorToken.prototype, "integrador", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'integrador_id' }),
+    __metadata("design:type", String)
+], IntegradorToken.prototype, "integradorId", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ length: 100 }),
+    __metadata("design:type", String)
+], IntegradorToken.prototype, "nome", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ length: 500, nullable: true }),
+    __metadata("design:type", String)
+], IntegradorToken.prototype, "descricao", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ length: 64 }),
+    __metadata("design:type", String)
+], IntegradorToken.prototype, "tokenHash", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'simple-array', nullable: true }),
+    __metadata("design:type", Array)
+], IntegradorToken.prototype, "escopos", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'timestamptz', nullable: true }),
+    __metadata("design:type", typeof (_b = typeof Date !== "undefined" && Date) === "function" ? _b : Object)
+], IntegradorToken.prototype, "dataExpiracao", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ default: false }),
+    __metadata("design:type", Boolean)
+], IntegradorToken.prototype, "revogado", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'timestamptz', nullable: true }),
+    __metadata("design:type", typeof (_c = typeof Date !== "undefined" && Date) === "function" ? _c : Object)
+], IntegradorToken.prototype, "dataRevogacao", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", String)
+], IntegradorToken.prototype, "motivoRevogacao", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'timestamptz', nullable: true }),
+    __metadata("design:type", typeof (_d = typeof Date !== "undefined" && Date) === "function" ? _d : Object)
+], IntegradorToken.prototype, "ultimoUso", void 0);
+__decorate([
+    (0, typeorm_1.CreateDateColumn)({ type: 'timestamptz' }),
+    __metadata("design:type", typeof (_e = typeof Date !== "undefined" && Date) === "function" ? _e : Object)
+], IntegradorToken.prototype, "dataCriacao", void 0);
+exports.IntegradorToken = IntegradorToken = __decorate([
+    (0, typeorm_1.Entity)('integrador_tokens')
+], IntegradorToken);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXGVudGl0aWVzXFxpbnRlZ3JhZG9yLXRva2VuLmVudGl0eS50cyIsIm1hcHBpbmdzIjoiOzs7Ozs7Ozs7Ozs7O0FBQUEscUNBT2lCO0FBQ2pCLDJEQUFpRDtBQUVqRDs7O0dBR0c7QUFFSSxJQUFNLGVBQWUsR0FBckIsTUFBTSxlQUFlO0lBRTFCLEVBQUUsQ0FBUztJQU1YLFVBQVUsQ0FBYTtJQUd2QixZQUFZLENBQVM7SUFHckIsSUFBSSxDQUFTO0lBR2IsU0FBUyxDQUFTO0lBRWxCLHlFQUF5RTtJQUV6RSxTQUFTLENBQVM7SUFHbEIsT0FBTyxDQUFXO0lBRWxCLG1EQUFtRDtJQUVuRCxhQUFhLENBQU87SUFHcEIsUUFBUSxDQUFVO0lBR2xCLGFBQWEsQ0FBTztJQUdwQixlQUFlLENBQVM7SUFHeEIsU0FBUyxDQUFPO0lBR2hCLFdBQVcsQ0FBTztDQUNuQixDQUFBO0FBNUNZLDBDQUFlO0FBRTFCO0lBREMsSUFBQSxnQ0FBc0IsRUFBQyxNQUFNLENBQUM7OzJDQUNwQjtBQU1YO0lBSkMsSUFBQSxtQkFBUyxFQUFDLEdBQUcsRUFBRSxDQUFDLDhCQUFVLEVBQUUsQ0FBQyxVQUFVLEVBQUUsRUFBRSxDQUFDLFVBQVUsQ0FBQyxNQUFNLEVBQUU7UUFDOUQsUUFBUSxFQUFFLEtBQUs7S0FDaEIsQ0FBQztJQUNELElBQUEsb0JBQVUsRUFBQyxFQUFFLElBQUksRUFBRSxlQUFlLEVBQUUsQ0FBQztrREFDMUIsOEJBQVUsb0JBQVYsOEJBQVU7bURBQUM7QUFHdkI7SUFEQyxJQUFBLGdCQUFNLEVBQUMsRUFBRSxJQUFJLEVBQUUsZUFBZSxFQUFFLENBQUM7O3FEQUNiO0FBR3JCO0lBREMsSUFBQSxnQkFBTSxFQUFDLEVBQUUsTUFBTSxFQUFFLEdBQUcsRUFBRSxDQUFDOzs2Q0FDWDtBQUdiO0lBREMsSUFBQSxnQkFBTSxFQUFDLEVBQUUsTUFBTSxFQUFFLEdBQUcsRUFBRSxRQUFRLEVBQUUsSUFBSSxFQUFFLENBQUM7O2tEQUN0QjtBQUlsQjtJQURDLElBQUEsZ0JBQU0sRUFBQyxFQUFFLE1BQU0sRUFBRSxFQUFFLEVBQUUsQ0FBQzs7a0RBQ0w7QUFHbEI7SUFEQyxJQUFBLGdCQUFNLEVBQUMsRUFBRSxJQUFJLEVBQUUsY0FBYyxFQUFFLFFBQVEsRUFBRSxJQUFJLEVBQUUsQ0FBQzs7Z0RBQy9CO0FBSWxCO0lBREMsSUFBQSxnQkFBTSxFQUFDLEVBQUUsSUFBSSxFQUFFLGFBQWEsRUFBRSxRQUFRLEVBQUUsSUFBSSxFQUFFLENBQUM7a0RBQ2pDLElBQUksb0JBQUosSUFBSTtzREFBQztBQUdwQjtJQURDLElBQUEsZ0JBQU0sRUFBQyxFQUFFLE9BQU8sRUFBRSxLQUFLLEVBQUUsQ0FBQzs7aURBQ1Q7QUFHbEI7SUFEQyxJQUFBLGdCQUFNLEVBQUMsRUFBRSxJQUFJLEVBQUUsYUFBYSxFQUFFLFFBQVEsRUFBRSxJQUFJLEVBQUUsQ0FBQztrREFDakMsSUFBSSxvQkFBSixJQUFJO3NEQUFDO0FBR3BCO0lBREMsSUFBQSxnQkFBTSxFQUFDLEVBQUUsUUFBUSxFQUFFLElBQUksRUFBRSxDQUFDOzt3REFDSDtBQUd4QjtJQURDLElBQUEsZ0JBQU0sRUFBQyxFQUFFLElBQUksRUFBRSxhQUFhLEVBQUUsUUFBUSxFQUFFLElBQUksRUFBRSxDQUFDO2tEQUNyQyxJQUFJLG9CQUFKLElBQUk7a0RBQUM7QUFHaEI7SUFEQyxJQUFBLDBCQUFnQixFQUFDLEVBQUUsSUFBSSxFQUFFLGFBQWEsRUFBRSxDQUFDO2tEQUM3QixJQUFJLG9CQUFKLElBQUk7b0RBQUM7MEJBM0NQLGVBQWU7SUFEM0IsSUFBQSxnQkFBTSxFQUFDLG1CQUFtQixDQUFDO0dBQ2YsZUFBZSxDQTRDM0IiLCJuYW1lcyI6W10sInNvdXJjZXMiOlsiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXGVudGl0aWVzXFxpbnRlZ3JhZG9yLXRva2VuLmVudGl0eS50cyJdLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQge1xuICBFbnRpdHksXG4gIFByaW1hcnlHZW5lcmF0ZWRDb2x1bW4sXG4gIENvbHVtbixcbiAgTWFueVRvT25lLFxuICBKb2luQ29sdW1uLFxuICBDcmVhdGVEYXRlQ29sdW1uLFxufSBmcm9tICd0eXBlb3JtJztcbmltcG9ydCB7IEludGVncmFkb3IgfSBmcm9tICcuL2ludGVncmFkb3IuZW50aXR5JztcblxuLyoqXG4gKiBFbnRpZGFkZSBxdWUgcmVwcmVzZW50YSB1bSB0b2tlbiBkZSBhY2Vzc28gcGFyYSB1bSBpbnRlZ3JhZG9yIGVzcGVjw61maWNvLlxuICogQXJtYXplbmEgaW5mb3JtYcOnw7VlcyBzb2JyZSBvIHRva2VuLCBzZXVzIGVzY29wb3MgZGUgcGVybWlzc8OjbyBlIHN0YXR1cy5cbiAqL1xuQEVudGl0eSgnaW50ZWdyYWRvcl90b2tlbnMnKVxuZXhwb3J0IGNsYXNzIEludGVncmFkb3JUb2tlbiB7XG4gIEBQcmltYXJ5R2VuZXJhdGVkQ29sdW1uKCd1dWlkJylcbiAgaWQ6IHN0cmluZztcblxuICBATWFueVRvT25lKCgpID0+IEludGVncmFkb3IsIChpbnRlZ3JhZG9yKSA9PiBpbnRlZ3JhZG9yLnRva2Vucywge1xuICAgIG51bGxhYmxlOiBmYWxzZSxcbiAgfSlcbiAgQEpvaW5Db2x1bW4oeyBuYW1lOiAnaW50ZWdyYWRvcl9pZCcgfSlcbiAgaW50ZWdyYWRvcjogSW50ZWdyYWRvcjtcblxuICBAQ29sdW1uKHsgbmFtZTogJ2ludGVncmFkb3JfaWQnIH0pXG4gIGludGVncmFkb3JJZDogc3RyaW5nO1xuXG4gIEBDb2x1bW4oeyBsZW5ndGg6IDEwMCB9KVxuICBub21lOiBzdHJpbmc7XG5cbiAgQENvbHVtbih7IGxlbmd0aDogNTAwLCBudWxsYWJsZTogdHJ1ZSB9KVxuICBkZXNjcmljYW86IHN0cmluZztcblxuICAvLyBBcm1hemVuYW1vcyBhcGVuYXMgbyBoYXNoIGRvIHRva2VuIHBhcmEgc2VndXJhbsOnYSwgbnVuY2EgbyB0b2tlbiBlbSBzaVxuICBAQ29sdW1uKHsgbGVuZ3RoOiA2NCB9KVxuICB0b2tlbkhhc2g6IHN0cmluZztcblxuICBAQ29sdW1uKHsgdHlwZTogJ3NpbXBsZS1hcnJheScsIG51bGxhYmxlOiB0cnVlIH0pXG4gIGVzY29wb3M6IHN0cmluZ1tdO1xuXG4gIC8vIEEgY29sdW5hIHBvZGUgc2VyIG51bGwgcGFyYSB0b2tlbnMgc2VtIGV4cGlyYcOnw6NvXG4gIEBDb2x1bW4oeyB0eXBlOiAndGltZXN0YW1wdHonLCBudWxsYWJsZTogdHJ1ZSB9KVxuICBkYXRhRXhwaXJhY2FvOiBEYXRlO1xuXG4gIEBDb2x1bW4oeyBkZWZhdWx0OiBmYWxzZSB9KVxuICByZXZvZ2FkbzogYm9vbGVhbjtcblxuICBAQ29sdW1uKHsgdHlwZTogJ3RpbWVzdGFtcHR6JywgbnVsbGFibGU6IHRydWUgfSlcbiAgZGF0YVJldm9nYWNhbzogRGF0ZTtcblxuICBAQ29sdW1uKHsgbnVsbGFibGU6IHRydWUgfSlcbiAgbW90aXZvUmV2b2dhY2FvOiBzdHJpbmc7XG5cbiAgQENvbHVtbih7IHR5cGU6ICd0aW1lc3RhbXB0eicsIG51bGxhYmxlOiB0cnVlIH0pXG4gIHVsdGltb1VzbzogRGF0ZTtcblxuICBAQ3JlYXRlRGF0ZUNvbHVtbih7IHR5cGU6ICd0aW1lc3RhbXB0eicgfSlcbiAgZGF0YUNyaWFjYW86IERhdGU7XG59XG4iXSwidmVyc2lvbiI6M30=

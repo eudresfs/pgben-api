@@ -1,0 +1,167 @@
+91aebfec5aab0dbc0bf228ec28c7d638
+"use strict";
+// Arquivo de índice para todas as entidades do sistema
+// Este arquivo centraliza as exportações de todas as entidades para facilitar as importações
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.NotificacaoSistema = exports.Template = exports.NotificationTemplate = exports.Notificacao = exports.ProcessoJudicial = exports.DeterminacaoJudicial = exports.IntegradorToken = exports.Integrador = exports.RecursoHistorico = exports.LogAuditoria = exports.HistoricoSolicitacao = exports.HistoricoConversaoPapel = exports.CategoriaLog = exports.RequisitoDocumento = exports.Documento = exports.Parametro = exports.ConfiguracaoRenovacao = exports.ConfiguracaoNotificacao = exports.ConfiguracaoIntegracao = exports.SituacaoMoradia = exports.PapelCidadao = exports.InfoBancaria = exports.DadosSociais = exports.ComposicaoFamiliar = exports.Cidadao = exports.DadosCestaBasica = exports.DadosFuneral = exports.DadosAluguelSocial = exports.DadosNatalidade = exports.WorkflowBeneficio = exports.FluxoBeneficio = exports.DadosBeneficios = exports.TipoBeneficioSchema = exports.DadosSolicitacaoBeneficio = exports.CampoDinamicoBeneficio = exports.TipoBeneficio = exports.RegraAlerta = exports.RegistroMetrica = exports.MetricaSnapshot = exports.MetricaSistema = exports.MetricaSeguranca = exports.MetricaHttp = exports.MetricaDocumento = exports.GranularidadeTemporal = exports.MetricaDefinicao = exports.EstrategiaAmostragem = exports.TipoAgendamento = exports.MetricaConfiguracao = exports.Metrica = exports.AlertaMetrica = void 0;
+exports.ScopeType = exports.StatusSolicitacao = exports.Solicitacao = exports.Unidade = exports.SetorUnidade = exports.Setor = exports.Usuario = exports.TokenRevogado = exports.Role = exports.RegraConflitoPapel = exports.Recurso = exports.StatusPendencia = exports.Pendencia = exports.Pagamento = exports.ConfirmacaoRecebimento = exports.ComprovantePagamento = exports.Ocorrencia = exports.DemandaMotivo = exports.Notification = exports.TentativaEntrega = exports.StatusNotificacaoProcessamento = exports.TipoNotificacao = void 0;
+// Entidades de Alertas e Métricas
+var alerta_metrica_entity_1 = require("./alerta-metrica.entity");
+Object.defineProperty(exports, "AlertaMetrica", { enumerable: true, get: function () { return alerta_metrica_entity_1.AlertaMetrica; } });
+var metrica_entity_1 = require("./metrica.entity");
+Object.defineProperty(exports, "Metrica", { enumerable: true, get: function () { return metrica_entity_1.Metrica; } });
+var metrica_configuracao_entity_1 = require("./metrica-configuracao.entity");
+Object.defineProperty(exports, "MetricaConfiguracao", { enumerable: true, get: function () { return metrica_configuracao_entity_1.MetricaConfiguracao; } });
+Object.defineProperty(exports, "TipoAgendamento", { enumerable: true, get: function () { return metrica_configuracao_entity_1.TipoAgendamento; } });
+Object.defineProperty(exports, "EstrategiaAmostragem", { enumerable: true, get: function () { return metrica_configuracao_entity_1.EstrategiaAmostragem; } });
+var metrica_definicao_entity_1 = require("./metrica-definicao.entity");
+Object.defineProperty(exports, "MetricaDefinicao", { enumerable: true, get: function () { return metrica_definicao_entity_1.MetricaDefinicao; } });
+Object.defineProperty(exports, "GranularidadeTemporal", { enumerable: true, get: function () { return metrica_definicao_entity_1.GranularidadeTemporal; } });
+var metrica_documento_entity_1 = require("./metrica-documento.entity");
+Object.defineProperty(exports, "MetricaDocumento", { enumerable: true, get: function () { return metrica_documento_entity_1.MetricaDocumento; } });
+var metrica_http_entity_1 = require("./metrica-http.entity");
+Object.defineProperty(exports, "MetricaHttp", { enumerable: true, get: function () { return metrica_http_entity_1.MetricaHttp; } });
+var metrica_seguranca_entity_1 = require("./metrica-seguranca.entity");
+Object.defineProperty(exports, "MetricaSeguranca", { enumerable: true, get: function () { return metrica_seguranca_entity_1.MetricaSeguranca; } });
+var metrica_sistema_entity_1 = require("./metrica-sistema.entity");
+Object.defineProperty(exports, "MetricaSistema", { enumerable: true, get: function () { return metrica_sistema_entity_1.MetricaSistema; } });
+var metrica_snapshot_entity_1 = require("./metrica-snapshot.entity");
+Object.defineProperty(exports, "MetricaSnapshot", { enumerable: true, get: function () { return metrica_snapshot_entity_1.MetricaSnapshot; } });
+var registro_metrica_entity_1 = require("./registro-metrica.entity");
+Object.defineProperty(exports, "RegistroMetrica", { enumerable: true, get: function () { return registro_metrica_entity_1.RegistroMetrica; } });
+var regra_alerta_entity_1 = require("./regra-alerta.entity");
+Object.defineProperty(exports, "RegraAlerta", { enumerable: true, get: function () { return regra_alerta_entity_1.RegraAlerta; } });
+// Entidades de Benefícios
+var tipo_beneficio_entity_1 = require("./tipo-beneficio.entity");
+Object.defineProperty(exports, "TipoBeneficio", { enumerable: true, get: function () { return tipo_beneficio_entity_1.TipoBeneficio; } });
+var campo_dinamico_beneficio_entity_1 = require("./campo-dinamico-beneficio.entity");
+Object.defineProperty(exports, "CampoDinamicoBeneficio", { enumerable: true, get: function () { return campo_dinamico_beneficio_entity_1.CampoDinamicoBeneficio; } });
+var dados_beneficios_entity_1 = require("./dados-beneficios.entity");
+Object.defineProperty(exports, "DadosSolicitacaoBeneficio", { enumerable: true, get: function () { return dados_beneficios_entity_1.DadosSolicitacaoBeneficio; } });
+var tipo_beneficio_schema_entity_1 = require("./tipo-beneficio-schema.entity");
+Object.defineProperty(exports, "TipoBeneficioSchema", { enumerable: true, get: function () { return tipo_beneficio_schema_entity_1.TipoBeneficioSchema; } });
+// Alias para compatibilidade
+var dados_beneficios_entity_2 = require("./dados-beneficios.entity");
+Object.defineProperty(exports, "DadosBeneficios", { enumerable: true, get: function () { return dados_beneficios_entity_2.DadosSolicitacaoBeneficio; } });
+var fluxo_beneficio_entity_1 = require("./fluxo-beneficio.entity");
+Object.defineProperty(exports, "FluxoBeneficio", { enumerable: true, get: function () { return fluxo_beneficio_entity_1.FluxoBeneficio; } });
+var workflow_beneficio_entity_1 = require("./workflow-beneficio.entity");
+Object.defineProperty(exports, "WorkflowBeneficio", { enumerable: true, get: function () { return workflow_beneficio_entity_1.WorkflowBeneficio; } });
+// Entidades de Dados Específicos de Benefícios (dados do cidadão)
+var dados_natalidade_entity_1 = require("./dados-natalidade.entity");
+Object.defineProperty(exports, "DadosNatalidade", { enumerable: true, get: function () { return dados_natalidade_entity_1.DadosNatalidade; } });
+var dados_aluguel_social_entity_1 = require("./dados-aluguel-social.entity");
+Object.defineProperty(exports, "DadosAluguelSocial", { enumerable: true, get: function () { return dados_aluguel_social_entity_1.DadosAluguelSocial; } });
+var dados_funeral_entity_1 = require("./dados-funeral.entity");
+Object.defineProperty(exports, "DadosFuneral", { enumerable: true, get: function () { return dados_funeral_entity_1.DadosFuneral; } });
+var dados_cesta_basica_entity_1 = require("./dados-cesta-basica.entity");
+Object.defineProperty(exports, "DadosCestaBasica", { enumerable: true, get: function () { return dados_cesta_basica_entity_1.DadosCestaBasica; } });
+// Entidades de Cidadão e Família
+var cidadao_entity_1 = require("./cidadao.entity");
+Object.defineProperty(exports, "Cidadao", { enumerable: true, get: function () { return cidadao_entity_1.Cidadao; } });
+var composicao_familiar_entity_1 = require("./composicao-familiar.entity");
+Object.defineProperty(exports, "ComposicaoFamiliar", { enumerable: true, get: function () { return composicao_familiar_entity_1.ComposicaoFamiliar; } });
+var dados_sociais_entity_1 = require("./dados-sociais.entity");
+Object.defineProperty(exports, "DadosSociais", { enumerable: true, get: function () { return dados_sociais_entity_1.DadosSociais; } });
+var info_bancaria_entity_1 = require("./info-bancaria.entity");
+Object.defineProperty(exports, "InfoBancaria", { enumerable: true, get: function () { return info_bancaria_entity_1.InfoBancaria; } });
+var papel_cidadao_entity_1 = require("./papel-cidadao.entity");
+Object.defineProperty(exports, "PapelCidadao", { enumerable: true, get: function () { return papel_cidadao_entity_1.PapelCidadao; } });
+var situacao_moradia_entity_1 = require("./situacao-moradia.entity");
+Object.defineProperty(exports, "SituacaoMoradia", { enumerable: true, get: function () { return situacao_moradia_entity_1.SituacaoMoradia; } });
+// Entidades de Configuração
+var configuracao_integracao_entity_1 = require("./configuracao-integracao.entity");
+Object.defineProperty(exports, "ConfiguracaoIntegracao", { enumerable: true, get: function () { return configuracao_integracao_entity_1.ConfiguracaoIntegracao; } });
+var configuracao_notificacao_entity_1 = require("./configuracao-notificacao.entity");
+Object.defineProperty(exports, "ConfiguracaoNotificacao", { enumerable: true, get: function () { return configuracao_notificacao_entity_1.ConfiguracaoNotificacao; } });
+var configuracao_renovacao_entity_1 = require("./configuracao-renovacao.entity");
+Object.defineProperty(exports, "ConfiguracaoRenovacao", { enumerable: true, get: function () { return configuracao_renovacao_entity_1.ConfiguracaoRenovacao; } });
+var parametro_entity_1 = require("./parametro.entity");
+Object.defineProperty(exports, "Parametro", { enumerable: true, get: function () { return parametro_entity_1.Parametro; } });
+// Entidades de Documentos
+var documento_entity_1 = require("./documento.entity");
+Object.defineProperty(exports, "Documento", { enumerable: true, get: function () { return documento_entity_1.Documento; } });
+var requisito_documento_entity_1 = require("./requisito-documento.entity");
+Object.defineProperty(exports, "RequisitoDocumento", { enumerable: true, get: function () { return requisito_documento_entity_1.RequisitoDocumento; } });
+// Entidades de Histórico e Logs
+var categoria_log_entity_1 = require("./categoria-log.entity");
+Object.defineProperty(exports, "CategoriaLog", { enumerable: true, get: function () { return categoria_log_entity_1.CategoriaLog; } });
+var historico_conversao_papel_entity_1 = require("./historico-conversao-papel.entity");
+Object.defineProperty(exports, "HistoricoConversaoPapel", { enumerable: true, get: function () { return historico_conversao_papel_entity_1.HistoricoConversaoPapel; } });
+var historico_solicitacao_entity_1 = require("./historico-solicitacao.entity");
+Object.defineProperty(exports, "HistoricoSolicitacao", { enumerable: true, get: function () { return historico_solicitacao_entity_1.HistoricoSolicitacao; } });
+var log_auditoria_entity_1 = require("./log-auditoria.entity");
+Object.defineProperty(exports, "LogAuditoria", { enumerable: true, get: function () { return log_auditoria_entity_1.LogAuditoria; } });
+var recurso_historico_entity_1 = require("./recurso-historico.entity");
+Object.defineProperty(exports, "RecursoHistorico", { enumerable: true, get: function () { return recurso_historico_entity_1.RecursoHistorico; } });
+// Entidades de Integração
+var integrador_entity_1 = require("./integrador.entity");
+Object.defineProperty(exports, "Integrador", { enumerable: true, get: function () { return integrador_entity_1.Integrador; } });
+var integrador_token_entity_1 = require("./integrador-token.entity");
+Object.defineProperty(exports, "IntegradorToken", { enumerable: true, get: function () { return integrador_token_entity_1.IntegradorToken; } });
+// Entidades Judiciais
+var determinacao_judicial_entity_1 = require("./determinacao-judicial.entity");
+Object.defineProperty(exports, "DeterminacaoJudicial", { enumerable: true, get: function () { return determinacao_judicial_entity_1.DeterminacaoJudicial; } });
+var processo_judicial_entity_1 = require("./processo-judicial.entity");
+Object.defineProperty(exports, "ProcessoJudicial", { enumerable: true, get: function () { return processo_judicial_entity_1.ProcessoJudicial; } });
+// Entidades de Notificação
+var notificacao_entity_1 = require("./notificacao.entity");
+Object.defineProperty(exports, "Notificacao", { enumerable: true, get: function () { return notificacao_entity_1.Notificacao; } });
+var notification_template_entity_1 = require("./notification-template.entity");
+Object.defineProperty(exports, "NotificationTemplate", { enumerable: true, get: function () { return notification_template_entity_1.NotificationTemplate; } });
+var template_entity_1 = require("./template.entity");
+Object.defineProperty(exports, "Template", { enumerable: true, get: function () { return template_entity_1.Template; } });
+// Exportações do notification.entity.ts
+var notification_entity_1 = require("./notification.entity");
+Object.defineProperty(exports, "NotificacaoSistema", { enumerable: true, get: function () { return notification_entity_1.NotificacaoSistema; } });
+Object.defineProperty(exports, "TipoNotificacao", { enumerable: true, get: function () { return notification_entity_1.TipoNotificacao; } });
+Object.defineProperty(exports, "StatusNotificacaoProcessamento", { enumerable: true, get: function () { return notification_entity_1.StatusNotificacaoProcessamento; } });
+Object.defineProperty(exports, "TentativaEntrega", { enumerable: true, get: function () { return notification_entity_1.TentativaEntrega; } });
+// Alias para compatibilidade
+var notification_entity_2 = require("./notification.entity");
+Object.defineProperty(exports, "Notification", { enumerable: true, get: function () { return notification_entity_2.NotificacaoSistema; } });
+// Entidades de Ocorrências e Demandas
+var demanda_motivo_entity_1 = require("./demanda-motivo.entity");
+Object.defineProperty(exports, "DemandaMotivo", { enumerable: true, get: function () { return demanda_motivo_entity_1.DemandaMotivo; } });
+var ocorrencia_entity_1 = require("./ocorrencia.entity");
+Object.defineProperty(exports, "Ocorrencia", { enumerable: true, get: function () { return ocorrencia_entity_1.Ocorrencia; } });
+// Entidades de Pagamento
+var comprovante_pagamento_entity_1 = require("./comprovante-pagamento.entity");
+Object.defineProperty(exports, "ComprovantePagamento", { enumerable: true, get: function () { return comprovante_pagamento_entity_1.ComprovantePagamento; } });
+var confirmacao_recebimento_entity_1 = require("./confirmacao-recebimento.entity");
+Object.defineProperty(exports, "ConfirmacaoRecebimento", { enumerable: true, get: function () { return confirmacao_recebimento_entity_1.ConfirmacaoRecebimento; } });
+var pagamento_entity_1 = require("./pagamento.entity");
+Object.defineProperty(exports, "Pagamento", { enumerable: true, get: function () { return pagamento_entity_1.Pagamento; } });
+// Entidades de Pendências e Recursos
+var pendencia_entity_1 = require("./pendencia.entity");
+Object.defineProperty(exports, "Pendencia", { enumerable: true, get: function () { return pendencia_entity_1.Pendencia; } });
+Object.defineProperty(exports, "StatusPendencia", { enumerable: true, get: function () { return pendencia_entity_1.StatusPendencia; } });
+var recurso_entity_1 = require("./recurso.entity");
+Object.defineProperty(exports, "Recurso", { enumerable: true, get: function () { return recurso_entity_1.Recurso; } });
+// Entidades de Regras
+var regra_conflito_papel_entity_1 = require("./regra-conflito-papel.entity");
+Object.defineProperty(exports, "RegraConflitoPapel", { enumerable: true, get: function () { return regra_conflito_papel_entity_1.RegraConflitoPapel; } });
+// Entidades de Segurança e Autenticação
+var role_entity_1 = require("./role.entity");
+Object.defineProperty(exports, "Role", { enumerable: true, get: function () { return role_entity_1.Role; } });
+var token_revogado_entity_1 = require("./token-revogado.entity");
+Object.defineProperty(exports, "TokenRevogado", { enumerable: true, get: function () { return token_revogado_entity_1.TokenRevogado; } });
+var usuario_entity_1 = require("./usuario.entity");
+Object.defineProperty(exports, "Usuario", { enumerable: true, get: function () { return usuario_entity_1.Usuario; } });
+// Entidades de Setores e Unidades
+var setor_entity_1 = require("./setor.entity");
+Object.defineProperty(exports, "Setor", { enumerable: true, get: function () { return setor_entity_1.Setor; } });
+var setor_unidade_entity_1 = require("./setor-unidade.entity");
+Object.defineProperty(exports, "SetorUnidade", { enumerable: true, get: function () { return setor_unidade_entity_1.SetorUnidade; } });
+var unidade_entity_1 = require("./unidade.entity");
+Object.defineProperty(exports, "Unidade", { enumerable: true, get: function () { return unidade_entity_1.Unidade; } });
+// Entidades de Solicitação
+var solicitacao_entity_1 = require("./solicitacao.entity");
+Object.defineProperty(exports, "Solicitacao", { enumerable: true, get: function () { return solicitacao_entity_1.Solicitacao; } });
+// Exportação do enum StatusSolicitacao
+var status_solicitacao_enum_1 = require("../enums/status-solicitacao.enum");
+Object.defineProperty(exports, "StatusSolicitacao", { enumerable: true, get: function () { return status_solicitacao_enum_1.StatusSolicitacao; } });
+// Exportações de Auth/Permissões
+var user_permission_entity_1 = require("./user-permission.entity");
+Object.defineProperty(exports, "ScopeType", { enumerable: true, get: function () { return user_permission_entity_1.ScopeType; } });
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXGVudGl0aWVzXFxpbmRleC50cyIsIm1hcHBpbmdzIjoiO0FBQUEsdURBQXVEO0FBQ3ZELDZGQUE2Rjs7OztBQUU3RixrQ0FBa0M7QUFDbEMsaUVBQXdEO0FBQS9DLHNIQUFBLGFBQWEsT0FBQTtBQUN0QixtREFBMkM7QUFBbEMseUdBQUEsT0FBTyxPQUFBO0FBQ2hCLDZFQUl1QztBQUhyQyxrSUFBQSxtQkFBbUIsT0FBQTtBQUNuQiw4SEFBQSxlQUFlLE9BQUE7QUFDZixtSUFBQSxvQkFBb0IsT0FBQTtBQUV0Qix1RUFHb0M7QUFGbEMsNEhBQUEsZ0JBQWdCLE9BQUE7QUFDaEIsaUlBQUEscUJBQXFCLE9BQUE7QUFFdkIsdUVBQThEO0FBQXJELDRIQUFBLGdCQUFnQixPQUFBO0FBQ3pCLDZEQUFvRDtBQUEzQyxrSEFBQSxXQUFXLE9BQUE7QUFDcEIsdUVBQThEO0FBQXJELDRIQUFBLGdCQUFnQixPQUFBO0FBQ3pCLG1FQUEwRDtBQUFqRCx3SEFBQSxjQUFjLE9BQUE7QUFDdkIscUVBQTREO0FBQW5ELDBIQUFBLGVBQWUsT0FBQTtBQUN4QixxRUFBNEQ7QUFBbkQsMEhBQUEsZUFBZSxPQUFBO0FBQ3hCLDZEQUFvRDtBQUEzQyxrSEFBQSxXQUFXLE9BQUE7QUFFcEIsMEJBQTBCO0FBQzFCLGlFQUF3RDtBQUEvQyxzSEFBQSxhQUFhLE9BQUE7QUFDdEIscUZBQTJFO0FBQWxFLHlJQUFBLHNCQUFzQixPQUFBO0FBQy9CLHFFQUFzRTtBQUE3RCxvSUFBQSx5QkFBeUIsT0FBQTtBQUNsQywrRUFBcUU7QUFBNUQsbUlBQUEsbUJBQW1CLE9BQUE7QUFDNUIsNkJBQTZCO0FBQzdCLHFFQUF5RjtBQUFoRiwwSEFBQSx5QkFBeUIsT0FBbUI7QUFDckQsbUVBQTBEO0FBQWpELHdIQUFBLGNBQWMsT0FBQTtBQUN2Qix5RUFBZ0U7QUFBdkQsOEhBQUEsaUJBQWlCLE9BQUE7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QUFBO0FBQ2QsK0RBQXNEO0FBQTdDLG9IQUFBLFlBQVksT0FBQTtBQUNyQixtREFBMkM7QUFBbEMseUdBQUEsT0FBTyxPQUFBO0FBRWhCLDJCQUEyQjtBQUMzQiwyREFBbUQ7QUFBMUMsaUhBQUEsV0FBVyxPQUFBO0FBQ3BCLHVDQUF1QztBQUN2Qyw0RUFBcUU7QUFBNUQsNEhBQUEsaUJBQWlCLE9BQUE7QUFFMUIsaUNBQWlDO0FBQ2pDLG1FQUFxRDtBQUE1QyxtSEFBQSxTQUFTLE9BQUEiLCJuYW1lcyI6W10sInNvdXJjZXMiOlsiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXGVudGl0aWVzXFxpbmRleC50cyJdLCJzb3VyY2VzQ29udGVudCI6WyIvLyBBcnF1aXZvIGRlIMOtbmRpY2UgcGFyYSB0b2RhcyBhcyBlbnRpZGFkZXMgZG8gc2lzdGVtYVxuLy8gRXN0ZSBhcnF1aXZvIGNlbnRyYWxpemEgYXMgZXhwb3J0YcOnw7VlcyBkZSB0b2RhcyBhcyBlbnRpZGFkZXMgcGFyYSBmYWNpbGl0YXIgYXMgaW1wb3J0YcOnw7Vlc1xuXG4vLyBFbnRpZGFkZXMgZGUgQWxlcnRhcyBlIE3DqXRyaWNhc1xuZXhwb3J0IHsgQWxlcnRhTWV0cmljYSB9IGZyb20gJy4vYWxlcnRhLW1ldHJpY2EuZW50aXR5JztcbmV4cG9ydCB7IE1ldHJpY2EgfSBmcm9tICcuL21ldHJpY2EuZW50aXR5JztcbmV4cG9ydCB7XG4gIE1ldHJpY2FDb25maWd1cmFjYW8sXG4gIFRpcG9BZ2VuZGFtZW50byxcbiAgRXN0cmF0ZWdpYUFtb3N0cmFnZW0sXG59IGZyb20gJy4vbWV0cmljYS1jb25maWd1cmFjYW8uZW50aXR5JztcbmV4cG9ydCB7XG4gIE1ldHJpY2FEZWZpbmljYW8sXG4gIEdyYW51bGFyaWRhZGVUZW1wb3JhbCxcbn0gZnJvbSAnLi9tZXRyaWNhLWRlZmluaWNhby5lbnRpdHknO1xuZXhwb3J0IHsgTWV0cmljYURvY3VtZW50byB9IGZyb20gJy4vbWV0cmljYS1kb2N1bWVudG8uZW50aXR5JztcbmV4cG9ydCB7IE1ldHJpY2FIdHRwIH0gZnJvbSAnLi9tZXRyaWNhLWh0dHAuZW50aXR5JztcbmV4cG9ydCB7IE1ldHJpY2FTZWd1cmFuY2EgfSBmcm9tICcuL21ldHJpY2Etc2VndXJhbmNhLmVudGl0eSc7XG5leHBvcnQgeyBNZXRyaWNhU2lzdGVtYSB9IGZyb20gJy4vbWV0cmljYS1zaXN0ZW1hLmVudGl0eSc7XG5leHBvcnQgeyBNZXRyaWNhU25hcHNob3QgfSBmcm9tICcuL21ldHJpY2Etc25hcHNob3QuZW50aXR5JztcbmV4cG9ydCB7IFJlZ2lzdHJvTWV0cmljYSB9IGZyb20gJy4vcmVnaXN0cm8tbWV0cmljYS5lbnRpdHknO1xuZXhwb3J0IHsgUmVncmFBbGVydGEgfSBmcm9tICcuL3JlZ3JhLWFsZXJ0YS5lbnRpdHknO1xuXG4vLyBFbnRpZGFkZXMgZGUgQmVuZWbDrWNpb3NcbmV4cG9ydCB7IFRpcG9CZW5lZmljaW8gfSBmcm9tICcuL3RpcG8tYmVuZWZpY2lvLmVudGl0eSc7XG5leHBvcnQgeyBDYW1wb0RpbmFtaWNvQmVuZWZpY2lvIH0gZnJvbSAnLi9jYW1wby1kaW5hbWljby1iZW5lZmljaW8uZW50aXR5JztcbmV4cG9ydCB7IERhZG9zU29saWNpdGFjYW9CZW5lZmljaW8gfSBmcm9tICcuL2RhZG9zLWJlbmVmaWNpb3MuZW50aXR5JztcbmV4cG9ydCB7IFRpcG9CZW5lZmljaW9TY2hlbWEgfSBmcm9tICcuL3RpcG8tYmVuZWZpY2lvLXNjaGVtYS5lbnRpdHknO1xuLy8gQWxpYXMgcGFyYSBjb21wYXRpYmlsaWRhZGVcbmV4cG9ydCB7IERhZG9zU29saWNpdGFjYW9CZW5lZmljaW8gYXMgRGFkb3NCZW5lZmljaW9zIH0gZnJvbSAnLi9kYWRvcy1iZW5lZmljaW9zLmVudGl0eSc7XG5leHBvcnQgeyBGbHV4b0JlbmVmaWNpbyB9IGZyb20gJy4vZmx1eG8tYmVuZWZpY2lvLmVudGl0eSc7XG5leHBvcnQgeyBXb3JrZmxvd0JlbmVmaWNpbyB9IGZyb20gJy4vd29ya2Zsb3ctYmVuZWZpY2lvLmVudGl0eSc7XG5cbi8vIEVudGlkYWRlcyBkZSBEYWRvcyBFc3BlY8OtZmljb3MgZGUgQmVuZWbDrWNpb3MgKGRhZG9zIGRvIGNpZGFkw6NvKVxuZXhwb3J0IHsgRGFkb3NOYXRhbGlkYWRlIH0gZnJvbSAnLi9kYWRvcy1uYXRhbGlkYWRlLmVudGl0eSc7XG5leHBvcnQgeyBEYWRvc0FsdWd1ZWxTb2NpYWwgfSBmcm9tICcuL2RhZG9zLWFsdWd1ZWwtc29jaWFsLmVudGl0eSc7XG5leHBvcnQgeyBEYWRvc0Z1bmVyYWwgfSBmcm9tICcuL2RhZG9zLWZ1bmVyYWwuZW50aXR5JztcbmV4cG9ydCB7IERhZG9zQ2VzdGFCYXNpY2EgfSBmcm9tICcuL2RhZG9zLWNlc3RhLWJhc2ljYS5lbnRpdHknO1xuXG4vLyBFbnRpZGFkZXMgZGUgQ2lkYWTDo28gZSBGYW3DrWxpYVxuZXhwb3J0IHsgQ2lkYWRhbyB9IGZyb20gJy4vY2lkYWRhby5lbnRpdHknO1xuZXhwb3J0IHsgQ29tcG9zaWNhb0ZhbWlsaWFyIH0gZnJvbSAnLi9jb21wb3NpY2FvLWZhbWlsaWFyLmVudGl0eSc7XG5leHBvcnQgeyBEYWRvc1NvY2lhaXMgfSBmcm9tICcuL2RhZG9zLXNvY2lhaXMuZW50aXR5JztcbmV4cG9ydCB7IEluZm9CYW5jYXJpYSB9IGZyb20gJy4vaW5mby1iYW5jYXJpYS5lbnRpdHknO1xuZXhwb3J0IHsgUGFwZWxDaWRhZGFvIH0gZnJvbSAnLi9wYXBlbC1jaWRhZGFvLmVudGl0eSc7XG5leHBvcnQgeyBTaXR1YWNhb01vcmFkaWEgfSBmcm9tICcuL3NpdHVhY2FvLW1vcmFkaWEuZW50aXR5JztcblxuLy8gRW50aWRhZGVzIGRlIENvbmZpZ3VyYcOnw6NvXG5leHBvcnQgeyBDb25maWd1cmFjYW9JbnRlZ3JhY2FvIH0gZnJvbSAnLi9jb25maWd1cmFjYW8taW50ZWdyYWNhby5lbnRpdHknO1xuZXhwb3J0IHsgQ29uZmlndXJhY2FvTm90aWZpY2FjYW8gfSBmcm9tICcuL2NvbmZpZ3VyYWNhby1ub3RpZmljYWNhby5lbnRpdHknO1xuZXhwb3J0IHsgQ29uZmlndXJhY2FvUmVub3ZhY2FvIH0gZnJvbSAnLi9jb25maWd1cmFjYW8tcmVub3ZhY2FvLmVudGl0eSc7XG5leHBvcnQgeyBQYXJhbWV0cm8gfSBmcm9tICcuL3BhcmFtZXRyby5lbnRpdHknO1xuXG4vLyBFbnRpZGFkZXMgZGUgRG9jdW1lbnRvc1xuZXhwb3J0IHsgRG9jdW1lbnRvIH0gZnJvbSAnLi9kb2N1bWVudG8uZW50aXR5JztcbmV4cG9ydCB7IFJlcXVpc2l0b0RvY3VtZW50byB9IGZyb20gJy4vcmVxdWlzaXRvLWRvY3VtZW50by5lbnRpdHknO1xuXG4vLyBFbnRpZGFkZXMgZGUgSGlzdMOzcmljbyBlIExvZ3NcbmV4cG9ydCB7IENhdGVnb3JpYUxvZyB9IGZyb20gJy4vY2F0ZWdvcmlhLWxvZy5lbnRpdHknO1xuZXhwb3J0IHsgSGlzdG9yaWNvQ29udmVyc2FvUGFwZWwgfSBmcm9tICcuL2hpc3Rvcmljby1jb252ZXJzYW8tcGFwZWwuZW50aXR5JztcbmV4cG9ydCB7IEhpc3Rvcmljb1NvbGljaXRhY2FvIH0gZnJvbSAnLi9oaXN0b3JpY28tc29saWNpdGFjYW8uZW50aXR5JztcbmV4cG9ydCB7IExvZ0F1ZGl0b3JpYSB9IGZyb20gJy4vbG9nLWF1ZGl0b3JpYS5lbnRpdHknO1xuZXhwb3J0IHsgUmVjdXJzb0hpc3RvcmljbyB9IGZyb20gJy4vcmVjdXJzby1oaXN0b3JpY28uZW50aXR5JztcblxuLy8gRW50aWRhZGVzIGRlIEludGVncmHDp8Ojb1xuZXhwb3J0IHsgSW50ZWdyYWRvciB9IGZyb20gJy4vaW50ZWdyYWRvci5lbnRpdHknO1xuZXhwb3J0IHsgSW50ZWdyYWRvclRva2VuIH0gZnJvbSAnLi9pbnRlZ3JhZG9yLXRva2VuLmVudGl0eSc7XG5cbi8vIEVudGlkYWRlcyBKdWRpY2lhaXNcbmV4cG9ydCB7IERldGVybWluYWNhb0p1ZGljaWFsIH0gZnJvbSAnLi9kZXRlcm1pbmFjYW8tanVkaWNpYWwuZW50aXR5JztcbmV4cG9ydCB7IFByb2Nlc3NvSnVkaWNpYWwgfSBmcm9tICcuL3Byb2Nlc3NvLWp1ZGljaWFsLmVudGl0eSc7XG5cbi8vIEVudGlkYWRlcyBkZSBOb3RpZmljYcOnw6NvXG5leHBvcnQgeyBOb3RpZmljYWNhbyB9IGZyb20gJy4vbm90aWZpY2FjYW8uZW50aXR5JztcbmV4cG9ydCB7IE5vdGlmaWNhdGlvblRlbXBsYXRlIH0gZnJvbSAnLi9ub3RpZmljYXRpb24tdGVtcGxhdGUuZW50aXR5JztcbmV4cG9ydCB7IFRlbXBsYXRlIH0gZnJvbSAnLi90ZW1wbGF0ZS5lbnRpdHknO1xuLy8gRXhwb3J0YcOnw7VlcyBkbyBub3RpZmljYXRpb24uZW50aXR5LnRzXG5leHBvcnQge1xuICBOb3RpZmljYWNhb1Npc3RlbWEsXG4gIFRpcG9Ob3RpZmljYWNhbyxcbiAgU3RhdHVzTm90aWZpY2FjYW9Qcm9jZXNzYW1lbnRvLFxuICBUZW50YXRpdmFFbnRyZWdhLFxufSBmcm9tICcuL25vdGlmaWNhdGlvbi5lbnRpdHknO1xuLy8gQWxpYXMgcGFyYSBjb21wYXRpYmlsaWRhZGVcbmV4cG9ydCB7IE5vdGlmaWNhY2FvU2lzdGVtYSBhcyBOb3RpZmljYXRpb24gfSBmcm9tICcuL25vdGlmaWNhdGlvbi5lbnRpdHknO1xuXG4vLyBFbnRpZGFkZXMgZGUgT2NvcnLDqm5jaWFzIGUgRGVtYW5kYXNcbmV4cG9ydCB7IERlbWFuZGFNb3Rpdm8gfSBmcm9tICcuL2RlbWFuZGEtbW90aXZvLmVudGl0eSc7XG5leHBvcnQgeyBPY29ycmVuY2lhIH0gZnJvbSAnLi9vY29ycmVuY2lhLmVudGl0eSc7XG5cbi8vIEVudGlkYWRlcyBkZSBQYWdhbWVudG9cbmV4cG9ydCB7IENvbXByb3ZhbnRlUGFnYW1lbnRvIH0gZnJvbSAnLi9jb21wcm92YW50ZS1wYWdhbWVudG8uZW50aXR5JztcbmV4cG9ydCB7IENvbmZpcm1hY2FvUmVjZWJpbWVudG8gfSBmcm9tICcuL2NvbmZpcm1hY2FvLXJlY2ViaW1lbnRvLmVudGl0eSc7XG5leHBvcnQgeyBQYWdhbWVudG8gfSBmcm9tICcuL3BhZ2FtZW50by5lbnRpdHknO1xuXG4vLyBFbnRpZGFkZXMgZGUgUGVuZMOqbmNpYXMgZSBSZWN1cnNvc1xuZXhwb3J0IHsgUGVuZGVuY2lhLCBTdGF0dXNQZW5kZW5jaWEgfSBmcm9tICcuL3BlbmRlbmNpYS5lbnRpdHknO1xuZXhwb3J0IHsgUmVjdXJzbyB9IGZyb20gJy4vcmVjdXJzby5lbnRpdHknO1xuXG4vLyBFbnRpZGFkZXMgZGUgUmVncmFzXG5leHBvcnQgeyBSZWdyYUNvbmZsaXRvUGFwZWwgfSBmcm9tICcuL3JlZ3JhLWNvbmZsaXRvLXBhcGVsLmVudGl0eSc7XG5cbi8vIEVudGlkYWRlcyBkZSBTZWd1cmFuw6dhIGUgQXV0ZW50aWNhw6fDo29cbmV4cG9ydCB7IFJvbGUgfSBmcm9tICcuL3JvbGUuZW50aXR5JztcbmV4cG9ydCB7IFRva2VuUmV2b2dhZG8gfSBmcm9tICcuL3Rva2VuLXJldm9nYWRvLmVudGl0eSc7XG5leHBvcnQgeyBVc3VhcmlvIH0gZnJvbSAnLi91c3VhcmlvLmVudGl0eSc7XG5cbi8vIEVudGlkYWRlcyBkZSBTZXRvcmVzIGUgVW5pZGFkZXNcbmV4cG9ydCB7IFNldG9yIH0gZnJvbSAnLi9zZXRvci5lbnRpdHknO1xuZXhwb3J0IHsgU2V0b3JVbmlkYWRlIH0gZnJvbSAnLi9zZXRvci11bmlkYWRlLmVudGl0eSc7XG5leHBvcnQgeyBVbmlkYWRlIH0gZnJvbSAnLi91bmlkYWRlLmVudGl0eSc7XG5cbi8vIEVudGlkYWRlcyBkZSBTb2xpY2l0YcOnw6NvXG5leHBvcnQgeyBTb2xpY2l0YWNhbyB9IGZyb20gJy4vc29saWNpdGFjYW8uZW50aXR5Jztcbi8vIEV4cG9ydGHDp8OjbyBkbyBlbnVtIFN0YXR1c1NvbGljaXRhY2FvXG5leHBvcnQgeyBTdGF0dXNTb2xpY2l0YWNhbyB9IGZyb20gJy4uL2VudW1zL3N0YXR1cy1zb2xpY2l0YWNhby5lbnVtJztcblxuLy8gRXhwb3J0YcOnw7VlcyBkZSBBdXRoL1Blcm1pc3PDtWVzXG5leHBvcnQgeyBTY29wZVR5cGUgfSBmcm9tICcuL3VzZXItcGVybWlzc2lvbi5lbnRpdHknO1xuIl0sInZlcnNpb24iOjN9

@@ -1,0 +1,97 @@
+af79781f46829838dd782e60082dafcf
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.PagamentoModule = void 0;
+const common_1 = require("@nestjs/common");
+const typeorm_1 = require("@nestjs/typeorm");
+// Entidades
+const entities_1 = require("../../entities");
+// Controllers
+const pagamento_controller_1 = require("./controllers/pagamento.controller");
+const comprovante_controller_1 = require("./controllers/comprovante.controller");
+const confirmacao_controller_1 = require("./controllers/confirmacao.controller");
+// Serviços principais
+const pagamento_service_1 = require("./services/pagamento.service");
+const comprovante_service_1 = require("./services/comprovante.service");
+const confirmacao_service_1 = require("./services/confirmacao.service");
+// Serviços de integração
+const auditoria_pagamento_service_1 = require("./services/auditoria-pagamento.service");
+const integracao_solicitacao_service_1 = require("./services/integracao-solicitacao.service");
+const integracao_documento_service_1 = require("./services/integracao-documento.service");
+const integracao_cidadao_service_1 = require("./services/integracao-cidadao.service");
+// Validadores
+const pix_validator_1 = require("./validators/pix-validator");
+const status_transition_validator_1 = require("./validators/status-transition-validator");
+const dados_bancarios_validator_1 = require("./validators/dados-bancarios-validator");
+/**
+ * Módulo de Pagamento/Liberação
+ *
+ * Este módulo gerencia a etapa final do fluxo de concessão de benefícios,
+ * controlando a liberação efetiva dos recursos para os beneficiários.
+ *
+ * @author Equipe PGBen
+ */
+let PagamentoModule = class PagamentoModule {
+};
+exports.PagamentoModule = PagamentoModule;
+exports.PagamentoModule = PagamentoModule = __decorate([
+    (0, common_1.Module)({
+        imports: [
+            typeorm_1.TypeOrmModule.forFeature([
+                entities_1.Pagamento,
+                entities_1.ComprovantePagamento,
+                entities_1.ConfirmacaoRecebimento,
+            ]),
+            // Outros módulos necessários serão importados aqui:
+            // SolicitacaoModule,
+            // UsuarioModule,
+            // CidadaoModule,
+            // DocumentoModule,
+            // AuditoriaModule,
+            // ConfiguracaoModule
+        ],
+        controllers: [
+            pagamento_controller_1.PagamentoController,
+            comprovante_controller_1.ComprovanteController,
+            confirmacao_controller_1.ConfirmacaoController,
+        ],
+        providers: [
+            // Serviços principais
+            pagamento_service_1.PagamentoService,
+            comprovante_service_1.ComprovanteService,
+            confirmacao_service_1.ConfirmacaoService,
+            // Serviços de integração
+            auditoria_pagamento_service_1.AuditoriaPagamentoService,
+            integracao_solicitacao_service_1.IntegracaoSolicitacaoService,
+            integracao_documento_service_1.IntegracaoDocumentoService,
+            integracao_cidadao_service_1.IntegracaoCidadaoService,
+            // Validadores
+            pix_validator_1.PixValidator,
+            status_transition_validator_1.StatusTransitionValidator,
+            dados_bancarios_validator_1.DadosBancariosValidator,
+        ],
+        exports: [
+            typeorm_1.TypeOrmModule,
+            // Serviços principais
+            pagamento_service_1.PagamentoService,
+            comprovante_service_1.ComprovanteService,
+            confirmacao_service_1.ConfirmacaoService,
+            // Serviços de integração
+            auditoria_pagamento_service_1.AuditoriaPagamentoService,
+            integracao_solicitacao_service_1.IntegracaoSolicitacaoService,
+            integracao_documento_service_1.IntegracaoDocumentoService,
+            integracao_cidadao_service_1.IntegracaoCidadaoService,
+            // Validadores
+            pix_validator_1.PixValidator,
+            dados_bancarios_validator_1.DadosBancariosValidator,
+            status_transition_validator_1.StatusTransitionValidator,
+        ],
+    })
+], PagamentoModule);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXHBhZ2FtZW50b1xccGFnYW1lbnRvLm1vZHVsZS50cyIsIm1hcHBpbmdzIjoiOzs7Ozs7Ozs7QUFBQSwyQ0FBd0M7QUFDeEMsNkNBQWdEO0FBRWhELFlBQVk7QUFDWiw2Q0FJd0I7QUFFeEIsY0FBYztBQUNkLDZFQUF5RTtBQUN6RSxpRkFBNkU7QUFDN0UsaUZBQTZFO0FBRTdFLHNCQUFzQjtBQUN0QixvRUFBZ0U7QUFDaEUsd0VBQW9FO0FBQ3BFLHdFQUFvRTtBQUVwRSx5QkFBeUI7QUFDekIsd0ZBQW1GO0FBQ25GLDhGQUF5RjtBQUN6RiwwRkFBcUY7QUFDckYsc0ZBQWlGO0FBRWpGLGNBQWM7QUFDZCw4REFBMEQ7QUFDMUQsMEZBQXFGO0FBQ3JGLHNGQUFpRjtBQUVqRjs7Ozs7OztHQU9HO0FBMERJLElBQU0sZUFBZSxHQUFyQixNQUFNLGVBQWU7Q0FBRyxDQUFBO0FBQWxCLDBDQUFlOzBCQUFmLGVBQWU7SUF6RDNCLElBQUEsZUFBTSxFQUFDO1FBQ04sT0FBTyxFQUFFO1lBQ1AsdUJBQWEsQ0FBQyxVQUFVLENBQUM7Z0JBQ3ZCLG9CQUFTO2dCQUNULCtCQUFvQjtnQkFDcEIsaUNBQXNCO2FBQ3ZCLENBQUM7WUFDRixvREFBb0Q7WUFDcEQscUJBQXFCO1lBQ3JCLGlCQUFpQjtZQUNqQixpQkFBaUI7WUFDakIsbUJBQW1CO1lBQ25CLG1CQUFtQjtZQUNuQixxQkFBcUI7U0FDdEI7UUFDRCxXQUFXLEVBQUU7WUFDWCwwQ0FBbUI7WUFDbkIsOENBQXFCO1lBQ3JCLDhDQUFxQjtTQUN0QjtRQUNELFNBQVMsRUFBRTtZQUNULHNCQUFzQjtZQUN0QixvQ0FBZ0I7WUFDaEIsd0NBQWtCO1lBQ2xCLHdDQUFrQjtZQUVsQix5QkFBeUI7WUFDekIsdURBQXlCO1lBQ3pCLDZEQUE0QjtZQUM1Qix5REFBMEI7WUFDMUIscURBQXdCO1lBRXhCLGNBQWM7WUFDZCw0QkFBWTtZQUNaLHVEQUF5QjtZQUN6QixtREFBdUI7U0FDeEI7UUFDRCxPQUFPLEVBQUU7WUFDUCx1QkFBYTtZQUViLHNCQUFzQjtZQUN0QixvQ0FBZ0I7WUFDaEIsd0NBQWtCO1lBQ2xCLHdDQUFrQjtZQUVsQix5QkFBeUI7WUFDekIsdURBQXlCO1lBQ3pCLDZEQUE0QjtZQUM1Qix5REFBMEI7WUFDMUIscURBQXdCO1lBRXhCLGNBQWM7WUFDZCw0QkFBWTtZQUNaLG1EQUF1QjtZQUN2Qix1REFBeUI7U0FDMUI7S0FDRixDQUFDO0dBQ1csZUFBZSxDQUFHIiwibmFtZXMiOltdLCJzb3VyY2VzIjpbIkM6XFxVc2Vyc1xcZXVkcmVcXE9uZURyaXZlXFxEZXNrdG9wXFxQcm9qZXRvc1xccGdiZW5cXHBnYmVuLXNlcnZlclxcc3JjXFxtb2R1bGVzXFxwYWdhbWVudG9cXHBhZ2FtZW50by5tb2R1bGUudHMiXSwic291cmNlc0NvbnRlbnQiOlsiaW1wb3J0IHsgTW9kdWxlIH0gZnJvbSAnQG5lc3Rqcy9jb21tb24nO1xuaW1wb3J0IHsgVHlwZU9ybU1vZHVsZSB9IGZyb20gJ0BuZXN0anMvdHlwZW9ybSc7XG5cbi8vIEVudGlkYWRlc1xuaW1wb3J0IHtcbiAgUGFnYW1lbnRvLFxuICBDb21wcm92YW50ZVBhZ2FtZW50byxcbiAgQ29uZmlybWFjYW9SZWNlYmltZW50byxcbn0gZnJvbSAnLi4vLi4vZW50aXRpZXMnO1xuXG4vLyBDb250cm9sbGVyc1xuaW1wb3J0IHsgUGFnYW1lbnRvQ29udHJvbGxlciB9IGZyb20gJy4vY29udHJvbGxlcnMvcGFnYW1lbnRvLmNvbnRyb2xsZXInO1xuaW1wb3J0IHsgQ29tcHJvdmFudGVDb250cm9sbGVyIH0gZnJvbSAnLi9jb250cm9sbGVycy9jb21wcm92YW50ZS5jb250cm9sbGVyJztcbmltcG9ydCB7IENvbmZpcm1hY2FvQ29udHJvbGxlciB9IGZyb20gJy4vY29udHJvbGxlcnMvY29uZmlybWFjYW8uY29udHJvbGxlcic7XG5cbi8vIFNlcnZpw6dvcyBwcmluY2lwYWlzXG5pbXBvcnQgeyBQYWdhbWVudG9TZXJ2aWNlIH0gZnJvbSAnLi9zZXJ2aWNlcy9wYWdhbWVudG8uc2VydmljZSc7XG5pbXBvcnQgeyBDb21wcm92YW50ZVNlcnZpY2UgfSBmcm9tICcuL3NlcnZpY2VzL2NvbXByb3ZhbnRlLnNlcnZpY2UnO1xuaW1wb3J0IHsgQ29uZmlybWFjYW9TZXJ2aWNlIH0gZnJvbSAnLi9zZXJ2aWNlcy9jb25maXJtYWNhby5zZXJ2aWNlJztcblxuLy8gU2VydmnDp29zIGRlIGludGVncmHDp8Ojb1xuaW1wb3J0IHsgQXVkaXRvcmlhUGFnYW1lbnRvU2VydmljZSB9IGZyb20gJy4vc2VydmljZXMvYXVkaXRvcmlhLXBhZ2FtZW50by5zZXJ2aWNlJztcbmltcG9ydCB7IEludGVncmFjYW9Tb2xpY2l0YWNhb1NlcnZpY2UgfSBmcm9tICcuL3NlcnZpY2VzL2ludGVncmFjYW8tc29saWNpdGFjYW8uc2VydmljZSc7XG5pbXBvcnQgeyBJbnRlZ3JhY2FvRG9jdW1lbnRvU2VydmljZSB9IGZyb20gJy4vc2VydmljZXMvaW50ZWdyYWNhby1kb2N1bWVudG8uc2VydmljZSc7XG5pbXBvcnQgeyBJbnRlZ3JhY2FvQ2lkYWRhb1NlcnZpY2UgfSBmcm9tICcuL3NlcnZpY2VzL2ludGVncmFjYW8tY2lkYWRhby5zZXJ2aWNlJztcblxuLy8gVmFsaWRhZG9yZXNcbmltcG9ydCB7IFBpeFZhbGlkYXRvciB9IGZyb20gJy4vdmFsaWRhdG9ycy9waXgtdmFsaWRhdG9yJztcbmltcG9ydCB7IFN0YXR1c1RyYW5zaXRpb25WYWxpZGF0b3IgfSBmcm9tICcuL3ZhbGlkYXRvcnMvc3RhdHVzLXRyYW5zaXRpb24tdmFsaWRhdG9yJztcbmltcG9ydCB7IERhZG9zQmFuY2FyaW9zVmFsaWRhdG9yIH0gZnJvbSAnLi92YWxpZGF0b3JzL2RhZG9zLWJhbmNhcmlvcy12YWxpZGF0b3InO1xuXG4vKipcbiAqIE3Ds2R1bG8gZGUgUGFnYW1lbnRvL0xpYmVyYcOnw6NvXG4gKlxuICogRXN0ZSBtw7NkdWxvIGdlcmVuY2lhIGEgZXRhcGEgZmluYWwgZG8gZmx1eG8gZGUgY29uY2Vzc8OjbyBkZSBiZW5lZsOtY2lvcyxcbiAqIGNvbnRyb2xhbmRvIGEgbGliZXJhw6fDo28gZWZldGl2YSBkb3MgcmVjdXJzb3MgcGFyYSBvcyBiZW5lZmljacOhcmlvcy5cbiAqXG4gKiBAYXV0aG9yIEVxdWlwZSBQR0JlblxuICovXG5ATW9kdWxlKHtcbiAgaW1wb3J0czogW1xuICAgIFR5cGVPcm1Nb2R1bGUuZm9yRmVhdHVyZShbXG4gICAgICBQYWdhbWVudG8sXG4gICAgICBDb21wcm92YW50ZVBhZ2FtZW50byxcbiAgICAgIENvbmZpcm1hY2FvUmVjZWJpbWVudG8sXG4gICAgXSksXG4gICAgLy8gT3V0cm9zIG3Ds2R1bG9zIG5lY2Vzc8OhcmlvcyBzZXLDo28gaW1wb3J0YWRvcyBhcXVpOlxuICAgIC8vIFNvbGljaXRhY2FvTW9kdWxlLFxuICAgIC8vIFVzdWFyaW9Nb2R1bGUsXG4gICAgLy8gQ2lkYWRhb01vZHVsZSxcbiAgICAvLyBEb2N1bWVudG9Nb2R1bGUsXG4gICAgLy8gQXVkaXRvcmlhTW9kdWxlLFxuICAgIC8vIENvbmZpZ3VyYWNhb01vZHVsZVxuICBdLFxuICBjb250cm9sbGVyczogW1xuICAgIFBhZ2FtZW50b0NvbnRyb2xsZXIsXG4gICAgQ29tcHJvdmFudGVDb250cm9sbGVyLFxuICAgIENvbmZpcm1hY2FvQ29udHJvbGxlcixcbiAgXSxcbiAgcHJvdmlkZXJzOiBbXG4gICAgLy8gU2VydmnDp29zIHByaW5jaXBhaXNcbiAgICBQYWdhbWVudG9TZXJ2aWNlLFxuICAgIENvbXByb3ZhbnRlU2VydmljZSxcbiAgICBDb25maXJtYWNhb1NlcnZpY2UsXG5cbiAgICAvLyBTZXJ2acOnb3MgZGUgaW50ZWdyYcOnw6NvXG4gICAgQXVkaXRvcmlhUGFnYW1lbnRvU2VydmljZSxcbiAgICBJbnRlZ3JhY2FvU29saWNpdGFjYW9TZXJ2aWNlLFxuICAgIEludGVncmFjYW9Eb2N1bWVudG9TZXJ2aWNlLFxuICAgIEludGVncmFjYW9DaWRhZGFvU2VydmljZSxcblxuICAgIC8vIFZhbGlkYWRvcmVzXG4gICAgUGl4VmFsaWRhdG9yLFxuICAgIFN0YXR1c1RyYW5zaXRpb25WYWxpZGF0b3IsXG4gICAgRGFkb3NCYW5jYXJpb3NWYWxpZGF0b3IsXG4gIF0sXG4gIGV4cG9ydHM6IFtcbiAgICBUeXBlT3JtTW9kdWxlLFxuXG4gICAgLy8gU2VydmnDp29zIHByaW5jaXBhaXNcbiAgICBQYWdhbWVudG9TZXJ2aWNlLFxuICAgIENvbXByb3ZhbnRlU2VydmljZSxcbiAgICBDb25maXJtYWNhb1NlcnZpY2UsXG5cbiAgICAvLyBTZXJ2acOnb3MgZGUgaW50ZWdyYcOnw6NvXG4gICAgQXVkaXRvcmlhUGFnYW1lbnRvU2VydmljZSxcbiAgICBJbnRlZ3JhY2FvU29saWNpdGFjYW9TZXJ2aWNlLFxuICAgIEludGVncmFjYW9Eb2N1bWVudG9TZXJ2aWNlLFxuICAgIEludGVncmFjYW9DaWRhZGFvU2VydmljZSxcblxuICAgIC8vIFZhbGlkYWRvcmVzXG4gICAgUGl4VmFsaWRhdG9yLFxuICAgIERhZG9zQmFuY2FyaW9zVmFsaWRhdG9yLFxuICAgIFN0YXR1c1RyYW5zaXRpb25WYWxpZGF0b3IsXG4gIF0sXG59KVxuZXhwb3J0IGNsYXNzIFBhZ2FtZW50b01vZHVsZSB7fVxuIl0sInZlcnNpb24iOjN9

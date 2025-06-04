@@ -1,0 +1,28 @@
+04fc822329fe2f4e3a952e819a51d019
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.ScheduleAdapterModule = void 0;
+const common_1 = require("@nestjs/common");
+const schedule_adapter_service_1 = require("./schedule-adapter.service");
+/**
+ * Módulo adaptador para agendamento
+ *
+ * Este módulo fornece uma solução alternativa para o agendamento de tarefas
+ * enquanto resolvemos os problemas de compatibilidade com o ScheduleModule.
+ */
+let ScheduleAdapterModule = class ScheduleAdapterModule {
+};
+exports.ScheduleAdapterModule = ScheduleAdapterModule;
+exports.ScheduleAdapterModule = ScheduleAdapterModule = __decorate([
+    (0, common_1.Module)({
+        providers: [schedule_adapter_service_1.ScheduleAdapterService],
+        exports: [schedule_adapter_service_1.ScheduleAdapterService],
+    })
+], ScheduleAdapterModule);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXHNoYXJlZFxcc2NoZWR1bGVcXHNjaGVkdWxlLWFkYXB0ZXIubW9kdWxlLnRzIiwibWFwcGluZ3MiOiI7Ozs7Ozs7OztBQUFBLDJDQUF3QztBQUN4Qyx5RUFBb0U7QUFFcEU7Ozs7O0dBS0c7QUFLSSxJQUFNLHFCQUFxQixHQUEzQixNQUFNLHFCQUFxQjtDQUFHLENBQUE7QUFBeEIsc0RBQXFCO2dDQUFyQixxQkFBcUI7SUFKakMsSUFBQSxlQUFNLEVBQUM7UUFDTixTQUFTLEVBQUUsQ0FBQyxpREFBc0IsQ0FBQztRQUNuQyxPQUFPLEVBQUUsQ0FBQyxpREFBc0IsQ0FBQztLQUNsQyxDQUFDO0dBQ1cscUJBQXFCLENBQUciLCJuYW1lcyI6W10sInNvdXJjZXMiOlsiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXHNoYXJlZFxcc2NoZWR1bGVcXHNjaGVkdWxlLWFkYXB0ZXIubW9kdWxlLnRzIl0sInNvdXJjZXNDb250ZW50IjpbImltcG9ydCB7IE1vZHVsZSB9IGZyb20gJ0BuZXN0anMvY29tbW9uJztcbmltcG9ydCB7IFNjaGVkdWxlQWRhcHRlclNlcnZpY2UgfSBmcm9tICcuL3NjaGVkdWxlLWFkYXB0ZXIuc2VydmljZSc7XG5cbi8qKlxuICogTcOzZHVsbyBhZGFwdGFkb3IgcGFyYSBhZ2VuZGFtZW50b1xuICpcbiAqIEVzdGUgbcOzZHVsbyBmb3JuZWNlIHVtYSBzb2x1w6fDo28gYWx0ZXJuYXRpdmEgcGFyYSBvIGFnZW5kYW1lbnRvIGRlIHRhcmVmYXNcbiAqIGVucXVhbnRvIHJlc29sdmVtb3Mgb3MgcHJvYmxlbWFzIGRlIGNvbXBhdGliaWxpZGFkZSBjb20gbyBTY2hlZHVsZU1vZHVsZS5cbiAqL1xuQE1vZHVsZSh7XG4gIHByb3ZpZGVyczogW1NjaGVkdWxlQWRhcHRlclNlcnZpY2VdLFxuICBleHBvcnRzOiBbU2NoZWR1bGVBZGFwdGVyU2VydmljZV0sXG59KVxuZXhwb3J0IGNsYXNzIFNjaGVkdWxlQWRhcHRlck1vZHVsZSB7fVxuIl0sInZlcnNpb24iOjN9

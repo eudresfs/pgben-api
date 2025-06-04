@@ -1,0 +1,24 @@
+6ae77a52684b2ddd264dfc6920486990
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.MetodoConfirmacaoEnum = void 0;
+/**
+ * Enum que define os possíveis métodos de confirmação de recebimento de pagamento.
+ * Representa as diferentes formas pelas quais um beneficiário pode confirmar o recebimento do benefício.
+ */
+var MetodoConfirmacaoEnum;
+(function (MetodoConfirmacaoEnum) {
+    /**
+     * Confirmação por assinatura física em documento impresso.
+     */
+    MetodoConfirmacaoEnum["ASSINATURA"] = "assinatura";
+    /**
+     * Confirmação digital, realizada através de sistema eletrônico (app, portal, etc).
+     */
+    MetodoConfirmacaoEnum["DIGITAL"] = "digital";
+    /**
+     * Confirmação realizada por terceiro autorizado a receber em nome do beneficiário.
+     */
+    MetodoConfirmacaoEnum["TERCEIRIZADO"] = "terceirizado";
+})(MetodoConfirmacaoEnum || (exports.MetodoConfirmacaoEnum = MetodoConfirmacaoEnum = {}));
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXGVudW1zXFxtZXRvZG8tY29uZmlybWFjYW8uZW51bS50cyIsIm1hcHBpbmdzIjoiOzs7QUFBQTs7O0dBR0c7QUFDSCxJQUFZLHFCQWVYO0FBZkQsV0FBWSxxQkFBcUI7SUFDL0I7O09BRUc7SUFDSCxrREFBeUIsQ0FBQTtJQUV6Qjs7T0FFRztJQUNILDRDQUFtQixDQUFBO0lBRW5COztPQUVHO0lBQ0gsc0RBQTZCLENBQUE7QUFDL0IsQ0FBQyxFQWZXLHFCQUFxQixxQ0FBckIscUJBQXFCLFFBZWhDIiwibmFtZXMiOltdLCJzb3VyY2VzIjpbIkM6XFxVc2Vyc1xcZXVkcmVcXE9uZURyaXZlXFxEZXNrdG9wXFxQcm9qZXRvc1xccGdiZW5cXHBnYmVuLXNlcnZlclxcc3JjXFxlbnVtc1xcbWV0b2RvLWNvbmZpcm1hY2FvLmVudW0udHMiXSwic291cmNlc0NvbnRlbnQiOlsiLyoqXG4gKiBFbnVtIHF1ZSBkZWZpbmUgb3MgcG9zc8OtdmVpcyBtw6l0b2RvcyBkZSBjb25maXJtYcOnw6NvIGRlIHJlY2ViaW1lbnRvIGRlIHBhZ2FtZW50by5cbiAqIFJlcHJlc2VudGEgYXMgZGlmZXJlbnRlcyBmb3JtYXMgcGVsYXMgcXVhaXMgdW0gYmVuZWZpY2nDoXJpbyBwb2RlIGNvbmZpcm1hciBvIHJlY2ViaW1lbnRvIGRvIGJlbmVmw61jaW8uXG4gKi9cbmV4cG9ydCBlbnVtIE1ldG9kb0NvbmZpcm1hY2FvRW51bSB7XG4gIC8qKlxuICAgKiBDb25maXJtYcOnw6NvIHBvciBhc3NpbmF0dXJhIGbDrXNpY2EgZW0gZG9jdW1lbnRvIGltcHJlc3NvLlxuICAgKi9cbiAgQVNTSU5BVFVSQSA9ICdhc3NpbmF0dXJhJyxcblxuICAvKipcbiAgICogQ29uZmlybWHDp8OjbyBkaWdpdGFsLCByZWFsaXphZGEgYXRyYXbDqXMgZGUgc2lzdGVtYSBlbGV0csO0bmljbyAoYXBwLCBwb3J0YWwsIGV0YykuXG4gICAqL1xuICBESUdJVEFMID0gJ2RpZ2l0YWwnLFxuXG4gIC8qKlxuICAgKiBDb25maXJtYcOnw6NvIHJlYWxpemFkYSBwb3IgdGVyY2Vpcm8gYXV0b3JpemFkbyBhIHJlY2ViZXIgZW0gbm9tZSBkbyBiZW5lZmljacOhcmlvLlxuICAgKi9cbiAgVEVSQ0VJUklaQURPID0gJ3RlcmNlaXJpemFkbycsXG59XG4iXSwidmVyc2lvbiI6M30=

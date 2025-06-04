@@ -1,0 +1,183 @@
+36fbb81f9a8dcf338c562077894abd42
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var _a, _b, _c, _d, _e, _f, _g, _h;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Recurso = exports.StatusRecurso = void 0;
+const typeorm_1 = require("typeorm");
+const class_validator_1 = require("class-validator");
+const solicitacao_entity_1 = require("./solicitacao.entity");
+const usuario_entity_1 = require("./usuario.entity");
+const setor_entity_1 = require("./setor.entity");
+const recurso_historico_entity_1 = require("./recurso-historico.entity");
+var StatusRecurso;
+(function (StatusRecurso) {
+    StatusRecurso["PENDENTE"] = "pendente";
+    StatusRecurso["EM_ANALISE"] = "em_analise";
+    StatusRecurso["DEFERIDO"] = "deferido";
+    StatusRecurso["INDEFERIDO"] = "indeferido";
+    StatusRecurso["CANCELADO"] = "cancelado";
+})(StatusRecurso || (exports.StatusRecurso = StatusRecurso = {}));
+let Recurso = class Recurso {
+    id;
+    solicitacao_id;
+    solicitacao;
+    justificativa;
+    status;
+    created_at;
+    data_analise;
+    analista_id;
+    analista;
+    parecer;
+    documentos_adicionais;
+    motivo_indeferimento;
+    prazo_analise;
+    setor_responsavel_id;
+    setor_responsavel;
+    historicos;
+    // Campos para controle de alteração de status
+    statusAnterior;
+    usuarioAlteracao;
+    observacaoAlteracao;
+    ipUsuario;
+    /**
+     * Prepara a alteração de status para posterior registro no histórico
+     * @param novoStatus Novo status do recurso
+     * @param usuario ID do usuário que realizou a alteração
+     * @param observacao Observação sobre a alteração
+     * @param ip IP do usuário que realizou a alteração
+     */
+    prepararAlteracaoStatus(novoStatus, usuario, observacao, ip) {
+        this.statusAnterior = this.status;
+        this.status = novoStatus;
+        this.usuarioAlteracao = usuario;
+        this.observacaoAlteracao = observacao;
+        this.ipUsuario = ip;
+    }
+    // REMOVIDO: @AfterUpdate logStatusChange()
+    // O logging de histórico agora é feito diretamente nos serviços
+    // que têm acesso ao DataSource e repositórios adequados.
+    // Isso evita o erro ConnectionNotFoundError que ocorria quando
+    // o método tentava usar getRepository() sem contexto de conexão.
+    updated_at;
+    removed_at;
+};
+exports.Recurso = Recurso;
+__decorate([
+    (0, typeorm_1.PrimaryGeneratedColumn)('uuid'),
+    __metadata("design:type", String)
+], Recurso.prototype, "id", void 0);
+__decorate([
+    (0, typeorm_1.Column)(),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Solicitação é obrigatória' }),
+    __metadata("design:type", String)
+], Recurso.prototype, "solicitacao_id", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => solicitacao_entity_1.Solicitacao, { eager: false }),
+    (0, typeorm_1.JoinColumn)({ name: 'solicitacao_id' }),
+    __metadata("design:type", typeof (_a = typeof solicitacao_entity_1.Solicitacao !== "undefined" && solicitacao_entity_1.Solicitacao) === "function" ? _a : Object)
+], Recurso.prototype, "solicitacao", void 0);
+__decorate([
+    (0, typeorm_1.Column)('text'),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Justificativa é obrigatória' }),
+    __metadata("design:type", String)
+], Recurso.prototype, "justificativa", void 0);
+__decorate([
+    (0, typeorm_1.Column)({
+        type: 'enum',
+        enum: StatusRecurso,
+        enumName: 'status_recurso',
+        default: StatusRecurso.PENDENTE,
+    }),
+    __metadata("design:type", String)
+], Recurso.prototype, "status", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'timestamp' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Data de criação é obrigatória' }),
+    __metadata("design:type", typeof (_b = typeof Date !== "undefined" && Date) === "function" ? _b : Object)
+], Recurso.prototype, "created_at", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'timestamp', nullable: true }),
+    __metadata("design:type", typeof (_c = typeof Date !== "undefined" && Date) === "function" ? _c : Object)
+], Recurso.prototype, "data_analise", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", String)
+], Recurso.prototype, "analista_id", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => usuario_entity_1.Usuario),
+    (0, typeorm_1.JoinColumn)({ name: 'analista_id' }),
+    __metadata("design:type", typeof (_d = typeof usuario_entity_1.Usuario !== "undefined" && usuario_entity_1.Usuario) === "function" ? _d : Object)
+], Recurso.prototype, "analista", void 0);
+__decorate([
+    (0, typeorm_1.Column)('text', { nullable: true }),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], Recurso.prototype, "parecer", void 0);
+__decorate([
+    (0, typeorm_1.Column)('jsonb', { nullable: true }),
+    __metadata("design:type", typeof (_e = typeof Record !== "undefined" && Record) === "function" ? _e : Object)
+], Recurso.prototype, "documentos_adicionais", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true, length: 100 }),
+    __metadata("design:type", String)
+], Recurso.prototype, "motivo_indeferimento", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ default: 5 }),
+    __metadata("design:type", Number)
+], Recurso.prototype, "prazo_analise", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", String)
+], Recurso.prototype, "setor_responsavel_id", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => setor_entity_1.Setor),
+    (0, typeorm_1.JoinColumn)({ name: 'setor_responsavel_id' }),
+    __metadata("design:type", typeof (_f = typeof setor_entity_1.Setor !== "undefined" && setor_entity_1.Setor) === "function" ? _f : Object)
+], Recurso.prototype, "setor_responsavel", void 0);
+__decorate([
+    (0, typeorm_1.OneToMany)(() => recurso_historico_entity_1.RecursoHistorico, (historico) => historico.recurso, {
+        cascade: ['insert', 'update'],
+    }),
+    __metadata("design:type", Array)
+], Recurso.prototype, "historicos", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ select: false, insert: false, update: false }),
+    __metadata("design:type", String)
+], Recurso.prototype, "statusAnterior", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ select: false, insert: false, update: false }),
+    __metadata("design:type", String)
+], Recurso.prototype, "usuarioAlteracao", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ select: false, insert: false, update: false }),
+    __metadata("design:type", String)
+], Recurso.prototype, "observacaoAlteracao", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ select: false, insert: false, update: false }),
+    __metadata("design:type", String)
+], Recurso.prototype, "ipUsuario", void 0);
+__decorate([
+    (0, typeorm_1.UpdateDateColumn)(),
+    __metadata("design:type", typeof (_g = typeof Date !== "undefined" && Date) === "function" ? _g : Object)
+], Recurso.prototype, "updated_at", void 0);
+__decorate([
+    (0, typeorm_1.DeleteDateColumn)(),
+    __metadata("design:type", typeof (_h = typeof Date !== "undefined" && Date) === "function" ? _h : Object)
+], Recurso.prototype, "removed_at", void 0);
+exports.Recurso = Recurso = __decorate([
+    (0, typeorm_1.Entity)('recurso'),
+    (0, typeorm_1.Index)(['solicitacao_id']),
+    (0, typeorm_1.Index)(['status']),
+    (0, typeorm_1.Index)(['status', 'setor_responsavel_id']),
+    (0, typeorm_1.Index)(['created_at'])
+], Recurso);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXGVudGl0aWVzXFxyZWN1cnNvLmVudGl0eS50cyIsIm1hcHBpbmdzIjoiOzs7Ozs7Ozs7Ozs7O0FBQUEscUNBYWlCO0FBQ2pCLHFEQUF5RDtBQUN6RCw2REFBbUQ7QUFDbkQscURBQTJDO0FBQzNDLGlEQUF1QztBQUN2Qyx5RUFBOEQ7QUFFOUQsSUFBWSxhQU1YO0FBTkQsV0FBWSxhQUFhO0lBQ3ZCLHNDQUFxQixDQUFBO0lBQ3JCLDBDQUF5QixDQUFBO0lBQ3pCLHNDQUFxQixDQUFBO0lBQ3JCLDBDQUF5QixDQUFBO0lBQ3pCLHdDQUF1QixDQUFBO0FBQ3pCLENBQUMsRUFOVyxhQUFhLDZCQUFiLGFBQWEsUUFNeEI7QUFPTSxJQUFNLE9BQU8sR0FBYixNQUFNLE9BQU87SUFFbEIsRUFBRSxDQUFTO0lBSVgsY0FBYyxDQUFTO0lBSXZCLFdBQVcsQ0FBYztJQUl6QixhQUFhLENBQVM7SUFRdEIsTUFBTSxDQUFnQjtJQUl0QixVQUFVLENBQU87SUFHakIsWUFBWSxDQUFPO0lBR25CLFdBQVcsQ0FBUztJQUlwQixRQUFRLENBQVU7SUFJbEIsT0FBTyxDQUFTO0lBR2hCLHFCQUFxQixDQUFzQjtJQUczQyxvQkFBb0IsQ0FBUztJQUc3QixhQUFhLENBQVM7SUFHdEIsb0JBQW9CLENBQVM7SUFJN0IsaUJBQWlCLENBQVE7SUFLekIsVUFBVSxDQUFxQjtJQUUvQiw4Q0FBOEM7SUFFdEMsY0FBYyxDQUFnQjtJQUc5QixnQkFBZ0IsQ0FBUztJQUd6QixtQkFBbUIsQ0FBUztJQUc1QixTQUFTLENBQVM7SUFFMUI7Ozs7OztPQU1HO0lBQ0gsdUJBQXVCLENBQ3JCLFVBQXlCLEVBQ3pCLE9BQWUsRUFDZixVQUFrQixFQUNsQixFQUFVO1FBRVYsSUFBSSxDQUFDLGNBQWMsR0FBRyxJQUFJLENBQUMsTUFBTSxDQUFDO1FBQ2xDLElBQUksQ0FBQyxNQUFNLEdBQUcsVUFBVSxD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bkIiLCJuYW1lcyI6W10sInNvdXJjZXMiOlsiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXGVudGl0aWVzXFxyZWN1cnNvLmVudGl0eS50cyJdLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQge1xuICBFbnRpdHksXG4gIFByaW1hcnlHZW5lcmF0ZWRDb2x1bW4sXG4gIENvbHVtbixcbiAgQ3JlYXRlRGF0ZUNvbHVtbixcbiAgVXBkYXRlRGF0ZUNvbHVtbixcbiAgRGVsZXRlRGF0ZUNvbHVtbixcbiAgTWFueVRvT25lLFxuICBKb2luQ29sdW1uLFxuICBPbmVUb01hbnksXG4gIEluZGV4LFxuICBCZWZvcmVJbnNlcnQsXG4gIEFmdGVyVXBkYXRlLFxufSBmcm9tICd0eXBlb3JtJztcbmltcG9ydCB7IElzTm90RW1wdHksIElzT3B0aW9uYWwgfSBmcm9tICdjbGFzcy12YWxpZGF0b3InO1xuaW1wb3J0IHsgU29saWNpdGFjYW8gfSBmcm9tICcuL3NvbGljaXRhY2FvLmVudGl0eSc7XG5pbXBvcnQgeyBVc3VhcmlvIH0gZnJvbSAnLi91c3VhcmlvLmVudGl0eSc7XG5pbXBvcnQgeyBTZXRvciB9IGZyb20gJy4vc2V0b3IuZW50aXR5JztcbmltcG9ydCB7IFJlY3Vyc29IaXN0b3JpY28gfSBmcm9tICcuL3JlY3Vyc28taGlzdG9yaWNvLmVudGl0eSc7XG5cbmV4cG9ydCBlbnVtIFN0YXR1c1JlY3Vyc28ge1xuICBQRU5ERU5URSA9ICdwZW5kZW50ZScsXG4gIEVNX0FOQUxJU0UgPSAnZW1fYW5hbGlzZScsXG4gIERFRkVSSURPID0gJ2RlZmVyaWRvJyxcbiAgSU5ERUZFUklETyA9ICdpbmRlZmVyaWRvJyxcbiAgQ0FOQ0VMQURPID0gJ2NhbmNlbGFkbycsXG59XG5cbkBFbnRpdHkoJ3JlY3Vyc28nKVxuQEluZGV4KFsnc29saWNpdGFjYW9faWQnXSlcbkBJbmRleChbJ3N0YXR1cyddKVxuQEluZGV4KFsnc3RhdHVzJywgJ3NldG9yX3Jlc3BvbnNhdmVsX2lkJ10pXG5ASW5kZXgoWydjcmVhdGVkX2F0J10pXG5leHBvcnQgY2xhc3MgUmVjdXJzbyB7XG4gIEBQcmltYXJ5R2VuZXJhdGVkQ29sdW1uKCd1dWlkJylcbiAgaWQ6IHN0cmluZztcblxuICBAQ29sdW1uKClcbiAgQElzTm90RW1wdHkoeyBtZXNzYWdlOiAnU29saWNpdGHDp8OjbyDDqSBvYnJpZ2F0w7NyaWEnIH0pXG4gIHNvbGljaXRhY2FvX2lkOiBzdHJpbmc7XG5cbiAgQE1hbnlUb09uZSgoKSA9PiBTb2xpY2l0YWNhbywgeyBlYWdlcjogZmFsc2UgfSlcbiAgQEpvaW5Db2x1bW4oeyBuYW1lOiAnc29saWNpdGFjYW9faWQnIH0pXG4gIHNvbGljaXRhY2FvOiBTb2xpY2l0YWNhbztcblxuICBAQ29sdW1uKCd0ZXh0JylcbiAgQElzTm90RW1wdHkoeyBtZXNzYWdlOiAnSnVzdGlmaWNhdGl2YSDDqSBvYnJpZ2F0w7NyaWEnIH0pXG4gIGp1c3RpZmljYXRpdmE6IHN0cmluZztcblxuICBAQ29sdW1uKHtcbiAgICB0eXBlOiAnZW51bScsXG4gICAgZW51bTogU3RhdHVzUmVjdXJzbyxcbiAgICBlbnVtTmFtZTogJ3N0YXR1c19yZWN1cnNvJyxcbiAgICBkZWZhdWx0OiBTdGF0dXNSZWN1cnNvLlBFTkRFTlRFLFxuICB9KVxuICBzdGF0dXM6IFN0YXR1c1JlY3Vyc287XG5cbiAgQENvbHVtbih7IHR5cGU6ICd0aW1lc3RhbXAnIH0pXG4gIEBJc05vdEVtcHR5KHsgbWVzc2FnZTogJ0RhdGEgZGUgY3JpYcOnw6NvIMOpIG9icmlnYXTDs3JpYScgfSlcbiAgY3JlYXRlZF9hdDogRGF0ZTtcblxuICBAQ29sdW1uKHsgdHlwZTogJ3RpbWVzdGFtcCcsIG51bGxhYmxlOiB0cnVlIH0pXG4gIGRhdGFfYW5hbGlzZTogRGF0ZTtcblxuICBAQ29sdW1uKHsgbnVsbGFibGU6IHRydWUgfSlcbiAgYW5hbGlzdGFfaWQ6IHN0cmluZztcblxuICBATWFueVRvT25lKCgpID0+IFVzdWFyaW8pXG4gIEBKb2luQ29sdW1uKHsgbmFtZTogJ2FuYWxpc3RhX2lkJyB9KVxuICBhbmFsaXN0YTogVXN1YXJpbztcblxuICBAQ29sdW1uKCd0ZXh0JywgeyBudWxsYWJsZTogdHJ1ZSB9KVxuICBASXNPcHRpb25hbCgpXG4gIHBhcmVjZXI6IHN0cmluZztcblxuICBAQ29sdW1uKCdqc29uYicsIHsgbnVsbGFibGU6IHRydWUgfSlcbiAgZG9jdW1lbnRvc19hZGljaW9uYWlzOiBSZWNvcmQ8c3RyaW5nLCBhbnk+O1xuXG4gIEBDb2x1bW4oeyBudWxsYWJsZTogdHJ1ZSwgbGVuZ3RoOiAxMDAgfSlcbiAgbW90aXZvX2luZGVmZXJpbWVudG86IHN0cmluZztcblxuICBAQ29sdW1uKHsgZGVmYXVsdDogNSB9KVxuICBwcmF6b19hbmFsaXNlOiBudW1iZXI7XG5cbiAgQENvbHVtbih7IG51bGxhYmxlOiB0cnVlIH0pXG4gIHNldG9yX3Jlc3BvbnNhdmVsX2lkOiBzdHJpbmc7XG5cbiAgQE1hbnlUb09uZSgoKSA9PiBTZXRvcilcbiAgQEpvaW5Db2x1bW4oeyBuYW1lOiAnc2V0b3JfcmVzcG9uc2F2ZWxfaWQnIH0pXG4gIHNldG9yX3Jlc3BvbnNhdmVsOiBTZXRvcjtcblxuICBAT25lVG9NYW55KCgpID0+IFJlY3Vyc29IaXN0b3JpY28sIChoaXN0b3JpY28pID0+IGhpc3Rvcmljby5yZWN1cnNvLCB7XG4gICAgY2FzY2FkZTogWydpbnNlcnQnLCAndXBkYXRlJ10sXG4gIH0pXG4gIGhpc3Rvcmljb3M6IFJlY3Vyc29IaXN0b3JpY29bXTtcblxuICAvLyBDYW1wb3MgcGFyYSBjb250cm9sZSBkZSBhbHRlcmHDp8OjbyBkZSBzdGF0dXNcbiAgQENvbHVtbih7IHNlbGVjdDogZmFsc2UsIGluc2VydDogZmFsc2UsIHVwZGF0ZTogZmFsc2UgfSlcbiAgcHJpdmF0ZSBzdGF0dXNBbnRlcmlvcjogU3RhdHVzUmVjdXJzbztcblxuICBAQ29sdW1uKHsgc2VsZWN0OiBmYWxzZSwgaW5zZXJ0OiBmYWxzZSwgdXBkYXRlOiBmYWxzZSB9KVxuICBwcml2YXRlIHVzdWFyaW9BbHRlcmFjYW86IHN0cmluZztcblxuICBAQ29sdW1uKHsgc2VsZWN0OiBmYWxzZSwgaW5zZXJ0OiBmYWxzZSwgdXBkYXRlOiBmYWxzZSB9KVxuICBwcml2YXRlIG9ic2VydmFjYW9BbHRlcmFjYW86IHN0cmluZztcblxuICBAQ29sdW1uKHsgc2VsZWN0OiBmYWxzZSwgaW5zZXJ0OiBmYWxzZSwgdXBkYXRlOiBmYWxzZSB9KVxuICBwcml2YXRlIGlwVXN1YXJpbzogc3RyaW5nO1xuXG4gIC8qKlxuICAgKiBQcmVwYXJhIGEgYWx0ZXJhw6fDo28gZGUgc3RhdHVzIHBhcmEgcG9zdGVyaW9yIHJlZ2lzdHJvIG5vIGhpc3TDs3JpY29cbiAgICogQHBhcmFtIG5vdm9TdGF0dXMgTm92byBzdGF0dXMgZG8gcmVjdXJzb1xuICAgKiBAcGFyYW0gdXN1YXJpbyBJRCBkbyB1c3XDoXJpbyBxdWUgcmVhbGl6b3UgYSBhbHRlcmHDp8Ojb1xuICAgKiBAcGFyYW0gb2JzZXJ2YWNhbyBPYnNlcnZhw6fDo28gc29icmUgYSBhbHRlcmHDp8Ojb1xuICAgKiBAcGFyYW0gaXAgSVAgZG8gdXN1w6FyaW8gcXVlIHJlYWxpem91IGEgYWx0ZXJhw6fDo29cbiAgICovXG4gIHByZXBhcmFyQWx0ZXJhY2FvU3RhdHVzKFxuICAgIG5vdm9TdGF0dXM6IFN0YXR1c1JlY3Vyc28sXG4gICAgdXN1YXJpbzogc3RyaW5nLFxuICAgIG9ic2VydmFjYW86IHN0cmluZyxcbiAgICBpcDogc3RyaW5nLFxuICApIHtcbiAgICB0aGlzLnN0YXR1c0FudGVyaW9yID0gdGhpcy5zdGF0dXM7XG4gICAgdGhpcy5zdGF0dXMgPSBub3ZvU3RhdHVzO1xuICAgIHRoaXMudXN1YXJpb0FsdGVyYWNhbyA9IHVzdWFyaW87XG4gICAgdGhpcy5vYnNlcnZhY2FvQWx0ZXJhY2FvID0gb2JzZXJ2YWNhbztcbiAgICB0aGlzLmlwVXN1YXJpbyA9IGlwO1xuICB9XG5cbiAgLy8gUkVNT1ZJRE86IEBBZnRlclVwZGF0ZSBsb2dTdGF0dXNDaGFuZ2UoKVxuICAvLyBPIGxvZ2dpbmcgZGUgaGlzdMOzcmljbyBhZ29yYSDDqSBmZWl0byBkaXJldGFtZW50ZSBub3Mgc2VydmnDp29zXG4gIC8vIHF1ZSB0w6ptIGFjZXNzbyBhbyBEYXRhU291cmNlIGUgcmVwb3NpdMOzcmlvcyBhZGVxdWFkb3MuXG4gIC8vIElzc28gZXZpdGEgbyBlcnJvIENvbm5lY3Rpb25Ob3RGb3VuZEVycm9yIHF1ZSBvY29ycmlhIHF1YW5kb1xuICAvLyBvIG3DqXRvZG8gdGVudGF2YSB1c2FyIGdldFJlcG9zaXRvcnkoKSBzZW0gY29udGV4dG8gZGUgY29uZXjDo28uXG5cbiAgQFVwZGF0ZURhdGVDb2x1bW4oKVxuICB1cGRhdGVkX2F0OiBEYXRlO1xuXG4gIEBEZWxldGVEYXRlQ29sdW1uKClcbiAgcmVtb3ZlZF9hdDogRGF0ZTtcbn1cbiJdLCJ2ZXJzaW9uIjozfQ==

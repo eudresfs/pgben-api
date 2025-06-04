@@ -1,0 +1,88 @@
+83b05a9db1977afa2dbe5db8fa278468
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var _a, _b;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.PrimeiroAcessoGuard = void 0;
+const common_1 = require("@nestjs/common");
+const core_1 = require("@nestjs/core");
+const typeorm_1 = require("@nestjs/typeorm");
+const typeorm_2 = require("typeorm");
+const usuario_entity_1 = require("../../entities/usuario.entity");
+/**
+ * Guard para verificar se o usuário está em primeiro acesso
+ *
+ * Este guard verifica se o usuário logado possui o campo `primeiro_acesso` como `true`.
+ * Se sim, bloqueia o acesso a rotas que não sejam especificamente para alteração
+ * de senha no primeiro acesso.
+ *
+ * Para permitir acesso a uma rota mesmo em primeiro acesso, use o decorator
+ * `@AllowPrimeiroAcesso()` na rota ou controller.
+ */
+let PrimeiroAcessoGuard = class PrimeiroAcessoGuard {
+    reflector;
+    usuarioRepository;
+    constructor(reflector, usuarioRepository) {
+        this.reflector = reflector;
+        this.usuarioRepository = usuarioRepository;
+    }
+    async canActivate(context) {
+        const request = context.switchToHttp().getRequest();
+        const user = request.user;
+        // Se não há usuário autenticado, deixar outros guards tratarem
+        if (!user || !user.id) {
+            return true;
+        }
+        // Verificar se a rota permite primeiro acesso
+        const allowPrimeiroAcesso = this.reflector.get('allow-primeiro-acesso', context.getHandler()) ||
+            this.reflector.get('allow-primeiro-acesso', context.getClass());
+        if (allowPrimeiroAcesso) {
+            return true;
+        }
+        // Buscar dados completos do usuário para verificar primeiro_acesso
+        try {
+            const usuarioCompleto = await this.usuarioRepository.findOne({
+                where: { id: user.id },
+                select: ['id', 'primeiro_acesso', 'nome', 'email'],
+            });
+            if (!usuarioCompleto) {
+                throw new common_1.ForbiddenException('Usuário não encontrado');
+            }
+            // Se usuário está em primeiro acesso, bloquear
+            if (usuarioCompleto?.primeiro_acesso) {
+                throw new common_1.ForbiddenException({
+                    message: 'Primeiro acesso detectado. Alteração de senha obrigatória.',
+                    code: 'PRIMEIRO_ACESSO_OBRIGATORIO',
+                    redirect: '/auth/alterar-senha-primeiro-acesso',
+                });
+            }
+            return true;
+        }
+        catch (error) {
+            if (error instanceof common_1.ForbiddenException) {
+                throw error;
+            }
+            // Em caso de erro na consulta, permitir acesso para não quebrar o sistema
+            console.error('Erro ao verificar primeiro acesso:', error);
+            return true;
+        }
+    }
+};
+exports.PrimeiroAcessoGuard = PrimeiroAcessoGuard;
+exports.PrimeiroAcessoGuard = PrimeiroAcessoGuard = __decorate([
+    (0, common_1.Injectable)(),
+    __param(1, (0, typeorm_1.InjectRepository)(usuario_entity_1.Usuario)),
+    __metadata("design:paramtypes", [typeof (_a = typeof core_1.Reflector !== "undefined" && core_1.Reflector) === "function" ? _a : Object, typeof (_b = typeof typeorm_2.Repository !== "undefined" && typeorm_2.Repository) === "function" ? _b : Object])
+], PrimeiroAcessoGuard);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXGF1dGhcXGd1YXJkc1xccHJpbWVpcm8tYWNlc3NvLmd1YXJkLnRzIiwibWFwcGluZ3MiOiI7Ozs7Ozs7Ozs7Ozs7Ozs7QUFBQSwyQ0FLd0I7QUFDeEIsdUNBQXlDO0FBQ3pDLDZDQUFtRDtBQUNuRCxxQ0FBcUM7QUFDckMsa0VBQXdEO0FBRXhEOzs7Ozs7Ozs7R0FTRztBQUVJLElBQU0sbUJBQW1CLEdBQXpCLE1BQU0sbUJBQW1CO0lBRVg7SUFFQTtJQUhuQixZQUNtQixTQUFvQixFQUVwQixpQkFBc0M7UUFGdEMsY0FBUyxHQUFULFNBQVMsQ0FBVztRQUVwQixzQkFBaUIsR0FBakIsaUJBQWlCLENBQXFCO0lBQ3RELENBQUM7SUFFSixLQUFLLENBQUMsV0FBVyxDQUFDLE9BQXlCO1FBQ3pDLE1BQU0sT0FBTyxHQUFHLE9BQU8sQ0FBQyxZQUFZLEVBQUUsQ0FBQyxVQUFVLEVBQUUsQ0FBQztRQUNwRCxNQUFNLElBQUksR0FBRyxPQUFPLENBQUMsSUFBSSxDQUFDO1FBRTFCLCtEQUErRDtRQUMvRCxJQUFJLENBQUMsSUFBSSxJQUFJLENBQUMsSUFBSSxDQUFDLEVBQUUsRUFBRSxDQUFDO1lBQ3RCLE9BQU8sSUFBSSxDQUFDO1FBQ2QsQ0FBQztRQUVELDhDQUE4QztRQUM5QyxNQUFNLG1CQUFtQixHQUN2QixJQUFJLENBQUMsU0FBUyxDQUFDLEdBQUcsQ0FDaEIsdUJBQXVCLEVBQ3ZCLE9BQU8sQ0FBQyxVQUFVLEVBQUUsQ0FDckI7WUFDRCxJQUFJLENBQUMsU0FBUyxDQUFDLEdBQUcsQ0FBVSx1QkFBdUIsRUFBRSxPQUFPLENBQUMsUUFBUSxFQUFFLENBQUMsQ0FBQztRQUUzRSxJQUFJLG1CQUFtQixFQUFFLENBQUM7WUFDeEIsT0FBTyxJQUFJLENBQUM7UUFDZCxDQUFDO1FBRUQsbUVBQW1FO1FBQ25FLElBQUksQ0FBQztZQUNILE1BQU0sZUFBZSxHQUFHLE1BQU0sSUFBSSxDQUFDLGlCQUFpQixDQUFDLE9BQU8sQ0FBQztnQkFDM0QsS0FBSyxFQUFFLEVBQUUsRUFBRSxFQUFFLElBQUksQ0FBQyxFQUFFLEVBQUU7Z0JBQ3RCLE1BQU0sRUFBRSxDQUFDLElBQUksRUFBRSxpQkFBaUIsRUFBRSxNQUFNLEVBQUUsT0FBTyxDQUFDO2FBQ25ELENBQUMsQ0FBQztZQUVILElBQUksQ0FBQyxlQUFlLEVBQUUsQ0FBQztnQkFDckIsTUFBTSxJQUFJLDJCQUFrQixDQUFDLHdCQUF3QixDQUFDLENBQUM7WUFDekQsQ0FBQztZQUVELCtDQUErQztZQUMvQyxJQUFJLGVBQWUsRUFBRSxlQUFlLEVBQUUsQ0FBQztnQkFDckMsTUFBTSxJQUFJLDJCQUFrQixDQUFDO29CQUMzQixPQUFPLEVBQUUsNERBQTREO29CQUNyRSxJQUFJLEVBQUUsNkJBQTZCO29CQUNuQyxRQUFRLEVBQUUscUNBQXFDO2lCQUNoRCxDQUFDLENBQUM7WUFDTCxDQUFDO1lBRUQsT0FBTyxJQUFJLENBQUM7UUFDZCxDQUFDO1FBQUMsT0FBTyxLQUFLLEVBQUUsQ0FBQztZQUNmLElBQUksS0FBSyxZQUFZLDJCQUFrQixFQUFFLENBQUM7Z0JBQ3hDLE1BQU0sS0FBSyxDQUFDO1lBQ2QsQ0FBQztZQUVELDBFQUEwRTtZQUMxRSxPQUFPLENBQUMsS0FBSyxDQUFDLG9DQUFvQyxFQUFFLEtBQUssQ0FBQyxDQUFDO1lBQzNELE9BQU8sSUFBSSxDQUFDO1FBQ2QsQ0FBQztJQUNILENBQUM7Q0FDRixDQUFBO0FBM0RZLGtEQUFtQjs4QkFBbkIsbUJBQW1CO0lBRC9CLElBQUEsbUJBQVUsR0FBRTtJQUlSLFdBQUEsSUFBQSwwQkFBZ0IsRUFBQyx3QkFBTyxDQUFDLENBQUE7eURBREUsZ0JBQVMsb0JBQVQsZ0JBQVMsb0RBRUQsb0JBQVUsb0JBQVYsb0JBQVU7R0FKckMsbUJBQW1CLENBMkQvQiIsIm5hbWVzIjpbXSwic291cmNlcyI6WyJDOlxcVXNlcnNcXGV1ZHJlXFxPbmVEcml2ZVxcRGVza3RvcFxcUHJvamV0b3NcXHBnYmVuXFxwZ2Jlbi1zZXJ2ZXJcXHNyY1xcYXV0aFxcZ3VhcmRzXFxwcmltZWlyby1hY2Vzc28uZ3VhcmQudHMiXSwic291cmNlc0NvbnRlbnQiOlsiaW1wb3J0IHtcbiAgQ2FuQWN0aXZhdGUsXG4gIEV4ZWN1dGlvbkNvbnRleHQsXG4gIEluamVjdGFibGUsXG4gIEZvcmJpZGRlbkV4Y2VwdGlvbixcbn0gZnJvbSAnQG5lc3Rqcy9jb21tb24nO1xuaW1wb3J0IHsgUmVmbGVjdG9yIH0gZnJvbSAnQG5lc3Rqcy9jb3JlJztcbmltcG9ydCB7IEluamVjdFJlcG9zaXRvcnkgfSBmcm9tICdAbmVzdGpzL3R5cGVvcm0nO1xuaW1wb3J0IHsgUmVwb3NpdG9yeSB9IGZyb20gJ3R5cGVvcm0nO1xuaW1wb3J0IHsgVXN1YXJpbyB9IGZyb20gJy4uLy4uL2VudGl0aWVzL3VzdWFyaW8uZW50aXR5JztcblxuLyoqXG4gKiBHdWFyZCBwYXJhIHZlcmlmaWNhciBzZSBvIHVzdcOhcmlvIGVzdMOhIGVtIHByaW1laXJvIGFjZXNzb1xuICpcbiAqIEVzdGUgZ3VhcmQgdmVyaWZpY2Egc2UgbyB1c3XDoXJpbyBsb2dhZG8gcG9zc3VpIG8gY2FtcG8gYHByaW1laXJvX2FjZXNzb2AgY29tbyBgdHJ1ZWAuXG4gKiBTZSBzaW0sIGJsb3F1ZWlhIG8gYWNlc3NvIGEgcm90YXMgcXVlIG7Do28gc2VqYW0gZXNwZWNpZmljYW1lbnRlIHBhcmEgYWx0ZXJhw6fDo29cbiAqIGRlIHNlbmhhIG5vIHByaW1laXJvIGFjZXNzby5cbiAqXG4gKiBQYXJhIHBlcm1pdGlyIGFjZXNzbyBhIHVtYSByb3RhIG1lc21vIGVtIHByaW1laXJvIGFjZXNzbywgdXNlIG8gZGVjb3JhdG9yXG4gKiBgQEFsbG93UHJpbWVpcm9BY2Vzc28oKWAgbmEgcm90YSBvdSBjb250cm9sbGVyLlxuICovXG5ASW5qZWN0YWJsZSgpXG5leHBvcnQgY2xhc3MgUHJpbWVpcm9BY2Vzc29HdWFyZCBpbXBsZW1lbnRzIENhbkFjdGl2YXRlIHtcbiAgY29uc3RydWN0b3IoXG4gICAgcHJpdmF0ZSByZWFkb25seSByZWZsZWN0b3I6IFJlZmxlY3RvcixcbiAgICBASW5qZWN0UmVwb3NpdG9yeShVc3VhcmlvKVxuICAgIHByaXZhdGUgcmVhZG9ubHkgdXN1YXJpb1JlcG9zaXRvcnk6IFJlcG9zaXRvcnk8VXN1YXJpbz4sXG4gICkge31cblxuICBhc3luYyBjYW5BY3RpdmF0ZShjb250ZXh0OiBFeGVjdXRpb25Db250ZXh0KTogUHJvbWlzZTxib29sZWFuPiB7XG4gICAgY29uc3QgcmVxdWVzdCA9IGNvbnRleHQuc3dpdGNoVG9IdHRwKCkuZ2V0UmVxdWVzdCgpO1xuICAgIGNvbnN0IHVzZXIgPSByZXF1ZXN0LnVzZXI7XG5cbiAgICAvLyBTZSBuw6NvIGjDoSB1c3XDoXJpbyBhdXRlbnRpY2FkbywgZGVpeGFyIG91dHJvcyBndWFyZHMgdHJhdGFyZW1cbiAgICBpZiAoIXVzZXIgfHwgIXVzZXIuaWQpIHtcbiAgICAgIHJldHVybiB0cnVlO1xuICAgIH1cblxuICAgIC8vIFZlcmlmaWNhciBzZSBhIHJvdGEgcGVybWl0ZSBwcmltZWlybyBhY2Vzc29cbiAgICBjb25zdCBhbGxvd1ByaW1laXJvQWNlc3NvID1cbiAgICAgIHRoaXMucmVmbGVjdG9yLmdldDxib29sZWFuPihcbiAgICAgICAgJ2FsbG93LXByaW1laXJvLWFjZXNzbycsXG4gICAgICAgIGNvbnRleHQuZ2V0SGFuZGxlcigpLFxuICAgICAgKSB8fFxuICAgICAgdGhpcy5yZWZsZWN0b3IuZ2V0PGJvb2xlYW4+KCdhbGxvdy1wcmltZWlyby1hY2Vzc28nLCBjb250ZXh0LmdldENsYXNzKCkpO1xuXG4gICAgaWYgKGFsbG93UHJpbWVpcm9BY2Vzc28pIHtcbiAgICAgIHJldHVybiB0cnVlO1xuICAgIH1cblxuICAgIC8vIEJ1c2NhciBkYWRvcyBjb21wbGV0b3MgZG8gdXN1w6FyaW8gcGFyYSB2ZXJpZmljYXIgcHJpbWVpcm9fYWNlc3NvXG4gICAgdHJ5IHtcbiAgICAgIGNvbnN0IHVzdWFyaW9Db21wbGV0byA9IGF3YWl0IHRoaXMudXN1YXJpb1JlcG9zaXRvcnkuZmluZE9uZSh7XG4gICAgICAgIHdoZXJlOiB7IGlkOiB1c2VyLmlkIH0sXG4gICAgICAgIHNlbGVjdDogWydpZCcsICdwcmltZWlyb19hY2Vzc28nLCAnbm9tZScsICdlbWFpbCddLFxuICAgICAgfSk7XG5cbiAgICAgIGlmICghdXN1YXJpb0NvbXBsZXRvKSB7XG4gICAgICAgIHRocm93IG5ldyBGb3JiaWRkZW5FeGNlcHRpb24oJ1VzdcOhcmlvIG7Do28gZW5jb250cmFkbycpO1xuICAgICAgfVxuXG4gICAgICAvLyBTZSB1c3XDoXJpbyBlc3TDoSBlbSBwcmltZWlybyBhY2Vzc28sIGJsb3F1ZWFyXG4gICAgICBpZiAodXN1YXJpb0NvbXBsZXRvPy5wcmltZWlyb19hY2Vzc28pIHtcbiAgICAgICAgdGhyb3cgbmV3IEZvcmJpZGRlbkV4Y2VwdGlvbih7XG4gICAgICAgICAgbWVzc2FnZTogJ1ByaW1laXJvIGFjZXNzbyBkZXRlY3RhZG8uIEFsdGVyYcOnw6NvIGRlIHNlbmhhIG9icmlnYXTDs3JpYS4nLFxuICAgICAgICAgIGNvZGU6ICdQUklNRUlST19BQ0VTU09fT0JSSUdBVE9SSU8nLFxuICAgICAgICAgIHJlZGlyZWN0OiAnL2F1dGgvYWx0ZXJhci1zZW5oYS1wcmltZWlyby1hY2Vzc28nLFxuICAgICAgICB9KTtcbiAgICAgIH1cblxuICAgICAgcmV0dXJuIHRydWU7XG4gICAgfSBjYXRjaCAoZXJyb3IpIHtcbiAgICAgIGlmIChlcnJvciBpbnN0YW5jZW9mIEZvcmJpZGRlbkV4Y2VwdGlvbikge1xuICAgICAgICB0aHJvdyBlcnJvcjtcbiAgICAgIH1cblxuICAgICAgLy8gRW0gY2FzbyBkZSBlcnJvIG5hIGNvbnN1bHRhLCBwZXJtaXRpciBhY2Vzc28gcGFyYSBuw6NvIHF1ZWJyYXIgbyBzaXN0ZW1hXG4gICAgICBjb25zb2xlLmVycm9yKCdFcnJvIGFvIHZlcmlmaWNhciBwcmltZWlybyBhY2Vzc286JywgZXJyb3IpO1xuICAgICAgcmV0dXJuIHRydWU7XG4gICAgfVxuICB9XG59XG4iXSwidmVyc2lvbiI6M30=

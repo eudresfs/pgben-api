@@ -1,0 +1,384 @@
+c1e5f5993f23c1dec1fb7ad1af30ab5c
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.InfoBancariaController = void 0;
+const common_1 = require("@nestjs/common");
+const swagger_1 = require("@nestjs/swagger");
+const info_bancaria_service_1 = require("../services/info-bancaria.service");
+const create_info_bancaria_dto_1 = require("../dto/create-info-bancaria.dto");
+const update_info_bancaria_dto_1 = require("../dto/update-info-bancaria.dto");
+const info_bancaria_response_dto_1 = require("../dto/info-bancaria-response.dto");
+const jwt_auth_guard_1 = require("../../../auth/guards/jwt-auth.guard");
+const permission_guard_1 = require("../../../auth/guards/permission.guard");
+const requires_permission_decorator_1 = require("../../../auth/decorators/requires-permission.decorator");
+const user_permission_entity_1 = require("@/entities/user-permission.entity");
+/**
+ * Controller para gerenciamento de informações bancárias
+ *
+ * Responsável pelos endpoints relacionados às informações bancárias dos cidadãos,
+ * incluindo contas poupança social do Banco do Brasil e dados PIX.
+ */
+let InfoBancariaController = class InfoBancariaController {
+    infoBancariaService;
+    constructor(infoBancariaService) {
+        this.infoBancariaService = infoBancariaService;
+    }
+    /**
+     * Cria uma nova informação bancária
+     */
+    async create(createInfoBancariaDto) {
+        return await this.infoBancariaService.create(createInfoBancariaDto);
+    }
+    /**
+     * Lista todas as informações bancárias com filtros
+     */
+    async findAll(skip, take, cidadao_id, banco, ativo, includeRelations) {
+        return await this.infoBancariaService.findAll({
+            skip: skip ? Number(skip) : undefined,
+            take: take ? Number(take) : undefined,
+            cidadao_id,
+            banco,
+            ativo,
+            includeRelations,
+        });
+    }
+    /**
+     * Busca informação bancária por ID
+     */
+    async findOne(id, includeRelations) {
+        return await this.infoBancariaService.findById(id, includeRelations);
+    }
+    /**
+     * Busca informação bancária por ID do cidadão
+     */
+    async findByCidadaoId(cidadaoId, includeRelations) {
+        return await this.infoBancariaService.findByCidadaoId(cidadaoId, includeRelations);
+    }
+    /**
+     * Atualiza informação bancária
+     */
+    async update(id, updateInfoBancariaDto) {
+        return await this.infoBancariaService.update(id, updateInfoBancariaDto);
+    }
+    /**
+     * Desativa informação bancária
+     */
+    async deactivate(id) {
+        return await this.infoBancariaService.deactivate(id);
+    }
+    /**
+     * Remove informação bancária
+     */
+    async remove(id) {
+        return await this.infoBancariaService.remove(id);
+    }
+};
+exports.InfoBancariaController = InfoBancariaController;
+__decorate([
+    (0, common_1.Post)(),
+    (0, common_1.HttpCode)(common_1.HttpStatus.CREATED),
+    (0, requires_permission_decorator_1.RequiresPermission)({
+        permissionName: 'info_bancaria.criar',
+        scopeType: user_permission_entity_1.TipoEscopo.GLOBAL,
+    }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Criar informação bancária',
+        description: 'Cria uma nova informação bancária para um cidadão, incluindo dados de conta poupança social e PIX',
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: 201,
+        description: 'Informação bancária criada com sucesso',
+        type: info_bancaria_response_dto_1.InfoBancariaResponseDto,
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: 400,
+        description: 'Dados inválidos fornecidos',
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: 404,
+        description: 'Cidadão não encontrado',
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: 409,
+        description: 'Cidadão já possui informação bancária ativa ou chave PIX já está em uso',
+    }),
+    __param(0, (0, common_1.Body)(common_1.ValidationPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [typeof (_b = typeof create_info_bancaria_dto_1.CreateInfoBancariaDto !== "undefined" && create_info_bancaria_dto_1.CreateInfoBancariaDto) === "function" ? _b : Object]),
+    __metadata("design:returntype", typeof (_c = typeof Promise !== "undefined" && Promise) === "function" ? _c : Object)
+], InfoBancariaController.prototype, "create", null);
+__decorate([
+    (0, common_1.Get)(),
+    (0, requires_permission_decorator_1.RequiresPermission)({
+        permissionName: 'info_bancaria.visualizar',
+        scopeType: user_permission_entity_1.TipoEscopo.GLOBAL,
+    }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Listar informações bancárias',
+        description: 'Lista todas as informações bancárias com filtros opcionais e paginação',
+    }),
+    (0, swagger_1.ApiQuery)({
+        name: 'skip',
+        required: false,
+        type: Number,
+        description: 'Número de registros para pular (paginação)',
+        example: 0,
+    }),
+    (0, swagger_1.ApiQuery)({
+        name: 'take',
+        required: false,
+        type: Number,
+        description: 'Número de registros para retornar',
+        example: 10,
+    }),
+    (0, swagger_1.ApiQuery)({
+        name: 'cidadao_id',
+        required: false,
+        type: String,
+        description: 'Filtrar por ID do cidadão',
+    }),
+    (0, swagger_1.ApiQuery)({
+        name: 'banco',
+        required: false,
+        type: String,
+        description: 'Filtrar por código do banco',
+        example: '001',
+    }),
+    (0, swagger_1.ApiQuery)({
+        name: 'ativo',
+        required: false,
+        type: Boolean,
+        description: 'Filtrar por status ativo',
+        example: true,
+    }),
+    (0, swagger_1.ApiQuery)({
+        name: 'includeRelations',
+        required: false,
+        type: Boolean,
+        description: 'Incluir dados do cidadão',
+        example: false,
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: 200,
+        description: 'Lista de informações bancárias retornada com sucesso',
+        schema: {
+            type: 'object',
+            properties: {
+                data: {
+                    type: 'array',
+                    items: { $ref: '#/components/schemas/InfoBancariaResponseDto' },
+                },
+                total: {
+                    type: 'number',
+                    description: 'Total de registros encontrados',
+                },
+            },
+        },
+    }),
+    __param(0, (0, common_1.Query)('skip')),
+    __param(1, (0, common_1.Query)('take')),
+    __param(2, (0, common_1.Query)('cidadao_id')),
+    __param(3, (0, common_1.Query)('banco')),
+    __param(4, (0, common_1.Query)('ativo')),
+    __param(5, (0, common_1.Query)('includeRelations')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Number, String, String, Boolean, Boolean]),
+    __metadata("design:returntype", typeof (_d = typeof Promise !== "undefined" && Promise) === "function" ? _d : Object)
+], InfoBancariaController.prototype, "findAll", null);
+__decorate([
+    (0, common_1.Get)(':id'),
+    (0, requires_permission_decorator_1.RequiresPermission)({
+        permissionName: 'info_bancaria.visualizar',
+        scopeType: user_permission_entity_1.TipoEscopo.GLOBAL,
+    }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Buscar informação bancária por ID',
+        description: 'Retorna uma informação bancária específica pelo seu ID',
+    }),
+    (0, swagger_1.ApiParam)({
+        name: 'id',
+        description: 'ID da informação bancária',
+        type: String,
+        format: 'uuid',
+    }),
+    (0, swagger_1.ApiQuery)({
+        name: 'includeRelations',
+        required: false,
+        type: Boolean,
+        description: 'Incluir dados do cidadão',
+        example: false,
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: 200,
+        description: 'Informação bancária encontrada',
+        type: info_bancaria_response_dto_1.InfoBancariaResponseDto,
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: 404,
+        description: 'Informação bancária não encontrada',
+    }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __param(1, (0, common_1.Query)('includeRelations')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Boolean]),
+    __metadata("design:returntype", typeof (_e = typeof Promise !== "undefined" && Promise) === "function" ? _e : Object)
+], InfoBancariaController.prototype, "findOne", null);
+__decorate([
+    (0, common_1.Get)('cidadao/:cidadaoId'),
+    (0, requires_permission_decorator_1.RequiresPermission)({
+        permissionName: 'info_bancaria.visualizar',
+        scopeType: user_permission_entity_1.TipoEscopo.GLOBAL,
+    }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Buscar informação bancária por ID do cidadão',
+        description: 'Retorna a informação bancária ativa de um cidadão específico',
+    }),
+    (0, swagger_1.ApiParam)({
+        name: 'cidadaoId',
+        description: 'ID do cidadão',
+        type: String,
+        format: 'uuid',
+    }),
+    (0, swagger_1.ApiQuery)({
+        name: 'includeRelations',
+        required: false,
+        type: Boolean,
+        description: 'Incluir dados do cidadão',
+        example: false,
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: 200,
+        description: 'Informação bancária encontrada',
+        type: info_bancaria_response_dto_1.InfoBancariaResponseDto,
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: 200,
+        description: 'Cidadão não possui informação bancária',
+        schema: { type: 'null' },
+    }),
+    __param(0, (0, common_1.Param)('cidadaoId', common_1.ParseUUIDPipe)),
+    __param(1, (0, common_1.Query)('includeRelations')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Boolean]),
+    __metadata("design:returntype", typeof (_f = typeof Promise !== "undefined" && Promise) === "function" ? _f : Object)
+], InfoBancariaController.prototype, "findByCidadaoId", null);
+__decorate([
+    (0, common_1.Patch)(':id'),
+    (0, requires_permission_decorator_1.RequiresPermission)({
+        permissionName: 'info_bancaria.atualizar',
+        scopeType: user_permission_entity_1.TipoEscopo.GLOBAL,
+    }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Atualizar informação bancária',
+        description: 'Atualiza uma informação bancária existente',
+    }),
+    (0, swagger_1.ApiParam)({
+        name: 'id',
+        description: 'ID da informação bancária',
+        type: String,
+        format: 'uuid',
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: 200,
+        description: 'Informação bancária atualizada com sucesso',
+        type: info_bancaria_response_dto_1.InfoBancariaResponseDto,
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: 400,
+        description: 'Dados inválidos fornecidos',
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: 404,
+        description: 'Informação bancária não encontrada',
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: 409,
+        description: 'Chave PIX já está em uso',
+    }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __param(1, (0, common_1.Body)(common_1.ValidationPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, typeof (_g = typeof update_info_bancaria_dto_1.UpdateInfoBancariaDto !== "undefined" && update_info_bancaria_dto_1.UpdateInfoBancariaDto) === "function" ? _g : Object]),
+    __metadata("design:returntype", typeof (_h = typeof Promise !== "undefined" && Promise) === "function" ? _h : Object)
+], InfoBancariaController.prototype, "update", null);
+__decorate([
+    (0, common_1.Patch)(':id/deactivate'),
+    (0, requires_permission_decorator_1.RequiresPermission)({
+        permissionName: 'info_bancaria.atualizar',
+        scopeType: user_permission_entity_1.TipoEscopo.GLOBAL,
+    }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Desativar informação bancária',
+        description: 'Desativa uma informação bancária sem removê-la do sistema',
+    }),
+    (0, swagger_1.ApiParam)({
+        name: 'id',
+        description: 'ID da informação bancária',
+        type: String,
+        format: 'uuid',
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: 200,
+        description: 'Informação bancária desativada com sucesso',
+        type: info_bancaria_response_dto_1.InfoBancariaResponseDto,
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: 404,
+        description: 'Informação bancária não encontrada',
+    }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", typeof (_j = typeof Promise !== "undefined" && Promise) === "function" ? _j : Object)
+], InfoBancariaController.prototype, "deactivate", null);
+__decorate([
+    (0, common_1.Delete)(':id'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.NO_CONTENT),
+    (0, requires_permission_decorator_1.RequiresPermission)({
+        permissionName: 'info_bancaria.excluir',
+        scopeType: user_permission_entity_1.TipoEscopo.GLOBAL,
+    }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Remover informação bancária',
+        description: 'Remove uma informação bancária do sistema (soft delete)',
+    }),
+    (0, swagger_1.ApiParam)({
+        name: 'id',
+        description: 'ID da informação bancária',
+        type: String,
+        format: 'uuid',
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: 204,
+        description: 'Informação bancária removida com sucesso',
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: 404,
+        description: 'Informação bancária não encontrada',
+    }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", typeof (_k = typeof Promise !== "undefined" && Promise) === "function" ? _k : Object)
+], InfoBancariaController.prototype, "remove", null);
+exports.InfoBancariaController = InfoBancariaController = __decorate([
+    (0, swagger_1.ApiTags)('Cidadão'),
+    (0, common_1.Controller)('cidadao/info-bancaria'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, permission_guard_1.PermissionGuard),
+    (0, swagger_1.ApiBearerAuth)(),
+    __metadata("design:paramtypes", [typeof (_a = typeof info_bancaria_service_1.InfoBancariaService !== "undefined" && info_bancaria_service_1.InfoBancariaService) === "function" ? _a : Object])
+], InfoBancariaController);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXGNpZGFkYW9cXGNvbnRyb2xsZXJzXFxpbmZvLWJhbmNhcmlhLmNvbnRyb2xsZXIudHMiLCJtYXBwaW5ncyI6Ijs7Ozs7Ozs7Ozs7Ozs7OztBQUFBLDJDQWN3QjtBQUN4Qiw2Q0FPeUI7QUFDekIsNkVBQXdFO0FBQ3hFLDhFQUF3RTtBQUN4RSw4RUFBd0U7QUFDeEUsa0ZBQTRFO0FBQzVFLHdFQUFtRTtBQUNuRSw0RUFBd0U7QUFDeEUsMEdBQTRGO0FBQzVGLDhFQUErRDtBQUUvRDs7Ozs7R0FLRztBQUtJLElBQU0sc0JBQXNCLEdBQTVCLE1BQU0sc0JBQXNCO0lBQ0o7SUFBN0IsWUFBNkIsbUJBQXdDO1FBQXhDLHdCQUFtQixHQUFuQixtQkFBbUIsQ0FBcUI7SUFBRyxDQUFDO0lBRXpFOztPQUVHO0lBOEJHLEFBQU4sS0FBSyxDQUFDLE1BQU0sQ0FDWSxxQkFBNEM7UUFFbEUsT0FBTyxNQUFNLElBQUksQ0FBQyxtQkFBbUIsQ0FBQyxNQUFNLENBQUMscUJBQXFCLENBQUMsQ0FBQztJQUN0RSxDQUFDO0lBRUQ7O09BRUc7SUFxRUcsQUFBTixLQUFLLENBQUMsT0FBTyxDQUNJLElBQWEsRUFDYixJQUFhLEVBQ1AsVUFBbUIsRUFDeEIsS0FBYyxFQUNkLEtBQWUsRUFDSixnQkFBMEI7UUFFckQsT0FBTyxNQUFNLElBQUksQ0FBQyxtQkFBbUIsQ0FBQyxPQUFPLENBQUM7WUFDNUMsSUFBSSxFQUFFLElBQUksQ0FBQyxDQUFDLENBQUMsTUFBTSxDQUFDLElBQUksQ0FBQyxDQUFDLENBQUMsQ0FBQyxTQUFTO1lBQ3JDLElBQUksRUFBRSxJQUFJLENBQUMsQ0FBQyxDQUFDLE1BQU0sQ0FBQyxJQUFJLENBQUMsQ0FBQyxDQUFDLENBQUMsU0FBUztZQUNyQyxVQUFVO1lBQ1YsS0FBSztZQUNMLEtBQUs7WUFDTCxnQkFBZ0I7U0FDakIsQ0FBQyxDQUFD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QUUsb0NBQW9DO0tBQ2xELENBQUM7SUFDWSxXQUFBLElBQUEsY0FBSyxFQUFDLElBQUksRUFBRSxzQkFBYSxDQUFDLENBQUE7Ozt3REFBYyxPQUFPLG9CQUFQLE9BQU87b0RBRTVEO2lDQWhVVSxzQkFBc0I7SUFKbEMsSUFBQSxpQkFBTyxFQUFDLFNBQVMsQ0FBQztJQUNsQixJQUFBLG1CQUFVLEVBQUMsdUJBQXVCLENBQUM7SUFDbkMsSUFBQSxrQkFBUyxFQUFDLDZCQUFZLEVBQUUsa0NBQWUsQ0FBQztJQUN4QyxJQUFBLHVCQUFhLEdBQUU7eURBRW9DLDJDQUFtQixvQkFBbkIsMkNBQW1CO0dBRDFELHNCQUFzQixDQWlVbEMiLCJuYW1lcyI6W10sInNvdXJjZXMiOlsiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXGNpZGFkYW9cXGNvbnRyb2xsZXJzXFxpbmZvLWJhbmNhcmlhLmNvbnRyb2xsZXIudHMiXSwic291cmNlc0NvbnRlbnQiOlsiaW1wb3J0IHtcbiAgQ29udHJvbGxlcixcbiAgR2V0LFxuICBQb3N0LFxuICBCb2R5LFxuICBQYXRjaCxcbiAgUGFyYW0sXG4gIERlbGV0ZSxcbiAgUXVlcnksXG4gIFVzZUd1YXJkcyxcbiAgUGFyc2VVVUlEUGlwZSxcbiAgVmFsaWRhdGlvblBpcGUsXG4gIEh0dHBDb2RlLFxuICBIdHRwU3RhdHVzLFxufSBmcm9tICdAbmVzdGpzL2NvbW1vbic7XG5pbXBvcnQge1xuICBBcGlUYWdzLFxuICBBcGlPcGVyYXRpb24sXG4gIEFwaVJlc3BvbnNlLFxuICBBcGlCZWFyZXJBdXRoLFxuICBBcGlQYXJhbSxcbiAgQXBpUXVlcnksXG59IGZyb20gJ0BuZXN0anMvc3dhZ2dlcic7XG5pbXBvcnQgeyBJbmZvQmFuY2FyaWFTZXJ2aWNlIH0gZnJvbSAnLi4vc2VydmljZXMvaW5mby1iYW5jYXJpYS5zZXJ2aWNlJztcbmltcG9ydCB7IENyZWF0ZUluZm9CYW5jYXJpYUR0byB9IGZyb20gJy4uL2R0by9jcmVhdGUtaW5mby1iYW5jYXJpYS5kdG8nO1xuaW1wb3J0IHsgVXBkYXRlSW5mb0JhbmNhcmlhRHRvIH0gZnJvbSAnLi4vZHRvL3VwZGF0ZS1pbmZvLWJhbmNhcmlhLmR0byc7XG5pbXBvcnQgeyBJbmZvQmFuY2FyaWFSZXNwb25zZUR0byB9IGZyb20gJy4uL2R0by9pbmZvLWJhbmNhcmlhLXJlc3BvbnNlLmR0byc7XG5pbXBvcnQgeyBKd3RBdXRoR3VhcmQgfSBmcm9tICcuLi8uLi8uLi9hdXRoL2d1YXJkcy9qd3QtYXV0aC5ndWFyZCc7XG5pbXBvcnQgeyBQZXJtaXNzaW9uR3VhcmQgfSBmcm9tICcuLi8uLi8uLi9hdXRoL2d1YXJkcy9wZXJtaXNzaW9uLmd1YXJkJztcbmltcG9ydCB7IFJlcXVpcmVzUGVybWlzc2lvbiB9IGZyb20gJy4uLy4uLy4uL2F1dGgvZGVjb3JhdG9ycy9yZXF1aXJlcy1wZXJtaXNzaW9uLmRlY29yYXRvcic7XG5pbXBvcnQgeyBUaXBvRXNjb3BvIH0gZnJvbSAnQC9lbnRpdGllcy91c2VyLXBlcm1pc3Npb24uZW50aXR5JztcblxuLyoqXG4gKiBDb250cm9sbGVyIHBhcmEgZ2VyZW5jaWFtZW50byBkZSBpbmZvcm1hw6fDtWVzIGJhbmPDoXJpYXNcbiAqXG4gKiBSZXNwb25zw6F2ZWwgcGVsb3MgZW5kcG9pbnRzIHJlbGFjaW9uYWRvcyDDoHMgaW5mb3JtYcOnw7VlcyBiYW5jw6FyaWFzIGRvcyBjaWRhZMOjb3MsXG4gKiBpbmNsdWluZG8gY29udGFzIHBvdXBhbsOnYSBzb2NpYWwgZG8gQmFuY28gZG8gQnJhc2lsIGUgZGFkb3MgUElYLlxuICovXG5AQXBpVGFncygnQ2lkYWTDo28nKVxuQENvbnRyb2xsZXIoJ2NpZGFkYW8vaW5mby1iYW5jYXJpYScpXG5AVXNlR3VhcmRzKEp3dEF1dGhHdWFyZCwgUGVybWlzc2lvbkd1YXJkKVxuQEFwaUJlYXJlckF1dGgoKVxuZXhwb3J0IGNsYXNzIEluZm9CYW5jYXJpYUNvbnRyb2xsZXIge1xuICBjb25zdHJ1Y3Rvcihwcml2YXRlIHJlYWRvbmx5IGluZm9CYW5jYXJpYVNlcnZpY2U6IEluZm9CYW5jYXJpYVNlcnZpY2UpIHt9XG5cbiAgLyoqXG4gICAqIENyaWEgdW1hIG5vdmEgaW5mb3JtYcOnw6NvIGJhbmPDoXJpYVxuICAgKi9cbiAgQFBvc3QoKVxuICBASHR0cENvZGUoSHR0cFN0YXR1cy5DUkVBVEVEKVxuICBAUmVxdWlyZXNQZXJtaXNzaW9uKHtcbiAgICBwZXJtaXNzaW9uTmFtZTogJ2luZm9fYmFuY2FyaWEuY3JpYXInLFxuICAgIHNjb3BlVHlwZTogVGlwb0VzY29wby5HTE9CQUwsXG4gIH0pXG4gIEBBcGlPcGVyYXRpb24oe1xuICAgIHN1bW1hcnk6ICdDcmlhciBpbmZvcm1hw6fDo28gYmFuY8OhcmlhJyxcbiAgICBkZXNjcmlwdGlvbjpcbiAgICAgICdDcmlhIHVtYSBub3ZhIGluZm9ybWHDp8OjbyBiYW5jw6FyaWEgcGFyYSB1bSBjaWRhZMOjbywgaW5jbHVpbmRvIGRhZG9zIGRlIGNvbnRhIHBvdXBhbsOnYSBzb2NpYWwgZSBQSVgnLFxuICB9KVxuICBAQXBpUmVzcG9uc2Uoe1xuICAgIHN0YXR1czogMjAxLFxuICAgIGRlc2NyaXB0aW9uOiAnSW5mb3JtYcOnw6NvIGJhbmPDoXJpYSBjcmlhZGEgY29tIHN1Y2Vzc28nLFxuICAgIHR5cGU6IEluZm9CYW5jYXJpYVJlc3BvbnNlRHRvLFxuICB9KVxuICBAQXBpUmVzcG9uc2Uoe1xuICAgIHN0YXR1czogNDAwLFxuICAgIGRlc2NyaXB0aW9uOiAnRGFkb3MgaW52w6FsaWRvcyBmb3JuZWNpZG9zJyxcbiAgfSlcbiAgQEFwaVJlc3BvbnNlKHtcbiAgICBzdGF0dXM6IDQwNCxcbiAgICBkZXNjcmlwdGlvbjogJ0NpZGFkw6NvIG7Do28gZW5jb250cmFkbycsXG4gIH0pXG4gIEBBcGlSZXNwb25zZSh7XG4gICAgc3RhdHVzOiA0MDksXG4gICAgZGVzY3JpcHRpb246XG4gICAgICAnQ2lkYWTDo28gasOhIHBvc3N1aSBpbmZvcm1hw6fDo28gYmFuY8OhcmlhIGF0aXZhIG91IGNoYXZlIFBJWCBqw6EgZXN0w6EgZW0gdXNvJyxcbiAgfSlcbiAgYXN5bmMgY3JlYXRlKFxuICAgIEBCb2R5KFZhbGlkYXRpb25QaXBlKSBjcmVhdGVJbmZvQmFuY2FyaWFEdG86IENyZWF0ZUluZm9CYW5jYXJpYUR0byxcbiAgKTogUHJvbWlzZTxJbmZvQmFuY2FyaWFSZXNwb25zZUR0bz4ge1xuICAgIHJldHVybiBhd2FpdCB0aGlzLmluZm9CYW5jYXJpYVNlcnZpY2UuY3JlYXRlKGNyZWF0ZUluZm9CYW5jYXJpYUR0byk7XG4gIH1cblxuICAvKipcbiAgICogTGlzdGEgdG9kYXMgYXMgaW5mb3JtYcOnw7VlcyBiYW5jw6FyaWFzIGNvbSBmaWx0cm9zXG4gICAqL1xuICBAR2V0KClcbiAgQFJlcXVpcmVzUGVybWlzc2lvbih7XG4gICAgcGVybWlzc2lvbk5hbWU6ICdpbmZvX2JhbmNhcmlhLnZpc3VhbGl6YXInLFxuICAgIHNjb3BlVHlwZTogVGlwb0VzY29wby5HTE9CQUwsXG4gIH0pXG4gIEBBcGlPcGVyYXRpb24oe1xuICAgIHN1bW1hcnk6ICdMaXN0YXIgaW5mb3JtYcOnw7VlcyBiYW5jw6FyaWFzJyxcbiAgICBkZXNjcmlwdGlvbjpcbiAgICAgICdMaXN0YSB0b2RhcyBhcyBpbmZvcm1hw6fDtWVzIGJhbmPDoXJpYXMgY29tIGZpbHRyb3Mgb3BjaW9uYWlzIGUgcGFnaW5hw6fDo28nLFxuICB9KVxuICBAQXBpUXVlcnkoe1xuICAgIG5hbWU6ICdza2lwJyxcbiAgICByZXF1aXJlZDogZmFsc2UsXG4gICAgdHlwZTogTnVtYmVyLFxuICAgIGRlc2NyaXB0aW9uOiAnTsO6bWVybyBkZSByZWdpc3Ryb3MgcGFyYSBwdWxhciAocGFnaW5hw6fDo28pJyxcbiAgICBleGFtcGxlOiAwLFxuICB9KVxuICBAQXBpUXVlcnkoe1xuICAgIG5hbWU6ICd0YWtlJyxcbiAgICByZXF1aXJlZDogZmFsc2UsXG4gICAgdHlwZTogTnVtYmVyLFxuICAgIGRlc2NyaXB0aW9uOiAnTsO6bWVybyBkZSByZWdpc3Ryb3MgcGFyYSByZXRvcm5hcicsXG4gICAgZXhhbXBsZTogMTAsXG4gIH0pXG4gIEBBcGlRdWVyeSh7XG4gICAgbmFtZTogJ2NpZGFkYW9faWQnLFxuICAgIHJlcXVpcmVkOiBmYWxzZSxcbiAgICB0eXBlOiBTdHJpbmcsXG4gICAgZGVzY3JpcHRpb246ICdGaWx0cmFyIHBvciBJRCBkbyBjaWRhZMOjbycsXG4gIH0pXG4gIEBBcGlRdWVyeSh7XG4gICAgbmFtZTogJ2JhbmNvJyxcbiAgICByZXF1aXJlZDogZmFsc2UsXG4gICAgdHlwZTogU3RyaW5nLFxuICAgIGRlc2NyaXB0aW9uOiAnRmlsdHJhciBwb3IgY8OzZGlnbyBkbyBiYW5jbycsXG4gICAgZXhhbXBsZTogJzAwMScsXG4gIH0pXG4gIEBBcGlRdWVyeSh7XG4gICAgbmFtZTogJ2F0aXZvJyxcbiAgICByZXF1aXJlZDogZmFsc2UsXG4gICAgdHlwZTogQm9vbGVhbixcbiAgICBkZXNjcmlwdGlvbjogJ0ZpbHRyYXIgcG9yIHN0YXR1cyBhdGl2bycsXG4gICAgZXhhbXBsZTogdHJ1ZSxcbiAgfSlcbiAgQEFwaVF1ZXJ5KHtcbiAgICBuYW1lOiAnaW5jbHVkZVJlbGF0aW9ucycsXG4gICAgcmVxdWlyZWQ6IGZhbHNlLFxuICAgIHR5cGU6IEJvb2xlYW4sXG4gICAgZGVzY3JpcHRpb246ICdJbmNsdWlyIGRhZG9zIGRvIGNpZGFkw6NvJyxcbiAgICBleGFtcGxlOiBmYWxzZSxcbiAgfSlcbiAgQEFwaVJlc3BvbnNlKHtcbiAgICBzdGF0dXM6IDIwMCxcbiAgICBkZXNjcmlwdGlvbjogJ0xpc3RhIGRlIGluZm9ybWHDp8O1ZXMgYmFuY8OhcmlhcyByZXRvcm5hZGEgY29tIHN1Y2Vzc28nLFxuICAgIHNjaGVtYToge1xuICAgICAgdHlwZTogJ29iamVjdCcsXG4gICAgICBwcm9wZXJ0aWVzOiB7XG4gICAgICAgIGRhdGE6IHtcbiAgICAgICAgICB0eXBlOiAnYXJyYXknLFxuICAgICAgICAgIGl0ZW1zOiB7ICRyZWY6ICcjL2NvbXBvbmVudHMvc2NoZW1hcy9JbmZvQmFuY2FyaWFSZXNwb25zZUR0bycgfSxcbiAgICAgICAgfSxcbiAgICAgICAgdG90YWw6IHtcbiAgICAgICAgICB0eXBlOiAnbnVtYmVyJyxcbiAgICAgICAgICBkZXNjcmlwdGlvbjogJ1RvdGFsIGRlIHJlZ2lzdHJvcyBlbmNvbnRyYWRvcycsXG4gICAgICAgIH0sXG4gICAgICB9LFxuICAgIH0sXG4gIH0pXG4gIGFzeW5jIGZpbmRBbGwoXG4gICAgQFF1ZXJ5KCdza2lwJykgc2tpcD86IG51bWJlcixcbiAgICBAUXVlcnkoJ3Rha2UnKSB0YWtlPzogbnVtYmVyLFxuICAgIEBRdWVyeSgnY2lkYWRhb19pZCcpIGNpZGFkYW9faWQ/OiBzdHJpbmcsXG4gICAgQFF1ZXJ5KCdiYW5jbycpIGJhbmNvPzogc3RyaW5nLFxuICAgIEBRdWVyeSgnYXRpdm8nKSBhdGl2bz86IGJvb2xlYW4sXG4gICAgQFF1ZXJ5KCdpbmNsdWRlUmVsYXRpb25zJykgaW5jbHVkZVJlbGF0aW9ucz86IGJvb2xlYW4sXG4gICk6IFByb21pc2U8eyBkYXRhOiBJbmZvQmFuY2FyaWFSZXNwb25zZUR0b1tdOyB0b3RhbDogbnVtYmVyIH0+IHtcbiAgICByZXR1cm4gYXdhaXQgdGhpcy5pbmZvQmFuY2FyaWFTZXJ2aWNlLmZpbmRBbGwoe1xuICAgICAgc2tpcDogc2tpcCA/IE51bWJlcihza2lwKSA6IHVuZGVmaW5lZCxcbiAgICAgIHRha2U6IHRha2UgPyBOdW1iZXIodGFrZSkgOiB1bmRlZmluZWQsXG4gICAgICBjaWRhZGFvX2lkLFxuICAgICAgYmFuY28sXG4gICAgICBhdGl2byxcbiAgICAgIGluY2x1ZGVSZWxhdGlvbnMsXG4gICAgfSk7XG4gIH1cblxuICAvKipcbiAgICogQnVzY2EgaW5mb3JtYcOnw6NvIGJhbmPDoXJpYSBwb3IgSURcbiAgICovXG4gIEBHZXQoJzppZCcpXG4gIEBSZXF1aXJlc1Blcm1pc3Npb24oe1xuICAgIHBlcm1pc3Npb25OYW1lOiAnaW5mb19iYW5jYXJpYS52aXN1YWxpemFyJyxcbiAgICBzY29wZVR5cGU6IFRpcG9Fc2NvcG8uR0xPQkFMLFxuICB9KVxuICBAQXBpT3BlcmF0aW9uKHtcbiAgICBzdW1tYXJ5OiAnQnVzY2FyIGluZm9ybWHDp8OjbyBiYW5jw6FyaWEgcG9yIElEJyxcbiAgICBkZXNjcmlwdGlvbjogJ1JldG9ybmEgdW1hIGluZm9ybWHDp8OjbyBiYW5jw6FyaWEgZXNwZWPDrWZpY2EgcGVsbyBzZXUgSUQnLFxuICB9KVxuICBAQXBpUGFyYW0oe1xuICAgIG5hbWU6ICdpZCcsXG4gICAgZGVzY3JpcHRpb246ICdJRCBkYSBpbmZvcm1hw6fDo28gYmFuY8OhcmlhJyxcbiAgICB0eXBlOiBTdHJpbmcsXG4gICAgZm9ybWF0OiAndXVpZCcsXG4gIH0pXG4gIEBBcGlRdWVyeSh7XG4gICAgbmFtZTogJ2luY2x1ZGVSZWxhdGlvbnMnLFxuICAgIHJlcXVpcmVkOiBmYWxzZSxcbiAgICB0eXBlOiBCb29sZWFuLFxuICAgIGRlc2NyaXB0aW9uOiAnSW5jbHVpciBkYWRvcyBkbyBjaWRhZMOjbycsXG4gICAgZXhhbXBsZTogZmFsc2UsXG4gIH0pXG4gIEBBcGlSZXNwb25zZSh7XG4gICAgc3RhdHVzOiAyMDAsXG4gICAgZGVzY3JpcHRpb246ICdJbmZvcm1hw6fDo28gYmFuY8OhcmlhIGVuY29udHJhZGEnLFxuICAgIHR5cGU6IEluZm9CYW5jYXJpYVJlc3BvbnNlRHRvLFxuICB9KVxuICBAQXBpUmVzcG9uc2Uoe1xuICAgIHN0YXR1czogNDA0LFxuICAgIGRlc2NyaXB0aW9uOiAnSW5mb3JtYcOnw6NvIGJhbmPDoXJpYSBuw6NvIGVuY29udHJhZGEnLFxuICB9KVxuICBhc3luYyBmaW5kT25lKFxuICAgIEBQYXJhbSgnaWQnLCBQYXJzZVVVSURQaXBlKSBpZDogc3RyaW5nLFxuICAgIEBRdWVyeSgnaW5jbHVkZVJlbGF0aW9ucycpIGluY2x1ZGVSZWxhdGlvbnM/OiBib29sZWFuLFxuICApOiBQcm9taXNlPEluZm9CYW5jYXJpYVJlc3BvbnNlRHRvPiB7XG4gICAgcmV0dXJuIGF3YWl0IHRoaXMuaW5mb0JhbmNhcmlhU2VydmljZS5maW5kQnlJZChpZCwgaW5jbHVkZVJlbGF0aW9ucyk7XG4gIH1cblxuICAvKipcbiAgICogQnVzY2EgaW5mb3JtYcOnw6NvIGJhbmPDoXJpYSBwb3IgSUQgZG8gY2lkYWTDo29cbiAgICovXG4gIEBHZXQoJ2NpZGFkYW8vOmNpZGFkYW9JZCcpXG4gIEBSZXF1aXJlc1Blcm1pc3Npb24oe1xuICAgIHBlcm1pc3Npb25OYW1lOiAnaW5mb19iYW5jYXJpYS52aXN1YWxpemFyJyxcbiAgICBzY29wZVR5cGU6IFRpcG9Fc2NvcG8uR0xPQkFMLFxuICB9KVxuICBAQXBpT3BlcmF0aW9uKHtcbiAgICBzdW1tYXJ5OiAnQnVzY2FyIGluZm9ybWHDp8OjbyBiYW5jw6FyaWEgcG9yIElEIGRvIGNpZGFkw6NvJyxcbiAgICBkZXNjcmlwdGlvbjogJ1JldG9ybmEgYSBpbmZvcm1hw6fDo28gYmFuY8OhcmlhIGF0aXZhIGRlIHVtIGNpZGFkw6NvIGVzcGVjw61maWNvJyxcbiAgfSlcbiAgQEFwaVBhcmFtKHtcbiAgICBuYW1lOiAnY2lkYWRhb0lkJyxcbiAgICBkZXNjcmlwdGlvbjogJ0lEIGRvIGNpZGFkw6NvJyxcbiAgICB0eXBlOiBTdHJpbmcsXG4gICAgZm9ybWF0OiAndXVpZCcsXG4gIH0pXG4gIEBBcGlRdWVyeSh7XG4gICAgbmFtZTogJ2luY2x1ZGVSZWxhdGlvbnMnLFxuICAgIHJlcXVpcmVkOiBmYWxzZSxcbiAgICB0eXBlOiBCb29sZWFuLFxuICAgIGRlc2NyaXB0aW9uOiAnSW5jbHVpciBkYWRvcyBkbyBjaWRhZMOjbycsXG4gICAgZXhhbXBsZTogZmFsc2UsXG4gIH0pXG4gIEBBcGlSZXNwb25zZSh7XG4gICAgc3RhdHVzOiAyMDAsXG4gICAgZGVzY3JpcHRpb246ICdJbmZvcm1hw6fDo28gYmFuY8OhcmlhIGVuY29udHJhZGEnLFxuICAgIHR5cGU6IEluZm9CYW5jYXJpYVJlc3BvbnNlRHRvLFxuICB9KVxuICBAQXBpUmVzcG9uc2Uoe1xuICAgIHN0YXR1czogMjAwLFxuICAgIGRlc2NyaXB0aW9uOiAnQ2lkYWTDo28gbsOjbyBwb3NzdWkgaW5mb3JtYcOnw6NvIGJhbmPDoXJpYScsXG4gICAgc2NoZW1hOiB7IHR5cGU6ICdudWxsJyB9LFxuICB9KVxuICBhc3luYyBmaW5kQnlDaWRhZGFvSWQoXG4gICAgQFBhcmFtKCdjaWRhZGFvSWQnLCBQYXJzZVVVSURQaXBlKSBjaWRhZGFvSWQ6IHN0cmluZyxcbiAgICBAUXVlcnkoJ2luY2x1ZGVSZWxhdGlvbnMnKSBpbmNsdWRlUmVsYXRpb25zPzogYm9vbGVhbixcbiAgKTogUHJvbWlzZTxJbmZvQmFuY2FyaWFSZXNwb25zZUR0byB8IG51bGw+IHtcbiAgICByZXR1cm4gYXdhaXQgdGhpcy5pbmZvQmFuY2FyaWFTZXJ2aWNlLmZpbmRCeUNpZGFkYW9JZChcbiAgICAgIGNpZGFkYW9JZCxcbiAgICAgIGluY2x1ZGVSZWxhdGlvbnMsXG4gICAgKTtcbiAgfVxuXG4gIC8qKlxuICAgKiBBdHVhbGl6YSBpbmZvcm1hw6fDo28gYmFuY8OhcmlhXG4gICAqL1xuICBAUGF0Y2goJzppZCcpXG4gIEBSZXF1aXJlc1Blcm1pc3Npb24oe1xuICAgIHBlcm1pc3Npb25OYW1lOiAnaW5mb19iYW5jYXJpYS5hdHVhbGl6YXInLFxuICAgIHNjb3BlVHlwZTogVGlwb0VzY29wby5HTE9CQUwsXG4gIH0pXG4gIEBBcGlPcGVyYXRpb24oe1xuICAgIHN1bW1hcnk6ICdBdHVhbGl6YXIgaW5mb3JtYcOnw6NvIGJhbmPDoXJpYScsXG4gICAgZGVzY3JpcHRpb246ICdBdHVhbGl6YSB1bWEgaW5mb3JtYcOnw6NvIGJhbmPDoXJpYSBleGlzdGVudGUnLFxuICB9KVxuICBAQXBpUGFyYW0oe1xuICAgIG5hbWU6ICdpZCcsXG4gICAgZGVzY3JpcHRpb246ICdJRCBkYSBpbmZvcm1hw6fDo28gYmFuY8OhcmlhJyxcbiAgICB0eXBlOiBTdHJpbmcsXG4gICAgZm9ybWF0OiAndXVpZCcsXG4gIH0pXG4gIEBBcGlSZXNwb25zZSh7XG4gICAgc3RhdHVzOiAyMDAsXG4gICAgZGVzY3JpcHRpb246ICdJbmZvcm1hw6fDo28gYmFuY8OhcmlhIGF0dWFsaXphZGEgY29tIHN1Y2Vzc28nLFxuICAgIHR5cGU6IEluZm9CYW5jYXJpYVJlc3BvbnNlRHRvLFxuICB9KVxuICBAQXBpUmVzcG9uc2Uoe1xuICAgIHN0YXR1czogNDAwLFxuICAgIGRlc2NyaXB0aW9uOiAnRGFkb3MgaW52w6FsaWRvcyBmb3JuZWNpZG9zJyxcbiAgfSlcbiAgQEFwaVJlc3BvbnNlKHtcbiAgICBzdGF0dXM6IDQwNCxcbiAgICBkZXNjcmlwdGlvbjogJ0luZm9ybWHDp8OjbyBiYW5jw6FyaWEgbsOjbyBlbmNvbnRyYWRhJyxcbiAgfSlcbiAgQEFwaVJlc3BvbnNlKHtcbiAgICBzdGF0dXM6IDQwOSxcbiAgICBkZXNjcmlwdGlvbjogJ0NoYXZlIFBJWCBqw6EgZXN0w6EgZW0gdXNvJyxcbiAgfSlcbiAgYXN5bmMgdXBkYXRlKFxuICAgIEBQYXJhbSgnaWQnLCBQYXJzZVVVSURQaXBlKSBpZDogc3RyaW5nLFxuICAgIEBCb2R5KFZhbGlkYXRpb25QaXBlKSB1cGRhdGVJbmZvQmFuY2FyaWFEdG86IFVwZGF0ZUluZm9CYW5jYXJpYUR0byxcbiAgKTogUHJvbWlzZTxJbmZvQmFuY2FyaWFSZXNwb25zZUR0bz4ge1xuICAgIHJldHVybiBhd2FpdCB0aGlzLmluZm9CYW5jYXJpYVNlcnZpY2UudXBkYXRlKGlkLCB1cGRhdGVJbmZvQmFuY2FyaWFEdG8pO1xuICB9XG5cbiAgLyoqXG4gICAqIERlc2F0aXZhIGluZm9ybWHDp8OjbyBiYW5jw6FyaWFcbiAgICovXG4gIEBQYXRjaCgnOmlkL2RlYWN0aXZhdGUnKVxuICBAUmVxdWlyZXNQZXJtaXNzaW9uKHtcbiAgICBwZXJtaXNzaW9uTmFtZTogJ2luZm9fYmFuY2FyaWEuYXR1YWxpemFyJyxcbiAgICBzY29wZVR5cGU6IFRpcG9Fc2NvcG8uR0xPQkFMLFxuICB9KVxuICBAQXBpT3BlcmF0aW9uKHtcbiAgICBzdW1tYXJ5OiAnRGVzYXRpdmFyIGluZm9ybWHDp8OjbyBiYW5jw6FyaWEnLFxuICAgIGRlc2NyaXB0aW9uOiAnRGVzYXRpdmEgdW1hIGluZm9ybWHDp8OjbyBiYW5jw6FyaWEgc2VtIHJlbW92w6otbGEgZG8gc2lzdGVtYScsXG4gIH0pXG4gIEBBcGlQYXJhbSh7XG4gICAgbmFtZTogJ2lkJyxcbiAgICBkZXNjcmlwdGlvbjogJ0lEIGRhIGluZm9ybWHDp8OjbyBiYW5jw6FyaWEnLFxuICAgIHR5cGU6IFN0cmluZyxcbiAgICBmb3JtYXQ6ICd1dWlkJyxcbiAgfSlcbiAgQEFwaVJlc3BvbnNlKHtcbiAgICBzdGF0dXM6IDIwMCxcbiAgICBkZXNjcmlwdGlvbjogJ0luZm9ybWHDp8OjbyBiYW5jw6FyaWEgZGVzYXRpdmFkYSBjb20gc3VjZXNzbycsXG4gICAgdHlwZTogSW5mb0JhbmNhcmlhUmVzcG9uc2VEdG8sXG4gIH0pXG4gIEBBcGlSZXNwb25zZSh7XG4gICAgc3RhdHVzOiA0MDQsXG4gICAgZGVzY3JpcHRpb246ICdJbmZvcm1hw6fDo28gYmFuY8OhcmlhIG7Do28gZW5jb250cmFkYScsXG4gIH0pXG4gIGFzeW5jIGRlYWN0aXZhdGUoXG4gICAgQFBhcmFtKCdpZCcsIFBhcnNlVVVJRFBpcGUpIGlkOiBzdHJpbmcsXG4gICk6IFByb21pc2U8SW5mb0JhbmNhcmlhUmVzcG9uc2VEdG8+IHtcbiAgICByZXR1cm4gYXdhaXQgdGhpcy5pbmZvQmFuY2FyaWFTZXJ2aWNlLmRlYWN0aXZhdGUoaWQpO1xuICB9XG5cbiAgLyoqXG4gICAqIFJlbW92ZSBpbmZvcm1hw6fDo28gYmFuY8OhcmlhXG4gICAqL1xuICBARGVsZXRlKCc6aWQnKVxuICBASHR0cENvZGUoSHR0cFN0YXR1cy5OT19DT05URU5UKVxuICBAUmVxdWlyZXNQZXJtaXNzaW9uKHtcbiAgICBwZXJtaXNzaW9uTmFtZTogJ2luZm9fYmFuY2FyaWEuZXhjbHVpcicsXG4gICAgc2NvcGVUeXBlOiBUaXBvRXNjb3BvLkdMT0JBTCxcbiAgfSlcbiAgQEFwaU9wZXJhdGlvbih7XG4gICAgc3VtbWFyeTogJ1JlbW92ZXIgaW5mb3JtYcOnw6NvIGJhbmPDoXJpYScsXG4gICAgZGVzY3JpcHRpb246ICdSZW1vdmUgdW1hIGluZm9ybWHDp8OjbyBiYW5jw6FyaWEgZG8gc2lzdGVtYSAoc29mdCBkZWxldGUpJyxcbiAgfSlcbiAgQEFwaVBhcmFtKHtcbiAgICBuYW1lOiAnaWQnLFxuICAgIGRlc2NyaXB0aW9uOiAnSUQgZGEgaW5mb3JtYcOnw6NvIGJhbmPDoXJpYScsXG4gICAgdHlwZTogU3RyaW5nLFxuICAgIGZvcm1hdDogJ3V1aWQnLFxuICB9KVxuICBAQXBpUmVzcG9uc2Uoe1xuICAgIHN0YXR1czogMjA0LFxuICAgIGRlc2NyaXB0aW9uOiAnSW5mb3JtYcOnw6NvIGJhbmPDoXJpYSByZW1vdmlkYSBjb20gc3VjZXNzbycsXG4gIH0pXG4gIEBBcGlSZXNwb25zZSh7XG4gICAgc3RhdHVzOiA0MDQsXG4gICAgZGVzY3JpcHRpb246ICdJbmZvcm1hw6fDo28gYmFuY8OhcmlhIG7Do28gZW5jb250cmFkYScsXG4gIH0pXG4gIGFzeW5jIHJlbW92ZShAUGFyYW0oJ2lkJywgUGFyc2VVVUlEUGlwZSkgaWQ6IHN0cmluZyk6IFByb21pc2U8dm9pZD4ge1xuICAgIHJldHVybiBhd2FpdCB0aGlzLmluZm9CYW5jYXJpYVNlcnZpY2UucmVtb3ZlKGlkKTtcbiAgfVxufVxuIl0sInZlcnNpb24iOjN9

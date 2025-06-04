@@ -1,0 +1,329 @@
+971b0ee951a8d62b0cae106d71e35e9c
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var _a, _b, _c, _d, _e, _f;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.UsuarioController = void 0;
+const common_1 = require("@nestjs/common");
+const swagger_1 = require("@nestjs/swagger");
+const usuario_service_1 = require("../services/usuario.service");
+const create_usuario_dto_1 = require("../dto/create-usuario.dto");
+const update_usuario_dto_1 = require("../dto/update-usuario.dto");
+const update_status_usuario_dto_1 = require("../dto/update-status-usuario.dto");
+const update_senha_dto_1 = require("../dto/update-senha.dto");
+const alterar_senha_primeiro_acesso_dto_1 = require("../dto/alterar-senha-primeiro-acesso.dto");
+const jwt_auth_guard_1 = require("../../../auth/guards/jwt-auth.guard");
+const primeiro_acesso_guard_1 = require("../../../auth/guards/primeiro-acesso.guard");
+const requires_permission_decorator_1 = require("../../../auth/decorators/requires-permission.decorator");
+const allow_primeiro_acesso_decorator_1 = require("../../../auth/decorators/allow-primeiro-acesso.decorator");
+const user_permission_entity_1 = require("../../../entities/user-permission.entity");
+/**
+ * Controlador de usuários
+ *
+ * Responsável por gerenciar as rotas relacionadas a usuários
+ */
+let UsuarioController = class UsuarioController {
+    usuarioService;
+    constructor(usuarioService) {
+        this.usuarioService = usuarioService;
+    }
+    /**
+     * Lista todos os usuários com filtros e paginação
+     */
+    async findAll(page, limit, search, role, status, unidade_id) {
+        return this.usuarioService.findAll({
+            page: page ? +page : undefined,
+            limit: limit ? +limit : undefined,
+            search,
+            role,
+            status,
+            unidade_id,
+        });
+    }
+    /**
+     * Retorna todas as roles (papéis) disponíveis no sistema
+     */
+    async findAllRoles() {
+        return this.usuarioService.findAllRoles();
+    }
+    /**
+     * Obtém o perfil do usuário atual
+     */
+    async getProfile(req) {
+        return this.usuarioService.getProfile(req.user.id);
+    }
+    /**
+     * Obtém detalhes de um usuário específico
+     */
+    async findOne(id) {
+        return this.usuarioService.findById(id);
+    }
+    /**
+     * Cria um novo usuário
+     */
+    async create(createUsuarioDto) {
+        return this.usuarioService.create(createUsuarioDto);
+    }
+    /**
+     * Atualiza um usuário existente
+     */
+    async update(id, updateUsuarioDto) {
+        return this.usuarioService.update(id, updateUsuarioDto);
+    }
+    /**
+     * Atualiza o status de um usuário
+     */
+    async updateStatus(id, updateStatusUsuarioDto) {
+        return this.usuarioService.updateStatus(id, updateStatusUsuarioDto);
+    }
+    /**
+     * Altera a senha do usuário
+     */
+    async updateSenha(id, updateSenhaDto, req) {
+        // A verificação agora é feita pelo sistema de permissões granulares
+        return this.usuarioService.updateSenha(id, updateSenhaDto);
+    }
+    /**
+     * Altera a senha no primeiro acesso
+     */
+    async alterarSenhaPrimeiroAcesso(alterarSenhaDto, req) {
+        const userId = req.user.id;
+        return this.usuarioService.alterarSenhaPrimeiroAcesso(userId, alterarSenhaDto);
+    }
+    /**
+     * Remove um usuário (soft delete)
+     */
+    async remove(id) {
+        return this.usuarioService.remove(id);
+    }
+};
+exports.UsuarioController = UsuarioController;
+__decorate([
+    (0, common_1.Get)(),
+    (0, requires_permission_decorator_1.RequiresPermission)({
+        permissionName: 'usuario.listar',
+        scopeType: user_permission_entity_1.ScopeType.UNIT,
+        scopeIdExpression: 'query.unidade_id',
+    }),
+    (0, swagger_1.ApiOperation)({ summary: 'Listar usuários' }),
+    (0, swagger_1.ApiResponse)({
+        status: 200,
+        description: 'Lista de usuários retornada com sucesso',
+    }),
+    (0, swagger_1.ApiQuery)({
+        name: 'page',
+        required: false,
+        type: Number,
+        description: 'Página atual',
+    }),
+    (0, swagger_1.ApiQuery)({
+        name: 'limit',
+        required: false,
+        type: Number,
+        description: 'Itens por página',
+    }),
+    (0, swagger_1.ApiQuery)({
+        name: 'search',
+        required: false,
+        type: String,
+        description: 'Termo de busca',
+    }),
+    (0, swagger_1.ApiQuery)({
+        name: 'role',
+        required: false,
+        type: String,
+        description: 'Filtro por papel',
+    }),
+    (0, swagger_1.ApiQuery)({
+        name: 'status',
+        required: false,
+        type: String,
+        description: 'Filtro por status',
+    }),
+    (0, swagger_1.ApiQuery)({
+        name: 'unidade_id',
+        required: false,
+        type: String,
+        description: 'Filtro por unidade',
+    }),
+    __param(0, (0, common_1.Query)('page')),
+    __param(1, (0, common_1.Query)('limit')),
+    __param(2, (0, common_1.Query)('search')),
+    __param(3, (0, common_1.Query)('role')),
+    __param(4, (0, common_1.Query)('status')),
+    __param(5, (0, common_1.Query)('unidade_id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Number, String, String, String, String]),
+    __metadata("design:returntype", Promise)
+], UsuarioController.prototype, "findAll", null);
+__decorate([
+    (0, common_1.Get)('roles'),
+    (0, requires_permission_decorator_1.RequiresPermission)({
+        permissionName: 'usuario.listar',
+        scopeType: user_permission_entity_1.ScopeType.GLOBAL,
+    }),
+    (0, swagger_1.ApiOperation)({ summary: 'Listar todas as roles disponíveis' }),
+    (0, swagger_1.ApiResponse)({
+        status: 200,
+        description: 'Lista de roles retornada com sucesso',
+    }),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], UsuarioController.prototype, "findAllRoles", null);
+__decorate([
+    (0, common_1.Get)('me'),
+    (0, requires_permission_decorator_1.RequiresPermission)({
+        permissionName: 'usuario.perfil.visualizar',
+        scopeType: user_permission_entity_1.ScopeType.SELF,
+    }),
+    (0, swagger_1.ApiOperation)({ summary: 'Obter perfil do usuário atual' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Perfil obtido com sucesso' }),
+    __param(0, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], UsuarioController.prototype, "getProfile", null);
+__decorate([
+    (0, common_1.Get)(':id'),
+    (0, requires_permission_decorator_1.RequiresPermission)({
+        permissionName: 'usuario.visualizar',
+        scopeType: user_permission_entity_1.ScopeType.UNIT,
+        scopeIdExpression: 'usuario.unidade_id',
+    }),
+    (0, swagger_1.ApiOperation)({ summary: 'Obter detalhes de um usuário' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Usuário encontrado com sucesso' }),
+    (0, swagger_1.ApiResponse)({ status: 404, description: 'Usuário não encontrado' }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], UsuarioController.prototype, "findOne", null);
+__decorate([
+    (0, common_1.Post)(),
+    (0, requires_permission_decorator_1.RequiresPermission)({
+        permissionName: 'usuario.criar',
+        scopeType: user_permission_entity_1.ScopeType.UNIT,
+        scopeIdExpression: 'body.unidade_id',
+    }),
+    (0, swagger_1.ApiOperation)({ summary: 'Criar novo usuário' }),
+    (0, swagger_1.ApiResponse)({ status: 201, description: 'Usuário criado com sucesso' }),
+    (0, swagger_1.ApiResponse)({ status: 400, description: 'Dados inválidos' }),
+    (0, swagger_1.ApiResponse)({
+        status: 409,
+        description: 'Email, CPF ou matrícula já em uso',
+    }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [typeof (_b = typeof create_usuario_dto_1.CreateUsuarioDto !== "undefined" && create_usuario_dto_1.CreateUsuarioDto) === "function" ? _b : Object]),
+    __metadata("design:returntype", Promise)
+], UsuarioController.prototype, "create", null);
+__decorate([
+    (0, common_1.Put)(':id'),
+    (0, requires_permission_decorator_1.RequiresPermission)({
+        permissionName: 'usuario.editar',
+        scopeType: user_permission_entity_1.ScopeType.UNIT,
+        scopeIdExpression: 'usuario.unidade_id',
+    }),
+    (0, swagger_1.ApiOperation)({ summary: 'Atualizar usuário existente' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Usuário atualizado com sucesso' }),
+    (0, swagger_1.ApiResponse)({ status: 400, description: 'Dados inválidos' }),
+    (0, swagger_1.ApiResponse)({ status: 404, description: 'Usuário não encontrado' }),
+    (0, swagger_1.ApiResponse)({
+        status: 409,
+        description: 'Email, CPF ou matrícula já em uso',
+    }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, typeof (_c = typeof update_usuario_dto_1.UpdateUsuarioDto !== "undefined" && update_usuario_dto_1.UpdateUsuarioDto) === "function" ? _c : Object]),
+    __metadata("design:returntype", Promise)
+], UsuarioController.prototype, "update", null);
+__decorate([
+    (0, common_1.Patch)(':id/status'),
+    (0, requires_permission_decorator_1.RequiresPermission)({
+        permissionName: 'usuario.status.alterar',
+        scopeType: user_permission_entity_1.ScopeType.UNIT,
+        scopeIdExpression: 'usuario.unidade_id',
+    }),
+    (0, swagger_1.ApiOperation)({ summary: 'Ativar/inativar usuário' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Status atualizado com sucesso' }),
+    (0, swagger_1.ApiResponse)({ status: 404, description: 'Usuário não encontrado' }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, typeof (_d = typeof update_status_usuario_dto_1.UpdateStatusUsuarioDto !== "undefined" && update_status_usuario_dto_1.UpdateStatusUsuarioDto) === "function" ? _d : Object]),
+    __metadata("design:returntype", Promise)
+], UsuarioController.prototype, "updateStatus", null);
+__decorate([
+    (0, common_1.Put)(':id/senha'),
+    (0, requires_permission_decorator_1.RequiresPermission)({
+        permissionName: 'usuario.senha.alterar',
+        scopeType: user_permission_entity_1.ScopeType.SELF,
+        scopeIdExpression: 'params.id',
+    }),
+    (0, swagger_1.ApiOperation)({ summary: 'Alterar senha' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Senha alterada com sucesso' }),
+    (0, swagger_1.ApiResponse)({
+        status: 400,
+        description: 'Dados inválidos ou senha atual incorreta',
+    }),
+    (0, swagger_1.ApiResponse)({ status: 404, description: 'Usuário não encontrado' }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, typeof (_e = typeof update_senha_dto_1.UpdateSenhaDto !== "undefined" && update_senha_dto_1.UpdateSenhaDto) === "function" ? _e : Object, Object]),
+    __metadata("design:returntype", Promise)
+], UsuarioController.prototype, "updateSenha", null);
+__decorate([
+    (0, common_1.Put)('/primeiro-acesso/alterar-senha'),
+    (0, allow_primeiro_acesso_decorator_1.AllowPrimeiroAcesso)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Alterar senha no primeiro acesso' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Senha alterada com sucesso' }),
+    (0, swagger_1.ApiResponse)({
+        status: 400,
+        description: 'Dados inválidos ou usuário não está em primeiro acesso',
+    }),
+    (0, swagger_1.ApiResponse)({ status: 404, description: 'Usuário não encontrado' }),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [typeof (_f = typeof alterar_senha_primeiro_acesso_dto_1.AlterarSenhaPrimeiroAcessoDto !== "undefined" && alterar_senha_primeiro_acesso_dto_1.AlterarSenhaPrimeiroAcessoDto) === "function" ? _f : Object, Object]),
+    __metadata("design:returntype", Promise)
+], UsuarioController.prototype, "alterarSenhaPrimeiroAcesso", null);
+__decorate([
+    (0, common_1.Delete)(':id'),
+    (0, requires_permission_decorator_1.RequiresPermission)({
+        permissionName: 'usuario.remover',
+        scopeType: user_permission_entity_1.ScopeType.UNIT,
+        scopeIdExpression: 'usuario.unidade_id',
+    }),
+    (0, swagger_1.ApiOperation)({ summary: 'Remover usuário (soft delete)' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Usuário removido com sucesso' }),
+    (0, swagger_1.ApiResponse)({ status: 404, description: 'Usuário não encontrado' }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], UsuarioController.prototype, "remove", null);
+exports.UsuarioController = UsuarioController = __decorate([
+    (0, swagger_1.ApiTags)('Usuários'),
+    (0, common_1.Controller)('usuario'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, primeiro_acesso_guard_1.PrimeiroAcessoGuard) // PermissionGuard removido temporariamente para teste 1.1
+    ,
+    (0, swagger_1.ApiBearerAuth)(),
+    __metadata("design:paramtypes", [typeof (_a = typeof usuario_service_1.UsuarioService !== "undefined" && usuario_service_1.UsuarioService) === "function" ? _a : Object])
+], UsuarioController);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXHVzdWFyaW9cXGNvbnRyb2xsZXJzXFx1c3VhcmlvLmNvbnRyb2xsZXIudHMiLCJtYXBwaW5ncyI6Ijs7Ozs7Ozs7Ozs7Ozs7OztBQUFBLDJDQWF3QjtBQUN4Qiw2Q0FNeUI7QUFDekIsaUVBQTZEO0FBQzdELGtFQUE2RDtBQUM3RCxrRUFBNkQ7QUFDN0QsZ0ZBQTBFO0FBQzFFLDhEQUF5RDtBQUN6RCxnR0FBeUY7QUFDekYsd0VBQW1FO0FBRW5FLHNGQUFpRjtBQUNqRiwwR0FBNEY7QUFDNUYsOEdBQStGO0FBQy9GLHFGQUFxRTtBQUVyRTs7OztHQUlHO0FBS0ksSUFBTSxpQkFBaUIsR0FBdkIsTUFBTSxpQkFBaUI7SUFDQztJQUE3QixZQUE2QixjQUE4QjtRQUE5QixtQkFBYyxHQUFkLGNBQWMsQ0FBZ0I7SUFBRyxDQUFDO0lBRS9EOztPQUVHO0lBZ0RHLEFBQU4sS0FBSyxDQUFDLE9BQU8sQ0FDSSxJQUFhLEVBQ1osS0FBYyxFQUNiLE1BQWUsRUFDakIsSUFBYSxFQUNYLE1BQWUsRUFDWCxVQUFtQjtRQUV4QyxPQUFPLElBQUksQ0FBQyxjQUFjLENBQUMsT0FBTyxDQUFDO1lBQ2pDLElBQUksRUFBRSxJQUFJLENBQUMsQ0FBQyxDQUFDLENBQUMsSUFBSSxDQUFDLENBQUMsQ0FBQyxTQUFTO1lBQzlCLEtBQUssRUFBRSxLQUFLLENBQUMsQ0FBQyxDQUFDLENBQUMsS0FBSyxDQUFDLENBQUMsQ0FBQyxTQUFTO1lBQ2pDLE1BQU07WUFDTixJQUFJO1lBQ0osTUFBTTtZQUNOLFVBQVU7U0FDWCxDQUFDLENBQUM7SUFDTCxDQUFDO0lBRUQ7O09BRUc7SUFXRyxBQUFOLEtBQUssQ0FBQyxZQUFZO1FBQ2hCLE9BQU8sSUFBSSxDQUFDLGNBQWMsQ0FBQyxZQUFZLEVBQUUsQ0FBQztJQUM1QyxDQUFDO0lBRUQ7O09BRUc7SUFRRyxBQUFOLEtBQUss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QUFBLG1CQUFVLEVBQUMsU0FBUyxDQUFDO0lBQ3JCLElBQUEsa0JBQVMsRUFBQyw2QkFBWSxFQUFFLDJDQUFtQixDQUFDLENBQUMsMERBQTBEOztJQUN2RyxJQUFBLHVCQUFhLEdBQUU7eURBRStCLGdDQUFjLG9CQUFkLGdDQUFjO0dBRGhELGlCQUFpQixDQXFQN0IiLCJuYW1lcyI6W10sInNvdXJjZXMiOlsiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXHVzdWFyaW9cXGNvbnRyb2xsZXJzXFx1c3VhcmlvLmNvbnRyb2xsZXIudHMiXSwic291cmNlc0NvbnRlbnQiOlsiaW1wb3J0IHtcbiAgQ29udHJvbGxlcixcbiAgR2V0LFxuICBQb3N0LFxuICBCb2R5LFxuICBQdXQsXG4gIFBhdGNoLFxuICBEZWxldGUsXG4gIFBhcmFtLFxuICBQYXJzZVVVSURQaXBlLFxuICBRdWVyeSxcbiAgVXNlR3VhcmRzLFxuICBSZXF1ZXN0LFxufSBmcm9tICdAbmVzdGpzL2NvbW1vbic7XG5pbXBvcnQge1xuICBBcGlUYWdzLFxuICBBcGlPcGVyYXRpb24sXG4gIEFwaVJlc3BvbnNlLFxuICBBcGlCZWFyZXJBdXRoLFxuICBBcGlRdWVyeSxcbn0gZnJvbSAnQG5lc3Rqcy9zd2FnZ2VyJztcbmltcG9ydCB7IFVzdWFyaW9TZXJ2aWNlIH0gZnJvbSAnLi4vc2VydmljZXMvdXN1YXJpby5zZXJ2aWNlJztcbmltcG9ydCB7IENyZWF0ZVVzdWFyaW9EdG8gfSBmcm9tICcuLi9kdG8vY3JlYXRlLXVzdWFyaW8uZHRvJztcbmltcG9ydCB7IFVwZGF0ZVVzdWFyaW9EdG8gfSBmcm9tICcuLi9kdG8vdXBkYXRlLXVzdWFyaW8uZHRvJztcbmltcG9ydCB7IFVwZGF0ZVN0YXR1c1VzdWFyaW9EdG8gfSBmcm9tICcuLi9kdG8vdXBkYXRlLXN0YXR1cy11c3VhcmlvLmR0byc7XG5pbXBvcnQgeyBVcGRhdGVTZW5oYUR0byB9IGZyb20gJy4uL2R0by91cGRhdGUtc2VuaGEuZHRvJztcbmltcG9ydCB7IEFsdGVyYXJTZW5oYVByaW1laXJvQWNlc3NvRHRvIH0gZnJvbSAnLi4vZHRvL2FsdGVyYXItc2VuaGEtcHJpbWVpcm8tYWNlc3NvLmR0byc7XG5pbXBvcnQgeyBKd3RBdXRoR3VhcmQgfSBmcm9tICcuLi8uLi8uLi9hdXRoL2d1YXJkcy9qd3QtYXV0aC5ndWFyZCc7XG5pbXBvcnQgeyBQZXJtaXNzaW9uR3VhcmQgfSBmcm9tICcuLi8uLi8uLi9hdXRoL2d1YXJkcy9wZXJtaXNzaW9uLmd1YXJkJztcbmltcG9ydCB7IFByaW1laXJvQWNlc3NvR3VhcmQgfSBmcm9tICcuLi8uLi8uLi9hdXRoL2d1YXJkcy9wcmltZWlyby1hY2Vzc28uZ3VhcmQnO1xuaW1wb3J0IHsgUmVxdWlyZXNQZXJtaXNzaW9uIH0gZnJvbSAnLi4vLi4vLi4vYXV0aC9kZWNvcmF0b3JzL3JlcXVpcmVzLXBlcm1pc3Npb24uZGVjb3JhdG9yJztcbmltcG9ydCB7IEFsbG93UHJpbWVpcm9BY2Vzc28gfSBmcm9tICcuLi8uLi8uLi9hdXRoL2RlY29yYXRvcnMvYWxsb3ctcHJpbWVpcm8tYWNlc3NvLmRlY29yYXRvcic7XG5pbXBvcnQgeyBTY29wZVR5cGUgfSBmcm9tICcuLi8uLi8uLi9lbnRpdGllcy91c2VyLXBlcm1pc3Npb24uZW50aXR5JztcblxuLyoqXG4gKiBDb250cm9sYWRvciBkZSB1c3XDoXJpb3NcbiAqXG4gKiBSZXNwb25zw6F2ZWwgcG9yIGdlcmVuY2lhciBhcyByb3RhcyByZWxhY2lvbmFkYXMgYSB1c3XDoXJpb3NcbiAqL1xuQEFwaVRhZ3MoJ1VzdcOhcmlvcycpXG5AQ29udHJvbGxlcigndXN1YXJpbycpXG5AVXNlR3VhcmRzKEp3dEF1dGhHdWFyZCwgUHJpbWVpcm9BY2Vzc29HdWFyZCkgLy8gUGVybWlzc2lvbkd1YXJkIHJlbW92aWRvIHRlbXBvcmFyaWFtZW50ZSBwYXJhIHRlc3RlIDEuMVxuQEFwaUJlYXJlckF1dGgoKVxuZXhwb3J0IGNsYXNzIFVzdWFyaW9Db250cm9sbGVyIHtcbiAgY29uc3RydWN0b3IocHJpdmF0ZSByZWFkb25seSB1c3VhcmlvU2VydmljZTogVXN1YXJpb1NlcnZpY2UpIHt9XG5cbiAgLyoqXG4gICAqIExpc3RhIHRvZG9zIG9zIHVzdcOhcmlvcyBjb20gZmlsdHJvcyBlIHBhZ2luYcOnw6NvXG4gICAqL1xuICBAR2V0KClcbiAgQFJlcXVpcmVzUGVybWlzc2lvbih7XG4gICAgcGVybWlzc2lvbk5hbWU6ICd1c3VhcmlvLmxpc3RhcicsXG4gICAgc2NvcGVUeXBlOiBTY29wZVR5cGUuVU5JVCxcbiAgICBzY29wZUlkRXhwcmVzc2lvbjogJ3F1ZXJ5LnVuaWRhZGVfaWQnLFxuICB9KVxuICBAQXBpT3BlcmF0aW9uKHsgc3VtbWFyeTogJ0xpc3RhciB1c3XDoXJpb3MnIH0pXG4gIEBBcGlSZXNwb25zZSh7XG4gICAgc3RhdHVzOiAyMDAsXG4gICAgZGVzY3JpcHRpb246ICdMaXN0YSBkZSB1c3XDoXJpb3MgcmV0b3JuYWRhIGNvbSBzdWNlc3NvJyxcbiAgfSlcbiAgQEFwaVF1ZXJ5KHtcbiAgICBuYW1lOiAncGFnZScsXG4gICAgcmVxdWlyZWQ6IGZhbHNlLFxuICAgIHR5cGU6IE51bWJlcixcbiAgICBkZXNjcmlwdGlvbjogJ1DDoWdpbmEgYXR1YWwnLFxuICB9KVxuICBAQXBpUXVlcnkoe1xuICAgIG5hbWU6ICdsaW1pdCcsXG4gICAgcmVxdWlyZWQ6IGZhbHNlLFxuICAgIHR5cGU6IE51bWJlcixcbiAgICBkZXNjcmlwdGlvbjogJ0l0ZW5zIHBvciBww6FnaW5hJyxcbiAgfSlcbiAgQEFwaVF1ZXJ5KHtcbiAgICBuYW1lOiAnc2VhcmNoJyxcbiAgICByZXF1aXJlZDogZmFsc2UsXG4gICAgdHlwZTogU3RyaW5nLFxuICAgIGRlc2NyaXB0aW9uOiAnVGVybW8gZGUgYnVzY2EnLFxuICB9KVxuICBAQXBpUXVlcnkoe1xuICAgIG5hbWU6ICdyb2xlJyxcbiAgICByZXF1aXJlZDogZmFsc2UsXG4gICAgdHlwZTogU3RyaW5nLFxuICAgIGRlc2NyaXB0aW9uOiAnRmlsdHJvIHBvciBwYXBlbCcsXG4gIH0pXG4gIEBBcGlRdWVyeSh7XG4gICAgbmFtZTogJ3N0YXR1cycsXG4gICAgcmVxdWlyZWQ6IGZhbHNlLFxuICAgIHR5cGU6IFN0cmluZyxcbiAgICBkZXNjcmlwdGlvbjogJ0ZpbHRybyBwb3Igc3RhdHVzJyxcbiAgfSlcbiAgQEFwaVF1ZXJ5KHtcbiAgICBuYW1lOiAndW5pZGFkZV9pZCcsXG4gICAgcmVxdWlyZWQ6IGZhbHNlLFxuICAgIHR5cGU6IFN0cmluZyxcbiAgICBkZXNjcmlwdGlvbjogJ0ZpbHRybyBwb3IgdW5pZGFkZScsXG4gIH0pXG4gIGFzeW5jIGZpbmRBbGwoXG4gICAgQFF1ZXJ5KCdwYWdlJykgcGFnZT86IG51bWJlcixcbiAgICBAUXVlcnkoJ2xpbWl0JykgbGltaXQ/OiBudW1iZXIsXG4gICAgQFF1ZXJ5KCdzZWFyY2gnKSBzZWFyY2g/OiBzdHJpbmcsXG4gICAgQFF1ZXJ5KCdyb2xlJykgcm9sZT86IHN0cmluZyxcbiAgICBAUXVlcnkoJ3N0YXR1cycpIHN0YXR1cz86IHN0cmluZyxcbiAgICBAUXVlcnkoJ3VuaWRhZGVfaWQnKSB1bmlkYWRlX2lkPzogc3RyaW5nLFxuICApIHtcbiAgICByZXR1cm4gdGhpcy51c3VhcmlvU2VydmljZS5maW5kQWxsKHtcbiAgICAgIHBhZ2U6IHBhZ2UgPyArcGFnZSA6IHVuZGVmaW5lZCxcbiAgICAgIGxpbWl0OiBsaW1pdCA/ICtsaW1pdCA6IHVuZGVmaW5lZCxcbiAgICAgIHNlYXJjaCxcbiAgICAgIHJvbGUsXG4gICAgICBzdGF0dXMsXG4gICAgICB1bmlkYWRlX2lkLFxuICAgIH0pO1xuICB9XG5cbiAgLyoqXG4gICAqIFJldG9ybmEgdG9kYXMgYXMgcm9sZXMgKHBhcMOpaXMpIGRpc3BvbsOtdmVpcyBubyBzaXN0ZW1hXG4gICAqL1xuICBAR2V0KCdyb2xlcycpXG4gIEBSZXF1aXJlc1Blcm1pc3Npb24oe1xuICAgIHBlcm1pc3Npb25OYW1lOiAndXN1YXJpby5saXN0YXInLFxuICAgIHNjb3BlVHlwZTogU2NvcGVUeXBlLkdMT0JBTCxcbiAgfSlcbiAgQEFwaU9wZXJhdGlvbih7IHN1bW1hcnk6ICdMaXN0YXIgdG9kYXMgYXMgcm9sZXMgZGlzcG9uw612ZWlzJyB9KVxuICBAQXBpUmVzcG9uc2Uoe1xuICAgIHN0YXR1czogMjAwLFxuICAgIGRlc2NyaXB0aW9uOiAnTGlzdGEgZGUgcm9sZXMgcmV0b3JuYWRhIGNvbSBzdWNlc3NvJyxcbiAgfSlcbiAgYXN5bmMgZmluZEFsbFJvbGVzKCkge1xuICAgIHJldHVybiB0aGlzLnVzdWFyaW9TZXJ2aWNlLmZpbmRBbGxSb2xlcygpO1xuICB9XG5cbiAgLyoqXG4gICAqIE9idMOpbSBvIHBlcmZpbCBkbyB1c3XDoXJpbyBhdHVhbFxuICAgKi9cbiAgQEdldCgnbWUnKVxuICBAUmVxdWlyZXNQZXJtaXNzaW9uKHtcbiAgICBwZXJtaXNzaW9uTmFtZTogJ3VzdWFyaW8ucGVyZmlsLnZpc3VhbGl6YXInLFxuICAgIHNjb3BlVHlwZTogU2NvcGVUeXBlLlNFTEYsXG4gIH0pXG4gIEBBcGlPcGVyYXRpb24oeyBzdW1tYXJ5OiAnT2J0ZXIgcGVyZmlsIGRvIHVzdcOhcmlvIGF0dWFsJyB9KVxuICBAQXBpUmVzcG9uc2UoeyBzdGF0dXM6IDIwMCwgZGVzY3JpcHRpb246ICdQZXJmaWwgb2J0aWRvIGNvbSBzdWNlc3NvJyB9KVxuICBhc3luYyBnZXRQcm9maWxlKEBSZXF1ZXN0KCkgcmVxKSB7XG4gICAgcmV0dXJuIHRoaXMudXN1YXJpb1NlcnZpY2UuZ2V0UHJvZmlsZShyZXEudXNlci5pZCk7XG4gIH1cblxuICAvKipcbiAgICogT2J0w6ltIGRldGFsaGVzIGRlIHVtIHVzdcOhcmlvIGVzcGVjw61maWNvXG4gICAqL1xuICBAR2V0KCc6aWQnKVxuICBAUmVxdWlyZXNQZXJtaXNzaW9uKHtcbiAgICBwZXJtaXNzaW9uTmFtZTogJ3VzdWFyaW8udmlzdWFsaXphcicsXG4gICAgc2NvcGVUeXBlOiBTY29wZVR5cGUuVU5JVCxcbiAgICBzY29wZUlkRXhwcmVzc2lvbjogJ3VzdWFyaW8udW5pZGFkZV9pZCcsXG4gIH0pXG4gIEBBcGlPcGVyYXRpb24oeyBzdW1tYXJ5OiAnT2J0ZXIgZGV0YWxoZXMgZGUgdW0gdXN1w6FyaW8nIH0pXG4gIEBBcGlSZXNwb25zZSh7IHN0YXR1czogMjAwLCBkZXNjcmlwdGlvbjogJ1VzdcOhcmlvIGVuY29udHJhZG8gY29tIHN1Y2Vzc28nIH0pXG4gIEBBcGlSZXNwb25zZSh7IHN0YXR1czogNDA0LCBkZXNjcmlwdGlvbjogJ1VzdcOhcmlvIG7Do28gZW5jb250cmFkbycgfSlcbiAgYXN5bmMgZmluZE9uZShAUGFyYW0oJ2lkJywgUGFyc2VVVUlEUGlwZSkgaWQ6IHN0cmluZykge1xuICAgIHJldHVybiB0aGlzLnVzdWFyaW9TZXJ2aWNlLmZpbmRCeUlkKGlkKTtcbiAgfVxuXG4gIC8qKlxuICAgKiBDcmlhIHVtIG5vdm8gdXN1w6FyaW9cbiAgICovXG4gIEBQb3N0KClcbiAgQFJlcXVpcmVzUGVybWlzc2lvbih7XG4gICAgcGVybWlzc2lvbk5hbWU6ICd1c3VhcmlvLmNyaWFyJyxcbiAgICBzY29wZVR5cGU6IFNjb3BlVHlwZS5VTklULFxuICAgIHNjb3BlSWRFeHByZXNzaW9uOiAnYm9keS51bmlkYWRlX2lkJyxcbiAgfSlcbiAgQEFwaU9wZXJhdGlvbih7IHN1bW1hcnk6ICdDcmlhciBub3ZvIHVzdcOhcmlvJyB9KVxuICBAQXBpUmVzcG9uc2UoeyBzdGF0dXM6IDIwMSwgZGVzY3JpcHRpb246ICdVc3XDoXJpbyBjcmlhZG8gY29tIHN1Y2Vzc28nIH0pXG4gIEBBcGlSZXNwb25zZSh7IHN0YXR1czogNDAwLCBkZXNjcmlwdGlvbjogJ0RhZG9zIGludsOhbGlkb3MnIH0pXG4gIEBBcGlSZXNwb25zZSh7XG4gICAgc3RhdHVzOiA0MDksXG4gICAgZGVzY3JpcHRpb246ICdFbWFpbCwgQ1BGIG91IG1hdHLDrWN1bGEgasOhIGVtIHVzbycsXG4gIH0pXG4gIGFzeW5jIGNyZWF0ZShAQm9keSgpIGNyZWF0ZVVzdWFyaW9EdG86IENyZWF0ZVVzdWFyaW9EdG8pIHtcbiAgICByZXR1cm4gdGhpcy51c3VhcmlvU2VydmljZS5jcmVhdGUoY3JlYXRlVXN1YXJpb0R0byk7XG4gIH1cblxuICAvKipcbiAgICogQXR1YWxpemEgdW0gdXN1w6FyaW8gZXhpc3RlbnRlXG4gICAqL1xuICBAUHV0KCc6aWQnKVxuICBAUmVxdWlyZXNQZXJtaXNzaW9uKHtcbiAgICBwZXJtaXNzaW9uTmFtZTogJ3VzdWFyaW8uZWRpdGFyJyxcbiAgICBzY29wZVR5cGU6IFNjb3BlVHlwZS5VTklULFxuICAgIHNjb3BlSWRFeHByZXNzaW9uOiAndXN1YXJpby51bmlkYWRlX2lkJyxcbiAgfSlcbiAgQEFwaU9wZXJhdGlvbih7IHN1bW1hcnk6ICdBdHVhbGl6YXIgdXN1w6FyaW8gZXhpc3RlbnRlJyB9KVxuICBAQXBpUmVzcG9uc2UoeyBzdGF0dXM6IDIwMCwgZGVzY3JpcHRpb246ICdVc3XDoXJpbyBhdHVhbGl6YWRvIGNvbSBzdWNlc3NvJyB9KVxuICBAQXBpUmVzcG9uc2UoeyBzdGF0dXM6IDQwMCwgZGVzY3JpcHRpb246ICdEYWRvcyBpbnbDoWxpZG9zJyB9KVxuICBAQXBpUmVzcG9uc2UoeyBzdGF0dXM6IDQwNCwgZGVzY3JpcHRpb246ICdVc3XDoXJpbyBuw6NvIGVuY29udHJhZG8nIH0pXG4gIEBBcGlSZXNwb25zZSh7XG4gICAgc3RhdHVzOiA0MDksXG4gICAgZGVzY3JpcHRpb246ICdFbWFpbCwgQ1BGIG91IG1hdHLDrWN1bGEgasOhIGVtIHVzbycsXG4gIH0pXG4gIGFzeW5jIHVwZGF0ZShcbiAgICBAUGFyYW0oJ2lkJywgUGFyc2VVVUlEUGlwZSkgaWQ6IHN0cmluZyxcbiAgICBAQm9keSgpIHVwZGF0ZVVzdWFyaW9EdG86IFVwZGF0ZVVzdWFyaW9EdG8sXG4gICkge1xuICAgIHJldHVybiB0aGlzLnVzdWFyaW9TZXJ2aWNlLnVwZGF0ZShpZCwgdXBkYXRlVXN1YXJpb0R0byk7XG4gIH1cblxuICAvKipcbiAgICogQXR1YWxpemEgbyBzdGF0dXMgZGUgdW0gdXN1w6FyaW9cbiAgICovXG4gIEBQYXRjaCgnOmlkL3N0YXR1cycpXG4gIEBSZXF1aXJlc1Blcm1pc3Npb24oe1xuICAgIHBlcm1pc3Npb25OYW1lOiAndXN1YXJpby5zdGF0dXMuYWx0ZXJhcicsXG4gICAgc2NvcGVUeXBlOiBTY29wZVR5cGUuVU5JVCxcbiAgICBzY29wZUlkRXhwcmVzc2lvbjogJ3VzdWFyaW8udW5pZGFkZV9pZCcsXG4gIH0pXG4gIEBBcGlPcGVyYXRpb24oeyBzdW1tYXJ5OiAnQXRpdmFyL2luYXRpdmFyIHVzdcOhcmlvJyB9KVxuICBAQXBpUmVzcG9uc2UoeyBzdGF0dXM6IDIwMCwgZGVzY3JpcHRpb246ICdTdGF0dXMgYXR1YWxpemFkbyBjb20gc3VjZXNzbycgfSlcbiAgQEFwaVJlc3BvbnNlKHsgc3RhdHVzOiA0MDQsIGRlc2NyaXB0aW9uOiAnVXN1w6FyaW8gbsOjbyBlbmNvbnRyYWRvJyB9KVxuICBhc3luYyB1cGRhdGVTdGF0dXMoXG4gICAgQFBhcmFtKCdpZCcsIFBhcnNlVVVJRFBpcGUpIGlkOiBzdHJpbmcsXG4gICAgQEJvZHkoKSB1cGRhdGVTdGF0dXNVc3VhcmlvRHRvOiBVcGRhdGVTdGF0dXNVc3VhcmlvRHRvLFxuICApIHtcbiAgICByZXR1cm4gdGhpcy51c3VhcmlvU2VydmljZS51cGRhdGVTdGF0dXMoaWQsIHVwZGF0ZVN0YXR1c1VzdWFyaW9EdG8pO1xuICB9XG5cbiAgLyoqXG4gICAqIEFsdGVyYSBhIHNlbmhhIGRvIHVzdcOhcmlvXG4gICAqL1xuICBAUHV0KCc6aWQvc2VuaGEnKVxuICBAUmVxdWlyZXNQZXJtaXNzaW9uKHtcbiAgICBwZXJtaXNzaW9uTmFtZTogJ3VzdWFyaW8uc2VuaGEuYWx0ZXJhcicsXG4gICAgc2NvcGVUeXBlOiBTY29wZVR5cGUuU0VMRixcbiAgICBzY29wZUlkRXhwcmVzc2lvbjogJ3BhcmFtcy5pZCcsXG4gIH0pXG4gIEBBcGlPcGVyYXRpb24oeyBzdW1tYXJ5OiAnQWx0ZXJhciBzZW5oYScgfSlcbiAgQEFwaVJlc3BvbnNlKHsgc3RhdHVzOiAyMDAsIGRlc2NyaXB0aW9uOiAnU2VuaGEgYWx0ZXJhZGEgY29tIHN1Y2Vzc28nIH0pXG4gIEBBcGlSZXNwb25zZSh7XG4gICAgc3RhdHVzOiA0MDAsXG4gICAgZGVzY3JpcHRpb246ICdEYWRvcyBpbnbDoWxpZG9zIG91IHNlbmhhIGF0dWFsIGluY29ycmV0YScsXG4gIH0pXG4gIEBBcGlSZXNwb25zZSh7IHN0YXR1czogNDA0LCBkZXNjcmlwdGlvbjogJ1VzdcOhcmlvIG7Do28gZW5jb250cmFkbycgfSlcbiAgYXN5bmMgdXBkYXRlU2VuaGEoXG4gICAgQFBhcmFtKCdpZCcsIFBhcnNlVVVJRFBpcGUpIGlkOiBzdHJpbmcsXG4gICAgQEJvZHkoKSB1cGRhdGVTZW5oYUR0bzogVXBkYXRlU2VuaGFEdG8sXG4gICAgQFJlcXVlc3QoKSByZXEsXG4gICkge1xuICAgIC8vIEEgdmVyaWZpY2HDp8OjbyBhZ29yYSDDqSBmZWl0YSBwZWxvIHNpc3RlbWEgZGUgcGVybWlzc8O1ZXMgZ3JhbnVsYXJlc1xuXG4gICAgcmV0dXJuIHRoaXMudXN1YXJpb1NlcnZpY2UudXBkYXRlU2VuaGEoaWQsIHVwZGF0ZVNlbmhhRHRvKTtcbiAgfVxuXG4gIC8qKlxuICAgKiBBbHRlcmEgYSBzZW5oYSBubyBwcmltZWlybyBhY2Vzc29cbiAgICovXG4gIEBQdXQoJy9wcmltZWlyby1hY2Vzc28vYWx0ZXJhci1zZW5oYScpXG4gIEBBbGxvd1ByaW1laXJvQWNlc3NvKClcbiAgQEFwaU9wZXJhdGlvbih7IHN1bW1hcnk6ICdBbHRlcmFyIHNlbmhhIG5vIHByaW1laXJvIGFjZXNzbycgfSlcbiAgQEFwaVJlc3BvbnNlKHsgc3RhdHVzOiAyMDAsIGRlc2NyaXB0aW9uOiAnU2VuaGEgYWx0ZXJhZGEgY29tIHN1Y2Vzc28nIH0pXG4gIEBBcGlSZXNwb25zZSh7XG4gICAgc3RhdHVzOiA0MDAsXG4gICAgZGVzY3JpcHRpb246ICdEYWRvcyBpbnbDoWxpZG9zIG91IHVzdcOhcmlvIG7Do28gZXN0w6EgZW0gcHJpbWVpcm8gYWNlc3NvJyxcbiAgfSlcbiAgQEFwaVJlc3BvbnNlKHsgc3RhdHVzOiA0MDQsIGRlc2NyaXB0aW9uOiAnVXN1w6FyaW8gbsOjbyBlbmNvbnRyYWRvJyB9KVxuICBhc3luYyBhbHRlcmFyU2VuaGFQcmltZWlyb0FjZXNzbyhcbiAgICBAQm9keSgpIGFsdGVyYXJTZW5oYUR0bzogQWx0ZXJhclNlbmhhUHJpbWVpcm9BY2Vzc29EdG8sXG4gICAgQFJlcXVlc3QoKSByZXEsXG4gICkge1xuICAgIGNvbnN0IHVzZXJJZCA9IHJlcS51c2VyLmlkO1xuICAgIHJldHVybiB0aGlzLnVzdWFyaW9TZXJ2aWNlLmFsdGVyYXJTZW5oYVByaW1laXJvQWNlc3NvKFxuICAgICAgdXNlcklkLFxuICAgICAgYWx0ZXJhclNlbmhhRHRvLFxuICAgICk7XG4gIH1cblxuICAvKipcbiAgICogUmVtb3ZlIHVtIHVzdcOhcmlvIChzb2Z0IGRlbGV0ZSlcbiAgICovXG4gIEBEZWxldGUoJzppZCcpXG4gIEBSZXF1aXJlc1Blcm1pc3Npb24oe1xuICAgIHBlcm1pc3Npb25OYW1lOiAndXN1YXJpby5yZW1vdmVyJyxcbiAgICBzY29wZVR5cGU6IFNjb3BlVHlwZS5VTklULFxuICAgIHNjb3BlSWRFeHByZXNzaW9uOiAndXN1YXJpby51bmlkYWRlX2lkJyxcbiAgfSlcbiAgQEFwaU9wZXJhdGlvbih7IHN1bW1hcnk6ICdSZW1vdmVyIHVzdcOhcmlvIChzb2Z0IGRlbGV0ZSknIH0pXG4gIEBBcGlSZXNwb25zZSh7IHN0YXR1czogMjAwLCBkZXNjcmlwdGlvbjogJ1VzdcOhcmlvIHJlbW92aWRvIGNvbSBzdWNlc3NvJyB9KVxuICBAQXBpUmVzcG9uc2UoeyBzdGF0dXM6IDQwNCwgZGVzY3JpcHRpb246ICdVc3XDoXJpbyBuw6NvIGVuY29udHJhZG8nIH0pXG4gIGFzeW5jIHJlbW92ZShAUGFyYW0oJ2lkJywgUGFyc2VVVUlEUGlwZSkgaWQ6IHN0cmluZykge1xuICAgIHJldHVybiB0aGlzLnVzdWFyaW9TZXJ2aWNlLnJlbW92ZShpZCk7XG4gIH1cbn1cbiJdLCJ2ZXJzaW9uIjozfQ==

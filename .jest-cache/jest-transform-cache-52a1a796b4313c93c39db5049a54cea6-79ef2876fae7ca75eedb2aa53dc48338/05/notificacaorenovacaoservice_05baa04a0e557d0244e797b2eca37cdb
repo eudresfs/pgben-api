@@ -1,0 +1,122 @@
+1884b1cf47ab62ff213269fa3aa0b123
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var NotificacaoRenovacaoService_1;
+var _a;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.NotificacaoRenovacaoService = void 0;
+const common_1 = require("@nestjs/common");
+const typeorm_1 = require("@nestjs/typeorm");
+const typeorm_2 = require("typeorm");
+const entities_1 = require("../../../entities");
+/**
+ * Serviço de notificação para renovações automáticas
+ *
+ * Responsável por gerenciar as notificações relacionadas às renovações automáticas
+ * de benefícios, incluindo alertas de renovações pendentes e notificações de renovações
+ * processadas.
+ */
+let NotificacaoRenovacaoService = NotificacaoRenovacaoService_1 = class NotificacaoRenovacaoService {
+    solicitacaoRepository;
+    logger = new common_1.Logger(NotificacaoRenovacaoService_1.name);
+    constructor(solicitacaoRepository) {
+        this.solicitacaoRepository = solicitacaoRepository;
+    }
+    /**
+     * Notifica sobre renovações pendentes
+     * @param solicitacoes Lista de solicitações com renovações pendentes
+     */
+    async notificarRenovacoesPendentes(solicitacoes) {
+        if (solicitacoes.length === 0) {
+            this.logger.log('Nenhuma renovação pendente para notificar');
+            return;
+        }
+        this.logger.log(`Notificando sobre ${solicitacoes.length} renovações pendentes`);
+        // Aqui seria implementada a lógica de envio de notificações
+        // por e-mail, SMS ou outro canal de comunicação
+        // Exemplo de log para cada solicitação
+        for (const solicitacao of solicitacoes) {
+            this.logger.log(`Notificação enviada para renovação pendente: ID ${solicitacao.id}, ` +
+                `Data prevista: ${solicitacao.data_proxima_renovacao}`);
+        }
+    }
+    /**
+     * Notifica sobre renovações processadas
+     * @param solicitacoes Lista de solicitações renovadas
+     * @param novasSolicitacoes Lista das novas solicitações geradas pela renovação
+     */
+    async notificarRenovacoesProcessadas(solicitacoes, novasSolicitacoes) {
+        if (solicitacoes.length === 0) {
+            this.logger.log('Nenhuma renovação processada para notificar');
+            return;
+        }
+        this.logger.log(`Notificando sobre ${solicitacoes.length} renovações processadas`);
+        // Aqui seria implementada a lógica de envio de notificações
+        // por e-mail, SMS ou outro canal de comunicação
+        // Exemplo de log para cada solicitação renovada
+        for (let i = 0; i < solicitacoes.length; i++) {
+            const solicitacaoOriginal = solicitacoes[i];
+            const novaSolicitacao = novasSolicitacoes[i];
+            this.logger.log(`Notificação enviada para renovação processada: ` +
+                `Solicitação original: ${solicitacaoOriginal.id}, ` +
+                `Nova solicitação: ${novaSolicitacao.id}`);
+        }
+    }
+    /**
+     * Notifica sobre falhas no processo de renovação
+     * @param solicitacao Solicitação que falhou ao renovar
+     * @param erro Descrição do erro
+     */
+    async notificarFalhaRenovacao(solicitacao, erro) {
+        this.logger.error(`Falha na renovação da solicitação ${solicitacao.id}: ${erro}`, solicitacao);
+        // Aqui seria implementada a lógica de envio de notificações
+        // para administradores ou responsáveis pelo sistema
+    }
+    /**
+     * Notifica sobre a proximidade da data de renovação
+     * @param solicitacao Solicitação próxima da data de renovação
+     * @param configuracao Configuração de renovação
+     */
+    async notificarProximidadeRenovacao(solicitacao, configuracao) {
+        this.logger.log(`Notificando proximidade de renovação: Solicitação ${solicitacao.id}, ` +
+            `Data prevista: ${solicitacao.data_proxima_renovacao}`);
+        // Aqui seria implementada a lógica de envio de notificações
+        // para o cidadão e/ou assistentes sociais responsáveis
+    }
+    /**
+     * Notifica sobre renovações que requerem aprovação
+     * @param solicitacoes Lista de solicitações que requerem aprovação para renovação
+     */
+    async notificarRenovacoesParaAprovacao(solicitacoes) {
+        if (solicitacoes.length === 0) {
+            this.logger.log('Nenhuma renovação pendente de aprovação para notificar');
+            return;
+        }
+        this.logger.log(`Notificando sobre ${solicitacoes.length} renovações que requerem aprovação`);
+        // Aqui seria implementada a lógica de envio de notificações
+        // para os aprovadores ou gestores do sistema
+        // Exemplo de log para cada solicitação
+        for (const solicitacao of solicitacoes) {
+            this.logger.log(`Notificação enviada para aprovação de renovação: ID ${solicitacao.id}, ` +
+                `Data prevista: ${solicitacao.data_proxima_renovacao}`);
+        }
+    }
+};
+exports.NotificacaoRenovacaoService = NotificacaoRenovacaoService;
+exports.NotificacaoRenovacaoService = NotificacaoRenovacaoService = NotificacaoRenovacaoService_1 = __decorate([
+    (0, common_1.Injectable)(),
+    __param(0, (0, typeorm_1.InjectRepository)(entities_1.Solicitacao)),
+    __metadata("design:paramtypes", [typeof (_a = typeof typeorm_2.Repository !== "undefined" && typeorm_2.Repository) === "function" ? _a : Object])
+], NotificacaoRenovacaoService);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXGJlbmVmaWNpb1xcc2VydmljZXNcXG5vdGlmaWNhY2FvLXJlbm92YWNhby5zZXJ2aWNlLnRzIiwibWFwcGluZ3MiOiI7Ozs7Ozs7Ozs7Ozs7Ozs7O0FBQUEsMkNBQW9EO0FBQ3BELDZDQUFtRDtBQUNuRCxxQ0FBcUM7QUFDckMsZ0RBQXVFO0FBRXZFOzs7Ozs7R0FNRztBQUVJLElBQU0sMkJBQTJCLG1DQUFqQyxNQUFNLDJCQUEyQjtJQUtuQjtJQUpGLE1BQU0sR0FBRyxJQUFJLGVBQU0sQ0FBQyw2QkFBMkIsQ0FBQyxJQUFJLENBQUMsQ0FBQztJQUV2RSxZQUVtQixxQkFBOEM7UUFBOUMsMEJBQXFCLEdBQXJCLHFCQUFxQixDQUF5QjtJQUM5RCxDQUFDO0lBRUo7OztPQUdHO0lBQ0gsS0FBSyxDQUFDLDRCQUE0QixDQUNoQyxZQUEyQjtRQUUzQixJQUFJLFlBQVksQ0FBQyxNQUFNLEtBQUssQ0FBQyxFQUFFLENBQUM7WUFDOUIsSUFBSSxDQUFDLE1BQU0sQ0FBQyxHQUFHLENBQUMsMkNBQTJDLENBQUMsQ0FBQztZQUM3RCxPQUFPO1FBQ1QsQ0FBQztRQUVELElBQUksQ0FBQyxNQUFNLENBQUMsR0FBRyxDQUNiLHFCQUFxQixZQUFZLENBQUMsTUFBTSx1QkFBdUIsQ0FDaEUsQ0FBQztRQUVGLDREQUE0RDtRQUM1RCxnREFBZ0Q7UUFFaEQsdUNBQXVDO1FBQ3ZDLEtBQUssTUFBTSxXQUFXLElBQUksWUFBWSxFQUFFLENBQUM7WUFDdkMsSUFBSSxDQUFDLE1BQU0sQ0FBQyxHQUFHLENBQ2IsbURBQW1ELFdBQVcsQ0FBQyxFQUFFLElBQUk7Z0JBQ25FLGtCQUFrQixXQUFXLENBQUMsc0JBQXNCLEVBQUUsQ0FDekQsQ0FBQztRQUNKLENBQUM7SUFDSCxDQUFDO0lBRUQ7Ozs7T0FJRztJQUNILEtBQUssQ0FBQyw4QkFBOEIsQ0FDbEMsWUFBMkIsRUFDM0IsaUJBQWdDO1FBRWhDLElBQUksWUFBWSxDQUFDLE1BQU0sS0FBSyxDQUFDLEVBQUUsQ0FBQztZQUM5QixJQUFJLENBQUMsTUFBTSxDQUFDLEdBQUcsQ0FBQyw2Q0FBNkMsQ0FBQyxDQUFDO1lBQy9ELE9BQU87UUFDVCxDQUFDO1FBRUQsSUFBSSxDQUFDLE1BQU0sQ0FBQyxHQUFHLENBQ2IscUJBQXFCLFlBQVksQ0FBQyxNQUFNLHlCQUF5QixDQUNsRSxDQUFDO1FBRUYsNERBQTREO1FBQzVELGdEQUFnRDtRQUVoRCxnREFBZ0Q7UUFDaEQsS0FBSyxJQUFJLENBQUMsR0FBRyxDQUFDLEVBQUUsQ0FBQyxHQUFHLFlBQVksQ0FBQyxNQUFNLEVBQUUsQ0FBQyxFQUFFLEVBQUUsQ0FBQztZQUM3QyxNQUFNLG1CQUFtQixHQUFHLFlBQVksQ0FBQyxDQUFDLENBQUMsQ0FBQztZQUM1QyxNQUFNLGVBQWUsR0FBRyxpQkFBaUIsQ0FBQyxDQUFDLENBQUMsQ0FBQztZQUU3QyxJQUFJLENBQUMsTUFBTSxDQUFDLEdBQUcsQ0FDYixpREFBaUQ7Z0JBQy9DLHlCQUF5QixtQkFBbUIsQ0FBQyxFQUFFLElBQUk7Z0JBQ25ELHFCQUFxQixlQUFlLENBQUMsRUFBRSxFQUFFLENBQzVDLENBQUM7UUFDSixDQUFDO0lBQ0gsQ0FBQztJQUVEOzs7O09BSUc7SUFDSCxLQUFLLENBQUMsdUJBQXVCLENBQzNCLFdBQXdCLEVBQ3hCLElBQVk7UUFFWixJQUFJLENBQUMsTUFBTSxDQUFDLEtBQUssQ0FDZixxQ0FBcUMsV0FBVyxDQUFDLEVBQUUsS0FBSyxJQUFJLEVBQUUsRUFDOUQsV0FBVyxDQUNaLENBQUM7UUFFRiw0REFBNEQ7UUFDNUQsb0RBQW9EO0lBQ3RELENBQUM7SUFFRDs7OztPQUlHO0lBQ0gsS0FBSyxDQUFDLDZCQUE2QixDQUNqQyxXQUF3QixFQUN4QixZQUFtQztRQUVuQyxJQUFJLENBQUMsTUFBTSxDQUFDLEdBQUcsQ0FDYixxREFBcUQsV0FBVyxDQUFDLEVBQUUsSUFBSTtZQUNyRSxrQkFBa0IsV0FBVyxDQUFDLHNCQUFzQixFQUFFLENBQ3pELENBQUM7UUFFRiw0REFBNEQ7UUFDNUQsdURBQXVEO0lBQ3pELENBQUM7SUFFRDs7O09BR0c7SUFDSCxLQUFLLENBQUMsZ0NBQWdDLENBQ3BDLFlBQTJCO1FBRTNCLElBQUksWUFBWSxDQUFDLE1BQU0sS0FBSyxDQUFDLEVBQUUsQ0FBQztZQUM5QixJQUFJLENBQUMsTUFBTSxDQUFDLEdBQUcsQ0FBQyx3REFBd0QsQ0FBQyxDQUFDO1lBQzFFLE9BQU87UUFDVCxDQUFDO1FBRUQsSUFBSSxDQUFDLE1BQU0sQ0FBQyxHQUFHLENBQ2IscUJBQXFCLFlBQVksQ0FBQyxNQUFNLG9DQUFvQyxDQUM3RSxDQUFDO1FBRUYsNERBQTREO1FBQzVELDZDQUE2QztRQUU3Qyx1Q0FBdUM7UUFDdkMsS0FBSyxNQUFNLFdBQVcsSUFBSSxZQUFZLEVBQUUsQ0FBQztZQUN2QyxJQUFJLENBQUMsTUFBTSxDQUFDLEdBQUcsQ0FDYix1REFBdUQsV0FBVyxDQUFDLEVBQUUsSUFBSTtnQkFDdkUsa0JBQWtCLFdBQVcsQ0FBQyxzQkFBc0IsRUFBRSxDQUN6RCxDQUFDO1FBQ0osQ0FBQztJQUNILENBQUM7Q0FDRixDQUFBO0FBcklZLGtFQUEyQjtzQ0FBM0IsMkJBQTJCO0lBRHZDLElBQUEsbUJBQVUsR0FBRTtJQUtSLFdBQUEsSUFBQSwwQkFBZ0IsRUFBQyxzQkFBVyxDQUFDLENBQUE7eURBQ1Usb0JBQVUsb0JBQVYsb0JBQVU7R0FMekMsMkJBQTJCLENBcUl2QyIsIm5hbWVzIjpbXSwic291cmNlcyI6WyJDOlxcVXNlcnNcXGV1ZHJlXFxPbmVEcml2ZVxcRGVza3RvcFxcUHJvamV0b3NcXHBnYmVuXFxwZ2Jlbi1zZXJ2ZXJcXHNyY1xcbW9kdWxlc1xcYmVuZWZpY2lvXFxzZXJ2aWNlc1xcbm90aWZpY2FjYW8tcmVub3ZhY2FvLnNlcnZpY2UudHMiXSwic291cmNlc0NvbnRlbnQiOlsiaW1wb3J0IHsgSW5qZWN0YWJsZSwgTG9nZ2VyIH0gZnJvbSAnQG5lc3Rqcy9jb21tb24nO1xuaW1wb3J0IHsgSW5qZWN0UmVwb3NpdG9yeSB9IGZyb20gJ0BuZXN0anMvdHlwZW9ybSc7XG5pbXBvcnQgeyBSZXBvc2l0b3J5IH0gZnJvbSAndHlwZW9ybSc7XG5pbXBvcnQgeyBTb2xpY2l0YWNhbywgQ29uZmlndXJhY2FvUmVub3ZhY2FvIH0gZnJvbSAnLi4vLi4vLi4vZW50aXRpZXMnO1xuXG4vKipcbiAqIFNlcnZpw6dvIGRlIG5vdGlmaWNhw6fDo28gcGFyYSByZW5vdmHDp8O1ZXMgYXV0b23DoXRpY2FzXG4gKlxuICogUmVzcG9uc8OhdmVsIHBvciBnZXJlbmNpYXIgYXMgbm90aWZpY2HDp8O1ZXMgcmVsYWNpb25hZGFzIMOgcyByZW5vdmHDp8O1ZXMgYXV0b23DoXRpY2FzXG4gKiBkZSBiZW5lZsOtY2lvcywgaW5jbHVpbmRvIGFsZXJ0YXMgZGUgcmVub3Zhw6fDtWVzIHBlbmRlbnRlcyBlIG5vdGlmaWNhw6fDtWVzIGRlIHJlbm92YcOnw7Vlc1xuICogcHJvY2Vzc2FkYXMuXG4gKi9cbkBJbmplY3RhYmxlKClcbmV4cG9ydCBjbGFzcyBOb3RpZmljYWNhb1Jlbm92YWNhb1NlcnZpY2Uge1xuICBwcml2YXRlIHJlYWRvbmx5IGxvZ2dlciA9IG5ldyBMb2dnZXIoTm90aWZpY2FjYW9SZW5vdmFjYW9TZXJ2aWNlLm5hbWUpO1xuXG4gIGNvbnN0cnVjdG9yKFxuICAgIEBJbmplY3RSZXBvc2l0b3J5KFNvbGljaXRhY2FvKVxuICAgIHByaXZhdGUgcmVhZG9ubHkgc29saWNpdGFjYW9SZXBvc2l0b3J5OiBSZXBvc2l0b3J5PFNvbGljaXRhY2FvPixcbiAgKSB7fVxuXG4gIC8qKlxuICAgKiBOb3RpZmljYSBzb2JyZSByZW5vdmHDp8O1ZXMgcGVuZGVudGVzXG4gICAqIEBwYXJhbSBzb2xpY2l0YWNvZXMgTGlzdGEgZGUgc29saWNpdGHDp8O1ZXMgY29tIHJlbm92YcOnw7VlcyBwZW5kZW50ZXNcbiAgICovXG4gIGFzeW5jIG5vdGlmaWNhclJlbm92YWNvZXNQZW5kZW50ZXMoXG4gICAgc29saWNpdGFjb2VzOiBTb2xpY2l0YWNhb1tdLFxuICApOiBQcm9taXNlPHZvaWQ+IHtcbiAgICBpZiAoc29saWNpdGFjb2VzLmxlbmd0aCA9PT0gMCkge1xuICAgICAgdGhpcy5sb2dnZXIubG9nKCdOZW5odW1hIHJlbm92YcOnw6NvIHBlbmRlbnRlIHBhcmEgbm90aWZpY2FyJyk7XG4gICAgICByZXR1cm47XG4gICAgfVxuXG4gICAgdGhpcy5sb2dnZXIubG9nKFxuICAgICAgYE5vdGlmaWNhbmRvIHNvYnJlICR7c29saWNpdGFjb2VzLmxlbmd0aH0gcmVub3Zhw6fDtWVzIHBlbmRlbnRlc2AsXG4gICAgKTtcblxuICAgIC8vIEFxdWkgc2VyaWEgaW1wbGVtZW50YWRhIGEgbMOzZ2ljYSBkZSBlbnZpbyBkZSBub3RpZmljYcOnw7Vlc1xuICAgIC8vIHBvciBlLW1haWwsIFNNUyBvdSBvdXRybyBjYW5hbCBkZSBjb211bmljYcOnw6NvXG5cbiAgICAvLyBFeGVtcGxvIGRlIGxvZyBwYXJhIGNhZGEgc29saWNpdGHDp8Ojb1xuICAgIGZvciAoY29uc3Qgc29saWNpdGFjYW8gb2Ygc29saWNpdGFjb2VzKSB7XG4gICAgICB0aGlzLmxvZ2dlci5sb2coXG4gICAgICAgIGBOb3RpZmljYcOnw6NvIGVudmlhZGEgcGFyYSByZW5vdmHDp8OjbyBwZW5kZW50ZTogSUQgJHtzb2xpY2l0YWNhby5pZH0sIGAgK1xuICAgICAgICAgIGBEYXRhIHByZXZpc3RhOiAke3NvbGljaXRhY2FvLmRhdGFfcHJveGltYV9yZW5vdmFjYW99YCxcbiAgICAgICk7XG4gICAgfVxuICB9XG5cbiAgLyoqXG4gICAqIE5vdGlmaWNhIHNvYnJlIHJlbm92YcOnw7VlcyBwcm9jZXNzYWRhc1xuICAgKiBAcGFyYW0gc29saWNpdGFjb2VzIExpc3RhIGRlIHNvbGljaXRhw6fDtWVzIHJlbm92YWRhc1xuICAgKiBAcGFyYW0gbm92YXNTb2xpY2l0YWNvZXMgTGlzdGEgZGFzIG5vdmFzIHNvbGljaXRhw6fDtWVzIGdlcmFkYXMgcGVsYSByZW5vdmHDp8Ojb1xuICAgKi9cbiAgYXN5bmMgbm90aWZpY2FyUmVub3ZhY29lc1Byb2Nlc3NhZGFzKFxuICAgIHNvbGljaXRhY29lczogU29saWNpdGFjYW9bXSxcbiAgICBub3Zhc1NvbGljaXRhY29lczogU29saWNpdGFjYW9bXSxcbiAgKTogUHJvbWlzZTx2b2lkPiB7XG4gICAgaWYgKHNvbGljaXRhY29lcy5sZW5ndGggPT09IDApIHtcbiAgICAgIHRoaXMubG9nZ2VyLmxvZygnTmVuaHVtYSByZW5vdmHDp8OjbyBwcm9jZXNzYWRhIHBhcmEgbm90aWZpY2FyJyk7XG4gICAgICByZXR1cm47XG4gICAgfVxuXG4gICAgdGhpcy5sb2dnZXIubG9nKFxuICAgICAgYE5vdGlmaWNhbmRvIHNvYnJlICR7c29saWNpdGFjb2VzLmxlbmd0aH0gcmVub3Zhw6fDtWVzIHByb2Nlc3NhZGFzYCxcbiAgICApO1xuXG4gICAgLy8gQXF1aSBzZXJpYSBpbXBsZW1lbnRhZGEgYSBsw7NnaWNhIGRlIGVudmlvIGRlIG5vdGlmaWNhw6fDtWVzXG4gICAgLy8gcG9yIGUtbWFpbCwgU01TIG91IG91dHJvIGNhbmFsIGRlIGNvbXVuaWNhw6fDo29cblxuICAgIC8vIEV4ZW1wbG8gZGUgbG9nIHBhcmEgY2FkYSBzb2xpY2l0YcOnw6NvIHJlbm92YWRhXG4gICAgZm9yIChsZXQgaSA9IDA7IGkgPCBzb2xpY2l0YWNvZXMubGVuZ3RoOyBpKyspIHtcbiAgICAgIGNvbnN0IHNvbGljaXRhY2FvT3JpZ2luYWwgPSBzb2xpY2l0YWNvZXNbaV07XG4gICAgICBjb25zdCBub3ZhU29saWNpdGFjYW8gPSBub3Zhc1NvbGljaXRhY29lc1tpXTtcblxuICAgICAgdGhpcy5sb2dnZXIubG9nKFxuICAgICAgICBgTm90aWZpY2HDp8OjbyBlbnZpYWRhIHBhcmEgcmVub3Zhw6fDo28gcHJvY2Vzc2FkYTogYCArXG4gICAgICAgICAgYFNvbGljaXRhw6fDo28gb3JpZ2luYWw6ICR7c29saWNpdGFjYW9PcmlnaW5hbC5pZH0sIGAgK1xuICAgICAgICAgIGBOb3ZhIHNvbGljaXRhw6fDo286ICR7bm92YVNvbGljaXRhY2FvLmlkfWAsXG4gICAgICApO1xuICAgIH1cbiAgfVxuXG4gIC8qKlxuICAgKiBOb3RpZmljYSBzb2JyZSBmYWxoYXMgbm8gcHJvY2Vzc28gZGUgcmVub3Zhw6fDo29cbiAgICogQHBhcmFtIHNvbGljaXRhY2FvIFNvbGljaXRhw6fDo28gcXVlIGZhbGhvdSBhbyByZW5vdmFyXG4gICAqIEBwYXJhbSBlcnJvIERlc2NyacOnw6NvIGRvIGVycm9cbiAgICovXG4gIGFzeW5jIG5vdGlmaWNhckZhbGhhUmVub3ZhY2FvKFxuICAgIHNvbGljaXRhY2FvOiBTb2xpY2l0YWNhbyxcbiAgICBlcnJvOiBzdHJpbmcsXG4gICk6IFByb21pc2U8dm9pZD4ge1xuICAgIHRoaXMubG9nZ2VyLmVycm9yKFxuICAgICAgYEZhbGhhIG5hIHJlbm92YcOnw6NvIGRhIHNvbGljaXRhw6fDo28gJHtzb2xpY2l0YWNhby5pZH06ICR7ZXJyb31gLFxuICAgICAgc29saWNpdGFjYW8sXG4gICAgKTtcblxuICAgIC8vIEFxdWkgc2VyaWEgaW1wbGVtZW50YWRhIGEgbMOzZ2ljYSBkZSBlbnZpbyBkZSBub3RpZmljYcOnw7Vlc1xuICAgIC8vIHBhcmEgYWRtaW5pc3RyYWRvcmVzIG91IHJlc3BvbnPDoXZlaXMgcGVsbyBzaXN0ZW1hXG4gIH1cblxuICAvKipcbiAgICogTm90aWZpY2Egc29icmUgYSBwcm94aW1pZGFkZSBkYSBkYXRhIGRlIHJlbm92YcOnw6NvXG4gICAqIEBwYXJhbSBzb2xpY2l0YWNhbyBTb2xpY2l0YcOnw6NvIHByw7N4aW1hIGRhIGRhdGEgZGUgcmVub3Zhw6fDo29cbiAgICogQHBhcmFtIGNvbmZpZ3VyYWNhbyBDb25maWd1cmHDp8OjbyBkZSByZW5vdmHDp8Ojb1xuICAgKi9cbiAgYXN5bmMgbm90aWZpY2FyUHJveGltaWRhZGVSZW5vdmFjYW8oXG4gICAgc29saWNpdGFjYW86IFNvbGljaXRhY2FvLFxuICAgIGNvbmZpZ3VyYWNhbzogQ29uZmlndXJhY2FvUmVub3ZhY2FvLFxuICApOiBQcm9taXNlPHZvaWQ+IHtcbiAgICB0aGlzLmxvZ2dlci5sb2coXG4gICAgICBgTm90aWZpY2FuZG8gcHJveGltaWRhZGUgZGUgcmVub3Zhw6fDo286IFNvbGljaXRhw6fDo28gJHtzb2xpY2l0YWNhby5pZH0sIGAgK1xuICAgICAgICBgRGF0YSBwcmV2aXN0YTogJHtzb2xpY2l0YWNhby5kYXRhX3Byb3hpbWFfcmVub3ZhY2FvfWAsXG4gICAgKTtcblxuICAgIC8vIEFxdWkgc2VyaWEgaW1wbGVtZW50YWRhIGEgbMOzZ2ljYSBkZSBlbnZpbyBkZSBub3RpZmljYcOnw7Vlc1xuICAgIC8vIHBhcmEgbyBjaWRhZMOjbyBlL291IGFzc2lzdGVudGVzIHNvY2lhaXMgcmVzcG9uc8OhdmVpc1xuICB9XG5cbiAgLyoqXG4gICAqIE5vdGlmaWNhIHNvYnJlIHJlbm92YcOnw7VlcyBxdWUgcmVxdWVyZW0gYXByb3Zhw6fDo29cbiAgICogQHBhcmFtIHNvbGljaXRhY29lcyBMaXN0YSBkZSBzb2xpY2l0YcOnw7VlcyBxdWUgcmVxdWVyZW0gYXByb3Zhw6fDo28gcGFyYSByZW5vdmHDp8Ojb1xuICAgKi9cbiAgYXN5bmMgbm90aWZpY2FyUmVub3ZhY29lc1BhcmFBcHJvdmFjYW8oXG4gICAgc29saWNpdGFjb2VzOiBTb2xpY2l0YWNhb1tdLFxuICApOiBQcm9taXNlPHZvaWQ+IHtcbiAgICBpZiAoc29saWNpdGFjb2VzLmxlbmd0aCA9PT0gMCkge1xuICAgICAgdGhpcy5sb2dnZXIubG9nKCdOZW5odW1hIHJlbm92YcOnw6NvIHBlbmRlbnRlIGRlIGFwcm92YcOnw6NvIHBhcmEgbm90aWZpY2FyJyk7XG4gICAgICByZXR1cm47XG4gICAgfVxuXG4gICAgdGhpcy5sb2dnZXIubG9nKFxuICAgICAgYE5vdGlmaWNhbmRvIHNvYnJlICR7c29saWNpdGFjb2VzLmxlbmd0aH0gcmVub3Zhw6fDtWVzIHF1ZSByZXF1ZXJlbSBhcHJvdmHDp8Ojb2AsXG4gICAgKTtcblxuICAgIC8vIEFxdWkgc2VyaWEgaW1wbGVtZW50YWRhIGEgbMOzZ2ljYSBkZSBlbnZpbyBkZSBub3RpZmljYcOnw7Vlc1xuICAgIC8vIHBhcmEgb3MgYXByb3ZhZG9yZXMgb3UgZ2VzdG9yZXMgZG8gc2lzdGVtYVxuXG4gICAgLy8gRXhlbXBsbyBkZSBsb2cgcGFyYSBjYWRhIHNvbGljaXRhw6fDo29cbiAgICBmb3IgKGNvbnN0IHNvbGljaXRhY2FvIG9mIHNvbGljaXRhY29lcykge1xuICAgICAgdGhpcy5sb2dnZXIubG9nKFxuICAgICAgICBgTm90aWZpY2HDp8OjbyBlbnZpYWRhIHBhcmEgYXByb3Zhw6fDo28gZGUgcmVub3Zhw6fDo286IElEICR7c29saWNpdGFjYW8uaWR9LCBgICtcbiAgICAgICAgICBgRGF0YSBwcmV2aXN0YTogJHtzb2xpY2l0YWNhby5kYXRhX3Byb3hpbWFfcmVub3ZhY2FvfWAsXG4gICAgICApO1xuICAgIH1cbiAgfVxufVxuIl0sInZlcnNpb24iOjN9

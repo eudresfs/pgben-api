@@ -1,0 +1,45 @@
+599009c0cb6088b000dcde13ee52e4a7
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.VincularProcessoJudicialDto = void 0;
+const class_validator_1 = require("class-validator");
+const swagger_1 = require("@nestjs/swagger");
+/**
+ * DTO para vincular um processo judicial a uma solicitação
+ *
+ * Este DTO é usado pelo módulo de solicitação para vincular um processo judicial
+ * existente a uma solicitação. A responsabilidade de gerenciar este vínculo
+ * é do módulo de solicitação, não do módulo judicial.
+ */
+class VincularProcessoJudicialDto {
+    processo_judicial_id;
+    observacao;
+}
+exports.VincularProcessoJudicialDto = VincularProcessoJudicialDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'ID do processo judicial a ser vinculado',
+        example: '550e8400-e29b-41d4-a716-446655440000',
+    }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'O ID do processo judicial é obrigatório' }),
+    (0, class_validator_1.IsUUID)('4', { message: 'O ID do processo judicial deve ser um UUID válido' }),
+    __metadata("design:type", String)
+], VincularProcessoJudicialDto.prototype, "processo_judicial_id", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Observação sobre o vínculo (opcional)',
+        example: 'Vinculado conforme determinação do juiz',
+        required: false,
+    }),
+    __metadata("design:type", String)
+], VincularProcessoJudicialDto.prototype, "observacao", void 0);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXHNvbGljaXRhY2FvXFxkdG9cXHZpbmN1bGFyLXByb2Nlc3NvLWp1ZGljaWFsLmR0by50cyIsIm1hcHBpbmdzIjoiOzs7Ozs7Ozs7Ozs7QUFBQSxxREFBcUQ7QUFDckQsNkNBQThDO0FBRTlDOzs7Ozs7R0FNRztBQUNILE1BQWEsMkJBQTJCO0lBT3RDLG9CQUFvQixDQUFTO0lBTzdCLFVBQVUsQ0FBVTtDQUNyQjtBQWZELGtFQWVDO0FBUkM7SUFOQyxJQUFBLHFCQUFXLEVBQUM7UUFDWCxXQUFXLEVBQUUseUNBQXlDO1FBQ3RELE9BQU8sRUFBRSxzQ0FBc0M7S0FDaEQsQ0FBQztJQUNELElBQUEsNEJBQVUsRUFBQyxFQUFFLE9BQU8sRUFBRSx5Q0FBeUMsRUFBRSxDQUFDO0lBQ2xFLElBQUEsd0JBQU0sRUFBQyxHQUFHLEVBQUUsRUFBRSxPQUFPLEVBQUUsbURBQW1ELEVBQUUsQ0FBQzs7eUVBQ2pEO0FBTzdCO0lBTEMsSUFBQSxxQkFBVyxFQUFDO1FBQ1gsV0FBVyxFQUFFLHVDQUF1QztRQUNwRCxPQUFPLEVBQUUseUNBQXlDO1FBQ2xELFFBQVEsRUFBRSxLQUFLO0tBQ2hCLENBQUM7OytEQUNrQiIsIm5hbWVzIjpbXSwic291cmNlcyI6WyJDOlxcVXNlcnNcXGV1ZHJlXFxPbmVEcml2ZVxcRGVza3RvcFxcUHJvamV0b3NcXHBnYmVuXFxwZ2Jlbi1zZXJ2ZXJcXHNyY1xcbW9kdWxlc1xcc29saWNpdGFjYW9cXGR0b1xcdmluY3VsYXItcHJvY2Vzc28tanVkaWNpYWwuZHRvLnRzIl0sInNvdXJjZXNDb250ZW50IjpbImltcG9ydCB7IElzTm90RW1wdHksIElzVVVJRCB9IGZyb20gJ2NsYXNzLXZhbGlkYXRvcic7XG5pbXBvcnQgeyBBcGlQcm9wZXJ0eSB9IGZyb20gJ0BuZXN0anMvc3dhZ2dlcic7XG5cbi8qKlxuICogRFRPIHBhcmEgdmluY3VsYXIgdW0gcHJvY2Vzc28ganVkaWNpYWwgYSB1bWEgc29saWNpdGHDp8Ojb1xuICpcbiAqIEVzdGUgRFRPIMOpIHVzYWRvIHBlbG8gbcOzZHVsbyBkZSBzb2xpY2l0YcOnw6NvIHBhcmEgdmluY3VsYXIgdW0gcHJvY2Vzc28ganVkaWNpYWxcbiAqIGV4aXN0ZW50ZSBhIHVtYSBzb2xpY2l0YcOnw6NvLiBBIHJlc3BvbnNhYmlsaWRhZGUgZGUgZ2VyZW5jaWFyIGVzdGUgdsOtbmN1bG9cbiAqIMOpIGRvIG3Ds2R1bG8gZGUgc29saWNpdGHDp8OjbywgbsOjbyBkbyBtw7NkdWxvIGp1ZGljaWFsLlxuICovXG5leHBvcnQgY2xhc3MgVmluY3VsYXJQcm9jZXNzb0p1ZGljaWFsRHRvIHtcbiAgQEFwaVByb3BlcnR5KHtcbiAgICBkZXNjcmlwdGlvbjogJ0lEIGRvIHByb2Nlc3NvIGp1ZGljaWFsIGEgc2VyIHZpbmN1bGFkbycsXG4gICAgZXhhbXBsZTogJzU1MGU4NDAwLWUyOWItNDFkNC1hNzE2LTQ0NjY1NTQ0MDAwMCcsXG4gIH0pXG4gIEBJc05vdEVtcHR5KHsgbWVzc2FnZTogJ08gSUQgZG8gcHJvY2Vzc28ganVkaWNpYWwgw6kgb2JyaWdhdMOzcmlvJyB9KVxuICBASXNVVUlEKCc0JywgeyBtZXNzYWdlOiAnTyBJRCBkbyBwcm9jZXNzbyBqdWRpY2lhbCBkZXZlIHNlciB1bSBVVUlEIHbDoWxpZG8nIH0pXG4gIHByb2Nlc3NvX2p1ZGljaWFsX2lkOiBzdHJpbmc7XG5cbiAgQEFwaVByb3BlcnR5KHtcbiAgICBkZXNjcmlwdGlvbjogJ09ic2VydmHDp8OjbyBzb2JyZSBvIHbDrW5jdWxvIChvcGNpb25hbCknLFxuICAgIGV4YW1wbGU6ICdWaW5jdWxhZG8gY29uZm9ybWUgZGV0ZXJtaW5hw6fDo28gZG8ganVpeicsXG4gICAgcmVxdWlyZWQ6IGZhbHNlLFxuICB9KVxuICBvYnNlcnZhY2FvPzogc3RyaW5nO1xufVxuIl0sInZlcnNpb24iOjN9

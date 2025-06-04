@@ -1,0 +1,85 @@
+e7d13e7e5265866e7f6c8af721071b77
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var _a, _b;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.SolicitacaoCreateDeterminacaoJudicialDto = void 0;
+const class_validator_1 = require("class-validator");
+const class_transformer_1 = require("class-transformer");
+/**
+ * DTO para criação de determinação judicial no contexto de solicitação
+ */
+class SolicitacaoCreateDeterminacaoJudicialDto {
+    solicitacao_id;
+    numero_processo;
+    orgao_judicial;
+    comarca;
+    juiz;
+    data_decisao;
+    descricao_decisao;
+    prazo_cumprimento;
+    observacoes;
+    documento_url;
+}
+exports.SolicitacaoCreateDeterminacaoJudicialDto = SolicitacaoCreateDeterminacaoJudicialDto;
+__decorate([
+    (0, class_validator_1.IsNotEmpty)({ message: 'ID da solicitação é obrigatório' }),
+    (0, class_validator_1.IsUUID)('4', { message: 'ID da solicitação inválido' }),
+    __metadata("design:type", String)
+], SolicitacaoCreateDeterminacaoJudicialDto.prototype, "solicitacao_id", void 0);
+__decorate([
+    (0, class_validator_1.IsNotEmpty)({ message: 'Número do processo é obrigatório' }),
+    (0, class_validator_1.IsString)({ message: 'Número do processo deve ser uma string' }),
+    __metadata("design:type", String)
+], SolicitacaoCreateDeterminacaoJudicialDto.prototype, "numero_processo", void 0);
+__decorate([
+    (0, class_validator_1.IsNotEmpty)({ message: 'Órgão judicial é obrigatório' }),
+    (0, class_validator_1.IsString)({ message: 'Órgão judicial deve ser uma string' }),
+    __metadata("design:type", String)
+], SolicitacaoCreateDeterminacaoJudicialDto.prototype, "orgao_judicial", void 0);
+__decorate([
+    (0, class_validator_1.IsNotEmpty)({ message: 'Comarca é obrigatória' }),
+    (0, class_validator_1.IsString)({ message: 'Comarca deve ser uma string' }),
+    __metadata("design:type", String)
+], SolicitacaoCreateDeterminacaoJudicialDto.prototype, "comarca", void 0);
+__decorate([
+    (0, class_validator_1.IsNotEmpty)({ message: 'Juiz é obrigatório' }),
+    (0, class_validator_1.IsString)({ message: 'Juiz deve ser uma string' }),
+    __metadata("design:type", String)
+], SolicitacaoCreateDeterminacaoJudicialDto.prototype, "juiz", void 0);
+__decorate([
+    (0, class_validator_1.IsNotEmpty)({ message: 'Data da decisão é obrigatória' }),
+    (0, class_validator_1.IsDate)({ message: 'Data da decisão deve ser uma data válida' }),
+    (0, class_transformer_1.Type)(() => Date),
+    __metadata("design:type", typeof (_a = typeof Date !== "undefined" && Date) === "function" ? _a : Object)
+], SolicitacaoCreateDeterminacaoJudicialDto.prototype, "data_decisao", void 0);
+__decorate([
+    (0, class_validator_1.IsNotEmpty)({ message: 'Descrição da decisão é obrigatória' }),
+    (0, class_validator_1.IsString)({ message: 'Descrição da decisão deve ser uma string' }),
+    __metadata("design:type", String)
+], SolicitacaoCreateDeterminacaoJudicialDto.prototype, "descricao_decisao", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsDate)({ message: 'Prazo de cumprimento deve ser uma data válida' }),
+    (0, class_transformer_1.Type)(() => Date),
+    __metadata("design:type", typeof (_b = typeof Date !== "undefined" && Date) === "function" ? _b : Object)
+], SolicitacaoCreateDeterminacaoJudicialDto.prototype, "prazo_cumprimento", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'Observações devem ser uma string' }),
+    __metadata("design:type", String)
+], SolicitacaoCreateDeterminacaoJudicialDto.prototype, "observacoes", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsUrl)({}, { message: 'URL do documento deve ser uma URL válida' }),
+    __metadata("design:type", String)
+], SolicitacaoCreateDeterminacaoJudicialDto.prototype, "documento_url", void 0);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXHNvbGljaXRhY2FvXFxkdG9cXGNyZWF0ZS1kZXRlcm1pbmFjYW8tanVkaWNpYWwuZHRvLnRzIiwibWFwcGluZ3MiOiI7Ozs7Ozs7Ozs7Ozs7QUFBQSxxREFPeUI7QUFDekIseURBQXlDO0FBRXpDOztHQUVHO0FBQ0gsTUFBYSx3Q0FBd0M7SUFHbkQsY0FBYyxDQUFTO0lBSXZCLGVBQWUsQ0FBUztJQUl4QixjQUFjLENBQVM7SUFJdkIsT0FBTyxDQUFTO0lBSWhCLElBQUksQ0FBUztJQUtiLFlBQVksQ0FBTztJQUluQixpQkFBaUIsQ0FBUztJQUsxQixpQkFBaUIsQ0FBUTtJQUl6QixXQUFXLENBQVU7SUFJckIsYUFBYSxDQUFVO0NBQ3hCO0FBMUNELDRGQTBDQztBQXZDQztJQUZDLElBQUEsNEJBQVUsRUFBQyxFQUFFLE9BQU8sRUFBRSxpQ0FBaUMsRUFBRSxDQUFDO0lBQzFELElBQUEsd0JBQU0sRUFBQyxHQUFHLEVBQUUsRUFBRSxPQUFPLEVBQUUsNEJBQTRCLEVBQUUsQ0FBQzs7Z0ZBQ2hDO0FBSXZCO0lBRkMsSUFBQSw0QkFBVSxFQUFDLEVBQUUsT0FBTyxFQUFFLGtDQUFrQyxFQUFFLENBQUM7SUFDM0QsSUFBQSwwQkFBUSxFQUFDLEVBQUUsT0FBTyxFQUFFLHdDQUF3QyxFQUFFLENBQUM7O2lGQUN4QztBQUl4QjtJQUZDLElBQUEsNEJBQVUsRUFBQyxFQUFFLE9BQU8sRUFBRSw4QkFBOEIsRUFBRSxDQUFDO0lBQ3ZELElBQUEsMEJBQVEsRUFBQyxFQUFFLE9BQU8sRUFBRSxvQ0FBb0MsRUFBRSxDQUFDOztnRkFDckM7QUFJdkI7SUFGQyxJQUFBLDRCQUFVLEVBQUMsRUFBRSxPQUFPLEVBQUUsdUJBQXVCLEVBQUUsQ0FBQztJQUNoRCxJQUFBLDBCQUFRLEVBQUMsRUFBRSxPQUFPLEVBQUUsNkJBQTZCLEVBQUUsQ0FBQzs7eUVBQ3JDO0FBSWhCO0lBRkMsSUFBQSw0QkFBVSxFQUFDLEVBQUUsT0FBTyxFQUFFLG9CQUFvQixFQUFFLENBQUM7SUFDN0MsSUFBQSwwQkFBUSxFQUFDLEVBQUUsT0FBTyxFQUFFLDBCQUEwQixFQUFFLENBQUM7O3NFQUNyQztBQUtiO0lBSEMsSUFBQSw0QkFBVSxFQUFDLEVBQUUsT0FBTyxFQUFFLCtCQUErQixFQUFFLENBQUM7SUFDeEQsSUFBQSx3QkFBTSxFQUFDLEVBQUUsT0FBTyxFQUFFLDBDQUEwQyxFQUFFLENBQUM7SUFDL0QsSUFBQSx3QkFBSSxFQUFDLEdBQUcsRUFBRSxDQUFDLElBQUksQ0FBQztrREFDSCxJQUFJLG9CQUFKLElBQUk7OEVBQUM7QUFJbkI7SUFGQyxJQUFBLDRCQUFVLEVBQUMsRUFBRSxPQUFPLEVBQUUsb0NBQW9DLEVBQUUsQ0FBQztJQUM3RCxJQUFBLDBCQUFRLEVBQUMsRUFBRSxPQUFPLEVBQUUsMENBQTBDLEVBQUUsQ0FBQzs7bUZBQ3hDO0FBSzFCO0lBSEMsSUFBQSw0QkFBVSxHQUFFO0lBQ1osSUFBQSx3QkFBTSxFQUFDLEVBQUUsT0FBTyxFQUFFLCtDQUErQyxFQUFFLENBQUM7SUFDcEUsSUFBQSx3QkFBSSxFQUFDLEdBQUcsRUFBRSxDQUFDLElBQUksQ0FBQztrREFDRyxJQUFJLG9CQUFKLElBQUk7bUZBQUM7QUFJekI7SUFGQyxJQUFBLDRCQUFVLEdBQUU7SUFDWixJQUFBLDBCQUFRLEVBQUMsRUFBRSxPQUFPLEVBQUUsa0NBQWtDLEVBQUUsQ0FBQzs7NkVBQ3JDO0FBSXJCO0lBRkMsSUFBQSw0QkFBVSxHQUFFO0lBQ1osSUFBQSx1QkFBSyxFQUFDLEVBQUUsRUFBRSxFQUFFLE9BQU8sRUFBRSwwQ0FBMEMsRUFBRSxDQUFDOzsrRUFDNUMiLCJuYW1lcyI6W10sInNvdXJjZXMiOlsiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXHNvbGljaXRhY2FvXFxkdG9cXGNyZWF0ZS1kZXRlcm1pbmFjYW8tanVkaWNpYWwuZHRvLnRzIl0sInNvdXJjZXNDb250ZW50IjpbImltcG9ydCB7XG4gIElzTm90RW1wdHksXG4gIElzT3B0aW9uYWwsXG4gIElzU3RyaW5nLFxuICBJc1VVSUQsXG4gIElzRGF0ZSxcbiAgSXNVcmwsXG59IGZyb20gJ2NsYXNzLXZhbGlkYXRvcic7XG5pbXBvcnQgeyBUeXBlIH0gZnJvbSAnY2xhc3MtdHJhbnNmb3JtZXInO1xuXG4vKipcbiAqIERUTyBwYXJhIGNyaWHDp8OjbyBkZSBkZXRlcm1pbmHDp8OjbyBqdWRpY2lhbCBubyBjb250ZXh0byBkZSBzb2xpY2l0YcOnw6NvXG4gKi9cbmV4cG9ydCBjbGFzcyBTb2xpY2l0YWNhb0NyZWF0ZURldGVybWluYWNhb0p1ZGljaWFsRHRvIHtcbiAgQElzTm90RW1wdHkoeyBtZXNzYWdlOiAnSUQgZGEgc29saWNpdGHDp8OjbyDDqSBvYnJpZ2F0w7NyaW8nIH0pXG4gIEBJc1VVSUQoJzQnLCB7IG1lc3NhZ2U6ICdJRCBkYSBzb2xpY2l0YcOnw6NvIGludsOhbGlkbycgfSlcbiAgc29saWNpdGFjYW9faWQ6IHN0cmluZztcblxuICBASXNOb3RFbXB0eSh7IG1lc3NhZ2U6ICdOw7ptZXJvIGRvIHByb2Nlc3NvIMOpIG9icmlnYXTDs3JpbycgfSlcbiAgQElzU3RyaW5nKHsgbWVzc2FnZTogJ07Dum1lcm8gZG8gcHJvY2Vzc28gZGV2ZSBzZXIgdW1hIHN0cmluZycgfSlcbiAgbnVtZXJvX3Byb2Nlc3NvOiBzdHJpbmc7XG5cbiAgQElzTm90RW1wdHkoeyBtZXNzYWdlOiAnw5NyZ8OjbyBqdWRpY2lhbCDDqSBvYnJpZ2F0w7NyaW8nIH0pXG4gIEBJc1N0cmluZyh7IG1lc3NhZ2U6ICfDk3Jnw6NvIGp1ZGljaWFsIGRldmUgc2VyIHVtYSBzdHJpbmcnIH0pXG4gIG9yZ2FvX2p1ZGljaWFsOiBzdHJpbmc7XG5cbiAgQElzTm90RW1wdHkoeyBtZXNzYWdlOiAnQ29tYXJjYSDDqSBvYnJpZ2F0w7NyaWEnIH0pXG4gIEBJc1N0cmluZyh7IG1lc3NhZ2U6ICdDb21hcmNhIGRldmUgc2VyIHVtYSBzdHJpbmcnIH0pXG4gIGNvbWFyY2E6IHN0cmluZztcblxuICBASXNOb3RFbXB0eSh7IG1lc3NhZ2U6ICdKdWl6IMOpIG9icmlnYXTDs3JpbycgfSlcbiAgQElzU3RyaW5nKHsgbWVzc2FnZTogJ0p1aXogZGV2ZSBzZXIgdW1hIHN0cmluZycgfSlcbiAganVpejogc3RyaW5nO1xuXG4gIEBJc05vdEVtcHR5KHsgbWVzc2FnZTogJ0RhdGEgZGEgZGVjaXPDo28gw6kgb2JyaWdhdMOzcmlhJyB9KVxuICBASXNEYXRlKHsgbWVzc2FnZTogJ0RhdGEgZGEgZGVjaXPDo28gZGV2ZSBzZXIgdW1hIGRhdGEgdsOhbGlkYScgfSlcbiAgQFR5cGUoKCkgPT4gRGF0ZSlcbiAgZGF0YV9kZWNpc2FvOiBEYXRlO1xuXG4gIEBJc05vdEVtcHR5KHsgbWVzc2FnZTogJ0Rlc2NyacOnw6NvIGRhIGRlY2lzw6NvIMOpIG9icmlnYXTDs3JpYScgfSlcbiAgQElzU3RyaW5nKHsgbWVzc2FnZTogJ0Rlc2NyacOnw6NvIGRhIGRlY2lzw6NvIGRldmUgc2VyIHVtYSBzdHJpbmcnIH0pXG4gIGRlc2NyaWNhb19kZWNpc2FvOiBzdHJpbmc7XG5cbiAgQElzT3B0aW9uYWwoKVxuICBASXNEYXRlKHsgbWVzc2FnZTogJ1ByYXpvIGRlIGN1bXByaW1lbnRvIGRldmUgc2VyIHVtYSBkYXRhIHbDoWxpZGEnIH0pXG4gIEBUeXBlKCgpID0+IERhdGUpXG4gIHByYXpvX2N1bXByaW1lbnRvPzogRGF0ZTtcblxuICBASXNPcHRpb25hbCgpXG4gIEBJc1N0cmluZyh7IG1lc3NhZ2U6ICdPYnNlcnZhw6fDtWVzIGRldmVtIHNlciB1bWEgc3RyaW5nJyB9KVxuICBvYnNlcnZhY29lcz86IHN0cmluZztcblxuICBASXNPcHRpb25hbCgpXG4gIEBJc1VybCh7fSwgeyBtZXNzYWdlOiAnVVJMIGRvIGRvY3VtZW50byBkZXZlIHNlciB1bWEgVVJMIHbDoWxpZGEnIH0pXG4gIGRvY3VtZW50b191cmw/OiBzdHJpbmc7XG59XG4iXSwidmVyc2lvbiI6M30=

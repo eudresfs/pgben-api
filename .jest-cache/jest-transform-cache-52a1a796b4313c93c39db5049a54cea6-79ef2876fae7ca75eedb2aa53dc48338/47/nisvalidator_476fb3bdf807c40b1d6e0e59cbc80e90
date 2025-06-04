@@ -1,0 +1,45 @@
+4ddb313d03f11feee8af868bebfc1b9f
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.NISValidator = void 0;
+const class_validator_1 = require("class-validator");
+let NISValidator = class NISValidator {
+    validate(nis, args) {
+        if (!nis) {
+            return false;
+        }
+        // Remove caracteres especiais
+        nis = nis.replace(/[^\d]/g, '');
+        // Verifica se tem 11 dígitos
+        if (nis.length !== 11) {
+            return false;
+        }
+        // Verifica se todos os dígitos são iguais
+        if (/^(\d)\1+$/.test(nis)) {
+            return false;
+        }
+        // Validação do dígito verificador (algoritmo do PIS/PASEP/NIS)
+        const multiplicadores = [3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+        let soma = 0;
+        for (let i = 0; i < 10; i++) {
+            soma += parseInt(nis.charAt(i)) * multiplicadores[i];
+        }
+        const resto = soma % 11;
+        const digitoVerificador = resto < 2 ? 0 : 11 - resto;
+        return digitoVerificador === parseInt(nis.charAt(10));
+    }
+    defaultMessage(args) {
+        return 'NIS inválido';
+    }
+};
+exports.NISValidator = NISValidator;
+exports.NISValidator = NISValidator = __decorate([
+    (0, class_validator_1.ValidatorConstraint)({ name: 'nisValidator', async: false })
+], NISValidator);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXGNpZGFkYW9cXHZhbGlkYXRvcnNcXG5pcy12YWxpZGF0b3IudHMiLCJtYXBwaW5ncyI6Ijs7Ozs7Ozs7O0FBQUEscURBSXlCO0FBR2xCLElBQU0sWUFBWSxHQUFsQixNQUFNLFlBQVk7SUFDdkIsUUFBUSxDQUFDLEdBQVcsRUFBRSxJQUF5QjtRQUM3QyxJQUFJLENBQUMsR0FBRyxFQUFFLENBQUM7WUFDVCxPQUFPLEtBQUssQ0FBQztRQUNmLENBQUM7UUFFRCw4QkFBOEI7UUFDOUIsR0FBRyxHQUFHLEdBQUcsQ0FBQyxPQUFPLENBQUMsUUFBUSxFQUFFLEVBQUUsQ0FBQyxDQUFDO1FBRWhDLDZCQUE2QjtRQUM3QixJQUFJLEdBQUcsQ0FBQyxNQUFNLEtBQUssRUFBRSxFQUFFLENBQUM7WUFDdEIsT0FBTyxLQUFLLENBQUM7UUFDZixDQUFDO1FBRUQsMENBQTBDO1FBQzFDLElBQUksV0FBVyxDQUFDLElBQUksQ0FBQyxHQUFHLENBQUMsRUFBRSxDQUFDO1lBQzFCLE9BQU8sS0FBSyxDQUFDO1FBQ2YsQ0FBQztRQUVELCtEQUErRDtRQUMvRCxNQUFNLGVBQWUsR0FBRyxDQUFDLENBQUMsRUFBRSxDQUFDLEVBQUUsQ0FBQyxFQUFFLENBQUMsRUFBRSxDQUFDLEVBQUUsQ0FBQyxFQUFFLENBQUMsRUFBRSxDQUFDLEVBQUUsQ0FBQyxFQUFFLENBQUMsQ0FBQyxDQUFDO1FBQ3ZELElBQUksSUFBSSxHQUFHLENBQUMsQ0FBQztRQUViLEtBQUssSUFBSSxDQUFDLEdBQUcsQ0FBQyxFQUFFLENBQUMsR0FBRyxFQUFFLEVBQUUsQ0FBQyxFQUFFLEVBQUUsQ0FBQztZQUM1QixJQUFJLElBQUksUUFBUSxDQUFDLEdBQUcsQ0FBQyxNQUFNLENBQUMsQ0FBQyxDQUFDLENBQUMsR0FBRyxlQUFlLENBQUMsQ0FBQyxDQUFDLENBQUM7UUFDdkQsQ0FBQztRQUVELE1BQU0sS0FBSyxHQUFHLElBQUksR0FBRyxFQUFFLENBQUM7UUFDeEIsTUFBTSxpQkFBaUIsR0FBRyxLQUFLLEdBQUcsQ0FBQyxDQUFDLENBQUMsQ0FBQyxDQUFDLENBQUMsQ0FBQyxDQUFDLEVBQUUsR0FBRyxLQUFLLENBQUM7UUFFckQsT0FBTyxpQkFBaUIsS0FBSyxRQUFRLENBQUMsR0FBRyxDQUFDLE1BQU0sQ0FBQyxFQUFFLENBQUMsQ0FBQyxDQUFDO0lBQ3hELENBQUM7SUFFRCxjQUFjLENBQUMsSUFBeUI7UUFDdEMsT0FBTyxjQUFjLENBQUM7SUFDeEIsQ0FBQztDQUNGLENBQUE7QUFwQ1ksb0NBQVk7dUJBQVosWUFBWTtJQUR4QixJQUFBLHFDQUFtQixFQUFDLEVBQUUsSUFBSSxFQUFFLGNBQWMsRUFBRSxLQUFLLEVBQUUsS0FBSyxFQUFFLENBQUM7R0FDL0MsWUFBWSxDQW9DeEIiLCJuYW1lcyI6W10sInNvdXJjZXMiOlsiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXGNpZGFkYW9cXHZhbGlkYXRvcnNcXG5pcy12YWxpZGF0b3IudHMiXSwic291cmNlc0NvbnRlbnQiOlsiaW1wb3J0IHtcbiAgVmFsaWRhdG9yQ29uc3RyYWludCxcbiAgVmFsaWRhdG9yQ29uc3RyYWludEludGVyZmFjZSxcbiAgVmFsaWRhdGlvbkFyZ3VtZW50cyxcbn0gZnJvbSAnY2xhc3MtdmFsaWRhdG9yJztcblxuQFZhbGlkYXRvckNvbnN0cmFpbnQoeyBuYW1lOiAnbmlzVmFsaWRhdG9yJywgYXN5bmM6IGZhbHNlIH0pXG5leHBvcnQgY2xhc3MgTklTVmFsaWRhdG9yIGltcGxlbWVudHMgVmFsaWRhdG9yQ29uc3RyYWludEludGVyZmFjZSB7XG4gIHZhbGlkYXRlKG5pczogc3RyaW5nLCBhcmdzOiBWYWxpZGF0aW9uQXJndW1lbnRzKSB7XG4gICAgaWYgKCFuaXMpIHtcbiAgICAgIHJldHVybiBmYWxzZTtcbiAgICB9XG5cbiAgICAvLyBSZW1vdmUgY2FyYWN0ZXJlcyBlc3BlY2lhaXNcbiAgICBuaXMgPSBuaXMucmVwbGFjZSgvW15cXGRdL2csICcnKTtcblxuICAgIC8vIFZlcmlmaWNhIHNlIHRlbSAxMSBkw61naXRvc1xuICAgIGlmIChuaXMubGVuZ3RoICE9PSAxMSkge1xuICAgICAgcmV0dXJuIGZhbHNlO1xuICAgIH1cblxuICAgIC8vIFZlcmlmaWNhIHNlIHRvZG9zIG9zIGTDrWdpdG9zIHPDo28gaWd1YWlzXG4gICAgaWYgKC9eKFxcZClcXDErJC8udGVzdChuaXMpKSB7XG4gICAgICByZXR1cm4gZmFsc2U7XG4gICAgfVxuXG4gICAgLy8gVmFsaWRhw6fDo28gZG8gZMOtZ2l0byB2ZXJpZmljYWRvciAoYWxnb3JpdG1vIGRvIFBJUy9QQVNFUC9OSVMpXG4gICAgY29uc3QgbXVsdGlwbGljYWRvcmVzID0gWzMsIDIsIDksIDgsIDcsIDYsIDUsIDQsIDMsIDJdO1xuICAgIGxldCBzb21hID0gMDtcblxuICAgIGZvciAobGV0IGkgPSAwOyBpIDwgMTA7IGkrKykge1xuICAgICAgc29tYSArPSBwYXJzZUludChuaXMuY2hhckF0KGkpKSAqIG11bHRpcGxpY2Fkb3Jlc1tpXTtcbiAgICB9XG5cbiAgICBjb25zdCByZXN0byA9IHNvbWEgJSAxMTtcbiAgICBjb25zdCBkaWdpdG9WZXJpZmljYWRvciA9IHJlc3RvIDwgMiA/IDAgOiAxMSAtIHJlc3RvO1xuXG4gICAgcmV0dXJuIGRpZ2l0b1ZlcmlmaWNhZG9yID09PSBwYXJzZUludChuaXMuY2hhckF0KDEwKSk7XG4gIH1cblxuICBkZWZhdWx0TWVzc2FnZShhcmdzOiBWYWxpZGF0aW9uQXJndW1lbnRzKSB7XG4gICAgcmV0dXJuICdOSVMgaW52w6FsaWRvJztcbiAgfVxufVxuIl0sInZlcnNpb24iOjN9

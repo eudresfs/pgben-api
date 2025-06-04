@@ -1,0 +1,73 @@
+0ff1fa705216a2f853dab87ac3fe7688
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.WorkflowUpdateDto = void 0;
+const swagger_1 = require("@nestjs/swagger");
+const class_transformer_1 = require("class-transformer");
+const class_validator_1 = require("class-validator");
+const workflow_etapa_dto_1 = require("./workflow-etapa.dto");
+/**
+ * DTO para atualização de um workflow de benefício.
+ */
+class WorkflowUpdateDto {
+    nome;
+    descricao;
+    etapas;
+    ativo;
+}
+exports.WorkflowUpdateDto = WorkflowUpdateDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Nome do workflow',
+        example: 'Fluxo de Aprovação do Auxílio Natalidade',
+        maxLength: 200,
+        required: false,
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'O nome deve ser uma string' }),
+    (0, class_validator_1.MaxLength)(200, { message: 'O nome deve ter no máximo 200 caracteres' }),
+    __metadata("design:type", String)
+], WorkflowUpdateDto.prototype, "nome", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Descrição detalhada do workflow',
+        example: 'Processo de aprovação para solicitações de Auxílio Natalidade',
+        maxLength: 500,
+        required: false,
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'A descrição deve ser uma string' }),
+    (0, class_validator_1.MaxLength)(500, { message: 'A descrição deve ter no máximo 500 caracteres' }),
+    __metadata("design:type", String)
+], WorkflowUpdateDto.prototype, "descricao", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Lista de etapas do workflow',
+        type: [workflow_etapa_dto_1.WorkflowEtapaDto],
+    }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'As etapas são obrigatórias' }),
+    (0, class_validator_1.IsArray)({ message: 'As etapas devem estar em um array' }),
+    (0, class_validator_1.ValidateNested)({ each: true }),
+    (0, class_transformer_1.Type)(() => workflow_etapa_dto_1.WorkflowEtapaDto),
+    __metadata("design:type", Array)
+], WorkflowUpdateDto.prototype, "etapas", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Status ativo/inativo do workflow',
+        example: true,
+        required: false,
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsBoolean)({ message: 'O status deve ser um booleano' }),
+    __metadata("design:type", Boolean)
+], WorkflowUpdateDto.prototype, "ativo", void 0);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXGNvbmZpZ3VyYWNhb1xcZHRvc1xcd29ya2Zsb3dcXHdvcmtmbG93LXVwZGF0ZS5kdG8udHMiLCJtYXBwaW5ncyI6Ijs7Ozs7Ozs7Ozs7O0FBQUEsNkNBQThDO0FBQzlDLHlEQUF5QztBQUN6QyxxREFReUI7QUFDekIsNkRBQXdEO0FBRXhEOztHQUVHO0FBQ0gsTUFBYSxpQkFBaUI7SUFVNUIsSUFBSSxDQUFVO0lBV2QsU0FBUyxDQUFVO0lBVW5CLE1BQU0sQ0FBcUI7SUFTM0IsS0FBSyxDQUFXO0NBQ2pCO0FBekNELDhDQXlDQztBQS9CQztJQVRDLElBQUEscUJBQVcsRUFBQztRQUNYLFdBQVcsRUFBRSxrQkFBa0I7UUFDL0IsT0FBTyxFQUFFLDBDQUEwQztRQUNuRCxTQUFTLEVBQUUsR0FBRztRQUNkLFFBQVEsRUFBRSxLQUFLO0tBQ2hCLENBQUM7SUFDRCxJQUFBLDRCQUFVLEdBQUU7SUFDWixJQUFBLDBCQUFRLEVBQUMsRUFBRSxPQUFPLEVBQUUsNEJBQTRCLEVBQUUsQ0FBQztJQUNuRCxJQUFBLDJCQUFTLEVBQUMsR0FBRyxFQUFFLEVBQUUsT0FBTyxFQUFFLDBDQUEwQyxFQUFFLENBQUM7OytDQUMxRDtBQVdkO0lBVEMsSUFBQSxxQkFBVyxFQUFDO1FBQ1gsV0FBVyxFQUFFLGlDQUFpQztRQUM5QyxPQUFPLEVBQUUsK0RBQStEO1FBQ3hFLFNBQVMsRUFBRSxHQUFHO1FBQ2QsUUFBUSxFQUFFLEtBQUs7S0FDaEIsQ0FBQztJQUNELElBQUEsNEJBQVUsR0FBRTtJQUNaLElBQUEsMEJBQVEsRUFBQyxFQUFFLE9BQU8sRUFBRSxpQ0FBaUMsRUFBRSxDQUFDO0lBQ3hELElBQUEsMkJBQVMsRUFBQyxHQUFHLEVBQUUsRUFBRSxPQUFPLEVBQUUsK0NBQStDLEVBQUUsQ0FBQzs7b0RBQzFEO0FBVW5CO0lBUkMsSUFBQSxxQkFBVyxFQUFDO1FBQ1gsV0FBVyxFQUFFLDZCQUE2QjtRQUMxQyxJQUFJLEVBQUUsQ0FBQyxxQ0FBZ0IsQ0FBQztLQUN6QixDQUFDO0lBQ0QsSUFBQSw0QkFBVSxFQUFDLEVBQUUsT0FBTyxFQUFFLDRCQUE0QixFQUFFLENBQUM7SUFDckQsSUFBQSx5QkFBTyxFQUFDLEVBQUUsT0FBTyxFQUFFLG1DQUFtQyxFQUFFLENBQUM7SUFDekQsSUFBQSxnQ0FBYyxFQUFDLEVBQUUsSUFBSSxFQUFFLElBQUksRUFBRSxDQUFDO0lBQzlCLElBQUEsd0JBQUksRUFBQyxHQUFHLEVBQUUsQ0FBQyxxQ0FBZ0IsQ0FBQzs7aURBQ0Y7QUFTM0I7SUFQQyxJQUFBLHFCQUFXLEVBQUM7UUFDWCxXQUFXLEVBQUUsa0NBQWtDO1FBQy9DLE9BQU8sRUFBRSxJQUFJO1FBQ2IsUUFBUSxFQUFFLEtBQUs7S0FDaEIsQ0FBQztJQUNELElBQUEsNEJBQVUsR0FBRTtJQUNaLElBQUEsMkJBQVMsRUFBQyxFQUFFLE9BQU8sRUFBRSwrQkFBK0IsRUFBRSxDQUFDOztnREFDeEMiLCJuYW1lcyI6W10sInNvdXJjZXMiOlsiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXGNvbmZpZ3VyYWNhb1xcZHRvc1xcd29ya2Zsb3dcXHdvcmtmbG93LXVwZGF0ZS5kdG8udHMiXSwic291cmNlc0NvbnRlbnQiOlsiaW1wb3J0IHsgQXBpUHJvcGVydHkgfSBmcm9tICdAbmVzdGpzL3N3YWdnZXInO1xuaW1wb3J0IHsgVHlwZSB9IGZyb20gJ2NsYXNzLXRyYW5zZm9ybWVyJztcbmltcG9ydCB7XG4gIElzQXJyYXksXG4gIElzQm9vbGVhbixcbiAgSXNOb3RFbXB0eSxcbiAgSXNPcHRpb25hbCxcbiAgSXNTdHJpbmcsXG4gIE1heExlbmd0aCxcbiAgVmFsaWRhdGVOZXN0ZWQsXG59IGZyb20gJ2NsYXNzLXZhbGlkYXRvcic7XG5pbXBvcnQgeyBXb3JrZmxvd0V0YXBhRHRvIH0gZnJvbSAnLi93b3JrZmxvdy1ldGFwYS5kdG8nO1xuXG4vKipcbiAqIERUTyBwYXJhIGF0dWFsaXphw6fDo28gZGUgdW0gd29ya2Zsb3cgZGUgYmVuZWbDrWNpby5cbiAqL1xuZXhwb3J0IGNsYXNzIFdvcmtmbG93VXBkYXRlRHRvIHtcbiAgQEFwaVByb3BlcnR5KHtcbiAgICBkZXNjcmlwdGlvbjogJ05vbWUgZG8gd29ya2Zsb3cnLFxuICAgIGV4YW1wbGU6ICdGbHV4byBkZSBBcHJvdmHDp8OjbyBkbyBBdXjDrWxpbyBOYXRhbGlkYWRlJyxcbiAgICBtYXhMZW5ndGg6IDIwMCxcbiAgICByZXF1aXJlZDogZmFsc2UsXG4gIH0pXG4gIEBJc09wdGlvbmFsKClcbiAgQElzU3RyaW5nKHsgbWVzc2FnZTogJ08gbm9tZSBkZXZlIHNlciB1bWEgc3RyaW5nJyB9KVxuICBATWF4TGVuZ3RoKDIwMCwgeyBtZXNzYWdlOiAnTyBub21lIGRldmUgdGVyIG5vIG3DoXhpbW8gMjAwIGNhcmFjdGVyZXMnIH0pXG4gIG5vbWU/OiBzdHJpbmc7XG5cbiAgQEFwaVByb3BlcnR5KHtcbiAgICBkZXNjcmlwdGlvbjogJ0Rlc2NyacOnw6NvIGRldGFsaGFkYSBkbyB3b3JrZmxvdycsXG4gICAgZXhhbXBsZTogJ1Byb2Nlc3NvIGRlIGFwcm92YcOnw6NvIHBhcmEgc29saWNpdGHDp8O1ZXMgZGUgQXV4w61saW8gTmF0YWxpZGFkZScsXG4gICAgbWF4TGVuZ3RoOiA1MDAsXG4gICAgcmVxdWlyZWQ6IGZhbHNlLFxuICB9KVxuICBASXNPcHRpb25hbCgpXG4gIEBJc1N0cmluZyh7IG1lc3NhZ2U6ICdBIGRlc2NyacOnw6NvIGRldmUgc2VyIHVtYSBzdHJpbmcnIH0pXG4gIEBNYXhMZW5ndGgoNTAwLCB7IG1lc3NhZ2U6ICdBIGRlc2NyacOnw6NvIGRldmUgdGVyIG5vIG3DoXhpbW8gNTAwIGNhcmFjdGVyZXMnIH0pXG4gIGRlc2NyaWNhbz86IHN0cmluZztcblxuICBAQXBpUHJvcGVydHkoe1xuICAgIGRlc2NyaXB0aW9uOiAnTGlzdGEgZGUgZXRhcGFzIGRvIHdvcmtmbG93JyxcbiAgICB0eXBlOiBbV29ya2Zsb3dFdGFwYUR0b10sXG4gIH0pXG4gIEBJc05vdEVtcHR5KHsgbWVzc2FnZTogJ0FzIGV0YXBhcyBzw6NvIG9icmlnYXTDs3JpYXMnIH0pXG4gIEBJc0FycmF5KHsgbWVzc2FnZTogJ0FzIGV0YXBhcyBkZXZlbSBlc3RhciBlbSB1bSBhcnJheScgfSlcbiAgQFZhbGlkYXRlTmVzdGVkKHsgZWFjaDogdHJ1ZSB9KVxuICBAVHlwZSgoKSA9PiBXb3JrZmxvd0V0YXBhRHRvKVxuICBldGFwYXM6IFdvcmtmbG93RXRhcGFEdG9bXTtcblxuICBAQXBpUHJvcGVydHkoe1xuICAgIGRlc2NyaXB0aW9uOiAnU3RhdHVzIGF0aXZvL2luYXRpdm8gZG8gd29ya2Zsb3cnLFxuICAgIGV4YW1wbGU6IHRydWUsXG4gICAgcmVxdWlyZWQ6IGZhbHNlLFxuICB9KVxuICBASXNPcHRpb25hbCgpXG4gIEBJc0Jvb2xlYW4oeyBtZXNzYWdlOiAnTyBzdGF0dXMgZGV2ZSBzZXIgdW0gYm9vbGVhbm8nIH0pXG4gIGF0aXZvPzogYm9vbGVhbjtcbn1cbiJdLCJ2ZXJzaW9uIjozfQ==

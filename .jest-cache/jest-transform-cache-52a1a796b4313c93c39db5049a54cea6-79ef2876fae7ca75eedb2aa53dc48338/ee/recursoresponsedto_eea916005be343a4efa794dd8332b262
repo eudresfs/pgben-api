@@ -1,0 +1,95 @@
+d492dfd45108dcd342b903c0428dac32
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.RecursoResponseDto = void 0;
+/**
+ * DTO de resposta para recursos
+ */
+class RecursoResponseDto {
+    /**
+     * ID do recurso
+     * @example "550e8400-e29b-41d4-a716-446655440000"
+     */
+    id;
+    /**
+     * ID da solicitação relacionada
+     * @example "550e8400-e29b-41d4-a716-446655440000"
+     */
+    solicitacao_id;
+    /**
+     * Número do protocolo da solicitação
+     * @example "SOL202500010001"
+     */
+    protocolo_solicitacao;
+    /**
+     * Nome do beneficiário
+     * @example "João da Silva"
+     */
+    nome_beneficiario;
+    /**
+     * Justificativa do recurso
+     * @example "Discordo da decisão pois apresentei todos os documentos necessários."
+     */
+    justificativa;
+    /**
+     * Status atual do recurso
+     * @example "pendente"
+     */
+    status;
+    /**
+     * Data de análise do recurso (se houver)
+     * @example "2025-05-26T14:20:00.000Z"
+     */
+    data_analise;
+    /**
+     * ID do analista responsável (se houver)
+     * @example "550e8400-e29b-41d4-a716-446655440000"
+     */
+    analista_id;
+    /**
+     * Nome do analista responsável (se houver)
+     * @example "Maria Oliveira"
+     */
+    nome_analista;
+    /**
+     * Parecer da análise (se houver)
+     * @example "Após análise da documentação, verificou-se que o beneficiário atende aos requisitos."
+     */
+    parecer;
+    /**
+     * Documentos adicionais enviados
+     */
+    documentos_adicionais;
+    /**
+     * Motivo do indeferimento original
+     * @example "Documentação incompleta"
+     */
+    motivo_indeferimento;
+    /**
+     * Prazo em dias úteis para análise
+     * @example 5
+     */
+    prazo_analise;
+    /**
+     * ID do setor responsável
+     * @example "550e8400-e29b-41d4-a716-446655440000"
+     */
+    setor_responsavel_id;
+    /**
+     * Nome do setor responsável
+     * @example "Setor de Análise de Recursos"
+     */
+    nome_setor_responsavel;
+    /**
+     * Data de criação do registro
+     * @example "2025-05-24T10:30:00.000Z"
+     */
+    created_at;
+    /**
+     * Data da última atualização do registro
+     * @example "2025-05-26T14:20:00.000Z"
+     */
+    updated_at;
+}
+exports.RecursoResponseDto = RecursoResponseDto;
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXHJlY3Vyc29cXGR0b1xccmVjdXJzby1yZXNwb25zZS5kdG8udHMiLCJtYXBwaW5ncyI6Ijs7O0FBRUE7O0dBRUc7QUFDSCxNQUFhLGtCQUFrQjtJQUM3Qjs7O09BR0c7SUFDSCxFQUFFLENBQVM7SUFFWDs7O09BR0c7SUFDSCxjQUFjLENBQVM7SUFFdkI7OztPQUdHO0lBQ0gscUJBQXFCLENBQVU7SUFFL0I7OztPQUdHO0lBQ0gsaUJBQWlCLENBQVU7SUFFM0I7OztPQUdHO0lBQ0gsYUFBYSxDQUFTO0lBRXRCOzs7T0FHRztJQUNILE1BQU0sQ0FBZ0I7SUFFdEI7OztPQUdHO0lBQ0gsWUFBWSxDQUFRO0lBRXBCOzs7T0FHRztJQUNILFdBQVcsQ0FBVTtJQUVyQjs7O09BR0c7SUFDSCxhQUFhLENBQVU7SUFFdkI7OztPQUdHO0lBQ0gsT0FBTyxDQUFVO0lBRWpCOztPQUVHO0lBQ0gscUJBQXFCLENBQXVCO0lBRTVDOzs7T0FHRztJQUNILG9CQUFvQixDQUFVO0lBRTlCOzs7T0FHRztJQUNILGFBQWEsQ0FBUztJQUV0Qjs7O09BR0c7SUFDSCxvQkFBb0IsQ0FBVTtJQUU5Qjs7O09BR0c7SUFDSCxzQkFBc0IsQ0FBVTtJQUVoQzs7O09BR0c7SUFDSCxVQUFVLENBQU87SUFFakI7OztPQUdHO0lBQ0gsVUFBVSxDQUFPO0NBQ2xCO0FBckdELGdEQXFHQyIsIm5hbWVzIjpbXSwic291cmNlcyI6WyJDOlxcVXNlcnNcXGV1ZHJlXFxPbmVEcml2ZVxcRGVza3RvcFxcUHJvamV0b3NcXHBnYmVuXFxwZ2Jlbi1zZXJ2ZXJcXHNyY1xcbW9kdWxlc1xccmVjdXJzb1xcZHRvXFxyZWN1cnNvLXJlc3BvbnNlLmR0by50cyJdLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQgeyBTdGF0dXNSZWN1cnNvIH0gZnJvbSAnLi4vLi4vLi4vZW50aXRpZXMvcmVjdXJzby5lbnRpdHknO1xuXG4vKipcbiAqIERUTyBkZSByZXNwb3N0YSBwYXJhIHJlY3Vyc29zXG4gKi9cbmV4cG9ydCBjbGFzcyBSZWN1cnNvUmVzcG9uc2VEdG8ge1xuICAvKipcbiAgICogSUQgZG8gcmVjdXJzb1xuICAgKiBAZXhhbXBsZSBcIjU1MGU4NDAwLWUyOWItNDFkNC1hNzE2LTQ0NjY1NTQ0MDAwMFwiXG4gICAqL1xuICBpZDogc3RyaW5nO1xuXG4gIC8qKlxuICAgKiBJRCBkYSBzb2xpY2l0YcOnw6NvIHJlbGFjaW9uYWRhXG4gICAqIEBleGFtcGxlIFwiNTUwZTg0MDAtZTI5Yi00MWQ0LWE3MTYtNDQ2NjU1NDQwMDAwXCJcbiAgICovXG4gIHNvbGljaXRhY2FvX2lkOiBzdHJpbmc7XG5cbiAgLyoqXG4gICAqIE7Dum1lcm8gZG8gcHJvdG9jb2xvIGRhIHNvbGljaXRhw6fDo29cbiAgICogQGV4YW1wbGUgXCJTT0wyMDI1MDAwMTAwMDFcIlxuICAgKi9cbiAgcHJvdG9jb2xvX3NvbGljaXRhY2FvPzogc3RyaW5nO1xuXG4gIC8qKlxuICAgKiBOb21lIGRvIGJlbmVmaWNpw6FyaW9cbiAgICogQGV4YW1wbGUgXCJKb8OjbyBkYSBTaWx2YVwiXG4gICAqL1xuICBub21lX2JlbmVmaWNpYXJpbz86IHN0cmluZztcblxuICAvKipcbiAgICogSnVzdGlmaWNhdGl2YSBkbyByZWN1cnNvXG4gICAqIEBleGFtcGxlIFwiRGlzY29yZG8gZGEgZGVjaXPDo28gcG9pcyBhcHJlc2VudGVpIHRvZG9zIG9zIGRvY3VtZW50b3MgbmVjZXNzw6FyaW9zLlwiXG4gICAqL1xuICBqdXN0aWZpY2F0aXZhOiBzdHJpbmc7XG5cbiAgLyoqXG4gICAqIFN0YXR1cyBhdHVhbCBkbyByZWN1cnNvXG4gICAqIEBleGFtcGxlIFwicGVuZGVudGVcIlxuICAgKi9cbiAgc3RhdHVzOiBTdGF0dXNSZWN1cnNvO1xuXG4gIC8qKlxuICAgKiBEYXRhIGRlIGFuw6FsaXNlIGRvIHJlY3Vyc28gKHNlIGhvdXZlcilcbiAgICogQGV4YW1wbGUgXCIyMDI1LTA1LTI2VDE0OjIwOjAwLjAwMFpcIlxuICAgKi9cbiAgZGF0YV9hbmFsaXNlPzogRGF0ZTtcblxuICAvKipcbiAgICogSUQgZG8gYW5hbGlzdGEgcmVzcG9uc8OhdmVsIChzZSBob3V2ZXIpXG4gICAqIEBleGFtcGxlIFwiNTUwZTg0MDAtZTI5Yi00MWQ0LWE3MTYtNDQ2NjU1NDQwMDAwXCJcbiAgICovXG4gIGFuYWxpc3RhX2lkPzogc3RyaW5nO1xuXG4gIC8qKlxuICAgKiBOb21lIGRvIGFuYWxpc3RhIHJlc3BvbnPDoXZlbCAoc2UgaG91dmVyKVxuICAgKiBAZXhhbXBsZSBcIk1hcmlhIE9saXZlaXJhXCJcbiAgICovXG4gIG5vbWVfYW5hbGlzdGE/OiBzdHJpbmc7XG5cbiAgLyoqXG4gICAqIFBhcmVjZXIgZGEgYW7DoWxpc2UgKHNlIGhvdXZlcilcbiAgICogQGV4YW1wbGUgXCJBcMOzcyBhbsOhbGlzZSBkYSBkb2N1bWVudGHDp8OjbywgdmVyaWZpY291LXNlIHF1ZSBvIGJlbmVmaWNpw6FyaW8gYXRlbmRlIGFvcyByZXF1aXNpdG9zLlwiXG4gICAqL1xuICBwYXJlY2VyPzogc3RyaW5nO1xuXG4gIC8qKlxuICAgKiBEb2N1bWVudG9zIGFkaWNpb25haXMgZW52aWFkb3NcbiAgICovXG4gIGRvY3VtZW50b3NfYWRpY2lvbmFpcz86IFJlY29yZDxzdHJpbmcsIGFueT47XG5cbiAgLyoqXG4gICAqIE1vdGl2byBkbyBpbmRlZmVyaW1lbnRvIG9yaWdpbmFsXG4gICAqIEBleGFtcGxlIFwiRG9jdW1lbnRhw6fDo28gaW5jb21wbGV0YVwiXG4gICAqL1xuICBtb3Rpdm9faW5kZWZlcmltZW50bz86IHN0cmluZztcblxuICAvKipcbiAgICogUHJhem8gZW0gZGlhcyDDunRlaXMgcGFyYSBhbsOhbGlzZVxuICAgKiBAZXhhbXBsZSA1XG4gICAqL1xuICBwcmF6b19hbmFsaXNlOiBudW1iZXI7XG5cbiAgLyoqXG4gICAqIElEIGRvIHNldG9yIHJlc3BvbnPDoXZlbFxuICAgKiBAZXhhbXBsZSBcIjU1MGU4NDAwLWUyOWItNDFkNC1hNzE2LTQ0NjY1NTQ0MDAwMFwiXG4gICAqL1xuICBzZXRvcl9yZXNwb25zYXZlbF9pZD86IHN0cmluZztcblxuICAvKipcbiAgICogTm9tZSBkbyBzZXRvciByZXNwb25zw6F2ZWxcbiAgICogQGV4YW1wbGUgXCJTZXRvciBkZSBBbsOhbGlzZSBkZSBSZWN1cnNvc1wiXG4gICAqL1xuICBub21lX3NldG9yX3Jlc3BvbnNhdmVsPzogc3RyaW5nO1xuXG4gIC8qKlxuICAgKiBEYXRhIGRlIGNyaWHDp8OjbyBkbyByZWdpc3Ryb1xuICAgKiBAZXhhbXBsZSBcIjIwMjUtMDUtMjRUMTA6MzA6MDAuMDAwWlwiXG4gICAqL1xuICBjcmVhdGVkX2F0OiBEYXRlO1xuXG4gIC8qKlxuICAgKiBEYXRhIGRhIMO6bHRpbWEgYXR1YWxpemHDp8OjbyBkbyByZWdpc3Ryb1xuICAgKiBAZXhhbXBsZSBcIjIwMjUtMDUtMjZUMTQ6MjA6MDAuMDAwWlwiXG4gICAqL1xuICB1cGRhdGVkX2F0OiBEYXRlO1xufVxuIl0sInZlcnNpb24iOjN9

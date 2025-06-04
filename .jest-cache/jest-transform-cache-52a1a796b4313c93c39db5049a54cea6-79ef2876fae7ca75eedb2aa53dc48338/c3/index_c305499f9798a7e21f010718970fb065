@@ -1,0 +1,162 @@
+8c31dff6cd981fa70d7249b0d0a113b3
+"use strict";
+/**
+ * Índice dos Domínios de Erros
+ *
+ * Exporta todos os domínios de erro específicos do sistema SEMTAS.
+ * Cada domínio contém códigos de erro padronizados e funções auxiliares
+ * para lançamento de exceções com contexto específico.
+ *
+ * @see docs/ADRs/catalogo-erros.md
+ */
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __exportStar = (this && this.__exportStar) || function(m, exports) {
+    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.DOMAIN_ERROR_CODES = exports.DOMAIN_ERRORS = exports.throwVersionMismatch = exports.throwDataTransformationFailed = exports.throwCertificateInvalid = exports.throwCircuitBreakerOpen = exports.throwMaxRetriesExceeded = exports.throwIntegradorRateLimitExceeded = exports.throwInvalidResponse = exports.throwIntegradorInvalidCredentials = exports.throwIntegradorTimeout = exports.throwConnectionFailed = exports.throwIntegradorNotFound = exports.throwRelatorioTemplateNotFound = exports.throwMemoryLimitExceeded = exports.throwNoDataFound = exports.throwExportFailed = exports.throwRelatorioAccessDenied = exports.throwDataTooLarge = exports.throwProcessingTimeout = exports.throwMissingParameters = exports.throwInvalidDateRange = exports.throwGenerationFailed = exports.throwRelatorioNotFound = void 0;
+exports.isDomainError = isDomainError;
+exports.getDomainErrorDefinition = getDomainErrorDefinition;
+exports.getDomainStatistics = getDomainStatistics;
+exports.getDomainCoverage = getDomainCoverage;
+// ========================================
+// EXPORTAÇÕES DOS DOMÍNIOS
+// ========================================
+// Domínio USUARIO
+__exportStar(require("./usuario.errors"), exports);
+// Domínio SOLICITACAO
+__exportStar(require("./solicitacao.errors"), exports);
+// Domínio CIDADAO
+__exportStar(require("./cidadao.errors"), exports);
+// Domínio BENEFICIO
+__exportStar(require("./beneficio.errors"), exports);
+// Domínio DOCUMENTO
+__exportStar(require("./documento.errors"), exports);
+// Domínio AUDITORIA
+__exportStar(require("./auditoria.errors"), exports);
+// Domínio NOTIFICACAO
+__exportStar(require("./notificacao.errors"), exports);
+// Domínio RELATORIO - exportações específicas para evitar conflitos
+var relatorio_errors_1 = require("./relatorio.errors");
+Object.defineProperty(exports, "throwRelatorioNotFound", { enumerable: true, get: function () { return relatorio_errors_1.throwRelatorioNotFound; } });
+Object.defineProperty(exports, "throwGenerationFailed", { enumerable: true, get: function () { return relatorio_errors_1.throwGenerationFailed; } });
+Object.defineProperty(exports, "throwInvalidDateRange", { enumerable: true, get: function () { return relatorio_errors_1.throwInvalidDateRange; } });
+Object.defineProperty(exports, "throwMissingParameters", { enumerable: true, get: function () { return relatorio_errors_1.throwMissingParameters; } });
+Object.defineProperty(exports, "throwProcessingTimeout", { enumerable: true, get: function () { return relatorio_errors_1.throwProcessingTimeout; } });
+Object.defineProperty(exports, "throwDataTooLarge", { enumerable: true, get: function () { return relatorio_errors_1.throwDataTooLarge; } });
+Object.defineProperty(exports, "throwRelatorioAccessDenied", { enumerable: true, get: function () { return relatorio_errors_1.throwRelatorioAccessDenied; } });
+Object.defineProperty(exports, "throwExportFailed", { enumerable: true, get: function () { return relatorio_errors_1.throwExportFailed; } });
+Object.defineProperty(exports, "throwNoDataFound", { enumerable: true, get: function () { return relatorio_errors_1.throwNoDataFound; } });
+Object.defineProperty(exports, "throwMemoryLimitExceeded", { enumerable: true, get: function () { return relatorio_errors_1.throwMemoryLimitExceeded; } });
+Object.defineProperty(exports, "throwRelatorioTemplateNotFound", { enumerable: true, get: function () { return relatorio_errors_1.throwTemplateNotFound; } });
+// Domínio INTEGRADOR - exportações específicas para evitar conflitos
+var integrador_errors_1 = require("./integrador.errors");
+Object.defineProperty(exports, "throwIntegradorNotFound", { enumerable: true, get: function () { return integrador_errors_1.throwIntegradorNotFound; } });
+Object.defineProperty(exports, "throwConnectionFailed", { enumerable: true, get: function () { return integrador_errors_1.throwConnectionFailed; } });
+Object.defineProperty(exports, "throwIntegradorTimeout", { enumerable: true, get: function () { return integrador_errors_1.throwIntegradorTimeout; } });
+Object.defineProperty(exports, "throwIntegradorInvalidCredentials", { enumerable: true, get: function () { return integrador_errors_1.throwInvalidCredentials; } });
+Object.defineProperty(exports, "throwInvalidResponse", { enumerable: true, get: function () { return integrador_errors_1.throwInvalidResponse; } });
+Object.defineProperty(exports, "throwIntegradorRateLimitExceeded", { enumerable: true, get: function () { return integrador_errors_1.throwRateLimitExceeded; } });
+Object.defineProperty(exports, "throwMaxRetriesExceeded", { enumerable: true, get: function () { return integrador_errors_1.throwMaxRetriesExceeded; } });
+Object.defineProperty(exports, "throwCircuitBreakerOpen", { enumerable: true, get: function () { return integrador_errors_1.throwCircuitBreakerOpen; } });
+Object.defineProperty(exports, "throwCertificateInvalid", { enumerable: true, get: function () { return integrador_errors_1.throwCertificateInvalid; } });
+Object.defineProperty(exports, "throwDataTransformationFailed", { enumerable: true, get: function () { return integrador_errors_1.throwDataTransformationFailed; } });
+Object.defineProperty(exports, "throwVersionMismatch", { enumerable: true, get: function () { return integrador_errors_1.throwVersionMismatch; } });
+// ========================================
+// CONSOLIDAÇÃO DOS CATÁLOGOS
+// ========================================
+const usuario_errors_1 = require("./usuario.errors");
+const solicitacao_errors_1 = require("./solicitacao.errors");
+const cidadao_errors_1 = require("./cidadao.errors");
+const beneficio_errors_1 = require("./beneficio.errors");
+const documento_errors_1 = require("./documento.errors");
+const auditoria_errors_1 = require("./auditoria.errors");
+const notificacao_errors_1 = require("./notificacao.errors");
+const relatorio_errors_2 = require("./relatorio.errors");
+const integrador_errors_2 = require("./integrador.errors");
+/**
+ * Catálogo consolidado de todos os erros de domínio
+ */
+exports.DOMAIN_ERRORS = {
+    ...usuario_errors_1.USUARIO_ERRORS,
+    ...solicitacao_errors_1.SOLICITACAO_ERRORS,
+    ...cidadao_errors_1.CIDADAO_ERRORS,
+    ...beneficio_errors_1.BENEFICIO_ERRORS,
+    ...documento_errors_1.DOCUMENTO_ERRORS,
+    ...auditoria_errors_1.AUDITORIA_ERRORS,
+    ...notificacao_errors_1.NOTIFICACAO_ERRORS,
+    ...relatorio_errors_2.RELATORIO_ERRORS,
+    ...integrador_errors_2.INTEGRADOR_ERRORS,
+};
+/**
+ * Lista de todos os códigos de erro de domínio
+ */
+exports.DOMAIN_ERROR_CODES = Object.keys(exports.DOMAIN_ERRORS);
+/**
+ * Verifica se um código de erro pertence aos domínios
+ */
+function isDomainError(code) {
+    return code in exports.DOMAIN_ERRORS;
+}
+/**
+ * Obtém a definição de erro de um código de domínio
+ */
+function getDomainErrorDefinition(code) {
+    return exports.DOMAIN_ERRORS[code];
+}
+// ========================================
+// ESTATÍSTICAS DOS DOMÍNIOS
+// ========================================
+/**
+ * Estatísticas dos domínios de erro
+ * Função para evitar problemas de ordem de importação
+ */
+function getDomainStatistics() {
+    return {
+        USUARIO: Object.keys(usuario_errors_1.USUARIO_ERRORS).length,
+        SOLICITACAO: Object.keys(solicitacao_errors_1.SOLICITACAO_ERRORS).length,
+        CIDADAO: Object.keys(cidadao_errors_1.CIDADAO_ERRORS).length,
+        BENEFICIO: Object.keys(beneficio_errors_1.BENEFICIO_ERRORS).length,
+        DOCUMENTO: Object.keys(documento_errors_1.DOCUMENTO_ERRORS).length,
+        AUDITORIA: Object.keys(auditoria_errors_1.AUDITORIA_ERRORS).length,
+        NOTIFICACAO: Object.keys(notificacao_errors_1.NOTIFICACAO_ERRORS).length,
+        RELATORIO: Object.keys(relatorio_errors_2.RELATORIO_ERRORS).length,
+        INTEGRADOR: Object.keys(integrador_errors_2.INTEGRADOR_ERRORS).length,
+        TOTAL: Object.keys(exports.DOMAIN_ERRORS).length,
+    };
+}
+// DOMAIN_STATISTICS removido para evitar problemas de inicialização
+// Use getDomainStatistics() quando necessário
+/**
+ * Informações sobre a cobertura dos domínios
+ */
+function getDomainCoverage() {
+    const stats = getDomainStatistics();
+    return {
+        domains: [
+            'USUARIO',
+            'SOLICITACAO',
+            'CIDADAO',
+            'BENEFICIO',
+            'DOCUMENTO',
+            'AUDITORIA',
+            'NOTIFICACAO',
+            'RELATORIO',
+            'INTEGRADOR',
+        ],
+        totalDomains: 9,
+        totalErrors: stats.TOTAL,
+        averageErrorsPerDomain: Math.round(stats.TOTAL / 9),
+    };
+}
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXHNoYXJlZFxcZXhjZXB0aW9uc1xcZXJyb3ItY2F0YWxvZ1xcZG9tYWluc1xcaW5kZXgudHMiLCJtYXBwaW5ncyI6IjtBQUFBOzs7Ozs7OztHQVFHOzs7Ozs7Ozs7Ozs7Ozs7OztBQWdHSCxzQ0FFQztBQUtELDREQUVDO0FBVUQsa0RBYUM7QUFRRCw4Q0FrQkM7QUF4SkQsMkNBQTJDO0FBQzNDLDJCQUEyQjtBQUMzQiwyQ0FBMkM7QUFFM0Msa0JBQWtCO0FBQ2xCLG1EQUFpQztBQUVqQyxzQkFBc0I7QUFDdEIsdURBQXFDO0FBRXJDLGtCQUFrQjtBQUNsQixtREFBaUM7QUFFakMsb0JBQW9CO0FBQ3BCLHFEQUFtQztBQUVuQyxvQkFBb0I7QUFDcEIscURBQW1DO0FBRW5DLG9CQUFvQjtBQUNwQixxREFBbUM7QUFFbkMsc0JBQXNCO0FBQ3RCLHVEQUFxQztBQUVyQyxvRUFBb0U7QUFDcEUsdURBWTRCO0FBWDFCLDBIQUFBLHNCQUFzQixPQUFBO0FBQ3RCLHlIQUFBLHFCQUFxQixPQUFBO0FBQ3JCLHlIQUFBLHFCQUFxQixPQUFBO0FBQ3JCLDBIQUFBLHNCQUFzQixPQUFBO0FBQ3RCLDBIQUFBLHNCQUFzQixPQUFBO0FBQ3RCLHFIQUFBLGlCQUFpQixPQUFBO0FBQ2pCLDhIQUFBLDBCQUEwQixPQUFBO0FBQzFCLHFIQUFBLGlCQUFpQixPQUFBO0FBQ2pCLG9IQUFBLGdCQUFnQixPQUFBO0FBQ2hCLDRIQUFBLHdCQUF3QixPQUFBO0FBQ3hCLGtJQUFBLHFCQUFxQixPQUFrQztBQUd6RCxxRUFBcUU7QUFDckUseURBWTZCO0FBWDNCLDRIQUFBLHVCQUF1QixPQUFBO0FBQ3ZCLDBIQUFBLHFCQUFxQixPQUFBO0FBQ3JCLDJIQUFBLHNCQUFzQixPQUFBO0FBQ3RCLHNJQUFBLHVCQUF1QixPQUFxQztBQUM1RCx5SEFBQSxvQkFBb0IsT0FBQTtBQUNwQixxSUFBQSxz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T25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXHNoYXJlZFxcZXhjZXB0aW9uc1xcZXJyb3ItY2F0YWxvZ1xcZG9tYWluc1xcaW5kZXgudHMiXSwic291cmNlc0NvbnRlbnQiOlsiLyoqXG4gKiDDjW5kaWNlIGRvcyBEb23DrW5pb3MgZGUgRXJyb3NcbiAqXG4gKiBFeHBvcnRhIHRvZG9zIG9zIGRvbcOtbmlvcyBkZSBlcnJvIGVzcGVjw61maWNvcyBkbyBzaXN0ZW1hIFNFTVRBUy5cbiAqIENhZGEgZG9tw61uaW8gY29udMOpbSBjw7NkaWdvcyBkZSBlcnJvIHBhZHJvbml6YWRvcyBlIGZ1bsOnw7VlcyBhdXhpbGlhcmVzXG4gKiBwYXJhIGxhbsOnYW1lbnRvIGRlIGV4Y2XDp8O1ZXMgY29tIGNvbnRleHRvIGVzcGVjw61maWNvLlxuICpcbiAqIEBzZWUgZG9jcy9BRFJzL2NhdGFsb2dvLWVycm9zLm1kXG4gKi9cblxuLy8gPT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PVxuLy8gRVhQT1JUQcOHw5VFUyBET1MgRE9Nw41OSU9TXG4vLyA9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09XG5cbi8vIERvbcOtbmlvIFVTVUFSSU9cbmV4cG9ydCAqIGZyb20gJy4vdXN1YXJpby5lcnJvcnMnO1xuXG4vLyBEb23DrW5pbyBTT0xJQ0lUQUNBT1xuZXhwb3J0ICogZnJvbSAnLi9zb2xpY2l0YWNhby5lcnJvcnMnO1xuXG4vLyBEb23DrW5pbyBDSURBREFPXG5leHBvcnQgKiBmcm9tICcuL2NpZGFkYW8uZXJyb3JzJztcblxuLy8gRG9tw61uaW8gQkVORUZJQ0lPXG5leHBvcnQgKiBmcm9tICcuL2JlbmVmaWNpby5lcnJvcnMnO1xuXG4vLyBEb23DrW5pbyBET0NVTUVOVE9cbmV4cG9ydCAqIGZyb20gJy4vZG9jdW1lbnRvLmVycm9ycyc7XG5cbi8vIERvbcOtbmlvIEFVRElUT1JJQVxuZXhwb3J0ICogZnJvbSAnLi9hdWRpdG9yaWEuZXJyb3JzJztcblxuLy8gRG9tw61uaW8gTk9USUZJQ0FDQU9cbmV4cG9ydCAqIGZyb20gJy4vbm90aWZpY2FjYW8uZXJyb3JzJztcblxuLy8gRG9tw61uaW8gUkVMQVRPUklPIC0gZXhwb3J0YcOnw7VlcyBlc3BlY8OtZmljYXMgcGFyYSBldml0YXIgY29uZmxpdG9zXG5leHBvcnQge1xuICB0aHJvd1JlbGF0b3Jpb05vdEZvdW5kLFxuICB0aHJvd0dlbmVyYXRpb25GYWlsZWQsXG4gIHRocm93SW52YWxpZERhdGVSYW5nZSxcbiAgdGhyb3dNaXNzaW5nUGFyYW1ldGVycyxcbiAgdGhyb3dQcm9jZXNzaW5nVGltZW91dCxcbiAgdGhyb3dEYXRhVG9vTGFyZ2UsXG4gIHRocm93UmVsYXRvcmlvQWNjZXNzRGVuaWVkLFxuICB0aHJvd0V4cG9ydEZhaWxlZCxcbiAgdGhyb3dOb0RhdGFGb3VuZCxcbiAgdGhyb3dNZW1vcnlMaW1pdEV4Y2VlZGVkLFxuICB0aHJvd1RlbXBsYXRlTm90Rm91bmQgYXMgdGhyb3dSZWxhdG9yaW9UZW1wbGF0ZU5vdEZvdW5kLFxufSBmcm9tICcuL3JlbGF0b3Jpby5lcnJvcnMnO1xuXG4vLyBEb23DrW5pbyBJTlRFR1JBRE9SIC0gZXhwb3J0YcOnw7VlcyBlc3BlY8OtZmljYXMgcGFyYSBldml0YXIgY29uZmxpdG9zXG5leHBvcnQge1xuICB0aHJvd0ludGVncmFkb3JOb3RGb3VuZCxcbiAgdGhyb3dDb25uZWN0aW9uRmFpbGVkLFxuICB0aHJvd0ludGVncmFkb3JUaW1lb3V0LFxuICB0aHJvd0ludmFsaWRDcmVkZW50aWFscyBhcyB0aHJvd0ludGVncmFkb3JJbnZhbGlkQ3JlZGVudGlhbHMsXG4gIHRocm93SW52YWxpZFJlc3BvbnNlLFxuICB0aHJvd1JhdGVMaW1pdEV4Y2VlZGVkIGFzIHRocm93SW50ZWdyYWRvclJhdGVMaW1pdEV4Y2VlZGVkLFxuICB0aHJvd01heFJldHJpZXNFeGNlZWRlZCxcbiAgdGhyb3dDaXJjdWl0QnJlYWtlck9wZW4sXG4gIHRocm93Q2VydGlmaWNhdGVJbnZhbGlkLFxuICB0aHJvd0RhdGFUcmFuc2Zvcm1hdGlvbkZhaWxlZCxcbiAgdGhyb3dWZXJzaW9uTWlzbWF0Y2gsXG59IGZyb20gJy4vaW50ZWdyYWRvci5lcnJvcnMnO1xuXG4vLyA9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09XG4vLyBDT05TT0xJREHDh8ODTyBET1MgQ0FUw4FMT0dPU1xuLy8gPT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PVxuXG5pbXBvcnQgeyBVU1VBUklPX0VSUk9SUyB9IGZyb20gJy4vdXN1YXJpby5lcnJvcnMnO1xuaW1wb3J0IHsgU09MSUNJVEFDQU9fRVJST1JTIH0gZnJvbSAnLi9zb2xpY2l0YWNhby5lcnJvcnMnO1xuaW1wb3J0IHsgQ0lEQURBT19FUlJPUlMgfSBmcm9tICcuL2NpZGFkYW8uZXJyb3JzJztcbmltcG9ydCB7IEJFTkVGSUNJT19FUlJPUlMgfSBmcm9tICcuL2JlbmVmaWNpby5lcnJvcnMnO1xuaW1wb3J0IHsgRE9DVU1FTlRPX0VSUk9SUyB9IGZyb20gJy4vZG9jdW1lbnRvLmVycm9ycyc7XG5pbXBvcnQgeyBBVURJVE9SSUFfRVJST1JTIH0gZnJvbSAnLi9hdWRpdG9yaWEuZXJyb3JzJztcbmltcG9ydCB7IE5PVElGSUNBQ0FPX0VSUk9SUyB9IGZyb20gJy4vbm90aWZpY2FjYW8uZXJyb3JzJztcbmltcG9ydCB7IFJFTEFUT1JJT19FUlJPUlMgfSBmcm9tICcuL3JlbGF0b3Jpby5lcnJvcnMnO1xuaW1wb3J0IHsgSU5URUdSQURPUl9FUlJPUlMgfSBmcm9tICcuL2ludGVncmFkb3IuZXJyb3JzJztcblxuLyoqXG4gKiBDYXTDoWxvZ28gY29uc29saWRhZG8gZGUgdG9kb3Mgb3MgZXJyb3MgZGUgZG9tw61uaW9cbiAqL1xuZXhwb3J0IGNvbnN0IERPTUFJTl9FUlJPUlMgPSB7XG4gIC4uLlVTVUFSSU9fRVJST1JTLFxuICAuLi5TT0xJQ0lUQUNBT19FUlJPUlMsXG4gIC4uLkNJREFEQU9fRVJST1JTLFxuICAuLi5CRU5FRklDSU9fRVJST1JTLFxuICAuLi5ET0NVTUVOVE9fRVJST1JTLFxuICAuLi5BVURJVE9SSUFfRVJST1JTLFxuICAuLi5OT1RJRklDQUNBT19FUlJPUlMsXG4gIC4uLlJFTEFUT1JJT19FUlJPUlMsXG4gIC4uLklOVEVHUkFET1JfRVJST1JTLFxufSBhcyBjb25zdDtcblxuLyoqXG4gKiBMaXN0YSBkZSB0b2RvcyBvcyBjw7NkaWdvcyBkZSBlcnJvIGRlIGRvbcOtbmlvXG4gKi9cbmV4cG9ydCBjb25zdCBET01BSU5fRVJST1JfQ09ERVMgPSBPYmplY3Qua2V5cyhET01BSU5fRVJST1JTKSBhcyBBcnJheTxcbiAga2V5b2YgdHlwZW9mIERPTUFJTl9FUlJPUlNcbj47XG5cbi8qKlxuICogVmVyaWZpY2Egc2UgdW0gY8OzZGlnbyBkZSBlcnJvIHBlcnRlbmNlIGFvcyBkb23DrW5pb3NcbiAqL1xuZXhwb3J0IGZ1bmN0aW9uIGlzRG9tYWluRXJyb3IoY29kZTogc3RyaW5nKTogY29kZSBpcyBzdHJpbmcge1xuICByZXR1cm4gY29kZSBpbiBET01BSU5fRVJST1JTO1xufVxuXG4vKipcbiAqIE9idMOpbSBhIGRlZmluacOnw6NvIGRlIGVycm8gZGUgdW0gY8OzZGlnbyBkZSBkb23DrW5pb1xuICovXG5leHBvcnQgZnVuY3Rpb24gZ2V0RG9tYWluRXJyb3JEZWZpbml0aW9uKGNvZGU6IGtleW9mIHR5cGVvZiBET01BSU5fRVJST1JTKSB7XG4gIHJldHVybiBET01BSU5fRVJST1JTW2NvZGVdO1xufVxuXG4vLyA9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09XG4vLyBFU1RBVMONU1RJQ0FTIERPUyBET03DjU5JT1Ncbi8vID09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT1cblxuLyoqXG4gKiBFc3RhdMOtc3RpY2FzIGRvcyBkb23DrW5pb3MgZGUgZXJyb1xuICogRnVuw6fDo28gcGFyYSBldml0YXIgcHJvYmxlbWFzIGRlIG9yZGVtIGRlIGltcG9ydGHDp8Ojb1xuICovXG5leHBvcnQgZnVuY3Rpb24gZ2V0RG9tYWluU3RhdGlzdGljcygpIHtcbiAgcmV0dXJuIHtcbiAgICBVU1VBUklPOiBPYmplY3Qua2V5cyhVU1VBUklPX0VSUk9SUykubGVuZ3RoLFxuICAgIFNPTElDSVRBQ0FPOiBPYmplY3Qua2V5cyhTT0xJQ0lUQUNBT19FUlJPUlMpLmxlbmd0aCxcbiAgICBDSURBREFPOiBPYmplY3Qua2V5cyhDSURBREFPX0VSUk9SUykubGVuZ3RoLFxuICAgIEJFTkVGSUNJTzogT2JqZWN0LmtleXMoQkVORUZJQ0lPX0VSUk9SUykubGVuZ3RoLFxuICAgIERPQ1VNRU5UTzogT2JqZWN0LmtleXMoRE9DVU1FTlRPX0VSUk9SUykubGVuZ3RoLFxuICAgIEFVRElUT1JJQTogT2JqZWN0LmtleXMoQVVESVRPUklBX0VSUk9SUykubGVuZ3RoLFxuICAgIE5PVElGSUNBQ0FPOiBPYmplY3Qua2V5cyhOT1RJRklDQUNBT19FUlJPUlMpLmxlbmd0aCxcbiAgICBSRUxBVE9SSU86IE9iamVjdC5rZXlzKFJFTEFUT1JJT19FUlJPUlMpLmxlbmd0aCxcbiAgICBJTlRFR1JBRE9SOiBPYmplY3Qua2V5cyhJTlRFR1JBRE9SX0VSUk9SUykubGVuZ3RoLFxuICAgIFRPVEFMOiBPYmplY3Qua2V5cyhET01BSU5fRVJST1JTKS5sZW5ndGgsXG4gIH0gYXMgY29uc3Q7XG59XG5cbi8vIERPTUFJTl9TVEFUSVNUSUNTIHJlbW92aWRvIHBhcmEgZXZpdGFyIHByb2JsZW1hcyBkZSBpbmljaWFsaXphw6fDo29cbi8vIFVzZSBnZXREb21haW5TdGF0aXN0aWNzKCkgcXVhbmRvIG5lY2Vzc8OhcmlvXG5cbi8qKlxuICogSW5mb3JtYcOnw7VlcyBzb2JyZSBhIGNvYmVydHVyYSBkb3MgZG9tw61uaW9zXG4gKi9cbmV4cG9ydCBmdW5jdGlvbiBnZXREb21haW5Db3ZlcmFnZSgpIHtcbiAgY29uc3Qgc3RhdHMgPSBnZXREb21haW5TdGF0aXN0aWNzKCk7XG4gIHJldHVybiB7XG4gICAgZG9tYWluczogW1xuICAgICAgJ1VTVUFSSU8nLFxuICAgICAgJ1NPTElDSVRBQ0FPJyxcbiAgICAgICdDSURBREFPJyxcbiAgICAgICdCRU5FRklDSU8nLFxuICAgICAgJ0RPQ1VNRU5UTycsXG4gICAgICAnQVVESVRPUklBJyxcbiAgICAgICdOT1RJRklDQUNBTycsXG4gICAgICAnUkVMQVRPUklPJyxcbiAgICAgICdJTlRFR1JBRE9SJyxcbiAgICBdLFxuICAgIHRvdGFsRG9tYWluczogOSxcbiAgICB0b3RhbEVycm9yczogc3RhdHMuVE9UQUwsXG4gICAgYXZlcmFnZUVycm9yc1BlckRvbWFpbjogTWF0aC5yb3VuZChzdGF0cy5UT1RBTCAvIDkpLFxuICB9IGFzIGNvbnN0O1xufVxuIl0sInZlcnNpb24iOjN9

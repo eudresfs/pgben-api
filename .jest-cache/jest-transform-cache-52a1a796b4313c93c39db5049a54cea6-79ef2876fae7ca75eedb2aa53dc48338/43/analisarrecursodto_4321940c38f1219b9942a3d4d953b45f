@@ -1,0 +1,53 @@
+9a242c765191d271d545a6a62ed956a7
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var _a;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.AnalisarRecursoDto = void 0;
+const class_validator_1 = require("class-validator");
+const recurso_entity_1 = require("../../../entities/recurso.entity");
+/**
+ * DTO para análise de um recurso
+ */
+class AnalisarRecursoDto {
+    /**
+     * Novo status do recurso
+     * @example "deferido"
+     */
+    status;
+    /**
+     * Parecer da análise
+     * @example "Após análise da documentação, verificou-se que o beneficiário atende aos requisitos."
+     */
+    parecer;
+    /**
+     * Observação adicional (opcional)
+     * @example "Encaminhar para setor responsável para providências."
+     */
+    observacao;
+}
+exports.AnalisarRecursoDto = AnalisarRecursoDto;
+__decorate([
+    (0, class_validator_1.IsEnum)(recurso_entity_1.StatusRecurso, { message: 'Status inválido' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Status é obrigatório' }),
+    __metadata("design:type", typeof (_a = typeof recurso_entity_1.StatusRecurso !== "undefined" && recurso_entity_1.StatusRecurso) === "function" ? _a : Object)
+], AnalisarRecursoDto.prototype, "status", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Parecer é obrigatório' }),
+    __metadata("design:type", String)
+], AnalisarRecursoDto.prototype, "parecer", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], AnalisarRecursoDto.prototype, "observacao", void 0);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXHJlY3Vyc29cXGR0b1xcYW5hbGlzYXItcmVjdXJzby5kdG8udHMiLCJtYXBwaW5ncyI6Ijs7Ozs7Ozs7Ozs7OztBQUFBLHFEQU15QjtBQUN6QixxRUFBaUU7QUFFakU7O0dBRUc7QUFDSCxNQUFhLGtCQUFrQjtJQUM3Qjs7O09BR0c7SUFHSCxNQUFNLENBQWdCO0lBRXRCOzs7T0FHRztJQUdILE9BQU8sQ0FBUztJQUVoQjs7O09BR0c7SUFHSCxVQUFVLENBQVU7Q0FDckI7QUF4QkQsZ0RBd0JDO0FBakJDO0lBRkMsSUFBQSx3QkFBTSxFQUFDLDhCQUFhLEVBQUUsRUFBRSxPQUFPLEVBQUUsaUJBQWlCLEVBQUUsQ0FBQztJQUNyRCxJQUFBLDRCQUFVLEVBQUMsRUFBRSxPQUFPLEVBQUUsc0JBQXNCLEVBQUUsQ0FBQztrREFDeEMsOEJBQWEsb0JBQWIsOEJBQWE7a0RBQUM7QUFRdEI7SUFGQyxJQUFBLDBCQUFRLEdBQUU7SUFDVixJQUFBLDRCQUFVLEVBQUMsRUFBRSxPQUFPLEVBQUUsdUJBQXVCLEVBQUUsQ0FBQzs7bURBQ2pDO0FBUWhCO0lBRkMsSUFBQSw0QkFBVSxHQUFFO0lBQ1osSUFBQSwwQkFBUSxHQUFFOztzREFDUyIsIm5hbWVzIjpbXSwic291cmNlcyI6WyJDOlxcVXNlcnNcXGV1ZHJlXFxPbmVEcml2ZVxcRGVza3RvcFxcUHJvamV0b3NcXHBnYmVuXFxwZ2Jlbi1zZXJ2ZXJcXHNyY1xcbW9kdWxlc1xccmVjdXJzb1xcZHRvXFxhbmFsaXNhci1yZWN1cnNvLmR0by50cyJdLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQge1xuICBJc05vdEVtcHR5LFxuICBJc09wdGlvbmFsLFxuICBJc1VVSUQsXG4gIElzU3RyaW5nLFxuICBJc0VudW0sXG59IGZyb20gJ2NsYXNzLXZhbGlkYXRvcic7XG5pbXBvcnQgeyBTdGF0dXNSZWN1cnNvIH0gZnJvbSAnLi4vLi4vLi4vZW50aXRpZXMvcmVjdXJzby5lbnRpdHknO1xuXG4vKipcbiAqIERUTyBwYXJhIGFuw6FsaXNlIGRlIHVtIHJlY3Vyc29cbiAqL1xuZXhwb3J0IGNsYXNzIEFuYWxpc2FyUmVjdXJzb0R0byB7XG4gIC8qKlxuICAgKiBOb3ZvIHN0YXR1cyBkbyByZWN1cnNvXG4gICAqIEBleGFtcGxlIFwiZGVmZXJpZG9cIlxuICAgKi9cbiAgQElzRW51bShTdGF0dXNSZWN1cnNvLCB7IG1lc3NhZ2U6ICdTdGF0dXMgaW52w6FsaWRvJyB9KVxuICBASXNOb3RFbXB0eSh7IG1lc3NhZ2U6ICdTdGF0dXMgw6kgb2JyaWdhdMOzcmlvJyB9KVxuICBzdGF0dXM6IFN0YXR1c1JlY3Vyc287XG5cbiAgLyoqXG4gICAqIFBhcmVjZXIgZGEgYW7DoWxpc2VcbiAgICogQGV4YW1wbGUgXCJBcMOzcyBhbsOhbGlzZSBkYSBkb2N1bWVudGHDp8OjbywgdmVyaWZpY291LXNlIHF1ZSBvIGJlbmVmaWNpw6FyaW8gYXRlbmRlIGFvcyByZXF1aXNpdG9zLlwiXG4gICAqL1xuICBASXNTdHJpbmcoKVxuICBASXNOb3RFbXB0eSh7IG1lc3NhZ2U6ICdQYXJlY2VyIMOpIG9icmlnYXTDs3JpbycgfSlcbiAgcGFyZWNlcjogc3RyaW5nO1xuXG4gIC8qKlxuICAgKiBPYnNlcnZhw6fDo28gYWRpY2lvbmFsIChvcGNpb25hbClcbiAgICogQGV4YW1wbGUgXCJFbmNhbWluaGFyIHBhcmEgc2V0b3IgcmVzcG9uc8OhdmVsIHBhcmEgcHJvdmlkw6puY2lhcy5cIlxuICAgKi9cbiAgQElzT3B0aW9uYWwoKVxuICBASXNTdHJpbmcoKVxuICBvYnNlcnZhY2FvPzogc3RyaW5nO1xufVxuIl0sInZlcnNpb24iOjN9

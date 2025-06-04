@@ -1,0 +1,28 @@
+4098a62003974c717dd225c5c2f01f49
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.MetodoPagamentoEnum = void 0;
+/**
+ * Enum que define os possíveis métodos de pagamento disponíveis no sistema.
+ * Representa as diferentes formas de transferência de valores para os beneficiários.
+ */
+var MetodoPagamentoEnum;
+(function (MetodoPagamentoEnum) {
+    /**
+     * Pagamento via PIX - sistema de pagamentos instantâneos brasileiro.
+     */
+    MetodoPagamentoEnum["PIX"] = "pix";
+    /**
+     * Pagamento via depósito bancário tradicional.
+     */
+    MetodoPagamentoEnum["DEPOSITO"] = "deposito";
+    /**
+     * Pagamento presencial, geralmente realizado na unidade da SEMTAS.
+     */
+    MetodoPagamentoEnum["PRESENCIAL"] = "presencial";
+    /**
+     * Pagamento via Documento de Crédito (DOC).
+     */
+    MetodoPagamentoEnum["DOC"] = "doc";
+})(MetodoPagamentoEnum || (exports.MetodoPagamentoEnum = MetodoPagamentoEnum = {}));
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXGVudW1zXFxtZXRvZG8tcGFnYW1lbnRvLmVudW0udHMiLCJtYXBwaW5ncyI6Ijs7O0FBQUE7OztHQUdHO0FBQ0gsSUFBWSxtQkFvQlg7QUFwQkQsV0FBWSxtQkFBbUI7SUFDN0I7O09BRUc7SUFDSCxrQ0FBVyxDQUFBO0lBRVg7O09BRUc7SUFDSCw0Q0FBcUIsQ0FBQTtJQUVyQjs7T0FFRztJQUNILGdEQUF5QixDQUFBO0lBRXpCOztPQUVHO0lBQ0gsa0NBQVcsQ0FBQTtBQUNiLENBQUMsRUFwQlcsbUJBQW1CLG1DQUFuQixtQkFBbUIsUUFvQjlCIiwibmFtZXMiOltdLCJzb3VyY2VzIjpbIkM6XFxVc2Vyc1xcZXVkcmVcXE9uZURyaXZlXFxEZXNrdG9wXFxQcm9qZXRvc1xccGdiZW5cXHBnYmVuLXNlcnZlclxcc3JjXFxlbnVtc1xcbWV0b2RvLXBhZ2FtZW50by5lbnVtLnRzIl0sInNvdXJjZXNDb250ZW50IjpbIi8qKlxuICogRW51bSBxdWUgZGVmaW5lIG9zIHBvc3PDrXZlaXMgbcOpdG9kb3MgZGUgcGFnYW1lbnRvIGRpc3BvbsOtdmVpcyBubyBzaXN0ZW1hLlxuICogUmVwcmVzZW50YSBhcyBkaWZlcmVudGVzIGZvcm1hcyBkZSB0cmFuc2ZlcsOqbmNpYSBkZSB2YWxvcmVzIHBhcmEgb3MgYmVuZWZpY2nDoXJpb3MuXG4gKi9cbmV4cG9ydCBlbnVtIE1ldG9kb1BhZ2FtZW50b0VudW0ge1xuICAvKipcbiAgICogUGFnYW1lbnRvIHZpYSBQSVggLSBzaXN0ZW1hIGRlIHBhZ2FtZW50b3MgaW5zdGFudMOibmVvcyBicmFzaWxlaXJvLlxuICAgKi9cbiAgUElYID0gJ3BpeCcsXG5cbiAgLyoqXG4gICAqIFBhZ2FtZW50byB2aWEgZGVww7NzaXRvIGJhbmPDoXJpbyB0cmFkaWNpb25hbC5cbiAgICovXG4gIERFUE9TSVRPID0gJ2RlcG9zaXRvJyxcblxuICAvKipcbiAgICogUGFnYW1lbnRvIHByZXNlbmNpYWwsIGdlcmFsbWVudGUgcmVhbGl6YWRvIG5hIHVuaWRhZGUgZGEgU0VNVEFTLlxuICAgKi9cbiAgUFJFU0VOQ0lBTCA9ICdwcmVzZW5jaWFsJyxcblxuICAvKipcbiAgICogUGFnYW1lbnRvIHZpYSBEb2N1bWVudG8gZGUgQ3LDqWRpdG8gKERPQykuXG4gICAqL1xuICBET0MgPSAnZG9jJyxcbn1cbiJdLCJ2ZXJzaW9uIjozfQ==

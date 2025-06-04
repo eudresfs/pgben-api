@@ -1,0 +1,74 @@
+d963df760cc3df52871935a1830778ff
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var _a, _b;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.TemplateTestDto = void 0;
+const swagger_1 = require("@nestjs/swagger");
+const class_validator_1 = require("class-validator");
+const enums_1 = require("../../../../enums");
+/**
+ * DTO para testar a renderização de um template com dados de exemplo.
+ */
+class TemplateTestDto {
+    codigo;
+    conteudo;
+    tipo;
+    dados;
+}
+exports.TemplateTestDto = TemplateTestDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Código do template a ser renderizado',
+        example: 'email.nova-solicitacao',
+        required: false,
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'O código do template deve ser uma string' }),
+    __metadata("design:type", String)
+], TemplateTestDto.prototype, "codigo", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Conteúdo do template (alternativo ao código)',
+        example: '<p>Olá {{nome}},</p><p>Sua solicitação foi registrada.</p>',
+        required: false,
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'O conteúdo do template deve ser uma string' }),
+    __metadata("design:type", String)
+], TemplateTestDto.prototype, "conteudo", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Tipo do template',
+        enum: enums_1.TemplateTipoEnum,
+        example: enums_1.TemplateTipoEnum.EMAIL,
+        required: false,
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsEnum)(enums_1.TemplateTipoEnum, { message: 'Tipo de template inválido' }),
+    __metadata("design:type", typeof (_a = typeof enums_1.TemplateTipoEnum !== "undefined" && enums_1.TemplateTipoEnum) === "function" ? _a : Object)
+], TemplateTestDto.prototype, "tipo", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Dados para substituir as variáveis do template',
+        example: {
+            nome: 'João Silva',
+            tipo_beneficio: 'Auxílio Natalidade',
+            data_solicitacao: '2023-01-15',
+        },
+        type: 'object',
+        additionalProperties: true,
+    }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Os dados para renderização são obrigatórios' }),
+    (0, class_validator_1.IsObject)({ message: 'Os dados devem estar em formato de objeto' }),
+    __metadata("design:type", typeof (_b = typeof Record !== "undefined" && Record) === "function" ? _b : Object)
+], TemplateTestDto.prototype, "dados", void 0);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXGNvbmZpZ3VyYWNhb1xcZHRvc1xcdGVtcGxhdGVcXHRlbXBsYXRlLXRlc3QuZHRvLnRzIiwibWFwcGluZ3MiOiI7Ozs7Ozs7Ozs7Ozs7QUFBQSw2Q0FBOEM7QUFDOUMscURBTXlCO0FBQ3pCLDZDQUFxRDtBQUVyRDs7R0FFRztBQUNILE1BQWEsZUFBZTtJQVExQixNQUFNLENBQVU7SUFTaEIsUUFBUSxDQUFVO0lBVWxCLElBQUksQ0FBb0I7SUFjeEIsS0FBSyxDQUFzQjtDQUM1QjtBQTFDRCwwQ0EwQ0M7QUFsQ0M7SUFQQyxJQUFBLHFCQUFXLEVBQUM7UUFDWCxXQUFXLEVBQUUsc0NBQXNDO1FBQ25ELE9BQU8sRUFBRSx3QkFBd0I7UUFDakMsUUFBUSxFQUFFLEtBQUs7S0FDaEIsQ0FBQztJQUNELElBQUEsNEJBQVUsR0FBRTtJQUNaLElBQUEsMEJBQVEsRUFBQyxFQUFFLE9BQU8sRUFBRSwwQ0FBMEMsRUFBRSxDQUFDOzsrQ0FDbEQ7QUFTaEI7SUFQQyxJQUFBLHFCQUFXLEVBQUM7UUFDWCxXQUFXLEVBQUUsOENBQThDO1FBQzNELE9BQU8sRUFBRSw0REFBNEQ7UUFDckUsUUFBUSxFQUFFLEtBQUs7S0FDaEIsQ0FBQztJQUNELElBQUEsNEJBQVUsR0FBRTtJQUNaLElBQUEsMEJBQVEsRUFBQyxFQUFFLE9BQU8sRUFBRSw0Q0FBNEMsRUFBRSxDQUFDOztpREFDbEQ7QUFVbEI7SUFSQyxJQUFBLHFCQUFXLEVBQUM7UUFDWCxXQUFXLEVBQUUsa0JBQWtCO1FBQy9CLElBQUksRUFBRSx3QkFBZ0I7UUFDdEIsT0FBTyxFQUFFLHdCQUFnQixDQUFDLEtBQUs7UUFDL0IsUUFBUSxFQUFFLEtBQUs7S0FDaEIsQ0FBQztJQUNELElBQUEsNEJBQVUsR0FBRTtJQUNaLElBQUEsd0JBQU0sRUFBQyx3QkFBZ0IsRUFBRSxFQUFFLE9BQU8sRUFBRSwyQkFBMkIsRUFBRSxDQUFDO2tEQUM1RCx3QkFBZ0Isb0JBQWhCLHdCQUFnQjs2Q0FBQztBQWN4QjtJQVpDLElBQUEscUJBQVcsRUFBQztRQUNYLFdBQVcsRUFBRSxnREFBZ0Q7UUFDN0QsT0FBTyxFQUFFO1lBQ1AsSUFBSSxFQUFFLFlBQVk7WUFDbEIsY0FBYyxFQUFFLG9CQUFvQjtZQUNwQyxnQkFBZ0IsRUFBRSxZQUFZO1NBQy9CO1FBQ0QsSUFBSSxFQUFFLFFBQVE7UUFDZCxvQkFBb0IsRUFBRSxJQUFJO0tBQzNCLENBQUM7SUFDRCxJQUFBLDRCQUFVLEVBQUMsRUFBRSxPQUFPLEVBQUUsNkNBQTZDLEVBQUUsQ0FBQztJQUN0RSxJQUFBLDBCQUFRLEVBQUMsRUFBRSxPQUFPLEVBQUUsMkNBQTJDLEVBQUUsQ0FBQztrREFDNUQsTUFBTSxvQkFBTixNQUFNOzhDQUFjIiwibmFtZXMiOltdLCJzb3VyY2VzIjpbIkM6XFxVc2Vyc1xcZXVkcmVcXE9uZURyaXZlXFxEZXNrdG9wXFxQcm9qZXRvc1xccGdiZW5cXHBnYmVuLXNlcnZlclxcc3JjXFxtb2R1bGVzXFxjb25maWd1cmFjYW9cXGR0b3NcXHRlbXBsYXRlXFx0ZW1wbGF0ZS10ZXN0LmR0by50cyJdLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQgeyBBcGlQcm9wZXJ0eSB9IGZyb20gJ0BuZXN0anMvc3dhZ2dlcic7XG5pbXBvcnQge1xuICBJc0VudW0sXG4gIElzTm90RW1wdHksXG4gIElzT2JqZWN0LFxuICBJc09wdGlvbmFsLFxuICBJc1N0cmluZyxcbn0gZnJvbSAnY2xhc3MtdmFsaWRhdG9yJztcbmltcG9ydCB7IFRlbXBsYXRlVGlwb0VudW0gfSBmcm9tICcuLi8uLi8uLi8uLi9lbnVtcyc7XG5cbi8qKlxuICogRFRPIHBhcmEgdGVzdGFyIGEgcmVuZGVyaXphw6fDo28gZGUgdW0gdGVtcGxhdGUgY29tIGRhZG9zIGRlIGV4ZW1wbG8uXG4gKi9cbmV4cG9ydCBjbGFzcyBUZW1wbGF0ZVRlc3REdG8ge1xuICBAQXBpUHJvcGVydHkoe1xuICAgIGRlc2NyaXB0aW9uOiAnQ8OzZGlnbyBkbyB0ZW1wbGF0ZSBhIHNlciByZW5kZXJpemFkbycsXG4gICAgZXhhbXBsZTogJ2VtYWlsLm5vdmEtc29saWNpdGFjYW8nLFxuICAgIHJlcXVpcmVkOiBmYWxzZSxcbiAgfSlcbiAgQElzT3B0aW9uYWwoKVxuICBASXNTdHJpbmcoeyBtZXNzYWdlOiAnTyBjw7NkaWdvIGRvIHRlbXBsYXRlIGRldmUgc2VyIHVtYSBzdHJpbmcnIH0pXG4gIGNvZGlnbz86IHN0cmluZztcblxuICBAQXBpUHJvcGVydHkoe1xuICAgIGRlc2NyaXB0aW9uOiAnQ29udGXDumRvIGRvIHRlbXBsYXRlIChhbHRlcm5hdGl2byBhbyBjw7NkaWdvKScsXG4gICAgZXhhbXBsZTogJzxwPk9sw6Ege3tub21lfX0sPC9wPjxwPlN1YSBzb2xpY2l0YcOnw6NvIGZvaSByZWdpc3RyYWRhLjwvcD4nLFxuICAgIHJlcXVpcmVkOiBmYWxzZSxcbiAgfSlcbiAgQElzT3B0aW9uYWwoKVxuICBASXNTdHJpbmcoeyBtZXNzYWdlOiAnTyBjb250ZcO6ZG8gZG8gdGVtcGxhdGUgZGV2ZSBzZXIgdW1hIHN0cmluZycgfSlcbiAgY29udGV1ZG8/OiBzdHJpbmc7XG5cbiAgQEFwaVByb3BlcnR5KHtcbiAgICBkZXNjcmlwdGlvbjogJ1RpcG8gZG8gdGVtcGxhdGUnLFxuICAgIGVudW06IFRlbXBsYXRlVGlwb0VudW0sXG4gICAgZXhhbXBsZTogVGVtcGxhdGVUaXBvRW51bS5FTUFJTCxcbiAgICByZXF1aXJlZDogZmFsc2UsXG4gIH0pXG4gIEBJc09wdGlvbmFsKClcbiAgQElzRW51bShUZW1wbGF0ZVRpcG9FbnVtLCB7IG1lc3NhZ2U6ICdUaXBvIGRlIHRlbXBsYXRlIGludsOhbGlkbycgfSlcbiAgdGlwbz86IFRlbXBsYXRlVGlwb0VudW07XG5cbiAgQEFwaVByb3BlcnR5KHtcbiAgICBkZXNjcmlwdGlvbjogJ0RhZG9zIHBhcmEgc3Vic3RpdHVpciBhcyB2YXJpw6F2ZWlzIGRvIHRlbXBsYXRlJyxcbiAgICBleGFtcGxlOiB7XG4gICAgICBub21lOiAnSm/Do28gU2lsdmEnLFxuICAgICAgdGlwb19iZW5lZmljaW86ICdBdXjDrWxpbyBOYXRhbGlkYWRlJyxcbiAgICAgIGRhdGFfc29saWNpdGFjYW86ICcyMDIzLTAxLTE1JyxcbiAgICB9LFxuICAgIHR5cGU6ICdvYmplY3QnLFxuICAgIGFkZGl0aW9uYWxQcm9wZXJ0aWVzOiB0cnVlLFxuICB9KVxuICBASXNOb3RFbXB0eSh7IG1lc3NhZ2U6ICdPcyBkYWRvcyBwYXJhIHJlbmRlcml6YcOnw6NvIHPDo28gb2JyaWdhdMOzcmlvcycgfSlcbiAgQElzT2JqZWN0KHsgbWVzc2FnZTogJ09zIGRhZG9zIGRldmVtIGVzdGFyIGVtIGZvcm1hdG8gZGUgb2JqZXRvJyB9KVxuICBkYWRvczogUmVjb3JkPHN0cmluZywgYW55Pjtcbn1cbiJdLCJ2ZXJzaW9uIjozfQ==

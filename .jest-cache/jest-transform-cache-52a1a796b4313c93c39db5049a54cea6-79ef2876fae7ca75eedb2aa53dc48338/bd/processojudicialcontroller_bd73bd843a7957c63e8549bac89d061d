@@ -1,0 +1,246 @@
+6676ae79f064c25ddc91cd69ce79b2b9
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.ProcessoJudicialController = void 0;
+const common_1 = require("@nestjs/common");
+const swagger_1 = require("@nestjs/swagger");
+const jwt_auth_guard_1 = require("../../../auth/guards/jwt-auth.guard");
+const processo_judicial_service_1 = require("../services/processo-judicial.service");
+const processo_judicial_entity_1 = require("../../../entities/processo-judicial.entity");
+const processo_judicial_dto_1 = require("../dtos/processo-judicial.dto");
+/**
+ * Controller para gerenciamento de processos judiciais
+ *
+ * Fornece endpoints para operações CRUD e consultas específicas para processos judiciais.
+ */
+let ProcessoJudicialController = class ProcessoJudicialController {
+    processoJudicialService;
+    constructor(processoJudicialService) {
+        this.processoJudicialService = processoJudicialService;
+    }
+    /**
+     * Cria um novo processo judicial
+     */
+    async create(createProcessoJudicialDto, req) {
+        return this.processoJudicialService.create(createProcessoJudicialDto, req.user.id);
+    }
+    /**
+     * Busca todos os processos judiciais com paginação e filtros
+     */
+    async findAll(query) {
+        return this.processoJudicialService.findAll({
+            page: query.page,
+            limit: query.limit,
+            cidadaoId: query.cidadaoId,
+            status: query.status,
+            comarca: query.comarca,
+            vara: query.vara,
+            termo: query.termo,
+        });
+    }
+    /**
+     * Busca um processo judicial pelo ID
+     */
+    async findOne(id) {
+        return this.processoJudicialService.findById(id);
+    }
+    /**
+     * Busca processos judiciais por cidadão
+     */
+    async findByCidadao(cidadaoId) {
+        return this.processoJudicialService.findByCidadao(cidadaoId);
+    }
+    /**
+     * Atualiza um processo judicial
+     */
+    async update(id, updateProcessoJudicialDto, req) {
+        return this.processoJudicialService.update(id, updateProcessoJudicialDto, req.user.id);
+    }
+    /**
+     * Atualiza o status de um processo judicial
+     */
+    async updateStatus(id, updateStatusDto, req) {
+        return this.processoJudicialService.updateStatus(id, updateStatusDto.status, req.user.id);
+    }
+    /**
+     * Desativa um processo judicial (soft delete)
+     */
+    async remove(id, req) {
+        await this.processoJudicialService.desativar(id, req.user.id);
+    }
+};
+exports.ProcessoJudicialController = ProcessoJudicialController;
+__decorate([
+    (0, common_1.Post)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Cria um novo processo judicial' }),
+    (0, swagger_1.ApiResponse)({
+        status: common_1.HttpStatus.CREATED,
+        description: 'Processo judicial criado com sucesso',
+        type: processo_judicial_entity_1.ProcessoJudicial,
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: common_1.HttpStatus.BAD_REQUEST,
+        description: 'Dados inválidos',
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: common_1.HttpStatus.UNAUTHORIZED,
+        description: 'Não autorizado',
+    }),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [typeof (_b = typeof processo_judicial_dto_1.CreateProcessoJudicialDto !== "undefined" && processo_judicial_dto_1.CreateProcessoJudicialDto) === "function" ? _b : Object, Object]),
+    __metadata("design:returntype", typeof (_c = typeof Promise !== "undefined" && Promise) === "function" ? _c : Object)
+], ProcessoJudicialController.prototype, "create", null);
+__decorate([
+    (0, common_1.Get)(),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Lista processos judiciais com paginação e filtros',
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: common_1.HttpStatus.OK,
+        description: 'Lista de processos judiciais',
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: common_1.HttpStatus.UNAUTHORIZED,
+        description: 'Não autorizado',
+    }),
+    __param(0, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [typeof (_d = typeof processo_judicial_dto_1.FindProcessoJudicialFilterDto !== "undefined" && processo_judicial_dto_1.FindProcessoJudicialFilterDto) === "function" ? _d : Object]),
+    __metadata("design:returntype", typeof (_e = typeof Promise !== "undefined" && Promise) === "function" ? _e : Object)
+], ProcessoJudicialController.prototype, "findAll", null);
+__decorate([
+    (0, common_1.Get)(':id'),
+    (0, swagger_1.ApiOperation)({ summary: 'Busca um processo judicial pelo ID' }),
+    (0, swagger_1.ApiResponse)({
+        status: common_1.HttpStatus.OK,
+        description: 'Processo judicial encontrado',
+        type: processo_judicial_entity_1.ProcessoJudicial,
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: common_1.HttpStatus.NOT_FOUND,
+        description: 'Processo judicial não encontrado',
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: common_1.HttpStatus.UNAUTHORIZED,
+        description: 'Não autorizado',
+    }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", typeof (_f = typeof Promise !== "undefined" && Promise) === "function" ? _f : Object)
+], ProcessoJudicialController.prototype, "findOne", null);
+__decorate([
+    (0, common_1.Get)('cidadao/:cidadaoId'),
+    (0, swagger_1.ApiOperation)({ summary: 'Busca processos judiciais por cidadão' }),
+    (0, swagger_1.ApiResponse)({
+        status: common_1.HttpStatus.OK,
+        description: 'Lista de processos judiciais do cidadão',
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: common_1.HttpStatus.UNAUTHORIZED,
+        description: 'Não autorizado',
+    }),
+    __param(0, (0, common_1.Param)('cidadaoId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", typeof (_g = typeof Promise !== "undefined" && Promise) === "function" ? _g : Object)
+], ProcessoJudicialController.prototype, "findByCidadao", null);
+__decorate([
+    (0, common_1.Patch)(':id'),
+    (0, swagger_1.ApiOperation)({ summary: 'Atualiza um processo judicial' }),
+    (0, swagger_1.ApiResponse)({
+        status: common_1.HttpStatus.OK,
+        description: 'Processo judicial atualizado',
+        type: processo_judicial_entity_1.ProcessoJudicial,
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: common_1.HttpStatus.NOT_FOUND,
+        description: 'Processo judicial não encontrado',
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: common_1.HttpStatus.BAD_REQUEST,
+        description: 'Dados inválidos',
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: common_1.HttpStatus.UNAUTHORIZED,
+        description: 'Não autorizado',
+    }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, typeof (_h = typeof processo_judicial_dto_1.UpdateProcessoJudicialDto !== "undefined" && processo_judicial_dto_1.UpdateProcessoJudicialDto) === "function" ? _h : Object, Object]),
+    __metadata("design:returntype", typeof (_j = typeof Promise !== "undefined" && Promise) === "function" ? _j : Object)
+], ProcessoJudicialController.prototype, "update", null);
+__decorate([
+    (0, common_1.Patch)(':id/status'),
+    (0, swagger_1.ApiOperation)({ summary: 'Atualiza o status de um processo judicial' }),
+    (0, swagger_1.ApiResponse)({
+        status: common_1.HttpStatus.OK,
+        description: 'Status atualizado com sucesso',
+        type: processo_judicial_entity_1.ProcessoJudicial,
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: common_1.HttpStatus.NOT_FOUND,
+        description: 'Processo judicial não encontrado',
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: common_1.HttpStatus.BAD_REQUEST,
+        description: 'Status inválido',
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: common_1.HttpStatus.UNAUTHORIZED,
+        description: 'Não autorizado',
+    }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, typeof (_k = typeof processo_judicial_dto_1.UpdateStatusProcessoJudicialDto !== "undefined" && processo_judicial_dto_1.UpdateStatusProcessoJudicialDto) === "function" ? _k : Object, Object]),
+    __metadata("design:returntype", typeof (_l = typeof Promise !== "undefined" && Promise) === "function" ? _l : Object)
+], ProcessoJudicialController.prototype, "updateStatus", null);
+__decorate([
+    (0, common_1.Delete)(':id'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.NO_CONTENT),
+    (0, swagger_1.ApiOperation)({ summary: 'Desativa um processo judicial (soft delete)' }),
+    (0, swagger_1.ApiResponse)({
+        status: common_1.HttpStatus.NO_CONTENT,
+        description: 'Processo judicial desativado com sucesso',
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: common_1.HttpStatus.NOT_FOUND,
+        description: 'Processo judicial não encontrado',
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: common_1.HttpStatus.UNAUTHORIZED,
+        description: 'Não autorizado',
+    }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", typeof (_m = typeof Promise !== "undefined" && Promise) === "function" ? _m : Object)
+], ProcessoJudicialController.prototype, "remove", null);
+exports.ProcessoJudicialController = ProcessoJudicialController = __decorate([
+    (0, swagger_1.ApiTags)('Solicitação'),
+    (0, common_1.Controller)('judicial/processos'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, swagger_1.ApiBearerAuth)(),
+    __metadata("design:paramtypes", [typeof (_a = typeof processo_judicial_service_1.ProcessoJudicialService !== "undefined" && processo_judicial_service_1.ProcessoJudicialService) === "function" ? _a : Object])
+], ProcessoJudicialController);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXGp1ZGljaWFsXFxjb250cm9sbGVyc1xccHJvY2Vzc28tanVkaWNpYWwuY29udHJvbGxlci50cyIsIm1hcHBpbmdzIjoiOzs7Ozs7Ozs7Ozs7Ozs7O0FBQUEsMkNBY3dCO0FBQ3hCLDZDQUt5QjtBQUN6Qix3RUFBbUU7QUFDbkUscUZBQWdGO0FBQ2hGLHlGQUE4RTtBQUM5RSx5RUFLdUM7QUFHdkM7Ozs7R0FJRztBQUtJLElBQU0sMEJBQTBCLEdBQWhDLE1BQU0sMEJBQTBCO0lBRWxCO0lBRG5CLFlBQ21CLHVCQUFnRDtRQUFoRCw0QkFBdUIsR0FBdkIsdUJBQXVCLENBQXlCO0lBQ2hFLENBQUM7SUFFSjs7T0FFRztJQWdCRyxBQUFOLEtBQUssQ0FBQyxNQUFNLENBQ0YseUJBQW9ELEVBQ2pELEdBQUc7UUFFZCxPQUFPLElBQUksQ0FBQyx1QkFBdUIsQ0FBQyxNQUFNLENBQ3hDLHlCQUF5QixFQUN6QixHQUFHLENBQUMsSUFBSSxDQUFDLEVBQUUsQ0FDWixDQUFDO0lBQ0osQ0FBQztJQUVEOztPQUVHO0lBYUcsQUFBTixLQUFLLENBQUMsT0FBTyxDQUNGLEtBQW9DO1FBRTdDLE9BQU8sSUFBSSxDQUFDLHVCQUF1QixDQUFDLE9BQU8sQ0FBQztZQUMxQyxJQUFJLEVBQUUsS0FBSyxDQUFDLElBQUk7WUFDaEIsS0FBSyxFQUFFLEtBQUssQ0FBQyxLQUFLO1lBQ2xCLFNBQVMsRUFBRSxLQUFLLENBQUMsU0FBUztZQUMxQixNQUFNLEVBQUUsS0FBSyxDQUFDLE1BQU07WUFDcEIsT0FBTyxFQUFFLEtBQUssQ0FBQyxPQUFPO1lBQ3RCLElBQUksRUFBRSxLQUFLLENBQUMsSUFBSTtZQUNoQixLQUFLLEVBQUUsS0FBSyxDQUFDLEtBQUs7U0FDbkIsQ0FBQyxDQUFDO0lBQ0wsQ0FBQztJQUVEOztPQUVHO0lBZ0JHLEFBQU4sS0FBSyxDQUFDLE9BQU8sQ0FDaUIsRUFBVTtRQUV0QyxPQUFPLElBQUksQ0FBQyx1QkFBdUIsQ0FBQyxRQUFRLENBQUMsRUFBRSxDQUFDLENBQUM7SUFDbkQsQ0FBQztJQUVEOztPQUVHO0lBV0csQUFBTixLQUFLLENBQUMsYUFBYSxDQUNHLFNBQWlCO1FBRXJDLE9BQU8sSUFBSSxDQUFDLHVCQUF1QixDQUFDLGFBQWEsQ0FBQyxTQUFTLENBQUMsQ0FBQztJQUMvRCxDQUFDO0lBRUQ7O09BRUc7SUFvQkcsQUFBTixLQUFLLENBQUMsTUFBTSxDQUNrQixFQUFVLEVBQzlCLHlCQUFvRCxFQUNqRCxHQUFHO1FBRWQsT0FBTyxJQUFJLENBQUMsdUJBQXVCLENBQUMsTUFBTSxDQUN4QyxFQUFFLEVBQ0YseUJBQXlCLEVBQ3pCLEdBQUcsQ0FBQyxJQUFJLENBQUMsRUFBRSxDQUNaLENBQUM7SUFDSixDQUFDO0lBRUQ7O09BRUc7SUFvQkcsQUFBTixLQUFLLENBQUMsWUFBWSxDQUNZLEVBQVUsRUFDOUIsZUFBZ0QsRUFDN0MsR0FBRztRQUVkLE9BQU8sSUFBSSxDQUFDLHVCQUF1QixDQUFDLFlBQVksQ0FDOUMsRUFBRSxFQUNGLGVBQWUsQ0FBQyxNQUFNLEVBQ3RCLEdBQUcsQ0FBQyxJQUFJLENBQUMsRUFBRSxDQUNaLENBQUM7SUFDSixDQUFDO0lBRUQ7O09BRUc7SUFnQkcsQUFBTixLQUFLLENBQUMsTUFBTSxDQUNrQixFQUFVLEVBQzNCLEdBQUc7UUFFZCxNQUFNLElBQUksQ0FBQyx1QkFBdUIsQ0FBQyxTQUFTLENBQUMsRUFBRSxFQUFFLEdBQUcsQ0FBQyxJQUFJLENBQUMsRUFBRSxDQUFDLENBQUM7SUFDaEUsQ0FBQztDQUNGLENBQUE7QUFyTVksZ0VBQTBCO0FBdUIvQjtJQWZMLElBQUEsYUFBSSxHQUFFO0lBQ04sSUFBQSxzQkFBWSxFQUFDLEVBQUUsT0FBTyxFQUFFLGdDQUFnQyxFQUFFLENBQUM7SUFDM0QsSUFBQSxxQkFBVyxFQUFDO1FBQ1gsTUFBTSxFQUFFLG1CQUFVLENBQUMsT0FBTztRQUMxQixXQUFXLEVBQUUsc0NBQXNDO1FBQ25ELElBQUksRUFBRSwyQ0FBZ0I7S0FDdkIsQ0FBQztJQUNELElBQUEscUJBQVcsRUFBQztRQUNYLE1BQU0sRUFBRSxtQkFBVSxDQUFDLFdBQVc7UUFDOUIsV0FBVyxFQUFFLGlCQUFpQjtLQUMvQixDQUFDO0lBQ0QsSUFBQSxxQkFBVyxFQUFDO1FBQ1gsTUFBTSxFQUFFLG1CQUFVLENBQUMsWUFBWTtRQUMvQixXQUFXLEVBQUUsZ0JBQWdCO0tBQzlCLENBQUM7SUFFQyxXQUFBLElBQUEsYUFBSSxHQUFFLENBQUE7SUFDTixXQUFBLElBQUEsZ0JBQU8sR0FBRSxDQUFBOzt5REFEeUIsaURBQXlCLG9CQUF6QixpREFBeUI7d0RBRTNELE9BQU8sb0JBQVAsT0FBTzt3REFLVDtBQWlCSztJQVpMLElBQUEsWUFBRyxHQUFFO0lBQ0wsSUFBQSxzQkFBWSxFQUFDO1FBQ1osT0FBTyxFQUFFLG1EQUFtRDtLQUM3RCxDQUFDO0lBQ0QsSUFBQSxxQkFBVyxFQUFDO1FBQ1gsTUFBTSxFQUFFLG1CQUFVLENBQUMsRUFBRTtRQUNyQixXQUFXLEVBQUUsOEJBQThCO0tBQzVDLENBQUM7SUFDRCxJQUFBLHFCQUFXLEVBQUM7UUFDWCxNQUFNLEVBQUUsbUJBQVUsQ0FBQyxZQUFZO1FBQy9CLFdBQVcsRUFBRSxnQkFBZ0I7S0FDOUIsQ0FBQztJQUVDLFdBQUEsSUFBQSxjQUFLLEdBQUUsQ0FBQTs7eURBQVEscURBQTZCLG9CQUE3QixxREFBNkI7d0RBQzVDLE9BQU8sb0JBQVAsT0FBTzt5REFVVDtBQW9CSztJQWZMLElBQUEsWUFBRyxFQUFDLEtBQUssQ0FBQztJQUNWLElBQUEsc0JBQVksRUFBQyxFQUFFLE9BQU8sRUFBRSxvQ0FBb0MsRUFBRSxDQUFDO0lBQy9ELElBQUEscUJBQVcsRUFBQztRQUNYLE1BQU0sRUFBRSxtQkFBVSxDQUFDLEVBQUU7UUFDckIsV0FBVyxFQUFFLDhCQUE4QjtRQUMzQyxJQUFJLEVBQUUsMkNBQWdCO0tBQ3ZCLENBQUM7SUFDRCxJQUFBLHFCQUFXLEVBQUM7UUFDWCxNQUFNLEVBQUUsbUJBQVUsQ0FBQyxTQUFTO1FBQzVCLFdBQVcsRUFBRSxrQ0FBa0M7S0FDaEQsQ0FBQztJQUNELElBQUEscUJBQVcsRUFBQztRQUNYLE1BQU0sRUFBRSxtQkFBVSxDQUFDLFlBQVk7UUFDL0IsV0FBVyxFQUFFLGdCQUFnQjtLQUM5QixDQUFDO0lBRUMsV0FBQSxJQUFBLGNBQUssRUFBQyxJQUFJLEVBQUUsc0JBQWEsQ0FBQyxDQUFBOzs7d0RBQzFCLE9BQU8sb0JBQVAsT0FBTzt5REFFVDtBQWVLO0lBVkwsSUFBQSxZQUFHLEVBQUMsb0JBQW9CLENBQUM7SUFDekIsSUFBQSxzQkFBWSxFQUFDLEVBQUUsT0FBTyxFQUFFLHVDQUF1QyxFQUFFLENBQUM7SUFDbEUsSUFBQSxxQkFBVyxFQUFDO1FBQ1gsTUFBTSxFQUFFLG1CQUFVLENBQUMsRUFBRTtRQUNyQixXQUFXLEVBQUUseUNBQXlDO0tBQ3ZELENBQUM7SUFDRCxJQUFBLHFCQUFXLEVBQUM7UUFDWCxNQUFNLEVBQUUsbUJBQVUsQ0FBQyxZQUFZO1FBQy9CLFdBQVcsRUFBRSxnQkFBZ0I7S0FDOUIsQ0FBQztJQUVDLFdBQUEsSUFBQSxjQUFLLEVBQUMsV0FBVyxDQUFDLENBQUE7Ozt3REFDbEIsT0FBTyxvQkFBUCxPQUFPOytEQUVUO0FBd0JLO0lBbkJMLElBQUEsY0FBSyxFQUFDLEtBQUssQ0FBQztJQUNaLElBQUEsc0JBQVksRUFBQyxFQUFFLE9BQU8sRUFBRSwrQkFBK0IsRUFBRSxDQUFDO0lBQzFELElBQUEscUJBQVcsRUFBQztRQUNYLE1BQU0sRUFBRSxtQkFBVSxDQUFDLEVBQUU7UUFDckIsV0FBVyxFQUFFLDhCQUE4QjtRQUMzQyxJQUFJLEVBQUUsMkNBQWdCO0tBQ3ZCLENBQUM7SUFDRCxJQUFBLHFCQUFXLEVBQUM7UUFDWCxNQUFNLEVBQUUsbUJBQVUsQ0FBQyxTQUFTO1FBQzVCLFdBQVcsRUFBRSxrQ0FBa0M7S0FDaEQsQ0FBQztJQUNELElBQUEscUJBQVcsRUFBQztRQUNYLE1BQU0sRUFBRSxtQkFBVSxDQUFDLFdBQVc7UUFDOUIsV0FBVyxFQUFFLGlCQUFpQjtLQUMvQixDQUFDO0lBQ0QsSUFBQSxxQkFBVyxFQUFDO1FBQ1gsTUFBTSxFQUFFLG1CQUFVLENBQUMsWUFBWTtRQUMvQixXQUFXLEVBQUUsZ0JBQWdCO0tBQzlCLENBQUM7SUFFQyxXQUFBLElBQUEsY0FBSyxFQUFDLElBQUksRUFBRSxzQkFBYSxDQUFDLENBQUE7SUFDMUIsV0FBQSxJQUFBLGFBQUksR0FBRSxDQUFBO0lBQ04sV0FBQSxJQUFBLGdCQUFPLEdBQUUsQ0FBQTs7aUVBRHlCLGlEQUF5QixvQkFBekIsaURBQXlCO3dEQUUzRCxPQUFPLG9CQUFQLE9BQU87d0RBTVQ7QUF3Qks7SUFuQkwsSUFBQSxjQUFLLEVBQUMsWUFBWSxDQUFDO0lBQ25CLElBQUEsc0JBQVksRUFBQyxFQUFFLE9BQU8sRUFBRSwyQ0FBMkMsRUFBRSxDQUFDO0lBQ3RFLElBQUEscUJBQVcsRUFBQztRQUNYLE1BQU0sRUFBRSxtQkFBVSxDQUFDLEVBQUU7UUFDckIsV0FBVyxFQUFFLCtCQUErQjtRQUM1QyxJQUFJLEVBQUUsMkNBQWdCO0tBQ3ZCLENBQUM7SUFDRCxJQUFBLHFCQUFXLEVBQUM7UUFDWCxNQUFNLEVBQUUsbUJBQVUsQ0FBQyxTQUFTO1FBQzVCLFdBQVcsRUFBRSxrQ0FBa0M7S0FDaEQsQ0FBQztJQUNELElBQUEscUJBQVcsRUFBQztRQUNYLE1BQU0sRUFBRSxtQkFBVSxDQUFDLFdBQVc7UUFDOUIsV0FBVyxFQUFFLGlCQUFpQjtLQUMvQixDQUFDO0lBQ0QsSUFBQSxxQkFBVyxFQUFDO1FBQ1gsTUFBTSxFQUFFLG1CQUFVLENBQUMsWUFBWTtRQUMvQixXQUFXLEVBQUUsZ0JBQWdCO0tBQzlCLENBQUM7SUFFQyxXQUFBLElBQUEsY0FBSyxFQUFDLElBQUksRUFBRSxzQkFBYSxDQUFDLENBQUE7SUFDMUIsV0FBQSxJQUFBLGFBQUksR0FBRSxDQUFBO0lBQ04sV0FBQSxJQUFBLGdCQUFPLEdBQUUsQ0FBQTs7aUVBRGUsdURBQStCLG9CQUEvQix1REFBK0I7d0RBRXZELE9BQU8sb0JBQVAsT0FBTzs4REFNVDtBQW9CSztJQWZMLElBQUEsZUFBTSxFQUFDLEtBQUssQ0FBQztJQUNiLElBQUEsaUJBQVEsRUFBQyxtQkFBVSxDQUFDLFVBQVUsQ0FBQztJQUMvQixJQUFBLHNCQUFZLEVBQUMsRUFBRSxPQUFPLEVBQUUsNkNBQTZDLEVBQUUsQ0FBQztJQUN4RSxJQUFBLHFCQUFXLEVBQUM7UUFDWCxNQUFNLEVBQUUsbUJBQVUsQ0FBQyxVQUFVO1FBQzdCLFdBQVcsRUFBRSwwQ0FBMEM7S0FDeEQsQ0FBQztJQUNELElBQUEscUJBQVcsRUFBQztRQUNYLE1BQU0sRUFBRSxtQkFBVSxDQUFDLFNBQVM7UUFDNUIsV0FBVyxFQUFFLGtDQUFrQztLQUNoRCxDQUFDO0lBQ0QsSUFBQSxxQkFBVyxFQUFDO1FBQ1gsTUFBTSxFQUFFLG1CQUFVLENBQUMsWUFBWTtRQUMvQixXQUFXLEVBQUUsZ0JBQWdCO0tBQzlCLENBQUM7SUFFQyxXQUFBLElBQUEsY0FBSyxFQUFDLElBQUksRUFBRSxzQkFBYSxDQUFDLENBQUE7SUFDMUIsV0FBQSxJQUFBLGdCQUFPLEdBQUUsQ0FBQTs7O3dEQUNULE9BQU8sb0JBQVAsT0FBTzt3REFFVDtxQ0FwTVUsMEJBQTBCO0lBSnRDLElBQUEsaUJBQU8sRUFBQyxhQUFhLENBQUM7SUFDdEIsSUFBQSxtQkFBVSxFQUFDLG9CQUFvQixDQUFDO0lBQ2hDLElBQUEsa0JBQVMsRUFBQyw2QkFBWSxDQUFDO0lBQ3ZCLElBQUEsdUJBQWEsR0FBRTt5REFHOEIsbURBQXVCLG9CQUF2QixtREFBdUI7R0FGeEQsMEJBQTBCLENBcU10QyIsIm5hbWVzIjpbXSwic291cmNlcyI6WyJDOlxcVXNlcnNcXGV1ZHJlXFxPbmVEcml2ZVxcRGVza3RvcFxcUHJvamV0b3NcXHBnYmVuXFxwZ2Jlbi1zZXJ2ZXJcXHNyY1xcbW9kdWxlc1xcanVkaWNpYWxcXGNvbnRyb2xsZXJzXFxwcm9jZXNzby1qdWRpY2lhbC5jb250cm9sbGVyLnRzIl0sInNvdXJjZXNDb250ZW50IjpbImltcG9ydCB7XG4gIENvbnRyb2xsZXIsXG4gIEdldCxcbiAgUG9zdCxcbiAgQm9keSxcbiAgUGFyYW0sXG4gIFBhcnNlVVVJRFBpcGUsXG4gIFBhdGNoLFxuICBEZWxldGUsXG4gIFF1ZXJ5LFxuICBVc2VHdWFyZHMsXG4gIEh0dHBTdGF0dXMsXG4gIEh0dHBDb2RlLFxuICBSZXF1ZXN0LFxufSBmcm9tICdAbmVzdGpzL2NvbW1vbic7XG5pbXBvcnQge1xuICBBcGlCZWFyZXJBdXRoLFxuICBBcGlPcGVyYXRpb24sXG4gIEFwaVJlc3BvbnNlLFxuICBBcGlUYWdzLFxufSBmcm9tICdAbmVzdGpzL3N3YWdnZXInO1xuaW1wb3J0IHsgSnd0QXV0aEd1YXJkIH0gZnJvbSAnLi4vLi4vLi4vYXV0aC9ndWFyZHMvand0LWF1dGguZ3VhcmQnO1xuaW1wb3J0IHsgUHJvY2Vzc29KdWRpY2lhbFNlcnZpY2UgfSBmcm9tICcuLi9zZXJ2aWNlcy9wcm9jZXNzby1qdWRpY2lhbC5zZXJ2aWNlJztcbmltcG9ydCB7IFByb2Nlc3NvSnVkaWNpYWwgfSBmcm9tICcuLi8uLi8uLi9lbnRpdGllcy9wcm9jZXNzby1qdWRpY2lhbC5lbnRpdHknO1xuaW1wb3J0IHtcbiAgQ3JlYXRlUHJvY2Vzc29KdWRpY2lhbER0byxcbiAgVXBkYXRlUHJvY2Vzc29KdWRpY2lhbER0byxcbiAgVXBkYXRlU3RhdHVzUHJvY2Vzc29KdWRpY2lhbER0byxcbiAgRmluZFByb2Nlc3NvSnVkaWNpYWxGaWx0ZXJEdG8sXG59IGZyb20gJy4uL2R0b3MvcHJvY2Vzc28tanVkaWNpYWwuZHRvJztcbmltcG9ydCB7IFBhZ2luYXRlZFJlc3VsdCB9IGZyb20gJy4uLy4uLy4uL2NvbW1vbi9pbnRlcmZhY2VzL3BhZ2luYXRlZC1yZXN1bHQuaW50ZXJmYWNlJztcblxuLyoqXG4gKiBDb250cm9sbGVyIHBhcmEgZ2VyZW5jaWFtZW50byBkZSBwcm9jZXNzb3MganVkaWNpYWlzXG4gKlxuICogRm9ybmVjZSBlbmRwb2ludHMgcGFyYSBvcGVyYcOnw7VlcyBDUlVEIGUgY29uc3VsdGFzIGVzcGVjw61maWNhcyBwYXJhIHByb2Nlc3NvcyBqdWRpY2lhaXMuXG4gKi9cbkBBcGlUYWdzKCdTb2xpY2l0YcOnw6NvJylcbkBDb250cm9sbGVyKCdqdWRpY2lhbC9wcm9jZXNzb3MnKVxuQFVzZUd1YXJkcyhKd3RBdXRoR3VhcmQpXG5AQXBpQmVhcmVyQXV0aCgpXG5leHBvcnQgY2xhc3MgUHJvY2Vzc29KdWRpY2lhbENvbnRyb2xsZXIge1xuICBjb25zdHJ1Y3RvcihcbiAgICBwcml2YXRlIHJlYWRvbmx5IHByb2Nlc3NvSnVkaWNpYWxTZXJ2aWNlOiBQcm9jZXNzb0p1ZGljaWFsU2VydmljZSxcbiAgKSB7fVxuXG4gIC8qKlxuICAgKiBDcmlhIHVtIG5vdm8gcHJvY2Vzc28ganVkaWNpYWxcbiAgICovXG4gIEBQb3N0KClcbiAgQEFwaU9wZXJhdGlvbih7IHN1bW1hcnk6ICdDcmlhIHVtIG5vdm8gcHJvY2Vzc28ganVkaWNpYWwnIH0pXG4gIEBBcGlSZXNwb25zZSh7XG4gICAgc3RhdHVzOiBIdHRwU3RhdHVzLkNSRUFURUQsXG4gICAgZGVzY3JpcHRpb246ICdQcm9jZXNzbyBqdWRpY2lhbCBjcmlhZG8gY29tIHN1Y2Vzc28nLFxuICAgIHR5cGU6IFByb2Nlc3NvSnVkaWNpYWwsXG4gIH0pXG4gIEBBcGlSZXNwb25zZSh7XG4gICAgc3RhdHVzOiBIdHRwU3RhdHVzLkJBRF9SRVFVRVNULFxuICAgIGRlc2NyaXB0aW9uOiAnRGFkb3MgaW52w6FsaWRvcycsXG4gIH0pXG4gIEBBcGlSZXNwb25zZSh7XG4gICAgc3RhdHVzOiBIdHRwU3RhdHVzLlVOQVVUSE9SSVpFRCxcbiAgICBkZXNjcmlwdGlvbjogJ07Do28gYXV0b3JpemFkbycsXG4gIH0pXG4gIGFzeW5jIGNyZWF0ZShcbiAgICBAQm9keSgpIGNyZWF0ZVByb2Nlc3NvSnVkaWNpYWxEdG86IENyZWF0ZVByb2Nlc3NvSnVkaWNpYWxEdG8sXG4gICAgQFJlcXVlc3QoKSByZXEsXG4gICk6IFByb21pc2U8UHJvY2Vzc29KdWRpY2lhbD4ge1xuICAgIHJldHVybiB0aGlzLnByb2Nlc3NvSnVkaWNpYWxTZXJ2aWNlLmNyZWF0ZShcbiAgICAgIGNyZWF0ZVByb2Nlc3NvSnVkaWNpYWxEdG8sXG4gICAgICByZXEudXNlci5pZCxcbiAgICApO1xuICB9XG5cbiAgLyoqXG4gICAqIEJ1c2NhIHRvZG9zIG9zIHByb2Nlc3NvcyBqdWRpY2lhaXMgY29tIHBhZ2luYcOnw6NvIGUgZmlsdHJvc1xuICAgKi9cbiAgQEdldCgpXG4gIEBBcGlPcGVyYXRpb24oe1xuICAgIHN1bW1hcnk6ICdMaXN0YSBwcm9jZXNzb3MganVkaWNpYWlzIGNvbSBwYWdpbmHDp8OjbyBlIGZpbHRyb3MnLFxuICB9KVxuICBAQXBpUmVzcG9uc2Uoe1xuICAgIHN0YXR1czogSHR0cFN0YXR1cy5PSyxcbiAgICBkZXNjcmlwdGlvbjogJ0xpc3RhIGRlIHByb2Nlc3NvcyBqdWRpY2lhaXMnLFxuICB9KVxuICBAQXBpUmVzcG9uc2Uoe1xuICAgIHN0YXR1czogSHR0cFN0YXR1cy5VTkFVVEhPUklaRUQsXG4gICAgZGVzY3JpcHRpb246ICdOw6NvIGF1dG9yaXphZG8nLFxuICB9KVxuICBhc3luYyBmaW5kQWxsKFxuICAgIEBRdWVyeSgpIHF1ZXJ5OiBGaW5kUHJvY2Vzc29KdWRpY2lhbEZpbHRlckR0byxcbiAgKTogUHJvbWlzZTxQYWdpbmF0ZWRSZXN1bHQ8UHJvY2Vzc29KdWRpY2lhbD4+IHtcbiAgICByZXR1cm4gdGhpcy5wcm9jZXNzb0p1ZGljaWFsU2VydmljZS5maW5kQWxsKHtcbiAgICAgIHBhZ2U6IHF1ZXJ5LnBhZ2UsXG4gICAgICBsaW1pdDogcXVlcnkubGltaXQsXG4gICAgICBjaWRhZGFvSWQ6IHF1ZXJ5LmNpZGFkYW9JZCxcbiAgICAgIHN0YXR1czogcXVlcnkuc3RhdHVzLFxuICAgICAgY29tYXJjYTogcXVlcnkuY29tYXJjYSxcbiAgICAgIHZhcmE6IHF1ZXJ5LnZhcmEsXG4gICAgICB0ZXJtbzogcXVlcnkudGVybW8sXG4gICAgfSk7XG4gIH1cblxuICAvKipcbiAgICogQnVzY2EgdW0gcHJvY2Vzc28ganVkaWNpYWwgcGVsbyBJRFxuICAgKi9cbiAgQEdldCgnOmlkJylcbiAgQEFwaU9wZXJhdGlvbih7IHN1bW1hcnk6ICdCdXNjYSB1bSBwcm9jZXNzbyBqdWRpY2lhbCBwZWxvIElEJyB9KVxuICBAQXBpUmVzcG9uc2Uoe1xuICAgIHN0YXR1czogSHR0cFN0YXR1cy5PSyxcbiAgICBkZXNjcmlwdGlvbjogJ1Byb2Nlc3NvIGp1ZGljaWFsIGVuY29udHJhZG8nLFxuICAgIHR5cGU6IFByb2Nlc3NvSnVkaWNpYWwsXG4gIH0pXG4gIEBBcGlSZXNwb25zZSh7XG4gICAgc3RhdHVzOiBIdHRwU3RhdHVzLk5PVF9GT1VORCxcbiAgICBkZXNjcmlwdGlvbjogJ1Byb2Nlc3NvIGp1ZGljaWFsIG7Do28gZW5jb250cmFkbycsXG4gIH0pXG4gIEBBcGlSZXNwb25zZSh7XG4gICAgc3RhdHVzOiBIdHRwU3RhdHVzLlVOQVVUSE9SSVpFRCxcbiAgICBkZXNjcmlwdGlvbjogJ07Do28gYXV0b3JpemFkbycsXG4gIH0pXG4gIGFzeW5jIGZpbmRPbmUoXG4gICAgQFBhcmFtKCdpZCcsIFBhcnNlVVVJRFBpcGUpIGlkOiBzdHJpbmcsXG4gICk6IFByb21pc2U8UHJvY2Vzc29KdWRpY2lhbD4ge1xuICAgIHJldHVybiB0aGlzLnByb2Nlc3NvSnVkaWNpYWxTZXJ2aWNlLmZpbmRCeUlkKGlkKTtcbiAgfVxuXG4gIC8qKlxuICAgKiBCdXNjYSBwcm9jZXNzb3MganVkaWNpYWlzIHBvciBjaWRhZMOjb1xuICAgKi9cbiAgQEdldCgnY2lkYWRhby86Y2lkYWRhb0lkJylcbiAgQEFwaU9wZXJhdGlvbih7IHN1bW1hcnk6ICdCdXNjYSBwcm9jZXNzb3MganVkaWNpYWlzIHBvciBjaWRhZMOjbycgfSlcbiAgQEFwaVJlc3BvbnNlKHtcbiAgICBzdGF0dXM6IEh0dHBTdGF0dXMuT0ssXG4gICAgZGVzY3JpcHRpb246ICdMaXN0YSBkZSBwcm9jZXNzb3MganVkaWNpYWlzIGRvIGNpZGFkw6NvJyxcbiAgfSlcbiAgQEFwaVJlc3BvbnNlKHtcbiAgICBzdGF0dXM6IEh0dHBTdGF0dXMuVU5BVVRIT1JJWkVELFxuICAgIGRlc2NyaXB0aW9uOiAnTsOjbyBhdXRvcml6YWRvJyxcbiAgfSlcbiAgYXN5bmMgZmluZEJ5Q2lkYWRhbyhcbiAgICBAUGFyYW0oJ2NpZGFkYW9JZCcpIGNpZGFkYW9JZDogc3RyaW5nLFxuICApOiBQcm9taXNlPFByb2Nlc3NvSnVkaWNpYWxbXT4ge1xuICAgIHJldHVybiB0aGlzLnByb2Nlc3NvSnVkaWNpYWxTZXJ2aWNlLmZpbmRCeUNpZGFkYW8oY2lkYWRhb0lkKTtcbiAgfVxuXG4gIC8qKlxuICAgKiBBdHVhbGl6YSB1bSBwcm9jZXNzbyBqdWRpY2lhbFxuICAgKi9cbiAgQFBhdGNoKCc6aWQnKVxuICBAQXBpT3BlcmF0aW9uKHsgc3VtbWFyeTogJ0F0dWFsaXphIHVtIHByb2Nlc3NvIGp1ZGljaWFsJyB9KVxuICBAQXBpUmVzcG9uc2Uoe1xuICAgIHN0YXR1czogSHR0cFN0YXR1cy5PSyxcbiAgICBkZXNjcmlwdGlvbjogJ1Byb2Nlc3NvIGp1ZGljaWFsIGF0dWFsaXphZG8nLFxuICAgIHR5cGU6IFByb2Nlc3NvSnVkaWNpYWwsXG4gIH0pXG4gIEBBcGlSZXNwb25zZSh7XG4gICAgc3RhdHVzOiBIdHRwU3RhdHVzLk5PVF9GT1VORCxcbiAgICBkZXNjcmlwdGlvbjogJ1Byb2Nlc3NvIGp1ZGljaWFsIG7Do28gZW5jb250cmFkbycsXG4gIH0pXG4gIEBBcGlSZXNwb25zZSh7XG4gICAgc3RhdHVzOiBIdHRwU3RhdHVzLkJBRF9SRVFVRVNULFxuICAgIGRlc2NyaXB0aW9uOiAnRGFkb3MgaW52w6FsaWRvcycsXG4gIH0pXG4gIEBBcGlSZXNwb25zZSh7XG4gICAgc3RhdHVzOiBIdHRwU3RhdHVzLlVOQVVUSE9SSVpFRCxcbiAgICBkZXNjcmlwdGlvbjogJ07Do28gYXV0b3JpemFkbycsXG4gIH0pXG4gIGFzeW5jIHVwZGF0ZShcbiAgICBAUGFyYW0oJ2lkJywgUGFyc2VVVUlEUGlwZSkgaWQ6IHN0cmluZyxcbiAgICBAQm9keSgpIHVwZGF0ZVByb2Nlc3NvSnVkaWNpYWxEdG86IFVwZGF0ZVByb2Nlc3NvSnVkaWNpYWxEdG8sXG4gICAgQFJlcXVlc3QoKSByZXEsXG4gICk6IFByb21pc2U8UHJvY2Vzc29KdWRpY2lhbD4ge1xuICAgIHJldHVybiB0aGlzLnByb2Nlc3NvSnVkaWNpYWxTZXJ2aWNlLnVwZGF0ZShcbiAgICAgIGlkLFxuICAgICAgdXBkYXRlUHJvY2Vzc29KdWRpY2lhbER0byxcbiAgICAgIHJlcS51c2VyLmlkLFxuICAgICk7XG4gIH1cblxuICAvKipcbiAgICogQXR1YWxpemEgbyBzdGF0dXMgZGUgdW0gcHJvY2Vzc28ganVkaWNpYWxcbiAgICovXG4gIEBQYXRjaCgnOmlkL3N0YXR1cycpXG4gIEBBcGlPcGVyYXRpb24oeyBzdW1tYXJ5OiAnQXR1YWxpemEgbyBzdGF0dXMgZGUgdW0gcHJvY2Vzc28ganVkaWNpYWwnIH0pXG4gIEBBcGlSZXNwb25zZSh7XG4gICAgc3RhdHVzOiBIdHRwU3RhdHVzLk9LLFxuICAgIGRlc2NyaXB0aW9uOiAnU3RhdHVzIGF0dWFsaXphZG8gY29tIHN1Y2Vzc28nLFxuICAgIHR5cGU6IFByb2Nlc3NvSnVkaWNpYWwsXG4gIH0pXG4gIEBBcGlSZXNwb25zZSh7XG4gICAgc3RhdHVzOiBIdHRwU3RhdHVzLk5PVF9GT1VORCxcbiAgICBkZXNjcmlwdGlvbjogJ1Byb2Nlc3NvIGp1ZGljaWFsIG7Do28gZW5jb250cmFkbycsXG4gIH0pXG4gIEBBcGlSZXNwb25zZSh7XG4gICAgc3RhdHVzOiBIdHRwU3RhdHVzLkJBRF9SRVFVRVNULFxuICAgIGRlc2NyaXB0aW9uOiAnU3RhdHVzIGludsOhbGlkbycsXG4gIH0pXG4gIEBBcGlSZXNwb25zZSh7XG4gICAgc3RhdHVzOiBIdHRwU3RhdHVzLlVOQVVUSE9SSVpFRCxcbiAgICBkZXNjcmlwdGlvbjogJ07Do28gYXV0b3JpemFkbycsXG4gIH0pXG4gIGFzeW5jIHVwZGF0ZVN0YXR1cyhcbiAgICBAUGFyYW0oJ2lkJywgUGFyc2VVVUlEUGlwZSkgaWQ6IHN0cmluZyxcbiAgICBAQm9keSgpIHVwZGF0ZVN0YXR1c0R0bzogVXBkYXRlU3RhdHVzUHJvY2Vzc29KdWRpY2lhbER0byxcbiAgICBAUmVxdWVzdCgpIHJlcSxcbiAgKTogUHJvbWlzZTxQcm9jZXNzb0p1ZGljaWFsPiB7XG4gICAgcmV0dXJuIHRoaXMucHJvY2Vzc29KdWRpY2lhbFNlcnZpY2UudXBkYXRlU3RhdHVzKFxuICAgICAgaWQsXG4gICAgICB1cGRhdGVTdGF0dXNEdG8uc3RhdHVzLFxuICAgICAgcmVxLnVzZXIuaWQsXG4gICAgKTtcbiAgfVxuXG4gIC8qKlxuICAgKiBEZXNhdGl2YSB1bSBwcm9jZXNzbyBqdWRpY2lhbCAoc29mdCBkZWxldGUpXG4gICAqL1xuICBARGVsZXRlKCc6aWQnKVxuICBASHR0cENvZGUoSHR0cFN0YXR1cy5OT19DT05URU5UKVxuICBAQXBpT3BlcmF0aW9uKHsgc3VtbWFyeTogJ0Rlc2F0aXZhIHVtIHByb2Nlc3NvIGp1ZGljaWFsIChzb2Z0IGRlbGV0ZSknIH0pXG4gIEBBcGlSZXNwb25zZSh7XG4gICAgc3RhdHVzOiBIdHRwU3RhdHVzLk5PX0NPTlRFTlQsXG4gICAgZGVzY3JpcHRpb246ICdQcm9jZXNzbyBqdWRpY2lhbCBkZXNhdGl2YWRvIGNvbSBzdWNlc3NvJyxcbiAgfSlcbiAgQEFwaVJlc3BvbnNlKHtcbiAgICBzdGF0dXM6IEh0dHBTdGF0dXMuTk9UX0ZPVU5ELFxuICAgIGRlc2NyaXB0aW9uOiAnUHJvY2Vzc28ganVkaWNpYWwgbsOjbyBlbmNvbnRyYWRvJyxcbiAgfSlcbiAgQEFwaVJlc3BvbnNlKHtcbiAgICBzdGF0dXM6IEh0dHBTdGF0dXMuVU5BVVRIT1JJWkVELFxuICAgIGRlc2NyaXB0aW9uOiAnTsOjbyBhdXRvcml6YWRvJyxcbiAgfSlcbiAgYXN5bmMgcmVtb3ZlKFxuICAgIEBQYXJhbSgnaWQnLCBQYXJzZVVVSURQaXBlKSBpZDogc3RyaW5nLFxuICAgIEBSZXF1ZXN0KCkgcmVxLFxuICApOiBQcm9taXNlPHZvaWQ+IHtcbiAgICBhd2FpdCB0aGlzLnByb2Nlc3NvSnVkaWNpYWxTZXJ2aWNlLmRlc2F0aXZhcihpZCwgcmVxLnVzZXIuaWQpO1xuICB9XG59XG4iXSwidmVyc2lvbiI6M30=

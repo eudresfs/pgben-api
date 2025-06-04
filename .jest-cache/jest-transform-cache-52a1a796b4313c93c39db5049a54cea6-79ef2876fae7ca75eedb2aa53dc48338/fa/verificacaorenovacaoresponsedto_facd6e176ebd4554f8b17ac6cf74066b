@@ -1,0 +1,94 @@
+f48208bd711aba6282dd4fda549c22e7
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var _a;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.VerificacaoRenovacaoResponseDto = void 0;
+const swagger_1 = require("@nestjs/swagger");
+/**
+ * DTO para resposta de verificação de renovação automática
+ *
+ * Este DTO é utilizado para retornar o resultado da verificação de renovação automática
+ * de uma solicitação de benefício, garantindo a padronização das respostas da API.
+ */
+class VerificacaoRenovacaoResponseDto {
+    renovacao_automatica;
+    contador_renovacoes;
+    data_proxima_renovacao;
+    solicitacao_original_id;
+    configuracao_tipo_beneficio;
+    dias_antecedencia;
+    numero_maximo_renovacoes;
+    requer_aprovacao;
+}
+exports.VerificacaoRenovacaoResponseDto = VerificacaoRenovacaoResponseDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Indica se a renovação automática está ativada para a solicitação',
+        example: true,
+    }),
+    __metadata("design:type", Boolean)
+], VerificacaoRenovacaoResponseDto.prototype, "renovacao_automatica", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Contador de renovações já realizadas',
+        example: 2,
+    }),
+    __metadata("design:type", Number)
+], VerificacaoRenovacaoResponseDto.prototype, "contador_renovacoes", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Data da próxima renovação programada',
+        example: '2025-06-24T00:00:00.000Z',
+        nullable: true,
+    }),
+    __metadata("design:type", Object)
+], VerificacaoRenovacaoResponseDto.prototype, "data_proxima_renovacao", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'ID da solicitação original (caso seja uma renovação)',
+        example: '123e4567-e89b-12d3-a456-426614174000',
+        nullable: true,
+    }),
+    __metadata("design:type", Object)
+], VerificacaoRenovacaoResponseDto.prototype, "solicitacao_original_id", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Indica se o tipo de benefício tem configuração de renovação automática ativada',
+        example: true,
+    }),
+    __metadata("design:type", Boolean)
+], VerificacaoRenovacaoResponseDto.prototype, "configuracao_tipo_beneficio", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Dias de antecedência para a renovação automática',
+        example: 30,
+        nullable: true,
+    }),
+    __metadata("design:type", Object)
+], VerificacaoRenovacaoResponseDto.prototype, "dias_antecedencia", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Número máximo de renovações permitidas',
+        example: 3,
+        nullable: true,
+    }),
+    __metadata("design:type", Object)
+], VerificacaoRenovacaoResponseDto.prototype, "numero_maximo_renovacoes", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Indica se a renovação requer aprovação manual',
+        example: false,
+        nullable: true,
+    }),
+    __metadata("design:type", Object)
+], VerificacaoRenovacaoResponseDto.prototype, "requer_aprovacao", void 0);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXGJlbmVmaWNpb1xcZHRvXFx2ZXJpZmljYWNhby1yZW5vdmFjYW8tcmVzcG9uc2UuZHRvLnRzIiwibWFwcGluZ3MiOiI7Ozs7Ozs7Ozs7Ozs7QUFBQSw2Q0FBOEM7QUFFOUM7Ozs7O0dBS0c7QUFDSCxNQUFhLCtCQUErQjtJQU0xQyxvQkFBb0IsQ0FBVTtJQU05QixtQkFBbUIsQ0FBUztJQU81QixzQkFBc0IsQ0FBYztJQU9wQyx1QkFBdUIsQ0FBZ0I7SUFPdkMsMkJBQTJCLENBQVU7SUFPckMsaUJBQWlCLENBQWdCO0lBT2pDLHdCQUF3QixDQUFnQjtJQU94QyxnQkFBZ0IsQ0FBaUI7Q0FDbEM7QUF2REQsMEVBdURDO0FBakRDO0lBTEMsSUFBQSxxQkFBVyxFQUFDO1FBQ1gsV0FBVyxFQUNULGtFQUFrRTtRQUNwRSxPQUFPLEVBQUUsSUFBSTtLQUNkLENBQUM7OzZFQUM0QjtBQU05QjtJQUpDLElBQUEscUJBQVcsRUFBQztRQUNYLFdBQVcsRUFBRSxzQ0FBc0M7UUFDbkQsT0FBTyxFQUFFLENBQUM7S0FDWCxDQUFDOzs0RUFDMEI7QUFPNUI7SUFMQyxJQUFBLHFCQUFXLEVBQUM7UUFDWCxXQUFXLEVBQUUsc0NBQXNDO1FBQ25ELE9BQU8sRUFBRSwwQkFBMEI7UUFDbkMsUUFBUSxFQUFFLElBQUk7S0FDZixDQUFDOzsrRUFDa0M7QUFPcEM7SUFMQyxJQUFBLHFCQUFXLEVBQUM7UUFDWCxXQUFXLEVBQUUsc0RBQXNEO1FBQ25FLE9BQU8sRUFBRSxzQ0FBc0M7UUFDL0MsUUFBUSxFQUFFLElBQUk7S0FDZixDQUFDOztnRkFDcUM7QUFPdkM7SUFMQyxJQUFBLHFCQUFXLEVBQUM7UUFDWCxXQUFXLEVBQ1QsZ0ZBQWdGO1FBQ2xGLE9BQU8sRUFBRSxJQUFJO0tBQ2QsQ0FBQzs7b0ZBQ21DO0FBT3JDO0lBTEMsSUFBQSxxQkFBVyxFQUFDO1FBQ1gsV0FBVyxFQUFFLGtEQUFrRDtRQUMvRCxPQUFPLEVBQUUsRUFBRTtRQUNYLFFBQVEsRUFBRSxJQUFJO0tBQ2YsQ0FBQzs7MEVBQytCO0FBT2pDO0lBTEMsSUFBQSxxQkFBVyxFQUFDO1FBQ1gsV0FBVyxFQUFFLHdDQUF3QztRQUNyRCxPQUFPLEVBQUUsQ0FBQztRQUNWLFFBQVEsRUFBRSxJQUFJO0tBQ2YsQ0FBQzs7aUZBQ3NDO0FBT3hDO0lBTEMsSUFBQSxxQkFBVyxFQUFDO1FBQ1gsV0FBVyxFQUFFLCtDQUErQztRQUM1RCxPQUFPLEVBQUUsS0FBSztRQUNkLFFBQVEsRUFBRSxJQUFJO0tBQ2YsQ0FBQzs7eUVBQytCIiwibmFtZXMiOltdLCJzb3VyY2VzIjpbIkM6XFxVc2Vyc1xcZXVkcmVcXE9uZURyaXZlXFxEZXNrdG9wXFxQcm9qZXRvc1xccGdiZW5cXHBnYmVuLXNlcnZlclxcc3JjXFxtb2R1bGVzXFxiZW5lZmljaW9cXGR0b1xcdmVyaWZpY2FjYW8tcmVub3ZhY2FvLXJlc3BvbnNlLmR0by50cyJdLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQgeyBBcGlQcm9wZXJ0eSB9IGZyb20gJ0BuZXN0anMvc3dhZ2dlcic7XG5cbi8qKlxuICogRFRPIHBhcmEgcmVzcG9zdGEgZGUgdmVyaWZpY2HDp8OjbyBkZSByZW5vdmHDp8OjbyBhdXRvbcOhdGljYVxuICpcbiAqIEVzdGUgRFRPIMOpIHV0aWxpemFkbyBwYXJhIHJldG9ybmFyIG8gcmVzdWx0YWRvIGRhIHZlcmlmaWNhw6fDo28gZGUgcmVub3Zhw6fDo28gYXV0b23DoXRpY2FcbiAqIGRlIHVtYSBzb2xpY2l0YcOnw6NvIGRlIGJlbmVmw61jaW8sIGdhcmFudGluZG8gYSBwYWRyb25pemHDp8OjbyBkYXMgcmVzcG9zdGFzIGRhIEFQSS5cbiAqL1xuZXhwb3J0IGNsYXNzIFZlcmlmaWNhY2FvUmVub3ZhY2FvUmVzcG9uc2VEdG8ge1xuICBAQXBpUHJvcGVydHkoe1xuICAgIGRlc2NyaXB0aW9uOlxuICAgICAgJ0luZGljYSBzZSBhIHJlbm92YcOnw6NvIGF1dG9tw6F0aWNhIGVzdMOhIGF0aXZhZGEgcGFyYSBhIHNvbGljaXRhw6fDo28nLFxuICAgIGV4YW1wbGU6IHRydWUsXG4gIH0pXG4gIHJlbm92YWNhb19hdXRvbWF0aWNhOiBib29sZWFuO1xuXG4gIEBBcGlQcm9wZXJ0eSh7XG4gICAgZGVzY3JpcHRpb246ICdDb250YWRvciBkZSByZW5vdmHDp8O1ZXMgasOhIHJlYWxpemFkYXMnLFxuICAgIGV4YW1wbGU6IDIsXG4gIH0pXG4gIGNvbnRhZG9yX3Jlbm92YWNvZXM6IG51bWJlcjtcblxuICBAQXBpUHJvcGVydHkoe1xuICAgIGRlc2NyaXB0aW9uOiAnRGF0YSBkYSBwcsOzeGltYSByZW5vdmHDp8OjbyBwcm9ncmFtYWRhJyxcbiAgICBleGFtcGxlOiAnMjAyNS0wNi0yNFQwMDowMDowMC4wMDBaJyxcbiAgICBudWxsYWJsZTogdHJ1ZSxcbiAgfSlcbiAgZGF0YV9wcm94aW1hX3Jlbm92YWNhbzogRGF0ZSB8IG51bGw7XG5cbiAgQEFwaVByb3BlcnR5KHtcbiAgICBkZXNjcmlwdGlvbjogJ0lEIGRhIHNvbGljaXRhw6fDo28gb3JpZ2luYWwgKGNhc28gc2VqYSB1bWEgcmVub3Zhw6fDo28pJyxcbiAgICBleGFtcGxlOiAnMTIzZTQ1NjctZTg5Yi0xMmQzLWE0NTYtNDI2NjE0MTc0MDAwJyxcbiAgICBudWxsYWJsZTogdHJ1ZSxcbiAgfSlcbiAgc29saWNpdGFjYW9fb3JpZ2luYWxfaWQ6IHN0cmluZyB8IG51bGw7XG5cbiAgQEFwaVByb3BlcnR5KHtcbiAgICBkZXNjcmlwdGlvbjpcbiAgICAgICdJbmRpY2Egc2UgbyB0aXBvIGRlIGJlbmVmw61jaW8gdGVtIGNvbmZpZ3VyYcOnw6NvIGRlIHJlbm92YcOnw6NvIGF1dG9tw6F0aWNhIGF0aXZhZGEnLFxuICAgIGV4YW1wbGU6IHRydWUsXG4gIH0pXG4gIGNvbmZpZ3VyYWNhb190aXBvX2JlbmVmaWNpbzogYm9vbGVhbjtcblxuICBAQXBpUHJvcGVydHkoe1xuICAgIGRlc2NyaXB0aW9uOiAnRGlhcyBkZSBhbnRlY2Vkw6puY2lhIHBhcmEgYSByZW5vdmHDp8OjbyBhdXRvbcOhdGljYScsXG4gICAgZXhhbXBsZTogMzAsXG4gICAgbnVsbGFibGU6IHRydWUsXG4gIH0pXG4gIGRpYXNfYW50ZWNlZGVuY2lhOiBudW1iZXIgfCBudWxsO1xuXG4gIEBBcGlQcm9wZXJ0eSh7XG4gICAgZGVzY3JpcHRpb246ICdOw7ptZXJvIG3DoXhpbW8gZGUgcmVub3Zhw6fDtWVzIHBlcm1pdGlkYXMnLFxuICAgIGV4YW1wbGU6IDMsXG4gICAgbnVsbGFibGU6IHRydWUsXG4gIH0pXG4gIG51bWVyb19tYXhpbW9fcmVub3ZhY29lczogbnVtYmVyIHwgbnVsbDtcblxuICBAQXBpUHJvcGVydHkoe1xuICAgIGRlc2NyaXB0aW9uOiAnSW5kaWNhIHNlIGEgcmVub3Zhw6fDo28gcmVxdWVyIGFwcm92YcOnw6NvIG1hbnVhbCcsXG4gICAgZXhhbXBsZTogZmFsc2UsXG4gICAgbnVsbGFibGU6IHRydWUsXG4gIH0pXG4gIHJlcXVlcl9hcHJvdmFjYW86IGJvb2xlYW4gfCBudWxsO1xufVxuIl0sInZlcnNpb24iOjN9

@@ -1,0 +1,78 @@
+e5748769ba7122b8f5ca645e38e41d0a
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var _a, _b, _c, _d;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.MetricasController = void 0;
+const common_1 = require("@nestjs/common");
+const swagger_1 = require("@nestjs/swagger");
+const metricas_service_1 = require("../services/metricas.service");
+const health_service_1 = require("../services/health.service");
+const public_decorator_1 = require("../../../shared/decorators/public.decorator");
+/**
+ * Controlador responsável por expor endpoints para coleta de métricas
+ * pelo Prometheus.
+ */
+let MetricasController = class MetricasController {
+    metricasService;
+    healthService;
+    constructor(metricasService, healthService) {
+        this.metricasService = metricasService;
+        this.healthService = healthService;
+    }
+    /**
+     * Endpoint para o Prometheus coletar métricas
+     * @returns Métricas no formato do Prometheus
+     */
+    async getMetrics() {
+        return this.metricasService.obterMetricas();
+    }
+    /**
+     * Endpoint para verificar a saúde do sistema
+     * @returns Status de saúde do sistema com detalhes dos componentes
+     */
+    async getHealth() {
+        return this.healthService.checkHealth();
+    }
+};
+exports.MetricasController = MetricasController;
+__decorate([
+    (0, common_1.Get)(),
+    (0, public_decorator_1.Public)() // Endpoint público para permitir a coleta pelo Prometheus
+    ,
+    (0, common_1.Header)('Content-Type', 'text/plain'),
+    (0, swagger_1.ApiOperation)({ summary: 'Obter métricas do sistema' }),
+    (0, swagger_1.ApiResponse)({
+        status: 200,
+        description: 'Métricas no formato do Prometheus',
+    }),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", typeof (_c = typeof Promise !== "undefined" && Promise) === "function" ? _c : Object)
+], MetricasController.prototype, "getMetrics", null);
+__decorate([
+    (0, common_1.Get)('health'),
+    (0, public_decorator_1.Public)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Verificar a saúde do sistema' }),
+    (0, swagger_1.ApiResponse)({
+        status: 200,
+        description: 'Status de saúde do sistema',
+    }),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", typeof (_d = typeof Promise !== "undefined" && Promise) === "function" ? _d : Object)
+], MetricasController.prototype, "getHealth", null);
+exports.MetricasController = MetricasController = __decorate([
+    (0, swagger_1.ApiTags)('Métricas e Dashboard'),
+    (0, common_1.Controller)('metricas'),
+    __metadata("design:paramtypes", [typeof (_a = typeof metricas_service_1.MetricasService !== "undefined" && metricas_service_1.MetricasService) === "function" ? _a : Object, typeof (_b = typeof health_service_1.HealthService !== "undefined" && health_service_1.HealthService) === "function" ? _b : Object])
+], MetricasController);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXG1ldHJpY2FzXFxjb250cm9sbGVyc1xcbWV0cmljYXMuY29udHJvbGxlci50cyIsIm1hcHBpbmdzIjoiOzs7Ozs7Ozs7Ozs7O0FBQUEsMkNBQXlEO0FBQ3pELDZDQUFxRTtBQUNyRSxtRUFBK0Q7QUFDL0QsK0RBQTJEO0FBQzNELGtGQUFxRTtBQUVyRTs7O0dBR0c7QUFHSSxJQUFNLGtCQUFrQixHQUF4QixNQUFNLGtCQUFrQjtJQUVWO0lBQ0E7SUFGbkIsWUFDbUIsZUFBZ0MsRUFDaEMsYUFBNEI7UUFENUIsb0JBQWUsR0FBZixlQUFlLENBQWlCO1FBQ2hDLGtCQUFhLEdBQWIsYUFBYSxDQUFlO0lBQzVDLENBQUM7SUFFSjs7O09BR0c7SUFTRyxBQUFOLEtBQUssQ0FBQyxVQUFVO1FBQ2QsT0FBTyxJQUFJLENBQUMsZUFBZSxDQUFDLGFBQWEsRUFBRSxDQUFDO0lBQzlDLENBQUM7SUFFRDs7O09BR0c7SUFRRyxBQUFOLEtBQUssQ0FBQyxTQUFTO1FBQ2IsT0FBTyxJQUFJLENBQUMsYUFBYSxDQUFDLFdBQVcsRUFBRSxDQUFDO0lBQzFDLENBQUM7Q0FDRixDQUFBO0FBcENZLGdEQUFrQjtBQWtCdkI7SUFSTCxJQUFBLFlBQUcsR0FBRTtJQUNMLElBQUEseUJBQU0sR0FBRSxDQUFDLDBEQUEwRDs7SUFDbkUsSUFBQSxlQUFNLEVBQUMsY0FBYyxFQUFFLFlBQVksQ0FBQztJQUNwQyxJQUFBLHNCQUFZLEVBQUMsRUFBRSxPQUFPLEVBQUUsMkJBQTJCLEVBQUUsQ0FBQztJQUN0RCxJQUFBLHFCQUFXLEVBQUM7UUFDWCxNQUFNLEVBQUUsR0FBRztRQUNYLFdBQVcsRUFBRSxtQ0FBbUM7S0FDakQsQ0FBQzs7O3dEQUNrQixPQUFPLG9CQUFQLE9BQU87b0RBRTFCO0FBYUs7SUFQTCxJQUFBLFlBQUcsRUFBQyxRQUFRLENBQUM7SUFDYixJQUFBLHlCQUFNLEdBQUU7SUFDUixJQUFBLHNCQUFZLEVBQUMsRUFBRSxPQUFPLEVBQUUsOEJBQThCLEVBQUUsQ0FBQztJQUN6RCxJQUFBLHFCQUFXLEVBQUM7UUFDWCxNQUFNLEVBQUUsR0FBRztRQUNYLFdBQVcsRUFBRSw0QkFBNEI7S0FDMUMsQ0FBQzs7O3dEQUNpQixPQUFPLG9CQUFQLE9BQU87bURBRXpCOzZCQW5DVSxrQkFBa0I7SUFGOUIsSUFBQSxpQkFBTyxFQUFDLHNCQUFzQixDQUFDO0lBQy9CLElBQUEsbUJBQVUsRUFBQyxVQUFVLENBQUM7eURBR2Usa0NBQWUsb0JBQWYsa0NBQWUsb0RBQ2pCLDhCQUFhLG9CQUFiLDhCQUFhO0dBSHBDLGtCQUFrQixDQW9DOUIiLCJuYW1lcyI6W10sInNvdXJjZXMiOlsiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXG1ldHJpY2FzXFxjb250cm9sbGVyc1xcbWV0cmljYXMuY29udHJvbGxlci50cyJdLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQgeyBDb250cm9sbGVyLCBHZXQsIEhlYWRlciB9IGZyb20gJ0BuZXN0anMvY29tbW9uJztcbmltcG9ydCB7IEFwaU9wZXJhdGlvbiwgQXBpUmVzcG9uc2UsIEFwaVRhZ3MgfSBmcm9tICdAbmVzdGpzL3N3YWdnZXInO1xuaW1wb3J0IHsgTWV0cmljYXNTZXJ2aWNlIH0gZnJvbSAnLi4vc2VydmljZXMvbWV0cmljYXMuc2VydmljZSc7XG5pbXBvcnQgeyBIZWFsdGhTZXJ2aWNlIH0gZnJvbSAnLi4vc2VydmljZXMvaGVhbHRoLnNlcnZpY2UnO1xuaW1wb3J0IHsgUHVibGljIH0gZnJvbSAnLi4vLi4vLi4vc2hhcmVkL2RlY29yYXRvcnMvcHVibGljLmRlY29yYXRvcic7XG5cbi8qKlxuICogQ29udHJvbGFkb3IgcmVzcG9uc8OhdmVsIHBvciBleHBvciBlbmRwb2ludHMgcGFyYSBjb2xldGEgZGUgbcOpdHJpY2FzXG4gKiBwZWxvIFByb21ldGhldXMuXG4gKi9cbkBBcGlUYWdzKCdNw6l0cmljYXMgZSBEYXNoYm9hcmQnKVxuQENvbnRyb2xsZXIoJ21ldHJpY2FzJylcbmV4cG9ydCBjbGFzcyBNZXRyaWNhc0NvbnRyb2xsZXIge1xuICBjb25zdHJ1Y3RvcihcbiAgICBwcml2YXRlIHJlYWRvbmx5IG1ldHJpY2FzU2VydmljZTogTWV0cmljYXNTZXJ2aWNlLFxuICAgIHByaXZhdGUgcmVhZG9ubHkgaGVhbHRoU2VydmljZTogSGVhbHRoU2VydmljZSxcbiAgKSB7fVxuXG4gIC8qKlxuICAgKiBFbmRwb2ludCBwYXJhIG8gUHJvbWV0aGV1cyBjb2xldGFyIG3DqXRyaWNhc1xuICAgKiBAcmV0dXJucyBNw6l0cmljYXMgbm8gZm9ybWF0byBkbyBQcm9tZXRoZXVzXG4gICAqL1xuICBAR2V0KClcbiAgQFB1YmxpYygpIC8vIEVuZHBvaW50IHDDumJsaWNvIHBhcmEgcGVybWl0aXIgYSBjb2xldGEgcGVsbyBQcm9tZXRoZXVzXG4gIEBIZWFkZXIoJ0NvbnRlbnQtVHlwZScsICd0ZXh0L3BsYWluJylcbiAgQEFwaU9wZXJhdGlvbih7IHN1bW1hcnk6ICdPYnRlciBtw6l0cmljYXMgZG8gc2lzdGVtYScgfSlcbiAgQEFwaVJlc3BvbnNlKHtcbiAgICBzdGF0dXM6IDIwMCxcbiAgICBkZXNjcmlwdGlvbjogJ03DqXRyaWNhcyBubyBmb3JtYXRvIGRvIFByb21ldGhldXMnLFxuICB9KVxuICBhc3luYyBnZXRNZXRyaWNzKCk6IFByb21pc2U8c3RyaW5nPiB7XG4gICAgcmV0dXJuIHRoaXMubWV0cmljYXNTZXJ2aWNlLm9idGVyTWV0cmljYXMoKTtcbiAgfVxuXG4gIC8qKlxuICAgKiBFbmRwb2ludCBwYXJhIHZlcmlmaWNhciBhIHNhw7pkZSBkbyBzaXN0ZW1hXG4gICAqIEByZXR1cm5zIFN0YXR1cyBkZSBzYcO6ZGUgZG8gc2lzdGVtYSBjb20gZGV0YWxoZXMgZG9zIGNvbXBvbmVudGVzXG4gICAqL1xuICBAR2V0KCdoZWFsdGgnKVxuICBAUHVibGljKClcbiAgQEFwaU9wZXJhdGlvbih7IHN1bW1hcnk6ICdWZXJpZmljYXIgYSBzYcO6ZGUgZG8gc2lzdGVtYScgfSlcbiAgQEFwaVJlc3BvbnNlKHtcbiAgICBzdGF0dXM6IDIwMCxcbiAgICBkZXNjcmlwdGlvbjogJ1N0YXR1cyBkZSBzYcO6ZGUgZG8gc2lzdGVtYScsXG4gIH0pXG4gIGFzeW5jIGdldEhlYWx0aCgpOiBQcm9taXNlPGFueT4ge1xuICAgIHJldHVybiB0aGlzLmhlYWx0aFNlcnZpY2UuY2hlY2tIZWFsdGgoKTtcbiAgfVxufVxuIl0sInZlcnNpb24iOjN9

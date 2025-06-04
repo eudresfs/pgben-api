@@ -1,0 +1,41 @@
+82393c83bdb28f32171eecf1a6dfd65f
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.LogsModule = void 0;
+const common_1 = require("@nestjs/common");
+const typeorm_1 = require("@nestjs/typeorm");
+const logs_controller_1 = require("./controllers/logs.controller");
+const logs_service_1 = require("./services/logs.service");
+const entities_1 = require("../../entities");
+/**
+ * Módulo de Logs de Auditoria
+ *
+ * Responsável por gerenciar os logs de auditoria do sistema, fornecendo
+ * funcionalidades para consulta, filtragem e exportação de logs.
+ */
+const common_2 = require("@nestjs/common");
+const auth_module_1 = require("../../auth/auth.module");
+let LogsModule = class LogsModule {
+};
+exports.LogsModule = LogsModule;
+exports.LogsModule = LogsModule = __decorate([
+    (0, common_1.Module)({
+        imports: [
+            typeorm_1.TypeOrmModule.forFeature([
+                entities_1.LogAuditoria,
+                entities_1.Usuario,
+            ]),
+            (0, common_2.forwardRef)(() => auth_module_1.AuthModule),
+        ],
+        controllers: [logs_controller_1.LogsController],
+        providers: [logs_service_1.LogsService],
+        exports: [logs_service_1.LogsService],
+    })
+], LogsModule);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXGxvZ3NcXGxvZ3MubW9kdWxlLnRzIiwibWFwcGluZ3MiOiI7Ozs7Ozs7OztBQUFBLDJDQUF3QztBQUN4Qyw2Q0FBZ0Q7QUFDaEQsbUVBQStEO0FBQy9ELDBEQUFzRDtBQUN0RCw2Q0FHd0I7QUFFeEI7Ozs7O0dBS0c7QUFDSCwyQ0FBNEM7QUFDNUMsd0RBQW9EO0FBYzdDLElBQU0sVUFBVSxHQUFoQixNQUFNLFVBQVU7Q0FBRyxDQUFBO0FBQWIsZ0NBQVU7cUJBQVYsVUFBVTtJQVp0QixJQUFBLGVBQU0sRUFBQztRQUNOLE9BQU8sRUFBRTtZQUNQLHVCQUFhLENBQUMsVUFBVSxDQUFDO2dCQUN2Qix1QkFBWTtnQkFDWixrQkFBTzthQUNSLENBQUM7WUFDRixJQUFBLG1CQUFVLEVBQUMsR0FBRyxFQUFFLENBQUMsd0JBQVUsQ0FBQztTQUM3QjtRQUNELFdBQVcsRUFBRSxDQUFDLGdDQUFjLENBQUM7UUFDN0IsU0FBUyxFQUFFLENBQUMsMEJBQVcsQ0FBQztRQUN4QixPQUFPLEVBQUUsQ0FBQywwQkFBVyxDQUFDO0tBQ3ZCLENBQUM7R0FDVyxVQUFVLENBQUciLCJuYW1lcyI6W10sInNvdXJjZXMiOlsiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXGxvZ3NcXGxvZ3MubW9kdWxlLnRzIl0sInNvdXJjZXNDb250ZW50IjpbImltcG9ydCB7IE1vZHVsZSB9IGZyb20gJ0BuZXN0anMvY29tbW9uJztcbmltcG9ydCB7IFR5cGVPcm1Nb2R1bGUgfSBmcm9tICdAbmVzdGpzL3R5cGVvcm0nO1xuaW1wb3J0IHsgTG9nc0NvbnRyb2xsZXIgfSBmcm9tICcuL2NvbnRyb2xsZXJzL2xvZ3MuY29udHJvbGxlcic7XG5pbXBvcnQgeyBMb2dzU2VydmljZSB9IGZyb20gJy4vc2VydmljZXMvbG9ncy5zZXJ2aWNlJztcbmltcG9ydCB7IFxuICBMb2dBdWRpdG9yaWEsIFxuICBVc3VhcmlvIFxufSBmcm9tICcuLi8uLi9lbnRpdGllcyc7XG5cbi8qKlxuICogTcOzZHVsbyBkZSBMb2dzIGRlIEF1ZGl0b3JpYVxuICogXG4gKiBSZXNwb25zw6F2ZWwgcG9yIGdlcmVuY2lhciBvcyBsb2dzIGRlIGF1ZGl0b3JpYSBkbyBzaXN0ZW1hLCBmb3JuZWNlbmRvXG4gKiBmdW5jaW9uYWxpZGFkZXMgcGFyYSBjb25zdWx0YSwgZmlsdHJhZ2VtIGUgZXhwb3J0YcOnw6NvIGRlIGxvZ3MuXG4gKi9cbmltcG9ydCB7IGZvcndhcmRSZWYgfSBmcm9tICdAbmVzdGpzL2NvbW1vbic7XG5pbXBvcnQgeyBBdXRoTW9kdWxlIH0gZnJvbSAnLi4vLi4vYXV0aC9hdXRoLm1vZHVsZSc7XG5cbkBNb2R1bGUoe1xuICBpbXBvcnRzOiBbXG4gICAgVHlwZU9ybU1vZHVsZS5mb3JGZWF0dXJlKFtcbiAgICAgIExvZ0F1ZGl0b3JpYSxcbiAgICAgIFVzdWFyaW8sXG4gICAgXSksXG4gICAgZm9yd2FyZFJlZigoKSA9PiBBdXRoTW9kdWxlKSxcbiAgXSxcbiAgY29udHJvbGxlcnM6IFtMb2dzQ29udHJvbGxlcl0sXG4gIHByb3ZpZGVyczogW0xvZ3NTZXJ2aWNlXSxcbiAgZXhwb3J0czogW0xvZ3NTZXJ2aWNlXSxcbn0pXG5leHBvcnQgY2xhc3MgTG9nc01vZHVsZSB7fVxuIl0sInZlcnNpb24iOjN9

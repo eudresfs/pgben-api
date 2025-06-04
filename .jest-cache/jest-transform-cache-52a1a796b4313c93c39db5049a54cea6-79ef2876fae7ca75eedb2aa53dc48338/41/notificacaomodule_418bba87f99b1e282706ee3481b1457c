@@ -1,0 +1,58 @@
+cd4cb53326e7034aef6c13113b25d2b5
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.NotificacaoModule = void 0;
+const common_1 = require("@nestjs/common");
+const typeorm_1 = require("@nestjs/typeorm");
+const config_1 = require("@nestjs/config");
+const schedule_adapter_module_1 = require("../../shared/schedule/schedule-adapter.module");
+const auth_module_1 = require("../../auth/auth.module");
+// Controladores
+const notificacao_controller_1 = require("./controllers/notificacao.controller");
+const notification_template_controller_1 = require("./controllers/notification-template.controller");
+// Serviços
+const notificacao_service_1 = require("./services/notificacao.service");
+const notification_manager_service_1 = require("./services/notification-manager.service");
+const template_renderer_service_1 = require("./services/template-renderer.service");
+const email_channel_service_1 = require("./channels/email-channel.service");
+const sse_service_1 = require("./services/sse.service");
+const sse_guard_1 = require("./guards/sse.guard");
+// Entidades
+const entities_1 = require("../../entities");
+/**
+ * Módulo de Notificações
+ *
+ * Responsável por gerenciar as notificações enviadas aos usuários do sistema,
+ * incluindo criação, leitura e arquivamento.
+ */
+let NotificacaoModule = class NotificacaoModule {
+};
+exports.NotificacaoModule = NotificacaoModule;
+exports.NotificacaoModule = NotificacaoModule = __decorate([
+    (0, common_1.Module)({
+        imports: [
+            typeorm_1.TypeOrmModule.forFeature([entities_1.NotificacaoSistema, entities_1.NotificationTemplate]),
+            schedule_adapter_module_1.ScheduleAdapterModule,
+            config_1.ConfigModule,
+            // Importa o módulo compartilhado de autenticação
+            (0, common_1.forwardRef)(() => auth_module_1.AuthModule),
+        ],
+        controllers: [notificacao_controller_1.NotificacaoController, notification_template_controller_1.NotificationTemplateController],
+        providers: [
+            notificacao_service_1.NotificacaoService,
+            notification_manager_service_1.NotificationManagerService,
+            template_renderer_service_1.TemplateRendererService,
+            email_channel_service_1.EmailChannelService,
+            sse_service_1.SseService,
+            sse_guard_1.SseGuard,
+        ],
+        exports: [notificacao_service_1.NotificacaoService, notification_manager_service_1.NotificationManagerService, sse_service_1.SseService],
+    })
+], NotificacaoModule);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXG5vdGlmaWNhY2FvXFxub3RpZmljYWNhby5tb2R1bGUudHMiLCJtYXBwaW5ncyI6Ijs7Ozs7Ozs7O0FBQUEsMkNBQW9EO0FBQ3BELDZDQUFnRDtBQUNoRCwyQ0FBOEM7QUFDOUMsMkZBQXNGO0FBQ3RGLHdEQUFvRDtBQUVwRCxnQkFBZ0I7QUFDaEIsaUZBQTZFO0FBQzdFLHFHQUFnRztBQUVoRyxXQUFXO0FBQ1gsd0VBQW9FO0FBQ3BFLDBGQUFxRjtBQUNyRixvRkFBK0U7QUFDL0UsNEVBQXVFO0FBQ3ZFLHdEQUFvRDtBQUNwRCxrREFBOEM7QUFFOUMsWUFBWTtBQUNaLDZDQUEwRTtBQUUxRTs7Ozs7R0FLRztBQW9CSSxJQUFNLGlCQUFpQixHQUF2QixNQUFNLGlCQUFpQjtDQUFHLENBQUE7QUFBcEIsOENBQWlCOzRCQUFqQixpQkFBaUI7SUFuQjdCLElBQUEsZUFBTSxFQUFDO1FBQ04sT0FBTyxFQUFFO1lBQ1AsdUJBQWEsQ0FBQyxVQUFVLENBQUMsQ0FBQyw2QkFBa0IsRUFBRSwrQkFBb0IsQ0FBQyxDQUFDO1lBQ3BFLCtDQUFxQjtZQUNyQixxQkFBWTtZQUNaLGlEQUFpRDtZQUNqRCxJQUFBLG1CQUFVLEVBQUMsR0FBRyxFQUFFLENBQUMsd0JBQVUsQ0FBQztTQUM3QjtRQUNELFdBQVcsRUFBRSxDQUFDLDhDQUFxQixFQUFFLGlFQUE4QixDQUFDO1FBQ3BFLFNBQVMsRUFBRTtZQUNULHdDQUFrQjtZQUNsQix5REFBMEI7WUFDMUIsbURBQXVCO1lBQ3ZCLDJDQUFtQjtZQUNuQix3QkFBVTtZQUNWLG9CQUFRO1NBQ1Q7UUFDRCxPQUFPLEVBQUUsQ0FBQyx3Q0FBa0IsRUFBRSx5REFBMEIsRUFBRSx3QkFBVSxDQUFDO0tBQ3RFLENBQUM7R0FDVyxpQkFBaUIsQ0FBRyIsIm5hbWVzIjpbXSwic291cmNlcyI6WyJDOlxcVXNlcnNcXGV1ZHJlXFxPbmVEcml2ZVxcRGVza3RvcFxcUHJvamV0b3NcXHBnYmVuXFxwZ2Jlbi1zZXJ2ZXJcXHNyY1xcbW9kdWxlc1xcbm90aWZpY2FjYW9cXG5vdGlmaWNhY2FvLm1vZHVsZS50cyJdLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQgeyBNb2R1bGUsIGZvcndhcmRSZWYgfSBmcm9tICdAbmVzdGpzL2NvbW1vbic7XG5pbXBvcnQgeyBUeXBlT3JtTW9kdWxlIH0gZnJvbSAnQG5lc3Rqcy90eXBlb3JtJztcbmltcG9ydCB7IENvbmZpZ01vZHVsZSB9IGZyb20gJ0BuZXN0anMvY29uZmlnJztcbmltcG9ydCB7IFNjaGVkdWxlQWRhcHRlck1vZHVsZSB9IGZyb20gJy4uLy4uL3NoYXJlZC9zY2hlZHVsZS9zY2hlZHVsZS1hZGFwdGVyLm1vZHVsZSc7XG5pbXBvcnQgeyBBdXRoTW9kdWxlIH0gZnJvbSAnLi4vLi4vYXV0aC9hdXRoLm1vZHVsZSc7XG5cbi8vIENvbnRyb2xhZG9yZXNcbmltcG9ydCB7IE5vdGlmaWNhY2FvQ29udHJvbGxlciB9IGZyb20gJy4vY29udHJvbGxlcnMvbm90aWZpY2FjYW8uY29udHJvbGxlcic7XG5pbXBvcnQgeyBOb3RpZmljYXRpb25UZW1wbGF0ZUNvbnRyb2xsZXIgfSBmcm9tICcuL2NvbnRyb2xsZXJzL25vdGlmaWNhdGlvbi10ZW1wbGF0ZS5jb250cm9sbGVyJztcblxuLy8gU2VydmnDp29zXG5pbXBvcnQgeyBOb3RpZmljYWNhb1NlcnZpY2UgfSBmcm9tICcuL3NlcnZpY2VzL25vdGlmaWNhY2FvLnNlcnZpY2UnO1xuaW1wb3J0IHsgTm90aWZpY2F0aW9uTWFuYWdlclNlcnZpY2UgfSBmcm9tICcuL3NlcnZpY2VzL25vdGlmaWNhdGlvbi1tYW5hZ2VyLnNlcnZpY2UnO1xuaW1wb3J0IHsgVGVtcGxhdGVSZW5kZXJlclNlcnZpY2UgfSBmcm9tICcuL3NlcnZpY2VzL3RlbXBsYXRlLXJlbmRlcmVyLnNlcnZpY2UnO1xuaW1wb3J0IHsgRW1haWxDaGFubmVsU2VydmljZSB9IGZyb20gJy4vY2hhbm5lbHMvZW1haWwtY2hhbm5lbC5zZXJ2aWNlJztcbmltcG9ydCB7IFNzZVNlcnZpY2UgfSBmcm9tICcuL3NlcnZpY2VzL3NzZS5zZXJ2aWNlJztcbmltcG9ydCB7IFNzZUd1YXJkIH0gZnJvbSAnLi9ndWFyZHMvc3NlLmd1YXJkJztcblxuLy8gRW50aWRhZGVzXG5pbXBvcnQgeyBOb3RpZmljYWNhb1Npc3RlbWEsIE5vdGlmaWNhdGlvblRlbXBsYXRlIH0gZnJvbSAnLi4vLi4vZW50aXRpZXMnO1xuXG4vKipcbiAqIE3Ds2R1bG8gZGUgTm90aWZpY2HDp8O1ZXNcbiAqXG4gKiBSZXNwb25zw6F2ZWwgcG9yIGdlcmVuY2lhciBhcyBub3RpZmljYcOnw7VlcyBlbnZpYWRhcyBhb3MgdXN1w6FyaW9zIGRvIHNpc3RlbWEsXG4gKiBpbmNsdWluZG8gY3JpYcOnw6NvLCBsZWl0dXJhIGUgYXJxdWl2YW1lbnRvLlxuICovXG5ATW9kdWxlKHtcbiAgaW1wb3J0czogW1xuICAgIFR5cGVPcm1Nb2R1bGUuZm9yRmVhdHVyZShbTm90aWZpY2FjYW9TaXN0ZW1hLCBOb3RpZmljYXRpb25UZW1wbGF0ZV0pLFxuICAgIFNjaGVkdWxlQWRhcHRlck1vZHVsZSxcbiAgICBDb25maWdNb2R1bGUsXG4gICAgLy8gSW1wb3J0YSBvIG3Ds2R1bG8gY29tcGFydGlsaGFkbyBkZSBhdXRlbnRpY2HDp8Ojb1xuICAgIGZvcndhcmRSZWYoKCkgPT4gQXV0aE1vZHVsZSksXG4gIF0sXG4gIGNvbnRyb2xsZXJzOiBbTm90aWZpY2FjYW9Db250cm9sbGVyLCBOb3RpZmljYXRpb25UZW1wbGF0ZUNvbnRyb2xsZXJdLFxuICBwcm92aWRlcnM6IFtcbiAgICBOb3RpZmljYWNhb1NlcnZpY2UsXG4gICAgTm90aWZpY2F0aW9uTWFuYWdlclNlcnZpY2UsXG4gICAgVGVtcGxhdGVSZW5kZXJlclNlcnZpY2UsXG4gICAgRW1haWxDaGFubmVsU2VydmljZSxcbiAgICBTc2VTZXJ2aWNlLFxuICAgIFNzZUd1YXJkLFxuICBdLFxuICBleHBvcnRzOiBbTm90aWZpY2FjYW9TZXJ2aWNlLCBOb3RpZmljYXRpb25NYW5hZ2VyU2VydmljZSwgU3NlU2VydmljZV0sXG59KVxuZXhwb3J0IGNsYXNzIE5vdGlmaWNhY2FvTW9kdWxlIHt9XG4iXSwidmVyc2lvbiI6M30=

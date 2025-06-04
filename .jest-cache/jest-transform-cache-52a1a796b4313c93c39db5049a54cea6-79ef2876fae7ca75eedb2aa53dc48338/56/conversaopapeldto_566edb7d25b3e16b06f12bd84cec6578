@@ -1,0 +1,206 @@
+1ae22f5af4447536eb6483e20a18f1cb
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var _a, _b, _c;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.ConversaoPapelResponseDto = exports.ConversaoParaComposicaoFamiliarDto = exports.DadosComposicaoFamiliarDto = exports.ConversaoParaBeneficiarioDto = exports.DadosCidadaoDto = void 0;
+const class_validator_1 = require("class-validator");
+const class_transformer_1 = require("class-transformer");
+const cpf_validator_1 = require("../validators/cpf-validator");
+const parentesco_enum_1 = require("../../../enums/parentesco.enum");
+const escolaridade_enum_1 = require("../../../enums/escolaridade.enum");
+const sexo_enum_1 = require("../../../enums/sexo.enum");
+/**
+ * DTO para dados básicos do cidadão
+ */
+class DadosCidadaoDto {
+    nome;
+    rg;
+    nis;
+    email;
+    telefone;
+    data_nascimento;
+    sexo;
+    endereco;
+}
+exports.DadosCidadaoDto = DadosCidadaoDto;
+__decorate([
+    (0, class_validator_1.IsNotEmpty)({ message: 'Nome é obrigatório' }),
+    (0, class_validator_1.IsString)({ message: 'Nome deve ser uma string' }),
+    __metadata("design:type", String)
+], DadosCidadaoDto.prototype, "nome", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'RG deve ser uma string' }),
+    __metadata("design:type", String)
+], DadosCidadaoDto.prototype, "rg", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'NIS deve ser uma string' }),
+    __metadata("design:type", String)
+], DadosCidadaoDto.prototype, "nis", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'Email deve ser uma string' }),
+    __metadata("design:type", String)
+], DadosCidadaoDto.prototype, "email", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'Telefone deve ser uma string' }),
+    __metadata("design:type", String)
+], DadosCidadaoDto.prototype, "telefone", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'Data de nascimento deve ser uma string' }),
+    __metadata("design:type", String)
+], DadosCidadaoDto.prototype, "data_nascimento", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'Sexo deve ser uma string' }),
+    __metadata("design:type", typeof (_a = typeof sexo_enum_1.Sexo !== "undefined" && sexo_enum_1.Sexo) === "function" ? _a : Object)
+], DadosCidadaoDto.prototype, "sexo", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'Endereço deve ser uma string' }),
+    __metadata("design:type", String)
+], DadosCidadaoDto.prototype, "endereco", void 0);
+/**
+ * DTO para conversão de membro de composição familiar para cidadão beneficiário
+ */
+class ConversaoParaBeneficiarioDto {
+    cpf;
+    justificativa;
+    dados_cidadao;
+}
+exports.ConversaoParaBeneficiarioDto = ConversaoParaBeneficiarioDto;
+__decorate([
+    (0, class_validator_1.IsNotEmpty)({ message: 'CPF é obrigatório' }),
+    (0, class_validator_1.IsString)({ message: 'CPF deve ser uma string' }),
+    (0, class_validator_1.Length)(11, 14, { message: 'CPF deve ter entre 11 e 14 caracteres' }),
+    (0, class_validator_1.Validate)(cpf_validator_1.CPFValidator, { message: 'CPF inválido' }),
+    __metadata("design:type", String)
+], ConversaoParaBeneficiarioDto.prototype, "cpf", void 0);
+__decorate([
+    (0, class_validator_1.IsNotEmpty)({ message: 'Justificativa é obrigatória' }),
+    (0, class_validator_1.IsString)({ message: 'Justificativa deve ser uma string' }),
+    __metadata("design:type", String)
+], ConversaoParaBeneficiarioDto.prototype, "justificativa", void 0);
+__decorate([
+    (0, class_validator_1.IsNotEmpty)({ message: 'Dados do cidadão são obrigatórios' }),
+    (0, class_validator_1.ValidateNested)(),
+    (0, class_transformer_1.Type)(() => DadosCidadaoDto),
+    __metadata("design:type", DadosCidadaoDto)
+], ConversaoParaBeneficiarioDto.prototype, "dados_cidadao", void 0);
+/**
+ * DTO para dados de composição familiar
+ */
+class DadosComposicaoFamiliarDto {
+    nome;
+    nis;
+    idade;
+    ocupacao;
+    escolaridade;
+    parentesco;
+    renda;
+    observacoes;
+}
+exports.DadosComposicaoFamiliarDto = DadosComposicaoFamiliarDto;
+__decorate([
+    (0, class_validator_1.IsNotEmpty)({ message: 'Nome é obrigatório' }),
+    (0, class_validator_1.IsString)({ message: 'Nome deve ser uma string' }),
+    __metadata("design:type", String)
+], DadosComposicaoFamiliarDto.prototype, "nome", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'NIS deve ser uma string' }),
+    __metadata("design:type", String)
+], DadosComposicaoFamiliarDto.prototype, "nis", void 0);
+__decorate([
+    (0, class_validator_1.IsNotEmpty)({ message: 'Idade é obrigatória' }),
+    (0, class_validator_1.IsNumber)({}, { message: 'Idade deve ser um número' }),
+    (0, class_validator_1.Min)(0, { message: 'Idade não pode ser negativa' }),
+    __metadata("design:type", Number)
+], DadosComposicaoFamiliarDto.prototype, "idade", void 0);
+__decorate([
+    (0, class_validator_1.IsNotEmpty)({ message: 'Ocupação é obrigatória' }),
+    (0, class_validator_1.IsString)({ message: 'Ocupação deve ser uma string' }),
+    __metadata("design:type", String)
+], DadosComposicaoFamiliarDto.prototype, "ocupacao", void 0);
+__decorate([
+    (0, class_validator_1.IsNotEmpty)({ message: 'Escolaridade é obrigatória' }),
+    (0, class_validator_1.IsEnum)(escolaridade_enum_1.EscolaridadeEnum, { message: 'Escolaridade inválida' }),
+    __metadata("design:type", typeof (_b = typeof escolaridade_enum_1.EscolaridadeEnum !== "undefined" && escolaridade_enum_1.EscolaridadeEnum) === "function" ? _b : Object)
+], DadosComposicaoFamiliarDto.prototype, "escolaridade", void 0);
+__decorate([
+    (0, class_validator_1.IsNotEmpty)({ message: 'Parentesco é obrigatório' }),
+    (0, class_validator_1.IsEnum)(parentesco_enum_1.ParentescoEnum, { message: 'Parentesco inválido' }),
+    __metadata("design:type", typeof (_c = typeof parentesco_enum_1.ParentescoEnum !== "undefined" && parentesco_enum_1.ParentescoEnum) === "function" ? _c : Object)
+], DadosComposicaoFamiliarDto.prototype, "parentesco", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNumber)({}, { message: 'Renda deve ser um número' }),
+    (0, class_validator_1.Min)(0, { message: 'Renda não pode ser negativa' }),
+    __metadata("design:type", Number)
+], DadosComposicaoFamiliarDto.prototype, "renda", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'Observações devem ser uma string' }),
+    __metadata("design:type", String)
+], DadosComposicaoFamiliarDto.prototype, "observacoes", void 0);
+/**
+ * DTO para conversão de papel para composição familiar
+ */
+class ConversaoParaComposicaoFamiliarDto {
+    cpf;
+    cidadao_alvo_id;
+    dados_composicao;
+    justificativa;
+    tecnico_notificado_id;
+}
+exports.ConversaoParaComposicaoFamiliarDto = ConversaoParaComposicaoFamiliarDto;
+__decorate([
+    (0, class_validator_1.IsNotEmpty)({ message: 'CPF é obrigatório' }),
+    (0, class_validator_1.IsString)({ message: 'CPF deve ser uma string' }),
+    (0, class_validator_1.Length)(11, 14, { message: 'CPF deve ter entre 11 e 14 caracteres' }),
+    (0, class_validator_1.Validate)(cpf_validator_1.CPFValidator, { message: 'CPF inválido' }),
+    __metadata("design:type", String)
+], ConversaoParaComposicaoFamiliarDto.prototype, "cpf", void 0);
+__decorate([
+    (0, class_validator_1.IsNotEmpty)({ message: 'ID do cidadão alvo é obrigatório' }),
+    (0, class_validator_1.IsUUID)('4', { message: 'ID do cidadão alvo inválido' }),
+    __metadata("design:type", String)
+], ConversaoParaComposicaoFamiliarDto.prototype, "cidadao_alvo_id", void 0);
+__decorate([
+    (0, class_validator_1.IsNotEmpty)({ message: 'Dados da composição familiar são obrigatórios' }),
+    (0, class_validator_1.ValidateNested)(),
+    (0, class_transformer_1.Type)(() => DadosComposicaoFamiliarDto),
+    __metadata("design:type", DadosComposicaoFamiliarDto)
+], ConversaoParaComposicaoFamiliarDto.prototype, "dados_composicao", void 0);
+__decorate([
+    (0, class_validator_1.IsNotEmpty)({ message: 'Justificativa é obrigatória' }),
+    (0, class_validator_1.IsString)({ message: 'Justificativa deve ser uma string' }),
+    __metadata("design:type", String)
+], ConversaoParaComposicaoFamiliarDto.prototype, "justificativa", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsUUID)('4', { message: 'ID do técnico notificado inválido' }),
+    __metadata("design:type", String)
+], ConversaoParaComposicaoFamiliarDto.prototype, "tecnico_notificado_id", void 0);
+/**
+ * DTO para resposta de conversão de papel
+ */
+class ConversaoPapelResponseDto {
+    sucesso;
+    mensagem;
+    historicoId;
+}
+exports.ConversaoPapelResponseDto = ConversaoPapelResponseDto;
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXGNpZGFkYW9cXGR0b1xcY29udmVyc2FvLXBhcGVsLmR0by50cyIsIm1hcHBpbmdzIjoiOzs7Ozs7Ozs7Ozs7O0FBQUEscURBV3lCO0FBQ3pCLHlEQUF5QztBQUN6QywrREFBMkQ7QUFDM0Qsb0VBQWdFO0FBQ2hFLHdFQUFvRTtBQUNwRSx3REFBZ0Q7QUFFaEQ7O0dBRUc7QUFDSCxNQUFhLGVBQWU7SUFHMUIsSUFBSSxDQUFTO0lBSWIsRUFBRSxDQUFVO0lBSVosR0FBRyxDQUFVO0lBSWIsS0FBSyxDQUFVO0lBSWYsUUFBUSxDQUFVO0lBSWxCLGVBQWUsQ0FBVTtJQUl6QixJQUFJLENBQVE7SUFJWixRQUFRLENBQVU7Q0FDbkI7QUFoQ0QsMENBZ0NDO0FBN0JDO0lBRkMsSUFBQSw0QkFBVSxFQUFDLEVBQUUsT0FBTyxFQUFFLG9CQUFvQixFQUFFLENBQUM7SUFDN0MsSUFBQSwwQkFBUSxFQUFDLEVBQUUsT0FBTyxFQUFFLDBCQUEwQixFQUFFLENBQUM7OzZDQUNyQztBQUliO0lBRkMsSUFBQSw0QkFBVSxHQUFFO0lBQ1osSUFBQSwwQkFBUSxFQUFDLEVBQUUsT0FBTyxFQUFFLHdCQUF3QixFQUFFLENBQUM7OzJDQUNwQztBQUlaO0lBRkMsSUFBQSw0QkFBVSxHQUFFO0lBQ1osSUFBQSwwQkFBUSxFQUFDLEVBQUUsT0FBTyxFQUFFLHlCQUF5QixFQUFFLENBQUM7OzRDQUNwQztBQUliO0lBRkMsSUFBQSw0QkFBVSxHQUFFO0lBQ1osSUFBQSwwQkFBUSxFQUFDLEVBQUUsT0FBTyxFQUFFLDJCQUEyQixFQUFFLENBQUM7OzhDQUNwQztBQUlmO0lBRkMsSUFBQSw0QkFBVSxHQUFFO0lBQ1osSUFBQSwwQkFBUSxFQUFDLEVBQUUsT0FBTyxFQUFFLDhCQUE4QixFQUFFLENBQUM7O2lEQUNwQztBQUlsQjtJQUZDLElBQUEsNEJBQVUsR0FBRTtJQUNa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QUFFLENBQUM7SUFDeEUsSUFBQSxnQ0FBYyxHQUFFO0lBQ2hCLElBQUEsd0JBQUksRUFBQyxHQUFHLEVBQUUsQ0FBQywwQkFBMEIsQ0FBQzs4QkFDckIsMEJBQTBCOzRFQUFDO0FBSTdDO0lBRkMsSUFBQSw0QkFBVSxFQUFDLEVBQUUsT0FBTyxFQUFFLDZCQUE2QixFQUFFLENBQUM7SUFDdEQsSUFBQSwwQkFBUSxFQUFDLEVBQUUsT0FBTyxFQUFFLG1DQUFtQyxFQUFFLENBQUM7O3lFQUNyQztBQUl0QjtJQUZDLElBQUEsNEJBQVUsR0FBRTtJQUNaLElBQUEsd0JBQU0sRUFBQyxHQUFHLEVBQUUsRUFBRSxPQUFPLEVBQUUsbUNBQW1DLEVBQUUsQ0FBQzs7aUZBQy9CO0FBR2pDOztHQUVHO0FBQ0gsTUFBYSx5QkFBeUI7SUFDcEMsT0FBTyxDQUFVO0lBQ2pCLFFBQVEsQ0FBUztJQUNqQixXQUFXLENBQVU7Q0FDdEI7QUFKRCw4REFJQyIsIm5hbWVzIjpbXSwic291cmNlcyI6WyJDOlxcVXNlcnNcXGV1ZHJlXFxPbmVEcml2ZVxcRGVza3RvcFxcUHJvamV0b3NcXHBnYmVuXFxwZ2Jlbi1zZXJ2ZXJcXHNyY1xcbW9kdWxlc1xcY2lkYWRhb1xcZHRvXFxjb252ZXJzYW8tcGFwZWwuZHRvLnRzIl0sInNvdXJjZXNDb250ZW50IjpbImltcG9ydCB7XG4gIElzTm90RW1wdHksXG4gIElzU3RyaW5nLFxuICBMZW5ndGgsXG4gIFZhbGlkYXRlLFxuICBJc1VVSUQsXG4gIElzT3B0aW9uYWwsXG4gIElzRW51bSxcbiAgVmFsaWRhdGVOZXN0ZWQsXG4gIElzTnVtYmVyLFxuICBNaW4sXG59IGZyb20gJ2NsYXNzLXZhbGlkYXRvcic7XG5pbXBvcnQgeyBUeXBlIH0gZnJvbSAnY2xhc3MtdHJhbnNmb3JtZXInO1xuaW1wb3J0IHsgQ1BGVmFsaWRhdG9yIH0gZnJvbSAnLi4vdmFsaWRhdG9ycy9jcGYtdmFsaWRhdG9yJztcbmltcG9ydCB7IFBhcmVudGVzY29FbnVtIH0gZnJvbSAnLi4vLi4vLi4vZW51bXMvcGFyZW50ZXNjby5lbnVtJztcbmltcG9ydCB7IEVzY29sYXJpZGFkZUVudW0gfSBmcm9tICcuLi8uLi8uLi9lbnVtcy9lc2NvbGFyaWRhZGUuZW51bSc7XG5pbXBvcnQgeyBTZXhvIH0gZnJvbSAnLi4vLi4vLi4vZW51bXMvc2V4by5lbnVtJztcblxuLyoqXG4gKiBEVE8gcGFyYSBkYWRvcyBiw6FzaWNvcyBkbyBjaWRhZMOjb1xuICovXG5leHBvcnQgY2xhc3MgRGFkb3NDaWRhZGFvRHRvIHtcbiAgQElzTm90RW1wdHkoeyBtZXNzYWdlOiAnTm9tZSDDqSBvYnJpZ2F0w7NyaW8nIH0pXG4gIEBJc1N0cmluZyh7IG1lc3NhZ2U6ICdOb21lIGRldmUgc2VyIHVtYSBzdHJpbmcnIH0pXG4gIG5vbWU6IHN0cmluZztcblxuICBASXNPcHRpb25hbCgpXG4gIEBJc1N0cmluZyh7IG1lc3NhZ2U6ICdSRyBkZXZlIHNlciB1bWEgc3RyaW5nJyB9KVxuICByZz86IHN0cmluZztcblxuICBASXNPcHRpb25hbCgpXG4gIEBJc1N0cmluZyh7IG1lc3NhZ2U6ICdOSVMgZGV2ZSBzZXIgdW1hIHN0cmluZycgfSlcbiAgbmlzPzogc3RyaW5nO1xuXG4gIEBJc09wdGlvbmFsKClcbiAgQElzU3RyaW5nKHsgbWVzc2FnZTogJ0VtYWlsIGRldmUgc2VyIHVtYSBzdHJpbmcnIH0pXG4gIGVtYWlsPzogc3RyaW5nO1xuXG4gIEBJc09wdGlvbmFsKClcbiAgQElzU3RyaW5nKHsgbWVzc2FnZTogJ1RlbGVmb25lIGRldmUgc2VyIHVtYSBzdHJpbmcnIH0pXG4gIHRlbGVmb25lPzogc3RyaW5nO1xuXG4gIEBJc09wdGlvbmFsKClcbiAgQElzU3RyaW5nKHsgbWVzc2FnZTogJ0RhdGEgZGUgbmFzY2ltZW50byBkZXZlIHNlciB1bWEgc3RyaW5nJyB9KVxuICBkYXRhX25hc2NpbWVudG8/OiBzdHJpbmc7XG5cbiAgQElzT3B0aW9uYWwoKVxuICBASXNTdHJpbmcoeyBtZXNzYWdlOiAnU2V4byBkZXZlIHNlciB1bWEgc3RyaW5nJyB9KVxuICBzZXhvPzogU2V4bztcblxuICBASXNPcHRpb25hbCgpXG4gIEBJc1N0cmluZyh7IG1lc3NhZ2U6ICdFbmRlcmXDp28gZGV2ZSBzZXIgdW1hIHN0cmluZycgfSlcbiAgZW5kZXJlY28/OiBzdHJpbmc7XG59XG5cbi8qKlxuICogRFRPIHBhcmEgY29udmVyc8OjbyBkZSBtZW1icm8gZGUgY29tcG9zacOnw6NvIGZhbWlsaWFyIHBhcmEgY2lkYWTDo28gYmVuZWZpY2nDoXJpb1xuICovXG5leHBvcnQgY2xhc3MgQ29udmVyc2FvUGFyYUJlbmVmaWNpYXJpb0R0byB7XG4gIEBJc05vdEVtcHR5KHsgbWVzc2FnZTogJ0NQRiDDqSBvYnJpZ2F0w7NyaW8nIH0pXG4gIEBJc1N0cmluZyh7IG1lc3NhZ2U6ICdDUEYgZGV2ZSBzZXIgdW1hIHN0cmluZycgfSlcbiAgQExlbmd0aCgxMSwgMTQsIHsgbWVzc2FnZTogJ0NQRiBkZXZlIHRlciBlbnRyZSAxMSBlIDE0IGNhcmFjdGVyZXMnIH0pXG4gIEBWYWxpZGF0ZShDUEZWYWxpZGF0b3IsIHsgbWVzc2FnZTogJ0NQRiBpbnbDoWxpZG8nIH0pXG4gIGNwZjogc3RyaW5nO1xuXG4gIEBJc05vdEVtcHR5KHsgbWVzc2FnZTogJ0p1c3RpZmljYXRpdmEgw6kgb2JyaWdhdMOzcmlhJyB9KVxuICBASXNTdHJpbmcoeyBtZXNzYWdlOiAnSnVzdGlmaWNhdGl2YSBkZXZlIHNlciB1bWEgc3RyaW5nJyB9KVxuICBqdXN0aWZpY2F0aXZhOiBzdHJpbmc7XG5cbiAgQElzTm90RW1wdHkoeyBtZXNzYWdlOiAnRGFkb3MgZG8gY2lkYWTDo28gc8OjbyBvYnJpZ2F0w7NyaW9zJyB9KVxuICBAVmFsaWRhdGVOZXN0ZWQoKVxuICBAVHlwZSgoKSA9PiBEYWRvc0NpZGFkYW9EdG8pXG4gIGRhZG9zX2NpZGFkYW86IERhZG9zQ2lkYWRhb0R0bztcbn1cblxuLyoqXG4gKiBEVE8gcGFyYSBkYWRvcyBkZSBjb21wb3Npw6fDo28gZmFtaWxpYXJcbiAqL1xuZXhwb3J0IGNsYXNzIERhZG9zQ29tcG9zaWNhb0ZhbWlsaWFyRHRvIHtcbiAgQElzTm90RW1wdHkoeyBtZXNzYWdlOiAnTm9tZSDDqSBvYnJpZ2F0w7NyaW8nIH0pXG4gIEBJc1N0cmluZyh7IG1lc3NhZ2U6ICdOb21lIGRldmUgc2VyIHVtYSBzdHJpbmcnIH0pXG4gIG5vbWU6IHN0cmluZztcblxuICBASXNPcHRpb25hbCgpXG4gIEBJc1N0cmluZyh7IG1lc3NhZ2U6ICdOSVMgZGV2ZSBzZXIgdW1hIHN0cmluZycgfSlcbiAgbmlzPzogc3RyaW5nO1xuXG4gIEBJc05vdEVtcHR5KHsgbWVzc2FnZTogJ0lkYWRlIMOpIG9icmlnYXTDs3JpYScgfSlcbiAgQElzTnVtYmVyKHt9LCB7IG1lc3NhZ2U6ICdJZGFkZSBkZXZlIHNlciB1bSBuw7ptZXJvJyB9KVxuICBATWluKDAsIHsgbWVzc2FnZTogJ0lkYWRlIG7Do28gcG9kZSBzZXIgbmVnYXRpdmEnIH0pXG4gIGlkYWRlOiBudW1iZXI7XG5cbiAgQElzTm90RW1wdHkoeyBtZXNzYWdlOiAnT2N1cGHDp8OjbyDDqSBvYnJpZ2F0w7NyaWEnIH0pXG4gIEBJc1N0cmluZyh7IG1lc3NhZ2U6ICdPY3VwYcOnw6NvIGRldmUgc2VyIHVtYSBzdHJpbmcnIH0pXG4gIG9jdXBhY2FvOiBzdHJpbmc7XG5cbiAgQElzTm90RW1wdHkoeyBtZXNzYWdlOiAnRXNjb2xhcmlkYWRlIMOpIG9icmlnYXTDs3JpYScgfSlcbiAgQElzRW51bShFc2NvbGFyaWRhZGVFbnVtLCB7IG1lc3NhZ2U6ICdFc2NvbGFyaWRhZGUgaW52w6FsaWRhJyB9KVxuICBlc2NvbGFyaWRhZGU6IEVzY29sYXJpZGFkZUVudW07XG5cbiAgQElzTm90RW1wdHkoeyBtZXNzYWdlOiAnUGFyZW50ZXNjbyDDqSBvYnJpZ2F0w7NyaW8nIH0pXG4gIEBJc0VudW0oUGFyZW50ZXNjb0VudW0sIHsgbWVzc2FnZTogJ1BhcmVudGVzY28gaW52w6FsaWRvJyB9KVxuICBwYXJlbnRlc2NvOiBQYXJlbnRlc2NvRW51bTtcblxuICBASXNPcHRpb25hbCgpXG4gIEBJc051bWJlcih7fSwgeyBtZXNzYWdlOiAnUmVuZGEgZGV2ZSBzZXIgdW0gbsO6bWVybycgfSlcbiAgQE1pbigwLCB7IG1lc3NhZ2U6ICdSZW5kYSBuw6NvIHBvZGUgc2VyIG5lZ2F0aXZhJyB9KVxuICByZW5kYT86IG51bWJlcjtcblxuICBASXNPcHRpb25hbCgpXG4gIEBJc1N0cmluZyh7IG1lc3NhZ2U6ICdPYnNlcnZhw6fDtWVzIGRldmVtIHNlciB1bWEgc3RyaW5nJyB9KVxuICBvYnNlcnZhY29lcz86IHN0cmluZztcbn1cblxuLyoqXG4gKiBEVE8gcGFyYSBjb252ZXJzw6NvIGRlIHBhcGVsIHBhcmEgY29tcG9zacOnw6NvIGZhbWlsaWFyXG4gKi9cbmV4cG9ydCBjbGFzcyBDb252ZXJzYW9QYXJhQ29tcG9zaWNhb0ZhbWlsaWFyRHRvIHtcbiAgQElzTm90RW1wdHkoeyBtZXNzYWdlOiAnQ1BGIMOpIG9icmlnYXTDs3JpbycgfSlcbiAgQElzU3RyaW5nKHsgbWVzc2FnZTogJ0NQRiBkZXZlIHNlciB1bWEgc3RyaW5nJyB9KVxuICBATGVuZ3RoKDExLCAxNCwgeyBtZXNzYWdlOiAnQ1BGIGRldmUgdGVyIGVudHJlIDExIGUgMTQgY2FyYWN0ZXJlcycgfSlcbiAgQFZhbGlkYXRlKENQRlZhbGlkYXRvciwgeyBtZXNzYWdlOiAnQ1BGIGludsOhbGlkbycgfSlcbiAgY3BmOiBzdHJpbmc7XG5cbiAgQElzTm90RW1wdHkoeyBtZXNzYWdlOiAnSUQgZG8gY2lkYWTDo28gYWx2byDDqSBvYnJpZ2F0w7NyaW8nIH0pXG4gIEBJc1VVSUQoJzQnLCB7IG1lc3NhZ2U6ICdJRCBkbyBjaWRhZMOjbyBhbHZvIGludsOhbGlkbycgfSlcbiAgY2lkYWRhb19hbHZvX2lkOiBzdHJpbmc7XG5cbiAgQElzTm90RW1wdHkoeyBtZXNzYWdlOiAnRGFkb3MgZGEgY29tcG9zacOnw6NvIGZhbWlsaWFyIHPDo28gb2JyaWdhdMOzcmlvcycgfSlcbiAgQFZhbGlkYXRlTmVzdGVkKClcbiAgQFR5cGUoKCkgPT4gRGFkb3NDb21wb3NpY2FvRmFtaWxpYXJEdG8pXG4gIGRhZG9zX2NvbXBvc2ljYW86IERhZG9zQ29tcG9zaWNhb0ZhbWlsaWFyRHRvO1xuXG4gIEBJc05vdEVtcHR5KHsgbWVzc2FnZTogJ0p1c3RpZmljYXRpdmEgw6kgb2JyaWdhdMOzcmlhJyB9KVxuICBASXNTdHJpbmcoeyBtZXNzYWdlOiAnSnVzdGlmaWNhdGl2YSBkZXZlIHNlciB1bWEgc3RyaW5nJyB9KVxuICBqdXN0aWZpY2F0aXZhOiBzdHJpbmc7XG5cbiAgQElzT3B0aW9uYWwoKVxuICBASXNVVUlEKCc0JywgeyBtZXNzYWdlOiAnSUQgZG8gdMOpY25pY28gbm90aWZpY2FkbyBpbnbDoWxpZG8nIH0pXG4gIHRlY25pY29fbm90aWZpY2Fkb19pZD86IHN0cmluZztcbn1cblxuLyoqXG4gKiBEVE8gcGFyYSByZXNwb3N0YSBkZSBjb252ZXJzw6NvIGRlIHBhcGVsXG4gKi9cbmV4cG9ydCBjbGFzcyBDb252ZXJzYW9QYXBlbFJlc3BvbnNlRHRvIHtcbiAgc3VjZXNzbzogYm9vbGVhbjtcbiAgbWVuc2FnZW06IHN0cmluZztcbiAgaGlzdG9yaWNvSWQ/OiBzdHJpbmc7XG59XG4iXSwidmVyc2lvbiI6M30=

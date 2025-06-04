@@ -1,0 +1,58 @@
+6a23c6e64b5adbf1160a6a2bb77ca01a
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.AvaliarSolicitacaoDto = void 0;
+const swagger_1 = require("@nestjs/swagger");
+const class_validator_1 = require("class-validator");
+/**
+ * DTO para avaliação de solicitação
+ *
+ * Utilizado para aprovar ou pendenciar solicitações de benefícios
+ */
+class AvaliarSolicitacaoDto {
+    aprovado;
+    parecer;
+    pendencias;
+}
+exports.AvaliarSolicitacaoDto = AvaliarSolicitacaoDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Indica se a solicitação foi aprovada',
+        example: true,
+    }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Decisão de aprovação é obrigatória' }),
+    (0, class_validator_1.IsBoolean)({ message: 'Aprovado deve ser um booleano' }),
+    __metadata("design:type", Boolean)
+], AvaliarSolicitacaoDto.prototype, "aprovado", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Parecer técnico sobre a solicitação',
+        example: 'Solicitação aprovada conforme análise da documentação e verificação dos critérios de elegibilidade.',
+    }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Parecer é obrigatório' }),
+    (0, class_validator_1.IsString)({ message: 'Parecer deve ser um texto' }),
+    __metadata("design:type", String)
+], AvaliarSolicitacaoDto.prototype, "parecer", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        description: 'Lista de pendências (caso a solicitação não seja aprovada)',
+        example: [
+            'Comprovante de residência desatualizado',
+            'Necessário apresentar declaração de renda',
+        ],
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsArray)({ message: 'Pendências deve ser um array' }),
+    (0, class_validator_1.IsString)({ each: true, message: 'Cada pendência deve ser um texto' }),
+    __metadata("design:type", Array)
+], AvaliarSolicitacaoDto.prototype, "pendencias", void 0);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXHNvbGljaXRhY2FvXFxkdG9cXGF2YWxpYXItc29saWNpdGFjYW8uZHRvLnRzIiwibWFwcGluZ3MiOiI7Ozs7Ozs7Ozs7OztBQUFBLDZDQUFtRTtBQUNuRSxxREFNeUI7QUFFekI7Ozs7R0FJRztBQUNILE1BQWEscUJBQXFCO0lBT2hDLFFBQVEsQ0FBVTtJQVNsQixPQUFPLENBQVM7SUFZaEIsVUFBVSxDQUFZO0NBQ3ZCO0FBN0JELHNEQTZCQztBQXRCQztJQU5DLElBQUEscUJBQVcsRUFBQztRQUNYLFdBQVcsRUFBRSxzQ0FBc0M7UUFDbkQsT0FBTyxFQUFFLElBQUk7S0FDZCxDQUFDO0lBQ0QsSUFBQSw0QkFBVSxFQUFDLEVBQUUsT0FBTyxFQUFFLG9DQUFvQyxFQUFFLENBQUM7SUFDN0QsSUFBQSwyQkFBUyxFQUFDLEVBQUUsT0FBTyxFQUFFLCtCQUErQixFQUFFLENBQUM7O3VEQUN0QztBQVNsQjtJQVBDLElBQUEscUJBQVcsRUFBQztRQUNYLFdBQVcsRUFBRSxxQ0FBcUM7UUFDbEQsT0FBTyxFQUNMLHFHQUFxRztLQUN4RyxDQUFDO0lBQ0QsSUFBQSw0QkFBVSxFQUFDLEVBQUUsT0FBTyxFQUFFLHVCQUF1QixFQUFFLENBQUM7SUFDaEQsSUFBQSwwQkFBUSxFQUFDLEVBQUUsT0FBTyxFQUFFLDJCQUEyQixFQUFFLENBQUM7O3NEQUNuQztBQVloQjtJQVZDLElBQUEsNkJBQW1CLEVBQUM7UUFDbkIsV0FBVyxFQUFFLDREQUE0RDtRQUN6RSxPQUFPLEVBQUU7WUFDUCx5Q0FBeUM7WUFDekMsMkNBQTJDO1NBQzVDO0tBQ0YsQ0FBQztJQUNELElBQUEsNEJBQVUsR0FBRTtJQUNaLElBQUEseUJBQU8sRUFBQyxFQUFFLE9BQU8sRUFBRSw4QkFBOEIsRUFBRSxDQUFDO0lBQ3BELElBQUEsMEJBQVEsRUFBQyxFQUFFLElBQUksRUFBRSxJQUFJLEVBQUUsT0FBTyxFQUFFLGtDQUFrQyxFQUFFLENBQUM7O3lEQUNoRCIsIm5hbWVzIjpbXSwic291cmNlcyI6WyJDOlxcVXNlcnNcXGV1ZHJlXFxPbmVEcml2ZVxcRGVza3RvcFxcUHJvamV0b3NcXHBnYmVuXFxwZ2Jlbi1zZXJ2ZXJcXHNyY1xcbW9kdWxlc1xcc29saWNpdGFjYW9cXGR0b1xcYXZhbGlhci1zb2xpY2l0YWNhby5kdG8udHMiXSwic291cmNlc0NvbnRlbnQiOlsiaW1wb3J0IHsgQXBpUHJvcGVydHksIEFwaVByb3BlcnR5T3B0aW9uYWwgfSBmcm9tICdAbmVzdGpzL3N3YWdnZXInO1xuaW1wb3J0IHtcbiAgSXNOb3RFbXB0eSxcbiAgSXNTdHJpbmcsXG4gIElzQm9vbGVhbixcbiAgSXNPcHRpb25hbCxcbiAgSXNBcnJheSxcbn0gZnJvbSAnY2xhc3MtdmFsaWRhdG9yJztcblxuLyoqXG4gKiBEVE8gcGFyYSBhdmFsaWHDp8OjbyBkZSBzb2xpY2l0YcOnw6NvXG4gKlxuICogVXRpbGl6YWRvIHBhcmEgYXByb3ZhciBvdSBwZW5kZW5jaWFyIHNvbGljaXRhw6fDtWVzIGRlIGJlbmVmw61jaW9zXG4gKi9cbmV4cG9ydCBjbGFzcyBBdmFsaWFyU29saWNpdGFjYW9EdG8ge1xuICBAQXBpUHJvcGVydHkoe1xuICAgIGRlc2NyaXB0aW9uOiAnSW5kaWNhIHNlIGEgc29saWNpdGHDp8OjbyBmb2kgYXByb3ZhZGEnLFxuICAgIGV4YW1wbGU6IHRydWUsXG4gIH0pXG4gIEBJc05vdEVtcHR5KHsgbWVzc2FnZTogJ0RlY2lzw6NvIGRlIGFwcm92YcOnw6NvIMOpIG9icmlnYXTDs3JpYScgfSlcbiAgQElzQm9vbGVhbih7IG1lc3NhZ2U6ICdBcHJvdmFkbyBkZXZlIHNlciB1bSBib29sZWFubycgfSlcbiAgYXByb3ZhZG86IGJvb2xlYW47XG5cbiAgQEFwaVByb3BlcnR5KHtcbiAgICBkZXNjcmlwdGlvbjogJ1BhcmVjZXIgdMOpY25pY28gc29icmUgYSBzb2xpY2l0YcOnw6NvJyxcbiAgICBleGFtcGxlOlxuICAgICAgJ1NvbGljaXRhw6fDo28gYXByb3ZhZGEgY29uZm9ybWUgYW7DoWxpc2UgZGEgZG9jdW1lbnRhw6fDo28gZSB2ZXJpZmljYcOnw6NvIGRvcyBjcml0w6lyaW9zIGRlIGVsZWdpYmlsaWRhZGUuJyxcbiAgfSlcbiAgQElzTm90RW1wdHkoeyBtZXNzYWdlOiAnUGFyZWNlciDDqSBvYnJpZ2F0w7NyaW8nIH0pXG4gIEBJc1N0cmluZyh7IG1lc3NhZ2U6ICdQYXJlY2VyIGRldmUgc2VyIHVtIHRleHRvJyB9KVxuICBwYXJlY2VyOiBzdHJpbmc7XG5cbiAgQEFwaVByb3BlcnR5T3B0aW9uYWwoe1xuICAgIGRlc2NyaXB0aW9uOiAnTGlzdGEgZGUgcGVuZMOqbmNpYXMgKGNhc28gYSBzb2xpY2l0YcOnw6NvIG7Do28gc2VqYSBhcHJvdmFkYSknLFxuICAgIGV4YW1wbGU6IFtcbiAgICAgICdDb21wcm92YW50ZSBkZSByZXNpZMOqbmNpYSBkZXNhdHVhbGl6YWRvJyxcbiAgICAgICdOZWNlc3PDoXJpbyBhcHJlc2VudGFyIGRlY2xhcmHDp8OjbyBkZSByZW5kYScsXG4gICAgXSxcbiAgfSlcbiAgQElzT3B0aW9uYWwoKVxuICBASXNBcnJheSh7IG1lc3NhZ2U6ICdQZW5kw6puY2lhcyBkZXZlIHNlciB1bSBhcnJheScgfSlcbiAgQElzU3RyaW5nKHsgZWFjaDogdHJ1ZSwgbWVzc2FnZTogJ0NhZGEgcGVuZMOqbmNpYSBkZXZlIHNlciB1bSB0ZXh0bycgfSlcbiAgcGVuZGVuY2lhcz86IHN0cmluZ1tdO1xufVxuIl0sInZlcnNpb24iOjN9

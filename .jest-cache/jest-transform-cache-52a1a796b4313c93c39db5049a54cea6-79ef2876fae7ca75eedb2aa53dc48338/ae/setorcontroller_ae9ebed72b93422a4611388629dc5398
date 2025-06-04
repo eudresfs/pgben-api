@@ -1,0 +1,114 @@
+9385e0feff587eb6c9f3985a930b4014
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var SetorController_1;
+var _a, _b, _c;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.SetorController = void 0;
+const common_1 = require("@nestjs/common");
+const swagger_1 = require("@nestjs/swagger");
+const setor_service_1 = require("../services/setor.service");
+const create_setor_dto_1 = require("../dto/create-setor.dto");
+const update_setor_dto_1 = require("../dto/update-setor.dto");
+const jwt_auth_guard_1 = require("../../../auth/guards/jwt-auth.guard");
+const roles_guard_1 = require("../../../auth/guards/roles.guard");
+const requires_permission_decorator_1 = require("@/auth/decorators/requires-permission.decorator");
+const user_permission_entity_1 = require("@/entities/user-permission.entity");
+/**
+ * Controlador de setores
+ *
+ * Responsável por gerenciar as rotas relacionadas a setores dentro das unidades
+ */
+let SetorController = SetorController_1 = class SetorController {
+    setorService;
+    logger = new common_1.Logger(SetorController_1.name);
+    constructor(setorService) {
+        this.setorService = setorService;
+    }
+    /**
+     * Cria um novo setor
+     */
+    async create(createSetorDto) {
+        this.logger.log('Dados recebidos para criação de setor:', JSON.stringify(createSetorDto, null, 2));
+        const result = await this.setorService.create(createSetorDto);
+        this.logger.log('Setor criado com sucesso:', JSON.stringify(result, null, 2));
+        return result;
+    }
+    /**
+     * Atualiza um setor existente
+     */
+    async update(id, updateSetorDto) {
+        return this.setorService.update(id, updateSetorDto);
+    }
+    /**
+     * Obtém detalhes de um setor específico
+     */
+    async findOne(id) {
+        return this.setorService.findById(id);
+    }
+};
+exports.SetorController = SetorController;
+__decorate([
+    (0, common_1.Post)(),
+    (0, requires_permission_decorator_1.RequiresPermission)({
+        permissionName: 'setor.criar',
+        scopeType: user_permission_entity_1.ScopeType.GLOBAL,
+    }),
+    (0, swagger_1.ApiOperation)({ summary: 'Criar novo setor' }),
+    (0, swagger_1.ApiResponse)({ status: 201, description: 'Setor criado com sucesso' }),
+    (0, swagger_1.ApiResponse)({ status: 400, description: 'Dados inválidos' }),
+    (0, swagger_1.ApiResponse)({ status: 404, description: 'Unidade não encontrada' }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [typeof (_b = typeof create_setor_dto_1.CreateSetorDto !== "undefined" && create_setor_dto_1.CreateSetorDto) === "function" ? _b : Object]),
+    __metadata("design:returntype", Promise)
+], SetorController.prototype, "create", null);
+__decorate([
+    (0, common_1.Put)(':id'),
+    (0, requires_permission_decorator_1.RequiresPermission)({
+        permissionName: 'setor.atualizar',
+        scopeType: user_permission_entity_1.ScopeType.GLOBAL,
+    }),
+    (0, swagger_1.ApiOperation)({ summary: 'Atualizar setor existente' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Setor atualizado com sucesso' }),
+    (0, swagger_1.ApiResponse)({ status: 400, description: 'Dados inválidos' }),
+    (0, swagger_1.ApiResponse)({ status: 404, description: 'Setor não encontrado' }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, typeof (_c = typeof update_setor_dto_1.UpdateSetorDto !== "undefined" && update_setor_dto_1.UpdateSetorDto) === "function" ? _c : Object]),
+    __metadata("design:returntype", Promise)
+], SetorController.prototype, "update", null);
+__decorate([
+    (0, common_1.Get)(':id'),
+    (0, requires_permission_decorator_1.RequiresPermission)({
+        permissionName: 'setor.listar',
+        scopeType: user_permission_entity_1.ScopeType.GLOBAL,
+    }),
+    (0, swagger_1.ApiOperation)({ summary: 'Obter detalhes de um setor' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Setor encontrado com sucesso' }),
+    (0, swagger_1.ApiResponse)({ status: 404, description: 'Setor não encontrado' }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], SetorController.prototype, "findOne", null);
+exports.SetorController = SetorController = SetorController_1 = __decorate([
+    (0, swagger_1.ApiTags)('Unidades'),
+    (0, common_1.Controller)('setor'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, swagger_1.ApiBearerAuth)(),
+    __metadata("design:paramtypes", [typeof (_a = typeof setor_service_1.SetorService !== "undefined" && setor_service_1.SetorService) === "function" ? _a : Object])
+], SetorController);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXHVuaWRhZGVcXGNvbnRyb2xsZXJzXFxzZXRvci5jb250cm9sbGVyLnRzIiwibWFwcGluZ3MiOiI7Ozs7Ozs7Ozs7Ozs7Ozs7O0FBQUEsMkNBVXdCO0FBQ3hCLDZDQUt5QjtBQUN6Qiw2REFBeUQ7QUFDekQsOERBQXlEO0FBQ3pELDhEQUF5RDtBQUN6RCx3RUFBbUU7QUFDbkUsa0VBQThEO0FBRzlELG1HQUFxRjtBQUNyRiw4RUFBOEQ7QUFFOUQ7Ozs7R0FJRztBQUtJLElBQU0sZUFBZSx1QkFBckIsTUFBTSxlQUFlO0lBR0c7SUFGWixNQUFNLEdBQUcsSUFBSSxlQUFNLENBQUMsaUJBQWUsQ0FBQyxJQUFJLENBQUMsQ0FBQztJQUUzRCxZQUE2QixZQUEwQjtRQUExQixpQkFBWSxHQUFaLFlBQVksQ0FBYztJQUFHLENBQUM7SUFFM0Q7O09BRUc7SUFVRyxBQUFOLEtBQUssQ0FBQyxNQUFNLENBQVMsY0FBOEI7UUFDakQsSUFBSSxDQUFDLE1BQU0sQ0FBQyxHQUFHLENBQ2Isd0NBQXdDLEVBQ3hDLElBQUksQ0FBQyxTQUFTLENBQUMsY0FBYyxFQUFFLElBQUksRUFBRSxDQUFDLENBQUMsQ0FDeEMsQ0FBQztRQUNGLE1BQU0sTUFBTSxHQUFHLE1BQU0sSUFBSSxDQUFDLFlBQVksQ0FBQyxNQUFNLENBQUMsY0FBYyxDQUFDLENBQUM7UUFDOUQsSUFBSSxDQUFDLE1BQU0sQ0FBQyxHQUFHLENBQ2IsMkJBQTJCLEVBQzNCLElBQUksQ0FBQyxTQUFTLENBQUMsTUFBTSxFQUFFLElBQUksRUFBRSxDQUFDLENBQUMsQ0FDaEMsQ0FBQztRQUNGLE9BQU8sTUFBTSxDQUFDO0lBQ2hCLENBQUM7SUFFRDs7T0FFRztJQVVHLEFBQU4sS0FBSyxDQUFDLE1BQU0sQ0FDa0IsRUFBVSxFQUM5QixjQUE4QjtRQUV0QyxPQUFPLElBQUksQ0FBQyxZQUFZLENBQUMsTUFBTSxDQUFDLEVBQUUsRUFBRSxjQUFjLENBQUMsQ0FBQztJQUN0RCxDQUFDO0lBRUQ7O09BRUc7SUFTRyxBQUFOLEtBQUssQ0FBQyxPQUFPLENBQTZCLEVBQVU7UUFDbEQsT0FBTyxJQUFJLENBQUMsWUFBWSxDQUFDLFFBQVEsQ0FBQyxFQUFFLENBQUMsQ0FBQztJQUN4QyxDQUFDO0NBQ0YsQ0FBQTtBQS9EWSwwQ0FBZTtBQWlCcEI7SUFUTCxJQUFBLGFBQUksR0FBRTtJQUNOLElBQUEsa0RBQWtCLEVBQUM7UUFDbEIsY0FBYyxFQUFFLGFBQWE7UUFDN0IsU0FBUyxFQUFFLGtDQUFTLENBQUMsTUFBTTtLQUM1QixDQUFDO0lBQ0QsSUFBQSxzQkFBWSxFQUFDLEVBQUUsT0FBTyxFQUFFLGtCQUFrQixFQUFFLENBQUM7SUFDN0MsSUFBQSxxQkFBVyxFQUFDLEVBQUUsTUFBTSxFQUFFLEdBQUcsRUFBRSxXQUFXLEVBQUUsMEJBQTBCLEVBQUUsQ0FBQztJQUNyRSxJQUFBLHFCQUFXLEVBQUMsRUFBRSxNQUFNLEVBQUUsR0FBRyxFQUFFLFdBQVcsRUFBRSxpQkFBaUIsRUFBRSxDQUFDO0lBQzVELElBQUEscUJBQVcsRUFBQyxFQUFFLE1BQU0sRUFBRSxHQUFHLEVBQUUsV0FBVyxFQUFFLHdCQUF3QixFQUFFLENBQUM7SUFDdEQsV0FBQSxJQUFBLGFBQUksR0FBRSxDQUFBOzt5REFBaUIsaUNBQWMsb0JBQWQsaUNBQWM7OzZDQVdsRDtBQWNLO0lBVEwsSUFBQSxZQUFHLEVBQUMsS0FBSyxDQUFDO0lBQ1YsSUFBQSxrREFBa0IsRUFBQztRQUNsQixjQUFjLEVBQUUsaUJBQWlCO1FBQ2pDLFNBQVMsRUFBRSxrQ0FBUyxDQUFDLE1BQU07S0FDNUIsQ0FBQztJQUNELElBQUEsc0JBQVksRUFBQyxFQUFFLE9BQU8sRUFBRSwyQkFBMkIsRUFBRSxDQUFDO0lBQ3RELElBQUEscUJBQVcsRUFBQyxFQUFFLE1BQU0sRUFBRSxHQUFHLEVBQUUsV0FBVyxFQUFFLDhCQUE4QixFQUFFLENBQUM7SUFDekUsSUFBQSxxQkFBVyxFQUFDLEVBQUUsTUFBTSxFQUFFLEdBQUcsRUFBRSxXQUFXLEVBQUUsaUJBQWlCLEVBQUUsQ0FBQztJQUM1RCxJQUFBLHFCQUFXLEVBQUMsRUFBRSxNQUFNLEVBQUUsR0FBRyxFQUFFLFdBQVcsRUFBRSxzQkFBc0IsRUFBRSxDQUFDO0lBRS9ELFdBQUEsSUFBQSxjQUFLLEVBQUMsSUFBSSxFQUFFLHNCQUFhLENBQUMsQ0FBQTtJQUMxQixXQUFBLElBQUEsYUFBSSxHQUFFLENBQUE7O2lFQUFpQixpQ0FBYyxvQkFBZCxpQ0FBYzs7NkNBR3ZDO0FBYUs7SUFSTCxJQUFBLFlBQUcsRUFBQyxLQUFLLENBQUM7SUFDVixJQUFBLGtEQUFrQixFQUFDO1FBQ2xCLGNBQWMsRUFBRSxjQUFjO1FBQzlCLFNBQVMsRUFBRSxrQ0FBUyxDQUFDLE1BQU07S0FDNUIsQ0FBQztJQUNELElBQUEsc0JBQVksRUFBQyxFQUFFLE9BQU8sRUFBRSw0QkFBNEIsRUFBRSxDQUFDO0lBQ3ZELElBQUEscUJBQVcsRUFBQyxFQUFFLE1BQU0sRUFBRSxHQUFHLEVBQUUsV0FBVyxFQUFFLDhCQUE4QixFQUFFLENBQUM7SUFDekUsSUFBQSxxQkFBVyxFQUFDLEVBQUUsTUFBTSxFQUFFLEdBQUcsRUFBRSxXQUFXLEVBQUUsc0JBQXNCLEVBQUUsQ0FBQztJQUNuRCxXQUFBLElBQUEsY0FBSyxFQUFDLElBQUksRUFBRSxzQkFBYSxDQUFDLENBQUE7Ozs7OENBRXhDOzBCQTlEVSxlQUFlO0lBSjNCLElBQUEsaUJBQU8sRUFBQyxVQUFVLENBQUM7SUFDbkIsSUFBQSxtQkFBVSxFQUFDLE9BQU8sQ0FBQztJQUNuQixJQUFBLGtCQUFTLEVBQUMsNkJBQVksRUFBRSx3QkFBVSxDQUFDO0lBQ25DLElBQUEsdUJBQWEsR0FBRTt5REFJNkIsNEJBQVksb0JBQVosNEJBQVk7R0FINUMsZUFBZSxDQStEM0IiLCJuYW1lcyI6W10sInNvdXJjZXMiOlsiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXHVuaWRhZGVcXGNvbnRyb2xsZXJzXFxzZXRvci5jb250cm9sbGVyLnRzIl0sInNvdXJjZXNDb250ZW50IjpbImltcG9ydCB7XG4gIENvbnRyb2xsZXIsXG4gIEdldCxcbiAgUG9zdCxcbiAgQm9keSxcbiAgUHV0LFxuICBQYXJhbSxcbiAgUGFyc2VVVUlEUGlwZSxcbiAgVXNlR3VhcmRzLFxuICBMb2dnZXIsXG59IGZyb20gJ0BuZXN0anMvY29tbW9uJztcbmltcG9ydCB7XG4gIEFwaVRhZ3MsXG4gIEFwaU9wZXJhdGlvbixcbiAgQXBpUmVzcG9uc2UsXG4gIEFwaUJlYXJlckF1dGgsXG59IGZyb20gJ0BuZXN0anMvc3dhZ2dlcic7XG5pbXBvcnQgeyBTZXRvclNlcnZpY2UgfSBmcm9tICcuLi9zZXJ2aWNlcy9zZXRvci5zZXJ2aWNlJztcbmltcG9ydCB7IENyZWF0ZVNldG9yRHRvIH0gZnJvbSAnLi4vZHRvL2NyZWF0ZS1zZXRvci5kdG8nO1xuaW1wb3J0IHsgVXBkYXRlU2V0b3JEdG8gfSBmcm9tICcuLi9kdG8vdXBkYXRlLXNldG9yLmR0byc7XG5pbXBvcnQgeyBKd3RBdXRoR3VhcmQgfSBmcm9tICcuLi8uLi8uLi9hdXRoL2d1YXJkcy9qd3QtYXV0aC5ndWFyZCc7XG5pbXBvcnQgeyBSb2xlc0d1YXJkIH0gZnJvbSAnLi4vLi4vLi4vYXV0aC9ndWFyZHMvcm9sZXMuZ3VhcmQnO1xuaW1wb3J0IHsgUm9sZXMgfSBmcm9tICcuLi8uLi8uLi9hdXRoL2RlY29yYXRvcnMvcm9sZS5kZWNvcmF0b3InO1xuaW1wb3J0IHsgUk9MRVMgfSBmcm9tICcuLi8uLi8uLi9zaGFyZWQvY29uc3RhbnRzL3JvbGVzLmNvbnN0YW50cyc7XG5pbXBvcnQgeyBSZXF1aXJlc1Blcm1pc3Npb24gfSBmcm9tICdAL2F1dGgvZGVjb3JhdG9ycy9yZXF1aXJlcy1wZXJtaXNzaW9uLmRlY29yYXRvcic7XG5pbXBvcnQgeyBTY29wZVR5cGUgfSBmcm9tICdAL2VudGl0aWVzL3VzZXItcGVybWlzc2lvbi5lbnRpdHknO1xuXG4vKipcbiAqIENvbnRyb2xhZG9yIGRlIHNldG9yZXNcbiAqXG4gKiBSZXNwb25zw6F2ZWwgcG9yIGdlcmVuY2lhciBhcyByb3RhcyByZWxhY2lvbmFkYXMgYSBzZXRvcmVzIGRlbnRybyBkYXMgdW5pZGFkZXNcbiAqL1xuQEFwaVRhZ3MoJ1VuaWRhZGVzJylcbkBDb250cm9sbGVyKCdzZXRvcicpXG5AVXNlR3VhcmRzKEp3dEF1dGhHdWFyZCwgUm9sZXNHdWFyZClcbkBBcGlCZWFyZXJBdXRoKClcbmV4cG9ydCBjbGFzcyBTZXRvckNvbnRyb2xsZXIge1xuICBwcml2YXRlIHJlYWRvbmx5IGxvZ2dlciA9IG5ldyBMb2dnZXIoU2V0b3JDb250cm9sbGVyLm5hbWUpO1xuXG4gIGNvbnN0cnVjdG9yKHByaXZhdGUgcmVhZG9ubHkgc2V0b3JTZXJ2aWNlOiBTZXRvclNlcnZpY2UpIHt9XG5cbiAgLyoqXG4gICAqIENyaWEgdW0gbm92byBzZXRvclxuICAgKi9cbiAgQFBvc3QoKVxuICBAUmVxdWlyZXNQZXJtaXNzaW9uKHtcbiAgICBwZXJtaXNzaW9uTmFtZTogJ3NldG9yLmNyaWFyJyxcbiAgICBzY29wZVR5cGU6IFNjb3BlVHlwZS5HTE9CQUwsXG4gIH0pXG4gIEBBcGlPcGVyYXRpb24oeyBzdW1tYXJ5OiAnQ3JpYXIgbm92byBzZXRvcicgfSlcbiAgQEFwaVJlc3BvbnNlKHsgc3RhdHVzOiAyMDEsIGRlc2NyaXB0aW9uOiAnU2V0b3IgY3JpYWRvIGNvbSBzdWNlc3NvJyB9KVxuICBAQXBpUmVzcG9uc2UoeyBzdGF0dXM6IDQwMCwgZGVzY3JpcHRpb246ICdEYWRvcyBpbnbDoWxpZG9zJyB9KVxuICBAQXBpUmVzcG9uc2UoeyBzdGF0dXM6IDQwNCwgZGVzY3JpcHRpb246ICdVbmlkYWRlIG7Do28gZW5jb250cmFkYScgfSlcbiAgYXN5bmMgY3JlYXRlKEBCb2R5KCkgY3JlYXRlU2V0b3JEdG86IENyZWF0ZVNldG9yRHRvKSB7XG4gICAgdGhpcy5sb2dnZXIubG9nKFxuICAgICAgJ0RhZG9zIHJlY2ViaWRvcyBwYXJhIGNyaWHDp8OjbyBkZSBzZXRvcjonLFxuICAgICAgSlNPTi5zdHJpbmdpZnkoY3JlYXRlU2V0b3JEdG8sIG51bGwsIDIpLFxuICAgICk7XG4gICAgY29uc3QgcmVzdWx0ID0gYXdhaXQgdGhpcy5zZXRvclNlcnZpY2UuY3JlYXRlKGNyZWF0ZVNldG9yRHRvKTtcbiAgICB0aGlzLmxvZ2dlci5sb2coXG4gICAgICAnU2V0b3IgY3JpYWRvIGNvbSBzdWNlc3NvOicsXG4gICAgICBKU09OLnN0cmluZ2lmeShyZXN1bHQsIG51bGwsIDIpLFxuICAgICk7XG4gICAgcmV0dXJuIHJlc3VsdDtcbiAgfVxuXG4gIC8qKlxuICAgKiBBdHVhbGl6YSB1bSBzZXRvciBleGlzdGVudGVcbiAgICovXG4gIEBQdXQoJzppZCcpXG4gIEBSZXF1aXJlc1Blcm1pc3Npb24oe1xuICAgIHBlcm1pc3Npb25OYW1lOiAnc2V0b3IuYXR1YWxpemFyJyxcbiAgICBzY29wZVR5cGU6IFNjb3BlVHlwZS5HTE9CQUwsXG4gIH0pXG4gIEBBcGlPcGVyYXRpb24oeyBzdW1tYXJ5OiAnQXR1YWxpemFyIHNldG9yIGV4aXN0ZW50ZScgfSlcbiAgQEFwaVJlc3BvbnNlKHsgc3RhdHVzOiAyMDAsIGRlc2NyaXB0aW9uOiAnU2V0b3IgYXR1YWxpemFkbyBjb20gc3VjZXNzbycgfSlcbiAgQEFwaVJlc3BvbnNlKHsgc3RhdHVzOiA0MDAsIGRlc2NyaXB0aW9uOiAnRGFkb3MgaW52w6FsaWRvcycgfSlcbiAgQEFwaVJlc3BvbnNlKHsgc3RhdHVzOiA0MDQsIGRlc2NyaXB0aW9uOiAnU2V0b3IgbsOjbyBlbmNvbnRyYWRvJyB9KVxuICBhc3luYyB1cGRhdGUoXG4gICAgQFBhcmFtKCdpZCcsIFBhcnNlVVVJRFBpcGUpIGlkOiBzdHJpbmcsXG4gICAgQEJvZHkoKSB1cGRhdGVTZXRvckR0bzogVXBkYXRlU2V0b3JEdG8sXG4gICkge1xuICAgIHJldHVybiB0aGlzLnNldG9yU2VydmljZS51cGRhdGUoaWQsIHVwZGF0ZVNldG9yRHRvKTtcbiAgfVxuXG4gIC8qKlxuICAgKiBPYnTDqW0gZGV0YWxoZXMgZGUgdW0gc2V0b3IgZXNwZWPDrWZpY29cbiAgICovXG4gIEBHZXQoJzppZCcpXG4gIEBSZXF1aXJlc1Blcm1pc3Npb24oe1xuICAgIHBlcm1pc3Npb25OYW1lOiAnc2V0b3IubGlzdGFyJyxcbiAgICBzY29wZVR5cGU6IFNjb3BlVHlwZS5HTE9CQUwsXG4gIH0pXG4gIEBBcGlPcGVyYXRpb24oeyBzdW1tYXJ5OiAnT2J0ZXIgZGV0YWxoZXMgZGUgdW0gc2V0b3InIH0pXG4gIEBBcGlSZXNwb25zZSh7IHN0YXR1czogMjAwLCBkZXNjcmlwdGlvbjogJ1NldG9yIGVuY29udHJhZG8gY29tIHN1Y2Vzc28nIH0pXG4gIEBBcGlSZXNwb25zZSh7IHN0YXR1czogNDA0LCBkZXNjcmlwdGlvbjogJ1NldG9yIG7Do28gZW5jb250cmFkbycgfSlcbiAgYXN5bmMgZmluZE9uZShAUGFyYW0oJ2lkJywgUGFyc2VVVUlEUGlwZSkgaWQ6IHN0cmluZykge1xuICAgIHJldHVybiB0aGlzLnNldG9yU2VydmljZS5maW5kQnlJZChpZCk7XG4gIH1cbn1cbiJdLCJ2ZXJzaW9uIjozfQ==

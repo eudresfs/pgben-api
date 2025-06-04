@@ -1,0 +1,15 @@
+7d062e58440d54bf731fdcaccd3756f4
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.TipoUrnaEnum = void 0;
+/**
+ * Enum para tipo de urna
+ */
+var TipoUrnaEnum;
+(function (TipoUrnaEnum) {
+    TipoUrnaEnum["PADRAO"] = "padrao";
+    TipoUrnaEnum["OBESO"] = "obeso";
+    TipoUrnaEnum["ESPECIAL"] = "especial";
+    TipoUrnaEnum["INFANTIL"] = "infantil";
+})(TipoUrnaEnum || (exports.TipoUrnaEnum = TipoUrnaEnum = {}));
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXGVudW1zXFx0aXBvLXVybmEuZW51bS50cyIsIm1hcHBpbmdzIjoiOzs7QUFBQTs7R0FFRztBQUNILElBQVksWUFLWDtBQUxELFdBQVksWUFBWTtJQUN0QixpQ0FBaUIsQ0FBQTtJQUNqQiwrQkFBZSxDQUFBO0lBQ2YscUNBQXFCLENBQUE7SUFDckIscUNBQXFCLENBQUE7QUFDdkIsQ0FBQyxFQUxXLFlBQVksNEJBQVosWUFBWSxRQUt2QiIsIm5hbWVzIjpbXSwic291cmNlcyI6WyJDOlxcVXNlcnNcXGV1ZHJlXFxPbmVEcml2ZVxcRGVza3RvcFxcUHJvamV0b3NcXHBnYmVuXFxwZ2Jlbi1zZXJ2ZXJcXHNyY1xcZW51bXNcXHRpcG8tdXJuYS5lbnVtLnRzIl0sInNvdXJjZXNDb250ZW50IjpbIi8qKlxuICogRW51bSBwYXJhIHRpcG8gZGUgdXJuYVxuICovXG5leHBvcnQgZW51bSBUaXBvVXJuYUVudW0ge1xuICBQQURSQU8gPSAncGFkcmFvJyxcbiAgT0JFU08gPSAnb2Jlc28nLFxuICBFU1BFQ0lBTCA9ICdlc3BlY2lhbCcsXG4gIElORkFOVElMID0gJ2luZmFudGlsJyxcbn1cbiJdLCJ2ZXJzaW9uIjozfQ==

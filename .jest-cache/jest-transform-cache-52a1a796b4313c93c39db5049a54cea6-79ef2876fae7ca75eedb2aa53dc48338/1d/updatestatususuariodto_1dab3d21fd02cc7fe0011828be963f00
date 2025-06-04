@@ -1,0 +1,34 @@
+9368e13f10677589d17e83a7bfcf5823
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var _a;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.UpdateStatusUsuarioDto = void 0;
+const swagger_1 = require("@nestjs/swagger");
+const class_validator_1 = require("class-validator");
+const status_enum_1 = require("../../../enums/status.enum");
+/**
+ * DTO para atualização de status do usuário
+ */
+class UpdateStatusUsuarioDto {
+    status;
+}
+exports.UpdateStatusUsuarioDto = UpdateStatusUsuarioDto;
+__decorate([
+    (0, class_validator_1.IsEnum)(status_enum_1.Status, { message: 'Status deve ser ativo ou inativo' }),
+    (0, swagger_1.ApiProperty)({
+        enum: status_enum_1.Status,
+        example: status_enum_1.Status.ATIVO,
+        description: 'Status do usuário',
+    }),
+    __metadata("design:type", typeof (_a = typeof status_enum_1.Status !== "undefined" && status_enum_1.Status) === "function" ? _a : Object)
+], UpdateStatusUsuarioDto.prototype, "status", void 0);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXHVzdWFyaW9cXGR0b1xcdXBkYXRlLXN0YXR1cy11c3VhcmlvLmR0by50cyIsIm1hcHBpbmdzIjoiOzs7Ozs7Ozs7Ozs7O0FBQUEsNkNBQThDO0FBQzlDLHFEQUF5QztBQUN6Qyw0REFBb0Q7QUFFcEQ7O0dBRUc7QUFDSCxNQUFhLHNCQUFzQjtJQU9qQyxNQUFNLENBQVM7Q0FDaEI7QUFSRCx3REFRQztBQURDO0lBTkMsSUFBQSx3QkFBTSxFQUFDLG9CQUFNLEVBQUUsRUFBRSxPQUFPLEVBQUUsa0NBQWtDLEVBQUUsQ0FBQztJQUMvRCxJQUFBLHFCQUFXLEVBQUM7UUFDWCxJQUFJLEVBQUUsb0JBQU07UUFDWixPQUFPLEVBQUUsb0JBQU0sQ0FBQyxLQUFLO1FBQ3JCLFdBQVcsRUFBRSxtQkFBbUI7S0FDakMsQ0FBQztrREFDTSxvQkFBTSxvQkFBTixvQkFBTTtzREFBQyIsIm5hbWVzIjpbXSwic291cmNlcyI6WyJDOlxcVXNlcnNcXGV1ZHJlXFxPbmVEcml2ZVxcRGVza3RvcFxcUHJvamV0b3NcXHBnYmVuXFxwZ2Jlbi1zZXJ2ZXJcXHNyY1xcbW9kdWxlc1xcdXN1YXJpb1xcZHRvXFx1cGRhdGUtc3RhdHVzLXVzdWFyaW8uZHRvLnRzIl0sInNvdXJjZXNDb250ZW50IjpbImltcG9ydCB7IEFwaVByb3BlcnR5IH0gZnJvbSAnQG5lc3Rqcy9zd2FnZ2VyJztcbmltcG9ydCB7IElzRW51bSB9IGZyb20gJ2NsYXNzLXZhbGlkYXRvcic7XG5pbXBvcnQgeyBTdGF0dXMgfSBmcm9tICcuLi8uLi8uLi9lbnVtcy9zdGF0dXMuZW51bSc7XG5cbi8qKlxuICogRFRPIHBhcmEgYXR1YWxpemHDp8OjbyBkZSBzdGF0dXMgZG8gdXN1w6FyaW9cbiAqL1xuZXhwb3J0IGNsYXNzIFVwZGF0ZVN0YXR1c1VzdWFyaW9EdG8ge1xuICBASXNFbnVtKFN0YXR1cywgeyBtZXNzYWdlOiAnU3RhdHVzIGRldmUgc2VyIGF0aXZvIG91IGluYXRpdm8nIH0pXG4gIEBBcGlQcm9wZXJ0eSh7XG4gICAgZW51bTogU3RhdHVzLFxuICAgIGV4YW1wbGU6IFN0YXR1cy5BVElWTyxcbiAgICBkZXNjcmlwdGlvbjogJ1N0YXR1cyBkbyB1c3XDoXJpbycsXG4gIH0pXG4gIHN0YXR1czogU3RhdHVzO1xufVxuIl0sInZlcnNpb24iOjN9

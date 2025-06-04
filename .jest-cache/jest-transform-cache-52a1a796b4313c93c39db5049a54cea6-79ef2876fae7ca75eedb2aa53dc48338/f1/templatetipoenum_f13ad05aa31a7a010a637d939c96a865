@@ -1,0 +1,15 @@
+8c0cf5ab05ba50bc04d9324f760d069c
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.TemplateTipoEnum = void 0;
+/**
+ * Enum que define os tipos de templates suportados pelo sistema.
+ * Cada tipo de template pode ter variáveis e contextos específicos disponíveis.
+ */
+var TemplateTipoEnum;
+(function (TemplateTipoEnum) {
+    TemplateTipoEnum["EMAIL"] = "email";
+    TemplateTipoEnum["NOTIFICACAO"] = "notificacao";
+    TemplateTipoEnum["DOCUMENTO"] = "documento";
+})(TemplateTipoEnum || (exports.TemplateTipoEnum = TemplateTipoEnum = {}));
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXGVudW1zXFx0ZW1wbGF0ZS10aXBvLmVudW0udHMiLCJtYXBwaW5ncyI6Ijs7O0FBQUE7OztHQUdHO0FBQ0gsSUFBWSxnQkFJWDtBQUpELFdBQVksZ0JBQWdCO0lBQzFCLG1DQUFlLENBQUE7SUFDZiwrQ0FBMkIsQ0FBQTtJQUMzQiwyQ0FBdUIsQ0FBQTtBQUN6QixDQUFDLEVBSlcsZ0JBQWdCLGdDQUFoQixnQkFBZ0IsUUFJM0IiLCJuYW1lcyI6W10sInNvdXJjZXMiOlsiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXGVudW1zXFx0ZW1wbGF0ZS10aXBvLmVudW0udHMiXSwic291cmNlc0NvbnRlbnQiOlsiLyoqXG4gKiBFbnVtIHF1ZSBkZWZpbmUgb3MgdGlwb3MgZGUgdGVtcGxhdGVzIHN1cG9ydGFkb3MgcGVsbyBzaXN0ZW1hLlxuICogQ2FkYSB0aXBvIGRlIHRlbXBsYXRlIHBvZGUgdGVyIHZhcmnDoXZlaXMgZSBjb250ZXh0b3MgZXNwZWPDrWZpY29zIGRpc3BvbsOtdmVpcy5cbiAqL1xuZXhwb3J0IGVudW0gVGVtcGxhdGVUaXBvRW51bSB7XG4gIEVNQUlMID0gJ2VtYWlsJyxcbiAgTk9USUZJQ0FDQU8gPSAnbm90aWZpY2FjYW8nLFxuICBET0NVTUVOVE8gPSAnZG9jdW1lbnRvJyxcbn1cbiJdLCJ2ZXJzaW9uIjozfQ==

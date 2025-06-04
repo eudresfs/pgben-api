@@ -1,0 +1,47 @@
+923555461b636eaa3051cb9a39a17a4c
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.AlterarSenhaPrimeiroAcessoDto = void 0;
+const swagger_1 = require("@nestjs/swagger");
+const class_validator_1 = require("class-validator");
+const match_validator_1 = require("../../../shared/validators/match.validator");
+/**
+ * DTO para alteração de senha no primeiro acesso
+ */
+class AlterarSenhaPrimeiroAcessoDto {
+    nova_senha;
+    confirmar_senha;
+}
+exports.AlterarSenhaPrimeiroAcessoDto = AlterarSenhaPrimeiroAcessoDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Nova senha do usuário',
+        example: 'MinhaNovaSenh@123',
+        minLength: 8,
+    }),
+    (0, class_validator_1.IsString)({ message: 'A nova senha deve ser uma string' }),
+    (0, class_validator_1.MinLength)(8, { message: 'A nova senha deve ter pelo menos 8 caracteres' }),
+    (0, class_validator_1.Matches)(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/, {
+        message: 'A nova senha deve conter pelo menos: 1 letra minúscula, 1 maiúscula, 1 número e 1 caractere especial',
+    }),
+    __metadata("design:type", String)
+], AlterarSenhaPrimeiroAcessoDto.prototype, "nova_senha", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Confirmação da nova senha',
+        example: 'MinhaNovaSenh@123',
+    }),
+    (0, class_validator_1.IsString)({ message: 'A confirmação da senha deve ser uma string' }),
+    (0, match_validator_1.Match)('nova_senha', { message: 'As senhas não coincidem' }),
+    __metadata("design:type", String)
+], AlterarSenhaPrimeiroAcessoDto.prototype, "confirmar_senha", void 0);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXHVzdWFyaW9cXGR0b1xcYWx0ZXJhci1zZW5oYS1wcmltZWlyby1hY2Vzc28uZHRvLnRzIiwibWFwcGluZ3MiOiI7Ozs7Ozs7Ozs7OztBQUFBLDZDQUE4QztBQUM5QyxxREFBK0Q7QUFDL0QsZ0ZBQW1FO0FBRW5FOztHQUVHO0FBQ0gsTUFBYSw2QkFBNkI7SUFZeEMsVUFBVSxDQUFTO0lBUW5CLGVBQWUsQ0FBUztDQUN6QjtBQXJCRCxzRUFxQkM7QUFUQztJQVhDLElBQUEscUJBQVcsRUFBQztRQUNYLFdBQVcsRUFBRSx1QkFBdUI7UUFDcEMsT0FBTyxFQUFFLG1CQUFtQjtRQUM1QixTQUFTLEVBQUUsQ0FBQztLQUNiLENBQUM7SUFDRCxJQUFBLDBCQUFRLEVBQUMsRUFBRSxPQUFPLEVBQUUsa0NBQWtDLEVBQUUsQ0FBQztJQUN6RCxJQUFBLDJCQUFTLEVBQUMsQ0FBQyxFQUFFLEVBQUUsT0FBTyxFQUFFLCtDQUErQyxFQUFFLENBQUM7SUFDMUUsSUFBQSx5QkFBTyxFQUFDLGlFQUFpRSxFQUFFO1FBQzFFLE9BQU8sRUFDTCxzR0FBc0c7S0FDekcsQ0FBQzs7aUVBQ2lCO0FBUW5CO0lBTkMsSUFBQSxxQkFBVyxFQUFDO1FBQ1gsV0FBVyxFQUFFLDJCQUEyQjtRQUN4QyxPQUFPLEVBQUUsbUJBQW1CO0tBQzdCLENBQUM7SUFDRCxJQUFBLDBCQUFRLEVBQUMsRUFBRSxPQUFPLEVBQUUsNENBQTRDLEVBQUUsQ0FBQztJQUNuRSxJQUFBLHVCQUFLLEVBQUMsWUFBWSxFQUFFLEVBQUUsT0FBTyxFQUFFLHlCQUF5QixFQUFFLENBQUM7O3NFQUNwQyIsIm5hbWVzIjpbXSwic291cmNlcyI6WyJDOlxcVXNlcnNcXGV1ZHJlXFxPbmVEcml2ZVxcRGVza3RvcFxcUHJvamV0b3NcXHBnYmVuXFxwZ2Jlbi1zZXJ2ZXJcXHNyY1xcbW9kdWxlc1xcdXN1YXJpb1xcZHRvXFxhbHRlcmFyLXNlbmhhLXByaW1laXJvLWFjZXNzby5kdG8udHMiXSwic291cmNlc0NvbnRlbnQiOlsiaW1wb3J0IHsgQXBpUHJvcGVydHkgfSBmcm9tICdAbmVzdGpzL3N3YWdnZXInO1xuaW1wb3J0IHsgSXNTdHJpbmcsIE1pbkxlbmd0aCwgTWF0Y2hlcyB9IGZyb20gJ2NsYXNzLXZhbGlkYXRvcic7XG5pbXBvcnQgeyBNYXRjaCB9IGZyb20gJy4uLy4uLy4uL3NoYXJlZC92YWxpZGF0b3JzL21hdGNoLnZhbGlkYXRvcic7XG5cbi8qKlxuICogRFRPIHBhcmEgYWx0ZXJhw6fDo28gZGUgc2VuaGEgbm8gcHJpbWVpcm8gYWNlc3NvXG4gKi9cbmV4cG9ydCBjbGFzcyBBbHRlcmFyU2VuaGFQcmltZWlyb0FjZXNzb0R0byB7XG4gIEBBcGlQcm9wZXJ0eSh7XG4gICAgZGVzY3JpcHRpb246ICdOb3ZhIHNlbmhhIGRvIHVzdcOhcmlvJyxcbiAgICBleGFtcGxlOiAnTWluaGFOb3ZhU2VuaEAxMjMnLFxuICAgIG1pbkxlbmd0aDogOCxcbiAgfSlcbiAgQElzU3RyaW5nKHsgbWVzc2FnZTogJ0Egbm92YSBzZW5oYSBkZXZlIHNlciB1bWEgc3RyaW5nJyB9KVxuICBATWluTGVuZ3RoKDgsIHsgbWVzc2FnZTogJ0Egbm92YSBzZW5oYSBkZXZlIHRlciBwZWxvIG1lbm9zIDggY2FyYWN0ZXJlcycgfSlcbiAgQE1hdGNoZXMoL14oPz0uKlthLXpdKSg/PS4qW0EtWl0pKD89LipcXGQpKD89LipbQCQhJSo/Jl0pW0EtWmEtelxcZEAkISUqPyZdLywge1xuICAgIG1lc3NhZ2U6XG4gICAgICAnQSBub3ZhIHNlbmhhIGRldmUgY29udGVyIHBlbG8gbWVub3M6IDEgbGV0cmEgbWluw7pzY3VsYSwgMSBtYWnDunNjdWxhLCAxIG7Dum1lcm8gZSAxIGNhcmFjdGVyZSBlc3BlY2lhbCcsXG4gIH0pXG4gIG5vdmFfc2VuaGE6IHN0cmluZztcblxuICBAQXBpUHJvcGVydHkoe1xuICAgIGRlc2NyaXB0aW9uOiAnQ29uZmlybWHDp8OjbyBkYSBub3ZhIHNlbmhhJyxcbiAgICBleGFtcGxlOiAnTWluaGFOb3ZhU2VuaEAxMjMnLFxuICB9KVxuICBASXNTdHJpbmcoeyBtZXNzYWdlOiAnQSBjb25maXJtYcOnw6NvIGRhIHNlbmhhIGRldmUgc2VyIHVtYSBzdHJpbmcnIH0pXG4gIEBNYXRjaCgnbm92YV9zZW5oYScsIHsgbWVzc2FnZTogJ0FzIHNlbmhhcyBuw6NvIGNvaW5jaWRlbScgfSlcbiAgY29uZmlybWFyX3NlbmhhOiBzdHJpbmc7XG59XG4iXSwidmVyc2lvbiI6M30=

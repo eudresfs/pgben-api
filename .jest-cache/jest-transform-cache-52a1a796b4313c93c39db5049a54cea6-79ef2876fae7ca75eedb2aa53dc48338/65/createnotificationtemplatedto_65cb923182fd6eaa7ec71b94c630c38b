@@ -1,0 +1,86 @@
+0c4b23c0e8603d481d64257002b1cfe9
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.CreateNotificationTemplateDto = void 0;
+const class_validator_1 = require("class-validator");
+const swagger_1 = require("@nestjs/swagger");
+const notification_template_entity_1 = require("../../../entities/notification-template.entity");
+/**
+ * DTO para criação de templates de notificação
+ */
+class CreateNotificationTemplateDto {
+    nome;
+    descricao;
+    assunto;
+    template_conteudo;
+    canais_suportados;
+    ativo;
+}
+exports.CreateNotificationTemplateDto = CreateNotificationTemplateDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Nome do template de notificação',
+        example: 'confirmacao-solicitacao',
+    }),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    __metadata("design:type", String)
+], CreateNotificationTemplateDto.prototype, "nome", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Descrição do template de notificação',
+        example: 'Template para confirmação de abertura de solicitação de benefício',
+    }),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    __metadata("design:type", String)
+], CreateNotificationTemplateDto.prototype, "descricao", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Assunto da notificação',
+        example: 'Confirmação da sua solicitação de benefício',
+    }),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    __metadata("design:type", String)
+], CreateNotificationTemplateDto.prototype, "assunto", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Conteúdo do template com variáveis no formato {{variavel}}',
+        example: 'Olá {{nome}}, sua solicitação de benefício #{{protocolo}} foi registrada com sucesso.',
+    }),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    __metadata("design:type", String)
+], CreateNotificationTemplateDto.prototype, "template_conteudo", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Canais de notificação suportados por este template',
+        enum: notification_template_entity_1.CanalNotificacao,
+        isArray: true,
+        example: [notification_template_entity_1.CanalNotificacao.EMAIL, notification_template_entity_1.CanalNotificacao.IN_APP],
+    }),
+    (0, class_validator_1.IsArray)(),
+    (0, class_validator_1.ArrayNotEmpty)(),
+    (0, class_validator_1.IsEnum)(notification_template_entity_1.CanalNotificacao, { each: true }),
+    __metadata("design:type", Array)
+], CreateNotificationTemplateDto.prototype, "canais_suportados", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Indica se o template está ativo',
+        default: true,
+    }),
+    (0, class_validator_1.IsBoolean)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Boolean)
+], CreateNotificationTemplateDto.prototype, "ativo", void 0);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXG5vdGlmaWNhY2FvXFxkdG9zXFxjcmVhdGUtbm90aWZpY2F0aW9uLXRlbXBsYXRlLmR0by50cyIsIm1hcHBpbmdzIjoiOzs7Ozs7Ozs7Ozs7QUFBQSxxREFReUI7QUFDekIsNkNBQThDO0FBQzlDLGlHQUFrRjtBQUVsRjs7R0FFRztBQUNILE1BQWEsNkJBQTZCO0lBT3hDLElBQUksQ0FBUztJQVNiLFNBQVMsQ0FBUztJQVFsQixPQUFPLENBQVM7SUFTaEIsaUJBQWlCLENBQVM7SUFXMUIsaUJBQWlCLENBQXFCO0lBUXRDLEtBQUssQ0FBVztDQUNqQjtBQXJERCxzRUFxREM7QUE5Q0M7SUFOQyxJQUFBLHFCQUFXLEVBQUM7UUFDWCxXQUFXLEVBQUUsaUNBQWlDO1FBQzlDLE9BQU8sRUFBRSx5QkFBeUI7S0FDbkMsQ0FBQztJQUNELElBQUEsMEJBQVEsR0FBRTtJQUNWLElBQUEsNEJBQVUsR0FBRTs7MkRBQ0E7QUFTYjtJQVBDLElBQUEscUJBQVcsRUFBQztRQUNYLFdBQVcsRUFBRSxzQ0FBc0M7UUFDbkQsT0FBTyxFQUNMLG1FQUFtRTtLQUN0RSxDQUFDO0lBQ0QsSUFBQSwwQkFBUSxHQUFFO0lBQ1YsSUFBQSw0QkFBVSxHQUFFOztnRUFDSztBQVFsQjtJQU5DLElBQUEscUJBQVcsRUFBQztRQUNYLFdBQVcsRUFBRSx3QkFBd0I7UUFDckMsT0FBTyxFQUFFLDZDQUE2QztLQUN2RCxDQUFDO0lBQ0QsSUFBQSwwQkFBUSxHQUFFO0lBQ1YsSUFBQSw0QkFBVSxHQUFFOzs4REFDRztBQVNoQjtJQVBDLElBQUEscUJBQVcsRUFBQztRQUNYLFdBQVcsRUFBRSw0REFBNEQ7UUFDekUsT0FBTyxFQUNMLHVGQUF1RjtLQUMxRixDQUFDO0lBQ0QsSUFBQSwwQkFBUSxHQUFFO0lBQ1YsSUFBQSw0QkFBVSxHQUFFOzt3RUFDYTtBQVcxQjtJQVRDLElBQUEscUJBQVcsRUFBQztRQUNYLFdBQVcsRUFBRSxvREFBb0Q7UUFDakUsSUFBSSxFQUFFLCtDQUFnQjtRQUN0QixPQUFPLEVBQUUsSUFBSTtRQUNiLE9BQU8sRUFBRSxDQUFDLCtDQUFnQixDQUFDLEtBQUssRUFBRSwrQ0FBZ0IsQ0FBQyxNQUFNLENBQUM7S0FDM0QsQ0FBQztJQUNELElBQUEseUJBQU8sR0FBRTtJQUNULElBQUEsK0JBQWEsR0FBRTtJQUNmLElBQUEsd0JBQU0sRUFBQywrQ0FBZ0IsRUFBRSxFQUFFLElBQUksRUFBRSxJQUFJLEVBQUUsQ0FBQzs7d0VBQ0g7QUFRdEM7SUFOQyxJQUFBLHFCQUFXLEVBQUM7UUFDWCxXQUFXLEVBQUUsaUNBQWlDO1FBQzlDLE9BQU8sRUFBRSxJQUFJO0tBQ2QsQ0FBQztJQUNELElBQUEsMkJBQVMsR0FBRTtJQUNYLElBQUEsNEJBQVUsR0FBRTs7NERBQ0ciLCJuYW1lcyI6W10sInNvdXJjZXMiOlsiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXG5vdGlmaWNhY2FvXFxkdG9zXFxjcmVhdGUtbm90aWZpY2F0aW9uLXRlbXBsYXRlLmR0by50cyJdLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQge1xuICBJc1N0cmluZyxcbiAgSXNOb3RFbXB0eSxcbiAgSXNBcnJheSxcbiAgQXJyYXlOb3RFbXB0eSxcbiAgSXNFbnVtLFxuICBJc0Jvb2xlYW4sXG4gIElzT3B0aW9uYWwsXG59IGZyb20gJ2NsYXNzLXZhbGlkYXRvcic7XG5pbXBvcnQgeyBBcGlQcm9wZXJ0eSB9IGZyb20gJ0BuZXN0anMvc3dhZ2dlcic7XG5pbXBvcnQgeyBDYW5hbE5vdGlmaWNhY2FvIH0gZnJvbSAnLi4vLi4vLi4vZW50aXRpZXMvbm90aWZpY2F0aW9uLXRlbXBsYXRlLmVudGl0eSc7XG5cbi8qKlxuICogRFRPIHBhcmEgY3JpYcOnw6NvIGRlIHRlbXBsYXRlcyBkZSBub3RpZmljYcOnw6NvXG4gKi9cbmV4cG9ydCBjbGFzcyBDcmVhdGVOb3RpZmljYXRpb25UZW1wbGF0ZUR0byB7XG4gIEBBcGlQcm9wZXJ0eSh7XG4gICAgZGVzY3JpcHRpb246ICdOb21lIGRvIHRlbXBsYXRlIGRlIG5vdGlmaWNhw6fDo28nLFxuICAgIGV4YW1wbGU6ICdjb25maXJtYWNhby1zb2xpY2l0YWNhbycsXG4gIH0pXG4gIEBJc1N0cmluZygpXG4gIEBJc05vdEVtcHR5KClcbiAgbm9tZTogc3RyaW5nO1xuXG4gIEBBcGlQcm9wZXJ0eSh7XG4gICAgZGVzY3JpcHRpb246ICdEZXNjcmnDp8OjbyBkbyB0ZW1wbGF0ZSBkZSBub3RpZmljYcOnw6NvJyxcbiAgICBleGFtcGxlOlxuICAgICAgJ1RlbXBsYXRlIHBhcmEgY29uZmlybWHDp8OjbyBkZSBhYmVydHVyYSBkZSBzb2xpY2l0YcOnw6NvIGRlIGJlbmVmw61jaW8nLFxuICB9KVxuICBASXNTdHJpbmcoKVxuICBASXNOb3RFbXB0eSgpXG4gIGRlc2NyaWNhbzogc3RyaW5nO1xuXG4gIEBBcGlQcm9wZXJ0eSh7XG4gICAgZGVzY3JpcHRpb246ICdBc3N1bnRvIGRhIG5vdGlmaWNhw6fDo28nLFxuICAgIGV4YW1wbGU6ICdDb25maXJtYcOnw6NvIGRhIHN1YSBzb2xpY2l0YcOnw6NvIGRlIGJlbmVmw61jaW8nLFxuICB9KVxuICBASXNTdHJpbmcoKVxuICBASXNOb3RFbXB0eSgpXG4gIGFzc3VudG86IHN0cmluZztcblxuICBAQXBpUHJvcGVydHkoe1xuICAgIGRlc2NyaXB0aW9uOiAnQ29udGXDumRvIGRvIHRlbXBsYXRlIGNvbSB2YXJpw6F2ZWlzIG5vIGZvcm1hdG8ge3t2YXJpYXZlbH19JyxcbiAgICBleGFtcGxlOlxuICAgICAgJ09sw6Ege3tub21lfX0sIHN1YSBzb2xpY2l0YcOnw6NvIGRlIGJlbmVmw61jaW8gI3t7cHJvdG9jb2xvfX0gZm9pIHJlZ2lzdHJhZGEgY29tIHN1Y2Vzc28uJyxcbiAgfSlcbiAgQElzU3RyaW5nKClcbiAgQElzTm90RW1wdHkoKVxuICB0ZW1wbGF0ZV9jb250ZXVkbzogc3RyaW5nO1xuXG4gIEBBcGlQcm9wZXJ0eSh7XG4gICAgZGVzY3JpcHRpb246ICdDYW5haXMgZGUgbm90aWZpY2HDp8OjbyBzdXBvcnRhZG9zIHBvciBlc3RlIHRlbXBsYXRlJyxcbiAgICBlbnVtOiBDYW5hbE5vdGlmaWNhY2FvLFxuICAgIGlzQXJyYXk6IHRydWUsXG4gICAgZXhhbXBsZTogW0NhbmFsTm90aWZpY2FjYW8uRU1BSUwsIENhbmFsTm90aWZpY2FjYW8uSU5fQVBQXSxcbiAgfSlcbiAgQElzQXJyYXkoKVxuICBAQXJyYXlOb3RFbXB0eSgpXG4gIEBJc0VudW0oQ2FuYWxOb3RpZmljYWNhbywgeyBlYWNoOiB0cnVlIH0pXG4gIGNhbmFpc19zdXBvcnRhZG9zOiBDYW5hbE5vdGlmaWNhY2FvW107XG5cbiAgQEFwaVByb3BlcnR5KHtcbiAgICBkZXNjcmlwdGlvbjogJ0luZGljYSBzZSBvIHRlbXBsYXRlIGVzdMOhIGF0aXZvJyxcbiAgICBkZWZhdWx0OiB0cnVlLFxuICB9KVxuICBASXNCb29sZWFuKClcbiAgQElzT3B0aW9uYWwoKVxuICBhdGl2bz86IGJvb2xlYW47XG59XG4iXSwidmVyc2lvbiI6M30=

@@ -185,45 +185,40 @@ export class CreateCidadaoDto {
   cpf: string;
 
   @IsString({ message: 'RG deve ser uma string' })
-  @IsNotEmpty({ message: 'RG é obrigatório' })
   @ApiProperty({
     example: '1234567',
     description: 'RG do cidadão',
   })
-  rg: string;
+  rg?: string;
 
-  @IsNotEmpty({ message: 'Prontuario SUAS é obrigatório' })
   @ApiProperty({
     example: 'SUAS1234567',
     description: 'Nº do Prontuário SUAS do cidadão',
   })
-  prontuario_suas: string;
+  prontuario_suas?: string;
 
   @IsString({ message: 'Naturalidade deve ser uma string' })
-  @IsNotEmpty({ message: 'Naturalidade é obrigatória' })
   @ApiProperty({
     example: 'Natal',
     description: 'Cidade de Naturalidade',
   })
-  naturalidade: string;
+  naturalidade?: string;
 
   @IsDate()
   @Type(() => Date)
-  @IsNotEmpty({ message: 'Data de nascimento é obrigatória' })
   @ApiProperty({
     example: '1985-10-15',
     description: 'Data de nascimento do cidadão',
   })
-  data_nascimento: Date;
+  data_nascimento?: Date;
 
   @IsEnum(Sexo, { message: 'Sexo inválido' })
-  @IsNotEmpty({ message: 'Sexo é obrigatório' })
   @ApiProperty({
     enum: Sexo,
     example: Sexo.FEMININO,
     description: 'Sexo do cidadão',
   })
-  sexo: Sexo;
+  sexo?: Sexo;
 
   @IsString({ message: 'NIS deve ser uma string' })
   @ValidateIf((o) =>
@@ -249,21 +244,19 @@ export class CreateCidadaoDto {
   nome_social?: string;
 
   @IsEnum(EstadoCivil, { message: 'Estado civil inválido' })
-  @IsNotEmpty({ message: 'Estado civil é obrigatório' })
   @ApiProperty({
     enum: EstadoCivil,
     example: EstadoCivil.CASADO,
     description: 'Estado civil do cidadão',
   })
-  estado_civil: EstadoCivil;
+  estado_civil?: EstadoCivil;
 
   @IsString({ message: 'Nome da mãe deve ser uma string' })
-  @IsNotEmpty({ message: 'Nome da mãe é obrigatório' })
   @ApiProperty({
     example: 'Maria da Silva',
     description: 'Nome completo da mãe do cidadão',
   })
-  nome_mae: string;
+  nome_mae?: string;
 
   @IsString({ message: 'Telefone deve ser uma string' })
   @IsOptional()

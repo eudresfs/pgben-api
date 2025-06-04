@@ -1,0 +1,168 @@
+5ad44125416858f092fcd9bfda78b8d7
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var _a, _b;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.ConfirmacaoService = void 0;
+const common_1 = require("@nestjs/common");
+const typeorm_1 = require("@nestjs/typeorm");
+const typeorm_2 = require("typeorm");
+const confirmacao_recebimento_entity_1 = require("../../../entities/confirmacao-recebimento.entity");
+const comprovante_service_1 = require("./comprovante.service");
+/**
+ * Serviço para gerenciamento de confirmações de recebimento de pagamentos
+ *
+ * Implementa a lógica para registrar e consultar confirmações de recebimento
+ * por parte dos beneficiários, validando regras de negócio específicas.
+ *
+ * @author Equipe PGBen
+ */
+let ConfirmacaoService = class ConfirmacaoService {
+    confirmacaoRepository;
+    comprovanteService;
+    constructor(confirmacaoRepository, comprovanteService) {
+        this.confirmacaoRepository = confirmacaoRepository;
+        this.comprovanteService = comprovanteService;
+    }
+    /**
+     * Registra uma nova confirmação de recebimento para um pagamento
+     *
+     * @param pagamentoId ID do pagamento
+     * @param createDto Dados da confirmação
+     * @param usuarioId ID do usuário que está registrando a confirmação
+     * @returns Confirmação registrada
+     */
+    async registrarConfirmacao(pagamentoId, createDto, usuarioId) {
+        // Verificar se o pagamento existe
+        // const pagamento = await this.pagamentoService.findOne(pagamentoId);
+        // if (!pagamento) {
+        //   throw new NotFoundException('Pagamento não encontrado');
+        // }
+        // Verificar se o pagamento está no status adequado
+        // if (pagamento.status !== StatusPagamentoEnum.LIBERADO) {
+        //   throw new ConflictException(
+        //     'Somente pagamentos liberados podem receber confirmação'
+        //   );
+        // }
+        // Verificar se já existe confirmação para este pagamento
+        const existingConfirmacao = await this.findByPagamento(pagamentoId);
+        if (existingConfirmacao.length > 0) {
+            throw new common_1.ConflictException('Este pagamento já possui uma confirmação de recebimento registrada');
+        }
+        // Verificar se o pagamento tem pelo menos um comprovante
+        const hasComprovantes = await this.comprovanteService.hasComprovantes(pagamentoId);
+        if (!hasComprovantes) {
+            throw new common_1.ConflictException('É necessário anexar pelo menos um comprovante antes de confirmar o recebimento');
+        }
+        // Criar nova confirmação
+        const confirmacao = this.confirmacaoRepository.create({
+            pagamento_id: pagamentoId,
+            data_confirmacao: createDto.dataConfirmacao,
+            metodo_confirmacao: createDto.metodoConfirmacao,
+            confirmado_por: usuarioId,
+            destinatario_id: createDto.destinatarioId,
+            observacoes: createDto.observacoes,
+        });
+        // Salvar a confirmação
+        const result = await this.confirmacaoRepository.save(confirmacao);
+        // Atualizar o status do pagamento para CONFIRMADO
+        // await this.pagamentoService.atualizarStatus(
+        //   pagamentoId,
+        //   StatusPagamentoEnum.CONFIRMADO,
+        //   usuarioId
+        // );
+        // Registrar operação no log de auditoria
+        // await this.auditoriaService.registrarOperacao({
+        //   tipoOperacao: 'CONFIRMACAO_RECEBIMENTO',
+        //   usuarioId,
+        //   entidadeId: result.id,
+        //   tipoEntidade: 'CONFIRMACAO_RECEBIMENTO',
+        //   dadosAnteriores: null,
+        //   dadosNovos: result
+        // });
+        return result;
+    }
+    /**
+     * Busca uma confirmação pelo ID
+     *
+     * @param id ID da confirmação
+     * @returns Confirmação encontrada ou null
+     */
+    async findOne(id) {
+        return this.confirmacaoRepository.findOneBy({ id });
+    }
+    /**
+     * Busca confirmações de um pagamento específico
+     *
+     * @param pagamentoId ID do pagamento
+     * @returns Lista de confirmações para o pagamento
+     */
+    async findByPagamento(pagamentoId) {
+        return this.confirmacaoRepository.find({
+            where: { pagamento_id: pagamentoId },
+            order: { data_confirmacao: 'DESC' },
+        });
+    }
+    /**
+     * Busca uma confirmação pelo ID com todos os relacionamentos
+     *
+     * @param id ID da confirmação
+     * @returns Confirmação encontrada com relacionamentos ou null
+     */
+    async findOneWithRelations(id) {
+        return this.confirmacaoRepository.findOne({
+            where: { id },
+            relations: ['pagamento'],
+        });
+    }
+    /**
+     * Verifica se um pagamento tem confirmação de recebimento
+     *
+     * @param pagamentoId ID do pagamento
+     * @returns true se o pagamento tem confirmação
+     */
+    async temConfirmacao(pagamentoId) {
+        const count = await this.confirmacaoRepository.count({
+            where: { pagamento_id: pagamentoId },
+        });
+        return count > 0;
+    }
+    /**
+     * Validar destinatário se diferente do beneficiário
+     *
+     * @param pagamentoId ID do pagamento
+     * @param destinatarioId ID do destinatário
+     * @returns true se o destinatário é válido
+     */
+    async validarDestinatario(pagamentoId, destinatarioId) {
+        // Esta é uma implementação de placeholder
+        // Será integrada com o CidadaoService para validar a relação entre o beneficiário e o destinatário
+        if (!destinatarioId) {
+            return true; // Sem destinatário específico, assume-se que é o próprio beneficiário
+        }
+        // Lógica para validar se o destinatário é válido (ex: familiar cadastrado)
+        // const pagamento = await this.pagamentoService.findOne(pagamentoId);
+        // const solicitacao = await this.solicitacaoService.findOne(pagamento.solicitacaoId);
+        // const beneficiarioId = solicitacao.cidadaoId;
+        // return this.cidadaoService.verificarRelacaoFamiliar(beneficiarioId, destinatarioId);
+        return true; // Temporariamente retornando true
+    }
+};
+exports.ConfirmacaoService = ConfirmacaoService;
+exports.ConfirmacaoService = ConfirmacaoService = __decorate([
+    (0, common_1.Injectable)(),
+    __param(0, (0, typeorm_1.InjectRepository)(confirmacao_recebimento_entity_1.ConfirmacaoRecebimento)),
+    __metadata("design:paramtypes", [typeof (_a = typeof typeorm_2.Repository !== "undefined" && typeorm_2.Repository) === "function" ? _a : Object, typeof (_b = typeof comprovante_service_1.ComprovanteService !== "undefined" && comprovante_service_1.ComprovanteService) === "function" ? _b : Object])
+], ConfirmacaoService);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXHBhZ2FtZW50b1xcc2VydmljZXNcXGNvbmZpcm1hY2FvLnNlcnZpY2UudHMiLCJtYXBwaW5ncyI6Ijs7Ozs7Ozs7Ozs7Ozs7OztBQUFBLDJDQUl3QjtBQUN4Qiw2Q0FBbUQ7QUFDbkQscUNBQXFDO0FBQ3JDLHFHQUEwRjtBQUcxRiwrREFBMkQ7QUFFM0Q7Ozs7Ozs7R0FPRztBQUVJLElBQU0sa0JBQWtCLEdBQXhCLE1BQU0sa0JBQWtCO0lBR1Y7SUFDQTtJQUhuQixZQUVtQixxQkFBeUQsRUFDekQsa0JBQXNDO1FBRHRDLDBCQUFxQixHQUFyQixxQkFBcUIsQ0FBb0M7UUFDekQsdUJBQWtCLEdBQWxCLGtCQUFrQixDQUFvQjtJQUl0RCxDQUFDO0lBRUo7Ozs7Ozs7T0FPRztJQUNILEtBQUssQ0FBQyxvQkFBb0IsQ0FDeEIsV0FBbUIsRUFDbkIsU0FBb0MsRUFDcEMsU0FBaUI7UUFFakIsa0NBQWtDO1FBQ2xDLHNFQUFzRTtRQUV0RSxvQkFBb0I7UUFDcEIsNkRBQTZEO1FBQzdELElBQUk7UUFFSixtREFBbUQ7UUFDbkQsMkRBQTJEO1FBQzNELGlDQUFpQztRQUNqQywrREFBK0Q7UUFDL0QsT0FBTztRQUNQLElBQUk7UUFFSix5REFBeUQ7UUFDekQsTUFBTSxtQkFBbUIsR0FBRyxNQUFNLElBQUksQ0FBQyxlQUFlLENBQUMsV0FBVyxDQUFDLENBQUM7UUFFcEUsSUFBSSxtQkFBbUIsQ0FBQyxNQUFNLEdBQUcsQ0FBQyxFQUFFLENBQUM7WUFDbkMsTUFBTSxJQUFJLDBCQUFpQixDQUN6QixvRUFBb0UsQ0FDckUsQ0FBQztRQUNKLENBQUM7UUFFRCx5REFBeUQ7UUFDekQsTUFBTSxlQUFlLEdBQ25CLE1BQU0sSUFBSSxDQUFDLGtCQUFrQixDQUFDLGVBQWUsQ0FBQyxXQUFXLENBQUMsQ0FBQztRQUU3RCxJQUFJLENBQUMsZUFBZSxFQUFFLENB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ZURyaXZlXFxEZXNrdG9wXFxQcm9qZXRvc1xccGdiZW5cXHBnYmVuLXNlcnZlclxcc3JjXFxtb2R1bGVzXFxwYWdhbWVudG9cXHNlcnZpY2VzXFxjb25maXJtYWNhby5zZXJ2aWNlLnRzIl0sInNvdXJjZXNDb250ZW50IjpbImltcG9ydCB7XG4gIENvbmZsaWN0RXhjZXB0aW9uLFxuICBJbmplY3RhYmxlLFxuICBOb3RGb3VuZEV4Y2VwdGlvbixcbn0gZnJvbSAnQG5lc3Rqcy9jb21tb24nO1xuaW1wb3J0IHsgSW5qZWN0UmVwb3NpdG9yeSB9IGZyb20gJ0BuZXN0anMvdHlwZW9ybSc7XG5pbXBvcnQgeyBSZXBvc2l0b3J5IH0gZnJvbSAndHlwZW9ybSc7XG5pbXBvcnQgeyBDb25maXJtYWNhb1JlY2ViaW1lbnRvIH0gZnJvbSAnLi4vLi4vLi4vZW50aXRpZXMvY29uZmlybWFjYW8tcmVjZWJpbWVudG8uZW50aXR5JztcbmltcG9ydCB7IFN0YXR1c1BhZ2FtZW50b0VudW0gfSBmcm9tICcuLi8uLi8uLi9lbnVtcy9zdGF0dXMtcGFnYW1lbnRvLmVudW0nO1xuaW1wb3J0IHsgQ29uZmlybWFjYW9SZWNlYmltZW50b0R0byB9IGZyb20gJy4uL2R0b3MvY29uZmlybWFjYW8tcmVjZWJpbWVudG8uZHRvJztcbmltcG9ydCB7IENvbXByb3ZhbnRlU2VydmljZSB9IGZyb20gJy4vY29tcHJvdmFudGUuc2VydmljZSc7XG5cbi8qKlxuICogU2VydmnDp28gcGFyYSBnZXJlbmNpYW1lbnRvIGRlIGNvbmZpcm1hw6fDtWVzIGRlIHJlY2ViaW1lbnRvIGRlIHBhZ2FtZW50b3NcbiAqXG4gKiBJbXBsZW1lbnRhIGEgbMOzZ2ljYSBwYXJhIHJlZ2lzdHJhciBlIGNvbnN1bHRhciBjb25maXJtYcOnw7VlcyBkZSByZWNlYmltZW50b1xuICogcG9yIHBhcnRlIGRvcyBiZW5lZmljacOhcmlvcywgdmFsaWRhbmRvIHJlZ3JhcyBkZSBuZWfDs2NpbyBlc3BlY8OtZmljYXMuXG4gKlxuICogQGF1dGhvciBFcXVpcGUgUEdCZW5cbiAqL1xuQEluamVjdGFibGUoKVxuZXhwb3J0IGNsYXNzIENvbmZpcm1hY2FvU2VydmljZSB7XG4gIGNvbnN0cnVjdG9yKFxuICAgIEBJbmplY3RSZXBvc2l0b3J5KENvbmZpcm1hY2FvUmVjZWJpbWVudG8pXG4gICAgcHJpdmF0ZSByZWFkb25seSBjb25maXJtYWNhb1JlcG9zaXRvcnk6IFJlcG9zaXRvcnk8Q29uZmlybWFjYW9SZWNlYmltZW50bz4sXG4gICAgcHJpdmF0ZSByZWFkb25seSBjb21wcm92YW50ZVNlcnZpY2U6IENvbXByb3ZhbnRlU2VydmljZSxcbiAgICAvLyBPdXRyb3Mgc2VydmnDp29zIG5lY2Vzc8OhcmlvcyBzZXLDo28gaW5qZXRhZG9zIGFxdWlcbiAgICAvLyBwcml2YXRlIHJlYWRvbmx5IHBhZ2FtZW50b1NlcnZpY2U6IFBhZ2FtZW50b1NlcnZpY2UsXG4gICAgLy8gcHJpdmF0ZSByZWFkb25seSBhdWRpdG9yaWFTZXJ2aWNlOiBBdWRpdG9yaWFTZXJ2aWNlLFxuICApIHt9XG5cbiAgLyoqXG4gICAqIFJlZ2lzdHJhIHVtYSBub3ZhIGNvbmZpcm1hw6fDo28gZGUgcmVjZWJpbWVudG8gcGFyYSB1bSBwYWdhbWVudG9cbiAgICpcbiAgICogQHBhcmFtIHBhZ2FtZW50b0lkIElEIGRvIHBhZ2FtZW50b1xuICAgKiBAcGFyYW0gY3JlYXRlRHRvIERhZG9zIGRhIGNvbmZpcm1hw6fDo29cbiAgICogQHBhcmFtIHVzdWFyaW9JZCBJRCBkbyB1c3XDoXJpbyBxdWUgZXN0w6EgcmVnaXN0cmFuZG8gYSBjb25maXJtYcOnw6NvXG4gICAqIEByZXR1cm5zIENvbmZpcm1hw6fDo28gcmVnaXN0cmFkYVxuICAgKi9cbiAgYXN5bmMgcmVnaXN0cmFyQ29uZmlybWFjYW8oXG4gICAgcGFnYW1lbnRvSWQ6IHN0cmluZyxcbiAgICBjcmVhdGVEdG86IENvbmZpcm1hY2FvUmVjZWJpbWVudG9EdG8sXG4gICAgdXN1YXJpb0lkOiBzdHJpbmcsXG4gICk6IFByb21pc2U8Q29uZmlybWFjYW9SZWNlYmltZW50bz4ge1xuICAgIC8vIFZlcmlmaWNhciBzZSBvIHBhZ2FtZW50byBleGlzdGVcbiAgICAvLyBjb25zdCBwYWdhbWVudG8gPSBhd2FpdCB0aGlzLnBhZ2FtZW50b1NlcnZpY2UuZmluZE9uZShwYWdhbWVudG9JZCk7XG5cbiAgICAvLyBpZiAoIXBhZ2FtZW50bykge1xuICAgIC8vICAgdGhyb3cgbmV3IE5vdEZvdW5kRXhjZXB0aW9uKCdQYWdhbWVudG8gbsOjbyBlbmNvbnRyYWRvJyk7XG4gICAgLy8gfVxuXG4gICAgLy8gVmVyaWZpY2FyIHNlIG8gcGFnYW1lbnRvIGVzdMOhIG5vIHN0YXR1cyBhZGVxdWFkb1xuICAgIC8vIGlmIChwYWdhbWVudG8uc3RhdHVzICE9PSBTdGF0dXNQYWdhbWVudG9FbnVtLkxJQkVSQURPKSB7XG4gICAgLy8gICB0aHJvdyBuZXcgQ29uZmxpY3RFeGNlcHRpb24oXG4gICAgLy8gICAgICdTb21lbnRlIHBhZ2FtZW50b3MgbGliZXJhZG9zIHBvZGVtIHJlY2ViZXIgY29uZmlybWHDp8OjbydcbiAgICAvLyAgICk7XG4gICAgLy8gfVxuXG4gICAgLy8gVmVyaWZpY2FyIHNlIGrDoSBleGlzdGUgY29uZmlybWHDp8OjbyBwYXJhIGVzdGUgcGFnYW1lbnRvXG4gICAgY29uc3QgZXhpc3RpbmdDb25maXJtYWNhbyA9IGF3YWl0IHRoaXMuZmluZEJ5UGFnYW1lbnRvKHBhZ2FtZW50b0lkKTtcblxuICAgIGlmIChleGlzdGluZ0NvbmZpcm1hY2FvLmxlbmd0aCA+IDApIHtcbiAgICAgIHRocm93IG5ldyBDb25mbGljdEV4Y2VwdGlvbihcbiAgICAgICAgJ0VzdGUgcGFnYW1lbnRvIGrDoSBwb3NzdWkgdW1hIGNvbmZpcm1hw6fDo28gZGUgcmVjZWJpbWVudG8gcmVnaXN0cmFkYScsXG4gICAgICApO1xuICAgIH1cblxuICAgIC8vIFZlcmlmaWNhciBzZSBvIHBhZ2FtZW50byB0ZW0gcGVsbyBtZW5vcyB1bSBjb21wcm92YW50ZVxuICAgIGNvbnN0IGhhc0NvbXByb3ZhbnRlcyA9XG4gICAgICBhd2FpdCB0aGlzLmNvbXByb3ZhbnRlU2VydmljZS5oYXNDb21wcm92YW50ZXMocGFnYW1lbnRvSWQpO1xuXG4gICAgaWYgKCFoYXNDb21wcm92YW50ZXMpIHtcbiAgICAgIHRocm93IG5ldyBDb25mbGljdEV4Y2VwdGlvbihcbiAgICAgICAgJ8OJIG5lY2Vzc8OhcmlvIGFuZXhhciBwZWxvIG1lbm9zIHVtIGNvbXByb3ZhbnRlIGFudGVzIGRlIGNvbmZpcm1hciBvIHJlY2ViaW1lbnRvJyxcbiAgICAgICk7XG4gICAgfVxuXG4gICAgLy8gQ3JpYXIgbm92YSBjb25maXJtYcOnw6NvXG4gICAgY29uc3QgY29uZmlybWFjYW8gPSB0aGlzLmNvbmZpcm1hY2FvUmVwb3NpdG9yeS5jcmVhdGUoe1xuICAgICAgcGFnYW1lbnRvX2lkOiBwYWdhbWVudG9JZCxcbiAgICAgIGRhdGFfY29uZmlybWFjYW86IGNyZWF0ZUR0by5kYXRhQ29uZmlybWFjYW8sXG4gICAgICBtZXRvZG9fY29uZmlybWFjYW86IGNyZWF0ZUR0by5tZXRvZG9Db25maXJtYWNhbyxcbiAgICAgIGNvbmZpcm1hZG9fcG9yOiB1c3VhcmlvSWQsXG4gICAgICBkZXN0aW5hdGFyaW9faWQ6IGNyZWF0ZUR0by5kZXN0aW5hdGFyaW9JZCxcbiAgICAgIG9ic2VydmFjb2VzOiBjcmVhdGVEdG8ub2JzZXJ2YWNvZXMsXG4gICAgfSk7XG5cbiAgICAvLyBTYWx2YXIgYSBjb25maXJtYcOnw6NvXG4gICAgY29uc3QgcmVzdWx0ID0gYXdhaXQgdGhpcy5jb25maXJtYWNhb1JlcG9zaXRvcnkuc2F2ZShjb25maXJtYWNhbyk7XG5cbiAgICAvLyBBdHVhbGl6YXIgbyBzdGF0dXMgZG8gcGFnYW1lbnRvIHBhcmEgQ09ORklSTUFET1xuICAgIC8vIGF3YWl0IHRoaXMucGFnYW1lbnRvU2VydmljZS5hdHVhbGl6YXJTdGF0dXMoXG4gICAgLy8gICBwYWdhbWVudG9JZCxcbiAgICAvLyAgIFN0YXR1c1BhZ2FtZW50b0VudW0uQ09ORklSTUFETyxcbiAgICAvLyAgIHVzdWFyaW9JZFxuICAgIC8vICk7XG5cbiAgICAvLyBSZWdpc3RyYXIgb3BlcmHDp8OjbyBubyBsb2cgZGUgYXVkaXRvcmlhXG4gICAgLy8gYXdhaXQgdGhpcy5hdWRpdG9yaWFTZXJ2aWNlLnJlZ2lzdHJhck9wZXJhY2FvKHtcbiAgICAvLyAgIHRpcG9PcGVyYWNhbzogJ0NPTkZJUk1BQ0FPX1JFQ0VCSU1FTlRPJyxcbiAgICAvLyAgIHVzdWFyaW9JZCxcbiAgICAvLyAgIGVudGlkYWRlSWQ6IHJlc3VsdC5pZCxcbiAgICAvLyAgIHRpcG9FbnRpZGFkZTogJ0NPTkZJUk1BQ0FPX1JFQ0VCSU1FTlRPJyxcbiAgICAvLyAgIGRhZG9zQW50ZXJpb3JlczogbnVsbCxcbiAgICAvLyAgIGRhZG9zTm92b3M6IHJlc3VsdFxuICAgIC8vIH0pO1xuXG4gICAgcmV0dXJuIHJlc3VsdDtcbiAgfVxuXG4gIC8qKlxuICAgKiBCdXNjYSB1bWEgY29uZmlybWHDp8OjbyBwZWxvIElEXG4gICAqXG4gICAqIEBwYXJhbSBpZCBJRCBkYSBjb25maXJtYcOnw6NvXG4gICAqIEByZXR1cm5zIENvbmZpcm1hw6fDo28gZW5jb250cmFkYSBvdSBudWxsXG4gICAqL1xuICBhc3luYyBmaW5kT25lKGlkOiBzdHJpbmcpOiBQcm9taXNlPENvbmZpcm1hY2FvUmVjZWJpbWVudG8gfCBudWxsPiB7XG4gICAgcmV0dXJuIHRoaXMuY29uZmlybWFjYW9SZXBvc2l0b3J5LmZpbmRPbmVCeSh7IGlkIH0pO1xuICB9XG5cbiAgLyoqXG4gICAqIEJ1c2NhIGNvbmZpcm1hw6fDtWVzIGRlIHVtIHBhZ2FtZW50byBlc3BlY8OtZmljb1xuICAgKlxuICAgKiBAcGFyYW0gcGFnYW1lbnRvSWQgSUQgZG8gcGFnYW1lbnRvXG4gICAqIEByZXR1cm5zIExpc3RhIGRlIGNvbmZpcm1hw6fDtWVzIHBhcmEgbyBwYWdhbWVudG9cbiAgICovXG4gIGFzeW5jIGZpbmRCeVBhZ2FtZW50byhcbiAgICBwYWdhbWVudG9JZDogc3RyaW5nLFxuICApOiBQcm9taXNlPENvbmZpcm1hY2FvUmVjZWJpbWVudG9bXT4ge1xuICAgIHJldHVybiB0aGlzLmNvbmZpcm1hY2FvUmVwb3NpdG9yeS5maW5kKHtcbiAgICAgIHdoZXJlOiB7IHBhZ2FtZW50b19pZDogcGFnYW1lbnRvSWQgfSxcbiAgICAgIG9yZGVyOiB7IGRhdGFfY29uZmlybWFjYW86ICdERVNDJyB9LFxuICAgIH0pO1xuICB9XG5cbiAgLyoqXG4gICAqIEJ1c2NhIHVtYSBjb25maXJtYcOnw6NvIHBlbG8gSUQgY29tIHRvZG9zIG9zIHJlbGFjaW9uYW1lbnRvc1xuICAgKlxuICAgKiBAcGFyYW0gaWQgSUQgZGEgY29uZmlybWHDp8Ojb1xuICAgKiBAcmV0dXJucyBDb25maXJtYcOnw6NvIGVuY29udHJhZGEgY29tIHJlbGFjaW9uYW1lbnRvcyBvdSBudWxsXG4gICAqL1xuICBhc3luYyBmaW5kT25lV2l0aFJlbGF0aW9ucyhcbiAgICBpZDogc3RyaW5nLFxuICApOiBQcm9taXNlPENvbmZpcm1hY2FvUmVjZWJpbWVudG8gfCBudWxsPiB7XG4gICAgcmV0dXJuIHRoaXMuY29uZmlybWFjYW9SZXBvc2l0b3J5LmZpbmRPbmUoe1xuICAgICAgd2hlcmU6IHsgaWQgfSxcbiAgICAgIHJlbGF0aW9uczogWydwYWdhbWVudG8nXSxcbiAgICB9KTtcbiAgfVxuXG4gIC8qKlxuICAgKiBWZXJpZmljYSBzZSB1bSBwYWdhbWVudG8gdGVtIGNvbmZpcm1hw6fDo28gZGUgcmVjZWJpbWVudG9cbiAgICpcbiAgICogQHBhcmFtIHBhZ2FtZW50b0lkIElEIGRvIHBhZ2FtZW50b1xuICAgKiBAcmV0dXJucyB0cnVlIHNlIG8gcGFnYW1lbnRvIHRlbSBjb25maXJtYcOnw6NvXG4gICAqL1xuICBhc3luYyB0ZW1Db25maXJtYWNhbyhwYWdhbWVudG9JZDogc3RyaW5nKTogUHJvbWlzZTxib29sZWFuPiB7XG4gICAgY29uc3QgY291bnQgPSBhd2FpdCB0aGlzLmNvbmZpcm1hY2FvUmVwb3NpdG9yeS5jb3VudCh7XG4gICAgICB3aGVyZTogeyBwYWdhbWVudG9faWQ6IHBhZ2FtZW50b0lkIH0sXG4gICAgfSk7XG5cbiAgICByZXR1cm4gY291bnQgPiAwO1xuICB9XG5cbiAgLyoqXG4gICAqIFZhbGlkYXIgZGVzdGluYXTDoXJpbyBzZSBkaWZlcmVudGUgZG8gYmVuZWZpY2nDoXJpb1xuICAgKlxuICAgKiBAcGFyYW0gcGFnYW1lbnRvSWQgSUQgZG8gcGFnYW1lbnRvXG4gICAqIEBwYXJhbSBkZXN0aW5hdGFyaW9JZCBJRCBkbyBkZXN0aW5hdMOhcmlvXG4gICAqIEByZXR1cm5zIHRydWUgc2UgbyBkZXN0aW5hdMOhcmlvIMOpIHbDoWxpZG9cbiAgICovXG4gIHByaXZhdGUgYXN5bmMgdmFsaWRhckRlc3RpbmF0YXJpbyhcbiAgICBwYWdhbWVudG9JZDogc3RyaW5nLFxuICAgIGRlc3RpbmF0YXJpb0lkPzogc3RyaW5nLFxuICApOiBQcm9taXNlPGJvb2xlYW4+IHtcbiAgICAvLyBFc3RhIMOpIHVtYSBpbXBsZW1lbnRhw6fDo28gZGUgcGxhY2Vob2xkZXJcbiAgICAvLyBTZXLDoSBpbnRlZ3JhZGEgY29tIG8gQ2lkYWRhb1NlcnZpY2UgcGFyYSB2YWxpZGFyIGEgcmVsYcOnw6NvIGVudHJlIG8gYmVuZWZpY2nDoXJpbyBlIG8gZGVzdGluYXTDoXJpb1xuXG4gICAgaWYgKCFkZXN0aW5hdGFyaW9JZCkge1xuICAgICAgcmV0dXJuIHRydWU7IC8vIFNlbSBkZXN0aW5hdMOhcmlvIGVzcGVjw61maWNvLCBhc3N1bWUtc2UgcXVlIMOpIG8gcHLDs3ByaW8gYmVuZWZpY2nDoXJpb1xuICAgIH1cblxuICAgIC8vIEzDs2dpY2EgcGFyYSB2YWxpZGFyIHNlIG8gZGVzdGluYXTDoXJpbyDDqSB2w6FsaWRvIChleDogZmFtaWxpYXIgY2FkYXN0cmFkbylcbiAgICAvLyBjb25zdCBwYWdhbWVudG8gPSBhd2FpdCB0aGlzLnBhZ2FtZW50b1NlcnZpY2UuZmluZE9uZShwYWdhbWVudG9JZCk7XG4gICAgLy8gY29uc3Qgc29saWNpdGFjYW8gPSBhd2FpdCB0aGlzLnNvbGljaXRhY2FvU2VydmljZS5maW5kT25lKHBhZ2FtZW50by5zb2xpY2l0YWNhb0lkKTtcbiAgICAvLyBjb25zdCBiZW5lZmljaWFyaW9JZCA9IHNvbGljaXRhY2FvLmNpZGFkYW9JZDtcblxuICAgIC8vIHJldHVybiB0aGlzLmNpZGFkYW9TZXJ2aWNlLnZlcmlmaWNhclJlbGFjYW9GYW1pbGlhcihiZW5lZmljaWFyaW9JZCwgZGVzdGluYXRhcmlvSWQpO1xuXG4gICAgcmV0dXJuIHRydWU7IC8vIFRlbXBvcmFyaWFtZW50ZSByZXRvcm5hbmRvIHRydWVcbiAgfVxufVxuIl0sInZlcnNpb24iOjN9

@@ -1,0 +1,92 @@
+1a5c8090bc3246efaf2f87a8bf8be168
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.SharedModule = void 0;
+const common_1 = require("@nestjs/common");
+const config_1 = require("@nestjs/config");
+const core_1 = require("@nestjs/core");
+const typeorm_1 = require("@nestjs/typeorm");
+const module_options_1 = require("./configs/module-options");
+// Interceptors
+const logging_interceptor_1 = require("./interceptors/logging.interceptor");
+const validation_error_interceptor_1 = require("./interceptors/validation-error.interceptor");
+// Módulo unificado de logging
+const unified_logger_module_1 = require("./logging/unified-logger.module");
+// Monitoramento
+const monitoring_module_1 = require("./monitoring/monitoring.module");
+// Services
+const criptografia_service_1 = require("./services/criptografia.service");
+const minio_service_1 = require("./services/minio.service");
+const chave_monitor_service_1 = require("./services/chave-monitor.service");
+const health_check_service_1 = require("./services/health-check.service");
+// Validators
+const enum_validator_1 = require("./validators/enum-validator");
+const cpf_validator_1 = require("./validators/cpf.validator");
+let SharedModule = class SharedModule {
+};
+exports.SharedModule = SharedModule;
+exports.SharedModule = SharedModule = __decorate([
+    (0, common_1.Module)({
+        imports: [
+            config_1.ConfigModule.forRoot(module_options_1.configModuleOptions),
+            typeorm_1.TypeOrmModule.forRootAsync({
+                imports: [config_1.ConfigModule],
+                inject: [config_1.ConfigService],
+                useFactory: async (configService) => ({
+                    type: 'postgres',
+                    host: configService.get('database.host'),
+                    port: configService.get('database.port'),
+                    database: configService.get('database.name'),
+                    username: configService.get('database.user'),
+                    password: configService.get('database.pass'),
+                    entities: [__dirname + '/../**/entities/*.entity{.ts,.js}'],
+                    // Timezone configured on the Postgres server.
+                    // This is used to typecast server date/time values to JavaScript Date object and vice versa.
+                    timezone: 'Z',
+                    synchronize: false,
+                    debug: configService.get('env') === 'development',
+                }),
+            }),
+            // Módulo unificado de logging
+            unified_logger_module_1.UnifiedLoggerModule,
+            // Monitoramento
+            monitoring_module_1.MonitoringModule,
+        ],
+        exports: [
+            unified_logger_module_1.UnifiedLoggerModule,
+            config_1.ConfigModule,
+            monitoring_module_1.MonitoringModule,
+            criptografia_service_1.CriptografiaService,
+            minio_service_1.MinioService,
+            chave_monitor_service_1.ChaveMonitorService,
+            health_check_service_1.HealthCheckService,
+            // Validators
+            cpf_validator_1.IsCPF,
+            enum_validator_1.IsEnumValueConstraint,
+            enum_validator_1.EnumValidationHelper,
+            validation_error_interceptor_1.ValidationMessageHelper,
+        ],
+        providers: [
+            // Serviços compartilhados
+            chave_monitor_service_1.ChaveMonitorService,
+            criptografia_service_1.CriptografiaService,
+            minio_service_1.MinioService,
+            health_check_service_1.HealthCheckService,
+            // Validators
+            cpf_validator_1.IsCPF,
+            enum_validator_1.IsEnumValueConstraint,
+            enum_validator_1.EnumValidationHelper,
+            validation_error_interceptor_1.ValidationMessageHelper,
+            // Interceptores para logging e métricas
+            { provide: core_1.APP_INTERCEPTOR, useClass: logging_interceptor_1.LoggingInterceptor },
+            { provide: core_1.APP_INTERCEPTOR, useClass: validation_error_interceptor_1.ValidationErrorInterceptor },
+        ],
+    })
+], SharedModule);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXHNoYXJlZFxcc2hhcmVkLm1vZHVsZS50cyIsIm1hcHBpbmdzIjoiOzs7Ozs7Ozs7QUFBQSwyQ0FBZ0Q7QUFDaEQsMkNBQTZEO0FBSTdELHVDQUEyRDtBQUMzRCw2Q0FBZ0Q7QUFFaEQsNkRBQStEO0FBRS9ELGVBQWU7QUFDZiw0RUFBd0U7QUFFeEUsOEZBR3FEO0FBRXJELDhCQUE4QjtBQUM5QiwyRUFBc0U7QUFFdEUsZ0JBQWdCO0FBQ2hCLHNFQUFrRTtBQUVsRSxXQUFXO0FBQ1gsMEVBQXNFO0FBQ3RFLDREQUF3RDtBQUN4RCw0RUFBdUU7QUFDdkUsMEVBQXFFO0FBRXJFLGFBQWE7QUFDYixnRUFHcUM7QUFDckMsOERBQW1EO0FBNEQ1QyxJQUFNLFlBQVksR0FBbEIsTUFBTSxZQUFZO0NBQUcsQ0FBQTtBQUFmLG9DQUFZO3VCQUFaLFlBQVk7SUExRHhCLElBQUEsZUFBTSxFQUFDO1FBQ04sT0FBTyxFQUFFO1lBQ1AscUJBQVksQ0FBQyxPQUFPLENBQUMsb0NBQW1CLENBQUM7WUFDekMsdUJBQWEsQ0FBQyxZQUFZLENBQUM7Z0JBQ3pCLE9BQU8sRUFBRSxDQUFDLHFCQUFZLENBQUM7Z0JBQ3ZCLE1BQU0sRUFBRSxDQUFDLHNCQUFhLENBQUM7Z0JBQ3ZCLFVBQVUsRUFBRSxLQUFLLEVBQUUsYUFBNEIsRUFBRSxFQUFFLENBQUMsQ0FBQztvQkFDbkQsSUFBSSxFQUFFLFVBQVU7b0JBQ2hCLElBQUksRUFBRSxhQUFhLENBQUMsR0FBRyxDQUFTLGVBQWUsQ0FBQztvQkFDaEQsSUFBSSxFQUFFLGFBQWEsQ0FBQyxHQUFHLENBQXFCLGVBQWUsQ0FBQztvQkFDNUQsUUFBUSxFQUFFLGFBQWEsQ0FBQyxHQUFHLENBQVMsZUFBZSxDQUFDO29CQUNwRCxRQUFRLEVBQUUsYUFBYSxDQUFDLEdBQUcsQ0FBUyxlQUFlLENBQUM7b0JBQ3BELFFBQVEsRUFBRSxhQUFhLENBQUMsR0FBRyxDQUFTLGVBQWUsQ0FBQztvQkFDcEQsUUFBUSxFQUFFLENBQUMsU0FBUyxHQUFHLG1DQUFtQyxDQUFDO29CQUMzRCw4Q0FBOEM7b0JBQzlDLDZGQUE2RjtvQkFDN0YsUUFBUSxFQUFFLEdBQUc7b0JBQ2IsV0FBVyxFQUFFLEtBQUs7b0JBQ2xCLEtBQUssRUFBRSxhQUFhLENBQUMsR0FBRyxDQUFTLEtBQUssQ0FBQyxLQUFLLGFBQWE7aUJBQzFELENBQUM7YUFDSCxDQUFDO1lBQ0YsOEJBQThCO1lBQzlCLDJDQUFtQjtZQUNuQixnQkFBZ0I7WUFDaEIsb0NBQWdCO1NBQ2pCO1FBQ0QsT0FBTyxFQUFFO1lBQ1AsMkNBQW1CO1lBQ25CLHFCQUFZO1lBQ1osb0NBQWdCO1lBQ2hCLDBDQUFtQjtZQUNuQiw0QkFBWTtZQUNaLDJDQUFtQjtZQUNuQix5Q0FBa0I7WUFDbEIsYUFBYTtZQUNiLHFCQUFLO1lBQ0wsc0NBQXFCO1lBQ3JCLHFDQUFvQjtZQUNwQixzREFBdUI7U0FDeEI7UUFDRCxTQUFTLEVBQUU7WUFDVCwwQkFBMEI7WUFDMUIsMkNBQW1CO1lBQ25CLDBDQUFtQjtZQUNuQiw0QkFBWTtZQUNaLHlDQUFrQjtZQUVsQixhQUFhO1lBQ2IscUJBQUs7WUFDTCxzQ0FBcUI7WUFDckIscUNBQW9CO1lBQ3BCLHNEQUF1QjtZQUV2Qix3Q0FBd0M7WUFDeEMsRUFBRSxPQUFPLEVBQUUsc0JBQWUsRUFBRSxRQUFRLEVBQUUsd0NBQWtCLEVBQUU7WUFDMUQsRUFBRSxPQUFPLEVBQUUsc0JBQWUsRUFBRSxRQUFRLEVBQUUseURBQTBCLEVBQUU7U0FDbkU7S0FDRixDQUFDO0dBQ1csWUFBWSxDQUFHIiwibmFtZXMiOltdLCJzb3VyY2VzIjpbIkM6XFxVc2Vyc1xcZXVkcmVcXE9uZURyaXZlXFxEZXNrdG9wXFxQcm9qZXRvc1xccGdiZW5cXHBnYmVuLXNlcnZlclxcc3JjXFxzaGFyZWRcXHNoYXJlZC5tb2R1bGUudHMiXSwic291cmNlc0NvbnRlbnQiOlsiaW1wb3J0IHsgR2xvYmFsLCBNb2R1bGUgfSBmcm9tICdAbmVzdGpzL2NvbW1vbic7XG5pbXBvcnQgeyBDb25maWdNb2R1bGUsIENvbmZpZ1NlcnZpY2UgfSBmcm9tICdAbmVzdGpzL2NvbmZpZyc7XG5pbXBvcnQgeyBKd3RNb2R1bGUgfSBmcm9tICdAbmVzdGpzL2p3dCc7XG5pbXBvcnQgeyBQYXNzcG9ydE1vZHVsZSB9IGZyb20gJ0BuZXN0anMvcGFzc3BvcnQnO1xuaW1wb3J0IHsgVGhyb3R0bGVyTW9kdWxlIH0gZnJvbSAnQG5lc3Rqcy90aHJvdHRsZXInO1xuaW1wb3J0IHsgQVBQX0ZJTFRFUiwgQVBQX0lOVEVSQ0VQVE9SIH0gZnJvbSAnQG5lc3Rqcy9jb3JlJztcbmltcG9ydCB7IFR5cGVPcm1Nb2R1bGUgfSBmcm9tICdAbmVzdGpzL3R5cGVvcm0nO1xuXG5pbXBvcnQgeyBjb25maWdNb2R1bGVPcHRpb25zIH0gZnJvbSAnLi9jb25maWdzL21vZHVsZS1vcHRpb25zJztcblxuLy8gSW50ZXJjZXB0b3JzXG5pbXBvcnQgeyBMb2dnaW5nSW50ZXJjZXB0b3IgfSBmcm9tICcuL2ludGVyY2VwdG9ycy9sb2dnaW5nLmludGVyY2VwdG9yJztcbmltcG9ydCB7IFJlc3BvbnNlSW50ZXJjZXB0b3IgfSBmcm9tICcuL2ludGVyY2VwdG9ycy9yZXNwb25zZS5pbnRlcmNlcHRvcic7XG5pbXBvcnQge1xuICBWYWxpZGF0aW9uRXJyb3JJbnRlcmNlcHRvcixcbiAgVmFsaWRhdGlvbk1lc3NhZ2VIZWxwZXIsXG59IGZyb20gJy4vaW50ZXJjZXB0b3JzL3ZhbGlkYXRpb24tZXJyb3IuaW50ZXJjZXB0b3InO1xuXG4vLyBNw7NkdWxvIHVuaWZpY2FkbyBkZSBsb2dnaW5nXG5pbXBvcnQgeyBVbmlmaWVkTG9nZ2VyTW9kdWxlIH0gZnJvbSAnLi9sb2dnaW5nL3VuaWZpZWQtbG9nZ2VyLm1vZHVsZSc7XG5cbi8vIE1vbml0b3JhbWVudG9cbmltcG9ydCB7IE1vbml0b3JpbmdNb2R1bGUgfSBmcm9tICcuL21vbml0b3JpbmcvbW9uaXRvcmluZy5tb2R1bGUnO1xuXG4vLyBTZXJ2aWNlc1xuaW1wb3J0IHsgQ3JpcHRvZ3JhZmlhU2VydmljZSB9IGZyb20gJy4vc2VydmljZXMvY3JpcHRvZ3JhZmlhLnNlcnZpY2UnO1xuaW1wb3J0IHsgTWluaW9TZXJ2aWNlIH0gZnJvbSAnLi9zZXJ2aWNlcy9taW5pby5zZXJ2aWNlJztcbmltcG9ydCB7IENoYXZlTW9uaXRvclNlcnZpY2UgfSBmcm9tICcuL3NlcnZpY2VzL2NoYXZlLW1vbml0b3Iuc2VydmljZSc7XG5pbXBvcnQgeyBIZWFsdGhDaGVja1NlcnZpY2UgfSBmcm9tICcuL3NlcnZpY2VzL2hlYWx0aC1jaGVjay5zZXJ2aWNlJztcblxuLy8gVmFsaWRhdG9yc1xuaW1wb3J0IHtcbiAgSXNFbnVtVmFsdWVDb25zdHJhaW50LFxuICBFbnVtVmFsaWRhdGlvbkhlbHBlcixcbn0gZnJvbSAnLi92YWxpZGF0b3JzL2VudW0tdmFsaWRhdG9yJztcbmltcG9ydCB7IElzQ1BGIH0gZnJvbSAnLi92YWxpZGF0b3JzL2NwZi52YWxpZGF0b3InO1xuXG5ATW9kdWxlKHtcbiAgaW1wb3J0czogW1xuICAgIENvbmZpZ01vZHVsZS5mb3JSb290KGNvbmZpZ01vZHVsZU9wdGlvbnMpLFxuICAgIFR5cGVPcm1Nb2R1bGUuZm9yUm9vdEFzeW5jKHtcbiAgICAgIGltcG9ydHM6IFtDb25maWdNb2R1bGVdLFxuICAgICAgaW5qZWN0OiBbQ29uZmlnU2VydmljZV0sXG4gICAgICB1c2VGYWN0b3J5OiBhc3luYyAoY29uZmlnU2VydmljZTogQ29uZmlnU2VydmljZSkgPT4gKHtcbiAgICAgICAgdHlwZTogJ3Bvc3RncmVzJyxcbiAgICAgICAgaG9zdDogY29uZmlnU2VydmljZS5nZXQ8c3RyaW5nPignZGF0YWJhc2UuaG9zdCcpLFxuICAgICAgICBwb3J0OiBjb25maWdTZXJ2aWNlLmdldDxudW1iZXIgfCB1bmRlZmluZWQ+KCdkYXRhYmFzZS5wb3J0JyksXG4gICAgICAgIGRhdGFiYXNlOiBjb25maWdTZXJ2aWNlLmdldDxzdHJpbmc+KCdkYXRhYmFzZS5uYW1lJyksXG4gICAgICAgIHVzZXJuYW1lOiBjb25maWdTZXJ2aWNlLmdldDxzdHJpbmc+KCdkYXRhYmFzZS51c2VyJyksXG4gICAgICAgIHBhc3N3b3JkOiBjb25maWdTZXJ2aWNlLmdldDxzdHJpbmc+KCdkYXRhYmFzZS5wYXNzJyksXG4gICAgICAgIGVudGl0aWVzOiBbX19kaXJuYW1lICsgJy8uLi8qKi9lbnRpdGllcy8qLmVudGl0eXsudHMsLmpzfSddLFxuICAgICAgICAvLyBUaW1lem9uZSBjb25maWd1cmVkIG9uIHRoZSBQb3N0Z3JlcyBzZXJ2ZXIuXG4gICAgICAgIC8vIFRoaXMgaXMgdXNlZCB0byB0eXBlY2FzdCBzZXJ2ZXIgZGF0ZS90aW1lIHZhbHVlcyB0byBKYXZhU2NyaXB0IERhdGUgb2JqZWN0IGFuZCB2aWNlIHZlcnNhLlxuICAgICAgICB0aW1lem9uZTogJ1onLFxuICAgICAgICBzeW5jaHJvbml6ZTogZmFsc2UsXG4gICAgICAgIGRlYnVnOiBjb25maWdTZXJ2aWNlLmdldDxzdHJpbmc+KCdlbnYnKSA9PT0gJ2RldmVsb3BtZW50JyxcbiAgICAgIH0pLFxuICAgIH0pLFxuICAgIC8vIE3Ds2R1bG8gdW5pZmljYWRvIGRlIGxvZ2dpbmdcbiAgICBVbmlmaWVkTG9nZ2VyTW9kdWxlLFxuICAgIC8vIE1vbml0b3JhbWVudG9cbiAgICBNb25pdG9yaW5nTW9kdWxlLFxuICBdLFxuICBleHBvcnRzOiBbXG4gICAgVW5pZmllZExvZ2dlck1vZHVsZSxcbiAgICBDb25maWdNb2R1bGUsXG4gICAgTW9uaXRvcmluZ01vZHVsZSxcbiAgICBDcmlwdG9ncmFmaWFTZXJ2aWNlLFxuICAgIE1pbmlvU2VydmljZSxcbiAgICBDaGF2ZU1vbml0b3JTZXJ2aWNlLFxuICAgIEhlYWx0aENoZWNrU2VydmljZSxcbiAgICAvLyBWYWxpZGF0b3JzXG4gICAgSXNDUEYsXG4gICAgSXNFbnVtVmFsdWVDb25zdHJhaW50LFxuICAgIEVudW1WYWxpZGF0aW9uSGVscGVyLFxuICAgIFZhbGlkYXRpb25NZXNzYWdlSGVscGVyLFxuICBdLFxuICBwcm92aWRlcnM6IFtcbiAgICAvLyBTZXJ2acOnb3MgY29tcGFydGlsaGFkb3NcbiAgICBDaGF2ZU1vbml0b3JTZXJ2aWNlLFxuICAgIENyaXB0b2dyYWZpYVNlcnZpY2UsXG4gICAgTWluaW9TZXJ2aWNlLFxuICAgIEhlYWx0aENoZWNrU2VydmljZSxcblxuICAgIC8vIFZhbGlkYXRvcnNcbiAgICBJc0NQRixcbiAgICBJc0VudW1WYWx1ZUNvbnN0cmFpbnQsXG4gICAgRW51bVZhbGlkYXRpb25IZWxwZXIsXG4gICAgVmFsaWRhdGlvbk1lc3NhZ2VIZWxwZXIsXG5cbiAgICAvLyBJbnRlcmNlcHRvcmVzIHBhcmEgbG9nZ2luZyBlIG3DqXRyaWNhc1xuICAgIHsgcHJvdmlkZTogQVBQX0lOVEVSQ0VQVE9SLCB1c2VDbGFzczogTG9nZ2luZ0ludGVyY2VwdG9yIH0sXG4gICAgeyBwcm92aWRlOiBBUFBfSU5URVJDRVBUT1IsIHVzZUNsYXNzOiBWYWxpZGF0aW9uRXJyb3JJbnRlcmNlcHRvciB9LFxuICBdLFxufSlcbmV4cG9ydCBjbGFzcyBTaGFyZWRNb2R1bGUge31cbiJdLCJ2ZXJzaW9uIjozfQ==

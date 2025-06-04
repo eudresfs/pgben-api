@@ -1,0 +1,131 @@
+93f82a00d8ebf068ac2f6ba165336f20
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.AppModule = void 0;
+const common_1 = require("@nestjs/common");
+const config_1 = require("@nestjs/config");
+const typeorm_1 = require("@nestjs/typeorm");
+const cache_manager_1 = require("@nestjs/cache-manager");
+const throttler_1 = require("@nestjs/throttler");
+const throttler_config_1 = require("./config/throttler.config");
+const app_controller_1 = require("./app.controller");
+const app_service_1 = require("./app.service");
+const monitoring_module_1 = require("./shared/monitoring/monitoring.module");
+const auth_module_1 = require("./auth/auth.module");
+const permission_shared_module_1 = require("./shared/permission/permission-shared.module");
+const auditoria_shared_module_1 = require("./shared/auditoria/auditoria-shared.module");
+const usuario_module_1 = require("./modules/usuario/usuario.module");
+const unidade_module_1 = require("./modules/unidade/unidade.module");
+const cidadao_module_1 = require("./modules/cidadao/cidadao.module");
+const beneficio_module_1 = require("./modules/beneficio/beneficio.module");
+const documento_module_1 = require("./modules/documento/documento.module");
+const metricas_module_1 = require("./modules/metricas/metricas.module");
+const audit_module_1 = require("./audit/audit.module");
+const recurso_module_1 = require("./modules/recurso/recurso.module");
+const logs_module_1 = require("./modules/logs/logs.module");
+const core_1 = require("@nestjs/core");
+const error_catalog_1 = require("./shared/exceptions/error-catalog");
+const unified_logger_module_1 = require("./shared/logging/unified-logger.module");
+const resilience_module_1 = require("./shared/modules/resilience.module");
+const email_module_1 = require("./shared/modules/email.module");
+let AppModule = class AppModule {
+    constructor() {
+        console.log('✅ AppModule inicializado - com autenticação');
+    }
+}; //
+exports.AppModule = AppModule;
+exports.AppModule = AppModule = __decorate([
+    (0, common_1.Module)({
+        imports: [
+            config_1.ConfigModule.forRoot({
+                isGlobal: true,
+                envFilePath: '.env',
+            }),
+            // Cache para relatórios e autenticação
+            cache_manager_1.CacheModule.register({
+                isGlobal: true,
+                ttl: 3600, // tempo de vida do cache: 1 hora
+                max: 100, // máximo de 100 itens no cache
+            }),
+            // Rate limiting - configuração robusta com múltiplos throttlers
+            throttler_1.ThrottlerModule.forRootAsync({
+                imports: [config_1.ConfigModule],
+                inject: [config_1.ConfigService],
+                useFactory: throttler_config_1.createThrottlerConfig,
+            }),
+            // Configuração do TypeORM
+            typeorm_1.TypeOrmModule.forRootAsync({
+                imports: [config_1.ConfigModule],
+                inject: [config_1.ConfigService],
+                useFactory: (configService) => ({
+                    type: 'postgres',
+                    host: configService.get('DB_HOST', 'localhost'),
+                    port: parseInt(configService.get('DB_PORT', '5432')),
+                    username: configService.get('DB_USER', 'postgres'),
+                    password: configService.get('DB_PASS', 'postgres'),
+                    database: configService.get('DB_NAME', 'pgben'),
+                    entities: [__dirname + '/**/*.entity{.ts,.js}'],
+                    synchronize: false,
+                    logging: configService.get('NODE_ENV') === 'development',
+                    maxQueryExecutionTime: 10000,
+                    extra: {
+                        max: parseInt(configService.get('DB_POOL_MAX', '20')),
+                        min: parseInt(configService.get('DB_POOL_MIN', '5')),
+                        idleTimeoutMillis: parseInt(configService.get('DB_POOL_IDLE', '30000')),
+                        connectionTimeoutMillis: parseInt(configService.get('DB_POOL_CONN_TIMEOUT', '5000')),
+                        allowExitOnIdle: false,
+                    },
+                }),
+            }),
+            // Módulo de monitoramento
+            monitoring_module_1.MonitoringModule,
+            // Módulos compartilhados
+            email_module_1.EmailModule, // Módulo de email
+            unified_logger_module_1.UnifiedLoggerModule,
+            permission_shared_module_1.PermissionSharedModule,
+            auditoria_shared_module_1.AuditoriaSharedModule,
+            resilience_module_1.ResilienceModule, // Reabilitado após correções no Redis/Cache
+            // Módulo de autenticação
+            auth_module_1.AuthModule,
+            // Módulo de usuários
+            usuario_module_1.UsuarioModule,
+            // Módulo de unidades
+            unidade_module_1.UnidadeModule,
+            // Módulo de cidadãos
+            cidadao_module_1.CidadaoModule,
+            // Módulo de benefícios
+            beneficio_module_1.BeneficioModule,
+            // Módulo de docuentos
+            documento_module_1.DocumentoModule,
+            // Módulo de auditoria e logging
+            audit_module_1.AuditModule,
+            // Módulo de métricas
+            metricas_module_1.MetricasModule,
+            // Módulo de recursos de primeira instância
+            recurso_module_1.RecursoModule,
+            // Módulo de logs de auditoria
+            logs_module_1.LogsModule,
+        ],
+        controllers: [app_controller_1.AppController],
+        providers: [
+            app_service_1.AppService,
+            error_catalog_1.CatalogAwareExceptionFilter,
+            // Aplicar rate limiting globalmente
+            {
+                provide: core_1.APP_GUARD,
+                useClass: throttler_1.ThrottlerGuard,
+            },
+        ],
+    }),
+    __metadata("design:paramtypes", [])
+], AppModule);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXGFwcC5tb2R1bGUudHMiLCJtYXBwaW5ncyI6Ijs7Ozs7Ozs7Ozs7O0FBQUEsMkNBQXdDO0FBQ3hDLDJDQUE2RDtBQUM3RCw2Q0FBZ0Q7QUFDaEQseURBQW9EO0FBQ3BELGlEQUFvRTtBQUNwRSxnRUFBa0U7QUFDbEUscURBQWlEO0FBQ2pELCtDQUEyQztBQUMzQyw2RUFBeUU7QUFDekUsb0RBQWdEO0FBQ2hELDJGQUFzRjtBQUN0Rix3RkFBbUY7QUFDbkYscUVBQWlFO0FBQ2pFLHFFQUFpRTtBQUNqRSxxRUFBaUU7QUFDakUsMkVBQXVFO0FBQ3ZFLDJFQUF1RTtBQUN2RSx3RUFBb0U7QUFDcEUsdURBQW1EO0FBQ25ELHFFQUFpRTtBQUNqRSw0REFBd0Q7QUFDeEQsdUNBQXlDO0FBQ3pDLHFFQUFnRjtBQUNoRixrRkFBNkU7QUFDN0UsMEVBQXNFO0FBQ3RFLGdFQUE0RDtBQW1HckQsSUFBTSxTQUFTLEdBQWYsTUFBTSxTQUFTO0lBQ3BCO1FBQ0UsT0FBTyxDQUFDLEdBQUcsQ0FBQyw2Q0FBNkMsQ0FBQyxDQUFDO0lBQzdELENBQUM7Q0FDRixDQUFBLENBQUMsRUFBRTtBQUpTLDhCQUFTO29CQUFULFNBQVM7SUFqR3JCLElBQUEsZUFBTSxFQUFDO1FBQ04sT0FBTyxFQUFFO1lBQ1AscUJBQVksQ0FBQyxPQUFPLENBQUM7Z0JBQ25CLFFBQVEsRUFBRSxJQUFJO2dCQUNkLFdBQVcsRUFBRSxNQUFNO2FBQ3BCLENBQUM7WUFDRix1Q0FBdUM7WUFDdkMsMkJBQVcsQ0FBQyxRQUFRLENBQUM7Z0JBQ25CLFFBQVEsRUFBRSxJQUFJO2dCQUNkLEdBQUcsRUFBRSxJQUFJLEVBQUUsaUNBQWlDO2dCQUM1QyxHQUFHLEVBQUUsR0FBRyxFQUFFLCtCQUErQjthQUMxQyxDQUFDO1lBQ0YsZ0VBQWdFO1lBQ2hFLDJCQUFlLENBQUMsWUFBWSxDQUFDO2dCQUMzQixPQUFPLEVBQUUsQ0FBQyxxQkFBWSxDQUFDO2dCQUN2QixNQUFNLEVBQUUsQ0FBQyxzQkFBYSxDQUFDO2dCQUN2QixVQUFVLEVBQUUsd0NBQXFCO2FBQ2xDLENBQUM7WUFDRiwwQkFBMEI7WUFDMUIsdUJBQWEsQ0FBQyxZQUFZLENBQUM7Z0JBQ3pCLE9BQU8sRUFBRSxDQUFDLHFCQUFZLENBQUM7Z0JBQ3ZCLE1BQU0sRUFBRSxDQUFDLHNCQUFhLENBQUM7Z0JBQ3ZCLFVBQVUsRUFBRSxDQUFDLGFBQTRCLEVBQUUsRUFBRSxDQUFDLENBQUM7b0JBQzdDLElBQUksRUFBRSxVQUFVO29CQUNoQixJQUFJLEVBQUUsYUFBYSxDQUFDLEdBQUcsQ0FBQyxTQUFTLEVBQUUsV0FBVyxDQUFDO29CQUMvQyxJQUFJLEVBQUUsUUFBUSxDQUFDLGFBQWEsQ0FBQyxHQUFHLENBQUMsU0FBUyxFQUFFLE1BQU0sQ0FBQyxDQUFDO29CQUNwRCxRQUFRLEVBQUUsYUFBYSxDQUFDLEdBQUcsQ0FBQyxTQUFTLEVBQUUsVUFBVSxDQUFDO29CQUNsRCxRQUFRLEVBQUUsYUFBYSxDQUFDLEdBQUcsQ0FBQyxTQUFTLEVBQUUsVUFBVSxDQUFDO29CQUNsRCxRQUFRLEVBQUUsYUFBYSxDQUFDLEdBQUcsQ0FBQyxTQUFTLEVBQUUsT0FBTyxDQUFDO29CQUMvQyxRQUFRLEVBQUUsQ0FBQyxTQUFTLEdBQUcsdUJBQXVCLENBQUM7b0JBQy9DLFdBQVcsRUFBRSxLQUFLO29CQUNsQixPQUFPLEVBQUUsYUFBYSxDQUFDLEdBQUcsQ0FBQyxVQUFVLENBQUMsS0FBSyxhQUFhO29CQUN4RCxxQkFBcUIsRUFBRSxLQUFLO29CQUM1QixLQUFLLEVBQUU7d0JBQ0wsR0FBRyxFQUFFLFFBQVEsQ0FBQyxhQUFhLENBQUMsR0FBRyxDQUFDLGFBQWEsRUFBRSxJQUFJLENBQUMsQ0FBQzt3QkFDckQsR0FBRyxFQUFFLFFBQVEsQ0FBQyxhQUFhLENBQUMsR0FBRyxDQUFDLGFBQWEsRUFBRSxHQUFHLENBQUMsQ0FBQzt3QkFDcEQsaUJBQWlCLEVBQUUsUUFBUSxDQUN6QixhQUFhLENBQUMsR0FBRyxDQUFDLGNBQWMsRUFBRSxPQUFPLENBQUMsQ0FDM0M7d0JBQ0QsdUJBQXVCLEVBQUUsUUFBUSxDQUMvQixhQUFhLENBQUMsR0FBRyxDQUFDLHNCQUFzQixFQUFFLE1BQU0sQ0FBQyxDQUNsRDt3QkFDRCxlQUFlLEVBQUUsS0FBSztxQkFDdkI7aUJBQ0YsQ0FBQzthQUNILENBQUM7WUFDRiwwQkFBMEI7WUFDMUIsb0NBQWdCO1lBRWhCLHlCQUF5QjtZQUN6QiwwQkFBVyxFQUFFLGtCQUFrQjtZQUMvQiwyQ0FBbUI7WUFDbkIsaURBQXNCO1lBQ3RCLCtDQUFxQjtZQUNyQixvQ0FBZ0IsRUFBRSw0Q0FBNEM7WUFFOUQseUJBQXlCO1lBQ3pCLHdCQUFVO1lBRVYscUJBQXFCO1lBQ3JCLDhCQUFhO1lBRWIscUJBQXFCO1lBQ3JCLDhCQUFhO1lBRWIscUJBQXFCO1lBQ3JCLDhCQUFhO1lBRWIsdUJBQXVCO1lBQ3ZCLGtDQUFlO1lBRWYsc0JBQXNCO1lBQ3RCLGtDQUFlO1lBRWYsZ0NBQWdDO1lBQ2hDLDBCQUFXO1lBRVgscUJBQXFCO1lBQ3JCLGdDQUFjO1lBRWQsMkNBQTJDO1lBQzNDLDhCQUFhO1lBRWIsOEJBQThCO1lBQzlCLHdCQUFVO1NBQ1g7UUFDRCxXQUFXLEVBQUUsQ0FBQyw4QkFBYSxDQUFDO1FBQzVCLFNBQVMsRUFBRTtZQUNULHdCQUFVO1lBQ1YsMkNBQTJCO1lBQzNCLG9DQUFvQztZQUNwQztnQkFDRSxPQUFPLEVBQUUsZ0JBQVM7Z0JBQ2xCLFFBQVEsRUFBRSwwQkFBYzthQUN6QjtTQUNGO0tBQ0YsQ0FBQzs7R0FDVyxTQUFTLENBSXJCIiwibmFtZXMiOltdLCJzb3VyY2VzIjpbIkM6XFxVc2Vyc1xcZXVkcmVcXE9uZURyaXZlXFxEZXNrdG9wXFxQcm9qZXRvc1xccGdiZW5cXHBnYmVuLXNlcnZlclxcc3JjXFxhcHAubW9kdWxlLnRzIl0sInNvdXJjZXNDb250ZW50IjpbImltcG9ydCB7IE1vZHVsZSB9IGZyb20gJ0BuZXN0anMvY29tbW9uJztcbmltcG9ydCB7IENvbmZpZ01vZHVsZSwgQ29uZmlnU2VydmljZSB9IGZyb20gJ0BuZXN0anMvY29uZmlnJztcbmltcG9ydCB7IFR5cGVPcm1Nb2R1bGUgfSBmcm9tICdAbmVzdGpzL3R5cGVvcm0nO1xuaW1wb3J0IHsgQ2FjaGVNb2R1bGUgfSBmcm9tICdAbmVzdGpzL2NhY2hlLW1hbmFnZXInO1xuaW1wb3J0IHsgVGhyb3R0bGVyTW9kdWxlLCBUaHJvdHRsZXJHdWFyZCB9IGZyb20gJ0BuZXN0anMvdGhyb3R0bGVyJztcbmltcG9ydCB7IGNyZWF0ZVRocm90dGxlckNvbmZpZyB9IGZyb20gJy4vY29uZmlnL3Rocm90dGxlci5jb25maWcnO1xuaW1wb3J0IHsgQXBwQ29udHJvbGxlciB9IGZyb20gJy4vYXBwLmNvbnRyb2xsZXInO1xuaW1wb3J0IHsgQXBwU2VydmljZSB9IGZyb20gJy4vYXBwLnNlcnZpY2UnO1xuaW1wb3J0IHsgTW9uaXRvcmluZ01vZHVsZSB9IGZyb20gJy4vc2hhcmVkL21vbml0b3JpbmcvbW9uaXRvcmluZy5tb2R1bGUnO1xuaW1wb3J0IHsgQXV0aE1vZHVsZSB9IGZyb20gJy4vYXV0aC9hdXRoLm1vZHVsZSc7XG5pbXBvcnQgeyBQZXJtaXNzaW9uU2hhcmVkTW9kdWxlIH0gZnJvbSAnLi9zaGFyZWQvcGVybWlzc2lvbi9wZXJtaXNzaW9uLXNoYXJlZC5tb2R1bGUnO1xuaW1wb3J0IHsgQXVkaXRvcmlhU2hhcmVkTW9kdWxlIH0gZnJvbSAnLi9zaGFyZWQvYXVkaXRvcmlhL2F1ZGl0b3JpYS1zaGFyZWQubW9kdWxlJztcbmltcG9ydCB7IFVzdWFyaW9Nb2R1bGUgfSBmcm9tICcuL21vZHVsZXMvdXN1YXJpby91c3VhcmlvLm1vZHVsZSc7XG5pbXBvcnQgeyBVbmlkYWRlTW9kdWxlIH0gZnJvbSAnLi9tb2R1bGVzL3VuaWRhZGUvdW5pZGFkZS5tb2R1bGUnO1xuaW1wb3J0IHsgQ2lkYWRhb01vZHVsZSB9IGZyb20gJy4vbW9kdWxlcy9jaWRhZGFvL2NpZGFkYW8ubW9kdWxlJztcbmltcG9ydCB7IEJlbmVmaWNpb01vZHVsZSB9IGZyb20gJy4vbW9kdWxlcy9iZW5lZmljaW8vYmVuZWZpY2lvLm1vZHVsZSc7XG5pbXBvcnQgeyBEb2N1bWVudG9Nb2R1bGUgfSBmcm9tICcuL21vZHVsZXMvZG9jdW1lbnRvL2RvY3VtZW50by5tb2R1bGUnO1xuaW1wb3J0IHsgTWV0cmljYXNNb2R1bGUgfSBmcm9tICcuL21vZHVsZXMvbWV0cmljYXMvbWV0cmljYXMubW9kdWxlJztcbmltcG9ydCB7IEF1ZGl0TW9kdWxlIH0gZnJvbSAnLi9hdWRpdC9hdWRpdC5tb2R1bGUnO1xuaW1wb3J0IHsgUmVjdXJzb01vZHVsZSB9IGZyb20gJy4vbW9kdWxlcy9yZWN1cnNvL3JlY3Vyc28ubW9kdWxlJztcbmltcG9ydCB7IExvZ3NNb2R1bGUgfSBmcm9tICcuL21vZHVsZXMvbG9ncy9sb2dzLm1vZHVsZSc7XG5pbXBvcnQgeyBBUFBfR1VBUkQgfSBmcm9tICdAbmVzdGpzL2NvcmUnO1xuaW1wb3J0IHsgQ2F0YWxvZ0F3YXJlRXhjZXB0aW9uRmlsdGVyIH0gZnJvbSAnLi9zaGFyZWQvZXhjZXB0aW9ucy9lcnJvci1jYXRhbG9nJztcbmltcG9ydCB7IFVuaWZpZWRMb2dnZXJNb2R1bGUgfSBmcm9tICcuL3NoYXJlZC9sb2dnaW5nL3VuaWZpZWQtbG9nZ2VyLm1vZHVsZSc7XG5pbXBvcnQgeyBSZXNpbGllbmNlTW9kdWxlIH0gZnJvbSAnLi9zaGFyZWQvbW9kdWxlcy9yZXNpbGllbmNlLm1vZHVsZSc7XG5pbXBvcnQgeyBFbWFpbE1vZHVsZSB9IGZyb20gJy4vc2hhcmVkL21vZHVsZXMvZW1haWwubW9kdWxlJztcblxuQE1vZHVsZSh7XG4gIGltcG9ydHM6IFtcbiAgICBDb25maWdNb2R1bGUuZm9yUm9vdCh7XG4gICAgICBpc0dsb2JhbDogdHJ1ZSxcbiAgICAgIGVudkZpbGVQYXRoOiAnLmVudicsXG4gICAgfSksXG4gICAgLy8gQ2FjaGUgcGFyYSByZWxhdMOzcmlvcyBlIGF1dGVudGljYcOnw6NvXG4gICAgQ2FjaGVNb2R1bGUucmVnaXN0ZXIoe1xuICAgICAgaXNHbG9iYWw6IHRydWUsXG4gICAgICB0dGw6IDM2MDAsIC8vIHRlbXBvIGRlIHZpZGEgZG8gY2FjaGU6IDEgaG9yYVxuICAgICAgbWF4OiAxMDAsIC8vIG3DoXhpbW8gZGUgMTAwIGl0ZW5zIG5vIGNhY2hlXG4gICAgfSksXG4gICAgLy8gUmF0ZSBsaW1pdGluZyAtIGNvbmZpZ3VyYcOnw6NvIHJvYnVzdGEgY29tIG3Dumx0aXBsb3MgdGhyb3R0bGVyc1xuICAgIFRocm90dGxlck1vZHVsZS5mb3JSb290QXN5bmMoe1xuICAgICAgaW1wb3J0czogW0NvbmZpZ01vZHVsZV0sXG4gICAgICBpbmplY3Q6IFtDb25maWdTZXJ2aWNlXSxcbiAgICAgIHVzZUZhY3Rvcnk6IGNyZWF0ZVRocm90dGxlckNvbmZpZyxcbiAgICB9KSxcbiAgICAvLyBDb25maWd1cmHDp8OjbyBkbyBUeXBlT1JNXG4gICAgVHlwZU9ybU1vZHVsZS5mb3JSb290QXN5bmMoe1xuICAgICAgaW1wb3J0czogW0NvbmZpZ01vZHVsZV0sXG4gICAgICBpbmplY3Q6IFtDb25maWdTZXJ2aWNlXSxcbiAgICAgIHVzZUZhY3Rvcnk6IChjb25maWdTZXJ2aWNlOiBDb25maWdTZXJ2aWNlKSA9PiAoe1xuICAgICAgICB0eXBlOiAncG9zdGdyZXMnLFxuICAgICAgICBob3N0OiBjb25maWdTZXJ2aWNlLmdldCgnREJfSE9TVCcsICdsb2NhbGhvc3QnKSxcbiAgICAgICAgcG9ydDogcGFyc2VJbnQoY29uZmlnU2VydmljZS5nZXQoJ0RCX1BPUlQnLCAnNTQzMicpKSxcbiAgICAgICAgdXNlcm5hbWU6IGNvbmZpZ1NlcnZpY2UuZ2V0KCdEQl9VU0VSJywgJ3Bvc3RncmVzJyksXG4gICAgICAgIHBhc3N3b3JkOiBjb25maWdTZXJ2aWNlLmdldCgnREJfUEFTUycsICdwb3N0Z3JlcycpLFxuICAgICAgICBkYXRhYmFzZTogY29uZmlnU2VydmljZS5nZXQoJ0RCX05BTUUnLCAncGdiZW4nKSxcbiAgICAgICAgZW50aXRpZXM6IFtfX2Rpcm5hbWUgKyAnLyoqLyouZW50aXR5ey50cywuanN9J10sXG4gICAgICAgIHN5bmNocm9uaXplOiBmYWxzZSxcbiAgICAgICAgbG9nZ2luZzogY29uZmlnU2VydmljZS5nZXQoJ05PREVfRU5WJykgPT09ICdkZXZlbG9wbWVudCcsXG4gICAgICAgIG1heFF1ZXJ5RXhlY3V0aW9uVGltZTogMTAwMDAsXG4gICAgICAgIGV4dHJhOiB7XG4gICAgICAgICAgbWF4OiBwYXJzZUludChjb25maWdTZXJ2aWNlLmdldCgnREJfUE9PTF9NQVgnLCAnMjAnKSksXG4gICAgICAgICAgbWluOiBwYXJzZUludChjb25maWdTZXJ2aWNlLmdldCgnREJfUE9PTF9NSU4nLCAnNScpKSxcbiAgICAgICAgICBpZGxlVGltZW91dE1pbGxpczogcGFyc2VJbnQoXG4gICAgICAgICAgICBjb25maWdTZXJ2aWNlLmdldCgnREJfUE9PTF9JRExFJywgJzMwMDAwJyksXG4gICAgICAgICAgKSxcbiAgICAgICAgICBjb25uZWN0aW9uVGltZW91dE1pbGxpczogcGFyc2VJbnQoXG4gICAgICAgICAgICBjb25maWdTZXJ2aWNlLmdldCgnREJfUE9PTF9DT05OX1RJTUVPVVQnLCAnNTAwMCcpLFxuICAgICAgICAgICksXG4gICAgICAgICAgYWxsb3dFeGl0T25JZGxlOiBmYWxzZSxcbiAgICAgICAgfSxcbiAgICAgIH0pLFxuICAgIH0pLFxuICAgIC8vIE3Ds2R1bG8gZGUgbW9uaXRvcmFtZW50b1xuICAgIE1vbml0b3JpbmdNb2R1bGUsXG5cbiAgICAvLyBNw7NkdWxvcyBjb21wYXJ0aWxoYWRvc1xuICAgIEVtYWlsTW9kdWxlLCAvLyBNw7NkdWxvIGRlIGVtYWlsXG4gICAgVW5pZmllZExvZ2dlck1vZHVsZSxcbiAgICBQZXJtaXNzaW9uU2hhcmVkTW9kdWxlLFxuICAgIEF1ZGl0b3JpYVNoYXJlZE1vZHVsZSxcbiAgICBSZXNpbGllbmNlTW9kdWxlLCAvLyBSZWFiaWxpdGFkbyBhcMOzcyBjb3JyZcOnw7VlcyBubyBSZWRpcy9DYWNoZVxuXG4gICAgLy8gTcOzZHVsbyBkZSBhdXRlbnRpY2HDp8Ojb1xuICAgIEF1dGhNb2R1bGUsXG5cbiAgICAvLyBNw7NkdWxvIGRlIHVzdcOhcmlvc1xuICAgIFVzdWFyaW9Nb2R1bGUsXG5cbiAgICAvLyBNw7NkdWxvIGRlIHVuaWRhZGVzXG4gICAgVW5pZGFkZU1vZHVsZSxcblxuICAgIC8vIE3Ds2R1bG8gZGUgY2lkYWTDo29zXG4gICAgQ2lkYWRhb01vZHVsZSxcblxuICAgIC8vIE3Ds2R1bG8gZGUgYmVuZWbDrWNpb3NcbiAgICBCZW5lZmljaW9Nb2R1bGUsXG5cbiAgICAvLyBNw7NkdWxvIGRlIGRvY3VlbnRvc1xuICAgIERvY3VtZW50b01vZHVsZSxcblxuICAgIC8vIE3Ds2R1bG8gZGUgYXVkaXRvcmlhIGUgbG9nZ2luZ1xuICAgIEF1ZGl0TW9kdWxlLFxuXG4gICAgLy8gTcOzZHVsbyBkZSBtw6l0cmljYXNcbiAgICBNZXRyaWNhc01vZHVsZSxcblxuICAgIC8vIE3Ds2R1bG8gZGUgcmVjdXJzb3MgZGUgcHJpbWVpcmEgaW5zdMOibmNpYVxuICAgIFJlY3Vyc29Nb2R1bGUsXG5cbiAgICAvLyBNw7NkdWxvIGRlIGxvZ3MgZGUgYXVkaXRvcmlhXG4gICAgTG9nc01vZHVsZSxcbiAgXSxcbiAgY29udHJvbGxlcnM6IFtBcHBDb250cm9sbGVyXSxcbiAgcHJvdmlkZXJzOiBbXG4gICAgQXBwU2VydmljZSxcbiAgICBDYXRhbG9nQXdhcmVFeGNlcHRpb25GaWx0ZXIsXG4gICAgLy8gQXBsaWNhciByYXRlIGxpbWl0aW5nIGdsb2JhbG1lbnRlXG4gICAge1xuICAgICAgcHJvdmlkZTogQVBQX0dVQVJELFxuICAgICAgdXNlQ2xhc3M6IFRocm90dGxlckd1YXJkLFxuICAgIH0sXG4gIF0sXG59KVxuZXhwb3J0IGNsYXNzIEFwcE1vZHVsZSB7XG4gIGNvbnN0cnVjdG9yKCkge1xuICAgIGNvbnNvbGUubG9nKCfinIUgQXBwTW9kdWxlIGluaWNpYWxpemFkbyAtIGNvbSBhdXRlbnRpY2HDp8OjbycpO1xuICB9XG59IC8vXG4iXSwidmVyc2lvbiI6M30=

@@ -1,0 +1,135 @@
+60ea89181b18c6086661eb7403f3a53f
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var _a, _b, _c, _d;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Metrica = exports.CategoriaMetricaEnum = exports.TipoMetricaEnum = void 0;
+const typeorm_1 = require("typeorm");
+const registro_metrica_entity_1 = require("./registro-metrica.entity");
+const regra_alerta_entity_1 = require("./regra-alerta.entity");
+/**
+ * Tipos de métricas suportados pelo sistema
+ */
+var TipoMetricaEnum;
+(function (TipoMetricaEnum) {
+    TipoMetricaEnum["SEGURANCA"] = "seguranca";
+    TipoMetricaEnum["LGPD"] = "lgpd";
+    TipoMetricaEnum["DOCUMENTO"] = "documento";
+    TipoMetricaEnum["SISTEMA"] = "sistema";
+    TipoMetricaEnum["BANCO_DADOS"] = "banco_dados";
+    TipoMetricaEnum["HTTP"] = "http";
+})(TipoMetricaEnum || (exports.TipoMetricaEnum = TipoMetricaEnum = {}));
+/**
+ * Categorias de métricas
+ */
+var CategoriaMetricaEnum;
+(function (CategoriaMetricaEnum) {
+    CategoriaMetricaEnum["CONTAGEM"] = "contagem";
+    CategoriaMetricaEnum["DURACAO"] = "duracao";
+    CategoriaMetricaEnum["TAMANHO"] = "tamanho";
+    CategoriaMetricaEnum["PERCENTUAL"] = "percentual";
+    CategoriaMetricaEnum["ESTADO"] = "estado";
+    CategoriaMetricaEnum["ERRO"] = "erro";
+})(CategoriaMetricaEnum || (exports.CategoriaMetricaEnum = CategoriaMetricaEnum = {}));
+/**
+ * Entidade que representa uma definição de métrica no sistema
+ *
+ * Esta entidade armazena as informações básicas sobre uma métrica,
+ * como seu nome, tipo, categoria e limiares para alertas.
+ */
+let Metrica = class Metrica {
+    id;
+    nome;
+    tipo;
+    categoria;
+    descricao;
+    ativo;
+    unidade_medida;
+    limiar_alerta;
+    limiar_critico;
+    tags;
+    created_at;
+    updated_at;
+    removed_at;
+    registros;
+    regras_alerta;
+};
+exports.Metrica = Metrica;
+__decorate([
+    (0, typeorm_1.PrimaryGeneratedColumn)('uuid'),
+    __metadata("design:type", String)
+], Metrica.prototype, "id", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ length: 100 }),
+    __metadata("design:type", String)
+], Metrica.prototype, "nome", void 0);
+__decorate([
+    (0, typeorm_1.Column)({
+        type: 'enum',
+        enum: TipoMetricaEnum,
+    }),
+    __metadata("design:type", String)
+], Metrica.prototype, "tipo", void 0);
+__decorate([
+    (0, typeorm_1.Column)({
+        type: 'enum',
+        enum: CategoriaMetricaEnum,
+    }),
+    __metadata("design:type", String)
+], Metrica.prototype, "categoria", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'text', nullable: true }),
+    __metadata("design:type", String)
+], Metrica.prototype, "descricao", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ default: true }),
+    __metadata("design:type", Boolean)
+], Metrica.prototype, "ativo", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ length: 50, nullable: true }),
+    __metadata("design:type", String)
+], Metrica.prototype, "unidade_medida", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'numeric', precision: 15, scale: 2, nullable: true }),
+    __metadata("design:type", Number)
+], Metrica.prototype, "limiar_alerta", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'numeric', precision: 15, scale: 2, nullable: true }),
+    __metadata("design:type", Number)
+], Metrica.prototype, "limiar_critico", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'jsonb', nullable: true }),
+    __metadata("design:type", typeof (_a = typeof Record !== "undefined" && Record) === "function" ? _a : Object)
+], Metrica.prototype, "tags", void 0);
+__decorate([
+    (0, typeorm_1.CreateDateColumn)(),
+    __metadata("design:type", typeof (_b = typeof Date !== "undefined" && Date) === "function" ? _b : Object)
+], Metrica.prototype, "created_at", void 0);
+__decorate([
+    (0, typeorm_1.UpdateDateColumn)(),
+    __metadata("design:type", typeof (_c = typeof Date !== "undefined" && Date) === "function" ? _c : Object)
+], Metrica.prototype, "updated_at", void 0);
+__decorate([
+    (0, typeorm_1.DeleteDateColumn)({ nullable: true }),
+    __metadata("design:type", typeof (_d = typeof Date !== "undefined" && Date) === "function" ? _d : Object)
+], Metrica.prototype, "removed_at", void 0);
+__decorate([
+    (0, typeorm_1.OneToMany)(() => registro_metrica_entity_1.RegistroMetrica, (registro) => registro.metrica),
+    __metadata("design:type", Array)
+], Metrica.prototype, "registros", void 0);
+__decorate([
+    (0, typeorm_1.OneToMany)(() => regra_alerta_entity_1.RegraAlerta, (regra) => regra.metrica),
+    __metadata("design:type", Array)
+], Metrica.prototype, "regras_alerta", void 0);
+exports.Metrica = Metrica = __decorate([
+    (0, typeorm_1.Entity)('metricas')
+], Metrica);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXGVudGl0aWVzXFxtZXRyaWNhLmVudGl0eS50cyIsIm1hcHBpbmdzIjoiOzs7Ozs7Ozs7Ozs7O0FBQUEscUNBU2lCO0FBQ2pCLHVFQUE0RDtBQUM1RCwrREFBb0Q7QUFFcEQ7O0dBRUc7QUFDSCxJQUFZLGVBT1g7QUFQRCxXQUFZLGVBQWU7SUFDekIsMENBQXVCLENBQUE7SUFDdkIsZ0NBQWEsQ0FBQTtJQUNiLDBDQUF1QixDQUFBO0lBQ3ZCLHNDQUFtQixDQUFBO0lBQ25CLDhDQUEyQixDQUFBO0lBQzNCLGdDQUFhLENBQUE7QUFDZixDQUFDLEVBUFcsZUFBZSwrQkFBZixlQUFlLFFBTzFCO0FBRUQ7O0dBRUc7QUFDSCxJQUFZLG9CQU9YO0FBUEQsV0FBWSxvQkFBb0I7SUFDOUIsNkNBQXFCLENBQUE7SUFDckIsMkNBQW1CLENBQUE7SUFDbkIsMkNBQW1CLENBQUE7SUFDbkIsaURBQXlCLENBQUE7SUFDekIseUNBQWlCLENBQUE7SUFDakIscUNBQWEsQ0FBQTtBQUNmLENBQUMsRUFQVyxvQkFBb0Isb0NBQXBCLG9CQUFvQixRQU8vQjtBQUVEOzs7OztHQUtHO0FBRUksSUFBTSxPQUFPLEdBQWIsTUFBTSxPQUFPO0lBRWxCLEVBQUUsQ0FBUztJQUdYLElBQUksQ0FBUztJQU1iLElBQUksQ0FBa0I7SUFNdEIsU0FBUyxDQUF1QjtJQUdoQyxTQUFTLENBQVM7SUFHbEIsS0FBSyxDQUFVO0lBR2YsY0FBYyxDQUFTO0lBR3ZCLGFBQWEsQ0FBUztJQUd0QixjQUFjLENBQVM7SUFHdkIsSUFBSSxDQUFzQjtJQUcxQixVQUFVLENBQU87SUFHakIsVUFBVSxDQUFPO0lBR2pCLFVBQVUsQ0FBTztJQUdqQixTQUFTLENBQW9CO0lBRzdCLGFBQWEsQ0FBZ0I7Q0FDOUIsQ0FBQTtBQW5EWSwwQkFBTztBQUVsQjtJQURDLElBQUEsZ0NBQXNCLEVBQUMsTUFBTSxDQUFDOzttQ0FDcEI7QUFHWDtJQURDLElBQUEsZ0JBQU0sRUFBQyxFQUFFLE1BQU0sRUFBRSxHQUFHLEVBQUUsQ0FBQzs7cUNBQ1g7QUFNYjtJQUpDLElBQUEsZ0JBQU0sRUFBQztRQUNOLElBQUksRUFBRSxNQUFNO1FBQ1osSUFBSSxFQUFFLGVBQWU7S0FDdEIsQ0FBQzs7cUNBQ29CO0FBTXRCO0lBSkMsSUFBQSxnQkFBTSxFQUFDO1FBQ04sSUFBSSxFQUFFLE1BQU07UUFDWixJQUFJLEVBQUUsb0JBQW9CO0tBQzNCLENBQUM7OzBDQUM4QjtBQUdoQztJQURDLElBQUEsZ0JBQU0sRUFBQyxFQUFFLElBQUksRUFBRSxNQUFNLEVBQUUsUUFBUSxFQUFFLElBQUksRUFBRSxDQUFDOzswQ0FDdkI7QUFHbEI7SUFEQyxJQUFBLGdCQUFNLEVBQUMsRUFBRSxPQUFPLEVBQUUsSUFBSSxFQUFFLENBQUM7O3NDQUNYO0FBR2Y7SUFEQyxJQUFBLGdCQUFNLEVBQUMsRUFBRSxNQUFNLEVBQUUsRUFBRSxFQUFFLFFBQVEsRUFBRSxJQUFJLEVBQUUsQ0FBQzs7K0NBQ2hCO0FBR3ZCO0lBREMsSUFBQSxnQkFBTSxFQUFDLEVBQUUsSUFBSSxFQUFFLFNBQVMsRUFBRSxTQUFTLEVBQUUsRUFBRSxFQUFFLEtBQUssRUFBRSxDQUFDLEVBQUUsUUFBUSxFQUFFLElBQUksRUFBRSxDQUFDOzs4Q0FDL0M7QUFHdEI7SUFEQyxJQUFBLGdCQUFNLEVBQUMsRUFBRSxJQUFJLEVBQUUsU0FBUyxFQUFFLFNBQVMsRUFBRSxFQUFFLEVBQUUsS0FBSyxFQUFFLENBQUMsRUFBRSxRQUFRLEVBQUUsSUFBSSxFQUFFLENBQUM7OytDQUM5QztBQUd2QjtJQURDLElBQUEsZ0JBQU0sRUFBQyxFQUFFLElBQUksRUFBRSxPQUFPLEVBQUUsUUFBUSxFQUFFLElBQUksRUFBRSxDQUFDO2tEQUNwQyxNQUFNLG9CQUFOLE1BQU07cUNBQWM7QUFHMUI7SUFEQyxJQUFBLDBCQUFnQixHQUFFO2tEQUNQLElBQUksb0JBQUosSUFBSTsyQ0FBQztBQUdqQjtJQURDLElBQUEsMEJBQWdCLEdBQUU7a0RBQ1AsSUFBSSxvQkFBSixJQUFJOzJDQUFDO0FBR2pCO0lBREMsSUFBQSwwQkFBZ0IsRUFBQyxFQUFFLFFBQVEsRUFBRSxJQUFJLEVBQUUsQ0FBQztrREFDekIsSUFBSSxvQkFBSixJQUFJOzJDQUFDO0FBR2pCO0lBREMsSUFBQSxtQkFBUyxFQUFDLEdBQUcsRUFBRSxDQUFDLHlDQUFlLEVBQUUsQ0FBQyxRQUFRLEVBQUUsRUFBRSxDQUFDLFFBQVEsQ0FBQyxPQUFPLENBQUM7OzBDQUNwQztBQUc3QjtJQURDLElBQUEsbUJBQVMsRUFBQyxHQUFHLEVBQUUsQ0FBQyxpQ0FBVyxFQUFFLENBQUMsS0FBSyxFQUFFLEVBQUUsQ0FBQyxLQUFLLENBQUMsT0FBTyxDQUFDOzs4Q0FDMUI7a0JBbERsQixPQUFPO0lBRG5CLElBQUEsZ0JBQU0sRUFBQyxVQUFVLENBQUM7R0FDTixPQUFPLENBbURuQiIsIm5hbWVzIjpbXSwic291cmNlcyI6WyJDOlxcVXNlcnNcXGV1ZHJlXFxPbmVEcml2ZVxcRGVza3RvcFxcUHJvamV0b3NcXHBnYmVuXFxwZ2Jlbi1zZXJ2ZXJcXHNyY1xcZW50aXRpZXNcXG1ldHJpY2EuZW50aXR5LnRzIl0sInNvdXJjZXNDb250ZW50IjpbImltcG9ydCB7XG4gIEVudGl0eSxcbiAgQ29sdW1uLFxuICBQcmltYXJ5R2VuZXJhdGVkQ29sdW1uLFxuICBDcmVhdGVEYXRlQ29sdW1uLFxuICBVcGRhdGVEYXRlQ29sdW1uLFxuICBEZWxldGVEYXRlQ29sdW1uLFxuICBPbmVUb01hbnksXG4gIEluZGV4LFxufSBmcm9tICd0eXBlb3JtJztcbmltcG9ydCB7IFJlZ2lzdHJvTWV0cmljYSB9IGZyb20gJy4vcmVnaXN0cm8tbWV0cmljYS5lbnRpdHknO1xuaW1wb3J0IHsgUmVncmFBbGVydGEgfSBmcm9tICcuL3JlZ3JhLWFsZXJ0YS5lbnRpdHknO1xuXG4vKipcbiAqIFRpcG9zIGRlIG3DqXRyaWNhcyBzdXBvcnRhZG9zIHBlbG8gc2lzdGVtYVxuICovXG5leHBvcnQgZW51bSBUaXBvTWV0cmljYUVudW0ge1xuICBTRUdVUkFOQ0EgPSAnc2VndXJhbmNhJyxcbiAgTEdQRCA9ICdsZ3BkJyxcbiAgRE9DVU1FTlRPID0gJ2RvY3VtZW50bycsXG4gIFNJU1RFTUEgPSAnc2lzdGVtYScsXG4gIEJBTkNPX0RBRE9TID0gJ2JhbmNvX2RhZG9zJyxcbiAgSFRUUCA9ICdodHRwJyxcbn1cblxuLyoqXG4gKiBDYXRlZ29yaWFzIGRlIG3DqXRyaWNhc1xuICovXG5leHBvcnQgZW51bSBDYXRlZ29yaWFNZXRyaWNhRW51bSB7XG4gIENPTlRBR0VNID0gJ2NvbnRhZ2VtJyxcbiAgRFVSQUNBTyA9ICdkdXJhY2FvJyxcbiAgVEFNQU5ITyA9ICd0YW1hbmhvJyxcbiAgUEVSQ0VOVFVBTCA9ICdwZXJjZW50dWFsJyxcbiAgRVNUQURPID0gJ2VzdGFkbycsXG4gIEVSUk8gPSAnZXJybycsXG59XG5cbi8qKlxuICogRW50aWRhZGUgcXVlIHJlcHJlc2VudGEgdW1hIGRlZmluacOnw6NvIGRlIG3DqXRyaWNhIG5vIHNpc3RlbWFcbiAqXG4gKiBFc3RhIGVudGlkYWRlIGFybWF6ZW5hIGFzIGluZm9ybWHDp8O1ZXMgYsOhc2ljYXMgc29icmUgdW1hIG3DqXRyaWNhLFxuICogY29tbyBzZXUgbm9tZSwgdGlwbywgY2F0ZWdvcmlhIGUgbGltaWFyZXMgcGFyYSBhbGVydGFzLlxuICovXG5ARW50aXR5KCdtZXRyaWNhcycpXG5leHBvcnQgY2xhc3MgTWV0cmljYSB7XG4gIEBQcmltYXJ5R2VuZXJhdGVkQ29sdW1uKCd1dWlkJylcbiAgaWQ6IHN0cmluZztcblxuICBAQ29sdW1uKHsgbGVuZ3RoOiAxMDAgfSlcbiAgbm9tZTogc3RyaW5nO1xuXG4gIEBDb2x1bW4oe1xuICAgIHR5cGU6ICdlbnVtJyxcbiAgICBlbnVtOiBUaXBvTWV0cmljYUVudW0sXG4gIH0pXG4gIHRpcG86IFRpcG9NZXRyaWNhRW51bTtcblxuICBAQ29sdW1uKHtcbiAgICB0eXBlOiAnZW51bScsXG4gICAgZW51bTogQ2F0ZWdvcmlhTWV0cmljYUVudW0sXG4gIH0pXG4gIGNhdGVnb3JpYTogQ2F0ZWdvcmlhTWV0cmljYUVudW07XG5cbiAgQENvbHVtbih7IHR5cGU6ICd0ZXh0JywgbnVsbGFibGU6IHRydWUgfSlcbiAgZGVzY3JpY2FvOiBzdHJpbmc7XG5cbiAgQENvbHVtbih7IGRlZmF1bHQ6IHRydWUgfSlcbiAgYXRpdm86IGJvb2xlYW47XG5cbiAgQENvbHVtbih7IGxlbmd0aDogNTAsIG51bGxhYmxlOiB0cnVlIH0pXG4gIHVuaWRhZGVfbWVkaWRhOiBzdHJpbmc7XG5cbiAgQENvbHVtbih7IHR5cGU6ICdudW1lcmljJywgcHJlY2lzaW9uOiAxNSwgc2NhbGU6IDIsIG51bGxhYmxlOiB0cnVlIH0pXG4gIGxpbWlhcl9hbGVydGE6IG51bWJlcjtcblxuICBAQ29sdW1uKHsgdHlwZTogJ251bWVyaWMnLCBwcmVjaXNpb246IDE1LCBzY2FsZTogMiwgbnVsbGFibGU6IHRydWUgfSlcbiAgbGltaWFyX2NyaXRpY286IG51bWJlcjtcblxuICBAQ29sdW1uKHsgdHlwZTogJ2pzb25iJywgbnVsbGFibGU6IHRydWUgfSlcbiAgdGFnczogUmVjb3JkPHN0cmluZywgYW55PjtcblxuICBAQ3JlYXRlRGF0ZUNvbHVtbigpXG4gIGNyZWF0ZWRfYXQ6IERhdGU7XG5cbiAgQFVwZGF0ZURhdGVDb2x1bW4oKVxuICB1cGRhdGVkX2F0OiBEYXRlO1xuXG4gIEBEZWxldGVEYXRlQ29sdW1uKHsgbnVsbGFibGU6IHRydWUgfSlcbiAgcmVtb3ZlZF9hdDogRGF0ZTtcblxuICBAT25lVG9NYW55KCgpID0+IFJlZ2lzdHJvTWV0cmljYSwgKHJlZ2lzdHJvKSA9PiByZWdpc3Ryby5tZXRyaWNhKVxuICByZWdpc3Ryb3M6IFJlZ2lzdHJvTWV0cmljYVtdO1xuXG4gIEBPbmVUb01hbnkoKCkgPT4gUmVncmFBbGVydGEsIChyZWdyYSkgPT4gcmVncmEubWV0cmljYSlcbiAgcmVncmFzX2FsZXJ0YTogUmVncmFBbGVydGFbXTtcbn1cbiJdLCJ2ZXJzaW9uIjozfQ==

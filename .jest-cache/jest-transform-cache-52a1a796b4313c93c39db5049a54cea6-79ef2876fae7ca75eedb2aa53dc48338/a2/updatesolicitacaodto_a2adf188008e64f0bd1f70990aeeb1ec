@@ -1,0 +1,40 @@
+71dcaa0924edb22b085d9638b8860ab8
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.UpdateSolicitacaoDto = void 0;
+const swagger_1 = require("@nestjs/swagger");
+const create_solicitacao_dto_1 = require("./create-solicitacao.dto");
+const class_validator_1 = require("class-validator");
+const class_transformer_1 = require("class-transformer");
+const create_solicitacao_dto_2 = require("./create-solicitacao.dto");
+/**
+ * DTO para atualização de solicitação
+ *
+ * Estende o DTO de criação, tornando todos os campos opcionais
+ * e omitindo o ID do beneficiário, que não pode ser alterado após a criação
+ */
+class UpdateSolicitacaoDto extends (0, swagger_1.PartialType)((0, swagger_1.OmitType)(create_solicitacao_dto_1.CreateSolicitacaoDto, ['beneficiario_id'])) {
+    documentos;
+}
+exports.UpdateSolicitacaoDto = UpdateSolicitacaoDto;
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        description: 'Documentos a serem adicionados à solicitação',
+        type: [create_solicitacao_dto_2.DocumentoSolicitacaoDto],
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsArray)({ message: 'Documentos deve ser um array' }),
+    (0, class_validator_1.ValidateNested)({ each: true }),
+    (0, class_transformer_1.Type)(() => create_solicitacao_dto_2.DocumentoSolicitacaoDto),
+    __metadata("design:type", Array)
+], UpdateSolicitacaoDto.prototype, "documentos", void 0);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXHNvbGljaXRhY2FvXFxkdG9cXHVwZGF0ZS1zb2xpY2l0YWNhby5kdG8udHMiLCJtYXBwaW5ncyI6Ijs7Ozs7Ozs7Ozs7O0FBQUEsNkNBQTZFO0FBQzdFLHFFQUFnRTtBQUNoRSxxREFBc0U7QUFDdEUseURBQXlDO0FBQ3pDLHFFQUFtRTtBQUVuRTs7Ozs7R0FLRztBQUNILE1BQWEsb0JBQXFCLFNBQVEsSUFBQSxxQkFBVyxFQUNuRCxJQUFBLGtCQUFRLEVBQUMsNkNBQW9CLEVBQUUsQ0FBQyxpQkFBaUIsQ0FBVSxDQUFDLENBQzdEO0lBU0MsVUFBVSxDQUE2QjtDQUN4QztBQVpELG9EQVlDO0FBREM7SUFSQyxJQUFBLDZCQUFtQixFQUFDO1FBQ25CLFdBQVcsRUFBRSw4Q0FBOEM7UUFDM0QsSUFBSSxFQUFFLENBQUMsZ0RBQXVCLENBQUM7S0FDaEMsQ0FBQztJQUNELElBQUEsNEJBQVUsR0FBRTtJQUNaLElBQUEseUJBQU8sRUFBQyxFQUFFLE9BQU8sRUFBRSw4QkFBOEIsRUFBRSxDQUFDO0lBQ3BELElBQUEsZ0NBQWMsRUFBQyxFQUFFLElBQUksRUFBRSxJQUFJLEVBQUUsQ0FBQztJQUM5QixJQUFBLHdCQUFJLEVBQUMsR0FBRyxFQUFFLENBQUMsZ0RBQXVCLENBQUM7O3dEQUNHIiwibmFtZXMiOltdLCJzb3VyY2VzIjpbIkM6XFxVc2Vyc1xcZXVkcmVcXE9uZURyaXZlXFxEZXNrdG9wXFxQcm9qZXRvc1xccGdiZW5cXHBnYmVuLXNlcnZlclxcc3JjXFxtb2R1bGVzXFxzb2xpY2l0YWNhb1xcZHRvXFx1cGRhdGUtc29saWNpdGFjYW8uZHRvLnRzIl0sInNvdXJjZXNDb250ZW50IjpbImltcG9ydCB7IFBhcnRpYWxUeXBlLCBPbWl0VHlwZSwgQXBpUHJvcGVydHlPcHRpb25hbCB9IGZyb20gJ0BuZXN0anMvc3dhZ2dlcic7XG5pbXBvcnQgeyBDcmVhdGVTb2xpY2l0YWNhb0R0byB9IGZyb20gJy4vY3JlYXRlLXNvbGljaXRhY2FvLmR0byc7XG5pbXBvcnQgeyBJc09wdGlvbmFsLCBJc0FycmF5LCBWYWxpZGF0ZU5lc3RlZCB9IGZyb20gJ2NsYXNzLXZhbGlkYXRvcic7XG5pbXBvcnQgeyBUeXBlIH0gZnJvbSAnY2xhc3MtdHJhbnNmb3JtZXInO1xuaW1wb3J0IHsgRG9jdW1lbnRvU29saWNpdGFjYW9EdG8gfSBmcm9tICcuL2NyZWF0ZS1zb2xpY2l0YWNhby5kdG8nO1xuXG4vKipcbiAqIERUTyBwYXJhIGF0dWFsaXphw6fDo28gZGUgc29saWNpdGHDp8Ojb1xuICpcbiAqIEVzdGVuZGUgbyBEVE8gZGUgY3JpYcOnw6NvLCB0b3JuYW5kbyB0b2RvcyBvcyBjYW1wb3Mgb3BjaW9uYWlzXG4gKiBlIG9taXRpbmRvIG8gSUQgZG8gYmVuZWZpY2nDoXJpbywgcXVlIG7Do28gcG9kZSBzZXIgYWx0ZXJhZG8gYXDDs3MgYSBjcmlhw6fDo29cbiAqL1xuZXhwb3J0IGNsYXNzIFVwZGF0ZVNvbGljaXRhY2FvRHRvIGV4dGVuZHMgUGFydGlhbFR5cGUoXG4gIE9taXRUeXBlKENyZWF0ZVNvbGljaXRhY2FvRHRvLCBbJ2JlbmVmaWNpYXJpb19pZCddIGFzIGNvbnN0KSxcbikge1xuICBAQXBpUHJvcGVydHlPcHRpb25hbCh7XG4gICAgZGVzY3JpcHRpb246ICdEb2N1bWVudG9zIGEgc2VyZW0gYWRpY2lvbmFkb3Mgw6Agc29saWNpdGHDp8OjbycsXG4gICAgdHlwZTogW0RvY3VtZW50b1NvbGljaXRhY2FvRHRvXSxcbiAgfSlcbiAgQElzT3B0aW9uYWwoKVxuICBASXNBcnJheSh7IG1lc3NhZ2U6ICdEb2N1bWVudG9zIGRldmUgc2VyIHVtIGFycmF5JyB9KVxuICBAVmFsaWRhdGVOZXN0ZWQoeyBlYWNoOiB0cnVlIH0pXG4gIEBUeXBlKCgpID0+IERvY3VtZW50b1NvbGljaXRhY2FvRHRvKVxuICBkb2N1bWVudG9zPzogRG9jdW1lbnRvU29saWNpdGFjYW9EdG9bXTtcbn1cbiJdLCJ2ZXJzaW9uIjozfQ==

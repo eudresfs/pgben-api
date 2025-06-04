@@ -1,0 +1,14 @@
+779f506fe43480c78a4f36a0b8cf6dc0
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.TipoBeneficio = void 0;
+var TipoBeneficio;
+(function (TipoBeneficio) {
+    TipoBeneficio["AUXILIO_NATALIDADE"] = "auxilio_natalidade";
+    TipoBeneficio["AUXILIO_FUNERAL"] = "auxilio_funeral";
+    TipoBeneficio["CESTA_BASICA"] = "cesta_basica";
+    TipoBeneficio["ALUGUEL_SOCIAL"] = "aluguel_social";
+    TipoBeneficio["PASSAGEM"] = "passagem";
+    TipoBeneficio["OUTRO"] = "outro";
+})(TipoBeneficio || (exports.TipoBeneficio = TipoBeneficio = {}));
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXGVudW1zXFx0aXBvLWJlbmVmaWNpby5lbnVtLnRzIiwibWFwcGluZ3MiOiI7OztBQUFBLElBQVksYUFPWDtBQVBELFdBQVksYUFBYTtJQUN2QiwwREFBeUMsQ0FBQTtJQUN6QyxvREFBbUMsQ0FBQTtJQUNuQyw4Q0FBNkIsQ0FBQTtJQUM3QixrREFBaUMsQ0FBQTtJQUNqQyxzQ0FBcUIsQ0FBQTtJQUNyQixnQ0FBZSxDQUFBO0FBQ2pCLENBQUMsRUFQVyxhQUFhLDZCQUFiLGFBQWEsUUFPeEIiLCJuYW1lcyI6W10sInNvdXJjZXMiOlsiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXGVudW1zXFx0aXBvLWJlbmVmaWNpby5lbnVtLnRzIl0sInNvdXJjZXNDb250ZW50IjpbImV4cG9ydCBlbnVtIFRpcG9CZW5lZmljaW8ge1xuICBBVVhJTElPX05BVEFMSURBREUgPSAnYXV4aWxpb19uYXRhbGlkYWRlJyxcbiAgQVVYSUxJT19GVU5FUkFMID0gJ2F1eGlsaW9fZnVuZXJhbCcsXG4gIENFU1RBX0JBU0lDQSA9ICdjZXN0YV9iYXNpY2EnLFxuICBBTFVHVUVMX1NPQ0lBTCA9ICdhbHVndWVsX3NvY2lhbCcsXG4gIFBBU1NBR0VNID0gJ3Bhc3NhZ2VtJyxcbiAgT1VUUk8gPSAnb3V0cm8nLFxufVxuIl0sInZlcnNpb24iOjN9

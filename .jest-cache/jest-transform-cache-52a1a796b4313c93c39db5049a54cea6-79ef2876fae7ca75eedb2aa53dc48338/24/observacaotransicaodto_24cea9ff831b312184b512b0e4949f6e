@@ -1,0 +1,77 @@
+a41f00419f96f1a4828fe00e54662aac
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.AprovacaoSolicitacaoDto = exports.ObservacaoTransicaoDto = void 0;
+const swagger_1 = require("@nestjs/swagger");
+const class_validator_1 = require("class-validator");
+/**
+ * DTO para transições de workflow que podem incluir observações
+ * Usado em operações como rejeição, cancelamento, etc.
+ */
+class ObservacaoTransicaoDto {
+    /**
+     * Observação opcional sobre a transição
+     * Pode ser usada para justificar a decisão ou adicionar comentários
+     */
+    observacao;
+}
+exports.ObservacaoTransicaoDto = ObservacaoTransicaoDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Observação opcional sobre a transição do workflow',
+        example: 'Documentação rejeitada devido a inconsistências',
+        required: false,
+        type: String,
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'A observação deve ser uma string válida' }),
+    __metadata("design:type", String)
+], ObservacaoTransicaoDto.prototype, "observacao", void 0);
+/**
+ * DTO específico para aprovação de solicitações
+ * Inclui o parecer SEMTAS obrigatório
+ */
+class AprovacaoSolicitacaoDto {
+    /**
+     * Parecer técnico da SEMTAS sobre a solicitação
+     * Campo obrigatório para aprovação
+     */
+    parecer_semtas;
+    /**
+     * Observação adicional opcional sobre a aprovação
+     */
+    observacao;
+}
+exports.AprovacaoSolicitacaoDto = AprovacaoSolicitacaoDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Parecer técnico da SEMTAS sobre a solicitação',
+        example: 'Solicitação aprovada conforme análise da documentação e verificação dos critérios de elegibilidade.',
+        required: true,
+        type: String,
+    }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'O parecer da SEMTAS é obrigatório para aprovação' }),
+    (0, class_validator_1.IsString)({ message: 'O parecer deve ser uma string válida' }),
+    __metadata("design:type", String)
+], AprovacaoSolicitacaoDto.prototype, "parecer_semtas", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Observação adicional opcional sobre a aprovação',
+        example: 'Aprovação realizada em caráter de urgência',
+        required: false,
+        type: String,
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'A observação deve ser uma string válida' }),
+    __metadata("design:type", String)
+], AprovacaoSolicitacaoDto.prototype, "observacao", void 0);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXHNvbGljaXRhY2FvXFxkdG9cXG9ic2VydmFjYW8tdHJhbnNpY2FvLmR0by50cyIsIm1hcHBpbmdzIjoiOzs7Ozs7Ozs7Ozs7QUFBQSw2Q0FBOEM7QUFDOUMscURBQW1FO0FBRW5FOzs7R0FHRztBQUNILE1BQWEsc0JBQXNCO0lBQ2pDOzs7T0FHRztJQVNILFVBQVUsQ0FBVTtDQUNyQjtBQWRELHdEQWNDO0FBREM7SUFSQyxJQUFBLHFCQUFXLEVBQUM7UUFDWCxXQUFXLEVBQUUsbURBQW1EO1FBQ2hFLE9BQU8sRUFBRSxpREFBaUQ7UUFDMUQsUUFBUSxFQUFFLEtBQUs7UUFDZixJQUFJLEVBQUUsTUFBTTtLQUNiLENBQUM7SUFDRCxJQUFBLDRCQUFVLEdBQUU7SUFDWixJQUFBLDBCQUFRLEVBQUMsRUFBRSxPQUFPLEVBQUUseUNBQXlDLEVBQUUsQ0FBQzs7MERBQzdDO0FBR3RCOzs7R0FHRztBQUNILE1BQWEsdUJBQXVCO0lBQ2xDOzs7T0FHRztJQVVILGNBQWMsQ0FBUztJQUV2Qjs7T0FFRztJQVNILFVBQVUsQ0FBVTtDQUNyQjtBQTVCRCwwREE0QkM7QUFkQztJQVRDLElBQUEscUJBQVcsRUFBQztRQUNYLFdBQVcsRUFBRSwrQ0FBK0M7UUFDNUQsT0FBTyxFQUNMLHFHQUFxRztRQUN2RyxRQUFRLEVBQUUsSUFBSTtRQUNkLElBQUksRUFBRSxNQUFNO0tBQ2IsQ0FBQztJQUNELElBQUEsNEJBQVUsRUFBQyxFQUFFLE9BQU8sRUFBRSxrREFBa0QsRUFBRSxDQUFDO0lBQzNFLElBQUEsMEJBQVEsRUFBQyxFQUFFLE9BQU8sRUFBRSxzQ0FBc0MsRUFBRSxDQUFDOzsrREFDdkM7QUFhdkI7SUFSQyxJQUFBLHFCQUFXLEVBQUM7UUFDWCxXQUFXLEVBQUUsaURBQWlEO1FBQzlELE9BQU8sRUFBRSw0Q0FBNEM7UUFDckQsUUFBUSxFQUFFLEtBQUs7UUFDZixJQUFJLEVBQUUsTUFBTTtLQUNiLENBQUM7SUFDRCxJQUFBLDRCQUFVLEdBQUU7SUFDWixJQUFBLDBCQUFRLEVBQUMsRUFBRSxPQUFPLEVBQUUseUNBQXlDLEVBQUUsQ0FBQzs7MkRBQzdDIiwibmFtZXMiOltdLCJzb3VyY2VzIjpbIkM6XFxVc2Vyc1xcZXVkcmVcXE9uZURyaXZlXFxEZXNrdG9wXFxQcm9qZXRvc1xccGdiZW5cXHBnYmVuLXNlcnZlclxcc3JjXFxtb2R1bGVzXFxzb2xpY2l0YWNhb1xcZHRvXFxvYnNlcnZhY2FvLXRyYW5zaWNhby5kdG8udHMiXSwic291cmNlc0NvbnRlbnQiOlsiaW1wb3J0IHsgQXBpUHJvcGVydHkgfSBmcm9tICdAbmVzdGpzL3N3YWdnZXInO1xuaW1wb3J0IHsgSXNPcHRpb25hbCwgSXNTdHJpbmcsIElzTm90RW1wdHkgfSBmcm9tICdjbGFzcy12YWxpZGF0b3InO1xuXG4vKipcbiAqIERUTyBwYXJhIHRyYW5zacOnw7VlcyBkZSB3b3JrZmxvdyBxdWUgcG9kZW0gaW5jbHVpciBvYnNlcnZhw6fDtWVzXG4gKiBVc2FkbyBlbSBvcGVyYcOnw7VlcyBjb21vIHJlamVpw6fDo28sIGNhbmNlbGFtZW50bywgZXRjLlxuICovXG5leHBvcnQgY2xhc3MgT2JzZXJ2YWNhb1RyYW5zaWNhb0R0byB7XG4gIC8qKlxuICAgKiBPYnNlcnZhw6fDo28gb3BjaW9uYWwgc29icmUgYSB0cmFuc2nDp8Ojb1xuICAgKiBQb2RlIHNlciB1c2FkYSBwYXJhIGp1c3RpZmljYXIgYSBkZWNpc8OjbyBvdSBhZGljaW9uYXIgY29tZW50w6FyaW9zXG4gICAqL1xuICBAQXBpUHJvcGVydHkoe1xuICAgIGRlc2NyaXB0aW9uOiAnT2JzZXJ2YcOnw6NvIG9wY2lvbmFsIHNvYnJlIGEgdHJhbnNpw6fDo28gZG8gd29ya2Zsb3cnLFxuICAgIGV4YW1wbGU6ICdEb2N1bWVudGHDp8OjbyByZWplaXRhZGEgZGV2aWRvIGEgaW5jb25zaXN0w6puY2lhcycsXG4gICAgcmVxdWlyZWQ6IGZhbHNlLFxuICAgIHR5cGU6IFN0cmluZyxcbiAgfSlcbiAgQElzT3B0aW9uYWwoKVxuICBASXNTdHJpbmcoeyBtZXNzYWdlOiAnQSBvYnNlcnZhw6fDo28gZGV2ZSBzZXIgdW1hIHN0cmluZyB2w6FsaWRhJyB9KVxuICBvYnNlcnZhY2FvPzogc3RyaW5nO1xufVxuXG4vKipcbiAqIERUTyBlc3BlY8OtZmljbyBwYXJhIGFwcm92YcOnw6NvIGRlIHNvbGljaXRhw6fDtWVzXG4gKiBJbmNsdWkgbyBwYXJlY2VyIFNFTVRBUyBvYnJpZ2F0w7NyaW9cbiAqL1xuZXhwb3J0IGNsYXNzIEFwcm92YWNhb1NvbGljaXRhY2FvRHRvIHtcbiAgLyoqXG4gICAqIFBhcmVjZXIgdMOpY25pY28gZGEgU0VNVEFTIHNvYnJlIGEgc29saWNpdGHDp8Ojb1xuICAgKiBDYW1wbyBvYnJpZ2F0w7NyaW8gcGFyYSBhcHJvdmHDp8Ojb1xuICAgKi9cbiAgQEFwaVByb3BlcnR5KHtcbiAgICBkZXNjcmlwdGlvbjogJ1BhcmVjZXIgdMOpY25pY28gZGEgU0VNVEFTIHNvYnJlIGEgc29saWNpdGHDp8OjbycsXG4gICAgZXhhbXBsZTpcbiAgICAgICdTb2xpY2l0YcOnw6NvIGFwcm92YWRhIGNvbmZvcm1lIGFuw6FsaXNlIGRhIGRvY3VtZW50YcOnw6NvIGUgdmVyaWZpY2HDp8OjbyBkb3MgY3JpdMOpcmlvcyBkZSBlbGVnaWJpbGlkYWRlLicsXG4gICAgcmVxdWlyZWQ6IHRydWUsXG4gICAgdHlwZTogU3RyaW5nLFxuICB9KVxuICBASXNOb3RFbXB0eSh7IG1lc3NhZ2U6ICdPIHBhcmVjZXIgZGEgU0VNVEFTIMOpIG9icmlnYXTDs3JpbyBwYXJhIGFwcm92YcOnw6NvJyB9KVxuICBASXNTdHJpbmcoeyBtZXNzYWdlOiAnTyBwYXJlY2VyIGRldmUgc2VyIHVtYSBzdHJpbmcgdsOhbGlkYScgfSlcbiAgcGFyZWNlcl9zZW10YXM6IHN0cmluZztcblxuICAvKipcbiAgICogT2JzZXJ2YcOnw6NvIGFkaWNpb25hbCBvcGNpb25hbCBzb2JyZSBhIGFwcm92YcOnw6NvXG4gICAqL1xuICBAQXBpUHJvcGVydHkoe1xuICAgIGRlc2NyaXB0aW9uOiAnT2JzZXJ2YcOnw6NvIGFkaWNpb25hbCBvcGNpb25hbCBzb2JyZSBhIGFwcm92YcOnw6NvJyxcbiAgICBleGFtcGxlOiAnQXByb3Zhw6fDo28gcmVhbGl6YWRhIGVtIGNhcsOhdGVyIGRlIHVyZ8OqbmNpYScsXG4gICAgcmVxdWlyZWQ6IGZhbHNlLFxuICAgIHR5cGU6IFN0cmluZyxcbiAgfSlcbiAgQElzT3B0aW9uYWwoKVxuICBASXNTdHJpbmcoeyBtZXNzYWdlOiAnQSBvYnNlcnZhw6fDo28gZGV2ZSBzZXIgdW1hIHN0cmluZyB2w6FsaWRhJyB9KVxuICBvYnNlcnZhY2FvPzogc3RyaW5nO1xufVxuIl0sInZlcnNpb24iOjN9

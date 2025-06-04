@@ -1,0 +1,98 @@
+0feda4ac2b97d3b600a2cfde3052b1cf
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.TransicaoEstadoService = void 0;
+const common_1 = require("@nestjs/common");
+const workflow_config_1 = require("../config/workflow-config");
+/**
+ * Serviço de Transição de Estado
+ *
+ * Responsável por gerenciar as regras de transição entre estados das solicitações.
+ * Centraliza a lógica de validação de transições e permissões necessárias.
+ */
+let TransicaoEstadoService = class TransicaoEstadoService {
+    /**
+     * Verifica se uma transição de estado é válida
+     * @param estadoAtual Estado atual da solicitação
+     * @param novoEstado Estado para o qual se deseja transicionar
+     * @returns Boolean indicando se a transição é permitida
+     */
+    isTransicaoValida(estadoAtual, novoEstado) {
+        return workflow_config_1.TRANSICOES_PERMITIDAS[estadoAtual]?.includes(novoEstado) || false;
+    }
+    /**
+     * Obtém todos os estados possíveis a partir de um estado atual
+     * @param estadoAtual Estado atual da solicitação
+     * @returns Array com os estados possíveis
+     */
+    getEstadosPossiveis(estadoAtual) {
+        return workflow_config_1.TRANSICOES_PERMITIDAS[estadoAtual] || [];
+    }
+    /**
+     * Obtém a chave de transição para um par de estados
+     * @param estadoAtual Estado atual da solicitação
+     * @param novoEstado Estado para o qual se deseja transicionar
+     * @returns Chave de transição no formato ESTADO_ATUAL_PARA_NOVO_ESTADO
+     */
+    getChaveTransicao(estadoAtual, novoEstado) {
+        return `${estadoAtual}_PARA_${novoEstado}`;
+    }
+    /**
+     * Obtém as permissões necessárias para realizar uma transição
+     * @param estadoAtual Estado atual da solicitação
+     * @param novoEstado Estado para o qual se deseja transicionar
+     * @returns Array com os nomes das permissões necessárias
+     */
+    getPermissoesNecessarias(estadoAtual, novoEstado) {
+        const chave = this.getChaveTransicao(estadoAtual, novoEstado);
+        return workflow_config_1.PERMISSOES_TRANSICAO[chave] || [];
+    }
+    /**
+     * Verifica se um usuário tem permissão para realizar uma transição
+     * @param estadoAtual Estado atual da solicitação
+     * @param novoEstado Estado para o qual se deseja transicionar
+     * @param permissoesUsuario Array com as permissões do usuário
+     * @returns Boolean indicando se o usuário tem permissão para a transição
+     */
+    usuarioTemPermissaoParaTransicao(estadoAtual, novoEstado, permissoesUsuario) {
+        const permissoesNecessarias = this.getPermissoesNecessarias(estadoAtual, novoEstado);
+        // Se não houver permissões definidas para a transição, assume que é permitida
+        if (permissoesNecessarias.length === 0) {
+            return true;
+        }
+        // Verifica se o usuário possui pelo menos uma das permissões necessárias
+        return permissoesNecessarias.some((permissao) => permissoesUsuario.includes(permissao));
+    }
+    /**
+     * Verifica se uma transição é permitida, lançando exceções caso não seja
+     * @param estadoAtual Estado atual da solicitação
+     * @param novoEstado Estado para o qual se deseja transicionar
+     * @param usuarioId ID do usuário que está realizando a transição
+     * @throws BadRequestException se a transição não for válida
+     * @throws ForbiddenException se o usuário não tiver permissão
+     */
+    async verificarTransicaoPermitida(estadoAtual, novoEstado, usuarioId) {
+        // Verificar se a transição é válida
+        if (!this.isTransicaoValida(estadoAtual, novoEstado)) {
+            throw new common_1.BadRequestException(`Transição de ${estadoAtual} para ${novoEstado} não é permitida`);
+        }
+        // Aqui seria necessário um serviço de usuário para buscar as permissões
+        // Para simplificar, estamos apenas verificando se a transição é válida
+        // em um ambiente de produção, buscaríamos as permissões do usuário
+        // const permissoesUsuario = await this.usuarioService.getPermissoes(usuarioId);
+        // if (!this.usuarioTemPermissaoParaTransicao(estadoAtual, novoEstado, permissoesUsuario)) {
+        //   throw new ForbiddenException('Usuário não tem permissão para realizar esta transição');
+        // }
+    }
+};
+exports.TransicaoEstadoService = TransicaoEstadoService;
+exports.TransicaoEstadoService = TransicaoEstadoService = __decorate([
+    (0, common_1.Injectable)()
+], TransicaoEstadoService);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXHNvbGljaXRhY2FvXFxzZXJ2aWNlc1xcdHJhbnNpY2FvLWVzdGFkby5zZXJ2aWNlLnRzIiwibWFwcGluZ3MiOiI7Ozs7Ozs7OztBQUFBLDJDQUl3QjtBQUV4QiwrREFHbUM7QUFFbkM7Ozs7O0dBS0c7QUFFSSxJQUFNLHNCQUFzQixHQUE1QixNQUFNLHNCQUFzQjtJQUNqQzs7Ozs7T0FLRztJQUNILGlCQUFpQixDQUNmLFdBQThCLEVBQzlCLFVBQTZCO1FBRTdCLE9BQU8sdUNBQXFCLENBQUMsV0FBVyxDQUFDLEVBQUUsUUFBUSxDQUFDLFVBQVUsQ0FBQyxJQUFJLEtBQUssQ0FBQztJQUMzRSxDQUFDO0lBRUQ7Ozs7T0FJRztJQUNILG1CQUFtQixDQUFDLFdBQThCO1FBQ2hELE9BQU8sdUNBQXFCLENBQUMsV0FBVyxDQUFDLElBQUksRUFBRSxDQUFDO0lBQ2xELENBQUM7SUFFRDs7Ozs7T0FLRztJQUNLLGlCQUFpQixDQUN2QixXQUE4QixFQUM5QixVQUE2QjtRQUU3QixPQUFPLEdBQUcsV0FBVyxTQUFTLFVBQVUsRUFBRSxDQUFDO0lBQzdDLENBQUM7SUFFRDs7Ozs7T0FLRztJQUNILHdCQUF3QixDQUN0QixXQUE4QixFQUM5QixVQUE2QjtRQUU3QixNQUFNLEtBQUssR0FBRyxJQUFJLENBQUMsaUJBQWlCLENBQUMsV0FBVyxFQUFFLFVBQVUsQ0FBQyxDQUFDO1FBQzlELE9BQU8sc0NBQW9CLENBQUMsS0FBSyxDQUFDLElBQUksRUFBRSxDQUFDO0lBQzNDLENBQUM7SUFFRDs7Ozs7O09BTUc7SUFDSCxnQ0FBZ0MsQ0FDOUIsV0FBOEIsRUFDOUIsVUFBNkIsRUFDN0IsaUJBQTJCO1FBRTNCLE1BQU0scUJBQXFCLEdBQUcsSUFBSSxDQUFDLHdCQUF3QixDQUN6RCxXQUFXLEVBQ1gsVUFBVSxDQUNYLENBQUM7UUFFRiw4RUFBOEU7UUFDOUUsSUFBSSxxQkFBcUIsQ0FBQyxNQUFNLEtBQUssQ0FBQyxFQUFFLENBQUM7WUFDdkMsT0FBTyxJQUFJLENBQUM7UUFDZCxDQUFDO1FBRUQseUVBQXlFO1FBQ3pFLE9BQU8scUJBQXFCLENBQUMsSUFBSSxDQUFDLENBQUMsU0FBUyxFQUFFLEVBQUUsQ0FDOUMsaUJBQWlCLENBQUMsUUFBUSxDQUFDLFNBQVMsQ0FBQyxDQUN0QyxDQUFDO0lBQ0osQ0FBQztJQUVEOzs7Ozs7O09BT0c7SUFDSCxLQUFLLENBQUMsMkJBQTJCLENBQy9CLFdBQThCLEVBQzlCLFVBQTZCLEVBQzdCLFNBQWlCO1FBRWpCLG9DQUFvQztRQUNwQyxJQUFJLENBQUMsSUFBSSxDQUFDLGlCQUFpQixDQUFDLFdBQVcsRUFBRSxVQUFVLENBQUMsRUFBRSxDQUFDO1lBQ3JELE1BQU0sSUFBSSw0QkFBbUIsQ0FDM0IsZ0JBQWdCLFdBQVcsU0FBUyxVQUFVLGtCQUFrQixDQUNqRSxDQUFDO1FBQ0osQ0FBQztRQUVELHdFQUF3RTtRQUN4RSx1RUFBdUU7UUFDdkUsbUVBQW1FO1FBRW5FLGdGQUFnRjtRQUNoRiw0RkFBNEY7UUFDNUYsNEZBQTRGO1FBQzVGLElBQUk7SUFDTixDQUFDO0NBQ0YsQ0FBQTtBQTNHWSx3REFBc0I7aUNBQXRCLHNCQUFzQjtJQURsQyxJQUFBLG1CQUFVLEdBQUU7R0FDQSxzQkFBc0IsQ0EyR2xDIiwibmFtZXMiOltdLCJzb3VyY2VzIjpbIkM6XFxVc2Vyc1xcZXVkcmVcXE9uZURyaXZlXFxEZXNrdG9wXFxQcm9qZXRvc1xccGdiZW5cXHBnYmVuLXNlcnZlclxcc3JjXFxtb2R1bGVzXFxzb2xpY2l0YWNhb1xcc2VydmljZXNcXHRyYW5zaWNhby1lc3RhZG8uc2VydmljZS50cyJdLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQge1xuICBJbmplY3RhYmxlLFxuICBCYWRSZXF1ZXN0RXhjZXB0aW9uLFxuICBGb3JiaWRkZW5FeGNlcHRpb24sXG59IGZyb20gJ0BuZXN0anMvY29tbW9uJztcbmltcG9ydCB7IFN0YXR1c1NvbGljaXRhY2FvIH0gZnJvbSAnLi4vLi4vLi4vZW50aXRpZXMvc29saWNpdGFjYW8uZW50aXR5JztcbmltcG9ydCB7XG4gIFRSQU5TSUNPRVNfUEVSTUlUSURBUyxcbiAgUEVSTUlTU09FU19UUkFOU0lDQU8sXG59IGZyb20gJy4uL2NvbmZpZy93b3JrZmxvdy1jb25maWcnO1xuXG4vKipcbiAqIFNlcnZpw6dvIGRlIFRyYW5zacOnw6NvIGRlIEVzdGFkb1xuICpcbiAqIFJlc3BvbnPDoXZlbCBwb3IgZ2VyZW5jaWFyIGFzIHJlZ3JhcyBkZSB0cmFuc2nDp8OjbyBlbnRyZSBlc3RhZG9zIGRhcyBzb2xpY2l0YcOnw7Vlcy5cbiAqIENlbnRyYWxpemEgYSBsw7NnaWNhIGRlIHZhbGlkYcOnw6NvIGRlIHRyYW5zacOnw7VlcyBlIHBlcm1pc3PDtWVzIG5lY2Vzc8Ohcmlhcy5cbiAqL1xuQEluamVjdGFibGUoKVxuZXhwb3J0IGNsYXNzIFRyYW5zaWNhb0VzdGFkb1NlcnZpY2Uge1xuICAvKipcbiAgICogVmVyaWZpY2Egc2UgdW1hIHRyYW5zacOnw6NvIGRlIGVzdGFkbyDDqSB2w6FsaWRhXG4gICAqIEBwYXJhbSBlc3RhZG9BdHVhbCBFc3RhZG8gYXR1YWwgZGEgc29saWNpdGHDp8Ojb1xuICAgKiBAcGFyYW0gbm92b0VzdGFkbyBFc3RhZG8gcGFyYSBvIHF1YWwgc2UgZGVzZWphIHRyYW5zaWNpb25hclxuICAgKiBAcmV0dXJucyBCb29sZWFuIGluZGljYW5kbyBzZSBhIHRyYW5zacOnw6NvIMOpIHBlcm1pdGlkYVxuICAgKi9cbiAgaXNUcmFuc2ljYW9WYWxpZGEoXG4gICAgZXN0YWRvQXR1YWw6IFN0YXR1c1NvbGljaXRhY2FvLFxuICAgIG5vdm9Fc3RhZG86IFN0YXR1c1NvbGljaXRhY2FvLFxuICApOiBib29sZWFuIHtcbiAgICByZXR1cm4gVFJBTlNJQ09FU19QRVJNSVRJREFTW2VzdGFkb0F0dWFsXT8uaW5jbHVkZXMobm92b0VzdGFkbykgfHwgZmFsc2U7XG4gIH1cblxuICAvKipcbiAgICogT2J0w6ltIHRvZG9zIG9zIGVzdGFkb3MgcG9zc8OtdmVpcyBhIHBhcnRpciBkZSB1bSBlc3RhZG8gYXR1YWxcbiAgICogQHBhcmFtIGVzdGFkb0F0dWFsIEVzdGFkbyBhdHVhbCBkYSBzb2xpY2l0YcOnw6NvXG4gICAqIEByZXR1cm5zIEFycmF5IGNvbSBvcyBlc3RhZG9zIHBvc3PDrXZlaXNcbiAgICovXG4gIGdldEVzdGFkb3NQb3NzaXZlaXMoZXN0YWRvQXR1YWw6IFN0YXR1c1NvbGljaXRhY2FvKTogU3RhdHVzU29saWNpdGFjYW9bXSB7XG4gICAgcmV0dXJuIFRSQU5TSUNPRVNfUEVSTUlUSURBU1tlc3RhZG9BdHVhbF0gfHwgW107XG4gIH1cblxuICAvKipcbiAgICogT2J0w6ltIGEgY2hhdmUgZGUgdHJhbnNpw6fDo28gcGFyYSB1bSBwYXIgZGUgZXN0YWRvc1xuICAgKiBAcGFyYW0gZXN0YWRvQXR1YWwgRXN0YWRvIGF0dWFsIGRhIHNvbGljaXRhw6fDo29cbiAgICogQHBhcmFtIG5vdm9Fc3RhZG8gRXN0YWRvIHBhcmEgbyBxdWFsIHNlIGRlc2VqYSB0cmFuc2ljaW9uYXJcbiAgICogQHJldHVybnMgQ2hhdmUgZGUgdHJhbnNpw6fDo28gbm8gZm9ybWF0byBFU1RBRE9fQVRVQUxfUEFSQV9OT1ZPX0VTVEFET1xuICAgKi9cbiAgcHJpdmF0ZSBnZXRDaGF2ZVRyYW5zaWNhbyhcbiAgICBlc3RhZG9BdHVhbDogU3RhdHVzU29saWNpdGFjYW8sXG4gICAgbm92b0VzdGFkbzogU3RhdHVzU29saWNpdGFjYW8sXG4gICk6IHN0cmluZyB7XG4gICAgcmV0dXJuIGAke2VzdGFkb0F0dWFsfV9QQVJBXyR7bm92b0VzdGFkb31gO1xuICB9XG5cbiAgLyoqXG4gICAqIE9idMOpbSBhcyBwZXJtaXNzw7VlcyBuZWNlc3PDoXJpYXMgcGFyYSByZWFsaXphciB1bWEgdHJhbnNpw6fDo29cbiAgICogQHBhcmFtIGVzdGFkb0F0dWFsIEVzdGFkbyBhdHVhbCBkYSBzb2xpY2l0YcOnw6NvXG4gICAqIEBwYXJhbSBub3ZvRXN0YWRvIEVzdGFkbyBwYXJhIG8gcXVhbCBzZSBkZXNlamEgdHJhbnNpY2lvbmFyXG4gICAqIEByZXR1cm5zIEFycmF5IGNvbSBvcyBub21lcyBkYXMgcGVybWlzc8O1ZXMgbmVjZXNzw6FyaWFzXG4gICAqL1xuICBnZXRQZXJtaXNzb2VzTmVjZXNzYXJpYXMoXG4gICAgZXN0YWRvQXR1YWw6IFN0YXR1c1NvbGljaXRhY2FvLFxuICAgIG5vdm9Fc3RhZG86IFN0YXR1c1NvbGljaXRhY2FvLFxuICApOiBzdHJpbmdbXSB7XG4gICAgY29uc3QgY2hhdmUgPSB0aGlzLmdldENoYXZlVHJhbnNpY2FvKGVzdGFkb0F0dWFsLCBub3ZvRXN0YWRvKTtcbiAgICByZXR1cm4gUEVSTUlTU09FU19UUkFOU0lDQU9bY2hhdmVdIHx8IFtdO1xuICB9XG5cbiAgLyoqXG4gICAqIFZlcmlmaWNhIHNlIHVtIHVzdcOhcmlvIHRlbSBwZXJtaXNzw6NvIHBhcmEgcmVhbGl6YXIgdW1hIHRyYW5zacOnw6NvXG4gICAqIEBwYXJhbSBlc3RhZG9BdHVhbCBFc3RhZG8gYXR1YWwgZGEgc29saWNpdGHDp8Ojb1xuICAgKiBAcGFyYW0gbm92b0VzdGFkbyBFc3RhZG8gcGFyYSBvIHF1YWwgc2UgZGVzZWphIHRyYW5zaWNpb25hclxuICAgKiBAcGFyYW0gcGVybWlzc29lc1VzdWFyaW8gQXJyYXkgY29tIGFzIHBlcm1pc3PDtWVzIGRvIHVzdcOhcmlvXG4gICAqIEByZXR1cm5zIEJvb2xlYW4gaW5kaWNhbmRvIHNlIG8gdXN1w6FyaW8gdGVtIHBlcm1pc3PDo28gcGFyYSBhIHRyYW5zacOnw6NvXG4gICAqL1xuICB1c3VhcmlvVGVtUGVybWlzc2FvUGFyYVRyYW5zaWNhbyhcbiAgICBlc3RhZG9BdHVhbDogU3RhdHVzU29saWNpdGFjYW8sXG4gICAgbm92b0VzdGFkbzogU3RhdHVzU29saWNpdGFjYW8sXG4gICAgcGVybWlzc29lc1VzdWFyaW86IHN0cmluZ1tdLFxuICApOiBib29sZWFuIHtcbiAgICBjb25zdCBwZXJtaXNzb2VzTmVjZXNzYXJpYXMgPSB0aGlzLmdldFBlcm1pc3NvZXNOZWNlc3NhcmlhcyhcbiAgICAgIGVzdGFkb0F0dWFsLFxuICAgICAgbm92b0VzdGFkbyxcbiAgICApO1xuXG4gICAgLy8gU2UgbsOjbyBob3V2ZXIgcGVybWlzc8O1ZXMgZGVmaW5pZGFzIHBhcmEgYSB0cmFuc2nDp8OjbywgYXNzdW1lIHF1ZSDDqSBwZXJtaXRpZGFcbiAgICBpZiAocGVybWlzc29lc05lY2Vzc2FyaWFzLmxlbmd0aCA9PT0gMCkge1xuICAgICAgcmV0dXJuIHRydWU7XG4gICAgfVxuXG4gICAgLy8gVmVyaWZpY2Egc2UgbyB1c3XDoXJpbyBwb3NzdWkgcGVsbyBtZW5vcyB1bWEgZGFzIHBlcm1pc3PDtWVzIG5lY2Vzc8Ohcmlhc1xuICAgIHJldHVybiBwZXJtaXNzb2VzTmVjZXNzYXJpYXMuc29tZSgocGVybWlzc2FvKSA9PlxuICAgICAgcGVybWlzc29lc1VzdWFyaW8uaW5jbHVkZXMocGVybWlzc2FvKSxcbiAgICApO1xuICB9XG5cbiAgLyoqXG4gICAqIFZlcmlmaWNhIHNlIHVtYSB0cmFuc2nDp8OjbyDDqSBwZXJtaXRpZGEsIGxhbsOnYW5kbyBleGNlw6fDtWVzIGNhc28gbsOjbyBzZWphXG4gICAqIEBwYXJhbSBlc3RhZG9BdHVhbCBFc3RhZG8gYXR1YWwgZGEgc29saWNpdGHDp8Ojb1xuICAgKiBAcGFyYW0gbm92b0VzdGFkbyBFc3RhZG8gcGFyYSBvIHF1YWwgc2UgZGVzZWphIHRyYW5zaWNpb25hclxuICAgKiBAcGFyYW0gdXN1YXJpb0lkIElEIGRvIHVzdcOhcmlvIHF1ZSBlc3TDoSByZWFsaXphbmRvIGEgdHJhbnNpw6fDo29cbiAgICogQHRocm93cyBCYWRSZXF1ZXN0RXhjZXB0aW9uIHNlIGEgdHJhbnNpw6fDo28gbsOjbyBmb3IgdsOhbGlkYVxuICAgKiBAdGhyb3dzIEZvcmJpZGRlbkV4Y2VwdGlvbiBzZSBvIHVzdcOhcmlvIG7Do28gdGl2ZXIgcGVybWlzc8Ojb1xuICAgKi9cbiAgYXN5bmMgdmVyaWZpY2FyVHJhbnNpY2FvUGVybWl0aWRhKFxuICAgIGVzdGFkb0F0dWFsOiBTdGF0dXNTb2xpY2l0YWNhbyxcbiAgICBub3ZvRXN0YWRvOiBTdGF0dXNTb2xpY2l0YWNhbyxcbiAgICB1c3VhcmlvSWQ6IHN0cmluZyxcbiAgKTogUHJvbWlzZTx2b2lkPiB7XG4gICAgLy8gVmVyaWZpY2FyIHNlIGEgdHJhbnNpw6fDo28gw6kgdsOhbGlkYVxuICAgIGlmICghdGhpcy5pc1RyYW5zaWNhb1ZhbGlkYShlc3RhZG9BdHVhbCwgbm92b0VzdGFkbykpIHtcbiAgICAgIHRocm93IG5ldyBCYWRSZXF1ZXN0RXhjZXB0aW9uKFxuICAgICAgICBgVHJhbnNpw6fDo28gZGUgJHtlc3RhZG9BdHVhbH0gcGFyYSAke25vdm9Fc3RhZG99IG7Do28gw6kgcGVybWl0aWRhYCxcbiAgICAgICk7XG4gICAgfVxuXG4gICAgLy8gQXF1aSBzZXJpYSBuZWNlc3PDoXJpbyB1bSBzZXJ2acOnbyBkZSB1c3XDoXJpbyBwYXJhIGJ1c2NhciBhcyBwZXJtaXNzw7Vlc1xuICAgIC8vIFBhcmEgc2ltcGxpZmljYXIsIGVzdGFtb3MgYXBlbmFzIHZlcmlmaWNhbmRvIHNlIGEgdHJhbnNpw6fDo28gw6kgdsOhbGlkYVxuICAgIC8vIGVtIHVtIGFtYmllbnRlIGRlIHByb2R1w6fDo28sIGJ1c2NhcsOtYW1vcyBhcyBwZXJtaXNzw7VlcyBkbyB1c3XDoXJpb1xuXG4gICAgLy8gY29uc3QgcGVybWlzc29lc1VzdWFyaW8gPSBhd2FpdCB0aGlzLnVzdWFyaW9TZXJ2aWNlLmdldFBlcm1pc3NvZXModXN1YXJpb0lkKTtcbiAgICAvLyBpZiAoIXRoaXMudXN1YXJpb1RlbVBlcm1pc3Nhb1BhcmFUcmFuc2ljYW8oZXN0YWRvQXR1YWwsIG5vdm9Fc3RhZG8sIHBlcm1pc3NvZXNVc3VhcmlvKSkge1xuICAgIC8vICAgdGhyb3cgbmV3IEZvcmJpZGRlbkV4Y2VwdGlvbignVXN1w6FyaW8gbsOjbyB0ZW0gcGVybWlzc8OjbyBwYXJhIHJlYWxpemFyIGVzdGEgdHJhbnNpw6fDo28nKTtcbiAgICAvLyB9XG4gIH1cbn1cbiJdLCJ2ZXJzaW9uIjozfQ==

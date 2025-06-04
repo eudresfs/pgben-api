@@ -1,0 +1,18 @@
+6d537966a554e7d954ed02b050399866
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.PublicoPrioritarioAluguel = void 0;
+/**
+ * Enum para público prioritário do Aluguel Social
+ */
+var PublicoPrioritarioAluguel;
+(function (PublicoPrioritarioAluguel) {
+    PublicoPrioritarioAluguel["CRIANCAS_ADOLESCENTES"] = "criancas_adolescentes";
+    PublicoPrioritarioAluguel["GESTANTES_NUTRIZES"] = "gestantes_nutrizes";
+    PublicoPrioritarioAluguel["IDOSOS"] = "idosos";
+    PublicoPrioritarioAluguel["MULHERES_VITIMAS_VIOLENCIA"] = "mulheres_vitimas_violencia";
+    PublicoPrioritarioAluguel["PCD"] = "pcd";
+    PublicoPrioritarioAluguel["ATINGIDOS_CALAMIDADE"] = "atingidos_calamidade";
+    PublicoPrioritarioAluguel["SITUACAO_RISCO"] = "situacao_risco";
+})(PublicoPrioritarioAluguel || (exports.PublicoPrioritarioAluguel = PublicoPrioritarioAluguel = {}));
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXGVudW1zXFxwdWJsaWNvLXByaW9yaXRhcmlvLWFsdWd1ZWwuZW51bS50cyIsIm1hcHBpbmdzIjoiOzs7QUFBQTs7R0FFRztBQUNILElBQVkseUJBUVg7QUFSRCxXQUFZLHlCQUF5QjtJQUNuQyw0RUFBK0MsQ0FBQTtJQUMvQyxzRUFBeUMsQ0FBQTtJQUN6Qyw4Q0FBaUIsQ0FBQTtJQUNqQixzRkFBeUQsQ0FBQTtJQUN6RCx3Q0FBVyxDQUFBO0lBQ1gsMEVBQTZDLENBQUE7SUFDN0MsOERBQWlDLENBQUE7QUFDbkMsQ0FBQyxFQVJXLHlCQUF5Qix5Q0FBekIseUJBQXlCLFFBUXBDIiwibmFtZXMiOltdLCJzb3VyY2VzIjpbIkM6XFxVc2Vyc1xcZXVkcmVcXE9uZURyaXZlXFxEZXNrdG9wXFxQcm9qZXRvc1xccGdiZW5cXHBnYmVuLXNlcnZlclxcc3JjXFxlbnVtc1xccHVibGljby1wcmlvcml0YXJpby1hbHVndWVsLmVudW0udHMiXSwic291cmNlc0NvbnRlbnQiOlsiLyoqXG4gKiBFbnVtIHBhcmEgcMO6YmxpY28gcHJpb3JpdMOhcmlvIGRvIEFsdWd1ZWwgU29jaWFsXG4gKi9cbmV4cG9ydCBlbnVtIFB1YmxpY29Qcmlvcml0YXJpb0FsdWd1ZWwge1xuICBDUklBTkNBU19BRE9MRVNDRU5URVMgPSAnY3JpYW5jYXNfYWRvbGVzY2VudGVzJyxcbiAgR0VTVEFOVEVTX05VVFJJWkVTID0gJ2dlc3RhbnRlc19udXRyaXplcycsXG4gIElET1NPUyA9ICdpZG9zb3MnLFxuICBNVUxIRVJFU19WSVRJTUFTX1ZJT0xFTkNJQSA9ICdtdWxoZXJlc192aXRpbWFzX3Zpb2xlbmNpYScsXG4gIFBDRCA9ICdwY2QnLFxuICBBVElOR0lET1NfQ0FMQU1JREFERSA9ICdhdGluZ2lkb3NfY2FsYW1pZGFkZScsXG4gIFNJVFVBQ0FPX1JJU0NPID0gJ3NpdHVhY2FvX3Jpc2NvJyxcbn1cbiJdLCJ2ZXJzaW9uIjozfQ==

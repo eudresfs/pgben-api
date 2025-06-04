@@ -1,0 +1,166 @@
+6dcd28f6ce14781eab54f630042a2105
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.NotificacaoSistema = exports.StatusNotificacaoProcessamento = exports.TipoNotificacao = void 0;
+const typeorm_1 = require("typeorm");
+const class_validator_1 = require("class-validator");
+const notification_template_entity_1 = require("./notification-template.entity");
+/**
+ * Enum para os tipos de notificação
+ */
+var TipoNotificacao;
+(function (TipoNotificacao) {
+    TipoNotificacao["SISTEMA"] = "sistema";
+    TipoNotificacao["SOLICITACAO"] = "solicitacao";
+    TipoNotificacao["PENDENCIA"] = "pendencia";
+    TipoNotificacao["APROVACAO"] = "aprovacao";
+    TipoNotificacao["LIBERACAO"] = "liberacao";
+    TipoNotificacao["ALERTA"] = "alerta";
+})(TipoNotificacao || (exports.TipoNotificacao = TipoNotificacao = {}));
+/**
+ * Enum para os possíveis estados de uma notificação do sistema
+ */
+var StatusNotificacaoProcessamento;
+(function (StatusNotificacaoProcessamento) {
+    StatusNotificacaoProcessamento["PENDENTE"] = "pendente";
+    StatusNotificacaoProcessamento["EM_PROCESSAMENTO"] = "em_processamento";
+    StatusNotificacaoProcessamento["ENVIADA"] = "enviada";
+    StatusNotificacaoProcessamento["FALHA"] = "falha";
+    StatusNotificacaoProcessamento["CANCELADA"] = "cancelada";
+    StatusNotificacaoProcessamento["NAO_LIDA"] = "nao_lida";
+    StatusNotificacaoProcessamento["LIDA"] = "lida";
+    StatusNotificacaoProcessamento["ARQUIVADA"] = "arquivada";
+})(StatusNotificacaoProcessamento || (exports.StatusNotificacaoProcessamento = StatusNotificacaoProcessamento = {}));
+/**
+ * Entidade que representa uma notificação para um destinatário específico
+ */
+let NotificacaoSistema = class NotificacaoSistema {
+    id;
+    destinatario_id;
+    template;
+    template_id;
+    dados_contexto;
+    status;
+    tentativas_entrega;
+    dados_envio;
+    ultima_tentativa;
+    tentativas_envio;
+    proxima_tentativa;
+    numero_tentativas;
+    data_entrega;
+    data_envio;
+    data_agendamento;
+    data_leitura;
+    created_at;
+    updated_at;
+};
+exports.NotificacaoSistema = NotificacaoSistema;
+__decorate([
+    (0, typeorm_1.PrimaryGeneratedColumn)('uuid'),
+    __metadata("design:type", String)
+], NotificacaoSistema.prototype, "id", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'destinatario_id' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'ID do destinatário é obrigatório' }),
+    (0, class_validator_1.IsUUID)('4', { message: 'ID do destinatário inválido' }),
+    __metadata("design:type", String)
+], NotificacaoSistema.prototype, "destinatario_id", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => notification_template_entity_1.NotificationTemplate),
+    (0, typeorm_1.JoinColumn)({ name: 'template_id' }),
+    __metadata("design:type", typeof (_a = typeof notification_template_entity_1.NotificationTemplate !== "undefined" && notification_template_entity_1.NotificationTemplate) === "function" ? _a : Object)
+], NotificacaoSistema.prototype, "template", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'template_id' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'ID do template é obrigatório' }),
+    (0, class_validator_1.IsUUID)('4', { message: 'ID do template inválido' }),
+    __metadata("design:type", String)
+], NotificacaoSistema.prototype, "template_id", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'jsonb', name: 'dados_contexto' }),
+    __metadata("design:type", typeof (_b = typeof Record !== "undefined" && Record) === "function" ? _b : Object)
+], NotificacaoSistema.prototype, "dados_contexto", void 0);
+__decorate([
+    (0, typeorm_1.Column)({
+        type: 'enum',
+        enum: StatusNotificacaoProcessamento,
+        enumName: 'status_notificacao_processamento',
+        default: StatusNotificacaoProcessamento.PENDENTE,
+    }),
+    (0, class_validator_1.IsEnum)(StatusNotificacaoProcessamento, { message: 'Status inválido' }),
+    __metadata("design:type", String)
+], NotificacaoSistema.prototype, "status", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'jsonb', name: 'tentativas_entrega', nullable: true }),
+    __metadata("design:type", Array)
+], NotificacaoSistema.prototype, "tentativas_entrega", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'jsonb', name: 'dados_envio', nullable: true }),
+    __metadata("design:type", typeof (_c = typeof Record !== "undefined" && Record) === "function" ? _c : Object)
+], NotificacaoSistema.prototype, "dados_envio", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'ultima_tentativa', nullable: true }),
+    __metadata("design:type", typeof (_d = typeof Date !== "undefined" && Date) === "function" ? _d : Object)
+], NotificacaoSistema.prototype, "ultima_tentativa", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'tentativas_envio', default: 0 }),
+    (0, class_validator_1.IsNumber)({}, { message: 'Tentativas de envio deve ser um número' }),
+    (0, class_validator_1.Min)(0, { message: 'Tentativas de envio não pode ser negativo' }),
+    __metadata("design:type", Number)
+], NotificacaoSistema.prototype, "tentativas_envio", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'proxima_tentativa', nullable: true }),
+    __metadata("design:type", typeof (_e = typeof Date !== "undefined" && Date) === "function" ? _e : Object)
+], NotificacaoSistema.prototype, "proxima_tentativa", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'numero_tentativas', default: 0 }),
+    (0, class_validator_1.IsNumber)({}, { message: 'Número de tentativas deve ser um número' }),
+    (0, class_validator_1.Min)(0, { message: 'Número de tentativas não pode ser negativo' }),
+    __metadata("design:type", Number)
+], NotificacaoSistema.prototype, "numero_tentativas", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'data_entrega', nullable: true }),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", typeof (_f = typeof Date !== "undefined" && Date) === "function" ? _f : Object)
+], NotificacaoSistema.prototype, "data_entrega", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'data_envio', nullable: true }),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", typeof (_g = typeof Date !== "undefined" && Date) === "function" ? _g : Object)
+], NotificacaoSistema.prototype, "data_envio", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'data_agendamento', nullable: true }),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", typeof (_h = typeof Date !== "undefined" && Date) === "function" ? _h : Object)
+], NotificacaoSistema.prototype, "data_agendamento", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'data_leitura', nullable: true }),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", typeof (_j = typeof Date !== "undefined" && Date) === "function" ? _j : Object)
+], NotificacaoSistema.prototype, "data_leitura", void 0);
+__decorate([
+    (0, typeorm_1.CreateDateColumn)({ name: 'created_at' }),
+    __metadata("design:type", typeof (_k = typeof Date !== "undefined" && Date) === "function" ? _k : Object)
+], NotificacaoSistema.prototype, "created_at", void 0);
+__decorate([
+    (0, typeorm_1.UpdateDateColumn)({ name: 'updated_at' }),
+    __metadata("design:type", typeof (_l = typeof Date !== "undefined" && Date) === "function" ? _l : Object)
+], NotificacaoSistema.prototype, "updated_at", void 0);
+exports.NotificacaoSistema = NotificacaoSistema = __decorate([
+    (0, typeorm_1.Entity)('notificacoes_sistema')
+    // Nome da classe alterado para evitar conflitos com a entidade Notificacao
+    ,
+    (0, typeorm_1.Index)(['destinatario_id', 'created_at']),
+    (0, typeorm_1.Index)(['status', 'created_at'])
+], NotificacaoSistema);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXGVudGl0aWVzXFxub3RpZmljYXRpb24uZW50aXR5LnRzIiwibWFwcGluZ3MiOiI7Ozs7Ozs7Ozs7Ozs7QUFBQSxxQ0FTaUI7QUFDakIscURBT3lCO0FBQ3pCLGlGQUFzRTtBQUV0RTs7R0FFRztBQUNILElBQVksZUFPWDtBQVBELFdBQVksZUFBZTtJQUN6QixzQ0FBbUIsQ0FBQTtJQUNuQiw4Q0FBMkIsQ0FBQTtJQUMzQiwwQ0FBdUIsQ0FBQTtJQUN2QiwwQ0FBdUIsQ0FBQTtJQUN2QiwwQ0FBdUIsQ0FBQTtJQUN2QixvQ0FBaUIsQ0FBQTtBQUNuQixDQUFDLEVBUFcsZUFBZSwrQkFBZixlQUFlLFFBTzFCO0FBRUQ7O0dBRUc7QUFDSCxJQUFZLDhCQVNYO0FBVEQsV0FBWSw4QkFBOEI7SUFDeEMsdURBQXFCLENBQUE7SUFDckIsdUVBQXFDLENBQUE7SUFDckMscURBQW1CLENBQUE7SUFDbkIsaURBQWUsQ0FBQTtJQUNmLHlEQUF1QixDQUFBO0lBQ3ZCLHVEQUFxQixDQUFBO0lBQ3JCLCtDQUFhLENBQUE7SUFDYix5REFBdUIsQ0FBQTtBQUN6QixDQUFDLEVBVFcsOEJBQThCLDhDQUE5Qiw4QkFBOEIsUUFTekM7QUFhRDs7R0FFRztBQUtJLElBQU0sa0JBQWtCLEdBQXhCLE1BQU0sa0JBQWtCO0lBRTdCLEVBQUUsQ0FBUztJQUtYLGVBQWUsQ0FBUztJQUl4QixRQUFRLENBQXVCO0lBSy9CLFdBQVcsQ0FBUztJQUdwQixjQUFjLENBQXNCO0lBU3BDLE1BQU0sQ0FBaUM7SUFHdkMsa0JBQWtCLENBQXFCO0lBR3ZDLFdBQVcsQ0FBc0I7SUFHakMsZ0JBQWdCLENBQU87SUFLdkIsZ0JBQWdCLENBQVM7SUFHekIsaUJBQWlCLENBQU87SUFLeEIsaUJBQWlCLENBQVM7SUFJMUIsWUFBWSxDQUFPO0lBSW5CLFVBQVUsQ0FBTztJQUlqQixnQkFBZ0IsQ0FBTztJQUl2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c291cmNlcyI6WyJDOlxcVXNlcnNcXGV1ZHJlXFxPbmVEcml2ZVxcRGVza3RvcFxcUHJvamV0b3NcXHBnYmVuXFxwZ2Jlbi1zZXJ2ZXJcXHNyY1xcZW50aXRpZXNcXG5vdGlmaWNhdGlvbi5lbnRpdHkudHMiXSwic291cmNlc0NvbnRlbnQiOlsiaW1wb3J0IHtcbiAgRW50aXR5LFxuICBDb2x1bW4sXG4gIFByaW1hcnlHZW5lcmF0ZWRDb2x1bW4sXG4gIENyZWF0ZURhdGVDb2x1bW4sXG4gIFVwZGF0ZURhdGVDb2x1bW4sXG4gIE1hbnlUb09uZSxcbiAgSm9pbkNvbHVtbixcbiAgSW5kZXgsXG59IGZyb20gJ3R5cGVvcm0nO1xuaW1wb3J0IHtcbiAgSXNOb3RFbXB0eSxcbiAgSXNVVUlELFxuICBJc09wdGlvbmFsLFxuICBJc0VudW0sXG4gIElzTnVtYmVyLFxuICBNaW4sXG59IGZyb20gJ2NsYXNzLXZhbGlkYXRvcic7XG5pbXBvcnQgeyBOb3RpZmljYXRpb25UZW1wbGF0ZSB9IGZyb20gJy4vbm90aWZpY2F0aW9uLXRlbXBsYXRlLmVudGl0eSc7XG5cbi8qKlxuICogRW51bSBwYXJhIG9zIHRpcG9zIGRlIG5vdGlmaWNhw6fDo29cbiAqL1xuZXhwb3J0IGVudW0gVGlwb05vdGlmaWNhY2FvIHtcbiAgU0lTVEVNQSA9ICdzaXN0ZW1hJyxcbiAgU09MSUNJVEFDQU8gPSAnc29saWNpdGFjYW8nLFxuICBQRU5ERU5DSUEgPSAncGVuZGVuY2lhJyxcbiAgQVBST1ZBQ0FPID0gJ2Fwcm92YWNhbycsXG4gIExJQkVSQUNBTyA9ICdsaWJlcmFjYW8nLFxuICBBTEVSVEEgPSAnYWxlcnRhJyxcbn1cblxuLyoqXG4gKiBFbnVtIHBhcmEgb3MgcG9zc8OtdmVpcyBlc3RhZG9zIGRlIHVtYSBub3RpZmljYcOnw6NvIGRvIHNpc3RlbWFcbiAqL1xuZXhwb3J0IGVudW0gU3RhdHVzTm90aWZpY2FjYW9Qcm9jZXNzYW1lbnRvIHtcbiAgUEVOREVOVEUgPSAncGVuZGVudGUnLFxuICBFTV9QUk9DRVNTQU1FTlRPID0gJ2VtX3Byb2Nlc3NhbWVudG8nLFxuICBFTlZJQURBID0gJ2VudmlhZGEnLFxuICBGQUxIQSA9ICdmYWxoYScsXG4gIENBTkNFTEFEQSA9ICdjYW5jZWxhZGEnLFxuICBOQU9fTElEQSA9ICduYW9fbGlkYScsXG4gIExJREEgPSAnbGlkYScsXG4gIEFSUVVJVkFEQSA9ICdhcnF1aXZhZGEnLFxufVxuXG4vKipcbiAqIEludGVyZmFjZSBwYXJhIHJlZ2lzdHJhciB0ZW50YXRpdmFzIGRlIGVudHJlZ2FcbiAqL1xuZXhwb3J0IGludGVyZmFjZSBUZW50YXRpdmFFbnRyZWdhIHtcbiAgZGF0YV90ZW50YXRpdmE6IERhdGU7XG4gIGNhbmFsOiBzdHJpbmc7XG4gIHN1Y2Vzc286IGJvb2xlYW47XG4gIG1lbnNhZ2VtX2Vycm8/OiBzdHJpbmc7XG4gIGRhZG9zX3Jlc3Bvc3RhPzogUmVjb3JkPHN0cmluZywgYW55Pjtcbn1cblxuLyoqXG4gKiBFbnRpZGFkZSBxdWUgcmVwcmVzZW50YSB1bWEgbm90aWZpY2HDp8OjbyBwYXJhIHVtIGRlc3RpbmF0w6FyaW8gZXNwZWPDrWZpY29cbiAqL1xuQEVudGl0eSgnbm90aWZpY2Fjb2VzX3Npc3RlbWEnKVxuLy8gTm9tZSBkYSBjbGFzc2UgYWx0ZXJhZG8gcGFyYSBldml0YXIgY29uZmxpdG9zIGNvbSBhIGVudGlkYWRlIE5vdGlmaWNhY2FvXG5ASW5kZXgoWydkZXN0aW5hdGFyaW9faWQnLCAnY3JlYXRlZF9hdCddKVxuQEluZGV4KFsnc3RhdHVzJywgJ2NyZWF0ZWRfYXQnXSlcbmV4cG9ydCBjbGFzcyBOb3RpZmljYWNhb1Npc3RlbWEge1xuICBAUHJpbWFyeUdlbmVyYXRlZENvbHVtbigndXVpZCcpXG4gIGlkOiBzdHJpbmc7XG5cbiAgQENvbHVtbih7IG5hbWU6ICdkZXN0aW5hdGFyaW9faWQnIH0pXG4gIEBJc05vdEVtcHR5KHsgbWVzc2FnZTogJ0lEIGRvIGRlc3RpbmF0w6FyaW8gw6kgb2JyaWdhdMOzcmlvJyB9KVxuICBASXNVVUlEKCc0JywgeyBtZXNzYWdlOiAnSUQgZG8gZGVzdGluYXTDoXJpbyBpbnbDoWxpZG8nIH0pXG4gIGRlc3RpbmF0YXJpb19pZDogc3RyaW5nO1xuXG4gIEBNYW55VG9PbmUoKCkgPT4gTm90aWZpY2F0aW9uVGVtcGxhdGUpXG4gIEBKb2luQ29sdW1uKHsgbmFtZTogJ3RlbXBsYXRlX2lkJyB9KVxuICB0ZW1wbGF0ZTogTm90aWZpY2F0aW9uVGVtcGxhdGU7XG5cbiAgQENvbHVtbih7IG5hbWU6ICd0ZW1wbGF0ZV9pZCcgfSlcbiAgQElzTm90RW1wdHkoeyBtZXNzYWdlOiAnSUQgZG8gdGVtcGxhdGUgw6kgb2JyaWdhdMOzcmlvJyB9KVxuICBASXNVVUlEKCc0JywgeyBtZXNzYWdlOiAnSUQgZG8gdGVtcGxhdGUgaW52w6FsaWRvJyB9KVxuICB0ZW1wbGF0ZV9pZDogc3RyaW5nO1xuXG4gIEBDb2x1bW4oeyB0eXBlOiAnanNvbmInLCBuYW1lOiAnZGFkb3NfY29udGV4dG8nIH0pXG4gIGRhZG9zX2NvbnRleHRvOiBSZWNvcmQ8c3RyaW5nLCBhbnk+O1xuXG4gIEBDb2x1bW4oe1xuICAgIHR5cGU6ICdlbnVtJyxcbiAgICBlbnVtOiBTdGF0dXNOb3RpZmljYWNhb1Byb2Nlc3NhbWVudG8sXG4gICAgZW51bU5hbWU6ICdzdGF0dXNfbm90aWZpY2FjYW9fcHJvY2Vzc2FtZW50bycsXG4gICAgZGVmYXVsdDogU3RhdHVzTm90aWZpY2FjYW9Qcm9jZXNzYW1lbnRvLlBFTkRFTlRFLFxuICB9KVxuICBASXNFbnVtKFN0YXR1c05vdGlmaWNhY2FvUHJvY2Vzc2FtZW50bywgeyBtZXNzYWdlOiAnU3RhdHVzIGludsOhbGlkbycgfSlcbiAgc3RhdHVzOiBTdGF0dXNOb3RpZmljYWNhb1Byb2Nlc3NhbWVudG87XG5cbiAgQENvbHVtbih7IHR5cGU6ICdqc29uYicsIG5hbWU6ICd0ZW50YXRpdmFzX2VudHJlZ2EnLCBudWxsYWJsZTogdHJ1ZSB9KVxuICB0ZW50YXRpdmFzX2VudHJlZ2E6IFRlbnRhdGl2YUVudHJlZ2FbXTtcblxuICBAQ29sdW1uKHsgdHlwZTogJ2pzb25iJywgbmFtZTogJ2RhZG9zX2VudmlvJywgbnVsbGFibGU6IHRydWUgfSlcbiAgZGFkb3NfZW52aW86IFJlY29yZDxzdHJpbmcsIGFueT47XG5cbiAgQENvbHVtbih7IG5hbWU6ICd1bHRpbWFfdGVudGF0aXZhJywgbnVsbGFibGU6IHRydWUgfSlcbiAgdWx0aW1hX3RlbnRhdGl2YTogRGF0ZTtcblxuICBAQ29sdW1uKHsgbmFtZTogJ3RlbnRhdGl2YXNfZW52aW8nLCBkZWZhdWx0OiAwIH0pXG4gIEBJc051bWJlcih7fSwgeyBtZXNzYWdlOiAnVGVudGF0aXZhcyBkZSBlbnZpbyBkZXZlIHNlciB1bSBuw7ptZXJvJyB9KVxuICBATWluKDAsIHsgbWVzc2FnZTogJ1RlbnRhdGl2YXMgZGUgZW52aW8gbsOjbyBwb2RlIHNlciBuZWdhdGl2bycgfSlcbiAgdGVudGF0aXZhc19lbnZpbzogbnVtYmVyO1xuXG4gIEBDb2x1bW4oeyBuYW1lOiAncHJveGltYV90ZW50YXRpdmEnLCBudWxsYWJsZTogdHJ1ZSB9KVxuICBwcm94aW1hX3RlbnRhdGl2YTogRGF0ZTtcblxuICBAQ29sdW1uKHsgbmFtZTogJ251bWVyb190ZW50YXRpdmFzJywgZGVmYXVsdDogMCB9KVxuICBASXNOdW1iZXIoe30sIHsgbWVzc2FnZTogJ07Dum1lcm8gZGUgdGVudGF0aXZhcyBkZXZlIHNlciB1bSBuw7ptZXJvJyB9KVxuICBATWluKDAsIHsgbWVzc2FnZTogJ07Dum1lcm8gZGUgdGVudGF0aXZhcyBuw6NvIHBvZGUgc2VyIG5lZ2F0aXZvJyB9KVxuICBudW1lcm9fdGVudGF0aXZhczogbnVtYmVyO1xuXG4gIEBDb2x1bW4oeyBuYW1lOiAnZGF0YV9lbnRyZWdhJywgbnVsbGFibGU6IHRydWUgfSlcbiAgQElzT3B0aW9uYWwoKVxuICBkYXRhX2VudHJlZ2E6IERhdGU7XG5cbiAgQENvbHVtbih7IG5hbWU6ICdkYXRhX2VudmlvJywgbnVsbGFibGU6IHRydWUgfSlcbiAgQElzT3B0aW9uYWwoKVxuICBkYXRhX2VudmlvOiBEYXRlO1xuXG4gIEBDb2x1bW4oeyBuYW1lOiAnZGF0YV9hZ2VuZGFtZW50bycsIG51bGxhYmxlOiB0cnVlIH0pXG4gIEBJc09wdGlvbmFsKClcbiAgZGF0YV9hZ2VuZGFtZW50bzogRGF0ZTtcblxuICBAQ29sdW1uKHsgbmFtZTogJ2RhdGFfbGVpdHVyYScsIG51bGxhYmxlOiB0cnVlIH0pXG4gIEBJc09wdGlvbmFsKClcbiAgZGF0YV9sZWl0dXJhOiBEYXRlO1xuXG4gIEBDcmVhdGVEYXRlQ29sdW1uKHsgbmFtZTogJ2NyZWF0ZWRfYXQnIH0pXG4gIGNyZWF0ZWRfYXQ6IERhdGU7XG5cbiAgQFVwZGF0ZURhdGVDb2x1bW4oeyBuYW1lOiAndXBkYXRlZF9hdCcgfSlcbiAgdXBkYXRlZF9hdDogRGF0ZTtcbn1cbiJdLCJ2ZXJzaW9uIjozfQ==

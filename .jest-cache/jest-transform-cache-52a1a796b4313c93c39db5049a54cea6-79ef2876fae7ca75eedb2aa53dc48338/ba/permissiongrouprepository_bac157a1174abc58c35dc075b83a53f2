@@ -1,0 +1,87 @@
+3de75b03fde1cf39298d1f5166fa6b95
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var _a;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.PermissionGroupRepository = void 0;
+const typeorm_1 = require("typeorm");
+const common_1 = require("@nestjs/common");
+const permission_group_entity_1 = require("../../entities/permission-group.entity");
+/**
+ * Repositório para a entidade PermissionGroup.
+ *
+ * Fornece métodos para manipulação de grupos de permissões no banco de dados,
+ * incluindo busca por nome e operações de CRUD.
+ */
+let PermissionGroupRepository = class PermissionGroupRepository extends typeorm_1.Repository {
+    dataSource;
+    constructor(dataSource) {
+        super(permission_group_entity_1.PermissionGroup, dataSource.createEntityManager());
+        this.dataSource = dataSource;
+    }
+    /**
+     * Busca um grupo de permissões pelo nome.
+     *
+     * @param name Nome do grupo
+     * @returns O grupo encontrado ou null
+     */
+    async findByName(name) {
+        return this.findOne({ where: { name } });
+    }
+    /**
+     * Busca um grupo de permissões pelo ID.
+     *
+     * @param id ID do grupo
+     * @returns O grupo encontrado ou null
+     */
+    async findById(id) {
+        return this.findOneBy({ id });
+    }
+    /**
+     * Cria um novo grupo de permissões.
+     *
+     * @param data Dados do grupo a ser criado
+     * @returns O grupo criado
+     */
+    async createGroup(data) {
+        const group = this.create(data);
+        return this.save(group);
+    }
+    /**
+     * Atualiza um grupo de permissões existente.
+     *
+     * @param id ID do grupo a ser atualizado
+     * @param data Dados atualizados do grupo
+     * @returns O grupo atualizado
+     */
+    async updateGroup(id, data) {
+        await this.update(id, data);
+        return this.findOneBy({ id });
+    }
+    /**
+     * Remove um grupo de permissões.
+     *
+     * @param id ID do grupo a ser removido
+     * @returns true se o grupo foi removido, false caso contrário
+     */
+    async removeGroup(id) {
+        const result = await this.delete(id);
+        return (result.affected !== null &&
+            result.affected !== undefined &&
+            result.affected > 0);
+    }
+};
+exports.PermissionGroupRepository = PermissionGroupRepository;
+exports.PermissionGroupRepository = PermissionGroupRepository = __decorate([
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [typeof (_a = typeof typeorm_1.DataSource !== "undefined" && typeorm_1.DataSource) === "function" ? _a : Object])
+], PermissionGroupRepository);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXGF1dGhcXHJlcG9zaXRvcmllc1xccGVybWlzc2lvbi1ncm91cC5yZXBvc2l0b3J5LnRzIiwibWFwcGluZ3MiOiI7Ozs7Ozs7Ozs7Ozs7QUFBQSxxQ0FBaUQ7QUFDakQsMkNBQTRDO0FBQzVDLG9GQUF5RTtBQUV6RTs7Ozs7R0FLRztBQUVJLElBQU0seUJBQXlCLEdBQS9CLE1BQU0seUJBQTBCLFNBQVEsb0JBQTJCO0lBQ3BEO0lBQXBCLFlBQW9CLFVBQXNCO1FBQ3hDLEtBQUssQ0FBQyx5Q0FBZSxFQUFFLFVBQVUsQ0FBQyxtQkFBbUIsRUFBRSxDQUFDLENBQUM7UUFEdkMsZUFBVSxHQUFWLFVBQVUsQ0FBWTtJQUUxQyxDQUFDO0lBRUQ7Ozs7O09BS0c7SUFDSCxLQUFLLENBQUMsVUFBVSxDQUFDLElBQVk7UUFDM0IsT0FBTyxJQUFJLENBQUMsT0FBTyxDQUFDLEVBQUUsS0FBSyxFQUFFLEVBQUUsSUFBSSxFQUFFLEVBQUUsQ0FBQyxDQUFDO0lBQzNDLENBQUM7SUFFRDs7Ozs7T0FLRztJQUNILEtBQUssQ0FBQyxRQUFRLENBQUMsRUFBVTtRQUN2QixPQUFPLElBQUksQ0FBQyxTQUFTLENBQUMsRUFBRSxFQUFFLEVBQUUsQ0FBQyxDQUFDO0lBQ2hDLENBQUM7SUFFRDs7Ozs7T0FLRztJQUNILEtBQUssQ0FBQyxXQUFXLENBQUMsSUFBOEI7UUFDOUMsTUFBTSxLQUFLLEdBQUcsSUFBSSxDQUFDLE1BQU0sQ0FBQyxJQUFJLENBQUMsQ0FBQztRQUNoQyxPQUFPLElBQUksQ0FBQyxJQUFJLENBQUMsS0FBSyxDQUFDLENBQUM7SUFDMUIsQ0FBQztJQUVEOzs7Ozs7T0FNRztJQUNILEtBQUssQ0FBQyxXQUFXLENBQ2YsRUFBVSxFQUNWLElBQThCO1FBRTlCLE1BQU0sSUFBSSxDQUFDLE1BQU0sQ0FBQyxFQUFFLEVBQUUsSUFBSSxDQUFDLENBQUM7UUFDNUIsT0FBTyxJQUFJLENBQUMsU0FBUyxDQUFDLEVBQUUsRUFBRSxFQUFFLENBQUMsQ0FBQztJQUNoQyxDQUFDO0lBRUQ7Ozs7O09BS0c7SUFDSCxLQUFLLENBQUMsV0FBVyxDQUFDLEVBQVU7UUFDMUIsTUFBTSxNQUFNLEdBQUcsTUFBTSxJQUFJLENBQUMsTUFBTSxDQUFDLEVBQUUsQ0FBQyxDQUFDO1FBQ3JDLE9BQU8sQ0FDTCxNQUFNLENBQUMsUUFBUSxLQUFLLElBQUk7WUFDeEIsTUFBTSxDQUFDLFFBQVEsS0FBSyxTQUFTO1lBQzdCLE1BQU0sQ0FBQyxRQUFRLEdBQUcsQ0FBQyxDQUNwQixDQUFDO0lBQ0osQ0FBQztDQUNGLENBQUE7QUFqRVksOERBQXlCO29DQUF6Qix5QkFBeUI7SUFEckMsSUFBQSxtQkFBVSxHQUFFO3lEQUVxQixvQkFBVSxvQkFBVixvQkFBVTtHQUQvQix5QkFBeUIsQ0FpRXJDIiwibmFtZXMiOltdLCJzb3VyY2VzIjpbIkM6XFxVc2Vyc1xcZXVkcmVcXE9uZURyaXZlXFxEZXNrdG9wXFxQcm9qZXRvc1xccGdiZW5cXHBnYmVuLXNlcnZlclxcc3JjXFxhdXRoXFxyZXBvc2l0b3JpZXNcXHBlcm1pc3Npb24tZ3JvdXAucmVwb3NpdG9yeS50cyJdLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQgeyBEYXRhU291cmNlLCBSZXBvc2l0b3J5IH0gZnJvbSAndHlwZW9ybSc7XG5pbXBvcnQgeyBJbmplY3RhYmxlIH0gZnJvbSAnQG5lc3Rqcy9jb21tb24nO1xuaW1wb3J0IHsgUGVybWlzc2lvbkdyb3VwIH0gZnJvbSAnLi4vLi4vZW50aXRpZXMvcGVybWlzc2lvbi1ncm91cC5lbnRpdHknO1xuXG4vKipcbiAqIFJlcG9zaXTDs3JpbyBwYXJhIGEgZW50aWRhZGUgUGVybWlzc2lvbkdyb3VwLlxuICpcbiAqIEZvcm5lY2UgbcOpdG9kb3MgcGFyYSBtYW5pcHVsYcOnw6NvIGRlIGdydXBvcyBkZSBwZXJtaXNzw7VlcyBubyBiYW5jbyBkZSBkYWRvcyxcbiAqIGluY2x1aW5kbyBidXNjYSBwb3Igbm9tZSBlIG9wZXJhw6fDtWVzIGRlIENSVUQuXG4gKi9cbkBJbmplY3RhYmxlKClcbmV4cG9ydCBjbGFzcyBQZXJtaXNzaW9uR3JvdXBSZXBvc2l0b3J5IGV4dGVuZHMgUmVwb3NpdG9yeTxQZXJtaXNzaW9uR3JvdXA+IHtcbiAgY29uc3RydWN0b3IocHJpdmF0ZSBkYXRhU291cmNlOiBEYXRhU291cmNlKSB7XG4gICAgc3VwZXIoUGVybWlzc2lvbkdyb3VwLCBkYXRhU291cmNlLmNyZWF0ZUVudGl0eU1hbmFnZXIoKSk7XG4gIH1cblxuICAvKipcbiAgICogQnVzY2EgdW0gZ3J1cG8gZGUgcGVybWlzc8O1ZXMgcGVsbyBub21lLlxuICAgKlxuICAgKiBAcGFyYW0gbmFtZSBOb21lIGRvIGdydXBvXG4gICAqIEByZXR1cm5zIE8gZ3J1cG8gZW5jb250cmFkbyBvdSBudWxsXG4gICAqL1xuICBhc3luYyBmaW5kQnlOYW1lKG5hbWU6IHN0cmluZyk6IFByb21pc2U8UGVybWlzc2lvbkdyb3VwIHwgbnVsbD4ge1xuICAgIHJldHVybiB0aGlzLmZpbmRPbmUoeyB3aGVyZTogeyBuYW1lIH0gfSk7XG4gIH1cblxuICAvKipcbiAgICogQnVzY2EgdW0gZ3J1cG8gZGUgcGVybWlzc8O1ZXMgcGVsbyBJRC5cbiAgICpcbiAgICogQHBhcmFtIGlkIElEIGRvIGdydXBvXG4gICAqIEByZXR1cm5zIE8gZ3J1cG8gZW5jb250cmFkbyBvdSBudWxsXG4gICAqL1xuICBhc3luYyBmaW5kQnlJZChpZDogc3RyaW5nKTogUHJvbWlzZTxQZXJtaXNzaW9uR3JvdXAgfCBudWxsPiB7XG4gICAgcmV0dXJuIHRoaXMuZmluZE9uZUJ5KHsgaWQgfSk7XG4gIH1cblxuICAvKipcbiAgICogQ3JpYSB1bSBub3ZvIGdydXBvIGRlIHBlcm1pc3PDtWVzLlxuICAgKlxuICAgKiBAcGFyYW0gZGF0YSBEYWRvcyBkbyBncnVwbyBhIHNlciBjcmlhZG9cbiAgICogQHJldHVybnMgTyBncnVwbyBjcmlhZG9cbiAgICovXG4gIGFzeW5jIGNyZWF0ZUdyb3VwKGRhdGE6IFBhcnRpYWw8UGVybWlzc2lvbkdyb3VwPik6IFByb21pc2U8UGVybWlzc2lvbkdyb3VwPiB7XG4gICAgY29uc3QgZ3JvdXAgPSB0aGlzLmNyZWF0ZShkYXRhKTtcbiAgICByZXR1cm4gdGhpcy5zYXZlKGdyb3VwKTtcbiAgfVxuXG4gIC8qKlxuICAgKiBBdHVhbGl6YSB1bSBncnVwbyBkZSBwZXJtaXNzw7VlcyBleGlzdGVudGUuXG4gICAqXG4gICAqIEBwYXJhbSBpZCBJRCBkbyBncnVwbyBhIHNlciBhdHVhbGl6YWRvXG4gICAqIEBwYXJhbSBkYXRhIERhZG9zIGF0dWFsaXphZG9zIGRvIGdydXBvXG4gICAqIEByZXR1cm5zIE8gZ3J1cG8gYXR1YWxpemFkb1xuICAgKi9cbiAgYXN5bmMgdXBkYXRlR3JvdXAoXG4gICAgaWQ6IHN0cmluZyxcbiAgICBkYXRhOiBQYXJ0aWFsPFBlcm1pc3Npb25Hcm91cD4sXG4gICk6IFByb21pc2U8UGVybWlzc2lvbkdyb3VwIHwgbnVsbD4ge1xuICAgIGF3YWl0IHRoaXMudXBkYXRlKGlkLCBkYXRhKTtcbiAgICByZXR1cm4gdGhpcy5maW5kT25lQnkoeyBpZCB9KTtcbiAgfVxuXG4gIC8qKlxuICAgKiBSZW1vdmUgdW0gZ3J1cG8gZGUgcGVybWlzc8O1ZXMuXG4gICAqXG4gICAqIEBwYXJhbSBpZCBJRCBkbyBncnVwbyBhIHNlciByZW1vdmlkb1xuICAgKiBAcmV0dXJucyB0cnVlIHNlIG8gZ3J1cG8gZm9pIHJlbW92aWRvLCBmYWxzZSBjYXNvIGNvbnRyw6FyaW9cbiAgICovXG4gIGFzeW5jIHJlbW92ZUdyb3VwKGlkOiBzdHJpbmcpOiBQcm9taXNlPGJvb2xlYW4+IHtcbiAgICBjb25zdCByZXN1bHQgPSBhd2FpdCB0aGlzLmRlbGV0ZShpZCk7XG4gICAgcmV0dXJuIChcbiAgICAgIHJlc3VsdC5hZmZlY3RlZCAhPT0gbnVsbCAmJlxuICAgICAgcmVzdWx0LmFmZmVjdGVkICE9PSB1bmRlZmluZWQgJiZcbiAgICAgIHJlc3VsdC5hZmZlY3RlZCA+IDBcbiAgICApO1xuICB9XG59XG4iXSwidmVyc2lvbiI6M30=

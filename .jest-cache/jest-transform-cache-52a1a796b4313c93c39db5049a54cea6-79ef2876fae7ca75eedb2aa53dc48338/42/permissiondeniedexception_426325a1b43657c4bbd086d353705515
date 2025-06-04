@@ -1,0 +1,26 @@
+a7f051d98dbb685294bc211f08887de3
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.PermissionDeniedException = void 0;
+const common_1 = require("@nestjs/common");
+/**
+ * Exceção lançada quando um usuário não tem permissão para acessar um recurso.
+ *
+ * Esta exceção contém informações detalhadas sobre a permissão necessária
+ * para auxiliar o usuário a entender o que está faltando.
+ */
+class PermissionDeniedException extends common_1.ForbiddenException {
+    constructor(permissionName, scopeType, scopeId) {
+        const baseMessage = `Acesso negado: você não possui a permissão necessária`;
+        const detailMessage = `Permissão necessária: ${permissionName} com escopo ${scopeType}${scopeId ? ` e ID ${scopeId}` : ''}`;
+        super({
+            message: baseMessage,
+            code: 'PERMISSION_DENIED',
+            details: {
+                requiredPermission: detailMessage,
+            },
+        });
+    }
+}
+exports.PermissionDeniedException = PermissionDeniedException;
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXGF1dGhcXGV4Y2VwdGlvbnNcXHBlcm1pc3Npb24tZGVuaWVkLmV4Y2VwdGlvbi50cyIsIm1hcHBpbmdzIjoiOzs7QUFBQSwyQ0FBb0Q7QUFHcEQ7Ozs7O0dBS0c7QUFDSCxNQUFhLHlCQUEwQixTQUFRLDJCQUFrQjtJQUMvRCxZQUFZLGNBQXNCLEVBQUUsU0FBcUIsRUFBRSxPQUFnQjtRQUN6RSxNQUFNLFdBQVcsR0FBRyx1REFBdUQsQ0FBQztRQUM1RSxNQUFNLGFBQWEsR0FBRyx5QkFBeUIsY0FBYyxlQUFlLFNBQVMsR0FDbkYsT0FBTyxDQUFDLENBQUMsQ0FBQyxTQUFTLE9BQU8sRUFBRSxDQUFDLENBQUMsQ0FBQyxFQUNqQyxFQUFFLENBQUM7UUFFSCxLQUFLLENBQUM7WUFDSixPQUFPLEVBQUUsV0FBVztZQUNwQixJQUFJLEVBQUUsbUJBQW1CO1lBQ3pCLE9BQU8sRUFBRTtnQkFDUCxrQkFBa0IsRUFBRSxhQUFhO2FBQ2xDO1NBQ0YsQ0FBQyxDQUFDO0lBQ0wsQ0FBQztDQUNGO0FBZkQsOERBZUMiLCJuYW1lcyI6W10sInNvdXJjZXMiOlsiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXGF1dGhcXGV4Y2VwdGlvbnNcXHBlcm1pc3Npb24tZGVuaWVkLmV4Y2VwdGlvbi50cyJdLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQgeyBGb3JiaWRkZW5FeGNlcHRpb24gfSBmcm9tICdAbmVzdGpzL2NvbW1vbic7XG5pbXBvcnQgeyBUaXBvRXNjb3BvIH0gZnJvbSAnLi4vLi4vZW50aXRpZXMvdXNlci1wZXJtaXNzaW9uLmVudGl0eSc7XG5cbi8qKlxuICogRXhjZcOnw6NvIGxhbsOnYWRhIHF1YW5kbyB1bSB1c3XDoXJpbyBuw6NvIHRlbSBwZXJtaXNzw6NvIHBhcmEgYWNlc3NhciB1bSByZWN1cnNvLlxuICpcbiAqIEVzdGEgZXhjZcOnw6NvIGNvbnTDqW0gaW5mb3JtYcOnw7VlcyBkZXRhbGhhZGFzIHNvYnJlIGEgcGVybWlzc8OjbyBuZWNlc3PDoXJpYVxuICogcGFyYSBhdXhpbGlhciBvIHVzdcOhcmlvIGEgZW50ZW5kZXIgbyBxdWUgZXN0w6EgZmFsdGFuZG8uXG4gKi9cbmV4cG9ydCBjbGFzcyBQZXJtaXNzaW9uRGVuaWVkRXhjZXB0aW9uIGV4dGVuZHMgRm9yYmlkZGVuRXhjZXB0aW9uIHtcbiAgY29uc3RydWN0b3IocGVybWlzc2lvbk5hbWU6IHN0cmluZywgc2NvcGVUeXBlOiBUaXBvRXNjb3BvLCBzY29wZUlkPzogc3RyaW5nKSB7XG4gICAgY29uc3QgYmFzZU1lc3NhZ2UgPSBgQWNlc3NvIG5lZ2Fkbzogdm9jw6ogbsOjbyBwb3NzdWkgYSBwZXJtaXNzw6NvIG5lY2Vzc8OhcmlhYDtcbiAgICBjb25zdCBkZXRhaWxNZXNzYWdlID0gYFBlcm1pc3PDo28gbmVjZXNzw6FyaWE6ICR7cGVybWlzc2lvbk5hbWV9IGNvbSBlc2NvcG8gJHtzY29wZVR5cGV9JHtcbiAgICAgIHNjb3BlSWQgPyBgIGUgSUQgJHtzY29wZUlkfWAgOiAnJ1xuICAgIH1gO1xuXG4gICAgc3VwZXIoe1xuICAgICAgbWVzc2FnZTogYmFzZU1lc3NhZ2UsXG4gICAgICBjb2RlOiAnUEVSTUlTU0lPTl9ERU5JRUQnLFxuICAgICAgZGV0YWlsczoge1xuICAgICAgICByZXF1aXJlZFBlcm1pc3Npb246IGRldGFpbE1lc3NhZ2UsXG4gICAgICB9LFxuICAgIH0pO1xuICB9XG59XG4iXSwidmVyc2lvbiI6M30=

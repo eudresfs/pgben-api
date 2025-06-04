@@ -1,0 +1,110 @@
+1e69ad00f1efbd3ece474efeee0365d8
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var _a;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.PermissionGroupMappingRepository = void 0;
+const typeorm_1 = require("typeorm");
+const common_1 = require("@nestjs/common");
+const permission_group_mapping_entity_1 = require("../../entities/permission-group-mapping.entity");
+/**
+ * Repositório para a entidade PermissionGroupMapping.
+ *
+ * Fornece métodos para manipulação de mapeamentos entre permissões e grupos no banco de dados,
+ * incluindo busca por grupo, permissão e operações de CRUD.
+ */
+let PermissionGroupMappingRepository = class PermissionGroupMappingRepository extends typeorm_1.Repository {
+    dataSource;
+    constructor(dataSource) {
+        super(permission_group_mapping_entity_1.PermissionGroupMapping, dataSource.createEntityManager());
+        this.dataSource = dataSource;
+    }
+    /**
+     * Busca mapeamentos por ID de grupo.
+     *
+     * @param groupId ID do grupo
+     * @returns Lista de mapeamentos encontrados
+     */
+    async findByGroupId(groupId) {
+        return this.find({ where: { groupId } });
+    }
+    /**
+     * Busca mapeamentos por ID de permissão.
+     *
+     * @param permissionId ID da permissão
+     * @returns Lista de mapeamentos encontrados
+     */
+    async findByPermissionId(permissionId) {
+        return this.find({ where: { permissionId } });
+    }
+    /**
+     * Busca mapeamento por ID de grupo e ID de permissão.
+     *
+     * @param groupId ID do grupo
+     * @param permissionId ID da permissão
+     * @returns O mapeamento encontrado ou null
+     */
+    async findByGroupAndPermission(groupId, permissionId) {
+        return this.findOne({ where: { groupId, permissionId } });
+    }
+    /**
+     * Cria um novo mapeamento entre grupo e permissão.
+     *
+     * @param data Dados do mapeamento a ser criado
+     * @returns O mapeamento criado
+     */
+    async createMapping(data) {
+        const mapping = this.create(data);
+        return this.save(mapping);
+    }
+    /**
+     * Remove um mapeamento entre grupo e permissão.
+     *
+     * @param id ID do mapeamento a ser removido
+     * @returns true se o mapeamento foi removido, false caso contrário
+     */
+    async removeMapping(id) {
+        const result = await this.delete(id);
+        return (result.affected !== null &&
+            result.affected !== undefined &&
+            result.affected > 0);
+    }
+    /**
+     * Remove todos os mapeamentos de um grupo.
+     *
+     * @param groupId ID do grupo
+     * @returns true se os mapeamentos foram removidos, false caso contrário
+     */
+    async removeMappingsByGroupId(groupId) {
+        const result = await this.delete({ groupId });
+        return (result.affected !== null &&
+            result.affected !== undefined &&
+            result.affected > 0);
+    }
+    /**
+     * Remove todos os mapeamentos de uma permissão.
+     *
+     * @param permissionId ID da permissão
+     * @returns true se os mapeamentos foram removidos, false caso contrário
+     */
+    async removeMappingsByPermissionId(permissionId) {
+        const result = await this.delete({ permissionId });
+        return (result.affected !== null &&
+            result.affected !== undefined &&
+            result.affected > 0);
+    }
+};
+exports.PermissionGroupMappingRepository = PermissionGroupMappingRepository;
+exports.PermissionGroupMappingRepository = PermissionGroupMappingRepository = __decorate([
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [typeof (_a = typeof typeorm_1.DataSource !== "undefined" && typeorm_1.DataSource) === "function" ? _a : Object])
+], PermissionGroupMappingRepository);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXGF1dGhcXHJlcG9zaXRvcmllc1xccGVybWlzc2lvbi1ncm91cC1tYXBwaW5nLnJlcG9zaXRvcnkudHMiLCJtYXBwaW5ncyI6Ijs7Ozs7Ozs7Ozs7OztBQUFBLHFDQUFpRDtBQUNqRCwyQ0FBNEM7QUFDNUMsb0dBQXdGO0FBRXhGOzs7OztHQUtHO0FBRUksSUFBTSxnQ0FBZ0MsR0FBdEMsTUFBTSxnQ0FBaUMsU0FBUSxvQkFBa0M7SUFDbEU7SUFBcEIsWUFBb0IsVUFBc0I7UUFDeEMsS0FBSyxDQUFDLHdEQUFzQixFQUFFLFVBQVUsQ0FBQyxtQkFBbUIsRUFBRSxDQUFDLENBQUM7UUFEOUMsZUFBVSxHQUFWLFVBQVUsQ0FBWTtJQUUxQyxDQUFDO0lBRUQ7Ozs7O09BS0c7SUFDSCxLQUFLLENBQUMsYUFBYSxDQUFDLE9BQWU7UUFDakMsT0FBTyxJQUFJLENBQUMsSUFBSSxDQUFDLEVBQUUsS0FBSyxFQUFFLEVBQUUsT0FBTyxFQUFFLEVBQUUsQ0FBQyxDQUFDO0lBQzNDLENBQUM7SUFFRDs7Ozs7T0FLRztJQUNILEtBQUssQ0FBQyxrQkFBa0IsQ0FDdEIsWUFBb0I7UUFFcEIsT0FBTyxJQUFJLENBQUMsSUFBSSxDQUFDLEVBQUUsS0FBSyxFQUFFLEVBQUUsWUFBWSxFQUFFLEVBQUUsQ0FBQyxDQUFDO0lBQ2hELENBQUM7SUFFRDs7Ozs7O09BTUc7SUFDSCxLQUFLLENBQUMsd0JBQXdCLENBQzVCLE9BQWUsRUFDZixZQUFvQjtRQUVwQixPQUFPLElBQUksQ0FBQyxPQUFPLENBQUMsRUFBRSxLQUFLLEVBQUUsRUFBRSxPQUFPLEVBQUUsWUFBWSxFQUFFLEVBQUUsQ0FBQyxDQUFDO0lBQzVELENBQUM7SUFFRDs7Ozs7T0FLRztJQUNILEtBQUssQ0FBQyxhQUFhLENBQ2pCLElBQXFDO1FBRXJDLE1BQU0sT0FBTyxHQUFHLElBQUksQ0FBQyxNQUFNLENBQUMsSUFBSSxDQUFDLENBQUM7UUFDbEMsT0FBTyxJQUFJLENBQUMsSUFBSSxDQUFDLE9BQU8sQ0FBQyxDQUFDO0lBQzVCLENBQUM7SUFFRDs7Ozs7T0FLRztJQUNILEtBQUssQ0FBQyxhQUFhLENBQUMsRUFBVTtRQUM1QixNQUFNLE1BQU0sR0FBRyxNQUFNLElBQUksQ0FBQyxNQUFNLENBQUMsRUFBRSxDQUFDLENBQUM7UUFDckMsT0FBTyxDQUNMLE1BQU0sQ0FBQyxRQUFRLEtBQUssSUFBSTtZQUN4QixNQUFNLENBQUMsUUFBUSxLQUFLLFNBQVM7WUFDN0IsTUFBTSxDQUFDLFFBQVEsR0FBRyxDQUFDLENBQ3BCLENBQUM7SUFDSixDQUFDO0lBRUQ7Ozs7O09BS0c7SUFDSCxLQUFLLENBQUMsdUJBQXVCLENBQUMsT0FBZTtRQUMzQyxNQUFNLE1BQU0sR0FBRyxNQUFNLElBQUksQ0FBQyxNQUFNLENBQUMsRUFBRSxPQUFPLEVBQUUsQ0FBQyxDQUFDO1FBQzlDLE9BQU8sQ0FDTCxNQUFNLENBQUMsUUFBUSxLQUFLLElBQUk7WUFDeEIsTUFBTSxDQUFDLFFBQVEsS0FBSyxTQUFTO1lBQzdCLE1BQU0sQ0FBQyxRQUFRLEdBQUcsQ0FBQyxDQUNwQixDQUFDO0lBQ0osQ0FBQztJQUVEOzs7OztPQUtHO0lBQ0gsS0FBSyxDQUFDLDRCQUE0QixDQUFDLFlBQW9CO1FBQ3JELE1BQU0sTUFBTSxHQUFHLE1BQU0sSUFBSSxDQUFDLE1BQU0sQ0FBQyxFQUFFLFlBQVksRUFBRSxDQUFDLENBQUM7UUFDbkQsT0FBTyxDQUNMLE1BQU0sQ0FBQyxRQUFRLEtBQUssSUFBSTtZQUN4QixNQUFNLENBQUMsUUFBUSxLQUFLLFNBQVM7WUFDN0IsTUFBTSxDQUFDLFFBQVEsR0FBRyxDQUFDLENBQ3BCLENBQUM7SUFDSixDQUFDO0NBQ0YsQ0FBQTtBQWxHWSw0RUFBZ0M7MkNBQWhDLGdDQUFnQztJQUQ1QyxJQUFBLG1CQUFVLEdBQUU7eURBRXFCLG9CQUFVLG9CQUFWLG9CQUFVO0dBRC9CLGdDQUFnQyxDQWtHNUMiLCJuYW1lcyI6W10sInNvdXJjZXMiOlsiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXGF1dGhcXHJlcG9zaXRvcmllc1xccGVybWlzc2lvbi1ncm91cC1tYXBwaW5nLnJlcG9zaXRvcnkudHMiXSwic291cmNlc0NvbnRlbnQiOlsiaW1wb3J0IHsgRGF0YVNvdXJjZSwgUmVwb3NpdG9yeSB9IGZyb20gJ3R5cGVvcm0nO1xuaW1wb3J0IHsgSW5qZWN0YWJsZSB9IGZyb20gJ0BuZXN0anMvY29tbW9uJztcbmltcG9ydCB7IFBlcm1pc3Npb25Hcm91cE1hcHBpbmcgfSBmcm9tICcuLi8uLi9lbnRpdGllcy9wZXJtaXNzaW9uLWdyb3VwLW1hcHBpbmcuZW50aXR5JztcblxuLyoqXG4gKiBSZXBvc2l0w7NyaW8gcGFyYSBhIGVudGlkYWRlIFBlcm1pc3Npb25Hcm91cE1hcHBpbmcuXG4gKlxuICogRm9ybmVjZSBtw6l0b2RvcyBwYXJhIG1hbmlwdWxhw6fDo28gZGUgbWFwZWFtZW50b3MgZW50cmUgcGVybWlzc8O1ZXMgZSBncnVwb3Mgbm8gYmFuY28gZGUgZGFkb3MsXG4gKiBpbmNsdWluZG8gYnVzY2EgcG9yIGdydXBvLCBwZXJtaXNzw6NvIGUgb3BlcmHDp8O1ZXMgZGUgQ1JVRC5cbiAqL1xuQEluamVjdGFibGUoKVxuZXhwb3J0IGNsYXNzIFBlcm1pc3Npb25Hcm91cE1hcHBpbmdSZXBvc2l0b3J5IGV4dGVuZHMgUmVwb3NpdG9yeTxQZXJtaXNzaW9uR3JvdXBNYXBwaW5nPiB7XG4gIGNvbnN0cnVjdG9yKHByaXZhdGUgZGF0YVNvdXJjZTogRGF0YVNvdXJjZSkge1xuICAgIHN1cGVyKFBlcm1pc3Npb25Hcm91cE1hcHBpbmcsIGRhdGFTb3VyY2UuY3JlYXRlRW50aXR5TWFuYWdlcigpKTtcbiAgfVxuXG4gIC8qKlxuICAgKiBCdXNjYSBtYXBlYW1lbnRvcyBwb3IgSUQgZGUgZ3J1cG8uXG4gICAqXG4gICAqIEBwYXJhbSBncm91cElkIElEIGRvIGdydXBvXG4gICAqIEByZXR1cm5zIExpc3RhIGRlIG1hcGVhbWVudG9zIGVuY29udHJhZG9zXG4gICAqL1xuICBhc3luYyBmaW5kQnlHcm91cElkKGdyb3VwSWQ6IHN0cmluZyk6IFByb21pc2U8UGVybWlzc2lvbkdyb3VwTWFwcGluZ1tdPiB7XG4gICAgcmV0dXJuIHRoaXMuZmluZCh7IHdoZXJlOiB7IGdyb3VwSWQgfSB9KTtcbiAgfVxuXG4gIC8qKlxuICAgKiBCdXNjYSBtYXBlYW1lbnRvcyBwb3IgSUQgZGUgcGVybWlzc8Ojby5cbiAgICpcbiAgICogQHBhcmFtIHBlcm1pc3Npb25JZCBJRCBkYSBwZXJtaXNzw6NvXG4gICAqIEByZXR1cm5zIExpc3RhIGRlIG1hcGVhbWVudG9zIGVuY29udHJhZG9zXG4gICAqL1xuICBhc3luYyBmaW5kQnlQZXJtaXNzaW9uSWQoXG4gICAgcGVybWlzc2lvbklkOiBzdHJpbmcsXG4gICk6IFByb21pc2U8UGVybWlzc2lvbkdyb3VwTWFwcGluZ1tdPiB7XG4gICAgcmV0dXJuIHRoaXMuZmluZCh7IHdoZXJlOiB7IHBlcm1pc3Npb25JZCB9IH0pO1xuICB9XG5cbiAgLyoqXG4gICAqIEJ1c2NhIG1hcGVhbWVudG8gcG9yIElEIGRlIGdydXBvIGUgSUQgZGUgcGVybWlzc8Ojby5cbiAgICpcbiAgICogQHBhcmFtIGdyb3VwSWQgSUQgZG8gZ3J1cG9cbiAgICogQHBhcmFtIHBlcm1pc3Npb25JZCBJRCBkYSBwZXJtaXNzw6NvXG4gICAqIEByZXR1cm5zIE8gbWFwZWFtZW50byBlbmNvbnRyYWRvIG91IG51bGxcbiAgICovXG4gIGFzeW5jIGZpbmRCeUdyb3VwQW5kUGVybWlzc2lvbihcbiAgICBncm91cElkOiBzdHJpbmcsXG4gICAgcGVybWlzc2lvbklkOiBzdHJpbmcsXG4gICk6IFByb21pc2U8UGVybWlzc2lvbkdyb3VwTWFwcGluZyB8IG51bGw+IHtcbiAgICByZXR1cm4gdGhpcy5maW5kT25lKHsgd2hlcmU6IHsgZ3JvdXBJZCwgcGVybWlzc2lvbklkIH0gfSk7XG4gIH1cblxuICAvKipcbiAgICogQ3JpYSB1bSBub3ZvIG1hcGVhbWVudG8gZW50cmUgZ3J1cG8gZSBwZXJtaXNzw6NvLlxuICAgKlxuICAgKiBAcGFyYW0gZGF0YSBEYWRvcyBkbyBtYXBlYW1lbnRvIGEgc2VyIGNyaWFkb1xuICAgKiBAcmV0dXJucyBPIG1hcGVhbWVudG8gY3JpYWRvXG4gICAqL1xuICBhc3luYyBjcmVhdGVNYXBwaW5nKFxuICAgIGRhdGE6IFBhcnRpYWw8UGVybWlzc2lvbkdyb3VwTWFwcGluZz4sXG4gICk6IFByb21pc2U8UGVybWlzc2lvbkdyb3VwTWFwcGluZz4ge1xuICAgIGNvbnN0IG1hcHBpbmcgPSB0aGlzLmNyZWF0ZShkYXRhKTtcbiAgICByZXR1cm4gdGhpcy5zYXZlKG1hcHBpbmcpO1xuICB9XG5cbiAgLyoqXG4gICAqIFJlbW92ZSB1bSBtYXBlYW1lbnRvIGVudHJlIGdydXBvIGUgcGVybWlzc8Ojby5cbiAgICpcbiAgICogQHBhcmFtIGlkIElEIGRvIG1hcGVhbWVudG8gYSBzZXIgcmVtb3ZpZG9cbiAgICogQHJldHVybnMgdHJ1ZSBzZSBvIG1hcGVhbWVudG8gZm9pIHJlbW92aWRvLCBmYWxzZSBjYXNvIGNvbnRyw6FyaW9cbiAgICovXG4gIGFzeW5jIHJlbW92ZU1hcHBpbmcoaWQ6IHN0cmluZyk6IFByb21pc2U8Ym9vbGVhbj4ge1xuICAgIGNvbnN0IHJlc3VsdCA9IGF3YWl0IHRoaXMuZGVsZXRlKGlkKTtcbiAgICByZXR1cm4gKFxuICAgICAgcmVzdWx0LmFmZmVjdGVkICE9PSBudWxsICYmXG4gICAgICByZXN1bHQuYWZmZWN0ZWQgIT09IHVuZGVmaW5lZCAmJlxuICAgICAgcmVzdWx0LmFmZmVjdGVkID4gMFxuICAgICk7XG4gIH1cblxuICAvKipcbiAgICogUmVtb3ZlIHRvZG9zIG9zIG1hcGVhbWVudG9zIGRlIHVtIGdydXBvLlxuICAgKlxuICAgKiBAcGFyYW0gZ3JvdXBJZCBJRCBkbyBncnVwb1xuICAgKiBAcmV0dXJucyB0cnVlIHNlIG9zIG1hcGVhbWVudG9zIGZvcmFtIHJlbW92aWRvcywgZmFsc2UgY2FzbyBjb250csOhcmlvXG4gICAqL1xuICBhc3luYyByZW1vdmVNYXBwaW5nc0J5R3JvdXBJZChncm91cElkOiBzdHJpbmcpOiBQcm9taXNlPGJvb2xlYW4+IHtcbiAgICBjb25zdCByZXN1bHQgPSBhd2FpdCB0aGlzLmRlbGV0ZSh7IGdyb3VwSWQgfSk7XG4gICAgcmV0dXJuIChcbiAgICAgIHJlc3VsdC5hZmZlY3RlZCAhPT0gbnVsbCAmJlxuICAgICAgcmVzdWx0LmFmZmVjdGVkICE9PSB1bmRlZmluZWQgJiZcbiAgICAgIHJlc3VsdC5hZmZlY3RlZCA+IDBcbiAgICApO1xuICB9XG5cbiAgLyoqXG4gICAqIFJlbW92ZSB0b2RvcyBvcyBtYXBlYW1lbnRvcyBkZSB1bWEgcGVybWlzc8Ojby5cbiAgICpcbiAgICogQHBhcmFtIHBlcm1pc3Npb25JZCBJRCBkYSBwZXJtaXNzw6NvXG4gICAqIEByZXR1cm5zIHRydWUgc2Ugb3MgbWFwZWFtZW50b3MgZm9yYW0gcmVtb3ZpZG9zLCBmYWxzZSBjYXNvIGNvbnRyw6FyaW9cbiAgICovXG4gIGFzeW5jIHJlbW92ZU1hcHBpbmdzQnlQZXJtaXNzaW9uSWQocGVybWlzc2lvbklkOiBzdHJpbmcpOiBQcm9taXNlPGJvb2xlYW4+IHtcbiAgICBjb25zdCByZXN1bHQgPSBhd2FpdCB0aGlzLmRlbGV0ZSh7IHBlcm1pc3Npb25JZCB9KTtcbiAgICByZXR1cm4gKFxuICAgICAgcmVzdWx0LmFmZmVjdGVkICE9PSBudWxsICYmXG4gICAgICByZXN1bHQuYWZmZWN0ZWQgIT09IHVuZGVmaW5lZCAmJlxuICAgICAgcmVzdWx0LmFmZmVjdGVkID4gMFxuICAgICk7XG4gIH1cbn1cbiJdLCJ2ZXJzaW9uIjozfQ==

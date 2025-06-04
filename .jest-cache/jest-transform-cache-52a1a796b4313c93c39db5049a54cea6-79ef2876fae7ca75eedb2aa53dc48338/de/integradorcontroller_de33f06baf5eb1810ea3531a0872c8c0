@@ -1,0 +1,273 @@
+05854575046cf490a283d345a9c8d586
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.IntegradorController = void 0;
+const common_1 = require("@nestjs/common");
+const swagger_1 = require("@nestjs/swagger");
+const integrador_service_1 = require("../services/integrador.service");
+const integrador_token_service_1 = require("../services/integrador-token.service");
+const create_integrador_dto_1 = require("../dto/create-integrador.dto");
+const update_integrador_dto_1 = require("../dto/update-integrador.dto");
+const create_token_dto_1 = require("../dto/create-token.dto");
+const revoke_token_dto_1 = require("../dto/revoke-token.dto");
+const integrador_response_dto_1 = require("../dto/integrador-response.dto");
+const token_response_dto_1 = require("../dto/token-response.dto");
+const role_decorator_1 = require("../../../auth/decorators/role.decorator");
+const jwt_auth_guard_1 = require("../../../auth/guards/jwt-auth.guard");
+const roles_guard_1 = require("../../../auth/guards/roles.guard");
+const roles_constants_1 = require("../../../shared/constants/roles.constants");
+/**
+ * Controller para gerenciamento de integradores e seus tokens.
+ * Requer autenticação administrativa e papel de ADMIN para acesso.
+ */
+let IntegradorController = class IntegradorController {
+    integradorService;
+    tokenService;
+    constructor(integradorService, tokenService) {
+        this.integradorService = integradorService;
+        this.tokenService = tokenService;
+    }
+    /**
+     * Cria um novo integrador.
+     */
+    create(createIntegradorDto) {
+        return this.integradorService.create(createIntegradorDto);
+    }
+    /**
+     * Lista todos os integradores cadastrados.
+     */
+    findAll() {
+        return this.integradorService.findAll();
+    }
+    /**
+     * Obtém detalhes de um integrador específico.
+     */
+    findOne(id) {
+        return this.integradorService.findOne(id);
+    }
+    /**
+     * Atualiza dados de um integrador.
+     */
+    update(id, updateIntegradorDto) {
+        return this.integradorService.update(id, updateIntegradorDto);
+    }
+    /**
+     * Remove um integrador do sistema.
+     */
+    async remove(id) {
+        await this.integradorService.remove(id);
+    }
+    /**
+     * Ativa ou desativa um integrador.
+     */
+    toggleStatus(id, ativo) {
+        return this.integradorService.toggleAtivo(id, ativo);
+    }
+    /**
+     * Lista todos os tokens de um integrador.
+     */
+    findAllTokens(id) {
+        return this.tokenService.findAllByIntegrador(id);
+    }
+    /**
+     * Cria um novo token para um integrador.
+     */
+    async createToken(id, createTokenDto) {
+        const result = await this.tokenService.createToken(id, createTokenDto);
+        return {
+            token: result.token,
+            tokenInfo: result.tokenInfo,
+        };
+    }
+    /**
+     * Revoga um token existente.
+     */
+    revogarToken(tokenId, revokeTokenDto) {
+        return this.tokenService.revogarToken(tokenId, revokeTokenDto.motivo);
+    }
+};
+exports.IntegradorController = IntegradorController;
+__decorate([
+    (0, common_1.Post)(),
+    (0, role_decorator_1.Roles)(roles_constants_1.ROLES.ADMIN),
+    (0, swagger_1.ApiOperation)({ summary: 'Cria um novo integrador' }),
+    (0, swagger_1.ApiResponse)({
+        status: 201,
+        description: 'Integrador criado com sucesso',
+        type: integrador_response_dto_1.IntegradorResponseDto,
+    }),
+    (0, swagger_1.ApiResponse)({ status: 400, description: 'Dados inválidos' }),
+    (0, swagger_1.ApiResponse)({
+        status: 409,
+        description: 'Já existe um integrador com este nome',
+    }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [typeof (_c = typeof create_integrador_dto_1.CreateIntegradorDto !== "undefined" && create_integrador_dto_1.CreateIntegradorDto) === "function" ? _c : Object]),
+    __metadata("design:returntype", typeof (_d = typeof Promise !== "undefined" && Promise) === "function" ? _d : Object)
+], IntegradorController.prototype, "create", null);
+__decorate([
+    (0, common_1.Get)(),
+    (0, role_decorator_1.Roles)(roles_constants_1.ROLES.ADMIN),
+    (0, swagger_1.ApiOperation)({ summary: 'Lista todos os integradores' }),
+    (0, swagger_1.ApiResponse)({
+        status: 200,
+        description: 'Lista de integradores retornada com sucesso',
+        type: [integrador_response_dto_1.IntegradorResponseDto],
+    }),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", typeof (_e = typeof Promise !== "undefined" && Promise) === "function" ? _e : Object)
+], IntegradorController.prototype, "findAll", null);
+__decorate([
+    (0, common_1.Get)(':id'),
+    (0, role_decorator_1.Roles)(roles_constants_1.ROLES.ADMIN),
+    (0, swagger_1.ApiOperation)({ summary: 'Obtém um integrador pelo ID' }),
+    (0, swagger_1.ApiParam)({ name: 'id', description: 'ID do integrador', type: 'string' }),
+    (0, swagger_1.ApiResponse)({
+        status: 200,
+        description: 'Integrador encontrado',
+        type: integrador_response_dto_1.IntegradorResponseDto,
+    }),
+    (0, swagger_1.ApiResponse)({ status: 404, description: 'Integrador não encontrado' }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", typeof (_f = typeof Promise !== "undefined" && Promise) === "function" ? _f : Object)
+], IntegradorController.prototype, "findOne", null);
+__decorate([
+    (0, common_1.Patch)(':id'),
+    (0, role_decorator_1.Roles)(roles_constants_1.ROLES.ADMIN),
+    (0, swagger_1.ApiOperation)({ summary: 'Atualiza um integrador' }),
+    (0, swagger_1.ApiParam)({ name: 'id', description: 'ID do integrador', type: 'string' }),
+    (0, swagger_1.ApiResponse)({
+        status: 200,
+        description: 'Integrador atualizado com sucesso',
+        type: integrador_response_dto_1.IntegradorResponseDto,
+    }),
+    (0, swagger_1.ApiResponse)({ status: 400, description: 'Dados inválidos' }),
+    (0, swagger_1.ApiResponse)({ status: 404, description: 'Integrador não encontrado' }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, typeof (_g = typeof update_integrador_dto_1.UpdateIntegradorDto !== "undefined" && update_integrador_dto_1.UpdateIntegradorDto) === "function" ? _g : Object]),
+    __metadata("design:returntype", typeof (_h = typeof Promise !== "undefined" && Promise) === "function" ? _h : Object)
+], IntegradorController.prototype, "update", null);
+__decorate([
+    (0, common_1.Delete)(':id'),
+    (0, role_decorator_1.Roles)(roles_constants_1.ROLES.ADMIN),
+    (0, common_1.HttpCode)(common_1.HttpStatus.NO_CONTENT),
+    (0, swagger_1.ApiOperation)({ summary: 'Remove um integrador' }),
+    (0, swagger_1.ApiParam)({ name: 'id', description: 'ID do integrador', type: 'string' }),
+    (0, swagger_1.ApiResponse)({ status: 204, description: 'Integrador removido com sucesso' }),
+    (0, swagger_1.ApiResponse)({ status: 404, description: 'Integrador não encontrado' }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", typeof (_j = typeof Promise !== "undefined" && Promise) === "function" ? _j : Object)
+], IntegradorController.prototype, "remove", null);
+__decorate([
+    (0, common_1.Patch)(':id/status'),
+    (0, role_decorator_1.Roles)(roles_constants_1.ROLES.ADMIN),
+    (0, swagger_1.ApiOperation)({ summary: 'Ativa ou desativa um integrador' }),
+    (0, swagger_1.ApiParam)({ name: 'id', description: 'ID do integrador', type: 'string' }),
+    (0, swagger_1.ApiResponse)({
+        status: 200,
+        description: 'Status do integrador atualizado com sucesso',
+        type: integrador_response_dto_1.IntegradorResponseDto,
+    }),
+    (0, swagger_1.ApiResponse)({ status: 404, description: 'Integrador não encontrado' }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __param(1, (0, common_1.Body)('ativo')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Boolean]),
+    __metadata("design:returntype", typeof (_k = typeof Promise !== "undefined" && Promise) === "function" ? _k : Object)
+], IntegradorController.prototype, "toggleStatus", null);
+__decorate([
+    (0, common_1.Get)(':id/tokens'),
+    (0, role_decorator_1.Roles)(roles_constants_1.ROLES.ADMIN),
+    (0, swagger_1.ApiOperation)({ summary: 'Lista todos os tokens de um integrador' }),
+    (0, swagger_1.ApiParam)({ name: 'id', description: 'ID do integrador', type: 'string' }),
+    (0, swagger_1.ApiResponse)({
+        status: 200,
+        description: 'Lista de tokens retornada com sucesso',
+        type: [token_response_dto_1.TokenResponseDto],
+    }),
+    (0, swagger_1.ApiResponse)({ status: 404, description: 'Integrador não encontrado' }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", typeof (_l = typeof Promise !== "undefined" && Promise) === "function" ? _l : Object)
+], IntegradorController.prototype, "findAllTokens", null);
+__decorate([
+    (0, common_1.Post)(':id/tokens'),
+    (0, role_decorator_1.Roles)(roles_constants_1.ROLES.ADMIN),
+    (0, swagger_1.ApiOperation)({ summary: 'Cria um novo token para um integrador' }),
+    (0, swagger_1.ApiParam)({ name: 'id', description: 'ID do integrador', type: 'string' }),
+    (0, swagger_1.ApiResponse)({
+        status: 201,
+        description: 'Token criado com sucesso',
+        schema: {
+            properties: {
+                token: {
+                    type: 'string',
+                    description: 'Token JWT gerado (exibido apenas uma vez)',
+                    example: 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...',
+                },
+                tokenInfo: {
+                    $ref: '#/components/schemas/TokenResponseDto',
+                },
+            },
+        },
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: 400,
+        description: 'Dados inválidos ou integrador inativo',
+    }),
+    (0, swagger_1.ApiResponse)({ status: 404, description: 'Integrador não encontrado' }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, typeof (_m = typeof create_token_dto_1.CreateTokenDto !== "undefined" && create_token_dto_1.CreateTokenDto) === "function" ? _m : Object]),
+    __metadata("design:returntype", Promise)
+], IntegradorController.prototype, "createToken", null);
+__decorate([
+    (0, common_1.Patch)(':id/tokens/:tokenId/revogar'),
+    (0, role_decorator_1.Roles)(roles_constants_1.ROLES.ADMIN),
+    (0, swagger_1.ApiOperation)({ summary: 'Revoga um token' }),
+    (0, swagger_1.ApiParam)({ name: 'id', description: 'ID do integrador', type: 'string' }),
+    (0, swagger_1.ApiParam)({ name: 'tokenId', description: 'ID do token', type: 'string' }),
+    (0, swagger_1.ApiResponse)({
+        status: 200,
+        description: 'Token revogado com sucesso',
+        type: token_response_dto_1.TokenResponseDto,
+    }),
+    (0, swagger_1.ApiResponse)({ status: 400, description: 'Token já revogado' }),
+    (0, swagger_1.ApiResponse)({ status: 404, description: 'Token não encontrado' }),
+    __param(0, (0, common_1.Param)('tokenId', common_1.ParseUUIDPipe)),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, typeof (_o = typeof revoke_token_dto_1.RevokeTokenDto !== "undefined" && revoke_token_dto_1.RevokeTokenDto) === "function" ? _o : Object]),
+    __metadata("design:returntype", typeof (_p = typeof Promise !== "undefined" && Promise) === "function" ? _p : Object)
+], IntegradorController.prototype, "revogarToken", null);
+exports.IntegradorController = IntegradorController = __decorate([
+    (0, swagger_1.ApiTags)('Integradores'),
+    (0, common_1.Controller)('integradores'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, swagger_1.ApiBearerAuth)(),
+    __metadata("design:paramtypes", [typeof (_a = typeof integrador_service_1.IntegradorService !== "undefined" && integrador_service_1.IntegradorService) === "function" ? _a : Object, typeof (_b = typeof integrador_token_service_1.IntegradorTokenService !== "undefined" && integrador_token_service_1.IntegradorTokenService) === "function" ? _b : Object])
+], IntegradorController);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXGludGVncmFkb3JcXGNvbnRyb2xsZXJzXFxpbnRlZ3JhZG9yLmNvbnRyb2xsZXIudHMiLCJtYXBwaW5ncyI6Ijs7Ozs7Ozs7Ozs7Ozs7OztBQUFBLDJDQVl3QjtBQUN4Qiw2Q0FNeUI7QUFDekIsdUVBQW1FO0FBQ25FLG1GQUE4RTtBQUM5RSx3RUFBbUU7QUFDbkUsd0VBQW1FO0FBQ25FLDhEQUF5RDtBQUN6RCw4REFBeUQ7QUFDekQsNEVBQXVFO0FBQ3ZFLGtFQUE2RDtBQUM3RCw0RUFBZ0U7QUFFaEUsd0VBQW1FO0FBQ25FLGtFQUE4RDtBQUM5RCwrRUFBa0U7QUFFbEU7OztHQUdHO0FBS0ksSUFBTSxvQkFBb0IsR0FBMUIsTUFBTSxvQkFBb0I7SUFFWjtJQUNBO0lBRm5CLFlBQ21CLGlCQUFvQyxFQUNwQyxZQUFvQztRQURwQyxzQkFBaUIsR0FBakIsaUJBQWlCLENBQW1CO1FBQ3BDLGlCQUFZLEdBQVosWUFBWSxDQUF3QjtJQUNwRCxDQUFDO0lBRUo7O09BRUc7SUFjSCxNQUFNLENBQ0ksbUJBQXdDO1FBRWhELE9BQU8sSUFBSSxDQUFDLGlCQUFpQixDQUFDLE1BQU0sQ0FBQyxtQkFBbUIsQ0FBQyxDQUFDO0lBQzVELENBQUM7SUFFRDs7T0FFRztJQVNILE9BQU87UUFDTCxPQUFPLElBQUksQ0FBQyxpQkFBaUIsQ0FBQyxPQUFPLEVBQUUsQ0FBQztJQUMxQyxDQUFDO0lBRUQ7O09BRUc7SUFXSCxPQUFPLENBQ3VCLEVBQVU7UUFFdEMsT0FBTyxJQUFJLENBQUMsaUJBQWlCLENBQUMsT0FBTyxDQUFDLEVBQUUsQ0FBQyxDQUFDO0lBQzVDLENBQUM7SUFFRDs7T0FFRztJQVlILE1BQU0sQ0FDd0IsRUFBVSxFQUM5QixtQkFBd0M7UUFFaEQsT0FBTyxJQUFJLENBQUMsaUJBQWlCLENBQUMsTUFBTSxDQUFDLEVBQUUsRUFBRSxtQkFBbUIs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U0FBUyxFQUFFLHNCQUFhLENBQUMsQ0FBQTtJQUMvQixXQUFBLElBQUEsYUFBSSxHQUFFLENBQUE7O2lFQUFpQixpQ0FBYyxvQkFBZCxpQ0FBYzt3REFDckMsT0FBTyxvQkFBUCxPQUFPO3dEQUVUOytCQXBNVSxvQkFBb0I7SUFKaEMsSUFBQSxpQkFBTyxFQUFDLGNBQWMsQ0FBQztJQUN2QixJQUFBLG1CQUFVLEVBQUMsY0FBYyxDQUFDO0lBQzFCLElBQUEsa0JBQVMsRUFBQyw2QkFBWSxFQUFFLHdCQUFVLENBQUM7SUFDbkMsSUFBQSx1QkFBYSxHQUFFO3lEQUd3QixzQ0FBaUIsb0JBQWpCLHNDQUFpQixvREFDdEIsaURBQXNCLG9CQUF0QixpREFBc0I7R0FINUMsb0JBQW9CLENBcU1oQyIsIm5hbWVzIjpbXSwic291cmNlcyI6WyJDOlxcVXNlcnNcXGV1ZHJlXFxPbmVEcml2ZVxcRGVza3RvcFxcUHJvamV0b3NcXHBnYmVuXFxwZ2Jlbi1zZXJ2ZXJcXHNyY1xcbW9kdWxlc1xcaW50ZWdyYWRvclxcY29udHJvbGxlcnNcXGludGVncmFkb3IuY29udHJvbGxlci50cyJdLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQge1xuICBDb250cm9sbGVyLFxuICBHZXQsXG4gIFBvc3QsXG4gIEJvZHksXG4gIFBhdGNoLFxuICBQYXJhbSxcbiAgRGVsZXRlLFxuICBVc2VHdWFyZHMsXG4gIEh0dHBDb2RlLFxuICBIdHRwU3RhdHVzLFxuICBQYXJzZVVVSURQaXBlLFxufSBmcm9tICdAbmVzdGpzL2NvbW1vbic7XG5pbXBvcnQge1xuICBBcGlUYWdzLFxuICBBcGlPcGVyYXRpb24sXG4gIEFwaVJlc3BvbnNlLFxuICBBcGlCZWFyZXJBdXRoLFxuICBBcGlQYXJhbSxcbn0gZnJvbSAnQG5lc3Rqcy9zd2FnZ2VyJztcbmltcG9ydCB7IEludGVncmFkb3JTZXJ2aWNlIH0gZnJvbSAnLi4vc2VydmljZXMvaW50ZWdyYWRvci5zZXJ2aWNlJztcbmltcG9ydCB7IEludGVncmFkb3JUb2tlblNlcnZpY2UgfSBmcm9tICcuLi9zZXJ2aWNlcy9pbnRlZ3JhZG9yLXRva2VuLnNlcnZpY2UnO1xuaW1wb3J0IHsgQ3JlYXRlSW50ZWdyYWRvckR0byB9IGZyb20gJy4uL2R0by9jcmVhdGUtaW50ZWdyYWRvci5kdG8nO1xuaW1wb3J0IHsgVXBkYXRlSW50ZWdyYWRvckR0byB9IGZyb20gJy4uL2R0by91cGRhdGUtaW50ZWdyYWRvci5kdG8nO1xuaW1wb3J0IHsgQ3JlYXRlVG9rZW5EdG8gfSBmcm9tICcuLi9kdG8vY3JlYXRlLXRva2VuLmR0byc7XG5pbXBvcnQgeyBSZXZva2VUb2tlbkR0byB9IGZyb20gJy4uL2R0by9yZXZva2UtdG9rZW4uZHRvJztcbmltcG9ydCB7IEludGVncmFkb3JSZXNwb25zZUR0byB9IGZyb20gJy4uL2R0by9pbnRlZ3JhZG9yLXJlc3BvbnNlLmR0byc7XG5pbXBvcnQgeyBUb2tlblJlc3BvbnNlRHRvIH0gZnJvbSAnLi4vZHRvL3Rva2VuLXJlc3BvbnNlLmR0byc7XG5pbXBvcnQgeyBSb2xlcyB9IGZyb20gJy4uLy4uLy4uL2F1dGgvZGVjb3JhdG9ycy9yb2xlLmRlY29yYXRvcic7XG5pbXBvcnQgeyBSb2xlIH0gZnJvbSAnLi4vLi4vLi4vYXV0aC9lbnVtcy9yb2xlLmVudW0nO1xuaW1wb3J0IHsgSnd0QXV0aEd1YXJkIH0gZnJvbSAnLi4vLi4vLi4vYXV0aC9ndWFyZHMvand0LWF1dGguZ3VhcmQnO1xuaW1wb3J0IHsgUm9sZXNHdWFyZCB9IGZyb20gJy4uLy4uLy4uL2F1dGgvZ3VhcmRzL3JvbGVzLmd1YXJkJztcbmltcG9ydCB7IFJPTEVTIH0gZnJvbSAnLi4vLi4vLi4vc2hhcmVkL2NvbnN0YW50cy9yb2xlcy5jb25zdGFudHMnO1xuXG4vKipcbiAqIENvbnRyb2xsZXIgcGFyYSBnZXJlbmNpYW1lbnRvIGRlIGludGVncmFkb3JlcyBlIHNldXMgdG9rZW5zLlxuICogUmVxdWVyIGF1dGVudGljYcOnw6NvIGFkbWluaXN0cmF0aXZhIGUgcGFwZWwgZGUgQURNSU4gcGFyYSBhY2Vzc28uXG4gKi9cbkBBcGlUYWdzKCdJbnRlZ3JhZG9yZXMnKVxuQENvbnRyb2xsZXIoJ2ludGVncmFkb3JlcycpXG5AVXNlR3VhcmRzKEp3dEF1dGhHdWFyZCwgUm9sZXNHdWFyZClcbkBBcGlCZWFyZXJBdXRoKClcbmV4cG9ydCBjbGFzcyBJbnRlZ3JhZG9yQ29udHJvbGxlciB7XG4gIGNvbnN0cnVjdG9yKFxuICAgIHByaXZhdGUgcmVhZG9ubHkgaW50ZWdyYWRvclNlcnZpY2U6IEludGVncmFkb3JTZXJ2aWNlLFxuICAgIHByaXZhdGUgcmVhZG9ubHkgdG9rZW5TZXJ2aWNlOiBJbnRlZ3JhZG9yVG9rZW5TZXJ2aWNlLFxuICApIHt9XG5cbiAgLyoqXG4gICAqIENyaWEgdW0gbm92byBpbnRlZ3JhZG9yLlxuICAgKi9cbiAgQFBvc3QoKVxuICBAUm9sZXMoUk9MRVMuQURNSU4pXG4gIEBBcGlPcGVyYXRpb24oeyBzdW1tYXJ5OiAnQ3JpYSB1bSBub3ZvIGludGVncmFkb3InIH0pXG4gIEBBcGlSZXNwb25zZSh7XG4gICAgc3RhdHVzOiAyMDEsXG4gICAgZGVzY3JpcHRpb246ICdJbnRlZ3JhZG9yIGNyaWFkbyBjb20gc3VjZXNzbycsXG4gICAgdHlwZTogSW50ZWdyYWRvclJlc3BvbnNlRHRvLFxuICB9KVxuICBAQXBpUmVzcG9uc2UoeyBzdGF0dXM6IDQwMCwgZGVzY3JpcHRpb246ICdEYWRvcyBpbnbDoWxpZG9zJyB9KVxuICBAQXBpUmVzcG9uc2Uoe1xuICAgIHN0YXR1czogNDA5LFxuICAgIGRlc2NyaXB0aW9uOiAnSsOhIGV4aXN0ZSB1bSBpbnRlZ3JhZG9yIGNvbSBlc3RlIG5vbWUnLFxuICB9KVxuICBjcmVhdGUoXG4gICAgQEJvZHkoKSBjcmVhdGVJbnRlZ3JhZG9yRHRvOiBDcmVhdGVJbnRlZ3JhZG9yRHRvLFxuICApOiBQcm9taXNlPEludGVncmFkb3JSZXNwb25zZUR0bz4ge1xuICAgIHJldHVybiB0aGlzLmludGVncmFkb3JTZXJ2aWNlLmNyZWF0ZShjcmVhdGVJbnRlZ3JhZG9yRHRvKTtcbiAgfVxuXG4gIC8qKlxuICAgKiBMaXN0YSB0b2RvcyBvcyBpbnRlZ3JhZG9yZXMgY2FkYXN0cmFkb3MuXG4gICAqL1xuICBAR2V0KClcbiAgQFJvbGVzKFJPTEVTLkFETUlOKVxuICBAQXBpT3BlcmF0aW9uKHsgc3VtbWFyeTogJ0xpc3RhIHRvZG9zIG9zIGludGVncmFkb3JlcycgfSlcbiAgQEFwaVJlc3BvbnNlKHtcbiAgICBzdGF0dXM6IDIwMCxcbiAgICBkZXNjcmlwdGlvbjogJ0xpc3RhIGRlIGludGVncmFkb3JlcyByZXRvcm5hZGEgY29tIHN1Y2Vzc28nLFxuICAgIHR5cGU6IFtJbnRlZ3JhZG9yUmVzcG9uc2VEdG9dLFxuICB9KVxuICBmaW5kQWxsKCk6IFByb21pc2U8SW50ZWdyYWRvclJlc3BvbnNlRHRvW10+IHtcbiAgICByZXR1cm4gdGhpcy5pbnRlZ3JhZG9yU2VydmljZS5maW5kQWxsKCk7XG4gIH1cblxuICAvKipcbiAgICogT2J0w6ltIGRldGFsaGVzIGRlIHVtIGludGVncmFkb3IgZXNwZWPDrWZpY28uXG4gICAqL1xuICBAR2V0KCc6aWQnKVxuICBAUm9sZXMoUk9MRVMuQURNSU4pXG4gIEBBcGlPcGVyYXRpb24oeyBzdW1tYXJ5OiAnT2J0w6ltIHVtIGludGVncmFkb3IgcGVsbyBJRCcgfSlcbiAgQEFwaVBhcmFtKHsgbmFtZTogJ2lkJywgZGVzY3JpcHRpb246ICdJRCBkbyBpbnRlZ3JhZG9yJywgdHlwZTogJ3N0cmluZycgfSlcbiAgQEFwaVJlc3BvbnNlKHtcbiAgICBzdGF0dXM6IDIwMCxcbiAgICBkZXNjcmlwdGlvbjogJ0ludGVncmFkb3IgZW5jb250cmFkbycsXG4gICAgdHlwZTogSW50ZWdyYWRvclJlc3BvbnNlRHRvLFxuICB9KVxuICBAQXBpUmVzcG9uc2UoeyBzdGF0dXM6IDQwNCwgZGVzY3JpcHRpb246ICdJbnRlZ3JhZG9yIG7Do28gZW5jb250cmFkbycgfSlcbiAgZmluZE9uZShcbiAgICBAUGFyYW0oJ2lkJywgUGFyc2VVVUlEUGlwZSkgaWQ6IHN0cmluZyxcbiAgKTogUHJvbWlzZTxJbnRlZ3JhZG9yUmVzcG9uc2VEdG8+IHtcbiAgICByZXR1cm4gdGhpcy5pbnRlZ3JhZG9yU2VydmljZS5maW5kT25lKGlkKTtcbiAgfVxuXG4gIC8qKlxuICAgKiBBdHVhbGl6YSBkYWRvcyBkZSB1bSBpbnRlZ3JhZG9yLlxuICAgKi9cbiAgQFBhdGNoKCc6aWQnKVxuICBAUm9sZXMoUk9MRVMuQURNSU4pXG4gIEBBcGlPcGVyYXRpb24oeyBzdW1tYXJ5OiAnQXR1YWxpemEgdW0gaW50ZWdyYWRvcicgfSlcbiAgQEFwaVBhcmFtKHsgbmFtZTogJ2lkJywgZGVzY3JpcHRpb246ICdJRCBkbyBpbnRlZ3JhZG9yJywgdHlwZTogJ3N0cmluZycgfSlcbiAgQEFwaVJlc3BvbnNlKHtcbiAgICBzdGF0dXM6IDIwMCxcbiAgICBkZXNjcmlwdGlvbjogJ0ludGVncmFkb3IgYXR1YWxpemFkbyBjb20gc3VjZXNzbycsXG4gICAgdHlwZTogSW50ZWdyYWRvclJlc3BvbnNlRHRvLFxuICB9KVxuICBAQXBpUmVzcG9uc2UoeyBzdGF0dXM6IDQwMCwgZGVzY3JpcHRpb246ICdEYWRvcyBpbnbDoWxpZG9zJyB9KVxuICBAQXBpUmVzcG9uc2UoeyBzdGF0dXM6IDQwNCwgZGVzY3JpcHRpb246ICdJbnRlZ3JhZG9yIG7Do28gZW5jb250cmFkbycgfSlcbiAgdXBkYXRlKFxuICAgIEBQYXJhbSgnaWQnLCBQYXJzZVVVSURQaXBlKSBpZDogc3RyaW5nLFxuICAgIEBCb2R5KCkgdXBkYXRlSW50ZWdyYWRvckR0bzogVXBkYXRlSW50ZWdyYWRvckR0byxcbiAgKTogUHJvbWlzZTxJbnRlZ3JhZG9yUmVzcG9uc2VEdG8+IHtcbiAgICByZXR1cm4gdGhpcy5pbnRlZ3JhZG9yU2VydmljZS51cGRhdGUoaWQsIHVwZGF0ZUludGVncmFkb3JEdG8pO1xuICB9XG5cbiAgLyoqXG4gICAqIFJlbW92ZSB1bSBpbnRlZ3JhZG9yIGRvIHNpc3RlbWEuXG4gICAqL1xuICBARGVsZXRlKCc6aWQnKVxuICBAUm9sZXMoUk9MRVMuQURNSU4pXG4gIEBIdHRwQ29kZShIdHRwU3RhdHVzLk5PX0NPTlRFTlQpXG4gIEBBcGlPcGVyYXRpb24oeyBzdW1tYXJ5OiAnUmVtb3ZlIHVtIGludGVncmFkb3InIH0pXG4gIEBBcGlQYXJhbSh7IG5hbWU6ICdpZCcsIGRlc2NyaXB0aW9uOiAnSUQgZG8gaW50ZWdyYWRvcicsIHR5cGU6ICdzdHJpbmcnIH0pXG4gIEBBcGlSZXNwb25zZSh7IHN0YXR1czogMjA0LCBkZXNjcmlwdGlvbjogJ0ludGVncmFkb3IgcmVtb3ZpZG8gY29tIHN1Y2Vzc28nIH0pXG4gIEBBcGlSZXNwb25zZSh7IHN0YXR1czogNDA0LCBkZXNjcmlwdGlvbjogJ0ludGVncmFkb3IgbsOjbyBlbmNvbnRyYWRvJyB9KVxuICBhc3luYyByZW1vdmUoQFBhcmFtKCdpZCcsIFBhcnNlVVVJRFBpcGUpIGlkOiBzdHJpbmcpOiBQcm9taXNlPHZvaWQ+IHtcbiAgICBhd2FpdCB0aGlzLmludGVncmFkb3JTZXJ2aWNlLnJlbW92ZShpZCk7XG4gIH1cblxuICAvKipcbiAgICogQXRpdmEgb3UgZGVzYXRpdmEgdW0gaW50ZWdyYWRvci5cbiAgICovXG4gIEBQYXRjaCgnOmlkL3N0YXR1cycpXG4gIEBSb2xlcyhST0xFUy5BRE1JTilcbiAgQEFwaU9wZXJhdGlvbih7IHN1bW1hcnk6ICdBdGl2YSBvdSBkZXNhdGl2YSB1bSBpbnRlZ3JhZG9yJyB9KVxuICBAQXBpUGFyYW0oeyBuYW1lOiAnaWQnLCBkZXNjcmlwdGlvbjogJ0lEIGRvIGludGVncmFkb3InLCB0eXBlOiAnc3RyaW5nJyB9KVxuICBAQXBpUmVzcG9uc2Uoe1xuICAgIHN0YXR1czogMjAwLFxuICAgIGRlc2NyaXB0aW9uOiAnU3RhdHVzIGRvIGludGVncmFkb3IgYXR1YWxpemFkbyBjb20gc3VjZXNzbycsXG4gICAgdHlwZTogSW50ZWdyYWRvclJlc3BvbnNlRHRvLFxuICB9KVxuICBAQXBpUmVzcG9uc2UoeyBzdGF0dXM6IDQwNCwgZGVzY3JpcHRpb246ICdJbnRlZ3JhZG9yIG7Do28gZW5jb250cmFkbycgfSlcbiAgdG9nZ2xlU3RhdHVzKFxuICAgIEBQYXJhbSgnaWQnLCBQYXJzZVVVSURQaXBlKSBpZDogc3RyaW5nLFxuICAgIEBCb2R5KCdhdGl2bycpIGF0aXZvOiBib29sZWFuLFxuICApOiBQcm9taXNlPEludGVncmFkb3JSZXNwb25zZUR0bz4ge1xuICAgIHJldHVybiB0aGlzLmludGVncmFkb3JTZXJ2aWNlLnRvZ2dsZUF0aXZvKGlkLCBhdGl2byk7XG4gIH1cblxuICAvKipcbiAgICogTGlzdGEgdG9kb3Mgb3MgdG9rZW5zIGRlIHVtIGludGVncmFkb3IuXG4gICAqL1xuICBAR2V0KCc6aWQvdG9rZW5zJylcbiAgQFJvbGVzKFJPTEVTLkFETUlOKVxuICBAQXBpT3BlcmF0aW9uKHsgc3VtbWFyeTogJ0xpc3RhIHRvZG9zIG9zIHRva2VucyBkZSB1bSBpbnRlZ3JhZG9yJyB9KVxuICBAQXBpUGFyYW0oeyBuYW1lOiAnaWQnLCBkZXNjcmlwdGlvbjogJ0lEIGRvIGludGVncmFkb3InLCB0eXBlOiAnc3RyaW5nJyB9KVxuICBAQXBpUmVzcG9uc2Uoe1xuICAgIHN0YXR1czogMjAwLFxuICAgIGRlc2NyaXB0aW9uOiAnTGlzdGEgZGUgdG9rZW5zIHJldG9ybmFkYSBjb20gc3VjZXNzbycsXG4gICAgdHlwZTogW1Rva2VuUmVzcG9uc2VEdG9dLFxuICB9KVxuICBAQXBpUmVzcG9uc2UoeyBzdGF0dXM6IDQwNCwgZGVzY3JpcHRpb246ICdJbnRlZ3JhZG9yIG7Do28gZW5jb250cmFkbycgfSlcbiAgZmluZEFsbFRva2VucyhcbiAgICBAUGFyYW0oJ2lkJywgUGFyc2VVVUlEUGlwZSkgaWQ6IHN0cmluZyxcbiAgKTogUHJvbWlzZTxUb2tlblJlc3BvbnNlRHRvW10+IHtcbiAgICByZXR1cm4gdGhpcy50b2tlblNlcnZpY2UuZmluZEFsbEJ5SW50ZWdyYWRvcihpZCk7XG4gIH1cblxuICAvKipcbiAgICogQ3JpYSB1bSBub3ZvIHRva2VuIHBhcmEgdW0gaW50ZWdyYWRvci5cbiAgICovXG4gIEBQb3N0KCc6aWQvdG9rZW5zJylcbiAgQFJvbGVzKFJPTEVTLkFETUlOKVxuICBAQXBpT3BlcmF0aW9uKHsgc3VtbWFyeTogJ0NyaWEgdW0gbm92byB0b2tlbiBwYXJhIHVtIGludGVncmFkb3InIH0pXG4gIEBBcGlQYXJhbSh7IG5hbWU6ICdpZCcsIGRlc2NyaXB0aW9uOiAnSUQgZG8gaW50ZWdyYWRvcicsIHR5cGU6ICdzdHJpbmcnIH0pXG4gIEBBcGlSZXNwb25zZSh7XG4gICAgc3RhdHVzOiAyMDEsXG4gICAgZGVzY3JpcHRpb246ICdUb2tlbiBjcmlhZG8gY29tIHN1Y2Vzc28nLFxuICAgIHNjaGVtYToge1xuICAgICAgcHJvcGVydGllczoge1xuICAgICAgICB0b2tlbjoge1xuICAgICAgICAgIHR5cGU6ICdzdHJpbmcnLFxuICAgICAgICAgIGRlc2NyaXB0aW9uOiAnVG9rZW4gSldUIGdlcmFkbyAoZXhpYmlkbyBhcGVuYXMgdW1hIHZleiknLFxuICAgICAgICAgIGV4YW1wbGU6ICdleUpoYkdjaU9pSlNVekkxTmlJc0luUjVjQ0k2SWtwWFZDSjkuLi4nLFxuICAgICAgICB9LFxuICAgICAgICB0b2tlbkluZm86IHtcbiAgICAgICAgICAkcmVmOiAnIy9jb21wb25lbnRzL3NjaGVtYXMvVG9rZW5SZXNwb25zZUR0bycsXG4gICAgICAgIH0sXG4gICAgICB9LFxuICAgIH0sXG4gIH0pXG4gIEBBcGlSZXNwb25zZSh7XG4gICAgc3RhdHVzOiA0MDAsXG4gICAgZGVzY3JpcHRpb246ICdEYWRvcyBpbnbDoWxpZG9zIG91IGludGVncmFkb3IgaW5hdGl2bycsXG4gIH0pXG4gIEBBcGlSZXNwb25zZSh7IHN0YXR1czogNDA0LCBkZXNjcmlwdGlvbjogJ0ludGVncmFkb3IgbsOjbyBlbmNvbnRyYWRvJyB9KVxuICBhc3luYyBjcmVhdGVUb2tlbihcbiAgICBAUGFyYW0oJ2lkJywgUGFyc2VVVUlEUGlwZSkgaWQ6IHN0cmluZyxcbiAgICBAQm9keSgpIGNyZWF0ZVRva2VuRHRvOiBDcmVhdGVUb2tlbkR0byxcbiAgKSB7XG4gICAgY29uc3QgcmVzdWx0ID0gYXdhaXQgdGhpcy50b2tlblNlcnZpY2UuY3JlYXRlVG9rZW4oaWQsIGNyZWF0ZVRva2VuRHRvKTtcblxuICAgIHJldHVybiB7XG4gICAgICB0b2tlbjogcmVzdWx0LnRva2VuLFxuICAgICAgdG9rZW5JbmZvOiByZXN1bHQudG9rZW5JbmZvLFxuICAgIH07XG4gIH1cblxuICAvKipcbiAgICogUmV2b2dhIHVtIHRva2VuIGV4aXN0ZW50ZS5cbiAgICovXG4gIEBQYXRjaCgnOmlkL3Rva2Vucy86dG9rZW5JZC9yZXZvZ2FyJylcbiAgQFJvbGVzKFJPTEVTLkFETUlOKVxuICBAQXBpT3BlcmF0aW9uKHsgc3VtbWFyeTogJ1Jldm9nYSB1bSB0b2tlbicgfSlcbiAgQEFwaVBhcmFtKHsgbmFtZTogJ2lkJywgZGVzY3JpcHRpb246ICdJRCBkbyBpbnRlZ3JhZG9yJywgdHlwZTogJ3N0cmluZycgfSlcbiAgQEFwaVBhcmFtKHsgbmFtZTogJ3Rva2VuSWQnLCBkZXNjcmlwdGlvbjogJ0lEIGRvIHRva2VuJywgdHlwZTogJ3N0cmluZycgfSlcbiAgQEFwaVJlc3BvbnNlKHtcbiAgICBzdGF0dXM6IDIwMCxcbiAgICBkZXNjcmlwdGlvbjogJ1Rva2VuIHJldm9nYWRvIGNvbSBzdWNlc3NvJyxcbiAgICB0eXBlOiBUb2tlblJlc3BvbnNlRHRvLFxuICB9KVxuICBAQXBpUmVzcG9uc2UoeyBzdGF0dXM6IDQwMCwgZGVzY3JpcHRpb246ICdUb2tlbiBqw6EgcmV2b2dhZG8nIH0pXG4gIEBBcGlSZXNwb25zZSh7IHN0YXR1czogNDA0LCBkZXNjcmlwdGlvbjogJ1Rva2VuIG7Do28gZW5jb250cmFkbycgfSlcbiAgcmV2b2dhclRva2VuKFxuICAgIEBQYXJhbSgndG9rZW5JZCcsIFBhcnNlVVVJRFBpcGUpIHRva2VuSWQ6IHN0cmluZyxcbiAgICBAQm9keSgpIHJldm9rZVRva2VuRHRvOiBSZXZva2VUb2tlbkR0byxcbiAgKTogUHJvbWlzZTxUb2tlblJlc3BvbnNlRHRvPiB7XG4gICAgcmV0dXJuIHRoaXMudG9rZW5TZXJ2aWNlLnJldm9nYXJUb2tlbih0b2tlbklkLCByZXZva2VUb2tlbkR0by5tb3Rpdm8pO1xuICB9XG59XG4iXSwidmVyc2lvbiI6M30=

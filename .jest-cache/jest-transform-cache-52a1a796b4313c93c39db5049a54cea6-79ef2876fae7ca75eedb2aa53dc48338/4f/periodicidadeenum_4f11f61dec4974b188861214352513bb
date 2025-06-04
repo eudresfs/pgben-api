@@ -1,0 +1,17 @@
+f735899bebb1ee13f2237aa73463533d
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.PeriodicidadeEnum = void 0;
+/**
+ * Enum para período de concessão da Cesta Básica
+ */
+var PeriodicidadeEnum;
+(function (PeriodicidadeEnum) {
+    PeriodicidadeEnum["MENSAL"] = "mensal";
+    PeriodicidadeEnum["BIMESTRAL"] = "bimestral";
+    PeriodicidadeEnum["TRIMESTRAL"] = "trimestral";
+    PeriodicidadeEnum["SEMESTRAL"] = "semestral";
+    PeriodicidadeEnum["UNICO"] = "unico";
+    PeriodicidadeEnum["ANUAL"] = "anual";
+})(PeriodicidadeEnum || (exports.PeriodicidadeEnum = PeriodicidadeEnum = {}));
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXGVudW1zXFxwZXJpb2RpY2lkYWRlLmVudW0udHMiLCJtYXBwaW5ncyI6Ijs7O0FBQUE7O0dBRUc7QUFDSCxJQUFZLGlCQU9YO0FBUEQsV0FBWSxpQkFBaUI7SUFDM0Isc0NBQWlCLENBQUE7SUFDakIsNENBQXVCLENBQUE7SUFDdkIsOENBQXlCLENBQUE7SUFDekIsNENBQXVCLENBQUE7SUFDdkIsb0NBQWUsQ0FBQTtJQUNmLG9DQUFlLENBQUE7QUFDakIsQ0FBQyxFQVBXLGlCQUFpQixpQ0FBakIsaUJBQWlCLFFBTzVCIiwibmFtZXMiOltdLCJzb3VyY2VzIjpbIkM6XFxVc2Vyc1xcZXVkcmVcXE9uZURyaXZlXFxEZXNrdG9wXFxQcm9qZXRvc1xccGdiZW5cXHBnYmVuLXNlcnZlclxcc3JjXFxlbnVtc1xccGVyaW9kaWNpZGFkZS5lbnVtLnRzIl0sInNvdXJjZXNDb250ZW50IjpbIi8qKlxuICogRW51bSBwYXJhIHBlcsOtb2RvIGRlIGNvbmNlc3PDo28gZGEgQ2VzdGEgQsOhc2ljYVxuICovXG5leHBvcnQgZW51bSBQZXJpb2RpY2lkYWRlRW51bSB7XG4gIE1FTlNBTCA9ICdtZW5zYWwnLFxuICBCSU1FU1RSQUwgPSAnYmltZXN0cmFsJyxcbiAgVFJJTUVTVFJBTCA9ICd0cmltZXN0cmFsJyxcbiAgU0VNRVNUUkFMID0gJ3NlbWVzdHJhbCcsXG4gIFVOSUNPID0gJ3VuaWNvJyxcbiAgQU5VQUwgPSAnYW51YWwnLFxufVxuIl0sInZlcnNpb24iOjN9

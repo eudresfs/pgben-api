@@ -1,0 +1,121 @@
+aefbb1e320ff11f900c012e9ae08048c
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.MetricasModule = void 0;
+const common_1 = require("@nestjs/common");
+const typeorm_1 = require("@nestjs/typeorm");
+const event_emitter_1 = require("@nestjs/event-emitter");
+const schedule_adapter_module_1 = require("../../shared/schedule/schedule-adapter.module");
+const auth_module_1 = require("../../auth/auth.module");
+const health_check_service_1 = require("../../shared/services/health-check.service");
+// Controladores
+const metricas_controller_1 = require("./controllers/metricas.controller");
+const metricas_definicao_controller_1 = require("./controllers/metricas-definicao.controller");
+const metricas_anomalias_controller_1 = require("./controllers/metricas-anomalias.controller");
+const metricas_valores_controller_1 = require("./controllers/metricas-valores.controller");
+const metricas_analise_controller_1 = require("./controllers/metricas-analise.controller");
+const metricas_dashboard_controller_1 = require("./controllers/metricas-dashboard.controller");
+const metricas_exportacao_controller_1 = require("./controllers/metricas-exportacao.controller");
+// Serviços
+const metricas_service_1 = require("./services/metricas.service");
+const metricas_definicao_service_1 = require("./services/metricas-definicao.service");
+const health_service_1 = require("./services/health.service");
+const metricas_coleta_service_1 = require("./services/metricas-coleta.service");
+const metrica_calculo_service_1 = require("./services/metrica-calculo.service");
+const metricas_cache_service_1 = require("./services/metricas-cache.service");
+const dashboard_service_1 = require("./services/dashboard.service");
+const metricas_anomalia_service_1 = require("./services/metricas-anomalia.service");
+// Middleware
+const metricas_middleware_1 = require("./middlewares/metricas.middleware");
+// Entidades
+const entities_1 = require("../../entities");
+// Módulos externos
+const nestjs_prometheus_1 = require("@willsoto/nestjs-prometheus");
+/**
+ * Módulo responsável pelo monitoramento, observabilidade e análise de métricas do sistema
+ *
+ * Este módulo implementa:
+ * 1. Coleta e exposição de métricas para o Prometheus
+ * 2. Sistema completo de definição, coleta e armazenamento de métricas de negócio
+ * 3. Análise de tendências e detecção de anomalias
+ * 4. Cacheamento eficiente para consultas de alta performance
+ * 5. API para alimentação de dashboards e relatórios
+ */
+let MetricasModule = class MetricasModule {
+    configure(consumer) {
+        // Aplica o middleware de métricas a todas as rotas
+        consumer.apply(metricas_middleware_1.MetricasMiddleware).forRoutes('*');
+    }
+};
+exports.MetricasModule = MetricasModule;
+exports.MetricasModule = MetricasModule = __decorate([
+    (0, common_1.Module)({
+        imports: [
+            // Configuração do Prometheus para métricas de sistema
+            nestjs_prometheus_1.PrometheusModule.register({
+                defaultMetrics: {
+                    enabled: true,
+                },
+                path: '/prometheus',
+            }),
+            // Módulo de agendamento personalizado para coleta programada de métricas
+            schedule_adapter_module_1.ScheduleAdapterModule,
+            // Módulo de eventos para comunicação entre serviços
+            event_emitter_1.EventEmitterModule.forRoot(),
+            // Entidades de banco de dados
+            typeorm_1.TypeOrmModule.forFeature([
+                entities_1.LogAuditoria,
+                entities_1.MetricaDefinicao,
+                entities_1.MetricaSnapshot,
+                entities_1.MetricaConfiguracao,
+                // Entidades para dashboard
+                entities_1.Solicitacao,
+                entities_1.Recurso,
+                entities_1.TipoBeneficio,
+                entities_1.Unidade,
+                entities_1.Usuario,
+            ]),
+            // Importa o módulo compartilhado de autenticação
+            auth_module_1.AuthModule,
+        ],
+        // Controladores para API
+        controllers: [
+            metricas_controller_1.MetricasController,
+            metricas_definicao_controller_1.MetricasDefinicaoController,
+            metricas_anomalias_controller_1.MetricasAnomaliasController,
+            metricas_valores_controller_1.MetricasValoresController,
+            metricas_analise_controller_1.MetricasAnaliseController,
+            metricas_dashboard_controller_1.MetricasDashboardController,
+            metricas_exportacao_controller_1.MetricasExportacaoController,
+        ],
+        // Serviços do módulo
+        providers: [
+            // Serviços originais
+            metricas_service_1.MetricasService,
+            health_service_1.HealthService,
+            // Novos serviços
+            metricas_definicao_service_1.MetricasService,
+            metricas_coleta_service_1.MetricasColetaService,
+            metrica_calculo_service_1.MetricaCalculoService,
+            metricas_cache_service_1.MetricasCacheService,
+            metricas_anomalia_service_1.MetricasAnomaliasService,
+            dashboard_service_1.DashboardService,
+            // Serviço de health check compartilhado
+            health_check_service_1.HealthCheckService,
+        ],
+        // Serviços exportados para outros módulos
+        exports: [
+            metricas_service_1.MetricasService,
+            health_service_1.HealthService,
+            metricas_coleta_service_1.MetricasColetaService,
+            metricas_cache_service_1.MetricasCacheService,
+        ],
+    })
+], MetricasModule);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXG1ldHJpY2FzXFxtZXRyaWNhcy5tb2R1bGUudHMiLCJtYXBwaW5ncyI6Ijs7Ozs7Ozs7O0FBQUEsMkNBQXdFO0FBQ3hFLDZDQUFnRDtBQUNoRCx5REFBMkQ7QUFDM0QsMkZBQXNGO0FBQ3RGLHdEQUFvRDtBQUNwRCxxRkFBZ0Y7QUFFaEYsZ0JBQWdCO0FBQ2hCLDJFQUF1RTtBQUN2RSwrRkFBMEY7QUFDMUYsK0ZBQTBGO0FBQzFGLDJGQUFzRjtBQUN0RiwyRkFBc0Y7QUFDdEYsK0ZBQTBGO0FBQzFGLGlHQUE0RjtBQUU1RixXQUFXO0FBQ1gsa0VBQThEO0FBQzlELHNGQUFvRztBQUNwRyw4REFBMEQ7QUFDMUQsZ0ZBQTJFO0FBQzNFLGdGQUEyRTtBQUMzRSw4RUFBeUU7QUFDekUsb0VBQWdFO0FBQ2hFLG9GQUFnRjtBQUVoRixhQUFhO0FBQ2IsMkVBQXVFO0FBRXZFLFlBQVk7QUFDWiw2Q0FVd0I7QUFFeEIsbUJBQW1CO0FBQ25CLG1FQUErRDtBQUUvRDs7Ozs7Ozs7O0dBU0c7QUF3RUksSUFBTSxjQUFjLEdBQXBCLE1BQU0sY0FBYztJQUN6QixTQUFTLENBQUMsUUFBNEI7UUFDcEMsbURBQW1EO1FBQ25ELFFBQVEsQ0FBQyxLQUFLLENBQUMsd0NBQWtCLENBQUMsQ0FBQyxTQUFTLENBQUMsR0FBRyxDQUFDLENBQUM7SUFDcEQsQ0FBQztDQUNGLENBQUE7QUFMWSx3Q0FBYzt5QkFBZCxjQUFjO0lBdkUxQixJQUFBLGVBQU0sRUFBQztRQUNOLE9BQU8sRUFBRTtZQUNQLHNEQUFzRDtZQUN0RCxvQ0FBZ0IsQ0FBQyxRQUFRLENBQUM7Z0JBQ3hCLGNBQWMsRUFBRTtvQkFDZCxPQUFPLEVBQUUsSUFBSTtpQkFDZDtnQkFDRCxJQUFJLEVBQUUsYUFBYTthQUNwQixDQUFDO1lBRUYseUVBQXlFO1lBQ3pFLCtDQUFxQjtZQUVyQixvREFBb0Q7WUFDcEQsa0NBQWtCLENBQUMsT0FBTyxFQUFFO1lBRTVCLDhCQUE4QjtZQUM5Qix1QkFBYSxDQUFDLFVBQVUsQ0FBQztnQkFDdkIsdUJBQVk7Z0JBQ1osMkJBQWdCO2dCQUNoQiwwQkFBZTtnQkFDZiw4QkFBbUI7Z0JBQ25CLDJCQUEyQjtnQkFDM0Isc0JBQVc7Z0JBQ1gsa0JBQU87Z0JBQ1Asd0JBQWE7Z0JBQ2Isa0JBQU87Z0JBQ1Asa0JBQU87YUFDUixDQUFDO1lBRUYsaURBQWlEO1lBQ2pELHdCQUFVO1NBQ1g7UUFFRCx5QkFBeUI7UUFDekIsV0FBVyxFQUFFO1lBQ1gsd0NBQWtCO1lBQ2xCLDJEQUEyQjtZQUMzQiwyREFBMkI7WUFDM0IsdURBQXlCO1lBQ3pCLHVEQUF5QjtZQUN6QiwyREFBMkI7WUFDM0IsNkRBQTRCO1NBQzdCO1FBRUQscUJBQXFCO1FBQ3JCLFNBQVMsRUFBRTtZQUNULHFCQUFxQjtZQUNyQixrQ0FBZTtZQUNmLDhCQUFhO1lBRWIsaUJBQWlCO1lBQ2pCLDRDQUF3QjtZQUN4QiwrQ0FBcUI7WUFDckIsK0NBQXFCO1lBQ3JCLDZDQUFvQjtZQUNwQixvREFBd0I7WUFDeEIsb0NBQWdCO1lBRWhCLHdDQUF3QztZQUN4Qyx5Q0FBa0I7U0FDbkI7UUFFRCwwQ0FBMEM7UUFDMUMsT0FBTyxFQUFFO1lBQ1Asa0NBQWU7WUFDZiw4QkFBYTtZQUNiLCtDQUFxQjtZQUNyQiw2Q0FBb0I7U0FDckI7S0FDRixDQUFDO0dBQ1csY0FBYyxDQUsxQiIsIm5hbWVzIjpbXSwic291cmNlcyI6WyJDOlxcVXNlcnNcXGV1ZHJlXFxPbmVEcml2ZVxcRGVza3RvcFxcUHJvamV0b3NcXHBnYmVuXFxwZ2Jlbi1zZXJ2ZXJcXHNyY1xcbW9kdWxlc1xcbWV0cmljYXNcXG1ldHJpY2FzLm1vZHVsZS50cyJdLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQgeyBNb2R1bGUsIE5lc3RNb2R1bGUsIE1pZGRsZXdhcmVDb25zdW1lciB9IGZyb20gJ0BuZXN0anMvY29tbW9uJztcbmltcG9ydCB7IFR5cGVPcm1Nb2R1bGUgfSBmcm9tICdAbmVzdGpzL3R5cGVvcm0nO1xuaW1wb3J0IHsgRXZlbnRFbWl0dGVyTW9kdWxlIH0gZnJvbSAnQG5lc3Rqcy9ldmVudC1lbWl0dGVyJztcbmltcG9ydCB7IFNjaGVkdWxlQWRhcHRlck1vZHVsZSB9IGZyb20gJy4uLy4uL3NoYXJlZC9zY2hlZHVsZS9zY2hlZHVsZS1hZGFwdGVyLm1vZHVsZSc7XG5pbXBvcnQgeyBBdXRoTW9kdWxlIH0gZnJvbSAnLi4vLi4vYXV0aC9hdXRoLm1vZHVsZSc7XG5pbXBvcnQgeyBIZWFsdGhDaGVja1NlcnZpY2UgfSBmcm9tICcuLi8uLi9zaGFyZWQvc2VydmljZXMvaGVhbHRoLWNoZWNrLnNlcnZpY2UnO1xuXG4vLyBDb250cm9sYWRvcmVzXG5pbXBvcnQgeyBNZXRyaWNhc0NvbnRyb2xsZXIgfSBmcm9tICcuL2NvbnRyb2xsZXJzL21ldHJpY2FzLmNvbnRyb2xsZXInO1xuaW1wb3J0IHsgTWV0cmljYXNEZWZpbmljYW9Db250cm9sbGVyIH0gZnJvbSAnLi9jb250cm9sbGVycy9tZXRyaWNhcy1kZWZpbmljYW8uY29udHJvbGxlcic7XG5pbXBvcnQgeyBNZXRyaWNhc0Fub21hbGlhc0NvbnRyb2xsZXIgfSBmcm9tICcuL2NvbnRyb2xsZXJzL21ldHJpY2FzLWFub21hbGlhcy5jb250cm9sbGVyJztcbmltcG9ydCB7IE1ldHJpY2FzVmFsb3Jlc0NvbnRyb2xsZXIgfSBmcm9tICcuL2NvbnRyb2xsZXJzL21ldHJpY2FzLXZhbG9yZXMuY29udHJvbGxlcic7XG5pbXBvcnQgeyBNZXRyaWNhc0FuYWxpc2VDb250cm9sbGVyIH0gZnJvbSAnLi9jb250cm9sbGVycy9tZXRyaWNhcy1hbmFsaXNlLmNvbnRyb2xsZXInO1xuaW1wb3J0IHsgTWV0cmljYXNEYXNoYm9hcmRDb250cm9sbGVyIH0gZnJvbSAnLi9jb250cm9sbGVycy9tZXRyaWNhcy1kYXNoYm9hcmQuY29udHJvbGxlcic7XG5pbXBvcnQgeyBNZXRyaWNhc0V4cG9ydGFjYW9Db250cm9sbGVyIH0gZnJvbSAnLi9jb250cm9sbGVycy9tZXRyaWNhcy1leHBvcnRhY2FvLmNvbnRyb2xsZXInO1xuXG4vLyBTZXJ2acOnb3NcbmltcG9ydCB7IE1ldHJpY2FzU2VydmljZSB9IGZyb20gJy4vc2VydmljZXMvbWV0cmljYXMuc2VydmljZSc7XG5pbXBvcnQgeyBNZXRyaWNhc1NlcnZpY2UgYXMgTWV0cmljYXNEZWZpbmljYW9TZXJ2aWNlIH0gZnJvbSAnLi9zZXJ2aWNlcy9tZXRyaWNhcy1kZWZpbmljYW8uc2VydmljZSc7XG5pbXBvcnQgeyBIZWFsdGhTZXJ2aWNlIH0gZnJvbSAnLi9zZXJ2aWNlcy9oZWFsdGguc2VydmljZSc7XG5pbXBvcnQgeyBNZXRyaWNhc0NvbGV0YVNlcnZpY2UgfSBmcm9tICcuL3NlcnZpY2VzL21ldHJpY2FzLWNvbGV0YS5zZXJ2aWNlJztcbmltcG9ydCB7IE1ldHJpY2FDYWxjdWxvU2VydmljZSB9IGZyb20gJy4vc2VydmljZXMvbWV0cmljYS1jYWxjdWxvLnNlcnZpY2UnO1xuaW1wb3J0IHsgTWV0cmljYXNDYWNoZVNlcnZpY2UgfSBmcm9tICcuL3NlcnZpY2VzL21ldHJpY2FzLWNhY2hlLnNlcnZpY2UnO1xuaW1wb3J0IHsgRGFzaGJvYXJkU2VydmljZSB9IGZyb20gJy4vc2VydmljZXMvZGFzaGJvYXJkLnNlcnZpY2UnO1xuaW1wb3J0IHsgTWV0cmljYXNBbm9tYWxpYXNTZXJ2aWNlIH0gZnJvbSAnLi9zZXJ2aWNlcy9tZXRyaWNhcy1hbm9tYWxpYS5zZXJ2aWNlJztcblxuLy8gTWlkZGxld2FyZVxuaW1wb3J0IHsgTWV0cmljYXNNaWRkbGV3YXJlIH0gZnJvbSAnLi9taWRkbGV3YXJlcy9tZXRyaWNhcy5taWRkbGV3YXJlJztcblxuLy8gRW50aWRhZGVzXG5pbXBvcnQge1xuICBMb2dBdWRpdG9yaWEsXG4gIE1ldHJpY2FEZWZpbmljYW8sXG4gIE1ldHJpY2FTbmFwc2hvdCxcbiAgTWV0cmljYUNvbmZpZ3VyYWNhbyxcbiAgU29saWNpdGFjYW8sXG4gIFJlY3Vyc28sXG4gIFRpcG9CZW5lZmljaW8sXG4gIFVuaWRhZGUsXG4gIFVzdWFyaW8sXG59IGZyb20gJy4uLy4uL2VudGl0aWVzJztcblxuLy8gTcOzZHVsb3MgZXh0ZXJub3NcbmltcG9ydCB7IFByb21ldGhldXNNb2R1bGUgfSBmcm9tICdAd2lsbHNvdG8vbmVzdGpzLXByb21ldGhldXMnO1xuXG4vKipcbiAqIE3Ds2R1bG8gcmVzcG9uc8OhdmVsIHBlbG8gbW9uaXRvcmFtZW50bywgb2JzZXJ2YWJpbGlkYWRlIGUgYW7DoWxpc2UgZGUgbcOpdHJpY2FzIGRvIHNpc3RlbWFcbiAqXG4gKiBFc3RlIG3Ds2R1bG8gaW1wbGVtZW50YTpcbiAqIDEuIENvbGV0YSBlIGV4cG9zacOnw6NvIGRlIG3DqXRyaWNhcyBwYXJhIG8gUHJvbWV0aGV1c1xuICogMi4gU2lzdGVtYSBjb21wbGV0byBkZSBkZWZpbmnDp8OjbywgY29sZXRhIGUgYXJtYXplbmFtZW50byBkZSBtw6l0cmljYXMgZGUgbmVnw7NjaW9cbiAqIDMuIEFuw6FsaXNlIGRlIHRlbmTDqm5jaWFzIGUgZGV0ZWPDp8OjbyBkZSBhbm9tYWxpYXNcbiAqIDQuIENhY2hlYW1lbnRvIGVmaWNpZW50ZSBwYXJhIGNvbnN1bHRhcyBkZSBhbHRhIHBlcmZvcm1hbmNlXG4gKiA1LiBBUEkgcGFyYSBhbGltZW50YcOnw6NvIGRlIGRhc2hib2FyZHMgZSByZWxhdMOzcmlvc1xuICovXG5ATW9kdWxlKHtcbiAgaW1wb3J0czogW1xuICAgIC8vIENvbmZpZ3VyYcOnw6NvIGRvIFByb21ldGhldXMgcGFyYSBtw6l0cmljYXMgZGUgc2lzdGVtYVxuICAgIFByb21ldGhldXNNb2R1bGUucmVnaXN0ZXIoe1xuICAgICAgZGVmYXVsdE1ldHJpY3M6IHtcbiAgICAgICAgZW5hYmxlZDogdHJ1ZSxcbiAgICAgIH0sXG4gICAgICBwYXRoOiAnL3Byb21ldGhldXMnLFxuICAgIH0pLFxuXG4gICAgLy8gTcOzZHVsbyBkZSBhZ2VuZGFtZW50byBwZXJzb25hbGl6YWRvIHBhcmEgY29sZXRhIHByb2dyYW1hZGEgZGUgbcOpdHJpY2FzXG4gICAgU2NoZWR1bGVBZGFwdGVyTW9kdWxlLFxuXG4gICAgLy8gTcOzZHVsbyBkZSBldmVudG9zIHBhcmEgY29tdW5pY2HDp8OjbyBlbnRyZSBzZXJ2acOnb3NcbiAgICBFdmVudEVtaXR0ZXJNb2R1bGUuZm9yUm9vdCgpLFxuXG4gICAgLy8gRW50aWRhZGVzIGRlIGJhbmNvIGRlIGRhZG9zXG4gICAgVHlwZU9ybU1vZHVsZS5mb3JGZWF0dXJlKFtcbiAgICAgIExvZ0F1ZGl0b3JpYSxcbiAgICAgIE1ldHJpY2FEZWZpbmljYW8sXG4gICAgICBNZXRyaWNhU25hcHNob3QsXG4gICAgICBNZXRyaWNhQ29uZmlndXJhY2FvLFxuICAgICAgLy8gRW50aWRhZGVzIHBhcmEgZGFzaGJvYXJkXG4gICAgICBTb2xpY2l0YWNhbyxcbiAgICAgIFJlY3Vyc28sXG4gICAgICBUaXBvQmVuZWZpY2lvLFxuICAgICAgVW5pZGFkZSxcbiAgICAgIFVzdWFyaW8sXG4gICAgXSksXG5cbiAgICAvLyBJbXBvcnRhIG8gbcOzZHVsbyBjb21wYXJ0aWxoYWRvIGRlIGF1dGVudGljYcOnw6NvXG4gICAgQXV0aE1vZHVsZSxcbiAgXSxcblxuICAvLyBDb250cm9sYWRvcmVzIHBhcmEgQVBJXG4gIGNvbnRyb2xsZXJzOiBbXG4gICAgTWV0cmljYXNDb250cm9sbGVyLFxuICAgIE1ldHJpY2FzRGVmaW5pY2FvQ29udHJvbGxlcixcbiAgICBNZXRyaWNhc0Fub21hbGlhc0NvbnRyb2xsZXIsXG4gICAgTWV0cmljYXNWYWxvcmVzQ29udHJvbGxlcixcbiAgICBNZXRyaWNhc0FuYWxpc2VDb250cm9sbGVyLFxuICAgIE1ldHJpY2FzRGFzaGJvYXJkQ29udHJvbGxlcixcbiAgICBNZXRyaWNhc0V4cG9ydGFjYW9Db250cm9sbGVyLFxuICBdLFxuXG4gIC8vIFNlcnZpw6dvcyBkbyBtw7NkdWxvXG4gIHByb3ZpZGVyczogW1xuICAgIC8vIFNlcnZpw6dvcyBvcmlnaW5haXNcbiAgICBNZXRyaWNhc1NlcnZpY2UsXG4gICAgSGVhbHRoU2VydmljZSxcblxuICAgIC8vIE5vdm9zIHNlcnZpw6dvc1xuICAgIE1ldHJpY2FzRGVmaW5pY2FvU2VydmljZSxcbiAgICBNZXRyaWNhc0NvbGV0YVNlcnZpY2UsXG4gICAgTWV0cmljYUNhbGN1bG9TZXJ2aWNlLFxuICAgIE1ldHJpY2FzQ2FjaGVTZXJ2aWNlLFxuICAgIE1ldHJpY2FzQW5vbWFsaWFzU2VydmljZSxcbiAgICBEYXNoYm9hcmRTZXJ2aWNlLFxuXG4gICAgLy8gU2VydmnDp28gZGUgaGVhbHRoIGNoZWNrIGNvbXBhcnRpbGhhZG9cbiAgICBIZWFsdGhDaGVja1NlcnZpY2UsXG4gIF0sXG5cbiAgLy8gU2VydmnDp29zIGV4cG9ydGFkb3MgcGFyYSBvdXRyb3MgbcOzZHVsb3NcbiAgZXhwb3J0czogW1xuICAgIE1ldHJpY2FzU2VydmljZSxcbiAgICBIZWFsdGhTZXJ2aWNlLFxuICAgIE1ldHJpY2FzQ29sZXRhU2VydmljZSxcbiAgICBNZXRyaWNhc0NhY2hlU2VydmljZSxcbiAgXSxcbn0pXG5leHBvcnQgY2xhc3MgTWV0cmljYXNNb2R1bGUgaW1wbGVtZW50cyBOZXN0TW9kdWxlIHtcbiAgY29uZmlndXJlKGNvbnN1bWVyOiBNaWRkbGV3YXJlQ29uc3VtZXIpIHtcbiAgICAvLyBBcGxpY2EgbyBtaWRkbGV3YXJlIGRlIG3DqXRyaWNhcyBhIHRvZGFzIGFzIHJvdGFzXG4gICAgY29uc3VtZXIuYXBwbHkoTWV0cmljYXNNaWRkbGV3YXJlKS5mb3JSb3V0ZXMoJyonKTtcbiAgfVxufVxuIl0sInZlcnNpb24iOjN9

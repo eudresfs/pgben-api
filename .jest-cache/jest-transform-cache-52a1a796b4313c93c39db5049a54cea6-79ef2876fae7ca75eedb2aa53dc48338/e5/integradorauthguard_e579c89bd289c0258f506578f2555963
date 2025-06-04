@@ -1,0 +1,69 @@
+43c6a2bcf7d36480c6b08ea999c538ce
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var _a, _b;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.IntegradorAuthGuard = void 0;
+const common_1 = require("@nestjs/common");
+const core_1 = require("@nestjs/core");
+const integrador_auth_service_1 = require("../services/integrador-auth.service");
+const escopos_decorator_1 = require("../decorators/escopos.decorator");
+/**
+ * Guard de autenticação para integradores.
+ * Valida se a requisição possui um token válido e se tem as permissões necessárias.
+ */
+let IntegradorAuthGuard = class IntegradorAuthGuard {
+    reflector;
+    authService;
+    constructor(reflector, authService) {
+        this.reflector = reflector;
+        this.authService = authService;
+    }
+    /**
+     * Verifica se a requisição pode ser ativada (autorizada).
+     * @param context Contexto de execução
+     * @returns true se autorizado, false ou exceção caso contrário
+     */
+    async canActivate(context) {
+        const request = context.switchToHttp().getRequest();
+        const resource = `${request.method} ${request.route?.path || request.url}`;
+        const ipAddress = this.authService.getIpFromRequest(request);
+        try {
+            // Validar a autenticação
+            const payload = await this.authService.validateRequest(request);
+            // Verificar escopos requeridos
+            const requiredScopes = this.reflector.getAllAndOverride(escopos_decorator_1.ESCOPOS_KEY, [
+                context.getHandler(),
+                context.getClass(),
+            ]) || [];
+            if (!this.authService.checkPermissions(request, requiredScopes)) {
+                // Registrar tentativa de acesso não autorizada
+                await this.authService.registrarTentativaAcesso(payload.jti, payload.integrador?.id, false, ipAddress, resource, `Escopos insuficientes. Requeridos: ${requiredScopes.join(', ')}`);
+                throw new common_1.ForbiddenException('Permissão insuficiente para acessar este recurso');
+            }
+            // Registrar acesso bem-sucedido
+            await this.authService.registrarTentativaAcesso(payload.jti, payload.integrador?.id, true, ipAddress, resource, 'Acesso autorizado');
+            return true;
+        }
+        catch (error) {
+            // Registrar tentativa de acesso falha
+            await this.authService.registrarTentativaAcesso(null, null, false, ipAddress, resource, error.message || 'Erro desconhecido');
+            // Propagar a exceção original
+            throw error;
+        }
+    }
+};
+exports.IntegradorAuthGuard = IntegradorAuthGuard;
+exports.IntegradorAuthGuard = IntegradorAuthGuard = __decorate([
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [typeof (_a = typeof core_1.Reflector !== "undefined" && core_1.Reflector) === "function" ? _a : Object, typeof (_b = typeof integrador_auth_service_1.IntegradorAuthService !== "undefined" && integrador_auth_service_1.IntegradorAuthService) === "function" ? _b : Object])
+], IntegradorAuthGuard);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXGludGVncmFkb3JcXGd1YXJkc1xcaW50ZWdyYWRvci1hdXRoLmd1YXJkLnRzIiwibWFwcGluZ3MiOiI7Ozs7Ozs7Ozs7Ozs7QUFBQSwyQ0FNd0I7QUFDeEIsdUNBQXlDO0FBQ3pDLGlGQUE0RTtBQUM1RSx1RUFBOEQ7QUFFOUQ7OztHQUdHO0FBRUksSUFBTSxtQkFBbUIsR0FBekIsTUFBTSxtQkFBbUI7SUFFcEI7SUFDQTtJQUZWLFlBQ1UsU0FBb0IsRUFDcEIsV0FBa0M7UUFEbEMsY0FBUyxHQUFULFNBQVMsQ0FBVztRQUNwQixnQkFBVyxHQUFYLFdBQVcsQ0FBdUI7SUFDekMsQ0FBQztJQUVKOzs7O09BSUc7SUFDSCxLQUFLLENBQUMsV0FBVyxDQUFDLE9BQXlCO1FBQ3pDLE1BQU0sT0FBTyxHQUFHLE9BQU8sQ0FBQyxZQUFZLEVBQUUsQ0FBQyxVQUFVLEVBQUUsQ0FBQztRQUNwRCxNQUFNLFFBQVEsR0FBRyxHQUFHLE9BQU8sQ0FBQyxNQUFNLElBQUksT0FBTyxDQUFDLEtBQUssRUFBRSxJQUFJLElBQUksT0FBTyxDQUFDLEdBQUcsRUFBRSxDQUFDO1FBQzNFLE1BQU0sU0FBUyxHQUFHLElBQUksQ0FBQyxXQUFXLENBQUMsZ0JBQWdCLENBQUMsT0FBTyxDQUFDLENBQUM7UUFFN0QsSUFBSSxDQUFDO1lBQ0gseUJBQXlCO1lBQ3pCLE1BQU0sT0FBTyxHQUFHLE1BQU0sSUFBSSxDQUFDLFdBQVcsQ0FBQyxlQUFlLENBQUMsT0FBTyxDQUFDLENBQUM7WUFFaEUsK0JBQStCO1lBQy9CLE1BQU0sY0FBYyxHQUNsQixJQUFJLENBQUMsU0FBUyxDQUFDLGlCQUFpQixDQUFXLCtCQUFXLEVBQUU7Z0JBQ3RELE9BQU8sQ0FBQyxVQUFVLEVBQUU7Z0JBQ3BCLE9BQU8sQ0FBQyxRQUFRLEVBQUU7YUFDbkIsQ0FBQyxJQUFJLEVBQUUsQ0FBQztZQUVYLElBQUksQ0FBQyxJQUFJLENBQUMsV0FBVyxDQUFDLGdCQUFnQixDQUFDLE9BQU8sRUFBRSxjQUFjLENBQUMsRUFBRSxDQUFDO2dCQUNoRSwrQ0FBK0M7Z0JBQy9DLE1BQU0sSUFBSSxDQUFDLFdBQVcsQ0FBQyx3QkFBd0IsQ0FDN0MsT0FBTyxDQUFDLEdBQUcsRUFDWCxPQUFPLENBQUMsVUFBVSxFQUFFLEVBQUUsRUFDdEIsS0FBSyxFQUNMLFNBQVMsRUFDVCxRQUFRLEVBQ1Isc0NBQXNDLGNBQWMsQ0FBQyxJQUFJLENBQUMsSUFBSSxDQUFDLEVBQUUsQ0FDbEUsQ0FBQztnQkFFRixNQUFNLElBQUksMkJBQWtCLENBQzFCLGtEQUFrRCxDQUNuRCxDQUFDO1lBQ0osQ0FBQztZQUVELGdDQUFnQztZQUNoQyxNQUFNLElBQUksQ0FBQyxXQUFXLENBQUMsd0JBQXdCLENBQzdDLE9BQU8sQ0FBQyxHQUFHLEVBQ1gsT0FBTyxDQUFDLFVBQVUsRUFBRSxFQUFFLEVBQ3RCLElBQUksRUFDSixTQUFTLEVBQ1QsUUFBUSxFQUNSLG1CQUFtQixDQUNwQixDQUFDO1lBRUYsT0FBTyxJQUFJLENBQUM7UUFDZCxDQUFDO1FBQUMsT0FBTyxLQUFLLEVBQUUsQ0FBQztZQUNmLHNDQUFzQztZQUN0QyxNQUFNLElBQUksQ0FBQyxXQUFXLENBQUMsd0JBQXdCLENBQzdDLElBQUksRUFDSixJQUFJLEVBQ0osS0FBSyxFQUNMLFNBQVMsRUFDVCxRQUFRLEVBQ1IsS0FBSyxDQUFDLE9BQU8sSUFBSSxtQkFBbUIsQ0FDckMsQ0FBQztZQUVGLDhCQUE4QjtZQUM5QixNQUFNLEtBQUssQ0FBQztRQUNkLENBQUM7SUFDSCxDQUFDO0NBQ0YsQ0FBQTtBQXJFWSxrREFBbUI7OEJBQW5CLG1CQUFtQjtJQUQvQixJQUFBLG1CQUFVLEdBQUU7eURBR1UsZ0JBQVMsb0JBQVQsZ0JBQVMsb0RBQ1AsK0NBQXFCLG9CQUFyQiwrQ0FBcUI7R0FIakMsbUJBQW1CLENBcUUvQiIsIm5hbWVzIjpbXSwic291cmNlcyI6WyJDOlxcVXNlcnNcXGV1ZHJlXFxPbmVEcml2ZVxcRGVza3RvcFxcUHJvamV0b3NcXHBnYmVuXFxwZ2Jlbi1zZXJ2ZXJcXHNyY1xcbW9kdWxlc1xcaW50ZWdyYWRvclxcZ3VhcmRzXFxpbnRlZ3JhZG9yLWF1dGguZ3VhcmQudHMiXSwic291cmNlc0NvbnRlbnQiOlsiaW1wb3J0IHtcbiAgSW5qZWN0YWJsZSxcbiAgQ2FuQWN0aXZhdGUsXG4gIEV4ZWN1dGlvbkNvbnRleHQsXG4gIFVuYXV0aG9yaXplZEV4Y2VwdGlvbixcbiAgRm9yYmlkZGVuRXhjZXB0aW9uLFxufSBmcm9tICdAbmVzdGpzL2NvbW1vbic7XG5pbXBvcnQgeyBSZWZsZWN0b3IgfSBmcm9tICdAbmVzdGpzL2NvcmUnO1xuaW1wb3J0IHsgSW50ZWdyYWRvckF1dGhTZXJ2aWNlIH0gZnJvbSAnLi4vc2VydmljZXMvaW50ZWdyYWRvci1hdXRoLnNlcnZpY2UnO1xuaW1wb3J0IHsgRVNDT1BPU19LRVkgfSBmcm9tICcuLi9kZWNvcmF0b3JzL2VzY29wb3MuZGVjb3JhdG9yJztcblxuLyoqXG4gKiBHdWFyZCBkZSBhdXRlbnRpY2HDp8OjbyBwYXJhIGludGVncmFkb3Jlcy5cbiAqIFZhbGlkYSBzZSBhIHJlcXVpc2nDp8OjbyBwb3NzdWkgdW0gdG9rZW4gdsOhbGlkbyBlIHNlIHRlbSBhcyBwZXJtaXNzw7VlcyBuZWNlc3PDoXJpYXMuXG4gKi9cbkBJbmplY3RhYmxlKClcbmV4cG9ydCBjbGFzcyBJbnRlZ3JhZG9yQXV0aEd1YXJkIGltcGxlbWVudHMgQ2FuQWN0aXZhdGUge1xuICBjb25zdHJ1Y3RvcihcbiAgICBwcml2YXRlIHJlZmxlY3RvcjogUmVmbGVjdG9yLFxuICAgIHByaXZhdGUgYXV0aFNlcnZpY2U6IEludGVncmFkb3JBdXRoU2VydmljZSxcbiAgKSB7fVxuXG4gIC8qKlxuICAgKiBWZXJpZmljYSBzZSBhIHJlcXVpc2nDp8OjbyBwb2RlIHNlciBhdGl2YWRhIChhdXRvcml6YWRhKS5cbiAgICogQHBhcmFtIGNvbnRleHQgQ29udGV4dG8gZGUgZXhlY3XDp8Ojb1xuICAgKiBAcmV0dXJucyB0cnVlIHNlIGF1dG9yaXphZG8sIGZhbHNlIG91IGV4Y2XDp8OjbyBjYXNvIGNvbnRyw6FyaW9cbiAgICovXG4gIGFzeW5jIGNhbkFjdGl2YXRlKGNvbnRleHQ6IEV4ZWN1dGlvbkNvbnRleHQpOiBQcm9taXNlPGJvb2xlYW4+IHtcbiAgICBjb25zdCByZXF1ZXN0ID0gY29udGV4dC5zd2l0Y2hUb0h0dHAoKS5nZXRSZXF1ZXN0KCk7XG4gICAgY29uc3QgcmVzb3VyY2UgPSBgJHtyZXF1ZXN0Lm1ldGhvZH0gJHtyZXF1ZXN0LnJvdXRlPy5wYXRoIHx8IHJlcXVlc3QudXJsfWA7XG4gICAgY29uc3QgaXBBZGRyZXNzID0gdGhpcy5hdXRoU2VydmljZS5nZXRJcEZyb21SZXF1ZXN0KHJlcXVlc3QpO1xuXG4gICAgdHJ5IHtcbiAgICAgIC8vIFZhbGlkYXIgYSBhdXRlbnRpY2HDp8Ojb1xuICAgICAgY29uc3QgcGF5bG9hZCA9IGF3YWl0IHRoaXMuYXV0aFNlcnZpY2UudmFsaWRhdGVSZXF1ZXN0KHJlcXVlc3QpO1xuXG4gICAgICAvLyBWZXJpZmljYXIgZXNjb3BvcyByZXF1ZXJpZG9zXG4gICAgICBjb25zdCByZXF1aXJlZFNjb3BlcyA9XG4gICAgICAgIHRoaXMucmVmbGVjdG9yLmdldEFsbEFuZE92ZXJyaWRlPHN0cmluZ1tdPihFU0NPUE9TX0tFWSwgW1xuICAgICAgICAgIGNvbnRleHQuZ2V0SGFuZGxlcigpLFxuICAgICAgICAgIGNvbnRleHQuZ2V0Q2xhc3MoKSxcbiAgICAgICAgXSkgfHwgW107XG5cbiAgICAgIGlmICghdGhpcy5hdXRoU2VydmljZS5jaGVja1Blcm1pc3Npb25zKHJlcXVlc3QsIHJlcXVpcmVkU2NvcGVzKSkge1xuICAgICAgICAvLyBSZWdpc3RyYXIgdGVudGF0aXZhIGRlIGFjZXNzbyBuw6NvIGF1dG9yaXphZGFcbiAgICAgICAgYXdhaXQgdGhpcy5hdXRoU2VydmljZS5yZWdpc3RyYXJUZW50YXRpdmFBY2Vzc28oXG4gICAgICAgICAgcGF5bG9hZC5qdGksXG4gICAgICAgICAgcGF5bG9hZC5pbnRlZ3JhZG9yPy5pZCxcbiAgICAgICAgICBmYWxzZSxcbiAgICAgICAgICBpcEFkZHJlc3MsXG4gICAgICAgICAgcmVzb3VyY2UsXG4gICAgICAgICAgYEVzY29wb3MgaW5zdWZpY2llbnRlcy4gUmVxdWVyaWRvczogJHtyZXF1aXJlZFNjb3Blcy5qb2luKCcsICcpfWAsXG4gICAgICAgICk7XG5cbiAgICAgICAgdGhyb3cgbmV3IEZvcmJpZGRlbkV4Y2VwdGlvbihcbiAgICAgICAgICAnUGVybWlzc8OjbyBpbnN1ZmljaWVudGUgcGFyYSBhY2Vzc2FyIGVzdGUgcmVjdXJzbycsXG4gICAgICAgICk7XG4gICAgICB9XG5cbiAgICAgIC8vIFJlZ2lzdHJhciBhY2Vzc28gYmVtLXN1Y2VkaWRvXG4gICAgICBhd2FpdCB0aGlzLmF1dGhTZXJ2aWNlLnJlZ2lzdHJhclRlbnRhdGl2YUFjZXNzbyhcbiAgICAgICAgcGF5bG9hZC5qdGksXG4gICAgICAgIHBheWxvYWQuaW50ZWdyYWRvcj8uaWQsXG4gICAgICAgIHRydWUsXG4gICAgICAgIGlwQWRkcmVzcyxcbiAgICAgICAgcmVzb3VyY2UsXG4gICAgICAgICdBY2Vzc28gYXV0b3JpemFkbycsXG4gICAgICApO1xuXG4gICAgICByZXR1cm4gdHJ1ZTtcbiAgICB9IGNhdGNoIChlcnJvcikge1xuICAgICAgLy8gUmVnaXN0cmFyIHRlbnRhdGl2YSBkZSBhY2Vzc28gZmFsaGFcbiAgICAgIGF3YWl0IHRoaXMuYXV0aFNlcnZpY2UucmVnaXN0cmFyVGVudGF0aXZhQWNlc3NvKFxuICAgICAgICBudWxsLFxuICAgICAgICBudWxsLFxuICAgICAgICBmYWxzZSxcbiAgICAgICAgaXBBZGRyZXNzLFxuICAgICAgICByZXNvdXJjZSxcbiAgICAgICAgZXJyb3IubWVzc2FnZSB8fCAnRXJybyBkZXNjb25oZWNpZG8nLFxuICAgICAgKTtcblxuICAgICAgLy8gUHJvcGFnYXIgYSBleGNlw6fDo28gb3JpZ2luYWxcbiAgICAgIHRocm93IGVycm9yO1xuICAgIH1cbiAgfVxufVxuIl0sInZlcnNpb24iOjN9

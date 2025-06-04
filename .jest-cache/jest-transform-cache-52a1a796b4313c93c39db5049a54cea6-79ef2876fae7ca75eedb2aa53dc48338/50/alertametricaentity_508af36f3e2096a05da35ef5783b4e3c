@@ -1,0 +1,109 @@
+fddabce1682d3ef38d2f6e115d9a31ce
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var _a, _b, _c, _d, _e;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.AlertaMetrica = void 0;
+const typeorm_1 = require("typeorm");
+const class_validator_1 = require("class-validator");
+const metrica_entity_1 = require("./metrica.entity");
+const metrica_seguranca_entity_1 = require("./metrica-seguranca.entity");
+/**
+ * Entidade que representa alertas gerados com base em métricas
+ *
+ * Esta entidade armazena informações sobre alertas gerados quando uma métrica
+ * ultrapassa um limiar definido, incluindo o nível do alerta, valor atual,
+ * limiar violado e status de resolução.
+ */
+let AlertaMetrica = class AlertaMetrica {
+    id;
+    metrica_id;
+    metrica;
+    created_at;
+    nivel;
+    valor_atual;
+    limiar_violado;
+    mensagem;
+    detalhes;
+    resolvido;
+    data_resolucao;
+    notificacao_enviada;
+};
+exports.AlertaMetrica = AlertaMetrica;
+__decorate([
+    (0, typeorm_1.PrimaryGeneratedColumn)('uuid'),
+    __metadata("design:type", String)
+], AlertaMetrica.prototype, "id", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'uuid' }),
+    (0, typeorm_1.Index)('idx_alertas_metricas_metrica_id'),
+    (0, class_validator_1.IsNotEmpty)({ message: 'ID da métrica é obrigatório' }),
+    (0, class_validator_1.IsUUID)('4', { message: 'ID da métrica inválido' }),
+    __metadata("design:type", String)
+], AlertaMetrica.prototype, "metrica_id", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => metrica_entity_1.Metrica),
+    (0, typeorm_1.JoinColumn)({ name: 'metrica_id' }),
+    __metadata("design:type", typeof (_a = typeof metrica_entity_1.Metrica !== "undefined" && metrica_entity_1.Metrica) === "function" ? _a : Object)
+], AlertaMetrica.prototype, "metrica", void 0);
+__decorate([
+    (0, typeorm_1.CreateDateColumn)({ name: 'created_at' }),
+    (0, typeorm_1.Index)('idx_alertas_metricas_timestamp'),
+    __metadata("design:type", typeof (_b = typeof Date !== "undefined" && Date) === "function" ? _b : Object)
+], AlertaMetrica.prototype, "created_at", void 0);
+__decorate([
+    (0, typeorm_1.Column)({
+        type: 'enum',
+        enum: metrica_seguranca_entity_1.NivelAlertaEnum,
+    }),
+    (0, typeorm_1.Index)('idx_alertas_metricas_nivel'),
+    (0, class_validator_1.IsEnum)(metrica_seguranca_entity_1.NivelAlertaEnum, { message: 'Nível de alerta inválido' }),
+    __metadata("design:type", typeof (_c = typeof metrica_seguranca_entity_1.NivelAlertaEnum !== "undefined" && metrica_seguranca_entity_1.NivelAlertaEnum) === "function" ? _c : Object)
+], AlertaMetrica.prototype, "nivel", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'numeric', precision: 15, scale: 2 }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Valor atual é obrigatório' }),
+    (0, class_validator_1.IsNumber)({}, { message: 'Valor atual deve ser um número' }),
+    __metadata("design:type", Number)
+], AlertaMetrica.prototype, "valor_atual", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'numeric', precision: 15, scale: 2 }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Limiar violado é obrigatório' }),
+    (0, class_validator_1.IsNumber)({}, { message: 'Limiar violado deve ser um número' }),
+    __metadata("design:type", Number)
+], AlertaMetrica.prototype, "limiar_violado", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'text', nullable: true }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'Mensagem deve ser uma string' }),
+    __metadata("design:type", String)
+], AlertaMetrica.prototype, "mensagem", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'jsonb', nullable: true }),
+    __metadata("design:type", typeof (_d = typeof Record !== "undefined" && Record) === "function" ? _d : Object)
+], AlertaMetrica.prototype, "detalhes", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ default: false }),
+    (0, typeorm_1.Index)('idx_alertas_metricas_resolvido'),
+    __metadata("design:type", Boolean)
+], AlertaMetrica.prototype, "resolvido", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'timestamp', nullable: true }),
+    __metadata("design:type", typeof (_e = typeof Date !== "undefined" && Date) === "function" ? _e : Object)
+], AlertaMetrica.prototype, "data_resolucao", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ default: false }),
+    __metadata("design:type", Boolean)
+], AlertaMetrica.prototype, "notificacao_enviada", void 0);
+exports.AlertaMetrica = AlertaMetrica = __decorate([
+    (0, typeorm_1.Entity)('alertas_metricas')
+], AlertaMetrica);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXGVudGl0aWVzXFxhbGVydGEtbWV0cmljYS5lbnRpdHkudHMiLCJtYXBwaW5ncyI6Ijs7Ozs7Ozs7Ozs7OztBQUFBLHFDQVNpQjtBQUNqQixxREFReUI7QUFDekIscURBQTJDO0FBQzNDLHlFQUE2RDtBQUU3RDs7Ozs7O0dBTUc7QUFFSSxJQUFNLGFBQWEsR0FBbkIsTUFBTSxhQUFhO0lBRXhCLEVBQUUsQ0FBUztJQU1YLFVBQVUsQ0FBUztJQUluQixPQUFPLENBQVU7SUFJakIsVUFBVSxDQUFPO0lBUWpCLEtBQUssQ0FBa0I7SUFLdkIsV0FBVyxDQUFTO0lBS3BCLGNBQWMsQ0FBUztJQUt2QixRQUFRLENBQVM7SUFHakIsUUFBUSxDQUFzQjtJQUk5QixTQUFTLENBQVU7SUFHbkIsY0FBYyxDQUFPO0lBR3JCLG1CQUFtQixDQUFVO0NBQzlCLENBQUE7QUFyRFksc0NBQWE7QUFFeEI7SUFEQyxJQUFBLGdDQUFzQixFQUFDLE1BQU0sQ0FBQzs7eUNBQ3BCO0FBTVg7SUFKQyxJQUFBLGdCQUFNLEVBQUMsRUFBRSxJQUFJLEVBQUUsTUFBTSxFQUFFLENBQUM7SUFDeEIsSUFBQSxlQUFLLEVBQUMsaUNBQWlDLENBQUM7SUFDeEMsSUFBQSw0QkFBVSxFQUFDLEVBQUUsT0FBTyxFQUFFLDZCQUE2QixFQUFFLENBQUM7SUFDdEQsSUFBQSx3QkFBTSxFQUFDLEdBQUcsRUFBRSxFQUFFLE9BQU8sRUFBRSx3QkFBd0IsRUFBRSxDQUFDOztpREFDaEM7QUFJbkI7SUFGQyxJQUFBLG1CQUFTLEVBQUMsR0FBRyxFQUFFLENBQUMsd0JBQU8sQ0FBQztJQUN4QixJQUFBLG9CQUFVLEVBQUMsRUFBRSxJQUFJLEVBQUUsWUFBWSxFQUFFLENBQUM7a0RBQzFCLHdCQUFPLG9CQUFQLHdCQUFPOzhDQUFDO0FBSWpCO0lBRkMsSUFBQSwwQkFBZ0IsRUFBQyxFQUFFLElBQUksRUFBRSxZQUFZLEVBQUUsQ0FBQztJQUN4QyxJQUFBLGVBQUssRUFBQyxnQ0FBZ0MsQ0FBQztrREFDNUIsSUFBSSxvQkFBSixJQUFJO2lEQUFDO0FBUWpCO0lBTkMsSUFBQSxnQkFBTSxFQUFDO1FBQ04sSUFBSSxFQUFFLE1BQU07UUFDWixJQUFJLEVBQUUsMENBQWU7S0FDdEIsQ0FBQztJQUNELElBQUEsZUFBSyxFQUFDLDRCQUE0QixDQUFDO0lBQ25DLElBQUEsd0JBQU0sRUFBQywwQ0FBZSxFQUFFLEVBQUUsT0FBTyxFQUFFLDBCQUEwQixFQUFFLENBQUM7a0RBQzFELDBDQUFlLG9CQUFmLDBDQUFlOzRDQUFDO0FBS3ZCO0lBSEMsSUFBQSxnQkFBTSxFQUFDLEVBQUUsSUFBSSxFQUFFLFNBQVMsRUFBRSxTQUFTLEVBQUUsRUFBRSxFQUFFLEtBQUssRUFBRSxDQUFDLEVBQUUsQ0FBQztJQUNwRCxJQUFBLDRCQUFVLEVBQUMsRUFBRSxPQUFPLEVBQUUsMkJBQTJCLEVBQUUsQ0FBQztJQUNwRCxJQUFBLDBCQUFRLEVBQUMsRUFBRSxFQUFFLEVBQUUsT0FBTyxFQUFFLGdDQUFnQyxFQUFFLENBQUM7O2tEQUN4QztBQUtwQjtJQUhDLElBQUEsZ0JBQU0sRUFBQyxFQUFFLElBQUksRUFBRSxTQUFTLEVBQUUsU0FBUyxFQUFFLEVBQUUsRUFBRSxLQUFLLEVBQUUsQ0FBQyxFQUFFLENBQUM7SUFDcEQsSUFBQSw0QkFBVSxFQUFDLEVBQUUsT0FBTyxFQUFFLDhCQUE4QixFQUFFLENBQUM7SUFDdkQsSUFBQSwwQkFBUSxFQUFDLEVBQUUsRUFBRSxFQUFFLE9BQU8sRUFBRSxtQ0FBbUMsRUFBRSxDQUFDOztxREFDeEM7QUFLdkI7SUFIQyxJQUFBLGdCQUFNLEVBQUMsRUFBRSxJQUFJLEVBQUUsTUFBTSxFQUFFLFFBQVEsRUFBRSxJQUFJLEVBQUUsQ0FBQztJQUN4QyxJQUFBLDRCQUFVLEdBQUU7SUFDWixJQUFBLDBCQUFRLEVBQUMsRUFBRSxPQUFPLEVBQUUsOEJBQThCLEVBQUUsQ0FBQzs7K0NBQ3JDO0FBR2pCO0lBREMsSUFBQSxnQkFBTSxFQUFDLEVBQUUsSUFBSSxFQUFFLE9BQU8sRUFBRSxRQUFRLEVBQUUsSUFBSSxFQUFFLENBQUM7a0RBQ2hDLE1BQU0sb0JBQU4sTUFBTTsrQ0FBYztBQUk5QjtJQUZDLElBQUEsZ0JBQU0sRUFBQyxFQUFFLE9BQU8sRUFBRSxLQUFLLEVBQUUsQ0FBQztJQUMxQixJQUFBLGVBQUssRUFBQyxnQ0FBZ0MsQ0FBQzs7Z0RBQ3JCO0FBR25CO0lBREMsSUFBQSxnQkFBTSxFQUFDLEVBQUUsSUFBSSxFQUFFLFdBQVcsRUFBRSxRQUFRLEVBQUUsSUFBSSxFQUFFLENBQUM7a0RBQzlCLElBQUksb0JBQUosSUFBSTtxREFBQztBQUdyQjtJQURDLElBQUEsZ0JBQU0sRUFBQyxFQUFFLE9BQU8sRUFBRSxLQUFLLEVBQUUsQ0FBQzs7MERBQ0U7d0JBcERsQixhQUFhO0lBRHpCLElBQUEsZ0JBQU0sRUFBQyxrQkFBa0IsQ0FBQztHQUNkLGFBQWEsQ0FxRHpCIiwibmFtZXMiOltdLCJzb3VyY2VzIjpbIkM6XFxVc2Vyc1xcZXVkcmVcXE9uZURyaXZlXFxEZXNrdG9wXFxQcm9qZXRvc1xccGdiZW5cXHBnYmVuLXNlcnZlclxcc3JjXFxlbnRpdGllc1xcYWxlcnRhLW1ldHJpY2EuZW50aXR5LnRzIl0sInNvdXJjZXNDb250ZW50IjpbImltcG9ydCB7XG4gIEVudGl0eSxcbiAgUHJpbWFyeUdlbmVyYXRlZENvbHVtbixcbiAgQ29sdW1uLFxuICBJbmRleCxcbiAgTWFueVRvT25lLFxuICBKb2luQ29sdW1uLFxuICBDcmVhdGVEYXRlQ29sdW1uLFxuICBVcGRhdGVEYXRlQ29sdW1uLFxufSBmcm9tICd0eXBlb3JtJztcbmltcG9ydCB7XG4gIElzTm90RW1wdHksXG4gIElzVVVJRCxcbiAgSXNPcHRpb25hbCxcbiAgSXNOdW1iZXIsXG4gIE1pbixcbiAgSXNFbnVtLFxuICBJc1N0cmluZyxcbn0gZnJvbSAnY2xhc3MtdmFsaWRhdG9yJztcbmltcG9ydCB7IE1ldHJpY2EgfSBmcm9tICcuL21ldHJpY2EuZW50aXR5JztcbmltcG9ydCB7IE5pdmVsQWxlcnRhRW51bSB9IGZyb20gJy4vbWV0cmljYS1zZWd1cmFuY2EuZW50aXR5JztcblxuLyoqXG4gKiBFbnRpZGFkZSBxdWUgcmVwcmVzZW50YSBhbGVydGFzIGdlcmFkb3MgY29tIGJhc2UgZW0gbcOpdHJpY2FzXG4gKlxuICogRXN0YSBlbnRpZGFkZSBhcm1hemVuYSBpbmZvcm1hw6fDtWVzIHNvYnJlIGFsZXJ0YXMgZ2VyYWRvcyBxdWFuZG8gdW1hIG3DqXRyaWNhXG4gKiB1bHRyYXBhc3NhIHVtIGxpbWlhciBkZWZpbmlkbywgaW5jbHVpbmRvIG8gbsOtdmVsIGRvIGFsZXJ0YSwgdmFsb3IgYXR1YWwsXG4gKiBsaW1pYXIgdmlvbGFkbyBlIHN0YXR1cyBkZSByZXNvbHXDp8Ojby5cbiAqL1xuQEVudGl0eSgnYWxlcnRhc19tZXRyaWNhcycpXG5leHBvcnQgY2xhc3MgQWxlcnRhTWV0cmljYSB7XG4gIEBQcmltYXJ5R2VuZXJhdGVkQ29sdW1uKCd1dWlkJylcbiAgaWQ6IHN0cmluZztcblxuICBAQ29sdW1uKHsgdHlwZTogJ3V1aWQnIH0pXG4gIEBJbmRleCgnaWR4X2FsZXJ0YXNfbWV0cmljYXNfbWV0cmljYV9pZCcpXG4gIEBJc05vdEVtcHR5KHsgbWVzc2FnZTogJ0lEIGRhIG3DqXRyaWNhIMOpIG9icmlnYXTDs3JpbycgfSlcbiAgQElzVVVJRCgnNCcsIHsgbWVzc2FnZTogJ0lEIGRhIG3DqXRyaWNhIGludsOhbGlkbycgfSlcbiAgbWV0cmljYV9pZDogc3RyaW5nO1xuXG4gIEBNYW55VG9PbmUoKCkgPT4gTWV0cmljYSlcbiAgQEpvaW5Db2x1bW4oeyBuYW1lOiAnbWV0cmljYV9pZCcgfSlcbiAgbWV0cmljYTogTWV0cmljYTtcblxuICBAQ3JlYXRlRGF0ZUNvbHVtbih7IG5hbWU6ICdjcmVhdGVkX2F0JyB9KVxuICBASW5kZXgoJ2lkeF9hbGVydGFzX21ldHJpY2FzX3RpbWVzdGFtcCcpXG4gIGNyZWF0ZWRfYXQ6IERhdGU7XG5cbiAgQENvbHVtbih7XG4gICAgdHlwZTogJ2VudW0nLFxuICAgIGVudW06IE5pdmVsQWxlcnRhRW51bSxcbiAgfSlcbiAgQEluZGV4KCdpZHhfYWxlcnRhc19tZXRyaWNhc19uaXZlbCcpXG4gIEBJc0VudW0oTml2ZWxBbGVydGFFbnVtLCB7IG1lc3NhZ2U6ICdOw612ZWwgZGUgYWxlcnRhIGludsOhbGlkbycgfSlcbiAgbml2ZWw6IE5pdmVsQWxlcnRhRW51bTtcblxuICBAQ29sdW1uKHsgdHlwZTogJ251bWVyaWMnLCBwcmVjaXNpb246IDE1LCBzY2FsZTogMiB9KVxuICBASXNOb3RFbXB0eSh7IG1lc3NhZ2U6ICdWYWxvciBhdHVhbCDDqSBvYnJpZ2F0w7NyaW8nIH0pXG4gIEBJc051bWJlcih7fSwgeyBtZXNzYWdlOiAnVmFsb3IgYXR1YWwgZGV2ZSBzZXIgdW0gbsO6bWVybycgfSlcbiAgdmFsb3JfYXR1YWw6IG51bWJlcjtcblxuICBAQ29sdW1uKHsgdHlwZTogJ251bWVyaWMnLCBwcmVjaXNpb246IDE1LCBzY2FsZTogMiB9KVxuICBASXNOb3RFbXB0eSh7IG1lc3NhZ2U6ICdMaW1pYXIgdmlvbGFkbyDDqSBvYnJpZ2F0w7NyaW8nIH0pXG4gIEBJc051bWJlcih7fSwgeyBtZXNzYWdlOiAnTGltaWFyIHZpb2xhZG8gZGV2ZSBzZXIgdW0gbsO6bWVybycgfSlcbiAgbGltaWFyX3Zpb2xhZG86IG51bWJlcjtcblxuICBAQ29sdW1uKHsgdHlwZTogJ3RleHQnLCBudWxsYWJsZTogdHJ1ZSB9KVxuICBASXNPcHRpb25hbCgpXG4gIEBJc1N0cmluZyh7IG1lc3NhZ2U6ICdNZW5zYWdlbSBkZXZlIHNlciB1bWEgc3RyaW5nJyB9KVxuICBtZW5zYWdlbTogc3RyaW5nO1xuXG4gIEBDb2x1bW4oeyB0eXBlOiAnanNvbmInLCBudWxsYWJsZTogdHJ1ZSB9KVxuICBkZXRhbGhlczogUmVjb3JkPHN0cmluZywgYW55PjtcblxuICBAQ29sdW1uKHsgZGVmYXVsdDogZmFsc2UgfSlcbiAgQEluZGV4KCdpZHhfYWxlcnRhc19tZXRyaWNhc19yZXNvbHZpZG8nKVxuICByZXNvbHZpZG86IGJvb2xlYW47XG5cbiAgQENvbHVtbih7IHR5cGU6ICd0aW1lc3RhbXAnLCBudWxsYWJsZTogdHJ1ZSB9KVxuICBkYXRhX3Jlc29sdWNhbzogRGF0ZTtcblxuICBAQ29sdW1uKHsgZGVmYXVsdDogZmFsc2UgfSlcbiAgbm90aWZpY2FjYW9fZW52aWFkYTogYm9vbGVhbjtcbn1cbiJdLCJ2ZXJzaW9uIjozfQ==

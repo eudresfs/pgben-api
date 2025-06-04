@@ -1,0 +1,16 @@
+48043b5f615e901c52ffa30d22869c2e
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.IntegracaoTipoEnum = void 0;
+/**
+ * Enum que define os tipos de integrações externas suportadas pelo sistema.
+ * Cada tipo de integração pode ter configurações e parâmetros específicos.
+ */
+var IntegracaoTipoEnum;
+(function (IntegracaoTipoEnum) {
+    IntegracaoTipoEnum["EMAIL"] = "email";
+    IntegracaoTipoEnum["STORAGE"] = "storage";
+    IntegracaoTipoEnum["SMS"] = "sms";
+    IntegracaoTipoEnum["API_EXTERNA"] = "api_externa";
+})(IntegracaoTipoEnum || (exports.IntegracaoTipoEnum = IntegracaoTipoEnum = {}));
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXGVudW1zXFxpbnRlZ3JhY2FvLXRpcG8uZW51bS50cyIsIm1hcHBpbmdzIjoiOzs7QUFBQTs7O0dBR0c7QUFDSCxJQUFZLGtCQUtYO0FBTEQsV0FBWSxrQkFBa0I7SUFDNUIscUNBQWUsQ0FBQTtJQUNmLHlDQUFtQixDQUFBO0lBQ25CLGlDQUFXLENBQUE7SUFDWCxpREFBMkIsQ0FBQTtBQUM3QixDQUFDLEVBTFcsa0JBQWtCLGtDQUFsQixrQkFBa0IsUUFLN0IiLCJuYW1lcyI6W10sInNvdXJjZXMiOlsiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXGVudW1zXFxpbnRlZ3JhY2FvLXRpcG8uZW51bS50cyJdLCJzb3VyY2VzQ29udGVudCI6WyIvKipcbiAqIEVudW0gcXVlIGRlZmluZSBvcyB0aXBvcyBkZSBpbnRlZ3Jhw6fDtWVzIGV4dGVybmFzIHN1cG9ydGFkYXMgcGVsbyBzaXN0ZW1hLlxuICogQ2FkYSB0aXBvIGRlIGludGVncmHDp8OjbyBwb2RlIHRlciBjb25maWd1cmHDp8O1ZXMgZSBwYXLDom1ldHJvcyBlc3BlY8OtZmljb3MuXG4gKi9cbmV4cG9ydCBlbnVtIEludGVncmFjYW9UaXBvRW51bSB7XG4gIEVNQUlMID0gJ2VtYWlsJyxcbiAgU1RPUkFHRSA9ICdzdG9yYWdlJyxcbiAgU01TID0gJ3NtcycsXG4gIEFQSV9FWFRFUk5BID0gJ2FwaV9leHRlcm5hJyxcbn1cbiJdLCJ2ZXJzaW9uIjozfQ==

@@ -1,0 +1,221 @@
+a4e2a207639e31562d1fb4a301e543fd
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Documento = void 0;
+const typeorm_1 = require("typeorm");
+const class_validator_1 = require("class-validator");
+const solicitacao_entity_1 = require("./solicitacao.entity");
+const usuario_entity_1 = require("./usuario.entity");
+const cidadao_entity_1 = require("./cidadao.entity");
+const enums_1 = require("../enums");
+/**
+ * Entidade Documento
+ *
+ * Representa documentos anexados pelos cidadãos, podendo estar vinculados
+ * a uma solicitação específica ou serem documentos gerais reutilizáveis.
+ * Todos os documentos são sempre vinculados a um cidadão.
+ */
+let Documento = class Documento {
+    id;
+    solicitacao_id;
+    solicitacao;
+    cidadao_id;
+    cidadao;
+    tipo;
+    nome_arquivo;
+    nome_original;
+    caminho;
+    thumbnail;
+    descricao;
+    tamanho;
+    mimetype;
+    data_upload;
+    usuario_upload_id;
+    usuario_upload;
+    verificado;
+    data_verificacao;
+    usuario_verificacao_id;
+    usuario_verificacao;
+    observacoes_verificacao;
+    reutilizavel;
+    hash_arquivo;
+    data_validade;
+    metadados;
+    created_at;
+    updated_at;
+    removed_at;
+};
+exports.Documento = Documento;
+__decorate([
+    (0, typeorm_1.PrimaryGeneratedColumn)('uuid'),
+    __metadata("design:type", String)
+], Documento.prototype, "id", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsUUID)('4', { message: 'ID da solicitação deve ser um UUID válido' }),
+    __metadata("design:type", String)
+], Documento.prototype, "solicitacao_id", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => solicitacao_entity_1.Solicitacao, (solicitacao) => solicitacao.documentos, {
+        nullable: true,
+    }),
+    (0, typeorm_1.JoinColumn)({ name: 'solicitacao_id' }),
+    __metadata("design:type", typeof (_a = typeof solicitacao_entity_1.Solicitacao !== "undefined" && solicitacao_entity_1.Solicitacao) === "function" ? _a : Object)
+], Documento.prototype, "solicitacao", void 0);
+__decorate([
+    (0, typeorm_1.Column)(),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Cidadão é obrigatório' }),
+    (0, class_validator_1.IsUUID)('4', { message: 'ID do cidadão deve ser um UUID válido' }),
+    __metadata("design:type", String)
+], Documento.prototype, "cidadao_id", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => cidadao_entity_1.Cidadao, { nullable: false }),
+    (0, typeorm_1.JoinColumn)({ name: 'cidadao_id' }),
+    __metadata("design:type", typeof (_b = typeof cidadao_entity_1.Cidadao !== "undefined" && cidadao_entity_1.Cidadao) === "function" ? _b : Object)
+], Documento.prototype, "cidadao", void 0);
+__decorate([
+    (0, typeorm_1.Column)({
+        type: 'enum',
+        enum: enums_1.TipoDocumentoEnum,
+        enumName: 'tipo_documento_enum',
+    }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Tipo de documento é obrigatório' }),
+    __metadata("design:type", typeof (_c = typeof enums_1.TipoDocumentoEnum !== "undefined" && enums_1.TipoDocumentoEnum) === "function" ? _c : Object)
+], Documento.prototype, "tipo", void 0);
+__decorate([
+    (0, typeorm_1.Column)(),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Nome do arquivo é obrigatório' }),
+    __metadata("design:type", String)
+], Documento.prototype, "nome_arquivo", void 0);
+__decorate([
+    (0, typeorm_1.Column)(),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Nome original do arquivo é obrigatório' }),
+    __metadata("design:type", String)
+], Documento.prototype, "nome_original", void 0);
+__decorate([
+    (0, typeorm_1.Column)(),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Caminho do arquivo é obrigatório' }),
+    __metadata("design:type", String)
+], Documento.prototype, "caminho", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], Documento.prototype, "thumbnail", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], Documento.prototype, "descricao", void 0);
+__decorate([
+    (0, typeorm_1.Column)(),
+    (0, class_validator_1.IsNumber)({}, { message: 'Tamanho deve ser um número' }),
+    (0, class_validator_1.Min)(0, { message: 'Tamanho não pode ser negativo' }),
+    __metadata("design:type", Number)
+], Documento.prototype, "tamanho", void 0);
+__decorate([
+    (0, typeorm_1.Column)(),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Tipo MIME é obrigatório' }),
+    __metadata("design:type", String)
+], Documento.prototype, "mimetype", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'timestamp' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Data de upload é obrigatória' }),
+    __metadata("design:type", typeof (_d = typeof Date !== "undefined" && Date) === "function" ? _d : Object)
+], Documento.prototype, "data_upload", void 0);
+__decorate([
+    (0, typeorm_1.Column)(),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Usuário que fez upload é obrigatório' }),
+    (0, class_validator_1.IsUUID)('4', { message: 'ID do usuário deve ser um UUID válido' }),
+    __metadata("design:type", String)
+], Documento.prototype, "usuario_upload_id", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => usuario_entity_1.Usuario, { nullable: false }),
+    (0, typeorm_1.JoinColumn)({ name: 'usuario_upload_id' }),
+    __metadata("design:type", typeof (_e = typeof usuario_entity_1.Usuario !== "undefined" && usuario_entity_1.Usuario) === "function" ? _e : Object)
+], Documento.prototype, "usuario_upload", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ default: false }),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], Documento.prototype, "verificado", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true, type: 'timestamp' }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsDate)(),
+    __metadata("design:type", typeof (_f = typeof Date !== "undefined" && Date) === "function" ? _f : Object)
+], Documento.prototype, "data_verificacao", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsUUID)('4', {
+        message: 'ID do usuário de verificação deve ser um UUID válido',
+    }),
+    __metadata("design:type", String)
+], Documento.prototype, "usuario_verificacao_id", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => usuario_entity_1.Usuario, { nullable: true }),
+    (0, typeorm_1.JoinColumn)({ name: 'usuario_verificacao_id' }),
+    __metadata("design:type", typeof (_g = typeof usuario_entity_1.Usuario !== "undefined" && usuario_entity_1.Usuario) === "function" ? _g : Object)
+], Documento.prototype, "usuario_verificacao", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], Documento.prototype, "observacoes_verificacao", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ default: false }),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], Documento.prototype, "reutilizavel", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], Documento.prototype, "hash_arquivo", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true, type: 'date' }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsDate)(),
+    __metadata("design:type", typeof (_h = typeof Date !== "undefined" && Date) === "function" ? _h : Object)
+], Documento.prototype, "data_validade", void 0);
+__decorate([
+    (0, typeorm_1.Column)('jsonb', { nullable: true }),
+    __metadata("design:type", Object)
+], Documento.prototype, "metadados", void 0);
+__decorate([
+    (0, typeorm_1.CreateDateColumn)(),
+    __metadata("design:type", typeof (_j = typeof Date !== "undefined" && Date) === "function" ? _j : Object)
+], Documento.prototype, "created_at", void 0);
+__decorate([
+    (0, typeorm_1.UpdateDateColumn)(),
+    __metadata("design:type", typeof (_k = typeof Date !== "undefined" && Date) === "function" ? _k : Object)
+], Documento.prototype, "updated_at", void 0);
+__decorate([
+    (0, typeorm_1.DeleteDateColumn)(),
+    __metadata("design:type", typeof (_l = typeof Date !== "undefined" && Date) === "function" ? _l : Object)
+], Documento.prototype, "removed_at", void 0);
+exports.Documento = Documento = __decorate([
+    (0, typeorm_1.Entity)('documentos'),
+    (0, typeorm_1.Index)(['cidadao_id']),
+    (0, typeorm_1.Index)(['solicitacao_id']),
+    (0, typeorm_1.Index)(['tipo']),
+    (0, typeorm_1.Index)(['usuario_upload_id']),
+    (0, typeorm_1.Index)(['data_upload']),
+    (0, typeorm_1.Index)(['verificado']),
+    (0, typeorm_1.Index)(['reutilizavel'])
+], Documento);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXGVudGl0aWVzXFxkb2N1bWVudG8uZW50aXR5LnRzIiwibWFwcGluZ3MiOiI7Ozs7Ozs7Ozs7Ozs7QUFBQSxxQ0FVaUI7QUFDakIscURBU3lCO0FBQ3pCLDZEQUFtRDtBQUNuRCxxREFBMkM7QUFDM0MscURBQTJDO0FBQzNDLG9DQUE2QztBQUU3Qzs7Ozs7O0dBTUc7QUFTSSxJQUFNLFNBQVMsR0FBZixNQUFNLFNBQVM7SUFFcEIsRUFBRSxDQUFTO0lBS1gsY0FBYyxDQUFVO0lBTXhCLFdBQVcsQ0FBZTtJQUsxQixVQUFVLENBQVM7SUFJbkIsT0FBTyxDQUFVO0lBUWpCLElBQUksQ0FBb0I7SUFJeEIsWUFBWSxDQUFTO0lBSXJCLGFBQWEsQ0FBUztJQUl0QixPQUFPLENBQVM7SUFJaEIsU0FBUyxDQUFVO0lBSW5CLFNBQVMsQ0FBVTtJQUtuQixPQUFPLENBQVM7SUFJaEIsUUFBUSxDQUFTO0lBSWpCLFdBQVcsQ0FBTztJQUtsQixpQkFBaUIsQ0FBUztJQUkxQixjQUFjLENBQVU7SUFJeEIsVUFBVSxDQUFVO0lBS3BCLGdCQUFnQixDQUFPO0lBT3ZCLHNCQUFzQixDQUFVO0lBSWhDLG1CQUFtQixDQUFXO0lBSzlCLHVCQUF1QixDQUFVO0lBSWpDLFlBQVksQ0FBVTtJQUt0QixZQUFZLENBQVU7SUFLdEIsYUFBYSxDQUFRO0lBR3JCLFNBQVMsQ0FVUDtJQUdGLFVBQVUsQ0FBTztJQUdqQixVQUFVLENBQU87SUFHakIsVUFBVSxDQUFPO0NBQ2xCLENBQUE7QUF0SVksOEJBQVM7QUFFcEI7SUFEQyxJQUFBLGdDQUFzQixFQUFDLE1BQU0sQ0FBQzs7cUNBQ3BCO0FBS1g7SUFIQyxJQUFBLGdCQUFNLEVBQUMsRUFBRSxRQUFRLEVBQUUsSUFBSSxFQUFFLENBQUM7SUFDMUIsSUFBQSw0QkFBVSxHQUFFO0lBQ1osSUFBQSx3QkFBTSxFQUFDLEdBQUcsRUFBRSxFQUFF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RSxDQUFDO0lBQzFCLElBQUEsNEJBQVUsR0FBRTtJQUNaLElBQUEsMEJBQVEsR0FBRTs7K0NBQ1c7QUFLdEI7SUFIQyxJQUFBLGdCQUFNLEVBQUMsRUFBRSxRQUFRLEVBQUUsSUFBSSxFQUFFLElBQUksRUFBRSxNQUFNLEVBQUUsQ0FBQztJQUN4QyxJQUFBLDRCQUFVLEdBQUU7SUFDWixJQUFBLHdCQUFNLEdBQUU7a0RBQ08sSUFBSSxvQkFBSixJQUFJO2dEQUFDO0FBR3JCO0lBREMsSUFBQSxnQkFBTSxFQUFDLE9BQU8sRUFBRSxFQUFFLFFBQVEsRUFBRSxJQUFJLEVBQUUsQ0FBQzs7NENBV2xDO0FBR0Y7SUFEQyxJQUFBLDBCQUFnQixHQUFFO2tEQUNQLElBQUksb0JBQUosSUFBSTs2Q0FBQztBQUdqQjtJQURDLElBQUEsMEJBQWdCLEdBQUU7a0RBQ1AsSUFBSSxvQkFBSixJQUFJOzZDQUFDO0FBR2pCO0lBREMsSUFBQSwwQkFBZ0IsR0FBRTtrREFDUCxJQUFJLG9CQUFKLElBQUk7NkNBQUM7b0JBcklOLFNBQVM7SUFSckIsSUFBQSxnQkFBTSxFQUFDLFlBQVksQ0FBQztJQUNwQixJQUFBLGVBQUssRUFBQyxDQUFDLFlBQVksQ0FBQyxDQUFDO0lBQ3JCLElBQUEsZUFBSyxFQUFDLENBQUMsZ0JBQWdCLENBQUMsQ0FBQztJQUN6QixJQUFBLGVBQUssRUFBQyxDQUFDLE1BQU0sQ0FBQyxDQUFDO0lBQ2YsSUFBQSxlQUFLLEVBQUMsQ0FBQyxtQkFBbUIsQ0FBQyxDQUFDO0lBQzVCLElBQUEsZUFBSyxFQUFDLENBQUMsYUFBYSxDQUFDLENBQUM7SUFDdEIsSUFBQSxlQUFLLEVBQUMsQ0FBQyxZQUFZLENBQUMsQ0FBQztJQUNyQixJQUFBLGVBQUssRUFBQyxDQUFDLGNBQWMsQ0FBQyxDQUFDO0dBQ1gsU0FBUyxDQXNJckIiLCJuYW1lcyI6W10sInNvdXJjZXMiOlsiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXGVudGl0aWVzXFxkb2N1bWVudG8uZW50aXR5LnRzIl0sInNvdXJjZXNDb250ZW50IjpbImltcG9ydCB7XG4gIEVudGl0eSxcbiAgUHJpbWFyeUdlbmVyYXRlZENvbHVtbixcbiAgQ29sdW1uLFxuICBDcmVhdGVEYXRlQ29sdW1uLFxuICBVcGRhdGVEYXRlQ29sdW1uLFxuICBEZWxldGVEYXRlQ29sdW1uLFxuICBNYW55VG9PbmUsXG4gIEpvaW5Db2x1bW4sXG4gIEluZGV4LFxufSBmcm9tICd0eXBlb3JtJztcbmltcG9ydCB7XG4gIElzTm90RW1wdHksXG4gIElzTnVtYmVyLFxuICBNaW4sXG4gIElzT3B0aW9uYWwsXG4gIElzQm9vbGVhbixcbiAgSXNVVUlELFxuICBJc1N0cmluZyxcbiAgSXNEYXRlLFxufSBmcm9tICdjbGFzcy12YWxpZGF0b3InO1xuaW1wb3J0IHsgU29saWNpdGFjYW8gfSBmcm9tICcuL3NvbGljaXRhY2FvLmVudGl0eSc7XG5pbXBvcnQgeyBVc3VhcmlvIH0gZnJvbSAnLi91c3VhcmlvLmVudGl0eSc7XG5pbXBvcnQgeyBDaWRhZGFvIH0gZnJvbSAnLi9jaWRhZGFvLmVudGl0eSc7XG5pbXBvcnQgeyBUaXBvRG9jdW1lbnRvRW51bSB9IGZyb20gJy4uL2VudW1zJztcblxuLyoqXG4gKiBFbnRpZGFkZSBEb2N1bWVudG9cbiAqXG4gKiBSZXByZXNlbnRhIGRvY3VtZW50b3MgYW5leGFkb3MgcGVsb3MgY2lkYWTDo29zLCBwb2RlbmRvIGVzdGFyIHZpbmN1bGFkb3NcbiAqIGEgdW1hIHNvbGljaXRhw6fDo28gZXNwZWPDrWZpY2Egb3Ugc2VyZW0gZG9jdW1lbnRvcyBnZXJhaXMgcmV1dGlsaXrDoXZlaXMuXG4gKiBUb2RvcyBvcyBkb2N1bWVudG9zIHPDo28gc2VtcHJlIHZpbmN1bGFkb3MgYSB1bSBjaWRhZMOjby5cbiAqL1xuQEVudGl0eSgnZG9jdW1lbnRvcycpXG5ASW5kZXgoWydjaWRhZGFvX2lkJ10pXG5ASW5kZXgoWydzb2xpY2l0YWNhb19pZCddKVxuQEluZGV4KFsndGlwbyddKVxuQEluZGV4KFsndXN1YXJpb191cGxvYWRfaWQnXSlcbkBJbmRleChbJ2RhdGFfdXBsb2FkJ10pXG5ASW5kZXgoWyd2ZXJpZmljYWRvJ10pXG5ASW5kZXgoWydyZXV0aWxpemF2ZWwnXSlcbmV4cG9ydCBjbGFzcyBEb2N1bWVudG8ge1xuICBAUHJpbWFyeUdlbmVyYXRlZENvbHVtbigndXVpZCcpXG4gIGlkOiBzdHJpbmc7XG5cbiAgQENvbHVtbih7IG51bGxhYmxlOiB0cnVlIH0pXG4gIEBJc09wdGlvbmFsKClcbiAgQElzVVVJRCgnNCcsIHsgbWVzc2FnZTogJ0lEIGRhIHNvbGljaXRhw6fDo28gZGV2ZSBzZXIgdW0gVVVJRCB2w6FsaWRvJyB9KVxuICBzb2xpY2l0YWNhb19pZD86IHN0cmluZztcblxuICBATWFueVRvT25lKCgpID0+IFNvbGljaXRhY2FvLCAoc29saWNpdGFjYW8pID0+IHNvbGljaXRhY2FvLmRvY3VtZW50b3MsIHtcbiAgICBudWxsYWJsZTogdHJ1ZSxcbiAgfSlcbiAgQEpvaW5Db2x1bW4oeyBuYW1lOiAnc29saWNpdGFjYW9faWQnIH0pXG4gIHNvbGljaXRhY2FvPzogU29saWNpdGFjYW87XG5cbiAgQENvbHVtbigpXG4gIEBJc05vdEVtcHR5KHsgbWVzc2FnZTogJ0NpZGFkw6NvIMOpIG9icmlnYXTDs3JpbycgfSlcbiAgQElzVVVJRCgnNCcsIHsgbWVzc2FnZTogJ0lEIGRvIGNpZGFkw6NvIGRldmUgc2VyIHVtIFVVSUQgdsOhbGlkbycgfSlcbiAgY2lkYWRhb19pZDogc3RyaW5nO1xuXG4gIEBNYW55VG9PbmUoKCkgPT4gQ2lkYWRhbywgeyBudWxsYWJsZTogZmFsc2UgfSlcbiAgQEpvaW5Db2x1bW4oeyBuYW1lOiAnY2lkYWRhb19pZCcgfSlcbiAgY2lkYWRhbzogQ2lkYWRhbztcblxuICBAQ29sdW1uKHtcbiAgICB0eXBlOiAnZW51bScsXG4gICAgZW51bTogVGlwb0RvY3VtZW50b0VudW0sXG4gICAgZW51bU5hbWU6ICd0aXBvX2RvY3VtZW50b19lbnVtJyxcbiAgfSlcbiAgQElzTm90RW1wdHkoeyBtZXNzYWdlOiAnVGlwbyBkZSBkb2N1bWVudG8gw6kgb2JyaWdhdMOzcmlvJyB9KVxuICB0aXBvOiBUaXBvRG9jdW1lbnRvRW51bTtcblxuICBAQ29sdW1uKClcbiAgQElzTm90RW1wdHkoeyBtZXNzYWdlOiAnTm9tZSBkbyBhcnF1aXZvIMOpIG9icmlnYXTDs3JpbycgfSlcbiAgbm9tZV9hcnF1aXZvOiBzdHJpbmc7XG5cbiAgQENvbHVtbigpXG4gIEBJc05vdEVtcHR5KHsgbWVzc2FnZTogJ05vbWUgb3JpZ2luYWwgZG8gYXJxdWl2byDDqSBvYnJpZ2F0w7NyaW8nIH0pXG4gIG5vbWVfb3JpZ2luYWw6IHN0cmluZztcblxuICBAQ29sdW1uKClcbiAgQElzTm90RW1wdHkoeyBtZXNzYWdlOiAnQ2FtaW5obyBkbyBhcnF1aXZvIMOpIG9icmlnYXTDs3JpbycgfSlcbiAgY2FtaW5obzogc3RyaW5nO1xuXG4gIEBDb2x1bW4oeyBudWxsYWJsZTogdHJ1ZSB9KVxuICBASXNPcHRpb25hbCgpXG4gIHRodW1ibmFpbD86IHN0cmluZztcblxuICBAQ29sdW1uKHsgbnVsbGFibGU6IHRydWUgfSlcbiAgQElzT3B0aW9uYWwoKVxuICBkZXNjcmljYW8/OiBzdHJpbmc7XG5cbiAgQENvbHVtbigpXG4gIEBJc051bWJlcih7fSwgeyBtZXNzYWdlOiAnVGFtYW5obyBkZXZlIHNlciB1bSBuw7ptZXJvJyB9KVxuICBATWluKDAsIHsgbWVzc2FnZTogJ1RhbWFuaG8gbsOjbyBwb2RlIHNlciBuZWdhdGl2bycgfSlcbiAgdGFtYW5obzogbnVtYmVyO1xuXG4gIEBDb2x1bW4oKVxuICBASXNOb3RFbXB0eSh7IG1lc3NhZ2U6ICdUaXBvIE1JTUUgw6kgb2JyaWdhdMOzcmlvJyB9KVxuICBtaW1ldHlwZTogc3RyaW5nO1xuXG4gIEBDb2x1bW4oeyB0eXBlOiAndGltZXN0YW1wJyB9KVxuICBASXNOb3RFbXB0eSh7IG1lc3NhZ2U6ICdEYXRhIGRlIHVwbG9hZCDDqSBvYnJpZ2F0w7NyaWEnIH0pXG4gIGRhdGFfdXBsb2FkOiBEYXRlO1xuXG4gIEBDb2x1bW4oKVxuICBASXNOb3RFbXB0eSh7IG1lc3NhZ2U6ICdVc3XDoXJpbyBxdWUgZmV6IHVwbG9hZCDDqSBvYnJpZ2F0w7NyaW8nIH0pXG4gIEBJc1VVSUQoJzQnLCB7IG1lc3NhZ2U6ICdJRCBkbyB1c3XDoXJpbyBkZXZlIHNlciB1bSBVVUlEIHbDoWxpZG8nIH0pXG4gIHVzdWFyaW9fdXBsb2FkX2lkOiBzdHJpbmc7XG5cbiAgQE1hbnlUb09uZSgoKSA9PiBVc3VhcmlvLCB7IG51bGxhYmxlOiBmYWxzZSB9KVxuICBASm9pbkNvbHVtbih7IG5hbWU6ICd1c3VhcmlvX3VwbG9hZF9pZCcgfSlcbiAgdXN1YXJpb191cGxvYWQ6IFVzdWFyaW87XG5cbiAgQENvbHVtbih7IGRlZmF1bHQ6IGZhbHNlIH0pXG4gIEBJc0Jvb2xlYW4oKVxuICB2ZXJpZmljYWRvOiBib29sZWFuO1xuXG4gIEBDb2x1bW4oeyBudWxsYWJsZTogdHJ1ZSwgdHlwZTogJ3RpbWVzdGFtcCcgfSlcbiAgQElzT3B0aW9uYWwoKVxuICBASXNEYXRlKClcbiAgZGF0YV92ZXJpZmljYWNhbzogRGF0ZTtcblxuICBAQ29sdW1uKHsgbnVsbGFibGU6IHRydWUgfSlcbiAgQElzT3B0aW9uYWwoKVxuICBASXNVVUlEKCc0Jywge1xuICAgIG1lc3NhZ2U6ICdJRCBkbyB1c3XDoXJpbyBkZSB2ZXJpZmljYcOnw6NvIGRldmUgc2VyIHVtIFVVSUQgdsOhbGlkbycsXG4gIH0pXG4gIHVzdWFyaW9fdmVyaWZpY2FjYW9faWQ/OiBzdHJpbmc7XG5cbiAgQE1hbnlUb09uZSgoKSA9PiBVc3VhcmlvLCB7IG51bGxhYmxlOiB0cnVlIH0pXG4gIEBKb2luQ29sdW1uKHsgbmFtZTogJ3VzdWFyaW9fdmVyaWZpY2FjYW9faWQnIH0pXG4gIHVzdWFyaW9fdmVyaWZpY2FjYW8/OiBVc3VhcmlvO1xuXG4gIEBDb2x1bW4oeyBudWxsYWJsZTogdHJ1ZSB9KVxuICBASXNPcHRpb25hbCgpXG4gIEBJc1N0cmluZygpXG4gIG9ic2VydmFjb2VzX3ZlcmlmaWNhY2FvPzogc3RyaW5nO1xuXG4gIEBDb2x1bW4oeyBkZWZhdWx0OiBmYWxzZSB9KVxuICBASXNCb29sZWFuKClcbiAgcmV1dGlsaXphdmVsOiBib29sZWFuO1xuXG4gIEBDb2x1bW4oeyBudWxsYWJsZTogdHJ1ZSB9KVxuICBASXNPcHRpb25hbCgpXG4gIEBJc1N0cmluZygpXG4gIGhhc2hfYXJxdWl2bz86IHN0cmluZztcblxuICBAQ29sdW1uKHsgbnVsbGFibGU6IHRydWUsIHR5cGU6ICdkYXRlJyB9KVxuICBASXNPcHRpb25hbCgpXG4gIEBJc0RhdGUoKVxuICBkYXRhX3ZhbGlkYWRlPzogRGF0ZTtcblxuICBAQ29sdW1uKCdqc29uYicsIHsgbnVsbGFibGU6IHRydWUgfSlcbiAgbWV0YWRhZG9zPzoge1xuICAgIGRldGVjY2FvX21pbWU/OiB7XG4gICAgICBtaW1lX2RlY2xhcmFkbzogc3RyaW5nO1xuICAgICAgbWltZV9kZXRlY3RhZG86IHN0cmluZztcbiAgICAgIGV4dGVuc2FvX2RldGVjdGFkYTogc3RyaW5nO1xuICAgIH07XG4gICAgdXBsb2FkX2luZm8/OiB7XG4gICAgICBpcDogc3RyaW5nO1xuICAgICAgdXNlcl9hZ2VudDogc3RyaW5nO1xuICAgIH07XG4gIH07XG5cbiAgQENyZWF0ZURhdGVDb2x1bW4oKVxuICBjcmVhdGVkX2F0OiBEYXRlO1xuXG4gIEBVcGRhdGVEYXRlQ29sdW1uKClcbiAgdXBkYXRlZF9hdDogRGF0ZTtcblxuICBARGVsZXRlRGF0ZUNvbHVtbigpXG4gIHJlbW92ZWRfYXQ6IERhdGU7XG59XG4iXSwidmVyc2lvbiI6M30=
