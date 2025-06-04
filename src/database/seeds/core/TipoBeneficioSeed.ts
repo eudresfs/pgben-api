@@ -43,7 +43,7 @@ export class TipoBeneficioSeed {
           descricao:
             'Kit enxoval ou auxílio financeiro para recém-nascidos. Valor em pecúnia: R$ 500,00 (projeto de lei). Prazo: Até 30 dias após o parto.',
           valor_referencia: 500.0, // Conforme projeto de lei
-          periodicidade: 'UNICA',
+          periodicidade: 'unica',
           duracao_maxima: 1,
           duracao_padrao: 1,
           teto_renda_per_capita: 0, // Não especificado na documentação
@@ -56,7 +56,7 @@ export class TipoBeneficioSeed {
           descricao:
             'Urna funerária com translado. Tipos: Padrão (até 100kg), Obeso (até 150kg), Especial, Infantil (até 50kg). Melhorias previstas: Flores, formol, velas e roupa.',
           valor_referencia: 0, // Benefício em espécie (urna)
-          periodicidade: 'UNICA',
+          periodicidade: 'unica',
           duracao_maxima: 1,
           duracao_padrao: 1,
           teto_renda_per_capita: 0, // Não especificado na documentação
@@ -69,7 +69,7 @@ export class TipoBeneficioSeed {
           descricao:
             'Gêneros alimentícios ou vale alimentação (R$ 200,00). Periodicidade: Máximo 6 meses, renovável por até 3 meses adicionais.',
           valor_referencia: 200.0, // Conforme projeto de lei
-          periodicidade: 'MENSAL',
+          periodicidade: 'mensal',
           duracao_maxima: 9, // 6 meses + 3 meses de renovação
           duracao_padrao: 6,
           teto_renda_per_capita: 0, // Não especificado na documentação
@@ -82,7 +82,7 @@ export class TipoBeneficioSeed {
           descricao:
             'R$ 600,00 mensais por até 6 meses (prorrogável por igual período mediante análise profissional). Finalidade exclusiva: locação em Natal.',
           valor_referencia: 600.0, // Valor fixo conforme especificação
-          periodicidade: 'MENSAL',
+          periodicidade: 'mensal',
           duracao_maxima: 12, // 6 meses + 6 meses de prorrogação
           duracao_padrao: 6,
           teto_renda_per_capita: 0, // Não especificado na documentação

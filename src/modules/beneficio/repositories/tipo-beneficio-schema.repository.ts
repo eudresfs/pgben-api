@@ -1,6 +1,7 @@
 import { DataSource, Repository } from 'typeorm';
 import { TipoBeneficioSchema } from '../../../entities/tipo-beneficio-schema.entity';
 import { Injectable } from '@nestjs/common';
+import { Status } from '@/enums';
 
 /**
  * Repositório customizado para TipoBeneficioSchema
@@ -24,7 +25,7 @@ export class TipoBeneficioSchemaRepository extends Repository<TipoBeneficioSchem
     return this.findOne({
       where: {
         tipo_beneficio_id: tipoBeneficioId,
-        ativo: true,
+        status: Status.ATIVO,
       },
       relations: ['tipo_beneficio'],
     });
@@ -42,7 +43,7 @@ export class TipoBeneficioSchemaRepository extends Repository<TipoBeneficioSchem
     return this.find({
       where: {
         entidade_dados: entidadeDados,
-        ativo: true,
+        status: Status.ATIVO,
       },
       relations: ['tipo_beneficio'],
     });
@@ -55,7 +56,7 @@ export class TipoBeneficioSchemaRepository extends Repository<TipoBeneficioSchem
    */
   async findAllAtivos(): Promise<TipoBeneficioSchema[]> {
     return this.find({
-      where: { ativo: true },
+      where: { status: Status.ATIVO },
       relations: ['tipo_beneficio'],
       order: { created_at: 'DESC' },
     });
@@ -71,7 +72,7 @@ export class TipoBeneficioSchemaRepository extends Repository<TipoBeneficioSchem
     return this.find({
       where: {
         versao,
-        ativo: true,
+        status: Status.ATIVO,
       },
       relations: ['tipo_beneficio'],
     });
@@ -89,7 +90,7 @@ export class TipoBeneficioSchemaRepository extends Repository<TipoBeneficioSchem
     return this.createQueryBuilder('schema')
       .leftJoinAndSelect('schema.tipo_beneficio', 'tipo_beneficio')
       .where('schema.created_at > :dataLimite', { dataLimite: umDiaAtras })
-      .andWhere('schema.ativo = :ativo', { ativo: true })
+      .andWhere('schema.ativo = :ativo', { status: Status.ATIVO })
       .orderBy('schema.created_at', 'DESC')
       .getMany();
   }
@@ -103,7 +104,7 @@ export class TipoBeneficioSchemaRepository extends Repository<TipoBeneficioSchem
   async findByCampo(nomeCampo: string): Promise<TipoBeneficioSchema[]> {
     return this.createQueryBuilder('schema')
       .leftJoinAndSelect('schema.tipo_beneficio', 'tipo_beneficio')
-      .where('schema.ativo = :ativo', { ativo: true })
+      .where('schema.ativo = :ativo', { status: Status.ATIVO })
       .andWhere(
         `EXISTS (
           SELECT 1 FROM jsonb_array_elements(schema.schema_estrutura->'campos') AS campo
@@ -143,7 +144,7 @@ export class TipoBeneficioSchemaRepository extends Repository<TipoBeneficioSchem
    * @returns Resultado da operação
    */
   async desativar(id: string): Promise<void> {
-    await this.update(id, { ativo: false });
+    await this.update(id, { status: Status.INATIVO });
   }
 
   /**
@@ -153,7 +154,7 @@ export class TipoBeneficioSchemaRepository extends Repository<TipoBeneficioSchem
    * @returns Resultado da operação
    */
   async ativar(id: string): Promise<void> {
-    await this.update(id, { ativo: true });
+    await this.update(id, { status: Status.ATIVO });
   }
 
   /**
@@ -165,7 +166,7 @@ export class TipoBeneficioSchemaRepository extends Repository<TipoBeneficioSchem
     const resultado = await this.createQueryBuilder('schema')
       .select('schema.entidade_dados', 'entidade')
       .addSelect('COUNT(*)', 'total')
-      .where('schema.ativo = :ativo', { ativo: true })
+      .where('schema.ativo = :ativo', { status: Status.ATIVO })
       .groupBy('schema.entidade_dados')
       .getRawMany();
 
@@ -188,7 +189,7 @@ export class TipoBeneficioSchemaRepository extends Repository<TipoBeneficioSchem
   ): Promise<boolean> {
     const query = this.createQueryBuilder('schema')
       .where('schema.tipo_beneficio_id = :tipoBeneficioId', { tipoBeneficioId })
-      .andWhere('schema.ativo = :ativo', { ativo: true });
+      .andWhere('schema.ativo = :ativo', { status: Status.ATIVO });
 
     if (excludeId) {
       query.andWhere('schema.id != :excludeId', { excludeId });

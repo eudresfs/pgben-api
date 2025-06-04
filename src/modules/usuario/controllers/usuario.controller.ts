@@ -264,7 +264,7 @@ export class UsuarioController {
     @Body() alterarSenhaDto: AlterarSenhaPrimeiroAcessoDto,
     @Request() req,
   ) {
-    const userId = req.user.sub;
+    const userId = req.user.id;
     return this.usuarioService.alterarSenhaPrimeiroAcesso(
       userId,
       alterarSenhaDto,

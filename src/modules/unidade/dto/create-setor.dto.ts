@@ -1,3 +1,4 @@
+import { Status } from '@/enums';
 import { ApiProperty } from '@nestjs/swagger';
 import {
   IsString,
@@ -8,6 +9,7 @@ import {
   MinLength,
   MaxLength,
   Matches,
+  IsEnum,
 } from 'class-validator';
 
 /**
@@ -56,13 +58,15 @@ export class CreateSetorDto {
   })
   unidade_id: string;
 
-  @IsBoolean({ message: 'Status deve ser um booleano' })
   @IsOptional()
+  @IsEnum(Status, { message: 'Status deve ser ativo ou inativo' })
   @ApiProperty({
-    example: true,
-    description: 'Status do setor (ativo/inativo)',
+    enum: Status,
+    enumName: 'Status',
+    example: Status.ATIVO,
     required: false,
-    default: true,
+    default: Status.ATIVO,
+    description: 'Status do setor. Valores válidos: ativo ou inativo',
   })
-  status?: boolean;
+  status?: Status;
 }

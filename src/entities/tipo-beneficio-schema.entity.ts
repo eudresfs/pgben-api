@@ -11,6 +11,7 @@ import {
 } from 'typeorm';
 import { IsNotEmpty, IsBoolean, IsOptional } from 'class-validator';
 import { TipoBeneficio } from './tipo-beneficio.entity';
+import { Status } from '@/enums';
 
 /**
  * Interface para definir a estrutura de um campo da entidade
@@ -81,9 +82,13 @@ export class TipoBeneficioSchema {
   @Column('varchar', { length: 20, default: '1.0.0' })
   versao: string;
 
-  @Column({ default: true })
-  @IsBoolean({ message: 'Status ativo deve ser um booleano' })
-  ativo: boolean;
+  @Column({
+    type: 'enum',
+    enum: Status,
+    enumName: 'status_enum',
+    default: Status.ATIVO,
+  })
+  status: Status;
 
   @Column('text', { nullable: true })
   @IsOptional()

@@ -84,12 +84,10 @@ describe('PagamentoService', () => {
         {
           provide: StatusTransitionValidator,
           useValue: {
-            canTransition: jest
-              .fn()
-              .mockReturnValue({
-                allowed: true,
-                message: 'Transição permitida',
-              }),
+            canTransition: jest.fn().mockReturnValue({
+              allowed: true,
+              message: 'Transição permitida',
+            }),
           },
         },
       ],

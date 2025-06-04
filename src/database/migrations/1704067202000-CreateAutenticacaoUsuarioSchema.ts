@@ -193,7 +193,7 @@ export class CreateAutenticacaoUsuarioSchema1704067202000
                 "sigla" VARCHAR(20) DEFAULT 'N/A',
                 "descricao" TEXT,
                 "unidade_id" UUID NOT NULL,
-                "status" BOOLEAN NOT NULL DEFAULT TRUE,
+                "status" "status_ativo_enum" NOT NULL DEFAULT 'ativo',
                 "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
                 "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
                 "removed_at" TIMESTAMP WITH TIME ZONE,

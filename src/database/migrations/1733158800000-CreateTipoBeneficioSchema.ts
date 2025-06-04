@@ -56,10 +56,10 @@ export class CreateTipoBeneficioSchema1733158800000
             comment: 'Versão do schema para controle de evolução',
           },
           {
-            name: 'ativo',
-            type: 'boolean',
+            name: 'status',
+            type: 'varchar',
             isNullable: false,
-            default: true,
+            default: "'ativo'",
             comment: 'Indica se o schema está ativo',
           },
           {
@@ -124,8 +124,8 @@ export class CreateTipoBeneficioSchema1733158800000
     await queryRunner.createIndex(
       'tipo_beneficio_schema',
       new TableIndex({
-        name: 'IDX_tipo_beneficio_schema_ativo',
-        columnNames: ['ativo'],
+        name: 'IDX_tipo_beneficio_schema_status',
+        columnNames: ['status'],
       }),
     );
 
@@ -133,10 +133,10 @@ export class CreateTipoBeneficioSchema1733158800000
     await queryRunner.createIndex(
       'tipo_beneficio_schema',
       new TableIndex({
-        name: 'IDX_tipo_beneficio_schema_unique_ativo',
-        columnNames: ['tipo_beneficio_id', 'ativo'],
+        name: 'IDX_tipo_beneficio_schema_unique_status',
+        columnNames: ['tipo_beneficio_id', 'status'],
         isUnique: true,
-        where: 'ativo = true',
+        where: "status = 'ativo'",
       }),
     );
 
@@ -162,11 +162,11 @@ export class CreateTipoBeneficioSchema1733158800000
     );
     await queryRunner.dropIndex(
       'tipo_beneficio_schema',
-      'IDX_tipo_beneficio_schema_unique_ativo',
+      'IDX_tipo_beneficio_schema_unique_status',
     );
     await queryRunner.dropIndex(
       'tipo_beneficio_schema',
-      'IDX_tipo_beneficio_schema_ativo',
+      'IDX_tipo_beneficio_schema_status',
     );
     await queryRunner.dropIndex(
       'tipo_beneficio_schema',

@@ -88,7 +88,7 @@ export class BeneficioService {
       items.map(async (item) => {
         // Obter schema ativo para o tipo de benefício
         const schemaAtivo = await this.tipoBeneficioSchemaRepository.findOne({
-          where: { tipo_beneficio_id: item.id, ativo: true },
+          where: { tipo_beneficio_id: item.id, status: Status.ATIVO },
         });
 
         return {
@@ -126,7 +126,7 @@ export class BeneficioService {
 
     // Obter schema ativo do benefício
     const schema = await this.tipoBeneficioSchemaRepository.findOne({
-      where: { tipo_beneficio_id: id, ativo: true },
+      where: { tipo_beneficio_id: id, status: Status.ATIVO },
     });
 
     return {

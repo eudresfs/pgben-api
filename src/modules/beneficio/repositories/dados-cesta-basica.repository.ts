@@ -261,9 +261,7 @@ export class DadosCestaBasicaRepository extends Repository<DadosCestaBasica> {
   /**
    * Buscar famílias que receberam cestas múltiplas vezes
    */
-  async findFamiliasRecorrentes(
-    minimoSolicitacoes: number = 2,
-  ): Promise<
+  async findFamiliasRecorrentes(minimoSolicitacoes: number = 2): Promise<
     {
       cidadao_id: string;
       nome_cidadao: string;

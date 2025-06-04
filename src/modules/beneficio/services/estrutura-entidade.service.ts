@@ -11,6 +11,7 @@ import {
   MetadadosEstrutura,
 } from '../../../entities/tipo-beneficio-schema.entity';
 import { Logger } from '@nestjs/common';
+import { Status } from '@/enums';
 
 /**
  * Interface para resposta da estrutura da entidade
@@ -495,7 +496,7 @@ export class EstruturaEntidadeService {
         metadados: estrutura.metadados,
       },
       versao: estrutura.versao,
-      ativo: true,
+      status: Status.ATIVO,
     });
 
     return this.tipoBeneficioSchemaRepository.save(schema);

@@ -47,17 +47,17 @@ export class PermissionScope {
   permissao: Permission;
 
   /**
-   * Tipo de escopo padrão (GLOBAL, UNIDADE, PROPRIO)
+   * Tipo de escopo padrão (global, unidade, proprio)
    */
   @Column({
     type: 'enum',
-    enum: ['GLOBAL', 'UNIDADE', 'PROPRIO'],
-    default: 'PROPRIO',
+    enum: ['global', 'unidade', 'proprio'],
+    default: 'proprio',
   })
-  @IsEnum(['GLOBAL', 'UNIDADE', 'PROPRIO'], {
-    message: 'Tipo de escopo deve ser GLOBAL, UNIDADE ou PROPRIO',
+  @IsEnum(['global', 'unidade', 'proprio'], {
+    message: 'Tipo de escopo deve ser global, unidade ou proprio',
   })
-  tipo_escopo_padrao: 'GLOBAL' | 'UNIDADE' | 'PROPRIO';
+  tipo_escopo_padrao: 'global' | 'unidade' | 'proprio';
 
   /**
    * Data de criação
@@ -118,11 +118,11 @@ export class PermissionScope {
     this.permissao = value;
   }
 
-  get defaultScopeType(): 'GLOBAL' | 'UNIDADE' | 'PROPRIO' {
+  get defaultScopeType(): 'global' | 'unidade' | 'proprio' {
     return this.tipo_escopo_padrao;
   }
 
-  set defaultScopeType(value: 'GLOBAL' | 'UNIDADE' | 'PROPRIO') {
+  set defaultScopeType(value: 'global' | 'unidade' | 'proprio') {
     this.tipo_escopo_padrao = value;
   }
 
@@ -181,7 +181,7 @@ export class PermissionScope {
    * @returns true se o escopo é global
    */
   isGlobal(): boolean {
-    return this.tipo_escopo_padrao === 'GLOBAL';
+    return this.tipo_escopo_padrao === 'global';
   }
 
   /**
@@ -189,7 +189,7 @@ export class PermissionScope {
    * @returns true se o escopo é por unidade
    */
   isPorUnidade(): boolean {
-    return this.tipo_escopo_padrao === 'UNIDADE';
+    return this.tipo_escopo_padrao === 'unidade';
   }
 
   /**
@@ -197,14 +197,14 @@ export class PermissionScope {
    * @returns true se o escopo é próprio
    */
   isProprio(): boolean {
-    return this.tipo_escopo_padrao === 'PROPRIO';
+    return this.tipo_escopo_padrao === 'proprio';
   }
 
   /**
    * Define o tipo de escopo padrão
    * @param tipo Tipo de escopo
    */
-  definirTipoEscopo(tipo: 'GLOBAL' | 'UNIDADE' | 'PROPRIO'): void {
+  definirTipoEscopo(tipo: 'global' | 'unidade' | 'proprio'): void {
     this.tipo_escopo_padrao = tipo;
   }
 
@@ -231,9 +231,9 @@ export class PermissionScope {
    */
   getDescricaoEscopo(): string {
     const descricoes = {
-      GLOBAL: 'Acesso global ao sistema',
-      UNIDADE: 'Acesso restrito à unidade do usuário',
-      PROPRIO: 'Acesso apenas aos próprios dados',
+      global: 'Acesso global ao sistema',
+      unidade: 'Acesso restrito à unidade do usuário',
+      proprio: 'Acesso apenas aos próprios dados',
     };
     return descricoes[this.tipo_escopo_padrao];
   }
@@ -367,27 +367,27 @@ export class PermissionScope {
   }
 
   /**
-   * Verifica se é um escopo de alta criticidade (GLOBAL)
+   * Verifica se é um escopo de alta criticidade (global)
    * @returns true se é de alta criticidade
    */
   isAltaCriticidade(): boolean {
-    return this.tipo_escopo_padrao === 'GLOBAL';
+    return this.tipo_escopo_padrao === 'global';
   }
 
   /**
-   * Verifica se é um escopo de média criticidade (UNIDADE)
+   * Verifica se é um escopo de média criticidade (unidade)
    * @returns true se é de média criticidade
    */
   isMediaCriticidade(): boolean {
-    return this.tipo_escopo_padrao === 'UNIDADE';
+    return this.tipo_escopo_padrao === 'unidade';
   }
 
   /**
-   * Verifica se é um escopo de baixa criticidade (PROPRIO)
+   * Verifica se é um escopo de baixa criticidade (proprio)
    * @returns true se é de baixa criticidade
    */
   isBaixaCriticidade(): boolean {
-    return this.tipo_escopo_padrao === 'PROPRIO';
+    return this.tipo_escopo_padrao === 'proprio';
   }
 
   /**
@@ -396,9 +396,9 @@ export class PermissionScope {
    */
   getNivelCriticidade(): number {
     const niveis = {
-      PROPRIO: 1,
-      UNIDADE: 2,
-      GLOBAL: 3,
+      proprio: 1,
+      unidade: 2,
+      global: 3,
     };
     return niveis[this.tipo_escopo_padrao];
   }
@@ -409,8 +409,8 @@ export class PermissionScope {
    */
   permiteAcessoAmplo(): boolean {
     return (
-      this.tipo_escopo_padrao === 'GLOBAL' ||
-      this.tipo_escopo_padrao === 'UNIDADE'
+      this.tipo_escopo_padrao === 'global' ||
+      this.tipo_escopo_padrao === 'unidade'
     );
   }
 
@@ -419,7 +419,7 @@ export class PermissionScope {
    * @returns true se é restritivo
    */
   isRestritivo(): boolean {
-    return this.tipo_escopo_padrao === 'PROPRIO';
+    return this.tipo_escopo_padrao === 'proprio';
   }
 
   /**
@@ -458,7 +458,7 @@ export class PermissionScope {
    * @returns true se requer aprovação especial
    */
   requerAprovacaoEspecial(): boolean {
-    return this.tipo_escopo_padrao === 'GLOBAL';
+    return this.tipo_escopo_padrao === 'global';
   }
 
   /**
@@ -468,7 +468,7 @@ export class PermissionScope {
   getSugestoesMelhoria(): string[] {
     const sugestoes: string[] = [];
 
-    if (this.tipo_escopo_padrao === 'GLOBAL') {
+    if (this.tipo_escopo_padrao === 'global') {
       sugestoes.push('Considere restringir o escopo se possível');
       sugestoes.push('Monitore o uso desta permissão global');
     }

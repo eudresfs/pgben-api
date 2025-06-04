@@ -293,10 +293,9 @@ export class CreateCidadaoDto {
   endereco?: EnderecoDto;
 
   @IsUUID('4', { message: 'ID da unidade deve ser um UUID válido' })
-  @IsNotEmpty({ message: 'ID da unidade é obrigatório' })
   @ApiProperty({
     example: '550e8400-e29b-41d4-a716-446655440000',
     description: 'ID da unidade onde o cidadão será cadastrado',
   })
-  unidade_id: string;
+  unidade_id?: string;
 }

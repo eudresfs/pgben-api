@@ -5,6 +5,7 @@ import {
   CampoEstrutura,
   MetadadosEstrutura,
 } from '../../../entities/tipo-beneficio-schema.entity';
+import { Status } from '@/enums';
 
 /**
  * Seed para popular a tabela tipo_beneficio_schema com estruturas das entidades existentes
@@ -45,7 +46,7 @@ export class SeedTipoBeneficioSchema1733158900000 {
               },
             },
             versao: '1.0.0',
-            ativo: true,
+            status: Status.ATIVO,
           });
 
           await tipoBeneficioSchemaRepository.save(novoSchema);

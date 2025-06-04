@@ -17,7 +17,8 @@ export class PixValidator {
   mascaraChavePix(arg0: string, arg1: string) {
     throw new Error('Method not implemented.');
   }
-  obterTipoChavePix(arg0: string): any { // Mascara UUID: mostra apenas os primeiros 8 caracteres
+  obterTipoChavePix(arg0: string): any {
+    // Mascara UUID: mostra apenas os primeiros 8 caracteres
     throw new Error('Method not implemented.');
   }
   /**

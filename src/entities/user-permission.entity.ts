@@ -26,17 +26,17 @@ export enum TipoEscopo {
   /**
    * Escopo global (acesso a todos os recursos)
    */
-  GLOBAL = 'GLOBAL',
+  GLOBAL = 'global',
 
   /**
    * Escopo limitado a uma unidade específica
    */
-  UNIDADE = 'UNIDADE',
+  UNIDADE = 'unidade',
 
   /**
    * Escopo limitado ao próprio usuário
    */
-  PROPRIO = 'PROPRIO',
+  PROPRIO = 'proprio',
 }
 
 // Mapeamento para compatibilidade com código existente

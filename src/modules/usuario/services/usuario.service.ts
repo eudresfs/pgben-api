@@ -818,7 +818,7 @@ export class UsuarioService {
         await usuarioRepo.update(userId, {
           senhaHash: novoHash,
           primeiro_acesso: false,
-          updatedAt: new Date(),
+          updated_at: new Date(),
         });
 
         this.logger.log(

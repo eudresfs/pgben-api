@@ -58,7 +58,7 @@ async function verificarSeeds(): Promise<void> {
 
     // Verificar permissões
     const permissoes = await AppDataSource.query(
-      'SELECT COUNT(*) as total FROM permission',
+      'SELECT COUNT(*) as total FROM permissao',
     );
     console.log(`✓ Permissões cadastradas: ${permissoes[0].total}`);
 

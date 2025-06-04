@@ -10,6 +10,7 @@ import { CampoDinamicoBeneficio } from '../../../entities/campo-dinamico-benefic
 import { TipoBeneficio } from '../../../entities/tipo-beneficio.entity';
 import { CreateCampoDinamicoDto } from '../dto/create-campo-dinamico.dto';
 import { TipoBeneficioSchema } from '../../../entities/tipo-beneficio-schema.entity';
+import { Status } from '@/enums';
 
 /**
  * Serviço de Campos Dinâmicos
@@ -271,7 +272,7 @@ export class CampoDinamicoService {
     if (ultimaVersao) {
       await this.tipoBeneficioSchemaRepository.update(
         { tipo_beneficio_id: tipoBeneficioId },
-        { ativo: false },
+        { status: Status.ATIVO },
       );
     }
 
@@ -289,7 +290,7 @@ export class CampoDinamicoService {
         },
       },
       versao: `${novaVersao}.0.0`,
-      ativo: true,
+      status: Status.ATIVO,
     });
 
     return this.tipoBeneficioSchemaRepository.save(novaVersaoSchema);
@@ -317,7 +318,7 @@ export class CampoDinamicoService {
     if (schemaExistente) {
       await this.tipoBeneficioSchemaRepository.update(
         { tipo_beneficio_id: tipoBeneficioId },
-        { ativo: false },
+        { status: Status.ATIVO },
       );
     }
 
@@ -378,7 +379,7 @@ export class CampoDinamicoService {
         },
       },
       versao: '1.0.0',
-      ativo: true,
+      status: Status.ATIVO,
     });
 
     return this.tipoBeneficioSchemaRepository.save(novoSchema);
@@ -404,7 +405,7 @@ export class CampoDinamicoService {
 
     // Buscar schema ativo
     const schemaAtivo = await this.tipoBeneficioSchemaRepository.findOne({
-      where: { tipo_beneficio_id: tipoBeneficioId, ativo: true },
+      where: { tipo_beneficio_id: tipoBeneficioId, status: Status.ATIVO },
     });
 
     if (!schemaAtivo) {
