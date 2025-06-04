@@ -7,19 +7,19 @@ export enum StatusPagamentoEnum {
    * Pagamento agendado, mas ainda não liberado efetivamente.
    */
   AGENDADO = 'agendado',
-  
+
   /**
    * Pagamento liberado para o beneficiário, mas ainda não confirmado o recebimento.
    */
   LIBERADO = 'liberado',
-  
+
   /**
    * Pagamento confirmado como recebido pelo beneficiário.
    */
   CONFIRMADO = 'confirmado',
-  
+
   /**
    * Pagamento cancelado por algum motivo específico.
    */
-  CANCELADO = 'cancelado'
+  CANCELADO = 'cancelado',
 }

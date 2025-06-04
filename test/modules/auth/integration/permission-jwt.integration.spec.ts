@@ -12,7 +12,7 @@ import { UserPermissionRepository } from '@/auth/repositories/user-permission.re
 
 /**
  * Testes de integração para o sistema de permissões com JWT
- * 
+ *
  * Estes testes verificam a interação entre o JwtService, PermissionService e PermissionGuard,
  * focando especialmente na extração de permissões do token JWT e na validação dessas
  * permissões para acessar endpoints protegidos.
@@ -40,7 +40,9 @@ describe('Permission JWT Integration', () => {
     configService = app.get<ConfigService>(ConfigService);
     permissionService = app.get<PermissionService>(PermissionService);
     permissionRepository = app.get<PermissionRepository>(PermissionRepository);
-    userPermissionRepository = app.get<UserPermissionRepository>(UserPermissionRepository);
+    userPermissionRepository = app.get<UserPermissionRepository>(
+      UserPermissionRepository,
+    );
   });
 
   afterAll(async () => {
@@ -129,7 +131,10 @@ describe('Permission JWT Integration', () => {
       });
 
       // Estabelecer relação de composição
-      await permissionRepository.establishComposition(parentPermission.id, childPermission.id);
+      await permissionRepository.establishComposition(
+        parentPermission.id,
+        childPermission.id,
+      );
 
       // Atribuir permissão filha ao usuário
       await userPermissionRepository.save({

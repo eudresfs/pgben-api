@@ -8,7 +8,7 @@ import { IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 export class ParametroUpdateDto {
   @ApiProperty({
     description: 'Valor do parâmetro (será convertido conforme o tipo)',
-    example: 'Sistema de Gestão de Benefícios'
+    example: 'Sistema de Gestão de Benefícios',
   })
   @IsNotEmpty({ message: 'O valor é obrigatório' })
   @IsString({ message: 'O valor deve ser uma string' })
@@ -18,7 +18,7 @@ export class ParametroUpdateDto {
     description: 'Descrição do parâmetro, explicando seu propósito e uso',
     example: 'Nome do sistema exibido na interface',
     maxLength: 500,
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsString({ message: 'A descrição deve ser uma string' })
@@ -29,7 +29,7 @@ export class ParametroUpdateDto {
     description: 'Categoria para agrupamento lógico dos parâmetros',
     example: 'sistema',
     maxLength: 100,
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsString({ message: 'A categoria deve ser uma string' })

@@ -1,13 +1,17 @@
-import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
 import { MetodoPagamentoEnum } from '../../../enums/metodo-pagamento.enum';
 
 /**
  * Validador de erros para o módulo de pagamento
- * 
+ *
  * Centraliza a criação de exceções padronizadas para o módulo,
  * garantindo consistência nas mensagens de erro.
- * 
+ *
  * @author Equipe PGBen
  */
 export class ErrorValidator {
@@ -17,7 +21,7 @@ export class ErrorValidator {
    */
   static solicitacaoNaoEncontrada(solicitacaoId: string): NotFoundException {
     return new NotFoundException(
-      `Solicitação com ID ${solicitacaoId} não encontrada.`
+      `Solicitação com ID ${solicitacaoId} não encontrada.`,
     );
   }
 
@@ -26,9 +30,12 @@ export class ErrorValidator {
    * @param solicitacaoId ID da solicitação
    * @param status Status atual da solicitação
    */
-  static solicitacaoNaoElegivel(solicitacaoId: string, status: string): ConflictException {
+  static solicitacaoNaoElegivel(
+    solicitacaoId: string,
+    status: string,
+  ): ConflictException {
     return new ConflictException(
-      `Solicitação com ID ${solicitacaoId} não está elegível para pagamento. Status atual: ${status}.`
+      `Solicitação com ID ${solicitacaoId} não está elegível para pagamento. Status atual: ${status}.`,
     );
   }
 
@@ -38,7 +45,7 @@ export class ErrorValidator {
    */
   static pagamentoNaoEncontrado(pagamentoId: string): NotFoundException {
     return new NotFoundException(
-      `Pagamento com ID ${pagamentoId} não encontrado.`
+      `Pagamento com ID ${pagamentoId} não encontrado.`,
     );
   }
 
@@ -48,7 +55,7 @@ export class ErrorValidator {
    */
   static comprovanteNaoEncontrado(comprovanteId: string): NotFoundException {
     return new NotFoundException(
-      `Comprovante com ID ${comprovanteId} não encontrado.`
+      `Comprovante com ID ${comprovanteId} não encontrado.`,
     );
   }
 
@@ -58,7 +65,7 @@ export class ErrorValidator {
    */
   static confirmacaoNaoEncontrada(confirmacaoId: string): NotFoundException {
     return new NotFoundException(
-      `Confirmação de recebimento com ID ${confirmacaoId} não encontrada.`
+      `Confirmação de recebimento com ID ${confirmacaoId} não encontrada.`,
     );
   }
 
@@ -67,18 +74,18 @@ export class ErrorValidator {
    * @param cidadaoId ID do cidadão
    */
   static cidadaoNaoEncontrado(cidadaoId: string): NotFoundException {
-    return new NotFoundException(
-      `Cidadão com ID ${cidadaoId} não encontrado.`
-    );
+    return new NotFoundException(`Cidadão com ID ${cidadaoId} não encontrado.`);
   }
 
   /**
    * Gera exceção para dados bancários não encontrados
    * @param infoBancariaId ID da informação bancária
    */
-  static dadosBancariosNaoEncontrados(infoBancariaId: string): NotFoundException {
+  static dadosBancariosNaoEncontrados(
+    infoBancariaId: string,
+  ): NotFoundException {
     return new NotFoundException(
-      `Dados bancários com ID ${infoBancariaId} não encontrados.`
+      `Dados bancários com ID ${infoBancariaId} não encontrados.`,
     );
   }
 
@@ -87,9 +94,7 @@ export class ErrorValidator {
    * @param motivo Motivo da invalidação
    */
   static dadosBancariosInvalidos(motivo: string): BadRequestException {
-    return new BadRequestException(
-      `Dados bancários inválidos: ${motivo}.`
-    );
+    return new BadRequestException(`Dados bancários inválidos: ${motivo}.`);
   }
 
   /**
@@ -99,12 +104,13 @@ export class ErrorValidator {
    */
   static chavePIXInvalida(chave: string, tipo: string): BadRequestException {
     // Mascara a chave PIX para segurança
-    const chaveMascarada = chave.length > 4 
-      ? `${chave.substring(0, 2)}...${chave.substring(chave.length - 2)}`
-      : '****';
-    
+    const chaveMascarada =
+      chave.length > 4
+        ? `${chave.substring(0, 2)}...${chave.substring(chave.length - 2)}`
+        : '****';
+
     return new BadRequestException(
-      `Chave PIX do tipo ${tipo} inválida: ${chaveMascarada}.`
+      `Chave PIX do tipo ${tipo} inválida: ${chaveMascarada}.`,
     );
   }
 
@@ -114,7 +120,7 @@ export class ErrorValidator {
    */
   static metodoPagamentoInvalido(metodo: string): BadRequestException {
     return new BadRequestException(
-      `Método de pagamento "${metodo}" inválido. Métodos válidos: ${Object.values(MetodoPagamentoEnum).join(', ')}.`
+      `Método de pagamento "${metodo}" inválido. Métodos válidos: ${Object.values(MetodoPagamentoEnum).join(', ')}.`,
     );
   }
 
@@ -127,10 +133,10 @@ export class ErrorValidator {
   static transicaoStatusInvalida(
     statusAtual: StatusPagamentoEnum,
     statusDesejado: StatusPagamentoEnum,
-    motivo: string
+    motivo: string,
   ): ConflictException {
     return new ConflictException(
-      `Não é possível alterar o status de ${statusAtual} para ${statusDesejado}: ${motivo}.`
+      `Não é possível alterar o status de ${statusAtual} para ${statusDesejado}: ${motivo}.`,
     );
   }
 
@@ -140,7 +146,7 @@ export class ErrorValidator {
    */
   static valorPagamentoInvalido(valor: number): BadRequestException {
     return new BadRequestException(
-      `Valor de pagamento inválido: ${valor}. O valor deve ser maior que zero.`
+      `Valor de pagamento inválido: ${valor}. O valor deve ser maior que zero.`,
     );
   }
 
@@ -150,7 +156,7 @@ export class ErrorValidator {
    */
   static dataLiberacaoInvalida(data: Date): BadRequestException {
     return new BadRequestException(
-      `Data de liberação inválida: ${data}. A data não pode ser anterior à data atual.`
+      `Data de liberação inválida: ${data}. A data não pode ser anterior à data atual.`,
     );
   }
 
@@ -160,7 +166,7 @@ export class ErrorValidator {
    */
   static arquivoComprovanteInvalido(motivo: string): BadRequestException {
     return new BadRequestException(
-      `Arquivo de comprovante inválido: ${motivo}.`
+      `Arquivo de comprovante inválido: ${motivo}.`,
     );
   }
 
@@ -170,7 +176,7 @@ export class ErrorValidator {
    */
   static pagamentoJaConfirmado(pagamentoId: string): ConflictException {
     return new ConflictException(
-      `Pagamento com ID ${pagamentoId} já foi confirmado e não pode ser alterado.`
+      `Pagamento com ID ${pagamentoId} já foi confirmado e não pode ser alterado.`,
     );
   }
 
@@ -180,7 +186,7 @@ export class ErrorValidator {
    */
   static pagamentoJaCancelado(pagamentoId: string): ConflictException {
     return new ConflictException(
-      `Pagamento com ID ${pagamentoId} já foi cancelado e não pode ser alterado.`
+      `Pagamento com ID ${pagamentoId} já foi cancelado e não pode ser alterado.`,
     );
   }
 
@@ -189,9 +195,12 @@ export class ErrorValidator {
    * @param pagamentoId ID do pagamento
    * @param statusAtual Status atual do pagamento
    */
-  static pagamentoNaoLiberado(pagamentoId: string, statusAtual: StatusPagamentoEnum): ConflictException {
+  static pagamentoNaoLiberado(
+    pagamentoId: string,
+    statusAtual: StatusPagamentoEnum,
+  ): ConflictException {
     return new ConflictException(
-      `Pagamento com ID ${pagamentoId} não está liberado para confirmação. Status atual: ${statusAtual}.`
+      `Pagamento com ID ${pagamentoId} não está liberado para confirmação. Status atual: ${statusAtual}.`,
     );
   }
 
@@ -201,9 +210,13 @@ export class ErrorValidator {
    * @param operacao Operação que falhou
    * @param motivo Motivo da falha
    */
-  static erroIntegracao(modulo: string, operacao: string, motivo: string): BadRequestException {
+  static erroIntegracao(
+    modulo: string,
+    operacao: string,
+    motivo: string,
+  ): BadRequestException {
     return new BadRequestException(
-      `Erro na integração com o módulo ${modulo} durante ${operacao}: ${motivo}.`
+      `Erro na integração com o módulo ${modulo} durante ${operacao}: ${motivo}.`,
     );
   }
 }

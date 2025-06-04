@@ -1,4 +1,13 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn, Index } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+  Index,
+} from 'typeorm';
 import { IsNotEmpty, IsUUID, IsEnum, IsOptional } from 'class-validator';
 import { Permission } from './permission.entity';
 import { Usuario } from './usuario.entity';
@@ -6,7 +15,7 @@ import { TipoEscopo } from './user-permission.entity';
 
 /**
  * Entidade que define regras de escopo padrão para permissões.
- * 
+ *
  * Esta entidade permite definir o tipo de escopo padrão para cada permissão,
  * facilitando a atribuição de permissões com escopo adequado.
  */
@@ -45,8 +54,8 @@ export class PermissionScope {
     enum: ['GLOBAL', 'UNIDADE', 'PROPRIO'],
     default: 'PROPRIO',
   })
-  @IsEnum(['GLOBAL', 'UNIDADE', 'PROPRIO'], { 
-    message: 'Tipo de escopo deve ser GLOBAL, UNIDADE ou PROPRIO' 
+  @IsEnum(['GLOBAL', 'UNIDADE', 'PROPRIO'], {
+    message: 'Tipo de escopo deve ser GLOBAL, UNIDADE ou PROPRIO',
   })
   tipo_escopo_padrao: 'GLOBAL' | 'UNIDADE' | 'PROPRIO';
 
@@ -224,7 +233,7 @@ export class PermissionScope {
     const descricoes = {
       GLOBAL: 'Acesso global ao sistema',
       UNIDADE: 'Acesso restrito à unidade do usuário',
-      PROPRIO: 'Acesso apenas aos próprios dados'
+      PROPRIO: 'Acesso apenas aos próprios dados',
     };
     return descricoes[this.tipo_escopo_padrao];
   }
@@ -289,7 +298,7 @@ export class PermissionScope {
       criadoEm: this.created_at,
       atualizadoEm: this.updated_at,
       temCriador: this.temCriador(),
-      temAtualizador: this.atualizado_por !== null
+      temAtualizador: this.atualizado_por !== null,
     };
   }
 
@@ -330,7 +339,9 @@ export class PermissionScope {
    * @returns descrição completa
    */
   getDescricaoCompleta(): string {
-    const permissaoInfo = this.permissao ? this.permissao.nome : 'Permissão não carregada';
+    const permissaoInfo = this.permissao
+      ? this.permissao.nome
+      : 'Permissão não carregada';
     return `Escopo ${this.tipo_escopo_padrao} para permissão: ${permissaoInfo}`;
   }
 
@@ -387,7 +398,7 @@ export class PermissionScope {
     const niveis = {
       PROPRIO: 1,
       UNIDADE: 2,
-      GLOBAL: 3
+      GLOBAL: 3,
     };
     return niveis[this.tipo_escopo_padrao];
   }
@@ -397,7 +408,10 @@ export class PermissionScope {
    * @returns true se permite acesso amplo
    */
   permiteAcessoAmplo(): boolean {
-    return this.tipo_escopo_padrao === 'GLOBAL' || this.tipo_escopo_padrao === 'UNIDADE';
+    return (
+      this.tipo_escopo_padrao === 'GLOBAL' ||
+      this.tipo_escopo_padrao === 'UNIDADE'
+    );
   }
 
   /**
@@ -435,7 +449,7 @@ export class PermissionScope {
       tipoEscopo: this.tipo_escopo_padrao,
       criadoEm: this.created_at,
       atualizadoEm: this.updated_at,
-      temCriador: this.temCriador()
+      temCriador: this.temCriador(),
     };
   }
 
@@ -453,16 +467,16 @@ export class PermissionScope {
    */
   getSugestoesMelhoria(): string[] {
     const sugestoes: string[] = [];
-    
+
     if (this.tipo_escopo_padrao === 'GLOBAL') {
       sugestoes.push('Considere restringir o escopo se possível');
       sugestoes.push('Monitore o uso desta permissão global');
     }
-    
+
     if (!this.temCriador()) {
       sugestoes.push('Defina um criador para auditoria');
     }
-    
+
     return sugestoes;
   }
 }

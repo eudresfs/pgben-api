@@ -2,12 +2,12 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
  * Migration para criar o schema relacionado ao pagamento
- * 
+ *
  * Esta migration cria as tabelas e restrições para o módulo de pagamento,
  * incluindo estruturas para gerenciar pagamentos, comprovantes e confirmações de recebimento.
- * 
+ *
  * Os enums necessários são criados na migration CreateAllEnums
- * 
+ *
  * @author Engenheiro de Dados
  * @date 19/05/2025
  */
@@ -19,7 +19,7 @@ export class CreatePagamentoSchema1704067236000 implements MigrationInterface {
    */
   public async up(queryRunner: QueryRunner): Promise<void> {
     console.log('Iniciando migration CreatePagamentoSchema...');
-    
+
     // Tabela principal de pagamento
     await queryRunner.query(`
       CREATE TABLE IF NOT EXISTS "pagamento" (
@@ -38,7 +38,7 @@ export class CreatePagamentoSchema1704067236000 implements MigrationInterface {
         CONSTRAINT "PK_pagamento" PRIMARY KEY ("id")
       );
     `);
-    
+
     // Índices para otimização de consultas
     await queryRunner.query(`
       CREATE INDEX IF NOT EXISTS "IDX_pagamento_solicitacao" ON "pagamento" ("solicitacao_id");
@@ -48,7 +48,7 @@ export class CreatePagamentoSchema1704067236000 implements MigrationInterface {
       CREATE INDEX IF NOT EXISTS "IDX_pagamento_data_liberacao" ON "pagamento" ("data_liberacao");
       CREATE INDEX IF NOT EXISTS "IDX_pagamento_metodo" ON "pagamento" ("metodo_pagamento");
     `);
-    
+
     // Trigger para atualização automática de timestamp
     await queryRunner.query(`
       DROP TRIGGER IF EXISTS trigger_pagamento_update_timestamp ON "pagamento";
@@ -57,9 +57,9 @@ export class CreatePagamentoSchema1704067236000 implements MigrationInterface {
         FOR EACH ROW
         EXECUTE PROCEDURE update_timestamp();
     `);
-    
+
     console.log('Tabela de pagamento criada com sucesso.');
-    
+
     // Tabela de comprovante de pagamento
     await queryRunner.query(`
       CREATE TABLE IF NOT EXISTS "comprovante_pagamento" (
@@ -77,14 +77,14 @@ export class CreatePagamentoSchema1704067236000 implements MigrationInterface {
         CONSTRAINT "PK_comprovante_pagamento" PRIMARY KEY ("id")
       );
     `);
-    
+
     // Índices para otimização de consultas
     await queryRunner.query(`
       CREATE INDEX IF NOT EXISTS "IDX_comprovante_pagamento" ON "comprovante_pagamento" ("pagamento_id");
       CREATE INDEX IF NOT EXISTS "IDX_comprovante_uploaded_por" ON "comprovante_pagamento" ("uploaded_por");
       CREATE INDEX IF NOT EXISTS "IDX_comprovante_tipo" ON "comprovante_pagamento" ("tipo_documento");
     `);
-    
+
     // Trigger para atualização automática de timestamp
     await queryRunner.query(`
       DROP TRIGGER IF EXISTS trigger_comprovante_update_timestamp ON "comprovante_pagamento";
@@ -93,9 +93,9 @@ export class CreatePagamentoSchema1704067236000 implements MigrationInterface {
         FOR EACH ROW
         EXECUTE PROCEDURE update_timestamp();
     `);
-    
+
     console.log('Tabela de comprovante de pagamento criada com sucesso.');
-    
+
     // Tabela de confirmação de recebimento
     await queryRunner.query(`
       CREATE TABLE IF NOT EXISTS "confirmacao_recebimento" (
@@ -111,7 +111,7 @@ export class CreatePagamentoSchema1704067236000 implements MigrationInterface {
         CONSTRAINT "PK_confirmacao_recebimento" PRIMARY KEY ("id")
       );
     `);
-    
+
     // Índices para otimização de consultas
     await queryRunner.query(`
       CREATE INDEX IF NOT EXISTS "IDX_confirmacao_pagamento" ON "confirmacao_recebimento" ("pagamento_id");
@@ -120,7 +120,7 @@ export class CreatePagamentoSchema1704067236000 implements MigrationInterface {
       CREATE INDEX IF NOT EXISTS "IDX_confirmacao_metodo" ON "confirmacao_recebimento" ("metodo_confirmacao");
       CREATE INDEX IF NOT EXISTS "IDX_confirmacao_data" ON "confirmacao_recebimento" ("data_confirmacao");
     `);
-    
+
     // Trigger para atualização automática de timestamp
     await queryRunner.query(`
       DROP TRIGGER IF EXISTS trigger_confirmacao_update_timestamp ON "confirmacao_recebimento";
@@ -129,9 +129,9 @@ export class CreatePagamentoSchema1704067236000 implements MigrationInterface {
         FOR EACH ROW
         EXECUTE PROCEDURE update_timestamp();
     `);
-    
+
     console.log('Tabela de confirmação de recebimento criada com sucesso.');
-    
+
     // Adicionar as chaves estrangeiras
     await queryRunner.query(`
       DO $$
@@ -211,7 +211,7 @@ export class CreatePagamentoSchema1704067236000 implements MigrationInterface {
         END IF;
       END $$;
     `);
-    
+
     console.log('Migration CreatePagamentoSchema executada com sucesso.');
   }
 
@@ -220,7 +220,7 @@ export class CreatePagamentoSchema1704067236000 implements MigrationInterface {
    */
   public async down(queryRunner: QueryRunner): Promise<void> {
     console.log('Revertendo migration CreatePagamentoSchema...');
-    
+
     // Remover chaves estrangeiras
     await queryRunner.query(`
       ALTER TABLE "pagamento" DROP CONSTRAINT IF EXISTS "FK_pagamento_solicitacao";
@@ -231,21 +231,21 @@ export class CreatePagamentoSchema1704067236000 implements MigrationInterface {
       ALTER TABLE "confirmacao_recebimento" DROP CONSTRAINT IF EXISTS "FK_confirmacao_confirmado_por";
       ALTER TABLE "confirmacao_recebimento" DROP CONSTRAINT IF EXISTS "FK_confirmacao_destinatario";
     `);
-    
+
     // Remover triggers de atualização automática de timestamp
     await queryRunner.query(`
       DROP TRIGGER IF EXISTS trigger_pagamento_update_timestamp ON "pagamento";
       DROP TRIGGER IF EXISTS trigger_comprovante_update_timestamp ON "comprovante_pagamento";
       DROP TRIGGER IF EXISTS trigger_confirmacao_update_timestamp ON "confirmacao_recebimento";
     `);
-    
+
     // Remover tabelas
     await queryRunner.query(`
       DROP TABLE IF EXISTS "confirmacao_recebimento";
       DROP TABLE IF EXISTS "comprovante_pagamento";
       DROP TABLE IF EXISTS "pagamento";
     `);
-    
+
     console.log('Migration CreatePagamentoSchema revertida com sucesso.');
   }
 }

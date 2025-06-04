@@ -3,10 +3,10 @@ import { MetodoConfirmacaoEnum } from '../../../enums/metodo-confirmacao.enum';
 
 /**
  * DTO para resposta contendo dados de uma confirmação de recebimento
- * 
+ *
  * Este DTO define a estrutura de dados retornada pela API ao consultar
  * informações sobre uma confirmação de recebimento específica.
- * 
+ *
  * @author Equipe PGBen
  */
 export class ConfirmacaoResponseDto {
@@ -15,7 +15,7 @@ export class ConfirmacaoResponseDto {
    */
   @ApiProperty({
     description: 'ID único da confirmação',
-    example: '123e4567-e89b-12d3-a456-426614174000'
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   id: string;
 
@@ -24,7 +24,7 @@ export class ConfirmacaoResponseDto {
    */
   @ApiProperty({
     description: 'ID do pagamento relacionado',
-    example: '123e4567-e89b-12d3-a456-426614174000'
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   pagamentoId: string;
 
@@ -33,7 +33,7 @@ export class ConfirmacaoResponseDto {
    */
   @ApiProperty({
     description: 'Data da confirmação de recebimento',
-    example: '2025-05-20T14:30:00.000Z'
+    example: '2025-05-20T14:30:00.000Z',
   })
   dataConfirmacao: Date;
 
@@ -43,7 +43,7 @@ export class ConfirmacaoResponseDto {
   @ApiProperty({
     description: 'Método utilizado para confirmar recebimento',
     enum: MetodoConfirmacaoEnum,
-    example: MetodoConfirmacaoEnum.ASSINATURA
+    example: MetodoConfirmacaoEnum.ASSINATURA,
   })
   metodoConfirmacao: MetodoConfirmacaoEnum;
 
@@ -55,8 +55,8 @@ export class ConfirmacaoResponseDto {
     example: {
       id: '123e4567-e89b-12d3-a456-426614174000',
       nome: 'Ana Souza',
-      cargo: 'Técnico SEMTAS'
-    }
+      cargo: 'Técnico SEMTAS',
+    },
   })
   responsavelConfirmacao: {
     id: string;
@@ -68,13 +68,14 @@ export class ConfirmacaoResponseDto {
    * Informações sobre o destinatário que recebeu (se diferente do beneficiário)
    */
   @ApiProperty({
-    description: 'Dados do destinatário que recebeu (se diferente do beneficiário)',
+    description:
+      'Dados do destinatário que recebeu (se diferente do beneficiário)',
     example: {
       id: '123e4567-e89b-12d3-a456-426614174000',
       nome: 'José Santos',
-      relacao: 'Filho'
+      relacao: 'Filho',
     },
-    required: false
+    required: false,
   })
   destinatario?: {
     id: string;
@@ -87,8 +88,9 @@ export class ConfirmacaoResponseDto {
    */
   @ApiProperty({
     description: 'Observações sobre a confirmação',
-    example: 'Beneficiário confirmou recebimento com assinatura no formulário padrão.',
-    required: false
+    example:
+      'Beneficiário confirmou recebimento com assinatura no formulário padrão.',
+    required: false,
   })
   observacoes?: string;
 
@@ -97,7 +99,7 @@ export class ConfirmacaoResponseDto {
    */
   @ApiProperty({
     description: 'Data de criação do registro',
-    example: '2025-05-20T14:30:00.000Z'
+    example: '2025-05-20T14:30:00.000Z',
   })
   createdAt: Date;
 
@@ -106,7 +108,7 @@ export class ConfirmacaoResponseDto {
    */
   @ApiProperty({
     description: 'Data da última atualização do registro',
-    example: '2025-05-20T14:30:00.000Z'
+    example: '2025-05-20T14:30:00.000Z',
   })
   updatedAt: Date;
 }

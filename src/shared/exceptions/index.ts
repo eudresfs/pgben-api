@@ -22,3 +22,6 @@ export { TemplateInvalidoException } from '../../modules/configuracao/exceptions
 
 // Exceções de integração (já existentes)
 export { IntegracaoTesteException } from '../../modules/configuracao/exceptions/integracao-teste.exception';
+
+// Sistema de catálogo de erros
+export * from './error-catalog';

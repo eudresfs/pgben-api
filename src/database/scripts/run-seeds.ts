@@ -7,14 +7,14 @@ import { PermissionRoleMappingSeed } from '../seeds/core/permission-role-mapping
 
 /**
  * Script para executar os scripts de seed
- * 
+ *
  * Este script coordena a execução dos scripts de seed para popular o banco de dados
  * com os dados iniciais necessários para o funcionamento do sistema.
  */
 async function runSeeds() {
   // Carrega as variáveis de ambiente
   dotenv.config();
-  
+
   const logger = new Logger('RunSeeds');
   logger.log('Iniciando execução dos scripts de seed...');
 
@@ -38,18 +38,18 @@ async function runSeeds() {
 
     // Executa os scripts de seed
     logger.log('Executando scripts de seed...');
-    
+
     // Executa o seed de permissões de usuário
     logger.log('Executando seed de permissões de usuário...');
     await PermissionUsuarioSeed.run(dataSource);
-    
+
     // Executa outros seeds de permissões para outros módulos
     // Aqui seriam adicionados os outros seeds conforme forem implementados
-    
+
     // Executa o seed de mapeamento de roles para permissões
     logger.log('Executando seed de mapeamento de roles para permissões...');
     await PermissionRoleMappingSeed.run(dataSource);
-    
+
     logger.log('Scripts de seed executados com sucesso!');
   } catch (error) {
     logger.error('Erro ao executar scripts de seed:');

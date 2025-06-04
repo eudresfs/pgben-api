@@ -9,7 +9,7 @@ export class PaginationQueryDto {
     example: 1,
     minimum: 1,
     default: 1,
-    type: 'integer'
+    type: 'integer',
   })
   page?: number = 1;
 
@@ -19,14 +19,14 @@ export class PaginationQueryDto {
     minimum: 1,
     maximum: 100,
     default: 10,
-    type: 'integer'
+    type: 'integer',
   })
   limit?: number = 10;
 
   @ApiPropertyOptional({
     description: 'Campo para ordenação',
     example: 'createdAt',
-    type: 'string'
+    type: 'string',
   })
   sortBy?: string;
 
@@ -34,7 +34,7 @@ export class PaginationQueryDto {
     description: 'Direção da ordenação',
     example: 'desc',
     enum: ['asc', 'desc'],
-    default: 'desc'
+    default: 'desc',
   })
   sortOrder?: 'asc' | 'desc' = 'desc';
 }
@@ -46,7 +46,7 @@ export class PaginatedResponse<T> {
   @ApiProperty({
     description: 'Lista de itens da página atual',
     isArray: true,
-    type: 'array'
+    type: 'array',
   })
   data: T[];
 
@@ -57,34 +57,34 @@ export class PaginatedResponse<T> {
       total: {
         type: 'integer',
         description: 'Número total de itens em todas as páginas',
-        example: 150
+        example: 150,
       },
       page: {
         type: 'integer',
         description: 'Número da página atual (iniciando em 1)',
-        example: 1
+        example: 1,
       },
       limit: {
         type: 'integer',
         description: 'Número de itens por página',
-        example: 10
+        example: 10,
       },
       totalPages: {
         type: 'integer',
         description: 'Número total de páginas',
-        example: 15
+        example: 15,
       },
       hasPrevious: {
         type: 'boolean',
         description: 'Indica se existe página anterior',
-        example: false
+        example: false,
       },
       hasNext: {
         type: 'boolean',
         description: 'Indica se existe próxima página',
-        example: true
-      }
-    }
+        example: true,
+      },
+    },
   })
   pagination: {
     total: number;
@@ -103,19 +103,19 @@ export class SuccessResponse {
   @ApiProperty({
     description: 'Indica se a operação foi bem-sucedida',
     example: true,
-    type: 'boolean'
+    type: 'boolean',
   })
   success: boolean;
 
   @ApiProperty({
     description: 'Mensagem descritiva do resultado',
     example: 'Operação realizada com sucesso',
-    type: 'string'
+    type: 'string',
   })
   message: string;
 
   @ApiPropertyOptional({
-    description: 'Dados adicionais retornados pela operação'
+    description: 'Dados adicionais retornados pela operação',
   })
   data?: any;
 
@@ -123,7 +123,7 @@ export class SuccessResponse {
     description: 'Timestamp da operação',
     example: '2025-01-18T10:30:00.000Z',
     type: 'string',
-    format: 'date-time'
+    format: 'date-time',
   })
   timestamp: string;
 }
@@ -135,21 +135,21 @@ export class ApiErrorResponse {
   @ApiProperty({
     description: 'Código de status HTTP',
     example: 400,
-    type: 'integer'
+    type: 'integer',
   })
   statusCode: number;
 
   @ApiProperty({
     description: 'Mensagem de erro principal',
     example: 'Dados inválidos fornecidos',
-    type: 'string'
+    type: 'string',
   })
   message: string;
 
   @ApiProperty({
     description: 'Tipo/categoria do erro',
     example: 'ValidationError',
-    type: 'string'
+    type: 'string',
   })
   error: string;
 
@@ -157,14 +157,14 @@ export class ApiErrorResponse {
     description: 'Timestamp do erro',
     example: '2025-01-18T10:30:00.000Z',
     type: 'string',
-    format: 'date-time'
+    format: 'date-time',
   })
   timestamp: string;
 
   @ApiPropertyOptional({
     description: 'Caminho da requisição que gerou o erro',
     example: '/api/v1/cidadao',
-    type: 'string'
+    type: 'string',
   })
   path?: string;
 }
@@ -180,16 +180,16 @@ export class ValidationErrorResponse extends ApiErrorResponse {
         field: 'cpf',
         value: '123.456.789-00',
         message: 'CPF deve ter formato válido',
-        code: 'INVALID_FORMAT'
+        code: 'INVALID_FORMAT',
       },
       {
         field: 'email',
         value: 'email-invalido',
         message: 'Email deve ter formato válido',
-        code: 'INVALID_EMAIL'
-      }
+        code: 'INVALID_EMAIL',
+      },
     ],
-    type: 'array'
+    type: 'array',
   })
   validationErrors: Array<{
     field: string;
@@ -206,14 +206,14 @@ export class NotFoundErrorResponse extends ApiErrorResponse {
   @ApiProperty({
     description: 'Identificador do recurso não encontrado',
     example: '507f1f77bcf86cd799439011',
-    type: 'string'
+    type: 'string',
   })
   resourceId: string;
 
   @ApiProperty({
     description: 'Tipo do recurso não encontrado',
     example: 'Cidadao',
-    type: 'string'
+    type: 'string',
   })
   resourceType: string;
 }
@@ -225,8 +225,13 @@ export class UnauthorizedErrorResponse extends ApiErrorResponse {
   @ApiProperty({
     description: 'Código específico do erro de autorização',
     example: 'INSUFFICIENT_PERMISSIONS',
-    enum: ['INVALID_TOKEN', 'EXPIRED_TOKEN', 'INSUFFICIENT_PERMISSIONS', 'ACCOUNT_DISABLED'],
-    type: 'string'
+    enum: [
+      'INVALID_TOKEN',
+      'EXPIRED_TOKEN',
+      'INSUFFICIENT_PERMISSIONS',
+      'ACCOUNT_DISABLED',
+    ],
+    type: 'string',
   })
   authErrorCode: string;
 
@@ -234,7 +239,7 @@ export class UnauthorizedErrorResponse extends ApiErrorResponse {
     description: 'Permissões necessárias para a operação',
     example: ['CIDADAO_READ', 'CIDADAO_WRITE'],
     type: 'array',
-    items: { type: 'string' }
+    items: { type: 'string' },
   })
   requiredPermissions?: string[];
 }

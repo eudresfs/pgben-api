@@ -34,14 +34,14 @@ const PERMISSION_CACHE_CONFIG = {
 
 /**
  * Módulo de Permissões Granulares
- * 
+ *
  * Responsável por:
  * - Gerenciamento de permissões granulares por usuário e role
  * - Sistema de cache para otimização de performance
  * - Guards para controle de acesso baseado em permissões
  * - Repositórios especializados para queries de permissões
  * - Integração com sistema de escopos (unidade, regional, etc.)
- * 
+ *
  * @example
  * ```typescript
  * // Uso do guard em controllers
@@ -72,12 +72,12 @@ const PERMISSION_CACHE_CONFIG = {
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         ttl: configService.get<number>(
-          'PERMISSION_CACHE_TTL', 
-          PERMISSION_CACHE_CONFIG.TTL_SECONDS * 1000
+          'PERMISSION_CACHE_TTL',
+          PERMISSION_CACHE_CONFIG.TTL_SECONDS * 1000,
         ),
         max: configService.get<number>(
-          'PERMISSION_CACHE_MAX_ITEMS', 
-          PERMISSION_CACHE_CONFIG.MAX_ITEMS
+          'PERMISSION_CACHE_MAX_ITEMS',
+          PERMISSION_CACHE_CONFIG.MAX_ITEMS,
         ),
         store: PERMISSION_CACHE_CONFIG.STORE,
         isGlobal: false, // Scoped para evitar conflitos
@@ -106,10 +106,10 @@ const PERMISSION_CACHE_CONFIG = {
   exports: [
     // Serviço para uso em outros módulos
     PermissionService,
-    
+
     // Guard para controle de acesso
     PermissionGuard,
-    
+
     // Repositórios para uso avançado
     PermissionRepository,
     RolePermissionRepository,
@@ -131,18 +131,18 @@ export class PermissionModule implements OnModuleInit {
     try {
       await this.validateModuleIntegrity();
       await this.performStartupTasks();
-      
+
       this.logger.log('✅ PermissionModule inicializado com sucesso');
     } catch (error) {
       this.logger.error(
         `❌ Erro crítico durante inicialização do PermissionModule: ${error.message}`,
-        error.stack
+        error.stack,
       );
-      
+
       // Em caso de erro crítico, não permitir que a aplicação continue
       // pois permissões são fundamentais para segurança
       throw new Error(
-        `PermissionModule falhou na inicialização: ${error.message}`
+        `PermissionModule falhou na inicialização: ${error.message}`,
       );
     }
   }
@@ -157,7 +157,7 @@ export class PermissionModule implements OnModuleInit {
     // Verifica se o PermissionService foi injetado corretamente
     if (!this.permissionService) {
       throw new Error(
-        'PermissionService não foi injetado corretamente. Verifique as dependências.'
+        'PermissionService não foi injetado corretamente. Verifique as dependências.',
       );
     }
 
@@ -168,7 +168,7 @@ export class PermissionModule implements OnModuleInit {
       this.logger.debug('✓ Conectividade com PermissionService validada');
     } catch (error) {
       this.logger.warn(
-        `Aviso na validação de conectividade: ${error.message}. Continuando inicialização...`
+        `Aviso na validação de conectividade: ${error.message}. Continuando inicialização...`,
       );
       // Não falha a inicialização por problemas de validação básica
       // A validação mais rigorosa será feita quando o serviço for efetivamente usado
@@ -192,10 +192,9 @@ export class PermissionModule implements OnModuleInit {
       // - Sincronização de permissões padrão
       // - Verificação de integridade de dados
       // - Validação de permissões críticas do sistema
-      
     } catch (error) {
       this.logger.warn(
-        `Aviso durante tarefas de inicialização: ${error.message}`
+        `Aviso durante tarefas de inicialização: ${error.message}`,
       );
       // Tarefas de inicialização podem falhar sem comprometer o módulo
     }

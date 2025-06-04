@@ -7,7 +7,7 @@ import { IsOptional, IsBoolean } from 'class-validator';
  * Remove o campo cidadao_id pois não deve ser alterado após criação
  */
 export class UpdateInfoBancariaDto extends PartialType(
-  OmitType(CreateInfoBancariaDto, ['cidadao_id'] as const)
+  OmitType(CreateInfoBancariaDto, ['cidadao_id'] as const),
 ) {
   @ApiPropertyOptional({
     description: 'Status ativo da conta bancária',

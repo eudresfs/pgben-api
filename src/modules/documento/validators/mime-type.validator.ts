@@ -1,14 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import fileType from 'file-type';
-import { 
-  MIME_TYPE_CONFIGS, 
-  BLOCKED_MIME_TYPES, 
+import {
+  MIME_TYPE_CONFIGS,
+  BLOCKED_MIME_TYPES,
   BLOCKED_EXTENSIONS,
   SECURITY_CONFIG,
   isMimeTypePermitido,
   getMaxFileSize,
   requiresEncryption,
-  allowsThumbnail
+  allowsThumbnail,
 } from '../config/documento.config';
 import * as crypto from 'crypto';
 
@@ -37,10 +37,10 @@ export class MimeTypeValidator {
    * Valida o tipo MIME de um arquivo com verificações de segurança avançadas
    */
   async validateMimeType(
-    buffer: Buffer, 
-    declaredMimeType: string, 
+    buffer: Buffer,
+    declaredMimeType: string,
     originalFilename: string,
-    fileSize: number
+    fileSize: number,
   ): Promise<MimeTypeValidationResult> {
     try {
       const fileExtension = this.extractFileExtension(originalFilename);
@@ -81,7 +81,7 @@ export class MimeTypeValidator {
 
       // 3. Detectar o tipo real do arquivo usando magic numbers
       const fileTypeResult = await fileType.fromBuffer(buffer);
-      
+
       if (!fileTypeResult && SECURITY_CONFIG.VERIFY_MAGIC_NUMBERS) {
         // Para alguns tipos como text/plain, file-type pode não detectar
         if (declaredMimeType !== 'text/plain') {
@@ -156,11 +156,14 @@ export class MimeTypeValidator {
 
       // 8. Verificações de conteúdo suspeito
       if (SECURITY_CONFIG.SCAN_CONTENT) {
-        const contentAnalysis = this.analyzeFileContent(buffer, detectedMimeType);
+        const contentAnalysis = this.analyzeFileContent(
+          buffer,
+          detectedMimeType,
+        );
         if (contentAnalysis.isSuspicious) {
           securityFlags.isSuspicious = true;
           securityFlags.hasEmbeddedContent = contentAnalysis.hasEmbeddedContent;
-          
+
           if (SECURITY_CONFIG.QUARANTINE_SUSPICIOUS) {
             return {
               isValid: false,
@@ -205,22 +208,25 @@ export class MimeTypeValidator {
   /**
    * Analisa o conteúdo do arquivo em busca de padrões suspeitos
    */
-  private analyzeFileContent(buffer: Buffer, mimeType: string): {
+  private analyzeFileContent(
+    buffer: Buffer,
+    mimeType: string,
+  ): {
     isSuspicious: boolean;
     hasEmbeddedContent: boolean;
     reason?: string;
   } {
     const content = buffer.toString('utf8', 0, Math.min(buffer.length, 1024)); // Primeiros 1KB
-    
+
     // Padrões suspeitos comuns
     const suspiciousPatterns = [
-      /<script[^>]*>/i,           // Tags de script
-      /javascript:/i,             // URLs javascript
-      /vbscript:/i,              // URLs vbscript
-      /on\w+\s*=/i,              // Event handlers (onclick, onload, etc.)
-      /%3Cscript/i,              // Script tags codificados
-      /\x00/,                    // Null bytes
-      /\\x[0-9a-f]{2}/i,         // Sequências de escape hexadecimal
+      /<script[^>]*>/i, // Tags de script
+      /javascript:/i, // URLs javascript
+      /vbscript:/i, // URLs vbscript
+      /on\w+\s*=/i, // Event handlers (onclick, onload, etc.)
+      /%3Cscript/i, // Script tags codificados
+      /\x00/, // Null bytes
+      /\\x[0-9a-f]{2}/i, // Sequências de escape hexadecimal
     ];
 
     // Verificar padrões suspeitos
@@ -249,7 +255,7 @@ export class MimeTypeValidator {
     // Verificar densidade de caracteres não-ASCII (possível ofuscação)
     const nonAsciiCount = (content.match(/[\x80-\xFF]/g) || []).length;
     const nonAsciiRatio = nonAsciiCount / content.length;
-    
+
     if (nonAsciiRatio > 0.3 && mimeType.startsWith('text/')) {
       return {
         isSuspicious: true,

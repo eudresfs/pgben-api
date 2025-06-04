@@ -1,11 +1,27 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn, Index } from 'typeorm';
-import { IsNotEmpty, IsString, Length, IsOptional, IsEnum } from 'class-validator';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+  Index,
+} from 'typeorm';
+import {
+  IsNotEmpty,
+  IsString,
+  Length,
+  IsOptional,
+  IsEnum,
+} from 'class-validator';
 import { Status } from '../enums/status.enum';
 import { Usuario } from './usuario.entity';
 
 /**
  * Entidade que representa uma permissão no sistema.
- * 
+ *
  * As permissões seguem o formato `modulo.recurso.operacao` e podem ser compostas
  * (ex: `modulo.*` para representar todas as permissões de um módulo).
  */
@@ -60,11 +76,11 @@ export class Permission {
   /**
    * Status da permissão (ativo/inativo)
    */
-  @Column({ 
-    type: 'enum', 
-    enum: Status, 
+  @Column({
+    type: 'enum',
+    enum: Status,
     default: Status.ATIVO,
-    name: 'status'
+    name: 'status',
   })
   @IsEnum(Status, { message: 'Status deve ser ATIVO ou INATIVO' })
   status: Status;
@@ -72,7 +88,7 @@ export class Permission {
   // Nota: As propriedades e relacionamentos hierárquicos foram removidos
   // pois não existem no banco de dados.
 
-  // Nota: As colunas criado_por e atualizado_por foram removidas 
+  // Nota: As colunas criado_por e atualizado_por foram removidas
   // pois não existem no banco de dados atual.
 
   /**
@@ -109,14 +125,16 @@ export class Permission {
   isHierarchical(): boolean {
     return this.nome ? this.nome.includes('.*') : false;
   }
-  
+
   // Método para obter o módulo de uma permissão pelo nome
   getModule(): string {
-    if (!this.nome) {return '';}
+    if (!this.nome) {
+      return '';
+    }
     const parts = this.nome.split('.');
     return parts.length > 0 ? parts[0] : '';
   }
-  
+
   // Método para verificar se uma permissão é parte de um módulo
   isPartOfModule(moduleName: string): boolean {
     return this.nome ? this.nome.startsWith(`${moduleName}.`) : false;
@@ -166,7 +184,7 @@ export class Permission {
    */
   validarFormatoNome(): boolean {
     if (!this.nome) return false;
-    
+
     // Formato esperado: modulo.recurso.operacao ou modulo.*
     const regex = /^[a-zA-Z][a-zA-Z0-9_-]*\.[a-zA-Z*][a-zA-Z0-9_.*-]*$/;
     return regex.test(this.nome);
@@ -181,19 +199,19 @@ export class Permission {
     }
 
     const parts = this.nome.split('.');
-    
+
     if (parts.length === 2 && parts[1] === '*') {
       return { modulo: parts[0] };
     }
-    
+
     if (parts.length >= 3) {
       return {
         modulo: parts[0],
         recurso: parts[1],
-        operacao: parts.slice(2).join('.')
+        operacao: parts.slice(2).join('.'),
       };
     }
-    
+
     return { modulo: parts[0] };
   }
 
@@ -215,14 +233,23 @@ export class Permission {
    * Verifica se a permissão é uma permissão de leitura
    */
   isReadPermission(): boolean {
-    return this.nome ? this.nome.includes('.read') || this.nome.includes('.view') || this.nome.includes('.list') : false;
+    return this.nome
+      ? this.nome.includes('.read') ||
+          this.nome.includes('.view') ||
+          this.nome.includes('.list')
+      : false;
   }
 
   /**
    * Verifica se a permissão é uma permissão de escrita
    */
   isWritePermission(): boolean {
-    return this.nome ? this.nome.includes('.write') || this.nome.includes('.create') || this.nome.includes('.update') || this.nome.includes('.delete') : false;
+    return this.nome
+      ? this.nome.includes('.write') ||
+          this.nome.includes('.create') ||
+          this.nome.includes('.update') ||
+          this.nome.includes('.delete')
+      : false;
   }
 
   /**
@@ -239,15 +266,15 @@ export class Permission {
     if (this.isSystemPermission() || this.isAdminPermission()) {
       return 'CRITICAL';
     }
-    
+
     if (this.isGlobalPermission()) {
       return 'HIGH';
     }
-    
+
     if (this.isWritePermission()) {
       return 'MEDIUM';
     }
-    
+
     return 'LOW';
   }
 
@@ -258,7 +285,7 @@ export class Permission {
     if (!this.nome || !otherPermission.nome) {
       return false;
     }
-    
+
     // Permissões do mesmo módulo são compatíveis
     return this.getModule() === otherPermission.getModule();
   }
@@ -277,14 +304,14 @@ export class Permission {
     if (!this.nome || !otherPermission.nome) {
       return false;
     }
-    
+
     // Se esta permissão é global para um módulo, inclui todas as permissões do módulo
     if (this.isGlobalPermission()) {
       const thisModule = this.getModule();
       const otherModule = otherPermission.getModule();
       return thisModule === otherModule;
     }
-    
+
     // Caso contrário, só inclui se for exatamente a mesma permissão
     return this.nome === otherPermission.nome;
   }
@@ -294,15 +321,15 @@ export class Permission {
    */
   getFriendlyDescription(): string {
     const info = this.getPermissionInfo();
-    
+
     if (this.isGlobalPermission()) {
       return `Todas as permissões do módulo ${info.modulo}`;
     }
-    
+
     if (info.recurso && info.operacao) {
       return `${info.operacao} em ${info.recurso} do módulo ${info.modulo}`;
     }
-    
+
     return this.descricao || this.nome;
   }
 

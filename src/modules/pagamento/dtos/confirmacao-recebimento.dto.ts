@@ -1,14 +1,21 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsDate, IsEnum, IsNotEmpty, IsOptional, IsString, IsUUID } from 'class-validator';
+import {
+  IsDate,
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsUUID,
+} from 'class-validator';
 import { MetodoConfirmacaoEnum } from '../../../enums/metodo-confirmacao.enum';
 
 /**
  * DTO para registro de confirmação de recebimento de pagamento
- * 
+ *
  * Este DTO é utilizado para validar os dados de entrada ao registrar
  * a confirmação de recebimento de um pagamento pelo beneficiário.
- * 
+ *
  * @author Equipe PGBen
  */
 export class ConfirmacaoRecebimentoDto {
@@ -18,7 +25,7 @@ export class ConfirmacaoRecebimentoDto {
   @ApiProperty({
     description: 'Data da confirmação de recebimento',
     example: '2025-05-18T14:30:00.000Z',
-    type: Date
+    type: Date,
   })
   @IsNotEmpty()
   @IsDate()
@@ -31,7 +38,7 @@ export class ConfirmacaoRecebimentoDto {
   @ApiProperty({
     description: 'Método de confirmação utilizado',
     enum: MetodoConfirmacaoEnum,
-    example: MetodoConfirmacaoEnum.ASSINATURA
+    example: MetodoConfirmacaoEnum.ASSINATURA,
   })
   @IsNotEmpty()
   @IsEnum(MetodoConfirmacaoEnum)
@@ -41,9 +48,10 @@ export class ConfirmacaoRecebimentoDto {
    * Referência ao cidadão que recebeu o benefício, se diferente do beneficiário original
    */
   @ApiProperty({
-    description: 'ID do destinatário que recebeu o pagamento (se diferente do beneficiário)',
+    description:
+      'ID do destinatário que recebeu o pagamento (se diferente do beneficiário)',
     example: '123e4567-e89b-12d3-a456-426614174000',
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsUUID('4')
@@ -54,8 +62,9 @@ export class ConfirmacaoRecebimentoDto {
    */
   @ApiProperty({
     description: 'Observações sobre a confirmação de recebimento',
-    example: 'Beneficiário confirmou recebimento com assinatura no formulário padrão.',
-    required: false
+    example:
+      'Beneficiário confirmou recebimento com assinatura no formulário padrão.',
+    required: false,
   })
   @IsOptional()
   @IsString()

@@ -1,0 +1,99 @@
+31eadb768c6e3bcb227c52fc26ddedd7
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.ApiErrorResponse = exports.ValidationError = void 0;
+const swagger_1 = require("@nestjs/swagger");
+class ValidationError {
+    field;
+    messages;
+}
+exports.ValidationError = ValidationError;
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Nome do campo que falhou na validação',
+        example: 'email',
+    }),
+    __metadata("design:type", String)
+], ValidationError.prototype, "field", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Mensagens de erro de validação para o campo',
+        example: ['O email deve ser um endereço de email válido'],
+        type: [String],
+    }),
+    __metadata("design:type", Array)
+], ValidationError.prototype, "messages", void 0);
+class ApiErrorResponse {
+    statusCode;
+    message;
+    code;
+    details;
+    errors;
+    timestamp;
+    path;
+    constructor(partial) {
+        Object.assign(this, partial);
+    }
+}
+exports.ApiErrorResponse = ApiErrorResponse;
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Código de status HTTP',
+        example: 400,
+    }),
+    __metadata("design:type", Number)
+], ApiErrorResponse.prototype, "statusCode", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Mensagem de erro amigável',
+        example: 'Erro de validação',
+    }),
+    __metadata("design:type", String)
+], ApiErrorResponse.prototype, "message", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Código de erro interno para referência',
+        example: 'VALIDATION_ERROR',
+        required: false,
+    }),
+    __metadata("design:type", String)
+], ApiErrorResponse.prototype, "code", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Detalhes adicionais sobre o erro',
+        required: false,
+    }),
+    __metadata("design:type", Object)
+], ApiErrorResponse.prototype, "details", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Lista de erros de validação',
+        type: [ValidationError],
+        required: false,
+    }),
+    __metadata("design:type", Array)
+], ApiErrorResponse.prototype, "errors", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Timestamp do erro',
+        example: '2023-05-16T10:00:00.000Z',
+    }),
+    __metadata("design:type", String)
+], ApiErrorResponse.prototype, "timestamp", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Caminho da requisição que causou o erro',
+        example: '/api/v1/cidadao',
+    }),
+    __metadata("design:type", String)
+], ApiErrorResponse.prototype, "path", void 0);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXHNoYXJlZFxcZHRvc1xcYXBpLWVycm9yLXJlc3BvbnNlLmR0by50cyIsIm1hcHBpbmdzIjoiOzs7Ozs7Ozs7Ozs7QUFBQSw2Q0FBOEM7QUFFOUMsTUFBYSxlQUFlO0lBSzFCLEtBQUssQ0FBUztJQU9kLFFBQVEsQ0FBVztDQUNwQjtBQWJELDBDQWFDO0FBUkM7SUFKQyxJQUFBLHFCQUFXLEVBQUM7UUFDWCxXQUFXLEVBQUUsdUNBQXVDO1FBQ3BELE9BQU8sRUFBRSxPQUFPO0tBQ2pCLENBQUM7OzhDQUNZO0FBT2Q7SUFMQyxJQUFBLHFCQUFXLEVBQUM7UUFDWCxXQUFXLEVBQUUsNkNBQTZDO1FBQzFELE9BQU8sRUFBRSxDQUFDLDhDQUE4QyxDQUFDO1FBQ3pELElBQUksRUFBRSxDQUFDLE1BQU0sQ0FBQztLQUNmLENBQUM7O2lEQUNpQjtBQUdyQixNQUFhLGdCQUFnQjtJQUszQixVQUFVLENBQVM7SUFNbkIsT0FBTyxDQUFTO0lBT2hCLElBQUksQ0FBVTtJQU1kLE9BQU8sQ0FBTztJQU9kLE1BQU0sQ0FBcUI7SUFNM0IsU0FBUyxDQUFTO0lBTWxCLElBQUksQ0FBUztJQUViLFlBQVksT0FBa0M7UUFDNUMsTUFBTSxDQUFDLE1BQU0sQ0FBQyxJQUFJLEVBQUUsT0FBTyxDQUFDLENBQUM7SUFDL0IsQ0FBQztDQUNGO0FBaERELDRDQWdEQztBQTNDQztJQUpDLElBQUEscUJBQVcsRUFBQztRQUNYLFdBQVcsRUFBRSx1QkFBdUI7UUFDcEMsT0FBTyxFQUFFLEdBQUc7S0FDYixDQUFDOztvREFDaUI7QUFNbkI7SUFKQyxJQUFBLHFCQUFXLEVBQUM7UUFDWCxXQUFXLEVBQUUsMkJBQTJCO1FBQ3hDLE9BQU8sRUFBRSxtQkFBbUI7S0FDN0IsQ0FBQzs7aURBQ2M7QUFPaEI7SUFMQyxJQUFBLHFCQUFXLEVBQUM7UUFDWCxXQUFXLEVBQUUsd0NBQXdDO1FBQ3JELE9BQU8sRUFBRSxrQkFBa0I7UUFDM0IsUUFBUSxFQUFFLEtBQUs7S0FDaEIsQ0FBQzs7OENBQ1k7QUFNZDtJQUpDLElBQUEscUJBQVcsRUFBQztRQUNYLFdBQVcsRUFBRSxrQ0FBa0M7UUFDL0MsUUFBUSxFQUFFLEtBQUs7S0FDaEIsQ0FBQzs7aURBQ1k7QUFPZDtJQUxDLElBQUEscUJBQVcsRUFBQztRQUNYLFdBQVcsRUFBRSw2QkFBNkI7UUFDMUMsSUFBSSxFQUFFLENBQUMsZUFBZSxDQUFDO1FBQ3ZCLFFBQVEsRUFBRSxLQUFLO0tBQ2hCLENBQUM7O2dEQUN5QjtBQU0zQjtJQUpDLElBQUEscUJBQVcsRUFBQztRQUNYLFdBQVcsRUFBRSxtQkFBbUI7UUFDaEMsT0FBTyxFQUFFLDBCQUEwQjtLQUNwQyxDQUFDOzttREFDZ0I7QUFNbEI7SUFKQyxJQUFBLHFCQUFXLEVBQUM7UUFDWCxXQUFXLEVBQUUseUNBQXlDO1FBQ3RELE9BQU8sRUFBRSxpQkFBaUI7S0FDM0IsQ0FBQzs7OENBQ1ciLCJuYW1lcyI6W10sInNvdXJjZXMiOlsiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXHNoYXJlZFxcZHRvc1xcYXBpLWVycm9yLXJlc3BvbnNlLmR0by50cyJdLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQgeyBBcGlQcm9wZXJ0eSB9IGZyb20gJ0BuZXN0anMvc3dhZ2dlcic7XG5cbmV4cG9ydCBjbGFzcyBWYWxpZGF0aW9uRXJyb3Ige1xuICBAQXBpUHJvcGVydHkoe1xuICAgIGRlc2NyaXB0aW9uOiAnTm9tZSBkbyBjYW1wbyBxdWUgZmFsaG91IG5hIHZhbGlkYcOnw6NvJyxcbiAgICBleGFtcGxlOiAnZW1haWwnLFxuICB9KVxuICBmaWVsZDogc3RyaW5nO1xuXG4gIEBBcGlQcm9wZXJ0eSh7XG4gICAgZGVzY3JpcHRpb246ICdNZW5zYWdlbnMgZGUgZXJybyBkZSB2YWxpZGHDp8OjbyBwYXJhIG8gY2FtcG8nLFxuICAgIGV4YW1wbGU6IFsnTyBlbWFpbCBkZXZlIHNlciB1bSBlbmRlcmXDp28gZGUgZW1haWwgdsOhbGlkbyddLFxuICAgIHR5cGU6IFtTdHJpbmddLFxuICB9KVxuICBtZXNzYWdlczogc3RyaW5nW107XG59XG5cbmV4cG9ydCBjbGFzcyBBcGlFcnJvclJlc3BvbnNlIHtcbiAgQEFwaVByb3BlcnR5KHtcbiAgICBkZXNjcmlwdGlvbjogJ0PDs2RpZ28gZGUgc3RhdHVzIEhUVFAnLFxuICAgIGV4YW1wbGU6IDQwMCxcbiAgfSlcbiAgc3RhdHVzQ29kZTogbnVtYmVyO1xuXG4gIEBBcGlQcm9wZXJ0eSh7XG4gICAgZGVzY3JpcHRpb246ICdNZW5zYWdlbSBkZSBlcnJvIGFtaWfDoXZlbCcsXG4gICAgZXhhbXBsZTogJ0Vycm8gZGUgdmFsaWRhw6fDo28nLFxuICB9KVxuICBtZXNzYWdlOiBzdHJpbmc7XG5cbiAgQEFwaVByb3BlcnR5KHtcbiAgICBkZXNjcmlwdGlvbjogJ0PDs2RpZ28gZGUgZXJybyBpbnRlcm5vIHBhcmEgcmVmZXLDqm5jaWEnLFxuICAgIGV4YW1wbGU6ICdWQUxJREFUSU9OX0VSUk9SJyxcbiAgICByZXF1aXJlZDogZmFsc2UsXG4gIH0pXG4gIGNvZGU/OiBzdHJpbmc7XG5cbiAgQEFwaVByb3BlcnR5KHtcbiAgICBkZXNjcmlwdGlvbjogJ0RldGFsaGVzIGFkaWNpb25haXMgc29icmUgbyBlcnJvJyxcbiAgICByZXF1aXJlZDogZmFsc2UsXG4gIH0pXG4gIGRldGFpbHM/OiBhbnk7XG5cbiAgQEFwaVByb3BlcnR5KHtcbiAgICBkZXNjcmlwdGlvbjogJ0xpc3RhIGRlIGVycm9zIGRlIHZhbGlkYcOnw6NvJyxcbiAgICB0eXBlOiBbVmFsaWRhdGlvbkVycm9yXSxcbiAgICByZXF1aXJlZDogZmFsc2UsXG4gIH0pXG4gIGVycm9ycz86IFZhbGlkYXRpb25FcnJvcltdO1xuXG4gIEBBcGlQcm9wZXJ0eSh7XG4gICAgZGVzY3JpcHRpb246ICdUaW1lc3RhbXAgZG8gZXJybycsXG4gICAgZXhhbXBsZTogJzIwMjMtMDUtMTZUMTA6MDA6MDAuMDAwWicsXG4gIH0pXG4gIHRpbWVzdGFtcDogc3RyaW5nO1xuXG4gIEBBcGlQcm9wZXJ0eSh7XG4gICAgZGVzY3JpcHRpb246ICdDYW1pbmhvIGRhIHJlcXVpc2nDp8OjbyBxdWUgY2F1c291IG8gZXJybycsXG4gICAgZXhhbXBsZTogJy9hcGkvdjEvY2lkYWRhbycsXG4gIH0pXG4gIHBhdGg6IHN0cmluZztcblxuICBjb25zdHJ1Y3RvcihwYXJ0aWFsOiBQYXJ0aWFsPEFwaUVycm9yUmVzcG9uc2U+KSB7XG4gICAgT2JqZWN0LmFzc2lnbih0aGlzLCBwYXJ0aWFsKTtcbiAgfVxufVxuIl0sInZlcnNpb24iOjN9

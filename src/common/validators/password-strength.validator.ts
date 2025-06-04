@@ -22,11 +22,31 @@ export interface PasswordStrengthOptions {
  * Lista de senhas comuns que devem ser rejeitadas
  */
 const COMMON_PASSWORDS = [
-  '123456', 'password', '123456789', '12345678', '12345',
-  '1234567', '1234567890', 'qwerty', 'abc123', 'million2',
-  '000000', '1234', 'iloveyou', 'aaron431', 'password1',
-  'qqww1122', '123', 'omgpop', '123321', '654321',
-  'admin', 'root', 'user', 'guest', 'test'
+  '123456',
+  'password',
+  '123456789',
+  '12345678',
+  '12345',
+  '1234567',
+  '1234567890',
+  'qwerty',
+  'abc123',
+  'million2',
+  '000000',
+  '1234',
+  'iloveyou',
+  'aaron431',
+  'password1',
+  'qqww1122',
+  '123',
+  'omgpop',
+  '123321',
+  '654321',
+  'admin',
+  'root',
+  'user',
+  'guest',
+  'test',
 ];
 
 /**
@@ -34,7 +54,9 @@ const COMMON_PASSWORDS = [
  * Implementa verificações de segurança para senhas
  */
 @ValidatorConstraint({ name: 'passwordStrength', async: false })
-export class PasswordStrengthConstraint implements ValidatorConstraintInterface {
+export class PasswordStrengthConstraint
+  implements ValidatorConstraintInterface
+{
   /**
    * Valida a força da senha
    * @param password Senha a ser validada
@@ -47,7 +69,7 @@ export class PasswordStrengthConstraint implements ValidatorConstraintInterface 
     }
 
     const options: PasswordStrengthOptions = args.constraints[0] || {};
-    
+
     // Configurações padrão
     const config = {
       minLength: options.minLength || 8,
@@ -79,12 +101,18 @@ export class PasswordStrengthConstraint implements ValidatorConstraintInterface 
     }
 
     // Verificar caracteres especiais
-    if (config.requireSpecialChars && !/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+    if (
+      config.requireSpecialChars &&
+      !/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)
+    ) {
       return false;
     }
 
     // Verificar senhas comuns
-    if (config.forbidCommonPasswords && COMMON_PASSWORDS.includes(password.toLowerCase())) {
+    if (
+      config.forbidCommonPasswords &&
+      COMMON_PASSWORDS.includes(password.toLowerCase())
+    ) {
       return false;
     }
 
@@ -117,21 +145,21 @@ export class PasswordStrengthConstraint implements ValidatorConstraintInterface 
     };
 
     const requirements: string[] = [];
-    
+
     requirements.push(`pelo menos ${config.minLength} caracteres`);
-    
+
     if (config.requireUppercase) {
       requirements.push('pelo menos uma letra maiúscula');
     }
-    
+
     if (config.requireLowercase) {
       requirements.push('pelo menos uma letra minúscula');
     }
-    
+
     if (config.requireNumbers) {
       requirements.push('pelo menos um número');
     }
-    
+
     if (config.requireSpecialChars) {
       requirements.push('pelo menos um caractere especial');
     }
@@ -150,24 +178,33 @@ export class PasswordStrengthConstraint implements ValidatorConstraintInterface 
       const char1 = password.charCodeAt(i);
       const char2 = password.charCodeAt(i + 1);
       const char3 = password.charCodeAt(i + 2);
-      
+
       // Sequência crescente ou decrescente
-      if ((char2 === char1 + 1 && char3 === char2 + 1) ||
-          (char2 === char1 - 1 && char3 === char2 - 1)) {
+      if (
+        (char2 === char1 + 1 && char3 === char2 + 1) ||
+        (char2 === char1 - 1 && char3 === char2 - 1)
+      ) {
         return true;
       }
     }
 
     // Verificar sequências de teclado comuns
     const keyboardPatterns = [
-      'qwerty', 'asdfgh', 'zxcvbn',
-      'qwertyuiop', 'asdfghjkl', 'zxcvbnm',
-      '1234567890'
+      'qwerty',
+      'asdfgh',
+      'zxcvbn',
+      'qwertyuiop',
+      'asdfghjkl',
+      'zxcvbnm',
+      '1234567890',
     ];
 
     const lowerPassword = password.toLowerCase();
     for (const pattern of keyboardPatterns) {
-      if (lowerPassword.includes(pattern) || lowerPassword.includes(pattern.split('').reverse().join(''))) {
+      if (
+        lowerPassword.includes(pattern) ||
+        lowerPassword.includes(pattern.split('').reverse().join(''))
+      ) {
         return true;
       }
     }
@@ -183,7 +220,7 @@ export class PasswordStrengthConstraint implements ValidatorConstraintInterface 
   public static hasExcessiveRepetition(password: string): boolean {
     // Verificar se mais de 50% dos caracteres são iguais
     const charCount = new Map<string, number>();
-    
+
     for (const char of password) {
       charCount.set(char, (charCount.get(char) || 0) + 1);
     }
@@ -238,32 +275,48 @@ export function IsPasswordStrong(
  * @returns Score de 0 a 100
  */
 export function calculatePasswordStrength(password: string): number {
-  if (!password) {return 0;}
+  if (!password) {
+    return 0;
+  }
 
   let score = 0;
-  
+
   // Comprimento (máximo 25 pontos)
   score += Math.min(password.length * 2, 25);
-  
+
   // Variedade de caracteres (máximo 25 pontos)
-  if (/[a-z]/.test(password)) {score += 5;}
-  if (/[A-Z]/.test(password)) {score += 5;}
-  if (/\d/.test(password)) {score += 5;}
-  if (/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {score += 10;}
-  
+  if (/[a-z]/.test(password)) {
+    score += 5;
+  }
+  if (/[A-Z]/.test(password)) {
+    score += 5;
+  }
+  if (/\d/.test(password)) {
+    score += 5;
+  }
+  if (/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+    score += 10;
+  }
+
   // Complexidade (máximo 25 pontos)
   const uniqueChars = new Set(password).size;
   score += Math.min(uniqueChars * 2, 25);
-  
+
   // Penalidades
-  if (COMMON_PASSWORDS.includes(password.toLowerCase())) {score -= 50;}
-  if (PasswordStrengthConstraint.hasSequentialPattern(password)) {score -= 25;}
-  if (PasswordStrengthConstraint.hasExcessiveRepetition(password)) {score -= 25;}
-  
+  if (COMMON_PASSWORDS.includes(password.toLowerCase())) {
+    score -= 50;
+  }
+  if (PasswordStrengthConstraint.hasSequentialPattern(password)) {
+    score -= 25;
+  }
+  if (PasswordStrengthConstraint.hasExcessiveRepetition(password)) {
+    score -= 25;
+  }
+
   // Bônus por comprimento extra (máximo 25 pontos)
   if (password.length > 12) {
     score += Math.min((password.length - 12) * 3, 25);
   }
-  
+
   return Math.max(0, Math.min(100, score));
 }

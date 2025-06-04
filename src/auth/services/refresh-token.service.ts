@@ -25,7 +25,7 @@ export class RefreshTokenService {
 
     const refreshToken = this.refreshTokenRepository.create({
       usuario: user,
-      usuario_id: user.id, 
+      usuario_id: user.id,
       token: this.generateToken(),
       expires_at: expiresAt,
     });
@@ -55,8 +55,8 @@ export class RefreshTokenService {
       where: {
         usuario_id: usuarioId,
         revoked: false,
-        expires_at: MoreThan(new Date()) // Apenas tokens não expirados
-      }
+        expires_at: MoreThan(new Date()), // Apenas tokens não expirados
+      },
     });
   }
 
@@ -66,7 +66,11 @@ export class RefreshTokenService {
    * @param ipAddress Endereço IP que solicitou a revogação
    * @param replacedByToken Token que substituiu este (opcional)
    */
-  async revokeToken(token: string, ipAddress: string, replacedByToken?: string): Promise<void> {
+  async revokeToken(
+    token: string,
+    ipAddress: string,
+    replacedByToken?: string,
+  ): Promise<void> {
     await this.refreshTokenRepository.update(
       { token },
       {
@@ -83,7 +87,10 @@ export class RefreshTokenService {
    * @param refreshToken Token pai
    * @param ipAddress Endereço IP que solicitou a revogação
    */
-  async revokeDescendantTokens(refreshToken: RefreshToken, ipAddress: string): Promise<void> {
+  async revokeDescendantTokens(
+    refreshToken: RefreshToken,
+    ipAddress: string,
+  ): Promise<void> {
     // Se houver um token que substituiu este token, revogue-o também
     if (refreshToken.replacedByToken) {
       const childToken = await this.refreshTokenRepository.findOne({
@@ -92,7 +99,7 @@ export class RefreshTokenService {
 
       if (childToken && !childToken.revoked) {
         await this.revokeToken(childToken.token, ipAddress);
-        
+
         // Recursivamente revogar descendentes
         await this.revokeDescendantTokens(childToken, ipAddress);
       }
@@ -105,13 +112,16 @@ export class RefreshTokenService {
    * @param ipAddress Endereço IP que solicitou a revogação
    * @returns Número de tokens revogados
    */
-  async revokeAllUserTokens(usuarioId: string, ipAddress: string): Promise<number> {
+  async revokeAllUserTokens(
+    usuarioId: string,
+    ipAddress: string,
+  ): Promise<number> {
     const tokens = await this.findActiveTokensByUserId(usuarioId);
-    
+
     for (const token of tokens) {
       await this.revokeToken(token.token, ipAddress);
     }
-    
+
     return tokens.length;
   }
 

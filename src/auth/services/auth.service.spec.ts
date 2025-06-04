@@ -224,30 +224,32 @@ describe('AuthService', () => {
 
       // Criar um input para o refresh token
       const refreshTokenInput = {
-        refreshToken: 'valid-refresh-token'
+        refreshToken: 'valid-refresh-token',
       };
-      
+
       // Mock do RefreshTokenService
       const mockRefreshToken = {
         token: 'valid-refresh-token',
         revoked: false,
         expiresAt: new Date(Date.now() + 1000 * 60 * 60), // 1 hora no futuro
-        usuario: { id: '123' }
+        usuario: { id: '123' },
       };
-      
+
       // Mock do serviço de tokens
       const mockRefreshTokenService = {
         findToken: jest.fn().mockResolvedValue(mockRefreshToken),
         revokeToken: jest.fn().mockResolvedValue(true),
         revokeDescendantTokens: jest.fn().mockResolvedValue(true),
-        createToken: jest.fn().mockResolvedValue({ token: 'new-refresh-token' })
+        createToken: jest
+          .fn()
+          .mockResolvedValue({ token: 'new-refresh-token' }),
       };
-      
+
       // Substituir o serviço mockado
       Object.defineProperty(service, 'refreshTokenService', {
-        value: mockRefreshTokenService
+        value: mockRefreshTokenService,
       });
-      
+
       const result = await service.refreshToken(ctx, refreshTokenInput);
 
       expect(service.getAuthToken).toBeCalled();
@@ -261,33 +263,33 @@ describe('AuthService', () => {
 
       // Criar um input para o refresh token
       const refreshTokenInput = {
-        refreshToken: 'invalid-refresh-token'
+        refreshToken: 'invalid-refresh-token',
       };
-      
+
       // Mock do RefreshTokenService
       const mockRefreshToken = {
         token: 'invalid-refresh-token',
         revoked: false,
         expiresAt: new Date(Date.now() + 1000 * 60 * 60), // 1 hora no futuro
-        usuario: { id: '999' } // ID que não existe
+        usuario: { id: '999' }, // ID que não existe
       };
-      
+
       // Mock do serviço de tokens
       const mockRefreshTokenService = {
         findToken: jest.fn().mockResolvedValue(mockRefreshToken),
         revokeToken: jest.fn().mockResolvedValue(true),
         revokeDescendantTokens: jest.fn().mockResolvedValue(true),
-        createToken: jest.fn().mockResolvedValue(null)
+        createToken: jest.fn().mockResolvedValue(null),
       };
-      
+
       // Substituir o serviço mockado
       Object.defineProperty(service, 'refreshTokenService', {
-        value: mockRefreshTokenService
+        value: mockRefreshTokenService,
       });
-      
-      await expect(service.refreshToken(ctx, refreshTokenInput)).rejects.toThrowError(
-        'Usuário não encontrado',
-      );
+
+      await expect(
+        service.refreshToken(ctx, refreshTokenInput),
+      ).rejects.toThrowError('Usuário não encontrado');
     });
 
     afterEach(() => {

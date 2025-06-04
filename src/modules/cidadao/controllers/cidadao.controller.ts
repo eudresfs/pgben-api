@@ -63,7 +63,7 @@ import { ApiErrorResponse } from '../../../shared/dtos/api-error-response.dto';
 @ApiBearerAuth()
 export class CidadaoController {
   private readonly logger = new Logger(CidadaoController.name);
-  
+
   constructor(
     private readonly cidadaoService: CidadaoService,
     private readonly cidadaoRepository: CidadaoRepository,
@@ -73,8 +73,7 @@ export class CidadaoController {
    * Lista todos os cidadãos com filtros e paginação
    */
   @Get()
-  @RequiresPermission(
-  {
+  @RequiresPermission({
     permissionName: 'cidadao.listar',
     scopeType: ScopeType.UNIT,
     scopeIdExpression: 'user.unidadeId',
@@ -135,8 +134,10 @@ export class CidadaoController {
     // Inicia medição de tempo para performance
     const startTime = Date.now();
     const requestId = `LIST-${Date.now()}`;
-    this.logger.log(`[${requestId}] Início de processamento da listagem de cidadãos`);
-    
+    this.logger.log(
+      `[${requestId}] Início de processamento da listagem de cidadãos`,
+    );
+
     try {
       // Restaurando o código original com monitoramento de performance
       const result = await this.cidadaoService.findAll({
@@ -146,20 +147,24 @@ export class CidadaoController {
         bairro,
         unidadeId: req?.user?.unidade_id,
       });
-      
+
       // Registra tempo total da operação para monitoramento
       const totalTime = Date.now() - startTime;
       if (totalTime > 500) {
-        this.logger.warn(`[${requestId}] Operação lenta (findAll): ${totalTime}ms`);
+        this.logger.warn(
+          `[${requestId}] Operação lenta (findAll): ${totalTime}ms`,
+        );
       } else {
         this.logger.log(`[${requestId}] Operação concluída em ${totalTime}ms`);
       }
-      
+
       return result;
     } catch (error) {
       // Registra erro para diagnóstico
       const totalTime = Date.now() - startTime;
-      this.logger.error(`[${requestId}] Erro em ${totalTime}ms: ${error.message}`);
+      this.logger.error(
+        `[${requestId}] Erro em ${totalTime}ms: ${error.message}`,
+      );
       throw error;
     }
   }
@@ -167,15 +172,18 @@ export class CidadaoController {
   @Get('cursor')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ 
-    summary: 'Lista cidadãos com paginação por cursor (mais eficiente para grandes volumes)', 
-    description: 'Implementa paginação baseada em cursor, que é mais eficiente que a paginação por offset para grandes volumes de dados.'
+  @ApiOperation({
+    summary:
+      'Lista cidadãos com paginação por cursor (mais eficiente para grandes volumes)',
+    description:
+      'Implementa paginação baseada em cursor, que é mais eficiente que a paginação por offset para grandes volumes de dados.',
   })
   @ApiQuery({
     name: 'cursor',
     required: false,
     type: String,
-    description: 'Cursor para a próxima página (ID do último item da página anterior)',
+    description:
+      'Cursor para a próxima página (ID do último item da página anterior)',
     example: '550e8400-e29b-41d4-a716-446655440000',
   })
   @ApiQuery({
@@ -221,7 +229,10 @@ export class CidadaoController {
     @Query('orderBy') orderBy?: string,
     @Query('orderDirection') orderDirection?: 'ASC' | 'DESC',
   ) {
-    return { data: [], message: 'Endpoint desativado temporariamente para diagnóstico' };
+    return {
+      data: [],
+      message: 'Endpoint desativado temporariamente para diagnóstico',
+    };
     // Código original comentado para permitir compilação
     /*return this.cidadaoService.findByCursor({
       cursor,
@@ -245,7 +256,8 @@ export class CidadaoController {
   })
   @ApiOperation({
     summary: 'Buscar cidadão',
-    description: 'Busca um cidadão por ID, CPF, NIS, telefone ou nome. Permite apenas um parâmetro por vez.',
+    description:
+      'Busca um cidadão por ID, CPF, NIS, telefone ou nome. Permite apenas um parâmetro por vez.',
   })
   @ApiQuery({
     name: 'id',
@@ -321,8 +333,6 @@ export class CidadaoController {
   ): Promise<CidadaoResponseDto | CidadaoResponseDto[]> {
     return this.cidadaoService.buscarCidadao(query);
   }
-  
-
 
   /**
    * Obtém detalhes de um cidadão específico
@@ -386,7 +396,8 @@ export class CidadaoController {
           examples: {
             'cidadao-completo': {
               summary: 'Cidadão com dados completos',
-              description: 'Exemplo de criação de cidadão com todos os dados preenchidos',
+              description:
+                'Exemplo de criação de cidadão com todos os dados preenchidos',
               value: {
                 nome: 'Maria da Silva Santos',
                 cpf: '123.456.789-00',
@@ -408,19 +419,22 @@ export class CidadaoController {
                   estado: 'RN',
                   cep: '59000-000',
                   ponto_referencia: 'Próximo ao Corpo de Bombeiros',
-                  tempo_de_residencia: 2
+                  tempo_de_residencia: 2,
                 },
-                papeis: [{
-                  tipo_papel: 'requerente',
-                  metadados: {
-                    grau_parentesco: 'Responsável'
-                  }
-                }]
-              }
+                papeis: [
+                  {
+                    tipo_papel: 'requerente',
+                    metadados: {
+                      grau_parentesco: 'Responsável',
+                    },
+                  },
+                ],
+              },
             },
             'cidadao-minimo': {
               summary: 'Cidadão com dados mínimos',
-              description: 'Exemplo de criação de cidadão apenas com campos obrigatórios',
+              description:
+                'Exemplo de criação de cidadão apenas com campos obrigatórios',
               value: {
                 nome: 'João Santos',
                 cpf: '987.654.321-00',
@@ -439,14 +453,14 @@ export class CidadaoController {
                   cidade: 'Natal',
                   estado: 'RN',
                   cep: '59100-000',
-                  tempo_de_residencia: 5
-                }
-              }
-            }
-          }
-        }
-      }
-    }
+                  tempo_de_residencia: 5,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
   })
   @ApiOkResponse({
     description: 'Cidadão criado com sucesso',
@@ -491,19 +505,19 @@ export class CidadaoController {
         req?.user?.id,
         req?.user?.unidade_id,
       );
-      
+
       const duration = Date.now() - startTime;
       this.logger.log(`✅ Cidadão criado com sucesso em ${duration}ms`, {
         cidadaoId: result.id,
-        duration
+        duration,
       });
-      
+
       return result;
     } catch (error) {
       const duration = Date.now() - startTime;
       this.logger.error(`❌ Erro ao criar cidadão após ${duration}ms:`, {
         error: error.message,
-        duration
+        duration,
       });
       throw error;
     }
@@ -566,25 +580,35 @@ export class CidadaoController {
     // Inicia medição de tempo para performance
     const startTime = Date.now();
     const requestId = `UPDATE-${id.substring(0, 8)}-${Date.now()}`;
-    this.logger.log(`[${requestId}] Início de processamento de atualização de cidadão`);
-    
+    this.logger.log(
+      `[${requestId}] Início de processamento de atualização de cidadão`,
+    );
+
     try {
       // Restaurando o código original com monitoramento de performance
-      const result = await this.cidadaoService.update(id, updateCidadaoDto, req.user.id);
-      
+      const result = await this.cidadaoService.update(
+        id,
+        updateCidadaoDto,
+        req.user.id,
+      );
+
       // Registra tempo total da operação para monitoramento
       const totalTime = Date.now() - startTime;
       if (totalTime > 500) {
-        this.logger.warn(`[${requestId}] Operação lenta (update): ${totalTime}ms`);
+        this.logger.warn(
+          `[${requestId}] Operação lenta (update): ${totalTime}ms`,
+        );
       } else {
         this.logger.log(`[${requestId}] Operação concluída em ${totalTime}ms`);
       }
-      
+
       return result;
     } catch (error) {
       // Registra erro para diagnóstico
       const totalTime = Date.now() - startTime;
-      this.logger.error(`[${requestId}] Erro em ${totalTime}ms: ${error.message}`);
+      this.logger.error(
+        `[${requestId}] Erro em ${totalTime}ms: ${error.message}`,
+      );
       throw error;
     }
   }
@@ -626,11 +650,11 @@ export class CidadaoController {
     const startTime = Date.now();
     const requestId = `CPF-${cpf.substring(Math.max(0, cpf.length - 4))}-${Date.now()}`;
     this.logger.log(`[${requestId}] Início de processamento da requisição CPF`);
-    
+
     try {
       // Chama o serviço otimizado para buscar por CPF
       const result = await this.cidadaoService.findByCpf(cpf, true);
-      
+
       // Registra tempo total da operação para monitoramento
       const totalTime = Date.now() - startTime;
       if (totalTime > 500) {
@@ -638,12 +662,14 @@ export class CidadaoController {
       } else {
         this.logger.log(`[${requestId}] Operação concluída em ${totalTime}ms`);
       }
-      
+
       return result;
     } catch (error) {
       // Registra erro para diagnóstico
       const totalTime = Date.now() - startTime;
-      this.logger.error(`[${requestId}] Erro em ${totalTime}ms: ${error.message}`);
+      this.logger.error(
+        `[${requestId}] Erro em ${totalTime}ms: ${error.message}`,
+      );
       throw error;
     }
   }
@@ -682,11 +708,11 @@ export class CidadaoController {
     const startTime = Date.now();
     const requestId = `NIS-${nis.substring(Math.max(0, nis.length - 4))}-${Date.now()}`;
     this.logger.log(`[${requestId}] Início de processamento da requisição NIS`);
-    
+
     try {
       // Chama o serviço otimizado para buscar por NIS
       const result = await this.cidadaoService.findByNis(nis, true);
-      
+
       // Registra tempo total da operação para monitoramento
       const totalTime = Date.now() - startTime;
       if (totalTime > 500) {
@@ -694,12 +720,14 @@ export class CidadaoController {
       } else {
         this.logger.log(`[${requestId}] Operação concluída em ${totalTime}ms`);
       }
-      
+
       return result;
     } catch (error) {
       // Registra erro para diagnóstico
       const totalTime = Date.now() - startTime;
-      this.logger.error(`[${requestId}] Erro em ${totalTime}ms: ${error.message}`);
+      this.logger.error(
+        `[${requestId}] Erro em ${totalTime}ms: ${error.message}`,
+      );
       throw error;
     }
   }
@@ -717,7 +745,7 @@ export class CidadaoController {
       scopeType: ScopeType.UNIT,
       scopeIdExpression: 'cidadao.unidadeId',
     },
-    { permissionName: 'solicitacao.listar' }
+    { permissionName: 'solicitacao.listar' },
   )
   async findSolicitacoes(@Param('id') id: string) {
     return this.cidadaoService.findSolicitacoesByCidadaoId(id);
@@ -744,8 +772,10 @@ export class CidadaoController {
     // Inicia medição de tempo para performance
     const startTime = Date.now();
     const requestId = `COMP-${id.substring(0, 8)}-${Date.now()}`;
-    this.logger.log(`[${requestId}] Início de processamento de adição na composição familiar`);
-    
+    this.logger.log(
+      `[${requestId}] Início de processamento de adição na composição familiar`,
+    );
+
     try {
       // Restaurando o código original com monitoramento de performance
       const result = await this.cidadaoService.addComposicaoFamiliar(
@@ -753,20 +783,24 @@ export class CidadaoController {
         createComposicaoFamiliarDto,
         req?.user?.id,
       );
-      
+
       // Registra tempo total da operação para monitoramento
       const totalTime = Date.now() - startTime;
       if (totalTime > 500) {
-        this.logger.warn(`[${requestId}] Operação lenta (addComposicaoFamiliar): ${totalTime}ms`);
+        this.logger.warn(
+          `[${requestId}] Operação lenta (addComposicaoFamiliar): ${totalTime}ms`,
+        );
       } else {
         this.logger.log(`[${requestId}] Operação concluída em ${totalTime}ms`);
       }
-      
+
       return result;
     } catch (error) {
       // Registra erro para diagnóstico
       const totalTime = Date.now() - startTime;
-      this.logger.error(`[${requestId}] Erro em ${totalTime}ms: ${error.message}`);
+      this.logger.error(
+        `[${requestId}] Erro em ${totalTime}ms: ${error.message}`,
+      );
       throw error;
     }
   }

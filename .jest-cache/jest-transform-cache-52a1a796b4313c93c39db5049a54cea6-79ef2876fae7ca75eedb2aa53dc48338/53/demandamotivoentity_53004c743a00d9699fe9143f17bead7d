@@ -1,0 +1,85 @@
+6da141e618fb36e9dfa9325074a0dbd2
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var _a, _b, _c;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.DemandaMotivo = exports.TipoDemanda = void 0;
+const typeorm_1 = require("typeorm");
+const class_validator_1 = require("class-validator");
+const ocorrencia_entity_1 = require("./ocorrencia.entity");
+var TipoDemanda;
+(function (TipoDemanda) {
+    TipoDemanda["DENUNCIA"] = "denuncia";
+    TipoDemanda["RECLAMACAO"] = "reclamacao";
+    TipoDemanda["SUGESTAO"] = "sugestao";
+    TipoDemanda["ELOGIO"] = "elogio";
+    TipoDemanda["INFORMACAO"] = "informacao";
+    TipoDemanda["OUTRO"] = "outro";
+})(TipoDemanda || (exports.TipoDemanda = TipoDemanda = {}));
+let DemandaMotivo = class DemandaMotivo {
+    id;
+    tipo;
+    nome;
+    descricao;
+    ativo;
+    ocorrencia;
+    created_at;
+    updated_at;
+    removed_at;
+};
+exports.DemandaMotivo = DemandaMotivo;
+__decorate([
+    (0, typeorm_1.PrimaryGeneratedColumn)('uuid'),
+    __metadata("design:type", String)
+], DemandaMotivo.prototype, "id", void 0);
+__decorate([
+    (0, typeorm_1.Column)({
+        type: 'enum',
+        enum: TipoDemanda,
+        enumName: 'tipo_demanda',
+    }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Tipo de demanda é obrigatório' }),
+    __metadata("design:type", String)
+], DemandaMotivo.prototype, "tipo", void 0);
+__decorate([
+    (0, typeorm_1.Column)(),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Nome é obrigatório' }),
+    __metadata("design:type", String)
+], DemandaMotivo.prototype, "nome", void 0);
+__decorate([
+    (0, typeorm_1.Column)('text', { nullable: true }),
+    __metadata("design:type", String)
+], DemandaMotivo.prototype, "descricao", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ default: true }),
+    __metadata("design:type", Boolean)
+], DemandaMotivo.prototype, "ativo", void 0);
+__decorate([
+    (0, typeorm_1.OneToMany)(() => ocorrencia_entity_1.Ocorrencia, (ocorrencia) => ocorrencia.demanda_motivo),
+    __metadata("design:type", Array)
+], DemandaMotivo.prototype, "ocorrencia", void 0);
+__decorate([
+    (0, typeorm_1.CreateDateColumn)(),
+    __metadata("design:type", typeof (_a = typeof Date !== "undefined" && Date) === "function" ? _a : Object)
+], DemandaMotivo.prototype, "created_at", void 0);
+__decorate([
+    (0, typeorm_1.UpdateDateColumn)(),
+    __metadata("design:type", typeof (_b = typeof Date !== "undefined" && Date) === "function" ? _b : Object)
+], DemandaMotivo.prototype, "updated_at", void 0);
+__decorate([
+    (0, typeorm_1.DeleteDateColumn)(),
+    __metadata("design:type", typeof (_c = typeof Date !== "undefined" && Date) === "function" ? _c : Object)
+], DemandaMotivo.prototype, "removed_at", void 0);
+exports.DemandaMotivo = DemandaMotivo = __decorate([
+    (0, typeorm_1.Entity)('demanda_motivos'),
+    (0, typeorm_1.Index)(['tipo', 'nome'], { unique: true })
+], DemandaMotivo);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXGVudGl0aWVzXFxkZW1hbmRhLW1vdGl2by5lbnRpdHkudHMiLCJtYXBwaW5ncyI6Ijs7Ozs7Ozs7Ozs7OztBQUFBLHFDQVNpQjtBQUNqQixxREFBNkM7QUFDN0MsMkRBQWlEO0FBRWpELElBQVksV0FPWDtBQVBELFdBQVksV0FBVztJQUNyQixvQ0FBcUIsQ0FBQTtJQUNyQix3Q0FBeUIsQ0FBQTtJQUN6QixvQ0FBcUIsQ0FBQTtJQUNyQixnQ0FBaUIsQ0FBQTtJQUNqQix3Q0FBeUIsQ0FBQTtJQUN6Qiw4QkFBZSxDQUFBO0FBQ2pCLENBQUMsRUFQVyxXQUFXLDJCQUFYLFdBQVcsUUFPdEI7QUFJTSxJQUFNLGFBQWEsR0FBbkIsTUFBTSxhQUFhO0lBRXhCLEVBQUUsQ0FBUztJQVFYLElBQUksQ0FBYztJQUlsQixJQUFJLENBQVM7SUFHYixTQUFTLENBQVM7SUFHbEIsS0FBSyxDQUFVO0lBR2YsVUFBVSxDQUFlO0lBR3pCLFVBQVUsQ0FBTztJQUdqQixVQUFVLENBQU87SUFHakIsVUFBVSxDQUFPO0NBQ2xCLENBQUE7QUFqQ1ksc0NBQWE7QUFFeEI7SUFEQyxJQUFBLGdDQUFzQixFQUFDLE1BQU0sQ0FBQzs7eUNBQ3BCO0FBUVg7SUFOQyxJQUFBLGdCQUFNLEVBQUM7UUFDTixJQUFJLEVBQUUsTUFBTTtRQUNaLElBQUksRUFBRSxXQUFXO1FBQ2pCLFFBQVEsRUFBRSxjQUFjO0tBQ3pCLENBQUM7SUFDRCxJQUFBLDRCQUFVLEVBQUMsRUFBRSxPQUFPLEVBQUUsK0JBQStCLEVBQUUsQ0FBQzs7MkNBQ3ZDO0FBSWxCO0lBRkMsSUFBQSxnQkFBTSxHQUFFO0lBQ1IsSUFBQSw0QkFBVSxFQUFDLEVBQUUsT0FBTyxFQUFFLG9CQUFvQixFQUFFLENBQUM7OzJDQUNqQztBQUdiO0lBREMsSUFBQSxnQkFBTSxFQUFDLE1BQU0sRUFBRSxFQUFFLFFBQVEsRUFBRSxJQUFJLEVBQUUsQ0FBQzs7Z0RBQ2pCO0FBR2xCO0lBREMsSUFBQSxnQkFBTSxFQUFDLEVBQUUsT0FBTyxFQUFFLElBQUksRUFBRSxDQUFDOzs0Q0FDWDtBQUdmO0lBREMsSUFBQSxtQkFBUyxFQUFDLEdBQUcsRUFBRSxDQUFDLDhCQUFVLEVBQUUsQ0FBQyxVQUFVLEVBQUUsRUFBRSxDQUFDLFVBQVUsQ0FBQyxjQUFjLENBQUM7O2lEQUM5QztBQUd6QjtJQURDLElBQUEsMEJBQWdCLEdBQUU7a0RBQ1AsSUFBSSxvQkFBSixJQUFJO2lEQUFDO0FBR2pCO0lBREMsSUFBQSwwQkFBZ0IsR0FBRTtrREFDUCxJQUFJLG9CQUFKLElBQUk7aURBQUM7QUFHakI7SUFEQyxJQUFBLDBCQUFnQixHQUFFO2tEQUNQLElBQUksb0JBQUosSUFBSTtpREFBQzt3QkFoQ04sYUFBYTtJQUZ6QixJQUFBLGdCQUFNLEVBQUMsaUJBQWlCLENBQUM7SUFDekIsSUFBQSxlQUFLLEVBQUMsQ0FBQyxNQUFNLEVBQUUsTUFBTSxDQUFDLEVBQUUsRUFBRSxNQUFNLEVBQUUsSUFBSSxFQUFFLENBQUM7R0FDN0IsYUFBYSxDQWlDekIiLCJuYW1lcyI6W10sInNvdXJjZXMiOlsiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXGVudGl0aWVzXFxkZW1hbmRhLW1vdGl2by5lbnRpdHkudHMiXSwic291cmNlc0NvbnRlbnQiOlsiaW1wb3J0IHtcbiAgRW50aXR5LFxuICBQcmltYXJ5R2VuZXJhdGVkQ29sdW1uLFxuICBDb2x1bW4sXG4gIENyZWF0ZURhdGVDb2x1bW4sXG4gIFVwZGF0ZURhdGVDb2x1bW4sXG4gIERlbGV0ZURhdGVDb2x1bW4sXG4gIE9uZVRvTWFueSxcbiAgSW5kZXgsXG59IGZyb20gJ3R5cGVvcm0nO1xuaW1wb3J0IHsgSXNOb3RFbXB0eSB9IGZyb20gJ2NsYXNzLXZhbGlkYXRvcic7XG5pbXBvcnQgeyBPY29ycmVuY2lhIH0gZnJvbSAnLi9vY29ycmVuY2lhLmVudGl0eSc7XG5cbmV4cG9ydCBlbnVtIFRpcG9EZW1hbmRhIHtcbiAgREVOVU5DSUEgPSAnZGVudW5jaWEnLFxuICBSRUNMQU1BQ0FPID0gJ3JlY2xhbWFjYW8nLFxuICBTVUdFU1RBTyA9ICdzdWdlc3RhbycsXG4gIEVMT0dJTyA9ICdlbG9naW8nLFxuICBJTkZPUk1BQ0FPID0gJ2luZm9ybWFjYW8nLFxuICBPVVRSTyA9ICdvdXRybycsXG59XG5cbkBFbnRpdHkoJ2RlbWFuZGFfbW90aXZvcycpXG5ASW5kZXgoWyd0aXBvJywgJ25vbWUnXSwgeyB1bmlxdWU6IHRydWUgfSlcbmV4cG9ydCBjbGFzcyBEZW1hbmRhTW90aXZvIHtcbiAgQFByaW1hcnlHZW5lcmF0ZWRDb2x1bW4oJ3V1aWQnKVxuICBpZDogc3RyaW5nO1xuXG4gIEBDb2x1bW4oe1xuICAgIHR5cGU6ICdlbnVtJyxcbiAgICBlbnVtOiBUaXBvRGVtYW5kYSxcbiAgICBlbnVtTmFtZTogJ3RpcG9fZGVtYW5kYScsXG4gIH0pXG4gIEBJc05vdEVtcHR5KHsgbWVzc2FnZTogJ1RpcG8gZGUgZGVtYW5kYSDDqSBvYnJpZ2F0w7NyaW8nIH0pXG4gIHRpcG86IFRpcG9EZW1hbmRhO1xuXG4gIEBDb2x1bW4oKVxuICBASXNOb3RFbXB0eSh7IG1lc3NhZ2U6ICdOb21lIMOpIG9icmlnYXTDs3JpbycgfSlcbiAgbm9tZTogc3RyaW5nO1xuXG4gIEBDb2x1bW4oJ3RleHQnLCB7IG51bGxhYmxlOiB0cnVlIH0pXG4gIGRlc2NyaWNhbzogc3RyaW5nO1xuXG4gIEBDb2x1bW4oeyBkZWZhdWx0OiB0cnVlIH0pXG4gIGF0aXZvOiBib29sZWFuO1xuXG4gIEBPbmVUb01hbnkoKCkgPT4gT2NvcnJlbmNpYSwgKG9jb3JyZW5jaWEpID0+IG9jb3JyZW5jaWEuZGVtYW5kYV9tb3Rpdm8pXG4gIG9jb3JyZW5jaWE6IE9jb3JyZW5jaWFbXTtcblxuICBAQ3JlYXRlRGF0ZUNvbHVtbigpXG4gIGNyZWF0ZWRfYXQ6IERhdGU7XG5cbiAgQFVwZGF0ZURhdGVDb2x1bW4oKVxuICB1cGRhdGVkX2F0OiBEYXRlO1xuXG4gIEBEZWxldGVEYXRlQ29sdW1uKClcbiAgcmVtb3ZlZF9hdDogRGF0ZTtcbn1cbiJdLCJ2ZXJzaW9uIjozfQ==

@@ -237,61 +237,69 @@ export class CampoDinamicoBeneficio {
    * Verifica se tem validação de valor mínimo
    */
   temValidacaoMin(): boolean {
-    return this.temValidacoes() && 
-           this.validacoes.min !== undefined &&
-           this.validacoes.min !== null;
+    return (
+      this.temValidacoes() &&
+      this.validacoes.min !== undefined &&
+      this.validacoes.min !== null
+    );
   }
 
   /**
    * Verifica se tem validação de valor máximo
    */
   temValidacaoMax(): boolean {
-    return this.temValidacoes() && 
-           this.validacoes.max !== undefined &&
-           this.validacoes.max !== null;
+    return (
+      this.temValidacoes() &&
+      this.validacoes.max !== undefined &&
+      this.validacoes.max !== null
+    );
   }
 
   /**
    * Verifica se tem validação de comprimento mínimo
    */
   temValidacaoMinLength(): boolean {
-    return this.temValidacoes() && 
-           this.validacoes.minLength !== undefined &&
-           this.validacoes.minLength !== null;
+    return (
+      this.temValidacoes() &&
+      this.validacoes.minLength !== undefined &&
+      this.validacoes.minLength !== null
+    );
   }
 
   /**
    * Verifica se tem validação de comprimento máximo
    */
   temValidacaoMaxLength(): boolean {
-    return this.temValidacoes() && 
-           this.validacoes.maxLength !== undefined &&
-           this.validacoes.maxLength !== null;
+    return (
+      this.temValidacoes() &&
+      this.validacoes.maxLength !== undefined &&
+      this.validacoes.maxLength !== null
+    );
   }
 
   /**
    * Verifica se tem validação de padrão (regex)
    */
   temValidacaoPattern(): boolean {
-    return this.temValidacoes() && 
-           !!this.validacoes.pattern;
+    return this.temValidacoes() && !!this.validacoes.pattern;
   }
 
   /**
    * Verifica se tem validação de enum (lista de valores)
    */
   temValidacaoEnum(): boolean {
-    return this.temValidacoes() && 
-           !!this.validacoes.enum &&
-           this.validacoes.enum.length > 0;
+    return (
+      this.temValidacoes() &&
+      !!this.validacoes.enum &&
+      this.validacoes.enum.length > 0
+    );
   }
 
   /**
    * Verifica se tem validação de formato
    */
   temValidacaoFormat(): boolean {
-    return this.temValidacoes() && 
-           !!this.validacoes.format;
+    return this.temValidacoes() && !!this.validacoes.format;
   }
 
   /**
@@ -357,7 +365,10 @@ export class CampoDinamicoBeneficio {
     const erros: string[] = [];
 
     // Verifica se é obrigatório
-    if (this.isObrigatorio() && (valor === null || valor === undefined || valor === '')) {
+    if (
+      this.isObrigatorio() &&
+      (valor === null || valor === undefined || valor === '')
+    ) {
       erros.push(`${this.label} é obrigatório`);
       return { valido: false, erros };
     }
@@ -374,12 +385,24 @@ export class CampoDinamicoBeneficio {
           erros.push(`${this.label} deve ser um texto`);
         } else {
           const comprimentoMinimo = this.getComprimentoMinimo();
-          if (this.temValidacaoMinLength() && comprimentoMinimo !== null && valor.length < comprimentoMinimo) {
-            erros.push(`${this.label} deve ter pelo menos ${comprimentoMinimo} caracteres`);
+          if (
+            this.temValidacaoMinLength() &&
+            comprimentoMinimo !== null &&
+            valor.length < comprimentoMinimo
+          ) {
+            erros.push(
+              `${this.label} deve ter pelo menos ${comprimentoMinimo} caracteres`,
+            );
           }
           const comprimentoMaximo = this.getComprimentoMaximo();
-          if (this.temValidacaoMaxLength() && comprimentoMaximo !== null && valor.length > comprimentoMaximo) {
-            erros.push(`${this.label} deve ter no máximo ${comprimentoMaximo} caracteres`);
+          if (
+            this.temValidacaoMaxLength() &&
+            comprimentoMaximo !== null &&
+            valor.length > comprimentoMaximo
+          ) {
+            erros.push(
+              `${this.label} deve ter no máximo ${comprimentoMaximo} caracteres`,
+            );
           }
           if (this.temValidacaoPattern()) {
             const padrao = this.getPadrao();
@@ -390,8 +413,13 @@ export class CampoDinamicoBeneficio {
               }
             }
           }
-          if (this.temValidacaoEnum() && !this.getValoresEnum().includes(valor)) {
-            erros.push(`${this.label} deve ser um dos valores: ${this.getValoresEnum().join(', ')}`);
+          if (
+            this.temValidacaoEnum() &&
+            !this.getValoresEnum().includes(valor)
+          ) {
+            erros.push(
+              `${this.label} deve ser um dos valores: ${this.getValoresEnum().join(', ')}`,
+            );
           }
         }
         break;
@@ -402,12 +430,24 @@ export class CampoDinamicoBeneficio {
           erros.push(`${this.label} deve ser um número`);
         } else {
           const valorMinimo = this.getValorMinimo();
-          if (this.temValidacaoMin() && valorMinimo !== null && numero < valorMinimo) {
-            erros.push(`${this.label} deve ser maior ou igual a ${valorMinimo}`);
+          if (
+            this.temValidacaoMin() &&
+            valorMinimo !== null &&
+            numero < valorMinimo
+          ) {
+            erros.push(
+              `${this.label} deve ser maior ou igual a ${valorMinimo}`,
+            );
           }
           const valorMaximo = this.getValorMaximo();
-          if (this.temValidacaoMax() && valorMaximo !== null && numero > valorMaximo) {
-            erros.push(`${this.label} deve ser menor ou igual a ${valorMaximo}`);
+          if (
+            this.temValidacaoMax() &&
+            valorMaximo !== null &&
+            numero > valorMaximo
+          ) {
+            erros.push(
+              `${this.label} deve ser menor ou igual a ${valorMaximo}`,
+            );
           }
         }
         break;
@@ -431,10 +471,20 @@ export class CampoDinamicoBeneficio {
         } else {
           const valorMinimo = this.getValorMinimo();
           const valorMaximo = this.getValorMaximo();
-          if (this.temValidacaoMin() && valorMinimo !== null && valor.length < valorMinimo) {
-            erros.push(`${this.label} deve ter pelo menos ${valorMinimo} itens`);
+          if (
+            this.temValidacaoMin() &&
+            valorMinimo !== null &&
+            valor.length < valorMinimo
+          ) {
+            erros.push(
+              `${this.label} deve ter pelo menos ${valorMinimo} itens`,
+            );
           }
-          if (this.temValidacaoMax() && valorMaximo !== null && valor.length > valorMaximo) {
+          if (
+            this.temValidacaoMax() &&
+            valorMaximo !== null &&
+            valor.length > valorMaximo
+          ) {
             erros.push(`${this.label} deve ter no máximo ${valorMaximo} itens`);
           }
         }
@@ -480,38 +530,46 @@ export class CampoDinamicoBeneficio {
   isConsistente(): boolean {
     // Verifica se tem tipo de benefício
     if (!this.tipo_beneficio_id) return false;
-    
+
     // Verifica se tem label
     if (!this.label || this.label.trim().length === 0) return false;
-    
+
     // Verifica se tem nome
     if (!this.nome || this.nome.trim().length === 0) return false;
-    
+
     // Verifica se tem tipo válido
     if (!Object.values(TipoDado).includes(this.tipo)) return false;
-    
+
     // Verifica se a ordem é válida
     if (this.ordem < 1) return false;
-    
+
     // Verifica validações se existirem
     if (this.temValidacoes()) {
       if (this.temValidacaoMin() && this.temValidacaoMax()) {
         const valorMinimo = this.getValorMinimo();
         const valorMaximo = this.getValorMaximo();
-        if (valorMinimo !== null && valorMaximo !== null && valorMinimo > valorMaximo) {
+        if (
+          valorMinimo !== null &&
+          valorMaximo !== null &&
+          valorMinimo > valorMaximo
+        ) {
           return false;
         }
       }
-      
+
       if (this.temValidacaoMinLength() && this.temValidacaoMaxLength()) {
         const comprimentoMinimo = this.getComprimentoMinimo();
         const comprimentoMaximo = this.getComprimentoMaximo();
-        if (comprimentoMinimo !== null && comprimentoMaximo !== null && comprimentoMinimo > comprimentoMaximo) {
+        if (
+          comprimentoMinimo !== null &&
+          comprimentoMaximo !== null &&
+          comprimentoMinimo > comprimentoMaximo
+        ) {
           return false;
         }
       }
     }
-    
+
     return true;
   }
 
@@ -521,10 +579,10 @@ export class CampoDinamicoBeneficio {
   podeSerRemovido(): boolean {
     // Não pode remover se já foi removido
     if (this.foiRemovido()) return false;
-    
+
     // Pode implementar lógica adicional aqui
     // Por exemplo, verificar se tem dados associados
-    
+
     return true;
   }
 
@@ -539,8 +597,9 @@ export class CampoDinamicoBeneficio {
       tipo: this.tipo,
       obrigatorio: this.obrigatorio,
       descricao: this.descricao,
-      validacoes: this.validacoes ? 
-        JSON.parse(JSON.stringify(this.validacoes)) : null,
+      validacoes: this.validacoes
+        ? JSON.parse(JSON.stringify(this.validacoes))
+        : null,
       ordem: this.ordem,
       ativo: this.ativo,
     };
@@ -552,10 +611,10 @@ export class CampoDinamicoBeneficio {
   isCritico(): boolean {
     // Campos obrigatórios são críticos
     if (this.isObrigatorio()) return true;
-    
+
     // Campos com ordem baixa (primeiros) são mais críticos
     if (this.ordem <= 3) return true;
-    
+
     return false;
   }
 
@@ -564,18 +623,18 @@ export class CampoDinamicoBeneficio {
    */
   getComplexidade(): 'BAIXA' | 'MEDIA' | 'ALTA' {
     let pontos = 0;
-    
+
     // Tipo de dado complexo
     if (this.isCampoObjeto() || this.isCampoArray()) pontos += 2;
-    
+
     // Validações
     if (this.temValidacoes()) {
       pontos += Object.keys(this.validacoes).length;
     }
-    
+
     // Obrigatório
     if (this.isObrigatorio()) pontos += 1;
-    
+
     if (pontos <= 2) return 'BAIXA';
     if (pontos <= 5) return 'MEDIA';
     return 'ALTA';
@@ -585,7 +644,11 @@ export class CampoDinamicoBeneficio {
    * Obtém a categoria do campo
    */
   getCategoria(): 'BASICO' | 'AVANCADO' | 'COMPLEXO' {
-    if (this.isCampoTexto() || this.isCampoNumerico() || this.isCampoBooleano()) {
+    if (
+      this.isCampoTexto() ||
+      this.isCampoNumerico() ||
+      this.isCampoBooleano()
+    ) {
       return this.temValidacoes() ? 'AVANCADO' : 'BASICO';
     }
     return 'COMPLEXO';
@@ -627,27 +690,30 @@ export class CampoDinamicoBeneficio {
    */
   getSugestoesMelhoria(): string[] {
     const sugestoes: string[] = [];
-    
+
     if (!this.descricao || this.descricao.trim().length === 0) {
       sugestoes.push('Adicionar descrição detalhada do campo');
     }
-    
-    if (!this.temValidacoes() && (this.isCampoTexto() || this.isCampoNumerico())) {
+
+    if (
+      !this.temValidacoes() &&
+      (this.isCampoTexto() || this.isCampoNumerico())
+    ) {
       sugestoes.push('Definir validações para o campo');
     }
-    
+
     if (this.isCampoTexto() && !this.temValidacaoMaxLength()) {
       sugestoes.push('Definir comprimento máximo para campos de texto');
     }
-    
+
     if (!this.isConsistente()) {
       sugestoes.push('Verificar e corrigir inconsistências nos dados');
     }
-    
+
     if (!this.ativo) {
       sugestoes.push('Considerar reativar o campo se necessário');
     }
-    
+
     return sugestoes;
   }
 
@@ -679,7 +745,9 @@ export class CampoDinamicoBeneficio {
       tipo: this.getDescricaoTipoDado(),
       obrigatorio: this.isObrigatorio(),
       temValidacoes: this.temValidacoes(),
-      numeroValidacoes: this.temValidacoes() ? Object.keys(this.validacoes).length : 0,
+      numeroValidacoes: this.temValidacoes()
+        ? Object.keys(this.validacoes).length
+        : 0,
       ordem: this.ordem,
     };
   }

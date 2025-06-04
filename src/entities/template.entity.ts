@@ -1,4 +1,11 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Index,
+} from 'typeorm';
 import { TemplateTipoEnum } from '../enums';
 
 /**
@@ -30,7 +37,7 @@ export class Template {
    */
   @Column({
     type: 'enum',
-    enum: TemplateTipoEnum
+    enum: TemplateTipoEnum,
   })
   @Index('idx_template_tipo')
   tipo: TemplateTipoEnum;

@@ -6,7 +6,7 @@ import { TemplateTipoEnum } from '../../../enums/template-tipo.enum';
 
 /**
  * Repositório para gerenciamento de templates do sistema
- * 
+ *
  * Fornece operações de acesso a dados para entidade Template
  */
 @Injectable()
@@ -32,9 +32,9 @@ export class TemplateRepository {
    */
   async findAll(tipo?: TemplateTipoEnum): Promise<Template[]> {
     const whereClause = tipo ? { tipo } : {};
-    return this.repository.find({ 
+    return this.repository.find({
       where: whereClause,
-      order: { tipo: 'ASC', codigo: 'ASC' }
+      order: { tipo: 'ASC', codigo: 'ASC' },
     });
   }
 
@@ -61,9 +61,9 @@ export class TemplateRepository {
    * @returns Lista de templates do tipo
    */
   async findByTipo(tipo: TemplateTipoEnum): Promise<Template[]> {
-    return this.repository.find({ 
+    return this.repository.find({
       where: { tipo },
-      order: { codigo: 'ASC' }
+      order: { codigo: 'ASC' },
     });
   }
 

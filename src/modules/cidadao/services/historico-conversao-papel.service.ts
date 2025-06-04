@@ -129,7 +129,9 @@ export class HistoricoConversaoPapelService {
 
       return historico;
     } catch (error) {
-      if (error instanceof NotFoundException) {throw error;}
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
       this.logger.error(
         `Erro ao buscar histórico de conversão: ${error.message}`,
         error.stack,
@@ -172,11 +174,18 @@ export class HistoricoConversaoPapelService {
     },
   ): Promise<{ items: HistoricoConversaoPapel[]; total: number }> {
     try {
-      const { cidadaoId, papelAnterior, papelNovo, page = 1, limit = 10 } = options || {};
+      const {
+        cidadaoId,
+        papelAnterior,
+        papelNovo,
+        page = 1,
+        limit = 10,
+      } = options || {};
       const skip = (page - 1) * limit;
 
       // Construir a query base
-      const queryBuilder = this.historicoRepository.createQueryBuilder('historico')
+      const queryBuilder = this.historicoRepository
+        .createQueryBuilder('historico')
         .where('historico.created_at BETWEEN :dataInicio AND :dataFim', {
           dataInicio,
           dataFim,
@@ -185,15 +194,21 @@ export class HistoricoConversaoPapelService {
 
       // Adicionar filtros opcionais
       if (cidadaoId) {
-        queryBuilder.andWhere('historico.cidadao_id = :cidadaoId', { cidadaoId });
+        queryBuilder.andWhere('historico.cidadao_id = :cidadaoId', {
+          cidadaoId,
+        });
       }
 
       if (papelAnterior) {
-        queryBuilder.andWhere('historico.papel_anterior = :papelAnterior', { papelAnterior });
+        queryBuilder.andWhere('historico.papel_anterior = :papelAnterior', {
+          papelAnterior,
+        });
       }
 
       if (papelNovo) {
-        queryBuilder.andWhere('historico.papel_novo = :papelNovo', { papelNovo });
+        queryBuilder.andWhere('historico.papel_novo = :papelNovo', {
+          papelNovo,
+        });
       }
 
       // Executar a query com paginação

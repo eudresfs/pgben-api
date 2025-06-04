@@ -1,10 +1,18 @@
-import { MigrationInterface, QueryRunner, Table, TableForeignKey, TableIndex } from 'typeorm';
+import {
+  MigrationInterface,
+  QueryRunner,
+  Table,
+  TableForeignKey,
+  TableIndex,
+} from 'typeorm';
 
 /**
  * Migration para criar a tabela tipo_beneficio_schema
  * Esta tabela mapeia tipos de benefícios para suas estruturas de entidades correspondentes
  */
-export class CreateTipoBeneficioSchema1733158800000 implements MigrationInterface {
+export class CreateTipoBeneficioSchema1733158800000
+  implements MigrationInterface
+{
   name = 'CreateTipoBeneficioSchema1733158800000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -30,7 +38,8 @@ export class CreateTipoBeneficioSchema1733158800000 implements MigrationInterfac
             type: 'varchar',
             length: '100',
             isNullable: false,
-            comment: 'Nome da entidade de dados correspondente (ex: DadosNatalidade, DadosAluguelSocial)',
+            comment:
+              'Nome da entidade de dados correspondente (ex: DadosNatalidade, DadosAluguelSocial)',
           },
           {
             name: 'schema_estrutura',
@@ -147,14 +156,32 @@ export class CreateTipoBeneficioSchema1733158800000 implements MigrationInterfac
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     // Remover índices
-    await queryRunner.dropIndex('tipo_beneficio_schema', 'IDX_tipo_beneficio_schema_estrutura_gin');
-    await queryRunner.dropIndex('tipo_beneficio_schema', 'IDX_tipo_beneficio_schema_unique_ativo');
-    await queryRunner.dropIndex('tipo_beneficio_schema', 'IDX_tipo_beneficio_schema_ativo');
-    await queryRunner.dropIndex('tipo_beneficio_schema', 'IDX_tipo_beneficio_schema_entidade_dados');
-    await queryRunner.dropIndex('tipo_beneficio_schema', 'IDX_tipo_beneficio_schema_tipo_beneficio_id');
+    await queryRunner.dropIndex(
+      'tipo_beneficio_schema',
+      'IDX_tipo_beneficio_schema_estrutura_gin',
+    );
+    await queryRunner.dropIndex(
+      'tipo_beneficio_schema',
+      'IDX_tipo_beneficio_schema_unique_ativo',
+    );
+    await queryRunner.dropIndex(
+      'tipo_beneficio_schema',
+      'IDX_tipo_beneficio_schema_ativo',
+    );
+    await queryRunner.dropIndex(
+      'tipo_beneficio_schema',
+      'IDX_tipo_beneficio_schema_entidade_dados',
+    );
+    await queryRunner.dropIndex(
+      'tipo_beneficio_schema',
+      'IDX_tipo_beneficio_schema_tipo_beneficio_id',
+    );
 
     // Remover foreign key
-    await queryRunner.dropForeignKey('tipo_beneficio_schema', 'FK_tipo_beneficio_schema_tipo_beneficio');
+    await queryRunner.dropForeignKey(
+      'tipo_beneficio_schema',
+      'FK_tipo_beneficio_schema_tipo_beneficio',
+    );
 
     // Remover tabela
     await queryRunner.dropTable('tipo_beneficio_schema');

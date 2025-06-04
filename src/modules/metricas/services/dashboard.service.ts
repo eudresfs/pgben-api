@@ -1,7 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between } from 'typeorm';
-import { Solicitacao, StatusSolicitacao } from '../../../entities/solicitacao.entity';
+import {
+  Solicitacao,
+  StatusSolicitacao,
+} from '../../../entities/solicitacao.entity';
 import { Recurso, StatusRecurso } from '../../../entities/recurso.entity';
 import { TipoBeneficio } from '../../../entities/tipo-beneficio.entity';
 import { Unidade } from '../../../entities/unidade.entity';
@@ -87,13 +90,13 @@ export class DashboardService {
   constructor(
     @InjectRepository(Solicitacao)
     private solicitacaoRepository: Repository<Solicitacao>,
-    
+
     @InjectRepository(Recurso)
     private recursoRepository: Repository<Recurso>,
-    
+
     @InjectRepository(TipoBeneficio)
     private tipoBeneficioRepository: Repository<TipoBeneficio>,
-    
+
     @InjectRepository(Unidade)
     private unidadeRepository: Repository<Unidade>,
   ) {
@@ -147,7 +150,9 @@ export class DashboardService {
       .select('tipo.nome', 'tipo')
       .addSelect('COUNT(solicitacao.id)', 'quantidade')
       .leftJoin('tipo.solicitacoes', 'solicitacao')
-      .where('solicitacao.status = :status', { status: StatusSolicitacao.LIBERADA })
+      .where('solicitacao.status = :status', {
+        status: StatusSolicitacao.LIBERADA,
+      })
       .groupBy('tipo.id')
       .orderBy('quantidade', 'DESC')
       .limit(5)
@@ -200,8 +205,13 @@ export class DashboardService {
     // Tempo médio de análise (em dias)
     const tempoMedioAnaliseResult = await this.solicitacaoRepository
       .createQueryBuilder('solicitacao')
-      .select('AVG(EXTRACT(EPOCH FROM (solicitacao.data_aprovacao - solicitacao.data_abertura)) / 86400)', 'media')
-      .where('solicitacao.status IN (:...status)', { status: [StatusSolicitacao.APROVADA, StatusSolicitacao.INDEFERIDA] })
+      .select(
+        'AVG(EXTRACT(EPOCH FROM (solicitacao.data_aprovacao - solicitacao.data_abertura)) / 86400)',
+        'media',
+      )
+      .where('solicitacao.status IN (:...status)', {
+        status: [StatusSolicitacao.APROVADA, StatusSolicitacao.INDEFERIDA],
+      })
       .andWhere('solicitacao.data_aprovacao IS NOT NULL')
       .getRawOne();
 
@@ -219,7 +229,8 @@ export class DashboardService {
       where: { status: StatusSolicitacao.APROVADA },
     });
 
-    const taxaAprovacao = totalAnalisadas > 0 ? (totalAprovadas / totalAnalisadas) * 100 : 0;
+    const taxaAprovacao =
+      totalAnalisadas > 0 ? (totalAprovadas / totalAnalisadas) * 100 : 0;
 
     // Taxa de recurso
     const totalReprovadas = await this.solicitacaoRepository.count({
@@ -227,7 +238,8 @@ export class DashboardService {
     });
 
     const totalRecursos = await this.recursoRepository.count();
-    const taxaRecurso = totalReprovadas > 0 ? (totalRecursos / totalReprovadas) * 100 : 0;
+    const taxaRecurso =
+      totalReprovadas > 0 ? (totalRecursos / totalReprovadas) * 100 : 0;
 
     // Taxa de deferimento
     const totalRecursosAnalisados = await this.recursoRepository.count({
@@ -241,7 +253,10 @@ export class DashboardService {
       where: { status: StatusRecurso.DEFERIDO },
     });
 
-    const taxaDeferimento = totalRecursosAnalisados > 0 ? (totalDeferidos / totalRecursosAnalisados) * 100 : 0;
+    const taxaDeferimento =
+      totalRecursosAnalisados > 0
+        ? (totalDeferidos / totalRecursosAnalisados) * 100
+        : 0;
 
     // Solicitações por dia (últimos 30 dias)
     const dataInicio = new Date();
@@ -287,7 +302,7 @@ export class DashboardService {
     // Solicitações por período (agrupadas por dia)
     const solicitacoesPorPeriodo = await this.solicitacaoRepository
       .createQueryBuilder('solicitacao')
-      .select('TO_CHAR(solicitacao.data_abertura, \'YYYY-MM-DD\')', 'data')
+      .select("TO_CHAR(solicitacao.data_abertura, 'YYYY-MM-DD')", 'data')
       .addSelect('COUNT(solicitacao.id)', 'quantidade')
       .where('solicitacao.data_abertura >= :dataInicio', { dataInicio })
       .groupBy('data')

@@ -1,0 +1,25 @@
+fcf93029f69b192582653fea167c44ce
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.RefreshTokenInput = void 0;
+const swagger_1 = require("@nestjs/swagger");
+const class_validator_1 = require("class-validator");
+class RefreshTokenInput {
+    refreshToken;
+}
+exports.RefreshTokenInput = RefreshTokenInput;
+__decorate([
+    (0, class_validator_1.IsNotEmpty)(),
+    (0, swagger_1.ApiProperty)(),
+    __metadata("design:type", String)
+], RefreshTokenInput.prototype, "refreshToken", void 0);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXGF1dGhcXGR0b3NcXGF1dGgtcmVmcmVzaC10b2tlbi1pbnB1dC5kdG8udHMiLCJtYXBwaW5ncyI6Ijs7Ozs7Ozs7Ozs7O0FBQUEsNkNBQThDO0FBQzlDLHFEQUE2QztBQUU3QyxNQUFhLGlCQUFpQjtJQUc1QixZQUFZLENBQVM7Q0FDdEI7QUFKRCw4Q0FJQztBQURDO0lBRkMsSUFBQSw0QkFBVSxHQUFFO0lBQ1osSUFBQSxxQkFBVyxHQUFFOzt1REFDTyIsIm5hbWVzIjpbXSwic291cmNlcyI6WyJDOlxcVXNlcnNcXGV1ZHJlXFxPbmVEcml2ZVxcRGVza3RvcFxcUHJvamV0b3NcXHBnYmVuXFxwZ2Jlbi1zZXJ2ZXJcXHNyY1xcYXV0aFxcZHRvc1xcYXV0aC1yZWZyZXNoLXRva2VuLWlucHV0LmR0by50cyJdLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQgeyBBcGlQcm9wZXJ0eSB9IGZyb20gJ0BuZXN0anMvc3dhZ2dlcic7XG5pbXBvcnQgeyBJc05vdEVtcHR5IH0gZnJvbSAnY2xhc3MtdmFsaWRhdG9yJztcblxuZXhwb3J0IGNsYXNzIFJlZnJlc2hUb2tlbklucHV0IHtcbiAgQElzTm90RW1wdHkoKVxuICBAQXBpUHJvcGVydHkoKVxuICByZWZyZXNoVG9rZW46IHN0cmluZztcbn1cbiJdLCJ2ZXJzaW9uIjozfQ==

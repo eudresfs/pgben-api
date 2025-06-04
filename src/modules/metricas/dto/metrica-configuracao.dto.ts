@@ -1,5 +1,15 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsEnum, IsNotEmpty, IsOptional, IsNumber, IsBoolean, IsArray, IsUUID, ValidateNested } from 'class-validator';
+import {
+  IsString,
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsNumber,
+  IsBoolean,
+  IsArray,
+  IsUUID,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { TipoAgendamento, EstrategiaAmostragem } from '../../../entities';
 
@@ -35,7 +45,8 @@ export class CriarMetricaConfiguracaoDto {
   tipo_agendamento?: TipoAgendamento;
 
   @ApiPropertyOptional({
-    description: 'Valor do intervalo de coleta em segundos (para tipo INTERVALO)',
+    description:
+      'Valor do intervalo de coleta em segundos (para tipo INTERVALO)',
     example: 86400, // 1 dia
     default: 86400,
   })
@@ -117,18 +128,18 @@ export class CriarMetricaConfiguracaoDto {
   @ApiPropertyOptional({
     description: 'Configurações de alertas baseados no valor da métrica',
     example: [
-      { 
-        tipo: 'valor_maximo', 
-        valor: 100, 
-        mensagem: 'Valor excedeu o limite', 
-        severidade: 'alta' 
+      {
+        tipo: 'valor_maximo',
+        valor: 100,
+        mensagem: 'Valor excedeu o limite',
+        severidade: 'alta',
       },
-      { 
-        tipo: 'valor_minimo', 
-        valor: 10, 
-        mensagem: 'Valor abaixo do mínimo', 
-        severidade: 'media' 
-      }
+      {
+        tipo: 'valor_minimo',
+        valor: 10,
+        mensagem: 'Valor abaixo do mínimo',
+        severidade: 'media',
+      },
     ],
   })
   @IsArray()
@@ -152,7 +163,8 @@ export class CriarMetricaConfiguracaoDto {
   exibir_dashboard?: boolean;
 
   @ApiPropertyOptional({
-    description: 'Prioridade de exibição (ordem) no dashboard (menor = mais importante)',
+    description:
+      'Prioridade de exibição (ordem) no dashboard (menor = mais importante)',
     example: 100,
     default: 100,
   })
@@ -183,7 +195,8 @@ export class AtualizarMetricaConfiguracaoDto {
   tipo_agendamento?: TipoAgendamento;
 
   @ApiPropertyOptional({
-    description: 'Valor do intervalo de coleta em segundos (para tipo INTERVALO)',
+    description:
+      'Valor do intervalo de coleta em segundos (para tipo INTERVALO)',
     example: 86400, // 1 dia
   })
   @IsNumber()
@@ -258,12 +271,12 @@ export class AtualizarMetricaConfiguracaoDto {
   @ApiPropertyOptional({
     description: 'Configurações de alertas baseados no valor da métrica',
     example: [
-      { 
-        tipo: 'valor_maximo', 
-        valor: 100, 
-        mensagem: 'Valor excedeu o limite', 
-        severidade: 'alta' 
-      }
+      {
+        tipo: 'valor_maximo',
+        valor: 100,
+        mensagem: 'Valor excedeu o limite',
+        severidade: 'alta',
+      },
     ],
   })
   @IsArray()
@@ -286,7 +299,8 @@ export class AtualizarMetricaConfiguracaoDto {
   exibir_dashboard?: boolean;
 
   @ApiPropertyOptional({
-    description: 'Prioridade de exibição (ordem) no dashboard (menor = mais importante)',
+    description:
+      'Prioridade de exibição (ordem) no dashboard (menor = mais importante)',
     example: 100,
   })
   @IsNumber()

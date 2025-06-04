@@ -7,10 +7,10 @@ import { Response } from 'express';
 
 /**
  * Testes unitários para ComprovanteController
- * 
- * Valida o comportamento dos endpoints de comprovante de pagamento, garantindo 
+ *
+ * Valida o comportamento dos endpoints de comprovante de pagamento, garantindo
  * o correto funcionamento do upload, download e manipulação de comprovantes.
- * 
+ *
  * @author Equipe PGBen
  */
 describe('ComprovanteController', () => {
@@ -28,7 +28,7 @@ describe('ComprovanteController', () => {
     caminhoArquivo: 'pagamentos/comprovantes/comprovante-id-1.pdf',
     adicionadoPor: 'usuario-id-1',
     dataCriacao: new Date(),
-    observacoes: 'Comprovante de pagamento via PIX'
+    observacoes: 'Comprovante de pagamento via PIX',
   };
 
   // Mock de um pagamento para os testes
@@ -36,7 +36,7 @@ describe('ComprovanteController', () => {
     id: 'pagamento-id-1',
     solicitacaoId: 'solicitacao-id-1',
     status: 'LIBERADO',
-    valor: 500
+    valor: 500,
   };
 
   // Lista de comprovantes para teste
@@ -45,8 +45,8 @@ describe('ComprovanteController', () => {
     {
       ...comprovanteMock,
       id: 'comprovante-id-2',
-      nomeArquivo: 'comprovante2.pdf'
-    }
+      nomeArquivo: 'comprovante2.pdf',
+    },
   ];
 
   // Mock do arquivo para teste de upload
@@ -54,7 +54,7 @@ describe('ComprovanteController', () => {
     originalname: 'comprovante.pdf',
     mimetype: 'application/pdf',
     size: 1024,
-    buffer: Buffer.from('mock file content')
+    buffer: Buffer.from('mock file content'),
   };
 
   // Mock do request com usuário autenticado
@@ -62,15 +62,15 @@ describe('ComprovanteController', () => {
     user: {
       id: 'usuario-id-1',
       nome: 'Usuário Teste',
-      perfil: 'operador'
-    }
+      perfil: 'operador',
+    },
   };
 
   // Mock da resposta para download
   const mockResponse = {
     contentType: jest.fn().mockReturnThis(),
     header: jest.fn().mockReturnThis(),
-    send: jest.fn().mockReturnThis()
+    send: jest.fn().mockReturnThis(),
   };
 
   beforeEach(async () => {
@@ -82,17 +82,19 @@ describe('ComprovanteController', () => {
           useValue: {
             uploadComprovante: jest.fn().mockResolvedValue(comprovanteMock),
             getComprovante: jest.fn().mockResolvedValue(comprovanteMock),
-            getComprovanteConteudo: jest.fn().mockResolvedValue(Buffer.from('mock file content')),
+            getComprovanteConteudo: jest
+              .fn()
+              .mockResolvedValue(Buffer.from('mock file content')),
             listarComprovantes: jest.fn().mockResolvedValue(comprovantesMock),
-            removerComprovante: jest.fn().mockResolvedValue(true)
-          }
+            removerComprovante: jest.fn().mockResolvedValue(true),
+          },
         },
         {
           provide: PagamentoService,
           useValue: {
-            findOne: jest.fn().mockResolvedValue(pagamentoMock)
-          }
-        }
+            findOne: jest.fn().mockResolvedValue(pagamentoMock),
+          },
+        },
       ],
     }).compile();
 
@@ -116,7 +118,7 @@ describe('ComprovanteController', () => {
         pagamentoId,
         fileMock as any,
         observacoes,
-        mockRequest as any
+        mockRequest as any,
       );
 
       // Assert
@@ -125,7 +127,7 @@ describe('ComprovanteController', () => {
         pagamentoId,
         fileMock,
         observacoes,
-        mockRequest.user.id
+        mockRequest.user.id,
       );
     });
 
@@ -133,12 +135,17 @@ describe('ComprovanteController', () => {
       // Arrange
       const pagamentoId = 'pagamento-inexistente';
       const observacoes = 'Comprovante de pagamento';
-      
+
       jest.spyOn(pagamentoService, 'findOne').mockResolvedValue(null);
 
       // Act & Assert
       await expect(
-        controller.uploadComprovante(pagamentoId, fileMock as any, observacoes, mockRequest as any)
+        controller.uploadComprovante(
+          pagamentoId,
+          fileMock as any,
+          observacoes,
+          mockRequest as any,
+        ),
       ).rejects.toThrow(NotFoundException);
       expect(pagamentoService.findOne).toHaveBeenCalledWith(pagamentoId);
     });
@@ -149,16 +156,23 @@ describe('ComprovanteController', () => {
       const observacoes = 'Comprovante de pagamento';
       const arquivoInvalido = {
         ...fileMock,
-        mimetype: 'application/exe'
+        mimetype: 'application/exe',
       };
-      
-      jest.spyOn(comprovanteService, 'uploadComprovante').mockRejectedValue(
-        new BadRequestException('Tipo de arquivo não permitido')
-      );
+
+      jest
+        .spyOn(comprovanteService, 'uploadComprovante')
+        .mockRejectedValue(
+          new BadRequestException('Tipo de arquivo não permitido'),
+        );
 
       // Act & Assert
       await expect(
-        controller.uploadComprovante(pagamentoId, arquivoInvalido as any, observacoes, mockRequest as any)
+        controller.uploadComprovante(
+          pagamentoId,
+          arquivoInvalido as any,
+          observacoes,
+          mockRequest as any,
+        ),
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -168,16 +182,23 @@ describe('ComprovanteController', () => {
       const observacoes = 'Comprovante de pagamento';
       const arquivoGrande = {
         ...fileMock,
-        size: 10 * 1024 * 1024 // 10MB
+        size: 10 * 1024 * 1024, // 10MB
       };
-      
-      jest.spyOn(comprovanteService, 'uploadComprovante').mockRejectedValue(
-        new BadRequestException('Arquivo excede o tamanho máximo permitido')
-      );
+
+      jest
+        .spyOn(comprovanteService, 'uploadComprovante')
+        .mockRejectedValue(
+          new BadRequestException('Arquivo excede o tamanho máximo permitido'),
+        );
 
       // Act & Assert
       await expect(
-        controller.uploadComprovante(pagamentoId, arquivoGrande as any, observacoes, mockRequest as any)
+        controller.uploadComprovante(
+          pagamentoId,
+          arquivoGrande as any,
+          observacoes,
+          mockRequest as any,
+        ),
       ).rejects.toThrow(BadRequestException);
     });
   });
@@ -192,19 +213,21 @@ describe('ComprovanteController', () => {
 
       // Assert
       expect(resultado).toEqual(comprovanteMock);
-      expect(comprovanteService.getComprovante).toHaveBeenCalledWith(comprovanteId);
+      expect(comprovanteService.getComprovante).toHaveBeenCalledWith(
+        comprovanteId,
+      );
     });
 
     it('deve lançar erro quando o comprovante não existe', async () => {
       // Arrange
       const comprovanteId = 'comprovante-inexistente';
-      
+
       jest.spyOn(comprovanteService, 'getComprovante').mockResolvedValue(null);
 
       // Act & Assert
-      await expect(
-        controller.getComprovante(comprovanteId)
-      ).rejects.toThrow(NotFoundException);
+      await expect(controller.getComprovante(comprovanteId)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -213,17 +236,26 @@ describe('ComprovanteController', () => {
       // Arrange
       const comprovanteId = 'comprovante-id-1';
       const arquivoConteudo = Buffer.from('mock file content');
-      
+
       // Act
-      await controller.downloadComprovante(comprovanteId, mockResponse as unknown as Response);
+      await controller.downloadComprovante(
+        comprovanteId,
+        mockResponse as unknown as Response,
+      );
 
       // Assert
-      expect(comprovanteService.getComprovante).toHaveBeenCalledWith(comprovanteId);
-      expect(comprovanteService.getComprovanteConteudo).toHaveBeenCalledWith(comprovanteId);
-      expect(mockResponse.contentType).toHaveBeenCalledWith(comprovanteMock.tipoArquivo);
+      expect(comprovanteService.getComprovante).toHaveBeenCalledWith(
+        comprovanteId,
+      );
+      expect(comprovanteService.getComprovanteConteudo).toHaveBeenCalledWith(
+        comprovanteId,
+      );
+      expect(mockResponse.contentType).toHaveBeenCalledWith(
+        comprovanteMock.tipoArquivo,
+      );
       expect(mockResponse.header).toHaveBeenCalledWith(
         'Content-Disposition',
-        `attachment; filename="${comprovanteMock.nomeArquivo}"`
+        `attachment; filename="${comprovanteMock.nomeArquivo}"`,
       );
       expect(mockResponse.send).toHaveBeenCalledWith(arquivoConteudo);
     });
@@ -231,12 +263,15 @@ describe('ComprovanteController', () => {
     it('deve lançar erro quando o comprovante não existe', async () => {
       // Arrange
       const comprovanteId = 'comprovante-inexistente';
-      
+
       jest.spyOn(comprovanteService, 'getComprovante').mockResolvedValue(null);
 
       // Act & Assert
       await expect(
-        controller.downloadComprovante(comprovanteId, mockResponse as unknown as Response)
+        controller.downloadComprovante(
+          comprovanteId,
+          mockResponse as unknown as Response,
+        ),
       ).rejects.toThrow(NotFoundException);
     });
   });
@@ -251,14 +286,18 @@ describe('ComprovanteController', () => {
 
       // Assert
       expect(resultado).toEqual(comprovantesMock);
-      expect(comprovanteService.listarComprovantes).toHaveBeenCalledWith(pagamentoId);
+      expect(comprovanteService.listarComprovantes).toHaveBeenCalledWith(
+        pagamentoId,
+      );
     });
 
     it('deve retornar lista vazia quando não há comprovantes', async () => {
       // Arrange
       const pagamentoId = 'pagamento-id-1';
-      
-      jest.spyOn(comprovanteService, 'listarComprovantes').mockResolvedValue([]);
+
+      jest
+        .spyOn(comprovanteService, 'listarComprovantes')
+        .mockResolvedValue([]);
 
       // Act
       const resultado = await controller.listarComprovantes(pagamentoId);
@@ -276,28 +315,31 @@ describe('ComprovanteController', () => {
       // Act
       const resultado = await controller.removerComprovante(
         comprovanteId,
-        mockRequest as any
+        mockRequest as any,
       );
 
       // Assert
-      expect(resultado).toEqual({ success: true, message: 'Comprovante removido com sucesso' });
+      expect(resultado).toEqual({
+        success: true,
+        message: 'Comprovante removido com sucesso',
+      });
       expect(comprovanteService.removerComprovante).toHaveBeenCalledWith(
         comprovanteId,
-        mockRequest.user.id
+        mockRequest.user.id,
       );
     });
 
     it('deve lançar erro quando o comprovante não existe', async () => {
       // Arrange
       const comprovanteId = 'comprovante-inexistente';
-      
-      jest.spyOn(comprovanteService, 'removerComprovante').mockRejectedValue(
-        new NotFoundException('Comprovante não encontrado')
-      );
+
+      jest
+        .spyOn(comprovanteService, 'removerComprovante')
+        .mockRejectedValue(new NotFoundException('Comprovante não encontrado'));
 
       // Act & Assert
       await expect(
-        controller.removerComprovante(comprovanteId, mockRequest as any)
+        controller.removerComprovante(comprovanteId, mockRequest as any),
       ).rejects.toThrow(NotFoundException);
     });
   });

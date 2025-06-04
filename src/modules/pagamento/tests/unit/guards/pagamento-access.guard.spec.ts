@@ -1,19 +1,26 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ExecutionContext, ForbiddenException, NotFoundException } from '@nestjs/common';
+import {
+  ExecutionContext,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 
 import { PagamentoAccessGuard } from '../../../guards/pagamento-access.guard';
 import { PagamentoService } from '../../../services/pagamento.service';
 import { IntegracaoSolicitacaoService } from '../../../services/integracao-solicitacao.service';
 import { IntegracaoCidadaoService } from '../../../services/integracao-cidadao.service';
-import { PERFIS_PERMITIDOS_KEY, VERIFICAR_UNIDADE_KEY } from '../../../decorators/pagamento-access.decorator';
+import {
+  PERFIS_PERMITIDOS_KEY,
+  VERIFICAR_UNIDADE_KEY,
+} from '../../../decorators/pagamento-access.decorator';
 
 /**
  * Testes unitários para PagamentoAccessGuard
- * 
- * Valida o correto funcionamento do controle de acesso baseado em perfis 
+ *
+ * Valida o correto funcionamento do controle de acesso baseado em perfis
  * e unidades para recursos do módulo de pagamento.
- * 
+ *
  * @author Equipe PGBen
  */
 describe('PagamentoAccessGuard', () => {
@@ -28,20 +35,20 @@ describe('PagamentoAccessGuard', () => {
     id: 'pagamento-id-1',
     solicitacaoId: 'solicitacao-id-1',
     valor: 500,
-    status: 'LIBERADO'
+    status: 'LIBERADO',
   };
 
   const mockSolicitacaoStatus = {
     id: 'solicitacao-id-1',
     unidadeId: 'unidade-id-1',
-    status: 'APROVADA'
+    status: 'APROVADA',
   };
 
   const mockCidadao = {
     id: 'cidadao-id-1',
     nome: 'Maria Silva',
     cpf: '123.456.789-09',
-    unidadeId: 'unidade-id-1'
+    unidadeId: 'unidade-id-1',
   };
 
   beforeEach(async () => {
@@ -51,36 +58,42 @@ describe('PagamentoAccessGuard', () => {
         {
           provide: Reflector,
           useValue: {
-            getAllAndOverride: jest.fn()
-          }
+            getAllAndOverride: jest.fn(),
+          },
         },
         {
           provide: PagamentoService,
           useValue: {
             findOneWithRelations: jest.fn().mockResolvedValue(mockPagamento),
-            findOne: jest.fn().mockResolvedValue(mockPagamento)
-          }
+            findOne: jest.fn().mockResolvedValue(mockPagamento),
+          },
         },
         {
           provide: IntegracaoSolicitacaoService,
           useValue: {
-            verificarSolicitacaoAprovada: jest.fn().mockResolvedValue(mockSolicitacaoStatus)
-          }
+            verificarSolicitacaoAprovada: jest
+              .fn()
+              .mockResolvedValue(mockSolicitacaoStatus),
+          },
         },
         {
           provide: IntegracaoCidadaoService,
           useValue: {
-            obterDadosPessoais: jest.fn().mockResolvedValue(mockCidadao)
-          }
-        }
+            obterDadosPessoais: jest.fn().mockResolvedValue(mockCidadao),
+          },
+        },
       ],
     }).compile();
 
     guard = module.get<PagamentoAccessGuard>(PagamentoAccessGuard);
     reflector = module.get<Reflector>(Reflector);
     pagamentoService = module.get<PagamentoService>(PagamentoService);
-    solicitacaoService = module.get<IntegracaoSolicitacaoService>(IntegracaoSolicitacaoService);
-    cidadaoService = module.get<IntegracaoCidadaoService>(IntegracaoCidadaoService);
+    solicitacaoService = module.get<IntegracaoSolicitacaoService>(
+      IntegracaoSolicitacaoService,
+    );
+    cidadaoService = module.get<IntegracaoCidadaoService>(
+      IntegracaoCidadaoService,
+    );
   });
 
   it('deve estar definido', () => {
@@ -95,27 +108,28 @@ describe('PagamentoAccessGuard', () => {
           user: {
             id: 'usuario-id-1',
             perfil: 'operador',
-            unidadeId: 'unidade-id-1'
+            unidadeId: 'unidade-id-1',
           },
           params: {
-            pagamentoId: 'pagamento-id-1'
+            pagamentoId: 'pagamento-id-1',
           },
           method: 'GET',
           route: {
-            path: '/pagamentos/:pagamentoId'
-          }
-        })
+            path: '/pagamentos/:pagamentoId',
+          },
+        }),
       }),
       getHandler: jest.fn(),
-      getClass: jest.fn()
+      getClass: jest.fn(),
     } as unknown as ExecutionContext;
 
     it('deve permitir acesso quando usuário tem perfil permitido', async () => {
       // Arrange
-      jest.spyOn(reflector, 'getAllAndOverride')
+      jest
+        .spyOn(reflector, 'getAllAndOverride')
         .mockReturnValueOnce(['admin', 'operador']) // PERFIS_PERMITIDOS_KEY
         .mockReturnValueOnce(true); // VERIFICAR_UNIDADE_KEY
-      
+
       // Act
       const resultado = await guard.canActivate(mockExecutionContext);
 
@@ -123,13 +137,14 @@ describe('PagamentoAccessGuard', () => {
       expect(resultado).toBeTruthy();
       expect(reflector.getAllAndOverride).toHaveBeenCalledWith(
         PERFIS_PERMITIDOS_KEY,
-        [mockExecutionContext.getHandler(), mockExecutionContext.getClass()]
+        [mockExecutionContext.getHandler(), mockExecutionContext.getClass()],
       );
     });
 
     it('deve negar acesso quando usuário não tem perfil permitido', async () => {
       // Arrange
-      jest.spyOn(reflector, 'getAllAndOverride')
+      jest
+        .spyOn(reflector, 'getAllAndOverride')
         .mockReturnValueOnce(['admin']) // PERFIS_PERMITIDOS_KEY - apenas admin pode acessar
         .mockReturnValueOnce(true); // VERIFICAR_UNIDADE_KEY
 
@@ -141,22 +156,25 @@ describe('PagamentoAccessGuard', () => {
             user: {
               id: 'usuario-id-1',
               perfil: 'atendente', // Perfil não presente na lista de permitidos
-              unidadeId: 'unidade-id-1'
+              unidadeId: 'unidade-id-1',
             },
             params: {
-              pagamentoId: 'pagamento-id-1'
-            }
-          })
-        })
+              pagamentoId: 'pagamento-id-1',
+            },
+          }),
+        }),
       } as unknown as ExecutionContext;
 
       // Act & Assert
-      await expect(guard.canActivate(mockContext)).rejects.toThrow(ForbiddenException);
+      await expect(guard.canActivate(mockContext)).rejects.toThrow(
+        ForbiddenException,
+      );
     });
 
     it('deve permitir acesso para admin independente da unidade', async () => {
       // Arrange
-      jest.spyOn(reflector, 'getAllAndOverride')
+      jest
+        .spyOn(reflector, 'getAllAndOverride')
         .mockReturnValueOnce(['admin', 'operador']) // PERFIS_PERMITIDOS_KEY
         .mockReturnValueOnce(true); // VERIFICAR_UNIDADE_KEY
 
@@ -168,13 +186,13 @@ describe('PagamentoAccessGuard', () => {
             user: {
               id: 'usuario-id-1',
               perfil: 'admin', // Admin pode acessar qualquer unidade
-              unidadeId: 'unidade-id-2' // Unidade diferente
+              unidadeId: 'unidade-id-2', // Unidade diferente
             },
             params: {
-              pagamentoId: 'pagamento-id-1'
-            }
-          })
-        })
+              pagamentoId: 'pagamento-id-1',
+            },
+          }),
+        }),
       } as unknown as ExecutionContext;
 
       // Act
@@ -186,7 +204,8 @@ describe('PagamentoAccessGuard', () => {
 
     it('deve negar acesso quando usuário não é da mesma unidade', async () => {
       // Arrange
-      jest.spyOn(reflector, 'getAllAndOverride')
+      jest
+        .spyOn(reflector, 'getAllAndOverride')
         .mockReturnValueOnce(['admin', 'operador']) // PERFIS_PERMITIDOS_KEY
         .mockReturnValueOnce(true); // VERIFICAR_UNIDADE_KEY
 
@@ -198,46 +217,59 @@ describe('PagamentoAccessGuard', () => {
             user: {
               id: 'usuario-id-1',
               perfil: 'operador',
-              unidadeId: 'unidade-id-2' // Unidade diferente
+              unidadeId: 'unidade-id-2', // Unidade diferente
             },
             params: {
-              pagamentoId: 'pagamento-id-1'
-            }
-          })
-        })
+              pagamentoId: 'pagamento-id-1',
+            },
+          }),
+        }),
       } as unknown as ExecutionContext;
 
       // Act & Assert
-      await expect(guard.canActivate(mockContext)).rejects.toThrow(ForbiddenException);
+      await expect(guard.canActivate(mockContext)).rejects.toThrow(
+        ForbiddenException,
+      );
     });
 
     it('deve lançar erro quando pagamento não existe', async () => {
       // Arrange
-      jest.spyOn(reflector, 'getAllAndOverride')
+      jest
+        .spyOn(reflector, 'getAllAndOverride')
         .mockReturnValueOnce(['admin', 'operador']) // PERFIS_PERMITIDOS_KEY
         .mockReturnValueOnce(true); // VERIFICAR_UNIDADE_KEY
-      
-      jest.spyOn(pagamentoService, 'findOneWithRelations').mockResolvedValue(null);
+
+      jest
+        .spyOn(pagamentoService, 'findOneWithRelations')
+        .mockResolvedValue(null);
 
       // Act & Assert
-      await expect(guard.canActivate(mockExecutionContext)).rejects.toThrow(NotFoundException);
+      await expect(guard.canActivate(mockExecutionContext)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('deve lançar erro quando solicitação não existe', async () => {
       // Arrange
-      jest.spyOn(reflector, 'getAllAndOverride')
+      jest
+        .spyOn(reflector, 'getAllAndOverride')
         .mockReturnValueOnce(['admin', 'operador']) // PERFIS_PERMITIDOS_KEY
         .mockReturnValueOnce(true); // VERIFICAR_UNIDADE_KEY
-      
-      jest.spyOn(solicitacaoService, 'verificarSolicitacaoAprovada').mockResolvedValue(null);
+
+      jest
+        .spyOn(solicitacaoService, 'verificarSolicitacaoAprovada')
+        .mockResolvedValue(null);
 
       // Act & Assert
-      await expect(guard.canActivate(mockExecutionContext)).rejects.toThrow(NotFoundException);
+      await expect(guard.canActivate(mockExecutionContext)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('deve validar acesso baseado em beneficiário', async () => {
       // Arrange
-      jest.spyOn(reflector, 'getAllAndOverride')
+      jest
+        .spyOn(reflector, 'getAllAndOverride')
         .mockReturnValueOnce(['admin', 'operador']) // PERFIS_PERMITIDOS_KEY
         .mockReturnValueOnce(true); // VERIFICAR_UNIDADE_KEY
 
@@ -249,13 +281,13 @@ describe('PagamentoAccessGuard', () => {
             user: {
               id: 'usuario-id-1',
               perfil: 'operador',
-              unidadeId: 'unidade-id-1'
+              unidadeId: 'unidade-id-1',
             },
             params: {
-              beneficiarioId: 'cidadao-id-1' // Agora usamos um beneficiário em vez de pagamento
-            }
-          })
-        })
+              beneficiarioId: 'cidadao-id-1', // Agora usamos um beneficiário em vez de pagamento
+            },
+          }),
+        }),
       } as unknown as ExecutionContext;
 
       // Act
@@ -263,15 +295,18 @@ describe('PagamentoAccessGuard', () => {
 
       // Assert
       expect(resultado).toBeTruthy();
-      expect(cidadaoService.obterDadosPessoais).toHaveBeenCalledWith('cidadao-id-1');
+      expect(cidadaoService.obterDadosPessoais).toHaveBeenCalledWith(
+        'cidadao-id-1',
+      );
     });
 
     it('deve lançar erro quando beneficiário não existe', async () => {
       // Arrange
-      jest.spyOn(reflector, 'getAllAndOverride')
+      jest
+        .spyOn(reflector, 'getAllAndOverride')
         .mockReturnValueOnce(['admin', 'operador']) // PERFIS_PERMITIDOS_KEY
         .mockReturnValueOnce(true); // VERIFICAR_UNIDADE_KEY
-      
+
       jest.spyOn(cidadaoService, 'obterDadosPessoais').mockResolvedValue(null);
 
       // Request com beneficiário
@@ -282,22 +317,25 @@ describe('PagamentoAccessGuard', () => {
             user: {
               id: 'usuario-id-1',
               perfil: 'operador',
-              unidadeId: 'unidade-id-1'
+              unidadeId: 'unidade-id-1',
             },
             params: {
-              beneficiarioId: 'cidadao-inexistente'
-            }
-          })
-        })
+              beneficiarioId: 'cidadao-inexistente',
+            },
+          }),
+        }),
       } as unknown as ExecutionContext;
 
       // Act & Assert
-      await expect(guard.canActivate(mockContext)).rejects.toThrow(NotFoundException);
+      await expect(guard.canActivate(mockContext)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('deve permitir acesso quando verificação de unidade está desativada', async () => {
       // Arrange
-      jest.spyOn(reflector, 'getAllAndOverride')
+      jest
+        .spyOn(reflector, 'getAllAndOverride')
         .mockReturnValueOnce(['admin', 'operador']) // PERFIS_PERMITIDOS_KEY
         .mockReturnValueOnce(false); // VERIFICAR_UNIDADE_KEY - desativado
 
@@ -309,13 +347,13 @@ describe('PagamentoAccessGuard', () => {
             user: {
               id: 'usuario-id-1',
               perfil: 'operador',
-              unidadeId: 'unidade-id-2' // Unidade diferente
+              unidadeId: 'unidade-id-2', // Unidade diferente
             },
             params: {
-              pagamentoId: 'pagamento-id-1'
-            }
-          })
-        })
+              pagamentoId: 'pagamento-id-1',
+            },
+          }),
+        }),
       } as unknown as ExecutionContext;
 
       // Act

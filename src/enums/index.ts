@@ -32,7 +32,7 @@ export {
   CodigoBanco,
   NOMES_BANCOS,
   getNomeBanco,
-  isPoupancaSocialBB
+  isPoupancaSocialBB,
 } from './info-bancaria.enum';
 
 // Enums de workflow e auditoria
@@ -54,4 +54,3 @@ export { TipoDocumentoEnum } from './tipo-documento.enum';
 // Enums de usuário e permissões
 export { Role } from './role.enum';
 export { Role as UserRole } from './role.enum';
-

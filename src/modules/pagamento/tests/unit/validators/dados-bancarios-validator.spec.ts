@@ -73,25 +73,27 @@ describe('DadosBancariosValidator', () => {
       // Casos de teste com algoritmo de verificação simulado
       // Nota: Esta função depende do algoritmo específico implementado no validator
       // Os exemplos abaixo assumem implementações comuns de validação
-      
+
       // Simulando casos onde o dígito verificador está correto
-      const mockValid = jest.spyOn(validator, 'calcularDigitoVerificadorConta')
+      const mockValid = jest
+        .spyOn(validator, 'calcularDigitoVerificadorConta')
         .mockImplementation(() => '6');
-      
+
       expect(validator.validarContaComDigito('12345-6')).toBeTruthy();
       expect(mockValid).toHaveBeenCalledWith('12345');
-      
+
       mockValid.mockRestore();
     });
 
     it('deve rejeitar contas com dígito verificador incorreto', () => {
       // Simulando casos onde o dígito verificador está incorreto
-      const mockInvalid = jest.spyOn(validator, 'calcularDigitoVerificadorConta')
+      const mockInvalid = jest
+        .spyOn(validator, 'calcularDigitoVerificadorConta')
         .mockImplementation(() => '7');
-      
+
       expect(validator.validarContaComDigito('12345-6')).toBeFalsy();
       expect(mockInvalid).toHaveBeenCalledWith('12345');
-      
+
       mockInvalid.mockRestore();
     });
   });
@@ -100,10 +102,12 @@ describe('DadosBancariosValidator', () => {
     it('deve calcular corretamente dígitos verificadores', () => {
       // Estes testes dependem da implementação específica do algoritmo
       // Os valores esperados devem ser ajustados de acordo com o algoritmo real usado
-      
+
       // Exemplos genéricos baseados em algoritmos comuns
       expect(validator.calcularDigitoVerificadorConta('12345')).toBeDefined();
-      expect(typeof validator.calcularDigitoVerificadorConta('12345')).toBe('string');
+      expect(typeof validator.calcularDigitoVerificadorConta('12345')).toBe(
+        'string',
+      );
       expect(validator.calcularDigitoVerificadorConta('12345').length).toBe(1);
     });
   });
@@ -115,7 +119,9 @@ describe('DadosBancariosValidator', () => {
       jest.spyOn(validator, 'validarFormatoAgencia').mockReturnValue(true);
       jest.spyOn(validator, 'validarFormatoConta').mockReturnValue(true);
 
-      expect(validator.validarContaBancaria('001', '1234', '12345-6')).toBeTruthy();
+      expect(
+        validator.validarContaBancaria('001', '1234', '12345-6'),
+      ).toBeTruthy();
     });
 
     it('deve rejeitar se o código do banco for inválido', () => {
@@ -123,7 +129,9 @@ describe('DadosBancariosValidator', () => {
       jest.spyOn(validator, 'validarFormatoAgencia').mockReturnValue(true);
       jest.spyOn(validator, 'validarFormatoConta').mockReturnValue(true);
 
-      expect(validator.validarContaBancaria('000', '1234', '12345-6')).toBeFalsy();
+      expect(
+        validator.validarContaBancaria('000', '1234', '12345-6'),
+      ).toBeFalsy();
     });
 
     it('deve rejeitar se o formato da agência for inválido', () => {
@@ -131,7 +139,9 @@ describe('DadosBancariosValidator', () => {
       jest.spyOn(validator, 'validarFormatoAgencia').mockReturnValue(false);
       jest.spyOn(validator, 'validarFormatoConta').mockReturnValue(true);
 
-      expect(validator.validarContaBancaria('001', 'abcd', '12345-6')).toBeFalsy();
+      expect(
+        validator.validarContaBancaria('001', 'abcd', '12345-6'),
+      ).toBeFalsy();
     });
 
     it('deve rejeitar se o formato da conta for inválido', () => {
@@ -139,7 +149,9 @@ describe('DadosBancariosValidator', () => {
       jest.spyOn(validator, 'validarFormatoAgencia').mockReturnValue(true);
       jest.spyOn(validator, 'validarFormatoConta').mockReturnValue(false);
 
-      expect(validator.validarContaBancaria('001', '1234', 'abcde-f')).toBeFalsy();
+      expect(
+        validator.validarContaBancaria('001', '1234', 'abcde-f'),
+      ).toBeFalsy();
     });
   });
 });

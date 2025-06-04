@@ -1,7 +1,22 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsEnum, IsNotEmpty, IsOptional, IsNumber, IsBoolean, IsArray, IsUUID, ValidateNested, IsDateString } from 'class-validator';
+import {
+  IsString,
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsNumber,
+  IsBoolean,
+  IsArray,
+  IsUUID,
+  ValidateNested,
+  IsDateString,
+} from 'class-validator';
 import { Type } from 'class-transformer';
-import { TipoMetrica, CategoriaMetrica, GranularidadeTemporal } from '../../../entities/metrica-definicao.entity';
+import {
+  TipoMetrica,
+  CategoriaMetrica,
+  GranularidadeTemporal,
+} from '../../../entities/metrica-definicao.entity';
 
 /**
  * DTO para criar uma nova definição de métrica
@@ -25,7 +40,8 @@ export class CriarMetricaDefinicaoDto {
 
   @ApiProperty({
     description: 'Descrição detalhada da métrica',
-    example: 'Calcula o tempo médio de processamento de solicitações de benefício, desde a submissão até a aprovação ou rejeição.',
+    example:
+      'Calcula o tempo médio de processamento de solicitações de benefício, desde a submissão até a aprovação ou rejeição.',
   })
   @IsString()
   @IsNotEmpty()
@@ -81,8 +97,10 @@ export class CriarMetricaDefinicaoDto {
   casas_decimais?: number;
 
   @ApiPropertyOptional({
-    description: 'Consulta SQL para coletar dados (para métricas baseadas em banco de dados)',
-    example: 'SELECT AVG(EXTRACT(EPOCH FROM (data_conclusao - data_solicitacao))/86400) FROM solicitacao WHERE status = \'concluido\' AND data_conclusao BETWEEN ${PERIODO_INICIO} AND ${PERIODO_FIM}',
+    description:
+      'Consulta SQL para coletar dados (para métricas baseadas em banco de dados)',
+    example:
+      "SELECT AVG(EXTRACT(EPOCH FROM (data_conclusao - data_solicitacao))/86400) FROM solicitacao WHERE status = 'concluido' AND data_conclusao BETWEEN ${PERIODO_INICIO} AND ${PERIODO_FIM}",
   })
   @IsString()
   @IsOptional()
@@ -106,7 +124,8 @@ export class CriarMetricaDefinicaoDto {
   fonte_dados?: string;
 
   @ApiPropertyOptional({
-    description: 'Especificação de como agregar os dados em diferentes períodos',
+    description:
+      'Especificação de como agregar os dados em diferentes períodos',
     example: 'media',
     default: 'soma',
   })
@@ -125,7 +144,8 @@ export class CriarMetricaDefinicaoDto {
   granularidade?: GranularidadeTemporal;
 
   @ApiPropertyOptional({
-    description: 'Referência a outras métricas utilizadas no cálculo (caso seja composta)',
+    description:
+      'Referência a outras métricas utilizadas no cálculo (caso seja composta)',
     example: ['beneficios_aprovados', 'total_solicitacoes'],
     type: [String],
   })
@@ -166,7 +186,8 @@ export class AtualizarMetricaDefinicaoDto {
 
   @ApiPropertyOptional({
     description: 'Descrição detalhada da métrica',
-    example: 'Calcula o tempo médio de processamento de solicitações de benefício, desde a submissão até a aprovação ou rejeição.',
+    example:
+      'Calcula o tempo médio de processamento de solicitações de benefício, desde a submissão até a aprovação ou rejeição.',
   })
   @IsString()
   @IsOptional()
@@ -223,8 +244,10 @@ export class AtualizarMetricaDefinicaoDto {
   casas_decimais?: number;
 
   @ApiPropertyOptional({
-    description: 'Consulta SQL para coletar dados (para métricas baseadas em banco de dados)',
-    example: 'SELECT AVG(EXTRACT(EPOCH FROM (data_conclusao - data_solicitacao))/86400) FROM solicitacao WHERE status = \'concluido\' AND data_conclusao BETWEEN ${PERIODO_INICIO} AND ${PERIODO_FIM}',
+    description:
+      'Consulta SQL para coletar dados (para métricas baseadas em banco de dados)',
+    example:
+      "SELECT AVG(EXTRACT(EPOCH FROM (data_conclusao - data_solicitacao))/86400) FROM solicitacao WHERE status = 'concluido' AND data_conclusao BETWEEN ${PERIODO_INICIO} AND ${PERIODO_FIM}",
   })
   @IsString()
   @IsOptional()
@@ -247,7 +270,8 @@ export class AtualizarMetricaDefinicaoDto {
   fonte_dados?: string;
 
   @ApiPropertyOptional({
-    description: 'Especificação de como agregar os dados em diferentes períodos',
+    description:
+      'Especificação de como agregar os dados em diferentes períodos',
     example: 'media',
   })
   @IsString()
@@ -264,7 +288,8 @@ export class AtualizarMetricaDefinicaoDto {
   granularidade?: GranularidadeTemporal;
 
   @ApiPropertyOptional({
-    description: 'Referência a outras métricas utilizadas no cálculo (caso seja composta)',
+    description:
+      'Referência a outras métricas utilizadas no cálculo (caso seja composta)',
     example: ['beneficios_aprovados', 'total_solicitacoes'],
     type: [String],
   })
@@ -299,7 +324,8 @@ export class AtualizarMetricaDefinicaoDto {
   tags?: string[];
 
   @ApiPropertyOptional({
-    description: 'Flag que indica se a métrica é calculada em tempo real ou pré-calculada',
+    description:
+      'Flag que indica se a métrica é calculada em tempo real ou pré-calculada',
     example: false,
   })
   @IsBoolean()

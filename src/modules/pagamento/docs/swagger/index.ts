@@ -1,9 +1,9 @@
 /**
  * Índice de exportação para documentação Swagger do módulo de pagamento
- * 
+ *
  * Centraliza a exportação de todos os schemas e decoradores para
  * facilitar o uso na documentação da API.
- * 
+ *
  * @author Equipe PGBen
  */
 

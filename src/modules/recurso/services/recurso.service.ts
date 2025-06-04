@@ -8,7 +8,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Connection } from 'typeorm';
 import { Recurso, StatusRecurso } from '../../../entities/recurso.entity';
 import { RecursoHistorico } from '../../../entities/recurso-historico.entity';
-import { Solicitacao, StatusSolicitacao } from '../../../entities/solicitacao.entity';
+import {
+  Solicitacao,
+  StatusSolicitacao,
+} from '../../../entities/solicitacao.entity';
 import { CreateRecursoDto } from '../dto/create-recurso.dto';
 import { AnalisarRecursoDto } from '../dto/analisar-recurso.dto';
 import { RecursoResponseDto } from '../dto/recurso-response.dto';
@@ -91,13 +94,10 @@ export class RecursoService {
       const fim = new Date(data_fim);
       fim.setHours(23, 59, 59, 999); // Ajusta para o final do dia
 
-      queryBuilder.andWhere(
-        'recurso.created_at BETWEEN :inicio AND :fim',
-        {
-          inicio,
-          fim,
-        },
-      );
+      queryBuilder.andWhere('recurso.created_at BETWEEN :inicio AND :fim', {
+        inicio,
+        fim,
+      });
     } else if (data_inicio) {
       const inicio = new Date(data_inicio);
       queryBuilder.andWhere('recurso.created_at >= :inicio', { inicio });
@@ -126,7 +126,7 @@ export class RecursoService {
     const [items, total] = await queryBuilder.getManyAndCount();
 
     // Mapear resultados para DTOs
-    const recursos = items.map(recurso => this.mapToDto(recurso));
+    const recursos = items.map((recurso) => this.mapToDto(recurso));
 
     return {
       items: recursos,
@@ -160,12 +160,13 @@ export class RecursoService {
     return recurso;
   }
 
-
-
   /**
    * Cria um novo recurso
    */
-  async create(createRecursoDto: CreateRecursoDto, user: any): Promise<RecursoResponseDto> {
+  async create(
+    createRecursoDto: CreateRecursoDto,
+    user: any,
+  ): Promise<RecursoResponseDto> {
     return this.connection.transaction(async (manager) => {
       // Buscar a solicitação
       const solicitacao = await this.solicitacaoRepository.findOne({
@@ -202,19 +203,22 @@ export class RecursoService {
       recurso.justificativa = createRecursoDto.justificativa;
       recurso.status = StatusRecurso.PENDENTE;
       recurso.created_at = new Date();
-      
+
       // Dados adicionais
       if (createRecursoDto.documentos) {
-        recurso.documentos_adicionais = { documentos: createRecursoDto.documentos };
+        recurso.documentos_adicionais = {
+          documentos: createRecursoDto.documentos,
+        };
       }
-      
+
       if (createRecursoDto.motivo_indeferimento) {
         recurso.motivo_indeferimento = createRecursoDto.motivo_indeferimento;
       } else {
         // Se não foi informado, usar o parecer da solicitação
-        recurso.motivo_indeferimento = solicitacao.parecer_semtas || 'Não especificado';
+        recurso.motivo_indeferimento =
+          solicitacao.parecer_semtas || 'Não especificado';
       }
-      
+
       // Definir setor responsável
       if (createRecursoDto.setor_responsavel_id) {
         recurso.setor_responsavel_id = createRecursoDto.setor_responsavel_id;
@@ -233,7 +237,7 @@ export class RecursoService {
       historico.status_novo = StatusRecurso.PENDENTE;
       historico.usuario_id = user.id;
       historico.observacao = 'Recurso criado';
-      
+
       await manager.save(historico);
 
       // Retornar o recurso salvo
@@ -271,7 +275,7 @@ export class RecursoService {
         'Análise iniciada',
         user.ip || '0.0.0.0',
       );
-      
+
       recurso.analista_id = user.id;
 
       // Salvar o recurso
@@ -316,7 +320,7 @@ export class RecursoService {
         analisarRecursoDto.observacao || 'Análise concluída',
         user.ip || '0.0.0.0',
       );
-      
+
       recurso.parecer = analisarRecursoDto.parecer;
       recurso.data_analise = new Date();
 
@@ -333,10 +337,10 @@ export class RecursoService {
             'Solicitação aprovada via recurso',
             user.ip || '0.0.0.0',
           );
-          
+
           solicitacao.aprovador_id = user.id;
           solicitacao.data_aprovacao = new Date();
-          
+
           await manager.save(solicitacao);
         }
       }
@@ -366,7 +370,11 @@ export class RecursoService {
       }
 
       // Verificar se o recurso pode ser cancelado
-      if ([StatusRecurso.DEFERIDO, StatusRecurso.INDEFERIDO].includes(recurso.status)) {
+      if (
+        [StatusRecurso.DEFERIDO, StatusRecurso.INDEFERIDO].includes(
+          recurso.status,
+        )
+      ) {
         throw new BadRequestException(
           'Não é possível cancelar um recurso já analisado',
         );
@@ -411,38 +419,38 @@ export class RecursoService {
     const dto = new RecursoResponseDto();
     dto.id = recurso.id;
     dto.solicitacao_id = recurso.solicitacao_id;
-    
+
     if (recurso.solicitacao) {
       dto.protocolo_solicitacao = recurso.solicitacao.protocolo;
-      
+
       if (recurso.solicitacao.beneficiario) {
         dto.nome_beneficiario = recurso.solicitacao.beneficiario.nome;
       }
     }
-    
+
     dto.justificativa = recurso.justificativa;
     dto.status = recurso.status;
     dto.created_at = recurso.created_at;
     dto.data_analise = recurso.data_analise;
     dto.analista_id = recurso.analista_id;
-    
+
     if (recurso.analista) {
       dto.nome_analista = recurso.analista.nome;
     }
-    
+
     dto.parecer = recurso.parecer;
     dto.documentos_adicionais = recurso.documentos_adicionais;
     dto.motivo_indeferimento = recurso.motivo_indeferimento;
     dto.prazo_analise = recurso.prazo_analise;
     dto.setor_responsavel_id = recurso.setor_responsavel_id;
-    
+
     if (recurso.setor_responsavel) {
       dto.nome_setor_responsavel = recurso.setor_responsavel.nome;
     }
-    
+
     dto.created_at = recurso.created_at;
     dto.updated_at = recurso.updated_at;
-    
+
     return dto;
   }
 }

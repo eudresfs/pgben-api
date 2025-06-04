@@ -130,9 +130,9 @@ describe('PasswordResetController', () => {
         confirmPassword: 'senha-diferente',
       };
 
-      await expect(
-        controller.resetPassword(invalidDto),
-      ).rejects.toThrow(BadRequestException);
+      await expect(controller.resetPassword(invalidDto)).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('deve validar força da senha', async () => {
@@ -191,9 +191,9 @@ describe('PasswordResetController', () => {
         new NotFoundException('Token não encontrado'),
       );
 
-      await expect(
-        controller.validateToken(validateTokenDto),
-      ).rejects.toThrow(NotFoundException);
+      await expect(controller.validateToken(validateTokenDto)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -244,11 +244,7 @@ describe('PasswordResetController', () => {
     });
 
     it('deve validar força da senha', () => {
-      const validPasswords = [
-        'MinhaSenh@123',
-        'Outr@Senha456',
-        'Segur@nca789',
-      ];
+      const validPasswords = ['MinhaSenh@123', 'Outr@Senha456', 'Segur@nca789'];
 
       const invalidPasswords = [
         '123456',
@@ -294,7 +290,10 @@ describe('PasswordResetController', () => {
   describe('Documentação Swagger', () => {
     it('deve ter documentação completa', () => {
       // Verifica se os decorators do Swagger estão aplicados
-      const apiTags = Reflect.getMetadata('swagger/apiUseTags', PasswordResetController);
+      const apiTags = Reflect.getMetadata(
+        'swagger/apiUseTags',
+        PasswordResetController,
+      );
       expect(apiTags).toContain('Recuperação de Senha');
     });
   });

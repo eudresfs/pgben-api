@@ -17,7 +17,10 @@ import { Reflector } from '@nestjs/core';
 export class IpBlacklistGuard implements CanActivate {
   private readonly logger = new Logger(IpBlacklistGuard.name);
   private readonly blacklistedIps = new Set<string>();
-  private readonly suspiciousIps = new Map<string, { count: number; lastSeen: Date }>();
+  private readonly suspiciousIps = new Map<
+    string,
+    { count: number; lastSeen: Date }
+  >();
   private readonly maxSuspiciousAttempts: number;
   private readonly suspiciousTimeWindow: number; // em minutos
   private readonly blacklistDuration: number; // em minutos
@@ -46,15 +49,18 @@ export class IpBlacklistGuard implements CanActivate {
       '',
     );
     if (permanentBlacklist) {
-      permanentBlacklist.split(',').forEach(ip => {
+      permanentBlacklist.split(',').forEach((ip) => {
         this.blacklistedIps.add(ip.trim());
       });
     }
 
     // Limpeza periódica de IPs suspeitos
-    setInterval(() => {
-      this.cleanupSuspiciousIps();
-    }, 5 * 60 * 1000); // A cada 5 minutos
+    setInterval(
+      () => {
+        this.cleanupSuspiciousIps();
+      },
+      5 * 60 * 1000,
+    ); // A cada 5 minutos
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -101,7 +107,7 @@ export class IpBlacklistGuard implements CanActivate {
     // Priorizar headers de proxy confiáveis
     if (forwarded) {
       // X-Forwarded-For pode conter múltiplos IPs separados por vírgula
-      const ips = forwarded.split(',').map(ip => ip.trim());
+      const ips = forwarded.split(',').map((ip) => ip.trim());
       return ips[0]; // Primeiro IP é o cliente original
     }
 
@@ -128,9 +134,12 @@ export class IpBlacklistGuard implements CanActivate {
 
     // Remover da blacklist após o tempo especificado
     const timeoutDuration = duration || this.blacklistDuration;
-    setTimeout(() => {
-      this.removeFromBlacklist(ip);
-    }, timeoutDuration * 60 * 1000);
+    setTimeout(
+      () => {
+        this.removeFromBlacklist(ip);
+      },
+      timeoutDuration * 60 * 1000,
+    );
   }
 
   /**
@@ -151,7 +160,8 @@ export class IpBlacklistGuard implements CanActivate {
 
     if (existing) {
       // Verificar se ainda está dentro da janela de tempo
-      const timeDiff = (now.getTime() - existing.lastSeen.getTime()) / (1000 * 60);
+      const timeDiff =
+        (now.getTime() - existing.lastSeen.getTime()) / (1000 * 60);
       if (timeDiff <= this.suspiciousTimeWindow) {
         existing.count++;
         existing.lastSeen = now;
@@ -194,7 +204,7 @@ export class IpBlacklistGuard implements CanActivate {
       }
     });
 
-    toRemove.forEach(ip => {
+    toRemove.forEach((ip) => {
       this.suspiciousIps.delete(ip);
     });
 
@@ -239,7 +249,7 @@ export class IpBlacklistGuard implements CanActivate {
       /^localhost$/i,
     ];
 
-    return localPatterns.some(pattern => pattern.test(ip));
+    return localPatterns.some((pattern) => pattern.test(ip));
   }
 
   /**

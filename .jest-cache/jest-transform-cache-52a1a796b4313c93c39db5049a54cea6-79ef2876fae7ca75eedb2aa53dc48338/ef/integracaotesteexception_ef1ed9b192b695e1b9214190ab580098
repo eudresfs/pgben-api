@@ -1,0 +1,21 @@
+51909509f99429a9c7080afd13c48f6c
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.IntegracaoTesteException = void 0;
+const common_1 = require("@nestjs/common");
+/**
+ * Exceção lançada quando um teste de integração falha.
+ * Estende a BadRequestException padrão do NestJS com mensagem personalizada.
+ */
+class IntegracaoTesteException extends common_1.BadRequestException {
+    /**
+     * Cria uma nova instância da exceção.
+     * @param codigo - Código da integração
+     * @param motivo - Motivo da falha
+     */
+    constructor(codigo, motivo) {
+        super(`Teste de integração '${codigo}' falhou: ${motivo}`);
+    }
+}
+exports.IntegracaoTesteException = IntegracaoTesteException;
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXGNvbmZpZ3VyYWNhb1xcZXhjZXB0aW9uc1xcaW50ZWdyYWNhby10ZXN0ZS5leGNlcHRpb24udHMiLCJtYXBwaW5ncyI6Ijs7O0FBQUEsMkNBQXFEO0FBRXJEOzs7R0FHRztBQUNILE1BQWEsd0JBQXlCLFNBQVEsNEJBQW1CO0lBQy9EOzs7O09BSUc7SUFDSCxZQUFZLE1BQWMsRUFBRSxNQUFjO1FBQ3hDLEtBQUssQ0FBQyx3QkFBd0IsTUFBTSxhQUFhLE1BQU0sRUFBRSxDQUFDLENBQUM7SUFDN0QsQ0FBQztDQUNGO0FBVEQsNERBU0MiLCJuYW1lcyI6W10sInNvdXJjZXMiOlsiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXGNvbmZpZ3VyYWNhb1xcZXhjZXB0aW9uc1xcaW50ZWdyYWNhby10ZXN0ZS5leGNlcHRpb24udHMiXSwic291cmNlc0NvbnRlbnQiOlsiaW1wb3J0IHsgQmFkUmVxdWVzdEV4Y2VwdGlvbiB9IGZyb20gJ0BuZXN0anMvY29tbW9uJztcblxuLyoqXG4gKiBFeGNlw6fDo28gbGFuw6dhZGEgcXVhbmRvIHVtIHRlc3RlIGRlIGludGVncmHDp8OjbyBmYWxoYS5cbiAqIEVzdGVuZGUgYSBCYWRSZXF1ZXN0RXhjZXB0aW9uIHBhZHLDo28gZG8gTmVzdEpTIGNvbSBtZW5zYWdlbSBwZXJzb25hbGl6YWRhLlxuICovXG5leHBvcnQgY2xhc3MgSW50ZWdyYWNhb1Rlc3RlRXhjZXB0aW9uIGV4dGVuZHMgQmFkUmVxdWVzdEV4Y2VwdGlvbiB7XG4gIC8qKlxuICAgKiBDcmlhIHVtYSBub3ZhIGluc3TDom5jaWEgZGEgZXhjZcOnw6NvLlxuICAgKiBAcGFyYW0gY29kaWdvIC0gQ8OzZGlnbyBkYSBpbnRlZ3Jhw6fDo29cbiAgICogQHBhcmFtIG1vdGl2byAtIE1vdGl2byBkYSBmYWxoYVxuICAgKi9cbiAgY29uc3RydWN0b3IoY29kaWdvOiBzdHJpbmcsIG1vdGl2bzogc3RyaW5nKSB7XG4gICAgc3VwZXIoYFRlc3RlIGRlIGludGVncmHDp8OjbyAnJHtjb2RpZ299JyBmYWxob3U6ICR7bW90aXZvfWApO1xuICB9XG59XG4iXSwidmVyc2lvbiI6M30=

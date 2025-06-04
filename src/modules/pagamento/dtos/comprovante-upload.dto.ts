@@ -3,13 +3,13 @@ import { IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 
 /**
  * DTO para upload de comprovante de pagamento
- * 
+ *
  * Este DTO é utilizado para validar os metadados do comprovante
  * durante o upload de documentos comprobatórios de pagamento.
- * 
+ *
  * O arquivo em si é enviado como um arquivo multipart e processado
  * separadamente pelo framework.
- * 
+ *
  * @author Equipe PGBen
  */
 export class ComprovanteUploadDto {
@@ -19,7 +19,7 @@ export class ComprovanteUploadDto {
   @ApiProperty({
     description: 'Tipo do documento sendo enviado',
     example: 'comprovante_transferencia',
-    required: true
+    required: true,
   })
   @IsNotEmpty()
   @IsString()
@@ -31,8 +31,9 @@ export class ComprovanteUploadDto {
    */
   @ApiProperty({
     description: 'Observações sobre o comprovante',
-    example: 'Comprovante de transferência bancária realizada pelo sistema do banco.',
-    required: false
+    example:
+      'Comprovante de transferência bancária realizada pelo sistema do banco.',
+    required: false,
   })
   @IsOptional()
   @IsString()

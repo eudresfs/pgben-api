@@ -8,5 +8,5 @@ export enum Role {
   COORDENADOR = 'coordenador',
   ASSISTENTE_SOCIAL = 'assistente_social',
   CIDADAO = 'cidadao',
-  AUDITOR = 'auditor'
+  AUDITOR = 'auditor',
 }

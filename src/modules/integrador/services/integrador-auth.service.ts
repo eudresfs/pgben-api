@@ -50,7 +50,7 @@ export class IntegradorAuthService {
       const ips = xForwardedFor.split(',');
       return ips[0].trim();
     }
-    
+
     return request.ip || request.socket.remoteAddress || '0.0.0.0';
   }
 
@@ -69,14 +69,16 @@ export class IntegradorAuthService {
     try {
       // Validar o token e obter o payload
       const payload = await this.tokenService.validateToken(token);
-      
+
       // Verificar restrições de IP
       const ipAddress = this.getIpFromRequest(request);
       if (!this.tokenService.isIpAllowed(payload.integrador, ipAddress)) {
         this.logger.warn(
-          `Tentativa de acesso de IP não autorizado: ${ipAddress} para integrador ${payload.integrador.id}`
+          `Tentativa de acesso de IP não autorizado: ${ipAddress} para integrador ${payload.integrador.id}`,
         );
-        throw new UnauthorizedException(`Acesso não permitido do IP ${ipAddress}`);
+        throw new UnauthorizedException(
+          `Acesso não permitido do IP ${ipAddress}`,
+        );
       }
 
       // Adicionar informações à requisição para uso posterior
@@ -87,7 +89,7 @@ export class IntegradorAuthService {
     } catch (error) {
       // Registrar tentativa de acesso inválida
       this.logger.warn(`Falha na autenticação de integrador: ${error.message}`);
-      
+
       // Propaga a exceção original
       throw error;
     }
@@ -119,22 +121,22 @@ export class IntegradorAuthService {
    * @param message Mensagem adicional
    */
   async registrarTentativaAcesso(
-    tokenId: string | null, 
+    tokenId: string | null,
     integradorId: string | null,
     success: boolean,
     ipAddress: string,
     resource: string,
-    message: string
+    message: string,
   ): Promise<void> {
-    // Aqui poderia ser implementada a lógica para registrar em um banco ou 
+    // Aqui poderia ser implementada a lógica para registrar em um banco ou
     // sistema de monitoramento. Por ora, apenas logamos.
     if (success) {
       this.logger.log(
-        `Acesso autorizado: integrador=${integradorId}, token=${tokenId}, ip=${ipAddress}, recurso=${resource}`
+        `Acesso autorizado: integrador=${integradorId}, token=${tokenId}, ip=${ipAddress}, recurso=${resource}`,
       );
     } else {
       this.logger.warn(
-        `Acesso negado: integrador=${integradorId}, ip=${ipAddress}, recurso=${resource}, motivo=${message}`
+        `Acesso negado: integrador=${integradorId}, ip=${ipAddress}, recurso=${resource}, motivo=${message}`,
       );
     }
   }
@@ -147,9 +149,9 @@ export class IntegradorAuthService {
    */
   async isTokenRevogado(tokenHash: string): Promise<boolean> {
     const revogado = await this.tokenRevogadoRepository.findOne({
-      where: { tokenHash }
+      where: { tokenHash },
     });
-    
+
     return !!revogado;
   }
 }

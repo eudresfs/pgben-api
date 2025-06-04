@@ -6,7 +6,7 @@ import { Status } from '../../../enums/status.enum';
 
 /**
  * Script de seed para popular as permissões do módulo de solicitação.
- * 
+ *
  * Este script cria as permissões granulares para o módulo de solicitação conforme
  * definido no catálogo de permissões, incluindo permissões compostas e
  * configurações de escopo padrão.
@@ -14,7 +14,7 @@ import { Status } from '../../../enums/status.enum';
 export class PermissionSolicitacaoSeed {
   /**
    * Executa o seed das permissões do módulo de solicitação.
-   * 
+   *
    * @param dataSource Conexão com o banco de dados
    */
   public static async run(dataSource: DataSource): Promise<void> {
@@ -23,21 +23,30 @@ export class PermissionSolicitacaoSeed {
 
     // Permissão composta para todas as operações do módulo de solicitação
     // Usamos SQL direto para evitar problemas com campos que não existem na entidade
-    let solicitacaoAllPermission = await permissionRepository.findOne({ where: { nome: 'solicitacao.*' } });
-    
+    let solicitacaoAllPermission = await permissionRepository.findOne({
+      where: { nome: 'solicitacao.*' },
+    });
+
     if (!solicitacaoAllPermission) {
       // Inserir diretamente no banco de dados
       const result = await dataSource.query(
         `INSERT INTO permissao (nome, descricao, modulo, acao, status) 
          VALUES ($1, $2, $3, $4, $5) 
          RETURNING id`,
-        ['solicitacao.*', 'Todas as permissões do módulo de solicitação', 'solicitacao', '*', Status.ATIVO]
+        [
+          'solicitacao.*',
+          'Todas as permissões do módulo de solicitação',
+          'solicitacao',
+          '*',
+          Status.ATIVO,
+        ],
       );
-      
+
       solicitacaoAllPermission = new Permission();
       solicitacaoAllPermission.id = result[0].id;
       solicitacaoAllPermission.nome = 'solicitacao.*';
-      solicitacaoAllPermission.descricao = 'Todas as permissões do módulo de solicitação';
+      solicitacaoAllPermission.descricao =
+        'Todas as permissões do módulo de solicitação';
     }
 
     // Permissões individuais do módulo de solicitação
@@ -99,7 +108,8 @@ export class PermissionSolicitacaoSeed {
       },
       {
         nome: 'solicitacao.status.reativar',
-        descricao: 'Reativar uma solicitação suspensa (transição de status específica)',
+        descricao:
+          'Reativar uma solicitação suspensa (transição de status específica)',
         scopeType: TipoEscopo.UNIDADE,
       },
       {
@@ -142,30 +152,30 @@ export class PermissionSolicitacaoSeed {
     // Cria as permissões individuais e configura o escopo padrão
     for (const permissionData of permissions) {
       const { nome, descricao, scopeType } = permissionData;
-      
+
       // Verificar se a permissão já existe
       let permission = await permissionRepository.findOne({ where: { nome } });
-      
+
       if (!permission) {
         // Extrair módulo e ação do nome
         const parts = nome.split('.');
         const modulo = parts[0];
         const acao = parts.slice(1).join('.');
-        
+
         // Inserir diretamente no banco de dados para evitar problemas com campos não existentes na entidade
         const result = await dataSource.query(
           `INSERT INTO permissao (nome, descricao, modulo, acao, status) 
            VALUES ($1, $2, $3, $4, $5) 
            RETURNING id`,
-          [nome, descricao, modulo, acao, Status.ATIVO]
+          [nome, descricao, modulo, acao, Status.ATIVO],
         );
-        
+
         permission = new Permission();
         permission.id = result[0].id;
         permission.nome = nome;
         permission.descricao = descricao;
       }
-      
+
       // Configura o escopo padrão
       const permissionScope = permissionScopeRepository.create({
         permissao_id: permission.id,
@@ -174,6 +184,8 @@ export class PermissionSolicitacaoSeed {
       await permissionScopeRepository.save(permissionScope);
     }
 
-    console.log('Seed de permissões do módulo de solicitação concluído com sucesso!');
+    console.log(
+      'Seed de permissões do módulo de solicitação concluído com sucesso!',
+    );
   }
 }

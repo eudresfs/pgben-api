@@ -25,7 +25,7 @@ export class DadosAdicionaisVisita {
   })
   @IsOptional()
   @IsEnum(['regular', 'irregular', 'precario'], {
-    message: 'Situação do imóvel deve ser "regular", "irregular" ou "precario"'
+    message: 'Situação do imóvel deve ser "regular", "irregular" ou "precario"',
   })
   situacao_imovel?: 'regular' | 'irregular' | 'precario';
 
@@ -47,7 +47,8 @@ export class DadosAdicionaisVisita {
 
   @ApiPropertyOptional({
     description: 'Observações adicionais sobre a situação do imóvel',
-    example: 'Imóvel em boas condições gerais, mas com pequenas infiltrações no banheiro.',
+    example:
+      'Imóvel em boas condições gerais, mas com pequenas infiltrações no banheiro.',
   })
   @IsOptional()
   @IsString({ message: 'Observações sobre o imóvel devem ser um texto' })

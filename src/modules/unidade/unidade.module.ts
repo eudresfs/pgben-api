@@ -6,11 +6,8 @@ import { UnidadeService } from './services/unidade.service';
 import { SetorService } from './services/setor.service';
 import { UnidadeRepository } from './repositories/unidade.repository';
 import { SetorRepository } from './repositories/setor.repository';
-import { 
-  Unidade, 
-  Setor 
-} from '../../entities';
-import { AuthModule } from '../../auth/auth.module'
+import { Unidade, Setor } from '../../entities';
+import { AuthModule } from '../../auth/auth.module';
 
 /**
  * Módulo de unidades

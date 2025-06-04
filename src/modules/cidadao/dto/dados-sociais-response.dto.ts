@@ -6,7 +6,7 @@ import { SituacaoTrabalhoEnum } from '../../../enums/situacao-trabalho.enum';
 
 /**
  * DTO de resposta para dados sociais de um cidadão
- * 
+ *
  * Padroniza o formato de retorno dos dados sociais, incluindo
  * campos calculados e formatação adequada para o frontend.
  */
@@ -42,13 +42,13 @@ export class DadosSociaisResponseDto {
 
   @ApiProperty({
     description: 'Renda mensal do cidadão em reais',
-    example: 1500.50,
+    example: 1500.5,
     type: 'number',
     format: 'decimal',
     nullable: true,
   })
   @Expose()
-  @Transform(({ value }) => value ? parseFloat(value) : null)
+  @Transform(({ value }) => (value ? parseFloat(value) : null))
   renda: number | null;
 
   @ApiProperty({
@@ -67,13 +67,13 @@ export class DadosSociaisResponseDto {
 
   @ApiProperty({
     description: 'Valor mensal recebido do Programa Bolsa Família',
-    example: 400.00,
+    example: 400.0,
     type: 'number',
     format: 'decimal',
     nullable: true,
   })
   @Expose()
-  @Transform(({ value }) => value ? parseFloat(value) : null)
+  @Transform(({ value }) => (value ? parseFloat(value) : null))
   valor_pbf: number | null;
 
   @ApiProperty({
@@ -92,24 +92,26 @@ export class DadosSociaisResponseDto {
 
   @ApiProperty({
     description: 'Valor mensal recebido do BPC',
-    example: 1320.00,
+    example: 1320.0,
     type: 'number',
     format: 'decimal',
     nullable: true,
   })
   @Expose()
-  @Transform(({ value }) => value ? parseFloat(value) : null)
+  @Transform(({ value }) => (value ? parseFloat(value) : null))
   valor_bpc: number | null;
 
   @ApiProperty({
-    description: 'Curso profissionalizante que o cidadão possui ou está cursando',
+    description:
+      'Curso profissionalizante que o cidadão possui ou está cursando',
     example: 'Técnico em Informática',
   })
   @Expose()
   curso_profissionalizante: string;
 
   @ApiProperty({
-    description: 'Indica se o cidadão tem interesse em fazer curso profissionalizante',
+    description:
+      'Indica se o cidadão tem interesse em fazer curso profissionalizante',
     example: true,
   })
   @Expose()
@@ -131,7 +133,8 @@ export class DadosSociaisResponseDto {
   area_trabalho: string;
 
   @ApiProperty({
-    description: 'Indica se há familiar apto para trabalhar na composição familiar',
+    description:
+      'Indica se há familiar apto para trabalhar na composição familiar',
     example: true,
   })
   @Expose()
@@ -167,7 +170,7 @@ export class DadosSociaisResponseDto {
 
   @ApiProperty({
     description: 'Total de benefícios recebidos (PBF + BPC)',
-    example: 1720.00,
+    example: 1720.0,
     type: 'number',
     format: 'decimal',
     nullable: true,
@@ -183,7 +186,7 @@ export class DadosSociaisResponseDto {
 
   @ApiProperty({
     description: 'Renda total (renda + benefícios)',
-    example: 3220.00,
+    example: 3220.0,
     type: 'number',
     format: 'decimal',
     nullable: true,
@@ -218,15 +221,22 @@ export class DadosSociaisResponseDto {
       this.cidadao_id = dadosSociais.cidadao_id;
       this.escolaridade = dadosSociais.escolaridade;
       this.publico_prioritario = dadosSociais.publico_prioritario;
-      this.renda = dadosSociais.renda ? parseFloat(dadosSociais.renda.toString()) : null;
+      this.renda = dadosSociais.renda
+        ? parseFloat(dadosSociais.renda.toString())
+        : null;
       this.ocupacao = dadosSociais.ocupacao;
       this.recebe_pbf = dadosSociais.recebe_pbf;
-      this.valor_pbf = dadosSociais.valor_pbf ? parseFloat(dadosSociais.valor_pbf.toString()) : null;
+      this.valor_pbf = dadosSociais.valor_pbf
+        ? parseFloat(dadosSociais.valor_pbf.toString())
+        : null;
       this.recebe_bpc = dadosSociais.recebe_bpc;
       this.tipo_bpc = dadosSociais.tipo_bpc;
-      this.valor_bpc = dadosSociais.valor_bpc ? parseFloat(dadosSociais.valor_bpc.toString()) : null;
+      this.valor_bpc = dadosSociais.valor_bpc
+        ? parseFloat(dadosSociais.valor_bpc.toString())
+        : null;
       this.curso_profissionalizante = dadosSociais.curso_profissionalizante;
-      this.interesse_curso_profissionalizante = dadosSociais.interesse_curso_profissionalizante;
+      this.interesse_curso_profissionalizante =
+        dadosSociais.interesse_curso_profissionalizante;
       this.situacao_trabalho = dadosSociais.situacao_trabalho;
       this.area_trabalho = dadosSociais.area_trabalho;
       this.familiar_apto_trabalho = dadosSociais.familiar_apto_trabalho;

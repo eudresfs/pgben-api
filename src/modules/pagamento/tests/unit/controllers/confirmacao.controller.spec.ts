@@ -7,10 +7,10 @@ import { ConfirmacaoRecebimentoDto } from '../../../dtos/confirmacao-recebimento
 
 /**
  * Testes unitários para ConfirmacaoController
- * 
+ *
  * Valida o comportamento dos endpoints de confirmação de recebimento,
  * garantindo que o processo de confirmação pelo beneficiário funcione corretamente.
- * 
+ *
  * @author Equipe PGBen
  */
 describe('ConfirmacaoController', () => {
@@ -28,7 +28,7 @@ describe('ConfirmacaoController', () => {
     recebedorDocumento: '123.456.789-09',
     recebedorVinculo: 'beneficiario',
     observacoes: 'Confirmação realizada pelo próprio beneficiário',
-    confirmadoPor: 'usuario-id-1'
+    confirmadoPor: 'usuario-id-1',
   };
 
   // Mock de um pagamento para os testes
@@ -37,7 +37,7 @@ describe('ConfirmacaoController', () => {
     solicitacaoId: 'solicitacao-id-1',
     status: 'LIBERADO',
     valor: 500,
-    beneficiarioId: 'beneficiario-id-1'
+    beneficiarioId: 'beneficiario-id-1',
   };
 
   // Mock do request com usuário autenticado
@@ -45,8 +45,8 @@ describe('ConfirmacaoController', () => {
     user: {
       id: 'usuario-id-1',
       nome: 'Usuário Teste',
-      perfil: 'operador'
-    }
+      perfil: 'operador',
+    },
   };
 
   beforeEach(async () => {
@@ -57,8 +57,8 @@ describe('ConfirmacaoController', () => {
           provide: ConfirmacaoService,
           useValue: {
             registrarConfirmacao: jest.fn().mockResolvedValue(confirmacaoMock),
-            getConfirmacao: jest.fn().mockResolvedValue(confirmacaoMock)
-          }
+            getConfirmacao: jest.fn().mockResolvedValue(confirmacaoMock),
+          },
         },
         {
           provide: PagamentoService,
@@ -66,10 +66,10 @@ describe('ConfirmacaoController', () => {
             findOne: jest.fn().mockResolvedValue(pagamentoMock),
             findOneWithRelations: jest.fn().mockResolvedValue({
               ...pagamentoMock,
-              confirmacao: null // Inicialmente sem confirmação
-            })
-          }
-        }
+              confirmacao: null, // Inicialmente sem confirmação
+            }),
+          },
+        },
       ],
     }).compile();
 
@@ -91,23 +91,25 @@ describe('ConfirmacaoController', () => {
         recebedorNome: 'Maria Silva',
         recebedorDocumento: '123.456.789-09',
         recebedorVinculo: 'beneficiario',
-        observacoes: 'Confirmação realizada pelo próprio beneficiário'
+        observacoes: 'Confirmação realizada pelo próprio beneficiário',
       };
 
       // Act
       const resultado = await controller.registrarConfirmacao(
         pagamentoId,
         confirmacaoDto,
-        mockRequest as any
+        mockRequest as any,
       );
 
       // Assert
       expect(resultado).toEqual(confirmacaoMock);
-      expect(pagamentoService.findOneWithRelations).toHaveBeenCalledWith(pagamentoId);
+      expect(pagamentoService.findOneWithRelations).toHaveBeenCalledWith(
+        pagamentoId,
+      );
       expect(confirmacaoService.registrarConfirmacao).toHaveBeenCalledWith(
         pagamentoId,
         confirmacaoDto,
-        mockRequest.user.id
+        mockRequest.user.id,
       );
     });
 
@@ -119,14 +121,20 @@ describe('ConfirmacaoController', () => {
         recebedorNome: 'Maria Silva',
         recebedorDocumento: '123.456.789-09',
         recebedorVinculo: 'beneficiario',
-        observacoes: 'Confirmação realizada pelo próprio beneficiário'
+        observacoes: 'Confirmação realizada pelo próprio beneficiário',
       };
-      
-      jest.spyOn(pagamentoService, 'findOneWithRelations').mockResolvedValue(null);
+
+      jest
+        .spyOn(pagamentoService, 'findOneWithRelations')
+        .mockResolvedValue(null);
 
       // Act & Assert
       await expect(
-        controller.registrarConfirmacao(pagamentoId, confirmacaoDto, mockRequest as any)
+        controller.registrarConfirmacao(
+          pagamentoId,
+          confirmacaoDto,
+          mockRequest as any,
+        ),
       ).rejects.toThrow(NotFoundException);
     });
 
@@ -138,20 +146,24 @@ describe('ConfirmacaoController', () => {
         recebedorNome: 'Maria Silva',
         recebedorDocumento: '123.456.789-09',
         recebedorVinculo: 'beneficiario',
-        observacoes: 'Confirmação realizada pelo próprio beneficiário'
+        observacoes: 'Confirmação realizada pelo próprio beneficiário',
       };
-      
+
       // Simular pagamento que já possui confirmação
       jest.spyOn(pagamentoService, 'findOneWithRelations').mockResolvedValue({
         ...pagamentoMock,
         confirmacao: {
-          id: 'confirmacao-existente'
-        }
+          id: 'confirmacao-existente',
+        },
       });
 
       // Act & Assert
       await expect(
-        controller.registrarConfirmacao(pagamentoId, confirmacaoDto, mockRequest as any)
+        controller.registrarConfirmacao(
+          pagamentoId,
+          confirmacaoDto,
+          mockRequest as any,
+        ),
       ).rejects.toThrow();
     });
   });
@@ -166,19 +178,21 @@ describe('ConfirmacaoController', () => {
 
       // Assert
       expect(resultado).toEqual(confirmacaoMock);
-      expect(confirmacaoService.getConfirmacao).toHaveBeenCalledWith(confirmacaoId);
+      expect(confirmacaoService.getConfirmacao).toHaveBeenCalledWith(
+        confirmacaoId,
+      );
     });
 
     it('deve lançar erro quando confirmação não existe', async () => {
       // Arrange
       const confirmacaoId = 'confirmacao-inexistente';
-      
+
       jest.spyOn(confirmacaoService, 'getConfirmacao').mockResolvedValue(null);
 
       // Act & Assert
-      await expect(
-        controller.getConfirmacao(confirmacaoId)
-      ).rejects.toThrow(NotFoundException);
+      await expect(controller.getConfirmacao(confirmacaoId)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -186,46 +200,51 @@ describe('ConfirmacaoController', () => {
     it('deve retornar confirmação de um pagamento', async () => {
       // Arrange
       const pagamentoId = 'pagamento-id-1';
-      
+
       // Simular pagamento com confirmação
       jest.spyOn(pagamentoService, 'findOneWithRelations').mockResolvedValue({
         ...pagamentoMock,
-        confirmacao: confirmacaoMock
+        confirmacao: confirmacaoMock,
       });
 
       // Act
-      const resultado = await controller.getConfirmacaoPorPagamento(pagamentoId);
+      const resultado =
+        await controller.getConfirmacaoPorPagamento(pagamentoId);
 
       // Assert
       expect(resultado).toEqual(confirmacaoMock);
-      expect(pagamentoService.findOneWithRelations).toHaveBeenCalledWith(pagamentoId);
+      expect(pagamentoService.findOneWithRelations).toHaveBeenCalledWith(
+        pagamentoId,
+      );
     });
 
     it('deve verificar se o pagamento existe', async () => {
       // Arrange
       const pagamentoId = 'pagamento-inexistente';
-      
-      jest.spyOn(pagamentoService, 'findOneWithRelations').mockResolvedValue(null);
+
+      jest
+        .spyOn(pagamentoService, 'findOneWithRelations')
+        .mockResolvedValue(null);
 
       // Act & Assert
       await expect(
-        controller.getConfirmacaoPorPagamento(pagamentoId)
+        controller.getConfirmacaoPorPagamento(pagamentoId),
       ).rejects.toThrow(NotFoundException);
     });
 
     it('deve lançar erro quando pagamento não possui confirmação', async () => {
       // Arrange
       const pagamentoId = 'pagamento-id-1';
-      
+
       // Simular pagamento sem confirmação
       jest.spyOn(pagamentoService, 'findOneWithRelations').mockResolvedValue({
         ...pagamentoMock,
-        confirmacao: null
+        confirmacao: null,
       });
 
       // Act & Assert
       await expect(
-        controller.getConfirmacaoPorPagamento(pagamentoId)
+        controller.getConfirmacaoPorPagamento(pagamentoId),
       ).rejects.toThrow(NotFoundException);
     });
   });

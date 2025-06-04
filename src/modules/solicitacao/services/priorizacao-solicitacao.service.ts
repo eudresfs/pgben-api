@@ -1,7 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
-import { Solicitacao, StatusSolicitacao } from '../../../entities/solicitacao.entity';
+import {
+  Solicitacao,
+  StatusSolicitacao,
+} from '../../../entities/solicitacao.entity';
 import { ConfigService } from '@nestjs/config';
 
 /**
@@ -28,7 +31,7 @@ interface CriterioPriorizacao {
 
 /**
  * Serviço responsável pela priorização de solicitações
- * 
+ *
  * Este serviço implementa funcionalidades para:
  * - Calcular a prioridade de solicitações com base em critérios configuráveis
  * - Priorizar automaticamente solicitações com determinação judicial
@@ -55,7 +58,8 @@ export class PriorizacaoSolicitacaoService {
       {
         nome: 'determinacao_judicial',
         descricao: 'Solicitação com determinação judicial',
-        verificador: (solicitacao) => solicitacao.determinacao_judicial_flag === true,
+        verificador: (solicitacao) =>
+          solicitacao.determinacao_judicial_flag === true,
         nivelPrioridade: NivelPrioridade.URGENTE,
         peso: 100,
       },
@@ -66,8 +70,10 @@ export class PriorizacaoSolicitacaoService {
           const agora = new Date();
           return (
             (solicitacao.prazo_analise && agora > solicitacao.prazo_analise) ||
-            (solicitacao.prazo_documentos && agora > solicitacao.prazo_documentos) ||
-            (solicitacao.prazo_processamento && agora > solicitacao.prazo_processamento) ||
+            (solicitacao.prazo_documentos &&
+              agora > solicitacao.prazo_documentos) ||
+            (solicitacao.prazo_processamento &&
+              agora > solicitacao.prazo_processamento) ||
             false
           );
         },
@@ -80,11 +86,17 @@ export class PriorizacaoSolicitacaoService {
         verificador: (solicitacao): boolean => {
           const agora = new Date();
           const limite = new Date(agora.getTime() + 48 * 60 * 60 * 1000); // 48 horas em milissegundos
-          
+
           return (
-            (solicitacao.prazo_analise && agora <= solicitacao.prazo_analise && solicitacao.prazo_analise <= limite) ||
-            (solicitacao.prazo_documentos && agora <= solicitacao.prazo_documentos && solicitacao.prazo_documentos <= limite) ||
-            (solicitacao.prazo_processamento && agora <= solicitacao.prazo_processamento && solicitacao.prazo_processamento <= limite) ||
+            (solicitacao.prazo_analise &&
+              agora <= solicitacao.prazo_analise &&
+              solicitacao.prazo_analise <= limite) ||
+            (solicitacao.prazo_documentos &&
+              agora <= solicitacao.prazo_documentos &&
+              solicitacao.prazo_documentos <= limite) ||
+            (solicitacao.prazo_processamento &&
+              agora <= solicitacao.prazo_processamento &&
+              solicitacao.prazo_processamento <= limite) ||
             false
           );
         },
@@ -192,7 +204,9 @@ export class PriorizacaoSolicitacaoService {
    * @param tecnicoId ID do técnico
    * @returns Lista de solicitações priorizadas do técnico
    */
-  async calcularListaTrabalhoTecnico(tecnicoId: string): Promise<Solicitacao[]> {
+  async calcularListaTrabalhoTecnico(
+    tecnicoId: string,
+  ): Promise<Solicitacao[]> {
     const estadosAtivos = [
       StatusSolicitacao.PENDENTE,
       StatusSolicitacao.EM_ANALISE,
@@ -207,7 +221,7 @@ export class PriorizacaoSolicitacaoService {
     });
 
     // Calcular prioridade para cada solicitação
-    const solicitacoesComPrioridade = solicitacoes.map(solicitacao => ({
+    const solicitacoesComPrioridade = solicitacoes.map((solicitacao) => ({
       solicitacao,
       prioridade: this.calcularPrioridade(solicitacao),
     }));
@@ -218,12 +232,15 @@ export class PriorizacaoSolicitacaoService {
       if (b.prioridade.pontuacao !== a.prioridade.pontuacao) {
         return b.prioridade.pontuacao - a.prioridade.pontuacao;
       }
-      
+
       // Segundo critério: data de abertura (mais antiga primeiro)
-      return a.solicitacao.data_abertura.getTime() - b.solicitacao.data_abertura.getTime();
+      return (
+        a.solicitacao.data_abertura.getTime() -
+        b.solicitacao.data_abertura.getTime()
+      );
     });
 
     // Retornar apenas as solicitações, já ordenadas
-    return solicitacoesComPrioridade.map(item => item.solicitacao);
+    return solicitacoesComPrioridade.map((item) => item.solicitacao);
   }
 }

@@ -1,13 +1,45 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, HttpStatus, HttpCode, Req, HttpException } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+  HttpStatus,
+  HttpCode,
+  Req,
+  HttpException,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiQuery,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { Request } from 'express';
 
 import { MetricasService as MetricasDefinicaoService } from '../services/metricas-definicao.service';
 import { MetricasColetaService } from '../services/metricas-coleta.service';
 import { MetricasCacheService } from '../services/metricas-cache.service';
-import { CriarMetricaDefinicaoDto, AtualizarMetricaDefinicaoDto, FiltroMetricasDto } from '../dto/metrica-definicao.dto';
-import { CriarMetricaConfiguracaoDto, AtualizarMetricaConfiguracaoDto } from '../dto/metrica-configuracao.dto';
-import { ColetaManualMetricaDto, ConsultaValorMetricaDto, ConsultaSerieTemporalDto } from '../dto/metrica-snapshot.dto';
+import {
+  CriarMetricaDefinicaoDto,
+  AtualizarMetricaDefinicaoDto,
+  FiltroMetricasDto,
+} from '../dto/metrica-definicao.dto';
+import {
+  CriarMetricaConfiguracaoDto,
+  AtualizarMetricaConfiguracaoDto,
+} from '../dto/metrica-configuracao.dto';
+import {
+  ColetaManualMetricaDto,
+  ConsultaValorMetricaDto,
+  ConsultaSerieTemporalDto,
+} from '../dto/metrica-snapshot.dto';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../auth/guards/roles.guard';
 import { Roles } from '../../../auth/decorators/role.decorator';
@@ -33,9 +65,18 @@ export class MetricasDefinicaoController {
   @Post()
   @Roles(ROLES.ADMIN, ROLES.GESTOR)
   @ApiOperation({ summary: 'Criar nova métrica' })
-  @ApiResponse({ status: HttpStatus.CREATED, description: 'Métrica criada com sucesso' })
-  @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Dados inválidos' })
-  @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Não autorizado' })
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    description: 'Métrica criada com sucesso',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Dados inválidos',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Não autorizado',
+  })
   @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'Acesso negado' })
   async criarMetrica(
     @Body() dto: CriarMetricaDefinicaoDto,
@@ -44,7 +85,7 @@ export class MetricasDefinicaoController {
     // Obter usuário atual da requisição
     const usuarioId = req.user?.['sub'] || 'sistema';
     const usuarioNome = req.user?.['nome'] || 'Sistema';
-    
+
     return this.metricasService.criarMetrica(dto, usuarioId, usuarioNome);
   }
 
@@ -55,10 +96,22 @@ export class MetricasDefinicaoController {
   @Roles(ROLES.ADMIN, ROLES.GESTOR)
   @ApiOperation({ summary: 'Atualizar métrica existente' })
   @ApiParam({ name: 'id', description: 'ID da métrica' })
-  @ApiResponse({ status: HttpStatus.OK, description: 'Métrica atualizada com sucesso' })
-  @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Dados inválidos' })
-  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Métrica não encontrada' })
-  @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Não autorizado' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Métrica atualizada com sucesso',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Dados inválidos',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Métrica não encontrada',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Não autorizado',
+  })
   @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'Acesso negado' })
   async atualizarMetrica(
     @Param('id') id: string,
@@ -68,8 +121,13 @@ export class MetricasDefinicaoController {
     // Obter usuário atual da requisição
     const usuarioId = req.user?.['sub'] || 'sistema';
     const usuarioNome = req.user?.['nome'] || 'Sistema';
-    
-    return this.metricasService.atualizarMetrica(id, dto, usuarioId, usuarioNome);
+
+    return this.metricasService.atualizarMetrica(
+      id,
+      dto,
+      usuarioId,
+      usuarioNome,
+    );
   }
 
   /**
@@ -80,16 +138,22 @@ export class MetricasDefinicaoController {
   @ApiOperation({ summary: 'Buscar métrica por ID' })
   @ApiParam({ name: 'id', description: 'ID da métrica' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Métrica encontrada' })
-  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Métrica não encontrada' })
-  @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Não autorizado' })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Métrica não encontrada',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Não autorizado',
+  })
   @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'Acesso negado' })
   async buscarMetricaPorId(@Param('id') id: string) {
     const metrica = await this.metricasService.buscarMetricaPorId(id);
-    
+
     if (!metrica) {
       throw new HttpException('Métrica não encontrada', HttpStatus.NOT_FOUND);
     }
-    
+
     return metrica;
   }
 
@@ -101,16 +165,22 @@ export class MetricasDefinicaoController {
   @ApiOperation({ summary: 'Buscar métrica por código' })
   @ApiParam({ name: 'codigo', description: 'Código da métrica' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Métrica encontrada' })
-  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Métrica não encontrada' })
-  @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Não autorizado' })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Métrica não encontrada',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Não autorizado',
+  })
   @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'Acesso negado' })
   async buscarMetricaPorCodigo(@Param('codigo') codigo: string) {
     const metrica = await this.metricasService.buscarMetricaPorCodigo(codigo);
-    
+
     if (!metrica) {
       throw new HttpException('Métrica não encontrada', HttpStatus.NOT_FOUND);
     }
-    
+
     return metrica;
   }
 
@@ -121,7 +191,10 @@ export class MetricasDefinicaoController {
   @Roles(ROLES.ADMIN, ROLES.GESTOR, ROLES.COORDENADOR)
   @ApiOperation({ summary: 'Listar métricas com filtros' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Lista de métricas' })
-  @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Não autorizado' })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Não autorizado',
+  })
   @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'Acesso negado' })
   async listarMetricas(@Query() filtros: FiltroMetricasDto) {
     return this.metricasService.listarMetricas(filtros);
@@ -135,9 +208,18 @@ export class MetricasDefinicaoController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Remover métrica' })
   @ApiParam({ name: 'id', description: 'ID da métrica' })
-  @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'Métrica removida com sucesso' })
-  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Métrica não encontrada' })
-  @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Não autorizado' })
+  @ApiResponse({
+    status: HttpStatus.NO_CONTENT,
+    description: 'Métrica removida com sucesso',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Métrica não encontrada',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Não autorizado',
+  })
   @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'Acesso negado' })
   async removerMetrica(@Param('id') id: string) {
     await this.metricasService.removerMetrica(id);
@@ -149,9 +231,18 @@ export class MetricasDefinicaoController {
   @Post('configuracao')
   @Roles(ROLES.ADMIN, ROLES.GESTOR)
   @ApiOperation({ summary: 'Criar configuração para métrica' })
-  @ApiResponse({ status: HttpStatus.CREATED, description: 'Configuração criada com sucesso' })
-  @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Dados inválidos' })
-  @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Não autorizado' })
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    description: 'Configuração criada com sucesso',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Dados inválidos',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Não autorizado',
+  })
   @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'Acesso negado' })
   async criarConfiguracao(
     @Body() dto: CriarMetricaConfiguracaoDto,
@@ -160,7 +251,7 @@ export class MetricasDefinicaoController {
     // Obter usuário atual da requisição
     const usuarioId = req.user?.['sub'] || 'sistema';
     const usuarioNome = req.user?.['nome'] || 'Sistema';
-    
+
     return this.metricasService.criarConfiguracao(dto, usuarioId, usuarioNome);
   }
 
@@ -171,10 +262,22 @@ export class MetricasDefinicaoController {
   @Roles(ROLES.ADMIN, ROLES.GESTOR)
   @ApiOperation({ summary: 'Atualizar configuração de métrica' })
   @ApiParam({ name: 'id', description: 'ID da configuração' })
-  @ApiResponse({ status: HttpStatus.OK, description: 'Configuração atualizada com sucesso' })
-  @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Dados inválidos' })
-  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Configuração não encontrada' })
-  @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Não autorizado' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Configuração atualizada com sucesso',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Dados inválidos',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Configuração não encontrada',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Não autorizado',
+  })
   @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'Acesso negado' })
   async atualizarConfiguracao(
     @Param('id') id: string,
@@ -184,8 +287,13 @@ export class MetricasDefinicaoController {
     // Obter usuário atual da requisição
     const usuarioId = req.user?.['sub'] || 'sistema';
     const usuarioNome = req.user?.['nome'] || 'Sistema';
-    
-    return this.metricasService.atualizarConfiguracao(id, dto, usuarioId, usuarioNome);
+
+    return this.metricasService.atualizarConfiguracao(
+      id,
+      dto,
+      usuarioId,
+      usuarioNome,
+    );
   }
 
   /**
@@ -195,17 +303,30 @@ export class MetricasDefinicaoController {
   @Roles(ROLES.ADMIN, ROLES.GESTOR, ROLES.COORDENADOR)
   @ApiOperation({ summary: 'Buscar configuração de uma métrica' })
   @ApiParam({ name: 'metricaId', description: 'ID da métrica' })
-  @ApiResponse({ status: HttpStatus.OK, description: 'Configuração encontrada' })
-  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Configuração não encontrada' })
-  @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Não autorizado' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Configuração encontrada',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Configuração não encontrada',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Não autorizado',
+  })
   @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'Acesso negado' })
   async buscarConfiguracaoPorMetrica(@Param('metricaId') metricaId: string) {
-    const configuracao = await this.metricasService.buscarConfiguracaoPorMetrica(metricaId);
-    
+    const configuracao =
+      await this.metricasService.buscarConfiguracaoPorMetrica(metricaId);
+
     if (!configuracao) {
-      throw new HttpException('Configuração não encontrada', HttpStatus.NOT_FOUND);
+      throw new HttpException(
+        'Configuração não encontrada',
+        HttpStatus.NOT_FOUND,
+      );
     }
-    
+
     return configuracao;
   }
 
@@ -215,10 +336,22 @@ export class MetricasDefinicaoController {
   @Post('coleta')
   @Roles(ROLES.ADMIN, ROLES.GESTOR)
   @ApiOperation({ summary: 'Coletar métrica manualmente' })
-  @ApiResponse({ status: HttpStatus.OK, description: 'Métrica coletada com sucesso' })
-  @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Dados inválidos' })
-  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Métrica não encontrada' })
-  @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Não autorizado' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Métrica coletada com sucesso',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Dados inválidos',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Métrica não encontrada',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Não autorizado',
+  })
   @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'Acesso negado' })
   async coletarMetrica(@Body() dto: ColetaManualMetricaDto) {
     return this.coletaService.coletarMetricaManual(dto.codigo, dto.dimensoes);
@@ -231,24 +364,41 @@ export class MetricasDefinicaoController {
   @Roles(ROLES.ADMIN, ROLES.GESTOR, ROLES.COORDENADOR, ROLES.TECNICO)
   @ApiOperation({ summary: 'Consultar valor atual de uma métrica' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Valor da métrica' })
-  @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Dados inválidos' })
-  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Métrica não encontrada' })
-  @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Não autorizado' })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Dados inválidos',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Métrica não encontrada',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Não autorizado',
+  })
   @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'Acesso negado' })
   async consultarValorMetrica(@Body() dto: ConsultaValorMetricaDto) {
-    const metrica = await this.metricasService.buscarMetricaPorCodigo(dto.codigo);
-    
+    const metrica = await this.metricasService.buscarMetricaPorCodigo(
+      dto.codigo,
+    );
+
     if (!metrica) {
       throw new HttpException('Métrica não encontrada', HttpStatus.NOT_FOUND);
     }
-    
+
     // Buscar último snapshot
-    const snapshot = await this.cacheService.obterUltimoSnapshot(metrica.id, dto.dimensoes);
-    
+    const snapshot = await this.cacheService.obterUltimoSnapshot(
+      metrica.id,
+      dto.dimensoes,
+    );
+
     if (!snapshot) {
-      throw new HttpException('Nenhum valor disponível para a métrica', HttpStatus.NOT_FOUND);
+      throw new HttpException(
+        'Nenhum valor disponível para a métrica',
+        HttpStatus.NOT_FOUND,
+      );
     }
-    
+
     return {
       metrica: {
         id: metrica.id,
@@ -267,7 +417,7 @@ export class MetricasDefinicaoController {
         periodo_fim: snapshot.periodo_fim,
         dimensoes: snapshot.dimensoes,
         data_coleta: snapshot.created_at,
-      }
+      },
     };
   }
 
@@ -277,26 +427,40 @@ export class MetricasDefinicaoController {
   @Post('serie-temporal')
   @Roles(ROLES.ADMIN, ROLES.GESTOR, ROLES.COORDENADOR)
   @ApiOperation({ summary: 'Consultar série temporal de uma métrica' })
-  @ApiResponse({ status: HttpStatus.OK, description: 'Série temporal da métrica' })
-  @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Dados inválidos' })
-  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Métrica não encontrada' })
-  @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Não autorizado' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Série temporal da métrica',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Dados inválidos',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Métrica não encontrada',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Não autorizado',
+  })
   @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'Acesso negado' })
   async consultarSerieTemporalMetrica(@Body() dto: ConsultaSerieTemporalDto) {
-    const metrica = await this.metricasService.buscarMetricaPorCodigo(dto.codigo);
-    
+    const metrica = await this.metricasService.buscarMetricaPorCodigo(
+      dto.codigo,
+    );
+
     if (!metrica) {
       throw new HttpException('Métrica não encontrada', HttpStatus.NOT_FOUND);
     }
-    
+
     // Buscar snapshots para o período
     const snapshots = await this.cacheService.obterSerieTemporal(
       metrica.id,
       dto.data_inicial,
       dto.data_final,
-      dto.dimensoes
+      dto.dimensoes,
     );
-    
+
     return {
       metrica: {
         id: metrica.id,
@@ -313,7 +477,7 @@ export class MetricasDefinicaoController {
         granularidade: dto.granularidade || metrica.granularidade,
       },
       dimensoes: dto.dimensoes || {},
-      pontos: snapshots.map(s => ({
+      pontos: snapshots.map((s) => ({
         valor: s.valor,
         valor_formatado: s.valor_formatado,
         periodo_inicio: s.periodo_inicio,
@@ -329,8 +493,14 @@ export class MetricasDefinicaoController {
   @Roles(ROLES.ADMIN)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Limpar cache de métricas' })
-  @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'Cache limpo com sucesso' })
-  @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Não autorizado' })
+  @ApiResponse({
+    status: HttpStatus.NO_CONTENT,
+    description: 'Cache limpo com sucesso',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Não autorizado',
+  })
   @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'Acesso negado' })
   async limparCache() {
     this.cacheService.limparCacheCompleto();
@@ -343,7 +513,10 @@ export class MetricasDefinicaoController {
   @Roles(ROLES.ADMIN, ROLES.GESTOR)
   @ApiOperation({ summary: 'Obter estatísticas do cache de métricas' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Estatísticas do cache' })
-  @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Não autorizado' })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Não autorizado',
+  })
   @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'Acesso negado' })
   async obterEstatisticasCache() {
     return this.cacheService.obterEstatisticas();

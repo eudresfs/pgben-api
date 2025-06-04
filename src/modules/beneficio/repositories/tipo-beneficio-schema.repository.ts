@@ -18,13 +18,15 @@ export class TipoBeneficioSchemaRepository extends Repository<TipoBeneficioSchem
    * @param tipoBeneficioId ID do tipo de benefício
    * @returns Schema ativo ou null se não encontrado
    */
-  async findByTipoBeneficioId(tipoBeneficioId: string): Promise<TipoBeneficioSchema | null> {
+  async findByTipoBeneficioId(
+    tipoBeneficioId: string,
+  ): Promise<TipoBeneficioSchema | null> {
     return this.findOne({
       where: {
         tipo_beneficio_id: tipoBeneficioId,
-        ativo: true
+        ativo: true,
       },
-      relations: ['tipo_beneficio']
+      relations: ['tipo_beneficio'],
     });
   }
 
@@ -34,13 +36,15 @@ export class TipoBeneficioSchemaRepository extends Repository<TipoBeneficioSchem
    * @param entidadeDados Nome da entidade de dados
    * @returns Lista de schemas que usam a entidade especificada
    */
-  async findByEntidadeDados(entidadeDados: string): Promise<TipoBeneficioSchema[]> {
+  async findByEntidadeDados(
+    entidadeDados: string,
+  ): Promise<TipoBeneficioSchema[]> {
     return this.find({
       where: {
         entidade_dados: entidadeDados,
-        ativo: true
+        ativo: true,
       },
-      relations: ['tipo_beneficio']
+      relations: ['tipo_beneficio'],
     });
   }
 
@@ -53,7 +57,7 @@ export class TipoBeneficioSchemaRepository extends Repository<TipoBeneficioSchem
     return this.find({
       where: { ativo: true },
       relations: ['tipo_beneficio'],
-      order: { created_at: 'DESC' }
+      order: { created_at: 'DESC' },
     });
   }
 
@@ -67,9 +71,9 @@ export class TipoBeneficioSchemaRepository extends Repository<TipoBeneficioSchem
     return this.find({
       where: {
         versao,
-        ativo: true
+        ativo: true,
       },
-      relations: ['tipo_beneficio']
+      relations: ['tipo_beneficio'],
     });
   }
 
@@ -105,7 +109,7 @@ export class TipoBeneficioSchemaRepository extends Repository<TipoBeneficioSchem
           SELECT 1 FROM jsonb_array_elements(schema.schema_estrutura->'campos') AS campo
           WHERE campo->>'nome' = :nomeCampo
         )`,
-        { nomeCampo }
+        { nomeCampo },
       )
       .getMany();
   }
@@ -117,9 +121,15 @@ export class TipoBeneficioSchemaRepository extends Repository<TipoBeneficioSchem
    * @param novaVersao Nova versão
    * @returns Schema atualizado
    */
-  async atualizarVersao(id: string, novaVersao: string): Promise<TipoBeneficioSchema> {
+  async atualizarVersao(
+    id: string,
+    novaVersao: string,
+  ): Promise<TipoBeneficioSchema> {
     await this.update(id, { versao: novaVersao });
-    const schema = await this.findOne({ where: { id }, relations: ['tipo_beneficio'] });
+    const schema = await this.findOne({
+      where: { id },
+      relations: ['tipo_beneficio'],
+    });
     if (!schema) {
       throw new Error(`Schema com ID ${id} não encontrado`);
     }
@@ -172,7 +182,10 @@ export class TipoBeneficioSchemaRepository extends Repository<TipoBeneficioSchem
    * @param excludeId ID do schema a ser excluído da validação (opcional)
    * @returns True se existe conflito
    */
-  async existeConflito(tipoBeneficioId: string, excludeId?: string): Promise<boolean> {
+  async existeConflito(
+    tipoBeneficioId: string,
+    excludeId?: string,
+  ): Promise<boolean> {
     const query = this.createQueryBuilder('schema')
       .where('schema.tipo_beneficio_id = :tipoBeneficioId', { tipoBeneficioId })
       .andWhere('schema.ativo = :ativo', { ativo: true });

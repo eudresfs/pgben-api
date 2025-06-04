@@ -1,4 +1,9 @@
-import { Injectable, NestMiddleware, HttpException, HttpStatus } from '@nestjs/common';
+import {
+  Injectable,
+  NestMiddleware,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 
 /**
@@ -7,8 +12,11 @@ import { Request, Response, NextFunction } from 'express';
  */
 @Injectable()
 export class RateLimitMiddleware implements NestMiddleware {
-  private attempts: Map<string, { count: number; lastAttempt: Date; blockedUntil?: Date }> = new Map();
-  
+  private attempts: Map<
+    string,
+    { count: number; lastAttempt: Date; blockedUntil?: Date }
+  > = new Map();
+
   // Configurações do rate limiting
   private readonly MAX_ATTEMPTS = 5; // Máximo de tentativas
   private readonly BLOCK_DURATION = 15 * 60 * 1000; // 15 minutos em ms
@@ -28,31 +36,33 @@ export class RateLimitMiddleware implements NestMiddleware {
 
     const clientId = this.getClientIdentifier(req);
     const now = new Date();
-    
+
     // Verificar se o cliente está bloqueado
     if (this.isBlocked(clientId, now)) {
       const blockedUntil = this.attempts.get(clientId)?.blockedUntil;
-      const remainingTime = blockedUntil ? Math.ceil((blockedUntil.getTime() - now.getTime()) / 1000) : 0;
-      
+      const remainingTime = blockedUntil
+        ? Math.ceil((blockedUntil.getTime() - now.getTime()) / 1000)
+        : 0;
+
       throw new HttpException(
         {
           message: 'Muitas tentativas de login. Tente novamente mais tarde.',
           error: 'Too Many Requests',
           statusCode: HttpStatus.TOO_MANY_REQUESTS,
-          remainingTime: remainingTime
+          remainingTime: remainingTime,
         },
-        HttpStatus.TOO_MANY_REQUESTS
+        HttpStatus.TOO_MANY_REQUESTS,
       );
     }
 
     // Registrar a tentativa
     this.recordAttempt(clientId, now);
-    
+
     // Interceptar resposta para detectar falhas de autenticação
     const originalSend = res.send;
-    res.send = function(body: any) {
+    res.send = function (body: any) {
       const response = typeof body === 'string' ? JSON.parse(body) : body;
-      
+
       // Se a autenticação falhou, incrementar contador
       if (res.statusCode === 401 || (response && response.statusCode === 401)) {
         const attempts = this.attempts.get(clientId);
@@ -64,7 +74,7 @@ export class RateLimitMiddleware implements NestMiddleware {
         // Login bem-sucedido, limpar tentativas
         this.attempts.delete(clientId);
       }
-      
+
       return originalSend.call(this, body);
     }.bind(this);
 
@@ -78,7 +88,7 @@ export class RateLimitMiddleware implements NestMiddleware {
    */
   private isAuthRoute(path: string): boolean {
     const authRoutes = ['/api/v1/auth/login', '/api/v1/auth/refresh'];
-    return authRoutes.some(route => path.includes(route));
+    return authRoutes.some((route) => path.includes(route));
   }
 
   /**
@@ -101,7 +111,7 @@ export class RateLimitMiddleware implements NestMiddleware {
    */
   private isBlocked(clientId: string, now: Date): boolean {
     const attempts = this.attempts.get(clientId);
-    
+
     if (!attempts) {
       return false;
     }
@@ -122,7 +132,7 @@ export class RateLimitMiddleware implements NestMiddleware {
    */
   private recordAttempt(clientId: string, now: Date): void {
     const existing = this.attempts.get(clientId);
-    
+
     if (!existing) {
       this.attempts.set(clientId, { count: 1, lastAttempt: now });
       return;
@@ -146,10 +156,10 @@ export class RateLimitMiddleware implements NestMiddleware {
    */
   public cleanupExpiredAttempts(): void {
     const now = new Date();
-    
+
     for (const [clientId, attempts] of this.attempts.entries()) {
       const timeDiff = now.getTime() - attempts.lastAttempt.getTime();
-      
+
       // Remover entradas antigas (mais de 1 hora)
       if (timeDiff > 60 * 60 * 1000) {
         this.attempts.delete(clientId);

@@ -25,7 +25,7 @@ export class StorageHealthService {
   constructor(
     private readonly storageProviderFactory: StorageProviderFactory,
     private readonly configService: ConfigService,
-    private readonly unifiedLogger: UnifiedLoggerService
+    private readonly unifiedLogger: UnifiedLoggerService,
   ) {
     this.logger = unifiedLogger.child({ context: StorageHealthService.name });
   }
@@ -36,13 +36,13 @@ export class StorageHealthService {
   async checkHealth(): Promise<StorageHealthStatus> {
     const startTime = Date.now();
     const timestamp = new Date();
-    
+
     try {
       const storageProvider = this.storageProviderFactory.getProvider();
       const providerName = this.getProviderName();
-      
+
       this.logger.debug('Iniciando verificação de saúde do storage', {
-        provider: providerName
+        provider: providerName,
       });
 
       // 1. Verificar configuração
@@ -55,9 +55,9 @@ export class StorageHealthService {
             connectivity: false,
             configuration: false,
             permissions: false,
-            error: 'Configuração inválida ou ausente'
+            error: 'Configuração inválida ou ausente',
           },
-          timestamp
+          timestamp,
         };
       }
 
@@ -73,34 +73,37 @@ export class StorageHealthService {
           configuration: true,
           permissions: connectivityResult.success,
           latency,
-          error: connectivityResult.error
+          error: connectivityResult.error,
         },
-        timestamp
+        timestamp,
       };
 
       if (healthStatus.isHealthy) {
-        this.logger.info('Verificação de saúde do storage concluída com sucesso', {
-          provider: providerName,
-          latency,
-          timestamp
-        });
+        this.logger.info(
+          'Verificação de saúde do storage concluída com sucesso',
+          {
+            provider: providerName,
+            latency,
+            timestamp,
+          },
+        );
       } else {
         this.logger.error('Verificação de saúde do storage falhou', {
           provider: providerName,
           error: connectivityResult.error,
           latency,
-          timestamp
+          timestamp,
         });
       }
 
       return healthStatus;
     } catch (error) {
       const latency = Date.now() - startTime;
-      
+
       this.logger.error('Erro durante verificação de saúde do storage', {
         error: error.message,
         stack: error.stack,
-        latency
+        latency,
       });
 
       return {
@@ -111,9 +114,9 @@ export class StorageHealthService {
           configuration: false,
           permissions: false,
           latency,
-          error: `Erro interno: ${error.message}`
+          error: `Erro interno: ${error.message}`,
         },
-        timestamp
+        timestamp,
       };
     }
   }
@@ -123,20 +126,23 @@ export class StorageHealthService {
    */
   private async checkConfiguration(): Promise<boolean> {
     try {
-      const storageType = this.configService.get<string>('STORAGE_TYPE', 'minio');
-      
+      const storageType = this.configService.get<string>(
+        'STORAGE_TYPE',
+        'minio',
+      );
+
       if (storageType === 's3') {
         const requiredS3Configs = [
           'AWS_S3_BUCKET',
           'AWS_REGION',
           'AWS_ACCESS_KEY_ID',
-          'AWS_SECRET_ACCESS_KEY'
+          'AWS_SECRET_ACCESS_KEY',
         ];
-        
+
         const missingConfigs = requiredS3Configs.filter(
-          config => !this.configService.get(config)
+          (config) => !this.configService.get(config),
         );
-        
+
         if (missingConfigs.length > 0) {
           this.logger.warn('Configurações S3 ausentes', { missingConfigs });
           return false;
@@ -146,22 +152,24 @@ export class StorageHealthService {
           'MINIO_ENDPOINT',
           'MINIO_ACCESS_KEY',
           'MINIO_SECRET_KEY',
-          'MINIO_BUCKET'
+          'MINIO_BUCKET',
         ];
-        
+
         const missingConfigs = requiredMinioConfigs.filter(
-          config => !this.configService.get(config)
+          (config) => !this.configService.get(config),
         );
-        
+
         if (missingConfigs.length > 0) {
           this.logger.warn('Configurações MinIO ausentes', { missingConfigs });
           return false;
         }
       }
-      
+
       return true;
     } catch (error) {
-      this.logger.error('Erro ao verificar configuração', { error: error.message });
+      this.logger.error('Erro ao verificar configuração', {
+        error: error.message,
+      });
       return false;
     }
   }
@@ -169,9 +177,11 @@ export class StorageHealthService {
   /**
    * Testa conectividade fazendo upload, download e remoção de um arquivo de teste
    */
-  private async testConnectivity(storageProvider: any): Promise<{ success: boolean; error?: string }> {
+  private async testConnectivity(
+    storageProvider: any,
+  ): Promise<{ success: boolean; error?: string }> {
     const testKey = `health-checks/${Date.now()}-${this.testFileName}`;
-    
+
     try {
       // Teste 1: Upload
       this.logger.debug('Testando upload para storage', { testKey });
@@ -179,13 +189,13 @@ export class StorageHealthService {
         this.testContent,
         testKey,
         'text/plain',
-        { healthCheck: true }
+        { healthCheck: true },
       );
 
       // Teste 2: Download
       this.logger.debug('Testando download do storage', { testKey });
       const downloadedContent = await storageProvider.obterArquivo(testKey);
-      
+
       if (!downloadedContent || !downloadedContent.equals(this.testContent)) {
         throw new Error('Conteúdo baixado não confere com o enviado');
       }
@@ -202,13 +212,13 @@ export class StorageHealthService {
       } catch (cleanupError) {
         this.logger.warn('Erro ao limpar arquivo de teste', {
           testKey,
-          cleanupError: cleanupError.message
+          cleanupError: cleanupError.message,
         });
       }
 
       return {
         success: false,
-        error: error.message
+        error: error.message,
       };
     }
   }
@@ -228,15 +238,15 @@ export class StorageHealthService {
     try {
       const configurationCheck = await this.checkConfiguration();
       const providerName = this.getProviderName();
-      
+
       return {
         isHealthy: configurationCheck,
-        provider: providerName
+        provider: providerName,
       };
     } catch (error) {
       return {
         isHealthy: false,
-        provider: 'unknown'
+        provider: 'unknown',
       };
     }
   }

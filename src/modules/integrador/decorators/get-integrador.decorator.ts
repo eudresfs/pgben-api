@@ -3,7 +3,7 @@ import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 /**
  * Decorator para injetar o objeto integrador na assinatura do método do controller.
  * Extrai o integrador do objeto de requisição que foi previamente configurado pelo guard.
- * 
+ *
  * @example
  * // Uso em um método de controller
  * @Get('recursos')

@@ -2,10 +2,10 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
  * Migration para melhorar as políticas de segurança RLS do módulo de auditoria
- * 
+ *
  * Esta migration cria registros de acesso a dados sensíveis e aprimora as políticas RLS
  * para o módulo de auditoria, com foco em segurança e compliance com LGPD.
- * 
+ *
  * @author Engenheiro de Dados
  * @date 20/05/2025
  */
@@ -17,31 +17,31 @@ export class ImproveAuditoriaRLS1704067243000 implements MigrationInterface {
    */
   public async up(queryRunner: QueryRunner): Promise<void> {
     console.log('Iniciando migration 1150000-ImproveAuditoriaRLS...');
-    
+
     // Verificar se a tabela existe
     const tableExists = await queryRunner.query(`
       SELECT EXISTS (
         SELECT 1 FROM information_schema.tables WHERE table_name = 'logs_auditoria'
       );
     `);
-    
+
     if (!tableExists[0].exists) {
       console.log('Tabela logs_auditoria não existe, pulando migration.');
       return;
     }
-    
+
     // Remover política existente (muito simples)
     await queryRunner.query(`
       DROP POLICY IF EXISTS logs_auditoria_policy ON logs_auditoria;
     `);
-    
+
     // Criar tabela para registrar acesso a dados sensíveis (se não existir)
     const sensitiveTblExists = await queryRunner.query(`
       SELECT EXISTS (
         SELECT 1 FROM information_schema.tables WHERE table_name = 'logs_acesso_dados_sensiveis'
       );
     `);
-    
+
     if (!sensitiveTblExists[0].exists) {
       console.log('Criando tabela logs_acesso_dados_sensiveis...');
       await queryRunner.query(`
@@ -61,7 +61,7 @@ export class ImproveAuditoriaRLS1704067243000 implements MigrationInterface {
         CREATE INDEX idx_logs_acesso_dados_sensiveis_data ON logs_acesso_dados_sensiveis (data_acesso);
       `);
     }
-    
+
     // Criar função para registrar acesso a dados sensíveis
     await queryRunner.query(`
       CREATE OR REPLACE FUNCTION registrar_acesso_dados_sensiveis(
@@ -93,7 +93,7 @@ export class ImproveAuditoriaRLS1704067243000 implements MigrationInterface {
       END;
       $$ LANGUAGE plpgsql SECURITY DEFINER;
     `);
-    
+
     // Adicionar políticas RLS simples mas robustas para logs de auditoria
     await queryRunner.query(`
       -- Política para administradores (acesso total)
@@ -112,7 +112,7 @@ export class ImproveAuditoriaRLS1704067243000 implements MigrationInterface {
       TO PUBLIC
       USING (current_user = usuario_id::text);
     `);
-    
+
     // Adicionar política RLS para a tabela de logs de acesso a dados sensíveis
     await queryRunner.query(`
       -- Habilitar RLS para a tabela
@@ -134,7 +134,7 @@ export class ImproveAuditoriaRLS1704067243000 implements MigrationInterface {
       TO PUBLIC
       USING (current_user = usuario::text);
     `);
-    
+
     console.log('Migration 1150000-ImproveAuditoriaRLS concluída com sucesso!');
   }
 
@@ -143,25 +143,25 @@ export class ImproveAuditoriaRLS1704067243000 implements MigrationInterface {
    */
   public async down(queryRunner: QueryRunner): Promise<void> {
     console.log('Revertendo migration 1150000-ImproveAuditoriaRLS...');
-    
+
     // Remover políticas RLS de logs_acesso_dados_sensiveis
     await queryRunner.query(`
       DROP POLICY IF EXISTS logs_acesso_dados_sensiveis_admin_policy ON logs_acesso_dados_sensiveis;
       DROP POLICY IF EXISTS logs_acesso_dados_sensiveis_self_policy ON logs_acesso_dados_sensiveis;
       ALTER TABLE logs_acesso_dados_sensiveis DISABLE ROW LEVEL SECURITY;
     `);
-    
+
     // Remover políticas RLS de logs_auditoria
     await queryRunner.query(`
       DROP POLICY IF EXISTS logs_auditoria_admin_policy ON logs_auditoria;
       DROP POLICY IF EXISTS logs_auditoria_self_policy ON logs_auditoria;
     `);
-    
+
     // Remover função para registro de acesso a dados sensíveis
     await queryRunner.query(`
       DROP FUNCTION IF EXISTS registrar_acesso_dados_sensiveis CASCADE;
     `);
-    
+
     // Recriar política simples original
     await queryRunner.query(`
       CREATE POLICY logs_auditoria_policy ON logs_auditoria
@@ -169,7 +169,9 @@ export class ImproveAuditoriaRLS1704067243000 implements MigrationInterface {
       TO PUBLIC
       USING (true);
     `);
-    
-    console.log('Reversão da migration 1150000-ImproveAuditoriaRLS concluída com sucesso!');
+
+    console.log(
+      'Reversão da migration 1150000-ImproveAuditoriaRLS concluída com sucesso!',
+    );
   }
 }

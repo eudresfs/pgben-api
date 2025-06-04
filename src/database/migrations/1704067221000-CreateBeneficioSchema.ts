@@ -2,13 +2,13 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
  * Migration para criar o schema relacionado ao benefício
- * 
+ *
  * Esta migration cria as tabelas e restrições para o módulo de benefício,
  * incluindo estruturas para definir tipos de benefícios, requisitos, fluxos de aprovação,
  * campos dinâmicos relacionados aos benefícios e a tabela de benefícios com suporte a renovação automática.
- * 
+ *
  * Os enums necessários são criados na migration CreateAllEnums
- * 
+ *
  * @author Engenheiro de Dados
  * @date 19/05/2025
  */
@@ -20,7 +20,7 @@ export class CreateBeneficioSchema1704067215000 implements MigrationInterface {
    */
   public async up(queryRunner: QueryRunner): Promise<void> {
     console.log('Iniciando migration CreateBeneficioSchema...');
-    
+
     // Tabela de tipo de benefício
     await queryRunner.query(`
       CREATE TABLE IF NOT EXISTS "tipo_beneficio" (
@@ -43,7 +43,7 @@ export class CreateBeneficioSchema1704067215000 implements MigrationInterface {
         CONSTRAINT "UK_tipo_beneficio_codigo" UNIQUE ("codigo")
       );
     `);
-    
+
     // Índices para otimização de consultas
     await queryRunner.query(`
       CREATE INDEX IF NOT EXISTS "IDX_tipo_beneficio_nome_ativo" ON "tipo_beneficio" ("nome", "status");
@@ -51,7 +51,7 @@ export class CreateBeneficioSchema1704067215000 implements MigrationInterface {
       CREATE INDEX IF NOT EXISTS "IDX_tipo_beneficio_periodicidade" ON "tipo_beneficio" ("periodicidade");
       CREATE INDEX IF NOT EXISTS "IDX_tipo_beneficio_criterios" ON "tipo_beneficio" USING GIN ("criterios_elegibilidade");
     `);
-    
+
     // Trigger para atualização automática de timestamp
     await queryRunner.query(`
       DROP TRIGGER IF EXISTS trigger_tipo_beneficio_update_timestamp ON "tipo_beneficio";
@@ -60,7 +60,7 @@ export class CreateBeneficioSchema1704067215000 implements MigrationInterface {
         FOR EACH ROW
         EXECUTE PROCEDURE update_timestamp();
     `);
-    
+
     // Tabela de requisitos de documentos
     await queryRunner.query(`
       CREATE TABLE IF NOT EXISTS "requisito_documento" (
@@ -78,7 +78,7 @@ export class CreateBeneficioSchema1704067215000 implements MigrationInterface {
         CONSTRAINT "UK_requisito_documento_tipo_beneficio_tipo_documento" UNIQUE ("tipo_beneficio_id", "tipo_documento")
       );
     `);
-    
+
     // Índices para otimização de consultas
     await queryRunner.query(`
       CREATE INDEX IF NOT EXISTS "IDX_requisito_documento_tipo_beneficio" ON "requisito_documento" ("tipo_beneficio_id");
@@ -87,7 +87,7 @@ export class CreateBeneficioSchema1704067215000 implements MigrationInterface {
       CREATE INDEX IF NOT EXISTS "IDX_requisito_documento_obrigatorio" ON "requisito_documento" ("obrigatorio");
       CREATE INDEX IF NOT EXISTS "IDX_requisito_documento_validacoes" ON "requisito_documento" USING GIN ("validacoes");
     `);
-    
+
     // Trigger para atualização automática de timestamp
     await queryRunner.query(`
       DROP TRIGGER IF EXISTS trigger_requisito_documento_update_timestamp ON "requisito_documento";
@@ -96,7 +96,7 @@ export class CreateBeneficioSchema1704067215000 implements MigrationInterface {
         FOR EACH ROW
         EXECUTE PROCEDURE update_timestamp();
     `);
-    
+
     // Tabela de fluxo de benefício
     await queryRunner.query(`
       CREATE TABLE IF NOT EXISTS "fluxo_beneficio" (
@@ -117,7 +117,7 @@ export class CreateBeneficioSchema1704067215000 implements MigrationInterface {
         CONSTRAINT "UK_fluxo_beneficio_tipo_setor_ordem" UNIQUE ("tipo_beneficio_id", "setor_id", "ordem")
       );
     `);
-    
+
     // Índices para otimização de consultas
     await queryRunner.query(`
       CREATE INDEX IF NOT EXISTS "IDX_fluxo_beneficio_tipo" ON "fluxo_beneficio" ("tipo_beneficio_id");
@@ -125,7 +125,7 @@ export class CreateBeneficioSchema1704067215000 implements MigrationInterface {
       CREATE INDEX IF NOT EXISTS "IDX_fluxo_beneficio_ordem" ON "fluxo_beneficio" ("ordem");
       CREATE INDEX IF NOT EXISTS "IDX_fluxo_beneficio_ativo" ON "fluxo_beneficio" ("ativo");
     `);
-    
+
     // Trigger para atualização automática de timestamp
     await queryRunner.query(`
       DROP TRIGGER IF EXISTS trigger_fluxo_beneficio_update_timestamp ON "fluxo_beneficio";
@@ -134,7 +134,7 @@ export class CreateBeneficioSchema1704067215000 implements MigrationInterface {
         FOR EACH ROW
         EXECUTE PROCEDURE update_timestamp();
     `);
-    
+
     // Tabela de campos dinâmicos
     await queryRunner.query(`
       CREATE TABLE IF NOT EXISTS "campo_dinamico_beneficio" (
@@ -156,14 +156,14 @@ export class CreateBeneficioSchema1704067215000 implements MigrationInterface {
         CONSTRAINT "UK_campo_dinamico_tipo_nome" UNIQUE ("tipo_beneficio_id", "nome")
       );
     `);
-    
+
     // Índices para otimização de consultas
     await queryRunner.query(`
       CREATE INDEX IF NOT EXISTS "IDX_campo_dinamico_tipo" ON "campo_dinamico_beneficio" ("tipo_beneficio_id");
       CREATE INDEX IF NOT EXISTS "IDX_campo_dinamico_tipo_campo" ON "campo_dinamico_beneficio" ("tipo_campo");
       CREATE INDEX IF NOT EXISTS "IDX_campo_dinamico_regras" ON "campo_dinamico_beneficio" USING GIN ("regras_validacao");
     `);
-    
+
     // Trigger para atualização automática de timestamp
     await queryRunner.query(`
       DROP TRIGGER IF EXISTS trigger_campo_dinamico_update_timestamp ON "campo_dinamico_beneficio";
@@ -172,7 +172,7 @@ export class CreateBeneficioSchema1704067215000 implements MigrationInterface {
         FOR EACH ROW
         EXECUTE PROCEDURE update_timestamp();
     `);
-    
+
     // Tabela de versão de schema de benefício
     await queryRunner.query(`
       CREATE TABLE IF NOT EXISTS "versao_schema_beneficio" (
@@ -190,7 +190,7 @@ export class CreateBeneficioSchema1704067215000 implements MigrationInterface {
         CONSTRAINT "UK_versao_schema_tipo_versao" UNIQUE ("tipo_beneficio_id", "versao")
       );
     `);
-    
+
     /// Índices para otimização de consultas
     await queryRunner.query(`
       CREATE INDEX IF NOT EXISTS "IDX_versao_schema_tipo" ON "versao_schema_beneficio" ("tipo_beneficio_id");
@@ -198,7 +198,7 @@ export class CreateBeneficioSchema1704067215000 implements MigrationInterface {
       CREATE INDEX IF NOT EXISTS "IDX_versao_schema_ativo" ON "versao_schema_beneficio" ("ativo");
       CREATE INDEX IF NOT EXISTS "IDX_versao_schema_schema" ON "versao_schema_beneficio" USING GIN ("schema");
     `);
-    
+
     // Trigger para atualização automática de timestamp
     await queryRunner.query(`
       DROP TRIGGER IF EXISTS trigger_versao_schema_update_timestamp ON "versao_schema_beneficio";
@@ -207,7 +207,7 @@ export class CreateBeneficioSchema1704067215000 implements MigrationInterface {
         FOR EACH ROW
         EXECUTE PROCEDURE update_timestamp();
     `);
-    
+
     // Tabela de beneficio
     await queryRunner.query(`
       CREATE TABLE IF NOT EXISTS "beneficio" (
@@ -225,14 +225,14 @@ export class CreateBeneficioSchema1704067215000 implements MigrationInterface {
         CONSTRAINT "PK_beneficio" PRIMARY KEY ("id")
       );
     `);
-    
+
     // Índices para otimização de consultas da tabela beneficio
     await queryRunner.query(`
       CREATE INDEX IF NOT EXISTS "IDX_beneficio_tipo_beneficio" ON "beneficio" ("tipo_beneficio_id");
       CREATE INDEX IF NOT EXISTS "IDX_beneficio_ativo" ON "beneficio" ("ativo");
       CREATE INDEX IF NOT EXISTS "IDX_beneficio_permite_renovacao" ON "beneficio" ("permite_renovacao_automatica") WHERE permite_renovacao_automatica = true;
     `);
-    
+
     // Trigger para atualização automática de timestamp
     await queryRunner.query(`
       DROP TRIGGER IF EXISTS trigger_beneficio_update_timestamp ON "beneficio";
@@ -241,7 +241,7 @@ export class CreateBeneficioSchema1704067215000 implements MigrationInterface {
         FOR EACH ROW
         EXECUTE PROCEDURE update_timestamp();
     `);
-    
+
     // Adicionar as chaves estrangeiras
     await queryRunner.query(`
       DO $$
@@ -310,7 +310,7 @@ export class CreateBeneficioSchema1704067215000 implements MigrationInterface {
         END IF;
       END $$;
     `);
-    
+
     console.log('Migration CreateBeneficioSchema executada com sucesso.');
   }
 
@@ -319,7 +319,7 @@ export class CreateBeneficioSchema1704067215000 implements MigrationInterface {
    */
   public async down(queryRunner: QueryRunner): Promise<void> {
     console.log('Revertendo migration CreateBeneficioSchema...');
-    
+
     // Remover chaves estrangeiras
     await queryRunner.query(`
       ALTER TABLE "requisito_documento" DROP CONSTRAINT IF EXISTS "FK_requisito_documento_tipo_beneficio";
@@ -329,14 +329,14 @@ export class CreateBeneficioSchema1704067215000 implements MigrationInterface {
       ALTER TABLE "versao_schema_beneficio" DROP CONSTRAINT IF EXISTS "FK_versao_schema_tipo_beneficio";
       ALTER TABLE "beneficio" DROP CONSTRAINT IF EXISTS "FK_beneficio_tipo_beneficio";
     `);
-    
+
     // Remover índices da tabela beneficio
     await queryRunner.query(`
       DROP INDEX IF EXISTS "IDX_beneficio_permite_renovacao";
       DROP INDEX IF EXISTS "IDX_beneficio_ativo";
       DROP INDEX IF EXISTS "IDX_beneficio_tipo_beneficio";
     `);
-    
+
     // Remover triggers de atualização automática de timestamp
     await queryRunner.query(`
       DROP TRIGGER IF EXISTS trigger_tipo_beneficio_update_timestamp ON "tipo_beneficio";
@@ -346,7 +346,7 @@ export class CreateBeneficioSchema1704067215000 implements MigrationInterface {
       DROP TRIGGER IF EXISTS trigger_versao_schema_update_timestamp ON "versao_schema_beneficio";
       DROP TRIGGER IF EXISTS trigger_beneficio_update_timestamp ON "beneficio";
     `);
-    
+
     // Remover tabelas
     await queryRunner.query(`
       DROP TABLE IF EXISTS "versao_schema_beneficio";
@@ -356,7 +356,7 @@ export class CreateBeneficioSchema1704067215000 implements MigrationInterface {
       DROP TABLE IF EXISTS "beneficio";
       DROP TABLE IF EXISTS "tipo_beneficio";
     `);
-    
+
     console.log('Migration CreateBeneficioSchema revertida com sucesso.');
   }
 }

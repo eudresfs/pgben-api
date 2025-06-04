@@ -47,7 +47,7 @@ export class LogAuditoriaRepository {
 
       // Salvar o log sem assinatura para evitar dependência circular
       const savedLog = await this.repository.save(logAuditoria);
-      
+
       this.logger.debug(`Log ${savedLog.id} criado com sucesso`);
 
       return savedLog;
@@ -311,7 +311,9 @@ export class LogAuditoriaRepository {
    * @param log Log de auditoria
    */
   private async compressLogDataIfNeeded(log: LogAuditoria): Promise<void> {
-    if (!this.compressionEnabled) {return;}
+    if (!this.compressionEnabled) {
+      return;
+    }
 
     try {
       // Comprimir dados_anteriores se for grande
@@ -351,7 +353,9 @@ export class LogAuditoriaRepository {
    * @param log Log de auditoria
    */
   private async decompressLogDataIfNeeded(log: LogAuditoria): Promise<void> {
-    if (!this.compressionEnabled) {return;}
+    if (!this.compressionEnabled) {
+      return;
+    }
 
     try {
       // Descomprimir dados_anteriores se estiver comprimido

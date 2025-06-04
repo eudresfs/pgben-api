@@ -45,7 +45,7 @@ export class AuditoriaController {
   @Post()
   @RequiresPermission({
     permissionName: 'auditoria.log.criar',
-    scopeType: ScopeType.GLOBAL
+    scopeType: ScopeType.GLOBAL,
   })
   @ApiOperation({ summary: 'Cria um novo log de auditoria manualmente' })
   @ApiResponse({
@@ -77,7 +77,7 @@ export class AuditoriaController {
   @Get()
   @RequiresPermission({
     permissionName: 'auditoria.log.listar',
-    scopeType: ScopeType.GLOBAL
+    scopeType: ScopeType.GLOBAL,
   })
   @ApiOperation({ summary: 'Busca logs de auditoria' })
   @ApiResponse({ status: 200, description: 'Lista de logs de auditoria' })
@@ -92,7 +92,7 @@ export class AuditoriaController {
   @Get(':id')
   @RequiresPermission({
     permissionName: 'auditoria.log.visualizar',
-    scopeType: ScopeType.GLOBAL
+    scopeType: ScopeType.GLOBAL,
   })
   @ApiOperation({ summary: 'Busca um log de auditoria pelo ID' })
   @ApiParam({ name: 'id', description: 'ID do log de auditoria' })
@@ -109,7 +109,7 @@ export class AuditoriaController {
   @Get('entidade/:entidade/:id')
   @RequiresPermission({
     permissionName: 'auditoria.log.entidade.visualizar',
-    scopeType: ScopeType.GLOBAL
+    scopeType: ScopeType.GLOBAL,
   })
   @ApiOperation({ summary: 'Busca logs de auditoria por entidade' })
   @ApiParam({ name: 'entidade', description: 'Nome da entidade' })
@@ -119,7 +119,10 @@ export class AuditoriaController {
     description: 'Lista de logs de auditoria da entidade',
   })
   @ApiResponse({ status: 403, description: 'Acesso negado' })
-  findByEntidade(@Param('entidade') entidade: string, @Param('id', ParseUUIDPipe) id: string) {
+  findByEntidade(
+    @Param('entidade') entidade: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
     return this.auditoriaService.findByEntidade(entidade, id);
   }
 
@@ -129,7 +132,7 @@ export class AuditoriaController {
   @Get('usuario/:id')
   @RequiresPermission({
     permissionName: 'auditoria.log.usuario.visualizar',
-    scopeType: ScopeType.GLOBAL
+    scopeType: ScopeType.GLOBAL,
   })
   @ApiOperation({ summary: 'Busca logs de auditoria por usuário' })
   @ApiParam({ name: 'id', description: 'ID do usuário' })
@@ -148,7 +151,7 @@ export class AuditoriaController {
   @Get('relatorios/dados-sensiveis')
   @RequiresPermission({
     permissionName: 'auditoria.relatorio.dados-sensiveis',
-    scopeType: ScopeType.GLOBAL
+    scopeType: ScopeType.GLOBAL,
   })
   @ApiOperation({
     summary: 'Gera relatório de acessos a dados sensíveis por período',

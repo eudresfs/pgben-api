@@ -1,9 +1,24 @@
-import { Entity, PrimaryGeneratedColumn, Column, Index, CreateDateColumn } from 'typeorm';
-import { IsNotEmpty, IsUUID, IsOptional, IsNumber, Min, IsString, MaxLength, IsEnum } from 'class-validator';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  Index,
+  CreateDateColumn,
+} from 'typeorm';
+import {
+  IsNotEmpty,
+  IsUUID,
+  IsOptional,
+  IsNumber,
+  Min,
+  IsString,
+  MaxLength,
+  IsEnum,
+} from 'class-validator';
 
 /**
  * Entidade que representa métricas de operações com documentos
- * 
+ *
  * Esta entidade armazena informações sobre operações realizadas com documentos,
  * como upload, download, visualização e exclusão, incluindo metadados como
  * tamanho, duração da operação e status.

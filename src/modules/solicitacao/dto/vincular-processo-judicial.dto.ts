@@ -3,7 +3,7 @@ import { ApiProperty } from '@nestjs/swagger';
 
 /**
  * DTO para vincular um processo judicial a uma solicitação
- * 
+ *
  * Este DTO é usado pelo módulo de solicitação para vincular um processo judicial
  * existente a uma solicitação. A responsabilidade de gerenciar este vínculo
  * é do módulo de solicitação, não do módulo judicial.

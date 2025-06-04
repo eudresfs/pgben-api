@@ -14,16 +14,22 @@ import {
 @ValidatorConstraint({ name: 'cpf', async: false })
 export class CPFValidator implements ValidatorConstraintInterface {
   validate(cpf: string, args: ValidationArguments) {
-    if (!cpf) {return false;}
+    if (!cpf) {
+      return false;
+    }
 
     // Remove caracteres não numéricos
     cpf = cpf.replace(/[^\d]/g, '');
 
     // Verifica se tem 11 dígitos
-    if (cpf.length !== 11) {return false;}
+    if (cpf.length !== 11) {
+      return false;
+    }
 
     // Verifica se todos os dígitos são iguais (CPF inválido, mas passa na verificação de dígitos)
-    if (/^(\d)\1{10}$/.test(cpf)) {return false;}
+    if (/^(\d)\1{10}$/.test(cpf)) {
+      return false;
+    }
 
     // Cálculo do primeiro dígito verificador
     let soma = 0;
@@ -58,16 +64,22 @@ export class CPFValidator implements ValidatorConstraintInterface {
 @ValidatorConstraint({ name: 'nis', async: false })
 export class NISValidator implements ValidatorConstraintInterface {
   validate(nis: string, args: ValidationArguments) {
-    if (!nis) {return false;}
+    if (!nis) {
+      return false;
+    }
 
     // Remove caracteres não numéricos
     nis = nis.replace(/[^\d]/g, '');
 
     // Verifica se tem 11 dígitos
-    if (nis.length !== 11) {return false;}
+    if (nis.length !== 11) {
+      return false;
+    }
 
     // Verifica se todos os dígitos são iguais (NIS inválido, mas passa na verificação de dígitos)
-    if (/^(\d)\1{10}$/.test(nis)) {return false;}
+    if (/^(\d)\1{10}$/.test(nis)) {
+      return false;
+    }
 
     // Pesos para cálculo do dígito verificador
     const pesos = [3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
@@ -79,7 +91,9 @@ export class NISValidator implements ValidatorConstraintInterface {
     }
     const resto = soma % 11;
     let dv = 11 - resto;
-    if (dv === 10 || dv === 11) {dv = 0;}
+    if (dv === 10 || dv === 11) {
+      dv = 0;
+    }
 
     // Verifica se o dígito verificador está correto
     return dv === parseInt(nis.charAt(10));
@@ -98,7 +112,9 @@ export class NISValidator implements ValidatorConstraintInterface {
 @ValidatorConstraint({ name: 'cep', async: false })
 export class CEPValidator implements ValidatorConstraintInterface {
   validate(cep: string, args: ValidationArguments) {
-    if (!cep) {return false;}
+    if (!cep) {
+      return false;
+    }
 
     // Remove caracteres não numéricos
     cep = cep.replace(/[^\d]/g, '');
@@ -120,7 +136,9 @@ export class CEPValidator implements ValidatorConstraintInterface {
 @ValidatorConstraint({ name: 'telefone', async: false })
 export class TelefoneValidator implements ValidatorConstraintInterface {
   validate(telefone: string, args: ValidationArguments) {
-    if (!telefone) {return false;}
+    if (!telefone) {
+      return false;
+    }
 
     // Remove caracteres não numéricos
     telefone = telefone.replace(/[^\d]/g, '');

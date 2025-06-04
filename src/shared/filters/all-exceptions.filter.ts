@@ -1,4 +1,12 @@
-import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus, Injectable, BadRequestException } from '@nestjs/common';
+import {
+  ArgumentsHost,
+  Catch,
+  ExceptionFilter,
+  HttpException,
+  HttpStatus,
+  Injectable,
+  BadRequestException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Request, Response } from 'express';
 import { ValidationError } from 'class-validator';
@@ -10,10 +18,10 @@ import { ApiErrorResponse } from '../dtos/api-error-response.dto';
 
 /**
  * Filtro global para tratamento de exceções
- * 
+ *
  * Padroniza todas as respostas de erro da aplicação,
  * garantindo consistência e logging adequado.
- * 
+ *
  * Características:
  * - Tratamento específico para diferentes tipos de exceção
  * - Logging estruturado com contexto de requisição
@@ -42,7 +50,8 @@ export class AllExceptionsFilter<T> implements ExceptionFilter {
     const requestContext = createRequestContext(req);
 
     // Extrair idioma do header para localização (padrão: pt-BR)
-    const acceptedLanguage = req.headers['accept-language']?.split(',')[0] || 'pt-BR';
+    const acceptedLanguage =
+      req.headers['accept-language']?.split(',')[0] || 'pt-BR';
 
     let stack: string | undefined;
     let statusCode: HttpStatus;
@@ -50,7 +59,9 @@ export class AllExceptionsFilter<T> implements ExceptionFilter {
     let message: string;
     let details: any;
     let localizedMessage: string | undefined;
-    let validationErrors: Array<{ field: string; messages: string[] }> | undefined;
+    let validationErrors:
+      | Array<{ field: string; messages: string[] }>
+      | undefined;
 
     // Tratamento estruturado por tipo de exceção
     switch (true) {
@@ -66,7 +77,7 @@ export class AllExceptionsFilter<T> implements ExceptionFilter {
         statusCode = exception.getStatus();
         errorName = exception.constructor.name;
         const response = exception.getResponse() as any;
-        
+
         // Tratar erros de validação do class-validator
         if (response?.message && Array.isArray(response.message)) {
           validationErrors = this.processValidationErrors(response.message);
@@ -121,7 +132,10 @@ export class AllExceptionsFilter<T> implements ExceptionFilter {
       userAgent: req.headers['user-agent'],
       ip: req.ip,
       method: req.method,
-      stack: stack && this.config.get<string>('NODE_ENV') === 'development' ? stack : undefined,
+      stack:
+        stack && this.config.get<string>('NODE_ENV') === 'development'
+          ? stack
+          : undefined,
     };
 
     if (logLevel === 'error') {
@@ -144,7 +158,7 @@ export class AllExceptionsFilter<T> implements ExceptionFilter {
    * Processa erros de validação do class-validator em formato estruturado
    */
   private processValidationErrors(
-    validationErrors: string[] | ValidationError[]
+    validationErrors: string[] | ValidationError[],
   ): Array<{ field: string; messages: string[] }> {
     const result: Array<{ field: string; messages: string[] }> = [];
 
@@ -161,7 +175,7 @@ export class AllExceptionsFilter<T> implements ExceptionFilter {
         const messages = validationError.constraints
           ? Object.values(validationError.constraints)
           : ['Erro de validação'];
-        
+
         result.push({
           field: validationError.property,
           messages,
@@ -169,11 +183,15 @@ export class AllExceptionsFilter<T> implements ExceptionFilter {
 
         // Processar erros aninhados
         if (validationError.children && validationError.children.length > 0) {
-          const childErrors = this.processValidationErrors(validationError.children);
-          result.push(...childErrors.map(childError => ({
-            field: `${validationError.property}.${childError.field}`,
-            messages: childError.messages,
-          })));
+          const childErrors = this.processValidationErrors(
+            validationError.children,
+          );
+          result.push(
+            ...childErrors.map((childError) => ({
+              field: `${validationError.property}.${childError.field}`,
+              messages: childError.messages,
+            })),
+          );
         }
       }
     }

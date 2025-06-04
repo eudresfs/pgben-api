@@ -1,4 +1,11 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Index,
+} from 'typeorm';
 import { ParametroTipoEnum } from '../enums';
 
 /**
@@ -32,7 +39,7 @@ export class Parametro {
   @Column({
     type: 'enum',
     enum: ParametroTipoEnum,
-    default: ParametroTipoEnum.STRING
+    default: ParametroTipoEnum.STRING,
   })
   tipo: ParametroTipoEnum;
 

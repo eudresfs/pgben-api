@@ -17,7 +17,7 @@ import { normalizeEnumFields } from '../../../shared/utils/enum-normalizer.util'
 
 /**
  * Service responsável pelo gerenciamento dos dados sociais dos cidadãos
- * 
+ *
  * Implementa todas as operações CRUD para dados sociais, incluindo:
  * - Validações de negócio específicas
  * - Cálculos automáticos (renda per capita)
@@ -42,7 +42,7 @@ export class DadosSociaisService {
 
   /**
    * Cria dados sociais para um cidadão específico
-   * 
+   *
    * Valida se o cidadão existe e se não possui dados sociais já cadastrados.
    * Calcula automaticamente a renda per capita baseada na composição familiar.
    */
@@ -60,7 +60,9 @@ export class DadosSociaisService {
       });
 
       if (!cidadao) {
-        throw new NotFoundException(`Cidadão com ID ${cidadaoId} não encontrado`);
+        throw new NotFoundException(
+          `Cidadão com ID ${cidadaoId} não encontrado`,
+        );
       }
 
       // Verificar se já existem dados sociais para este cidadão
@@ -95,14 +97,16 @@ export class DadosSociaisService {
       // Invalidar cache
       await this.invalidateCache(cidadaoId);
 
-      this.logger.log(`Dados sociais criados com sucesso para cidadão ${cidadaoId}`);
+      this.logger.log(
+        `Dados sociais criados com sucesso para cidadão ${cidadaoId}`,
+      );
       return savedDadosSociais;
     });
   }
 
   /**
    * Busca os dados sociais de um cidadão específico
-   * 
+   *
    * Utiliza cache para otimizar performance em consultas frequentes.
    */
   async findByCidadaoId(cidadaoId: string): Promise<DadosSociais> {
@@ -113,7 +117,9 @@ export class DadosSociaisService {
     const cachedData = await this.cacheService.get(cacheKey);
 
     if (cachedData) {
-      this.logger.log(`Dados sociais encontrados no cache para cidadão ${cidadaoId}`);
+      this.logger.log(
+        `Dados sociais encontrados no cache para cidadão ${cidadaoId}`,
+      );
       return cachedData as DadosSociais;
     }
 
@@ -146,7 +152,7 @@ export class DadosSociaisService {
 
   /**
    * Atualiza os dados sociais de um cidadão
-   * 
+   *
    * Permite atualização parcial dos dados sociais.
    * Recalcula automaticamente valores derivados como renda per capita.
    */
@@ -181,7 +187,10 @@ export class DadosSociaisService {
 
       // Atualizar dados
       Object.assign(dadosSociais, dadosNormalizados);
-      const updatedDadosSociais = await manager.save(DadosSociais, dadosSociais);
+      const updatedDadosSociais = await manager.save(
+        DadosSociais,
+        dadosSociais,
+      );
 
       // Recalcular renda per capita se a renda foi alterada
       if (updateDadosSociaisDto.renda !== undefined) {
@@ -191,14 +200,16 @@ export class DadosSociaisService {
       // Invalidar cache
       await this.invalidateCache(cidadaoId);
 
-      this.logger.log(`Dados sociais atualizados com sucesso para cidadão ${cidadaoId}`);
+      this.logger.log(
+        `Dados sociais atualizados com sucesso para cidadão ${cidadaoId}`,
+      );
       return updatedDadosSociais;
     });
   }
 
   /**
    * Remove os dados sociais de um cidadão
-   * 
+   *
    * Realiza soft delete dos dados sociais, mantendo histórico para auditoria.
    * Verifica dependências antes da remoção.
    */
@@ -226,7 +237,9 @@ export class DadosSociaisService {
       // Invalidar cache
       await this.invalidateCache(cidadaoId);
 
-      this.logger.log(`Dados sociais removidos com sucesso para cidadão ${cidadaoId}`);
+      this.logger.log(
+        `Dados sociais removidos com sucesso para cidadão ${cidadaoId}`,
+      );
     });
   }
 
@@ -271,28 +284,36 @@ export class DadosSociaisService {
     // Validar PBF com verificações mais robustas
     if (data.recebe_pbf === true) {
       if (!data.valor_pbf || data.valor_pbf <= 0) {
-        errors.push('Valor do PBF é obrigatório e deve ser maior que zero quando recebe_pbf é verdadeiro');
+        errors.push(
+          'Valor do PBF é obrigatório e deve ser maior que zero quando recebe_pbf é verdadeiro',
+        );
       } else if (data.valor_pbf > 10000) {
         errors.push('Valor do PBF não pode exceder R$ 10.000,00');
       } else if (data.valor_pbf < 50) {
-        errors.push('Valor do PBF parece muito baixo. Verifique se o valor está correto (mínimo R$ 50,00)');
+        errors.push(
+          'Valor do PBF parece muito baixo. Verifique se o valor está correto (mínimo R$ 50,00)',
+        );
       }
     }
 
     if (data.recebe_pbf === false && data.valor_pbf) {
       if (data.valor_pbf > 0) {
-        errors.push('Valor do PBF não deve ser informado quando recebe_pbf é falso');
+        errors.push(
+          'Valor do PBF não deve ser informado quando recebe_pbf é falso',
+        );
       }
     }
 
     // Validar BPC com verificações mais robustas
     if (data.recebe_bpc === true) {
       if (!data.valor_bpc || data.valor_bpc <= 0) {
-        errors.push('Valor do BPC é obrigatório e deve ser maior que zero quando recebe_bpc é verdadeiro');
+        errors.push(
+          'Valor do BPC é obrigatório e deve ser maior que zero quando recebe_bpc é verdadeiro',
+        );
       } else if (data.valor_bpc > 10000) {
         errors.push('Valor do BPC não pode exceder R$ 10.000,00');
       }
-      
+
       if (!data.tipo_bpc || data.tipo_bpc.trim().length === 0) {
         errors.push('Tipo do BPC é obrigatório quando recebe_bpc é verdadeiro');
       } else if (data.tipo_bpc.length > 100) {
@@ -302,16 +323,22 @@ export class DadosSociaisService {
 
     if (data.recebe_bpc === false) {
       if (data.valor_bpc && data.valor_bpc > 0) {
-        errors.push('Valor do BPC não deve ser informado quando recebe_bpc é falso');
+        errors.push(
+          'Valor do BPC não deve ser informado quando recebe_bpc é falso',
+        );
       }
       if (data.tipo_bpc && data.tipo_bpc.trim().length > 0) {
-        errors.push('Tipo do BPC não deve ser informado quando recebe_bpc é falso');
+        errors.push(
+          'Tipo do BPC não deve ser informado quando recebe_bpc é falso',
+        );
       }
     }
 
     // Validação de consistência entre benefícios
     if (data.recebe_pbf === true && data.recebe_bpc === true) {
-      this.logger.warn(`Cidadão recebe tanto PBF quanto BPC - verificar elegibilidade`);
+      this.logger.warn(
+        `Cidadão recebe tanto PBF quanto BPC - verificar elegibilidade`,
+      );
     }
 
     // Lançar erro com todas as validações que falharam
@@ -319,7 +346,7 @@ export class DadosSociaisService {
       throw new BadRequestException({
         message: 'Dados de benefícios inválidos',
         errors: errors,
-        statusCode: 400
+        statusCode: 400,
       });
     }
   }
@@ -340,20 +367,25 @@ export class DadosSociaisService {
   /**
    * Verifica dependências antes da remoção
    */
-  private async checkDependencies(cidadaoId: string, manager: any): Promise<void> {
+  private async checkDependencies(
+    cidadaoId: string,
+    manager: any,
+  ): Promise<void> {
     // Aqui você pode adicionar verificações específicas
     // Por exemplo: verificar se há solicitações ativas
     // const solicitacoesAtivas = await manager.count(Solicitacao, {
     //   where: { cidadao_id: cidadaoId, status: 'ATIVA' }
     // });
-    // 
+    //
     // if (solicitacoesAtivas > 0) {
     //   throw new ConflictException(
     //     'Não é possível remover dados sociais de cidadão com solicitações ativas'
     //   );
     // }
 
-    this.logger.log(`Verificação de dependências concluída para cidadão ${cidadaoId}`);
+    this.logger.log(
+      `Verificação de dependências concluída para cidadão ${cidadaoId}`,
+    );
   }
 
   /**
@@ -362,7 +394,7 @@ export class DadosSociaisService {
   private async invalidateCache(cidadaoId: string): Promise<void> {
     const cacheKey = `dados-sociais:${cidadaoId}`;
     await this.cacheService.del(cacheKey);
-    
+
     // Invalidar outros caches relacionados se necessário
     await this.cacheService.del(`cidadao:${cidadaoId}`);
   }

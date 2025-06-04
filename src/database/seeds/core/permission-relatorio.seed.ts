@@ -1,18 +1,21 @@
 import { DataSource } from 'typeorm';
 import { Permission } from '../../../entities/permission.entity';
 import { PermissionScope } from '../../../entities/permission-scope.entity';
-import { ScopeType, TipoEscopo } from '../../../entities/user-permission.entity';
+import {
+  ScopeType,
+  TipoEscopo,
+} from '../../../entities/user-permission.entity';
 
 /**
  * Seed para as permissões do módulo de relatórios.
- * 
+ *
  * Este seed cria permissões para operações relacionadas a relatórios,
  * incluindo geração, exportação e agendamento de relatórios.
  */
 export class PermissionRelatorioSeed {
   /**
    * Executa o seed para criar as permissões do módulo de relatórios.
-   * 
+   *
    * @param dataSource Conexão com o banco de dados
    * @returns Promise que resolve quando o seed for concluído
    */
@@ -235,12 +238,14 @@ export class PermissionRelatorioSeed {
       ScopeType.GLOBAL,
     );
 
-    console.log('Seed de permissões do módulo de relatórios concluído com sucesso!');
+    console.log(
+      'Seed de permissões do módulo de relatórios concluído com sucesso!',
+    );
   }
 
   /**
    * Cria uma permissão no banco de dados.
-   * 
+   *
    * @param repository Repositório de permissões
    * @param name Nome da permissão
    * @param description Descrição da permissão
@@ -253,7 +258,9 @@ export class PermissionRelatorioSeed {
     description: string,
     isComposite: boolean,
   ): Promise<Permission> {
-    const existingPermission = await repository.findOne({ where: { nome: name } });
+    const existingPermission = await repository.findOne({
+      where: { nome: name },
+    });
 
     if (existingPermission) {
       console.log(`Permissão '${name}' já existe, atualizando...`);
@@ -267,7 +274,6 @@ export class PermissionRelatorioSeed {
     permission.nome = name;
     permission.description = description;
 
-    
     // Extrair módulo e ação do nome da permissão
     const parts = name.split('.');
     if (parts.length >= 1) {
@@ -283,7 +289,7 @@ export class PermissionRelatorioSeed {
 
   /**
    * Cria um escopo de permissão no banco de dados.
-   * 
+   *
    * @param repository Repositório de escopos de permissão
    * @param permissionId ID da permissão
    * @param defaultScopeType Tipo de escopo padrão
@@ -299,7 +305,9 @@ export class PermissionRelatorioSeed {
     });
 
     if (existingScope) {
-      console.log(`Escopo para permissão '${permissionId}' já existe, atualizando...`);
+      console.log(
+        `Escopo para permissão '${permissionId}' já existe, atualizando...`,
+      );
       existingScope.defaultScopeType = defaultScopeType;
       return repository.save(existingScope);
     }

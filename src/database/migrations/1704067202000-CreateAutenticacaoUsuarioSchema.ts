@@ -17,7 +17,9 @@ dotenv.config();
  * @author Engenheiro de Dados
  * @date 19/05/2025
  */
-export class CreateAutenticacaoUsuarioSchema1704067202000 implements MigrationInterface {
+export class CreateAutenticacaoUsuarioSchema1704067202000
+  implements MigrationInterface
+{
   name = 'CreateAutenticacaoUsuarioSchema1704067202000';
 
   /**
@@ -25,7 +27,9 @@ export class CreateAutenticacaoUsuarioSchema1704067202000 implements MigrationIn
    */
   public async up(queryRunner: QueryRunner): Promise<void> {
     try {
-      console.log('Iniciando migration 1000000-CreateAutenticacaoUsuarioSchema...');
+      console.log(
+        'Iniciando migration 1000000-CreateAutenticacaoUsuarioSchema...',
+      );
 
       // 1. Criar extensões PostgreSQL necessárias
       await queryRunner.query(`
@@ -54,7 +58,7 @@ export class CreateAutenticacaoUsuarioSchema1704067202000 implements MigrationIn
         $$ LANGUAGE plpgsql;
       `);
 
-      // 3. Criar tipos enumerados 
+      // 3. Criar tipos enumerados
       await queryRunner.query(`
         DO $$
         BEGIN
@@ -374,23 +378,27 @@ export class CreateAutenticacaoUsuarioSchema1704067202000 implements MigrationIn
       `);
 
       // 8. Inserir usuário administrador padrão usando variáveis de ambiente
-      const adminEmail = process.env.DEFAULT_ADMIN_USER_EMAIL || 'admin@natal.pgben.gov.br';
-      const adminName = process.env.DEFAULT_ADMIN_USER_NAME || 'Administrador do Sistema';
-      const adminPassword = process.env.DEFAULT_ADMIN_USER_PASSWORD || 'PGBen@2025';
-      
+      const adminEmail =
+        process.env.DEFAULT_ADMIN_USER_EMAIL || 'admin@natal.pgben.gov.br';
+      const adminName =
+        process.env.DEFAULT_ADMIN_USER_NAME || 'Administrador do Sistema';
+      const adminPassword =
+        process.env.DEFAULT_ADMIN_USER_PASSWORD || 'PGBen@2025';
+
       // Gera o hash da senha usando bcrypt
       const saltRounds = 10;
       const hashedPassword = await bcrypt.hash(adminPassword, saltRounds);
-      
+
       // Primeiro verifica se o usuário já existe
       const existingUser = await queryRunner.query(
         `SELECT 1 FROM "usuario" WHERE "email" = $1`,
-        [adminEmail]
+        [adminEmail],
       );
 
       // Se não existe, cria o usuário
       if (existingUser.length === 0) {
-        await queryRunner.query(`
+        await queryRunner.query(
+          `
           INSERT INTO "usuario" (
             "id",
             "nome",
@@ -408,13 +416,20 @@ export class CreateAutenticacaoUsuarioSchema1704067202000 implements MigrationIn
             'ativo',
             false
           )
-        `, [adminName, adminEmail, hashedPassword]);
+        `,
+          [adminName, adminEmail, hashedPassword],
+        );
       }
 
       console.log('Usuário administrador padrão criado com sucesso.');
-      console.log('Migration 1000000-CreateAutenticacaoUsuarioSchema executada com sucesso.');
+      console.log(
+        'Migration 1000000-CreateAutenticacaoUsuarioSchema executada com sucesso.',
+      );
     } catch (error) {
-      console.error('Erro ao executar migration 1000000-CreateAutenticacaoUsuarioSchema:', error);
+      console.error(
+        'Erro ao executar migration 1000000-CreateAutenticacaoUsuarioSchema:',
+        error,
+      );
       throw error;
     }
   }
@@ -424,7 +439,9 @@ export class CreateAutenticacaoUsuarioSchema1704067202000 implements MigrationIn
    */
   public async down(queryRunner: QueryRunner): Promise<void> {
     try {
-      console.log('Iniciando rollback da migration 1000000-CreateAutenticacaoUsuarioSchema...');
+      console.log(
+        'Iniciando rollback da migration 1000000-CreateAutenticacaoUsuarioSchema...',
+      );
 
       // 1. Remover tabelas na ordem inversa da criação
       await queryRunner.query(`DROP TABLE IF EXISTS "refresh_tokens";`);
@@ -438,9 +455,14 @@ export class CreateAutenticacaoUsuarioSchema1704067202000 implements MigrationIn
       // 3. Remover funções criadas
       await queryRunner.query(`DROP FUNCTION IF EXISTS update_timestamp();`);
 
-      console.log('Rollback da migration 1000000-CreateAutenticacaoUsuarioSchema executado com sucesso.');
+      console.log(
+        'Rollback da migration 1000000-CreateAutenticacaoUsuarioSchema executado com sucesso.',
+      );
     } catch (error) {
-      console.error('Erro ao executar rollback da migration 1000000-CreateAutenticacaoUsuarioSchema:', error);
+      console.error(
+        'Erro ao executar rollback da migration 1000000-CreateAutenticacaoUsuarioSchema:',
+        error,
+      );
       throw error;
     }
   }

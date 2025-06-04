@@ -232,9 +232,7 @@ async function testarPoliticasRLS() {
 
         console.log(`✅ ${role} pode inserir em cidadao`);
       } catch (error) {
-        console.log(
-          `❌ ${role} não pode inserir em cidadao: ${error.message}`,
-        );
+        console.log(`❌ ${role} não pode inserir em cidadao: ${error.message}`);
       }
 
       // Limpar variáveis de sessão

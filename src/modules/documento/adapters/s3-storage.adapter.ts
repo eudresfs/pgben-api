@@ -34,27 +34,36 @@ export class S3StorageAdapter implements StorageProvider {
 
   constructor(
     private readonly configService: ConfigService,
-    unifiedLoggerService: UnifiedLoggerService
+    unifiedLoggerService: UnifiedLoggerService,
   ) {
-    this.unifiedLogger = unifiedLoggerService.child({ context: S3StorageAdapter.name });
-    
+    this.unifiedLogger = unifiedLoggerService.child({
+      context: S3StorageAdapter.name,
+    });
+
     const bucketName = this.configService.get<string>('AWS_S3_BUCKET');
     if (!bucketName) {
       throw new Error('AWS_S3_BUCKET configuration is required');
     }
     this.bucketName = bucketName;
-    
+
     this.maxRetries = this.configService.get<number>('STORAGE_MAX_RETRIES', 3);
-    this.retryDelay = this.configService.get<number>('STORAGE_RETRY_DELAY', 1000);
-    
+    this.retryDelay = this.configService.get<number>(
+      'STORAGE_RETRY_DELAY',
+      1000,
+    );
+
     const region = this.configService.get<string>('AWS_REGION');
     const accessKeyId = this.configService.get<string>('AWS_ACCESS_KEY_ID');
-    const secretAccessKey = this.configService.get<string>('AWS_SECRET_ACCESS_KEY');
-    
+    const secretAccessKey = this.configService.get<string>(
+      'AWS_SECRET_ACCESS_KEY',
+    );
+
     if (!region || !accessKeyId || !secretAccessKey) {
-      throw new Error('AWS credentials (AWS_REGION, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY) are required');
+      throw new Error(
+        'AWS credentials (AWS_REGION, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY) are required',
+      );
     }
-    
+
     this.s3Client = new S3Client({
       region,
       credentials: {
@@ -63,48 +72,50 @@ export class S3StorageAdapter implements StorageProvider {
       },
       maxAttempts: this.maxRetries,
     });
-    
+
     this.validateConfiguration();
   }
-  
+
   private validateConfiguration(): void {
     const requiredConfigs = [
       'AWS_S3_BUCKET',
       'AWS_REGION',
       'AWS_ACCESS_KEY_ID',
-      'AWS_SECRET_ACCESS_KEY'
+      'AWS_SECRET_ACCESS_KEY',
     ];
-    
+
     const missingConfigs = requiredConfigs.filter(
-      config => !this.configService.get(config)
+      (config) => !this.configService.get(config),
     );
-    
+
     if (missingConfigs.length > 0) {
       const error = `Configurações S3 ausentes: ${missingConfigs.join(', ')}`;
       this.unifiedLogger.error('Configuração S3 inválida', { missingConfigs });
       throw new Error(error);
     }
-    
+
     this.unifiedLogger.debug('Configuração S3 validada com sucesso', {
       bucket: this.bucketName,
       region: this.configService.get('AWS_REGION'),
-      maxRetries: this.maxRetries
+      maxRetries: this.maxRetries,
     });
   }
-  
+
   private async retryOperation<T>(
     operation: () => Promise<T>,
     operationName: string,
-    maxRetries: number = this.maxRetries
+    maxRetries: number = this.maxRetries,
   ): Promise<T> {
-    let lastError: Error = new Error('Operação falhou após todas as tentativas');
-    
+    let lastError: Error = new Error(
+      'Operação falhou após todas as tentativas',
+    );
+
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         return await operation();
       } catch (error) {
         lastError = error;
-        
+
         if (attempt === maxRetries) {
           this.unifiedLogger.error(
             `Operação S3 falhou após ${maxRetries} tentativas: ${operationName}`,
@@ -112,12 +123,12 @@ export class S3StorageAdapter implements StorageProvider {
               operationName,
               attempts: maxRetries,
               error: error.message,
-              errorCode: error.name
-            }
+              errorCode: error.name,
+            },
           );
           break;
         }
-        
+
         const delay = this.retryDelay * Math.pow(2, attempt - 1);
         this.unifiedLogger.warn(
           `Tentativa ${attempt}/${maxRetries} falhou para ${operationName}, tentando novamente em ${delay}ms`,
@@ -126,45 +137,47 @@ export class S3StorageAdapter implements StorageProvider {
             attempt,
             maxRetries,
             delay,
-            error: error.message
-          }
+            error: error.message,
+          },
         );
-        
-        await new Promise(resolve => setTimeout(resolve, delay));
+
+        await new Promise((resolve) => setTimeout(resolve, delay));
       }
     }
-    
+
     throw lastError;
   }
-  
+
   private handleS3Error(error: any, operation: string, key?: string): Error {
     const errorInfo = {
       operation,
       key,
       errorName: error.name,
       errorCode: error.$metadata?.httpStatusCode,
-      errorMessage: error.message
+      errorMessage: error.message,
     };
-    
+
     this.unifiedLogger.error(`Erro S3 na operação ${operation}`, errorInfo);
-    
+
     if (error instanceof NoSuchKey) {
       return new Error(`Arquivo não encontrado: ${key}`);
     }
-    
+
     if (error instanceof S3ServiceException) {
       const statusCode = error.$metadata?.httpStatusCode;
       if (statusCode === 403) {
         return new Error('Acesso negado ao S3. Verifique as credenciais.');
       }
       if (statusCode === 404) {
-        return new Error(`Bucket ou arquivo não encontrado: ${key || this.bucketName}`);
+        return new Error(
+          `Bucket ou arquivo não encontrado: ${key || this.bucketName}`,
+        );
       }
       if (statusCode && statusCode >= 500) {
         return new Error('Erro interno do S3. Tente novamente.');
       }
     }
-    
+
     return new Error(`Erro S3 na operação ${operation}: ${error.message}`);
   }
 
@@ -217,14 +230,14 @@ export class S3StorageAdapter implements StorageProvider {
     metadata?: Record<string, any>,
   ): Promise<string> {
     const startTime = Date.now();
-    
+
     try {
       this.unifiedLogger.debug(`Iniciando upload S3`, {
         key,
         mimetype,
         tamanho: buffer.length,
         bucket: this.bucketName,
-        metadata
+        metadata,
       });
 
       // Preparar metadados para o S3
@@ -245,19 +258,19 @@ export class S3StorageAdapter implements StorageProvider {
           ContentType: mimetype,
           Metadata: s3Metadata,
         });
-        
+
         return await this.s3Client.send(command);
       };
-      
+
       await this.retryOperation(uploadOperation, `upload S3 [${key}]`);
-      
+
       const duration = Date.now() - startTime;
       this.unifiedLogger.info(`Upload S3 concluído com sucesso`, {
         key,
         bucket: this.bucketName,
         tamanho: buffer.length,
         duracao: duration,
-        mimetype
+        mimetype,
       });
 
       return key;
@@ -268,9 +281,9 @@ export class S3StorageAdapter implements StorageProvider {
         bucket: this.bucketName,
         tamanho: buffer.length,
         duracao: duration,
-        error: error.message
+        error: error.message,
       });
-      
+
       throw this.handleS3Error(error, 'upload', key);
     }
   }
@@ -282,11 +295,11 @@ export class S3StorageAdapter implements StorageProvider {
    */
   async download(key: string): Promise<Buffer> {
     const startTime = Date.now();
-    
+
     try {
       this.unifiedLogger.debug(`Iniciando download S3`, {
         key,
-        bucket: this.bucketName
+        bucket: this.bucketName,
       });
 
       // Obter arquivo do S3 com retry
@@ -295,32 +308,35 @@ export class S3StorageAdapter implements StorageProvider {
           Bucket: this.bucketName,
           Key: key,
         });
-        
+
         return await this.s3Client.send(command);
       };
-      
-      const response = await this.retryOperation(downloadOperation, `download S3 [${key}]`);
+
+      const response = await this.retryOperation(
+        downloadOperation,
+        `download S3 [${key}]`,
+      );
 
       // Converter stream para buffer
       const chunks: Uint8Array[] = [];
       const stream = response.Body as Readable;
-      
+
       if (!stream) {
         throw new Error('Resposta do S3 não contém dados');
       }
-      
+
       for await (const chunk of stream) {
         chunks.push(chunk);
       }
 
       const buffer = Buffer.concat(chunks);
       const duration = Date.now() - startTime;
-      
+
       this.unifiedLogger.info(`Download S3 concluído com sucesso`, {
         key,
         bucket: this.bucketName,
         tamanho: buffer.length,
-        duracao: duration
+        duracao: duration,
       });
 
       return buffer;
@@ -330,9 +346,9 @@ export class S3StorageAdapter implements StorageProvider {
         key,
         bucket: this.bucketName,
         duracao: duration,
-        error: error.message
+        error: error.message,
       });
-      
+
       throw this.handleS3Error(error, 'download', key);
     }
   }
@@ -343,11 +359,11 @@ export class S3StorageAdapter implements StorageProvider {
    */
   async delete(key: string): Promise<void> {
     const startTime = Date.now();
-    
+
     try {
       this.unifiedLogger.debug(`Iniciando remoção S3`, {
         key,
-        bucket: this.bucketName
+        bucket: this.bucketName,
       });
 
       // Remover arquivo do S3 com retry
@@ -356,17 +372,17 @@ export class S3StorageAdapter implements StorageProvider {
           Bucket: this.bucketName,
           Key: key,
         });
-        
+
         return await this.s3Client.send(command);
       };
-      
+
       await this.retryOperation(deleteOperation, `delete S3 [${key}]`);
-      
+
       const duration = Date.now() - startTime;
       this.unifiedLogger.info(`Remoção S3 concluída com sucesso`, {
         key,
         bucket: this.bucketName,
-        duracao: duration
+        duracao: duration,
       });
     } catch (error) {
       const duration = Date.now() - startTime;
@@ -374,15 +390,15 @@ export class S3StorageAdapter implements StorageProvider {
         key,
         bucket: this.bucketName,
         duracao: duration,
-        error: error.message
+        error: error.message,
       });
-      
+
       // Para delete, não é crítico se o arquivo não existir
       if (error instanceof NoSuchKey) {
         this.unifiedLogger.warn(`Arquivo já não existe no S3`, { key });
         return; // Sucesso silencioso
       }
-      
+
       throw this.handleS3Error(error, 'delete', key);
     }
   }

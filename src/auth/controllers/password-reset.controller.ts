@@ -43,7 +43,14 @@ import { ROLES } from '../../shared/constants/roles.constants';
 
 @ApiTags('Recuperação de Senha')
 @Controller('auth/password-reset')
-@ApiExtraModels(RequestPasswordResetDto, ResetPasswordDto, ValidateTokenDto, ResetPasswordResponseDto, ValidateTokenResponseDto, PasswordResetStatsDto)
+@ApiExtraModels(
+  RequestPasswordResetDto,
+  ResetPasswordDto,
+  ValidateTokenDto,
+  ResetPasswordResponseDto,
+  ValidateTokenResponseDto,
+  PasswordResetStatsDto,
+)
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
 export class PasswordResetController {
   constructor(private readonly passwordResetService: PasswordResetService) {}
@@ -77,7 +84,10 @@ export class PasswordResetController {
     @Body() requestDto: RequestPasswordResetDto,
     @GetClientInfo() clientInfo: ClientInfo,
   ): Promise<any> {
-    return this.passwordResetService.requestPasswordReset(requestDto, clientInfo);
+    return this.passwordResetService.requestPasswordReset(
+      requestDto,
+      clientInfo,
+    );
   }
 
   @Post('reset')
@@ -85,7 +95,8 @@ export class PasswordResetController {
   @Throttle({ default: { limit: 5, ttl: 60000 } }) // 5 tentativas por minuto
   @ApiOperation({
     summary: 'Redefinir senha',
-    description: 'Redefine a senha do usuário usando o token recebido por email',
+    description:
+      'Redefine a senha do usuário usando o token recebido por email',
   })
   @ApiBody({ type: ResetPasswordDto })
   @ApiResponse({
@@ -161,7 +172,8 @@ export class PasswordResetController {
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Estatísticas de recuperação de senha',
-    description: 'Obtém estatísticas sobre solicitações de recuperação de senha (apenas admins)',
+    description:
+      'Obtém estatísticas sobre solicitações de recuperação de senha (apenas admins)',
   })
   @ApiResponse({
     status: 200,
@@ -184,7 +196,7 @@ export class PasswordResetController {
       successfulResetsLast24h: stats.usedTokens || 0,
       expiredTokensLast24h: stats.expiredTokens || 0,
       successRate: ((stats.usedTokens || 0) / (stats.totalRequests || 1)) * 100,
-      uniqueUsersLast24h: stats.requestsLast24h || 0
+      uniqueUsersLast24h: stats.requestsLast24h || 0,
     };
   }
 
@@ -194,7 +206,8 @@ export class PasswordResetController {
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Limpar tokens expirados',
-    description: 'Remove manualmente tokens de recuperação expirados (apenas admins)',
+    description:
+      'Remove manualmente tokens de recuperação expirados (apenas admins)',
   })
   @ApiResponse({
     status: 200,
@@ -202,7 +215,10 @@ export class PasswordResetController {
     schema: {
       type: 'object',
       properties: {
-        message: { type: 'string', example: 'Tokens expirados removidos com sucesso' },
+        message: {
+          type: 'string',
+          example: 'Tokens expirados removidos com sucesso',
+        },
         deletedCount: { type: 'number', example: 15 },
         timestamp: { type: 'string', example: '2024-01-15T10:30:00Z' },
       },
@@ -235,7 +251,8 @@ export class PasswordResetController {
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Estatísticas detalhadas de tokens',
-    description: 'Obtém estatísticas detalhadas sobre tokens de recuperação (apenas admins)',
+    description:
+      'Obtém estatísticas detalhadas sobre tokens de recuperação (apenas admins)',
   })
   @ApiResponse({
     status: 200,

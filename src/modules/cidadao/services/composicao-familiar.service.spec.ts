@@ -72,7 +72,7 @@ describe('ComposicaoFamiliarService', () => {
     ocupacao: 'Estudante',
     escolaridade: EscolaridadeEnum.MEDIO_COMPLETO,
     parentesco: ParentescoEnum.FILHO,
-    renda: 1500.00,
+    renda: 1500.0,
     observacoes: 'Observações de teste',
     created_at: new Date('2024-01-01T10:00:00Z'),
     updated_at: new Date('2024-01-01T10:00:00Z'),
@@ -107,7 +107,9 @@ describe('ComposicaoFamiliarService', () => {
     composicaoFamiliarRepository = module.get<Repository<ComposicaoFamiliar>>(
       getRepositoryToken(ComposicaoFamiliar),
     );
-    cidadaoRepository = module.get<Repository<Cidadao>>(getRepositoryToken(Cidadao));
+    cidadaoRepository = module.get<Repository<Cidadao>>(
+      getRepositoryToken(Cidadao),
+    );
     cacheService = module.get<CacheService>(CacheService);
     dataSource = module.get<DataSource>(DataSource);
     queryRunner = mockQueryRunner as any;
@@ -131,7 +133,7 @@ describe('ComposicaoFamiliarService', () => {
       ocupacao: 'Estudante',
       escolaridade: EscolaridadeEnum.MEDIO_COMPLETO,
       parentesco: ParentescoEnum.FILHO,
-      renda: 1500.00,
+      renda: 1500.0,
       observacoes: 'Observações de teste',
     };
 
@@ -140,7 +142,9 @@ describe('ComposicaoFamiliarService', () => {
     beforeEach(() => {
       mockCidadaoRepository.findOne.mockResolvedValue(mockCidadao);
       mockComposicaoFamiliarRepository.findOne.mockResolvedValue(null);
-      mockComposicaoFamiliarRepository.create.mockReturnValue(mockComposicaoFamiliar);
+      mockComposicaoFamiliarRepository.create.mockReturnValue(
+        mockComposicaoFamiliar,
+      );
       mockQueryRunner.manager.save.mockResolvedValue(mockComposicaoFamiliar);
       mockCacheService.set.mockResolvedValue(undefined);
       mockCacheService.del.mockResolvedValue(undefined);
@@ -165,32 +169,38 @@ describe('ComposicaoFamiliarService', () => {
     it('should throw NotFoundException when cidadao does not exist', async () => {
       mockCidadaoRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.create(createDto, userId))
-        .rejects.toThrow(NotFoundException);
+      await expect(service.create(createDto, userId)).rejects.toThrow(
+        NotFoundException,
+      );
       expect(queryRunner.rollbackTransaction).toHaveBeenCalled();
     });
 
     it('should throw BadRequestException for invalid CPF', async () => {
       const invalidCpfDto = { ...createDto, cpf: '123' };
 
-      await expect(service.create(invalidCpfDto, userId))
-        .rejects.toThrow(BadRequestException);
+      await expect(service.create(invalidCpfDto, userId)).rejects.toThrow(
+        BadRequestException,
+      );
       expect(queryRunner.rollbackTransaction).toHaveBeenCalled();
     });
 
     it('should throw ConflictException when member with same CPF exists', async () => {
-      mockComposicaoFamiliarRepository.findOne.mockResolvedValue(mockComposicaoFamiliar);
+      mockComposicaoFamiliarRepository.findOne.mockResolvedValue(
+        mockComposicaoFamiliar,
+      );
 
-      await expect(service.create(createDto, userId))
-        .rejects.toThrow(ConflictException);
+      await expect(service.create(createDto, userId)).rejects.toThrow(
+        ConflictException,
+      );
       expect(queryRunner.rollbackTransaction).toHaveBeenCalled();
     });
 
     it('should throw ConflictException when CPF is same as cidadao CPF', async () => {
       const sameCpfDto = { ...createDto, cpf: '987.654.321-00' };
 
-      await expect(service.create(sameCpfDto, userId))
-        .rejects.toThrow(ConflictException);
+      await expect(service.create(sameCpfDto, userId)).rejects.toThrow(
+        ConflictException,
+      );
       expect(queryRunner.rollbackTransaction).toHaveBeenCalled();
     });
 
@@ -199,16 +209,20 @@ describe('ComposicaoFamiliarService', () => {
         .mockResolvedValueOnce(null) // CPF check
         .mockResolvedValueOnce(mockComposicaoFamiliar); // Name check
 
-      await expect(service.create(createDto, userId))
-        .rejects.toThrow(ConflictException);
+      await expect(service.create(createDto, userId)).rejects.toThrow(
+        ConflictException,
+      );
       expect(queryRunner.rollbackTransaction).toHaveBeenCalled();
     });
 
     it('should handle transaction rollback on error', async () => {
-      mockQueryRunner.manager.save.mockRejectedValue(new Error('Database error'));
+      mockQueryRunner.manager.save.mockRejectedValue(
+        new Error('Database error'),
+      );
 
-      await expect(service.create(createDto, userId))
-        .rejects.toThrow('Database error');
+      await expect(service.create(createDto, userId)).rejects.toThrow(
+        'Database error',
+      );
       expect(queryRunner.rollbackTransaction).toHaveBeenCalled();
       expect(queryRunner.release).toHaveBeenCalled();
     });
@@ -225,7 +239,9 @@ describe('ComposicaoFamiliarService', () => {
         [mockComposicaoFamiliar],
         1,
       ]);
-      mockComposicaoFamiliarRepository.find.mockResolvedValue([mockComposicaoFamiliar]);
+      mockComposicaoFamiliarRepository.find.mockResolvedValue([
+        mockComposicaoFamiliar,
+      ]);
       mockCacheService.set.mockResolvedValue(undefined);
     });
 
@@ -254,8 +270,21 @@ describe('ComposicaoFamiliarService', () => {
     it('should return cached result when available', async () => {
       const cachedResult = {
         data: [mockComposicaoFamiliar],
-        meta: { total: 1, page: 1, limit: 10, totalPages: 1, hasNext: false, hasPrev: false },
-        estatisticas: { totalMembros: 1, rendaTotal: 1500, rendaMedia: 1500, idadeMedia: 25, membrosComRenda: 1 },
+        meta: {
+          total: 1,
+          page: 1,
+          limit: 10,
+          totalPages: 1,
+          hasNext: false,
+          hasPrev: false,
+        },
+        estatisticas: {
+          totalMembros: 1,
+          rendaTotal: 1500,
+          rendaMedia: 1500,
+          idadeMedia: 25,
+          membrosComRenda: 1,
+        },
       };
       mockCacheService.get.mockResolvedValue(cachedResult);
 
@@ -268,8 +297,9 @@ describe('ComposicaoFamiliarService', () => {
     it('should throw NotFoundException when cidadao does not exist', async () => {
       mockCidadaoRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.findByCidadao(cidadaoId, options))
-        .rejects.toThrow(NotFoundException);
+      await expect(service.findByCidadao(cidadaoId, options)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should calculate correct pagination metadata', async () => {
@@ -278,7 +308,10 @@ describe('ComposicaoFamiliarService', () => {
         25,
       ]);
 
-      const result = await service.findByCidadao(cidadaoId, { page: 2, limit: 10 });
+      const result = await service.findByCidadao(cidadaoId, {
+        page: 2,
+        limit: 10,
+      });
 
       expect(result.meta.total).toBe(25);
       expect(result.meta.page).toBe(2);
@@ -293,7 +326,9 @@ describe('ComposicaoFamiliarService', () => {
 
     beforeEach(() => {
       mockCacheService.get.mockResolvedValue(null);
-      mockComposicaoFamiliarRepository.findOne.mockResolvedValue(mockComposicaoFamiliar);
+      mockComposicaoFamiliarRepository.findOne.mockResolvedValue(
+        mockComposicaoFamiliar,
+      );
       mockCacheService.set.mockResolvedValue(undefined);
     });
 
@@ -324,8 +359,7 @@ describe('ComposicaoFamiliarService', () => {
     it('should throw NotFoundException when member does not exist', async () => {
       mockComposicaoFamiliarRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.findOne(id))
-        .rejects.toThrow(NotFoundException);
+      await expect(service.findOne(id)).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -333,12 +367,14 @@ describe('ComposicaoFamiliarService', () => {
     const id = '123e4567-e89b-12d3-a456-426614174000';
     const updateDto: UpdateComposicaoFamiliarDto = {
       nome: 'João Silva Atualizado',
-      renda: 2000.00,
+      renda: 2000.0,
     };
     const userId = 'user123';
 
     beforeEach(() => {
-      mockComposicaoFamiliarRepository.findOne.mockResolvedValue(mockComposicaoFamiliar);
+      mockComposicaoFamiliarRepository.findOne.mockResolvedValue(
+        mockComposicaoFamiliar,
+      );
       mockQueryRunner.manager.save.mockResolvedValue({
         ...mockComposicaoFamiliar,
         ...updateDto,
@@ -365,16 +401,18 @@ describe('ComposicaoFamiliarService', () => {
     it('should throw NotFoundException when member does not exist', async () => {
       mockComposicaoFamiliarRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.update(id, updateDto, userId))
-        .rejects.toThrow(NotFoundException);
+      await expect(service.update(id, updateDto, userId)).rejects.toThrow(
+        NotFoundException,
+      );
       expect(queryRunner.rollbackTransaction).toHaveBeenCalled();
     });
 
     it('should validate CPF when updating', async () => {
       const updateWithCpf = { ...updateDto, cpf: '123' };
 
-      await expect(service.update(id, updateWithCpf, userId))
-        .rejects.toThrow(BadRequestException);
+      await expect(service.update(id, updateWithCpf, userId)).rejects.toThrow(
+        BadRequestException,
+      );
       expect(queryRunner.rollbackTransaction).toHaveBeenCalled();
     });
 
@@ -382,10 +420,14 @@ describe('ComposicaoFamiliarService', () => {
       const updateWithCpf = { ...updateDto, cpf: '111.111.111-11' };
       mockComposicaoFamiliarRepository.findOne
         .mockResolvedValueOnce(mockComposicaoFamiliar) // Initial find
-        .mockResolvedValueOnce({ ...mockComposicaoFamiliar, id: 'different-id' }); // Duplicate check
+        .mockResolvedValueOnce({
+          ...mockComposicaoFamiliar,
+          id: 'different-id',
+        }); // Duplicate check
 
-      await expect(service.update(id, updateWithCpf, userId))
-        .rejects.toThrow(ConflictException);
+      await expect(service.update(id, updateWithCpf, userId)).rejects.toThrow(
+        ConflictException,
+      );
       expect(queryRunner.rollbackTransaction).toHaveBeenCalled();
     });
 
@@ -394,10 +436,14 @@ describe('ComposicaoFamiliarService', () => {
       mockComposicaoFamiliarRepository.findOne
         .mockResolvedValueOnce(mockComposicaoFamiliar) // Initial find
         .mockResolvedValueOnce(null) // CPF check (not applicable)
-        .mockResolvedValueOnce({ ...mockComposicaoFamiliar, id: 'different-id' }); // Name check
+        .mockResolvedValueOnce({
+          ...mockComposicaoFamiliar,
+          id: 'different-id',
+        }); // Name check
 
-      await expect(service.update(id, updateWithName, userId))
-        .rejects.toThrow(ConflictException);
+      await expect(service.update(id, updateWithName, userId)).rejects.toThrow(
+        ConflictException,
+      );
       expect(queryRunner.rollbackTransaction).toHaveBeenCalled();
     });
   });
@@ -407,7 +453,9 @@ describe('ComposicaoFamiliarService', () => {
     const userId = 'user123';
 
     beforeEach(() => {
-      mockComposicaoFamiliarRepository.findOne.mockResolvedValue(mockComposicaoFamiliar);
+      mockComposicaoFamiliarRepository.findOne.mockResolvedValue(
+        mockComposicaoFamiliar,
+      );
       mockComposicaoFamiliarRepository.save.mockResolvedValue({
         ...mockComposicaoFamiliar,
         removed_at: new Date(),
@@ -435,8 +483,9 @@ describe('ComposicaoFamiliarService', () => {
     it('should throw NotFoundException when member does not exist', async () => {
       mockComposicaoFamiliarRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.remove(id, userId))
-        .rejects.toThrow(NotFoundException);
+      await expect(service.remove(id, userId)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -444,7 +493,9 @@ describe('ComposicaoFamiliarService', () => {
     const cpf = '12345678900';
 
     beforeEach(() => {
-      mockComposicaoFamiliarRepository.find.mockResolvedValue([mockComposicaoFamiliar]);
+      mockComposicaoFamiliarRepository.find.mockResolvedValue([
+        mockComposicaoFamiliar,
+      ]);
     });
 
     it('should return composicao familiar members by CPF', async () => {
@@ -465,8 +516,9 @@ describe('ComposicaoFamiliarService', () => {
     });
 
     it('should throw BadRequestException for invalid CPF length', async () => {
-      await expect(service.findByCpf('123'))
-        .rejects.toThrow(BadRequestException);
+      await expect(service.findByCpf('123')).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should return empty array when no members found', async () => {
@@ -505,7 +557,9 @@ describe('ComposicaoFamiliarService', () => {
 
       mockCidadaoRepository.findOne.mockResolvedValue(mockCidadao);
       mockComposicaoFamiliarRepository.findOne.mockResolvedValue(null);
-      mockComposicaoFamiliarRepository.create.mockReturnValue(mockComposicaoFamiliar);
+      mockComposicaoFamiliarRepository.create.mockReturnValue(
+        mockComposicaoFamiliar,
+      );
       mockQueryRunner.manager.save.mockResolvedValue(mockComposicaoFamiliar);
 
       await service.create(createDto, 'user123');
@@ -517,7 +571,9 @@ describe('ComposicaoFamiliarService', () => {
 
     it('should set cache after successful operations', async () => {
       mockCacheService.get.mockResolvedValue(null);
-      mockComposicaoFamiliarRepository.findOne.mockResolvedValue(mockComposicaoFamiliar);
+      mockComposicaoFamiliarRepository.findOne.mockResolvedValue(
+        mockComposicaoFamiliar,
+      );
 
       await service.findOne('123e4567-e89b-12d3-a456-426614174000');
 
@@ -538,10 +594,16 @@ describe('ComposicaoFamiliarService', () => {
       ];
 
       mockCidadaoRepository.findOne.mockResolvedValue(mockCidadao);
-      mockComposicaoFamiliarRepository.findAndCount.mockResolvedValue([membrosComRenda, 3]);
+      mockComposicaoFamiliarRepository.findAndCount.mockResolvedValue([
+        membrosComRenda,
+        3,
+      ]);
       mockComposicaoFamiliarRepository.find.mockResolvedValue(membrosComRenda);
 
-      const result = await service.findByCidadao('cidadao-id', { page: 1, limit: 10 });
+      const result = await service.findByCidadao('cidadao-id', {
+        page: 1,
+        limit: 10,
+      });
 
       expect(result.estatisticas.totalMembros).toBe(3);
       expect(result.estatisticas.rendaTotal).toBe(3000);

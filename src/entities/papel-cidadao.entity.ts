@@ -31,7 +31,7 @@ export class PapelCidadao {
   @ManyToOne(() => Cidadao, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'cidadao_id' })
   cidadao: Cidadao;
-  
+
   @Column({ name: 'composicao_familiar_id', type: 'uuid', nullable: true })
   composicao_familiar_id: string;
 
@@ -163,7 +163,7 @@ export class PapelCidadao {
    * Verifica se tem grau de parentesco definido
    */
   temGrauParentesco(): boolean {
-    return !!(this.metadados?.grau_parentesco);
+    return !!this.metadados?.grau_parentesco;
   }
 
   /**
@@ -177,7 +177,7 @@ export class PapelCidadao {
    * Verifica se tem documento de representação
    */
   temDocumentoRepresentacao(): boolean {
-    return !!(this.metadados?.documento_representacao);
+    return !!this.metadados?.documento_representacao;
   }
 
   /**
@@ -209,7 +209,9 @@ export class PapelCidadao {
    */
   getSummary(): string {
     const status = this.isAtivo() ? 'Ativo' : 'Inativo';
-    const grau = this.temGrauParentesco() ? ` (${this.getGrauParentesco()})` : '';
+    const grau = this.temGrauParentesco()
+      ? ` (${this.getGrauParentesco()})`
+      : '';
     return `${this.tipo_papel}${grau} - ${status}`;
   }
 
@@ -226,20 +228,23 @@ export class PapelCidadao {
   isConsistente(): boolean {
     // Verifica se tem cidadão
     if (!this.cidadao_id) return false;
-    
+
     // Verifica se tem tipo de papel
     if (!this.tipo_papel) return false;
-    
+
     // Se é representante legal, deve ter documento
     if (this.isRepresentanteLegal() && !this.temDocumentoRepresentacao()) {
       return false;
     }
-    
+
     // Se tem data de validade, deve estar válida
-    if (this.metadados?.data_validade_representacao && !this.isRepresentacaoValida()) {
+    if (
+      this.metadados?.data_validade_representacao &&
+      !this.isRepresentacaoValida()
+    ) {
       return false;
     }
-    
+
     return true;
   }
 
@@ -249,7 +254,7 @@ export class PapelCidadao {
   podeSerRemovido(): boolean {
     // Não pode remover se já foi removido
     if (this.foiRemovido()) return false;
-    
+
     // Responsável familiar só pode ser removido se houver outro responsável
     // Esta verificação seria feita no serviço
     return true;
@@ -322,11 +327,11 @@ export class PapelCidadao {
     if (!this.metadados?.data_validade_representacao) {
       return false;
     }
-    
+
     const dataValidade = new Date(this.metadados.data_validade_representacao);
     const trintaDiasFrente = new Date();
     trintaDiasFrente.setDate(trintaDiasFrente.getDate() + 30);
-    
+
     return dataValidade <= trintaDiasFrente;
   }
 
@@ -335,23 +340,23 @@ export class PapelCidadao {
    */
   getSugestoesVerificacao(): string[] {
     const sugestoes: string[] = [];
-    
+
     if (this.isRepresentanteLegal() && !this.temDocumentoRepresentacao()) {
       sugestoes.push('Adicionar documento de representação legal');
     }
-    
+
     if (this.expiraEmBreve()) {
       sugestoes.push('Renovar documento de representação (expira em breve)');
     }
-    
+
     if (!this.temGrauParentesco() && this.isDependente()) {
       sugestoes.push('Definir grau de parentesco para dependente');
     }
-    
+
     if (!this.isConsistente()) {
       sugestoes.push('Verificar consistência dos dados do papel');
     }
-    
+
     return sugestoes;
   }
 }

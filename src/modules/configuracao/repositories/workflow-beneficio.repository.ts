@@ -5,7 +5,7 @@ import { WorkflowBeneficio } from '../../../entities';
 
 /**
  * Repositório para gerenciamento de workflows de benefícios
- * 
+ *
  * Fornece operações de acesso a dados para entidade WorkflowBeneficio
  */
 @Injectable()
@@ -20,8 +20,12 @@ export class WorkflowBeneficioRepository {
    * @param tipoBeneficioId ID do tipo de benefício
    * @returns Workflow encontrado ou null
    */
-  async findByTipoBeneficio(tipoBeneficioId: string): Promise<WorkflowBeneficio | null> {
-    return this.repository.findOne({ where: { tipo_beneficio_id: tipoBeneficioId } });
+  async findByTipoBeneficio(
+    tipoBeneficioId: string,
+  ): Promise<WorkflowBeneficio | null> {
+    return this.repository.findOne({
+      where: { tipo_beneficio_id: tipoBeneficioId },
+    });
   }
 
   /**
@@ -29,8 +33,8 @@ export class WorkflowBeneficioRepository {
    * @returns Lista de workflows
    */
   async findAll(): Promise<WorkflowBeneficio[]> {
-    return this.repository.find({ 
-      order: { created_at: 'DESC' }
+    return this.repository.find({
+      order: { created_at: 'DESC' },
     });
   }
 
@@ -57,8 +61,8 @@ export class WorkflowBeneficioRepository {
    * @returns true se existir, false caso contrário
    */
   async existsByTipoBeneficio(tipoBeneficioId: string): Promise<boolean> {
-    const count = await this.repository.count({ 
-      where: { tipo_beneficio_id: tipoBeneficioId } 
+    const count = await this.repository.count({
+      where: { tipo_beneficio_id: tipoBeneficioId },
     });
     return count > 0;
   }

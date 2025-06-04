@@ -43,13 +43,10 @@ export class SetorController {
    * Cria um novo setor
    */
   @Post()
-  @RequiresPermission(
-    
-    {
-      permissionName: 'setor.criar',
-      scopeType: ScopeType.GLOBAL
-    }
-  )
+  @RequiresPermission({
+    permissionName: 'setor.criar',
+    scopeType: ScopeType.GLOBAL,
+  })
   @ApiOperation({ summary: 'Criar novo setor' })
   @ApiResponse({ status: 201, description: 'Setor criado com sucesso' })
   @ApiResponse({ status: 400, description: 'Dados inválidos' })
@@ -71,13 +68,10 @@ export class SetorController {
    * Atualiza um setor existente
    */
   @Put(':id')
-  @RequiresPermission(
-    
-    {
-      permissionName: 'setor.atualizar',
-      scopeType: ScopeType.GLOBAL
-    }
-  )
+  @RequiresPermission({
+    permissionName: 'setor.atualizar',
+    scopeType: ScopeType.GLOBAL,
+  })
   @ApiOperation({ summary: 'Atualizar setor existente' })
   @ApiResponse({ status: 200, description: 'Setor atualizado com sucesso' })
   @ApiResponse({ status: 400, description: 'Dados inválidos' })
@@ -93,13 +87,10 @@ export class SetorController {
    * Obtém detalhes de um setor específico
    */
   @Get(':id')
-  @RequiresPermission(
-    
-    {
-      permissionName: 'setor.listar',
-      scopeType: ScopeType.GLOBAL
-    }
-  )
+  @RequiresPermission({
+    permissionName: 'setor.listar',
+    scopeType: ScopeType.GLOBAL,
+  })
   @ApiOperation({ summary: 'Obter detalhes de um setor' })
   @ApiResponse({ status: 200, description: 'Setor encontrado com sucesso' })
   @ApiResponse({ status: 404, description: 'Setor não encontrado' })

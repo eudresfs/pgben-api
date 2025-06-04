@@ -1,5 +1,10 @@
 import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../../shared/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../auth/guards/roles.guard';
 import { Roles } from '../../../auth/decorators/role.decorator';
@@ -10,7 +15,7 @@ import { MetricasAnomaliasService } from '../services/metricas-anomalia.service'
 
 /**
  * Controlador para análise de métricas
- * 
+ *
  * Este controlador fornece endpoints para:
  * 1. Analisar tendências de métricas
  * 2. Detectar anomalias em séries históricas
@@ -32,7 +37,10 @@ export class MetricasAnaliseController {
   @Get(':codigo/tendencia')
   @Roles(ROLES.ADMIN, ROLES.GESTOR, ROLES.TECNICO)
   @ApiOperation({ summary: 'Analisa tendência de uma métrica' })
-  @ApiResponse({ status: 200, description: 'Análise de tendência realizada com sucesso' })
+  @ApiResponse({
+    status: 200,
+    description: 'Análise de tendência realizada com sucesso',
+  })
   @ApiResponse({ status: 404, description: 'Métrica não encontrada' })
   async analisarTendencia(
     @Param('codigo') codigo: string,
@@ -44,7 +52,7 @@ export class MetricasAnaliseController {
       codigo,
       dataInicio,
       dataFim,
-      { granularidade: granularidade || 'diaria' }
+      { granularidade: granularidade || 'diaria' },
     );
   }
 
@@ -54,7 +62,10 @@ export class MetricasAnaliseController {
   @Get(':codigo/anomalias')
   @Roles(ROLES.ADMIN, ROLES.GESTOR, ROLES.TECNICO)
   @ApiOperation({ summary: 'Detecta anomalias em série histórica de métrica' })
-  @ApiResponse({ status: 200, description: 'Detecção de anomalias realizada com sucesso' })
+  @ApiResponse({
+    status: 200,
+    description: 'Detecção de anomalias realizada com sucesso',
+  })
   @ApiResponse({ status: 404, description: 'Métrica não encontrada' })
   async detectarAnomalias(
     @Param('codigo') codigo: string,
@@ -65,7 +76,7 @@ export class MetricasAnaliseController {
     return this.metricasAnomaliasService.detectarAnomaliasPorCodigo(
       codigo,
       dataInicio,
-      dataFim
+      dataFim,
     );
   }
 
@@ -89,10 +100,8 @@ export class MetricasAnaliseController {
       horizonte,
       intervaloConfianca,
       modelo,
-      previsao: [
-        { data: new Date(), valor: 0 }
-      ],
-      mensagem: 'Funcionalidade em desenvolvimento'
+      previsao: [{ data: new Date(), valor: 0 }],
+      mensagem: 'Funcionalidade em desenvolvimento',
     };
   }
 }

@@ -1,22 +1,22 @@
-import { 
-  Controller, 
-  Get, 
-  Post, 
-  Body, 
-  Patch, 
-  Param, 
-  Delete, 
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
   UseGuards,
   HttpCode,
   HttpStatus,
-  ParseUUIDPipe 
+  ParseUUIDPipe,
 } from '@nestjs/common';
-import { 
-  ApiTags, 
-  ApiOperation, 
-  ApiResponse, 
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
   ApiBearerAuth,
-  ApiParam
+  ApiParam,
 } from '@nestjs/swagger';
 import { IntegradorService } from '../services/integrador.service';
 import { IntegradorTokenService } from '../services/integrador-token.service';
@@ -52,14 +52,19 @@ export class IntegradorController {
   @Post()
   @Roles(ROLES.ADMIN)
   @ApiOperation({ summary: 'Cria um novo integrador' })
-  @ApiResponse({ 
-    status: 201, 
-    description: 'Integrador criado com sucesso', 
-    type: IntegradorResponseDto 
+  @ApiResponse({
+    status: 201,
+    description: 'Integrador criado com sucesso',
+    type: IntegradorResponseDto,
   })
   @ApiResponse({ status: 400, description: 'Dados inválidos' })
-  @ApiResponse({ status: 409, description: 'Já existe um integrador com este nome' })
-  create(@Body() createIntegradorDto: CreateIntegradorDto): Promise<IntegradorResponseDto> {
+  @ApiResponse({
+    status: 409,
+    description: 'Já existe um integrador com este nome',
+  })
+  create(
+    @Body() createIntegradorDto: CreateIntegradorDto,
+  ): Promise<IntegradorResponseDto> {
     return this.integradorService.create(createIntegradorDto);
   }
 
@@ -69,10 +74,10 @@ export class IntegradorController {
   @Get()
   @Roles(ROLES.ADMIN)
   @ApiOperation({ summary: 'Lista todos os integradores' })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Lista de integradores retornada com sucesso',
-    type: [IntegradorResponseDto] 
+    type: [IntegradorResponseDto],
   })
   findAll(): Promise<IntegradorResponseDto[]> {
     return this.integradorService.findAll();
@@ -85,13 +90,15 @@ export class IntegradorController {
   @Roles(ROLES.ADMIN)
   @ApiOperation({ summary: 'Obtém um integrador pelo ID' })
   @ApiParam({ name: 'id', description: 'ID do integrador', type: 'string' })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Integrador encontrado',
-    type: IntegradorResponseDto 
+    type: IntegradorResponseDto,
   })
   @ApiResponse({ status: 404, description: 'Integrador não encontrado' })
-  findOne(@Param('id', ParseUUIDPipe) id: string): Promise<IntegradorResponseDto> {
+  findOne(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<IntegradorResponseDto> {
     return this.integradorService.findOne(id);
   }
 
@@ -102,16 +109,16 @@ export class IntegradorController {
   @Roles(ROLES.ADMIN)
   @ApiOperation({ summary: 'Atualiza um integrador' })
   @ApiParam({ name: 'id', description: 'ID do integrador', type: 'string' })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Integrador atualizado com sucesso',
-    type: IntegradorResponseDto 
+    type: IntegradorResponseDto,
   })
   @ApiResponse({ status: 400, description: 'Dados inválidos' })
   @ApiResponse({ status: 404, description: 'Integrador não encontrado' })
   update(
-    @Param('id', ParseUUIDPipe) id: string, 
-    @Body() updateIntegradorDto: UpdateIntegradorDto
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() updateIntegradorDto: UpdateIntegradorDto,
   ): Promise<IntegradorResponseDto> {
     return this.integradorService.update(id, updateIntegradorDto);
   }
@@ -137,15 +144,15 @@ export class IntegradorController {
   @Roles(ROLES.ADMIN)
   @ApiOperation({ summary: 'Ativa ou desativa um integrador' })
   @ApiParam({ name: 'id', description: 'ID do integrador', type: 'string' })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Status do integrador atualizado com sucesso',
-    type: IntegradorResponseDto 
+    type: IntegradorResponseDto,
   })
   @ApiResponse({ status: 404, description: 'Integrador não encontrado' })
   toggleStatus(
-    @Param('id', ParseUUIDPipe) id: string, 
-    @Body('ativo') ativo: boolean
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body('ativo') ativo: boolean,
   ): Promise<IntegradorResponseDto> {
     return this.integradorService.toggleAtivo(id, ativo);
   }
@@ -157,13 +164,15 @@ export class IntegradorController {
   @Roles(ROLES.ADMIN)
   @ApiOperation({ summary: 'Lista todos os tokens de um integrador' })
   @ApiParam({ name: 'id', description: 'ID do integrador', type: 'string' })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Lista de tokens retornada com sucesso',
-    type: [TokenResponseDto] 
+    type: [TokenResponseDto],
   })
   @ApiResponse({ status: 404, description: 'Integrador não encontrado' })
-  findAllTokens(@Param('id', ParseUUIDPipe) id: string): Promise<TokenResponseDto[]> {
+  findAllTokens(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<TokenResponseDto[]> {
     return this.tokenService.findAllByIntegrador(id);
   }
 
@@ -174,33 +183,36 @@ export class IntegradorController {
   @Roles(ROLES.ADMIN)
   @ApiOperation({ summary: 'Cria um novo token para um integrador' })
   @ApiParam({ name: 'id', description: 'ID do integrador', type: 'string' })
-  @ApiResponse({ 
-    status: 201, 
+  @ApiResponse({
+    status: 201,
     description: 'Token criado com sucesso',
     schema: {
       properties: {
         token: {
           type: 'string',
           description: 'Token JWT gerado (exibido apenas uma vez)',
-          example: 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...'
+          example: 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...',
         },
         tokenInfo: {
-          $ref: '#/components/schemas/TokenResponseDto'
-        }
-      }
-    }
+          $ref: '#/components/schemas/TokenResponseDto',
+        },
+      },
+    },
   })
-  @ApiResponse({ status: 400, description: 'Dados inválidos ou integrador inativo' })
+  @ApiResponse({
+    status: 400,
+    description: 'Dados inválidos ou integrador inativo',
+  })
   @ApiResponse({ status: 404, description: 'Integrador não encontrado' })
   async createToken(
-    @Param('id', ParseUUIDPipe) id: string, 
-    @Body() createTokenDto: CreateTokenDto
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() createTokenDto: CreateTokenDto,
   ) {
     const result = await this.tokenService.createToken(id, createTokenDto);
-    
+
     return {
       token: result.token,
-      tokenInfo: result.tokenInfo
+      tokenInfo: result.tokenInfo,
     };
   }
 
@@ -212,16 +224,16 @@ export class IntegradorController {
   @ApiOperation({ summary: 'Revoga um token' })
   @ApiParam({ name: 'id', description: 'ID do integrador', type: 'string' })
   @ApiParam({ name: 'tokenId', description: 'ID do token', type: 'string' })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Token revogado com sucesso',
-    type: TokenResponseDto 
+    type: TokenResponseDto,
   })
   @ApiResponse({ status: 400, description: 'Token já revogado' })
   @ApiResponse({ status: 404, description: 'Token não encontrado' })
   revogarToken(
     @Param('tokenId', ParseUUIDPipe) tokenId: string,
-    @Body() revokeTokenDto: RevokeTokenDto
+    @Body() revokeTokenDto: RevokeTokenDto,
   ): Promise<TokenResponseDto> {
     return this.tokenService.revogarToken(tokenId, revokeTokenDto.motivo);
   }

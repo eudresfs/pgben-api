@@ -20,7 +20,6 @@ import {
 import { Solicitacao } from './solicitacao.entity';
 import { PeriodicidadeEnum, OrigemAtendimentoEnum } from '../enums';
 
-
 /**
  * Entidade para armazenar dados específicos do cidadão para Cesta Básica
  *
@@ -117,7 +116,7 @@ export class DadosCestaBasica {
    */
   calcularQuantidadeRecomendada(): number {
     if (!this.numero_pessoas_familia) return 1;
-    
+
     // Regra: 1 cesta para até 3 pessoas, +1 cesta a cada 3 pessoas adicionais
     return Math.ceil(this.numero_pessoas_familia / 3);
   }
@@ -138,7 +137,7 @@ export class DadosCestaBasica {
       OrigemAtendimentoEnum.CREAS,
       OrigemAtendimentoEnum.BUSCA_ATIVA,
     ];
-    
+
     return origemPrioritaria.includes(this.origem_atendimento);
   }
 
@@ -147,7 +146,7 @@ export class DadosCestaBasica {
    */
   calcularDuracaoTotalMeses(): number {
     let multiplicador = 1;
-    
+
     switch (this.periodo_concessao) {
       case PeriodicidadeEnum.MENSAL:
         multiplicador = 1;
@@ -165,7 +164,7 @@ export class DadosCestaBasica {
         multiplicador = 0; // Entrega única
         break;
     }
-    
+
     return multiplicador;
   }
 
@@ -174,11 +173,11 @@ export class DadosCestaBasica {
    */
   calcularTotalCestasNoPeriodo(): number {
     const duracaoMeses = this.calcularDuracaoTotalMeses();
-    
+
     if (this.periodo_concessao === PeriodicidadeEnum.UNICO) {
       return this.quantidade_cestas_solicitadas;
     }
-    
+
     // Para períodos recorrentes, considera entrega mensal
     return this.quantidade_cestas_solicitadas * duracaoMeses;
   }
@@ -196,7 +195,7 @@ export class DadosCestaBasica {
    */
   calcularPontuacaoPrioridade(): number {
     let pontuacao = 0;
-    
+
     // Pontuação por origem do atendimento
     switch (this.origem_atendimento) {
       case OrigemAtendimentoEnum.CREAS:
@@ -218,14 +217,14 @@ export class DadosCestaBasica {
         pontuacao += 50;
         break;
     }
-    
+
     // Pontuação por tamanho da família
     if (this.numero_pessoas_familia) {
       if (this.numero_pessoas_familia >= 6) pontuacao += 30;
       else if (this.numero_pessoas_familia >= 4) pontuacao += 20;
       else if (this.numero_pessoas_familia >= 2) pontuacao += 10;
     }
-    
+
     return pontuacao;
   }
 
@@ -235,7 +234,10 @@ export class DadosCestaBasica {
   validarDadosCompletos(): { valido: boolean; erros: string[] } {
     const erros: string[] = [];
 
-    if (!this.quantidade_cestas_solicitadas || this.quantidade_cestas_solicitadas < 1) {
+    if (
+      !this.quantidade_cestas_solicitadas ||
+      this.quantidade_cestas_solicitadas < 1
+    ) {
       erros.push('Quantidade de cestas deve ser maior que zero');
     }
 
@@ -247,19 +249,30 @@ export class DadosCestaBasica {
       erros.push('Origem do atendimento é obrigatória');
     }
 
-    if (this.precisaJustificativaQuantidade() && 
-        (!this.justificativa_quantidade || this.justificativa_quantidade.trim().length === 0)) {
-      erros.push('Justificativa é obrigatória para quantidade acima do recomendado');
+    if (
+      this.precisaJustificativaQuantidade() &&
+      (!this.justificativa_quantidade ||
+        this.justificativa_quantidade.trim().length === 0)
+    ) {
+      erros.push(
+        'Justificativa é obrigatória para quantidade acima do recomendado',
+      );
     }
 
-    if (this.origem_atendimento === OrigemAtendimentoEnum.ENCAMINHAMENTO_EXTERNO && 
-        (!this.unidade_solicitante || this.unidade_solicitante.trim().length === 0)) {
-      erros.push('Unidade solicitante é obrigatória para encaminhamentos externos');
+    if (
+      this.origem_atendimento ===
+        OrigemAtendimentoEnum.ENCAMINHAMENTO_EXTERNO &&
+      (!this.unidade_solicitante ||
+        this.unidade_solicitante.trim().length === 0)
+    ) {
+      erros.push(
+        'Unidade solicitante é obrigatória para encaminhamentos externos',
+      );
     }
 
     return {
       valido: erros.length === 0,
-      erros
+      erros,
     };
   }
 }

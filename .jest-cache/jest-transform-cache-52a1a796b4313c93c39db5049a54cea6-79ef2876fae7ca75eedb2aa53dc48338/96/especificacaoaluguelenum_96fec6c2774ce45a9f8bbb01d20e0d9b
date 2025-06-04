@@ -1,0 +1,19 @@
+d8890e35859364c1c5eb6aaa6c23f1d7
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.EspecificacaoAluguel = void 0;
+/**
+ * Enum para especificações do Aluguel Social
+ */
+var EspecificacaoAluguel;
+(function (EspecificacaoAluguel) {
+    EspecificacaoAluguel["TRABALHO_INFANTIL"] = "trabalho_infantil";
+    EspecificacaoAluguel["EXPLORACAO_SEXUAL"] = "exploracao_sexual";
+    EspecificacaoAluguel["VITIMA_VIOLENCIA"] = "vitima_violencia";
+    EspecificacaoAluguel["LGBTQIA"] = "lgbtqia";
+    EspecificacaoAluguel["CONFLITO_LEI"] = "conflito_lei";
+    EspecificacaoAluguel["DROGADICAO"] = "drogadicao";
+    EspecificacaoAluguel["SITUACAO_RUA"] = "situacao_rua";
+    EspecificacaoAluguel["GRAVIDEZ_ADOLESCENCIA"] = "gravidez_adolescencia";
+})(EspecificacaoAluguel || (exports.EspecificacaoAluguel = EspecificacaoAluguel = {}));
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXGVudW1zXFxlc3BlY2lmaWNhY2FvLWFsdWd1ZWwuZW51bS50cyIsIm1hcHBpbmdzIjoiOzs7QUFBQTs7R0FFRztBQUNILElBQVksb0JBU1Y7QUFURixXQUFZLG9CQUFvQjtJQUM3QiwrREFBdUMsQ0FBQTtJQUN2QywrREFBdUMsQ0FBQTtJQUN2Qyw2REFBcUMsQ0FBQTtJQUNyQywyQ0FBbUIsQ0FBQTtJQUNuQixxREFBNkIsQ0FBQTtJQUM3QixpREFBeUIsQ0FBQTtJQUN6QixxREFBNkIsQ0FBQTtJQUM3Qix1RUFBK0MsQ0FBQTtBQUNqRCxDQUFDLEVBVFUsb0JBQW9CLG9DQUFwQixvQkFBb0IsUUFTOUIiLCJuYW1lcyI6W10sInNvdXJjZXMiOlsiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXGVudW1zXFxlc3BlY2lmaWNhY2FvLWFsdWd1ZWwuZW51bS50cyJdLCJzb3VyY2VzQ29udGVudCI6WyIvKipcclxuICogRW51bSBwYXJhIGVzcGVjaWZpY2HDp8O1ZXMgZG8gQWx1Z3VlbCBTb2NpYWxcclxuICovXHJcbmV4cG9ydCBlbnVtIEVzcGVjaWZpY2FjYW9BbHVndWVsIHtcclxuICAgVFJBQkFMSE9fSU5GQU5USUwgPSAndHJhYmFsaG9faW5mYW50aWwnLFxyXG4gICBFWFBMT1JBQ0FPX1NFWFVBTCA9ICdleHBsb3JhY2FvX3NleHVhbCcsXHJcbiAgIFZJVElNQV9WSU9MRU5DSUEgPSAndml0aW1hX3Zpb2xlbmNpYScsXHJcbiAgIExHQlRRSUEgPSAnbGdidHFpYScsXHJcbiAgIENPTkZMSVRPX0xFSSA9ICdjb25mbGl0b19sZWknLFxyXG4gICBEUk9HQURJQ0FPID0gJ2Ryb2dhZGljYW8nLFxyXG4gICBTSVRVQUNBT19SVUEgPSAnc2l0dWFjYW9fcnVhJyxcclxuICAgR1JBVklERVpfQURPTEVTQ0VOQ0lBID0gJ2dyYXZpZGV6X2Fkb2xlc2NlbmNpYScsXHJcbiB9Il0sInZlcnNpb24iOjN9

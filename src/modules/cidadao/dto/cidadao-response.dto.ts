@@ -43,7 +43,7 @@ export class CidadaoComposicaoFamiliarDto {
   idade: number;
 
   @ApiProperty({
-    example: 1500.50,
+    example: 1500.5,
     description: 'Renda mensal do membro da família',
   })
   @Expose()
@@ -183,8 +183,6 @@ export class EnderecoResponseDto {
     return dateValue;
   })
   updated_at: string;
-
-
 }
 
 export class CidadaoResponseDto {
@@ -334,7 +332,7 @@ export class CidadaoResponseDto {
   profissao: string;
 
   @ApiProperty({
-    example: 3500.00,
+    example: 3500.0,
     description: 'Renda mensal do cidadão',
   })
   @Expose()

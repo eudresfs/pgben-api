@@ -75,7 +75,9 @@ export class CreateComposicaoFamiliarDto {
   ocupacao: string;
 
   @IsNotEmpty({ message: 'Escolaridade é obrigatória' })
-  @IsEnum(EscolaridadeEnum, { message: 'Escolaridade deve ser um valor válido' })
+  @IsEnum(EscolaridadeEnum, {
+    message: 'Escolaridade deve ser um valor válido',
+  })
   @Transform(({ value }) => {
     if (typeof value === 'string') {
       return value.toUpperCase();
@@ -108,7 +110,7 @@ export class CreateComposicaoFamiliarDto {
   @IsNumber({}, { message: 'Renda deve ser um número' })
   @Min(0, { message: 'Renda não pode ser negativa' })
   @ApiProperty({
-    example: 2500.00,
+    example: 2500.0,
     description: 'Renda mensal do membro familiar',
     required: false,
   })

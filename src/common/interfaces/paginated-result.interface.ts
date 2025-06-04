@@ -1,6 +1,6 @@
 /**
  * Interface para resultados paginados
- * 
+ *
  * Esta interface padroniza a estrutura de retorno para endpoints
  * que implementam paginação, facilitando o consumo pelo frontend.
  */

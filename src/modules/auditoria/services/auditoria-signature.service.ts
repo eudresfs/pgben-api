@@ -22,7 +22,7 @@ export class AuditoriaSignatureService {
     // Utiliza uma chave separada apenas para assinar logs de auditoria
     const auditSigningKey = this.configService.get<string>('AUDIT_SIGNING_KEY');
     const jwtSecret = this.configService.get<string>('JWT_SECRET');
-    
+
     if (auditSigningKey) {
       this.signingKey = auditSigningKey;
     } else {
@@ -30,11 +30,13 @@ export class AuditoriaSignatureService {
         'AUDIT_SIGNING_KEY não configurada! Usando JWT_SECRET como fallback. ' +
           'Recomenda-se configurar uma chave dedicada para assinatura de logs de auditoria.',
       );
-      
+
       if (!jwtSecret) {
-        throw new Error('Nenhuma chave de assinatura configurada. Configure AUDIT_SIGNING_KEY ou JWT_SECRET.');
+        throw new Error(
+          'Nenhuma chave de assinatura configurada. Configure AUDIT_SIGNING_KEY ou JWT_SECRET.',
+        );
       }
-      
+
       this.signingKey = jwtSecret;
     }
   }
@@ -46,8 +48,14 @@ export class AuditoriaSignatureService {
    * @returns Hash SHA-256 dos dados
    */
   private calculateHash(logAuditoria: Partial<LogAuditoria>): string {
-    if (!logAuditoria.tipo_operacao || !logAuditoria.entidade_afetada || !logAuditoria.usuario_id) {
-      throw new Error('Dados insuficientes para calcular o hash do log de auditoria');
+    if (
+      !logAuditoria.tipo_operacao ||
+      !logAuditoria.entidade_afetada ||
+      !logAuditoria.usuario_id
+    ) {
+      throw new Error(
+        'Dados insuficientes para calcular o hash do log de auditoria',
+      );
     }
 
     const dataToHash = JSON.stringify({
@@ -58,7 +66,9 @@ export class AuditoriaSignatureService {
       endpoint: logAuditoria.endpoint || null,
       metodo_http: logAuditoria.metodo_http || null,
       ip_origem: logAuditoria.ip_origem || null,
-      data_hora: logAuditoria.data_hora ? logAuditoria.data_hora.toISOString() : null,
+      data_hora: logAuditoria.data_hora
+        ? logAuditoria.data_hora.toISOString()
+        : null,
     });
 
     return createHash('sha256').update(dataToHash).digest('hex');
@@ -94,9 +104,10 @@ export class AuditoriaSignatureService {
       );
       return token;
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Erro desconhecido';
       const errorStack = error instanceof Error ? error.stack : undefined;
-      
+
       this.logger.error(
         `Erro ao assinar log de auditoria: ${errorMessage}`,
         errorStack,
@@ -118,7 +129,10 @@ export class AuditoriaSignatureService {
   ): Promise<boolean> {
     try {
       // Verificar se a assinatura é um JWT válido
-      const payload = await this.jwtService.verifyAsync<{ id: string; hash: string }>(assinatura, {
+      const payload = await this.jwtService.verifyAsync<{
+        id: string;
+        hash: string;
+      }>(assinatura, {
         secret: this.signingKey,
       });
 
@@ -141,9 +155,10 @@ export class AuditoriaSignatureService {
 
       return true;
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Erro desconhecido';
       const errorStack = error instanceof Error ? error.stack : undefined;
-      
+
       this.logger.error(
         `Erro ao validar assinatura: ${errorMessage}`,
         errorStack,
@@ -161,7 +176,8 @@ export class AuditoriaSignatureService {
   async verificarIntegridadeLogs(
     logs: Array<{ log: LogAuditoria; assinatura: string }>,
   ): Promise<Array<{ id: string; integro: boolean; motivo?: string }>> {
-    const resultados: Array<{ id: string; integro: boolean; motivo?: string }> = [];
+    const resultados: Array<{ id: string; integro: boolean; motivo?: string }> =
+      [];
 
     for (const item of logs) {
       try {
@@ -179,8 +195,9 @@ export class AuditoriaSignatureService {
             : 'Assinatura inválida ou dados modificados',
         });
       } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
-        
+        const errorMessage =
+          error instanceof Error ? error.message : 'Erro desconhecido';
+
         resultados.push({
           id: item.log.id || 'id-desconhecido',
           integro: false,

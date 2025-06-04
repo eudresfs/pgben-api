@@ -11,7 +11,7 @@ import { TemplateTipoEnum } from '../../../enums/template-tipo.enum';
 
 /**
  * Serviço para gerenciamento de templates do sistema
- * 
+ *
  * Responsável por:
  * - Operações CRUD para templates
  * - Renderização de templates
@@ -34,7 +34,7 @@ export class TemplateService {
    */
   async buscarTodos(tipo?: TemplateTipoEnum): Promise<TemplateResponseDto[]> {
     const templates = await this.templateRepository.findAll(tipo);
-    return templates.map(t => this.mapearParaDto(t));
+    return templates.map((t) => this.mapearParaDto(t));
   }
 
   /**
@@ -69,7 +69,7 @@ export class TemplateService {
     } catch (error) {
       throw new TemplateInvalidoException(
         dto.codigo,
-        `Template inválido: ${error.message}`
+        `Template inválido: ${error.message}`,
       );
     }
 
@@ -92,7 +92,10 @@ export class TemplateService {
    * @returns DTO de resposta do template atualizado
    * @throws Error se o template não existir
    */
-  async atualizar(codigo: string, dto: TemplateUpdateDto): Promise<TemplateResponseDto> {
+  async atualizar(
+    codigo: string,
+    dto: TemplateUpdateDto,
+  ): Promise<TemplateResponseDto> {
     const template = await this.templateRepository.findByCodigo(codigo);
     if (!template) {
       throw new Error(`Template com código '${codigo}' não encontrado`);
@@ -105,7 +108,7 @@ export class TemplateService {
       } catch (error) {
         throw new TemplateInvalidoException(
           codigo,
-          `Template inválido: ${error.message}`
+          `Template inválido: ${error.message}`,
         );
       }
       template.conteudo = dto.conteudo;
@@ -155,8 +158,8 @@ export class TemplateService {
       if (!template && !dto.conteudo) {
         throw new Error(`Template com código '${dto.codigo}' não encontrado`);
       }
-    } 
-    
+    }
+
     // Se não encontrou o template pelo código ou não foi fornecido código, usa o conteúdo direto
     if (!template && dto.conteudo) {
       const tempTemplate = new Template();
@@ -166,24 +169,26 @@ export class TemplateService {
       tempTemplate.nome = 'Template Temporário';
       tempTemplate.ativo = true;
       template = tempTemplate;
-    } 
-    
+    }
+
     if (!template) {
-      throw new Error('É necessário fornecer o código ou o conteúdo do template');
+      throw new Error(
+        'É necessário fornecer o código ou o conteúdo do template',
+      );
     }
 
     try {
       const conteudoRenderizado = await this.templateEngine.render(
         template.conteudo,
         dto.dados || {},
-        { sanitize: true }
+        { sanitize: true },
       );
-      
+
       return { conteudo: conteudoRenderizado };
     } catch (error) {
       throw new TemplateInvalidoException(
         dto.codigo || 'unknown',
-        `Erro ao renderizar template: ${error.message}`
+        `Erro ao renderizar template: ${error.message}`,
       );
     }
   }
@@ -198,9 +203,9 @@ export class TemplateService {
    * @throws TemplateInvalidoException se ocorrer erro na renderização
    */
   async renderizar(
-    codigo: string, 
-    dados: Record<string, any>, 
-    opcoes: { sanitize?: boolean } = { sanitize: true }
+    codigo: string,
+    dados: Record<string, any>,
+    opcoes: { sanitize?: boolean } = { sanitize: true },
   ): Promise<string> {
     const template = await this.templateRepository.findByCodigo(codigo);
     if (!template) {
@@ -216,7 +221,7 @@ export class TemplateService {
     } catch (error) {
       throw new TemplateInvalidoException(
         codigo,
-        `Erro ao renderizar template: ${error.message}`
+        `Erro ao renderizar template: ${error.message}`,
       );
     }
   }
@@ -228,7 +233,7 @@ export class TemplateService {
    */
   async buscarPorTipo(tipo: TemplateTipoEnum): Promise<TemplateResponseDto[]> {
     const templates = await this.templateRepository.findByTipo(tipo);
-    return templates.map(t => this.mapearParaDto(t));
+    return templates.map((t) => this.mapearParaDto(t));
   }
 
   /**
@@ -238,7 +243,10 @@ export class TemplateService {
    * @returns DTO de resposta do template atualizado
    * @throws Error se o template não existir
    */
-  async alterarStatus(codigo: string, ativo: boolean): Promise<TemplateResponseDto> {
+  async alterarStatus(
+    codigo: string,
+    ativo: boolean,
+  ): Promise<TemplateResponseDto> {
     const template = await this.templateRepository.findByCodigo(codigo);
     if (!template) {
       throw new Error(`Template com código '${codigo}' não encontrado`);
@@ -246,7 +254,7 @@ export class TemplateService {
 
     template.ativo = ativo;
     const salvo = await this.templateRepository.save(template);
-    
+
     this.logger.log(`Template '${codigo}' ${ativo ? 'ativado' : 'desativado'}`);
     return this.mapearParaDto(salvo);
   }

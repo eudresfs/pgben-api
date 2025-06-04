@@ -69,7 +69,10 @@ export class CreateDadosNatalidadeDto {
     format: 'date',
   })
   @IsOptional()
-  @IsDateString({}, { message: 'Data provável do parto deve ser uma data válida' })
+  @IsDateString(
+    {},
+    { message: 'Data provável do parto deve ser uma data válida' },
+  )
   data_provavel_parto?: string;
 
   @ApiProperty({
@@ -99,12 +102,15 @@ export class CreateDadosNatalidadeDto {
   ja_tem_filhos: boolean;
 
   @ApiPropertyOptional({
-    description: 'Quantidade de filhos que já possui (obrigatório se já_tem_filhos = true)',
+    description:
+      'Quantidade de filhos que já possui (obrigatório se já_tem_filhos = true)',
     example: 2,
     minimum: 0,
   })
   @ValidateIf((o) => o.ja_tem_filhos === true)
-  @IsNotEmpty({ message: 'Quantidade de filhos é obrigatória quando já tem filhos' })
+  @IsNotEmpty({
+    message: 'Quantidade de filhos é obrigatória quando já tem filhos',
+  })
   @IsNumber({}, { message: 'Quantidade de filhos deve ser um número' })
   @Min(0, { message: 'Quantidade de filhos não pode ser negativa' })
   @Transform(({ value }) => {
@@ -184,7 +190,10 @@ export class UpdateDadosNatalidadeDto {
     format: 'date',
   })
   @IsOptional()
-  @IsDateString({}, { message: 'Data provável do parto deve ser uma data válida' })
+  @IsDateString(
+    {},
+    { message: 'Data provável do parto deve ser uma data válida' },
+  )
   data_provavel_parto?: string;
 
   @ApiPropertyOptional({

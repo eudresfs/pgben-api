@@ -1,0 +1,56 @@
+f8088dc04739a1b0047fdf4d142110fb
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.BaseDto = void 0;
+/**
+ * DTO Base
+ *
+ * Classe base para todos os DTOs da aplicação, fornecendo métodos utilitários
+ * para transformação e validação de dados.
+ */
+class BaseDto {
+    /**
+     * Transforma um objeto plano em uma instância da classe DTO
+     *
+     * @param data Objeto plano com os dados
+     * @param dto Classe DTO para transformação
+     * @returns Instância da classe DTO
+     */
+    static plainToInstance(data, dto) {
+        const instance = new dto();
+        for (const key in data) {
+            if (Object.prototype.hasOwnProperty.call(data, key)) {
+                instance[key] = data[key];
+            }
+        }
+        return instance;
+    }
+    /**
+     * Transforma uma instância da classe DTO em um objeto plano
+     *
+     * @param instance Instância da classe DTO
+     * @returns Objeto plano com os dados
+     */
+    static instanceToPlain(instance) {
+        const plainObject = {};
+        for (const key in instance) {
+            if (Object.prototype.hasOwnProperty.call(instance, key)) {
+                plainObject[key] = instance[key];
+            }
+        }
+        return plainObject;
+    }
+    /**
+     * Valida os dados do DTO de acordo com as regras definidas pelos decorators
+     * Este método pode ser sobrescrito pelas classes filhas para adicionar validações específicas
+     *
+     * @param validationGroup Grupo de validação opcional
+     * @returns Void se a validação for bem-sucedida, ou lança uma exceção em caso de erro
+     */
+    validar(validationGroup) {
+        // Este método será implementado pelas classes filhas ou mockado em testes
+        // Por padrão, não faz nada, mas serve como ponto de extensão
+    }
+}
+exports.BaseDto = BaseDto;
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXHNoYXJlZFxcZHRvc1xcYmFzZS5kdG8udHMiLCJtYXBwaW5ncyI6Ijs7O0FBQUE7Ozs7O0dBS0c7QUFDSCxNQUFzQixPQUFPO0lBQzNCOzs7Ozs7T0FNRztJQUNILE1BQU0sQ0FBQyxlQUFlLENBQUksSUFBWSxFQUFFLEdBQWdCO1FBQ3RELE1BQU0sUUFBUSxHQUFHLElBQUksR0FBRyxFQUFFLENBQUM7UUFFM0IsS0FBSyxNQUFNLEdBQUcsSUFBSSxJQUFJLEVBQUUsQ0FBQztZQUN2QixJQUFJLE1BQU0sQ0FBQyxTQUFTLENBQUMsY0FBYyxDQUFDLElBQUksQ0FBQyxJQUFJLEVBQUUsR0FBRyxDQUFDLEVBQUUsQ0FBQztnQkFDcEQsUUFBUSxDQUFDLEdBQUcsQ0FBQyxHQUFHLElBQUksQ0FBQyxHQUFHLENBQUMsQ0FBQztZQUM1QixDQUFDO1FBQ0gsQ0FBQztRQUVELE9BQU8sUUFBUSxDQUFDO0lBQ2xCLENBQUM7SUFFRDs7Ozs7T0FLRztJQUNILE1BQU0sQ0FBQyxlQUFlLENBQUksUUFBVztRQUNuQyxNQUFNLFdBQVcsR0FBd0IsRUFBRSxDQUFDO1FBRTVDLEtBQUssTUFBTSxHQUFHLElBQUksUUFBUSxFQUFFLENBQUM7WUFDM0IsSUFBSSxNQUFNLENBQUMsU0FBUyxDQUFDLGNBQWMsQ0FBQyxJQUFJLENBQUMsUUFBUSxFQUFFLEdBQUcsQ0FBQyxFQUFFLENBQUM7Z0JBQ3hELFdBQVcsQ0FBQyxHQUFHLENBQUMsR0FBRyxRQUFRLENBQUMsR0FBRyxDQUFDLENBQUM7WUFDbkMsQ0FBQztRQUNILENBQUM7UUFFRCxPQUFPLFdBQVcsQ0FBQztJQUNyQixDQUFDO0lBRUQ7Ozs7OztPQU1HO0lBQ0gsT0FBTyxDQUFDLGVBQXdCO1FBQzlCLDBFQUEwRTtRQUMxRSw2REFBNkQ7SUFDL0QsQ0FBQztDQUNGO0FBakRELDBCQWlEQyIsIm5hbWVzIjpbXSwic291cmNlcyI6WyJDOlxcVXNlcnNcXGV1ZHJlXFxPbmVEcml2ZVxcRGVza3RvcFxcUHJvamV0b3NcXHBnYmVuXFxwZ2Jlbi1zZXJ2ZXJcXHNyY1xcc2hhcmVkXFxkdG9zXFxiYXNlLmR0by50cyJdLCJzb3VyY2VzQ29udGVudCI6WyIvKipcbiAqIERUTyBCYXNlXG4gKlxuICogQ2xhc3NlIGJhc2UgcGFyYSB0b2RvcyBvcyBEVE9zIGRhIGFwbGljYcOnw6NvLCBmb3JuZWNlbmRvIG3DqXRvZG9zIHV0aWxpdMOhcmlvc1xuICogcGFyYSB0cmFuc2Zvcm1hw6fDo28gZSB2YWxpZGHDp8OjbyBkZSBkYWRvcy5cbiAqL1xuZXhwb3J0IGFic3RyYWN0IGNsYXNzIEJhc2VEdG8ge1xuICAvKipcbiAgICogVHJhbnNmb3JtYSB1bSBvYmpldG8gcGxhbm8gZW0gdW1hIGluc3TDom5jaWEgZGEgY2xhc3NlIERUT1xuICAgKlxuICAgKiBAcGFyYW0gZGF0YSBPYmpldG8gcGxhbm8gY29tIG9zIGRhZG9zXG4gICAqIEBwYXJhbSBkdG8gQ2xhc3NlIERUTyBwYXJhIHRyYW5zZm9ybWHDp8Ojb1xuICAgKiBAcmV0dXJucyBJbnN0w6JuY2lhIGRhIGNsYXNzZSBEVE9cbiAgICovXG4gIHN0YXRpYyBwbGFpblRvSW5zdGFuY2U8VD4oZGF0YTogb2JqZWN0LCBkdG86IG5ldyAoKSA9PiBUKTogVCB7XG4gICAgY29uc3QgaW5zdGFuY2UgPSBuZXcgZHRvKCk7XG5cbiAgICBmb3IgKGNvbnN0IGtleSBpbiBkYXRhKSB7XG4gICAgICBpZiAoT2JqZWN0LnByb3RvdHlwZS5oYXNPd25Qcm9wZXJ0eS5jYWxsKGRhdGEsIGtleSkpIHtcbiAgICAgICAgaW5zdGFuY2Vba2V5XSA9IGRhdGFba2V5XTtcbiAgICAgIH1cbiAgICB9XG5cbiAgICByZXR1cm4gaW5zdGFuY2U7XG4gIH1cblxuICAvKipcbiAgICogVHJhbnNmb3JtYSB1bWEgaW5zdMOibmNpYSBkYSBjbGFzc2UgRFRPIGVtIHVtIG9iamV0byBwbGFub1xuICAgKlxuICAgKiBAcGFyYW0gaW5zdGFuY2UgSW5zdMOibmNpYSBkYSBjbGFzc2UgRFRPXG4gICAqIEByZXR1cm5zIE9iamV0byBwbGFubyBjb20gb3MgZGFkb3NcbiAgICovXG4gIHN0YXRpYyBpbnN0YW5jZVRvUGxhaW48VD4oaW5zdGFuY2U6IFQpOiBSZWNvcmQ8c3RyaW5nLCBhbnk+IHtcbiAgICBjb25zdCBwbGFpbk9iamVjdDogUmVjb3JkPHN0cmluZywgYW55PiA9IHt9O1xuXG4gICAgZm9yIChjb25zdCBrZXkgaW4gaW5zdGFuY2UpIHtcbiAgICAgIGlmIChPYmplY3QucHJvdG90eXBlLmhhc093blByb3BlcnR5LmNhbGwoaW5zdGFuY2UsIGtleSkpIHtcbiAgICAgICAgcGxhaW5PYmplY3Rba2V5XSA9IGluc3RhbmNlW2tleV07XG4gICAgICB9XG4gICAgfVxuXG4gICAgcmV0dXJuIHBsYWluT2JqZWN0O1xuICB9XG5cbiAgLyoqXG4gICAqIFZhbGlkYSBvcyBkYWRvcyBkbyBEVE8gZGUgYWNvcmRvIGNvbSBhcyByZWdyYXMgZGVmaW5pZGFzIHBlbG9zIGRlY29yYXRvcnNcbiAgICogRXN0ZSBtw6l0b2RvIHBvZGUgc2VyIHNvYnJlc2NyaXRvIHBlbGFzIGNsYXNzZXMgZmlsaGFzIHBhcmEgYWRpY2lvbmFyIHZhbGlkYcOnw7VlcyBlc3BlY8OtZmljYXNcbiAgICpcbiAgICogQHBhcmFtIHZhbGlkYXRpb25Hcm91cCBHcnVwbyBkZSB2YWxpZGHDp8OjbyBvcGNpb25hbFxuICAgKiBAcmV0dXJucyBWb2lkIHNlIGEgdmFsaWRhw6fDo28gZm9yIGJlbS1zdWNlZGlkYSwgb3UgbGFuw6dhIHVtYSBleGNlw6fDo28gZW0gY2FzbyBkZSBlcnJvXG4gICAqL1xuICB2YWxpZGFyKHZhbGlkYXRpb25Hcm91cD86IHN0cmluZyk6IHZvaWQge1xuICAgIC8vIEVzdGUgbcOpdG9kbyBzZXLDoSBpbXBsZW1lbnRhZG8gcGVsYXMgY2xhc3NlcyBmaWxoYXMgb3UgbW9ja2FkbyBlbSB0ZXN0ZXNcbiAgICAvLyBQb3IgcGFkcsOjbywgbsOjbyBmYXogbmFkYSwgbWFzIHNlcnZlIGNvbW8gcG9udG8gZGUgZXh0ZW5zw6NvXG4gIH1cbn1cbiJdLCJ2ZXJzaW9uIjozfQ==

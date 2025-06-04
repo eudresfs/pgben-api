@@ -74,7 +74,8 @@ export class DeterminacaoJudicialService {
         usuario_id: usuarioId,
       });
 
-      const determinacaoSalva = await queryRunner.manager.save(novaDeterminacao);
+      const determinacaoSalva =
+        await queryRunner.manager.save(novaDeterminacao);
 
       // Atualizar a solicitação para indicar que possui determinação judicial
       await queryRunner.manager.update(
@@ -92,7 +93,10 @@ export class DeterminacaoJudicialService {
     } catch (error) {
       await queryRunner.rollbackTransaction();
 
-      if (error instanceof NotFoundException || error instanceof ConflictException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ConflictException
+      ) {
         throw error;
       }
 
@@ -113,7 +117,9 @@ export class DeterminacaoJudicialService {
    * @param solicitacaoId ID da solicitação
    * @returns Lista de determinações judiciais
    */
-  async findBySolicitacaoId(solicitacaoId: string): Promise<DeterminacaoJudicial[]> {
+  async findBySolicitacaoId(
+    solicitacaoId: string,
+  ): Promise<DeterminacaoJudicial[]> {
     try {
       // Verificar se a solicitação existe
       const solicitacao = await this.solicitacaoRepository.findOne({
@@ -298,8 +304,11 @@ export class DeterminacaoJudicialService {
         if (outrasDeterminacoes.length > 1) {
           // Se houver outras determinações, definir a mais recente como principal
           const outrasDeterminacoesOrdenadas = outrasDeterminacoes
-            .filter(det => det.id !== id)
-            .sort((a, b) => b.data_determinacao.getTime() - a.data_determinacao.getTime());
+            .filter((det) => det.id !== id)
+            .sort(
+              (a, b) =>
+                b.data_determinacao.getTime() - a.data_determinacao.getTime(),
+            );
 
           // Atualizar a solicitação com a nova determinação principal
           await queryRunner.manager.update(

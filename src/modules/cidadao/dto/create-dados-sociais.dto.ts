@@ -20,7 +20,7 @@ import { IsEnumValue } from '../../../shared/validators/enum-validator';
 
 /**
  * DTO para criação de dados sociais de um cidadão
- * 
+ *
  * Contém todas as informações socioeconômicas necessárias para
  * caracterizar a situação social do cidadão e sua família.
  */
@@ -32,21 +32,21 @@ export class CreateDadosSociaisDto {
     examples: {
       analfabeto: {
         value: EscolaridadeEnum.ANALFABETO,
-        description: 'Cidadão que não sabe ler nem escrever'
+        description: 'Cidadão que não sabe ler nem escrever',
       },
       fundamental_completo: {
         value: EscolaridadeEnum.FUNDAMENTAL_COMPLETO,
-        description: 'Ensino fundamental completo (até 9º ano)'
+        description: 'Ensino fundamental completo (até 9º ano)',
       },
       medio_completo: {
         value: EscolaridadeEnum.MEDIO_COMPLETO,
-        description: 'Ensino médio completo'
+        description: 'Ensino médio completo',
       },
       superior_completo: {
         value: EscolaridadeEnum.SUPERIOR_COMPLETO,
-        description: 'Ensino superior completo'
-      }
-    }
+        description: 'Ensino superior completo',
+      },
+    },
   })
   @IsNotEmpty({ message: 'Escolaridade é obrigatória' })
   @IsEnumValue(EscolaridadeEnum, {
@@ -61,7 +61,9 @@ export class CreateDadosSociaisDto {
     required: false,
   })
   @IsOptional()
-  @IsBoolean({ message: 'O campo publico_prioritario deve ser verdadeiro ou falso' })
+  @IsBoolean({
+    message: 'O campo publico_prioritario deve ser verdadeiro ou falso',
+  })
   @Transform(({ value }) => {
     if (typeof value === 'string') {
       return value.toLowerCase() === 'true';
@@ -72,27 +74,32 @@ export class CreateDadosSociaisDto {
 
   @ApiProperty({
     description: 'Renda mensal do cidadão em reais',
-    example: 1500.50,
+    example: 1500.5,
     minimum: 0,
     maximum: 999999.99,
     required: false,
     examples: {
       sem_renda: {
         value: 0,
-        description: 'Cidadão sem renda'
+        description: 'Cidadão sem renda',
       },
       salario_minimo: {
-        value: 1320.00,
-        description: 'Um salário mínimo'
+        value: 1320.0,
+        description: 'Um salário mínimo',
       },
       renda_media: {
-        value: 2500.00,
-        description: 'Renda média'
-      }
-    }
+        value: 2500.0,
+        description: 'Renda média',
+      },
+    },
   })
   @IsOptional()
-  @IsNumber({ maxDecimalPlaces: 2 }, { message: 'Renda deve ser um número válido com no máximo 2 casas decimais' })
+  @IsNumber(
+    { maxDecimalPlaces: 2 },
+    {
+      message: 'Renda deve ser um número válido com no máximo 2 casas decimais',
+    },
+  )
   @Min(0, { message: 'Renda não pode ser negativa' })
   @Max(999999.99, { message: 'Renda não pode exceder R$ 999.999,99' })
   @Type(() => Number)
@@ -116,27 +123,28 @@ export class CreateDadosSociaisDto {
     examples: {
       servicos_gerais: {
         value: 'Auxiliar de limpeza',
-        description: 'Profissional de serviços gerais'
+        description: 'Profissional de serviços gerais',
       },
       comercio: {
         value: 'Vendedor',
-        description: 'Profissional do comércio'
+        description: 'Profissional do comércio',
       },
       autonomo: {
         value: 'Manicure autônoma',
-        description: 'Profissional autônomo'
+        description: 'Profissional autônomo',
       },
       desempregado: {
         value: 'Desempregado',
-        description: 'Pessoa sem ocupação atual'
-      }
-    }
+        description: 'Pessoa sem ocupação atual',
+      },
+    },
   })
   @IsOptional()
   @IsString({ message: 'Ocupação deve ser um texto' })
   @MaxLength(255, { message: 'Ocupação deve ter no máximo 255 caracteres' })
-  @Matches(/^[a-zA-ZÀ-ÿ0-9\s\-\.\,]*$/, { 
-    message: 'Ocupação deve conter apenas letras, números, espaços e pontuação básica' 
+  @Matches(/^[a-zA-ZÀ-ÿ0-9\s\-\.\,]*$/, {
+    message:
+      'Ocupação deve conter apenas letras, números, espaços e pontuação básica',
   })
   ocupacao?: string;
 
@@ -156,29 +164,37 @@ export class CreateDadosSociaisDto {
 
   @ApiProperty({
     description: 'Valor mensal recebido do Programa Bolsa Família',
-    example: 400.00,
+    example: 400.0,
     minimum: 0,
-    maximum: 10000.00,
+    maximum: 10000.0,
     required: false,
     examples: {
       valor_basico: {
-        value: 142.00,
-        description: 'Valor básico do Auxílio Brasil'
+        value: 142.0,
+        description: 'Valor básico do Auxílio Brasil',
       },
       valor_medio: {
-        value: 400.00,
-        description: 'Valor médio com benefícios adicionais'
+        value: 400.0,
+        description: 'Valor médio com benefícios adicionais',
       },
       valor_alto: {
-        value: 600.00,
-        description: 'Valor com múltiplos benefícios'
-      }
-    }
+        value: 600.0,
+        description: 'Valor com múltiplos benefícios',
+      },
+    },
   })
   @ValidateIf((o) => o.recebe_pbf === true)
-  @IsNumber({ maxDecimalPlaces: 2 }, { message: 'Valor do PBF deve ser um número válido com no máximo 2 casas decimais' })
-  @IsPositive({ message: 'Valor do PBF deve ser maior que zero quando informado' })
-  @Max(10000.00, { message: 'Valor do PBF não pode exceder R$ 10.000,00' })
+  @IsNumber(
+    { maxDecimalPlaces: 2 },
+    {
+      message:
+        'Valor do PBF deve ser um número válido com no máximo 2 casas decimais',
+    },
+  )
+  @IsPositive({
+    message: 'Valor do PBF deve ser maior que zero quando informado',
+  })
+  @Max(10000.0, { message: 'Valor do PBF não pode exceder R$ 10.000,00' })
   @Type(() => Number)
   @Transform(({ value }) => {
     if (value === null || value === undefined || value === '') {
@@ -219,21 +235,29 @@ export class CreateDadosSociaisDto {
 
   @ApiProperty({
     description: 'Valor mensal recebido do BPC',
-    example: 1320.00,
+    example: 1320.0,
     minimum: 0,
-    maximum: 10000.00,
+    maximum: 10000.0,
     required: false,
     examples: {
       salario_minimo: {
-        value: 1320.00,
-        description: 'Valor padrão do BPC (1 salário mínimo)'
-      }
-    }
+        value: 1320.0,
+        description: 'Valor padrão do BPC (1 salário mínimo)',
+      },
+    },
   })
   @ValidateIf((o) => o.recebe_bpc === true)
-  @IsNumber({ maxDecimalPlaces: 2 }, { message: 'Valor do BPC deve ser um número válido com no máximo 2 casas decimais' })
-  @IsPositive({ message: 'Valor do BPC deve ser maior que zero quando informado' })
-  @Max(10000.00, { message: 'Valor do BPC não pode exceder R$ 10.000,00' })
+  @IsNumber(
+    { maxDecimalPlaces: 2 },
+    {
+      message:
+        'Valor do BPC deve ser um número válido com no máximo 2 casas decimais',
+    },
+  )
+  @IsPositive({
+    message: 'Valor do BPC deve ser maior que zero quando informado',
+  })
+  @Max(10000.0, { message: 'Valor do BPC não pode exceder R$ 10.000,00' })
   @Type(() => Number)
   @Transform(({ value }) => {
     if (value === null || value === undefined || value === '') {
@@ -248,23 +272,30 @@ export class CreateDadosSociaisDto {
   valor_bpc?: number;
 
   @ApiProperty({
-    description: 'Curso profissionalizante que o cidadão possui ou está cursando',
+    description:
+      'Curso profissionalizante que o cidadão possui ou está cursando',
     example: 'Técnico em Informática',
     maxLength: 255,
     required: false,
   })
   @IsOptional()
   @IsString({ message: 'Curso profissionalizante deve ser um texto' })
-  @MaxLength(255, { message: 'Curso profissionalizante deve ter no máximo 255 caracteres' })
+  @MaxLength(255, {
+    message: 'Curso profissionalizante deve ter no máximo 255 caracteres',
+  })
   curso_profissionalizante?: string;
 
   @ApiProperty({
-    description: 'Indica se o cidadão tem interesse em fazer curso profissionalizante',
+    description:
+      'Indica se o cidadão tem interesse em fazer curso profissionalizante',
     example: true,
     required: false,
   })
   @IsOptional()
-  @IsBoolean({ message: 'O campo interesse_curso_profissionalizante deve ser verdadeiro ou falso' })
+  @IsBoolean({
+    message:
+      'O campo interesse_curso_profissionalizante deve ser verdadeiro ou falso',
+  })
   @Transform(({ value }) => {
     if (typeof value === 'string') {
       return value.toLowerCase() === 'true';
@@ -281,25 +312,25 @@ export class CreateDadosSociaisDto {
     examples: {
       desempregado: {
         value: SituacaoTrabalhoEnum.DESEMPREGADO,
-        description: 'Pessoa sem emprego atual'
+        description: 'Pessoa sem emprego atual',
       },
       empregado_formal: {
         value: SituacaoTrabalhoEnum.EMPREGADO_FORMAL,
-        description: 'Empregado com carteira assinada'
+        description: 'Empregado com carteira assinada',
       },
       autonomo: {
         value: SituacaoTrabalhoEnum.AUTONOMO,
-        description: 'Trabalhador autônomo'
+        description: 'Trabalhador autônomo',
       },
       aposentado: {
         value: SituacaoTrabalhoEnum.APOSENTADO,
-        description: 'Pessoa aposentada'
+        description: 'Pessoa aposentada',
       },
       do_lar: {
         value: SituacaoTrabalhoEnum.DO_LAR,
-        description: 'Pessoa dedicada aos cuidados do lar'
-      }
-    }
+        description: 'Pessoa dedicada aos cuidados do lar',
+      },
+    },
   })
   @IsOptional()
   @IsEnumValue(SituacaoTrabalhoEnum, {
@@ -316,16 +347,21 @@ export class CreateDadosSociaisDto {
   })
   @IsOptional()
   @IsString({ message: 'Área de trabalho deve ser um texto' })
-  @MaxLength(255, { message: 'Área de trabalho deve ter no máximo 255 caracteres' })
+  @MaxLength(255, {
+    message: 'Área de trabalho deve ter no máximo 255 caracteres',
+  })
   area_trabalho?: string;
 
   @ApiProperty({
-    description: 'Indica se há familiar apto para trabalhar na composição familiar',
+    description:
+      'Indica se há familiar apto para trabalhar na composição familiar',
     example: true,
     required: false,
   })
   @IsOptional()
-  @IsBoolean({ message: 'O campo familiar_apto_trabalho deve ser verdadeiro ou falso' })
+  @IsBoolean({
+    message: 'O campo familiar_apto_trabalho deve ser verdadeiro ou falso',
+  })
   @Transform(({ value }) => {
     if (typeof value === 'string') {
       return value.toLowerCase() === 'true';
@@ -342,7 +378,9 @@ export class CreateDadosSociaisDto {
   })
   @IsOptional()
   @IsString({ message: 'Área de interesse familiar deve ser um texto' })
-  @MaxLength(255, { message: 'Área de interesse familiar deve ter no máximo 255 caracteres' })
+  @MaxLength(255, {
+    message: 'Área de interesse familiar deve ter no máximo 255 caracteres',
+  })
   area_interesse_familiar?: string;
 
   @ApiProperty({
@@ -353,6 +391,8 @@ export class CreateDadosSociaisDto {
   })
   @IsOptional()
   @IsString({ message: 'Observações devem ser um texto' })
-  @MaxLength(1000, { message: 'Observações devem ter no máximo 1000 caracteres' })
+  @MaxLength(1000, {
+    message: 'Observações devem ter no máximo 1000 caracteres',
+  })
   observacoes?: string;
 }

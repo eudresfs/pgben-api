@@ -23,7 +23,10 @@ import { RolesGuard } from '../../../auth/guards/roles.guard';
 import { Roles } from '../../../auth/decorators/role.decorator';
 import { UserRole } from '../../../enums';
 import { DadosCestaBasicaService } from '../services/dados-cesta-basica.service';
-import { CreateDadosCestaBasicaDto, UpdateDadosCestaBasicaDto } from '../dto/create-dados-cesta-basica.dto';
+import {
+  CreateDadosCestaBasicaDto,
+  UpdateDadosCestaBasicaDto,
+} from '../dto/create-dados-cesta-basica.dto';
 import { DadosCestaBasica } from '../../../entities/dados-cesta-basica.entity';
 
 /**
@@ -56,7 +59,9 @@ export class DadosCestaBasicaController {
     status: HttpStatus.BAD_REQUEST,
     description: 'Dados inválidos fornecidos',
   })
-  async create(@Body() createDto: CreateDadosCestaBasicaDto): Promise<DadosCestaBasica> {
+  async create(
+    @Body() createDto: CreateDadosCestaBasicaDto,
+  ): Promise<DadosCestaBasica> {
     return this.dadosCestaBasicaService.create(createDto);
   }
 
@@ -78,7 +83,9 @@ export class DadosCestaBasicaController {
     status: HttpStatus.NOT_FOUND,
     description: 'Dados de cesta básica não encontrados',
   })
-  async findOne(@Param('id', ParseUUIDPipe) id: string): Promise<DadosCestaBasica> {
+  async findOne(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<DadosCestaBasica> {
     return this.dadosCestaBasicaService.findOne(id);
   }
 
@@ -88,7 +95,8 @@ export class DadosCestaBasicaController {
   @Get('solicitacao/:solicitacaoId')
   @ApiOperation({
     summary: 'Buscar dados de cesta básica por solicitação',
-    description: 'Retorna os dados de cesta básica de uma solicitação específica',
+    description:
+      'Retorna os dados de cesta básica de uma solicitação específica',
   })
   @ApiParam({ name: 'solicitacaoId', description: 'ID da solicitação' })
   @ApiResponse({
@@ -100,7 +108,9 @@ export class DadosCestaBasicaController {
     status: HttpStatus.NOT_FOUND,
     description: 'Dados de cesta básica não encontrados para esta solicitação',
   })
-  async findBySolicitacao(@Param('solicitacaoId', ParseUUIDPipe) solicitacaoId: string): Promise<DadosCestaBasica> {
+  async findBySolicitacao(
+    @Param('solicitacaoId', ParseUUIDPipe) solicitacaoId: string,
+  ): Promise<DadosCestaBasica> {
     return this.dadosCestaBasicaService.findBySolicitacao(solicitacaoId);
   }
 
@@ -110,7 +120,8 @@ export class DadosCestaBasicaController {
   @Patch(':id')
   @ApiOperation({
     summary: 'Atualizar dados de cesta básica',
-    description: 'Atualiza dados específicos de uma solicitação de Cesta Básica',
+    description:
+      'Atualiza dados específicos de uma solicitação de Cesta Básica',
   })
   @ApiParam({ name: 'id', description: 'ID dos dados de cesta básica' })
   @ApiBody({ type: UpdateDadosCestaBasicaDto })
@@ -140,7 +151,8 @@ export class DadosCestaBasicaController {
   @Delete(':id')
   @ApiOperation({
     summary: 'Remover dados de cesta básica',
-    description: 'Remove dados específicos de cesta básica (apenas administradores)',
+    description:
+      'Remove dados específicos de cesta básica (apenas administradores)',
   })
   @ApiParam({ name: 'id', description: 'ID dos dados de cesta básica' })
   @ApiResponse({

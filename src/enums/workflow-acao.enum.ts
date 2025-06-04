@@ -7,5 +7,5 @@ export enum WorkflowAcaoEnum {
   ANALISE = 'analise',
   APROVACAO = 'aprovacao',
   LIBERACAO = 'liberacao',
-  CONFIRMACAO = 'confirmacao'
+  CONFIRMACAO = 'confirmacao',
 }

@@ -194,7 +194,9 @@ export class ExportacaoService {
    * @returns Data formatada
    */
   private formatarData(data: Date): string {
-    if (!data) {return '';}
+    if (!data) {
+      return '';
+    }
 
     const dia = data.getDate().toString().padStart(2, '0');
     const mes = (data.getMonth() + 1).toString().padStart(2, '0');

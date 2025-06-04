@@ -2,10 +2,10 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 /**
  * Schemas Swagger para comprovantes de pagamento
- * 
+ *
  * Define os schemas utilizados na documentação Swagger para
  * as operações relacionadas a comprovantes de pagamento.
- * 
+ *
  * @author Equipe PGBen
  */
 
@@ -16,14 +16,14 @@ export class ComprovanteUploadDto {
   @ApiProperty({
     description: 'Arquivo do comprovante de pagamento',
     type: 'string',
-    format: 'binary'
+    format: 'binary',
   })
   arquivo: any;
 
   @ApiPropertyOptional({
     description: 'Descrição do comprovante',
     example: 'Comprovante de transferência bancária',
-    type: String
+    type: String,
   })
   descricao?: string;
 }
@@ -35,77 +35,78 @@ export class ComprovanteResponseDto {
   @ApiProperty({
     description: 'ID único do comprovante',
     example: '5f8d3b4e3b4f3b2d3c2e1d2f',
-    type: String
+    type: String,
   })
   id: string;
 
   @ApiProperty({
     description: 'ID do pagamento associado ao comprovante',
     example: '5f8d3b4e3b4f3b2d3c2e1d2f',
-    type: String
+    type: String,
   })
   pagamentoId: string;
 
   @ApiProperty({
     description: 'ID do documento no sistema de armazenamento',
     example: '5f8d3b4e3b4f3b2d3c2e1d2f',
-    type: String
+    type: String,
   })
   documentoId: string;
 
   @ApiProperty({
     description: 'Nome do arquivo',
     example: 'comprovante_pagamento_20250518.pdf',
-    type: String
+    type: String,
   })
   nomeArquivo: string;
 
   @ApiProperty({
     description: 'Tipo MIME do arquivo',
     example: 'application/pdf',
-    type: String
+    type: String,
   })
   tipoArquivo: string;
 
   @ApiProperty({
     description: 'Tamanho do arquivo em bytes',
     example: 245789,
-    type: Number
+    type: Number,
   })
   tamanhoArquivo: number;
 
   @ApiProperty({
     description: 'URL para download do arquivo',
-    example: 'https://api.pgben.natal.rn.gov.br/documentos/5f8d3b4e3b4f3b2d3c2e1d2f/download',
-    type: String
+    example:
+      'https://api.pgben.natal.rn.gov.br/documentos/5f8d3b4e3b4f3b2d3c2e1d2f/download',
+    type: String,
   })
   urlDownload: string;
 
   @ApiProperty({
     description: 'ID do usuário que enviou o comprovante',
     example: '5f8d3b4e3b4f3b2d3c2e1d2f',
-    type: String
+    type: String,
   })
   uploadedBy: string;
 
   @ApiPropertyOptional({
     description: 'Descrição do comprovante',
     example: 'Comprovante de transferência bancária',
-    type: String
+    type: String,
   })
   descricao?: string;
 
   @ApiProperty({
     description: 'Data de criação do registro',
     example: '2025-05-18T12:30:00.000Z',
-    type: Date
+    type: Date,
   })
   createdAt: Date;
 
   @ApiProperty({
     description: 'Data da última atualização do registro',
     example: '2025-05-18T12:30:00.000Z',
-    type: Date
+    type: Date,
   })
   updatedAt: Date;
 }
@@ -117,7 +118,7 @@ export class ComprovanteRemocaoDto {
   @ApiProperty({
     description: 'Motivo da remoção do comprovante',
     example: 'Documento incorreto ou ilegível',
-    type: String
+    type: String,
   })
   motivo: string;
 }
@@ -129,14 +130,14 @@ export class ComprovantesResponseDto {
   @ApiProperty({
     description: 'Lista de comprovantes',
     type: [ComprovanteResponseDto],
-    isArray: true
+    isArray: true,
   })
   items: ComprovanteResponseDto[];
 
   @ApiProperty({
     description: 'Total de registros encontrados',
     example: 3,
-    type: Number
+    type: Number,
   })
   total: number;
 }

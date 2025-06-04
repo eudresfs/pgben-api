@@ -1,7 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Solicitacao, StatusSolicitacao } from '../../../entities/solicitacao.entity';
+import {
+  Solicitacao,
+  StatusSolicitacao,
+} from '../../../entities/solicitacao.entity';
 import { PrazoSolicitacaoService } from './prazo-solicitacao.service';
 import { PriorizacaoSolicitacaoService } from './priorizacao-solicitacao.service';
 import { ConfigService } from '@nestjs/config';
@@ -40,7 +43,7 @@ export interface DadosNotificacao {
 
 /**
  * Serviço responsável pelo gerenciamento de notificações contextuais
- * 
+ *
  * Este serviço implementa funcionalidades para:
  * - Gerar notificações para eventos importantes
  * - Verificar regularmente prazos e emitir alertas
@@ -67,16 +70,16 @@ export class NotificacaoService {
   enviarNotificacao(notificacao: DadosNotificacao): void {
     try {
       this.logger.log(`Enviando notificação: ${notificacao.titulo}`);
-      
+
       // Emitir evento para o sistema de notificações
       this.eventEmitter.emit('notificacao.criada', notificacao);
-      
+
       // Em um ambiente real, aqui poderia haver integrações com:
       // - Sistema de e-mail
       // - Notificações push
       // - SMS
       // - Webhooks para sistemas externos
-      
+
       this.logger.log(`Notificação enviada com sucesso: ${notificacao.titulo}`);
     } catch (error) {
       this.logger.error(
@@ -99,17 +102,17 @@ export class NotificacaoService {
   ): void {
     // Identificar os destinatários da notificação
     const destinatarios = this.identificarDestinatariosAlteracao(solicitacao);
-    
+
     // Construir a mensagem da notificação
     const mensagem = `A solicitação ${solicitacao.protocolo} foi alterada de ${statusAnterior} para ${solicitacao.status}${
       observacao ? `: ${observacao}` : '.'
     }`;
-    
+
     // Determinar a prioridade da notificação
-    const prioridade = solicitacao.determinacao_judicial_flag 
-      ? 'alta' 
+    const prioridade = solicitacao.determinacao_judicial_flag
+      ? 'alta'
       : 'normal';
-    
+
     // Enviar notificação para cada destinatário
     for (const destinatarioId of destinatarios) {
       this.enviarNotificacao({
@@ -128,35 +131,37 @@ export class NotificacaoService {
       });
     }
   }
-  
+
   /**
    * Identifica os destinatários para uma notificação de alteração de solicitação
    * @param solicitacao Solicitação alterada
    * @returns Lista de IDs de usuários que devem receber a notificação
    */
-  private identificarDestinatariosAlteracao(solicitacao: Solicitacao): string[] {
+  private identificarDestinatariosAlteracao(
+    solicitacao: Solicitacao,
+  ): string[] {
     const destinatarios = new Set<string>();
-    
+
     // Técnico responsável
     if (solicitacao.tecnico_id) {
       destinatarios.add(solicitacao.tecnico_id);
     }
-    
+
     // Aprovador (se houver)
     if (solicitacao.aprovador_id) {
       destinatarios.add(solicitacao.aprovador_id);
     }
-    
+
     // Liberador (se houver)
     if (solicitacao.liberador_id) {
       destinatarios.add(solicitacao.liberador_id);
     }
-    
+
     // Em um ambiente real, aqui também buscaríamos:
     // - Gerentes da unidade
     // - Usuários com papel específico de acompanhamento
     // - Administradores do sistema
-    
+
     return Array.from(destinatarios);
   }
 
@@ -170,24 +175,26 @@ export class NotificacaoService {
     tipoPrazo: 'analise' | 'documentos' | 'processamento',
   ): void {
     const prazoData = solicitacao[`prazo_${tipoPrazo}`] as Date;
-    if (!prazoData) {return;}
-    
+    if (!prazoData) {
+      return;
+    }
+
     const diasAtraso = Math.floor(
-      (new Date().getTime() - prazoData.getTime()) / (1000 * 60 * 60 * 24)
+      (new Date().getTime() - prazoData.getTime()) / (1000 * 60 * 60 * 24),
     );
-    
+
     // Construir a mensagem da notificação
     const mensagem = `O prazo de ${tipoPrazo} da solicitação ${solicitacao.protocolo} expirou há ${diasAtraso} dias. Estado atual: ${solicitacao.status}.`;
-    
+
     // Determinar prioridade com base no atraso e determinação judicial
     let prioridade: 'baixa' | 'normal' | 'alta' | 'urgente' = 'normal';
-    
+
     if (solicitacao.determinacao_judicial_flag) {
       prioridade = diasAtraso > 5 ? 'urgente' : 'alta';
     } else {
       prioridade = diasAtraso > 10 ? 'alta' : 'normal';
     }
-    
+
     // Enviar notificação para os destinatários
     const destinatarios = this.identificarDestinatariosAlteracao(solicitacao);
     for (const destinatarioId of destinatarios) {
@@ -208,25 +215,28 @@ export class NotificacaoService {
       });
     }
   }
-  
+
   /**
    * Notifica sobre a atribuição de uma nova solicitação a um técnico
    * @param solicitacao Solicitação atribuída
    * @param tecnicoId ID do técnico responsável
    */
-  notificarSolicitacaoAtribuida(solicitacao: Solicitacao, tecnicoId: string): void {
+  notificarSolicitacaoAtribuida(
+    solicitacao: Solicitacao,
+    tecnicoId: string,
+  ): void {
     // Determinar prioridade com base na determinação judicial
-    const prioridade = solicitacao.determinacao_judicial_flag 
-      ? 'alta' 
+    const prioridade = solicitacao.determinacao_judicial_flag
+      ? 'alta'
       : 'normal';
-    
+
     // Construir a mensagem da notificação
     const mensagem = `A solicitação ${solicitacao.protocolo} foi atribuída a você. Estado atual: ${solicitacao.status}.${
-      solicitacao.determinacao_judicial_flag 
+      solicitacao.determinacao_judicial_flag
         ? ' ATENÇÃO: Esta solicitação tem determinação judicial e requer tratamento prioritário.'
         : ''
     }`;
-    
+
     // Enviar notificação para o técnico
     this.enviarNotificacao({
       tipo: TipoNotificacao.SOLICITACAO_ATRIBUIDA,
@@ -248,11 +258,13 @@ export class NotificacaoService {
    * @param solicitacao Solicitação com determinação judicial
    */
   notificarDeterminacaoJudicial(solicitacao: Solicitacao): void {
-    if (!solicitacao.determinacao_judicial_flag) {return;}
-    
+    if (!solicitacao.determinacao_judicial_flag) {
+      return;
+    }
+
     // Construir a mensagem da notificação
     const mensagem = `ATENÇÃO: A solicitação ${solicitacao.protocolo} está associada a uma determinação judicial e requer tratamento prioritário. Estado atual: ${solicitacao.status}.`;
-    
+
     // Enviar notificação para os destinatários
     const destinatarios = this.identificarDestinatariosAlteracao(solicitacao);
     for (const destinatarioId of destinatarios) {
@@ -281,17 +293,21 @@ export class NotificacaoService {
    * @param solicitacao Solicitação de Aluguel Social com visita pendente
    * @param dataLimite Data limite para realizar a visita
    */
-  notificarMonitoramentoPendente(solicitacao: Solicitacao, dataLimite: Date): void {
+  notificarMonitoramentoPendente(
+    solicitacao: Solicitacao,
+    dataLimite: Date,
+  ): void {
     // Identificar os destinatários da notificação
     const destinatarios = this.identificarDestinatariosAlteracao(solicitacao);
-    
+
     // Formatar a data limite para exibição
     const dataFormatada = dataLimite.toLocaleDateString('pt-BR');
-    
+
     // Construir a mensagem da notificação
-    const mensagem = `A solicitação de Aluguel Social ${solicitacao.protocolo} requer visita de monitoramento. ` +
+    const mensagem =
+      `A solicitação de Aluguel Social ${solicitacao.protocolo} requer visita de monitoramento. ` +
       `Data limite: ${dataFormatada}. Por favor, realize a visita e registre no sistema.`;
-    
+
     // Enviar notificação para cada destinatário
     for (const destinatarioId of destinatarios) {
       this.enviarNotificacao({
@@ -304,7 +320,10 @@ export class NotificacaoService {
         dados: {
           tipoBeneficio: 'aluguel_social',
           dataLimite: dataLimite.toISOString(),
-          ultimaVisita: solicitacao.dados_complementares?.visitas_monitoramento?.[solicitacao.dados_complementares.visitas_monitoramento.length - 1]?.data || null,
+          ultimaVisita:
+            solicitacao.dados_complementares?.visitas_monitoramento?.[
+              solicitacao.dados_complementares.visitas_monitoramento.length - 1
+            ]?.data || null,
         },
         prioridade: 'alta',
         dataVencimento: dataLimite,
@@ -318,18 +337,23 @@ export class NotificacaoService {
    * @param dataProximaVisita Data da próxima visita programada
    * @param diasRestantes Número de dias restantes até a data da visita
    */
-  notificarMonitoramentoProximo(solicitacao: Solicitacao, dataProximaVisita: Date, diasRestantes: number): void {
+  notificarMonitoramentoProximo(
+    solicitacao: Solicitacao,
+    dataProximaVisita: Date,
+    diasRestantes: number,
+  ): void {
     // Identificar os destinatários da notificação
     const destinatarios = this.identificarDestinatariosAlteracao(solicitacao);
-    
+
     // Formatar a data da próxima visita para exibição
     const dataFormatada = dataProximaVisita.toLocaleDateString('pt-BR');
-    
+
     // Construir a mensagem da notificação
-    const mensagem = `A solicitação de Aluguel Social ${solicitacao.protocolo} requer visita de monitoramento em breve. ` +
+    const mensagem =
+      `A solicitação de Aluguel Social ${solicitacao.protocolo} requer visita de monitoramento em breve. ` +
       `Data programada: ${dataFormatada} (${diasRestantes} dias restantes). ` +
       `Por favor, planeje a visita.`;
-    
+
     // Enviar notificação para cada destinatário
     for (const destinatarioId of destinatarios) {
       this.enviarNotificacao({
@@ -343,7 +367,10 @@ export class NotificacaoService {
           tipoBeneficio: 'aluguel_social',
           dataProximaVisita: dataProximaVisita.toISOString(),
           diasRestantes,
-          ultimaVisita: solicitacao.dados_complementares?.visitas_monitoramento?.[solicitacao.dados_complementares.visitas_monitoramento.length - 1]?.data || null,
+          ultimaVisita:
+            solicitacao.dados_complementares?.visitas_monitoramento?.[
+              solicitacao.dados_complementares.visitas_monitoramento.length - 1
+            ]?.data || null,
         },
         prioridade: 'normal',
         dataVencimento: dataProximaVisita,
@@ -357,18 +384,23 @@ export class NotificacaoService {
    * @param dataVisita Data da visita realizada
    * @param proximaVisita Data da próxima visita programada
    */
-  notificarVisitaMonitoramentoRegistrada(solicitacao: Solicitacao, dataVisita: Date, proximaVisita: Date): void {
+  notificarVisitaMonitoramentoRegistrada(
+    solicitacao: Solicitacao,
+    dataVisita: Date,
+    proximaVisita: Date,
+  ): void {
     // Identificar os destinatários da notificação
     const destinatarios = this.identificarDestinatariosAlteracao(solicitacao);
-    
+
     // Formatar as datas para exibição
     const dataVisitaFormatada = dataVisita.toLocaleDateString('pt-BR');
     const proximaVisitaFormatada = proximaVisita.toLocaleDateString('pt-BR');
-    
+
     // Construir a mensagem da notificação
-    const mensagem = `Foi registrada uma visita de monitoramento para a solicitação de Aluguel Social ${solicitacao.protocolo} ` +
+    const mensagem =
+      `Foi registrada uma visita de monitoramento para a solicitação de Aluguel Social ${solicitacao.protocolo} ` +
       `em ${dataVisitaFormatada}. A próxima visita está programada para ${proximaVisitaFormatada}.`;
-    
+
     // Enviar notificação para cada destinatário
     for (const destinatarioId of destinatarios) {
       this.enviarNotificacao({
@@ -382,7 +414,9 @@ export class NotificacaoService {
           tipoBeneficio: 'aluguel_social',
           dataVisita: dataVisita.toISOString(),
           proximaVisita: proximaVisita.toISOString(),
-          totalVisitas: solicitacao.dados_complementares?.visitas_monitoramento?.length || 1,
+          totalVisitas:
+            solicitacao.dados_complementares?.visitas_monitoramento?.length ||
+            1,
         },
         prioridade: 'baixa',
       });
@@ -391,29 +425,41 @@ export class NotificacaoService {
 
   async verificarPrazosENotificar(): Promise<void> {
     this.logger.log('Iniciando verificação diária de prazos...');
-    
+
     try {
       // Buscar solicitações com prazos vencidos
-      const solicitacoesComPrazosVencidos = await this.prazoService.listarSolicitacoesComPrazosVencidos();
-      
-      this.logger.log(`Encontradas ${solicitacoesComPrazosVencidos.length} solicitações com prazos vencidos`);
-      
+      const solicitacoesComPrazosVencidos =
+        await this.prazoService.listarSolicitacoesComPrazosVencidos();
+
+      this.logger.log(
+        `Encontradas ${solicitacoesComPrazosVencidos.length} solicitações com prazos vencidos`,
+      );
+
       // Gerar notificações para cada solicitação com prazo vencido
       for (const solicitacao of solicitacoesComPrazosVencidos) {
         // Verificar cada tipo de prazo
-        if (solicitacao.prazo_analise && new Date() > solicitacao.prazo_analise) {
+        if (
+          solicitacao.prazo_analise &&
+          new Date() > solicitacao.prazo_analise
+        ) {
           this.notificarPrazoExpirado(solicitacao, 'analise');
         }
-        
-        if (solicitacao.prazo_documentos && new Date() > solicitacao.prazo_documentos) {
+
+        if (
+          solicitacao.prazo_documentos &&
+          new Date() > solicitacao.prazo_documentos
+        ) {
           this.notificarPrazoExpirado(solicitacao, 'documentos');
         }
-        
-        if (solicitacao.prazo_processamento && new Date() > solicitacao.prazo_processamento) {
+
+        if (
+          solicitacao.prazo_processamento &&
+          new Date() > solicitacao.prazo_processamento
+        ) {
           this.notificarPrazoExpirado(solicitacao, 'processamento');
         }
       }
-      
+
       this.logger.log('Verificação de prazos concluída com sucesso');
     } catch (error) {
       this.logger.error(

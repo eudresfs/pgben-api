@@ -7,7 +7,7 @@ import { TransicaoEstadoService } from './transicao-estado.service';
 
 /**
  * Serviço de Validação de Solicitação
- * 
+ *
  * Responsável por validar as regras de negócio específicas para operações
  * relacionadas a solicitações, como aprovação, liberação, etc.
  */
@@ -36,9 +36,14 @@ export class ValidacaoSolicitacaoService {
     }
 
     // Verificar se a transição para APROVADA é válida
-    if (!this.transicaoEstadoService.isTransicaoValida(solicitacao.status, StatusSolicitacao.APROVADA)) {
+    if (
+      !this.transicaoEstadoService.isTransicaoValida(
+        solicitacao.status,
+        StatusSolicitacao.APROVADA,
+      )
+    ) {
       throw new BadRequestException(
-        `Não é possível aprovar uma solicitação no estado ${solicitacao.status}`
+        `Não é possível aprovar uma solicitação no estado ${solicitacao.status}`,
       );
     }
 
@@ -52,14 +57,14 @@ export class ValidacaoSolicitacaoService {
 
     if (pendenciasAbertas.length > 0) {
       throw new BadRequestException(
-        'Não é possível aprovar a solicitação com pendências não resolvidas. Resolva todas as pendências antes de aprovar.'
+        'Não é possível aprovar a solicitação com pendências não resolvidas. Resolva todas as pendências antes de aprovar.',
       );
     }
 
     // Verificar se a solicitação tem os campos obrigatórios preenchidos
     if (!solicitacao.parecer_semtas) {
       throw new BadRequestException(
-        'O parecer da SEMTAS é obrigatório para aprovar a solicitação'
+        'O parecer da SEMTAS é obrigatório para aprovar a solicitação',
       );
     }
   }
@@ -79,23 +84,28 @@ export class ValidacaoSolicitacaoService {
     }
 
     // Verificar se a transição para LIBERADA é válida
-    if (!this.transicaoEstadoService.isTransicaoValida(solicitacao.status, StatusSolicitacao.LIBERADA)) {
+    if (
+      !this.transicaoEstadoService.isTransicaoValida(
+        solicitacao.status,
+        StatusSolicitacao.LIBERADA,
+      )
+    ) {
       throw new BadRequestException(
-        `Não é possível liberar uma solicitação no estado ${solicitacao.status}`
+        `Não é possível liberar uma solicitação no estado ${solicitacao.status}`,
       );
     }
 
     // Verificar se a solicitação foi aprovada
     if (solicitacao.status !== StatusSolicitacao.APROVADA) {
       throw new BadRequestException(
-        'Apenas solicitações aprovadas podem ser liberadas'
+        'Apenas solicitações aprovadas podem ser liberadas',
       );
     }
 
     // Verificar se a solicitação tem os campos obrigatórios preenchidos
     if (!solicitacao.aprovador_id) {
       throw new BadRequestException(
-        'A solicitação precisa ter um aprovador registrado para ser liberada'
+        'A solicitação precisa ter um aprovador registrado para ser liberada',
       );
     }
   }
@@ -115,19 +125,24 @@ export class ValidacaoSolicitacaoService {
     }
 
     // Verificar se a transição para CANCELADA é válida
-    if (!this.transicaoEstadoService.isTransicaoValida(solicitacao.status, StatusSolicitacao.CANCELADA)) {
+    if (
+      !this.transicaoEstadoService.isTransicaoValida(
+        solicitacao.status,
+        StatusSolicitacao.CANCELADA,
+      )
+    ) {
       throw new BadRequestException(
-        `Não é possível cancelar uma solicitação no estado ${solicitacao.status}`
+        `Não é possível cancelar uma solicitação no estado ${solicitacao.status}`,
       );
     }
 
     // Verificar se a solicitação já está em um estado final
     if (
-      solicitacao.status === StatusSolicitacao.CONCLUIDA || 
+      solicitacao.status === StatusSolicitacao.CONCLUIDA ||
       solicitacao.status === StatusSolicitacao.ARQUIVADA
     ) {
       throw new BadRequestException(
-        'Não é possível cancelar uma solicitação que já foi concluída ou arquivada'
+        'Não é possível cancelar uma solicitação que já foi concluída ou arquivada',
       );
     }
   }
@@ -147,16 +162,21 @@ export class ValidacaoSolicitacaoService {
     }
 
     // Verificar se a transição para CONCLUIDA é válida
-    if (!this.transicaoEstadoService.isTransicaoValida(solicitacao.status, StatusSolicitacao.CONCLUIDA)) {
+    if (
+      !this.transicaoEstadoService.isTransicaoValida(
+        solicitacao.status,
+        StatusSolicitacao.CONCLUIDA,
+      )
+    ) {
       throw new BadRequestException(
-        `Não é possível concluir uma solicitação no estado ${solicitacao.status}`
+        `Não é possível concluir uma solicitação no estado ${solicitacao.status}`,
       );
     }
 
     // Verificar se a solicitação está em processamento
     if (solicitacao.status !== StatusSolicitacao.EM_PROCESSAMENTO) {
       throw new BadRequestException(
-        'Apenas solicitações em processamento podem ser concluídas'
+        'Apenas solicitações em processamento podem ser concluídas',
       );
     }
   }
@@ -176,9 +196,14 @@ export class ValidacaoSolicitacaoService {
     }
 
     // Verificar se a transição para ARQUIVADA é válida
-    if (!this.transicaoEstadoService.isTransicaoValida(solicitacao.status, StatusSolicitacao.ARQUIVADA)) {
+    if (
+      !this.transicaoEstadoService.isTransicaoValida(
+        solicitacao.status,
+        StatusSolicitacao.ARQUIVADA,
+      )
+    ) {
       throw new BadRequestException(
-        `Não é possível arquivar uma solicitação no estado ${solicitacao.status}`
+        `Não é possível arquivar uma solicitação no estado ${solicitacao.status}`,
       );
     }
 
@@ -186,12 +211,12 @@ export class ValidacaoSolicitacaoService {
     const estadosPermitidos = [
       StatusSolicitacao.CONCLUIDA,
       StatusSolicitacao.INDEFERIDA,
-      StatusSolicitacao.CANCELADA
+      StatusSolicitacao.CANCELADA,
     ];
 
     if (!estadosPermitidos.includes(solicitacao.status)) {
       throw new BadRequestException(
-        'Apenas solicitações concluídas, reprovadas ou canceladas podem ser arquivadas'
+        'Apenas solicitações concluídas, reprovadas ou canceladas podem ser arquivadas',
       );
     }
   }

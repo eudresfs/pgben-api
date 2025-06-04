@@ -70,7 +70,7 @@ export class UsuarioAdapter {
 
   /**
    * Converte um Usuario para UserAccessTokenClaims
-   * 
+   *
    * @param usuario Usuário a ser convertido
    * @param permissions Lista de permissões do usuário (opcional)
    * @param permissionScopes Mapeamento de permissões para escopos (opcional)
@@ -79,7 +79,7 @@ export class UsuarioAdapter {
   static toUserAccessTokenClaims(
     usuario: Usuario,
     permissions?: Permission[],
-    permissionScopes?: Record<string, TipoEscopo | string>
+    permissionScopes?: Record<string, TipoEscopo | string>,
   ): UserAccessTokenClaims {
     const claims: UserAccessTokenClaims = {
       id: usuario.id,
@@ -89,13 +89,15 @@ export class UsuarioAdapter {
 
     // Adiciona permissões se disponíveis
     if (permissions && permissions.length > 0) {
-      claims.permissions = permissions.map(p => p.name);
+      claims.permissions = permissions.map((p) => p.name);
     }
 
     // Adiciona escopos de permissões se disponíveis
     if (permissionScopes && Object.keys(permissionScopes).length > 0) {
       claims.permissionScopes = {};
-      for (const [permissionId, scopeType] of Object.entries(permissionScopes)) {
+      for (const [permissionId, scopeType] of Object.entries(
+        permissionScopes,
+      )) {
         claims.permissionScopes[permissionId] = scopeType.toString();
       }
     }

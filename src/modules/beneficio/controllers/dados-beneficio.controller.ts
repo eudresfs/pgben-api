@@ -28,12 +28,12 @@ import {
   TipoDadosBeneficio,
   IDadosBeneficio,
   ICreateDadosBeneficioDto,
-  IUpdateDadosBeneficioDto
+  IUpdateDadosBeneficioDto,
 } from '../interfaces/dados-beneficio.interface';
 
 /**
  * Controlador centralizado para gerenciar dados de todos os tipos de benefícios
- * 
+ *
  * Este controlador unifica o acesso a dados específicos de benefícios,
  * eliminando a necessidade de múltiplos controladores separados.
  */
@@ -52,7 +52,8 @@ export class DadosBeneficioController {
   @Get('tipos')
   @ApiOperation({
     summary: 'Listar tipos de benefícios suportados',
-    description: 'Retorna todos os tipos de benefícios que possuem dados específicos',
+    description:
+      'Retorna todos os tipos de benefícios que possuem dados específicos',
   })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -67,20 +68,23 @@ export class DadosBeneficioController {
             properties: {
               codigo: { type: 'string', example: 'aluguel-social' },
               nome: { type: 'string', example: 'Aluguel Social' },
-              descricao: { type: 'string', example: 'Dados específicos para solicitação de Aluguel Social' }
-            }
-          }
-        }
-      }
-    }
+              descricao: {
+                type: 'string',
+                example: 'Dados específicos para solicitação de Aluguel Social',
+              },
+            },
+          },
+        },
+      },
+    },
   })
   async getTiposSuportados() {
     const tipos = this.dadosBeneficioFactoryService.getSupportedTypes();
     return {
-      tipos: tipos.map(tipo => ({
+      tipos: tipos.map((tipo) => ({
         codigo: tipo,
-        ...this.dadosBeneficioFactoryService.getTypeMetadata(tipo)
-      }))
+        ...this.dadosBeneficioFactoryService.getTypeMetadata(tipo),
+      })),
     };
   }
 
@@ -90,28 +94,30 @@ export class DadosBeneficioController {
   @Post(':tipo')
   @ApiOperation({
     summary: 'Criar dados específicos de benefício',
-    description: 'Cria dados específicos para uma solicitação de benefício baseado no tipo',
+    description:
+      'Cria dados específicos para uma solicitação de benefício baseado no tipo',
   })
   @ApiParam({
     name: 'tipo',
     description: 'Tipo do benefício',
     enum: TipoDadosBeneficio,
-    example: TipoDadosBeneficio.ALUGUEL_SOCIAL
+    example: TipoDadosBeneficio.ALUGUEL_SOCIAL,
   })
   @ApiBody({
-    description: 'Dados específicos do benefício (estrutura varia conforme o tipo)',
+    description:
+      'Dados específicos do benefício (estrutura varia conforme o tipo)',
     schema: {
       type: 'object',
       properties: {
         solicitacao_id: {
           type: 'string',
           format: 'uuid',
-          description: 'ID da solicitação'
-        }
+          description: 'ID da solicitação',
+        },
       },
       required: ['solicitacao_id'],
-      additionalProperties: true
-    }
+      additionalProperties: true,
+    },
   })
   @ApiResponse({
     status: HttpStatus.CREATED,
@@ -122,10 +128,10 @@ export class DadosBeneficioController {
         id: { type: 'string', format: 'uuid' },
         solicitacao_id: { type: 'string', format: 'uuid' },
         createdAt: { type: 'string', format: 'date-time' },
-        updatedAt: { type: 'string', format: 'date-time' }
+        updatedAt: { type: 'string', format: 'date-time' },
       },
-      additionalProperties: true
-    }
+      additionalProperties: true,
+    },
   })
   @ApiResponse({
     status: HttpStatus.BAD_REQUEST,
@@ -133,7 +139,7 @@ export class DadosBeneficioController {
   })
   async create(
     @Param('tipo') tipo: string,
-    @Body() createDto: ICreateDadosBeneficioDto
+    @Body() createDto: ICreateDadosBeneficioDto,
   ): Promise<IDadosBeneficio> {
     return this.dadosBeneficioFactoryService.create(tipo, createDto);
   }
@@ -150,7 +156,7 @@ export class DadosBeneficioController {
     name: 'tipo',
     description: 'Tipo do benefício',
     enum: TipoDadosBeneficio,
-    example: TipoDadosBeneficio.ALUGUEL_SOCIAL
+    example: TipoDadosBeneficio.ALUGUEL_SOCIAL,
   })
   @ApiParam({ name: 'id', description: 'ID dos dados específicos' })
   @ApiResponse({
@@ -162,10 +168,10 @@ export class DadosBeneficioController {
         id: { type: 'string', format: 'uuid' },
         solicitacao_id: { type: 'string', format: 'uuid' },
         createdAt: { type: 'string', format: 'date-time' },
-        updatedAt: { type: 'string', format: 'date-time' }
+        updatedAt: { type: 'string', format: 'date-time' },
       },
-      additionalProperties: true
-    }
+      additionalProperties: true,
+    },
   })
   @ApiResponse({
     status: HttpStatus.NOT_FOUND,
@@ -173,7 +179,7 @@ export class DadosBeneficioController {
   })
   async findOne(
     @Param('tipo') tipo: string,
-    @Param('id', ParseUUIDPipe) id: string
+    @Param('id', ParseUUIDPipe) id: string,
   ): Promise<IDadosBeneficio> {
     return this.dadosBeneficioFactoryService.findOne(tipo, id);
   }
@@ -190,7 +196,7 @@ export class DadosBeneficioController {
     name: 'tipo',
     description: 'Tipo do benefício',
     enum: TipoDadosBeneficio,
-    example: TipoDadosBeneficio.ALUGUEL_SOCIAL
+    example: TipoDadosBeneficio.ALUGUEL_SOCIAL,
   })
   @ApiParam({ name: 'solicitacaoId', description: 'ID da solicitação' })
   @ApiResponse({
@@ -202,10 +208,10 @@ export class DadosBeneficioController {
         id: { type: 'string', format: 'uuid' },
         solicitacao_id: { type: 'string', format: 'uuid' },
         createdAt: { type: 'string', format: 'date-time' },
-        updatedAt: { type: 'string', format: 'date-time' }
+        updatedAt: { type: 'string', format: 'date-time' },
       },
-      additionalProperties: true
-    }
+      additionalProperties: true,
+    },
   })
   @ApiResponse({
     status: HttpStatus.NOT_FOUND,
@@ -213,9 +219,12 @@ export class DadosBeneficioController {
   })
   async findBySolicitacao(
     @Param('tipo') tipo: string,
-    @Param('solicitacaoId', ParseUUIDPipe) solicitacaoId: string
+    @Param('solicitacaoId', ParseUUIDPipe) solicitacaoId: string,
   ): Promise<IDadosBeneficio> {
-    return this.dadosBeneficioFactoryService.findBySolicitacao(tipo, solicitacaoId);
+    return this.dadosBeneficioFactoryService.findBySolicitacao(
+      tipo,
+      solicitacaoId,
+    );
   }
 
   /**
@@ -230,15 +239,15 @@ export class DadosBeneficioController {
     name: 'tipo',
     description: 'Tipo do benefício',
     enum: TipoDadosBeneficio,
-    example: TipoDadosBeneficio.ALUGUEL_SOCIAL
+    example: TipoDadosBeneficio.ALUGUEL_SOCIAL,
   })
   @ApiParam({ name: 'id', description: 'ID dos dados específicos' })
   @ApiBody({
     description: 'Dados para atualização (estrutura varia conforme o tipo)',
     schema: {
       type: 'object',
-      additionalProperties: true
-    }
+      additionalProperties: true,
+    },
   })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -249,10 +258,10 @@ export class DadosBeneficioController {
         id: { type: 'string', format: 'uuid' },
         solicitacao_id: { type: 'string', format: 'uuid' },
         createdAt: { type: 'string', format: 'date-time' },
-        updatedAt: { type: 'string', format: 'date-time' }
+        updatedAt: { type: 'string', format: 'date-time' },
       },
-      additionalProperties: true
-    }
+      additionalProperties: true,
+    },
   })
   @ApiResponse({
     status: HttpStatus.NOT_FOUND,
@@ -261,7 +270,7 @@ export class DadosBeneficioController {
   async update(
     @Param('tipo') tipo: string,
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() updateDto: IUpdateDadosBeneficioDto
+    @Body() updateDto: IUpdateDadosBeneficioDto,
   ): Promise<IDadosBeneficio> {
     return this.dadosBeneficioFactoryService.update(tipo, id, updateDto);
   }
@@ -278,7 +287,7 @@ export class DadosBeneficioController {
     name: 'tipo',
     description: 'Tipo do benefício',
     enum: TipoDadosBeneficio,
-    example: TipoDadosBeneficio.ALUGUEL_SOCIAL
+    example: TipoDadosBeneficio.ALUGUEL_SOCIAL,
   })
   @ApiParam({ name: 'id', description: 'ID dos dados específicos' })
   @ApiResponse({
@@ -291,7 +300,7 @@ export class DadosBeneficioController {
   })
   async remove(
     @Param('tipo') tipo: string,
-    @Param('id', ParseUUIDPipe) id: string
+    @Param('id', ParseUUIDPipe) id: string,
   ): Promise<void> {
     return this.dadosBeneficioFactoryService.remove(tipo, id);
   }
@@ -308,7 +317,7 @@ export class DadosBeneficioController {
     name: 'tipo',
     description: 'Tipo do benefício',
     enum: TipoDadosBeneficio,
-    example: TipoDadosBeneficio.ALUGUEL_SOCIAL
+    example: TipoDadosBeneficio.ALUGUEL_SOCIAL,
   })
   @ApiParam({ name: 'solicitacaoId', description: 'ID da solicitação' })
   @ApiResponse({
@@ -319,19 +328,22 @@ export class DadosBeneficioController {
       properties: {
         exists: { type: 'boolean' },
         tipo: { type: 'string' },
-        solicitacao_id: { type: 'string', format: 'uuid' }
-      }
-    }
+        solicitacao_id: { type: 'string', format: 'uuid' },
+      },
+    },
   })
   async checkExists(
     @Param('tipo') tipo: string,
-    @Param('solicitacaoId', ParseUUIDPipe) solicitacaoId: string
+    @Param('solicitacaoId', ParseUUIDPipe) solicitacaoId: string,
   ) {
-    const exists = await this.dadosBeneficioFactoryService.existsBySolicitacao(tipo, solicitacaoId);
+    const exists = await this.dadosBeneficioFactoryService.existsBySolicitacao(
+      tipo,
+      solicitacaoId,
+    );
     return {
       exists,
       tipo,
-      solicitacao_id: solicitacaoId
+      solicitacao_id: solicitacaoId,
     };
   }
 }

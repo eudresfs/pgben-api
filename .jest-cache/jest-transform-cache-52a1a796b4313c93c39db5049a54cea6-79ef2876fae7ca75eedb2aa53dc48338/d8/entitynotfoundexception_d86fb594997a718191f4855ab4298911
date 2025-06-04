@@ -1,0 +1,28 @@
+f084741e8aec00f52f4a48d98df9d4e3
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.EntityNotFoundException = void 0;
+const common_1 = require("@nestjs/common");
+/**
+ * Exceção lançada quando uma entidade não é encontrada no banco de dados.
+ *
+ * Esta exceção padroniza as respostas para casos onde recursos específicos
+ * não são localizados, fornecendo informações detalhadas sobre a entidade.
+ */
+class EntityNotFoundException extends common_1.NotFoundException {
+    constructor(entityName, identifier, field = 'id') {
+        const message = `${entityName} não encontrada`;
+        const details = {
+            entity: entityName,
+            [field]: identifier,
+            message: `${entityName} com ${field} '${identifier}' não foi encontrada`
+        };
+        super({
+            message,
+            code: 'ENTITY_NOT_FOUND',
+            details
+        });
+    }
+}
+exports.EntityNotFoundException = EntityNotFoundException;
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXHNoYXJlZFxcZXhjZXB0aW9uc1xcZW50aXR5LW5vdC1mb3VuZC5leGNlcHRpb24udHMiLCJtYXBwaW5ncyI6Ijs7O0FBQUEsMkNBQW1EO0FBRW5EOzs7OztHQUtHO0FBQ0gsTUFBYSx1QkFBd0IsU0FBUSwwQkFBaUI7SUFDNUQsWUFDRSxVQUFrQixFQUNsQixVQUEyQixFQUMzQixRQUFnQixJQUFJO1FBRXBCLE1BQU0sT0FBTyxHQUFHLEdBQUcsVUFBVSxpQkFBaUIsQ0FBQztRQUMvQyxNQUFNLE9BQU8sR0FBRztZQUNkLE1BQU0sRUFBRSxVQUFVO1lBQ2xCLENBQUMsS0FBSyxDQUFDLEVBQUUsVUFBVTtZQUNuQixPQUFPLEVBQUUsR0FBRyxVQUFVLFFBQVEsS0FBSyxLQUFLLFVBQVUsc0JBQXNCO1NBQ3pFLENBQUM7UUFFRixLQUFLLENBQUM7WUFDSixPQUFPO1lBQ1AsSUFBSSxFQUFFLGtCQUFrQjtZQUN4QixPQUFPO1NBQ1IsQ0FBQyxDQUFDO0lBQ0wsQ0FBQztDQUNGO0FBbkJELDBEQW1CQyIsIm5hbWVzIjpbXSwic291cmNlcyI6WyJDOlxcVXNlcnNcXGV1ZHJlXFxPbmVEcml2ZVxcRGVza3RvcFxcUHJvamV0b3NcXHBnYmVuXFxwZ2Jlbi1zZXJ2ZXJcXHNyY1xcc2hhcmVkXFxleGNlcHRpb25zXFxlbnRpdHktbm90LWZvdW5kLmV4Y2VwdGlvbi50cyJdLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQgeyBOb3RGb3VuZEV4Y2VwdGlvbiB9IGZyb20gJ0BuZXN0anMvY29tbW9uJztcblxuLyoqXG4gKiBFeGNlw6fDo28gbGFuw6dhZGEgcXVhbmRvIHVtYSBlbnRpZGFkZSBuw6NvIMOpIGVuY29udHJhZGEgbm8gYmFuY28gZGUgZGFkb3MuXG4gKiBcbiAqIEVzdGEgZXhjZcOnw6NvIHBhZHJvbml6YSBhcyByZXNwb3N0YXMgcGFyYSBjYXNvcyBvbmRlIHJlY3Vyc29zIGVzcGVjw61maWNvc1xuICogbsOjbyBzw6NvIGxvY2FsaXphZG9zLCBmb3JuZWNlbmRvIGluZm9ybWHDp8O1ZXMgZGV0YWxoYWRhcyBzb2JyZSBhIGVudGlkYWRlLlxuICovXG5leHBvcnQgY2xhc3MgRW50aXR5Tm90Rm91bmRFeGNlcHRpb24gZXh0ZW5kcyBOb3RGb3VuZEV4Y2VwdGlvbiB7XG4gIGNvbnN0cnVjdG9yKFxuICAgIGVudGl0eU5hbWU6IHN0cmluZyxcbiAgICBpZGVudGlmaWVyOiBzdHJpbmcgfCBudW1iZXIsXG4gICAgZmllbGQ6IHN0cmluZyA9ICdpZCdcbiAgKSB7XG4gICAgY29uc3QgbWVzc2FnZSA9IGAke2VudGl0eU5hbWV9IG7Do28gZW5jb250cmFkYWA7XG4gICAgY29uc3QgZGV0YWlscyA9IHtcbiAgICAgIGVudGl0eTogZW50aXR5TmFtZSxcbiAgICAgIFtmaWVsZF06IGlkZW50aWZpZXIsXG4gICAgICBtZXNzYWdlOiBgJHtlbnRpdHlOYW1lfSBjb20gJHtmaWVsZH0gJyR7aWRlbnRpZmllcn0nIG7Do28gZm9pIGVuY29udHJhZGFgXG4gICAgfTtcblxuICAgIHN1cGVyKHtcbiAgICAgIG1lc3NhZ2UsXG4gICAgICBjb2RlOiAnRU5USVRZX05PVF9GT1VORCcsXG4gICAgICBkZXRhaWxzXG4gICAgfSk7XG4gIH1cbn0iXSwidmVyc2lvbiI6M30=

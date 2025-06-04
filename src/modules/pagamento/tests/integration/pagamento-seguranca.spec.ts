@@ -7,10 +7,10 @@ import { JwtModule, JwtService } from '@nestjs/jwt';
 import { HttpModule } from '@nestjs/axios';
 
 import { PagamentoModule } from '../../pagamento.module';
-import { 
-  Pagamento, 
-  ComprovantePagamento, 
-  ConfirmacaoRecebimento 
+import {
+  Pagamento,
+  ComprovantePagamento,
+  ConfirmacaoRecebimento,
 } from '../../entities';
 import { StatusPagamentoEnum } from '../../enums/status-pagamento.enum';
 import { MetodoPagamentoEnum } from '../../enums/metodo-pagamento.enum';
@@ -22,17 +22,17 @@ import { AuditoriaPagamentoService } from '../../services/auditoria-pagamento.se
 
 /**
  * Testes de integração para segurança do módulo de pagamento
- * 
+ *
  * Verifica o funcionamento correto dos mecanismos de segurança,
  * incluindo autenticação, autorização e proteção de dados sensíveis.
- * 
+ *
  * @author Equipe PGBen
  */
 describe('Segurança do Módulo de Pagamento (Integration)', () => {
   let app: INestApplication;
   let jwtService: JwtService;
   let pagamentoService: PagamentoService;
-  
+
   // Dados de teste
   const usuarioId = 'usuario-teste-id';
   const usuarioOutraUnidadeId = 'usuario-outra-unidade-id';
@@ -41,47 +41,49 @@ describe('Segurança do Módulo de Pagamento (Integration)', () => {
   const outraUnidadeId = 'outra-unidade-id';
   const pagamentoId = 'pagamento-teste-id';
   const comprovanteId = 'comprovante-teste-id';
-  
+
   // Mock dos serviços externos
   const mockIntegracaoSolicitacaoService = {
-    verificarStatusSolicitacao: jest.fn().mockResolvedValue('PAGAMENTO_PENDENTE'),
+    verificarStatusSolicitacao: jest
+      .fn()
+      .mockResolvedValue('PAGAMENTO_PENDENTE'),
     verificarSolicitacaoElegivel: jest.fn().mockResolvedValue(true),
     atualizarStatusSolicitacao: jest.fn().mockResolvedValue(true),
     obterDetalhesSolicitacao: jest.fn().mockResolvedValue({
       id: solicitacaoId,
       unidadeId: unidadeId,
-      status: 'PAGAMENTO_PENDENTE'
-    })
+      status: 'PAGAMENTO_PENDENTE',
+    }),
   };
 
   const mockIntegracaoCidadaoService = {
     obterDadosCidadao: jest.fn().mockResolvedValue({
       id: 'cidadao-id',
       nome: 'João da Silva',
-      cpf: '12345678900'
+      cpf: '12345678900',
     }),
     obterDadosBancarios: jest.fn().mockResolvedValue([
       {
         id: 'info-bancaria-id',
         tipo: 'PIX',
         pixTipo: 'CPF',
-        pixChave: '12345678900'
-      }
+        pixChave: '12345678900',
+      },
     ]),
-    validarDadosBancarios: jest.fn().mockResolvedValue(true)
+    validarDadosBancarios: jest.fn().mockResolvedValue(true),
   };
 
   const mockIntegracaoDocumentoService = {
     uploadComprovante: jest.fn().mockResolvedValue({
       id: 'documento-id',
-      nome: 'comprovante.pdf'
+      nome: 'comprovante.pdf',
     }),
     obterComprovante: jest.fn().mockResolvedValue({
       id: 'documento-id',
-      nome: 'comprovante.pdf'
+      nome: 'comprovante.pdf',
     }),
     listarComprovantes: jest.fn().mockResolvedValue([]),
-    removerComprovante: jest.fn().mockResolvedValue(undefined)
+    removerComprovante: jest.fn().mockResolvedValue(undefined),
   };
 
   const mockAuditoriaPagamentoService = {
@@ -92,7 +94,7 @@ describe('Segurança do Módulo de Pagamento (Integration)', () => {
     logRemocaoComprovante: jest.fn(),
     logConfirmacaoRecebimento: jest.fn(),
     logErroProcessamento: jest.fn(),
-    logTentativaAcessoNaoAutorizado: jest.fn()
+    logTentativaAcessoNaoAutorizado: jest.fn(),
   };
 
   // Mock dos repositórios
@@ -102,7 +104,7 @@ describe('Segurança do Módulo de Pagamento (Integration)', () => {
     findOne: jest.fn(),
     find: jest.fn(),
     findAndCount: jest.fn(),
-    update: jest.fn()
+    update: jest.fn(),
   };
 
   const mockComprovanteRepository = {
@@ -111,7 +113,7 @@ describe('Segurança do Módulo de Pagamento (Integration)', () => {
     findOne: jest.fn(),
     find: jest.fn(),
     findAndCount: jest.fn(),
-    delete: jest.fn()
+    delete: jest.fn(),
   };
 
   const mockConfirmacaoRepository = {
@@ -119,7 +121,7 @@ describe('Segurança do Módulo de Pagamento (Integration)', () => {
     save: jest.fn(),
     findOne: jest.fn(),
     find: jest.fn(),
-    findAndCount: jest.fn()
+    findAndCount: jest.fn(),
   };
 
   beforeAll(async () => {
@@ -128,32 +130,32 @@ describe('Segurança do Módulo de Pagamento (Integration)', () => {
         PagamentoModule,
         ConfigModule.forRoot({
           isGlobal: true,
-          envFilePath: '.env.test'
+          envFilePath: '.env.test',
         }),
         JwtModule.registerAsync({
           imports: [ConfigModule],
           useFactory: async (configService: ConfigService) => ({
             secret: configService.get<string>('JWT_SECRET') || 'test-secret',
-            signOptions: { expiresIn: '1h' }
+            signOptions: { expiresIn: '1h' },
           }),
-          inject: [ConfigService]
+          inject: [ConfigService],
         }),
-        HttpModule
+        HttpModule,
       ],
       providers: [
         {
           provide: getRepositoryToken(Pagamento),
-          useValue: mockPagamentoRepository
+          useValue: mockPagamentoRepository,
         },
         {
           provide: getRepositoryToken(ComprovantePagamento),
-          useValue: mockComprovanteRepository
+          useValue: mockComprovanteRepository,
         },
         {
           provide: getRepositoryToken(ConfirmacaoRecebimento),
-          useValue: mockConfirmacaoRepository
-        }
-      ]
+          useValue: mockConfirmacaoRepository,
+        },
+      ],
     })
       .overrideProvider(IntegracaoSolicitacaoService)
       .useValue(mockIntegracaoSolicitacaoService)
@@ -168,7 +170,7 @@ describe('Segurança do Módulo de Pagamento (Integration)', () => {
     app = moduleFixture.createNestApplication();
     jwtService = moduleFixture.get<JwtService>(JwtService);
     pagamentoService = moduleFixture.get<PagamentoService>(PagamentoService);
-    
+
     await app.init();
   });
 
@@ -181,18 +183,21 @@ describe('Segurança do Módulo de Pagamento (Integration)', () => {
   });
 
   // Função auxiliar para gerar tokens JWT com diferentes perfis
-  const gerarToken = (userId: string, perfis: string[] = ['usuario'], unidadeId: string = 'unidade-teste-id') => {
+  const gerarToken = (
+    userId: string,
+    perfis: string[] = ['usuario'],
+    unidadeId: string = 'unidade-teste-id',
+  ) => {
     return jwtService.sign({
       sub: userId,
       perfis,
-      unidadeId
+      unidadeId,
     });
   };
 
   describe('Autenticação', () => {
     it('deve rejeitar acesso sem token JWT', async () => {
-      const response = await request(app.getHttpServer())
-        .get('/pagamentos');
+      const response = await request(app.getHttpServer()).get('/pagamentos');
 
       expect(response.status).toBe(401);
     });
@@ -208,9 +213,9 @@ describe('Segurança do Módulo de Pagamento (Integration)', () => {
     it('deve permitir acesso com token JWT válido', async () => {
       // Configurar mock
       mockPagamentoRepository.findAndCount.mockResolvedValue([[], 0]);
-      
+
       const token = gerarToken(usuarioId);
-      
+
       const response = await request(app.getHttpServer())
         .get('/pagamentos')
         .set('Authorization', `Bearer ${token}`);
@@ -223,16 +228,18 @@ describe('Segurança do Módulo de Pagamento (Integration)', () => {
     it('deve rejeitar acesso a operações administrativas para usuários sem perfil adequado', async () => {
       // Token com perfil básico
       const token = gerarToken(usuarioId, ['usuario_basico']);
-      
+
       const response = await request(app.getHttpServer())
         .post(`/pagamentos/${pagamentoId}/cancelar`)
         .set('Authorization', `Bearer ${token}`)
         .send({
-          motivo: 'Teste de cancelamento'
+          motivo: 'Teste de cancelamento',
         });
 
       expect(response.status).toBe(403);
-      expect(mockAuditoriaPagamentoService.logTentativaAcessoNaoAutorizado).toHaveBeenCalled();
+      expect(
+        mockAuditoriaPagamentoService.logTentativaAcessoNaoAutorizado,
+      ).toHaveBeenCalled();
     });
 
     it('deve permitir acesso a operações administrativas para usuários com perfil adequado', async () => {
@@ -241,24 +248,24 @@ describe('Segurança do Módulo de Pagamento (Integration)', () => {
         id: pagamentoId,
         solicitacaoId,
         status: StatusPagamentoEnum.AGENDADO,
-        unidadeId
+        unidadeId,
       });
-      
+
       mockPagamentoRepository.save.mockResolvedValue({
         id: pagamentoId,
         solicitacaoId,
         status: StatusPagamentoEnum.CANCELADO,
-        unidadeId
+        unidadeId,
       });
-      
+
       // Token com perfil administrativo
       const token = gerarToken(usuarioId, ['admin_pagamentos']);
-      
+
       const response = await request(app.getHttpServer())
         .post(`/pagamentos/${pagamentoId}/cancelar`)
         .set('Authorization', `Bearer ${token}`)
         .send({
-          motivo: 'Teste de cancelamento'
+          motivo: 'Teste de cancelamento',
         });
 
       expect(response.status).toBe(200);
@@ -272,18 +279,20 @@ describe('Segurança do Módulo de Pagamento (Integration)', () => {
         id: pagamentoId,
         solicitacaoId,
         status: StatusPagamentoEnum.AGENDADO,
-        unidadeId: outraUnidadeId // Unidade diferente do usuário
+        unidadeId: outraUnidadeId, // Unidade diferente do usuário
       });
-      
+
       // Token de usuário de uma unidade específica
       const token = gerarToken(usuarioId, ['usuario'], unidadeId);
-      
+
       const response = await request(app.getHttpServer())
         .get(`/pagamentos/${pagamentoId}`)
         .set('Authorization', `Bearer ${token}`);
 
       expect(response.status).toBe(403);
-      expect(mockAuditoriaPagamentoService.logTentativaAcessoNaoAutorizado).toHaveBeenCalled();
+      expect(
+        mockAuditoriaPagamentoService.logTentativaAcessoNaoAutorizado,
+      ).toHaveBeenCalled();
     });
 
     it('deve permitir acesso a pagamentos da mesma unidade', async () => {
@@ -292,12 +301,12 @@ describe('Segurança do Módulo de Pagamento (Integration)', () => {
         id: pagamentoId,
         solicitacaoId,
         status: StatusPagamentoEnum.AGENDADO,
-        unidadeId // Mesma unidade do usuário
+        unidadeId, // Mesma unidade do usuário
       });
-      
+
       // Token de usuário da mesma unidade
       const token = gerarToken(usuarioId, ['usuario'], unidadeId);
-      
+
       const response = await request(app.getHttpServer())
         .get(`/pagamentos/${pagamentoId}`)
         .set('Authorization', `Bearer ${token}`);
@@ -311,12 +320,12 @@ describe('Segurança do Módulo de Pagamento (Integration)', () => {
         id: pagamentoId,
         solicitacaoId,
         status: StatusPagamentoEnum.AGENDADO,
-        unidadeId: outraUnidadeId // Unidade diferente do usuário
+        unidadeId: outraUnidadeId, // Unidade diferente do usuário
       });
-      
+
       // Token com perfil super_admin
       const token = gerarToken(usuarioId, ['super_admin'], 'qualquer-unidade');
-      
+
       const response = await request(app.getHttpServer())
         .get(`/pagamentos/${pagamentoId}`)
         .set('Authorization', `Bearer ${token}`);
@@ -336,18 +345,18 @@ describe('Segurança do Módulo de Pagamento (Integration)', () => {
         metodoPagamento: MetodoPagamentoEnum.PIX,
         dadosBancarios: {
           pixTipo: 'CPF',
-          pixChave: '12345678900'
-        }
+          pixChave: '12345678900',
+        },
       });
-      
+
       const token = gerarToken(usuarioId);
-      
+
       const response = await request(app.getHttpServer())
         .get(`/pagamentos/${pagamentoId}`)
         .set('Authorization', `Bearer ${token}`);
 
       expect(response.status).toBe(200);
-      
+
       // Verificar que a chave PIX está mascarada
       expect(response.body.dadosBancarios.pixChave).not.toBe('12345678900');
       expect(response.body.dadosBancarios.pixChave).toContain('*');
@@ -363,18 +372,18 @@ describe('Segurança do Módulo de Pagamento (Integration)', () => {
         beneficiario: {
           id: 'cidadao-id',
           nome: 'João da Silva',
-          cpf: '12345678900'
-        }
+          cpf: '12345678900',
+        },
       });
-      
+
       const token = gerarToken(usuarioId);
-      
+
       const response = await request(app.getHttpServer())
         .get(`/pagamentos/${pagamentoId}`)
         .set('Authorization', `Bearer ${token}`);
 
       expect(response.status).toBe(200);
-      
+
       // Verificar que o CPF está mascarado
       if (response.body.beneficiario && response.body.beneficiario.cpf) {
         expect(response.body.beneficiario.cpf).not.toBe('12345678900');
@@ -387,9 +396,9 @@ describe('Segurança do Módulo de Pagamento (Integration)', () => {
     it('deve rejeitar uploads de arquivos maliciosos', async () => {
       // Criar arquivo de teste com extensão suspeita
       const buffer = Buffer.from('conteúdo malicioso');
-      
+
       const token = gerarToken(usuarioId);
-      
+
       const response = await request(app.getHttpServer())
         .post(`/pagamentos/${pagamentoId}/comprovantes`)
         .set('Authorization', `Bearer ${token}`)
@@ -402,9 +411,9 @@ describe('Segurança do Módulo de Pagamento (Integration)', () => {
     it('deve rejeitar uploads de arquivos muito grandes', async () => {
       // Criar arquivo de teste muito grande (simulado)
       const buffer = Buffer.alloc(6 * 1024 * 1024); // 6MB
-      
+
       const token = gerarToken(usuarioId);
-      
+
       const response = await request(app.getHttpServer())
         .post(`/pagamentos/${pagamentoId}/comprovantes`)
         .set('Authorization', `Bearer ${token}`)
@@ -421,36 +430,42 @@ describe('Segurança do Módulo de Pagamento (Integration)', () => {
         id: pagamentoId,
         solicitacaoId,
         status: StatusPagamentoEnum.AGENDADO,
-        unidadeId: outraUnidadeId
+        unidadeId: outraUnidadeId,
       });
-      
+
       const token = gerarToken(usuarioId);
-      
+
       await request(app.getHttpServer())
         .get(`/pagamentos/${pagamentoId}`)
         .set('Authorization', `Bearer ${token}`);
 
-      expect(mockAuditoriaPagamentoService.logTentativaAcessoNaoAutorizado).toHaveBeenCalled();
+      expect(
+        mockAuditoriaPagamentoService.logTentativaAcessoNaoAutorizado,
+      ).toHaveBeenCalled();
     });
 
     it('deve limitar taxa de requisições (rate limiting)', async () => {
       const token = gerarToken(usuarioId);
-      
+
       // Fazer múltiplas requisições em sequência
-      const promises = Array(20).fill(0).map(() => 
-        request(app.getHttpServer())
-          .get('/pagamentos')
-          .set('Authorization', `Bearer ${token}`)
-      );
-      
+      const promises = Array(20)
+        .fill(0)
+        .map(() =>
+          request(app.getHttpServer())
+            .get('/pagamentos')
+            .set('Authorization', `Bearer ${token}`),
+        );
+
       const responses = await Promise.all(promises);
-      
+
       // Verificar se alguma requisição foi limitada (429 Too Many Requests)
-      const limitedRequests = responses.filter(res => res.status === 429);
-      
+      const limitedRequests = responses.filter((res) => res.status === 429);
+
       // Em um ambiente real, algumas requisições seriam limitadas
       // No ambiente de teste, isso depende da configuração do rate limiter
-      console.log(`Requisições limitadas: ${limitedRequests.length} de ${promises.length}`);
+      console.log(
+        `Requisições limitadas: ${limitedRequests.length} de ${promises.length}`,
+      );
     });
   });
 });

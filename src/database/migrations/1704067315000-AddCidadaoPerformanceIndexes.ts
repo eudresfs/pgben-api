@@ -1,6 +1,8 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddCidadaoPerformanceIndexes1704067315000 implements MigrationInterface {
+export class AddCidadaoPerformanceIndexes1704067315000
+  implements MigrationInterface
+{
   name = 'AddCidadaoPerformanceIndexes1704067315000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -34,6 +36,8 @@ export class AddCidadaoPerformanceIndexes1704067315000 implements MigrationInter
     await queryRunner.query(`DROP INDEX IF EXISTS "IDX_cidadao_nome_gin"`);
     await queryRunner.query(`DROP INDEX IF EXISTS "IDX_cidadao_cpf_partial"`);
     await queryRunner.query(`DROP INDEX IF EXISTS "IDX_cidadao_nis_partial"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_cidadao_endereco_bairro"`);
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_cidadao_endereco_bairro"`,
+    );
   }
 }

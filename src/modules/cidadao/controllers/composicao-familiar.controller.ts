@@ -33,7 +33,10 @@ import { ScopeType } from '../../../entities/user-permission.entity';
 import { ApiErrorResponse } from '../../../shared/dtos/api-error-response.dto';
 import { CreateComposicaoFamiliarDto } from '../dto/create-composicao-familiar.dto';
 import { UpdateComposicaoFamiliarDto } from '../dto/update-composicao-familiar.dto';
-import { ComposicaoFamiliarResponseDto, ComposicaoFamiliarPaginatedResponseDto } from '../dto/composicao-familiar-response.dto';
+import {
+  ComposicaoFamiliarResponseDto,
+  ComposicaoFamiliarPaginatedResponseDto,
+} from '../dto/composicao-familiar-response.dto';
 import { ComposicaoFamiliarService } from '../services/composicao-familiar.service';
 import { CidadaoAuditInterceptor } from '../interceptors/cidadao-audit.interceptor';
 import { UseInterceptors } from '@nestjs/common';
@@ -44,7 +47,10 @@ import { UseInterceptors } from '@nestjs/common';
  * Responsável por gerenciar as rotas relacionadas aos membros da composição familiar dos cidadãos
  */
 @ApiTags('Cidadão')
-@ApiExtraModels(ComposicaoFamiliarResponseDto, ComposicaoFamiliarPaginatedResponseDto)
+@ApiExtraModels(
+  ComposicaoFamiliarResponseDto,
+  ComposicaoFamiliarPaginatedResponseDto,
+)
 @Controller('composicao-familiar')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
@@ -91,7 +97,9 @@ export class ComposicaoFamiliarController {
   ): Promise<ComposicaoFamiliarResponseDto> {
     const startTime = Date.now();
     const requestId = `CF-CREATE-${Date.now()}`;
-    this.logger.log(`[${requestId}] Início da criação de membro da composição familiar`);
+    this.logger.log(
+      `[${requestId}] Início da criação de membro da composição familiar`,
+    );
 
     try {
       const result = await this.composicaoFamiliarService.create(
@@ -101,7 +109,9 @@ export class ComposicaoFamiliarController {
 
       const totalTime = Date.now() - startTime;
       if (totalTime > 500) {
-        this.logger.warn(`[${requestId}] Operação lenta (create): ${totalTime}ms`);
+        this.logger.warn(
+          `[${requestId}] Operação lenta (create): ${totalTime}ms`,
+        );
       } else {
         this.logger.log(`[${requestId}] Operação concluída em ${totalTime}ms`);
       }
@@ -109,7 +119,9 @@ export class ComposicaoFamiliarController {
       return result;
     } catch (error) {
       const totalTime = Date.now() - startTime;
-      this.logger.error(`[${requestId}] Erro em ${totalTime}ms: ${error.message}`);
+      this.logger.error(
+        `[${requestId}] Erro em ${totalTime}ms: ${error.message}`,
+      );
       throw error;
     }
   }
@@ -125,7 +137,8 @@ export class ComposicaoFamiliarController {
   })
   @ApiOperation({
     summary: 'Listar membros da composição familiar',
-    description: 'Retorna uma lista paginada dos membros da composição familiar de um cidadão.',
+    description:
+      'Retorna uma lista paginada dos membros da composição familiar de um cidadão.',
   })
   @ApiParam({
     name: 'cidadaoId',
@@ -148,7 +161,8 @@ export class ComposicaoFamiliarController {
     example: 10,
   })
   @ApiOkResponse({
-    description: 'Lista de membros da composição familiar retornada com sucesso',
+    description:
+      'Lista de membros da composição familiar retornada com sucesso',
     type: ComposicaoFamiliarPaginatedResponseDto,
   })
   @ApiNotFoundResponse({
@@ -172,7 +186,9 @@ export class ComposicaoFamiliarController {
 
       const totalTime = Date.now() - startTime;
       if (totalTime > 300) {
-        this.logger.warn(`[${requestId}] Operação lenta (findByCidadao): ${totalTime}ms`);
+        this.logger.warn(
+          `[${requestId}] Operação lenta (findByCidadao): ${totalTime}ms`,
+        );
       } else {
         this.logger.log(`[${requestId}] Operação concluída em ${totalTime}ms`);
       }
@@ -180,7 +196,9 @@ export class ComposicaoFamiliarController {
       return result;
     } catch (error) {
       const totalTime = Date.now() - startTime;
-      this.logger.error(`[${requestId}] Erro em ${totalTime}ms: ${error.message}`);
+      this.logger.error(
+        `[${requestId}] Erro em ${totalTime}ms: ${error.message}`,
+      );
       throw error;
     }
   }
@@ -196,7 +214,8 @@ export class ComposicaoFamiliarController {
   })
   @ApiOperation({
     summary: 'Buscar membro da composição familiar',
-    description: 'Retorna os dados de um membro específico da composição familiar.',
+    description:
+      'Retorna os dados de um membro específico da composição familiar.',
   })
   @ApiParam({
     name: 'id',
@@ -217,14 +236,18 @@ export class ComposicaoFamiliarController {
   ): Promise<ComposicaoFamiliarResponseDto> {
     const startTime = Date.now();
     const requestId = `CF-GET-${id.substring(0, 8)}-${Date.now()}`;
-    this.logger.log(`[${requestId}] Início da busca de membro da composição familiar`);
+    this.logger.log(
+      `[${requestId}] Início da busca de membro da composição familiar`,
+    );
 
     try {
       const result = await this.composicaoFamiliarService.findOne(id);
 
       const totalTime = Date.now() - startTime;
       if (totalTime > 200) {
-        this.logger.warn(`[${requestId}] Operação lenta (findOne): ${totalTime}ms`);
+        this.logger.warn(
+          `[${requestId}] Operação lenta (findOne): ${totalTime}ms`,
+        );
       } else {
         this.logger.log(`[${requestId}] Operação concluída em ${totalTime}ms`);
       }
@@ -232,7 +255,9 @@ export class ComposicaoFamiliarController {
       return result;
     } catch (error) {
       const totalTime = Date.now() - startTime;
-      this.logger.error(`[${requestId}] Erro em ${totalTime}ms: ${error.message}`);
+      this.logger.error(
+        `[${requestId}] Erro em ${totalTime}ms: ${error.message}`,
+      );
       throw error;
     }
   }
@@ -279,7 +304,9 @@ export class ComposicaoFamiliarController {
   ): Promise<ComposicaoFamiliarResponseDto> {
     const startTime = Date.now();
     const requestId = `CF-UPDATE-${id.substring(0, 8)}-${Date.now()}`;
-    this.logger.log(`[${requestId}] Início da atualização de membro da composição familiar`);
+    this.logger.log(
+      `[${requestId}] Início da atualização de membro da composição familiar`,
+    );
 
     try {
       const result = await this.composicaoFamiliarService.update(
@@ -290,7 +317,9 @@ export class ComposicaoFamiliarController {
 
       const totalTime = Date.now() - startTime;
       if (totalTime > 500) {
-        this.logger.warn(`[${requestId}] Operação lenta (update): ${totalTime}ms`);
+        this.logger.warn(
+          `[${requestId}] Operação lenta (update): ${totalTime}ms`,
+        );
       } else {
         this.logger.log(`[${requestId}] Operação concluída em ${totalTime}ms`);
       }
@@ -298,7 +327,9 @@ export class ComposicaoFamiliarController {
       return result;
     } catch (error) {
       const totalTime = Date.now() - startTime;
-      this.logger.error(`[${requestId}] Erro em ${totalTime}ms: ${error.message}`);
+      this.logger.error(
+        `[${requestId}] Erro em ${totalTime}ms: ${error.message}`,
+      );
       throw error;
     }
   }
@@ -335,14 +366,18 @@ export class ComposicaoFamiliarController {
   ): Promise<{ message: string }> {
     const startTime = Date.now();
     const requestId = `CF-DELETE-${id.substring(0, 8)}-${Date.now()}`;
-    this.logger.log(`[${requestId}] Início da remoção de membro da composição familiar`);
+    this.logger.log(
+      `[${requestId}] Início da remoção de membro da composição familiar`,
+    );
 
     try {
       await this.composicaoFamiliarService.remove(id, req?.user?.id);
 
       const totalTime = Date.now() - startTime;
       if (totalTime > 300) {
-        this.logger.warn(`[${requestId}] Operação lenta (remove): ${totalTime}ms`);
+        this.logger.warn(
+          `[${requestId}] Operação lenta (remove): ${totalTime}ms`,
+        );
       } else {
         this.logger.log(`[${requestId}] Operação concluída em ${totalTime}ms`);
       }
@@ -350,7 +385,9 @@ export class ComposicaoFamiliarController {
       return { message: 'Membro da composição familiar removido com sucesso' };
     } catch (error) {
       const totalTime = Date.now() - startTime;
-      this.logger.error(`[${requestId}] Erro em ${totalTime}ms: ${error.message}`);
+      this.logger.error(
+        `[${requestId}] Erro em ${totalTime}ms: ${error.message}`,
+      );
       throw error;
     }
   }
@@ -390,7 +427,9 @@ export class ComposicaoFamiliarController {
 
       const totalTime = Date.now() - startTime;
       if (totalTime > 200) {
-        this.logger.warn(`[${requestId}] Operação lenta (findByCpf): ${totalTime}ms`);
+        this.logger.warn(
+          `[${requestId}] Operação lenta (findByCpf): ${totalTime}ms`,
+        );
       } else {
         this.logger.log(`[${requestId}] Operação concluída em ${totalTime}ms`);
       }
@@ -398,7 +437,9 @@ export class ComposicaoFamiliarController {
       return result;
     } catch (error) {
       const totalTime = Date.now() - startTime;
-      this.logger.error(`[${requestId}] Erro em ${totalTime}ms: ${error.message}`);
+      this.logger.error(
+        `[${requestId}] Erro em ${totalTime}ms: ${error.message}`,
+      );
       throw error;
     }
   }

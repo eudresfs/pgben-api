@@ -127,7 +127,8 @@ export class LogAuditoria {
   @Column({
     type: 'jsonb',
     nullable: true,
-    comment: 'Array de campos sensíveis que foram acessados, para compliance com LGPD',
+    comment:
+      'Array de campos sensíveis que foram acessados, para compliance com LGPD',
   })
   dados_sensiveis_acessados: string[];
 

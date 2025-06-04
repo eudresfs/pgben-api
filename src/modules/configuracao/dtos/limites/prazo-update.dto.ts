@@ -1,5 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsInt, IsNotEmpty, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
+import {
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  Max,
+  MaxLength,
+  Min,
+} from 'class-validator';
 
 /**
  * DTO para atualização de configuração de prazos no sistema.
@@ -9,7 +17,7 @@ export class PrazoUpdateDto {
   @ApiProperty({
     description: 'Quantidade de dias para o prazo',
     example: 5,
-    minimum: 0
+    minimum: 0,
   })
   @IsNotEmpty({ message: 'A quantidade de dias é obrigatória' })
   @IsInt({ message: 'A quantidade de dias deve ser um número inteiro' })
@@ -22,7 +30,7 @@ export class PrazoUpdateDto {
     example: 12,
     minimum: 0,
     maximum: 23,
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsInt({ message: 'A quantidade de horas deve ser um número inteiro' })
@@ -34,7 +42,7 @@ export class PrazoUpdateDto {
     description: 'Descrição do prazo',
     example: 'Prazo para análise inicial da solicitação',
     maxLength: 200,
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsString({ message: 'A descrição deve ser uma string' })

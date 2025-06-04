@@ -18,7 +18,7 @@ export class JwtRefreshStrategy extends PassportStrategy(
   constructor(private readonly configService: ConfigService) {
     // Carregar a chave pública antes de configurar a estratégia
     const publicKey = JwtRefreshStrategy.loadPublicKey(configService);
-    
+
     // Configuração da estratégia
     super({
       jwtFromRequest: ExtractJwt.fromBodyField('refreshToken'),
@@ -36,21 +36,26 @@ export class JwtRefreshStrategy extends PassportStrategy(
    */
   private static loadPublicKey(configService: ConfigService): string {
     const publicKeyPath = configService.get<string>('JWT_PUBLIC_KEY_PATH');
-    
+
     if (!publicKeyPath) {
       throw new Error('JWT_PUBLIC_KEY_PATH não está configurado');
     }
 
     try {
       // Carregar a chave pública do arquivo
-      const publicKey = readFileSync(join(process.cwd(), publicKeyPath), 'utf8').trim();
-      
+      const publicKey = readFileSync(
+        join(process.cwd(), publicKeyPath),
+        'utf8',
+      ).trim();
+
       // Validar o formato da chave
-      if (!publicKey.startsWith('-----BEGIN PUBLIC KEY-----') || 
-          !publicKey.endsWith('-----END PUBLIC KEY-----')) {
+      if (
+        !publicKey.startsWith('-----BEGIN PUBLIC KEY-----') ||
+        !publicKey.endsWith('-----END PUBLIC KEY-----')
+      ) {
         throw new Error('Formato de chave pública inválido');
       }
-      
+
       return publicKey;
     } catch (error) {
       const logger = new Logger(JwtRefreshStrategy.name);

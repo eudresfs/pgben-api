@@ -4,8 +4,18 @@ export class CreateLogsPermissions1704067225000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Adicionar permissões relacionadas aos logs
     const permissoesLog = [
-      { nome: 'log.ler', descricao: 'Visualizar logs de auditoria', modulo: 'log', acao: 'ler' },
-      { nome: 'log.exportar', descricao: 'Exportar logs de auditoria', modulo: 'log', acao: 'exportar' }
+      {
+        nome: 'log.ler',
+        descricao: 'Visualizar logs de auditoria',
+        modulo: 'log',
+        acao: 'ler',
+      },
+      {
+        nome: 'log.exportar',
+        descricao: 'Exportar logs de auditoria',
+        modulo: 'log',
+        acao: 'exportar',
+      },
     ];
 
     // Inserir cada permissão verificando se já existe
@@ -13,7 +23,7 @@ export class CreateLogsPermissions1704067225000 implements MigrationInterface {
       // Verificar se a permissão já existe
       const permExistente = await queryRunner.query(
         `SELECT id FROM permissao WHERE nome = $1`,
-        [perm.nome]
+        [perm.nome],
       );
 
       // Se não existir, inserir
@@ -21,7 +31,7 @@ export class CreateLogsPermissions1704067225000 implements MigrationInterface {
         await queryRunner.query(
           `INSERT INTO permissao (id, nome, descricao, modulo, acao, created_at, updated_at)
            VALUES (uuid_generate_v4(), $1, $2, $3, $4, NOW(), NOW())`,
-          [perm.nome, perm.descricao, perm.modulo, perm.acao]
+          [perm.nome, perm.descricao, perm.modulo, perm.acao],
         );
       }
     }
@@ -29,23 +39,23 @@ export class CreateLogsPermissions1704067225000 implements MigrationInterface {
     // Adicionar permissões aos papéis existentes
     // 1. Obter os papéis (roles)
     const roles = await queryRunner.query(
-      `SELECT id, nome FROM role WHERE nome IN ('ADMIN', 'GESTOR')`
+      `SELECT id, nome FROM role WHERE nome IN ('ADMIN', 'GESTOR')`,
     );
 
     // 2. Obter as permissões de logs
     const permissoesBD = await queryRunner.query(
-      `SELECT id, nome FROM permissao WHERE nome LIKE 'log.%'`
+      `SELECT id, nome FROM permissao WHERE nome LIKE 'log.%'`,
     );
 
     // 3. Mapear quais permissões cada papel deve ter
     const permissoesPorPapel: { roleId: string; permissaoId: string }[] = [];
-    
+
     for (const role of roles) {
       for (const perm of permissoesBD) {
         // Admin e Gestor têm todas as permissões de log
         permissoesPorPapel.push({
           roleId: role.id,
-          permissaoId: perm.id
+          permissaoId: perm.id,
         });
       }
     }
@@ -55,7 +65,7 @@ export class CreateLogsPermissions1704067225000 implements MigrationInterface {
       // Verificar se já existe esta associação
       const existente = await queryRunner.query(
         `SELECT 1 FROM role_permissao WHERE role_id = $1 AND permissao_id = $2`,
-        [item.roleId, item.permissaoId]
+        [item.roleId, item.permissaoId],
       );
 
       // Se não existir, inserir
@@ -63,7 +73,7 @@ export class CreateLogsPermissions1704067225000 implements MigrationInterface {
         await queryRunner.query(
           `INSERT INTO role_permissao (role_id, permissao_id, created_at, updated_at)
            VALUES ($1, $2, NOW(), NOW())`,
-          [item.roleId, item.permissaoId]
+          [item.roleId, item.permissaoId],
         );
       }
     }

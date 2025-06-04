@@ -20,11 +20,17 @@ const loadJwtKeys = () => {
     const privateKey = readFileSync(fullPrivateKeyPath, 'utf8').trim();
 
     // Validar formato das chaves
-    if (!publicKey.includes('BEGIN PUBLIC KEY') && !publicKey.includes('BEGIN RSA PUBLIC KEY')) {
+    if (
+      !publicKey.includes('BEGIN PUBLIC KEY') &&
+      !publicKey.includes('BEGIN RSA PUBLIC KEY')
+    ) {
       throw new Error('Formato inválido para chave pública');
     }
 
-    if (!privateKey.includes('BEGIN PRIVATE KEY') && !privateKey.includes('BEGIN RSA PRIVATE KEY')) {
+    if (
+      !privateKey.includes('BEGIN PRIVATE KEY') &&
+      !privateKey.includes('BEGIN RSA PRIVATE KEY')
+    ) {
       throw new Error('Formato inválido para chave privada');
     }
 

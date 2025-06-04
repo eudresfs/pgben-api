@@ -16,7 +16,9 @@ export class DadosFuneralRepository extends Repository<DadosFuneral> {
   /**
    * Buscar dados de funeral por solicitação com relacionamentos
    */
-  async findBySolicitacaoWithRelations(solicitacaoId: string): Promise<DadosFuneral | null> {
+  async findBySolicitacaoWithRelations(
+    solicitacaoId: string,
+  ): Promise<DadosFuneral | null> {
     return this.findOne({
       where: { solicitacao_id: solicitacaoId },
       relations: [
@@ -54,7 +56,9 @@ export class DadosFuneralRepository extends Repository<DadosFuneral> {
     return this.createQueryBuilder('dados')
       .leftJoinAndSelect('dados.solicitacao', 'solicitacao')
       .leftJoinAndSelect('solicitacao.cidadao', 'cidadao')
-      .where('dados.grau_parentesco_requerente = :grauParentesco', { grauParentesco })
+      .where('dados.grau_parentesco_requerente = :grauParentesco', {
+        grauParentesco,
+      })
       .orderBy('dados.created_at', 'DESC')
       .getMany();
   }
@@ -62,9 +66,7 @@ export class DadosFuneralRepository extends Repository<DadosFuneral> {
   /**
    * Buscar dados por tipo de urna
    */
-  async findByTipoUrna(
-    tipoUrna: TipoUrnaEnum,
-  ): Promise<DadosFuneral[]> {
+  async findByTipoUrna(tipoUrna: TipoUrnaEnum): Promise<DadosFuneral[]> {
     return this.createQueryBuilder('dados')
       .leftJoinAndSelect('dados.solicitacao', 'solicitacao')
       .leftJoinAndSelect('solicitacao.cidadao', 'cidadao')
@@ -76,9 +78,7 @@ export class DadosFuneralRepository extends Repository<DadosFuneral> {
   /**
    * Buscar dados por local de óbito
    */
-  async findByLocalObito(
-    localObito: string,
-  ): Promise<DadosFuneral[]> {
+  async findByLocalObito(localObito: string): Promise<DadosFuneral[]> {
     return this.createQueryBuilder('dados')
       .leftJoinAndSelect('dados.solicitacao', 'solicitacao')
       .leftJoinAndSelect('solicitacao.cidadao', 'cidadao')
@@ -159,7 +159,10 @@ export class DadosFuneralRepository extends Repository<DadosFuneral> {
 
     // Tempo médio entre óbito e autorização (em dias)
     const tempoMedioResult = await this.createQueryBuilder('dados')
-      .select('AVG(EXTRACT(DAY FROM (dados.data_autorizacao - dados.data_obito)))', 'tempoMedio')
+      .select(
+        'AVG(EXTRACT(DAY FROM (dados.data_autorizacao - dados.data_obito)))',
+        'tempoMedio',
+      )
       .where('dados.data_autorizacao IS NOT NULL')
       .andWhere('dados.data_obito IS NOT NULL')
       .getRawOne();
@@ -185,7 +188,9 @@ export class DadosFuneralRepository extends Repository<DadosFuneral> {
   ): Promise<DadosFuneral[]> {
     const query = this.createQueryBuilder('dados')
       .leftJoinAndSelect('dados.solicitacao', 'solicitacao')
-      .where('LOWER(dados.nome_completo_falecido) = LOWER(:nomeFalecido)', { nomeFalecido })
+      .where('LOWER(dados.nome_completo_falecido) = LOWER(:nomeFalecido)', {
+        nomeFalecido,
+      })
       .andWhere('dados.data_obito = :dataObito', { dataObito });
 
     if (excludeId) {
@@ -215,17 +220,23 @@ export class DadosFuneralRepository extends Repository<DadosFuneral> {
       .leftJoinAndSelect('solicitacao.cidadao', 'cidadao');
 
     if (filters.dataObitoInicio && filters.dataObitoFim) {
-      query.andWhere('dados.data_obito BETWEEN :dataObitoInicio AND :dataObitoFim', {
-        dataObitoInicio: filters.dataObitoInicio,
-        dataObitoFim: filters.dataObitoFim,
-      });
+      query.andWhere(
+        'dados.data_obito BETWEEN :dataObitoInicio AND :dataObitoFim',
+        {
+          dataObitoInicio: filters.dataObitoInicio,
+          dataObitoFim: filters.dataObitoFim,
+        },
+      );
     }
 
     if (filters.dataAutorizacaoInicio && filters.dataAutorizacaoFim) {
-      query.andWhere('dados.data_autorizacao BETWEEN :dataAutorizacaoInicio AND :dataAutorizacaoFim', {
-        dataAutorizacaoInicio: filters.dataAutorizacaoInicio,
-        dataAutorizacaoFim: filters.dataAutorizacaoFim,
-      });
+      query.andWhere(
+        'dados.data_autorizacao BETWEEN :dataAutorizacaoInicio AND :dataAutorizacaoFim',
+        {
+          dataAutorizacaoInicio: filters.dataAutorizacaoInicio,
+          dataAutorizacaoFim: filters.dataAutorizacaoFim,
+        },
+      );
     }
 
     if (filters.grauParentesco) {
@@ -247,17 +258,18 @@ export class DadosFuneralRepository extends Repository<DadosFuneral> {
     }
 
     if (filters.nomeFalecido) {
-      query.andWhere('LOWER(dados.nome_completo_falecido) LIKE LOWER(:nomeFalecido)', {
-        nomeFalecido: `%${filters.nomeFalecido}%`,
-      });
+      query.andWhere(
+        'LOWER(dados.nome_completo_falecido) LIKE LOWER(:nomeFalecido)',
+        {
+          nomeFalecido: `%${filters.nomeFalecido}%`,
+        },
+      );
     }
 
     const total = await query.getCount();
 
     if (filters.page && filters.limit) {
-      query
-        .skip((filters.page - 1) * filters.limit)
-        .take(filters.limit);
+      query.skip((filters.page - 1) * filters.limit).take(filters.limit);
     }
 
     query.orderBy('dados.data_obito', 'DESC');
@@ -280,11 +292,11 @@ export class DadosFuneralRepository extends Repository<DadosFuneral> {
       .groupBy('EXTRACT(MONTH FROM dados.data_obito)')
       .orderBy('mes', 'ASC')
       .getRawMany()
-      .then(results => 
-        results.map(item => ({
+      .then((results) =>
+        results.map((item) => ({
           mes: parseInt(item.mes),
           quantidade: parseInt(item.quantidade),
-        }))
+        })),
       );
   }
 }

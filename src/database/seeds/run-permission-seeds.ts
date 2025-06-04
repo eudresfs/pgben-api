@@ -11,7 +11,6 @@ async function runPermissionSeeds() {
     const seeder = new PermissionSeeder();
     await seeder.run(AppDataSource);
     console.log('Seeds de permissão executadas com sucesso!');
-
   } catch (error) {
     console.error('Erro ao executar seeds de permissão:', error);
     process.exit(1);

@@ -21,25 +21,27 @@ import { EnhancedMetricsService } from './enhanced-metrics.service';
 @Injectable()
 export class EnhancedMetricsInterceptor implements NestInterceptor {
   private readonly logger = new Logger('EnhancedMetricsInterceptor');
-  
+
   constructor(private readonly metricsService: EnhancedMetricsService) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     // CORRIGIDO: Redução de logs e simplificação do interceptor
-    this.logger.debug(`🔥 EnhancedMetricsInterceptor: Iniciando para ${context.getType()}`);
-    
+    this.logger.debug(
+      `🔥 EnhancedMetricsInterceptor: Iniciando para ${context.getType()}`,
+    );
+
     // Verificar se é uma requisição HTTP
     if (context.getType() !== 'http') {
       // Não é HTTP, apenas passar adiante
       this.logger.debug(`🔥 EnhancedMetricsInterceptor: Não é HTTP, ignorando`);
       return next.handle();
     }
-    
+
     // Obter informações da requisição
     const ctx = context.switchToHttp();
     const request = ctx.getRequest();
     const { method, url, ip } = request;
-    
+
     // Log simplificado para debugging
     this.logger.debug(`🔥 Métricas: ${method} ${url}`);
 
@@ -49,14 +51,18 @@ export class EnhancedMetricsInterceptor implements NestInterceptor {
 
     // Incrementar contador de requisições em andamento
     try {
-      this.metricsService.incrementHttpRequestsInProgress(method, route, userRole);
+      this.metricsService.incrementHttpRequestsInProgress(
+        method,
+        route,
+        userRole,
+      );
     } catch (err) {
       this.logger.error(`Erro ao registrar métrica inicial: ${err.message}`);
       // Não deixar o erro interromper o fluxo
     }
 
     const startTime = process.hrtime();
-    
+
     // IMPORTANTE: Primeiro, garantir que o request continue seu fluxo
     // Usar finalize para garantir que as métricas sejam sempre processadas
     return next.handle().pipe(
@@ -71,22 +77,45 @@ export class EnhancedMetricsInterceptor implements NestInterceptor {
             const durationSeconds = seconds + nanoseconds / 1e9;
 
             // Registrar métricas HTTP
-            this.metricsService.recordHttpRequest(method, route, statusCode, userRole);
-            this.metricsService.recordHttpRequestDuration(method, route, statusCode, durationSeconds, userRole);
-            
+            this.metricsService.recordHttpRequest(
+              method,
+              route,
+              statusCode,
+              userRole,
+            );
+            this.metricsService.recordHttpRequestDuration(
+              method,
+              route,
+              statusCode,
+              durationSeconds,
+              userRole,
+            );
+
             // Verificar LGPD somente se necessário
-            if (route.includes('cidadao') || route.includes('beneficiario') || route.includes('documento')) {
+            if (
+              route.includes('cidadao') ||
+              route.includes('beneficiario') ||
+              route.includes('documento')
+            ) {
               this.checkAndRecordLgpdDataAccess(request, data, route);
             }
-            
-            this.logger.debug(`🔥 Métricas finalizadas: ${method} ${url} - ${statusCode}`);
+
+            this.logger.debug(
+              `🔥 Métricas finalizadas: ${method} ${url} - ${statusCode}`,
+            );
           } catch (err) {
-            this.logger.error(`Erro no processamento de métricas: ${err.message}`);
+            this.logger.error(
+              `Erro no processamento de métricas: ${err.message}`,
+            );
             // Não deixar o erro interromper o fluxo
           } finally {
             // Garantir que o contador seja decrementado mesmo em caso de erro
             try {
-              this.metricsService.decrementHttpRequestsInProgress(method, route, userRole);
+              this.metricsService.decrementHttpRequestsInProgress(
+                method,
+                route,
+                userRole,
+              );
             } catch (err) {
               this.logger.error(`Erro ao decrementar contador: ${err.message}`);
             }
@@ -101,30 +130,57 @@ export class EnhancedMetricsInterceptor implements NestInterceptor {
             const durationSeconds = seconds + nanoseconds / 1e9;
 
             // Registrar métricas HTTP
-            this.metricsService.recordHttpRequest(method, route, statusCode, userRole);
-            this.metricsService.recordHttpRequestDuration(method, route, statusCode, durationSeconds, userRole);
+            this.metricsService.recordHttpRequest(
+              method,
+              route,
+              statusCode,
+              userRole,
+            );
+            this.metricsService.recordHttpRequestDuration(
+              method,
+              route,
+              statusCode,
+              durationSeconds,
+              userRole,
+            );
 
             // Registrar eventos de segurança apenas para erros relevantes
             if (statusCode === 401 || statusCode === 403) {
-              this.metricsService.recordSecurityEvent('authorization_failure', 'warning', 'api');
+              this.metricsService.recordSecurityEvent(
+                'authorization_failure',
+                'warning',
+                'api',
+              );
             } else if (statusCode >= 500) {
-              this.metricsService.recordSecurityEvent('server_error', 'error', 'api');
+              this.metricsService.recordSecurityEvent(
+                'server_error',
+                'error',
+                'api',
+              );
             }
-            
-            this.logger.debug(`🔥 Métricas de erro: ${method} ${url} - ${statusCode}`);
+
+            this.logger.debug(
+              `🔥 Métricas de erro: ${method} ${url} - ${statusCode}`,
+            );
           } catch (err) {
-            this.logger.error(`Erro no processamento de métricas de erro: ${err.message}`);
+            this.logger.error(
+              `Erro no processamento de métricas de erro: ${err.message}`,
+            );
             // Não deixar o erro interromper o fluxo
           } finally {
             // Garantir que o contador seja decrementado mesmo em caso de erro
             try {
-              this.metricsService.decrementHttpRequestsInProgress(method, route, userRole);
+              this.metricsService.decrementHttpRequestsInProgress(
+                method,
+                route,
+                userRole,
+              );
             } catch (err) {
               this.logger.error(`Erro ao decrementar contador: ${err.message}`);
             }
           }
-        }
-      })
+        },
+      }),
     );
   }
 

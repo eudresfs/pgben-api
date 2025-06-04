@@ -39,7 +39,9 @@ export class CreateInfoBancariaDto {
   })
   @IsOptional()
   @IsString({ message: 'Nome do banco deve ser uma string' })
-  @MaxLength(100, { message: 'Nome do banco deve ter no máximo 100 caracteres' })
+  @MaxLength(100, {
+    message: 'Nome do banco deve ter no máximo 100 caracteres',
+  })
   nome_banco?: string;
 
   @ApiProperty({
@@ -49,7 +51,9 @@ export class CreateInfoBancariaDto {
   })
   @IsOptional()
   @IsString({ message: 'Agência deve ser uma string' })
-  @Matches(/^\d{4,5}(-\d)?$/, { message: 'Agência deve ter formato válido (ex: 1234 ou 1234-5)' })
+  @Matches(/^\d{4,5}(-\d)?$/, {
+    message: 'Agência deve ter formato válido (ex: 1234 ou 1234-5)',
+  })
   agencia?: string;
 
   @ApiProperty({

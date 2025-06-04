@@ -1,11 +1,20 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn, Index } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+  Index,
+} from 'typeorm';
 import { IsNotEmpty, IsUUID, IsOptional } from 'class-validator';
 import { Permission } from './permission.entity';
 import { Usuario } from './usuario.entity';
 
 /**
  * Entidade que representa o relacionamento entre roles e permissões.
- * 
+ *
  * Esta entidade permite mapear as permissões granulares para as roles existentes,
  * facilitando a transição do modelo baseado em roles para o modelo de permissões granulares.
  */
@@ -164,10 +173,10 @@ export class RolePermission {
    */
   isCriadoRecentemente(): boolean {
     if (!this.created_at) return false;
-    
+
     const agora = new Date();
     const umDiaAtras = new Date(agora.getTime() - 24 * 60 * 60 * 1000);
-    
+
     return this.created_at > umDiaAtras;
   }
 
@@ -176,11 +185,11 @@ export class RolePermission {
    */
   getIdadeEmDias(): number {
     if (!this.created_at) return 0;
-    
+
     const agora = new Date();
     const diffTime = Math.abs(agora.getTime() - this.created_at.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
+
     return diffDays;
   }
 
@@ -208,7 +217,7 @@ export class RolePermission {
       permissao_id: this.permissao_id,
       criado_por: this.criado_por,
       created_at: this.created_at,
-      idadeEmDias: this.getIdadeEmDias()
+      idadeEmDias: this.getIdadeEmDias(),
     };
   }
 
@@ -232,10 +241,7 @@ export class RolePermission {
    */
   isConsistente(): boolean {
     return (
-      !!this.id &&
-      !!this.role_id &&
-      !!this.permissao_id &&
-      !!this.created_at
+      !!this.id && !!this.role_id && !!this.permissao_id && !!this.created_at
     );
   }
 
@@ -263,7 +269,7 @@ export class RolePermission {
     return {
       role_id: this.role_id,
       permissao_id: this.permissao_id,
-      criado_por: this.criado_por
+      criado_por: this.criado_por,
     };
   }
 
@@ -297,7 +303,7 @@ export class RolePermission {
       month: '2-digit',
       day: '2-digit',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     });
   }
 }

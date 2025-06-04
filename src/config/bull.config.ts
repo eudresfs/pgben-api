@@ -5,12 +5,14 @@ import { Logger } from '@nestjs/common';
 /**
  * Configuração centralizada do Bull para evitar duplicação de processadores
  */
-export const getBullConfig = (configService: ConfigService): BullModuleOptions => {
+export const getBullConfig = (
+  configService: ConfigService,
+): BullModuleOptions => {
   const logger = new Logger('BullConfig');
-  
+
   // Verificar se o Redis deve ser desabilitado (útil para desenvolvimento)
   const disableRedis = configService.get('DISABLE_REDIS') === 'true';
-  
+
   if (disableRedis) {
     logger.warn('Redis desabilitado por configuração. Filas não funcionarão.');
     // Retornar configuração mínima que não tentará conectar ao Redis
@@ -28,7 +30,7 @@ export const getBullConfig = (configService: ConfigService): BullModuleOptions =
       },
     };
   }
-  
+
   return {
     redis: {
       host: configService.get('REDIS_HOST', 'localhost'),
@@ -42,7 +44,9 @@ export const getBullConfig = (configService: ConfigService): BullModuleOptions =
       retryStrategy: (times: number) => {
         if (times > 3) {
           // Após 3 tentativas, esperar mais tempo entre tentativas
-          logger.warn(`Falha ao conectar ao Redis após ${times} tentativas. Nova tentativa em 10s.`);
+          logger.warn(
+            `Falha ao conectar ao Redis após ${times} tentativas. Nova tentativa em 10s.`,
+          );
           return 10000; // 10 segundos
         }
         return Math.min(times * 1000, 3000); // Espera crescente até 3 segundos

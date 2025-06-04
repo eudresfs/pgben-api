@@ -25,7 +25,7 @@ export class AuthService {
   // Valores padrão no formato semântico
   private readonly DEFAULT_ACCESS_TOKEN_EXPIRES_IN = '1h';
   private readonly DEFAULT_REFRESH_TOKEN_EXPIRES_IN = '7d';
-  
+
   /**
    * Gera um JTI (JWT ID) único
    * @returns string - JTI único
@@ -156,13 +156,19 @@ export class AuthService {
     }
 
     // Obter as permissões do usuário
-    const permissions = await this.permissionService.getUserPermissions(usuario.id);
-    
+    const permissions = await this.permissionService.getUserPermissions(
+      usuario.id,
+    );
+
     // Obter os escopos das permissões
     const permissionScopes: Record<string, string> = {};
-    
+
     // Converter para o formato esperado incluindo permissões
-    return UsuarioAdapter.toUserAccessTokenClaims(usuario, permissions, permissionScopes);
+    return UsuarioAdapter.toUserAccessTokenClaims(
+      usuario,
+      permissions,
+      permissionScopes,
+    );
   }
 
   async login(ctx: RequestContext): Promise<AuthTokenOutput> {
@@ -268,19 +274,19 @@ export class AuthService {
 
     // Gerar um JTI (JWT ID) único para cada token
     const jti = this.generateJti();
-    
+
     const subject = { sub: user.id };
     const payload = {
       username: user.username,
       sub: user.id,
       roles: user.roles,
     };
-    
+
     // Adicionar permissões ao payload se disponíveis
     if ('permissions' in user && user.permissions) {
       payload['permissions'] = user.permissions;
     }
-    
+
     // Adicionar escopos de permissões ao payload se disponíveis
     if ('permissionScopes' in user && user.permissionScopes) {
       payload['permissionScopes'] = user.permissionScopes;
@@ -310,26 +316,26 @@ export class AuthService {
         secret: privateKey,
         algorithm: 'RS256',
         expiresIn: accessTokenExpiresIn,
-        jwtid: jti, 
+        jwtid: jti,
       },
     );
 
     // Para o refreshToken, usamos o mesmo JwtService, mas com opções diferentes de expiração
     // Gerar um JTI diferente para o refresh token
     const refreshJti = this.generateJti();
-    
+
     const refreshTokenJwt = this.jwtService.sign(
       {
         ...subject,
-      }, 
+      },
       {
         secret: privateKey,
         algorithm: 'RS256',
         expiresIn: refreshTokenExpiresIn,
-        jwtid: refreshJti, 
+        jwtid: refreshJti,
       },
     );
-    
+
     const authToken = {
       accessToken,
       refreshToken: refreshTokenJwt,

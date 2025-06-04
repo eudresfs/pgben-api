@@ -1,5 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsArray, IsBoolean, IsEnum, IsNotEmpty, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import {
+  IsArray,
+  IsBoolean,
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
 import { TemplateTipoEnum } from '@/enums';
 
 /**
@@ -9,7 +18,7 @@ export class TemplateCreateDto {
   @ApiProperty({
     description: 'Código único que identifica o template',
     example: 'email.nova-solicitacao',
-    maxLength: 100
+    maxLength: 100,
   })
   @IsNotEmpty({ message: 'O código é obrigatório' })
   @IsString({ message: 'O código deve ser uma string' })
@@ -20,7 +29,7 @@ export class TemplateCreateDto {
   @ApiProperty({
     description: 'Nome descritivo do template',
     example: 'Email de Nova Solicitação',
-    maxLength: 200
+    maxLength: 200,
   })
   @IsNotEmpty({ message: 'O nome é obrigatório' })
   @IsString({ message: 'O nome deve ser uma string' })
@@ -30,7 +39,7 @@ export class TemplateCreateDto {
   @ApiProperty({
     description: 'Tipo do template',
     enum: TemplateTipoEnum,
-    example: TemplateTipoEnum.EMAIL
+    example: TemplateTipoEnum.EMAIL,
   })
   @IsNotEmpty({ message: 'O tipo é obrigatório' })
   @IsEnum(TemplateTipoEnum, { message: 'Tipo de template inválido' })
@@ -40,7 +49,7 @@ export class TemplateCreateDto {
     description: 'Assunto do template (obrigatório para emails)',
     example: 'Nova solicitação de benefício registrada',
     maxLength: 200,
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsString({ message: 'O assunto deve ser uma string' })
@@ -48,8 +57,10 @@ export class TemplateCreateDto {
   assunto?: string;
 
   @ApiProperty({
-    description: 'Conteúdo do template em formato HTML ou texto com placeholders',
-    example: '<p>Olá {{nome}},</p><p>Sua solicitação de benefício {{tipo_beneficio}} foi registrada com sucesso.</p>'
+    description:
+      'Conteúdo do template em formato HTML ou texto com placeholders',
+    example:
+      '<p>Olá {{nome}},</p><p>Sua solicitação de benefício {{tipo_beneficio}} foi registrada com sucesso.</p>',
   })
   @IsNotEmpty({ message: 'O conteúdo é obrigatório' })
   @IsString({ message: 'O conteúdo deve ser uma string' })
@@ -58,7 +69,7 @@ export class TemplateCreateDto {
   @ApiProperty({
     description: 'Lista de variáveis disponíveis para substituição no template',
     example: ['nome', 'tipo_beneficio', 'data_solicitacao'],
-    type: [String]
+    type: [String],
   })
   @IsArray({ message: 'As variáveis devem estar em um array' })
   @IsString({ each: true, message: 'Cada variável deve ser uma string' })
@@ -67,7 +78,7 @@ export class TemplateCreateDto {
   @ApiProperty({
     description: 'Status ativo/inativo do template',
     example: true,
-    default: true
+    default: true,
   })
   @IsOptional()
   @IsBoolean({ message: 'O status deve ser um booleano' })

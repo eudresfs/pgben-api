@@ -212,7 +212,10 @@ export class RecursoController {
     description: 'Recurso não pode ser analisado',
   })
   @ApiResponse({ status: 404, description: 'Recurso não encontrado' })
-  async iniciarAnalise(@Param('id', ParseUUIDPipe) id: string, @Req() req: Request) {
+  async iniciarAnalise(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: Request,
+  ) {
     const user = req.user;
     return this.recursoService.iniciarAnalise(id, user);
   }
@@ -259,7 +262,10 @@ export class RecursoController {
     description: 'Recurso não pode ser cancelado',
   })
   @ApiResponse({ status: 404, description: 'Recurso não encontrado' })
-  async cancelarRecurso(@Param('id', ParseUUIDPipe) id: string, @Req() req: Request) {
+  async cancelarRecurso(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: Request,
+  ) {
     const user = req.user;
     return this.recursoService.cancelarRecurso(id, user);
   }

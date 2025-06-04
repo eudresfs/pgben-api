@@ -6,7 +6,7 @@ import { Status } from '../../../enums/status.enum';
 
 /**
  * Script de seed para popular as permissões do módulo de benefício.
- * 
+ *
  * Este script cria as permissões granulares para o módulo de benefício conforme
  * definido no catálogo de permissões, incluindo permissões compostas e
  * configurações de escopo padrão.
@@ -14,15 +14,15 @@ import { Status } from '../../../enums/status.enum';
 export class PermissionBeneficioSeed {
   /**
    * Executa o seed das permissões do módulo de benefício.
-   * 
+   *
    * @param dataSource Conexão com o banco de dados
    */
   public static async run(dataSource: DataSource): Promise<void> {
     console.log('Executando seed de permissões do módulo de benefício...');
-    
+
     const permissionRepository = dataSource.getRepository(Permission);
     const permissionScopeRepository = dataSource.getRepository(PermissionScope);
-    
+
     // Remove todos os escopos de permissão existentes para benefício para evitar conflitos
     await dataSource.query(`
       DELETE FROM escopo_permissao 
@@ -33,21 +33,30 @@ export class PermissionBeneficioSeed {
 
     // Permissão composta para todas as operações do módulo de benefício
     // Usamos SQL direto para evitar problemas com campos que não existem na entidade
-    let beneficioAllPermission = await permissionRepository.findOne({ where: { nome: 'beneficio.*' } });
-    
+    let beneficioAllPermission = await permissionRepository.findOne({
+      where: { nome: 'beneficio.*' },
+    });
+
     if (!beneficioAllPermission) {
       // Inserir diretamente no banco de dados
       const result = await dataSource.query(
         `INSERT INTO permissao (nome, descricao, modulo, acao, status) 
          VALUES ($1, $2, $3, $4, $5) 
          RETURNING id`,
-        ['beneficio.*', 'Todas as permissões do módulo de benefício', 'beneficio', '*', Status.ATIVO]
+        [
+          'beneficio.*',
+          'Todas as permissões do módulo de benefício',
+          'beneficio',
+          '*',
+          Status.ATIVO,
+        ],
       );
-      
+
       beneficioAllPermission = new Permission();
       beneficioAllPermission.id = result[0].id;
       beneficioAllPermission.nome = 'beneficio.*';
-      beneficioAllPermission.descricao = 'Todas as permissões do módulo de benefício';
+      beneficioAllPermission.descricao =
+        'Todas as permissões do módulo de benefício';
     }
 
     // Configura o escopo padrão para a permissão composta
@@ -159,30 +168,30 @@ export class PermissionBeneficioSeed {
     // Cria as permissões individuais e configura o escopo padrão
     for (const permissionData of permissions) {
       const { nome, descricao, scopeType } = permissionData;
-      
+
       // Verificar se a permissão já existe
       let permission = await permissionRepository.findOne({ where: { nome } });
-      
+
       if (!permission) {
         // Extrair módulo e ação do nome
         const parts = nome.split('.');
         const modulo = parts[0];
         const acao = parts.slice(1).join('.');
-        
+
         // Inserir diretamente no banco de dados para evitar problemas com campos não existentes na entidade
         const result = await dataSource.query(
           `INSERT INTO permissao (nome, descricao, modulo, acao, status) 
            VALUES ($1, $2, $3, $4, $5) 
            RETURNING id`,
-          [nome, descricao, modulo, acao, Status.ATIVO]
+          [nome, descricao, modulo, acao, Status.ATIVO],
         );
-        
+
         permission = new Permission();
         permission.id = result[0].id;
         permission.nome = nome;
         permission.descricao = descricao;
       }
-      
+
       // Configura o escopo padrão
       const permissionScope = permissionScopeRepository.create({
         permissao_id: permission.id,
@@ -191,6 +200,8 @@ export class PermissionBeneficioSeed {
       await permissionScopeRepository.save(permissionScope);
     }
 
-    console.log('Seed de permissões do módulo de benefício concluído com sucesso!');
+    console.log(
+      'Seed de permissões do módulo de benefício concluído com sucesso!',
+    );
   }
 }

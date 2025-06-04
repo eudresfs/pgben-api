@@ -1,5 +1,15 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsEnum, IsNotEmpty, IsOptional, IsNumber, IsBoolean, IsDate, IsObject, IsUUID } from 'class-validator';
+import {
+  IsString,
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsNumber,
+  IsBoolean,
+  IsDate,
+  IsObject,
+  IsUUID,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { GranularidadeTemporal } from '../../../entities';
 
@@ -48,7 +58,7 @@ export class CriarMetricaSnapshotDto {
 
   @ApiPropertyOptional({
     description: 'Dimensões ou filtros aplicados na coleta do valor',
-    example: { "regiao": "nordeste", "faixa_etaria": "18-25" },
+    example: { regiao: 'nordeste', faixa_etaria: '18-25' },
   })
   @IsObject()
   @IsOptional()
@@ -56,7 +66,7 @@ export class CriarMetricaSnapshotDto {
 
   @ApiPropertyOptional({
     description: 'Metadados adicionais sobre o snapshot',
-    example: { "fonte": "importacao_manual", "usuario": "admin" },
+    example: { fonte: 'importacao_manual', usuario: 'admin' },
   })
   @IsObject()
   @IsOptional()
@@ -112,7 +122,7 @@ export class FiltroMetricaSnapshotsDto {
 
   @ApiPropertyOptional({
     description: 'Dimensões para filtrar os snapshots',
-    example: { "regiao": "nordeste" },
+    example: { regiao: 'nordeste' },
   })
   @IsObject()
   @IsOptional()
@@ -169,14 +179,15 @@ export class ColetaManualMetricaDto {
 
   @ApiPropertyOptional({
     description: 'Dimensões para filtrar a coleta',
-    example: { "regiao": "nordeste", "faixa_etaria": "18-25" },
+    example: { regiao: 'nordeste', faixa_etaria: '18-25' },
   })
   @IsObject()
   @IsOptional()
   dimensoes?: Record<string, any>;
 
   @ApiPropertyOptional({
-    description: 'Data de início do período (se não informado, usa padrão da granularidade)',
+    description:
+      'Data de início do período (se não informado, usa padrão da granularidade)',
     example: '2023-01-01T00:00:00.000Z',
   })
   @IsDate()
@@ -208,7 +219,7 @@ export class ConsultaValorMetricaDto {
 
   @ApiPropertyOptional({
     description: 'Dimensões para filtrar o valor',
-    example: { "regiao": "nordeste", "faixa_etaria": "18-25" },
+    example: { regiao: 'nordeste', faixa_etaria: '18-25' },
   })
   @IsObject()
   @IsOptional()
@@ -254,7 +265,7 @@ export class ConsultaSerieTemporalDto {
 
   @ApiPropertyOptional({
     description: 'Dimensões para filtrar os dados',
-    example: { "regiao": "nordeste" },
+    example: { regiao: 'nordeste' },
   })
   @IsObject()
   @IsOptional()

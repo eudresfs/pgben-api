@@ -144,7 +144,9 @@ describe('AuthorizationService', () => {
         scopeType: ScopeType.GLOBAL,
         scopeId: undefined,
       });
-      expect((service as any).hasRole).toHaveBeenCalledWith('user-123', ['admin']);
+      expect((service as any).hasRole).toHaveBeenCalledWith('user-123', [
+        'admin',
+      ]);
       expect(mockCacheManager.set).toHaveBeenCalled(); // Deve armazenar em cache
       expect(result).toBe(true);
     });
@@ -179,7 +181,9 @@ describe('AuthorizationService', () => {
         scopeType: ScopeType.GLOBAL,
         scopeId: undefined,
       });
-      expect((service as any).hasRole).toHaveBeenCalledWith('user-123', ['admin']);
+      expect((service as any).hasRole).toHaveBeenCalledWith('user-123', [
+        'admin',
+      ]);
       expect(mockCacheManager.set).toHaveBeenCalled(); // Deve armazenar em cache
       expect(result).toBe(false);
     });

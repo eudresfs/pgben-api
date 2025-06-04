@@ -13,18 +13,20 @@ export class CreateUsuarioRoleTable1704067224000 implements MigrationInterface {
     const roleTableExists = await queryRunner.hasTable('role');
     if (!roleTableExists) {
       console.log('Tabela role não existe, verificando tabela role');
-      
+
       // Verificar se a tabela role existe
       const roleExists = await queryRunner.hasTable('role');
       if (!roleExists) {
-        console.log('Tabela role não existe, não é possível criar relacionamentos');
+        console.log(
+          'Tabela role não existe, não é possível criar relacionamentos',
+        );
         return;
       }
     }
 
     // Determinar o nome correto da tabela de roles
     const roleTableName = roleTableExists ? 'role' : 'role';
-    
+
     await queryRunner.query(`
       CREATE TABLE "usuario_role" (
         "id" UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
@@ -50,7 +52,7 @@ export class CreateUsuarioRoleTable1704067224000 implements MigrationInterface {
       COMMENT ON COLUMN "usuario_role"."created_at" IS 'Data de criação do registro';
       COMMENT ON COLUMN "usuario_role"."criado_por" IS 'Usuário que criou o registro';
     `);
-    
+
     // Migrar dados do campo role_id da tabela usuario para a nova tabela usuario_role
     await queryRunner.query(`
       INSERT INTO "usuario_role" ("usuario_id", "role_id", "created_at")
@@ -58,7 +60,7 @@ export class CreateUsuarioRoleTable1704067224000 implements MigrationInterface {
       FROM "usuario"
       WHERE "role_id" IS NOT NULL;
     `);
-    
+
     console.log('Tabela usuario_role criada com sucesso');
   }
 

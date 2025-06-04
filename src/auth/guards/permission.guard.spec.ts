@@ -64,10 +64,10 @@ describe('PermissionGuard', () => {
       const result = await guard.canActivate(context);
 
       // Assert
-      expect(reflector.getAllAndOverride).toHaveBeenCalledWith(PERMISSION_REQUIREMENTS_KEY, [
-        context.getHandler(),
-        context.getClass(),
-      ]);
+      expect(reflector.getAllAndOverride).toHaveBeenCalledWith(
+        PERMISSION_REQUIREMENTS_KEY,
+        [context.getHandler(), context.getClass()],
+      );
       expect(result).toBe(true);
     });
 
@@ -88,17 +88,19 @@ describe('PermissionGuard', () => {
         }),
       });
 
-      jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(permissionOptions);
+      jest
+        .spyOn(reflector, 'getAllAndOverride')
+        .mockReturnValue(permissionOptions);
       mockPermissionService.hasPermission.mockResolvedValue(true);
 
       // Act
       const result = await guard.canActivate(context);
 
       // Assert
-      expect(reflector.getAllAndOverride).toHaveBeenCalledWith(PERMISSION_REQUIREMENTS_KEY, [
-        context.getHandler(),
-        context.getClass(),
-      ]);
+      expect(reflector.getAllAndOverride).toHaveBeenCalledWith(
+        PERMISSION_REQUIREMENTS_KEY,
+        [context.getHandler(), context.getClass()],
+      );
       expect(mockPermissionService.hasPermission).toHaveBeenCalledWith({
         userId: 'user-123',
         permissionName: 'usuario.visualizar',
@@ -125,15 +127,19 @@ describe('PermissionGuard', () => {
         }),
       });
 
-      jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(permissionOptions);
+      jest
+        .spyOn(reflector, 'getAllAndOverride')
+        .mockReturnValue(permissionOptions);
       mockPermissionService.hasPermission.mockResolvedValue(false);
 
       // Act & Assert
-      await expect(guard.canActivate(context)).rejects.toThrow(UnauthorizedException);
-      expect(reflector.getAllAndOverride).toHaveBeenCalledWith(PERMISSION_REQUIREMENTS_KEY, [
-        context.getHandler(),
-        context.getClass(),
-      ]);
+      await expect(guard.canActivate(context)).rejects.toThrow(
+        UnauthorizedException,
+      );
+      expect(reflector.getAllAndOverride).toHaveBeenCalledWith(
+        PERMISSION_REQUIREMENTS_KEY,
+        [context.getHandler(), context.getClass()],
+      );
       expect(mockPermissionService.hasPermission).toHaveBeenCalledWith({
         userId: 'user-123',
         permissionName: 'usuario.visualizar',
@@ -160,17 +166,19 @@ describe('PermissionGuard', () => {
         }),
       });
 
-      jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(permissionOptions);
+      jest
+        .spyOn(reflector, 'getAllAndOverride')
+        .mockReturnValue(permissionOptions);
       mockPermissionService.hasPermission.mockResolvedValue(true);
 
       // Act
       const result = await guard.canActivate(context);
 
       // Assert
-      expect(reflector.getAllAndOverride).toHaveBeenCalledWith(PERMISSION_REQUIREMENTS_KEY, [
-        context.getHandler(),
-        context.getClass(),
-      ]);
+      expect(reflector.getAllAndOverride).toHaveBeenCalledWith(
+        PERMISSION_REQUIREMENTS_KEY,
+        [context.getHandler(), context.getClass()],
+      );
       expect(mockPermissionService.hasPermission).toHaveBeenCalledWith({
         userId: 'user-123',
         permissionName: 'usuario.visualizar',
@@ -198,17 +206,19 @@ describe('PermissionGuard', () => {
         }),
       });
 
-      jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(permissionOptions);
+      jest
+        .spyOn(reflector, 'getAllAndOverride')
+        .mockReturnValue(permissionOptions);
       mockPermissionService.hasPermission.mockResolvedValue(true);
 
       // Act
       const result = await guard.canActivate(context);
 
       // Assert
-      expect(reflector.getAllAndOverride).toHaveBeenCalledWith(PERMISSION_REQUIREMENTS_KEY, [
-        context.getHandler(),
-        context.getClass(),
-      ]);
+      expect(reflector.getAllAndOverride).toHaveBeenCalledWith(
+        PERMISSION_REQUIREMENTS_KEY,
+        [context.getHandler(), context.getClass()],
+      );
       expect(mockPermissionService.hasPermission).toHaveBeenCalledWith({
         userId: 'user-123',
         permissionName: 'usuario.visualizar',
@@ -235,14 +245,18 @@ describe('PermissionGuard', () => {
         }),
       });
 
-      jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(permissionOptions);
+      jest
+        .spyOn(reflector, 'getAllAndOverride')
+        .mockReturnValue(permissionOptions);
 
       // Act & Assert
-      await expect(guard.canActivate(context)).rejects.toThrow(UnauthorizedException);
-      expect(reflector.getAllAndOverride).toHaveBeenCalledWith(PERMISSION_REQUIREMENTS_KEY, [
-        context.getHandler(),
-        context.getClass(),
-      ]);
+      await expect(guard.canActivate(context)).rejects.toThrow(
+        UnauthorizedException,
+      );
+      expect(reflector.getAllAndOverride).toHaveBeenCalledWith(
+        PERMISSION_REQUIREMENTS_KEY,
+        [context.getHandler(), context.getClass()],
+      );
       expect(mockPermissionService.hasPermission).not.toHaveBeenCalled();
     });
 
@@ -264,14 +278,18 @@ describe('PermissionGuard', () => {
         }),
       });
 
-      jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(permissionOptions);
+      jest
+        .spyOn(reflector, 'getAllAndOverride')
+        .mockReturnValue(permissionOptions);
 
       // Act & Assert
-      await expect(guard.canActivate(context)).rejects.toThrow(UnauthorizedException);
-      expect(reflector.getAllAndOverride).toHaveBeenCalledWith(PERMISSION_REQUIREMENTS_KEY, [
-        context.getHandler(),
-        context.getClass(),
-      ]);
+      await expect(guard.canActivate(context)).rejects.toThrow(
+        UnauthorizedException,
+      );
+      expect(reflector.getAllAndOverride).toHaveBeenCalledWith(
+        PERMISSION_REQUIREMENTS_KEY,
+        [context.getHandler(), context.getClass()],
+      );
       expect(mockPermissionService.hasPermission).not.toHaveBeenCalled();
     });
   });

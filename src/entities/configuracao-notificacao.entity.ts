@@ -1,9 +1,15 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 import { NivelAlertaEnum } from './metrica-seguranca.entity';
 
 /**
  * Entidade que representa configurações de notificação para alertas
- * 
+ *
  * Esta entidade define como as notificações de alertas devem ser enviadas,
  * incluindo o tipo de notificação, configurações específicas e níveis de alerta.
  */

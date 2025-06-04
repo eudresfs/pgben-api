@@ -22,7 +22,9 @@ export const AppDataSource = new DataSource({
     max: parseInt(process.env.DB_POOL_MAX || '20'),
     min: parseInt(process.env.DB_POOL_MIN || '5'),
     idleTimeoutMillis: parseInt(process.env.DB_POOL_IDLE || '30000'),
-    connectionTimeoutMillis: parseInt(process.env.DB_POOL_CONN_TIMEOUT || '5000'),
+    connectionTimeoutMillis: parseInt(
+      process.env.DB_POOL_CONN_TIMEOUT || '5000',
+    ),
     allowExitOnIdle: false,
   },
 });

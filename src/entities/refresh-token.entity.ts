@@ -9,7 +9,15 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm';
-import { IsNotEmpty, IsUUID, IsBoolean, IsOptional, IsString, IsDateString, Length } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsUUID,
+  IsBoolean,
+  IsOptional,
+  IsString,
+  IsDateString,
+  Length,
+} from 'class-validator';
 import { Usuario } from './usuario.entity';
 
 @Entity('refresh_tokens')
@@ -66,7 +74,9 @@ export class RefreshToken {
   })
   @IsOptional()
   @IsString({ message: 'Token de substituição deve ser uma string' })
-  @Length(10, 500, { message: 'Token de substituição deve ter entre 10 e 500 caracteres' })
+  @Length(10, 500, {
+    message: 'Token de substituição deve ter entre 10 e 500 caracteres',
+  })
   replacedByToken: string | null;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamp with time zone' })
@@ -171,10 +181,10 @@ export class RefreshToken {
    */
   isCriadoRecentemente(horas: number = 1): boolean {
     if (!this.created_at) return false;
-    
+
     const agora = new Date();
     const horasAtras = new Date(agora.getTime() - horas * 60 * 60 * 1000);
-    
+
     return this.created_at > horasAtras;
   }
 
@@ -183,11 +193,11 @@ export class RefreshToken {
    */
   getIdadeEmHoras(): number {
     if (!this.created_at) return 0;
-    
+
     const agora = new Date();
     const diffTime = Math.abs(agora.getTime() - this.created_at.getTime());
     const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
-    
+
     return diffHours;
   }
 
@@ -238,7 +248,7 @@ export class RefreshToken {
       expiraEm: this.expires_at,
       minutosRestantes: this.getMinutosAteExpiracao(),
       idadeEmHoras: this.getIdadeEmHoras(),
-      foiSubstituido: this.foiSubstituido()
+      foiSubstituido: this.foiSubstituido(),
     };
   }
 
@@ -266,7 +276,7 @@ export class RefreshToken {
    */
   getTempoVidaUtil(): number {
     if (!this.created_at || !this.expires_at) return 0;
-    
+
     const diffTime = this.expires_at.getTime() - this.created_at.getTime();
     return Math.floor(diffTime / (1000 * 60 * 60));
   }
@@ -277,8 +287,8 @@ export class RefreshToken {
   isProximoExpiracao(): boolean {
     const tempoVidaUtil = this.getTempoVidaUtil();
     const tempoRestante = this.getMinutosAteExpiracao() / 60; // Converter para horas
-    
-    return tempoRestante <= (tempoVidaUtil * 0.1);
+
+    return tempoRestante <= tempoVidaUtil * 0.1;
   }
 
   /**
@@ -291,7 +301,7 @@ export class RefreshToken {
       day: '2-digit',
       hour: '2-digit',
       minute: '2-digit',
-      second: '2-digit'
+      second: '2-digit',
     });
   }
 
@@ -302,15 +312,15 @@ export class RefreshToken {
     if (this.isRevoked()) {
       return `Revogado em ${this.revoked_at?.toLocaleString('pt-BR')}`;
     }
-    
+
     if (this.isExpired()) {
       return `Expirado em ${this.getExpiracaoFormatada()}`;
     }
-    
+
     if (this.isProximoExpiracao()) {
       return `Expira em ${this.getMinutosAteExpiracao()} minutos`;
     }
-    
+
     return 'Ativo';
   }
 }

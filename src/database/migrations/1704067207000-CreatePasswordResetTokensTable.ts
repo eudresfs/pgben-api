@@ -1,6 +1,13 @@
-import { MigrationInterface, QueryRunner, Table, TableForeignKey } from 'typeorm';
+import {
+  MigrationInterface,
+  QueryRunner,
+  Table,
+  TableForeignKey,
+} from 'typeorm';
 
-export class CreatePasswordResetTokensTable1704067210000 implements MigrationInterface {
+export class CreatePasswordResetTokensTable1704067210000
+  implements MigrationInterface
+{
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Criar a tabela password_reset_tokens
     await queryRunner.createTable(
@@ -115,19 +122,19 @@ export class CreatePasswordResetTokensTable1704067210000 implements MigrationInt
 
     // Criar índices conforme definido na entidade
     await queryRunner.query(
-      'CREATE UNIQUE INDEX "IDX_password_reset_tokens_token" ON "password_reset_tokens" ("token")'
+      'CREATE UNIQUE INDEX "IDX_password_reset_tokens_token" ON "password_reset_tokens" ("token")',
     );
-    
+
     await queryRunner.query(
-      'CREATE INDEX "IDX_password_reset_tokens_usuario_id_is_used" ON "password_reset_tokens" ("usuario_id", "is_used")'
+      'CREATE INDEX "IDX_password_reset_tokens_usuario_id_is_used" ON "password_reset_tokens" ("usuario_id", "is_used")',
     );
-    
+
     await queryRunner.query(
-      'CREATE INDEX "IDX_password_reset_tokens_expires_at" ON "password_reset_tokens" ("expires_at")'
+      'CREATE INDEX "IDX_password_reset_tokens_expires_at" ON "password_reset_tokens" ("expires_at")',
     );
-    
+
     await queryRunner.query(
-      'CREATE INDEX "IDX_password_reset_tokens_used_at" ON "password_reset_tokens" ("used_at")'
+      'CREATE INDEX "IDX_password_reset_tokens_used_at" ON "password_reset_tokens" ("used_at")',
     );
 
     // Criar trigger para atualizar updated_at automaticamente
@@ -164,11 +171,15 @@ export class CreatePasswordResetTokensTable1704067210000 implements MigrationInt
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     // Remover trigger
-    await queryRunner.query('DROP TRIGGER IF EXISTS update_password_reset_tokens_updated_at ON password_reset_tokens');
-    
+    await queryRunner.query(
+      'DROP TRIGGER IF EXISTS update_password_reset_tokens_updated_at ON password_reset_tokens',
+    );
+
     // Remover função do trigger (só se não estiver sendo usada por outras tabelas)
-    await queryRunner.query('DROP FUNCTION IF EXISTS update_updated_at_column()');
-    
+    await queryRunner.query(
+      'DROP FUNCTION IF EXISTS update_updated_at_column()',
+    );
+
     // Remover a tabela (isso também remove os índices e chaves estrangeiras)
     await queryRunner.dropTable('password_reset_tokens');
   }

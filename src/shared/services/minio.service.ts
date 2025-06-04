@@ -29,7 +29,7 @@ export class MinioService implements OnModuleInit {
     // Configuração do cliente MinIO
     const useSSL = this.configService.get('MINIO_USE_SSL') === 'true';
     this.logger.log(`Configurando MinIO com SSL: ${useSSL}`);
-    
+
     this.minioClient = new Minio.Client({
       endPoint: this.configService.get<string>('MINIO_ENDPOINT', 'localhost'),
       port: this.configService.get<number>('MINIO_PORT', 9000),

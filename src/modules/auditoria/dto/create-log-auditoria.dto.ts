@@ -184,10 +184,13 @@ export class CreateLogAuditoriaDto extends BaseDto {
     example: '2023-01-01T12:00:00Z',
   })
   @IsOptional({ groups: [CREATE, UPDATE, SECURITY] })
-  @IsDateString({}, {
-    message: 'A data e hora deve estar em formato ISO',
-    groups: [CREATE, UPDATE, SECURITY],
-  })
+  @IsDateString(
+    {},
+    {
+      message: 'A data e hora deve estar em formato ISO',
+      groups: [CREATE, UPDATE, SECURITY],
+    },
+  )
   data_hora?: Date;
 
   @ApiPropertyOptional({

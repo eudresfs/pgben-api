@@ -1,0 +1,148 @@
+733947cd6ccb9613cc7be9e7b03cae2c
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var ScheduleAdapterService_1;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.ScheduleAdapterService = void 0;
+const common_1 = require("@nestjs/common");
+/**
+ * Serviço adaptador para agendamento
+ *
+ * Este serviço implementa uma solução alternativa para o agendamento de tarefas
+ * enquanto resolvemos os problemas de compatibilidade com o ScheduleModule.
+ */
+let ScheduleAdapterService = ScheduleAdapterService_1 = class ScheduleAdapterService {
+    logger = new common_1.Logger(ScheduleAdapterService_1.name);
+    intervals = new Map();
+    timeouts = new Map();
+    /**
+     * Agenda uma tarefa para ser executada em intervalos regulares
+     *
+     * @param name Nome único para identificar a tarefa
+     * @param milliseconds Intervalo em milissegundos
+     * @param callback Função a ser executada
+     */
+    scheduleInterval(name, milliseconds, callback) {
+        // Cancela o intervalo existente, se houver
+        this.cancelInterval(name);
+        // Cria um novo intervalo
+        const interval = setInterval(async () => {
+            try {
+                await callback();
+            }
+            catch (error) {
+                this.logger.error(`Erro ao executar tarefa agendada ${name}: ${error.message}`);
+            }
+        }, milliseconds);
+        // Armazena o intervalo para referência futura
+        this.intervals.set(name, interval);
+        this.logger.log(`Tarefa ${name} agendada para executar a cada ${milliseconds}ms`);
+    }
+    /**
+     * Cancela uma tarefa agendada
+     *
+     * @param name Nome da tarefa a ser cancelada
+     */
+    cancelInterval(name) {
+        const interval = this.intervals.get(name);
+        if (interval) {
+            clearInterval(interval);
+            this.intervals.delete(name);
+            this.logger.log(`Tarefa ${name} cancelada`);
+        }
+    }
+    /**
+     * Agenda uma tarefa para ser executada diariamente em um horário específico
+     *
+     * @param name Nome único para identificar a tarefa
+     * @param hour Hora do dia (0-23)
+     * @param minute Minuto (0-59)
+     * @param callback Função a ser executada
+     */
+    scheduleDailyTask(name, hour, minute, callback) {
+        this.cancelInterval(name);
+        const calculateNextRun = () => {
+            const now = new Date();
+            const nextRun = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hour, minute, 0);
+            // Se o horário já passou hoje, agendar para amanhã
+            if (nextRun.getTime() <= now.getTime()) {
+                nextRun.setDate(nextRun.getDate() + 1);
+            }
+            return nextRun.getTime() - now.getTime();
+        };
+        const scheduleNext = () => {
+            const timeUntilNextRun = calculateNextRun();
+            const timeout = setTimeout(async () => {
+                try {
+                    await callback();
+                }
+                catch (error) {
+                    this.logger.error(`Erro ao executar tarefa diária ${name}: ${error.message}`);
+                }
+                // Agenda a próxima execução
+                scheduleNext();
+            }, timeUntilNextRun);
+            this.intervals.set(name, timeout);
+            this.logger.log(`Tarefa diária ${name} agendada para executar em ${Math.floor(timeUntilNextRun / 1000 / 60)} minutos`);
+        };
+        // Inicia o agendamento
+        scheduleNext();
+    }
+    /**
+     * Agenda uma tarefa para ser executada uma única vez em uma data específica
+     *
+     * @param name Nome único para identificar a tarefa
+     * @param date Data e hora para execução da tarefa
+     * @param callback Função a ser executada
+     */
+    scheduleOnce(name, date, callback) {
+        // Cancela o timeout existente, se houver
+        this.cancelTimeout(name);
+        const now = new Date();
+        const delay = date.getTime() - now.getTime();
+        if (delay <= 0) {
+            // Se a data já passou, executar imediatamente
+            callback().catch(error => {
+                this.logger.error(`Erro ao executar tarefa agendada ${name}: ${error.message}`);
+            });
+            return;
+        }
+        // Criar um novo timeout
+        const timeout = setTimeout(async () => {
+            try {
+                await callback();
+                // Remover da lista após execução
+                this.timeouts.delete(name);
+            }
+            catch (error) {
+                this.logger.error(`Erro ao executar tarefa agendada ${name}: ${error.message}`);
+            }
+        }, delay);
+        // Armazenar o timeout para referência futura
+        this.timeouts.set(name, timeout);
+        this.logger.log(`Tarefa ${name} agendada para executar em ${new Date(now.getTime() + delay).toISOString()}`);
+    }
+    /**
+     * Cancela um timeout agendado
+     *
+     * @param name Nome da tarefa a ser cancelada
+     */
+    cancelTimeout(name) {
+        const timeout = this.timeouts.get(name);
+        if (timeout) {
+            clearTimeout(timeout);
+            this.timeouts.delete(name);
+            this.logger.log(`Timeout ${name} cancelado`);
+        }
+    }
+};
+exports.ScheduleAdapterService = ScheduleAdapterService;
+exports.ScheduleAdapterService = ScheduleAdapterService = ScheduleAdapterService_1 = __decorate([
+    (0, common_1.Injectable)()
+], ScheduleAdapterService);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXHNoYXJlZFxcc2NoZWR1bGVcXHNjaGVkdWxlLWFkYXB0ZXIuc2VydmljZS50cyIsIm1hcHBpbmdzIjoiOzs7Ozs7Ozs7O0FBQUEsMkNBQW9EO0FBRXBEOzs7OztHQUtHO0FBRUksSUFBTSxzQkFBc0IsOEJBQTVCLE1BQU0sc0JBQXNCO0lBQ2hCLE1BQU0sR0FBRyxJQUFJLGVBQU0sQ0FBQyx3QkFBc0IsQ0FBQyxJQUFJLENBQUMsQ0FBQztJQUMxRCxTQUFTLEdBQWdDLElBQUksR0FBRyxFQUFFLENBQUM7SUFDbkQsUUFBUSxHQUFnQyxJQUFJLEdBQUcsRUFBRSxDQUFDO0lBRTFEOzs7Ozs7T0FNRztJQUNILGdCQUFnQixDQUFDLElBQVksRUFBRSxZQUFvQixFQUFFLFFBQTZCO1FBQ2hGLDJDQUEyQztRQUMzQyxJQUFJLENBQUMsY0FBYyxDQUFDLElBQUksQ0FBQyxDQUFDO1FBRTFCLHlCQUF5QjtRQUN6QixNQUFNLFFBQVEsR0FBRyxXQUFXLENBQUMsS0FBSyxJQUFJLEVBQUU7WUFDdEMsSUFBSSxDQUFDO2dCQUNILE1BQU0sUUFBUSxFQUFFLENBQUM7WUFDbkIsQ0FBQztZQUFDLE9BQU8sS0FBSyxFQUFFLENBQUM7Z0JBQ2YsSUFBSSxDQUFDLE1BQU0sQ0FBQyxLQUFLLENBQUMsb0NBQW9DLElBQUksS0FBSyxLQUFLLENBQUMsT0FBTyxFQUFFLENBQUMsQ0FBQztZQUNsRixDQUFDO1FBQ0gsQ0FBQyxFQUFFLFlBQVksQ0FBQyxDQUFDO1FBRWpCLDhDQUE4QztRQUM5QyxJQUFJLENBQUMsU0FBUyxDQUFDLEdBQUcsQ0FBQyxJQUFJLEVBQUUsUUFBUSxDQUFDLENBQUM7UUFDbkMsSUFBSSxDQUFDLE1BQU0sQ0FBQyxHQUFHLENBQUMsVUFBVSxJQUFJLGtDQUFrQyxZQUFZLElBQUksQ0FBQyxDQUFDO0lBQ3BGLENBQUM7SUFFRDs7OztPQUlHO0lBQ0gsY0FB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SCxDQUFDO0NBQ0YsQ0FBQTtBQW5KWSx3REFBc0I7aUNBQXRCLHNCQUFzQjtJQURsQyxJQUFBLG1CQUFVLEdBQUU7R0FDQSxzQkFBc0IsQ0FtSmxDIiwibmFtZXMiOltdLCJzb3VyY2VzIjpbIkM6XFxVc2Vyc1xcZXVkcmVcXE9uZURyaXZlXFxEZXNrdG9wXFxQcm9qZXRvc1xccGdiZW5cXHBnYmVuLXNlcnZlclxcc3JjXFxzaGFyZWRcXHNjaGVkdWxlXFxzY2hlZHVsZS1hZGFwdGVyLnNlcnZpY2UudHMiXSwic291cmNlc0NvbnRlbnQiOlsiaW1wb3J0IHsgSW5qZWN0YWJsZSwgTG9nZ2VyIH0gZnJvbSAnQG5lc3Rqcy9jb21tb24nO1xuXG4vKipcbiAqIFNlcnZpw6dvIGFkYXB0YWRvciBwYXJhIGFnZW5kYW1lbnRvXG4gKiBcbiAqIEVzdGUgc2VydmnDp28gaW1wbGVtZW50YSB1bWEgc29sdcOnw6NvIGFsdGVybmF0aXZhIHBhcmEgbyBhZ2VuZGFtZW50byBkZSB0YXJlZmFzXG4gKiBlbnF1YW50byByZXNvbHZlbW9zIG9zIHByb2JsZW1hcyBkZSBjb21wYXRpYmlsaWRhZGUgY29tIG8gU2NoZWR1bGVNb2R1bGUuXG4gKi9cbkBJbmplY3RhYmxlKClcbmV4cG9ydCBjbGFzcyBTY2hlZHVsZUFkYXB0ZXJTZXJ2aWNlIHtcbiAgcHJpdmF0ZSByZWFkb25seSBsb2dnZXIgPSBuZXcgTG9nZ2VyKFNjaGVkdWxlQWRhcHRlclNlcnZpY2UubmFtZSk7XG4gIHByaXZhdGUgaW50ZXJ2YWxzOiBNYXA8c3RyaW5nLCBOb2RlSlMuVGltZW91dD4gPSBuZXcgTWFwKCk7XG4gIHByaXZhdGUgdGltZW91dHM6IE1hcDxzdHJpbmcsIE5vZGVKUy5UaW1lb3V0PiA9IG5ldyBNYXAoKTtcblxuICAvKipcbiAgICogQWdlbmRhIHVtYSB0YXJlZmEgcGFyYSBzZXIgZXhlY3V0YWRhIGVtIGludGVydmFsb3MgcmVndWxhcmVzXG4gICAqIFxuICAgKiBAcGFyYW0gbmFtZSBOb21lIMO6bmljbyBwYXJhIGlkZW50aWZpY2FyIGEgdGFyZWZhXG4gICAqIEBwYXJhbSBtaWxsaXNlY29uZHMgSW50ZXJ2YWxvIGVtIG1pbGlzc2VndW5kb3NcbiAgICogQHBhcmFtIGNhbGxiYWNrIEZ1bsOnw6NvIGEgc2VyIGV4ZWN1dGFkYVxuICAgKi9cbiAgc2NoZWR1bGVJbnRlcnZhbChuYW1lOiBzdHJpbmcsIG1pbGxpc2Vjb25kczogbnVtYmVyLCBjYWxsYmFjazogKCkgPT4gUHJvbWlzZTx2b2lkPik6IHZvaWQge1xuICAgIC8vIENhbmNlbGEgbyBpbnRlcnZhbG8gZXhpc3RlbnRlLCBzZSBob3V2ZXJcbiAgICB0aGlzLmNhbmNlbEludGVydmFsKG5hbWUpO1xuICAgIFxuICAgIC8vIENyaWEgdW0gbm92byBpbnRlcnZhbG9cbiAgICBjb25zdCBpbnRlcnZhbCA9IHNldEludGVydmFsKGFzeW5jICgpID0+IHtcbiAgICAgIHRyeSB7XG4gICAgICAgIGF3YWl0IGNhbGxiYWNrKCk7XG4gICAgICB9IGNhdGNoIChlcnJvcikge1xuICAgICAgICB0aGlzLmxvZ2dlci5lcnJvcihgRXJybyBhbyBleGVjdXRhciB0YXJlZmEgYWdlbmRhZGEgJHtuYW1lfTogJHtlcnJvci5tZXNzYWdlfWApO1xuICAgICAgfVxuICAgIH0sIG1pbGxpc2Vjb25kcyk7XG4gICAgXG4gICAgLy8gQXJtYXplbmEgbyBpbnRlcnZhbG8gcGFyYSByZWZlcsOqbmNpYSBmdXR1cmFcbiAgICB0aGlzLmludGVydmFscy5zZXQobmFtZSwgaW50ZXJ2YWwpO1xuICAgIHRoaXMubG9nZ2VyLmxvZyhgVGFyZWZhICR7bmFtZX0gYWdlbmRhZGEgcGFyYSBleGVjdXRhciBhIGNhZGEgJHttaWxsaXNlY29uZHN9bXNgKTtcbiAgfVxuXG4gIC8qKlxuICAgKiBDYW5jZWxhIHVtYSB0YXJlZmEgYWdlbmRhZGFcbiAgICogXG4gICAqIEBwYXJhbSBuYW1lIE5vbWUgZGEgdGFyZWZhIGEgc2VyIGNhbmNlbGFkYVxuICAgKi9cbiAgY2FuY2VsSW50ZXJ2YWwobmFtZTogc3RyaW5nKTogdm9pZCB7XG4gICAgY29uc3QgaW50ZXJ2YWwgPSB0aGlzLmludGVydmFscy5nZXQobmFtZSk7XG4gICAgaWYgKGludGVydmFsKSB7XG4gICAgICBjbGVhckludGVydmFsKGludGVydmFsKTtcbiAgICAgIHRoaXMuaW50ZXJ2YWxzLmRlbGV0ZShuYW1lKTtcbiAgICAgIHRoaXMubG9nZ2VyLmxvZyhgVGFyZWZhICR7bmFtZX0gY2FuY2VsYWRhYCk7XG4gICAgfVxuICB9XG5cbiAgLyoqXG4gICAqIEFnZW5kYSB1bWEgdGFyZWZhIHBhcmEgc2VyIGV4ZWN1dGFkYSBkaWFyaWFtZW50ZSBlbSB1bSBob3LDoXJpbyBlc3BlY8OtZmljb1xuICAgKiBcbiAgICogQHBhcmFtIG5hbWUgTm9tZSDDum5pY28gcGFyYSBpZGVudGlmaWNhciBhIHRhcmVmYVxuICAgKiBAcGFyYW0gaG91ciBIb3JhIGRvIGRpYSAoMC0yMylcbiAgICogQHBhcmFtIG1pbnV0ZSBNaW51dG8gKDAtNTkpXG4gICAqIEBwYXJhbSBjYWxsYmFjayBGdW7Dp8OjbyBhIHNlciBleGVjdXRhZGFcbiAgICovXG4gIHNjaGVkdWxlRGFpbHlUYXNrKG5hbWU6IHN0cmluZywgaG91cjogbnVtYmVyLCBtaW51dGU6IG51bWJlciwgY2FsbGJhY2s6ICgpID0+IFByb21pc2U8dm9pZD4pOiB2b2lkIHtcbiAgICB0aGlzLmNhbmNlbEludGVydmFsKG5hbWUpO1xuICAgIFxuICAgIGNvbnN0IGNhbGN1bGF0ZU5leHRSdW4gPSAoKTogbnVtYmVyID0+IHtcbiAgICAgIGNvbnN0IG5vdyA9IG5ldyBEYXRlKCk7XG4gICAgICBjb25zdCBuZXh0UnVuID0gbmV3IERhdGUoXG4gICAgICAgIG5vdy5nZXRGdWxsWWVhcigpLFxuICAgICAgICBub3cuZ2V0TW9udGgoKSxcbiAgICAgICAgbm93LmdldERhdGUoKSxcbiAgICAgICAgaG91cixcbiAgICAgICAgbWludXRlLFxuICAgICAgICAwXG4gICAgICApO1xuICAgICAgXG4gICAgICAvLyBTZSBvIGhvcsOhcmlvIGrDoSBwYXNzb3UgaG9qZSwgYWdlbmRhciBwYXJhIGFtYW5ow6NcbiAgICAgIGlmIChuZXh0UnVuLmdldFRpbWUoKSA8PSBub3cuZ2V0VGltZSgpKSB7XG4gICAgICAgIG5leHRSdW4uc2V0RGF0ZShuZXh0UnVuLmdldERhdGUoKSArIDEpO1xuICAgICAgfVxuICAgICAgXG4gICAgICByZXR1cm4gbmV4dFJ1bi5nZXRUaW1lKCkgLSBub3cuZ2V0VGltZSgpO1xuICAgIH07XG4gICAgXG4gICAgY29uc3Qgc2NoZWR1bGVOZXh0ID0gKCkgPT4ge1xuICAgICAgY29uc3QgdGltZVVudGlsTmV4dFJ1biA9IGNhbGN1bGF0ZU5leHRSdW4oKTtcbiAgICAgIFxuICAgICAgY29uc3QgdGltZW91dCA9IHNldFRpbWVvdXQoYXN5bmMgKCkgPT4ge1xuICAgICAgICB0cnkge1xuICAgICAgICAgIGF3YWl0IGNhbGxiYWNrKCk7XG4gICAgICAgIH0gY2F0Y2ggKGVycm9yKSB7XG4gICAgICAgICAgdGhpcy5sb2dnZXIuZXJyb3IoYEVycm8gYW8gZXhlY3V0YXIgdGFyZWZhIGRpw6FyaWEgJHtuYW1lfTogJHtlcnJvci5tZXNzYWdlfWApO1xuICAgICAgICB9XG4gICAgICAgIFxuICAgICAgICAvLyBBZ2VuZGEgYSBwcsOzeGltYSBleGVjdcOnw6NvXG4gICAgICAgIHNjaGVkdWxlTmV4dCgpO1xuICAgICAgfSwgdGltZVVudGlsTmV4dFJ1bik7XG4gICAgICBcbiAgICAgIHRoaXMuaW50ZXJ2YWxzLnNldChuYW1lLCB0aW1lb3V0IGFzIHVua25vd24gYXMgTm9kZUpTLlRpbWVvdXQpO1xuICAgICAgdGhpcy5sb2dnZXIubG9nKGBUYXJlZmEgZGnDoXJpYSAke25hbWV9IGFnZW5kYWRhIHBhcmEgZXhlY3V0YXIgZW0gJHtNYXRoLmZsb29yKHRpbWVVbnRpbE5leHRSdW4gLyAxMDAwIC8gNjApfSBtaW51dG9zYCk7XG4gICAgfTtcbiAgICBcbiAgICAvLyBJbmljaWEgbyBhZ2VuZGFtZW50b1xuICAgIHNjaGVkdWxlTmV4dCgpO1xuICB9XG4gIFxuICAvKipcbiAgICogQWdlbmRhIHVtYSB0YXJlZmEgcGFyYSBzZXIgZXhlY3V0YWRhIHVtYSDDum5pY2EgdmV6IGVtIHVtYSBkYXRhIGVzcGVjw61maWNhXG4gICAqIFxuICAgKiBAcGFyYW0gbmFtZSBOb21lIMO6bmljbyBwYXJhIGlkZW50aWZpY2FyIGEgdGFyZWZhXG4gICAqIEBwYXJhbSBkYXRlIERhdGEgZSBob3JhIHBhcmEgZXhlY3XDp8OjbyBkYSB0YXJlZmFcbiAgICogQHBhcmFtIGNhbGxiYWNrIEZ1bsOnw6NvIGEgc2VyIGV4ZWN1dGFkYVxuICAgKi9cbiAgc2NoZWR1bGVPbmNlKG5hbWU6IHN0cmluZywgZGF0ZTogRGF0ZSwgY2FsbGJhY2s6ICgpID0+IFByb21pc2U8dm9pZD4pOiB2b2lkIHtcbiAgICAvLyBDYW5jZWxhIG8gdGltZW91dCBleGlzdGVudGUsIHNlIGhvdXZlclxuICAgIHRoaXMuY2FuY2VsVGltZW91dChuYW1lKTtcbiAgICBcbiAgICBjb25zdCBub3cgPSBuZXcgRGF0ZSgpO1xuICAgIGNvbnN0IGRlbGF5ID0gZGF0ZS5nZXRUaW1lKCkgLSBub3cuZ2V0VGltZSgpO1xuICAgIFxuICAgIGlmIChkZWxheSA8PSAwKSB7XG4gICAgICAvLyBTZSBhIGRhdGEgasOhIHBhc3NvdSwgZXhlY3V0YXIgaW1lZGlhdGFtZW50ZVxuICAgICAgY2FsbGJhY2soKS5jYXRjaChlcnJvciA9PiB7XG4gICAgICAgIHRoaXMubG9nZ2VyLmVycm9yKGBFcnJvIGFvIGV4ZWN1dGFyIHRhcmVmYSBhZ2VuZGFkYSAke25hbWV9OiAke2Vycm9yLm1lc3NhZ2V9YCk7XG4gICAgICB9KTtcbiAgICAgIHJldHVybjtcbiAgICB9XG4gICAgXG4gICAgLy8gQ3JpYXIgdW0gbm92byB0aW1lb3V0XG4gICAgY29uc3QgdGltZW91dCA9IHNldFRpbWVvdXQoYXN5bmMgKCkgPT4ge1xuICAgICAgdHJ5IHtcbiAgICAgICAgYXdhaXQgY2FsbGJhY2soKTtcbiAgICAgICAgLy8gUmVtb3ZlciBkYSBsaXN0YSBhcMOzcyBleGVjdcOnw6NvXG4gICAgICAgIHRoaXMudGltZW91dHMuZGVsZXRlKG5hbWUpO1xuICAgICAgfSBjYXRjaCAoZXJyb3IpIHtcbiAgICAgICAgdGhpcy5sb2dnZXIuZXJyb3IoYEVycm8gYW8gZXhlY3V0YXIgdGFyZWZhIGFnZW5kYWRhICR7bmFtZX06ICR7ZXJyb3IubWVzc2FnZX1gKTtcbiAgICAgIH1cbiAgICB9LCBkZWxheSk7XG4gICAgXG4gICAgLy8gQXJtYXplbmFyIG8gdGltZW91dCBwYXJhIHJlZmVyw6puY2lhIGZ1dHVyYVxuICAgIHRoaXMudGltZW91dHMuc2V0KG5hbWUsIHRpbWVvdXQpO1xuICAgIHRoaXMubG9nZ2VyLmxvZyhgVGFyZWZhICR7bmFtZX0gYWdlbmRhZGEgcGFyYSBleGVjdXRhciBlbSAke25ldyBEYXRlKG5vdy5nZXRUaW1lKCkgKyBkZWxheSkudG9JU09TdHJpbmcoKX1gKTtcbiAgfVxuICBcbiAgLyoqXG4gICAqIENhbmNlbGEgdW0gdGltZW91dCBhZ2VuZGFkb1xuICAgKiBcbiAgICogQHBhcmFtIG5hbWUgTm9tZSBkYSB0YXJlZmEgYSBzZXIgY2FuY2VsYWRhXG4gICAqL1xuICBjYW5jZWxUaW1lb3V0KG5hbWU6IHN0cmluZyk6IHZvaWQge1xuICAgIGNvbnN0IHRpbWVvdXQgPSB0aGlzLnRpbWVvdXRzLmdldChuYW1lKTtcbiAgICBpZiAodGltZW91dCkge1xuICAgICAgY2xlYXJUaW1lb3V0KHRpbWVvdXQpO1xuICAgICAgdGhpcy50aW1lb3V0cy5kZWxldGUobmFtZSk7XG4gICAgICB0aGlzLmxvZ2dlci5sb2coYFRpbWVvdXQgJHtuYW1lfSBjYW5jZWxhZG9gKTtcbiAgICB9XG4gIH1cbn1cbiJdLCJ2ZXJzaW9uIjozfQ==

@@ -5,14 +5,14 @@ import { Logger } from '@nestjs/common';
 
 /**
  * Script para testar a execução e rollback das migrações
- * 
+ *
  * Este script testa a execução das migrações e o rollback das mesmas,
  * garantindo que as migrações estão funcionando corretamente.
  */
 async function testMigrations() {
   // Carrega as variáveis de ambiente
   dotenv.config();
-  
+
   const logger = new Logger('TestMigrations');
   logger.log('Iniciando teste de migrações...');
 
@@ -90,7 +90,9 @@ async function testMigrations() {
     if (tablesAfterRollback.length === 0) {
       logger.log('Todas as tabelas foram removidas com sucesso!');
     } else {
-      logger.error(`${tablesAfterRollback.length} tabelas ainda existem após o rollback!`);
+      logger.error(
+        `${tablesAfterRollback.length} tabelas ainda existem após o rollback!`,
+      );
       logger.error('Tabelas encontradas:');
       tablesAfterRollback.forEach((table: any) => {
         logger.error(`- ${table.table_name}`);

@@ -11,7 +11,7 @@ import { IntegracaoTipoEnum } from '../enums/integracao-tipo.enum';
 
 /**
  * Teste de integração do Módulo de Configuração
- * 
+ *
  * Este teste realiza a verificação completa do fluxo de operações
  * CRUD para os diversos serviços do módulo, garantindo que todas
  * as funcionalidades estão operando corretamente.
@@ -66,7 +66,7 @@ describe('Configuração - Testes de Integração', () => {
           isGlobal: true,
           envFilePath: '.env.test',
         }),
-        
+
         // Conexão com o banco de dados de teste
         TypeOrmModule.forRootAsync({
           imports: [ConfigModule],
@@ -82,7 +82,7 @@ describe('Configuração - Testes de Integração', () => {
           }),
           inject: [ConfigService],
         }),
-        
+
         // Módulo JWT para simulação de autenticação
         JwtModule.registerAsync({
           imports: [ConfigModule],
@@ -92,7 +92,7 @@ describe('Configuração - Testes de Integração', () => {
           }),
           inject: [ConfigService],
         }),
-        
+
         // Módulo de configuração a ser testado
         ConfiguracaoModule,
       ],
@@ -100,7 +100,7 @@ describe('Configuração - Testes de Integração', () => {
 
     // Criar a aplicação
     app = moduleFixture.createNestApplication();
-    
+
     // Configurar pipes globais para validação
     app.useGlobalPipes(
       new ValidationPipe({
@@ -109,7 +109,7 @@ describe('Configuração - Testes de Integração', () => {
         forbidNonWhitelisted: true,
       }),
     );
-    
+
     await app.init();
 
     // Criar um token JWT para os testes (simulando um usuário autenticado)
@@ -268,7 +268,9 @@ describe('Configuração - Testes de Integração', () => {
         })
         .expect(200);
 
-      expect(testarResponse.body.conteudo).toBe('<html><body>Conteúdo atualizado, João!</body></html>');
+      expect(testarResponse.body.conteudo).toBe(
+        '<html><body>Conteúdo atualizado, João!</body></html>',
+      );
 
       // 5. Alterar status do template
       const statusResponse = await request(app.getHttpServer())
@@ -335,7 +337,9 @@ describe('Configuração - Testes de Integração', () => {
 
       expect(buscarResponse.body.codigo).toBe(integracaoTeste.codigo);
       expect(buscarResponse.body.nome).toBe(integracaoTeste.nome);
-      expect(buscarResponse.body.configuracao).toEqual(integracaoTeste.configuracao);
+      expect(buscarResponse.body.configuracao).toEqual(
+        integracaoTeste.configuracao,
+      );
       // As credenciais não devem ser retornadas na resposta
       expect(buscarResponse.body.credenciais).toBeUndefined();
 
@@ -358,7 +362,9 @@ describe('Configuração - Testes de Integração', () => {
 
       expect(atualizarResponse.body.nome).toBe(dadosAtualizacao.nome);
       expect(atualizarResponse.body.descricao).toBe(dadosAtualizacao.descricao);
-      expect(atualizarResponse.body.configuracao).toEqual(dadosAtualizacao.configuracao);
+      expect(atualizarResponse.body.configuracao).toEqual(
+        dadosAtualizacao.configuracao,
+      );
 
       // 4. Alterar status da configuração
       const statusResponse = await request(app.getHttpServer())
@@ -451,10 +457,18 @@ describe('Configuração - Testes de Integração', () => {
         .send(limitesAtualizados)
         .expect(200);
 
-      expect(atualizarResponse.body.tamanhoMaximoArquivo).toBe(limitesAtualizados.tamanhoMaximoArquivo);
-      expect(atualizarResponse.body.numeroMaximoArquivos).toBe(limitesAtualizados.numeroMaximoArquivos);
-      expect(atualizarResponse.body.extensoesPermitidas).toEqual(expect.arrayContaining(limitesAtualizados.extensoesPermitidas));
-      expect(atualizarResponse.body.maximoPorRequisicao).toBe(limitesAtualizados.maximoPorRequisicao);
+      expect(atualizarResponse.body.tamanhoMaximoArquivo).toBe(
+        limitesAtualizados.tamanhoMaximoArquivo,
+      );
+      expect(atualizarResponse.body.numeroMaximoArquivos).toBe(
+        limitesAtualizados.numeroMaximoArquivos,
+      );
+      expect(atualizarResponse.body.extensoesPermitidas).toEqual(
+        expect.arrayContaining(limitesAtualizados.extensoesPermitidas),
+      );
+      expect(atualizarResponse.body.maximoPorRequisicao).toBe(
+        limitesAtualizados.maximoPorRequisicao,
+      );
 
       // 3. Verificar que os limites foram atualizados
       const verificarResponse = await request(app.getHttpServer())
@@ -487,7 +501,10 @@ describe('Configuração - Testes de Integração', () => {
         .expect(200);
 
       expect(atualizarResponse.body).toHaveProperty('tipo', 'analise');
-      expect(atualizarResponse.body).toHaveProperty('dias', prazoAtualizado.dias);
+      expect(atualizarResponse.body).toHaveProperty(
+        'dias',
+        prazoAtualizado.dias,
+      );
 
       // 3. Verificar que o prazo foi atualizado
       const verificarResponse = await request(app.getHttpServer())
@@ -504,9 +521,12 @@ describe('Configuração - Testes de Integração', () => {
         .expect(200);
 
       expect(dataLimiteResponse.body).toHaveProperty('tipo', 'analise');
-      expect(dataLimiteResponse.body).toHaveProperty('dias', prazoAtualizado.dias);
+      expect(dataLimiteResponse.body).toHaveProperty(
+        'dias',
+        prazoAtualizado.dias,
+      );
       expect(dataLimiteResponse.body).toHaveProperty('dataLimite');
-      
+
       // A data limite deve ser uma data futura
       const dataLimite = new Date(dataLimiteResponse.body.dataLimite);
       const hoje = new Date();

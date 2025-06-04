@@ -11,7 +11,7 @@ import { FilterPagamentoDto } from '../../../dtos/filter-pagamento.dto';
 
 /**
  * Testes unitários para PagamentoController
- * 
+ *
  * Valida o comportamento dos endpoints de pagamento, garantindo que os controladores
  * interagem corretamente com os serviços subjacentes e retornam as respostas esperadas.
  */
@@ -32,7 +32,7 @@ describe('PagamentoController', () => {
     dataCriacao: new Date(),
     dataAtualizacao: new Date(),
     liberadoPor: 'usuario-id-1',
-    observacoes: 'Pagamento de benefício eventual'
+    observacoes: 'Pagamento de benefício eventual',
   };
 
   // Mock da lista de pagamentos
@@ -42,8 +42,8 @@ describe('PagamentoController', () => {
       ...pagamentoMock,
       id: 'pagamento-id-2',
       solicitacaoId: 'solicitacao-id-2',
-      valor: 300
-    }
+      valor: 300,
+    },
   ];
 
   // Mock de resposta paginada
@@ -51,7 +51,7 @@ describe('PagamentoController', () => {
     items: pagamentosListMock,
     total: pagamentosListMock.length,
     page: 1,
-    limit: 10
+    limit: 10,
   };
 
   // Mock das informações bancárias
@@ -63,14 +63,14 @@ describe('PagamentoController', () => {
       agencia: '1234',
       conta: '12345-6',
       tipoConta: 'Corrente',
-      principal: true
+      principal: true,
     },
     {
       id: 'info-bancaria-id-2',
       pixTipo: 'email',
       pixChave: 'u***@e***.com',
-      principal: false
-    }
+      principal: false,
+    },
   ];
 
   // Mock do request para simular o usuário autenticado
@@ -78,8 +78,8 @@ describe('PagamentoController', () => {
     user: {
       id: 'usuario-id-1',
       nome: 'Usuário Teste',
-      perfil: 'operador'
-    }
+      perfil: 'operador',
+    },
   };
 
   beforeEach(async () => {
@@ -96,28 +96,32 @@ describe('PagamentoController', () => {
             findPendentes: jest.fn().mockResolvedValue(paginatedResponseMock),
             atualizarStatus: jest.fn().mockResolvedValue({
               ...pagamentoMock,
-              status: StatusPagamentoEnum.CONFIRMADO
+              status: StatusPagamentoEnum.CONFIRMADO,
             }),
             cancelarPagamento: jest.fn().mockResolvedValue({
               ...pagamentoMock,
               status: StatusPagamentoEnum.CANCELADO,
               motivoCancelamento: 'Cancelado a pedido do beneficiário',
-              dataCancelamento: new Date()
-            })
-          }
+              dataCancelamento: new Date(),
+            }),
+          },
         },
         {
           provide: IntegracaoCidadaoService,
           useValue: {
-            obterInformacoesBancarias: jest.fn().mockResolvedValue(infoBancariasMock)
-          }
-        }
+            obterInformacoesBancarias: jest
+              .fn()
+              .mockResolvedValue(infoBancariasMock),
+          },
+        },
       ],
     }).compile();
 
     controller = module.get<PagamentoController>(PagamentoController);
     pagamentoService = module.get<PagamentoService>(PagamentoService);
-    integracaoCidadaoService = module.get<IntegracaoCidadaoService>(IntegracaoCidadaoService);
+    integracaoCidadaoService = module.get<IntegracaoCidadaoService>(
+      IntegracaoCidadaoService,
+    );
   });
 
   it('deve estar definido', () => {
@@ -133,14 +137,14 @@ describe('PagamentoController', () => {
         valor: 500,
         dataLiberacao: new Date(),
         metodoPagamento: 'pix',
-        observacoes: 'Pagamento teste'
+        observacoes: 'Pagamento teste',
       };
 
       // Act
       const resultado = await controller.createPagamento(
         solicitacaoId,
         createDto,
-        mockRequest as any
+        mockRequest as any,
       );
 
       // Assert
@@ -148,7 +152,7 @@ describe('PagamentoController', () => {
       expect(pagamentoService.createPagamento).toHaveBeenCalledWith(
         solicitacaoId,
         createDto,
-        mockRequest.user.id
+        mockRequest.user.id,
       );
     });
 
@@ -160,16 +164,20 @@ describe('PagamentoController', () => {
         valor: 500,
         dataLiberacao: new Date(),
         metodoPagamento: 'pix',
-        observacoes: 'Pagamento teste'
+        observacoes: 'Pagamento teste',
       };
-      
-      jest.spyOn(pagamentoService, 'createPagamento').mockRejectedValue(
-        new ConflictException('Erro ao criar pagamento')
-      );
+
+      jest
+        .spyOn(pagamentoService, 'createPagamento')
+        .mockRejectedValue(new ConflictException('Erro ao criar pagamento'));
 
       // Act & Assert
       await expect(
-        controller.createPagamento(solicitacaoId, createDto, mockRequest as any)
+        controller.createPagamento(
+          solicitacaoId,
+          createDto,
+          mockRequest as any,
+        ),
       ).rejects.toThrow(ConflictException);
     });
   });
@@ -184,19 +192,23 @@ describe('PagamentoController', () => {
 
       // Assert
       expect(resultado).toEqual(pagamentoMock);
-      expect(pagamentoService.findOneWithRelations).toHaveBeenCalledWith(pagamentoId);
+      expect(pagamentoService.findOneWithRelations).toHaveBeenCalledWith(
+        pagamentoId,
+      );
     });
 
     it('deve lançar erro quando o pagamento não existe', async () => {
       // Arrange
       const pagamentoId = 'pagamento-inexistente';
-      
-      jest.spyOn(pagamentoService, 'findOneWithRelations').mockResolvedValue(null);
+
+      jest
+        .spyOn(pagamentoService, 'findOneWithRelations')
+        .mockResolvedValue(null);
 
       // Act & Assert
-      await expect(
-        controller.getPagamento(pagamentoId)
-      ).rejects.toThrow(NotFoundException);
+      await expect(controller.getPagamento(pagamentoId)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -206,7 +218,7 @@ describe('PagamentoController', () => {
       const filterDto: FilterPagamentoDto = {
         status: StatusPagamentoEnum.LIBERADO,
         page: 1,
-        limit: 10
+        limit: 10,
       };
 
       // Act
@@ -225,7 +237,7 @@ describe('PagamentoController', () => {
         unidadeId: 'unidade-id-1',
         tipoBeneficioId: 'tipo-beneficio-id-1',
         page: 1,
-        limit: 10
+        limit: 10,
       };
 
       // Act
@@ -242,19 +254,19 @@ describe('PagamentoController', () => {
       // Arrange
       const pagamentoId = 'pagamento-id-1';
       const updateDto: AtualizarStatusDto = {
-        status: StatusPagamentoEnum.CONFIRMADO
+        status: StatusPagamentoEnum.CONFIRMADO,
       };
-      
+
       const pagamentoAtualizado = {
         ...pagamentoMock,
-        status: StatusPagamentoEnum.CONFIRMADO
+        status: StatusPagamentoEnum.CONFIRMADO,
       };
 
       // Act
       const resultado = await controller.atualizarStatus(
         pagamentoId,
         updateDto,
-        mockRequest as any
+        mockRequest as any,
       );
 
       // Assert
@@ -262,7 +274,7 @@ describe('PagamentoController', () => {
       expect(pagamentoService.atualizarStatus).toHaveBeenCalledWith(
         pagamentoId,
         updateDto.status,
-        mockRequest.user.id
+        mockRequest.user.id,
       );
     });
 
@@ -270,16 +282,16 @@ describe('PagamentoController', () => {
       // Arrange
       const pagamentoId = 'pagamento-inexistente';
       const updateDto: AtualizarStatusDto = {
-        status: StatusPagamentoEnum.CONFIRMADO
+        status: StatusPagamentoEnum.CONFIRMADO,
       };
-      
-      jest.spyOn(pagamentoService, 'atualizarStatus').mockRejectedValue(
-        new NotFoundException('Pagamento não encontrado')
-      );
+
+      jest
+        .spyOn(pagamentoService, 'atualizarStatus')
+        .mockRejectedValue(new NotFoundException('Pagamento não encontrado'));
 
       // Act & Assert
       await expect(
-        controller.atualizarStatus(pagamentoId, updateDto, mockRequest as any)
+        controller.atualizarStatus(pagamentoId, updateDto, mockRequest as any),
       ).rejects.toThrow(NotFoundException);
     });
   });
@@ -289,21 +301,21 @@ describe('PagamentoController', () => {
       // Arrange
       const pagamentoId = 'pagamento-id-1';
       const cancelarDto: CancelarPagamentoDto = {
-        motivoCancelamento: 'Cancelado a pedido do beneficiário'
+        motivoCancelamento: 'Cancelado a pedido do beneficiário',
       };
-      
+
       const pagamentoCancelado = {
         ...pagamentoMock,
         status: StatusPagamentoEnum.CANCELADO,
         motivoCancelamento: 'Cancelado a pedido do beneficiário',
-        dataCancelamento: expect.any(Date)
+        dataCancelamento: expect.any(Date),
       };
 
       // Act
       const resultado = await controller.cancelarPagamento(
         pagamentoId,
         cancelarDto,
-        mockRequest as any
+        mockRequest as any,
       );
 
       // Assert
@@ -311,7 +323,7 @@ describe('PagamentoController', () => {
       expect(pagamentoService.cancelarPagamento).toHaveBeenCalledWith(
         pagamentoId,
         mockRequest.user.id,
-        cancelarDto.motivoCancelamento
+        cancelarDto.motivoCancelamento,
       );
     });
   });
@@ -326,23 +338,25 @@ describe('PagamentoController', () => {
 
       // Assert
       expect(resultado).toEqual(infoBancariasMock);
-      expect(integracaoCidadaoService.obterInformacoesBancarias).toHaveBeenCalledWith(
-        beneficiarioId
-      );
+      expect(
+        integracaoCidadaoService.obterInformacoesBancarias,
+      ).toHaveBeenCalledWith(beneficiarioId);
     });
 
     it('deve lançar erro quando o beneficiário não existe', async () => {
       // Arrange
       const beneficiarioId = 'beneficiario-inexistente';
-      
-      jest.spyOn(integracaoCidadaoService, 'obterInformacoesBancarias').mockRejectedValue(
-        new NotFoundException('Beneficiário não encontrado')
-      );
+
+      jest
+        .spyOn(integracaoCidadaoService, 'obterInformacoesBancarias')
+        .mockRejectedValue(
+          new NotFoundException('Beneficiário não encontrado'),
+        );
 
       // Act & Assert
-      await expect(
-        controller.getInfoBancarias(beneficiarioId)
-      ).rejects.toThrow(NotFoundException);
+      await expect(controller.getInfoBancarias(beneficiarioId)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 });

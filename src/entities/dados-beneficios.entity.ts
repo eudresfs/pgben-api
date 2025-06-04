@@ -8,7 +8,7 @@ import {
   DeleteDateColumn,
   OneToOne,
   JoinColumn,
-  Index
+  Index,
 } from 'typeorm';
 import { IsNotEmpty, IsOptional, IsNumber, Min } from 'class-validator';
 import { Solicitacao } from './solicitacao.entity';
@@ -28,10 +28,10 @@ export class DadosSolicitacaoBeneficio {
   @JoinColumn({ name: 'solicitacao_id' })
   solicitacao: Solicitacao;
 
-  @Column('enum', { 
-    name: 'tipo_beneficio', 
+  @Column('enum', {
+    name: 'tipo_beneficio',
     enum: TipoBeneficio,
-    default: TipoBeneficio.AUXILIO_NATALIDADE
+    default: TipoBeneficio.AUXILIO_NATALIDADE,
   })
   @IsNotEmpty({ message: 'Tipo de benefício é obrigatório' })
   tipo_beneficio: TipoBeneficio;

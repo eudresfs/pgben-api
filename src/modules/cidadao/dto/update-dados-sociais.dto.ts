@@ -18,7 +18,7 @@ import { IsEnumValue } from '../../../shared/validators/enum-validator';
 
 /**
  * DTO para atualização de dados sociais de um cidadão
- * 
+ *
  * Permite atualização parcial dos dados sociais, mantendo as mesmas
  * validações do DTO de criação mas com todos os campos opcionais.
  */
@@ -28,7 +28,7 @@ export class UpdateDadosSociaisDto extends PartialType(CreateDadosSociaisDto) {
     enum: EscolaridadeEnum,
     example: EscolaridadeEnum.MEDIO_COMPLETO,
     required: false,
-    enumName: 'EscolaridadeEnum'
+    enumName: 'EscolaridadeEnum',
   })
   @IsOptional()
   @IsEnumValue(EscolaridadeEnum, {
@@ -43,7 +43,9 @@ export class UpdateDadosSociaisDto extends PartialType(CreateDadosSociaisDto) {
     required: false,
   })
   @IsOptional()
-  @IsBoolean({ message: 'O campo publico_prioritario deve ser verdadeiro ou falso' })
+  @IsBoolean({
+    message: 'O campo publico_prioritario deve ser verdadeiro ou falso',
+  })
   @Transform(({ value }) => {
     if (typeof value === 'string') {
       return value.toLowerCase() === 'true';
@@ -54,13 +56,18 @@ export class UpdateDadosSociaisDto extends PartialType(CreateDadosSociaisDto) {
 
   @ApiProperty({
     description: 'Renda mensal do cidadão em reais',
-    example: 1500.50,
+    example: 1500.5,
     minimum: 0,
     maximum: 50000,
     required: false,
   })
   @IsOptional()
-  @IsNumber({ maxDecimalPlaces: 2 }, { message: 'Renda deve ser um número válido com no máximo 2 casas decimais' })
+  @IsNumber(
+    { maxDecimalPlaces: 2 },
+    {
+      message: 'Renda deve ser um número válido com no máximo 2 casas decimais',
+    },
+  )
   @Min(0, { message: 'Renda não pode ser negativa' })
   @Max(50000, { message: 'Renda não pode exceder R$ 50.000,00' })
   @Transform(({ value }) => {
@@ -101,14 +108,20 @@ export class UpdateDadosSociaisDto extends PartialType(CreateDadosSociaisDto) {
 
   @ApiProperty({
     description: 'Valor mensal recebido do Programa Bolsa Família',
-    example: 400.00,
+    example: 400.0,
     minimum: 50,
     maximum: 10000,
     required: false,
   })
   @IsOptional()
   @ValidateIf((o) => o.recebe_pbf === true)
-  @IsNumber({ maxDecimalPlaces: 2 }, { message: 'Valor do PBF deve ser um número válido com no máximo 2 casas decimais' })
+  @IsNumber(
+    { maxDecimalPlaces: 2 },
+    {
+      message:
+        'Valor do PBF deve ser um número válido com no máximo 2 casas decimais',
+    },
+  )
   @Min(50, { message: 'Valor do PBF deve ser no mínimo R$ 50,00' })
   @Max(10000, { message: 'Valor do PBF não pode exceder R$ 10.000,00' })
   @Transform(({ value }) => {
@@ -150,14 +163,20 @@ export class UpdateDadosSociaisDto extends PartialType(CreateDadosSociaisDto) {
 
   @ApiProperty({
     description: 'Valor mensal recebido do BPC',
-    example: 1320.00,
+    example: 1320.0,
     minimum: 100,
     maximum: 10000,
     required: false,
   })
   @IsOptional()
   @ValidateIf((o) => o.recebe_bpc === true)
-  @IsNumber({ maxDecimalPlaces: 2 }, { message: 'Valor do BPC deve ser um número válido com no máximo 2 casas decimais' })
+  @IsNumber(
+    { maxDecimalPlaces: 2 },
+    {
+      message:
+        'Valor do BPC deve ser um número válido com no máximo 2 casas decimais',
+    },
+  )
   @Min(100, { message: 'Valor do BPC deve ser no mínimo R$ 100,00' })
   @Max(10000, { message: 'Valor do BPC não pode exceder R$ 10.000,00' })
   @Transform(({ value }) => {
@@ -171,23 +190,30 @@ export class UpdateDadosSociaisDto extends PartialType(CreateDadosSociaisDto) {
   valor_bpc?: number;
 
   @ApiProperty({
-    description: 'Curso profissionalizante que o cidadão possui ou está cursando',
+    description:
+      'Curso profissionalizante que o cidadão possui ou está cursando',
     example: 'Técnico em Informática',
     maxLength: 255,
     required: false,
   })
   @IsOptional()
   @IsString({ message: 'Curso profissionalizante deve ser um texto' })
-  @MaxLength(255, { message: 'Curso profissionalizante deve ter no máximo 255 caracteres' })
+  @MaxLength(255, {
+    message: 'Curso profissionalizante deve ter no máximo 255 caracteres',
+  })
   curso_profissionalizante?: string;
 
   @ApiProperty({
-    description: 'Indica se o cidadão tem interesse em fazer curso profissionalizante',
+    description:
+      'Indica se o cidadão tem interesse em fazer curso profissionalizante',
     example: true,
     required: false,
   })
   @IsOptional()
-  @IsBoolean({ message: 'O campo interesse_curso_profissionalizante deve ser verdadeiro ou falso' })
+  @IsBoolean({
+    message:
+      'O campo interesse_curso_profissionalizante deve ser verdadeiro ou falso',
+  })
   @Transform(({ value }) => {
     if (typeof value === 'string') {
       return value.toLowerCase() === 'true';
@@ -201,7 +227,7 @@ export class UpdateDadosSociaisDto extends PartialType(CreateDadosSociaisDto) {
     enum: SituacaoTrabalhoEnum,
     example: SituacaoTrabalhoEnum.DESEMPREGADO,
     required: false,
-    enumName: 'SituacaoTrabalhoEnum'
+    enumName: 'SituacaoTrabalhoEnum',
   })
   @IsOptional()
   @IsEnumValue(SituacaoTrabalhoEnum, {
@@ -218,16 +244,21 @@ export class UpdateDadosSociaisDto extends PartialType(CreateDadosSociaisDto) {
   })
   @IsOptional()
   @IsString({ message: 'Área de trabalho deve ser um texto' })
-  @MaxLength(255, { message: 'Área de trabalho deve ter no máximo 255 caracteres' })
+  @MaxLength(255, {
+    message: 'Área de trabalho deve ter no máximo 255 caracteres',
+  })
   area_trabalho?: string;
 
   @ApiProperty({
-    description: 'Indica se há familiar apto para trabalhar na composição familiar',
+    description:
+      'Indica se há familiar apto para trabalhar na composição familiar',
     example: true,
     required: false,
   })
   @IsOptional()
-  @IsBoolean({ message: 'O campo familiar_apto_trabalho deve ser verdadeiro ou falso' })
+  @IsBoolean({
+    message: 'O campo familiar_apto_trabalho deve ser verdadeiro ou falso',
+  })
   @Transform(({ value }) => {
     if (typeof value === 'string') {
       return value.toLowerCase() === 'true';
@@ -244,7 +275,9 @@ export class UpdateDadosSociaisDto extends PartialType(CreateDadosSociaisDto) {
   })
   @IsOptional()
   @IsString({ message: 'Área de interesse familiar deve ser um texto' })
-  @MaxLength(255, { message: 'Área de interesse familiar deve ter no máximo 255 caracteres' })
+  @MaxLength(255, {
+    message: 'Área de interesse familiar deve ter no máximo 255 caracteres',
+  })
   area_interesse_familiar?: string;
 
   @ApiProperty({
@@ -255,6 +288,8 @@ export class UpdateDadosSociaisDto extends PartialType(CreateDadosSociaisDto) {
   })
   @IsOptional()
   @IsString({ message: 'Observações devem ser um texto' })
-  @MaxLength(1000, { message: 'Observações devem ter no máximo 1000 caracteres' })
+  @MaxLength(1000, {
+    message: 'Observações devem ter no máximo 1000 caracteres',
+  })
   observacoes?: string;
 }

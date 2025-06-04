@@ -1,5 +1,9 @@
 import { INestApplication } from '@nestjs/common';
-import { DocumentBuilder, SwaggerCustomOptions, SwaggerModule } from '@nestjs/swagger';
+import {
+  DocumentBuilder,
+  SwaggerCustomOptions,
+  SwaggerModule,
+} from '@nestjs/swagger';
 import * as fs from 'fs';
 import * as path from 'path';
 import { SWAGGER_TAGS_CONFIG, SWAGGER_TAG_ORDER } from './tags.config';
@@ -67,7 +71,7 @@ Esta API segue versionamento semântico. Versão atual: v1.0.0
 Para mudanças breaking, uma nova versão será criada (v2, v3, etc.)
 
 ## Suporte
-Para dúvidas técnicas ou reportar problemas, entre em contato com a equipe de desenvolvimento.`
+Para dúvidas técnicas ou reportar problemas, entre em contato com a equipe de desenvolvimento.`,
     )
     .setVersion('1.0.0')
     .setContact(
@@ -75,14 +79,11 @@ Para dúvidas técnicas ou reportar problemas, entre em contato com a equipe de 
       'https://www.natal.rn.gov.br/semtas',
       'suporte@semtas.natal.rn.gov.br',
     )
-    .setLicense(
-      'Proprietary',
-      'https://semtas.gov.br/licenca'
-    )
+    .setLicense('Proprietary', 'https://semtas.gov.br/licenca')
     .setTermsOfService('https://semtas.gov.br/termos-uso')
     .setExternalDoc(
       'Documentação Técnica Completa',
-      'https://docs.semtas.gov.br'
+      'https://docs.semtas.gov.br',
     )
     // Configuração de autenticação JWT
     .addBearerAuth(
@@ -102,9 +103,9 @@ Para dúvidas técnicas ou reportar problemas, entre em contato com a equipe de 
         type: 'apiKey',
         name: 'X-API-Key',
         in: 'header',
-        description: 'Chave de API para integrações externas autorizadas'
+        description: 'Chave de API para integrações externas autorizadas',
       },
-      'ApiKey'
+      'ApiKey',
     )
     // Servidores de ambiente
     .addServer('http://localhost:3000', 'Desenvolvimento Local')
@@ -113,7 +114,7 @@ Para dúvidas técnicas ou reportar problemas, entre em contato com a equipe de 
     .addServer('https://api.semtas.gov.br', 'Ambiente de Produção');
 
   // Adicionar todas as tags configuradas
-  SWAGGER_TAGS_CONFIG.forEach(tag => {
+  SWAGGER_TAGS_CONFIG.forEach((tag) => {
     config.addTag(tag.name, tag.description);
   });
 
@@ -127,7 +128,7 @@ export const swaggerConfig = createSwaggerConfig();
  */
 export const swaggerDocumentOptions = {
   deepScanRoutes: true,
-  operationIdFactory: (controllerKey: string, methodKey: string) => 
+  operationIdFactory: (controllerKey: string, methodKey: string) =>
     `${controllerKey.replace('Controller', '')}_${methodKey}`,
 };
 
@@ -146,11 +147,11 @@ export const swaggerSetupOptions: SwaggerCustomOptions = {
     tagsSorter: (a: string, b: string) => {
       const indexA = SWAGGER_TAG_ORDER.indexOf(a as any);
       const indexB = SWAGGER_TAG_ORDER.indexOf(b as any);
-      
+
       if (indexA === -1 && indexB === -1) return a.localeCompare(b);
       if (indexA === -1) return 1;
       if (indexB === -1) return -1;
-      
+
       return indexA - indexB;
     },
     operationsSorter: 'method',
@@ -162,7 +163,7 @@ export const swaggerSetupOptions: SwaggerCustomOptions = {
     supportedSubmitMethods: ['get', 'post', 'put', 'delete', 'patch'],
     validatorUrl: null,
   },
-  customSiteTitle: 'PGBen API - Documentação'
+  customSiteTitle: 'PGBen API - Documentação',
 };
 
 /**
@@ -180,7 +181,7 @@ const INTERNAL_ENDPOINTS_TO_REMOVE = [
   '/api/configuracao/integracoes',
   '/api/configuracao/templates',
   '/api/configuracao/limites',
-  
+
   // Endpoints de métricas e monitoramento interno
   '/api/v1/metricas',
   '/api/v1/metricas/valores',
@@ -198,29 +199,29 @@ const INTERNAL_ENDPOINTS_TO_REMOVE = [
   '/health/check',
   '/health/ready',
   '/health/live',
-  
+
   // Endpoints de logs e debug
   '/api/v1/logs',
   '/api/audit',
   '/debug',
   '/dev',
   '/test',
-  
+
   // Endpoints de integração interna
   '/api/integradores',
   '/api/api/exemplo',
   '/api/exemplo',
-  
+
   // Endpoints judiciais (acesso restrito)
   '/api/v1/judicial/processos',
   '/api/v1/judicial/determinacoes',
   '/api/v1/solicitacao/determinacao-judicial',
-  
+
   // Endpoints de verificação e conflitos internos
   '/api/cidadao/verificacao-papel',
   '/api/v1/cidadao/regra-conflito',
   '/api/v1/cidadao/papel-conflito',
-  
+
   // Endpoints de dados específicos de benefícios (internos)
   '/api/dados-funeral',
   '/api/dados-aluguel-social',
@@ -228,129 +229,129 @@ const INTERNAL_ENDPOINTS_TO_REMOVE = [
   '/api/dados-cesta-basica',
   '/api/dados-natalidade',
   '/api/monitoramento-aluguel-social',
-  
+
   // Endpoints de pagamento interno
   '/api/pagamentos',
-  
+
   // Endpoints de recursos internos
   '/api/v1/recursos',
-  
+
   // Blacklist de autenticação
   '/api/auth/blacklist',
   '/auth/blacklist',
   '/auth/internal',
   '/auth/system',
-  
+
   // Endpoints administrativos internos
   '/admin/internal',
   '/internal',
-  
+
   // Endpoints de sistema
   '/system',
   '/status',
-  
+
   // Endpoints de cache
   '/cache/clear',
   '/cache/stats',
-  
+
   // Endpoints de logs internos
   '/logs/internal',
-  
+
   // Endpoints de backup/restore
   '/backup',
   '/restore',
-  
+
   // Endpoints de migração
   '/migrate',
   '/migration',
-  
+
   // Endpoints de configuração interna
   '/config/reload',
   '/config/internal',
-  
+
   // Endpoints de sessão interna
   '/session/cleanup',
   '/session/internal',
-  
+
   // Endpoints de queue/job internos
   '/queue/stats',
   '/queue/internal',
   '/jobs/internal',
-  
+
   // Endpoints de webhook internos
   '/webhook/internal',
-  
+
   // Endpoints de sincronização
   '/sync/internal',
-  
+
   // Endpoints de validação interna
   '/validate/internal',
-  
+
   // Endpoints de cleanup
   '/cleanup',
   '/purge',
-  
+
   // Endpoints de estatísticas internas
   '/stats/internal',
-  
+
   // Endpoints de profiling
   '/profile',
   '/profiler',
-  
+
   // Endpoints de trace
   '/trace',
   '/tracing',
-  
+
   // Endpoints específicos que não devem aparecer na documentação
   '/favicon.ico',
   '/robots.txt',
   '/sitemap.xml',
-  
+
   // Endpoints de upload interno
   '/upload/internal',
-  
+
   // Endpoints de download interno
   '/download/internal',
-  
+
   // Endpoints de notificação interna
   '/notification/internal',
-  
+
   // Endpoints de relatório interno
   '/report/internal',
-  
+
   // Endpoints de auditoria interna
   '/audit/internal',
-  
+
   // Endpoints de integração interna
   '/integration/internal',
-  
+
   // Endpoints de workflow interno
   '/workflow/internal',
-  
+
   // Endpoints de template interno
   '/template/internal',
-  
+
   // Endpoints de configuração de sistema
   '/system-config',
-  
+
   // Endpoints de manutenção
   '/maintenance',
-  
+
   // Endpoints de monitoramento de performance
   '/perf',
   '/performance',
-  
+
   // Endpoints de análise
   '/analytics/internal',
-  
+
   // Endpoints de exportação interna
   '/export/internal',
-  
+
   // Endpoints de importação interna
   '/import/internal',
-  
+
   // Root API
-  '/api'
+  '/api',
 ];
 
 /**
@@ -359,29 +360,31 @@ const INTERNAL_ENDPOINTS_TO_REMOVE = [
  */
 function filterInternalEndpoints(document: any): void {
   if (!document.paths) return;
-  
+
   // Remove endpoints específicos da lista
-  INTERNAL_ENDPOINTS_TO_REMOVE.forEach(path => {
+  INTERNAL_ENDPOINTS_TO_REMOVE.forEach((path) => {
     if (document.paths[path]) {
       delete document.paths[path];
     }
   });
-  
+
   // Remove endpoints que correspondem a padrões internos
   const pathsToCheck = Object.keys(document.paths);
-  pathsToCheck.forEach(path => {
+  pathsToCheck.forEach((path) => {
     // Remove endpoints que contêm padrões de administração
-    if (path.includes('/admin/') || 
-        path.includes('/internal/') || 
-        path.includes('/debug/') || 
-        path.includes('/dev/') ||
-        path.includes('/test/') ||
-        path.includes('/config/') ||
-        path.includes('/settings/admin') ||
-        path.includes('/logs/') ||
-        path.includes('/stats/internal') ||
-        path.includes('/backup/') ||
-        path.includes('/maintenance/')) {
+    if (
+      path.includes('/admin/') ||
+      path.includes('/internal/') ||
+      path.includes('/debug/') ||
+      path.includes('/dev/') ||
+      path.includes('/test/') ||
+      path.includes('/config/') ||
+      path.includes('/settings/admin') ||
+      path.includes('/logs/') ||
+      path.includes('/stats/internal') ||
+      path.includes('/backup/') ||
+      path.includes('/maintenance/')
+    ) {
       delete document.paths[path];
     }
   });
@@ -391,24 +394,28 @@ function filterInternalEndpoints(document: any): void {
  * Configura o Swagger na aplicação NestJS com filtros de segurança aprimorados
  */
 export function setupSwagger(app: INestApplication) {
-  const document = SwaggerModule.createDocument(app, swaggerConfig, swaggerDocumentOptions);
-  
+  const document = SwaggerModule.createDocument(
+    app,
+    swaggerConfig,
+    swaggerDocumentOptions,
+  );
+
   // Aplicar filtros de segurança para remover endpoints internos
   filterInternalEndpoints(document);
-  
+
   // Adicionar informações de segurança ao documento
   if (document.info) {
     document.info['x-api-classification'] = 'public';
     document.info['x-security-level'] = 'standard';
     document.info['x-last-updated'] = new Date().toISOString();
   }
-  
+
   // Configurar rota padrão para a documentação
   SwaggerModule.setup('api-docs', app, document, swaggerSetupOptions);
-  
+
   // Adicionar rotas públicas para sincronização com ferramentas externas
   const httpAdapter = app.getHttpAdapter();
-  
+
   // Rota para openapi.json (formato OpenAPI 3.0)
   httpAdapter.get('/openapi.json', (req, res) => {
     res.setHeader('Content-Type', 'application/json');
@@ -418,7 +425,7 @@ export function setupSwagger(app: INestApplication) {
     res.setHeader('Cache-Control', 'public, max-age=3600'); // Cache por 1 hora
     res.send(JSON.stringify(document, null, 2));
   });
-  
+
   // Rota para v2/swagger.json (compatibilidade com Swagger 2.0/OpenAPI 2.0)
   httpAdapter.get('/v2/swagger.json', (req, res) => {
     res.setHeader('Content-Type', 'application/json');

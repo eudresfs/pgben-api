@@ -7,7 +7,7 @@ import { ValidationErrorException } from '../../../shared/exceptions';
 
 /**
  * Serviço para gerenciamento de limites operacionais do sistema
- * 
+ *
  * Responsável por:
  * - Gerenciar limites de upload (tamanho, tipos)
  * - Gerenciar prazos de processos
@@ -32,7 +32,14 @@ export class LimitesService {
   // Valores padrão
   private readonly DEFAULT_MAX_SIZE = 10 * 1024 * 1024; // 10MB
   private readonly DEFAULT_MAX_FILES = 20;
-  private readonly DEFAULT_ALLOWED_TYPES = ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx'];
+  private readonly DEFAULT_ALLOWED_TYPES = [
+    'jpg',
+    'jpeg',
+    'png',
+    'pdf',
+    'doc',
+    'docx',
+  ];
   private readonly DEFAULT_MAX_PER_REQUEST = 5;
 
   private readonly DEFAULT_PRAZO_ANALISE = 15; // dias
@@ -48,30 +55,32 @@ export class LimitesService {
    */
   async buscarLimitesUpload(): Promise<LimitesUploadResponseDto> {
     const dto = new LimitesUploadResponseDto();
-    
+
     dto.tamanho_maximo = await this.parametroService.obterNumero(
-      this.KEY_UPLOAD_MAX_SIZE, 
-      this.DEFAULT_MAX_SIZE
+      this.KEY_UPLOAD_MAX_SIZE,
+      this.DEFAULT_MAX_SIZE,
     );
-    
+
     dto.arquivos_maximo = await this.parametroService.obterNumero(
-      this.KEY_UPLOAD_MAX_FILES, 
-      this.DEFAULT_MAX_FILES
+      this.KEY_UPLOAD_MAX_FILES,
+      this.DEFAULT_MAX_FILES,
     );
-    
+
     dto.tipos_permitidos = await this.parametroService.obterJson<string[]>(
-      this.KEY_UPLOAD_ALLOWED_TYPES, 
-      this.DEFAULT_ALLOWED_TYPES
+      this.KEY_UPLOAD_ALLOWED_TYPES,
+      this.DEFAULT_ALLOWED_TYPES,
     );
-    
+
     dto.max_por_requisicao = await this.parametroService.obterNumero(
-      this.KEY_UPLOAD_MAX_PER_REQUEST, 
-      this.DEFAULT_MAX_PER_REQUEST
+      this.KEY_UPLOAD_MAX_PER_REQUEST,
+      this.DEFAULT_MAX_PER_REQUEST,
     );
-    
+
     // Adicionar versões formatadas para exibição
-    dto.tamanho_maximo_formatado = this.formatarTamanhoBytes(dto.tamanho_maximo);
-    
+    dto.tamanho_maximo_formatado = this.formatarTamanhoBytes(
+      dto.tamanho_maximo,
+    );
+
     return dto;
   }
 
@@ -80,35 +89,37 @@ export class LimitesService {
    * @param dto DTO com os novos limites
    * @returns DTO com os limites atualizados
    */
-  async atualizarLimitesUpload(dto: LimitesUploadDto): Promise<LimitesUploadResponseDto> {
+  async atualizarLimitesUpload(
+    dto: LimitesUploadDto,
+  ): Promise<LimitesUploadResponseDto> {
     if (dto.tamanho_maximo !== undefined) {
       await this.parametroService.atualizar(this.KEY_UPLOAD_MAX_SIZE, {
         valor: String(dto.tamanho_maximo),
-        descricao: 'Tamanho máximo de arquivos para upload (em bytes)'
+        descricao: 'Tamanho máximo de arquivos para upload (em bytes)',
       });
     }
-    
+
     if (dto.arquivos_maximo !== undefined) {
       await this.parametroService.atualizar(this.KEY_UPLOAD_MAX_FILES, {
         valor: String(dto.arquivos_maximo),
-        descricao: 'Número máximo de arquivos por cidadão'
+        descricao: 'Número máximo de arquivos por cidadão',
       });
     }
-    
+
     if (dto.tipos_permitidos !== undefined) {
       await this.parametroService.atualizar(this.KEY_UPLOAD_ALLOWED_TYPES, {
         valor: JSON.stringify(dto.tipos_permitidos),
-        descricao: 'Tipos de arquivo permitidos para upload'
+        descricao: 'Tipos de arquivo permitidos para upload',
       });
     }
-    
+
     if (dto.max_por_requisicao !== undefined) {
       await this.parametroService.atualizar(this.KEY_UPLOAD_MAX_PER_REQUEST, {
         valor: String(dto.max_por_requisicao),
-        descricao: 'Número máximo de arquivos por requisição de upload'
+        descricao: 'Número máximo de arquivos por requisição de upload',
       });
     }
-    
+
     this.logger.log('Limites de upload atualizados');
     return this.buscarLimitesUpload();
   }
@@ -121,7 +132,7 @@ export class LimitesService {
   async buscarPrazo(tipo: string): Promise<number> {
     const chave = this.obterChavePrazo(tipo);
     const padrao = this.obterPrazoPadrao(tipo);
-    
+
     return this.parametroService.obterNumero(chave, padrao);
   }
 
@@ -133,23 +144,23 @@ export class LimitesService {
    */
   async atualizarPrazo(tipo: string, dto: PrazoUpdateDto): Promise<number> {
     const chave = this.obterChavePrazo(tipo);
-    
+
     if (dto.dias === undefined || dto.dias < 1) {
       throw new ValidationErrorException(
         'dias',
         dto.dias,
         'number',
-        'Prazo deve ser pelo menos 1 dia'
+        'Prazo deve ser pelo menos 1 dia',
       );
     }
-    
+
     const descricao = this.obterDescricaoPrazo(tipo);
-    
+
     await this.parametroService.atualizar(chave, {
       valor: String(dto.dias),
-      descricao
+      descricao,
     });
-    
+
     this.logger.log(`Prazo de ${tipo} atualizado para ${dto.dias} dias`);
     return dto.dias;
   }
@@ -174,7 +185,7 @@ export class LimitesService {
           'tipo',
           tipo,
           'string',
-          `Tipo de prazo não reconhecido: ${tipo}`
+          `Tipo de prazo não reconhecido: ${tipo}`,
         );
     }
   }
@@ -242,20 +253,23 @@ export class LimitesService {
    * @param extensao Extensão do arquivo
    * @returns true se estiver dentro dos limites, false caso contrário
    */
-  async verificarLimitesArquivo(tamanhoBytes: number, extensao: string): Promise<boolean> {
+  async verificarLimitesArquivo(
+    tamanhoBytes: number,
+    extensao: string,
+  ): Promise<boolean> {
     const limites = await this.buscarLimitesUpload();
-    
+
     // Verificar tamanho
     if (tamanhoBytes > limites.tamanho_maximo) {
       return false;
     }
-    
+
     // Verificar extensão (normalizar para minúsculas sem ponto)
     extensao = extensao.toLowerCase().replace(/^\./, '');
     if (!limites.tipos_permitidos.includes(extensao)) {
       return false;
     }
-    
+
     return true;
   }
 
@@ -264,7 +278,9 @@ export class LimitesService {
    * @param quantidadeArquivos Quantidade de arquivos
    * @returns true se estiver dentro do limite, false caso contrário
    */
-  async verificarLimiteQuantidade(quantidadeArquivos: number): Promise<boolean> {
+  async verificarLimiteQuantidade(
+    quantidadeArquivos: number,
+  ): Promise<boolean> {
     const limites = await this.buscarLimitesUpload();
     return quantidadeArquivos <= limites.max_por_requisicao;
   }
@@ -276,8 +292,8 @@ export class LimitesService {
    * @returns true se ainda estiver dentro do limite, false caso contrário
    */
   async verificarLimiteUsuario(
-    cidadaoId: string, 
-    quantidadeAtual: number
+    cidadaoId: string,
+    quantidadeAtual: number,
   ): Promise<boolean> {
     const limites = await this.buscarLimitesUpload();
     return quantidadeAtual < limites.arquivos_maximo;
@@ -289,12 +305,15 @@ export class LimitesService {
    * @param dataReferencia Data de referência para o cálculo
    * @returns Data limite
    */
-  async calcularDataLimite(tipo: string, dataReferencia: Date = new Date()): Promise<Date> {
+  async calcularDataLimite(
+    tipo: string,
+    dataReferencia: Date = new Date(),
+  ): Promise<Date> {
     const prazoEmDias = await this.buscarPrazo(tipo);
-    
+
     const dataLimite = new Date(dataReferencia);
     dataLimite.setDate(dataLimite.getDate() + prazoEmDias);
-    
+
     return dataLimite;
   }
 }

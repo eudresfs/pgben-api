@@ -1,0 +1,84 @@
+56ed12c6e32615c943d101951f1a2ead
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.TipoDocumentoEnum = void 0;
+var TipoDocumentoEnum;
+(function (TipoDocumentoEnum) {
+    // Documentos de identificação
+    TipoDocumentoEnum["CPF"] = "cpf";
+    TipoDocumentoEnum["RG"] = "rg";
+    TipoDocumentoEnum["CNH"] = "cnh";
+    TipoDocumentoEnum["PASSAPORTE"] = "passaporte";
+    // Certidões
+    TipoDocumentoEnum["CERTIDAO_NASCIMENTO"] = "certidao_nascimento";
+    TipoDocumentoEnum["CERTIDAO_CASAMENTO"] = "certidao_casamento";
+    TipoDocumentoEnum["CERTIDAO_OBITO"] = "certidao_obito";
+    // Comprovantes básicos
+    TipoDocumentoEnum["COMPROVANTE_RESIDENCIA"] = "comprovante_residencia";
+    TipoDocumentoEnum["COMPROVANTE_RENDA"] = "comprovante_renda";
+    TipoDocumentoEnum["COMPROVANTE_ESCOLARIDADE"] = "comprovante_escolaridade";
+    // Documentos médicos e de saúde
+    TipoDocumentoEnum["DECLARACAO_MEDICA"] = "declaracao_medica";
+    TipoDocumentoEnum["CARTAO_VACINA"] = "cartao_vacina";
+    TipoDocumentoEnum["CARTAO_SUS"] = "cartao_sus";
+    TipoDocumentoEnum["LAUDO_MEDICO"] = "laudo_medico";
+    TipoDocumentoEnum["ATESTADO_MEDICO"] = "atestado_medico";
+    TipoDocumentoEnum["EXAME_PRE_NATAL"] = "exame_pre_natal";
+    // Documentos habitacionais
+    TipoDocumentoEnum["CONTRATO_ALUGUEL"] = "contrato_aluguel";
+    TipoDocumentoEnum["ESCRITURA_IMOVEL"] = "escritura_imovel";
+    TipoDocumentoEnum["IPTU"] = "iptu";
+    TipoDocumentoEnum["CONTA_AGUA"] = "conta_agua";
+    TipoDocumentoEnum["CONTA_LUZ"] = "conta_luz";
+    TipoDocumentoEnum["CONTA_TELEFONE"] = "conta_telefone";
+    // Documentos trabalhistas e previdenciários
+    TipoDocumentoEnum["CARTEIRA_TRABALHO"] = "carteira_trabalho";
+    TipoDocumentoEnum["COMPROVANTE_DESEMPREGO"] = "comprovante_desemprego";
+    TipoDocumentoEnum["EXTRATO_FGTS"] = "extrato_fgts";
+    TipoDocumentoEnum["COMPROVANTE_APOSENTADORIA"] = "comprovante_aposentadoria";
+    TipoDocumentoEnum["COMPROVANTE_PENSAO"] = "comprovante_pensao";
+    TipoDocumentoEnum["COMPROVANTE_BENEFICIO_INSS"] = "comprovante_beneficio_inss";
+    // Documentos bancários
+    TipoDocumentoEnum["EXTRATO_BANCARIO"] = "extrato_bancario";
+    TipoDocumentoEnum["COMPROVANTE_PIX"] = "comprovante_pix";
+    TipoDocumentoEnum["DADOS_BANCARIOS"] = "dados_bancarios";
+    // Documentos familiares e sociais
+    TipoDocumentoEnum["DECLARACAO_COMPOSICAO_FAMILIAR"] = "declaracao_composicao_familiar";
+    TipoDocumentoEnum["DECLARACAO_UNIAO_ESTAVEL"] = "declaracao_uniao_estavel";
+    TipoDocumentoEnum["GUARDA_MENOR"] = "guarda_menor";
+    TipoDocumentoEnum["TUTELA"] = "tutela";
+    // Documentos específicos para benefícios
+    TipoDocumentoEnum["BOLETIM_OCORRENCIA"] = "boletim_ocorrencia";
+    TipoDocumentoEnum["MEDIDA_PROTETIVA"] = "medida_protetiva";
+    TipoDocumentoEnum["TERMO_ACOLHIMENTO"] = "termo_acolhimento";
+    TipoDocumentoEnum["RELATORIO_SOCIAL"] = "relatorio_social";
+    TipoDocumentoEnum["PARECER_TECNICO"] = "parecer_tecnico";
+    // Documentos de programas sociais
+    TipoDocumentoEnum["CARTAO_CADUNICO"] = "cartao_cadunico";
+    TipoDocumentoEnum["FOLHA_RESUMO_CADUNICO"] = "folha_resumo_cadunico";
+    TipoDocumentoEnum["COMPROVANTE_BOLSA_FAMILIA"] = "comprovante_bolsa_familia";
+    TipoDocumentoEnum["COMPROVANTE_BPC"] = "comprovante_bpc";
+    // Documentos educacionais
+    TipoDocumentoEnum["DECLARACAO_ESCOLAR"] = "declaracao_escolar";
+    TipoDocumentoEnum["HISTORICO_ESCOLAR"] = "historico_escolar";
+    TipoDocumentoEnum["MATRICULA_ESCOLAR"] = "matricula_escolar";
+    // Documentos específicos para mortalidade
+    TipoDocumentoEnum["DECLARACAO_OBITO"] = "declaracao_obito";
+    TipoDocumentoEnum["AUTORIZACAO_SEPULTAMENTO"] = "autorizacao_sepultamento";
+    TipoDocumentoEnum["COMPROVANTE_PARENTESCO"] = "comprovante_parentesco";
+    // Documentos específicos para natalidade
+    TipoDocumentoEnum["CARTAO_PRE_NATAL"] = "cartao_pre_natal";
+    TipoDocumentoEnum["DECLARACAO_NASCIDO_VIVO"] = "declaracao_nascido_vivo";
+    TipoDocumentoEnum["COMPROVANTE_GESTACAO"] = "comprovante_gestacao";
+    // Documentos específicos para passagens
+    TipoDocumentoEnum["COMPROVANTE_VIAGEM"] = "comprovante_viagem";
+    TipoDocumentoEnum["AUTORIZACAO_VIAGEM"] = "autorizacao_viagem";
+    TipoDocumentoEnum["BILHETE_PASSAGEM"] = "bilhete_passagem";
+    // Documentos diversos
+    TipoDocumentoEnum["PROCURACAO"] = "procuracao";
+    TipoDocumentoEnum["DECLARACAO_HIPOSSUFICIENCIA"] = "declaracao_hipossuficiencia";
+    TipoDocumentoEnum["TERMO_RESPONSABILIDADE"] = "termo_responsabilidade";
+    TipoDocumentoEnum["FOTO_3X4"] = "foto_3x4";
+    TipoDocumentoEnum["OUTRO"] = "outro";
+})(TipoDocumentoEnum || (exports.TipoDocumentoEnum = TipoDocumentoEnum = {}));
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXGVudW1zXFx0aXBvLWRvY3VtZW50by5lbnVtLnRzIiwibWFwcGluZ3MiOiI7OztBQUFBLElBQVksaUJBMkZWO0FBM0ZGLFdBQVksaUJBQWlCO0lBQzFCLDhCQUE4QjtJQUM5QixnQ0FBVyxDQUFBO0lBQ1gsOEJBQVMsQ0FBQTtJQUNULGdDQUFXLENBQUE7SUFDWCw4Q0FBeUIsQ0FBQTtJQUV6QixZQUFZO0lBQ1osZ0VBQTJDLENBQUE7SUFDM0MsOERBQXlDLENBQUE7SUFDekMsc0RBQWlDLENBQUE7SUFFakMsdUJBQXVCO0lBQ3ZCLHNFQUFpRCxDQUFBO0lBQ2pELDREQUF1QyxDQUFBO0lBQ3ZDLDBFQUFxRCxDQUFBO0lBRXJELGdDQUFnQztJQUNoQyw0REFBdUMsQ0FBQTtJQUN2QyxvREFBK0IsQ0FBQTtJQUMvQiw4Q0FBeUIsQ0FBQTtJQUN6QixrREFBNkIsQ0FBQTtJQUM3Qix3REFBbUMsQ0FBQTtJQUNuQyx3REFBbUMsQ0FBQTtJQUVuQywyQkFBMkI7SUFDM0IsMERBQXFDLENBQUE7SUFDckMsMERBQXFDLENBQUE7SUFDckMsa0NBQWEsQ0FBQTtJQUNiLDhDQUF5QixDQUFBO0lBQ3pCLDRDQUF1QixDQUFBO0lBQ3ZCLHNEQUFpQyxDQUFBO0lBRWpDLDRDQUE0QztJQUM1Qyw0REFBdUMsQ0FBQTtJQUN2QyxzRUFBaUQsQ0FBQTtJQUNqRCxrREFBNkIsQ0FBQTtJQUM3Qiw0RUFBdUQsQ0FBQTtJQUN2RCw4REFBeUMsQ0FBQTtJQUN6Qyw4RUFBeUQsQ0FBQTtJQUV6RCx1QkFBdUI7SUFDdkIsMERBQXFDLENBQUE7SUFDckMsd0RBQW1DLENBQUE7SUFDbkMsd0RBQW1DLENBQUE7SUFFbkMsa0NBQWtDO0lBQ2xDLHNGQUFpRSxDQUFBO0lBQ2pFLDBFQUFxRCxDQUFBO0lBQ3JELGtEQUE2QixDQUFBO0lBQzdCLHNDQUFpQixDQUFBO0lBRWpCLHlDQUF5QztJQUN6Qyw4REFBeUMsQ0FBQTtJQUN6QywwREFBcUMsQ0FBQTtJQUNyQyw0REFBdUMsQ0FBQTtJQUN2QywwREFBcUMsQ0FBQTtJQUNyQyx3REFBbUMsQ0FBQTtJQUVuQyxrQ0FBa0M7SUFDbEMsd0RBQW1DLENBQUE7SUFDbkMsb0VBQStDLENBQUE7SUFDL0MsNEVBQXVELENBQUE7SUFDdkQsd0RBQW1DLENBQUE7SUFFbkMsMEJBQTBCO0lBQzFCLDhEQUF5QyxDQUFBO0lBQ3pDLDREQUF1QyxDQUFBO0lBQ3ZDLDREQUF1QyxDQUFBO0lBRXZDLDBDQUEwQztJQUMxQywwREFBcUMsQ0FBQTtJQUNyQywwRUFBcUQsQ0FBQTtJQUNyRCxzRUFBaUQsQ0FBQTtJQUVqRCx5Q0FBeUM7SUFDekMsMERBQXFDLENBQUE7SUFDckMsd0VBQW1ELENBQUE7SUFDbkQsa0VBQTZDLENBQUE7SUFFN0Msd0NBQXdDO0lBQ3hDLDhEQUF5QyxDQUFBO0lBQ3pDLDhEQUF5QyxDQUFBO0lBQ3pDLDBEQUFxQyxDQUFBO0lBRXJDLHNCQUFzQjtJQUN0Qiw4Q0FBeUIsQ0FBQTtJQUN6QixnRkFBMkQsQ0FBQTtJQUMzRCxzRUFBaUQsQ0FBQTtJQUNqRCwwQ0FBcUIsQ0FBQTtJQUNyQixvQ0FBZSxDQUFBO0FBQ2pCLENBQUMsRUEzRlUsaUJBQWlCLGlDQUFqQixpQkFBaUIsUUEyRjNCIiwibmFtZXMiOltdLCJzb3VyY2VzIjpbIkM6XFxVc2Vyc1xcZXVkcmVcXE9uZURyaXZlXFxEZXNrdG9wXFxQcm9qZXRvc1xccGdiZW5cXHBnYmVuLXNlcnZlclxcc3JjXFxlbnVtc1xcdGlwby1kb2N1bWVudG8uZW51bS50cyJdLCJzb3VyY2VzQ29udGVudCI6WyJleHBvcnQgZW51bSBUaXBvRG9jdW1lbnRvRW51bSB7XHJcbiAgIC8vIERvY3VtZW50b3MgZGUgaWRlbnRpZmljYcOnw6NvXHJcbiAgIENQRiA9ICdjcGYnLFxyXG4gICBSRyA9ICdyZycsXHJcbiAgIENOSCA9ICdjbmgnLFxyXG4gICBQQVNTQVBPUlRFID0gJ3Bhc3NhcG9ydGUnLFxyXG4gICBcclxuICAgLy8gQ2VydGlkw7Vlc1xyXG4gICBDRVJUSURBT19OQVNDSU1FTlRPID0gJ2NlcnRpZGFvX25hc2NpbWVudG8nLFxyXG4gICBDRVJUSURBT19DQVNBTUVOVE8gPSAnY2VydGlkYW9fY2FzYW1lbnRvJyxcclxuICAgQ0VSVElEQU9fT0JJVE8gPSAnY2VydGlkYW9fb2JpdG8nLFxyXG4gICBcclxuICAgLy8gQ29tcHJvdmFudGVzIGLDoXNpY29zXHJcbiAgIENPTVBST1ZBTlRFX1JFU0lERU5DSUEgPSAnY29tcHJvdmFudGVfcmVzaWRlbmNpYScsXHJcbiAgIENPTVBST1ZBTlRFX1JFTkRBID0gJ2NvbXByb3ZhbnRlX3JlbmRhJyxcclxuICAgQ09NUFJPVkFOVEVfRVNDT0xBUklEQURFID0gJ2NvbXByb3ZhbnRlX2VzY29sYXJpZGFkZScsXHJcbiAgIFxyXG4gICAvLyBEb2N1bWVudG9zIG3DqWRpY29zIGUgZGUgc2HDumRlXHJcbiAgIERFQ0xBUkFDQU9fTUVESUNBID0gJ2RlY2xhcmFjYW9fbWVkaWNhJyxcclxuICAgQ0FSVEFPX1ZBQ0lOQSA9ICdjYXJ0YW9fdmFjaW5hJyxcclxuICAgQ0FSVEFPX1NVUyA9ICdjYXJ0YW9fc3VzJyxcclxuICAgTEFVRE9fTUVESUNPID0gJ2xhdWRvX21lZGljbycsXHJcbiAgIEFURVNUQURPX01FRElDTyA9ICdhdGVzdGFkb19tZWRpY28nLFxyXG4gICBFWEFNRV9QUkVfTkFUQUwgPSAnZXhhbWVfcHJlX25hdGFsJyxcclxuICAgXHJcbiAgIC8vIERvY3VtZW50b3MgaGFiaXRhY2lvbmFpc1xyXG4gICBDT05UUkFUT19BTFVHVUVMID0gJ2NvbnRyYXRvX2FsdWd1ZWwnLFxyXG4gICBFU0NSSVRVUkFfSU1PVkVMID0gJ2VzY3JpdHVyYV9pbW92ZWwnLFxyXG4gICBJUFRVID0gJ2lwdHUnLFxyXG4gICBDT05UQV9BR1VBID0gJ2NvbnRhX2FndWEnLFxyXG4gICBDT05UQV9MVVogPSAnY29udGFfbHV6JyxcclxuICAgQ09OVEFfVEVMRUZPTkUgPSAnY29udGFfdGVsZWZvbmUnLFxyXG4gICBcclxuICAgLy8gRG9jdW1lbnRvcyB0cmFiYWxoaXN0YXMgZSBwcmV2aWRlbmNpw6FyaW9zXHJcbiAgIENBUlRFSVJBX1RSQUJBTEhPID0gJ2NhcnRlaXJhX3RyYWJhbGhvJyxcclxuICAgQ09NUFJPVkFOVEVfREVTRU1QUkVHTyA9ICdjb21wcm92YW50ZV9kZXNlbXByZWdvJyxcclxuICAgRVhUUkFUT19GR1RTID0gJ2V4dHJhdG9fZmd0cycsXHJcbiAgIENPTVBST1ZBTlRFX0FQT1NFTlRBRE9SSUEgPSAnY29tcHJvdmFudGVfYXBvc2VudGFkb3JpYScsXHJcbiAgIENPTVBST1ZBTlRFX1BFTlNBTyA9ICdjb21wcm92YW50ZV9wZW5zYW8nLFxyXG4gICBDT01QUk9WQU5URV9CRU5FRklDSU9fSU5TUyA9ICdjb21wcm92YW50ZV9iZW5lZmljaW9faW5zcycsXHJcbiAgIFxyXG4gICAvLyBEb2N1bWVudG9zIGJhbmPDoXJpb3NcclxuICAgRVhUUkFUT19CQU5DQVJJTyA9ICdleHRyYXRvX2JhbmNhcmlvJyxcclxuICAgQ09NUFJPVkFOVEVfUElYID0gJ2NvbXByb3ZhbnRlX3BpeCcsXHJcbiAgIERBRE9TX0JBTkNBUklPUyA9ICdkYWRvc19iYW5jYXJpb3MnLFxyXG4gICBcclxuICAgLy8gRG9jdW1lbnRvcyBmYW1pbGlhcmVzIGUgc29jaWFpc1xyXG4gICBERUNMQVJBQ0FPX0NPTVBPU0lDQU9fRkFNSUxJQVIgPSAnZGVjbGFyYWNhb19jb21wb3NpY2FvX2ZhbWlsaWFyJyxcclxuICAgREVDTEFSQUNBT19VTklBT19FU1RBVkVMID0gJ2RlY2xhcmFjYW9fdW5pYW9fZXN0YXZlbCcsXHJcbiAgIEdVQVJEQV9NRU5PUiA9ICdndWFyZGFfbWVub3InLFxyXG4gICBUVVRFTEEgPSAndHV0ZWxhJyxcclxuICAgXHJcbiAgIC8vIERvY3VtZW50b3MgZXNwZWPDrWZpY29zIHBhcmEgYmVuZWbDrWNpb3NcclxuICAgQk9MRVRJTV9PQ09SUkVOQ0lBID0gJ2JvbGV0aW1fb2NvcnJlbmNpYScsXHJcbiAgIE1FRElEQV9QUk9URVRJVkEgPSAnbWVkaWRhX3Byb3RldGl2YScsXHJcbiAgIFRFUk1PX0FDT0xISU1FTlRPID0gJ3Rlcm1vX2Fjb2xoaW1lbnRvJyxcclxuICAgUkVMQVRPUklPX1NPQ0lBTCA9ICdyZWxhdG9yaW9fc29jaWFsJyxcclxuICAgUEFSRUNFUl9URUNOSUNPID0gJ3BhcmVjZXJfdGVjbmljbycsXHJcbiAgIFxyXG4gICAvLyBEb2N1bWVudG9zIGRlIHByb2dyYW1hcyBzb2NpYWlzXHJcbiAgIENBUlRBT19DQURVTklDTyA9ICdjYXJ0YW9fY2FkdW5pY28nLFxyXG4gICBGT0xIQV9SRVNVTU9fQ0FEVU5JQ08gPSAnZm9saGFfcmVzdW1vX2NhZHVuaWNvJyxcclxuICAgQ09NUFJPVkFOVEVfQk9MU0FfRkFNSUxJQSA9ICdjb21wcm92YW50ZV9ib2xzYV9mYW1pbGlhJyxcclxuICAgQ09NUFJPVkFOVEVfQlBDID0gJ2NvbXByb3ZhbnRlX2JwYycsXHJcbiAgIFxyXG4gICAvLyBEb2N1bWVudG9zIGVkdWNhY2lvbmFpc1xyXG4gICBERUNMQVJBQ0FPX0VTQ09MQVIgPSAnZGVjbGFyYWNhb19lc2NvbGFyJyxcclxuICAgSElTVE9SSUNPX0VTQ09MQVIgPSAnaGlzdG9yaWNvX2VzY29sYXInLFxyXG4gICBNQVRSSUNVTEFfRVNDT0xBUiA9ICdtYXRyaWN1bGFfZXNjb2xhcicsXHJcbiAgIFxyXG4gICAvLyBEb2N1bWVudG9zIGVzcGVjw61maWNvcyBwYXJhIG1vcnRhbGlkYWRlXHJcbiAgIERFQ0xBUkFDQU9fT0JJVE8gPSAnZGVjbGFyYWNhb19vYml0bycsXHJcbiAgIEFVVE9SSVpBQ0FPX1NFUFVMVEFNRU5UTyA9ICdhdXRvcml6YWNhb19zZXB1bHRhbWVudG8nLFxyXG4gICBDT01QUk9WQU5URV9QQVJFTlRFU0NPID0gJ2NvbXByb3ZhbnRlX3BhcmVudGVzY28nLFxyXG4gICBcclxuICAgLy8gRG9jdW1lbnRvcyBlc3BlY8OtZmljb3MgcGFyYSBuYXRhbGlkYWRlXHJcbiAgIENBUlRBT19QUkVfTkFUQUwgPSAnY2FydGFvX3ByZV9uYXRhbCcsXHJcbiAgIERFQ0xBUkFDQU9fTkFTQ0lET19WSVZPID0gJ2RlY2xhcmFjYW9fbmFzY2lkb192aXZvJyxcclxuICAgQ09NUFJPVkFOVEVfR0VTVEFDQU8gPSAnY29tcHJvdmFudGVfZ2VzdGFjYW8nLFxyXG4gICBcclxuICAgLy8gRG9jdW1lbnRvcyBlc3BlY8OtZmljb3MgcGFyYSBwYXNzYWdlbnNcclxuICAgQ09NUFJPVkFOVEVfVklBR0VNID0gJ2NvbXByb3ZhbnRlX3ZpYWdlbScsXHJcbiAgIEFVVE9SSVpBQ0FPX1ZJQUdFTSA9ICdhdXRvcml6YWNhb192aWFnZW0nLFxyXG4gICBCSUxIRVRFX1BBU1NBR0VNID0gJ2JpbGhldGVfcGFzc2FnZW0nLFxyXG4gICBcclxuICAgLy8gRG9jdW1lbnRvcyBkaXZlcnNvc1xyXG4gICBQUk9DVVJBQ0FPID0gJ3Byb2N1cmFjYW8nLFxyXG4gICBERUNMQVJBQ0FPX0hJUE9TU1VGSUNJRU5DSUEgPSAnZGVjbGFyYWNhb19oaXBvc3N1ZmljaWVuY2lhJyxcclxuICAgVEVSTU9fUkVTUE9OU0FCSUxJREFERSA9ICd0ZXJtb19yZXNwb25zYWJpbGlkYWRlJyxcclxuICAgRk9UT18zWDQgPSAnZm90b18zeDQnLFxyXG4gICBPVVRSTyA9ICdvdXRybydcclxuIH0iXSwidmVyc2lvbiI6M30=

@@ -57,13 +57,17 @@ export class InfoBancaria {
   @Column({ length: 100 })
   @IsOptional()
   @IsString({ message: 'Nome do banco deve ser uma string' })
-  @MaxLength(100, { message: 'Nome do banco deve ter no máximo 100 caracteres' })
+  @MaxLength(100, {
+    message: 'Nome do banco deve ter no máximo 100 caracteres',
+  })
   nome_banco: string; // Ex: 'Banco do Brasil S.A.'
 
   @Column({ length: 10 })
   @IsOptional()
   @IsString({ message: 'Agência deve ser uma string' })
-  @Matches(/^\d{4,5}(-\d)?$/, { message: 'Agência deve ter formato válido (ex: 1234 ou 1234-5)' })
+  @Matches(/^\d{4,5}(-\d)?$/, {
+    message: 'Agência deve ter formato válido (ex: 1234 ou 1234-5)',
+  })
   agencia: string;
 
   @Column({ length: 20 })
@@ -266,7 +270,7 @@ export class InfoBancaria {
    */
   getDescricaoTipoChavePix(): string {
     if (!this.tipo_chave_pix) return 'Não informado';
-    
+
     const descricoes = {
       [TipoChavePix.CPF]: 'CPF',
       [TipoChavePix.EMAIL]: 'E-mail',
@@ -297,10 +301,13 @@ export class InfoBancaria {
    */
   getChavePixFormatada(): string {
     if (!this.chave_pix) return 'Não informado';
-    
+
     switch (this.tipo_chave_pix) {
       case TipoChavePix.CPF:
-        return this.chave_pix.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.***.$3-**');
+        return this.chave_pix.replace(
+          /(\d{3})(\d{3})(\d{3})(\d{2})/,
+          '$1.***.$3-**',
+        );
       case TipoChavePix.EMAIL:
         const [local, domain] = this.chave_pix.split('@');
         return `${local.substring(0, 2)}***@${domain}`;
@@ -326,7 +333,9 @@ export class InfoBancaria {
   getSummary(): string {
     const banco = this.getBancoFormatado();
     const conta = this.getDescricaoTipoConta();
-    const pix = this.temChavePix() ? ` - PIX: ${this.getDescricaoTipoChavePix()}` : '';
+    const pix = this.temChavePix()
+      ? ` - PIX: ${this.getDescricaoTipoChavePix()}`
+      : '';
     return `${banco} - ${conta}${pix}`;
   }
 
@@ -343,16 +352,16 @@ export class InfoBancaria {
   isConsistente(): boolean {
     // Verifica se tem cidadão
     if (!this.cidadao_id) return false;
-    
+
     // Se tem dados bancários, devem estar completos
     if (this.banco || this.agencia || this.conta) {
       if (!this.temDadosBancariosCompletos()) return false;
     }
-    
+
     // Se tem chave PIX, deve ter tipo
     if (this.chave_pix && !this.tipo_chave_pix) return false;
     if (this.tipo_chave_pix && !this.chave_pix) return false;
-    
+
     // Validação específica por tipo de chave PIX
     if (this.temChavePix()) {
       switch (this.tipo_chave_pix) {
@@ -366,7 +375,7 @@ export class InfoBancaria {
           return this.chave_pix.length >= 32;
       }
     }
-    
+
     return true;
   }
 
@@ -376,7 +385,7 @@ export class InfoBancaria {
   podeSerRemovido(): boolean {
     // Não pode remover se já foi removido
     if (this.foiRemovido()) return false;
-    
+
     // Outras validações específicas podem ser adicionadas
     return true;
   }
@@ -430,15 +439,15 @@ export class InfoBancaria {
   precisaValidacao(): boolean {
     // Informações muito antigas precisam de validação
     if (this.getIdadeRegistroEmDias() > 365) return true;
-    
+
     // Informações inconsistentes precisam de validação
     if (!this.isConsistente()) return true;
-    
+
     // Contas não preferenciais podem precisar de validação
     if (this.temDadosBancariosCompletos() && !this.isPreferencialPagamentos()) {
       return true;
     }
-    
+
     return false;
   }
 
@@ -477,27 +486,35 @@ export class InfoBancaria {
    */
   getSugestoesMelhoria(): string[] {
     const sugestoes: string[] = [];
-    
+
     if (!this.temDadosBancariosCompletos() && !this.temChavePix()) {
-      sugestoes.push('Adicionar dados bancários ou chave PIX para recebimento de benefícios');
+      sugestoes.push(
+        'Adicionar dados bancários ou chave PIX para recebimento de benefícios',
+      );
     }
-    
+
     if (!this.isPreferencialPagamentos() && this.temDadosBancariosCompletos()) {
-      sugestoes.push('Considerar abertura de Poupança Social no Banco do Brasil para facilitar pagamentos');
+      sugestoes.push(
+        'Considerar abertura de Poupança Social no Banco do Brasil para facilitar pagamentos',
+      );
     }
-    
+
     if (!this.temChavePix()) {
-      sugestoes.push('Cadastrar chave PIX para agilizar recebimento de benefícios');
+      sugestoes.push(
+        'Cadastrar chave PIX para agilizar recebimento de benefícios',
+      );
     }
-    
+
     if (this.precisaValidacao()) {
       sugestoes.push('Validar e atualizar informações bancárias');
     }
-    
+
     if (!this.isConsistente()) {
-      sugestoes.push('Verificar e corrigir inconsistências nos dados bancários');
+      sugestoes.push(
+        'Verificar e corrigir inconsistências nos dados bancários',
+      );
     }
-    
+
     return sugestoes;
   }
 
@@ -515,15 +532,15 @@ export class InfoBancaria {
    */
   getStatus(): 'COMPLETO' | 'PARCIAL' | 'INCOMPLETO' | 'INATIVO' {
     if (!this.isAtivo()) return 'INATIVO';
-    
+
     if (this.temDadosBancariosCompletos() && this.temChavePix()) {
       return 'COMPLETO';
     }
-    
+
     if (this.temDadosBancariosCompletos() || this.temChavePix()) {
       return 'PARCIAL';
     }
-    
+
     return 'INCOMPLETO';
   }
 
@@ -532,7 +549,7 @@ export class InfoBancaria {
    */
   getPontuacaoCompletude(): number {
     let pontos = 0;
-    
+
     if (this.banco) pontos += 15;
     if (this.nome_banco) pontos += 10;
     if (this.agencia) pontos += 15;
@@ -540,7 +557,7 @@ export class InfoBancaria {
     if (this.tipo_conta) pontos += 10;
     if (this.chave_pix) pontos += 20;
     if (this.tipo_chave_pix) pontos += 15;
-    
+
     return pontos;
   }
 }

@@ -1,7 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { JwtService } from '@nestjs/jwt';
-import { BadRequestException, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { IntegradorToken, TokenRevogado } from '../../../entities';
 import { IntegradorTokenService } from '../services/integrador-token.service';
 import { IntegradorService } from '../services/integrador.service';
@@ -110,7 +114,11 @@ describe('IntegradorTokenService', () => {
         id: integradorId,
         nome: 'Integrador Teste',
         ativo: true,
-        permissoesEscopo: ['read:dados_basicos', 'write:solicitacoes', 'read:cidadaos'],
+        permissoesEscopo: [
+          'read:dados_basicos',
+          'write:solicitacoes',
+          'read:cidadaos',
+        ],
       };
 
       const tokenEntity = {
@@ -143,20 +151,22 @@ describe('IntegradorTokenService', () => {
           type: 'api_token',
           scopes: createTokenDto.escopos,
         },
-        { expiresIn: '30d' }
+        { expiresIn: '30d' },
       );
-      expect(mockTokenRepository.create).toHaveBeenCalledWith(expect.objectContaining({
-        integradorId,
-        nome: createTokenDto.nome,
-        descricao: createTokenDto.descricao,
-        tokenHash: expect.any(String),
-        escopos: createTokenDto.escopos,
-        dataExpiracao: expect.any(Date),
-      }));
+      expect(mockTokenRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          integradorId,
+          nome: createTokenDto.nome,
+          descricao: createTokenDto.descricao,
+          tokenHash: expect.any(String),
+          escopos: createTokenDto.escopos,
+          dataExpiracao: expect.any(Date),
+        }),
+      );
       expect(mockTokenRepository.save).toHaveBeenCalled();
       expect(result).toEqual({
         token: jwtToken,
-        tokenInfo: expect.any(Object)
+        tokenInfo: expect.any(Object),
       });
     });
 
@@ -174,7 +184,11 @@ describe('IntegradorTokenService', () => {
         id: integradorId,
         nome: 'Integrador Teste',
         ativo: true,
-        permissoesEscopo: ['read:dados_basicos', 'write:solicitacoes', 'read:cidadaos'],
+        permissoesEscopo: [
+          'read:dados_basicos',
+          'write:solicitacoes',
+          'read:cidadaos',
+        ],
       };
 
       const tokenEntity = {
@@ -199,11 +213,13 @@ describe('IntegradorTokenService', () => {
       // Assert
       expect(mockJwtService.sign).toHaveBeenCalledWith(
         expect.any(Object),
-        {} // Sem opções de expiração
+        {}, // Sem opções de expiração
       );
-      expect(mockTokenRepository.create).toHaveBeenCalledWith(expect.objectContaining({
-        dataExpiracao: null, // Confirma que token não tem expiração
-      }));
+      expect(mockTokenRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          dataExpiracao: null, // Confirma que token não tem expiração
+        }),
+      );
       expect(result.tokenInfo.dataExpiracao).toBeNull();
     });
 
@@ -224,8 +240,9 @@ describe('IntegradorTokenService', () => {
       mockIntegradorService.findById.mockResolvedValue(integrador);
 
       // Act & Assert
-      await expect(service.createToken(integradorId, createTokenDto))
-        .rejects.toThrow(BadRequestException);
+      await expect(
+        service.createToken(integradorId, createTokenDto),
+      ).rejects.toThrow(BadRequestException);
       expect(mockIntegradorService.findById).toHaveBeenCalledWith(integradorId);
       expect(mockTokenRepository.create).not.toHaveBeenCalled();
       expect(mockTokenRepository.save).not.toHaveBeenCalled();
@@ -249,8 +266,9 @@ describe('IntegradorTokenService', () => {
       mockIntegradorService.findById.mockResolvedValue(integrador);
 
       // Act & Assert
-      await expect(service.createToken(integradorId, createTokenDto))
-        .rejects.toThrow(BadRequestException);
+      await expect(
+        service.createToken(integradorId, createTokenDto),
+      ).rejects.toThrow(BadRequestException);
       expect(mockIntegradorService.findById).toHaveBeenCalledWith(integradorId);
       expect(mockTokenRepository.create).not.toHaveBeenCalled();
       expect(mockTokenRepository.save).not.toHaveBeenCalled();
@@ -286,7 +304,7 @@ describe('IntegradorTokenService', () => {
       expect(mockIntegradorService.findById).toHaveBeenCalledWith(integradorId);
       expect(mockTokenRepository.find).toHaveBeenCalledWith({
         where: { integradorId },
-        order: { dataCriacao: 'DESC' }
+        order: { dataCriacao: 'DESC' },
       });
       expect(result).toHaveLength(2);
       expect(result[0].id).toEqual(tokens[0].id);
@@ -312,7 +330,7 @@ describe('IntegradorTokenService', () => {
 
       // Assert
       expect(mockTokenRepository.findOne).toHaveBeenCalledWith({
-        where: { id: tokenId }
+        where: { id: tokenId },
       });
       expect(result).toBeDefined();
       expect(result.id).toEqual(tokenId);
@@ -326,7 +344,7 @@ describe('IntegradorTokenService', () => {
       // Act & Assert
       await expect(service.findOne(tokenId)).rejects.toThrow(NotFoundException);
       expect(mockTokenRepository.findOne).toHaveBeenCalledWith({
-        where: { id: tokenId }
+        where: { id: tokenId },
       });
     });
   });
@@ -336,7 +354,7 @@ describe('IntegradorTokenService', () => {
       // Arrange
       const tokenId = 'token-id';
       const motivo = 'Teste de revogação';
-      
+
       const token = {
         id: tokenId,
         integradorId: 'integrador-id',
@@ -369,14 +387,16 @@ describe('IntegradorTokenService', () => {
 
       // Assert
       expect(mockTokenRepository.findOne).toHaveBeenCalledWith({
-        where: { id: tokenId }
+        where: { id: tokenId },
       });
-      expect(mockTokenRepository.save).toHaveBeenCalledWith(expect.objectContaining({
-        id: tokenId,
-        revogado: true,
-        dataRevogacao: expect.any(Date),
-        motivoRevogacao: motivo,
-      }));
+      expect(mockTokenRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: tokenId,
+          revogado: true,
+          dataRevogacao: expect.any(Date),
+          motivoRevogacao: motivo,
+        }),
+      );
       expect(mockTokenRevogadoRepository.create).toHaveBeenCalled();
       expect(mockTokenRevogadoRepository.save).toHaveBeenCalled();
       expect(result.revogado).toBe(true);
@@ -387,7 +407,7 @@ describe('IntegradorTokenService', () => {
       // Arrange
       const tokenId = 'token-id';
       const motivo = 'Teste de revogação';
-      
+
       const token = {
         id: tokenId,
         nome: 'Token já Revogado',
@@ -399,10 +419,11 @@ describe('IntegradorTokenService', () => {
       mockTokenRepository.findOne.mockResolvedValue(token);
 
       // Act & Assert
-      await expect(service.revogarToken(tokenId, motivo))
-        .rejects.toThrow(BadRequestException);
+      await expect(service.revogarToken(tokenId, motivo)).rejects.toThrow(
+        BadRequestException,
+      );
       expect(mockTokenRepository.findOne).toHaveBeenCalledWith({
-        where: { id: tokenId }
+        where: { id: tokenId },
       });
       expect(mockTokenRepository.save).not.toHaveBeenCalled();
       expect(mockTokenRevogadoRepository.create).not.toHaveBeenCalled();
@@ -413,14 +434,15 @@ describe('IntegradorTokenService', () => {
       // Arrange
       const tokenId = 'token-inexistente';
       const motivo = 'Teste de revogação';
-      
+
       mockTokenRepository.findOne.mockResolvedValue(null);
 
       // Act & Assert
-      await expect(service.revogarToken(tokenId, motivo))
-        .rejects.toThrow(NotFoundException);
+      await expect(service.revogarToken(tokenId, motivo)).rejects.toThrow(
+        NotFoundException,
+      );
       expect(mockTokenRepository.findOne).toHaveBeenCalledWith({
-        where: { id: tokenId }
+        where: { id: tokenId },
       });
       expect(mockTokenRepository.save).not.toHaveBeenCalled();
       expect(mockTokenRevogadoRepository.create).not.toHaveBeenCalled();
@@ -434,7 +456,7 @@ describe('IntegradorTokenService', () => {
       const token = 'valid-jwt-token';
       const tokenHash = 'token-hash';
       const integradorId = 'integrador-id';
-      
+
       const jwtPayload = {
         sub: `integrador:${integradorId}`,
         name: 'Integrador Teste',
@@ -466,17 +488,21 @@ describe('IntegradorTokenService', () => {
       // Assert
       expect(mockJwtService.verify).toHaveBeenCalledWith(token);
       expect(mockTokenRevogadoRepository.findOne).toHaveBeenCalledWith({
-        where: { tokenHash }
+        where: { tokenHash },
       });
       expect(mockIntegradorService.findById).toHaveBeenCalledWith(integradorId);
-      expect(mockIntegradorService.registrarAcesso).toHaveBeenCalledWith(integradorId);
+      expect(mockIntegradorService.registrarAcesso).toHaveBeenCalledWith(
+        integradorId,
+      );
       expect(mockTokenRepository.findOne).toHaveBeenCalledWith({
-        where: { tokenHash }
+        where: { tokenHash },
       });
-      expect(mockTokenRepository.save).toHaveBeenCalledWith(expect.objectContaining({
-        id: tokenInfo.id,
-        ultimoUso: expect.any(Date),
-      }));
+      expect(mockTokenRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: tokenInfo.id,
+          ultimoUso: expect.any(Date),
+        }),
+      );
       expect(result).toEqual({
         ...jwtPayload,
         integrador,
@@ -488,7 +514,7 @@ describe('IntegradorTokenService', () => {
       const token = 'revoked-jwt-token';
       const tokenHash = 'token-hash';
       const integradorId = 'integrador-id';
-      
+
       const jwtPayload = {
         sub: `integrador:${integradorId}`,
         name: 'Integrador Teste',
@@ -502,11 +528,12 @@ describe('IntegradorTokenService', () => {
       }); // Token revogado
 
       // Act & Assert
-      await expect(service.validateToken(token))
-        .rejects.toThrow(UnauthorizedException);
+      await expect(service.validateToken(token)).rejects.toThrow(
+        UnauthorizedException,
+      );
       expect(mockJwtService.verify).toHaveBeenCalledWith(token);
       expect(mockTokenRevogadoRepository.findOne).toHaveBeenCalledWith({
-        where: { tokenHash }
+        where: { tokenHash },
       });
       expect(mockIntegradorService.findById).not.toHaveBeenCalled();
       expect(mockIntegradorService.registrarAcesso).not.toHaveBeenCalled();
@@ -517,7 +544,7 @@ describe('IntegradorTokenService', () => {
       const token = 'valid-jwt-token';
       const tokenHash = 'token-hash';
       const integradorId = 'integrador-id';
-      
+
       const jwtPayload = {
         sub: `integrador:${integradorId}`,
         name: 'Integrador Inativo',
@@ -535,11 +562,12 @@ describe('IntegradorTokenService', () => {
       mockIntegradorService.findById.mockResolvedValue(integrador);
 
       // Act & Assert
-      await expect(service.validateToken(token))
-        .rejects.toThrow(UnauthorizedException);
+      await expect(service.validateToken(token)).rejects.toThrow(
+        UnauthorizedException,
+      );
       expect(mockJwtService.verify).toHaveBeenCalledWith(token);
       expect(mockTokenRevogadoRepository.findOne).toHaveBeenCalledWith({
-        where: { tokenHash }
+        where: { tokenHash },
       });
       expect(mockIntegradorService.findById).toHaveBeenCalledWith(integradorId);
       expect(mockIntegradorService.registrarAcesso).not.toHaveBeenCalled();
@@ -548,7 +576,7 @@ describe('IntegradorTokenService', () => {
     it('deve lançar UnauthorizedException quando type do token não é api_token', async () => {
       // Arrange
       const token = 'wrong-type-token';
-      
+
       const jwtPayload = {
         sub: 'user:123',
         name: 'Usuário',
@@ -558,8 +586,9 @@ describe('IntegradorTokenService', () => {
       mockJwtService.verify.mockReturnValue(jwtPayload);
 
       // Act & Assert
-      await expect(service.validateToken(token))
-        .rejects.toThrow(UnauthorizedException);
+      await expect(service.validateToken(token)).rejects.toThrow(
+        UnauthorizedException,
+      );
       expect(mockJwtService.verify).toHaveBeenCalledWith(token);
       expect(mockTokenRevogadoRepository.findOne).not.toHaveBeenCalled();
       expect(mockIntegradorService.findById).not.toHaveBeenCalled();

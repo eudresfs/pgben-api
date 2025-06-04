@@ -1,0 +1,65 @@
+3eee2261e5db14f142a5b7ef3fe5a63b
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.RelatorioSolicitacoesDto = void 0;
+const class_validator_1 = require("class-validator");
+const swagger_1 = require("@nestjs/swagger");
+/**
+ * DTO para geração de relatório de solicitações por status
+ *
+ * Define os parâmetros necessários para gerar o relatório de solicitações por status
+ */
+class RelatorioSolicitacoesDto {
+    data_inicio;
+    data_fim;
+    unidade_id;
+    formato = 'pdf';
+}
+exports.RelatorioSolicitacoesDto = RelatorioSolicitacoesDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Data inicial (formato: YYYY-MM-DD)',
+        example: '2023-01-01',
+        required: true,
+    }),
+    (0, class_validator_1.IsDateString)(),
+    __metadata("design:type", String)
+], RelatorioSolicitacoesDto.prototype, "data_inicio", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Data final (formato: YYYY-MM-DD)',
+        example: '2023-12-31',
+        required: true,
+    }),
+    (0, class_validator_1.IsDateString)(),
+    __metadata("design:type", String)
+], RelatorioSolicitacoesDto.prototype, "data_fim", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'ID da unidade (opcional)',
+        required: false,
+        type: String,
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsUUID)(4),
+    __metadata("design:type", String)
+], RelatorioSolicitacoesDto.prototype, "unidade_id", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Formato de saída do relatório',
+        enum: ['pdf', 'excel', 'csv'],
+        default: 'pdf',
+    }),
+    (0, class_validator_1.IsEnum)(['pdf', 'excel', 'csv']),
+    __metadata("design:type", String)
+], RelatorioSolicitacoesDto.prototype, "formato", void 0);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXHJlbGF0b3Jpb3MtdW5pZmljYWRvXFxkdG9cXHJlbGF0b3Jpby1zb2xpY2l0YWNvZXMuZHRvLnRzIiwibWFwcGluZ3MiOiI7Ozs7Ozs7Ozs7OztBQUFBLHFEQUEyRTtBQUMzRSw2Q0FBOEM7QUFFOUM7Ozs7R0FJRztBQUNILE1BQWEsd0JBQXdCO0lBT25DLFdBQVcsQ0FBUztJQVFwQixRQUFRLENBQVM7SUFTakIsVUFBVSxDQUFVO0lBUXBCLE9BQU8sR0FBNEIsS0FBSyxDQUFDO0NBQzFDO0FBakNELDREQWlDQztBQTFCQztJQU5DLElBQUEscUJBQVcsRUFBQztRQUNYLFdBQVcsRUFBRSxvQ0FBb0M7UUFDakQsT0FBTyxFQUFFLFlBQVk7UUFDckIsUUFBUSxFQUFFLElBQUk7S0FDZixDQUFDO0lBQ0QsSUFBQSw4QkFBWSxHQUFFOzs2REFDSztBQVFwQjtJQU5DLElBQUEscUJBQVcsRUFBQztRQUNYLFdBQVcsRUFBRSxrQ0FBa0M7UUFDL0MsT0FBTyxFQUFFLFlBQVk7UUFDckIsUUFBUSxFQUFFLElBQUk7S0FDZixDQUFDO0lBQ0QsSUFBQSw4QkFBWSxHQUFFOzswREFDRTtBQVNqQjtJQVBDLElBQUEscUJBQVcsRUFBQztRQUNYLFdBQVcsRUFBRSwwQkFBMEI7UUFDdkMsUUFBUSxFQUFFLEtBQUs7UUFDZixJQUFJLEVBQUUsTUFBTTtLQUNiLENBQUM7SUFDRCxJQUFBLDRCQUFVLEdBQUU7SUFDWixJQUFBLHdCQUFNLEVBQUMsQ0FBQyxDQUFDOzs0REFDVTtBQVFwQjtJQU5DLElBQUEscUJBQVcsRUFBQztRQUNYLFdBQVcsRUFBRSwrQkFBK0I7UUFDNUMsSUFBSSxFQUFFLENBQUMsS0FBSyxFQUFFLE9BQU8sRUFBRSxLQUFLLENBQUM7UUFDN0IsT0FBTyxFQUFFLEtBQUs7S0FDZixDQUFDO0lBQ0QsSUFBQSx3QkFBTSxFQUFDLENBQUMsS0FBSyxFQUFFLE9BQU8sRUFBRSxLQUFLLENBQUMsQ0FBQzs7eURBQ1MiLCJuYW1lcyI6W10sInNvdXJjZXMiOlsiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXHJlbGF0b3Jpb3MtdW5pZmljYWRvXFxkdG9cXHJlbGF0b3Jpby1zb2xpY2l0YWNvZXMuZHRvLnRzIl0sInNvdXJjZXNDb250ZW50IjpbImltcG9ydCB7IElzRGF0ZVN0cmluZywgSXNFbnVtLCBJc09wdGlvbmFsLCBJc1VVSUQgfSBmcm9tICdjbGFzcy12YWxpZGF0b3InO1xuaW1wb3J0IHsgQXBpUHJvcGVydHkgfSBmcm9tICdAbmVzdGpzL3N3YWdnZXInO1xuXG4vKipcbiAqIERUTyBwYXJhIGdlcmHDp8OjbyBkZSByZWxhdMOzcmlvIGRlIHNvbGljaXRhw6fDtWVzIHBvciBzdGF0dXNcbiAqXG4gKiBEZWZpbmUgb3MgcGFyw6JtZXRyb3MgbmVjZXNzw6FyaW9zIHBhcmEgZ2VyYXIgbyByZWxhdMOzcmlvIGRlIHNvbGljaXRhw6fDtWVzIHBvciBzdGF0dXNcbiAqL1xuZXhwb3J0IGNsYXNzIFJlbGF0b3Jpb1NvbGljaXRhY29lc0R0byB7XG4gIEBBcGlQcm9wZXJ0eSh7XG4gICAgZGVzY3JpcHRpb246ICdEYXRhIGluaWNpYWwgKGZvcm1hdG86IFlZWVktTU0tREQpJyxcbiAgICBleGFtcGxlOiAnMjAyMy0wMS0wMScsXG4gICAgcmVxdWlyZWQ6IHRydWUsXG4gIH0pXG4gIEBJc0RhdGVTdHJpbmcoKVxuICBkYXRhX2luaWNpbzogc3RyaW5nO1xuXG4gIEBBcGlQcm9wZXJ0eSh7XG4gICAgZGVzY3JpcHRpb246ICdEYXRhIGZpbmFsIChmb3JtYXRvOiBZWVlZLU1NLUREKScsXG4gICAgZXhhbXBsZTogJzIwMjMtMTItMzEnLFxuICAgIHJlcXVpcmVkOiB0cnVlLFxuICB9KVxuICBASXNEYXRlU3RyaW5nKClcbiAgZGF0YV9maW06IHN0cmluZztcblxuICBAQXBpUHJvcGVydHkoe1xuICAgIGRlc2NyaXB0aW9uOiAnSUQgZGEgdW5pZGFkZSAob3BjaW9uYWwpJyxcbiAgICByZXF1aXJlZDogZmFsc2UsXG4gICAgdHlwZTogU3RyaW5nLFxuICB9KVxuICBASXNPcHRpb25hbCgpXG4gIEBJc1VVSUQoNClcbiAgdW5pZGFkZV9pZD86IHN0cmluZztcblxuICBAQXBpUHJvcGVydHkoe1xuICAgIGRlc2NyaXB0aW9uOiAnRm9ybWF0byBkZSBzYcOtZGEgZG8gcmVsYXTDs3JpbycsXG4gICAgZW51bTogWydwZGYnLCAnZXhjZWwnLCAnY3N2J10sXG4gICAgZGVmYXVsdDogJ3BkZicsXG4gIH0pXG4gIEBJc0VudW0oWydwZGYnLCAnZXhjZWwnLCAnY3N2J10pXG4gIGZvcm1hdG86ICdwZGYnIHwgJ2V4Y2VsJyB8ICdjc3YnID0gJ3BkZic7XG59XG4iXSwidmVyc2lvbiI6M30=

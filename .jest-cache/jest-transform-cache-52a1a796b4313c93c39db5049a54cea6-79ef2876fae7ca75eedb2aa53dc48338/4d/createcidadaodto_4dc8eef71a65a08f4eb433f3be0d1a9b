@@ -1,0 +1,353 @@
+7363fbb66534c72f5311ab47d82eacd7
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var _a, _b, _c, _d;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.CreateCidadaoDto = exports.PapelCidadaoCreateDto = exports.EnderecoDto = void 0;
+const swagger_1 = require("@nestjs/swagger");
+const class_validator_1 = require("class-validator");
+const class_transformer_1 = require("class-transformer");
+const sexo_enum_1 = require("../../../enums/sexo.enum");
+const tipo_papel_enum_1 = require("../../../enums/tipo-papel.enum");
+const cpf_validator_1 = require("../validators/cpf-validator");
+const nis_validator_1 = require("../validators/nis-validator");
+const telefone_validator_1 = require("../validators/telefone-validator");
+const cep_validator_1 = require("../validators/cep-validator");
+const create_composicao_familiar_dto_1 = require("./create-composicao-familiar.dto");
+const estado_civil_enum_1 = require("../../../enums/estado-civil.enum");
+/**
+ * DTO para endereço do cidadão
+ *
+ * Contém todos os campos necessários para registrar o endereço completo de um cidadão
+ */
+class EnderecoDto {
+    logradouro;
+    numero;
+    complemento;
+    bairro;
+    cidade;
+    estado;
+    cep;
+    ponto_referencia;
+    tempo_de_residencia;
+}
+exports.EnderecoDto = EnderecoDto;
+__decorate([
+    (0, class_validator_1.IsString)({ message: 'Logradouro deve ser uma string' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Logradouro é obrigatório' }),
+    (0, swagger_1.ApiProperty)({
+        example: 'Rua das Flores',
+        description: 'Logradouro do endereço',
+    }),
+    __metadata("design:type", String)
+], EnderecoDto.prototype, "logradouro", void 0);
+__decorate([
+    (0, class_validator_1.IsString)({ message: 'Número deve ser uma string' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Número é obrigatório' }),
+    (0, swagger_1.ApiProperty)({
+        example: '123',
+        description: 'Número do endereço',
+    }),
+    __metadata("design:type", String)
+], EnderecoDto.prototype, "numero", void 0);
+__decorate([
+    (0, class_validator_1.IsString)({ message: 'Complemento deve ser uma string' }),
+    (0, class_validator_1.IsOptional)(),
+    (0, swagger_1.ApiPropertyOptional)({
+        example: 'Apto 101',
+        description: 'Complemento do endereço',
+        required: false,
+    }),
+    __metadata("design:type", String)
+], EnderecoDto.prototype, "complemento", void 0);
+__decorate([
+    (0, class_validator_1.IsString)({ message: 'Bairro deve ser uma string' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Bairro é obrigatório' }),
+    (0, swagger_1.ApiProperty)({
+        example: 'Centro',
+        description: 'Bairro do endereço',
+    }),
+    __metadata("design:type", String)
+], EnderecoDto.prototype, "bairro", void 0);
+__decorate([
+    (0, class_validator_1.IsString)({ message: 'Cidade deve ser uma string' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Cidade é obrigatória' }),
+    (0, swagger_1.ApiProperty)({
+        example: 'Natal',
+        description: 'Cidade do endereço',
+    }),
+    __metadata("design:type", String)
+], EnderecoDto.prototype, "cidade", void 0);
+__decorate([
+    (0, class_validator_1.IsString)({ message: 'Estado deve ser uma string' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Estado é obrigatório' }),
+    (0, swagger_1.ApiProperty)({
+        example: 'RN',
+        description: 'Estado do endereço (sigla)',
+    }),
+    __metadata("design:type", String)
+], EnderecoDto.prototype, "estado", void 0);
+__decorate([
+    (0, class_validator_1.IsString)({ message: 'CEP deve ser uma string' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'CEP é obrigatório' }),
+    (0, class_validator_1.Validate)(cep_validator_1.CEPValidator, { message: 'CEP inválido' }),
+    (0, swagger_1.ApiProperty)({
+        example: '59000-000',
+        description: 'CEP do endereço',
+    }),
+    __metadata("design:type", String)
+], EnderecoDto.prototype, "cep", void 0);
+__decorate([
+    (0, class_validator_1.IsString)({ message: 'Ponto de referência deve ser uma string' }),
+    (0, class_validator_1.IsOptional)(),
+    (0, swagger_1.ApiPropertyOptional)({
+        example: 'Próximo ao Corpo de Bombeiros',
+        description: 'Ponto de referência do endereço',
+        required: false,
+    }),
+    __metadata("design:type", String)
+], EnderecoDto.prototype, "ponto_referencia", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)({}, { message: 'Tempo de residência deve ser um número' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Tempo de residência é obrigatório' }),
+    (0, swagger_1.ApiProperty)({
+        example: 2,
+        description: 'O tempo de residência do cidadão em anos',
+    }),
+    __metadata("design:type", Number)
+], EnderecoDto.prototype, "tempo_de_residencia", void 0);
+/**
+ * DTO para criação de cidadão
+ *
+ * Contém todos os campos necessários para cadastrar um novo cidadão no sistema,
+ * incluindo informações pessoais, documentos, endereço e dados socioeconômicos.
+ */
+/**
+ * DTO para papel do cidadão na criação
+ */
+class PapelCidadaoCreateDto {
+    tipo_papel;
+    metadados;
+}
+exports.PapelCidadaoCreateDto = PapelCidadaoCreateDto;
+__decorate([
+    (0, class_validator_1.IsEnum)(tipo_papel_enum_1.TipoPapel, { message: 'Tipo de papel inválido' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Tipo de papel é obrigatório' }),
+    (0, swagger_1.ApiProperty)({
+        enum: tipo_papel_enum_1.TipoPapel,
+        example: tipo_papel_enum_1.TipoPapel.BENEFICIARIO,
+        description: 'Tipo de papel do cidadão',
+    }),
+    __metadata("design:type", typeof (_a = typeof tipo_papel_enum_1.PaperType !== "undefined" && tipo_papel_enum_1.PaperType) === "function" ? _a : Object)
+], PapelCidadaoCreateDto.prototype, "tipo_papel", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsObject)({ message: 'Metadados deve ser um objeto' }),
+    (0, swagger_1.ApiPropertyOptional)({
+        type: 'object',
+        additionalProperties: true,
+        example: {
+            grau_parentesco: 'Mãe',
+            documento_representacao: '12345',
+            data_validade_representacao: '2026-01-01',
+        },
+        description: 'Metadados específicos do papel (varia conforme o tipo)',
+    }),
+    __metadata("design:type", Object)
+], PapelCidadaoCreateDto.prototype, "metadados", void 0);
+class CreateCidadaoDto {
+    papeis;
+    composicao_familiar;
+    nome;
+    cpf;
+    rg;
+    prontuario_suas;
+    naturalidade;
+    data_nascimento;
+    sexo;
+    nis;
+    nome_social;
+    estado_civil;
+    nome_mae;
+    telefone;
+    email;
+    endereco;
+    unidade_id;
+}
+exports.CreateCidadaoDto = CreateCidadaoDto;
+__decorate([
+    (0, class_validator_1.IsArray)(),
+    (0, class_validator_1.ValidateNested)({ each: true }),
+    (0, class_transformer_1.Type)(() => PapelCidadaoCreateDto),
+    (0, class_validator_1.IsOptional)(),
+    (0, swagger_1.ApiPropertyOptional)({
+        type: [PapelCidadaoCreateDto],
+        description: 'Papéis que o cidadão irá assumir no sistema',
+    }),
+    __metadata("design:type", Array)
+], CreateCidadaoDto.prototype, "papeis", void 0);
+__decorate([
+    (0, class_validator_1.IsArray)(),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.ValidateNested)({ each: true }),
+    (0, class_transformer_1.Type)(() => create_composicao_familiar_dto_1.CreateComposicaoFamiliarDto),
+    (0, swagger_1.ApiPropertyOptional)({
+        type: [create_composicao_familiar_dto_1.CreateComposicaoFamiliarDto],
+        description: 'Composição familiar do cidadão',
+    }),
+    __metadata("design:type", Array)
+], CreateCidadaoDto.prototype, "composicao_familiar", void 0);
+__decorate([
+    (0, class_validator_1.IsString)({ message: 'Nome deve ser uma string' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Nome é obrigatório' }),
+    (0, swagger_1.ApiProperty)({
+        example: 'Maria da Silva',
+        description: 'Nome completo do cidadão',
+    }),
+    __metadata("design:type", String)
+], CreateCidadaoDto.prototype, "nome", void 0);
+__decorate([
+    (0, class_validator_1.IsString)({ message: 'CPF deve ser uma string' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'CPF é obrigatório' }),
+    (0, class_validator_1.Validate)(cpf_validator_1.CPFValidator, { message: 'CPF inválido' }),
+    (0, swagger_1.ApiProperty)({
+        example: '123.456.789-00',
+        description: 'CPF do cidadão',
+    }),
+    __metadata("design:type", String)
+], CreateCidadaoDto.prototype, "cpf", void 0);
+__decorate([
+    (0, class_validator_1.IsString)({ message: 'RG deve ser uma string' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'RG é obrigatório' }),
+    (0, swagger_1.ApiProperty)({
+        example: '1234567',
+        description: 'RG do cidadão',
+    }),
+    __metadata("design:type", String)
+], CreateCidadaoDto.prototype, "rg", void 0);
+__decorate([
+    (0, class_validator_1.IsNotEmpty)({ message: 'Prontuario SUAS é obrigatório' }),
+    (0, swagger_1.ApiProperty)({
+        example: 'SUAS1234567',
+        description: 'Nº do Prontuário SUAS do cidadão',
+    }),
+    __metadata("design:type", String)
+], CreateCidadaoDto.prototype, "prontuario_suas", void 0);
+__decorate([
+    (0, class_validator_1.IsString)({ message: 'Naturalidade deve ser uma string' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Naturalidade é obrigatória' }),
+    (0, swagger_1.ApiProperty)({
+        example: 'Natal',
+        description: 'Cidade de Naturalidade',
+    }),
+    __metadata("design:type", String)
+], CreateCidadaoDto.prototype, "naturalidade", void 0);
+__decorate([
+    (0, class_validator_1.IsDate)(),
+    (0, class_transformer_1.Type)(() => Date),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Data de nascimento é obrigatória' }),
+    (0, swagger_1.ApiProperty)({
+        example: '1985-10-15',
+        description: 'Data de nascimento do cidadão',
+    }),
+    __metadata("design:type", typeof (_b = typeof Date !== "undefined" && Date) === "function" ? _b : Object)
+], CreateCidadaoDto.prototype, "data_nascimento", void 0);
+__decorate([
+    (0, class_validator_1.IsEnum)(sexo_enum_1.Sexo, { message: 'Sexo inválido' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Sexo é obrigatório' }),
+    (0, swagger_1.ApiProperty)({
+        enum: sexo_enum_1.Sexo,
+        example: sexo_enum_1.Sexo.FEMININO,
+        description: 'Sexo do cidadão',
+    }),
+    __metadata("design:type", typeof (_c = typeof sexo_enum_1.Sexo !== "undefined" && sexo_enum_1.Sexo) === "function" ? _c : Object)
+], CreateCidadaoDto.prototype, "sexo", void 0);
+__decorate([
+    (0, class_validator_1.IsString)({ message: 'NIS deve ser uma string' }),
+    (0, class_validator_1.ValidateIf)((o) => o.papeis?.some((p) => p.tipo_papel === tipo_papel_enum_1.TipoPapel.BENEFICIARIO)),
+    (0, class_validator_1.IsNotEmpty)({ message: 'NIS é obrigatório para beneficiários' }),
+    (0, class_validator_1.Validate)(nis_validator_1.NISValidator, { message: 'NIS inválido' }),
+    (0, swagger_1.ApiPropertyOptional)({
+        example: '12345678901',
+        description: 'Número de Identificação Social (NIS) do cidadão, utilizado para programas sociais. Obrigatório para beneficiários.',
+        required: false,
+    }),
+    __metadata("design:type", String)
+], CreateCidadaoDto.prototype, "nis", void 0);
+__decorate([
+    (0, class_validator_1.IsString)({ message: 'Nome social deve ser uma string' }),
+    (0, class_validator_1.IsOptional)(),
+    (0, swagger_1.ApiPropertyOptional)({
+        example: 'Maria Santos',
+        description: 'Nome social do cidadão (usado para pessoas trans)',
+        required: false,
+    }),
+    __metadata("design:type", String)
+], CreateCidadaoDto.prototype, "nome_social", void 0);
+__decorate([
+    (0, class_validator_1.IsEnum)(estado_civil_enum_1.EstadoCivil, { message: 'Estado civil inválido' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Estado civil é obrigatório' }),
+    (0, swagger_1.ApiProperty)({
+        enum: estado_civil_enum_1.EstadoCivil,
+        example: estado_civil_enum_1.EstadoCivil.CASADO,
+        description: 'Estado civil do cidadão',
+    }),
+    __metadata("design:type", typeof (_d = typeof estado_civil_enum_1.EstadoCivil !== "undefined" && estado_civil_enum_1.EstadoCivil) === "function" ? _d : Object)
+], CreateCidadaoDto.prototype, "estado_civil", void 0);
+__decorate([
+    (0, class_validator_1.IsString)({ message: 'Nome da mãe deve ser uma string' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Nome da mãe é obrigatório' }),
+    (0, swagger_1.ApiProperty)({
+        example: 'Maria da Silva',
+        description: 'Nome completo da mãe do cidadão',
+    }),
+    __metadata("design:type", String)
+], CreateCidadaoDto.prototype, "nome_mae", void 0);
+__decorate([
+    (0, class_validator_1.IsString)({ message: 'Telefone deve ser uma string' }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.Validate)(telefone_validator_1.TelefoneValidator, { message: 'Telefone inválido' }),
+    (0, swagger_1.ApiPropertyOptional)({
+        example: '(84) 98765-4321',
+        description: 'Telefone do cidadão para contato',
+        required: false,
+    }),
+    __metadata("design:type", String)
+], CreateCidadaoDto.prototype, "telefone", void 0);
+__decorate([
+    (0, class_validator_1.IsEmail)({}, { message: 'Email inválido' }),
+    (0, class_validator_1.IsOptional)(),
+    (0, swagger_1.ApiPropertyOptional)({
+        example: 'email@exemplo.com',
+        description: 'Endereço de email do cidadão para contato',
+        required: false,
+    }),
+    __metadata("design:type", String)
+], CreateCidadaoDto.prototype, "email", void 0);
+__decorate([
+    (0, class_validator_1.ValidateNested)(),
+    (0, class_transformer_1.Type)(() => EnderecoDto),
+    (0, swagger_1.ApiProperty)({
+        type: EnderecoDto,
+        description: 'Endereço do cidadão',
+    }),
+    __metadata("design:type", EnderecoDto)
+], CreateCidadaoDto.prototype, "endereco", void 0);
+__decorate([
+    (0, class_validator_1.IsUUID)('4', { message: 'ID da unidade deve ser um UUID válido' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'ID da unidade é obrigatório' }),
+    (0, swagger_1.ApiProperty)({
+        example: '550e8400-e29b-41d4-a716-446655440000',
+        description: 'ID da unidade onde o cidadão será cadastrado',
+    }),
+    __metadata("design:type", String)
+], CreateCidadaoDto.prototype, "unidade_id", void 0);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXGNpZGFkYW9cXGR0b1xcY3JlYXRlLWNpZGFkYW8uZHRvLnRzIiwibWFwcGluZ3MiOiI7Ozs7Ozs7Ozs7Ozs7QUFBQSw2Q0FBbUU7QUFDbkUscURBZXlCO0FBQ3pCLHlEQUF5QztBQUN6Qyx3REFBZ0Q7QUFDaEQsb0VBQXNFO0FBQ3RFLCtEQUEyRDtBQUMzRCwrREFBMkQ7QUFDM0QseUVBQXFFO0FBQ3JFLCtEQUEyRDtBQUMzRCxxRkFBK0U7QUFDL0Usd0VBQStEO0FBRS9EOzs7O0dBSUc7QUFDSCxNQUFhLFdBQVc7SUFPdEIsVUFBVSxDQUFTO0lBUW5CLE1BQU0sQ0FBUztJQVNmLFdBQVcsQ0FBVTtJQVFyQixNQUFNLENBQVM7SUFRZixNQUFNLENBQVM7SUFRZixNQUFNLENBQVM7SUFTZixHQUFHLENBQVM7SUFTWixnQkFBZ0IsQ0FBVTtJQVMxQixtQkFBbUIsQ0FBUztDQUM3QjtBQTVFRCxrQ0E0RUM7QUFyRUM7SUFOQyxJQUFBLDBCQUFRLEVBQUMsRUFBRSxPQUFPLEVBQUUsZ0NBQWdDLEVBQUUsQ0FBQztJQUN2RCxJQUFBLDRCQUFVLEVBQUMsRUFBRSxPQUFPLEVBQUUsMEJBQTBCLEVBQUUsQ0FBQztJQUNuRCxJQUFBLHFCQUFXLEVBQUM7UUFDWCxPQUFPLEVBQUUsZ0JBQWdCO1FBQ3pCLFdBQVcsRUFBRSx3QkFBd0I7S0FDdEMsQ0FBQzs7K0NBQ2lCO0FBUW5CO0lBTkMsSUFBQSwwQkFBUSxFQUFDLEVBQUUsT0FBTyxFQUFFLDRCQUE0QixFQUFFLENBQUM7SUFDbkQsSUFBQSw0QkFBVSxFQUFDLEVBQUUsT0FBTyxFQUFFLHNCQUFzQixFQUFFLENBQUM7SUFDL0MsSUFBQSxxQkFBVyxFQUFDO1FBQ1gsT0FBTyxFQUFFLEtBQUs7UUFDZCxXQUFXLEVBQUUsb0JBQW9CO0tBQ2xDLENBQUM7OzJDQUNhO0FBU2Y7SUFQQyxJQUFBLDBCQUFR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QUFBLDBCQUFRLEVBQUMsRUFBRSxPQUFPLEVBQUUsOEJBQThCLEVBQUUsQ0FBQztJQUNyRCxJQUFBLDRCQUFVLEdBQUU7SUFDWixJQUFBLDBCQUFRLEVBQUMsc0NBQWlCLEVBQUUsRUFBRSxPQUFPLEVBQUUsbUJBQW1CLEVBQUUsQ0FBQztJQUM3RCxJQUFBLDZCQUFtQixFQUFDO1FBQ25CLE9BQU8sRUFBRSxpQkFBaUI7UUFDMUIsV0FBVyxFQUFFLGtDQUFrQztRQUMvQyxRQUFRLEVBQUUsS0FBSztLQUNoQixDQUFDOztrREFDZ0I7QUFTbEI7SUFQQyxJQUFBLHlCQUFPLEVBQUMsRUFBRSxFQUFFLEVBQUUsT0FBTyxFQUFFLGdCQUFnQixFQUFFLENBQUM7SUFDMUMsSUFBQSw0QkFBVSxHQUFFO0lBQ1osSUFBQSw2QkFBbUIsRUFBQztRQUNuQixPQUFPLEVBQUUsbUJBQW1CO1FBQzVCLFdBQVcsRUFBRSwyQ0FBMkM7UUFDeEQsUUFBUSxFQUFFLEtBQUs7S0FDaEIsQ0FBQzs7K0NBQ2E7QUFRZjtJQU5DLElBQUEsZ0NBQWMsR0FBRTtJQUNoQixJQUFBLHdCQUFJLEVBQUMsR0FBRyxFQUFFLENBQUMsV0FBVyxDQUFDO0lBQ3ZCLElBQUEscUJBQVcsRUFBQztRQUNYLElBQUksRUFBRSxXQUFXO1FBQ2pCLFdBQVcsRUFBRSxxQkFBcUI7S0FDbkMsQ0FBQzs4QkFDUyxXQUFXO2tEQUFDO0FBUXZCO0lBTkMsSUFBQSx3QkFBTSxFQUFDLEdBQUcsRUFBRSxFQUFFLE9BQU8sRUFBRSx1Q0FBdUMsRUFBRSxDQUFDO0lBQ2pFLElBQUEsNEJBQVUsRUFBQyxFQUFFLE9BQU8sRUFBRSw2QkFBNkIsRUFBRSxDQUFDO0lBQ3RELElBQUEscUJBQVcsRUFBQztRQUNYLE9BQU8sRUFBRSxzQ0FBc0M7UUFDL0MsV0FBVyxFQUFFLDhDQUE4QztLQUM1RCxDQUFDOztvREFDaUIiLCJuYW1lcyI6W10sInNvdXJjZXMiOlsiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXGNpZGFkYW9cXGR0b1xcY3JlYXRlLWNpZGFkYW8uZHRvLnRzIl0sInNvdXJjZXNDb250ZW50IjpbImltcG9ydCB7IEFwaVByb3BlcnR5LCBBcGlQcm9wZXJ0eU9wdGlvbmFsIH0gZnJvbSAnQG5lc3Rqcy9zd2FnZ2VyJztcbmltcG9ydCB7XG4gIElzRW1haWwsXG4gIElzU3RyaW5nLFxuICBJc09wdGlvbmFsLFxuICBJc0VudW0sXG4gIElzTm90RW1wdHksXG4gIElzRGF0ZSxcbiAgSXNOdW1iZXIsXG4gIFZhbGlkYXRlTmVzdGVkLFxuICBWYWxpZGF0ZSxcbiAgTWF0Y2hlcyxcbiAgVmFsaWRhdGVJZixcbiAgSXNBcnJheSxcbiAgSXNVVUlELFxuICBJc09iamVjdCxcbn0gZnJvbSAnY2xhc3MtdmFsaWRhdG9yJztcbmltcG9ydCB7IFR5cGUgfSBmcm9tICdjbGFzcy10cmFuc2Zvcm1lcic7XG5pbXBvcnQgeyBTZXhvIH0gZnJvbSAnLi4vLi4vLi4vZW51bXMvc2V4by5lbnVtJztcbmltcG9ydCB7IFRpcG9QYXBlbCwgUGFwZXJUeXBlIH0gZnJvbSAnLi4vLi4vLi4vZW51bXMvdGlwby1wYXBlbC5lbnVtJztcbmltcG9ydCB7IENQRlZhbGlkYXRvciB9IGZyb20gJy4uL3ZhbGlkYXRvcnMvY3BmLXZhbGlkYXRvcic7XG5pbXBvcnQgeyBOSVNWYWxpZGF0b3IgfSBmcm9tICcuLi92YWxpZGF0b3JzL25pcy12YWxpZGF0b3InO1xuaW1wb3J0IHsgVGVsZWZvbmVWYWxpZGF0b3IgfSBmcm9tICcuLi92YWxpZGF0b3JzL3RlbGVmb25lLXZhbGlkYXRvcic7XG5pbXBvcnQgeyBDRVBWYWxpZGF0b3IgfSBmcm9tICcuLi92YWxpZGF0b3JzL2NlcC12YWxpZGF0b3InO1xuaW1wb3J0IHsgQ3JlYXRlQ29tcG9zaWNhb0ZhbWlsaWFyRHRvIH0gZnJvbSAnLi9jcmVhdGUtY29tcG9zaWNhby1mYW1pbGlhci5kdG8nO1xuaW1wb3J0IHsgRXN0YWRvQ2l2aWwgfSBmcm9tICcuLi8uLi8uLi9lbnVtcy9lc3RhZG8tY2l2aWwuZW51bSc7XG5cbi8qKlxuICogRFRPIHBhcmEgZW5kZXJlw6dvIGRvIGNpZGFkw6NvXG4gKlxuICogQ29udMOpbSB0b2RvcyBvcyBjYW1wb3MgbmVjZXNzw6FyaW9zIHBhcmEgcmVnaXN0cmFyIG8gZW5kZXJlw6dvIGNvbXBsZXRvIGRlIHVtIGNpZGFkw6NvXG4gKi9cbmV4cG9ydCBjbGFzcyBFbmRlcmVjb0R0byB7XG4gIEBJc1N0cmluZyh7IG1lc3NhZ2U6ICdMb2dyYWRvdXJvIGRldmUgc2VyIHVtYSBzdHJpbmcnIH0pXG4gIEBJc05vdEVtcHR5KHsgbWVzc2FnZTogJ0xvZ3JhZG91cm8gw6kgb2JyaWdhdMOzcmlvJyB9KVxuICBAQXBpUHJvcGVydHkoe1xuICAgIGV4YW1wbGU6ICdSdWEgZGFzIEZsb3JlcycsXG4gICAgZGVzY3JpcHRpb246ICdMb2dyYWRvdXJvIGRvIGVuZGVyZcOnbycsXG4gIH0pXG4gIGxvZ3JhZG91cm86IHN0cmluZztcblxuICBASXNTdHJpbmcoeyBtZXNzYWdlOiAnTsO6bWVybyBkZXZlIHNlciB1bWEgc3RyaW5nJyB9KVxuICBASXNOb3RFbXB0eSh7IG1lc3NhZ2U6ICdOw7ptZXJvIMOpIG9icmlnYXTDs3JpbycgfSlcbiAgQEFwaVByb3BlcnR5KHtcbiAgICBleGFtcGxlOiAnMTIzJyxcbiAgICBkZXNjcmlwdGlvbjogJ07Dum1lcm8gZG8gZW5kZXJlw6dvJyxcbiAgfSlcbiAgbnVtZXJvOiBzdHJpbmc7XG5cbiAgQElzU3RyaW5nKHsgbWVzc2FnZTogJ0NvbXBsZW1lbnRvIGRldmUgc2VyIHVtYSBzdHJpbmcnIH0pXG4gIEBJc09wdGlvbmFsKClcbiAgQEFwaVByb3BlcnR5T3B0aW9uYWwoe1xuICAgIGV4YW1wbGU6ICdBcHRvIDEwMScsXG4gICAgZGVzY3JpcHRpb246ICdDb21wbGVtZW50byBkbyBlbmRlcmXDp28nLFxuICAgIHJlcXVpcmVkOiBmYWxzZSxcbiAgfSlcbiAgY29tcGxlbWVudG8/OiBzdHJpbmc7XG5cbiAgQElzU3RyaW5nKHsgbWVzc2FnZTogJ0JhaXJybyBkZXZlIHNlciB1bWEgc3RyaW5nJyB9KVxuICBASXNOb3RFbXB0eSh7IG1lc3NhZ2U6ICdCYWlycm8gw6kgb2JyaWdhdMOzcmlvJyB9KVxuICBAQXBpUHJvcGVydHkoe1xuICAgIGV4YW1wbGU6ICdDZW50cm8nLFxuICAgIGRlc2NyaXB0aW9uOiAnQmFpcnJvIGRvIGVuZGVyZcOnbycsXG4gIH0pXG4gIGJhaXJybzogc3RyaW5nO1xuXG4gIEBJc1N0cmluZyh7IG1lc3NhZ2U6ICdDaWRhZGUgZGV2ZSBzZXIgdW1hIHN0cmluZycgfSlcbiAgQElzTm90RW1wdHkoeyBtZXNzYWdlOiAnQ2lkYWRlIMOpIG9icmlnYXTDs3JpYScgfSlcbiAgQEFwaVByb3BlcnR5KHtcbiAgICBleGFtcGxlOiAnTmF0YWwnLFxuICAgIGRlc2NyaXB0aW9uOiAnQ2lkYWRlIGRvIGVuZGVyZcOnbycsXG4gIH0pXG4gIGNpZGFkZTogc3RyaW5nO1xuXG4gIEBJc1N0cmluZyh7IG1lc3NhZ2U6ICdFc3RhZG8gZGV2ZSBzZXIgdW1hIHN0cmluZycgfSlcbiAgQElzTm90RW1wdHkoeyBtZXNzYWdlOiAnRXN0YWRvIMOpIG9icmlnYXTDs3JpbycgfSlcbiAgQEFwaVByb3BlcnR5KHtcbiAgICBleGFtcGxlOiAnUk4nLFxuICAgIGRlc2NyaXB0aW9uOiAnRXN0YWRvIGRvIGVuZGVyZcOnbyAoc2lnbGEpJyxcbiAgfSlcbiAgZXN0YWRvOiBzdHJpbmc7XG5cbiAgQElzU3RyaW5nKHsgbWVzc2FnZTogJ0NFUCBkZXZlIHNlciB1bWEgc3RyaW5nJyB9KVxuICBASXNOb3RFbXB0eSh7IG1lc3NhZ2U6ICdDRVAgw6kgb2JyaWdhdMOzcmlvJyB9KVxuICBAVmFsaWRhdGUoQ0VQVmFsaWRhdG9yLCB7IG1lc3NhZ2U6ICdDRVAgaW52w6FsaWRvJyB9KVxuICBAQXBpUHJvcGVydHkoe1xuICAgIGV4YW1wbGU6ICc1OTAwMC0wMDAnLFxuICAgIGRlc2NyaXB0aW9uOiAnQ0VQIGRvIGVuZGVyZcOnbycsXG4gIH0pXG4gIGNlcDogc3RyaW5nO1xuXG4gIEBJc1N0cmluZyh7IG1lc3NhZ2U6ICdQb250byBkZSByZWZlcsOqbmNpYSBkZXZlIHNlciB1bWEgc3RyaW5nJyB9KVxuICBASXNPcHRpb25hbCgpXG4gIEBBcGlQcm9wZXJ0eU9wdGlvbmFsKHtcbiAgICBleGFtcGxlOiAnUHLDs3hpbW8gYW8gQ29ycG8gZGUgQm9tYmVpcm9zJyxcbiAgICBkZXNjcmlwdGlvbjogJ1BvbnRvIGRlIHJlZmVyw6puY2lhIGRvIGVuZGVyZcOnbycsXG4gICAgcmVxdWlyZWQ6IGZhbHNlLFxuICB9KVxuICBwb250b19yZWZlcmVuY2lhPzogc3RyaW5nO1xuXG5cbiAgQElzTnVtYmVyKHt9LCB7IG1lc3NhZ2U6ICdUZW1wbyBkZSByZXNpZMOqbmNpYSBkZXZlIHNlciB1bSBuw7ptZXJvJyB9KVxuICBASXNOb3RFbXB0eSh7IG1lc3NhZ2U6ICdUZW1wbyBkZSByZXNpZMOqbmNpYSDDqSBvYnJpZ2F0w7NyaW8nIH0pXG4gIEBBcGlQcm9wZXJ0eSh7XG4gICAgZXhhbXBsZTogMixcbiAgICBkZXNjcmlwdGlvbjogJ08gdGVtcG8gZGUgcmVzaWTDqm5jaWEgZG8gY2lkYWTDo28gZW0gYW5vcycsXG4gIH0pXG4gIHRlbXBvX2RlX3Jlc2lkZW5jaWE6IG51bWJlcjtcbn1cblxuLyoqXG4gKiBEVE8gcGFyYSBjcmlhw6fDo28gZGUgY2lkYWTDo29cbiAqXG4gKiBDb250w6ltIHRvZG9zIG9zIGNhbXBvcyBuZWNlc3PDoXJpb3MgcGFyYSBjYWRhc3RyYXIgdW0gbm92byBjaWRhZMOjbyBubyBzaXN0ZW1hLFxuICogaW5jbHVpbmRvIGluZm9ybWHDp8O1ZXMgcGVzc29haXMsIGRvY3VtZW50b3MsIGVuZGVyZcOnbyBlIGRhZG9zIHNvY2lvZWNvbsO0bWljb3MuXG4gKi9cbi8qKlxuICogRFRPIHBhcmEgcGFwZWwgZG8gY2lkYWTDo28gbmEgY3JpYcOnw6NvXG4gKi9cbmV4cG9ydCBjbGFzcyBQYXBlbENpZGFkYW9DcmVhdGVEdG8ge1xuICBASXNFbnVtKFRpcG9QYXBlbCwgeyBtZXNzYWdlOiAnVGlwbyBkZSBwYXBlbCBpbnbDoWxpZG8nIH0pXG4gIEBJc05vdEVtcHR5KHsgbWVzc2FnZTogJ1RpcG8gZGUgcGFwZWwgw6kgb2JyaWdhdMOzcmlvJyB9KVxuICBAQXBpUHJvcGVydHkoe1xuICAgIGVudW06IFRpcG9QYXBlbCxcbiAgICBleGFtcGxlOiBUaXBvUGFwZWwuQkVORUZJQ0lBUklPLFxuICAgIGRlc2NyaXB0aW9uOiAnVGlwbyBkZSBwYXBlbCBkbyBjaWRhZMOjbycsXG4gIH0pXG4gIHRpcG9fcGFwZWw6IFBhcGVyVHlwZTtcblxuICBASXNPcHRpb25hbCgpXG4gIEBJc09iamVjdCh7IG1lc3NhZ2U6ICdNZXRhZGFkb3MgZGV2ZSBzZXIgdW0gb2JqZXRvJyB9KVxuICBAQXBpUHJvcGVydHlPcHRpb25hbCh7XG4gICAgdHlwZTogJ29iamVjdCcsXG4gICAgYWRkaXRpb25hbFByb3BlcnRpZXM6IHRydWUsXG4gICAgZXhhbXBsZToge1xuICAgICAgZ3JhdV9wYXJlbnRlc2NvOiAnTcOjZScsXG4gICAgICBkb2N1bWVudG9fcmVwcmVzZW50YWNhbzogJzEyMzQ1JyxcbiAgICAgIGRhdGFfdmFsaWRhZGVfcmVwcmVzZW50YWNhbzogJzIwMjYtMDEtMDEnLFxuICAgIH0sXG4gICAgZGVzY3JpcHRpb246ICdNZXRhZGFkb3MgZXNwZWPDrWZpY29zIGRvIHBhcGVsICh2YXJpYSBjb25mb3JtZSBvIHRpcG8pJyxcbiAgfSlcbiAgbWV0YWRhZG9zPzoge1xuICAgIGdyYXVfcGFyZW50ZXNjbz86IHN0cmluZztcbiAgICBkb2N1bWVudG9fcmVwcmVzZW50YWNhbz86IHN0cmluZztcbiAgICBkYXRhX3ZhbGlkYWRlX3JlcHJlc2VudGFjYW8/OiBEYXRlO1xuICAgIFtrZXk6IHN0cmluZ106IGFueTtcbiAgfTtcbn1cblxuZXhwb3J0IGNsYXNzIENyZWF0ZUNpZGFkYW9EdG8ge1xuICBASXNBcnJheSgpXG4gIEBWYWxpZGF0ZU5lc3RlZCh7IGVhY2g6IHRydWUgfSlcbiAgQFR5cGUoKCkgPT4gUGFwZWxDaWRhZGFvQ3JlYXRlRHRvKVxuICBASXNPcHRpb25hbCgpXG4gIEBBcGlQcm9wZXJ0eU9wdGlvbmFsKHtcbiAgICB0eXBlOiBbUGFwZWxDaWRhZGFvQ3JlYXRlRHRvXSxcbiAgICBkZXNjcmlwdGlvbjogJ1BhcMOpaXMgcXVlIG8gY2lkYWTDo28gaXLDoSBhc3N1bWlyIG5vIHNpc3RlbWEnLFxuICB9KVxuICBwYXBlaXM/OiBQYXBlbENpZGFkYW9DcmVhdGVEdG9bXTtcblxuICBASXNBcnJheSgpXG4gIEBJc09wdGlvbmFsKClcbiAgQFZhbGlkYXRlTmVzdGVkKHsgZWFjaDogdHJ1ZSB9KVxuICBAVHlwZSgoKSA9PiBDcmVhdGVDb21wb3NpY2FvRmFtaWxpYXJEdG8pXG4gIEBBcGlQcm9wZXJ0eU9wdGlvbmFsKHtcbiAgICB0eXBlOiBbQ3JlYXRlQ29tcG9zaWNhb0ZhbWlsaWFyRHRvXSxcbiAgICBkZXNjcmlwdGlvbjogJ0NvbXBvc2nDp8OjbyBmYW1pbGlhciBkbyBjaWRhZMOjbycsXG4gIH0pXG4gIGNvbXBvc2ljYW9fZmFtaWxpYXI/OiBDcmVhdGVDb21wb3NpY2FvRmFtaWxpYXJEdG9bXTtcblxuICBASXNTdHJpbmcoeyBtZXNzYWdlOiAnTm9tZSBkZXZlIHNlciB1bWEgc3RyaW5nJyB9KVxuICBASXNOb3RFbXB0eSh7IG1lc3NhZ2U6ICdOb21lIMOpIG9icmlnYXTDs3JpbycgfSlcbiAgQEFwaVByb3BlcnR5KHtcbiAgICBleGFtcGxlOiAnTWFyaWEgZGEgU2lsdmEnLFxuICAgIGRlc2NyaXB0aW9uOiAnTm9tZSBjb21wbGV0byBkbyBjaWRhZMOjbycsXG4gIH0pXG4gIG5vbWU6IHN0cmluZztcblxuICBASXNTdHJpbmcoeyBtZXNzYWdlOiAnQ1BGIGRldmUgc2VyIHVtYSBzdHJpbmcnIH0pXG4gIEBJc05vdEVtcHR5KHsgbWVzc2FnZTogJ0NQRiDDqSBvYnJpZ2F0w7NyaW8nIH0pXG4gIEBWYWxpZGF0ZShDUEZWYWxpZGF0b3IsIHsgbWVzc2FnZTogJ0NQRiBpbnbDoWxpZG8nIH0pXG4gIEBBcGlQcm9wZXJ0eSh7XG4gICAgZXhhbXBsZTogJzEyMy40NTYuNzg5LTAwJyxcbiAgICBkZXNjcmlwdGlvbjogJ0NQRiBkbyBjaWRhZMOjbycsXG4gIH0pXG4gIGNwZjogc3RyaW5nO1xuXG4gIEBJc1N0cmluZyh7IG1lc3NhZ2U6ICdSRyBkZXZlIHNlciB1bWEgc3RyaW5nJyB9KVxuICBASXNOb3RFbXB0eSh7IG1lc3NhZ2U6ICdSRyDDqSBvYnJpZ2F0w7NyaW8nIH0pXG4gIEBBcGlQcm9wZXJ0eSh7XG4gICAgZXhhbXBsZTogJzEyMzQ1NjcnLFxuICAgIGRlc2NyaXB0aW9uOiAnUkcgZG8gY2lkYWTDo28nLFxuICB9KVxuICByZzogc3RyaW5nO1xuXG4gIEBJc05vdEVtcHR5KHsgbWVzc2FnZTogJ1Byb250dWFyaW8gU1VBUyDDqSBvYnJpZ2F0w7NyaW8nIH0pXG4gICAgQEFwaVByb3BlcnR5KHtcbiAgICBleGFtcGxlOiAnU1VBUzEyMzQ1NjcnLFxuICAgIGRlc2NyaXB0aW9uOiAnTsK6IGRvIFByb250dcOhcmlvIFNVQVMgZG8gY2lkYWTDo28nLFxuICB9KVxuICBwcm9udHVhcmlvX3N1YXM6IHN0cmluZztcblxuICBASXNTdHJpbmcoeyBtZXNzYWdlOiAnTmF0dXJhbGlkYWRlIGRldmUgc2VyIHVtYSBzdHJpbmcnIH0pXG4gIEBJc05vdEVtcHR5KHsgbWVzc2FnZTogJ05hdHVyYWxpZGFkZSDDqSBvYnJpZ2F0w7NyaWEnIH0pXG4gIEBBcGlQcm9wZXJ0eSh7XG4gICAgZXhhbXBsZTogJ05hdGFsJyxcbiAgICBkZXNjcmlwdGlvbjogJ0NpZGFkZSBkZSBOYXR1cmFsaWRhZGUnLFxuICB9KVxuICBuYXR1cmFsaWRhZGU6IHN0cmluZztcblxuICBASXNEYXRlKClcbiAgQFR5cGUoKCkgPT4gRGF0ZSlcbiAgQElzTm90RW1wdHkoeyBtZXNzYWdlOiAnRGF0YSBkZSBuYXNjaW1lbnRvIMOpIG9icmlnYXTDs3JpYScgfSlcbiAgQEFwaVByb3BlcnR5KHtcbiAgICBleGFtcGxlOiAnMTk4NS0xMC0xNScsXG4gICAgZGVzY3JpcHRpb246ICdEYXRhIGRlIG5hc2NpbWVudG8gZG8gY2lkYWTDo28nLFxuICB9KVxuICBkYXRhX25hc2NpbWVudG86IERhdGU7XG5cbiAgQElzRW51bShTZXhvLCB7IG1lc3NhZ2U6ICdTZXhvIGludsOhbGlkbycgfSlcbiAgQElzTm90RW1wdHkoeyBtZXNzYWdlOiAnU2V4byDDqSBvYnJpZ2F0w7NyaW8nIH0pXG4gIEBBcGlQcm9wZXJ0eSh7XG4gICAgZW51bTogU2V4byxcbiAgICBleGFtcGxlOiBTZXhvLkZFTUlOSU5PLFxuICAgIGRlc2NyaXB0aW9uOiAnU2V4byBkbyBjaWRhZMOjbycsXG4gIH0pXG4gIHNleG86IFNleG87XG5cbiAgQElzU3RyaW5nKHsgbWVzc2FnZTogJ05JUyBkZXZlIHNlciB1bWEgc3RyaW5nJyB9KVxuICBAVmFsaWRhdGVJZigobykgPT5cbiAgICBvLnBhcGVpcz8uc29tZSgocCkgPT4gcC50aXBvX3BhcGVsID09PSBUaXBvUGFwZWwuQkVORUZJQ0lBUklPKSxcbiAgKVxuICBASXNOb3RFbXB0eSh7IG1lc3NhZ2U6ICdOSVMgw6kgb2JyaWdhdMOzcmlvIHBhcmEgYmVuZWZpY2nDoXJpb3MnIH0pXG4gIEBWYWxpZGF0ZShOSVNWYWxpZGF0b3IsIHsgbWVzc2FnZTogJ05JUyBpbnbDoWxpZG8nIH0pXG4gIEBBcGlQcm9wZXJ0eU9wdGlvbmFsKHtcbiAgICBleGFtcGxlOiAnMTIzNDU2Nzg5MDEnLFxuICAgIGRlc2NyaXB0aW9uOlxuICAgICAgJ07Dum1lcm8gZGUgSWRlbnRpZmljYcOnw6NvIFNvY2lhbCAoTklTKSBkbyBjaWRhZMOjbywgdXRpbGl6YWRvIHBhcmEgcHJvZ3JhbWFzIHNvY2lhaXMuIE9icmlnYXTDs3JpbyBwYXJhIGJlbmVmaWNpw6FyaW9zLicsXG4gICAgcmVxdWlyZWQ6IGZhbHNlLFxuICB9KVxuICBuaXM/OiBzdHJpbmc7XG5cbiAgQElzU3RyaW5nKHsgbWVzc2FnZTogJ05vbWUgc29jaWFsIGRldmUgc2VyIHVtYSBzdHJpbmcnIH0pXG4gIEBJc09wdGlvbmFsKClcbiAgQEFwaVByb3BlcnR5T3B0aW9uYWwoe1xuICAgIGV4YW1wbGU6ICdNYXJpYSBTYW50b3MnLFxuICAgIGRlc2NyaXB0aW9uOlxuICAgICAgJ05vbWUgc29jaWFsIGRvIGNpZGFkw6NvICh1c2FkbyBwYXJhIHBlc3NvYXMgdHJhbnMpJyxcbiAgICByZXF1aXJlZDogZmFsc2UsXG4gIH0pXG4gIG5vbWVfc29jaWFsPzogc3RyaW5nO1xuXG4gIEBJc0VudW0oRXN0YWRvQ2l2aWwsIHsgbWVzc2FnZTogJ0VzdGFkbyBjaXZpbCBpbnbDoWxpZG8nIH0pXG4gIEBJc05vdEVtcHR5KHsgbWVzc2FnZTogJ0VzdGFkbyBjaXZpbCDDqSBvYnJpZ2F0w7NyaW8nIH0pXG4gIEBBcGlQcm9wZXJ0eSh7XG4gICAgZW51bTogRXN0YWRvQ2l2aWwsXG4gICAgZXhhbXBsZTogRXN0YWRvQ2l2aWwuQ0FTQURPLFxuICAgIGRlc2NyaXB0aW9uOiAnRXN0YWRvIGNpdmlsIGRvIGNpZGFkw6NvJyxcbiAgfSlcbiAgZXN0YWRvX2NpdmlsOiBFc3RhZG9DaXZpbFxuXG5cbiAgQElzU3RyaW5nKHsgbWVzc2FnZTogJ05vbWUgZGEgbcOjZSBkZXZlIHNlciB1bWEgc3RyaW5nJyB9KVxuICBASXNOb3RFbXB0eSh7IG1lc3NhZ2U6ICdOb21lIGRhIG3Do2Ugw6kgb2JyaWdhdMOzcmlvJyB9KVxuICBAQXBpUHJvcGVydHkoe1xuICAgIGV4YW1wbGU6ICdNYXJpYSBkYSBTaWx2YScsXG4gICAgZGVzY3JpcHRpb246ICdOb21lIGNvbXBsZXRvIGRhIG3Do2UgZG8gY2lkYWTDo28nLFxuICB9KVxuICBub21lX21hZTogc3RyaW5nO1xuXG4gIEBJc1N0cmluZyh7IG1lc3NhZ2U6ICdUZWxlZm9uZSBkZXZlIHNlciB1bWEgc3RyaW5nJyB9KVxuICBASXNPcHRpb25hbCgpXG4gIEBWYWxpZGF0ZShUZWxlZm9uZVZhbGlkYXRvciwgeyBtZXNzYWdlOiAnVGVsZWZvbmUgaW52w6FsaWRvJyB9KVxuICBAQXBpUHJvcGVydHlPcHRpb25hbCh7XG4gICAgZXhhbXBsZTogJyg4NCkgOTg3NjUtNDMyMScsXG4gICAgZGVzY3JpcHRpb246ICdUZWxlZm9uZSBkbyBjaWRhZMOjbyBwYXJhIGNvbnRhdG8nLFxuICAgIHJlcXVpcmVkOiBmYWxzZSxcbiAgfSlcbiAgdGVsZWZvbmU/OiBzdHJpbmc7XG5cbiAgQElzRW1haWwoe30sIHsgbWVzc2FnZTogJ0VtYWlsIGludsOhbGlkbycgfSlcbiAgQElzT3B0aW9uYWwoKVxuICBAQXBpUHJvcGVydHlPcHRpb25hbCh7XG4gICAgZXhhbXBsZTogJ2VtYWlsQGV4ZW1wbG8uY29tJyxcbiAgICBkZXNjcmlwdGlvbjogJ0VuZGVyZcOnbyBkZSBlbWFpbCBkbyBjaWRhZMOjbyBwYXJhIGNvbnRhdG8nLFxuICAgIHJlcXVpcmVkOiBmYWxzZSxcbiAgfSlcbiAgZW1haWw/OiBzdHJpbmc7XG5cbiAgQFZhbGlkYXRlTmVzdGVkKClcbiAgQFR5cGUoKCkgPT4gRW5kZXJlY29EdG8pXG4gIEBBcGlQcm9wZXJ0eSh7XG4gICAgdHlwZTogRW5kZXJlY29EdG8sXG4gICAgZGVzY3JpcHRpb246ICdFbmRlcmXDp28gZG8gY2lkYWTDo28nLFxuICB9KVxuICBlbmRlcmVjbz86IEVuZGVyZWNvRHRvO1xuXG4gIEBJc1VVSUQoJzQnLCB7IG1lc3NhZ2U6ICdJRCBkYSB1bmlkYWRlIGRldmUgc2VyIHVtIFVVSUQgdsOhbGlkbycgfSlcbiAgQElzTm90RW1wdHkoeyBtZXNzYWdlOiAnSUQgZGEgdW5pZGFkZSDDqSBvYnJpZ2F0w7NyaW8nIH0pXG4gIEBBcGlQcm9wZXJ0eSh7XG4gICAgZXhhbXBsZTogJzU1MGU4NDAwLWUyOWItNDFkNC1hNzE2LTQ0NjY1NTQ0MDAwMCcsXG4gICAgZGVzY3JpcHRpb246ICdJRCBkYSB1bmlkYWRlIG9uZGUgbyBjaWRhZMOjbyBzZXLDoSBjYWRhc3RyYWRvJyxcbiAgfSlcbiAgdW5pZGFkZV9pZDogc3RyaW5nO1xufVxuIl0sInZlcnNpb24iOjN9

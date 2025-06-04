@@ -43,13 +43,16 @@ export class EmailService {
   constructor(private readonly configService: ConfigService) {
     this.templatesDir = path.join(process.cwd(), 'src', 'templates', 'email');
     this.isEnabled = this.configService.get<boolean>('EMAIL_ENABLED', false);
-    this.isDevelopment = this.configService.get<string>('NODE_ENV') === 'development';
-    
+    this.isDevelopment =
+      this.configService.get<string>('NODE_ENV') === 'development';
+
     if (this.isEnabled) {
       // Inicialização síncrona para garantir que o transporter esteja disponível
       this.initializeTransporter();
     } else {
-      this.logger.warn('Serviço de email desabilitado. Configure EMAIL_ENABLED=true para habilitar.');
+      this.logger.warn(
+        'Serviço de email desabilitado. Configure EMAIL_ENABLED=true para habilitar.',
+      );
     }
   }
 
@@ -62,21 +65,25 @@ export class EmailService {
     const port = this.configService.get<number>('SMTP_PORT', 587);
     const user = this.configService.get<string>('SMTP_USER');
     const pass = this.configService.get<string>('SMTP_PASS');
-    
+
     // Configurações SSL/TLS baseadas na porta e provedor
     const secure = port === 465; // SSL para porta 465, STARTTLS para porta 587
     const requireTLS = port === 587 && !this.isMailHog(host, port); // Força STARTTLS apenas para porta 587 (exceto MailHog)
-    
+
     if (!host) {
-      this.logger.error('SMTP_HOST não configurado. Verifique as configurações.');
+      this.logger.error(
+        'SMTP_HOST não configurado. Verifique as configurações.',
+      );
       return;
     }
 
     // MailHog não requer autenticação
     const isMailHog = this.isMailHog(host, port);
-    
+
     if (!isMailHog && (!user || !pass)) {
-      this.logger.error('Configurações SMTP incompletas. Verifique SMTP_USER e SMTP_PASS (não necessário para MailHog).');
+      this.logger.error(
+        'Configurações SMTP incompletas. Verifique SMTP_USER e SMTP_PASS (não necessário para MailHog).',
+      );
       return;
     }
 
@@ -102,16 +109,24 @@ export class EmailService {
         },
       });
 
-      this.logger.log(`MailHog detectado: ${host}:${port} - Autenticação desabilitada`);
-      this.verifyConnection().catch(error => {
-        this.logger.error('Falha na verificação inicial da conexão MailHog:', error.message);
+      this.logger.log(
+        `MailHog detectado: ${host}:${port} - Autenticação desabilitada`,
+      );
+      this.verifyConnection().catch((error) => {
+        this.logger.error(
+          'Falha na verificação inicial da conexão MailHog:',
+          error.message,
+        );
       });
       return;
     }
 
     // Configurações TLS mais flexíveis para outros provedores
     const tlsOptions = {
-      rejectUnauthorized: this.configService.get<boolean>('SMTP_REJECT_UNAUTHORIZED', false),
+      rejectUnauthorized: this.configService.get<boolean>(
+        'SMTP_REJECT_UNAUTHORIZED',
+        false,
+      ),
       minVersion: 'TLSv1' as const,
       maxVersion: 'TLSv1.3' as const,
       secureProtocol: undefined,
@@ -142,7 +157,9 @@ export class EmailService {
 
     // Configuração de fallback para ambientes de desenvolvimento problemáticos
     if (this.isDevelopment && host.includes('localhost') && !isMailHog) {
-      this.logger.warn('Detectado ambiente local - aplicando configurações SSL relaxadas');
+      this.logger.warn(
+        'Detectado ambiente local - aplicando configurações SSL relaxadas',
+      );
       this.transporter = nodemailer.createTransport({
         host: host!,
         port,
@@ -162,8 +179,11 @@ export class EmailService {
     }
 
     // Verificar conexão de forma assíncrona sem bloquear a inicialização
-    this.verifyConnection().catch(error => {
-      this.logger.error('Falha na verificação inicial da conexão SMTP:', error.message);
+    this.verifyConnection().catch((error) => {
+      this.logger.error(
+        'Falha na verificação inicial da conexão SMTP:',
+        error.message,
+      );
     });
   }
 
@@ -173,9 +193,9 @@ export class EmailService {
    */
   private isMailHog(host: string | undefined, port: number): boolean {
     if (!host) return false;
-    
+
     const lowerHost = host.toLowerCase();
-    
+
     // Detecta MailHog por host ou porta padrão
     return (
       lowerHost.includes('mailhog') ||
@@ -193,7 +213,7 @@ export class EmailService {
     try {
       await this.transporter.verify();
       this.logger.log(
-        `Servidor SMTP configurado com sucesso: ${this.configService.get('SMTP_HOST')}:${this.configService.get('SMTP_PORT')}`
+        `Servidor SMTP configurado com sucesso: ${this.configService.get('SMTP_HOST')}:${this.configService.get('SMTP_PORT')}`,
       );
     } catch (error) {
       const errorInfo = {
@@ -210,7 +230,7 @@ export class EmailService {
       // Tentativa de fallback para configurações mais permissivas
       if (retries > 0 && error.code === 'ESOCKET') {
         this.logger.warn('Tentando configuração SMTP alternativa...');
-        
+
         // Recriar transporter com configurações mais permissivas
         const host = this.configService.get<string>('SMTP_HOST');
         const port = this.configService.get<number>('SMTP_PORT', 587);
@@ -263,14 +283,16 @@ export class EmailService {
     if (smtpHost.toLowerCase().includes('live.smtp.mailtrap.io')) {
       this.logger.error(
         'Mailtrap Live detectado: Configure SMTP_FROM com seu domínio verificado no Mailtrap. ' +
-        'Exemplo: SMTP_FROM=noreply@seudominio.com'
+          'Exemplo: SMTP_FROM=noreply@seudominio.com',
       );
       return smtpUser || 'noreply@example.com';
     }
 
     // Para Mailtrap Testing (desenvolvimento)
-    if (smtpHost.toLowerCase().includes('sandbox.smtp.mailtrap.io') || 
-        smtpHost.toLowerCase().includes('send.smtp.mailtrap.io')) {
+    if (
+      smtpHost.toLowerCase().includes('sandbox.smtp.mailtrap.io') ||
+      smtpHost.toLowerCase().includes('send.smtp.mailtrap.io')
+    ) {
       return 'noreply@localhost.test';
     }
 
@@ -285,7 +307,9 @@ export class EmailService {
     }
 
     // Fallback para domínio genérico
-    this.logger.warn('Usando domínio genérico como remetente - configure SMTP_FROM adequadamente');
+    this.logger.warn(
+      'Usando domínio genérico como remetente - configure SMTP_FROM adequadamente',
+    );
     return 'noreply@localhost.test';
   }
 
@@ -316,14 +340,21 @@ export class EmailService {
         const template = await this.loadTemplate(options.template);
         if (template) {
           html = this.compileTemplate(template.html, options.context || {});
-          text = template.text ? this.compileTemplate(template.text, options.context || {}) : undefined;
-          subject = this.compileTemplate(template.subject, options.context || {});
+          text = template.text
+            ? this.compileTemplate(template.text, options.context || {})
+            : undefined;
+          subject = this.compileTemplate(
+            template.subject,
+            options.context || {},
+          );
         } else {
-          this.logger.error(`Template '${options.template}' não pôde ser carregado`);
+          this.logger.error(
+            `Template '${options.template}' não pôde ser carregado`,
+          );
           return false;
         }
       }
-      
+
       // Garantir que o assunto esteja definido
       if (!subject) {
         subject = 'Notificação - SEMTAS';
@@ -335,8 +366,11 @@ export class EmailService {
 
       // Configurar remetente com domínio autorizado
       const fromEmail = this.getAuthorizedFromEmail();
-      const fromName = this.configService.get<string>('SMTP_FROM_NAME', 'SEMTAS - Sistema');
-      
+      const fromName = this.configService.get<string>(
+        'SMTP_FROM_NAME',
+        'SEMTAS - Sistema',
+      );
+
       const mailOptions = {
         from: `"${fromName}" <${fromEmail}>`,
         to: Array.isArray(options.to) ? options.to.join(', ') : options.to,
@@ -364,7 +398,7 @@ export class EmailService {
       }
 
       const result = await this.transporter.sendMail(mailOptions);
-      
+
       this.logger.log('Email enviado com sucesso', {
         to: options.to,
         subject: subject,
@@ -390,7 +424,9 @@ export class EmailService {
 
       // Tentar reconectar se for erro de conexão
       if (error.code === 'ESOCKET' || error.code === 'ECONNECTION') {
-        this.logger.warn('Erro de conexão detectado, tentando reinicializar transporter...');
+        this.logger.warn(
+          'Erro de conexão detectado, tentando reinicializar transporter...',
+        );
         setTimeout(() => this.initializeTransporter(), 5000);
       }
 
@@ -401,7 +437,9 @@ export class EmailService {
   /**
    * Carrega um template de email com cache inteligente
    */
-  private async loadTemplate(templateName: string): Promise<EmailTemplate | null> {
+  private async loadTemplate(
+    templateName: string,
+  ): Promise<EmailTemplate | null> {
     // Verificar cache primeiro (apenas em produção)
     if (!this.isDevelopment && this.templatesCache.has(templateName)) {
       return this.templatesCache.get(templateName)!;
@@ -409,10 +447,12 @@ export class EmailService {
 
     try {
       const templatePath = path.join(this.templatesDir, templateName);
-      
+
       // Verificar se o diretório do template existe
       if (!fs.existsSync(templatePath)) {
-        this.logger.error(`Diretório do template não encontrado: ${templatePath}`);
+        this.logger.error(
+          `Diretório do template não encontrado: ${templatePath}`,
+        );
         return null;
       }
 
@@ -427,25 +467,30 @@ export class EmailService {
       }
 
       const html = fs.readFileSync(htmlPath, 'utf8');
-      const text = fs.existsSync(textPath) ? fs.readFileSync(textPath, 'utf8') : undefined;
-      
+      const text = fs.existsSync(textPath)
+        ? fs.readFileSync(textPath, 'utf8')
+        : undefined;
+
       let subject = 'Notificação - SEMTAS';
       if (fs.existsSync(configPath)) {
         try {
           const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
           subject = config.subject || subject;
         } catch (parseError) {
-          this.logger.warn(`Erro ao parsear config.json para template ${templateName}:`, parseError.message);
+          this.logger.warn(
+            `Erro ao parsear config.json para template ${templateName}:`,
+            parseError.message,
+          );
         }
       }
 
       const template: EmailTemplate = { subject, html, text };
-      
+
       // Cache do template (apenas em produção)
       if (!this.isDevelopment) {
         this.templatesCache.set(templateName, template);
       }
-      
+
       this.logger.debug(`Template '${templateName}' carregado com sucesso`);
       return template;
     } catch (error) {
@@ -460,7 +505,10 @@ export class EmailService {
   /**
    * Compila um template Handlebars com tratamento de erro melhorado
    */
-  private compileTemplate(template: string, context: Record<string, any>): string {
+  private compileTemplate(
+    template: string,
+    context: Record<string, any>,
+  ): string {
     try {
       const compiledTemplate = handlebars.compile(template);
       return compiledTemplate(context);
@@ -483,7 +531,11 @@ export class EmailService {
     const smtpHost = this.configService.get<string>('SMTP_HOST') || '';
     const smtpPort = this.configService.get<number>('SMTP_PORT', 587);
 
-    if (errorCode === 'EENVELOPE' && errorMessage.includes('domain') && errorMessage.includes('not allowed')) {
+    if (
+      errorCode === 'EENVELOPE' &&
+      errorMessage.includes('domain') &&
+      errorMessage.includes('not allowed')
+    ) {
       if (this.isMailHog(smtpHost, smtpPort)) {
         return 'MailHog não deveria rejeitar domínios. Verifique se o MailHog está rodando corretamente';
       }
@@ -545,7 +597,10 @@ export class EmailService {
         resetUrl,
         expiresAt: expiresAt.toLocaleString('pt-BR'),
         expiresInMinutes: expiresIn,
-        supportEmail: this.configService.get<string>('SUPPORT_EMAIL', 'suporte@semtas.gov.br'),
+        supportEmail: this.configService.get<string>(
+          'SUPPORT_EMAIL',
+          'suporte@semtas.gov.br',
+        ),
       },
     });
 
@@ -573,7 +628,10 @@ export class EmailService {
       context: {
         name,
         loginUrl: `${this.configService.get<string>('FRONTEND_URL')}/login`,
-        supportEmail: this.configService.get<string>('SUPPORT_EMAIL', 'suporte@semtas.gov.br'),
+        supportEmail: this.configService.get<string>(
+          'SUPPORT_EMAIL',
+          'suporte@semtas.gov.br',
+        ),
       },
     });
   }
@@ -597,7 +655,10 @@ export class EmailService {
         ipAddress,
         userAgent,
         timestamp: new Date().toLocaleString('pt-BR'),
-        supportEmail: this.configService.get<string>('SUPPORT_EMAIL', 'suporte@semtas.gov.br'),
+        supportEmail: this.configService.get<string>(
+          'SUPPORT_EMAIL',
+          'suporte@semtas.gov.br',
+        ),
       },
     });
   }
@@ -649,12 +710,14 @@ export class EmailService {
   } {
     const host = this.configService.get<string>('SMTP_HOST') || 'N/A';
     const port = this.configService.get<number>('SMTP_PORT', 587);
-    
+
     let provider = 'Generic SMTP';
     if (this.isMailHog(host, port)) {
       provider = 'MailHog (Development)';
     } else if (host.toLowerCase().includes('mailtrap')) {
-      provider = host.toLowerCase().includes('live') ? 'Mailtrap Live' : 'Mailtrap Testing';
+      provider = host.toLowerCase().includes('live')
+        ? 'Mailtrap Live'
+        : 'Mailtrap Testing';
     } else if (host.toLowerCase().includes('gmail')) {
       provider = 'Gmail';
     }

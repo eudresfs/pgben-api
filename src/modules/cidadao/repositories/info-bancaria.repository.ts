@@ -6,7 +6,7 @@ import { UpdateInfoBancariaDto } from '../dto/update-info-bancaria.dto';
 
 /**
  * Repository para gerenciamento de informações bancárias
- * 
+ *
  * Responsável por operações de banco de dados relacionadas às informações bancárias dos cidadãos,
  * incluindo contas poupança social do Banco do Brasil e dados PIX.
  */
@@ -23,7 +23,9 @@ export class InfoBancariaRepository {
    * @param createInfoBancariaDto Dados para criação
    * @returns Informação bancária criada
    */
-  async create(createInfoBancariaDto: CreateInfoBancariaDto): Promise<InfoBancaria> {
+  async create(
+    createInfoBancariaDto: CreateInfoBancariaDto,
+  ): Promise<InfoBancaria> {
     const infoBancaria = this.repository.create(createInfoBancariaDto);
     return await this.repository.save(infoBancaria);
   }
@@ -57,24 +59,35 @@ export class InfoBancariaRepository {
 
     // Aplica filtros
     if (where.cidadao_id) {
-      queryBuilder.andWhere('info_bancaria.cidadao_id = :cidadao_id', { cidadao_id: where.cidadao_id });
+      queryBuilder.andWhere('info_bancaria.cidadao_id = :cidadao_id', {
+        cidadao_id: where.cidadao_id,
+      });
     }
 
     if (where.banco) {
-      queryBuilder.andWhere('info_bancaria.banco = :banco', { banco: where.banco });
+      queryBuilder.andWhere('info_bancaria.banco = :banco', {
+        banco: where.banco,
+      });
     }
 
     if (where.ativo !== undefined) {
-      queryBuilder.andWhere('info_bancaria.ativo = :ativo', { ativo: where.ativo });
+      queryBuilder.andWhere('info_bancaria.ativo = :ativo', {
+        ativo: where.ativo,
+      });
     }
 
     if (where.tipo_conta) {
-      queryBuilder.andWhere('info_bancaria.tipo_conta = :tipo_conta', { tipo_conta: where.tipo_conta });
+      queryBuilder.andWhere('info_bancaria.tipo_conta = :tipo_conta', {
+        tipo_conta: where.tipo_conta,
+      });
     }
 
     // Aplica ordenação
     Object.entries(order).forEach(([field, direction]) => {
-      queryBuilder.addOrderBy(`info_bancaria.${field}`, direction as 'ASC' | 'DESC');
+      queryBuilder.addOrderBy(
+        `info_bancaria.${field}`,
+        direction as 'ASC' | 'DESC',
+      );
     });
 
     // Aplica paginação
@@ -89,8 +102,12 @@ export class InfoBancariaRepository {
    * @param includeRelations Se deve incluir relações
    * @returns Informação bancária encontrada ou null
    */
-  async findById(id: string, includeRelations = false): Promise<InfoBancaria | null> {
-    const queryBuilder = this.repository.createQueryBuilder('info_bancaria')
+  async findById(
+    id: string,
+    includeRelations = false,
+  ): Promise<InfoBancaria | null> {
+    const queryBuilder = this.repository
+      .createQueryBuilder('info_bancaria')
       .where('info_bancaria.id = :id', { id });
 
     if (includeRelations) {
@@ -106,8 +123,12 @@ export class InfoBancariaRepository {
    * @param includeRelations Se deve incluir relações
    * @returns Informação bancária encontrada ou null
    */
-  async findByCidadaoId(cidadaoId: string, includeRelations = false): Promise<InfoBancaria | null> {
-    const queryBuilder = this.repository.createQueryBuilder('info_bancaria')
+  async findByCidadaoId(
+    cidadaoId: string,
+    includeRelations = false,
+  ): Promise<InfoBancaria | null> {
+    const queryBuilder = this.repository
+      .createQueryBuilder('info_bancaria')
       .where('info_bancaria.cidadao_id = :cidadaoId', { cidadaoId })
       .andWhere('info_bancaria.ativo = :ativo', { ativo: true });
 
@@ -139,7 +160,10 @@ export class InfoBancariaRepository {
    * @param updateInfoBancariaDto Dados para atualização
    * @returns Informação bancária atualizada
    */
-  async update(id: string, updateInfoBancariaDto: UpdateInfoBancariaDto): Promise<InfoBancaria | null> {
+  async update(
+    id: string,
+    updateInfoBancariaDto: UpdateInfoBancariaDto,
+  ): Promise<InfoBancaria | null> {
     await this.repository.update(id, updateInfoBancariaDto);
     return await this.findById(id);
   }
@@ -185,8 +209,12 @@ export class InfoBancariaRepository {
    * @param excludeId ID para excluir da verificação (útil em atualizações)
    * @returns True se já existe, false caso contrário
    */
-  async existsByChavePix(chavePix: string, excludeId?: string): Promise<boolean> {
-    const queryBuilder = this.repository.createQueryBuilder('info_bancaria')
+  async existsByChavePix(
+    chavePix: string,
+    excludeId?: string,
+  ): Promise<boolean> {
+    const queryBuilder = this.repository
+      .createQueryBuilder('info_bancaria')
       .where('info_bancaria.chave_pix = :chavePix', { chavePix })
       .andWhere('info_bancaria.ativo = :ativo', { ativo: true });
 

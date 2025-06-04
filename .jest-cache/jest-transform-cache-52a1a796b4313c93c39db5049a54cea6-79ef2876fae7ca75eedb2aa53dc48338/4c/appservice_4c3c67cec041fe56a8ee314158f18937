@@ -1,0 +1,28 @@
+478ff10c47c208aa18cf97c3d641b86b
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.AppService = void 0;
+const common_1 = require("@nestjs/common");
+let AppService = class AppService {
+    constructor() {
+        console.log('✅ AppService inicializado');
+    }
+    getHello() {
+        return 'Hello World! PGBen funcionando!';
+    }
+};
+exports.AppService = AppService;
+exports.AppService = AppService = __decorate([
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [])
+], AppService);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXGFwcC5zZXJ2aWNlLnRzIiwibWFwcGluZ3MiOiI7Ozs7Ozs7Ozs7OztBQUFBLDJDQUE0QztBQUdyQyxJQUFNLFVBQVUsR0FBaEIsTUFBTSxVQUFVO0lBQ3JCO1FBQ0UsT0FBTyxDQUFDLEdBQUcsQ0FBQywyQkFBMkIsQ0FBQyxDQUFDO0lBQzNDLENBQUM7SUFFRCxRQUFRO1FBQ04sT0FBTyxpQ0FBaUMsQ0FBQztJQUMzQyxDQUFDO0NBQ0YsQ0FBQTtBQVJZLGdDQUFVO3FCQUFWLFVBQVU7SUFEdEIsSUFBQSxtQkFBVSxHQUFFOztHQUNBLFVBQVUsQ0FRdEIiLCJuYW1lcyI6W10sInNvdXJjZXMiOlsiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXGFwcC5zZXJ2aWNlLnRzIl0sInNvdXJjZXNDb250ZW50IjpbImltcG9ydCB7IEluamVjdGFibGUgfSBmcm9tICdAbmVzdGpzL2NvbW1vbic7XG5cbkBJbmplY3RhYmxlKClcbmV4cG9ydCBjbGFzcyBBcHBTZXJ2aWNlIHtcbiAgY29uc3RydWN0b3IoKSB7XG4gICAgY29uc29sZS5sb2coJ+KchSBBcHBTZXJ2aWNlIGluaWNpYWxpemFkbycpO1xuICB9XG5cbiAgZ2V0SGVsbG8oKTogc3RyaW5nIHtcbiAgICByZXR1cm4gJ0hlbGxvIFdvcmxkISBQR0JlbiBmdW5jaW9uYW5kbyEnO1xuICB9XG59XG4iXSwidmVyc2lvbiI6M30=

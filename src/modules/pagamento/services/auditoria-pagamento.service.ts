@@ -3,11 +3,11 @@ import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
 
 /**
  * Serviço para registro de auditoria de operações do módulo de pagamento
- * 
+ *
  * Este serviço implementa a integração com o módulo de auditoria do sistema,
  * registrando todas as operações sensíveis relacionadas a pagamentos,
  * comprovantes e confirmações.
- * 
+ *
  * @author Equipe PGBen
  */
 @Injectable()
@@ -17,7 +17,7 @@ export class AuditoriaPagamentoService {
 
   /**
    * Registra uma operação de criação de pagamento
-   * 
+   *
    * @param pagamentoId ID do pagamento criado
    * @param solicitacaoId ID da solicitação relacionada
    * @param usuarioId ID do usuário que realizou a operação
@@ -27,7 +27,7 @@ export class AuditoriaPagamentoService {
     pagamentoId: string,
     solicitacaoId: string,
     usuarioId: string,
-    dados: any
+    dados: any,
   ): Promise<void> {
     // Mascarar dados sensíveis
     const dadosMascarados = this.mascararDadosSensiveisPagamento(dados);
@@ -47,12 +47,14 @@ export class AuditoriaPagamentoService {
     //   timestamp: new Date()
     // });
 
-    console.log(`[AUDITORIA] Criação de pagamento ${pagamentoId} registrada por ${usuarioId}`);
+    console.log(
+      `[AUDITORIA] Criação de pagamento ${pagamentoId} registrada por ${usuarioId}`,
+    );
   }
 
   /**
    * Registra uma operação de atualização de status de pagamento
-   * 
+   *
    * @param pagamentoId ID do pagamento
    * @param statusAnterior Status anterior
    * @param statusNovo Novo status
@@ -64,7 +66,7 @@ export class AuditoriaPagamentoService {
     statusAnterior: StatusPagamentoEnum,
     statusNovo: StatusPagamentoEnum,
     usuarioId: string,
-    observacoes?: string
+    observacoes?: string,
   ): Promise<void> {
     // Em uma implementação real, chamaria o serviço de auditoria
     // await this.auditoriaService.registrarOperacao({
@@ -73,7 +75,7 @@ export class AuditoriaPagamentoService {
     //   tipoEntidade: 'PAGAMENTO',
     //   usuarioId,
     //   dadosAnteriores: { status: statusAnterior },
-    //   dadosNovos: { 
+    //   dadosNovos: {
     //     status: statusNovo,
     //     observacoes
     //   },
@@ -82,12 +84,14 @@ export class AuditoriaPagamentoService {
     //   timestamp: new Date()
     // });
 
-    console.log(`[AUDITORIA] Mudança de status do pagamento ${pagamentoId} de ${statusAnterior} para ${statusNovo} registrada por ${usuarioId}`);
+    console.log(
+      `[AUDITORIA] Mudança de status do pagamento ${pagamentoId} de ${statusAnterior} para ${statusNovo} registrada por ${usuarioId}`,
+    );
   }
 
   /**
    * Registra uma operação de upload de comprovante
-   * 
+   *
    * @param comprovanteId ID do comprovante
    * @param pagamentoId ID do pagamento relacionado
    * @param usuarioId ID do usuário que realizou a operação
@@ -97,7 +101,7 @@ export class AuditoriaPagamentoService {
     comprovanteId: string,
     pagamentoId: string,
     usuarioId: string,
-    dadosComprovante: any
+    dadosComprovante: any,
   ): Promise<void> {
     // Em uma implementação real, chamaria o serviço de auditoria
     // await this.auditoriaService.registrarOperacao({
@@ -119,12 +123,14 @@ export class AuditoriaPagamentoService {
     //   timestamp: new Date()
     // });
 
-    console.log(`[AUDITORIA] Upload de comprovante ${comprovanteId} para o pagamento ${pagamentoId} registrado por ${usuarioId}`);
+    console.log(
+      `[AUDITORIA] Upload de comprovante ${comprovanteId} para o pagamento ${pagamentoId} registrado por ${usuarioId}`,
+    );
   }
 
   /**
    * Registra uma operação de remoção de comprovante
-   * 
+   *
    * @param comprovanteId ID do comprovante
    * @param pagamentoId ID do pagamento relacionado
    * @param usuarioId ID do usuário que realizou a operação
@@ -134,7 +140,7 @@ export class AuditoriaPagamentoService {
     comprovanteId: string,
     pagamentoId: string,
     usuarioId: string,
-    dadosComprovante: any
+    dadosComprovante: any,
   ): Promise<void> {
     // Em uma implementação real, chamaria o serviço de auditoria
     // await this.auditoriaService.registrarOperacao({
@@ -156,12 +162,14 @@ export class AuditoriaPagamentoService {
     //   timestamp: new Date()
     // });
 
-    console.log(`[AUDITORIA] Remoção de comprovante ${comprovanteId} do pagamento ${pagamentoId} registrada por ${usuarioId}`);
+    console.log(
+      `[AUDITORIA] Remoção de comprovante ${comprovanteId} do pagamento ${pagamentoId} registrada por ${usuarioId}`,
+    );
   }
 
   /**
    * Registra uma operação de confirmação de recebimento
-   * 
+   *
    * @param confirmacaoId ID da confirmação
    * @param pagamentoId ID do pagamento relacionado
    * @param usuarioId ID do usuário que realizou a operação
@@ -171,7 +179,7 @@ export class AuditoriaPagamentoService {
     confirmacaoId: string,
     pagamentoId: string,
     usuarioId: string,
-    dadosConfirmacao: any
+    dadosConfirmacao: any,
   ): Promise<void> {
     // Em uma implementação real, chamaria o serviço de auditoria
     // await this.auditoriaService.registrarOperacao({
@@ -193,12 +201,14 @@ export class AuditoriaPagamentoService {
     //   timestamp: new Date()
     // });
 
-    console.log(`[AUDITORIA] Confirmação de recebimento ${confirmacaoId} para o pagamento ${pagamentoId} registrada por ${usuarioId}`);
+    console.log(
+      `[AUDITORIA] Confirmação de recebimento ${confirmacaoId} para o pagamento ${pagamentoId} registrada por ${usuarioId}`,
+    );
   }
 
   /**
    * Registra um acesso a dados sensíveis
-   * 
+   *
    * @param entidadeId ID da entidade acessada
    * @param tipoEntidade Tipo da entidade
    * @param usuarioId ID do usuário que realizou o acesso
@@ -208,7 +218,7 @@ export class AuditoriaPagamentoService {
     entidadeId: string,
     tipoEntidade: string,
     usuarioId: string,
-    dadosSensiveisAcessados: string[]
+    dadosSensiveisAcessados: string[],
   ): Promise<void> {
     // Em uma implementação real, chamaria o serviço de auditoria
     // await this.auditoriaService.registrarOperacao({
@@ -226,12 +236,14 @@ export class AuditoriaPagamentoService {
     //   timestamp: new Date()
     // });
 
-    console.log(`[AUDITORIA] Acesso a dados sensíveis de ${tipoEntidade} ${entidadeId} registrado por ${usuarioId}`);
+    console.log(
+      `[AUDITORIA] Acesso a dados sensíveis de ${tipoEntidade} ${entidadeId} registrado por ${usuarioId}`,
+    );
   }
 
   /**
    * Mascara dados sensíveis de um pagamento para registro em logs
-   * 
+   *
    * @param dados Dados originais do pagamento
    * @returns Dados com informações sensíveis mascaradas
    */
@@ -242,17 +254,21 @@ export class AuditoriaPagamentoService {
     // Mascarar dados bancários se existirem
     if (dadosMascarados.dadosBancarios) {
       if (dadosMascarados.dadosBancarios.agencia) {
-        dadosMascarados.dadosBancarios.agencia = this.mascaraAgencia(dadosMascarados.dadosBancarios.agencia);
+        dadosMascarados.dadosBancarios.agencia = this.mascaraAgencia(
+          dadosMascarados.dadosBancarios.agencia,
+        );
       }
-      
+
       if (dadosMascarados.dadosBancarios.conta) {
-        dadosMascarados.dadosBancarios.conta = this.mascaraConta(dadosMascarados.dadosBancarios.conta);
+        dadosMascarados.dadosBancarios.conta = this.mascaraConta(
+          dadosMascarados.dadosBancarios.conta,
+        );
       }
-      
+
       if (dadosMascarados.dadosBancarios.pixChave) {
         dadosMascarados.dadosBancarios.pixChave = this.mascaraPixChave(
           dadosMascarados.dadosBancarios.pixChave,
-          dadosMascarados.dadosBancarios.pixTipo
+          dadosMascarados.dadosBancarios.pixTipo,
         );
       }
     }
@@ -262,104 +278,125 @@ export class AuditoriaPagamentoService {
 
   /**
    * Mascara uma agência bancária
-   * 
+   *
    * @param agencia Número da agência
    * @returns Agência mascarada
    */
   private mascaraAgencia(agencia: string): string {
-    if (!agencia) {return '';}
-    
+    if (!agencia) {
+      return '';
+    }
+
     const agenciaLimpa = agencia.replace(/\D/g, '');
-    
+
     if (agenciaLimpa.length <= 2) {
       return '****';
     }
-    
+
     // Manter o primeiro e o último dígito
     const inicio = agenciaLimpa.slice(0, 1);
     const fim = agenciaLimpa.slice(-1);
     const meio = '*'.repeat(agenciaLimpa.length - 2);
-    
+
     return `${inicio}${meio}${fim}`;
   }
 
   /**
    * Mascara uma conta bancária
-   * 
+   *
    * @param conta Número da conta
    * @returns Conta mascarada
    */
   private mascaraConta(conta: string): string {
-    if (!conta) {return '';}
-    
+    if (!conta) {
+      return '';
+    }
+
     const contaLimpa = conta.replace(/[^\dXx]/g, '');
-    
+
     if (contaLimpa.length <= 4) {
       return '****';
     }
-    
+
     // Manter os dois primeiros e os dois últimos dígitos
     const inicio = contaLimpa.slice(0, 2);
     const fim = contaLimpa.slice(-2);
     const meio = '*'.repeat(contaLimpa.length - 4);
-    
+
     return `${inicio}${meio}${fim}`;
   }
 
   /**
    * Mascara uma chave PIX
-   * 
+   *
    * @param chave Valor da chave PIX
    * @param tipo Tipo da chave (CPF, email, telefone, aleatoria)
    * @returns Chave PIX mascarada
    */
   private mascaraPixChave(chave: string, tipo: string): string {
-    if (!chave) {return '';}
-    
+    if (!chave) {
+      return '';
+    }
+
     switch (tipo?.toLowerCase()) {
       case 'cpf':
         // Formato: ***.123.456-**
         const cpfLimpo = chave.replace(/\D/g, '');
-        if (cpfLimpo.length !== 11) {return '***.***.***-**';}
-        
+        if (cpfLimpo.length !== 11) {
+          return '***.***.***-**';
+        }
+
         return `***.${cpfLimpo.substr(3, 3)}.${cpfLimpo.substr(6, 3)}-**`;
-        
+
       case 'email':
         // Formato: a***@d***.com
         const partes = chave.split('@');
-        if (partes.length !== 2) {return chave.substring(0, 1) + '***@***';}
-        
+        if (partes.length !== 2) {
+          return chave.substring(0, 1) + '***@***';
+        }
+
         const usuario = partes[0];
         const dominio = partes[1];
-        
-        const usuarioMascarado = usuario.substring(0, 1) + '*'.repeat(Math.max(1, usuario.length - 1));
-        
+
+        const usuarioMascarado =
+          usuario.substring(0, 1) + '*'.repeat(Math.max(1, usuario.length - 1));
+
         const dominioPartes = dominio.split('.');
         const dominioNome = dominioPartes[0];
         const dominioExtensao = dominioPartes.slice(1).join('.');
-        
-        const dominioMascarado = dominioNome.substring(0, 1) + '*'.repeat(Math.max(1, dominioNome.length - 1));
-        
+
+        const dominioMascarado =
+          dominioNome.substring(0, 1) +
+          '*'.repeat(Math.max(1, dominioNome.length - 1));
+
         return `${usuarioMascarado}@${dominioMascarado}.${dominioExtensao}`;
-        
+
       case 'telefone':
         // Formato: (00) *****-6789
         const telLimpo = chave.replace(/\D/g, '');
-        if (telLimpo.length < 8) {return '(**) *****-****';}
-        
+        if (telLimpo.length < 8) {
+          return '(**) *****-****';
+        }
+
         return `(**) *****-${telLimpo.slice(-4)}`;
-        
+
       case 'aleatoria':
         // Formato: ********-****-****-****-************
-        if (chave.length < 8) {return '********';}
-        
+        if (chave.length < 8) {
+          return '********';
+        }
+
         return chave.substring(0, 8) + '****' + '*'.repeat(chave.length - 12);
-        
+
       default:
         // Mascaramento genérico
-        if (chave.length <= 4) {return '****';}
-        
-        return chave.substring(0, 2) + '*'.repeat(chave.length - 4) + chave.slice(-2);
+        if (chave.length <= 4) {
+          return '****';
+        }
+
+        return (
+          chave.substring(0, 2) + '*'.repeat(chave.length - 4) + chave.slice(-2)
+        );
     }
   }
 }

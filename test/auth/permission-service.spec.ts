@@ -10,7 +10,7 @@ import { Permission } from '../../src/auth/entities/permission.entity';
 
 /**
  * Testes para o PermissionService
- * 
+ *
  * Estes testes verificam a funcionalidade do serviço de permissões,
  * responsável por implementar controle de acesso granular no sistema PGBen.
  */
@@ -97,10 +97,17 @@ describe('PermissionService', () => {
     }).compile();
 
     service = module.get<PermissionService>(PermissionService);
-    permissionRepository = module.get<PermissionRepository>(PermissionRepository);
-    rolePermissionRepository = module.get<RolePermissionRepository>(RolePermissionRepository);
-    userPermissionRepository = module.get<UserPermissionRepository>(UserPermissionRepository);
-    permissionScopeRepository = module.get<PermissionScopeRepository>(PermissionScopeRepository);
+    permissionRepository =
+      module.get<PermissionRepository>(PermissionRepository);
+    rolePermissionRepository = module.get<RolePermissionRepository>(
+      RolePermissionRepository,
+    );
+    userPermissionRepository = module.get<UserPermissionRepository>(
+      UserPermissionRepository,
+    );
+    permissionScopeRepository = module.get<PermissionScopeRepository>(
+      PermissionScopeRepository,
+    );
     cacheManager = module.get(CACHE_MANAGER);
   });
 

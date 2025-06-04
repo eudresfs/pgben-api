@@ -10,7 +10,7 @@ export class LoginRequestDto {
     pattern: '^\\d{3}\\.\\d{3}\\.\\d{3}-\\d{2}$',
     type: 'string',
     minLength: 14,
-    maxLength: 14
+    maxLength: 14,
   })
   cpf: string;
 
@@ -20,7 +20,7 @@ export class LoginRequestDto {
     type: 'string',
     minLength: 8,
     maxLength: 128,
-    format: 'password'
+    format: 'password',
   })
   senha: string;
 }
@@ -31,17 +31,19 @@ export class LoginRequestDto {
 export class LoginResponseDto {
   @ApiProperty({
     description: 'Token de acesso JWT para autenticação nas requisições',
-    example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c',
+    example:
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c',
     type: 'string',
-    format: 'jwt'
+    format: 'jwt',
   })
   accessToken: string;
 
   @ApiProperty({
     description: 'Token de renovação para obter novos access tokens',
-    example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c',
+    example:
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c',
     type: 'string',
-    format: 'jwt'
+    format: 'jwt',
   })
   refreshToken: string;
 
@@ -50,7 +52,7 @@ export class LoginResponseDto {
     example: 'Bearer',
     enum: ['Bearer'],
     default: 'Bearer',
-    type: 'string'
+    type: 'string',
   })
   tokenType: string;
 
@@ -58,7 +60,7 @@ export class LoginResponseDto {
     description: 'Tempo de expiração do access token em segundos',
     example: 3600,
     type: 'integer',
-    minimum: 1
+    minimum: 1,
   })
   expiresIn: number;
 
@@ -66,7 +68,7 @@ export class LoginResponseDto {
     description: 'Timestamp de quando o token expira',
     example: '2025-01-18T11:30:00.000Z',
     type: 'string',
-    format: 'date-time'
+    format: 'date-time',
   })
   expiresAt: string;
 
@@ -77,37 +79,37 @@ export class LoginResponseDto {
       id: {
         type: 'string',
         description: 'Identificador único do usuário',
-        example: '507f1f77bcf86cd799439011'
+        example: '507f1f77bcf86cd799439011',
       },
       cpf: {
         type: 'string',
         description: 'CPF do usuário',
-        example: '123.456.789-00'
+        example: '123.456.789-00',
       },
       nome: {
         type: 'string',
         description: 'Nome completo do usuário',
-        example: 'João Silva Santos'
+        example: 'João Silva Santos',
       },
       email: {
         type: 'string',
         format: 'email',
         description: 'Email do usuário',
-        example: 'joao.silva@email.com'
+        example: 'joao.silva@email.com',
       },
       perfil: {
         type: 'string',
         enum: ['CIDADAO', 'SERVIDOR', 'GESTOR', 'ADMIN'],
         description: 'Perfil/papel do usuário no sistema',
-        example: 'CIDADAO'
+        example: 'CIDADAO',
       },
       permissoes: {
         type: 'array',
         items: { type: 'string' },
         description: 'Lista de permissões do usuário',
-        example: ['SOLICITACAO_CREATE', 'SOLICITACAO_READ']
-      }
-    }
+        example: ['SOLICITACAO_CREATE', 'SOLICITACAO_READ'],
+      },
+    },
   })
   user: {
     id: string;
@@ -125,10 +127,11 @@ export class LoginResponseDto {
 export class RefreshTokenRequestDto {
   @ApiProperty({
     description: 'Token de renovação válido obtido no login',
-    example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c',
+    example:
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c',
     type: 'string',
     format: 'jwt',
-    minLength: 10
+    minLength: 10,
   })
   refreshToken: string;
 }
@@ -143,18 +146,20 @@ export class AlterarSenhaDto {
     type: 'string',
     format: 'password',
     minLength: 8,
-    maxLength: 128
+    maxLength: 128,
   })
   senhaAtual: string;
 
   @ApiProperty({
-    description: 'Nova senha (mínimo 8 caracteres, deve conter letras, números e símbolos)',
+    description:
+      'Nova senha (mínimo 8 caracteres, deve conter letras, números e símbolos)',
     example: 'MinhaNov@Senh@123',
     type: 'string',
     format: 'password',
     minLength: 8,
     maxLength: 128,
-    pattern: '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]'
+    pattern:
+      '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]',
   })
   novaSenha: string;
 
@@ -164,7 +169,7 @@ export class AlterarSenhaDto {
     type: 'string',
     format: 'password',
     minLength: 8,
-    maxLength: 128
+    maxLength: 128,
   })
   confirmacaoSenha: string;
 }
@@ -175,9 +180,10 @@ export class AlterarSenhaDto {
 export class RefreshTokenResponseDto {
   @ApiProperty({
     description: 'Novo token de acesso JWT',
-    example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c',
+    example:
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c',
     type: 'string',
-    format: 'jwt'
+    format: 'jwt',
   })
   accessToken: string;
 
@@ -185,14 +191,14 @@ export class RefreshTokenResponseDto {
     description: 'Tipo do token',
     example: 'Bearer',
     enum: ['Bearer'],
-    type: 'string'
+    type: 'string',
   })
   tokenType: string;
 
   @ApiProperty({
     description: 'Tempo de expiração do novo token em segundos',
     example: 3600,
-    type: 'integer'
+    type: 'integer',
   })
   expiresIn: number;
 
@@ -200,7 +206,7 @@ export class RefreshTokenResponseDto {
     description: 'Timestamp de quando o novo token expira',
     example: '2025-01-18T11:30:00.000Z',
     type: 'string',
-    format: 'date-time'
+    format: 'date-time',
   })
   expiresAt: string;
 }
@@ -211,9 +217,10 @@ export class RefreshTokenResponseDto {
 export class LogoutRequestDto {
   @ApiProperty({
     description: 'Token de renovação a ser invalidado',
-    example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c',
+    example:
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c',
     type: 'string',
-    format: 'jwt'
+    format: 'jwt',
   })
   refreshToken: string;
 }

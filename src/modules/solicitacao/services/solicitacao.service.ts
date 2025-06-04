@@ -11,14 +11,14 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, ILike, Connection } from 'typeorm';
-import { 
-  Solicitacao, 
-  StatusSolicitacao, 
-  HistoricoSolicitacao, 
-  ProcessoJudicial, 
-  DeterminacaoJudicial, 
+import {
+  Solicitacao,
+  StatusSolicitacao,
+  HistoricoSolicitacao,
+  ProcessoJudicial,
+  DeterminacaoJudicial,
   StatusPendencia,
-  Pendencia
+  Pendencia,
 } from '../../../entities';
 import { CreateSolicitacaoDto } from '../dto/create-solicitacao.dto';
 import { UpdateSolicitacaoDto } from '../dto/update-solicitacao.dto';
@@ -56,7 +56,7 @@ export class SolicitacaoService {
     private determinacaoJudicialRepository: Repository<DeterminacaoJudicial>,
 
     private connection: Connection,
-    
+
     @Inject(forwardRef(() => ValidacaoExclusividadeService))
     private validacaoExclusividadeService: ValidacaoExclusividadeService,
   ) {}
@@ -185,8 +185,6 @@ export class SolicitacaoService {
     return solicitacao;
   }
 
-
-
   /**
    * Cria uma nova solicitação
    */
@@ -196,17 +194,25 @@ export class SolicitacaoService {
   ): Promise<Solicitacao> {
     // Validar exclusividade de papel para o beneficiário
     await this.validacaoExclusividadeService.validarExclusividadeBeneficiario(
-      createSolicitacaoDto.beneficiario_id
+      createSolicitacaoDto.beneficiario_id,
     );
-    
+
     // Se tiver composição familiar, validar para cada membro
-    if (createSolicitacaoDto.dados_complementares && 
-        createSolicitacaoDto.dados_complementares.composicao_familiar && 
-        Array.isArray(createSolicitacaoDto.dados_complementares.composicao_familiar) && 
-        createSolicitacaoDto.dados_complementares.composicao_familiar.length > 0) {
-      const composicaoFamiliar = createSolicitacaoDto.dados_complementares.composicao_familiar
-        .map(membro => membro.cidadao_id);
-      await this.validacaoExclusividadeService.validarComposicaoFamiliarCompleta(composicaoFamiliar);
+    if (
+      createSolicitacaoDto.dados_complementares &&
+      createSolicitacaoDto.dados_complementares.composicao_familiar &&
+      Array.isArray(
+        createSolicitacaoDto.dados_complementares.composicao_familiar,
+      ) &&
+      createSolicitacaoDto.dados_complementares.composicao_familiar.length > 0
+    ) {
+      const composicaoFamiliar =
+        createSolicitacaoDto.dados_complementares.composicao_familiar.map(
+          (membro) => membro.cidadao_id,
+        );
+      await this.validacaoExclusividadeService.validarComposicaoFamiliarCompleta(
+        composicaoFamiliar,
+      );
     }
     return this.connection.transaction(async (manager) => {
       // Criar uma nova instância de Solicitacao
@@ -217,7 +223,7 @@ export class SolicitacaoService {
       if (!user.unidade_id) {
         if (!createSolicitacaoDto.unidade_id) {
           throw new BadRequestException(
-            'Usuário não possui unidade vinculada. O campo unidade_id é obrigatório.'
+            'Usuário não possui unidade vinculada. O campo unidade_id é obrigatório.',
           );
         }
         unidadeId = createSolicitacaoDto.unidade_id;
@@ -232,10 +238,12 @@ export class SolicitacaoService {
       solicitacao.tecnico_id = user.id;
       solicitacao.status = StatusSolicitacao.RASCUNHO;
       solicitacao.data_abertura = new Date();
-      
+
       // Normalizar enums nos dados complementares antes de salvar
-      const dadosComplementares = createSolicitacaoDto.dados_complementares || {};
-      solicitacao.dados_complementares = normalizeEnumFields(dadosComplementares);
+      const dadosComplementares =
+        createSolicitacaoDto.dados_complementares || {};
+      solicitacao.dados_complementares =
+        normalizeEnumFields(dadosComplementares);
 
       // Salvar a solicitação
       const savedSolicitacao = await manager.save(solicitacao);
@@ -260,13 +268,13 @@ export class SolicitacaoService {
           'tipo_beneficio',
           'unidade',
           'tecnico',
-          'historico'
-        ]
+          'historico',
+        ],
       });
 
       if (!solicitacaoCompleta) {
         throw new NotFoundException(
-          `Solicitação com ID ${savedSolicitacao.id} não encontrada após criação`
+          `Solicitação com ID ${savedSolicitacao.id} não encontrada após criação`,
         );
       }
 
@@ -289,20 +297,20 @@ export class SolicitacaoService {
       // Check if request status allows editing based on business rules
       const EDITABLE_STATUSES = [
         StatusSolicitacao.ABERTA,
-        StatusSolicitacao.PENDENTE
+        StatusSolicitacao.PENDENTE,
       ];
-      
+
       if (!EDITABLE_STATUSES.includes(solicitacao.status)) {
         const statusMessage = `Status atual: ${solicitacao.status}`;
         const allowedMessage = `Status disponíveis: ${EDITABLE_STATUSES.join(', ')}`;
-        
+
         throw new BadRequestException({
           message: 'A solicitação não pode ser editado neste status.',
           detalhes: {
             statusAtual: solicitacao.status,
             statusPossiveis: EDITABLE_STATUSES,
           },
-          contexto: `${statusMessage}. ${allowedMessage}`
+          contexto: `${statusMessage}. ${allowedMessage}`,
         });
       }
 
@@ -316,7 +324,7 @@ export class SolicitacaoService {
       if (updateSolicitacaoDto.dados_complementares) {
         // Normalizar enums nos dados complementares antes de salvar
         solicitacao.dados_complementares = normalizeEnumFields(
-          updateSolicitacaoDto.dados_complementares
+          updateSolicitacaoDto.dados_complementares,
         );
       }
 
@@ -365,7 +373,7 @@ export class SolicitacaoService {
       );
 
       await manager.save(solicitacao);
-      
+
       // Register in history
       const historico = new HistoricoSolicitacao();
       historico.solicitacao_id = id;
@@ -377,7 +385,7 @@ export class SolicitacaoService {
         campos_alterados: Object.keys(UpdateSolicitacaoDto),
       };
       historico.ip_usuario = user.ip || '0.0.0.0';
-      
+
       await manager.save(historico);
 
       return this.findById(id);
@@ -597,28 +605,34 @@ export class SolicitacaoService {
         }
 
         // Verificar se a solicitação já tem este processo vinculado
-        if (solicitacao.processo_judicial_id === vincularDto.processo_judicial_id) {
-          throw new ConflictException('Este processo judicial já está vinculado à solicitação');
+        if (
+          solicitacao.processo_judicial_id === vincularDto.processo_judicial_id
+        ) {
+          throw new ConflictException(
+            'Este processo judicial já está vinculado à solicitação',
+          );
         }
 
         // Atualizar a solicitação
         solicitacao.processo_judicial_id = vincularDto.processo_judicial_id;
-        
+
         // Registrar no histórico
-        const historicoEntry = this.historicoRepository.create(normalizeEnumFields({
-          solicitacao_id: solicitacaoId,
-          status_anterior: solicitacao.status,
-          status_atual: solicitacao.status,
-          usuario_id: user.id,
-          observacao: vincularDto.observacao || 'Processo judicial vinculado',
-          dados_alterados: {
-            processo_judicial: {
-              id: vincularDto.processo_judicial_id,
-              numero: processoJudicial.numero_processo,
+        const historicoEntry = this.historicoRepository.create(
+          normalizeEnumFields({
+            solicitacao_id: solicitacaoId,
+            status_anterior: solicitacao.status,
+            status_atual: solicitacao.status,
+            usuario_id: user.id,
+            observacao: vincularDto.observacao || 'Processo judicial vinculado',
+            dados_alterados: {
+              processo_judicial: {
+                id: vincularDto.processo_judicial_id,
+                numero: processoJudicial.numero_processo,
+              },
             },
-          },
-          ip_usuario: user.ip || '0.0.0.0',
-        }));
+            ip_usuario: user.ip || '0.0.0.0',
+          }),
+        );
 
         // Salvar as alterações
         await manager.save(solicitacao);
@@ -669,7 +683,9 @@ export class SolicitacaoService {
 
         // Verificar se a solicitação tem processo vinculado
         if (!solicitacao.processo_judicial_id) {
-          throw new BadRequestException('Esta solicitação não possui processo judicial vinculado');
+          throw new BadRequestException(
+            'Esta solicitação não possui processo judicial vinculado',
+          );
         }
 
         // Guardar informação do processo para o histórico
@@ -680,23 +696,27 @@ export class SolicitacaoService {
 
         // Atualizar a solicitação
         solicitacao.processo_judicial_id = null as unknown as string;
-        
+
         // Registrar no histórico
-        const historicoEntry = this.historicoRepository.create(normalizeEnumFields({
-          solicitacao_id: solicitacaoId,
-          status_anterior: solicitacao.status,
-          status_atual: solicitacao.status,
-          usuario_id: user.id,
-          observacao: 'Processo judicial desvinculado',
-          dados_alterados: {
-            processo_judicial: {
-              id: processoJudicialId,
-              numero: processoJudicial ? processoJudicial.numero_processo : 'Desconhecido',
-              acao: 'removido',
+        const historicoEntry = this.historicoRepository.create(
+          normalizeEnumFields({
+            solicitacao_id: solicitacaoId,
+            status_anterior: solicitacao.status,
+            status_atual: solicitacao.status,
+            usuario_id: user.id,
+            observacao: 'Processo judicial desvinculado',
+            dados_alterados: {
+              processo_judicial: {
+                id: processoJudicialId,
+                numero: processoJudicial
+                  ? processoJudicial.numero_processo
+                  : 'Desconhecido',
+                acao: 'removido',
+              },
             },
-          },
-          ip_usuario: user.ip || '0.0.0.0',
-        }));
+            ip_usuario: user.ip || '0.0.0.0',
+          }),
+        );
 
         // Salvar as alterações
         await manager.save(solicitacao);
@@ -748,37 +768,47 @@ export class SolicitacaoService {
         }
 
         // Verificar se a determinação judicial existe
-        const determinacaoJudicial = await this.determinacaoJudicialRepository.findOne({
-          where: { id: vincularDto.determinacao_judicial_id },
-        });
+        const determinacaoJudicial =
+          await this.determinacaoJudicialRepository.findOne({
+            where: { id: vincularDto.determinacao_judicial_id },
+          });
 
         if (!determinacaoJudicial) {
           throw new NotFoundException('Determinação judicial não encontrada');
         }
 
         // Verificar se a solicitação já tem esta determinação vinculada
-        if (solicitacao.determinacao_judicial_id === vincularDto.determinacao_judicial_id) {
-          throw new ConflictException('Esta determinação judicial já está vinculada à solicitação');
+        if (
+          solicitacao.determinacao_judicial_id ===
+          vincularDto.determinacao_judicial_id
+        ) {
+          throw new ConflictException(
+            'Esta determinação judicial já está vinculada à solicitação',
+          );
         }
 
         // Atualizar a solicitação
-        solicitacao.determinacao_judicial_id = vincularDto.determinacao_judicial_id;
-        
+        solicitacao.determinacao_judicial_id =
+          vincularDto.determinacao_judicial_id;
+
         // Registrar no histórico
-        const historicoEntry = this.historicoRepository.create(normalizeEnumFields({
-          solicitacao_id: solicitacaoId,
-          status_anterior: solicitacao.status,
-          status_atual: solicitacao.status,
-          usuario_id: user.id,
-          observacao: vincularDto.observacao || 'Determinação judicial vinculada',
-          dados_alterados: {
-            determinacao_judicial: {
-              id: vincularDto.determinacao_judicial_id,
-              numero: determinacaoJudicial.numero_determinacao,
+        const historicoEntry = this.historicoRepository.create(
+          normalizeEnumFields({
+            solicitacao_id: solicitacaoId,
+            status_anterior: solicitacao.status,
+            status_atual: solicitacao.status,
+            usuario_id: user.id,
+            observacao:
+              vincularDto.observacao || 'Determinação judicial vinculada',
+            dados_alterados: {
+              determinacao_judicial: {
+                id: vincularDto.determinacao_judicial_id,
+                numero: determinacaoJudicial.numero_determinacao,
+              },
             },
-          },
-          ip_usuario: user.ip || '0.0.0.0',
-        }));
+            ip_usuario: user.ip || '0.0.0.0',
+          }),
+        );
 
         // Salvar as alterações
         await manager.save(solicitacao);
@@ -821,41 +851,46 @@ export class SolicitacaoService {
     converterPapelDto: ConverterPapelDto,
     user: any,
   ): Promise<Solicitacao> {
-    this.logger.log(`Iniciando conversão de papel para cidadão ${converterPapelDto.cidadao_id}`);
-    
+    this.logger.log(
+      `Iniciando conversão de papel para cidadão ${converterPapelDto.cidadao_id}`,
+    );
+
     return this.connection.transaction(async (manager) => {
       try {
         // Buscar a solicitação de origem
-        const solicitacaoOrigem = await this.findById(converterPapelDto.solicitacao_origem_id);
-        
+        const solicitacaoOrigem = await this.findById(
+          converterPapelDto.solicitacao_origem_id,
+        );
+
         if (!solicitacaoOrigem) {
           throw new NotFoundException('Solicitação de origem não encontrada');
         }
-        
+
         // Verificar se o cidadão está na composição familiar da solicitação
-        const composicaoFamiliar = solicitacaoOrigem.dados_complementares?.composicao_familiar || [];
+        const composicaoFamiliar =
+          solicitacaoOrigem.dados_complementares?.composicao_familiar || [];
         const membroIndex = composicaoFamiliar.findIndex(
           (membro) => membro.cidadao_id === converterPapelDto.cidadao_id,
         );
-        
+
         if (membroIndex === -1) {
           throw new BadRequestException(
             'Cidadão não encontrado na composição familiar da solicitação de origem',
           );
         }
-        
+
         // Obter o membro e remover da composição familiar
         const membro = { ...composicaoFamiliar[membroIndex] };
         composicaoFamiliar.splice(membroIndex, 1);
-        
+
         // Atualizar a solicitação de origem com a nova composição familiar
         solicitacaoOrigem.dados_complementares = {
           ...solicitacaoOrigem.dados_complementares,
           composicao_familiar: composicaoFamiliar,
         };
-        
+
         await manager.save(solicitacaoOrigem);
-        
+
         // Criar uma nova solicitação com o cidadão como beneficiário principal
         const novaSolicitacao = new Solicitacao();
         novaSolicitacao.beneficiario_id = converterPapelDto.cidadao_id;
@@ -864,55 +899,63 @@ export class SolicitacaoService {
         novaSolicitacao.tecnico_id = user.id;
         novaSolicitacao.status = StatusSolicitacao.RASCUNHO;
         novaSolicitacao.data_abertura = new Date();
-        novaSolicitacao.solicitacao_original_id = converterPapelDto.solicitacao_origem_id;
-        novaSolicitacao.dados_complementares = converterPapelDto.dados_complementares || {};
-        
+        novaSolicitacao.solicitacao_original_id =
+          converterPapelDto.solicitacao_origem_id;
+        novaSolicitacao.dados_complementares =
+          converterPapelDto.dados_complementares || {};
+
         // Adicionar observação sobre a conversão de papel
         novaSolicitacao.observacoes = `Solicitação criada a partir da conversão de papel. Justificativa: ${converterPapelDto.justificativa}`;
-        
+
         await manager.save(novaSolicitacao);
-        
+
         // Registrar no histórico da solicitação de origem
-        const historicoOrigem = this.historicoRepository.create(normalizeEnumFields({
-          solicitacao_id: solicitacaoOrigem.id,
-          status_anterior: solicitacaoOrigem.status,
-          status_atual: solicitacaoOrigem.status,
-          usuario_id: user.id,
-          observacao: `Cidadão removido da composição familiar para se tornar beneficiário principal em nova solicitação (${novaSolicitacao.protocolo})`,
-          dados_alterados: {
-            composicao_familiar: {
-              acao: 'remocao_membro',
-              cidadao_id: converterPapelDto.cidadao_id,
-              nova_solicitacao_id: novaSolicitacao.id,
-              nova_solicitacao_protocolo: novaSolicitacao.protocolo,
+        const historicoOrigem = this.historicoRepository.create(
+          normalizeEnumFields({
+            solicitacao_id: solicitacaoOrigem.id,
+            status_anterior: solicitacaoOrigem.status,
+            status_atual: solicitacaoOrigem.status,
+            usuario_id: user.id,
+            observacao: `Cidadão removido da composição familiar para se tornar beneficiário principal em nova solicitação (${novaSolicitacao.protocolo})`,
+            dados_alterados: {
+              composicao_familiar: {
+                acao: 'remocao_membro',
+                cidadao_id: converterPapelDto.cidadao_id,
+                nova_solicitacao_id: novaSolicitacao.id,
+                nova_solicitacao_protocolo: novaSolicitacao.protocolo,
+              },
             },
-          },
-          ip_usuario: user.ip || '0.0.0.0',
-        }));
-        
+            ip_usuario: user.ip || '0.0.0.0',
+          }),
+        );
+
         await manager.save(historicoOrigem);
-        
+
         // Registrar no histórico da nova solicitação
-        const historicoNova = this.historicoRepository.create(normalizeEnumFields({
-          solicitacao_id: novaSolicitacao.id,
-          status_anterior: StatusSolicitacao.RASCUNHO,
-          status_atual: StatusSolicitacao.RASCUNHO,
-          usuario_id: user.id,
-          observacao: `Solicitação criada a partir da conversão de papel do cidadão que estava na composição familiar da solicitação ${solicitacaoOrigem.protocolo}`,
-          dados_alterados: {
-            conversao_papel: {
-              solicitacao_origem_id: solicitacaoOrigem.id,
-              solicitacao_origem_protocolo: solicitacaoOrigem.protocolo,
-              justificativa: converterPapelDto.justificativa,
+        const historicoNova = this.historicoRepository.create(
+          normalizeEnumFields({
+            solicitacao_id: novaSolicitacao.id,
+            status_anterior: StatusSolicitacao.RASCUNHO,
+            status_atual: StatusSolicitacao.RASCUNHO,
+            usuario_id: user.id,
+            observacao: `Solicitação criada a partir da conversão de papel do cidadão que estava na composição familiar da solicitação ${solicitacaoOrigem.protocolo}`,
+            dados_alterados: {
+              conversao_papel: {
+                solicitacao_origem_id: solicitacaoOrigem.id,
+                solicitacao_origem_protocolo: solicitacaoOrigem.protocolo,
+                justificativa: converterPapelDto.justificativa,
+              },
             },
-          },
-          ip_usuario: user.ip || '0.0.0.0',
-        }));
-        
+            ip_usuario: user.ip || '0.0.0.0',
+          }),
+        );
+
         await manager.save(historicoNova);
-        
-        this.logger.log(`Conversão de papel concluída com sucesso. Nova solicitação: ${novaSolicitacao.id}`);
-        
+
+        this.logger.log(
+          `Conversão de papel concluída com sucesso. Nova solicitação: ${novaSolicitacao.id}`,
+        );
+
         return this.findById(novaSolicitacao.id);
       } catch (error) {
         if (
@@ -922,7 +965,7 @@ export class SolicitacaoService {
         ) {
           throw error;
         }
-        
+
         this.logger.error(
           `Erro ao converter papel do cidadão: ${error.message}`,
           error.stack,
@@ -952,34 +995,41 @@ export class SolicitacaoService {
 
         // Verificar se a solicitação tem determinação vinculada
         if (!solicitacao.determinacao_judicial_id) {
-          throw new BadRequestException('Esta solicitação não possui determinação judicial vinculada');
+          throw new BadRequestException(
+            'Esta solicitação não possui determinação judicial vinculada',
+          );
         }
 
         // Guardar informação da determinação para o histórico
         const determinacaoJudicialId = solicitacao.determinacao_judicial_id;
-        const determinacaoJudicial = await this.determinacaoJudicialRepository.findOne({
-          where: { id: determinacaoJudicialId },
-        });
+        const determinacaoJudicial =
+          await this.determinacaoJudicialRepository.findOne({
+            where: { id: determinacaoJudicialId },
+          });
 
         // Atualizar a solicitação
         solicitacao.determinacao_judicial_id = null as unknown as string;
-        
+
         // Registrar no histórico
-        const historicoEntry = this.historicoRepository.create(normalizeEnumFields({
-          solicitacao_id: solicitacaoId,
-          status_anterior: solicitacao.status,
-          status_atual: solicitacao.status,
-          usuario_id: user.id,
-          observacao: 'Determinação judicial desvinculada',
-          dados_alterados: {
-            determinacao_judicial: {
-              id: determinacaoJudicialId,
-              numero: determinacaoJudicial ? determinacaoJudicial.numero_determinacao : 'Desconhecida',
-              acao: 'removida',
+        const historicoEntry = this.historicoRepository.create(
+          normalizeEnumFields({
+            solicitacao_id: solicitacaoId,
+            status_anterior: solicitacao.status,
+            status_atual: solicitacao.status,
+            usuario_id: user.id,
+            observacao: 'Determinação judicial desvinculada',
+            dados_alterados: {
+              determinacao_judicial: {
+                id: determinacaoJudicialId,
+                numero: determinacaoJudicial
+                  ? determinacaoJudicial.numero_determinacao
+                  : 'Desconhecida',
+                acao: 'removida',
+              },
             },
-          },
-          ip_usuario: user.ip || '0.0.0.0',
-        }));
+            ip_usuario: user.ip || '0.0.0.0',
+          }),
+        );
 
         // Salvar as alterações
         await manager.save(solicitacao);

@@ -1,6 +1,6 @@
 /**
  * Constantes para os papéis (roles) do sistema
- * 
+ *
  * Este arquivo substitui o antigo enum Role, fornecendo constantes
  * que correspondem aos valores na tabela role.
  */
@@ -12,13 +12,13 @@ export const ROLES = {
   COORDENADOR: 'COORDENADOR',
   ASSISTENTE_SOCIAL: 'ASSISTENTE_SOCIAL',
   CIDADAO: 'CIDADAO',
-  AUDITOR: 'AUDITOR'
+  AUDITOR: 'AUDITOR',
 } as const;
 
 /**
  * Tipo que representa os valores possíveis de roles
  */
-export type RoleType = typeof ROLES[keyof typeof ROLES];
+export type RoleType = (typeof ROLES)[keyof typeof ROLES];
 
 /**
  * Array com todos os valores de roles

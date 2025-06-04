@@ -9,7 +9,7 @@ import { IntegracaoTipoEnum } from '../../../enums/integracao-tipo.enum';
 
 /**
  * Serviço para gerenciamento de configurações de integração externa
- * 
+ *
  * Responsável por:
  * - Operações CRUD para configurações de integração
  * - Criptografia para credenciais
@@ -20,16 +20,20 @@ import { IntegracaoTipoEnum } from '../../../enums/integracao-tipo.enum';
 export class IntegracaoService {
   private readonly logger = new Logger(IntegracaoService.name);
 
-  constructor(private readonly integracaoRepository: ConfiguracaoIntegracaoRepository) {}
+  constructor(
+    private readonly integracaoRepository: ConfiguracaoIntegracaoRepository,
+  ) {}
 
   /**
    * Busca todas as configurações de integração, convertendo-as para DTOs de resposta
    * @param tipo Tipo opcional para filtrar
    * @returns Lista de DTOs de resposta de configurações
    */
-  async buscarTodas(tipo?: IntegracaoTipoEnum): Promise<IntegracaoResponseDto[]> {
+  async buscarTodas(
+    tipo?: IntegracaoTipoEnum,
+  ): Promise<IntegracaoResponseDto[]> {
     const integracoes = await this.integracaoRepository.findAll(tipo);
-    return integracoes.map(i => this.mapearParaDto(i));
+    return integracoes.map((i) => this.mapearParaDto(i));
   }
 
   /**
@@ -41,7 +45,9 @@ export class IntegracaoService {
   async buscarPorCodigo(codigo: string): Promise<IntegracaoResponseDto> {
     const integracao = await this.integracaoRepository.findByCodigo(codigo);
     if (!integracao) {
-      throw new Error(`Configuração de integração com código '${codigo}' não encontrada`);
+      throw new Error(
+        `Configuração de integração com código '${codigo}' não encontrada`,
+      );
     }
     return this.mapearParaDto(integracao);
   }
@@ -52,17 +58,24 @@ export class IntegracaoService {
    * @param dto DTO com dados para atualização
    * @returns DTO de resposta da configuração atualizada
    */
-  async atualizarOuCriar(codigo: string, dto: IntegracaoUpdateDto): Promise<IntegracaoResponseDto> {
+  async atualizarOuCriar(
+    codigo: string,
+    dto: IntegracaoUpdateDto,
+  ): Promise<IntegracaoResponseDto> {
     // Verificar se já existe configuração com este código
     let integracao = await this.integracaoRepository.findByCodigo(codigo);
-    
+
     if (!integracao) {
       // Criar nova configuração
       integracao = new ConfiguracaoIntegracao();
       integracao.codigo = codigo;
-      this.logger.log(`Criando nova configuração de integração com código '${codigo}'`);
+      this.logger.log(
+        `Criando nova configuração de integração com código '${codigo}'`,
+      );
     } else {
-      this.logger.log(`Atualizando configuração de integração existente com código '${codigo}'`);
+      this.logger.log(
+        `Atualizando configuração de integração existente com código '${codigo}'`,
+      );
     }
 
     // Atualizar dados da configuração
@@ -76,12 +89,12 @@ export class IntegracaoService {
     if (dto.parametros) {
       integracao.parametros = dto.parametros;
     }
-    
+
     // Criptografar credenciais, se fornecidas
     if (dto.credenciais) {
       integracao.credenciais = this.criptografarCredenciais(dto.credenciais);
     }
-    
+
     // Atualizar status
     integracao.ativo = dto.ativo !== undefined ? dto.ativo : true;
 
@@ -97,7 +110,9 @@ export class IntegracaoService {
   async remover(codigo: string): Promise<void> {
     const integracao = await this.integracaoRepository.findByCodigo(codigo);
     if (!integracao) {
-      throw new Error(`Configuração de integração com código '${codigo}' não encontrada`);
+      throw new Error(
+        `Configuração de integração com código '${codigo}' não encontrada`,
+      );
     }
 
     await this.integracaoRepository.remove(integracao.id as unknown as number);
@@ -111,16 +126,23 @@ export class IntegracaoService {
    * @returns DTO de resposta da configuração atualizada
    * @throws Error se a configuração não existir
    */
-  async alterarStatus(codigo: string, ativo: boolean): Promise<IntegracaoResponseDto> {
+  async alterarStatus(
+    codigo: string,
+    ativo: boolean,
+  ): Promise<IntegracaoResponseDto> {
     const integracao = await this.integracaoRepository.findByCodigo(codigo);
     if (!integracao) {
-      throw new Error(`Configuração de integração com código '${codigo}' não encontrada`);
+      throw new Error(
+        `Configuração de integração com código '${codigo}' não encontrada`,
+      );
     }
 
     integracao.ativo = ativo;
     const salvo = await this.integracaoRepository.save(integracao);
-    
-    this.logger.log(`Configuração de integração '${codigo}' ${ativo ? 'ativada' : 'desativada'}`);
+
+    this.logger.log(
+      `Configuração de integração '${codigo}' ${ativo ? 'ativada' : 'desativada'}`,
+    );
     return this.mapearParaDto(salvo);
   }
 
@@ -129,7 +151,9 @@ export class IntegracaoService {
    * @param tipo Tipo da integração
    * @returns DTO de resposta da configuração ou null se não existir
    */
-  async buscarConfigAtiva(tipo: IntegracaoTipoEnum): Promise<IntegracaoResponseDto | null> {
+  async buscarConfigAtiva(
+    tipo: IntegracaoTipoEnum,
+  ): Promise<IntegracaoResponseDto | null> {
     const integracao = await this.integracaoRepository.findActiveByTipo(tipo);
     if (!integracao) {
       return null;
@@ -143,17 +167,21 @@ export class IntegracaoService {
    * @returns Resultado do teste
    * @throws IntegracaoTesteException se o teste falhar
    */
-  async testar(dto: IntegracaoTestDto): Promise<{ sucesso: boolean; mensagem: string }> {
+  async testar(
+    dto: IntegracaoTestDto,
+  ): Promise<{ sucesso: boolean; mensagem: string }> {
     let integracao: ConfiguracaoIntegracao | null = null;
 
     // Se for um código, busca a configuração existente
     if (dto.codigo) {
       integracao = await this.integracaoRepository.findByCodigo(dto.codigo);
       if (!integracao && !dto.configuracao) {
-        throw new Error(`Configuração de integração com código '${dto.codigo}' não encontrada`);
+        throw new Error(
+          `Configuração de integração com código '${dto.codigo}' não encontrada`,
+        );
       }
-    } 
-    
+    }
+
     // Se não encontrou pelo código ou configuração fornecida diretamente, cria uma temporária
     if (!integracao && dto.configuracao) {
       const tempIntegracao = new ConfiguracaoIntegracao();
@@ -161,17 +189,21 @@ export class IntegracaoService {
       tempIntegracao.codigo = 'temp-' + Date.now();
       tempIntegracao.nome = 'Configuração Temporária';
       tempIntegracao.configuracao = dto.configuracao;
-      
+
       // Criptografar credenciais temporárias, se fornecidas
       if (dto.credenciais) {
-        tempIntegracao.credenciais = this.criptografarCredenciais(dto.credenciais);
+        tempIntegracao.credenciais = this.criptografarCredenciais(
+          dto.credenciais,
+        );
       }
-      
+
       integracao = tempIntegracao;
-    } 
-    
+    }
+
     if (!integracao) {
-      throw new Error('É necessário fornecer o código ou a configuração para teste');
+      throw new Error(
+        'É necessário fornecer o código ou a configuração para teste',
+      );
     }
 
     try {
@@ -179,25 +211,27 @@ export class IntegracaoService {
       switch (integracao.tipo) {
         case IntegracaoTipoEnum.EMAIL:
           return await this.testarEmail(integracao);
-        
+
         case IntegracaoTipoEnum.SMS:
           return await this.testarSMS(integracao);
-        
+
         case IntegracaoTipoEnum.STORAGE:
           return await this.testarStorage(integracao);
-        
+
         case IntegracaoTipoEnum.API_EXTERNA:
           return await this.testarAPI(integracao);
-        
+
         default:
-          throw new Error(`Tipo de integração não suportado para testes: ${integracao.tipo}`);
-          // O erro de compilação foi corrigido na classe IntegracaoTesteException
+          throw new Error(
+            `Tipo de integração não suportado para testes: ${integracao.tipo}`,
+          );
+        // O erro de compilação foi corrigido na classe IntegracaoTesteException
       }
     } catch (error) {
       const codIntegracao = integracao.codigo || 'temporaria';
       throw new IntegracaoTesteException(
         codIntegracao,
-        `Falha no teste: ${error.message}`
+        `Falha no teste: ${error.message}`,
       );
     }
   }
@@ -223,7 +257,9 @@ export class IntegracaoService {
    * @param credenciaisCriptografadas Credenciais criptografadas
    * @returns Credenciais descriptografadas
    */
-  private descriptografarCredenciais(credenciaisCriptografadas: string): Record<string, any> {
+  private descriptografarCredenciais(
+    credenciaisCriptografadas: string,
+  ): Record<string, any> {
     // Em uma implementação real, usaríamos uma biblioteca como crypto com AES-256-GCM
     // Para simplificar neste momento, apenas deserializa de JSON
     // TODO: Implementar descriptografia real
@@ -240,20 +276,29 @@ export class IntegracaoService {
    * @param credenciais Credenciais a serem mascaradas
    * @returns Credenciais mascaradas
    */
-  private mascaraCredenciais(credenciais: Record<string, any>): Record<string, any> {
+  private mascaraCredenciais(
+    credenciais: Record<string, any>,
+  ): Record<string, any> {
     if (!credenciais) {
       return {};
     }
     const resultado = { ...credenciais };
-    
+
     // Mascarar campos comuns sensíveis
-    const camposSensiveis = ['senha', 'password', 'secret', 'key', 'token', 'apiKey'];
+    const camposSensiveis = [
+      'senha',
+      'password',
+      'secret',
+      'key',
+      'token',
+      'apiKey',
+    ];
     for (const campo of camposSensiveis) {
       if (resultado[campo]) {
         resultado[campo] = '••••••••••';
       }
     }
-    
+
     return resultado;
   }
 
@@ -262,17 +307,19 @@ export class IntegracaoService {
    * @param integracao Configuração a ser testada
    * @returns Resultado do teste
    */
-  private async testarEmail(integracao: ConfiguracaoIntegracao): Promise<{ sucesso: boolean; mensagem: string }> {
+  private async testarEmail(
+    integracao: ConfiguracaoIntegracao,
+  ): Promise<{ sucesso: boolean; mensagem: string }> {
     // Em uma implementação real, tentaria conectar ao servidor SMTP
     // e enviar um email de teste
     this.logger.log(`Testando integração de email: ${integracao.codigo}`);
-    
+
     // Simulação para fins de demonstração
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
     return {
       sucesso: true,
-      mensagem: 'Conexão com servidor SMTP estabelecida com sucesso'
+      mensagem: 'Conexão com servidor SMTP estabelecida com sucesso',
     };
   }
 
@@ -281,17 +328,19 @@ export class IntegracaoService {
    * @param integracao Configuração a ser testada
    * @returns Resultado do teste
    */
-  private async testarSMS(integracao: ConfiguracaoIntegracao): Promise<{ sucesso: boolean; mensagem: string }> {
+  private async testarSMS(
+    integracao: ConfiguracaoIntegracao,
+  ): Promise<{ sucesso: boolean; mensagem: string }> {
     // Em uma implementação real, tentaria conectar ao serviço de SMS
     // e verificar se a API está respondendo
     this.logger.log(`Testando integração de SMS: ${integracao.codigo}`);
-    
+
     // Simulação para fins de demonstração
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
     return {
       sucesso: true,
-      mensagem: 'API de SMS respondeu com sucesso'
+      mensagem: 'API de SMS respondeu com sucesso',
     };
   }
 
@@ -300,17 +349,22 @@ export class IntegracaoService {
    * @param integracao Configuração a ser testada
    * @returns Resultado do teste
    */
-  private async testarStorage(integracao: ConfiguracaoIntegracao): Promise<{ sucesso: boolean; mensagem: string }> {
+  private async testarStorage(
+    integracao: ConfiguracaoIntegracao,
+  ): Promise<{ sucesso: boolean; mensagem: string }> {
     // Em uma implementação real, tentaria conectar ao serviço de armazenamento
     // (S3, GCS, MinIO, etc.) e verificar permissões
-    this.logger.log(`Testando integração de armazenamento: ${integracao.codigo}`);
-    
+    this.logger.log(
+      `Testando integração de armazenamento: ${integracao.codigo}`,
+    );
+
     // Simulação para fins de demonstração
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
     return {
       sucesso: true,
-      mensagem: 'Conexão com serviço de armazenamento estabelecida e permissões verificadas'
+      mensagem:
+        'Conexão com serviço de armazenamento estabelecida e permissões verificadas',
     };
   }
 
@@ -319,17 +373,19 @@ export class IntegracaoService {
    * @param integracao Configuração a ser testada
    * @returns Resultado do teste
    */
-  private async testarAPI(integracao: ConfiguracaoIntegracao): Promise<{ sucesso: boolean; mensagem: string }> {
+  private async testarAPI(
+    integracao: ConfiguracaoIntegracao,
+  ): Promise<{ sucesso: boolean; mensagem: string }> {
     // Em uma implementação real, tentaria fazer uma requisição
     // para a API externa e verificar a resposta
     this.logger.log(`Testando integração de API: ${integracao.codigo}`);
-    
+
     // Simulação para fins de demonstração
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
     return {
       sucesso: true,
-      mensagem: 'API respondeu com status 200 OK'
+      mensagem: 'API respondeu com status 200 OK',
     };
   }
 
@@ -338,24 +394,28 @@ export class IntegracaoService {
    * @param integracao Entidade a ser convertida
    * @returns DTO de resposta
    */
-  private mapearParaDto(integracao: ConfiguracaoIntegracao): IntegracaoResponseDto {
+  private mapearParaDto(
+    integracao: ConfiguracaoIntegracao,
+  ): IntegracaoResponseDto {
     const dto = new IntegracaoResponseDto();
     dto.codigo = integracao.codigo;
     dto.nome = integracao.nome;
     dto.descricao = integracao.descricao;
     dto.tipo = integracao.tipo;
     dto.configuracao = integracao.configuracao;
-    
+
     // Descriptografar e mascarar credenciais
     if (integracao.credenciais) {
-      const credenciais = this.descriptografarCredenciais(integracao.credenciais);
+      const credenciais = this.descriptografarCredenciais(
+        integracao.credenciais,
+      );
       dto.credenciais = this.mascaraCredenciais(credenciais);
     }
-    
+
     dto.ativo = integracao.ativo;
     dto.created_at = integracao.created_at;
     dto.updated_at = integracao.updated_at;
-    
+
     return dto;
   }
 }

@@ -5,7 +5,7 @@ import { ClientInfo } from '../interfaces/client-info.interface';
 export const GetClientInfo = createParamDecorator(
   (data: unknown, ctx: ExecutionContext): ClientInfo => {
     const request = ctx.switchToHttp().getRequest<Request>();
-    
+
     // Extrai o IP real considerando proxies
     const getClientIp = (req: Request): string => {
       return (

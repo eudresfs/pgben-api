@@ -1,15 +1,23 @@
-import { MigrationInterface, QueryRunner, Table, TableIndex, TableForeignKey } from 'typeorm';
+import {
+  MigrationInterface,
+  QueryRunner,
+  Table,
+  TableIndex,
+  TableForeignKey,
+} from 'typeorm';
 
 /**
  * Migration para criar o schema relacionado às informações bancárias
- * 
+ *
  * Esta migration cria a tabela info_bancaria para armazenar dados bancários
  * dos cidadãos, incluindo contas poupança social do Banco do Brasil e
  * informações de chaves PIX.
- * 
+ *
  * Os enums necessários são criados na migration CreateAllEnums
  */
-export class CreateInfoBancariaSchema1704067205000 implements MigrationInterface {
+export class CreateInfoBancariaSchema1704067205000
+  implements MigrationInterface
+{
   name = 'CreateInfoBancariaSchema1704067205000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -217,7 +225,7 @@ export class CreateInfoBancariaSchema1704067205000 implements MigrationInterface
       try {
         // Verificar se a tabela cidadao existe
         const cidadaoExists = await queryRunner.hasTable('cidadao');
-        
+
         if (cidadaoExists) {
           console.log('Tabela cidadao existe. Criando chave estrangeira...');
           // Criar chave estrangeira para cidadao
@@ -230,16 +238,23 @@ export class CreateInfoBancariaSchema1704067205000 implements MigrationInterface
               onDelete: 'CASCADE',
               onUpdate: 'CASCADE',
               name: 'FK_info_bancaria_cidadao',
-            })
+            }),
           );
-          console.log('Chave estrangeira FK_info_bancaria_cidadao criada com sucesso');
+          console.log(
+            'Chave estrangeira FK_info_bancaria_cidadao criada com sucesso',
+          );
         } else {
-          console.log('⚠️ Tabela cidadao não existe. A chave estrangeira será criada posteriormente.');
+          console.log(
+            '⚠️ Tabela cidadao não existe. A chave estrangeira será criada posteriormente.',
+          );
           // Vamos criar uma função que cria a tabela temporária sem a FK
           // e depois teremos outra migration para adicionar a FK quando cidadao existir
         }
       } catch (error) {
-        console.error('Erro ao verificar tabela cidadao ou criar chave estrangeira:', error);
+        console.error(
+          'Erro ao verificar tabela cidadao ou criar chave estrangeira:',
+          error,
+        );
         // Continuamos sem a chave estrangeira por enquanto
       }
 
@@ -270,7 +285,10 @@ export class CreateInfoBancariaSchema1704067205000 implements MigrationInterface
 
       console.log('Migration CreateInfoBancariaSchema executada com sucesso.');
     } catch (error) {
-      console.error('Erro ao executar migration CreateInfoBancariaSchema:', error);
+      console.error(
+        'Erro ao executar migration CreateInfoBancariaSchema:',
+        error,
+      );
       throw error;
     }
   }
@@ -314,7 +332,10 @@ export class CreateInfoBancariaSchema1704067205000 implements MigrationInterface
 
       console.log('Migration CreateInfoBancariaSchema revertida com sucesso.');
     } catch (error) {
-      console.error('Erro ao reverter migration CreateInfoBancariaSchema:', error);
+      console.error(
+        'Erro ao reverter migration CreateInfoBancariaSchema:',
+        error,
+      );
       throw error;
     }
   }

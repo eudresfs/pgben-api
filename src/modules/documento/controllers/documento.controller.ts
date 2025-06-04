@@ -71,7 +71,13 @@ export class DocumentoController {
     name: 'tipo',
     description: 'Filtrar por tipo de documento',
     required: false,
-    enum: ['RG', 'CPF', 'COMPROVANTE_RESIDENCIA', 'COMPROVANTE_RENDA', 'OUTROS'],
+    enum: [
+      'RG',
+      'CPF',
+      'COMPROVANTE_RESIDENCIA',
+      'COMPROVANTE_RENDA',
+      'OUTROS',
+    ],
   })
   @ApiQuery({
     name: 'reutilizavel',
@@ -123,7 +129,13 @@ export class DocumentoController {
     name: 'tipo',
     description: 'Tipo de documento',
     required: true,
-    enum: ['RG', 'CPF', 'COMPROVANTE_RESIDENCIA', 'COMPROVANTE_RENDA', 'OUTROS'],
+    enum: [
+      'RG',
+      'CPF',
+      'COMPROVANTE_RESIDENCIA',
+      'COMPROVANTE_RENDA',
+      'OUTROS',
+    ],
   })
   @ApiQuery({
     name: 'cidadaoId',
@@ -171,10 +183,7 @@ export class DocumentoController {
     type: 'string',
     format: 'uuid',
   })
-  async download(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Res() res: Response,
-  ) {
+  async download(@Param('id', ParseUUIDPipe) id: string, @Res() res: Response) {
     const resultado = await this.documentoService.download(id);
 
     res.set({
@@ -213,8 +222,12 @@ export class DocumentoController {
       throw new BadRequestException('Arquivo é obrigatório');
     }
 
-    const resultado = await this.documentoService.upload(arquivo, uploadDto, usuario.id);
-    
+    const resultado = await this.documentoService.upload(
+      arquivo,
+      uploadDto,
+      usuario.id,
+    );
+
     // Transformar o resultado para excluir dados sensíveis
     return {
       data: plainToInstance(DocumentoResponseDto, resultado, {
@@ -276,10 +289,7 @@ export class DocumentoController {
     type: 'string',
     format: 'uuid',
   })
-  async remover(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Request() req: any
-  ) {
+  async remover(@Param('id', ParseUUIDPipe) id: string, @Request() req: any) {
     await this.documentoService.remover(id, req.user.id);
   }
 

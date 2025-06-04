@@ -3,19 +3,19 @@ import { ThrottlerModuleOptions } from '@nestjs/throttler';
 
 /**
  * Configuração do Rate Limiting para o Sistema SEMTAS
- * 
+ *
  * Implementa diferentes limites para diferentes tipos de endpoints:
  * - Autenticação: Mais restritivo para prevenir ataques de força bruta
  * - API Geral: Limite padrão para operações normais
  * - Upload: Limite específico para uploads de documentos
- * 
+ *
  * Utiliza Redis como storage para permitir rate limiting distribuído
  */
 export const createThrottlerConfig = (
   configService: ConfigService,
 ): ThrottlerModuleOptions => {
   const nodeEnv = configService.get<string>('NODE_ENV', 'development');
-  
+
   // Configuração do throttler com armazenamento em memória
   const config: ThrottlerModuleOptions = {
     throttlers: [
@@ -43,18 +43,22 @@ export const createThrottlerConfig = (
     skipIf: (context) => {
       // Pular rate limiting em desenvolvimento se configurado
       if (nodeEnv === 'development') {
-        const skipInDev = configService.get<boolean>('THROTTLE_SKIP_DEV', false);
+        const skipInDev = configService.get<boolean>(
+          'THROTTLE_SKIP_DEV',
+          false,
+        );
         if (skipInDev) {
           return true;
         }
       }
-      
+
       // Pular para health checks
       const request = context.switchToHttp().getRequest();
-      const isHealthCheck = request.url?.includes('/health') || 
-                           request.url?.includes('/metrics') ||
-                           request.url?.includes('/status');
-      
+      const isHealthCheck =
+        request.url?.includes('/health') ||
+        request.url?.includes('/metrics') ||
+        request.url?.includes('/status');
+
       return isHealthCheck;
     },
     errorMessage: 'Muitas tentativas. Tente novamente em alguns minutos.',

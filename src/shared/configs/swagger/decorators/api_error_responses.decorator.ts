@@ -1,11 +1,11 @@
 import { applyDecorators } from '@nestjs/common';
-import { 
+import {
   ApiBadRequestResponse,
   ApiUnauthorizedResponse,
   ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiServerErrorResponse,
-  ApiValidationResponse
+  ApiValidationResponse,
 } from '../responses/errors';
 
 /**

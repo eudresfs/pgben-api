@@ -66,14 +66,18 @@ export class CategoriaDocumentoSeed {
     let categoriasAtualizadas = 0;
     let erros = 0;
 
-    console.log(`📊 Total de categorias para processar: ${categoriasDocumentos.length}`);
+    console.log(
+      `📊 Total de categorias para processar: ${categoriasDocumentos.length}`,
+    );
 
     // Inserção das categorias de documentos no banco de dados
     for (const categoria of categoriasDocumentos) {
       try {
         // Validação básica dos dados
         if (!categoria.nome || !categoria.descricao) {
-          console.error(`❌ Erro: Categoria com dados inválidos - Nome: ${categoria.nome}, Descrição: ${categoria.descricao}`);
+          console.error(
+            `❌ Erro: Categoria com dados inválidos - Nome: ${categoria.nome}, Descrição: ${categoria.descricao}`,
+          );
           erros++;
           continue;
         }
@@ -108,28 +112,37 @@ export class CategoriaDocumentoSeed {
               categoria.ativo,
             ],
           );
-          console.log(`🔄 Categoria '${categoria.nome}' atualizada com sucesso`);
+          console.log(
+            `🔄 Categoria '${categoria.nome}' atualizada com sucesso`,
+          );
           categoriasAtualizadas++;
         }
-        
+
         categoriasProcessadas++;
       } catch (error) {
-        console.error(`❌ Erro ao processar categoria '${categoria.nome}':`, error.message);
+        console.error(
+          `❌ Erro ao processar categoria '${categoria.nome}':`,
+          error.message,
+        );
         erros++;
       }
     }
 
     // Relatório final
     console.log('📈 Relatório de execução:');
-    console.log(`   • Categorias processadas: ${categoriasProcessadas}/${categoriasDocumentos.length}`);
+    console.log(
+      `   • Categorias processadas: ${categoriasProcessadas}/${categoriasDocumentos.length}`,
+    );
     console.log(`   • Categorias criadas: ${categoriasCriadas}`);
     console.log(`   • Categorias atualizadas: ${categoriasAtualizadas}`);
     console.log(`   • Erros encontrados: ${erros}`);
-    
+
     if (erros > 0) {
       console.warn(`⚠️  Seed concluído com ${erros} erro(s)`);
     } else {
-      console.log('✅ Seed de categorias de documentos de referência concluído com sucesso!');
+      console.log(
+        '✅ Seed de categorias de documentos de referência concluído com sucesso!',
+      );
     }
   }
 }

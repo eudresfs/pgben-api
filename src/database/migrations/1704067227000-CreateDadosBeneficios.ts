@@ -1,11 +1,17 @@
-import { MigrationInterface, QueryRunner, Table, TableForeignKey, TableIndex } from 'typeorm';
+import {
+  MigrationInterface,
+  QueryRunner,
+  Table,
+  TableForeignKey,
+  TableIndex,
+} from 'typeorm';
 
 export class CreateDadosBeneficios1704067227000 implements MigrationInterface {
-    name = 'CreateDadosBeneficios1704067227000';
+  name = 'CreateDadosBeneficios1704067227000';
 
-    public async up(queryRunner: QueryRunner): Promise<void> {
-        // Criar ENUM para público prioritário do Aluguel Social
-        await queryRunner.query(`
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    // Criar ENUM para público prioritário do Aluguel Social
+    await queryRunner.query(`
             CREATE TYPE "publico_prioritario_aluguel_enum" AS ENUM (
                 'idoso_acima_60',
                 'pessoa_deficiencia',
@@ -30,8 +36,8 @@ export class CreateDadosBeneficios1704067227000 implements MigrationInterface {
             )
         `);
 
-        // Criar ENUM para especificação do Aluguel Social
-        await queryRunner.query(`
+    // Criar ENUM para especificação do Aluguel Social
+    await queryRunner.query(`
             CREATE TYPE "especificacao_aluguel_enum" AS ENUM (
                 'situacao_emergencial',
                 'vulnerabilidade_temporaria',
@@ -43,8 +49,8 @@ export class CreateDadosBeneficios1704067227000 implements MigrationInterface {
             )
         `);
 
-        // Criar ENUM para origem do atendimento (Cesta Básica)
-        await queryRunner.query(`
+    // Criar ENUM para origem do atendimento (Cesta Básica)
+    await queryRunner.query(`
             CREATE TYPE "origem_atendimento_enum" AS ENUM (
                 'cras',
                 'creas',
@@ -59,8 +65,8 @@ export class CreateDadosBeneficios1704067227000 implements MigrationInterface {
             )
         `);
 
-        // Criar tabela de dados específicos para Auxílio Natalidade
-        await queryRunner.query(`
+    // Criar tabela de dados específicos para Auxílio Natalidade
+    await queryRunner.query(`
             CREATE TABLE "dados_natalidade" (
                 "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
                 "solicitacao_id" uuid NOT NULL,
@@ -81,8 +87,8 @@ export class CreateDadosBeneficios1704067227000 implements MigrationInterface {
             )
         `);
 
-        // Criar tabela de dados específicos para Aluguel Social
-        await queryRunner.query(`
+    // Criar tabela de dados específicos para Aluguel Social
+    await queryRunner.query(`
             CREATE TABLE "dados_aluguel_social" (
                 "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
                 "solicitacao_id" uuid NOT NULL,
@@ -106,8 +112,8 @@ export class CreateDadosBeneficios1704067227000 implements MigrationInterface {
             )
         `);
 
-        // Criar tabela de dados específicos para Auxílio Funeral
-        await queryRunner.query(`
+    // Criar tabela de dados específicos para Auxílio Funeral
+    await queryRunner.query(`
             CREATE TABLE "dados_funeral" (
                 "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
                 "solicitacao_id" uuid NOT NULL,
@@ -130,8 +136,8 @@ export class CreateDadosBeneficios1704067227000 implements MigrationInterface {
             )
         `);
 
-        // Criar tabela de dados específicos para Cesta Básica
-        await queryRunner.query(`
+    // Criar tabela de dados específicos para Cesta Básica
+    await queryRunner.query(`
             CREATE TABLE "dados_cesta_basica" (
                 "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
                 "solicitacao_id" uuid NOT NULL,
@@ -149,30 +155,38 @@ export class CreateDadosBeneficios1704067227000 implements MigrationInterface {
             )
         `);
 
-        // Criar índices para as tabelas de dados específicos
-        await queryRunner.query(`
+    // Criar índices para as tabelas de dados específicos
+    await queryRunner.query(`
             CREATE INDEX "IDX_dados_natalidade_solicitacao" ON "dados_natalidade" ("solicitacao_id")
         `);
-        
-        await queryRunner.query(`
+
+    await queryRunner.query(`
             CREATE INDEX "IDX_dados_aluguel_social_solicitacao" ON "dados_aluguel_social" ("solicitacao_id")
         `);
-        
-        await queryRunner.query(`
+
+    await queryRunner.query(`
             CREATE INDEX "IDX_dados_funeral_solicitacao" ON "dados_funeral" ("solicitacao_id")
         `);
-        
-        await queryRunner.query(`
+
+    await queryRunner.query(`
             CREATE INDEX "IDX_dados_cesta_basica_solicitacao" ON "dados_cesta_basica" ("solicitacao_id")
         `);
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     // Remover índices
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_dados_natalidade_solicitacao"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_dados_aluguel_social_solicitacao"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_dados_funeral_solicitacao"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_dados_cesta_basica_solicitacao"`);
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_dados_natalidade_solicitacao"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_dados_aluguel_social_solicitacao"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_dados_funeral_solicitacao"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_dados_cesta_basica_solicitacao"`,
+    );
 
     // Remover tabelas de dados específicos
     await queryRunner.query(`DROP TABLE IF EXISTS "dados_natalidade"`);
@@ -185,6 +199,8 @@ export class CreateDadosBeneficios1704067227000 implements MigrationInterface {
     await queryRunner.query(`DROP TYPE IF EXISTS "periodicidade_enum"`);
     await queryRunner.query(`DROP TYPE IF EXISTS "tipo_urna_enum"`);
     await queryRunner.query(`DROP TYPE IF EXISTS "especificacao_aluguel_enum"`);
-    await queryRunner.query(`DROP TYPE IF EXISTS "publico_prioritario_aluguel_enum"`);
+    await queryRunner.query(
+      `DROP TYPE IF EXISTS "publico_prioritario_aluguel_enum"`,
+    );
   }
 }

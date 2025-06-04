@@ -151,9 +151,7 @@ export class AuditController {
       },
     },
   })
-  async findLogs(
-    @Query(ValidationPipe) queryDto: AuditLogQueryDto,
-  ): Promise<{
+  async findLogs(@Query(ValidationPipe) queryDto: AuditLogQueryDto): Promise<{
     data: AuditLogResponseDto[];
     total: number;
     page: number;
@@ -219,7 +217,7 @@ export class AuditController {
   ): Promise<AuditLogStatsDto> {
     const start = startDate ? new Date(startDate) : undefined;
     const end = endDate ? new Date(endDate) : undefined;
-    
+
     return await this.auditService.getStats(start, end);
   }
 
@@ -228,7 +226,8 @@ export class AuditController {
   @Throttle({ default: { limit: 1, ttl: 300000 } }) // 1 request per 5 minutes
   @ApiOperation({
     summary: 'Limpeza manual de logs',
-    description: 'Executa limpeza manual de logs antigos (apenas administradores)',
+    description:
+      'Executa limpeza manual de logs antigos (apenas administradores)',
   })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -266,7 +265,7 @@ export class AuditController {
     );
 
     await this.auditService.cleanupOldLogs();
-    
+
     return {
       message: 'Limpeza de logs executada com sucesso',
       timestamp: new Date().toISOString(),

@@ -77,9 +77,7 @@ export class RelatoriosService {
       options;
 
     // Verificar permissões do usuário
-    if (
-      ![Role.ADMIN, Role.GESTOR, Role.TECNICO].includes(user.role)
-    ) {
+    if (![Role.ADMIN, Role.GESTOR, Role.TECNICO].includes(user.role)) {
       throw new UnauthorizedException(
         'Você não tem permissão para gerar este relatório',
       );
@@ -212,12 +210,9 @@ export class RelatoriosService {
 
     // Verificar permissões do usuário
     if (
-      ![
-        Role.ADMIN,
-        Role.GESTOR,
-        Role.TECNICO,
-        Role.COORDENADOR,
-      ].includes(user.role)
+      ![Role.ADMIN, Role.GESTOR, Role.TECNICO, Role.COORDENADOR].includes(
+        user.role,
+      )
     ) {
       throw new UnauthorizedException(
         'Você não tem permissão para gerar este relatório',

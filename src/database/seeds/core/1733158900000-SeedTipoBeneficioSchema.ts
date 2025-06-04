@@ -1,6 +1,10 @@
 import { DataSource } from 'typeorm';
 import { TipoBeneficio } from '../../../entities/tipo-beneficio.entity';
-import { TipoBeneficioSchema, CampoEstrutura, MetadadosEstrutura } from '../../../entities/tipo-beneficio-schema.entity';
+import {
+  TipoBeneficioSchema,
+  CampoEstrutura,
+  MetadadosEstrutura,
+} from '../../../entities/tipo-beneficio-schema.entity';
 
 /**
  * Seed para popular a tabela tipo_beneficio_schema com estruturas das entidades existentes
@@ -8,7 +12,8 @@ import { TipoBeneficioSchema, CampoEstrutura, MetadadosEstrutura } from '../../.
 export class SeedTipoBeneficioSchema1733158900000 {
   public async run(dataSource: DataSource): Promise<void> {
     const tipoBeneficioRepository = dataSource.getRepository(TipoBeneficio);
-    const tipoBeneficioSchemaRepository = dataSource.getRepository(TipoBeneficioSchema);
+    const tipoBeneficioSchemaRepository =
+      dataSource.getRepository(TipoBeneficioSchema);
 
     // Buscar todos os tipos de benefícios existentes
     const tiposBeneficios = await tipoBeneficioRepository.find();
@@ -36,8 +41,8 @@ export class SeedTipoBeneficioSchema1733158900000 {
                 versao: '1.0.0',
                 descricao: `Schema para ${tipoBeneficio.nome}`,
                 categoria: 'beneficio_eventual',
-                tags: [nomeNormalizado]
-              }
+                tags: [nomeNormalizado],
+              },
             },
             versao: '1.0.0',
             ativo: true,
@@ -62,15 +67,15 @@ export class SeedTipoBeneficioSchema1733158900000 {
       .replace(/[^a-z0-9]/g, '_')
       .replace(/_+/g, '_')
       .replace(/^_|_$/g, '');
-    
+
     // Mapeamento específico para os códigos dos benefícios existentes
     const mapeamento: Record<string, string> = {
-      'beneficio_natalidade': 'BENEFICIO_NATALIDADE',
-      'beneficio_funeral': 'BENEFICIO_FUNERAL', 
-      'cesta_basica': 'CESTA_BASICA',
-      'aluguel_social': 'ALUGUEL_SOCIAL'
+      beneficio_natalidade: 'BENEFICIO_NATALIDADE',
+      beneficio_funeral: 'BENEFICIO_FUNERAL',
+      cesta_basica: 'CESTA_BASICA',
+      aluguel_social: 'ALUGUEL_SOCIAL',
     };
-    
+
     return mapeamento[nomeNormalizado] || nomeNormalizado;
   }
 
@@ -79,10 +84,10 @@ export class SeedTipoBeneficioSchema1733158900000 {
    */
   private converterParaCampos(schemaEstrutura: any): CampoEstrutura[] {
     const campos: CampoEstrutura[] = [];
-    
+
     for (const [nomeCampo, config] of Object.entries(schemaEstrutura)) {
       const campo = config as any;
-      
+
       campos.push({
         nome: nomeCampo,
         tipo: this.mapearTipo(campo.type),
@@ -93,19 +98,24 @@ export class SeedTipoBeneficioSchema1733158900000 {
           min: campo.validation?.min || campo.min,
           max: campo.validation?.max || campo.max,
           pattern: campo.validation?.pattern,
-          opcoes: campo.options?.map((opt: any) => opt.value) || campo.validation?.enum
+          opcoes:
+            campo.options?.map((opt: any) => opt.value) ||
+            campo.validation?.enum,
         },
-        opcoes: campo.options?.map((opt: any) => opt.value) || campo.validation?.enum
+        opcoes:
+          campo.options?.map((opt: any) => opt.value) || campo.validation?.enum,
       });
     }
-    
+
     return campos;
   }
 
   /**
    * Mapeia os tipos de campo para o formato esperado
    */
-  private mapearTipo(tipo: string): 'string' | 'number' | 'boolean' | 'date' | 'enum' | 'array' {
+  private mapearTipo(
+    tipo: string,
+  ): 'string' | 'number' | 'boolean' | 'date' | 'enum' | 'array' {
     switch (tipo) {
       case 'text':
       case 'textarea':
@@ -124,7 +134,10 @@ export class SeedTipoBeneficioSchema1733158900000 {
     }
   }
 
-  private definirEstruturas(): Record<string, { entidade_dados: string; schema_estrutura: any }> {
+  private definirEstruturas(): Record<
+    string,
+    { entidade_dados: string; schema_estrutura: any }
+  > {
     return {
       BENEFICIO_NATALIDADE: {
         entidade_dados: 'DadosNatalidade',
@@ -134,20 +147,22 @@ export class SeedTipoBeneficioSchema1733158900000 {
             label: 'Realiza pré-natal',
             required: false,
             colSpan: 1,
-            placeholder: 'Marque se a gestante realiza acompanhamento pré-natal',
+            placeholder:
+              'Marque se a gestante realiza acompanhamento pré-natal',
             validation: {
-              type: 'boolean'
-            }
+              type: 'boolean',
+            },
           },
           atendida_psf_ubs: {
             type: 'checkbox',
             label: 'Atendida pelo PSF/UBS',
             required: false,
             colSpan: 1,
-            placeholder: 'Marque se é atendida pelo Programa Saúde da Família ou Unidade Básica de Saúde',
+            placeholder:
+              'Marque se é atendida pelo Programa Saúde da Família ou Unidade Básica de Saúde',
             validation: {
-              type: 'boolean'
-            }
+              type: 'boolean',
+            },
           },
           gravidez_risco: {
             type: 'checkbox',
@@ -156,8 +171,8 @@ export class SeedTipoBeneficioSchema1733158900000 {
             colSpan: 1,
             placeholder: 'Marque se a gravidez foi classificada como de risco',
             validation: {
-              type: 'boolean'
-            }
+              type: 'boolean',
+            },
           },
           data_provavel_parto: {
             type: 'date',
@@ -168,8 +183,8 @@ export class SeedTipoBeneficioSchema1733158900000 {
             validation: {
               type: 'date',
               minDate: 'today',
-              maxDate: '+12months'
-            }
+              maxDate: '+12months',
+            },
           },
           gemeos_trigemeos: {
             type: 'checkbox',
@@ -178,8 +193,8 @@ export class SeedTipoBeneficioSchema1733158900000 {
             colSpan: 1,
             placeholder: 'Marque se é uma gestação múltipla',
             validation: {
-              type: 'boolean'
-            }
+              type: 'boolean',
+            },
           },
           ja_tem_filhos: {
             type: 'checkbox',
@@ -188,8 +203,8 @@ export class SeedTipoBeneficioSchema1733158900000 {
             colSpan: 1,
             placeholder: 'Marque se a gestante já possui outros filhos',
             validation: {
-              type: 'boolean'
-            }
+              type: 'boolean',
+            },
           },
           quantidade_filhos: {
             type: 'number',
@@ -203,8 +218,8 @@ export class SeedTipoBeneficioSchema1733158900000 {
               type: 'number',
               min: 0,
               max: 20,
-              integer: true
-            }
+              integer: true,
+            },
           },
           telefone_cadastrado_cpf: {
             type: 'text',
@@ -216,8 +231,8 @@ export class SeedTipoBeneficioSchema1733158900000 {
               type: 'string',
               minLength: 10,
               maxLength: 15,
-              pattern: '^\\(?\\d{2}\\)?[\\s-]?\\d{4,5}[\\s-]?\\d{4}$'
-            }
+              pattern: '^\\(?\\d{2}\\)?[\\s-]?\\d{4,5}[\\s-]?\\d{4}$',
+            },
           },
           chave_pix: {
             type: 'text',
@@ -229,9 +244,10 @@ export class SeedTipoBeneficioSchema1733158900000 {
               type: 'string',
               minLength: 11,
               maxLength: 77,
-              pattern: '^([0-9]{11}|[0-9]{14}|[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}|[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})$'
-            }
-          }
+              pattern:
+                '^([0-9]{11}|[0-9]{14}|[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}|[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})$',
+            },
+          },
         },
       },
       ALUGUEL_SOCIAL: {
@@ -244,18 +260,35 @@ export class SeedTipoBeneficioSchema1733158900000 {
             colSpan: 2,
             placeholder: 'Selecione o tipo de público prioritário',
             options: [
-              { label: 'Mulheres vítimas de violência', value: 'MULHERES_VITIMAS_VIOLENCIA' },
-              { label: 'Atingidos por calamidade', value: 'ATINGIDOS_CALAMIDADE' },
+              {
+                label: 'Mulheres vítimas de violência',
+                value: 'MULHERES_VITIMAS_VIOLENCIA',
+              },
+              {
+                label: 'Atingidos por calamidade',
+                value: 'ATINGIDOS_CALAMIDADE',
+              },
               { label: 'Situação de risco', value: 'SITUACAO_RISCO' },
-              { label: 'Crianças e adolescentes', value: 'CRIANCAS_ADOLESCENTES' },
+              {
+                label: 'Crianças e adolescentes',
+                value: 'CRIANCAS_ADOLESCENTES',
+              },
               { label: 'Gestantes e nutrizes', value: 'GESTANTES_NUTRIZES' },
               { label: 'Idosos', value: 'IDOSOS' },
-              { label: 'Pessoas com deficiência', value: 'PCD' }
+              { label: 'Pessoas com deficiência', value: 'PCD' },
             ],
             validation: {
               type: 'enum',
-              enum: ['MULHERES_VITIMAS_VIOLENCIA', 'ATINGIDOS_CALAMIDADE', 'SITUACAO_RISCO', 'CRIANCAS_ADOLESCENTES', 'GESTANTES_NUTRIZES', 'IDOSOS', 'PCD']
-            }
+              enum: [
+                'MULHERES_VITIMAS_VIOLENCIA',
+                'ATINGIDOS_CALAMIDADE',
+                'SITUACAO_RISCO',
+                'CRIANCAS_ADOLESCENTES',
+                'GESTANTES_NUTRIZES',
+                'IDOSOS',
+                'PCD',
+              ],
+            },
           },
           especificacoes: {
             type: 'multiselect',
@@ -267,16 +300,21 @@ export class SeedTipoBeneficioSchema1733158900000 {
               { label: 'Exploração sexual', value: 'EXPLORACAO_SEXUAL' },
               { label: 'Vítima de violência', value: 'VITIMA_VIOLENCIA' },
               { label: 'Situação de rua', value: 'SITUACAO_RUA' },
-              { label: 'Drogadição', value: 'DROGADICAO' }
+              { label: 'Drogadição', value: 'DROGADICAO' },
             ],
             validation: {
               type: 'array',
               items: {
                 type: 'enum',
-                enum: ['EXPLORACAO_SEXUAL', 'VITIMA_VIOLENCIA', 'SITUACAO_RUA', 'DROGADICAO']
+                enum: [
+                  'EXPLORACAO_SEXUAL',
+                  'VITIMA_VIOLENCIA',
+                  'SITUACAO_RUA',
+                  'DROGADICAO',
+                ],
               },
-              maxItems: 4
-            }
+              maxItems: 4,
+            },
           },
           situacao_moradia_atual: {
             type: 'textarea',
@@ -284,12 +322,13 @@ export class SeedTipoBeneficioSchema1733158900000 {
             required: true,
             colSpan: 2,
             rows: 3,
-            placeholder: 'Descreva detalhadamente a situação atual da moradia da família',
+            placeholder:
+              'Descreva detalhadamente a situação atual da moradia da família',
             validation: {
               type: 'string',
               minLength: 20,
-              maxLength: 1000
-            }
+              maxLength: 1000,
+            },
           },
           possui_imovel_interditado: {
             type: 'checkbox',
@@ -298,18 +337,19 @@ export class SeedTipoBeneficioSchema1733158900000 {
             colSpan: 1,
             placeholder: 'Marque se possui imóvel que foi interditado',
             validation: {
-              type: 'boolean'
-            }
+              type: 'boolean',
+            },
           },
           caso_judicializado_maria_penha: {
             type: 'checkbox',
             label: 'Caso judicializado Lei Maria da Penha',
             required: false,
             colSpan: 1,
-            placeholder: 'Marque se há processo judicial relacionado à Lei Maria da Penha',
+            placeholder:
+              'Marque se há processo judicial relacionado à Lei Maria da Penha',
             validation: {
-              type: 'boolean'
-            }
+              type: 'boolean',
+            },
           },
           observacoes_adicionais: {
             type: 'textarea',
@@ -317,12 +357,13 @@ export class SeedTipoBeneficioSchema1733158900000 {
             required: false,
             colSpan: 2,
             rows: 2,
-            placeholder: 'Informações complementares relevantes para a análise do caso',
+            placeholder:
+              'Informações complementares relevantes para a análise do caso',
             validation: {
               type: 'string',
-              maxLength: 500
-            }
-          }
+              maxLength: 500,
+            },
+          },
         },
       },
       CESTA_BASICA: {
@@ -340,8 +381,8 @@ export class SeedTipoBeneficioSchema1733158900000 {
               type: 'number',
               min: 1,
               max: 12,
-              integer: true
-            }
+              integer: true,
+            },
           },
           periodo_concessao: {
             type: 'select',
@@ -354,12 +395,12 @@ export class SeedTipoBeneficioSchema1733158900000 {
               { label: 'Mensal', value: 'MENSAL' },
               { label: 'Bimestral', value: 'BIMESTRAL' },
               { label: 'Trimestral', value: 'TRIMESTRAL' },
-              { label: 'Semestral', value: 'SEMESTRAL' }
+              { label: 'Semestral', value: 'SEMESTRAL' },
             ],
             validation: {
               type: 'enum',
-              enum: ['UNICO', 'MENSAL', 'BIMESTRAL', 'TRIMESTRAL', 'SEMESTRAL']
-            }
+              enum: ['UNICO', 'MENSAL', 'BIMESTRAL', 'TRIMESTRAL', 'SEMESTRAL'],
+            },
           },
           origem_atendimento: {
             type: 'select',
@@ -371,14 +412,24 @@ export class SeedTipoBeneficioSchema1733158900000 {
               { label: 'CRAS', value: 'CRAS' },
               { label: 'CREAS', value: 'CREAS' },
               { label: 'Busca ativa', value: 'BUSCA_ATIVA' },
-              { label: 'Encaminhamento externo', value: 'ENCAMINHAMENTO_EXTERNO' },
+              {
+                label: 'Encaminhamento externo',
+                value: 'ENCAMINHAMENTO_EXTERNO',
+              },
               { label: 'Unidade básica', value: 'UNIDADE_BASICA' },
-              { label: 'Demanda espontânea', value: 'DEMANDA_ESPONTANEA' }
+              { label: 'Demanda espontânea', value: 'DEMANDA_ESPONTANEA' },
             ],
             validation: {
               type: 'enum',
-              enum: ['CRAS', 'CREAS', 'BUSCA_ATIVA', 'ENCAMINHAMENTO_EXTERNO', 'UNIDADE_BASICA', 'DEMANDA_ESPONTANEA']
-            }
+              enum: [
+                'CRAS',
+                'CREAS',
+                'BUSCA_ATIVA',
+                'ENCAMINHAMENTO_EXTERNO',
+                'UNIDADE_BASICA',
+                'DEMANDA_ESPONTANEA',
+              ],
+            },
           },
           numero_pessoas_familia: {
             type: 'number',
@@ -392,8 +443,8 @@ export class SeedTipoBeneficioSchema1733158900000 {
               type: 'number',
               min: 1,
               max: 30,
-              integer: true
-            }
+              integer: true,
+            },
           },
           justificativa_quantidade: {
             type: 'textarea',
@@ -401,12 +452,13 @@ export class SeedTipoBeneficioSchema1733158900000 {
             required: false,
             colSpan: 2,
             rows: 3,
-            placeholder: 'Justifique a quantidade solicitada, especialmente se for acima do recomendado',
+            placeholder:
+              'Justifique a quantidade solicitada, especialmente se for acima do recomendado',
             validation: {
               type: 'string',
               minLength: 10,
-              maxLength: 500
-            }
+              maxLength: 500,
+            },
           },
           observacoes_especiais: {
             type: 'textarea',
@@ -417,8 +469,8 @@ export class SeedTipoBeneficioSchema1733158900000 {
             placeholder: 'Informações adicionais relevantes para a análise',
             validation: {
               type: 'string',
-              maxLength: 500
-            }
+              maxLength: 500,
+            },
           },
           tecnico_responsavel: {
             type: 'text',
@@ -430,8 +482,8 @@ export class SeedTipoBeneficioSchema1733158900000 {
               type: 'string',
               minLength: 2,
               maxLength: 100,
-              pattern: '^[A-Za-zÀ-ÿ\\s]+$'
-            }
+              pattern: '^[A-Za-zÀ-ÿ\\s]+$',
+            },
           },
           unidade_solicitante: {
             type: 'text',
@@ -442,9 +494,9 @@ export class SeedTipoBeneficioSchema1733158900000 {
             validation: {
               type: 'string',
               minLength: 2,
-              maxLength: 100
-            }
-          }
+              maxLength: 100,
+            },
+          },
         },
       },
       BENEFICIO_FUNERAL: {
@@ -460,8 +512,8 @@ export class SeedTipoBeneficioSchema1733158900000 {
               type: 'string',
               minLength: 2,
               maxLength: 150,
-              pattern: '^[A-Za-zÀ-ÿ\\s]+$'
-            }
+              pattern: '^[A-Za-zÀ-ÿ\\s]+$',
+            },
           },
           data_obito: {
             type: 'date',
@@ -471,8 +523,8 @@ export class SeedTipoBeneficioSchema1733158900000 {
             placeholder: 'Data conforme certidão de óbito',
             validation: {
               type: 'date',
-              maxDate: 'today'
-            }
+              maxDate: 'today',
+            },
           },
           local_obito: {
             type: 'text',
@@ -483,8 +535,8 @@ export class SeedTipoBeneficioSchema1733158900000 {
             validation: {
               type: 'string',
               minLength: 2,
-              maxLength: 100
-            }
+              maxLength: 100,
+            },
           },
           data_autorizacao: {
             type: 'date',
@@ -494,8 +546,8 @@ export class SeedTipoBeneficioSchema1733158900000 {
             placeholder: 'Data da autorização do sepultamento',
             validation: {
               type: 'date',
-              maxDate: 'today'
-            }
+              maxDate: 'today',
+            },
           },
           grau_parentesco_requerente: {
             type: 'select',
@@ -511,12 +563,21 @@ export class SeedTipoBeneficioSchema1733158900000 {
               { label: 'Irmão/Irmã', value: 'IRMAO' },
               { label: 'Avô/Avó', value: 'AVO' },
               { label: 'Neto(a)', value: 'NETO' },
-              { label: 'Outro', value: 'OUTRO' }
+              { label: 'Outro', value: 'OUTRO' },
             ],
             validation: {
               type: 'enum',
-              enum: ['CONJUGE', 'FILHO', 'PAI', 'MAE', 'IRMAO', 'AVO', 'NETO', 'OUTRO']
-            }
+              enum: [
+                'CONJUGE',
+                'FILHO',
+                'PAI',
+                'MAE',
+                'IRMAO',
+                'AVO',
+                'NETO',
+                'OUTRO',
+              ],
+            },
           },
           tipo_urna_necessaria: {
             type: 'select',
@@ -528,12 +589,12 @@ export class SeedTipoBeneficioSchema1733158900000 {
               { label: 'Padrão', value: 'PADRAO' },
               { label: 'Infantil', value: 'INFANTIL' },
               { label: 'Especial', value: 'ESPECIAL' },
-              { label: 'Para obeso', value: 'OBESO' }
+              { label: 'Para obeso', value: 'OBESO' },
             ],
             validation: {
               type: 'enum',
-              enum: ['PADRAO', 'INFANTIL', 'ESPECIAL', 'OBESO']
-            }
+              enum: ['PADRAO', 'INFANTIL', 'ESPECIAL', 'OBESO'],
+            },
           },
           observacoes_especiais: {
             type: 'textarea',
@@ -544,8 +605,8 @@ export class SeedTipoBeneficioSchema1733158900000 {
             placeholder: 'Informações adicionais relevantes',
             validation: {
               type: 'string',
-              maxLength: 1000
-            }
+              maxLength: 1000,
+            },
           },
           numero_certidao_obito: {
             type: 'text',
@@ -557,8 +618,8 @@ export class SeedTipoBeneficioSchema1733158900000 {
               type: 'string',
               minLength: 5,
               maxLength: 50,
-              pattern: '^[A-Za-z0-9\\-\\/\\s]+$'
-            }
+              pattern: '^[A-Za-z0-9\\-\\/\\s]+$',
+            },
           },
           cartorio_emissor: {
             type: 'text',
@@ -569,9 +630,9 @@ export class SeedTipoBeneficioSchema1733158900000 {
             validation: {
               type: 'string',
               minLength: 5,
-              maxLength: 150
-            }
-          }
+              maxLength: 150,
+            },
+          },
         },
       },
     };

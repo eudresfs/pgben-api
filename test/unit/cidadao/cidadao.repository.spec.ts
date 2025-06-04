@@ -79,7 +79,9 @@ describe('CidadaoRepository', () => {
     it('deve buscar cidadão por ID com relacionamentos por padrão', async () => {
       mockTypeormRepository.findOne.mockResolvedValue(mockCidadao);
 
-      const result = await repository.findById('550e8400-e29b-41d4-a716-446655440000');
+      const result = await repository.findById(
+        '550e8400-e29b-41d4-a716-446655440000',
+      );
 
       expect(mockTypeormRepository.findOne).toHaveBeenCalledWith({
         where: { id: '550e8400-e29b-41d4-a716-446655440000' },
@@ -91,7 +93,10 @@ describe('CidadaoRepository', () => {
     it('deve buscar cidadão por ID sem relacionamentos quando especificado', async () => {
       mockTypeormRepository.findOne.mockResolvedValue(mockCidadao);
 
-      const result = await repository.findById('550e8400-e29b-41d4-a716-446655440000', false);
+      const result = await repository.findById(
+        '550e8400-e29b-41d4-a716-446655440000',
+        false,
+      );
 
       expect(mockTypeormRepository.findOne).toHaveBeenCalledWith({
         where: { id: '550e8400-e29b-41d4-a716-446655440000' },
@@ -162,9 +167,15 @@ describe('CidadaoRepository', () => {
     it('deve atualizar cidadão e retornar dados atualizados', async () => {
       const updateData = { nome: 'João Silva Atualizado' };
       mockTypeormRepository.update.mockResolvedValue({ affected: 1 });
-      mockTypeormRepository.findOne.mockResolvedValue({ ...mockCidadao, ...updateData });
+      mockTypeormRepository.findOne.mockResolvedValue({
+        ...mockCidadao,
+        ...updateData,
+      });
 
-      const result = await repository.update('550e8400-e29b-41d4-a716-446655440000', updateData);
+      const result = await repository.update(
+        '550e8400-e29b-41d4-a716-446655440000',
+        updateData,
+      );
 
       expect(mockTypeormRepository.update).toHaveBeenCalledWith(
         '550e8400-e29b-41d4-a716-446655440000',
@@ -176,9 +187,15 @@ describe('CidadaoRepository', () => {
     it('deve normalizar CPF antes de atualizar', async () => {
       const updateData = { cpf: '987.654.321-00' };
       mockTypeormRepository.update.mockResolvedValue({ affected: 1 });
-      mockTypeormRepository.findOne.mockResolvedValue({ ...mockCidadao, cpf: '98765432100' });
+      mockTypeormRepository.findOne.mockResolvedValue({
+        ...mockCidadao,
+        cpf: '98765432100',
+      });
 
-      await repository.update('550e8400-e29b-41d4-a716-446655440000', updateData);
+      await repository.update(
+        '550e8400-e29b-41d4-a716-446655440000',
+        updateData,
+      );
 
       expect(mockTypeormRepository.update).toHaveBeenCalledWith(
         '550e8400-e29b-41d4-a716-446655440000',
@@ -189,9 +206,15 @@ describe('CidadaoRepository', () => {
     it('deve normalizar NIS antes de atualizar', async () => {
       const updateData = { nis: '987.654.321-00' };
       mockTypeormRepository.update.mockResolvedValue({ affected: 1 });
-      mockTypeormRepository.findOne.mockResolvedValue({ ...mockCidadao, nis: '98765432100' });
+      mockTypeormRepository.findOne.mockResolvedValue({
+        ...mockCidadao,
+        nis: '98765432100',
+      });
 
-      await repository.update('550e8400-e29b-41d4-a716-446655440000', updateData);
+      await repository.update(
+        '550e8400-e29b-41d4-a716-446655440000',
+        updateData,
+      );
 
       expect(mockTypeormRepository.update).toHaveBeenCalledWith(
         '550e8400-e29b-41d4-a716-446655440000',
@@ -212,7 +235,9 @@ describe('CidadaoRepository', () => {
       mockTypeormRepository.findOne.mockResolvedValue(null);
 
       await expect(
-        repository.update('550e8400-e29b-41d4-a716-446655440000', { nome: 'Teste' }),
+        repository.update('550e8400-e29b-41d4-a716-446655440000', {
+          nome: 'Teste',
+        }),
       ).rejects.toThrow(NotFoundException);
     });
   });

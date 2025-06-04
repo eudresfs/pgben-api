@@ -6,7 +6,7 @@ import { StatusSolicitacao } from '../../../entities/solicitacao.entity';
 
 /**
  * Repository customizado para Histórico de Solicitações
- * 
+ *
  * Implementa consultas e operações específicas para o histórico de solicitações,
  * permitindo rastrear todas as mudanças de status e alterações.
  */
@@ -23,7 +23,9 @@ export class HistoricoSolicitacaoRepository {
    * @param solicitacaoId ID da solicitação
    * @returns Lista de registros de histórico ordenados por data
    */
-  async buscarHistoricoPorSolicitacao(solicitacaoId: string): Promise<HistoricoSolicitacao[]> {
+  async buscarHistoricoPorSolicitacao(
+    solicitacaoId: string,
+  ): Promise<HistoricoSolicitacao[]> {
     return this.repository.find({
       where: { solicitacao_id: solicitacaoId },
       relations: ['usuario'],
@@ -98,7 +100,9 @@ export class HistoricoSolicitacaoRepository {
    * @param solicitacaoId ID da solicitação
    * @returns Último registro de histórico ou null se não existir
    */
-  async buscarUltimoRegistro(solicitacaoId: string): Promise<HistoricoSolicitacao | null> {
+  async buscarUltimoRegistro(
+    solicitacaoId: string,
+  ): Promise<HistoricoSolicitacao | null> {
     return this.repository.findOne({
       where: { solicitacao_id: solicitacaoId },
       order: { created_at: 'DESC' },
@@ -110,19 +114,20 @@ export class HistoricoSolicitacaoRepository {
    * @param filtros Filtros opcionais (período, tipo de benefício, etc)
    * @returns Objeto com tempo médio em cada status em dias
    */
-  async calcularTempoMedioPorStatus(
-    filtros?: {
-      dataInicio?: Date;
-      dataFim?: Date;
-      tipoBeneficioId?: string;
-      unidadeId?: string;
-    },
-  ): Promise<Record<StatusSolicitacao, number>> {
+  async calcularTempoMedioPorStatus(filtros?: {
+    dataInicio?: Date;
+    dataFim?: Date;
+    tipoBeneficioId?: string;
+    unidadeId?: string;
+  }): Promise<Record<StatusSolicitacao, number>> {
     // Construir a query para calcular o tempo médio entre status
     const queryBuilder = this.repository
       .createQueryBuilder('historico')
       .select('historico.status_anterior', 'status')
-      .addSelect('AVG(EXTRACT(EPOCH FROM (LEAD(historico.created_at) OVER (PARTITION BY historico.solicitacao_id ORDER BY historico.created_at) - historico.created_at)))/86400', 'tempo_medio_dias')
+      .addSelect(
+        'AVG(EXTRACT(EPOCH FROM (LEAD(historico.created_at) OVER (PARTITION BY historico.solicitacao_id ORDER BY historico.created_at) - historico.created_at)))/86400',
+        'tempo_medio_dias',
+      )
       .innerJoin('historico.solicitacao', 'solicitacao')
       .groupBy('historico.status_anterior');
 
@@ -140,9 +145,12 @@ export class HistoricoSolicitacaoRepository {
     }
 
     if (filtros?.tipoBeneficioId) {
-      queryBuilder.andWhere('solicitacao.tipo_beneficio_id = :tipoBeneficioId', {
-        tipoBeneficioId: filtros.tipoBeneficioId,
-      });
+      queryBuilder.andWhere(
+        'solicitacao.tipo_beneficio_id = :tipoBeneficioId',
+        {
+          tipoBeneficioId: filtros.tipoBeneficioId,
+        },
+      );
     }
 
     if (filtros?.unidadeId) {
@@ -154,15 +162,19 @@ export class HistoricoSolicitacaoRepository {
     const resultados = await queryBuilder.getRawMany();
 
     // Inicializar todos os status com 0
-    const tempoMedio = Object.values(StatusSolicitacao).reduce((acc, status) => {
-      acc[status] = 0;
-      return acc;
-    }, {} as Record<StatusSolicitacao, number>);
+    const tempoMedio = Object.values(StatusSolicitacao).reduce(
+      (acc, status) => {
+        acc[status] = 0;
+        return acc;
+      },
+      {} as Record<StatusSolicitacao, number>,
+    );
 
     // Preencher com os valores reais
-    resultados.forEach(resultado => {
+    resultados.forEach((resultado) => {
       if (resultado.status) {
-        tempoMedio[resultado.status] = parseFloat(resultado.tempo_medio_dias) || 0;
+        tempoMedio[resultado.status] =
+          parseFloat(resultado.tempo_medio_dias) || 0;
       }
     });
 

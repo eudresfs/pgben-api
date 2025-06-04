@@ -236,8 +236,12 @@ export class ValidacaoDinamicaService {
     erros: Array<{ campo: string; mensagem: string }>,
   ): void {
     // Converter strings 'true' e 'false' para boolean
-    if (valor === 'true') {valor = true;}
-    if (valor === 'false') {valor = false;}
+    if (valor === 'true') {
+      valor = true;
+    }
+    if (valor === 'false') {
+      valor = false;
+    }
 
     if (typeof valor !== 'boolean') {
       erros.push({

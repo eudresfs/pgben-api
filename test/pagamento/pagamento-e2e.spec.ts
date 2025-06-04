@@ -11,19 +11,19 @@ import { MetodoPagamentoEnum } from '../../src/modules/pagamento/enums/metodo-pa
 
 /**
  * Testes E2E para o fluxo completo de pagamento
- * 
+ *
  * Este teste valida a integração completa do módulo de pagamento com outros
  * módulos do sistema em um ambiente próximo ao de produção. Testa-se o fluxo
  * completo desde a criação do pagamento até a confirmação de recebimento.
- * 
+ *
  * Execução: npm run test:e2e -- pagamento-e2e
- * 
+ *
  * @author Equipe PGBen
  */
 describe('PagamentoController (e2e)', () => {
   let app: INestApplication;
   let jwtService: JwtService;
-  
+
   // Dados de teste
   const usuarioId = 'e2e-usuario-teste';
   const gestorId = 'e2e-gestor-teste';
@@ -32,7 +32,7 @@ describe('PagamentoController (e2e)', () => {
   const solicitacaoId = 'e2e-solicitacao-teste';
   const beneficiarioId = 'e2e-beneficiario-teste';
   const infoBancariaId = 'e2e-info-bancaria-teste';
-  
+
   // IDs gerados durante os testes
   let pagamentoId: string;
   let comprovanteId: string;
@@ -54,7 +54,7 @@ describe('PagamentoController (e2e)', () => {
             database: ':memory:',
             entities: [__dirname + '/../../src/**/*.entity{.ts,.js}'],
             synchronize: true, // Apenas para testes
-            logging: false
+            logging: false,
           }),
         }),
         JwtModule.registerAsync({
@@ -70,16 +70,18 @@ describe('PagamentoController (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe({
-      transform: true,
-      whitelist: true,
-      forbidNonWhitelisted: true,
-    }));
-    
+    app.useGlobalPipes(
+      new ValidationPipe({
+        transform: true,
+        whitelist: true,
+        forbidNonWhitelisted: true,
+      }),
+    );
+
     jwtService = moduleFixture.get<JwtService>(JwtService);
-    
+
     await app.init();
-    
+
     // Preparar dados necessários para os testes
     await prepararDadosParaTestes();
   });
@@ -87,7 +89,7 @@ describe('PagamentoController (e2e)', () => {
   afterAll(async () => {
     await app.close();
   });
-  
+
   /**
    * Função auxiliar para preparar dados necessários no banco de testes
    * Como estamos usando SQLite em memória, precisamos criar os dados iniciais
@@ -101,37 +103,41 @@ describe('PagamentoController (e2e)', () => {
   /**
    * Função auxiliar para gerar tokens JWT com diferentes perfis
    */
-  const gerarToken = (userId: string, perfis: string[] = ['usuario'], unidadeId: string = 'e2e-unidade-teste') => {
+  const gerarToken = (
+    userId: string,
+    perfis: string[] = ['usuario'],
+    unidadeId: string = 'e2e-unidade-teste',
+  ) => {
     return jwtService.sign({
       sub: userId,
       perfis,
-      unidade: unidadeId
+      unidade: unidadeId,
     });
   };
 
   describe('Fluxo Completo de Pagamento', () => {
     it('1. Deve criar um novo pagamento com sucesso', async () => {
       const token = gerarToken(gestorId, ['gestor', 'financeiro'], unidadeId);
-      
+
       const response = await request(app.getHttpServer())
         .post(`/pagamentos/solicitacao/${solicitacaoId}`)
         .set('Authorization', `Bearer ${token}`)
         .send({
-          valor: 750.00,
+          valor: 750.0,
           metodoPagamento: MetodoPagamentoEnum.PIX,
           infoBancariaId,
           dadosBancarios: {
             pixTipo: 'CPF',
-            pixChave: '12345678900'
+            pixChave: '12345678900',
           },
-          dataLiberacao: new Date().toISOString()
+          dataLiberacao: new Date().toISOString(),
         });
 
       expect(response.status).toBe(201);
       expect(response.body).toHaveProperty('id');
       expect(response.body.status).toBe(StatusPagamentoEnum.AGENDADO);
       expect(response.body.metodoPagamento).toBe(MetodoPagamentoEnum.PIX);
-      
+
       // Guardar ID para próximos testes
       pagamentoId = response.body.id;
     });
@@ -144,7 +150,7 @@ describe('PagamentoController (e2e)', () => {
       }
 
       const token = gerarToken(gestorId, ['gestor'], unidadeId);
-      
+
       const response = await request(app.getHttpServer())
         .get(`/pagamentos/${pagamentoId}`)
         .set('Authorization', `Bearer ${token}`);
@@ -157,7 +163,7 @@ describe('PagamentoController (e2e)', () => {
 
     it('3. Deve listar pagamentos com paginação', async () => {
       const token = gerarToken(gestorId, ['gestor'], unidadeId);
-      
+
       const response = await request(app.getHttpServer())
         .get('/pagamentos')
         .query({ page: 1, limit: 10 })
@@ -167,10 +173,12 @@ describe('PagamentoController (e2e)', () => {
       expect(response.body).toHaveProperty('items');
       expect(response.body).toHaveProperty('meta');
       expect(Array.isArray(response.body.items)).toBe(true);
-      
+
       // Deve encontrar o pagamento criado anteriormente
       if (pagamentoId) {
-        const encontrado = response.body.items.some(item => item.id === pagamentoId);
+        const encontrado = response.body.items.some(
+          (item) => item.id === pagamentoId,
+        );
         expect(encontrado).toBe(true);
       }
     });
@@ -183,13 +191,13 @@ describe('PagamentoController (e2e)', () => {
       }
 
       const token = gerarToken(gestorId, ['gestor', 'financeiro'], unidadeId);
-      
+
       const response = await request(app.getHttpServer())
         .patch(`/pagamentos/${pagamentoId}/status`)
         .set('Authorization', `Bearer ${token}`)
         .send({
           status: StatusPagamentoEnum.LIBERADO,
-          observacoes: 'Pagamento liberado para transferência'
+          observacoes: 'Pagamento liberado para transferência',
         });
 
       expect(response.status).toBe(200);
@@ -204,13 +212,13 @@ describe('PagamentoController (e2e)', () => {
       }
 
       const token = gerarToken(gestorId, ['gestor', 'financeiro'], unidadeId);
-      
+
       const response = await request(app.getHttpServer())
         .patch(`/pagamentos/${pagamentoId}/status`)
         .set('Authorization', `Bearer ${token}`)
         .send({
           status: StatusPagamentoEnum.PAGO,
-          observacoes: 'Transferência PIX realizada'
+          observacoes: 'Transferência PIX realizada',
         });
 
       expect(response.status).toBe(200);
@@ -225,10 +233,12 @@ describe('PagamentoController (e2e)', () => {
       }
 
       const token = gerarToken(gestorId, ['gestor', 'financeiro'], unidadeId);
-      
+
       // Criar buffer simulando um arquivo PDF
-      const buffer = Buffer.from('Conteúdo do comprovante de pagamento para testes e2e');
-      
+      const buffer = Buffer.from(
+        'Conteúdo do comprovante de pagamento para testes e2e',
+      );
+
       const response = await request(app.getHttpServer())
         .post(`/pagamentos/${pagamentoId}/comprovantes`)
         .set('Authorization', `Bearer ${token}`)
@@ -237,7 +247,7 @@ describe('PagamentoController (e2e)', () => {
       expect(response.status).toBe(201);
       expect(response.body).toHaveProperty('id');
       expect(response.body).toHaveProperty('pagamentoId', pagamentoId);
-      
+
       // Guardar ID para próximos testes
       comprovanteId = response.body.id;
     });
@@ -245,12 +255,14 @@ describe('PagamentoController (e2e)', () => {
     it('7. Deve listar comprovantes de um pagamento', async () => {
       // Pular se os testes anteriores falharam
       if (!pagamentoId || !comprovanteId) {
-        console.warn('Pulando teste - pagamentoId ou comprovanteId não disponível');
+        console.warn(
+          'Pulando teste - pagamentoId ou comprovanteId não disponível',
+        );
         return;
       }
 
       const token = gerarToken(gestorId, ['gestor'], unidadeId);
-      
+
       const response = await request(app.getHttpServer())
         .get(`/pagamentos/${pagamentoId}/comprovantes`)
         .set('Authorization', `Bearer ${token}`);
@@ -269,19 +281,19 @@ describe('PagamentoController (e2e)', () => {
       }
 
       const token = gerarToken(beneficiarioId, ['usuario'], unidadeId);
-      
+
       const response = await request(app.getHttpServer())
         .post(`/pagamentos/${pagamentoId}/confirmar`)
         .set('Authorization', `Bearer ${token}`)
         .send({
           observacoes: 'Pagamento recebido via PIX em minha conta',
-          dataConfirmacao: new Date().toISOString()
+          dataConfirmacao: new Date().toISOString(),
         });
 
       expect(response.status).toBe(201);
       expect(response.body).toHaveProperty('id');
       expect(response.body).toHaveProperty('pagamentoId', pagamentoId);
-      
+
       // Guardar ID para próximos testes
       confirmacaoId = response.body.id;
     });
@@ -289,12 +301,14 @@ describe('PagamentoController (e2e)', () => {
     it('9. Deve consultar confirmação de recebimento', async () => {
       // Pular se os testes anteriores falharam
       if (!pagamentoId || !confirmacaoId) {
-        console.warn('Pulando teste - pagamentoId ou confirmacaoId não disponível');
+        console.warn(
+          'Pulando teste - pagamentoId ou confirmacaoId não disponível',
+        );
         return;
       }
 
       const token = gerarToken(gestorId, ['gestor'], unidadeId);
-      
+
       const response = await request(app.getHttpServer())
         .get(`/pagamentos/${pagamentoId}/confirmacao`)
         .set('Authorization', `Bearer ${token}`);
@@ -309,18 +323,20 @@ describe('PagamentoController (e2e)', () => {
     it('10. Deve finalizar o pagamento após confirmação', async () => {
       // Pular se os testes anteriores falharam
       if (!pagamentoId || !confirmacaoId) {
-        console.warn('Pulando teste - pagamentoId ou confirmacaoId não disponível');
+        console.warn(
+          'Pulando teste - pagamentoId ou confirmacaoId não disponível',
+        );
         return;
       }
 
       const token = gerarToken(gestorId, ['gestor', 'financeiro'], unidadeId);
-      
+
       const response = await request(app.getHttpServer())
         .patch(`/pagamentos/${pagamentoId}/status`)
         .set('Authorization', `Bearer ${token}`)
         .send({
           status: StatusPagamentoEnum.FINALIZADO,
-          observacoes: 'Pagamento finalizado após confirmação de recebimento'
+          observacoes: 'Pagamento finalizado após confirmação de recebimento',
         });
 
       expect(response.status).toBe(200);
@@ -330,8 +346,7 @@ describe('PagamentoController (e2e)', () => {
 
   describe('Testes de Segurança E2E', () => {
     it('Deve rejeitar acesso sem autenticação', async () => {
-      const response = await request(app.getHttpServer())
-        .get('/pagamentos');
+      const response = await request(app.getHttpServer()).get('/pagamentos');
 
       expect(response.status).toBe(401);
     });
@@ -346,12 +361,12 @@ describe('PagamentoController (e2e)', () => {
 
     it('Deve rejeitar acesso a recursos restritos por perfil', async () => {
       const token = gerarToken(usuarioId, ['usuario_basico'], unidadeId);
-      
+
       const response = await request(app.getHttpServer())
         .patch(`/pagamentos/${pagamentoId || 'pagamento-id'}/status`)
         .set('Authorization', `Bearer ${token}`)
         .send({
-          status: StatusPagamentoEnum.PAGO
+          status: StatusPagamentoEnum.PAGO,
         });
 
       expect(response.status).toBe(403);
@@ -361,7 +376,7 @@ describe('PagamentoController (e2e)', () => {
   describe('Casos de Erro', () => {
     it('Deve retornar 404 para pagamento inexistente', async () => {
       const token = gerarToken(gestorId, ['gestor'], unidadeId);
-      
+
       const response = await request(app.getHttpServer())
         .get('/pagamentos/pagamento-inexistente')
         .set('Authorization', `Bearer ${token}`);
@@ -375,21 +390,21 @@ describe('PagamentoController (e2e)', () => {
       if (!pagamentoId) {
         // Criar um pagamento específico para este teste
         const token = gerarToken(gestorId, ['gestor', 'financeiro'], unidadeId);
-        
+
         const createResponse = await request(app.getHttpServer())
           .post(`/pagamentos/solicitacao/${solicitacaoId}`)
           .set('Authorization', `Bearer ${token}`)
           .send({
-            valor: 300.00,
+            valor: 300.0,
             metodoPagamento: MetodoPagamentoEnum.PIX,
             infoBancariaId,
             dadosBancarios: {
               pixTipo: 'CPF',
-              pixChave: '12345678900'
+              pixChave: '12345678900',
             },
-            dataLiberacao: new Date().toISOString()
+            dataLiberacao: new Date().toISOString(),
           });
-        
+
         if (createResponse.status === 201) {
           pagamentoId = createResponse.body.id;
         } else {
@@ -399,13 +414,13 @@ describe('PagamentoController (e2e)', () => {
       }
 
       const token = gerarToken(gestorId, ['gestor', 'financeiro'], unidadeId);
-      
+
       // Tentar uma transição inválida (de AGENDADO para FINALIZADO pulando estados)
       const response = await request(app.getHttpServer())
         .patch(`/pagamentos/${pagamentoId}/status`)
         .set('Authorization', `Bearer ${token}`)
         .send({
-          status: StatusPagamentoEnum.FINALIZADO
+          status: StatusPagamentoEnum.FINALIZADO,
         });
 
       expect(response.status).toBe(400);

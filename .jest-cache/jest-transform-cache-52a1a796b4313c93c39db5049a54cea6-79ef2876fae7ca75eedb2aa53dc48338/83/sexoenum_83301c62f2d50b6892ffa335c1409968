@@ -1,0 +1,11 @@
+eb74d551970892d11aadb1bacfba7e9c
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Sexo = void 0;
+var Sexo;
+(function (Sexo) {
+    Sexo["MASCULINO"] = "masculino";
+    Sexo["FEMININO"] = "feminino";
+    Sexo["OUTRO"] = "outro";
+})(Sexo || (exports.Sexo = Sexo = {}));
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXGVudW1zXFxzZXhvLmVudW0udHMiLCJtYXBwaW5ncyI6Ijs7O0FBQUEsSUFBWSxJQUlWO0FBSkYsV0FBWSxJQUFJO0lBQ2IsK0JBQXVCLENBQUE7SUFDdkIsNkJBQXFCLENBQUE7SUFDckIsdUJBQWUsQ0FBQTtBQUNqQixDQUFDLEVBSlUsSUFBSSxvQkFBSixJQUFJLFFBSWQiLCJuYW1lcyI6W10sInNvdXJjZXMiOlsiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXGVudW1zXFxzZXhvLmVudW0udHMiXSwic291cmNlc0NvbnRlbnQiOlsiZXhwb3J0IGVudW0gU2V4byB7XHJcbiAgIE1BU0NVTElOTyA9ICdtYXNjdWxpbm8nLFxyXG4gICBGRU1JTklOTyA9ICdmZW1pbmlubycsXHJcbiAgIE9VVFJPID0gJ291dHJvJyxcclxuIH0iXSwidmVyc2lvbiI6M30=

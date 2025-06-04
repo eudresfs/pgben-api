@@ -8,11 +8,14 @@ import { ParametroNaoEncontradoException } from '../exceptions/parametro-nao-enc
 import { ParametroTipoInvalidoException } from '../exceptions/parametro-tipo-invalido.exception';
 import { ParametroTipoEnum } from '../../../enums/parametro-tipo.enum';
 import { ParametroConverter } from '../util/converters';
-import { ValidationErrorException, InvalidOperationException } from '../../../shared/exceptions';
+import {
+  ValidationErrorException,
+  InvalidOperationException,
+} from '../../../shared/exceptions';
 
 /**
  * Serviço para gerenciamento de parâmetros do sistema
- * 
+ *
  * Responsável por:
  * - Operações CRUD para parâmetros
  * - Sistema de cache para otimização
@@ -22,10 +25,10 @@ import { ValidationErrorException, InvalidOperationException } from '../../../sh
 @Injectable()
 export class ParametroService {
   private readonly logger = new Logger(ParametroService.name);
-  
+
   // Cache em memória para parâmetros (chave -> valor)
   private cache: Map<string, { valor: any; expiraEm: number }> = new Map();
-  
+
   // Tempo padrão de expiração do cache em milissegundos (5 minutos)
   private readonly CACHE_TTL = 5 * 60 * 1000;
 
@@ -55,7 +58,7 @@ export class ParametroService {
    */
   async buscarTodos(categoria?: string): Promise<ParametroResponseDto[]> {
     const parametros = await this.parametroRepository.findAll(categoria);
-    return parametros.map(p => this.mapearParaDto(p));
+    return parametros.map((p) => this.mapearParaDto(p));
   }
 
   /**
@@ -85,7 +88,7 @@ export class ParametroService {
         'chave',
         dto.chave,
         'string',
-        `Parâmetro com chave '${dto.chave}' já existe`
+        `Parâmetro com chave '${dto.chave}' já existe`,
       );
     }
 
@@ -111,7 +114,10 @@ export class ParametroService {
    * @returns DTO de resposta do parâmetro atualizado
    * @throws ParametroNaoEncontradoException se o parâmetro não existir
    */
-  async atualizar(chave: string, dto: ParametroUpdateDto): Promise<ParametroResponseDto> {
+  async atualizar(
+    chave: string,
+    dto: ParametroUpdateDto,
+  ): Promise<ParametroResponseDto> {
     const parametro = await this.parametroRepository.findByChave(chave);
     if (!parametro) {
       throw new ParametroNaoEncontradoException(chave);
@@ -124,13 +130,16 @@ export class ParametroService {
         'editar parâmetro',
         `Parâmetro '${chave}' não é editável`,
         'não editável',
-        'editável'
+        'editável',
       );
     }
 
     // Converter valor para string antes de salvar (se fornecido)
     if (dto.valor !== undefined) {
-      parametro.valor = ParametroConverter.paraString(dto.valor, parametro.tipo);
+      parametro.valor = ParametroConverter.paraString(
+        dto.valor,
+        parametro.tipo,
+      );
     }
 
     if (dto.descricao !== undefined) {
@@ -147,10 +156,10 @@ export class ParametroService {
     // }
 
     const salvo = await this.parametroRepository.save(parametro);
-    
+
     // Invalidar cache para este parâmetro
     this.invalidarCache(chave);
-    
+
     return this.mapearParaDto(salvo);
   }
 
@@ -172,15 +181,15 @@ export class ParametroService {
         'remover parâmetro',
         `Parâmetro '${chave}' não pode ser removido pois não é editável`,
         'não editável',
-        'editável'
+        'editável',
       );
     }
 
     await this.parametroRepository.remove(parametro.id as unknown as number);
-    
+
     // Invalidar cache para este parâmetro
     this.invalidarCache(chave);
-    
+
     this.logger.log(`Parâmetro '${chave}' removido`);
   }
 
@@ -207,17 +216,24 @@ export class ParametroService {
       }
 
       // Converter para o tipo correto
-      const valorConvertido = ParametroConverter.paraValorTipado(chave, parametro.valor, parametro.tipo);
-      
+      const valorConvertido = ParametroConverter.paraValorTipado(
+        chave,
+        parametro.valor,
+        parametro.tipo,
+      );
+
       // Armazenar no cache
       this.cache.set(chave, {
         valor: valorConvertido,
-        expiraEm: Date.now() + this.CACHE_TTL
+        expiraEm: Date.now() + this.CACHE_TTL,
       });
-      
+
       return valorConvertido as T;
     } catch (error) {
-      if (error instanceof ParametroNaoEncontradoException && padrao !== undefined) {
+      if (
+        error instanceof ParametroNaoEncontradoException &&
+        padrao !== undefined
+      ) {
         return padrao;
       }
       throw error;
@@ -235,7 +251,11 @@ export class ParametroService {
     if (typeof valor === 'boolean') {
       return valor;
     }
-    throw new ParametroTipoInvalidoException(chave, valor, ParametroTipoEnum.BOOLEAN);
+    throw new ParametroTipoInvalidoException(
+      chave,
+      valor,
+      ParametroTipoEnum.BOOLEAN,
+    );
   }
 
   /**
@@ -249,7 +269,11 @@ export class ParametroService {
     if (typeof valor === 'number') {
       return valor;
     }
-    throw new ParametroTipoInvalidoException(chave, valor, ParametroTipoEnum.NUMBER);
+    throw new ParametroTipoInvalidoException(
+      chave,
+      valor,
+      ParametroTipoEnum.NUMBER,
+    );
   }
 
   /**
@@ -263,7 +287,11 @@ export class ParametroService {
     if (typeof valor === 'string') {
       return valor;
     }
-    throw new ParametroTipoInvalidoException(chave, valor, ParametroTipoEnum.STRING);
+    throw new ParametroTipoInvalidoException(
+      chave,
+      valor,
+      ParametroTipoEnum.STRING,
+    );
   }
 
   /**
@@ -277,7 +305,11 @@ export class ParametroService {
     if (valor instanceof Date) {
       return valor;
     }
-    throw new ParametroTipoInvalidoException(chave, valor, ParametroTipoEnum.DATE);
+    throw new ParametroTipoInvalidoException(
+      chave,
+      valor,
+      ParametroTipoEnum.DATE,
+    );
   }
 
   /**
@@ -291,7 +323,11 @@ export class ParametroService {
     if (typeof valor === 'object') {
       return valor as T;
     }
-    throw new ParametroTipoInvalidoException(chave, valor, ParametroTipoEnum.JSON);
+    throw new ParametroTipoInvalidoException(
+      chave,
+      valor,
+      ParametroTipoEnum.JSON,
+    );
   }
 
   /**
@@ -304,7 +340,7 @@ export class ParametroService {
         'ttlMs',
         ttlMs,
         'number',
-        'Tempo de cache deve ser maior que zero'
+        'Tempo de cache deve ser maior que zero',
       );
     }
     this.logger.log(`Tempo de cache alterado para ${ttlMs}ms`);
@@ -320,8 +356,15 @@ export class ParametroService {
     dto.chave = parametro.chave;
     dto.descricao = parametro.descricao;
     dto.tipo = parametro.tipo;
-    dto.valor = ParametroConverter.paraValorTipado(parametro.chave, parametro.valor, parametro.tipo);
-    dto.valor_formatado = ParametroConverter.formatarParaExibicao(dto.valor, parametro.tipo);
+    dto.valor = ParametroConverter.paraValorTipado(
+      parametro.chave,
+      parametro.valor,
+      parametro.tipo,
+    );
+    dto.valor_formatado = ParametroConverter.formatarParaExibicao(
+      dto.valor,
+      parametro.tipo,
+    );
     dto.categoria = parametro.categoria;
     // Escopo e editável serão implementados posteriormente
     // dto.escopo = parametro.escopo;

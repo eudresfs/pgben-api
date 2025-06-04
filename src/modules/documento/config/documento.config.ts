@@ -1,6 +1,6 @@
 /**
  * Configuração consolidada para o módulo de documentos
- * 
+ *
  * Este arquivo centraliza todas as configurações relacionadas a documentos,
  * incluindo tipos MIME permitidos e configurações de upload.
  */
@@ -73,54 +73,79 @@ export const MIME_TYPE_CONFIGS: Record<string, MimeTypeConfig> = {
 /**
  * Lista de todos os tipos MIME permitidos (extraída das configurações)
  */
-export const TODOS_MIME_TYPES_PERMITIDOS = Object.values(MIME_TYPE_CONFIGS)
-  .flatMap(config => config.mimeTypes);
+export const TODOS_MIME_TYPES_PERMITIDOS = Object.values(
+  MIME_TYPE_CONFIGS,
+).flatMap((config) => config.mimeTypes);
 
 /**
  * Mapeamento de tipos MIME por categoria
  */
 export const MIME_TYPES_POR_CATEGORIA = {
   DOCUMENTOS: Object.values(MIME_TYPE_CONFIGS)
-    .filter(config => config.category === 'DOCUMENTOS')
-    .flatMap(config => config.mimeTypes),
+    .filter((config) => config.category === 'DOCUMENTOS')
+    .flatMap((config) => config.mimeTypes),
   IMAGENS: Object.values(MIME_TYPE_CONFIGS)
-    .filter(config => config.category === 'IMAGENS')
-    .flatMap(config => config.mimeTypes),
+    .filter((config) => config.category === 'IMAGENS')
+    .flatMap((config) => config.mimeTypes),
   PLANILHAS: Object.values(MIME_TYPE_CONFIGS)
-    .filter(config => config.category === 'PLANILHAS')
-    .flatMap(config => config.mimeTypes),
+    .filter((config) => config.category === 'PLANILHAS')
+    .flatMap((config) => config.mimeTypes),
   // APRESENTACOES: Categoria não definida na interface MimeTypeConfig
   TEXTO: Object.values(MIME_TYPE_CONFIGS)
-    .filter(config => config.category === 'TEXTO')
-    .flatMap(config => config.mimeTypes),
+    .filter((config) => config.category === 'TEXTO')
+    .flatMap((config) => config.mimeTypes),
 };
 
 /**
  * Extensões de arquivo correspondentes aos tipos MIME
  */
-export const EXTENSOES_PERMITIDAS = Object.values(MIME_TYPE_CONFIGS)
-  .reduce((acc, config) => {
-    config.mimeTypes.forEach(mimeType => {
+export const EXTENSOES_PERMITIDAS = Object.values(MIME_TYPE_CONFIGS).reduce(
+  (acc, config) => {
+    config.mimeTypes.forEach((mimeType) => {
       if (!acc[mimeType]) {
         acc[mimeType] = [];
       }
       acc[mimeType].push(`.${config.extension}`);
     });
     return acc;
-  }, {} as Record<string, string[]>);
+  },
+  {} as Record<string, string[]>,
+);
 
 /**
  * Lista de extensões perigosas que devem ser sempre bloqueadas
  */
 export const BLOCKED_EXTENSIONS = [
   // Executáveis
-  'exe', 'bat', 'cmd', 'com', 'scr', 'pif', 'msi', 'dll',
+  'exe',
+  'bat',
+  'cmd',
+  'com',
+  'scr',
+  'pif',
+  'msi',
+  'dll',
   // Scripts
-  'js', 'vbs', 'ps1', 'sh', 'py', 'pl', 'php', 'asp', 'jsp',
+  'js',
+  'vbs',
+  'ps1',
+  'sh',
+  'py',
+  'pl',
+  'php',
+  'asp',
+  'jsp',
   // Arquivos compactados (podem conter malware)
-  'zip', 'rar', '7z', 'tar', 'gz',
+  'zip',
+  'rar',
+  '7z',
+  'tar',
+  'gz',
   // Outros formatos perigosos
-  'html', 'htm', 'xml', 'svg',
+  'html',
+  'htm',
+  'xml',
+  'svg',
 ];
 
 /**
@@ -152,22 +177,22 @@ export const BLOCKED_MIME_TYPES = [
 export const SECURITY_CONFIG = {
   // Tamanho máximo global para qualquer arquivo (20MB)
   MAX_FILE_SIZE: 20 * 1024 * 1024,
-  
+
   // Número máximo de arquivos por upload
   MAX_FILES_PER_UPLOAD: 5,
-  
+
   // Verificar magic numbers (assinatura do arquivo)
   VERIFY_MAGIC_NUMBERS: true,
-  
+
   // Escanear conteúdo em busca de padrões suspeitos
   SCAN_CONTENT: true,
-  
+
   // Verificar vírus/malware
   MALWARE_SCAN: true,
-  
+
   // Criptografar documentos sensíveis
   ENCRYPT_SENSITIVE_DOCS: true,
-  
+
   // Colocar arquivos suspeitos em quarentena
   QUARANTINE_SUSPICIOUS: true,
 };
@@ -178,16 +203,16 @@ export const SECURITY_CONFIG = {
 export const UPLOAD_CONFIG = {
   // Diretório temporário para uploads
   TEMP_DIR: 'uploads/temp',
-  
+
   // Diretório final para documentos
   DOCS_DIR: 'uploads/documentos',
-  
+
   // Diretório para thumbnails
   THUMBNAILS_DIR: 'uploads/thumbnails',
-  
+
   // Tempo limite para upload (em segundos)
   UPLOAD_TIMEOUT: 300,
-  
+
   // Número máximo de tentativas de upload
   MAX_UPLOAD_RETRIES: 3,
 };
@@ -199,9 +224,11 @@ export const UPLOAD_CONFIG = {
 /**
  * Obtém a configuração de um tipo MIME
  */
-export function getMimeTypeConfig(mimeType: string): MimeTypeConfig | undefined {
-  return Object.values(MIME_TYPE_CONFIGS).find(config => 
-    config.mimeTypes.includes(mimeType)
+export function getMimeTypeConfig(
+  mimeType: string,
+): MimeTypeConfig | undefined {
+  return Object.values(MIME_TYPE_CONFIGS).find((config) =>
+    config.mimeTypes.includes(mimeType),
   );
 }
 

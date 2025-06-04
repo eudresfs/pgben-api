@@ -18,7 +18,7 @@ export class AppController {
   getApi(): { status: string; message: string } {
     return {
       status: 'ok',
-      message: 'API PGBen está funcionando!'
+      message: 'API PGBen está funcionando!',
     };
   }
 }

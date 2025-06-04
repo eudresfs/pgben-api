@@ -91,8 +91,6 @@ export class VerificacaoPapelService {
     private readonly dataSource: DataSource,
   ) {}
 
-
-
   /**
    * Converte um cidadão para beneficiário
    * @param cidadaoId ID do cidadão
@@ -126,18 +124,19 @@ export class VerificacaoPapelService {
       }
 
       // Verificar conflitos
-      const conflitos = await this.verificarConflitoPapeis(
-        cidadao.cpf,
-      );
+      const conflitos = await this.verificarConflitoPapeis(cidadao.cpf);
 
       if (conflitos.temConflito) {
         // Registrar histórico de tentativa de conversão
-        await this.historicoService.criarHistorico({
-          cidadao_id: cidadaoId,
-          papel_anterior: conflitos.tipoPapelAtual || 'membro_composicao',
-          papel_novo: 'beneficiario',
-          justificativa: `Conversão bloqueada: ${conflitos.detalhes}`,
-        }, 'sistema');
+        await this.historicoService.criarHistorico(
+          {
+            cidadao_id: cidadaoId,
+            papel_anterior: conflitos.tipoPapelAtual || 'membro_composicao',
+            papel_novo: 'beneficiario',
+            justificativa: `Conversão bloqueada: ${conflitos.detalhes}`,
+          },
+          'sistema',
+        );
 
         return {
           sucesso: false,
@@ -165,12 +164,15 @@ export class VerificacaoPapelService {
       await manager.save(novoPapel);
 
       // Registrar no histórico
-      const historico = await this.historicoService.criarHistorico({
-        cidadao_id: cidadaoId,
-        papel_anterior: conflitos.tipoPapelAtual || 'membro_composicao',
-        papel_novo: 'beneficiario',
-        justificativa: motivoConversao,
-      }, 'sistema');
+      const historico = await this.historicoService.criarHistorico(
+        {
+          cidadao_id: cidadaoId,
+          papel_anterior: conflitos.tipoPapelAtual || 'membro_composicao',
+          papel_novo: 'beneficiario',
+          justificativa: motivoConversao,
+        },
+        'sistema',
+      );
 
       return {
         sucesso: true,
@@ -199,17 +201,19 @@ export class VerificacaoPapelService {
     usuarioId: string,
   ): Promise<ResultadoConversaoPapel> {
     this.logger.log(`Iniciando conversão para beneficiário: CPF ${cpf}`);
-    
+
     // Validar dados do cidadão
     if (!dadosCidadao.nome) {
-      this.logger.warn(`Tentativa de conversão com dados inválidos: CPF ${cpf}`);
+      this.logger.warn(
+        `Tentativa de conversão com dados inválidos: CPF ${cpf}`,
+      );
       throw new BadRequestException('Nome do cidadão é obrigatório');
     }
-    
+
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
-    
+
     this.logger.debug(`Transação iniciada para conversão: CPF ${cpf}`);
 
     try {
@@ -223,7 +227,9 @@ export class VerificacaoPapelService {
 
       // Se já existir um cidadão com este CPF, verificar se já é beneficiário
       if (cidadaoExistente) {
-        this.logger.debug(`Cidadão existente encontrado: ID ${cidadaoExistente.id}`);
+        this.logger.debug(
+          `Cidadão existente encontrado: ID ${cidadaoExistente.id}`,
+        );
         const papelBeneficiario = await this.papelCidadaoRepository.findOne({
           where: {
             cidadao_id: cidadaoExistente.id,
@@ -233,39 +239,48 @@ export class VerificacaoPapelService {
         });
 
         if (papelBeneficiario) {
-          this.logger.warn(`Cidadão já é beneficiário: ID ${cidadaoExistente.id}`);
+          this.logger.warn(
+            `Cidadão já é beneficiário: ID ${cidadaoExistente.id}`,
+          );
           throw new ConflictException('Cidadão já é beneficiário');
         }
       }
 
       // Verificar se o membro está em alguma composição familiar
-      const composicaoFamiliar = await this.composicaoFamiliarRepository.findOne({
-        where: { cpf: cpfLimpo },
-        relations: ['cidadao'],
-      });
+      const composicaoFamiliar =
+        await this.composicaoFamiliarRepository.findOne({
+          where: { cpf: cpfLimpo },
+          relations: ['cidadao'],
+        });
 
       if (!composicaoFamiliar) {
-        this.logger.warn(`Membro não encontrado em composição familiar: CPF ${cpfLimpo}`);
+        this.logger.warn(
+          `Membro não encontrado em composição familiar: CPF ${cpfLimpo}`,
+        );
         throw new BadRequestException(
           'Membro não encontrado em nenhuma composição familiar',
         );
       }
-      
-      this.logger.debug(`Composição familiar encontrada: ID ${composicaoFamiliar.id}`);
+
+      this.logger.debug(
+        `Composição familiar encontrada: ID ${composicaoFamiliar.id}`,
+      );
 
       let cidadao;
       let novoPapel;
 
       // Se o cidadão já existe, apenas adicionar o papel de beneficiário
       if (cidadaoExistente) {
-        this.logger.debug(`Usando cidadão existente: ID ${cidadaoExistente.id}`);
+        this.logger.debug(
+          `Usando cidadão existente: ID ${cidadaoExistente.id}`,
+        );
         cidadao = cidadaoExistente;
-        
+
         // Adicionar papel de beneficiário
         novoPapel = await this.papelCidadaoService.criarPapel(
           cidadao.id,
           TipoPapel.BENEFICIARIO,
-          {}
+          {},
         );
       } else {
         // Criar um novo cidadão com os dados fornecidos
@@ -284,23 +299,25 @@ export class VerificacaoPapelService {
 
         // Criar o cidadão usando o serviço de cidadão
         const cidadaoCriado = await queryRunner.manager.save(
-          this.cidadaoRepository.create(dadosCidadaoCompletos)
+          this.cidadaoRepository.create(dadosCidadaoCompletos),
         );
 
         cidadao = cidadaoCriado;
-        
+
         // Criar papel de beneficiário para o novo cidadão
         novoPapel = await queryRunner.manager.save(
           this.papelCidadaoRepository.create({
             cidadao_id: cidadao.id,
             tipo_papel: TipoPapel.BENEFICIARIO,
             ativo: true,
-          })
+          }),
         );
       }
 
       // Soft delete da composição familiar (marcar como removido)
-      this.logger.debug(`Realizando soft delete da composição familiar: ID ${composicaoFamiliar.id}`);
+      this.logger.debug(
+        `Realizando soft delete da composição familiar: ID ${composicaoFamiliar.id}`,
+      );
       await queryRunner.manager.softRemove(composicaoFamiliar);
 
       // Registrar histórico de conversão
@@ -309,9 +326,9 @@ export class VerificacaoPapelService {
           cidadao_id: cidadao.id,
           papel_anterior: TipoPapel.MEMBRO_COMPOSICAO,
           papel_novo: TipoPapel.BENEFICIARIO,
-          justificativa
+          justificativa,
         },
-        usuarioId
+        usuarioId,
       );
 
       await queryRunner.commitTransaction();
@@ -322,7 +339,9 @@ export class VerificacaoPapelService {
         historicoId: historico.id,
       };
     } catch (error) {
-      this.logger.warn(`Erro durante a conversão para beneficiário: ${error.message}`);
+      this.logger.warn(
+        `Erro durante a conversão para beneficiário: ${error.message}`,
+      );
       await queryRunner.rollbackTransaction();
       this.logger.debug('Transação revertida após erro');
 
@@ -342,7 +361,7 @@ export class VerificacaoPapelService {
         nome: dadosCidadao?.nome,
         timestamp: new Date().toISOString(),
       };
-      
+
       this.logger.error(
         `Erro ao converter para beneficiário: ${JSON.stringify(errorDetails)}`,
         error.stack,
@@ -376,17 +395,21 @@ export class VerificacaoPapelService {
     usuarioId: string,
   ): Promise<ResultadoConversaoPapel> {
     this.logger.log(`Iniciando conversão para composição familiar: CPF ${cpf}`);
-    
+
     // Validar dados da composição familiar
     if (!dadosComposicao || !cidadaoAlvoId) {
-      this.logger.warn(`Tentativa de conversão com dados inválidos: CPF ${cpf}`);
-      throw new BadRequestException('Dados da composição familiar e ID do cidadão alvo são obrigatórios');
+      this.logger.warn(
+        `Tentativa de conversão com dados inválidos: CPF ${cpf}`,
+      );
+      throw new BadRequestException(
+        'Dados da composição familiar e ID do cidadão alvo são obrigatórios',
+      );
     }
-    
+
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
-    
+
     this.logger.debug(`Transação iniciada para conversão: CPF ${cpf}`);
 
     try {
@@ -402,7 +425,7 @@ export class VerificacaoPapelService {
         this.logger.warn(`Cidadão não encontrado: CPF ${cpfLimpo}`);
         throw new NotFoundException('Cidadão não encontrado');
       }
-      
+
       this.logger.debug(`Cidadão encontrado: ID ${cidadao.id}`);
 
       // Verificar se o cidadão alvo existe
@@ -414,7 +437,7 @@ export class VerificacaoPapelService {
         this.logger.warn(`Cidadão alvo não encontrado: ID ${cidadaoAlvoId}`);
         throw new NotFoundException('Cidadão alvo não encontrado');
       }
-      
+
       this.logger.debug(`Cidadão alvo encontrado: ID ${cidadaoAlvo.id}`);
 
       // Verificar se o cidadão é beneficiário
@@ -430,25 +453,32 @@ export class VerificacaoPapelService {
         this.logger.warn(`Cidadão não é beneficiário: ID ${cidadao.id}`);
         throw new BadRequestException('Cidadão não é beneficiário');
       }
-      
-      this.logger.debug(`Papel beneficiário encontrado: ID ${papelBeneficiario.id}`);
+
+      this.logger.debug(
+        `Papel beneficiário encontrado: ID ${papelBeneficiario.id}`,
+      );
 
       // Verificar se o cidadão já está em alguma composição familiar
-      const composicaoExistente = await this.composicaoFamiliarRepository.findOne({
-        where: { cpf: cpfLimpo },
-      });
+      const composicaoExistente =
+        await this.composicaoFamiliarRepository.findOne({
+          where: { cpf: cpfLimpo },
+        });
 
       if (composicaoExistente) {
-        this.logger.warn(`Cidadão já está em uma composição familiar: ID ${composicaoExistente.id}`);
+        this.logger.warn(
+          `Cidadão já está em uma composição familiar: ID ${composicaoExistente.id}`,
+        );
         throw new ConflictException(
           'Cidadão já está em uma composição familiar',
         );
       }
-      
+
       this.logger.debug('Cidadão não está em nenhuma composição familiar');
 
       // Criar composição familiar
-      this.logger.debug(`Criando nova composição familiar para o cidadão: ID ${cidadao.id}`);
+      this.logger.debug(
+        `Criando nova composição familiar para o cidadão: ID ${cidadao.id}`,
+      );
       const novaComposicao = this.composicaoFamiliarRepository.create({
         ...dadosComposicao,
         cpf: cpfLimpo,
@@ -457,7 +487,9 @@ export class VerificacaoPapelService {
       });
 
       await queryRunner.manager.save(novaComposicao);
-      this.logger.debug(`Nova composição familiar criada: ID ${novaComposicao.id}`);
+      this.logger.debug(
+        `Nova composição familiar criada: ID ${novaComposicao.id}`,
+      );
 
       // Soft delete do cidadão (marcar como removido)
       this.logger.debug(`Realizando soft delete do cidadão: ID ${cidadao.id}`);
@@ -472,18 +504,21 @@ export class VerificacaoPapelService {
           justificativa,
           composicao_familiar_id: novaComposicao.id,
         },
-        usuarioId
+        usuarioId,
       );
 
       await queryRunner.commitTransaction();
 
       return {
         sucesso: true,
-        mensagem: 'Cidadão convertido para membro de composição familiar com sucesso',
+        mensagem:
+          'Cidadão convertido para membro de composição familiar com sucesso',
         historicoId: historico.id,
       };
     } catch (error) {
-      this.logger.warn(`Erro durante a conversão para composição familiar: ${error.message}`);
+      this.logger.warn(
+        `Erro durante a conversão para composição familiar: ${error.message}`,
+      );
       await queryRunner.rollbackTransaction();
       this.logger.debug('Transação revertida após erro');
 
@@ -503,7 +538,7 @@ export class VerificacaoPapelService {
         cidadaoAlvoId,
         timestamp: new Date().toISOString(),
       };
-      
+
       this.logger.error(
         `Erro ao converter para composição familiar: ${JSON.stringify(errorDetails)}`,
         error.stack,
@@ -542,7 +577,7 @@ export class VerificacaoPapelService {
       });
 
       // Simular a lista de papéis que o cidadão teria
-      const todosPapeis = [...papeisCidadao.map(p => p.id), ...papelIds];
+      const todosPapeis = [...papeisCidadao.map((p) => p.id), ...papelIds];
 
       // Verificar conflitos com base nas regras de negócio
       const regrasConflito = await this.listarRegrasConflito();
@@ -550,7 +585,9 @@ export class VerificacaoPapelService {
 
       // Verificar cada regra de conflito
       for (const regra of regrasConflito) {
-        if (!regra.ativo) {continue;}
+        if (!regra.ativo) {
+          continue;
+        }
 
         // Verificar se a regra se aplica aos papéis do cidadão
         const temPapelOrigem = todosPapeis.includes(regra.papel_origem_id);
@@ -558,8 +595,12 @@ export class VerificacaoPapelService {
 
         if (temPapelOrigem && temPapelDestino) {
           conflitos.push({
-            papel_id: papelIds.includes(regra.papel_origem_id) ? regra.papel_origem_id : regra.papel_destino_id,
-            nome_papel: papelIds.includes(regra.papel_origem_id) ? regra.papel_origem_nome : regra.papel_destino_nome,
+            papel_id: papelIds.includes(regra.papel_origem_id)
+              ? regra.papel_origem_id
+              : regra.papel_destino_id,
+            nome_papel: papelIds.includes(regra.papel_origem_id)
+              ? regra.papel_origem_nome
+              : regra.papel_destino_nome,
             regra_conflito: regra.descricao,
           });
         }
@@ -613,11 +654,17 @@ export class VerificacaoPapelService {
 
       // Verificar cada regra de conflito
       for (const regra of regrasConflito) {
-        if (!regra.ativo) {continue;}
+        if (!regra.ativo) {
+          continue;
+        }
 
         // Verificar se a regra se aplica aos papéis do cidadão
-        const temPapelOrigem = papeisCidadao.some(p => p.id === regra.papel_origem_id);
-        const temPapelDestino = papeisCidadao.some(p => p.id === regra.papel_destino_id);
+        const temPapelOrigem = papeisCidadao.some(
+          (p) => p.id === regra.papel_origem_id,
+        );
+        const temPapelDestino = papeisCidadao.some(
+          (p) => p.id === regra.papel_destino_id,
+        );
 
         if (temPapelOrigem && temPapelDestino) {
           conflitos.push({
@@ -661,7 +708,8 @@ export class VerificacaoPapelService {
           papel_origem_nome: 'Beneficiário',
           papel_destino_id: '2',
           papel_destino_nome: 'Membro de Composição Familiar',
-          descricao: 'Um cidadão não pode ser beneficiário e membro de composição familiar ao mesmo tempo',
+          descricao:
+            'Um cidadão não pode ser beneficiário e membro de composição familiar ao mesmo tempo',
           ativo: true,
         },
         {
@@ -670,7 +718,8 @@ export class VerificacaoPapelService {
           papel_origem_nome: 'Responsável Familiar',
           papel_destino_id: '4',
           papel_destino_nome: 'Dependente',
-          descricao: 'Um cidadão não pode ser responsável familiar e dependente ao mesmo tempo',
+          descricao:
+            'Um cidadão não pode ser responsável familiar e dependente ao mesmo tempo',
           ativo: true,
         },
         {
@@ -679,7 +728,8 @@ export class VerificacaoPapelService {
           papel_origem_nome: 'Servidor Público',
           papel_destino_id: '1',
           papel_destino_nome: 'Beneficiário',
-          descricao: 'Um servidor público não pode ser beneficiário de programas sociais',
+          descricao:
+            'Um servidor público não pode ser beneficiário de programas sociais',
           ativo: true,
         },
       ];
@@ -739,7 +789,8 @@ export class VerificacaoPapelService {
           temConflito: true,
           tipoPapelAtual: 'beneficiario',
           cidadaoId: cidadao.id,
-          detalhes: 'Cidadão não pode ser beneficiário e requerente simultaneamente',
+          detalhes:
+            'Cidadão não pode ser beneficiário e requerente simultaneamente',
         };
       }
 

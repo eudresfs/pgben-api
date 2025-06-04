@@ -1,5 +1,21 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn, Index } from 'typeorm';
-import { IsNotEmpty, IsUUID, IsEnum, IsOptional, IsString, Length } from 'class-validator';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+  Index,
+} from 'typeorm';
+import {
+  IsNotEmpty,
+  IsUUID,
+  IsEnum,
+  IsOptional,
+  IsString,
+  Length,
+} from 'class-validator';
 import { Permission } from './permission.entity';
 import { Usuario } from './usuario.entity';
 
@@ -11,28 +27,28 @@ export enum TipoEscopo {
    * Escopo global (acesso a todos os recursos)
    */
   GLOBAL = 'GLOBAL',
-  
+
   /**
    * Escopo limitado a uma unidade específica
    */
   UNIDADE = 'UNIDADE',
-  
+
   /**
    * Escopo limitado ao próprio usuário
    */
-  PROPRIO = 'PROPRIO'
+  PROPRIO = 'PROPRIO',
 }
 
 // Mapeamento para compatibilidade com código existente
 export const ScopeType = {
   GLOBAL: TipoEscopo.GLOBAL,
   UNIT: TipoEscopo.UNIDADE,
-  SELF: TipoEscopo.PROPRIO
+  SELF: TipoEscopo.PROPRIO,
 };
 
 /**
  * Entidade que representa permissões atribuídas diretamente a usuários.
- * 
+ *
  * Estas permissões podem sobrepor-se às permissões da role do usuário,
  * permitindo conceder ou revogar permissões específicas.
  */
@@ -94,7 +110,7 @@ export class UserPermission {
     type: 'varchar',
     length: 20,
     name: 'tipo_escopo',
-    default: TipoEscopo.GLOBAL
+    default: TipoEscopo.GLOBAL,
   })
   @IsEnum(TipoEscopo, { message: 'Tipo de escopo inválido' })
   tipo_escopo: TipoEscopo;

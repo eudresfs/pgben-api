@@ -45,7 +45,7 @@ import { PermissionModule } from './permission.module';
 
 /**
  * Módulo de Autenticação e Autorização
- * 
+ *
  * Responsável por:
  * - Autenticação JWT e local
  * - Gerenciamento de tokens de refresh
@@ -56,18 +56,14 @@ import { PermissionModule } from './permission.module';
 @Module({
   imports: [
     // Configuração do Passport
-    PassportModule.register({ 
+    PassportModule.register({
       defaultStrategy: 'jwt',
       property: 'user',
-      session: false 
+      session: false,
     }),
 
     // Entidades do TypeORM
-    TypeOrmModule.forFeature([
-      RefreshToken,
-      PasswordResetToken,
-      JwtBlacklist,
-    ]),
+    TypeOrmModule.forFeature([RefreshToken, PasswordResetToken, JwtBlacklist]),
 
     // Configuração assíncrona do JWT
     JwtModule.registerAsync({
@@ -152,7 +148,7 @@ export class AuthModule {
    */
   constructor(private readonly configService: ConfigService) {
     const isDevelopment = this.configService.get('NODE_ENV') !== 'production';
-    
+
     if (isDevelopment) {
       console.log('AuthModule initialized');
       console.log('Available guards: JWT, Roles, Permission');

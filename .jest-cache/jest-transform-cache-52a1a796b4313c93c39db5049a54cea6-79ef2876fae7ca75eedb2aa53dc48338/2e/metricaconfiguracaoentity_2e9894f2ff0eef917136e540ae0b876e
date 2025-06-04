@@ -1,0 +1,255 @@
+c6c358d2fba7a9b1b522e45befbfe411
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var _a, _b, _c, _d;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.MetricaConfiguracao = exports.EstrategiaAmostragem = exports.TipoAgendamento = void 0;
+const typeorm_1 = require("typeorm");
+const metrica_definicao_entity_1 = require("./metrica-definicao.entity");
+/**
+ * Tipos de agendamento de coleta de métricas
+ */
+var TipoAgendamento;
+(function (TipoAgendamento) {
+    /** Intervalo fixo em segundos */
+    TipoAgendamento["INTERVALO"] = "intervalo";
+    /** Expressão cron para agendamento mais complexo */
+    TipoAgendamento["CRON"] = "cron";
+    /** Coleta baseada em eventos específicos */
+    TipoAgendamento["EVENTO"] = "evento";
+    /** Coleta manual via API */
+    TipoAgendamento["MANUAL"] = "manual";
+})(TipoAgendamento || (exports.TipoAgendamento = TipoAgendamento = {}));
+/**
+ * Estratégias de amostragem para coleta de dados
+ */
+var EstrategiaAmostragem;
+(function (EstrategiaAmostragem) {
+    /** Coleta todos os dados disponíveis */
+    EstrategiaAmostragem["COMPLETA"] = "completa";
+    /** Amostragem aleatória */
+    EstrategiaAmostragem["ALEATORIA"] = "aleatoria";
+    /** Amostragem sistemática (a cada N registros) */
+    EstrategiaAmostragem["SISTEMATICA"] = "sistematica";
+    /** Amostragem estratificada por dimensão */
+    EstrategiaAmostragem["ESTRATIFICADA"] = "estratificada";
+})(EstrategiaAmostragem || (exports.EstrategiaAmostragem = EstrategiaAmostragem = {}));
+/**
+ * Configuração para coleta, armazenamento e exibição de uma métrica
+ *
+ * Esta entidade permite configurar como uma métrica será coletada,
+ * processada, armazenada e exibida no sistema.
+ */
+let MetricaConfiguracao = class MetricaConfiguracao {
+    id;
+    /**
+     * Referência para a definição da métrica
+     */
+    metrica_id;
+    /**
+     * Relacionamento com a definição da métrica
+     *
+     * Usando lazy loading para evitar dependências circulares
+     */
+    metrica;
+    /**
+     * Habilita ou desabilita a coleta automática
+     */
+    coleta_automatica;
+    /**
+     * Tipo de agendamento para coleta automática
+     */
+    tipo_agendamento;
+    /**
+     * Valor do intervalo de coleta em segundos (para tipo INTERVALO)
+     */
+    intervalo_segundos;
+    /**
+     * Expressão cron para agendamento complexo (para tipo CRON)
+     * Exemplo: '0 0 * * *' (diariamente à meia-noite)
+     */
+    expressao_cron;
+    /**
+     * Nome do evento que dispara a coleta (para tipo EVENTO)
+     * Exemplo: 'beneficio_aprovado', 'usuario_cadastrado'
+     */
+    nome_evento;
+    /**
+     * Número máximo de snapshots a serem mantidos
+     * (0 = sem limite, mantém todo o histórico)
+     */
+    max_snapshots;
+    /**
+     * Período máximo de retenção em dias
+     * (0 = sem limite, mantém todo o histórico)
+     */
+    periodo_retencao_dias;
+    /**
+     * Estratégia de amostragem para coleta de dados
+     */
+    estrategia_amostragem;
+    /**
+     * Tamanho da amostra (quando aplicável)
+     */
+    tamanho_amostra;
+    /**
+     * Habilita ou desabilita o cacheamento dos valores
+     */
+    cacheamento_habilitado;
+    /**
+     * Tempo de vida do cache em segundos
+     */
+    cache_ttl;
+    /**
+     * Configurações de alertas baseados no valor da métrica
+     * Exemplo: [
+     *   { "tipo": "valor_maximo", "valor": 100, "mensagem": "Valor excedeu o limite", "severidade": "alta" },
+     *   { "tipo": "valor_minimo", "valor": 10, "mensagem": "Valor abaixo do mínimo", "severidade": "media" }
+     * ]
+     */
+    alertas;
+    /**
+     * Configurações de visualização
+     * Exemplo: { "cor": "#FF5500", "icone": "chart-line", "destaque": true }
+     */
+    visualizacao;
+    /**
+     * Flag que indica se a métrica deve ser exibida em dashboards
+     */
+    exibir_dashboard;
+    /**
+     * Prioridade de exibição (ordem) no dashboard (menor = mais importante)
+     */
+    prioridade_dashboard;
+    /**
+     * Usuário que criou a configuração
+     */
+    criado_por;
+    /**
+     * Usuário que atualizou a configuração pela última vez
+     */
+    atualizado_por;
+    /**
+     * Data de criação do registro
+     */
+    created_at;
+    /**
+     * Data da última atualização do registro
+     */
+    updated_at;
+};
+exports.MetricaConfiguracao = MetricaConfiguracao;
+__decorate([
+    (0, typeorm_1.PrimaryGeneratedColumn)('uuid'),
+    __metadata("design:type", String)
+], MetricaConfiguracao.prototype, "id", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'uuid' }),
+    __metadata("design:type", String)
+], MetricaConfiguracao.prototype, "metrica_id", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => metrica_definicao_entity_1.MetricaDefinicao, (definicao) => definicao.configuracoes, { onDelete: 'CASCADE', lazy: true }),
+    (0, typeorm_1.JoinColumn)({ name: 'metrica_id' }),
+    __metadata("design:type", typeof (_a = typeof Promise !== "undefined" && Promise) === "function" ? _a : Object)
+], MetricaConfiguracao.prototype, "metrica", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ default: true }),
+    __metadata("design:type", Boolean)
+], MetricaConfiguracao.prototype, "coleta_automatica", void 0);
+__decorate([
+    (0, typeorm_1.Column)({
+        type: 'enum',
+        enum: TipoAgendamento,
+        enumName: 'tipo_agendamento',
+        default: TipoAgendamento.INTERVALO,
+    }),
+    __metadata("design:type", String)
+], MetricaConfiguracao.prototype, "tipo_agendamento", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ default: 86400 }) // Padrão: 1 dia
+    ,
+    __metadata("design:type", Number)
+], MetricaConfiguracao.prototype, "intervalo_segundos", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ length: 100, nullable: true }),
+    __metadata("design:type", String)
+], MetricaConfiguracao.prototype, "expressao_cron", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ length: 100, nullable: true }),
+    __metadata("design:type", String)
+], MetricaConfiguracao.prototype, "nome_evento", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ default: 0 }),
+    __metadata("design:type", Number)
+], MetricaConfiguracao.prototype, "max_snapshots", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ default: 365 }),
+    __metadata("design:type", Number)
+], MetricaConfiguracao.prototype, "periodo_retencao_dias", void 0);
+__decorate([
+    (0, typeorm_1.Column)({
+        type: 'enum',
+        enum: EstrategiaAmostragem,
+        enumName: 'estrategia_amostragem',
+        default: EstrategiaAmostragem.COMPLETA,
+    }),
+    __metadata("design:type", String)
+], MetricaConfiguracao.prototype, "estrategia_amostragem", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ default: 0 }),
+    __metadata("design:type", Number)
+], MetricaConfiguracao.prototype, "tamanho_amostra", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ default: true }),
+    __metadata("design:type", Boolean)
+], MetricaConfiguracao.prototype, "cacheamento_habilitado", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ default: 300 }) // Padrão: 5 minutos
+    ,
+    __metadata("design:type", Number)
+], MetricaConfiguracao.prototype, "cache_ttl", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'jsonb', nullable: true }),
+    __metadata("design:type", Array)
+], MetricaConfiguracao.prototype, "alertas", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'jsonb', nullable: true }),
+    __metadata("design:type", typeof (_b = typeof Record !== "undefined" && Record) === "function" ? _b : Object)
+], MetricaConfiguracao.prototype, "visualizacao", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ default: true }),
+    __metadata("design:type", Boolean)
+], MetricaConfiguracao.prototype, "exibir_dashboard", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ default: 100 }),
+    __metadata("design:type", Number)
+], MetricaConfiguracao.prototype, "prioridade_dashboard", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ length: 100, nullable: true }),
+    __metadata("design:type", String)
+], MetricaConfiguracao.prototype, "criado_por", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ length: 100, nullable: true }),
+    __metadata("design:type", String)
+], MetricaConfiguracao.prototype, "atualizado_por", void 0);
+__decorate([
+    (0, typeorm_1.CreateDateColumn)(),
+    __metadata("design:type", typeof (_c = typeof Date !== "undefined" && Date) === "function" ? _c : Object)
+], MetricaConfiguracao.prototype, "created_at", void 0);
+__decorate([
+    (0, typeorm_1.UpdateDateColumn)(),
+    __metadata("design:type", typeof (_d = typeof Date !== "undefined" && Date) === "function" ? _d : Object)
+], MetricaConfiguracao.prototype, "updated_at", void 0);
+exports.MetricaConfiguracao = MetricaConfiguracao = __decorate([
+    (0, typeorm_1.Entity)('metrica_configuracao'),
+    (0, typeorm_1.Index)(['metrica_id'])
+], MetricaConfiguracao);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXGVudGl0aWVzXFxtZXRyaWNhLWNvbmZpZ3VyYWNhby5lbnRpdHkudHMiLCJtYXBwaW5ncyI6Ijs7Ozs7Ozs7Ozs7OztBQUFBLHFDQUFtSTtBQUNuSSx5RUFBOEQ7QUFFOUQ7O0dBRUc7QUFDSCxJQUFZLGVBWVg7QUFaRCxXQUFZLGVBQWU7SUFDekIsaUNBQWlDO0lBQ2pDLDBDQUF1QixDQUFBO0lBRXZCLG9EQUFvRDtJQUNwRCxnQ0FBYSxDQUFBO0lBRWIsNENBQTRDO0lBQzVDLG9DQUFpQixDQUFBO0lBRWpCLDRCQUE0QjtJQUM1QixvQ0FBaUIsQ0FBQTtBQUNuQixDQUFDLEVBWlcsZUFBZSwrQkFBZixlQUFlLFFBWTFCO0FBRUQ7O0dBRUc7QUFDSCxJQUFZLG9CQVlYO0FBWkQsV0FBWSxvQkFBb0I7SUFDOUIsd0NBQXdDO0lBQ3hDLDZDQUFxQixDQUFBO0lBRXJCLDJCQUEyQjtJQUMzQiwrQ0FBdUIsQ0FBQTtJQUV2QixrREFBa0Q7SUFDbEQsbURBQTJCLENBQUE7SUFFM0IsNENBQTRDO0lBQzVDLHVEQUErQixDQUFBO0FBQ2pDLENBQUMsRUFaVyxvQkFBb0Isb0NBQXBCLG9CQUFvQixRQVkvQjtBQUVEOzs7OztHQUtHO0FBR0ksSUFBTSxtQkFBbUIsR0FBekIsTUFBTSxtQkFBbUI7SUFFOUIsRUFBRSxDQUFTO0lBRVg7O09BRUc7SUFFSCxVQUFVLENBQVM7SUFFbkI7Ozs7T0FJRztJQUdILE9BQU8sQ0FBNEI7SUFFbkM7O09BRUc7SUFFSCxpQkFBaUIsQ0FBVTtJQUUzQjs7T0FFRztJQU9ILGdCQUFnQixDQUFrQjtJQUVsQzs7T0FFRztJQUVILGtCQUFrQixDQUFTO0lBRTNCOzs7T0FHRztJQUVILGNBQWMsQ0FBUztJQUV2Qjs7O09BR0c7SUFFSCxXQUFXLENBQVM7SUFFcEI7OztPQUdHO0lBRUgsYUFBYSxDQUFTO0lBRXRCOzs7T0FHRztJQUVILHFC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QUM7a0RBQzVCLE1BQU0sb0JBQU4sTUFBTTt5REFBYztBQU1sQztJQURDLElBQUEsZ0JBQU0sRUFBQyxFQUFFLE9BQU8sRUFBRSxJQUFJLEVBQUUsQ0FBQzs7NkRBQ0E7QUFNMUI7SUFEQyxJQUFBLGdCQUFNLEVBQUMsRUFBRSxPQUFPLEVBQUUsR0FBRyxFQUFFLENBQUM7O2lFQUNJO0FBTTdCO0lBREMsSUFBQSxnQkFBTSxFQUFDLEVBQUUsTUFBTSxFQUFFLEdBQUcsRUFBRSxRQUFRLEVBQUUsSUFBSSxFQUFFLENBQUM7O3VEQUNyQjtBQU1uQjtJQURDLElBQUEsZ0JBQU0sRUFBQyxFQUFFLE1BQU0sRUFBRSxHQUFHLEVBQUUsUUFBUSxFQUFFLElBQUksRUFBRSxDQUFDOzsyREFDakI7QUFNdkI7SUFEQyxJQUFBLDBCQUFnQixHQUFFO2tEQUNQLElBQUksb0JBQUosSUFBSTt1REFBQztBQU1qQjtJQURDLElBQUEsMEJBQWdCLEdBQUU7a0RBQ1AsSUFBSSxvQkFBSixJQUFJO3VEQUFDOzhCQXRKTixtQkFBbUI7SUFGL0IsSUFBQSxnQkFBTSxFQUFDLHNCQUFzQixDQUFDO0lBQzlCLElBQUEsZUFBSyxFQUFDLENBQUMsWUFBWSxDQUFDLENBQUM7R0FDVCxtQkFBbUIsQ0F1Si9CIiwibmFtZXMiOltdLCJzb3VyY2VzIjpbIkM6XFxVc2Vyc1xcZXVkcmVcXE9uZURyaXZlXFxEZXNrdG9wXFxQcm9qZXRvc1xccGdiZW5cXHBnYmVuLXNlcnZlclxcc3JjXFxlbnRpdGllc1xcbWV0cmljYS1jb25maWd1cmFjYW8uZW50aXR5LnRzIl0sInNvdXJjZXNDb250ZW50IjpbImltcG9ydCB7IEVudGl0eSwgQ29sdW1uLCBQcmltYXJ5R2VuZXJhdGVkQ29sdW1uLCBDcmVhdGVEYXRlQ29sdW1uLCBVcGRhdGVEYXRlQ29sdW1uLCBNYW55VG9PbmUsIEpvaW5Db2x1bW4sIEluZGV4IH0gZnJvbSAndHlwZW9ybSc7XG5pbXBvcnQgeyBNZXRyaWNhRGVmaW5pY2FvIH0gZnJvbSAnLi9tZXRyaWNhLWRlZmluaWNhby5lbnRpdHknO1xuXG4vKipcbiAqIFRpcG9zIGRlIGFnZW5kYW1lbnRvIGRlIGNvbGV0YSBkZSBtw6l0cmljYXNcbiAqL1xuZXhwb3J0IGVudW0gVGlwb0FnZW5kYW1lbnRvIHtcbiAgLyoqIEludGVydmFsbyBmaXhvIGVtIHNlZ3VuZG9zICovXG4gIElOVEVSVkFMTyA9ICdpbnRlcnZhbG8nLFxuICBcbiAgLyoqIEV4cHJlc3PDo28gY3JvbiBwYXJhIGFnZW5kYW1lbnRvIG1haXMgY29tcGxleG8gKi9cbiAgQ1JPTiA9ICdjcm9uJyxcbiAgXG4gIC8qKiBDb2xldGEgYmFzZWFkYSBlbSBldmVudG9zIGVzcGVjw61maWNvcyAqL1xuICBFVkVOVE8gPSAnZXZlbnRvJyxcbiAgXG4gIC8qKiBDb2xldGEgbWFudWFsIHZpYSBBUEkgKi9cbiAgTUFOVUFMID0gJ21hbnVhbCcsXG59XG5cbi8qKlxuICogRXN0cmF0w6lnaWFzIGRlIGFtb3N0cmFnZW0gcGFyYSBjb2xldGEgZGUgZGFkb3NcbiAqL1xuZXhwb3J0IGVudW0gRXN0cmF0ZWdpYUFtb3N0cmFnZW0ge1xuICAvKiogQ29sZXRhIHRvZG9zIG9zIGRhZG9zIGRpc3BvbsOtdmVpcyAqL1xuICBDT01QTEVUQSA9ICdjb21wbGV0YScsXG4gIFxuICAvKiogQW1vc3RyYWdlbSBhbGVhdMOzcmlhICovXG4gIEFMRUFUT1JJQSA9ICdhbGVhdG9yaWEnLFxuICBcbiAgLyoqIEFtb3N0cmFnZW0gc2lzdGVtw6F0aWNhIChhIGNhZGEgTiByZWdpc3Ryb3MpICovXG4gIFNJU1RFTUFUSUNBID0gJ3Npc3RlbWF0aWNhJyxcbiAgXG4gIC8qKiBBbW9zdHJhZ2VtIGVzdHJhdGlmaWNhZGEgcG9yIGRpbWVuc8OjbyAqL1xuICBFU1RSQVRJRklDQURBID0gJ2VzdHJhdGlmaWNhZGEnLFxufVxuXG4vKipcbiAqIENvbmZpZ3VyYcOnw6NvIHBhcmEgY29sZXRhLCBhcm1hemVuYW1lbnRvIGUgZXhpYmnDp8OjbyBkZSB1bWEgbcOpdHJpY2FcbiAqIFxuICogRXN0YSBlbnRpZGFkZSBwZXJtaXRlIGNvbmZpZ3VyYXIgY29tbyB1bWEgbcOpdHJpY2Egc2Vyw6EgY29sZXRhZGEsXG4gKiBwcm9jZXNzYWRhLCBhcm1hemVuYWRhIGUgZXhpYmlkYSBubyBzaXN0ZW1hLlxuICovXG5ARW50aXR5KCdtZXRyaWNhX2NvbmZpZ3VyYWNhbycpXG5ASW5kZXgoWydtZXRyaWNhX2lkJ10pXG5leHBvcnQgY2xhc3MgTWV0cmljYUNvbmZpZ3VyYWNhbyB7XG4gIEBQcmltYXJ5R2VuZXJhdGVkQ29sdW1uKCd1dWlkJylcbiAgaWQ6IHN0cmluZztcblxuICAvKipcbiAgICogUmVmZXLDqm5jaWEgcGFyYSBhIGRlZmluacOnw6NvIGRhIG3DqXRyaWNhXG4gICAqL1xuICBAQ29sdW1uKHsgdHlwZTogJ3V1aWQnIH0pXG4gIG1ldHJpY2FfaWQ6IHN0cmluZztcblxuICAvKipcbiAgICogUmVsYWNpb25hbWVudG8gY29tIGEgZGVmaW5pw6fDo28gZGEgbcOpdHJpY2FcbiAgICogXG4gICAqIFVzYW5kbyBsYXp5IGxvYWRpbmcgcGFyYSBldml0YXIgZGVwZW5kw6puY2lhcyBjaXJjdWxhcmVzXG4gICAqL1xuICBATWFueVRvT25lKCgpID0+IE1ldHJpY2FEZWZpbmljYW8sIChkZWZpbmljYW8pID0+IGRlZmluaWNhby5jb25maWd1cmFjb2VzLCB7IG9uRGVsZXRlOiAnQ0FTQ0FERScsIGxhenk6IHRydWUgfSlcbiAgQEpvaW5Db2x1bW4oeyBuYW1lOiAnbWV0cmljYV9pZCcgfSlcbiAgbWV0cmljYTogUHJvbWlzZTxNZXRyaWNhRGVmaW5pY2FvPjtcblxuICAvKipcbiAgICogSGFiaWxpdGEgb3UgZGVzYWJpbGl0YSBhIGNvbGV0YSBhdXRvbcOhdGljYVxuICAgKi9cbiAgQENvbHVtbih7IGRlZmF1bHQ6IHRydWUgfSlcbiAgY29sZXRhX2F1dG9tYXRpY2E6IGJvb2xlYW47XG5cbiAgLyoqXG4gICAqIFRpcG8gZGUgYWdlbmRhbWVudG8gcGFyYSBjb2xldGEgYXV0b23DoXRpY2FcbiAgICovXG4gIEBDb2x1bW4oe1xuICAgIHR5cGU6ICdlbnVtJyxcbiAgICBlbnVtOiBUaXBvQWdlbmRhbWVudG8sXG4gICAgZW51bU5hbWU6ICd0aXBvX2FnZW5kYW1lbnRvJyxcbiAgICBkZWZhdWx0OiBUaXBvQWdlbmRhbWVudG8uSU5URVJWQUxPLFxuICB9KVxuICB0aXBvX2FnZW5kYW1lbnRvOiBUaXBvQWdlbmRhbWVudG87XG5cbiAgLyoqXG4gICAqIFZhbG9yIGRvIGludGVydmFsbyBkZSBjb2xldGEgZW0gc2VndW5kb3MgKHBhcmEgdGlwbyBJTlRFUlZBTE8pXG4gICAqL1xuICBAQ29sdW1uKHsgZGVmYXVsdDogODY0MDAgfSkgLy8gUGFkcsOjbzogMSBkaWFcbiAgaW50ZXJ2YWxvX3NlZ3VuZG9zOiBudW1iZXI7XG5cbiAgLyoqXG4gICAqIEV4cHJlc3PDo28gY3JvbiBwYXJhIGFnZW5kYW1lbnRvIGNvbXBsZXhvIChwYXJhIHRpcG8gQ1JPTilcbiAgICogRXhlbXBsbzogJzAgMCAqICogKicgKGRpYXJpYW1lbnRlIMOgIG1laWEtbm9pdGUpXG4gICAqL1xuICBAQ29sdW1uKHsgbGVuZ3RoOiAxMDAsIG51bGxhYmxlOiB0cnVlIH0pXG4gIGV4cHJlc3Nhb19jcm9uOiBzdHJpbmc7XG5cbiAgLyoqXG4gICAqIE5vbWUgZG8gZXZlbnRvIHF1ZSBkaXNwYXJhIGEgY29sZXRhIChwYXJhIHRpcG8gRVZFTlRPKVxuICAgKiBFeGVtcGxvOiAnYmVuZWZpY2lvX2Fwcm92YWRvJywgJ3VzdWFyaW9fY2FkYXN0cmFkbydcbiAgICovXG4gIEBDb2x1bW4oeyBsZW5ndGg6IDEwMCwgbnVsbGFibGU6IHRydWUgfSlcbiAgbm9tZV9ldmVudG86IHN0cmluZztcblxuICAvKipcbiAgICogTsO6bWVybyBtw6F4aW1vIGRlIHNuYXBzaG90cyBhIHNlcmVtIG1hbnRpZG9zXG4gICAqICgwID0gc2VtIGxpbWl0ZSwgbWFudMOpbSB0b2RvIG8gaGlzdMOzcmljbylcbiAgICovXG4gIEBDb2x1bW4oeyBkZWZhdWx0OiAwIH0pXG4gIG1heF9zbmFwc2hvdHM6IG51bWJlcjtcblxuICAvKipcbiAgICogUGVyw61vZG8gbcOheGltbyBkZSByZXRlbsOnw6NvIGVtIGRpYXNcbiAgICogKDAgPSBzZW0gbGltaXRlLCBtYW50w6ltIHRvZG8gbyBoaXN0w7NyaWNvKVxuICAgKi9cbiAgQENvbHVtbih7IGRlZmF1bHQ6IDM2NSB9KVxuICBwZXJpb2RvX3JldGVuY2FvX2RpYXM6IG51bWJlcjtcblxuICAvKipcbiAgICogRXN0cmF0w6lnaWEgZGUgYW1vc3RyYWdlbSBwYXJhIGNvbGV0YSBkZSBkYWRvc1xuICAgKi9cbiAgQENvbHVtbih7XG4gICAgdHlwZTogJ2VudW0nLFxuICAgIGVudW06IEVzdHJhdGVnaWFBbW9zdHJhZ2VtLFxuICAgIGVudW1OYW1lOiAnZXN0cmF0ZWdpYV9hbW9zdHJhZ2VtJyxcbiAgICBkZWZhdWx0OiBFc3RyYXRlZ2lhQW1vc3RyYWdlbS5DT01QTEVUQSxcbiAgfSlcbiAgZXN0cmF0ZWdpYV9hbW9zdHJhZ2VtOiBFc3RyYXRlZ2lhQW1vc3RyYWdlbTtcblxuICAvKipcbiAgICogVGFtYW5obyBkYSBhbW9zdHJhIChxdWFuZG8gYXBsaWPDoXZlbClcbiAgICovXG4gIEBDb2x1bW4oeyBkZWZhdWx0OiAwIH0pXG4gIHRhbWFuaG9fYW1vc3RyYTogbnVtYmVyO1xuXG4gIC8qKlxuICAgKiBIYWJpbGl0YSBvdSBkZXNhYmlsaXRhIG8gY2FjaGVhbWVudG8gZG9zIHZhbG9yZXNcbiAgICovXG4gIEBDb2x1bW4oeyBkZWZhdWx0OiB0cnVlIH0pXG4gIGNhY2hlYW1lbnRvX2hhYmlsaXRhZG86IGJvb2xlYW47XG5cbiAgLyoqXG4gICAqIFRlbXBvIGRlIHZpZGEgZG8gY2FjaGUgZW0gc2VndW5kb3NcbiAgICovXG4gIEBDb2x1bW4oeyBkZWZhdWx0OiAzMDAgfSkgLy8gUGFkcsOjbzogNSBtaW51dG9zXG4gIGNhY2hlX3R0bDogbnVtYmVyO1xuXG4gIC8qKlxuICAgKiBDb25maWd1cmHDp8O1ZXMgZGUgYWxlcnRhcyBiYXNlYWRvcyBubyB2YWxvciBkYSBtw6l0cmljYVxuICAgKiBFeGVtcGxvOiBbXG4gICAqICAgeyBcInRpcG9cIjogXCJ2YWxvcl9tYXhpbW9cIiwgXCJ2YWxvclwiOiAxMDAsIFwibWVuc2FnZW1cIjogXCJWYWxvciBleGNlZGV1IG8gbGltaXRlXCIsIFwic2V2ZXJpZGFkZVwiOiBcImFsdGFcIiB9LFxuICAgKiAgIHsgXCJ0aXBvXCI6IFwidmFsb3JfbWluaW1vXCIsIFwidmFsb3JcIjogMTAsIFwibWVuc2FnZW1cIjogXCJWYWxvciBhYmFpeG8gZG8gbcOtbmltb1wiLCBcInNldmVyaWRhZGVcIjogXCJtZWRpYVwiIH1cbiAgICogXVxuICAgKi9cbiAgQENvbHVtbih7IHR5cGU6ICdqc29uYicsIG51bGxhYmxlOiB0cnVlIH0pXG4gIGFsZXJ0YXM6IGFueVtdO1xuXG4gIC8qKlxuICAgKiBDb25maWd1cmHDp8O1ZXMgZGUgdmlzdWFsaXphw6fDo29cbiAgICogRXhlbXBsbzogeyBcImNvclwiOiBcIiNGRjU1MDBcIiwgXCJpY29uZVwiOiBcImNoYXJ0LWxpbmVcIiwgXCJkZXN0YXF1ZVwiOiB0cnVlIH1cbiAgICovXG4gIEBDb2x1bW4oeyB0eXBlOiAnanNvbmInLCBudWxsYWJsZTogdHJ1ZSB9KVxuICB2aXN1YWxpemFjYW86IFJlY29yZDxzdHJpbmcsIGFueT47XG5cbiAgLyoqXG4gICAqIEZsYWcgcXVlIGluZGljYSBzZSBhIG3DqXRyaWNhIGRldmUgc2VyIGV4aWJpZGEgZW0gZGFzaGJvYXJkc1xuICAgKi9cbiAgQENvbHVtbih7IGRlZmF1bHQ6IHRydWUgfSlcbiAgZXhpYmlyX2Rhc2hib2FyZDogYm9vbGVhbjtcblxuICAvKipcbiAgICogUHJpb3JpZGFkZSBkZSBleGliacOnw6NvIChvcmRlbSkgbm8gZGFzaGJvYXJkIChtZW5vciA9IG1haXMgaW1wb3J0YW50ZSlcbiAgICovXG4gIEBDb2x1bW4oeyBkZWZhdWx0OiAxMDAgfSlcbiAgcHJpb3JpZGFkZV9kYXNoYm9hcmQ6IG51bWJlcjtcblxuICAvKipcbiAgICogVXN1w6FyaW8gcXVlIGNyaW91IGEgY29uZmlndXJhw6fDo29cbiAgICovXG4gIEBDb2x1bW4oeyBsZW5ndGg6IDEwMCwgbnVsbGFibGU6IHRydWUgfSlcbiAgY3JpYWRvX3Bvcjogc3RyaW5nO1xuXG4gIC8qKlxuICAgKiBVc3XDoXJpbyBxdWUgYXR1YWxpem91IGEgY29uZmlndXJhw6fDo28gcGVsYSDDumx0aW1hIHZlelxuICAgKi9cbiAgQENvbHVtbih7IGxlbmd0aDogMTAwLCBudWxsYWJsZTogdHJ1ZSB9KVxuICBhdHVhbGl6YWRvX3Bvcjogc3RyaW5nO1xuXG4gIC8qKlxuICAgKiBEYXRhIGRlIGNyaWHDp8OjbyBkbyByZWdpc3Ryb1xuICAgKi9cbiAgQENyZWF0ZURhdGVDb2x1bW4oKVxuICBjcmVhdGVkX2F0OiBEYXRlO1xuXG4gIC8qKlxuICAgKiBEYXRhIGRhIMO6bHRpbWEgYXR1YWxpemHDp8OjbyBkbyByZWdpc3Ryb1xuICAgKi9cbiAgQFVwZGF0ZURhdGVDb2x1bW4oKVxuICB1cGRhdGVkX2F0OiBEYXRlO1xufVxuIl0sInZlcnNpb24iOjN9

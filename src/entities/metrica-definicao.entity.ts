@@ -1,4 +1,12 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany, Index } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  OneToMany,
+  Index,
+} from 'typeorm';
 import { MetricaSnapshot } from './metrica-snapshot.entity';
 import { MetricaConfiguracao } from './metrica-configuracao.entity';
 
@@ -8,28 +16,28 @@ import { MetricaConfiguracao } from './metrica-configuracao.entity';
 export enum TipoMetrica {
   /** Contagem simples de ocorrências */
   CONTAGEM = 'contagem',
-  
+
   /** Soma de valores */
   SOMA = 'soma',
-  
+
   /** Média de valores */
   MEDIA = 'media',
-  
+
   /** Valor mínimo */
   MINIMO = 'minimo',
-  
+
   /** Valor máximo */
   MAXIMO = 'maximo',
-  
+
   /** Métrica calculada a partir de outras métricas usando fórmula personalizada */
   COMPOSTA = 'composta',
-  
+
   /** Percentil (requer parâmetro adicional) */
   PERCENTIL = 'percentil',
-  
+
   /** Contagem de valores distintos */
   CARDINALIDADE = 'cardinalidade',
-  
+
   /** Taxa de variação entre períodos */
   TAXA_VARIACAO = 'taxa_variacao',
 }
@@ -63,7 +71,7 @@ export enum GranularidadeTemporal {
 
 /**
  * Definição de uma métrica no sistema
- * 
+ *
  * Esta entidade armazena a definição de cada métrica, incluindo sua fórmula
  * de cálculo, tipo, categoria, e configurações de coleta e armazenamento.
  */
@@ -252,17 +260,21 @@ export class MetricaDefinicao {
 
   /**
    * Relacionamento com snapshots históricos da métrica
-   * 
+   *
    * Usando lazy loading para evitar dependências circulares
    */
-  @OneToMany(() => MetricaSnapshot, (snapshot) => snapshot.definicao, { lazy: true })
+  @OneToMany(() => MetricaSnapshot, (snapshot) => snapshot.definicao, {
+    lazy: true,
+  })
   snapshots: Promise<MetricaSnapshot[]>;
 
   /**
    * Relacionamento com configurações de coleta e armazenamento
-   * 
+   *
    * Usando lazy loading para evitar dependências circulares
    */
-  @OneToMany(() => MetricaConfiguracao, (config) => config.metrica, { lazy: true })
+  @OneToMany(() => MetricaConfiguracao, (config) => config.metrica, {
+    lazy: true,
+  })
   configuracoes: Promise<MetricaConfiguracao[]>;
 }

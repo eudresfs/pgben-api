@@ -1,5 +1,20 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  Query,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { TemplateService } from '../services/template.service';
 import { TemplateCreateDto } from '../dtos/template/template-create.dto';
 import { TemplateUpdateDto } from '../dtos/template/template-update.dto';
@@ -22,19 +37,19 @@ export class TemplateController {
    */
   @Get()
   @ApiOperation({ summary: 'Buscar todos os templates do sistema' })
-  @ApiQuery({ 
-    name: 'tipo', 
-    required: false, 
+  @ApiQuery({
+    name: 'tipo',
+    required: false,
     description: 'Filtrar por tipo de template',
-    enum: TemplateTipoEnum
+    enum: TemplateTipoEnum,
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Lista de templates encontrados',
-    type: [TemplateResponseDto]
+    type: [TemplateResponseDto],
   })
   async buscarTodos(
-    @Query('tipo') tipo?: TemplateTipoEnum
+    @Query('tipo') tipo?: TemplateTipoEnum,
   ): Promise<TemplateResponseDto[]> {
     return this.templateService.buscarTodos(tipo);
   }
@@ -46,22 +61,22 @@ export class TemplateController {
    */
   @Get(':codigo')
   @ApiOperation({ summary: 'Buscar template por código' })
-  @ApiParam({ 
-    name: 'codigo', 
+  @ApiParam({
+    name: 'codigo',
     description: 'Código único do template',
-    example: 'email-bem-vindo' 
+    example: 'email-bem-vindo',
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Template encontrado',
-    type: TemplateResponseDto
+    type: TemplateResponseDto,
   })
-  @ApiResponse({ 
-    status: 404, 
-    description: 'Template não encontrado'
+  @ApiResponse({
+    status: 404,
+    description: 'Template não encontrado',
   })
   async buscarPorCodigo(
-    @Param('codigo') codigo: string
+    @Param('codigo') codigo: string,
   ): Promise<TemplateResponseDto> {
     return this.templateService.buscarPorCodigo(codigo);
   }
@@ -73,18 +88,16 @@ export class TemplateController {
    */
   @Post()
   @ApiOperation({ summary: 'Criar novo template' })
-  @ApiResponse({ 
-    status: 201, 
+  @ApiResponse({
+    status: 201,
     description: 'Template criado com sucesso',
-    type: TemplateResponseDto
+    type: TemplateResponseDto,
   })
-  @ApiResponse({ 
-    status: 400, 
-    description: 'Dados inválidos ou template já existe'
+  @ApiResponse({
+    status: 400,
+    description: 'Dados inválidos ou template já existe',
   })
-  async criar(
-    @Body() dto: TemplateCreateDto
-  ): Promise<TemplateResponseDto> {
+  async criar(@Body() dto: TemplateCreateDto): Promise<TemplateResponseDto> {
     return this.templateService.criar(dto);
   }
 
@@ -96,27 +109,27 @@ export class TemplateController {
    */
   @Put(':codigo')
   @ApiOperation({ summary: 'Atualizar template existente' })
-  @ApiParam({ 
-    name: 'codigo', 
+  @ApiParam({
+    name: 'codigo',
     description: 'Código único do template',
-    example: 'email-bem-vindo' 
+    example: 'email-bem-vindo',
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Template atualizado com sucesso',
-    type: TemplateResponseDto
+    type: TemplateResponseDto,
   })
-  @ApiResponse({ 
-    status: 404, 
-    description: 'Template não encontrado'
+  @ApiResponse({
+    status: 404,
+    description: 'Template não encontrado',
   })
-  @ApiResponse({ 
-    status: 400, 
-    description: 'Dados inválidos'
+  @ApiResponse({
+    status: 400,
+    description: 'Dados inválidos',
   })
   async atualizar(
     @Param('codigo') codigo: string,
-    @Body() dto: TemplateUpdateDto
+    @Body() dto: TemplateUpdateDto,
   ): Promise<TemplateResponseDto> {
     return this.templateService.atualizar(codigo, dto);
   }
@@ -127,22 +140,20 @@ export class TemplateController {
    */
   @Delete(':codigo')
   @ApiOperation({ summary: 'Remover template' })
-  @ApiParam({ 
-    name: 'codigo', 
+  @ApiParam({
+    name: 'codigo',
     description: 'Código único do template',
-    example: 'email-bem-vindo' 
+    example: 'email-bem-vindo',
   })
-  @ApiResponse({ 
-    status: 204, 
-    description: 'Template removido com sucesso'
+  @ApiResponse({
+    status: 204,
+    description: 'Template removido com sucesso',
   })
-  @ApiResponse({ 
-    status: 404, 
-    description: 'Template não encontrado'
+  @ApiResponse({
+    status: 404,
+    description: 'Template não encontrado',
   })
-  async remover(
-    @Param('codigo') codigo: string
-  ): Promise<void> {
+  async remover(@Param('codigo') codigo: string): Promise<void> {
     await this.templateService.remover(codigo);
   }
 
@@ -153,26 +164,24 @@ export class TemplateController {
    */
   @Post('testar')
   @ApiOperation({ summary: 'Testar renderização de template' })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Template renderizado com sucesso',
     schema: {
       type: 'object',
       properties: {
         conteudo: {
           type: 'string',
-          description: 'Conteúdo renderizado do template'
-        }
-      }
-    }
+          description: 'Conteúdo renderizado do template',
+        },
+      },
+    },
   })
-  @ApiResponse({ 
-    status: 400, 
-    description: 'Dados inválidos ou erro na renderização'
+  @ApiResponse({
+    status: 400,
+    description: 'Dados inválidos ou erro na renderização',
   })
-  async testar(
-    @Body() dto: TemplateTestDto
-  ): Promise<{ conteudo: string }> {
+  async testar(@Body() dto: TemplateTestDto): Promise<{ conteudo: string }> {
     return this.templateService.testar(dto);
   }
 
@@ -184,23 +193,23 @@ export class TemplateController {
    */
   @Put(':codigo/status')
   @ApiOperation({ summary: 'Ativar ou desativar template' })
-  @ApiParam({ 
-    name: 'codigo', 
+  @ApiParam({
+    name: 'codigo',
     description: 'Código único do template',
-    example: 'email-bem-vindo' 
+    example: 'email-bem-vindo',
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Status do template atualizado com sucesso',
-    type: TemplateResponseDto
+    type: TemplateResponseDto,
   })
-  @ApiResponse({ 
-    status: 404, 
-    description: 'Template não encontrado'
+  @ApiResponse({
+    status: 404,
+    description: 'Template não encontrado',
   })
   async alterarStatus(
     @Param('codigo') codigo: string,
-    @Body() { ativo }: { ativo: boolean }
+    @Body() { ativo }: { ativo: boolean },
   ): Promise<TemplateResponseDto> {
     return this.templateService.alterarStatus(codigo, ativo);
   }
@@ -212,18 +221,18 @@ export class TemplateController {
    */
   @Get('tipo/:tipo')
   @ApiOperation({ summary: 'Buscar templates por tipo' })
-  @ApiParam({ 
-    name: 'tipo', 
+  @ApiParam({
+    name: 'tipo',
     description: 'Tipo de template',
-    enum: TemplateTipoEnum
+    enum: TemplateTipoEnum,
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Lista de templates encontrados',
-    type: [TemplateResponseDto]
+    type: [TemplateResponseDto],
   })
   async buscarPorTipo(
-    @Param('tipo') tipo: TemplateTipoEnum
+    @Param('tipo') tipo: TemplateTipoEnum,
   ): Promise<TemplateResponseDto[]> {
     return this.templateService.buscarPorTipo(tipo);
   }

@@ -32,7 +32,7 @@ import { TipoEscopo } from '@/entities/user-permission.entity';
 
 /**
  * Controller para gerenciamento de informações bancárias
- * 
+ *
  * Responsável pelos endpoints relacionados às informações bancárias dos cidadãos,
  * incluindo contas poupança social do Banco do Brasil e dados PIX.
  */
@@ -48,13 +48,14 @@ export class InfoBancariaController {
    */
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  @RequiresPermission({ 
-    permissionName: 'info_bancaria.criar', 
-    scopeType: TipoEscopo.GLOBAL
+  @RequiresPermission({
+    permissionName: 'info_bancaria.criar',
+    scopeType: TipoEscopo.GLOBAL,
   })
   @ApiOperation({
     summary: 'Criar informação bancária',
-    description: 'Cria uma nova informação bancária para um cidadão, incluindo dados de conta poupança social e PIX',
+    description:
+      'Cria uma nova informação bancária para um cidadão, incluindo dados de conta poupança social e PIX',
   })
   @ApiResponse({
     status: 201,
@@ -71,7 +72,8 @@ export class InfoBancariaController {
   })
   @ApiResponse({
     status: 409,
-    description: 'Cidadão já possui informação bancária ativa ou chave PIX já está em uso',
+    description:
+      'Cidadão já possui informação bancária ativa ou chave PIX já está em uso',
   })
   async create(
     @Body(ValidationPipe) createInfoBancariaDto: CreateInfoBancariaDto,
@@ -83,13 +85,14 @@ export class InfoBancariaController {
    * Lista todas as informações bancárias com filtros
    */
   @Get()
-  @RequiresPermission({ 
-    permissionName: 'info_bancaria.visualizar', 
-    scopeType: TipoEscopo.GLOBAL
+  @RequiresPermission({
+    permissionName: 'info_bancaria.visualizar',
+    scopeType: TipoEscopo.GLOBAL,
   })
   @ApiOperation({
     summary: 'Listar informações bancárias',
-    description: 'Lista todas as informações bancárias com filtros opcionais e paginação',
+    description:
+      'Lista todas as informações bancárias com filtros opcionais e paginação',
   })
   @ApiQuery({
     name: 'skip',
@@ -171,9 +174,9 @@ export class InfoBancariaController {
    * Busca informação bancária por ID
    */
   @Get(':id')
-  @RequiresPermission({ 
-    permissionName: 'info_bancaria.visualizar', 
-    scopeType: TipoEscopo.GLOBAL
+  @RequiresPermission({
+    permissionName: 'info_bancaria.visualizar',
+    scopeType: TipoEscopo.GLOBAL,
   })
   @ApiOperation({
     summary: 'Buscar informação bancária por ID',
@@ -212,9 +215,9 @@ export class InfoBancariaController {
    * Busca informação bancária por ID do cidadão
    */
   @Get('cidadao/:cidadaoId')
-  @RequiresPermission({ 
-    permissionName: 'info_bancaria.visualizar', 
-    scopeType: TipoEscopo.GLOBAL
+  @RequiresPermission({
+    permissionName: 'info_bancaria.visualizar',
+    scopeType: TipoEscopo.GLOBAL,
   })
   @ApiOperation({
     summary: 'Buscar informação bancária por ID do cidadão',
@@ -247,16 +250,19 @@ export class InfoBancariaController {
     @Param('cidadaoId', ParseUUIDPipe) cidadaoId: string,
     @Query('includeRelations') includeRelations?: boolean,
   ): Promise<InfoBancariaResponseDto | null> {
-    return await this.infoBancariaService.findByCidadaoId(cidadaoId, includeRelations);
+    return await this.infoBancariaService.findByCidadaoId(
+      cidadaoId,
+      includeRelations,
+    );
   }
 
   /**
    * Atualiza informação bancária
    */
   @Patch(':id')
-  @RequiresPermission({ 
-    permissionName: 'info_bancaria.atualizar', 
-    scopeType: TipoEscopo.GLOBAL
+  @RequiresPermission({
+    permissionName: 'info_bancaria.atualizar',
+    scopeType: TipoEscopo.GLOBAL,
   })
   @ApiOperation({
     summary: 'Atualizar informação bancária',
@@ -296,9 +302,9 @@ export class InfoBancariaController {
    * Desativa informação bancária
    */
   @Patch(':id/deactivate')
-  @RequiresPermission({ 
-    permissionName: 'info_bancaria.atualizar', 
-    scopeType: TipoEscopo.GLOBAL
+  @RequiresPermission({
+    permissionName: 'info_bancaria.atualizar',
+    scopeType: TipoEscopo.GLOBAL,
   })
   @ApiOperation({
     summary: 'Desativar informação bancária',
@@ -330,9 +336,9 @@ export class InfoBancariaController {
    */
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @RequiresPermission({ 
-    permissionName: 'info_bancaria.excluir', 
-    scopeType: TipoEscopo.GLOBAL
+  @RequiresPermission({
+    permissionName: 'info_bancaria.excluir',
+    scopeType: TipoEscopo.GLOBAL,
   })
   @ApiOperation({
     summary: 'Remover informação bancária',

@@ -2,22 +2,24 @@ import { MigrationInterface, QueryRunner, TableForeignKey } from 'typeorm';
 
 /**
  * Migration para criar o schema relacionado à solicitação
- * 
+ *
  * Esta migration cria as tabelas e restrições para o módulo de solicitação,
  * incluindo estruturas para gerenciar solicitações de benefícios, histórico de status,
  * avaliações, documentos e parcelas de pagamento.
- * 
+ *
  * Inclui também campos para:
  * - Determinações judiciais
  * - Renovação automática de solicitações
- * 
+ *
  * Os enums necessários são criados na migration CreateAllEnums
  * A tabela de benefícios é criada na migration CreateBeneficioSchema
- * 
+ *
  * @author Engenheiro de Dados
  * @date 19/05/2025
  */
-export class CreateSolicitacaoSchema1704067226000 implements MigrationInterface {
+export class CreateSolicitacaoSchema1704067226000
+  implements MigrationInterface
+{
   name = 'CreateSolicitacaoSchema1704067226000';
 
   /**
@@ -25,7 +27,7 @@ export class CreateSolicitacaoSchema1704067226000 implements MigrationInterface 
    */
   public async up(queryRunner: QueryRunner): Promise<void> {
     console.log('Iniciando migration CreateSolicitacaoSchema...');
-    
+
     // Tabela principal de solicitação
     await queryRunner.query(`
       CREATE TABLE IF NOT EXISTS "solicitacao" (
@@ -69,7 +71,7 @@ export class CreateSolicitacaoSchema1704067226000 implements MigrationInterface 
         CONSTRAINT "UQ_solicitacao_protocolo" UNIQUE ("protocolo")
       );
     `);
-    
+
     // Índices para otimização de consultas
     await queryRunner.query(`
       CREATE INDEX IF NOT EXISTS "IDX_solicitacao_beneficiario" ON "solicitacao" ("beneficiario_id");
@@ -95,7 +97,7 @@ export class CreateSolicitacaoSchema1704067226000 implements MigrationInterface 
       CREATE INDEX IF NOT EXISTS "IDX_solicitacao_prazo_documentos" ON "solicitacao" ("prazo_documentos");
       CREATE INDEX IF NOT EXISTS "IDX_solicitacao_prazo_processamento" ON "solicitacao" ("prazo_processamento");
     `);
-    
+
     // Trigger para atualização automática de timestamp
     await queryRunner.query(`
       DROP TRIGGER IF EXISTS trigger_solicitacao_update_timestamp ON "solicitacao";
@@ -104,9 +106,9 @@ export class CreateSolicitacaoSchema1704067226000 implements MigrationInterface 
         FOR EACH ROW
         EXECUTE PROCEDURE update_timestamp();
     `);
-    
+
     console.log('Tabela de solicitação criada com sucesso.');
-    
+
     // Tabela de histórico de solicitação
     await queryRunner.query(`
       CREATE TABLE IF NOT EXISTS "historico_status_solicitacao" (
@@ -122,7 +124,7 @@ export class CreateSolicitacaoSchema1704067226000 implements MigrationInterface 
         CONSTRAINT "PK_historico_status_solicitacao" PRIMARY KEY ("id")
       );
     `);
-    
+
     // Índices para otimização de consultas
     await queryRunner.query(`
       CREATE INDEX IF NOT EXISTS "IDX_historico_solicitacao" ON "historico_status_solicitacao" ("solicitacao_id", "created_at");
@@ -130,9 +132,9 @@ export class CreateSolicitacaoSchema1704067226000 implements MigrationInterface 
       CREATE INDEX IF NOT EXISTS "IDX_historico_status" ON "historico_status_solicitacao" ("status_anterior", "status_atual");
       CREATE INDEX IF NOT EXISTS "IDX_historico_dados" ON "historico_status_solicitacao" USING GIN ("dados_alterados");
     `);
-    
+
     console.log('Tabela de histórico de solicitação criada com sucesso.');
-    
+
     // Tabela de dados de benefícios
     await queryRunner.query(`
       CREATE TABLE IF NOT EXISTS "dados_beneficios" (
@@ -165,13 +167,13 @@ export class CreateSolicitacaoSchema1704067226000 implements MigrationInterface 
         CONSTRAINT "UK_dados_beneficios_solicitacao" UNIQUE ("solicitacao_id")
       );
     `);
-    
+
     // Índices para otimização de consultas
     await queryRunner.query(`
       CREATE INDEX IF NOT EXISTS "IDX_DADOS_BENEFICIOS_SOLICITACAO" ON "dados_beneficios" ("solicitacao_id");
       CREATE INDEX IF NOT EXISTS "IDX_DADOS_BENEFICIOS_TIPO" ON "dados_beneficios" ("tipo_beneficio");
     `);
-    
+
     // Trigger para atualização automática de timestamp
     await queryRunner.query(`
       DROP TRIGGER IF EXISTS trigger_dados_beneficios_update_timestamp ON "dados_beneficios";
@@ -180,9 +182,9 @@ export class CreateSolicitacaoSchema1704067226000 implements MigrationInterface 
         FOR EACH ROW
         EXECUTE PROCEDURE update_timestamp();
     `);
-    
+
     console.log('Tabela de dados de benefícios criada com sucesso.');
-    
+
     // Tabela de pendências
     await queryRunner.query(`
       CREATE TABLE IF NOT EXISTS "pendencias" (
@@ -201,7 +203,7 @@ export class CreateSolicitacaoSchema1704067226000 implements MigrationInterface 
         CONSTRAINT "PK_pendencias" PRIMARY KEY ("id")
       );
     `);
-    
+
     // Índices para otimização de consultas
     await queryRunner.query(`
       CREATE INDEX IF NOT EXISTS "IDX_pendencias_solicitacao" ON "pendencias" ("solicitacao_id", "created_at");
@@ -209,7 +211,7 @@ export class CreateSolicitacaoSchema1704067226000 implements MigrationInterface 
       CREATE INDEX IF NOT EXISTS "IDX_pendencias_registrado" ON "pendencias" ("registrado_por_id");
       CREATE INDEX IF NOT EXISTS "IDX_pendencias_resolvido" ON "pendencias" ("resolvido_por_id");
     `);
-    
+
     // Trigger para atualização automática de timestamp
     await queryRunner.query(`
       DROP TRIGGER IF EXISTS trigger_pendencias_update_timestamp ON "pendencias";
@@ -218,9 +220,9 @@ export class CreateSolicitacaoSchema1704067226000 implements MigrationInterface 
         FOR EACH ROW
         EXECUTE PROCEDURE update_timestamp();
     `);
-    
+
     console.log('Tabela de pendências criada com sucesso.');
-    
+
     // Tabela de avaliação de solicitação
     await queryRunner.query(`
       CREATE TABLE IF NOT EXISTS "avaliacao_solicitacao" (
@@ -239,7 +241,7 @@ export class CreateSolicitacaoSchema1704067226000 implements MigrationInterface 
         CONSTRAINT "UK_avaliacao_solicitacao_tipo" UNIQUE ("solicitacao_id", "tipo_avaliacao")
       );
     `);
-    
+
     // Índices para otimização de consultas
     await queryRunner.query(`
       CREATE INDEX IF NOT EXISTS "IDX_avaliacao_solicitacao" ON "avaliacao_solicitacao" ("solicitacao_id");
@@ -248,7 +250,7 @@ export class CreateSolicitacaoSchema1704067226000 implements MigrationInterface 
       CREATE INDEX IF NOT EXISTS "IDX_avaliacao_avaliador" ON "avaliacao_solicitacao" ("avaliador_id");
       CREATE INDEX IF NOT EXISTS "IDX_avaliacao_docs" ON "avaliacao_solicitacao" USING GIN ("documentos_analisados");
     `);
-    
+
     // Trigger para atualização automática de timestamp
     await queryRunner.query(`
       DROP TRIGGER IF EXISTS trigger_avaliacao_update_timestamp ON "avaliacao_solicitacao";
@@ -257,9 +259,9 @@ export class CreateSolicitacaoSchema1704067226000 implements MigrationInterface 
         FOR EACH ROW
         EXECUTE PROCEDURE update_timestamp();
     `);
-    
+
     console.log('Tabela de avaliação de solicitação criada com sucesso.');
-    
+
     // Tabela de documento de solicitação
     await queryRunner.query(`
       CREATE TABLE IF NOT EXISTS "documento_solicitacao" (
@@ -279,7 +281,7 @@ export class CreateSolicitacaoSchema1704067226000 implements MigrationInterface 
         CONSTRAINT "PK_documento_solicitacao" PRIMARY KEY ("id")
       );
     `);
-    
+
     // Índices para otimização de consultas
     await queryRunner.query(`
       CREATE INDEX IF NOT EXISTS "IDX_documento_solicitacao" ON "documento_solicitacao" ("solicitacao_id");
@@ -287,7 +289,7 @@ export class CreateSolicitacaoSchema1704067226000 implements MigrationInterface 
       CREATE INDEX IF NOT EXISTS "IDX_documento_upload" ON "documento_solicitacao" ("upload_por_id");
       CREATE INDEX IF NOT EXISTS "IDX_documento_metadata" ON "documento_solicitacao" USING GIN ("metadados");
     `);
-    
+
     // Trigger para atualização automática de timestamp
     await queryRunner.query(`
       DROP TRIGGER IF EXISTS trigger_documento_update_timestamp ON "documento_solicitacao";
@@ -296,9 +298,9 @@ export class CreateSolicitacaoSchema1704067226000 implements MigrationInterface 
         FOR EACH ROW
         EXECUTE PROCEDURE update_timestamp();
     `);
-    
+
     console.log('Tabela de documento de solicitação criada com sucesso.');
-    
+
     // Tabela de parcela de pagamento
     await queryRunner.query(`
       CREATE TABLE IF NOT EXISTS "parcela_pagamento" (
@@ -318,14 +320,14 @@ export class CreateSolicitacaoSchema1704067226000 implements MigrationInterface 
         CONSTRAINT "UK_parcela_solicitacao_numero" UNIQUE ("solicitacao_id", "numero_parcela")
       );
     `);
-    
+
     // Índices para otimização de consultas
     await queryRunner.query(`
       CREATE INDEX IF NOT EXISTS "IDX_parcela_solicitacao" ON "parcela_pagamento" ("solicitacao_id");
       CREATE INDEX IF NOT EXISTS "IDX_parcela_status" ON "parcela_pagamento" ("status");
       CREATE INDEX IF NOT EXISTS "IDX_parcela_data_prevista" ON "parcela_pagamento" ("data_prevista");
     `);
-    
+
     // Trigger para atualização automática de timestamp
     await queryRunner.query(`
       DROP TRIGGER IF EXISTS trigger_parcela_update_timestamp ON "parcela_pagamento";
@@ -334,9 +336,9 @@ export class CreateSolicitacaoSchema1704067226000 implements MigrationInterface 
         FOR EACH ROW
         EXECUTE PROCEDURE update_timestamp();
     `);
-    
+
     console.log('Tabela de parcela de pagamento criada com sucesso.');
-    
+
     // Adicionar as chaves estrangeiras
     await queryRunner.query(`
       DO $$
@@ -548,7 +550,7 @@ export class CreateSolicitacaoSchema1704067226000 implements MigrationInterface 
         END IF;
       END $$;
     `);
-    
+
     // Verificar se a tabela tipo_beneficio existe
     const tipoBeneficioExists = await queryRunner.query(`
       SELECT EXISTS (
@@ -557,13 +559,19 @@ export class CreateSolicitacaoSchema1704067226000 implements MigrationInterface 
         AND table_name = 'tipo_beneficio'
       );
     `);
-    
+
     if (!tipoBeneficioExists[0].exists) {
-      console.log('ERRO: A tabela tipo_beneficio não existe. Esta tabela é necessária para a chave estrangeira da tabela solicitacao.');
-      console.log('Execute a migração CreateBeneficioSchema1747961017133 primeiro.');
-      throw new Error('Tabela tipo_beneficio não encontrada. Execute a migração CreateBeneficioSchema1747961017133 primeiro.');
+      console.log(
+        'ERRO: A tabela tipo_beneficio não existe. Esta tabela é necessária para a chave estrangeira da tabela solicitacao.',
+      );
+      console.log(
+        'Execute a migração CreateBeneficioSchema1747961017133 primeiro.',
+      );
+      throw new Error(
+        'Tabela tipo_beneficio não encontrada. Execute a migração CreateBeneficioSchema1747961017133 primeiro.',
+      );
     }
-    
+
     // Verificar se as tabelas de processo judicial existem
     const processoJudicialExists = await queryRunner.query(`
       SELECT EXISTS (
@@ -572,7 +580,7 @@ export class CreateSolicitacaoSchema1704067226000 implements MigrationInterface 
         AND table_name = 'processo_judicial'
       );
     `);
-    
+
     const determinacaoJudicialExists = await queryRunner.query(`
       SELECT EXISTS (
         SELECT FROM information_schema.tables 
@@ -580,17 +588,25 @@ export class CreateSolicitacaoSchema1704067226000 implements MigrationInterface 
         AND table_name = 'determinacao_judicial_flag'
       );
     `);
-    
+
     if (!processoJudicialExists[0].exists) {
-      console.log('AVISO: A tabela processo_judicial não existe. Execute a migração CreateProcessoJudicialSchema1747961017135 primeiro.');
-      console.log('Continuando sem adicionar as chaves estrangeiras para processo judicial...');
+      console.log(
+        'AVISO: A tabela processo_judicial não existe. Execute a migração CreateProcessoJudicialSchema1747961017135 primeiro.',
+      );
+      console.log(
+        'Continuando sem adicionar as chaves estrangeiras para processo judicial...',
+      );
     }
-    
+
     if (!determinacaoJudicialExists[0].exists) {
-      console.log('AVISO: A tabela determinacao_judicial_flag não existe. Execute a migração CreateProcessoJudicialSchema1747961017135 primeiro.');
-      console.log('Continuando sem adicionar as chaves estrangeiras para determinação judicial...');
+      console.log(
+        'AVISO: A tabela determinacao_judicial_flag não existe. Execute a migração CreateProcessoJudicialSchema1747961017135 primeiro.',
+      );
+      console.log(
+        'Continuando sem adicionar as chaves estrangeiras para determinação judicial...',
+      );
     }
-    
+
     // Adicionar chaves estrangeiras para os novos campos
     await queryRunner.query(`
       DO $$
@@ -604,7 +620,7 @@ export class CreateSolicitacaoSchema1704067226000 implements MigrationInterface 
         END IF;
       END $$;
     `);
-    
+
     // Adicionar chaves estrangeiras para processo judicial apenas se a tabela existir
     if (processoJudicialExists[0].exists) {
       await queryRunner.query(`
@@ -620,7 +636,7 @@ export class CreateSolicitacaoSchema1704067226000 implements MigrationInterface 
         END $$;
       `);
     }
-    
+
     // Adicionar chaves estrangeiras para determinação judicial apenas se a tabela existir
     if (determinacaoJudicialExists[0].exists) {
       await queryRunner.query(`
@@ -636,7 +652,7 @@ export class CreateSolicitacaoSchema1704067226000 implements MigrationInterface 
         END $$;
       `);
     }
-    
+
     console.log('Migration CreateSolicitacaoSchema executada com sucesso.');
   }
 
@@ -645,7 +661,7 @@ export class CreateSolicitacaoSchema1704067226000 implements MigrationInterface 
    */
   public async down(queryRunner: QueryRunner): Promise<void> {
     console.log('Revertendo migration CreateSolicitacaoSchema...');
-    
+
     // Remover chaves estrangeiras
     await queryRunner.query(`
       -- Remover chaves estrangeiras adicionadas para campos de renovação e determinação judicial
@@ -674,7 +690,7 @@ export class CreateSolicitacaoSchema1704067226000 implements MigrationInterface 
       ALTER TABLE "solicitacao" DROP CONSTRAINT IF EXISTS "FK_solicitacao_aprovador";
       ALTER TABLE "solicitacao" DROP CONSTRAINT IF EXISTS "FK_solicitacao_liberador";
     `);
-    
+
     // Remover índices adicionados para os novos campos
     await queryRunner.query(`
       -- Remover índices para campos de determinação judicial
@@ -688,7 +704,7 @@ export class CreateSolicitacaoSchema1704067226000 implements MigrationInterface 
       DROP INDEX IF EXISTS "IDX_solicitacao_data_proxima_renovacao";
       DROP INDEX IF EXISTS "IDX_solicitacao_renovacao";
     `);
-    
+
     // Remover triggers de atualização automática de timestamp
     await queryRunner.query(`
       DROP TRIGGER IF EXISTS trigger_solicitacao_update_timestamp ON "solicitacao";
@@ -698,7 +714,7 @@ export class CreateSolicitacaoSchema1704067226000 implements MigrationInterface 
       DROP TRIGGER IF EXISTS trigger_documento_update_timestamp ON "documento_solicitacao";
       DROP TRIGGER IF EXISTS trigger_parcela_update_timestamp ON "parcela_pagamento";
     `);
-    
+
     // Remover tabelas
     await queryRunner.query(`
       DROP TABLE IF EXISTS "parcela_pagamento";
@@ -709,7 +725,7 @@ export class CreateSolicitacaoSchema1704067226000 implements MigrationInterface 
       DROP TABLE IF EXISTS "historico_status_solicitacao";
       DROP TABLE IF EXISTS "solicitacao";
     `);
-    
+
     console.log('Migration CreateSolicitacaoSchema revertida com sucesso.');
   }
 }

@@ -59,7 +59,8 @@ export class CreateUsuarioDto {
   })
   @ApiProperty({
     example: 'Senha@123',
-    description: 'Senha do usuário (opcional - se não fornecida, será gerada automaticamente)',
+    description:
+      'Senha do usuário (opcional - se não fornecida, será gerada automaticamente)',
     required: false,
   })
   senha?: string;

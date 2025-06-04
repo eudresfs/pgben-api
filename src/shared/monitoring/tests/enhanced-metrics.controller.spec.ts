@@ -65,7 +65,7 @@ describe('EnhancedMetricsController', () => {
       // Verificar se a resposta contém as métricas esperadas
       expect(mockResponse.send).toHaveBeenCalled();
       expect(mockResponse.send).toHaveBeenCalledWith(
-        expect.stringContaining('enhanced_metrics_data')
+        expect.stringContaining('enhanced_metrics_data'),
       );
     });
   });
@@ -91,10 +91,10 @@ describe('EnhancedMetricsController', () => {
         'text/plain',
       );
       expect(mockResponse.send).toHaveBeenCalledWith(
-        expect.stringContaining('security_metric 1')
+        expect.stringContaining('security_metric 1'),
       );
       expect(mockResponse.send).toHaveBeenCalledWith(
-        expect.stringContaining('security_metric 2')
+        expect.stringContaining('security_metric 2'),
       );
     });
   });
@@ -120,10 +120,10 @@ describe('EnhancedMetricsController', () => {
         'text/plain',
       );
       expect(mockResponse.send).toHaveBeenCalledWith(
-        expect.stringContaining('document_metric 1')
+        expect.stringContaining('document_metric 1'),
       );
       expect(mockResponse.send).toHaveBeenCalledWith(
-        expect.stringContaining('document_metric 2')
+        expect.stringContaining('document_metric 2'),
       );
     });
   });
@@ -150,10 +150,10 @@ describe('EnhancedMetricsController', () => {
         'text/plain',
       );
       expect(mockResponse.send).toHaveBeenCalledWith(
-        expect.stringContaining('system_metric 1')
+        expect.stringContaining('system_metric 1'),
       );
       expect(mockResponse.send).toHaveBeenCalledWith(
-        expect.stringContaining('system_metric 2')
+        expect.stringContaining('system_metric 2'),
       );
     });
   });
@@ -179,10 +179,10 @@ describe('EnhancedMetricsController', () => {
         'text/plain',
       );
       expect(mockResponse.send).toHaveBeenCalledWith(
-        expect.stringContaining('cache_operations_total 10')
+        expect.stringContaining('cache_operations_total 10'),
       );
       expect(mockResponse.send).toHaveBeenCalledWith(
-        expect.stringContaining('cache_hit_ratio 0.75')
+        expect.stringContaining('cache_hit_ratio 0.75'),
       );
     });
   });

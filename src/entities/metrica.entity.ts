@@ -1,4 +1,13 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, DeleteDateColumn, OneToMany, Index } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  DeleteDateColumn,
+  OneToMany,
+  Index,
+} from 'typeorm';
 import { RegistroMetrica } from './registro-metrica.entity';
 import { RegraAlerta } from './regra-alerta.entity';
 
@@ -28,7 +37,7 @@ export enum CategoriaMetricaEnum {
 
 /**
  * Entidade que representa uma definição de métrica no sistema
- * 
+ *
  * Esta entidade armazena as informações básicas sobre uma métrica,
  * como seu nome, tipo, categoria e limiares para alertas.
  */

@@ -48,14 +48,11 @@ export class UsuarioController {
    * Lista todos os usuários com filtros e paginação
    */
   @Get()
-  @RequiresPermission(
-    
-    {
-      permissionName: 'usuario.listar',
-      scopeType: ScopeType.UNIT,
-      scopeIdExpression: 'query.unidade_id'
-    }
-  )
+  @RequiresPermission({
+    permissionName: 'usuario.listar',
+    scopeType: ScopeType.UNIT,
+    scopeIdExpression: 'query.unidade_id',
+  })
   @ApiOperation({ summary: 'Listar usuários' })
   @ApiResponse({
     status: 200,
@@ -119,12 +116,10 @@ export class UsuarioController {
    * Retorna todas as roles (papéis) disponíveis no sistema
    */
   @Get('roles')
-  @RequiresPermission(
-    {
-      permissionName: 'usuario.listar',
-      scopeType: ScopeType.GLOBAL
-    }
-  )
+  @RequiresPermission({
+    permissionName: 'usuario.listar',
+    scopeType: ScopeType.GLOBAL,
+  })
   @ApiOperation({ summary: 'Listar todas as roles disponíveis' })
   @ApiResponse({
     status: 200,
@@ -138,13 +133,10 @@ export class UsuarioController {
    * Obtém o perfil do usuário atual
    */
   @Get('me')
-  @RequiresPermission(
-    
-    {
-      permissionName: 'usuario.perfil.visualizar',
-      scopeType: ScopeType.SELF
-    }
-  )
+  @RequiresPermission({
+    permissionName: 'usuario.perfil.visualizar',
+    scopeType: ScopeType.SELF,
+  })
   @ApiOperation({ summary: 'Obter perfil do usuário atual' })
   @ApiResponse({ status: 200, description: 'Perfil obtido com sucesso' })
   async getProfile(@Request() req) {
@@ -155,14 +147,11 @@ export class UsuarioController {
    * Obtém detalhes de um usuário específico
    */
   @Get(':id')
-  @RequiresPermission(
-    
-    {
-      permissionName: 'usuario.visualizar',
-      scopeType: ScopeType.UNIT,
-      scopeIdExpression: 'usuario.unidade_id'
-    }
-  )
+  @RequiresPermission({
+    permissionName: 'usuario.visualizar',
+    scopeType: ScopeType.UNIT,
+    scopeIdExpression: 'usuario.unidade_id',
+  })
   @ApiOperation({ summary: 'Obter detalhes de um usuário' })
   @ApiResponse({ status: 200, description: 'Usuário encontrado com sucesso' })
   @ApiResponse({ status: 404, description: 'Usuário não encontrado' })
@@ -174,14 +163,11 @@ export class UsuarioController {
    * Cria um novo usuário
    */
   @Post()
-  @RequiresPermission(
-    
-    {
-      permissionName: 'usuario.criar',
-      scopeType: ScopeType.UNIT,
-      scopeIdExpression: 'body.unidade_id'
-    }
-  )
+  @RequiresPermission({
+    permissionName: 'usuario.criar',
+    scopeType: ScopeType.UNIT,
+    scopeIdExpression: 'body.unidade_id',
+  })
   @ApiOperation({ summary: 'Criar novo usuário' })
   @ApiResponse({ status: 201, description: 'Usuário criado com sucesso' })
   @ApiResponse({ status: 400, description: 'Dados inválidos' })
@@ -197,14 +183,11 @@ export class UsuarioController {
    * Atualiza um usuário existente
    */
   @Put(':id')
-  @RequiresPermission(
-    
-    {
-      permissionName: 'usuario.editar',
-      scopeType: ScopeType.UNIT,
-      scopeIdExpression: 'usuario.unidade_id'
-    }
-  )
+  @RequiresPermission({
+    permissionName: 'usuario.editar',
+    scopeType: ScopeType.UNIT,
+    scopeIdExpression: 'usuario.unidade_id',
+  })
   @ApiOperation({ summary: 'Atualizar usuário existente' })
   @ApiResponse({ status: 200, description: 'Usuário atualizado com sucesso' })
   @ApiResponse({ status: 400, description: 'Dados inválidos' })
@@ -224,14 +207,11 @@ export class UsuarioController {
    * Atualiza o status de um usuário
    */
   @Patch(':id/status')
-  @RequiresPermission(
-    
-    {
-      permissionName: 'usuario.status.alterar',
-      scopeType: ScopeType.UNIT,
-      scopeIdExpression: 'usuario.unidade_id'
-    }
-  )
+  @RequiresPermission({
+    permissionName: 'usuario.status.alterar',
+    scopeType: ScopeType.UNIT,
+    scopeIdExpression: 'usuario.unidade_id',
+  })
   @ApiOperation({ summary: 'Ativar/inativar usuário' })
   @ApiResponse({ status: 200, description: 'Status atualizado com sucesso' })
   @ApiResponse({ status: 404, description: 'Usuário não encontrado' })
@@ -246,14 +226,11 @@ export class UsuarioController {
    * Altera a senha do usuário
    */
   @Put(':id/senha')
-  @RequiresPermission(
-    
-    {
-      permissionName: 'usuario.senha.alterar',
-      scopeType: ScopeType.SELF,
-      scopeIdExpression: 'params.id'
-    }
-  )
+  @RequiresPermission({
+    permissionName: 'usuario.senha.alterar',
+    scopeType: ScopeType.SELF,
+    scopeIdExpression: 'params.id',
+  })
   @ApiOperation({ summary: 'Alterar senha' })
   @ApiResponse({ status: 200, description: 'Senha alterada com sucesso' })
   @ApiResponse({
@@ -288,21 +265,21 @@ export class UsuarioController {
     @Request() req,
   ) {
     const userId = req.user.sub;
-    return this.usuarioService.alterarSenhaPrimeiroAcesso(userId, alterarSenhaDto);
+    return this.usuarioService.alterarSenhaPrimeiroAcesso(
+      userId,
+      alterarSenhaDto,
+    );
   }
 
   /**
    * Remove um usuário (soft delete)
    */
   @Delete(':id')
-  @RequiresPermission(
-    
-    {
-      permissionName: 'usuario.remover',
-      scopeType: ScopeType.UNIT,
-      scopeIdExpression: 'usuario.unidade_id'
-    }
-  )
+  @RequiresPermission({
+    permissionName: 'usuario.remover',
+    scopeType: ScopeType.UNIT,
+    scopeIdExpression: 'usuario.unidade_id',
+  })
   @ApiOperation({ summary: 'Remover usuário (soft delete)' })
   @ApiResponse({ status: 200, description: 'Usuário removido com sucesso' })
   @ApiResponse({ status: 404, description: 'Usuário não encontrado' })

@@ -65,12 +65,42 @@ export class CreateRecursoSchema1704067228000 implements MigrationInterface {
 
     // Adicionar permissões relacionadas a recursos
     const permissoesRecurso = [
-      { nome: 'recurso.criar', descricao: 'Criar recursos de primeira instância', modulo: 'recurso', acao: 'criar' },
-      { nome: 'recurso.listar', descricao: 'Listar recursos de primeira instância', modulo: 'recurso', acao: 'listar' },
-      { nome: 'recurso.visualizar', descricao: 'Visualizar detalhes de recursos', modulo: 'recurso', acao: 'visualizar' },
-      { nome: 'recurso.analisar', descricao: 'Analisar recursos de primeira instância', modulo: 'recurso', acao: 'analisar' },
-      { nome: 'recurso.cancelar', descricao: 'Cancelar recursos de primeira instância', modulo: 'recurso', acao: 'cancelar' },
-      { nome: 'recurso.historico.visualizar', descricao: 'Visualizar histórico de recursos', modulo: 'recurso', acao: 'historico.visualizar' }
+      {
+        nome: 'recurso.criar',
+        descricao: 'Criar recursos de primeira instância',
+        modulo: 'recurso',
+        acao: 'criar',
+      },
+      {
+        nome: 'recurso.listar',
+        descricao: 'Listar recursos de primeira instância',
+        modulo: 'recurso',
+        acao: 'listar',
+      },
+      {
+        nome: 'recurso.visualizar',
+        descricao: 'Visualizar detalhes de recursos',
+        modulo: 'recurso',
+        acao: 'visualizar',
+      },
+      {
+        nome: 'recurso.analisar',
+        descricao: 'Analisar recursos de primeira instância',
+        modulo: 'recurso',
+        acao: 'analisar',
+      },
+      {
+        nome: 'recurso.cancelar',
+        descricao: 'Cancelar recursos de primeira instância',
+        modulo: 'recurso',
+        acao: 'cancelar',
+      },
+      {
+        nome: 'recurso.historico.visualizar',
+        descricao: 'Visualizar histórico de recursos',
+        modulo: 'recurso',
+        acao: 'historico.visualizar',
+      },
     ];
 
     // Inserir cada permissão verificando se já existe
@@ -78,7 +108,7 @@ export class CreateRecursoSchema1704067228000 implements MigrationInterface {
       // Verificar se a permissão já existe
       const permExistente = await queryRunner.query(
         `SELECT id FROM permissao WHERE nome = $1`,
-        [perm.nome]
+        [perm.nome],
       );
 
       // Se não existir, inserir
@@ -86,7 +116,7 @@ export class CreateRecursoSchema1704067228000 implements MigrationInterface {
         await queryRunner.query(
           `INSERT INTO permissao (id, nome, descricao, modulo, acao, created_at, updated_at)
            VALUES (uuid_generate_v4(), $1, $2, $3, $4, NOW(), NOW())`,
-          [perm.nome, perm.descricao, perm.modulo, perm.acao]
+          [perm.nome, perm.descricao, perm.modulo, perm.acao],
         );
       }
     }
@@ -94,32 +124,39 @@ export class CreateRecursoSchema1704067228000 implements MigrationInterface {
     // Adicionar permissões aos papéis existentes
     // 1. Obter os papéis (roles)
     const roles = await queryRunner.query(
-      `SELECT id, nome FROM role WHERE nome IN ('ADMIN', 'GESTOR', 'TECNICO')`
+      `SELECT id, nome FROM role WHERE nome IN ('ADMIN', 'GESTOR', 'TECNICO')`,
     );
 
     // 2. Obter as permissões de recurso
     const permissoesBD = await queryRunner.query(
-      `SELECT id, nome FROM permissao WHERE nome LIKE 'recurso.%'`
+      `SELECT id, nome FROM permissao WHERE nome LIKE 'recurso.%'`,
     );
 
     // 3. Mapear quais permissões cada papel deve ter
     const permissoesPorPapel: { roleId: string; permissaoId: string }[] = [];
-    
+
     for (const role of roles) {
       for (const perm of permissoesBD) {
         // Admin e Gestor têm todas as permissões
         if (role.nome === 'ADMIN' || role.nome === 'GESTOR') {
           permissoesPorPapel.push({
             roleId: role.id,
-            permissaoId: perm.id
+            permissaoId: perm.id,
           });
         }
         // Técnicos têm permissões específicas
-        else if (role.nome === 'TECNICO' && 
-                (['recurso.listar', 'recurso.visualizar', 'recurso.analisar', 'recurso.historico.visualizar'].includes(perm.nome))) {
+        else if (
+          role.nome === 'TECNICO' &&
+          [
+            'recurso.listar',
+            'recurso.visualizar',
+            'recurso.analisar',
+            'recurso.historico.visualizar',
+          ].includes(perm.nome)
+        ) {
           permissoesPorPapel.push({
             roleId: role.id,
-            permissaoId: perm.id
+            permissaoId: perm.id,
           });
         }
       }
@@ -130,7 +167,7 @@ export class CreateRecursoSchema1704067228000 implements MigrationInterface {
       // Verificar se já existe esta associação
       const existente = await queryRunner.query(
         `SELECT 1 FROM role_permissao WHERE role_id = $1 AND permissao_id = $2`,
-        [item.roleId, item.permissaoId]
+        [item.roleId, item.permissaoId],
       );
 
       // Se não existir, inserir
@@ -138,7 +175,7 @@ export class CreateRecursoSchema1704067228000 implements MigrationInterface {
         await queryRunner.query(
           `INSERT INTO role_permissao (role_id, permissao_id, created_at)
            VALUES ($1, $2, NOW())`,
-          [item.roleId, item.permissaoId]
+          [item.roleId, item.permissaoId],
         );
       }
     }

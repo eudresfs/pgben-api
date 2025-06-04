@@ -31,8 +31,6 @@ describe('VerificacaoPapelService', () => {
     update: jest.fn(),
   };
 
-
-
   const mockComposicaoFamiliarRepository = {
     find: jest.fn(),
     findOne: jest.fn(),
@@ -90,8 +88,6 @@ describe('VerificacaoPapelService', () => {
     updated_at: new Date(),
   } as PapelCidadao;
 
-
-
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -132,7 +128,9 @@ describe('VerificacaoPapelService', () => {
     }).compile();
 
     service = module.get<VerificacaoPapelService>(VerificacaoPapelService);
-    papelRepository = module.get<Repository<PapelCidadao>>(getRepositoryToken(PapelCidadao));
+    papelRepository = module.get<Repository<PapelCidadao>>(
+      getRepositoryToken(PapelCidadao),
+    );
 
     historicoService = module.get<HistoricoConversaoPapelService>(
       HistoricoConversaoPapelService,
@@ -197,7 +195,9 @@ describe('VerificacaoPapelService', () => {
       const result = await service.verificarConflitoPapeis(cpf);
 
       expect(result.temConflito).toBe(true);
-      expect(result.detalhes).toContain('beneficiário e requerente simultaneamente');
+      expect(result.detalhes).toContain(
+        'beneficiário e requerente simultaneamente',
+      );
     });
 
     it('deve buscar cidadão com papéis', async () => {
@@ -252,8 +252,7 @@ describe('VerificacaoPapelService', () => {
 
       mockDataSource.transaction.mockImplementation(async (callback) => {
         const manager = {
-          findOne: jest.fn()
-            .mockResolvedValueOnce(cidadaoComPapeis), // busca do cidadão com papéis
+          findOne: jest.fn().mockResolvedValueOnce(cidadaoComPapeis), // busca do cidadão com papéis
           find: jest.fn(),
           update: jest.fn().mockResolvedValue({ affected: 1 }),
           create: jest.fn().mockReturnValue(novoPapel),
@@ -262,12 +261,16 @@ describe('VerificacaoPapelService', () => {
         return callback(manager);
       });
 
-      mockHistoricoService.criarHistorico.mockResolvedValue({ id: 'historico-id' });
+      mockHistoricoService.criarHistorico.mockResolvedValue({
+        id: 'historico-id',
+      });
 
       const result = await service.converterParaBeneficiario(cidadaoId, motivo);
 
       expect(result.sucesso).toBe(true);
-      expect(result.mensagem).toBe('Conversão para beneficiário realizada com sucesso');
+      expect(result.mensagem).toBe(
+        'Conversão para beneficiário realizada com sucesso',
+      );
       expect(result.historicoId).toBeDefined();
       expect(mockHistoricoService.criarHistorico).toHaveBeenCalled();
     });
@@ -284,9 +287,9 @@ describe('VerificacaoPapelService', () => {
         return callback(manager);
       });
 
-      await expect(service.converterParaBeneficiario(cidadaoId, motivo)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        service.converterParaBeneficiario(cidadaoId, motivo),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('deve lançar ConflictException quando cidadão já for beneficiário', async () => {
@@ -303,8 +306,7 @@ describe('VerificacaoPapelService', () => {
 
       mockDataSource.transaction.mockImplementation(async (callback) => {
         const manager = {
-          findOne: jest.fn()
-            .mockResolvedValueOnce(cidadaoComBeneficiario), // busca do cidadão com papel beneficiário
+          findOne: jest.fn().mockResolvedValueOnce(cidadaoComBeneficiario), // busca do cidadão com papel beneficiário
           find: jest.fn(),
           update: jest.fn(),
           create: jest.fn(),
@@ -313,8 +315,9 @@ describe('VerificacaoPapelService', () => {
         return callback(manager);
       });
 
-      await expect(service.converterParaBeneficiario(cidadaoId, motivo))
-        .rejects.toThrow('Cidadão já é beneficiário');
+      await expect(
+        service.converterParaBeneficiario(cidadaoId, motivo),
+      ).rejects.toThrow('Cidadão já é beneficiário');
     });
 
     it('deve desativar papéis conflitantes durante a conversão', async () => {
@@ -340,8 +343,7 @@ describe('VerificacaoPapelService', () => {
       };
 
       const mockManager = {
-        findOne: jest.fn()
-          .mockResolvedValueOnce(cidadaoComPapeis), // busca do cidadão com papéis
+        findOne: jest.fn().mockResolvedValueOnce(cidadaoComPapeis), // busca do cidadão com papéis
         find: jest.fn(),
         update: jest.fn().mockResolvedValue({ affected: 1 }),
         create: jest.fn().mockReturnValue(novoPapel),
@@ -352,21 +354,24 @@ describe('VerificacaoPapelService', () => {
         return callback(mockManager);
       });
 
-      mockHistoricoService.criarHistorico.mockResolvedValue({ id: 'historico-id' });
+      mockHistoricoService.criarHistorico.mockResolvedValue({
+        id: 'historico-id',
+      });
 
       await service.converterParaBeneficiario(cidadaoId, motivo);
 
       // Verifica se o save foi chamado duas vezes (desativar papel antigo + criar novo papel)
       expect(mockManager.save).toHaveBeenCalledTimes(2);
-      
+
       // Verifica se o papel antigo foi desativado (primeira chamada)
-      expect(mockManager.save).toHaveBeenNthCalledWith(1, 
+      expect(mockManager.save).toHaveBeenNthCalledWith(
+        1,
         expect.objectContaining({
           id: papelMembroComposicao.id,
           ativo: false,
-        })
+        }),
       );
-      
+
       // Verifica se o novo papel foi criado (segunda chamada)
       expect(mockManager.save).toHaveBeenNthCalledWith(2, novoPapel);
     });
@@ -384,11 +389,11 @@ describe('VerificacaoPapelService', () => {
 
       mockDataSource.transaction.mockImplementation(async (callback) => {
         const manager = {
-          findOne: jest.fn()
+          findOne: jest
+            .fn()
             .mockResolvedValueOnce(mockCidadao) // busca do cidadão
             .mockResolvedValueOnce(null), // verificação de papel existente
-          find: jest.fn()
-            .mockResolvedValueOnce([mockPapelCidadao]), // papéis ativos
+          find: jest.fn().mockResolvedValueOnce([mockPapelCidadao]), // papéis ativos
           update: jest.fn().mockResolvedValue({ affected: 1 }),
           create: jest.fn().mockReturnValue(novoPapel),
           save: jest.fn().mockResolvedValue(novoPapel),
@@ -400,12 +405,15 @@ describe('VerificacaoPapelService', () => {
 
       await service.converterParaBeneficiario(cidadaoId, motivo);
 
-      expect(mockHistoricoService.criarHistorico).toHaveBeenCalledWith({
-        cidadao_id: cidadaoId,
-        papel_anterior: 'membro_composicao',
-        papel_novo: 'beneficiario',
-        justificativa: motivo,
-      }, 'sistema');
+      expect(mockHistoricoService.criarHistorico).toHaveBeenCalledWith(
+        {
+          cidadao_id: cidadaoId,
+          papel_anterior: 'membro_composicao',
+          papel_novo: 'beneficiario',
+          justificativa: motivo,
+        },
+        'sistema',
+      );
     });
   });
 });

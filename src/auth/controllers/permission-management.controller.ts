@@ -188,7 +188,10 @@ export class PermissionManagementController {
     status: 200,
     description: 'Permissão atribuída com sucesso',
   })
-  async grantPermission(@Body() grantDto: GrantPermissionDto, @Query('createdBy') createdBy: string) {
+  async grantPermission(
+    @Body() grantDto: GrantPermissionDto,
+    @Query('createdBy') createdBy: string,
+  ) {
     if (!createdBy) {
       throw new BadRequestException('O parâmetro createdBy é obrigatório');
     }
@@ -222,7 +225,10 @@ export class PermissionManagementController {
     status: 200,
     description: 'Permissão revogada com sucesso',
   })
-  async revokePermission(@Body() revokeDto: RevokePermissionDto, @Query('revokedBy') revokedBy: string) {
+  async revokePermission(
+    @Body() revokeDto: RevokePermissionDto,
+    @Query('revokedBy') revokedBy: string,
+  ) {
     if (!revokedBy) {
       throw new BadRequestException('O parâmetro revokedBy é obrigatório');
     }
@@ -287,7 +293,9 @@ export class PermissionManagementController {
    * Endpoint de debug para verificar permissões (apenas em ambiente não-produção)
    */
   @Get('debug')
-  @ApiOperation({ summary: 'Debug de permissões (apenas em ambiente não-produção)' })
+  @ApiOperation({
+    summary: 'Debug de permissões (apenas em ambiente não-produção)',
+  })
   @ApiResponse({
     status: 200,
     description: 'Informações de debug retornadas com sucesso',
@@ -296,15 +304,19 @@ export class PermissionManagementController {
     // Verificar se estamos em ambiente de produção
     const isProd = process.env.NODE_ENV === 'production';
     if (isProd) {
-      throw new UnauthorizedException('Este endpoint não está disponível em ambiente de produção');
+      throw new UnauthorizedException(
+        'Este endpoint não está disponível em ambiente de produção',
+      );
     }
 
     if (!userId) {
       throw new BadRequestException('O parâmetro userId é obrigatório');
     }
 
-    const userPermissions = await this.permissionService.getUserPermissions(userId);
-    const rolePermissions = await this.permissionService.getRolePermissionsByUserId(userId);
+    const userPermissions =
+      await this.permissionService.getUserPermissions(userId);
+    const rolePermissions =
+      await this.permissionService.getRolePermissionsByUserId(userId);
 
     return {
       userPermissions,

@@ -1,17 +1,17 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { 
-  IsEmail, 
-  IsNotEmpty, 
-  IsString, 
-  Length, 
-  MaxLength, 
-  Matches, 
-  Validate, 
-  IsArray, 
-  ArrayMinSize, 
-  ArrayMaxSize, 
-  IsBoolean, 
-  IsOptional 
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsString,
+  Length,
+  MaxLength,
+  Matches,
+  Validate,
+  IsArray,
+  ArrayMinSize,
+  ArrayMaxSize,
+  IsBoolean,
+  IsOptional,
 } from 'class-validator';
 import { IsCPF, IsTelefone } from '../../shared/validators/br-validators';
 import { Role } from '../../enums/role.enum';
@@ -34,7 +34,9 @@ export class RegisterInput {
     example: 'joao.silva',
   })
   @IsNotEmpty({ message: 'O nome de usuário é obrigatório' })
-  @MaxLength(200, { message: 'O nome de usuário deve ter no máximo 200 caracteres' })
+  @MaxLength(200, {
+    message: 'O nome de usuário deve ter no máximo 200 caracteres',
+  })
   @IsString({ message: 'O nome de usuário deve ser uma string' })
   username: string;
 
@@ -98,9 +100,10 @@ export class RegisterInput {
   @IsNotEmpty({ message: 'O telefone é obrigatório' })
   @IsString({ message: 'O telefone deve ser uma string' })
   @Matches(/\(\d{2}\)\s\d{4,5}-\d{4}$/, {
-    message: 'Formato de telefone inválido. Use: (XX) XXXX-XXXX para fixo ou (XX) XXXXX-XXXX para celular',
+    message:
+      'Formato de telefone inválido. Use: (XX) XXXX-XXXX para fixo ou (XX) XXXXX-XXXX para celular',
   })
-  @Validate(IsTelefone, {message: ''})
+  @Validate(IsTelefone, { message: '' })
   telefone: string;
 
   @ApiProperty({
@@ -110,7 +113,8 @@ export class RegisterInput {
   @IsNotEmpty({ message: 'O número de matrícula é obrigatório' })
   @IsString({ message: 'A matrícula deve ser uma string' })
   @Matches(/^[0-9]{5,10}$/, {
-    message: 'A matrícula deve conter apenas números e ter entre 5 e 10 dígitos',
+    message:
+      'A matrícula deve conter apenas números e ter entre 5 e 10 dígitos',
   })
   matricula: string;
 }

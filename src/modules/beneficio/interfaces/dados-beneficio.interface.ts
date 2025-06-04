@@ -27,7 +27,11 @@ export interface IUpdateDadosBeneficioDto {
 /**
  * Interface para serviços de dados de benefícios
  */
-export interface IDadosBeneficioService<T extends IDadosBeneficio, C extends ICreateDadosBeneficioDto, U extends IUpdateDadosBeneficioDto> {
+export interface IDadosBeneficioService<
+  T extends IDadosBeneficio,
+  C extends ICreateDadosBeneficioDto,
+  U extends IUpdateDadosBeneficioDto,
+> {
   create(createDto: C): Promise<T>;
   findOne(id: string): Promise<T>;
   findBySolicitacao(solicitacaoId: string): Promise<T>;
@@ -43,7 +47,7 @@ export enum TipoDadosBeneficio {
   ALUGUEL_SOCIAL = 'aluguel-social',
   CESTA_BASICA = 'cesta-basica',
   FUNERAL = 'funeral',
-  NATALIDADE = 'natalidade'
+  NATALIDADE = 'natalidade',
 }
 
 /**

@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { Repository, DataSource, SelectQueryBuilder } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { 
-  Solicitacao, 
-  StatusSolicitacao, 
-  Usuario, 
-  TipoBeneficio, 
-  Unidade, 
-  Cidadao 
+import {
+  Solicitacao,
+  StatusSolicitacao,
+  Usuario,
+  TipoBeneficio,
+  Unidade,
+  Cidadao,
 } from '../../../entities';
 
 /**
@@ -52,7 +52,7 @@ export interface ResultadoPaginado<T> {
 
 /**
  * Repository customizado para Solicitações
- * 
+ *
  * Implementa consultas complexas e otimizadas para o módulo de solicitações,
  * incluindo filtros avançados, paginação e joins otimizados.
  */
@@ -86,7 +86,7 @@ export class SolicitacaoRepository {
     this.aplicarOrdenacao(queryBuilder, opcoesPaginacao.ordenacao);
 
     const total = await queryBuilder.getCount();
-    
+
     const dados = await queryBuilder
       .skip((opcoesPaginacao.pagina - 1) * opcoesPaginacao.limite)
       .take(opcoesPaginacao.limite)
@@ -142,19 +142,25 @@ export class SolicitacaoRepository {
    * @param dataReferencia Data de referência para verificar vencimento
    * @returns Lista de solicitações com prazos vencidos
    */
-  async buscarComPrazosVencidos(dataReferencia: Date = new Date()): Promise<Solicitacao[]> {
+  async buscarComPrazosVencidos(
+    dataReferencia: Date = new Date(),
+  ): Promise<Solicitacao[]> {
     return this.repository
       .createQueryBuilder('solicitacao')
       .leftJoinAndSelect('solicitacao.unidade', 'unidade')
       .leftJoinAndSelect('solicitacao.tecnico', 'tecnico')
       .where(
         '(solicitacao.prazo_analise IS NOT NULL AND solicitacao.prazo_analise < :data) OR ' +
-        '(solicitacao.prazo_documentos IS NOT NULL AND solicitacao.prazo_documentos < :data) OR ' +
-        '(solicitacao.prazo_processamento IS NOT NULL AND solicitacao.prazo_processamento < :data)',
+          '(solicitacao.prazo_documentos IS NOT NULL AND solicitacao.prazo_documentos < :data) OR ' +
+          '(solicitacao.prazo_processamento IS NOT NULL AND solicitacao.prazo_processamento < :data)',
         { data: dataReferencia },
       )
       .andWhere('solicitacao.status NOT IN (:...statusFinais)', {
-        statusFinais: [StatusSolicitacao.CONCLUIDA, StatusSolicitacao.ARQUIVADA, StatusSolicitacao.CANCELADA],
+        statusFinais: [
+          StatusSolicitacao.CONCLUIDA,
+          StatusSolicitacao.ARQUIVADA,
+          StatusSolicitacao.CANCELADA,
+        ],
       })
       .getMany();
   }
@@ -164,7 +170,9 @@ export class SolicitacaoRepository {
    * @param diasAntecedencia Número de dias de antecedência para considerar "próximo"
    * @returns Lista de solicitações próximas do vencimento
    */
-  async buscarProximasDoVencimento(diasAntecedencia: number = 3): Promise<Solicitacao[]> {
+  async buscarProximasDoVencimento(
+    diasAntecedencia: number = 3,
+  ): Promise<Solicitacao[]> {
     const dataLimite = new Date();
     dataLimite.setDate(dataLimite.getDate() + diasAntecedencia);
 
@@ -174,12 +182,16 @@ export class SolicitacaoRepository {
       .leftJoinAndSelect('solicitacao.tecnico', 'tecnico')
       .where(
         '(solicitacao.prazo_analise IS NOT NULL AND solicitacao.prazo_analise BETWEEN :hoje AND :limite) OR ' +
-        '(solicitacao.prazo_documentos IS NOT NULL AND solicitacao.prazo_documentos BETWEEN :hoje AND :limite) OR ' +
-        '(solicitacao.prazo_processamento IS NOT NULL AND solicitacao.prazo_processamento BETWEEN :hoje AND :limite)',
+          '(solicitacao.prazo_documentos IS NOT NULL AND solicitacao.prazo_documentos BETWEEN :hoje AND :limite) OR ' +
+          '(solicitacao.prazo_processamento IS NOT NULL AND solicitacao.prazo_processamento BETWEEN :hoje AND :limite)',
         { hoje: new Date(), limite: dataLimite },
       )
       .andWhere('solicitacao.status NOT IN (:...statusFinais)', {
-        statusFinais: [StatusSolicitacao.CONCLUIDA, StatusSolicitacao.ARQUIVADA, StatusSolicitacao.CANCELADA],
+        statusFinais: [
+          StatusSolicitacao.CONCLUIDA,
+          StatusSolicitacao.ARQUIVADA,
+          StatusSolicitacao.CANCELADA,
+        ],
       })
       .getMany();
   }
@@ -189,7 +201,9 @@ export class SolicitacaoRepository {
    * @param filtros Filtros opcionais
    * @returns Objeto com contagem por status
    */
-  async contarPorStatus(filtros?: Partial<FiltrosSolicitacao>): Promise<Record<StatusSolicitacao, number>> {
+  async contarPorStatus(
+    filtros?: Partial<FiltrosSolicitacao>,
+  ): Promise<Record<StatusSolicitacao, number>> {
     const queryBuilder = this.criarQueryBuilder()
       .select('solicitacao.status', 'status')
       .addSelect('COUNT(*)', 'total')
@@ -200,15 +214,18 @@ export class SolicitacaoRepository {
     }
 
     const resultados = await queryBuilder.getRawMany();
-    
+
     // Inicializar todos os status com 0
-    const contagem = Object.values(StatusSolicitacao).reduce((acc, status) => {
-      acc[status] = 0;
-      return acc;
-    }, {} as Record<StatusSolicitacao, number>);
+    const contagem = Object.values(StatusSolicitacao).reduce(
+      (acc, status) => {
+        acc[status] = 0;
+        return acc;
+      },
+      {} as Record<StatusSolicitacao, number>,
+    );
 
     // Preencher com os valores reais
-    resultados.forEach(resultado => {
+    resultados.forEach((resultado) => {
       contagem[resultado.status] = parseInt(resultado.total);
     });
 
@@ -229,7 +246,9 @@ export class SolicitacaoRepository {
       .createQueryBuilder('solicitacao')
       .leftJoinAndSelect('solicitacao.tipo_beneficio', 'tipo_beneficio')
       .leftJoinAndSelect('solicitacao.unidade', 'unidade')
-      .where('solicitacao.beneficiario_id = :beneficiarioId', { beneficiarioId })
+      .where('solicitacao.beneficiario_id = :beneficiarioId', {
+        beneficiarioId,
+      })
       .orderBy('solicitacao.created_at', 'DESC');
 
     if (!incluirArquivadas) {
@@ -313,9 +332,12 @@ export class SolicitacaoRepository {
     }
 
     if (filtros.determinacao_judicial !== undefined) {
-      queryBuilder.andWhere('solicitacao.determinacao_judicial_flag = :determinacaoJudicial', {
-        determinacaoJudicial: filtros.determinacao_judicial,
-      });
+      queryBuilder.andWhere(
+        'solicitacao.determinacao_judicial_flag = :determinacaoJudicial',
+        {
+          determinacaoJudicial: filtros.determinacao_judicial,
+        },
+      );
     }
 
     if (filtros.vencimento_prazo) {
@@ -340,24 +362,24 @@ export class SolicitacaoRepository {
       case 'vencido':
         queryBuilder.andWhere(
           '(solicitacao.prazo_analise IS NOT NULL AND solicitacao.prazo_analise < :hoje) OR ' +
-          '(solicitacao.prazo_documentos IS NOT NULL AND solicitacao.prazo_documentos < :hoje) OR ' +
-          '(solicitacao.prazo_processamento IS NOT NULL AND solicitacao.prazo_processamento < :hoje)',
+            '(solicitacao.prazo_documentos IS NOT NULL AND solicitacao.prazo_documentos < :hoje) OR ' +
+            '(solicitacao.prazo_processamento IS NOT NULL AND solicitacao.prazo_processamento < :hoje)',
           { hoje },
         );
         break;
       case 'proximo':
         queryBuilder.andWhere(
           '(solicitacao.prazo_analise IS NOT NULL AND solicitacao.prazo_analise BETWEEN :hoje AND :proximo) OR ' +
-          '(solicitacao.prazo_documentos IS NOT NULL AND solicitacao.prazo_documentos BETWEEN :hoje AND :proximo) OR ' +
-          '(solicitacao.prazo_processamento IS NOT NULL AND solicitacao.prazo_processamento BETWEEN :hoje AND :proximo)',
+            '(solicitacao.prazo_documentos IS NOT NULL AND solicitacao.prazo_documentos BETWEEN :hoje AND :proximo) OR ' +
+            '(solicitacao.prazo_processamento IS NOT NULL AND solicitacao.prazo_processamento BETWEEN :hoje AND :proximo)',
           { hoje, proximo: proximoVencimento },
         );
         break;
       case 'normal':
         queryBuilder.andWhere(
           '(solicitacao.prazo_analise IS NULL OR solicitacao.prazo_analise > :proximo) AND ' +
-          '(solicitacao.prazo_documentos IS NULL OR solicitacao.prazo_documentos > :proximo) AND ' +
-          '(solicitacao.prazo_processamento IS NULL OR solicitacao.prazo_processamento > :proximo)',
+            '(solicitacao.prazo_documentos IS NULL OR solicitacao.prazo_documentos > :proximo) AND ' +
+            '(solicitacao.prazo_processamento IS NULL OR solicitacao.prazo_processamento > :proximo)',
           { proximo: proximoVencimento },
         );
         break;
@@ -389,14 +411,14 @@ export class SolicitacaoRepository {
    */
   private mapearCampoOrdenacao(campo: string): string {
     const mapeamento: Record<string, string> = {
-      'data_abertura': 'solicitacao.data_abertura',
-      'protocolo': 'solicitacao.protocolo',
-      'status': 'solicitacao.status',
-      'beneficiario': 'beneficiario.nome',
-      'tipo_beneficio': 'tipo_beneficio.nome',
-      'unidade': 'unidade.nome',
-      'created_at': 'solicitacao.created_at',
-      'updated_at': 'solicitacao.updated_at',
+      data_abertura: 'solicitacao.data_abertura',
+      protocolo: 'solicitacao.protocolo',
+      status: 'solicitacao.status',
+      beneficiario: 'beneficiario.nome',
+      tipo_beneficio: 'tipo_beneficio.nome',
+      unidade: 'unidade.nome',
+      created_at: 'solicitacao.created_at',
+      updated_at: 'solicitacao.updated_at',
     };
 
     return mapeamento[campo] || 'solicitacao.created_at';
@@ -435,7 +457,10 @@ export class SolicitacaoRepository {
    * @param excluirId ID a ser excluído da verificação (para updates)
    * @returns Boolean indicando se existe
    */
-  async existeProtocolo(protocolo: string, excluirId?: string): Promise<boolean> {
+  async existeProtocolo(
+    protocolo: string,
+    excluirId?: string,
+  ): Promise<boolean> {
     const queryBuilder = this.repository
       .createQueryBuilder('solicitacao')
       .where('solicitacao.protocolo = :protocolo', { protocolo });

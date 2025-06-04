@@ -1,4 +1,10 @@
-import { IsOptional, IsBoolean, IsNumber, Min, IsString } from 'class-validator';
+import {
+  IsOptional,
+  IsBoolean,
+  IsNumber,
+  Min,
+  IsString,
+} from 'class-validator';
 
 /**
  * DTO para atualização de configuração de renovação automática

@@ -2,7 +2,10 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { DadosAluguelSocial } from '../../../entities/dados-aluguel-social.entity';
-import { CreateDadosAluguelSocialDto, UpdateDadosAluguelSocialDto } from '../dto/create-dados-aluguel-social.dto';
+import {
+  CreateDadosAluguelSocialDto,
+  UpdateDadosAluguelSocialDto,
+} from '../dto/create-dados-aluguel-social.dto';
 
 /**
  * Serviço para gerenciar dados específicos de Aluguel Social
@@ -12,22 +15,27 @@ export class DadosAluguelSocialService {
   constructor(
     @InjectRepository(DadosAluguelSocial)
     private readonly dadosAluguelSocialRepository: Repository<DadosAluguelSocial>,
-  ) { }
+  ) {}
 
   /**
    * Criar dados de aluguel social para uma solicitação
    */
-  async create(createDto: CreateDadosAluguelSocialDto): Promise<DadosAluguelSocial> {
+  async create(
+    createDto: CreateDadosAluguelSocialDto,
+  ): Promise<DadosAluguelSocial> {
     // Verificar se já existem dados para esta solicitação
     const existingData = await this.dadosAluguelSocialRepository.findOne({
       where: { solicitacao_id: createDto.solicitacao_id },
     });
 
     if (existingData) {
-      throw new Error('Já existem dados de aluguel social para esta solicitação');
+      throw new Error(
+        'Já existem dados de aluguel social para esta solicitação',
+      );
     }
 
-    const dadosAluguelSocial = this.dadosAluguelSocialRepository.create(createDto);
+    const dadosAluguelSocial =
+      this.dadosAluguelSocialRepository.create(createDto);
     return this.dadosAluguelSocialRepository.save(dadosAluguelSocial);
   }
 
@@ -104,7 +112,12 @@ export class DadosAluguelSocialService {
   async findAll(
     page: number = 1,
     limit: number = 10,
-  ): Promise<{ data: DadosAluguelSocial[]; total: number; page: number; limit: number }> {
+  ): Promise<{
+    data: DadosAluguelSocial[];
+    total: number;
+    page: number;
+    limit: number;
+  }> {
     const [data, total] = await this.dadosAluguelSocialRepository.findAndCount({
       relations: ['solicitacao'],
       skip: (page - 1) * limit,
@@ -127,7 +140,12 @@ export class DadosAluguelSocialService {
     publicoPrioritario: string,
     page: number = 1,
     limit: number = 10,
-  ): Promise<{ data: DadosAluguelSocial[]; total: number; page: number; limit: number }> {
+  ): Promise<{
+    data: DadosAluguelSocial[];
+    total: number;
+    page: number;
+    limit: number;
+  }> {
     const [data, total] = await this.dadosAluguelSocialRepository.findAndCount({
       where: { publico_prioritario: publicoPrioritario as any },
       relations: ['solicitacao'],

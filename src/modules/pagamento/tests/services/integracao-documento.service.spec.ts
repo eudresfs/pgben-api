@@ -8,10 +8,10 @@ import { NotFoundException } from '@nestjs/common';
 
 /**
  * Testes unitários para o serviço de integração com o módulo de documentos
- * 
+ *
  * Verifica o funcionamento correto das operações de armazenamento e
  * recuperação de comprovantes de pagamento.
- * 
+ *
  * @author Equipe PGBen
  */
 describe('IntegracaoDocumentoService', () => {
@@ -24,17 +24,23 @@ describe('IntegracaoDocumentoService', () => {
     get: jest.fn(),
     post: jest.fn(),
     put: jest.fn(),
-    delete: jest.fn()
+    delete: jest.fn(),
   };
 
   // Mock do ConfigService
   const mockConfigService = {
     get: jest.fn().mockImplementation((key) => {
-      if (key === 'documento.apiUrl') {return 'http://api-documento.pgben.local';}
-      if (key === 'documento.apiKey') {return 'api-key-mock';}
-      if (key === 'documento.categoriaComprovante') {return 'COMPROVANTE_PAGAMENTO';}
+      if (key === 'documento.apiUrl') {
+        return 'http://api-documento.pgben.local';
+      }
+      if (key === 'documento.apiKey') {
+        return 'api-key-mock';
+      }
+      if (key === 'documento.categoriaComprovante') {
+        return 'COMPROVANTE_PAGAMENTO';
+      }
       return null;
-    })
+    }),
   };
 
   beforeEach(async () => {
@@ -43,16 +49,18 @@ describe('IntegracaoDocumentoService', () => {
         IntegracaoDocumentoService,
         {
           provide: HttpService,
-          useValue: mockHttpService
+          useValue: mockHttpService,
         },
         {
           provide: ConfigService,
-          useValue: mockConfigService
-        }
+          useValue: mockConfigService,
+        },
       ],
     }).compile();
 
-    service = module.get<IntegracaoDocumentoService>(IntegracaoDocumentoService);
+    service = module.get<IntegracaoDocumentoService>(
+      IntegracaoDocumentoService,
+    );
     httpService = module.get<HttpService>(HttpService);
     configService = module.get<ConfigService>(ConfigService);
 
@@ -67,7 +75,7 @@ describe('IntegracaoDocumentoService', () => {
       originalname: 'comprovante.pdf',
       mimetype: 'application/pdf',
       buffer: Buffer.from('conteúdo do arquivo'),
-      size: 1024
+      size: 1024,
     } as any;
 
     const mockResposta = {
@@ -78,7 +86,7 @@ describe('IntegracaoDocumentoService', () => {
       categoria: 'COMPROVANTE_PAGAMENTO',
       referencia: pagamentoId,
       url: 'http://api-documento.pgben.local/documentos/documento-id',
-      createdAt: '2023-01-01T00:00:00Z'
+      createdAt: '2023-01-01T00:00:00Z',
     };
 
     it('deve fazer upload de comprovante com sucesso', async () => {
@@ -88,13 +96,17 @@ describe('IntegracaoDocumentoService', () => {
         status: 201,
         statusText: 'Created',
         headers: {},
-        config: { headers: {} } as any
+        config: { headers: {} } as any,
       };
-      
+
       mockHttpService.post.mockReturnValue(of(axiosResponse));
 
       // Executar método
-      const result = await service.uploadComprovante(pagamentoId, arquivo, usuarioId);
+      const result = await service.uploadComprovante(
+        pagamentoId,
+        arquivo,
+        usuarioId,
+      );
 
       // Verificar resultado
       expect(result).toEqual(mockResposta);
@@ -104,9 +116,9 @@ describe('IntegracaoDocumentoService', () => {
         expect.objectContaining({
           headers: expect.objectContaining({
             'x-api-key': 'api-key-mock',
-            'Content-Type': expect.stringContaining('multipart/form-data')
-          })
-        })
+            'Content-Type': expect.stringContaining('multipart/form-data'),
+          }),
+        }),
       );
     });
 
@@ -116,19 +128,21 @@ describe('IntegracaoDocumentoService', () => {
         throwError(() => ({
           response: {
             status: 500,
-            data: { message: 'Erro interno do servidor' }
-          }
-        }))
+            data: { message: 'Erro interno do servidor' },
+          },
+        })),
       );
 
       // Executar e verificar exceção
-      await expect(service.uploadComprovante(pagamentoId, arquivo, usuarioId)).rejects.toThrow();
+      await expect(
+        service.uploadComprovante(pagamentoId, arquivo, usuarioId),
+      ).rejects.toThrow();
     });
   });
 
   describe('obterComprovante', () => {
     const documentoId = 'documento-id';
-    
+
     const mockDocumento = {
       id: documentoId,
       nome: 'comprovante.pdf',
@@ -137,7 +151,7 @@ describe('IntegracaoDocumentoService', () => {
       categoria: 'COMPROVANTE_PAGAMENTO',
       referencia: 'pagamento-id',
       url: 'http://api-documento.pgben.local/documentos/documento-id',
-      createdAt: '2023-01-01T00:00:00Z'
+      createdAt: '2023-01-01T00:00:00Z',
     };
 
     it('deve obter documento quando encontrado', async () => {
@@ -147,9 +161,9 @@ describe('IntegracaoDocumentoService', () => {
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: { headers: {} } as any
+        config: { headers: {} } as any,
       };
-      
+
       mockHttpService.get.mockReturnValue(of(axiosResponse));
 
       // Executar método
@@ -161,9 +175,9 @@ describe('IntegracaoDocumentoService', () => {
         `http://api-documento.pgben.local/documentos/${documentoId}`,
         expect.objectContaining({
           headers: expect.objectContaining({
-            'x-api-key': 'api-key-mock'
-          })
-        })
+            'x-api-key': 'api-key-mock',
+          }),
+        }),
       );
     });
 
@@ -173,19 +187,21 @@ describe('IntegracaoDocumentoService', () => {
         throwError(() => ({
           response: {
             status: 404,
-            data: { message: 'Documento não encontrado' }
-          }
-        }))
+            data: { message: 'Documento não encontrado' },
+          },
+        })),
       );
 
       // Executar e verificar exceção
-      await expect(service.obterComprovante(documentoId)).rejects.toThrow(NotFoundException);
+      await expect(service.obterComprovante(documentoId)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
   describe('listarComprovantes', () => {
     const pagamentoId = 'pagamento-id';
-    
+
     const mockComprovantes = [
       {
         id: 'documento-1',
@@ -195,7 +211,7 @@ describe('IntegracaoDocumentoService', () => {
         categoria: 'COMPROVANTE_PAGAMENTO',
         referencia: pagamentoId,
         url: 'http://api-documento.pgben.local/documentos/documento-1',
-        createdAt: '2023-01-01T00:00:00Z'
+        createdAt: '2023-01-01T00:00:00Z',
       },
       {
         id: 'documento-2',
@@ -205,8 +221,8 @@ describe('IntegracaoDocumentoService', () => {
         categoria: 'COMPROVANTE_PAGAMENTO',
         referencia: pagamentoId,
         url: 'http://api-documento.pgben.local/documentos/documento-2',
-        createdAt: '2023-01-02T00:00:00Z'
-      }
+        createdAt: '2023-01-02T00:00:00Z',
+      },
     ];
 
     it('deve listar comprovantes quando encontrados', async () => {
@@ -216,9 +232,9 @@ describe('IntegracaoDocumentoService', () => {
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: { headers: {} } as any
+        config: { headers: {} } as any,
       };
-      
+
       mockHttpService.get.mockReturnValue(of(axiosResponse));
 
       // Executar método
@@ -230,9 +246,9 @@ describe('IntegracaoDocumentoService', () => {
         expect.stringContaining(`referencia=${pagamentoId}`),
         expect.objectContaining({
           headers: expect.objectContaining({
-            'x-api-key': 'api-key-mock'
-          })
-        })
+            'x-api-key': 'api-key-mock',
+          }),
+        }),
       );
     });
 
@@ -243,9 +259,9 @@ describe('IntegracaoDocumentoService', () => {
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: { headers: {} } as any
+        config: { headers: {} } as any,
       };
-      
+
       mockHttpService.get.mockReturnValue(of(axiosResponse));
 
       // Executar método
@@ -267,9 +283,9 @@ describe('IntegracaoDocumentoService', () => {
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: { headers: {} } as any
+        config: { headers: {} } as any,
       };
-      
+
       mockHttpService.delete.mockReturnValue(of(axiosResponse));
 
       // Executar método
@@ -281,9 +297,9 @@ describe('IntegracaoDocumentoService', () => {
         expect.objectContaining({
           headers: expect.objectContaining({
             'x-api-key': 'api-key-mock',
-            'x-user-id': usuarioId
-          })
-        })
+            'x-user-id': usuarioId,
+          }),
+        }),
       );
     });
 
@@ -293,13 +309,15 @@ describe('IntegracaoDocumentoService', () => {
         throwError(() => ({
           response: {
             status: 404,
-            data: { message: 'Documento não encontrado' }
-          }
-        }))
+            data: { message: 'Documento não encontrado' },
+          },
+        })),
       );
 
       // Executar e verificar exceção
-      await expect(service.removerComprovante(documentoId, usuarioId)).rejects.toThrow(NotFoundException);
+      await expect(
+        service.removerComprovante(documentoId, usuarioId),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('deve propagar outros erros HTTP', async () => {
@@ -308,13 +326,15 @@ describe('IntegracaoDocumentoService', () => {
         throwError(() => ({
           response: {
             status: 500,
-            data: { message: 'Erro interno do servidor' }
-          }
-        }))
+            data: { message: 'Erro interno do servidor' },
+          },
+        })),
       );
 
       // Executar e verificar exceção
-      await expect(service.removerComprovante(documentoId, usuarioId)).rejects.toThrow();
+      await expect(
+        service.removerComprovante(documentoId, usuarioId),
+      ).rejects.toThrow();
     });
   });
 });

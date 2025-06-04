@@ -2,13 +2,13 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
  * Migration unificada para criar o schema relacionado às métricas
- * 
+ *
  * Esta migration cria as tabelas e restrições para o módulo de métricas,
  * incluindo estruturas para monitoramento, alertas, registro de métricas do sistema,
  * definições de métricas, configurações e valores históricos.
- * 
+ *
  * Os enums necessários são criados na migration CreateAllEnums
- * 
+ *
  * @author Engenheiro de Dados
  * @date 19/05/2025
  */
@@ -20,7 +20,7 @@ export class CreateMetricasSchema1704067234000 implements MigrationInterface {
    */
   public async up(queryRunner: QueryRunner): Promise<void> {
     console.log('Iniciando migration CreateMetricasSchema...');
-    
+
     // Tabela de definições de métricas
     await queryRunner.query(`
       CREATE TABLE IF NOT EXISTS "metrica_definicao" (
@@ -54,7 +54,7 @@ export class CreateMetricasSchema1704067234000 implements MigrationInterface {
         CONSTRAINT "PK_metrica_definicao" PRIMARY KEY ("id")
       );
     `);
-    
+
     // Índices para metrica_definicao
     await queryRunner.query(`
       CREATE INDEX IF NOT EXISTS "IDX_metrica_definicao_codigo" ON "metrica_definicao" ("codigo");
@@ -63,7 +63,7 @@ export class CreateMetricasSchema1704067234000 implements MigrationInterface {
       CREATE INDEX IF NOT EXISTS "IDX_metrica_definicao_ativa" ON "metrica_definicao" ("ativa");
       CREATE INDEX IF NOT EXISTS "IDX_metrica_definicao_tags" ON "metrica_definicao" USING GIN ("tags");
     `);
-    
+
     // Trigger para metrica_definicao
     await queryRunner.query(`
       DROP TRIGGER IF EXISTS trigger_metrica_definicao_update_timestamp ON "metrica_definicao";
@@ -72,9 +72,9 @@ export class CreateMetricasSchema1704067234000 implements MigrationInterface {
         FOR EACH ROW
         EXECUTE PROCEDURE update_timestamp();
     `);
-    
+
     console.log('Tabela de definições de métricas criada com sucesso.');
-    
+
     // Tabela de configuração de métricas
     await queryRunner.query(`
       CREATE TABLE IF NOT EXISTS "metrica_configuracao" (
@@ -103,14 +103,14 @@ export class CreateMetricasSchema1704067234000 implements MigrationInterface {
         CONSTRAINT "PK_metrica_configuracao" PRIMARY KEY ("id")
       );
     `);
-    
+
     // Índices para metrica_configuracao
     await queryRunner.query(`
       CREATE INDEX IF NOT EXISTS "IDX_metrica_configuracao_metrica_id" ON "metrica_configuracao" ("metrica_id");
       CREATE INDEX IF NOT EXISTS "IDX_metrica_configuracao_coleta_automatica" ON "metrica_configuracao" ("coleta_automatica");
       CREATE INDEX IF NOT EXISTS "IDX_metrica_configuracao_tipo_agendamento" ON "metrica_configuracao" ("tipo_agendamento");
     `);
-    
+
     // Trigger para metrica_configuracao
     await queryRunner.query(`
       DROP TRIGGER IF EXISTS trigger_metrica_configuracao_update_timestamp ON "metrica_configuracao";
@@ -119,9 +119,9 @@ export class CreateMetricasSchema1704067234000 implements MigrationInterface {
         FOR EACH ROW
         EXECUTE PROCEDURE update_timestamp();
     `);
-    
+
     console.log('Tabela de configuração de métricas criada com sucesso.');
-    
+
     // Tabela de valores de métricas
     await queryRunner.query(`
       CREATE TABLE IF NOT EXISTS "metrica_valor" (
@@ -136,16 +136,16 @@ export class CreateMetricasSchema1704067234000 implements MigrationInterface {
         CONSTRAINT "PK_metrica_valor" PRIMARY KEY ("id")
       );
     `);
-    
+
     // Índices para metrica_valor
     await queryRunner.query(`
       CREATE INDEX IF NOT EXISTS "IDX_integrador_metrica_valor_metrica_id" ON "metrica_valor" ("metrica_id");
       CREATE INDEX IF NOT EXISTS "IDX_integrador_metrica_valor_timestamp" ON "metrica_valor" ("timestamp");
       CREATE INDEX IF NOT EXISTS "IDX_integrador_metrica_valor_metrica_timestamp" ON "metrica_valor" ("metrica_id", "timestamp");
     `);
-    
+
     console.log('Tabela de valores de métricas criada com sucesso.');
-    
+
     // Tabela de registros de métricas (legacy - para compatibilidade)
     await queryRunner.query(`
       CREATE TABLE IF NOT EXISTS "registros_metricas" (
@@ -160,7 +160,7 @@ export class CreateMetricasSchema1704067234000 implements MigrationInterface {
         CONSTRAINT "PK_registros_metricas" PRIMARY KEY ("id")
       );
     `);
-    
+
     // Índices para registros_metricas
     await queryRunner.query(`
       CREATE INDEX IF NOT EXISTS "IDX_registros_metricas_metrica_id" ON "registros_metricas" ("metrica_id");
@@ -168,9 +168,9 @@ export class CreateMetricasSchema1704067234000 implements MigrationInterface {
       CREATE INDEX IF NOT EXISTS "IDX_registros_metricas_usuario_id" ON "registros_metricas" ("usuario_id");
       CREATE INDEX IF NOT EXISTS "IDX_registros_metricas_detalhes" ON "registros_metricas" USING GIN ("detalhes");
     `);
-    
+
     console.log('Tabela de registros de métricas criada com sucesso.');
-    
+
     // Tabela de regras de alerta
     await queryRunner.query(`
       CREATE TABLE IF NOT EXISTS "regras_alerta" (
@@ -188,7 +188,7 @@ export class CreateMetricasSchema1704067234000 implements MigrationInterface {
         CONSTRAINT "PK_regras_alerta" PRIMARY KEY ("id")
       );
     `);
-    
+
     // Índices para regras_alerta
     await queryRunner.query(`
       CREATE INDEX IF NOT EXISTS "IDX_regras_alerta_metrica" ON "regras_alerta" ("metrica_id");
@@ -196,7 +196,7 @@ export class CreateMetricasSchema1704067234000 implements MigrationInterface {
       CREATE INDEX IF NOT EXISTS "IDX_regras_alerta_ativo" ON "regras_alerta" ("ativo");
       CREATE INDEX IF NOT EXISTS "IDX_regras_alerta_canais" ON "regras_alerta" USING GIN ("canais_notificacao");
     `);
-    
+
     // Trigger para regras_alerta
     await queryRunner.query(`
       DROP TRIGGER IF EXISTS trigger_regras_alerta_update_timestamp ON "regras_alerta";
@@ -205,9 +205,9 @@ export class CreateMetricasSchema1704067234000 implements MigrationInterface {
         FOR EACH ROW
         EXECUTE PROCEDURE update_timestamp();
     `);
-    
+
     console.log('Tabela de regras de alerta criada com sucesso.');
-    
+
     // Tabela de alertas de métricas
     await queryRunner.query(`
       CREATE TABLE IF NOT EXISTS "alertas_metrica" (
@@ -228,7 +228,7 @@ export class CreateMetricasSchema1704067234000 implements MigrationInterface {
         CONSTRAINT "PK_alertas_metrica" PRIMARY KEY ("id")
       );
     `);
-    
+
     // Índices para alertas_metrica
     await queryRunner.query(`
       CREATE INDEX IF NOT EXISTS "IDX_alertas_metrica_id" ON "alertas_metrica" ("metrica_id");
@@ -237,7 +237,7 @@ export class CreateMetricasSchema1704067234000 implements MigrationInterface {
       CREATE INDEX IF NOT EXISTS "IDX_alertas_resolvido" ON "alertas_metrica" ("resolvido");
       CREATE INDEX IF NOT EXISTS "IDX_alertas_detalhes" ON "alertas_metrica" USING GIN ("detalhes");
     `);
-    
+
     // Trigger para alertas_metrica
     await queryRunner.query(`
       DROP TRIGGER IF EXISTS trigger_alertas_metrica_update_timestamp ON "alertas_metrica";
@@ -246,9 +246,9 @@ export class CreateMetricasSchema1704067234000 implements MigrationInterface {
         FOR EACH ROW
         EXECUTE PROCEDURE update_timestamp();
     `);
-    
+
     console.log('Tabela de alertas de métricas criada com sucesso.');
-    
+
     // Tabela de configuração de notificação
     await queryRunner.query(`
       CREATE TABLE IF NOT EXISTS "configuracao_notificacao" (
@@ -263,14 +263,14 @@ export class CreateMetricasSchema1704067234000 implements MigrationInterface {
         CONSTRAINT "UQ_configuracao_notificacao_usuario_canal" UNIQUE ("usuario_id", "canal")
       );
     `);
-    
+
     // Índices para configuracao_notificacao
     await queryRunner.query(`
       CREATE INDEX IF NOT EXISTS "IDX_configuracao_usuario" ON "configuracao_notificacao" ("usuario_id");
       CREATE INDEX IF NOT EXISTS "IDX_configuracao_canal" ON "configuracao_notificacao" ("canal");
       CREATE INDEX IF NOT EXISTS "IDX_configuracao_ativo" ON "configuracao_notificacao" ("ativo");
     `);
-    
+
     // Trigger para configuracao_notificacao
     await queryRunner.query(`
       DROP TRIGGER IF EXISTS trigger_configuracao_notificacao_update_timestamp ON "configuracao_notificacao";
@@ -279,9 +279,9 @@ export class CreateMetricasSchema1704067234000 implements MigrationInterface {
         FOR EACH ROW
         EXECUTE PROCEDURE update_timestamp();
     `);
-    
+
     console.log('Tabela de configuração de notificação criada com sucesso.');
-    
+
     // Tabela de snapshot de métricas
     await queryRunner.query(`
       CREATE TABLE IF NOT EXISTS "metrica_snapshot" (
@@ -297,16 +297,16 @@ export class CreateMetricasSchema1704067234000 implements MigrationInterface {
         CONSTRAINT "UQ_metrica_snapshot_periodo" UNIQUE ("metrica_id", "periodo", "data_inicio")
       );
     `);
-    
+
     // Índices para metrica_snapshot
     await queryRunner.query(`
       CREATE INDEX IF NOT EXISTS "IDX_snapshot_metrica" ON "metrica_snapshot" ("metrica_id");
       CREATE INDEX IF NOT EXISTS "IDX_snapshot_periodo" ON "metrica_snapshot" ("periodo");
       CREATE INDEX IF NOT EXISTS "IDX_snapshot_data" ON "metrica_snapshot" ("data_inicio", "data_fim");
     `);
-    
+
     console.log('Tabela de snapshot de métricas criada com sucesso.');
-    
+
     // Adicionar as chaves estrangeiras
     await queryRunner.query(`
       DO $$
@@ -419,7 +419,7 @@ export class CreateMetricasSchema1704067234000 implements MigrationInterface {
         END IF;
       END $$;
     `);
-    
+
     console.log('Migration CreateMetricasSchema executada com sucesso.');
   }
 
@@ -428,7 +428,7 @@ export class CreateMetricasSchema1704067234000 implements MigrationInterface {
    */
   public async down(queryRunner: QueryRunner): Promise<void> {
     console.log('Revertendo migration CreateMetricasSchema...');
-    
+
     // Remover chaves estrangeiras
     await queryRunner.query(`
       ALTER TABLE "metrica_configuracao" DROP CONSTRAINT IF EXISTS "FK_metrica_configuracao_metrica";
@@ -442,7 +442,7 @@ export class CreateMetricasSchema1704067234000 implements MigrationInterface {
       ALTER TABLE "configuracao_notificacao" DROP CONSTRAINT IF EXISTS "FK_configuracao_usuario";
       ALTER TABLE "metrica_snapshot" DROP CONSTRAINT IF EXISTS "FK_snapshot_metrica";
     `);
-    
+
     // Remover triggers de atualização automática de timestamp
     await queryRunner.query(`
       DROP TRIGGER IF EXISTS trigger_metrica_definicao_update_timestamp ON "metrica_definicao";
@@ -451,7 +451,7 @@ export class CreateMetricasSchema1704067234000 implements MigrationInterface {
       DROP TRIGGER IF EXISTS trigger_alertas_metrica_update_timestamp ON "alertas_metrica";
       DROP TRIGGER IF EXISTS trigger_configuracao_notificacao_update_timestamp ON "configuracao_notificacao";
     `);
-    
+
     // Remover tabelas em ordem reversa (para respeitar constraints)
     await queryRunner.query(`
       DROP TABLE IF EXISTS "metrica_snapshot";
@@ -463,7 +463,7 @@ export class CreateMetricasSchema1704067234000 implements MigrationInterface {
       DROP TABLE IF EXISTS "metrica_configuracao";
       DROP TABLE IF EXISTS "metrica_definicao";
     `);
-    
+
     console.log('Migration CreateMetricasSchema revertida com sucesso.');
   }
 }

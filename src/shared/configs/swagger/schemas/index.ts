@@ -1,6 +1,6 @@
 /**
  * Índice centralizador de schemas (DTOs) para documentação Swagger
- * 
+ *
  * Este arquivo exporta schemas básicos e essenciais para a API
  */
 

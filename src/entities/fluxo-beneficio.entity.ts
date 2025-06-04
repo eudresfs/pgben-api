@@ -11,7 +11,7 @@ import {
 } from 'typeorm';
 import { IsNotEmpty, IsOptional, IsNumber, Min, IsEnum } from 'class-validator';
 import { TipoBeneficio } from './tipo-beneficio.entity';
-import { Role } from '../enums/role.enum'
+import { Role } from '../enums/role.enum';
 
 export enum TipoEtapa {
   ABERTURA = 'abertura',
@@ -152,14 +152,22 @@ export class FluxoBeneficio {
    * Verifica se tem setor definido
    */
   temSetor(): boolean {
-    return this.setor_id !== null && this.setor_id !== undefined && this.setor_id.trim() !== '';
+    return (
+      this.setor_id !== null &&
+      this.setor_id !== undefined &&
+      this.setor_id.trim() !== ''
+    );
   }
 
   /**
    * Verifica se tem descrição
    */
   temDescricao(): boolean {
-    return this.descricao !== null && this.descricao !== undefined && this.descricao.trim() !== '';
+    return (
+      this.descricao !== null &&
+      this.descricao !== undefined &&
+      this.descricao.trim() !== ''
+    );
   }
 
   /**
@@ -188,7 +196,10 @@ export class FluxoBeneficio {
       [Role.ASSISTENTE_SOCIAL]: 'Assistente Social',
       [Role.AUDITOR]: 'Auditor',
     };
-    return descricoes[this.perfil_responsavel as keyof typeof descricoes] || 'Perfil desconhecido';
+    return (
+      descricoes[this.perfil_responsavel as keyof typeof descricoes] ||
+      'Perfil desconhecido'
+    );
   }
 
   /**
@@ -202,8 +213,10 @@ export class FluxoBeneficio {
    * Verifica se é uma etapa de análise
    */
   isEtapaAnalise(): boolean {
-    return this.tipo_etapa === TipoEtapa.ANALISE_DOCUMENTOS || 
-           this.tipo_etapa === TipoEtapa.ANALISE_TECNICA;
+    return (
+      this.tipo_etapa === TipoEtapa.ANALISE_DOCUMENTOS ||
+      this.tipo_etapa === TipoEtapa.ANALISE_TECNICA
+    );
   }
 
   /**
@@ -232,11 +245,11 @@ export class FluxoBeneficio {
    */
   getNivelCriticidade(): 'BAIXA' | 'MEDIA' | 'ALTA' {
     let pontos = 0;
-    
+
     if (this.isObrigatorio()) pontos += 2;
     if (!this.permiteRetorno()) pontos += 2;
     if (this.isEtapaDecisao() || this.isEtapaFinal()) pontos += 1;
-    
+
     if (pontos <= 2) return 'BAIXA';
     if (pontos <= 4) return 'MEDIA';
     return 'ALTA';
@@ -254,7 +267,9 @@ export class FluxoBeneficio {
    */
   getSummary(): string {
     const obrigatorio = this.isObrigatorio() ? 'Obrigatória' : 'Opcional';
-    const retorno = this.permiteRetorno() ? 'Permite retorno' : 'Não permite retorno';
+    const retorno = this.permiteRetorno()
+      ? 'Permite retorno'
+      : 'Não permite retorno';
     return `${this.ordem}. ${this.nome_etapa} (${obrigatorio}, ${retorno})`;
   }
 
@@ -271,19 +286,19 @@ export class FluxoBeneficio {
   isConsistente(): boolean {
     // Verifica se tem tipo de benefício
     if (!this.tipo_beneficio_id) return false;
-    
+
     // Verifica se tem nome da etapa
     if (!this.nome_etapa || this.nome_etapa.trim() === '') return false;
-    
+
     // Verifica se ordem é válida
     if (this.ordem < 1) return false;
-    
+
     // Verifica se tipo de etapa é válido
     if (!Object.values(TipoEtapa).includes(this.tipo_etapa)) return false;
-    
+
     // Verifica se perfil responsável é válido
     if (!Object.values(Role).includes(this.perfil_responsavel)) return false;
-    
+
     return true;
   }
 
@@ -293,13 +308,13 @@ export class FluxoBeneficio {
   podeSerRemovida(): boolean {
     // Não pode remover se já foi removida
     if (this.foiRemovido()) return false;
-    
+
     // Primeira etapa geralmente não pode ser removida
     if (this.isPrimeiraEtapa()) return false;
-    
+
     // Etapas obrigatórias precisam de cuidado especial
     if (this.isObrigatorio()) return false;
-    
+
     return true;
   }
 
@@ -364,27 +379,27 @@ export class FluxoBeneficio {
    */
   getSugestoesMelhoria(): string[] {
     const sugestoes: string[] = [];
-    
+
     if (!this.temDescricao()) {
       sugestoes.push('Adicionar descrição detalhada da etapa');
     }
-    
+
     if (!this.temSetor()) {
       sugestoes.push('Definir setor responsável pela etapa');
     }
-    
+
     if (this.isEtapaCritica() && !this.temDescricao()) {
       sugestoes.push('Etapa crítica deve ter descrição detalhada');
     }
-    
+
     if (this.isEtapaAnalise() && this.permiteRetorno()) {
       sugestoes.push('Considerar não permitir retorno em etapas de análise');
     }
-    
+
     if (!this.isConsistente()) {
       sugestoes.push('Verificar e corrigir inconsistências nos dados');
     }
-    
+
     return sugestoes;
   }
 
@@ -426,40 +441,39 @@ export class FluxoBeneficio {
   /**
    * Simula a execução da etapa
    */
-  simularExecucao(dados: {
-    perfilUsuario: Role;
-    setorUsuario?: string;
-  }): {
+  simularExecucao(dados: { perfilUsuario: Role; setorUsuario?: string }): {
     podeExecutar: boolean;
     motivos: string[];
     observacoes: string[];
   } {
     const motivos: string[] = [];
     const observacoes: string[] = [];
-    
+
     // Verifica se o perfil do usuário pode executar a etapa
     if (dados.perfilUsuario !== this.perfil_responsavel) {
-      motivos.push(`Perfil ${dados.perfilUsuario} não autorizado. Requer: ${this.perfil_responsavel}`);
+      motivos.push(
+        `Perfil ${dados.perfilUsuario} não autorizado. Requer: ${this.perfil_responsavel}`,
+      );
     }
-    
+
     // Verifica se o setor do usuário corresponde (se definido)
     if (this.temSetor() && dados.setorUsuario !== this.setor_id) {
       motivos.push('Usuário não pertence ao setor responsável pela etapa');
     }
-    
+
     // Observações sobre a etapa
     if (this.isObrigatorio()) {
       observacoes.push('Esta é uma etapa obrigatória');
     }
-    
+
     if (!this.permiteRetorno()) {
       observacoes.push('Atenção: Esta etapa não permite retorno');
     }
-    
+
     if (this.isEtapaFinal()) {
       observacoes.push('Esta é a etapa final do processo');
     }
-    
+
     return {
       podeExecutar: motivos.length === 0,
       motivos,

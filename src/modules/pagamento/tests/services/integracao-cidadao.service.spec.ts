@@ -10,10 +10,10 @@ import { NotFoundException } from '@nestjs/common';
 
 /**
  * Testes unitários para o serviço de integração com o módulo de cidadão
- * 
+ *
  * Verifica o funcionamento correto das operações de consulta de dados
  * pessoais e bancários de beneficiários.
- * 
+ *
  * @author Equipe PGBen
  */
 describe('IntegracaoCidadaoService', () => {
@@ -26,16 +26,20 @@ describe('IntegracaoCidadaoService', () => {
   // Mock do HttpService
   const mockHttpService = {
     get: jest.fn(),
-    post: jest.fn()
+    post: jest.fn(),
   };
 
   // Mock do ConfigService
   const mockConfigService = {
     get: jest.fn().mockImplementation((key) => {
-      if (key === 'cidadao.apiUrl') {return 'http://api-cidadao.pgben.local';}
-      if (key === 'cidadao.apiKey') {return 'api-key-mock';}
+      if (key === 'cidadao.apiUrl') {
+        return 'http://api-cidadao.pgben.local';
+      }
+      if (key === 'cidadao.apiKey') {
+        return 'api-key-mock';
+      }
       return null;
-    })
+    }),
   };
 
   // Mock do DadosBancariosValidator
@@ -47,14 +51,14 @@ describe('IntegracaoCidadaoService', () => {
     mascaraAgencia: jest.fn(),
     mascaraConta: jest.fn(),
     formatarAgencia: jest.fn(),
-    formatarConta: jest.fn()
+    formatarConta: jest.fn(),
   };
 
   // Mock do PixValidator
   const mockPixValidator = {
     validarChavePix: jest.fn(),
     mascaraChavePix: jest.fn(),
-    obterTipoChavePix: jest.fn()
+    obterTipoChavePix: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -63,27 +67,29 @@ describe('IntegracaoCidadaoService', () => {
         IntegracaoCidadaoService,
         {
           provide: HttpService,
-          useValue: mockHttpService
+          useValue: mockHttpService,
         },
         {
           provide: ConfigService,
-          useValue: mockConfigService
+          useValue: mockConfigService,
         },
         {
           provide: DadosBancariosValidator,
-          useValue: mockDadosBancariosValidator
+          useValue: mockDadosBancariosValidator,
         },
         {
           provide: PixValidator,
-          useValue: mockPixValidator
-        }
+          useValue: mockPixValidator,
+        },
       ],
     }).compile();
 
     service = module.get<IntegracaoCidadaoService>(IntegracaoCidadaoService);
     httpService = module.get<HttpService>(HttpService);
     configService = module.get<ConfigService>(ConfigService);
-    dadosBancariosValidator = module.get<DadosBancariosValidator>(DadosBancariosValidator);
+    dadosBancariosValidator = module.get<DadosBancariosValidator>(
+      DadosBancariosValidator,
+    );
     pixValidator = module.get<PixValidator>(PixValidator);
 
     // Limpar mocks antes de cada teste
@@ -103,12 +109,12 @@ describe('IntegracaoCidadaoService', () => {
         bairro: 'Centro',
         cidade: 'Natal',
         uf: 'RN',
-        cep: '59000000'
+        cep: '59000000',
       },
       contato: {
         telefone: '84999999999',
-        email: 'joao@exemplo.com'
-      }
+        email: 'joao@exemplo.com',
+      },
     };
 
     it('deve retornar dados do cidadão quando encontrado', async () => {
@@ -118,9 +124,9 @@ describe('IntegracaoCidadaoService', () => {
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: { headers: {} } as any
+        config: { headers: {} } as any,
       };
-      
+
       mockHttpService.get.mockReturnValue(of(axiosResponse));
 
       // Executar método
@@ -132,9 +138,9 @@ describe('IntegracaoCidadaoService', () => {
         `http://api-cidadao.pgben.local/cidadaos/${cidadaoId}`,
         expect.objectContaining({
           headers: expect.objectContaining({
-            'x-api-key': 'api-key-mock'
-          })
-        })
+            'x-api-key': 'api-key-mock',
+          }),
+        }),
       );
     });
 
@@ -144,13 +150,15 @@ describe('IntegracaoCidadaoService', () => {
         throwError(() => ({
           response: {
             status: 404,
-            data: { message: 'Cidadão não encontrado' }
-          }
-        }))
+            data: { message: 'Cidadão não encontrado' },
+          },
+        })),
       );
 
       // Executar e verificar exceção
-      await expect(service.obterDadosCidadao(cidadaoId)).rejects.toThrow(NotFoundException);
+      await expect(service.obterDadosCidadao(cidadaoId)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('deve propagar outros erros HTTP', async () => {
@@ -159,9 +167,9 @@ describe('IntegracaoCidadaoService', () => {
         throwError(() => ({
           response: {
             status: 500,
-            data: { message: 'Erro interno do servidor' }
-          }
-        }))
+            data: { message: 'Erro interno do servidor' },
+          },
+        })),
       );
 
       // Executar e verificar exceção
@@ -182,7 +190,7 @@ describe('IntegracaoCidadaoService', () => {
         titularCpf: '12345678900',
         titularNome: 'João da Silva',
         principal: true,
-        createdAt: '2023-01-01T00:00:00Z'
+        createdAt: '2023-01-01T00:00:00Z',
       },
       {
         id: 'info-bancaria-2',
@@ -193,8 +201,8 @@ describe('IntegracaoCidadaoService', () => {
         titularCpf: '12345678900',
         titularNome: 'João da Silva',
         principal: false,
-        createdAt: '2023-01-02T00:00:00Z'
-      }
+        createdAt: '2023-01-02T00:00:00Z',
+      },
     ];
 
     it('deve retornar dados bancários quando encontrados', async () => {
@@ -204,13 +212,15 @@ describe('IntegracaoCidadaoService', () => {
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: { headers: {} } as any
+        config: { headers: {} } as any,
       };
-      
+
       mockHttpService.get.mockReturnValue(of(axiosResponse));
-      
+
       // Configurar validadores
-      mockDadosBancariosValidator.obterNomeBanco.mockReturnValue('Banco do Brasil');
+      mockDadosBancariosValidator.obterNomeBanco.mockReturnValue(
+        'Banco do Brasil',
+      );
       mockDadosBancariosValidator.mascaraAgencia.mockReturnValue('1**4');
       mockDadosBancariosValidator.mascaraConta.mockReturnValue('56**9-0');
       mockPixValidator.mascaraChavePix.mockReturnValue('***.456.789-**');
@@ -224,9 +234,9 @@ describe('IntegracaoCidadaoService', () => {
         `http://api-cidadao.pgben.local/cidadaos/${cidadaoId}/dados-bancarios`,
         expect.objectContaining({
           headers: expect.objectContaining({
-            'x-api-key': 'api-key-mock'
-          })
-        })
+            'x-api-key': 'api-key-mock',
+          }),
+        }),
       );
     });
 
@@ -236,13 +246,15 @@ describe('IntegracaoCidadaoService', () => {
         throwError(() => ({
           response: {
             status: 404,
-            data: { message: 'Dados bancários não encontrados' }
-          }
-        }))
+            data: { message: 'Dados bancários não encontrados' },
+          },
+        })),
       );
 
       // Executar e verificar exceção
-      await expect(service.obterDadosBancarios(cidadaoId)).rejects.toThrow(NotFoundException);
+      await expect(service.obterDadosBancarios(cidadaoId)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('deve retornar array vazio quando não há dados bancários', async () => {
@@ -252,9 +264,9 @@ describe('IntegracaoCidadaoService', () => {
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: { headers: {} } as any
+        config: { headers: {} } as any,
       };
-      
+
       mockHttpService.get.mockReturnValue(of(axiosResponse));
 
       // Executar método
@@ -278,7 +290,7 @@ describe('IntegracaoCidadaoService', () => {
       titularCpf: '12345678900',
       titularNome: 'João da Silva',
       principal: true,
-      createdAt: '2023-01-01T00:00:00Z'
+      createdAt: '2023-01-01T00:00:00Z',
     };
 
     it('deve retornar dados bancários específicos quando encontrados', async () => {
@@ -288,18 +300,23 @@ describe('IntegracaoCidadaoService', () => {
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: { headers: {} } as any
+        config: { headers: {} } as any,
       };
-      
+
       mockHttpService.get.mockReturnValue(of(axiosResponse));
-      
+
       // Configurar validadores
-      mockDadosBancariosValidator.obterNomeBanco.mockReturnValue('Banco do Brasil');
+      mockDadosBancariosValidator.obterNomeBanco.mockReturnValue(
+        'Banco do Brasil',
+      );
       mockDadosBancariosValidator.mascaraAgencia.mockReturnValue('1**4');
       mockDadosBancariosValidator.mascaraConta.mockReturnValue('56**9-0');
 
       // Executar método
-      const result = await service.obterDadosBancariosPorId(cidadaoId, infoBancariaId);
+      const result = await service.obterDadosBancariosPorId(
+        cidadaoId,
+        infoBancariaId,
+      );
 
       // Verificar resultado
       expect(result).toEqual(mockDadosBancarios);
@@ -307,9 +324,9 @@ describe('IntegracaoCidadaoService', () => {
         `http://api-cidadao.pgben.local/cidadaos/${cidadaoId}/dados-bancarios/${infoBancariaId}`,
         expect.objectContaining({
           headers: expect.objectContaining({
-            'x-api-key': 'api-key-mock'
-          })
-        })
+            'x-api-key': 'api-key-mock',
+          }),
+        }),
       );
     });
 
@@ -319,13 +336,15 @@ describe('IntegracaoCidadaoService', () => {
         throwError(() => ({
           response: {
             status: 404,
-            data: { message: 'Dados bancários não encontrados' }
-          }
-        }))
+            data: { message: 'Dados bancários não encontrados' },
+          },
+        })),
       );
 
       // Executar e verificar exceção
-      await expect(service.obterDadosBancariosPorId(cidadaoId, infoBancariaId)).rejects.toThrow(NotFoundException);
+      await expect(
+        service.obterDadosBancariosPorId(cidadaoId, infoBancariaId),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -335,7 +354,7 @@ describe('IntegracaoCidadaoService', () => {
         tipo: 'CONTA_CORRENTE',
         banco: '001',
         agencia: '1234',
-        conta: '56789-0'
+        conta: '56789-0',
       };
 
       // Configurar validadores
@@ -348,16 +367,24 @@ describe('IntegracaoCidadaoService', () => {
 
       // Verificar resultado
       expect(result).toBe(true);
-      expect(mockDadosBancariosValidator.validarCodigoBanco).toHaveBeenCalledWith('001');
-      expect(mockDadosBancariosValidator.validarAgencia).toHaveBeenCalledWith('1234', '001');
-      expect(mockDadosBancariosValidator.validarConta).toHaveBeenCalledWith('56789-0', '001');
+      expect(
+        mockDadosBancariosValidator.validarCodigoBanco,
+      ).toHaveBeenCalledWith('001');
+      expect(mockDadosBancariosValidator.validarAgencia).toHaveBeenCalledWith(
+        '1234',
+        '001',
+      );
+      expect(mockDadosBancariosValidator.validarConta).toHaveBeenCalledWith(
+        '56789-0',
+        '001',
+      );
     });
 
     it('deve validar dados bancários do tipo PIX', async () => {
       const dadosBancarios = {
         tipo: 'PIX',
         pixTipo: 'CPF',
-        pixChave: '12345678900'
+        pixChave: '12345678900',
       };
 
       // Configurar validadores
@@ -368,7 +395,10 @@ describe('IntegracaoCidadaoService', () => {
 
       // Verificar resultado
       expect(result).toBe(true);
-      expect(mockPixValidator.validarChavePix).toHaveBeenCalledWith('12345678900', 'CPF');
+      expect(mockPixValidator.validarChavePix).toHaveBeenCalledWith(
+        '12345678900',
+        'CPF',
+      );
     });
 
     it('deve rejeitar dados bancários inválidos do tipo CONTA_CORRENTE', async () => {
@@ -376,7 +406,7 @@ describe('IntegracaoCidadaoService', () => {
         tipo: 'CONTA_CORRENTE',
         banco: '999', // banco inválido
         agencia: '1234',
-        conta: '56789-0'
+        conta: '56789-0',
       };
 
       // Configurar validadores
@@ -393,7 +423,7 @@ describe('IntegracaoCidadaoService', () => {
       const dadosBancarios = {
         tipo: 'PIX',
         pixTipo: 'CPF',
-        pixChave: '123456789' // CPF inválido
+        pixChave: '123456789', // CPF inválido
       };
 
       // Configurar validadores

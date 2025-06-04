@@ -11,11 +11,11 @@ import { Usuario } from '../../entities/usuario.entity';
 
 /**
  * Guard para verificar se o usuário está em primeiro acesso
- * 
+ *
  * Este guard verifica se o usuário logado possui o campo `primeiro_acesso` como `true`.
  * Se sim, bloqueia o acesso a rotas que não sejam especificamente para alteração
  * de senha no primeiro acesso.
- * 
+ *
  * Para permitir acesso a uma rota mesmo em primeiro acesso, use o decorator
  * `@AllowPrimeiroAcesso()` na rota ou controller.
  */
@@ -37,13 +37,12 @@ export class PrimeiroAcessoGuard implements CanActivate {
     }
 
     // Verificar se a rota permite primeiro acesso
-    const allowPrimeiroAcesso = this.reflector.get<boolean>(
-      'allow-primeiro-acesso',
-      context.getHandler(),
-    ) || this.reflector.get<boolean>(
-      'allow-primeiro-acesso',
-      context.getClass(),
-    );
+    const allowPrimeiroAcesso =
+      this.reflector.get<boolean>(
+        'allow-primeiro-acesso',
+        context.getHandler(),
+      ) ||
+      this.reflector.get<boolean>('allow-primeiro-acesso', context.getClass());
 
     if (allowPrimeiroAcesso) {
       return true;
@@ -53,7 +52,7 @@ export class PrimeiroAcessoGuard implements CanActivate {
     try {
       const usuarioCompleto = await this.usuarioRepository.findOne({
         where: { id: user.id },
-        select: ['id', 'primeiro_acesso', 'nome', 'email']
+        select: ['id', 'primeiro_acesso', 'nome', 'email'],
       });
 
       if (!usuarioCompleto) {
@@ -65,7 +64,7 @@ export class PrimeiroAcessoGuard implements CanActivate {
         throw new ForbiddenException({
           message: 'Primeiro acesso detectado. Alteração de senha obrigatória.',
           code: 'PRIMEIRO_ACESSO_OBRIGATORIO',
-          redirect: '/auth/alterar-senha-primeiro-acesso'
+          redirect: '/auth/alterar-senha-primeiro-acesso',
         });
       }
 
@@ -74,7 +73,7 @@ export class PrimeiroAcessoGuard implements CanActivate {
       if (error instanceof ForbiddenException) {
         throw error;
       }
-      
+
       // Em caso de erro na consulta, permitir acesso para não quebrar o sistema
       console.error('Erro ao verificar primeiro acesso:', error);
       return true;

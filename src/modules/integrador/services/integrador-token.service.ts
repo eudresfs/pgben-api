@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, BadRequestException, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
@@ -17,10 +22,10 @@ export class IntegradorTokenService {
   constructor(
     @InjectRepository(IntegradorToken)
     private tokenRepository: Repository<IntegradorToken>,
-    
+
     @InjectRepository(TokenRevogado)
     private tokenRevogadoRepository: Repository<TokenRevogado>,
-    
+
     private integradorService: IntegradorService,
     private jwtService: JwtService,
   ) {}
@@ -41,27 +46,32 @@ export class IntegradorTokenService {
    * @returns Token gerado e informações associadas
    */
   async createToken(
-    integradorId: string, 
-    createTokenDto: CreateTokenDto
+    integradorId: string,
+    createTokenDto: CreateTokenDto,
   ): Promise<{ token: string; tokenInfo: TokenResponseDto }> {
     // Verificar se o integrador existe e está ativo
     const integrador = await this.integradorService.findById(integradorId);
-    
+
     if (!integrador.ativo) {
-      throw new BadRequestException('Não é possível criar token para um integrador inativo');
+      throw new BadRequestException(
+        'Não é possível criar token para um integrador inativo',
+      );
     }
 
     // Validar escopos solicitados
     if (createTokenDto.escopos && createTokenDto.escopos.length > 0) {
       // Se o integrador tem permissões definidas, verificar se todos os escopos solicitados são permitidos
-      if (integrador.permissoesEscopo && integrador.permissoesEscopo.length > 0) {
+      if (
+        integrador.permissoesEscopo &&
+        integrador.permissoesEscopo.length > 0
+      ) {
         const escoposNaoPermitidos = createTokenDto.escopos.filter(
-          escopo => !integrador.permissoesEscopo.includes(escopo)
+          (escopo) => !integrador.permissoesEscopo.includes(escopo),
         );
-        
+
         if (escoposNaoPermitidos.length > 0) {
           throw new BadRequestException(
-            `Escopos não permitidos para este integrador: ${escoposNaoPermitidos.join(', ')}`
+            `Escopos não permitidos para este integrador: ${escoposNaoPermitidos.join(', ')}`,
           );
         }
       }
@@ -70,10 +80,12 @@ export class IntegradorTokenService {
     // Configurar expiração (se aplicável)
     let dataExpiracao: Date | null = null;
     let expiresIn: string | undefined = undefined;
-    
+
     if (!createTokenDto.semExpiracao && createTokenDto.diasValidade) {
       dataExpiracao = new Date();
-      dataExpiracao.setDate(dataExpiracao.getDate() + createTokenDto.diasValidade);
+      dataExpiracao.setDate(
+        dataExpiracao.getDate() + createTokenDto.diasValidade,
+      );
       expiresIn = `${createTokenDto.diasValidade}d`;
     }
 
@@ -90,7 +102,7 @@ export class IntegradorTokenService {
     if (expiresIn) {
       tokenOptions.expiresIn = expiresIn;
     }
-    
+
     const token = this.jwtService.sign(payload, tokenOptions);
     const tokenHash = this.generateTokenHash(token);
 
@@ -101,14 +113,14 @@ export class IntegradorTokenService {
       descricao: createTokenDto.descricao,
       tokenHash,
       escopos: createTokenDto.escopos,
-      dataExpiracao: dataExpiracao || undefined // Garante que seja undefined se for null
+      dataExpiracao: dataExpiracao || undefined, // Garante que seja undefined se for null
     });
 
     const savedToken = await this.tokenRepository.save(tokenEntity);
-    
+
     return {
       token, // O token JWT completo - só será exposto uma vez
-      tokenInfo: new TokenResponseDto(savedToken)
+      tokenInfo: new TokenResponseDto(savedToken),
     };
   }
 
@@ -120,13 +132,13 @@ export class IntegradorTokenService {
   async findAllByIntegrador(integradorId: string): Promise<TokenResponseDto[]> {
     // Verificar se o integrador existe
     await this.integradorService.findById(integradorId);
-    
-    const tokens = await this.tokenRepository.find({ 
+
+    const tokens = await this.tokenRepository.find({
       where: { integradorId },
-      order: { dataCriacao: 'DESC' }
+      order: { dataCriacao: 'DESC' },
     });
-    
-    return tokens.map(token => new TokenResponseDto(token));
+
+    return tokens.map((token) => new TokenResponseDto(token));
   }
 
   /**
@@ -136,11 +148,11 @@ export class IntegradorTokenService {
    */
   async findOne(id: string): Promise<TokenResponseDto> {
     const token = await this.tokenRepository.findOne({ where: { id } });
-    
+
     if (!token) {
       throw new NotFoundException(`Token com ID ${id} não encontrado`);
     }
-    
+
     return new TokenResponseDto(token);
   }
 
@@ -152,11 +164,11 @@ export class IntegradorTokenService {
    */
   async revogarToken(id: string, motivo: string): Promise<TokenResponseDto> {
     const token = await this.tokenRepository.findOne({ where: { id } });
-    
+
     if (!token) {
       throw new NotFoundException(`Token com ID ${id} não encontrado`);
     }
-    
+
     if (token.revogado) {
       throw new BadRequestException('Token já está revogado');
     }
@@ -165,7 +177,7 @@ export class IntegradorTokenService {
     token.revogado = true;
     token.dataRevogacao = new Date();
     token.motivoRevogacao = motivo;
-    
+
     const updatedToken = await this.tokenRepository.save(token);
 
     // Adicionar à lista de tokens revogados para validação rápida
@@ -176,11 +188,12 @@ export class IntegradorTokenService {
       dataExpiracao: token.dataExpiracao,
       // Configura a data para remoção do registro da lista de revogados
       // (para depois da expiração natural, ou um período padrão se não expirar)
-      dataLimpeza: token.dataExpiracao || new Date(Date.now() + 1000 * 60 * 60 * 24 * 90) // 90 dias se não tiver expiração
+      dataLimpeza:
+        token.dataExpiracao || new Date(Date.now() + 1000 * 60 * 60 * 24 * 90), // 90 dias se não tiver expiração
     });
-    
+
     await this.tokenRevogadoRepository.save(tokenRevogado);
-    
+
     return new TokenResponseDto(updatedToken);
   }
 
@@ -194,56 +207,58 @@ export class IntegradorTokenService {
     try {
       // Verificar assinatura do token
       const payload = this.jwtService.verify(token);
-      
+
       // Verificar tipo de token
       if (payload.type !== 'api_token') {
         throw new UnauthorizedException('Tipo de token inválido');
       }
-      
+
       // Extrair ID do integrador do subject
       const subParts = payload.sub.split(':');
       if (subParts.length !== 2 || subParts[0] !== 'integrador') {
         throw new UnauthorizedException('Formato de token inválido');
       }
-      
+
       const integradorId = subParts[1];
-      
+
       // Verificar se o token foi revogado
       const tokenHash = this.generateTokenHash(token);
       const tokenRevogado = await this.tokenRevogadoRepository.findOne({
-        where: { tokenHash }
+        where: { tokenHash },
       });
-      
+
       if (tokenRevogado) {
         throw new UnauthorizedException('Token revogado');
       }
-      
+
       // Verificar se o integrador existe e está ativo
       const integrador = await this.integradorService.findById(integradorId);
       if (!integrador.ativo) {
         throw new UnauthorizedException('Integrador desativado');
       }
-      
+
       // Registrar o último acesso
       await this.integradorService.registrarAcesso(integradorId);
-      
+
       // Buscar o token no banco para atualizar último uso
       const tokenInfo = await this.tokenRepository.findOne({
-        where: { tokenHash }
+        where: { tokenHash },
       });
-      
+
       if (tokenInfo) {
         tokenInfo.ultimoUso = new Date();
         await this.tokenRepository.save(tokenInfo);
       }
-      
+
       // Adicionar integrador ao payload para uso posterior
       return {
         ...payload,
-        integrador
+        integrador,
       };
     } catch (error) {
-      throw new UnauthorizedException('Token inválido: ' + (error.message || 'erro desconhecido'));
+      throw new UnauthorizedException(
+        'Token inválido: ' + (error.message || 'erro desconhecido'),
+      );
     }
   }
 
@@ -257,14 +272,14 @@ export class IntegradorTokenService {
     if (!requiredScopes || requiredScopes.length === 0) {
       return true;
     }
-    
+
     if (!payload.scopes || payload.scopes.length === 0) {
       return false;
     }
-    
+
     // Verificar se o token possui todos os escopos necessários
-    return requiredScopes.every(requiredScope => 
-      payload.scopes.includes(requiredScope)
+    return requiredScopes.every((requiredScope) =>
+      payload.scopes.includes(requiredScope),
     );
   }
 
@@ -279,7 +294,7 @@ export class IntegradorTokenService {
     if (!integrador.ipPermitidos || integrador.ipPermitidos.length === 0) {
       return true;
     }
-    
+
     // Verificar se o IP está na lista de permitidos
     return integrador.ipPermitidos.includes(ipAddress);
   }
@@ -295,7 +310,7 @@ export class IntegradorTokenService {
       .from(TokenRevogado)
       .where('dataLimpeza < :now', { now: new Date() })
       .execute();
-      
+
     return result.affected || 0;
   }
 }

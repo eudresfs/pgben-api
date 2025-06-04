@@ -1,4 +1,10 @@
-import { Injectable, CanActivate, ExecutionContext, ForbiddenException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { PagamentoService } from '../services/pagamento.service';
 import { IntegracaoCidadaoService } from '../services/integracao-cidadao.service';
@@ -10,12 +16,12 @@ export const UNIDADES_KEY = 'verificar_unidade';
 
 /**
  * Guard para controle de acesso aos endpoints do módulo de pagamento
- * 
+ *
  * Implementa verificações de permissão baseadas em:
  * - Perfil do usuário (admin, operador, etc)
  * - Unidade do usuário vs unidade do pagamento/solicitação
  * - Propriedade do recurso (pagamento, comprovante, confirmação)
- * 
+ *
  * @author Equipe PGBen
  */
 @Injectable()
@@ -29,20 +35,22 @@ export class PagamentoAccessGuard implements CanActivate {
 
   /**
    * Verifica se o usuário tem permissão para acessar o recurso
-   * 
+   *
    * @param context Contexto de execução
    * @returns true se o usuário tem permissão, false caso contrário
    */
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const perfisPermitidos = this.reflector.getAllAndOverride<string[]>(
-      PERFIS_KEY,
-      [context.getHandler(), context.getClass()],
-    ) || [];
+    const perfisPermitidos =
+      this.reflector.getAllAndOverride<string[]>(PERFIS_KEY, [
+        context.getHandler(),
+        context.getClass(),
+      ]) || [];
 
-    const verificarUnidade = this.reflector.getAllAndOverride<boolean>(
-      UNIDADES_KEY,
-      [context.getHandler(), context.getClass()],
-    ) || false;
+    const verificarUnidade =
+      this.reflector.getAllAndOverride<boolean>(UNIDADES_KEY, [
+        context.getHandler(),
+        context.getClass(),
+      ]) || false;
 
     const request = context.switchToHttp().getRequest();
     const usuario = request.user;
@@ -53,8 +61,13 @@ export class PagamentoAccessGuard implements CanActivate {
     }
 
     // Verificar perfil do usuário
-    if (perfisPermitidos.length > 0 && !perfisPermitidos.includes(usuario.perfil)) {
-      throw new ForbiddenException(`Acesso restrito a: ${perfisPermitidos.join(', ')}`);
+    if (
+      perfisPermitidos.length > 0 &&
+      !perfisPermitidos.includes(usuario.perfil)
+    ) {
+      throw new ForbiddenException(
+        `Acesso restrito a: ${perfisPermitidos.join(', ')}`,
+      );
     }
 
     // Super admin sempre tem acesso
@@ -75,20 +88,24 @@ export class PagamentoAccessGuard implements CanActivate {
     // Verificar acesso baseado no ID do pagamento
     if (pagamentoId) {
       try {
-        const pagamento = await this.pagamentoService.findOneWithRelations(pagamentoId);
-        
+        const pagamento =
+          await this.pagamentoService.findOneWithRelations(pagamentoId);
+
         if (!pagamento) {
           throw new NotFoundException('Pagamento não encontrado');
         }
 
         // Verificar status da solicitação associada ao pagamento
         // Usando o método que existe no serviço
-        const solicitacaoStatus = await this.solicitacaoService.verificarSolicitacaoAprovada(pagamento.solicitacaoId);
-        
+        const solicitacaoStatus =
+          await this.solicitacaoService.verificarSolicitacaoAprovada(
+            pagamento.solicitacaoId,
+          );
+
         if (!solicitacaoStatus) {
           throw new NotFoundException('Solicitação não encontrada');
         }
-        
+
         // Obter a unidade da solicitação
         const unidadeId = solicitacaoStatus.unidadeId;
 
@@ -101,11 +118,17 @@ export class PagamentoAccessGuard implements CanActivate {
         if (comprovanteId && usuario.perfil !== 'admin') {
           // Verificar se o comprovante existe e pertence ao pagamento
           // Usando um método genérico que deve existir no serviço
-          const comprovante = await this.pagamentoService.findOne(comprovanteId);
-          
+          const comprovante =
+            await this.pagamentoService.findOne(comprovanteId);
+
           // Verificar se o comprovante pertence ao pagamento
-          if (!comprovante || comprovante.solicitacaoId !== pagamento.solicitacaoId) {
-            throw new ForbiddenException('Comprovante não encontrado ou não pertence ao pagamento');
+          if (
+            !comprovante ||
+            comprovante.solicitacaoId !== pagamento.solicitacaoId
+          ) {
+            throw new ForbiddenException(
+              'Comprovante não encontrado ou não pertence ao pagamento',
+            );
           }
         }
       } catch (error) {
@@ -122,8 +145,9 @@ export class PagamentoAccessGuard implements CanActivate {
     if (beneficiarioId) {
       try {
         // Obter informações do beneficiário usando o método correto que existe no serviço
-        const cidadao = await this.cidadaoService.obterDadosPessoais(beneficiarioId);
-        
+        const cidadao =
+          await this.cidadaoService.obterDadosPessoais(beneficiarioId);
+
         if (!cidadao) {
           throw new NotFoundException('Beneficiário não encontrado');
         }
@@ -131,15 +155,23 @@ export class PagamentoAccessGuard implements CanActivate {
         // Verificar se o usuário pertence à mesma unidade do cidadão
         // Assumindo que a unidade está disponível nos dados retornados
         const unidadeId = cidadao.unidadeId || null;
-        
-        if (unidadeId && usuario.unidadeId !== unidadeId && usuario.perfil !== 'admin') {
-          throw new ForbiddenException('Acesso restrito à unidade responsável pelo beneficiário');
+
+        if (
+          unidadeId &&
+          usuario.unidadeId !== unidadeId &&
+          usuario.perfil !== 'admin'
+        ) {
+          throw new ForbiddenException(
+            'Acesso restrito à unidade responsável pelo beneficiário',
+          );
         }
       } catch (error) {
         if (error instanceof NotFoundException) {
           throw error;
         }
-        throw new ForbiddenException('Erro ao verificar permissões de acesso ao beneficiário');
+        throw new ForbiddenException(
+          'Erro ao verificar permissões de acesso ao beneficiário',
+        );
       }
 
       return true;

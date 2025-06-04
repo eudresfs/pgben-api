@@ -38,14 +38,14 @@ describe('ComposicaoFamiliarController', () => {
     ocupacao: 'Estudante',
     escolaridade: EscolaridadeEnum.MEDIO_INCOMPLETO,
     parentesco: ParentescoEnum.FILHO,
-    renda: 1500.00,
+    renda: 1500.0,
     observacoes: 'Observações de teste',
     created_at: new Date('2024-01-01T10:00:00Z'),
     updated_at: new Date('2024-01-01T10:00:00Z'),
     ativo: true,
     cpf_formatado: '',
     escolaridade_descricao: '',
-    parentesco_descricao: ''
+    parentesco_descricao: '',
   };
 
   const mockPaginatedResponse: ComposicaoFamiliarPaginatedResponseDto = {
@@ -60,8 +60,8 @@ describe('ComposicaoFamiliarController', () => {
     },
     estatisticas: {
       totalMembros: 1,
-      rendaTotal: 1500.00,
-      rendaMedia: 1500.00,
+      rendaTotal: 1500.0,
+      rendaMedia: 1500.0,
       idadeMedia: 25,
       membrosComRenda: 1,
     },
@@ -78,7 +78,9 @@ describe('ComposicaoFamiliarController', () => {
       ],
     }).compile();
 
-    controller = module.get<ComposicaoFamiliarController>(ComposicaoFamiliarController);
+    controller = module.get<ComposicaoFamiliarController>(
+      ComposicaoFamiliarController,
+    );
     service = module.get<ComposicaoFamiliarService>(ComposicaoFamiliarService);
   });
 
@@ -100,7 +102,7 @@ describe('ComposicaoFamiliarController', () => {
       ocupacao: 'Estudante',
       escolaridade: EscolaridadeEnum.MEDIO_COMPLETO,
       parentesco: ParentescoEnum.FILHO,
-      renda: 1500.00,
+      renda: 1500.0,
       observacoes: 'Observações de teste',
     };
 
@@ -109,7 +111,9 @@ describe('ComposicaoFamiliarController', () => {
     };
 
     it('should create a new composicao familiar member', async () => {
-      mockComposicaoFamiliarService.create.mockResolvedValue(mockComposicaoFamiliarResponse);
+      mockComposicaoFamiliarService.create.mockResolvedValue(
+        mockComposicaoFamiliarResponse,
+      );
 
       const result = await controller.create(createDto, mockRequest as any);
 
@@ -119,11 +123,14 @@ describe('ComposicaoFamiliarController', () => {
 
     it('should throw ConflictException when member already exists', async () => {
       mockComposicaoFamiliarService.create.mockRejectedValue(
-        new ConflictException('Já existe um membro com este CPF na composição familiar'),
+        new ConflictException(
+          'Já existe um membro com este CPF na composição familiar',
+        ),
       );
 
-      await expect(controller.create(createDto, mockRequest as any))
-        .rejects.toThrow(ConflictException);
+      await expect(
+        controller.create(createDto, mockRequest as any),
+      ).rejects.toThrow(ConflictException);
     });
 
     it('should throw BadRequestException for invalid data', async () => {
@@ -131,8 +138,9 @@ describe('ComposicaoFamiliarController', () => {
         new BadRequestException('CPF inválido'),
       );
 
-      await expect(controller.create(createDto, mockRequest as any))
-        .rejects.toThrow(BadRequestException);
+      await expect(
+        controller.create(createDto, mockRequest as any),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 
@@ -141,9 +149,15 @@ describe('ComposicaoFamiliarController', () => {
     const query = { page: 1, limit: 10 };
 
     it('should return paginated composicao familiar members', async () => {
-      mockComposicaoFamiliarService.findByCidadao.mockResolvedValue(mockPaginatedResponse);
+      mockComposicaoFamiliarService.findByCidadao.mockResolvedValue(
+        mockPaginatedResponse,
+      );
 
-      const result = await controller.findByCidadao(cidadaoId, query.page, query.limit);
+      const result = await controller.findByCidadao(
+        cidadaoId,
+        query.page,
+        query.limit,
+      );
 
       expect(service.findByCidadao).toHaveBeenCalledWith(cidadaoId, query);
       expect(result).toEqual(mockPaginatedResponse);
@@ -154,12 +168,15 @@ describe('ComposicaoFamiliarController', () => {
         new NotFoundException('Cidadão não encontrado'),
       );
 
-      await expect(controller.findByCidadao(cidadaoId, 1, 10))
-        .rejects.toThrow(NotFoundException);
+      await expect(controller.findByCidadao(cidadaoId, 1, 10)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should use default pagination values', async () => {
-      mockComposicaoFamiliarService.findByCidadao.mockResolvedValue(mockPaginatedResponse);
+      mockComposicaoFamiliarService.findByCidadao.mockResolvedValue(
+        mockPaginatedResponse,
+      );
 
       await controller.findByCidadao(cidadaoId, 1, 10);
 
@@ -174,7 +191,9 @@ describe('ComposicaoFamiliarController', () => {
     const id = '123e4567-e89b-12d3-a456-426614174000';
 
     it('should return a composicao familiar member', async () => {
-      mockComposicaoFamiliarService.findOne.mockResolvedValue(mockComposicaoFamiliarResponse);
+      mockComposicaoFamiliarService.findOne.mockResolvedValue(
+        mockComposicaoFamiliarResponse,
+      );
 
       const result = await controller.findOne(id);
 
@@ -187,8 +206,7 @@ describe('ComposicaoFamiliarController', () => {
         new NotFoundException('Membro da composição familiar não encontrado'),
       );
 
-      await expect(controller.findOne(id))
-        .rejects.toThrow(NotFoundException);
+      await expect(controller.findOne(id)).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -196,7 +214,7 @@ describe('ComposicaoFamiliarController', () => {
     const id = '123e4567-e89b-12d3-a456-426614174000';
     const updateDto: UpdateComposicaoFamiliarDto = {
       nome: 'João Silva Atualizado',
-      renda: 2000.00,
+      renda: 2000.0,
     };
 
     const mockRequest = {
@@ -207,7 +225,7 @@ describe('ComposicaoFamiliarController', () => {
       const updatedResponse = {
         ...mockComposicaoFamiliarResponse,
         nome: 'João Silva Atualizado',
-        renda: 2000.00,
+        renda: 2000.0,
       };
       mockComposicaoFamiliarService.update.mockResolvedValue(updatedResponse);
 
@@ -222,17 +240,21 @@ describe('ComposicaoFamiliarController', () => {
         new NotFoundException('Membro da composição familiar não encontrado'),
       );
 
-      await expect(controller.update(id, updateDto, mockRequest as any))
-        .rejects.toThrow(NotFoundException);
+      await expect(
+        controller.update(id, updateDto, mockRequest as any),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('should throw ConflictException for duplicate data', async () => {
       mockComposicaoFamiliarService.update.mockRejectedValue(
-        new ConflictException('Já existe um membro com este nome na composição familiar'),
+        new ConflictException(
+          'Já existe um membro com este nome na composição familiar',
+        ),
       );
 
-      await expect(controller.update(id, updateDto, mockRequest as any))
-        .rejects.toThrow(ConflictException);
+      await expect(
+        controller.update(id, updateDto, mockRequest as any),
+      ).rejects.toThrow(ConflictException);
     });
   });
 
@@ -255,8 +277,9 @@ describe('ComposicaoFamiliarController', () => {
         new NotFoundException('Membro da composição familiar não encontrado'),
       );
 
-      await expect(controller.remove(id, mockRequest as any))
-        .rejects.toThrow(NotFoundException);
+      await expect(controller.remove(id, mockRequest as any)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -265,7 +288,9 @@ describe('ComposicaoFamiliarController', () => {
 
     it('should return composicao familiar members by CPF', async () => {
       const expectedResponse = [mockComposicaoFamiliarResponse];
-      mockComposicaoFamiliarService.findByCpf.mockResolvedValue(expectedResponse);
+      mockComposicaoFamiliarService.findByCpf.mockResolvedValue(
+        expectedResponse,
+      );
 
       const result = await controller.findByCpf(cpf);
 
@@ -278,8 +303,9 @@ describe('ComposicaoFamiliarController', () => {
         new BadRequestException('CPF deve ter 11 dígitos'),
       );
 
-      await expect(controller.findByCpf('123'))
-        .rejects.toThrow(BadRequestException);
+      await expect(controller.findByCpf('123')).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should return empty array when no members found', async () => {
@@ -294,12 +320,13 @@ describe('ComposicaoFamiliarController', () => {
   describe('Input validation', () => {
     it('should validate UUID format for ID parameters', async () => {
       const invalidId = 'invalid-uuid';
-      
+
       // O controller deve validar UUIDs através dos decorators
       // Este teste verifica se a validação está configurada corretamente
       expect(() => {
         // Simulação de validação de UUID
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+        const uuidRegex =
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
         if (!uuidRegex.test(invalidId)) {
           throw new BadRequestException('ID deve ser um UUID válido');
         }
@@ -308,7 +335,7 @@ describe('ComposicaoFamiliarController', () => {
 
     it('should validate pagination parameters', () => {
       const invalidQuery = { page: -1, limit: 0 };
-      
+
       // Validação de parâmetros de paginação
       expect(() => {
         if (invalidQuery.page < 1 || invalidQuery.limit < 1) {
@@ -337,8 +364,9 @@ describe('ComposicaoFamiliarController', () => {
         new Error('Erro interno do servidor'),
       );
 
-      await expect(controller.create(createDto, mockRequest as any))
-        .rejects.toThrow('Erro interno do servidor');
+      await expect(
+        controller.create(createDto, mockRequest as any),
+      ).rejects.toThrow('Erro interno do servidor');
     });
   });
 
@@ -356,7 +384,9 @@ describe('ComposicaoFamiliarController', () => {
       };
 
       const mockRequest = { user: { id: 'user123' } };
-      mockComposicaoFamiliarService.create.mockResolvedValue(mockComposicaoFamiliarResponse);
+      mockComposicaoFamiliarService.create.mockResolvedValue(
+        mockComposicaoFamiliarResponse,
+      );
 
       await controller.create(createDto, mockRequest as any);
 

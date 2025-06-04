@@ -93,22 +93,30 @@ export class CampoDinamicoService {
 
     // Adaptar os tipos para garantir compatibilidade
     const { validacoes, ...restoCampos } = createCampoDinamicoDto;
-    
+
     // Criar o objeto de campo dinâmico com os tipos corretos
     // Para resolver o erro de TypeScript, precisamos garantir que o tipo do campo validacoes
     // seja compatível com a definição da entidade
     const campoDinamico = this.campoDinamicoRepository.create({
       ...restoCampos,
       tipo_beneficio_id: tipoBeneficioId,
-      validacoes: validacoes ? {
-        min: typeof validacoes.min === 'string' ? parseFloat(validacoes.min) : validacoes.min,
-        max: typeof validacoes.max === 'string' ? parseFloat(validacoes.max) : validacoes.max,
-        minLength: validacoes.minLength,
-        maxLength: validacoes.maxLength,
-        pattern: validacoes.pattern,
-        enum: validacoes.enum,
-        format: validacoes.format
-      } : undefined
+      validacoes: validacoes
+        ? {
+            min:
+              typeof validacoes.min === 'string'
+                ? parseFloat(validacoes.min)
+                : validacoes.min,
+            max:
+              typeof validacoes.max === 'string'
+                ? parseFloat(validacoes.max)
+                : validacoes.max,
+            minLength: validacoes.minLength,
+            maxLength: validacoes.maxLength,
+            pattern: validacoes.pattern,
+            enum: validacoes.enum,
+            format: validacoes.format,
+          }
+        : undefined,
     });
 
     const campoCriado = await this.campoDinamicoRepository.save(campoDinamico);
@@ -220,7 +228,13 @@ export class CampoDinamicoService {
     // Construir estrutura de campos
     const camposEstrutura = campos.map((campo) => {
       // Mapear TipoDado para os tipos aceitos por CampoEstrutura
-      let tipoMapeado: 'string' | 'number' | 'boolean' | 'date' | 'enum' | 'array';
+      let tipoMapeado:
+        | 'string'
+        | 'number'
+        | 'boolean'
+        | 'date'
+        | 'enum'
+        | 'array';
       switch (campo.tipo) {
         case 'string':
           tipoMapeado = 'string';
@@ -242,14 +256,14 @@ export class CampoDinamicoService {
           tipoMapeado = 'string'; // Fallback para string
           break;
       }
-      
+
       return {
         nome: campo.nome,
         tipo: tipoMapeado,
         obrigatorio: campo.obrigatorio,
         label: campo.label,
         descricao: campo.descricao,
-        validacoes: campo.validacoes
+        validacoes: campo.validacoes,
       };
     });
 
@@ -271,8 +285,8 @@ export class CampoDinamicoService {
           versao: `${novaVersao}.0.0`,
           descricao: `Versão ${novaVersao} - Atualização automática`,
           categoria: 'beneficio_eventual',
-          tags: ['dinamico']
-        }
+          tags: ['dinamico'],
+        },
       },
       versao: `${novaVersao}.0.0`,
       ativo: true,
@@ -310,7 +324,13 @@ export class CampoDinamicoService {
     // Construir estrutura de campos
     const camposEstrutura = campos.map((campo) => {
       // Mapear TipoDado para os tipos aceitos por CampoEstrutura
-      let tipoMapeado: 'string' | 'number' | 'boolean' | 'date' | 'enum' | 'array';
+      let tipoMapeado:
+        | 'string'
+        | 'number'
+        | 'boolean'
+        | 'date'
+        | 'enum'
+        | 'array';
       switch (campo.tipo) {
         case 'string':
           tipoMapeado = 'string';
@@ -332,14 +352,14 @@ export class CampoDinamicoService {
           tipoMapeado = 'string'; // Fallback para string
           break;
       }
-      
+
       return {
         nome: campo.nome,
         tipo: tipoMapeado,
         obrigatorio: campo.obrigatorio,
         label: campo.label,
         descricao: campo.descricao,
-        validacoes: campo.validacoes
+        validacoes: campo.validacoes,
       };
     });
 
@@ -351,10 +371,11 @@ export class CampoDinamicoService {
         campos: camposEstrutura,
         metadados: {
           versao: '1.0.0',
-          descricao: 'Schema gerado automaticamente a partir de campos dinâmicos',
+          descricao:
+            'Schema gerado automaticamente a partir de campos dinâmicos',
           categoria: 'beneficio_eventual',
-          tags: ['dinamico']
-        }
+          tags: ['dinamico'],
+        },
       },
       versao: '1.0.0',
       ativo: true,

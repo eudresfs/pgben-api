@@ -4,7 +4,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 
 /**
  * Módulo singleton para o Bull
- * 
+ *
  * Este módulo garante que a configuração do Bull seja feita apenas uma vez
  * e que as filas sejam registradas de forma centralizada, evitando duplicação
  * de processadores.
@@ -49,7 +49,7 @@ export class BullSingletonModule {
 
   /**
    * Registra uma fila Bull, garantindo que cada fila seja registrada apenas uma vez
-   * 
+   *
    * @param queueName Nome da fila
    */
   static registerQueue(queueName: string): DynamicModule {

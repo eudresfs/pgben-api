@@ -1,6 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsArray, IsBoolean, IsNotEmpty, IsOptional, IsString, MaxLength, ValidateNested } from 'class-validator';
+import {
+  IsArray,
+  IsBoolean,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  MaxLength,
+  ValidateNested,
+} from 'class-validator';
 import { WorkflowEtapaDto } from './workflow-etapa.dto';
 
 /**
@@ -11,7 +19,7 @@ export class WorkflowUpdateDto {
     description: 'Nome do workflow',
     example: 'Fluxo de Aprovação do Auxílio Natalidade',
     maxLength: 200,
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsString({ message: 'O nome deve ser uma string' })
@@ -22,7 +30,7 @@ export class WorkflowUpdateDto {
     description: 'Descrição detalhada do workflow',
     example: 'Processo de aprovação para solicitações de Auxílio Natalidade',
     maxLength: 500,
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsString({ message: 'A descrição deve ser uma string' })
@@ -31,7 +39,7 @@ export class WorkflowUpdateDto {
 
   @ApiProperty({
     description: 'Lista de etapas do workflow',
-    type: [WorkflowEtapaDto]
+    type: [WorkflowEtapaDto],
   })
   @IsNotEmpty({ message: 'As etapas são obrigatórias' })
   @IsArray({ message: 'As etapas devem estar em um array' })
@@ -42,7 +50,7 @@ export class WorkflowUpdateDto {
   @ApiProperty({
     description: 'Status ativo/inativo do workflow',
     example: true,
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsBoolean({ message: 'O status deve ser um booleano' })

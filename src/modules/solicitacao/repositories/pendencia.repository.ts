@@ -2,7 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { Repository, DataSource } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Pendencia, StatusPendencia } from '../../../entities';
-import { EntityNotFoundException, InvalidOperationException } from '../../../shared/exceptions';
+import {
+  EntityNotFoundException,
+  InvalidOperationException,
+} from '../../../shared/exceptions';
 
 /**
  * Interface para filtros de busca de pendências
@@ -19,7 +22,7 @@ export interface FiltrosPendencia {
 
 /**
  * Repository customizado para Pendências
- * 
+ *
  * Implementa consultas e operações específicas para pendências de solicitações,
  * incluindo filtros, relatórios e gestão de prazos.
  */
@@ -62,7 +65,9 @@ export class PendenciaRepository {
    * @param solicitacaoId ID da solicitação
    * @returns Lista de pendências abertas
    */
-  async buscarAbertasPorSolicitacao(solicitacaoId: string): Promise<Pendencia[]> {
+  async buscarAbertasPorSolicitacao(
+    solicitacaoId: string,
+  ): Promise<Pendencia[]> {
     return this.repository.find({
       where: {
         solicitacao_id: solicitacaoId,
@@ -111,7 +116,7 @@ export class PendenciaRepository {
     registradoPorId: string,
     prazoResolucao?: Date,
   ): Promise<Pendencia[]> {
-    const pendencias = descricoes.map(descricao => {
+    const pendencias = descricoes.map((descricao) => {
       const pendencia = new Pendencia();
       pendencia.solicitacao_id = solicitacaoId;
       pendencia.descricao = descricao;
@@ -149,7 +154,7 @@ export class PendenciaRepository {
         'resolver pendência',
         'Apenas pendências abertas podem ser resolvidas',
         pendencia.status,
-        StatusPendencia.ABERTA
+        StatusPendencia.ABERTA,
       );
     }
 
@@ -186,14 +191,15 @@ export class PendenciaRepository {
         'cancelar pendência',
         'Apenas pendências abertas podem ser canceladas',
         pendencia.status,
-        StatusPendencia.ABERTA
+        StatusPendencia.ABERTA,
       );
     }
 
     pendencia.status = StatusPendencia.CANCELADA;
     pendencia.resolvido_por_id = resolvidoPorId;
     pendencia.data_resolucao = new Date();
-    pendencia.observacao_resolucao = observacaoResolucao || 'Pendência cancelada';
+    pendencia.observacao_resolucao =
+      observacaoResolucao || 'Pendência cancelada';
 
     return this.repository.save(pendencia);
   }
@@ -254,9 +260,7 @@ export class PendenciaRepository {
       );
     }
 
-    return queryBuilder
-      .orderBy('pendencia.created_at', 'DESC')
-      .getMany();
+    return queryBuilder.orderBy('pendencia.created_at', 'DESC').getMany();
   }
 
   /**
@@ -264,14 +268,18 @@ export class PendenciaRepository {
    * @param dataReferencia Data de referência para verificar vencimento
    * @returns Lista de pendências vencidas
    */
-  async buscarComPrazoVencido(dataReferencia: Date = new Date()): Promise<Pendencia[]> {
+  async buscarComPrazoVencido(
+    dataReferencia: Date = new Date(),
+  ): Promise<Pendencia[]> {
     return this.repository
       .createQueryBuilder('pendencia')
       .leftJoinAndSelect('pendencia.solicitacao', 'solicitacao')
       .leftJoinAndSelect('pendencia.registrado_por', 'registrado_por')
       .where('pendencia.status = :status', { status: StatusPendencia.ABERTA })
       .andWhere('pendencia.prazo_resolucao IS NOT NULL')
-      .andWhere('pendencia.prazo_resolucao < :dataReferencia', { dataReferencia })
+      .andWhere('pendencia.prazo_resolucao < :dataReferencia', {
+        dataReferencia,
+      })
       .orderBy('pendencia.prazo_resolucao', 'ASC')
       .getMany();
   }
@@ -281,7 +289,9 @@ export class PendenciaRepository {
    * @param diasAntecedencia Número de dias de antecedência
    * @returns Lista de pendências próximas do vencimento
    */
-  async buscarProximasDoVencimento(diasAntecedencia: number = 3): Promise<Pendencia[]> {
+  async buscarProximasDoVencimento(
+    diasAntecedencia: number = 3,
+  ): Promise<Pendencia[]> {
     const hoje = new Date();
     const dataLimite = new Date();
     dataLimite.setDate(hoje.getDate() + diasAntecedencia);
@@ -305,7 +315,9 @@ export class PendenciaRepository {
    * @param filtros Filtros opcionais
    * @returns Objeto com contagem por status
    */
-  async contarPorStatus(filtros?: Partial<FiltrosPendencia>): Promise<Record<StatusPendencia, number>> {
+  async contarPorStatus(
+    filtros?: Partial<FiltrosPendencia>,
+  ): Promise<Record<StatusPendencia, number>> {
     const queryBuilder = this.repository
       .createQueryBuilder('pendencia')
       .select('pendencia.status', 'status')
@@ -333,14 +345,18 @@ export class PendenciaRepository {
     const resultados = await queryBuilder.getRawMany();
 
     // Inicializar todos os status com 0
-    const contagem = Object.values(StatusPendencia).reduce((acc, status) => {
-      (acc as Record<StatusPendencia, number>)[status] = 0;
-      return acc;
-    }, {} as Record<StatusPendencia, number>);
+    const contagem = Object.values(StatusPendencia).reduce(
+      (acc, status) => {
+        (acc as Record<StatusPendencia, number>)[status] = 0;
+        return acc;
+      },
+      {} as Record<StatusPendencia, number>,
+    );
 
     // Preencher com os valores reais
-    resultados.forEach(resultado => {
-      (contagem as Record<StatusPendencia, number>)[resultado.status] = parseInt(resultado.total);
+    resultados.forEach((resultado) => {
+      (contagem as Record<StatusPendencia, number>)[resultado.status] =
+        parseInt(resultado.total);
     });
 
     return contagem as Record<StatusPendencia, number>;

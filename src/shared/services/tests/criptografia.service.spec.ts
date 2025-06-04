@@ -44,7 +44,9 @@ describe('CriptografiaService', () => {
 
   const mockConfigService = {
     get: jest.fn().mockImplementation((key) => {
-      if (key === 'ENCRYPTION_KEY_PATH') {return './test-encryption.key';}
+      if (key === 'ENCRYPTION_KEY_PATH') {
+        return './test-encryption.key';
+      }
       return null;
     }),
   };
@@ -54,7 +56,9 @@ describe('CriptografiaService', () => {
 
     // Mock para crypto.randomBytes
     (crypto.randomBytes as jest.Mock).mockImplementation((size) => {
-      if (size === 16) {return mockIv;}
+      if (size === 16) {
+        return mockIv;
+      }
       return Buffer.alloc(size);
     });
 

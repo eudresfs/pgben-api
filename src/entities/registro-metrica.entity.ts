@@ -1,14 +1,31 @@
-import { Entity, PrimaryGeneratedColumn, Column, Index, ManyToOne, JoinColumn, CreateDateColumn } from 'typeorm';
-import { IsNotEmpty, IsUUID, IsOptional, IsNumber, Min, IsString, MaxLength, IsIP } from 'class-validator';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  Index,
+  ManyToOne,
+  JoinColumn,
+  CreateDateColumn,
+} from 'typeorm';
+import {
+  IsNotEmpty,
+  IsUUID,
+  IsOptional,
+  IsNumber,
+  Min,
+  IsString,
+  MaxLength,
+  IsIP,
+} from 'class-validator';
 import { MetricaDefinicao } from './metrica-definicao.entity';
 import { Metrica } from './metrica.entity';
 
 /**
  * Entidade que representa um registro de métrica
- * 
+ *
  * Esta entidade armazena os valores coletados para uma métrica específica,
  * incluindo o timestamp da coleta e detalhes adicionais.
- * 
+ *
  * A tabela é particionada por tempo para otimizar o desempenho em consultas
  * com grandes volumes de dados.
  */

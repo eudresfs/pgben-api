@@ -2,11 +2,13 @@ import { MigrationInterface, QueryRunner, Table, TableIndex } from 'typeorm';
 
 /**
  * Migração para criar a tabela de grupos de permissões.
- * 
+ *
  * Esta tabela armazena os grupos lógicos de permissões, facilitando a organização
  * e atribuição de permissões relacionadas.
  */
-export class CreatePermissionGroupTable1704067238000 implements MigrationInterface {
+export class CreatePermissionGroupTable1704067238000
+  implements MigrationInterface
+{
   name = 'CreatePermissionGroupTable1704067238000';
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.createTable(
@@ -66,7 +68,7 @@ export class CreatePermissionGroupTable1704067238000 implements MigrationInterfa
           },
         ],
       }),
-      true
+      true,
     );
 
     await queryRunner.createIndex(
@@ -74,7 +76,7 @@ export class CreatePermissionGroupTable1704067238000 implements MigrationInterfa
       new TableIndex({
         name: 'IDX_GRUPO_PERMISSAO_NOME',
         columnNames: ['nome'],
-      })
+      }),
     );
   }
 

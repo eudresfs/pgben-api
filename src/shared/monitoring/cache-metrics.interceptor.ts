@@ -12,7 +12,7 @@ import { ConfigService } from '@nestjs/config';
 
 /**
  * Interceptor para coletar métricas de operações de cache
- * 
+ *
  * Este interceptor monitora operações de cache e registra métricas
  * como taxa de acertos, tempo de resposta e operações totais.
  */
@@ -35,7 +35,7 @@ export class CacheMetricsInterceptor implements NestInterceptor {
     // Verificar se o Redis está habilitado
     this.cacheEnabled = this.configService.get('DISABLE_REDIS') !== 'true';
     this.cacheType = this.cacheEnabled ? 'redis' : 'memory';
-    
+
     // Iniciar relatório periódico de taxa de acertos
     this.scheduleHitRatioReport();
   }
@@ -51,7 +51,7 @@ export class CacheMetricsInterceptor implements NestInterceptor {
 
     const request = context.switchToHttp().getRequest();
     const { method, url } = request;
-    
+
     // Identificar operação de cache com base no método e URL
     const cacheOperation = this.getCacheOperation(method, url);
     if (!cacheOperation) {
@@ -69,7 +69,7 @@ export class CacheMetricsInterceptor implements NestInterceptor {
 
           // Determinar se foi um hit ou miss no cache
           const isCacheHit = this.isCacheHit(data, cacheOperation);
-          
+
           // Registrar operação de cache
           this.metricsService.recordCacheOperation(
             cacheOperation,
@@ -118,7 +118,10 @@ export class CacheMetricsInterceptor implements NestInterceptor {
     if (method === 'GET' && url.includes('/api/')) {
       return 'get';
     }
-    if ((method === 'POST' || method === 'PUT' || method === 'DELETE') && url.includes('/api/')) {
+    if (
+      (method === 'POST' || method === 'PUT' || method === 'DELETE') &&
+      url.includes('/api/')
+    ) {
       return 'invalidate';
     }
     return null;
@@ -158,11 +161,11 @@ export class CacheMetricsInterceptor implements NestInterceptor {
     if (total > 0) {
       const ratio = this.cacheHits / total;
       this.metricsService.updateCacheHitRatio(ratio, this.cacheType);
-      
+
       // Resetar contadores após o relatório
       this.cacheHits = 0;
       this.cacheMisses = 0;
-      
+
       this.logger.debug(
         `Taxa de acertos do cache (${this.cacheType}): ${(ratio * 100).toFixed(2)}%`,
       );

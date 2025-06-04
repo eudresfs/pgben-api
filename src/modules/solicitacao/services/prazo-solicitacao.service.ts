@@ -1,7 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Solicitacao, StatusSolicitacao } from '../../../entities/solicitacao.entity';
+import {
+  Solicitacao,
+  StatusSolicitacao,
+} from '../../../entities/solicitacao.entity';
 import { EntityNotFoundException } from '../../../shared/exceptions';
 import { ConfigService } from '@nestjs/config';
 
@@ -17,7 +20,7 @@ interface ConfiguracaoPrazos {
 
 /**
  * Serviço responsável pelo gerenciamento de prazos das solicitações
- * 
+ *
  * Este serviço implementa funcionalidades para:
  * - Calcular e definir prazos com base no tipo de solicitação e status
  * - Atualizar prazos quando ocorrerem mudanças de status
@@ -38,8 +41,14 @@ export class PrazoSolicitacaoService {
     this.configuracaoPrazos = {
       analise: this.configService.get<number>('PRAZO_ANALISE_DIAS', 7),
       documentos: this.configService.get<number>('PRAZO_DOCUMENTOS_DIAS', 15),
-      processamento: this.configService.get<number>('PRAZO_PROCESSAMENTO_DIAS', 5),
-      prioridadeJudicial: this.configService.get<number>('FATOR_PRIORIDADE_JUDICIAL', 0.5),
+      processamento: this.configService.get<number>(
+        'PRAZO_PROCESSAMENTO_DIAS',
+        5,
+      ),
+      prioridadeJudicial: this.configService.get<number>(
+        'FATOR_PRIORIDADE_JUDICIAL',
+        0.5,
+      ),
     };
   }
 
@@ -59,21 +68,25 @@ export class PrazoSolicitacaoService {
 
     // Calcular prazo com base na configuração
     let prazoEmDias = this.configuracaoPrazos.analise;
-    
+
     // Aplicar prioridade se for determinação judicial
     if (solicitacao.determinacao_judicial_flag) {
-      prazoEmDias = Math.ceil(prazoEmDias * this.configuracaoPrazos.prioridadeJudicial);
-      this.logger.log(`Prazo reduzido para determinação judicial: ${prazoEmDias} dias`);
+      prazoEmDias = Math.ceil(
+        prazoEmDias * this.configuracaoPrazos.prioridadeJudicial,
+      );
+      this.logger.log(
+        `Prazo reduzido para determinação judicial: ${prazoEmDias} dias`,
+      );
     }
 
     // Calcular data do prazo
     const dataPrazo = new Date();
     dataPrazo.setDate(dataPrazo.getDate() + prazoEmDias);
-    
+
     // Atualizar a solicitação
     solicitacao.prazo_analise = dataPrazo;
     await this.solicitacaoRepository.save(solicitacao);
-    
+
     return dataPrazo;
   }
 
@@ -93,21 +106,25 @@ export class PrazoSolicitacaoService {
 
     // Calcular prazo com base na configuração
     let prazoEmDias = this.configuracaoPrazos.documentos;
-    
+
     // Aplicar prioridade se for determinação judicial
     if (solicitacao.determinacao_judicial_flag) {
-      prazoEmDias = Math.ceil(prazoEmDias * this.configuracaoPrazos.prioridadeJudicial);
-      this.logger.log(`Prazo reduzido para determinação judicial: ${prazoEmDias} dias`);
+      prazoEmDias = Math.ceil(
+        prazoEmDias * this.configuracaoPrazos.prioridadeJudicial,
+      );
+      this.logger.log(
+        `Prazo reduzido para determinação judicial: ${prazoEmDias} dias`,
+      );
     }
 
     // Calcular data do prazo
     const dataPrazo = new Date();
     dataPrazo.setDate(dataPrazo.getDate() + prazoEmDias);
-    
+
     // Atualizar a solicitação
     solicitacao.prazo_documentos = dataPrazo;
     await this.solicitacaoRepository.save(solicitacao);
-    
+
     return dataPrazo;
   }
 
@@ -127,21 +144,25 @@ export class PrazoSolicitacaoService {
 
     // Calcular prazo com base na configuração
     let prazoEmDias = this.configuracaoPrazos.processamento;
-    
+
     // Aplicar prioridade se for determinação judicial
     if (solicitacao.determinacao_judicial_flag) {
-      prazoEmDias = Math.ceil(prazoEmDias * this.configuracaoPrazos.prioridadeJudicial);
-      this.logger.log(`Prazo reduzido para determinação judicial: ${prazoEmDias} dias`);
+      prazoEmDias = Math.ceil(
+        prazoEmDias * this.configuracaoPrazos.prioridadeJudicial,
+      );
+      this.logger.log(
+        `Prazo reduzido para determinação judicial: ${prazoEmDias} dias`,
+      );
     }
 
     // Calcular data do prazo
     const dataPrazo = new Date();
     dataPrazo.setDate(dataPrazo.getDate() + prazoEmDias);
-    
+
     // Atualizar a solicitação
     solicitacao.prazo_processamento = dataPrazo;
     await this.solicitacaoRepository.save(solicitacao);
-    
+
     return dataPrazo;
   }
 
@@ -160,15 +181,15 @@ export class PrazoSolicitacaoService {
         case StatusSolicitacao.EM_ANALISE:
           await this.definirPrazoAnalise(solicitacaoId);
           break;
-        
+
         case StatusSolicitacao.AGUARDANDO_DOCUMENTOS:
           await this.definirPrazoDocumentos(solicitacaoId);
           break;
-        
+
         case StatusSolicitacao.EM_PROCESSAMENTO:
           await this.definirPrazoProcessamento(solicitacaoId);
           break;
-        
+
         // Para outros estados, os prazos anteriores são mantidos ou podem ser limpos
         case StatusSolicitacao.APROVADA:
         case StatusSolicitacao.INDEFERIDA:
@@ -180,7 +201,10 @@ export class PrazoSolicitacaoService {
           break;
       }
     } catch (error) {
-      this.logger.error(`Erro ao atualizar prazos: ${error.message}`, error.stack);
+      this.logger.error(
+        `Erro ao atualizar prazos: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }
@@ -194,7 +218,7 @@ export class PrazoSolicitacaoService {
       const solicitacao = await this.solicitacaoRepository.findOne({
         where: { id: solicitacaoId },
       });
-      
+
       if (solicitacao) {
         solicitacao.prazo_analise = null;
         solicitacao.prazo_documentos = null;
@@ -238,7 +262,8 @@ export class PrazoSolicitacaoService {
     if (solicitacao.prazo_analise && agora > solicitacao.prazo_analise) {
       resultado.analiseVencida = true;
       resultado.diasAtraso = Math.floor(
-        (agora.getTime() - solicitacao.prazo_analise.getTime()) / (1000 * 60 * 60 * 24)
+        (agora.getTime() - solicitacao.prazo_analise.getTime()) /
+          (1000 * 60 * 60 * 24),
       );
     }
 
@@ -246,16 +271,21 @@ export class PrazoSolicitacaoService {
     if (solicitacao.prazo_documentos && agora > solicitacao.prazo_documentos) {
       resultado.documentosVencidos = true;
       const diasAtrasoDoc = Math.floor(
-        (agora.getTime() - solicitacao.prazo_documentos.getTime()) / (1000 * 60 * 60 * 24)
+        (agora.getTime() - solicitacao.prazo_documentos.getTime()) /
+          (1000 * 60 * 60 * 24),
       );
       resultado.diasAtraso = Math.max(resultado.diasAtraso, diasAtrasoDoc);
     }
 
     // Verificar prazo de processamento
-    if (solicitacao.prazo_processamento && agora > solicitacao.prazo_processamento) {
+    if (
+      solicitacao.prazo_processamento &&
+      agora > solicitacao.prazo_processamento
+    ) {
       resultado.processamentoVencido = true;
       const diasAtrasoProc = Math.floor(
-        (agora.getTime() - solicitacao.prazo_processamento.getTime()) / (1000 * 60 * 60 * 24)
+        (agora.getTime() - solicitacao.prazo_processamento.getTime()) /
+          (1000 * 60 * 60 * 24),
       );
       resultado.diasAtraso = Math.max(resultado.diasAtraso, diasAtrasoProc);
     }
@@ -269,48 +299,60 @@ export class PrazoSolicitacaoService {
    * @returns Lista de solicitações com prazos vencidos
    */
   async listarSolicitacoesComPrazosVencidos(
-    tiposPrazo: ('analise' | 'documentos' | 'processamento')[] = ['analise', 'documentos', 'processamento'],
+    tiposPrazo: ('analise' | 'documentos' | 'processamento')[] = [
+      'analise',
+      'documentos',
+      'processamento',
+    ],
   ): Promise<Solicitacao[]> {
     const agora = new Date();
-    const queryBuilder = this.solicitacaoRepository.createQueryBuilder('solicitacao');
-    
+    const queryBuilder =
+      this.solicitacaoRepository.createQueryBuilder('solicitacao');
+
     // Construir condições para a consulta
     const condicoesArray: string[] = [];
-    
+
     if (tiposPrazo.includes('analise')) {
-      condicoesArray.push('solicitacao.prazo_analise IS NOT NULL AND solicitacao.prazo_analise < :agora');
+      condicoesArray.push(
+        'solicitacao.prazo_analise IS NOT NULL AND solicitacao.prazo_analise < :agora',
+      );
     }
-    
+
     if (tiposPrazo.includes('documentos')) {
-      condicoesArray.push('solicitacao.prazo_documentos IS NOT NULL AND solicitacao.prazo_documentos < :agora');
+      condicoesArray.push(
+        'solicitacao.prazo_documentos IS NOT NULL AND solicitacao.prazo_documentos < :agora',
+      );
     }
-    
+
     if (tiposPrazo.includes('processamento')) {
-      condicoesArray.push('solicitacao.prazo_processamento IS NOT NULL AND solicitacao.prazo_processamento < :agora');
+      condicoesArray.push(
+        'solicitacao.prazo_processamento IS NOT NULL AND solicitacao.prazo_processamento < :agora',
+      );
     }
-    
+
     if (condicoesArray.length === 0) {
       return [];
     }
-    
+
     // Combinar as condições com OR
     const whereCondition = `(${condicoesArray.join(' OR ')})`;
-    
+
     // Aplicar a condição WHERE
     queryBuilder.where(whereCondition, { agora });
-    
+
     // Priorizar determinações judiciais
     queryBuilder.orderBy('solicitacao.determinacao_judicial_flag', 'DESC');
-    
+
     // Depois ordenar por data de prazo mais antiga
-    const leastExpr = 'LEAST(' +
+    const leastExpr =
+      'LEAST(' +
       'COALESCE(solicitacao.prazo_analise, :dataFutura), ' +
       'COALESCE(solicitacao.prazo_documentos, :dataFutura), ' +
-      'COALESCE(solicitacao.prazo_processamento, :dataFutura))'; 
-    
+      'COALESCE(solicitacao.prazo_processamento, :dataFutura))';
+
     queryBuilder.addOrderBy(leastExpr, 'ASC');
     queryBuilder.setParameter('dataFutura', new Date('2099-12-31'));
-    
+
     return queryBuilder.getMany();
   }
 }

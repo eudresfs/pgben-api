@@ -30,13 +30,20 @@ export class HttpExceptionFilter implements ExceptionFilter {
   /**
    * Extrai a primeira mensagem de erro de validação para usar como mensagem principal
    */
-  private getFirstValidationErrorMessage(validationErrors: ValidationError[] | Array<{ field: string; messages: string[] }>): string {
+  private getFirstValidationErrorMessage(
+    validationErrors:
+      | ValidationError[]
+      | Array<{ field: string; messages: string[] }>,
+  ): string {
     if (!validationErrors || validationErrors.length === 0) {
       return 'Erro de validação';
     }
-    
+
     // Verifica se é um array de ValidationError (class-validator)
-    if ('property' in validationErrors[0] || 'constraints' in validationErrors[0]) {
+    if (
+      'property' in validationErrors[0] ||
+      'constraints' in validationErrors[0]
+    ) {
       const errors = validationErrors as ValidationError[];
       for (const error of errors) {
         if (error.constraints) {
@@ -45,41 +52,51 @@ export class HttpExceptionFilter implements ExceptionFilter {
             return constraintMessage;
           }
         }
-        
+
         // Se não encontrou nas constraints, verifica os filhos
         if (error.children && error.children.length > 0) {
-          const childMessage = this.getFirstValidationErrorMessage(error.children);
+          const childMessage = this.getFirstValidationErrorMessage(
+            error.children,
+          );
           if (childMessage && childMessage !== 'Erro de validação') {
             return childMessage;
           }
         }
       }
-    } 
+    }
     // Se for o formato interno { field: string; messages: string[] }
-    else if ('field' in validationErrors[0] && 'messages' in validationErrors[0]) {
-      const errors = validationErrors as Array<{ field: string; messages: string[] }>;
+    else if (
+      'field' in validationErrors[0] &&
+      'messages' in validationErrors[0]
+    ) {
+      const errors = validationErrors as Array<{
+        field: string;
+        messages: string[];
+      }>;
       for (const error of errors) {
         if (error.messages && error.messages.length > 0) {
           return error.messages[0];
         }
       }
     }
-    
+
     return 'Erro de validação';
   }
-  
+
   /**
    * Processa os erros de validação em um formato estruturado
    */
   private processValidationErrors(
     validationErrors: ValidationError[],
-    parentProperty: string = ''
+    parentProperty: string = '',
   ): Array<{ field: string; messages: string[] }> {
     const result: Array<{ field: string; messages: string[] }> = [];
-    
+
     for (const error of validationErrors) {
-      const property = parentProperty ? `${parentProperty}.${error.property}` : error.property;
-      
+      const property = parentProperty
+        ? `${parentProperty}.${error.property}`
+        : error.property;
+
       if (error.constraints) {
         const messages = Object.values(error.constraints);
         if (messages.length > 0) {
@@ -89,13 +106,16 @@ export class HttpExceptionFilter implements ExceptionFilter {
           });
         }
       }
-      
+
       if (error.children && error.children.length > 0) {
-        const childErrors = this.processValidationErrors(error.children, property);
+        const childErrors = this.processValidationErrors(
+          error.children,
+          property,
+        );
         result.push(...childErrors);
       }
     }
-    
+
     return result;
   }
 
@@ -120,7 +140,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
         // Trata erros de validação
         if (exception instanceof BadRequestException) {
           code = 'VALIDATION_ERROR';
-          
+
           // Caso o erro já venha formatado pelo ValidationPipe
           if (responseObj.errors && Array.isArray(responseObj.errors)) {
             validationErrors = responseObj.errors.map((err: any) => ({
@@ -128,21 +148,33 @@ export class HttpExceptionFilter implements ExceptionFilter {
               messages: [err.message],
             }));
             // Converte para o formato ValidationError para usar com getFirstValidationErrorMessage
-            const validationErrorObjects = responseObj.errors.map((err: any) => ({
-              property: err.field || 'geral',
-              constraints: {
-                custom: err.message
-              },
-              children: []
-            }));
-            message = this.getFirstValidationErrorMessage(validationErrorObjects);
+            const validationErrorObjects = responseObj.errors.map(
+              (err: any) => ({
+                property: err.field || 'geral',
+                constraints: {
+                  custom: err.message,
+                },
+                children: [],
+              }),
+            );
+            message = this.getFirstValidationErrorMessage(
+              validationErrorObjects,
+            );
           }
           // Caso seja um erro de validação do class-validator
           else if (responseObj.message && Array.isArray(responseObj.message)) {
-            if (responseObj.message[0] && typeof responseObj.message[0] === 'object' && responseObj.message[0].property) {
+            if (
+              responseObj.message[0] &&
+              typeof responseObj.message[0] === 'object' &&
+              responseObj.message[0].property
+            ) {
               // É um erro de validação do class-validator
-              message = this.getFirstValidationErrorMessage(responseObj.message);
-              validationErrors = this.processValidationErrors(responseObj.message);
+              message = this.getFirstValidationErrorMessage(
+                responseObj.message,
+              );
+              validationErrors = this.processValidationErrors(
+                responseObj.message,
+              );
             } else {
               // É uma lista de mensagens de erro
               message = responseObj.message[0] || 'Erro de validação';

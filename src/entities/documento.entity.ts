@@ -26,7 +26,7 @@ import { TipoDocumentoEnum } from '../enums';
 
 /**
  * Entidade Documento
- * 
+ *
  * Representa documentos anexados pelos cidadãos, podendo estar vinculados
  * a uma solicitação específica ou serem documentos gerais reutilizáveis.
  * Todos os documentos são sempre vinculados a um cidadão.
@@ -48,7 +48,9 @@ export class Documento {
   @IsUUID('4', { message: 'ID da solicitação deve ser um UUID válido' })
   solicitacao_id?: string;
 
-  @ManyToOne(() => Solicitacao, (solicitacao) => solicitacao.documentos, { nullable: true })
+  @ManyToOne(() => Solicitacao, (solicitacao) => solicitacao.documentos, {
+    nullable: true,
+  })
   @JoinColumn({ name: 'solicitacao_id' })
   solicitacao?: Solicitacao;
 
@@ -122,7 +124,9 @@ export class Documento {
 
   @Column({ nullable: true })
   @IsOptional()
-  @IsUUID('4', { message: 'ID do usuário de verificação deve ser um UUID válido' })
+  @IsUUID('4', {
+    message: 'ID do usuário de verificação deve ser um UUID válido',
+  })
   usuario_verificacao_id?: string;
 
   @ManyToOne(() => Usuario, { nullable: true })

@@ -6,9 +6,9 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
  * Permite informar o motivo da revogação para auditoria.
  */
 export class RevokeTokenDto {
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Motivo da revogação do token',
-    example: 'Integração descontinuada' 
+    example: 'Integração descontinuada',
   })
   @IsNotEmpty({ message: 'O motivo da revogação é obrigatório' })
   @IsString({ message: 'O motivo deve ser uma string' })

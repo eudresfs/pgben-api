@@ -43,7 +43,7 @@ import { SharedModule } from '../../shared/shared.module';
             'application/vnd.ms-excel',
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
           ];
-          
+
           if (allowedMimes.includes(file.mimetype)) {
             cb(null, true);
           } else {
@@ -51,7 +51,8 @@ import { SharedModule } from '../../shared/shared.module';
           }
         },
         limits: {
-          fileSize: configService.get<number>('MAX_FILE_SIZE') || 10 * 1024 * 1024, // 10MB
+          fileSize:
+            configService.get<number>('MAX_FILE_SIZE') || 10 * 1024 * 1024, // 10MB
         },
       }),
       inject: [ConfigService],
@@ -69,13 +70,18 @@ import { SharedModule } from '../../shared/shared.module';
     LocalStorageAdapter,
     {
       provide: S3StorageAdapter,
-      useFactory: (configService: ConfigService, unifiedLoggerService: UnifiedLoggerService) => {
+      useFactory: (
+        configService: ConfigService,
+        unifiedLoggerService: UnifiedLoggerService,
+      ) => {
         // Verifica se todas as configurações AWS estão presentes
         const bucketName = configService.get<string>('AWS_S3_BUCKET');
         const region = configService.get<string>('AWS_REGION');
         const accessKeyId = configService.get<string>('AWS_ACCESS_KEY_ID');
-        const secretAccessKey = configService.get<string>('AWS_SECRET_ACCESS_KEY');
-        
+        const secretAccessKey = configService.get<string>(
+          'AWS_SECRET_ACCESS_KEY',
+        );
+
         if (!bucketName || !region || !accessKeyId || !secretAccessKey) {
           // Retorna null quando AWS não está configurado completamente
           // Isso evita erros de injeção de dependência

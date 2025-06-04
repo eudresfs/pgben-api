@@ -18,7 +18,9 @@ describe('ExcelStrategy', () => {
     addWorksheet: jest.fn().mockImplementation(() => mockWorksheet),
     xlsx: {
       writeFile: jest.fn().mockImplementation((path, callback) => {
-        if (callback) {callback();}
+        if (callback) {
+          callback();
+        }
         return Promise.resolve();
       }),
     },

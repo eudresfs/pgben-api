@@ -65,7 +65,8 @@ export class CreateSolicitacaoDto {
   tipo_beneficio_id: string;
 
   @ApiPropertyOptional({
-    description: 'ID da unidade onde a solicitação está sendo feita (obrigatório se usuário não tiver unidade vinculada)',
+    description:
+      'ID da unidade onde a solicitação está sendo feita (obrigatório se usuário não tiver unidade vinculada)',
   })
   @IsOptional()
   @IsUUID('4', { message: 'ID da unidade inválido' })

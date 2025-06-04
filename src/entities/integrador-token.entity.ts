@@ -1,4 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+  CreateDateColumn,
+} from 'typeorm';
 import { Integrador } from './integrador.entity';
 
 /**
@@ -10,7 +17,9 @@ export class IntegradorToken {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => Integrador, integrador => integrador.tokens, { nullable: false })
+  @ManyToOne(() => Integrador, (integrador) => integrador.tokens, {
+    nullable: false,
+  })
   @JoinColumn({ name: 'integrador_id' })
   integrador: Integrador;
 

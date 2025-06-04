@@ -28,12 +28,12 @@ export class CidadaoAuditInterceptor implements NestInterceptor {
 
   /**
    * Intercepta requisições para auditoria LGPD, usando padrão totalmente não-bloqueante
-   * 
+   *
    * OTIMIZAÇÃO DE PERFORMANCE:
    * - Processo executado em segundo plano com setTimeout
    * - Não bloqueia ou atrasa a resposta para o usuário
    * - Logging mínimo para evitar sobrecarga do log
-   * 
+   *
    * @param context Contexto da execução
    * @param next Handler para a próxima etapa
    * @returns Observable da resposta processada
@@ -42,20 +42,20 @@ export class CidadaoAuditInterceptor implements NestInterceptor {
     // Capturar dados básicos da requisição
     const request = context.switchToHttp().getRequest<Request>();
     const { method, url } = request;
-    
+
     // Verificação preliminar rápida para determinar se a operação precisa ser auditada
     // Esta etapa é mantida síncrona por ser muito rápida (microssegundos)
     const needsAudit = this.isSensitiveOperation(method, url);
-    
+
     // Se não precisar de auditoria, simplesmente prosseguir
     if (!needsAudit) {
       return next.handle();
     }
-    
+
     // Capturar timestamp inicial para medição de tempo
     const startTime = Date.now();
     const requestId = `${method}-${url.substring(0, 30)}-${startTime}`;
-    
+
     // Processar a requisição normalmente e fazer a auditoria em segundo plano
     return next.handle().pipe(
       tap({
@@ -67,14 +67,14 @@ export class CidadaoAuditInterceptor implements NestInterceptor {
               const { params, query, body, user } = request;
               const userId = user?.id || 'anônimo';
               const userRole = user?.role_id || 'não autenticado';
-              
+
               // Log mínimo para diagnóstico
               if (duration > 500) {
                 this.logger.log(
                   `AUDIT-SUCCESS [${requestId}] Duração: ${duration}ms, Usuário: ${userId}`,
                 );
               }
-              
+
               // Registrar em sistema de auditoria
               this.registerAuditEvent({
                 userId,
@@ -91,7 +91,9 @@ export class CidadaoAuditInterceptor implements NestInterceptor {
               });
             } catch (auditError) {
               // Erro na auditoria não deve afetar o fluxo principal
-              this.logger.warn(`Erro na auditoria [${requestId}]: ${auditError.message}`);
+              this.logger.warn(
+                `Erro na auditoria [${requestId}]: ${auditError.message}`,
+              );
             }
           }, 10); // Pequeno delay para garantir que não bloqueie
         },
@@ -103,12 +105,12 @@ export class CidadaoAuditInterceptor implements NestInterceptor {
               const { params, query, body, user } = request;
               const userId = user?.id || 'anônimo';
               const userRole = user?.role_id || 'não autenticado';
-              
+
               // Log mínimo para erros importantes
               this.logger.warn(
                 `AUDIT-ERROR [${requestId}] Duração: ${duration}ms, Erro: ${error.message.substring(0, 50)}`,
               );
-              
+
               // Registrar erro em sistema de auditoria
               this.registerAuditEvent({
                 userId,
@@ -126,7 +128,9 @@ export class CidadaoAuditInterceptor implements NestInterceptor {
               });
             } catch (auditError) {
               // Erro na auditoria não deve afetar o fluxo principal
-              this.logger.warn(`Erro na auditoria de erro [${requestId}]: ${auditError.message}`);
+              this.logger.warn(
+                `Erro na auditoria de erro [${requestId}]: ${auditError.message}`,
+              );
             }
           }, 10); // Pequeno delay para garantir que não bloqueie
         },
@@ -193,7 +197,9 @@ export class CidadaoAuditInterceptor implements NestInterceptor {
    * Verifica se o corpo da requisição contém dados sensíveis
    */
   private containsSensitiveData(body: any): boolean {
-    if (!body) {return false;}
+    if (!body) {
+      return false;
+    }
 
     const sensitiveFields = [
       'cpf',
@@ -211,7 +217,9 @@ export class CidadaoAuditInterceptor implements NestInterceptor {
    * Extrai os campos sensíveis do corpo da requisição
    */
   private extractSensitiveFields(body: any): string[] {
-    if (!body) {return [];}
+    if (!body) {
+      return [];
+    }
 
     const sensitiveFields = [
       'cpf',
@@ -232,7 +240,9 @@ export class CidadaoAuditInterceptor implements NestInterceptor {
    * Remove dados sensíveis do corpo da requisição para o log de auditoria
    */
   private sanitizeBody(body: any): any {
-    if (!body) {return null;}
+    if (!body) {
+      return null;
+    }
 
     const sanitized = { ...body };
 
@@ -264,10 +274,14 @@ export class CidadaoAuditInterceptor implements NestInterceptor {
    * Mascara o CPF para exibir apenas os primeiros e últimos dígitos
    */
   private maskCPF(cpf: string): string {
-    if (!cpf) {return '';}
+    if (!cpf) {
+      return '';
+    }
 
     const cpfLimpo = cpf.replace(/\D/g, '');
-    if (cpfLimpo.length !== 11) {return '***INVALID***';}
+    if (cpfLimpo.length !== 11) {
+      return '***INVALID***';
+    }
 
     return `${cpfLimpo.substring(0, 3)}.***.${cpfLimpo.substring(9)}`;
   }
@@ -276,10 +290,14 @@ export class CidadaoAuditInterceptor implements NestInterceptor {
    * Mascara o NIS para exibir apenas os primeiros e últimos dígitos
    */
   private maskNIS(nis: string): string {
-    if (!nis) {return '';}
+    if (!nis) {
+      return '';
+    }
 
     const nisLimpo = nis.replace(/\D/g, '');
-    if (nisLimpo.length !== 11) {return '***INVALID***';}
+    if (nisLimpo.length !== 11) {
+      return '***INVALID***';
+    }
 
     return `${nisLimpo.substring(0, 3)}.***.${nisLimpo.substring(9)}`;
   }
@@ -297,27 +315,33 @@ export class CidadaoAuditInterceptor implements NestInterceptor {
     setTimeout(async () => {
       const requestId = `${event.method}-${event.url}-${Date.now()}`;
       console.time(`AUDIT-EVENT-${requestId}`);
-      
+
       try {
         // Versão simplificada para diagnóstico
         const logAuditoriaDto = new CreateLogAuditoriaDto();
-        
+
         // Configuração básica
-        logAuditoriaDto.tipo_operacao = event.method === 'GET' ? TipoOperacao.READ : 
-                                       event.method === 'POST' ? TipoOperacao.CREATE : 
-                                       event.method === 'DELETE' ? TipoOperacao.DELETE : 
-                                       TipoOperacao.UPDATE;
-        
+        logAuditoriaDto.tipo_operacao =
+          event.method === 'GET'
+            ? TipoOperacao.READ
+            : event.method === 'POST'
+              ? TipoOperacao.CREATE
+              : event.method === 'DELETE'
+                ? TipoOperacao.DELETE
+                : TipoOperacao.UPDATE;
+
         logAuditoriaDto.entidade_afetada = 'Cidadao';
         logAuditoriaDto.entidade_id = this.extractEntityId(event.url);
         logAuditoriaDto.usuario_id = event.userId;
         logAuditoriaDto.endpoint = event.url;
         logAuditoriaDto.metodo_http = event.method;
-        
+
         // Enfileirar sem aguardar resultado (fire and forget)
-        this.auditoriaQueueService.enfileirarLogAuditoria(logAuditoriaDto)
-          .catch(err => this.logger.warn(`Erro em auditoria: ${err.message}`));
-        
+        this.auditoriaQueueService
+          .enfileirarLogAuditoria(logAuditoriaDto)
+          .catch((err) =>
+            this.logger.warn(`Erro em auditoria: ${err.message}`),
+          );
       } catch (error) {
         // Apenas log, não interrompe o fluxo principal
         this.logger.warn(`Erro ao registrar auditoria: ${error.message}`);

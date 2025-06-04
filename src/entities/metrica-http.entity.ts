@@ -1,9 +1,25 @@
-import { Entity, PrimaryGeneratedColumn, Column, Index, CreateDateColumn } from 'typeorm';
-import { IsNotEmpty, IsOptional, IsUUID, IsNumber, Min, Max, IsString, MaxLength, IsIP } from 'class-validator';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  Index,
+  CreateDateColumn,
+} from 'typeorm';
+import {
+  IsNotEmpty,
+  IsOptional,
+  IsUUID,
+  IsNumber,
+  Min,
+  Max,
+  IsString,
+  MaxLength,
+  IsIP,
+} from 'class-validator';
 
 /**
  * Entidade que representa métricas de requisições HTTP
- * 
+ *
  * Esta entidade armazena informações sobre requisições HTTP realizadas no sistema,
  * incluindo endpoint, método, código de status, duração e informações do usuário.
  */
@@ -63,7 +79,9 @@ export class MetricaHttp {
   @Column({ length: 50, nullable: true })
   @IsOptional()
   @IsString({ message: 'Perfil do usuário deve ser uma string' })
-  @MaxLength(50, { message: 'Perfil do usuário deve ter no máximo 50 caracteres' })
+  @MaxLength(50, {
+    message: 'Perfil do usuário deve ter no máximo 50 caracteres',
+  })
   perfil_usuario: string;
 
   @Column({ type: 'text', nullable: true })

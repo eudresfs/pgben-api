@@ -4,13 +4,14 @@ import { IsInt, IsOptional, IsString, Min } from 'class-validator';
 
 /**
  * DTO para paginação baseada em cursor
- * 
+ *
  * A paginação baseada em cursor é mais eficiente que a paginação por offset para grandes volumes de dados
  * pois não exige que o banco de dados conte todos os registros anteriores ao offset desejado.
  */
 export class CursorPaginationDto {
   @ApiPropertyOptional({
-    description: 'Cursor para paginação (geralmente o ID do último item da página anterior)',
+    description:
+      'Cursor para paginação (geralmente o ID do último item da página anterior)',
     example: '550e8400-e29b-41d4-a716-446655440000',
   })
   @IsOptional()
@@ -69,13 +70,13 @@ export class CursorPaginatedResponseDto<T> {
   meta: {
     /** Quantidade de itens retornados na página atual */
     count: number;
-    
+
     /** Total de itens disponíveis (pode ser uma estimativa) */
     total: number;
-    
+
     /** Cursor para a próxima página */
     nextCursor?: string;
-    
+
     /** Indica se existe uma próxima página */
     hasNextPage: boolean;
   };

@@ -11,7 +11,12 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../../../auth/guards/permission.guard';
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
@@ -49,13 +54,11 @@ export class RenovacaoAutomaticaController {
    * @returns Configuração criada
    */
   @Post('configuracao')
-  @RequiresPermission(
-    
-    { permissionName: 'beneficio.configuracao.criar' }
-  )
+  @RequiresPermission({ permissionName: 'beneficio.configuracao.criar' })
   @ApiOperation({
     summary: 'Cria uma nova configuração de renovação automática',
-    description: 'Cria uma configuração de renovação automática para um tipo de benefício.',
+    description:
+      'Cria uma configuração de renovação automática para um tipo de benefício.',
   })
   @ApiResponse({
     status: 201,
@@ -74,13 +77,11 @@ export class RenovacaoAutomaticaController {
    * @returns Lista de configurações
    */
   @Get('configuracao')
-  @RequiresPermission(
-    
-    { permissionName: 'beneficio.configuracao.listar' }
-  )
+  @RequiresPermission({ permissionName: 'beneficio.configuracao.listar' })
   @ApiOperation({
     summary: 'Busca todas as configurações de renovação',
-    description: 'Retorna a lista de todas as configurações de renovação automática.',
+    description:
+      'Retorna a lista de todas as configurações de renovação automática.',
   })
   @ApiResponse({
     status: 200,
@@ -97,13 +98,11 @@ export class RenovacaoAutomaticaController {
    * @returns Configuração
    */
   @Get('configuracao/:id')
-  @RequiresPermission(
-    
-    { permissionName: 'beneficio.configuracao.visualizar' }
-  )
+  @RequiresPermission({ permissionName: 'beneficio.configuracao.visualizar' })
   @ApiOperation({
     summary: 'Busca uma configuração de renovação pelo ID',
-    description: 'Retorna os detalhes de uma configuração de renovação específica.',
+    description:
+      'Retorna os detalhes de uma configuração de renovação específica.',
   })
   @ApiResponse({
     status: 200,
@@ -120,13 +119,11 @@ export class RenovacaoAutomaticaController {
    * @returns Configuração
    */
   @Get('configuracao/tipo-beneficio/:tipoBeneficioId')
-  @RequiresPermission(
-    
-    { permissionName: 'beneficio.configuracao.visualizar' }
-  )
+  @RequiresPermission({ permissionName: 'beneficio.configuracao.visualizar' })
   @ApiOperation({
     summary: 'Busca uma configuração de renovação pelo tipo de benefício',
-    description: 'Retorna a configuração de renovação para um tipo de benefício específico.',
+    description:
+      'Retorna a configuração de renovação para um tipo de benefício específico.',
   })
   @ApiResponse({
     status: 200,
@@ -146,13 +143,11 @@ export class RenovacaoAutomaticaController {
    * @returns Configuração atualizada
    */
   @Patch('configuracao/:id')
-  @RequiresPermission(
-    
-    { permissionName: 'beneficio.configuracao.atualizar' }
-  )
+  @RequiresPermission({ permissionName: 'beneficio.configuracao.atualizar' })
   @ApiOperation({
     summary: 'Atualiza uma configuração de renovação',
-    description: 'Atualiza os dados de uma configuração de renovação existente.',
+    description:
+      'Atualiza os dados de uma configuração de renovação existente.',
   })
   @ApiResponse({
     status: 200,
@@ -173,10 +168,7 @@ export class RenovacaoAutomaticaController {
    */
   @Delete('configuracao/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @RequiresPermission(
-    
-    { permissionName: 'beneficio.configuracao.remover' }
-  )
+  @RequiresPermission({ permissionName: 'beneficio.configuracao.remover' })
   @ApiOperation({
     summary: 'Remove uma configuração de renovação',
     description: 'Remove permanentemente uma configuração de renovação.',
@@ -196,13 +188,11 @@ export class RenovacaoAutomaticaController {
    * @returns Configuração atualizada
    */
   @Patch('configuracao/:id/ativar')
-  @RequiresPermission(
-    
-    { permissionName: 'beneficio.configuracao.atualizar' }
-  )
+  @RequiresPermission({ permissionName: 'beneficio.configuracao.atualizar' })
   @ApiOperation({
     summary: 'Ativa ou desativa uma configuração de renovação',
-    description: 'Altera o status de ativação de uma configuração de renovação.',
+    description:
+      'Altera o status de ativação de uma configuração de renovação.',
   })
   @ApiResponse({
     status: 200,
@@ -222,21 +212,21 @@ export class RenovacaoAutomaticaController {
    * @returns Informações sobre a configuração de renovação da solicitação
    */
   @Get('solicitacao/:solicitacaoId/verificar')
-  @RequiresPermission(
-    
-    { 
-      permissionName: 'solicitacao.visualizar',
-      scopeType: ScopeType.UNIT,
-      scopeIdExpression: 'solicitacao.unidadeId'
-    }
-  )
+  @RequiresPermission({
+    permissionName: 'solicitacao.visualizar',
+    scopeType: ScopeType.UNIT,
+    scopeIdExpression: 'solicitacao.unidadeId',
+  })
   @ApiOperation({
-    summary: 'Verifica a configuração de renovação automática de uma solicitação',
-    description: 'Retorna informações sobre a configuração de renovação automática de uma solicitação específica.',
+    summary:
+      'Verifica a configuração de renovação automática de uma solicitação',
+    description:
+      'Retorna informações sobre a configuração de renovação automática de uma solicitação específica.',
   })
   @ApiResponse({
     status: 200,
-    description: 'Informações sobre renovação automática retornadas com sucesso',
+    description:
+      'Informações sobre renovação automática retornadas com sucesso',
     type: VerificacaoRenovacaoResponseDto,
   })
   async verificarRenovacaoSolicitacao(
@@ -253,17 +243,15 @@ export class RenovacaoAutomaticaController {
    * @returns Solicitação atualizada
    */
   @Patch('solicitacao/:solicitacaoId')
-  @RequiresPermission(
-    
-    { 
-      permissionName: 'solicitacao.configurar-renovacao',
-      scopeType: ScopeType.UNIT,
-      scopeIdExpression: 'solicitacao.unidadeId'
-    }
-  )
+  @RequiresPermission({
+    permissionName: 'solicitacao.configurar-renovacao',
+    scopeType: ScopeType.UNIT,
+    scopeIdExpression: 'solicitacao.unidadeId',
+  })
   @ApiOperation({
     summary: 'Configura a renovação automática para uma solicitação',
-    description: 'Ativa ou desativa a renovação automática para uma solicitação específica.',
+    description:
+      'Ativa ou desativa a renovação automática para uma solicitação específica.',
   })
   @ApiResponse({
     status: 200,
@@ -288,23 +276,24 @@ export class RenovacaoAutomaticaController {
    * @returns Número de solicitações renovadas
    */
   @Post('verificar-pendentes')
-  @RequiresPermission(
-    
-    { permissionName: 'beneficio.renovacao.verificar' }
-  )
+  @RequiresPermission({ permissionName: 'beneficio.renovacao.verificar' })
   @ApiOperation({
     summary: 'Verifica e processa manualmente as renovações pendentes',
-    description: 'Executa manualmente o processo de verificação e renovação automática.',
+    description:
+      'Executa manualmente o processo de verificação e renovação automática.',
   })
   @ApiResponse({
     status: 200,
     description: 'Verificação concluída com sucesso',
     type: VerificacaoRenovacoesPendentesResponseDto,
   })
-  async verificarRenovacoesPendentes(@Req() req: any): Promise<VerificacaoRenovacoesPendentesResponseDto> {
-    const renovacoesProcessadas = await this.renovacaoService.verificarRenovacoesPendentes(req.user.id);
+  async verificarRenovacoesPendentes(
+    @Req() req: any,
+  ): Promise<VerificacaoRenovacoesPendentesResponseDto> {
+    const renovacoesProcessadas =
+      await this.renovacaoService.verificarRenovacoesPendentes(req.user.id);
     const response: VerificacaoRenovacoesPendentesResponseDto = {
-      renovacoes_processadas: renovacoesProcessadas
+      renovacoes_processadas: renovacoesProcessadas,
     };
     return response;
   }

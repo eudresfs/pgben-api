@@ -1,4 +1,11 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Index,
+} from 'typeorm';
 import { IntegracaoTipoEnum } from '../enums';
 
 /**
@@ -10,7 +17,7 @@ import { IntegracaoTipoEnum } from '../enums';
 export class ConfiguracaoIntegracao {
   @PrimaryGeneratedColumn('uuid')
   id: string;
-  
+
   /**
    * Código único que identifica a configuração de integração.
    */
@@ -23,7 +30,7 @@ export class ConfiguracaoIntegracao {
    */
   @Column({
     type: 'enum',
-    enum: IntegracaoTipoEnum
+    enum: IntegracaoTipoEnum,
   })
   @Index('idx_integracao_tipo')
   tipo: IntegracaoTipoEnum;
@@ -33,7 +40,7 @@ export class ConfiguracaoIntegracao {
    */
   @Column({ type: 'varchar', length: 200 })
   nome: string;
-  
+
   /**
    * Descrição detalhada da configuração de integração.
    */
@@ -52,18 +59,18 @@ export class ConfiguracaoIntegracao {
    */
   @Column({ type: 'jsonb', default: '{}' })
   parametros: Record<string, string>;
-  
+
   /**
    * Alias para o campo parametros, utilizado em diferentes partes do código
    */
   get configuracao(): Record<string, string> {
     return this.parametros;
   }
-  
+
   set configuracao(value: Record<string, string>) {
     this.parametros = value;
   }
-  
+
   /**
    * Credenciais sensíveis para autenticação com o serviço externo.
    * Armazenado de forma criptografada.

@@ -42,7 +42,7 @@ async function testarPerformanceQueries() {
     console.log(
       `Conexão com banco de dados de teste ${dbConfig.database} estabelecida`,
     );
-    
+
     // Definir tipo explícito para o array de resultados
     const resultados: Array<{
       nome: string;
@@ -215,7 +215,8 @@ async function testarPerformanceQueries() {
           if (r.tempoExecucao !== null) {
             console.log(
               `   Tempo: ${r.tempoExecucao.toFixed(2)} ms (limite: ${
-                queriesCriticas.find((q) => q.nome === r.nome)?.limiteTempo || 'não definido'
+                queriesCriticas.find((q) => q.nome === r.nome)?.limiteTempo ||
+                'não definido'
               } ms)`,
             );
           } else {

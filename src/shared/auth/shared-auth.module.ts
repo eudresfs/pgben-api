@@ -10,7 +10,7 @@ import { JwtAuthStrategy } from '../../auth/strategies/jwt-auth.strategy';
 
 /**
  * Módulo compartilhado de autenticação
- * 
+ *
  * Contém apenas os componentes que podem ser utilizados
  * em qualquer módulo sem criar dependências circulares.
  */
@@ -28,15 +28,7 @@ import { JwtAuthStrategy } from '../../auth/strategies/jwt-auth.strategy';
       }),
     }),
   ],
-  providers: [
-    JwtAuthStrategy,
-    JwtAuthGuard,
-    RolesGuard,
-  ],
-  exports: [
-    JwtModule,
-    JwtAuthGuard,
-    RolesGuard,
-  ],
+  providers: [JwtAuthStrategy, JwtAuthGuard, RolesGuard],
+  exports: [JwtModule, JwtAuthGuard, RolesGuard],
 })
 export class SharedAuthModule {}

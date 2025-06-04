@@ -69,7 +69,7 @@ export class PasswordResetService {
       'PASSWORD_RESET_MAX_REQUESTS_PER_HOUR',
       5,
     );
-    
+
     // Iniciar limpeza automática de tokens expirados
     this.startTokenCleanup();
   }
@@ -85,14 +85,19 @@ export class PasswordResetService {
 
     try {
       // Buscar usuário pelo email
-      const usuario = await this.usuarioRepository.findByEmail(email.toLowerCase());
+      const usuario = await this.usuarioRepository.findByEmail(
+        email.toLowerCase(),
+      );
 
       // Por segurança, sempre retornamos sucesso mesmo se o email não existir
       if (!usuario) {
-        this.logger.warn(`Tentativa de reset para email inexistente: ${email}`, {
-          ip: clientInfo.ip,
-          userAgent: clientInfo.userAgent,
-        });
+        this.logger.warn(
+          `Tentativa de reset para email inexistente: ${email}`,
+          {
+            ip: clientInfo.ip,
+            userAgent: clientInfo.userAgent,
+          },
+        );
 
         await this.auditService.logSecurityEvent(
           AuditAction.PASSWORD_RESET,
@@ -100,11 +105,12 @@ export class PasswordResetService {
           undefined,
           AuditSeverity.MEDIUM,
           { email },
-          { ip: clientInfo.ip, userAgent: clientInfo.userAgent }
+          { ip: clientInfo.ip, userAgent: clientInfo.userAgent },
         );
 
         return {
-          message: 'Se o email existir, você receberá instruções para redefinir sua senha.',
+          message:
+            'Se o email existir, você receberá instruções para redefinir sua senha.',
           expiresInMinutes: this.tokenExpirationMinutes,
         };
       }
@@ -118,7 +124,9 @@ export class PasswordResetService {
       // Gerar novo token
       const token = this.generateSecureToken();
       const tokenHash = await this.hashToken(token);
-      const expiresAt = new Date(Date.now() + this.tokenExpirationMinutes * 60 * 1000);
+      const expiresAt = new Date(
+        Date.now() + this.tokenExpirationMinutes * 60 * 1000,
+      );
 
       // Salvar token no banco
       const passwordResetToken = this.passwordResetTokenRepository.create({
@@ -146,25 +154,26 @@ export class PasswordResetService {
         'password_reset_token',
         passwordResetToken.id,
         'Solicitação de recuperação de senha',
-        { ip: clientInfo.ip, userAgent: clientInfo.userAgent }
+        { ip: clientInfo.ip, userAgent: clientInfo.userAgent },
       );
 
       this.logger.log(`Token de recuperação gerado para usuário ${usuario.id}`);
 
       return {
-        message: 'Se o email existir, você receberá instruções para redefinir sua senha.',
+        message:
+          'Se o email existir, você receberá instruções para redefinir sua senha.',
         expiresInMinutes: this.tokenExpirationMinutes,
       };
     } catch (error) {
       this.logger.error('Erro ao solicitar recuperação de senha', error.stack);
-      
+
       await this.auditService.logSecurityEvent(
         AuditAction.PASSWORD_RESET,
         `Erro ao processar solicitação de reset: ${error.message}`,
         undefined,
         AuditSeverity.HIGH,
         { email, error: error.message },
-        { ip: clientInfo.ip, userAgent: clientInfo.userAgent }
+        { ip: clientInfo.ip, userAgent: clientInfo.userAgent },
       );
 
       throw new InternalServerErrorException(
@@ -201,20 +210,25 @@ export class PasswordResetService {
           undefined,
           AuditSeverity.HIGH,
           { tokenPrefix: token.substring(0, 8) },
-          { ip: clientInfo.ip, userAgent: clientInfo.userAgent }
+          { ip: clientInfo.ip, userAgent: clientInfo.userAgent },
         );
         throw new UnauthorizedException('Token inválido ou expirado');
       }
 
       // Carregar usuário pelo ID
-      const usuario = await this.usuarioRepository.findById(resetToken.usuario_id);
+      const usuario = await this.usuarioRepository.findById(
+        resetToken.usuario_id,
+      );
 
       if (!usuario) {
         throw new NotFoundException('Usuário não encontrado');
       }
 
       // Verificar se a nova senha é diferente da atual
-      const isSamePassword = await bcrypt.compare(newPassword, usuario.senhaHash);
+      const isSamePassword = await bcrypt.compare(
+        newPassword,
+        usuario.senhaHash,
+      );
       if (isSamePassword) {
         throw new BadRequestException(
           'A nova senha deve ser diferente da senha atual',
@@ -225,15 +239,14 @@ export class PasswordResetService {
       const hashedPassword = await bcrypt.hash(newPassword, 12);
 
       // Atualizar senha do usuário usando query builder
-      await this.passwordResetTokenRepository
-        .manager
+      await this.passwordResetTokenRepository.manager
         .createQueryBuilder()
         .update('usuario')
         .set({
           senha: hashedPassword,
-          updated_at: new Date()
+          updated_at: new Date(),
         })
-        .where("id = :id", { id: usuario.id })
+        .where('id = :id', { id: usuario.id })
         .execute();
 
       // Marcar token como usado
@@ -241,7 +254,11 @@ export class PasswordResetService {
       await this.passwordResetTokenRepository.save(resetToken);
 
       // Invalidar outros tokens do usuário
-      await this.invalidateUserTokens(usuario.id, 'password_changed', resetToken.id);
+      await this.invalidateUserTokens(
+        usuario.id,
+        'password_changed',
+        resetToken.id,
+      );
 
       // Enviar email de confirmação
       await this.sendPasswordResetConfirmationEmail(usuario, clientInfo);
@@ -253,7 +270,7 @@ export class PasswordResetService {
         'usuario',
         usuario.id,
         'Senha redefinida com sucesso',
-        { ip: clientInfo.ip, userAgent: clientInfo.userAgent }
+        { ip: clientInfo.ip, userAgent: clientInfo.userAgent },
       );
 
       await this.auditService.logSecurityEvent(
@@ -262,13 +279,16 @@ export class PasswordResetService {
         usuario.id,
         AuditSeverity.MEDIUM,
         { email: usuario.email },
-        { ip: clientInfo.ip, userAgent: clientInfo.userAgent }
+        { ip: clientInfo.ip, userAgent: clientInfo.userAgent },
       );
 
-      this.logger.log(`Senha redefinida com sucesso para usuário ${usuario.id}`);
+      this.logger.log(
+        `Senha redefinida com sucesso para usuário ${usuario.id}`,
+      );
 
       return {
-        message: 'Senha redefinida com sucesso. Você pode fazer login com sua nova senha.',
+        message:
+          'Senha redefinida com sucesso. Você pode fazer login com sua nova senha.',
       };
     } catch (error) {
       // Registrar erro e redirecionar
@@ -279,19 +299,21 @@ export class PasswordResetService {
       }
 
       this.logger.error('Erro ao redefinir senha', error.stack);
-      
+
       await this.auditService.logSecurityEvent(
         AuditAction.PASSWORD_RESET,
         `Erro ao redefinir senha: ${error.message}`,
         foundToken?.usuario?.id,
         AuditSeverity.HIGH,
         { tokenPrefix: token.substring(0, 8), error: error.message },
-        { ip: clientInfo.ip, userAgent: clientInfo.userAgent }
+        { ip: clientInfo.ip, userAgent: clientInfo.userAgent },
       );
 
-      if (error instanceof BadRequestException || 
-          error instanceof UnauthorizedException || 
-          error instanceof NotFoundException) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof UnauthorizedException ||
+        error instanceof NotFoundException
+      ) {
         throw error;
       }
 
@@ -304,10 +326,12 @@ export class PasswordResetService {
   /**
    * Valida se um token é válido
    */
-  async validateToken(token: string): Promise<{ valid: boolean; expiresInMinutes?: number }> {
+  async validateToken(
+    token: string,
+  ): Promise<{ valid: boolean; expiresInMinutes?: number }> {
     try {
       const resetToken = await this.findValidToken(token);
-      
+
       if (!resetToken) {
         return { valid: false };
       }
@@ -329,35 +353,43 @@ export class PasswordResetService {
     const now = new Date();
     const last24h = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
-    const [totalRequests, activeTokens, expiredTokens, usedTokens, requestsLast24h] = 
-      await Promise.all([
-        this.passwordResetTokenRepository.count(),
-        this.passwordResetTokenRepository.count({
-          where: {
-            is_used: false,
-            expires_at: LessThan(now),
-          },
-        }),
-        this.passwordResetTokenRepository.count({
-          where: {
-            is_used: false,
-            expires_at: LessThan(now),
-          },
-        }),
-        this.passwordResetTokenRepository.count({
-          where: { is_used: true },
-        }),
-        this.passwordResetTokenRepository.count({
-          where: {
-            created_at: LessThan(last24h),
-          },
-        }),
-      ]);
+    const [
+      totalRequests,
+      activeTokens,
+      expiredTokens,
+      usedTokens,
+      requestsLast24h,
+    ] = await Promise.all([
+      this.passwordResetTokenRepository.count(),
+      this.passwordResetTokenRepository.count({
+        where: {
+          is_used: false,
+          expires_at: LessThan(now),
+        },
+      }),
+      this.passwordResetTokenRepository.count({
+        where: {
+          is_used: false,
+          expires_at: LessThan(now),
+        },
+      }),
+      this.passwordResetTokenRepository.count({
+        where: { is_used: true },
+      }),
+      this.passwordResetTokenRepository.count({
+        where: {
+          created_at: LessThan(last24h),
+        },
+      }),
+    ]);
 
     // Calcular tempo médio de uso
     const usedTokensWithTime = await this.passwordResetTokenRepository
       .createQueryBuilder('token')
-      .select('AVG(EXTRACT(EPOCH FROM (token.used_at - token.created_at)) / 60)', 'avgMinutes')
+      .select(
+        'AVG(EXTRACT(EPOCH FROM (token.used_at - token.created_at)) / 60)',
+        'avgMinutes',
+      )
       .where('token.is_used = true AND token.used_at IS NOT NULL')
       .getRawOne();
 
@@ -386,9 +418,11 @@ export class PasswordResetService {
       });
 
       if (result.affected && result.affected > 0) {
-        this.logger.log(`Removidos ${result.affected} tokens de recuperação expirados`);
+        this.logger.log(
+          `Removidos ${result.affected} tokens de recuperação expirados`,
+        );
       }
-      
+
       return result.affected || 0;
     } catch (error) {
       this.logger.error('Erro na limpeza de tokens expirados', error.stack);
@@ -409,9 +443,11 @@ export class PasswordResetService {
       });
 
       if (result.affected && result.affected > 0) {
-        this.logger.log(`Removidos ${result.affected} tokens de recuperação antigos`);
+        this.logger.log(
+          `Removidos ${result.affected} tokens de recuperação antigos`,
+        );
       }
-      
+
       return result.affected || 0;
     } catch (error) {
       this.logger.error('Erro na limpeza de tokens antigos', error.stack);
@@ -429,7 +465,9 @@ export class PasswordResetService {
     return bcrypt.hash(token, 10);
   }
 
-  private async findValidToken(token: string): Promise<PasswordResetToken | null> {
+  private async findValidToken(
+    token: string,
+  ): Promise<PasswordResetToken | null> {
     const tokens = await this.passwordResetTokenRepository.find({
       where: {
         is_used: false,
@@ -444,14 +482,14 @@ export class PasswordResetService {
         // Incrementar tentativas
         resetToken.incrementAttempts();
         await this.passwordResetTokenRepository.save(resetToken);
-        
+
         // Verificar limite de tentativas
         if (resetToken.attempts > this.maxAttemptsPerToken) {
           resetToken.markAsUsed('max_attempts_exceeded');
           await this.passwordResetTokenRepository.save(resetToken);
           return null;
         }
-        
+
         return resetToken;
       }
     }
@@ -461,7 +499,7 @@ export class PasswordResetService {
 
   private async checkRateLimit(usuarioId: string, ip: string): Promise<void> {
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
-    
+
     const recentRequests = await this.passwordResetTokenRepository.count({
       where: [
         {
@@ -510,13 +548,15 @@ export class PasswordResetService {
     token: string,
     expiresAt: Date,
   ): Promise<void> {
-    const expiresInMinutes = Math.ceil((expiresAt.getTime() - Date.now()) / (1000 * 60));
+    const expiresInMinutes = Math.ceil(
+      (expiresAt.getTime() - Date.now()) / (1000 * 60),
+    );
 
     await this.emailService.sendPasswordResetEmail(
       usuario.email,
       usuario.nome,
       token,
-      expiresInMinutes
+      expiresInMinutes,
     );
   }
 
@@ -526,7 +566,7 @@ export class PasswordResetService {
   ): Promise<void> {
     await this.emailService.sendPasswordResetConfirmationEmail(
       usuario.email,
-      usuario.nome
+      usuario.nome,
     );
   }
 
@@ -536,16 +576,18 @@ export class PasswordResetService {
    */
   private startTokenCleanup(): void {
     const CLEANUP_INTERVAL = 24 * 60 * 60 * 1000; // 24 horas
-    
+
     // Executar limpeza a cada 24 horas
     setInterval(async () => {
       try {
         await this.cleanupExpiredTokens();
       } catch (error) {
-        this.logger.error(`Erro na limpeza automática de tokens: ${error.message}`);
+        this.logger.error(
+          `Erro na limpeza automática de tokens: ${error.message}`,
+        );
       }
     }, CLEANUP_INTERVAL);
-    
+
     // Executar limpeza de tokens usados a cada 24 horas
     setInterval(async () => {
       try {
@@ -555,8 +597,6 @@ export class PasswordResetService {
       }
     }, CLEANUP_INTERVAL);
   }
-  
-
 
   /**
    * Obtém estatísticas de tokens de recuperação
@@ -570,7 +610,7 @@ export class PasswordResetService {
     used: number;
   }> {
     const now = new Date();
-    
+
     const [total, active, expired, used] = await Promise.all([
       this.passwordResetTokenRepository.count(),
       this.passwordResetTokenRepository.count({

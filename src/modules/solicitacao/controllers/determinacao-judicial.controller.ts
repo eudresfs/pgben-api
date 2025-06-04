@@ -11,7 +11,12 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../../../auth/guards/permission.guard';
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
@@ -31,7 +36,9 @@ import { DeterminacaoJudicial } from '../../../entities/determinacao-judicial.en
 @UseGuards(JwtAuthGuard, PermissionGuard)
 @ApiBearerAuth()
 export class DeterminacaoJudicialController {
-  constructor(private readonly determinacaoService: DeterminacaoJudicialAdapterService) {}
+  constructor(
+    private readonly determinacaoService: DeterminacaoJudicialAdapterService,
+  ) {}
 
   /**
    * Cria uma nova determinação judicial
@@ -40,7 +47,9 @@ export class DeterminacaoJudicialController {
    * @returns Determinação judicial criada
    */
   @Post()
-  @RequiresPermission({ permissionName: 'solicitacao.criar-determinacao-judicial' })
+  @RequiresPermission({
+    permissionName: 'solicitacao.criar-determinacao-judicial',
+  })
   @ApiOperation({ summary: 'Cria uma nova determinação judicial' })
   @ApiResponse({
     status: 201,
@@ -61,7 +70,9 @@ export class DeterminacaoJudicialController {
    * @returns Lista de determinações judiciais
    */
   @Get('solicitacao/:solicitacaoId')
-  @RequiresPermission({ permissionName: 'solicitacao.listar-determinacao-judicial' })
+  @RequiresPermission({
+    permissionName: 'solicitacao.listar-determinacao-judicial',
+  })
   @ApiOperation({
     summary: 'Busca todas as determinações judiciais de uma solicitação',
   })
@@ -82,7 +93,9 @@ export class DeterminacaoJudicialController {
    * @returns Determinação judicial
    */
   @Get(':id')
-  @RequiresPermission({ permissionName: 'solicitacao.visualizar-determinacao-judicial' })
+  @RequiresPermission({
+    permissionName: 'solicitacao.visualizar-determinacao-judicial',
+  })
   @ApiOperation({ summary: 'Busca uma determinação judicial pelo ID' })
   @ApiResponse({
     status: 200,
@@ -100,7 +113,9 @@ export class DeterminacaoJudicialController {
    * @returns Determinação judicial atualizada
    */
   @Patch(':id')
-  @RequiresPermission({ permissionName: 'solicitacao.atualizar-determinacao-judicial' })
+  @RequiresPermission({
+    permissionName: 'solicitacao.atualizar-determinacao-judicial',
+  })
   @ApiOperation({ summary: 'Atualiza uma determinação judicial' })
   @ApiResponse({
     status: 200,
@@ -121,8 +136,12 @@ export class DeterminacaoJudicialController {
    * @returns Determinação judicial atualizada
    */
   @Patch(':id/cumprir')
-  @RequiresPermission({ permissionName: 'solicitacao.cumprir-determinacao-judicial' })
-  @ApiOperation({ summary: 'Registra o cumprimento de uma determinação judicial' })
+  @RequiresPermission({
+    permissionName: 'solicitacao.cumprir-determinacao-judicial',
+  })
+  @ApiOperation({
+    summary: 'Registra o cumprimento de uma determinação judicial',
+  })
   @ApiResponse({
     status: 200,
     description: 'Cumprimento registrado com sucesso',
@@ -142,7 +161,9 @@ export class DeterminacaoJudicialController {
    */
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @RequiresPermission({ permissionName: 'solicitacao.remover-determinacao-judicial' })
+  @RequiresPermission({
+    permissionName: 'solicitacao.remover-determinacao-judicial',
+  })
   @ApiOperation({ summary: 'Remove uma determinação judicial' })
   @ApiResponse({
     status: 204,

@@ -1,0 +1,45 @@
+47152749fde167dd5914bf15d7838d41
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var LoggingInterceptor_1;
+var _a;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.LoggingInterceptor = void 0;
+const common_1 = require("@nestjs/common");
+const operators_1 = require("rxjs/operators");
+const logger_service_1 = require("../logger/logger.service");
+const util_1 = require("../request-context/util");
+let LoggingInterceptor = LoggingInterceptor_1 = class LoggingInterceptor {
+    appLogger;
+    constructor(appLogger) {
+        this.appLogger = appLogger;
+        this.appLogger.setContext(LoggingInterceptor_1.name);
+    }
+    intercept(context, next) {
+        const request = context.switchToHttp().getRequest();
+        const method = request.method;
+        const ctx = (0, util_1.createRequestContext)(request);
+        const now = Date.now();
+        return next.handle().pipe((0, operators_1.tap)(() => {
+            const response = context.switchToHttp().getResponse();
+            const statusCode = response.statusCode;
+            const responseTime = Date.now() - now;
+            const resData = { method, statusCode, responseTime };
+            this.appLogger.log(ctx, 'Request completed', { resData });
+        }));
+    }
+};
+exports.LoggingInterceptor = LoggingInterceptor;
+exports.LoggingInterceptor = LoggingInterceptor = LoggingInterceptor_1 = __decorate([
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [typeof (_a = typeof logger_service_1.AppLogger !== "undefined" && logger_service_1.AppLogger) === "function" ? _a : Object])
+], LoggingInterceptor);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXHNoYXJlZFxcaW50ZXJjZXB0b3JzXFxsb2dnaW5nLmludGVyY2VwdG9yLnRzIiwibWFwcGluZ3MiOiI7Ozs7Ozs7Ozs7Ozs7O0FBQUEsMkNBS3dCO0FBRXhCLDhDQUFxQztBQUVyQyw2REFBcUQ7QUFDckQsa0RBQStEO0FBR3hELElBQU0sa0JBQWtCLDBCQUF4QixNQUFNLGtCQUFrQjtJQUNUO0lBQXBCLFlBQW9CLFNBQW9CO1FBQXBCLGNBQVMsR0FBVCxTQUFTLENBQVc7UUFDdEMsSUFBSSxDQUFDLFNBQVMsQ0FBQyxVQUFVLENBQUMsb0JBQWtCLENBQUMsSUFBSSxDQUFDLENBQUM7SUFDckQsQ0FBQztJQUVELFNBQVMsQ0FBQyxPQUF5QixFQUFFLElBQWlCO1FBQ3BELE1BQU0sT0FBTyxHQUFHLE9BQU8sQ0FBQyxZQUFZLEVBQUUsQ0FBQyxVQUFVLEVBQUUsQ0FBQztRQUNwRCxNQUFNLE1BQU0sR0FBRyxPQUFPLENBQUMsTUFBTSxDQUFDO1FBQzlCLE1BQU0sR0FBRyxHQUFHLElBQUEsMkJBQW9CLEVBQUMsT0FBTyxDQUFDLENBQUM7UUFFMUMsTUFBTSxHQUFHLEdBQUcsSUFBSSxDQUFDLEdBQUcsRUFBRSxDQUFDO1FBQ3ZCLE9BQU8sSUFBSSxDQUFDLE1BQU0sRUFBRSxDQUFDLElBQUksQ0FDdkIsSUFBQSxlQUFHLEVBQUMsR0FBRyxFQUFFO1lBQ1AsTUFBTSxRQUFRLEdBQUcsT0FBTyxDQUFDLFlBQVksRUFBRSxDQUFDLFdBQVcsRUFBRSxDQUFDO1lBQ3RELE1BQU0sVUFBVSxHQUFHLFFBQVEsQ0FBQyxVQUFVLENBQUM7WUFFdkMsTUFBTSxZQUFZLEdBQUcsSUFBSSxDQUFDLEdBQUcsRUFBRSxHQUFHLEdBQUcsQ0FBQztZQUV0QyxNQUFNLE9BQU8sR0FBRyxFQUFFLE1BQU0sRUFBRSxVQUFVLEVBQUUsWUFBWSxFQUFFLENBQUM7WUFFckQsSUFBSSxDQUFDLFNBQVMsQ0FBQyxHQUFHLENBQUMsR0FBRyxFQUFFLG1CQUFtQixFQUFFLEVBQUUsT0FBTyxFQUFFLENBQUMsQ0FBQztRQUM1RCxDQUFDLENBQUMsQ0FDSCxDQUFDO0lBQ0osQ0FBQztDQUNGLENBQUE7QUF4QlksZ0RBQWtCOzZCQUFsQixrQkFBa0I7SUFEOUIsSUFBQSxtQkFBVSxHQUFFO3lEQUVvQiwwQkFBUyxvQkFBVCwwQkFBUztHQUQ3QixrQkFBa0IsQ0F3QjlCIiwibmFtZXMiOltdLCJzb3VyY2VzIjpbIkM6XFxVc2Vyc1xcZXVkcmVcXE9uZURyaXZlXFxEZXNrdG9wXFxQcm9qZXRvc1xccGdiZW5cXHBnYmVuLXNlcnZlclxcc3JjXFxzaGFyZWRcXGludGVyY2VwdG9yc1xcbG9nZ2luZy5pbnRlcmNlcHRvci50cyJdLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQge1xuICBDYWxsSGFuZGxlcixcbiAgRXhlY3V0aW9uQ29udGV4dCxcbiAgSW5qZWN0YWJsZSxcbiAgTmVzdEludGVyY2VwdG9yLFxufSBmcm9tICdAbmVzdGpzL2NvbW1vbic7XG5pbXBvcnQgeyBPYnNlcnZhYmxlIH0gZnJvbSAncnhqcyc7XG5pbXBvcnQgeyB0YXAgfSBmcm9tICdyeGpzL29wZXJhdG9ycyc7XG5cbmltcG9ydCB7IEFwcExvZ2dlciB9IGZyb20gJy4uL2xvZ2dlci9sb2dnZXIuc2VydmljZSc7XG5pbXBvcnQgeyBjcmVhdGVSZXF1ZXN0Q29udGV4dCB9IGZyb20gJy4uL3JlcXVlc3QtY29udGV4dC91dGlsJztcblxuQEluamVjdGFibGUoKVxuZXhwb3J0IGNsYXNzIExvZ2dpbmdJbnRlcmNlcHRvciBpbXBsZW1lbnRzIE5lc3RJbnRlcmNlcHRvciB7XG4gIGNvbnN0cnVjdG9yKHByaXZhdGUgYXBwTG9nZ2VyOiBBcHBMb2dnZXIpIHtcbiAgICB0aGlzLmFwcExvZ2dlci5zZXRDb250ZXh0KExvZ2dpbmdJbnRlcmNlcHRvci5uYW1lKTtcbiAgfVxuXG4gIGludGVyY2VwdChjb250ZXh0OiBFeGVjdXRpb25Db250ZXh0LCBuZXh0OiBDYWxsSGFuZGxlcik6IE9ic2VydmFibGU8YW55PiB7XG4gICAgY29uc3QgcmVxdWVzdCA9IGNvbnRleHQuc3dpdGNoVG9IdHRwKCkuZ2V0UmVxdWVzdCgpO1xuICAgIGNvbnN0IG1ldGhvZCA9IHJlcXVlc3QubWV0aG9kO1xuICAgIGNvbnN0IGN0eCA9IGNyZWF0ZVJlcXVlc3RDb250ZXh0KHJlcXVlc3QpO1xuXG4gICAgY29uc3Qgbm93ID0gRGF0ZS5ub3coKTtcbiAgICByZXR1cm4gbmV4dC5oYW5kbGUoKS5waXBlKFxuICAgICAgdGFwKCgpID0+IHtcbiAgICAgICAgY29uc3QgcmVzcG9uc2UgPSBjb250ZXh0LnN3aXRjaFRvSHR0cCgpLmdldFJlc3BvbnNlKCk7XG4gICAgICAgIGNvbnN0IHN0YXR1c0NvZGUgPSByZXNwb25zZS5zdGF0dXNDb2RlO1xuXG4gICAgICAgIGNvbnN0IHJlc3BvbnNlVGltZSA9IERhdGUubm93KCkgLSBub3c7XG5cbiAgICAgICAgY29uc3QgcmVzRGF0YSA9IHsgbWV0aG9kLCBzdGF0dXNDb2RlLCByZXNwb25zZVRpbWUgfTtcblxuICAgICAgICB0aGlzLmFwcExvZ2dlci5sb2coY3R4LCAnUmVxdWVzdCBjb21wbGV0ZWQnLCB7IHJlc0RhdGEgfSk7XG4gICAgICB9KSxcbiAgICApO1xuICB9XG59XG4iXSwidmVyc2lvbiI6M30=

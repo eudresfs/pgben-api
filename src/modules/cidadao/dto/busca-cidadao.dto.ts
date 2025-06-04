@@ -1,5 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsString, IsUUID, ValidateBy, ValidationOptions, ValidationArguments } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsUUID,
+  ValidateBy,
+  ValidationOptions,
+  ValidationArguments,
+} from 'class-validator';
 
 /**
  * Validador customizado para garantir que apenas um parâmetro de busca seja fornecido
@@ -11,9 +18,17 @@ export function IsOnlyOneSearchParam(validationOptions?: ValidationOptions) {
       validator: {
         validate(value: any, args: ValidationArguments) {
           const object = args.object as BuscaCidadaoDto;
-          const searchParams = [object.id, object.cpf, object.nis, object.telefone, object.nome];
-          const definedParams = searchParams.filter(param => param !== undefined && param !== null && param !== '');
-          
+          const searchParams = [
+            object.id,
+            object.cpf,
+            object.nis,
+            object.telefone,
+            object.nome,
+          ];
+          const definedParams = searchParams.filter(
+            (param) => param !== undefined && param !== null && param !== '',
+          );
+
           return definedParams.length === 1;
         },
         defaultMessage(args: ValidationArguments) {
@@ -38,7 +53,10 @@ export class BuscaCidadaoDto {
   })
   @IsOptional()
   @IsUUID('4', { message: 'ID deve ser um UUID válido' })
-  @IsOnlyOneSearchParam({ message: 'Apenas um parâmetro de busca deve ser fornecido por vez (id, cpf, nis, telefone ou nome)' })
+  @IsOnlyOneSearchParam({
+    message:
+      'Apenas um parâmetro de busca deve ser fornecido por vez (id, cpf, nis, telefone ou nome)',
+  })
   id?: string;
 
   @ApiProperty({
@@ -78,7 +96,8 @@ export class BuscaCidadaoDto {
   nome?: string;
 
   @ApiProperty({
-    description: 'Se deve incluir relacionamentos (papéis e composição familiar)',
+    description:
+      'Se deve incluir relacionamentos (papéis e composição familiar)',
     example: false,
     required: false,
     default: false,

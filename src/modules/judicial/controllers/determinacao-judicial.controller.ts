@@ -13,13 +13,22 @@ import {
   HttpStatus,
   Query,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../../../auth/guards/permission.guard';
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
 import { DeterminacaoJudicialConsolidadoService } from '../services/determinacao-judicial-consolidado.service';
 import { DeterminacaoJudicial } from '../../../entities/determinacao-judicial.entity';
-import { CreateDeterminacaoJudicialDto, UpdateDeterminacaoJudicialDto } from '../dtos/determinacao-judicial.dto';
+import {
+  CreateDeterminacaoJudicialDto,
+  UpdateDeterminacaoJudicialDto,
+} from '../dtos/determinacao-judicial.dto';
 
 /**
  * DTO para marcar determinação como cumprida
@@ -39,7 +48,9 @@ class CumprimentoDeterminacaoDto {
 @UseGuards(JwtAuthGuard, PermissionGuard)
 @ApiBearerAuth()
 export class DeterminacaoJudicialController {
-  constructor(private readonly determinacaoJudicialService: DeterminacaoJudicialConsolidadoService) {}
+  constructor(
+    private readonly determinacaoJudicialService: DeterminacaoJudicialConsolidadoService,
+  ) {}
 
   /**
    * Cria uma nova determinação judicial
@@ -51,7 +62,8 @@ export class DeterminacaoJudicialController {
   @RequiresPermission({ permissionName: 'judicial.criar-determinacao' })
   @ApiOperation({
     summary: 'Cria uma nova determinação judicial',
-    description: 'Cria uma determinação judicial relacionada a um processo judicial.',
+    description:
+      'Cria uma determinação judicial relacionada a um processo judicial.',
   })
   @ApiResponse({
     status: 201,
@@ -62,7 +74,10 @@ export class DeterminacaoJudicialController {
     @Body() createDeterminacaoDto: CreateDeterminacaoJudicialDto,
     @Req() req: any,
   ): Promise<DeterminacaoJudicial> {
-    return this.determinacaoJudicialService.create(createDeterminacaoDto, req.user.id);
+    return this.determinacaoJudicialService.create(
+      createDeterminacaoDto,
+      req.user.id,
+    );
   }
 
   /**
@@ -119,7 +134,9 @@ export class DeterminacaoJudicialController {
     description: 'Determinação encontrada com sucesso',
     type: DeterminacaoJudicial,
   })
-  async findById(@Param('id', ParseUUIDPipe) id: string): Promise<DeterminacaoJudicial> {
+  async findById(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<DeterminacaoJudicial> {
     return this.determinacaoJudicialService.findById(id);
   }
 
@@ -133,7 +150,8 @@ export class DeterminacaoJudicialController {
   @RequiresPermission({ permissionName: 'judicial.listar-determinacao' })
   @ApiOperation({
     summary: 'Busca determinações por processo judicial',
-    description: 'Retorna a lista de determinações judiciais relacionadas a um processo específico.',
+    description:
+      'Retorna a lista de determinações judiciais relacionadas a um processo específico.',
   })
   @ApiResponse({
     status: 200,
@@ -156,7 +174,8 @@ export class DeterminacaoJudicialController {
   @RequiresPermission({ permissionName: 'judicial.listar-determinacao' })
   @ApiOperation({
     summary: 'Busca determinações por cidadão',
-    description: 'Retorna a lista de determinações judiciais relacionadas a um cidadão específico.',
+    description:
+      'Retorna a lista de determinações judiciais relacionadas a um cidadão específico.',
   })
   @ApiResponse({
     status: 200,
@@ -179,7 +198,8 @@ export class DeterminacaoJudicialController {
   @RequiresPermission({ permissionName: 'judicial.listar-determinacao' })
   @ApiOperation({
     summary: 'Busca determinações por solicitação',
-    description: 'Retorna a lista de determinações judiciais relacionadas a uma solicitação específica.',
+    description:
+      'Retorna a lista de determinações judiciais relacionadas a uma solicitação específica.',
   })
   @ApiResponse({
     status: 200,
@@ -194,7 +214,11 @@ export class DeterminacaoJudicialController {
 
   @Get('pendentes')
   @ApiOperation({ summary: 'Buscar determinações pendentes de cumprimento' })
-  @ApiResponse({ status: 200, description: 'Lista de determinações pendentes', type: [DeterminacaoJudicial] })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de determinações pendentes',
+    type: [DeterminacaoJudicial],
+  })
   async findPendentes(): Promise<DeterminacaoJudicial[]> {
     return this.determinacaoJudicialService.findPendentes();
   }
@@ -222,7 +246,11 @@ export class DeterminacaoJudicialController {
     @Body() updateDeterminacaoDto: UpdateDeterminacaoJudicialDto,
     @Req() req: any,
   ): Promise<DeterminacaoJudicial> {
-    return this.determinacaoJudicialService.update(id, updateDeterminacaoDto, req.user.id);
+    return this.determinacaoJudicialService.update(
+      id,
+      updateDeterminacaoDto,
+      req.user.id,
+    );
   }
 
   /**
@@ -236,7 +264,8 @@ export class DeterminacaoJudicialController {
   @RequiresPermission({ permissionName: 'judicial.cumprir-determinacao' })
   @ApiOperation({
     summary: 'Marca uma determinação como cumprida',
-    description: 'Atualiza o status de uma determinação judicial para cumprida.',
+    description:
+      'Atualiza o status de uma determinação judicial para cumprida.',
   })
   @ApiResponse({
     status: 200,
@@ -248,14 +277,25 @@ export class DeterminacaoJudicialController {
     @Body() body: CumprimentoDeterminacaoDto,
     @Req() req: any,
   ): Promise<DeterminacaoJudicial> {
-    return this.determinacaoJudicialService.marcarComoCumprida(id, body.observacao, req.user.id);
+    return this.determinacaoJudicialService.marcarComoCumprida(
+      id,
+      body.observacao,
+      req.user.id,
+    );
   }
 
   @Patch(':id/ativar')
   @ApiOperation({ summary: 'Ativar ou desativar uma determinação judicial' })
   @ApiParam({ name: 'id', description: 'ID da determinação judicial' })
-  @ApiResponse({ status: 200, description: 'Determinação judicial atualizada', type: DeterminacaoJudicial })
-  @ApiResponse({ status: 404, description: 'Determinação judicial não encontrada' })
+  @ApiResponse({
+    status: 200,
+    description: 'Determinação judicial atualizada',
+    type: DeterminacaoJudicial,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Determinação judicial não encontrada',
+  })
   async toggleAtivo(
     @Param('id', ParseUUIDPipe) id: string,
     @Req() req: any,

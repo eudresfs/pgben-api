@@ -11,7 +11,7 @@ import { JwtBlacklistService } from '../../auth/services/jwt-blacklist.service';
 
 /**
  * Middleware para verificação de tokens na blacklist
- * 
+ *
  * Intercepta requisições e verifica se o token JWT está na blacklist
  * antes de permitir o acesso aos recursos protegidos
  */
@@ -119,14 +119,16 @@ export class TokenBlacklistMiddleware implements NestMiddleware {
     try {
       // Decodificar sem verificar assinatura (apenas para extrair JTI)
       const decoded = this.jwtService.decode(token) as any;
-      
+
       if (!decoded || typeof decoded !== 'object') {
         return null;
       }
 
       return decoded.jti || null;
     } catch (error) {
-      this.logger.debug(`Erro ao decodificar token para extrair JTI: ${error.message}`);
+      this.logger.debug(
+        `Erro ao decodificar token para extrair JTI: ${error.message}`,
+      );
       return null;
     }
   }

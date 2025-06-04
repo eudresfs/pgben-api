@@ -2,10 +2,10 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
  * Migration para criar o schema relacionado ao módulo de auditoria
- * 
+ *
  * Esta migration cria as tabelas, enumerações e restrições para o módulo de auditoria,
  * permitindo o registro e rastreamento de ações realizadas no sistema para compliance e segurança.
- * 
+ *
  * @author Engenheiro de Dados
  * @date 20/05/2025
  */
@@ -17,7 +17,7 @@ export class CreateAuditoriaSchema1704067227000 implements MigrationInterface {
    */
   public async up(queryRunner: QueryRunner): Promise<void> {
     console.log('Iniciando migration 1120000-CreateAuditoriaSchema...');
-    
+
     // Criação de um tipo enumerado mais simples para o tipo de operação
     await queryRunner.query(`
       DO $$ 
@@ -39,16 +39,16 @@ export class CreateAuditoriaSchema1704067227000 implements MigrationInterface {
       END
       $$;
     `);
-    
+
     console.log('Tipos enumerados criados com sucesso.');
-    
+
     // Tabela principal de logs de auditoria
     const logsAuditoriaExists = await queryRunner.query(`
       SELECT EXISTS (
         SELECT 1 FROM information_schema.tables WHERE table_name = 'logs_auditoria'
       );
     `);
-    
+
     if (!logsAuditoriaExists[0].exists) {
       await queryRunner.query(`
         CREATE TABLE "logs_auditoria" (
@@ -81,9 +81,9 @@ export class CreateAuditoriaSchema1704067227000 implements MigrationInterface {
     } else {
       console.log('Tabela logs_auditoria já existe, pulando criação.');
     }
-    
+
     console.log('Tabela de logs de auditoria criada com sucesso.');
-    
+
     // Adicionando políticas RLS (Row-Level Security)
     await queryRunner.query(`
       ALTER TABLE "logs_auditoria" ENABLE ROW LEVEL SECURITY;
@@ -92,7 +92,7 @@ export class CreateAuditoriaSchema1704067227000 implements MigrationInterface {
       CREATE POLICY logs_auditoria_policy ON "logs_auditoria" 
         USING (current_user = 'postgres');
     `);
-    
+
     // Função para gerar hash de identificação dos logs (pseudonimização LGPD)
     await queryRunner.query(`
       CREATE OR REPLACE FUNCTION generate_log_hash()
@@ -115,7 +115,7 @@ export class CreateAuditoriaSchema1704067227000 implements MigrationInterface {
       FOR EACH ROW
       EXECUTE FUNCTION generate_log_hash();
     `);
-    
+
     // Função para limitar o tempo de retenção de logs detalhados (LGPD)
     // Reteremos apenas logs anonimizados após 5 anos
     await queryRunner.query(`
@@ -138,8 +138,10 @@ export class CreateAuditoriaSchema1704067227000 implements MigrationInterface {
       END;
       $$ LANGUAGE plpgsql;
     `);
-    
-    console.log('Migration 1120000-CreateAuditoriaSchema executada com sucesso.');
+
+    console.log(
+      'Migration 1120000-CreateAuditoriaSchema executada com sucesso.',
+    );
   }
 
   /**
@@ -147,29 +149,31 @@ export class CreateAuditoriaSchema1704067227000 implements MigrationInterface {
    */
   public async down(queryRunner: QueryRunner): Promise<void> {
     console.log('Revertendo migration 1120000-CreateAuditoriaSchema...');
-    
+
     // Remover políticas RLS
     await queryRunner.query(`
       DROP POLICY IF EXISTS logs_auditoria_policy ON "logs_auditoria";
     `);
-    
+
     // Remover triggers e funções
     await queryRunner.query(`
       DROP TRIGGER IF EXISTS trigger_logs_auditoria_hash ON "logs_auditoria";
       DROP FUNCTION IF EXISTS generate_log_hash();
       DROP FUNCTION IF EXISTS anonymize_old_logs();
     `);
-    
+
     // Remover tabelas
     await queryRunner.query(`
       DROP TABLE IF EXISTS "logs_auditoria";
     `);
-    
+
     // Remover tipos enumerados
     await queryRunner.query(`
       DROP TYPE IF EXISTS "tipo_operacao";
     `);
-    
-    console.log('Migration 1120000-CreateAuditoriaSchema revertida com sucesso.');
+
+    console.log(
+      'Migration 1120000-CreateAuditoriaSchema revertida com sucesso.',
+    );
   }
 }

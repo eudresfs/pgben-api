@@ -1,18 +1,19 @@
+import { Controller, Post, Body, UseGuards, Get, Param } from '@nestjs/common';
 import {
-  Controller,
-  Post,
-  Body,
-  UseGuards,
-  Get,
-  Param,
-} from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../../../auth/guards/permission.guard';
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
 import { VerificacaoPapelService } from '../services/verificacao-papel.service';
 import { VerificacaoPapelConflitoDto } from '../dto/verificacao-papel-conflito.dto';
-import { VerificacaoPapelConflitoResponseDto, RegraConflitoDto } from '../dto/verificacao-papel-conflito-response.dto';
+import {
+  VerificacaoPapelConflitoResponseDto,
+  RegraConflitoDto,
+} from '../dto/verificacao-papel-conflito-response.dto';
 
 /**
  * Controller de Verificação de Papéis Conflitantes
@@ -25,7 +26,9 @@ import { VerificacaoPapelConflitoResponseDto, RegraConflitoDto } from '../dto/ve
 @UseGuards(JwtAuthGuard, PermissionGuard)
 @ApiBearerAuth()
 export class PapelConflitoController {
-  constructor(private readonly verificacaoPapelService: VerificacaoPapelService) {}
+  constructor(
+    private readonly verificacaoPapelService: VerificacaoPapelService,
+  ) {}
 
   /**
    * Verifica se existem conflitos entre papéis para um cidadão
@@ -36,7 +39,8 @@ export class PapelConflitoController {
   @RequiresPermission({ permissionName: 'cidadao.verificar-papel-conflito' })
   @ApiOperation({
     summary: 'Verifica conflitos entre papéis',
-    description: 'Verifica se existem conflitos entre os papéis que um cidadão possui ou está tentando obter.',
+    description:
+      'Verifica se existem conflitos entre os papéis que um cidadão possui ou está tentando obter.',
   })
   @ApiResponse({
     status: 200,
@@ -48,7 +52,7 @@ export class PapelConflitoController {
   ): Promise<VerificacaoPapelConflitoResponseDto> {
     return this.verificacaoPapelService.verificarPapeisConflitantes(
       verificacaoDto.cidadao_id,
-      verificacaoDto.papeis.map(p => p.papel_id),
+      verificacaoDto.papeis.map((p) => p.papel_id),
     );
   }
 
@@ -60,7 +64,8 @@ export class PapelConflitoController {
   @RequiresPermission({ permissionName: 'cidadao.listar-regras-conflito' })
   @ApiOperation({
     summary: 'Lista regras de conflito entre papéis',
-    description: 'Retorna a lista de regras que definem conflitos entre papéis no sistema.',
+    description:
+      'Retorna a lista de regras que definem conflitos entre papéis no sistema.',
   })
   @ApiResponse({
     status: 200,
@@ -90,6 +95,8 @@ export class PapelConflitoController {
   async verificarConflitosCidadao(
     @Param('cidadaoId') cidadaoId: string,
   ): Promise<VerificacaoPapelConflitoResponseDto> {
-    return this.verificacaoPapelService.verificarPapeisConflitantesCidadao(cidadaoId);
+    return this.verificacaoPapelService.verificarPapeisConflitantesCidadao(
+      cidadaoId,
+    );
   }
 }

@@ -8,16 +8,14 @@ import { AppLogger } from '../logger/logger.service';
 
 /**
  * Módulo Unificado de Logging
- * 
+ *
  * Fornece serviços de logging para toda a aplicação,
  * mantendo compatibilidade com o código existente
  * enquanto oferece uma interface unificada e melhorada.
  */
 @Global()
 @Module({
-  imports: [
-    WinstonModule.forRoot(winstonConfig),
-  ],
+  imports: [WinstonModule.forRoot(winstonConfig)],
   providers: [
     UnifiedLoggerService,
     // Manter os serviços originais para compatibilidade
@@ -30,10 +28,6 @@ import { AppLogger } from '../logger/logger.service';
       useExisting: UnifiedLoggerService,
     },
   ],
-  exports: [
-    UnifiedLoggerService,
-    LoggingService,
-    AppLogger,
-  ],
+  exports: [UnifiedLoggerService, LoggingService, AppLogger],
 })
 export class UnifiedLoggerModule {}

@@ -1,4 +1,10 @@
-import { IsNotEmpty, IsOptional, IsUUID, IsString, IsEnum } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsOptional,
+  IsUUID,
+  IsString,
+  IsEnum,
+} from 'class-validator';
 import { StatusRecurso } from '../../../entities/recurso.entity';
 
 /**

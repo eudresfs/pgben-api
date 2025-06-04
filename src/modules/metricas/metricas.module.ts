@@ -2,7 +2,7 @@ import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ScheduleAdapterModule } from '../../shared/schedule/schedule-adapter.module';
-import { AuthModule } from '../../auth/auth.module'
+import { AuthModule } from '../../auth/auth.module';
 import { HealthCheckService } from '../../shared/services/health-check.service';
 
 // Controladores
@@ -28,16 +28,16 @@ import { MetricasAnomaliasService } from './services/metricas-anomalia.service';
 import { MetricasMiddleware } from './middlewares/metricas.middleware';
 
 // Entidades
-import { 
-  LogAuditoria, 
-  MetricaDefinicao, 
-  MetricaSnapshot, 
-  MetricaConfiguracao, 
-  Solicitacao, 
-  Recurso, 
-  TipoBeneficio, 
-  Unidade, 
-  Usuario 
+import {
+  LogAuditoria,
+  MetricaDefinicao,
+  MetricaSnapshot,
+  MetricaConfiguracao,
+  Solicitacao,
+  Recurso,
+  TipoBeneficio,
+  Unidade,
+  Usuario,
 } from '../../entities';
 
 // Módulos externos
@@ -45,7 +45,7 @@ import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 
 /**
  * Módulo responsável pelo monitoramento, observabilidade e análise de métricas do sistema
- * 
+ *
  * Este módulo implementa:
  * 1. Coleta e exposição de métricas para o Prometheus
  * 2. Sistema completo de definição, coleta e armazenamento de métricas de negócio
@@ -62,13 +62,13 @@ import { PrometheusModule } from '@willsoto/nestjs-prometheus';
       },
       path: '/prometheus',
     }),
-    
+
     // Módulo de agendamento personalizado para coleta programada de métricas
     ScheduleAdapterModule,
-    
+
     // Módulo de eventos para comunicação entre serviços
     EventEmitterModule.forRoot(),
-    
+
     // Entidades de banco de dados
     TypeOrmModule.forFeature([
       LogAuditoria,
@@ -80,13 +80,13 @@ import { PrometheusModule } from '@willsoto/nestjs-prometheus';
       Recurso,
       TipoBeneficio,
       Unidade,
-      Usuario
+      Usuario,
     ]),
-    
+
     // Importa o módulo compartilhado de autenticação
     AuthModule,
   ],
-  
+
   // Controladores para API
   controllers: [
     MetricasController,
@@ -95,15 +95,15 @@ import { PrometheusModule } from '@willsoto/nestjs-prometheus';
     MetricasValoresController,
     MetricasAnaliseController,
     MetricasDashboardController,
-    MetricasExportacaoController
+    MetricasExportacaoController,
   ],
-  
+
   // Serviços do módulo
   providers: [
     // Serviços originais
-    MetricasService, 
+    MetricasService,
     HealthService,
-    
+
     // Novos serviços
     MetricasDefinicaoService,
     MetricasColetaService,
@@ -111,17 +111,17 @@ import { PrometheusModule } from '@willsoto/nestjs-prometheus';
     MetricasCacheService,
     MetricasAnomaliasService,
     DashboardService,
-    
+
     // Serviço de health check compartilhado
-    HealthCheckService
+    HealthCheckService,
   ],
-  
+
   // Serviços exportados para outros módulos
   exports: [
-    MetricasService, 
+    MetricasService,
     HealthService,
     MetricasColetaService,
-    MetricasCacheService
+    MetricasCacheService,
   ],
 })
 export class MetricasModule implements NestModule {

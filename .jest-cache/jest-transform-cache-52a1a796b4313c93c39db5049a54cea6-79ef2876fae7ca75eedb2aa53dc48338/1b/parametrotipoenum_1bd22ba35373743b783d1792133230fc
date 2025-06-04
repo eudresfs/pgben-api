@@ -1,0 +1,17 @@
+1973b87505c18f35787b67b60425d698
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.ParametroTipoEnum = void 0;
+/**
+ * Enum que define os tipos de parâmetros de configuração suportados pelo sistema.
+ * Cada tipo determina como o valor do parâmetro será convertido e validado.
+ */
+var ParametroTipoEnum;
+(function (ParametroTipoEnum) {
+    ParametroTipoEnum["STRING"] = "string";
+    ParametroTipoEnum["NUMBER"] = "number";
+    ParametroTipoEnum["BOOLEAN"] = "boolean";
+    ParametroTipoEnum["JSON"] = "json";
+    ParametroTipoEnum["DATE"] = "date";
+})(ParametroTipoEnum || (exports.ParametroTipoEnum = ParametroTipoEnum = {}));
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXGVudW1zXFxwYXJhbWV0cm8tdGlwby5lbnVtLnRzIiwibWFwcGluZ3MiOiI7OztBQUFBOzs7R0FHRztBQUNILElBQVksaUJBTVg7QUFORCxXQUFZLGlCQUFpQjtJQUMzQixzQ0FBaUIsQ0FBQTtJQUNqQixzQ0FBaUIsQ0FBQTtJQUNqQix3Q0FBbUIsQ0FBQTtJQUNuQixrQ0FBYSxDQUFBO0lBQ2Isa0NBQWEsQ0FBQTtBQUNmLENBQUMsRUFOVyxpQkFBaUIsaUNBQWpCLGlCQUFpQixRQU01QiIsIm5hbWVzIjpbXSwic291cmNlcyI6WyJDOlxcVXNlcnNcXGV1ZHJlXFxPbmVEcml2ZVxcRGVza3RvcFxcUHJvamV0b3NcXHBnYmVuXFxwZ2Jlbi1zZXJ2ZXJcXHNyY1xcZW51bXNcXHBhcmFtZXRyby10aXBvLmVudW0udHMiXSwic291cmNlc0NvbnRlbnQiOlsiLyoqXG4gKiBFbnVtIHF1ZSBkZWZpbmUgb3MgdGlwb3MgZGUgcGFyw6JtZXRyb3MgZGUgY29uZmlndXJhw6fDo28gc3Vwb3J0YWRvcyBwZWxvIHNpc3RlbWEuXG4gKiBDYWRhIHRpcG8gZGV0ZXJtaW5hIGNvbW8gbyB2YWxvciBkbyBwYXLDom1ldHJvIHNlcsOhIGNvbnZlcnRpZG8gZSB2YWxpZGFkby5cbiAqL1xuZXhwb3J0IGVudW0gUGFyYW1ldHJvVGlwb0VudW0ge1xuICBTVFJJTkcgPSAnc3RyaW5nJyxcbiAgTlVNQkVSID0gJ251bWJlcicsXG4gIEJPT0xFQU4gPSAnYm9vbGVhbicsXG4gIEpTT04gPSAnanNvbicsXG4gIERBVEUgPSAnZGF0ZSdcbn1cbiJdLCJ2ZXJzaW9uIjozfQ==

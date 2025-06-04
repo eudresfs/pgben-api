@@ -11,7 +11,10 @@ import { configModuleOptions } from './configs/module-options';
 // Interceptors
 import { LoggingInterceptor } from './interceptors/logging.interceptor';
 import { ResponseInterceptor } from './interceptors/response.interceptor';
-import { ValidationErrorInterceptor, ValidationMessageHelper } from './interceptors/validation-error.interceptor';
+import {
+  ValidationErrorInterceptor,
+  ValidationMessageHelper,
+} from './interceptors/validation-error.interceptor';
 
 // Módulo unificado de logging
 import { UnifiedLoggerModule } from './logging/unified-logger.module';
@@ -26,7 +29,10 @@ import { ChaveMonitorService } from './services/chave-monitor.service';
 import { HealthCheckService } from './services/health-check.service';
 
 // Validators
-import { IsEnumValueConstraint, EnumValidationHelper } from './validators/enum-validator';
+import {
+  IsEnumValueConstraint,
+  EnumValidationHelper,
+} from './validators/enum-validator';
 import { IsCPF } from './validators/cpf.validator';
 
 @Module({

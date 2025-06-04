@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 
 /**
  * DTO para resposta de verificação de configuração de renovação automática
- * 
+ *
  * Este DTO é utilizado para retornar o resultado da verificação de configuração
  * de renovação automática de um tipo de benefício, garantindo a padronização das respostas da API.
  */
@@ -26,7 +26,8 @@ export class VerificacaoConfiguracaoRenovacaoResponseDto {
   tipo_beneficio_nome: string;
 
   @ApiProperty({
-    description: 'Indica se a renovação automática está ativada para o tipo de benefício',
+    description:
+      'Indica se a renovação automática está ativada para o tipo de benefício',
     example: true,
   })
   renovacao_automatica: boolean;

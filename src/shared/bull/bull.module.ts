@@ -4,7 +4,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 
 /**
  * Módulo de configuração do Bull para filas de processamento assíncrono
- * 
+ *
  * Este módulo centraliza a configuração do Bull para evitar duplicação
  * de processadores e garantir uma configuração consistente em toda a aplicação.
  */
@@ -43,15 +43,18 @@ export class BullQueueModule {
       exports: [BullModule],
     };
   }
-  
+
   /**
    * Registra uma fila Bull específica
    * Este método deve ser usado para registrar filas em módulos específicos
-   * 
+   *
    * @param queueName Nome da fila a ser registrada
    * @param options Opções adicionais para a fila (opcional)
    */
-  static registerQueue(queueName: string, options?: Partial<BullModuleOptions>): DynamicModule {
+  static registerQueue(
+    queueName: string,
+    options?: Partial<BullModuleOptions>,
+  ): DynamicModule {
     return {
       module: BullQueueModule,
       imports: [

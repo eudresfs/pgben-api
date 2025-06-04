@@ -2,7 +2,7 @@ import { MigrationInterface, QueryRunner, Table, TableIndex } from 'typeorm';
 
 /**
  * Migração para criar a tabela de permissões.
- * 
+ *
  * Esta tabela armazena todas as permissões do sistema no formato `modulo.recurso.operacao`.
  */
 export class CreatePermissionTable1704067221000 implements MigrationInterface {
@@ -81,7 +81,7 @@ export class CreatePermissionTable1704067221000 implements MigrationInterface {
           },
         ],
       }),
-      true
+      true,
     );
   }
 

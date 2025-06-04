@@ -26,19 +26,25 @@ export class CleanupTokensTask {
   @Cron(CronExpression.EVERY_DAY_AT_2AM)
   async handleTokenCleanup(): Promise<void> {
     this.logger.log('Iniciando limpeza automática de tokens expirados...');
-    
+
     try {
       // Limpeza de tokens JWT da blacklist
-      const deletedJwtTokens = await this.jwtBlacklistService.cleanupExpiredTokens();
-      this.logger.log(`Removidos ${deletedJwtTokens} tokens JWT expirados da blacklist`);
+      const deletedJwtTokens =
+        await this.jwtBlacklistService.cleanupExpiredTokens();
+      this.logger.log(
+        `Removidos ${deletedJwtTokens} tokens JWT expirados da blacklist`,
+      );
 
       // Limpeza de tokens de reset de senha
       await this.passwordResetService.cleanupExpiredTokens();
       this.logger.log('Tokens de reset de senha expirados removidos');
 
       // Limpeza de tokens de recuperação de senha
-      const deletedRecoveryTokens = await this.passwordResetService.cleanupExpiredTokens();
-      this.logger.log(`Removidos ${deletedRecoveryTokens} tokens de recuperação expirados`);
+      const deletedRecoveryTokens =
+        await this.passwordResetService.cleanupExpiredTokens();
+      this.logger.log(
+        `Removidos ${deletedRecoveryTokens} tokens de recuperação expirados`,
+      );
 
       // Limpeza de tokens de recuperação usados (mais antigos que 7 dias)
       await this.passwordResetService.cleanupOldUsedTokens();
@@ -61,15 +67,17 @@ export class CleanupTokensTask {
     success: boolean;
   }> {
     this.logger.log('Executando limpeza manual de tokens...');
-    
+
     try {
-      const deletedJwtTokens = await this.jwtBlacklistService.cleanupExpiredTokens();
+      const deletedJwtTokens =
+        await this.jwtBlacklistService.cleanupExpiredTokens();
       await this.passwordResetService.cleanupExpiredTokens();
-      const deletedRecoveryTokens = await this.passwordResetService.cleanupExpiredTokens();
+      const deletedRecoveryTokens =
+        await this.passwordResetService.cleanupExpiredTokens();
       await this.passwordResetService.cleanupOldUsedTokens();
 
       this.logger.log('Limpeza manual de tokens concluída com sucesso');
-      
+
       return {
         deletedJwtTokens,
         deletedRecoveryTokens,

@@ -9,7 +9,16 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm';
-import { IsNotEmpty, IsOptional, IsNumber, Min, IsEnum, ValidateIf, IsString, IsBoolean } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsOptional,
+  IsNumber,
+  Min,
+  IsEnum,
+  ValidateIf,
+  IsString,
+  IsBoolean,
+} from 'class-validator';
 import { Cidadao } from './cidadao.entity';
 import { EscolaridadeEnum } from '../enums/escolaridade.enum';
 import { SituacaoTrabalhoEnum } from '../enums/situacao-trabalho.enum';
@@ -40,7 +49,9 @@ export class DadosSociais {
 
   @Column({ nullable: true })
   @IsOptional()
-  @IsBoolean({ message: 'O campo publico_prioritario deve ser um true ou false' })
+  @IsBoolean({
+    message: 'O campo publico_prioritario deve ser um true ou false',
+  })
   publico_prioritario: boolean;
 
   @Column('decimal', { precision: 10, scale: 2, nullable: true })
@@ -85,7 +96,10 @@ export class DadosSociais {
 
   @Column({ nullable: true })
   @IsOptional()
-  @IsBoolean({ message: 'O campo interesse_curso_profissionalizante deve ser um true ou false' })
+  @IsBoolean({
+    message:
+      'O campo interesse_curso_profissionalizante deve ser um true ou false',
+  })
   interesse_curso_profissionalizante: boolean;
 
   @Column({
@@ -105,7 +119,9 @@ export class DadosSociais {
 
   @Column({ nullable: true })
   @IsOptional()
-  @IsBoolean({ message: 'O campo familiar_apto_trabalho deve ser um true ou false' })
+  @IsBoolean({
+    message: 'O campo familiar_apto_trabalho deve ser um true ou false',
+  })
   familiar_apto_trabalho: boolean;
 
   @Column({ nullable: true })
@@ -202,7 +218,7 @@ export class DadosSociais {
     if (!this.temRenda()) return 'Sem renda';
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
-      currency: 'BRL'
+      currency: 'BRL',
     }).format(this.renda);
   }
 
@@ -220,7 +236,7 @@ export class DadosSociais {
     if (!this.recebe_pbf || !this.valor_pbf) return 'Não recebe';
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
-      currency: 'BRL'
+      currency: 'BRL',
     }).format(this.valor_pbf);
   }
 
@@ -238,7 +254,7 @@ export class DadosSociais {
     if (!this.recebe_bpc || !this.valor_bpc) return 'Não recebe';
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
-      currency: 'BRL'
+      currency: 'BRL',
     }).format(this.valor_bpc);
   }
 
@@ -267,7 +283,7 @@ export class DadosSociais {
     if (total === 0) return 'Nenhum benefício';
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
-      currency: 'BRL'
+      currency: 'BRL',
     }).format(total);
   }
 
@@ -282,7 +298,9 @@ export class DadosSociais {
    * Verifica se já fez curso profissionalizante
    */
   jafezCursoProfissionalizante(): boolean {
-    return !!(this.curso_profissionalizante && this.curso_profissionalizante.trim());
+    return !!(
+      this.curso_profissionalizante && this.curso_profissionalizante.trim()
+    );
   }
 
   /**
@@ -349,7 +367,7 @@ export class DadosSociais {
    */
   getDescricaoSituacaoTrabalho(): string {
     if (!this.situacao_trabalho) return 'Não informado';
-    
+
     const descricoes = {
       [SituacaoTrabalhoEnum.EMPREGADO_FORMAL]: 'Empregado',
       [SituacaoTrabalhoEnum.DESEMPREGADO]: 'Desempregado',
@@ -376,7 +394,9 @@ export class DadosSociais {
     const escolaridade = this.getDescricaoEscolaridade();
     const situacao = this.getDescricaoSituacaoTrabalho();
     const renda = this.getRendaFormatada();
-    const beneficios = this.recebeBeneficioSocial() ? ' - Recebe benefícios' : '';
+    const beneficios = this.recebeBeneficioSocial()
+      ? ' - Recebe benefícios'
+      : '';
     return `${escolaridade} - ${situacao} - ${renda}${beneficios}`;
   }
 
@@ -393,25 +413,28 @@ export class DadosSociais {
   isConsistente(): boolean {
     // Verifica se tem cidadão
     if (!this.cidadao_id) return false;
-    
+
     // Verifica se tem escolaridade
     if (!this.escolaridade) return false;
-    
+
     // Se recebe PBF, deve ter valor
     if (this.recebe_pbf && (!this.valor_pbf || this.valor_pbf <= 0)) {
       return false;
     }
-    
+
     // Se recebe BPC, deve ter valor e tipo
-    if (this.recebe_bpc && (!this.valor_bpc || this.valor_bpc <= 0 || !this.tipo_bpc)) {
+    if (
+      this.recebe_bpc &&
+      (!this.valor_bpc || this.valor_bpc <= 0 || !this.tipo_bpc)
+    ) {
       return false;
     }
-    
+
     // Se tem renda, deve ser positiva
     if (this.renda !== null && this.renda !== undefined && this.renda < 0) {
       return false;
     }
-    
+
     return true;
   }
 
@@ -421,7 +444,7 @@ export class DadosSociais {
   podeSerRemovido(): boolean {
     // Não pode remover se já foi removido
     if (this.foiRemovido()) return false;
-    
+
     // Outras validações específicas podem ser adicionadas
     return true;
   }
@@ -442,7 +465,8 @@ export class DadosSociais {
       tipo_bpc: this.tipo_bpc,
       valor_bpc: this.valor_bpc,
       curso_profissionalizante: this.curso_profissionalizante,
-      interesse_curso_profissionalizante: this.interesse_curso_profissionalizante,
+      interesse_curso_profissionalizante:
+        this.interesse_curso_profissionalizante,
       situacao_trabalho: this.situacao_trabalho,
       area_trabalho: this.area_trabalho,
       familiar_apto_trabalho: this.familiar_apto_trabalho,
@@ -462,7 +486,11 @@ export class DadosSociais {
    * Verifica se tem potencial de geração de renda
    */
   temPotencialGeracaoRenda(): boolean {
-    return this.temFamiliarAptoTrabalho() || this.temInteresseCursoProfissionalizante() || this.jafezCursoProfissionalizante();
+    return (
+      this.temFamiliarAptoTrabalho() ||
+      this.temInteresseCursoProfissionalizante() ||
+      this.jafezCursoProfissionalizante()
+    );
   }
 
   /**
@@ -483,7 +511,7 @@ export class DadosSociais {
     if (total === 0) return 'Sem renda';
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
-      currency: 'BRL'
+      currency: 'BRL',
     }).format(total);
   }
 
@@ -512,7 +540,8 @@ export class DadosSociais {
       situacao_trabalho: this.situacao_trabalho,
       recebe_pbf: this.recebe_pbf,
       recebe_bpc: this.recebe_bpc,
-      interesse_curso_profissionalizante: this.interesse_curso_profissionalizante,
+      interesse_curso_profissionalizante:
+        this.interesse_curso_profissionalizante,
       created_at: this.created_at,
       updated_at: this.updated_at,
     };
@@ -523,31 +552,31 @@ export class DadosSociais {
    */
   getSugestoesMelhoria(): string[] {
     const sugestoes: string[] = [];
-    
+
     if (!this.ocupacao && this.isEmpregado()) {
       sugestoes.push('Definir ocupação para pessoa empregada');
     }
-    
+
     if (!this.area_trabalho && (this.isEmpregado() || this.isAutonomo())) {
       sugestoes.push('Especificar área de trabalho');
     }
-    
+
     if (this.isDesempregado() && !this.temInteresseCursoProfissionalizante()) {
       sugestoes.push('Verificar interesse em capacitação profissional');
     }
-    
+
     if (this.recebe_pbf && !this.valor_pbf) {
       sugestoes.push('Informar valor do Programa Bolsa Família');
     }
-    
+
     if (this.recebe_bpc && (!this.valor_bpc || !this.tipo_bpc)) {
       sugestoes.push('Completar informações do BPC (valor e tipo)');
     }
-    
+
     if (!this.isConsistente()) {
       sugestoes.push('Verificar consistência dos dados sociais');
     }
-    
+
     return sugestoes;
   }
 

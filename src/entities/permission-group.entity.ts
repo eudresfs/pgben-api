@@ -1,11 +1,27 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn, Index } from 'typeorm';
-import { IsNotEmpty, IsString, Length, IsOptional, IsUUID, IsEnum } from 'class-validator';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+  Index,
+} from 'typeorm';
+import {
+  IsNotEmpty,
+  IsString,
+  Length,
+  IsOptional,
+  IsUUID,
+  IsEnum,
+} from 'class-validator';
 import { Status } from '../enums/status.enum';
 import { Usuario } from './usuario.entity';
 
 /**
  * Entidade que representa um grupo de permissões no sistema.
- * 
+ *
  * Os grupos permitem organizar permissões logicamente (ex: "Gerenciamento de Cidadãos")
  * e facilitar a atribuição de múltiplas permissões relacionadas.
  */
@@ -41,11 +57,11 @@ export class PermissionGroup {
   /**
    * Status do grupo (ativo/inativo)
    */
-  @Column({ 
-    type: 'enum', 
-    enum: Status, 
+  @Column({
+    type: 'enum',
+    enum: Status,
     default: Status.ATIVO,
-    name: 'status'
+    name: 'status',
   })
   @IsEnum(Status, { message: 'Status deve ser ATIVO ou INATIVO' })
   status: Status;
@@ -230,13 +246,19 @@ export class PermissionGroup {
   /**
    * Obtém informações resumidas do grupo
    */
-  getSummary(): { id: string; nome: string; descricao: string; status: Status; ativo: boolean } {
+  getSummary(): {
+    id: string;
+    nome: string;
+    descricao: string;
+    status: Status;
+    ativo: boolean;
+  } {
     return {
       id: this.id,
       nome: this.nome,
       descricao: this.descricao,
       status: this.status,
-      ativo: this.isAtivo()
+      ativo: this.isAtivo(),
     };
   }
 
@@ -245,10 +267,10 @@ export class PermissionGroup {
    */
   isCriadoRecentemente(): boolean {
     if (!this.created_at) return false;
-    
+
     const agora = new Date();
     const umDiaAtras = new Date(agora.getTime() - 24 * 60 * 60 * 1000);
-    
+
     return this.created_at > umDiaAtras;
   }
 
@@ -257,10 +279,10 @@ export class PermissionGroup {
    */
   isAtualizadoRecentemente(): boolean {
     if (!this.updated_at) return false;
-    
+
     const agora = new Date();
     const umDiaAtras = new Date(agora.getTime() - 24 * 60 * 60 * 1000);
-    
+
     return this.updated_at > umDiaAtras;
   }
 
@@ -269,11 +291,11 @@ export class PermissionGroup {
    */
   getIdadeEmDias(): number {
     if (!this.created_at) return 0;
-    
+
     const agora = new Date();
     const diffTime = Math.abs(agora.getTime() - this.created_at.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
+
     return diffDays;
   }
 
@@ -318,9 +340,10 @@ export class PermissionGroup {
    * Verifica se o nome do grupo é único (para validação)
    */
   isNomeUnico(outrosGrupos: PermissionGroup[]): boolean {
-    return !outrosGrupos.some(grupo => 
-      grupo.id !== this.id && 
-      grupo.nome.toLowerCase() === this.nome.toLowerCase()
+    return !outrosGrupos.some(
+      (grupo) =>
+        grupo.id !== this.id &&
+        grupo.nome.toLowerCase() === this.nome.toLowerCase(),
     );
   }
 
@@ -332,7 +355,7 @@ export class PermissionGroup {
       nome: `${this.nome} (Cópia)`,
       descricao: this.descricao,
       status: this.status,
-      criado_por: this.criado_por
+      criado_por: this.criado_por,
     };
   }
 }

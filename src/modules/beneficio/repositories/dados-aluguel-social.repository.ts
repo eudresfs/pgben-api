@@ -16,7 +16,9 @@ export class DadosAluguelSocialRepository extends Repository<DadosAluguelSocial>
   /**
    * Buscar dados de aluguel social por solicitação com relacionamentos
    */
-  async findBySolicitacaoWithRelations(solicitacaoId: string): Promise<DadosAluguelSocial | null> {
+  async findBySolicitacaoWithRelations(
+    solicitacaoId: string,
+  ): Promise<DadosAluguelSocial | null> {
     return this.findOne({
       where: { solicitacao_id: solicitacaoId },
       relations: [
@@ -36,7 +38,9 @@ export class DadosAluguelSocialRepository extends Repository<DadosAluguelSocial>
     return this.createQueryBuilder('dados')
       .leftJoinAndSelect('dados.solicitacao', 'solicitacao')
       .leftJoinAndSelect('solicitacao.cidadao', 'cidadao')
-      .where('dados.publico_prioritario = :publicoPrioritario', { publicoPrioritario })
+      .where('dados.publico_prioritario = :publicoPrioritario', {
+        publicoPrioritario,
+      })
       .orderBy('dados.created_at', 'DESC')
       .getMany();
   }
@@ -231,10 +235,13 @@ export class DadosAluguelSocialRepository extends Repository<DadosAluguelSocial>
     }
 
     if (filters.dataInicioMin && filters.dataInicioMax) {
-      query.andWhere('dados.data_inicio_aluguel BETWEEN :dataInicioMin AND :dataInicioMax', {
-        dataInicioMin: filters.dataInicioMin,
-        dataInicioMax: filters.dataInicioMax,
-      });
+      query.andWhere(
+        'dados.data_inicio_aluguel BETWEEN :dataInicioMin AND :dataInicioMax',
+        {
+          dataInicioMin: filters.dataInicioMin,
+          dataInicioMax: filters.dataInicioMax,
+        },
+      );
     }
 
     if (filters.endereco) {
@@ -246,9 +253,7 @@ export class DadosAluguelSocialRepository extends Repository<DadosAluguelSocial>
     const total = await query.getCount();
 
     if (filters.page && filters.limit) {
-      query
-        .skip((filters.page - 1) * filters.limit)
-        .take(filters.limit);
+      query.skip((filters.page - 1) * filters.limit).take(filters.limit);
     }
 
     query.orderBy('dados.created_at', 'DESC');

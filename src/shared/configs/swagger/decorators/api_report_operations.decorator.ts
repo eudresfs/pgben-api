@@ -5,7 +5,7 @@ import {
   ApiQuery,
   ApiParam,
   ApiBearerAuth,
-  ApiProduces
+  ApiProduces,
 } from '@nestjs/swagger';
 import {
   RelatorioSolicitacoesResponseDto,
@@ -13,7 +13,7 @@ import {
   RelatorioFinanceiroResponseDto,
   ApiErrorResponse,
   ValidationErrorResponse,
-  UnauthorizedErrorResponse
+  UnauthorizedErrorResponse,
 } from '../schemas';
 
 /**
@@ -23,8 +23,9 @@ export function ApiGerarRelatorioSolicitacoes() {
   return applyDecorators(
     ApiOperation({
       summary: 'Gerar relatório de solicitações',
-      description: 'Gera um relatório detalhado das solicitações de benefícios com base nos filtros especificados. Suporta múltiplos formatos de saída.',
-      operationId: 'gerarRelatorioSolicitacoes'
+      description:
+        'Gera um relatório detalhado das solicitações de benefícios com base nos filtros especificados. Suporta múltiplos formatos de saída.',
+      operationId: 'gerarRelatorioSolicitacoes',
     }),
     ApiQuery({
       name: 'dataInicio',
@@ -32,7 +33,7 @@ export function ApiGerarRelatorioSolicitacoes() {
       type: 'string',
       format: 'date',
       example: '2025-01-01',
-      required: true
+      required: true,
     }),
     ApiQuery({
       name: 'dataFim',
@@ -40,14 +41,14 @@ export function ApiGerarRelatorioSolicitacoes() {
       type: 'string',
       format: 'date',
       example: '2025-01-31',
-      required: true
+      required: true,
     }),
     ApiQuery({
       name: 'tipoBeneficioId',
       description: 'Filtrar por tipo de benefício específico',
       type: 'string',
       example: '507f1f77bcf86cd799439011',
-      required: false
+      required: false,
     }),
     ApiQuery({
       name: 'status',
@@ -55,14 +56,14 @@ export function ApiGerarRelatorioSolicitacoes() {
       enum: ['PENDENTE', 'EM_ANALISE', 'APROVADA', 'REJEITADA', 'CANCELADA'],
       type: 'string',
       example: 'APROVADA',
-      required: false
+      required: false,
     }),
     ApiQuery({
       name: 'analistaId',
       description: 'Filtrar por analista responsável',
       type: 'string',
       example: '507f1f77bcf86cd799439014',
-      required: false
+      required: false,
     }),
     ApiQuery({
       name: 'formato',
@@ -70,21 +71,21 @@ export function ApiGerarRelatorioSolicitacoes() {
       enum: ['PDF', 'EXCEL', 'CSV', 'JSON'],
       type: 'string',
       example: 'PDF',
-      required: false
+      required: false,
     }),
     ApiQuery({
       name: 'incluirDetalhesCidadao',
       description: 'Incluir detalhes dos cidadãos no relatório',
       type: 'boolean',
       example: true,
-      required: false
+      required: false,
     }),
     ApiQuery({
       name: 'incluirDocumentos',
       description: 'Incluir lista de documentos anexados',
       type: 'boolean',
       example: false,
-      required: false
+      required: false,
     }),
     ApiQuery({
       name: 'agruparPor',
@@ -92,66 +93,71 @@ export function ApiGerarRelatorioSolicitacoes() {
       enum: ['tipoBeneficio', 'status', 'analista', 'mes', 'bairro'],
       type: 'string',
       example: 'tipoBeneficio',
-      required: false
+      required: false,
     }),
     ApiBearerAuth(),
-    ApiProduces('application/json', 'application/pdf', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'text/csv'),
+    ApiProduces(
+      'application/json',
+      'application/pdf',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'text/csv',
+    ),
     ApiResponse({
       status: 200,
       description: 'Relatório gerado com sucesso',
       content: {
         'application/json': {
           schema: {
-            $ref: '#/components/schemas/RelatorioSolicitacoesResponseDto'
-          }
+            $ref: '#/components/schemas/RelatorioSolicitacoesResponseDto',
+          },
         },
         'application/pdf': {
           schema: {
             type: 'string',
-            format: 'binary'
+            format: 'binary',
           },
-          example: 'Arquivo PDF do relatório'
+          example: 'Arquivo PDF do relatório',
         },
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': {
           schema: {
             type: 'string',
-            format: 'binary'
+            format: 'binary',
           },
-          example: 'Arquivo Excel do relatório'
+          example: 'Arquivo Excel do relatório',
         },
         'text/csv': {
           schema: {
-            type: 'string'
+            type: 'string',
           },
-          example: 'Dados CSV do relatório'
-        }
-      }
+          example: 'Dados CSV do relatório',
+        },
+      },
     }),
     ApiResponse({
       status: 400,
       description: 'Parâmetros de relatório inválidos',
-      type: ValidationErrorResponse
+      type: ValidationErrorResponse,
     }),
     ApiResponse({
       status: 401,
       description: 'Token de acesso inválido ou expirado',
-      type: UnauthorizedErrorResponse
+      type: UnauthorizedErrorResponse,
     }),
     ApiResponse({
       status: 403,
       description: 'Sem permissão para gerar relatórios',
-      type: ApiErrorResponse
+      type: ApiErrorResponse,
     }),
     ApiResponse({
       status: 422,
       description: 'Período muito extenso ou dados insuficientes',
-      type: ApiErrorResponse
+      type: ApiErrorResponse,
     }),
     ApiResponse({
       status: 500,
       description: 'Erro interno do servidor',
-      type: ApiErrorResponse
-    })
+      type: ApiErrorResponse,
+    }),
   );
 }
 
@@ -162,8 +168,9 @@ export function ApiObterDashboardMetricas() {
   return applyDecorators(
     ApiOperation({
       summary: 'Obter métricas do dashboard',
-      description: 'Retorna métricas consolidadas para exibição no dashboard principal, incluindo estatísticas de solicitações, aprovações e comparações temporais.',
-      operationId: 'obterDashboardMetricas'
+      description:
+        'Retorna métricas consolidadas para exibição no dashboard principal, incluindo estatísticas de solicitações, aprovações e comparações temporais.',
+      operationId: 'obterDashboardMetricas',
     }),
     ApiQuery({
       name: 'periodo',
@@ -172,41 +179,41 @@ export function ApiObterDashboardMetricas() {
       minimum: 1,
       maximum: 365,
       example: 30,
-      required: false
+      required: false,
     }),
     ApiQuery({
       name: 'incluirComparacao',
       description: 'Incluir comparação com período anterior',
       type: 'boolean',
       example: true,
-      required: false
+      required: false,
     }),
     ApiBearerAuth(),
     ApiResponse({
       status: 200,
       description: 'Métricas do dashboard retornadas com sucesso',
-      type: DashboardMetricasResponseDto
+      type: DashboardMetricasResponseDto,
     }),
     ApiResponse({
       status: 400,
       description: 'Parâmetros de consulta inválidos',
-      type: ValidationErrorResponse
+      type: ValidationErrorResponse,
     }),
     ApiResponse({
       status: 401,
       description: 'Token de acesso inválido ou expirado',
-      type: UnauthorizedErrorResponse
+      type: UnauthorizedErrorResponse,
     }),
     ApiResponse({
       status: 403,
       description: 'Sem permissão para acessar métricas',
-      type: ApiErrorResponse
+      type: ApiErrorResponse,
     }),
     ApiResponse({
       status: 500,
       description: 'Erro interno do servidor',
-      type: ApiErrorResponse
-    })
+      type: ApiErrorResponse,
+    }),
   );
 }
 
@@ -217,8 +224,9 @@ export function ApiGerarRelatorioFinanceiro() {
   return applyDecorators(
     ApiOperation({
       summary: 'Gerar relatório financeiro',
-      description: 'Gera um relatório financeiro detalhado com informações sobre valores concedidos, pagos e projeções orçamentárias.',
-      operationId: 'gerarRelatorioFinanceiro'
+      description:
+        'Gera um relatório financeiro detalhado com informações sobre valores concedidos, pagos e projeções orçamentárias.',
+      operationId: 'gerarRelatorioFinanceiro',
     }),
     ApiQuery({
       name: 'ano',
@@ -227,62 +235,63 @@ export function ApiGerarRelatorioFinanceiro() {
       minimum: 2020,
       maximum: 2030,
       example: 2025,
-      required: true
+      required: true,
     }),
     ApiQuery({
       name: 'mes',
-      description: 'Mês específico (1-12), se não informado considera o ano todo',
+      description:
+        'Mês específico (1-12), se não informado considera o ano todo',
       type: 'integer',
       minimum: 1,
       maximum: 12,
       example: 1,
-      required: false
+      required: false,
     }),
     ApiQuery({
       name: 'tipoBeneficioId',
       description: 'Filtrar por tipo de benefício específico',
       type: 'string',
       example: '507f1f77bcf86cd799439011',
-      required: false
+      required: false,
     }),
     ApiQuery({
       name: 'incluirProjecoes',
       description: 'Incluir projeções para os próximos meses',
       type: 'boolean',
       example: true,
-      required: false
+      required: false,
     }),
     ApiBearerAuth(),
     ApiResponse({
       status: 200,
       description: 'Relatório financeiro gerado com sucesso',
-      type: RelatorioFinanceiroResponseDto
+      type: RelatorioFinanceiroResponseDto,
     }),
     ApiResponse({
       status: 400,
       description: 'Parâmetros de relatório inválidos',
-      type: ValidationErrorResponse
+      type: ValidationErrorResponse,
     }),
     ApiResponse({
       status: 401,
       description: 'Token de acesso inválido ou expirado',
-      type: UnauthorizedErrorResponse
+      type: UnauthorizedErrorResponse,
     }),
     ApiResponse({
       status: 403,
       description: 'Sem permissão para gerar relatórios financeiros',
-      type: ApiErrorResponse
+      type: ApiErrorResponse,
     }),
     ApiResponse({
       status: 422,
       description: 'Dados insuficientes para o período solicitado',
-      type: ApiErrorResponse
+      type: ApiErrorResponse,
     }),
     ApiResponse({
       status: 500,
       description: 'Erro interno do servidor',
-      type: ApiErrorResponse
-    })
+      type: ApiErrorResponse,
+    }),
   );
 }
 
@@ -293,17 +302,22 @@ export function ApiDownloadRelatorio() {
   return applyDecorators(
     ApiOperation({
       summary: 'Download de relatório',
-      description: 'Realiza o download de um relatório previamente gerado. O arquivo é retornado no formato especificado durante a geração.',
-      operationId: 'downloadRelatorio'
+      description:
+        'Realiza o download de um relatório previamente gerado. O arquivo é retornado no formato especificado durante a geração.',
+      operationId: 'downloadRelatorio',
     }),
     ApiParam({
       name: 'id',
       description: 'ID único do relatório gerado',
       type: 'string',
-      example: '507f1f77bcf86cd799439020'
+      example: '507f1f77bcf86cd799439020',
     }),
     ApiBearerAuth(),
-    ApiProduces('application/pdf', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'text/csv'),
+    ApiProduces(
+      'application/pdf',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'text/csv',
+    ),
     ApiResponse({
       status: 200,
       description: 'Arquivo do relatório',
@@ -311,58 +325,59 @@ export function ApiDownloadRelatorio() {
         'application/pdf': {
           schema: {
             type: 'string',
-            format: 'binary'
-          }
+            format: 'binary',
+          },
         },
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': {
           schema: {
             type: 'string',
-            format: 'binary'
-          }
+            format: 'binary',
+          },
         },
         'text/csv': {
           schema: {
-            type: 'string'
-          }
-        }
+            type: 'string',
+          },
+        },
       },
       headers: {
         'Content-Disposition': {
           description: 'Nome do arquivo para download',
           schema: {
             type: 'string',
-            example: 'attachment; filename="relatorio_solicitacoes_2025_01.pdf"'
-          }
+            example:
+              'attachment; filename="relatorio_solicitacoes_2025_01.pdf"',
+          },
         },
         'Content-Type': {
           description: 'Tipo MIME do arquivo',
           schema: {
             type: 'string',
-            example: 'application/pdf'
-          }
-        }
-      }
+            example: 'application/pdf',
+          },
+        },
+      },
     }),
     ApiResponse({
       status: 401,
       description: 'Token de acesso inválido ou expirado',
-      type: UnauthorizedErrorResponse
+      type: UnauthorizedErrorResponse,
     }),
     ApiResponse({
       status: 403,
       description: 'Sem permissão para acessar este relatório',
-      type: ApiErrorResponse
+      type: ApiErrorResponse,
     }),
     ApiResponse({
       status: 404,
       description: 'Relatório não encontrado ou expirado',
-      type: ApiErrorResponse
+      type: ApiErrorResponse,
     }),
     ApiResponse({
       status: 500,
       description: 'Erro interno do servidor',
-      type: ApiErrorResponse
-    })
+      type: ApiErrorResponse,
+    }),
   );
 }
 
@@ -373,8 +388,9 @@ export function ApiListarRelatorios() {
   return applyDecorators(
     ApiOperation({
       summary: 'Listar relatórios gerados',
-      description: 'Lista os relatórios gerados anteriormente, com informações sobre status, formato e data de geração.',
-      operationId: 'listarRelatorios'
+      description:
+        'Lista os relatórios gerados anteriormente, com informações sobre status, formato e data de geração.',
+      operationId: 'listarRelatorios',
     }),
     ApiQuery({
       name: 'tipo',
@@ -382,7 +398,7 @@ export function ApiListarRelatorios() {
       enum: ['SOLICITACOES', 'FINANCEIRO', 'DASHBOARD'],
       type: 'string',
       example: 'SOLICITACOES',
-      required: false
+      required: false,
     }),
     ApiQuery({
       name: 'status',
@@ -390,7 +406,7 @@ export function ApiListarRelatorios() {
       enum: ['PROCESSANDO', 'CONCLUIDO', 'ERRO', 'EXPIRADO'],
       type: 'string',
       example: 'CONCLUIDO',
-      required: false
+      required: false,
     }),
     ApiQuery({
       name: 'dataInicio',
@@ -398,7 +414,7 @@ export function ApiListarRelatorios() {
       type: 'string',
       format: 'date',
       example: '2025-01-01',
-      required: false
+      required: false,
     }),
     ApiQuery({
       name: 'dataFim',
@@ -406,7 +422,7 @@ export function ApiListarRelatorios() {
       type: 'string',
       format: 'date',
       example: '2025-01-31',
-      required: false
+      required: false,
     }),
     ApiBearerAuth(),
     ApiResponse({
@@ -424,79 +440,79 @@ export function ApiListarRelatorios() {
                   properties: {
                     id: {
                       type: 'string',
-                      description: 'ID único do relatório'
+                      description: 'ID único do relatório',
                     },
                     tipo: {
                       type: 'string',
                       enum: ['SOLICITACOES', 'FINANCEIRO', 'DASHBOARD'],
-                      description: 'Tipo do relatório'
+                      description: 'Tipo do relatório',
                     },
                     titulo: {
                       type: 'string',
-                      description: 'Título do relatório'
+                      description: 'Título do relatório',
                     },
                     formato: {
                       type: 'string',
                       enum: ['PDF', 'EXCEL', 'CSV', 'JSON'],
-                      description: 'Formato do arquivo'
+                      description: 'Formato do arquivo',
                     },
                     status: {
                       type: 'string',
                       enum: ['PROCESSANDO', 'CONCLUIDO', 'ERRO', 'EXPIRADO'],
-                      description: 'Status atual do relatório'
+                      description: 'Status atual do relatório',
                     },
                     tamanhoArquivo: {
                       type: 'integer',
-                      description: 'Tamanho do arquivo em bytes'
+                      description: 'Tamanho do arquivo em bytes',
                     },
                     dataGeracao: {
                       type: 'string',
                       format: 'date-time',
-                      description: 'Data e hora de geração'
+                      description: 'Data e hora de geração',
                     },
                     dataExpiracao: {
                       type: 'string',
                       format: 'date-time',
-                      description: 'Data de expiração do arquivo'
+                      description: 'Data de expiração do arquivo',
                     },
                     geradoPor: {
                       type: 'string',
-                      description: 'Nome do usuário que gerou'
+                      description: 'Nome do usuário que gerou',
                     },
                     urlDownload: {
                       type: 'string',
                       format: 'uri',
-                      description: 'URL para download (quando disponível)'
-                    }
-                  }
-                }
-              }
-            }
+                      description: 'URL para download (quando disponível)',
+                    },
+                  },
+                },
+              },
+            },
           },
-          { $ref: '#/components/schemas/PaginatedResponse' }
-        ]
-      }
+          { $ref: '#/components/schemas/PaginatedResponse' },
+        ],
+      },
     }),
     ApiResponse({
       status: 400,
       description: 'Parâmetros de filtro inválidos',
-      type: ValidationErrorResponse
+      type: ValidationErrorResponse,
     }),
     ApiResponse({
       status: 401,
       description: 'Token de acesso inválido ou expirado',
-      type: UnauthorizedErrorResponse
+      type: UnauthorizedErrorResponse,
     }),
     ApiResponse({
       status: 403,
       description: 'Sem permissão para listar relatórios',
-      type: ApiErrorResponse
+      type: ApiErrorResponse,
     }),
     ApiResponse({
       status: 500,
       description: 'Erro interno do servidor',
-      type: ApiErrorResponse
-    })
+      type: ApiErrorResponse,
+    }),
   );
 }
 
@@ -507,39 +523,40 @@ export function ApiExcluirRelatorio() {
   return applyDecorators(
     ApiOperation({
       summary: 'Excluir relatório',
-      description: 'Remove um relatório gerado do sistema. Esta operação é irreversível.',
-      operationId: 'excluirRelatorio'
+      description:
+        'Remove um relatório gerado do sistema. Esta operação é irreversível.',
+      operationId: 'excluirRelatorio',
     }),
     ApiParam({
       name: 'id',
       description: 'ID único do relatório a ser excluído',
       type: 'string',
-      example: '507f1f77bcf86cd799439020'
+      example: '507f1f77bcf86cd799439020',
     }),
     ApiBearerAuth(),
     ApiResponse({
       status: 204,
-      description: 'Relatório excluído com sucesso'
+      description: 'Relatório excluído com sucesso',
     }),
     ApiResponse({
       status: 401,
       description: 'Token de acesso inválido ou expirado',
-      type: UnauthorizedErrorResponse
+      type: UnauthorizedErrorResponse,
     }),
     ApiResponse({
       status: 403,
       description: 'Sem permissão para excluir relatórios',
-      type: ApiErrorResponse
+      type: ApiErrorResponse,
     }),
     ApiResponse({
       status: 404,
       description: 'Relatório não encontrado',
-      type: ApiErrorResponse
+      type: ApiErrorResponse,
     }),
     ApiResponse({
       status: 500,
       description: 'Erro interno do servidor',
-      type: ApiErrorResponse
-    })
+      type: ApiErrorResponse,
+    }),
   );
 }

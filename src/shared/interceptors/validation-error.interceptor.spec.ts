@@ -1,7 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { BadRequestException, ExecutionContext, CallHandler } from '@nestjs/common';
+import {
+  BadRequestException,
+  ExecutionContext,
+  CallHandler,
+} from '@nestjs/common';
 import { of, throwError } from 'rxjs';
-import { ValidationErrorInterceptor, ValidationMessageHelper } from './validation-error.interceptor';
+import {
+  ValidationErrorInterceptor,
+  ValidationMessageHelper,
+} from './validation-error.interceptor';
 
 describe('ValidationErrorInterceptor', () => {
   let interceptor: ValidationErrorInterceptor;
@@ -13,8 +20,10 @@ describe('ValidationErrorInterceptor', () => {
       providers: [ValidationErrorInterceptor],
     }).compile();
 
-    interceptor = module.get<ValidationErrorInterceptor>(ValidationErrorInterceptor);
-    
+    interceptor = module.get<ValidationErrorInterceptor>(
+      ValidationErrorInterceptor,
+    );
+
     mockExecutionContext = {
       switchToHttp: jest.fn(),
       getClass: jest.fn(),
@@ -34,7 +43,9 @@ describe('ValidationErrorInterceptor', () => {
   describe('intercept', () => {
     it('deve passar erros não relacionados à validação sem modificação', (done) => {
       const nonValidationError = new Error('Erro genérico');
-      mockCallHandler.handle = jest.fn(() => throwError(() => nonValidationError));
+      mockCallHandler.handle = jest.fn(() =>
+        throwError(() => nonValidationError),
+      );
 
       interceptor.intercept(mockExecutionContext, mockCallHandler).subscribe({
         error: (error) => {
@@ -45,8 +56,12 @@ describe('ValidationErrorInterceptor', () => {
     });
 
     it('deve passar BadRequestException não relacionado à validação', (done) => {
-      const nonValidationBadRequest = new BadRequestException('Erro customizado');
-      mockCallHandler.handle = jest.fn(() => throwError(() => nonValidationBadRequest));
+      const nonValidationBadRequest = new BadRequestException(
+        'Erro customizado',
+      );
+      mockCallHandler.handle = jest.fn(() =>
+        throwError(() => nonValidationBadRequest),
+      );
 
       interceptor.intercept(mockExecutionContext, mockCallHandler).subscribe({
         error: (error) => {
@@ -75,13 +90,16 @@ describe('ValidationErrorInterceptor', () => {
           try {
             expect(error).toBeInstanceOf(BadRequestException);
             const response = error.getResponse();
-            
+
             expect(response).toHaveProperty('error', 'Erro de Validação');
-            expect(response).toHaveProperty('message', 'Os dados fornecidos contêm erros de validação');
+            expect(response).toHaveProperty(
+              'message',
+              'Os dados fornecidos contêm erros de validação',
+            );
             expect(response).toHaveProperty('details');
             expect(response).toHaveProperty('timestamp');
             expect(response).toHaveProperty('statusCode', 400);
-            
+
             done();
           } catch (e) {
             done(e);
@@ -108,12 +126,12 @@ describe('ValidationErrorInterceptor', () => {
           try {
             const response = error.getResponse();
             const details = response.details;
-            
+
             expect(details).toHaveProperty('nome');
             expect(details).toHaveProperty('email');
             expect(details.nome).toHaveLength(2); // Dois erros para o campo nome
             expect(details.email).toHaveLength(1); // Um erro para o campo email
-            
+
             done();
           } catch (e) {
             done(e);
@@ -133,57 +151,60 @@ describe('ValidationErrorInterceptor', () => {
 
       mockCallHandler.handle = jest.fn(() => throwError(() => enumError));
 
-       try {
-          await interceptor.intercept(mockExecutionContext, mockCallHandler).toPromise();
-        } catch (error) {
-          const response = error.getResponse();
-          console.log('Response structure:', JSON.stringify(response, null, 2));
-          
-          expect(response).toHaveProperty('details');
-          const details = response.details;
-          console.log('Details structure:', JSON.stringify(details, null, 2));
-          
-          // Verifica se o campo status existe e tem pelo menos um erro
-          expect(details).toHaveProperty('status');
-          expect(Array.isArray(details.status)).toBe(true);
-          expect(details.status.length).toBeGreaterThan(0);
-          
-          expect(details.status[0]).toContain('deve ser um dos seguintes valores');
-          expect(details.status[0]).toContain('ATIVO, INATIVO, PENDENTE');
-        }
+      try {
+        await interceptor
+          .intercept(mockExecutionContext, mockCallHandler)
+          .toPromise();
+      } catch (error) {
+        const response = error.getResponse();
+        console.log('Response structure:', JSON.stringify(response, null, 2));
+
+        expect(response).toHaveProperty('details');
+        const details = response.details;
+        console.log('Details structure:', JSON.stringify(details, null, 2));
+
+        // Verifica se o campo status existe e tem pelo menos um erro
+        expect(details).toHaveProperty('status');
+        expect(Array.isArray(details.status)).toBe(true);
+        expect(details.status.length).toBeGreaterThan(0);
+
+        expect(details.status[0]).toContain(
+          'deve ser um dos seguintes valores',
+        );
+        expect(details.status[0]).toContain('ATIVO, INATIVO, PENDENTE');
+      }
     });
 
     it('deve melhorar mensagens de erro de tipo', async () => {
       const typeError = new BadRequestException({
         error: 'Bad Request',
-        message: [
-          'idade must be a number',
-          'ativo must be a boolean',
-        ],
+        message: ['idade must be a number', 'ativo must be a boolean'],
         statusCode: 400,
       });
 
       mockCallHandler.handle = jest.fn(() => throwError(() => typeError));
 
       try {
-         await interceptor.intercept(mockExecutionContext, mockCallHandler).toPromise();
-       } catch (error) {
-         const response = error.getResponse();
-         expect(response).toHaveProperty('details');
-         const details = response.details;
-         
-         // Verifica se os campos existem e têm pelo menos um erro
-         expect(details).toHaveProperty('idade');
-         expect(Array.isArray(details.idade)).toBe(true);
-         expect(details.idade.length).toBeGreaterThan(0);
-         
-         expect(details).toHaveProperty('ativo');
-         expect(Array.isArray(details.ativo)).toBe(true);
-         expect(details.ativo.length).toBeGreaterThan(0);
-         
-         expect(details.idade[0]).toContain('deve ser um número');
-         expect(details.ativo[0]).toContain('deve ser um verdadeiro ou falso');
-       }
+        await interceptor
+          .intercept(mockExecutionContext, mockCallHandler)
+          .toPromise();
+      } catch (error) {
+        const response = error.getResponse();
+        expect(response).toHaveProperty('details');
+        const details = response.details;
+
+        // Verifica se os campos existem e têm pelo menos um erro
+        expect(details).toHaveProperty('idade');
+        expect(Array.isArray(details.idade)).toBe(true);
+        expect(details.idade.length).toBeGreaterThan(0);
+
+        expect(details).toHaveProperty('ativo');
+        expect(Array.isArray(details.ativo)).toBe(true);
+        expect(details.ativo.length).toBeGreaterThan(0);
+
+        expect(details.idade[0]).toContain('deve ser um número');
+        expect(details.ativo[0]).toContain('deve ser um verdadeiro ou falso');
+      }
     });
 
     it('deve melhorar mensagens de erro de tamanho', (done) => {
@@ -203,10 +224,12 @@ describe('ValidationErrorInterceptor', () => {
           try {
             const response = error.getResponse();
             const details = response.details;
-            
+
             expect(details.nome[0]).toContain('deve ter mais de 2 caracteres');
-            expect(details.descricao[0]).toContain('deve ter menos de 100 caracteres');
-            
+            expect(details.descricao[0]).toContain(
+              'deve ter menos de 100 caracteres',
+            );
+
             done();
           } catch (e) {
             done(e);
@@ -232,10 +255,12 @@ describe('ValidationErrorInterceptor', () => {
           try {
             const response = error.getResponse();
             const details = response.details;
-            
+
             expect(details.idade[0]).toContain('deve ser maior ou igual a 18');
-            expect(details.salario[0]).toContain('deve ser menor ou igual a 50000');
-            
+            expect(details.salario[0]).toContain(
+              'deve ser menor ou igual a 50000',
+            );
+
             done();
           } catch (e) {
             done(e);
@@ -273,12 +298,15 @@ describe('ValidationMessageHelper', () => {
     });
 
     it('deve mapear tipos em inglês para português', () => {
-      expect(ValidationMessageHelper.invalidType('campo', 'string'))
-        .toBe("O campo 'campo' deve ser texto");
-      expect(ValidationMessageHelper.invalidType('campo', 'boolean'))
-        .toBe("O campo 'campo' deve ser verdadeiro ou falso");
-      expect(ValidationMessageHelper.invalidType('campo', 'email'))
-        .toBe("O campo 'campo' deve ser email válido");
+      expect(ValidationMessageHelper.invalidType('campo', 'string')).toBe(
+        "O campo 'campo' deve ser texto",
+      );
+      expect(ValidationMessageHelper.invalidType('campo', 'boolean')).toBe(
+        "O campo 'campo' deve ser verdadeiro ou falso",
+      );
+      expect(ValidationMessageHelper.invalidType('campo', 'email')).toBe(
+        "O campo 'campo' deve ser email válido",
+      );
     });
   });
 
@@ -294,7 +322,11 @@ describe('ValidationMessageHelper', () => {
     });
 
     it('deve criar mensagem apenas para máximo', () => {
-      const message = ValidationMessageHelper.invalidLength('nome', undefined, 50);
+      const message = ValidationMessageHelper.invalidLength(
+        'nome',
+        undefined,
+        50,
+      );
       expect(message).toBe("O campo 'nome' deve ter no máximo 50 caracteres");
     });
 
@@ -316,7 +348,11 @@ describe('ValidationMessageHelper', () => {
     });
 
     it('deve criar mensagem apenas para máximo', () => {
-      const message = ValidationMessageHelper.invalidRange('idade', undefined, 65);
+      const message = ValidationMessageHelper.invalidRange(
+        'idade',
+        undefined,
+        65,
+      );
       expect(message).toBe("O campo 'idade' deve ser menor ou igual a 65");
     });
   });
@@ -324,19 +360,28 @@ describe('ValidationMessageHelper', () => {
   describe('invalidFormat', () => {
     it('deve criar mensagem para formato inválido', () => {
       const message = ValidationMessageHelper.invalidFormat('email', 'email');
-      expect(message).toBe("O campo 'email' deve ter o formato: email válido (exemplo: usuario@dominio.com)");
+      expect(message).toBe(
+        "O campo 'email' deve ter o formato: email válido (exemplo: usuario@dominio.com)",
+      );
     });
 
     it('deve mapear formatos conhecidos', () => {
-      expect(ValidationMessageHelper.invalidFormat('cpf', 'cpf'))
-        .toContain('CPF válido (exemplo: 123.456.789-00)');
-      expect(ValidationMessageHelper.invalidFormat('telefone', 'phone'))
-        .toContain('telefone válido (exemplo: (11) 99999-9999)');
+      expect(ValidationMessageHelper.invalidFormat('cpf', 'cpf')).toContain(
+        'CPF válido (exemplo: 123.456.789-00)',
+      );
+      expect(
+        ValidationMessageHelper.invalidFormat('telefone', 'phone'),
+      ).toContain('telefone válido (exemplo: (11) 99999-9999)');
     });
 
     it('deve usar formato original se não mapeado', () => {
-      const message = ValidationMessageHelper.invalidFormat('campo', 'formato_customizado');
-      expect(message).toBe("O campo 'campo' deve ter o formato: formato_customizado");
+      const message = ValidationMessageHelper.invalidFormat(
+        'campo',
+        'formato_customizado',
+      );
+      expect(message).toBe(
+        "O campo 'campo' deve ter o formato: formato_customizado",
+      );
     });
   });
 });

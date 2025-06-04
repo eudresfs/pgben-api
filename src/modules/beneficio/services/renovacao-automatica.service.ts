@@ -9,7 +9,10 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, LessThanOrEqual, IsNull, Not } from 'typeorm';
 import { ConfiguracaoRenovacao } from '../../../entities/configuracao-renovacao.entity';
-import { Solicitacao, StatusSolicitacao } from '../../../entities/solicitacao.entity';
+import {
+  Solicitacao,
+  StatusSolicitacao,
+} from '../../../entities/solicitacao.entity';
 import { CreateConfiguracaoRenovacaoDto } from '../dto/create-configuracao-renovacao.dto';
 import { UpdateConfiguracaoRenovacaoDto } from '../dto/update-configuracao-renovacao.dto';
 import { WorkflowSolicitacaoService } from '../../solicitacao/services/workflow-solicitacao.service';
@@ -137,7 +140,9 @@ export class RenovacaoAutomaticaService {
    * @param tipoBeneficioId ID do tipo de benefício
    * @returns Configuração
    */
-  async findByTipoBeneficio(tipoBeneficioId: string): Promise<ConfiguracaoRenovacao> {
+  async findByTipoBeneficio(
+    tipoBeneficioId: string,
+  ): Promise<ConfiguracaoRenovacao> {
     try {
       const configuracao = await this.configuracaoRepository.findOne({
         where: { tipo_beneficio_id: tipoBeneficioId },
@@ -145,7 +150,9 @@ export class RenovacaoAutomaticaService {
       });
 
       if (!configuracao) {
-        throw new NotFoundException('Configuração de renovação não encontrada para este tipo de benefício');
+        throw new NotFoundException(
+          'Configuração de renovação não encontrada para este tipo de benefício',
+        );
       }
 
       return configuracao;
@@ -243,7 +250,10 @@ export class RenovacaoAutomaticaService {
    * @param ativo Status de ativação
    * @returns Configuração atualizada
    */
-  async toggleAtivo(id: string, ativo: boolean): Promise<ConfiguracaoRenovacao> {
+  async toggleAtivo(
+    id: string,
+    ativo: boolean,
+  ): Promise<ConfiguracaoRenovacao> {
     try {
       // Verificar se a configuração existe
       const configuracao = await this.configuracaoRepository.findOne({
@@ -305,7 +315,7 @@ export class RenovacaoAutomaticaService {
 
       // Verificar se existe configuração de renovação para o tipo de benefício
       const configuracao = await this.configuracaoRepository.findOne({
-        where: { 
+        where: {
           tipo_beneficio_id: solicitacao.tipo_beneficio_id,
           ativo: true,
         },
@@ -327,11 +337,11 @@ export class RenovacaoAutomaticaService {
       const updateData: any = {
         renovacao_automatica: renovacaoAutomatica,
       };
-      
+
       // Adicionar a data da próxima renovação apenas se estiver ativada
       if (renovacaoAutomatica) {
         updateData.data_proxima_renovacao = this.calcularDataProximaRenovacao(
-          configuracao.dias_antecedencia_renovacao
+          configuracao.dias_antecedencia_renovacao,
         );
       } else {
         // Usar SQL bruto para definir como NULL
@@ -339,27 +349,28 @@ export class RenovacaoAutomaticaService {
           .createQueryBuilder()
           .update(Solicitacao)
           .set({ renovacao_automatica: false })
-          .where("id = :id", { id: solicitacaoId })
+          .where('id = :id', { id: solicitacaoId })
           .execute();
-          
-        await this.dataSource
-          .query(
-            `UPDATE solicitacao SET data_proxima_renovacao = NULL WHERE id = $1`,
-            [solicitacaoId]
-          );
-          
+
+        await this.dataSource.query(
+          `UPDATE solicitacao SET data_proxima_renovacao = NULL WHERE id = $1`,
+          [solicitacaoId],
+        );
+
         // Retornar mais cedo para evitar a segunda atualização
         const solicitacaoAtualizada = await this.solicitacaoRepository.findOne({
           where: { id: solicitacaoId },
         });
-        
+
         if (!solicitacaoAtualizada) {
-          throw new NotFoundException(`Solicitação com ID ${solicitacaoId} não encontrada após atualização`);
+          throw new NotFoundException(
+            `Solicitação com ID ${solicitacaoId} não encontrada após atualização`,
+          );
         }
-        
+
         return solicitacaoAtualizada;
       }
-      
+
       // Atualizar a solicitação se a renovação estiver ativada
       await this.solicitacaoRepository.update(solicitacaoId, updateData);
 
@@ -367,11 +378,13 @@ export class RenovacaoAutomaticaService {
       const solicitacaoAtualizada = await this.solicitacaoRepository.findOne({
         where: { id: solicitacaoId },
       });
-      
+
       if (!solicitacaoAtualizada) {
-        throw new NotFoundException(`Solicitação com ID ${solicitacaoId} não encontrada após atualização`);
+        throw new NotFoundException(
+          `Solicitação com ID ${solicitacaoId} não encontrada após atualização`,
+        );
       }
-      
+
       return solicitacaoAtualizada;
     } catch (error) {
       if (
@@ -399,13 +412,15 @@ export class RenovacaoAutomaticaService {
   private calcularDataProximaRenovacao(diasAntecedencia: number): Date {
     const dataAtual = new Date();
     const dataProximaRenovacao = new Date(dataAtual);
-    
+
     // Adicionar um mês à data atual
     dataProximaRenovacao.setMonth(dataProximaRenovacao.getMonth() + 1);
-    
+
     // Subtrair os dias de antecedência
-    dataProximaRenovacao.setDate(dataProximaRenovacao.getDate() - diasAntecedencia);
-    
+    dataProximaRenovacao.setDate(
+      dataProximaRenovacao.getDate() - diasAntecedencia,
+    );
+
     return dataProximaRenovacao;
   }
 
@@ -418,7 +433,7 @@ export class RenovacaoAutomaticaService {
     this.logger.log('Iniciando processamento de renovações automáticas');
 
     const dataAtual = new Date();
-    
+
     try {
       // Buscar solicitações com renovação automática ativada e data de renovação menor ou igual à data atual
       const solicitacoesPendentes = await this.solicitacaoRepository.find({
@@ -430,7 +445,9 @@ export class RenovacaoAutomaticaService {
         relations: ['tipo_beneficio'],
       });
 
-      this.logger.log(`Encontradas ${solicitacoesPendentes.length} solicitações pendentes de renovação`);
+      this.logger.log(
+        `Encontradas ${solicitacoesPendentes.length} solicitações pendentes de renovação`,
+      );
 
       for (const solicitacao of solicitacoesPendentes) {
         await this.processarRenovacaoSolicitacao(solicitacao);
@@ -449,7 +466,9 @@ export class RenovacaoAutomaticaService {
    * Processa a renovação de uma solicitação específica
    * @param solicitacao Solicitação a ser renovada
    */
-  private async processarRenovacaoSolicitacao(solicitacao: Solicitacao): Promise<void> {
+  private async processarRenovacaoSolicitacao(
+    solicitacao: Solicitacao,
+  ): Promise<void> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -479,7 +498,7 @@ export class RenovacaoAutomaticaService {
         this.logger.warn(
           `Solicitação ${solicitacao.id} atingiu o número máximo de renovações (${configuracao.numero_maximo_renovacoes})`,
         );
-        
+
         // Desativar renovação automática
         await queryRunner.manager.update(
           Solicitacao,
@@ -489,7 +508,7 @@ export class RenovacaoAutomaticaService {
             data_proxima_renovacao: undefined,
           },
         );
-        
+
         await queryRunner.commitTransaction();
         return;
       }
@@ -499,11 +518,11 @@ export class RenovacaoAutomaticaService {
         tipo_beneficio_id: solicitacao.tipo_beneficio_id,
         dados_dinamicos: solicitacao.dados_dinamicos,
         observacoes: `Renovação automática da solicitação ${solicitacao.id}`,
-        solicitacao_original_id: solicitacao.solicitacao_original_id || solicitacao.id,
+        solicitacao_original_id:
+          solicitacao.solicitacao_original_id || solicitacao.id,
         contador_renovacoes: solicitacao.contador_renovacoes + 1,
         renovacao_automatica: true,
       });
-      
 
       // Definir o status inicial da nova solicitação
       if (configuracao.requer_aprovacao_renovacao) {
@@ -513,7 +532,8 @@ export class RenovacaoAutomaticaService {
       }
 
       // Salvar a nova solicitação
-      const novaSolicitacaoSalva = await queryRunner.manager.save(novaSolicitacao);
+      const novaSolicitacaoSalva =
+        await queryRunner.manager.save(novaSolicitacao);
 
       // Calcular a data da próxima renovação
       const dataProximaRenovacao = this.calcularDataProximaRenovacao(
@@ -590,10 +610,18 @@ export class RenovacaoAutomaticaService {
         contador_renovacoes: solicitacao.contador_renovacoes,
         data_proxima_renovacao: solicitacao.data_proxima_renovacao,
         solicitacao_original_id: solicitacao.solicitacao_original_id,
-        configuracao_tipo_beneficio: configuracao ? (configuracao.renovacao_automatica && configuracao.ativo) : false,
-        dias_antecedencia: configuracao ? (configuracao.dias_antecedencia_renovacao || null) : null,
-        numero_maximo_renovacoes: configuracao ? (configuracao.numero_maximo_renovacoes || null) : null,
-        requer_aprovacao: configuracao ? configuracao.requer_aprovacao_renovacao : null,
+        configuracao_tipo_beneficio: configuracao
+          ? configuracao.renovacao_automatica && configuracao.ativo
+          : false,
+        dias_antecedencia: configuracao
+          ? configuracao.dias_antecedencia_renovacao || null
+          : null,
+        numero_maximo_renovacoes: configuracao
+          ? configuracao.numero_maximo_renovacoes || null
+          : null,
+        requer_aprovacao: configuracao
+          ? configuracao.requer_aprovacao_renovacao
+          : null,
       };
     } catch (error) {
       if (error instanceof NotFoundException) {
@@ -616,11 +644,13 @@ export class RenovacaoAutomaticaService {
    * @returns Número de solicitações renovadas
    */
   async verificarRenovacoesPendentes(usuarioId: string): Promise<number> {
-    this.logger.log(`Verificação manual de renovações pendentes iniciada por ${usuarioId}`);
+    this.logger.log(
+      `Verificação manual de renovações pendentes iniciada por ${usuarioId}`,
+    );
 
     const dataAtual = new Date();
     let renovacoesProcessadas = 0;
-    
+
     try {
       // Buscar solicitações com renovação automática ativada e data de renovação menor ou igual à data atual
       const solicitacoesPendentes = await this.solicitacaoRepository.find({
@@ -632,14 +662,18 @@ export class RenovacaoAutomaticaService {
         relations: ['tipo_beneficio'],
       });
 
-      this.logger.log(`Encontradas ${solicitacoesPendentes.length} solicitações pendentes de renovação`);
+      this.logger.log(
+        `Encontradas ${solicitacoesPendentes.length} solicitações pendentes de renovação`,
+      );
 
       for (const solicitacao of solicitacoesPendentes) {
         await this.processarRenovacaoSolicitacao(solicitacao);
         renovacoesProcessadas++;
       }
 
-      this.logger.log(`Verificação manual concluída. ${renovacoesProcessadas} renovações processadas.`);
+      this.logger.log(
+        `Verificação manual concluída. ${renovacoesProcessadas} renovações processadas.`,
+      );
       return renovacoesProcessadas;
     } catch (error) {
       this.logger.error(

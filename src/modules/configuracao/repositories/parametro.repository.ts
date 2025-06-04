@@ -5,7 +5,7 @@ import { Parametro } from '../../../entities';
 
 /**
  * Repositório para gerenciamento de parâmetros do sistema
- * 
+ *
  * Fornece operações de acesso a dados para entidade Parametro
  */
 @Injectable()
@@ -31,9 +31,9 @@ export class ParametroRepository {
    */
   async findAll(categoria?: string): Promise<Parametro[]> {
     const whereClause = categoria ? { categoria } : {};
-    return this.repository.find({ 
+    return this.repository.find({
       where: whereClause,
-      order: { categoria: 'ASC', chave: 'ASC' }
+      order: { categoria: 'ASC', chave: 'ASC' },
     });
   }
 
@@ -60,9 +60,9 @@ export class ParametroRepository {
    * @returns Lista de parâmetros da categoria
    */
   async findByCategoria(categoria: string): Promise<Parametro[]> {
-    return this.repository.find({ 
+    return this.repository.find({
       where: { categoria },
-      order: { chave: 'ASC' }
+      order: { chave: 'ASC' },
     });
   }
 

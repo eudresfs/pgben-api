@@ -1,0 +1,68 @@
+542975936000672186c5fcb0e364df04
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var _a, _b, _c;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.TokenRevogado = void 0;
+const typeorm_1 = require("typeorm");
+/**
+ * Entidade que armazena tokens revogados para consulta rápida durante a validação.
+ * Esta tabela é utilizada para manter um registro de tokens que foram invalidados
+ * antes de sua expiração natural, servindo como uma "lista negra" que é consultada
+ * a cada validação de token.
+ */
+let TokenRevogado = class TokenRevogado {
+    id;
+    tokenHash;
+    integradorId;
+    motivoRevogacao;
+    dataExpiracao;
+    dataCriacao;
+    // Data em que este registro pode ser removido do banco (limpeza)
+    dataLimpeza;
+};
+exports.TokenRevogado = TokenRevogado;
+__decorate([
+    (0, typeorm_1.PrimaryGeneratedColumn)('uuid'),
+    __metadata("design:type", String)
+], TokenRevogado.prototype, "id", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ length: 64 }),
+    (0, typeorm_1.Index)() // Índice para consulta rápida
+    ,
+    __metadata("design:type", String)
+], TokenRevogado.prototype, "tokenHash", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: false }),
+    __metadata("design:type", String)
+], TokenRevogado.prototype, "integradorId", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", String)
+], TokenRevogado.prototype, "motivoRevogacao", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'timestamptz', nullable: true }),
+    __metadata("design:type", typeof (_a = typeof Date !== "undefined" && Date) === "function" ? _a : Object)
+], TokenRevogado.prototype, "dataExpiracao", void 0);
+__decorate([
+    (0, typeorm_1.CreateDateColumn)({ type: 'timestamptz' }),
+    __metadata("design:type", typeof (_b = typeof Date !== "undefined" && Date) === "function" ? _b : Object)
+], TokenRevogado.prototype, "dataCriacao", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'timestamptz', nullable: true }),
+    (0, typeorm_1.Index)() // Índice para facilitar limpeza periódica
+    ,
+    __metadata("design:type", typeof (_c = typeof Date !== "undefined" && Date) === "function" ? _c : Object)
+], TokenRevogado.prototype, "dataLimpeza", void 0);
+exports.TokenRevogado = TokenRevogado = __decorate([
+    (0, typeorm_1.Entity)('tokens_revogados')
+], TokenRevogado);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXGVudGl0aWVzXFx0b2tlbi1yZXZvZ2Fkby5lbnRpdHkudHMiLCJtYXBwaW5ncyI6Ijs7Ozs7Ozs7Ozs7OztBQUFBLHFDQUEwRjtBQUUxRjs7Ozs7R0FLRztBQUVJLElBQU0sYUFBYSxHQUFuQixNQUFNLGFBQWE7SUFFeEIsRUFBRSxDQUFTO0lBSVgsU0FBUyxDQUFTO0lBR2xCLFlBQVksQ0FBUztJQUdyQixlQUFlLENBQVM7SUFHeEIsYUFBYSxDQUFPO0lBR3BCLFdBQVcsQ0FBTztJQUVsQixpRUFBaUU7SUFHakUsV0FBVyxDQUFPO0NBQ25CLENBQUE7QUF4Qlksc0NBQWE7QUFFeEI7SUFEQyxJQUFBLGdDQUFzQixFQUFDLE1BQU0sQ0FBQzs7eUNBQ3BCO0FBSVg7SUFGQyxJQUFBLGdCQUFNLEVBQUMsRUFBRSxNQUFNLEVBQUUsRUFBRSxFQUFFLENBQUM7SUFDdEIsSUFBQSxlQUFLLEdBQUUsQ0FBQyw4QkFBOEI7OztnREFDckI7QUFHbEI7SUFEQyxJQUFBLGdCQUFNLEVBQUMsRUFBRSxRQUFRLEVBQUUsS0FBSyxFQUFFLENBQUM7O21EQUNQO0FBR3JCO0lBREMsSUFBQSxnQkFBTSxFQUFDLEVBQUUsUUFBUSxFQUFFLElBQUksRUFBRSxDQUFDOztzREFDSDtBQUd4QjtJQURDLElBQUEsZ0JBQU0sRUFBQyxFQUFFLElBQUksRUFBRSxhQUFhLEVBQUUsUUFBUSxFQUFFLElBQUksRUFBRSxDQUFDO2tEQUNqQyxJQUFJLG9CQUFKLElBQUk7b0RBQUM7QUFHcEI7SUFEQyxJQUFBLDBCQUFnQixFQUFDLEVBQUUsSUFBSSxFQUFFLGFBQWEsRUFBRSxDQUFDO2tEQUM3QixJQUFJLG9CQUFKLElBQUk7a0RBQUM7QUFLbEI7SUFGQyxJQUFBLGdCQUFNLEVBQUMsRUFBRSxJQUFJLEVBQUUsYUFBYSxFQUFFLFFBQVEsRUFBRSxJQUFJLEVBQUUsQ0FBQztJQUMvQyxJQUFBLGVBQUssR0FBRSxDQUFDLDBDQUEwQzs7a0RBQ3RDLElBQUksb0JBQUosSUFBSTtrREFBQzt3QkF2QlAsYUFBYTtJQUR6QixJQUFBLGdCQUFNLEVBQUMsa0JBQWtCLENBQUM7R0FDZCxhQUFhLENBd0J6QiIsIm5hbWVzIjpbXSwic291cmNlcyI6WyJDOlxcVXNlcnNcXGV1ZHJlXFxPbmVEcml2ZVxcRGVza3RvcFxcUHJvamV0b3NcXHBnYmVuXFxwZ2Jlbi1zZXJ2ZXJcXHNyY1xcZW50aXRpZXNcXHRva2VuLXJldm9nYWRvLmVudGl0eS50cyJdLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQgeyBFbnRpdHksIFByaW1hcnlHZW5lcmF0ZWRDb2x1bW4sIENvbHVtbiwgQ3JlYXRlRGF0ZUNvbHVtbiwgSW5kZXggfSBmcm9tICd0eXBlb3JtJztcblxuLyoqXG4gKiBFbnRpZGFkZSBxdWUgYXJtYXplbmEgdG9rZW5zIHJldm9nYWRvcyBwYXJhIGNvbnN1bHRhIHLDoXBpZGEgZHVyYW50ZSBhIHZhbGlkYcOnw6NvLlxuICogRXN0YSB0YWJlbGEgw6kgdXRpbGl6YWRhIHBhcmEgbWFudGVyIHVtIHJlZ2lzdHJvIGRlIHRva2VucyBxdWUgZm9yYW0gaW52YWxpZGFkb3NcbiAqIGFudGVzIGRlIHN1YSBleHBpcmHDp8OjbyBuYXR1cmFsLCBzZXJ2aW5kbyBjb21vIHVtYSBcImxpc3RhIG5lZ3JhXCIgcXVlIMOpIGNvbnN1bHRhZGFcbiAqIGEgY2FkYSB2YWxpZGHDp8OjbyBkZSB0b2tlbi5cbiAqL1xuQEVudGl0eSgndG9rZW5zX3Jldm9nYWRvcycpXG5leHBvcnQgY2xhc3MgVG9rZW5SZXZvZ2FkbyB7XG4gIEBQcmltYXJ5R2VuZXJhdGVkQ29sdW1uKCd1dWlkJylcbiAgaWQ6IHN0cmluZztcblxuICBAQ29sdW1uKHsgbGVuZ3RoOiA2NCB9KVxuICBASW5kZXgoKSAvLyDDjW5kaWNlIHBhcmEgY29uc3VsdGEgcsOhcGlkYVxuICB0b2tlbkhhc2g6IHN0cmluZztcblxuICBAQ29sdW1uKHsgbnVsbGFibGU6IGZhbHNlIH0pXG4gIGludGVncmFkb3JJZDogc3RyaW5nO1xuXG4gIEBDb2x1bW4oeyBudWxsYWJsZTogdHJ1ZSB9KVxuICBtb3Rpdm9SZXZvZ2FjYW86IHN0cmluZztcblxuICBAQ29sdW1uKHsgdHlwZTogJ3RpbWVzdGFtcHR6JywgbnVsbGFibGU6IHRydWUgfSlcbiAgZGF0YUV4cGlyYWNhbzogRGF0ZTtcblxuICBAQ3JlYXRlRGF0ZUNvbHVtbih7IHR5cGU6ICd0aW1lc3RhbXB0eicgfSlcbiAgZGF0YUNyaWFjYW86IERhdGU7XG5cbiAgLy8gRGF0YSBlbSBxdWUgZXN0ZSByZWdpc3RybyBwb2RlIHNlciByZW1vdmlkbyBkbyBiYW5jbyAobGltcGV6YSlcbiAgQENvbHVtbih7IHR5cGU6ICd0aW1lc3RhbXB0eicsIG51bGxhYmxlOiB0cnVlIH0pXG4gIEBJbmRleCgpIC8vIMONbmRpY2UgcGFyYSBmYWNpbGl0YXIgbGltcGV6YSBwZXJpw7NkaWNhXG4gIGRhdGFMaW1wZXphOiBEYXRlO1xufVxuIl0sInZlcnNpb24iOjN9

@@ -8,6 +8,12 @@ import {
   Inject,
   forwardRef,
 } from '@nestjs/common';
+import {
+  AppError,
+  throwFromPostgresError,
+  throwDuplicateCpf,
+  throwDuplicateNis,
+} from '../../../shared/exceptions';
 import { CacheService } from '../../../shared/cache';
 import { CidadaoRepository } from '../repositories/cidadao.repository';
 import { CreateCidadaoDto } from '../dto/create-cidadao.dto';
@@ -33,13 +39,13 @@ export class CidadaoService {
   private readonly logger = new Logger(CidadaoService.name);
   // TTLs dinâmicos para diferentes tipos de entidades/operações
   private readonly CACHE_TTL_MAP = {
-    cidadao: 3600,       // 1 hora para registros individuais
-    list: 300,           // 5 minutos para listas (mudam com mais frequência)
-    count: 60,           // 1 minuto para contagens
-    default: 3600        // padrão: 1 hora
+    cidadao: 3600, // 1 hora para registros individuais
+    list: 300, // 5 minutos para listas (mudam com mais frequência)
+    count: 60, // 1 minuto para contagens
+    default: 3600, // padrão: 1 hora
   };
   private readonly CACHE_PREFIX = 'cidadao:';
-  
+
   /**
    * Obtém o TTL apropriado baseado no tipo de entidade
    * @param entityType Tipo de entidade/operação
@@ -73,13 +79,7 @@ export class CidadaoService {
     bairro?: string;
     unidadeId?: string;
   }): Promise<CidadaoPaginatedResponseDto> {
-    const {
-      page = 1,
-      limit = 10,
-      search,
-      bairro,
-      unidadeId,
-    } = options || {};
+    const { page = 1, limit = 10, search, bairro, unidadeId } = options || {};
 
     // Construir filtros
     const where: any = {};
@@ -152,9 +152,12 @@ export class CidadaoService {
    * @returns Cidadão encontrado
    * @throws NotFoundException se o cidadão não for encontrado
    */
-  async findById(id: string, includeRelations = false): Promise<CidadaoResponseDto> {
+  async findById(
+    id: string,
+    includeRelations = false,
+  ): Promise<CidadaoResponseDto> {
     const cacheKey = `${this.CACHE_PREFIX}id:${id}:${includeRelations ? 'full' : 'basic'}`;
-    
+
     // Verifica se está no cache
     const cached = await this.cacheService.get<CidadaoResponseDto>(cacheKey);
     if (cached) {
@@ -168,13 +171,27 @@ export class CidadaoService {
 
     try {
       // Definir campos específicos para reduzir volume de dados quando não precisar de todos
-      const specificFields = includeRelations ? undefined : [
-        'id', 'nome', 'cpf', 'nis', 'telefone', 'endereco', 'unidade_id', 'created_at', 'updated_at'
-      ];
-      
+      const specificFields = includeRelations
+        ? undefined
+        : [
+            'id',
+            'nome',
+            'cpf',
+            'nis',
+            'telefone',
+            'endereco',
+            'unidade_id',
+            'created_at',
+            'updated_at',
+          ];
+
       // Buscar do repositório com campos específicos
-      const cidadao = await this.cidadaoRepository.findById(id, includeRelations, specificFields);
-      
+      const cidadao = await this.cidadaoRepository.findById(
+        id,
+        includeRelations,
+        specificFields,
+      );
+
       if (!cidadao) {
         throw new NotFoundException('Cidadão não encontrado');
       }
@@ -183,13 +200,16 @@ export class CidadaoService {
         excludeExtraneousValues: true,
         enableImplicitConversion: false,
       });
-      
+
       // Usar o método otimizado para armazenar em cache em lote
       await this.updateCidadaoCache(cidadaoDto, includeRelations);
-      
+
       return cidadaoDto;
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
         throw error;
       }
       this.logger.error(
@@ -214,59 +234,73 @@ export class CidadaoService {
    */
   private isValidCPF(cpfLimpo: string): boolean {
     // CPF deve ter 11 dígitos
-    if (cpfLimpo.length !== 11) {return false;}
-    
+    if (cpfLimpo.length !== 11) {
+      return false;
+    }
+
     // Verificação básica de dígitos iguais
-    if (/^(\d)\1{10}$/.test(cpfLimpo)) {return false;}
-    
+    if (/^(\d)\1{10}$/.test(cpfLimpo)) {
+      return false;
+    }
+
     // Para diagnóstico, vamos aceitar qualquer CPF bem formado
     // A validação completa será restaurada após a resolução do problema
     return true;
   }
-  
+
   /**
    * Método auxiliar para armazenar no cache de forma não-bloqueante
-   * 
+   *
    * OTIMIZAÇÃO DE PERFORMANCE:
    * - Utiliza setTimeout para tornar a operação assíncrona e não-bloqueante
    * - Captura erros localmente para não afetar o fluxo principal
    * - Logs mínimos para evitar sobrecarga
-   * 
+   *
    * @param chave Chave do cache
    * @param dados Dados a serem armazenados
    * @param ttl Tempo de vida no cache em segundos
    */
-  private armazenarNoCache(chave: string, dados: any, ttl: number = 3600): void {
+  private armazenarNoCache(
+    chave: string,
+    dados: any,
+    ttl: number = 3600,
+  ): void {
     // Executa em segundo plano para não bloquear o fluxo principal
     setTimeout(async () => {
       try {
         await this.cacheService.set(chave, dados, ttl);
       } catch (error) {
         // Erros de cache não devem afetar o fluxo principal
-        this.logger.warn(`Cache write error [${chave.substring(0, 20)}...]: ${error.message}`);
+        this.logger.warn(
+          `Cache write error [${chave.substring(0, 20)}...]: ${error.message}`,
+        );
       }
     }, 10); // Delay mínimo para garantir a não-interferência
   }
-  
+
   /**
    * Método otimizado para buscar cidadão por CPF
-   * 
+   *
    * OTIMIZAÇÕES DE PERFORMANCE:
    * - Cache com timeout para evitar bloqueios
    * - Armazenamento em cache feito de forma não-bloqueante
    * - Medição de tempo para diagnóstico
    * - Validação de CPF otimizada
-   * 
+   *
    * @param cpf CPF do cidadão (com ou sem formatação)
    * @param includeRelations Incluir relacionamentos na resposta
    * @param specificFields Campos específicos a serem retornados
    * @returns Dados do cidadão encontrado
    */
-  async findByCpf(cpf: string, includeRelations = false, specificFields?: string[]): Promise<CidadaoResponseDto> {
+  async findByCpf(
+    cpf: string,
+    includeRelations = false,
+    specificFields?: string[],
+  ): Promise<CidadaoResponseDto> {
     // Performance: Registrar tempo para fins de diagnóstico
     const startTime = Date.now();
     const requestId = `CPF-${cpf.substr(-4)}-${Date.now()}`;
-    
+
     if (!cpf || cpf.trim() === '') {
       throw new BadRequestException('CPF é obrigatório');
     }
@@ -282,21 +316,25 @@ export class CidadaoService {
     try {
       // Chave de cache otimizada
       const cacheKey = `${this.CACHE_PREFIX}cpf:${cpfLimpo}:${includeRelations ? 'full' : 'basic'}`;
-      
+
       // Consulta ao cache com timeout para evitar bloqueios
       let cachedCidadao: CidadaoResponseDto | undefined = undefined;
       try {
         // Limitamos o tempo de espera do cache para evitar bloqueios
-        const cachePromise = this.cacheService.get<CidadaoResponseDto>(cacheKey);
+        const cachePromise =
+          this.cacheService.get<CidadaoResponseDto>(cacheKey);
         const timeoutPromise = new Promise<undefined>((resolve) => {
           setTimeout(() => resolve(undefined), 30); // Reduzido para 30ms para maior agilidade
         });
-        cachedCidadao = await Promise.race([cachePromise, timeoutPromise]) as CidadaoResponseDto;
+        cachedCidadao = (await Promise.race([
+          cachePromise,
+          timeoutPromise,
+        ])) as CidadaoResponseDto;
       } catch (cacheError) {
         // Erro de cache não deve impedir a continuidade da operação
         this.logger.warn(`Cache error [${requestId}]: ${cacheError.message}`);
       }
-      
+
       // Se encontrou no cache, retornar imediatamente
       if (cachedCidadao) {
         this.logger.debug(`Cache hit [${requestId}]`);
@@ -305,15 +343,27 @@ export class CidadaoService {
 
       // Cache miss - buscar no banco de dados
       this.logger.debug(`Cache miss [${requestId}]`);
-      
+
       // Definindo campos específicos para otimizar a query
       const campos = specificFields || [
-        'id', 'nome', 'cpf', 'nis', 'telefone', 'data_nascimento',
-        'endereco', 'unidade_id', 'created_at', 'updated_at'
+        'id',
+        'nome',
+        'cpf',
+        'nis',
+        'telefone',
+        'data_nascimento',
+        'endereco',
+        'unidade_id',
+        'created_at',
+        'updated_at',
       ];
-      
+
       // Consulta otimizada ao banco de dados
-      const cidadao = await this.cidadaoRepository.findByCpf(cpfLimpo, includeRelations, campos);
+      const cidadao = await this.cidadaoRepository.findByCpf(
+        cpfLimpo,
+        includeRelations,
+        campos,
+      );
 
       if (!cidadao) {
         throw new NotFoundException('Cidadão não encontrado');
@@ -332,7 +382,7 @@ export class CidadaoService {
       this.armazenarNoCache(
         `${this.CACHE_PREFIX}id:${cidadao.id}:${includeRelations ? 'full' : 'basic'}`,
         cidadaoDto,
-        this.getTTL('cidadao')
+        this.getTTL('cidadao'),
       );
 
       // Monitoramento de performance
@@ -346,8 +396,9 @@ export class CidadaoService {
       if (
         error instanceof NotFoundException ||
         error instanceof BadRequestException
-      )
-        {throw error;}
+      ) {
+        throw error;
+      }
       this.logger.error(
         `Erro ao buscar cidadão por CPF [${cpfLimpo}]: ${error.message}`,
         error.stack,
@@ -365,12 +416,15 @@ export class CidadaoService {
    * @throws BadRequestException se o NIS for inválido
    * @throws NotFoundException se o cidadão não for encontrado
    */
-  async findByNis(nis: string, includeRelations = false): Promise<CidadaoResponseDto> {
+  async findByNis(
+    nis: string,
+    includeRelations = false,
+  ): Promise<CidadaoResponseDto> {
     // Inicia medição de tempo para performance
     const startTime = Date.now();
     const requestId = `NIS-${nis.substring(Math.max(0, nis.length - 4))}-${Date.now()}`;
     this.logger.log(`[${requestId}] Processando busca por NIS`);
-    
+
     if (!nis || nis.trim() === '') {
       throw new BadRequestException('NIS é obrigatório');
     }
@@ -386,11 +440,12 @@ export class CidadaoService {
     try {
       // Verificar cache com timeout para evitar bloqueio
       const cacheKey = `${this.CACHE_PREFIX}nis:${nisLimpo}:${includeRelations ? 'full' : 'basic'}`;
-      
+
       let cachedCidadao: CidadaoResponseDto | null = null;
       try {
         // Verificar cache com timeout para evitar bloqueio
-        const cachePromise = this.cacheService.get<CidadaoResponseDto>(cacheKey);
+        const cachePromise =
+          this.cacheService.get<CidadaoResponseDto>(cacheKey);
         cachedCidadao = await Promise.race([
           cachePromise,
           new Promise<null>((resolve) => {
@@ -401,31 +456,44 @@ export class CidadaoService {
           }),
         ]);
       } catch (cacheError) {
-        this.logger.error(`[${requestId}] Erro ao acessar cache: ${cacheError.message}`);
+        this.logger.error(
+          `[${requestId}] Erro ao acessar cache: ${cacheError.message}`,
+        );
         // Continua a execução mesmo com erro de cache
       }
 
       if (cachedCidadao) {
         const totalTime = Date.now() - startTime;
-        this.logger.debug(`[${requestId}] Cache hit para cidadão NIS: ${nisLimpo} em ${totalTime}ms`);
+        this.logger.debug(
+          `[${requestId}] Cache hit para cidadão NIS: ${nisLimpo} em ${totalTime}ms`,
+        );
         return cachedCidadao;
       }
 
       // Se não encontrou no cache, busca no banco de dados
-      this.logger.debug(`[${requestId}] Cache miss para cidadão NIS: ${nisLimpo}, buscando no banco...`);
+      this.logger.debug(
+        `[${requestId}] Cache miss para cidadão NIS: ${nisLimpo}, buscando no banco...`,
+      );
       const dbStartTime = Date.now();
-      
+
       // Buscar cidadão no banco de dados
-      const cidadao = await this.cidadaoRepository.findByNis(nisLimpo, includeRelations);
+      const cidadao = await this.cidadaoRepository.findByNis(
+        nisLimpo,
+        includeRelations,
+      );
 
       if (!cidadao) {
         const totalTime = Date.now() - startTime;
-        this.logger.warn(`[${requestId}] Cidadão não encontrado em ${totalTime}ms`);
+        this.logger.warn(
+          `[${requestId}] Cidadão não encontrado em ${totalTime}ms`,
+        );
         throw new NotFoundException(`Cidadão com NIS ${nis} não encontrado`);
       }
 
       const dbTime = Date.now() - dbStartTime;
-      this.logger.debug(`[${requestId}] Consulta ao banco completada em ${dbTime}ms`);
+      this.logger.debug(
+        `[${requestId}] Consulta ao banco completada em ${dbTime}ms`,
+      );
 
       // Converter para DTO
       const cidadaoDto = plainToInstance(CidadaoResponseDto, cidadao, {
@@ -441,26 +509,28 @@ export class CidadaoService {
         this.armazenarNoCache(
           `${this.CACHE_PREFIX}id:${cidadao.id}:${includeRelations ? 'full' : 'basic'}`,
           cidadaoDto,
-          this.getTTL('cidadao')
+          this.getTTL('cidadao'),
         );
       }
-      
+
       if (cidadao.cpf) {
         this.armazenarNoCache(
           `${this.CACHE_PREFIX}cpf:${cidadao.cpf}:${includeRelations ? 'full' : 'basic'}`,
           cidadaoDto,
-          this.getTTL('cidadao')
+          this.getTTL('cidadao'),
         );
       }
-      
+
       const totalTime = Date.now() - startTime;
       this.logger.log(`[${requestId}] Operação completa em ${totalTime}ms`);
-      
+
       return cidadaoDto;
     } catch (error) {
       const totalTime = Date.now() - startTime;
-      this.logger.error(`[${requestId}] Erro em ${totalTime}ms: ${error.message}`);
-      
+      this.logger.error(
+        `[${requestId}] Erro em ${totalTime}ms: ${error.message}`,
+      );
+
       if (
         error instanceof NotFoundException ||
         error instanceof BadRequestException
@@ -469,7 +539,7 @@ export class CidadaoService {
       }
       throw new InternalServerErrorException('Erro ao buscar cidadão por NIS');
     }
-  }  
+  }
 
   /**
    * Busca cidadão pelo telefone
@@ -479,7 +549,10 @@ export class CidadaoService {
    * @throws BadRequestException se o telefone for inválido
    * @throws NotFoundException se o cidadão não for encontrado
    */
-  async findByTelefone(telefone: string, includeRelations = false): Promise<CidadaoResponseDto> {
+  async findByTelefone(
+    telefone: string,
+    includeRelations = false,
+  ): Promise<CidadaoResponseDto> {
     if (!telefone || telefone.trim() === '') {
       throw new BadRequestException('Telefone é obrigatório');
     }
@@ -499,12 +572,17 @@ export class CidadaoService {
         await this.cacheService.get<CidadaoResponseDto>(cacheKey);
 
       if (cachedCidadao) {
-        this.logger.debug(`Cache hit para busca por telefone: ${telefoneClean}`);
+        this.logger.debug(
+          `Cache hit para busca por telefone: ${telefoneClean}`,
+        );
         return cachedCidadao;
       }
 
       this.logger.debug(`Cache miss para busca por telefone: ${telefoneClean}`);
-      const cidadao = await this.cidadaoRepository.findByTelefone(telefoneClean, includeRelations);
+      const cidadao = await this.cidadaoRepository.findByTelefone(
+        telefoneClean,
+        includeRelations,
+      );
 
       if (!cidadao) {
         throw new NotFoundException('Cidadão não encontrado');
@@ -520,129 +598,162 @@ export class CidadaoService {
 
       return cidadaoDto;
     } catch (error) {
-      if (error instanceof BadRequestException || error instanceof NotFoundException) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof NotFoundException
+      ) {
         throw error;
       }
       this.logger.error(
         `Erro ao buscar cidadão por telefone: ${error.message}`,
         error.stack,
       );
-      throw new InternalServerErrorException('Erro ao buscar cidadão por telefone');
+      throw new InternalServerErrorException(
+        'Erro ao buscar cidadão por telefone',
+      );
     }
   }
 
   /**
-    * Busca cidadãos pelo nome (busca parcial)
-    * @param nome Nome do cidadão
-    * @param includeRelations Se deve incluir relacionamentos
-    * @returns Lista de cidadãos encontrados
-    * @throws BadRequestException se o nome for inválido
-    */
-   async findByNome(nome: string, includeRelations = false): Promise<CidadaoResponseDto[]> {
-     if (!nome || nome.trim() === '' || nome.trim().length < 2) {
-       throw new BadRequestException('Nome deve ter pelo menos 2 caracteres');
-     }
+   * Busca cidadãos pelo nome (busca parcial)
+   * @param nome Nome do cidadão
+   * @param includeRelations Se deve incluir relacionamentos
+   * @returns Lista de cidadãos encontrados
+   * @throws BadRequestException se o nome for inválido
+   */
+  async findByNome(
+    nome: string,
+    includeRelations = false,
+  ): Promise<CidadaoResponseDto[]> {
+    if (!nome || nome.trim() === '' || nome.trim().length < 2) {
+      throw new BadRequestException('Nome deve ter pelo menos 2 caracteres');
+    }
 
-     try {
-       // Verificar cache
-       const cacheKey = `${this.CACHE_PREFIX}nome:${nome.toLowerCase()}:${includeRelations ? 'full' : 'basic'}`;
-       const cachedCidadaos =
-         await this.cacheService.get<CidadaoResponseDto[]>(cacheKey);
+    try {
+      // Verificar cache
+      const cacheKey = `${this.CACHE_PREFIX}nome:${nome.toLowerCase()}:${includeRelations ? 'full' : 'basic'}`;
+      const cachedCidadaos =
+        await this.cacheService.get<CidadaoResponseDto[]>(cacheKey);
 
-       if (cachedCidadaos) {
-         this.logger.debug(`Cache hit para busca por nome: ${nome}`);
-         return cachedCidadaos;
-       }
+      if (cachedCidadaos) {
+        this.logger.debug(`Cache hit para busca por nome: ${nome}`);
+        return cachedCidadaos;
+      }
 
-       this.logger.debug(`Cache miss para busca por nome: ${nome}`);
-       const cidadaos = await this.cidadaoRepository.findByNome(nome, includeRelations);
+      this.logger.debug(`Cache miss para busca por nome: ${nome}`);
+      const cidadaos = await this.cidadaoRepository.findByNome(
+        nome,
+        includeRelations,
+      );
 
-       const cidadaosDto = cidadaos.map(cidadao => 
-         plainToInstance(CidadaoResponseDto, cidadao, {
-           excludeExtraneousValues: true,
-           enableImplicitConversion: false,
-         })
-       );
+      const cidadaosDto = cidadaos.map((cidadao) =>
+        plainToInstance(CidadaoResponseDto, cidadao, {
+          excludeExtraneousValues: true,
+          enableImplicitConversion: false,
+        }),
+      );
 
-       // Armazenar no cache por menos tempo (busca por nome pode mudar mais frequentemente)
-       await this.cacheService.set(cacheKey, cidadaosDto, this.getTTL('cidadao') / 2);
+      // Armazenar no cache por menos tempo (busca por nome pode mudar mais frequentemente)
+      await this.cacheService.set(
+        cacheKey,
+        cidadaosDto,
+        this.getTTL('cidadao') / 2,
+      );
 
-       return cidadaosDto;
-     } catch (error) {
-       if (error instanceof BadRequestException) {
-         throw error;
-       }
-       this.logger.error(
-         `Erro ao buscar cidadãos por nome: ${error.message}`,
-         error.stack,
-       );
-       throw new InternalServerErrorException('Erro ao buscar cidadãos por nome');
-     }
-   }
+      return cidadaosDto;
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      this.logger.error(
+        `Erro ao buscar cidadãos por nome: ${error.message}`,
+        error.stack,
+      );
+      throw new InternalServerErrorException(
+        'Erro ao buscar cidadãos por nome',
+      );
+    }
+  }
 
-   /**
-    * Busca unificada de cidadão por ID, CPF, NIS, telefone ou nome
-    * Permite apenas um parâmetro por vez para garantir clareza e previsibilidade
-    * @param searchParams Parâmetros de busca
-    * @returns Dados do cidadão ou lista de cidadãos (no caso de busca por nome)
-    * @throws BadRequestException se nenhum ou mais de um parâmetro for fornecido
-    */
-   async buscarCidadao(searchParams: {
-     id?: string;
-     cpf?: string;
-     nis?: string;
-     telefone?: string;
-     nome?: string;
-     includeRelations?: boolean;
-   }): Promise<CidadaoResponseDto | CidadaoResponseDto[]> {
-     const { id, cpf, nis, telefone, nome, includeRelations = false } = searchParams;
-     
-     // Validar que apenas um parâmetro foi fornecido
-     const parametros = [id, cpf, nis, telefone, nome].filter(param => param && param.trim() !== '');
-     
-     if (parametros.length === 0) {
-       throw new BadRequestException('Forneça pelo menos um parâmetro de busca: id, cpf, nis, telefone ou nome');
-     }
-     
-     if (parametros.length > 1) {
-       throw new BadRequestException('Forneça apenas um parâmetro de busca por vez');
-     }
+  /**
+   * Busca unificada de cidadão por ID, CPF, NIS, telefone ou nome
+   * Permite apenas um parâmetro por vez para garantir clareza e previsibilidade
+   * @param searchParams Parâmetros de busca
+   * @returns Dados do cidadão ou lista de cidadãos (no caso de busca por nome)
+   * @throws BadRequestException se nenhum ou mais de um parâmetro for fornecido
+   */
+  async buscarCidadao(searchParams: {
+    id?: string;
+    cpf?: string;
+    nis?: string;
+    telefone?: string;
+    nome?: string;
+    includeRelations?: boolean;
+  }): Promise<CidadaoResponseDto | CidadaoResponseDto[]> {
+    const {
+      id,
+      cpf,
+      nis,
+      telefone,
+      nome,
+      includeRelations = false,
+    } = searchParams;
 
-     try {
-       // Executar busca baseada no parâmetro fornecido
-       if (id) {
-         return await this.findById(id, includeRelations);
-       }
-       
-       if (cpf) {
-         return await this.findByCpf(cpf, includeRelations);
-       }
-       
-       if (nis) {
-         return await this.findByNis(nis, includeRelations);
-       }
-       
-       if (telefone) {
-         return await this.findByTelefone(telefone, includeRelations);
-       }
-       
-       if (nome) {
-         return await this.findByNome(nome, includeRelations);
-       }
+    // Validar que apenas um parâmetro foi fornecido
+    const parametros = [id, cpf, nis, telefone, nome].filter(
+      (param) => param && param.trim() !== '',
+    );
 
-       // Este ponto nunca deve ser alcançado devido à validação acima
-       throw new BadRequestException('Parâmetro de busca inválido');
-     } catch (error) {
-       if (error instanceof BadRequestException || error instanceof NotFoundException) {
-         throw error;
-       }
-       this.logger.error(
-         `Erro na busca unificada de cidadão: ${error.message}`,
-         error.stack,
-       );
-       throw new InternalServerErrorException('Erro ao buscar cidadão');
-     }
-   }
+    if (parametros.length === 0) {
+      throw new BadRequestException(
+        'Forneça pelo menos um parâmetro de busca: id, cpf, nis, telefone ou nome',
+      );
+    }
+
+    if (parametros.length > 1) {
+      throw new BadRequestException(
+        'Forneça apenas um parâmetro de busca por vez',
+      );
+    }
+
+    try {
+      // Executar busca baseada no parâmetro fornecido
+      if (id) {
+        return await this.findById(id, includeRelations);
+      }
+
+      if (cpf) {
+        return await this.findByCpf(cpf, includeRelations);
+      }
+
+      if (nis) {
+        return await this.findByNis(nis, includeRelations);
+      }
+
+      if (telefone) {
+        return await this.findByTelefone(telefone, includeRelations);
+      }
+
+      if (nome) {
+        return await this.findByNome(nome, includeRelations);
+      }
+
+      // Este ponto nunca deve ser alcançado devido à validação acima
+      throw new BadRequestException('Parâmetro de busca inválido');
+    } catch (error) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof NotFoundException
+      ) {
+        throw error;
+      }
+      this.logger.error(
+        `Erro na busca unificada de cidadão: ${error.message}`,
+        error.stack,
+      );
+      throw new InternalServerErrorException('Erro ao buscar cidadão');
+    }
+  }
 
   /**
    * Cria um novo cidadão
@@ -664,7 +775,11 @@ export class CidadaoService {
    * @param cpf CPF do cidadão (opcional)
    * @param nis NIS do cidadão (opcional)
    */
-  private async invalidateCache(cidadao: any, cpf?: string, nis?: string): Promise<void> {
+  private async invalidateCache(
+    cidadao: any,
+    cpf?: string,
+    nis?: string,
+  ): Promise<void> {
     try {
       const keys = [
         `${this.CACHE_PREFIX}id:${cidadao.id}:basic`,
@@ -688,8 +803,10 @@ export class CidadaoService {
 
       // Executa todas as operações de invalidação em paralelo
       await Promise.all(keys.map((key) => this.cacheService.del(key)));
-      
-      this.logger.debug(`Cache invalidado para cidadão ID ${cidadao.id}: ${keys.length} chaves`);
+
+      this.logger.debug(
+        `Cache invalidado para cidadão ID ${cidadao.id}: ${keys.length} chaves`,
+      );
     } catch (error) {
       this.logger.error(
         `Erro ao invalidar cache: ${error.message}`,
@@ -697,53 +814,58 @@ export class CidadaoService {
       );
     }
   }
-  
+
   /**
    * Atualiza o cache para um cidadão usando operações em lote
    * @param cidadao Dados do cidadão
    * @param includeRelations Se inclui relacionamentos (define o tipo de cache)
    */
-  private async updateCidadaoCache(cidadao: CidadaoResponseDto, includeRelations = false): Promise<void> {
+  private async updateCidadaoCache(
+    cidadao: CidadaoResponseDto,
+    includeRelations = false,
+  ): Promise<void> {
     try {
       const cacheType = includeRelations ? 'full' : 'basic';
       const ttl = this.getTTL('cidadao');
       const cacheOperations: Promise<any>[] = [];
-      
+
       // Preparar todas as operações de cache em paralelo
       cacheOperations.push(
         this.cacheService.set(
           `${this.CACHE_PREFIX}id:${cidadao.id}:${cacheType}`,
           cidadao,
-          ttl
-        )
+          ttl,
+        ),
       );
-      
+
       if (cidadao.cpf) {
         const cpfNormalizado = cidadao.cpf.replace(/\D/g, '');
         cacheOperations.push(
           this.cacheService.set(
             `${this.CACHE_PREFIX}cpf:${cpfNormalizado}:${cacheType}`,
             cidadao,
-            ttl
-          )
+            ttl,
+          ),
         );
       }
-      
+
       if (cidadao.nis) {
         const nisNormalizado = cidadao.nis.replace(/\D/g, '');
         cacheOperations.push(
           this.cacheService.set(
             `${this.CACHE_PREFIX}nis:${nisNormalizado}:${cacheType}`,
             cidadao,
-            ttl
-          )
+            ttl,
+          ),
         );
       }
-      
+
       // Executa todas as operações de cache em paralelo
       await Promise.all(cacheOperations);
-      
-      this.logger.debug(`Cache atualizado para cidadão ID ${cidadao.id}: ${cacheOperations.length} operações`);
+
+      this.logger.debug(
+        `Cache atualizado para cidadão ID ${cidadao.id}: ${cacheOperations.length} operações`,
+      );
     } catch (error) {
       this.logger.error(
         `Erro ao atualizar cache: ${error.message}`,
@@ -808,9 +930,10 @@ export class CidadaoService {
         cpf: cpfLimpo,
         ...(nisLimpo && { nis: nisLimpo }),
       });
-      
+
       // Criar o cidadão
-      const cidadaoCriado = await this.cidadaoRepository.create(dadosParaCriacao);
+      const cidadaoCriado =
+        await this.cidadaoRepository.create(dadosParaCriacao);
 
       // Criar papéis para o cidadão, se fornecidos
       if (papeis && papeis.length > 0) {
@@ -834,56 +957,51 @@ export class CidadaoService {
       });
     } catch (error) {
       // Re-lançar exceções já tratadas
-      if (error instanceof ConflictException || error instanceof BadRequestException) {
+      if (
+        error instanceof ConflictException ||
+        error instanceof BadRequestException ||
+        error instanceof AppError
+      ) {
         throw error;
       }
 
-      // Tratar erros específicos do PostgreSQL
+      // Tratar erros específicos do PostgreSQL usando o catálogo
       if (error.code) {
-        switch (error.code) {
-          case '23503': // Violação de chave estrangeira
-            if (error.constraint === 'FK_cidadao_unidade') {
-              throw new BadRequestException(
-                'A unidade informada não existe ou não está ativa. Verifique se a unidade está corretamente cadastrada.',
-              );
-            }
-            throw new BadRequestException(
-              'Dados de relacionamento inválidos. Verifique se todas as referências existem.',
-            );
-          
-          case '23505': // Violação de restrição única
-            if (error.constraint?.includes('cpf')) {
-              throw new ConflictException('Já existe um cidadão cadastrado com este CPF');
-            }
-            if (error.constraint?.includes('nis')) {
-              throw new ConflictException('Já existe um cidadão cadastrado com este NIS');
-            }
-            throw new ConflictException('Já existe um registro com estes dados');
-          
-          case '23514': // Violação de check constraint
-            throw new BadRequestException(
-              'Dados fornecidos não atendem às regras de validação do sistema',
-            );
-          
-          case '23502': // Violação de NOT NULL
-            throw new BadRequestException(
-              'Campos obrigatórios não foram preenchidos corretamente',
-            );
+        // Verificar duplicatas específicas primeiro
+        if (error.code === '23505') {
+          if (error.constraint?.includes('cpf')) {
+            throwDuplicateCpf(cpfLimpo);
+          }
+          if (error.constraint?.includes('nis') && nisLimpo) {
+            throwDuplicateNis(nisLimpo);
+          }
         }
+
+        // Usar o catálogo de erros para outros casos
+        throwFromPostgresError(error.code, error, {
+          operationalContext: {
+            module: 'cidadao',
+            operation: 'create',
+            entityType: 'Cidadao',
+          },
+          metadata: {
+            constraint: error.constraint,
+            table: error.table,
+            column: error.column,
+            detail: error.detail,
+          },
+        });
       }
 
       // Log do erro para debugging
-      this.logger.error(
-        `Erro ao criar cidadão: ${error.message}`,
-        {
-          error: error.message,
-          code: error.code,
-          constraint: error.constraint,
-          detail: error.detail,
-          stack: error.stack,
-        },
-      );
-      
+      this.logger.error(`Erro ao criar cidadão: ${error.message}`, {
+        error: error.message,
+        code: error.code,
+        constraint: error.constraint,
+        detail: error.detail,
+        stack: error.stack,
+      });
+
       throw new InternalServerErrorException(
         'Erro interno do servidor ao criar cidadão. Tente novamente ou entre em contato com o suporte.',
       );
@@ -958,7 +1076,7 @@ export class CidadaoService {
 
       // Normalizar campos de enum antes de atualizar
       const normalizedData = normalizeEnumFields(updateData);
-      
+
       // Atualizar o cidadão
       const cidadaoAtualizado = await this.cidadaoRepository.update(
         id,
@@ -1003,57 +1121,52 @@ export class CidadaoService {
       if (
         error instanceof NotFoundException ||
         error instanceof ConflictException ||
-        error instanceof BadRequestException
+        error instanceof BadRequestException ||
+        error instanceof AppError
       ) {
         throw error;
       }
 
-      // Tratar erros específicos do PostgreSQL
+      // Tratar erros específicos do PostgreSQL usando o catálogo
       if (error.code) {
-        switch (error.code) {
-          case '23503': // Violação de chave estrangeira
-            if (error.constraint === 'FK_cidadao_unidade') {
-              throw new BadRequestException(
-                'A unidade informada não existe ou não está ativa. Verifique se a unidade está corretamente cadastrada.',
-              );
-            }
-            throw new BadRequestException(
-              'Dados de relacionamento inválidos. Verifique se todas as referências existem.',
-            );
-          
-          case '23505': // Violação de restrição única
-            if (error.constraint?.includes('cpf')) {
-              throw new ConflictException('Já existe um cidadão cadastrado com este CPF');
-            }
-            if (error.constraint?.includes('nis')) {
-              throw new ConflictException('Já existe um cidadão cadastrado com este NIS');
-            }
-            throw new ConflictException('Já existe um registro com estes dados');
-          
-          case '23514': // Violação de check constraint
-            throw new BadRequestException(
-              'Dados fornecidos não atendem às regras de validação do sistema',
-            );
-          
-          case '23502': // Violação de NOT NULL
-            throw new BadRequestException(
-              'Campos obrigatórios não foram preenchidos corretamente',
-            );
+        // Verificar duplicatas específicas primeiro
+        if (error.code === '23505') {
+          if (error.constraint?.includes('cpf') && updateCidadaoDto.cpf) {
+            const cpfLimpo = updateCidadaoDto.cpf.replace(/\D/g, '');
+            throwDuplicateCpf(cpfLimpo);
+          }
+          if (error.constraint?.includes('nis') && updateCidadaoDto.nis) {
+            const nisLimpo = updateCidadaoDto.nis.replace(/\D/g, '');
+            throwDuplicateNis(nisLimpo);
+          }
         }
+
+        // Usar o catálogo de erros para outros casos
+        throwFromPostgresError(error.code, error, {
+          operationalContext: {
+            module: 'cidadao',
+            operation: 'update',
+            entityType: 'Cidadao',
+            entityId: id,
+          },
+          metadata: {
+            constraint: error.constraint,
+            table: error.table,
+            column: error.column,
+            detail: error.detail,
+          },
+        });
       }
 
       // Log do erro para debugging
-      this.logger.error(
-        `Erro ao atualizar cidadão: ${error.message}`,
-        {
-          error: error.message,
-          code: error.code,
-          constraint: error.constraint,
-          detail: error.detail,
-          stack: error.stack,
-        },
-      );
-      
+      this.logger.error(`Erro ao atualizar cidadão: ${error.message}`, {
+        error: error.message,
+        code: error.code,
+        constraint: error.constraint,
+        detail: error.detail,
+        stack: error.stack,
+      });
+
       throw new InternalServerErrorException(
         'Erro interno do servidor ao atualizar cidadão. Tente novamente ou entre em contato com o suporte.',
       );
@@ -1095,33 +1208,33 @@ export class CidadaoService {
         throw error;
       }
 
-      // Tratar erros específicos do PostgreSQL
+      // Tratar erros específicos do PostgreSQL usando o catálogo
       if (error.code) {
-        switch (error.code) {
-          case '23503': // Violação de chave estrangeira
-            throw new BadRequestException(
-              'Não é possível remover este cidadão pois existem registros relacionados (solicitações, documentos, etc.). Remova primeiro os registros dependentes.',
-            );
-          
-          case '23514': // Violação de check constraint
-            throw new BadRequestException(
-              'Operação não permitida devido às regras de validação do sistema',
-            );
-        }
+        throwFromPostgresError(error.code, error, {
+          operationalContext: {
+            module: 'cidadao',
+            operation: 'remove',
+            entityType: 'Cidadao',
+            entityId: id,
+          },
+          metadata: {
+            constraint: error.constraint,
+            table: error.table,
+            column: error.column,
+            detail: error.detail,
+          },
+        });
       }
 
       // Log do erro para debugging
-      this.logger.error(
-        `Erro ao remover cidadão: ${error.message}`,
-        {
-          error: error.message,
-          code: error.code,
-          constraint: error.constraint,
-          detail: error.detail,
-          stack: error.stack,
-        },
-      );
-      
+      this.logger.error(`Erro ao remover cidadão: ${error.message}`, {
+        error: error.message,
+        code: error.code,
+        constraint: error.constraint,
+        detail: error.detail,
+        stack: error.stack,
+      });
+
       throw new InternalServerErrorException(
         'Erro interno do servidor ao remover cidadão. Tente novamente ou entre em contato com o suporte.',
       );
@@ -1138,7 +1251,7 @@ export class CidadaoService {
     // Implementação futura
     return [];
   }
-  
+
   /**
    * Busca cidadãos usando paginação por cursor, que é mais eficiente para grandes volumes de dados
    * @param options Opções de paginação e filtros
@@ -1157,35 +1270,42 @@ export class CidadaoService {
       // Cache com TTL mais curto para busca paginada
       const cacheKey = `${this.CACHE_PREFIX}cursor:${JSON.stringify(options)}`;
       const cached = await this.cacheService.get(cacheKey);
-      
+
       if (cached) {
         this.logger.debug(`Cache hit para paginação por cursor: ${cacheKey}`);
         return cached;
       }
-      
+
       // Converter parâmetros de busca para filtros TypeORM
       const where: any = {};
-      
+
       if (options.search) {
         // Busca por nome usando o índice GIN trgm otimizado
         where.nome = options.search;
       }
-      
+
       if (options.bairro) {
         // Busca por bairro usando o índice GIN JSONB otimizado
         where['endereco.bairro'] = options.bairro;
       }
-      
+
       if (options.unidadeId) {
         where.unidade_id = options.unidadeId;
       }
-      
+
       // Campos específicos para reduzir volume de dados transferidos
       const specificFields = [
-        'id', 'nome', 'cpf', 'nis', 'telefone', 'endereco', 
-        'unidade_id', 'created_at', 'updated_at'
+        'id',
+        'nome',
+        'cpf',
+        'nis',
+        'telefone',
+        'endereco',
+        'unidade_id',
+        'created_at',
+        'updated_at',
       ];
-      
+
       // Executar busca no repositório com paginação por cursor
       const result = await this.cidadaoRepository.findByCursor({
         cursor: options.cursor,
@@ -1196,15 +1316,15 @@ export class CidadaoService {
         includeRelations: false,
         specificFields,
       });
-      
+
       // Converter resultados para DTOs
-      const cidadaos = result.items.map(cidadao =>
+      const cidadaos = result.items.map((cidadao) =>
         plainToInstance(CidadaoResponseDto, cidadao, {
           excludeExtraneousValues: true,
           enableImplicitConversion: true,
-        })
+        }),
       );
-      
+
       // Construir resposta com metadados de paginação
       const response = {
         items: cidadaos,
@@ -1215,10 +1335,10 @@ export class CidadaoService {
           hasNextPage: result.hasNextPage,
         },
       };
-      
+
       // Armazenar no cache com TTL mais curto para paginação
       await this.cacheService.set(cacheKey, response, this.getTTL('list'));
-      
+
       return response;
     } catch (error) {
       this.logger.error(
@@ -1250,10 +1370,11 @@ export class CidadaoService {
       }
 
       // Adicionar membro à composição familiar usando o repositório
-      const cidadaoAtualizado = await this.cidadaoRepository.addComposicaoFamiliar(
-        cidadaoId,
-        createComposicaoFamiliarDto,
-      );
+      const cidadaoAtualizado =
+        await this.cidadaoRepository.addComposicaoFamiliar(
+          cidadaoId,
+          createComposicaoFamiliarDto,
+        );
 
       // Invalidar cache
       await this.invalidateCache(cidadaoAtualizado);
@@ -1277,12 +1398,14 @@ export class CidadaoService {
       return cidadaoDto;
     } catch (error) {
       // Propagar erros específicos sem transformá-los
-      if (error instanceof NotFoundException || 
-          error instanceof BadRequestException || 
-          error instanceof ConflictException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException ||
+        error instanceof ConflictException
+      ) {
         throw error;
       }
-      
+
       this.logger.error(
         `Erro ao adicionar membro à composição familiar: ${error.message}`,
         error.stack,

@@ -122,29 +122,37 @@ describe('PermissionService', () => {
         { id: 'perm-3', name: 'usuario.excluir' },
         { id: 'perm-4', name: 'usuario.criar' },
       ];
-      
+
       const now = new Date();
       const futureDate = new Date(now.getTime() + 10000000); // Data futura
       const pastDate = new Date(now.getTime() - 10000000); // Data passada
-      
+
       const mockUserPermissions = [
         { permission: mockPermissions[0], granted: true, validUntil: null }, // Ativa, sem expiração
-        { permission: mockPermissions[1], granted: true, validUntil: futureDate }, // Ativa, não expirada
+        {
+          permission: mockPermissions[1],
+          granted: true,
+          validUntil: futureDate,
+        }, // Ativa, não expirada
         { permission: mockPermissions[2], granted: false, validUntil: null }, // Inativa
         { permission: mockPermissions[3], granted: true, validUntil: pastDate }, // Ativa, mas expirada
       ] as UserPermission[];
 
-      mockUserPermissionRepository.findByUserIdWithPermissions.mockResolvedValue(mockUserPermissions);
+      mockUserPermissionRepository.findByUserIdWithPermissions.mockResolvedValue(
+        mockUserPermissions,
+      );
 
       // Act
       const result = await service.getUserPermissions(userId);
 
       // Assert
-      expect(mockUserPermissionRepository.findByUserIdWithPermissions).toHaveBeenCalledWith(userId);
+      expect(
+        mockUserPermissionRepository.findByUserIdWithPermissions,
+      ).toHaveBeenCalledWith(userId);
       // Deve retornar apenas as permissões ativas e não expiradas
       expect(result).toEqual([mockPermissions[0], mockPermissions[1]]);
     });
-    
+
     it('should return all user permissions when includeInactive is true', async () => {
       // Arrange
       const userId = 'user-123';
@@ -154,25 +162,33 @@ describe('PermissionService', () => {
         { id: 'perm-3', name: 'usuario.excluir' },
         { id: 'perm-4', name: 'usuario.criar' },
       ];
-      
+
       const now = new Date();
       const futureDate = new Date(now.getTime() + 10000000); // Data futura
       const pastDate = new Date(now.getTime() - 10000000); // Data passada
-      
+
       const mockUserPermissions = [
         { permission: mockPermissions[0], granted: true, validUntil: null }, // Ativa, sem expiração
-        { permission: mockPermissions[1], granted: true, validUntil: futureDate }, // Ativa, não expirada
+        {
+          permission: mockPermissions[1],
+          granted: true,
+          validUntil: futureDate,
+        }, // Ativa, não expirada
         { permission: mockPermissions[2], granted: false, validUntil: null }, // Inativa
         { permission: mockPermissions[3], granted: true, validUntil: pastDate }, // Ativa, mas expirada
       ] as UserPermission[];
 
-      mockUserPermissionRepository.findByUserIdWithPermissions.mockResolvedValue(mockUserPermissions);
+      mockUserPermissionRepository.findByUserIdWithPermissions.mockResolvedValue(
+        mockUserPermissions,
+      );
 
       // Act
       const result = await service.getUserPermissions(userId, true);
 
       // Assert
-      expect(mockUserPermissionRepository.findByUserIdWithPermissions).toHaveBeenCalledWith(userId);
+      expect(
+        mockUserPermissionRepository.findByUserIdWithPermissions,
+      ).toHaveBeenCalledWith(userId);
       // Deve retornar todas as permissões
       expect(result).toEqual(mockPermissions);
     });
@@ -180,16 +196,20 @@ describe('PermissionService', () => {
     it('should return empty array when user has no permissions', async () => {
       // Arrange
       const userId = 'user-123';
-      mockUserPermissionRepository.findByUserIdWithPermissions.mockResolvedValue([]);
+      mockUserPermissionRepository.findByUserIdWithPermissions.mockResolvedValue(
+        [],
+      );
 
       // Act
       const result = await service.getUserPermissions(userId);
 
       // Assert
-      expect(mockUserPermissionRepository.findByUserIdWithPermissions).toHaveBeenCalledWith(userId);
+      expect(
+        mockUserPermissionRepository.findByUserIdWithPermissions,
+      ).toHaveBeenCalledWith(userId);
       expect(result).toEqual([]);
     });
-    
+
     it('should return empty array when userId is not provided', async () => {
       // Arrange
       const userId = '';
@@ -198,20 +218,26 @@ describe('PermissionService', () => {
       const result = await service.getUserPermissions(userId);
 
       // Assert
-      expect(mockUserPermissionRepository.findByUserIdWithPermissions).not.toHaveBeenCalled();
+      expect(
+        mockUserPermissionRepository.findByUserIdWithPermissions,
+      ).not.toHaveBeenCalled();
       expect(result).toEqual([]);
     });
-    
+
     it('should handle errors and return empty array', async () => {
       // Arrange
       const userId = 'user-123';
-      mockUserPermissionRepository.findByUserIdWithPermissions.mockRejectedValue(new Error('Database error'));
+      mockUserPermissionRepository.findByUserIdWithPermissions.mockRejectedValue(
+        new Error('Database error'),
+      );
 
       // Act
       const result = await service.getUserPermissions(userId);
 
       // Assert
-      expect(mockUserPermissionRepository.findByUserIdWithPermissions).toHaveBeenCalledWith(userId);
+      expect(
+        mockUserPermissionRepository.findByUserIdWithPermissions,
+      ).toHaveBeenCalledWith(userId);
       expect(result).toEqual([]);
     });
   });
@@ -225,7 +251,10 @@ describe('PermissionService', () => {
         scopeType: ScopeType.GLOBAL,
       };
 
-      const mockPermission = { id: 'perm-1', name: 'usuario.visualizar' } as Permission;
+      const mockPermission = {
+        id: 'perm-1',
+        name: 'usuario.visualizar',
+      } as Permission;
       const mockUserPermission = {
         id: 'up-1',
         userId: 'user-123',
@@ -238,24 +267,25 @@ describe('PermissionService', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         createdBy: 'admin-user',
-        updatedBy: null
+        updatedBy: null,
       } as UserPermission;
 
       // Configurar o mock para retornar do cache primeiro
       mockCacheManager.get.mockResolvedValue(null); // Não está em cache
 
       // Configurar o mock para encontrar a permissão
-      mockUserPermissionRepository.findByUserIdAndPermissionName.mockResolvedValue([mockUserPermission]);
+      mockUserPermissionRepository.findByUserIdAndPermissionName.mockResolvedValue(
+        [mockUserPermission],
+      );
 
       // Act
       const result = await service.hasPermission(options);
 
       // Assert
       expect(mockCacheManager.get).toHaveBeenCalled();
-      expect(mockUserPermissionRepository.findByUserIdAndPermissionName).toHaveBeenCalledWith(
-        'user-123',
-        'usuario.visualizar',
-      );
+      expect(
+        mockUserPermissionRepository.findByUserIdAndPermissionName,
+      ).toHaveBeenCalledWith('user-123', 'usuario.visualizar');
       expect(mockCacheManager.set).toHaveBeenCalled(); // Deve armazenar em cache
       expect(result).toBe(true);
     });
@@ -272,17 +302,18 @@ describe('PermissionService', () => {
       mockCacheManager.get.mockResolvedValue(null); // Não está em cache
 
       // Configurar o mock para não encontrar a permissão
-      mockUserPermissionRepository.findByUserIdAndPermissionName.mockResolvedValue([]);
+      mockUserPermissionRepository.findByUserIdAndPermissionName.mockResolvedValue(
+        [],
+      );
 
       // Act
       const result = await service.hasPermission(options);
 
       // Assert
       expect(mockCacheManager.get).toHaveBeenCalled();
-      expect(mockUserPermissionRepository.findByUserIdAndPermissionName).toHaveBeenCalledWith(
-        'user-123',
-        'usuario.visualizar',
-      );
+      expect(
+        mockUserPermissionRepository.findByUserIdAndPermissionName,
+      ).toHaveBeenCalledWith('user-123', 'usuario.visualizar');
       expect(mockCacheManager.set).toHaveBeenCalled(); // Deve armazenar em cache
       expect(result).toBe(false);
     });
@@ -295,7 +326,10 @@ describe('PermissionService', () => {
         scopeType: ScopeType.GLOBAL,
       };
 
-      const mockWildcardPermission = { id: 'perm-1', name: 'usuario.visualizar.*' } as Permission;
+      const mockWildcardPermission = {
+        id: 'perm-1',
+        name: 'usuario.visualizar.*',
+      } as Permission;
       const mockUserPermission = {
         id: 'up-1',
         userId: 'user-123',
@@ -308,28 +342,33 @@ describe('PermissionService', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         createdBy: 'admin-user',
-        updatedBy: null
+        updatedBy: null,
       } as UserPermission;
 
       // Configurar o mock para retornar do cache primeiro
       mockCacheManager.get.mockResolvedValue(null); // Não está em cache
 
       // Configurar o mock para não encontrar a permissão exata
-      mockUserPermissionRepository.findByUserIdAndPermissionName.mockResolvedValue([]);
+      mockUserPermissionRepository.findByUserIdAndPermissionName.mockResolvedValue(
+        [],
+      );
 
       // Configurar o mock para encontrar permissões com wildcard
-      mockPermissionRepository.findByPattern.mockResolvedValue([mockWildcardPermission]);
-      mockUserPermissionRepository.findByUserIdWithPermissions.mockResolvedValue([mockUserPermission]);
+      mockPermissionRepository.findByPattern.mockResolvedValue([
+        mockWildcardPermission,
+      ]);
+      mockUserPermissionRepository.findByUserIdWithPermissions.mockResolvedValue(
+        [mockUserPermission],
+      );
 
       // Act
       const result = await service.hasPermission(options);
 
       // Assert
       expect(mockCacheManager.get).toHaveBeenCalled();
-      expect(mockUserPermissionRepository.findByUserIdAndPermissionName).toHaveBeenCalledWith(
-        'user-123',
-        'usuario.visualizar.detalhes',
-      );
+      expect(
+        mockUserPermissionRepository.findByUserIdAndPermissionName,
+      ).toHaveBeenCalledWith('user-123', 'usuario.visualizar.detalhes');
       expect(mockPermissionRepository.findByPattern).toHaveBeenCalled();
       expect(mockCacheManager.set).toHaveBeenCalled(); // Deve armazenar em cache
       expect(result).toBe(true);
@@ -351,7 +390,9 @@ describe('PermissionService', () => {
 
       // Assert
       expect(mockCacheManager.get).toHaveBeenCalled();
-      expect(mockUserPermissionRepository.findByUserIdAndPermissionName).not.toHaveBeenCalled(); // Não deve chamar o repositório
+      expect(
+        mockUserPermissionRepository.findByUserIdAndPermissionName,
+      ).not.toHaveBeenCalled(); // Não deve chamar o repositório
       expect(result).toBe(true);
     });
   });
@@ -365,13 +406,18 @@ describe('PermissionService', () => {
       const scopeId = undefined;
       const createdBy = 'admin-user';
 
-      const mockPermission = { id: 'perm-1', name: 'usuario.visualizar' } as Permission;
+      const mockPermission = {
+        id: 'perm-1',
+        name: 'usuario.visualizar',
+      } as Permission;
 
       // Configurar o mock para encontrar a permissão
       mockPermissionRepository.findByName.mockResolvedValue(mockPermission);
-      
+
       // Configurar o mock para não encontrar permissão existente
-      mockUserPermissionRepository.findByUserAndPermission.mockResolvedValue(null);
+      mockUserPermissionRepository.findByUserAndPermission.mockResolvedValue(
+        null,
+      );
 
       // Configurar o mock para criar a permissão do usuário
       mockUserPermissionRepository.createUserPermission.mockResolvedValue({
@@ -381,7 +427,7 @@ describe('PermissionService', () => {
         scopeType,
         scopeId,
         granted: true,
-        createdBy
+        createdBy,
       });
 
       // Act
@@ -395,14 +441,15 @@ describe('PermissionService', () => {
       );
 
       // Assert
-      expect(mockPermissionRepository.findByName).toHaveBeenCalledWith(permissionName);
-      expect(mockUserPermissionRepository.findByUserAndPermission).toHaveBeenCalledWith(
-        userId,
-        mockPermission.id,
-        scopeType,
-        undefined
+      expect(mockPermissionRepository.findByName).toHaveBeenCalledWith(
+        permissionName,
       );
-      expect(mockUserPermissionRepository.createUserPermission).toHaveBeenCalledWith({
+      expect(
+        mockUserPermissionRepository.findByUserAndPermission,
+      ).toHaveBeenCalledWith(userId, mockPermission.id, scopeType, undefined);
+      expect(
+        mockUserPermissionRepository.createUserPermission,
+      ).toHaveBeenCalledWith({
         userId,
         permissionId: mockPermission.id,
         granted: true,
@@ -414,7 +461,7 @@ describe('PermissionService', () => {
       expect(mockCacheManager.del).toHaveBeenCalled(); // Deve limpar o cache
       expect(result).toBe(true);
     });
-    
+
     it('should update an existing permission for a user', async () => {
       // Arrange
       const userId = 'user-123';
@@ -424,7 +471,10 @@ describe('PermissionService', () => {
       const createdBy = 'admin-user';
       const validUntil = new Date('2026-01-01');
 
-      const mockPermission = { id: 'perm-1', name: 'usuario.visualizar' } as Permission;
+      const mockPermission = {
+        id: 'perm-1',
+        name: 'usuario.visualizar',
+      } as Permission;
       const existingPermission = {
         id: 'up-1',
         userId,
@@ -432,21 +482,23 @@ describe('PermissionService', () => {
         scopeType,
         scopeId: undefined,
         granted: false,
-        validUntil: null
+        validUntil: null,
       };
 
       // Configurar o mock para encontrar a permissão
       mockPermissionRepository.findByName.mockResolvedValue(mockPermission);
-      
+
       // Configurar o mock para encontrar permissão existente
-      mockUserPermissionRepository.findByUserAndPermission.mockResolvedValue(existingPermission);
+      mockUserPermissionRepository.findByUserAndPermission.mockResolvedValue(
+        existingPermission,
+      );
 
       // Configurar o mock para atualizar a permissão do usuário
       mockUserPermissionRepository.updateUserPermission.mockResolvedValue({
         ...existingPermission,
         granted: true,
         validUntil,
-        updatedBy: createdBy
+        updatedBy: createdBy,
       });
 
       // Act
@@ -460,21 +512,19 @@ describe('PermissionService', () => {
       );
 
       // Assert
-      expect(mockPermissionRepository.findByName).toHaveBeenCalledWith(permissionName);
-      expect(mockUserPermissionRepository.findByUserAndPermission).toHaveBeenCalledWith(
-        userId,
-        mockPermission.id,
-        scopeType,
-        undefined
+      expect(mockPermissionRepository.findByName).toHaveBeenCalledWith(
+        permissionName,
       );
-      expect(mockUserPermissionRepository.updateUserPermission).toHaveBeenCalledWith(
-        existingPermission.id,
-        {
-          granted: true,
-          validUntil,
-          updatedBy: createdBy,
-        }
-      );
+      expect(
+        mockUserPermissionRepository.findByUserAndPermission,
+      ).toHaveBeenCalledWith(userId, mockPermission.id, scopeType, undefined);
+      expect(
+        mockUserPermissionRepository.updateUserPermission,
+      ).toHaveBeenCalledWith(existingPermission.id, {
+        granted: true,
+        validUntil,
+        updatedBy: createdBy,
+      });
       expect(mockCacheManager.del).toHaveBeenCalled(); // Deve limpar o cache
       expect(result).toBe(true);
     });
@@ -501,13 +551,21 @@ describe('PermissionService', () => {
       );
 
       // Assert
-      expect(mockPermissionRepository.findByName).toHaveBeenCalledWith(permissionName);
-      expect(mockUserPermissionRepository.findByUserAndPermission).not.toHaveBeenCalled();
-      expect(mockUserPermissionRepository.createUserPermission).not.toHaveBeenCalled();
-      expect(mockUserPermissionRepository.updateUserPermission).not.toHaveBeenCalled();
+      expect(mockPermissionRepository.findByName).toHaveBeenCalledWith(
+        permissionName,
+      );
+      expect(
+        mockUserPermissionRepository.findByUserAndPermission,
+      ).not.toHaveBeenCalled();
+      expect(
+        mockUserPermissionRepository.createUserPermission,
+      ).not.toHaveBeenCalled();
+      expect(
+        mockUserPermissionRepository.updateUserPermission,
+      ).not.toHaveBeenCalled();
       expect(result).toBe(false);
     });
-    
+
     it('should return false when userId is not provided', async () => {
       // Arrange
       const userId = '';
@@ -528,10 +586,12 @@ describe('PermissionService', () => {
 
       // Assert
       expect(mockPermissionRepository.findByName).not.toHaveBeenCalled();
-      expect(mockUserPermissionRepository.findByUserAndPermission).not.toHaveBeenCalled();
+      expect(
+        mockUserPermissionRepository.findByUserAndPermission,
+      ).not.toHaveBeenCalled();
       expect(result).toBe(false);
     });
-    
+
     it('should return false when trying to grant permission with UNIT scope but no scopeId', async () => {
       // Arrange
       const userId = 'user-123';
@@ -552,10 +612,12 @@ describe('PermissionService', () => {
 
       // Assert
       expect(mockPermissionRepository.findByName).not.toHaveBeenCalled();
-      expect(mockUserPermissionRepository.findByUserAndPermission).not.toHaveBeenCalled();
+      expect(
+        mockUserPermissionRepository.findByUserAndPermission,
+      ).not.toHaveBeenCalled();
       expect(result).toBe(false);
     });
-    
+
     it('should return false when validUntil is in the past', async () => {
       // Arrange
       const userId = 'user-123';
@@ -577,7 +639,9 @@ describe('PermissionService', () => {
 
       // Assert
       expect(mockPermissionRepository.findByName).not.toHaveBeenCalled();
-      expect(mockUserPermissionRepository.findByUserAndPermission).not.toHaveBeenCalled();
+      expect(
+        mockUserPermissionRepository.findByUserAndPermission,
+      ).not.toHaveBeenCalled();
       expect(result).toBe(false);
     });
   });
@@ -591,7 +655,10 @@ describe('PermissionService', () => {
       const scopeId = undefined;
       const revokedBy = 'admin-user';
 
-      const mockPermission = { id: 'perm-1', name: 'usuario.visualizar' } as Permission;
+      const mockPermission = {
+        id: 'perm-1',
+        name: 'usuario.visualizar',
+      } as Permission;
       const mockUserPermission = {
         id: 'up-1',
         userId,
@@ -599,20 +666,22 @@ describe('PermissionService', () => {
         scopeType,
         scopeId: undefined,
         granted: true,
-        validUntil: null
+        validUntil: null,
       };
 
       // Configurar o mock para encontrar a permissão
       mockPermissionRepository.findByName.mockResolvedValue(mockPermission);
 
       // Configurar o mock para encontrar a permissão do usuário
-      mockUserPermissionRepository.findByUserAndPermission.mockResolvedValue(mockUserPermission);
+      mockUserPermissionRepository.findByUserAndPermission.mockResolvedValue(
+        mockUserPermission,
+      );
 
       // Configurar o mock para atualizar a permissão do usuário
       mockUserPermissionRepository.updateUserPermission.mockResolvedValue({
         ...mockUserPermission,
         granted: false,
-        updatedBy: revokedBy
+        updatedBy: revokedBy,
       });
 
       // Act
@@ -625,24 +694,22 @@ describe('PermissionService', () => {
       );
 
       // Assert
-      expect(mockPermissionRepository.findByName).toHaveBeenCalledWith(permissionName);
-      expect(mockUserPermissionRepository.findByUserAndPermission).toHaveBeenCalledWith(
-        userId,
-        mockPermission.id,
-        scopeType,
-        undefined
+      expect(mockPermissionRepository.findByName).toHaveBeenCalledWith(
+        permissionName,
       );
-      expect(mockUserPermissionRepository.updateUserPermission).toHaveBeenCalledWith(
-        mockUserPermission.id,
-        {
-          granted: false,
-          updatedBy: revokedBy,
-        }
-      );
+      expect(
+        mockUserPermissionRepository.findByUserAndPermission,
+      ).toHaveBeenCalledWith(userId, mockPermission.id, scopeType, undefined);
+      expect(
+        mockUserPermissionRepository.updateUserPermission,
+      ).toHaveBeenCalledWith(mockUserPermission.id, {
+        granted: false,
+        updatedBy: revokedBy,
+      });
       expect(mockCacheManager.del).toHaveBeenCalled(); // Deve limpar o cache
       expect(result).toBe(true);
     });
-    
+
     it('should return true when permission is already revoked', async () => {
       // Arrange
       const userId = 'user-123';
@@ -651,7 +718,10 @@ describe('PermissionService', () => {
       const scopeId = undefined;
       const revokedBy = 'admin-user';
 
-      const mockPermission = { id: 'perm-1', name: 'usuario.visualizar' } as Permission;
+      const mockPermission = {
+        id: 'perm-1',
+        name: 'usuario.visualizar',
+      } as Permission;
       const mockUserPermission = {
         id: 'up-1',
         userId,
@@ -659,14 +729,16 @@ describe('PermissionService', () => {
         scopeType,
         scopeId: undefined,
         granted: false, // Já está revogada
-        validUntil: null
+        validUntil: null,
       };
 
       // Configurar o mock para encontrar a permissão
       mockPermissionRepository.findByName.mockResolvedValue(mockPermission);
 
       // Configurar o mock para encontrar a permissão do usuário (já revogada)
-      mockUserPermissionRepository.findByUserAndPermission.mockResolvedValue(mockUserPermission);
+      mockUserPermissionRepository.findByUserAndPermission.mockResolvedValue(
+        mockUserPermission,
+      );
 
       // Act
       const result = await service.revokePermission(
@@ -678,14 +750,15 @@ describe('PermissionService', () => {
       );
 
       // Assert
-      expect(mockPermissionRepository.findByName).toHaveBeenCalledWith(permissionName);
-      expect(mockUserPermissionRepository.findByUserAndPermission).toHaveBeenCalledWith(
-        userId,
-        mockPermission.id,
-        scopeType,
-        undefined
+      expect(mockPermissionRepository.findByName).toHaveBeenCalledWith(
+        permissionName,
       );
-      expect(mockUserPermissionRepository.updateUserPermission).not.toHaveBeenCalled();
+      expect(
+        mockUserPermissionRepository.findByUserAndPermission,
+      ).toHaveBeenCalledWith(userId, mockPermission.id, scopeType, undefined);
+      expect(
+        mockUserPermissionRepository.updateUserPermission,
+      ).not.toHaveBeenCalled();
       expect(result).toBe(true);
     });
 
@@ -710,12 +783,18 @@ describe('PermissionService', () => {
       );
 
       // Assert
-      expect(mockPermissionRepository.findByName).toHaveBeenCalledWith(permissionName);
-      expect(mockUserPermissionRepository.findByUserAndPermission).not.toHaveBeenCalled();
-      expect(mockUserPermissionRepository.updateUserPermission).not.toHaveBeenCalled();
+      expect(mockPermissionRepository.findByName).toHaveBeenCalledWith(
+        permissionName,
+      );
+      expect(
+        mockUserPermissionRepository.findByUserAndPermission,
+      ).not.toHaveBeenCalled();
+      expect(
+        mockUserPermissionRepository.updateUserPermission,
+      ).not.toHaveBeenCalled();
       expect(result).toBe(false);
     });
-    
+
     it('should return false when user does not have the permission', async () => {
       // Arrange
       const userId = 'user-123';
@@ -724,13 +803,18 @@ describe('PermissionService', () => {
       const scopeId = undefined;
       const revokedBy = 'admin-user';
 
-      const mockPermission = { id: 'perm-1', name: 'usuario.visualizar' } as Permission;
+      const mockPermission = {
+        id: 'perm-1',
+        name: 'usuario.visualizar',
+      } as Permission;
 
       // Configurar o mock para encontrar a permissão
       mockPermissionRepository.findByName.mockResolvedValue(mockPermission);
 
       // Configurar o mock para não encontrar a permissão do usuário
-      mockUserPermissionRepository.findByUserAndPermission.mockResolvedValue(null);
+      mockUserPermissionRepository.findByUserAndPermission.mockResolvedValue(
+        null,
+      );
 
       // Act
       const result = await service.revokePermission(
@@ -742,17 +826,18 @@ describe('PermissionService', () => {
       );
 
       // Assert
-      expect(mockPermissionRepository.findByName).toHaveBeenCalledWith(permissionName);
-      expect(mockUserPermissionRepository.findByUserAndPermission).toHaveBeenCalledWith(
-        userId,
-        mockPermission.id,
-        scopeType,
-        undefined
+      expect(mockPermissionRepository.findByName).toHaveBeenCalledWith(
+        permissionName,
       );
-      expect(mockUserPermissionRepository.updateUserPermission).not.toHaveBeenCalled();
+      expect(
+        mockUserPermissionRepository.findByUserAndPermission,
+      ).toHaveBeenCalledWith(userId, mockPermission.id, scopeType, undefined);
+      expect(
+        mockUserPermissionRepository.updateUserPermission,
+      ).not.toHaveBeenCalled();
       expect(result).toBe(false);
     });
-    
+
     it('should return false when userId is not provided', async () => {
       // Arrange
       const userId = '';
@@ -772,10 +857,12 @@ describe('PermissionService', () => {
 
       // Assert
       expect(mockPermissionRepository.findByName).not.toHaveBeenCalled();
-      expect(mockUserPermissionRepository.findByUserAndPermission).not.toHaveBeenCalled();
+      expect(
+        mockUserPermissionRepository.findByUserAndPermission,
+      ).not.toHaveBeenCalled();
       expect(result).toBe(false);
     });
-    
+
     it('should return false when trying to revoke permission with UNIT scope but no scopeId', async () => {
       // Arrange
       const userId = 'user-123';
@@ -795,174 +882,212 @@ describe('PermissionService', () => {
 
       // Assert
       expect(mockPermissionRepository.findByName).not.toHaveBeenCalled();
-      expect(mockUserPermissionRepository.findByUserAndPermission).not.toHaveBeenCalled();
+      expect(
+        mockUserPermissionRepository.findByUserAndPermission,
+      ).not.toHaveBeenCalled();
       expect(result).toBe(false);
     });
   });
-  
+
   describe('createPermission', () => {
     it('should create a new permission', async () => {
       // Arrange
       const permissionName = 'modulo.operacao';
       const description = 'Descrição da permissão';
       const createdBy = 'admin-user';
-      
+
       const mockPermission = {
         id: 'perm-1',
         name: permissionName,
         description,
-        createdBy
+        createdBy,
       } as Permission;
-      
+
       // Configurar o mock para não encontrar a permissão existente
       mockPermissionRepository.findByName.mockResolvedValue(null);
-      
+
       // Configurar o mock para criar a permissão
       mockPermissionRepository.create.mockReturnValue(mockPermission);
       mockPermissionRepository.save.mockResolvedValue({
         ...mockPermission,
-        id: 'perm-1'
+        id: 'perm-1',
       });
-      
+
       // Act
-      const result = await service.createPermission(permissionName, description, createdBy);
-      
+      const result = await service.createPermission(
+        permissionName,
+        description,
+        createdBy,
+      );
+
       // Assert
-      expect(mockPermissionRepository.findByName).toHaveBeenCalledWith(permissionName);
+      expect(mockPermissionRepository.findByName).toHaveBeenCalledWith(
+        permissionName,
+      );
       expect(mockPermissionRepository.create).toHaveBeenCalledWith({
         name: permissionName,
         description,
-        createdBy
+        createdBy,
       });
       expect(mockPermissionRepository.save).toHaveBeenCalled();
       expect(result).toEqual(mockPermission);
     });
-    
+
     it('should return existing permission if it already exists', async () => {
       // Arrange
       const permissionName = 'modulo.operacao';
       const description = 'Descrição da permissão';
       const createdBy = 'admin-user';
-      
+
       const existingPermission = {
         id: 'perm-1',
         name: permissionName,
         description: 'Permissão existente',
-        createdBy: 'outro-usuario'
+        createdBy: 'outro-usuario',
       } as Permission;
-      
+
       // Configurar o mock para encontrar a permissão existente
       mockPermissionRepository.findByName.mockResolvedValue(existingPermission);
-      
+
       // Act
-      const result = await service.createPermission(permissionName, description, createdBy);
-      
+      const result = await service.createPermission(
+        permissionName,
+        description,
+        createdBy,
+      );
+
       // Assert
-      expect(mockPermissionRepository.findByName).toHaveBeenCalledWith(permissionName);
+      expect(mockPermissionRepository.findByName).toHaveBeenCalledWith(
+        permissionName,
+      );
       expect(mockPermissionRepository.create).not.toHaveBeenCalled();
       expect(mockPermissionRepository.save).not.toHaveBeenCalled();
       expect(result).toEqual(existingPermission);
     });
-    
+
     it('should return null when permission name is invalid', async () => {
       // Arrange
       const permissionName = 'permissao-invalida'; // Sem ponto
       const description = 'Descrição da permissão';
       const createdBy = 'admin-user';
-      
+
       // Act
-      const result = await service.createPermission(permissionName, description, createdBy);
-      
+      const result = await service.createPermission(
+        permissionName,
+        description,
+        createdBy,
+      );
+
       // Assert
       expect(mockPermissionRepository.findByName).not.toHaveBeenCalled();
       expect(mockPermissionRepository.create).not.toHaveBeenCalled();
       expect(mockPermissionRepository.save).not.toHaveBeenCalled();
       expect(result).toBeNull();
     });
-    
+
     it('should handle errors and return null', async () => {
       // Arrange
       const permissionName = 'modulo.operacao';
       const description = 'Descrição da permissão';
       const createdBy = 'admin-user';
-      
+
       // Configurar o mock para lançar um erro
-      mockPermissionRepository.findByName.mockRejectedValue(new Error('Database error'));
-      
+      mockPermissionRepository.findByName.mockRejectedValue(
+        new Error('Database error'),
+      );
+
       // Act
-      const result = await service.createPermission(permissionName, description, createdBy);
-      
+      const result = await service.createPermission(
+        permissionName,
+        description,
+        createdBy,
+      );
+
       // Assert
-      expect(mockPermissionRepository.findByName).toHaveBeenCalledWith(permissionName);
+      expect(mockPermissionRepository.findByName).toHaveBeenCalledWith(
+        permissionName,
+      );
       expect(result).toBeNull();
     });
   });
-  
+
   describe('createPermissionIfNotExists', () => {
     it('should create a new permission if it does not exist', async () => {
       // Arrange
       const permissionName = 'modulo.operacao';
       const description = 'Descrição da permissão';
       const createdBy = 'admin-user';
-      
+
       const mockPermission = {
         id: 'perm-1',
         name: permissionName,
         description,
-        createdBy
+        createdBy,
       } as Permission;
-      
+
       // Configurar o mock para não encontrar a permissão existente
       mockPermissionRepository.findByName.mockResolvedValue(null);
-      
+
       // Configurar o mock para criar a permissão
       mockPermissionRepository.create.mockReturnValue(mockPermission);
       mockPermissionRepository.save.mockResolvedValue({
         ...mockPermission,
-        id: 'perm-1'
+        id: 'perm-1',
       });
-      
+
       // Act
-      const result = await service.createPermissionIfNotExists(permissionName, description, createdBy);
-      
+      const result = await service.createPermissionIfNotExists(
+        permissionName,
+        description,
+        createdBy,
+      );
+
       // Assert
-      expect(mockPermissionRepository.findByName).toHaveBeenCalledWith(permissionName);
+      expect(mockPermissionRepository.findByName).toHaveBeenCalledWith(
+        permissionName,
+      );
       expect(mockPermissionRepository.create).toHaveBeenCalledWith({
         name: permissionName,
         description,
-        createdBy
+        createdBy,
       });
       expect(mockPermissionRepository.save).toHaveBeenCalled();
       expect(result).toEqual(mockPermission);
     });
-    
+
     it('should return existing permission if it already exists', async () => {
       // Arrange
       const permissionName = 'modulo.operacao';
       const description = 'Descrição da permissão';
       const createdBy = 'admin-user';
-      
+
       const existingPermission = {
         id: 'perm-1',
         name: permissionName,
         description: 'Permissão existente',
-        createdBy: 'outro-usuario'
+        createdBy: 'outro-usuario',
       } as Permission;
-      
+
       // Configurar o mock para encontrar a permissão existente
       mockPermissionRepository.findByName.mockResolvedValue(existingPermission);
-      
+
       // Act
-      const result = await service.createPermissionIfNotExists(permissionName, description, createdBy);
-      
+      const result = await service.createPermissionIfNotExists(
+        permissionName,
+        description,
+        createdBy,
+      );
+
       // Assert
-      expect(mockPermissionRepository.findByName).toHaveBeenCalledWith(permissionName);
+      expect(mockPermissionRepository.findByName).toHaveBeenCalledWith(
+        permissionName,
+      );
       expect(mockPermissionRepository.create).not.toHaveBeenCalled();
       expect(mockPermissionRepository.save).not.toHaveBeenCalled();
       expect(result).toEqual(existingPermission);
     });
   });
-  
+
   describe('checkCompositePermission', () => {
     it('should return true when user has a wildcard module permission', async () => {
       // Arrange
@@ -970,8 +1095,11 @@ describe('PermissionService', () => {
       const permissionName = 'usuario.visualizar.detalhes';
       const scopeType = ScopeType.GLOBAL;
       const scopeId = undefined;
-      
-      const wildcardPermission = { id: 'perm-wild', name: 'usuario.*' } as Permission;
+
+      const wildcardPermission = {
+        id: 'perm-wild',
+        name: 'usuario.*',
+      } as Permission;
       const userPermission = {
         id: 'up-wild-1',
         userId: 'user-123',
@@ -984,42 +1112,56 @@ describe('PermissionService', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         createdBy: 'admin-user',
-        updatedBy: null
+        updatedBy: null,
       } as UserPermission;
-      
+
       // Mock para o cache
       mockCacheManager.get.mockResolvedValue(null); // Não tem em cache
-      
+
       // Mock para encontrar a permissão wildcard
       mockPermissionRepository.findByName.mockResolvedValue(wildcardPermission);
-      
+
       // Mock para encontrar as permissões do usuário
-      mockUserPermissionRepository.findByUserAndPermission.mockResolvedValue(userPermission);
-      
+      mockUserPermissionRepository.findByUserAndPermission.mockResolvedValue(
+        userPermission,
+      );
+
       // Act
-      const result = await service.checkCompositePermission(userId, permissionName, scopeType, scopeId);
-      
+      const result = await service.checkCompositePermission(
+        userId,
+        permissionName,
+        scopeType,
+        scopeId,
+      );
+
       // Assert
       expect(mockCacheManager.get).toHaveBeenCalled();
-      expect(mockPermissionRepository.findByName).toHaveBeenCalledWith('usuario.*');
-      expect(mockUserPermissionRepository.findByUserAndPermission).toHaveBeenCalledWith(
+      expect(mockPermissionRepository.findByName).toHaveBeenCalledWith(
+        'usuario.*',
+      );
+      expect(
+        mockUserPermissionRepository.findByUserAndPermission,
+      ).toHaveBeenCalledWith(
         userId,
         wildcardPermission.id,
         ScopeType.GLOBAL,
-        undefined
+        undefined,
       );
       expect(mockCacheManager.set).toHaveBeenCalled(); // Deve armazenar em cache
       expect(result).toBe(true);
     });
-    
+
     it('should return true when user has a wildcard operation permission', async () => {
       // Arrange
       const userId = 'user-123';
       const permissionName = 'usuario.visualizar.detalhes';
       const scopeType = ScopeType.GLOBAL;
       const scopeId = undefined;
-      
-      const wildcardPermission = { id: 'perm-wild', name: '*.detalhes' } as Permission;
+
+      const wildcardPermission = {
+        id: 'perm-wild',
+        name: '*.detalhes',
+      } as Permission;
       const userPermission = {
         id: 'up-wild-1',
         userId: 'user-123',
@@ -1032,47 +1174,68 @@ describe('PermissionService', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         createdBy: 'admin-user',
-        updatedBy: null
+        updatedBy: null,
       } as UserPermission;
-      
+
       // Mock para o cache
       mockCacheManager.get.mockImplementation((key) => {
-        if (key.includes('usuario.*')) {return null;}
-        if (key.includes(permissionName)) {return null;}
+        if (key.includes('usuario.*')) {
+          return null;
+        }
+        if (key.includes(permissionName)) {
+          return null;
+        }
         return null;
       });
-      
+
       // Mock para encontrar a permissão wildcard
       mockPermissionRepository.findByName.mockImplementation((name) => {
-        if (name === 'usuario.*') {return null;}
-        if (name === '*.detalhes') {return wildcardPermission;}
+        if (name === 'usuario.*') {
+          return null;
+        }
+        if (name === '*.detalhes') {
+          return wildcardPermission;
+        }
         return null;
       });
-      
+
       // Mock para encontrar as permissões do usuário
-      mockUserPermissionRepository.findByUserAndPermission.mockImplementation((uid, permId, scopeT, scopeI) => {
-        if (permId === wildcardPermission.id) {return userPermission;}
-        return null;
-      });
-      
+      mockUserPermissionRepository.findByUserAndPermission.mockImplementation(
+        (uid, permId, scopeT, scopeI) => {
+          if (permId === wildcardPermission.id) {
+            return userPermission;
+          }
+          return null;
+        },
+      );
+
       // Act
-      const result = await service.checkCompositePermission(userId, permissionName, scopeType, scopeId);
-      
+      const result = await service.checkCompositePermission(
+        userId,
+        permissionName,
+        scopeType,
+        scopeId,
+      );
+
       // Assert
       expect(mockCacheManager.get).toHaveBeenCalled();
-      expect(mockPermissionRepository.findByName).toHaveBeenCalledWith('*.detalhes');
-      expect(mockUserPermissionRepository.findByUserAndPermission).toHaveBeenCalled();
+      expect(mockPermissionRepository.findByName).toHaveBeenCalledWith(
+        '*.detalhes',
+      );
+      expect(
+        mockUserPermissionRepository.findByUserAndPermission,
+      ).toHaveBeenCalled();
       expect(mockCacheManager.set).toHaveBeenCalled(); // Deve armazenar em cache
       expect(result).toBe(true);
     });
-    
+
     it('should return true when user has a super admin wildcard permission', async () => {
       // Arrange
       const userId = 'user-123';
       const permissionName = 'usuario.visualizar.detalhes';
       const scopeType = ScopeType.GLOBAL;
       const scopeId = undefined;
-      
+
       const wildcardPermission = { id: 'perm-wild', name: '*.*' } as Permission;
       const userPermission = {
         id: 'up-wild-1',
@@ -1086,134 +1249,185 @@ describe('PermissionService', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         createdBy: 'admin-user',
-        updatedBy: null
+        updatedBy: null,
       } as UserPermission;
-      
+
       // Mock para o cache
       mockCacheManager.get.mockImplementation((key) => {
-        if (key.includes('usuario.*')) {return null;}
-        if (key.includes('*.detalhes')) {return null;}
-        if (key.includes(permissionName)) {return null;}
+        if (key.includes('usuario.*')) {
+          return null;
+        }
+        if (key.includes('*.detalhes')) {
+          return null;
+        }
+        if (key.includes(permissionName)) {
+          return null;
+        }
         return null;
       });
-      
+
       // Mock para encontrar a permissão wildcard
       mockPermissionRepository.findByName.mockImplementation((name) => {
-        if (name === 'usuario.*') {return null;}
-        if (name === '*.detalhes') {return null;}
-        if (name === '*.*') {return wildcardPermission;}
+        if (name === 'usuario.*') {
+          return null;
+        }
+        if (name === '*.detalhes') {
+          return null;
+        }
+        if (name === '*.*') {
+          return wildcardPermission;
+        }
         return null;
       });
-      
+
       // Mock para encontrar as permissões do usuário
-      mockUserPermissionRepository.findByUserAndPermission.mockImplementation((uid, permId, scopeT, scopeI) => {
-        if (permId === wildcardPermission.id) {return userPermission;}
-        return null;
-      });
-      
+      mockUserPermissionRepository.findByUserAndPermission.mockImplementation(
+        (uid, permId, scopeT, scopeI) => {
+          if (permId === wildcardPermission.id) {
+            return userPermission;
+          }
+          return null;
+        },
+      );
+
       // Act
-      const result = await service.checkCompositePermission(userId, permissionName, scopeType, scopeId);
-      
+      const result = await service.checkCompositePermission(
+        userId,
+        permissionName,
+        scopeType,
+        scopeId,
+      );
+
       // Assert
       expect(mockCacheManager.get).toHaveBeenCalled();
       expect(mockPermissionRepository.findByName).toHaveBeenCalledWith('*.*');
-      expect(mockUserPermissionRepository.findByUserAndPermission).toHaveBeenCalled();
+      expect(
+        mockUserPermissionRepository.findByUserAndPermission,
+      ).toHaveBeenCalled();
       expect(mockCacheManager.set).toHaveBeenCalled(); // Deve armazenar em cache
       expect(result).toBe(true);
     });
-    
+
     it('should return true when permission is found in cache', async () => {
       // Arrange
       const userId = 'user-123';
       const permissionName = 'usuario.visualizar.detalhes';
       const scopeType = ScopeType.GLOBAL;
       const scopeId = undefined;
-      
+
       // Mock para o cache - já tem em cache
       mockCacheManager.get.mockResolvedValue(true);
-      
+
       // Act
-      const result = await service.checkCompositePermission(userId, permissionName, scopeType, scopeId);
-      
+      const result = await service.checkCompositePermission(
+        userId,
+        permissionName,
+        scopeType,
+        scopeId,
+      );
+
       // Assert
       expect(mockCacheManager.get).toHaveBeenCalled();
       expect(mockPermissionRepository.findByName).not.toHaveBeenCalled(); // Não deve chamar o repositório
       expect(result).toBe(true);
     });
-    
+
     it('should return false when user does not have any matching permission', async () => {
       // Arrange
       const userId = 'user-123';
       const permissionName = 'usuario.visualizar.detalhes';
       const scopeType = ScopeType.GLOBAL;
       const scopeId = undefined;
-      
+
       // Mock para o cache
       mockCacheManager.get.mockResolvedValue(null); // Não tem em cache
-      
+
       // Mock para encontrar a permissão wildcard
       mockPermissionRepository.findByName.mockResolvedValue(null); // Nenhuma permissão encontrada
-      
+
       // Act
-      const result = await service.checkCompositePermission(userId, permissionName, scopeType, scopeId);
-      
+      const result = await service.checkCompositePermission(
+        userId,
+        permissionName,
+        scopeType,
+        scopeId,
+      );
+
       // Assert
       expect(mockCacheManager.get).toHaveBeenCalled();
       expect(mockPermissionRepository.findByName).toHaveBeenCalled();
       expect(mockCacheManager.set).toHaveBeenCalled(); // Deve armazenar em cache (resultado negativo)
       expect(result).toBe(false);
     });
-    
+
     it('should return false when permission format is invalid', async () => {
       // Arrange
       const userId = 'user-123';
       const permissionName = 'invalidformat'; // Formato inválido, sem ponto
       const scopeType = ScopeType.GLOBAL;
       const scopeId = undefined;
-      
+
       // Act
-      const result = await service.checkCompositePermission(userId, permissionName, scopeType, scopeId);
-      
+      const result = await service.checkCompositePermission(
+        userId,
+        permissionName,
+        scopeType,
+        scopeId,
+      );
+
       // Assert
       expect(result).toBe(false);
     });
-    
+
     it('should return false when userId is not provided', async () => {
       // Arrange
       const userId = '';
       const permissionName = 'usuario.visualizar';
       const scopeType = ScopeType.GLOBAL;
       const scopeId = undefined;
-      
+
       // Act
-      const result = await service.checkCompositePermission(userId, permissionName, scopeType, scopeId);
-      
+      const result = await service.checkCompositePermission(
+        userId,
+        permissionName,
+        scopeType,
+        scopeId,
+      );
+
       // Assert
       expect(result).toBe(false);
     });
-    
+
     it('should return false when trying to check permission with UNIT scope but no scopeId', async () => {
       // Arrange
       const userId = 'user-123';
       const permissionName = 'usuario.visualizar';
       const scopeType = ScopeType.UNIT;
       const scopeId = undefined;
-      
+
       // Act
-      const result = await service.checkCompositePermission(userId, permissionName, scopeType, scopeId);
-      
+      const result = await service.checkCompositePermission(
+        userId,
+        permissionName,
+        scopeType,
+        scopeId,
+      );
+
       // Assert
       expect(result).toBe(false);
     });
-    
+
     it('should return false when user has a matching permission but it is expired', async () => {
       // Arrange
       const userId = 'user-123';
       const permissionName = 'usuario.visualizar.detalhes';
       const scopeType = ScopeType.GLOBAL;
       const scopeId = undefined;
-      
-      const wildcardPermission = { id: 'perm-wild', name: 'usuario.*' } as Permission;
+
+      const wildcardPermission = {
+        id: 'perm-wild',
+        name: 'usuario.*',
+      } as Permission;
       const userPermission = {
         id: 'up-wild-expired',
         userId: 'user-123',
@@ -1226,29 +1440,40 @@ describe('PermissionService', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         createdBy: 'admin-user',
-        updatedBy: null
+        updatedBy: null,
       } as UserPermission;
-      
+
       // Mock para o cache
       mockCacheManager.get.mockResolvedValue(null); // Não tem em cache
-      
+
       // Mock para encontrar a permissão wildcard
       mockPermissionRepository.findByName.mockResolvedValue(wildcardPermission);
-      
+
       // Mock para encontrar as permissões do usuário
-      mockUserPermissionRepository.findByUserAndPermission.mockResolvedValue(userPermission);
-      
+      mockUserPermissionRepository.findByUserAndPermission.mockResolvedValue(
+        userPermission,
+      );
+
       // Act
-      const result = await service.checkCompositePermission(userId, permissionName, scopeType, scopeId);
-      
+      const result = await service.checkCompositePermission(
+        userId,
+        permissionName,
+        scopeType,
+        scopeId,
+      );
+
       // Assert
       expect(mockCacheManager.get).toHaveBeenCalled();
-      expect(mockPermissionRepository.findByName).toHaveBeenCalledWith('usuario.*');
-      expect(mockUserPermissionRepository.findByUserAndPermission).toHaveBeenCalledWith(
+      expect(mockPermissionRepository.findByName).toHaveBeenCalledWith(
+        'usuario.*',
+      );
+      expect(
+        mockUserPermissionRepository.findByUserAndPermission,
+      ).toHaveBeenCalledWith(
         userId,
         wildcardPermission.id,
         ScopeType.GLOBAL,
-        undefined
+        undefined,
       );
       expect(result).toBe(false);
     });

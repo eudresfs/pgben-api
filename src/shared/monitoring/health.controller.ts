@@ -43,11 +43,11 @@ export class HealthController {
   @HealthCheck()
   async check() {
     console.log('🔥 HEALTH CONTROLLER: check() foi chamado!');
-    
+
     // Verificar disponibilidade do Redis
     const isRedisAvailable = await this.appHealthCheck.isRedisAvailable();
     const disableRedis = process.env.DISABLE_REDIS === 'true';
-    
+
     return this.health.check([
       // Verificar se o banco de dados está funcionando
       () => this.db.pingCheck('database'),
@@ -64,20 +64,26 @@ export class HealthController {
           path: '/',
           thresholdPercent: 0.9, // 90% de uso máximo
         }),
-        
+
       // Verificar Redis
       async () => {
         // Usando o formato correto para HealthIndicatorResult
         return {
           redis: {
-            status: disableRedis ? 'disabled' : (isRedisAvailable ? 'up' : 'down'),
-            message: disableRedis 
-              ? 'Redis desabilitado por configuração' 
-              : (isRedisAvailable ? 'Conexão com Redis estabelecida' : 'Não foi possível conectar ao Redis'),
-          }
+            status: disableRedis
+              ? 'disabled'
+              : isRedisAvailable
+                ? 'up'
+                : 'down',
+            message: disableRedis
+              ? 'Redis desabilitado por configuração'
+              : isRedisAvailable
+                ? 'Conexão com Redis estabelecida'
+                : 'Não foi possível conectar ao Redis',
+          },
         } as unknown as Record<string, any>; // Forçar tipo compatível com HealthIndicatorResult
       },
-      
+
       // Verificar Storage (S3/MinIO) - Temporariamente desabilitado
       // async () => {
       //   const storageStatus = await this.storageHealth.checkHealth();
@@ -137,7 +143,7 @@ export class HealthController {
         }),
     ]);
   }
-  
+
   /**
    * Verifica apenas o storage (S3/MinIO) - Temporariamente desabilitado
    */
@@ -165,15 +171,17 @@ export class HealthController {
   async checkRedis() {
     const isRedisAvailable = await this.appHealthCheck.isRedisAvailable();
     const disableRedis = process.env.DISABLE_REDIS === 'true';
-    
+
     return {
-      status: disableRedis ? 'disabled' : (isRedisAvailable ? 'up' : 'down'),
+      status: disableRedis ? 'disabled' : isRedisAvailable ? 'up' : 'down',
       info: {
         redis: {
-          status: disableRedis ? 'disabled' : (isRedisAvailable ? 'up' : 'down'),
-          message: disableRedis 
-            ? 'Redis desabilitado por configuração' 
-            : (isRedisAvailable ? 'Conexão com Redis estabelecida' : 'Não foi possível conectar ao Redis'),
+          status: disableRedis ? 'disabled' : isRedisAvailable ? 'up' : 'down',
+          message: disableRedis
+            ? 'Redis desabilitado por configuração'
+            : isRedisAvailable
+              ? 'Conexão com Redis estabelecida'
+              : 'Não foi possível conectar ao Redis',
         },
       },
     };

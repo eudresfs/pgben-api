@@ -123,9 +123,15 @@ export class RelatoriosAuditInterceptor implements NestInterceptor {
    */
   private extractReportType(path: string): string {
     // Extrai o tipo de relatório do caminho
-    if (path.includes('beneficios')) {return 'BENEFICIOS';}
-    if (path.includes('solicitacoes')) {return 'SOLICITACOES';}
-    if (path.includes('atendimentos')) {return 'ATENDIMENTOS';}
+    if (path.includes('beneficios')) {
+      return 'BENEFICIOS';
+    }
+    if (path.includes('solicitacoes')) {
+      return 'SOLICITACOES';
+    }
+    if (path.includes('atendimentos')) {
+      return 'ATENDIMENTOS';
+    }
     return 'GENERICO';
   }
 }

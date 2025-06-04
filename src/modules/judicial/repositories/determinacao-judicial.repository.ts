@@ -2,7 +2,10 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { DeterminacaoJudicial } from '../../../entities/determinacao-judicial.entity';
-import { CreateDeterminacaoJudicialDto, UpdateDeterminacaoJudicialDto } from '../dtos/determinacao-judicial.dto';
+import {
+  CreateDeterminacaoJudicialDto,
+  UpdateDeterminacaoJudicialDto,
+} from '../dtos/determinacao-judicial.dto';
 
 /**
  * Repositório para operações relacionadas às determinações judiciais
@@ -38,7 +41,8 @@ export class DeterminacaoJudicialRepository {
    * @returns Lista de determinações
    */
   async findAll(includeInactive = false): Promise<DeterminacaoJudicial[]> {
-    const query = this.repository.createQueryBuilder('determinacao')
+    const query = this.repository
+      .createQueryBuilder('determinacao')
       .leftJoinAndSelect('determinacao.processo_judicial', 'processo');
 
     if (!includeInactive) {
@@ -70,7 +74,8 @@ export class DeterminacaoJudicialRepository {
     processoId: string,
     includeInactive = false,
   ): Promise<DeterminacaoJudicial[]> {
-    const query = this.repository.createQueryBuilder('determinacao')
+    const query = this.repository
+      .createQueryBuilder('determinacao')
       .leftJoinAndSelect('determinacao.processo_judicial', 'processo')
       .where('determinacao.processo_judicial_id = :processoId', { processoId });
 
@@ -91,7 +96,8 @@ export class DeterminacaoJudicialRepository {
     cidadaoId: string,
     includeInactive = false,
   ): Promise<DeterminacaoJudicial[]> {
-    const query = this.repository.createQueryBuilder('determinacao')
+    const query = this.repository
+      .createQueryBuilder('determinacao')
       .leftJoinAndSelect('determinacao.processo_judicial', 'processo')
       .where('determinacao.cidadao_id = :cidadaoId', { cidadaoId });
 
@@ -112,7 +118,8 @@ export class DeterminacaoJudicialRepository {
     solicitacaoId: string,
     includeInactive = false,
   ): Promise<DeterminacaoJudicial[]> {
-    const query = this.repository.createQueryBuilder('determinacao')
+    const query = this.repository
+      .createQueryBuilder('determinacao')
       .leftJoinAndSelect('determinacao.processo_judicial', 'processo')
       .where('determinacao.solicitacao_id = :solicitacaoId', { solicitacaoId });
 
@@ -128,8 +135,11 @@ export class DeterminacaoJudicialRepository {
    * @param includeInactive Se deve incluir determinações inativas
    * @returns Lista de determinações
    */
-  async findPendentes(includeInactive = false): Promise<DeterminacaoJudicial[]> {
-    const query = this.repository.createQueryBuilder('determinacao')
+  async findPendentes(
+    includeInactive = false,
+  ): Promise<DeterminacaoJudicial[]> {
+    const query = this.repository
+      .createQueryBuilder('determinacao')
       .leftJoinAndSelect('determinacao.processo_judicial', 'processo')
       .where('determinacao.cumprida = :cumprida', { cumprida: false });
 
@@ -158,7 +168,9 @@ export class DeterminacaoJudicialRepository {
     });
     const determinacao = await this.findById(id);
     if (!determinacao) {
-      throw new NotFoundException(`Determinação judicial com ID ${id} não encontrada`);
+      throw new NotFoundException(
+        `Determinação judicial com ID ${id} não encontrada`,
+      );
     }
     return determinacao;
   }
@@ -183,7 +195,9 @@ export class DeterminacaoJudicialRepository {
     });
     const determinacao = await this.findById(id);
     if (!determinacao) {
-      throw new NotFoundException(`Determinação judicial com ID ${id} não encontrada`);
+      throw new NotFoundException(
+        `Determinação judicial com ID ${id} não encontrada`,
+      );
     }
     return determinacao;
   }
@@ -206,7 +220,9 @@ export class DeterminacaoJudicialRepository {
     });
     const determinacao = await this.findById(id);
     if (!determinacao) {
-      throw new NotFoundException(`Determinação judicial com ID ${id} não encontrada`);
+      throw new NotFoundException(
+        `Determinação judicial com ID ${id} não encontrada`,
+      );
     }
     return determinacao;
   }

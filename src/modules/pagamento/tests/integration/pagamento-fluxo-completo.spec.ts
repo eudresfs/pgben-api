@@ -8,10 +8,10 @@ import { JwtModule } from '@nestjs/jwt';
 import { HttpModule } from '@nestjs/axios';
 
 import { PagamentoModule } from '../../pagamento.module';
-import { 
-  Pagamento, 
-  ComprovantePagamento, 
-  ConfirmacaoRecebimento 
+import {
+  Pagamento,
+  ComprovantePagamento,
+  ConfirmacaoRecebimento,
 } from '../../../entities';
 import { StatusPagamentoEnum } from '../../enums/status-pagamento.enum';
 import { MetodoPagamentoEnum } from '../../enums/metodo-pagamento.enum';
@@ -23,10 +23,10 @@ import { AuditoriaPagamentoService } from '../../services/auditoria-pagamento.se
 
 /**
  * Testes de integração para o fluxo completo de pagamento
- * 
+ *
  * Verifica o funcionamento correto do fluxo completo de pagamento,
  * desde a criação até a confirmação de recebimento.
- * 
+ *
  * @author Equipe PGBen
  */
 describe('Fluxo Completo de Pagamento (Integration)', () => {
@@ -45,36 +45,39 @@ describe('Fluxo Completo de Pagamento (Integration)', () => {
   const solicitacaoId = 'solicitacao-teste-id';
   const cidadaoId = 'cidadao-teste-id';
   const infoBancariaId = 'info-bancaria-teste-id';
-  
+
   // Mock do token JWT para autenticação
-  const mockJwtToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c3VhcmlvLXRlc3RlLWlkIiwibmFtZSI6IlVzdcOhcmlvIFRlc3RlIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c';
+  const mockJwtToken =
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c3VhcmlvLXRlc3RlLWlkIiwibmFtZSI6IlVzdcOhcmlvIFRlc3RlIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c';
 
   // Mock dos serviços externos
   const mockIntegracaoSolicitacaoService = {
-    verificarStatusSolicitacao: jest.fn().mockResolvedValue('PAGAMENTO_PENDENTE'),
+    verificarStatusSolicitacao: jest
+      .fn()
+      .mockResolvedValue('PAGAMENTO_PENDENTE'),
     verificarSolicitacaoElegivel: jest.fn().mockResolvedValue(true),
     atualizarStatusSolicitacao: jest.fn().mockResolvedValue(true),
     obterDetalhesSolicitacao: jest.fn().mockResolvedValue({
       id: solicitacaoId,
       cidadaoId: cidadaoId,
-      valorAprovado: 500.00,
+      valorAprovado: 500.0,
       status: 'PAGAMENTO_PENDENTE',
       beneficio: {
         id: 'beneficio-id',
-        nome: 'Auxílio Moradia'
+        nome: 'Auxílio Moradia',
       },
       unidade: {
         id: 'unidade-id',
-        nome: 'CRAS Centro'
-      }
-    })
+        nome: 'CRAS Centro',
+      },
+    }),
   };
 
   const mockIntegracaoCidadaoService = {
     obterDadosCidadao: jest.fn().mockResolvedValue({
       id: cidadaoId,
       nome: 'João da Silva',
-      cpf: '12345678900'
+      cpf: '12345678900',
     }),
     obterDadosBancarios: jest.fn().mockResolvedValue([
       {
@@ -82,17 +85,17 @@ describe('Fluxo Completo de Pagamento (Integration)', () => {
         tipo: 'PIX',
         pixTipo: 'CPF',
         pixChave: '12345678900',
-        principal: true
-      }
+        principal: true,
+      },
     ]),
     obterDadosBancariosPorId: jest.fn().mockResolvedValue({
       id: infoBancariaId,
       tipo: 'PIX',
       pixTipo: 'CPF',
       pixChave: '12345678900',
-      principal: true
+      principal: true,
     }),
-    validarDadosBancarios: jest.fn().mockResolvedValue(true)
+    validarDadosBancarios: jest.fn().mockResolvedValue(true),
   };
 
   const mockIntegracaoDocumentoService = {
@@ -101,14 +104,14 @@ describe('Fluxo Completo de Pagamento (Integration)', () => {
       nome: 'comprovante.pdf',
       tamanho: 1024,
       tipo: 'application/pdf',
-      url: 'http://localhost/documentos/documento-id'
+      url: 'http://localhost/documentos/documento-id',
     }),
     obterComprovante: jest.fn().mockResolvedValue({
       id: 'documento-id',
       nome: 'comprovante.pdf',
       tamanho: 1024,
       tipo: 'application/pdf',
-      url: 'http://localhost/documentos/documento-id'
+      url: 'http://localhost/documentos/documento-id',
     }),
     listarComprovantes: jest.fn().mockResolvedValue([
       {
@@ -116,10 +119,10 @@ describe('Fluxo Completo de Pagamento (Integration)', () => {
         nome: 'comprovante.pdf',
         tamanho: 1024,
         tipo: 'application/pdf',
-        url: 'http://localhost/documentos/documento-id'
-      }
+        url: 'http://localhost/documentos/documento-id',
+      },
     ]),
-    removerComprovante: jest.fn().mockResolvedValue(undefined)
+    removerComprovante: jest.fn().mockResolvedValue(undefined),
   };
 
   const mockAuditoriaPagamentoService = {
@@ -129,7 +132,7 @@ describe('Fluxo Completo de Pagamento (Integration)', () => {
     logUploadComprovante: jest.fn(),
     logRemocaoComprovante: jest.fn(),
     logConfirmacaoRecebimento: jest.fn(),
-    logErroProcessamento: jest.fn()
+    logErroProcessamento: jest.fn(),
   };
 
   // Mock dos repositórios
@@ -140,7 +143,7 @@ describe('Fluxo Completo de Pagamento (Integration)', () => {
     find: jest.fn(),
     findAndCount: jest.fn(),
     update: jest.fn(),
-    delete: jest.fn()
+    delete: jest.fn(),
   };
 
   const mockComprovanteRepository = {
@@ -149,7 +152,7 @@ describe('Fluxo Completo de Pagamento (Integration)', () => {
     findOne: jest.fn(),
     find: jest.fn(),
     findAndCount: jest.fn(),
-    delete: jest.fn()
+    delete: jest.fn(),
   };
 
   const mockConfirmacaoRepository = {
@@ -157,7 +160,7 @@ describe('Fluxo Completo de Pagamento (Integration)', () => {
     save: jest.fn(),
     findOne: jest.fn(),
     find: jest.fn(),
-    findAndCount: jest.fn()
+    findAndCount: jest.fn(),
   };
 
   beforeAll(async () => {
@@ -166,32 +169,32 @@ describe('Fluxo Completo de Pagamento (Integration)', () => {
         PagamentoModule,
         ConfigModule.forRoot({
           isGlobal: true,
-          envFilePath: '.env.test'
+          envFilePath: '.env.test',
         }),
         JwtModule.registerAsync({
           imports: [ConfigModule],
           useFactory: async (configService: ConfigService) => ({
             secret: configService.get<string>('JWT_SECRET') || 'test-secret',
-            signOptions: { expiresIn: '1h' }
+            signOptions: { expiresIn: '1h' },
           }),
-          inject: [ConfigService]
+          inject: [ConfigService],
         }),
-        HttpModule
+        HttpModule,
       ],
       providers: [
         {
           provide: getRepositoryToken(Pagamento),
-          useValue: mockPagamentoRepository
+          useValue: mockPagamentoRepository,
         },
         {
           provide: getRepositoryToken(ComprovantePagamento),
-          useValue: mockComprovanteRepository
+          useValue: mockComprovanteRepository,
         },
         {
           provide: getRepositoryToken(ConfirmacaoRecebimento),
-          useValue: mockConfirmacaoRepository
-        }
-      ]
+          useValue: mockConfirmacaoRepository,
+        },
+      ],
     })
       .overrideProvider(IntegracaoSolicitacaoService)
       .useValue(mockIntegracaoSolicitacaoService)
@@ -204,17 +207,32 @@ describe('Fluxo Completo de Pagamento (Integration)', () => {
       .compile();
 
     app = moduleFixture.createNestApplication();
-    
+
     pagamentoService = moduleFixture.get<PagamentoService>(PagamentoService);
-    integracaoSolicitacaoService = moduleFixture.get<IntegracaoSolicitacaoService>(IntegracaoSolicitacaoService);
-    integracaoCidadaoService = moduleFixture.get<IntegracaoCidadaoService>(IntegracaoCidadaoService);
-    integracaoDocumentoService = moduleFixture.get<IntegracaoDocumentoService>(IntegracaoDocumentoService);
-    auditoriaPagamentoService = moduleFixture.get<AuditoriaPagamentoService>(AuditoriaPagamentoService);
-    
-    pagamentoRepository = moduleFixture.get<Repository<Pagamento>>(getRepositoryToken(Pagamento));
-    comprovanteRepository = moduleFixture.get<Repository<ComprovantePagamento>>(getRepositoryToken(ComprovantePagamento));
-    confirmacaoRepository = moduleFixture.get<Repository<ConfirmacaoRecebimento>>(getRepositoryToken(ConfirmacaoRecebimento));
-    
+    integracaoSolicitacaoService =
+      moduleFixture.get<IntegracaoSolicitacaoService>(
+        IntegracaoSolicitacaoService,
+      );
+    integracaoCidadaoService = moduleFixture.get<IntegracaoCidadaoService>(
+      IntegracaoCidadaoService,
+    );
+    integracaoDocumentoService = moduleFixture.get<IntegracaoDocumentoService>(
+      IntegracaoDocumentoService,
+    );
+    auditoriaPagamentoService = moduleFixture.get<AuditoriaPagamentoService>(
+      AuditoriaPagamentoService,
+    );
+
+    pagamentoRepository = moduleFixture.get<Repository<Pagamento>>(
+      getRepositoryToken(Pagamento),
+    );
+    comprovanteRepository = moduleFixture.get<Repository<ComprovantePagamento>>(
+      getRepositoryToken(ComprovantePagamento),
+    );
+    confirmacaoRepository = moduleFixture.get<
+      Repository<ConfirmacaoRecebimento>
+    >(getRepositoryToken(ConfirmacaoRecebimento));
+
     await app.init();
   });
 
@@ -236,20 +254,20 @@ describe('Fluxo Completo de Pagamento (Integration)', () => {
       const pagamentoMock = {
         id: 'pagamento-teste-id',
         solicitacaoId,
-        valor: 500.00,
+        valor: 500.0,
         status: StatusPagamentoEnum.AGENDADO,
         metodoPagamento: MetodoPagamentoEnum.PIX,
         dataLiberacao: new Date(),
         infoBancariaId,
         dadosBancarios: {
           pixTipo: 'CPF',
-          pixChave: '12345678900'
+          pixChave: '12345678900',
         },
         responsavelLiberacao: usuarioId,
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       };
-      
+
       mockPagamentoRepository.create.mockReturnValue(pagamentoMock);
       mockPagamentoRepository.save.mockResolvedValue(pagamentoMock);
 
@@ -258,26 +276,28 @@ describe('Fluxo Completo de Pagamento (Integration)', () => {
         .post(`/pagamentos/solicitacao/${solicitacaoId}`)
         .set('Authorization', `Bearer ${mockJwtToken}`)
         .send({
-          valor: 500.00,
+          valor: 500.0,
           dataLiberacao: new Date(),
           metodoPagamento: MetodoPagamentoEnum.PIX,
           infoBancariaId,
           dadosBancarios: {
             pixTipo: 'CPF',
-            pixChave: '12345678900'
-          }
+            pixChave: '12345678900',
+          },
         });
 
       // Verificar resposta
       expect(response.status).toBe(201);
       expect(response.body).toHaveProperty('id');
       expect(response.body.status).toBe(StatusPagamentoEnum.AGENDADO);
-      
+
       // Guardar ID para próximos testes
       pagamentoId = response.body.id;
-      
+
       // Verificar chamadas de serviços
-      expect(integracaoSolicitacaoService.verificarSolicitacaoElegivel).toHaveBeenCalledWith(solicitacaoId);
+      expect(
+        integracaoSolicitacaoService.verificarSolicitacaoElegivel,
+      ).toHaveBeenCalledWith(solicitacaoId);
       expect(integracaoCidadaoService.validarDadosBancarios).toHaveBeenCalled();
       expect(auditoriaPagamentoService.logCriacaoPagamento).toHaveBeenCalled();
     });
@@ -287,26 +307,26 @@ describe('Fluxo Completo de Pagamento (Integration)', () => {
       const pagamentoMock = {
         id: pagamentoId,
         solicitacaoId,
-        valor: 500.00,
+        valor: 500.0,
         status: StatusPagamentoEnum.AGENDADO,
         metodoPagamento: MetodoPagamentoEnum.PIX,
         dataLiberacao: new Date(),
         infoBancariaId,
         dadosBancarios: {
           pixTipo: 'CPF',
-          pixChave: '12345678900'
+          pixChave: '12345678900',
         },
         responsavelLiberacao: usuarioId,
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       };
-      
+
       const pagamentoAtualizadoMock = {
         ...pagamentoMock,
         status: StatusPagamentoEnum.LIBERADO,
-        updatedAt: new Date()
+        updatedAt: new Date(),
       };
-      
+
       mockPagamentoRepository.findOne.mockResolvedValue(pagamentoMock);
       mockPagamentoRepository.save.mockResolvedValue(pagamentoAtualizadoMock);
 
@@ -316,19 +336,21 @@ describe('Fluxo Completo de Pagamento (Integration)', () => {
         .set('Authorization', `Bearer ${mockJwtToken}`)
         .send({
           status: StatusPagamentoEnum.LIBERADO,
-          observacoes: 'Pagamento liberado após verificação'
+          observacoes: 'Pagamento liberado após verificação',
         });
 
       // Verificar resposta
       expect(response.status).toBe(200);
       expect(response.body.status).toBe(StatusPagamentoEnum.LIBERADO);
-      
+
       // Verificar chamadas de serviços
       expect(auditoriaPagamentoService.logMudancaStatus).toHaveBeenCalled();
-      expect(integracaoSolicitacaoService.atualizarStatusSolicitacao).toHaveBeenCalledWith(
+      expect(
+        integracaoSolicitacaoService.atualizarStatusSolicitacao,
+      ).toHaveBeenCalledWith(
         solicitacaoId,
         StatusPagamentoEnum.LIBERADO,
-        usuarioId
+        usuarioId,
       );
     });
 
@@ -337,9 +359,9 @@ describe('Fluxo Completo de Pagamento (Integration)', () => {
       const pagamentoMock = {
         id: pagamentoId,
         solicitacaoId,
-        status: StatusPagamentoEnum.LIBERADO
+        status: StatusPagamentoEnum.LIBERADO,
       };
-      
+
       const comprovanteMock = {
         id: 'comprovante-teste-id',
         pagamentoId,
@@ -349,16 +371,16 @@ describe('Fluxo Completo de Pagamento (Integration)', () => {
         tamanhoArquivo: 1024,
         urlDownload: 'http://localhost/documentos/documento-id',
         uploadedBy: usuarioId,
-        createdAt: new Date()
+        createdAt: new Date(),
       };
-      
+
       mockPagamentoRepository.findOne.mockResolvedValue(pagamentoMock);
       mockComprovanteRepository.create.mockReturnValue(comprovanteMock);
       mockComprovanteRepository.save.mockResolvedValue(comprovanteMock);
 
       // Criar arquivo de teste
       const buffer = Buffer.from('conteúdo de teste do arquivo');
-      
+
       // Executar requisição
       const response = await request(app.getHttpServer())
         .post(`/pagamentos/${pagamentoId}/comprovantes`)
@@ -370,10 +392,10 @@ describe('Fluxo Completo de Pagamento (Integration)', () => {
       expect(response.status).toBe(201);
       expect(response.body).toHaveProperty('id');
       expect(response.body.nomeArquivo).toBe('comprovante.pdf');
-      
+
       // Guardar ID para próximos testes
       comprovanteId = response.body.id;
-      
+
       // Verificar chamadas de serviços
       expect(integracaoDocumentoService.uploadComprovante).toHaveBeenCalled();
       expect(auditoriaPagamentoService.logUploadComprovante).toHaveBeenCalled();
@@ -385,20 +407,20 @@ describe('Fluxo Completo de Pagamento (Integration)', () => {
         id: pagamentoId,
         solicitacaoId,
         status: StatusPagamentoEnum.LIBERADO,
-        valor: 500.00,
+        valor: 500.0,
         metodoPagamento: MetodoPagamentoEnum.PIX,
         dataLiberacao: new Date(),
-        responsavelLiberacao: usuarioId
+        responsavelLiberacao: usuarioId,
       };
-      
+
       const pagamentoAtualizadoMock = {
         ...pagamentoMock,
         status: StatusPagamentoEnum.CONFIRMADO,
         responsavelConfirmacao: usuarioId,
         dataConfirmacao: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       };
-      
+
       const confirmacaoMock = {
         id: 'confirmacao-teste-id',
         pagamentoId,
@@ -406,9 +428,9 @@ describe('Fluxo Completo de Pagamento (Integration)', () => {
         metodoConfirmacao: 'PRESENCIAL',
         registradoPor: usuarioId,
         observacoes: 'Confirmação realizada pelo beneficiário',
-        createdAt: new Date()
+        createdAt: new Date(),
       };
-      
+
       mockPagamentoRepository.findOne.mockResolvedValue(pagamentoMock);
       mockPagamentoRepository.save.mockResolvedValue(pagamentoAtualizadoMock);
       mockConfirmacaoRepository.create.mockReturnValue(confirmacaoMock);
@@ -422,19 +444,21 @@ describe('Fluxo Completo de Pagamento (Integration)', () => {
           pagamentoId,
           dataConfirmacao: new Date(),
           metodoConfirmacao: 'PRESENCIAL',
-          observacoes: 'Confirmação realizada pelo beneficiário'
+          observacoes: 'Confirmação realizada pelo beneficiário',
         });
 
       // Verificar resposta
       expect(response.status).toBe(201);
       expect(response.body).toHaveProperty('id');
       expect(response.body.metodoConfirmacao).toBe('PRESENCIAL');
-      
+
       // Guardar ID para próximos testes
       confirmacaoId = response.body.id;
-      
+
       // Verificar chamadas de serviços
-      expect(auditoriaPagamentoService.logConfirmacaoRecebimento).toHaveBeenCalled();
+      expect(
+        auditoriaPagamentoService.logConfirmacaoRecebimento,
+      ).toHaveBeenCalled();
     });
 
     it('5. Deve verificar que o pagamento está com status CONFIRMADO', async () => {
@@ -443,14 +467,14 @@ describe('Fluxo Completo de Pagamento (Integration)', () => {
         id: pagamentoId,
         solicitacaoId,
         status: StatusPagamentoEnum.CONFIRMADO,
-        valor: 500.00,
+        valor: 500.0,
         metodoPagamento: MetodoPagamentoEnum.PIX,
         dataLiberacao: new Date(),
         responsavelLiberacao: usuarioId,
         responsavelConfirmacao: usuarioId,
-        dataConfirmacao: new Date()
+        dataConfirmacao: new Date(),
       };
-      
+
       mockPagamentoRepository.findOne.mockResolvedValue(pagamentoMock);
 
       // Executar requisição
@@ -474,20 +498,20 @@ describe('Fluxo Completo de Pagamento (Integration)', () => {
       const pagamentoMock = {
         id: 'pagamento-cancelamento-id',
         solicitacaoId,
-        valor: 300.00,
+        valor: 300.0,
         status: StatusPagamentoEnum.AGENDADO,
         metodoPagamento: MetodoPagamentoEnum.PIX,
         dataLiberacao: new Date(),
         infoBancariaId,
         dadosBancarios: {
           pixTipo: 'CPF',
-          pixChave: '12345678900'
+          pixChave: '12345678900',
         },
         responsavelLiberacao: usuarioId,
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       };
-      
+
       mockPagamentoRepository.create.mockReturnValue(pagamentoMock);
       mockPagamentoRepository.save.mockResolvedValue(pagamentoMock);
 
@@ -496,20 +520,20 @@ describe('Fluxo Completo de Pagamento (Integration)', () => {
         .post(`/pagamentos/solicitacao/${solicitacaoId}`)
         .set('Authorization', `Bearer ${mockJwtToken}`)
         .send({
-          valor: 300.00,
+          valor: 300.0,
           dataLiberacao: new Date(),
           metodoPagamento: MetodoPagamentoEnum.PIX,
           infoBancariaId,
           dadosBancarios: {
             pixTipo: 'CPF',
-            pixChave: '12345678900'
-          }
+            pixChave: '12345678900',
+          },
         });
 
       // Verificar resposta
       expect(response.status).toBe(201);
       expect(response.body).toHaveProperty('id');
-      
+
       // Guardar ID para próximos testes
       pagamentoId = response.body.id;
     });
@@ -519,27 +543,27 @@ describe('Fluxo Completo de Pagamento (Integration)', () => {
       const pagamentoMock = {
         id: pagamentoId,
         solicitacaoId,
-        valor: 300.00,
+        valor: 300.0,
         status: StatusPagamentoEnum.AGENDADO,
         metodoPagamento: MetodoPagamentoEnum.PIX,
         dataLiberacao: new Date(),
         infoBancariaId,
         dadosBancarios: {
           pixTipo: 'CPF',
-          pixChave: '12345678900'
+          pixChave: '12345678900',
         },
         responsavelLiberacao: usuarioId,
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       };
-      
+
       const pagamentoAtualizadoMock = {
         ...pagamentoMock,
         status: StatusPagamentoEnum.CANCELADO,
         observacoes: 'CANCELADO: Dados bancários incorretos',
-        updatedAt: new Date()
+        updatedAt: new Date(),
       };
-      
+
       mockPagamentoRepository.findOne.mockResolvedValue(pagamentoMock);
       mockPagamentoRepository.save.mockResolvedValue(pagamentoAtualizadoMock);
 
@@ -548,20 +572,24 @@ describe('Fluxo Completo de Pagamento (Integration)', () => {
         .post(`/pagamentos/${pagamentoId}/cancelar`)
         .set('Authorization', `Bearer ${mockJwtToken}`)
         .send({
-          motivo: 'Dados bancários incorretos'
+          motivo: 'Dados bancários incorretos',
         });
 
       // Verificar resposta
       expect(response.status).toBe(200);
       expect(response.body.status).toBe(StatusPagamentoEnum.CANCELADO);
       expect(response.body.observacoes).toContain('CANCELADO');
-      
+
       // Verificar chamadas de serviços
-      expect(auditoriaPagamentoService.logCancelamentoPagamento).toHaveBeenCalled();
-      expect(integracaoSolicitacaoService.atualizarStatusSolicitacao).toHaveBeenCalledWith(
+      expect(
+        auditoriaPagamentoService.logCancelamentoPagamento,
+      ).toHaveBeenCalled();
+      expect(
+        integracaoSolicitacaoService.atualizarStatusSolicitacao,
+      ).toHaveBeenCalledWith(
         solicitacaoId,
         StatusPagamentoEnum.CANCELADO,
-        usuarioId
+        usuarioId,
       );
     });
 
@@ -571,9 +599,9 @@ describe('Fluxo Completo de Pagamento (Integration)', () => {
         id: pagamentoId,
         solicitacaoId,
         status: StatusPagamentoEnum.CANCELADO,
-        observacoes: 'CANCELADO: Dados bancários incorretos'
+        observacoes: 'CANCELADO: Dados bancários incorretos',
       };
-      
+
       mockPagamentoRepository.findOne.mockResolvedValue(pagamentoMock);
 
       // Executar requisição
@@ -581,7 +609,7 @@ describe('Fluxo Completo de Pagamento (Integration)', () => {
         .patch(`/pagamentos/${pagamentoId}/status`)
         .set('Authorization', `Bearer ${mockJwtToken}`)
         .send({
-          status: StatusPagamentoEnum.LIBERADO
+          status: StatusPagamentoEnum.LIBERADO,
         });
 
       // Verificar resposta

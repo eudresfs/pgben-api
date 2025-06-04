@@ -30,14 +30,19 @@ export class CreateDadosAluguelSocialDto {
     example: PublicoPrioritarioAluguel.GESTANTES_NUTRIZES,
   })
   @IsNotEmpty({ message: 'Público prioritário é obrigatório' })
-  @IsEnum(PublicoPrioritarioAluguel, { message: 'Público prioritário inválido' })
+  @IsEnum(PublicoPrioritarioAluguel, {
+    message: 'Público prioritário inválido',
+  })
   publico_prioritario: PublicoPrioritarioAluguel;
 
   @ApiPropertyOptional({
     description: 'Especificações adicionais (até 2 opções)',
     enum: EspecificacaoAluguel,
     isArray: true,
-    example: [EspecificacaoAluguel.VITIMA_VIOLENCIA, EspecificacaoAluguel.LGBTQIA],
+    example: [
+      EspecificacaoAluguel.VITIMA_VIOLENCIA,
+      EspecificacaoAluguel.LGBTQIA,
+    ],
   })
   @IsOptional()
   @IsArray({ message: 'Especificações devem ser um array' })
@@ -50,10 +55,13 @@ export class CreateDadosAluguelSocialDto {
 
   @ApiProperty({
     description: 'Descrição detalhada da situação atual da moradia',
-    example: 'Família reside em casa de parentes, sem condições de permanência devido a conflitos familiares.',
+    example:
+      'Família reside em casa de parentes, sem condições de permanência devido a conflitos familiares.',
   })
   @IsNotEmpty({ message: 'Situação da moradia atual é obrigatória' })
-  @MinLength(10, { message: 'Situação da moradia deve ter pelo menos 10 caracteres' })
+  @MinLength(10, {
+    message: 'Situação da moradia deve ter pelo menos 10 caracteres',
+  })
   situacao_moradia_atual: string;
 
   @ApiProperty({
@@ -70,10 +78,13 @@ export class CreateDadosAluguelSocialDto {
   possui_imovel_interditado: boolean;
 
   @ApiProperty({
-    description: 'Indica se é caso judicializado pela Lei Maria da Penha (Art. 23, inciso VI)',
+    description:
+      'Indica se é caso judicializado pela Lei Maria da Penha (Art. 23, inciso VI)',
     example: false,
   })
-  @IsBoolean({ message: 'Caso judicializado Lei Maria da Penha deve ser um booleano' })
+  @IsBoolean({
+    message: 'Caso judicializado Lei Maria da Penha deve ser um booleano',
+  })
   @Transform(({ value }) => {
     if (typeof value === 'string') {
       return value.toLowerCase() === 'true';
@@ -84,7 +95,8 @@ export class CreateDadosAluguelSocialDto {
 
   @ApiPropertyOptional({
     description: 'Observações adicionais sobre o caso',
-    example: 'Família em situação de extrema vulnerabilidade, necessita acompanhamento psicossocial.',
+    example:
+      'Família em situação de extrema vulnerabilidade, necessita acompanhamento psicossocial.',
   })
   @IsOptional()
   observacoes_adicionais?: string;
@@ -100,7 +112,9 @@ export class UpdateDadosAluguelSocialDto {
     example: PublicoPrioritarioAluguel.GESTANTES_NUTRIZES,
   })
   @IsOptional()
-  @IsEnum(PublicoPrioritarioAluguel, { message: 'Público prioritário inválido' })
+  @IsEnum(PublicoPrioritarioAluguel, {
+    message: 'Público prioritário inválido',
+  })
   publico_prioritario?: PublicoPrioritarioAluguel;
 
   @ApiPropertyOptional({
@@ -123,7 +137,9 @@ export class UpdateDadosAluguelSocialDto {
     example: 'Situação da moradia foi atualizada após visita técnica.',
   })
   @IsOptional()
-  @MinLength(10, { message: 'Situação da moradia deve ter pelo menos 10 caracteres' })
+  @MinLength(10, {
+    message: 'Situação da moradia deve ter pelo menos 10 caracteres',
+  })
   situacao_moradia_atual?: string;
 
   @ApiPropertyOptional({
@@ -145,7 +161,9 @@ export class UpdateDadosAluguelSocialDto {
     example: false,
   })
   @IsOptional()
-  @IsBoolean({ message: 'Caso judicializado Lei Maria da Penha deve ser um booleano' })
+  @IsBoolean({
+    message: 'Caso judicializado Lei Maria da Penha deve ser um booleano',
+  })
   @Transform(({ value }) => {
     if (typeof value === 'string') {
       return value.toLowerCase() === 'true';

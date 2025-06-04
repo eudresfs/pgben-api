@@ -8,12 +8,22 @@ import {
   UpdateDateColumn,
   Index,
 } from 'typeorm';
-import { IsNotEmpty, IsUUID, IsBoolean, IsOptional, IsString, IsNumber, Length, Min, Max } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsUUID,
+  IsBoolean,
+  IsOptional,
+  IsString,
+  IsNumber,
+  Length,
+  Min,
+  Max,
+} from 'class-validator';
 import { Usuario } from './usuario.entity';
 
 /**
  * Entidade para Tokens de Recuperação de Senha
- * 
+ *
  * Armazena tokens temporários para recuperação de senha com:
  * - Associação ao usuário
  * - Token único e seguro
@@ -58,7 +68,9 @@ export class PasswordResetToken {
   })
   @IsNotEmpty({ message: 'Hash do token é obrigatório' })
   @IsString({ message: 'Hash do token deve ser uma string' })
-  @Length(32, 255, { message: 'Hash do token deve ter entre 32 e 255 caracteres' })
+  @Length(32, 255, {
+    message: 'Hash do token deve ter entre 32 e 255 caracteres',
+  })
   token_hash: string;
 
   /**
@@ -176,7 +188,9 @@ export class PasswordResetToken {
   })
   @IsOptional()
   @IsString({ message: 'Motivo da invalidação deve ser uma string' })
-  @Length(3, 50, { message: 'Motivo da invalidação deve ter entre 3 e 50 caracteres' })
+  @Length(3, 50, {
+    message: 'Motivo da invalidação deve ter entre 3 e 50 caracteres',
+  })
   invalidation_reason: string;
 
   /**
@@ -366,7 +380,7 @@ export class PasswordResetToken {
       attempts: this.attempts,
       status: this.getStatus(),
       minutesUntilExpiration: this.getMinutesUntilExpiration(),
-      hasClientInfo: this.hasClientInfo()
+      hasClientInfo: this.hasClientInfo(),
     };
   }
 
@@ -389,9 +403,9 @@ export class PasswordResetToken {
       'suspicious_activity',
       'too_many_attempts',
       'security_breach',
-      'admin_revoke'
+      'admin_revoke',
     ];
-    
+
     return securityReasons.includes(this.invalidation_reason);
   }
 
@@ -444,7 +458,7 @@ export class PasswordResetToken {
       created_at: this.created_at,
       attempts: this.attempts,
       status: this.getStatus(),
-      hasClientInfo: this.hasClientInfo()
+      hasClientInfo: this.hasClientInfo(),
     };
   }
 
@@ -458,7 +472,7 @@ export class PasswordResetToken {
       month: '2-digit',
       day: '2-digit',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     });
   }
 
@@ -472,7 +486,7 @@ export class PasswordResetToken {
       month: '2-digit',
       day: '2-digit',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     });
   }
 

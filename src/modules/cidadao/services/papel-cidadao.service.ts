@@ -1,4 +1,13 @@
-import { Injectable, Logger, NotFoundException, BadRequestException, ConflictException, InternalServerErrorException, Inject, forwardRef } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  BadRequestException,
+  ConflictException,
+  InternalServerErrorException,
+  Inject,
+  forwardRef,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { PapelCidadao } from '../../../entities/papel-cidadao.entity';
@@ -33,9 +42,14 @@ export class PapelCidadaoService {
    * @param createPapelCidadaoDto Dados para criação do papel
    * @returns Papel criado
    */
-  async create(createPapelCidadaoDto: CreatePapelCidadaoDto): Promise<PapelCidadao> {
+  async create(
+    createPapelCidadaoDto: CreatePapelCidadaoDto,
+  ): Promise<PapelCidadao> {
     // Verificar se o cidadão existe
-    const cidadaoExistente = await this.cidadaoService.findById(createPapelCidadaoDto.cidadao_id, false);
+    const cidadaoExistente = await this.cidadaoService.findById(
+      createPapelCidadaoDto.cidadao_id,
+      false,
+    );
     if (!cidadaoExistente) {
       throw new NotFoundException('Cidadão não encontrado');
     }
@@ -64,7 +78,10 @@ export class PapelCidadaoService {
       }
 
       // Validar metadados específicos do tipo de papel
-      this.validarMetadados(createPapelCidadaoDto.tipo_papel, createPapelCidadaoDto.metadados);
+      this.validarMetadados(
+        createPapelCidadaoDto.tipo_papel,
+        createPapelCidadaoDto.metadados,
+      );
 
       // Normalizar campos de enum antes de criar
       const dadosNormalizados = normalizeEnumFields({
@@ -91,8 +108,13 @@ export class PapelCidadaoService {
    * @throws ConflictException se houver conflito de papéis
    * @throws BadRequestException se os dados forem inválidos
    */
-  async createMany(cidadaoId: string, papeis: Omit<CreatePapelCidadaoDto, 'cidadao_id'>[]): Promise<PapelCidadao[]> {
-    this.logger.log(`Criando ${papeis.length} papéis para cidadão ${cidadaoId}`);
+  async createMany(
+    cidadaoId: string,
+    papeis: Omit<CreatePapelCidadaoDto, 'cidadao_id'>[],
+  ): Promise<PapelCidadao[]> {
+    this.logger.log(
+      `Criando ${papeis.length} papéis para cidadão ${cidadaoId}`,
+    );
 
     if (!papeis || papeis.length === 0) {
       throw new BadRequestException('Lista de papéis não pode estar vazia');
@@ -105,13 +127,13 @@ export class PapelCidadaoService {
         throw new NotFoundException('Cidadão não encontrado');
       }
 
-      const papeisParaCriar = papeis.map(papel => ({
+      const papeisParaCriar = papeis.map((papel) => ({
         ...papel,
         cidadao_id: cidadaoId,
       }));
 
       // Verificar papéis duplicados na lista
-      const tiposPapeis = papeisParaCriar.map(p => p.tipo_papel);
+      const tiposPapeis = papeisParaCriar.map((p) => p.tipo_papel);
       const tiposUnicos = new Set(tiposPapeis);
       if (tiposUnicos.size !== tiposPapeis.length) {
         throw new BadRequestException('Lista contém papéis duplicados');
@@ -138,15 +160,20 @@ export class PapelCidadaoService {
         });
 
         if (papelExistente) {
-          throw new ConflictException(`Cidadão já possui o papel ${papel.tipo_papel} ativo`);
+          throw new ConflictException(
+            `Cidadão já possui o papel ${papel.tipo_papel} ativo`,
+          );
         }
 
-        const conflitos = await this.verificacaoPapelService.verificarConflitoPapeis(
-          cidadaoParaConflito.cpf,
-        );
+        const conflitos =
+          await this.verificacaoPapelService.verificarConflitoPapeis(
+            cidadaoParaConflito.cpf,
+          );
 
         if (conflitos.temConflito) {
-          throw new ConflictException(`Conflito de papel detectado para ${papel.tipo_papel}: ${conflitos.detalhes}`);
+          throw new ConflictException(
+            `Conflito de papel detectado para ${papel.tipo_papel}: ${conflitos.detalhes}`,
+          );
         }
 
         // Validar metadados
@@ -154,11 +181,11 @@ export class PapelCidadaoService {
       }
 
       // Normalizar campos de enum antes de criar as entidades
-      const papeisNormalizados = papeisParaCriar.map(papel => 
+      const papeisNormalizados = papeisParaCriar.map((papel) =>
         normalizeEnumFields({
           ...papel,
           ativo: true,
-        })
+        }),
       );
 
       const papeisEntities = manager.create(PapelCidadao, papeisNormalizados);
@@ -300,7 +327,9 @@ export class PapelCidadaoService {
    * @returns Papel criado
    */
   async criarPapel(
-createPapelCidadaoDto: CreatePapelCidadaoDto, usuarioId: string, manager: unknown,
+    createPapelCidadaoDto: CreatePapelCidadaoDto,
+    usuarioId: string,
+    manager: unknown,
   ): Promise<PapelCidadao> {
     return this.create(createPapelCidadaoDto);
   }
@@ -353,7 +382,7 @@ createPapelCidadaoDto: CreatePapelCidadaoDto, usuarioId: string, manager: unknow
       const papeisParaCriar = updatePapeisDto.papeis.map((papelDto: any) => {
         // Validar metadados específicos do tipo de papel
         this.validarMetadados(papelDto.tipo_papel, papelDto.metadados);
-        
+
         return {
           cidadao_id: cidadaoId,
           tipo_papel: papelDto.tipo_papel,

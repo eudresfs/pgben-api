@@ -1,23 +1,23 @@
 import { applyDecorators, Type } from '@nestjs/common';
-import { 
-  ApiOperation, 
-  ApiResponse, 
-  ApiParam, 
-  ApiQuery, 
-  ApiBody, 
+import {
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiQuery,
+  ApiBody,
   getSchemaPath,
   ApiConsumes,
-  ApiOkResponse
+  ApiOkResponse,
 } from '@nestjs/swagger';
 import { StatusPagamentoEnum } from '../../../../enums/status-pagamento.enum';
 import { MetodoPagamentoEnum } from '../../../../enums/metodo-pagamento.enum';
 
 /**
  * Decoradores personalizados para documentação Swagger
- * 
+ *
  * Define decoradores reutilizáveis para padronizar a documentação
  * das operações da API do módulo de pagamento.
- * 
+ *
  * @author Equipe PGBen
  */
 
@@ -28,7 +28,7 @@ import { MetodoPagamentoEnum } from '../../../../enums/metodo-pagamento.enum';
  */
 export const ApiPaginatedResponse = <TModel extends Type<any>>(
   model: TModel,
-  description: string
+  description: string,
 ) => {
   return applyDecorators(
     ApiOperation({ summary: description }),
@@ -498,7 +498,8 @@ export const ApiConfirmarRecebimento = () => {
     }),
     ApiResponse({
       status: 409,
-      description: 'Conflito - Pagamento não está em status que permita confirmação',
+      description:
+        'Conflito - Pagamento não está em status que permita confirmação',
     }),
     ApiResponse({
       status: 500,

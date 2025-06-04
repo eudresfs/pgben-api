@@ -1,4 +1,13 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, Index, ManyToOne, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Index,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { WorkflowAcaoEnum } from '../enums';
 
 /**
@@ -43,7 +52,7 @@ export class WorkflowBeneficio {
     prazo_sla: number;
     template_notificacao_id?: string;
   }[];
-  
+
   /**
    * Versão do workflow, incrementada a cada atualização.
    */

@@ -4,11 +4,11 @@ import { MetodoPagamentoEnum } from '../../../enums/metodo-pagamento.enum';
 
 /**
  * DTO para resposta contendo dados de um pagamento
- * 
+ *
  * Este DTO define a estrutura de dados retornada pela API ao consultar
  * informações sobre um pagamento específico. Inclui mascaramento para
  * dados sensíveis.
- * 
+ *
  * @author Equipe PGBen
  */
 export class PagamentoResponseDto {
@@ -17,7 +17,7 @@ export class PagamentoResponseDto {
    */
   @ApiProperty({
     description: 'ID único do pagamento',
-    example: '123e4567-e89b-12d3-a456-426614174000'
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   id: string;
 
@@ -26,7 +26,7 @@ export class PagamentoResponseDto {
    */
   @ApiProperty({
     description: 'ID da solicitação que originou o pagamento',
-    example: '123e4567-e89b-12d3-a456-426614174000'
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   solicitacaoId: string;
 
@@ -39,9 +39,9 @@ export class PagamentoResponseDto {
       numeroProceso: '2025.123456',
       cidadaoNome: 'Maria Silva',
       tipoBeneficio: 'Auxílio Moradia',
-      unidade: 'CRAS Centro'
+      unidade: 'CRAS Centro',
     },
-    required: false
+    required: false,
   })
   solicitacao?: {
     numeroProcesso: string;
@@ -56,7 +56,7 @@ export class PagamentoResponseDto {
   @ApiProperty({
     description: 'ID da informação bancária utilizada',
     example: '123e4567-e89b-12d3-a456-426614174000',
-    required: false
+    required: false,
   })
   infoBancariaId?: string;
 
@@ -68,9 +68,9 @@ export class PagamentoResponseDto {
     example: {
       tipo: 'pix',
       chavePix: 'c****@****.com',
-      banco: 'Banco do Brasil'
+      banco: 'Banco do Brasil',
     },
-    required: false
+    required: false,
   })
   infoBancaria?: {
     tipo: string;
@@ -85,7 +85,7 @@ export class PagamentoResponseDto {
    */
   @ApiProperty({
     description: 'Valor do pagamento em reais',
-    example: 250.00
+    example: 250.0,
   })
   valor: number;
 
@@ -94,7 +94,7 @@ export class PagamentoResponseDto {
    */
   @ApiProperty({
     description: 'Data em que o pagamento foi liberado',
-    example: '2025-05-18T10:00:00.000Z'
+    example: '2025-05-18T10:00:00.000Z',
   })
   dataLiberacao: Date;
 
@@ -104,7 +104,7 @@ export class PagamentoResponseDto {
   @ApiProperty({
     description: 'Status atual do pagamento',
     enum: StatusPagamentoEnum,
-    example: StatusPagamentoEnum.LIBERADO
+    example: StatusPagamentoEnum.LIBERADO,
   })
   status: StatusPagamentoEnum;
 
@@ -114,7 +114,7 @@ export class PagamentoResponseDto {
   @ApiProperty({
     description: 'Método de pagamento utilizado',
     enum: MetodoPagamentoEnum,
-    example: MetodoPagamentoEnum.PIX
+    example: MetodoPagamentoEnum.PIX,
   })
   metodoPagamento: MetodoPagamentoEnum;
 
@@ -126,8 +126,8 @@ export class PagamentoResponseDto {
     example: {
       id: '123e4567-e89b-12d3-a456-426614174000',
       nome: 'João Silva',
-      cargo: 'Técnico SEMTAS'
-    }
+      cargo: 'Técnico SEMTAS',
+    },
   })
   responsavelLiberacao: {
     id: string;
@@ -140,7 +140,7 @@ export class PagamentoResponseDto {
    */
   @ApiProperty({
     description: 'Quantidade de comprovantes anexados',
-    example: 2
+    example: 2,
   })
   quantidadeComprovantes: number;
 
@@ -155,10 +155,10 @@ export class PagamentoResponseDto {
       metodoConfirmacao: 'assinatura',
       responsavel: {
         id: '123e4567-e89b-12d3-a456-426614174000',
-        nome: 'Ana Souza'
-      }
+        nome: 'Ana Souza',
+      },
     },
-    required: false
+    required: false,
   })
   confirmacaoRecebimento?: {
     id: string;
@@ -180,7 +180,7 @@ export class PagamentoResponseDto {
   @ApiProperty({
     description: 'Observações sobre o pagamento',
     example: 'Pagamento referente ao benefício eventual de auxílio moradia.',
-    required: false
+    required: false,
   })
   observacoes?: string;
 
@@ -189,7 +189,7 @@ export class PagamentoResponseDto {
    */
   @ApiProperty({
     description: 'Data de criação do registro',
-    example: '2025-05-18T10:00:00.000Z'
+    example: '2025-05-18T10:00:00.000Z',
   })
   createdAt: Date;
 
@@ -198,7 +198,7 @@ export class PagamentoResponseDto {
    */
   @ApiProperty({
     description: 'Data da última atualização do registro',
-    example: '2025-05-18T10:00:00.000Z'
+    example: '2025-05-18T10:00:00.000Z',
   })
   updatedAt: Date;
 }

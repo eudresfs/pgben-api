@@ -1,4 +1,13 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, Index } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
+  Index,
+} from 'typeorm';
 import { MetricaDefinicao } from './metrica-definicao.entity';
 
 /**
@@ -7,13 +16,13 @@ import { MetricaDefinicao } from './metrica-definicao.entity';
 export enum TipoAgendamento {
   /** Intervalo fixo em segundos */
   INTERVALO = 'intervalo',
-  
+
   /** Expressão cron para agendamento mais complexo */
   CRON = 'cron',
-  
+
   /** Coleta baseada em eventos específicos */
   EVENTO = 'evento',
-  
+
   /** Coleta manual via API */
   MANUAL = 'manual',
 }
@@ -24,20 +33,20 @@ export enum TipoAgendamento {
 export enum EstrategiaAmostragem {
   /** Coleta todos os dados disponíveis */
   COMPLETA = 'completa',
-  
+
   /** Amostragem aleatória */
   ALEATORIA = 'aleatoria',
-  
+
   /** Amostragem sistemática (a cada N registros) */
   SISTEMATICA = 'sistematica',
-  
+
   /** Amostragem estratificada por dimensão */
   ESTRATIFICADA = 'estratificada',
 }
 
 /**
  * Configuração para coleta, armazenamento e exibição de uma métrica
- * 
+ *
  * Esta entidade permite configurar como uma métrica será coletada,
  * processada, armazenada e exibida no sistema.
  */
@@ -55,10 +64,13 @@ export class MetricaConfiguracao {
 
   /**
    * Relacionamento com a definição da métrica
-   * 
+   *
    * Usando lazy loading para evitar dependências circulares
    */
-  @ManyToOne(() => MetricaDefinicao, (definicao) => definicao.configuracoes, { onDelete: 'CASCADE', lazy: true })
+  @ManyToOne(() => MetricaDefinicao, (definicao) => definicao.configuracoes, {
+    onDelete: 'CASCADE',
+    lazy: true,
+  })
   @JoinColumn({ name: 'metrica_id' })
   metrica: Promise<MetricaDefinicao>;
 

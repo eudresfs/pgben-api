@@ -34,7 +34,7 @@ describe('IntegradorAuthService', () => {
     jest.spyOn(Logger, 'log').mockImplementation(() => {});
     jest.spyOn(Logger, 'debug').mockImplementation(() => {});
     jest.spyOn(Logger, 'verbose').mockImplementation(() => {});
-    
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         IntegradorAuthService,
@@ -193,7 +193,10 @@ describe('IntegradorAuthService', () => {
       expect(service.extractTokenFromHeader).toHaveBeenCalledWith(request);
       expect(mockTokenService.validateToken).toHaveBeenCalledWith(token);
       expect(service.getIpFromRequest).toHaveBeenCalledWith(request);
-      expect(mockTokenService.isIpAllowed).toHaveBeenCalledWith(integrador, ipAddress);
+      expect(mockTokenService.isIpAllowed).toHaveBeenCalledWith(
+        integrador,
+        ipAddress,
+      );
       expect(result).toEqual(payload);
       expect(request['integrador']).toEqual(integrador);
       expect(request['integradorTokenPayload']).toEqual(payload);
@@ -208,8 +211,9 @@ describe('IntegradorAuthService', () => {
       service.extractTokenFromHeader = jest.fn().mockReturnValue(null);
 
       // Act & Assert
-      await expect(service.validateRequest(request))
-        .rejects.toThrow(UnauthorizedException);
+      await expect(service.validateRequest(request)).rejects.toThrow(
+        UnauthorizedException,
+      );
       expect(service.extractTokenFromHeader).toHaveBeenCalledWith(request);
       expect(mockTokenService.validateToken).not.toHaveBeenCalled();
     });
@@ -225,12 +229,13 @@ describe('IntegradorAuthService', () => {
 
       service.extractTokenFromHeader = jest.fn().mockReturnValue(token);
       mockTokenService.validateToken.mockRejectedValue(
-        new UnauthorizedException('Token inválido')
+        new UnauthorizedException('Token inválido'),
       );
 
       // Act & Assert
-      await expect(service.validateRequest(request))
-        .rejects.toThrow(UnauthorizedException);
+      await expect(service.validateRequest(request)).rejects.toThrow(
+        UnauthorizedException,
+      );
       expect(service.extractTokenFromHeader).toHaveBeenCalledWith(request);
       expect(mockTokenService.validateToken).toHaveBeenCalledWith(token);
     });
@@ -261,12 +266,16 @@ describe('IntegradorAuthService', () => {
       mockTokenService.isIpAllowed.mockReturnValue(false);
 
       // Act & Assert
-      await expect(service.validateRequest(request))
-        .rejects.toThrow(UnauthorizedException);
+      await expect(service.validateRequest(request)).rejects.toThrow(
+        UnauthorizedException,
+      );
       expect(service.extractTokenFromHeader).toHaveBeenCalledWith(request);
       expect(mockTokenService.validateToken).toHaveBeenCalledWith(token);
       expect(service.getIpFromRequest).toHaveBeenCalledWith(request);
-      expect(mockTokenService.isIpAllowed).toHaveBeenCalledWith(integrador, ipAddress);
+      expect(mockTokenService.isIpAllowed).toHaveBeenCalledWith(
+        integrador,
+        ipAddress,
+      );
     });
   });
 
@@ -287,7 +296,10 @@ describe('IntegradorAuthService', () => {
       const result = service.checkPermissions(request, requiredScopes);
 
       // Assert
-      expect(mockTokenService.hasRequiredScopes).toHaveBeenCalledWith(payload, requiredScopes);
+      expect(mockTokenService.hasRequiredScopes).toHaveBeenCalledWith(
+        payload,
+        requiredScopes,
+      );
       expect(result).toBe(true);
     });
 
@@ -307,7 +319,10 @@ describe('IntegradorAuthService', () => {
       const result = service.checkPermissions(request, requiredScopes);
 
       // Assert
-      expect(mockTokenService.hasRequiredScopes).toHaveBeenCalledWith(payload, requiredScopes);
+      expect(mockTokenService.hasRequiredScopes).toHaveBeenCalledWith(
+        payload,
+        requiredScopes,
+      );
       expect(result).toBe(false);
     });
 
@@ -339,7 +354,7 @@ describe('IntegradorAuthService', () => {
 
       // Assert
       expect(mockTokenRevogadoRepository.findOne).toHaveBeenCalledWith({
-        where: { tokenHash }
+        where: { tokenHash },
       });
       expect(result).toBe(true);
     });
@@ -354,7 +369,7 @@ describe('IntegradorAuthService', () => {
 
       // Assert
       expect(mockTokenRevogadoRepository.findOne).toHaveBeenCalledWith({
-        where: { tokenHash }
+        where: { tokenHash },
       });
       expect(result).toBe(false);
     });

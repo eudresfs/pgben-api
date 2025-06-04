@@ -5,14 +5,14 @@ import { CidadaoController } from './controllers/cidadao.controller';
 import { CidadaoService } from './services/cidadao.service';
 import { CidadaoRepository } from './repositories/cidadao.repository';
 import { RegraConflitoPapelRepository } from './repositories/regra-conflito-papel.repository';
-import { 
-  Cidadao, 
-  PapelCidadao, 
-  ComposicaoFamiliar, 
-  HistoricoConversaoPapel, 
-  RegraConflitoPapel, 
-  InfoBancaria, 
-  DadosSociais 
+import {
+  Cidadao,
+  PapelCidadao,
+  ComposicaoFamiliar,
+  HistoricoConversaoPapel,
+  RegraConflitoPapel,
+  InfoBancaria,
+  DadosSociais,
 } from '../../entities';
 import { CacheModule } from '../../shared/cache';
 import { CidadaoAuditInterceptor } from './interceptors/cidadao-audit.interceptor';
@@ -43,13 +43,13 @@ import { NotificacaoModule } from '../notificacao/notificacao.module';
 @Module({
   imports: [
     TypeOrmModule.forFeature([
-      Cidadao, 
-      PapelCidadao, 
-      ComposicaoFamiliar, 
+      Cidadao,
+      PapelCidadao,
+      ComposicaoFamiliar,
       HistoricoConversaoPapel,
       RegraConflitoPapel,
       InfoBancaria,
-      DadosSociais
+      DadosSociais,
     ]),
     CacheModule,
     AuthModule,
@@ -57,8 +57,8 @@ import { NotificacaoModule } from '../notificacao/notificacao.module';
     // AuditoriaSharedModule é global, não precisa ser importado
   ],
   controllers: [
-    CidadaoController, 
-    PapelCidadaoController, 
+    CidadaoController,
+    PapelCidadaoController,
     VerificacaoPapelController,
     PapelConflitoController,
     RegraConflitoPapelController,
@@ -85,8 +85,8 @@ import { NotificacaoModule } from '../notificacao/notificacao.module';
     },
   ],
   exports: [
-    CidadaoService, 
-    CidadaoRepository, 
+    CidadaoService,
+    CidadaoRepository,
     PapelCidadaoService,
     VerificacaoPapelService,
     HistoricoConversaoPapelService,
@@ -94,7 +94,7 @@ import { NotificacaoModule } from '../notificacao/notificacao.module';
     InfoBancariaService,
     InfoBancariaRepository,
     DadosSociaisService,
-    ComposicaoFamiliarService
+    ComposicaoFamiliarService,
   ],
 })
 export class CidadaoModule {}

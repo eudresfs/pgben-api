@@ -1,9 +1,9 @@
-import { 
-  registerDecorator, 
-  ValidationOptions, 
+import {
+  registerDecorator,
+  ValidationOptions,
   ValidationArguments,
   ValidatorConstraint,
-  ValidatorConstraintInterface 
+  ValidatorConstraintInterface,
 } from 'class-validator';
 
 /**
@@ -13,20 +13,20 @@ import {
 export class IsNotFutureDateConstraint implements ValidatorConstraintInterface {
   validate(date: any, args: ValidationArguments) {
     if (!date) return true; // Deixar que outras validações (como @IsNotEmpty) lidem com valores nulos
-    
+
     // Converter para Date se for string
     const dateToValidate = date instanceof Date ? date : new Date(date);
-    
+
     // Verificar se é uma data válida
     if (isNaN(dateToValidate.getTime())) {
       return false;
     }
-    
+
     // Verificar se a data não é futura (considerando apenas a data, não a hora)
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     dateToValidate.setHours(0, 0, 0, 0);
-    
+
     return dateToValidate <= today;
   }
 

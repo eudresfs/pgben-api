@@ -99,7 +99,7 @@ export class CreateTipoBeneficioDto {
     description: 'Status do benefício',
     enum: Status,
     example: Status.ATIVO,
-    default: 'ativo'
+    default: 'ativo',
   })
   @IsNotEmpty({ message: 'Status é obrigatória' })
   @IsEnum(Status, { message: 'Status inválida' })
@@ -113,5 +113,4 @@ export class CreateTipoBeneficioDto {
   @ValidateNested()
   @Type(() => CriteriosElegibilidadeDto)
   criterios_elegibilidade?: CriteriosElegibilidadeDto;
-
 }

@@ -1,6 +1,6 @@
 /**
  * Script para verificar a estrutura das tabelas no banco de dados
- * 
+ *
  * Este script verifica a estrutura das tabelas no banco de dados
  * e exibe as colunas de cada tabela para ajudar na depuração dos seeds.
  */
@@ -20,7 +20,7 @@ async function checkTableStructure() {
       'role',
       'usuario',
       'permissao',
-      'role_permissao'
+      'role_permissao',
     ];
 
     // Verificar a estrutura de cada tabela
@@ -32,20 +32,22 @@ async function checkTableStructure() {
            FROM information_schema.columns 
            WHERE table_name = $1
            ORDER BY ordinal_position`,
-          [table]
+          [table],
         );
-        
+
         if (columns.length === 0) {
           console.log(`Tabela ${table} não encontrada no banco de dados.`);
           continue;
         }
-        
+
         console.log(`Total de colunas: ${columns.length}`);
         console.log('Colunas:');
         columns.forEach((col: any) => {
-          console.log(`- ${col.column_name}: ${col.data_type}, nullable=${col.is_nullable}, default=${col.column_default || 'NULL'}`);
+          console.log(
+            `- ${col.column_name}: ${col.data_type}, nullable=${col.is_nullable}, default=${col.column_default || 'NULL'}`,
+          );
         });
-        
+
         // Verificar chaves primárias
         const primaryKeys = await AppDataSource.query(
           `SELECT c.column_name
@@ -54,16 +56,16 @@ async function checkTableStructure() {
            JOIN information_schema.columns AS c ON c.table_schema = tc.constraint_schema
              AND tc.table_name = c.table_name AND ccu.column_name = c.column_name
            WHERE constraint_type = 'PRIMARY KEY' AND tc.table_name = $1`,
-          [table]
+          [table],
         );
-        
+
         if (primaryKeys.length > 0) {
           console.log('Chaves primárias:');
           primaryKeys.forEach((pk: any) => {
             console.log(`- ${pk.column_name}`);
           });
         }
-        
+
         // Verificar chaves estrangeiras
         const foreignKeys = await AppDataSource.query(
           `SELECT
@@ -79,21 +81,24 @@ async function checkTableStructure() {
                ON ccu.constraint_name = tc.constraint_name
                AND ccu.table_schema = tc.table_schema
            WHERE tc.constraint_type = 'FOREIGN KEY' AND tc.table_name=$1`,
-          [table]
+          [table],
         );
-        
+
         if (foreignKeys.length > 0) {
           console.log('Chaves estrangeiras:');
           foreignKeys.forEach((fk: any) => {
-            console.log(`- ${fk.column_name} -> ${fk.foreign_table_name}.${fk.foreign_column_name}`);
+            console.log(
+              `- ${fk.column_name} -> ${fk.foreign_table_name}.${fk.foreign_column_name}`,
+            );
           });
         }
-        
       } catch (error) {
-        console.error(`Erro ao verificar a estrutura da tabela ${table}:`, error.message);
+        console.error(
+          `Erro ao verificar a estrutura da tabela ${table}:`,
+          error.message,
+        );
       }
     }
-    
   } catch (error) {
     console.error('Erro durante a verificação da estrutura das tabelas:');
     console.error(error);
@@ -110,7 +115,7 @@ async function checkTableStructure() {
 // Executar o script
 checkTableStructure()
   .then(() => process.exit(0))
-  .catch(error => {
+  .catch((error) => {
     console.error('Erro não tratado:', error);
     process.exit(1);
   });

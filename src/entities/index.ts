@@ -4,8 +4,15 @@
 // Entidades de Alertas e Métricas
 export { AlertaMetrica } from './alerta-metrica.entity';
 export { Metrica } from './metrica.entity';
-export { MetricaConfiguracao, TipoAgendamento, EstrategiaAmostragem } from './metrica-configuracao.entity';
-export { MetricaDefinicao, GranularidadeTemporal } from './metrica-definicao.entity';
+export {
+  MetricaConfiguracao,
+  TipoAgendamento,
+  EstrategiaAmostragem,
+} from './metrica-configuracao.entity';
+export {
+  MetricaDefinicao,
+  GranularidadeTemporal,
+} from './metrica-definicao.entity';
 export { MetricaDocumento } from './metrica-documento.entity';
 export { MetricaHttp } from './metrica-http.entity';
 export { MetricaSeguranca } from './metrica-seguranca.entity';
@@ -68,11 +75,11 @@ export { Notificacao } from './notificacao.entity';
 export { NotificationTemplate } from './notification-template.entity';
 export { Template } from './template.entity';
 // Exportações do notification.entity.ts
-export { 
+export {
   NotificacaoSistema,
   TipoNotificacao,
   StatusNotificacaoProcessamento,
-  TentativaEntrega
+  TentativaEntrega,
 } from './notification.entity';
 // Alias para compatibilidade
 export { NotificacaoSistema as Notification } from './notification.entity';

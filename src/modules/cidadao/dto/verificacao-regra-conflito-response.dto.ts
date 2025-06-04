@@ -12,14 +12,15 @@ export class RegraConflitoResponseDto {
 
   @ApiProperty({
     description: 'Descrição da regra de conflito',
-    example: 'Um cidadão não pode ser beneficiário e membro de composição familiar ao mesmo tempo',
+    example:
+      'Um cidadão não pode ser beneficiário e membro de composição familiar ao mesmo tempo',
   })
   descricao: string;
 }
 
 /**
  * DTO para resposta de verificação de regras de conflito
- * 
+ *
  * Este DTO é utilizado para retornar o resultado da verificação de conflitos
  * entre papéis, garantindo a padronização das respostas da API.
  */

@@ -72,7 +72,7 @@ export class TipoBeneficio {
     requer_comprovante_residencia?: boolean;
     numero_maximo_filhos?: number;
     valor_complementar?: number;
-    
+
     // Especificações para Aluguel Social
     duracao_maxima_meses?: number;
     permite_prorrogacao?: boolean;
@@ -80,14 +80,14 @@ export class TipoBeneficio {
     motivos_validos?: string[];
     valor_maximo_aluguel?: number;
     requer_visita_tecnica?: boolean;
-    
+
     // Especificações para Auxílio Funeral
     valor_maximo_urna?: number;
     tipos_urna_permitidos?: string[];
     prazo_maximo_solicitacao_dias?: number;
     requer_certidao_obito?: boolean;
     permite_parcelamento?: boolean;
-    
+
     // Especificações para Cesta Básica
     quantidade_maxima_cestas?: number;
     periodicidade_entrega?: string;
@@ -220,43 +220,54 @@ export class TipoBeneficio {
    * Verifica se tem critérios de elegibilidade definidos
    */
   temCriteriosElegibilidade(): boolean {
-    return !!this.criterios_elegibilidade && Object.keys(this.criterios_elegibilidade).length > 0;
+    return (
+      !!this.criterios_elegibilidade &&
+      Object.keys(this.criterios_elegibilidade).length > 0
+    );
   }
 
   /**
    * Verifica se tem critério de idade mínima
    */
   temIdadeMinima(): boolean {
-    return this.temCriteriosElegibilidade() && 
-           this.criterios_elegibilidade.idade_minima !== undefined &&
-           this.criterios_elegibilidade.idade_minima !== null;
+    return (
+      this.temCriteriosElegibilidade() &&
+      this.criterios_elegibilidade.idade_minima !== undefined &&
+      this.criterios_elegibilidade.idade_minima !== null
+    );
   }
 
   /**
    * Verifica se tem critério de idade máxima
    */
   temIdadeMaxima(): boolean {
-    return this.temCriteriosElegibilidade() && 
-           this.criterios_elegibilidade.idade_maxima !== undefined &&
-           this.criterios_elegibilidade.idade_maxima !== null;
+    return (
+      this.temCriteriosElegibilidade() &&
+      this.criterios_elegibilidade.idade_maxima !== undefined &&
+      this.criterios_elegibilidade.idade_maxima !== null
+    );
   }
 
   /**
    * Verifica se tem critério de renda máxima
    */
   temRendaMaxima(): boolean {
-    return this.temCriteriosElegibilidade() && 
-           this.criterios_elegibilidade.renda_maxima !== undefined &&
-           this.criterios_elegibilidade.renda_maxima !== null;
+    return (
+      this.temCriteriosElegibilidade() &&
+      this.criterios_elegibilidade.renda_maxima !== undefined &&
+      this.criterios_elegibilidade.renda_maxima !== null
+    );
   }
 
   /**
    * Verifica se tem critério de tempo mínimo de residência
    */
   temTempoMinimoResidencia(): boolean {
-    return this.temCriteriosElegibilidade() && 
-           this.criterios_elegibilidade.tempo_minimo_residencia !== undefined &&
-           this.criterios_elegibilidade.tempo_minimo_residencia !== null;
+    return (
+      this.temCriteriosElegibilidade() &&
+      this.criterios_elegibilidade.tempo_minimo_residencia !== undefined &&
+      this.criterios_elegibilidade.tempo_minimo_residencia !== null
+    );
   }
 
   /**
@@ -264,15 +275,21 @@ export class TipoBeneficio {
    */
   idadeAtendeAosCriterios(idade: number): boolean {
     if (!this.temCriteriosElegibilidade()) return true;
-    
-    if (this.temIdadeMinima() && idade < (this.criterios_elegibilidade?.idade_minima ?? 0)) {
+
+    if (
+      this.temIdadeMinima() &&
+      idade < (this.criterios_elegibilidade?.idade_minima ?? 0)
+    ) {
       return false;
     }
-    
-    if (this.temIdadeMaxima() && idade > (this.criterios_elegibilidade?.idade_maxima ?? 0)) {
+
+    if (
+      this.temIdadeMaxima() &&
+      idade > (this.criterios_elegibilidade?.idade_maxima ?? 0)
+    ) {
       return false;
     }
-    
+
     return true;
   }
 
@@ -281,7 +298,10 @@ export class TipoBeneficio {
    */
   rendaAtendeAosCriterios(renda: number): boolean {
     if (!this.temRendaMaxima()) return true;
-    return this.criterios_elegibilidade.renda_maxima !== undefined && renda <= this.criterios_elegibilidade.renda_maxima;
+    return (
+      this.criterios_elegibilidade.renda_maxima !== undefined &&
+      renda <= this.criterios_elegibilidade.renda_maxima
+    );
   }
 
   /**
@@ -289,7 +309,10 @@ export class TipoBeneficio {
    */
   tempoResidenciaAtendeAosCriterios(tempoMeses: number): boolean {
     if (!this.temTempoMinimoResidencia()) return true;
-    return this.criterios_elegibilidade.tempo_minimo_residencia !== undefined && tempoMeses >= this.criterios_elegibilidade.tempo_minimo_residencia;
+    return (
+      this.criterios_elegibilidade.tempo_minimo_residencia !== undefined &&
+      tempoMeses >= this.criterios_elegibilidade.tempo_minimo_residencia
+    );
   }
 
   /**
@@ -299,15 +322,15 @@ export class TipoBeneficio {
     if (!this.temIdadeMinima() && !this.temIdadeMaxima()) {
       return 'Qualquer idade';
     }
-    
+
     if (this.temIdadeMinima() && !this.temIdadeMaxima()) {
       return `A partir de ${this.criterios_elegibilidade.idade_minima} anos`;
     }
-    
+
     if (!this.temIdadeMinima() && this.temIdadeMaxima()) {
       return `Até ${this.criterios_elegibilidade.idade_maxima} anos`;
     }
-    
+
     return `De ${this.criterios_elegibilidade.idade_minima} a ${this.criterios_elegibilidade.idade_maxima} anos`;
   }
 
@@ -315,7 +338,11 @@ export class TipoBeneficio {
    * Obtém a renda máxima formatada
    */
   getRendaMaximaFormatada(): string {
-    if (!this.temRendaMaxima() || this.criterios_elegibilidade.renda_maxima === undefined) return 'Sem limite de renda';
+    if (
+      !this.temRendaMaxima() ||
+      this.criterios_elegibilidade.renda_maxima === undefined
+    )
+      return 'Sem limite de renda';
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL',
@@ -327,7 +354,7 @@ export class TipoBeneficio {
    */
   getTempoMinimoResidenciaFormatado(): string {
     if (!this.temTempoMinimoResidencia()) return 'Sem exigência de tempo';
-    
+
     const meses = this.criterios_elegibilidade.tempo_minimo_residencia;
     if (meses === undefined || meses < 12) {
       return `${meses ?? 0} mês(es)`;
@@ -346,7 +373,10 @@ export class TipoBeneficio {
    * Obtém lista de outros critérios
    */
   getOutrosCriterios(): string[] {
-    if (!this.temCriteriosElegibilidade() || !this.criterios_elegibilidade.outros) {
+    if (
+      !this.temCriteriosElegibilidade() ||
+      !this.criterios_elegibilidade.outros
+    ) {
       return [];
     }
     return this.criterios_elegibilidade.outros;
@@ -364,7 +394,7 @@ export class TipoBeneficio {
    */
   getNumeroRequisitosObrigatorios(): number {
     if (!this.temRequisitosDocumentos()) return 0;
-    return this.requisito_documento.filter(req => req.obrigatorio).length;
+    return this.requisito_documento.filter((req) => req.obrigatorio).length;
   }
 
   /**
@@ -379,7 +409,7 @@ export class TipoBeneficio {
    */
   getNumeroCamposDinamicosObrigatorios(): number {
     if (!this.temCamposDinamicos()) return 0;
-    return this.campos_dinamicos.filter(campo => campo.obrigatorio).length;
+    return this.campos_dinamicos.filter((campo) => campo.obrigatorio).length;
   }
 
   /**
@@ -412,30 +442,43 @@ export class TipoBeneficio {
   isConsistente(): boolean {
     // Verifica se tem nome
     if (!this.nome || this.nome.trim().length === 0) return false;
-    
+
     // Verifica se tem descrição
     if (!this.descricao || this.descricao.trim().length === 0) return false;
-    
+
     // Verifica se tem valor válido
     if (!this.temValor()) return false;
-    
+
     // Verifica critérios de elegibilidade
     if (this.temCriteriosElegibilidade()) {
       if (this.temIdadeMinima() && this.temIdadeMaxima()) {
-        if (this.criterios_elegibilidade.idade_minima !== undefined && this.criterios_elegibilidade.idade_maxima !== undefined && this.criterios_elegibilidade.idade_minima > this.criterios_elegibilidade.idade_maxima) {
+        if (
+          this.criterios_elegibilidade.idade_minima !== undefined &&
+          this.criterios_elegibilidade.idade_maxima !== undefined &&
+          this.criterios_elegibilidade.idade_minima >
+            this.criterios_elegibilidade.idade_maxima
+        ) {
           return false;
         }
       }
-      
-      if (this.temRendaMaxima() && this.criterios_elegibilidade.renda_maxima !== undefined && this.criterios_elegibilidade.renda_maxima < 0) {
+
+      if (
+        this.temRendaMaxima() &&
+        this.criterios_elegibilidade.renda_maxima !== undefined &&
+        this.criterios_elegibilidade.renda_maxima < 0
+      ) {
         return false;
       }
-      
-      if (this.temTempoMinimoResidencia() && this.criterios_elegibilidade.tempo_minimo_residencia !== undefined && this.criterios_elegibilidade.tempo_minimo_residencia < 0) {
+
+      if (
+        this.temTempoMinimoResidencia() &&
+        this.criterios_elegibilidade.tempo_minimo_residencia !== undefined &&
+        this.criterios_elegibilidade.tempo_minimo_residencia < 0
+      ) {
         return false;
       }
     }
-    
+
     return true;
   }
 
@@ -445,10 +488,10 @@ export class TipoBeneficio {
   podeSerRemovido(): boolean {
     // Não pode remover se já foi removido
     if (this.foiRemovido()) return false;
-    
+
     // Pode implementar lógica adicional aqui
     // Por exemplo, verificar se tem solicitações ativas
-    
+
     return true;
   }
 
@@ -462,8 +505,9 @@ export class TipoBeneficio {
       periodicidade: this.periodicidade,
       valor: this.valor,
       status: Status.ATIVO,
-      criterios_elegibilidade: this.criterios_elegibilidade ? 
-        JSON.parse(JSON.stringify(this.criterios_elegibilidade)) : null,
+      criterios_elegibilidade: this.criterios_elegibilidade
+        ? JSON.parse(JSON.stringify(this.criterios_elegibilidade))
+        : null,
     };
   }
 
@@ -480,22 +524,22 @@ export class TipoBeneficio {
    */
   getComplexidade(): 'BAIXA' | 'MEDIA' | 'ALTA' {
     let pontos = 0;
-    
+
     // Critérios de elegibilidade
     if (this.temCriteriosElegibilidade()) {
       pontos += Object.keys(this.criterios_elegibilidade).length;
     }
-    
+
     // Requisitos de documentos
     if (this.temRequisitosDocumentos()) {
       pontos += this.requisito_documento.length;
     }
-    
+
     // Campos dinâmicos
     if (this.temCamposDinamicos()) {
       pontos += this.campos_dinamicos.length;
     }
-    
+
     if (pontos <= 3) return 'BAIXA';
     if (pontos <= 7) return 'MEDIA';
     return 'ALTA';
@@ -534,23 +578,23 @@ export class TipoBeneficio {
    */
   getSugestoesMelhoria(): string[] {
     const sugestoes: string[] = [];
-    
+
     if (!this.temCriteriosElegibilidade()) {
       sugestoes.push('Definir critérios de elegibilidade');
     }
-    
+
     if (!this.temRequisitosDocumentos()) {
       sugestoes.push('Adicionar requisitos de documentos');
     }
-    
+
     if (!this.isConsistente()) {
       sugestoes.push('Verificar e corrigir inconsistências nos dados');
     }
-    
+
     if (this.status === Status.INATIVO) {
       sugestoes.push('Considerar reativar o benefício se necessário');
     }
-    
+
     return sugestoes;
   }
 
@@ -579,12 +623,15 @@ export class TipoBeneficio {
       valor: this.getValorFormatado(),
       periodicidade: this.getDescricaoPeriodicidade(),
       complexidade: this.getComplexidade(),
-      criteriosElegibilidade: this.temCriteriosElegibilidade() ? 
-        Object.keys(this.criterios_elegibilidade).length : 0,
-      requisitosDocumentos: this.temRequisitosDocumentos() ? 
-        this.requisito_documento.length : 0,
-      camposDinamicos: this.temCamposDinamicos() ? 
-        this.campos_dinamicos.length : 0,
+      criteriosElegibilidade: this.temCriteriosElegibilidade()
+        ? Object.keys(this.criterios_elegibilidade).length
+        : 0,
+      requisitosDocumentos: this.temRequisitosDocumentos()
+        ? this.requisito_documento.length
+        : 0,
+      camposDinamicos: this.temCamposDinamicos()
+        ? this.campos_dinamicos.length
+        : 0,
     };
   }
 }

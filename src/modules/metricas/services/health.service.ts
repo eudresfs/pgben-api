@@ -84,10 +84,10 @@ export class HealthService {
       const startTime = Date.now();
       const isAvailable = await this.healthCheckService.isRedisAvailable();
       const responseTime = Date.now() - startTime;
-      
+
       // Verificar se o Redis está desabilitado por configuração
       const disableRedis = this.configService.get('DISABLE_REDIS') === 'true';
-      
+
       if (disableRedis) {
         return {
           status: 'disabled',
@@ -95,7 +95,7 @@ export class HealthService {
           responseTime: 0,
         };
       }
-      
+
       if (isAvailable) {
         return {
           status: 'up',

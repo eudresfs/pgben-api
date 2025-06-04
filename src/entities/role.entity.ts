@@ -7,7 +7,14 @@ import {
   OneToMany,
   Index,
 } from 'typeorm';
-import { IsNotEmpty, IsString, MaxLength, MinLength, IsBoolean, IsOptional } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsString,
+  MaxLength,
+  MinLength,
+  IsBoolean,
+  IsOptional,
+} from 'class-validator';
 import { Usuario } from './usuario.entity';
 import { Status } from '../enums/status.enum';
 
@@ -42,7 +49,7 @@ export class Role {
     type: 'enum',
     enum: Status,
     default: Status.ATIVO,
-    enumName: 'status_role'
+    enumName: 'status_role',
   })
   @IsOptional()
   @IsBoolean({ message: 'Status deve ser um valor booleano' })
@@ -50,7 +57,7 @@ export class Role {
 
   @OneToMany(() => Usuario, (usuario) => usuario.role, {
     cascade: false,
-    lazy: true
+    lazy: true,
   })
   usuarios: Usuario[];
 

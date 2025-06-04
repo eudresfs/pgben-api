@@ -3,10 +3,10 @@ import { DadosBancariosValidator } from '../../validators/dados-bancarios-valida
 
 /**
  * Testes unitários para o validador de dados bancários
- * 
+ *
  * Verifica o funcionamento correto das validações para informações bancárias,
  * incluindo códigos de banco, agências, contas e dígitos verificadores.
- * 
+ *
  * @author Equipe PGBen
  */
 describe('DadosBancariosValidator', () => {
@@ -93,11 +93,11 @@ describe('DadosBancariosValidator', () => {
       // Banco do Brasil (4 ou 5 dígitos)
       expect(validator.validarAgencia('1234', '001')).toBe(true);
       expect(validator.validarAgencia('12345', '001')).toBe(true);
-      
+
       // Caixa (4 dígitos)
       expect(validator.validarAgencia('1234', '104')).toBe(true);
       expect(validator.validarAgencia('12345', '104')).toBe(false);
-      
+
       // Itaú (4 dígitos)
       expect(validator.validarAgencia('1234', '341')).toBe(true);
       expect(validator.validarAgencia('12345', '341')).toBe(false);
@@ -132,10 +132,10 @@ describe('DadosBancariosValidator', () => {
       // Banco do Brasil
       expect(validator.validarConta('12345-6', '001')).toBe(true);
       expect(validator.validarConta('123456X', '001')).toBe(true);
-      
+
       // Caixa
       expect(validator.validarConta('123456-7', '104')).toBe(true);
-      
+
       // Itaú
       expect(validator.validarConta('12345-6', '341')).toBe(true);
       expect(validator.validarConta('1234-5', '341')).toBe(true);
@@ -157,7 +157,9 @@ describe('DadosBancariosValidator', () => {
       const mascarado = validator.mascaraAgencia('12345');
       expect(mascarado.charAt(0)).toBe('1');
       expect(mascarado.charAt(mascarado.length - 1)).toBe('5');
-      expect(mascarado.substring(1, mascarado.length - 1)).not.toContain(/[0-9]/);
+      expect(mascarado.substring(1, mascarado.length - 1)).not.toContain(
+        /[0-9]/,
+      );
     });
   });
 
@@ -176,7 +178,9 @@ describe('DadosBancariosValidator', () => {
       const mascarado = validator.mascaraConta('1234567890');
       expect(mascarado.substring(0, 2)).toBe('12');
       expect(mascarado.substring(mascarado.length - 2)).toBe('90');
-      expect(mascarado.substring(2, mascarado.length - 2)).not.toContain(/[0-9]/);
+      expect(mascarado.substring(2, mascarado.length - 2)).not.toContain(
+        /[0-9]/,
+      );
     });
   });
 

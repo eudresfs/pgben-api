@@ -25,9 +25,7 @@ export class AuditoriaQueueService {
    * @param logAuditoriaDto Dados do log de auditoria a ser registrado
    * @returns Promise com o resultado da operação
    */
-  async processarLog(
-    logAuditoriaDto: CreateLogAuditoriaDto,
-  ): Promise<void> {
+  async processarLog(logAuditoriaDto: CreateLogAuditoriaDto): Promise<void> {
     try {
       // No MVP, simplificamos o processamento enfileirando diretamente
       // com configuração básica
@@ -40,17 +38,16 @@ export class AuditoriaQueueService {
         `Log de auditoria processado: ${logAuditoriaDto.entidade_afetada} - ${logAuditoriaDto.tipo_operacao}`,
       );
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
-      
-      this.logger.error(
-        `Erro ao processar log de auditoria: ${errorMessage}`,
-      );
+      const errorMessage =
+        error instanceof Error ? error.message : 'Erro desconhecido';
+
+      this.logger.error(`Erro ao processar log de auditoria: ${errorMessage}`);
     }
   }
 
   /**
    * Enfileira um log de auditoria para processamento assíncrono
-   * 
+   *
    * @param logAuditoriaDto Dados do log de auditoria a ser registrado
    * @returns Promise com o resultado da operação
    */
@@ -62,7 +59,7 @@ export class AuditoriaQueueService {
 
   /**
    * Enfileira um registro de acesso a dados sensíveis para processamento assíncrono
-   * 
+   *
    * @param usuarioId ID do usuário que acessou os dados
    * @param entidade Nome da entidade acessada
    * @param entidadeId ID da entidade acessada
@@ -99,8 +96,9 @@ export class AuditoriaQueueService {
 
       return this.processarLog(logAuditoriaDto);
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
-      
+      const errorMessage =
+        error instanceof Error ? error.message : 'Erro desconhecido';
+
       this.logger.error(
         `Erro ao enfileirar acesso a dados sensíveis: ${errorMessage}`,
       );

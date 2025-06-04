@@ -1,10 +1,19 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  ManyToOne,
+  JoinColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Index,
+} from 'typeorm';
 import { Metrica } from './metrica.entity';
 import { NivelAlertaEnum } from './metrica-seguranca.entity';
 
 /**
  * Entidade que representa regras para geração de alertas
- * 
+ *
  * Esta entidade define as condições para geração de alertas com base em métricas,
  * incluindo o operador de comparação, valor limiar e mensagem de alerta.
  */
@@ -26,7 +35,7 @@ export class RegraAlerta {
 
   @Column({
     type: 'enum',
-    enum: NivelAlertaEnum
+    enum: NivelAlertaEnum,
   })
   @Index('idx_regras_alerta_nivel')
   nivel: NivelAlertaEnum;

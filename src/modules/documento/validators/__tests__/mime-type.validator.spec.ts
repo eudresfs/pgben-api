@@ -1,5 +1,8 @@
 import { MimeTypeValidator } from '../mime-type.validator';
-import { MIME_TYPE_CONFIGS, BLOCKED_MIME_TYPES } from '../../config/documento.config';
+import {
+  MIME_TYPE_CONFIGS,
+  BLOCKED_MIME_TYPES,
+} from '../../config/documento.config';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -14,7 +17,10 @@ describe('MimeTypeValidator', () => {
     it('deve validar um PDF válido', async () => {
       // Criar um buffer que simula um PDF (com magic number correto)
       const pdfBuffer = Buffer.from([
-        0x25, 0x50, 0x44, 0x46, // %PDF magic number
+        0x25,
+        0x50,
+        0x44,
+        0x46, // %PDF magic number
         ...Buffer.from('-1.4\n%âãÏÓ\n'), // PDF header
       ]);
 
@@ -22,7 +28,7 @@ describe('MimeTypeValidator', () => {
         pdfBuffer,
         'application/pdf',
         'documento.pdf',
-        pdfBuffer.length
+        pdfBuffer.length,
       );
 
       expect(result.isValid).toBe(true);
@@ -32,12 +38,12 @@ describe('MimeTypeValidator', () => {
 
     it('deve rejeitar arquivo com extensão perigosa', async () => {
       const buffer = Buffer.from('conteúdo qualquer');
-      
+
       const result = await validator.validateMimeType(
         buffer,
         'application/octet-stream',
         'malware.exe',
-        buffer.length
+        buffer.length,
       );
 
       expect(result.isValid).toBe(false);
@@ -47,12 +53,12 @@ describe('MimeTypeValidator', () => {
 
     it('deve rejeitar tipo MIME bloqueado', async () => {
       const buffer = Buffer.from('conteúdo');
-      
+
       const result = await validator.validateMimeType(
         buffer,
         'text/javascript',
         'script.js',
-        buffer.length
+        buffer.length,
       );
 
       expect(result.isValid).toBe(false);
@@ -63,12 +69,12 @@ describe('MimeTypeValidator', () => {
     it('deve rejeitar arquivo que excede tamanho máximo', async () => {
       const buffer = Buffer.from('conteúdo');
       const largeSize = 25 * 1024 * 1024; // 25MB (maior que o limite global)
-      
+
       const result = await validator.validateMimeType(
         buffer,
         'application/pdf',
         'documento.pdf',
-        largeSize
+        largeSize,
       );
 
       expect(result.isValid).toBe(false);
@@ -79,7 +85,10 @@ describe('MimeTypeValidator', () => {
     it('deve detectar mismatch entre tipo declarado e detectado', async () => {
       // Buffer que simula uma imagem JPEG
       const jpegBuffer = Buffer.from([
-        0xFF, 0xD8, 0xFF, 0xE0, // JPEG magic number
+        0xff,
+        0xd8,
+        0xff,
+        0xe0, // JPEG magic number
         ...Buffer.from('fake jpeg content'),
       ]);
 
@@ -87,7 +96,7 @@ describe('MimeTypeValidator', () => {
         jpegBuffer,
         'application/pdf', // Tipo declarado incorreto
         'imagem.jpg',
-        jpegBuffer.length
+        jpegBuffer.length,
       );
 
       expect(result.isValid).toBe(false);
@@ -96,13 +105,15 @@ describe('MimeTypeValidator', () => {
     });
 
     it('deve validar arquivo de texto simples', async () => {
-      const textBuffer = Buffer.from('Este é um arquivo de texto simples.\nCom quebras de linha.');
-      
+      const textBuffer = Buffer.from(
+        'Este é um arquivo de texto simples.\nCom quebras de linha.',
+      );
+
       const result = await validator.validateMimeType(
         textBuffer,
         'text/plain',
         'documento.txt',
-        textBuffer.length
+        textBuffer.length,
       );
 
       expect(result.isValid).toBe(true);
@@ -115,12 +126,12 @@ describe('MimeTypeValidator', () => {
         <script>alert('xss')</script>
         Mais conteúdo
       `);
-      
+
       const result = await validator.validateMimeType(
         suspiciousBuffer,
         'text/plain',
         'arquivo.txt',
-        suspiciousBuffer.length
+        suspiciousBuffer.length,
       );
 
       expect(result.isValid).toBe(false);
@@ -136,12 +147,12 @@ describe('MimeTypeValidator', () => {
         /JS (document.cookie)
         resto do conteúdo PDF
       `);
-      
+
       const result = await validator.validateMimeType(
         pdfWithJsBuffer,
         'application/pdf',
         'documento.pdf',
-        pdfWithJsBuffer.length
+        pdfWithJsBuffer.length,
       );
 
       expect(result.isValid).toBe(false);
@@ -152,14 +163,14 @@ describe('MimeTypeValidator', () => {
     it('deve detectar alta densidade de caracteres não-ASCII', async () => {
       // Criar buffer com muitos caracteres não-ASCII (possível ofuscação)
       const obfuscatedBuffer = Buffer.from(
-        'texto' + '\x80\x81\x82\x83\x84\x85\x86\x87\x88\x89'.repeat(20)
+        'texto' + '\x80\x81\x82\x83\x84\x85\x86\x87\x88\x89'.repeat(20),
       );
-      
+
       const result = await validator.validateMimeType(
         obfuscatedBuffer,
         'text/plain',
         'arquivo.txt',
-        obfuscatedBuffer.length
+        obfuscatedBuffer.length,
       );
 
       expect(result.isValid).toBe(false);
@@ -171,10 +182,10 @@ describe('MimeTypeValidator', () => {
   describe('generateFileHash', () => {
     it('deve gerar hash SHA256 consistente', () => {
       const buffer = Buffer.from('conteúdo de teste');
-      
+
       const hash1 = validator.generateFileHash(buffer);
       const hash2 = validator.generateFileHash(buffer);
-      
+
       expect(hash1).toBe(hash2);
       expect(hash1).toHaveLength(64); // SHA256 em hex
       expect(hash1).toMatch(/^[a-f0-9]{64}$/);
@@ -183,10 +194,10 @@ describe('MimeTypeValidator', () => {
     it('deve gerar hashes diferentes para conteúdos diferentes', () => {
       const buffer1 = Buffer.from('conteúdo 1');
       const buffer2 = Buffer.from('conteúdo 2');
-      
+
       const hash1 = validator.generateFileHash(buffer1);
       const hash2 = validator.generateFileHash(buffer2);
-      
+
       expect(hash1).not.toBe(hash2);
     });
   });
@@ -199,18 +210,15 @@ describe('MimeTypeValidator', () => {
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       ];
 
-      sensitiveTypes.forEach(mimeType => {
+      sensitiveTypes.forEach((mimeType) => {
         expect(validator.requiresEncryption(mimeType)).toBe(true);
       });
     });
 
     it('deve retornar false para imagens', () => {
-      const imageTypes = [
-        'image/jpeg',
-        'image/png',
-      ];
+      const imageTypes = ['image/jpeg', 'image/png'];
 
-      imageTypes.forEach(mimeType => {
+      imageTypes.forEach((mimeType) => {
         expect(validator.requiresEncryption(mimeType)).toBe(false);
       });
     });
@@ -218,12 +226,9 @@ describe('MimeTypeValidator', () => {
 
   describe('allowsThumbnail', () => {
     it('deve retornar true para imagens', () => {
-      const imageTypes = [
-        'image/jpeg',
-        'image/png',
-      ];
+      const imageTypes = ['image/jpeg', 'image/png'];
 
-      imageTypes.forEach(mimeType => {
+      imageTypes.forEach((mimeType) => {
         expect(validator.allowsThumbnail(mimeType)).toBe(true);
       });
     });
@@ -239,7 +244,7 @@ describe('MimeTypeValidator', () => {
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       ];
 
-      officeTypes.forEach(mimeType => {
+      officeTypes.forEach((mimeType) => {
         expect(validator.allowsThumbnail(mimeType)).toBe(false);
       });
     });
@@ -248,9 +253,9 @@ describe('MimeTypeValidator', () => {
   describe('analyzeFileContent', () => {
     it('deve detectar tags de script', () => {
       const content = Buffer.from('<script>alert("xss")</script>');
-      
+
       const result = validator['analyzeFileContent'](content, 'text/html');
-      
+
       expect(result.isSuspicious).toBe(true);
       expect(result.hasEmbeddedContent).toBe(true);
       expect(result.reason).toContain('script');
@@ -258,27 +263,27 @@ describe('MimeTypeValidator', () => {
 
     it('deve detectar URLs javascript', () => {
       const content = Buffer.from('href="javascript:alert(1)"');
-      
+
       const result = validator['analyzeFileContent'](content, 'text/html');
-      
+
       expect(result.isSuspicious).toBe(true);
       expect(result.hasEmbeddedContent).toBe(true);
     });
 
     it('deve detectar event handlers', () => {
       const content = Buffer.from('<img onload="malicious()" />');
-      
+
       const result = validator['analyzeFileContent'](content, 'text/html');
-      
+
       expect(result.isSuspicious).toBe(true);
       expect(result.hasEmbeddedContent).toBe(true);
     });
 
     it('deve detectar null bytes', () => {
       const content = Buffer.from('texto\x00com\x00null\x00bytes');
-      
+
       const result = validator['analyzeFileContent'](content, 'text/plain');
-      
+
       expect(result.isSuspicious).toBe(true);
     });
 
@@ -289,9 +294,9 @@ describe('MimeTypeValidator', () => {
         Email: usuario@exemplo.com
         URL: https://exemplo.com
       `);
-      
+
       const result = validator['analyzeFileContent'](content, 'text/plain');
-      
+
       expect(result.isSuspicious).toBe(false);
       expect(result.hasEmbeddedContent).toBe(false);
     });
@@ -317,9 +322,10 @@ describe('MimeTypeValidator', () => {
   describe('integração com configuração', () => {
     it('deve usar configurações do documento.config', () => {
       // Verificar se os tipos permitidos estão sendo usados
-      const allowedTypes = Object.values(MIME_TYPE_CONFIGS)
-        .flatMap(config => config.mimeTypes);
-      
+      const allowedTypes = Object.values(MIME_TYPE_CONFIGS).flatMap(
+        (config) => config.mimeTypes,
+      );
+
       expect(allowedTypes).toContain('application/pdf');
       expect(allowedTypes).toContain('image/jpeg');
       expect(allowedTypes).toContain('text/plain');
@@ -335,7 +341,10 @@ describe('MimeTypeValidator', () => {
   describe('casos de uso reais', () => {
     it('deve processar upload de certidão de nascimento (PDF)', async () => {
       const pdfBuffer = Buffer.from([
-        0x25, 0x50, 0x44, 0x46, // %PDF
+        0x25,
+        0x50,
+        0x44,
+        0x46, // %PDF
         ...Buffer.from('-1.4\nCertidão de Nascimento\nNome: João da Silva'),
       ]);
 
@@ -343,7 +352,7 @@ describe('MimeTypeValidator', () => {
         pdfBuffer,
         'application/pdf',
         'certidao_nascimento.pdf',
-        pdfBuffer.length
+        pdfBuffer.length,
       );
 
       expect(result.isValid).toBe(true);
@@ -352,7 +361,10 @@ describe('MimeTypeValidator', () => {
 
     it('deve processar upload de foto de documento (JPEG)', async () => {
       const jpegBuffer = Buffer.from([
-        0xFF, 0xD8, 0xFF, 0xE0, // JPEG magic
+        0xff,
+        0xd8,
+        0xff,
+        0xe0, // JPEG magic
         ...Buffer.from('fake jpeg image data'),
       ]);
 
@@ -360,7 +372,7 @@ describe('MimeTypeValidator', () => {
         jpegBuffer,
         'image/jpeg',
         'foto_documento.jpg',
-        jpegBuffer.length
+        jpegBuffer.length,
       );
 
       expect(result.isValid).toBe(true);
@@ -374,7 +386,7 @@ describe('MimeTypeValidator', () => {
         malwareBuffer,
         'application/pdf',
         'documento.exe',
-        malwareBuffer.length
+        malwareBuffer.length,
       );
 
       expect(result.isValid).toBe(false);

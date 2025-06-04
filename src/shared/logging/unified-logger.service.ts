@@ -7,13 +7,13 @@ import { winstonConfig } from './winston.config';
 
 /**
  * Serviço de Logging Unificado
- * 
+ *
  * Unifica as funcionalidades do AppLogger e LoggingService em um único
  * serviço de logging consistente e flexível.
- * 
+ *
  * Mantém compatibilidade total com código existente e fornece recursos adicionais
  * para logging contextualizado, estruturado e com melhor performance.
- * 
+ *
  * Características:
  * - Compatibilidade total com AppLogger e LoggingService
  * - Logging estruturado com Winston
@@ -27,7 +27,9 @@ export class UnifiedLoggerService {
   private logger: Logger;
 
   constructor(
-    @Optional() @Inject(WINSTON_MODULE_PROVIDER) private readonly winstonLogger?: Logger,
+    @Optional()
+    @Inject(WINSTON_MODULE_PROVIDER)
+    private readonly winstonLogger?: Logger,
   ) {
     // Usar o logger injetado ou criar um novo com a configuração padrão
     this.logger = this.winstonLogger || createLogger(winstonConfig);
@@ -62,29 +64,29 @@ export class UnifiedLoggerService {
     extraMeta?: Record<string, any>,
   ): Logger {
     const timestamp = new Date().toISOString();
-    
+
     // Compatibilidade com a API antiga (AppLogger)
     if (typeof ctxOrMessage !== 'string') {
       const ctx = ctxOrMessage;
       const message = messageOrMeta as string;
       const meta = metaOrTrace as Record<string, any>;
-      
+
       return this.logger.error({
         message,
         contextName: this.context,
         ctx,
         timestamp,
         level: 'error',
-        ...meta
+        ...meta,
       });
     }
-    
+
     // Nova API (LoggingService)
     const message = ctxOrMessage;
-    const context = messageOrMeta as string || this.context;
+    const context = (messageOrMeta as string) || this.context;
     const trace = typeof metaOrTrace === 'string' ? metaOrTrace : undefined;
     const meta = typeof metaOrTrace === 'object' ? metaOrTrace : extraMeta;
-    
+
     return this.logger.error(message, {
       context,
       trace,
@@ -104,26 +106,26 @@ export class UnifiedLoggerService {
     meta?: Record<string, any>,
   ): Logger {
     const timestamp = new Date().toISOString();
-    
+
     // Compatibilidade com a API antiga (AppLogger)
     if (typeof ctxOrMessage !== 'string') {
       const ctx = ctxOrMessage;
       const message = messageOrMeta as string;
-      
+
       return this.logger.warn({
         message,
         contextName: this.context,
         ctx,
         timestamp,
         level: 'warn',
-        ...meta
+        ...meta,
       });
     }
-    
+
     // Nova API (LoggingService)
     const message = ctxOrMessage;
-    const context = messageOrMeta as string || this.context;
-    
+    const context = (messageOrMeta as string) || this.context;
+
     return this.logger.warn(message, {
       context,
       timestamp,
@@ -142,26 +144,26 @@ export class UnifiedLoggerService {
     meta?: Record<string, any>,
   ): Logger {
     const timestamp = new Date().toISOString();
-    
+
     // Compatibilidade com a API antiga (AppLogger)
     if (typeof ctxOrMessage !== 'string') {
       const ctx = ctxOrMessage;
       const message = messageOrMeta as string;
-      
+
       return this.logger.debug({
         message,
         contextName: this.context,
         ctx,
         timestamp,
         level: 'debug',
-        ...meta
+        ...meta,
       });
     }
-    
+
     // Nova API (LoggingService)
     const message = ctxOrMessage;
-    const context = messageOrMeta as string || this.context;
-    
+    const context = (messageOrMeta as string) || this.context;
+
     return this.logger.debug(message, {
       context,
       timestamp,
@@ -180,26 +182,26 @@ export class UnifiedLoggerService {
     meta?: Record<string, any>,
   ): Logger {
     const timestamp = new Date().toISOString();
-    
+
     // Compatibilidade com a API antiga (AppLogger)
     if (typeof ctxOrMessage !== 'string') {
       const ctx = ctxOrMessage;
       const message = messageOrMeta as string;
-      
+
       return this.logger.verbose({
         message,
         contextName: this.context,
         ctx,
         timestamp,
         level: 'verbose',
-        ...meta
+        ...meta,
       });
     }
-    
+
     // Nova API (LoggingService)
     const message = ctxOrMessage;
-    const context = messageOrMeta as string || this.context;
-    
+    const context = (messageOrMeta as string) || this.context;
+
     return this.logger.verbose(message, {
       context,
       timestamp,
@@ -218,26 +220,26 @@ export class UnifiedLoggerService {
     meta?: Record<string, any>,
   ): Logger {
     const timestamp = new Date().toISOString();
-    
+
     // Compatibilidade com a API antiga (AppLogger)
     if (typeof ctxOrMessage !== 'string') {
       const ctx = ctxOrMessage;
       const message = messageOrMeta as string;
-      
+
       return this.logger.info({
         message,
         contextName: this.context,
         ctx,
         timestamp,
         level: 'info',
-        ...meta
+        ...meta,
       });
     }
-    
+
     // Nova API (LoggingService)
     const message = ctxOrMessage;
-    const context = messageOrMeta as string || this.context;
-    
+    const context = (messageOrMeta as string) || this.context;
+
     return this.logger.info(message, {
       context,
       timestamp,

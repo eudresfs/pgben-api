@@ -1,6 +1,6 @@
 /**
  * Configuração otimizada do TypeORM para o PGBen
- * 
+ *
  * Esta configuração resolve problemas de inicialização relacionados a entidades
  * com nomes duplicados, utilizando um carregamento faseado de entidades.
  */
@@ -40,20 +40,20 @@ import {
   MetricaSnapshot,
   RegistroMetrica,
   RegraAlerta,
-  
+
   // Entidades de Benefícios
   TipoBeneficio,
   CampoDinamicoBeneficio,
   DadosBeneficios,
   FluxoBeneficio,
   WorkflowBeneficio,
-  
+
   // Entidades de Dados Específicos de Benefícios
   DadosAluguelSocial,
   DadosCestaBasica,
   DadosFuneral,
   DadosNatalidade,
-  
+
   // Entidades de Cidadão e Família
   Cidadao,
   ComposicaoFamiliar,
@@ -61,68 +61,68 @@ import {
   InfoBancaria,
   PapelCidadao,
   SituacaoMoradia,
-  
+
   // Entidades de Configuração
   ConfiguracaoIntegracao,
   ConfiguracaoNotificacao,
   ConfiguracaoRenovacao,
   Parametro,
-  
+
   // Entidades de Documentos
   Documento,
   RequisitoDocumento,
-  
+
   // Entidades de Histórico e Logs
   CategoriaLog,
   HistoricoConversaoPapel,
   HistoricoSolicitacao,
   LogAuditoria,
-  
+
   // Entidades de Integração
   Integrador,
   IntegradorToken,
-  
+
   // Entidades Judiciais
   DeterminacaoJudicial,
   ProcessoJudicial,
-  
+
   // Entidades de Notificação
   Notificacao,
   Notification,
   NotificationTemplate,
   Template,
-  
+
   // Entidades de Ocorrências e Demandas
   DemandaMotivo,
   Ocorrencia,
-  
+
   // Entidades de Pagamento
   ComprovantePagamento,
   ConfirmacaoRecebimento,
   Pagamento,
-  
+
   // Entidades de Regras
   RegraConflitoPapel,
-  
+
   // Entidades de Segurança e Autenticação
   Role,
   TokenRevogado,
   Usuario,
-  
+
   // Entidades de Setores e Unidades
   Setor,
   SetorUnidade,
   Unidade,
-  
+
   // Entidades de Solicitação
-  Solicitacao
+  Solicitacao,
 } from './entities';
 
 dotenvConfig();
 
 /**
  * Configuração do DataSource para carregamento faseado de entidades
- * 
+ *
  * Esta abordagem garante que as entidades sejam carregadas em uma ordem
  * que evita problemas de referência circular e conflitos de nome.
  */
@@ -238,9 +238,9 @@ export const AppDataSource = new DataSource({
   ],
   migrations: [__dirname + '/database/migrations/**/*{.ts,.js}'],
   migrationsTableName: 'migrations',
-  synchronize: false,        // CRÍTICO: Desabilitar
-  dropSchema: false,         // CRÍTICO: Nunca true
-  migrationsRun: false,      // Controle manual
+  synchronize: false, // CRÍTICO: Desabilitar
+  dropSchema: false, // CRÍTICO: Nunca true
+  migrationsRun: false, // Controle manual
   logging: ['error', 'warn', 'migration'], // Log migrations
   logger: 'file',
   maxQueryExecutionTime: 500,
@@ -257,30 +257,36 @@ export const AppDataSource = new DataSource({
  */
 export async function testarInicializacao() {
   console.log('Testando inicialização do AppDataSource otimizado...');
-  
+
   try {
     await AppDataSource.initialize();
     console.log('✅ SUCESSO: AppDataSource inicializado corretamente');
-    
+
     // Verificar se as entidades renomeadas foram carregadas
     const entidadesRenomeadas = [
       'NotificacaoSistema',
-      'HistoricoSolicitacaoBeneficio'
+      'HistoricoSolicitacaoBeneficio',
     ];
-    
+
     console.log('\nVerificando entidades renomeadas:');
-    entidadesRenomeadas.forEach(nome => {
-      const entidade = AppDataSource.entityMetadatas.find(meta => meta.name === nome);
+    entidadesRenomeadas.forEach((nome) => {
+      const entidade = AppDataSource.entityMetadatas.find(
+        (meta) => meta.name === nome,
+      );
       if (entidade) {
-        console.log(`✅ ${nome} carregada corretamente como tabela: ${entidade.tableName}`);
+        console.log(
+          `✅ ${nome} carregada corretamente como tabela: ${entidade.tableName}`,
+        );
       } else {
         console.log(`❌ ${nome} não foi carregada`);
       }
     });
-    
+
     // Verificar total de entidades carregadas
-    console.log(`\nTotal de entidades carregadas: ${AppDataSource.entityMetadatas.length}`);
-    
+    console.log(
+      `\nTotal de entidades carregadas: ${AppDataSource.entityMetadatas.length}`,
+    );
+
     await AppDataSource.destroy();
     console.log('Conexão fechada.');
     return true;
@@ -293,7 +299,7 @@ export async function testarInicializacao() {
 
 // Executar teste se este arquivo for chamado diretamente
 if (require.main === module) {
-  testarInicializacao().catch(error => {
+  testarInicializacao().catch((error) => {
     console.error('Erro não tratado:', error);
   });
 }

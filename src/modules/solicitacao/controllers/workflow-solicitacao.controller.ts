@@ -10,15 +10,26 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../../../auth/guards/permission.guard';
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
 import { ScopeType } from '../../../entities/user-permission.entity';
-import { WorkflowSolicitacaoService, ResultadoTransicaoEstado } from '../services/workflow-solicitacao.service';
+import {
+  WorkflowSolicitacaoService,
+  ResultadoTransicaoEstado,
+} from '../services/workflow-solicitacao.service';
 import { StatusSolicitacao } from '../../../entities';
 import { UpdateStatusSolicitacaoDto } from '../dto/update-status-solicitacao.dto';
-import { ObservacaoTransicaoDto, AprovacaoSolicitacaoDto } from '../dto/observacao-transicao.dto';
+import {
+  ObservacaoTransicaoDto,
+  AprovacaoSolicitacaoDto,
+} from '../dto/observacao-transicao.dto';
 
 /**
  * Controller de Workflow de Solicitação
@@ -42,7 +53,8 @@ export class WorkflowSolicitacaoController {
   @RequiresPermission({ permissionName: 'solicitacao.visualizar' })
   @ApiOperation({
     summary: 'Obtém os estados possíveis para uma solicitação',
-    description: 'Retorna a lista de estados para os quais a solicitação pode transicionar.',
+    description:
+      'Retorna a lista de estados para os quais a solicitação pode transicionar.',
   })
   @ApiResponse({
     status: 200,
@@ -61,10 +73,10 @@ export class WorkflowSolicitacaoController {
    * @returns Resultado da transição
    */
   @Post(':solicitacaoId/submeter')
-  @RequiresPermission({ 
+  @RequiresPermission({
     permissionName: 'solicitacao.submeter',
     scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'solicitacao.unidadeId'
+    scopeIdExpression: 'solicitacao.unidadeId',
   })
   @ApiOperation({
     summary: 'Submete um rascunho de solicitação',
@@ -88,14 +100,15 @@ export class WorkflowSolicitacaoController {
    * @returns Resultado da transição
    */
   @Post(':solicitacaoId/enviar-para-analise')
-  @RequiresPermission({ 
+  @RequiresPermission({
     permissionName: 'solicitacao.enviar-para-analise',
     scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'solicitacao.unidadeId'
+    scopeIdExpression: 'solicitacao.unidadeId',
   })
   @ApiOperation({
     summary: 'Envia uma solicitação para análise',
-    description: 'Altera o estado de uma solicitação de PENDENTE para EM_ANALISE.',
+    description:
+      'Altera o estado de uma solicitação de PENDENTE para EM_ANALISE.',
   })
   @ApiResponse({
     status: 200,
@@ -115,14 +128,15 @@ export class WorkflowSolicitacaoController {
    * @returns Resultado da transição
    */
   @Post(':solicitacaoId/iniciar-analise')
-  @RequiresPermission({ 
+  @RequiresPermission({
     permissionName: 'solicitacao.analisar',
     scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'solicitacao.unidadeId'
+    scopeIdExpression: 'solicitacao.unidadeId',
   })
   @ApiOperation({
     summary: 'Inicia a análise de uma solicitação',
-    description: 'Altera o estado de uma solicitação de PENDENTE para EM_ANALISE.',
+    description:
+      'Altera o estado de uma solicitação de PENDENTE para EM_ANALISE.',
   })
   @ApiResponse({
     status: 200,
@@ -143,14 +157,15 @@ export class WorkflowSolicitacaoController {
    * @returns Resultado da transição
    */
   @Post(':solicitacaoId/aprovar')
-  @RequiresPermission({ 
+  @RequiresPermission({
     permissionName: 'solicitacao.aprovar',
     scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'solicitacao.unidadeId'
+    scopeIdExpression: 'solicitacao.unidadeId',
   })
   @ApiOperation({
     summary: 'Aprova uma solicitação',
-    description: 'Altera o estado de uma solicitação de EM_ANALISE para APROVADA.',
+    description:
+      'Altera o estado de uma solicitação de EM_ANALISE para APROVADA.',
   })
   @ApiResponse({
     status: 200,
@@ -176,14 +191,15 @@ export class WorkflowSolicitacaoController {
    * @returns Resultado da transição
    */
   @Post(':solicitacaoId/liberar')
-  @RequiresPermission({ 
+  @RequiresPermission({
     permissionName: 'solicitacao.liberar',
     scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'solicitacao.unidadeId'
+    scopeIdExpression: 'solicitacao.unidadeId',
   })
   @ApiOperation({
     summary: 'Libera uma solicitação',
-    description: 'Altera o estado de uma solicitação de APROVADA para LIBERADA.',
+    description:
+      'Altera o estado de uma solicitação de APROVADA para LIBERADA.',
   })
   @ApiResponse({
     status: 200,
@@ -204,14 +220,15 @@ export class WorkflowSolicitacaoController {
    * @returns Resultado da transição
    */
   @Post(':solicitacaoId/rejeitar')
-  @RequiresPermission({ 
+  @RequiresPermission({
     permissionName: 'solicitacao.rejeitar',
     scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'solicitacao.unidadeId'
+    scopeIdExpression: 'solicitacao.unidadeId',
   })
   @ApiOperation({
     summary: 'Rejeita uma solicitação',
-    description: 'Altera o estado de uma solicitação de EM_ANALISE para INDEFERIDA.',
+    description:
+      'Altera o estado de uma solicitação de EM_ANALISE para INDEFERIDA.',
   })
   @ApiResponse({
     status: 200,
@@ -225,7 +242,7 @@ export class WorkflowSolicitacaoController {
     return this.workflowService.rejeitarSolicitacao(
       solicitacaoId,
       req.user.id,
-      body.observacao  ?? '',
+      body.observacao ?? '',
     );
   }
 
@@ -237,10 +254,10 @@ export class WorkflowSolicitacaoController {
    * @returns Resultado da transição
    */
   @Post(':solicitacaoId/cancelar')
-  @RequiresPermission({ 
+  @RequiresPermission({
     permissionName: 'solicitacao.cancelar',
     scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'solicitacao.unidadeId'
+    scopeIdExpression: 'solicitacao.unidadeId',
   })
   @ApiOperation({
     summary: 'Cancela uma solicitação',
@@ -258,7 +275,7 @@ export class WorkflowSolicitacaoController {
     return this.workflowService.cancelarSolicitacao(
       solicitacaoId,
       req.user.id,
-      body.observacao  ?? '',
+      body.observacao ?? '',
     );
   }
 
@@ -269,14 +286,15 @@ export class WorkflowSolicitacaoController {
    * @returns Resultado da transição
    */
   @Post(':solicitacaoId/iniciar-processamento')
-  @RequiresPermission({ 
+  @RequiresPermission({
     permissionName: 'solicitacao.processar',
     scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'solicitacao.unidadeId'
+    scopeIdExpression: 'solicitacao.unidadeId',
   })
   @ApiOperation({
     summary: 'Inicia o processamento de uma solicitação',
-    description: 'Altera o estado de uma solicitação de LIBERADA para EM_PROCESSAMENTO.',
+    description:
+      'Altera o estado de uma solicitação de LIBERADA para EM_PROCESSAMENTO.',
   })
   @ApiResponse({
     status: 200,
@@ -286,7 +304,10 @@ export class WorkflowSolicitacaoController {
     @Param('solicitacaoId', ParseUUIDPipe) solicitacaoId: string,
     @Req() req: any,
   ): Promise<ResultadoTransicaoEstado> {
-    return this.workflowService.iniciarProcessamento(solicitacaoId, req.user.id);
+    return this.workflowService.iniciarProcessamento(
+      solicitacaoId,
+      req.user.id,
+    );
   }
 
   /**
@@ -296,14 +317,15 @@ export class WorkflowSolicitacaoController {
    * @returns Resultado da transição
    */
   @Post(':solicitacaoId/concluir')
-  @RequiresPermission({ 
+  @RequiresPermission({
     permissionName: 'solicitacao.concluir',
     scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'solicitacao.unidadeId'
+    scopeIdExpression: 'solicitacao.unidadeId',
   })
   @ApiOperation({
     summary: 'Conclui uma solicitação',
-    description: 'Altera o estado de uma solicitação de EM_PROCESSAMENTO para CONCLUIDA.',
+    description:
+      'Altera o estado de uma solicitação de EM_PROCESSAMENTO para CONCLUIDA.',
   })
   @ApiResponse({
     status: 200,
@@ -323,10 +345,10 @@ export class WorkflowSolicitacaoController {
    * @returns Resultado da transição
    */
   @Post(':solicitacaoId/arquivar')
-  @RequiresPermission({ 
+  @RequiresPermission({
     permissionName: 'solicitacao.arquivar',
     scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'solicitacao.unidadeId'
+    scopeIdExpression: 'solicitacao.unidadeId',
   })
   @ApiOperation({
     summary: 'Arquiva uma solicitação',
@@ -352,14 +374,15 @@ export class WorkflowSolicitacaoController {
    * @returns Resultado da transição
    */
   @Post(':solicitacaoId/transicao/:novoEstado')
-  @RequiresPermission({ 
+  @RequiresPermission({
     permissionName: 'solicitacao.transicao-manual',
     scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'solicitacao.unidadeId'
+    scopeIdExpression: 'solicitacao.unidadeId',
   })
   @ApiOperation({
     summary: 'Realiza uma transição de estado genérica',
-    description: 'Permite a transição manual entre estados, desde que seja uma transição permitida.',
+    description:
+      'Permite a transição manual entre estados, desde que seja uma transição permitida.',
   })
   @ApiResponse({
     status: 200,
@@ -387,14 +410,15 @@ export class WorkflowSolicitacaoController {
    * @returns Resultado da transição
    */
   @Post(':solicitacaoId/atualizar-status')
-  @RequiresPermission({ 
+  @RequiresPermission({
     permissionName: 'solicitacao.atualizar-status',
     scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'solicitacao.unidadeId'
+    scopeIdExpression: 'solicitacao.unidadeId',
   })
   @ApiOperation({
     summary: 'Atualiza o status de uma solicitação',
-    description: 'Permite a atualização do status de uma solicitação com informações adicionais para conformidade com a API.',
+    description:
+      'Permite a atualização do status de uma solicitação com informações adicionais para conformidade com a API.',
   })
   @ApiResponse({
     status: 200,
@@ -404,8 +428,14 @@ export class WorkflowSolicitacaoController {
       properties: {
         sucesso: { type: 'boolean' },
         mensagem: { type: 'string' },
-        status_anterior: { type: 'string', enum: Object.values(StatusSolicitacao) },
-        status_atual: { type: 'string', enum: Object.values(StatusSolicitacao) },
+        status_anterior: {
+          type: 'string',
+          enum: Object.values(StatusSolicitacao),
+        },
+        status_atual: {
+          type: 'string',
+          enum: Object.values(StatusSolicitacao),
+        },
       },
     },
   })

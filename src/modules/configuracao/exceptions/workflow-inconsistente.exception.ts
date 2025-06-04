@@ -11,6 +11,8 @@ export class WorkflowInconsistenteException extends BadRequestException {
    * @param motivo - Motivo da inconsistência
    */
   constructor(tipoBeneficioId: string, motivo: string) {
-    super(`Workflow para tipo de benefício '${tipoBeneficioId}' inconsistente: ${motivo}`);
+    super(
+      `Workflow para tipo de benefício '${tipoBeneficioId}' inconsistente: ${motivo}`,
+    );
   }
 }

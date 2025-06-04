@@ -132,15 +132,16 @@ export class AuditLog {
   }
 
   isHighRisk(): boolean {
-    return [
-      AuditSeverity.HIGH,
-      AuditSeverity.CRITICAL,
-    ].includes(this.severity);
+    return [AuditSeverity.HIGH, AuditSeverity.CRITICAL].includes(this.severity);
   }
 
   getFormattedMessage(): string {
-    const user = this.usuario ? `${this.usuario.nome} (${this.usuario.email})` : 'Sistema';
-    const resource = this.resource_id ? `${this.resource_type}:${this.resource_id}` : this.resource_type;
+    const user = this.usuario
+      ? `${this.usuario.nome} (${this.usuario.email})`
+      : 'Sistema';
+    const resource = this.resource_id
+      ? `${this.resource_type}:${this.resource_id}`
+      : this.resource_type;
     return `${user} executou ${this.action} em ${resource}`;
   }
 }

@@ -8,7 +8,7 @@ import { REQUIRES_PERMISSION_KEY } from '@/auth/decorators/requires-permission.d
 
 /**
  * Testes unitários para o PermissionGuard
- * 
+ *
  * Estes testes verificam o funcionamento do guarda de permissões,
  * responsável por verificar se um usuário tem as permissões necessárias
  * para acessar uma rota.
@@ -160,8 +160,9 @@ describe('PermissionGuard', () => {
       } as unknown as ExecutionContext;
 
       // O usuário tem a primeira permissão mas não tem a segunda
-      jest.spyOn(permissionService, 'hasPermission')
-        .mockResolvedValueOnce(true)   // solicitacao.listar
+      jest
+        .spyOn(permissionService, 'hasPermission')
+        .mockResolvedValueOnce(true) // solicitacao.listar
         .mockResolvedValueOnce(false); // solicitacao.visualizar
 
       await expect(guard.canActivate(mockExecutionContext)).rejects.toThrow(
@@ -224,13 +225,13 @@ describe('PermissionGuard', () => {
       const mockExecutionContext = {
         switchToHttp: jest.fn().mockReturnValue({
           getRequest: jest.fn().mockReturnValue({
-            user: { 
+            user: {
               id: 'user-123',
-              unidadeId: 'unidade-789' // Unidade do usuário autenticado
+              unidadeId: 'unidade-789', // Unidade do usuário autenticado
             },
             body: {
-              unidadeId: 'unidade-456' // Unidade do formulário
-            }
+              unidadeId: 'unidade-456', // Unidade do formulário
+            },
           }),
         }),
         getHandler: jest.fn(),

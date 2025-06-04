@@ -13,6 +13,8 @@ export class ParametroTipoInvalidoException extends BadRequestException {
    * @param tipo - Tipo esperado para o parâmetro
    */
   constructor(chave: string, valor: string, tipo: ParametroTipoEnum) {
-    super(`Valor '${valor}' do parâmetro '${chave}' não pode ser convertido para o tipo ${tipo}`);
+    super(
+      `Valor '${valor}' do parâmetro '${chave}' não pode ser convertido para o tipo ${tipo}`,
+    );
   }
 }

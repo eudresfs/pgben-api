@@ -32,7 +32,7 @@ export class CriptografiaService {
   ) {
     // Obter a chave da variável de ambiente ou do arquivo
     const envKey = this.configService.get<string>('ENCRYPTION_KEY');
-    
+
     // Inicializar a lista de tipos sensíveis
     this.tiposSensiveis = this.configService.get<string[]>(
       'TIPOS_DOCUMENTOS_SENSIVEIS',
@@ -46,7 +46,7 @@ export class CriptografiaService {
         'PRONTUARIO_MEDICO',
       ],
     );
-    
+
     if (envKey) {
       // Usar a chave da variável de ambiente
       this.masterKey = Buffer.from(envKey);
@@ -67,19 +67,21 @@ export class CriptografiaService {
       if (fs.existsSync(this.keyPath)) {
         this.masterKey = fs.readFileSync(this.keyPath);
         this.logger.log('Chave de criptografia carregada do arquivo');
-        
+
         // Verificar integridade da chave se o monitor estiver disponível
         if (this.chaveMonitorService) {
           const integridadeOk = this.chaveMonitorService.verificarIntegridade();
           if (!integridadeOk) {
-            this.logger.warn('Alerta de segurança: Possível comprometimento da chave de criptografia');
+            this.logger.warn(
+              'Alerta de segurança: Possível comprometimento da chave de criptografia',
+            );
           }
         }
       } else {
         this.masterKey = crypto.randomBytes(this.keyLength);
         fs.writeFileSync(this.keyPath, this.masterKey, { mode: 0o600 });
         this.logger.log('Nova chave de criptografia gerada e salva');
-        
+
         // Criar backup da chave se o monitor estiver disponível
         if (this.chaveMonitorService) {
           this.chaveMonitorService.criarBackup();

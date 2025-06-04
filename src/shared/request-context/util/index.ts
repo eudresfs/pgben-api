@@ -27,9 +27,7 @@ export function createRequestContext(request: Request): RequestContext {
     : request.ip;
 
   // If request.user does not exist, we explicitly set it to null.
-  ctx.user = request.user
-    ? request.user as UserAccessTokenClaims
-    : null;
+  ctx.user = request.user ? (request.user as UserAccessTokenClaims) : null;
 
   return ctx;
 }

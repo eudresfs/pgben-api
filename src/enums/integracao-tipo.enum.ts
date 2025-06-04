@@ -6,5 +6,5 @@ export enum IntegracaoTipoEnum {
   EMAIL = 'email',
   STORAGE = 'storage',
   SMS = 'sms',
-  API_EXTERNA = 'api_externa'
+  API_EXTERNA = 'api_externa',
 }

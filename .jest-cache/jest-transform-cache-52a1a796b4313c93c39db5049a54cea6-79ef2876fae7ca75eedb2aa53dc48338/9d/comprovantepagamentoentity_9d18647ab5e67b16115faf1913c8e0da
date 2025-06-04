@@ -1,0 +1,159 @@
+3051719b081287c509e36590424996be
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var _a, _b, _c, _d, _e;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.ComprovantePagamento = void 0;
+const typeorm_1 = require("typeorm");
+const class_validator_1 = require("class-validator");
+const pagamento_entity_1 = require("./pagamento.entity");
+const usuario_entity_1 = require("./usuario.entity");
+/**
+ * Entidade que representa um comprovante de pagamento no sistema.
+ *
+ * Esta entidade armazena informações sobre documentos comprobatórios
+ * anexados para comprovar a realização de pagamentos.
+ *
+ * @author Equipe PGBen
+ */
+let ComprovantePagamento = class ComprovantePagamento {
+    /**
+     * Identificador único do comprovante
+     */
+    id;
+    /**
+     * Referência ao pagamento relacionado a este comprovante
+     */
+    pagamento_id;
+    /**
+     * Tipo de documento (ex: "comprovante_transferencia", "recibo", etc.)
+     */
+    tipo_documento;
+    /**
+     * Nome original do arquivo enviado
+     */
+    nome_arquivo;
+    /**
+     * Caminho/identificador do arquivo no sistema de armazenamento
+     */
+    caminho_arquivo;
+    /**
+     * Tamanho do arquivo em bytes
+     */
+    tamanho;
+    /**
+     * Tipo MIME do arquivo
+     */
+    mime_type;
+    /**
+     * Data de upload do comprovante
+     */
+    data_upload;
+    /**
+     * Referência ao usuário que fez o upload do comprovante
+     */
+    uploaded_por;
+    /**
+     * Data de criação do registro
+     */
+    created_at;
+    /**
+     * Data da última atualização do registro
+     */
+    updated_at;
+    /**
+     * Relacionamento com a entidade Pagamento
+     */
+    pagamento;
+    /**
+     * Relacionamento com a entidade Usuario
+     */
+    responsavel_upload;
+};
+exports.ComprovantePagamento = ComprovantePagamento;
+__decorate([
+    (0, typeorm_1.PrimaryGeneratedColumn)('uuid'),
+    __metadata("design:type", String)
+], ComprovantePagamento.prototype, "id", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'pagamento_id' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'ID do pagamento é obrigatório' }),
+    (0, class_validator_1.IsUUID)('4', { message: 'ID do pagamento deve ser um UUID válido' }),
+    __metadata("design:type", String)
+], ComprovantePagamento.prototype, "pagamento_id", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'tipo_documento' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Tipo de documento é obrigatório' }),
+    (0, class_validator_1.IsString)({ message: 'Tipo de documento deve ser uma string' }),
+    (0, class_validator_1.MaxLength)(100, { message: 'Tipo de documento deve ter no máximo 100 caracteres' }),
+    __metadata("design:type", String)
+], ComprovantePagamento.prototype, "tipo_documento", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'nome_arquivo' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Nome do arquivo é obrigatório' }),
+    (0, class_validator_1.IsString)({ message: 'Nome do arquivo deve ser uma string' }),
+    (0, class_validator_1.MaxLength)(255, { message: 'Nome do arquivo deve ter no máximo 255 caracteres' }),
+    __metadata("design:type", String)
+], ComprovantePagamento.prototype, "nome_arquivo", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'caminho_arquivo' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Caminho do arquivo é obrigatório' }),
+    (0, class_validator_1.IsString)({ message: 'Caminho do arquivo deve ser uma string' }),
+    (0, class_validator_1.MaxLength)(500, { message: 'Caminho do arquivo deve ter no máximo 500 caracteres' }),
+    __metadata("design:type", String)
+], ComprovantePagamento.prototype, "caminho_arquivo", void 0);
+__decorate([
+    (0, typeorm_1.Column)(),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Tamanho do arquivo é obrigatório' }),
+    (0, class_validator_1.IsNumber)({}, { message: 'Tamanho deve ser um número' }),
+    (0, class_validator_1.Min)(1, { message: 'Tamanho deve ser maior que zero' }),
+    __metadata("design:type", Number)
+], ComprovantePagamento.prototype, "tamanho", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'mime_type' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Tipo MIME é obrigatório' }),
+    (0, class_validator_1.IsString)({ message: 'Tipo MIME deve ser uma string' }),
+    (0, class_validator_1.MaxLength)(100, { message: 'Tipo MIME deve ter no máximo 100 caracteres' }),
+    __metadata("design:type", String)
+], ComprovantePagamento.prototype, "mime_type", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'data_upload', type: 'timestamp' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Data de upload é obrigatória' }),
+    __metadata("design:type", typeof (_a = typeof Date !== "undefined" && Date) === "function" ? _a : Object)
+], ComprovantePagamento.prototype, "data_upload", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'uploaded_por' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'ID do usuário responsável pelo upload é obrigatório' }),
+    (0, class_validator_1.IsUUID)('4', { message: 'ID do usuário deve ser um UUID válido' }),
+    __metadata("design:type", String)
+], ComprovantePagamento.prototype, "uploaded_por", void 0);
+__decorate([
+    (0, typeorm_1.CreateDateColumn)({ name: 'created_at' }),
+    __metadata("design:type", typeof (_b = typeof Date !== "undefined" && Date) === "function" ? _b : Object)
+], ComprovantePagamento.prototype, "created_at", void 0);
+__decorate([
+    (0, typeorm_1.UpdateDateColumn)({ name: 'updated_at' }),
+    __metadata("design:type", typeof (_c = typeof Date !== "undefined" && Date) === "function" ? _c : Object)
+], ComprovantePagamento.prototype, "updated_at", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => pagamento_entity_1.Pagamento, pagamento => pagamento.id),
+    (0, typeorm_1.JoinColumn)({ name: 'pagamento_id' }),
+    __metadata("design:type", typeof (_d = typeof pagamento_entity_1.Pagamento !== "undefined" && pagamento_entity_1.Pagamento) === "function" ? _d : Object)
+], ComprovantePagamento.prototype, "pagamento", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => usuario_entity_1.Usuario, usuario => usuario.id),
+    (0, typeorm_1.JoinColumn)({ name: 'uploaded_por' }),
+    __metadata("design:type", typeof (_e = typeof usuario_entity_1.Usuario !== "undefined" && usuario_entity_1.Usuario) === "function" ? _e : Object)
+], ComprovantePagamento.prototype, "responsavel_upload", void 0);
+exports.ComprovantePagamento = ComprovantePagamento = __decorate([
+    (0, typeorm_1.Entity)('comprovante_pagamento')
+], ComprovantePagamento);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXGVudGl0aWVzXFxjb21wcm92YW50ZS1wYWdhbWVudG8uZW50aXR5LnRzIiwibWFwcGluZ3MiOiI7Ozs7Ozs7Ozs7Ozs7QUFBQSxxQ0FRaUI7QUFDakIscURBQStIO0FBQy9ILHlEQUErQztBQUMvQyxxREFBMkM7QUFFM0M7Ozs7Ozs7R0FPRztBQUVJLElBQU0sb0JBQW9CLEdBQTFCLE1BQU0sb0JBQW9CO0lBQy9COztPQUVHO0lBRUgsRUFBRSxDQUFTO0lBRVg7O09BRUc7SUFJSCxZQUFZLENBQVM7SUFFckI7O09BRUc7SUFLSCxjQUFjLENBQVM7SUFFdkI7O09BRUc7SUFLSCxZQUFZLENBQVM7SUFFckI7O09BRUc7SUFLSCxlQUFlLENBQVM7SUFFeEI7O09BRUc7SUFLSCxPQUFPLENBQVM7SUFFaEI7O09BRUc7SUFLSCxTQUFTLENBQVM7SUFFbEI7O09BRUc7SUFHSCxXQUFXLENBQU87SUFFbEI7O09BRUc7SUFJSCxZQUFZLENBQVM7SUFFckI7O09BRUc7SUFFSCxVQUFVLENBQU87SUFFakI7O09BRUc7SUFFSCxVQUFVLENBQU87SUFFakI7O09BRUc7SUFHSCxTQUFTLENBQVk7SUFFckI7O09BRUc7SUFHSCxrQkFBa0IsQ0FBVTtDQUM3QixDQUFBO0FBcEdZLG9EQUFvQjtBQUsvQjtJQURDLElBQUEsZ0NBQXNCLEVBQUMsTUFBTSxDQUFDOztnREFDcEI7QUFRWDtJQUhDLElBQUEsZ0JBQU0sRUFBQyxFQUFFLElBQUksRUFBRSxjQUFjLEVBQUUsQ0FBQztJQUNoQyxJQUFBLDRCQUFVLEVBQUMsRUFBRSxPQUFPLEVBQUUsK0JBQStCLEVBQUUsQ0FBQztJQUN4RCxJQUFBLHdCQUFNLEVBQUMsR0FBRyxFQUFFLEVBQUUsT0FBTyxFQUFFLHlDQUF5QyxFQUFFLENBQUM7OzBEQUMvQztBQVNyQjtJQUpDLElBQUEsZ0JBQU0sRUFBQyxFQUFFLElBQUksRUFBRSxn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b0JBQVQsNEJBQVM7dURBQUM7QUFPckI7SUFGQyxJQUFBLG1CQUFTLEVBQUMsR0FBRyxFQUFFLENBQUMsd0JBQU8sRUFBRSxPQUFPLENBQUMsRUFBRSxDQUFDLE9BQU8sQ0FBQyxFQUFFLENBQUM7SUFDL0MsSUFBQSxvQkFBVSxFQUFDLEVBQUUsSUFBSSxFQUFFLGNBQWMsRUFBRSxDQUFDO2tEQUNqQix3QkFBTyxvQkFBUCx3QkFBTztnRUFBQzsrQkFuR2pCLG9CQUFvQjtJQURoQyxJQUFBLGdCQUFNLEVBQUMsdUJBQXVCLENBQUM7R0FDbkIsb0JBQW9CLENBb0doQyIsIm5hbWVzIjpbXSwic291cmNlcyI6WyJDOlxcVXNlcnNcXGV1ZHJlXFxPbmVEcml2ZVxcRGVza3RvcFxcUHJvamV0b3NcXHBnYmVuXFxwZ2Jlbi1zZXJ2ZXJcXHNyY1xcZW50aXRpZXNcXGNvbXByb3ZhbnRlLXBhZ2FtZW50by5lbnRpdHkudHMiXSwic291cmNlc0NvbnRlbnQiOlsiaW1wb3J0IHtcbiAgRW50aXR5LFxuICBQcmltYXJ5R2VuZXJhdGVkQ29sdW1uLFxuICBDb2x1bW4sXG4gIE1hbnlUb09uZSxcbiAgSm9pbkNvbHVtbixcbiAgQ3JlYXRlRGF0ZUNvbHVtbixcbiAgVXBkYXRlRGF0ZUNvbHVtbixcbn0gZnJvbSAndHlwZW9ybSc7XG5pbXBvcnQgeyBJc05vdEVtcHR5LCBJc1VVSUQsIElzT3B0aW9uYWwsIElzU3RyaW5nLCBNYXhMZW5ndGgsIElzTnVtYmVyLCBNaW4sIElzRGF0ZVN0cmluZywgSXNNaW1lVHlwZSB9IGZyb20gJ2NsYXNzLXZhbGlkYXRvcic7XG5pbXBvcnQgeyBQYWdhbWVudG8gfSBmcm9tICcuL3BhZ2FtZW50by5lbnRpdHknO1xuaW1wb3J0IHsgVXN1YXJpbyB9IGZyb20gJy4vdXN1YXJpby5lbnRpdHknO1xuXG4vKipcbiAqIEVudGlkYWRlIHF1ZSByZXByZXNlbnRhIHVtIGNvbXByb3ZhbnRlIGRlIHBhZ2FtZW50byBubyBzaXN0ZW1hLlxuICogXG4gKiBFc3RhIGVudGlkYWRlIGFybWF6ZW5hIGluZm9ybWHDp8O1ZXMgc29icmUgZG9jdW1lbnRvcyBjb21wcm9iYXTDs3Jpb3NcbiAqIGFuZXhhZG9zIHBhcmEgY29tcHJvdmFyIGEgcmVhbGl6YcOnw6NvIGRlIHBhZ2FtZW50b3MuXG4gKiBcbiAqIEBhdXRob3IgRXF1aXBlIFBHQmVuXG4gKi9cbkBFbnRpdHkoJ2NvbXByb3ZhbnRlX3BhZ2FtZW50bycpXG5leHBvcnQgY2xhc3MgQ29tcHJvdmFudGVQYWdhbWVudG8ge1xuICAvKipcbiAgICogSWRlbnRpZmljYWRvciDDum5pY28gZG8gY29tcHJvdmFudGVcbiAgICovXG4gIEBQcmltYXJ5R2VuZXJhdGVkQ29sdW1uKCd1dWlkJylcbiAgaWQ6IHN0cmluZztcblxuICAvKipcbiAgICogUmVmZXLDqm5jaWEgYW8gcGFnYW1lbnRvIHJlbGFjaW9uYWRvIGEgZXN0ZSBjb21wcm92YW50ZVxuICAgKi9cbiAgQENvbHVtbih7IG5hbWU6ICdwYWdhbWVudG9faWQnIH0pXG4gIEBJc05vdEVtcHR5KHsgbWVzc2FnZTogJ0lEIGRvIHBhZ2FtZW50byDDqSBvYnJpZ2F0w7NyaW8nIH0pXG4gIEBJc1VVSUQoJzQnLCB7IG1lc3NhZ2U6ICdJRCBkbyBwYWdhbWVudG8gZGV2ZSBzZXIgdW0gVVVJRCB2w6FsaWRvJyB9KVxuICBwYWdhbWVudG9faWQ6IHN0cmluZztcblxuICAvKipcbiAgICogVGlwbyBkZSBkb2N1bWVudG8gKGV4OiBcImNvbXByb3ZhbnRlX3RyYW5zZmVyZW5jaWFcIiwgXCJyZWNpYm9cIiwgZXRjLilcbiAgICovXG4gIEBDb2x1bW4oeyBuYW1lOiAndGlwb19kb2N1bWVudG8nIH0pXG4gIEBJc05vdEVtcHR5KHsgbWVzc2FnZTogJ1RpcG8gZGUgZG9jdW1lbnRvIMOpIG9icmlnYXTDs3JpbycgfSlcbiAgQElzU3RyaW5nKHsgbWVzc2FnZTogJ1RpcG8gZGUgZG9jdW1lbnRvIGRldmUgc2VyIHVtYSBzdHJpbmcnIH0pXG4gIEBNYXhMZW5ndGgoMTAwLCB7IG1lc3NhZ2U6ICdUaXBvIGRlIGRvY3VtZW50byBkZXZlIHRlciBubyBtw6F4aW1vIDEwMCBjYXJhY3RlcmVzJyB9KVxuICB0aXBvX2RvY3VtZW50bzogc3RyaW5nO1xuXG4gIC8qKlxuICAgKiBOb21lIG9yaWdpbmFsIGRvIGFycXVpdm8gZW52aWFkb1xuICAgKi9cbiAgQENvbHVtbih7IG5hbWU6ICdub21lX2FycXVpdm8nIH0pXG4gIEBJc05vdEVtcHR5KHsgbWVzc2FnZTogJ05vbWUgZG8gYXJxdWl2byDDqSBvYnJpZ2F0w7NyaW8nIH0pXG4gIEBJc1N0cmluZyh7IG1lc3NhZ2U6ICdOb21lIGRvIGFycXVpdm8gZGV2ZSBzZXIgdW1hIHN0cmluZycgfSlcbiAgQE1heExlbmd0aCgyNTUsIHsgbWVzc2FnZTogJ05vbWUgZG8gYXJxdWl2byBkZXZlIHRlciBubyBtw6F4aW1vIDI1NSBjYXJhY3RlcmVzJyB9KVxuICBub21lX2FycXVpdm86IHN0cmluZztcblxuICAvKipcbiAgICogQ2FtaW5oby9pZGVudGlmaWNhZG9yIGRvIGFycXVpdm8gbm8gc2lzdGVtYSBkZSBhcm1hemVuYW1lbnRvXG4gICAqL1xuICBAQ29sdW1uKHsgbmFtZTogJ2NhbWluaG9fYXJxdWl2bycgfSlcbiAgQElzTm90RW1wdHkoeyBtZXNzYWdlOiAnQ2FtaW5obyBkbyBhcnF1aXZvIMOpIG9icmlnYXTDs3JpbycgfSlcbiAgQElzU3RyaW5nKHsgbWVzc2FnZTogJ0NhbWluaG8gZG8gYXJxdWl2byBkZXZlIHNlciB1bWEgc3RyaW5nJyB9KVxuICBATWF4TGVuZ3RoKDUwMCwgeyBtZXNzYWdlOiAnQ2FtaW5obyBkbyBhcnF1aXZvIGRldmUgdGVyIG5vIG3DoXhpbW8gNTAwIGNhcmFjdGVyZXMnIH0pXG4gIGNhbWluaG9fYXJxdWl2bzogc3RyaW5nO1xuXG4gIC8qKlxuICAgKiBUYW1hbmhvIGRvIGFycXVpdm8gZW0gYnl0ZXNcbiAgICovXG4gIEBDb2x1bW4oKVxuICBASXNOb3RFbXB0eSh7IG1lc3NhZ2U6ICdUYW1hbmhvIGRvIGFycXVpdm8gw6kgb2JyaWdhdMOzcmlvJyB9KVxuICBASXNOdW1iZXIoe30sIHsgbWVzc2FnZTogJ1RhbWFuaG8gZGV2ZSBzZXIgdW0gbsO6bWVybycgfSlcbiAgQE1pbigxLCB7IG1lc3NhZ2U6ICdUYW1hbmhvIGRldmUgc2VyIG1haW9yIHF1ZSB6ZXJvJyB9KVxuICB0YW1hbmhvOiBudW1iZXI7XG5cbiAgLyoqXG4gICAqIFRpcG8gTUlNRSBkbyBhcnF1aXZvXG4gICAqL1xuICBAQ29sdW1uKHsgbmFtZTogJ21pbWVfdHlwZScgfSlcbiAgQElzTm90RW1wdHkoeyBtZXNzYWdlOiAnVGlwbyBNSU1FIMOpIG9icmlnYXTDs3JpbycgfSlcbiAgQElzU3RyaW5nKHsgbWVzc2FnZTogJ1RpcG8gTUlNRSBkZXZlIHNlciB1bWEgc3RyaW5nJyB9KVxuICBATWF4TGVuZ3RoKDEwMCwgeyBtZXNzYWdlOiAnVGlwbyBNSU1FIGRldmUgdGVyIG5vIG3DoXhpbW8gMTAwIGNhcmFjdGVyZXMnIH0pXG4gIG1pbWVfdHlwZTogc3RyaW5nO1xuXG4gIC8qKlxuICAgKiBEYXRhIGRlIHVwbG9hZCBkbyBjb21wcm92YW50ZVxuICAgKi9cbiAgQENvbHVtbih7IG5hbWU6ICdkYXRhX3VwbG9hZCcsIHR5cGU6ICd0aW1lc3RhbXAnIH0pXG4gIEBJc05vdEVtcHR5KHsgbWVzc2FnZTogJ0RhdGEgZGUgdXBsb2FkIMOpIG9icmlnYXTDs3JpYScgfSlcbiAgZGF0YV91cGxvYWQ6IERhdGU7XG5cbiAgLyoqXG4gICAqIFJlZmVyw6puY2lhIGFvIHVzdcOhcmlvIHF1ZSBmZXogbyB1cGxvYWQgZG8gY29tcHJvdmFudGVcbiAgICovXG4gIEBDb2x1bW4oeyBuYW1lOiAndXBsb2FkZWRfcG9yJyB9KVxuICBASXNOb3RFbXB0eSh7IG1lc3NhZ2U6ICdJRCBkbyB1c3XDoXJpbyByZXNwb25zw6F2ZWwgcGVsbyB1cGxvYWQgw6kgb2JyaWdhdMOzcmlvJyB9KVxuICBASXNVVUlEKCc0JywgeyBtZXNzYWdlOiAnSUQgZG8gdXN1w6FyaW8gZGV2ZSBzZXIgdW0gVVVJRCB2w6FsaWRvJyB9KVxuICB1cGxvYWRlZF9wb3I6IHN0cmluZztcblxuICAvKipcbiAgICogRGF0YSBkZSBjcmlhw6fDo28gZG8gcmVnaXN0cm9cbiAgICovXG4gIEBDcmVhdGVEYXRlQ29sdW1uKHsgbmFtZTogJ2NyZWF0ZWRfYXQnIH0pXG4gIGNyZWF0ZWRfYXQ6IERhdGU7XG5cbiAgLyoqXG4gICAqIERhdGEgZGEgw7psdGltYSBhdHVhbGl6YcOnw6NvIGRvIHJlZ2lzdHJvXG4gICAqL1xuICBAVXBkYXRlRGF0ZUNvbHVtbih7IG5hbWU6ICd1cGRhdGVkX2F0JyB9KVxuICB1cGRhdGVkX2F0OiBEYXRlO1xuXG4gIC8qKlxuICAgKiBSZWxhY2lvbmFtZW50byBjb20gYSBlbnRpZGFkZSBQYWdhbWVudG9cbiAgICovXG4gIEBNYW55VG9PbmUoKCkgPT4gUGFnYW1lbnRvLCBwYWdhbWVudG8gPT4gcGFnYW1lbnRvLmlkKVxuICBASm9pbkNvbHVtbih7IG5hbWU6ICdwYWdhbWVudG9faWQnIH0pXG4gIHBhZ2FtZW50bzogUGFnYW1lbnRvO1xuXG4gIC8qKlxuICAgKiBSZWxhY2lvbmFtZW50byBjb20gYSBlbnRpZGFkZSBVc3VhcmlvXG4gICAqL1xuICBATWFueVRvT25lKCgpID0+IFVzdWFyaW8sIHVzdWFyaW8gPT4gdXN1YXJpby5pZClcbiAgQEpvaW5Db2x1bW4oeyBuYW1lOiAndXBsb2FkZWRfcG9yJyB9KVxuICByZXNwb25zYXZlbF91cGxvYWQ6IFVzdWFyaW87XG59XG4iXSwidmVyc2lvbiI6M30=

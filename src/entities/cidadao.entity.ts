@@ -30,7 +30,6 @@ import { Sexo } from '../enums/sexo.enum';
 import { Unidade } from './unidade.entity';
 import { EstadoCivil } from '../enums/estado-civil.enum';
 
-
 @Entity('cidadao')
 @Index(['cpf'], { unique: true })
 @Index(['nis'], { unique: true, where: 'nis IS NOT NULL' })
@@ -38,8 +37,8 @@ import { EstadoCivil } from '../enums/estado-civil.enum';
 @Index(['telefone'])
 @Index(['created_at'])
 @Index(['unidade_id'])
-@Index('idx_cidadao_endereco_bairro') 
-@Index('idx_cidadao_endereco_cidade') 
+@Index('idx_cidadao_endereco_bairro')
+@Index('idx_cidadao_endereco_cidade')
 @Index('idx_cidadao_nome_trgm')
 export class Cidadao {
   @PrimaryGeneratedColumn('uuid')
@@ -93,7 +92,10 @@ export class Cidadao {
   @OneToMany(() => PapelCidadao, (papelCidadao) => papelCidadao.cidadao)
   papeis: PapelCidadao[];
 
-  @OneToMany(() => ComposicaoFamiliar, (composicaoFamiliar) => composicaoFamiliar.cidadao)
+  @OneToMany(
+    () => ComposicaoFamiliar,
+    (composicaoFamiliar) => composicaoFamiliar.cidadao,
+  )
   composicao_familiar: ComposicaoFamiliar[];
 
   @Column({
@@ -123,7 +125,6 @@ export class Cidadao {
   @IsEnum(Sexo, { message: 'Estado civil inválido' })
   @IsNotEmpty({ message: 'Estado Civil é obrigatório' })
   estado_civil: EstadoCivil;
-  
 
   @Column('jsonb')
   @IsNotEmpty({ message: 'Endereço é obrigatório' })
@@ -176,11 +177,14 @@ export class Cidadao {
     let idade = hoje.getFullYear() - nascimento.getFullYear();
     const mesAtual = hoje.getMonth();
     const mesNascimento = nascimento.getMonth();
-    
-    if (mesAtual < mesNascimento || (mesAtual === mesNascimento && hoje.getDate() < nascimento.getDate())) {
+
+    if (
+      mesAtual < mesNascimento ||
+      (mesAtual === mesNascimento && hoje.getDate() < nascimento.getDate())
+    ) {
       idade--;
     }
-    
+
     return idade;
   }
 
@@ -222,7 +226,11 @@ export class Cidadao {
    * @returns true se tem nome social
    */
   temNomeSocial(): boolean {
-    return this.nome_social !== null && this.nome_social !== undefined && this.nome_social.trim() !== '';
+    return (
+      this.nome_social !== null &&
+      this.nome_social !== undefined &&
+      this.nome_social.trim() !== ''
+    );
   }
 
   /**
@@ -238,7 +246,11 @@ export class Cidadao {
    * @returns true se tem email
    */
   temEmail(): boolean {
-    return this.email !== null && this.email !== undefined && this.email.trim() !== '';
+    return (
+      this.email !== null &&
+      this.email !== undefined &&
+      this.email.trim() !== ''
+    );
   }
 
   /**
@@ -247,14 +259,15 @@ export class Cidadao {
    */
   getEnderecoCompleto(): string {
     if (!this.endereco) return 'Endereço não informado';
-    
-    const { logradouro, numero, complemento, bairro, cidade, estado, cep } = this.endereco;
+
+    const { logradouro, numero, complemento, bairro, cidade, estado, cep } =
+      this.endereco;
     let endereco = `${logradouro}, ${numero}`;
-    
+
     if (complemento) {
       endereco += `, ${complemento}`;
     }
-    
+
     endereco += ` - ${bairro}, ${cidade}/${estado} - CEP: ${cep}`;
     return endereco;
   }
@@ -312,7 +325,7 @@ export class Cidadao {
       temEmail: this.temEmail(),
       unidadeId: this.unidade_id,
       ativo: this.isAtivo(),
-      criadoEm: this.created_at
+      criadoEm: this.created_at,
     };
   }
 
@@ -375,7 +388,7 @@ export class Cidadao {
    */
   getFaixaEtaria(): string {
     const idade = this.getIdade();
-    
+
     if (idade <= 12) return 'Criança';
     if (idade <= 17) return 'Adolescente';
     if (idade <= 29) return 'Jovem';
@@ -388,7 +401,7 @@ export class Cidadao {
    * @returns true se tem papéis ativos
    */
   temPapeisAtivos(): boolean {
-    return this.papeis && this.papeis.some(papel => papel.ativo);
+    return this.papeis && this.papeis.some((papel) => papel.ativo);
   }
 
   /**
@@ -466,7 +479,7 @@ export class Cidadao {
       sexo: this.sexo,
       unidadeId: this.unidade_id,
       ativo: this.isAtivo(),
-      criadoEm: this.created_at
+      criadoEm: this.created_at,
     };
   }
 
@@ -516,24 +529,26 @@ export class Cidadao {
    */
   getSugestoesVerificacao(): string[] {
     const sugestoes: string[] = [];
-    
+
     if (!this.temEmail()) {
       sugestoes.push('Considere cadastrar um email para contato');
     }
-    
+
     if (!this.temComposicaoFamiliar()) {
       sugestoes.push('Cadastre a composição familiar para análise completa');
     }
-    
+
     if (!this.temPapeisAtivos()) {
       sugestoes.push('Defina papéis para o cidadão no sistema');
     }
-    
+
     const idade = this.getIdade();
     if (idade < 0 || idade > 120) {
-      sugestoes.push('Verifique a data de nascimento - idade calculada parece incorreta');
+      sugestoes.push(
+        'Verifique a data de nascimento - idade calculada parece incorreta',
+      );
     }
-    
+
     return sugestoes;
   }
 }

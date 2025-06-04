@@ -63,7 +63,8 @@ export class CreateDadosCestaBasicaDto {
   origem_atendimento: OrigemAtendimentoEnum;
 
   @ApiPropertyOptional({
-    description: 'Número de pessoas na família (para cálculo da quantidade recomendada)',
+    description:
+      'Número de pessoas na família (para cálculo da quantidade recomendada)',
     example: 4,
     minimum: 1,
   })
@@ -80,23 +81,30 @@ export class CreateDadosCestaBasicaDto {
   numero_pessoas_familia?: number;
 
   @ApiPropertyOptional({
-    description: 'Justificativa para a quantidade solicitada (obrigatória se quantidade > recomendada)',
-    example: 'Família com necessidades especiais devido a situação de vulnerabilidade extrema.',
+    description:
+      'Justificativa para a quantidade solicitada (obrigatória se quantidade > recomendada)',
+    example:
+      'Família com necessidades especiais devido a situação de vulnerabilidade extrema.',
   })
   @IsOptional()
   @ValidateIf((o) => {
     // Validação condicional: obrigatória se quantidade > recomendada
     // Regra simples: 1 cesta para até 3 pessoas, +1 a cada 3 pessoas
-    const recomendada = o.numero_pessoas_familia ? Math.ceil(o.numero_pessoas_familia / 3) : 1;
+    const recomendada = o.numero_pessoas_familia
+      ? Math.ceil(o.numero_pessoas_familia / 3)
+      : 1;
     return o.quantidade_cestas_solicitadas > recomendada + 1;
   })
-  @IsNotEmpty({ message: 'Justificativa é obrigatória para quantidade acima do recomendado' })
+  @IsNotEmpty({
+    message: 'Justificativa é obrigatória para quantidade acima do recomendado',
+  })
   @MinLength(10, { message: 'Justificativa deve ter pelo menos 10 caracteres' })
   justificativa_quantidade?: string;
 
   @ApiPropertyOptional({
     description: 'Observações especiais sobre o caso',
-    example: 'Família acompanhada pelo PAIF devido a situação de vulnerabilidade.',
+    example:
+      'Família acompanhada pelo PAIF devido a situação de vulnerabilidade.',
   })
   @IsOptional()
   observacoes_especiais?: string;
@@ -109,11 +117,17 @@ export class CreateDadosCestaBasicaDto {
   tecnico_responsavel?: string;
 
   @ApiPropertyOptional({
-    description: 'Unidade solicitante (obrigatória para encaminhamentos externos)',
+    description:
+      'Unidade solicitante (obrigatória para encaminhamentos externos)',
     example: 'CRAS Regional III',
   })
-  @ValidateIf((o) => o.origem_atendimento === OrigemAtendimentoEnum.ENCAMINHAMENTO_EXTERNO)
-  @IsNotEmpty({ message: 'Unidade solicitante é obrigatória para encaminhamentos externos' })
+  @ValidateIf(
+    (o) =>
+      o.origem_atendimento === OrigemAtendimentoEnum.ENCAMINHAMENTO_EXTERNO,
+  )
+  @IsNotEmpty({
+    message: 'Unidade solicitante é obrigatória para encaminhamentos externos',
+  })
   @IsOptional()
   unidade_solicitante?: string;
 }

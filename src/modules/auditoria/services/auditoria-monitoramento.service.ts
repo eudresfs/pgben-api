@@ -1,6 +1,13 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource, Raw, Not, IsNull, MoreThanOrEqual } from 'typeorm';
+import {
+  Repository,
+  DataSource,
+  Raw,
+  Not,
+  IsNull,
+  MoreThanOrEqual,
+} from 'typeorm';
 import { LogAuditoria } from '../../../entities/log-auditoria.entity';
 import { ConfigService } from '@nestjs/config';
 import { TipoOperacao } from '../../../enums/tipo-operacao.enum';
@@ -175,17 +182,21 @@ export class AuditoriaMonitoramentoService implements OnModuleInit {
       // this.atualizarEstatisticas().catch(error => {
       //   this.logger.error(`Erro na atualização inicial de estatísticas: ${error.message}`);
       // });
-      
+
       // Configurar a atualização de estatísticas a cada 15 minutos (reduzir frequência)
       this.scheduleAdapter.scheduleInterval(
         'atualizar_estatisticas_auditoria',
         15 * 60 * 1000, // 15 minutos em milissegundos
-        () => this.atualizarEstatisticas()
+        () => this.atualizarEstatisticas(),
       );
-      
-      this.logger.log('Agendamento de estatísticas de auditoria configurado com sucesso (execução inicial desabilitada)');
+
+      this.logger.log(
+        'Agendamento de estatísticas de auditoria configurado com sucesso (execução inicial desabilitada)',
+      );
     } catch (error) {
-      this.logger.error(`Erro ao configurar agendamento de estatísticas: ${error.message}`);
+      this.logger.error(
+        `Erro ao configurar agendamento de estatísticas: ${error.message}`,
+      );
     }
   }
 
@@ -209,8 +220,10 @@ export class AuditoriaMonitoramentoService implements OnModuleInit {
       }
 
       // Atualizar logs por entidade (top 10)
-      const entidadesResult: Array<{ entidade_afetada: string; total: string }> = 
-        await this.dataSource.query(`
+      const entidadesResult: Array<{
+        entidade_afetada: string;
+        total: string;
+      }> = await this.dataSource.query(`
           SELECT entidade_afetada, COUNT(*) as total
           FROM logs_auditoria
           GROUP BY entidade_afetada
@@ -221,7 +234,7 @@ export class AuditoriaMonitoramentoService implements OnModuleInit {
       this.estatisticas.logsPorEntidade = {};
       for (const row of entidadesResult) {
         if (row.entidade_afetada) {
-          this.estatisticas.logsPorEntidade[row.entidade_afetada] = 
+          this.estatisticas.logsPorEntidade[row.entidade_afetada] =
             parseInt(row.total, 10) || 0;
         }
       }
@@ -235,7 +248,9 @@ export class AuditoriaMonitoramentoService implements OnModuleInit {
             },
           });
       } catch (error) {
-        this.logger.warn(`Erro ao contar logs com dados sensíveis: ${error.message}`);
+        this.logger.warn(
+          `Erro ao contar logs com dados sensíveis: ${error.message}`,
+        );
         this.estatisticas.logsComDadosSensiveis = 0;
       }
 
@@ -332,9 +347,10 @@ export class AuditoriaMonitoramentoService implements OnModuleInit {
       // Verificar alertas
       this.verificarAlertas();
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Erro desconhecido';
       const errorStack = error instanceof Error ? error.stack : undefined;
-      
+
       this.logger.error(
         `Erro ao atualizar estatísticas: ${errorMessage}`,
         errorStack,
@@ -396,9 +412,10 @@ export class AuditoriaMonitoramentoService implements OnModuleInit {
         );
       }
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Erro desconhecido';
       const errorStack = error instanceof Error ? error.stack : undefined;
-      
+
       this.logger.error(
         `Erro ao verificar alertas: ${errorMessage}`,
         errorStack,
@@ -524,9 +541,9 @@ export class AuditoriaMonitoramentoService implements OnModuleInit {
       }
 
       // Verificar índices não utilizados
-      const indicesNaoUtilizados = (indicesResult as Array<{ num_scans: string; nome_indice: string }>).filter(
-        (indice) => indice.num_scans === '0',
-      );
+      const indicesNaoUtilizados = (
+        indicesResult as Array<{ num_scans: string; nome_indice: string }>
+      ).filter((indice) => indice.num_scans === '0');
 
       if (indicesNaoUtilizados.length > 0) {
         recomendacoes.push(
@@ -549,9 +566,10 @@ export class AuditoriaMonitoramentoService implements OnModuleInit {
         recomendacoes,
       };
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Erro desconhecido';
       const errorStack = error instanceof Error ? error.stack : undefined;
-      
+
       this.logger.error(
         `Erro ao gerar relatório de saúde: ${errorMessage}`,
         errorStack,

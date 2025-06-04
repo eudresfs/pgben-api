@@ -1,7 +1,15 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { TipoBeneficioSchemaRepository } from '../repositories/tipo-beneficio-schema.repository';
 import { TipoBeneficio } from '../../../entities/tipo-beneficio.entity';
-import { TipoBeneficioSchema, CampoEstrutura, MetadadosEstrutura } from '../../../entities/tipo-beneficio-schema.entity';
+import {
+  TipoBeneficioSchema,
+  CampoEstrutura,
+  MetadadosEstrutura,
+} from '../../../entities/tipo-beneficio-schema.entity';
 import { Logger } from '@nestjs/common';
 
 /**
@@ -28,15 +36,15 @@ export class EstruturaEntidadeService {
   private readonly mapeamentoEntidades: Record<string, string> = {
     'beneficio-natalidade': 'DadosNatalidade',
     'beneficio natalidade': 'DadosNatalidade',
-    'natalidade': 'DadosNatalidade',
+    natalidade: 'DadosNatalidade',
     'aluguel-social': 'DadosAluguelSocial',
     'aluguel social': 'DadosAluguelSocial',
     'beneficio-funeral': 'DadosFuneral',
     'beneficio funeral': 'DadosFuneral',
-    'funeral': 'DadosFuneral',
+    funeral: 'DadosFuneral',
     'cesta-basica': 'DadosCestaBasica',
     'cesta básica': 'DadosCestaBasica',
-    'cesta': 'DadosCestaBasica'
+    cesta: 'DadosCestaBasica',
   };
 
   constructor(
@@ -49,26 +57,38 @@ export class EstruturaEntidadeService {
    * @param tipoBeneficio Dados do tipo de benefício
    * @returns Estrutura da entidade correspondente
    */
-  async obterEstruturaEntidade(tipoBeneficio: TipoBeneficio): Promise<EstruturaEntidadeResponse> {
+  async obterEstruturaEntidade(
+    tipoBeneficio: TipoBeneficio,
+  ): Promise<EstruturaEntidadeResponse> {
     try {
       // Primeiro, tenta buscar schema customizado no banco
-      const schemaCustomizado = await this.tipoBeneficioSchemaRepository.findByTipoBeneficioId(tipoBeneficio.id);
-      
+      const schemaCustomizado =
+        await this.tipoBeneficioSchemaRepository.findByTipoBeneficioId(
+          tipoBeneficio.id,
+        );
+
       if (schemaCustomizado) {
-        this.logger.log(`Schema customizado encontrado para benefício ${tipoBeneficio.id}`);
+        this.logger.log(
+          `Schema customizado encontrado para benefício ${tipoBeneficio.id}`,
+        );
         return {
           entidade_dados: schemaCustomizado.entidade_dados,
           campos: schemaCustomizado.schema_estrutura.campos,
           metadados: schemaCustomizado.schema_estrutura.metadados,
-          versao: schemaCustomizado.versao
+          versao: schemaCustomizado.versao,
         };
       }
 
       // Se não encontrou schema customizado, gera estrutura padrão
-      this.logger.log(`Gerando estrutura padrão para benefício ${tipoBeneficio.nome}`);
+      this.logger.log(
+        `Gerando estrutura padrão para benefício ${tipoBeneficio.nome}`,
+      );
       return await this.gerarEstruturaPadrao(tipoBeneficio);
     } catch (error) {
-      this.logger.error(`Erro ao obter estrutura da entidade: ${error.message}`, error.stack);
+      this.logger.error(
+        `Erro ao obter estrutura da entidade: ${error.message}`,
+        error.stack,
+      );
       throw new BadRequestException('Erro ao obter estrutura da entidade');
     }
   }
@@ -79,21 +99,28 @@ export class EstruturaEntidadeService {
    * @param tipoBeneficio Dados do tipo de benefício
    * @returns Estrutura padrão da entidade
    */
-  private async gerarEstruturaPadrao(tipoBeneficio: TipoBeneficio): Promise<EstruturaEntidadeResponse> {
+  private async gerarEstruturaPadrao(
+    tipoBeneficio: TipoBeneficio,
+  ): Promise<EstruturaEntidadeResponse> {
     const nomeNormalizado = this.normalizarNomeBeneficio(tipoBeneficio.nome);
     const entidadeDados = this.mapeamentoEntidades[nomeNormalizado];
 
     if (!entidadeDados) {
-      throw new NotFoundException(`Entidade de dados não encontrada para o benefício: ${tipoBeneficio.nome}`);
+      throw new NotFoundException(
+        `Entidade de dados não encontrada para o benefício: ${tipoBeneficio.nome}`,
+      );
     }
 
-    const estrutura = await this.gerarEstruturaPorEntidade(entidadeDados, tipoBeneficio);
-    
+    const estrutura = await this.gerarEstruturaPorEntidade(
+      entidadeDados,
+      tipoBeneficio,
+    );
+
     return {
       entidade_dados: entidadeDados,
       campos: estrutura.campos,
       metadados: estrutura.metadados,
-      versao: '1.0.0'
+      versao: '1.0.0',
     };
   }
 
@@ -105,8 +132,8 @@ export class EstruturaEntidadeService {
    * @returns Estrutura de campos e metadados
    */
   private async gerarEstruturaPorEntidade(
-    entidadeDados: string, 
-    tipoBeneficio: TipoBeneficio
+    entidadeDados: string,
+    tipoBeneficio: TipoBeneficio,
   ): Promise<{ campos: CampoEstrutura[]; metadados: MetadadosEstrutura }> {
     switch (entidadeDados) {
       case 'DadosNatalidade':
@@ -118,56 +145,62 @@ export class EstruturaEntidadeService {
       case 'DadosCestaBasica':
         return this.gerarEstruturaCestaBasica(tipoBeneficio);
       default:
-        throw new BadRequestException(`Entidade de dados não suportada: ${entidadeDados}`);
+        throw new BadRequestException(
+          `Entidade de dados não suportada: ${entidadeDados}`,
+        );
     }
   }
 
   /**
    * Gera estrutura específica para Auxílio Natalidade
    */
-  private gerarEstruturaNatalidade(tipoBeneficio: TipoBeneficio): { campos: CampoEstrutura[]; metadados: MetadadosEstrutura } {
+  private gerarEstruturaNatalidade(tipoBeneficio: TipoBeneficio): {
+    campos: CampoEstrutura[];
+    metadados: MetadadosEstrutura;
+  } {
     const campos: CampoEstrutura[] = [
       {
         nome: 'realiza_pre_natal',
         tipo: 'boolean',
         obrigatorio: true,
         label: 'Realiza pré-natal',
-        descricao: 'Indica se a gestante realiza acompanhamento pré-natal'
+        descricao: 'Indica se a gestante realiza acompanhamento pré-natal',
       },
       {
         nome: 'atendida_psf_ubs',
         tipo: 'boolean',
         obrigatorio: true,
         label: 'Atendida pelo PSF/UBS',
-        descricao: 'Indica se é atendida pelo Programa Saúde da Família ou Unidade Básica de Saúde'
+        descricao:
+          'Indica se é atendida pelo Programa Saúde da Família ou Unidade Básica de Saúde',
       },
       {
         nome: 'gravidez_risco',
         tipo: 'boolean',
         obrigatorio: true,
         label: 'Gravidez de risco',
-        descricao: 'Indica se a gravidez é considerada de alto risco'
+        descricao: 'Indica se a gravidez é considerada de alto risco',
       },
       {
         nome: 'data_provavel_parto',
         tipo: 'date',
         obrigatorio: false,
         label: 'Data provável do parto',
-        descricao: 'Data estimada para o nascimento do bebê'
+        descricao: 'Data estimada para o nascimento do bebê',
       },
       {
         nome: 'gemeos_trigemeos',
         tipo: 'boolean',
         obrigatorio: true,
         label: 'Gêmeos/Trigêmeos',
-        descricao: 'Indica se a gestação é múltipla (gêmeos ou trigêmeos)'
+        descricao: 'Indica se a gestação é múltipla (gêmeos ou trigêmeos)',
       },
       {
         nome: 'ja_tem_filhos',
         tipo: 'boolean',
         obrigatorio: true,
         label: 'Já tem filhos',
-        descricao: 'Indica se a gestante já possui outros filhos'
+        descricao: 'Indica se a gestante já possui outros filhos',
       },
       {
         nome: 'quantidade_filhos',
@@ -179,23 +212,23 @@ export class EstruturaEntidadeService {
         dependeDe: {
           campo: 'ja_tem_filhos',
           valor: true,
-          condicao: 'igual'
-        }
+          condicao: 'igual',
+        },
       },
       {
         nome: 'telefone_cadastrado_cpf',
         tipo: 'string',
         obrigatorio: false,
         label: 'Telefone cadastrado no CPF',
-        descricao: 'Número de telefone vinculado ao CPF da gestante'
+        descricao: 'Número de telefone vinculado ao CPF da gestante',
       },
       {
         nome: 'chave_pix',
         tipo: 'string',
         obrigatorio: false,
         label: 'Chave PIX',
-        descricao: 'Chave PIX para recebimento do benefício'
-      }
+        descricao: 'Chave PIX para recebimento do benefício',
+      },
     ];
 
     const metadados: MetadadosEstrutura = {
@@ -206,8 +239,8 @@ export class EstruturaEntidadeService {
       configuracoes: {
         permiteProrrogacao: false,
         tempoMaximoSolicitacao: '180 dias após o nascimento',
-        valorFixo: tipoBeneficio.valor
-      }
+        valorFixo: tipoBeneficio.valor,
+      },
     };
 
     return { campos, metadados };
@@ -216,7 +249,10 @@ export class EstruturaEntidadeService {
   /**
    * Gera estrutura específica para Aluguel Social
    */
-  private gerarEstruturaAluguelSocial(tipoBeneficio: TipoBeneficio): { campos: CampoEstrutura[]; metadados: MetadadosEstrutura } {
+  private gerarEstruturaAluguelSocial(tipoBeneficio: TipoBeneficio): {
+    campos: CampoEstrutura[];
+    metadados: MetadadosEstrutura;
+  } {
     const campos: CampoEstrutura[] = [
       {
         nome: 'publico_prioritario',
@@ -230,8 +266,8 @@ export class EstruturaEntidadeService {
           'FAMILIA_VULNERAVEL',
           'VITIMA_VIOLENCIA',
           'SITUACAO_RUA',
-          'OUTROS'
-        ]
+          'OUTROS',
+        ],
       },
       {
         nome: 'especificacoes',
@@ -239,41 +275,37 @@ export class EstruturaEntidadeService {
         obrigatorio: false,
         label: 'Especificações',
         descricao: 'Especificações adicionais do caso',
-        opcoes: [
-          'EMERGENCIAL',
-          'TEMPORARIO',
-          'JUDICIAL',
-          'SOCIAL'
-        ]
+        opcoes: ['EMERGENCIAL', 'TEMPORARIO', 'JUDICIAL', 'SOCIAL'],
       },
       {
         nome: 'situacao_moradia_atual',
         tipo: 'string',
         obrigatorio: true,
         label: 'Situação da moradia atual',
-        descricao: 'Descrição detalhada da situação atual de moradia'
+        descricao: 'Descrição detalhada da situação atual de moradia',
       },
       {
         nome: 'possui_imovel_interditado',
         tipo: 'boolean',
         obrigatorio: true,
         label: 'Possui imóvel interditado',
-        descricao: 'Indica se possui imóvel que foi interditado por autoridade competente'
+        descricao:
+          'Indica se possui imóvel que foi interditado por autoridade competente',
       },
       {
         nome: 'caso_judicializado_maria_penha',
         tipo: 'boolean',
         obrigatorio: true,
         label: 'Caso judicializado Lei Maria da Penha',
-        descricao: 'Indica se o caso está relacionado à Lei Maria da Penha'
+        descricao: 'Indica se o caso está relacionado à Lei Maria da Penha',
       },
       {
         nome: 'observacoes_adicionais',
         tipo: 'string',
         obrigatorio: false,
         label: 'Observações adicionais',
-        descricao: 'Informações complementares sobre o caso'
-      }
+        descricao: 'Informações complementares sobre o caso',
+      },
     ];
 
     const metadados: MetadadosEstrutura = {
@@ -283,9 +315,10 @@ export class EstruturaEntidadeService {
       tags: ['aluguel', 'moradia', 'social'],
       configuracoes: {
         permiteProrrogacao: true,
-        duracaoMaximaMeses: tipoBeneficio.especificacoes?.duracao_maxima_meses || 12,
-        valorMaximo: tipoBeneficio.valor
-      }
+        duracaoMaximaMeses:
+          tipoBeneficio.especificacoes?.duracao_maxima_meses || 12,
+        valorMaximo: tipoBeneficio.valor,
+      },
     };
 
     return { campos, metadados };
@@ -294,21 +327,24 @@ export class EstruturaEntidadeService {
   /**
    * Gera estrutura específica para Auxílio Funeral
    */
-  private gerarEstruturaFuneral(tipoBeneficio: TipoBeneficio): { campos: CampoEstrutura[]; metadados: MetadadosEstrutura } {
+  private gerarEstruturaFuneral(tipoBeneficio: TipoBeneficio): {
+    campos: CampoEstrutura[];
+    metadados: MetadadosEstrutura;
+  } {
     const campos: CampoEstrutura[] = [
       {
         nome: 'nome_falecido',
         tipo: 'string',
         obrigatorio: true,
         label: 'Nome do falecido',
-        descricao: 'Nome completo da pessoa falecida'
+        descricao: 'Nome completo da pessoa falecida',
       },
       {
         nome: 'data_obito',
         tipo: 'date',
         obrigatorio: true,
         label: 'Data do óbito',
-        descricao: 'Data em que ocorreu o falecimento'
+        descricao: 'Data em que ocorreu o falecimento',
       },
       {
         nome: 'parentesco_solicitante',
@@ -316,14 +352,7 @@ export class EstruturaEntidadeService {
         obrigatorio: true,
         label: 'Parentesco com o solicitante',
         descricao: 'Grau de parentesco entre o falecido e o solicitante',
-        opcoes: [
-          'CONJUGE',
-          'FILHO',
-          'PAI',
-          'MAE',
-          'IRMAO',
-          'OUTROS'
-        ]
+        opcoes: ['CONJUGE', 'FILHO', 'PAI', 'MAE', 'IRMAO', 'OUTROS'],
       },
       {
         nome: 'tipo_urna',
@@ -331,11 +360,7 @@ export class EstruturaEntidadeService {
         obrigatorio: true,
         label: 'Tipo de urna',
         descricao: 'Tipo de urna funerária solicitada',
-        opcoes: [
-          'SIMPLES',
-          'INTERMEDIARIA',
-          'LUXO'
-        ]
+        opcoes: ['SIMPLES', 'INTERMEDIARIA', 'LUXO'],
       },
       {
         nome: 'valor_solicitado',
@@ -343,8 +368,8 @@ export class EstruturaEntidadeService {
         obrigatorio: true,
         label: 'Valor solicitado',
         descricao: 'Valor total solicitado para o auxílio funeral',
-        validacoes: { min: 0, max: tipoBeneficio.valor }
-      }
+        validacoes: { min: 0, max: tipoBeneficio.valor },
+      },
     ];
 
     const metadados: MetadadosEstrutura = {
@@ -355,8 +380,8 @@ export class EstruturaEntidadeService {
       configuracoes: {
         permiteProrrogacao: false,
         prazoMaximoSolicitacao: '30 dias após o óbito',
-        valorMaximo: tipoBeneficio.valor
-      }
+        valorMaximo: tipoBeneficio.valor,
+      },
     };
 
     return { campos, metadados };
@@ -365,7 +390,10 @@ export class EstruturaEntidadeService {
   /**
    * Gera estrutura específica para Cesta Básica
    */
-  private gerarEstruturaCestaBasica(tipoBeneficio: TipoBeneficio): { campos: CampoEstrutura[]; metadados: MetadadosEstrutura } {
+  private gerarEstruturaCestaBasica(tipoBeneficio: TipoBeneficio): {
+    campos: CampoEstrutura[];
+    metadados: MetadadosEstrutura;
+  } {
     const campos: CampoEstrutura[] = [
       {
         nome: 'quantidade_pessoas_familia',
@@ -373,14 +401,15 @@ export class EstruturaEntidadeService {
         obrigatorio: true,
         label: 'Quantidade de pessoas na família',
         descricao: 'Número total de pessoas que compõem o núcleo familiar',
-        validacoes: { min: 1, max: 20 }
+        validacoes: { min: 1, max: 20 },
       },
       {
         nome: 'possui_restricao_alimentar',
         tipo: 'boolean',
         obrigatorio: true,
         label: 'Possui restrição alimentar',
-        descricao: 'Indica se algum membro da família possui restrição alimentar'
+        descricao:
+          'Indica se algum membro da família possui restrição alimentar',
       },
       {
         nome: 'tipo_restricao',
@@ -391,8 +420,8 @@ export class EstruturaEntidadeService {
         dependeDe: {
           campo: 'possui_restricao_alimentar',
           valor: true,
-          condicao: 'igual'
-        }
+          condicao: 'igual',
+        },
       },
       {
         nome: 'periodicidade_solicitada',
@@ -400,19 +429,15 @@ export class EstruturaEntidadeService {
         obrigatorio: true,
         label: 'Periodicidade solicitada',
         descricao: 'Frequência desejada para recebimento da cesta básica',
-        opcoes: [
-          'MENSAL',
-          'BIMESTRAL',
-          'TRIMESTRAL'
-        ]
+        opcoes: ['MENSAL', 'BIMESTRAL', 'TRIMESTRAL'],
       },
       {
         nome: 'local_entrega_preferido',
         tipo: 'string',
         obrigatorio: false,
         label: 'Local de entrega preferido',
-        descricao: 'Endereço ou local preferido para entrega da cesta básica'
-      }
+        descricao: 'Endereço ou local preferido para entrega da cesta básica',
+      },
     ];
 
     const metadados: MetadadosEstrutura = {
@@ -422,9 +447,10 @@ export class EstruturaEntidadeService {
       tags: ['cesta', 'alimentacao', 'basica'],
       configuracoes: {
         permiteProrrogacao: true,
-        quantidadeMaximaCestas: tipoBeneficio.especificacoes?.quantidade_maxima_cestas || 6,
-        pesoTotalKg: tipoBeneficio.especificacoes?.peso_total_kg || 15
-      }
+        quantidadeMaximaCestas:
+          tipoBeneficio.especificacoes?.quantidade_maxima_cestas || 6,
+        pesoTotalKg: tipoBeneficio.especificacoes?.peso_total_kg || 15,
+      },
     };
 
     return { campos, metadados };
@@ -437,7 +463,8 @@ export class EstruturaEntidadeService {
    * @returns Nome normalizado
    */
   private normalizarNomeBeneficio(nome: string): string {
-    return nome.toLowerCase()
+    return nome
+      .toLowerCase()
       .trim()
       .replace(/[áàâã]/g, 'a')
       .replace(/[éèê]/g, 'e')
@@ -458,17 +485,17 @@ export class EstruturaEntidadeService {
    */
   async criarSchemaCustomizado(
     tipoBeneficioId: string,
-    estrutura: EstruturaEntidadeResponse
+    estrutura: EstruturaEntidadeResponse,
   ): Promise<TipoBeneficioSchema> {
     const schema = this.tipoBeneficioSchemaRepository.create({
       tipo_beneficio_id: tipoBeneficioId,
       entidade_dados: estrutura.entidade_dados,
       schema_estrutura: {
         campos: estrutura.campos,
-        metadados: estrutura.metadados
+        metadados: estrutura.metadados,
       },
       versao: estrutura.versao,
-      ativo: true
+      ativo: true,
     });
 
     return this.tipoBeneficioSchemaRepository.save(schema);

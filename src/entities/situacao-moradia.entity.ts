@@ -205,7 +205,11 @@ export class SituacaoMoradia {
    * Verifica se tem valor de aluguel definido
    */
   temValorAluguel(): boolean {
-    return this.valor_aluguel !== null && this.valor_aluguel !== undefined && this.valor_aluguel > 0;
+    return (
+      this.valor_aluguel !== null &&
+      this.valor_aluguel !== undefined &&
+      this.valor_aluguel > 0
+    );
   }
 
   /**
@@ -223,17 +227,23 @@ export class SituacaoMoradia {
    * Verifica se tem número de cômodos definido
    */
   temNumeroComodos(): boolean {
-    return this.numero_comodos !== null && this.numero_comodos !== undefined && this.numero_comodos > 0;
+    return (
+      this.numero_comodos !== null &&
+      this.numero_comodos !== undefined &&
+      this.numero_comodos > 0
+    );
   }
 
   /**
    * Verifica se a moradia é adequada (tem infraestrutura básica)
    */
   isMoradiaAdequada(): boolean {
-    return this.possui_banheiro && 
-           this.possui_energia_eletrica && 
-           this.possui_agua_encanada && 
-           this.possui_coleta_lixo;
+    return (
+      this.possui_banheiro &&
+      this.possui_energia_eletrica &&
+      this.possui_agua_encanada &&
+      this.possui_coleta_lixo
+    );
   }
 
   /**
@@ -253,7 +263,7 @@ export class SituacaoMoradia {
    */
   getPontuacaoAdequacao(): number {
     let pontos = 0;
-    
+
     // Tipo de moradia (40 pontos)
     if (this.isMoradiaPropria()) pontos += 40;
     else if (this.isMoradiaAlugada()) pontos += 35;
@@ -261,10 +271,10 @@ export class SituacaoMoradia {
     else if (this.isOcupacao()) pontos += 15;
     else if (this.isAbrigo()) pontos += 10;
     else if (this.isSituacaoRua()) pontos += 0;
-    
+
     // Infraestrutura (60 pontos - 15 cada)
     pontos += this.getItensInfraestrutura() * 15;
-    
+
     return Math.min(pontos, 100);
   }
 
@@ -272,7 +282,11 @@ export class SituacaoMoradia {
    * Verifica se tem tempo de moradia definido
    */
   temTempoMoradia(): boolean {
-    return this.tempo_moradia !== null && this.tempo_moradia !== undefined && this.tempo_moradia > 0;
+    return (
+      this.tempo_moradia !== null &&
+      this.tempo_moradia !== undefined &&
+      this.tempo_moradia > 0
+    );
   }
 
   /**
@@ -310,7 +324,7 @@ export class SituacaoMoradia {
    */
   getDescricaoTempoMoradia(): string {
     if (!this.temTempoMoradia()) return 'Não informado';
-    
+
     if (this.tempo_moradia < 12) {
       return `${this.tempo_moradia} mês(es)`;
     } else {
@@ -361,7 +375,9 @@ export class SituacaoMoradia {
   getSummary(): string {
     const tipo = this.getDescricaoTipoMoradia();
     const adequacao = this.getPontuacaoAdequacao();
-    const tempo = this.temTempoMoradia() ? ` - ${this.getDescricaoTempoMoradia()}` : '';
+    const tempo = this.temTempoMoradia()
+      ? ` - ${this.getDescricaoTempoMoradia()}`
+      : '';
     return `${tipo} (${adequacao}% adequada)${tempo}`;
   }
 
@@ -378,22 +394,22 @@ export class SituacaoMoradia {
   isConsistente(): boolean {
     // Verifica se tem cidadão
     if (!this.cidadao_id) return false;
-    
+
     // Se é alugada, deve ter valor do aluguel
     if (this.isMoradiaAlugada() && !this.temValorAluguel()) {
       return false;
     }
-    
+
     // Se tem valor de aluguel, deve ser moradia alugada
     if (this.temValorAluguel() && !this.isMoradiaAlugada()) {
       return false;
     }
-    
+
     // Situação de rua não deveria ter infraestrutura
     if (this.isSituacaoRua() && this.getItensInfraestrutura() > 0) {
       return false;
     }
-    
+
     return true;
   }
 
@@ -403,7 +419,7 @@ export class SituacaoMoradia {
   podeSerRemovido(): boolean {
     // Não pode remover se já foi removido
     if (this.foiRemovido()) return false;
-    
+
     return true;
   }
 
@@ -430,19 +446,23 @@ export class SituacaoMoradia {
    */
   isElegivelAuxilioMoradia(): boolean {
     // Situações que podem ser elegíveis para auxílio
-    return this.isMoradiaAlugada() || 
-           this.temMoradiaPrecaria() || 
-           !this.isMoradiaAdequada();
+    return (
+      this.isMoradiaAlugada() ||
+      this.temMoradiaPrecaria() ||
+      !this.isMoradiaAdequada()
+    );
   }
 
   /**
    * Verifica se é prioritário para programas habitacionais
    */
   isPrioritarioHabitacao(): boolean {
-    return this.isSituacaoRua() || 
-           this.isAbrigo() || 
-           this.isOcupacao() || 
-           this.getPontuacaoAdequacao() < 50;
+    return (
+      this.isSituacaoRua() ||
+      this.isAbrigo() ||
+      this.isOcupacao() ||
+      this.getPontuacaoAdequacao() < 50
+    );
   }
 
   /**
@@ -451,7 +471,8 @@ export class SituacaoMoradia {
   getNivelVulnerabilidade(): 'BAIXO' | 'MEDIO' | 'ALTO' | 'CRITICO' {
     if (this.isSituacaoRua()) return 'CRITICO';
     if (this.isAbrigo() || this.isOcupacao()) return 'ALTO';
-    if (!this.isMoradiaAdequada() || this.getPontuacaoAdequacao() < 50) return 'MEDIO';
+    if (!this.isMoradiaAdequada() || this.getPontuacaoAdequacao() < 50)
+      return 'MEDIO';
     return 'BAIXO';
   }
 
@@ -492,32 +513,32 @@ export class SituacaoMoradia {
    */
   getSugestoesMelhoria(): string[] {
     const sugestoes: string[] = [];
-    
+
     if (this.temMoradiaPrecaria()) {
       sugestoes.push('Buscar programas habitacionais ou auxílio moradia');
     }
-    
+
     if (!this.isMoradiaAdequada()) {
       const faltantes = this.getItensInfraestruturaFaltantes();
       sugestoes.push(`Melhorar infraestrutura: ${faltantes.join(', ')}`);
     }
-    
+
     if (this.isMoradiaAlugada() && !this.temValorAluguel()) {
       sugestoes.push('Informar valor do aluguel para análise de benefícios');
     }
-    
+
     if (!this.temTempoMoradia()) {
       sugestoes.push('Informar tempo de moradia no local atual');
     }
-    
+
     if (!this.temNumeroComodos()) {
       sugestoes.push('Informar número de cômodos da moradia');
     }
-    
+
     if (!this.isConsistente()) {
       sugestoes.push('Verificar e corrigir inconsistências nos dados');
     }
-    
+
     return sugestoes;
   }
 

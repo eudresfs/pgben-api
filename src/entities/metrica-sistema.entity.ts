@@ -1,9 +1,23 @@
-import { Entity, PrimaryGeneratedColumn, Column, Index, CreateDateColumn } from 'typeorm';
-import { IsNotEmpty, IsOptional, IsNumber, Min, Max, IsString, MaxLength } from 'class-validator';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  Index,
+  CreateDateColumn,
+} from 'typeorm';
+import {
+  IsNotEmpty,
+  IsOptional,
+  IsNumber,
+  Min,
+  Max,
+  IsString,
+  MaxLength,
+} from 'class-validator';
 
 /**
  * Entidade que representa métricas de sistema
- * 
+ *
  * Esta entidade armazena informações sobre o desempenho do sistema,
  * incluindo uso de CPU, memória, disco e carga do sistema.
  */
@@ -20,7 +34,9 @@ export class MetricaSistema {
   @Index('idx_metricas_sistema_servidor')
   @IsNotEmpty({ message: 'Nome do servidor é obrigatório' })
   @IsString({ message: 'Nome do servidor deve ser uma string' })
-  @MaxLength(100, { message: 'Nome do servidor deve ter no máximo 100 caracteres' })
+  @MaxLength(100, {
+    message: 'Nome do servidor deve ter no máximo 100 caracteres',
+  })
   servidor: string;
 
   @Column({ type: 'numeric', precision: 5, scale: 2, nullable: true })

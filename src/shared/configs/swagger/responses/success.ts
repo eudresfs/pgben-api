@@ -28,7 +28,10 @@ export const ApiPaginatedResponse = (type: any) => {
 /**
  * Resposta de sucesso para operações de criação
  */
-export const ApiCreatedResponse = (type: any, description = 'Recurso criado com sucesso') => {
+export const ApiCreatedResponse = (
+  type: any,
+  description = 'Recurso criado com sucesso',
+) => {
   return ApiResponse({
     status: 201,
     description,
@@ -39,7 +42,9 @@ export const ApiCreatedResponse = (type: any, description = 'Recurso criado com 
 /**
  * Resposta de sucesso para operações de exclusão
  */
-export const ApiNoContentResponse = (description = 'Operação realizada com sucesso. Sem conteúdo para retornar.') => {
+export const ApiNoContentResponse = (
+  description = 'Operação realizada com sucesso. Sem conteúdo para retornar.',
+) => {
   return ApiResponse({
     status: 204,
     description,

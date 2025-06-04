@@ -2,14 +2,16 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
  * Migration para criar o schema relacionado ao módulo de configurações
- * 
+ *
  * Esta migration cria as tabelas, enumerações e restrições para o módulo de configurações,
  * permitindo o armazenamento centralizado de parâmetros configuráveis do sistema.
- * 
+ *
  * @author Engenheiro de Dados
  * @date 19/05/2025
  */
-export class CreateConfiguracaoSchema1704067229000 implements MigrationInterface {
+export class CreateConfiguracaoSchema1704067229000
+  implements MigrationInterface
+{
   name = 'CreateConfiguracaoSchema1704067229000';
 
   /**
@@ -17,14 +19,14 @@ export class CreateConfiguracaoSchema1704067229000 implements MigrationInterface
    */
   public async up(queryRunner: QueryRunner): Promise<void> {
     console.log('Iniciando migration 1100000-CreateConfiguracaoSchema...');
-    
+
     // Tabela de configurações de integração
     const configuracaoIntegracaoExists = await queryRunner.query(`
       SELECT EXISTS (
         SELECT 1 FROM information_schema.tables WHERE table_name = 'configuracao_integracao'
       );
     `);
-    
+
     if (!configuracaoIntegracaoExists[0].exists) {
       await queryRunner.query(`
         CREATE TABLE "configuracao_integracao" (
@@ -58,16 +60,16 @@ export class CreateConfiguracaoSchema1704067229000 implements MigrationInterface
     } else {
       console.log('Tabela configuracao_integracao já existe, pulando criação.');
     }
-    
+
     console.log('Tabela de configurações de integração criada com sucesso.');
-    
+
     // Tabela principal de configurações do sistema
     const configuracaoSistemaExists = await queryRunner.query(`
       SELECT EXISTS (
         SELECT 1 FROM information_schema.tables WHERE table_name = 'configuracao_sistema'
       );
     `);
-    
+
     if (!configuracaoSistemaExists[0].exists) {
       await queryRunner.query(`
         CREATE TABLE "configuracao_sistema" (
@@ -116,16 +118,16 @@ export class CreateConfiguracaoSchema1704067229000 implements MigrationInterface
     } else {
       console.log('Tabela configuracao_sistema já existe, pulando criação.');
     }
-    
+
     console.log('Tabela de configurações do sistema criada com sucesso.');
-    
+
     // Tabela de histórico de alterações de configuração
     const configuracaoHistoricoExists = await queryRunner.query(`
       SELECT EXISTS (
         SELECT 1 FROM information_schema.tables WHERE table_name = 'configuracao_historico'
       );
     `);
-    
+
     if (!configuracaoHistoricoExists[0].exists) {
       await queryRunner.query(`
         CREATE TABLE "configuracao_historico" (
@@ -149,16 +151,16 @@ export class CreateConfiguracaoSchema1704067229000 implements MigrationInterface
     } else {
       console.log('Tabela configuracao_historico já existe, pulando criação.');
     }
-    
+
     console.log('Tabela de histórico de configurações criada com sucesso.');
-    
+
     // Tabela de configurações de interface por usuário
     const configuracaoInterfaceExists = await queryRunner.query(`
       SELECT EXISTS (
         SELECT 1 FROM information_schema.tables WHERE table_name = 'configuracao_interface'
       );
     `);
-    
+
     if (!configuracaoInterfaceExists[0].exists) {
       await queryRunner.query(`
         CREATE TABLE "configuracao_interface" (
@@ -184,16 +186,16 @@ export class CreateConfiguracaoSchema1704067229000 implements MigrationInterface
     } else {
       console.log('Tabela configuracao_interface já existe, pulando criação.');
     }
-    
+
     console.log('Tabela de configurações de interface criada com sucesso.');
-    
+
     // Tabela de configurações por grupo de usuários
     const configuracaoGrupoExists = await queryRunner.query(`
       SELECT EXISTS (
         SELECT 1 FROM information_schema.tables WHERE table_name = 'configuracao_grupo'
       );
     `);
-    
+
     if (!configuracaoGrupoExists[0].exists) {
       await queryRunner.query(`
         CREATE TABLE "configuracao_grupo" (
@@ -224,9 +226,9 @@ export class CreateConfiguracaoSchema1704067229000 implements MigrationInterface
     } else {
       console.log('Tabela configuracao_grupo já existe, pulando criação.');
     }
-    
+
     console.log('Tabela de configurações de grupo criada com sucesso.');
-    
+
     // Adicionar as chaves estrangeiras
     await queryRunner.query(`
       -- Relacionamentos da tabela de configurações (comentados até verificar a existência das tabelas de referência)
@@ -261,7 +263,7 @@ export class CreateConfiguracaoSchema1704067229000 implements MigrationInterface
       -- ALTER TABLE "configuracao_grupo" ADD CONSTRAINT "FK_grupo_grupo_id"
       -- FOREIGN KEY ("grupo_id") REFERENCES "grupo" ("id") ON DELETE CASCADE;
     `);
-    
+
     // Adicionar políticas RLS (Row-Level Security)
     await queryRunner.query(`
       ALTER TABLE "configuracao_integracao" ENABLE ROW LEVEL SECURITY;
@@ -293,7 +295,7 @@ export class CreateConfiguracaoSchema1704067229000 implements MigrationInterface
       CREATE POLICY configuracao_grupo_policy ON "configuracao_grupo" 
         USING (current_user = 'postgres');
     `);
-    
+
     // Criar função para gatilho de histórico de configurações
     await queryRunner.query(`
       CREATE OR REPLACE FUNCTION configuracao_audit_trigger()
@@ -322,7 +324,7 @@ export class CreateConfiguracaoSchema1704067229000 implements MigrationInterface
       FOR EACH ROW
       EXECUTE PROCEDURE configuracao_audit_trigger();
     `);
-    
+
     // Criar log de auditoria para tabelas importantes
     /*
     await queryRunner.query(`
@@ -330,8 +332,10 @@ export class CreateConfiguracaoSchema1704067229000 implements MigrationInterface
       SELECT create_audit_log_trigger('configuracao_integracao');
     `);
     */
-    
-    console.log('Migration 1100000-CreateConfiguracaoSchema executada com sucesso.');
+
+    console.log(
+      'Migration 1100000-CreateConfiguracaoSchema executada com sucesso.',
+    );
   }
 
   /**
@@ -339,7 +343,7 @@ export class CreateConfiguracaoSchema1704067229000 implements MigrationInterface
    */
   public async down(queryRunner: QueryRunner): Promise<void> {
     console.log('Revertendo migration 1100000-CreateConfiguracaoSchema...');
-    
+
     // Remover políticas RLS
     await queryRunner.query(`
       DROP POLICY IF EXISTS configuracao_integracao_policy ON "configuracao_integracao";
@@ -348,13 +352,13 @@ export class CreateConfiguracaoSchema1704067229000 implements MigrationInterface
       DROP POLICY IF EXISTS configuracao_interface_policy ON "configuracao_interface";
       DROP POLICY IF EXISTS configuracao_grupo_policy ON "configuracao_grupo";
     `);
-    
+
     // Remover trigger de auditoria de configurações
     await queryRunner.query(`
       DROP TRIGGER IF EXISTS trigger_configuracao_audit ON "configuracao_sistema";
       DROP FUNCTION IF EXISTS configuracao_audit_trigger();
     `);
-    
+
     // Remover chaves estrangeiras
     await queryRunner.query(`
       ALTER TABLE "configuracao_sistema" DROP CONSTRAINT IF EXISTS "FK_configuracao_unidade";
@@ -371,14 +375,14 @@ export class CreateConfiguracaoSchema1704067229000 implements MigrationInterface
       ALTER TABLE "configuracao_grupo" DROP CONSTRAINT IF EXISTS "FK_grupo_created_by";
       ALTER TABLE "configuracao_grupo" DROP CONSTRAINT IF EXISTS "FK_grupo_grupo_id";
     `);
-    
+
     // Remover triggers de atualização de timestamp
     await queryRunner.query(`
       DROP TRIGGER IF EXISTS trigger_configuracao_sistema_update_timestamp ON "configuracao_sistema";
       DROP TRIGGER IF EXISTS trigger_configuracao_integracao_update_timestamp ON "configuracao_integracao";
       DROP TRIGGER IF EXISTS trigger_configuracao_grupo_update_timestamp ON "configuracao_grupo";
     `);
-    
+
     // Remover tabelas
     await queryRunner.query(`
       DROP TABLE IF EXISTS "configuracao_grupo";
@@ -387,14 +391,16 @@ export class CreateConfiguracaoSchema1704067229000 implements MigrationInterface
       DROP TABLE IF EXISTS "configuracao_sistema";
       DROP TABLE IF EXISTS "configuracao_integracao";
     `);
-    
+
     // Remover tipos enumerados
     await queryRunner.query(`
       DROP TYPE IF EXISTS "visibilidade_configuracao_enum";
       DROP TYPE IF EXISTS "tipo_configuracao_enum";
       DROP TYPE IF EXISTS "integracao_tipo_enum";
     `);
-    
-    console.log('Migration 1100000-CreateConfiguracaoSchema revertida com sucesso.');
+
+    console.log(
+      'Migration 1100000-CreateConfiguracaoSchema revertida com sucesso.',
+    );
   }
 }

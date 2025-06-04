@@ -1,0 +1,95 @@
+678b89f124875b4ffee94da5fe012baa
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var _a, _b;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.MetricaDocumento = void 0;
+const typeorm_1 = require("typeorm");
+const class_validator_1 = require("class-validator");
+/**
+ * Entidade que representa métricas de operações com documentos
+ *
+ * Esta entidade armazena informações sobre operações realizadas com documentos,
+ * como upload, download, visualização e exclusão, incluindo metadados como
+ * tamanho, duração da operação e status.
+ */
+let MetricaDocumento = class MetricaDocumento {
+    id;
+    operacao;
+    created_at;
+    documento_id;
+    usuario_id;
+    tamanho_bytes;
+    duracao_ms;
+    status;
+    detalhes;
+};
+exports.MetricaDocumento = MetricaDocumento;
+__decorate([
+    (0, typeorm_1.PrimaryGeneratedColumn)('uuid'),
+    __metadata("design:type", String)
+], MetricaDocumento.prototype, "id", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ length: 50 }),
+    (0, typeorm_1.Index)('idx_metricas_documentos_operacao'),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Operação é obrigatória' }),
+    (0, class_validator_1.IsString)({ message: 'Operação deve ser uma string' }),
+    (0, class_validator_1.MaxLength)(50, { message: 'Operação deve ter no máximo 50 caracteres' }),
+    __metadata("design:type", String)
+], MetricaDocumento.prototype, "operacao", void 0);
+__decorate([
+    (0, typeorm_1.CreateDateColumn)({ name: 'created_at' }),
+    (0, typeorm_1.Index)('idx_metricas_documentos_timestamp'),
+    __metadata("design:type", typeof (_a = typeof Date !== "undefined" && Date) === "function" ? _a : Object)
+], MetricaDocumento.prototype, "created_at", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'uuid', nullable: true }),
+    (0, typeorm_1.Index)('idx_metricas_documentos_documento'),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsUUID)('4', { message: 'ID do documento inválido' }),
+    __metadata("design:type", String)
+], MetricaDocumento.prototype, "documento_id", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'uuid', nullable: true }),
+    (0, typeorm_1.Index)('idx_metricas_documentos_usuario'),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsUUID)('4', { message: 'ID do usuário inválido' }),
+    __metadata("design:type", String)
+], MetricaDocumento.prototype, "usuario_id", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'bigint', nullable: true }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNumber)({}, { message: 'Tamanho em bytes deve ser um número' }),
+    (0, class_validator_1.Min)(0, { message: 'Tamanho em bytes não pode ser negativo' }),
+    __metadata("design:type", Number)
+], MetricaDocumento.prototype, "tamanho_bytes", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'integer', nullable: true }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNumber)({}, { message: 'Duração deve ser um número' }),
+    (0, class_validator_1.Min)(0, { message: 'Duração não pode ser negativa' }),
+    __metadata("design:type", Number)
+], MetricaDocumento.prototype, "duracao_ms", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ length: 20, nullable: true }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'Status deve ser uma string' }),
+    (0, class_validator_1.MaxLength)(20, { message: 'Status deve ter no máximo 20 caracteres' }),
+    __metadata("design:type", String)
+], MetricaDocumento.prototype, "status", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'jsonb', nullable: true }),
+    __metadata("design:type", typeof (_b = typeof Record !== "undefined" && Record) === "function" ? _b : Object)
+], MetricaDocumento.prototype, "detalhes", void 0);
+exports.MetricaDocumento = MetricaDocumento = __decorate([
+    (0, typeorm_1.Entity)('metricas_documentos')
+], MetricaDocumento);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXGVudGl0aWVzXFxtZXRyaWNhLWRvY3VtZW50by5lbnRpdHkudHMiLCJtYXBwaW5ncyI6Ijs7Ozs7Ozs7Ozs7OztBQUFBLHFDQUEwRjtBQUMxRixxREFBNkc7QUFFN0c7Ozs7OztHQU1HO0FBRUksSUFBTSxnQkFBZ0IsR0FBdEIsTUFBTSxnQkFBZ0I7SUFFM0IsRUFBRSxDQUFTO0lBT1gsUUFBUSxDQUFTO0lBSWpCLFVBQVUsQ0FBTztJQU1qQixZQUFZLENBQVM7SUFNckIsVUFBVSxDQUFTO0lBTW5CLGFBQWEsQ0FBUztJQU10QixVQUFVLENBQVM7SUFNbkIsTUFBTSxDQUFTO0lBR2YsUUFBUSxDQUFzQjtDQUMvQixDQUFBO0FBL0NZLDRDQUFnQjtBQUUzQjtJQURDLElBQUEsZ0NBQXNCLEVBQUMsTUFBTSxDQUFDOzs0Q0FDcEI7QUFPWDtJQUxDLElBQUEsZ0JBQU0sRUFBQyxFQUFFLE1BQU0sRUFBRSxFQUFFLEVBQUUsQ0FBQztJQUN0QixJQUFBLGVBQUssRUFBQyxrQ0FBa0MsQ0FBQztJQUN6QyxJQUFBLDRCQUFVLEVBQUMsRUFBRSxPQUFPLEVBQUUsd0JBQXdCLEVBQUUsQ0FBQztJQUNqRCxJQUFBLDBCQUFRLEVBQUMsRUFBRSxPQUFPLEVBQUUsOEJBQThCLEVBQUUsQ0FBQztJQUNyRCxJQUFBLDJCQUFTLEVBQUMsRUFBRSxFQUFFLEVBQUUsT0FBTyxFQUFFLDJDQUEyQyxFQUFFLENBQUM7O2tEQUN2RDtBQUlqQjtJQUZDLElBQUEsMEJBQWdCLEVBQUMsRUFBRSxJQUFJLEVBQUUsWUFBWSxFQUFFLENBQUM7SUFDeEMsSUFBQSxlQUFLLEVBQUMsbUNBQW1DLENBQUM7a0RBQy9CLElBQUksb0JBQUosSUFBSTtvREFBQztBQU1qQjtJQUpDLElBQUEsZ0JBQU0sRUFBQyxFQUFFLElBQUksRUFBRSxNQUFNLEVBQUUsUUFBUSxFQUFFLElBQUksRUFBRSxDQUFDO0lBQ3hDLElBQUEsZUFBSyxFQUFDLG1DQUFtQyxDQUFDO0lBQzFDLElBQUEsNEJBQVUsR0FBRTtJQUNaLElBQUEsd0JBQU0sRUFBQyxHQUFHLEVBQUUsRUFBRSxPQUFPLEVBQUUsMEJBQTBCLEVBQUUsQ0FBQzs7c0RBQ2hDO0FBTXJCO0lBSkMsSUFBQSxnQkFBTSxFQUFDLEVBQUUsSUFBSSxFQUFFLE1BQU0sRUFBRSxRQUFRLEVBQUUsSUFBSSxFQUFFLENBQUM7SUFDeEMsSUFBQSxlQUFLLEVBQUMsaUNBQWlDLENBQUM7SUFDeEMsSUFBQSw0QkFBVSxHQUFFO0lBQ1osSUFBQSx3QkFBTSxFQUFDLEdBQUcsRUFBRSxFQUFFLE9BQU8sRUFBRSx3QkFBd0IsRUFBRSxDQUFDOztvREFDaEM7QUFNbkI7SUFKQyxJQUFBLGdCQUFNLEVBQUMsRUFBRSxJQUFJLEVBQUUsUUFBUSxFQUFFLFFBQVEsRUFBRSxJQUFJLEVBQUUsQ0FBQztJQUMxQyxJQUFBLDRCQUFVLEdBQUU7SUFDWixJQUFBLDBCQUFRLEVBQUMsRUFBRSxFQUFFLEVBQUUsT0FBTyxFQUFFLHFDQUFxQyxFQUFFLENBQUM7SUFDaEUsSUFBQSxxQkFBRyxFQUFDLENBQUMsRUFBRSxFQUFFLE9BQU8sRUFBRSx3Q0FBd0MsRUFBRSxDQUFDOzt1REFDeEM7QUFNdEI7SUFKQyxJQUFBLGdCQUFNLEVBQUMsRUFBRSxJQUFJLEVBQUUsU0FBUyxFQUFFLFFBQVEsRUFBRSxJQUFJLEVBQUUsQ0FBQztJQUMzQyxJQUFBLDRCQUFVLEdBQUU7SUFDWixJQUFBLDBCQUFRLEVBQUMsRUFBRSxFQUFFLEVBQUUsT0FBTyxFQUFFLDRCQUE0QixFQUFFLENBQUM7SUFDdkQsSUFBQSxxQkFBRyxFQUFDLENBQUMsRUFBRSxFQUFFLE9BQU8sRUFBRSwrQkFBK0IsRUFBRSxDQUFDOztvREFDbEM7QUFNbkI7SUFKQyxJQUFBLGdCQUFNLEVBQUMsRUFBRSxNQUFNLEVBQUUsRUFBRSxFQUFFLFFBQVEsRUFBRSxJQUFJLEVBQUUsQ0FBQztJQUN0QyxJQUFBLDRCQUFVLEdBQUU7SUFDWixJQUFBLDBCQUFRLEVBQUMsRUFBRSxPQUFPLEVBQUUsNEJBQTRCLEVBQUUsQ0FBQztJQUNuRCxJQUFBLDJCQUFTLEVBQUMsRUFBRSxFQUFFLEVBQUUsT0FBTyxFQUFFLHlDQUF5QyxFQUFFLENBQUM7O2dEQUN2RDtBQUdmO0lBREMsSUFBQSxnQkFBTSxFQUFDLEVBQUUsSUFBSSxFQUFFLE9BQU8sRUFBRSxRQUFRLEVBQUUsSUFBSSxFQUFFLENBQUM7a0RBQ2hDLE1BQU0sb0JBQU4sTUFBTTtrREFBYzsyQkE5Q25CLGdCQUFnQjtJQUQ1QixJQUFBLGdCQUFNLEVBQUMscUJBQXFCLENBQUM7R0FDakIsZ0JBQWdCLENBK0M1QiIsIm5hbWVzIjpbXSwic291cmNlcyI6WyJDOlxcVXNlcnNcXGV1ZHJlXFxPbmVEcml2ZVxcRGVza3RvcFxcUHJvamV0b3NcXHBnYmVuXFxwZ2Jlbi1zZXJ2ZXJcXHNyY1xcZW50aXRpZXNcXG1ldHJpY2EtZG9jdW1lbnRvLmVudGl0eS50cyJdLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQgeyBFbnRpdHksIFByaW1hcnlHZW5lcmF0ZWRDb2x1bW4sIENvbHVtbiwgSW5kZXgsIENyZWF0ZURhdGVDb2x1bW4gfSBmcm9tICd0eXBlb3JtJztcbmltcG9ydCB7IElzTm90RW1wdHksIElzVVVJRCwgSXNPcHRpb25hbCwgSXNOdW1iZXIsIE1pbiwgSXNTdHJpbmcsIE1heExlbmd0aCwgSXNFbnVtIH0gZnJvbSAnY2xhc3MtdmFsaWRhdG9yJztcblxuLyoqXG4gKiBFbnRpZGFkZSBxdWUgcmVwcmVzZW50YSBtw6l0cmljYXMgZGUgb3BlcmHDp8O1ZXMgY29tIGRvY3VtZW50b3NcbiAqIFxuICogRXN0YSBlbnRpZGFkZSBhcm1hemVuYSBpbmZvcm1hw6fDtWVzIHNvYnJlIG9wZXJhw6fDtWVzIHJlYWxpemFkYXMgY29tIGRvY3VtZW50b3MsXG4gKiBjb21vIHVwbG9hZCwgZG93bmxvYWQsIHZpc3VhbGl6YcOnw6NvIGUgZXhjbHVzw6NvLCBpbmNsdWluZG8gbWV0YWRhZG9zIGNvbW9cbiAqIHRhbWFuaG8sIGR1cmHDp8OjbyBkYSBvcGVyYcOnw6NvIGUgc3RhdHVzLlxuICovXG5ARW50aXR5KCdtZXRyaWNhc19kb2N1bWVudG9zJylcbmV4cG9ydCBjbGFzcyBNZXRyaWNhRG9jdW1lbnRvIHtcbiAgQFByaW1hcnlHZW5lcmF0ZWRDb2x1bW4oJ3V1aWQnKVxuICBpZDogc3RyaW5nO1xuXG4gIEBDb2x1bW4oeyBsZW5ndGg6IDUwIH0pXG4gIEBJbmRleCgnaWR4X21ldHJpY2FzX2RvY3VtZW50b3Nfb3BlcmFjYW8nKVxuICBASXNOb3RFbXB0eSh7IG1lc3NhZ2U6ICdPcGVyYcOnw6NvIMOpIG9icmlnYXTDs3JpYScgfSlcbiAgQElzU3RyaW5nKHsgbWVzc2FnZTogJ09wZXJhw6fDo28gZGV2ZSBzZXIgdW1hIHN0cmluZycgfSlcbiAgQE1heExlbmd0aCg1MCwgeyBtZXNzYWdlOiAnT3BlcmHDp8OjbyBkZXZlIHRlciBubyBtw6F4aW1vIDUwIGNhcmFjdGVyZXMnIH0pXG4gIG9wZXJhY2FvOiBzdHJpbmc7XG5cbiAgQENyZWF0ZURhdGVDb2x1bW4oeyBuYW1lOiAnY3JlYXRlZF9hdCcgfSlcbiAgQEluZGV4KCdpZHhfbWV0cmljYXNfZG9jdW1lbnRvc190aW1lc3RhbXAnKVxuICBjcmVhdGVkX2F0OiBEYXRlO1xuXG4gIEBDb2x1bW4oeyB0eXBlOiAndXVpZCcsIG51bGxhYmxlOiB0cnVlIH0pXG4gIEBJbmRleCgnaWR4X21ldHJpY2FzX2RvY3VtZW50b3NfZG9jdW1lbnRvJylcbiAgQElzT3B0aW9uYWwoKVxuICBASXNVVUlEKCc0JywgeyBtZXNzYWdlOiAnSUQgZG8gZG9jdW1lbnRvIGludsOhbGlkbycgfSlcbiAgZG9jdW1lbnRvX2lkOiBzdHJpbmc7XG5cbiAgQENvbHVtbih7IHR5cGU6ICd1dWlkJywgbnVsbGFibGU6IHRydWUgfSlcbiAgQEluZGV4KCdpZHhfbWV0cmljYXNfZG9jdW1lbnRvc191c3VhcmlvJylcbiAgQElzT3B0aW9uYWwoKVxuICBASXNVVUlEKCc0JywgeyBtZXNzYWdlOiAnSUQgZG8gdXN1w6FyaW8gaW52w6FsaWRvJyB9KVxuICB1c3VhcmlvX2lkOiBzdHJpbmc7XG5cbiAgQENvbHVtbih7IHR5cGU6ICdiaWdpbnQnLCBudWxsYWJsZTogdHJ1ZSB9KVxuICBASXNPcHRpb25hbCgpXG4gIEBJc051bWJlcih7fSwgeyBtZXNzYWdlOiAnVGFtYW5obyBlbSBieXRlcyBkZXZlIHNlciB1bSBuw7ptZXJvJyB9KVxuICBATWluKDAsIHsgbWVzc2FnZTogJ1RhbWFuaG8gZW0gYnl0ZXMgbsOjbyBwb2RlIHNlciBuZWdhdGl2bycgfSlcbiAgdGFtYW5ob19ieXRlczogbnVtYmVyO1xuXG4gIEBDb2x1bW4oeyB0eXBlOiAnaW50ZWdlcicsIG51bGxhYmxlOiB0cnVlIH0pXG4gIEBJc09wdGlvbmFsKClcbiAgQElzTnVtYmVyKHt9LCB7IG1lc3NhZ2U6ICdEdXJhw6fDo28gZGV2ZSBzZXIgdW0gbsO6bWVybycgfSlcbiAgQE1pbigwLCB7IG1lc3NhZ2U6ICdEdXJhw6fDo28gbsOjbyBwb2RlIHNlciBuZWdhdGl2YScgfSlcbiAgZHVyYWNhb19tczogbnVtYmVyO1xuXG4gIEBDb2x1bW4oeyBsZW5ndGg6IDIwLCBudWxsYWJsZTogdHJ1ZSB9KVxuICBASXNPcHRpb25hbCgpXG4gIEBJc1N0cmluZyh7IG1lc3NhZ2U6ICdTdGF0dXMgZGV2ZSBzZXIgdW1hIHN0cmluZycgfSlcbiAgQE1heExlbmd0aCgyMCwgeyBtZXNzYWdlOiAnU3RhdHVzIGRldmUgdGVyIG5vIG3DoXhpbW8gMjAgY2FyYWN0ZXJlcycgfSlcbiAgc3RhdHVzOiBzdHJpbmc7XG5cbiAgQENvbHVtbih7IHR5cGU6ICdqc29uYicsIG51bGxhYmxlOiB0cnVlIH0pXG4gIGRldGFsaGVzOiBSZWNvcmQ8c3RyaW5nLCBhbnk+O1xufVxuIl0sInZlcnNpb24iOjN9

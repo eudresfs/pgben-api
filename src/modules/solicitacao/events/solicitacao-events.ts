@@ -1,6 +1,6 @@
 /**
  * Definição dos eventos relacionados a solicitações
- * 
+ *
  * Este arquivo contém as interfaces e tipos para os eventos emitidos pelo módulo de solicitação.
  * Estes eventos são utilizados para comunicação assíncrona entre os diferentes componentes do sistema.
  */
@@ -144,7 +144,8 @@ export interface SolicitacaoReleasedEvent extends SolicitacaoEvent {
 /**
  * Evento emitido quando uma determinação judicial é anexada à solicitação
  */
-export interface SolicitacaoJudicialDeterminationAttachedEvent extends SolicitacaoEvent {
+export interface SolicitacaoJudicialDeterminationAttachedEvent
+  extends SolicitacaoEvent {
   type: SolicitacaoEventType.JUDICIAL_DETERMINATION_ATTACHED;
   data: {
     determinacaoJudicialId: string;

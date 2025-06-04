@@ -1,0 +1,17 @@
+62ab9cdd505ed31ac8869fd95c179de2
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.OrigemAtendimentoEnum = void 0;
+/**
+ * Enum para origem do atendimento
+ */
+var OrigemAtendimentoEnum;
+(function (OrigemAtendimentoEnum) {
+    OrigemAtendimentoEnum["CRAS"] = "cras";
+    OrigemAtendimentoEnum["CREAS"] = "creas";
+    OrigemAtendimentoEnum["UNIDADE_BASICA"] = "unidade_basica";
+    OrigemAtendimentoEnum["DEMANDA_ESPONTANEA"] = "demanda_espontanea";
+    OrigemAtendimentoEnum["ENCAMINHAMENTO_EXTERNO"] = "encaminhamento_externo";
+    OrigemAtendimentoEnum["BUSCA_ATIVA"] = "busca_ativa";
+})(OrigemAtendimentoEnum || (exports.OrigemAtendimentoEnum = OrigemAtendimentoEnum = {}));
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXGVudW1zXFxvcmlnZW0tYXRlbmRpbWVudG8uZW51bS50cyIsIm1hcHBpbmdzIjoiOzs7QUFBQTs7R0FFRztBQUNILElBQVkscUJBT1Y7QUFQRixXQUFZLHFCQUFxQjtJQUM5QixzQ0FBYSxDQUFBO0lBQ2Isd0NBQWUsQ0FBQTtJQUNmLDBEQUFpQyxDQUFBO0lBQ2pDLGtFQUF5QyxDQUFBO0lBQ3pDLDBFQUFpRCxDQUFBO0lBQ2pELG9EQUEyQixDQUFBO0FBQzdCLENBQUMsRUFQVSxxQkFBcUIscUNBQXJCLHFCQUFxQixRQU8vQiIsIm5hbWVzIjpbXSwic291cmNlcyI6WyJDOlxcVXNlcnNcXGV1ZHJlXFxPbmVEcml2ZVxcRGVza3RvcFxcUHJvamV0b3NcXHBnYmVuXFxwZ2Jlbi1zZXJ2ZXJcXHNyY1xcZW51bXNcXG9yaWdlbS1hdGVuZGltZW50by5lbnVtLnRzIl0sInNvdXJjZXNDb250ZW50IjpbIi8qKlxyXG4gKiBFbnVtIHBhcmEgb3JpZ2VtIGRvIGF0ZW5kaW1lbnRvXHJcbiAqL1xyXG5leHBvcnQgZW51bSBPcmlnZW1BdGVuZGltZW50b0VudW0ge1xyXG4gICBDUkFTID0gJ2NyYXMnLFxyXG4gICBDUkVBUyA9ICdjcmVhcycsXHJcbiAgIFVOSURBREVfQkFTSUNBID0gJ3VuaWRhZGVfYmFzaWNhJyxcclxuICAgREVNQU5EQV9FU1BPTlRBTkVBID0gJ2RlbWFuZGFfZXNwb250YW5lYScsXHJcbiAgIEVOQ0FNSU5IQU1FTlRPX0VYVEVSTk8gPSAnZW5jYW1pbmhhbWVudG9fZXh0ZXJubycsXHJcbiAgIEJVU0NBX0FUSVZBID0gJ2J1c2NhX2F0aXZhJyxcclxuIH0iXSwidmVyc2lvbiI6M30=

@@ -1,4 +1,8 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ConfirmacaoRecebimento } from '../../../entities/confirmacao-recebimento.entity';
@@ -8,10 +12,10 @@ import { ComprovanteService } from './comprovante.service';
 
 /**
  * Serviço para gerenciamento de confirmações de recebimento de pagamentos
- * 
+ *
  * Implementa a lógica para registrar e consultar confirmações de recebimento
  * por parte dos beneficiários, validando regras de negócio específicas.
- * 
+ *
  * @author Equipe PGBen
  */
 @Injectable()
@@ -27,7 +31,7 @@ export class ConfirmacaoService {
 
   /**
    * Registra uma nova confirmação de recebimento para um pagamento
-   * 
+   *
    * @param pagamentoId ID do pagamento
    * @param createDto Dados da confirmação
    * @param usuarioId ID do usuário que está registrando a confirmação
@@ -36,15 +40,15 @@ export class ConfirmacaoService {
   async registrarConfirmacao(
     pagamentoId: string,
     createDto: ConfirmacaoRecebimentoDto,
-    usuarioId: string
+    usuarioId: string,
   ): Promise<ConfirmacaoRecebimento> {
     // Verificar se o pagamento existe
     // const pagamento = await this.pagamentoService.findOne(pagamentoId);
-    
+
     // if (!pagamento) {
     //   throw new NotFoundException('Pagamento não encontrado');
     // }
-    
+
     // Verificar se o pagamento está no status adequado
     // if (pagamento.status !== StatusPagamentoEnum.LIBERADO) {
     //   throw new ConflictException(
@@ -54,19 +58,20 @@ export class ConfirmacaoService {
 
     // Verificar se já existe confirmação para este pagamento
     const existingConfirmacao = await this.findByPagamento(pagamentoId);
-    
+
     if (existingConfirmacao.length > 0) {
       throw new ConflictException(
-        'Este pagamento já possui uma confirmação de recebimento registrada'
+        'Este pagamento já possui uma confirmação de recebimento registrada',
       );
     }
 
     // Verificar se o pagamento tem pelo menos um comprovante
-    const hasComprovantes = await this.comprovanteService.hasComprovantes(pagamentoId);
-    
+    const hasComprovantes =
+      await this.comprovanteService.hasComprovantes(pagamentoId);
+
     if (!hasComprovantes) {
       throw new ConflictException(
-        'É necessário anexar pelo menos um comprovante antes de confirmar o recebimento'
+        'É necessário anexar pelo menos um comprovante antes de confirmar o recebimento',
       );
     }
 
@@ -77,7 +82,7 @@ export class ConfirmacaoService {
       metodo_confirmacao: createDto.metodoConfirmacao,
       confirmado_por: usuarioId,
       destinatario_id: createDto.destinatarioId,
-      observacoes: createDto.observacoes
+      observacoes: createDto.observacoes,
     });
 
     // Salvar a confirmação
@@ -105,7 +110,7 @@ export class ConfirmacaoService {
 
   /**
    * Busca uma confirmação pelo ID
-   * 
+   *
    * @param id ID da confirmação
    * @returns Confirmação encontrada ou null
    */
@@ -115,24 +120,28 @@ export class ConfirmacaoService {
 
   /**
    * Busca confirmações de um pagamento específico
-   * 
+   *
    * @param pagamentoId ID do pagamento
    * @returns Lista de confirmações para o pagamento
    */
-  async findByPagamento(pagamentoId: string): Promise<ConfirmacaoRecebimento[]> {
+  async findByPagamento(
+    pagamentoId: string,
+  ): Promise<ConfirmacaoRecebimento[]> {
     return this.confirmacaoRepository.find({
       where: { pagamento_id: pagamentoId },
-      order: { data_confirmacao: 'DESC' }
+      order: { data_confirmacao: 'DESC' },
     });
   }
 
   /**
    * Busca uma confirmação pelo ID com todos os relacionamentos
-   * 
+   *
    * @param id ID da confirmação
    * @returns Confirmação encontrada com relacionamentos ou null
    */
-  async findOneWithRelations(id: string): Promise<ConfirmacaoRecebimento | null> {
+  async findOneWithRelations(
+    id: string,
+  ): Promise<ConfirmacaoRecebimento | null> {
     return this.confirmacaoRepository.findOne({
       where: { id },
       relations: ['pagamento'],
@@ -141,40 +150,43 @@ export class ConfirmacaoService {
 
   /**
    * Verifica se um pagamento tem confirmação de recebimento
-   * 
+   *
    * @param pagamentoId ID do pagamento
    * @returns true se o pagamento tem confirmação
    */
   async temConfirmacao(pagamentoId: string): Promise<boolean> {
     const count = await this.confirmacaoRepository.count({
-      where: { pagamento_id: pagamentoId }
+      where: { pagamento_id: pagamentoId },
     });
-    
+
     return count > 0;
   }
 
   /**
    * Validar destinatário se diferente do beneficiário
-   * 
+   *
    * @param pagamentoId ID do pagamento
    * @param destinatarioId ID do destinatário
    * @returns true se o destinatário é válido
    */
-  private async validarDestinatario(pagamentoId: string, destinatarioId?: string): Promise<boolean> {
+  private async validarDestinatario(
+    pagamentoId: string,
+    destinatarioId?: string,
+  ): Promise<boolean> {
     // Esta é uma implementação de placeholder
     // Será integrada com o CidadaoService para validar a relação entre o beneficiário e o destinatário
-    
+
     if (!destinatarioId) {
       return true; // Sem destinatário específico, assume-se que é o próprio beneficiário
     }
-    
+
     // Lógica para validar se o destinatário é válido (ex: familiar cadastrado)
     // const pagamento = await this.pagamentoService.findOne(pagamentoId);
     // const solicitacao = await this.solicitacaoService.findOne(pagamento.solicitacaoId);
     // const beneficiarioId = solicitacao.cidadaoId;
-    
+
     // return this.cidadaoService.verificarRelacaoFamiliar(beneficiarioId, destinatarioId);
-    
+
     return true; // Temporariamente retornando true
   }
 }

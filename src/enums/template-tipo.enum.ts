@@ -5,5 +5,5 @@
 export enum TemplateTipoEnum {
   EMAIL = 'email',
   NOTIFICACAO = 'notificacao',
-  DOCUMENTO = 'documento'
+  DOCUMENTO = 'documento',
 }

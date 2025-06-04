@@ -117,7 +117,8 @@ export class ComposicaoFamiliarService {
       });
 
       // Criar o membro da composição familiar
-      const novoMembro = this.composicaoFamiliarRepository.create(dadosNormalizados);
+      const novoMembro =
+        this.composicaoFamiliarRepository.create(dadosNormalizados);
 
       // Validar entidade
       const errors = await validate(novoMembro);
@@ -136,10 +137,14 @@ export class ComposicaoFamiliarService {
       await this.invalidateCache(createComposicaoFamiliarDto.cidadao_id);
 
       // Converter para DTO de resposta
-      const responseDto = plainToInstance(ComposicaoFamiliarResponseDto, membroSalvo, {
-        excludeExtraneousValues: true,
-        enableImplicitConversion: true,
-      });
+      const responseDto = plainToInstance(
+        ComposicaoFamiliarResponseDto,
+        membroSalvo,
+        {
+          excludeExtraneousValues: true,
+          enableImplicitConversion: true,
+        },
+      );
 
       // Cachear o resultado
       await this.cacheService.set(
@@ -189,23 +194,27 @@ export class ComposicaoFamiliarService {
 
     // Verificar cache
     const cacheKey = `${this.CACHE_PREFIX}cidadao:${cidadaoId}:page:${page}:limit:${limit}`;
-    const cached = await this.cacheService.get<ComposicaoFamiliarPaginatedResponseDto>(cacheKey);
+    const cached =
+      await this.cacheService.get<ComposicaoFamiliarPaginatedResponseDto>(
+        cacheKey,
+      );
     if (cached) {
       return cached;
     }
 
     // Buscar membros da composição familiar
-    const [membros, total] = await this.composicaoFamiliarRepository.findAndCount({
-      where: {
-        cidadao_id: cidadaoId,
-        removed_at: IsNull(),
-      },
-      order: {
-        created_at: 'DESC',
-      },
-      skip: offset,
-      take: limit,
-    });
+    const [membros, total] =
+      await this.composicaoFamiliarRepository.findAndCount({
+        where: {
+          cidadao_id: cidadaoId,
+          removed_at: IsNull(),
+        },
+        order: {
+          created_at: 'DESC',
+        },
+        skip: offset,
+        take: limit,
+      });
 
     // Converter para DTOs de resposta
     const data = membros.map((membro) =>
@@ -246,7 +255,8 @@ export class ComposicaoFamiliarService {
   async findOne(id: string): Promise<ComposicaoFamiliarResponseDto> {
     // Verificar cache
     const cacheKey = `${this.CACHE_PREFIX}id:${id}`;
-    const cached = await this.cacheService.get<ComposicaoFamiliarResponseDto>(cacheKey);
+    const cached =
+      await this.cacheService.get<ComposicaoFamiliarResponseDto>(cacheKey);
     if (cached) {
       return cached;
     }
@@ -260,7 +270,9 @@ export class ComposicaoFamiliarService {
     });
 
     if (!membro) {
-      throw new NotFoundException('Membro da composição familiar não encontrado');
+      throw new NotFoundException(
+        'Membro da composição familiar não encontrado',
+      );
     }
 
     const responseDto = plainToInstance(ComposicaoFamiliarResponseDto, membro, {
@@ -300,7 +312,9 @@ export class ComposicaoFamiliarService {
       });
 
       if (!membro) {
-        throw new NotFoundException('Membro da composição familiar não encontrado');
+        throw new NotFoundException(
+          'Membro da composição familiar não encontrado',
+        );
       }
 
       // Se o CPF está sendo atualizado, validar
@@ -312,14 +326,16 @@ export class ComposicaoFamiliarService {
         }
 
         // Verificar se já existe outro membro com o mesmo CPF
-        const membroExistente = await this.composicaoFamiliarRepository.findOne({
-          where: {
-            cidadao_id: membro.cidadao_id,
-            cpf: cpfLimpo,
-            id: Not(id),
-            removed_at: IsNull(),
+        const membroExistente = await this.composicaoFamiliarRepository.findOne(
+          {
+            where: {
+              cidadao_id: membro.cidadao_id,
+              cpf: cpfLimpo,
+              id: Not(id),
+              removed_at: IsNull(),
+            },
           },
-        });
+        );
 
         if (membroExistente) {
           throw new ConflictException(
@@ -356,7 +372,9 @@ export class ComposicaoFamiliarService {
       }
 
       // Normalizar campos de enum antes de atualizar
-      const dadosNormalizados = normalizeEnumFields({ ...updateComposicaoFamiliarDto });
+      const dadosNormalizados = normalizeEnumFields({
+        ...updateComposicaoFamiliarDto,
+      });
 
       // Atualizar dados
       Object.assign(membro, dadosNormalizados);
@@ -378,10 +396,14 @@ export class ComposicaoFamiliarService {
       // Invalidar cache
       await this.invalidateCache(membro.cidadao_id, id);
 
-      const responseDto = plainToInstance(ComposicaoFamiliarResponseDto, membroAtualizado, {
-        excludeExtraneousValues: true,
-        enableImplicitConversion: true,
-      });
+      const responseDto = plainToInstance(
+        ComposicaoFamiliarResponseDto,
+        membroAtualizado,
+        {
+          excludeExtraneousValues: true,
+          enableImplicitConversion: true,
+        },
+      );
 
       // Atualizar cache
       await this.cacheService.set(
@@ -421,7 +443,9 @@ export class ComposicaoFamiliarService {
     });
 
     if (!membro) {
-      throw new NotFoundException('Membro da composição familiar não encontrado');
+      throw new NotFoundException(
+        'Membro da composição familiar não encontrado',
+      );
     }
 
     // Soft delete
@@ -481,10 +505,15 @@ export class ComposicaoFamiliarService {
     });
 
     const totalMembros = membros.length;
-    const membrosComRenda = membros.filter((m) => m.renda && m.renda > 0).length;
+    const membrosComRenda = membros.filter(
+      (m) => m.renda && m.renda > 0,
+    ).length;
     const rendaTotal = membros.reduce((sum, m) => sum + (m.renda || 0), 0);
     const rendaMedia = membrosComRenda > 0 ? rendaTotal / membrosComRenda : 0;
-    const idadeMedia = totalMembros > 0 ? membros.reduce((sum, m) => sum + m.idade, 0) / totalMembros : 0;
+    const idadeMedia =
+      totalMembros > 0
+        ? membros.reduce((sum, m) => sum + m.idade, 0) / totalMembros
+        : 0;
 
     return {
       totalMembros,
@@ -500,7 +529,10 @@ export class ComposicaoFamiliarService {
    * @param cidadaoId ID do cidadão
    * @param membroId ID do membro (opcional)
    */
-  private async invalidateCache(cidadaoId: string, membroId?: string): Promise<void> {
+  private async invalidateCache(
+    cidadaoId: string,
+    membroId?: string,
+  ): Promise<void> {
     const patterns = [
       `${this.CACHE_PREFIX}cidadao:${cidadaoId}:*`,
       `cidadao:id:${cidadaoId}`,

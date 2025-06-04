@@ -12,10 +12,10 @@ import {
   ParseUUIDPipe,
   ValidationPipe,
 } from '@nestjs/common';
-import { 
-  ApiBearerAuth, 
-  ApiOperation, 
-  ApiResponse, 
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
   ApiTags,
   ApiBadRequestResponse,
   ApiUnauthorizedResponse,
@@ -27,14 +27,14 @@ import { PermissionGuard } from '../../../auth/guards/permission.guard';
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
 import { VerificacaoPapelService } from '../services/verificacao-papel.service';
 import { CidadaoService } from '../services/cidadao.service';
-import { 
-  VerificacaoConflitoPapelDto, 
-  VerificacaoConflitoPapelResponseDto 
+import {
+  VerificacaoConflitoPapelDto,
+  VerificacaoConflitoPapelResponseDto,
 } from '../dto/verificacao-conflito-papel.dto';
-import { 
-  ConversaoParaBeneficiarioDto, 
-  ConversaoParaComposicaoFamiliarDto, 
-  ConversaoPapelResponseDto 
+import {
+  ConversaoParaBeneficiarioDto,
+  ConversaoParaComposicaoFamiliarDto,
+  ConversaoPapelResponseDto,
 } from '../dto/conversao-papel.dto';
 import { TipoEscopo } from '../../../entities/user-permission.entity';
 import { Sexo } from '../../../enums/sexo.enum';
@@ -78,11 +78,12 @@ export class VerificacaoPapelController {
   @RequiresPermission({
     permissionName: 'cidadao.verificar-conflito-papel',
     scopeType: TipoEscopo.UNIDADE,
-    scopeIdExpression: 'params.unidadeId'
+    scopeIdExpression: 'params.unidadeId',
   })
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Verifica se um cidadão possui conflito de papéis',
-    description: 'Endpoint para verificar se um cidadão possui conflitos de papéis no sistema'
+    description:
+      'Endpoint para verificar se um cidadão possui conflitos de papéis no sistema',
   })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -90,30 +91,35 @@ export class VerificacaoPapelController {
     type: VerificacaoConflitoPapelResponseDto,
   })
   @ApiBadRequestResponse({
-    description: 'Dados de entrada inválidos'
+    description: 'Dados de entrada inválidos',
   })
   @ApiUnauthorizedResponse({
-    description: 'Token de autenticação inválido ou ausente'
+    description: 'Token de autenticação inválido ou ausente',
   })
   @ApiForbiddenResponse({
-    description: 'Usuário não possui permissão para esta operação'
+    description: 'Usuário não possui permissão para esta operação',
   })
   async verificarConflito(
     @Body(ValidationPipe) verificacaoDto: VerificacaoConflitoPapelDto,
   ): Promise<VerificacaoConflitoPapelResponseDto> {
-    this.logger.log(`Iniciando verificação de conflito para CPF: ${this.maskCpf(verificacaoDto.cpf)}`);
-    
+    this.logger.log(
+      `Iniciando verificação de conflito para CPF: ${this.maskCpf(verificacaoDto.cpf)}`,
+    );
+
     try {
-      const resultado = await this.verificacaoPapelService.verificarConflitoPapeis(
-        verificacaoDto.cpf,
+      const resultado =
+        await this.verificacaoPapelService.verificarConflitoPapeis(
+          verificacaoDto.cpf,
+        );
+
+      this.logger.log(
+        `Verificação de conflito concluída para CPF: ${this.maskCpf(verificacaoDto.cpf)}`,
       );
-      
-      this.logger.log(`Verificação de conflito concluída para CPF: ${this.maskCpf(verificacaoDto.cpf)}`);
       return resultado;
     } catch (error) {
       this.logger.error(
         `Erro ao verificar conflito para CPF: ${this.maskCpf(verificacaoDto.cpf)}`,
-        error.stack
+        error.stack,
       );
       throw error;
     }
@@ -130,11 +136,13 @@ export class VerificacaoPapelController {
   @RequiresPermission({
     permissionName: 'cidadao.converter-papel',
     scopeType: TipoEscopo.UNIDADE,
-    scopeIdExpression: 'params.unidadeId'
+    scopeIdExpression: 'params.unidadeId',
   })
   @ApiOperation({
-    summary: 'Converte um membro de composição familiar para cidadão beneficiário',
-    description: 'Endpoint para converter um membro de composição familiar em cidadão beneficiário'
+    summary:
+      'Converte um membro de composição familiar para cidadão beneficiário',
+    description:
+      'Endpoint para converter um membro de composição familiar em cidadão beneficiário',
   })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -142,13 +150,13 @@ export class VerificacaoPapelController {
     type: ConversaoPapelResponseDto,
   })
   @ApiBadRequestResponse({
-    description: 'Dados de entrada inválidos ou incompletos'
+    description: 'Dados de entrada inválidos ou incompletos',
   })
   @ApiUnauthorizedResponse({
-    description: 'Token de autenticação inválido ou ausente'
+    description: 'Token de autenticação inválido ou ausente',
   })
   @ApiForbiddenResponse({
-    description: 'Usuário não possui permissão para esta operação'
+    description: 'Usuário não possui permissão para esta operação',
   })
   async converterParaBeneficiario(
     @Body(ValidationPipe) conversaoDto: ConversaoParaBeneficiarioDto,
@@ -156,31 +164,36 @@ export class VerificacaoPapelController {
   ): Promise<ConversaoPapelResponseDto> {
     const usuarioId = req.user.id;
     const cpfMasked = this.maskCpf(conversaoDto.cpf);
-    
-    this.logger.log(`Iniciando conversão para beneficiário - CPF: ${cpfMasked}, Usuário: ${usuarioId}`);
+
+    this.logger.log(
+      `Iniciando conversão para beneficiário - CPF: ${cpfMasked}, Usuário: ${usuarioId}`,
+    );
 
     try {
       this.validateConversaoParaBeneficiario(conversaoDto);
-      
+
       const dadosCidadao = this.buildDadosCidadao(conversaoDto);
-      
+
       // Buscar cidadão pelo CPF para obter o ID
       const cidadao = await this.cidadaoService.findByCpf(conversaoDto.cpf);
       if (!cidadao) {
         throw new NotFoundException('Cidadão não encontrado');
       }
-      
-      const resultado = await this.verificacaoPapelService.converterParaBeneficiario(
-        cidadao.id,
-        conversaoDto.justificativa,
+
+      const resultado =
+        await this.verificacaoPapelService.converterParaBeneficiario(
+          cidadao.id,
+          conversaoDto.justificativa,
+        );
+
+      this.logger.log(
+        `Conversão para beneficiário concluída - CPF: ${cpfMasked}`,
       );
-      
-      this.logger.log(`Conversão para beneficiário concluída - CPF: ${cpfMasked}`);
       return resultado;
     } catch (error) {
       this.logger.error(
         `Erro na conversão para beneficiário - CPF: ${cpfMasked}`,
-        error.stack
+        error.stack,
       );
       throw error;
     }
@@ -197,11 +210,13 @@ export class VerificacaoPapelController {
   @RequiresPermission({
     permissionName: 'cidadao.converter-papel',
     scopeType: TipoEscopo.UNIDADE,
-    scopeIdExpression: 'params.unidadeId'
+    scopeIdExpression: 'params.unidadeId',
   })
   @ApiOperation({
-    summary: 'Converte um cidadão beneficiário para membro de composição familiar',
-    description: 'Endpoint para converter um cidadão beneficiário em membro de composição familiar'
+    summary:
+      'Converte um cidadão beneficiário para membro de composição familiar',
+    description:
+      'Endpoint para converter um cidadão beneficiário em membro de composição familiar',
   })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -209,13 +224,13 @@ export class VerificacaoPapelController {
     type: ConversaoPapelResponseDto,
   })
   @ApiBadRequestResponse({
-    description: 'Dados de entrada inválidos ou incompletos'
+    description: 'Dados de entrada inválidos ou incompletos',
   })
   @ApiUnauthorizedResponse({
-    description: 'Token de autenticação inválido ou ausente'
+    description: 'Token de autenticação inválido ou ausente',
   })
   @ApiForbiddenResponse({
-    description: 'Usuário não possui permissão para esta operação'
+    description: 'Usuário não possui permissão para esta operação',
   })
   async converterParaComposicaoFamiliar(
     @Body(ValidationPipe) conversaoDto: ConversaoParaComposicaoFamiliarDto,
@@ -223,24 +238,29 @@ export class VerificacaoPapelController {
   ): Promise<ConversaoPapelResponseDto> {
     const usuarioId = req.user.id;
     const cpfMasked = this.maskCpf(conversaoDto.cpf);
-    
-    this.logger.log(`Iniciando conversão para composição familiar - CPF: ${cpfMasked}, Usuário: ${usuarioId}`);
+
+    this.logger.log(
+      `Iniciando conversão para composição familiar - CPF: ${cpfMasked}, Usuário: ${usuarioId}`,
+    );
 
     try {
-      const resultado = await this.verificacaoPapelService.converterParaComposicaoFamiliar(
-        conversaoDto.cpf,
-        conversaoDto.cidadao_alvo_id,
-        conversaoDto.dados_composicao,
-        conversaoDto.justificativa,
-        usuarioId,
+      const resultado =
+        await this.verificacaoPapelService.converterParaComposicaoFamiliar(
+          conversaoDto.cpf,
+          conversaoDto.cidadao_alvo_id,
+          conversaoDto.dados_composicao,
+          conversaoDto.justificativa,
+          usuarioId,
+        );
+
+      this.logger.log(
+        `Conversão para composição familiar concluída - CPF: ${cpfMasked}`,
       );
-      
-      this.logger.log(`Conversão para composição familiar concluída - CPF: ${cpfMasked}`);
       return resultado;
     } catch (error) {
       this.logger.error(
         `Erro na conversão para composição familiar - CPF: ${cpfMasked}`,
-        error.stack
+        error.stack,
       );
       throw error;
     }
@@ -250,9 +270,13 @@ export class VerificacaoPapelController {
    * Valida os dados necessários para conversão para beneficiário
    * @private
    */
-  private validateConversaoParaBeneficiario(conversaoDto: ConversaoParaBeneficiarioDto): void {
+  private validateConversaoParaBeneficiario(
+    conversaoDto: ConversaoParaBeneficiarioDto,
+  ): void {
     if (!conversaoDto.dados_cidadao) {
-      throw new BadRequestException('Dados do cidadão são obrigatórios para a conversão');
+      throw new BadRequestException(
+        'Dados do cidadão são obrigatórios para a conversão',
+      );
     }
 
     const { dados_cidadao } = conversaoDto;
@@ -265,14 +289,21 @@ export class VerificacaoPapelController {
       throw new BadRequestException('Nome do cidadão é obrigatório');
     }
 
-    if (!dados_cidadao.sexo || !Object.values(Sexo).includes(dados_cidadao.sexo as Sexo)) {
-      throw new BadRequestException('Sexo do cidadão é obrigatório e deve ser válido');
+    if (
+      !dados_cidadao.sexo ||
+      !Object.values(Sexo).includes(dados_cidadao.sexo as Sexo)
+    ) {
+      throw new BadRequestException(
+        'Sexo do cidadão é obrigatório e deve ser válido',
+      );
     }
 
     // Validação adicional da data de nascimento
     const dataNascimento = new Date(dados_cidadao.data_nascimento);
     if (isNaN(dataNascimento.getTime())) {
-      throw new BadRequestException('Data de nascimento deve ser uma data válida');
+      throw new BadRequestException(
+        'Data de nascimento deve ser uma data válida',
+      );
     }
 
     const hoje = new Date();
@@ -283,7 +314,9 @@ export class VerificacaoPapelController {
     // Validação de idade mínima/máxima razoável (ex: entre 0 e 150 anos)
     const idade = hoje.getFullYear() - dataNascimento.getFullYear();
     if (idade > 150) {
-      throw new BadRequestException('Data de nascimento inválida - idade muito avançada');
+      throw new BadRequestException(
+        'Data de nascimento inválida - idade muito avançada',
+      );
     }
   }
 
@@ -293,12 +326,12 @@ export class VerificacaoPapelController {
    */
   private buildDadosCidadao(conversaoDto: ConversaoParaBeneficiarioDto) {
     const { dados_cidadao } = conversaoDto;
-    
+
     // A validação já garante que data_nascimento existe
     if (!dados_cidadao.data_nascimento) {
       throw new BadRequestException('Data de nascimento é obrigatória');
     }
-    
+
     return {
       nome: dados_cidadao.nome.trim(),
       cpf: conversaoDto.cpf,
@@ -308,7 +341,7 @@ export class VerificacaoPapelController {
       telefone: dados_cidadao.telefone?.trim() || undefined,
       data_nascimento: new Date(dados_cidadao.data_nascimento),
       sexo: dados_cidadao.sexo as Sexo,
-      endereco: dados_cidadao.endereco as unknown as EnderecoDto
+      endereco: dados_cidadao.endereco as unknown as EnderecoDto,
     };
   }
 
@@ -317,11 +350,15 @@ export class VerificacaoPapelController {
    * @private
    */
   private maskCpf(cpf: string): string {
-    if (!cpf || cpf.length < 11) {return '***';}
-    
+    if (!cpf || cpf.length < 11) {
+      return '***';
+    }
+
     const cleanCpf = cpf.replace(/\D/g, '');
-    if (cleanCpf.length !== 11) {return '***';}
-    
+    if (cleanCpf.length !== 11) {
+      return '***';
+    }
+
     return `${cleanCpf.substring(0, 3)}*****${cleanCpf.substring(9)}`;
   }
 }

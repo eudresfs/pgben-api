@@ -8,7 +8,14 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm';
-import { IsNotEmpty, IsOptional, IsString, IsUUID, IsDate, IsEnum } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsUUID,
+  IsDate,
+  IsEnum,
+} from 'class-validator';
 
 /**
  * Enum para o tipo de determinação judicial
@@ -86,10 +93,17 @@ export class DeterminacaoJudicial {
     default: TipoDeterminacaoJudicial.OUTRO,
   })
   @IsNotEmpty({ message: 'Tipo de determinação é obrigatório' })
-  @IsEnum(TipoDeterminacaoJudicial, { message: 'Tipo de determinação inválido' })
+  @IsEnum(TipoDeterminacaoJudicial, {
+    message: 'Tipo de determinação inválido',
+  })
   tipo: TipoDeterminacaoJudicial;
 
-  @Column({ name: 'orgao_judicial', type: 'varchar', length: 100, nullable: true })
+  @Column({
+    name: 'orgao_judicial',
+    type: 'varchar',
+    length: 100,
+    nullable: true,
+  })
   @IsOptional()
   @IsString({ message: 'Órgão judicial deve ser uma string' })
   orgao_judicial: string;
@@ -114,7 +128,11 @@ export class DeterminacaoJudicial {
   @IsDate({ message: 'Data da determinação deve ser uma data válida' })
   data_determinacao: Date;
 
-  @Column({ name: 'data_prazo', type: 'timestamp with time zone', nullable: true })
+  @Column({
+    name: 'data_prazo',
+    type: 'timestamp with time zone',
+    nullable: true,
+  })
   @IsOptional()
   @IsDate({ message: 'Data do prazo deve ser uma data válida' })
   data_prazo: Date;
@@ -122,7 +140,11 @@ export class DeterminacaoJudicial {
   @Column({ name: 'cumprida', type: 'boolean', default: false })
   cumprida: boolean;
 
-  @Column({ name: 'data_cumprimento', type: 'timestamp with time zone', nullable: true })
+  @Column({
+    name: 'data_cumprimento',
+    type: 'timestamp with time zone',
+    nullable: true,
+  })
   @IsOptional()
   @IsDate({ message: 'Data de cumprimento deve ser uma data válida' })
   data_cumprimento: Date;
@@ -132,7 +154,12 @@ export class DeterminacaoJudicial {
   @IsString({ message: 'Observação de cumprimento deve ser uma string' })
   observacao_cumprimento: string;
 
-  @Column({ name: 'documento_url', type: 'varchar', length: 255, nullable: true })
+  @Column({
+    name: 'documento_url',
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+  })
   @IsOptional()
   @IsString({ message: 'URL do documento deve ser uma string' })
   documento_url: string;

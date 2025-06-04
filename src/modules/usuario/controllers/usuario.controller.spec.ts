@@ -8,11 +8,14 @@ import { UpdateUsuarioDto } from '../dto/update-usuario.dto';
 import { UpdateStatusUsuarioDto } from '../dto/update-status-usuario.dto';
 import { UpdateSenhaDto } from '../dto/update-senha.dto';
 import { Usuario } from '../entities/usuario.entity';
-import { TipoUnidade, StatusUnidade } from '../../unidade/entities/unidade.entity';
+import {
+  TipoUnidade,
+  StatusUnidade,
+} from '../../unidade/entities/unidade.entity';
 
 /**
  * Testes unitários para o UsuarioController
- * 
+ *
  * Cobertura de testes:
  * - Listagem de usuários com filtros
  * - Busca por ID
@@ -50,7 +53,7 @@ describe('UsuarioController', () => {
       ativo: true,
       usuarios: [],
       created_at: new Date(),
-      updated_at: new Date()
+      updated_at: new Date(),
     },
     unidade: {
       id: 'unidade-123',
@@ -67,7 +70,7 @@ describe('UsuarioController', () => {
       setores: [],
       created_at: new Date(),
       updated_at: new Date(),
-      removed_at: null
+      removed_at: null,
     },
     setor: {
       id: 'setor-123',
@@ -86,24 +89,24 @@ describe('UsuarioController', () => {
         responsavel_matricula: '12345',
         status: StatusUnidade.ATIVO,
         usuarios: [],
-          setores: [],
-          created_at: new Date(),
-          updated_at: new Date(),
-          removed_at: null
-       },
+        setores: [],
+        created_at: new Date(),
+        updated_at: new Date(),
+        removed_at: null,
+      },
       usuarios: [],
       created_at: new Date(),
-      updated_at: new Date()
+      updated_at: new Date(),
     },
-    refreshTokens: []
+    refreshTokens: [],
   };
 
   const mockRequest = {
     user: {
       id: '123e4567-e89b-12d3-a456-426614174000',
       email: 'joao.silva@semtas.natal.gov.br',
-      role: 'ASSISTENTE_SOCIAL'
-    }
+      role: 'ASSISTENTE_SOCIAL',
+    },
   };
 
   beforeEach(async () => {
@@ -127,11 +130,11 @@ describe('UsuarioController', () => {
         },
       ],
     })
-    .overrideGuard(JwtAuthGuard)
-    .useValue({ canActivate: jest.fn(() => true) })
-    .overrideGuard(PermissionGuard)
-    .useValue({ canActivate: jest.fn(() => true) })
-    .compile();
+      .overrideGuard(JwtAuthGuard)
+      .useValue({ canActivate: jest.fn(() => true) })
+      .overrideGuard(PermissionGuard)
+      .useValue({ canActivate: jest.fn(() => true) })
+      .compile();
 
     controller = module.get<UsuarioController>(UsuarioController);
     service = module.get(UsuarioService);
@@ -145,13 +148,20 @@ describe('UsuarioController', () => {
           total: 1,
           page: 1,
           limit: 10,
-          totalPages: 1
-        }
+          totalPages: 1,
+        },
       };
 
       service.findAll.mockResolvedValue(mockResult);
 
-      const result = await controller.findAll(1, 10, 'João', 'ASSISTENTE_SOCIAL', 'ativo', 'unidade-123');
+      const result = await controller.findAll(
+        1,
+        10,
+        'João',
+        'ASSISTENTE_SOCIAL',
+        'ativo',
+        'unidade-123',
+      );
 
       expect(result).toEqual(mockResult);
       expect(service.findAll).toHaveBeenCalledWith({
@@ -160,7 +170,7 @@ describe('UsuarioController', () => {
         search: 'João',
         role: 'ASSISTENTE_SOCIAL',
         status: StatusUnidade.ATIVO,
-        unidadeId: 'unidade-123'
+        unidadeId: 'unidade-123',
       });
     });
 
@@ -171,8 +181,8 @@ describe('UsuarioController', () => {
           total: 1,
           page: 1,
           limit: 10,
-          totalPages: 1
-        }
+          totalPages: 1,
+        },
       };
       service.findAll.mockResolvedValue(mockResult);
 
@@ -184,7 +194,7 @@ describe('UsuarioController', () => {
         search: undefined,
         role: undefined,
         status: undefined,
-        unidadeId: undefined
+        unidadeId: undefined,
       });
     });
   });
@@ -193,10 +203,14 @@ describe('UsuarioController', () => {
     it('deve retornar usuário por ID', async () => {
       service.findById.mockResolvedValue(mockUsuario);
 
-      const result = await controller.findOne('123e4567-e89b-12d3-a456-426614174000');
+      const result = await controller.findOne(
+        '123e4567-e89b-12d3-a456-426614174000',
+      );
 
       expect(result).toEqual(mockUsuario);
-      expect(service.findById).toHaveBeenCalledWith('123e4567-e89b-12d3-a456-426614174000');
+      expect(service.findById).toHaveBeenCalledWith(
+        '123e4567-e89b-12d3-a456-426614174000',
+      );
     });
   });
 
@@ -207,7 +221,9 @@ describe('UsuarioController', () => {
       const result = await controller.getProfile(mockRequest);
 
       expect(result).toEqual(mockUsuario);
-      expect(service.getProfile).toHaveBeenCalledWith('123e4567-e89b-12d3-a456-426614174000');
+      expect(service.getProfile).toHaveBeenCalledWith(
+        '123e4567-e89b-12d3-a456-426614174000',
+      );
     });
   });
 
@@ -222,15 +238,15 @@ describe('UsuarioController', () => {
         matricula: '12345',
         role_id: 'ASSISTENTE_SOCIAL',
         unidade_id: 'unidade-123',
-        setor_id: 'setor-123'
+        setor_id: 'setor-123',
       };
-      
+
       const mockResponse = {
         data: mockUsuario,
         meta: null,
-        message: null
+        message: null,
       };
-      
+
       service.create.mockResolvedValue(mockResponse);
 
       const result = await controller.create(createDto);
@@ -245,38 +261,53 @@ describe('UsuarioController', () => {
       const updateDto: UpdateUsuarioDto = {
         nome: 'João Silva Santos',
         cpf: '123.456.789-00',
-        telefone: '(84) 88888-8888'
+        telefone: '(84) 88888-8888',
       };
-      
+
       const mockResponse = {
         data: { ...mockUsuario, ...updateDto },
         meta: null,
-        message: null
+        message: null,
       };
-      
+
       service.update.mockResolvedValue(mockResponse);
 
-      const result = await controller.update('123e4567-e89b-12d3-a456-426614174000', updateDto);
+      const result = await controller.update(
+        '123e4567-e89b-12d3-a456-426614174000',
+        updateDto,
+      );
 
       expect(result).toEqual(mockResponse);
-      expect(service.update).toHaveBeenCalledWith('123e4567-e89b-12d3-a456-426614174000', updateDto);
+      expect(service.update).toHaveBeenCalledWith(
+        '123e4567-e89b-12d3-a456-426614174000',
+        updateDto,
+      );
     });
   });
 
   describe('updateStatus', () => {
     it('deve atualizar status do usuário', async () => {
       const updateStatusDto: UpdateStatusUsuarioDto = {
-        status: 'inativo'
+        status: 'inativo',
       };
-      
-      const { senhaHash, ...usuarioAtualizado } = { ...mockUsuario, status: 'inativo' };
-      
+
+      const { senhaHash, ...usuarioAtualizado } = {
+        ...mockUsuario,
+        status: 'inativo',
+      };
+
       service.updateStatus.mockResolvedValue(usuarioAtualizado);
 
-      const result = await controller.updateStatus('123e4567-e89b-12d3-a456-426614174000', updateStatusDto);
+      const result = await controller.updateStatus(
+        '123e4567-e89b-12d3-a456-426614174000',
+        updateStatusDto,
+      );
 
       expect(result).toEqual(usuarioAtualizado);
-      expect(service.updateStatus).toHaveBeenCalledWith('123e4567-e89b-12d3-a456-426614174000', updateStatusDto);
+      expect(service.updateStatus).toHaveBeenCalledWith(
+        '123e4567-e89b-12d3-a456-426614174000',
+        updateStatusDto,
+      );
     });
   });
 
@@ -285,15 +316,22 @@ describe('UsuarioController', () => {
       const updateSenhaDto: UpdateSenhaDto = {
         senhaAtual: 'senhaAtual123',
         novaSenha: 'novaSenha123',
-        confirmacaoSenha: 'novaSenha123'
+        confirmacaoSenha: 'novaSenha123',
       };
       const mockResponse = { message: 'Senha atualizada com sucesso' };
       service.updateSenha.mockResolvedValue(mockResponse);
 
-      const result = await controller.updateSenha('123e4567-e89b-12d3-a456-426614174000', updateSenhaDto, mockRequest);
+      const result = await controller.updateSenha(
+        '123e4567-e89b-12d3-a456-426614174000',
+        updateSenhaDto,
+        mockRequest,
+      );
 
       expect(result).toEqual(mockResponse);
-      expect(service.updateSenha).toHaveBeenCalledWith('123e4567-e89b-12d3-a456-426614174000', updateSenhaDto);
+      expect(service.updateSenha).toHaveBeenCalledWith(
+        '123e4567-e89b-12d3-a456-426614174000',
+        updateSenhaDto,
+      );
     });
   });
 
@@ -302,9 +340,13 @@ describe('UsuarioController', () => {
       const mockResponse = { message: 'Usuário removido com sucesso' };
       service.remove.mockResolvedValue(undefined);
 
-      const result = await controller.remove('123e4567-e89b-12d3-a456-426614174000');
+      const result = await controller.remove(
+        '123e4567-e89b-12d3-a456-426614174000',
+      );
 
-      expect(service.remove).toHaveBeenCalledWith('123e4567-e89b-12d3-a456-426614174000');
+      expect(service.remove).toHaveBeenCalledWith(
+        '123e4567-e89b-12d3-a456-426614174000',
+      );
     });
   });
 

@@ -1,5 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsUUID, IsArray, ArrayMinSize, ValidateNested } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsUUID,
+  IsArray,
+  ArrayMinSize,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 /**
@@ -17,7 +23,7 @@ class PapelVerificacaoDto {
 
 /**
  * DTO para verificação de papéis conflitantes
- * 
+ *
  * Este DTO é utilizado para verificar se existe algum conflito entre os papéis
  * que um cidadão possui ou está tentando obter.
  */

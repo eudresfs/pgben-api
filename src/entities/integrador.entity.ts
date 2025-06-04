@@ -1,4 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  OneToMany,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 import { IntegradorToken } from './integrador-token.entity';
 
 /**
@@ -30,7 +37,7 @@ export class Integrador {
 
   @Column({ type: 'simple-array', nullable: true })
   permissoesEscopo: string[];
-  
+
   @Column({ type: 'simple-array', nullable: true })
   ipPermitidos: string[];
 
@@ -43,6 +50,6 @@ export class Integrador {
   @UpdateDateColumn({ type: 'timestamptz' })
   dataAtualizacao: Date;
 
-  @OneToMany(() => IntegradorToken, token => token.integrador)
+  @OneToMany(() => IntegradorToken, (token) => token.integrador)
   tokens: IntegradorToken[];
 }

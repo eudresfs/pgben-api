@@ -51,7 +51,9 @@ export class SetorService {
         const setorRepo = manager.getRepository('setor');
 
         // Verificar se a unidade existe
-        this.logger.log(`Buscando unidade com ID: ${createSetorDto.unidade_id}`);
+        this.logger.log(
+          `Buscando unidade com ID: ${createSetorDto.unidade_id}`,
+        );
         const unidade = await unidadeRepo.findOne({
           where: { id: createSetorDto.unidade_id },
         });

@@ -15,7 +15,9 @@ export class DadosNatalidadeRepository extends Repository<DadosNatalidade> {
   /**
    * Buscar dados de natalidade por solicitação com relacionamentos
    */
-  async findBySolicitacaoWithRelations(solicitacaoId: string): Promise<DadosNatalidade | null> {
+  async findBySolicitacaoWithRelations(
+    solicitacaoId: string,
+  ): Promise<DadosNatalidade | null> {
     return this.findOne({
       where: { solicitacao_id: solicitacaoId },
       relations: [
@@ -190,9 +192,7 @@ export class DadosNatalidadeRepository extends Repository<DadosNatalidade> {
     const total = await query.getCount();
 
     if (filters.page && filters.limit) {
-      query
-        .skip((filters.page - 1) * filters.limit)
-        .take(filters.limit);
+      query.skip((filters.page - 1) * filters.limit).take(filters.limit);
     }
 
     query.orderBy('dados.data_nascimento', 'DESC');

@@ -31,7 +31,9 @@ describe('SseGuard', () => {
     jest.clearAllMocks();
   });
 
-  const createMockExecutionContext = (request: Partial<Request>): ExecutionContext => {
+  const createMockExecutionContext = (
+    request: Partial<Request>,
+  ): ExecutionContext => {
     return {
       switchToHttp: () => ({
         getRequest: () => request,
@@ -47,7 +49,7 @@ describe('SseGuard', () => {
     it('should allow access with valid token in query parameter', async () => {
       const validToken = 'valid.jwt.token';
       const mockPayload = { id: 'user-123', email: 'test@example.com' };
-      
+
       mockJwtService.verifyAsync.mockResolvedValue(mockPayload);
 
       const mockRequest = {
@@ -67,7 +69,7 @@ describe('SseGuard', () => {
     it('should allow access with valid token in Authorization header', async () => {
       const validToken = 'valid.jwt.token';
       const mockPayload = { id: 'user-123', email: 'test@example.com' };
-      
+
       mockJwtService.verifyAsync.mockResolvedValue(mockPayload);
 
       const mockRequest = {
@@ -87,7 +89,7 @@ describe('SseGuard', () => {
     it('should allow access with valid token in cookie', async () => {
       const validToken = 'valid.jwt.token';
       const mockPayload = { id: 'user-123', email: 'test@example.com' };
-      
+
       mockJwtService.verifyAsync.mockResolvedValue(mockPayload);
 
       const mockRequest = {
@@ -108,7 +110,7 @@ describe('SseGuard', () => {
       const queryToken = 'query.jwt.token';
       const headerToken = 'header.jwt.token';
       const mockPayload = { id: 'user-123', email: 'test@example.com' };
-      
+
       mockJwtService.verifyAsync.mockResolvedValue(mockPayload);
 
       const mockRequest = {
@@ -129,7 +131,7 @@ describe('SseGuard', () => {
       const headerToken = 'header.jwt.token';
       const cookieToken = 'cookie.jwt.token';
       const mockPayload = { id: 'user-123', email: 'test@example.com' };
-      
+
       mockJwtService.verifyAsync.mockResolvedValue(mockPayload);
 
       const mockRequest = {
@@ -162,7 +164,7 @@ describe('SseGuard', () => {
 
     it('should deny access when token is invalid', async () => {
       const invalidToken = 'invalid.jwt.token';
-      
+
       mockJwtService.verifyAsync.mockRejectedValue(new Error('Invalid token'));
 
       const mockRequest = {
@@ -180,7 +182,7 @@ describe('SseGuard', () => {
 
     it('should deny access when token is expired', async () => {
       const expiredToken = 'expired.jwt.token';
-      
+
       mockJwtService.verifyAsync.mockRejectedValue(new Error('Token expired'));
 
       const mockRequest = {
@@ -254,8 +256,10 @@ describe('SseGuard', () => {
 
     it('should handle JWT service throwing unexpected error', async () => {
       const validToken = 'valid.jwt.token';
-      
-      mockJwtService.verifyAsync.mockRejectedValue(new Error('Unexpected error'));
+
+      mockJwtService.verifyAsync.mockRejectedValue(
+        new Error('Unexpected error'),
+      );
 
       const mockRequest = {
         query: { token: validToken },
@@ -294,9 +298,10 @@ describe('SseGuard', () => {
     });
 
     it('should extract token correctly from complex Authorization header', async () => {
-      const validToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c';
+      const validToken =
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c';
       const mockPayload = { id: 'user-123', email: 'test@example.com' };
-      
+
       mockJwtService.verifyAsync.mockResolvedValue(mockPayload);
 
       const mockRequest = {
@@ -315,7 +320,7 @@ describe('SseGuard', () => {
     it('should handle case-insensitive Authorization header', async () => {
       const validToken = 'valid.jwt.token';
       const mockPayload = { id: 'user-123', email: 'test@example.com' };
-      
+
       mockJwtService.verifyAsync.mockResolvedValue(mockPayload);
 
       const mockRequest = {
@@ -340,7 +345,7 @@ describe('SseGuard', () => {
         iat: 1234567890,
         exp: 1234567890 + 3600,
       };
-      
+
       mockJwtService.verifyAsync.mockResolvedValue(mockPayload);
 
       const mockRequest = {
@@ -360,7 +365,7 @@ describe('SseGuard', () => {
 
     it('should not set user in request object when token is invalid', async () => {
       const invalidToken = 'invalid.jwt.token';
-      
+
       mockJwtService.verifyAsync.mockRejectedValue(new Error('Invalid token'));
 
       const mockRequest = {

@@ -24,16 +24,16 @@ export class UploadDocumentoDto {
       'IPTU',
       'CONTRATO_ALUGUEL',
       'DECLARACAO_ESCOLA',
-      'OUTROS'
+      'OUTROS',
     ],
-    type: 'string'
+    type: 'string',
   })
   tipoDocumento: string;
 
   @ApiProperty({
     description: 'Arquivo do documento (multipart/form-data)',
     type: 'string',
-    format: 'binary'
+    format: 'binary',
   })
   arquivo: any;
 
@@ -41,21 +41,21 @@ export class UploadDocumentoDto {
     description: 'Descrição adicional do documento',
     example: 'Comprovante de renda referente ao mês de janeiro/2025',
     type: 'string',
-    maxLength: 200
+    maxLength: 200,
   })
   descricao?: string;
 
   @ApiPropertyOptional({
     description: 'ID da solicitação à qual o documento está relacionado',
     example: '507f1f77bcf86cd799439013',
-    type: 'string'
+    type: 'string',
   })
   solicitacaoId?: string;
 
   @ApiPropertyOptional({
     description: 'ID do cidadão proprietário do documento',
     example: '507f1f77bcf86cd799439012',
-    type: 'string'
+    type: 'string',
   })
   cidadaoId?: string;
 }
@@ -67,28 +67,28 @@ export class DocumentoResponseDto {
   @ApiProperty({
     description: 'Identificador único do documento',
     example: '507f1f77bcf86cd799439015',
-    type: 'string'
+    type: 'string',
   })
   id: string;
 
   @ApiProperty({
     description: 'Nome original do arquivo',
     example: 'comprovante_renda_janeiro_2025.pdf',
-    type: 'string'
+    type: 'string',
   })
   nomeOriginal: string;
 
   @ApiProperty({
     description: 'Nome do arquivo no sistema de armazenamento',
     example: '2025/01/18/507f1f77bcf86cd799439015_comprovante_renda.pdf',
-    type: 'string'
+    type: 'string',
   })
   nomeArquivo: string;
 
   @ApiProperty({
     description: 'Tipo MIME do arquivo',
     example: 'application/pdf',
-    type: 'string'
+    type: 'string',
   })
   mimeType: string;
 
@@ -96,7 +96,7 @@ export class DocumentoResponseDto {
     description: 'Tamanho do arquivo em bytes',
     example: 2048576,
     type: 'integer',
-    minimum: 0
+    minimum: 0,
   })
   tamanho: number;
 
@@ -105,7 +105,7 @@ export class DocumentoResponseDto {
     example: 'COMPROVANTE_RENDA',
     enum: [
       'CPF',
-      'RG', 
+      'RG',
       'COMPROVANTE_RESIDENCIA',
       'COMPROVANTE_RENDA',
       'CERTIDAO_NASCIMENTO',
@@ -120,9 +120,9 @@ export class DocumentoResponseDto {
       'IPTU',
       'CONTRATO_ALUGUEL',
       'DECLARACAO_ESCOLA',
-      'OUTROS'
+      'OUTROS',
     ],
-    type: 'string'
+    type: 'string',
   })
   tipoDocumento: string;
 
@@ -130,42 +130,42 @@ export class DocumentoResponseDto {
     description: 'Status de validação do documento',
     example: 'PENDENTE',
     enum: ['PENDENTE', 'VALIDADO', 'REJEITADO', 'EXPIRADO'],
-    type: 'string'
+    type: 'string',
   })
   statusValidacao: string;
 
   @ApiPropertyOptional({
     description: 'Descrição adicional do documento',
     example: 'Comprovante de renda referente ao mês de janeiro/2025',
-    type: 'string'
+    type: 'string',
   })
   descricao?: string;
 
   @ApiPropertyOptional({
     description: 'ID da solicitação relacionada',
     example: '507f1f77bcf86cd799439013',
-    type: 'string'
+    type: 'string',
   })
   solicitacaoId?: string;
 
   @ApiPropertyOptional({
     description: 'ID do cidadão proprietário',
     example: '507f1f77bcf86cd799439012',
-    type: 'string'
+    type: 'string',
   })
   cidadaoId?: string;
 
   @ApiPropertyOptional({
     description: 'ID do usuário que fez o upload',
     example: '507f1f77bcf86cd799439014',
-    type: 'string'
+    type: 'string',
   })
   uploadedBy?: string;
 
   @ApiPropertyOptional({
     description: 'Nome do usuário que fez o upload',
     example: 'João Silva Santos',
-    type: 'string'
+    type: 'string',
   })
   nomeUploader?: string;
 
@@ -173,7 +173,7 @@ export class DocumentoResponseDto {
     description: 'Data e hora do upload',
     example: '2025-01-18T10:30:00.000Z',
     type: 'string',
-    format: 'date-time'
+    format: 'date-time',
   })
   createdAt: string;
 
@@ -181,7 +181,7 @@ export class DocumentoResponseDto {
     description: 'Data e hora da última atualização',
     example: '2025-01-18T10:30:00.000Z',
     type: 'string',
-    format: 'date-time'
+    format: 'date-time',
   })
   updatedAt: string;
 
@@ -189,21 +189,21 @@ export class DocumentoResponseDto {
     description: 'Data de validação do documento',
     example: '2025-01-18T14:30:00.000Z',
     type: 'string',
-    format: 'date-time'
+    format: 'date-time',
   })
   dataValidacao?: string;
 
   @ApiPropertyOptional({
     description: 'ID do usuário que validou o documento',
     example: '507f1f77bcf86cd799439016',
-    type: 'string'
+    type: 'string',
   })
   validadoPor?: string;
 
   @ApiPropertyOptional({
     description: 'Nome do usuário que validou',
     example: 'Maria Analista Silva',
-    type: 'string'
+    type: 'string',
   })
   nomeValidador?: string;
 
@@ -211,7 +211,7 @@ export class DocumentoResponseDto {
     description: 'Motivo da rejeição (quando aplicável)',
     example: 'Documento ilegível, solicitar nova versão',
     type: 'string',
-    maxLength: 300
+    maxLength: 300,
   })
   motivoRejeicao?: string;
 
@@ -219,14 +219,14 @@ export class DocumentoResponseDto {
     description: 'Data de expiração do documento',
     example: '2025-12-31T23:59:59.000Z',
     type: 'string',
-    format: 'date-time'
+    format: 'date-time',
   })
   dataExpiracao?: string;
 
   @ApiPropertyOptional({
     description: 'Hash MD5 do arquivo para verificação de integridade',
     example: 'd41d8cd98f00b204e9800998ecf8427e',
-    type: 'string'
+    type: 'string',
   })
   hashArquivo?: string;
 
@@ -234,7 +234,7 @@ export class DocumentoResponseDto {
     description: 'URL para download do documento (temporária e autenticada)',
     example: 'https://storage.example.com/documents/temp/abc123?token=xyz789',
     type: 'string',
-    format: 'uri'
+    format: 'uri',
   })
   urlDownload: string;
 }
@@ -247,7 +247,7 @@ export class ValidarDocumentoDto {
     description: 'Status de validação a ser aplicado',
     example: 'VALIDADO',
     enum: ['VALIDADO', 'REJEITADO'],
-    type: 'string'
+    type: 'string',
   })
   statusValidacao: string;
 
@@ -255,7 +255,7 @@ export class ValidarDocumentoDto {
     description: 'Motivo da rejeição (obrigatório quando status = REJEITADO)',
     example: 'Documento com qualidade insuficiente para leitura',
     type: 'string',
-    maxLength: 300
+    maxLength: 300,
   })
   motivoRejeicao?: string;
 
@@ -263,7 +263,7 @@ export class ValidarDocumentoDto {
     description: 'Observações da validação',
     example: 'Documento válido, informações conferidas',
     type: 'string',
-    maxLength: 500
+    maxLength: 500,
   })
   observacoes?: string;
 
@@ -271,7 +271,7 @@ export class ValidarDocumentoDto {
     description: 'Data de expiração do documento',
     example: '2025-12-31',
     type: 'string',
-    format: 'date'
+    format: 'date',
   })
   dataExpiracao?: string;
 }
@@ -286,7 +286,7 @@ export class FiltroDocumentoDto {
     enum: [
       'CPF',
       'RG',
-      'COMPROVANTE_RESIDENCIA', 
+      'COMPROVANTE_RESIDENCIA',
       'COMPROVANTE_RENDA',
       'CERTIDAO_NASCIMENTO',
       'CERTIDAO_CASAMENTO',
@@ -300,9 +300,9 @@ export class FiltroDocumentoDto {
       'IPTU',
       'CONTRATO_ALUGUEL',
       'DECLARACAO_ESCOLA',
-      'OUTROS'
+      'OUTROS',
     ],
-    type: 'string'
+    type: 'string',
   })
   tipoDocumento?: string;
 
@@ -310,21 +310,21 @@ export class FiltroDocumentoDto {
     description: 'Filtrar por status de validação',
     example: 'PENDENTE',
     enum: ['PENDENTE', 'VALIDADO', 'REJEITADO', 'EXPIRADO'],
-    type: 'string'
+    type: 'string',
   })
   statusValidacao?: string;
 
   @ApiPropertyOptional({
     description: 'Filtrar por ID do cidadão',
     example: '507f1f77bcf86cd799439012',
-    type: 'string'
+    type: 'string',
   })
   cidadaoId?: string;
 
   @ApiPropertyOptional({
     description: 'Filtrar por ID da solicitação',
     example: '507f1f77bcf86cd799439013',
-    type: 'string'
+    type: 'string',
   })
   solicitacaoId?: string;
 
@@ -332,7 +332,7 @@ export class FiltroDocumentoDto {
     description: 'Data inicial para filtro por período de upload',
     example: '2025-01-01',
     type: 'string',
-    format: 'date'
+    format: 'date',
   })
   dataInicio?: string;
 
@@ -340,21 +340,21 @@ export class FiltroDocumentoDto {
     description: 'Data final para filtro por período de upload',
     example: '2025-01-31',
     type: 'string',
-    format: 'date'
+    format: 'date',
   })
   dataFim?: string;
 
   @ApiPropertyOptional({
     description: 'Filtrar apenas documentos expirados',
     example: true,
-    type: 'boolean'
+    type: 'boolean',
   })
   apenasExpirados?: boolean;
 
   @ApiPropertyOptional({
     description: 'Buscar por nome do arquivo',
     example: 'comprovante_renda',
-    type: 'string'
+    type: 'string',
   })
   nomeArquivo?: string;
 }
@@ -365,7 +365,7 @@ export class FiltroDocumentoDto {
 export class UploadMultiploResponseDto {
   @ApiProperty({
     description: 'Lista de documentos enviados com sucesso',
-    type: [DocumentoResponseDto]
+    type: [DocumentoResponseDto],
   })
   sucessos: DocumentoResponseDto[];
 
@@ -377,20 +377,20 @@ export class UploadMultiploResponseDto {
       properties: {
         arquivo: {
           type: 'string',
-          description: 'Nome do arquivo que falhou'
+          description: 'Nome do arquivo que falhou',
         },
         erro: {
-          type: 'string', 
-          description: 'Descrição do erro'
-        }
-      }
+          type: 'string',
+          description: 'Descrição do erro',
+        },
+      },
     },
     example: [
       {
         arquivo: 'documento_invalido.txt',
-        erro: 'Tipo de arquivo não permitido'
-      }
-    ]
+        erro: 'Tipo de arquivo não permitido',
+      },
+    ],
   })
   erros: Array<{
     arquivo: string;
@@ -400,21 +400,21 @@ export class UploadMultiploResponseDto {
   @ApiProperty({
     description: 'Número total de arquivos processados',
     example: 5,
-    type: 'integer'
+    type: 'integer',
   })
   totalProcessados: number;
 
   @ApiProperty({
     description: 'Número de uploads bem-sucedidos',
     example: 4,
-    type: 'integer'
+    type: 'integer',
   })
   totalSucessos: number;
 
   @ApiProperty({
     description: 'Número de uploads que falharam',
     example: 1,
-    type: 'integer'
+    type: 'integer',
   })
   totalErros: number;
 }

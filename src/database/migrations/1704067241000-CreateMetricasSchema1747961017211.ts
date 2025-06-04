@@ -1,11 +1,11 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * Migration para criar o schema relacionado ao módulo de métricas 
- * 
+ * Migration para criar o schema relacionado ao módulo de métricas
+ *
  * Esta migration cria as tabelas, enumerações e restrições para o módulo de métricas,
  * permitindo o registro e acompanhamento de métricas do sistema para analytics e monitoring.
- * 
+ *
  * @author Engenheiro de Dados
  * @date 20/05/2025
  */
@@ -17,7 +17,7 @@ export class CreateMetricasSchema1704067233000 implements MigrationInterface {
    */
   public async up(queryRunner: QueryRunner): Promise<void> {
     console.log('Iniciando migration 1140000-CreateMetricasSchema...');
-    
+
     // Criação de tipos enumerados para o módulo de métricas
     await queryRunner.query(`
       DO $$ 
@@ -71,16 +71,16 @@ export class CreateMetricasSchema1704067233000 implements MigrationInterface {
       END
       $$;
     `);
-    
+
     console.log('Tipos enumerados criados com sucesso.');
-    
+
     // Tabela de definições de métricas
     const metricaDefinicaoExists = await queryRunner.query(`
       SELECT EXISTS (
         SELECT 1 FROM information_schema.tables WHERE table_name = 'metrica_definicao'
       );
     `);
-    
+
     if (!metricaDefinicaoExists[0].exists) {
       await queryRunner.query(`
         CREATE TABLE "metrica_definicao" (
@@ -123,14 +123,14 @@ export class CreateMetricasSchema1704067233000 implements MigrationInterface {
     } else {
       console.log('Tabela metrica_definicao já existe, pulando criação.');
     }
-    
+
     // Tabela de configuração de métricas
     const metricaConfiguracaoExists = await queryRunner.query(`
       SELECT EXISTS (
         SELECT 1 FROM information_schema.tables WHERE table_name = 'metrica_configuracao'
       );
     `);
-    
+
     if (!metricaConfiguracaoExists[0].exists) {
       await queryRunner.query(`
         CREATE TABLE "metrica_configuracao" (
@@ -168,14 +168,14 @@ export class CreateMetricasSchema1704067233000 implements MigrationInterface {
     } else {
       console.log('Tabela metrica_configuracao já existe, pulando criação.');
     }
-    
+
     // Tabela de valores de métricas
     const metricaValorExists = await queryRunner.query(`
       SELECT EXISTS (
         SELECT 1 FROM information_schema.tables WHERE table_name = 'metrica_valor'
       );
     `);
-    
+
     if (!metricaValorExists[0].exists) {
       await queryRunner.query(`
         CREATE TABLE "metrica_valor" (
@@ -200,7 +200,7 @@ export class CreateMetricasSchema1704067233000 implements MigrationInterface {
     } else {
       console.log('Tabela metrica_valor já existe, pulando criação.');
     }
-    
+
     // Aplicando políticas RLS para segurança
     await queryRunner.query(`
       -- Habilitar RLS nas tabelas
@@ -216,9 +216,11 @@ export class CreateMetricasSchema1704067233000 implements MigrationInterface {
       CREATE POLICY metrica_valor_policy ON "metrica_valor" 
         USING (current_user = 'postgres');
     `);
-    
+
     console.log('Políticas de segurança aplicadas com sucesso.');
-    console.log('Migration 1140000-CreateMetricasSchema executada com sucesso.');
+    console.log(
+      'Migration 1140000-CreateMetricasSchema executada com sucesso.',
+    );
   }
 
   /**
@@ -226,7 +228,7 @@ export class CreateMetricasSchema1704067233000 implements MigrationInterface {
    */
   public async down(queryRunner: QueryRunner): Promise<void> {
     console.log('Revertendo migration 1140000-CreateMetricasSchema...');
-    
+
     // Remover políticas RLS
     await queryRunner.query(`
       DROP POLICY IF EXISTS metrica_definicao_policy ON "metrica_definicao";
@@ -237,14 +239,14 @@ export class CreateMetricasSchema1704067233000 implements MigrationInterface {
       ALTER TABLE "metrica_configuracao" DISABLE ROW LEVEL SECURITY;
       ALTER TABLE "metrica_valor" DISABLE ROW LEVEL SECURITY;
     `);
-    
+
     // Remover tabelas em ordem reversa (para respeitar constraints)
     await queryRunner.query(`
       DROP TABLE IF EXISTS "metrica_valor";
       DROP TABLE IF EXISTS "metrica_configuracao";
       DROP TABLE IF EXISTS "metrica_definicao";
     `);
-    
+
     // Remover tipos enumerados
     await queryRunner.query(`
       DROP TYPE IF EXISTS "tipo_agendamento_enum";
@@ -252,7 +254,9 @@ export class CreateMetricasSchema1704067233000 implements MigrationInterface {
       DROP TYPE IF EXISTS "categoria_metrica_enum";
       DROP TYPE IF EXISTS "tipo_metrica_enum";
     `);
-    
-    console.log('Migration 1140000-CreateMetricasSchema revertida com sucesso.');
+
+    console.log(
+      'Migration 1140000-CreateMetricasSchema revertida com sucesso.',
+    );
   }
 }

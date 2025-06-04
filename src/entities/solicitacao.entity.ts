@@ -32,7 +32,9 @@ import { StatusSolicitacao } from '../enums/status-solicitacao.enum';
 @Index(['data_abertura', 'status'])
 @Index(['status'], { where: "status IN ('pendente', 'em_analise')" })
 @Index(['processo_judicial_id'], { where: 'processo_judicial_id IS NOT NULL' })
-@Index(['determinacao_judicial_id'], { where: 'determinacao_judicial_id IS NOT NULL' })
+@Index(['determinacao_judicial_id'], {
+  where: 'determinacao_judicial_id IS NOT NULL',
+})
 export class Solicitacao {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -178,7 +180,7 @@ export class Solicitacao {
   })
   historico: HistoricoSolicitacao[];
 
-    /**
+  /**
    * Relação com histórico de status da solicitação
    */
   @OneToMany(() => Pendencia, (pendencia) => pendencia.solicitacao, {
@@ -215,11 +217,15 @@ export class Solicitacao {
   @ManyToOne(() => DeterminacaoJudicial, { nullable: true })
   @JoinColumn({ name: 'determinacao_judicial_id' })
   determinacao_judicial: DeterminacaoJudicial;
-  
+
   /**
    * Flag que indica se a solicitação tem determinação judicial
    */
-  @Column({ name: 'determinacao_judicial_flag', type: 'boolean', default: false })
+  @Column({
+    name: 'determinacao_judicial_flag',
+    type: 'boolean',
+    default: false,
+  })
   determinacao_judicial_flag: boolean;
 
   /**
@@ -232,7 +238,7 @@ export class Solicitacao {
   @ManyToOne(() => Solicitacao, { nullable: true })
   @JoinColumn({ name: 'solicitacao_original_id' })
   solicitacao_original: Solicitacao;
-  
+
   /**
    * Campos para suporte a renovação automática
    */
@@ -244,27 +250,27 @@ export class Solicitacao {
 
   @Column({ name: 'data_proxima_renovacao', type: 'timestamp', nullable: true })
   data_proxima_renovacao: Date;
-  
+
   /**
    * Dados dinâmicos específicos para cada tipo de benefício
    */
   @Column({ name: 'dados_dinamicos', type: 'jsonb', nullable: true })
   dados_dinamicos: Record<string, any>;
-  
+
   /**
    * Data limite para conclusão da análise da solicitação
    * Utilizado para controle de SLA do processo de análise
    */
   @Column({ name: 'prazo_analise', type: 'timestamp', nullable: true })
   prazo_analise: Date | null;
-  
+
   /**
    * Data limite para envio de documentos pelo cidadão
    * Utilizado quando a solicitação está no estado AGUARDANDO_DOCUMENTOS
    */
   @Column({ name: 'prazo_documentos', type: 'timestamp', nullable: true })
   prazo_documentos: Date | null;
-  
+
   /**
    * Data limite para conclusão do processamento da solicitação
    * Utilizado quando a solicitação está no estado EM_PROCESSAMENTO

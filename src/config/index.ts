@@ -1,6 +1,6 @@
 /**
  * Configuração centralizada da aplicação
- * 
+ *
  * Este arquivo exporta todas as configurações da aplicação de forma centralizada,
  * facilitando o acesso e manutenção das configurações.
  */

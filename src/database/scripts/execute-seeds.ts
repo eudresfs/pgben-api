@@ -9,7 +9,7 @@ config();
 
 /**
  * Script para executar os seeds do sistema
- * 
+ *
  * Este script executa todos os runners de seeds configurados
  * para inicializar o banco de dados com dados iniciais
  */
@@ -48,7 +48,7 @@ async function main() {
 }
 
 // Executa o script
-main().catch(error => {
+main().catch((error) => {
   console.error('Erro fatal durante a execução dos seeds:');
   console.error(error);
   process.exit(1);

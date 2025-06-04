@@ -32,7 +32,8 @@ export class AprovacaoSolicitacaoDto {
    */
   @ApiProperty({
     description: 'Parecer técnico da SEMTAS sobre a solicitação',
-    example: 'Solicitação aprovada conforme análise da documentação e verificação dos critérios de elegibilidade.',
+    example:
+      'Solicitação aprovada conforme análise da documentação e verificação dos critérios de elegibilidade.',
     required: true,
     type: String,
   })

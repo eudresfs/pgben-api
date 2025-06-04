@@ -1,21 +1,21 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AuthModule } from '../../auth/auth.module'
-import { SolicitacaoModule } from '../solicitacao/solicitacao.module'
+import { AuthModule } from '../../auth/auth.module';
+import { SolicitacaoModule } from '../solicitacao/solicitacao.module';
 
 // Entidades
-import { 
-  TipoBeneficio, 
+import {
+  TipoBeneficio,
   TipoBeneficioSchema,
-  RequisitoDocumento, 
-  FluxoBeneficio, 
-  CampoDinamicoBeneficio, 
-  DadosNatalidade, 
-  DadosAluguelSocial, 
-  DadosFuneral, 
-  DadosCestaBasica, 
-  ConfiguracaoRenovacao, 
-  Solicitacao 
+  RequisitoDocumento,
+  FluxoBeneficio,
+  CampoDinamicoBeneficio,
+  DadosNatalidade,
+  DadosAluguelSocial,
+  DadosFuneral,
+  DadosCestaBasica,
+  ConfiguracaoRenovacao,
+  Solicitacao,
 } from '../../entities';
 
 // Controladores

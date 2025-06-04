@@ -39,9 +39,6 @@ import { PermissionGuard } from '../../auth/guards/permission.guard';
     PermissionGuard,
     Reflector,
   ],
-  exports: [
-    PermissionService,
-    PermissionGuard,
-  ],
+  exports: [PermissionService, PermissionGuard],
 })
 export class PermissionSharedModule {}

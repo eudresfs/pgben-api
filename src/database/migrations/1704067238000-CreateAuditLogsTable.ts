@@ -1,4 +1,10 @@
-import { MigrationInterface, QueryRunner, Table, TableForeignKey, TableIndex } from 'typeorm';
+import {
+  MigrationInterface,
+  QueryRunner,
+  Table,
+  TableForeignKey,
+  TableIndex,
+} from 'typeorm';
 
 export class CreateAuditLogsTable1704067238000 implements MigrationInterface {
   name = 'CreateAuditLogsTable1704067238000';
@@ -153,7 +159,7 @@ export class CreateAuditLogsTable1704067238000 implements MigrationInterface {
         foreignKeys: [
           {
             columnNames: ['usuario_id'],
-            referencedTableName: 'usuarios',
+            referencedTableName: 'usuario',
             referencedColumnNames: ['id'],
             onDelete: 'SET NULL',
             onUpdate: 'CASCADE',
@@ -355,19 +361,33 @@ export class CreateAuditLogsTable1704067238000 implements MigrationInterface {
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     // Remover função de particionamento
-    await queryRunner.query(`DROP FUNCTION IF EXISTS create_audit_logs_partition(DATE);`);
+    await queryRunner.query(
+      `DROP FUNCTION IF EXISTS create_audit_logs_partition(DATE);`,
+    );
 
     // Remover políticas RLS
-    await queryRunner.query(`DROP POLICY IF EXISTS audit_logs_user_policy ON audit_logs;`);
-    await queryRunner.query(`DROP POLICY IF EXISTS audit_logs_insert_policy ON audit_logs;`);
+    await queryRunner.query(
+      `DROP POLICY IF EXISTS audit_logs_user_policy ON audit_logs;`,
+    );
+    await queryRunner.query(
+      `DROP POLICY IF EXISTS audit_logs_insert_policy ON audit_logs;`,
+    );
 
     // Remover trigger e função
-    await queryRunner.query(`DROP TRIGGER IF EXISTS trigger_audit_logs_updated_at ON audit_logs;`);
-    await queryRunner.query(`DROP FUNCTION IF EXISTS update_audit_logs_updated_at();`);
+    await queryRunner.query(
+      `DROP TRIGGER IF EXISTS trigger_audit_logs_updated_at ON audit_logs;`,
+    );
+    await queryRunner.query(
+      `DROP FUNCTION IF EXISTS update_audit_logs_updated_at();`,
+    );
 
     // Remover constraints
-    await queryRunner.query(`ALTER TABLE audit_logs DROP CONSTRAINT IF EXISTS chk_audit_logs_response_status_range;`);
-    await queryRunner.query(`ALTER TABLE audit_logs DROP CONSTRAINT IF EXISTS chk_audit_logs_response_time_positive;`);
+    await queryRunner.query(
+      `ALTER TABLE audit_logs DROP CONSTRAINT IF EXISTS chk_audit_logs_response_status_range;`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE audit_logs DROP CONSTRAINT IF EXISTS chk_audit_logs_response_time_positive;`,
+    );
 
     // Remover tabela
     await queryRunner.dropTable('audit_logs');

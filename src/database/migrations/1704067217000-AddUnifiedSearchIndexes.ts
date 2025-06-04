@@ -4,7 +4,9 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * Migração para adicionar índices específicos para busca unificada de cidadãos
  * Adiciona índices para telefone e melhora a busca por nome
  */
-export class AddUnifiedSearchIndexes1704067218000 implements MigrationInterface {
+export class AddUnifiedSearchIndexes1704067218000
+  implements MigrationInterface
+{
   name = 'AddUnifiedSearchIndexes1704067218000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -44,7 +46,11 @@ export class AddUnifiedSearchIndexes1704067218000 implements MigrationInterface 
     // Remover índices criados (em ordem reversa)
     await queryRunner.query(`DROP INDEX IF EXISTS "idx_cidadao_nome_lower";`);
     await queryRunner.query(`DROP INDEX IF EXISTS "idx_cidadao_nome_unidade";`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "idx_cidadao_nome_gin_trgm";`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "idx_cidadao_telefone_unique";`);
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "idx_cidadao_nome_gin_trgm";`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "idx_cidadao_telefone_unique";`,
+    );
   }
 }

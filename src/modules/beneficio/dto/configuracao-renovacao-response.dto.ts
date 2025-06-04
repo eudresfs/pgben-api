@@ -23,7 +23,8 @@ export class ConfiguracaoRenovacaoResponseDto {
   nome_tipo_beneficio: string;
 
   @ApiProperty({
-    description: 'Indica se a renovação automática está ativa para este tipo de benefício',
+    description:
+      'Indica se a renovação automática está ativa para este tipo de benefício',
     example: true,
   })
   renovacao_automatica: boolean;

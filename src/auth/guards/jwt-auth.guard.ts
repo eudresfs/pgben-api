@@ -47,16 +47,17 @@ export class JwtAuthGuard extends AuthGuard(STRATEGY_JWT_AUTH) {
     try {
       // Decodificar o token para obter o JTI
       const decodedToken = this.jwtService.decode(token) as any;
-      
+
       if (!decodedToken || !decodedToken.jti) {
         throw new UnauthorizedException('Token inválido - JTI não encontrado');
       }
 
       // Verificar se o token está na blacklist, usando o formato correto
-      const checkBlacklistResult = await this.jwtBlacklistService.isTokenBlacklisted({
-        jti: decodedToken.jti
-      });
-      
+      const checkBlacklistResult =
+        await this.jwtBlacklistService.isTokenBlacklisted({
+          jti: decodedToken.jti,
+        });
+
       if (checkBlacklistResult.is_blacklisted) {
         throw new UnauthorizedException('Token foi revogado');
       }

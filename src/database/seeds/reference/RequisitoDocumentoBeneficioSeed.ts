@@ -19,31 +19,36 @@ export class RequisitoDocumentoBeneficioSeed {
           {
             tipo_documento: TipoDocumentoEnum.CPF,
             nome: 'CPF da gestante/mãe',
-            descricao: 'Cadastro de Pessoa Física da gestante ou mãe do recém-nascido',
+            descricao:
+              'Cadastro de Pessoa Física da gestante ou mãe do recém-nascido',
             obrigatorio: true,
           },
           {
             tipo_documento: TipoDocumentoEnum.RG,
             nome: 'RG da gestante/mãe',
-            descricao: 'Registro Geral (Carteira de Identidade) da gestante ou mãe',
+            descricao:
+              'Registro Geral (Carteira de Identidade) da gestante ou mãe',
             obrigatorio: true,
           },
           {
             tipo_documento: TipoDocumentoEnum.COMPROVANTE_RESIDENCIA,
             nome: 'Comprovante de residência',
-            descricao: 'Documento que comprove residência no município há pelo menos 2 anos',
+            descricao:
+              'Documento que comprove residência no município há pelo menos 2 anos',
             obrigatorio: true,
           },
           {
             tipo_documento: TipoDocumentoEnum.CERTIDAO_NASCIMENTO,
             nome: 'Certidão de nascimento do bebê',
-            descricao: 'Certidão de nascimento da criança (para auxílio pós-parto)',
+            descricao:
+              'Certidão de nascimento da criança (para auxílio pós-parto)',
             obrigatorio: false,
           },
           {
             tipo_documento: TipoDocumentoEnum.CARTAO_PRE_NATAL,
             nome: 'Cartão de pré-natal',
-            descricao: 'Cartão de acompanhamento pré-natal com consultas registradas',
+            descricao:
+              'Cartão de acompanhamento pré-natal com consultas registradas',
             obrigatorio: true,
           },
           {
@@ -55,13 +60,15 @@ export class RequisitoDocumentoBeneficioSeed {
           {
             tipo_documento: TipoDocumentoEnum.DECLARACAO_NASCIDO_VIVO,
             nome: 'Declaração de nascido vivo',
-            descricao: 'Declaração de nascido vivo emitida pelo hospital/maternidade',
+            descricao:
+              'Declaração de nascido vivo emitida pelo hospital/maternidade',
             obrigatorio: false,
           },
           {
             tipo_documento: TipoDocumentoEnum.COMPROVANTE_GESTACAO,
             nome: 'Comprovante de gestação',
-            descricao: 'Atestado médico comprovando gestação (para auxílio pré-natal)',
+            descricao:
+              'Atestado médico comprovando gestação (para auxílio pré-natal)',
             obrigatorio: false,
           },
           {
@@ -85,7 +92,8 @@ export class RequisitoDocumentoBeneficioSeed {
           {
             tipo_documento: TipoDocumentoEnum.DADOS_BANCARIOS,
             nome: 'Dados bancários',
-            descricao: 'Informações da conta bancária para depósito do benefício',
+            descricao:
+              'Informações da conta bancária para depósito do benefício',
             obrigatorio: true,
           },
         ],
@@ -108,7 +116,8 @@ export class RequisitoDocumentoBeneficioSeed {
           {
             tipo_documento: TipoDocumentoEnum.COMPROVANTE_RESIDENCIA,
             nome: 'Comprovante de residência anterior',
-            descricao: 'Documento que comprove a última residência no município',
+            descricao:
+              'Documento que comprove a última residência no município',
             obrigatorio: true,
           },
           {
@@ -126,19 +135,22 @@ export class RequisitoDocumentoBeneficioSeed {
           {
             tipo_documento: TipoDocumentoEnum.BOLETIM_OCORRENCIA,
             nome: 'Boletim de ocorrência',
-            descricao: 'B.O. em casos de violência doméstica, desabamento ou situação de risco',
+            descricao:
+              'B.O. em casos de violência doméstica, desabamento ou situação de risco',
             obrigatorio: false,
           },
           {
             tipo_documento: TipoDocumentoEnum.MEDIDA_PROTETIVA,
             nome: 'Medida protetiva',
-            descricao: 'Medida protetiva de urgência em casos de violência doméstica',
+            descricao:
+              'Medida protetiva de urgência em casos de violência doméstica',
             obrigatorio: false,
           },
           {
             tipo_documento: TipoDocumentoEnum.RELATORIO_SOCIAL,
             nome: 'Relatório social',
-            descricao: 'Relatório elaborado pelo assistente social após visita domiciliar',
+            descricao:
+              'Relatório elaborado pelo assistente social após visita domiciliar',
             obrigatorio: true,
           },
           {
@@ -162,7 +174,8 @@ export class RequisitoDocumentoBeneficioSeed {
           {
             tipo_documento: TipoDocumentoEnum.DADOS_BANCARIOS,
             nome: 'Dados bancários',
-            descricao: 'Informações da conta bancária para depósito do benefício',
+            descricao:
+              'Informações da conta bancária para depósito do benefício',
             obrigatorio: true,
           },
           {
@@ -239,7 +252,8 @@ export class RequisitoDocumentoBeneficioSeed {
           {
             tipo_documento: TipoDocumentoEnum.DADOS_BANCARIOS,
             nome: 'Dados bancários',
-            descricao: 'Informações da conta bancária para depósito do benefício',
+            descricao:
+              'Informações da conta bancária para depósito do benefício',
             obrigatorio: true,
           },
         ],
@@ -292,13 +306,15 @@ export class RequisitoDocumentoBeneficioSeed {
           {
             tipo_documento: TipoDocumentoEnum.COMPROVANTE_BOLSA_FAMILIA,
             nome: 'Comprovante Bolsa Família',
-            descricao: 'Comprovante de recebimento do Bolsa Família (se aplicável)',
+            descricao:
+              'Comprovante de recebimento do Bolsa Família (se aplicável)',
             obrigatorio: false,
           },
           {
             tipo_documento: TipoDocumentoEnum.DECLARACAO_MEDICA,
             nome: 'Declaração médica',
-            descricao: 'Declaração médica sobre necessidades nutricionais especiais',
+            descricao:
+              'Declaração médica sobre necessidades nutricionais especiais',
             obrigatorio: false,
           },
           {
@@ -310,7 +326,8 @@ export class RequisitoDocumentoBeneficioSeed {
           {
             tipo_documento: TipoDocumentoEnum.DADOS_BANCARIOS,
             nome: 'Dados bancários',
-            descricao: 'Informações da conta bancária para depósito do benefício',
+            descricao:
+              'Informações da conta bancária para depósito do benefício',
             obrigatorio: true,
           },
         ],
@@ -357,7 +374,8 @@ export class RequisitoDocumentoBeneficioSeed {
           {
             tipo_documento: TipoDocumentoEnum.DECLARACAO_MEDICA,
             nome: 'Declaração médica',
-            descricao: 'Declaração médica justificando a viagem para tratamento',
+            descricao:
+              'Declaração médica justificando a viagem para tratamento',
             obrigatorio: false,
           },
           {
@@ -385,7 +403,7 @@ export class RequisitoDocumentoBeneficioSeed {
     // Inserir os requisitos de documentos no banco de dados
     for (const beneficio of requisitosPorBeneficio) {
       console.log(`Processando requisitos para ${beneficio.tipoBeneficio}...`);
-      
+
       // Buscar o ID do tipo de benefício pelo nome
       const tipoBeneficioResult = await dataSource.query(
         `SELECT id FROM tipo_beneficio WHERE nome = $1`,
@@ -461,6 +479,8 @@ export class RequisitoDocumentoBeneficioSeed {
       }
     }
 
-    console.log('✅ Seed de requisitos de documentos por benefício concluído com sucesso!');
+    console.log(
+      '✅ Seed de requisitos de documentos por benefício concluído com sucesso!',
+    );
   }
 }

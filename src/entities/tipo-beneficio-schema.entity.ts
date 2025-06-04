@@ -111,21 +111,21 @@ export class TipoBeneficioSchema {
    * Obtém os campos obrigatórios do schema
    */
   getCamposObrigatorios(): CampoEstrutura[] {
-    return this.schema_estrutura.campos.filter(campo => campo.obrigatorio);
+    return this.schema_estrutura.campos.filter((campo) => campo.obrigatorio);
   }
 
   /**
    * Obtém os campos opcionais do schema
    */
   getCamposOpcionais(): CampoEstrutura[] {
-    return this.schema_estrutura.campos.filter(campo => !campo.obrigatorio);
+    return this.schema_estrutura.campos.filter((campo) => !campo.obrigatorio);
   }
 
   /**
    * Busca um campo específico por nome
    */
   getCampoPorNome(nome: string): CampoEstrutura | undefined {
-    return this.schema_estrutura.campos.find(campo => campo.nome === nome);
+    return this.schema_estrutura.campos.find((campo) => campo.nome === nome);
   }
 
   /**
@@ -134,30 +134,35 @@ export class TipoBeneficioSchema {
   validarEstrutura(): { valido: boolean; erros: string[] } {
     const erros: string[] = [];
 
-    if (!this.schema_estrutura.campos || this.schema_estrutura.campos.length === 0) {
+    if (
+      !this.schema_estrutura.campos ||
+      this.schema_estrutura.campos.length === 0
+    ) {
       erros.push('Schema deve conter pelo menos um campo');
     }
 
     // Validar campos únicos
-    const nomesCampos = this.schema_estrutura.campos.map(c => c.nome);
+    const nomesCampos = this.schema_estrutura.campos.map((c) => c.nome);
     const nomesUnicos = new Set(nomesCampos);
     if (nomesCampos.length !== nomesUnicos.size) {
       erros.push('Nomes de campos devem ser únicos');
     }
 
     // Validar dependências
-    this.schema_estrutura.campos.forEach(campo => {
+    this.schema_estrutura.campos.forEach((campo) => {
       if (campo.dependeDe) {
         const campoReferenciado = this.getCampoPorNome(campo.dependeDe.campo);
         if (!campoReferenciado) {
-          erros.push(`Campo '${campo.nome}' depende de campo inexistente '${campo.dependeDe.campo}'`);
+          erros.push(
+            `Campo '${campo.nome}' depende de campo inexistente '${campo.dependeDe.campo}'`,
+          );
         }
       }
     });
 
     return {
       valido: erros.length === 0,
-      erros
+      erros,
     };
   }
 }

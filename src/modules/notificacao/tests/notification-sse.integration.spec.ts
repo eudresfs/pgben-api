@@ -83,7 +83,8 @@ describe('Notification SSE Integration', () => {
     app = moduleFixture.createNestApplication();
     await app.init();
 
-    notificacaoService = moduleFixture.get<NotificacaoService>(NotificacaoService);
+    notificacaoService =
+      moduleFixture.get<NotificacaoService>(NotificacaoService);
     sseService = moduleFixture.get<SseService>(SseService);
     notificacaoRepository = moduleFixture.get<Repository<NotificacaoSistema>>(
       getRepositoryToken(NotificacaoSistema),
@@ -130,12 +131,12 @@ describe('Notification SSE Integration', () => {
         .expect('Connection', 'keep-alive')
         .end((err, res) => {
           if (err) return done(err);
-          
+
           // Verificar se a conexão foi estabelecida
           const stats = sseService.getConnectionStats();
           expect(stats.totalConnections).toBe(1);
           expect(stats.activeUsers).toBe(1);
-          
+
           done();
         });
     });
@@ -200,7 +201,7 @@ describe('Notification SSE Integration', () => {
           });
           callback(null, res);
         });
-      
+
       setTimeout(done, 100); // Aguardar estabelecimento da conexão
     });
 
@@ -264,14 +265,14 @@ describe('Notification SSE Integration', () => {
         { titulo: 'Notificação 2', conteudo: 'Conteúdo 2' },
         { titulo: 'Notificação 3', conteudo: 'Conteúdo 3' },
       ];
-      
+
       let receivedCount = 0;
       const receivedNotifications = [];
 
       sseConnection.on('notification', (data) => {
         receivedNotifications.push(data.data);
         receivedCount++;
-        
+
         if (receivedCount === notifications.length) {
           expect(receivedNotifications).toHaveLength(3);
           expect(receivedNotifications[0].titulo).toBe('Notificação 1');
@@ -290,7 +291,7 @@ describe('Notification SSE Integration', () => {
             notification.titulo,
             notification.conteudo,
           );
-          await new Promise(resolve => setTimeout(resolve, 10)); // Pequeno delay
+          await new Promise((resolve) => setTimeout(resolve, 10)); // Pequeno delay
         }
       }, 50);
     });
@@ -314,12 +315,12 @@ describe('Notification SSE Integration', () => {
 
       expect(response.body.id).toBeDefined();
       expect(response.body.titulo).toBe(notificationData.titulo);
-      
+
       // Verificar se foi salva no banco
       const savedNotification = await notificacaoRepository.findOne({
         where: { id: response.body.id },
       });
-      
+
       expect(savedNotification).toBeDefined();
       expect(savedNotification.titulo).toBe(notificationData.titulo);
     });
@@ -343,16 +344,31 @@ describe('Notification SSE Integration', () => {
       const updatedNotification = await notificacaoRepository.findOne({
         where: { id: notification.id },
       });
-      
+
       expect(updatedNotification.lida).toBe(true);
       expect(updatedNotification.data_leitura).toBeDefined();
     });
 
     it('should get unread notification count', async () => {
       // Criar algumas notificações
-      await notificacaoService.criar(testUser.id, 'info', 'Teste 1', 'Conteúdo 1');
-      await notificacaoService.criar(testUser.id, 'info', 'Teste 2', 'Conteúdo 2');
-      await notificacaoService.criar(testUser.id, 'info', 'Teste 3', 'Conteúdo 3');
+      await notificacaoService.criar(
+        testUser.id,
+        'info',
+        'Teste 1',
+        'Conteúdo 1',
+      );
+      await notificacaoService.criar(
+        testUser.id,
+        'info',
+        'Teste 2',
+        'Conteúdo 2',
+      );
+      await notificacaoService.criar(
+        testUser.id,
+        'info',
+        'Teste 3',
+        'Conteúdo 3',
+      );
 
       const response = await request(app.getHttpServer())
         .get('/v1/notificacao/contador/nao-lidas')
@@ -399,7 +415,7 @@ describe('Notification SSE Integration', () => {
 
       // Remover uma conexão
       sseService.removeConnection(connection1.id);
-      
+
       const updatedStats = sseService.getConnectionStats();
       expect(updatedStats.totalConnections).toBe(2);
       expect(updatedStats.connectionsPerUser[testUser.id]).toBe(2);
@@ -408,16 +424,20 @@ describe('Notification SSE Integration', () => {
     it('should enforce connection limits per user', () => {
       // Tentar criar mais conexões que o limite
       const connections = [];
-      
-      for (let i = 0; i < 7; i++) { // Limite é 5
+
+      for (let i = 0; i < 7; i++) {
+        // Limite é 5
         try {
-          const connection = sseService.createConnection(testUser.id, {} as any);
+          const connection = sseService.createConnection(
+            testUser.id,
+            {} as any,
+          );
           connections.push(connection);
         } catch (error) {
           expect(error.message).toContain('limite máximo');
         }
       }
-      
+
       expect(connections.length).toBeLessThanOrEqual(5);
     });
 
@@ -452,15 +472,15 @@ describe('Notification SSE Integration', () => {
     it('should clean up inactive connections', async () => {
       // Criar conexão
       const connection = sseService.createConnection(testUser.id, {} as any);
-      
+
       expect(sseService.getConnectionStats().totalConnections).toBe(1);
-      
+
       // Simular conexão inativa (timeout)
       connection.lastActivity = Date.now() - 400000; // 400 segundos atrás
-      
+
       // Executar limpeza
       sseService.cleanupInactiveConnections();
-      
+
       expect(sseService.getConnectionStats().totalConnections).toBe(0);
     });
   });
@@ -468,9 +488,9 @@ describe('Notification SSE Integration', () => {
   describe('Error Handling', () => {
     it('should handle database errors gracefully', async () => {
       // Simular erro no banco
-      jest.spyOn(notificacaoRepository, 'save').mockRejectedValueOnce(
-        new Error('Database connection failed'),
-      );
+      jest
+        .spyOn(notificacaoRepository, 'save')
+        .mockRejectedValueOnce(new Error('Database connection failed'));
 
       try {
         await notificacaoService.criar(
@@ -519,7 +539,7 @@ describe('Notification SSE Integration', () => {
     it('should handle high volume of notifications', async () => {
       const startTime = Date.now();
       const notificationCount = 100;
-      
+
       const promises = [];
       for (let i = 0; i < notificationCount; i++) {
         promises.push(
@@ -531,14 +551,14 @@ describe('Notification SSE Integration', () => {
           ),
         );
       }
-      
+
       await Promise.all(promises);
-      
+
       const endTime = Date.now();
       const duration = endTime - startTime;
-      
+
       expect(duration).toBeLessThan(5000); // Deve completar em menos de 5 segundos
-      
+
       const count = await notificacaoRepository.count({
         where: { destinatario_id: testUser.id },
       });
@@ -548,9 +568,9 @@ describe('Notification SSE Integration', () => {
     it('should handle multiple concurrent SSE connections', () => {
       const connectionCount = 50;
       const connections = [];
-      
+
       const startTime = Date.now();
-      
+
       for (let i = 0; i < connectionCount; i++) {
         const mockResponse = {
           writeHead: jest.fn(),
@@ -558,19 +578,21 @@ describe('Notification SSE Integration', () => {
           end: jest.fn(),
           on: jest.fn(),
         };
-        
+
         const connection = sseService.createConnection(
           `user-${i}`,
           mockResponse as any,
         );
         connections.push(connection);
       }
-      
+
       const endTime = Date.now();
       const duration = endTime - startTime;
-      
+
       expect(duration).toBeLessThan(1000); // Deve completar em menos de 1 segundo
-      expect(sseService.getConnectionStats().totalConnections).toBe(connectionCount);
+      expect(sseService.getConnectionStats().totalConnections).toBe(
+        connectionCount,
+      );
     });
   });
 });

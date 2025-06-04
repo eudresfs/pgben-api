@@ -98,7 +98,6 @@ export class EnderecoDto {
   })
   ponto_referencia?: string;
 
-
   @IsNumber({}, { message: 'Tempo de residência deve ser um número' })
   @IsNotEmpty({ message: 'Tempo de residência é obrigatório' })
   @ApiProperty({
@@ -194,7 +193,7 @@ export class CreateCidadaoDto {
   rg: string;
 
   @IsNotEmpty({ message: 'Prontuario SUAS é obrigatório' })
-    @ApiProperty({
+  @ApiProperty({
     example: 'SUAS1234567',
     description: 'Nº do Prontuário SUAS do cidadão',
   })
@@ -244,8 +243,7 @@ export class CreateCidadaoDto {
   @IsOptional()
   @ApiPropertyOptional({
     example: 'Maria Santos',
-    description:
-      'Nome social do cidadão (usado para pessoas trans)',
+    description: 'Nome social do cidadão (usado para pessoas trans)',
     required: false,
   })
   nome_social?: string;
@@ -257,8 +255,7 @@ export class CreateCidadaoDto {
     example: EstadoCivil.CASADO,
     description: 'Estado civil do cidadão',
   })
-  estado_civil: EstadoCivil
-
+  estado_civil: EstadoCivil;
 
   @IsString({ message: 'Nome da mãe deve ser uma string' })
   @IsNotEmpty({ message: 'Nome da mãe é obrigatório' })

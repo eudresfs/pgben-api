@@ -4,7 +4,7 @@ import { StatusSolicitacao } from '../../../entities/solicitacao.entity';
 
 /**
  * DTO para atualização de status de solicitação
- * 
+ *
  * Este DTO é utilizado para atualizar o status de uma solicitação,
  * permitindo a inclusão de informações adicionais como observações,
  * justificativas e referências a processos judiciais.

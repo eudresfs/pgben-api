@@ -1,4 +1,10 @@
-import { IsNotEmpty, IsUUID, IsEnum, IsOptional, IsString } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsUUID,
+  IsEnum,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 import { TipoPapel, PaperType } from '../../../enums/tipo-papel.enum';
 
 /**

@@ -2,10 +2,10 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 // Entidades
-import { 
-  Pagamento, 
-  ComprovantePagamento, 
-  ConfirmacaoRecebimento 
+import {
+  Pagamento,
+  ComprovantePagamento,
+  ConfirmacaoRecebimento,
 } from '../../entities';
 
 // Controllers
@@ -31,10 +31,10 @@ import { DadosBancariosValidator } from './validators/dados-bancarios-validator'
 
 /**
  * Módulo de Pagamento/Liberação
- * 
+ *
  * Este módulo gerencia a etapa final do fluxo de concessão de benefícios,
  * controlando a liberação efetiva dos recursos para os beneficiários.
- * 
+ *
  * @author Equipe PGBen
  */
 @Module({
@@ -42,10 +42,10 @@ import { DadosBancariosValidator } from './validators/dados-bancarios-validator'
     TypeOrmModule.forFeature([
       Pagamento,
       ComprovantePagamento,
-      ConfirmacaoRecebimento
+      ConfirmacaoRecebimento,
     ]),
     // Outros módulos necessários serão importados aqui:
-    // SolicitacaoModule, 
+    // SolicitacaoModule,
     // UsuarioModule,
     // CidadaoModule,
     // DocumentoModule,
@@ -55,43 +55,43 @@ import { DadosBancariosValidator } from './validators/dados-bancarios-validator'
   controllers: [
     PagamentoController,
     ComprovanteController,
-    ConfirmacaoController
+    ConfirmacaoController,
   ],
   providers: [
     // Serviços principais
     PagamentoService,
     ComprovanteService,
     ConfirmacaoService,
-    
+
     // Serviços de integração
     AuditoriaPagamentoService,
     IntegracaoSolicitacaoService,
     IntegracaoDocumentoService,
     IntegracaoCidadaoService,
-    
+
     // Validadores
     PixValidator,
     StatusTransitionValidator,
-    DadosBancariosValidator
+    DadosBancariosValidator,
   ],
   exports: [
     TypeOrmModule,
-    
+
     // Serviços principais
     PagamentoService,
     ComprovanteService,
     ConfirmacaoService,
-    
+
     // Serviços de integração
     AuditoriaPagamentoService,
     IntegracaoSolicitacaoService,
     IntegracaoDocumentoService,
     IntegracaoCidadaoService,
-    
+
     // Validadores
     PixValidator,
     DadosBancariosValidator,
-    StatusTransitionValidator
-  ]
+    StatusTransitionValidator,
+  ],
 })
 export class PagamentoModule {}

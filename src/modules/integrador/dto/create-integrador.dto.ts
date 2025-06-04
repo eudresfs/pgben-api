@@ -1,4 +1,11 @@
-import { IsNotEmpty, IsString, IsOptional, IsEmail, IsArray, IsBoolean } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsString,
+  IsOptional,
+  IsEmail,
+  IsArray,
+  IsBoolean,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 /**
@@ -6,7 +13,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
  * Define os campos necessários e opcionais para o cadastro.
  */
 export class CreateIntegradorDto {
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Nome do integrador',
     example: 'Sistema ERP Municipal',
   })
@@ -14,7 +21,7 @@ export class CreateIntegradorDto {
   @IsString({ message: 'O nome do integrador deve ser uma string' })
   nome: string;
 
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     description: 'Descrição do integrador',
     example: 'Sistema de gestão financeira da Prefeitura Municipal',
   })
@@ -22,7 +29,7 @@ export class CreateIntegradorDto {
   @IsString({ message: 'A descrição deve ser uma string' })
   descricao?: string;
 
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     description: 'Nome do responsável pelo integrador',
     example: 'João da Silva',
   })
@@ -30,7 +37,7 @@ export class CreateIntegradorDto {
   @IsString({ message: 'O nome do responsável deve ser uma string' })
   responsavel?: string;
 
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     description: 'Email de contato do responsável',
     example: 'joao.silva@prefeitura.gov.br',
   })
@@ -38,7 +45,7 @@ export class CreateIntegradorDto {
   @IsEmail({}, { message: 'Email de contato inválido' })
   emailContato?: string;
 
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     description: 'Telefone de contato do responsável',
     example: '(84) 98765-4321',
   })
@@ -46,15 +53,16 @@ export class CreateIntegradorDto {
   @IsString({ message: 'O telefone de contato deve ser uma string' })
   telefoneContato?: string;
 
-  @ApiPropertyOptional({ 
-    description: 'Lista de permissões de escopo que este integrador pode utilizar',
+  @ApiPropertyOptional({
+    description:
+      'Lista de permissões de escopo que este integrador pode utilizar',
     example: ['read:cidadaos', 'read:beneficios', 'write:solicitacoes'],
   })
   @IsOptional()
   @IsArray({ message: 'As permissões de escopo devem ser um array' })
   permissoesEscopo?: string[];
 
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     description: 'Lista de endereços IP permitidos para acesso',
     example: ['192.168.1.100', '10.0.0.5'],
   })
@@ -62,10 +70,10 @@ export class CreateIntegradorDto {
   @IsArray({ message: 'Os IPs permitidos devem ser um array' })
   ipPermitidos?: string[];
 
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     description: 'Status de ativação do integrador',
     example: true,
-    default: true
+    default: true,
   })
   @IsOptional()
   @IsBoolean({ message: 'O status ativo deve ser um booleano' })

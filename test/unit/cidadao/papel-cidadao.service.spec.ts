@@ -1,7 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
-import { NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import {
+  NotFoundException,
+  ConflictException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PapelCidadaoService } from '@modules/cidadao/services/papel-cidadao.service';
 import { CidadaoService } from '@modules/cidadao/services/cidadao.service';
 import { VerificacaoPapelService } from '@modules/cidadao/services/verificacao-papel.service';
@@ -92,9 +96,13 @@ describe('PapelCidadaoService', () => {
     }).compile();
 
     service = module.get<PapelCidadaoService>(PapelCidadaoService);
-    repository = module.get<Repository<PapelCidadao>>(getRepositoryToken(PapelCidadao));
+    repository = module.get<Repository<PapelCidadao>>(
+      getRepositoryToken(PapelCidadao),
+    );
     cidadaoService = module.get<CidadaoService>(CidadaoService);
-    verificacaoPapelService = module.get<VerificacaoPapelService>(VerificacaoPapelService);
+    verificacaoPapelService = module.get<VerificacaoPapelService>(
+      VerificacaoPapelService,
+    );
     dataSource = module.get<DataSource>(DataSource);
 
     jest.clearAllMocks();
@@ -116,7 +124,7 @@ describe('PapelCidadaoService', () => {
       mockCidadaoService.findById.mockResolvedValue(mockCidadaoResponse);
       // Mock para verificação inicial de papel existente
       mockRepository.findOne.mockResolvedValue(null);
-      
+
       mockDataSource.transaction.mockImplementation(async (callback) => {
         const manager = {
           findOne: jest.fn().mockResolvedValue(mockCidadaoResponse), // Cidadão encontrado na transação
@@ -145,8 +153,10 @@ describe('PapelCidadaoService', () => {
     it('deve lançar NotFoundException quando cidadão não existir', async () => {
       mockCidadaoService.findById.mockResolvedValue(null);
 
-      await expect(service.create(createPapelDto)).rejects.toThrow(NotFoundException);
-      
+      await expect(service.create(createPapelDto)).rejects.toThrow(
+        NotFoundException,
+      );
+
       expect(mockCidadaoService.findById).toHaveBeenCalledWith(
         createPapelDto.cidadao_id,
         false,
@@ -159,8 +169,10 @@ describe('PapelCidadaoService', () => {
       // Mock para verificação inicial de papel existente - retorna papel existente
       mockRepository.findOne.mockResolvedValue(mockPapelCidadao);
 
-      await expect(service.create(createPapelDto)).rejects.toThrow(ConflictException);
-      
+      await expect(service.create(createPapelDto)).rejects.toThrow(
+        ConflictException,
+      );
+
       expect(mockCidadaoService.findById).toHaveBeenCalledWith(
         createPapelDto.cidadao_id,
         false,
@@ -177,7 +189,7 @@ describe('PapelCidadaoService', () => {
     it('deve lançar NotFoundException quando cidadão não existir na transação', async () => {
       // Mock para verificação inicial de papel existente
       mockRepository.findOne.mockResolvedValue(null);
-      
+
       mockDataSource.transaction.mockImplementation(async (callback) => {
         const manager = {
           findOne: jest.fn().mockResolvedValue(null), // Cidadão não encontrado na transação
@@ -187,7 +199,9 @@ describe('PapelCidadaoService', () => {
         return callback(manager);
       });
 
-      await expect(service.create(createPapelDto)).rejects.toThrow(NotFoundException);
+      await expect(service.create(createPapelDto)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -207,7 +221,8 @@ describe('PapelCidadaoService', () => {
     it('deve criar múltiplos papéis com sucesso', async () => {
       mockDataSource.transaction.mockImplementation(async (callback) => {
         const manager = {
-          findOne: jest.fn()
+          findOne: jest
+            .fn()
             .mockResolvedValueOnce(null) // Primeiro papel não existe
             .mockResolvedValueOnce(mockCidadaoResponse) // Cidadão encontrado para verificação de conflitos do primeiro papel
             .mockResolvedValueOnce(null) // Segundo papel não existe
@@ -226,12 +241,17 @@ describe('PapelCidadaoService', () => {
 
       const result = await service.createMany(cidadaoId, papeis);
 
-      expect(mockCidadaoService.findById).toHaveBeenCalledWith(cidadaoId, false);
+      expect(mockCidadaoService.findById).toHaveBeenCalledWith(
+        cidadaoId,
+        false,
+      );
       expect(result).toEqual([mockPapelCidadao]);
     });
 
     it('deve lançar BadRequestException quando lista estiver vazia', async () => {
-      await expect(service.createMany(cidadaoId, [])).rejects.toThrow(BadRequestException);
+      await expect(service.createMany(cidadaoId, [])).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('deve lançar BadRequestException quando houver papéis duplicados', async () => {
@@ -257,9 +277,9 @@ describe('PapelCidadaoService', () => {
 
       mockCidadaoService.findById.mockResolvedValue(mockCidadaoResponse);
 
-      await expect(service.createMany(cidadaoId, papeisDuplicados)).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        service.createMany(cidadaoId, papeisDuplicados),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('deve lançar NotFoundException quando cidadão não existir', async () => {
@@ -274,7 +294,9 @@ describe('PapelCidadaoService', () => {
 
       mockCidadaoService.findById.mockResolvedValue(null);
 
-      await expect(service.createMany(cidadaoId, papeis)).rejects.toThrow(NotFoundException);
+      await expect(service.createMany(cidadaoId, papeis)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -283,10 +305,15 @@ describe('PapelCidadaoService', () => {
       const papeis = [mockPapelCidadao];
       mockRepository.find.mockResolvedValue(papeis);
 
-      const result = await service.findByCidadaoId('550e8400-e29b-41d4-a716-446655440000');
+      const result = await service.findByCidadaoId(
+        '550e8400-e29b-41d4-a716-446655440000',
+      );
 
       expect(mockRepository.find).toHaveBeenCalledWith({
-        where: { cidadao_id: '550e8400-e29b-41d4-a716-446655440000', ativo: true },
+        where: {
+          cidadao_id: '550e8400-e29b-41d4-a716-446655440000',
+          ativo: true,
+        },
       });
       expect(result).toEqual(papeis);
     });

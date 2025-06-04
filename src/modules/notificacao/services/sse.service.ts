@@ -1,11 +1,16 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Subject, Observable, interval } from 'rxjs';
 import { map, takeUntil } from 'rxjs/operators';
-import { SseNotification, SseConnection, SseConnectionStats, HeartbeatEvent } from '../interfaces/sse-notification.interface';
+import {
+  SseNotification,
+  SseConnection,
+  SseConnectionStats,
+  HeartbeatEvent,
+} from '../interfaces/sse-notification.interface';
 
 /**
  * Serviço SSE (Server-Sent Events)
- * 
+ *
  * Responsável por gerenciar conexões SSE e envio de notificações em tempo real.
  * Mantém um mapa de conexões ativas por usuário e fornece métodos para
  * envio de notificações individuais ou em massa.
@@ -19,13 +24,16 @@ export class SseService {
     throw new Error('Method not implemented.');
   }
   private readonly logger = new Logger(SseService.name);
-  
+
   /** Mapa de conexões ativas: userId -> Map<connectionId, Subject> */
-  private readonly connections = new Map<string, Map<string, Subject<MessageEvent>>>();
-  
+  private readonly connections = new Map<
+    string,
+    Map<string, Subject<MessageEvent>>
+  >();
+
   /** Intervalo de heartbeat em milissegundos (30 segundos) */
   private readonly heartbeatInterval = 30000;
-  
+
   /** Máximo de conexões por usuário */
   private readonly maxConnectionsPerUser = 5;
 
@@ -35,30 +43,37 @@ export class SseService {
    * @param clientInfo Informações do cliente (opcional)
    * @returns Observable de MessageEvent para a conexão SSE
    */
-  createConnection(userId: string, clientInfo?: { userAgent?: string; ip?: string }): Observable<MessageEvent> {
+  createConnection(
+    userId: string,
+    clientInfo?: { userAgent?: string; ip?: string },
+  ): Observable<MessageEvent> {
     const connectionId = this.generateConnectionId();
     const subject = new Subject<MessageEvent>();
-    
+
     // Inicializa mapa do usuário se não existir
     if (!this.connections.has(userId)) {
       this.connections.set(userId, new Map());
     }
-    
+
     const userConnections = this.connections.get(userId)!;
-    
+
     // Verifica limite de conexões por usuário
     if (userConnections.size >= this.maxConnectionsPerUser) {
-      this.logger.warn(`Usuário ${userId} atingiu o limite de ${this.maxConnectionsPerUser} conexões`);
+      this.logger.warn(
+        `Usuário ${userId} atingiu o limite de ${this.maxConnectionsPerUser} conexões`,
+      );
       // Remove a conexão mais antiga
       const oldestConnectionId = userConnections.keys().next().value;
       this.removeConnection(userId, oldestConnectionId);
     }
-    
+
     userConnections.set(connectionId, subject);
     this.logger.log(`Nova conexão SSE: ${userId}:${connectionId}`);
-    
+
     if (clientInfo) {
-      this.logger.debug(`Cliente conectado: ${clientInfo.userAgent} - IP: ${clientInfo.ip}`);
+      this.logger.debug(
+        `Cliente conectado: ${clientInfo.userAgent} - IP: ${clientInfo.ip}`,
+      );
     }
 
     // Configura heartbeat
@@ -67,26 +82,26 @@ export class SseService {
         const heartbeatEvent: HeartbeatEvent = {
           type: 'heartbeat',
           timestamp: new Date(),
-          connectionId
+          connectionId,
         };
-        
+
         return {
-          data: JSON.stringify(heartbeatEvent)
+          data: JSON.stringify(heartbeatEvent),
         } as MessageEvent;
-      })
+      }),
     );
 
     // Combina notificações com heartbeat
-    return new Observable<MessageEvent>(observer => {
+    return new Observable<MessageEvent>((observer) => {
       // Envia evento de conexão estabelecida
       observer.next({
         data: JSON.stringify({
           type: 'connection_established',
           connectionId,
-          timestamp: new Date()
-        })
+          timestamp: new Date(),
+        }),
       } as MessageEvent);
-      
+
       const subscription = subject.asObservable().subscribe(observer);
       const heartbeatSub = heartbeat$.subscribe(observer);
 
@@ -106,7 +121,7 @@ export class SseService {
    */
   sendToUser(userId: string, notification: SseNotification): void {
     const userConnections = this.connections.get(userId);
-    
+
     if (!userConnections || userConnections.size === 0) {
       this.logger.warn(`Usuário ${userId} não tem conexões ativas`);
       return;
@@ -115,8 +130,8 @@ export class SseService {
     const messageEvent: MessageEvent = {
       data: JSON.stringify({
         ...notification,
-        timestamp: notification.timestamp.toISOString()
-      })
+        timestamp: notification.timestamp.toISOString(),
+      }),
     } as MessageEvent;
 
     // Envia para todas as conexões do usuário
@@ -127,12 +142,16 @@ export class SseService {
         successCount++;
         this.logger.debug(`Notificação enviada: ${userId}:${connectionId}`);
       } catch (error) {
-        this.logger.error(`Erro ao enviar notificação para ${userId}:${connectionId}: ${error.message}`);
+        this.logger.error(
+          `Erro ao enviar notificação para ${userId}:${connectionId}: ${error.message}`,
+        );
         this.removeConnection(userId, connectionId);
       }
     });
-    
-    this.logger.log(`Notificação enviada para ${successCount}/${userConnections.size} conexões do usuário ${userId}`);
+
+    this.logger.log(
+      `Notificação enviada para ${successCount}/${userConnections.size} conexões do usuário ${userId}`,
+    );
   }
 
   /**
@@ -140,10 +159,15 @@ export class SseService {
    * @param userIds Lista de IDs dos usuários
    * @param notification Dados da notificação (sem userId)
    */
-  sendToUsers(userIds: string[], notification: Omit<SseNotification, 'userId'>): void {
-    this.logger.log(`Enviando notificação em massa para ${userIds.length} usuários`);
-    
-    userIds.forEach(userId => {
+  sendToUsers(
+    userIds: string[],
+    notification: Omit<SseNotification, 'userId'>,
+  ): void {
+    this.logger.log(
+      `Enviando notificação em massa para ${userIds.length} usuários`,
+    );
+
+    userIds.forEach((userId) => {
       this.sendToUser(userId, { ...notification, userId });
     });
   }
@@ -154,8 +178,10 @@ export class SseService {
    */
   broadcastToAll(notification: Omit<SseNotification, 'userId'>): void {
     const connectedUserIds = Array.from(this.connections.keys());
-    this.logger.log(`Enviando broadcast para ${connectedUserIds.length} usuários conectados`);
-    
+    this.logger.log(
+      `Enviando broadcast para ${connectedUserIds.length} usuários conectados`,
+    );
+
     this.sendToUsers(connectedUserIds, notification);
   }
 
@@ -171,14 +197,14 @@ export class SseService {
       if (subject) {
         subject.complete();
       }
-      
+
       userConnections.delete(connectionId);
-      
+
       // Remove mapa do usuário se não houver mais conexões
       if (userConnections.size === 0) {
         this.connections.delete(userId);
       }
-      
+
       this.logger.log(`Conexão removida: ${userId}:${connectionId}`);
     }
   }
@@ -194,7 +220,7 @@ export class SseService {
         subject.complete();
         this.logger.log(`Conexão removida: ${userId}:${connectionId}`);
       });
-      
+
       this.connections.delete(userId);
       this.logger.log(`Todas as conexões do usuário ${userId} foram removidas`);
     }
@@ -217,7 +243,7 @@ export class SseService {
   getConnectionStats(): SseConnectionStats {
     let totalConnections = 0;
     const connectionsPerUser: Record<string, number> = {};
-    
+
     this.connections.forEach((userConns, userId) => {
       const connectionCount = userConns.size;
       totalConnections += connectionCount;
@@ -228,7 +254,7 @@ export class SseService {
       totalUsers: this.connections.size,
       totalConnections,
       connectionsPerUser,
-      lastUpdated: new Date()
+      lastUpdated: new Date(),
     };
   }
 
@@ -245,13 +271,13 @@ export class SseService {
    */
   clearAllConnections(): void {
     this.logger.log('Limpando todas as conexões SSE');
-    
+
     this.connections.forEach((userConns, userId) => {
       userConns.forEach((subject, connectionId) => {
         subject.complete();
       });
     });
-    
+
     this.connections.clear();
     this.logger.log('Todas as conexões SSE foram limpas');
   }

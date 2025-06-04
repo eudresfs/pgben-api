@@ -84,14 +84,18 @@ export class ModeloDocumentoSeed {
     let modelosPulados = 0;
     let erros = 0;
 
-    console.log(`📊 Total de modelos para processar: ${modelosDocumentos.length}`);
+    console.log(
+      `📊 Total de modelos para processar: ${modelosDocumentos.length}`,
+    );
 
     // Inserção dos modelos de documentos no banco de dados
     for (const modelo of modelosDocumentos) {
       try {
         // Validação básica dos dados
         if (!modelo.titulo || !modelo.descricao || !modelo.categoria) {
-          console.error(`❌ Erro: Modelo com dados inválidos - Título: ${modelo.titulo}, Categoria: ${modelo.categoria}`);
+          console.error(
+            `❌ Erro: Modelo com dados inválidos - Título: ${modelo.titulo}, Categoria: ${modelo.categoria}`,
+          );
           erros++;
           continue;
         }
@@ -103,7 +107,9 @@ export class ModeloDocumentoSeed {
         );
 
         if (categoriaResult.length === 0) {
-          console.warn(`⚠️  Categoria '${modelo.categoria}' não encontrada, pulando modelo '${modelo.titulo}'`);
+          console.warn(
+            `⚠️  Categoria '${modelo.categoria}' não encontrada, pulando modelo '${modelo.titulo}'`,
+          );
           modelosPulados++;
           continue;
         }
@@ -162,26 +168,37 @@ export class ModeloDocumentoSeed {
           console.log(`🔄 Modelo '${modelo.titulo}' atualizado com sucesso`);
           modelosAtualizados++;
         }
-        
+
         modelosProcessados++;
       } catch (error) {
-        console.error(`❌ Erro ao processar modelo '${modelo.titulo}':`, error.message);
+        console.error(
+          `❌ Erro ao processar modelo '${modelo.titulo}':`,
+          error.message,
+        );
         erros++;
       }
     }
 
     // Relatório final
     console.log('📈 Relatório de execução:');
-    console.log(`   • Modelos processados: ${modelosProcessados}/${modelosDocumentos.length}`);
+    console.log(
+      `   • Modelos processados: ${modelosProcessados}/${modelosDocumentos.length}`,
+    );
     console.log(`   • Modelos criados: ${modelosCriados}`);
     console.log(`   • Modelos atualizados: ${modelosAtualizados}`);
-    console.log(`   • Modelos pulados (categoria não encontrada): ${modelosPulados}`);
+    console.log(
+      `   • Modelos pulados (categoria não encontrada): ${modelosPulados}`,
+    );
     console.log(`   • Erros encontrados: ${erros}`);
-    
+
     if (erros > 0 || modelosPulados > 0) {
-      console.warn(`⚠️  Seed concluído com ${erros} erro(s) e ${modelosPulados} modelo(s) pulado(s)`);
+      console.warn(
+        `⚠️  Seed concluído com ${erros} erro(s) e ${modelosPulados} modelo(s) pulado(s)`,
+      );
     } else {
-      console.log('✅ Seed de modelos de documentos de referência concluído com sucesso!');
+      console.log(
+        '✅ Seed de modelos de documentos de referência concluído com sucesso!',
+      );
     }
   }
 }

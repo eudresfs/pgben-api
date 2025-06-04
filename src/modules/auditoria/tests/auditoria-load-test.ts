@@ -238,7 +238,12 @@ function createRandomLogDto(): CreateLogAuditoriaDto {
   dto.ip_origem = faker.internet.ip();
   dto.user_agent = faker.internet.userAgent();
   dto.endpoint = `/api/${dto.entidade_afetada.toLowerCase()}/${faker.helpers.arrayElement(['', dto.entidade_id])}`;
-  dto.metodo_http = faker.helpers.arrayElement(['GET', 'POST', 'PUT', 'DELETE']);
+  dto.metodo_http = faker.helpers.arrayElement([
+    'GET',
+    'POST',
+    'PUT',
+    'DELETE',
+  ]);
   dto.descricao = `${dto.metodo_http} ${dto.endpoint}`;
   dto.data_hora = new Date();
 

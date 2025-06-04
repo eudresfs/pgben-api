@@ -1,0 +1,109 @@
+9d1cd99eda5763190f40350380339608
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var _a, _b;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.TemplateResponseDto = void 0;
+const swagger_1 = require("@nestjs/swagger");
+const enums_1 = require("../../../../enums");
+/**
+ * DTO para resposta com informações de um template.
+ */
+class TemplateResponseDto {
+    codigo;
+    nome;
+    tipo;
+    assunto;
+    conteudo;
+    variaveis;
+    ativo;
+    created_at;
+    updated_at;
+    updated_by;
+}
+exports.TemplateResponseDto = TemplateResponseDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Código único que identifica o template',
+        example: 'email.nova-solicitacao'
+    }),
+    __metadata("design:type", String)
+], TemplateResponseDto.prototype, "codigo", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Nome descritivo do template',
+        example: 'Email de Nova Solicitação'
+    }),
+    __metadata("design:type", String)
+], TemplateResponseDto.prototype, "nome", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Tipo do template',
+        enum: enums_1.TemplateTipoEnum,
+        example: enums_1.TemplateTipoEnum.EMAIL
+    }),
+    __metadata("design:type", String)
+], TemplateResponseDto.prototype, "tipo", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Assunto do template (para emails)',
+        example: 'Nova solicitação de benefício registrada',
+        required: false
+    }),
+    __metadata("design:type", String)
+], TemplateResponseDto.prototype, "assunto", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Conteúdo do template em formato HTML ou texto com placeholders',
+        example: '<p>Olá {{nome}},</p><p>Sua solicitação de benefício {{tipo_beneficio}} foi registrada com sucesso.</p>'
+    }),
+    __metadata("design:type", String)
+], TemplateResponseDto.prototype, "conteudo", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Lista de variáveis disponíveis para substituição no template',
+        example: ['nome', 'tipo_beneficio', 'data_solicitacao'],
+        type: [String]
+    }),
+    __metadata("design:type", Array)
+], TemplateResponseDto.prototype, "variaveis", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Status ativo/inativo do template',
+        example: true
+    }),
+    __metadata("design:type", Boolean)
+], TemplateResponseDto.prototype, "ativo", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Data de criação do template',
+        example: '2025-05-18T20:10:30.123Z'
+    }),
+    __metadata("design:type", typeof (_a = typeof Date !== "undefined" && Date) === "function" ? _a : Object)
+], TemplateResponseDto.prototype, "created_at", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Data da última atualização do template',
+        example: '2025-05-18T20:15:45.678Z'
+    }),
+    __metadata("design:type", typeof (_b = typeof Date !== "undefined" && Date) === "function" ? _b : Object)
+], TemplateResponseDto.prototype, "updated_at", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Usuário que realizou a última atualização',
+        example: {
+            id: '550e8400-e29b-41d4-a716-446655440000',
+            nome: 'Administrador'
+        }
+    }),
+    __metadata("design:type", Object)
+], TemplateResponseDto.prototype, "updated_by", void 0);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXGNvbmZpZ3VyYWNhb1xcZHRvc1xcdGVtcGxhdGVcXHRlbXBsYXRlLXJlc3BvbnNlLmR0by50cyIsIm1hcHBpbmdzIjoiOzs7Ozs7Ozs7Ozs7O0FBQUEsNkNBQThDO0FBQzlDLDZDQUFxRDtBQUVyRDs7R0FFRztBQUNILE1BQWEsbUJBQW1CO0lBSzlCLE1BQU0sQ0FBUztJQU1mLElBQUksQ0FBUztJQU9iLElBQUksQ0FBUztJQU9iLE9BQU8sQ0FBVTtJQU1qQixRQUFRLENBQVM7SUFPakIsU0FBUyxDQUFXO0lBTXBCLEtBQUssQ0FBVTtJQU1mLFVBQVUsQ0FBTztJQU1qQixVQUFVLENBQU87SUFTakIsVUFBVSxDQUdSO0NBQ0g7QUFyRUQsa0RBcUVDO0FBaEVDO0lBSkMsSUFBQSxxQkFBVyxFQUFDO1FBQ1gsV0FBVyxFQUFFLHdDQUF3QztRQUNyRCxPQUFPLEVBQUUsd0JBQXdCO0tBQ2xDLENBQUM7O21EQUNhO0FBTWY7SUFKQyxJQUFBLHFCQUFXLEVBQUM7UUFDWCxXQUFXLEVBQUUsNkJBQTZCO1FBQzFDLE9BQU8sRUFBRSwyQkFBMkI7S0FDckMsQ0FBQzs7aURBQ1c7QUFPYjtJQUxDLElBQUEscUJBQVcsRUFBQztRQUNYLFdBQVcsRUFBRSxrQkFBa0I7UUFDL0IsSUFBSSxFQUFFLHdCQUFnQjtRQUN0QixPQUFPLEVBQUUsd0JBQWdCLENBQUMsS0FBSztLQUNoQyxDQUFDOztpREFDVztBQU9iO0lBTEMsSUFBQSxxQkFBVyxFQUFDO1FBQ1gsV0FBVyxFQUFFLG1DQUFtQztRQUNoRCxPQUFPLEVBQUUsMENBQTBDO1FBQ25ELFFBQVEsRUFBRSxLQUFLO0tBQ2hCLENBQUM7O29EQUNlO0FBTWpCO0lBSkMsSUFBQSxxQkFBVyxFQUFDO1FBQ1gsV0FBVyxFQUFFLGdFQUFnRTtRQUM3RSxPQUFPLEVBQUUsd0dBQXdHO0tBQ2xILENBQUM7O3FEQUNlO0FBT2pCO0lBTEMsSUFBQSxxQkFBVyxFQUFDO1FBQ1gsV0FBVyxFQUFFLDhEQUE4RDtRQUMzRSxPQUFPLEVBQUUsQ0FBQyxNQUFNLEVBQUUsZ0JBQWdCLEVBQUUsa0JBQWtCLENBQUM7UUFDdkQsSUFBSSxFQUFFLENBQUMsTUFBTSxDQUFDO0tBQ2YsQ0FBQzs7c0RBQ2tCO0FBTXBCO0lBSkMsSUFBQSxxQkFBVyxFQUFDO1FBQ1gsV0FBVyxFQUFFLGtDQUFrQztRQUMvQyxPQUFPLEVBQUUsSUFBSTtLQUNkLENBQUM7O2tEQUNhO0FBTWY7SUFKQyxJQUFBLHFCQUFXLEVBQUM7UUFDWCxXQUFXLEVBQUUsNkJBQTZCO1FBQzFDLE9BQU8sRUFBRSwwQkFBMEI7S0FDcEMsQ0FBQztrREFDVSxJQUFJLG9CQUFKLElBQUk7dURBQUM7QUFNakI7SUFKQyxJQUFBLHFCQUFXLEVBQUM7UUFDWCxXQUFXLEVBQUUsd0NBQXdDO1FBQ3JELE9BQU8sRUFBRSwwQkFBMEI7S0FDcEMsQ0FBQztrREFDVSxJQUFJLG9CQUFKLElBQUk7dURBQUM7QUFTakI7SUFQQyxJQUFBLHFCQUFXLEVBQUM7UUFDWCxXQUFXLEVBQUUsMkNBQTJDO1FBQ3hELE9BQU8sRUFBRTtZQUNQLEVBQUUsRUFBRSxzQ0FBc0M7WUFDMUMsSUFBSSxFQUFFLGVBQWU7U0FDdEI7S0FDRixDQUFDOzt1REFJQSIsIm5hbWVzIjpbXSwic291cmNlcyI6WyJDOlxcVXNlcnNcXGV1ZHJlXFxPbmVEcml2ZVxcRGVza3RvcFxcUHJvamV0b3NcXHBnYmVuXFxwZ2Jlbi1zZXJ2ZXJcXHNyY1xcbW9kdWxlc1xcY29uZmlndXJhY2FvXFxkdG9zXFx0ZW1wbGF0ZVxcdGVtcGxhdGUtcmVzcG9uc2UuZHRvLnRzIl0sInNvdXJjZXNDb250ZW50IjpbImltcG9ydCB7IEFwaVByb3BlcnR5IH0gZnJvbSAnQG5lc3Rqcy9zd2FnZ2VyJztcbmltcG9ydCB7IFRlbXBsYXRlVGlwb0VudW0gfSBmcm9tICcuLi8uLi8uLi8uLi9lbnVtcyc7XG5cbi8qKlxuICogRFRPIHBhcmEgcmVzcG9zdGEgY29tIGluZm9ybWHDp8O1ZXMgZGUgdW0gdGVtcGxhdGUuXG4gKi9cbmV4cG9ydCBjbGFzcyBUZW1wbGF0ZVJlc3BvbnNlRHRvIHtcbiAgQEFwaVByb3BlcnR5KHtcbiAgICBkZXNjcmlwdGlvbjogJ0PDs2RpZ28gw7puaWNvIHF1ZSBpZGVudGlmaWNhIG8gdGVtcGxhdGUnLFxuICAgIGV4YW1wbGU6ICdlbWFpbC5ub3ZhLXNvbGljaXRhY2FvJ1xuICB9KVxuICBjb2RpZ286IHN0cmluZztcblxuICBAQXBpUHJvcGVydHkoe1xuICAgIGRlc2NyaXB0aW9uOiAnTm9tZSBkZXNjcml0aXZvIGRvIHRlbXBsYXRlJyxcbiAgICBleGFtcGxlOiAnRW1haWwgZGUgTm92YSBTb2xpY2l0YcOnw6NvJ1xuICB9KVxuICBub21lOiBzdHJpbmc7XG5cbiAgQEFwaVByb3BlcnR5KHtcbiAgICBkZXNjcmlwdGlvbjogJ1RpcG8gZG8gdGVtcGxhdGUnLFxuICAgIGVudW06IFRlbXBsYXRlVGlwb0VudW0sXG4gICAgZXhhbXBsZTogVGVtcGxhdGVUaXBvRW51bS5FTUFJTFxuICB9KVxuICB0aXBvOiBzdHJpbmc7XG5cbiAgQEFwaVByb3BlcnR5KHtcbiAgICBkZXNjcmlwdGlvbjogJ0Fzc3VudG8gZG8gdGVtcGxhdGUgKHBhcmEgZW1haWxzKScsXG4gICAgZXhhbXBsZTogJ05vdmEgc29saWNpdGHDp8OjbyBkZSBiZW5lZsOtY2lvIHJlZ2lzdHJhZGEnLFxuICAgIHJlcXVpcmVkOiBmYWxzZVxuICB9KVxuICBhc3N1bnRvPzogc3RyaW5nO1xuXG4gIEBBcGlQcm9wZXJ0eSh7XG4gICAgZGVzY3JpcHRpb246ICdDb250ZcO6ZG8gZG8gdGVtcGxhdGUgZW0gZm9ybWF0byBIVE1MIG91IHRleHRvIGNvbSBwbGFjZWhvbGRlcnMnLFxuICAgIGV4YW1wbGU6ICc8cD5PbMOhIHt7bm9tZX19LDwvcD48cD5TdWEgc29saWNpdGHDp8OjbyBkZSBiZW5lZsOtY2lvIHt7dGlwb19iZW5lZmljaW99fSBmb2kgcmVnaXN0cmFkYSBjb20gc3VjZXNzby48L3A+J1xuICB9KVxuICBjb250ZXVkbzogc3RyaW5nO1xuXG4gIEBBcGlQcm9wZXJ0eSh7XG4gICAgZGVzY3JpcHRpb246ICdMaXN0YSBkZSB2YXJpw6F2ZWlzIGRpc3BvbsOtdmVpcyBwYXJhIHN1YnN0aXR1acOnw6NvIG5vIHRlbXBsYXRlJyxcbiAgICBleGFtcGxlOiBbJ25vbWUnLCAndGlwb19iZW5lZmljaW8nLCAnZGF0YV9zb2xpY2l0YWNhbyddLFxuICAgIHR5cGU6IFtTdHJpbmddXG4gIH0pXG4gIHZhcmlhdmVpczogc3RyaW5nW107XG5cbiAgQEFwaVByb3BlcnR5KHtcbiAgICBkZXNjcmlwdGlvbjogJ1N0YXR1cyBhdGl2by9pbmF0aXZvIGRvIHRlbXBsYXRlJyxcbiAgICBleGFtcGxlOiB0cnVlXG4gIH0pXG4gIGF0aXZvOiBib29sZWFuO1xuXG4gIEBBcGlQcm9wZXJ0eSh7XG4gICAgZGVzY3JpcHRpb246ICdEYXRhIGRlIGNyaWHDp8OjbyBkbyB0ZW1wbGF0ZScsXG4gICAgZXhhbXBsZTogJzIwMjUtMDUtMThUMjA6MTA6MzAuMTIzWidcbiAgfSlcbiAgY3JlYXRlZF9hdDogRGF0ZTtcblxuICBAQXBpUHJvcGVydHkoe1xuICAgIGRlc2NyaXB0aW9uOiAnRGF0YSBkYSDDumx0aW1hIGF0dWFsaXphw6fDo28gZG8gdGVtcGxhdGUnLFxuICAgIGV4YW1wbGU6ICcyMDI1LTA1LTE4VDIwOjE1OjQ1LjY3OFonXG4gIH0pXG4gIHVwZGF0ZWRfYXQ6IERhdGU7XG5cbiAgQEFwaVByb3BlcnR5KHtcbiAgICBkZXNjcmlwdGlvbjogJ1VzdcOhcmlvIHF1ZSByZWFsaXpvdSBhIMO6bHRpbWEgYXR1YWxpemHDp8OjbycsXG4gICAgZXhhbXBsZToge1xuICAgICAgaWQ6ICc1NTBlODQwMC1lMjliLTQxZDQtYTcxNi00NDY2NTU0NDAwMDAnLFxuICAgICAgbm9tZTogJ0FkbWluaXN0cmFkb3InXG4gICAgfVxuICB9KVxuICB1cGRhdGVkX2J5OiB7XG4gICAgaWQ6IHN0cmluZztcbiAgICBub21lOiBzdHJpbmc7XG4gIH07XG59XG4iXSwidmVyc2lvbiI6M30=

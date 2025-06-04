@@ -8,7 +8,14 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm';
-import { IsNotEmpty, IsUUID, IsOptional, IsEnum, IsNumber, Min } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsUUID,
+  IsOptional,
+  IsEnum,
+  IsNumber,
+  Min,
+} from 'class-validator';
 import { NotificationTemplate } from './notification-template.entity';
 
 /**

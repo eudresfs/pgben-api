@@ -3,7 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ScheduleModule } from '@nestjs/schedule';
 import { AuthModule } from '../../auth/auth.module';
-import { JudicialModule } from '../judicial/judicial.module'
+import { JudicialModule } from '../judicial/judicial.module';
 import { SolicitacaoController } from './controllers/solicitacao.controller';
 import { SolicitacaoService } from './services/solicitacao.service';
 import { DeterminacaoJudicialController } from './controllers/determinacao-judicial.controller';
@@ -20,11 +20,11 @@ import { NotificacaoService } from './services/notificacao.service';
 import { EventosService } from './services/eventos.service';
 import { ValidacaoExclusividadeService } from './services/validacao-exclusividade.service';
 import { SolicitacaoEventListener } from './listeners/solicitacao-event.listener';
-import { 
-  Solicitacao, 
-  HistoricoSolicitacao, 
+import {
+  Solicitacao,
+  HistoricoSolicitacao,
   DeterminacaoJudicial,
-  Pendencia 
+  Pendencia,
 } from '../../entities';
 import { MonitoramentoAluguelSocialService } from './services/monitoramento-aluguel-social.service';
 
@@ -37,10 +37,10 @@ import { MonitoramentoAluguelSocialService } from './services/monitoramento-alug
 @Module({
   imports: [
     TypeOrmModule.forFeature([
-      Solicitacao, 
-      HistoricoSolicitacao, 
+      Solicitacao,
+      HistoricoSolicitacao,
       Pendencia,
-      DeterminacaoJudicial
+      DeterminacaoJudicial,
     ]),
     // Importa o módulo judicial para acesso aos repositórios e serviços
     JudicialModule,
@@ -55,7 +55,7 @@ import { MonitoramentoAluguelSocialService } from './services/monitoramento-alug
     SolicitacaoController,
     DeterminacaoJudicialController,
     WorkflowSolicitacaoController,
-    MonitoramentoAluguelSocialController
+    MonitoramentoAluguelSocialController,
   ],
   providers: [
     SolicitacaoService,
@@ -70,7 +70,7 @@ import { MonitoramentoAluguelSocialService } from './services/monitoramento-alug
     EventosService,
     ValidacaoExclusividadeService,
     MonitoramentoAluguelSocialService,
-    SolicitacaoEventListener
+    SolicitacaoEventListener,
   ],
   exports: [
     SolicitacaoService,
@@ -81,7 +81,7 @@ import { MonitoramentoAluguelSocialService } from './services/monitoramento-alug
     PriorizacaoSolicitacaoService,
     NotificacaoService,
     EventosService,
-    MonitoramentoAluguelSocialService
+    MonitoramentoAluguelSocialService,
   ],
 })
 export class SolicitacaoModule {}

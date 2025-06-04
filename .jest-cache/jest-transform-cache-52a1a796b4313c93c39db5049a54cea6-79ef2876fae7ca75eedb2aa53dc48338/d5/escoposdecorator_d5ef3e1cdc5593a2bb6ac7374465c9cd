@@ -1,0 +1,25 @@
+87c94de906379da2610062f412d10483
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Escopos = exports.ESCOPOS_KEY = void 0;
+const common_1 = require("@nestjs/common");
+/**
+ * Chave de metadados usada para armazenar os escopos requeridos.
+ */
+exports.ESCOPOS_KEY = 'escopos_requeridos';
+/**
+ * Decorator para definir quais escopos são necessários para acessar um endpoint.
+ * @param escopos Lista de escopos requeridos no formato 'acao:recurso'
+ * @returns Decorator para controllers ou métodos
+ *
+ * @example
+ * // Requer permissão de leitura para o recurso 'usuarios'
+ * @Escopos('read:usuarios')
+ *
+ * @example
+ * // Requer múltiplas permissões
+ * @Escopos('read:beneficios', 'write:solicitacoes')
+ */
+const Escopos = (...escopos) => (0, common_1.SetMetadata)(exports.ESCOPOS_KEY, escopos);
+exports.Escopos = Escopos;
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXGludGVncmFkb3JcXGRlY29yYXRvcnNcXGVzY29wb3MuZGVjb3JhdG9yLnRzIiwibWFwcGluZ3MiOiI7OztBQUFBLDJDQUE2QztBQUU3Qzs7R0FFRztBQUNVLFFBQUEsV0FBVyxHQUFHLG9CQUFvQixDQUFDO0FBRWhEOzs7Ozs7Ozs7Ozs7R0FZRztBQUNJLE1BQU0sT0FBTyxHQUFHLENBQUMsR0FBRyxPQUFpQixFQUFFLEVBQUUsQ0FBQyxJQUFBLG9CQUFXLEVBQUMsbUJBQVcsRUFBRSxPQUFPLENBQUMsQ0FBQztBQUF0RSxRQUFBLE9BQU8sV0FBK0QiLCJuYW1lcyI6W10sInNvdXJjZXMiOlsiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXGludGVncmFkb3JcXGRlY29yYXRvcnNcXGVzY29wb3MuZGVjb3JhdG9yLnRzIl0sInNvdXJjZXNDb250ZW50IjpbImltcG9ydCB7IFNldE1ldGFkYXRhIH0gZnJvbSAnQG5lc3Rqcy9jb21tb24nO1xuXG4vKipcbiAqIENoYXZlIGRlIG1ldGFkYWRvcyB1c2FkYSBwYXJhIGFybWF6ZW5hciBvcyBlc2NvcG9zIHJlcXVlcmlkb3MuXG4gKi9cbmV4cG9ydCBjb25zdCBFU0NPUE9TX0tFWSA9ICdlc2NvcG9zX3JlcXVlcmlkb3MnO1xuXG4vKipcbiAqIERlY29yYXRvciBwYXJhIGRlZmluaXIgcXVhaXMgZXNjb3BvcyBzw6NvIG5lY2Vzc8OhcmlvcyBwYXJhIGFjZXNzYXIgdW0gZW5kcG9pbnQuXG4gKiBAcGFyYW0gZXNjb3BvcyBMaXN0YSBkZSBlc2NvcG9zIHJlcXVlcmlkb3Mgbm8gZm9ybWF0byAnYWNhbzpyZWN1cnNvJ1xuICogQHJldHVybnMgRGVjb3JhdG9yIHBhcmEgY29udHJvbGxlcnMgb3UgbcOpdG9kb3NcbiAqIFxuICogQGV4YW1wbGVcbiAqIC8vIFJlcXVlciBwZXJtaXNzw6NvIGRlIGxlaXR1cmEgcGFyYSBvIHJlY3Vyc28gJ3VzdWFyaW9zJ1xuICogQEVzY29wb3MoJ3JlYWQ6dXN1YXJpb3MnKVxuICogXG4gKiBAZXhhbXBsZVxuICogLy8gUmVxdWVyIG3Dumx0aXBsYXMgcGVybWlzc8O1ZXNcbiAqIEBFc2NvcG9zKCdyZWFkOmJlbmVmaWNpb3MnLCAnd3JpdGU6c29saWNpdGFjb2VzJylcbiAqL1xuZXhwb3J0IGNvbnN0IEVzY29wb3MgPSAoLi4uZXNjb3Bvczogc3RyaW5nW10pID0+IFNldE1ldGFkYXRhKEVTQ09QT1NfS0VZLCBlc2NvcG9zKTtcbiJdLCJ2ZXJzaW9uIjozfQ==

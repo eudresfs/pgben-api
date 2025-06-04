@@ -1,0 +1,44 @@
+9a2f4552a8d77c37566e1287a44804df
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.CEPValidator = void 0;
+const class_validator_1 = require("class-validator");
+/**
+ * Validador personalizado para CEP brasileiro
+ *
+ * Aceita formatos:
+ * - 00000-000 (com hífen)
+ * - 00000000 (sem formatação)
+ */
+let CEPValidator = class CEPValidator {
+    validate(text, args) {
+        if (!text) {
+            return true;
+        } // Permite valores vazios (use @IsNotEmpty se quiser tornar obrigatório)
+        // Remove todos os caracteres não numéricos
+        const cepLimpo = text.replace(/\D/g, '');
+        // Verifica se o CEP tem 8 dígitos
+        if (cepLimpo.length !== 8) {
+            return false;
+        }
+        // Verifica se o CEP não é uma sequência de dígitos iguais (00000000, 11111111, etc.)
+        if (/^(\d)\1{7}$/.test(cepLimpo)) {
+            return false;
+        }
+        return true;
+    }
+    defaultMessage(args) {
+        return 'CEP inválido. Formato esperado: 00000-000 ou 00000000';
+    }
+};
+exports.CEPValidator = CEPValidator;
+exports.CEPValidator = CEPValidator = __decorate([
+    (0, class_validator_1.ValidatorConstraint)({ name: 'cepValidator', async: false })
+], CEPValidator);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXGNpZGFkYW9cXHZhbGlkYXRvcnNcXGNlcC12YWxpZGF0b3IudHMiLCJtYXBwaW5ncyI6Ijs7Ozs7Ozs7O0FBQUEscURBSXlCO0FBRXpCOzs7Ozs7R0FNRztBQUVJLElBQU0sWUFBWSxHQUFsQixNQUFNLFlBQVk7SUFDdkIsUUFBUSxDQUFDLElBQVksRUFBRSxJQUF5QjtRQUM5QyxJQUFJLENBQUMsSUFBSSxFQUFFLENBQUM7WUFBQSxPQUFPLElBQUksQ0FBQztRQUFBLENBQUMsQ0FBQyx3RUFBd0U7UUFFbEcsMkNBQTJDO1FBQzNDLE1BQU0sUUFBUSxHQUFHLElBQUksQ0FBQyxPQUFPLENBQUMsS0FBSyxFQUFFLEVBQUUsQ0FBQyxDQUFDO1FBRXpDLGtDQUFrQztRQUNsQyxJQUFJLFFBQVEsQ0FBQyxNQUFNLEtBQUssQ0FBQyxFQUFFLENBQUM7WUFDMUIsT0FBTyxLQUFLLENBQUM7UUFDZixDQUFDO1FBRUQscUZBQXFGO1FBQ3JGLElBQUksYUFBYSxDQUFDLElBQUksQ0FBQyxRQUFRLENBQUMsRUFBRSxDQUFDO1lBQ2pDLE9BQU8sS0FBSyxDQUFDO1FBQ2YsQ0FBQztRQUVELE9BQU8sSUFBSSxDQUFDO0lBQ2QsQ0FBQztJQUVELGNBQWMsQ0FBQyxJQUF5QjtRQUN0QyxPQUFPLHVEQUF1RCxDQUFDO0lBQ2pFLENBQUM7Q0FDRixDQUFBO0FBdkJZLG9DQUFZO3VCQUFaLFlBQVk7SUFEeEIsSUFBQSxxQ0FBbUIsRUFBQyxFQUFFLElBQUksRUFBRSxjQUFjLEVBQUUsS0FBSyxFQUFFLEtBQUssRUFBRSxDQUFDO0dBQy9DLFlBQVksQ0F1QnhCIiwibmFtZXMiOltdLCJzb3VyY2VzIjpbIkM6XFxVc2Vyc1xcZXVkcmVcXE9uZURyaXZlXFxEZXNrdG9wXFxQcm9qZXRvc1xccGdiZW5cXHBnYmVuLXNlcnZlclxcc3JjXFxtb2R1bGVzXFxjaWRhZGFvXFx2YWxpZGF0b3JzXFxjZXAtdmFsaWRhdG9yLnRzIl0sInNvdXJjZXNDb250ZW50IjpbImltcG9ydCB7XG4gIFZhbGlkYXRvckNvbnN0cmFpbnQsXG4gIFZhbGlkYXRvckNvbnN0cmFpbnRJbnRlcmZhY2UsXG4gIFZhbGlkYXRpb25Bcmd1bWVudHMsXG59IGZyb20gJ2NsYXNzLXZhbGlkYXRvcic7XG5cbi8qKlxuICogVmFsaWRhZG9yIHBlcnNvbmFsaXphZG8gcGFyYSBDRVAgYnJhc2lsZWlyb1xuICpcbiAqIEFjZWl0YSBmb3JtYXRvczpcbiAqIC0gMDAwMDAtMDAwIChjb20gaMOtZmVuKVxuICogLSAwMDAwMDAwMCAoc2VtIGZvcm1hdGHDp8OjbylcbiAqL1xuQFZhbGlkYXRvckNvbnN0cmFpbnQoeyBuYW1lOiAnY2VwVmFsaWRhdG9yJywgYXN5bmM6IGZhbHNlIH0pXG5leHBvcnQgY2xhc3MgQ0VQVmFsaWRhdG9yIGltcGxlbWVudHMgVmFsaWRhdG9yQ29uc3RyYWludEludGVyZmFjZSB7XG4gIHZhbGlkYXRlKHRleHQ6IHN0cmluZywgYXJnczogVmFsaWRhdGlvbkFyZ3VtZW50cykge1xuICAgIGlmICghdGV4dCkge3JldHVybiB0cnVlO30gLy8gUGVybWl0ZSB2YWxvcmVzIHZhemlvcyAodXNlIEBJc05vdEVtcHR5IHNlIHF1aXNlciB0b3JuYXIgb2JyaWdhdMOzcmlvKVxuXG4gICAgLy8gUmVtb3ZlIHRvZG9zIG9zIGNhcmFjdGVyZXMgbsOjbyBudW3DqXJpY29zXG4gICAgY29uc3QgY2VwTGltcG8gPSB0ZXh0LnJlcGxhY2UoL1xcRC9nLCAnJyk7XG5cbiAgICAvLyBWZXJpZmljYSBzZSBvIENFUCB0ZW0gOCBkw61naXRvc1xuICAgIGlmIChjZXBMaW1wby5sZW5ndGggIT09IDgpIHtcbiAgICAgIHJldHVybiBmYWxzZTtcbiAgICB9XG5cbiAgICAvLyBWZXJpZmljYSBzZSBvIENFUCBuw6NvIMOpIHVtYSBzZXF1w6puY2lhIGRlIGTDrWdpdG9zIGlndWFpcyAoMDAwMDAwMDAsIDExMTExMTExLCBldGMuKVxuICAgIGlmICgvXihcXGQpXFwxezd9JC8udGVzdChjZXBMaW1wbykpIHtcbiAgICAgIHJldHVybiBmYWxzZTtcbiAgICB9XG5cbiAgICByZXR1cm4gdHJ1ZTtcbiAgfVxuXG4gIGRlZmF1bHRNZXNzYWdlKGFyZ3M6IFZhbGlkYXRpb25Bcmd1bWVudHMpIHtcbiAgICByZXR1cm4gJ0NFUCBpbnbDoWxpZG8uIEZvcm1hdG8gZXNwZXJhZG86IDAwMDAwLTAwMCBvdSAwMDAwMDAwMCc7XG4gIH1cbn1cbiJdLCJ2ZXJzaW9uIjozfQ==

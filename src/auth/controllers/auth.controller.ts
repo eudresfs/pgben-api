@@ -28,7 +28,7 @@ import { AuthService } from '../services/auth.service';
 import { Public } from '../decorators/public.decorator';
 
 @ApiTags('Autenticação')
-@Controller('auth') 
+@Controller('auth')
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
@@ -40,7 +40,8 @@ export class AuthController {
   @Public()
   @ApiOperation({
     summary: 'Fazer login',
-    description: 'Autentica um usuário no sistema usando credenciais (username/password)',
+    description:
+      'Autentica um usuário no sistema usando credenciais (username/password)',
     requestBody: {
       description: 'Credenciais de login',
       required: true,
@@ -55,29 +56,29 @@ export class AuthController {
               description: 'Exemplo de login para usuário administrador',
               value: {
                 username: 'admin@semtas.gov.br',
-                password: 'senha123'
-              }
+                password: 'senha123',
+              },
             },
             'usuario-assistente': {
               summary: 'Login de Assistente Social',
               description: 'Exemplo de login para assistente social',
               value: {
                 username: 'maria.silva@semtas.gov.br',
-                password: 'minhasenha456'
-              }
+                password: 'minhasenha456',
+              },
             },
             'usuario-coordenador': {
               summary: 'Login de Coordenador',
               description: 'Exemplo de login para coordenador de unidade',
               value: {
                 username: 'joao.santos@semtas.gov.br',
-                password: 'coordenador789'
-              }
-            }
-          }
-        }
-      }
-    }
+                password: 'coordenador789',
+              },
+            },
+          },
+        },
+      },
+    },
   })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -123,13 +124,14 @@ export class AuthController {
               summary: 'Renovação de Token',
               description: 'Exemplo de renovação usando refresh token',
               value: {
-                refreshToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c'
-              }
-            }
-          }
-        }
-      }
-    }
+                refreshToken:
+                  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c',
+              },
+            },
+          },
+        },
+      },
+    },
   })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -157,7 +159,7 @@ export class AuthController {
 
     return response;
   }
-  
+
   @Get('status')
   @Public()
   @ApiOperation({
@@ -169,8 +171,15 @@ export class AuthController {
       type: 'object',
       properties: {
         status: { type: 'string', example: 'online' },
-        message: { type: 'string', example: 'Serviço de autenticação está funcionando' },
-        timestamp: { type: 'string', format: 'date-time', example: '2023-01-01T00:00:00.000Z' },
+        message: {
+          type: 'string',
+          example: 'Serviço de autenticação está funcionando',
+        },
+        timestamp: {
+          type: 'string',
+          format: 'date-time',
+          example: '2023-01-01T00:00:00.000Z',
+        },
       },
     },
   })

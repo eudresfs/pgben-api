@@ -1,12 +1,15 @@
 import { Test } from '@nestjs/testing';
 import { Controller, Get } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { RequiresPermission, REQUIRES_PERMISSION_KEY } from '@/auth/decorators/requires-permission.decorator';
+import {
+  RequiresPermission,
+  REQUIRES_PERMISSION_KEY,
+} from '@/auth/decorators/requires-permission.decorator';
 import { ScopeType } from '@/auth/entities/user-permission.entity';
 
 /**
  * Testes unitários para o decorator RequiresPermission
- * 
+ *
  * Estes testes verificam se o decorator armazena corretamente as
  * informações de permissão necessárias para o PermissionGuard.
  */
@@ -37,10 +40,13 @@ describe('RequiresPermission', () => {
 
     // Instanciar o controlador
     const controller = new TestController();
-    
+
     // Obter os metadados
-    const permissionReqs = reflector.get(REQUIRES_PERMISSION_KEY, controller.testMethod);
-    
+    const permissionReqs = reflector.get(
+      REQUIRES_PERMISSION_KEY,
+      controller.testMethod,
+    );
+
     // Verificar se os metadados foram armazenados corretamente
     expect(permissionReqs).toBeDefined();
     expect(permissionReqs).toBeInstanceOf(Array);
@@ -68,10 +74,13 @@ describe('RequiresPermission', () => {
 
     // Instanciar o controlador
     const controller = new TestController();
-    
+
     // Obter os metadados
-    const permissionReqs = reflector.get(REQUIRES_PERMISSION_KEY, controller.testMethod);
-    
+    const permissionReqs = reflector.get(
+      REQUIRES_PERMISSION_KEY,
+      controller.testMethod,
+    );
+
     // Verificar se os metadados foram armazenados corretamente
     expect(permissionReqs).toBeDefined();
     expect(permissionReqs).toBeInstanceOf(Array);
@@ -99,10 +108,13 @@ describe('RequiresPermission', () => {
 
     // Instanciar o controlador
     const controller = new TestController();
-    
+
     // Obter os metadados
-    const permissionReqs = reflector.get(REQUIRES_PERMISSION_KEY, controller.testMethod);
-    
+    const permissionReqs = reflector.get(
+      REQUIRES_PERMISSION_KEY,
+      controller.testMethod,
+    );
+
     // Verificar se os metadados foram armazenados corretamente
     expect(permissionReqs).toBeDefined();
     expect(permissionReqs).toBeInstanceOf(Array);
@@ -135,10 +147,13 @@ describe('RequiresPermission', () => {
 
     // Instanciar o controlador
     const controller = new TestController();
-    
+
     // Obter os metadados
-    const permissionReqs = reflector.get(REQUIRES_PERMISSION_KEY, controller.testMethod);
-    
+    const permissionReqs = reflector.get(
+      REQUIRES_PERMISSION_KEY,
+      controller.testMethod,
+    );
+
     // Verificar se os metadados foram armazenados corretamente
     expect(permissionReqs).toBeDefined();
     expect(permissionReqs).toBeInstanceOf(Array);

@@ -1,0 +1,64 @@
+2b4e757b4f94ae9baf26301f91eeeb31
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.AuditorOuAdmin = exports.OperadorOuAdmin = exports.ApenasAdmin = exports.VerificarUnidade = exports.PerfisPermitidos = void 0;
+const common_1 = require("@nestjs/common");
+const pagamento_access_guard_1 = require("../guards/pagamento-access.guard");
+/**
+ * Decorador para definir perfis permitidos para acessar um endpoint
+ *
+ * @param perfis Lista de perfis permitidos
+ * @returns Decorador para aplicar em controllers ou métodos
+ *
+ * @example
+ * @PerfisPermitidos('admin', 'operador')
+ * async findAll() { ... }
+ */
+const PerfisPermitidos = (...perfis) => (0, common_1.SetMetadata)(pagamento_access_guard_1.PERFIS_KEY, perfis);
+exports.PerfisPermitidos = PerfisPermitidos;
+/**
+ * Decorador para definir se deve verificar a unidade do usuário
+ *
+ * @param verificar Se deve verificar a unidade
+ * @returns Decorador para aplicar em controllers ou métodos
+ *
+ * @example
+ * @VerificarUnidade(true)
+ * async findOne(@Param('id') id: string) { ... }
+ */
+const VerificarUnidade = (verificar = true) => (0, common_1.SetMetadata)(pagamento_access_guard_1.UNIDADES_KEY, verificar);
+exports.VerificarUnidade = VerificarUnidade;
+/**
+ * Decorador para definir acesso apenas para administradores
+ *
+ * @returns Decorador para aplicar em controllers ou métodos
+ *
+ * @example
+ * @ApenasAdmin()
+ * async remove(@Param('id') id: string) { ... }
+ */
+const ApenasAdmin = () => (0, exports.PerfisPermitidos)('admin', 'super_admin');
+exports.ApenasAdmin = ApenasAdmin;
+/**
+ * Decorador para definir acesso apenas para operadores e administradores
+ *
+ * @returns Decorador para aplicar em controllers ou métodos
+ *
+ * @example
+ * @OperadorOuAdmin()
+ * async update(@Param('id') id: string, @Body() updateDto: UpdateDto) { ... }
+ */
+const OperadorOuAdmin = () => (0, exports.PerfisPermitidos)('operador', 'admin', 'super_admin');
+exports.OperadorOuAdmin = OperadorOuAdmin;
+/**
+ * Decorador para definir acesso apenas para auditores e administradores
+ *
+ * @returns Decorador para aplicar em controllers ou métodos
+ *
+ * @example
+ * @AuditorOuAdmin()
+ * async getLogs() { ... }
+ */
+const AuditorOuAdmin = () => (0, exports.PerfisPermitidos)('auditor', 'admin', 'super_admin');
+exports.AuditorOuAdmin = AuditorOuAdmin;
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXHBhZ2FtZW50b1xcZGVjb3JhdG9yc1xccGFnYW1lbnRvLWFjY2Vzcy5kZWNvcmF0b3IudHMiLCJtYXBwaW5ncyI6Ijs7O0FBQUEsMkNBQTZDO0FBQzdDLDZFQUE0RTtBQUU1RTs7Ozs7Ozs7O0dBU0c7QUFDSSxNQUFNLGdCQUFnQixHQUFHLENBQUMsR0FBRyxNQUFnQixFQUFFLEVBQUUsQ0FBQyxJQUFBLG9CQUFXLEVBQUMsbUNBQVUsRUFBRSxNQUFNLENBQUMsQ0FBQztBQUE1RSxRQUFBLGdCQUFnQixvQkFBNEQ7QUFFekY7Ozs7Ozs7OztHQVNHO0FBQ0ksTUFBTSxnQkFBZ0IsR0FBRyxDQUFDLFlBQXFCLElBQUksRUFBRSxFQUFFLENBQUMsSUFBQSxvQkFBVyxFQUFDLHFDQUFZLEVBQUUsU0FBUyxDQUFDLENBQUM7QUFBdkYsUUFBQSxnQkFBZ0Isb0JBQXVFO0FBRXBHOzs7Ozs7OztHQVFHO0FBQ0ksTUFBTSxXQUFXLEdBQUcsR0FBRyxFQUFFLENBQUMsSUFBQSx3QkFBZ0IsRUFBQyxPQUFPLEVBQUUsYUFBYSxDQUFDLENBQUM7QUFBN0QsUUFBQSxXQUFXLGVBQWtEO0FBRTFFOzs7Ozs7OztHQVFHO0FBQ0ksTUFBTSxlQUFlLEdBQUcsR0FBRyxFQUFFLENBQUMsSUFBQSx3QkFBZ0IsRUFBQyxVQUFVLEVBQUUsT0FBTyxFQUFFLGFBQWEsQ0FBQyxDQUFDO0FBQTdFLFFBQUEsZUFBZSxtQkFBOEQ7QUFFMUY7Ozs7Ozs7O0dBUUc7QUFDSSxNQUFNLGNBQWMsR0FBRyxHQUFHLEVBQUUsQ0FBQyxJQUFBLHdCQUFnQixFQUFDLFNBQVMsRUFBRSxPQUFPLEVBQUUsYUFBYSxDQUFDLENBQUM7QUFBM0UsUUFBQSxjQUFjLGtCQUE2RCIsIm5hbWVzIjpbXSwic291cmNlcyI6WyJDOlxcVXNlcnNcXGV1ZHJlXFxPbmVEcml2ZVxcRGVza3RvcFxcUHJvamV0b3NcXHBnYmVuXFxwZ2Jlbi1zZXJ2ZXJcXHNyY1xcbW9kdWxlc1xccGFnYW1lbnRvXFxkZWNvcmF0b3JzXFxwYWdhbWVudG8tYWNjZXNzLmRlY29yYXRvci50cyJdLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQgeyBTZXRNZXRhZGF0YSB9IGZyb20gJ0BuZXN0anMvY29tbW9uJztcbmltcG9ydCB7IFBFUkZJU19LRVksIFVOSURBREVTX0tFWSB9IGZyb20gJy4uL2d1YXJkcy9wYWdhbWVudG8tYWNjZXNzLmd1YXJkJztcblxuLyoqXG4gKiBEZWNvcmFkb3IgcGFyYSBkZWZpbmlyIHBlcmZpcyBwZXJtaXRpZG9zIHBhcmEgYWNlc3NhciB1bSBlbmRwb2ludFxuICogXG4gKiBAcGFyYW0gcGVyZmlzIExpc3RhIGRlIHBlcmZpcyBwZXJtaXRpZG9zXG4gKiBAcmV0dXJucyBEZWNvcmFkb3IgcGFyYSBhcGxpY2FyIGVtIGNvbnRyb2xsZXJzIG91IG3DqXRvZG9zXG4gKiBcbiAqIEBleGFtcGxlXG4gKiBAUGVyZmlzUGVybWl0aWRvcygnYWRtaW4nLCAnb3BlcmFkb3InKVxuICogYXN5bmMgZmluZEFsbCgpIHsgLi4uIH1cbiAqL1xuZXhwb3J0IGNvbnN0IFBlcmZpc1Blcm1pdGlkb3MgPSAoLi4ucGVyZmlzOiBzdHJpbmdbXSkgPT4gU2V0TWV0YWRhdGEoUEVSRklTX0tFWSwgcGVyZmlzKTtcblxuLyoqXG4gKiBEZWNvcmFkb3IgcGFyYSBkZWZpbmlyIHNlIGRldmUgdmVyaWZpY2FyIGEgdW5pZGFkZSBkbyB1c3XDoXJpb1xuICogXG4gKiBAcGFyYW0gdmVyaWZpY2FyIFNlIGRldmUgdmVyaWZpY2FyIGEgdW5pZGFkZVxuICogQHJldHVybnMgRGVjb3JhZG9yIHBhcmEgYXBsaWNhciBlbSBjb250cm9sbGVycyBvdSBtw6l0b2Rvc1xuICogXG4gKiBAZXhhbXBsZVxuICogQFZlcmlmaWNhclVuaWRhZGUodHJ1ZSlcbiAqIGFzeW5jIGZpbmRPbmUoQFBhcmFtKCdpZCcpIGlkOiBzdHJpbmcpIHsgLi4uIH1cbiAqL1xuZXhwb3J0IGNvbnN0IFZlcmlmaWNhclVuaWRhZGUgPSAodmVyaWZpY2FyOiBib29sZWFuID0gdHJ1ZSkgPT4gU2V0TWV0YWRhdGEoVU5JREFERVNfS0VZLCB2ZXJpZmljYXIpO1xuXG4vKipcbiAqIERlY29yYWRvciBwYXJhIGRlZmluaXIgYWNlc3NvIGFwZW5hcyBwYXJhIGFkbWluaXN0cmFkb3Jlc1xuICogXG4gKiBAcmV0dXJucyBEZWNvcmFkb3IgcGFyYSBhcGxpY2FyIGVtIGNvbnRyb2xsZXJzIG91IG3DqXRvZG9zXG4gKiBcbiAqIEBleGFtcGxlXG4gKiBAQXBlbmFzQWRtaW4oKVxuICogYXN5bmMgcmVtb3ZlKEBQYXJhbSgnaWQnKSBpZDogc3RyaW5nKSB7IC4uLiB9XG4gKi9cbmV4cG9ydCBjb25zdCBBcGVuYXNBZG1pbiA9ICgpID0+IFBlcmZpc1Blcm1pdGlkb3MoJ2FkbWluJywgJ3N1cGVyX2FkbWluJyk7XG5cbi8qKlxuICogRGVjb3JhZG9yIHBhcmEgZGVmaW5pciBhY2Vzc28gYXBlbmFzIHBhcmEgb3BlcmFkb3JlcyBlIGFkbWluaXN0cmFkb3Jlc1xuICogXG4gKiBAcmV0dXJucyBEZWNvcmFkb3IgcGFyYSBhcGxpY2FyIGVtIGNvbnRyb2xsZXJzIG91IG3DqXRvZG9zXG4gKiBcbiAqIEBleGFtcGxlXG4gKiBAT3BlcmFkb3JPdUFkbWluKClcbiAqIGFzeW5jIHVwZGF0ZShAUGFyYW0oJ2lkJykgaWQ6IHN0cmluZywgQEJvZHkoKSB1cGRhdGVEdG86IFVwZGF0ZUR0bykgeyAuLi4gfVxuICovXG5leHBvcnQgY29uc3QgT3BlcmFkb3JPdUFkbWluID0gKCkgPT4gUGVyZmlzUGVybWl0aWRvcygnb3BlcmFkb3InLCAnYWRtaW4nLCAnc3VwZXJfYWRtaW4nKTtcblxuLyoqXG4gKiBEZWNvcmFkb3IgcGFyYSBkZWZpbmlyIGFjZXNzbyBhcGVuYXMgcGFyYSBhdWRpdG9yZXMgZSBhZG1pbmlzdHJhZG9yZXNcbiAqIFxuICogQHJldHVybnMgRGVjb3JhZG9yIHBhcmEgYXBsaWNhciBlbSBjb250cm9sbGVycyBvdSBtw6l0b2Rvc1xuICogXG4gKiBAZXhhbXBsZVxuICogQEF1ZGl0b3JPdUFkbWluKClcbiAqIGFzeW5jIGdldExvZ3MoKSB7IC4uLiB9XG4gKi9cbmV4cG9ydCBjb25zdCBBdWRpdG9yT3VBZG1pbiA9ICgpID0+IFBlcmZpc1Blcm1pdGlkb3MoJ2F1ZGl0b3InLCAnYWRtaW4nLCAnc3VwZXJfYWRtaW4nKTtcbiJdLCJ2ZXJzaW9uIjozfQ==

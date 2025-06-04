@@ -7,7 +7,14 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { IsNotEmpty, IsUUID, IsOptional, IsEnum, IsString, MaxLength } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsUUID,
+  IsOptional,
+  IsEnum,
+  IsString,
+  MaxLength,
+} from 'class-validator';
 import { Pagamento } from './pagamento.entity';
 import { Usuario } from './usuario.entity';
 import { MetodoConfirmacaoEnum } from '../enums/metodo-confirmacao.enum';
@@ -15,10 +22,10 @@ import { Cidadao } from './cidadao.entity';
 
 /**
  * Entidade que representa uma confirmação de recebimento de pagamento.
- * 
+ *
  * Esta entidade armazena informações sobre as confirmações de recebimento
  * dos benefícios pelos beneficiários, incluindo método de confirmação e dados do destinatário.
- * 
+ *
  * @author Equipe PGBen
  */
 @Entity('confirmacao_recebimento')
@@ -50,7 +57,7 @@ export class ConfirmacaoRecebimento {
   @Column({
     name: 'metodo_confirmacao',
     type: 'enum',
-    enum: MetodoConfirmacaoEnum
+    enum: MetodoConfirmacaoEnum,
   })
   @IsNotEmpty({ message: 'Método de confirmação é obrigatório' })
   @IsEnum(MetodoConfirmacaoEnum, { message: 'Método de confirmação inválido' })
@@ -78,7 +85,9 @@ export class ConfirmacaoRecebimento {
   @Column({ type: 'text', nullable: true })
   @IsOptional()
   @IsString({ message: 'Observações devem ser uma string' })
-  @MaxLength(1000, { message: 'Observações devem ter no máximo 1000 caracteres' })
+  @MaxLength(1000, {
+    message: 'Observações devem ter no máximo 1000 caracteres',
+  })
   observacoes: string;
 
   /**
@@ -96,7 +105,7 @@ export class ConfirmacaoRecebimento {
   /**
    * Relacionamento com a entidade Pagamento
    */
-  @ManyToOne(() => Pagamento, pagamento => pagamento.id)
+  @ManyToOne(() => Pagamento, (pagamento) => pagamento.id)
   @JoinColumn({ name: 'pagamento_id' })
   pagamento: Pagamento;
 
@@ -105,7 +114,7 @@ export class ConfirmacaoRecebimento {
    */
   @ManyToOne(() => Usuario)
   @JoinColumn({ name: 'confirmado_por' })
- @ JoinColumn({ name: 'confirmado_por' })
+  @JoinColumn({ name: 'confirmado_por' })
   responsavel_confirmacao: Usuario;
 
   @ManyToOne(() => Cidadao)

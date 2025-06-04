@@ -2,11 +2,13 @@ import { MigrationInterface, QueryRunner, Table, TableIndex } from 'typeorm';
 
 /**
  * Migração para criar a tabela de mapeamento entre roles e permissões.
- * 
+ *
  * Esta tabela implementa o relacionamento entre as roles existentes e as novas permissões granulares,
  * facilitando a transição do modelo baseado em roles para o modelo de permissões granulares.
  */
-export class CreateRolePermissionTable1704067212000 implements MigrationInterface {
+export class CreateRolePermissionTable1704067212000
+  implements MigrationInterface
+{
   name = 'CreateRolePermissionTable17479610172320';
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.createTable(
@@ -53,7 +55,7 @@ export class CreateRolePermissionTable1704067212000 implements MigrationInterfac
           },
         ],
       }),
-      true
+      true,
     );
 
     await queryRunner.createIndex(
@@ -62,7 +64,7 @@ export class CreateRolePermissionTable1704067212000 implements MigrationInterfac
         name: 'IDX_ROLE_PERMISSAO_UNICO',
         columnNames: ['role_id', 'permissao_id'],
         isUnique: true,
-      })
+      }),
     );
   }
 

@@ -10,7 +10,15 @@ import {
   Index,
   OneToOne,
 } from 'typeorm';
-import { IsNotEmpty, IsOptional, IsNumber, Min, IsEnum, Length, Validate } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsOptional,
+  IsNumber,
+  Min,
+  IsEnum,
+  Length,
+  Validate,
+} from 'class-validator';
 import { Cidadao } from './cidadao.entity';
 import { EscolaridadeEnum } from '../enums/escolaridade.enum';
 import { CPFValidator } from '../modules/cidadao/validators/cpf-validator';
@@ -26,7 +34,9 @@ export class ComposicaoFamiliar {
   @IsNotEmpty({ message: 'ID do cidadão é obrigatório' })
   cidadao_id: string;
 
-  @ManyToOne(() => Cidadao, (cidadao) => cidadao.composicao_familiar, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Cidadao, (cidadao) => cidadao.composicao_familiar, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'cidadao_id' })
   cidadao: Cidadao;
 
@@ -214,7 +224,7 @@ export class ComposicaoFamiliar {
     if (!this.temRenda()) return 'Sem renda';
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
-      currency: 'BRL'
+      currency: 'BRL',
     }).format(this.renda);
   }
 
@@ -243,7 +253,10 @@ export class ComposicaoFamiliar {
    * Verifica se é pai/mãe
    */
   isPai(): boolean {
-    return this.parentesco === ParentescoEnum.PAI || this.parentesco === ParentescoEnum.MAE;
+    return (
+      this.parentesco === ParentescoEnum.PAI ||
+      this.parentesco === ParentescoEnum.MAE
+    );
   }
 
   /**
@@ -314,7 +327,9 @@ export class ComposicaoFamiliar {
    * Obtém um resumo do membro familiar
    */
   getSummary(): string {
-    const renda = this.temRenda() ? ` - ${this.getRendaFormatada()}` : ' - Sem renda';
+    const renda = this.temRenda()
+      ? ` - ${this.getRendaFormatada()}`
+      : ' - Sem renda';
     return `${this.nome} (${this.getDescricaoParentesco()}, ${this.idade} anos)${renda}`;
   }
 
@@ -331,24 +346,24 @@ export class ComposicaoFamiliar {
   isConsistente(): boolean {
     // Verifica se tem cidadão
     if (!this.cidadao_id) return false;
-    
+
     // Verifica se tem nome
     if (!this.nome || !this.nome.trim()) return false;
-    
+
     // Verifica se tem CPF
     if (!this.cpf || !this.cpf.trim()) return false;
-    
+
     // Verifica se a idade é válida
     if (this.idade < 0 || this.idade > 150) return false;
-    
+
     // Verifica se tem ocupação
     if (!this.ocupacao || !this.ocupacao.trim()) return false;
-    
+
     // Se tem renda, deve ser positiva
     if (this.renda !== null && this.renda !== undefined && this.renda < 0) {
       return false;
     }
-    
+
     return true;
   }
 
@@ -358,7 +373,7 @@ export class ComposicaoFamiliar {
   podeSerRemovido(): boolean {
     // Não pode remover se já foi removido
     if (this.foiRemovido()) return false;
-    
+
     // Outras validações específicas podem ser adicionadas
     return true;
   }
@@ -446,23 +461,27 @@ export class ComposicaoFamiliar {
    */
   getSugestoesVerificacao(): string[] {
     const sugestoes: string[] = [];
-    
+
     if (!this.temNIS()) {
       sugestoes.push('Cadastrar NIS do membro familiar');
     }
-    
-    if (this.isMaiorIdade() && !this.temRenda() && !this.ocupacao.toLowerCase().includes('estudante')) {
+
+    if (
+      this.isMaiorIdade() &&
+      !this.temRenda() &&
+      !this.ocupacao.toLowerCase().includes('estudante')
+    ) {
       sugestoes.push('Verificar situação de trabalho/renda');
     }
-    
+
     if (!this.observacoes && this.isPrioritario()) {
       sugestoes.push('Adicionar observações sobre condições especiais');
     }
-    
+
     if (!this.isConsistente()) {
       sugestoes.push('Verificar consistência dos dados do membro');
     }
-    
+
     return sugestoes;
   }
 
@@ -476,5 +495,3 @@ export class ComposicaoFamiliar {
     return (this.renda / rendaFamiliarTotal) * 100;
   }
 }
-
-

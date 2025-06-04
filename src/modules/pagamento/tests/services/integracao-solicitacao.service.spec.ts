@@ -9,10 +9,10 @@ import { NotFoundException, ConflictException } from '@nestjs/common';
 
 /**
  * Testes unitários para o serviço de integração com o módulo de solicitação
- * 
+ *
  * Verifica o funcionamento correto das operações de consulta e atualização
  * de status de solicitações relacionadas a pagamentos.
- * 
+ *
  * @author Equipe PGBen
  */
 describe('IntegracaoSolicitacaoService', () => {
@@ -24,19 +24,29 @@ describe('IntegracaoSolicitacaoService', () => {
   const mockHttpService = {
     get: jest.fn(),
     post: jest.fn(),
-    patch: jest.fn()
+    patch: jest.fn(),
   };
 
   // Mock do ConfigService
   const mockConfigService = {
     get: jest.fn().mockImplementation((key) => {
-      if (key === 'solicitacao.apiUrl') {return 'http://api-solicitacao.pgben.local';}
-      if (key === 'solicitacao.apiKey') {return 'api-key-mock';}
-      if (key === 'solicitacao.statusPagamentoPendente') {return 'PAGAMENTO_PENDENTE';}
-      if (key === 'solicitacao.statusPagamentoRealizado') {return 'PAGAMENTO_REALIZADO';}
-      if (key === 'solicitacao.statusPagamentoCancelado') {return 'PAGAMENTO_CANCELADO';}
+      if (key === 'solicitacao.apiUrl') {
+        return 'http://api-solicitacao.pgben.local';
+      }
+      if (key === 'solicitacao.apiKey') {
+        return 'api-key-mock';
+      }
+      if (key === 'solicitacao.statusPagamentoPendente') {
+        return 'PAGAMENTO_PENDENTE';
+      }
+      if (key === 'solicitacao.statusPagamentoRealizado') {
+        return 'PAGAMENTO_REALIZADO';
+      }
+      if (key === 'solicitacao.statusPagamentoCancelado') {
+        return 'PAGAMENTO_CANCELADO';
+      }
       return null;
-    })
+    }),
   };
 
   beforeEach(async () => {
@@ -45,16 +55,18 @@ describe('IntegracaoSolicitacaoService', () => {
         IntegracaoSolicitacaoService,
         {
           provide: HttpService,
-          useValue: mockHttpService
+          useValue: mockHttpService,
         },
         {
           provide: ConfigService,
-          useValue: mockConfigService
-        }
+          useValue: mockConfigService,
+        },
       ],
     }).compile();
 
-    service = module.get<IntegracaoSolicitacaoService>(IntegracaoSolicitacaoService);
+    service = module.get<IntegracaoSolicitacaoService>(
+      IntegracaoSolicitacaoService,
+    );
     httpService = module.get<HttpService>(HttpService);
     configService = module.get<ConfigService>(ConfigService);
 
@@ -64,13 +76,13 @@ describe('IntegracaoSolicitacaoService', () => {
 
   describe('verificarStatusSolicitacao', () => {
     const solicitacaoId = 'solicitacao-id';
-    
+
     const mockSolicitacao = {
       id: solicitacaoId,
       status: 'PAGAMENTO_PENDENTE',
       cidadaoId: 'cidadao-id',
-      valorAprovado: 500.00,
-      createdAt: '2023-01-01T00:00:00Z'
+      valorAprovado: 500.0,
+      createdAt: '2023-01-01T00:00:00Z',
     };
 
     it('deve retornar status da solicitação quando encontrada', async () => {
@@ -80,9 +92,9 @@ describe('IntegracaoSolicitacaoService', () => {
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: { headers: {} } as any
+        config: { headers: {} } as any,
       };
-      
+
       mockHttpService.get.mockReturnValue(of(axiosResponse));
 
       // Executar método
@@ -94,9 +106,9 @@ describe('IntegracaoSolicitacaoService', () => {
         `http://api-solicitacao.pgben.local/solicitacoes/${solicitacaoId}`,
         expect.objectContaining({
           headers: expect.objectContaining({
-            'x-api-key': 'api-key-mock'
-          })
-        })
+            'x-api-key': 'api-key-mock',
+          }),
+        }),
       );
     });
 
@@ -106,13 +118,15 @@ describe('IntegracaoSolicitacaoService', () => {
         throwError(() => ({
           response: {
             status: 404,
-            data: { message: 'Solicitação não encontrada' }
-          }
-        }))
+            data: { message: 'Solicitação não encontrada' },
+          },
+        })),
       );
 
       // Executar e verificar exceção
-      await expect(service.verificarStatusSolicitacao(solicitacaoId)).rejects.toThrow(NotFoundException);
+      await expect(
+        service.verificarStatusSolicitacao(solicitacaoId),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('deve propagar outros erros HTTP', async () => {
@@ -121,13 +135,15 @@ describe('IntegracaoSolicitacaoService', () => {
         throwError(() => ({
           response: {
             status: 500,
-            data: { message: 'Erro interno do servidor' }
-          }
-        }))
+            data: { message: 'Erro interno do servidor' },
+          },
+        })),
       );
 
       // Executar e verificar exceção
-      await expect(service.verificarStatusSolicitacao(solicitacaoId)).rejects.toThrow();
+      await expect(
+        service.verificarStatusSolicitacao(solicitacaoId),
+      ).rejects.toThrow();
     });
   });
 
@@ -136,19 +152,25 @@ describe('IntegracaoSolicitacaoService', () => {
 
     it('deve retornar true quando solicitação está elegível para pagamento', async () => {
       // Configurar mock para verificarStatusSolicitacao
-      jest.spyOn(service, 'verificarStatusSolicitacao').mockResolvedValue('PAGAMENTO_PENDENTE');
+      jest
+        .spyOn(service, 'verificarStatusSolicitacao')
+        .mockResolvedValue('PAGAMENTO_PENDENTE');
 
       // Executar método
       const result = await service.verificarSolicitacaoElegivel(solicitacaoId);
 
       // Verificar resultado
       expect(result).toBe(true);
-      expect(service.verificarStatusSolicitacao).toHaveBeenCalledWith(solicitacaoId);
+      expect(service.verificarStatusSolicitacao).toHaveBeenCalledWith(
+        solicitacaoId,
+      );
     });
 
     it('deve retornar false quando solicitação não está elegível para pagamento', async () => {
       // Configurar mock para verificarStatusSolicitacao
-      jest.spyOn(service, 'verificarStatusSolicitacao').mockResolvedValue('PAGAMENTO_REALIZADO');
+      jest
+        .spyOn(service, 'verificarStatusSolicitacao')
+        .mockResolvedValue('PAGAMENTO_REALIZADO');
 
       // Executar método
       const result = await service.verificarSolicitacaoElegivel(solicitacaoId);
@@ -159,12 +181,14 @@ describe('IntegracaoSolicitacaoService', () => {
 
     it('deve propagar exceções de verificarStatusSolicitacao', async () => {
       // Configurar mock para verificarStatusSolicitacao
-      jest.spyOn(service, 'verificarStatusSolicitacao').mockRejectedValue(
-        new NotFoundException('Solicitação não encontrada')
-      );
+      jest
+        .spyOn(service, 'verificarStatusSolicitacao')
+        .mockRejectedValue(new NotFoundException('Solicitação não encontrada'));
 
       // Executar e verificar exceção
-      await expect(service.verificarSolicitacaoElegivel(solicitacaoId)).rejects.toThrow(NotFoundException);
+      await expect(
+        service.verificarSolicitacaoElegivel(solicitacaoId),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -172,11 +196,11 @@ describe('IntegracaoSolicitacaoService', () => {
     const solicitacaoId = 'solicitacao-id';
     const usuarioId = 'usuario-id';
     const statusPagamento = StatusPagamentoEnum.LIBERADO;
-    
+
     const mockResposta = {
       id: solicitacaoId,
       status: 'PAGAMENTO_REALIZADO',
-      updatedAt: '2023-01-02T00:00:00Z'
+      updatedAt: '2023-01-02T00:00:00Z',
     };
 
     it('deve atualizar status da solicitação para PAGAMENTO_REALIZADO quando pagamento liberado', async () => {
@@ -186,13 +210,17 @@ describe('IntegracaoSolicitacaoService', () => {
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: { headers: {} } as any
+        config: { headers: {} } as any,
       };
-      
+
       mockHttpService.patch.mockReturnValue(of(axiosResponse));
 
       // Executar método
-      const result = await service.atualizarStatusSolicitacao(solicitacaoId, statusPagamento, usuarioId);
+      const result = await service.atualizarStatusSolicitacao(
+        solicitacaoId,
+        statusPagamento,
+        usuarioId,
+      );
 
       // Verificar resultado
       expect(result).toBe(true);
@@ -202,9 +230,9 @@ describe('IntegracaoSolicitacaoService', () => {
         expect.objectContaining({
           headers: expect.objectContaining({
             'x-api-key': 'api-key-mock',
-            'x-user-id': usuarioId
-          })
-        })
+            'x-user-id': usuarioId,
+          }),
+        }),
       );
     });
 
@@ -215,16 +243,16 @@ describe('IntegracaoSolicitacaoService', () => {
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: { headers: {} } as any
+        config: { headers: {} } as any,
       };
-      
+
       mockHttpService.patch.mockReturnValue(of(axiosResponse));
 
       // Executar método
       const result = await service.atualizarStatusSolicitacao(
-        solicitacaoId, 
-        StatusPagamentoEnum.CANCELADO, 
-        usuarioId
+        solicitacaoId,
+        StatusPagamentoEnum.CANCELADO,
+        usuarioId,
       );
 
       // Verificar resultado
@@ -235,18 +263,22 @@ describe('IntegracaoSolicitacaoService', () => {
         expect.objectContaining({
           headers: expect.objectContaining({
             'x-api-key': 'api-key-mock',
-            'x-user-id': usuarioId
-          })
-        })
+            'x-user-id': usuarioId,
+          }),
+        }),
       );
     });
 
     it('deve lançar ConflictException quando status de pagamento não requer atualização da solicitação', async () => {
       // Executar e verificar exceção
       await expect(
-        service.atualizarStatusSolicitacao(solicitacaoId, StatusPagamentoEnum.AGENDADO, usuarioId)
+        service.atualizarStatusSolicitacao(
+          solicitacaoId,
+          StatusPagamentoEnum.AGENDADO,
+          usuarioId,
+        ),
       ).rejects.toThrow(ConflictException);
-      
+
       expect(mockHttpService.patch).not.toHaveBeenCalled();
     });
 
@@ -256,14 +288,18 @@ describe('IntegracaoSolicitacaoService', () => {
         throwError(() => ({
           response: {
             status: 404,
-            data: { message: 'Solicitação não encontrada' }
-          }
-        }))
+            data: { message: 'Solicitação não encontrada' },
+          },
+        })),
       );
 
       // Executar e verificar exceção
       await expect(
-        service.atualizarStatusSolicitacao(solicitacaoId, StatusPagamentoEnum.LIBERADO, usuarioId)
+        service.atualizarStatusSolicitacao(
+          solicitacaoId,
+          StatusPagamentoEnum.LIBERADO,
+          usuarioId,
+        ),
       ).rejects.toThrow(NotFoundException);
     });
 
@@ -273,37 +309,41 @@ describe('IntegracaoSolicitacaoService', () => {
         throwError(() => ({
           response: {
             status: 500,
-            data: { message: 'Erro interno do servidor' }
-          }
-        }))
+            data: { message: 'Erro interno do servidor' },
+          },
+        })),
       );
 
       // Executar e verificar exceção
       await expect(
-        service.atualizarStatusSolicitacao(solicitacaoId, StatusPagamentoEnum.LIBERADO, usuarioId)
+        service.atualizarStatusSolicitacao(
+          solicitacaoId,
+          StatusPagamentoEnum.LIBERADO,
+          usuarioId,
+        ),
       ).rejects.toThrow();
     });
   });
 
   describe('obterDetalhesSolicitacao', () => {
     const solicitacaoId = 'solicitacao-id';
-    
+
     const mockSolicitacao = {
       id: solicitacaoId,
       status: 'PAGAMENTO_PENDENTE',
       cidadaoId: 'cidadao-id',
-      valorAprovado: 500.00,
+      valorAprovado: 500.0,
       createdAt: '2023-01-01T00:00:00Z',
       beneficio: {
         id: 'beneficio-id',
         nome: 'Auxílio Moradia',
-        descricao: 'Auxílio para famílias em situação de vulnerabilidade'
+        descricao: 'Auxílio para famílias em situação de vulnerabilidade',
       },
       unidade: {
         id: 'unidade-id',
         nome: 'CRAS Centro',
-        endereco: 'Rua Principal, 123'
-      }
+        endereco: 'Rua Principal, 123',
+      },
     };
 
     it('deve retornar detalhes da solicitação quando encontrada', async () => {
@@ -313,9 +353,9 @@ describe('IntegracaoSolicitacaoService', () => {
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: { headers: {} } as any
+        config: { headers: {} } as any,
       };
-      
+
       mockHttpService.get.mockReturnValue(of(axiosResponse));
 
       // Executar método
@@ -327,12 +367,12 @@ describe('IntegracaoSolicitacaoService', () => {
         `http://api-solicitacao.pgben.local/solicitacoes/${solicitacaoId}`,
         expect.objectContaining({
           headers: expect.objectContaining({
-            'x-api-key': 'api-key-mock'
+            'x-api-key': 'api-key-mock',
           }),
           params: {
-            expand: 'beneficio,unidade'
-          }
-        })
+            expand: 'beneficio,unidade',
+          },
+        }),
       );
     });
 
@@ -342,13 +382,15 @@ describe('IntegracaoSolicitacaoService', () => {
         throwError(() => ({
           response: {
             status: 404,
-            data: { message: 'Solicitação não encontrada' }
-          }
-        }))
+            data: { message: 'Solicitação não encontrada' },
+          },
+        })),
       );
 
       // Executar e verificar exceção
-      await expect(service.obterDetalhesSolicitacao(solicitacaoId)).rejects.toThrow(NotFoundException);
+      await expect(
+        service.obterDetalhesSolicitacao(solicitacaoId),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 });

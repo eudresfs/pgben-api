@@ -10,7 +10,7 @@ export class EnderecoDto {
     pattern: '^\\d{5}-\\d{3}$',
     type: 'string',
     minLength: 9,
-    maxLength: 9
+    maxLength: 9,
   })
   cep: string;
 
@@ -19,7 +19,7 @@ export class EnderecoDto {
     example: 'Rua das Flores',
     type: 'string',
     minLength: 5,
-    maxLength: 200
+    maxLength: 200,
   })
   logradouro: string;
 
@@ -28,7 +28,7 @@ export class EnderecoDto {
     example: '123A',
     type: 'string',
     minLength: 1,
-    maxLength: 10
+    maxLength: 10,
   })
   numero: string;
 
@@ -36,7 +36,7 @@ export class EnderecoDto {
     description: 'Complemento do endereço (apartamento, bloco, etc.)',
     example: 'Apartamento 101, Bloco B',
     type: 'string',
-    maxLength: 100
+    maxLength: 100,
   })
   complemento?: string;
 
@@ -45,7 +45,7 @@ export class EnderecoDto {
     example: 'Cidade Alta',
     type: 'string',
     minLength: 2,
-    maxLength: 100
+    maxLength: 100,
   })
   bairro: string;
 
@@ -54,17 +54,45 @@ export class EnderecoDto {
     example: 'Natal',
     type: 'string',
     minLength: 2,
-    maxLength: 100
+    maxLength: 100,
   })
   cidade: string;
 
   @ApiProperty({
     description: 'Sigla do estado (UF)',
     example: 'RN',
-    enum: ['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'],
+    enum: [
+      'AC',
+      'AL',
+      'AP',
+      'AM',
+      'BA',
+      'CE',
+      'DF',
+      'ES',
+      'GO',
+      'MA',
+      'MT',
+      'MS',
+      'MG',
+      'PA',
+      'PB',
+      'PR',
+      'PE',
+      'PI',
+      'RJ',
+      'RN',
+      'RS',
+      'RO',
+      'RR',
+      'SC',
+      'SP',
+      'SE',
+      'TO',
+    ],
     type: 'string',
     minLength: 2,
-    maxLength: 2
+    maxLength: 2,
   })
   estado: string;
 
@@ -72,7 +100,7 @@ export class EnderecoDto {
     description: 'Ponto de referência para localização',
     example: 'Próximo ao mercado central',
     type: 'string',
-    maxLength: 200
+    maxLength: 200,
   })
   pontoReferencia?: string;
 }
@@ -87,7 +115,7 @@ export class CreateCidadaoDto {
     type: 'string',
     minLength: 5,
     maxLength: 200,
-    pattern: '^[A-Za-zÀ-ÿ\\s]+$'
+    pattern: '^[A-Za-zÀ-ÿ\\s]+$',
   })
   nome: string;
 
@@ -97,7 +125,7 @@ export class CreateCidadaoDto {
     pattern: '^\\d{3}\\.\\d{3}\\.\\d{3}-\\d{2}$',
     type: 'string',
     minLength: 14,
-    maxLength: 14
+    maxLength: 14,
   })
   cpf: string;
 
@@ -106,7 +134,7 @@ export class CreateCidadaoDto {
     example: '1.234.567',
     type: 'string',
     minLength: 5,
-    maxLength: 20
+    maxLength: 20,
   })
   rg: string;
 
@@ -115,7 +143,7 @@ export class CreateCidadaoDto {
     example: 'SSP/RN',
     type: 'string',
     minLength: 3,
-    maxLength: 20
+    maxLength: 20,
   })
   orgaoEmissorRg: string;
 
@@ -123,7 +151,7 @@ export class CreateCidadaoDto {
     description: 'Data de nascimento no formato YYYY-MM-DD',
     example: '1990-05-15',
     type: 'string',
-    format: 'date'
+    format: 'date',
   })
   dataNascimento: string;
 
@@ -131,15 +159,22 @@ export class CreateCidadaoDto {
     description: 'Sexo biológico do cidadão',
     example: 'M',
     enum: ['M', 'F'],
-    type: 'string'
+    type: 'string',
   })
   sexo: string;
 
   @ApiProperty({
     description: 'Estado civil atual do cidadão',
     example: 'SOLTEIRO',
-    enum: ['SOLTEIRO', 'CASADO', 'DIVORCIADO', 'VIUVO', 'UNIAO_ESTAVEL', 'SEPARADO'],
-    type: 'string'
+    enum: [
+      'SOLTEIRO',
+      'CASADO',
+      'DIVORCIADO',
+      'VIUVO',
+      'UNIAO_ESTAVEL',
+      'SEPARADO',
+    ],
+    type: 'string',
   })
   estadoCivil: string;
 
@@ -147,7 +182,7 @@ export class CreateCidadaoDto {
     description: 'Telefone principal para contato (formato: (XX) XXXXX-XXXX)',
     example: '(84) 99999-9999',
     pattern: '^\\(\\d{2}\\)\\s\\d{4,5}-\\d{4}$',
-    type: 'string'
+    type: 'string',
   })
   telefone: string;
 
@@ -155,7 +190,7 @@ export class CreateCidadaoDto {
     description: 'Telefone secundário para contato',
     example: '(84) 88888-8888',
     pattern: '^\\(\\d{2}\\)\\s\\d{4,5}-\\d{4}$',
-    type: 'string'
+    type: 'string',
   })
   telefoneSecundario?: string;
 
@@ -164,13 +199,13 @@ export class CreateCidadaoDto {
     example: 'joao.silva@email.com',
     type: 'string',
     format: 'email',
-    maxLength: 100
+    maxLength: 100,
   })
   email?: string;
 
   @ApiProperty({
     description: 'Informações de endereço residencial',
-    type: () => EnderecoDto
+    type: () => EnderecoDto,
   })
   endereco: EnderecoDto;
 
@@ -179,7 +214,7 @@ export class CreateCidadaoDto {
     example: 'Maria Silva Santos',
     type: 'string',
     minLength: 5,
-    maxLength: 200
+    maxLength: 200,
   })
   nomeMae?: string;
 
@@ -188,7 +223,7 @@ export class CreateCidadaoDto {
     example: 'José Santos',
     type: 'string',
     minLength: 5,
-    maxLength: 200
+    maxLength: 200,
   })
   nomePai?: string;
 
@@ -198,16 +233,16 @@ export class CreateCidadaoDto {
     pattern: '^\\d{11}$',
     type: 'string',
     minLength: 11,
-    maxLength: 11
+    maxLength: 11,
   })
   nis?: string;
 
   @ApiPropertyOptional({
     description: 'Renda familiar mensal declarada em reais',
-    example: 1200.50,
+    example: 1200.5,
     type: 'number',
     format: 'float',
-    minimum: 0
+    minimum: 0,
   })
   rendaFamiliar?: number;
 
@@ -216,7 +251,7 @@ export class CreateCidadaoDto {
     example: 4,
     type: 'integer',
     minimum: 1,
-    maximum: 20
+    maximum: 20,
   })
   composicaoFamiliar?: number;
 }
@@ -228,7 +263,7 @@ export class CidadaoResponseDto extends CreateCidadaoDto {
   @ApiProperty({
     description: 'Identificador único do cidadão no sistema',
     example: '507f1f77bcf86cd799439011',
-    type: 'string'
+    type: 'string',
   })
   id: string;
 
@@ -236,7 +271,7 @@ export class CidadaoResponseDto extends CreateCidadaoDto {
     description: 'Status do cadastro do cidadão',
     example: 'ATIVO',
     enum: ['ATIVO', 'INATIVO', 'PENDENTE', 'BLOQUEADO'],
-    type: 'string'
+    type: 'string',
   })
   status: string;
 
@@ -244,7 +279,7 @@ export class CidadaoResponseDto extends CreateCidadaoDto {
     description: 'Data e hora de criação do registro',
     example: '2025-01-18T10:30:00.000Z',
     type: 'string',
-    format: 'date-time'
+    format: 'date-time',
   })
   createdAt: string;
 
@@ -252,7 +287,7 @@ export class CidadaoResponseDto extends CreateCidadaoDto {
     description: 'Data e hora da última atualização do registro',
     example: '2025-01-18T10:30:00.000Z',
     type: 'string',
-    format: 'date-time'
+    format: 'date-time',
   })
   updatedAt: string;
 
@@ -260,7 +295,7 @@ export class CidadaoResponseDto extends CreateCidadaoDto {
     description: 'Data da última validação dos dados',
     example: '2025-01-18T10:30:00.000Z',
     type: 'string',
-    format: 'date-time'
+    format: 'date-time',
   })
   ultimaValidacao?: string;
 
@@ -268,7 +303,7 @@ export class CidadaoResponseDto extends CreateCidadaoDto {
     description: 'Observações administrativas sobre o cidadão',
     example: 'Documentação validada em 18/01/2025',
     type: 'string',
-    maxLength: 500
+    maxLength: 500,
   })
   observacoes?: string;
 }
@@ -282,7 +317,7 @@ export class UpdateCidadaoDto {
     example: 'João Silva Santos',
     type: 'string',
     minLength: 5,
-    maxLength: 200
+    maxLength: 200,
   })
   nome?: string;
 
@@ -290,7 +325,7 @@ export class UpdateCidadaoDto {
     description: 'Telefone principal para contato',
     example: '(84) 99999-9999',
     pattern: '^\\(\\d{2}\\)\\s\\d{4,5}-\\d{4}$',
-    type: 'string'
+    type: 'string',
   })
   telefone?: string;
 
@@ -298,7 +333,7 @@ export class UpdateCidadaoDto {
     description: 'Telefone secundário para contato',
     example: '(84) 88888-8888',
     pattern: '^\\(\\d{2}\\)\\s\\d{4,5}-\\d{4}$',
-    type: 'string'
+    type: 'string',
   })
   telefoneSecundario?: string;
 
@@ -306,30 +341,37 @@ export class UpdateCidadaoDto {
     description: 'Endereço de email válido',
     example: 'joao.silva@email.com',
     type: 'string',
-    format: 'email'
+    format: 'email',
   })
   email?: string;
 
   @ApiPropertyOptional({
     description: 'Informações de endereço residencial',
-    type: () => EnderecoDto
+    type: () => EnderecoDto,
   })
   endereco?: EnderecoDto;
 
   @ApiPropertyOptional({
     description: 'Estado civil atual',
     example: 'CASADO',
-    enum: ['SOLTEIRO', 'CASADO', 'DIVORCIADO', 'VIUVO', 'UNIAO_ESTAVEL', 'SEPARADO'],
-    type: 'string'
+    enum: [
+      'SOLTEIRO',
+      'CASADO',
+      'DIVORCIADO',
+      'VIUVO',
+      'UNIAO_ESTAVEL',
+      'SEPARADO',
+    ],
+    type: 'string',
   })
   estadoCivil?: string;
 
   @ApiPropertyOptional({
     description: 'Renda familiar mensal em reais',
-    example: 1500.00,
+    example: 1500.0,
     type: 'number',
     format: 'float',
-    minimum: 0
+    minimum: 0,
   })
   rendaFamiliar?: number;
 
@@ -338,7 +380,7 @@ export class UpdateCidadaoDto {
     example: 3,
     type: 'integer',
     minimum: 1,
-    maximum: 20
+    maximum: 20,
   })
   composicaoFamiliar?: number;
 }

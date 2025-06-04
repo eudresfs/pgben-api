@@ -8,7 +8,14 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm';
-import { IsNotEmpty, IsOptional, IsBoolean, IsNumber, Min, IsUUID } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsOptional,
+  IsBoolean,
+  IsNumber,
+  Min,
+  IsUUID,
+} from 'class-validator';
 import { TipoBeneficio } from './tipo-beneficio.entity';
 
 /**
@@ -47,7 +54,11 @@ export class ConfiguracaoRenovacao {
   @Min(0, { message: 'Número máximo de renovações não pode ser negativo' })
   numero_maximo_renovacoes?: number;
 
-  @Column({ name: 'requer_aprovacao_renovacao', type: 'boolean', default: true })
+  @Column({
+    name: 'requer_aprovacao_renovacao',
+    type: 'boolean',
+    default: true,
+  })
   @IsBoolean({ message: 'Requer aprovação de renovação deve ser um booleano' })
   requer_aprovacao_renovacao: boolean;
 
@@ -124,9 +135,11 @@ export class ConfiguracaoRenovacao {
    * Verifica se tem limite de renovações
    */
   temLimiteRenovacoes(): boolean {
-    return this.numero_maximo_renovacoes !== null && 
-           this.numero_maximo_renovacoes !== undefined &&
-           this.numero_maximo_renovacoes > 0;
+    return (
+      this.numero_maximo_renovacoes !== null &&
+      this.numero_maximo_renovacoes !== undefined &&
+      this.numero_maximo_renovacoes > 0
+    );
   }
 
   /**
@@ -158,10 +171,11 @@ export class ConfiguracaoRenovacao {
    */
   isHoraDeRenovar(dataVencimento: Date): boolean {
     if (!this.isRenovacaoAutomaticaHabilitada()) return false;
-    
+
     const agora = new Date();
-    const dataInicioRenovacao = this.calcularDataInicioRenovacao(dataVencimento);
-    
+    const dataInicioRenovacao =
+      this.calcularDataInicioRenovacao(dataVencimento);
+
     return agora >= dataInicioRenovacao;
   }
 
@@ -170,10 +184,13 @@ export class ConfiguracaoRenovacao {
    */
   podeRenovar(numeroRenovacoesRealizadas: number): boolean {
     if (!this.isRenovacaoAutomaticaHabilitada()) return false;
-    
+
     if (!this.temLimiteRenovacoes()) return true;
-    
-    return this.numero_maximo_renovacoes !== undefined && numeroRenovacoesRealizadas < this.numero_maximo_renovacoes;
+
+    return (
+      this.numero_maximo_renovacoes !== undefined &&
+      numeroRenovacoesRealizadas < this.numero_maximo_renovacoes
+    );
   }
 
   /**
@@ -181,8 +198,9 @@ export class ConfiguracaoRenovacao {
    */
   getRenovacoesRestantes(numeroRenovacoesRealizadas: number): number {
     if (!this.temLimiteRenovacoes()) return -1; // Ilimitado
-    
-    const restantes = (this.numero_maximo_renovacoes ?? 0) - numeroRenovacoesRealizadas;
+
+    const restantes =
+      (this.numero_maximo_renovacoes ?? 0) - numeroRenovacoesRealizadas;
     return Math.max(0, restantes);
   }
 
@@ -204,11 +222,16 @@ export class ConfiguracaoRenovacao {
    * Obtém um resumo da configuração
    */
   getSummary(): string {
-    const renovacao = this.isRenovacaoAutomaticaHabilitada() ? 'Habilitada' : 'Desabilitada';
-    const aprovacao = this.requerAprovacaoRenovacao() ? 'Requer aprovação' : 'Automática';
-    const limite = this.temLimiteRenovacoes() ? 
-      `Máx: ${this.numero_maximo_renovacoes}` : 'Ilimitado';
-    
+    const renovacao = this.isRenovacaoAutomaticaHabilitada()
+      ? 'Habilitada'
+      : 'Desabilitada';
+    const aprovacao = this.requerAprovacaoRenovacao()
+      ? 'Requer aprovação'
+      : 'Automática';
+    const limite = this.temLimiteRenovacoes()
+      ? `Máx: ${this.numero_maximo_renovacoes}`
+      : 'Ilimitado';
+
     return `Renovação: ${renovacao} | ${aprovacao} | ${limite} | ${this.dias_antecedencia_renovacao} dias antecedência`;
   }
 
@@ -225,18 +248,22 @@ export class ConfiguracaoRenovacao {
   isConsistente(): boolean {
     // Verifica se tem tipo de benefício
     if (!this.tipo_beneficio_id) return false;
-    
+
     // Verifica se tem usuário
     if (!this.usuario_id) return false;
-    
+
     // Verifica se dias de antecedência é válido
     if (this.dias_antecedencia_renovacao < 1) return false;
-    
+
     // Se tem limite, deve ser positivo
-    if (this.temLimiteRenovacoes() && this.numero_maximo_renovacoes !== undefined && this.numero_maximo_renovacoes <= 0) {
+    if (
+      this.temLimiteRenovacoes() &&
+      this.numero_maximo_renovacoes !== undefined &&
+      this.numero_maximo_renovacoes <= 0
+    ) {
       return false;
     }
-    
+
     return true;
   }
 
@@ -270,7 +297,9 @@ export class ConfiguracaoRenovacao {
    */
   isCritica(): boolean {
     // Configurações com renovação automática sem aprovação são críticas
-    return this.isRenovacaoAutomaticaHabilitada() && !this.requerAprovacaoRenovacao();
+    return (
+      this.isRenovacaoAutomaticaHabilitada() && !this.requerAprovacaoRenovacao()
+    );
   }
 
   /**
@@ -287,9 +316,10 @@ export class ConfiguracaoRenovacao {
    */
   getDescricaoNivelAutomacao(): string {
     const descricoes = {
-      'MANUAL': 'Renovação manual - requer intervenção do usuário',
-      'SEMI_AUTOMATICO': 'Renovação semi-automática - processo automático com aprovação',
-      'AUTOMATICO': 'Renovação totalmente automática - sem intervenção manual',
+      MANUAL: 'Renovação manual - requer intervenção do usuário',
+      SEMI_AUTOMATICO:
+        'Renovação semi-automática - processo automático com aprovação',
+      AUTOMATICO: 'Renovação totalmente automática - sem intervenção manual',
     };
     return descricoes[this.getNivelAutomacao()];
   }
@@ -330,27 +360,32 @@ export class ConfiguracaoRenovacao {
    */
   getSugestoesMelhoria(): string[] {
     const sugestoes: string[] = [];
-    
+
     if (!this.observacoes || this.observacoes.trim().length === 0) {
       sugestoes.push('Adicionar observações sobre a configuração');
     }
-    
-    if (this.isRenovacaoAutomaticaHabilitada() && !this.requerAprovacaoRenovacao()) {
+
+    if (
+      this.isRenovacaoAutomaticaHabilitada() &&
+      !this.requerAprovacaoRenovacao()
+    ) {
       sugestoes.push('Considerar exigir aprovação para renovações automáticas');
     }
-    
+
     if (!this.temLimiteRenovacoes()) {
       sugestoes.push('Considerar definir um limite máximo de renovações');
     }
-    
+
     if (this.dias_antecedencia_renovacao < 7) {
-      sugestoes.push('Considerar aumentar os dias de antecedência para pelo menos 7 dias');
+      sugestoes.push(
+        'Considerar aumentar os dias de antecedência para pelo menos 7 dias',
+      );
     }
-    
+
     if (!this.isConsistente()) {
       sugestoes.push('Verificar e corrigir inconsistências nos dados');
     }
-    
+
     return sugestoes;
   }
 
@@ -388,7 +423,10 @@ export class ConfiguracaoRenovacao {
   /**
    * Simula o processo de renovação
    */
-  simularRenovacao(dataVencimento: Date, numeroRenovacoesRealizadas: number): {
+  simularRenovacao(
+    dataVencimento: Date,
+    numeroRenovacoesRealizadas: number,
+  ): {
     podeRenovar: boolean;
     dataInicioRenovacao: Date;
     renovacoesRestantes: number;
@@ -396,18 +434,25 @@ export class ConfiguracaoRenovacao {
     motivo?: string;
   } {
     const podeRenovar = this.podeRenovar(numeroRenovacoesRealizadas);
-    const dataInicioRenovacao = this.calcularDataInicioRenovacao(dataVencimento);
-    const renovacoesRestantes = this.getRenovacoesRestantes(numeroRenovacoesRealizadas);
-    
+    const dataInicioRenovacao =
+      this.calcularDataInicioRenovacao(dataVencimento);
+    const renovacoesRestantes = this.getRenovacoesRestantes(
+      numeroRenovacoesRealizadas,
+    );
+
     let motivo: string | undefined;
     if (!podeRenovar) {
       if (!this.isRenovacaoAutomaticaHabilitada()) {
         motivo = 'Renovação automática não está habilitada';
-      } else if (this.temLimiteRenovacoes() && this.numero_maximo_renovacoes !== undefined && numeroRenovacoesRealizadas >= this.numero_maximo_renovacoes) {
+      } else if (
+        this.temLimiteRenovacoes() &&
+        this.numero_maximo_renovacoes !== undefined &&
+        numeroRenovacoesRealizadas >= this.numero_maximo_renovacoes
+      ) {
         motivo = 'Limite máximo de renovações atingido';
       }
     }
-    
+
     return {
       podeRenovar,
       dataInicioRenovacao,

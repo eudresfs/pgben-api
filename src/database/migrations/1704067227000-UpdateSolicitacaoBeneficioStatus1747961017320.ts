@@ -1,6 +1,8 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class UpdateSolicitacaoBeneficioStatus1704067245000 implements MigrationInterface {
+export class UpdateSolicitacaoBeneficioStatus1704067245000
+  implements MigrationInterface
+{
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Atualizar o tipo enum para incluir os novos valores
     await queryRunner.query(`

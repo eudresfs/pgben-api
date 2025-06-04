@@ -6,7 +6,7 @@ import { EnhancedMetricsService } from '../monitoring/enhanced-metrics.service';
 
 /**
  * Provedor de métricas para o sistema de cache
- * 
+ *
  * Este provedor coleta métricas do sistema de cache e as envia para o serviço de métricas
  * para monitoramento e análise de performance.
  */
@@ -46,7 +46,9 @@ export class CacheMetricsProvider implements OnModuleInit {
    */
   onModuleInit() {
     this.startMetricsCollection();
-    this.logger.log(`Iniciando coleta de métricas de cache (${this.cacheType})`);
+    this.logger.log(
+      `Iniciando coleta de métricas de cache (${this.cacheType})`,
+    );
   }
 
   /**
@@ -114,24 +116,35 @@ export class CacheMetricsProvider implements OnModuleInit {
 
       // Registrar falhas e tentativas de recuperação
       if (this.cacheFailures > 0) {
-        this.metricsService.recordCacheFailures(this.cacheFailures, this.cacheType);
+        this.metricsService.recordCacheFailures(
+          this.cacheFailures,
+          this.cacheType,
+        );
         this.cacheFailures = 0;
       }
-      
+
       if (this.cacheRecoveryAttempts > 0) {
-        this.metricsService.recordCacheRecoveryAttempts(this.cacheRecoveryAttempts, this.cacheType);
+        this.metricsService.recordCacheRecoveryAttempts(
+          this.cacheRecoveryAttempts,
+          this.cacheType,
+        );
         this.cacheRecoveryAttempts = 0;
       }
-      
+
       // Registrar tempos de resposta
       this.responseTimesMs.forEach((times, key) => {
         if (times.length > 0) {
-          const avgTime = times.reduce((sum, time) => sum + time, 0) / times.length;
-          this.metricsService.recordCacheResponseTime(avgTime, key, this.cacheType);
+          const avgTime =
+            times.reduce((sum, time) => sum + time, 0) / times.length;
+          this.metricsService.recordCacheResponseTime(
+            avgTime,
+            key,
+            this.cacheType,
+          );
         }
       });
       this.responseTimesMs.clear();
-      
+
       // Resetar contadores
       this.cacheHits = 0;
       this.cacheMisses = 0;
@@ -191,7 +204,7 @@ export class CacheMetricsProvider implements OnModuleInit {
   registerCacheClear(): void {
     this.cacheOperations.clear++;
   }
-  
+
   /**
    * Registra uma falha no cache
    */
@@ -199,7 +212,7 @@ export class CacheMetricsProvider implements OnModuleInit {
     this.cacheFailures++;
     this.metricsService.recordCacheOperation('failure', false, this.cacheType);
   }
-  
+
   /**
    * Registra uma tentativa de recuperação do circuit breaker
    */
@@ -207,7 +220,7 @@ export class CacheMetricsProvider implements OnModuleInit {
     this.cacheRecoveryAttempts++;
     this.metricsService.recordCacheOperation('recovery', true, this.cacheType);
   }
-  
+
   /**
    * Registra o tempo de resposta de uma operação de cache
    * @param key Chave do cache

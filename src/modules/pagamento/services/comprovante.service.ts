@@ -1,4 +1,9 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ComprovantePagamento } from '../../../entities/comprovante-pagamento.entity';
@@ -7,10 +12,10 @@ import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
 
 /**
  * Serviço para gerenciamento de comprovantes de pagamento
- * 
+ *
  * Implementa a lógica para upload, consulta e gerenciamento
  * dos documentos comprobatórios anexados aos pagamentos.
- * 
+ *
  * @author Equipe PGBen
  */
 @Injectable()
@@ -20,7 +25,7 @@ export class ComprovanteService {
     'application/pdf',
     'image/jpeg',
     'image/jpg',
-    'image/png'
+    'image/png',
   ];
 
   // Tamanho máximo permitido (5MB)
@@ -37,7 +42,7 @@ export class ComprovanteService {
 
   /**
    * Processa o upload de um novo comprovante de pagamento
-   * 
+   *
    * @param pagamentoId ID do pagamento relacionado
    * @param file Arquivo enviado
    * @param createDto Dados adicionais do comprovante
@@ -48,15 +53,15 @@ export class ComprovanteService {
     pagamentoId: string,
     file: any,
     createDto: ComprovanteUploadDto,
-    usuarioId: string
+    usuarioId: string,
   ): Promise<ComprovantePagamento> {
     // Verificar se o pagamento existe
     // const pagamento = await this.pagamentoService.findOne(pagamentoId);
-    
+
     // if (!pagamento) {
     //   throw new NotFoundException('Pagamento não encontrado');
     // }
-    
+
     // Verificar se o pagamento tem status que permite anexar comprovantes
     // if (pagamento.status === StatusPagamentoEnum.CANCELADO) {
     //   throw new ConflictException(
@@ -91,7 +96,7 @@ export class ComprovanteService {
       tamanho: file.size,
       mime_type: file.mimetype,
       data_upload: new Date(),
-      uploaded_por: usuarioId
+      uploaded_por: usuarioId,
     });
 
     // Salvar o registro
@@ -119,7 +124,7 @@ export class ComprovanteService {
 
   /**
    * Busca um comprovante pelo ID
-   * 
+   *
    * @param id ID do comprovante
    * @returns Comprovante encontrado ou null
    */
@@ -129,20 +134,22 @@ export class ComprovanteService {
 
   /**
    * Lista todos os comprovantes de um pagamento
-   * 
+   *
    * @param pagamentoId ID do pagamento
    * @returns Lista de comprovantes
    */
-  async findAllByPagamento(pagamentoId: string): Promise<ComprovantePagamento[]> {
+  async findAllByPagamento(
+    pagamentoId: string,
+  ): Promise<ComprovantePagamento[]> {
     return this.comprovanteRepository.find({
       where: { pagamento_id: pagamentoId },
-      order: { data_upload: 'DESC' }
+      order: { data_upload: 'DESC' },
     });
   }
 
   /**
    * Obtém o conteúdo de um comprovante (baixa o arquivo)
-   * 
+   *
    * @param id ID do comprovante
    * @returns Buffer com o conteúdo do arquivo e metadados
    */
@@ -152,38 +159,38 @@ export class ComprovanteService {
     mimeType: string;
   }> {
     const comprovante = await this.findOne(id);
-    
+
     if (!comprovante) {
       throw new NotFoundException('Comprovante não encontrado');
     }
 
     // Obter o arquivo do serviço de documentos
     // const file = await this.documentoService.getDocumento(comprovante.caminhoArquivo);
-    
+
     return {
       buffer: Buffer.from(''), // file.content,
       fileName: comprovante.nome_arquivo,
-      mimeType: comprovante.mime_type
+      mimeType: comprovante.mime_type,
     };
   }
 
   /**
    * Remove um comprovante
-   * 
+   *
    * @param id ID do comprovante
    * @param usuarioId ID do usuário que está removendo
    * @returns true se removido com sucesso
    */
   async removeComprovante(id: string, usuarioId: string): Promise<boolean> {
     const comprovante = await this.findOne(id);
-    
+
     if (!comprovante) {
       throw new NotFoundException('Comprovante não encontrado');
     }
 
     // Verificar se o pagamento permite remoção de comprovantes
     // const pagamento = await this.pagamentoService.findOne(comprovante.pagamentoId);
-    
+
     // if (pagamento.status === StatusPagamentoEnum.CONFIRMADO) {
     //   throw new ConflictException(
     //     'Não é possível remover comprovantes de um pagamento já confirmado'
@@ -214,21 +221,21 @@ export class ComprovanteService {
 
   /**
    * Verifica se um pagamento tem pelo menos um comprovante
-   * 
+   *
    * @param pagamentoId ID do pagamento
    * @returns true se o pagamento tem pelo menos um comprovante
    */
   async hasComprovantes(pagamentoId: string): Promise<boolean> {
     const count = await this.comprovanteRepository.count({
-      where: { pagamento_id: pagamentoId }
+      where: { pagamento_id: pagamentoId },
     });
-    
+
     return count > 0;
   }
 
   /**
    * Valida um arquivo enviado
-   * 
+   *
    * @param file Arquivo a ser validado
    * @throws BadRequestException se o arquivo não atender aos requisitos
    */
@@ -241,21 +248,21 @@ export class ComprovanteService {
     // Verificar o tamanho do arquivo
     if (file.size > this.maxFileSize) {
       throw new BadRequestException(
-        `Tamanho máximo permitido: ${this.maxFileSize / (1024 * 1024)}MB`
+        `Tamanho máximo permitido: ${this.maxFileSize / (1024 * 1024)}MB`,
       );
     }
 
     // Verificar o tipo MIME
     if (!this.allowedMimeTypes.includes(file.mimetype)) {
       throw new BadRequestException(
-        `Tipo de arquivo não permitido. Tipos permitidos: ${this.allowedMimeTypes.join(', ')}`
+        `Tipo de arquivo não permitido. Tipos permitidos: ${this.allowedMimeTypes.join(', ')}`,
       );
     }
   }
 
   /**
    * Sanitiza o nome de um arquivo para evitar riscos de segurança
-   * 
+   *
    * @param fileName Nome original do arquivo
    * @returns Nome sanitizado
    */
@@ -264,13 +271,13 @@ export class ComprovanteService {
     let sanitized = fileName
       .replace(/[/\\?%*:|"<>]/g, '_') // Remover caracteres inválidos em nomes de arquivo
       .replace(/\.\./g, '_'); // Evitar directory traversal
-    
+
     // Limitar o tamanho do nome
     if (sanitized.length > 100) {
       const extension = sanitized.slice(sanitized.lastIndexOf('.'));
       sanitized = sanitized.slice(0, 100 - extension.length) + extension;
     }
-    
+
     return sanitized;
   }
 }

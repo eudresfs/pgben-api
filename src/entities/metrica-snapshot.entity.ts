@@ -1,14 +1,27 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, ManyToOne, JoinColumn, Index } from 'typeorm';
-import { MetricaDefinicao, GranularidadeTemporal } from './metrica-definicao.entity';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  ManyToOne,
+  JoinColumn,
+  Index,
+} from 'typeorm';
+import {
+  MetricaDefinicao,
+  GranularidadeTemporal,
+} from './metrica-definicao.entity';
 
 /**
  * Snapshot de valor de uma métrica
- * 
+ *
  * Esta entidade armazena os valores coletados ou calculados para cada métrica
  * ao longo do tempo, mantendo um histórico completo para análise e visualização.
  */
 @Entity('metrica_snapshot')
-@Index(['definicao_id', 'periodo_inicio', 'periodo_fim', 'dimensoes_hash'], { unique: true })
+@Index(['definicao_id', 'periodo_inicio', 'periodo_fim', 'dimensoes_hash'], {
+  unique: true,
+})
 @Index(['periodo_inicio', 'periodo_fim'])
 export class MetricaSnapshot {
   @PrimaryGeneratedColumn('uuid')
@@ -22,10 +35,13 @@ export class MetricaSnapshot {
 
   /**
    * Relacionamento com a definição da métrica
-   * 
+   *
    * Usando lazy loading para evitar dependências circulares
    */
-  @ManyToOne(() => MetricaDefinicao, (definicao) => definicao.snapshots, { onDelete: 'CASCADE', lazy: true })
+  @ManyToOne(() => MetricaDefinicao, (definicao) => definicao.snapshots, {
+    onDelete: 'CASCADE',
+    lazy: true,
+  })
   @JoinColumn({ name: 'definicao_id' })
   definicao: Promise<MetricaDefinicao>;
 

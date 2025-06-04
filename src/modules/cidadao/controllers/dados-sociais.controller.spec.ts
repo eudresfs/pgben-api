@@ -5,7 +5,12 @@ import { CreateDadosSociaisDto } from '../dto/create-dados-sociais.dto';
 import { UpdateDadosSociaisDto } from '../dto/update-dados-sociais.dto';
 import { DadosSociais } from '../entities/dados-sociais.entity';
 import { NotFoundException, ConflictException } from '@nestjs/common';
-import { EscolaridadeEnum, PublicoPrioritarioEnum, SituacaoTrabalhoEnum, TipoBpcEnum } from '../../../shared/enums';
+import {
+  EscolaridadeEnum,
+  PublicoPrioritarioEnum,
+  SituacaoTrabalhoEnum,
+  TipoBpcEnum,
+} from '../../../shared/enums';
 
 describe('DadosSociaisController', () => {
   let controller: DadosSociaisController;
@@ -16,10 +21,10 @@ describe('DadosSociaisController', () => {
     cidadao_id: 'cidadao-1',
     escolaridade: EscolaridadeEnum.MEDIO_COMPLETO,
     publico_prioritario: PublicoPrioritarioEnum.PESSOA_IDOSA,
-    renda: 1500.00,
+    renda: 1500.0,
     ocupacao: 'Vendedor',
     recebe_pbf: true,
-    valor_pbf: 400.00,
+    valor_pbf: 400.0,
     recebe_bpc: false,
     tipo_bpc: null,
     valor_bpc: null,
@@ -70,10 +75,10 @@ describe('DadosSociaisController', () => {
     const createDto: CreateDadosSociaisDto = {
       escolaridade: EscolaridadeEnum.MEDIO_COMPLETO,
       publico_prioritario: PublicoPrioritarioEnum.PESSOA_IDOSA,
-      renda: 1500.00,
+      renda: 1500.0,
       ocupacao: 'Vendedor',
       recebe_pbf: true,
-      valor_pbf: 400.00,
+      valor_pbf: 400.0,
       recebe_bpc: false,
       curso_profissionalizante: 'Curso de Informática',
       interesse_curso_profissionalizante: true,
@@ -105,7 +110,9 @@ describe('DadosSociaisController', () => {
 
     it('should throw ConflictException when dados sociais already exist', async () => {
       mockDadosSociaisService.create.mockRejectedValue(
-        new ConflictException('Cidadão cidadao-1 já possui dados sociais cadastrados'),
+        new ConflictException(
+          'Cidadão cidadao-1 já possui dados sociais cadastrados',
+        ),
       );
 
       await expect(controller.create('cidadao-1', createDto)).rejects.toThrow(
@@ -116,7 +123,9 @@ describe('DadosSociaisController', () => {
 
   describe('findByCidadaoId', () => {
     it('should return dados sociais for valid cidadao', async () => {
-      mockDadosSociaisService.findByCidadaoId.mockResolvedValue(mockDadosSociais);
+      mockDadosSociaisService.findByCidadaoId.mockResolvedValue(
+        mockDadosSociais,
+      );
 
       const result = await controller.findByCidadaoId('cidadao-1');
 
@@ -136,7 +145,9 @@ describe('DadosSociaisController', () => {
 
     it('should throw NotFoundException when dados sociais not found', async () => {
       mockDadosSociaisService.findByCidadaoId.mockRejectedValue(
-        new NotFoundException('Dados sociais não encontrados para o cidadão cidadao-1'),
+        new NotFoundException(
+          'Dados sociais não encontrados para o cidadão cidadao-1',
+        ),
       );
 
       await expect(controller.findByCidadaoId('cidadao-1')).rejects.toThrow(
@@ -147,7 +158,7 @@ describe('DadosSociaisController', () => {
 
   describe('update', () => {
     const updateDto: UpdateDadosSociaisDto = {
-      renda: 1800.00,
+      renda: 1800.0,
       ocupacao: 'Gerente de Vendas',
       observacoes: 'Observações atualizadas',
     };
@@ -167,7 +178,9 @@ describe('DadosSociaisController', () => {
 
     it('should throw NotFoundException when dados sociais not found', async () => {
       mockDadosSociaisService.update.mockRejectedValue(
-        new NotFoundException('Dados sociais não encontrados para o cidadão cidadao-1'),
+        new NotFoundException(
+          'Dados sociais não encontrados para o cidadão cidadao-1',
+        ),
       );
 
       await expect(controller.update('cidadao-1', updateDto)).rejects.toThrow(
@@ -187,7 +200,9 @@ describe('DadosSociaisController', () => {
 
     it('should throw NotFoundException when dados sociais not found', async () => {
       mockDadosSociaisService.remove.mockRejectedValue(
-        new NotFoundException('Dados sociais não encontrados para o cidadão cidadao-1'),
+        new NotFoundException(
+          'Dados sociais não encontrados para o cidadão cidadao-1',
+        ),
       );
 
       await expect(controller.remove('cidadao-1')).rejects.toThrow(
@@ -243,7 +258,7 @@ describe('DadosSociaisController', () => {
 
     it('should propagate validation errors', async () => {
       const createDto = {} as CreateDadosSociaisDto; // DTO inválido
-      
+
       // Este teste seria mais completo com validação real
       expect(controller).toBeDefined();
     });

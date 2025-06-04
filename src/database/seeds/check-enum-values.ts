@@ -17,9 +17,9 @@ async function checkEnumValues() {
          FROM pg_enum e
          JOIN pg_type t ON e.enumtypid = t.oid
          WHERE t.typname = 'tipo_unidade'
-         ORDER BY e.enumsortorder`
+         ORDER BY e.enumsortorder`,
       );
-      
+
       if (tipoUnidadeEnum.length === 0) {
         console.log('Nenhum valor encontrado para o enum tipo_unidade');
       } else {
@@ -27,7 +27,10 @@ async function checkEnumValues() {
         tipoUnidadeEnum.forEach((v: any) => console.log(`- ${v.enumlabel}`));
       }
     } catch (error) {
-      console.error('Erro ao verificar valores do enum tipo_unidade:', error.message);
+      console.error(
+        'Erro ao verificar valores do enum tipo_unidade:',
+        error.message,
+      );
     }
 
     // Verificar valores do enum status_unidade
@@ -38,9 +41,9 @@ async function checkEnumValues() {
          FROM pg_enum e
          JOIN pg_type t ON e.enumtypid = t.oid
          WHERE t.typname = 'status_unidade'
-         ORDER BY e.enumsortorder`
+         ORDER BY e.enumsortorder`,
       );
-      
+
       if (statusUnidadeEnum.length === 0) {
         console.log('Nenhum valor encontrado para o enum status_unidade');
       } else {
@@ -48,7 +51,10 @@ async function checkEnumValues() {
         statusUnidadeEnum.forEach((v: any) => console.log(`- ${v.enumlabel}`));
       }
     } catch (error) {
-      console.error('Erro ao verificar valores do enum status_unidade:', error.message);
+      console.error(
+        'Erro ao verificar valores do enum status_unidade:',
+        error.message,
+      );
     }
 
     // Verificar valores do enum periodicidade_enum
@@ -59,9 +65,9 @@ async function checkEnumValues() {
          FROM pg_enum e
          JOIN pg_type t ON e.enumtypid = t.oid
          WHERE t.typname = 'periodicidade_enum'
-         ORDER BY e.enumsortorder`
+         ORDER BY e.enumsortorder`,
       );
-      
+
       if (periodicidadeEnum.length === 0) {
         console.log('Nenhum valor encontrado para o enum periodicidade_enum');
       } else {
@@ -69,7 +75,10 @@ async function checkEnumValues() {
         periodicidadeEnum.forEach((v: any) => console.log(`- ${v.enumlabel}`));
       }
     } catch (error) {
-      console.error('Erro ao verificar valores do enum periodicidade_enum:', error.message);
+      console.error(
+        'Erro ao verificar valores do enum periodicidade_enum:',
+        error.message,
+      );
     }
 
     // Verificar estrutura da tabela usuario
@@ -79,19 +88,24 @@ async function checkEnumValues() {
         `SELECT column_name, data_type, is_nullable 
          FROM information_schema.columns 
          WHERE table_name = 'usuario'
-         ORDER BY ordinal_position`
+         ORDER BY ordinal_position`,
       );
-      
+
       if (usuarioColumns.length === 0) {
         console.log('Nenhuma coluna encontrada para a tabela usuario');
       } else {
         console.log('Colunas da tabela usuario:');
         usuarioColumns.forEach((c: any) => {
-          console.log(`- ${c.column_name} (${c.data_type}, ${c.is_nullable === 'YES' ? 'nullable' : 'not null'})`);
+          console.log(
+            `- ${c.column_name} (${c.data_type}, ${c.is_nullable === 'YES' ? 'nullable' : 'not null'})`,
+          );
         });
       }
     } catch (error) {
-      console.error('Erro ao verificar estrutura da tabela usuario:', error.message);
+      console.error(
+        'Erro ao verificar estrutura da tabela usuario:',
+        error.message,
+      );
     }
 
     // Verificar se a tabela role existe
@@ -102,23 +116,25 @@ async function checkEnumValues() {
            SELECT FROM information_schema.tables 
            WHERE table_schema = 'public' 
            AND table_name = 'role'
-         ) as exists`
+         ) as exists`,
       );
-      
+
       if (roleExists[0].exists) {
         console.log('Tabela role existe');
-        
+
         // Verificar estrutura da tabela role
         const roleColumns = await AppDataSource.query(
           `SELECT column_name, data_type, is_nullable 
            FROM information_schema.columns 
            WHERE table_name = 'role'
-           ORDER BY ordinal_position`
+           ORDER BY ordinal_position`,
         );
-        
+
         console.log('Colunas da tabela role:');
         roleColumns.forEach((c: any) => {
-          console.log(`- ${c.column_name} (${c.data_type}, ${c.is_nullable === 'YES' ? 'nullable' : 'not null'})`);
+          console.log(
+            `- ${c.column_name} (${c.data_type}, ${c.is_nullable === 'YES' ? 'nullable' : 'not null'})`,
+          );
         });
       } else {
         console.log('Tabela role NÃO existe');
@@ -135,23 +151,25 @@ async function checkEnumValues() {
            SELECT FROM information_schema.tables 
            WHERE table_schema = 'public' 
            AND table_name = 'role'
-         ) as exists`
+         ) as exists`,
       );
-      
+
       if (roleExists[0].exists) {
         console.log('Tabela role existe');
-        
+
         // Verificar estrutura da tabela role
         const roleColumns = await AppDataSource.query(
           `SELECT column_name, data_type, is_nullable 
            FROM information_schema.columns 
            WHERE table_name = 'role'
-           ORDER BY ordinal_position`
+           ORDER BY ordinal_position`,
         );
-        
+
         console.log('Colunas da tabela role:');
         roleColumns.forEach((c: any) => {
-          console.log(`- ${c.column_name} (${c.data_type}, ${c.is_nullable === 'YES' ? 'nullable' : 'not null'})`);
+          console.log(
+            `- ${c.column_name} (${c.data_type}, ${c.is_nullable === 'YES' ? 'nullable' : 'not null'})`,
+          );
         });
       } else {
         console.log('Tabela role NÃO existe');
@@ -159,7 +177,6 @@ async function checkEnumValues() {
     } catch (error) {
       console.error('Erro ao verificar tabela role:', error.message);
     }
-    
   } catch (error) {
     console.error('Erro durante a verificação dos valores dos enums:', error);
     process.exit(1);
@@ -175,7 +192,7 @@ async function checkEnumValues() {
 // Executar o script
 checkEnumValues()
   .then(() => process.exit(0))
-  .catch(error => {
+  .catch((error) => {
     console.error('Erro não tratado:', error);
     process.exit(1);
   });

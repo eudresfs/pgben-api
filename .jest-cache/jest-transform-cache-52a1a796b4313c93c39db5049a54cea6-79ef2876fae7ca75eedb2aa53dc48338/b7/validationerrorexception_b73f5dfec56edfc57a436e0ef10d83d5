@@ -1,0 +1,30 @@
+4848455a46c1fc6a2082cb30353f28d9
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.ValidationErrorException = void 0;
+const common_1 = require("@nestjs/common");
+/**
+ * Exceção lançada quando dados fornecidos não passam na validação.
+ *
+ * Esta exceção padroniza as respostas para erros de validação de dados,
+ * fornecendo informações específicas sobre o campo e valor que falharam.
+ */
+class ValidationErrorException extends common_1.BadRequestException {
+    constructor(field, value, expectedType, additionalInfo) {
+        const message = `Erro de validação no campo '${field}'`;
+        const details = {
+            field,
+            value,
+            expectedType,
+            additionalInfo,
+            message: additionalInfo || `Valor '${value}' é inválido para o campo '${field}'${expectedType ? ` (esperado: ${expectedType})` : ''}`
+        };
+        super({
+            message,
+            code: 'VALIDATION_ERROR',
+            details
+        });
+    }
+}
+exports.ValidationErrorException = ValidationErrorException;
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXHNoYXJlZFxcZXhjZXB0aW9uc1xcdmFsaWRhdGlvbi1lcnJvci5leGNlcHRpb24udHMiLCJtYXBwaW5ncyI6Ijs7O0FBQUEsMkNBQXFEO0FBRXJEOzs7OztHQUtHO0FBQ0gsTUFBYSx3QkFBeUIsU0FBUSw0QkFBbUI7SUFDL0QsWUFDRSxLQUFhLEVBQ2IsS0FBVSxFQUNWLFlBQXFCLEVBQ3JCLGNBQXVCO1FBRXZCLE1BQU0sT0FBTyxHQUFHLCtCQUErQixLQUFLLEdBQUcsQ0FBQztRQUN4RCxNQUFNLE9BQU8sR0FBRztZQUNkLEtBQUs7WUFDTCxLQUFLO1lBQ0wsWUFBWTtZQUNaLGNBQWM7WUFDZCxPQUFPLEVBQUUsY0FBYyxJQUFJLFVBQVUsS0FBSyw4QkFBOEIsS0FBSyxJQUFJLFlBQVksQ0FBQyxDQUFDLENBQUMsZUFBZSxZQUFZLEdBQUcsQ0FBQyxDQUFDLENBQUMsRUFBRSxFQUFFO1NBQ3RJLENBQUM7UUFFRixLQUFLLENBQUM7WUFDSixPQUFPO1lBQ1AsSUFBSSxFQUFFLGtCQUFrQjtZQUN4QixPQUFPO1NBQ1IsQ0FBQyxDQUFDO0lBQ0wsQ0FBQztDQUNGO0FBdEJELDREQXNCQyIsIm5hbWVzIjpbXSwic291cmNlcyI6WyJDOlxcVXNlcnNcXGV1ZHJlXFxPbmVEcml2ZVxcRGVza3RvcFxcUHJvamV0b3NcXHBnYmVuXFxwZ2Jlbi1zZXJ2ZXJcXHNyY1xcc2hhcmVkXFxleGNlcHRpb25zXFx2YWxpZGF0aW9uLWVycm9yLmV4Y2VwdGlvbi50cyJdLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQgeyBCYWRSZXF1ZXN0RXhjZXB0aW9uIH0gZnJvbSAnQG5lc3Rqcy9jb21tb24nO1xuXG4vKipcbiAqIEV4Y2XDp8OjbyBsYW7Dp2FkYSBxdWFuZG8gZGFkb3MgZm9ybmVjaWRvcyBuw6NvIHBhc3NhbSBuYSB2YWxpZGHDp8Ojby5cbiAqIFxuICogRXN0YSBleGNlw6fDo28gcGFkcm9uaXphIGFzIHJlc3Bvc3RhcyBwYXJhIGVycm9zIGRlIHZhbGlkYcOnw6NvIGRlIGRhZG9zLFxuICogZm9ybmVjZW5kbyBpbmZvcm1hw6fDtWVzIGVzcGVjw61maWNhcyBzb2JyZSBvIGNhbXBvIGUgdmFsb3IgcXVlIGZhbGhhcmFtLlxuICovXG5leHBvcnQgY2xhc3MgVmFsaWRhdGlvbkVycm9yRXhjZXB0aW9uIGV4dGVuZHMgQmFkUmVxdWVzdEV4Y2VwdGlvbiB7XG4gIGNvbnN0cnVjdG9yKFxuICAgIGZpZWxkOiBzdHJpbmcsXG4gICAgdmFsdWU6IGFueSxcbiAgICBleHBlY3RlZFR5cGU/OiBzdHJpbmcsXG4gICAgYWRkaXRpb25hbEluZm8/OiBzdHJpbmdcbiAgKSB7XG4gICAgY29uc3QgbWVzc2FnZSA9IGBFcnJvIGRlIHZhbGlkYcOnw6NvIG5vIGNhbXBvICcke2ZpZWxkfSdgO1xuICAgIGNvbnN0IGRldGFpbHMgPSB7XG4gICAgICBmaWVsZCxcbiAgICAgIHZhbHVlLFxuICAgICAgZXhwZWN0ZWRUeXBlLFxuICAgICAgYWRkaXRpb25hbEluZm8sXG4gICAgICBtZXNzYWdlOiBhZGRpdGlvbmFsSW5mbyB8fCBgVmFsb3IgJyR7dmFsdWV9JyDDqSBpbnbDoWxpZG8gcGFyYSBvIGNhbXBvICcke2ZpZWxkfScke2V4cGVjdGVkVHlwZSA/IGAgKGVzcGVyYWRvOiAke2V4cGVjdGVkVHlwZX0pYCA6ICcnfWBcbiAgICB9O1xuXG4gICAgc3VwZXIoe1xuICAgICAgbWVzc2FnZSxcbiAgICAgIGNvZGU6ICdWQUxJREFUSU9OX0VSUk9SJyxcbiAgICAgIGRldGFpbHNcbiAgICB9KTtcbiAgfVxufSJdLCJ2ZXJzaW9uIjozfQ==

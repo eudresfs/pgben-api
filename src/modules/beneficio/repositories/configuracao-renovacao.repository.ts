@@ -18,7 +18,9 @@ export class ConfiguracaoRenovacaoRepository {
    * @param data Dados da configuração
    * @returns Configuração criada
    */
-  async create(data: Partial<ConfiguracaoRenovacao>): Promise<ConfiguracaoRenovacao> {
+  async create(
+    data: Partial<ConfiguracaoRenovacao>,
+  ): Promise<ConfiguracaoRenovacao> {
     const configuracao = this.repository.create(data);
     return this.repository.save(configuracao);
   }
@@ -50,7 +52,9 @@ export class ConfiguracaoRenovacaoRepository {
    * @param tipoBeneficioId ID do tipo de benefício
    * @returns Configuração encontrada ou null
    */
-  async findByTipoBeneficio(tipoBeneficioId: string): Promise<ConfiguracaoRenovacao | null> {
+  async findByTipoBeneficio(
+    tipoBeneficioId: string,
+  ): Promise<ConfiguracaoRenovacao | null> {
     return this.repository.findOne({
       where: { tipo_beneficio_id: tipoBeneficioId },
       relations: ['tipoBeneficio'],
@@ -74,11 +78,16 @@ export class ConfiguracaoRenovacaoRepository {
    * @param data Dados para atualização
    * @returns Configuração atualizada
    */
-  async update(id: string, data: Partial<ConfiguracaoRenovacao>): Promise<ConfiguracaoRenovacao> {
+  async update(
+    id: string,
+    data: Partial<ConfiguracaoRenovacao>,
+  ): Promise<ConfiguracaoRenovacao> {
     await this.repository.update(id, data);
     const configuracao = await this.findById(id);
     if (!configuracao) {
-      throw new NotFoundException(`Configuração de renovação com ID ${id} não encontrada`);
+      throw new NotFoundException(
+        `Configuração de renovação com ID ${id} não encontrada`,
+      );
     }
     return configuracao;
   }

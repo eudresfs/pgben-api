@@ -18,7 +18,7 @@ import { AuditEvent } from '../interfaces/audit-event.interface';
  *
  * Este interceptor pode ser aplicado a controladores ou métodos específicos
  * para registrar automaticamente operações críticas no sistema de auditoria.
- * 
+ *
  * Implementação simplificada para o MVP com foco em rastreabilidade básica.
  *
  * Exemplo de uso:

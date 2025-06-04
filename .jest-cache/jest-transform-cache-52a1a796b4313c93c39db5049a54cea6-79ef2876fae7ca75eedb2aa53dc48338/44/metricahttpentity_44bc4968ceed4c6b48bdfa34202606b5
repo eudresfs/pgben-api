@@ -1,0 +1,119 @@
+3bc86a27af39095d27d07996d2145109
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var _a, _b;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.MetricaHttp = void 0;
+const typeorm_1 = require("typeorm");
+const class_validator_1 = require("class-validator");
+/**
+ * Entidade que representa métricas de requisições HTTP
+ *
+ * Esta entidade armazena informações sobre requisições HTTP realizadas no sistema,
+ * incluindo endpoint, método, código de status, duração e informações do usuário.
+ */
+let MetricaHttp = class MetricaHttp {
+    id;
+    created_at;
+    endpoint;
+    metodo;
+    codigo_status;
+    duracao_ms;
+    tamanho_resposta_bytes;
+    ip_origem;
+    usuario_id;
+    perfil_usuario;
+    user_agent;
+    detalhes;
+};
+exports.MetricaHttp = MetricaHttp;
+__decorate([
+    (0, typeorm_1.PrimaryGeneratedColumn)('uuid'),
+    __metadata("design:type", String)
+], MetricaHttp.prototype, "id", void 0);
+__decorate([
+    (0, typeorm_1.CreateDateColumn)({ name: 'created_at' }),
+    (0, typeorm_1.Index)('idx_metricas_http_timestamp'),
+    __metadata("design:type", typeof (_a = typeof Date !== "undefined" && Date) === "function" ? _a : Object)
+], MetricaHttp.prototype, "created_at", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ length: 255 }),
+    (0, typeorm_1.Index)('idx_metricas_http_endpoint'),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Endpoint é obrigatório' }),
+    (0, class_validator_1.IsString)({ message: 'Endpoint deve ser uma string' }),
+    (0, class_validator_1.MaxLength)(255, { message: 'Endpoint deve ter no máximo 255 caracteres' }),
+    __metadata("design:type", String)
+], MetricaHttp.prototype, "endpoint", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ length: 10 }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Método HTTP é obrigatório' }),
+    (0, class_validator_1.IsString)({ message: 'Método deve ser uma string' }),
+    (0, class_validator_1.MaxLength)(10, { message: 'Método deve ter no máximo 10 caracteres' }),
+    __metadata("design:type", String)
+], MetricaHttp.prototype, "metodo", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'integer' }),
+    (0, typeorm_1.Index)('idx_metricas_http_status'),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Código de status é obrigatório' }),
+    (0, class_validator_1.IsNumber)({}, { message: 'Código de status deve ser um número' }),
+    (0, class_validator_1.Min)(100, { message: 'Código de status deve ser maior ou igual a 100' }),
+    (0, class_validator_1.Max)(599, { message: 'Código de status deve ser menor ou igual a 599' }),
+    __metadata("design:type", Number)
+], MetricaHttp.prototype, "codigo_status", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'integer' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Duração é obrigatória' }),
+    (0, class_validator_1.IsNumber)({}, { message: 'Duração deve ser um número' }),
+    (0, class_validator_1.Min)(0, { message: 'Duração não pode ser negativa' }),
+    __metadata("design:type", Number)
+], MetricaHttp.prototype, "duracao_ms", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'integer', nullable: true }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNumber)({}, { message: 'Tamanho da resposta deve ser um número' }),
+    (0, class_validator_1.Min)(0, { message: 'Tamanho da resposta não pode ser negativo' }),
+    __metadata("design:type", Number)
+], MetricaHttp.prototype, "tamanho_resposta_bytes", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ length: 45, nullable: true }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsIP)(undefined, { message: 'IP de origem inválido' }),
+    __metadata("design:type", String)
+], MetricaHttp.prototype, "ip_origem", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'uuid', nullable: true }),
+    (0, typeorm_1.Index)('idx_metricas_http_usuario'),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsUUID)('4', { message: 'ID do usuário inválido' }),
+    __metadata("design:type", String)
+], MetricaHttp.prototype, "usuario_id", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ length: 50, nullable: true }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'Perfil do usuário deve ser uma string' }),
+    (0, class_validator_1.MaxLength)(50, { message: 'Perfil do usuário deve ter no máximo 50 caracteres' }),
+    __metadata("design:type", String)
+], MetricaHttp.prototype, "perfil_usuario", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'text', nullable: true }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'User agent deve ser uma string' }),
+    __metadata("design:type", String)
+], MetricaHttp.prototype, "user_agent", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'jsonb', nullable: true }),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", typeof (_b = typeof Record !== "undefined" && Record) === "function" ? _b : Object)
+], MetricaHttp.prototype, "detalhes", void 0);
+exports.MetricaHttp = MetricaHttp = __decorate([
+    (0, typeorm_1.Entity)('metricas_http')
+], MetricaHttp);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXGVudGl0aWVzXFxtZXRyaWNhLWh0dHAuZW50aXR5LnRzIiwibWFwcGluZ3MiOiI7Ozs7Ozs7Ozs7Ozs7QUFBQSxxQ0FBMEY7QUFDMUYscURBQWdIO0FBRWhIOzs7OztHQUtHO0FBRUksSUFBTSxXQUFXLEdBQWpCLE1BQU0sV0FBVztJQUV0QixFQUFFLENBQVM7SUFJWCxVQUFVLENBQU87SUFPakIsUUFBUSxDQUFTO0lBTWpCLE1BQU0sQ0FBUztJQVFmLGFBQWEsQ0FBUztJQU10QixVQUFVLENBQVM7SUFNbkIsc0JBQXNCLENBQVM7SUFLL0IsU0FBUyxDQUFTO0lBTWxCLFVBQVUsQ0FBUztJQU1uQixjQUFjLENBQVM7SUFLdkIsVUFBVSxDQUFTO0lBSW5CLFFBQVEsQ0FBc0I7Q0FDL0IsQ0FBQTtBQWxFWSxrQ0FBVztBQUV0QjtJQURDLElBQUEsZ0NBQXNCLEVBQUMsTUFBTSxDQUFDOzt1Q0FDcEI7QUFJWDtJQUZDLElBQUEsMEJBQWdCLEVBQUMsRUFBRSxJQUFJLEVBQUUsWUFBWSxFQUFFLENBQUM7SUFDeEMsSUFBQSxlQUFLLEVBQUMsNkJBQTZCLENBQUM7a0RBQ3pCLElBQUksb0JBQUosSUFBSTsrQ0FBQztBQU9qQjtJQUxDLElBQUEsZ0JBQU0sRUFBQyxFQUFFLE1BQU0sRUFBRSxHQUFHLEVBQUUsQ0FBQztJQUN2QixJQUFBLGVBQUssRUFBQyw0QkFBNEIsQ0FBQztJQUNuQyxJQUFBLDRCQUFVLEVBQUMsRUFBRSxPQUFPLEVBQUUsd0JBQXdCLEVBQUUsQ0FBQztJQUNqRCxJQUFBLDBCQUFRLEVBQUMsRUFBRSxPQUFPLEVBQUUsOEJBQThCLEVBQUUsQ0FBQztJQUNyRCxJQUFBLDJCQUFTLEVBQUMsR0FBRyxFQUFFLEVBQUUsT0FBTyxFQUFFLDRDQUE0QyxFQUFFLENBQUM7OzZDQUN6RDtBQU1qQjtJQUpDLElBQUEsZ0JBQU0sRUFBQyxFQUFFLE1BQU0s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QU0sRUFBQyxFQUFFLElBQUksRUFBRSxPQUFPLEVBQUUsUUFBUSxFQUFFLElBQUksRUFBRSxDQUFDO0lBQ3pDLElBQUEsNEJBQVUsR0FBRTtrREFDSCxNQUFNLG9CQUFOLE1BQU07NkNBQWM7c0JBakVuQixXQUFXO0lBRHZCLElBQUEsZ0JBQU0sRUFBQyxlQUFlLENBQUM7R0FDWCxXQUFXLENBa0V2QiIsIm5hbWVzIjpbXSwic291cmNlcyI6WyJDOlxcVXNlcnNcXGV1ZHJlXFxPbmVEcml2ZVxcRGVza3RvcFxcUHJvamV0b3NcXHBnYmVuXFxwZ2Jlbi1zZXJ2ZXJcXHNyY1xcZW50aXRpZXNcXG1ldHJpY2EtaHR0cC5lbnRpdHkudHMiXSwic291cmNlc0NvbnRlbnQiOlsiaW1wb3J0IHsgRW50aXR5LCBQcmltYXJ5R2VuZXJhdGVkQ29sdW1uLCBDb2x1bW4sIEluZGV4LCBDcmVhdGVEYXRlQ29sdW1uIH0gZnJvbSAndHlwZW9ybSc7XG5pbXBvcnQgeyBJc05vdEVtcHR5LCBJc09wdGlvbmFsLCBJc1VVSUQsIElzTnVtYmVyLCBNaW4sIE1heCwgSXNTdHJpbmcsIE1heExlbmd0aCwgSXNJUCB9IGZyb20gJ2NsYXNzLXZhbGlkYXRvcic7XG5cbi8qKlxuICogRW50aWRhZGUgcXVlIHJlcHJlc2VudGEgbcOpdHJpY2FzIGRlIHJlcXVpc2nDp8O1ZXMgSFRUUFxuICogXG4gKiBFc3RhIGVudGlkYWRlIGFybWF6ZW5hIGluZm9ybWHDp8O1ZXMgc29icmUgcmVxdWlzacOnw7VlcyBIVFRQIHJlYWxpemFkYXMgbm8gc2lzdGVtYSxcbiAqIGluY2x1aW5kbyBlbmRwb2ludCwgbcOpdG9kbywgY8OzZGlnbyBkZSBzdGF0dXMsIGR1cmHDp8OjbyBlIGluZm9ybWHDp8O1ZXMgZG8gdXN1w6FyaW8uXG4gKi9cbkBFbnRpdHkoJ21ldHJpY2FzX2h0dHAnKVxuZXhwb3J0IGNsYXNzIE1ldHJpY2FIdHRwIHtcbiAgQFByaW1hcnlHZW5lcmF0ZWRDb2x1bW4oJ3V1aWQnKVxuICBpZDogc3RyaW5nO1xuXG4gIEBDcmVhdGVEYXRlQ29sdW1uKHsgbmFtZTogJ2NyZWF0ZWRfYXQnIH0pXG4gIEBJbmRleCgnaWR4X21ldHJpY2FzX2h0dHBfdGltZXN0YW1wJylcbiAgY3JlYXRlZF9hdDogRGF0ZTtcblxuICBAQ29sdW1uKHsgbGVuZ3RoOiAyNTUgfSlcbiAgQEluZGV4KCdpZHhfbWV0cmljYXNfaHR0cF9lbmRwb2ludCcpXG4gIEBJc05vdEVtcHR5KHsgbWVzc2FnZTogJ0VuZHBvaW50IMOpIG9icmlnYXTDs3JpbycgfSlcbiAgQElzU3RyaW5nKHsgbWVzc2FnZTogJ0VuZHBvaW50IGRldmUgc2VyIHVtYSBzdHJpbmcnIH0pXG4gIEBNYXhMZW5ndGgoMjU1LCB7IG1lc3NhZ2U6ICdFbmRwb2ludCBkZXZlIHRlciBubyBtw6F4aW1vIDI1NSBjYXJhY3RlcmVzJyB9KVxuICBlbmRwb2ludDogc3RyaW5nO1xuXG4gIEBDb2x1bW4oeyBsZW5ndGg6IDEwIH0pXG4gIEBJc05vdEVtcHR5KHsgbWVzc2FnZTogJ03DqXRvZG8gSFRUUCDDqSBvYnJpZ2F0w7NyaW8nIH0pXG4gIEBJc1N0cmluZyh7IG1lc3NhZ2U6ICdNw6l0b2RvIGRldmUgc2VyIHVtYSBzdHJpbmcnIH0pXG4gIEBNYXhMZW5ndGgoMTAsIHsgbWVzc2FnZTogJ03DqXRvZG8gZGV2ZSB0ZXIgbm8gbcOheGltbyAxMCBjYXJhY3RlcmVzJyB9KVxuICBtZXRvZG86IHN0cmluZztcblxuICBAQ29sdW1uKHsgdHlwZTogJ2ludGVnZXInIH0pXG4gIEBJbmRleCgnaWR4X21ldHJpY2FzX2h0dHBfc3RhdHVzJylcbiAgQElzTm90RW1wdHkoeyBtZXNzYWdlOiAnQ8OzZGlnbyBkZSBzdGF0dXMgw6kgb2JyaWdhdMOzcmlvJyB9KVxuICBASXNOdW1iZXIoe30sIHsgbWVzc2FnZTogJ0PDs2RpZ28gZGUgc3RhdHVzIGRldmUgc2VyIHVtIG7Dum1lcm8nIH0pXG4gIEBNaW4oMTAwLCB7IG1lc3NhZ2U6ICdDw7NkaWdvIGRlIHN0YXR1cyBkZXZlIHNlciBtYWlvciBvdSBpZ3VhbCBhIDEwMCcgfSlcbiAgQE1heCg1OTksIHsgbWVzc2FnZTogJ0PDs2RpZ28gZGUgc3RhdHVzIGRldmUgc2VyIG1lbm9yIG91IGlndWFsIGEgNTk5JyB9KVxuICBjb2RpZ29fc3RhdHVzOiBudW1iZXI7XG5cbiAgQENvbHVtbih7IHR5cGU6ICdpbnRlZ2VyJyB9KVxuICBASXNOb3RFbXB0eSh7IG1lc3NhZ2U6ICdEdXJhw6fDo28gw6kgb2JyaWdhdMOzcmlhJyB9KVxuICBASXNOdW1iZXIoe30sIHsgbWVzc2FnZTogJ0R1cmHDp8OjbyBkZXZlIHNlciB1bSBuw7ptZXJvJyB9KVxuICBATWluKDAsIHsgbWVzc2FnZTogJ0R1cmHDp8OjbyBuw6NvIHBvZGUgc2VyIG5lZ2F0aXZhJyB9KVxuICBkdXJhY2FvX21zOiBudW1iZXI7XG5cbiAgQENvbHVtbih7IHR5cGU6ICdpbnRlZ2VyJywgbnVsbGFibGU6IHRydWUgfSlcbiAgQElzT3B0aW9uYWwoKVxuICBASXNOdW1iZXIoe30sIHsgbWVzc2FnZTogJ1RhbWFuaG8gZGEgcmVzcG9zdGEgZGV2ZSBzZXIgdW0gbsO6bWVybycgfSlcbiAgQE1pbigwLCB7IG1lc3NhZ2U6ICdUYW1hbmhvIGRhIHJlc3Bvc3RhIG7Do28gcG9kZSBzZXIgbmVnYXRpdm8nIH0pXG4gIHRhbWFuaG9fcmVzcG9zdGFfYnl0ZXM6IG51bWJlcjtcblxuICBAQ29sdW1uKHsgbGVuZ3RoOiA0NSwgbnVsbGFibGU6IHRydWUgfSlcbiAgQElzT3B0aW9uYWwoKVxuICBASXNJUCh1bmRlZmluZWQsIHsgbWVzc2FnZTogJ0lQIGRlIG9yaWdlbSBpbnbDoWxpZG8nIH0pXG4gIGlwX29yaWdlbTogc3RyaW5nO1xuXG4gIEBDb2x1bW4oeyB0eXBlOiAndXVpZCcsIG51bGxhYmxlOiB0cnVlIH0pXG4gIEBJbmRleCgnaWR4X21ldHJpY2FzX2h0dHBfdXN1YXJpbycpXG4gIEBJc09wdGlvbmFsKClcbiAgQElzVVVJRCgnNCcsIHsgbWVzc2FnZTogJ0lEIGRvIHVzdcOhcmlvIGludsOhbGlkbycgfSlcbiAgdXN1YXJpb19pZDogc3RyaW5nO1xuXG4gIEBDb2x1bW4oeyBsZW5ndGg6IDUwLCBudWxsYWJsZTogdHJ1ZSB9KVxuICBASXNPcHRpb25hbCgpXG4gIEBJc1N0cmluZyh7IG1lc3NhZ2U6ICdQZXJmaWwgZG8gdXN1w6FyaW8gZGV2ZSBzZXIgdW1hIHN0cmluZycgfSlcbiAgQE1heExlbmd0aCg1MCwgeyBtZXNzYWdlOiAnUGVyZmlsIGRvIHVzdcOhcmlvIGRldmUgdGVyIG5vIG3DoXhpbW8gNTAgY2FyYWN0ZXJlcycgfSlcbiAgcGVyZmlsX3VzdWFyaW86IHN0cmluZztcblxuICBAQ29sdW1uKHsgdHlwZTogJ3RleHQnLCBudWxsYWJsZTogdHJ1ZSB9KVxuICBASXNPcHRpb25hbCgpXG4gIEBJc1N0cmluZyh7IG1lc3NhZ2U6ICdVc2VyIGFnZW50IGRldmUgc2VyIHVtYSBzdHJpbmcnIH0pXG4gIHVzZXJfYWdlbnQ6IHN0cmluZztcblxuICBAQ29sdW1uKHsgdHlwZTogJ2pzb25iJywgbnVsbGFibGU6IHRydWUgfSlcbiAgQElzT3B0aW9uYWwoKVxuICBkZXRhbGhlczogUmVjb3JkPHN0cmluZywgYW55Pjtcbn1cbiJdLCJ2ZXJzaW9uIjozfQ==

@@ -21,9 +21,15 @@ describe('PixValidator', () => {
     });
 
     it('deve validar email como chave PIX', () => {
-      expect(validator.validarChavePix('usuario@dominio.com.br', 'EMAIL')).toBeTruthy();
-      expect(validator.validarChavePix('nome.sobrenome@empresa.com', 'EMAIL')).toBeTruthy();
-      expect(validator.validarChavePix('usuario.123@dominio.net', 'EMAIL')).toBeTruthy();
+      expect(
+        validator.validarChavePix('usuario@dominio.com.br', 'EMAIL'),
+      ).toBeTruthy();
+      expect(
+        validator.validarChavePix('nome.sobrenome@empresa.com', 'EMAIL'),
+      ).toBeTruthy();
+      expect(
+        validator.validarChavePix('usuario.123@dominio.net', 'EMAIL'),
+      ).toBeTruthy();
     });
 
     it('deve rejeitar email inválido como chave PIX', () => {
@@ -31,30 +37,57 @@ describe('PixValidator', () => {
       expect(validator.validarChavePix('@dominio.com', 'EMAIL')).toBeFalsy(); // Usuário ausente
       expect(validator.validarChavePix('usuario@dominio', 'EMAIL')).toBeFalsy(); // TLD ausente
       expect(validator.validarChavePix('usuario@.com', 'EMAIL')).toBeFalsy(); // Domínio inválido
-      expect(validator.validarChavePix('usuário@dominio.com', 'EMAIL')).toBeFalsy(); // Caracteres especiais no usuário
+      expect(
+        validator.validarChavePix('usuário@dominio.com', 'EMAIL'),
+      ).toBeFalsy(); // Caracteres especiais no usuário
     });
 
     it('deve validar telefone como chave PIX', () => {
-      expect(validator.validarChavePix('+5584999999999', 'TELEFONE')).toBeTruthy();
-      expect(validator.validarChavePix('+55 84 99999-9999', 'TELEFONE')).toBeTruthy();
-      expect(validator.validarChavePix('(84) 99999-9999', 'TELEFONE')).toBeTruthy();
+      expect(
+        validator.validarChavePix('+5584999999999', 'TELEFONE'),
+      ).toBeTruthy();
+      expect(
+        validator.validarChavePix('+55 84 99999-9999', 'TELEFONE'),
+      ).toBeTruthy();
+      expect(
+        validator.validarChavePix('(84) 99999-9999', 'TELEFONE'),
+      ).toBeTruthy();
       expect(validator.validarChavePix('84999999999', 'TELEFONE')).toBeTruthy();
     });
 
     it('deve rejeitar telefone inválido como chave PIX', () => {
       expect(validator.validarChavePix('+558499', 'TELEFONE')).toBeFalsy(); // Número incompleto
-      expect(validator.validarChavePix('+558499999999999', 'TELEFONE')).toBeFalsy(); // Número muito longo
+      expect(
+        validator.validarChavePix('+558499999999999', 'TELEFONE'),
+      ).toBeFalsy(); // Número muito longo
       expect(validator.validarChavePix('abc-def-ghij', 'TELEFONE')).toBeFalsy(); // Formato incorreto
     });
 
     it('deve validar chave aleatória como chave PIX', () => {
-      expect(validator.validarChavePix('123e4567-e89b-12d3-a456-426655440000', 'ALEATORIA')).toBeTruthy(); // UUID v4
-      expect(validator.validarChavePix('123e4567e89b12d3a456426655440000', 'ALEATORIA')).toBeTruthy(); // UUID sem hifens
+      expect(
+        validator.validarChavePix(
+          '123e4567-e89b-12d3-a456-426655440000',
+          'ALEATORIA',
+        ),
+      ).toBeTruthy(); // UUID v4
+      expect(
+        validator.validarChavePix(
+          '123e4567e89b12d3a456426655440000',
+          'ALEATORIA',
+        ),
+      ).toBeTruthy(); // UUID sem hifens
     });
 
     it('deve rejeitar chave aleatória inválida como chave PIX', () => {
-      expect(validator.validarChavePix('123e4567-e89b-12d3-a456', 'ALEATORIA')).toBeFalsy(); // UUID incompleto
-      expect(validator.validarChavePix('123e4567-e89b-12d3-a456-42665544000G', 'ALEATORIA')).toBeFalsy(); // Caracteres inválidos
+      expect(
+        validator.validarChavePix('123e4567-e89b-12d3-a456', 'ALEATORIA'),
+      ).toBeFalsy(); // UUID incompleto
+      expect(
+        validator.validarChavePix(
+          '123e4567-e89b-12d3-a456-42665544000G',
+          'ALEATORIA',
+        ),
+      ).toBeFalsy(); // Caracteres inválidos
     });
 
     it('deve rejeitar tipo de chave PIX desconhecido', () => {
@@ -100,7 +133,9 @@ describe('PixValidator', () => {
   describe('validarEmail', () => {
     it('deve validar emails com formato correto', () => {
       expect(validator.validarEmail('usuario@dominio.com')).toBeTruthy();
-      expect(validator.validarEmail('usuario.nome@dominio.com.br')).toBeTruthy();
+      expect(
+        validator.validarEmail('usuario.nome@dominio.com.br'),
+      ).toBeTruthy();
       expect(validator.validarEmail('usuario_nome@dominio.net')).toBeTruthy();
       expect(validator.validarEmail('usuario123@dominio.io')).toBeTruthy();
       expect(validator.validarEmail('u@d.co')).toBeTruthy(); // Email curto mas válido
@@ -137,16 +172,28 @@ describe('PixValidator', () => {
 
   describe('validarChaveAleatoria', () => {
     it('deve validar UUIDs com formato correto', () => {
-      expect(validator.validarChaveAleatoria('123e4567-e89b-12d3-a456-426655440000')).toBeTruthy(); // Com hifens
-      expect(validator.validarChaveAleatoria('123e4567e89b12d3a456426655440000')).toBeTruthy(); // Sem hifens
+      expect(
+        validator.validarChaveAleatoria('123e4567-e89b-12d3-a456-426655440000'),
+      ).toBeTruthy(); // Com hifens
+      expect(
+        validator.validarChaveAleatoria('123e4567e89b12d3a456426655440000'),
+      ).toBeTruthy(); // Sem hifens
     });
 
     it('deve rejeitar strings que não são UUIDs válidos', () => {
       expect(validator.validarChaveAleatoria('')).toBeFalsy();
       expect(validator.validarChaveAleatoria('123')).toBeFalsy(); // Muito curto
-      expect(validator.validarChaveAleatoria('123e4567-e89b-12d3-a456')).toBeFalsy(); // Incompleto
-      expect(validator.validarChaveAleatoria('123e4567-e89b-12d3-a456-42665544000G')).toBeFalsy(); // Caracteres inválidos
-      expect(validator.validarChaveAleatoria('123e4567-e89b-12d3-a456-4266554400000')).toBeFalsy(); // Muito longo
+      expect(
+        validator.validarChaveAleatoria('123e4567-e89b-12d3-a456'),
+      ).toBeFalsy(); // Incompleto
+      expect(
+        validator.validarChaveAleatoria('123e4567-e89b-12d3-a456-42665544000G'),
+      ).toBeFalsy(); // Caracteres inválidos
+      expect(
+        validator.validarChaveAleatoria(
+          '123e4567-e89b-12d3-a456-4266554400000',
+        ),
+      ).toBeFalsy(); // Muito longo
     });
   });
 });

@@ -55,12 +55,12 @@ describe('TemplateService', () => {
         conteudo: '<html><body>Bem-vindo, {{nome}}!</body></html>',
         ativo: true,
       };
-      
+
       jest.spyOn(repository, 'findByCodigo').mockResolvedValue(templateMock);
-      
+
       // Act
       const resultado = await service.buscarPorCodigo('email-bem-vindo');
-      
+
       // Assert
       expect(resultado).toEqual(templateMock);
       expect(repository.findByCodigo).toHaveBeenCalledWith('email-bem-vindo');
@@ -69,13 +69,15 @@ describe('TemplateService', () => {
     it('deve lançar NotFoundException quando o template não for encontrado', async () => {
       // Arrange
       jest.spyOn(repository, 'findByCodigo').mockResolvedValue(null);
-      
+
       // Act & Assert
-      await expect(service.buscarPorCodigo('template-inexistente'))
-        .rejects
-        .toThrow(NotFoundException);
-      
-      expect(repository.findByCodigo).toHaveBeenCalledWith('template-inexistente');
+      await expect(
+        service.buscarPorCodigo('template-inexistente'),
+      ).rejects.toThrow(NotFoundException);
+
+      expect(repository.findByCodigo).toHaveBeenCalledWith(
+        'template-inexistente',
+      );
     });
   });
 
@@ -102,12 +104,12 @@ describe('TemplateService', () => {
           ativo: true,
         },
       ];
-      
+
       jest.spyOn(repository, 'findAll').mockResolvedValue(templatesMock);
-      
+
       // Act
       const resultado = await service.buscarTodos();
-      
+
       // Assert
       expect(resultado).toEqual(templatesMock);
       expect(repository.findAll).toHaveBeenCalled();
@@ -128,12 +130,12 @@ describe('TemplateService', () => {
           ativo: true,
         },
       ];
-      
+
       jest.spyOn(repository, 'findByTipo').mockResolvedValue(templatesMock);
-      
+
       // Act
       const resultado = await service.buscarTodos(tipo);
-      
+
       // Assert
       expect(resultado).toEqual(templatesMock);
       expect(repository.findByTipo).toHaveBeenCalledWith(tipo);
@@ -156,12 +158,12 @@ describe('TemplateService', () => {
           ativo: true,
         },
       ];
-      
+
       jest.spyOn(repository, 'findByTipo').mockResolvedValue(templatesMock);
-      
+
       // Act
       const resultado = await service.buscarPorTipo(tipo);
-      
+
       // Assert
       expect(resultado).toEqual(templatesMock);
       expect(repository.findByTipo).toHaveBeenCalledWith(tipo);
@@ -176,28 +178,31 @@ describe('TemplateService', () => {
         nome: 'Novo Template',
         descricao: 'Descrição do novo template',
         tipo: TemplateTipoEnum.EMAIL,
-        conteudo: '<html><body>Conteúdo do template: {{variavel}}</body></html>',
+        conteudo:
+          '<html><body>Conteúdo do template: {{variavel}}</body></html>',
       };
-      
+
       const templateMock = {
         id: '3',
         ...dto,
         ativo: true,
       };
-      
+
       jest.spyOn(repository, 'findByCodigo').mockResolvedValue(null);
       jest.spyOn(repository, 'save').mockResolvedValue(templateMock);
-      
+
       // Act
       const resultado = await service.criar(dto);
-      
+
       // Assert
       expect(resultado).toEqual(templateMock);
       expect(repository.findByCodigo).toHaveBeenCalledWith('novo-template');
-      expect(repository.save).toHaveBeenCalledWith(expect.objectContaining({
-        ...dto,
-        ativo: true,
-      }));
+      expect(repository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ...dto,
+          ativo: true,
+        }),
+      );
     });
 
     it('deve lançar BadRequestException ao tentar criar um template com código já existente', async () => {
@@ -209,21 +214,23 @@ describe('TemplateService', () => {
         tipo: TemplateTipoEnum.EMAIL,
         conteudo: '<html><body>Conteúdo</body></html>',
       };
-      
+
       const templateExistente = {
         id: '4',
         ...dto,
         ativo: true,
       };
-      
-      jest.spyOn(repository, 'findByCodigo').mockResolvedValue(templateExistente);
-      
+
+      jest
+        .spyOn(repository, 'findByCodigo')
+        .mockResolvedValue(templateExistente);
+
       // Act & Assert
-      await expect(service.criar(dto))
-        .rejects
-        .toThrow(BadRequestException);
-      
-      expect(repository.findByCodigo).toHaveBeenCalledWith('template-existente');
+      await expect(service.criar(dto)).rejects.toThrow(BadRequestException);
+
+      expect(repository.findByCodigo).toHaveBeenCalledWith(
+        'template-existente',
+      );
       expect(repository.save).not.toHaveBeenCalled();
     });
 
@@ -236,14 +243,12 @@ describe('TemplateService', () => {
         tipo: TemplateTipoEnum.EMAIL,
         conteudo: '<html><body>{{#each items}}</body></html>', // Template inválido (tag não fechada)
       };
-      
+
       jest.spyOn(repository, 'findByCodigo').mockResolvedValue(null);
-      
+
       // Act & Assert
-      await expect(service.criar(dto))
-        .rejects
-        .toThrow(BadRequestException);
-      
+      await expect(service.criar(dto)).rejects.toThrow(BadRequestException);
+
       expect(repository.findByCodigo).toHaveBeenCalledWith('template-invalido');
       expect(repository.save).not.toHaveBeenCalled();
     });
@@ -258,7 +263,7 @@ describe('TemplateService', () => {
         descricao: 'Descrição atualizada',
         conteudo: '<html><body>Conteúdo atualizado: {{variavel}}</body></html>',
       };
-      
+
       const templateExistente = {
         id: '5',
         codigo,
@@ -268,25 +273,29 @@ describe('TemplateService', () => {
         conteudo: '<html><body>Conteúdo antigo</body></html>',
         ativo: true,
       };
-      
+
       const templateAtualizado = {
         ...templateExistente,
         ...dto,
       };
-      
-      jest.spyOn(repository, 'findByCodigo').mockResolvedValue(templateExistente);
+
+      jest
+        .spyOn(repository, 'findByCodigo')
+        .mockResolvedValue(templateExistente);
       jest.spyOn(repository, 'save').mockResolvedValue(templateAtualizado);
-      
+
       // Act
       const resultado = await service.atualizar(codigo, dto);
-      
+
       // Assert
       expect(resultado).toEqual(templateAtualizado);
       expect(repository.findByCodigo).toHaveBeenCalledWith(codigo);
-      expect(repository.save).toHaveBeenCalledWith(expect.objectContaining({
-        ...templateExistente,
-        ...dto,
-      }));
+      expect(repository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ...templateExistente,
+          ...dto,
+        }),
+      );
     });
 
     it('deve lançar NotFoundException ao tentar atualizar um template inexistente', async () => {
@@ -297,14 +306,14 @@ describe('TemplateService', () => {
         descricao: 'Descrição atualizada',
         conteudo: '<html><body>Conteúdo atualizado</body></html>',
       };
-      
+
       jest.spyOn(repository, 'findByCodigo').mockResolvedValue(null);
-      
+
       // Act & Assert
-      await expect(service.atualizar(codigo, dto))
-        .rejects
-        .toThrow(NotFoundException);
-      
+      await expect(service.atualizar(codigo, dto)).rejects.toThrow(
+        NotFoundException,
+      );
+
       expect(repository.findByCodigo).toHaveBeenCalledWith(codigo);
       expect(repository.save).not.toHaveBeenCalled();
     });
@@ -317,7 +326,7 @@ describe('TemplateService', () => {
         descricao: 'Descrição atualizada',
         conteudo: '<html><body>{{#if invalido}</body></html>', // Template inválido (tag não fechada)
       };
-      
+
       const templateExistente = {
         id: '6',
         codigo,
@@ -327,14 +336,16 @@ describe('TemplateService', () => {
         conteudo: '<html><body>Conteúdo antigo</body></html>',
         ativo: true,
       };
-      
-      jest.spyOn(repository, 'findByCodigo').mockResolvedValue(templateExistente);
-      
+
+      jest
+        .spyOn(repository, 'findByCodigo')
+        .mockResolvedValue(templateExistente);
+
       // Act & Assert
-      await expect(service.atualizar(codigo, dto))
-        .rejects
-        .toThrow(BadRequestException);
-      
+      await expect(service.atualizar(codigo, dto)).rejects.toThrow(
+        BadRequestException,
+      );
+
       expect(repository.findByCodigo).toHaveBeenCalledWith(codigo);
       expect(repository.save).not.toHaveBeenCalled();
     });
@@ -353,13 +364,15 @@ describe('TemplateService', () => {
         conteudo: '<html><body>Conteúdo</body></html>',
         ativo: true,
       };
-      
-      jest.spyOn(repository, 'findByCodigo').mockResolvedValue(templateExistente);
+
+      jest
+        .spyOn(repository, 'findByCodigo')
+        .mockResolvedValue(templateExistente);
       jest.spyOn(repository, 'remove').mockResolvedValue(undefined);
-      
+
       // Act
       await service.remover(codigo);
-      
+
       // Assert
       expect(repository.findByCodigo).toHaveBeenCalledWith(codigo);
       expect(repository.remove).toHaveBeenCalledWith(templateExistente);
@@ -368,14 +381,12 @@ describe('TemplateService', () => {
     it('deve lançar NotFoundException ao tentar remover um template inexistente', async () => {
       // Arrange
       const codigo = 'template-inexistente';
-      
+
       jest.spyOn(repository, 'findByCodigo').mockResolvedValue(null);
-      
+
       // Act & Assert
-      await expect(service.remover(codigo))
-        .rejects
-        .toThrow(NotFoundException);
-      
+      await expect(service.remover(codigo)).rejects.toThrow(NotFoundException);
+
       expect(repository.findByCodigo).toHaveBeenCalledWith(codigo);
       expect(repository.remove).not.toHaveBeenCalled();
     });
@@ -386,7 +397,7 @@ describe('TemplateService', () => {
       // Arrange
       const codigo = 'template-existente';
       const ativo = true;
-      
+
       const templateExistente = {
         id: '8',
         codigo,
@@ -396,39 +407,43 @@ describe('TemplateService', () => {
         conteudo: '<html><body>Conteúdo</body></html>',
         ativo: false,
       };
-      
+
       const templateAtualizado = {
         ...templateExistente,
         ativo,
       };
-      
-      jest.spyOn(repository, 'findByCodigo').mockResolvedValue(templateExistente);
+
+      jest
+        .spyOn(repository, 'findByCodigo')
+        .mockResolvedValue(templateExistente);
       jest.spyOn(repository, 'save').mockResolvedValue(templateAtualizado);
-      
+
       // Act
       const resultado = await service.alterarStatus(codigo, ativo);
-      
+
       // Assert
       expect(resultado).toEqual(templateAtualizado);
       expect(repository.findByCodigo).toHaveBeenCalledWith(codigo);
-      expect(repository.save).toHaveBeenCalledWith(expect.objectContaining({
-        ...templateExistente,
-        ativo,
-      }));
+      expect(repository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ...templateExistente,
+          ativo,
+        }),
+      );
     });
 
     it('deve lançar NotFoundException ao tentar alterar o status de um template inexistente', async () => {
       // Arrange
       const codigo = 'template-inexistente';
       const ativo = true;
-      
+
       jest.spyOn(repository, 'findByCodigo').mockResolvedValue(null);
-      
+
       // Act & Assert
-      await expect(service.alterarStatus(codigo, ativo))
-        .rejects
-        .toThrow(NotFoundException);
-      
+      await expect(service.alterarStatus(codigo, ativo)).rejects.toThrow(
+        NotFoundException,
+      );
+
       expect(repository.findByCodigo).toHaveBeenCalledWith(codigo);
       expect(repository.save).not.toHaveBeenCalled();
     });
@@ -441,12 +456,12 @@ describe('TemplateService', () => {
         conteudo: '<html><body>Olá, {{nome}}!</body></html>',
         dados: { nome: 'João' },
       };
-      
+
       const conteudoEsperado = '<html><body>Olá, João!</body></html>';
-      
+
       // Act
       const resultado = await service.testar(dto);
-      
+
       // Assert
       expect(resultado).toEqual({ conteudo: conteudoEsperado });
     });
@@ -457,11 +472,9 @@ describe('TemplateService', () => {
         conteudo: '<html><body>{{#each items}}</body></html>', // Template inválido (tag não fechada)
         dados: { items: ['item1', 'item2'] },
       };
-      
+
       // Act & Assert
-      await expect(service.testar(dto))
-        .rejects
-        .toThrow(BadRequestException);
+      await expect(service.testar(dto)).rejects.toThrow(BadRequestException);
     });
 
     it('deve renderizar um template com dados complexos', async () => {
@@ -488,10 +501,10 @@ describe('TemplateService', () => {
           total: 31.25,
         },
       };
-      
+
       // Act
       const resultado = await service.testar(dto);
-      
+
       // Assert
       expect(resultado).toHaveProperty('conteudo');
       expect(resultado.conteudo).toContain('<li>Item 1 - R$ 10.5</li>');
@@ -505,24 +518,26 @@ describe('TemplateService', () => {
       // Arrange
       const codigo = 'email-bem-vindo';
       const dados = { nome: 'João', link: 'https://exemplo.com' };
-      
+
       const templateMock = {
         id: '9',
         codigo,
         nome: 'E-mail de Boas-vindas',
         descricao: 'Template para e-mail de boas-vindas',
         tipo: TemplateTipoEnum.EMAIL,
-        conteudo: '<html><body>Bem-vindo, {{nome}}! <a href="{{link}}">Acesse aqui</a></body></html>',
+        conteudo:
+          '<html><body>Bem-vindo, {{nome}}! <a href="{{link}}">Acesse aqui</a></body></html>',
         ativo: true,
       };
-      
-      const conteudoEsperado = '<html><body>Bem-vindo, João! <a href="https://exemplo.com">Acesse aqui</a></body></html>';
-      
+
+      const conteudoEsperado =
+        '<html><body>Bem-vindo, João! <a href="https://exemplo.com">Acesse aqui</a></body></html>';
+
       jest.spyOn(repository, 'findByCodigo').mockResolvedValue(templateMock);
-      
+
       // Act
       const resultado = await service.renderizar(codigo, dados);
-      
+
       // Assert
       expect(resultado).toBe(conteudoEsperado);
       expect(repository.findByCodigo).toHaveBeenCalledWith(codigo);
@@ -532,14 +547,14 @@ describe('TemplateService', () => {
       // Arrange
       const codigo = 'template-inexistente';
       const dados = { nome: 'João' };
-      
+
       jest.spyOn(repository, 'findByCodigo').mockResolvedValue(null);
-      
+
       // Act & Assert
-      await expect(service.renderizar(codigo, dados))
-        .rejects
-        .toThrow(NotFoundException);
-      
+      await expect(service.renderizar(codigo, dados)).rejects.toThrow(
+        NotFoundException,
+      );
+
       expect(repository.findByCodigo).toHaveBeenCalledWith(codigo);
     });
 
@@ -547,7 +562,7 @@ describe('TemplateService', () => {
       // Arrange
       const codigo = 'template-inativo';
       const dados = { nome: 'João' };
-      
+
       const templateMock = {
         id: '10',
         codigo,
@@ -557,14 +572,14 @@ describe('TemplateService', () => {
         conteudo: '<html><body>Conteúdo</body></html>',
         ativo: false,
       };
-      
+
       jest.spyOn(repository, 'findByCodigo').mockResolvedValue(templateMock);
-      
+
       // Act & Assert
-      await expect(service.renderizar(codigo, dados))
-        .rejects
-        .toThrow(BadRequestException);
-      
+      await expect(service.renderizar(codigo, dados)).rejects.toThrow(
+        BadRequestException,
+      );
+
       expect(repository.findByCodigo).toHaveBeenCalledWith(codigo);
     });
   });

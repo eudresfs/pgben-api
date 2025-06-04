@@ -23,7 +23,10 @@ import { RolesGuard } from '../../../auth/guards/roles.guard';
 import { Roles } from '../../../auth/decorators/role.decorator';
 import { UserRole } from '../../../enums';
 import { DadosAluguelSocialService } from '../services/dados-aluguel-social.service';
-import { CreateDadosAluguelSocialDto, UpdateDadosAluguelSocialDto } from '../dto/create-dados-aluguel-social.dto';
+import {
+  CreateDadosAluguelSocialDto,
+  UpdateDadosAluguelSocialDto,
+} from '../dto/create-dados-aluguel-social.dto';
 import { DadosAluguelSocial } from '../../../entities/dados-aluguel-social.entity';
 
 /**
@@ -56,7 +59,9 @@ export class DadosAluguelSocialController {
     status: HttpStatus.BAD_REQUEST,
     description: 'Dados inválidos fornecidos',
   })
-  async create(@Body() createDto: CreateDadosAluguelSocialDto): Promise<DadosAluguelSocial> {
+  async create(
+    @Body() createDto: CreateDadosAluguelSocialDto,
+  ): Promise<DadosAluguelSocial> {
     return this.dadosAluguelSocialService.create(createDto);
   }
 
@@ -78,7 +83,9 @@ export class DadosAluguelSocialController {
     status: HttpStatus.NOT_FOUND,
     description: 'Dados de aluguel social não encontrados',
   })
-  async findOne(@Param('id', ParseUUIDPipe) id: string): Promise<DadosAluguelSocial> {
+  async findOne(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<DadosAluguelSocial> {
     return this.dadosAluguelSocialService.findOne(id);
   }
 
@@ -88,7 +95,8 @@ export class DadosAluguelSocialController {
   @Get('solicitacao/:solicitacaoId')
   @ApiOperation({
     summary: 'Buscar dados de aluguel social por solicitação',
-    description: 'Retorna os dados de aluguel social de uma solicitação específica',
+    description:
+      'Retorna os dados de aluguel social de uma solicitação específica',
   })
   @ApiParam({ name: 'solicitacaoId', description: 'ID da solicitação' })
   @ApiResponse({
@@ -98,9 +106,12 @@ export class DadosAluguelSocialController {
   })
   @ApiResponse({
     status: HttpStatus.NOT_FOUND,
-    description: 'Dados de aluguel social não encontrados para esta solicitação',
+    description:
+      'Dados de aluguel social não encontrados para esta solicitação',
   })
-  async findBySolicitacao(@Param('solicitacaoId', ParseUUIDPipe) solicitacaoId: string): Promise<DadosAluguelSocial> {
+  async findBySolicitacao(
+    @Param('solicitacaoId', ParseUUIDPipe) solicitacaoId: string,
+  ): Promise<DadosAluguelSocial> {
     return this.dadosAluguelSocialService.findBySolicitacao(solicitacaoId);
   }
 
@@ -110,7 +121,8 @@ export class DadosAluguelSocialController {
   @Patch(':id')
   @ApiOperation({
     summary: 'Atualizar dados de aluguel social',
-    description: 'Atualiza dados específicos de uma solicitação de Aluguel Social',
+    description:
+      'Atualiza dados específicos de uma solicitação de Aluguel Social',
   })
   @ApiParam({ name: 'id', description: 'ID dos dados de aluguel social' })
   @ApiBody({ type: UpdateDadosAluguelSocialDto })
@@ -140,7 +152,8 @@ export class DadosAluguelSocialController {
   @Delete(':id')
   @ApiOperation({
     summary: 'Remover dados de aluguel social',
-    description: 'Remove dados específicos de aluguel social (apenas administradores)',
+    description:
+      'Remove dados específicos de aluguel social (apenas administradores)',
   })
   @ApiParam({ name: 'id', description: 'ID dos dados de aluguel social' })
   @ApiResponse({

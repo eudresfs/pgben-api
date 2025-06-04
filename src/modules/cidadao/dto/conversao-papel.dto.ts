@@ -1,9 +1,20 @@
-import { IsNotEmpty, IsString, Length, Validate, IsUUID, IsOptional, IsEnum, ValidateNested, IsNumber, Min } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsString,
+  Length,
+  Validate,
+  IsUUID,
+  IsOptional,
+  IsEnum,
+  ValidateNested,
+  IsNumber,
+  Min,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { CPFValidator } from '../validators/cpf-validator';
 import { ParentescoEnum } from '../../../enums/parentesco.enum';
 import { EscolaridadeEnum } from '../../../enums/escolaridade.enum';
-import { Sexo } from '../../../enums/sexo.enum'; 
+import { Sexo } from '../../../enums/sexo.enum';
 
 /**
  * DTO para dados básicos do cidadão
@@ -28,15 +39,15 @@ export class DadosCidadaoDto {
   @IsOptional()
   @IsString({ message: 'Telefone deve ser uma string' })
   telefone?: string;
-  
+
   @IsOptional()
   @IsString({ message: 'Data de nascimento deve ser uma string' })
   data_nascimento?: string;
-  
+
   @IsOptional()
   @IsString({ message: 'Sexo deve ser uma string' })
   sexo?: Sexo;
-  
+
   @IsOptional()
   @IsString({ message: 'Endereço deve ser uma string' })
   endereco?: string;

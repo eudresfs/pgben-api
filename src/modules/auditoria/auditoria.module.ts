@@ -5,7 +5,7 @@ import {
   MiddlewareConsumer,
   RequestMethod,
   Logger,
-  forwardRef
+  forwardRef,
 } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { BullModule } from '@nestjs/bull';
@@ -13,7 +13,6 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ScheduleAdapterModule } from '../../shared/schedule/schedule-adapter.module';
 import { AuthModule } from '../../auth/auth.module';
-
 
 // Entidades
 import { LogAuditoria } from '../../entities';
@@ -62,7 +61,7 @@ import { LogAuditoriaRepository } from './repositories/log-auditoria.repository'
   imports: [
     // Configuração do TypeORM para entidades do módulo
     TypeOrmModule.forFeature([LogAuditoria]),
-    
+
     // Configuração assíncrona do BullModule
     BullModule.registerQueueAsync({
       name: 'auditoria',
@@ -75,13 +74,13 @@ import { LogAuditoriaRepository } from './repositories/log-auditoria.repository'
       }),
       inject: [ConfigService],
     }),
-    
+
     // Módulo de agendamento de tarefas
     ScheduleAdapterModule,
-    
+
     // Módulo de autenticação (para JwtAuthGuard e JwtBlacklistService)
     forwardRef(() => AuthModule),
-    
+
     // Configuração assíncrona do JwtModule
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -102,10 +101,10 @@ import { LogAuditoriaRepository } from './repositories/log-auditoria.repository'
     AuditoriaService,
     AuditoriaQueueService,
     AuditoriaQueueProcessor,
-    
+
     // Repositórios
     LogAuditoriaRepository,
-    
+
     // Serviços Especializados
     AuditoriaSignatureService,
     AuditoriaExportacaoService,
@@ -136,10 +135,12 @@ export class AuditoriaModule implements NestModule {
           { path: 'auditoria/monitoramento', method: RequestMethod.ALL }, // Evitar recursão
         )
         .forRoutes({ path: '*', method: RequestMethod.ALL });
-        
+
       this.logger.log('Middleware de auditoria configurado com sucesso');
     } catch (error) {
-      this.logger.error(`Erro ao configurar middleware de auditoria: ${error.message}`);
+      this.logger.error(
+        `Erro ao configurar middleware de auditoria: ${error.message}`,
+      );
       // Não propagar erro para não bloquear a inicialização da aplicação
     }
   }

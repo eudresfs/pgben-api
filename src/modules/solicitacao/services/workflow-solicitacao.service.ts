@@ -8,12 +8,12 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
-import { 
-  Solicitacao, 
-  StatusSolicitacao, 
+import {
+  Solicitacao,
+  StatusSolicitacao,
   HistoricoSolicitacao,
   Pendencia,
-  StatusPendencia
+  StatusPendencia,
 } from '../../../entities';
 import { TransicaoEstadoService } from './transicao-estado.service';
 import { ValidacaoSolicitacaoService } from './validacao-solicitacao.service';
@@ -65,7 +65,10 @@ export class WorkflowSolicitacaoService {
     estadoAtual: StatusSolicitacao,
     novoEstado: StatusSolicitacao,
   ): boolean {
-    return this.transicaoEstadoService.isTransicaoValida(estadoAtual, novoEstado);
+    return this.transicaoEstadoService.isTransicaoValida(
+      estadoAtual,
+      novoEstado,
+    );
   }
 
   /**
@@ -126,7 +129,8 @@ export class WorkflowSolicitacaoService {
       status_anterior: estadoAtual,
       status_atual: novoEstado,
       usuario_id: usuarioId,
-      observacao: observacao || `Transição de ${estadoAtual} para ${novoEstado}`,
+      observacao:
+        observacao || `Transição de ${estadoAtual} para ${novoEstado}`,
       dados_alterados: {
         status: {
           de: estadoAtual,
@@ -196,8 +200,13 @@ export class WorkflowSolicitacaoService {
 
       // Atualizar os prazos com base no novo estado da solicitação
       try {
-        await this.prazoService.atualizarPrazosTransicao(solicitacaoId, novoEstado);
-        this.logger.log(`Prazos atualizados para a solicitação ${solicitacaoId}`);
+        await this.prazoService.atualizarPrazosTransicao(
+          solicitacaoId,
+          novoEstado,
+        );
+        this.logger.log(
+          `Prazos atualizados para a solicitação ${solicitacaoId}`,
+        );
       } catch (prazoError) {
         // Apenas logar o erro sem interromper o fluxo principal
         this.logger.error(
@@ -232,7 +241,9 @@ export class WorkflowSolicitacaoService {
    * @param solicitacaoId ID da solicitação
    * @returns Lista de estados possíveis
    */
-  async getEstadosPossiveis(solicitacaoId: string): Promise<StatusSolicitacao[]> {
+  async getEstadosPossiveis(
+    solicitacaoId: string,
+  ): Promise<StatusSolicitacao[]> {
     const solicitacao = await this.solicitacaoRepository.findOne({
       where: { id: solicitacaoId },
     });
@@ -249,7 +260,9 @@ export class WorkflowSolicitacaoService {
    * @param solicitacaoData Dados da solicitação
    * @returns Solicitação criada
    */
-  async criarRascunho(solicitacaoData: Partial<Solicitacao>): Promise<Solicitacao> {
+  async criarRascunho(
+    solicitacaoData: Partial<Solicitacao>,
+  ): Promise<Solicitacao> {
     const solicitacao = this.solicitacaoRepository.create({
       ...solicitacaoData,
       status: StatusSolicitacao.RASCUNHO,
@@ -336,7 +349,7 @@ export class WorkflowSolicitacaoService {
 
     // Validar se a solicitação pode ser aprovada (regras de negócio)
     await this.validacaoService.validarAprovacao(solicitacaoId);
-    
+
     // Se passar na validação, realizar a transição
     return this.realizarTransicao(
       solicitacaoId,
@@ -358,12 +371,12 @@ export class WorkflowSolicitacaoService {
   ): Promise<ResultadoTransicaoEstado> {
     // Validar se a solicitação pode ser liberada (regras de negócio)
     await this.validacaoService.validarLiberacao(solicitacaoId);
-    
+
     // Registrar o liberador da solicitação e a data de liberação
     const solicitacao = await this.solicitacaoRepository.findOne({
       where: { id: solicitacaoId },
     });
-    
+
     if (solicitacao) {
       solicitacao.liberador_id = usuarioId;
       solicitacao.data_liberacao = new Date();
@@ -371,7 +384,7 @@ export class WorkflowSolicitacaoService {
     } else {
       throw new NotFoundException('Solicitação não encontrada');
     }
-    
+
     // Se passar na validação, realizar a transição
     return this.realizarTransicao(
       solicitacaoId,
@@ -415,7 +428,7 @@ export class WorkflowSolicitacaoService {
   ): Promise<ResultadoTransicaoEstado> {
     // Validar se a solicitação pode ser cancelada (regras de negócio)
     await this.validacaoService.validarCancelamento(solicitacaoId);
-    
+
     // Se passar na validação, realizar a transição
     return this.realizarTransicao(
       solicitacaoId,
@@ -455,7 +468,7 @@ export class WorkflowSolicitacaoService {
   ): Promise<ResultadoTransicaoEstado> {
     // Validar se a solicitação pode ser concluída (regras de negócio)
     await this.validacaoService.validarConclusao(solicitacaoId);
-    
+
     // Se passar na validação, realizar a transição
     return this.realizarTransicao(
       solicitacaoId,
@@ -477,7 +490,7 @@ export class WorkflowSolicitacaoService {
   ): Promise<ResultadoTransicaoEstado> {
     // Validar se a solicitação pode ser arquivada (regras de negócio)
     await this.validacaoService.validarArquivamento(solicitacaoId);
-    
+
     // Se passar na validação, realizar a transição
     return this.realizarTransicao(
       solicitacaoId,
@@ -529,15 +542,15 @@ export class WorkflowSolicitacaoService {
 
       // Construir a observação com os dados adicionais
       let observacaoCompleta = dadosAdicionais.observacao || '';
-      
+
       if (dadosAdicionais.justificativa) {
         observacaoCompleta += `\nJustificativa: ${dadosAdicionais.justificativa}`;
       }
-      
+
       if (dadosAdicionais.processo_judicial_id) {
         observacaoCompleta += `\nProcesso Judicial ID: ${dadosAdicionais.processo_judicial_id}`;
       }
-      
+
       if (dadosAdicionais.determinacao_judicial_id) {
         observacaoCompleta += `\nDeterminação Judicial ID: ${dadosAdicionais.determinacao_judicial_id}`;
       }
@@ -548,22 +561,27 @@ export class WorkflowSolicitacaoService {
       // Preparar dados adicionais para atualização
       const updateData: any = {
         status: novoStatus,
-        updated_at: new Date()
+        updated_at: new Date(),
       };
-      
+
       // Adicionar dados adicionais, se existirem
       if (dadosAdicionais.processo_judicial_id) {
         updateData.processo_judicial_id = dadosAdicionais.processo_judicial_id;
         updateData.determinacao_judicial_flag = true;
       }
-      
+
       if (dadosAdicionais.determinacao_judicial_id) {
-        updateData.determinacao_judicial_id = dadosAdicionais.determinacao_judicial_id;
+        updateData.determinacao_judicial_id =
+          dadosAdicionais.determinacao_judicial_id;
         updateData.determinacao_judicial_flag = true;
       }
 
       // Atualizar a solicitação usando o queryRunner
-      await queryRunner.manager.update(Solicitacao, { id: solicitacaoId }, updateData);
+      await queryRunner.manager.update(
+        Solicitacao,
+        { id: solicitacaoId },
+        updateData,
+      );
 
       // Registrar a transição no histórico
       const historico = new HistoricoSolicitacao();
@@ -571,7 +589,9 @@ export class WorkflowSolicitacaoService {
       historico.status_anterior = statusAnterior;
       historico.status_atual = novoStatus;
       historico.usuario_id = usuarioId;
-      historico.observacao = observacaoCompleta || `Status atualizado de ${statusAnterior} para ${novoStatus}`;
+      historico.observacao =
+        observacaoCompleta ||
+        `Status atualizado de ${statusAnterior} para ${novoStatus}`;
       historico.created_at = new Date();
 
       await queryRunner.manager.save(HistoricoSolicitacao, historico);
@@ -588,11 +608,14 @@ export class WorkflowSolicitacaoService {
       await queryRunner.rollbackTransaction();
 
       // Verificar se é um erro de versão (conflito de concorrência)
-      if (error.name === 'QueryFailedError' && 
-          (error.message.includes('version') || error.message.includes('version mismatch'))) {
+      if (
+        error.name === 'QueryFailedError' &&
+        (error.message.includes('version') ||
+          error.message.includes('version mismatch'))
+      ) {
         throw new BadRequestException(
           'A solicitação foi modificada por outro usuário enquanto você a editava. ' +
-          'Por favor, atualize a página e tente novamente.'
+            'Por favor, atualize a página e tente novamente.',
         );
       }
 

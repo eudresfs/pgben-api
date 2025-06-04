@@ -9,15 +9,9 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm';
-import {
-  IsNotEmpty,
-  IsDateString,
-  IsEnum,
-  IsOptional,
-} from 'class-validator';
+import { IsNotEmpty, IsDateString, IsEnum, IsOptional } from 'class-validator';
 import { Solicitacao } from './solicitacao.entity';
 import { TipoUrnaEnum, ParentescoEnum } from '../enums';
-
 
 /**
  * Entidade para armazenar dados específicos do cidadão para Auxílio Funeral
@@ -121,7 +115,7 @@ export class DadosFuneral {
       ParentescoEnum.PAI,
       ParentescoEnum.MAE,
     ];
-    
+
     return primeiroGrau.includes(this.grau_parentesco_requerente);
   }
 
@@ -132,9 +126,9 @@ export class DadosFuneral {
     const segundoGrau = [
       ParentescoEnum.IRMAO,
       ParentescoEnum.AVO,
-      ParentescoEnum.NETO
+      ParentescoEnum.NETO,
     ];
-    
+
     return segundoGrau.includes(this.grau_parentesco_requerente);
   }
 
@@ -188,7 +182,10 @@ export class DadosFuneral {
   validarDadosCompletos(): { valido: boolean; erros: string[] } {
     const erros: string[] = [];
 
-    if (!this.nome_completo_falecido || this.nome_completo_falecido.trim().length === 0) {
+    if (
+      !this.nome_completo_falecido ||
+      this.nome_completo_falecido.trim().length === 0
+    ) {
       erros.push('Nome completo do falecido é obrigatório');
     }
 
@@ -216,7 +213,7 @@ export class DadosFuneral {
     if (this.data_obito && this.data_autorizacao) {
       const dataObito = new Date(this.data_obito);
       const dataAutorizacao = new Date(this.data_autorizacao);
-      
+
       if (dataObito > dataAutorizacao) {
         erros.push('Data da autorização não pode ser anterior à data do óbito');
       }
@@ -224,7 +221,7 @@ export class DadosFuneral {
 
     return {
       valido: erros.length === 0,
-      erros
+      erros,
     };
   }
 }

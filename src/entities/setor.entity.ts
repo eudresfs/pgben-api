@@ -1,15 +1,15 @@
 /* eslint-disable prettier/prettier */
-import { 
-  Entity, 
-  PrimaryGeneratedColumn, 
-  Column, 
-  CreateDateColumn, 
-  UpdateDateColumn, 
-  DeleteDateColumn, 
-  OneToMany, 
-  ManyToOne, 
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  DeleteDateColumn,
+  OneToMany,
+  ManyToOne,
   JoinColumn,
-  Index
+  Index,
 } from 'typeorm';
 import { IsNotEmpty, IsString, MinLength, MaxLength } from 'class-validator';
 import { Unidade } from './unidade.entity';
@@ -39,7 +39,7 @@ export class Setor {
   @Column({ nullable: false })
   unidade_id: string;
 
-  @ManyToOne(() => Unidade, unidade => unidade.setores)
+  @ManyToOne(() => Unidade, (unidade) => unidade.setores)
   @JoinColumn({ name: 'unidade_id' })
   unidade: Unidade;
 
@@ -58,6 +58,6 @@ export class Setor {
   /**
    * Relacionamento com os usuários do setor
    */
-  @OneToMany(() => Usuario, usuario => usuario.setor)
+  @OneToMany(() => Usuario, (usuario) => usuario.setor)
   usuarios: Usuario[];
 }

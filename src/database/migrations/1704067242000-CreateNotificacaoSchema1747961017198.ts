@@ -2,14 +2,16 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
  * Migration para criar o schema relacionado ao módulo de notificações
- * 
+ *
  * Esta migration cria as tabelas, enumerações e restrições para o módulo de notificações,
  * permitindo o gerenciamento de notificações do sistema, templates e preferências do usuário.
- * 
+ *
  * @author Engenheiro de Dados
  * @date 19/05/2025
  */
-export class CreateNotificacaoSchema1704067235000 implements MigrationInterface {
+export class CreateNotificacaoSchema1704067235000
+  implements MigrationInterface
+{
   name = 'CreateNotificacaoSchema1704067235000';
 
   /**
@@ -17,19 +19,21 @@ export class CreateNotificacaoSchema1704067235000 implements MigrationInterface 
    */
   public async up(queryRunner: QueryRunner): Promise<void> {
     console.log('Iniciando migration 1110000-CreateNotificacaoSchema...');
-    
+
     // Inicialmente, vamos usar VARCHAR em vez de tipos enumerados para evitar problemas de conversão
-    console.log('Utilizando campos de texto em vez de enumerações para evitar problemas de compatibilidade.');
-    
+    console.log(
+      'Utilizando campos de texto em vez de enumerações para evitar problemas de compatibilidade.',
+    );
+
     console.log('Tipos enumerados criados com sucesso.');
-    
+
     // Tabela de templates de notificação
     const notificationTemplateExists = await queryRunner.query(`
       SELECT EXISTS (
         SELECT 1 FROM information_schema.tables WHERE table_name = 'notification_template'
       );
     `);
-    
+
     if (!notificationTemplateExists[0].exists) {
       await queryRunner.query(`
         CREATE TABLE "notification_template" (
@@ -70,16 +74,16 @@ export class CreateNotificacaoSchema1704067235000 implements MigrationInterface 
     } else {
       console.log('Tabela notification_template já existe, pulando criação.');
     }
-    
+
     console.log('Tabela de templates de notificação criada com sucesso.');
-    
+
     // Tabela principal de notificações
     const notificacoesSistemaExists = await queryRunner.query(`
       SELECT EXISTS (
         SELECT 1 FROM information_schema.tables WHERE table_name = 'notificacoes_sistema'
       );
     `);
-    
+
     if (!notificacoesSistemaExists[0].exists) {
       await queryRunner.query(`
         CREATE TABLE "notificacoes_sistema" (
@@ -113,16 +117,16 @@ export class CreateNotificacaoSchema1704067235000 implements MigrationInterface 
     } else {
       console.log('Tabela notificacoes_sistema já existe, pulando criação.');
     }
-    
+
     console.log('Tabela de notificações do sistema criada com sucesso.');
-    
+
     // Tabela de preferências de notificação por usuário
     const preferenciasNotificacaoExists = await queryRunner.query(`
       SELECT EXISTS (
         SELECT 1 FROM information_schema.tables WHERE table_name = 'preferencias_notificacao'
       );
     `);
-    
+
     if (!preferenciasNotificacaoExists[0].exists) {
       await queryRunner.query(`
         CREATE TABLE "preferencias_notificacao" (
@@ -152,18 +156,20 @@ export class CreateNotificacaoSchema1704067235000 implements MigrationInterface 
       EXECUTE PROCEDURE update_timestamp();
       `);
     } else {
-      console.log('Tabela preferencias_notificacao já existe, pulando criação.');
+      console.log(
+        'Tabela preferencias_notificacao já existe, pulando criação.',
+      );
     }
-    
+
     console.log('Tabela de preferências de notificação criada com sucesso.');
-    
+
     // Tabela de configurações de canais de notificação
     const canalNotificacaoExists = await queryRunner.query(`
       SELECT EXISTS (
         SELECT 1 FROM information_schema.tables WHERE table_name = 'canal_notificacao'
       );
     `);
-    
+
     if (!canalNotificacaoExists[0].exists) {
       await queryRunner.query(`
         CREATE TABLE "canal_notificacao" (
@@ -199,16 +205,16 @@ export class CreateNotificacaoSchema1704067235000 implements MigrationInterface 
     } else {
       console.log('Tabela canal_notificacao já existe, pulando criação.');
     }
-    
+
     console.log('Tabela de canais de notificação criada com sucesso.');
-    
+
     // Tabela de grupos de notificação
     const grupoNotificacaoExists = await queryRunner.query(`
       SELECT EXISTS (
         SELECT 1 FROM information_schema.tables WHERE table_name = 'grupo_notificacao'
       );
     `);
-    
+
     if (!grupoNotificacaoExists[0].exists) {
       await queryRunner.query(`
         CREATE TABLE "grupo_notificacao" (
@@ -237,9 +243,9 @@ export class CreateNotificacaoSchema1704067235000 implements MigrationInterface 
     } else {
       console.log('Tabela grupo_notificacao já existe, pulando criação.');
     }
-    
+
     console.log('Tabela de grupos de notificação criada com sucesso.');
-    
+
     // Adicionar as chaves estrangeiras
     await queryRunner.query(`
       -- Relacionamentos da tabela de templates
@@ -271,7 +277,7 @@ export class CreateNotificacaoSchema1704067235000 implements MigrationInterface 
       ALTER TABLE "grupo_notificacao" ADD CONSTRAINT "FK_grupo_created_by"
       FOREIGN KEY ("created_by") REFERENCES "usuario" ("id") ON DELETE SET NULL;
     `);
-    
+
     // Adicionar políticas RLS (Row-Level Security) simplificadas
     await queryRunner.query(`
       ALTER TABLE "notification_template" ENABLE ROW LEVEL SECURITY;
@@ -296,7 +302,7 @@ export class CreateNotificacaoSchema1704067235000 implements MigrationInterface 
       CREATE POLICY grupo_notificacao_policy ON "grupo_notificacao" 
         USING (current_user = 'postgres');
     `);
-    
+
     // Criar log de auditoria para tabelas importantes
     /*
     await queryRunner.query(`
@@ -305,8 +311,10 @@ export class CreateNotificacaoSchema1704067235000 implements MigrationInterface 
       SELECT create_audit_log_trigger('grupo_notificacao');
     `);
     */
-    
-    console.log('Migration 1110000-CreateNotificacaoSchema executada com sucesso.');
+
+    console.log(
+      'Migration 1110000-CreateNotificacaoSchema executada com sucesso.',
+    );
   }
 
   /**
@@ -314,7 +322,7 @@ export class CreateNotificacaoSchema1704067235000 implements MigrationInterface 
    */
   public async down(queryRunner: QueryRunner): Promise<void> {
     console.log('Revertendo migration 1110000-CreateNotificacaoSchema...');
-    
+
     // Remover políticas RLS
     await queryRunner.query(`
       DROP POLICY IF EXISTS notification_template_policy ON "notification_template";
@@ -323,7 +331,7 @@ export class CreateNotificacaoSchema1704067235000 implements MigrationInterface 
       DROP POLICY IF EXISTS canal_notificacao_policy ON "canal_notificacao";
       DROP POLICY IF EXISTS grupo_notificacao_policy ON "grupo_notificacao";
     `);
-    
+
     // Remover chaves estrangeiras
     await queryRunner.query(`
       ALTER TABLE "notification_template" DROP CONSTRAINT IF EXISTS "FK_template_criado_por";
@@ -339,7 +347,7 @@ export class CreateNotificacaoSchema1704067235000 implements MigrationInterface 
       
       ALTER TABLE "grupo_notificacao" DROP CONSTRAINT IF EXISTS "FK_grupo_created_by";
     `);
-    
+
     // Remover triggers
     await queryRunner.query(`
       DROP TRIGGER IF EXISTS trigger_notification_template_update_timestamp ON "notification_template";
@@ -347,7 +355,7 @@ export class CreateNotificacaoSchema1704067235000 implements MigrationInterface 
       DROP TRIGGER IF EXISTS trigger_canal_update_timestamp ON "canal_notificacao";
       DROP TRIGGER IF EXISTS trigger_grupo_notificacao_update_timestamp ON "grupo_notificacao";
     `);
-    
+
     // Remover tabelas
     await queryRunner.query(`
       DROP TABLE IF EXISTS "grupo_notificacao";
@@ -356,7 +364,7 @@ export class CreateNotificacaoSchema1704067235000 implements MigrationInterface 
       DROP TABLE IF EXISTS "notificacoes_sistema";
       DROP TABLE IF EXISTS "notification_template";
     `);
-    
+
     // Remover tipos enumerados
     await queryRunner.query(`
       DROP TYPE IF EXISTS "prioridade_notificacao_enum";
@@ -364,7 +372,9 @@ export class CreateNotificacaoSchema1704067235000 implements MigrationInterface 
       DROP TYPE IF EXISTS "status_notificacao_processamento";
       DROP TYPE IF EXISTS "tipo_notificacao";
     `);
-    
-    console.log('Migration 1110000-CreateNotificacaoSchema revertida com sucesso.');
+
+    console.log(
+      'Migration 1110000-CreateNotificacaoSchema revertida com sucesso.',
+    );
   }
 }

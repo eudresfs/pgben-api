@@ -29,7 +29,8 @@ export class RegraConflitoPapelRepository {
    * @returns Lista de regras
    */
   async findAll(includeInactive = false): Promise<RegraConflitoPapel[]> {
-    const query = this.repository.createQueryBuilder('regra')
+    const query = this.repository
+      .createQueryBuilder('regra')
       .leftJoinAndSelect('regra.papel_origem', 'papel_origem')
       .leftJoinAndSelect('regra.papel_destino', 'papel_destino');
 
@@ -62,7 +63,8 @@ export class RegraConflitoPapelRepository {
     papelOrigemId: string,
     includeInactive = false,
   ): Promise<RegraConflitoPapel[]> {
-    const query = this.repository.createQueryBuilder('regra')
+    const query = this.repository
+      .createQueryBuilder('regra')
       .leftJoinAndSelect('regra.papel_origem', 'papel_origem')
       .leftJoinAndSelect('regra.papel_destino', 'papel_destino')
       .where('regra.papel_origem_id = :papelOrigemId', { papelOrigemId });
@@ -84,7 +86,8 @@ export class RegraConflitoPapelRepository {
     papelDestinoId: string,
     includeInactive = false,
   ): Promise<RegraConflitoPapel[]> {
-    const query = this.repository.createQueryBuilder('regra')
+    const query = this.repository
+      .createQueryBuilder('regra')
       .leftJoinAndSelect('regra.papel_origem', 'papel_origem')
       .leftJoinAndSelect('regra.papel_destino', 'papel_destino')
       .where('regra.papel_destino_id = :papelDestinoId', { papelDestinoId });
@@ -108,8 +111,16 @@ export class RegraConflitoPapelRepository {
   ): Promise<RegraConflitoPapel | null> {
     return this.repository.findOne({
       where: [
-        { papel_origem_id: papelOrigemId, papel_destino_id: papelDestinoId, ativo: true },
-        { papel_origem_id: papelDestinoId, papel_destino_id: papelOrigemId, ativo: true },
+        {
+          papel_origem_id: papelOrigemId,
+          papel_destino_id: papelDestinoId,
+          ativo: true,
+        },
+        {
+          papel_origem_id: papelDestinoId,
+          papel_destino_id: papelOrigemId,
+          ativo: true,
+        },
       ],
       relations: ['papel_origem', 'papel_destino'],
     });
@@ -121,11 +132,16 @@ export class RegraConflitoPapelRepository {
    * @param data Dados para atualização
    * @returns Regra atualizada
    */
-  async update(id: string, data: Partial<RegraConflitoPapel>): Promise<RegraConflitoPapel> {
+  async update(
+    id: string,
+    data: Partial<RegraConflitoPapel>,
+  ): Promise<RegraConflitoPapel> {
     await this.repository.update(id, data);
     const regra = await this.findById(id);
     if (!regra) {
-      throw new NotFoundException(`Regra de conflito com ID ${id} não encontrada`);
+      throw new NotFoundException(
+        `Regra de conflito com ID ${id} não encontrada`,
+      );
     }
     return regra;
   }
@@ -140,7 +156,9 @@ export class RegraConflitoPapelRepository {
     await this.repository.update(id, { ativo });
     const regra = await this.findById(id);
     if (!regra) {
-      throw new NotFoundException(`Regra de conflito com ID ${id} não encontrada`);
+      throw new NotFoundException(
+        `Regra de conflito com ID ${id} não encontrada`,
+      );
     }
     return regra;
   }

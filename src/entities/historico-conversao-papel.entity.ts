@@ -151,7 +151,7 @@ export class HistoricoConversaoPapel {
       [TipoPapel.REPRESENTANTE_LEGAL]: 3,
       [TipoPapel.REQUERENTE]: 4,
     };
-    
+
     return hierarquia[this.papel_novo] > hierarquia[this.papel_anterior];
   }
 
@@ -165,7 +165,7 @@ export class HistoricoConversaoPapel {
       [TipoPapel.REPRESENTANTE_LEGAL]: 3,
       [TipoPapel.REQUERENTE]: 4,
     };
-    
+
     return hierarquia[this.papel_novo] < hierarquia[this.papel_anterior];
   }
 
@@ -208,7 +208,7 @@ export class HistoricoConversaoPapel {
   getDescricaoMudanca(): string {
     const anterior = this.getDescricaoPapelAnterior();
     const novo = this.getDescricaoPapelNovo();
-    
+
     if (this.isPromocao()) {
       return `Promoção: ${anterior} → ${novo}`;
     } else if (this.isReducao()) {
@@ -262,19 +262,20 @@ export class HistoricoConversaoPapel {
   isConsistente(): boolean {
     // Verifica se tem cidadão
     if (!this.cidadao_id) return false;
-    
+
     // Verifica se tem usuário
     if (!this.usuario_id) return false;
-    
+
     // Verifica se tem papéis válidos
     if (!this.papel_anterior || !this.papel_novo) return false;
-    
+
     // Verifica se os papéis são diferentes
     if (this.papel_anterior === this.papel_novo) return false;
-    
+
     // Verifica se tem justificativa
-    if (!this.justificativa || this.justificativa.trim().length === 0) return false;
-    
+    if (!this.justificativa || this.justificativa.trim().length === 0)
+      return false;
+
     return true;
   }
 
@@ -300,13 +301,14 @@ export class HistoricoConversaoPapel {
   isCritico(): boolean {
     // Conversões para responsável familiar são críticas
     if (this.papel_novo === TipoPapel.REQUERENTE) return true;
-    
+
     // Remoção de responsável familiar é crítica
     if (this.papel_anterior === TipoPapel.REQUERENTE) return true;
-    
+
     // Conversões recentes sem notificação são críticas
-    if (this.isCriadoRecentemente() && !this.isNotificacaoEnviada()) return true;
-    
+    if (this.isCriadoRecentemente() && !this.isNotificacaoEnviada())
+      return true;
+
     return false;
   }
 
@@ -316,10 +318,10 @@ export class HistoricoConversaoPapel {
   requerAprovacao(): boolean {
     // Mudanças para responsável familiar requerem aprovação
     if (this.papel_novo === TipoPapel.REQUERENTE) return true;
-    
+
     // Reduções de papel requerem aprovação
     if (this.isReducao()) return true;
-    
+
     return false;
   }
 
@@ -341,7 +343,7 @@ export class HistoricoConversaoPapel {
       month: '2-digit',
       day: '2-digit',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     });
   }
 
@@ -363,7 +365,7 @@ export class HistoricoConversaoPapel {
    */
   notificacaoPendenteMuitoTempo(): boolean {
     if (this.isNotificacaoEnviada()) return false;
-    
+
     const seteDiasAtras = new Date();
     seteDiasAtras.setDate(seteDiasAtras.getDate() - 7);
     return this.created_at < seteDiasAtras;
@@ -374,23 +376,25 @@ export class HistoricoConversaoPapel {
    */
   getSugestoesAcao(): string[] {
     const sugestoes: string[] = [];
-    
+
     if (!this.isNotificacaoEnviada()) {
       sugestoes.push('Enviar notificação sobre a conversão');
     }
-    
+
     if (this.notificacaoPendenteMuitoTempo()) {
-      sugestoes.push('Notificação pendente há mais de 7 dias - verificar urgência');
+      sugestoes.push(
+        'Notificação pendente há mais de 7 dias - verificar urgência',
+      );
     }
-    
+
     if (this.isCritico() && !this.temTecnicoNotificado()) {
       sugestoes.push('Conversão crítica - notificar técnico responsável');
     }
-    
+
     if (!this.isConsistente()) {
       sugestoes.push('Verificar consistência dos dados do histórico');
     }
-    
+
     return sugestoes;
   }
 
@@ -411,10 +415,14 @@ export class HistoricoConversaoPapel {
     notificacao_status: string;
   } {
     return {
-      tipo_mudanca: this.isPromocao() ? 'PROMOCAO' : this.isReducao() ? 'REDUCAO' : 'LATERAL',
+      tipo_mudanca: this.isPromocao()
+        ? 'PROMOCAO'
+        : this.isReducao()
+          ? 'REDUCAO'
+          : 'LATERAL',
       impacto: this.getTipoImpacto(),
       dias_desde_conversao: this.getIdadeRegistroEmDias(),
-      notificacao_status: this.isNotificacaoEnviada() ? 'ENVIADA' : 'PENDENTE'
+      notificacao_status: this.isNotificacaoEnviada() ? 'ENVIADA' : 'PENDENTE',
     };
   }
 }

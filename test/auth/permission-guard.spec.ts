@@ -6,21 +6,24 @@ import { ScopeType } from '../../src/auth/entities/user-permission.entity';
 
 /**
  * Testes simplificados para o PermissionGuard
- * 
+ *
  * Estes testes verificam o funcionamento básico da lógica do guarda de permissões,
  * sem depender de implementações complexas do serviço de permissões.
  */
 describe('PermissionGuard (Simplificado)', () => {
   // Mock simples da classe PermissionGuard
   class PermissionGuard {
-    constructor(private reflector: Reflector, private permissionService: any) {}
+    constructor(
+      private reflector: Reflector,
+      private permissionService: any,
+    ) {}
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
       // Obter os requisitos de permissão do controlador/método
-      const requiredPermissions = this.reflector.getAllAndOverride(REQUIRES_PERMISSION_KEY, [
-        context.getHandler(),
-        context.getClass(),
-      ]);
+      const requiredPermissions = this.reflector.getAllAndOverride(
+        REQUIRES_PERMISSION_KEY,
+        [context.getHandler(), context.getClass()],
+      );
 
       // Se não houver requisitos, permitir o acesso
       if (!requiredPermissions) {
@@ -93,7 +96,7 @@ describe('PermissionGuard (Simplificado)', () => {
   it('deve retornar o resultado correto do método', () => {
     const scopeType = ScopeType.GLOBAL;
     expect(scopeType).toBe('GLOBAL');
-    
+
     // Apenas para demonstrar que a constante ScopeType está funcionando
     expect(ScopeType.UNIT).toBe('UNIT');
     expect(ScopeType.SELF).toBe('SELF');

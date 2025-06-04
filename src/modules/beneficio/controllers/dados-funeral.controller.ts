@@ -23,7 +23,10 @@ import { RolesGuard } from '../../../auth/guards/roles.guard';
 import { Roles } from '../../../auth/decorators/role.decorator';
 import { UserRole } from '../../../enums';
 import { DadosFuneralService } from '../services/dados-funeral.service';
-import { CreateDadosFuneralDto, UpdateDadosFuneralDto } from '../dto/create-dados-funeral.dto';
+import {
+  CreateDadosFuneralDto,
+  UpdateDadosFuneralDto,
+} from '../dto/create-dados-funeral.dto';
 import { DadosFuneral } from '../../../entities/dados-funeral.entity';
 
 /**
@@ -34,9 +37,7 @@ import { DadosFuneral } from '../../../entities/dados-funeral.entity';
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
 export class DadosFuneralController {
-  constructor(
-    private readonly dadosFuneralService: DadosFuneralService,
-  ) {}
+  constructor(private readonly dadosFuneralService: DadosFuneralService) {}
 
   /**
    * Criar dados de funeral para uma solicitação
@@ -56,7 +57,9 @@ export class DadosFuneralController {
     status: HttpStatus.BAD_REQUEST,
     description: 'Dados inválidos fornecidos',
   })
-  async create(@Body() createDto: CreateDadosFuneralDto): Promise<DadosFuneral> {
+  async create(
+    @Body() createDto: CreateDadosFuneralDto,
+  ): Promise<DadosFuneral> {
     return this.dadosFuneralService.create(createDto);
   }
 
@@ -100,7 +103,9 @@ export class DadosFuneralController {
     status: HttpStatus.NOT_FOUND,
     description: 'Dados de funeral não encontrados para esta solicitação',
   })
-  async findBySolicitacao(@Param('solicitacaoId', ParseUUIDPipe) solicitacaoId: string): Promise<DadosFuneral> {
+  async findBySolicitacao(
+    @Param('solicitacaoId', ParseUUIDPipe) solicitacaoId: string,
+  ): Promise<DadosFuneral> {
     return this.dadosFuneralService.findBySolicitacao(solicitacaoId);
   }
 
@@ -110,7 +115,8 @@ export class DadosFuneralController {
   @Patch(':id')
   @ApiOperation({
     summary: 'Atualizar dados de funeral',
-    description: 'Atualiza dados específicos de uma solicitação de Auxílio Funeral',
+    description:
+      'Atualiza dados específicos de uma solicitação de Auxílio Funeral',
   })
   @ApiParam({ name: 'id', description: 'ID dos dados de funeral' })
   @ApiBody({ type: UpdateDadosFuneralDto })

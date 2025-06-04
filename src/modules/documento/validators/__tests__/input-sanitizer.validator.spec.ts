@@ -18,7 +18,11 @@ describe('InputSanitizerValidator', () => {
 
       expect(result.sanitizedValue).toBe('Texto normal');
       expect(result.blocked).toBe(false);
-      expect(result.warnings.some(w => w.includes('modificado durante a sanitização'))).toBe(true);
+      expect(
+        result.warnings.some((w) =>
+          w.includes('modificado durante a sanitização'),
+        ),
+      ).toBe(true);
     });
 
     it('deve bloquear padrões perigosos em modo estrito', () => {
@@ -30,7 +34,9 @@ describe('InputSanitizerValidator', () => {
       });
 
       expect(result.blocked).toBe(true);
-      expect(result.warnings.some(w => w.includes('Padrão perigoso detectado'))).toBe(true);
+      expect(
+        result.warnings.some((w) => w.includes('Padrão perigoso detectado')),
+      ).toBe(true);
     });
 
     it('deve truncar texto que excede o limite', () => {
@@ -42,7 +48,9 @@ describe('InputSanitizerValidator', () => {
       });
 
       expect(result.sanitizedValue).toHaveLength(100);
-      expect(result.warnings.some(w => w.includes('comprimento máximo'))).toBe(true);
+      expect(
+        result.warnings.some((w) => w.includes('comprimento máximo')),
+      ).toBe(true);
     });
 
     it('deve permitir HTML quando allowHtml é true', () => {
@@ -73,7 +81,7 @@ describe('InputSanitizerValidator', () => {
     it('deve detectar e bloquear caracteres de controle', () => {
       const input = 'Texto com\x00caracteres\x1Fde controle';
       const result = validator.sanitizeInput(input, { strictMode: true });
-      
+
       expect(result.sanitizedValue).not.toContain('\x00');
       expect(result.sanitizedValue).not.toContain('\x1F');
       expect(result.warnings.length).toBeGreaterThan(0);
@@ -84,7 +92,7 @@ describe('InputSanitizerValidator', () => {
     it('deve remover caracteres perigosos de nomes de arquivo', () => {
       const filename = 'documento<>:"/\\|?*importante.pdf';
       const result = validator.sanitizeFilename(filename);
-      
+
       expect(result).not.toContain('<');
       expect(result).not.toContain('>');
       expect(result).not.toContain(':');
@@ -99,7 +107,7 @@ describe('InputSanitizerValidator', () => {
     it('deve preservar extensão do arquivo', () => {
       const filename = 'documento_importante.pdf';
       const result = validator.sanitizeFilename(filename);
-      
+
       expect(result).toMatch(/\.pdf$/);
       expect(result).toContain('documento_importante');
     });
@@ -107,14 +115,14 @@ describe('InputSanitizerValidator', () => {
     it('deve truncar nomes muito longos preservando extensão', () => {
       const longName = 'a'.repeat(300) + '.pdf';
       const result = validator.sanitizeFilename(longName);
-      
+
       expect(result.length).toBeLessThanOrEqual(255);
       expect(result).toMatch(/\.pdf$/);
     });
 
     it('deve gerar nome padrão para arquivos sem nome válido', () => {
       const result = validator.sanitizeFilename('');
-      
+
       expect(result).toBe('arquivo_sem_nome');
     });
   });
@@ -128,9 +136,9 @@ describe('InputSanitizerValidator', () => {
         tags: ['importante', 'urgente', '<script>'],
         campo_nao_permitido: 'valor perigoso',
       };
-      
+
       const result = validator.sanitizeMetadados(metadados);
-      
+
       expect(result).toHaveProperty('titulo');
       expect(result).toHaveProperty('descricao');
       expect(result).toHaveProperty('autor');
@@ -144,7 +152,7 @@ describe('InputSanitizerValidator', () => {
       const result1 = validator.sanitizeMetadados(null);
       const result2 = validator.sanitizeMetadados('string');
       const result3 = validator.sanitizeMetadados(123);
-      
+
       expect(result1).toEqual({});
       expect(result2).toEqual({});
       expect(result3).toEqual({});
@@ -154,9 +162,9 @@ describe('InputSanitizerValidator', () => {
       const metadados = {
         tags: Array.from({ length: 15 }, (_, i) => `tag${i}`),
       };
-      
+
       const result = validator.sanitizeMetadados(metadados);
-      
+
       expect(result.tags).toHaveLength(10);
     });
   });
@@ -181,7 +189,7 @@ describe('InputSanitizerValidator', () => {
       const patterns = [
         "'; DROP TABLE users;",
         'UNION SELECT * FROM users',
-        'admin\'--',
+        "admin'--",
         'password OR 1=1',
         'EXEC(xp_cmdshell)',
       ];

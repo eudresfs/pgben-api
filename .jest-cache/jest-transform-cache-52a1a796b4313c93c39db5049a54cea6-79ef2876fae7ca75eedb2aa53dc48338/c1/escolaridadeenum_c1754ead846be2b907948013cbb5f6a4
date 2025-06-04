@@ -1,0 +1,16 @@
+eadca72af71b5fc2aa16eacadb9fbcb4
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.EscolaridadeEnum = void 0;
+var EscolaridadeEnum;
+(function (EscolaridadeEnum) {
+    EscolaridadeEnum["ANALFABETO"] = "analfabeto";
+    EscolaridadeEnum["FUNDAMENTAL_INCOMPLETO"] = "fundamental_incompleto";
+    EscolaridadeEnum["FUNDAMENTAL_COMPLETO"] = "fundamental_completo";
+    EscolaridadeEnum["MEDIO_INCOMPLETO"] = "medio_incompleto";
+    EscolaridadeEnum["MEDIO_COMPLETO"] = "medio_completo";
+    EscolaridadeEnum["SUPERIOR_INCOMPLETO"] = "superior_incompleto";
+    EscolaridadeEnum["SUPERIOR_COMPLETO"] = "superior_completo";
+    EscolaridadeEnum["POS_GRADUACAO"] = "pos_graduacao";
+})(EscolaridadeEnum || (exports.EscolaridadeEnum = EscolaridadeEnum = {}));
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXGVudW1zXFxlc2NvbGFyaWRhZGUuZW51bS50cyIsIm1hcHBpbmdzIjoiOzs7QUFBQSxJQUFZLGdCQVNWO0FBVEYsV0FBWSxnQkFBZ0I7SUFDekIsNkNBQXlCLENBQUE7SUFDekIscUVBQWlELENBQUE7SUFDakQsaUVBQTZDLENBQUE7SUFDN0MseURBQXFDLENBQUE7SUFDckMscURBQWlDLENBQUE7SUFDakMsK0RBQTJDLENBQUE7SUFDM0MsMkRBQXVDLENBQUE7SUFDdkMsbURBQStCLENBQUE7QUFDakMsQ0FBQyxFQVRVLGdCQUFnQixnQ0FBaEIsZ0JBQWdCLFFBUzFCIiwibmFtZXMiOltdLCJzb3VyY2VzIjpbIkM6XFxVc2Vyc1xcZXVkcmVcXE9uZURyaXZlXFxEZXNrdG9wXFxQcm9qZXRvc1xccGdiZW5cXHBnYmVuLXNlcnZlclxcc3JjXFxlbnVtc1xcZXNjb2xhcmlkYWRlLmVudW0udHMiXSwic291cmNlc0NvbnRlbnQiOlsiZXhwb3J0IGVudW0gRXNjb2xhcmlkYWRlRW51bSB7XHJcbiAgIEFOQUxGQUJFVE8gPSAnYW5hbGZhYmV0bycsXHJcbiAgIEZVTkRBTUVOVEFMX0lOQ09NUExFVE8gPSAnZnVuZGFtZW50YWxfaW5jb21wbGV0bycsXHJcbiAgIEZVTkRBTUVOVEFMX0NPTVBMRVRPID0gJ2Z1bmRhbWVudGFsX2NvbXBsZXRvJyxcclxuICAgTUVESU9fSU5DT01QTEVUTyA9ICdtZWRpb19pbmNvbXBsZXRvJyxcclxuICAgTUVESU9fQ09NUExFVE8gPSAnbWVkaW9fY29tcGxldG8nLFxyXG4gICBTVVBFUklPUl9JTkNPTVBMRVRPID0gJ3N1cGVyaW9yX2luY29tcGxldG8nLFxyXG4gICBTVVBFUklPUl9DT01QTEVUTyA9ICdzdXBlcmlvcl9jb21wbGV0bycsXHJcbiAgIFBPU19HUkFEVUFDQU8gPSAncG9zX2dyYWR1YWNhbycsXHJcbiB9Il0sInZlcnNpb24iOjN9

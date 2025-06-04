@@ -1,0 +1,22 @@
+79969af4f1b16bb987e1f90330c81248
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.ParametroTipoInvalidoException = void 0;
+const common_1 = require("@nestjs/common");
+/**
+ * Exceção lançada quando um valor de parâmetro não pode ser convertido para o tipo esperado.
+ * Estende a BadRequestException padrão do NestJS com mensagem personalizada.
+ */
+class ParametroTipoInvalidoException extends common_1.BadRequestException {
+    /**
+     * Cria uma nova instância da exceção.
+     * @param chave - Chave do parâmetro
+     * @param valor - Valor que não pode ser convertido
+     * @param tipo - Tipo esperado para o parâmetro
+     */
+    constructor(chave, valor, tipo) {
+        super(`Valor '${valor}' do parâmetro '${chave}' não pode ser convertido para o tipo ${tipo}`);
+    }
+}
+exports.ParametroTipoInvalidoException = ParametroTipoInvalidoException;
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXGNvbmZpZ3VyYWNhb1xcZXhjZXB0aW9uc1xccGFyYW1ldHJvLXRpcG8taW52YWxpZG8uZXhjZXB0aW9uLnRzIiwibWFwcGluZ3MiOiI7OztBQUFBLDJDQUFxRDtBQUdyRDs7O0dBR0c7QUFDSCxNQUFhLDhCQUErQixTQUFRLDRCQUFtQjtJQUNyRTs7Ozs7T0FLRztJQUNILFlBQVksS0FBYSxFQUFFLEtBQWEsRUFBRSxJQUF1QjtRQUMvRCxLQUFLLENBQUMsVUFBVSxLQUFLLG1CQUFtQixLQUFLLHlDQUF5QyxJQUFJLEVBQUUsQ0FBQyxDQUFDO0lBQ2hHLENBQUM7Q0FDRjtBQVZELHdFQVVDIiwibmFtZXMiOltdLCJzb3VyY2VzIjpbIkM6XFxVc2Vyc1xcZXVkcmVcXE9uZURyaXZlXFxEZXNrdG9wXFxQcm9qZXRvc1xccGdiZW5cXHBnYmVuLXNlcnZlclxcc3JjXFxtb2R1bGVzXFxjb25maWd1cmFjYW9cXGV4Y2VwdGlvbnNcXHBhcmFtZXRyby10aXBvLWludmFsaWRvLmV4Y2VwdGlvbi50cyJdLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQgeyBCYWRSZXF1ZXN0RXhjZXB0aW9uIH0gZnJvbSAnQG5lc3Rqcy9jb21tb24nO1xuaW1wb3J0IHsgUGFyYW1ldHJvVGlwb0VudW0gfSBmcm9tICcuLi8uLi8uLi9lbnVtcyc7XG5cbi8qKlxuICogRXhjZcOnw6NvIGxhbsOnYWRhIHF1YW5kbyB1bSB2YWxvciBkZSBwYXLDom1ldHJvIG7Do28gcG9kZSBzZXIgY29udmVydGlkbyBwYXJhIG8gdGlwbyBlc3BlcmFkby5cbiAqIEVzdGVuZGUgYSBCYWRSZXF1ZXN0RXhjZXB0aW9uIHBhZHLDo28gZG8gTmVzdEpTIGNvbSBtZW5zYWdlbSBwZXJzb25hbGl6YWRhLlxuICovXG5leHBvcnQgY2xhc3MgUGFyYW1ldHJvVGlwb0ludmFsaWRvRXhjZXB0aW9uIGV4dGVuZHMgQmFkUmVxdWVzdEV4Y2VwdGlvbiB7XG4gIC8qKlxuICAgKiBDcmlhIHVtYSBub3ZhIGluc3TDom5jaWEgZGEgZXhjZcOnw6NvLlxuICAgKiBAcGFyYW0gY2hhdmUgLSBDaGF2ZSBkbyBwYXLDom1ldHJvXG4gICAqIEBwYXJhbSB2YWxvciAtIFZhbG9yIHF1ZSBuw6NvIHBvZGUgc2VyIGNvbnZlcnRpZG9cbiAgICogQHBhcmFtIHRpcG8gLSBUaXBvIGVzcGVyYWRvIHBhcmEgbyBwYXLDom1ldHJvXG4gICAqL1xuICBjb25zdHJ1Y3RvcihjaGF2ZTogc3RyaW5nLCB2YWxvcjogc3RyaW5nLCB0aXBvOiBQYXJhbWV0cm9UaXBvRW51bSkge1xuICAgIHN1cGVyKGBWYWxvciAnJHt2YWxvcn0nIGRvIHBhcsOibWV0cm8gJyR7Y2hhdmV9JyBuw6NvIHBvZGUgc2VyIGNvbnZlcnRpZG8gcGFyYSBvIHRpcG8gJHt0aXBvfWApO1xuICB9XG59XG4iXSwidmVyc2lvbiI6M30=

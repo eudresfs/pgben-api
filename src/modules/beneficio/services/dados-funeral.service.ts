@@ -2,7 +2,10 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { DadosFuneral } from '../../../entities/dados-funeral.entity';
-import { CreateDadosFuneralDto, UpdateDadosFuneralDto } from '../dto/create-dados-funeral.dto';
+import {
+  CreateDadosFuneralDto,
+  UpdateDadosFuneralDto,
+} from '../dto/create-dados-funeral.dto';
 
 /**
  * Serviço para gerenciar dados específicos de Auxílio Funeral
@@ -104,7 +107,12 @@ export class DadosFuneralService {
   async findAll(
     page: number = 1,
     limit: number = 10,
-  ): Promise<{ data: DadosFuneral[]; total: number; page: number; limit: number }> {
+  ): Promise<{
+    data: DadosFuneral[];
+    total: number;
+    page: number;
+    limit: number;
+  }> {
     const [data, total] = await this.dadosFuneralRepository.findAndCount({
       relations: ['solicitacao'],
       skip: (page - 1) * limit,
@@ -127,7 +135,12 @@ export class DadosFuneralService {
     grauParentesco: string,
     page: number = 1,
     limit: number = 10,
-  ): Promise<{ data: DadosFuneral[]; total: number; page: number; limit: number }> {
+  ): Promise<{
+    data: DadosFuneral[];
+    total: number;
+    page: number;
+    limit: number;
+  }> {
     const [data, total] = await this.dadosFuneralRepository.findAndCount({
       where: { grau_parentesco_requerente: grauParentesco as any },
       relations: ['solicitacao'],
@@ -152,7 +165,12 @@ export class DadosFuneralService {
     dataFim: Date,
     page: number = 1,
     limit: number = 10,
-  ): Promise<{ data: DadosFuneral[]; total: number; page: number; limit: number }> {
+  ): Promise<{
+    data: DadosFuneral[];
+    total: number;
+    page: number;
+    limit: number;
+  }> {
     const [data, total] = await this.dadosFuneralRepository.findAndCount({
       where: {
         data_obito: {

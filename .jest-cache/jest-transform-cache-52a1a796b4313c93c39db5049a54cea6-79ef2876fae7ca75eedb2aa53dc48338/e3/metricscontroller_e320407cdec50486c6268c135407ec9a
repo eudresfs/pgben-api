@@ -1,0 +1,57 @@
+30f59250a5ccc6c4b77b922a5eee2279
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var _a, _b;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.MetricsController = void 0;
+const common_1 = require("@nestjs/common");
+const express_1 = require("express");
+const metrics_service_1 = require("./metrics.service");
+const public_decorator_1 = require("../../auth/decorators/public.decorator");
+const swagger_1 = require("@nestjs/swagger");
+/**
+ * Controlador de Métricas
+ *
+ * Expõe endpoints para acesso às métricas da aplicação
+ * no formato do Prometheus
+ */
+let MetricsController = class MetricsController {
+    metricsService;
+    constructor(metricsService) {
+        this.metricsService = metricsService;
+    }
+    /**
+     * Retorna todas as métricas no formato do Prometheus
+     */
+    async getMetrics(response) {
+        const metrics = await this.metricsService.getMetrics();
+        response.setHeader('Content-Type', 'text/plain');
+        return response.send(metrics);
+    }
+};
+exports.MetricsController = MetricsController;
+__decorate([
+    (0, common_1.Get)(),
+    (0, public_decorator_1.Public)(),
+    __param(0, (0, common_1.Res)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [typeof (_b = typeof express_1.Response !== "undefined" && express_1.Response) === "function" ? _b : Object]),
+    __metadata("design:returntype", Promise)
+], MetricsController.prototype, "getMetrics", null);
+exports.MetricsController = MetricsController = __decorate([
+    (0, swagger_1.ApiTags)('Métricas e Dashboard'),
+    (0, common_1.Controller)({ path: 'metrics', version: '1' }),
+    __metadata("design:paramtypes", [typeof (_a = typeof metrics_service_1.MetricsService !== "undefined" && metrics_service_1.MetricsService) === "function" ? _a : Object])
+], MetricsController);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXHNoYXJlZFxcbW9uaXRvcmluZ1xcbWV0cmljcy5jb250cm9sbGVyLnRzIiwibWFwcGluZ3MiOiI7Ozs7Ozs7Ozs7Ozs7Ozs7QUFBQSwyQ0FBc0Q7QUFDdEQscUNBQW1DO0FBQ25DLHVEQUFtRDtBQUNuRCw2RUFBZ0U7QUFDaEUsNkNBQTBDO0FBRTFDOzs7OztHQUtHO0FBR0ksSUFBTSxpQkFBaUIsR0FBdkIsTUFBTSxpQkFBaUI7SUFDQztJQUE3QixZQUE2QixjQUE4QjtRQUE5QixtQkFBYyxHQUFkLGNBQWMsQ0FBZ0I7SUFBRyxDQUFDO0lBRS9EOztPQUVHO0lBR0csQUFBTixLQUFLLENBQUMsVUFBVSxDQUFRLFFBQWtCO1FBQ3hDLE1BQU0sT0FBTyxHQUFHLE1BQU0sSUFBSSxDQUFDLGNBQWMsQ0FBQyxVQUFVLEVBQUUsQ0FBQztRQUN2RCxRQUFRLENBQUMsU0FBUyxDQUFDLGNBQWMsRUFBRSxZQUFZLENBQUMsQ0FBQztRQUNqRCxPQUFPLFFBQVEsQ0FBQyxJQUFJLENBQUMsT0FBTyxDQUFDLENBQUM7SUFDaEMsQ0FBQztDQUNGLENBQUE7QUFiWSw4Q0FBaUI7QUFRdEI7SUFGTCxJQUFBLFlBQUcsR0FBRTtJQUNMLElBQUEseUJBQU0sR0FBRTtJQUNTLFdBQUEsSUFBQSxZQUFHLEdBQUUsQ0FBQTs7eURBQVcsa0JBQVEsb0JBQVIsa0JBQVE7O21EQUl6Qzs0QkFaVSxpQkFBaUI7SUFGN0IsSUFBQSxpQkFBTyxFQUFDLHNCQUFzQixDQUFDO0lBQy9CLElBQUEsbUJBQVUsRUFBQyxFQUFFLElBQUksRUFBRSxTQUFTLEVBQUUsT0FBTyxFQUFFLEdBQUcsRUFBRSxDQUFDO3lEQUVDLGdDQUFjLG9CQUFkLGdDQUFjO0dBRGhELGlCQUFpQixDQWE3QiIsIm5hbWVzIjpbXSwic291cmNlcyI6WyJDOlxcVXNlcnNcXGV1ZHJlXFxPbmVEcml2ZVxcRGVza3RvcFxcUHJvamV0b3NcXHBnYmVuXFxwZ2Jlbi1zZXJ2ZXJcXHNyY1xcc2hhcmVkXFxtb25pdG9yaW5nXFxtZXRyaWNzLmNvbnRyb2xsZXIudHMiXSwic291cmNlc0NvbnRlbnQiOlsiaW1wb3J0IHsgQ29udHJvbGxlciwgR2V0LCBSZXMgfSBmcm9tICdAbmVzdGpzL2NvbW1vbic7XG5pbXBvcnQgeyBSZXNwb25zZSB9IGZyb20gJ2V4cHJlc3MnO1xuaW1wb3J0IHsgTWV0cmljc1NlcnZpY2UgfSBmcm9tICcuL21ldHJpY3Muc2VydmljZSc7XG5pbXBvcnQgeyBQdWJsaWMgfSBmcm9tICcuLi8uLi9hdXRoL2RlY29yYXRvcnMvcHVibGljLmRlY29yYXRvcic7XG5pbXBvcnQgeyBBcGlUYWdzIH0gZnJvbSAnQG5lc3Rqcy9zd2FnZ2VyJztcblxuLyoqXG4gKiBDb250cm9sYWRvciBkZSBNw6l0cmljYXNcbiAqXG4gKiBFeHDDtWUgZW5kcG9pbnRzIHBhcmEgYWNlc3NvIMOgcyBtw6l0cmljYXMgZGEgYXBsaWNhw6fDo29cbiAqIG5vIGZvcm1hdG8gZG8gUHJvbWV0aGV1c1xuICovXG5AQXBpVGFncygnTcOpdHJpY2FzIGUgRGFzaGJvYXJkJylcbkBDb250cm9sbGVyKHsgcGF0aDogJ21ldHJpY3MnLCB2ZXJzaW9uOiAnMScgfSlcbmV4cG9ydCBjbGFzcyBNZXRyaWNzQ29udHJvbGxlciB7XG4gIGNvbnN0cnVjdG9yKHByaXZhdGUgcmVhZG9ubHkgbWV0cmljc1NlcnZpY2U6IE1ldHJpY3NTZXJ2aWNlKSB7fVxuXG4gIC8qKlxuICAgKiBSZXRvcm5hIHRvZGFzIGFzIG3DqXRyaWNhcyBubyBmb3JtYXRvIGRvIFByb21ldGhldXNcbiAgICovXG4gIEBHZXQoKVxuICBAUHVibGljKClcbiAgYXN5bmMgZ2V0TWV0cmljcyhAUmVzKCkgcmVzcG9uc2U6IFJlc3BvbnNlKSB7XG4gICAgY29uc3QgbWV0cmljcyA9IGF3YWl0IHRoaXMubWV0cmljc1NlcnZpY2UuZ2V0TWV0cmljcygpO1xuICAgIHJlc3BvbnNlLnNldEhlYWRlcignQ29udGVudC1UeXBlJywgJ3RleHQvcGxhaW4nKTtcbiAgICByZXR1cm4gcmVzcG9uc2Uuc2VuZChtZXRyaWNzKTtcbiAgfVxufVxuIl0sInZlcnNpb24iOjN9

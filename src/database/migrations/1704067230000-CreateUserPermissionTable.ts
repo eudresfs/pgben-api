@@ -2,12 +2,14 @@ import { MigrationInterface, QueryRunner, Table, TableIndex } from 'typeorm';
 
 /**
  * Migração para criar a tabela de permissões atribuídas diretamente a usuários.
- * 
+ *
  * Esta tabela armazena permissões específicas atribuídas a usuários individuais,
  * que podem sobrepor-se às permissões da role do usuário. Também suporta
  * permissões com escopo e validade temporal.
  */
-export class CreateUserPermissionTable1704067220000 implements MigrationInterface {
+export class CreateUserPermissionTable1704067220000
+  implements MigrationInterface
+{
   name = 'CreateUserPermissionTable1704067220000';
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.createTable(
@@ -97,7 +99,7 @@ export class CreateUserPermissionTable1704067220000 implements MigrationInterfac
           },
         ],
       }),
-      true
+      true,
     );
 
     await queryRunner.createIndex(
@@ -105,7 +107,7 @@ export class CreateUserPermissionTable1704067220000 implements MigrationInterfac
       new TableIndex({
         name: 'IDX_USUARIO_PERMISSAO_USUARIO',
         columnNames: ['usuario_id'],
-      })
+      }),
     );
 
     await queryRunner.createIndex(
@@ -113,7 +115,7 @@ export class CreateUserPermissionTable1704067220000 implements MigrationInterfac
       new TableIndex({
         name: 'IDX_USUARIO_PERMISSAO_PERMISSAO',
         columnNames: ['permissao_id'],
-      })
+      }),
     );
 
     await queryRunner.createIndex(
@@ -121,7 +123,7 @@ export class CreateUserPermissionTable1704067220000 implements MigrationInterfac
       new TableIndex({
         name: 'IDX_USUARIO_PERMISSAO_ESCOPO',
         columnNames: ['tipo_escopo', 'escopo_id'],
-      })
+      }),
     );
 
     await queryRunner.createIndex(
@@ -129,7 +131,7 @@ export class CreateUserPermissionTable1704067220000 implements MigrationInterfac
       new TableIndex({
         name: 'IDX_USUARIO_PERMISSAO_VALIDADE',
         columnNames: ['valido_ate'],
-      })
+      }),
     );
 
     await queryRunner.createIndex(
@@ -139,7 +141,7 @@ export class CreateUserPermissionTable1704067220000 implements MigrationInterfac
         columnNames: ['usuario_id', 'permissao_id', 'tipo_escopo', 'escopo_id'],
         isUnique: true,
         where: 'escopo_id IS NOT NULL',
-      })
+      }),
     );
 
     await queryRunner.createIndex(
@@ -149,7 +151,7 @@ export class CreateUserPermissionTable1704067220000 implements MigrationInterfac
         columnNames: ['usuario_id', 'permissao_id', 'tipo_escopo'],
         isUnique: true,
         where: 'escopo_id IS NULL',
-      })
+      }),
     );
   }
 

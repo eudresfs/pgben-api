@@ -1,14 +1,12 @@
-
-
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from '../../auth/auth.module';
 
 // Entidades
-import { 
-  ProcessoJudicial, 
-  DeterminacaoJudicial, 
-  Solicitacao 
+import {
+  ProcessoJudicial,
+  DeterminacaoJudicial,
+  Solicitacao,
 } from '../../entities';
 
 // Repositories
@@ -39,10 +37,7 @@ import { DeterminacaoJudicialConsolidadoService } from './services/determinacao-
     ]),
     AuthModule,
   ],
-  controllers: [
-    DeterminacaoJudicialController,
-    ProcessoJudicialController,
-  ],
+  controllers: [DeterminacaoJudicialController, ProcessoJudicialController],
   providers: [
     DeterminacaoJudicialRepository,
     ProcessoJudicialRepository,

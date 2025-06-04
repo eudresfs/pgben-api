@@ -11,16 +11,22 @@ import {
 @ValidatorConstraint({ name: 'isCPF', async: false })
 export class IsCPF implements ValidatorConstraintInterface {
   validate(cpf: string): boolean {
-    if (!cpf) {return false;}
+    if (!cpf) {
+      return false;
+    }
 
     // Remove caracteres não numéricos
     cpf = cpf.replace(/[^\d]/g, '');
 
     // Verifica se tem 11 dígitos
-    if (cpf.length !== 11) {return false;}
+    if (cpf.length !== 11) {
+      return false;
+    }
 
     // Verifica se todos os dígitos são iguais (caso inválido)
-    if (/^(\d)\1{10}$/.test(cpf)) {return false;}
+    if (/^(\d)\1{10}$/.test(cpf)) {
+      return false;
+    }
 
     // Algoritmo de validação do CPF
     let soma = 0;
@@ -32,8 +38,12 @@ export class IsCPF implements ValidatorConstraintInterface {
     }
 
     resto = (soma * 10) % 11;
-    if (resto === 10 || resto === 11) {resto = 0;}
-    if (resto !== parseInt(cpf.substring(9, 10))) {return false;}
+    if (resto === 10 || resto === 11) {
+      resto = 0;
+    }
+    if (resto !== parseInt(cpf.substring(9, 10))) {
+      return false;
+    }
 
     // Segundo dígito verificador
     soma = 0;
@@ -42,8 +52,12 @@ export class IsCPF implements ValidatorConstraintInterface {
     }
 
     resto = (soma * 10) % 11;
-    if (resto === 10 || resto === 11) {resto = 0;}
-    if (resto !== parseInt(cpf.substring(10, 11))) {return false;}
+    if (resto === 10 || resto === 11) {
+      resto = 0;
+    }
+    if (resto !== parseInt(cpf.substring(10, 11))) {
+      return false;
+    }
 
     return true;
   }

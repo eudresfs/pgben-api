@@ -545,7 +545,7 @@ export class EnhancedMetricsService {
   updateCacheSize(sizeBytes: number, cacheType: string = 'redis'): void {
     this.cacheSize.set({ cache_type: cacheType }, sizeBytes);
   }
-  
+
   /**
    * Registra falhas de cache
    * @param count Número de falhas
@@ -557,26 +557,33 @@ export class EnhancedMetricsService {
       this.recordCacheOperation('failure', false, cacheType);
     }
   }
-  
+
   /**
    * Registra tentativas de recuperação do circuit breaker
    * @param count Número de tentativas
    * @param cacheType Tipo de cache (redis, memory, etc)
    */
-  recordCacheRecoveryAttempts(count: number, cacheType: string = 'redis'): void {
+  recordCacheRecoveryAttempts(
+    count: number,
+    cacheType: string = 'redis',
+  ): void {
     // Registramos cada tentativa como uma operação de recovery
     for (let i = 0; i < count; i++) {
       this.recordCacheOperation('recovery', true, cacheType);
     }
   }
-  
+
   /**
    * Registra o tempo de resposta de uma operação de cache
    * @param durationMs Tempo em milissegundos
    * @param key Chave do cache
    * @param cacheType Tipo de cache (redis, memory, etc)
    */
-  recordCacheResponseTime(durationMs: number, key: string, cacheType: string = 'redis'): void {
+  recordCacheResponseTime(
+    durationMs: number,
+    key: string,
+    cacheType: string = 'redis',
+  ): void {
     // Convertemos de milissegundos para segundos para manter a convenção do Prometheus
     const durationSeconds = durationMs / 1000;
     this.recordCacheOperationDuration('get', durationSeconds, cacheType);

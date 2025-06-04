@@ -56,10 +56,8 @@ export class AuditoriaService {
    * @param dtos Array de DTOs de logs de auditoria
    * @returns Array de logs de auditoria criados
    */
-  async criarLogsBatch(
-    dtos: CreateLogAuditoriaDto[],
-  ): Promise<LogAuditoria[]> {
-    const logs = dtos.map(dto => this.logAuditoriaRepository.create(dto));
+  async criarLogsBatch(dtos: CreateLogAuditoriaDto[]): Promise<LogAuditoria[]> {
+    const logs = dtos.map((dto) => this.logAuditoriaRepository.create(dto));
     return this.logAuditoriaRepository.save(logs);
   }
 
@@ -255,7 +253,7 @@ export class AuditoriaService {
   async buscarLogs(queryParams: any) {
     return this.findAll(queryParams);
   }
-  
+
   /**
    * Verifica a integridade de um log de auditoria
    * @param logId ID do log de auditoria a verificar
@@ -263,7 +261,7 @@ export class AuditoriaService {
    */
   async verificarIntegridade(logId: string) {
     const log = await this.findOne(logId);
-    
+
     // Simular alguma verificação de integridade para os testes
     return {
       log,

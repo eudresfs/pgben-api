@@ -2,7 +2,10 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { DadosCestaBasica } from '../../../entities/dados-cesta-basica.entity';
-import { CreateDadosCestaBasicaDto, UpdateDadosCestaBasicaDto } from '../dto/create-dados-cesta-basica.dto';
+import {
+  CreateDadosCestaBasicaDto,
+  UpdateDadosCestaBasicaDto,
+} from '../dto/create-dados-cesta-basica.dto';
 
 /**
  * Serviço para gerenciar dados específicos de Cesta Básica
@@ -17,7 +20,9 @@ export class DadosCestaBasicaService {
   /**
    * Criar dados de cesta básica para uma solicitação
    */
-  async create(createDto: CreateDadosCestaBasicaDto): Promise<DadosCestaBasica> {
+  async create(
+    createDto: CreateDadosCestaBasicaDto,
+  ): Promise<DadosCestaBasica> {
     // Verificar se já existem dados para esta solicitação
     const existingData = await this.dadosCestaBasicaRepository.findOne({
       where: { solicitacao_id: createDto.solicitacao_id },
@@ -104,7 +109,12 @@ export class DadosCestaBasicaService {
   async findAll(
     page: number = 1,
     limit: number = 10,
-  ): Promise<{ data: DadosCestaBasica[]; total: number; page: number; limit: number }> {
+  ): Promise<{
+    data: DadosCestaBasica[];
+    total: number;
+    page: number;
+    limit: number;
+  }> {
     const [data, total] = await this.dadosCestaBasicaRepository.findAndCount({
       relations: ['solicitacao'],
       skip: (page - 1) * limit,
@@ -127,7 +137,12 @@ export class DadosCestaBasicaService {
     periodoConcessao: string,
     page: number = 1,
     limit: number = 10,
-  ): Promise<{ data: DadosCestaBasica[]; total: number; page: number; limit: number }> {
+  ): Promise<{
+    data: DadosCestaBasica[];
+    total: number;
+    page: number;
+    limit: number;
+  }> {
     const [data, total] = await this.dadosCestaBasicaRepository.findAndCount({
       where: { periodo_concessao: periodoConcessao as any },
       relations: ['solicitacao'],
@@ -151,7 +166,12 @@ export class DadosCestaBasicaService {
     origemAtendimento: string,
     page: number = 1,
     limit: number = 10,
-  ): Promise<{ data: DadosCestaBasica[]; total: number; page: number; limit: number }> {
+  ): Promise<{
+    data: DadosCestaBasica[];
+    total: number;
+    page: number;
+    limit: number;
+  }> {
     const [data, total] = await this.dadosCestaBasicaRepository.findAndCount({
       where: { origem_atendimento: origemAtendimento as any },
       relations: ['solicitacao'],
@@ -178,12 +198,12 @@ export class DadosCestaBasicaService {
     porOrigem: Record<string, number>;
   }> {
     const totalSolicitacoes = await this.dadosCestaBasicaRepository.count();
-    
+
     const totalCestasResult = await this.dadosCestaBasicaRepository
       .createQueryBuilder('dados')
       .select('SUM(dados.quantidade_cestas_solicitadas)', 'total')
       .getRawOne();
-    
+
     const totalCestas = parseInt(totalCestasResult.total) || 0;
 
     // Estatísticas por período

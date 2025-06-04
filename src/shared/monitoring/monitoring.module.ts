@@ -20,11 +20,7 @@ import { HealthCheckService } from '../services/health-check.service';
  */
 // Módulo NÃO global para evitar problemas com interceptors
 @Module({
-  imports: [
-    TerminusModule, 
-    HttpModule, 
-    ConfigModule
-  ],
+  imports: [TerminusModule, HttpModule, ConfigModule],
   controllers: [HealthController, MetricsController, EnhancedMetricsController],
   providers: [
     MetricsService,

@@ -10,7 +10,15 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
 } from 'typeorm';
-import { IsNotEmpty, IsUUID, IsOptional, IsEnum, IsNumber, Min, IsDecimal } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsUUID,
+  IsOptional,
+  IsEnum,
+  IsNumber,
+  Min,
+  IsDecimal,
+} from 'class-validator';
 import { StatusPagamentoEnum } from '../enums/status-pagamento.enum';
 import { MetodoPagamentoEnum } from '../enums/metodo-pagamento.enum';
 import { Usuario } from './usuario.entity';
@@ -18,10 +26,10 @@ import { Solicitacao } from './solicitacao.entity';
 
 /**
  * Entidade que representa um pagamento de benefício no sistema.
- * 
+ *
  * Esta entidade armazena informações sobre pagamentos liberados para beneficiários,
  * incluindo valores, métodos de pagamento, status e histórico de liberação.
- * 
+ *
  * @author Equipe PGBen
  */
 @Entity('pagamento')
@@ -51,7 +59,10 @@ export class Pagamento {
    */
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   @IsNotEmpty({ message: 'Valor é obrigatório' })
-  @IsDecimal({ decimal_digits: '2' }, { message: 'Valor deve ter no máximo 2 casas decimais' })
+  @IsDecimal(
+    { decimal_digits: '2' },
+    { message: 'Valor deve ter no máximo 2 casas decimais' },
+  )
   @Min(0.01, { message: 'Valor deve ser maior que zero' })
   valor: number;
 
@@ -68,7 +79,7 @@ export class Pagamento {
   @Column({
     type: 'enum',
     enum: StatusPagamentoEnum,
-    default: StatusPagamentoEnum.AGENDADO
+    default: StatusPagamentoEnum.AGENDADO,
   })
   @IsEnum(StatusPagamentoEnum, { message: 'Status inválido' })
   status: StatusPagamentoEnum;
@@ -79,7 +90,7 @@ export class Pagamento {
   @Column({
     name: 'metodo_pagamento',
     type: 'enum',
-    enum: MetodoPagamentoEnum
+    enum: MetodoPagamentoEnum,
   })
   @IsEnum(MetodoPagamentoEnum, { message: 'Método de pagamento inválido' })
   metodoPagamento: MetodoPagamentoEnum;

@@ -85,6 +85,12 @@ export function getNomeBanco(codigo: string): string {
 /**
  * Função utilitária para validar se é uma conta poupança social do Banco do Brasil
  */
-export function isPoupancaSocialBB(banco: string, tipoConta: TipoConta): boolean {
-  return banco === CodigoBanco.BANCO_DO_BRASIL && tipoConta === TipoConta.POUPANCA_SOCIAL;
+export function isPoupancaSocialBB(
+  banco: string,
+  tipoConta: TipoConta,
+): boolean {
+  return (
+    banco === CodigoBanco.BANCO_DO_BRASIL &&
+    tipoConta === TipoConta.POUPANCA_SOCIAL
+  );
 }

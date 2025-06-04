@@ -60,9 +60,7 @@ export class AuditService {
   /**
    * Busca logs de auditoria com filtros e paginação
    */
-  async findLogs(
-    queryDto: AuditLogQueryDto,
-  ): Promise<{
+  async findLogs(queryDto: AuditLogQueryDto): Promise<{
     data: AuditLogResponseDto[];
     total: number;
     page: number;
@@ -89,16 +87,30 @@ export class AuditService {
     const where: FindOptionsWhere<AuditLog> = {};
 
     // Aplicar filtros
-    if (usuario_id) {where.usuario_id = usuario_id;}
-    if (action) {where.action = action;}
-    if (resource_type) {where.resource_type = resource_type;}
-    if (resource_id) {where.resource_id = resource_id;}
-    if (severity) {where.severity = severity;}
-    if (client_ip) {where.client_ip = client_ip;}
+    if (usuario_id) {
+      where.usuario_id = usuario_id;
+    }
+    if (action) {
+      where.action = action;
+    }
+    if (resource_type) {
+      where.resource_type = resource_type;
+    }
+    if (resource_id) {
+      where.resource_id = resource_id;
+    }
+    if (severity) {
+      where.severity = severity;
+    }
+    if (client_ip) {
+      where.client_ip = client_ip;
+    }
 
     // Filtro de data
     if (start_date || end_date) {
-      const startDate = start_date ? new Date(start_date) : new Date('1970-01-01');
+      const startDate = start_date
+        ? new Date(start_date)
+        : new Date('1970-01-01');
       const endDate = end_date ? new Date(end_date) : new Date();
       where.created_at = Between(startDate, endDate);
     }
@@ -129,7 +141,7 @@ export class AuditService {
       take: limit,
     });
 
-    const data = logs.map(log => this.mapToResponseDto(log));
+    const data = logs.map((log) => this.mapToResponseDto(log));
 
     return {
       data,
@@ -155,10 +167,7 @@ export class AuditService {
   /**
    * Gera estatísticas de auditoria
    */
-  async getStats(
-    startDate?: Date,
-    endDate?: Date,
-  ): Promise<AuditLogStatsDto> {
+  async getStats(startDate?: Date, endDate?: Date): Promise<AuditLogStatsDto> {
     const start = startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000); // 30 dias atrás
     const end = endDate || new Date();
 
@@ -242,7 +251,7 @@ export class AuditService {
         (acc, item) => ({ ...acc, [item.severity]: parseInt(item.count) }),
         {},
       ),
-      top_users: topUsers.map(user => ({
+      top_users: topUsers.map((user) => ({
         usuario_id: user.usuario_id,
         nome: user.nome || 'Usuário Desconhecido',
         count: parseInt(user.count),

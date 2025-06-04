@@ -12,7 +12,7 @@ import { MetodoPagamentoEnum } from '../../../enums/metodo-pagamento.enum';
 
 /**
  * Testes unitários para PagamentoService
- * 
+ *
  * Garante que cada método do serviço de pagamentos funciona corretamente
  * em isolamento, com dependências devidamente mockadas.
  */
@@ -33,7 +33,7 @@ describe('PagamentoService', () => {
     dataCriacao: new Date(),
     dataAtualizacao: new Date(),
     liberadoPor: 'usuario-id-1',
-    observacoes: 'Pagamento de benefício eventual'
+    observacoes: 'Pagamento de benefício eventual',
   };
 
   const pagamentosListMock = [
@@ -42,8 +42,8 @@ describe('PagamentoService', () => {
       ...pagamentoMock,
       id: 'pagamento-id-2',
       solicitacaoId: 'solicitacao-id-2',
-      valor: 300
-    }
+      valor: 300,
+    },
   ];
 
   const pagamentoCreateDtoMock: PagamentoCreateDto = {
@@ -51,7 +51,7 @@ describe('PagamentoService', () => {
     metodoPagamento: 'pix',
     infoBancariaId: 'info-bancaria-id-1',
     dataLiberacao: new Date(),
-    observacoes: 'Pagamento de benefício eventual'
+    observacoes: 'Pagamento de benefício eventual',
   };
 
   beforeEach(async () => {
@@ -72,22 +72,36 @@ describe('PagamentoService', () => {
               orderBy: jest.fn().mockReturnThis(),
               skip: jest.fn().mockReturnThis(),
               take: jest.fn().mockReturnThis(),
-              getManyAndCount: jest.fn().mockResolvedValue([pagamentosListMock, pagamentosListMock.length])
+              getManyAndCount: jest
+                .fn()
+                .mockResolvedValue([
+                  pagamentosListMock,
+                  pagamentosListMock.length,
+                ]),
             })),
           },
         },
         {
           provide: StatusTransitionValidator,
           useValue: {
-            canTransition: jest.fn().mockReturnValue({ allowed: true, message: 'Transição permitida' }),
-          }
-        }
+            canTransition: jest
+              .fn()
+              .mockReturnValue({
+                allowed: true,
+                message: 'Transição permitida',
+              }),
+          },
+        },
       ],
     }).compile();
 
     service = module.get<PagamentoService>(PagamentoService);
-    pagamentoRepository = module.get<Repository<Pagamento>>(getRepositoryToken(Pagamento));
-    statusValidator = module.get<StatusTransitionValidator>(StatusTransitionValidator);
+    pagamentoRepository = module.get<Repository<Pagamento>>(
+      getRepositoryToken(Pagamento),
+    );
+    statusValidator = module.get<StatusTransitionValidator>(
+      StatusTransitionValidator,
+    );
   });
 
   it('deve estar definido', () => {
@@ -99,12 +113,12 @@ describe('PagamentoService', () => {
       // Arrange
       const solicitacaoId = 'solicitacao-id-1';
       const usuarioId = 'usuario-id-1';
-      
+
       // Act
       const resultado = await service.createPagamento(
         solicitacaoId,
         pagamentoCreateDtoMock,
-        usuarioId
+        usuarioId,
       );
 
       // Assert
@@ -120,13 +134,13 @@ describe('PagamentoService', () => {
       const dtoInvalido = {
         ...pagamentoCreateDtoMock,
         metodoPagamento: 'pix',
-        infoBancariaId: undefined
+        infoBancariaId: undefined,
       };
 
       // Act & Assert
-      await expect(service.createPagamento(solicitacaoId, dtoInvalido, usuarioId))
-        .rejects
-        .toThrow(ConflictException);
+      await expect(
+        service.createPagamento(solicitacaoId, dtoInvalido, usuarioId),
+      ).rejects.toThrow(ConflictException);
     });
 
     it('deve aceitar pagamento presencial sem infoBancariaId', async () => {
@@ -136,24 +150,30 @@ describe('PagamentoService', () => {
       const dtoPresencial = {
         ...pagamentoCreateDtoMock,
         metodoPagamento: 'presencial',
-        infoBancariaId: undefined
+        infoBancariaId: undefined,
       };
-      
+
       // Mock específico para este teste
       jest.spyOn(pagamentoRepository, 'create').mockReturnValue({
         ...pagamentoMock,
         metodoPagamento: 'presencial',
-        infoBancariaId: undefined
+        infoBancariaId: undefined,
       });
 
       // Act
-      const resultado = await service.createPagamento(solicitacaoId, dtoPresencial, usuarioId);
+      const resultado = await service.createPagamento(
+        solicitacaoId,
+        dtoPresencial,
+        usuarioId,
+      );
 
       // Assert
       expect(resultado.metodoPagamento).toBe('presencial');
-      expect(pagamentoRepository.create).toHaveBeenCalledWith(expect.objectContaining({
-        metodoPagamento: 'presencial'
-      }));
+      expect(pagamentoRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          metodoPagamento: 'presencial',
+        }),
+      );
       expect(pagamentoRepository.save).toHaveBeenCalled();
     });
   });
@@ -164,26 +184,34 @@ describe('PagamentoService', () => {
       const pagamentoId = 'pagamento-id-1';
       const novoStatus = StatusPagamentoEnum.CONFIRMADO;
       const usuarioId = 'usuario-id-1';
-      
+
       // Mock do resultado da atualização
       const pagamentoAtualizado = {
         ...pagamentoMock,
         status: novoStatus,
         atualizadoPor: usuarioId,
-        dataAtualizacao: expect.any(Date)
+        dataAtualizacao: expect.any(Date),
       };
-      
-      jest.spyOn(pagamentoRepository, 'save').mockResolvedValue(pagamentoAtualizado);
-      jest.spyOn(pagamentoRepository, 'findOne').mockResolvedValue(pagamentoMock);
+
+      jest
+        .spyOn(pagamentoRepository, 'save')
+        .mockResolvedValue(pagamentoAtualizado);
+      jest
+        .spyOn(pagamentoRepository, 'findOne')
+        .mockResolvedValue(pagamentoMock);
 
       // Act
-      const resultado = await service.atualizarStatus(pagamentoId, novoStatus, usuarioId);
+      const resultado = await service.atualizarStatus(
+        pagamentoId,
+        novoStatus,
+        usuarioId,
+      );
 
       // Assert
       expect(resultado).toEqual(pagamentoAtualizado);
       expect(statusValidator.canTransition).toHaveBeenCalledWith(
         pagamentoMock.status,
-        novoStatus
+        novoStatus,
       );
       expect(pagamentoRepository.save).toHaveBeenCalled();
     });
@@ -193,13 +221,13 @@ describe('PagamentoService', () => {
       const pagamentoId = 'pagamento-inexistente';
       const novoStatus = StatusPagamentoEnum.CONFIRMADO;
       const usuarioId = 'usuario-id-1';
-      
+
       jest.spyOn(pagamentoRepository, 'findOne').mockResolvedValue(null);
 
       // Act & Assert
-      await expect(service.atualizarStatus(pagamentoId, novoStatus, usuarioId))
-        .rejects
-        .toThrow(NotFoundException);
+      await expect(
+        service.atualizarStatus(pagamentoId, novoStatus, usuarioId),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('deve lançar erro quando transição de status não é permitida', async () => {
@@ -207,16 +235,16 @@ describe('PagamentoService', () => {
       const pagamentoId = 'pagamento-id-1';
       const novoStatus = StatusPagamentoEnum.AGENDADO; // Transição inválida de LIBERADO para AGENDADO
       const usuarioId = 'usuario-id-1';
-      
-      jest.spyOn(statusValidator, 'canTransition').mockReturnValue({ 
-        allowed: false, 
-        message: 'Transição não permitida' 
+
+      jest.spyOn(statusValidator, 'canTransition').mockReturnValue({
+        allowed: false,
+        message: 'Transição não permitida',
       });
 
       // Act & Assert
-      await expect(service.atualizarStatus(pagamentoId, novoStatus, usuarioId))
-        .rejects
-        .toThrow(ConflictException);
+      await expect(
+        service.atualizarStatus(pagamentoId, novoStatus, usuarioId),
+      ).rejects.toThrow(ConflictException);
     });
   });
 
@@ -226,29 +254,31 @@ describe('PagamentoService', () => {
       const pagamentoId = 'pagamento-id-1';
       const usuarioId = 'usuario-id-1';
       const motivoCancelamento = 'Cancelado a pedido do beneficiário';
-      
+
       const pagamentoCancelado = {
         ...pagamentoMock,
         status: StatusPagamentoEnum.CANCELADO,
         motivoCancelamento,
         canceladoPor: usuarioId,
-        dataCancelamento: expect.any(Date)
+        dataCancelamento: expect.any(Date),
       };
-      
-      jest.spyOn(pagamentoRepository, 'save').mockResolvedValue(pagamentoCancelado);
+
+      jest
+        .spyOn(pagamentoRepository, 'save')
+        .mockResolvedValue(pagamentoCancelado);
 
       // Act
       const resultado = await service.cancelarPagamento(
         pagamentoId,
         usuarioId,
-        motivoCancelamento
+        motivoCancelamento,
       );
 
       // Assert
       expect(resultado).toEqual(pagamentoCancelado);
       expect(statusValidator.canTransition).toHaveBeenCalledWith(
         pagamentoMock.status,
-        StatusPagamentoEnum.CANCELADO
+        StatusPagamentoEnum.CANCELADO,
       );
       expect(pagamentoRepository.save).toHaveBeenCalled();
     });
@@ -258,13 +288,13 @@ describe('PagamentoService', () => {
       const pagamentoId = 'pagamento-inexistente';
       const usuarioId = 'usuario-id-1';
       const motivoCancelamento = 'Cancelado a pedido do beneficiário';
-      
+
       jest.spyOn(pagamentoRepository, 'findOne').mockResolvedValue(null);
 
       // Act & Assert
-      await expect(service.cancelarPagamento(pagamentoId, usuarioId, motivoCancelamento))
-        .rejects
-        .toThrow(NotFoundException);
+      await expect(
+        service.cancelarPagamento(pagamentoId, usuarioId, motivoCancelamento),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('deve lançar erro quando cancelamento não é permitido', async () => {
@@ -272,22 +302,22 @@ describe('PagamentoService', () => {
       const pagamentoId = 'pagamento-id-1';
       const usuarioId = 'usuario-id-1';
       const motivoCancelamento = 'Cancelado a pedido do beneficiário';
-      
+
       // Mock para pagamento já confirmado (não pode ser cancelado)
       jest.spyOn(pagamentoRepository, 'findOne').mockResolvedValue({
         ...pagamentoMock,
-        status: StatusPagamentoEnum.CONFIRMADO
+        status: StatusPagamentoEnum.CONFIRMADO,
       });
-      
-      jest.spyOn(statusValidator, 'canTransition').mockReturnValue({ 
-        allowed: false, 
-        message: 'Cancelamento não permitido para pagamentos confirmados' 
+
+      jest.spyOn(statusValidator, 'canTransition').mockReturnValue({
+        allowed: false,
+        message: 'Cancelamento não permitido para pagamentos confirmados',
       });
 
       // Act & Assert
-      await expect(service.cancelarPagamento(pagamentoId, usuarioId, motivoCancelamento))
-        .rejects
-        .toThrow(ConflictException);
+      await expect(
+        service.cancelarPagamento(pagamentoId, usuarioId, motivoCancelamento),
+      ).rejects.toThrow(ConflictException);
     });
   });
 
@@ -295,21 +325,21 @@ describe('PagamentoService', () => {
     it('deve retornar um pagamento pelo ID', async () => {
       // Arrange
       const pagamentoId = 'pagamento-id-1';
-      
+
       // Act
       const resultado = await service.findOne(pagamentoId);
 
       // Assert
       expect(resultado).toEqual(pagamentoMock);
       expect(pagamentoRepository.findOne).toHaveBeenCalledWith({
-        where: { id: pagamentoId }
+        where: { id: pagamentoId },
       });
     });
 
     it('deve retornar null quando pagamento não existe', async () => {
       // Arrange
       const pagamentoId = 'pagamento-inexistente';
-      
+
       jest.spyOn(pagamentoRepository, 'findOne').mockResolvedValue(null);
 
       // Act
@@ -327,10 +357,12 @@ describe('PagamentoService', () => {
       const pagamentoComRelacoes = {
         ...pagamentoMock,
         comprovantes: [],
-        confirmacao: null
+        confirmacao: null,
       };
-      
-      jest.spyOn(pagamentoRepository, 'findOne').mockResolvedValue(pagamentoComRelacoes);
+
+      jest
+        .spyOn(pagamentoRepository, 'findOne')
+        .mockResolvedValue(pagamentoComRelacoes);
 
       // Act
       const resultado = await service.findOneWithRelations(pagamentoId);
@@ -339,7 +371,7 @@ describe('PagamentoService', () => {
       expect(resultado).toEqual(pagamentoComRelacoes);
       expect(pagamentoRepository.findOne).toHaveBeenCalledWith({
         where: { id: pagamentoId },
-        relations: expect.arrayContaining(['comprovantes', 'confirmacao'])
+        relations: expect.arrayContaining(['comprovantes', 'confirmacao']),
       });
     });
   });
@@ -349,14 +381,14 @@ describe('PagamentoService', () => {
       // Arrange
       const options = {
         page: 1,
-        limit: 10
+        limit: 10,
       };
-      
+
       const expected = {
         items: pagamentosListMock,
         total: pagamentosListMock.length,
         page: options.page,
-        limit: options.limit
+        limit: options.limit,
       };
 
       // Act
@@ -376,7 +408,7 @@ describe('PagamentoService', () => {
         dataFim: new Date('2025-12-31'),
         metodoPagamento: 'pix',
         page: 1,
-        limit: 10
+        limit: 10,
       };
 
       const mockQueryBuilder = {
@@ -386,10 +418,14 @@ describe('PagamentoService', () => {
         orderBy: jest.fn().mockReturnThis(),
         skip: jest.fn().mockReturnThis(),
         take: jest.fn().mockReturnThis(),
-        getManyAndCount: jest.fn().mockResolvedValue([pagamentosListMock, pagamentosListMock.length])
+        getManyAndCount: jest
+          .fn()
+          .mockResolvedValue([pagamentosListMock, pagamentosListMock.length]),
       };
-      
-      jest.spyOn(pagamentoRepository, 'createQueryBuilder').mockReturnValue(mockQueryBuilder as any);
+
+      jest
+        .spyOn(pagamentoRepository, 'createQueryBuilder')
+        .mockReturnValue(mockQueryBuilder as any);
 
       // Act
       const resultado = await service.findAll(options);
@@ -407,9 +443,9 @@ describe('PagamentoService', () => {
       // Arrange
       const options = {
         page: 1,
-        limit: 10
+        limit: 10,
       };
-      
+
       const mockQueryBuilder = {
         where: jest.fn().mockReturnThis(),
         andWhere: jest.fn().mockReturnThis(),
@@ -417,18 +453,22 @@ describe('PagamentoService', () => {
         orderBy: jest.fn().mockReturnThis(),
         skip: jest.fn().mockReturnThis(),
         take: jest.fn().mockReturnThis(),
-        getManyAndCount: jest.fn().mockResolvedValue([pagamentosListMock, pagamentosListMock.length])
+        getManyAndCount: jest
+          .fn()
+          .mockResolvedValue([pagamentosListMock, pagamentosListMock.length]),
       };
-      
-      jest.spyOn(pagamentoRepository, 'createQueryBuilder').mockReturnValue(mockQueryBuilder as any);
+
+      jest
+        .spyOn(pagamentoRepository, 'createQueryBuilder')
+        .mockReturnValue(mockQueryBuilder as any);
 
       // Act
       const resultado = await service.findPendentes(options);
 
       // Assert
       expect(mockQueryBuilder.where).toHaveBeenCalledWith(
-        'pagamento.status = :status', 
-        { status: StatusPagamentoEnum.LIBERADO }
+        'pagamento.status = :status',
+        { status: StatusPagamentoEnum.LIBERADO },
       );
       expect(resultado.items).toEqual(pagamentosListMock);
     });
@@ -439,9 +479,9 @@ describe('PagamentoService', () => {
         unidadeId: 'unidade-id-1',
         tipoBeneficioId: 'tipo-beneficio-id-1',
         page: 1,
-        limit: 10
+        limit: 10,
       };
-      
+
       const mockQueryBuilder = {
         where: jest.fn().mockReturnThis(),
         andWhere: jest.fn().mockReturnThis(),
@@ -449,10 +489,14 @@ describe('PagamentoService', () => {
         orderBy: jest.fn().mockReturnThis(),
         skip: jest.fn().mockReturnThis(),
         take: jest.fn().mockReturnThis(),
-        getManyAndCount: jest.fn().mockResolvedValue([pagamentosListMock, pagamentosListMock.length])
+        getManyAndCount: jest
+          .fn()
+          .mockResolvedValue([pagamentosListMock, pagamentosListMock.length]),
       };
-      
-      jest.spyOn(pagamentoRepository, 'createQueryBuilder').mockReturnValue(mockQueryBuilder as any);
+
+      jest
+        .spyOn(pagamentoRepository, 'createQueryBuilder')
+        .mockReturnValue(mockQueryBuilder as any);
 
       // Act
       const resultado = await service.findPendentes(options);

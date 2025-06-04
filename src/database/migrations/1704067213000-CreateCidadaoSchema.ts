@@ -2,13 +2,13 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
  * Migration para criar o schema relacionado ao cidadão
- * 
+ *
  * Esta migration cria as tabelas e restrições para o módulo de cidadão,
  * incluindo estruturas para armazenar dados pessoais, composição familiar,
  * situação de moradia e papéis que o cidadão pode assumir.
- * 
+ *
  * Os enums necessários são criados na migration CreateAllEnums
- * 
+ *
  * @author Engenheiro de Dados
  * @date 19/05/2025
  */
@@ -20,7 +20,7 @@ export class CreateCidadaoSchema1704067216000 implements MigrationInterface {
    */
   public async up(queryRunner: QueryRunner): Promise<void> {
     console.log('Iniciando migration CreateCidadaoSchema...');
-    
+
     // Criar função update_timestamp se não existir
     await queryRunner.query(`
       CREATE OR REPLACE FUNCTION update_timestamp()
@@ -31,7 +31,7 @@ export class CreateCidadaoSchema1704067216000 implements MigrationInterface {
       END;
       $$ LANGUAGE plpgsql;
     `);
-    
+
     // Tabela principal de cidadão
     await queryRunner.query(`
       CREATE TABLE IF NOT EXISTS "cidadao" (
@@ -60,7 +60,7 @@ export class CreateCidadaoSchema1704067216000 implements MigrationInterface {
         CONSTRAINT "FK_cidadao_unidade" FOREIGN KEY ("unidade_id") REFERENCES "unidade"("id")
       );
     `);
-    
+
     // Índices para otimização de consultas
     await queryRunner.query(`
       CREATE INDEX IF NOT EXISTS "IDX_cidadao_cpf" ON "cidadao" ("cpf");
@@ -70,7 +70,7 @@ export class CreateCidadaoSchema1704067216000 implements MigrationInterface {
       CREATE INDEX IF NOT EXISTS "IDX_cidadao_endereco" ON "cidadao" USING GIN ("endereco");
       CREATE INDEX IF NOT EXISTS "IDX_cidadao_estado_civil" ON "cidadao" USING GIN ("estado_civil");
     `);
-    
+
     // Trigger para atualização automática de timestamp
     await queryRunner.query(`
       DROP TRIGGER IF EXISTS trigger_cidadao_update_timestamp ON "cidadao";
@@ -79,7 +79,7 @@ export class CreateCidadaoSchema1704067216000 implements MigrationInterface {
         FOR EACH ROW
         EXECUTE PROCEDURE update_timestamp();
     `);
-    
+
     // Tabela de papel do cidadão
     await queryRunner.query(`
       CREATE TABLE IF NOT EXISTS "papel_cidadao" (
@@ -96,14 +96,14 @@ export class CreateCidadaoSchema1704067216000 implements MigrationInterface {
         CONSTRAINT "UK_papel_cidadao_cidadao_tipo" UNIQUE ("cidadao_id", "tipo_papel")
       );
     `);
-    
+
     // Índices para papel_cidadao
     await queryRunner.query(`
       CREATE INDEX IF NOT EXISTS "IDX_papel_cidadao_cidadao" ON "papel_cidadao" ("cidadao_id");
       CREATE INDEX IF NOT EXISTS "IDX_papel_cidadao_tipo" ON "papel_cidadao" ("tipo_papel");
       CREATE INDEX IF NOT EXISTS "IDX_papel_cidadao_metadados" ON "papel_cidadao" USING GIN ("metadados");
     `);
-    
+
     // Trigger para papel_cidadao
     await queryRunner.query(`
       DROP TRIGGER IF EXISTS trigger_papel_cidadao_update_timestamp ON "papel_cidadao";
@@ -112,7 +112,7 @@ export class CreateCidadaoSchema1704067216000 implements MigrationInterface {
         FOR EACH ROW
         EXECUTE PROCEDURE update_timestamp();
     `);
-    
+
     // Tabela de composição familiar
     await queryRunner.query(`
       CREATE TABLE IF NOT EXISTS "composicao_familiar" (
@@ -133,13 +133,13 @@ export class CreateCidadaoSchema1704067216000 implements MigrationInterface {
         CONSTRAINT "UK_composicao_familiar_cidadao_nome" UNIQUE ("cidadao_id", "nome")
       );
     `);
-    
+
     // Índices para composicao_familiar
     await queryRunner.query(`
       CREATE INDEX IF NOT EXISTS "IDX_composicao_familiar_cidadao" ON "composicao_familiar" ("cidadao_id");
       CREATE INDEX IF NOT EXISTS "IDX_composicao_familiar_parentesco" ON "composicao_familiar" ("parentesco");
     `);
-    
+
     // Trigger para composicao_familiar
     await queryRunner.query(`
       DROP TRIGGER IF EXISTS trigger_composicao_familiar_update_timestamp ON "composicao_familiar";
@@ -148,7 +148,7 @@ export class CreateCidadaoSchema1704067216000 implements MigrationInterface {
         FOR EACH ROW
         EXECUTE PROCEDURE update_timestamp();
     `);
-    
+
     // Tabela de dados sociais
     await queryRunner.query(`
       CREATE TABLE IF NOT EXISTS "dados_sociais" (
@@ -177,14 +177,14 @@ export class CreateCidadaoSchema1704067216000 implements MigrationInterface {
         CONSTRAINT "UK_dados_sociais_cidadao" UNIQUE ("cidadao_id")
       );
     `);
-    
+
     // Índices para dados_sociais
     await queryRunner.query(`
       CREATE INDEX IF NOT EXISTS "IDX_dados_sociais_cidadao" ON "dados_sociais" ("cidadao_id");
       CREATE INDEX IF NOT EXISTS "IDX_dados_sociais_escolaridade" ON "dados_sociais" ("escolaridade");
       CREATE INDEX IF NOT EXISTS "IDX_dados_sociais_situacao_trabalho" ON "dados_sociais" ("situacao_trabalho");
     `);
-    
+
     // Trigger para dados_sociais
     await queryRunner.query(`
       DROP TRIGGER IF EXISTS trigger_dados_sociais_update_timestamp ON "dados_sociais";
@@ -193,7 +193,7 @@ export class CreateCidadaoSchema1704067216000 implements MigrationInterface {
         FOR EACH ROW
         EXECUTE PROCEDURE update_timestamp();
     `);
-    
+
     // Tabela de situação de moradia
     await queryRunner.query(`
       CREATE TABLE IF NOT EXISTS "situacao_moradia" (
@@ -215,13 +215,13 @@ export class CreateCidadaoSchema1704067216000 implements MigrationInterface {
         CONSTRAINT "UK_situacao_moradia_cidadao" UNIQUE ("cidadao_id")
       );
     `);
-    
+
     // Índices para situacao_moradia
     await queryRunner.query(`
       CREATE INDEX IF NOT EXISTS "IDX_situacao_moradia_cidadao" ON "situacao_moradia" ("cidadao_id");
       CREATE INDEX IF NOT EXISTS "IDX_situacao_moradia_tipo" ON "situacao_moradia" ("tipo_moradia");
     `);
-    
+
     // Trigger para situacao_moradia
     await queryRunner.query(`
       DROP TRIGGER IF EXISTS trigger_situacao_moradia_update_timestamp ON "situacao_moradia";
@@ -230,7 +230,7 @@ export class CreateCidadaoSchema1704067216000 implements MigrationInterface {
         FOR EACH ROW
         EXECUTE PROCEDURE update_timestamp();
     `);
-    
+
     // Adicionar as chaves estrangeiras
     await queryRunner.query(`
       DO $$
@@ -288,7 +288,7 @@ export class CreateCidadaoSchema1704067216000 implements MigrationInterface {
         END IF;
       END $$;
     `);
-    
+
     console.log('Migration CreateCidadaoSchema executada com sucesso.');
   }
 
@@ -297,7 +297,7 @@ export class CreateCidadaoSchema1704067216000 implements MigrationInterface {
    */
   public async down(queryRunner: QueryRunner): Promise<void> {
     console.log('Revertendo migration CreateCidadaoSchema...');
-    
+
     // Remover chaves estrangeiras
     await queryRunner.query(`
       ALTER TABLE "papel_cidadao" DROP CONSTRAINT IF EXISTS "FK_papel_cidadao_cidadao";
@@ -306,7 +306,7 @@ export class CreateCidadaoSchema1704067216000 implements MigrationInterface {
       ALTER TABLE "dados_sociais" DROP CONSTRAINT IF EXISTS "FK_dados_sociais_cidadao";
       ALTER TABLE "situacao_moradia" DROP CONSTRAINT IF EXISTS "FK_situacao_moradia_cidadao";
     `);
-    
+
     // Remover triggers de atualização automática de timestamp
     await queryRunner.query(`
       DROP TRIGGER IF EXISTS trigger_cidadao_update_timestamp ON "cidadao";
@@ -315,7 +315,7 @@ export class CreateCidadaoSchema1704067216000 implements MigrationInterface {
       DROP TRIGGER IF EXISTS trigger_dados_sociais_update_timestamp ON "dados_sociais";
       DROP TRIGGER IF EXISTS trigger_situacao_moradia_update_timestamp ON "situacao_moradia";
     `);
-    
+
     // Remover tabelas
     await queryRunner.query(`
       DROP TABLE IF EXISTS "situacao_moradia";
@@ -324,12 +324,12 @@ export class CreateCidadaoSchema1704067216000 implements MigrationInterface {
       DROP TABLE IF EXISTS "composicao_familiar";
       DROP TABLE IF EXISTS "cidadao";
     `);
-    
+
     // Remover função update_timestamp se não for usada por outras tabelas
     await queryRunner.query(`
       DROP FUNCTION IF EXISTS update_timestamp();
     `);
-    
+
     console.log('Migration CreateCidadaoSchema revertida com sucesso.');
   }
 }

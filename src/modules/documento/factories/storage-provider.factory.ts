@@ -70,7 +70,9 @@ export class StorageProviderFactory {
     switch (providerType) {
       case TipoStorageProvider.S3:
         if (!this.s3StorageAdapter) {
-          this.logger.warn('S3 não está configurado. Usando armazenamento local como fallback.');
+          this.logger.warn(
+            'S3 não está configurado. Usando armazenamento local como fallback.',
+          );
           return this.localStorageAdapter;
         }
         return this.s3StorageAdapter;
@@ -88,7 +90,9 @@ export class StorageProviderFactory {
         // Evitar recursão infinita usando diretamente o provedor padrão
         if (this.defaultProvider === TipoStorageProvider.S3) {
           if (!this.s3StorageAdapter) {
-            this.logger.warn('S3 não está configurado. Usando armazenamento local como fallback.');
+            this.logger.warn(
+              'S3 não está configurado. Usando armazenamento local como fallback.',
+            );
             return this.localStorageAdapter;
           }
           return this.s3StorageAdapter;
@@ -210,8 +214,12 @@ export class StorageProviderFactory {
           const client = (MinioService as any).client;
           if (client && typeof client.listObjects === 'function') {
             const objects: string[] = [];
-            const stream = client.listObjects(process.env.MINIO_BUCKET_NAME || 'documents', prefix, true);
-            
+            const stream = client.listObjects(
+              process.env.MINIO_BUCKET_NAME || 'documents',
+              prefix,
+              true,
+            );
+
             return new Promise((resolve, reject) => {
               stream.on('data', (obj: any) => {
                 if (obj.name && (!maxKeys || objects.length < maxKeys)) {
@@ -222,7 +230,7 @@ export class StorageProviderFactory {
               stream.on('error', reject);
             });
           }
-          
+
           this.logger.warn('Cliente MinIO não disponível para listagem');
           return [];
         } catch (error) {

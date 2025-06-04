@@ -48,13 +48,17 @@ describe('EnumValidator', () => {
 
       const errors = await validate(dto);
       expect(errors).toHaveLength(2);
-      
-      const testFieldError = errors.find(error => error.property === 'testField');
-      const sensitiveFieldError = errors.find(error => error.property === 'sensitiveField');
-      
+
+      const testFieldError = errors.find(
+        (error) => error.property === 'testField',
+      );
+      const sensitiveFieldError = errors.find(
+        (error) => error.property === 'sensitiveField',
+      );
+
       expect(testFieldError).toBeDefined();
       expect(sensitiveFieldError).toBeDefined();
-      
+
       expect(testFieldError.constraints).toHaveProperty('isEnumValue');
       expect(sensitiveFieldError.constraints).toHaveProperty('isEnumValue');
     });
@@ -66,10 +70,12 @@ describe('EnumValidator', () => {
       });
 
       const errors = await validate(dto);
-      
+
       // testField deve passar (case-insensitive)
       // sensitiveField deve passar (valor correto)
-      const testFieldErrors = errors.filter(error => error.property === 'testField');
+      const testFieldErrors = errors.filter(
+        (error) => error.property === 'testField',
+      );
       expect(testFieldErrors).toHaveLength(0);
     });
 
@@ -80,8 +86,10 @@ describe('EnumValidator', () => {
       });
 
       const errors = await validate(dto);
-      
-      const sensitiveFieldErrors = errors.filter(error => error.property === 'sensitiveField');
+
+      const sensitiveFieldErrors = errors.filter(
+        (error) => error.property === 'sensitiveField',
+      );
       expect(sensitiveFieldErrors).toHaveLength(1);
     });
 
@@ -92,11 +100,13 @@ describe('EnumValidator', () => {
       });
 
       const errors = await validate(dto);
-      
-      const testFieldError = errors.find(error => error.property === 'testField');
+
+      const testFieldError = errors.find(
+        (error) => error.property === 'testField',
+      );
       expect(testFieldError).toBeDefined();
       const message = testFieldError!.constraints?.isEnumValue;
-      
+
       expect(message).toContain('testField');
       expect(message).toContain('Opção de Teste');
       expect(message).toContain('OPTION_A, OPTION_B, OPTION_C');
@@ -109,11 +119,13 @@ describe('EnumValidator', () => {
       });
 
       const errors = await validate(dto);
-      
-      const testFieldError = errors.find(error => error.property === 'testField');
+
+      const testFieldError = errors.find(
+        (error) => error.property === 'testField',
+      );
       expect(testFieldError).toBeDefined();
       const message = testFieldError!.constraints?.isEnumValue;
-      
+
       // Deve sugerir OPTION_A como valor similar
       expect(message).toContain('Você quis dizer');
     });
@@ -131,7 +143,7 @@ describe('EnumValidator', () => {
 
       const errors1 = await validate(dto1);
       const errors2 = await validate(dto2);
-      
+
       expect(errors1.length).toBeGreaterThan(0);
       expect(errors2.length).toBeGreaterThan(0);
     });
@@ -143,7 +155,7 @@ describe('EnumValidator', () => {
         const message = EnumValidationHelper.createEnumMessage(
           TestEnum,
           'Opção de Teste',
-          'campo de teste'
+          'campo de teste',
         );
 
         expect(message).toContain('campo de teste');
@@ -162,10 +174,18 @@ describe('EnumValidator', () => {
 
     describe('isValidEnumValue', () => {
       it('deve validar corretamente valores do enum', () => {
-        expect(EnumValidationHelper.isValidEnumValue(TestEnum.OPTION_A, TestEnum)).toBe(true);
-        expect(EnumValidationHelper.isValidEnumValue('INVALID', TestEnum)).toBe(false);
-        expect(EnumValidationHelper.isValidEnumValue(null, TestEnum)).toBe(false);
-        expect(EnumValidationHelper.isValidEnumValue(undefined, TestEnum)).toBe(false);
+        expect(
+          EnumValidationHelper.isValidEnumValue(TestEnum.OPTION_A, TestEnum),
+        ).toBe(true);
+        expect(EnumValidationHelper.isValidEnumValue('INVALID', TestEnum)).toBe(
+          false,
+        );
+        expect(EnumValidationHelper.isValidEnumValue(null, TestEnum)).toBe(
+          false,
+        );
+        expect(EnumValidationHelper.isValidEnumValue(undefined, TestEnum)).toBe(
+          false,
+        );
       });
     });
 
@@ -174,14 +194,14 @@ describe('EnumValidator', () => {
         const result = EnumValidationHelper.normalizeEnumValue(
           TestEnum.OPTION_A,
           TestEnum,
-          true
+          true,
         );
         expect(result).toBe(TestEnum.OPTION_A);
 
         const invalidResult = EnumValidationHelper.normalizeEnumValue(
           'option_a',
           TestEnum,
-          true
+          true,
         );
         expect(invalidResult).toBeUndefined();
       });
@@ -190,21 +210,25 @@ describe('EnumValidator', () => {
         const result = EnumValidationHelper.normalizeEnumValue(
           'option_a',
           TestEnum,
-          false
+          false,
         );
         expect(result).toBe(TestEnum.OPTION_A);
 
         const result2 = EnumValidationHelper.normalizeEnumValue(
           'OPTION_B',
           TestEnum,
-          false
+          false,
         );
         expect(result2).toBe(TestEnum.OPTION_B);
       });
 
       it('deve retornar valor original se for null/undefined', () => {
-        expect(EnumValidationHelper.normalizeEnumValue(null, TestEnum)).toBeNull();
-        expect(EnumValidationHelper.normalizeEnumValue(undefined, TestEnum)).toBeUndefined();
+        expect(
+          EnumValidationHelper.normalizeEnumValue(null, TestEnum),
+        ).toBeNull();
+        expect(
+          EnumValidationHelper.normalizeEnumValue(undefined, TestEnum),
+        ).toBeUndefined();
       });
     });
 
@@ -231,11 +255,13 @@ describe('EnumValidator', () => {
         sensitiveField: TestEnum.OPTION_B,
       });
 
-      return validate(dto).then(errors => {
-        const testFieldError = errors.find(error => error.property === 'testField');
+      return validate(dto).then((errors) => {
+        const testFieldError = errors.find(
+          (error) => error.property === 'testField',
+        );
         expect(testFieldError).toBeDefined();
         const message = testFieldError!.constraints?.isEnumValue;
-        
+
         // Deve sugerir OPTION_A pois tem distância pequena
         expect(message).toContain('OPTION_A');
       });
@@ -247,11 +273,13 @@ describe('EnumValidator', () => {
         sensitiveField: TestEnum.OPTION_B,
       });
 
-      return validate(dto).then(errors => {
-        const testFieldError = errors.find(error => error.property === 'testField');
+      return validate(dto).then((errors) => {
+        const testFieldError = errors.find(
+          (error) => error.property === 'testField',
+        );
         expect(testFieldError).toBeDefined();
         const message = testFieldError!.constraints?.isEnumValue;
-        
+
         // Não deve conter sugestões para valores muito diferentes
         expect(message).not.toContain('Você quis dizer');
       });

@@ -4,7 +4,7 @@ import { TipoDocumentoEnum } from '@/enums';
 
 /**
  * DTO para resposta de usuário sem informações sensíveis
- * 
+ *
  * Exclui dados sensíveis como senha hash, tentativas de login, etc.
  */
 export class UsuarioSafeResponseDto {
@@ -99,7 +99,7 @@ export class UsuarioSafeResponseDto {
 
 /**
  * DTO para resposta de documento
- * 
+ *
  * Inclui informações do documento e dados seguros do usuário que fez upload
  */
 export class DocumentoResponseDto {
@@ -265,8 +265,8 @@ export class DocumentoResponseDto {
       upload_info: {
         ip: '192.168.1.1',
         user_agent: 'Mozilla/5.0...',
-        timestamp: '2025-01-01T10:30:00.000Z'
-      }
+        timestamp: '2025-01-01T10:30:00.000Z',
+      },
     },
   })
   @Expose()

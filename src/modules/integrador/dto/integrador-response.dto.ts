@@ -26,7 +26,9 @@ export class IntegradorResponseDto {
   @ApiProperty({ description: 'Status de ativação do integrador' })
   ativo: boolean;
 
-  @ApiPropertyOptional({ description: 'Lista de permissões de escopo disponíveis' })
+  @ApiPropertyOptional({
+    description: 'Lista de permissões de escopo disponíveis',
+  })
   permissoesEscopo?: string[];
 
   @ApiPropertyOptional({ description: 'Lista de endereços IP permitidos' })

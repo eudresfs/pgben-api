@@ -2,7 +2,7 @@ import { BadRequestException } from '@nestjs/common';
 
 /**
  * Exceção lançada quando dados fornecidos não passam na validação.
- * 
+ *
  * Esta exceção padroniza as respostas para erros de validação de dados,
  * fornecendo informações específicas sobre o campo e valor que falharam.
  */
@@ -11,7 +11,7 @@ export class ValidationErrorException extends BadRequestException {
     field: string,
     value: any,
     expectedType?: string,
-    additionalInfo?: string
+    additionalInfo?: string,
   ) {
     const message = `Erro de validação no campo '${field}'`;
     const details = {
@@ -19,13 +19,15 @@ export class ValidationErrorException extends BadRequestException {
       value,
       expectedType,
       additionalInfo,
-      message: additionalInfo || `Valor '${value}' é inválido para o campo '${field}'${expectedType ? ` (esperado: ${expectedType})` : ''}`
+      message:
+        additionalInfo ||
+        `Valor '${value}' é inválido para o campo '${field}'${expectedType ? ` (esperado: ${expectedType})` : ''}`,
     };
 
     super({
       message,
       code: 'VALIDATION_ERROR',
-      details
+      details,
     });
   }
 }

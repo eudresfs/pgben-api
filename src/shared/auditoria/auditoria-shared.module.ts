@@ -11,10 +11,10 @@ import { AuditoriaSignatureService } from '../../modules/auditoria/services/audi
 
 /**
  * Módulo compartilhado de Auditoria
- * 
+ *
  * Este módulo exporta os serviços essenciais de auditoria que podem
  * ser usados por outros módulos sem criar dependências circulares.
- * 
+ *
  * É usado para quebrar a dependência circular entre os módulos.
  */
 @Global()
@@ -22,7 +22,7 @@ import { AuditoriaSignatureService } from '../../modules/auditoria/services/audi
   imports: [
     // Configuração do TypeORM para entidades do módulo
     TypeOrmModule.forFeature([LogAuditoria]),
-    
+
     // Configuração assíncrona do BullModule
     BullModule.registerQueueAsync({
       name: 'auditoria',
@@ -35,7 +35,7 @@ import { AuditoriaSignatureService } from '../../modules/auditoria/services/audi
       }),
       inject: [ConfigService],
     }),
-    
+
     // Configuração assíncrona do JwtModule
     JwtModule.registerAsync({
       imports: [ConfigModule],

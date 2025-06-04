@@ -18,7 +18,12 @@ import { RequiresPermission } from '../decorators/requires-permission.decorator'
 import { PermissionGuard } from '../guards/permission.guard';
 import { TipoEscopo } from '../../entities/user-permission.entity';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 
 /**
  * DTO para atribuição de permissão a um usuário.
@@ -52,7 +57,7 @@ class AtribuirPermissaoDto {
 
 /**
  * Controlador para gerenciamento de permissões.
- * 
+ *
  * Este controlador fornece endpoints para gerenciar permissões de usuários,
  * incluindo verificação, atribuição e revogação de permissões.
  */
@@ -65,7 +70,7 @@ export class PermissionController {
 
   /**
    * Verifica se o usuário autenticado tem uma permissão específica.
-   * 
+   *
    * @param permissionName Nome da permissão
    * @param scopeType Tipo de escopo (opcional)
    * @param scopeId ID do escopo (opcional)
@@ -73,14 +78,19 @@ export class PermissionController {
    * @returns Resultado da verificação
    */
   @Get('verificar')
-  @ApiOperation({ summary: 'Verifica se o usuário tem uma permissão específica' })
-  @ApiResponse({ status: 200, description: 'Retorna o resultado da verificação' })
+  @ApiOperation({
+    summary: 'Verifica se o usuário tem uma permissão específica',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Retorna o resultado da verificação',
+  })
   @RequiresPermission({ permissionName: 'usuario.permissao.visualizar' })
   async verificarPermissao(
     @Query('permissionName') permissionName: string,
     @Query('scopeType') scopeType: TipoEscopo = TipoEscopo.GLOBAL,
     @Req() req: any,
-    @Query('scopeId') scopeId?: string
+    @Query('scopeId') scopeId?: string,
   ) {
     if (!permissionName) {
       throw new BadRequestException('Nome da permissão é obrigatório');
@@ -105,13 +115,16 @@ export class PermissionController {
 
   /**
    * Obtém todas as permissões de um usuário.
-   * 
+   *
    * @param userId ID do usuário
    * @returns Lista de permissões do usuário
    */
   @Get('usuario/:userId')
   @ApiOperation({ summary: 'Obtém todas as permissões de um usuário' })
-  @ApiResponse({ status: 200, description: 'Retorna a lista de permissões do usuário' })
+  @ApiResponse({
+    status: 200,
+    description: 'Retorna a lista de permissões do usuário',
+  })
   @RequiresPermission({ permissionName: 'usuario.permissao.visualizar' })
   async obterPermissoesUsuario(@Param('userId') userId: string) {
     if (!userId) {
@@ -124,7 +137,7 @@ export class PermissionController {
 
   /**
    * Atribui uma permissão a um usuário.
-   * 
+   *
    * @param dto DTO com os dados da permissão
    * @param req Requisição
    * @returns Resultado da operação
@@ -141,7 +154,9 @@ export class PermissionController {
     }
 
     if (dto.scopeType === TipoEscopo.UNIDADE && !dto.scopeId) {
-      throw new BadRequestException('ID do escopo é obrigatório para escopo UNIT');
+      throw new BadRequestException(
+        'ID do escopo é obrigatório para escopo UNIT',
+      );
     }
 
     const createdBy = req.user.id;
@@ -166,7 +181,7 @@ export class PermissionController {
 
   /**
    * Revoga uma permissão de um usuário.
-   * 
+   *
    * @param dto DTO com os dados da permissão
    * @param req Requisição
    * @returns Resultado da operação
@@ -183,7 +198,9 @@ export class PermissionController {
     }
 
     if (dto.scopeType === TipoEscopo.UNIDADE && !dto.scopeId) {
-      throw new BadRequestException('ID do escopo é obrigatório para escopo UNIT');
+      throw new BadRequestException(
+        'ID do escopo é obrigatório para escopo UNIT',
+      );
     }
 
     const createdBy = req.user.id;

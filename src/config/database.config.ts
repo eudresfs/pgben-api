@@ -1,6 +1,6 @@
 /**
  * Configuração do banco de dados
- * 
+ *
  * Este arquivo centraliza as configurações de conexão com o banco de dados,
  * permitindo fácil configuração através de variáveis de ambiente.
  */

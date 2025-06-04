@@ -45,7 +45,9 @@ export class DadosAluguelSocial {
     enumName: 'publico_prioritario_aluguel',
   })
   @IsNotEmpty({ message: 'Público prioritário é obrigatório' })
-  @IsEnum(PublicoPrioritarioAluguel, { message: 'Público prioritário inválido' })
+  @IsEnum(PublicoPrioritarioAluguel, {
+    message: 'Público prioritário inválido',
+  })
   publico_prioritario: PublicoPrioritarioAluguel;
 
   @Column('simple-array', { nullable: true })
@@ -62,7 +64,9 @@ export class DadosAluguelSocial {
   possui_imovel_interditado: boolean;
 
   @Column({ default: false })
-  @IsBoolean({ message: 'Caso judicializado Lei Maria da Penha deve ser um booleano' })
+  @IsBoolean({
+    message: 'Caso judicializado Lei Maria da Penha deve ser um booleano',
+  })
   caso_judicializado_maria_penha: boolean;
 
   @Column('text', { nullable: true })
@@ -103,8 +107,10 @@ export class DadosAluguelSocial {
       PublicoPrioritarioAluguel.SITUACAO_RISCO,
     ];
 
-    return casosAltaPrioridade.includes(this.publico_prioritario) ||
-      this.caso_judicializado_maria_penha;
+    return (
+      casosAltaPrioridade.includes(this.publico_prioritario) ||
+      this.caso_judicializado_maria_penha
+    );
   }
 
   /**
@@ -120,7 +126,7 @@ export class DadosAluguelSocial {
       EspecificacaoAluguel.DROGADICAO,
     ];
 
-    return this.especificacoes.some(esp => vulnerabilidades.includes(esp));
+    return this.especificacoes.some((esp) => vulnerabilidades.includes(esp));
   }
 
   /**
@@ -156,10 +162,14 @@ export class DadosAluguelSocial {
 
     // Pontuação adicional por especificações
     if (this.especificacoes) {
-      if (this.especificacoes.includes(EspecificacaoAluguel.EXPLORACAO_SEXUAL)) pontuacao += 50;
-      if (this.especificacoes.includes(EspecificacaoAluguel.VITIMA_VIOLENCIA)) pontuacao += 40;
-      if (this.especificacoes.includes(EspecificacaoAluguel.SITUACAO_RUA)) pontuacao += 30;
-      if (this.especificacoes.includes(EspecificacaoAluguel.DROGADICAO)) pontuacao += 20;
+      if (this.especificacoes.includes(EspecificacaoAluguel.EXPLORACAO_SEXUAL))
+        pontuacao += 50;
+      if (this.especificacoes.includes(EspecificacaoAluguel.VITIMA_VIOLENCIA))
+        pontuacao += 40;
+      if (this.especificacoes.includes(EspecificacaoAluguel.SITUACAO_RUA))
+        pontuacao += 30;
+      if (this.especificacoes.includes(EspecificacaoAluguel.DROGADICAO))
+        pontuacao += 20;
     }
 
     // Pontuação por situações especiais
@@ -179,7 +189,10 @@ export class DadosAluguelSocial {
       erros.push('Público prioritário é obrigatório');
     }
 
-    if (!this.situacao_moradia_atual || this.situacao_moradia_atual.trim().length === 0) {
+    if (
+      !this.situacao_moradia_atual ||
+      this.situacao_moradia_atual.trim().length === 0
+    ) {
       erros.push('Situação da moradia atual é obrigatória');
     }
 
@@ -189,7 +202,7 @@ export class DadosAluguelSocial {
 
     return {
       valido: erros.length === 0,
-      erros
+      erros,
     };
   }
 }

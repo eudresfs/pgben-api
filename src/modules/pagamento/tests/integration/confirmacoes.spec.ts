@@ -8,10 +8,10 @@ import { JwtModule, JwtService } from '@nestjs/jwt';
 import { HttpModule } from '@nestjs/axios';
 
 import { PagamentoModule } from '../../pagamento.module';
-import { 
-  Pagamento, 
-  ComprovantePagamento, 
-  ConfirmacaoRecebimento 
+import {
+  Pagamento,
+  ComprovantePagamento,
+  ConfirmacaoRecebimento,
 } from '../../entities';
 import { StatusPagamentoEnum } from '../../enums/status-pagamento.enum';
 import { MetodoPagamentoEnum } from '../../enums/metodo-pagamento.enum';
@@ -20,10 +20,10 @@ import { AuditoriaPagamentoService } from '../../services/auditoria-pagamento.se
 
 /**
  * Testes de integração para confirmações de recebimento de pagamento
- * 
+ *
  * Verifica o funcionamento correto das operações de registro, consulta
  * e listagem de confirmações de recebimento de pagamentos.
- * 
+ *
  * @author Equipe PGBen
  */
 describe('Confirmações de Recebimento (Integration)', () => {
@@ -31,10 +31,10 @@ describe('Confirmações de Recebimento (Integration)', () => {
   let jwtService: JwtService;
   let pagamentoService: PagamentoService;
   let auditoriaPagamentoService: AuditoriaPagamentoService;
-  
+
   let pagamentoRepository: Repository<Pagamento>;
   let confirmacaoRepository: Repository<ConfirmacaoRecebimento>;
-  
+
   // Dados de teste
   const usuarioId = 'usuario-teste-id';
   const gestorId = 'gestor-teste-id';
@@ -42,12 +42,12 @@ describe('Confirmações de Recebimento (Integration)', () => {
   const pagamentoId = 'pagamento-teste-id';
   const confirmacaoId = 'confirmacao-teste-id';
   const beneficiarioId = 'beneficiario-teste-id';
-  
+
   // Mock dos repositórios
   const mockPagamentoRepository = {
     findOne: jest.fn(),
     save: jest.fn(),
-    update: jest.fn()
+    update: jest.fn(),
   };
 
   const mockConfirmacaoRepository = {
@@ -55,14 +55,14 @@ describe('Confirmações de Recebimento (Integration)', () => {
     save: jest.fn(),
     findOne: jest.fn(),
     find: jest.fn(),
-    findAndCount: jest.fn()
+    findAndCount: jest.fn(),
   };
 
   // Mock do serviço de auditoria
   const mockAuditoriaPagamentoService = {
     logConfirmacaoRecebimento: jest.fn(),
     logErroProcessamento: jest.fn(),
-    logTentativaAcessoNaoAutorizado: jest.fn()
+    logTentativaAcessoNaoAutorizado: jest.fn(),
   };
 
   beforeAll(async () => {
@@ -71,7 +71,7 @@ describe('Confirmações de Recebimento (Integration)', () => {
         PagamentoModule,
         ConfigModule.forRoot({
           isGlobal: true,
-          envFilePath: '.env.test'
+          envFilePath: '.env.test',
         }),
         JwtModule.registerAsync({
           imports: [ConfigModule],
@@ -79,38 +79,44 @@ describe('Confirmações de Recebimento (Integration)', () => {
             secret: configService.get('JWT_SECRET') || 'teste-secret',
             signOptions: { expiresIn: '1h' },
           }),
-          inject: [ConfigService]
+          inject: [ConfigService],
         }),
-        HttpModule
+        HttpModule,
       ],
       providers: [
         {
           provide: getRepositoryToken(Pagamento),
-          useValue: mockPagamentoRepository
+          useValue: mockPagamentoRepository,
         },
         {
           provide: getRepositoryToken(ConfirmacaoRecebimento),
-          useValue: mockConfirmacaoRepository
+          useValue: mockConfirmacaoRepository,
         },
         {
           provide: getRepositoryToken(ComprovantePagamento),
-          useValue: {}
+          useValue: {},
         },
         {
           provide: AuditoriaPagamentoService,
-          useValue: mockAuditoriaPagamentoService
-        }
-      ]
+          useValue: mockAuditoriaPagamentoService,
+        },
+      ],
     }).compile();
 
     app = moduleFixture.createNestApplication();
     jwtService = moduleFixture.get<JwtService>(JwtService);
     pagamentoService = moduleFixture.get<PagamentoService>(PagamentoService);
-    auditoriaPagamentoService = moduleFixture.get<AuditoriaPagamentoService>(AuditoriaPagamentoService);
-    
-    pagamentoRepository = moduleFixture.get<Repository<Pagamento>>(getRepositoryToken(Pagamento));
-    confirmacaoRepository = moduleFixture.get<Repository<ConfirmacaoRecebimento>>(getRepositoryToken(ConfirmacaoRecebimento));
-    
+    auditoriaPagamentoService = moduleFixture.get<AuditoriaPagamentoService>(
+      AuditoriaPagamentoService,
+    );
+
+    pagamentoRepository = moduleFixture.get<Repository<Pagamento>>(
+      getRepositoryToken(Pagamento),
+    );
+    confirmacaoRepository = moduleFixture.get<
+      Repository<ConfirmacaoRecebimento>
+    >(getRepositoryToken(ConfirmacaoRecebimento));
+
     await app.init();
   });
 
@@ -120,7 +126,7 @@ describe('Confirmações de Recebimento (Integration)', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Configurar mocks padrão
     mockPagamentoRepository.findOne.mockImplementation((options) => {
       if (options.where?.id === pagamentoId) {
@@ -129,13 +135,13 @@ describe('Confirmações de Recebimento (Integration)', () => {
           status: StatusPagamentoEnum.PAGO,
           unidadeId,
           beneficiarioId,
-          valor: 500.00,
-          metodoPagamento: MetodoPagamentoEnum.PIX
+          valor: 500.0,
+          metodoPagamento: MetodoPagamentoEnum.PIX,
         });
       }
       return Promise.resolve(null);
     });
-    
+
     mockConfirmacaoRepository.findOne.mockImplementation((options) => {
       if (options.where?.id === confirmacaoId) {
         return Promise.resolve({
@@ -145,7 +151,7 @@ describe('Confirmações de Recebimento (Integration)', () => {
           observacoes: 'Pagamento recebido via PIX',
           numeroProtocolo: '123456789',
           confirmadoPor: beneficiarioId,
-          createdAt: new Date()
+          createdAt: new Date(),
         });
       } else if (options.where?.pagamentoId === pagamentoId) {
         return Promise.resolve({
@@ -155,12 +161,12 @@ describe('Confirmações de Recebimento (Integration)', () => {
           observacoes: 'Pagamento recebido via PIX',
           numeroProtocolo: '123456789',
           confirmadoPor: beneficiarioId,
-          createdAt: new Date()
+          createdAt: new Date(),
         });
       }
       return Promise.resolve(null);
     });
-    
+
     mockConfirmacaoRepository.create.mockImplementation((dto) => ({
       id: confirmacaoId,
       pagamentoId: dto.pagamentoId,
@@ -168,54 +174,62 @@ describe('Confirmações de Recebimento (Integration)', () => {
       observacoes: dto.observacoes,
       numeroProtocolo: dto.numeroProtocolo || '123456789',
       confirmadoPor: dto.confirmadoPor || beneficiarioId,
-      createdAt: new Date()
+      createdAt: new Date(),
     }));
-    
-    mockConfirmacaoRepository.save.mockImplementation((dto) => Promise.resolve(dto));
+
+    mockConfirmacaoRepository.save.mockImplementation((dto) =>
+      Promise.resolve(dto),
+    );
   });
 
   // Função auxiliar para gerar tokens JWT
-  const gerarToken = (userId: string, perfis: string[] = ['usuario'], unidadeId: string = 'unidade-teste-id') => {
+  const gerarToken = (
+    userId: string,
+    perfis: string[] = ['usuario'],
+    unidadeId: string = 'unidade-teste-id',
+  ) => {
     return jwtService.sign({
       sub: userId,
       perfis,
-      unidade: unidadeId
+      unidade: unidadeId,
     });
   };
 
   describe('Registro de Confirmações', () => {
     it('deve registrar confirmação de recebimento com sucesso', async () => {
       const token = gerarToken(beneficiarioId);
-      
+
       const response = await request(app.getHttpServer())
         .post(`/pagamentos/${pagamentoId}/confirmar`)
         .set('Authorization', `Bearer ${token}`)
         .send({
           observacoes: 'Pagamento recebido via PIX',
-          dataConfirmacao: new Date().toISOString()
+          dataConfirmacao: new Date().toISOString(),
         });
 
       expect(response.status).toBe(201);
       expect(response.body).toHaveProperty('id');
       expect(response.body.pagamentoId).toBe(pagamentoId);
-      
+
       expect(mockConfirmacaoRepository.create).toHaveBeenCalled();
       expect(mockConfirmacaoRepository.save).toHaveBeenCalled();
-      expect(auditoriaPagamentoService.logConfirmacaoRecebimento).toHaveBeenCalled();
+      expect(
+        auditoriaPagamentoService.logConfirmacaoRecebimento,
+      ).toHaveBeenCalled();
     });
 
     it('deve rejeitar confirmação para pagamento não encontrado', async () => {
       // Sobrescrever mock para este teste
       mockPagamentoRepository.findOne.mockResolvedValueOnce(null);
-      
+
       const token = gerarToken(beneficiarioId);
-      
+
       const response = await request(app.getHttpServer())
         .post(`/pagamentos/pagamento-inexistente/confirmar`)
         .set('Authorization', `Bearer ${token}`)
         .send({
           observacoes: 'Pagamento recebido via PIX',
-          dataConfirmacao: new Date().toISOString()
+          dataConfirmacao: new Date().toISOString(),
         });
 
       expect(response.status).toBe(404);
@@ -224,13 +238,13 @@ describe('Confirmações de Recebimento (Integration)', () => {
 
     it('deve rejeitar confirmação sem dados obrigatórios', async () => {
       const token = gerarToken(beneficiarioId);
-      
+
       const response = await request(app.getHttpServer())
         .post(`/pagamentos/${pagamentoId}/confirmar`)
         .set('Authorization', `Bearer ${token}`)
         .send({
           // Faltando observacoes
-          dataConfirmacao: new Date().toISOString()
+          dataConfirmacao: new Date().toISOString(),
         });
 
       expect(response.status).toBe(400);
@@ -246,20 +260,20 @@ describe('Confirmações de Recebimento (Integration)', () => {
             pagamentoId,
             dataConfirmacao: new Date(),
             observacoes: 'Confirmação anterior',
-            confirmadoPor: beneficiarioId
+            confirmadoPor: beneficiarioId,
           });
         }
         return Promise.resolve(null);
       });
-      
+
       const token = gerarToken(beneficiarioId);
-      
+
       const response = await request(app.getHttpServer())
         .post(`/pagamentos/${pagamentoId}/confirmar`)
         .set('Authorization', `Bearer ${token}`)
         .send({
           observacoes: 'Segunda confirmação',
-          dataConfirmacao: new Date().toISOString()
+          dataConfirmacao: new Date().toISOString(),
         });
 
       expect(response.status).toBe(409); // Conflict
@@ -270,7 +284,7 @@ describe('Confirmações de Recebimento (Integration)', () => {
   describe('Consulta de Confirmações', () => {
     it('deve buscar confirmação por ID com sucesso', async () => {
       const token = gerarToken(gestorId, ['gestor'], unidadeId);
-      
+
       const response = await request(app.getHttpServer())
         .get(`/confirmacoes/${confirmacaoId}`)
         .set('Authorization', `Bearer ${token}`);
@@ -282,7 +296,7 @@ describe('Confirmações de Recebimento (Integration)', () => {
 
     it('deve buscar confirmação por pagamentoId com sucesso', async () => {
       const token = gerarToken(gestorId, ['gestor'], unidadeId);
-      
+
       const response = await request(app.getHttpServer())
         .get(`/pagamentos/${pagamentoId}/confirmacao`)
         .set('Authorization', `Bearer ${token}`);
@@ -295,9 +309,9 @@ describe('Confirmações de Recebimento (Integration)', () => {
     it('deve retornar 404 ao buscar confirmação inexistente', async () => {
       // Sobrescrever mock para este teste
       mockConfirmacaoRepository.findOne.mockResolvedValueOnce(null);
-      
+
       const token = gerarToken(gestorId, ['gestor'], unidadeId);
-      
+
       const response = await request(app.getHttpServer())
         .get(`/confirmacoes/confirmacao-inexistente`)
         .set('Authorization', `Bearer ${token}`);
@@ -317,7 +331,7 @@ describe('Confirmações de Recebimento (Integration)', () => {
             observacoes: 'Pagamento recebido via PIX',
             numeroProtocolo: '123456789',
             confirmadoPor: beneficiarioId,
-            createdAt: new Date()
+            createdAt: new Date(),
           },
           {
             id: 'confirmacao-id-2',
@@ -326,14 +340,14 @@ describe('Confirmações de Recebimento (Integration)', () => {
             observacoes: 'Outro pagamento recebido',
             numeroProtocolo: '987654321',
             confirmadoPor: 'outro-beneficiario-id',
-            createdAt: new Date()
-          }
+            createdAt: new Date(),
+          },
         ],
-        2 // Total count
+        2, // Total count
       ]);
-      
+
       const token = gerarToken(gestorId, ['gestor'], unidadeId);
-      
+
       const response = await request(app.getHttpServer())
         .get(`/confirmacoes`)
         .query({ page: 1, limit: 10 })
@@ -356,17 +370,17 @@ describe('Confirmações de Recebimento (Integration)', () => {
         status: StatusPagamentoEnum.PAGO,
         unidadeId,
         beneficiarioId,
-        valor: 500.00
+        valor: 500.0,
       });
-      
+
       const token = gerarToken(beneficiarioId);
-      
+
       const response = await request(app.getHttpServer())
         .post(`/pagamentos/${pagamentoId}/confirmar`)
         .set('Authorization', `Bearer ${token}`)
         .send({
           observacoes: 'Confirmação pelo beneficiário',
-          dataConfirmacao: new Date().toISOString()
+          dataConfirmacao: new Date().toISOString(),
         });
 
       expect(response.status).toBe(201);
@@ -374,28 +388,34 @@ describe('Confirmações de Recebimento (Integration)', () => {
 
     it('deve permitir gestor registrar confirmação', async () => {
       const token = gerarToken(gestorId, ['gestor'], unidadeId);
-      
+
       const response = await request(app.getHttpServer())
         .post(`/pagamentos/${pagamentoId}/confirmar`)
         .set('Authorization', `Bearer ${token}`)
         .send({
           observacoes: 'Confirmação pelo gestor',
           dataConfirmacao: new Date().toISOString(),
-          confirmadoPor: beneficiarioId
+          confirmadoPor: beneficiarioId,
         });
 
       expect(response.status).toBe(201);
     });
 
     it('deve rejeitar acesso de usuário sem permissão às confirmações', async () => {
-      const token = gerarToken('outro-usuario', ['usuario_basico'], 'outra-unidade');
-      
+      const token = gerarToken(
+        'outro-usuario',
+        ['usuario_basico'],
+        'outra-unidade',
+      );
+
       const response = await request(app.getHttpServer())
         .get(`/confirmacoes`)
         .set('Authorization', `Bearer ${token}`);
 
       expect(response.status).toBe(403);
-      expect(mockAuditoriaPagamentoService.logTentativaAcessoNaoAutorizado).toHaveBeenCalled();
+      expect(
+        mockAuditoriaPagamentoService.logTentativaAcessoNaoAutorizado,
+      ).toHaveBeenCalled();
     });
 
     it('deve rejeitar confirmação de pagamento de outra unidade', async () => {
@@ -405,21 +425,23 @@ describe('Confirmações de Recebimento (Integration)', () => {
         status: StatusPagamentoEnum.PAGO,
         unidadeId: 'outra-unidade-id',
         beneficiarioId: 'outro-beneficiario-id',
-        valor: 500.00
+        valor: 500.0,
       });
-      
+
       const token = gerarToken(usuarioId, ['usuario'], unidadeId);
-      
+
       const response = await request(app.getHttpServer())
         .post(`/pagamentos/${pagamentoId}/confirmar`)
         .set('Authorization', `Bearer ${token}`)
         .send({
           observacoes: 'Tentativa de confirmação',
-          dataConfirmacao: new Date().toISOString()
+          dataConfirmacao: new Date().toISOString(),
         });
 
       expect(response.status).toBe(403);
-      expect(mockAuditoriaPagamentoService.logTentativaAcessoNaoAutorizado).toHaveBeenCalled();
+      expect(
+        mockAuditoriaPagamentoService.logTentativaAcessoNaoAutorizado,
+      ).toHaveBeenCalled();
     });
   });
 });

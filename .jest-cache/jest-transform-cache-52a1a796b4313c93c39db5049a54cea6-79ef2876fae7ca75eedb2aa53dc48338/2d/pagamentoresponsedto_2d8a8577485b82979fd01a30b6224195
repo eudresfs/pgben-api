@@ -1,0 +1,223 @@
+b2c766ce1ce418685bd7a1bbc2cc678f
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var _a, _b, _c, _d, _e;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.PagamentoResponseDto = void 0;
+const swagger_1 = require("@nestjs/swagger");
+const status_pagamento_enum_1 = require("../../../enums/status-pagamento.enum");
+const metodo_pagamento_enum_1 = require("../../../enums/metodo-pagamento.enum");
+/**
+ * DTO para resposta contendo dados de um pagamento
+ *
+ * Este DTO define a estrutura de dados retornada pela API ao consultar
+ * informações sobre um pagamento específico. Inclui mascaramento para
+ * dados sensíveis.
+ *
+ * @author Equipe PGBen
+ */
+class PagamentoResponseDto {
+    /**
+     * Identificador único do pagamento
+     */
+    id;
+    /**
+     * Referência à solicitação que originou o pagamento
+     */
+    solicitacaoId;
+    /**
+     * Informações sobre a solicitação (quando incluídas)
+     */
+    solicitacao;
+    /**
+     * Referência à informação bancária utilizada
+     */
+    infoBancariaId;
+    /**
+     * Informações bancárias com mascaramento de dados sensíveis
+     */
+    infoBancaria;
+    /**
+     * Valor do pagamento
+     */
+    valor;
+    /**
+     * Data de liberação do pagamento
+     */
+    dataLiberacao;
+    /**
+     * Status atual do pagamento
+     */
+    status;
+    /**
+     * Método de pagamento utilizado
+     */
+    metodoPagamento;
+    /**
+     * Informações sobre o responsável pela liberação
+     */
+    responsavelLiberacao;
+    /**
+     * Quantidade de comprovantes anexados
+     */
+    quantidadeComprovantes;
+    /**
+     * Informações sobre confirmação de recebimento (quando existente)
+     */
+    confirmacaoRecebimento;
+    /**
+     * Observações sobre o pagamento
+     */
+    observacoes;
+    /**
+     * Data de criação do registro
+     */
+    createdAt;
+    /**
+     * Data da última atualização do registro
+     */
+    updatedAt;
+}
+exports.PagamentoResponseDto = PagamentoResponseDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'ID único do pagamento',
+        example: '123e4567-e89b-12d3-a456-426614174000'
+    }),
+    __metadata("design:type", String)
+], PagamentoResponseDto.prototype, "id", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'ID da solicitação que originou o pagamento',
+        example: '123e4567-e89b-12d3-a456-426614174000'
+    }),
+    __metadata("design:type", String)
+], PagamentoResponseDto.prototype, "solicitacaoId", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Dados resumidos da solicitação',
+        example: {
+            numeroProceso: '2025.123456',
+            cidadaoNome: 'Maria Silva',
+            tipoBeneficio: 'Auxílio Moradia',
+            unidade: 'CRAS Centro'
+        },
+        required: false
+    }),
+    __metadata("design:type", Object)
+], PagamentoResponseDto.prototype, "solicitacao", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'ID da informação bancária utilizada',
+        example: '123e4567-e89b-12d3-a456-426614174000',
+        required: false
+    }),
+    __metadata("design:type", String)
+], PagamentoResponseDto.prototype, "infoBancariaId", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Dados bancários utilizados (com mascaramento)',
+        example: {
+            tipo: 'pix',
+            chavePix: 'c****@****.com',
+            banco: 'Banco do Brasil'
+        },
+        required: false
+    }),
+    __metadata("design:type", Object)
+], PagamentoResponseDto.prototype, "infoBancaria", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Valor do pagamento em reais',
+        example: 250.00
+    }),
+    __metadata("design:type", Number)
+], PagamentoResponseDto.prototype, "valor", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Data em que o pagamento foi liberado',
+        example: '2025-05-18T10:00:00.000Z'
+    }),
+    __metadata("design:type", typeof (_a = typeof Date !== "undefined" && Date) === "function" ? _a : Object)
+], PagamentoResponseDto.prototype, "dataLiberacao", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Status atual do pagamento',
+        enum: status_pagamento_enum_1.StatusPagamentoEnum,
+        example: status_pagamento_enum_1.StatusPagamentoEnum.LIBERADO
+    }),
+    __metadata("design:type", typeof (_b = typeof status_pagamento_enum_1.StatusPagamentoEnum !== "undefined" && status_pagamento_enum_1.StatusPagamentoEnum) === "function" ? _b : Object)
+], PagamentoResponseDto.prototype, "status", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Método de pagamento utilizado',
+        enum: metodo_pagamento_enum_1.MetodoPagamentoEnum,
+        example: metodo_pagamento_enum_1.MetodoPagamentoEnum.PIX
+    }),
+    __metadata("design:type", typeof (_c = typeof metodo_pagamento_enum_1.MetodoPagamentoEnum !== "undefined" && metodo_pagamento_enum_1.MetodoPagamentoEnum) === "function" ? _c : Object)
+], PagamentoResponseDto.prototype, "metodoPagamento", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Dados sobre quem liberou o pagamento',
+        example: {
+            id: '123e4567-e89b-12d3-a456-426614174000',
+            nome: 'João Silva',
+            cargo: 'Técnico SEMTAS'
+        }
+    }),
+    __metadata("design:type", Object)
+], PagamentoResponseDto.prototype, "responsavelLiberacao", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Quantidade de comprovantes anexados',
+        example: 2
+    }),
+    __metadata("design:type", Number)
+], PagamentoResponseDto.prototype, "quantidadeComprovantes", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Dados da confirmação de recebimento',
+        example: {
+            id: '123e4567-e89b-12d3-a456-426614174000',
+            dataConfirmacao: '2025-05-20T14:30:00Z',
+            metodoConfirmacao: 'assinatura',
+            responsavel: {
+                id: '123e4567-e89b-12d3-a456-426614174000',
+                nome: 'Ana Souza'
+            }
+        },
+        required: false
+    }),
+    __metadata("design:type", Object)
+], PagamentoResponseDto.prototype, "confirmacaoRecebimento", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Observações sobre o pagamento',
+        example: 'Pagamento referente ao benefício eventual de auxílio moradia.',
+        required: false
+    }),
+    __metadata("design:type", String)
+], PagamentoResponseDto.prototype, "observacoes", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Data de criação do registro',
+        example: '2025-05-18T10:00:00.000Z'
+    }),
+    __metadata("design:type", typeof (_d = typeof Date !== "undefined" && Date) === "function" ? _d : Object)
+], PagamentoResponseDto.prototype, "createdAt", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Data da última atualização do registro',
+        example: '2025-05-18T10:00:00.000Z'
+    }),
+    __metadata("design:type", typeof (_e = typeof Date !== "undefined" && Date) === "function" ? _e : Object)
+], PagamentoResponseDto.prototype, "updatedAt", void 0);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXHBhZ2FtZW50b1xcZHRvc1xccGFnYW1lbnRvLXJlc3BvbnNlLmR0by50cyIsIm1hcHBpbmdzIjoiOzs7Ozs7Ozs7Ozs7O0FBQUEsNkNBQThDO0FBQzlDLGdGQUEyRTtBQUMzRSxnRkFBMkU7QUFFM0U7Ozs7Ozs7O0dBUUc7QUFDSCxNQUFhLG9CQUFvQjtJQUMvQjs7T0FFRztJQUtILEVBQUUsQ0FBUztJQUVYOztPQUVHO0lBS0gsYUFBYSxDQUFTO0lBRXRCOztPQUVHO0lBV0gsV0FBVyxDQUtUO0lBRUY7O09BRUc7SUFNSCxjQUFjLENBQVU7SUFFeEI7O09BRUc7SUFVSCxZQUFZLENBTVY7SUFFRjs7T0FFRztJQUtILEtBQUssQ0FBUztJQUVkOztPQUVHO0lBS0gsYUFBYSxDQUFPO0lBRXBCOztPQUVHO0lBTUgsTUFBTSxDQUFzQjtJQUU1Qjs7T0FFRztJQU1ILGVBQWUsQ0FBc0I7SUFFckM7O09BRUc7SUFTSCxvQkFBb0IsQ0FJbEI7SUFFRjs7T0FFRztJQUtILHNCQUFzQixDQUFTO0lBRS9COztPQUVHO0lBY0gsc0JBQXNCLENBWXBCO0lBRUY7O09BRUc7SUFNSCxXQUFXLENBQVU7SUFFckI7O09BRUc7SUFLSCxTQUFTLENBQU87SUFFaEI7O09BRUc7SUFLSCxTQUFTLENBQU87Q0FDakI7QUE5TEQsb0RBOExDO0FBdExDO0lBSkMsSUFBQSxxQkFBVyxFQUFDO1FBQ1gsV0FBVyxFQUFFLHVCQUF1QjtRQUNwQyxPQUFPLEVBQUUsc0NBQXNDO0tBQ2hELENBQUM7O2dEQUNTO0FBU1g7SUFKQyxJQUFBLHFCQUFXLEVBQUM7UUFDWCxXQUFXLEVBQUUsNENBQTRDO1FBQ3pELE9BQU8sRUFBRSxzQ0FBc0M7S0FDaEQsQ0FBQzs7MkRBQ29CO0FBZXRCO0lBVkMsSUFBQSxxQkFBVyxFQUFDO1FBQ1gsV0FBVyxFQUFFLGdDQUFnQztRQUM3QyxPQUFP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b3NcXHBnYmVuXFxwZ2Jlbi1zZXJ2ZXJcXHNyY1xcbW9kdWxlc1xccGFnYW1lbnRvXFxkdG9zXFxwYWdhbWVudG8tcmVzcG9uc2UuZHRvLnRzIl0sInNvdXJjZXNDb250ZW50IjpbImltcG9ydCB7IEFwaVByb3BlcnR5IH0gZnJvbSAnQG5lc3Rqcy9zd2FnZ2VyJztcbmltcG9ydCB7IFN0YXR1c1BhZ2FtZW50b0VudW0gfSBmcm9tICcuLi8uLi8uLi9lbnVtcy9zdGF0dXMtcGFnYW1lbnRvLmVudW0nO1xuaW1wb3J0IHsgTWV0b2RvUGFnYW1lbnRvRW51bSB9IGZyb20gJy4uLy4uLy4uL2VudW1zL21ldG9kby1wYWdhbWVudG8uZW51bSc7XG5cbi8qKlxuICogRFRPIHBhcmEgcmVzcG9zdGEgY29udGVuZG8gZGFkb3MgZGUgdW0gcGFnYW1lbnRvXG4gKiBcbiAqIEVzdGUgRFRPIGRlZmluZSBhIGVzdHJ1dHVyYSBkZSBkYWRvcyByZXRvcm5hZGEgcGVsYSBBUEkgYW8gY29uc3VsdGFyXG4gKiBpbmZvcm1hw6fDtWVzIHNvYnJlIHVtIHBhZ2FtZW50byBlc3BlY8OtZmljby4gSW5jbHVpIG1hc2NhcmFtZW50byBwYXJhXG4gKiBkYWRvcyBzZW5zw612ZWlzLlxuICogXG4gKiBAYXV0aG9yIEVxdWlwZSBQR0JlblxuICovXG5leHBvcnQgY2xhc3MgUGFnYW1lbnRvUmVzcG9uc2VEdG8ge1xuICAvKipcbiAgICogSWRlbnRpZmljYWRvciDDum5pY28gZG8gcGFnYW1lbnRvXG4gICAqL1xuICBAQXBpUHJvcGVydHkoe1xuICAgIGRlc2NyaXB0aW9uOiAnSUQgw7puaWNvIGRvIHBhZ2FtZW50bycsXG4gICAgZXhhbXBsZTogJzEyM2U0NTY3LWU4OWItMTJkMy1hNDU2LTQyNjYxNDE3NDAwMCdcbiAgfSlcbiAgaWQ6IHN0cmluZztcblxuICAvKipcbiAgICogUmVmZXLDqm5jaWEgw6Agc29saWNpdGHDp8OjbyBxdWUgb3JpZ2lub3UgbyBwYWdhbWVudG9cbiAgICovXG4gIEBBcGlQcm9wZXJ0eSh7XG4gICAgZGVzY3JpcHRpb246ICdJRCBkYSBzb2xpY2l0YcOnw6NvIHF1ZSBvcmlnaW5vdSBvIHBhZ2FtZW50bycsXG4gICAgZXhhbXBsZTogJzEyM2U0NTY3LWU4OWItMTJkMy1hNDU2LTQyNjYxNDE3NDAwMCdcbiAgfSlcbiAgc29saWNpdGFjYW9JZDogc3RyaW5nO1xuXG4gIC8qKlxuICAgKiBJbmZvcm1hw6fDtWVzIHNvYnJlIGEgc29saWNpdGHDp8OjbyAocXVhbmRvIGluY2x1w61kYXMpXG4gICAqL1xuICBAQXBpUHJvcGVydHkoe1xuICAgIGRlc2NyaXB0aW9uOiAnRGFkb3MgcmVzdW1pZG9zIGRhIHNvbGljaXRhw6fDo28nLFxuICAgIGV4YW1wbGU6IHtcbiAgICAgIG51bWVyb1Byb2Nlc286ICcyMDI1LjEyMzQ1NicsXG4gICAgICBjaWRhZGFvTm9tZTogJ01hcmlhIFNpbHZhJyxcbiAgICAgIHRpcG9CZW5lZmljaW86ICdBdXjDrWxpbyBNb3JhZGlhJyxcbiAgICAgIHVuaWRhZGU6ICdDUkFTIENlbnRybydcbiAgICB9LFxuICAgIHJlcXVpcmVkOiBmYWxzZVxuICB9KVxuICBzb2xpY2l0YWNhbz86IHtcbiAgICBudW1lcm9Qcm9jZXNzbzogc3RyaW5nO1xuICAgIGNpZGFkYW9Ob21lOiBzdHJpbmc7XG4gICAgdGlwb0JlbmVmaWNpbzogc3RyaW5nO1xuICAgIHVuaWRhZGU6IHN0cmluZztcbiAgfTtcblxuICAvKipcbiAgICogUmVmZXLDqm5jaWEgw6AgaW5mb3JtYcOnw6NvIGJhbmPDoXJpYSB1dGlsaXphZGFcbiAgICovXG4gIEBBcGlQcm9wZXJ0eSh7XG4gICAgZGVzY3JpcHRpb246ICdJRCBkYSBpbmZvcm1hw6fDo28gYmFuY8OhcmlhIHV0aWxpemFkYScsXG4gICAgZXhhbXBsZTogJzEyM2U0NTY3LWU4OWItMTJkMy1hNDU2LTQyNjYxNDE3NDAwMCcsXG4gICAgcmVxdWlyZWQ6IGZhbHNlXG4gIH0pXG4gIGluZm9CYW5jYXJpYUlkPzogc3RyaW5nO1xuXG4gIC8qKlxuICAgKiBJbmZvcm1hw6fDtWVzIGJhbmPDoXJpYXMgY29tIG1hc2NhcmFtZW50byBkZSBkYWRvcyBzZW5zw612ZWlzXG4gICAqL1xuICBAQXBpUHJvcGVydHkoe1xuICAgIGRlc2NyaXB0aW9uOiAnRGFkb3MgYmFuY8OhcmlvcyB1dGlsaXphZG9zIChjb20gbWFzY2FyYW1lbnRvKScsXG4gICAgZXhhbXBsZToge1xuICAgICAgdGlwbzogJ3BpeCcsXG4gICAgICBjaGF2ZVBpeDogJ2MqKioqQCoqKiouY29tJyxcbiAgICAgIGJhbmNvOiAnQmFuY28gZG8gQnJhc2lsJ1xuICAgIH0sXG4gICAgcmVxdWlyZWQ6IGZhbHNlXG4gIH0pXG4gIGluZm9CYW5jYXJpYT86IHtcbiAgICB0aXBvOiBzdHJpbmc7XG4gICAgY2hhdmVQaXg/OiBzdHJpbmc7XG4gICAgYmFuY28/OiBzdHJpbmc7XG4gICAgYWdlbmNpYT86IHN0cmluZztcbiAgICBjb250YT86IHN0cmluZztcbiAgfTtcblxuICAvKipcbiAgICogVmFsb3IgZG8gcGFnYW1lbnRvXG4gICAqL1xuICBAQXBpUHJvcGVydHkoe1xuICAgIGRlc2NyaXB0aW9uOiAnVmFsb3IgZG8gcGFnYW1lbnRvIGVtIHJlYWlzJyxcbiAgICBleGFtcGxlOiAyNTAuMDBcbiAgfSlcbiAgdmFsb3I6IG51bWJlcjtcblxuICAvKipcbiAgICogRGF0YSBkZSBsaWJlcmHDp8OjbyBkbyBwYWdhbWVudG9cbiAgICovXG4gIEBBcGlQcm9wZXJ0eSh7XG4gICAgZGVzY3JpcHRpb246ICdEYXRhIGVtIHF1ZSBvIHBhZ2FtZW50byBmb2kgbGliZXJhZG8nLFxuICAgIGV4YW1wbGU6ICcyMDI1LTA1LTE4VDEwOjAwOjAwLjAwMFonXG4gIH0pXG4gIGRhdGFMaWJlcmFjYW86IERhdGU7XG5cbiAgLyoqXG4gICAqIFN0YXR1cyBhdHVhbCBkbyBwYWdhbWVudG9cbiAgICovXG4gIEBBcGlQcm9wZXJ0eSh7XG4gICAgZGVzY3JpcHRpb246ICdTdGF0dXMgYXR1YWwgZG8gcGFnYW1lbnRvJyxcbiAgICBlbnVtOiBTdGF0dXNQYWdhbWVudG9FbnVtLFxuICAgIGV4YW1wbGU6IFN0YXR1c1BhZ2FtZW50b0VudW0uTElCRVJBRE9cbiAgfSlcbiAgc3RhdHVzOiBTdGF0dXNQYWdhbWVudG9FbnVtO1xuXG4gIC8qKlxuICAgKiBNw6l0b2RvIGRlIHBhZ2FtZW50byB1dGlsaXphZG9cbiAgICovXG4gIEBBcGlQcm9wZXJ0eSh7XG4gICAgZGVzY3JpcHRpb246ICdNw6l0b2RvIGRlIHBhZ2FtZW50byB1dGlsaXphZG8nLFxuICAgIGVudW06IE1ldG9kb1BhZ2FtZW50b0VudW0sXG4gICAgZXhhbXBsZTogTWV0b2RvUGFnYW1lbnRvRW51bS5QSVhcbiAgfSlcbiAgbWV0b2RvUGFnYW1lbnRvOiBNZXRvZG9QYWdhbWVudG9FbnVtO1xuXG4gIC8qKlxuICAgKiBJbmZvcm1hw6fDtWVzIHNvYnJlIG8gcmVzcG9uc8OhdmVsIHBlbGEgbGliZXJhw6fDo29cbiAgICovXG4gIEBBcGlQcm9wZXJ0eSh7XG4gICAgZGVzY3JpcHRpb246ICdEYWRvcyBzb2JyZSBxdWVtIGxpYmVyb3UgbyBwYWdhbWVudG8nLFxuICAgIGV4YW1wbGU6IHtcbiAgICAgIGlkOiAnMTIzZTQ1NjctZTg5Yi0xMmQzLWE0NTYtNDI2NjE0MTc0MDAwJyxcbiAgICAgIG5vbWU6ICdKb8OjbyBTaWx2YScsXG4gICAgICBjYXJnbzogJ1TDqWNuaWNvIFNFTVRBUydcbiAgICB9XG4gIH0pXG4gIHJlc3BvbnNhdmVsTGliZXJhY2FvOiB7XG4gICAgaWQ6IHN0cmluZztcbiAgICBub21lOiBzdHJpbmc7XG4gICAgY2FyZ286IHN0cmluZztcbiAgfTtcblxuICAvKipcbiAgICogUXVhbnRpZGFkZSBkZSBjb21wcm92YW50ZXMgYW5leGFkb3NcbiAgICovXG4gIEBBcGlQcm9wZXJ0eSh7XG4gICAgZGVzY3JpcHRpb246ICdRdWFudGlkYWRlIGRlIGNvbXByb3ZhbnRlcyBhbmV4YWRvcycsXG4gICAgZXhhbXBsZTogMlxuICB9KVxuICBxdWFudGlkYWRlQ29tcHJvdmFudGVzOiBudW1iZXI7XG5cbiAgLyoqXG4gICAqIEluZm9ybWHDp8O1ZXMgc29icmUgY29uZmlybWHDp8OjbyBkZSByZWNlYmltZW50byAocXVhbmRvIGV4aXN0ZW50ZSlcbiAgICovXG4gIEBBcGlQcm9wZXJ0eSh7XG4gICAgZGVzY3JpcHRpb246ICdEYWRvcyBkYSBjb25maXJtYcOnw6NvIGRlIHJlY2ViaW1lbnRvJyxcbiAgICBleGFtcGxlOiB7XG4gICAgICBpZDogJzEyM2U0NTY3LWU4OWItMTJkMy1hNDU2LTQyNjYxNDE3NDAwMCcsXG4gICAgICBkYXRhQ29uZmlybWFjYW86ICcyMDI1LTA1LTIwVDE0OjMwOjAwWicsXG4gICAgICBtZXRvZG9Db25maXJtYWNhbzogJ2Fzc2luYXR1cmEnLFxuICAgICAgcmVzcG9uc2F2ZWw6IHtcbiAgICAgICAgaWQ6ICcxMjNlNDU2Ny1lODliLTEyZDMtYTQ1Ni00MjY2MTQxNzQwMDAnLFxuICAgICAgICBub21lOiAnQW5hIFNvdXphJ1xuICAgICAgfVxuICAgIH0sXG4gICAgcmVxdWlyZWQ6IGZhbHNlXG4gIH0pXG4gIGNvbmZpcm1hY2FvUmVjZWJpbWVudG8/OiB7XG4gICAgaWQ6IHN0cmluZztcbiAgICBkYXRhQ29uZmlybWFjYW86IERhdGU7XG4gICAgbWV0b2RvQ29uZmlybWFjYW86IHN0cmluZztcbiAgICByZXNwb25zYXZlbDoge1xuICAgICAgaWQ6IHN0cmluZztcbiAgICAgIG5vbWU6IHN0cmluZztcbiAgICB9O1xuICAgIGRlc3RpbmF0YXJpbz86IHtcbiAgICAgIGlkOiBzdHJpbmc7XG4gICAgICBub21lOiBzdHJpbmc7XG4gICAgfTtcbiAgfTtcblxuICAvKipcbiAgICogT2JzZXJ2YcOnw7VlcyBzb2JyZSBvIHBhZ2FtZW50b1xuICAgKi9cbiAgQEFwaVByb3BlcnR5KHtcbiAgICBkZXNjcmlwdGlvbjogJ09ic2VydmHDp8O1ZXMgc29icmUgbyBwYWdhbWVudG8nLFxuICAgIGV4YW1wbGU6ICdQYWdhbWVudG8gcmVmZXJlbnRlIGFvIGJlbmVmw61jaW8gZXZlbnR1YWwgZGUgYXV4w61saW8gbW9yYWRpYS4nLFxuICAgIHJlcXVpcmVkOiBmYWxzZVxuICB9KVxuICBvYnNlcnZhY29lcz86IHN0cmluZztcblxuICAvKipcbiAgICogRGF0YSBkZSBjcmlhw6fDo28gZG8gcmVnaXN0cm9cbiAgICovXG4gIEBBcGlQcm9wZXJ0eSh7XG4gICAgZGVzY3JpcHRpb246ICdEYXRhIGRlIGNyaWHDp8OjbyBkbyByZWdpc3RybycsXG4gICAgZXhhbXBsZTogJzIwMjUtMDUtMThUMTA6MDA6MDAuMDAwWidcbiAgfSlcbiAgY3JlYXRlZEF0OiBEYXRlO1xuXG4gIC8qKlxuICAgKiBEYXRhIGRhIMO6bHRpbWEgYXR1YWxpemHDp8OjbyBkbyByZWdpc3Ryb1xuICAgKi9cbiAgQEFwaVByb3BlcnR5KHtcbiAgICBkZXNjcmlwdGlvbjogJ0RhdGEgZGEgw7psdGltYSBhdHVhbGl6YcOnw6NvIGRvIHJlZ2lzdHJvJyxcbiAgICBleGFtcGxlOiAnMjAyNS0wNS0xOFQxMDowMDowMC4wMDBaJ1xuICB9KVxuICB1cGRhdGVkQXQ6IERhdGU7XG59XG4iXSwidmVyc2lvbiI6M30=

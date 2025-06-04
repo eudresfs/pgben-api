@@ -153,7 +153,9 @@ export class RegraConflitoPapel {
    * Verifica se envolve um papel específico (origem ou destino)
    */
   envolvePapel(papelId: string): boolean {
-    return this.papel_origem_id === papelId || this.papel_destino_id === papelId;
+    return (
+      this.papel_origem_id === papelId || this.papel_destino_id === papelId
+    );
   }
 
   /**
@@ -185,13 +187,13 @@ export class RegraConflitoPapel {
   isConsistente(): boolean {
     // Verifica se tem papéis origem e destino
     if (!this.papel_origem_id || !this.papel_destino_id) return false;
-    
+
     // Verifica se tem descrição
     if (!this.descricao || this.descricao.trim().length === 0) return false;
-    
+
     // Verifica se a descrição não é muito curta
     if (this.descricao.trim().length < 10) return false;
-    
+
     return true;
   }
 
@@ -237,19 +239,28 @@ export class RegraConflitoPapel {
    */
   getTipoConflito(): 'INCOMPATIBILIDADE' | 'RESTRICAO' | 'VALIDACAO' | 'OUTRO' {
     const descricaoLower = this.descricao.toLowerCase();
-    
-    if (descricaoLower.includes('incompatível') || descricaoLower.includes('conflito')) {
+
+    if (
+      descricaoLower.includes('incompatível') ||
+      descricaoLower.includes('conflito')
+    ) {
       return 'INCOMPATIBILIDADE';
     }
-    
-    if (descricaoLower.includes('não pode') || descricaoLower.includes('proibido')) {
+
+    if (
+      descricaoLower.includes('não pode') ||
+      descricaoLower.includes('proibido')
+    ) {
       return 'RESTRICAO';
     }
-    
-    if (descricaoLower.includes('validar') || descricaoLower.includes('verificar')) {
+
+    if (
+      descricaoLower.includes('validar') ||
+      descricaoLower.includes('verificar')
+    ) {
       return 'VALIDACAO';
     }
-    
+
     return 'OUTRO';
   }
 
@@ -293,49 +304,56 @@ export class RegraConflitoPapel {
    */
   getSugestoesMelhoria(): string[] {
     const sugestoes: string[] = [];
-    
+
     if (!this.isConsistente()) {
       sugestoes.push('Verificar e corrigir inconsistências na regra');
     }
-    
+
     if (this.descricao.length < 20) {
       sugestoes.push('Expandir descrição da regra para maior clareza');
     }
-    
+
     if (this.precisaRevisao()) {
       sugestoes.push('Revisar regra (criada há mais de 1 ano)');
     }
-    
+
     if (!this.temCriador()) {
       sugestoes.push('Definir responsável pela criação da regra');
     }
-    
+
     if (this.isBidirecional()) {
       sugestoes.push('Verificar se regra bidirecional está correta');
     }
-    
+
     return sugestoes;
   }
 
   /**
    * Verifica se pode ser aplicada a um contexto específico
    */
-  podeSerAplicada(contexto: { papelOrigemId: string; papelDestinoId: string }): boolean {
+  podeSerAplicada(contexto: {
+    papelOrigemId: string;
+    papelDestinoId: string;
+  }): boolean {
     if (!this.isAtivo()) return false;
-    
+
     // Verifica correspondência direta
-    if (this.papel_origem_id === contexto.papelOrigemId && 
-        this.papel_destino_id === contexto.papelDestinoId) {
+    if (
+      this.papel_origem_id === contexto.papelOrigemId &&
+      this.papel_destino_id === contexto.papelDestinoId
+    ) {
       return true;
     }
-    
+
     // Se for bidirecional, verifica correspondência inversa
-    if (this.isBidirecional() && 
-        this.papel_origem_id === contexto.papelDestinoId && 
-        this.papel_destino_id === contexto.papelOrigemId) {
+    if (
+      this.isBidirecional() &&
+      this.papel_origem_id === contexto.papelDestinoId &&
+      this.papel_destino_id === contexto.papelOrigemId
+    ) {
       return true;
     }
-    
+
     return false;
   }
 

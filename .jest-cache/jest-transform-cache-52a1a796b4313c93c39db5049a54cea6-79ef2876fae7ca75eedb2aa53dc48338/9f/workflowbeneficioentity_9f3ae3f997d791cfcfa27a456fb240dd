@@ -1,0 +1,114 @@
+a361530197fb708171c59e6bc4195370
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var _a, _b;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.WorkflowBeneficio = void 0;
+const typeorm_1 = require("typeorm");
+/**
+ * Entidade que representa um workflow de aprovação para um tipo de benefício.
+ * Define a sequência de etapas, setores responsáveis e prazos para cada
+ * tipo de benefício no sistema.
+ */
+let WorkflowBeneficio = class WorkflowBeneficio {
+    id;
+    /**
+     * Referência ao tipo de benefício ao qual este workflow se aplica.
+     */
+    tipo_beneficio_id;
+    /**
+     * Nome descritivo do workflow.
+     */
+    nome;
+    /**
+     * Descrição detalhada do workflow.
+     */
+    descricao;
+    /**
+     * Lista de etapas do workflow, armazenada como JSON.
+     * Cada etapa contém informações sobre ordem, descrição, setor, ação, etc.
+     */
+    etapas;
+    /**
+     * Versão do workflow, incrementada a cada atualização.
+     */
+    version;
+    /**
+     * SLA total do workflow em horas, calculado como a soma dos SLAs de todas as etapas.
+     */
+    sla_total;
+    /**
+     * Status ativo/inativo do workflow.
+     */
+    ativo;
+    /**
+     * Data de criação do workflow.
+     */
+    created_at;
+    /**
+     * Data da última atualização do workflow.
+     */
+    updated_at;
+    /**
+     * ID do usuário que realizou a última atualização.
+     */
+    updated_by;
+};
+exports.WorkflowBeneficio = WorkflowBeneficio;
+__decorate([
+    (0, typeorm_1.PrimaryGeneratedColumn)('uuid'),
+    __metadata("design:type", String)
+], WorkflowBeneficio.prototype, "id", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'uuid' }),
+    (0, typeorm_1.Index)('idx_workflow_tipo_beneficio'),
+    __metadata("design:type", String)
+], WorkflowBeneficio.prototype, "tipo_beneficio_id", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', length: 200 }),
+    __metadata("design:type", String)
+], WorkflowBeneficio.prototype, "nome", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', length: 500 }),
+    __metadata("design:type", String)
+], WorkflowBeneficio.prototype, "descricao", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'jsonb' }),
+    __metadata("design:type", Array)
+], WorkflowBeneficio.prototype, "etapas", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'integer', default: 1 }),
+    __metadata("design:type", Number)
+], WorkflowBeneficio.prototype, "version", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'float', default: 0 }),
+    __metadata("design:type", Number)
+], WorkflowBeneficio.prototype, "sla_total", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'boolean', default: true }),
+    __metadata("design:type", Boolean)
+], WorkflowBeneficio.prototype, "ativo", void 0);
+__decorate([
+    (0, typeorm_1.CreateDateColumn)({ type: 'timestamp' }),
+    __metadata("design:type", typeof (_a = typeof Date !== "undefined" && Date) === "function" ? _a : Object)
+], WorkflowBeneficio.prototype, "created_at", void 0);
+__decorate([
+    (0, typeorm_1.UpdateDateColumn)({ type: 'timestamp' }),
+    __metadata("design:type", typeof (_b = typeof Date !== "undefined" && Date) === "function" ? _b : Object)
+], WorkflowBeneficio.prototype, "updated_at", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'uuid', nullable: true }),
+    __metadata("design:type", String)
+], WorkflowBeneficio.prototype, "updated_by", void 0);
+exports.WorkflowBeneficio = WorkflowBeneficio = __decorate([
+    (0, typeorm_1.Entity)('configuracao_workflow_beneficio')
+], WorkflowBeneficio);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXGVudGl0aWVzXFx3b3JrZmxvdy1iZW5lZmljaW8uZW50aXR5LnRzIiwibWFwcGluZ3MiOiI7Ozs7Ozs7Ozs7Ozs7QUFBQSxxQ0FBbUk7QUFHbkk7Ozs7R0FJRztBQUVJLElBQU0saUJBQWlCLEdBQXZCLE1BQU0saUJBQWlCO0lBRTVCLEVBQUUsQ0FBUztJQUVYOztPQUVHO0lBR0gsaUJBQWlCLENBQVM7SUFFMUI7O09BRUc7SUFFSCxJQUFJLENBQVM7SUFFYjs7T0FFRztJQUVILFNBQVMsQ0FBUztJQUVsQjs7O09BR0c7SUFFSCxNQUFNLENBT0Y7SUFFSjs7T0FFRztJQUVILE9BQU8sQ0FBUztJQUVoQjs7T0FFRztJQUVILFNBQVMsQ0FBUztJQUVsQjs7T0FFRztJQUVILEtBQUssQ0FBVTtJQUVmOztPQUVHO0lBRUgsVUFBVSxDQUFPO0lBRWpCOztPQUVHO0lBRUgsVUFBVSxDQUFPO0lBRWpCOztPQUVHO0lBRUgsVUFBVSxDQUFTO0NBQ3BCLENBQUE7QUF4RVksOENBQWlCO0FBRTVCO0lBREMsSUFBQSxnQ0FBc0IsRUFBQyxNQUFNLENBQUM7OzZDQUNwQjtBQU9YO0lBRkMsSUFBQSxnQkFBTSxFQUFDLEVBQUUsSUFBSSxFQUFFLE1BQU0sRUFBRSxDQUFDO0lBQ3hCLElBQUEsZUFBSyxFQUFDLDZCQUE2QixDQUFDOzs0REFDWDtBQU0xQjtJQURDLElBQUEsZ0JBQU0sRUFBQyxFQUFFLElBQUksRUFBRSxTQUFTLEVBQUUsTUFBTSxFQUFFLEdBQUcsRUFBRSxDQUFDOzsrQ0FDNUI7QUFNYjtJQURDLElBQUEsZ0JBQU0sRUFBQyxFQUFFLElBQUksRUFBRSxTQUFTLEVBQUUsTUFBTSxFQUFFLEdBQUcsRUFBRSxDQUFDOztvREFDdkI7QUFPbEI7SUFEQyxJQUFBLGdCQUFNLEVBQUMsRUFBRSxJQUFJLEVBQUUsT0FBTyxFQUFFLENBQUM7O2lEQVF0QjtBQU1KO0lBREMsSUFBQSxnQkFBTSxFQUFDLEVBQUUsSUFBSSxFQUFFLFNBQVMsRUFBRSxPQUFPLEVBQUUsQ0FBQyxFQUFFLENBQUM7O2tEQUN4QjtBQU1oQjtJQURDLElBQUEsZ0JBQU0sRUFBQyxFQUFFLElBQUksRUFBRSxPQUFPLEVBQUUsT0FBTyxFQUFFLENBQUMsRUFBRSxDQUFDOztvREFDcEI7QUFNbEI7SUFEQyxJQUFBLGdCQUFNLEVBQUMsRUFBRSxJQUFJLEVBQUUsU0FBUyxFQUFFLE9BQU8sRUFBRSxJQUFJLEVBQUUsQ0FBQzs7Z0RBQzVCO0FBTWY7SUFEQyxJQUFBLDBCQUFnQixFQUFDLEVBQUUsSUFBSSxFQUFFLFdBQVcsRUFBRSxDQUFDO2tEQUM1QixJQUFJLG9CQUFKLElBQUk7cURBQUM7QUFNakI7SUFEQyxJQUFBLDBCQUFnQixFQUFDLEVBQUUsSUFBSSxFQUFFLFdBQVcsRUFBRSxDQUFDO2tEQUM1QixJQUFJLG9CQUFKLElBQUk7cURBQUM7QUFNakI7SUFEQyxJQUFBLGdCQUFNLEVBQUMsRUFBRSxJQUFJLEVBQUUsTUFBTSxFQUFFLFFBQVEsRUFBRSxJQUFJLEVBQUUsQ0FBQzs7cURBQ3RCOzRCQXZFUixpQkFBaUI7SUFEN0IsSUFBQSxnQkFBTSxFQUFDLGlDQUFpQyxDQUFDO0dBQzdCLGlCQUFpQixDQXdFN0IiLCJuYW1lcyI6W10sInNvdXJjZXMiOlsiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXGVudGl0aWVzXFx3b3JrZmxvdy1iZW5lZmljaW8uZW50aXR5LnRzIl0sInNvdXJjZXNDb250ZW50IjpbImltcG9ydCB7IEVudGl0eSwgQ29sdW1uLCBQcmltYXJ5R2VuZXJhdGVkQ29sdW1uLCBDcmVhdGVEYXRlQ29sdW1uLCBVcGRhdGVEYXRlQ29sdW1uLCBJbmRleCwgTWFueVRvT25lLCBKb2luQ29sdW1uIH0gZnJvbSAndHlwZW9ybSc7XG5pbXBvcnQgeyBXb3JrZmxvd0FjYW9FbnVtIH0gZnJvbSAnLi4vZW51bXMnO1xuXG4vKipcbiAqIEVudGlkYWRlIHF1ZSByZXByZXNlbnRhIHVtIHdvcmtmbG93IGRlIGFwcm92YcOnw6NvIHBhcmEgdW0gdGlwbyBkZSBiZW5lZsOtY2lvLlxuICogRGVmaW5lIGEgc2VxdcOqbmNpYSBkZSBldGFwYXMsIHNldG9yZXMgcmVzcG9uc8OhdmVpcyBlIHByYXpvcyBwYXJhIGNhZGFcbiAqIHRpcG8gZGUgYmVuZWbDrWNpbyBubyBzaXN0ZW1hLlxuICovXG5ARW50aXR5KCdjb25maWd1cmFjYW9fd29ya2Zsb3dfYmVuZWZpY2lvJylcbmV4cG9ydCBjbGFzcyBXb3JrZmxvd0JlbmVmaWNpbyB7XG4gIEBQcmltYXJ5R2VuZXJhdGVkQ29sdW1uKCd1dWlkJylcbiAgaWQ6IHN0cmluZztcblxuICAvKipcbiAgICogUmVmZXLDqm5jaWEgYW8gdGlwbyBkZSBiZW5lZsOtY2lvIGFvIHF1YWwgZXN0ZSB3b3JrZmxvdyBzZSBhcGxpY2EuXG4gICAqL1xuICBAQ29sdW1uKHsgdHlwZTogJ3V1aWQnIH0pXG4gIEBJbmRleCgnaWR4X3dvcmtmbG93X3RpcG9fYmVuZWZpY2lvJylcbiAgdGlwb19iZW5lZmljaW9faWQ6IHN0cmluZztcblxuICAvKipcbiAgICogTm9tZSBkZXNjcml0aXZvIGRvIHdvcmtmbG93LlxuICAgKi9cbiAgQENvbHVtbih7IHR5cGU6ICd2YXJjaGFyJywgbGVuZ3RoOiAyMDAgfSlcbiAgbm9tZTogc3RyaW5nO1xuXG4gIC8qKlxuICAgKiBEZXNjcmnDp8OjbyBkZXRhbGhhZGEgZG8gd29ya2Zsb3cuXG4gICAqL1xuICBAQ29sdW1uKHsgdHlwZTogJ3ZhcmNoYXInLCBsZW5ndGg6IDUwMCB9KVxuICBkZXNjcmljYW86IHN0cmluZztcblxuICAvKipcbiAgICogTGlzdGEgZGUgZXRhcGFzIGRvIHdvcmtmbG93LCBhcm1hemVuYWRhIGNvbW8gSlNPTi5cbiAgICogQ2FkYSBldGFwYSBjb250w6ltIGluZm9ybWHDp8O1ZXMgc29icmUgb3JkZW0sIGRlc2NyacOnw6NvLCBzZXRvciwgYcOnw6NvLCBldGMuXG4gICAqL1xuICBAQ29sdW1uKHsgdHlwZTogJ2pzb25iJyB9KVxuICBldGFwYXM6IHtcbiAgICBvcmRlbTogbnVtYmVyO1xuICAgIGRlc2NyaWNhbzogc3RyaW5nO1xuICAgIHNldG9yX2lkOiBzdHJpbmc7XG4gICAgYWNhbzogV29ya2Zsb3dBY2FvRW51bTtcbiAgICBwcmF6b19zbGE6IG51bWJlcjtcbiAgICB0ZW1wbGF0ZV9ub3RpZmljYWNhb19pZD86IHN0cmluZztcbiAgfVtdO1xuICBcbiAgLyoqXG4gICAqIFZlcnPDo28gZG8gd29ya2Zsb3csIGluY3JlbWVudGFkYSBhIGNhZGEgYXR1YWxpemHDp8Ojby5cbiAgICovXG4gIEBDb2x1bW4oeyB0eXBlOiAnaW50ZWdlcicsIGRlZmF1bHQ6IDEgfSlcbiAgdmVyc2lvbjogbnVtYmVyO1xuXG4gIC8qKlxuICAgKiBTTEEgdG90YWwgZG8gd29ya2Zsb3cgZW0gaG9yYXMsIGNhbGN1bGFkbyBjb21vIGEgc29tYSBkb3MgU0xBcyBkZSB0b2RhcyBhcyBldGFwYXMuXG4gICAqL1xuICBAQ29sdW1uKHsgdHlwZTogJ2Zsb2F0JywgZGVmYXVsdDogMCB9KVxuICBzbGFfdG90YWw6IG51bWJlcjtcblxuICAvKipcbiAgICogU3RhdHVzIGF0aXZvL2luYXRpdm8gZG8gd29ya2Zsb3cuXG4gICAqL1xuICBAQ29sdW1uKHsgdHlwZTogJ2Jvb2xlYW4nLCBkZWZhdWx0OiB0cnVlIH0pXG4gIGF0aXZvOiBib29sZWFuO1xuXG4gIC8qKlxuICAgKiBEYXRhIGRlIGNyaWHDp8OjbyBkbyB3b3JrZmxvdy5cbiAgICovXG4gIEBDcmVhdGVEYXRlQ29sdW1uKHsgdHlwZTogJ3RpbWVzdGFtcCcgfSlcbiAgY3JlYXRlZF9hdDogRGF0ZTtcblxuICAvKipcbiAgICogRGF0YSBkYSDDumx0aW1hIGF0dWFsaXphw6fDo28gZG8gd29ya2Zsb3cuXG4gICAqL1xuICBAVXBkYXRlRGF0ZUNvbHVtbih7IHR5cGU6ICd0aW1lc3RhbXAnIH0pXG4gIHVwZGF0ZWRfYXQ6IERhdGU7XG5cbiAgLyoqXG4gICAqIElEIGRvIHVzdcOhcmlvIHF1ZSByZWFsaXpvdSBhIMO6bHRpbWEgYXR1YWxpemHDp8Ojby5cbiAgICovXG4gIEBDb2x1bW4oeyB0eXBlOiAndXVpZCcsIG51bGxhYmxlOiB0cnVlIH0pXG4gIHVwZGF0ZWRfYnk6IHN0cmluZztcbn1cbiJdLCJ2ZXJzaW9uIjozfQ==

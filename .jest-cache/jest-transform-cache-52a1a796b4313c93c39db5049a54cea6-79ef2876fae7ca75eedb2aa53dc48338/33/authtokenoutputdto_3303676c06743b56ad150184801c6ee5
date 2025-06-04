@@ -1,0 +1,48 @@
+bea1b19a81b0a04370cdb413edde1a60
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.UserRefreshTokenClaims = exports.AuthTokenOutput = exports.RefreshTokenInput = void 0;
+const swagger_1 = require("@nestjs/swagger");
+const class_transformer_1 = require("class-transformer");
+const class_validator_1 = require("class-validator");
+/**
+ * DTO para solicitação de refresh token
+ */
+class RefreshTokenInput {
+    refreshToken;
+}
+exports.RefreshTokenInput = RefreshTokenInput;
+__decorate([
+    (0, swagger_1.ApiProperty)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], RefreshTokenInput.prototype, "refreshToken", void 0);
+class AuthTokenOutput {
+    accessToken;
+    refreshToken;
+}
+exports.AuthTokenOutput = AuthTokenOutput;
+__decorate([
+    (0, class_transformer_1.Expose)(),
+    (0, swagger_1.ApiProperty)(),
+    __metadata("design:type", String)
+], AuthTokenOutput.prototype, "accessToken", void 0);
+__decorate([
+    (0, class_transformer_1.Expose)(),
+    (0, swagger_1.ApiProperty)(),
+    __metadata("design:type", String)
+], AuthTokenOutput.prototype, "refreshToken", void 0);
+class UserRefreshTokenClaims {
+    id;
+}
+exports.UserRefreshTokenClaims = UserRefreshTokenClaims;
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXGF1dGhcXGR0b3NcXGF1dGgtdG9rZW4tb3V0cHV0LmR0by50cyIsIm1hcHBpbmdzIjoiOzs7Ozs7Ozs7Ozs7QUFBQSw2Q0FBOEM7QUFDOUMseURBQTJDO0FBQzNDLHFEQUEyQztBQUczQzs7R0FFRztBQUNILE1BQWEsaUJBQWlCO0lBRzVCLFlBQVksQ0FBUztDQUN0QjtBQUpELDhDQUlDO0FBREM7SUFGQyxJQUFBLHFCQUFXLEdBQUU7SUFDYixJQUFBLDBCQUFRLEdBQUU7O3VEQUNVO0FBR3ZCLE1BQWEsZUFBZTtJQUcxQixXQUFXLENBQVM7SUFJcEIsWUFBWSxDQUFTO0NBQ3RCO0FBUkQsMENBUUM7QUFMQztJQUZDLElBQUEsMEJBQU0sR0FBRTtJQUNSLElBQUEscUJBQVcsR0FBRTs7b0RBQ007QUFJcEI7SUFGQyxJQUFBLDBCQUFNLEdBQUU7SUFDUixJQUFBLHFCQUFXLEdBQUU7O3FEQUNPO0FBV3ZCLE1BQWEsc0JBQXNCO0lBQ2pDLEVBQUUsQ0FBa0I7Q0FDckI7QUFGRCx3REFFQyIsIm5hbWVzIjpbXSwic291cmNlcyI6WyJDOlxcVXNlcnNcXGV1ZHJlXFxPbmVEcml2ZVxcRGVza3RvcFxcUHJvamV0b3NcXHBnYmVuXFxwZ2Jlbi1zZXJ2ZXJcXHNyY1xcYXV0aFxcZHRvc1xcYXV0aC10b2tlbi1vdXRwdXQuZHRvLnRzIl0sInNvdXJjZXNDb250ZW50IjpbImltcG9ydCB7IEFwaVByb3BlcnR5IH0gZnJvbSAnQG5lc3Rqcy9zd2FnZ2VyJztcbmltcG9ydCB7IEV4cG9zZSB9IGZyb20gJ2NsYXNzLXRyYW5zZm9ybWVyJztcbmltcG9ydCB7IElzU3RyaW5nIH0gZnJvbSAnY2xhc3MtdmFsaWRhdG9yJztcbmltcG9ydCB7IFJvbGVUeXBlIH0gZnJvbSAnLi4vLi4vc2hhcmVkL2NvbnN0YW50cy9yb2xlcy5jb25zdGFudHMnO1xuXG4vKipcbiAqIERUTyBwYXJhIHNvbGljaXRhw6fDo28gZGUgcmVmcmVzaCB0b2tlblxuICovXG5leHBvcnQgY2xhc3MgUmVmcmVzaFRva2VuSW5wdXQge1xuICBAQXBpUHJvcGVydHkoKVxuICBASXNTdHJpbmcoKVxuICByZWZyZXNoVG9rZW46IHN0cmluZztcbn1cblxuZXhwb3J0IGNsYXNzIEF1dGhUb2tlbk91dHB1dCB7XG4gIEBFeHBvc2UoKVxuICBAQXBpUHJvcGVydHkoKVxuICBhY2Nlc3NUb2tlbjogc3RyaW5nO1xuXG4gIEBFeHBvc2UoKVxuICBAQXBpUHJvcGVydHkoKVxuICByZWZyZXNoVG9rZW46IHN0cmluZztcbn1cblxuZXhwb3J0IGludGVyZmFjZSBVc2VyQWNjZXNzVG9rZW5DbGFpbXMge1xuICBpZDogc3RyaW5nIHwgbnVtYmVyO1xuICB1c2VybmFtZTogc3RyaW5nO1xuICByb2xlczogUm9sZVR5cGVbXTtcbiAgcGVybWlzc2lvbnM/OiBzdHJpbmdbXTtcbiAgcGVybWlzc2lvblNjb3Blcz86IFJlY29yZDxzdHJpbmcsIHN0cmluZz47XG59XG5cbmV4cG9ydCBjbGFzcyBVc2VyUmVmcmVzaFRva2VuQ2xhaW1zIHtcbiAgaWQ6IHN0cmluZyB8IG51bWJlcjtcbn1cbiJdLCJ2ZXJzaW9uIjozfQ==

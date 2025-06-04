@@ -1,5 +1,19 @@
-import { Entity, PrimaryGeneratedColumn, Column, Index, CreateDateColumn } from 'typeorm';
-import { IsNotEmpty, IsOptional, IsUUID, IsString, MaxLength, IsIP, IsEnum } from 'class-validator';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  Index,
+  CreateDateColumn,
+} from 'typeorm';
+import {
+  IsNotEmpty,
+  IsOptional,
+  IsUUID,
+  IsString,
+  MaxLength,
+  IsIP,
+  IsEnum,
+} from 'class-validator';
 
 /**
  * Níveis de alerta para métricas de segurança
@@ -13,7 +27,7 @@ export enum NivelAlertaEnum {
 
 /**
  * Entidade que representa métricas de segurança específicas para LGPD
- * 
+ *
  * Esta entidade armazena eventos de segurança relacionados à LGPD,
  * incluindo acessos a dados sensíveis, tentativas de autenticação,
  * e outras operações relevantes para conformidade.
@@ -27,7 +41,9 @@ export class MetricaSeguranca {
   @Index('idx_metricas_seguranca_tipo')
   @IsNotEmpty({ message: 'Tipo de evento é obrigatório' })
   @IsString({ message: 'Tipo de evento deve ser uma string' })
-  @MaxLength(100, { message: 'Tipo de evento deve ter no máximo 100 caracteres' })
+  @MaxLength(100, {
+    message: 'Tipo de evento deve ter no máximo 100 caracteres',
+  })
   tipo_evento: string;
 
   @CreateDateColumn({ name: 'created_at' })
@@ -43,7 +59,9 @@ export class MetricaSeguranca {
   @Column({ length: 50, nullable: true })
   @IsOptional()
   @IsString({ message: 'Perfil do usuário deve ser uma string' })
-  @MaxLength(50, { message: 'Perfil do usuário deve ter no máximo 50 caracteres' })
+  @MaxLength(50, {
+    message: 'Perfil do usuário deve ter no máximo 50 caracteres',
+  })
   perfil_usuario: string;
 
   @Column({ length: 45, nullable: true })
@@ -72,7 +90,7 @@ export class MetricaSeguranca {
   @Column({
     type: 'enum',
     enum: NivelAlertaEnum,
-    default: NivelAlertaEnum.INFO
+    default: NivelAlertaEnum.INFO,
   })
   @Index('idx_metricas_seguranca_nivel')
   @IsEnum(NivelAlertaEnum, { message: 'Nível de alerta inválido' })

@@ -1,12 +1,19 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose, Transform, Type } from 'class-transformer';
-import { IsUUID, IsString, IsNumber, IsEnum, IsOptional, IsDate } from 'class-validator';
+import {
+  IsUUID,
+  IsString,
+  IsNumber,
+  IsEnum,
+  IsOptional,
+  IsDate,
+} from 'class-validator';
 import { EscolaridadeEnum } from '../../../enums/escolaridade.enum';
 import { ParentescoEnum } from '../../../enums/parentesco.enum';
 
 /**
  * DTO de resposta para membro da composição familiar
- * 
+ *
  * Define a estrutura de dados retornada nas consultas de membros da composição familiar,
  * incluindo campos calculados e formatação adequada para o frontend.
  */
@@ -101,7 +108,8 @@ export class ComposicaoFamiliarResponseDto {
   @Transform(({ value }) => {
     const escolaridadeMap = {
       [EscolaridadeEnum.ANALFABETO]: 'Analfabeto',
-      [EscolaridadeEnum.FUNDAMENTAL_INCOMPLETO]: 'Ensino Fundamental Incompleto',
+      [EscolaridadeEnum.FUNDAMENTAL_INCOMPLETO]:
+        'Ensino Fundamental Incompleto',
       [EscolaridadeEnum.FUNDAMENTAL_COMPLETO]: 'Ensino Fundamental Completo',
       [EscolaridadeEnum.MEDIO_INCOMPLETO]: 'Ensino Médio Incompleto',
       [EscolaridadeEnum.MEDIO_COMPLETO]: 'Ensino Médio Completo',
@@ -146,13 +154,13 @@ export class ComposicaoFamiliarResponseDto {
 
   @ApiProperty({
     description: 'Renda mensal do membro familiar',
-    example: 1500.00,
+    example: 1500.0,
     required: false,
   })
   @Expose()
   @IsOptional()
   @IsNumber()
-  @Transform(({ value }) => value ? parseFloat(value) : null)
+  @Transform(({ value }) => (value ? parseFloat(value) : null))
   renda?: number;
 
   @ApiProperty({
@@ -209,7 +217,7 @@ export class ComposicaoFamiliarResponseDto {
 
 /**
  * DTO de resposta paginada para composição familiar
- * 
+ *
  * Estrutura padrão para retorno de listas paginadas de membros da composição familiar.
  */
 export class ComposicaoFamiliarPaginatedResponseDto {
@@ -246,8 +254,8 @@ export class ComposicaoFamiliarPaginatedResponseDto {
     description: 'Estatísticas da composição familiar',
     example: {
       totalMembros: 4,
-      rendaTotal: 3500.00,
-      rendaMedia: 875.00,
+      rendaTotal: 3500.0,
+      rendaMedia: 875.0,
       idadeMedia: 28.5,
       membrosComRenda: 2,
     },

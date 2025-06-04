@@ -21,7 +21,7 @@ import {
 
 /**
  * Serviço de Blacklist de Tokens JWT
- * 
+ *
  * Gerencia tokens JWT invalidados para prevenir reutilização
  * de tokens comprometidos, revogados ou de usuários deslogados
  */
@@ -56,12 +56,15 @@ export class JwtBlacklistService {
       });
 
       if (existingToken) {
-        this.logger.warn(`Token já está na blacklist: ${addToBlacklistDto.jti}`, {
-          jti: addToBlacklistDto.jti,
-          usuarioId: addToBlacklistDto.usuario_id,
-          existingReason: existingToken.reason,
-          newReason: addToBlacklistDto.reason,
-        });
+        this.logger.warn(
+          `Token já está na blacklist: ${addToBlacklistDto.jti}`,
+          {
+            jti: addToBlacklistDto.jti,
+            usuarioId: addToBlacklistDto.usuario_id,
+            existingReason: existingToken.reason,
+            newReason: addToBlacklistDto.reason,
+          },
+        );
 
         return {
           message: 'Token já está na blacklist',
@@ -84,13 +87,16 @@ export class JwtBlacklistService {
 
       await this.jwtBlacklistRepository.save(blacklistEntry);
 
-      this.logger.log(`Token adicionado à blacklist: ${addToBlacklistDto.jti}`, {
-        jti: addToBlacklistDto.jti,
-        usuarioId: addToBlacklistDto.usuario_id,
-        tokenType: addToBlacklistDto.token_type,
-        reason: addToBlacklistDto.reason,
-        expiresAt: addToBlacklistDto.expires_at,
-      });
+      this.logger.log(
+        `Token adicionado à blacklist: ${addToBlacklistDto.jti}`,
+        {
+          jti: addToBlacklistDto.jti,
+          usuarioId: addToBlacklistDto.usuario_id,
+          tokenType: addToBlacklistDto.token_type,
+          reason: addToBlacklistDto.reason,
+          expiresAt: addToBlacklistDto.expires_at,
+        },
+      );
 
       return {
         message: 'Token adicionado à blacklist com sucesso',
@@ -98,14 +104,15 @@ export class JwtBlacklistService {
         affected_count: 1,
       };
     } catch (error) {
-      this.logger.error(`Erro ao adicionar token à blacklist: ${error.message}`, {
-        jti: addToBlacklistDto.jti,
-        error: error.stack,
-      });
-      
-      throw new InternalServerErrorException(
-        'Erro interno ao invalidar token',
+      this.logger.error(
+        `Erro ao adicionar token à blacklist: ${error.message}`,
+        {
+          jti: addToBlacklistDto.jti,
+          error: error.stack,
+        },
       );
+
+      throw new InternalServerErrorException('Erro interno ao invalidar token');
     }
   }
 
@@ -134,7 +141,7 @@ export class JwtBlacklistService {
       if (!isStillBlacklisted) {
         // Token expirou, pode ser removido da blacklist
         await this.jwtBlacklistRepository.remove(blacklistEntry);
-        
+
         return {
           is_blacklisted: false,
         };
@@ -151,7 +158,7 @@ export class JwtBlacklistService {
         jti: checkBlacklistDto.jti,
         error: error.stack,
       });
-      
+
       // Em caso de erro, assumir que o token não está blacklisted
       // para não bloquear usuários desnecessariamente
       return {
@@ -187,12 +194,12 @@ export class JwtBlacklistService {
       let tokensToInvalidate = activeTokens;
       if (invalidateDto.token_type && invalidateDto.token_type !== 'all') {
         tokensToInvalidate = activeTokens.filter(
-          token => token.token_type === invalidateDto.token_type,
+          (token) => token.token_type === invalidateDto.token_type,
         );
       }
 
       // Criar registros na blacklist
-      const blacklistEntries = tokensToInvalidate.map(token => 
+      const blacklistEntries = tokensToInvalidate.map((token) =>
         this.jwtBlacklistRepository.create({
           jti: token.jti,
           usuario_id: invalidateDto.usuario_id,
@@ -215,7 +222,7 @@ export class JwtBlacklistService {
         tokenType: invalidateDto.token_type || 'all',
         reason: invalidateDto.reason,
         affectedCount: blacklistEntries.length,
-        tokenJtis: tokensToInvalidate.map(t => t.jti),
+        tokenJtis: tokensToInvalidate.map((t) => t.jti),
       });
 
       return {
@@ -224,11 +231,14 @@ export class JwtBlacklistService {
         affected_count: blacklistEntries.length,
       };
     } catch (error) {
-      this.logger.error(`Erro ao invalidar tokens do usuário: ${error.message}`, {
-        usuarioId: invalidateDto.usuario_id,
-        error: error.stack,
-      });
-      
+      this.logger.error(
+        `Erro ao invalidar tokens do usuário: ${error.message}`,
+        {
+          usuarioId: invalidateDto.usuario_id,
+          error: error.stack,
+        },
+      );
+
       throw new InternalServerErrorException(
         'Erro interno ao invalidar tokens do usuário',
       );
@@ -256,15 +266,18 @@ export class JwtBlacklistService {
         affected_count: result.affected || 0,
       };
     } catch (error) {
-      this.logger.error(`Erro ao remover token da blacklist: ${error.message}`, {
-        jti,
-        error: error.stack,
-      });
-      
+      this.logger.error(
+        `Erro ao remover token da blacklist: ${error.message}`,
+        {
+          jti,
+          error: error.stack,
+        },
+      );
+
       if (error instanceof NotFoundException) {
         throw error;
       }
-      
+
       throw new InternalServerErrorException(
         'Erro interno ao remover token da blacklist',
       );
@@ -276,9 +289,7 @@ export class JwtBlacklistService {
    * @param queryDto Filtros de consulta
    * @returns Lista paginada de tokens
    */
-  async listBlacklistedTokens(
-    queryDto: BlacklistQueryDto,
-  ): Promise<{
+  async listBlacklistedTokens(queryDto: BlacklistQueryDto): Promise<{
     data: JwtBlacklist[];
     total: number;
     page: number;
@@ -290,7 +301,8 @@ export class JwtBlacklistService {
       const limit = Math.min(queryDto.limit || 10, 100);
       const skip = (page - 1) * limit;
 
-      const queryBuilder = this.jwtBlacklistRepository.createQueryBuilder('blacklist');
+      const queryBuilder =
+        this.jwtBlacklistRepository.createQueryBuilder('blacklist');
 
       // Aplicar filtros
       if (queryDto.usuario_id) {
@@ -338,7 +350,7 @@ export class JwtBlacklistService {
         queryDto,
         error: error.stack,
       });
-      
+
       throw new InternalServerErrorException(
         'Erro interno ao consultar blacklist',
       );
@@ -353,22 +365,23 @@ export class JwtBlacklistService {
     try {
       const now = new Date();
 
-      const [total, expired, active, accessTokens, refreshTokens, reasonStats] = await Promise.all([
-        this.jwtBlacklistRepository.count(),
-        this.jwtBlacklistRepository.count({
-          where: { expires_at: LessThan(now) },
-        }),
-        this.jwtBlacklistRepository.count({
-          where: { expires_at: MoreThan(now) },
-        }),
-        this.jwtBlacklistRepository.count({
-          where: { token_type: 'access' },
-        }),
-        this.jwtBlacklistRepository.count({
-          where: { token_type: 'refresh' },
-        }),
-        this.getReasonStats(),
-      ]);
+      const [total, expired, active, accessTokens, refreshTokens, reasonStats] =
+        await Promise.all([
+          this.jwtBlacklistRepository.count(),
+          this.jwtBlacklistRepository.count({
+            where: { expires_at: LessThan(now) },
+          }),
+          this.jwtBlacklistRepository.count({
+            where: { expires_at: MoreThan(now) },
+          }),
+          this.jwtBlacklistRepository.count({
+            where: { token_type: 'access' },
+          }),
+          this.jwtBlacklistRepository.count({
+            where: { token_type: 'refresh' },
+          }),
+          this.getReasonStats(),
+        ]);
 
       return {
         total,
@@ -380,10 +393,13 @@ export class JwtBlacklistService {
         last_cleanup: this.lastCleanup.toISOString(),
       };
     } catch (error) {
-      this.logger.error(`Erro ao obter estatísticas da blacklist: ${error.message}`, {
-        error: error.stack,
-      });
-      
+      this.logger.error(
+        `Erro ao obter estatísticas da blacklist: ${error.message}`,
+        {
+          error: error.stack,
+        },
+      );
+
       throw new InternalServerErrorException(
         'Erro interno ao obter estatísticas',
       );
@@ -403,14 +419,16 @@ export class JwtBlacklistService {
       const deletedCount = result.affected || 0;
       this.lastCleanup = new Date();
 
-      this.logger.log(`Limpeza da blacklist: ${deletedCount} tokens expirados removidos`);
+      this.logger.log(
+        `Limpeza da blacklist: ${deletedCount} tokens expirados removidos`,
+      );
 
       return deletedCount;
     } catch (error) {
       this.logger.error(`Erro na limpeza da blacklist: ${error.message}`, {
         error: error.stack,
       });
-      
+
       throw new InternalServerErrorException(
         'Erro interno na limpeza da blacklist',
       );
@@ -431,13 +449,15 @@ export class JwtBlacklistService {
         .getRawMany();
 
       const stats: Record<string, number> = {};
-      results.forEach(result => {
+      results.forEach((result) => {
         stats[result.reason] = parseInt(result.count, 10);
       });
 
       return stats;
     } catch (error) {
-      this.logger.error(`Erro ao obter estatísticas por motivo: ${error.message}`);
+      this.logger.error(
+        `Erro ao obter estatísticas por motivo: ${error.message}`,
+      );
       return {};
     }
   }
@@ -450,10 +470,14 @@ export class JwtBlacklistService {
       try {
         const deletedCount = await this.cleanupExpiredTokens();
         if (deletedCount > 0) {
-          this.logger.log(`Limpeza automática da blacklist: ${deletedCount} tokens removidos`);
+          this.logger.log(
+            `Limpeza automática da blacklist: ${deletedCount} tokens removidos`,
+          );
         }
       } catch (error) {
-        this.logger.error(`Erro na limpeza automática da blacklist: ${error.message}`);
+        this.logger.error(
+          `Erro na limpeza automática da blacklist: ${error.message}`,
+        );
       }
     }, this.CLEANUP_INTERVAL);
   }

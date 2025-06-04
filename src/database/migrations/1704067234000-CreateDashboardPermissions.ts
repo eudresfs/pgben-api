@@ -1,12 +1,14 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class CreateDashboardPermissions1704067223000 implements MigrationInterface {
+export class CreateDashboardPermissions1704067223000
+  implements MigrationInterface
+{
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Verificar se as permissões já existem
     const permissaoVisualizarExists = await queryRunner.query(`
       SELECT 1 FROM permissao WHERE nome = 'dashboard.visualizar'
     `);
-    
+
     const permissaoExportarExists = await queryRunner.query(`
       SELECT 1 FROM permissao WHERE nome = 'dashboard.exportar'
     `);
@@ -45,21 +47,28 @@ export class CreateDashboardPermissions1704067223000 implements MigrationInterfa
         // Verificar se a permissão deve ser associada ao papel
         if (
           // Admin e Gestor têm todas as permissões
-          (role.nome === 'ADMIN' || role.nome === 'GESTOR') ||
+          role.nome === 'ADMIN' ||
+          role.nome === 'GESTOR' ||
           // Técnicos só podem visualizar
           (role.nome === 'TECNICO' && permissao.nome === 'dashboard.visualizar')
         ) {
           // Verificar se a associação já existe
-          const relacaoExiste = await queryRunner.query(`
+          const relacaoExiste = await queryRunner.query(
+            `
             SELECT 1 FROM role_permissao 
             WHERE role_id = $1 AND permissao_id = $2
-          `, [role.id, permissao.id]);
+          `,
+            [role.id, permissao.id],
+          );
 
           if (!relacaoExiste || relacaoExiste.length === 0) {
-            await queryRunner.query(`
+            await queryRunner.query(
+              `
               INSERT INTO role_permissao (id, role_id, permissao_id, created_at, updated_at)
               VALUES (uuid_generate_v4(), $1, $2, NOW(), NOW())
-            `, [role.id, permissao.id]);
+            `,
+              [role.id, permissao.id],
+            );
           }
         }
       }
@@ -83,7 +92,10 @@ export class CreateDashboardPermissions1704067223000 implements MigrationInterfa
 
       console.log('\n✅ Permissões do dashboard removidas com sucesso');
     } catch (error) {
-      console.error('\n❌ Erro ao remover permissões do dashboard:', error.message);
+      console.error(
+        '\n❌ Erro ao remover permissões do dashboard:',
+        error.message,
+      );
       throw error;
     }
   }

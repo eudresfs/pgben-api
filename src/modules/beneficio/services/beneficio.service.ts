@@ -19,7 +19,6 @@ import { Role as PerfilResponsavel } from '../../../enums/role.enum';
 import { normalizeEnumFields } from '../../../shared/utils/enum-normalizer.util';
 import { TipoBeneficioSchema } from '../../../entities/tipo-beneficio-schema.entity';
 
-
 /**
  * Serviço de Benefícios
  *
@@ -54,9 +53,12 @@ export class BeneficioService {
   }) {
     const { page = 1, limit = 10, search, ativo } = options;
 
-    const queryBuilder =
-      this.tipoBeneficioRepository.createQueryBuilder('tipo_beneficio')
-        .leftJoinAndSelect('tipo_beneficio.requisito_documento', 'requisito_documento');
+    const queryBuilder = this.tipoBeneficioRepository
+      .createQueryBuilder('tipo_beneficio')
+      .leftJoinAndSelect(
+        'tipo_beneficio.requisito_documento',
+        'requisito_documento',
+      );
 
     // Aplicar filtros
     if (search) {
@@ -88,12 +90,12 @@ export class BeneficioService {
         const schemaAtivo = await this.tipoBeneficioSchemaRepository.findOne({
           where: { tipo_beneficio_id: item.id, ativo: true },
         });
-        
+
         return {
           ...item,
           schema: schemaAtivo,
         };
-      })
+      }),
     );
 
     return {
@@ -129,7 +131,7 @@ export class BeneficioService {
 
     return {
       ...tipoBeneficio,
-      schema: schema ? { ...schema.schema_estrutura } : null
+      schema: schema ? { ...schema.schema_estrutura } : null,
     };
   }
 
@@ -164,11 +166,9 @@ export class BeneficioService {
     if (!normalizedData.status) {
       normalizedData.status = Status.ATIVO;
     }
-    
+
     // Criar novo tipo de benefício
-    const tipoBeneficio = this.tipoBeneficioRepository.create(
-      normalizedData,
-    );
+    const tipoBeneficio = this.tipoBeneficioRepository.create(normalizedData);
     return this.tipoBeneficioRepository.save(tipoBeneficio);
   }
 
@@ -197,7 +197,7 @@ export class BeneficioService {
 
     // Normalizar campos de enum antes de atualizar
     const normalizedData = normalizeEnumFields(updateTipoBeneficioDto);
-    
+
     // Atualizar e salvar
     Object.assign(tipoBeneficio, normalizedData);
     return this.tipoBeneficioRepository.save(tipoBeneficio);

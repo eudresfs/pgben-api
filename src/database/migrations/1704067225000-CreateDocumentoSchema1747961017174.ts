@@ -2,12 +2,12 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
  * Migration para criar o schema relacionado a documentos
- * 
+ *
  * Esta migration cria as tabelas e restrições para o módulo de documentos,
  * incluindo estruturas para armazenar metadados, histórico e verificação de documentos.
- * 
+ *
  * Os enums necessários são criados na migration CreateAllEnums
- * 
+ *
  * @author Engenheiro de Dados
  * @date 19/05/2025
  */
@@ -19,7 +19,7 @@ export class CreateDocumentoSchema1704067231000 implements MigrationInterface {
    */
   public async up(queryRunner: QueryRunner): Promise<void> {
     console.log('Iniciando migration CreateDocumentoSchema...');
-    
+
     // Tabela principal de documentos
     await queryRunner.query(`
       CREATE TABLE IF NOT EXISTS "documentos" (
@@ -46,7 +46,7 @@ export class CreateDocumentoSchema1704067231000 implements MigrationInterface {
         CONSTRAINT "PK_documentos" PRIMARY KEY ("id")
       );
     `);
-    
+
     // Índices para otimização de consultas
     await queryRunner.query(`
       CREATE INDEX IF NOT EXISTS "IDX_DOCUMENTOS_SOLICITACAO_TIPO" ON "documentos" ("solicitacao_id", "tipo");
@@ -55,7 +55,7 @@ export class CreateDocumentoSchema1704067231000 implements MigrationInterface {
       CREATE INDEX IF NOT EXISTS "IDX_DOCUMENTOS_DATA_UPLOAD" ON "documentos" ("data_upload");
       CREATE INDEX IF NOT EXISTS "IDX_DOCUMENTOS_METADATA" ON "documentos" USING GIN ("metadados");
     `);
-    
+
     // Trigger para atualização automática de timestamp
     await queryRunner.query(`
       DROP TRIGGER IF EXISTS trigger_documentos_update_timestamp ON "documentos";
@@ -64,9 +64,9 @@ export class CreateDocumentoSchema1704067231000 implements MigrationInterface {
         FOR EACH ROW
         EXECUTE PROCEDURE update_timestamp();
     `);
-    
+
     console.log('Tabela de documentos criada com sucesso.');
-    
+
     // Tabela de documentos enviados
     await queryRunner.query(`
       CREATE TABLE IF NOT EXISTS "documentos_enviados" (
@@ -88,14 +88,14 @@ export class CreateDocumentoSchema1704067231000 implements MigrationInterface {
         CONSTRAINT "PK_documentos_enviados" PRIMARY KEY ("id")
       );
     `);
-    
+
     // Índices para otimização de consultas
     await queryRunner.query(`
       CREATE INDEX IF NOT EXISTS "IDX_DOCUMENTOS_ENVIADOS_DOCUMENTO" ON "documentos_enviados" ("documento_id");
       CREATE INDEX IF NOT EXISTS "IDX_DOCUMENTOS_ENVIADOS_USUARIO" ON "documentos_enviados" ("enviado_por_id");
       CREATE INDEX IF NOT EXISTS "IDX_DOCUMENTOS_ENVIADOS_DATA" ON "documentos_enviados" ("data_envio");
     `);
-    
+
     // Trigger para atualização automática de timestamp
     await queryRunner.query(`
       DROP TRIGGER IF EXISTS trigger_documentos_enviados_update_timestamp ON "documentos_enviados";
@@ -104,9 +104,9 @@ export class CreateDocumentoSchema1704067231000 implements MigrationInterface {
         FOR EACH ROW
         EXECUTE PROCEDURE update_timestamp();
     `);
-    
+
     console.log('Tabela de documentos enviados criada com sucesso.');
-    
+
     // Tabela para histórico de verificação de documentos
     await queryRunner.query(`
       CREATE TABLE IF NOT EXISTS "verificacao_documento" (
@@ -122,7 +122,7 @@ export class CreateDocumentoSchema1704067231000 implements MigrationInterface {
         CONSTRAINT "PK_verificacao_documento" PRIMARY KEY ("id")
       );
     `);
-    
+
     // Índices para otimização de consultas
     await queryRunner.query(`
       CREATE INDEX IF NOT EXISTS "IDX_VERIFICACAO_DOCUMENTO_ID" ON "verificacao_documento" ("documento_id");
@@ -130,9 +130,9 @@ export class CreateDocumentoSchema1704067231000 implements MigrationInterface {
       CREATE INDEX IF NOT EXISTS "IDX_VERIFICACAO_STATUS" ON "verificacao_documento" ("status");
       CREATE INDEX IF NOT EXISTS "IDX_VERIFICACAO_MALWARE" ON "verificacao_documento" ("resultado_verificacao_malware");
     `);
-    
+
     console.log('Tabela de verificação de documentos criada com sucesso.');
-    
+
     // Tabela para categorização e classificação de documentos
     await queryRunner.query(`
       CREATE TABLE IF NOT EXISTS "classificacao_documento" (
@@ -151,7 +151,7 @@ export class CreateDocumentoSchema1704067231000 implements MigrationInterface {
         CONSTRAINT "UK_documento_classificacao" UNIQUE ("documento_id")
       );
     `);
-    
+
     // Índices para otimização de consultas
     await queryRunner.query(`
       CREATE INDEX IF NOT EXISTS "IDX_CLASSIFICACAO_DOCUMENTO" ON "classificacao_documento" ("documento_id");
@@ -159,7 +159,7 @@ export class CreateDocumentoSchema1704067231000 implements MigrationInterface {
       CREATE INDEX IF NOT EXISTS "IDX_CLASSIFICACAO_TAGS" ON "classificacao_documento" USING GIN ("tags");
       CREATE INDEX IF NOT EXISTS "IDX_CLASSIFICACAO_CONFIDENCIALIDADE" ON "classificacao_documento" ("nivel_confidencialidade");
     `);
-    
+
     // Trigger para atualização automática de timestamp
     await queryRunner.query(`
       DROP TRIGGER IF EXISTS trigger_classificacao_documento_update_timestamp ON "classificacao_documento";
@@ -168,9 +168,9 @@ export class CreateDocumentoSchema1704067231000 implements MigrationInterface {
         FOR EACH ROW
         EXECUTE PROCEDURE update_timestamp();
     `);
-    
+
     console.log('Tabela de classificação de documentos criada com sucesso.');
-    
+
     // Relacionamentos e chaves estrangeiras
     await queryRunner.query(`
       DO $$
@@ -283,7 +283,7 @@ export class CreateDocumentoSchema1704067231000 implements MigrationInterface {
         END IF;
       END $$;
     `);
-    
+
     console.log('Migration CreateDocumentoSchema executada com sucesso.');
   }
 
@@ -292,7 +292,7 @@ export class CreateDocumentoSchema1704067231000 implements MigrationInterface {
    */
   public async down(queryRunner: QueryRunner): Promise<void> {
     console.log('Revertendo migration CreateDocumentoSchema...');
-    
+
     // Remover chaves estrangeiras
     await queryRunner.query(`
       ALTER TABLE "documentos" DROP CONSTRAINT IF EXISTS "FK_documentos_solicitacao";
@@ -309,14 +309,14 @@ export class CreateDocumentoSchema1704067231000 implements MigrationInterface {
       ALTER TABLE "classificacao_documento" DROP CONSTRAINT IF EXISTS "FK_classificacao_documento";
       ALTER TABLE "classificacao_documento" DROP CONSTRAINT IF EXISTS "FK_classificacao_usuario";
     `);
-    
+
     // Remover triggers
     await queryRunner.query(`
       DROP TRIGGER IF EXISTS trigger_documentos_update_timestamp ON "documentos";
       DROP TRIGGER IF EXISTS trigger_documentos_enviados_update_timestamp ON "documentos_enviados";
       DROP TRIGGER IF EXISTS trigger_classificacao_documento_update_timestamp ON "classificacao_documento";
     `);
-    
+
     // Remover tabelas
     await queryRunner.query(`
       DROP TABLE IF EXISTS "classificacao_documento";
@@ -324,7 +324,7 @@ export class CreateDocumentoSchema1704067231000 implements MigrationInterface {
       DROP TABLE IF EXISTS "documentos_enviados";
       DROP TABLE IF EXISTS "documentos";
     `);
-    
+
     console.log('Migration CreateDocumentoSchema revertida com sucesso.');
   }
 }

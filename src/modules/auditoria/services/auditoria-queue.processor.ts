@@ -13,7 +13,7 @@ import { registeredProcessors } from '../../../config/bull.config';
  * que o registro de operações seja feito de forma assíncrona sem impactar
  * na performance das requisições enquanto mantém a rastreabilidade
  * das operações para compliance com LGPD.
- * 
+ *
  * Esta implementação não usa o decorador @Processor para evitar duplicação
  * de processadores. Em vez disso, registra o processador manualmente na fila.
  */
@@ -27,7 +27,7 @@ export class AuditoriaQueueProcessor implements OnModuleInit {
     @InjectQueue('auditoria')
     private readonly auditoriaQueue: Queue,
   ) {}
-  
+
   /**
    * Registra o processador manualmente na fila quando o módulo é inicializado
    */
@@ -38,26 +38,38 @@ export class AuditoriaQueueProcessor implements OnModuleInit {
         await this.auditoriaQueue.process('registrar-log', async (job) => {
           return this.processarLogAuditoria(job);
         });
-        
+
         registeredProcessors.add('registrar-log');
         this.logger.log('Processador registrar-log registrado com sucesso');
       } else {
-        this.logger.warn('Processador registrar-log já registrado, ignorando registro duplicado');
+        this.logger.warn(
+          'Processador registrar-log já registrado, ignorando registro duplicado',
+        );
       }
-      
+
       // Registra o processador de acesso a dados sensíveis
       if (!registeredProcessors.has('registrar-acesso-dados-sensiveis')) {
-        await this.auditoriaQueue.process('registrar-acesso-dados-sensiveis', async (job) => {
-          return this.processarAcessoDadosSensiveis(job);
-        });
-        
+        await this.auditoriaQueue.process(
+          'registrar-acesso-dados-sensiveis',
+          async (job) => {
+            return this.processarAcessoDadosSensiveis(job);
+          },
+        );
+
         registeredProcessors.add('registrar-acesso-dados-sensiveis');
-        this.logger.log('Processador registrar-acesso-dados-sensiveis registrado com sucesso');
+        this.logger.log(
+          'Processador registrar-acesso-dados-sensiveis registrado com sucesso',
+        );
       } else {
-        this.logger.warn('Processador registrar-acesso-dados-sensiveis já registrado, ignorando registro duplicado');
+        this.logger.warn(
+          'Processador registrar-acesso-dados-sensiveis já registrado, ignorando registro duplicado',
+        );
       }
     } catch (error) {
-      this.logger.error(`Erro ao registrar processadores: ${error.message}`, error.stack);
+      this.logger.error(
+        `Erro ao registrar processadores: ${error.message}`,
+        error.stack,
+      );
     }
   }
 
@@ -129,7 +141,7 @@ export class AuditoriaQueueProcessor implements OnModuleInit {
         descricao: `Acesso a dados sensíveis (${camposSensiveis.join(', ')}) da entidade ${entidade}`,
         validar: function (validationGroup?: string): void {
           throw new Error('Function not implemented.');
-        }
+        },
       };
 
       // Use o repository customizado

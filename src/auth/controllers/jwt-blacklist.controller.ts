@@ -39,12 +39,15 @@ import { RolesGuard } from '../guards/roles.guard';
 import { Roles } from '../decorators/role.decorator';
 import { GetUser } from '../decorators/get-user.decorator';
 import { Usuario } from '../../entities/usuario.entity';
-import { ThrottleApi, ThrottleCritical } from '../../common/decorators/throttle.decorator';
-import { LoggingInterceptor } from '../../common/interceptors/logging.interceptor'; 
+import {
+  ThrottleApi,
+  ThrottleCritical,
+} from '../../common/decorators/throttle.decorator';
+import { LoggingInterceptor } from '../../common/interceptors/logging.interceptor';
 
 /**
  * Controller de Blacklist de Tokens JWT
- * 
+ *
  * Gerencia tokens JWT invalidados para prevenir reutilização
  * de tokens comprometidos ou revogados
  */
@@ -53,9 +56,7 @@ import { LoggingInterceptor } from '../../common/interceptors/logging.intercepto
 @UseInterceptors(LoggingInterceptor)
 @ApiBearerAuth()
 export class JwtBlacklistController {
-  constructor(
-    private readonly jwtBlacklistService: JwtBlacklistService,
-  ) { }
+  constructor(private readonly jwtBlacklistService: JwtBlacklistService) {}
 
   /**
    * Adiciona um token à blacklist
@@ -66,7 +67,8 @@ export class JwtBlacklistController {
   @ThrottleCritical()
   @ApiOperation({
     summary: 'Adicionar token à blacklist',
-    description: 'Invalida um token JWT específico adicionando-o à blacklist (apenas administradores)',
+    description:
+      'Invalida um token JWT específico adicionando-o à blacklist (apenas administradores)',
   })
   @ApiBody({ type: AddToBlacklistDto })
   @ApiResponse({
@@ -136,7 +138,8 @@ export class JwtBlacklistController {
   @ThrottleCritical()
   @ApiOperation({
     summary: 'Invalidar todos os tokens de um usuário',
-    description: 'Adiciona todos os tokens ativos de um usuário à blacklist (apenas administradores)',
+    description:
+      'Adiciona todos os tokens ativos de um usuário à blacklist (apenas administradores)',
   })
   @ApiParam({
     name: 'userId',
@@ -220,7 +223,8 @@ export class JwtBlacklistController {
   @ThrottleCritical()
   @ApiOperation({
     summary: 'Remover token da blacklist',
-    description: 'Remove um token específico da blacklist (apenas super administradores)',
+    description:
+      'Remove um token específico da blacklist (apenas super administradores)',
   })
   @ApiParam({
     name: 'jti',
@@ -258,7 +262,8 @@ export class JwtBlacklistController {
   @ThrottleApi()
   @ApiOperation({
     summary: 'Listar tokens na blacklist',
-    description: 'Lista tokens invalidados com filtros e paginação (apenas administradores)',
+    description:
+      'Lista tokens invalidados com filtros e paginação (apenas administradores)',
   })
   @ApiQuery({
     name: 'usuario_id',
@@ -323,9 +328,7 @@ export class JwtBlacklistController {
     status: 403,
     description: 'Acesso negado - Permissões insuficientes',
   })
-  async listBlacklistedTokens(
-    @Query() queryDto: BlacklistQueryDto,
-  ): Promise<{
+  async listBlacklistedTokens(@Query() queryDto: BlacklistQueryDto): Promise<{
     data: JwtBlacklist[];
     total: number;
     page: number;
@@ -343,7 +346,8 @@ export class JwtBlacklistController {
   @ThrottleApi()
   @ApiOperation({
     summary: 'Estatísticas da blacklist',
-    description: 'Obtém estatísticas detalhadas da blacklist de tokens (apenas administradores)',
+    description:
+      'Obtém estatísticas detalhadas da blacklist de tokens (apenas administradores)',
   })
   @ApiResponse({
     status: 200,
@@ -371,7 +375,8 @@ export class JwtBlacklistController {
   @ThrottleCritical()
   @ApiOperation({
     summary: 'Limpar tokens expirados',
-    description: 'Remove tokens expirados da blacklist (apenas administradores)',
+    description:
+      'Remove tokens expirados da blacklist (apenas administradores)',
   })
   @ApiResponse({
     status: 200,
@@ -451,7 +456,9 @@ export class JwtBlacklistController {
     }
 
     // Decodificar token para obter data de expiração
-    const decoded = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+    const decoded = JSON.parse(
+      Buffer.from(token.split('.')[1], 'base64').toString(),
+    );
     const expiresAt = new Date(decoded.exp * 1000);
 
     const addToBlacklistDto: AddToBlacklistDto = {
@@ -479,7 +486,8 @@ export class JwtBlacklistController {
   @ThrottleApi()
   @ApiOperation({
     summary: 'Logout Global - Invalidar todos os tokens',
-    description: 'Invalida todos os tokens ativos do usuário autenticado (access e refresh)',
+    description:
+      'Invalida todos os tokens ativos do usuário autenticado (access e refresh)',
   })
   @ApiResponse({
     status: 200,
@@ -561,7 +569,7 @@ export class JwtBlacklistController {
 
     const result = await this.jwtBlacklistService.invalidateUserTokens(
       invalidateDto,
-      activeTokens
+      activeTokens,
     );
 
     return {

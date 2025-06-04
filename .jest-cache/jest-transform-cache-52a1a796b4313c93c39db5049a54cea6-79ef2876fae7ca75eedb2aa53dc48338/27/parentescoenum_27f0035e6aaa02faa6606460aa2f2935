@@ -1,0 +1,18 @@
+2688db4293394d1ac01d3dc9389cba88
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.ParentescoEnum = void 0;
+var ParentescoEnum;
+(function (ParentescoEnum) {
+    ParentescoEnum["CONJUGE"] = "conjuge";
+    ParentescoEnum["FILHO"] = "filho";
+    ParentescoEnum["PAI"] = "pai";
+    ParentescoEnum["MAE"] = "mae";
+    ParentescoEnum["IRMAO"] = "irmao";
+    ParentescoEnum["AVO"] = "avo";
+    ParentescoEnum["NETO"] = "neto";
+    ParentescoEnum["TIO"] = "tio";
+    ParentescoEnum["SOBRINHO"] = "sobrinho";
+    ParentescoEnum["OUTRO"] = "outro";
+})(ParentescoEnum || (exports.ParentescoEnum = ParentescoEnum = {}));
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXGVudW1zXFxwYXJlbnRlc2NvLmVudW0udHMiLCJtYXBwaW5ncyI6Ijs7O0FBQUEsSUFBWSxjQVdWO0FBWEYsV0FBWSxjQUFjO0lBQ3ZCLHFDQUFtQixDQUFBO0lBQ25CLGlDQUFlLENBQUE7SUFDZiw2QkFBVyxDQUFBO0lBQ1gsNkJBQVcsQ0FBQTtJQUNYLGlDQUFlLENBQUE7SUFDZiw2QkFBVyxDQUFBO0lBQ1gsK0JBQWEsQ0FBQTtJQUNiLDZCQUFXLENBQUE7SUFDWCx1Q0FBcUIsQ0FBQTtJQUNyQixpQ0FBZSxDQUFBO0FBQ2pCLENBQUMsRUFYVSxjQUFjLDhCQUFkLGNBQWMsUUFXeEIiLCJuYW1lcyI6W10sInNvdXJjZXMiOlsiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXGVudW1zXFxwYXJlbnRlc2NvLmVudW0udHMiXSwic291cmNlc0NvbnRlbnQiOlsiZXhwb3J0IGVudW0gUGFyZW50ZXNjb0VudW0ge1xyXG4gICBDT05KVUdFID0gJ2Nvbmp1Z2UnLFxyXG4gICBGSUxITyA9ICdmaWxobycsXHJcbiAgIFBBSSA9ICdwYWknLFxyXG4gICBNQUUgPSAnbWFlJyxcclxuICAgSVJNQU8gPSAnaXJtYW8nLFxyXG4gICBBVk8gPSAnYXZvJyxcclxuICAgTkVUTyA9ICduZXRvJyxcclxuICAgVElPID0gJ3RpbycsXHJcbiAgIFNPQlJJTkhPID0gJ3NvYnJpbmhvJyxcclxuICAgT1VUUk8gPSAnb3V0cm8nLFxyXG4gfSJdLCJ2ZXJzaW9uIjozfQ==

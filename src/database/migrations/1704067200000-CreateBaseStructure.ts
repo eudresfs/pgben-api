@@ -21,7 +21,7 @@ export class CreateBaseStructure1704067200000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     try {
       console.log('Iniciando migration 1000000-CreateBaseStructure...');
-      
+
       // 1. Criar extensões PostgreSQL necessárias
       await queryRunner.query(`
         -- Extensão para geração de UUIDs
@@ -175,9 +175,14 @@ export class CreateBaseStructure1704067200000 implements MigrationInterface {
         END$$;
       `);
 
-      console.log('Migration 1000000-CreateBaseStructure executada com sucesso.');
+      console.log(
+        'Migration 1000000-CreateBaseStructure executada com sucesso.',
+      );
     } catch (error) {
-      console.error('Erro ao executar migration 1000000-CreateBaseStructure:', error);
+      console.error(
+        'Erro ao executar migration 1000000-CreateBaseStructure:',
+        error,
+      );
       throw error;
     }
   }
@@ -187,8 +192,10 @@ export class CreateBaseStructure1704067200000 implements MigrationInterface {
    */
   public async down(queryRunner: QueryRunner): Promise<void> {
     try {
-      console.log('Iniciando rollback da migration 1000000-CreateBaseStructure...');
-      
+      console.log(
+        'Iniciando rollback da migration 1000000-CreateBaseStructure...',
+      );
+
       // 1. Remover tabelas
       await queryRunner.query(`DROP TABLE IF EXISTS "parametro_sistema";`);
       await queryRunner.query(`DROP TABLE IF EXISTS "configuracao_sistema";`);
@@ -197,16 +204,21 @@ export class CreateBaseStructure1704067200000 implements MigrationInterface {
       await queryRunner.query(`DROP TYPE IF EXISTS "sim_nao_enum";`);
       await queryRunner.query(`DROP TYPE IF EXISTS "status_ativo_enum";`);
       await queryRunner.query(`DROP TYPE IF EXISTS "sexo_enum";`);
-      
+
       // 3. Remover funções criadas
       await queryRunner.query(`DROP FUNCTION IF EXISTS log_change();`);
       await queryRunner.query(`DROP FUNCTION IF EXISTS update_timestamp();`);
 
       // 4. As extensões geralmente não são removidas, pois podem ser usadas por outros sistemas
 
-      console.log('Rollback da migration 1000000-CreateBaseStructure executado com sucesso.');
+      console.log(
+        'Rollback da migration 1000000-CreateBaseStructure executado com sucesso.',
+      );
     } catch (error) {
-      console.error('Erro ao executar rollback da migration 1000000-CreateBaseStructure:', error);
+      console.error(
+        'Erro ao executar rollback da migration 1000000-CreateBaseStructure:',
+        error,
+      );
       throw error;
     }
   }

@@ -2,7 +2,10 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { SseService } from '../services/sse.service';
-import { SseNotification, SseConnection } from '../interfaces/sse-notification.interface';
+import {
+  SseNotification,
+  SseConnection,
+} from '../interfaces/sse-notification.interface';
 import { Observable } from 'rxjs';
 import { Request } from 'express';
 
@@ -135,7 +138,7 @@ describe('SseService', () => {
 
       // Criar conexão
       const observable = service.createConnection(userId, mockRequest);
-      
+
       // Subscrever para receber notificações
       observable.subscribe({
         next: (event) => {
@@ -232,7 +235,7 @@ describe('SseService', () => {
 
       // Criar conexão
       service.createConnection(userId, mockRequest);
-      
+
       let stats = service.getConnectionStats();
       expect(stats.totalConnections).toBe(1);
 
@@ -346,7 +349,7 @@ describe('SseService', () => {
       } as Request;
 
       const observable = service.createConnection(userId, mockRequest);
-      
+
       observable.subscribe({
         next: (event) => {
           if (event.type === 'heartbeat') {
@@ -372,7 +375,7 @@ describe('SseService', () => {
 
       // Criar conexão
       service.createConnection(userId, mockRequest);
-      
+
       let stats = service.getConnectionStats();
       expect(stats.totalConnections).toBe(1);
 
@@ -407,7 +410,7 @@ describe('SseService', () => {
       } as Request;
 
       const observable = service.createConnection(userId, mockRequest);
-      
+
       // Simular erro na conexão
       expect(() => {
         observable.subscribe({

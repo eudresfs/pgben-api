@@ -6,13 +6,19 @@ import { ReferenceSeedRunner } from './reference/ReferenceSeedRunner';
 
 // Adaptadores para os runners de seed para implementar a interface Seeder do typeorm-extension
 class CoreSeedRunnerAdapter implements Seeder {
-  public async run(dataSource: DataSource, factoryManager: SeederFactoryManager): Promise<any> {
+  public async run(
+    dataSource: DataSource,
+    factoryManager: SeederFactoryManager,
+  ): Promise<any> {
     return CoreSeedRunner.run(dataSource);
   }
 }
 
 class ReferenceSeedRunnerAdapter implements Seeder {
-  public async run(dataSource: DataSource, factoryManager: SeederFactoryManager): Promise<any> {
+  public async run(
+    dataSource: DataSource,
+    factoryManager: SeederFactoryManager,
+  ): Promise<any> {
     return ReferenceSeedRunner.run(dataSource);
   }
 }
@@ -34,7 +40,7 @@ const options: DataSourceOptions & SeederOptions = {
   seeds: [
     // Seeds principais para ambiente de produção
     CoreSeedRunnerAdapter,
-    ReferenceSeedRunnerAdapter
+    ReferenceSeedRunnerAdapter,
   ],
   factories: [],
 };

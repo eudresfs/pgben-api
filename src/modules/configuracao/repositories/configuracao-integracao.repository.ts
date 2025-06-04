@@ -6,7 +6,7 @@ import { IntegracaoTipoEnum } from '../../../enums/integracao-tipo.enum';
 
 /**
  * Repositório para gerenciamento de configurações de integração externa
- * 
+ *
  * Fornece operações de acesso a dados para entidade ConfiguracaoIntegracao
  */
 @Injectable()
@@ -32,9 +32,9 @@ export class ConfiguracaoIntegracaoRepository {
    */
   async findAll(tipo?: IntegracaoTipoEnum): Promise<ConfiguracaoIntegracao[]> {
     const whereClause = tipo ? { tipo } : {};
-    return this.repository.find({ 
+    return this.repository.find({
       where: whereClause,
-      order: { tipo: 'ASC', codigo: 'ASC' }
+      order: { tipo: 'ASC', codigo: 'ASC' },
     });
   }
 
@@ -43,7 +43,9 @@ export class ConfiguracaoIntegracaoRepository {
    * @param integracao Configuração a ser salva
    * @returns Configuração salva
    */
-  async save(integracao: ConfiguracaoIntegracao): Promise<ConfiguracaoIntegracao> {
+  async save(
+    integracao: ConfiguracaoIntegracao,
+  ): Promise<ConfiguracaoIntegracao> {
     return this.repository.save(integracao);
   }
 
@@ -60,10 +62,12 @@ export class ConfiguracaoIntegracaoRepository {
    * @param tipo Tipo das configurações
    * @returns Lista de configurações do tipo
    */
-  async findByTipo(tipo: IntegracaoTipoEnum): Promise<ConfiguracaoIntegracao[]> {
-    return this.repository.find({ 
+  async findByTipo(
+    tipo: IntegracaoTipoEnum,
+  ): Promise<ConfiguracaoIntegracao[]> {
+    return this.repository.find({
       where: { tipo },
-      order: { codigo: 'ASC' }
+      order: { codigo: 'ASC' },
     });
   }
 
@@ -82,10 +86,12 @@ export class ConfiguracaoIntegracaoRepository {
    * @param tipo Tipo da integração
    * @returns Configuração ativa ou null
    */
-  async findActiveByTipo(tipo: IntegracaoTipoEnum): Promise<ConfiguracaoIntegracao | null> {
-    return this.repository.findOne({ 
+  async findActiveByTipo(
+    tipo: IntegracaoTipoEnum,
+  ): Promise<ConfiguracaoIntegracao | null> {
+    return this.repository.findOne({
       where: { tipo, ativo: true },
-      order: { updated_at: 'DESC' }
+      order: { updated_at: 'DESC' },
     });
   }
 }

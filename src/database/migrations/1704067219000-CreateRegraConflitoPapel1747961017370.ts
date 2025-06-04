@@ -3,7 +3,9 @@ import { MigrationInterface, QueryRunner, Table, TableIndex } from 'typeorm';
 /**
  * Migração para criar a tabela de regras de conflito de papéis
  */
-export class CreateRegraConflitoPapel1704067239000 implements MigrationInterface {
+export class CreateRegraConflitoPapel1704067239000
+  implements MigrationInterface
+{
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.createTable(
       new Table({
@@ -76,7 +78,10 @@ export class CreateRegraConflitoPapel1704067239000 implements MigrationInterface
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.dropIndex('regra_conflito_papel', 'IDX_REGRA_CONFLITO_PAPEL_ORIGEM_DESTINO');
+    await queryRunner.dropIndex(
+      'regra_conflito_papel',
+      'IDX_REGRA_CONFLITO_PAPEL_ORIGEM_DESTINO',
+    );
     await queryRunner.dropTable('regra_conflito_papel');
   }
 }

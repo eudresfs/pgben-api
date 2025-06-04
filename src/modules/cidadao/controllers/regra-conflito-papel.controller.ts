@@ -12,13 +12,21 @@ import {
   HttpStatus,
   NotFoundException,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../../../auth/guards/permission.guard';
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
 import { RegraConflitoPapelRepository } from '../repositories/regra-conflito-papel.repository';
 import { RegraConflitoPapel } from '../../../entities/regra-conflito-papel.entity';
-import { VerificacaoRegraConflitoResponseDto, RegraConflitoResponseDto } from '../dto/verificacao-regra-conflito-response.dto';
+import {
+  VerificacaoRegraConflitoResponseDto,
+  RegraConflitoResponseDto,
+} from '../dto/verificacao-regra-conflito-response.dto';
 
 /**
  * DTO para criação de regra de conflito
@@ -58,13 +66,11 @@ export class RegraConflitoPapelController {
    * @returns Regra criada
    */
   @Post()
-  @RequiresPermission(
-    
-    { permissionName: 'cidadao.criar-regra-conflito' }
-  )
+  @RequiresPermission({ permissionName: 'cidadao.criar-regra-conflito' })
   @ApiOperation({
     summary: 'Cria uma nova regra de conflito',
-    description: 'Cria uma regra que define conflito entre dois papéis no sistema.',
+    description:
+      'Cria uma regra que define conflito entre dois papéis no sistema.',
   })
   @ApiResponse({
     status: 201,
@@ -88,10 +94,7 @@ export class RegraConflitoPapelController {
    * @returns Lista de regras
    */
   @Get()
-  @RequiresPermission(
-    
-    { permissionName: 'cidadao.listar-regra-conflito' }
-  )
+  @RequiresPermission({ permissionName: 'cidadao.listar-regra-conflito' })
   @ApiOperation({
     summary: 'Busca todas as regras de conflito',
     description: 'Retorna a lista de todas as regras de conflito entre papéis.',
@@ -112,10 +115,7 @@ export class RegraConflitoPapelController {
    * @returns Regra
    */
   @Get(':id')
-  @RequiresPermission(
-    
-    { permissionName: 'cidadao.visualizar-regra-conflito' }
-  )
+  @RequiresPermission({ permissionName: 'cidadao.visualizar-regra-conflito' })
   @ApiOperation({
     summary: 'Busca uma regra pelo ID',
     description: 'Retorna os detalhes de uma regra de conflito específica.',
@@ -128,7 +128,9 @@ export class RegraConflitoPapelController {
   async findById(@Param('id') id: string): Promise<RegraConflitoPapel> {
     const regra = await this.regraRepository.findById(id);
     if (!regra) {
-      throw new NotFoundException(`Regra de conflito com ID ${id} não encontrada`);
+      throw new NotFoundException(
+        `Regra de conflito com ID ${id} não encontrada`,
+      );
     }
     return regra;
   }
@@ -140,13 +142,11 @@ export class RegraConflitoPapelController {
    * @returns Lista de regras
    */
   @Get('papel-origem/:papelOrigemId')
-  @RequiresPermission(
-    
-    { permissionName: 'cidadao.listar-regra-conflito' }
-  )
+  @RequiresPermission({ permissionName: 'cidadao.listar-regra-conflito' })
   @ApiOperation({
     summary: 'Busca regras por papel de origem',
-    description: 'Retorna a lista de regras de conflito que têm o papel especificado como origem.',
+    description:
+      'Retorna a lista de regras de conflito que têm o papel especificado como origem.',
   })
   @ApiResponse({
     status: 200,
@@ -158,7 +158,10 @@ export class RegraConflitoPapelController {
     @Req() req: any,
   ): Promise<RegraConflitoPapel[]> {
     const includeInactive = req.query.includeInactive === 'true';
-    return this.regraRepository.findByPapelOrigem(papelOrigemId, includeInactive);
+    return this.regraRepository.findByPapelOrigem(
+      papelOrigemId,
+      includeInactive,
+    );
   }
 
   /**
@@ -168,13 +171,11 @@ export class RegraConflitoPapelController {
    * @returns Lista de regras
    */
   @Get('papel-destino/:papelDestinoId')
-  @RequiresPermission(
-    
-    { permissionName: 'cidadao.listar-regra-conflito' }
-  )
+  @RequiresPermission({ permissionName: 'cidadao.listar-regra-conflito' })
   @ApiOperation({
     summary: 'Busca regras por papel de destino',
-    description: 'Retorna a lista de regras de conflito que têm o papel especificado como destino.',
+    description:
+      'Retorna a lista de regras de conflito que têm o papel especificado como destino.',
   })
   @ApiResponse({
     status: 200,
@@ -186,7 +187,10 @@ export class RegraConflitoPapelController {
     @Req() req: any,
   ): Promise<RegraConflitoPapel[]> {
     const includeInactive = req.query.includeInactive === 'true';
-    return this.regraRepository.findByPapelDestino(papelDestinoId, includeInactive);
+    return this.regraRepository.findByPapelDestino(
+      papelDestinoId,
+      includeInactive,
+    );
   }
 
   /**
@@ -196,13 +200,11 @@ export class RegraConflitoPapelController {
    * @returns Resultado da verificação
    */
   @Get('verificar/:papelOrigemId/:papelDestinoId')
-  @RequiresPermission(
-    
-    { permissionName: 'cidadao.verificar-regra-conflito' }
-  )
+  @RequiresPermission({ permissionName: 'cidadao.verificar-regra-conflito' })
   @ApiOperation({
     summary: 'Verifica se existe conflito entre dois papéis',
-    description: 'Verifica se existe uma regra de conflito entre os papéis especificados.',
+    description:
+      'Verifica se existe uma regra de conflito entre os papéis especificados.',
   })
   @ApiResponse({
     status: 200,
@@ -213,13 +215,16 @@ export class RegraConflitoPapelController {
     @Param('papelOrigemId') papelOrigemId: string,
     @Param('papelDestinoId') papelDestinoId: string,
   ): Promise<VerificacaoRegraConflitoResponseDto> {
-    const regra = await this.regraRepository.verificarConflito(papelOrigemId, papelDestinoId);
-    
+    const regra = await this.regraRepository.verificarConflito(
+      papelOrigemId,
+      papelDestinoId,
+    );
+
     const response: VerificacaoRegraConflitoResponseDto = {
       possui_conflito: !!regra,
       regra: regra ? { id: regra.id, descricao: regra.descricao } : null,
     };
-    
+
     return response;
   }
 
@@ -231,10 +236,7 @@ export class RegraConflitoPapelController {
    * @returns Regra atualizada
    */
   @Patch(':id')
-  @RequiresPermission(
-    
-    { permissionName: 'cidadao.atualizar-regra-conflito' }
-  )
+  @RequiresPermission({ permissionName: 'cidadao.atualizar-regra-conflito' })
   @ApiOperation({
     summary: 'Atualiza uma regra',
     description: 'Atualiza os dados de uma regra de conflito existente.',
@@ -263,10 +265,7 @@ export class RegraConflitoPapelController {
    * @returns Regra atualizada
    */
   @Patch(':id/ativar')
-  @RequiresPermission(
-    
-    { permissionName: 'cidadao.atualizar-regra-conflito' }
-  )
+  @RequiresPermission({ permissionName: 'cidadao.atualizar-regra-conflito' })
   @ApiOperation({
     summary: 'Ativa ou desativa uma regra',
     description: 'Altera o status de ativação de uma regra de conflito.',
@@ -292,10 +291,7 @@ export class RegraConflitoPapelController {
    */
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @RequiresPermission(
-    
-    { permissionName: 'cidadao.remover-regra-conflito' }
-  )
+  @RequiresPermission({ permissionName: 'cidadao.remover-regra-conflito' })
   @ApiOperation({
     summary: 'Remove uma regra',
     description: 'Remove permanentemente uma regra de conflito.',

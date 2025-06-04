@@ -56,12 +56,7 @@ export class NotificacaoController {
    * Cria e envia uma nova notificação
    */
   @Post()
-  @Roles(
-    ROLES.ADMIN,
-    ROLES.GESTOR,
-    ROLES.COORDENADOR,
-    ROLES.TECNICO,
-  )
+  @Roles(ROLES.ADMIN, ROLES.GESTOR, ROLES.COORDENADOR, ROLES.TECNICO)
   @ApiOperation({ summary: 'Criar e enviar uma nova notificação' })
   @ApiResponse({
     status: 201,

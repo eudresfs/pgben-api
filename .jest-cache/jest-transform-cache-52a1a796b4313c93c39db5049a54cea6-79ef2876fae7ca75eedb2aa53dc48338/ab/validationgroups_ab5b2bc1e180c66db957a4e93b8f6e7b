@@ -1,0 +1,38 @@
+6caa5097ee8066f247344b59ad0fd497
+"use strict";
+/**
+ * Grupos de validação
+ *
+ * Define grupos para validação condicional de DTOs em diferentes contextos
+ */
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.SECURITY = exports.LGPD = exports.ADMIN = exports.DELETE = exports.READ = exports.UPDATE = exports.CREATE = void 0;
+/**
+ * Grupo para validação na criação de recursos
+ */
+exports.CREATE = 'create';
+/**
+ * Grupo para validação na atualização de recursos
+ */
+exports.UPDATE = 'update';
+/**
+ * Grupo para validação em operações de leitura
+ */
+exports.READ = 'read';
+/**
+ * Grupo para validação em operações de exclusão
+ */
+exports.DELETE = 'delete';
+/**
+ * Grupo para validação em operações administrativas
+ */
+exports.ADMIN = 'admin';
+/**
+ * Grupo para validação em operações relacionadas à LGPD
+ */
+exports.LGPD = 'lgpd';
+/**
+ * Grupo para validação em operações relacionadas à segurança
+ */
+exports.SECURITY = 'security';
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXHNoYXJlZFxcdmFsaWRhdG9yc1xcdmFsaWRhdGlvbi1ncm91cHMudHMiLCJtYXBwaW5ncyI6IjtBQUFBOzs7O0dBSUc7OztBQUtIOztHQUVHO0FBQ1UsUUFBQSxNQUFNLEdBQUcsUUFBUSxDQUFDO0FBRS9COztHQUVHO0FBQ1UsUUFBQSxNQUFNLEdBQUcsUUFBUSxDQUFDO0FBRS9COztHQUVHO0FBQ1UsUUFBQSxJQUFJLEdBQUcsTUFBTSxDQUFDO0FBRTNCOztHQUVHO0FBQ1UsUUFBQSxNQUFNLEdBQUcsUUFBUSxDQUFDO0FBRS9COztHQUVHO0FBQ1UsUUFBQSxLQUFLLEdBQUcsT0FBTyxDQUFDO0FBRTdCOztHQUVHO0FBQ1UsUUFBQSxJQUFJLEdBQUcsTUFBTSxDQUFDO0FBRTNCOztHQUVHO0FBQ1UsUUFBQSxRQUFRLEdBQUcsVUFBVSxDQUFDIiwibmFtZXMiOltdLCJzb3VyY2VzIjpbIkM6XFxVc2Vyc1xcZXVkcmVcXE9uZURyaXZlXFxEZXNrdG9wXFxQcm9qZXRvc1xccGdiZW5cXHBnYmVuLXNlcnZlclxcc3JjXFxzaGFyZWRcXHZhbGlkYXRvcnNcXHZhbGlkYXRpb24tZ3JvdXBzLnRzIl0sInNvdXJjZXNDb250ZW50IjpbIi8qKlxuICogR3J1cG9zIGRlIHZhbGlkYcOnw6NvXG4gKlxuICogRGVmaW5lIGdydXBvcyBwYXJhIHZhbGlkYcOnw6NvIGNvbmRpY2lvbmFsIGRlIERUT3MgZW0gZGlmZXJlbnRlcyBjb250ZXh0b3NcbiAqL1xuXG4vLyBEZWZpbmnDp8OjbyBkZSBpbnRlcmZhY2UgcGFyYSBncnVwb3MgZGUgdmFsaWRhw6fDo29cbmV4cG9ydCBpbnRlcmZhY2UgVmFsaWRhdGlvbkdyb3VwcyB7fVxuXG4vKipcbiAqIEdydXBvIHBhcmEgdmFsaWRhw6fDo28gbmEgY3JpYcOnw6NvIGRlIHJlY3Vyc29zXG4gKi9cbmV4cG9ydCBjb25zdCBDUkVBVEUgPSAnY3JlYXRlJztcblxuLyoqXG4gKiBHcnVwbyBwYXJhIHZhbGlkYcOnw6NvIG5hIGF0dWFsaXphw6fDo28gZGUgcmVjdXJzb3NcbiAqL1xuZXhwb3J0IGNvbnN0IFVQREFURSA9ICd1cGRhdGUnO1xuXG4vKipcbiAqIEdydXBvIHBhcmEgdmFsaWRhw6fDo28gZW0gb3BlcmHDp8O1ZXMgZGUgbGVpdHVyYVxuICovXG5leHBvcnQgY29uc3QgUkVBRCA9ICdyZWFkJztcblxuLyoqXG4gKiBHcnVwbyBwYXJhIHZhbGlkYcOnw6NvIGVtIG9wZXJhw6fDtWVzIGRlIGV4Y2x1c8Ojb1xuICovXG5leHBvcnQgY29uc3QgREVMRVRFID0gJ2RlbGV0ZSc7XG5cbi8qKlxuICogR3J1cG8gcGFyYSB2YWxpZGHDp8OjbyBlbSBvcGVyYcOnw7VlcyBhZG1pbmlzdHJhdGl2YXNcbiAqL1xuZXhwb3J0IGNvbnN0IEFETUlOID0gJ2FkbWluJztcblxuLyoqXG4gKiBHcnVwbyBwYXJhIHZhbGlkYcOnw6NvIGVtIG9wZXJhw6fDtWVzIHJlbGFjaW9uYWRhcyDDoCBMR1BEXG4gKi9cbmV4cG9ydCBjb25zdCBMR1BEID0gJ2xncGQnO1xuXG4vKipcbiAqIEdydXBvIHBhcmEgdmFsaWRhw6fDo28gZW0gb3BlcmHDp8O1ZXMgcmVsYWNpb25hZGFzIMOgIHNlZ3VyYW7Dp2FcbiAqL1xuZXhwb3J0IGNvbnN0IFNFQ1VSSVRZID0gJ3NlY3VyaXR5JztcbiJdLCJ2ZXJzaW9uIjozfQ==

@@ -4,7 +4,7 @@ import { PermissionGroup } from '../../entities/permission-group.entity';
 
 /**
  * Repositório para a entidade PermissionGroup.
- * 
+ *
  * Fornece métodos para manipulação de grupos de permissões no banco de dados,
  * incluindo busca por nome e operações de CRUD.
  */
@@ -16,7 +16,7 @@ export class PermissionGroupRepository extends Repository<PermissionGroup> {
 
   /**
    * Busca um grupo de permissões pelo nome.
-   * 
+   *
    * @param name Nome do grupo
    * @returns O grupo encontrado ou null
    */
@@ -26,7 +26,7 @@ export class PermissionGroupRepository extends Repository<PermissionGroup> {
 
   /**
    * Busca um grupo de permissões pelo ID.
-   * 
+   *
    * @param id ID do grupo
    * @returns O grupo encontrado ou null
    */
@@ -36,7 +36,7 @@ export class PermissionGroupRepository extends Repository<PermissionGroup> {
 
   /**
    * Cria um novo grupo de permissões.
-   * 
+   *
    * @param data Dados do grupo a ser criado
    * @returns O grupo criado
    */
@@ -47,24 +47,31 @@ export class PermissionGroupRepository extends Repository<PermissionGroup> {
 
   /**
    * Atualiza um grupo de permissões existente.
-   * 
+   *
    * @param id ID do grupo a ser atualizado
    * @param data Dados atualizados do grupo
    * @returns O grupo atualizado
    */
-  async updateGroup(id: string, data: Partial<PermissionGroup>): Promise<PermissionGroup | null> {
+  async updateGroup(
+    id: string,
+    data: Partial<PermissionGroup>,
+  ): Promise<PermissionGroup | null> {
     await this.update(id, data);
     return this.findOneBy({ id });
   }
 
   /**
    * Remove um grupo de permissões.
-   * 
+   *
    * @param id ID do grupo a ser removido
    * @returns true se o grupo foi removido, false caso contrário
    */
   async removeGroup(id: string): Promise<boolean> {
     const result = await this.delete(id);
-    return result.affected !== null && result.affected !== undefined && result.affected > 0;
+    return (
+      result.affected !== null &&
+      result.affected !== undefined &&
+      result.affected > 0
+    );
   }
 }

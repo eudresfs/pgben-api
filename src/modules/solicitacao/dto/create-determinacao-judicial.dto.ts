@@ -1,4 +1,11 @@
-import { IsNotEmpty, IsOptional, IsString, IsUUID, IsDate, IsUrl } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsUUID,
+  IsDate,
+  IsUrl,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 /**

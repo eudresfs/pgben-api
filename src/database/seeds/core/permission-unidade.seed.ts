@@ -1,18 +1,21 @@
 import { DataSource } from 'typeorm';
 import { Permission } from '../../../entities/permission.entity';
 import { PermissionScope } from '../../../entities/permission-scope.entity';
-import { ScopeType, TipoEscopo } from '../../../entities/user-permission.entity';
+import {
+  ScopeType,
+  TipoEscopo,
+} from '../../../entities/user-permission.entity';
 
 /**
  * Seed para as permissões do módulo de unidades.
- * 
+ *
  * Este seed cria permissões para operações relacionadas a unidades,
  * incluindo gerenciamento de unidades, configurações e hierarquia.
  */
 export class PermissionUnidadeSeed {
   /**
    * Executa o seed para criar as permissões do módulo de unidades.
-   * 
+   *
    * @param dataSource Conexão com o banco de dados
    * @returns Promise que resolve quando o seed for concluído
    */
@@ -170,12 +173,14 @@ export class PermissionUnidadeSeed {
       TipoEscopo.GLOBAL,
     );
 
-    console.log('Seed de permissões do módulo de unidades concluído com sucesso!');
+    console.log(
+      'Seed de permissões do módulo de unidades concluído com sucesso!',
+    );
   }
 
   /**
    * Cria uma permissão no banco de dados.
-   * 
+   *
    * @param repository Repositório de permissões
    * @param nome Nome da permissão
    * @param descricao Descrição da permissão
@@ -209,7 +214,7 @@ export class PermissionUnidadeSeed {
 
   /**
    * Cria um escopo de permissão no banco de dados.
-   * 
+   *
    * @param repository Repositório de escopos de permissão
    * @param permissaoId ID da permissão
    * @param tipoEscopo Tipo de escopo padrão
@@ -225,7 +230,9 @@ export class PermissionUnidadeSeed {
     });
 
     if (existingScope) {
-      console.log(`Escopo para permissão '${permissaoId}' já existe, pulando...`);
+      console.log(
+        `Escopo para permissão '${permissaoId}' já existe, pulando...`,
+      );
       return existingScope;
     }
 

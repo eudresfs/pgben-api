@@ -16,7 +16,9 @@ export class DadosCestaBasicaRepository extends Repository<DadosCestaBasica> {
   /**
    * Buscar dados de cesta básica por solicitação com relacionamentos
    */
-  async findBySolicitacaoWithRelations(solicitacaoId: string): Promise<DadosCestaBasica | null> {
+  async findBySolicitacaoWithRelations(
+    solicitacaoId: string,
+  ): Promise<DadosCestaBasica | null> {
     return this.findOne({
       where: { solicitacao_id: solicitacaoId },
       relations: [
@@ -36,7 +38,9 @@ export class DadosCestaBasicaRepository extends Repository<DadosCestaBasica> {
     return this.createQueryBuilder('dados')
       .leftJoinAndSelect('dados.solicitacao', 'solicitacao')
       .leftJoinAndSelect('solicitacao.cidadao', 'cidadao')
-      .where('dados.periodo_concessao = :periodoConcessao', { periodoConcessao })
+      .where('dados.periodo_concessao = :periodoConcessao', {
+        periodoConcessao,
+      })
       .orderBy('dados.created_at', 'DESC')
       .getMany();
   }
@@ -50,7 +54,9 @@ export class DadosCestaBasicaRepository extends Repository<DadosCestaBasica> {
     return this.createQueryBuilder('dados')
       .leftJoinAndSelect('dados.solicitacao', 'solicitacao')
       .leftJoinAndSelect('solicitacao.cidadao', 'cidadao')
-      .where('dados.origem_atendimento = :origemAtendimento', { origemAtendimento })
+      .where('dados.origem_atendimento = :origemAtendimento', {
+        origemAtendimento,
+      })
       .orderBy('dados.created_at', 'DESC')
       .getMany();
   }
@@ -65,10 +71,15 @@ export class DadosCestaBasicaRepository extends Repository<DadosCestaBasica> {
     const query = this.createQueryBuilder('dados')
       .leftJoinAndSelect('dados.solicitacao', 'solicitacao')
       .leftJoinAndSelect('solicitacao.cidadao', 'cidadao')
-      .where('dados.quantidade_cestas_solicitadas >= :quantidadeMinima', { quantidadeMinima });
+      .where('dados.quantidade_cestas_solicitadas >= :quantidadeMinima', {
+        quantidadeMinima,
+      });
 
     if (quantidadeMaxima) {
-      query.andWhere('dados.quantidade_cestas_solicitadas <= :quantidadeMaxima', { quantidadeMaxima });
+      query.andWhere(
+        'dados.quantidade_cestas_solicitadas <= :quantidadeMaxima',
+        { quantidadeMaxima },
+      );
     }
 
     return query
@@ -183,30 +194,37 @@ export class DadosCestaBasicaRepository extends Repository<DadosCestaBasica> {
     }
 
     if (filters.quantidadeMinima) {
-      query.andWhere('dados.quantidade_cestas_solicitadas >= :quantidadeMinima', {
-        quantidadeMinima: filters.quantidadeMinima,
-      });
+      query.andWhere(
+        'dados.quantidade_cestas_solicitadas >= :quantidadeMinima',
+        {
+          quantidadeMinima: filters.quantidadeMinima,
+        },
+      );
     }
 
     if (filters.quantidadeMaxima) {
-      query.andWhere('dados.quantidade_cestas_solicitadas <= :quantidadeMaxima', {
-        quantidadeMaxima: filters.quantidadeMaxima,
-      });
+      query.andWhere(
+        'dados.quantidade_cestas_solicitadas <= :quantidadeMaxima',
+        {
+          quantidadeMaxima: filters.quantidadeMaxima,
+        },
+      );
     }
 
     if (filters.dataInicioSolicitacao && filters.dataFimSolicitacao) {
-      query.andWhere('solicitacao.created_at BETWEEN :dataInicio AND :dataFim', {
-        dataInicio: filters.dataInicioSolicitacao,
-        dataFim: filters.dataFimSolicitacao,
-      });
+      query.andWhere(
+        'solicitacao.created_at BETWEEN :dataInicio AND :dataFim',
+        {
+          dataInicio: filters.dataInicioSolicitacao,
+          dataFim: filters.dataFimSolicitacao,
+        },
+      );
     }
 
     const total = await query.getCount();
 
     if (filters.page && filters.limit) {
-      query
-        .skip((filters.page - 1) * filters.limit)
-        .take(filters.limit);
+      query.skip((filters.page - 1) * filters.limit).take(filters.limit);
     }
 
     query.orderBy('dados.created_at', 'DESC');
@@ -231,12 +249,12 @@ export class DadosCestaBasicaRepository extends Repository<DadosCestaBasica> {
       .groupBy('EXTRACT(MONTH FROM solicitacao.created_at)')
       .orderBy('mes', 'ASC')
       .getRawMany()
-      .then(results => 
-        results.map(item => ({
+      .then((results) =>
+        results.map((item) => ({
           mes: parseInt(item.mes),
           quantidade: parseInt(item.quantidade),
           totalCestas: parseInt(item.totalCestas),
-        }))
+        })),
       );
   }
 
@@ -245,7 +263,14 @@ export class DadosCestaBasicaRepository extends Repository<DadosCestaBasica> {
    */
   async findFamiliasRecorrentes(
     minimoSolicitacoes: number = 2,
-  ): Promise<{ cidadao_id: string; nome_cidadao: string; total_solicitacoes: number; total_cestas: number }[]> {
+  ): Promise<
+    {
+      cidadao_id: string;
+      nome_cidadao: string;
+      total_solicitacoes: number;
+      total_cestas: number;
+    }[]
+  > {
     return this.createQueryBuilder('dados')
       .leftJoin('dados.solicitacao', 'solicitacao')
       .leftJoin('solicitacao.cidadao', 'cidadao')
@@ -257,13 +282,13 @@ export class DadosCestaBasicaRepository extends Repository<DadosCestaBasica> {
       .having('COUNT(*) >= :minimoSolicitacoes', { minimoSolicitacoes })
       .orderBy('total_solicitacoes', 'DESC')
       .getRawMany()
-      .then(results => 
-        results.map(item => ({
+      .then((results) =>
+        results.map((item) => ({
           cidadao_id: item.cidadao_id,
           nome_cidadao: item.nome_cidadao,
           total_solicitacoes: parseInt(item.total_solicitacoes),
           total_cestas: parseInt(item.total_cestas),
-        }))
+        })),
       );
   }
 

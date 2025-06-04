@@ -1,11 +1,28 @@
-import { Entity, PrimaryGeneratedColumn, Column, Index, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
-import { IsNotEmpty, IsUUID, IsOptional, IsNumber, Min, IsEnum, IsString } from 'class-validator';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  Index,
+  ManyToOne,
+  JoinColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
+import {
+  IsNotEmpty,
+  IsUUID,
+  IsOptional,
+  IsNumber,
+  Min,
+  IsEnum,
+  IsString,
+} from 'class-validator';
 import { Metrica } from './metrica.entity';
 import { NivelAlertaEnum } from './metrica-seguranca.entity';
 
 /**
  * Entidade que representa alertas gerados com base em métricas
- * 
+ *
  * Esta entidade armazena informações sobre alertas gerados quando uma métrica
  * ultrapassa um limiar definido, incluindo o nível do alerta, valor atual,
  * limiar violado e status de resolução.
@@ -31,7 +48,7 @@ export class AlertaMetrica {
 
   @Column({
     type: 'enum',
-    enum: NivelAlertaEnum
+    enum: NivelAlertaEnum,
   })
   @Index('idx_alertas_metricas_nivel')
   @IsEnum(NivelAlertaEnum, { message: 'Nível de alerta inválido' })

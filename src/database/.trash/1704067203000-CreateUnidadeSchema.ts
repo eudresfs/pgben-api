@@ -21,7 +21,7 @@ export class CreateUnidadeSchema1704067203000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     try {
       console.log('Iniciando migration 1010000-CreateUnidadeSchema...');
-      
+
       // 1. Criar tipos enumerados para o módulo
       await queryRunner.query(`
         -- Enum para tipos de unidades
@@ -169,9 +169,14 @@ export class CreateUnidadeSchema1704067203000 implements MigrationInterface {
         END$$;
       `);
 
-      console.log('Migration 1010000-CreateUnidadeSchema executada com sucesso.');
+      console.log(
+        'Migration 1010000-CreateUnidadeSchema executada com sucesso.',
+      );
     } catch (error) {
-      console.error('Erro ao executar migration 1010000-CreateUnidadeSchema:', error);
+      console.error(
+        'Erro ao executar migration 1010000-CreateUnidadeSchema:',
+        error,
+      );
       throw error;
     }
   }
@@ -181,8 +186,10 @@ export class CreateUnidadeSchema1704067203000 implements MigrationInterface {
    */
   public async down(queryRunner: QueryRunner): Promise<void> {
     try {
-      console.log('Iniciando rollback da migration 1010000-CreateUnidadeSchema...');
-      
+      console.log(
+        'Iniciando rollback da migration 1010000-CreateUnidadeSchema...',
+      );
+
       // 1. Remover as foreign keys da tabela de usuários
       await queryRunner.query(`
         ALTER TABLE "usuario" DROP CONSTRAINT IF EXISTS "FK_USUARIO_SETOR";
@@ -197,9 +204,14 @@ export class CreateUnidadeSchema1704067203000 implements MigrationInterface {
       await queryRunner.query(`DROP TYPE IF EXISTS "status_unidade";`);
       await queryRunner.query(`DROP TYPE IF EXISTS "tipo_unidade";`);
 
-      console.log('Rollback da migration 1010000-CreateUnidadeSchema executado com sucesso.');
+      console.log(
+        'Rollback da migration 1010000-CreateUnidadeSchema executado com sucesso.',
+      );
     } catch (error) {
-      console.error('Erro ao executar rollback da migration 1010000-CreateUnidadeSchema:', error);
+      console.error(
+        'Erro ao executar rollback da migration 1010000-CreateUnidadeSchema:',
+        error,
+      );
       throw error;
     }
   }

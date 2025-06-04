@@ -7,58 +7,60 @@ import { TemplateTipoEnum } from '../../../../enums';
 export class TemplateResponseDto {
   @ApiProperty({
     description: 'Código único que identifica o template',
-    example: 'email.nova-solicitacao'
+    example: 'email.nova-solicitacao',
   })
   codigo: string;
 
   @ApiProperty({
     description: 'Nome descritivo do template',
-    example: 'Email de Nova Solicitação'
+    example: 'Email de Nova Solicitação',
   })
   nome: string;
 
   @ApiProperty({
     description: 'Tipo do template',
     enum: TemplateTipoEnum,
-    example: TemplateTipoEnum.EMAIL
+    example: TemplateTipoEnum.EMAIL,
   })
   tipo: string;
 
   @ApiProperty({
     description: 'Assunto do template (para emails)',
     example: 'Nova solicitação de benefício registrada',
-    required: false
+    required: false,
   })
   assunto?: string;
 
   @ApiProperty({
-    description: 'Conteúdo do template em formato HTML ou texto com placeholders',
-    example: '<p>Olá {{nome}},</p><p>Sua solicitação de benefício {{tipo_beneficio}} foi registrada com sucesso.</p>'
+    description:
+      'Conteúdo do template em formato HTML ou texto com placeholders',
+    example:
+      '<p>Olá {{nome}},</p><p>Sua solicitação de benefício {{tipo_beneficio}} foi registrada com sucesso.</p>',
   })
   conteudo: string;
 
   @ApiProperty({
     description: 'Lista de variáveis disponíveis para substituição no template',
     example: ['nome', 'tipo_beneficio', 'data_solicitacao'],
-    type: [String]
+    type: [String],
   })
   variaveis: string[];
 
   @ApiProperty({
     description: 'Status ativo/inativo do template',
-    example: true
+    example: true,
   })
   ativo: boolean;
 
   @ApiProperty({
     description: 'Data de criação do template',
-    example: '2025-05-18T20:10:30.123Z'
+    example: '2025-05-18T20:10:30.123Z',
   })
   created_at: Date;
 
   @ApiProperty({
     description: 'Data da última atualização do template',
-    example: '2025-05-18T20:15:45.678Z'
+    example: '2025-05-18T20:15:45.678Z',
   })
   updated_at: Date;
 
@@ -66,8 +68,8 @@ export class TemplateResponseDto {
     description: 'Usuário que realizou a última atualização',
     example: {
       id: '550e8400-e29b-41d4-a716-446655440000',
-      nome: 'Administrador'
-    }
+      nome: 'Administrador',
+    },
   })
   updated_by: {
     id: string;

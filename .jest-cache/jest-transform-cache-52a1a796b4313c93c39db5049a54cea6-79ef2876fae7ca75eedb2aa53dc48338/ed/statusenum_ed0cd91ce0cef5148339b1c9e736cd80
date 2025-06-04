@@ -1,0 +1,13 @@
+25a7e2512103927237aa5b37e45cac44
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Status = void 0;
+/**
+ * Enum para os status de registros no sistema
+ */
+var Status;
+(function (Status) {
+    Status["ATIVO"] = "ativo";
+    Status["INATIVO"] = "inativo";
+})(Status || (exports.Status = Status = {}));
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXGVudW1zXFxzdGF0dXMuZW51bS50cyIsIm1hcHBpbmdzIjoiOzs7QUFBQTs7R0FFRztBQUNILElBQVksTUFHWDtBQUhELFdBQVksTUFBTTtJQUNoQix5QkFBZSxDQUFBO0lBQ2YsNkJBQW1CLENBQUE7QUFDckIsQ0FBQyxFQUhXLE1BQU0sc0JBQU4sTUFBTSxRQUdqQiIsIm5hbWVzIjpbXSwic291cmNlcyI6WyJDOlxcVXNlcnNcXGV1ZHJlXFxPbmVEcml2ZVxcRGVza3RvcFxcUHJvamV0b3NcXHBnYmVuXFxwZ2Jlbi1zZXJ2ZXJcXHNyY1xcZW51bXNcXHN0YXR1cy5lbnVtLnRzIl0sInNvdXJjZXNDb250ZW50IjpbIi8qKlxuICogRW51bSBwYXJhIG9zIHN0YXR1cyBkZSByZWdpc3Ryb3Mgbm8gc2lzdGVtYVxuICovXG5leHBvcnQgZW51bSBTdGF0dXMge1xuICBBVElWTyA9ICdhdGl2bycsXG4gIElOQVRJVk8gPSAnaW5hdGl2bycsXG59XG4iXSwidmVyc2lvbiI6M30=

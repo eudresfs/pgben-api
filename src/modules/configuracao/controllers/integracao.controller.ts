@@ -1,5 +1,22 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query, Put } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+  Query,
+  Put,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiParam,
+} from '@nestjs/swagger';
 import { IntegracaoService } from '../services/integracao.service';
 import { IntegracaoUpdateDto } from '../dtos/integracao/integracao-update.dto';
 import { IntegracaoTestDto } from '../dtos/integracao/integracao-test.dto';
@@ -25,13 +42,13 @@ export class IntegracaoController {
    */
   @Get()
   @ApiOperation({ summary: 'Buscar todas as configurações de integração' })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Lista de configurações encontradas',
-    type: [IntegracaoResponseDto]
+    type: [IntegracaoResponseDto],
   })
   async buscarTodas(
-    @Query('tipo') tipo?: IntegracaoTipoEnum
+    @Query('tipo') tipo?: IntegracaoTipoEnum,
   ): Promise<IntegracaoResponseDto[]> {
     return this.integracaoService.buscarTodas(tipo);
   }
@@ -43,22 +60,22 @@ export class IntegracaoController {
    */
   @Get(':codigo')
   @ApiOperation({ summary: 'Buscar configuração de integração por código' })
-  @ApiParam({ 
-    name: 'codigo', 
+  @ApiParam({
+    name: 'codigo',
     description: 'Código único da configuração',
-    example: 'smtp-principal' 
+    example: 'smtp-principal',
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Configuração encontrada',
-    type: IntegracaoResponseDto
+    type: IntegracaoResponseDto,
   })
-  @ApiResponse({ 
-    status: 404, 
-    description: 'Configuração não encontrada'
+  @ApiResponse({
+    status: 404,
+    description: 'Configuração não encontrada',
   })
   async buscarPorCodigo(
-    @Param('codigo') codigo: string
+    @Param('codigo') codigo: string,
   ): Promise<IntegracaoResponseDto> {
     return this.integracaoService.buscarPorCodigo(codigo);
   }
@@ -71,23 +88,23 @@ export class IntegracaoController {
    */
   @Put(':codigo')
   @ApiOperation({ summary: 'Criar ou atualizar configuração de integração' })
-  @ApiParam({ 
-    name: 'codigo', 
+  @ApiParam({
+    name: 'codigo',
     description: 'Código único da configuração',
-    example: 'smtp-principal' 
+    example: 'smtp-principal',
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Configuração criada/atualizada com sucesso',
-    type: IntegracaoResponseDto
+    type: IntegracaoResponseDto,
   })
-  @ApiResponse({ 
-    status: 400, 
-    description: 'Dados inválidos'
+  @ApiResponse({
+    status: 400,
+    description: 'Dados inválidos',
   })
   async atualizarOuCriar(
     @Param('codigo') codigo: string,
-    @Body() dto: IntegracaoUpdateDto
+    @Body() dto: IntegracaoUpdateDto,
   ): Promise<IntegracaoResponseDto> {
     return this.integracaoService.atualizarOuCriar(codigo, dto);
   }
@@ -98,22 +115,20 @@ export class IntegracaoController {
    */
   @Delete(':codigo')
   @ApiOperation({ summary: 'Remover configuração de integração' })
-  @ApiParam({ 
-    name: 'codigo', 
+  @ApiParam({
+    name: 'codigo',
     description: 'Código único da configuração',
-    example: 'smtp-principal' 
+    example: 'smtp-principal',
   })
-  @ApiResponse({ 
-    status: 204, 
-    description: 'Configuração removida com sucesso'
+  @ApiResponse({
+    status: 204,
+    description: 'Configuração removida com sucesso',
   })
-  @ApiResponse({ 
-    status: 404, 
-    description: 'Configuração não encontrada'
+  @ApiResponse({
+    status: 404,
+    description: 'Configuração não encontrada',
   })
-  async remover(
-    @Param('codigo') codigo: string
-  ): Promise<void> {
+  async remover(@Param('codigo') codigo: string): Promise<void> {
     await this.integracaoService.remover(codigo);
   }
 
@@ -124,29 +139,29 @@ export class IntegracaoController {
    */
   @Post('testar')
   @ApiOperation({ summary: 'Testar configuração de integração' })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Teste executado com sucesso',
     schema: {
       type: 'object',
       properties: {
         sucesso: {
           type: 'boolean',
-          description: 'Indica se o teste foi bem-sucedido'
+          description: 'Indica se o teste foi bem-sucedido',
         },
         mensagem: {
           type: 'string',
-          description: 'Mensagem detalhada do resultado do teste'
-        }
-      }
-    }
+          description: 'Mensagem detalhada do resultado do teste',
+        },
+      },
+    },
   })
-  @ApiResponse({ 
-    status: 400, 
-    description: 'Dados inválidos ou erro no teste'
+  @ApiResponse({
+    status: 400,
+    description: 'Dados inválidos ou erro no teste',
   })
   async testar(
-    @Body() dto: IntegracaoTestDto
+    @Body() dto: IntegracaoTestDto,
   ): Promise<{ sucesso: boolean; mensagem: string }> {
     return this.integracaoService.testar(dto);
   }
@@ -159,23 +174,23 @@ export class IntegracaoController {
    */
   @Put(':codigo/status')
   @ApiOperation({ summary: 'Ativar ou desativar configuração de integração' })
-  @ApiParam({ 
-    name: 'codigo', 
+  @ApiParam({
+    name: 'codigo',
     description: 'Código único da configuração',
-    example: 'smtp-principal' 
+    example: 'smtp-principal',
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Status da configuração atualizado com sucesso',
-    type: IntegracaoResponseDto
+    type: IntegracaoResponseDto,
   })
-  @ApiResponse({ 
-    status: 404, 
-    description: 'Configuração não encontrada'
+  @ApiResponse({
+    status: 404,
+    description: 'Configuração não encontrada',
   })
   async alterarStatus(
     @Param('codigo') codigo: string,
-    @Body() { ativo }: { ativo: boolean }
+    @Body() { ativo }: { ativo: boolean },
   ): Promise<IntegracaoResponseDto> {
     return this.integracaoService.alterarStatus(codigo, ativo);
   }
@@ -187,26 +202,30 @@ export class IntegracaoController {
    */
   @Get('ativa/:tipo')
   @ApiOperation({ summary: 'Buscar configuração ativa por tipo' })
-  @ApiParam({ 
-    name: 'tipo', 
+  @ApiParam({
+    name: 'tipo',
     description: 'Tipo de integração',
-    enum: IntegracaoTipoEnum
+    enum: IntegracaoTipoEnum,
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Configuração ativa encontrada',
-    type: IntegracaoResponseDto
+    type: IntegracaoResponseDto,
   })
-  @ApiResponse({ 
-    status: 404, 
-    description: 'Nenhuma configuração ativa encontrada'
+  @ApiResponse({
+    status: 404,
+    description: 'Nenhuma configuração ativa encontrada',
   })
   async buscarConfigAtiva(
-    @Param('tipo') tipo: IntegracaoTipoEnum
+    @Param('tipo') tipo: IntegracaoTipoEnum,
   ): Promise<IntegracaoResponseDto> {
     const config = await this.integracaoService.buscarConfigAtiva(tipo);
     if (!config) {
-      throw new EntityNotFoundException('Configuração de integração', tipo, 'tipo');
+      throw new EntityNotFoundException(
+        'Configuração de integração',
+        tipo,
+        'tipo',
+      );
     }
     return config;
   }

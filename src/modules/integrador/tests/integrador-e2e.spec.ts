@@ -96,7 +96,9 @@ describe('Integrador E2E', () => {
 
     jwtService = moduleRef.get<JwtService>(JwtService);
     integradorService = moduleRef.get<IntegradorService>(IntegradorService);
-    tokenService = moduleRef.get<IntegradorTokenService>(IntegradorTokenService);
+    tokenService = moduleRef.get<IntegradorTokenService>(
+      IntegradorTokenService,
+    );
     integradorRepository = moduleRef.get(getRepositoryToken(Integrador));
     tokenRepository = moduleRef.get(getRepositoryToken(IntegradorToken));
     tokenRevogadoRepository = moduleRef.get(getRepositoryToken(TokenRevogado));
@@ -189,7 +191,7 @@ describe('Integrador E2E', () => {
 
     const tokenResult = await tokenService.createToken(
       'test-integrador-id',
-      createTokenDto
+      createTokenDto,
     );
     integradorToken = tokenResult.token;
   });

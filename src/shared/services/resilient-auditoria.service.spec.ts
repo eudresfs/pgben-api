@@ -15,8 +15,8 @@ jest.mock('fs', () => ({
     mkdir: jest.fn(),
     appendFile: jest.fn(),
     readdir: jest.fn(),
-    readFile: jest.fn()
-  }
+    readFile: jest.fn(),
+  },
 }));
 
 describe('ResilientAuditoriaService', () => {
@@ -34,7 +34,7 @@ describe('ResilientAuditoriaService', () => {
     dadosAnteriores: null,
     dadosNovos: { nome: 'Teste' },
     ip: '127.0.0.1',
-    userAgent: 'test-agent'
+    userAgent: 'test-agent',
   };
 
   beforeEach(async () => {
@@ -44,35 +44,35 @@ describe('ResilientAuditoriaService', () => {
         {
           provide: AuditoriaService,
           useValue: {
-            create: jest.fn()
-          }
+            create: jest.fn(),
+          },
         },
         {
           provide: AuditoriaQueueService,
           useValue: {
-            enfileirarLogAuditoria: jest.fn()
-          }
+            enfileirarLogAuditoria: jest.fn(),
+          },
         },
         {
           provide: HealthCheckService,
           useValue: {
-            getServicesStatus: jest.fn()
-          }
+            getServicesStatus: jest.fn(),
+          },
         },
         {
           provide: ConfigService,
           useValue: {
             get: jest.fn((key: string, defaultValue?: any) => {
               const config = {
-                'AUDITORIA_BACKUP_PATH': './test-logs/audit-backup',
-                'AUDITORIA_ENABLE_SYNC_FALLBACK': 'true',
-                'AUDITORIA_ENABLE_FILE_BACKUP': 'true'
+                AUDITORIA_BACKUP_PATH: './test-logs/audit-backup',
+                AUDITORIA_ENABLE_SYNC_FALLBACK: 'true',
+                AUDITORIA_ENABLE_FILE_BACKUP: 'true',
               };
               return config[key] || defaultValue;
-            })
-          }
-        }
-      ]
+            }),
+          },
+        },
+      ],
     }).compile();
 
     service = module.get<ResilientAuditoriaService>(ResilientAuditoriaService);
@@ -98,9 +98,11 @@ describe('ResilientAuditoriaService', () => {
       await service.registrarLogResilient(mockLogData);
 
       // Assert
-      expect(auditoriaQueueService.enfileirarLogAuditoria).toHaveBeenCalledWith(mockLogData);
+      expect(auditoriaQueueService.enfileirarLogAuditoria).toHaveBeenCalledWith(
+        mockLogData,
+      );
       expect(auditoriaService.create).not.toHaveBeenCalled();
-      
+
       const metrics = service.getMetrics();
       expect(metrics.queueSuccesses).toBe(1);
       expect(metrics.queueFailures).toBe(0);
@@ -109,16 +111,20 @@ describe('ResilientAuditoriaService', () => {
     it('deve usar fallback síncrono quando fila falha', async () => {
       // Arrange
       const queueError = new Error('Fila indisponível');
-      auditoriaQueueService.enfileirarLogAuditoria.mockRejectedValue(queueError);
+      auditoriaQueueService.enfileirarLogAuditoria.mockRejectedValue(
+        queueError,
+      );
       auditoriaService.create.mockResolvedValue({ id: '123' } as any);
 
       // Act
       await service.registrarLogResilient(mockLogData);
 
       // Assert
-      expect(auditoriaQueueService.enfileirarLogAuditoria).toHaveBeenCalledWith(mockLogData);
+      expect(auditoriaQueueService.enfileirarLogAuditoria).toHaveBeenCalledWith(
+        mockLogData,
+      );
       expect(auditoriaService.create).toHaveBeenCalledWith(mockLogData);
-      
+
       const metrics = service.getMetrics();
       expect(metrics.queueFailures).toBe(1);
       expect(metrics.syncFallbacks).toBe(1);
@@ -128,8 +134,10 @@ describe('ResilientAuditoriaService', () => {
       // Arrange
       const queueError = new Error('Fila indisponível');
       const syncError = new Error('Banco indisponível');
-      
-      auditoriaQueueService.enfileirarLogAuditoria.mockRejectedValue(queueError);
+
+      auditoriaQueueService.enfileirarLogAuditoria.mockRejectedValue(
+        queueError,
+      );
       auditoriaService.create.mockRejectedValue(syncError);
       (fs.appendFile as jest.Mock).mockResolvedValue(undefined);
 
@@ -137,10 +145,12 @@ describe('ResilientAuditoriaService', () => {
       await service.registrarLogResilient(mockLogData);
 
       // Assert
-      expect(auditoriaQueueService.enfileirarLogAuditoria).toHaveBeenCalledWith(mockLogData);
+      expect(auditoriaQueueService.enfileirarLogAuditoria).toHaveBeenCalledWith(
+        mockLogData,
+      );
       expect(auditoriaService.create).toHaveBeenCalledWith(mockLogData);
       expect(fs.appendFile).toHaveBeenCalled();
-      
+
       const metrics = service.getMetrics();
       expect(metrics.queueFailures).toBe(1);
       expect(metrics.syncFallbacks).toBe(0); // Falhou antes de contar como sucesso
@@ -152,15 +162,18 @@ describe('ResilientAuditoriaService', () => {
       const queueError = new Error('Fila indisponível');
       const syncError = new Error('Banco indisponível');
       const fileError = new Error('Disco cheio');
-      
-      auditoriaQueueService.enfileirarLogAuditoria.mockRejectedValue(queueError);
+
+      auditoriaQueueService.enfileirarLogAuditoria.mockRejectedValue(
+        queueError,
+      );
       auditoriaService.create.mockRejectedValue(syncError);
       (fs.appendFile as jest.Mock).mockRejectedValue(fileError);
 
       // Act & Assert
-      await expect(service.registrarLogResilient(mockLogData))
-        .rejects.toThrow('Falha total na auditoria');
-      
+      await expect(service.registrarLogResilient(mockLogData)).rejects.toThrow(
+        'Falha total na auditoria',
+      );
+
       const metrics = service.getMetrics();
       expect(metrics.queueFailures).toBe(1);
       expect(metrics.fileBackups).toBe(0);
@@ -169,7 +182,7 @@ describe('ResilientAuditoriaService', () => {
     it('deve respeitar timeout na fila', async () => {
       // Arrange
       auditoriaQueueService.enfileirarLogAuditoria.mockImplementation(
-        () => new Promise(resolve => setTimeout(resolve, 3000)) // 3 segundos
+        () => new Promise((resolve) => setTimeout(resolve, 3000)), // 3 segundos
       );
       auditoriaService.create.mockResolvedValue({ id: '123' } as any);
 
@@ -178,7 +191,7 @@ describe('ResilientAuditoriaService', () => {
 
       // Assert
       expect(auditoriaService.create).toHaveBeenCalledWith(mockLogData);
-      
+
       const metrics = service.getMetrics();
       expect(metrics.queueFailures).toBe(1);
       expect(metrics.syncFallbacks).toBe(1);
@@ -187,9 +200,11 @@ describe('ResilientAuditoriaService', () => {
     it('deve respeitar timeout no sync', async () => {
       // Arrange
       const queueError = new Error('Fila indisponível');
-      auditoriaQueueService.enfileirarLogAuditoria.mockRejectedValue(queueError);
+      auditoriaQueueService.enfileirarLogAuditoria.mockRejectedValue(
+        queueError,
+      );
       auditoriaService.create.mockImplementation(
-        () => new Promise(resolve => setTimeout(resolve, 6000)) // 6 segundos
+        () => new Promise((resolve) => setTimeout(resolve, 6000)), // 6 segundos
       );
       (fs.appendFile as jest.Mock).mockResolvedValue(undefined);
 
@@ -198,7 +213,7 @@ describe('ResilientAuditoriaService', () => {
 
       // Assert
       expect(fs.appendFile).toHaveBeenCalled();
-      
+
       const metrics = service.getMetrics();
       expect(metrics.fileBackups).toBe(1);
     });
@@ -213,16 +228,21 @@ describe('ResilientAuditoriaService', () => {
           timestamp: new Date().toISOString(),
           data: mockLogData,
           status: 'pending_recovery' as const,
-          attempts: 0
-        }
+          attempts: 0,
+        },
       ];
-      
-      (fs.readdir as jest.Mock).mockResolvedValue(['audit-backup-2024-01-01.jsonl']);
-      (fs.readFile as jest.Mock).mockResolvedValue(JSON.stringify(backupLogs[0]));
+
+      (fs.readdir as jest.Mock).mockResolvedValue([
+        'audit-backup-2024-01-01.jsonl',
+      ]);
+      (fs.readFile as jest.Mock).mockResolvedValue(
+        JSON.stringify(backupLogs[0]),
+      );
       auditoriaService.create.mockResolvedValue({ id: '123' } as any);
 
       // Spy nos métodos privados
-      const markAsProcessedSpy = jest.spyOn(service as any, 'markLogAsProcessed')
+      const markAsProcessedSpy = jest
+        .spyOn(service as any, 'markLogAsProcessed')
         .mockResolvedValue(undefined);
 
       // Act
@@ -231,7 +251,7 @@ describe('ResilientAuditoriaService', () => {
       // Assert
       expect(auditoriaService.create).toHaveBeenCalledWith(mockLogData);
       expect(markAsProcessedSpy).toHaveBeenCalledWith('backup_1');
-      
+
       const metrics = service.getMetrics();
       expect(metrics.recoveredLogs).toBe(1);
     });
@@ -244,16 +264,21 @@ describe('ResilientAuditoriaService', () => {
           timestamp: new Date().toISOString(),
           data: mockLogData,
           status: 'pending_recovery' as const,
-          attempts: 1
-        }
+          attempts: 1,
+        },
       ];
-      
-      (fs.readdir as jest.Mock).mockResolvedValue(['audit-backup-2024-01-01.jsonl']);
-      (fs.readFile as jest.Mock).mockResolvedValue(JSON.stringify(backupLogs[0]));
+
+      (fs.readdir as jest.Mock).mockResolvedValue([
+        'audit-backup-2024-01-01.jsonl',
+      ]);
+      (fs.readFile as jest.Mock).mockResolvedValue(
+        JSON.stringify(backupLogs[0]),
+      );
       auditoriaService.create.mockRejectedValue(new Error('Falha temporária'));
 
       // Spy nos métodos privados
-      const updateAttemptsSpy = jest.spyOn(service as any, 'updateLogAttempts')
+      const updateAttemptsSpy = jest
+        .spyOn(service as any, 'updateLogAttempts')
         .mockResolvedValue(undefined);
 
       // Act
@@ -261,7 +286,7 @@ describe('ResilientAuditoriaService', () => {
 
       // Assert
       expect(updateAttemptsSpy).toHaveBeenCalledWith('backup_1', 2);
-      
+
       const metrics = service.getMetrics();
       expect(metrics.recoveredLogs).toBe(0);
     });
@@ -274,16 +299,21 @@ describe('ResilientAuditoriaService', () => {
           timestamp: new Date().toISOString(),
           data: mockLogData,
           status: 'pending_recovery' as const,
-          attempts: 2 // Próxima tentativa será a 3ª (máximo)
-        }
+          attempts: 2, // Próxima tentativa será a 3ª (máximo)
+        },
       ];
-      
-      (fs.readdir as jest.Mock).mockResolvedValue(['audit-backup-2024-01-01.jsonl']);
-      (fs.readFile as jest.Mock).mockResolvedValue(JSON.stringify(backupLogs[0]));
+
+      (fs.readdir as jest.Mock).mockResolvedValue([
+        'audit-backup-2024-01-01.jsonl',
+      ]);
+      (fs.readFile as jest.Mock).mockResolvedValue(
+        JSON.stringify(backupLogs[0]),
+      );
       auditoriaService.create.mockRejectedValue(new Error('Falha permanente'));
 
       // Spy nos métodos privados
-      const markAsFailedSpy = jest.spyOn(service as any, 'markLogAsFailed')
+      const markAsFailedSpy = jest
+        .spyOn(service as any, 'markLogAsFailed')
         .mockResolvedValue(undefined);
 
       // Act
@@ -295,12 +325,14 @@ describe('ResilientAuditoriaService', () => {
 
     it('deve lidar com arquivos de backup corrompidos', async () => {
       // Arrange
-      (fs.readdir as jest.Mock).mockResolvedValue(['audit-backup-2024-01-01.jsonl']);
+      (fs.readdir as jest.Mock).mockResolvedValue([
+        'audit-backup-2024-01-01.jsonl',
+      ]);
       (fs.readFile as jest.Mock).mockResolvedValue('invalid json content');
 
       // Act & Assert
       await expect(service.processBackupAuditLogs()).resolves.not.toThrow();
-      
+
       // Deve continuar processamento mesmo com arquivo corrompido
       const metrics = service.getMetrics();
       expect(metrics.recoveredLogs).toBe(0);
@@ -314,12 +346,16 @@ describe('ResilientAuditoriaService', () => {
           timestamp: new Date().toISOString(),
           data: mockLogData,
           status: 'pending_recovery' as const,
-          attempts: 5 // Excede o máximo de 3
-        }
+          attempts: 5, // Excede o máximo de 3
+        },
       ];
-      
-      (fs.readdir as jest.Mock).mockResolvedValue(['audit-backup-2024-01-01.jsonl']);
-      (fs.readFile as jest.Mock).mockResolvedValue(JSON.stringify(backupLogs[0]));
+
+      (fs.readdir as jest.Mock).mockResolvedValue([
+        'audit-backup-2024-01-01.jsonl',
+      ]);
+      (fs.readFile as jest.Mock).mockResolvedValue(
+        JSON.stringify(backupLogs[0]),
+      );
 
       // Act
       await service.processBackupAuditLogs();
@@ -337,7 +373,7 @@ describe('ResilientAuditoriaService', () => {
         queueFailures: 20,
         syncFallbacks: 15,
         fileBackups: 5,
-        recoveredLogs: 10
+        recoveredLogs: 10,
       };
 
       // Act
@@ -352,7 +388,7 @@ describe('ResilientAuditoriaService', () => {
         recoveredLogs: 10,
         queueSuccessRate: 80, // 80/100
         fallbackUsageRate: 15, // 15/100
-        backupUsageRate: 5 // 5/100
+        backupUsageRate: 5, // 5/100
       });
     });
 
@@ -373,10 +409,14 @@ describe('ResilientAuditoriaService', () => {
   describe('configurações', () => {
     it('deve respeitar configuração de fallback síncrono desabilitado', async () => {
       // Arrange
-      configService.get.mockImplementation((key: string, defaultValue?: any) => {
-        if (key === 'AUDITORIA_ENABLE_SYNC_FALLBACK') {return 'false';}
-        return defaultValue;
-      });
+      configService.get.mockImplementation(
+        (key: string, defaultValue?: any) => {
+          if (key === 'AUDITORIA_ENABLE_SYNC_FALLBACK') {
+            return 'false';
+          }
+          return defaultValue;
+        },
+      );
 
       // Recriar serviço com nova configuração
       const module: TestingModule = await Test.createTestingModule({
@@ -385,29 +425,40 @@ describe('ResilientAuditoriaService', () => {
           { provide: AuditoriaService, useValue: auditoriaService },
           { provide: AuditoriaQueueService, useValue: auditoriaQueueService },
           { provide: HealthCheckService, useValue: healthCheckService },
-          { provide: ConfigService, useValue: configService }
-        ]
+          { provide: ConfigService, useValue: configService },
+        ],
       }).compile();
 
-      const newService = module.get<ResilientAuditoriaService>(ResilientAuditoriaService);
+      const newService = module.get<ResilientAuditoriaService>(
+        ResilientAuditoriaService,
+      );
 
       const queueError = new Error('Fila indisponível');
-      auditoriaQueueService.enfileirarLogAuditoria.mockRejectedValue(queueError);
+      auditoriaQueueService.enfileirarLogAuditoria.mockRejectedValue(
+        queueError,
+      );
 
       // Act & Assert
-      await expect(newService.registrarLogResilient(mockLogData))
-        .rejects.toThrow('Fila indisponível');
-      
+      await expect(
+        newService.registrarLogResilient(mockLogData),
+      ).rejects.toThrow('Fila indisponível');
+
       expect(auditoriaService.create).not.toHaveBeenCalled();
     });
 
     it('deve respeitar configuração de backup em arquivo desabilitado', async () => {
       // Arrange
-      configService.get.mockImplementation((key: string, defaultValue?: any) => {
-        if (key === 'AUDITORIA_ENABLE_FILE_BACKUP') {return 'false';}
-        if (key === 'AUDITORIA_ENABLE_SYNC_FALLBACK') {return 'true';}
-        return defaultValue;
-      });
+      configService.get.mockImplementation(
+        (key: string, defaultValue?: any) => {
+          if (key === 'AUDITORIA_ENABLE_FILE_BACKUP') {
+            return 'false';
+          }
+          if (key === 'AUDITORIA_ENABLE_SYNC_FALLBACK') {
+            return 'true';
+          }
+          return defaultValue;
+        },
+      );
 
       // Recriar serviço com nova configuração
       const module: TestingModule = await Test.createTestingModule({
@@ -416,22 +467,27 @@ describe('ResilientAuditoriaService', () => {
           { provide: AuditoriaService, useValue: auditoriaService },
           { provide: AuditoriaQueueService, useValue: auditoriaQueueService },
           { provide: HealthCheckService, useValue: healthCheckService },
-          { provide: ConfigService, useValue: configService }
-        ]
+          { provide: ConfigService, useValue: configService },
+        ],
       }).compile();
 
-      const newService = module.get<ResilientAuditoriaService>(ResilientAuditoriaService);
+      const newService = module.get<ResilientAuditoriaService>(
+        ResilientAuditoriaService,
+      );
 
       const queueError = new Error('Fila indisponível');
       const syncError = new Error('Banco indisponível');
-      
-      auditoriaQueueService.enfileirarLogAuditoria.mockRejectedValue(queueError);
+
+      auditoriaQueueService.enfileirarLogAuditoria.mockRejectedValue(
+        queueError,
+      );
       auditoriaService.create.mockRejectedValue(syncError);
 
       // Act & Assert
-      await expect(newService.registrarLogResilient(mockLogData))
-        .rejects.toThrow('Falha crítica na auditoria');
-      
+      await expect(
+        newService.registrarLogResilient(mockLogData),
+      ).rejects.toThrow('Falha crítica na auditoria');
+
       expect(fs.appendFile).not.toHaveBeenCalled();
     });
   });
@@ -441,17 +497,19 @@ describe('ResilientAuditoriaService', () => {
       // Arrange
       healthCheckService.getServicesStatus.mockReturnValue({
         redis: { status: 'down' },
-        database: { status: 'up' }
+        database: { status: 'up' },
       });
-      
+
       auditoriaQueueService.enfileirarLogAuditoria.mockResolvedValue(undefined);
 
       // Act
       await service.registrarLogResilient(mockLogData);
 
       // Assert
-      expect(auditoriaQueueService.enfileirarLogAuditoria).toHaveBeenCalledWith(mockLogData);
-      
+      expect(auditoriaQueueService.enfileirarLogAuditoria).toHaveBeenCalledWith(
+        mockLogData,
+      );
+
       const metrics = service.getMetrics();
       expect(metrics.queueSuccesses).toBe(1);
     });

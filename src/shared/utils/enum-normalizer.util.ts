@@ -1,10 +1,10 @@
 /**
  * Utilitário para normalização de valores de enums
- * 
+ *
  * Este utilitário garante que valores de enums sejam normalizados para lowercase
  * antes de serem salvos no banco de dados, mantendo consistência com os valores
  * definidos nas migrations.
- * 
+ *
  * @author Equipe PGBen
  */
 
@@ -29,118 +29,118 @@ const ENUM_FIELDS = [
   'status',
   'tipo',
   'metodoPagamento',
-  
+
   // Dados pessoais
   'sexo',
   'escolaridade',
   'parentesco',
   'situacao_trabalho',
   'tipo_trabalho',
-  
+
   // Pendências e confirmações
   'status_pendencia',
   'metodo_confirmacao',
-  
+
   // Métricas e alertas
   'tipo_metrica',
   'categoria_metrica',
   'nivel_alerta',
-  
+
   // Integração
   'integracao_tipo',
   'tipo_evento_integracao',
-  
+
   // Benefícios específicos
   'tipo_urna_funeraria',
   'periodicidade_entrega',
   'motivo_aluguel_social',
   'tipo_entrega_cesta_basica',
   'periodicidade_cesta_basica',
-  
+
   // Avaliação
   'tipo_avaliacao',
   'resultado_avaliacao',
-  
+
   // Solicitações
   'origem_solicitacao',
   'tipo_solicitacao',
-  
+
   // Relatórios
   'formato_relatorio',
   'tipo_relatorio',
   'status_geracao',
   'estrategia_amostragem',
-  
+
   // Agendamento
   'tipo_agendamento',
   'tipo_escopo',
-  
+
   // Documentos
   'status_verificacao_documento',
   'resultado_verificacao_malware',
   'tipo_documento_enviado',
-  
+
   // Configurações
   'visibilidade_configuracao',
-  
+
   // Requisitos
   'fase_requisito',
   'tipo_campo',
-  
+
   // Operações
   'tipo_operacao',
   'status_ativo',
-  
+
   // Informações bancárias
   'tipo_conta',
   'tipo_chave_pix',
   'codigo_banco',
-  
+
   // Recursos e processos
   'status_recurso',
   'status_processo_judicial',
   'tipo_determinacao_judicial',
-  
+
   // Ocorrências
   'tipo_ocorrencia',
   'status_ocorrencia',
   'tipo_demanda',
-  
+
   // Auditoria
   'audit_action',
   'audit_severity',
-  
+
   // Notificações
   'tipo_notificacao',
   'status_notificacao_processamento',
-  
+
   // Métricas avançadas
   'tipo_metrica_enum',
   'categoria_metrica_enum',
   'granularidade_temporal',
   'nivel_confianca_anomalia',
-  
+
   // Configurações avançadas
   'parametro_tipo',
   'workflow_acao',
   'template_tipo',
-  
+
   // Benefícios específicos
   'tipo_aprovador',
   'tipo_etapa',
   'tipo_dado',
-  
+
   // Storage e documentos
   'categoria_documento',
   'tipo_storage_provider',
-  
+
   // Logs
   'criticidade_log',
   'formato_exportacao',
-  
+
   // Roles e permissões
   'role',
-  'tipo_escopo_permission'
+  'tipo_escopo_permission',
 ];
 
 /**
@@ -148,15 +148,17 @@ const ENUM_FIELDS = [
  * @param value Valor a ser normalizado
  * @returns Valor normalizado em lowercase ou o valor original se for null/undefined
  */
-export function normalizeEnumValue(value: string | null | undefined): string | null | undefined {
+export function normalizeEnumValue(
+  value: string | null | undefined,
+): string | null | undefined {
   if (value === null || value === undefined) {
     return value;
   }
-  
+
   if (typeof value !== 'string') {
     return value;
   }
-  
+
   return value.toLowerCase();
 }
 
@@ -169,16 +171,18 @@ export function normalizeEnumFields<T extends Record<string, any>>(data: T): T {
   if (!data || typeof data !== 'object') {
     return data;
   }
-  
+
   const normalizedData = { ...data };
-  
+
   // Normalizar campos conhecidos de enum
-  ENUM_FIELDS.forEach(field => {
+  ENUM_FIELDS.forEach((field) => {
     if (field in normalizedData) {
-      (normalizedData as any)[field] = normalizeEnumValue(normalizedData[field]);
+      (normalizedData as any)[field] = normalizeEnumValue(
+        normalizedData[field],
+      );
     }
   });
-  
+
   return normalizedData;
 }
 
@@ -187,12 +191,14 @@ export function normalizeEnumFields<T extends Record<string, any>>(data: T): T {
  * @param dataArray Array de objetos a serem normalizados
  * @returns Array com objetos normalizados
  */
-export function normalizeEnumFieldsArray<T extends Record<string, any>>(dataArray: T[]): T[] {
+export function normalizeEnumFieldsArray<T extends Record<string, any>>(
+  dataArray: T[],
+): T[] {
   if (!Array.isArray(dataArray)) {
     return dataArray;
   }
-  
-  return dataArray.map(item => normalizeEnumFields(item));
+
+  return dataArray.map((item) => normalizeEnumFields(item));
 }
 
 /**
@@ -209,7 +215,7 @@ export function isEnumField(fieldName: string): boolean {
  * @param newFields Array de novos campos de enum
  */
 export function addEnumFields(newFields: string[]): void {
-  newFields.forEach(field => {
+  newFields.forEach((field) => {
     if (!ENUM_FIELDS.includes(field)) {
       ENUM_FIELDS.push(field);
     }

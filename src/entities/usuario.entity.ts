@@ -15,7 +15,18 @@ import { RefreshToken } from './refresh-token.entity';
 import { Unidade } from './unidade.entity';
 import { Setor } from './setor.entity';
 import { IsCPF, IsTelefone } from '../shared/validators/br-validators';
-import { IsNotEmpty, IsString, Length, MaxLength, MinLength, Validate, IsEmail, IsEnum, IsOptional, IsBoolean } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsString,
+  Length,
+  MaxLength,
+  MinLength,
+  Validate,
+  IsEmail,
+  IsEnum,
+  IsOptional,
+  IsBoolean,
+} from 'class-validator';
 import { IsStrongPassword } from '../shared/validators/strong-password.validator';
 import { Role } from './role.entity';
 import { Status } from '../enums/status.enum';
@@ -55,7 +66,8 @@ export class Usuario {
   @IsNotEmpty({ message: 'Senha é obrigatória' })
   @IsString({ message: 'Senha deve ser uma string' })
   @Validate(IsStrongPassword, {
-    message: 'Senha deve ter no mínimo 8 caracteres, incluindo maiúscula, minúscula, número e caractere especial'
+    message:
+      'Senha deve ter no mínimo 8 caracteres, incluindo maiúscula, minúscula, número e caractere especial',
   })
   senhaHash: string;
 
@@ -85,7 +97,7 @@ export class Usuario {
 
   @ManyToOne(() => Role, (role) => role.usuarios, {
     nullable: false,
-    eager: false
+    eager: false,
   })
   @JoinColumn({ name: 'role_id' })
   role: Role;
@@ -95,7 +107,7 @@ export class Usuario {
 
   @ManyToOne(() => Unidade, (unidade) => unidade.usuarios, {
     nullable: true,
-    eager: false
+    eager: false,
   })
   @JoinColumn({ name: 'unidade_id' })
   unidade: Unidade;
@@ -105,7 +117,7 @@ export class Usuario {
 
   @ManyToOne(() => Setor, (setor) => setor.usuarios, {
     nullable: true,
-    eager: false
+    eager: false,
   })
   @JoinColumn({ name: 'setor_id' })
   setor: Setor;
@@ -114,7 +126,7 @@ export class Usuario {
     type: 'enum',
     enum: Status,
     default: Status.ATIVO,
-    enumName: 'status_usuario'
+    enumName: 'status_usuario',
   })
   @IsOptional()
   @IsEnum(Status, { message: 'Status deve ser ATIVO ou INATIVO' })
@@ -135,7 +147,7 @@ export class Usuario {
 
   @OneToMany(() => RefreshToken, (refreshToken) => refreshToken.usuario, {
     cascade: ['remove'],
-    lazy: true
+    lazy: true,
   })
   refreshTokens: RefreshToken[];
 

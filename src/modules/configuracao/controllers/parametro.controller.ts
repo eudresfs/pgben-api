@@ -1,5 +1,22 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiQuery,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../../../auth/guards/permission.guard';
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
@@ -25,26 +42,23 @@ export class ParametroController {
    * @returns Lista de parâmetros
    */
   @Get()
-  @RequiresPermission(
-    
-    {
-      permissionName: 'configuracao.parametro.listar',
-      scopeType: ScopeType.GLOBAL
-    }
-  )
-  @ApiOperation({ summary: 'Buscar todos os parâmetros do sistema' })
-  @ApiQuery({ 
-    name: 'categoria', 
-    required: false, 
-    description: 'Filtrar por categoria'
+  @RequiresPermission({
+    permissionName: 'configuracao.parametro.listar',
+    scopeType: ScopeType.GLOBAL,
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiOperation({ summary: 'Buscar todos os parâmetros do sistema' })
+  @ApiQuery({
+    name: 'categoria',
+    required: false,
+    description: 'Filtrar por categoria',
+  })
+  @ApiResponse({
+    status: 200,
     description: 'Lista de parâmetros encontrados',
-    type: [ParametroResponseDto]
+    type: [ParametroResponseDto],
   })
   async buscarTodos(
-    @Query('categoria') categoria?: string
+    @Query('categoria') categoria?: string,
   ): Promise<ParametroResponseDto[]> {
     return this.parametroService.buscarTodos(categoria);
   }
@@ -55,30 +69,27 @@ export class ParametroController {
    * @returns Parâmetro encontrado
    */
   @Get(':chave')
-  @RequiresPermission(
-    
-    {
-      permissionName: 'configuracao.parametro.visualizar',
-      scopeType: ScopeType.GLOBAL
-    }
-  )
+  @RequiresPermission({
+    permissionName: 'configuracao.parametro.visualizar',
+    scopeType: ScopeType.GLOBAL,
+  })
   @ApiOperation({ summary: 'Buscar parâmetro por chave' })
-  @ApiParam({ 
-    name: 'chave', 
+  @ApiParam({
+    name: 'chave',
     description: 'Chave única do parâmetro',
-    example: 'sistema.nome' 
+    example: 'sistema.nome',
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Parâmetro encontrado',
-    type: ParametroResponseDto
+    type: ParametroResponseDto,
   })
-  @ApiResponse({ 
-    status: 404, 
-    description: 'Parâmetro não encontrado'
+  @ApiResponse({
+    status: 404,
+    description: 'Parâmetro não encontrado',
   })
   async buscarPorChave(
-    @Param('chave') chave: string
+    @Param('chave') chave: string,
   ): Promise<ParametroResponseDto> {
     return this.parametroService.buscarPorChave(chave);
   }
@@ -89,26 +100,21 @@ export class ParametroController {
    * @returns Parâmetro criado
    */
   @Post()
-  @RequiresPermission(
-    
-    {
-      permissionName: 'configuracao.parametro.criar',
-      scopeType: ScopeType.GLOBAL
-    }
-  )
+  @RequiresPermission({
+    permissionName: 'configuracao.parametro.criar',
+    scopeType: ScopeType.GLOBAL,
+  })
   @ApiOperation({ summary: 'Criar novo parâmetro' })
-  @ApiResponse({ 
-    status: 201, 
+  @ApiResponse({
+    status: 201,
     description: 'Parâmetro criado com sucesso',
-    type: ParametroResponseDto
+    type: ParametroResponseDto,
   })
-  @ApiResponse({ 
-    status: 400, 
-    description: 'Dados inválidos ou parâmetro já existe'
+  @ApiResponse({
+    status: 400,
+    description: 'Dados inválidos ou parâmetro já existe',
   })
-  async criar(
-    @Body() dto: ParametroCreateDto
-  ): Promise<ParametroResponseDto> {
+  async criar(@Body() dto: ParametroCreateDto): Promise<ParametroResponseDto> {
     return this.parametroService.criar(dto);
   }
 
@@ -119,35 +125,32 @@ export class ParametroController {
    * @returns Parâmetro atualizado
    */
   @Put(':chave')
-  @RequiresPermission(
-    
-    {
-      permissionName: 'configuracao.parametro.editar',
-      scopeType: ScopeType.GLOBAL
-    }
-  )
+  @RequiresPermission({
+    permissionName: 'configuracao.parametro.editar',
+    scopeType: ScopeType.GLOBAL,
+  })
   @ApiOperation({ summary: 'Atualizar parâmetro existente' })
-  @ApiParam({ 
-    name: 'chave', 
+  @ApiParam({
+    name: 'chave',
     description: 'Chave única do parâmetro',
-    example: 'sistema.nome' 
+    example: 'sistema.nome',
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Parâmetro atualizado com sucesso',
-    type: ParametroResponseDto
+    type: ParametroResponseDto,
   })
-  @ApiResponse({ 
-    status: 404, 
-    description: 'Parâmetro não encontrado'
+  @ApiResponse({
+    status: 404,
+    description: 'Parâmetro não encontrado',
   })
-  @ApiResponse({ 
-    status: 400, 
-    description: 'Dados inválidos ou parâmetro não editável'
+  @ApiResponse({
+    status: 400,
+    description: 'Dados inválidos ou parâmetro não editável',
   })
   async atualizar(
     @Param('chave') chave: string,
-    @Body() dto: ParametroUpdateDto
+    @Body() dto: ParametroUpdateDto,
   ): Promise<ParametroResponseDto> {
     return this.parametroService.atualizar(chave, dto);
   }
@@ -157,34 +160,29 @@ export class ParametroController {
    * @param chave Chave do parâmetro
    */
   @Delete(':chave')
-  @RequiresPermission(
-    
-    {
-      permissionName: 'configuracao.parametro.remover',
-      scopeType: ScopeType.GLOBAL
-    }
-  )
+  @RequiresPermission({
+    permissionName: 'configuracao.parametro.remover',
+    scopeType: ScopeType.GLOBAL,
+  })
   @ApiOperation({ summary: 'Remover parâmetro' })
-  @ApiParam({ 
-    name: 'chave', 
+  @ApiParam({
+    name: 'chave',
     description: 'Chave única do parâmetro',
-    example: 'sistema.nome' 
+    example: 'sistema.nome',
   })
-  @ApiResponse({ 
-    status: 204, 
-    description: 'Parâmetro removido com sucesso'
+  @ApiResponse({
+    status: 204,
+    description: 'Parâmetro removido com sucesso',
   })
-  @ApiResponse({ 
-    status: 404, 
-    description: 'Parâmetro não encontrado'
+  @ApiResponse({
+    status: 404,
+    description: 'Parâmetro não encontrado',
   })
-  @ApiResponse({ 
-    status: 400, 
-    description: 'Parâmetro não pode ser removido'
+  @ApiResponse({
+    status: 400,
+    description: 'Parâmetro não pode ser removido',
   })
-  async remover(
-    @Param('chave') chave: string
-  ): Promise<void> {
+  async remover(@Param('chave') chave: string): Promise<void> {
     await this.parametroService.remover(chave);
   }
 
@@ -192,17 +190,14 @@ export class ParametroController {
    * Limpa o cache de parâmetros
    */
   @Post('cache/limpar')
-  @RequiresPermission(
-    
-    {
-      permissionName: 'configuracao.parametro.cache.limpar',
-      scopeType: ScopeType.GLOBAL
-    }
-  )
+  @RequiresPermission({
+    permissionName: 'configuracao.parametro.cache.limpar',
+    scopeType: ScopeType.GLOBAL,
+  })
   @ApiOperation({ summary: 'Limpar cache de parâmetros' })
-  @ApiResponse({ 
-    status: 200, 
-    description: 'Cache limpo com sucesso'
+  @ApiResponse({
+    status: 200,
+    description: 'Cache limpo com sucesso',
   })
   async limparCache(): Promise<{ mensagem: string }> {
     this.parametroService.limparCache();

@@ -105,8 +105,10 @@ export class NotificacaoService {
     }
 
     // Normalizar o status antes de atualizar
-    const statusNormalizado = normalizeEnumFields({ status: StatusNotificacaoProcessamento.LIDA }).status;
-    
+    const statusNormalizado = normalizeEnumFields({
+      status: StatusNotificacaoProcessamento.LIDA,
+    }).status;
+
     notificacao.status = statusNormalizado;
     notificacao.data_leitura = new Date();
 
@@ -124,8 +126,10 @@ export class NotificacaoService {
     }
 
     // Normalizar o status antes de atualizar
-    const statusNormalizado = normalizeEnumFields({ status: StatusNotificacaoProcessamento.ARQUIVADA }).status;
-    
+    const statusNormalizado = normalizeEnumFields({
+      status: StatusNotificacaoProcessamento.ARQUIVADA,
+    }).status;
+
     notificacao.status = statusNormalizado;
 
     return this.notificacaoRepository.save(notificacao);
@@ -320,12 +324,14 @@ export class NotificacaoService {
     link?: string;
   }) {
     // Extrair entidade relacionada dos dados, se fornecida
-    const entidadeRelacionadaId = dados.entidade_relacionada_id || 
-      (dados.dados && dados.dados.historico_id) || 
+    const entidadeRelacionadaId =
+      dados.entidade_relacionada_id ||
+      (dados.dados && dados.dados.historico_id) ||
       (dados.dados && dados.dados.solicitacao_id);
-    
-    const entidadeTipo = dados.entidade_tipo || 
-      (dados.dados && dados.dados.historico_id ? 'historico' : undefined) || 
+
+    const entidadeTipo =
+      dados.entidade_tipo ||
+      (dados.dados && dados.dados.historico_id ? 'historico' : undefined) ||
       (dados.dados && dados.dados.solicitacao_id ? 'solicitacao' : undefined);
 
     // Determinar o tipo de notificação
@@ -433,11 +439,11 @@ export class NotificacaoService {
       entidade_tipo?: string;
       link?: string;
       prioridade?: 'low' | 'medium' | 'high';
-    }
+    },
   ): Promise<NotificacaoSistema[]> {
     // Cria notificações no banco para todos os usuários
     const notificacoes = await Promise.all(
-      userIds.map(userId =>
+      userIds.map((userId) =>
         this.criar({
           destinatario_id: userId,
           tipo: dados.tipo as TipoNotificacao,
@@ -446,8 +452,8 @@ export class NotificacaoService {
           entidade_relacionada_id: dados.entidade_relacionada_id,
           entidade_tipo: dados.entidade_tipo,
           link: dados.link,
-        })
-      )
+        }),
+      ),
     );
 
     // Envia via SSE para usuários conectados

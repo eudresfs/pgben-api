@@ -129,16 +129,20 @@ export class RequisitoDocumento {
    * Verifica se é documento de identificação
    */
   isDocumentoIdentificacao(): boolean {
-    return this.tipo_documento === TipoDocumentoEnum.RG ||
-           this.tipo_documento === TipoDocumentoEnum.CPF;
+    return (
+      this.tipo_documento === TipoDocumentoEnum.RG ||
+      this.tipo_documento === TipoDocumentoEnum.CPF
+    );
   }
 
   /**
    * Verifica se é documento de comprovação
    */
   isDocumentoComprovacao(): boolean {
-    return this.tipo_documento === TipoDocumentoEnum.COMPROVANTE_RESIDENCIA ||
-           this.tipo_documento === TipoDocumentoEnum.COMPROVANTE_RENDA;
+    return (
+      this.tipo_documento === TipoDocumentoEnum.COMPROVANTE_RESIDENCIA ||
+      this.tipo_documento === TipoDocumentoEnum.COMPROVANTE_RENDA
+    );
   }
 
   /**
@@ -159,8 +163,10 @@ export class RequisitoDocumento {
    * Verifica se é documento de moradia
    */
   isDocumentoMoradia(): boolean {
-    return this.tipo_documento === TipoDocumentoEnum.CONTRATO_ALUGUEL ||
-           this.tipo_documento === TipoDocumentoEnum.COMPROVANTE_RESIDENCIA;
+    return (
+      this.tipo_documento === TipoDocumentoEnum.CONTRATO_ALUGUEL ||
+      this.tipo_documento === TipoDocumentoEnum.COMPROVANTE_RESIDENCIA
+    );
   }
 
   /**
@@ -173,17 +179,18 @@ export class RequisitoDocumento {
       [TipoDocumentoEnum.RG]: 'Registro Geral (RG)',
       [TipoDocumentoEnum.CNH]: 'Carteira Nacional de Habilitação (CNH)',
       [TipoDocumentoEnum.PASSAPORTE]: 'Passaporte',
-      
+
       // Certidões
       [TipoDocumentoEnum.CERTIDAO_NASCIMENTO]: 'Certidão de Nascimento',
       [TipoDocumentoEnum.CERTIDAO_CASAMENTO]: 'Certidão de Casamento',
       [TipoDocumentoEnum.CERTIDAO_OBITO]: 'Certidão de Óbito',
-      
+
       // Comprovantes básicos
       [TipoDocumentoEnum.COMPROVANTE_RESIDENCIA]: 'Comprovante de Residência',
       [TipoDocumentoEnum.COMPROVANTE_RENDA]: 'Comprovante de Renda',
-      [TipoDocumentoEnum.COMPROVANTE_ESCOLARIDADE]: 'Comprovante de Escolaridade',
-      
+      [TipoDocumentoEnum.COMPROVANTE_ESCOLARIDADE]:
+        'Comprovante de Escolaridade',
+
       // Documentos médicos e de saúde
       [TipoDocumentoEnum.DECLARACAO_MEDICA]: 'Declaração Médica',
       [TipoDocumentoEnum.CARTAO_VACINA]: 'Cartão de Vacinação',
@@ -191,7 +198,7 @@ export class RequisitoDocumento {
       [TipoDocumentoEnum.LAUDO_MEDICO]: 'Laudo Médico',
       [TipoDocumentoEnum.ATESTADO_MEDICO]: 'Atestado Médico',
       [TipoDocumentoEnum.EXAME_PRE_NATAL]: 'Exame Pré-Natal',
-      
+
       // Documentos habitacionais
       [TipoDocumentoEnum.CONTRATO_ALUGUEL]: 'Contrato de Aluguel',
       [TipoDocumentoEnum.ESCRITURA_IMOVEL]: 'Escritura do Imóvel',
@@ -199,62 +206,69 @@ export class RequisitoDocumento {
       [TipoDocumentoEnum.CONTA_AGUA]: 'Conta de Água',
       [TipoDocumentoEnum.CONTA_LUZ]: 'Conta de Luz',
       [TipoDocumentoEnum.CONTA_TELEFONE]: 'Conta de Telefone',
-      
+
       // Documentos trabalhistas e previdenciários
       [TipoDocumentoEnum.CARTEIRA_TRABALHO]: 'Carteira de Trabalho',
       [TipoDocumentoEnum.COMPROVANTE_DESEMPREGO]: 'Comprovante de Desemprego',
       [TipoDocumentoEnum.EXTRATO_FGTS]: 'Extrato do FGTS',
-      [TipoDocumentoEnum.COMPROVANTE_APOSENTADORIA]: 'Comprovante de Aposentadoria',
+      [TipoDocumentoEnum.COMPROVANTE_APOSENTADORIA]:
+        'Comprovante de Aposentadoria',
       [TipoDocumentoEnum.COMPROVANTE_PENSAO]: 'Comprovante de Pensão',
-      [TipoDocumentoEnum.COMPROVANTE_BENEFICIO_INSS]: 'Comprovante de Benefício INSS',
-      
+      [TipoDocumentoEnum.COMPROVANTE_BENEFICIO_INSS]:
+        'Comprovante de Benefício INSS',
+
       // Documentos bancários
       [TipoDocumentoEnum.EXTRATO_BANCARIO]: 'Extrato Bancário',
       [TipoDocumentoEnum.COMPROVANTE_PIX]: 'Comprovante PIX',
       [TipoDocumentoEnum.DADOS_BANCARIOS]: 'Dados Bancários',
-      
+
       // Documentos familiares e sociais
-      [TipoDocumentoEnum.DECLARACAO_COMPOSICAO_FAMILIAR]: 'Declaração de Composição Familiar',
-      [TipoDocumentoEnum.DECLARACAO_UNIAO_ESTAVEL]: 'Declaração de União Estável',
+      [TipoDocumentoEnum.DECLARACAO_COMPOSICAO_FAMILIAR]:
+        'Declaração de Composição Familiar',
+      [TipoDocumentoEnum.DECLARACAO_UNIAO_ESTAVEL]:
+        'Declaração de União Estável',
       [TipoDocumentoEnum.GUARDA_MENOR]: 'Termo de Guarda de Menor',
       [TipoDocumentoEnum.TUTELA]: 'Termo de Tutela',
-      
+
       // Documentos específicos para benefícios
       [TipoDocumentoEnum.BOLETIM_OCORRENCIA]: 'Boletim de Ocorrência',
       [TipoDocumentoEnum.MEDIDA_PROTETIVA]: 'Medida Protetiva',
       [TipoDocumentoEnum.TERMO_ACOLHIMENTO]: 'Termo de Acolhimento',
       [TipoDocumentoEnum.RELATORIO_SOCIAL]: 'Relatório Social',
       [TipoDocumentoEnum.PARECER_TECNICO]: 'Parecer Técnico',
-      
+
       // Documentos de programas sociais
       [TipoDocumentoEnum.CARTAO_CADUNICO]: 'Cartão CadÚnico',
       [TipoDocumentoEnum.FOLHA_RESUMO_CADUNICO]: 'Folha Resumo CadÚnico',
-      [TipoDocumentoEnum.COMPROVANTE_BOLSA_FAMILIA]: 'Comprovante Bolsa Família',
+      [TipoDocumentoEnum.COMPROVANTE_BOLSA_FAMILIA]:
+        'Comprovante Bolsa Família',
       [TipoDocumentoEnum.COMPROVANTE_BPC]: 'Comprovante BPC',
-      
+
       // Documentos educacionais
       [TipoDocumentoEnum.DECLARACAO_ESCOLAR]: 'Declaração Escolar',
       [TipoDocumentoEnum.HISTORICO_ESCOLAR]: 'Histórico Escolar',
       [TipoDocumentoEnum.MATRICULA_ESCOLAR]: 'Comprovante de Matrícula Escolar',
-      
+
       // Documentos específicos para mortalidade
       [TipoDocumentoEnum.DECLARACAO_OBITO]: 'Declaração de Óbito',
-      [TipoDocumentoEnum.AUTORIZACAO_SEPULTAMENTO]: 'Autorização de Sepultamento',
+      [TipoDocumentoEnum.AUTORIZACAO_SEPULTAMENTO]:
+        'Autorização de Sepultamento',
       [TipoDocumentoEnum.COMPROVANTE_PARENTESCO]: 'Comprovante de Parentesco',
-      
+
       // Documentos específicos para natalidade
       [TipoDocumentoEnum.CARTAO_PRE_NATAL]: 'Cartão Pré-Natal',
       [TipoDocumentoEnum.DECLARACAO_NASCIDO_VIVO]: 'Declaração de Nascido Vivo',
       [TipoDocumentoEnum.COMPROVANTE_GESTACAO]: 'Comprovante de Gestação',
-      
+
       // Documentos específicos para passagens
       [TipoDocumentoEnum.COMPROVANTE_VIAGEM]: 'Comprovante de Viagem',
       [TipoDocumentoEnum.AUTORIZACAO_VIAGEM]: 'Autorização de Viagem',
       [TipoDocumentoEnum.BILHETE_PASSAGEM]: 'Bilhete de Passagem',
-      
+
       // Documentos diversos
       [TipoDocumentoEnum.PROCURACAO]: 'Procuração',
-      [TipoDocumentoEnum.DECLARACAO_HIPOSSUFICIENCIA]: 'Declaração de Hipossuficiência',
+      [TipoDocumentoEnum.DECLARACAO_HIPOSSUFICIENCIA]:
+        'Declaração de Hipossuficiência',
       [TipoDocumentoEnum.TERMO_RESPONSABILIDADE]: 'Termo de Responsabilidade',
       [TipoDocumentoEnum.FOTO_3X4]: 'Foto 3x4',
       [TipoDocumentoEnum.OUTRO]: 'Outro Documento',
@@ -273,27 +287,33 @@ export class RequisitoDocumento {
    * Verifica se tem validação de formato
    */
   temValidacaoFormato(): boolean {
-    return this.temValidacoes() && 
-           !!this.validacoes.formato && 
-           this.validacoes.formato.length > 0;
+    return (
+      this.temValidacoes() &&
+      !!this.validacoes.formato &&
+      this.validacoes.formato.length > 0
+    );
   }
 
   /**
    * Verifica se tem validação de tamanho
    */
   temValidacaoTamanho(): boolean {
-    return this.temValidacoes() && 
-           this.validacoes.tamanho_maximo !== undefined &&
-           this.validacoes.tamanho_maximo !== null;
+    return (
+      this.temValidacoes() &&
+      this.validacoes.tamanho_maximo !== undefined &&
+      this.validacoes.tamanho_maximo !== null
+    );
   }
 
   /**
    * Verifica se tem validação de validade
    */
   temValidacaoValidade(): boolean {
-    return this.temValidacoes() && 
-           this.validacoes.validade_maxima !== undefined &&
-           this.validacoes.validade_maxima !== null;
+    return (
+      this.temValidacoes() &&
+      this.validacoes.validade_maxima !== undefined &&
+      this.validacoes.validade_maxima !== null
+    );
   }
 
   /**
@@ -326,7 +346,7 @@ export class RequisitoDocumento {
   getTamanhoMaximoFormatado(): string {
     const tamanho = this.getTamanhoMaximo();
     if (!tamanho) return 'Sem limite de tamanho';
-    
+
     if (tamanho < 1) {
       return `${(tamanho * 1024).toFixed(0)} KB`;
     } else {
@@ -340,7 +360,7 @@ export class RequisitoDocumento {
   getValidadeMaximaFormatada(): string {
     const validade = this.getValidadeMaxima();
     if (!validade) return 'Sem limite de validade';
-    
+
     if (validade < 30) {
       return `${validade} dia(s)`;
     } else if (validade < 365) {
@@ -366,7 +386,7 @@ export class RequisitoDocumento {
   tamanhoEhValido(tamanhoBytes: number): boolean {
     const tamanhoMaximo = this.getTamanhoMaximo();
     if (!tamanhoMaximo) return true;
-    
+
     const tamanhoMaximoBytes = tamanhoMaximo * 1024 * 1024; // Converte MB para bytes
     return tamanhoBytes <= tamanhoMaximoBytes;
   }
@@ -377,11 +397,11 @@ export class RequisitoDocumento {
   dataEmissaoEhValida(dataEmissao: Date): boolean {
     const validadeMaxima = this.getValidadeMaxima();
     if (!validadeMaxima) return true;
-    
+
     const agora = new Date();
     const diffTime = Math.abs(agora.getTime() - dataEmissao.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
+
     return diffDays <= validadeMaxima;
   }
 
@@ -414,21 +434,30 @@ export class RequisitoDocumento {
   isConsistente(): boolean {
     // Verifica se tem tipo de benefício
     if (!this.tipo_beneficio_id) return false;
-    
+
     // Verifica se tem tipo de documento válido
-    if (!Object.values(TipoDocumentoEnum).includes(this.tipo_documento)) return false;
-    
+    if (!Object.values(TipoDocumentoEnum).includes(this.tipo_documento))
+      return false;
+
     // Verifica validações se existirem
     if (this.temValidacoes()) {
-      if (this.temValidacaoTamanho() && this.validacoes.tamanho_maximo !== undefined && this.validacoes.tamanho_maximo <= 0) {
+      if (
+        this.temValidacaoTamanho() &&
+        this.validacoes.tamanho_maximo !== undefined &&
+        this.validacoes.tamanho_maximo <= 0
+      ) {
         return false;
       }
-      
-      if (this.temValidacaoValidade() && this.validacoes.validade_maxima !== undefined && this.validacoes.validade_maxima <= 0) {
+
+      if (
+        this.temValidacaoValidade() &&
+        this.validacoes.validade_maxima !== undefined &&
+        this.validacoes.validade_maxima <= 0
+      ) {
         return false;
       }
     }
-    
+
     return true;
   }
 
@@ -438,10 +467,10 @@ export class RequisitoDocumento {
   podeSerRemovido(): boolean {
     // Não pode remover se já foi removido
     if (this.foiRemovido()) return false;
-    
+
     // Pode implementar lógica adicional aqui
     // Por exemplo, verificar se tem documentos associados
-    
+
     return true;
   }
 
@@ -454,8 +483,9 @@ export class RequisitoDocumento {
       tipo_documento: this.tipo_documento,
       obrigatorio: this.obrigatorio,
       descricao: this.descricao,
-      validacoes: this.validacoes ? 
-        JSON.parse(JSON.stringify(this.validacoes)) : null,
+      validacoes: this.validacoes
+        ? JSON.parse(JSON.stringify(this.validacoes))
+        : null,
     };
   }
 
@@ -465,17 +495,23 @@ export class RequisitoDocumento {
   isCritico(): boolean {
     // Documentos de identificação são sempre críticos
     if (this.isDocumentoIdentificacao()) return true;
-    
+
     // Documentos obrigatórios são críticos
     if (this.isObrigatorio()) return true;
-    
+
     return false;
   }
 
   /**
    * Obtém a categoria do documento
    */
-  getCategoria(): 'IDENTIFICACAO' | 'COMPROVACAO' | 'CERTIDAO' | 'MEDICO' | 'MORADIA' | 'OUTRO' {
+  getCategoria():
+    | 'IDENTIFICACAO'
+    | 'COMPROVACAO'
+    | 'CERTIDAO'
+    | 'MEDICO'
+    | 'MORADIA'
+    | 'OUTRO' {
     if (this.isDocumentoIdentificacao()) return 'IDENTIFICACAO';
     if (this.isDocumentoComprovacao()) return 'COMPROVACAO';
     if (this.isCertidao()) return 'CERTIDAO';
@@ -525,23 +561,23 @@ export class RequisitoDocumento {
    */
   getSugestoesMelhoria(): string[] {
     const sugestoes: string[] = [];
-    
+
     if (!this.descricao || this.descricao.trim().length === 0) {
       sugestoes.push('Adicionar descrição detalhada do documento');
     }
-    
+
     if (!this.temValidacoes()) {
       sugestoes.push('Definir validações para o documento');
     }
-    
+
     if (this.isDocumentoIdentificacao() && !this.isObrigatorio()) {
       sugestoes.push('Documentos de identificação devem ser obrigatórios');
     }
-    
+
     if (!this.isConsistente()) {
       sugestoes.push('Verificar e corrigir inconsistências nos dados');
     }
-    
+
     return sugestoes;
   }
 

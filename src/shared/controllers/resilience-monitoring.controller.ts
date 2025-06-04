@@ -1,5 +1,17 @@
-import { Controller, Get, Post, HttpCode, HttpStatus, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  Controller,
+  Get,
+  Post,
+  HttpCode,
+  HttpStatus,
+  UseGuards,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { ResilientAuditoriaService } from '../services/resilient-auditoria.service';
 import { HybridCacheService } from '../services/hybrid-cache.service';
 import { HealthCheckService } from '../services/health-check.service';
@@ -47,14 +59,14 @@ interface ResilienceStatus {
 
 /**
  * Controller de Monitoramento de Resiliência
- * 
+ *
  * Fornece endpoints para monitorar o status e métricas dos serviços resilientes:
  * - Status geral do sistema
  * - Métricas detalhadas de cache
  * - Métricas de auditoria
  * - Health checks de serviços externos
  * - Alertas e notificações
- * 
+ *
  * Acesso restrito a administradores do sistema
  */
 @ApiTags('Monitoramento de Resiliência')
@@ -65,7 +77,7 @@ export class ResilienceMonitoringController {
   constructor(
     private readonly resilientAuditoriaService: ResilientAuditoriaService,
     private readonly hybridCacheService: HybridCacheService,
-    private readonly healthCheckService: HealthCheckService
+    private readonly healthCheckService: HealthCheckService,
   ) {}
 
   /**
@@ -73,12 +85,13 @@ export class ResilienceMonitoringController {
    */
   @Get('status')
   @Roles(ROLES.ADMIN, ROLES.GESTOR)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Status geral de resiliência',
-    description: 'Retorna o status consolidado de todos os serviços resilientes do sistema'
+    description:
+      'Retorna o status consolidado de todos os serviços resilientes do sistema',
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Status de resiliência obtido com sucesso',
     schema: {
       type: 'object',
@@ -86,43 +99,57 @@ export class ResilienceMonitoringController {
         timestamp: { type: 'string', format: 'date-time' },
         overall: { type: 'string', enum: ['healthy', 'degraded', 'critical'] },
         services: { type: 'object' },
-        alerts: { type: 'array' }
-      }
-    }
+        alerts: { type: 'array' },
+      },
+    },
   })
   async getResilienceStatus(): Promise<ResilienceStatus> {
     const timestamp = new Date().toISOString();
-    
+
     // Obter status dos serviços
     // Verificar status dos serviços
     const redisAvailable = await this.healthCheckService.isRedisAvailable();
     const servicesStatus = {
       redis: {
-        status: redisAvailable ? 'up' as const : 'down' as const,
+        status: redisAvailable ? ('up' as const) : ('down' as const),
         lastCheck: new Date().toISOString(),
-        latency: redisAvailable ? 5 : undefined
+        latency: redisAvailable ? 5 : undefined,
       },
       database: {
         status: 'up' as const, // Assumindo que o banco está sempre disponível se a aplicação está rodando
         lastCheck: new Date().toISOString(),
-        latency: 10
-      }
+        latency: 10,
+      },
     };
     const cacheMetrics = this.hybridCacheService.getMetrics();
     const auditoriaMetrics = this.resilientAuditoriaService.getMetrics();
-    
+
     // Avaliar status do cache
-    const cacheStatus = this.evaluateCacheStatus(cacheMetrics, servicesStatus.redis?.status === 'up');
-    
+    const cacheStatus = this.evaluateCacheStatus(
+      cacheMetrics,
+      servicesStatus.redis?.status === 'up',
+    );
+
     // Avaliar status da auditoria
-    const auditoriaStatus = this.evaluateAuditoriaStatus(auditoriaMetrics, servicesStatus.redis?.status === 'up');
-    
+    const auditoriaStatus = this.evaluateAuditoriaStatus(
+      auditoriaMetrics,
+      servicesStatus.redis?.status === 'up',
+    );
+
     // Gerar alertas
-    const alerts = this.generateAlerts(cacheMetrics, auditoriaMetrics, servicesStatus);
-    
+    const alerts = this.generateAlerts(
+      cacheMetrics,
+      auditoriaMetrics,
+      servicesStatus,
+    );
+
     // Determinar status geral
-    const overall = this.determineOverallStatus(cacheStatus.status, auditoriaStatus.status, servicesStatus);
-    
+    const overall = this.determineOverallStatus(
+      cacheStatus.status,
+      auditoriaStatus.status,
+      servicesStatus,
+    );
+
     return {
       timestamp,
       overall,
@@ -132,15 +159,15 @@ export class ResilienceMonitoringController {
         redis: {
           status: servicesStatus.redis?.status || 'down',
           latency: servicesStatus.redis?.latency,
-          lastCheck: servicesStatus.redis?.lastCheck || timestamp
+          lastCheck: servicesStatus.redis?.lastCheck || timestamp,
         },
         database: {
           status: servicesStatus.database?.status || 'down',
           latency: servicesStatus.database?.latency,
-          lastCheck: servicesStatus.database?.lastCheck || timestamp
-        }
+          lastCheck: servicesStatus.database?.lastCheck || timestamp,
+        },
       },
-      alerts
+      alerts,
     };
   }
 
@@ -149,13 +176,14 @@ export class ResilienceMonitoringController {
    */
   @Get('cache/metrics')
   @Roles(ROLES.ADMIN, ROLES.GESTOR)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Métricas do cache híbrido',
-    description: 'Retorna métricas detalhadas do sistema de cache em múltiplas camadas'
+    description:
+      'Retorna métricas detalhadas do sistema de cache em múltiplas camadas',
   })
-  @ApiResponse({ 
-    status: 200, 
-    description: 'Métricas do cache obtidas com sucesso'
+  @ApiResponse({
+    status: 200,
+    description: 'Métricas do cache obtidas com sucesso',
   })
   async getCacheMetrics() {
     const metrics = this.hybridCacheService.getMetrics();
@@ -163,17 +191,17 @@ export class ResilienceMonitoringController {
     const redisAvailable = await this.healthCheckService.isRedisAvailable();
     const servicesStatus = {
       redis: {
-        status: redisAvailable ? 'up' as const : 'down' as const,
+        status: redisAvailable ? ('up' as const) : ('down' as const),
         lastCheck: new Date().toISOString(),
-        latency: redisAvailable ? 5 : undefined
+        latency: redisAvailable ? 5 : undefined,
       },
       database: {
         status: 'up' as const, // Assumindo que o banco está sempre disponível se a aplicação está rodando
         lastCheck: new Date().toISOString(),
-        latency: 10
-      }
+        latency: 10,
+      },
     };
-    
+
     return {
       timestamp: new Date().toISOString(),
       l1Cache: {
@@ -182,26 +210,28 @@ export class ResilienceMonitoringController {
         utilizationRate: (metrics.l1Size / metrics.l1MaxSize) * 100,
         hitRate: metrics.l1HitRate,
         hits: metrics.l1Hits,
-        misses: metrics.l1Misses
+        misses: metrics.l1Misses,
       },
       l2Cache: {
         available: servicesStatus.redis?.status === 'up',
         hitRate: metrics.l2HitRate,
         hits: metrics.l2Hits,
         misses: metrics.l2Misses,
-        failovers: metrics.failovers
+        failovers: metrics.failovers,
       },
       overall: {
         hitRate: metrics.overallHitRate,
         evictions: metrics.evictions,
         warmingOperations: metrics.warmingOperations,
         criticalKeysCount: metrics.criticalKeysCount,
-        pendingOperations: metrics.pendingOperations
+        pendingOperations: metrics.pendingOperations,
       },
       performance: {
         l1ResponseTime: '< 1ms',
-        l2ResponseTime: servicesStatus.redis?.latency ? `${servicesStatus.redis.latency}ms` : 'N/A'
-      }
+        l2ResponseTime: servicesStatus.redis?.latency
+          ? `${servicesStatus.redis.latency}ms`
+          : 'N/A',
+      },
     };
   }
 
@@ -210,13 +240,14 @@ export class ResilienceMonitoringController {
    */
   @Get('auditoria/metrics')
   @Roles(ROLES.ADMIN, ROLES.GESTOR)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Métricas da auditoria resiliente',
-    description: 'Retorna métricas detalhadas do sistema de auditoria com fallbacks'
+    description:
+      'Retorna métricas detalhadas do sistema de auditoria com fallbacks',
   })
-  @ApiResponse({ 
-    status: 200, 
-    description: 'Métricas da auditoria obtidas com sucesso'
+  @ApiResponse({
+    status: 200,
+    description: 'Métricas da auditoria obtidas com sucesso',
   })
   async getAuditoriaMetrics() {
     const metrics = this.resilientAuditoriaService.getMetrics();
@@ -224,19 +255,19 @@ export class ResilienceMonitoringController {
     const redisAvailable = await this.healthCheckService.isRedisAvailable();
     const servicesStatus = {
       redis: {
-        status: redisAvailable ? 'up' as const : 'down' as const,
+        status: redisAvailable ? ('up' as const) : ('down' as const),
         lastCheck: new Date().toISOString(),
-        latency: redisAvailable ? 5 : undefined
+        latency: redisAvailable ? 5 : undefined,
       },
       database: {
         status: 'up' as const, // Assumindo que o banco está sempre disponível se a aplicação está rodando
         lastCheck: new Date().toISOString(),
-        latency: 10
-      }
+        latency: 10,
+      },
     };
-    
+
     const totalOperations = metrics.queueSuccesses + metrics.queueFailures;
-    
+
     return {
       timestamp: new Date().toISOString(),
       queue: {
@@ -244,22 +275,25 @@ export class ResilienceMonitoringController {
         successRate: metrics.queueSuccessRate,
         successes: metrics.queueSuccesses,
         failures: metrics.queueFailures,
-        totalOperations
+        totalOperations,
       },
       fallbacks: {
         syncFallbackUsage: metrics.fallbackUsageRate,
         syncFallbacks: metrics.syncFallbacks,
         fileBackupUsage: metrics.backupUsageRate,
-        fileBackups: metrics.fileBackups
+        fileBackups: metrics.fileBackups,
       },
       recovery: {
         recoveredLogs: metrics.recoveredLogs,
-        lastRecoveryRun: 'Informação não disponível' // Implementar se necessário
+        lastRecoveryRun: 'Informação não disponível', // Implementar se necessário
       },
       reliability: {
         dataLossRisk: this.calculateDataLossRisk(metrics),
-        systemResilience: this.calculateSystemResilience(metrics, servicesStatus.redis?.status === 'up')
-      }
+        systemResilience: this.calculateSystemResilience(
+          metrics,
+          servicesStatus.redis?.status === 'up',
+        ),
+      },
     };
   }
 
@@ -269,20 +303,21 @@ export class ResilienceMonitoringController {
   @Post('cache/warm')
   @HttpCode(HttpStatus.OK)
   @Roles(ROLES.ADMIN)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Força cache warming',
-    description: 'Executa manualmente o processo de aquecimento do cache para chaves críticas'
+    description:
+      'Executa manualmente o processo de aquecimento do cache para chaves críticas',
   })
-  @ApiResponse({ 
-    status: 200, 
-    description: 'Cache warming executado com sucesso'
+  @ApiResponse({
+    status: 200,
+    description: 'Cache warming executado com sucesso',
   })
   async forceCacheWarming() {
     await this.hybridCacheService.performCacheWarming();
-    
+
     return {
       message: 'Cache warming executado com sucesso',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
   }
 
@@ -292,20 +327,21 @@ export class ResilienceMonitoringController {
   @Post('auditoria/recover')
   @HttpCode(HttpStatus.OK)
   @Roles(ROLES.ADMIN)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Força recuperação de logs',
-    description: 'Executa manualmente o processo de recuperação de logs de auditoria em backup'
+    description:
+      'Executa manualmente o processo de recuperação de logs de auditoria em backup',
   })
-  @ApiResponse({ 
-    status: 200, 
-    description: 'Recuperação de logs executada com sucesso'
+  @ApiResponse({
+    status: 200,
+    description: 'Recuperação de logs executada com sucesso',
   })
   async forceAuditoriaRecovery() {
     await this.resilientAuditoriaService.processBackupAuditLogs();
-    
+
     return {
       message: 'Recuperação de logs de auditoria executada com sucesso',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
   }
 
@@ -315,21 +351,21 @@ export class ResilienceMonitoringController {
   @Post('metrics/reset')
   @HttpCode(HttpStatus.OK)
   @Roles(ROLES.ADMIN)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Reseta métricas',
-    description: 'Reseta todas as métricas de resiliência (use com cuidado)'
+    description: 'Reseta todas as métricas de resiliência (use com cuidado)',
   })
-  @ApiResponse({ 
-    status: 200, 
-    description: 'Métricas resetadas com sucesso'
+  @ApiResponse({
+    status: 200,
+    description: 'Métricas resetadas com sucesso',
   })
   async resetMetrics() {
     this.hybridCacheService.resetMetrics();
     this.resilientAuditoriaService.resetMetrics();
-    
+
     return {
       message: 'Métricas de resiliência resetadas com sucesso',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
   }
 
@@ -337,7 +373,7 @@ export class ResilienceMonitoringController {
 
   private evaluateCacheStatus(metrics: any, redisAvailable: boolean) {
     let status: 'healthy' | 'degraded' | 'critical';
-    
+
     if (metrics.overallHitRate >= 80 && redisAvailable) {
       status = 'healthy';
     } else if (metrics.overallHitRate >= 60 || !redisAvailable) {
@@ -345,121 +381,131 @@ export class ResilienceMonitoringController {
     } else {
       status = 'critical';
     }
-    
+
     return {
       status,
       l1Available: true, // L1 sempre disponível
       l2Available: redisAvailable,
-      metrics
+      metrics,
     };
   }
 
   private evaluateAuditoriaStatus(metrics: any, redisAvailable: boolean) {
     let status: 'healthy' | 'degraded' | 'critical';
-    
+
     if (metrics.queueSuccessRate >= 95 && redisAvailable) {
       status = 'healthy';
-    } else if (metrics.queueSuccessRate >= 80 || metrics.fallbackUsageRate < 20) {
+    } else if (
+      metrics.queueSuccessRate >= 80 ||
+      metrics.fallbackUsageRate < 20
+    ) {
       status = 'degraded';
     } else {
       status = 'critical';
     }
-    
+
     return {
       status,
       queueAvailable: redisAvailable,
       syncFallbackActive: metrics.syncFallbacks > 0,
       fileBackupActive: metrics.fileBackups > 0,
-      metrics
+      metrics,
     };
   }
 
   private determineOverallStatus(
     cacheStatus: string,
     auditoriaStatus: string,
-    servicesStatus: any
+    servicesStatus: any,
   ): 'healthy' | 'degraded' | 'critical' {
     const statuses = [cacheStatus, auditoriaStatus];
-    
+
     // Se algum serviço crítico está down
     if (servicesStatus.database?.status === 'down') {
       return 'critical';
     }
-    
+
     // Se algum componente está crítico
     if (statuses.includes('critical')) {
       return 'critical';
     }
-    
+
     // Se algum componente está degradado
-    if (statuses.includes('degraded') || servicesStatus.redis?.status === 'down') {
+    if (
+      statuses.includes('degraded') ||
+      servicesStatus.redis?.status === 'down'
+    ) {
       return 'degraded';
     }
-    
+
     return 'healthy';
   }
 
-  private generateAlerts(cacheMetrics: any, auditoriaMetrics: any, servicesStatus: any) {
+  private generateAlerts(
+    cacheMetrics: any,
+    auditoriaMetrics: any,
+    servicesStatus: any,
+  ) {
     const alerts: any[] = [];
     const timestamp = new Date().toISOString();
-    
+
     // Alertas de cache
     if (cacheMetrics.overallHitRate < 60) {
       alerts.push({
         severity: 'warning',
         service: 'cache',
         message: `Taxa de hit do cache baixa: ${cacheMetrics.overallHitRate.toFixed(1)}%`,
-        timestamp
+        timestamp,
       });
     }
-    
+
     if (cacheMetrics.failovers > 10) {
       alerts.push({
         severity: 'critical',
         service: 'cache',
         message: `Muitos failovers do cache L2: ${cacheMetrics.failovers}`,
-        timestamp
+        timestamp,
       });
     }
-    
+
     // Alertas de auditoria
     if (auditoriaMetrics.queueSuccessRate < 90) {
       alerts.push({
         severity: 'warning',
         service: 'auditoria',
         message: `Taxa de sucesso da fila de auditoria baixa: ${auditoriaMetrics.queueSuccessRate.toFixed(1)}%`,
-        timestamp
+        timestamp,
       });
     }
-    
+
     if (auditoriaMetrics.fileBackups > 0) {
       alerts.push({
         severity: 'critical',
         service: 'auditoria',
         message: `Logs de auditoria sendo salvos em backup: ${auditoriaMetrics.fileBackups}`,
-        timestamp
+        timestamp,
       });
     }
-    
+
     // Alertas de serviços externos
     if (servicesStatus.redis?.status === 'down') {
       alerts.push({
         severity: 'critical',
         service: 'redis',
         message: 'Redis indisponível - sistema operando em modo degradado',
-        timestamp
+        timestamp,
       });
     }
-    
+
     if (servicesStatus.database?.status === 'down') {
       alerts.push({
         severity: 'critical',
         service: 'database',
         message: 'Banco de dados indisponível',
-        timestamp
+        timestamp,
       });
     }
-    
+
     return alerts;
   }
 
@@ -467,33 +513,36 @@ export class ResilienceMonitoringController {
     if (metrics.fileBackups > 0) {
       return 'high';
     }
-    
+
     if (metrics.queueSuccessRate < 95) {
       return 'medium';
     }
-    
+
     return 'low';
   }
 
-  private calculateSystemResilience(metrics: any, redisAvailable: boolean): number {
+  private calculateSystemResilience(
+    metrics: any,
+    redisAvailable: boolean,
+  ): number {
     let score = 100;
-    
+
     // Penalizar por falhas na fila
     if (metrics.queueSuccessRate < 100) {
       score -= (100 - metrics.queueSuccessRate) * 0.5;
     }
-    
+
     // Penalizar por uso de fallbacks
     score -= metrics.fallbackUsageRate * 0.3;
-    
+
     // Penalizar por backups em arquivo
     score -= metrics.backupUsageRate * 0.8;
-    
+
     // Penalizar por Redis indisponível
     if (!redisAvailable) {
       score -= 20;
     }
-    
+
     return Math.max(0, Math.min(100, score));
   }
 }

@@ -1,5 +1,21 @@
-import { Controller, Get, Post, Body, Param, Query, UseGuards, HttpStatus } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+  HttpStatus,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiQuery,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 
 import { MetricasAnomaliasService, NivelConfiancaAnomalia } from '../services';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
@@ -15,9 +31,7 @@ import { Roles } from '../../../auth/decorators/role.decorator';
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
 export class MetricasAnomaliasController {
-  constructor(
-    private readonly anomaliasService: MetricasAnomaliasService,
-  ) {}
+  constructor(private readonly anomaliasService: MetricasAnomaliasService) {}
 
   /**
    * Detecta anomalias para um snapshot específico
@@ -26,20 +40,29 @@ export class MetricasAnomaliasController {
   @Roles(ROLES.ADMIN, ROLES.GESTOR, ROLES.COORDENADOR)
   @ApiOperation({ summary: 'Detectar anomalias para um snapshot específico' })
   @ApiParam({ name: 'id', description: 'ID do snapshot' })
-  @ApiQuery({ 
-    name: 'nivel_confianca', 
-    description: 'Nível de confiança para detecção', 
+  @ApiQuery({
+    name: 'nivel_confianca',
+    description: 'Nível de confiança para detecção',
     enum: NivelConfiancaAnomalia,
-    required: false 
+    required: false,
   })
-  @ApiQuery({ 
-    name: 'janela_temporal', 
-    description: 'Número de dias a considerar para o histórico', 
-    required: false 
+  @ApiQuery({
+    name: 'janela_temporal',
+    description: 'Número de dias a considerar para o histórico',
+    required: false,
   })
-  @ApiResponse({ status: HttpStatus.OK, description: 'Resultado da detecção de anomalias' })
-  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Snapshot não encontrado' })
-  @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Não autorizado' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Resultado da detecção de anomalias',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Snapshot não encontrado',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Não autorizado',
+  })
   @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'Acesso negado' })
   async detectarAnomalias(
     @Param('id') id: string,
@@ -58,20 +81,28 @@ export class MetricasAnomaliasController {
    */
   @Post('anomalias/batch')
   @Roles(ROLES.ADMIN, ROLES.COORDENADOR)
-  @ApiOperation({ summary: 'Detectar anomalias em lote para todas as métricas' })
-  @ApiQuery({ 
-    name: 'nivel_confianca', 
-    description: 'Nível de confiança para detecção', 
+  @ApiOperation({
+    summary: 'Detectar anomalias em lote para todas as métricas',
+  })
+  @ApiQuery({
+    name: 'nivel_confianca',
+    description: 'Nível de confiança para detecção',
     enum: NivelConfiancaAnomalia,
-    required: false 
+    required: false,
   })
-  @ApiQuery({ 
-    name: 'janela_temporal', 
-    description: 'Número de dias a considerar para o histórico', 
-    required: false 
+  @ApiQuery({
+    name: 'janela_temporal',
+    description: 'Número de dias a considerar para o histórico',
+    required: false,
   })
-  @ApiResponse({ status: HttpStatus.OK, description: 'Lista de anomalias detectadas' })
-  @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Não autorizado' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Lista de anomalias detectadas',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Não autorizado',
+  })
   @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'Acesso negado' })
   async detectarAnomaliasBatch(
     @Query('nivel_confianca') nivelConfianca?: NivelConfiancaAnomalia,
@@ -90,13 +121,23 @@ export class MetricasAnomaliasController {
   @Roles(ROLES.ADMIN, ROLES.GESTOR, ROLES.COORDENADOR)
   @ApiOperation({ summary: 'Analisar tendências para uma métrica' })
   @ApiParam({ name: 'id', description: 'ID da métrica' })
-  @ApiResponse({ status: HttpStatus.OK, description: 'Resultado da análise de tendências' })
-  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Métrica não encontrada' })
-  @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Não autorizado' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Resultado da análise de tendências',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Métrica não encontrada',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Não autorizado',
+  })
   @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'Acesso negado' })
   async analisarTendencias(
     @Param('id') id: string,
-    @Body() body: {
+    @Body()
+    body: {
       data_inicial: string;
       data_final: string;
       dimensoes?: Record<string, any>;

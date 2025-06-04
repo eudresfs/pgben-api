@@ -20,7 +20,7 @@ import { AuditModule } from './audit/audit.module';
 import { RecursoModule } from './modules/recurso/recurso.module';
 import { LogsModule } from './modules/logs/logs.module';
 import { APP_GUARD } from '@nestjs/core';
-import { AllExceptionsFilter } from './shared/filters/all-exceptions.filter';
+import { CatalogAwareExceptionFilter } from './shared/exceptions/error-catalog';
 import { UnifiedLoggerModule } from './shared/logging/unified-logger.module';
 import { ResilienceModule } from './shared/modules/resilience.module';
 import { EmailModule } from './shared/modules/email.module';
@@ -61,15 +61,19 @@ import { EmailModule } from './shared/modules/email.module';
         extra: {
           max: parseInt(configService.get('DB_POOL_MAX', '20')),
           min: parseInt(configService.get('DB_POOL_MIN', '5')),
-          idleTimeoutMillis: parseInt(configService.get('DB_POOL_IDLE', '30000')),
-          connectionTimeoutMillis: parseInt(configService.get('DB_POOL_CONN_TIMEOUT', '5000')),
+          idleTimeoutMillis: parseInt(
+            configService.get('DB_POOL_IDLE', '30000'),
+          ),
+          connectionTimeoutMillis: parseInt(
+            configService.get('DB_POOL_CONN_TIMEOUT', '5000'),
+          ),
           allowExitOnIdle: false,
         },
       }),
     }),
     // Módulo de monitoramento
     MonitoringModule,
-    
+
     // Módulos compartilhados
     EmailModule, // Módulo de email
     UnifiedLoggerModule,
@@ -110,7 +114,7 @@ import { EmailModule } from './shared/modules/email.module';
   controllers: [AppController],
   providers: [
     AppService,
-    AllExceptionsFilter,
+    CatalogAwareExceptionFilter,
     // Aplicar rate limiting globalmente
     {
       provide: APP_GUARD,
@@ -122,4 +126,4 @@ export class AppModule {
   constructor() {
     console.log('✅ AppModule inicializado - com autenticação');
   }
-}//
+} //

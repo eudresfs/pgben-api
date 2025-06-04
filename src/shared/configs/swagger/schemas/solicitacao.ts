@@ -9,23 +9,24 @@ export class CreateSolicitacaoDto {
   @ApiProperty({
     description: 'ID do tipo de benefício solicitado',
     example: '507f1f77bcf86cd799439011',
-    type: 'string'
+    type: 'string',
   })
   tipoBeneficioId: string;
 
   @ApiProperty({
     description: 'ID do cidadão solicitante',
     example: '507f1f77bcf86cd799439012',
-    type: 'string'
+    type: 'string',
   })
   cidadaoId: string;
 
   @ApiProperty({
     description: 'Justificativa detalhada para a solicitação do benefício',
-    example: 'Família em situação de vulnerabilidade social após nascimento de gêmeos, necessitando de auxílio para despesas médicas e alimentação.',
+    example:
+      'Família em situação de vulnerabilidade social após nascimento de gêmeos, necessitando de auxílio para despesas médicas e alimentação.',
     type: 'string',
     minLength: 20,
-    maxLength: 1000
+    maxLength: 1000,
   })
   justificativa: string;
 
@@ -33,7 +34,7 @@ export class CreateSolicitacaoDto {
     description: 'Observações adicionais do solicitante',
     example: 'Pai desempregado há 3 meses, mãe em licença maternidade.',
     type: 'string',
-    maxLength: 500
+    maxLength: 500,
   })
   observacoes?: string;
 
@@ -42,19 +43,20 @@ export class CreateSolicitacaoDto {
     example: ['doc1_id', 'doc2_id', 'doc3_id'],
     type: 'array',
     items: {
-      type: 'string'
-    }
+      type: 'string',
+    },
   })
   documentosAnexados?: string[];
 
   @ApiPropertyOptional({
-    description: 'Dados específicos relacionados ao tipo de benefício solicitado',
+    description:
+      'Dados específicos relacionados ao tipo de benefício solicitado',
     example: {
       quantidadePessoas: 3,
-      valorAluguel: 800.00,
+      valorAluguel: 800.0,
       tempoMoradia: '2 anos',
-      situacaoHabitacional: 'Aluguel'
-    }
+      situacaoHabitacional: 'Aluguel',
+    },
   })
   dadosEspecificos?: object;
 
@@ -62,7 +64,7 @@ export class CreateSolicitacaoDto {
     description: 'Indica se é uma solicitação urgente',
     example: false,
     type: 'boolean',
-    default: false
+    default: false,
   })
   urgente?: boolean;
 }
@@ -74,14 +76,14 @@ export class SolicitacaoResponseDto extends CreateSolicitacaoDto {
   @ApiProperty({
     description: 'Identificador único da solicitação',
     example: '507f1f77bcf86cd799439013',
-    type: 'string'
+    type: 'string',
   })
   id: string;
 
   @ApiProperty({
     description: 'Número sequencial da solicitação para identificação',
     example: '2025/001234',
-    type: 'string'
+    type: 'string',
   })
   numeroProtocolo: string;
 
@@ -90,7 +92,7 @@ export class SolicitacaoResponseDto extends CreateSolicitacaoDto {
     example: 'EM_ANALISE',
     enum: [
       'RASCUNHO',
-      'SUBMETIDA', 
+      'SUBMETIDA',
       'EM_ANALISE',
       'PENDENTE_DOCUMENTACAO',
       'APROVADA',
@@ -98,9 +100,9 @@ export class SolicitacaoResponseDto extends CreateSolicitacaoDto {
       'CANCELADA',
       'PAGAMENTO_AUTORIZADO',
       'PAGA',
-      'FINALIZADA'
+      'FINALIZADA',
     ],
-    type: 'string'
+    type: 'string',
   })
   status: string;
 
@@ -108,19 +110,19 @@ export class SolicitacaoResponseDto extends CreateSolicitacaoDto {
     description: 'Prioridade da solicitação baseada em critérios automáticos',
     example: 'MEDIA',
     enum: ['BAIXA', 'MEDIA', 'ALTA', 'URGENTE'],
-    type: 'string'
+    type: 'string',
   })
   prioridade: string;
 
   @ApiProperty({
     description: 'Dados completos do cidadão solicitante',
-    type: () => CidadaoResponseDto
+    type: () => CidadaoResponseDto,
   })
   cidadao: CidadaoResponseDto;
 
   @ApiProperty({
     description: 'Dados completos do tipo de benefício solicitado',
-    type: () => TipoBeneficioResponseDto
+    type: () => TipoBeneficioResponseDto,
   })
   tipoBeneficio: TipoBeneficioResponseDto;
 
@@ -128,7 +130,7 @@ export class SolicitacaoResponseDto extends CreateSolicitacaoDto {
     description: 'Data e hora de criação da solicitação',
     example: '2025-01-18T10:30:00.000Z',
     type: 'string',
-    format: 'date-time'
+    format: 'date-time',
   })
   createdAt: string;
 
@@ -136,7 +138,7 @@ export class SolicitacaoResponseDto extends CreateSolicitacaoDto {
     description: 'Data e hora da última atualização',
     example: '2025-01-18T14:45:00.000Z',
     type: 'string',
-    format: 'date-time'
+    format: 'date-time',
   })
   updatedAt: string;
 
@@ -144,21 +146,21 @@ export class SolicitacaoResponseDto extends CreateSolicitacaoDto {
     description: 'Data limite para análise da solicitação',
     example: '2025-02-17T23:59:59.000Z',
     type: 'string',
-    format: 'date-time'
+    format: 'date-time',
   })
   prazoAnalise?: string;
 
   @ApiPropertyOptional({
     description: 'ID do usuário responsável pela análise',
     example: '507f1f77bcf86cd799439014',
-    type: 'string'
+    type: 'string',
   })
   analistaId?: string;
 
   @ApiPropertyOptional({
     description: 'Nome do analista responsável',
     example: 'Maria Silva Santos',
-    type: 'string'
+    type: 'string',
   })
   nomeAnalista?: string;
 
@@ -166,7 +168,7 @@ export class SolicitacaoResponseDto extends CreateSolicitacaoDto {
     description: 'Data de aprovação da solicitação',
     example: '2025-01-25T16:30:00.000Z',
     type: 'string',
-    format: 'date-time'
+    format: 'date-time',
   })
   dataAprovacao?: string;
 
@@ -174,7 +176,7 @@ export class SolicitacaoResponseDto extends CreateSolicitacaoDto {
     description: 'Data de rejeição da solicitação',
     example: '2025-01-25T16:30:00.000Z',
     type: 'string',
-    format: 'date-time'
+    format: 'date-time',
   })
   dataRejeicao?: string;
 
@@ -182,7 +184,7 @@ export class SolicitacaoResponseDto extends CreateSolicitacaoDto {
     description: 'Motivo da rejeição quando aplicável',
     example: 'Documentação incompleta: falta comprovante de renda atualizado',
     type: 'string',
-    maxLength: 500
+    maxLength: 500,
   })
   motivoRejeicao?: string;
 
@@ -192,16 +194,16 @@ export class SolicitacaoResponseDto extends CreateSolicitacaoDto {
     type: 'number',
     format: 'float',
     minimum: 0,
-    maximum: 100
+    maximum: 100,
   })
   pontuacao?: number;
 
   @ApiPropertyOptional({
     description: 'Valor aprovado para pagamento (pode diferir do valor padrão)',
-    example: 500.00,
+    example: 500.0,
     type: 'number',
     format: 'float',
-    minimum: 0
+    minimum: 0,
   })
   valorAprovado?: number;
 
@@ -209,7 +211,7 @@ export class SolicitacaoResponseDto extends CreateSolicitacaoDto {
     description: 'Número de parcelas aprovadas',
     example: 1,
     type: 'integer',
-    minimum: 1
+    minimum: 1,
   })
   parcelasAprovadas?: number;
 }
@@ -220,10 +222,11 @@ export class SolicitacaoResponseDto extends CreateSolicitacaoDto {
 export class UpdateSolicitacaoDto {
   @ApiPropertyOptional({
     description: 'Justificativa detalhada para a solicitação',
-    example: 'Atualização: situação agravada devido a problemas de saúde da mãe',
+    example:
+      'Atualização: situação agravada devido a problemas de saúde da mãe',
     type: 'string',
     minLength: 20,
-    maxLength: 1000
+    maxLength: 1000,
   })
   justificativa?: string;
 
@@ -231,7 +234,7 @@ export class UpdateSolicitacaoDto {
     description: 'Observações adicionais',
     example: 'Documentos médicos anexados comprovando a necessidade',
     type: 'string',
-    maxLength: 500
+    maxLength: 500,
   })
   observacoes?: string;
 
@@ -240,8 +243,8 @@ export class UpdateSolicitacaoDto {
     example: ['doc1_id', 'doc2_id', 'doc3_id', 'doc4_id'],
     type: 'array',
     items: {
-      type: 'string'
-    }
+      type: 'string',
+    },
   })
   documentosAnexados?: string[];
 
@@ -249,8 +252,8 @@ export class UpdateSolicitacaoDto {
     description: 'Dados específicos atualizados',
     example: {
       situacaoSaude: 'Mãe com complicações pós-parto',
-      rendaFamiliarAtual: 0
-    }
+      rendaFamiliarAtual: 0,
+    },
   })
   dadosEspecificos?: object;
 }
@@ -263,16 +266,17 @@ export class AnaliseSolicitacaoDto {
     description: 'Decisão da análise',
     example: 'APROVADA',
     enum: ['APROVADA', 'REJEITADA', 'PENDENTE_DOCUMENTACAO'],
-    type: 'string'
+    type: 'string',
   })
   decisao: string;
 
   @ApiProperty({
     description: 'Parecer técnico detalhado do analista',
-    example: 'Solicitação atende todos os critérios estabelecidos. Família em situação de vulnerabilidade comprovada.',
+    example:
+      'Solicitação atende todos os critérios estabelecidos. Família em situação de vulnerabilidade comprovada.',
     type: 'string',
     minLength: 10,
-    maxLength: 1000
+    maxLength: 1000,
   })
   parecerTecnico: string;
 
@@ -280,16 +284,16 @@ export class AnaliseSolicitacaoDto {
     description: 'Motivo da rejeição (obrigatório quando decisão = REJEITADA)',
     example: 'Renda familiar superior ao limite estabelecido',
     type: 'string',
-    maxLength: 500
+    maxLength: 500,
   })
   motivoRejeicao?: string;
 
   @ApiPropertyOptional({
     description: 'Valor aprovado (pode ser diferente do valor padrão)',
-    example: 400.00,
+    example: 400.0,
     type: 'number',
     format: 'float',
-    minimum: 0
+    minimum: 0,
   })
   valorAprovado?: number;
 
@@ -298,7 +302,7 @@ export class AnaliseSolicitacaoDto {
     example: 1,
     type: 'integer',
     minimum: 1,
-    maximum: 60
+    maximum: 60,
   })
   parcelasAprovadas?: number;
 
@@ -307,8 +311,8 @@ export class AnaliseSolicitacaoDto {
     example: ['Comprovante de renda atualizado', 'Declaração médica'],
     type: 'array',
     items: {
-      type: 'string'
-    }
+      type: 'string',
+    },
   })
   documentosSolicitados?: string[];
 
@@ -317,7 +321,7 @@ export class AnaliseSolicitacaoDto {
     example: 15,
     type: 'integer',
     minimum: 1,
-    maximum: 90
+    maximum: 90,
   })
   prazoDocumentos?: number;
 }
@@ -332,23 +336,23 @@ export class FiltroSolicitacaoDto {
     enum: [
       'RASCUNHO',
       'SUBMETIDA',
-      'EM_ANALISE', 
+      'EM_ANALISE',
       'PENDENTE_DOCUMENTACAO',
       'APROVADA',
       'REJEITADA',
       'CANCELADA',
       'PAGAMENTO_AUTORIZADO',
       'PAGA',
-      'FINALIZADA'
+      'FINALIZADA',
     ],
-    type: 'string'
+    type: 'string',
   })
   status?: string;
 
   @ApiPropertyOptional({
     description: 'Filtrar por tipo de benefício',
     example: '507f1f77bcf86cd799439011',
-    type: 'string'
+    type: 'string',
   })
   tipoBeneficioId?: string;
 
@@ -356,7 +360,7 @@ export class FiltroSolicitacaoDto {
     description: 'Filtrar por prioridade',
     example: 'ALTA',
     enum: ['BAIXA', 'MEDIA', 'ALTA', 'URGENTE'],
-    type: 'string'
+    type: 'string',
   })
   prioridade?: string;
 
@@ -364,7 +368,7 @@ export class FiltroSolicitacaoDto {
     description: 'Data inicial para filtro por período de criação',
     example: '2025-01-01',
     type: 'string',
-    format: 'date'
+    format: 'date',
   })
   dataInicio?: string;
 
@@ -372,35 +376,35 @@ export class FiltroSolicitacaoDto {
     description: 'Data final para filtro por período de criação',
     example: '2025-01-31',
     type: 'string',
-    format: 'date'
+    format: 'date',
   })
   dataFim?: string;
 
   @ApiPropertyOptional({
     description: 'Filtrar por analista responsável',
     example: '507f1f77bcf86cd799439014',
-    type: 'string'
+    type: 'string',
   })
   analistaId?: string;
 
   @ApiPropertyOptional({
     description: 'Filtrar apenas solicitações urgentes',
     example: true,
-    type: 'boolean'
+    type: 'boolean',
   })
   apenasUrgentes?: boolean;
 
   @ApiPropertyOptional({
     description: 'Buscar por número de protocolo',
     example: '2025/001234',
-    type: 'string'
+    type: 'string',
   })
   numeroProtocolo?: string;
 
   @ApiPropertyOptional({
     description: 'Buscar por CPF do cidadão',
     example: '123.456.789-00',
-    type: 'string'
+    type: 'string',
   })
   cpfCidadao?: string;
 }

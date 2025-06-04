@@ -23,7 +23,10 @@ import { RolesGuard } from '../../../auth/guards/roles.guard';
 import { Roles } from '../../../auth/decorators/role.decorator';
 import { UserRole } from '../../../enums';
 import { DadosNatalidadeService } from '../services/dados-natalidade.service';
-import { CreateDadosNatalidadeDto, UpdateDadosNatalidadeDto } from '../dto/create-dados-natalidade.dto';
+import {
+  CreateDadosNatalidadeDto,
+  UpdateDadosNatalidadeDto,
+} from '../dto/create-dados-natalidade.dto';
 import { DadosNatalidade } from '../../../entities/dados-natalidade.entity';
 
 /**
@@ -44,7 +47,8 @@ export class DadosNatalidadeController {
   @Post()
   @ApiOperation({
     summary: 'Criar dados de natalidade',
-    description: 'Cria dados específicos para solicitação de Auxílio Natalidade',
+    description:
+      'Cria dados específicos para solicitação de Auxílio Natalidade',
   })
   @ApiBody({ type: CreateDadosNatalidadeDto })
   @ApiResponse({
@@ -56,7 +60,9 @@ export class DadosNatalidadeController {
     status: HttpStatus.BAD_REQUEST,
     description: 'Dados inválidos fornecidos',
   })
-  async create(@Body() createDto: CreateDadosNatalidadeDto): Promise<DadosNatalidade> {
+  async create(
+    @Body() createDto: CreateDadosNatalidadeDto,
+  ): Promise<DadosNatalidade> {
     return this.dadosNatalidadeService.create(createDto);
   }
 
@@ -78,7 +84,9 @@ export class DadosNatalidadeController {
     status: HttpStatus.NOT_FOUND,
     description: 'Dados de natalidade não encontrados',
   })
-  async findOne(@Param('id', ParseUUIDPipe) id: string): Promise<DadosNatalidade> {
+  async findOne(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<DadosNatalidade> {
     return this.dadosNatalidadeService.findOne(id);
   }
 
@@ -100,7 +108,9 @@ export class DadosNatalidadeController {
     status: HttpStatus.NOT_FOUND,
     description: 'Dados de natalidade não encontrados para esta solicitação',
   })
-  async findBySolicitacao(@Param('solicitacaoId', ParseUUIDPipe) solicitacaoId: string): Promise<DadosNatalidade> {
+  async findBySolicitacao(
+    @Param('solicitacaoId', ParseUUIDPipe) solicitacaoId: string,
+  ): Promise<DadosNatalidade> {
     return this.dadosNatalidadeService.findBySolicitacao(solicitacaoId);
   }
 
@@ -110,7 +120,8 @@ export class DadosNatalidadeController {
   @Patch(':id')
   @ApiOperation({
     summary: 'Atualizar dados de natalidade',
-    description: 'Atualiza dados específicos de uma solicitação de Auxílio Natalidade',
+    description:
+      'Atualiza dados específicos de uma solicitação de Auxílio Natalidade',
   })
   @ApiParam({ name: 'id', description: 'ID dos dados de natalidade' })
   @ApiBody({ type: UpdateDadosNatalidadeDto })
@@ -140,7 +151,8 @@ export class DadosNatalidadeController {
   @Delete(':id')
   @ApiOperation({
     summary: 'Remover dados de natalidade',
-    description: 'Remove dados específicos de natalidade (apenas administradores)',
+    description:
+      'Remove dados específicos de natalidade (apenas administradores)',
   })
   @ApiParam({ name: 'id', description: 'ID dos dados de natalidade' })
   @ApiResponse({

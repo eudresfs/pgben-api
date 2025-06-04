@@ -117,7 +117,7 @@ export class UnidadeService {
       return await this.dataSource.transaction(async (manager) => {
         // Normalizar campos de enum antes de criar
         const normalizedData = normalizeEnumFields(createUnidadeDto);
-        
+
         // Criar unidade usando o manager da transação
         const unidadeRepo = manager.getRepository('unidade');
         const unidade = unidadeRepo.create(normalizedData);
@@ -169,7 +169,7 @@ export class UnidadeService {
       return await this.dataSource.transaction(async (manager) => {
         // Normalizar campos de enum antes de atualizar
         const normalizedData = normalizeEnumFields(updateUnidadeDto);
-        
+
         // Atualizar unidade usando o manager da transação
         const unidadeRepo = manager.getRepository('unidade');
         await unidadeRepo.update(id, normalizedData);

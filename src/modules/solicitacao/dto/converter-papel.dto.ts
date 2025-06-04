@@ -3,7 +3,7 @@ import { IsNotEmpty, IsString, IsUUID, IsOptional } from 'class-validator';
 
 /**
  * DTO para conversão de papel de um cidadão
- * 
+ *
  * Permite converter um cidadão que está na composição familiar de uma solicitação
  * para se tornar o beneficiário principal de uma nova solicitação.
  */
@@ -42,7 +42,8 @@ export class ConverterPapelDto {
 
   @ApiProperty({
     description: 'Justificativa para a conversão de papel',
-    example: 'Cidadão precisa ser beneficiário devido a mudança na situação familiar',
+    example:
+      'Cidadão precisa ser beneficiário devido a mudança na situação familiar',
   })
   @IsNotEmpty({ message: 'Justificativa é obrigatória' })
   @IsString({ message: 'Justificativa deve ser uma string' })

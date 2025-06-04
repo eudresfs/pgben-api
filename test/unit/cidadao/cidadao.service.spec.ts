@@ -9,10 +9,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { plainToInstance } from 'class-transformer';
 import { CidadaoService } from '@modules/cidadao/services/cidadao.service';
 import { CidadaoRepository } from '@modules/cidadao/repositories/cidadao.repository';
-import {
-  Cidadao,
-  Sexo,
-} from '@modules/cidadao/entities/cidadao.entity';
+import { Cidadao, Sexo } from '@modules/cidadao/entities/cidadao.entity';
 import { TipoPapel, PaperType } from '@modules/cidadao/enums/tipo-papel.enum';
 import { CreateCidadaoDto } from '@modules/cidadao/dto/create-cidadao.dto';
 import { UpdateCidadaoDto } from '@modules/cidadao/dto/update-cidadao.dto';
@@ -233,11 +230,16 @@ describe('CidadaoService', () => {
 
       const result = await service.findById(mockCidadao.id);
 
-      expect(result).toEqual(plainToInstance(CidadaoResponseDto, mockCidadao, {
-        excludeExtraneousValues: true,
-        enableImplicitConversion: false,
-      }));
-      expect(mockCidadaoRepository.findById).toHaveBeenCalledWith(mockCidadao.id, true);
+      expect(result).toEqual(
+        plainToInstance(CidadaoResponseDto, mockCidadao, {
+          excludeExtraneousValues: true,
+          enableImplicitConversion: false,
+        }),
+      );
+      expect(mockCidadaoRepository.findById).toHaveBeenCalledWith(
+        mockCidadao.id,
+        true,
+      );
     });
 
     it('deve retornar cidadão sem relacionamentos quando includeRelations for false', async () => {
@@ -245,11 +247,16 @@ describe('CidadaoService', () => {
 
       const result = await service.findById(mockCidadao.id, false);
 
-      expect(result).toEqual(plainToInstance(CidadaoResponseDto, mockCidadao, {
-        excludeExtraneousValues: true,
-        enableImplicitConversion: false,
-      }));
-      expect(mockCidadaoRepository.findById).toHaveBeenCalledWith(mockCidadao.id, false);
+      expect(result).toEqual(
+        plainToInstance(CidadaoResponseDto, mockCidadao, {
+          excludeExtraneousValues: true,
+          enableImplicitConversion: false,
+        }),
+      );
+      expect(mockCidadaoRepository.findById).toHaveBeenCalledWith(
+        mockCidadao.id,
+        false,
+      );
     });
 
     it('deve retornar os dados corretos no DTO de resposta', async () => {
@@ -336,11 +343,16 @@ describe('CidadaoService', () => {
 
       const result = await service.findByCpf('123.456.789-09');
 
-      expect(result).toEqual(plainToInstance(CidadaoResponseDto, mockCidadao, {
-        excludeExtraneousValues: true,
-        enableImplicitConversion: false,
-      }));
-      expect(mockCidadaoRepository.findByCpf).toHaveBeenCalledWith('12345678909', false);
+      expect(result).toEqual(
+        plainToInstance(CidadaoResponseDto, mockCidadao, {
+          excludeExtraneousValues: true,
+          enableImplicitConversion: false,
+        }),
+      );
+      expect(mockCidadaoRepository.findByCpf).toHaveBeenCalledWith(
+        '12345678909',
+        false,
+      );
     });
 
     it('deve retornar cidadão sem relacionamentos quando includeRelations for false', async () => {
@@ -348,11 +360,16 @@ describe('CidadaoService', () => {
 
       const result = await service.findByCpf('123.456.789-09', false);
 
-      expect(result).toEqual(plainToInstance(CidadaoResponseDto, mockCidadao, {
-        excludeExtraneousValues: true,
-        enableImplicitConversion: false,
-      }));
-      expect(mockCidadaoRepository.findByCpf).toHaveBeenCalledWith('12345678909', false);
+      expect(result).toEqual(
+        plainToInstance(CidadaoResponseDto, mockCidadao, {
+          excludeExtraneousValues: true,
+          enableImplicitConversion: false,
+        }),
+      );
+      expect(mockCidadaoRepository.findByCpf).toHaveBeenCalledWith(
+        '12345678909',
+        false,
+      );
     });
 
     it('deve formatar o CPF removendo caracteres não numéricos', async () => {
@@ -360,7 +377,10 @@ describe('CidadaoService', () => {
 
       await service.findByCpf('123.456.789-09');
 
-      expect(mockCidadaoRepository.findByCpf).toHaveBeenCalledWith('12345678909', false);
+      expect(mockCidadaoRepository.findByCpf).toHaveBeenCalledWith(
+        '12345678909',
+        false,
+      );
     });
 
     it('deve lançar BadRequestException para CPF vazio', async () => {
@@ -413,11 +433,16 @@ describe('CidadaoService', () => {
 
       const result = await service.findByNis('12345678901');
 
-      expect(result).toEqual(plainToInstance(CidadaoResponseDto, mockCidadao, {
-        excludeExtraneousValues: true,
-        enableImplicitConversion: false,
-      }));
-      expect(mockCidadaoRepository.findByNis).toHaveBeenCalledWith('12345678901', false);
+      expect(result).toEqual(
+        plainToInstance(CidadaoResponseDto, mockCidadao, {
+          excludeExtraneousValues: true,
+          enableImplicitConversion: false,
+        }),
+      );
+      expect(mockCidadaoRepository.findByNis).toHaveBeenCalledWith(
+        '12345678901',
+        false,
+      );
     });
 
     it('deve retornar cidadão sem relacionamentos quando includeRelations for false', async () => {
@@ -425,11 +450,16 @@ describe('CidadaoService', () => {
 
       const result = await service.findByNis('12345678901', false);
 
-      expect(result).toEqual(plainToInstance(CidadaoResponseDto, mockCidadao, {
-        excludeExtraneousValues: true,
-        enableImplicitConversion: false,
-      }));
-      expect(mockCidadaoRepository.findByNis).toHaveBeenCalledWith('12345678901', false);
+      expect(result).toEqual(
+        plainToInstance(CidadaoResponseDto, mockCidadao, {
+          excludeExtraneousValues: true,
+          enableImplicitConversion: false,
+        }),
+      );
+      expect(mockCidadaoRepository.findByNis).toHaveBeenCalledWith(
+        '12345678901',
+        false,
+      );
     });
 
     it('deve formatar o NIS removendo caracteres não numéricos', async () => {
@@ -437,7 +467,10 @@ describe('CidadaoService', () => {
 
       await service.findByNis('123.456.789-01');
 
-      expect(mockCidadaoRepository.findByNis).toHaveBeenCalledWith('12345678901', false);
+      expect(mockCidadaoRepository.findByNis).toHaveBeenCalledWith(
+        '12345678901',
+        false,
+      );
     });
 
     it('deve lançar BadRequestException para NIS vazio', async () => {
@@ -475,7 +508,10 @@ describe('CidadaoService', () => {
 
       await service.findByNis('123.456.789-01');
 
-      expect(mockCidadaoRepository.findByNis).toHaveBeenCalledWith('12345678901', false);
+      expect(mockCidadaoRepository.findByNis).toHaveBeenCalledWith(
+        '12345678901',
+        false,
+      );
     });
   });
 
@@ -517,10 +553,12 @@ describe('CidadaoService', () => {
         'user-1',
       );
 
-      expect(result).toEqual(plainToInstance(CidadaoResponseDto, mockCidadao, {
-        excludeExtraneousValues: true,
-        enableImplicitConversion: false,
-      }));
+      expect(result).toEqual(
+        plainToInstance(CidadaoResponseDto, mockCidadao, {
+          excludeExtraneousValues: true,
+          enableImplicitConversion: false,
+        }),
+      );
       expect(mockCidadaoRepository.create).toHaveBeenCalledWith({
         ...createCidadaoDto,
         cpf: '12345678901',
@@ -779,9 +817,12 @@ describe('CidadaoService', () => {
 
       await service.remove(mockCidadao.id, 'user-1');
 
-      expect(mockCidadaoRepository.update).toHaveBeenCalledWith(mockCidadao.id, {
-        removed_at: expect.any(Date),
-      });
+      expect(mockCidadaoRepository.update).toHaveBeenCalledWith(
+        mockCidadao.id,
+        {
+          removed_at: expect.any(Date),
+        },
+      );
     });
 
     it('deve lançar BadRequestException para ID vazio', async () => {

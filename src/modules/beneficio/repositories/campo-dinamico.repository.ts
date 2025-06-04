@@ -90,7 +90,8 @@ export class CampoDinamicoRepository {
   async create(
     campoDinamico: Partial<CampoDinamicoBeneficio>,
   ): Promise<CampoDinamicoBeneficio> {
-    const novoCampoDinamico = this.campoDinamicoRepository.create(campoDinamico);
+    const novoCampoDinamico =
+      this.campoDinamicoRepository.create(campoDinamico);
     return this.campoDinamicoRepository.save(novoCampoDinamico);
   }
 
@@ -106,16 +107,16 @@ export class CampoDinamicoRepository {
     campoDinamico: Partial<CampoDinamicoBeneficio>,
   ): Promise<CampoDinamicoBeneficio> {
     const result = await this.campoDinamicoRepository.update(id, campoDinamico);
-    
+
     if (result.affected === 0) {
       throw new NotFoundException(`Campo dinâmico com ID ${id} não encontrado`);
     }
-    
+
     const updated = await this.findOne(id);
     if (!updated) {
       throw new NotFoundException('Erro ao buscar o campo dinâmico atualizado');
     }
-    
+
     return updated;
   }
 
@@ -127,11 +128,11 @@ export class CampoDinamicoRepository {
    */
   async remove(id: string): Promise<boolean> {
     const result = await this.campoDinamicoRepository.softDelete(id);
-    
+
     if (result.affected === 0) {
       throw new NotFoundException(`Campo dinâmico com ID ${id} não encontrado`);
     }
-    
+
     return result.affected !== undefined && result.affected > 0;
   }
 }

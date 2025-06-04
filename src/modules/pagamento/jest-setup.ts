@@ -3,24 +3,24 @@ import { ConfigModule } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
 import { ValidationPipe } from '@nestjs/common';
 import { APP_PIPE } from '@nestjs/core';
-import { 
-  Pagamento, 
-  ComprovantePagamento, 
-  ConfirmacaoRecebimento 
+import {
+  Pagamento,
+  ComprovantePagamento,
+  ConfirmacaoRecebimento,
 } from '../../entities';
 
 /**
  * Cria um módulo de teste para os testes do módulo de pagamento
- * 
+ *
  * @param imports Módulos adicionais a serem importados
  * @param controllers Controllers a serem incluídos no módulo de teste
  * @param providers Providers a serem incluídos no módulo de teste
  * @returns Módulo de teste configurado
  */
-export async function createTestingModule({ 
-  imports = [], 
-  controllers = [], 
-  providers = [] 
+export async function createTestingModule({
+  imports = [],
+  controllers = [],
+  providers = [],
 }) {
   const moduleRef = await Test.createTestingModule({
     imports: [
@@ -34,7 +34,11 @@ export async function createTestingModule({
         entities: [Pagamento, ComprovantePagamento, ConfirmacaoRecebimento],
         synchronize: true,
       }),
-      TypeOrmModule.forFeature([Pagamento, ComprovantePagamento, ConfirmacaoRecebimento]),
+      TypeOrmModule.forFeature([
+        Pagamento,
+        ComprovantePagamento,
+        ConfirmacaoRecebimento,
+      ]),
       ...imports,
     ],
     controllers,
@@ -56,7 +60,7 @@ export async function createTestingModule({
 
 /**
  * Cria fixtures para os testes
- * 
+ *
  * @param entityManager EntityManager do TypeORM
  */
 export async function createFixtures(entityManager) {
@@ -66,7 +70,7 @@ export async function createFixtures(entityManager) {
 
 /**
  * Limpa o banco de dados de teste
- * 
+ *
  * @param entityManager EntityManager do TypeORM
  */
 export async function cleanDatabase(entityManager) {
@@ -91,7 +95,7 @@ export function getCommonMocks() {
         orderBy: jest.fn().mockReturnThis(),
         skip: jest.fn().mockReturnThis(),
         take: jest.fn().mockReturnThis(),
-        getManyAndCount: jest.fn()
+        getManyAndCount: jest.fn(),
       })),
     },
     statusValidatorMock: {

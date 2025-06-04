@@ -7,5 +7,5 @@ export enum ParametroTipoEnum {
   NUMBER = 'number',
   BOOLEAN = 'boolean',
   JSON = 'json',
-  DATE = 'date'
+  DATE = 'date',
 }

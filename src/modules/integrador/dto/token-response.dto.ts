@@ -21,7 +21,9 @@ export class TokenResponseDto {
   @ApiPropertyOptional({ description: 'Lista de escopos de permissão' })
   escopos?: string[];
 
-  @ApiPropertyOptional({ description: 'Data de expiração (null se não expira)' })
+  @ApiPropertyOptional({
+    description: 'Data de expiração (null se não expira)',
+  })
   dataExpiracao?: Date;
 
   @ApiProperty({ description: 'Indica se o token foi revogado' })

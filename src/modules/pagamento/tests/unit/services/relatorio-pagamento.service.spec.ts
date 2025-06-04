@@ -9,10 +9,10 @@ import { MetodoPagamentoEnum } from '../../../enums/metodo-pagamento.enum';
 
 /**
  * Testes unitários para RelatorioPagamentoService
- * 
- * Garante que os métodos de geração de relatórios e estatísticas 
+ *
+ * Garante que os métodos de geração de relatórios e estatísticas
  * sobre pagamentos funcionem corretamente.
- * 
+ *
  * @author Equipe PGBen
  */
 describe('RelatorioPagamentoService', () => {
@@ -36,8 +36,8 @@ describe('RelatorioPagamentoService', () => {
       observacoes: 'Pagamento de benefício eventual',
       dadosAdicionais: {
         tipoBeneficio: 'Auxílio Moradia',
-        valorAprovado: 500
-      }
+        valorAprovado: 500,
+      },
     },
     {
       id: 'pagamento-id-2',
@@ -53,8 +53,8 @@ describe('RelatorioPagamentoService', () => {
       observacoes: 'Pagamento de benefício alimentação',
       dadosAdicionais: {
         tipoBeneficio: 'Auxílio Alimentação',
-        valorAprovado: 300
-      }
+        valorAprovado: 300,
+      },
     },
     {
       id: 'pagamento-id-3',
@@ -71,8 +71,8 @@ describe('RelatorioPagamentoService', () => {
       observacoes: 'Pagamento de benefício funeral',
       dadosAdicionais: {
         tipoBeneficio: 'Auxílio Funeral',
-        valorAprovado: 1000
-      }
+        valorAprovado: 1000,
+      },
     },
     {
       id: 'pagamento-id-4',
@@ -89,9 +89,9 @@ describe('RelatorioPagamentoService', () => {
       observacoes: 'CANCELADO: Dados bancários incorretos',
       dadosAdicionais: {
         tipoBeneficio: 'Auxílio Moradia',
-        valorAprovado: 500
-      }
-    }
+        valorAprovado: 500,
+      },
+    },
   ];
 
   const mockQueryBuilder = {
@@ -104,7 +104,7 @@ describe('RelatorioPagamentoService', () => {
     orderBy: jest.fn().mockReturnThis(),
     getRawMany: jest.fn().mockResolvedValue([]),
     getRawOne: jest.fn().mockResolvedValue({}),
-    execute: jest.fn().mockResolvedValue([])
+    execute: jest.fn().mockResolvedValue([]),
   };
 
   beforeEach(async () => {
@@ -116,17 +116,21 @@ describe('RelatorioPagamentoService', () => {
           useValue: {
             createQueryBuilder: jest.fn().mockReturnValue(mockQueryBuilder),
             find: jest.fn().mockResolvedValue(pagamentosMock),
-            findAndCount: jest.fn().mockResolvedValue([pagamentosMock, pagamentosMock.length]),
+            findAndCount: jest
+              .fn()
+              .mockResolvedValue([pagamentosMock, pagamentosMock.length]),
             manager: {
-              query: jest.fn().mockResolvedValue([])
-            }
+              query: jest.fn().mockResolvedValue([]),
+            },
           },
         },
       ],
     }).compile();
 
     service = module.get<RelatorioPagamentoService>(RelatorioPagamentoService);
-    pagamentoRepository = module.get<Repository<Pagamento>>(getRepositoryToken(Pagamento));
+    pagamentoRepository = module.get<Repository<Pagamento>>(
+      getRepositoryToken(Pagamento),
+    );
   });
 
   it('deve estar definido', () => {
@@ -138,14 +142,16 @@ describe('RelatorioPagamentoService', () => {
       // Arrange
       const dataInicio = new Date('2025-01-01');
       const dataFim = new Date('2025-03-31');
-      
+
       const mockResultado = [
         { mes: '2025-01', total: 1000, quantidade: 2 },
         { mes: '2025-02', total: 300, quantidade: 1 },
-        { mes: '2025-03', total: 1000, quantidade: 1 }
+        { mes: '2025-03', total: 1000, quantidade: 1 },
       ];
-      
-      jest.spyOn(mockQueryBuilder, 'getRawMany').mockResolvedValueOnce(mockResultado);
+
+      jest
+        .spyOn(mockQueryBuilder, 'getRawMany')
+        .mockResolvedValueOnce(mockResultado);
 
       // Act
       const resultado = await service.gerarRelatorioMensal(dataInicio, dataFim);
@@ -153,8 +159,14 @@ describe('RelatorioPagamentoService', () => {
       // Assert
       expect(resultado).toEqual(mockResultado);
       expect(mockQueryBuilder.select).toHaveBeenCalled();
-      expect(mockQueryBuilder.where).toHaveBeenCalledWith('pagamento.dataLiberacao >= :dataInicio', { dataInicio });
-      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('pagamento.dataLiberacao <= :dataFim', { dataFim });
+      expect(mockQueryBuilder.where).toHaveBeenCalledWith(
+        'pagamento.dataLiberacao >= :dataInicio',
+        { dataInicio },
+      );
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        'pagamento.dataLiberacao <= :dataFim',
+        { dataFim },
+      );
       expect(mockQueryBuilder.groupBy).toHaveBeenCalled();
     });
 
@@ -163,20 +175,29 @@ describe('RelatorioPagamentoService', () => {
       const dataInicio = new Date('2025-01-01');
       const dataFim = new Date('2025-03-31');
       const unidadeId = 'unidade-id-1';
-      
+
       const mockResultado = [
         { mes: '2025-01', total: 500, quantidade: 1 },
-        { mes: '2025-02', total: 300, quantidade: 1 }
+        { mes: '2025-02', total: 300, quantidade: 1 },
       ];
-      
-      jest.spyOn(mockQueryBuilder, 'getRawMany').mockResolvedValueOnce(mockResultado);
+
+      jest
+        .spyOn(mockQueryBuilder, 'getRawMany')
+        .mockResolvedValueOnce(mockResultado);
 
       // Act
-      const resultado = await service.gerarRelatorioMensal(dataInicio, dataFim, unidadeId);
+      const resultado = await service.gerarRelatorioMensal(
+        dataInicio,
+        dataFim,
+        unidadeId,
+      );
 
       // Assert
       expect(resultado).toEqual(mockResultado);
-      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('pagamento.unidadeId = :unidadeId', { unidadeId });
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        'pagamento.unidadeId = :unidadeId',
+        { unidadeId },
+      );
     });
 
     it('deve filtrar apenas pagamentos finalizados/pagos quando especificado', async () => {
@@ -185,23 +206,35 @@ describe('RelatorioPagamentoService', () => {
       const dataFim = new Date('2025-03-31');
       const unidadeId = null;
       const apenasFinalizados = true;
-      
+
       const mockResultado = [
         { mes: '2025-01', total: 500, quantidade: 1 },
         { mes: '2025-02', total: 300, quantidade: 1 },
-        { mes: '2025-03', total: 1000, quantidade: 1 }
+        { mes: '2025-03', total: 1000, quantidade: 1 },
       ];
-      
-      jest.spyOn(mockQueryBuilder, 'getRawMany').mockResolvedValueOnce(mockResultado);
+
+      jest
+        .spyOn(mockQueryBuilder, 'getRawMany')
+        .mockResolvedValueOnce(mockResultado);
 
       // Act
-      const resultado = await service.gerarRelatorioMensal(dataInicio, dataFim, unidadeId, apenasFinalizados);
+      const resultado = await service.gerarRelatorioMensal(
+        dataInicio,
+        dataFim,
+        unidadeId,
+        apenasFinalizados,
+      );
 
       // Assert
       expect(resultado).toEqual(mockResultado);
       expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
-        'pagamento.status IN (:...statusFinalizado)', 
-        { statusFinalizado: [StatusPagamentoEnum.FINALIZADO, StatusPagamentoEnum.PAGO] }
+        'pagamento.status IN (:...statusFinalizado)',
+        {
+          statusFinalizado: [
+            StatusPagamentoEnum.FINALIZADO,
+            StatusPagamentoEnum.PAGO,
+          ],
+        },
       );
     });
   });
@@ -211,17 +244,22 @@ describe('RelatorioPagamentoService', () => {
       // Arrange
       const dataInicio = new Date('2025-01-01');
       const dataFim = new Date('2025-03-31');
-      
+
       const mockResultado = [
         { metodoPagamento: 'pix', total: 1000, quantidade: 2 },
         { metodoPagamento: 'presencial', total: 300, quantidade: 1 },
-        { metodoPagamento: 'transferencia', total: 1000, quantidade: 1 }
+        { metodoPagamento: 'transferencia', total: 1000, quantidade: 1 },
       ];
-      
-      jest.spyOn(mockQueryBuilder, 'getRawMany').mockResolvedValueOnce(mockResultado);
+
+      jest
+        .spyOn(mockQueryBuilder, 'getRawMany')
+        .mockResolvedValueOnce(mockResultado);
 
       // Act
-      const resultado = await service.gerarRelatorioPorMetodo(dataInicio, dataFim);
+      const resultado = await service.gerarRelatorioPorMetodo(
+        dataInicio,
+        dataFim,
+      );
 
       // Assert
       expect(resultado).toEqual(mockResultado);
@@ -233,23 +271,28 @@ describe('RelatorioPagamentoService', () => {
       // Arrange
       const dataInicio = new Date('2025-01-01');
       const dataFim = new Date('2025-03-31');
-      
+
       const mockResultado = [
         { metodoPagamento: 'pix', total: 500, quantidade: 1 },
         { metodoPagamento: 'presencial', total: 300, quantidade: 1 },
-        { metodoPagamento: 'transferencia', total: 1000, quantidade: 1 }
+        { metodoPagamento: 'transferencia', total: 1000, quantidade: 1 },
       ];
-      
-      jest.spyOn(mockQueryBuilder, 'getRawMany').mockResolvedValueOnce(mockResultado);
+
+      jest
+        .spyOn(mockQueryBuilder, 'getRawMany')
+        .mockResolvedValueOnce(mockResultado);
 
       // Act
-      const resultado = await service.gerarRelatorioPorMetodo(dataInicio, dataFim);
+      const resultado = await service.gerarRelatorioPorMetodo(
+        dataInicio,
+        dataFim,
+      );
 
       // Assert
       expect(resultado).toEqual(mockResultado);
       expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
-        'pagamento.status != :statusCancelado', 
-        { statusCancelado: StatusPagamentoEnum.CANCELADO }
+        'pagamento.status != :statusCancelado',
+        { statusCancelado: StatusPagamentoEnum.CANCELADO },
       );
     });
   });
@@ -260,10 +303,12 @@ describe('RelatorioPagamentoService', () => {
       const mockResultado = [
         { status: 'finalizado', total: 800, quantidade: 2 },
         { status: 'pago', total: 1000, quantidade: 1 },
-        { status: 'cancelado', total: 500, quantidade: 1 }
+        { status: 'cancelado', total: 500, quantidade: 1 },
       ];
-      
-      jest.spyOn(mockQueryBuilder, 'getRawMany').mockResolvedValueOnce(mockResultado);
+
+      jest
+        .spyOn(mockQueryBuilder, 'getRawMany')
+        .mockResolvedValueOnce(mockResultado);
 
       // Act
       const resultado = await service.gerarRelatorioPorStatus();
@@ -278,22 +323,33 @@ describe('RelatorioPagamentoService', () => {
       // Arrange
       const dataInicio = new Date('2025-01-01');
       const dataFim = new Date('2025-03-31');
-      
+
       const mockResultado = [
         { status: 'finalizado', total: 800, quantidade: 2 },
         { status: 'pago', total: 1000, quantidade: 1 },
-        { status: 'cancelado', total: 500, quantidade: 1 }
+        { status: 'cancelado', total: 500, quantidade: 1 },
       ];
-      
-      jest.spyOn(mockQueryBuilder, 'getRawMany').mockResolvedValueOnce(mockResultado);
+
+      jest
+        .spyOn(mockQueryBuilder, 'getRawMany')
+        .mockResolvedValueOnce(mockResultado);
 
       // Act
-      const resultado = await service.gerarRelatorioPorStatus(dataInicio, dataFim);
+      const resultado = await service.gerarRelatorioPorStatus(
+        dataInicio,
+        dataFim,
+      );
 
       // Assert
       expect(resultado).toEqual(mockResultado);
-      expect(mockQueryBuilder.where).toHaveBeenCalledWith('pagamento.dataLiberacao >= :dataInicio', { dataInicio });
-      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('pagamento.dataLiberacao <= :dataFim', { dataFim });
+      expect(mockQueryBuilder.where).toHaveBeenCalledWith(
+        'pagamento.dataLiberacao >= :dataInicio',
+        { dataInicio },
+      );
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        'pagamento.dataLiberacao <= :dataFim',
+        { dataFim },
+      );
     });
   });
 
@@ -301,11 +357,23 @@ describe('RelatorioPagamentoService', () => {
     it('deve gerar relatório por unidade', async () => {
       // Arrange
       const mockResultado = [
-        { unidadeId: 'unidade-id-1', nomeUnidade: 'CRAS Centro', total: 1300, quantidade: 3 },
-        { unidadeId: 'unidade-id-2', nomeUnidade: 'CRAS Norte', total: 1000, quantidade: 1 }
+        {
+          unidadeId: 'unidade-id-1',
+          nomeUnidade: 'CRAS Centro',
+          total: 1300,
+          quantidade: 3,
+        },
+        {
+          unidadeId: 'unidade-id-2',
+          nomeUnidade: 'CRAS Norte',
+          total: 1000,
+          quantidade: 1,
+        },
       ];
-      
-      jest.spyOn(pagamentoRepository.manager, 'query').mockResolvedValueOnce(mockResultado);
+
+      jest
+        .spyOn(pagamentoRepository.manager, 'query')
+        .mockResolvedValueOnce(mockResultado);
 
       // Act
       const resultado = await service.gerarRelatorioPorUnidade();
@@ -319,22 +387,39 @@ describe('RelatorioPagamentoService', () => {
       // Arrange
       const dataInicio = new Date('2025-01-01');
       const dataFim = new Date('2025-03-31');
-      
+
       const mockResultado = [
-        { unidadeId: 'unidade-id-1', nomeUnidade: 'CRAS Centro', total: 1300, quantidade: 3 },
-        { unidadeId: 'unidade-id-2', nomeUnidade: 'CRAS Norte', total: 1000, quantidade: 1 }
+        {
+          unidadeId: 'unidade-id-1',
+          nomeUnidade: 'CRAS Centro',
+          total: 1300,
+          quantidade: 3,
+        },
+        {
+          unidadeId: 'unidade-id-2',
+          nomeUnidade: 'CRAS Norte',
+          total: 1000,
+          quantidade: 1,
+        },
       ];
-      
-      jest.spyOn(pagamentoRepository.manager, 'query').mockResolvedValueOnce(mockResultado);
+
+      jest
+        .spyOn(pagamentoRepository.manager, 'query')
+        .mockResolvedValueOnce(mockResultado);
 
       // Act
-      const resultado = await service.gerarRelatorioPorUnidade(dataInicio, dataFim);
+      const resultado = await service.gerarRelatorioPorUnidade(
+        dataInicio,
+        dataFim,
+      );
 
       // Assert
       expect(resultado).toEqual(mockResultado);
       expect(pagamentoRepository.manager.query).toHaveBeenCalledWith(
-        expect.stringContaining('WHERE p.data_liberacao >= $1 AND p.data_liberacao <= $2'),
-        [dataInicio, dataFim]
+        expect.stringContaining(
+          'WHERE p.data_liberacao >= $1 AND p.data_liberacao <= $2',
+        ),
+        [dataInicio, dataFim],
       );
     });
   });
@@ -345,10 +430,12 @@ describe('RelatorioPagamentoService', () => {
       const mockResultado = [
         { tipoBeneficio: 'Auxílio Moradia', total: 1000, quantidade: 2 },
         { tipoBeneficio: 'Auxílio Alimentação', total: 300, quantidade: 1 },
-        { tipoBeneficio: 'Auxílio Funeral', total: 1000, quantidade: 1 }
+        { tipoBeneficio: 'Auxílio Funeral', total: 1000, quantidade: 1 },
       ];
-      
-      jest.spyOn(pagamentoRepository.manager, 'query').mockResolvedValueOnce(mockResultado);
+
+      jest
+        .spyOn(pagamentoRepository.manager, 'query')
+        .mockResolvedValueOnce(mockResultado);
 
       // Act
       const resultado = await service.gerarRelatorioPorTipoBeneficio();
@@ -361,22 +448,28 @@ describe('RelatorioPagamentoService', () => {
     it('deve filtrar por unidade quando especificado', async () => {
       // Arrange
       const unidadeId = 'unidade-id-1';
-      
+
       const mockResultado = [
         { tipoBeneficio: 'Auxílio Moradia', total: 500, quantidade: 1 },
-        { tipoBeneficio: 'Auxílio Alimentação', total: 300, quantidade: 1 }
+        { tipoBeneficio: 'Auxílio Alimentação', total: 300, quantidade: 1 },
       ];
-      
-      jest.spyOn(pagamentoRepository.manager, 'query').mockResolvedValueOnce(mockResultado);
+
+      jest
+        .spyOn(pagamentoRepository.manager, 'query')
+        .mockResolvedValueOnce(mockResultado);
 
       // Act
-      const resultado = await service.gerarRelatorioPorTipoBeneficio(null, null, unidadeId);
+      const resultado = await service.gerarRelatorioPorTipoBeneficio(
+        null,
+        null,
+        unidadeId,
+      );
 
       // Assert
       expect(resultado).toEqual(mockResultado);
       expect(pagamentoRepository.manager.query).toHaveBeenCalledWith(
         expect.stringContaining('WHERE p.unidade_id = $1'),
-        [unidadeId]
+        [unidadeId],
       );
     });
   });
@@ -394,37 +487,38 @@ describe('RelatorioPagamentoService', () => {
         pagamentosPorMetodo: {
           pix: 2,
           presencial: 1,
-          transferencia: 1
-        }
+          transferencia: 1,
+        },
       };
-      
+
       jest.spyOn(mockQueryBuilder, 'getRawOne').mockResolvedValueOnce({
         totalPagamentos: '4',
         totalValorPago: '2300.00',
         totalFinalizados: '2',
         totalEmProcessamento: '1',
-        totalCancelados: '1'
+        totalCancelados: '1',
       });
-      
-      jest.spyOn(mockQueryBuilder, 'getRawMany')
-        .mockResolvedValueOnce([
-          { metodoPagamento: 'pix', quantidade: '2' },
-          { metodoPagamento: 'presencial', quantidade: '1' },
-          { metodoPagamento: 'transferencia', quantidade: '1' }
-        ]);
+
+      jest.spyOn(mockQueryBuilder, 'getRawMany').mockResolvedValueOnce([
+        { metodoPagamento: 'pix', quantidade: '2' },
+        { metodoPagamento: 'presencial', quantidade: '1' },
+        { metodoPagamento: 'transferencia', quantidade: '1' },
+      ]);
 
       // Act
       const resultado = await service.obterEstatisticasGerais();
 
       // Assert
-      expect(resultado).toEqual(expect.objectContaining({
-        totalPagamentos: 4,
-        totalValorPago: 2300,
-        totalFinalizados: 2,
-        totalEmProcessamento: 1,
-        totalCancelados: 1,
-        pagamentosPorMetodo: expect.any(Object)
-      }));
+      expect(resultado).toEqual(
+        expect.objectContaining({
+          totalPagamentos: 4,
+          totalValorPago: 2300,
+          totalFinalizados: 2,
+          totalEmProcessamento: 1,
+          totalCancelados: 1,
+          pagamentosPorMetodo: expect.any(Object),
+        }),
+      );
       expect(mockQueryBuilder.select).toHaveBeenCalled();
     });
 
@@ -432,29 +526,37 @@ describe('RelatorioPagamentoService', () => {
       // Arrange
       const dataInicio = new Date('2025-01-01');
       const dataFim = new Date('2025-03-31');
-      
+
       jest.spyOn(mockQueryBuilder, 'getRawOne').mockResolvedValueOnce({
         totalPagamentos: '4',
         totalValorPago: '2300.00',
         totalFinalizados: '2',
         totalEmProcessamento: '1',
-        totalCancelados: '1'
+        totalCancelados: '1',
       });
-      
-      jest.spyOn(mockQueryBuilder, 'getRawMany')
-        .mockResolvedValueOnce([
-          { metodoPagamento: 'pix', quantidade: '2' },
-          { metodoPagamento: 'presencial', quantidade: '1' },
-          { metodoPagamento: 'transferencia', quantidade: '1' }
-        ]);
+
+      jest.spyOn(mockQueryBuilder, 'getRawMany').mockResolvedValueOnce([
+        { metodoPagamento: 'pix', quantidade: '2' },
+        { metodoPagamento: 'presencial', quantidade: '1' },
+        { metodoPagamento: 'transferencia', quantidade: '1' },
+      ]);
 
       // Act
-      const resultado = await service.obterEstatisticasGerais(dataInicio, dataFim);
+      const resultado = await service.obterEstatisticasGerais(
+        dataInicio,
+        dataFim,
+      );
 
       // Assert
       expect(resultado).toBeDefined();
-      expect(mockQueryBuilder.where).toHaveBeenCalledWith('pagamento.dataLiberacao >= :dataInicio', { dataInicio });
-      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('pagamento.dataLiberacao <= :dataFim', { dataFim });
+      expect(mockQueryBuilder.where).toHaveBeenCalledWith(
+        'pagamento.dataLiberacao >= :dataInicio',
+        { dataInicio },
+      );
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        'pagamento.dataLiberacao <= :dataFim',
+        { dataFim },
+      );
     });
   });
 });

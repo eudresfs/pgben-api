@@ -107,7 +107,9 @@ export class VersaoSchemaBeneficio {
    * Verifica se tem descrição de mudanças
    */
   temDescricaoMudancas(): boolean {
-    return !!this.descricao_mudancas && this.descricao_mudancas.trim().length > 0;
+    return (
+      !!this.descricao_mudancas && this.descricao_mudancas.trim().length > 0
+    );
   }
 
   /**
@@ -144,7 +146,10 @@ export class VersaoSchemaBeneficio {
     if (!this.schema || !Array.isArray(this.schema.campos)) {
       return [];
     }
-    const tipos = this.schema.campos?.map((campo: any) => campo.tipo).filter((tipo: any): tipo is string => typeof tipo === 'string') || [];
+    const tipos =
+      this.schema.campos
+        ?.map((campo: any) => campo.tipo)
+        .filter((tipo: any): tipo is string => typeof tipo === 'string') || [];
     return Array.from(new Set(tipos)) as string[];
   }
 
@@ -162,11 +167,12 @@ export class VersaoSchemaBeneficio {
 
     return camposAnteriores
       .filter((campo: any) => campo.obrigatorio)
-      .every((campoObrigatorio: any) => 
-        camposAtuais.some((campoAtual: any) => 
-          campoAtual.nome === campoObrigatorio.nome && 
-          campoAtual.tipo === campoObrigatorio.tipo
-        )
+      .every((campoObrigatorio: any) =>
+        camposAtuais.some(
+          (campoAtual: any) =>
+            campoAtual.nome === campoObrigatorio.nome &&
+            campoAtual.tipo === campoObrigatorio.tipo,
+        ),
       );
   }
 
@@ -202,7 +208,7 @@ export class VersaoSchemaBeneficio {
       month: '2-digit',
       year: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     });
   }
 
@@ -215,7 +221,7 @@ export class VersaoSchemaBeneficio {
       month: '2-digit',
       year: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     });
   }
 
@@ -229,7 +235,7 @@ export class VersaoSchemaBeneficio {
       versao: this.versao,
       ativo: this.ativo,
       created_at: this.created_at,
-      updated_at: this.updated_at
+      updated_at: this.updated_at,
     };
   }
 
@@ -240,7 +246,9 @@ export class VersaoSchemaBeneficio {
     const sugestoes: string[] = [];
 
     if (!this.temDescricaoMudancas()) {
-      sugestoes.push('Adicionar descrição das mudanças para melhor rastreabilidade');
+      sugestoes.push(
+        'Adicionar descrição das mudanças para melhor rastreabilidade',
+      );
     }
 
     if (this.getNumeroCampos() === 0) {
@@ -253,7 +261,9 @@ export class VersaoSchemaBeneficio {
 
     const tiposCampos = this.getTiposCampos();
     if (tiposCampos.length === 1 && tiposCampos[0] === 'string') {
-      sugestoes.push('Considerar diversificar tipos de campos para melhor validação');
+      sugestoes.push(
+        'Considerar diversificar tipos de campos para melhor validação',
+      );
     }
 
     return sugestoes;
@@ -270,7 +280,10 @@ export class VersaoSchemaBeneficio {
   /**
    * Simula a migração de dados de uma versão anterior
    */
-  simularMigracao(versaoOrigem: VersaoSchemaBeneficio, dadosExemplo: any): {
+  simularMigracao(
+    versaoOrigem: VersaoSchemaBeneficio,
+    dadosExemplo: any,
+  ): {
     sucesso: boolean;
     dadosMigrados?: any;
     erros?: string[];
@@ -278,7 +291,7 @@ export class VersaoSchemaBeneficio {
   } {
     const erros: string[] = [];
     const avisos: string[] = [];
-    
+
     if (!this.isCompativelCom(versaoOrigem)) {
       erros.push('Versões não são compatíveis para migração automática');
       return { sucesso: false, erros };
@@ -291,25 +304,33 @@ export class VersaoSchemaBeneficio {
 
       // Verifica campos removidos
       camposAntigos.forEach((campoAntigo: any) => {
-        const campoExiste = camposNovos.some((campo: any) => campo.nome === campoAntigo.nome);
+        const campoExiste = camposNovos.some(
+          (campo: any) => campo.nome === campoAntigo.nome,
+        );
         if (!campoExiste) {
-          avisos.push(`Campo '${campoAntigo.nome}' foi removido na nova versão`);
+          avisos.push(
+            `Campo '${campoAntigo.nome}' foi removido na nova versão`,
+          );
           delete dadosMigrados[campoAntigo.nome];
         }
       });
 
       // Verifica campos novos obrigatórios
       camposNovos.forEach((campoNovo: any) => {
-        const campoExistia = camposAntigos.some((campo: any) => campo.nome === campoNovo.nome);
+        const campoExistia = camposAntigos.some(
+          (campo: any) => campo.nome === campoNovo.nome,
+        );
         if (!campoExistia && campoNovo.obrigatorio) {
-          avisos.push(`Campo obrigatório '${campoNovo.nome}' foi adicionado - valor padrão necessário`);
+          avisos.push(
+            `Campo obrigatório '${campoNovo.nome}' foi adicionado - valor padrão necessário`,
+          );
         }
       });
 
       return {
         sucesso: true,
         dadosMigrados,
-        avisos: avisos.length > 0 ? avisos : undefined
+        avisos: avisos.length > 0 ? avisos : undefined,
       };
     } catch (error) {
       erros.push(`Erro durante simulação de migração: ${error.message}`);

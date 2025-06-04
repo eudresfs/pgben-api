@@ -1,19 +1,22 @@
 import { DataSource } from 'typeorm';
 import { Permission } from '../../../entities/permission.entity';
 import { PermissionScope } from '../../../entities/permission-scope.entity';
-import { ScopeType, TipoEscopo } from '../../../entities/user-permission.entity';
+import {
+  ScopeType,
+  TipoEscopo,
+} from '../../../entities/user-permission.entity';
 import { Status } from '../../../enums/status.enum';
 
 /**
  * Seed para as permissões do módulo de usuários.
- * 
+ *
  * Este seed cria permissões para operações relacionadas a usuários,
  * incluindo gerenciamento de usuários, roles e permissões.
  */
 export class PermissionUsuarioSeed {
   /**
    * Executa o seed para criar as permissões do módulo de usuários.
-   * 
+   *
    * @param dataSource Conexão com o banco de dados
    * @returns Promise que resolve quando o seed for concluído
    */
@@ -198,22 +201,26 @@ export class PermissionUsuarioSeed {
     // Criar relação entre a permissão geral (*.*) e a role super_admin
     const superAdminRoleId = '00000000-0000-0000-0000-000000000000';
     const connection = permissionRepository.manager.connection;
-    
+
     // Verificar se a relação já existe
     const existingRolePermission = await connection.query(
       'SELECT id FROM role_permissao WHERE role_id = $1 AND permissao_id = $2',
-      [superAdminRoleId, permissaoAllPermissions.id]
+      [superAdminRoleId, permissaoAllPermissions.id],
     );
 
     if (!existingRolePermission || existingRolePermission.length === 0) {
       // Criar a relação role_permissao
       await connection.query(
         'INSERT INTO role_permissao (role_id, permissao_id) VALUES ($1, $2)',
-        [superAdminRoleId, permissaoAllPermissions.id]
+        [superAdminRoleId, permissaoAllPermissions.id],
       );
-      console.log(`Relação criada entre super_admin e permissão geral (*.*) com sucesso!`);
+      console.log(
+        `Relação criada entre super_admin e permissão geral (*.*) com sucesso!`,
+      );
     } else {
-      console.log(`Relação entre super_admin e permissão geral (*.*) já existe, pulando...`);
+      console.log(
+        `Relação entre super_admin e permissão geral (*.*) já existe, pulando...`,
+      );
     }
 
     // Configuração de escopo para as permissões
@@ -361,12 +368,14 @@ export class PermissionUsuarioSeed {
       ScopeType.GLOBAL,
     );
 
-    console.log('Seed de permissões do módulo de usuários concluído com sucesso!');
+    console.log(
+      'Seed de permissões do módulo de usuários concluído com sucesso!',
+    );
   }
 
   /**
    * Cria uma permissão no banco de dados.
-   * 
+   *
    * @param repository Repositório de permissões
    * @param name Nome da permissão
    * @param description Descrição da permissão
@@ -381,23 +390,23 @@ export class PermissionUsuarioSeed {
   ): Promise<Permission> {
     // Usar SQL nativo para evitar problemas com mapeamento de colunas
     const dataSource = repository.manager.connection;
-    
+
     // Verificar se a permissão já existe
     const existingPermission = await dataSource.query(
       `SELECT * FROM permissao WHERE nome = $1 LIMIT 1`,
-      [name]
+      [name],
     );
 
     if (existingPermission && existingPermission.length > 0) {
       console.log(`Permissão '${name}' já existe, atualizando...`);
       const row = existingPermission[0];
-      
+
       // Atualizar a descrição
       await dataSource.query(
         `UPDATE permissao SET descricao = $1 WHERE id = $2`,
-        [description, row.id]
+        [description, row.id],
       );
-      
+
       // Converter para objeto Permission
       const permission = new Permission();
       permission.id = row.id;
@@ -416,15 +425,15 @@ export class PermissionUsuarioSeed {
     const parts = name.split('.');
     const modulo = parts.length > 0 ? parts[0] : 'sistema';
     const acao = parts.length > 1 ? parts.slice(1).join('.') : null;
-    
+
     // Inserir nova permissão usando SQL nativo
     const result = await dataSource.query(
       `INSERT INTO permissao (nome, descricao, modulo, acao, status) 
        VALUES ($1, $2, $3, $4, $5) 
        RETURNING id, nome, descricao, modulo, acao, status, created_at, updated_at`,
-      [name, description, modulo, acao, Status.ATIVO]
+      [name, description, modulo, acao, Status.ATIVO],
     );
-    
+
     // Converter para objeto Permission
     const permission = new Permission();
     const row = result[0];
@@ -441,7 +450,7 @@ export class PermissionUsuarioSeed {
 
   /**
    * Cria um escopo de permissão no banco de dados.
-   * 
+   *
    * @param repository Repositório de escopos de permissão
    * @param permissionId ID da permissão
    * @param defaultScopeType Tipo de escopo padrão
@@ -457,7 +466,9 @@ export class PermissionUsuarioSeed {
     });
 
     if (existingScope) {
-      console.log(`Escopo para permissão '${permissionId}' já existe, atualizando...`);
+      console.log(
+        `Escopo para permissão '${permissionId}' já existe, atualizando...`,
+      );
       existingScope.tipo_escopo_padrao = defaultScopeType;
       return repository.save(existingScope);
     }

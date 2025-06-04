@@ -38,7 +38,9 @@ describe('IntegradorService', () => {
     }).compile();
 
     service = module.get<IntegradorService>(IntegradorService);
-    repository = module.get<Repository<Integrador>>(getRepositoryToken(Integrador));
+    repository = module.get<Repository<Integrador>>(
+      getRepositoryToken(Integrador),
+    );
   });
 
   // Limpar mocks após cada teste
@@ -62,7 +64,7 @@ describe('IntegradorService', () => {
         telefoneContato: '84999999999',
         permissoesEscopo: ['read:dados_basicos'],
         ipPermitidos: ['192.168.1.1'],
-        ativo: true
+        ativo: true,
       };
 
       const integrador = {
@@ -71,7 +73,7 @@ describe('IntegradorService', () => {
         dataCriacao: new Date(),
         dataAtualizacao: new Date(),
         ultimoAcesso: null,
-        tokens: []
+        tokens: [],
       };
 
       // Configurar mock para retornar null (integrador não existe)
@@ -85,7 +87,7 @@ describe('IntegradorService', () => {
 
       // Assert
       expect(mockRepository.findOne).toHaveBeenCalledWith({
-        where: { nome: createDto.nome }
+        where: { nome: createDto.nome },
       });
       expect(mockRepository.create).toHaveBeenCalledWith(createDto);
       expect(mockRepository.save).toHaveBeenCalledWith(integrador);
@@ -98,19 +100,21 @@ describe('IntegradorService', () => {
       // Arrange
       const createDto: CreateIntegradorDto = {
         nome: 'Integrador Duplicado',
-        ativo: true
+        ativo: true,
       };
 
       // Configurar mock para retornar um integrador existente
       mockRepository.findOne.mockResolvedValue({
         id: 'uuid-existente',
-        nome: 'Integrador Duplicado'
+        nome: 'Integrador Duplicado',
       });
 
       // Act & Assert
-      await expect(service.create(createDto)).rejects.toThrow(ConflictException);
+      await expect(service.create(createDto)).rejects.toThrow(
+        ConflictException,
+      );
       expect(mockRepository.findOne).toHaveBeenCalledWith({
-        where: { nome: createDto.nome }
+        where: { nome: createDto.nome },
       });
       expect(mockRepository.create).not.toHaveBeenCalled();
       expect(mockRepository.save).not.toHaveBeenCalled();
@@ -125,14 +129,14 @@ describe('IntegradorService', () => {
           id: 'uuid-1',
           nome: 'Integrador 1',
           dataCriacao: new Date(),
-          dataAtualizacao: new Date()
+          dataAtualizacao: new Date(),
         },
         {
           id: 'uuid-2',
           nome: 'Integrador 2',
           dataCriacao: new Date(),
-          dataAtualizacao: new Date()
-        }
+          dataAtualizacao: new Date(),
+        },
       ];
 
       mockRepository.find.mockResolvedValue(integradores);
@@ -155,7 +159,7 @@ describe('IntegradorService', () => {
         id: 'uuid-teste',
         nome: 'Integrador Teste',
         dataCriacao: new Date(),
-        dataAtualizacao: new Date()
+        dataAtualizacao: new Date(),
       };
 
       mockRepository.findOne.mockResolvedValue(integrador);
@@ -165,7 +169,7 @@ describe('IntegradorService', () => {
 
       // Assert
       expect(mockRepository.findOne).toHaveBeenCalledWith({
-        where: { id: 'uuid-teste' }
+        where: { id: 'uuid-teste' },
       });
       expect(result).toEqual(integrador);
     });
@@ -175,9 +179,11 @@ describe('IntegradorService', () => {
       mockRepository.findOne.mockResolvedValue(null);
 
       // Act & Assert
-      await expect(service.findById('uuid-inexistente')).rejects.toThrow(NotFoundException);
+      await expect(service.findById('uuid-inexistente')).rejects.toThrow(
+        NotFoundException,
+      );
       expect(mockRepository.findOne).toHaveBeenCalledWith({
-        where: { id: 'uuid-inexistente' }
+        where: { id: 'uuid-inexistente' },
       });
     });
   });
@@ -189,18 +195,18 @@ describe('IntegradorService', () => {
         id: 'uuid-teste',
         nome: 'Integrador Antigo',
         dataCriacao: new Date(),
-        dataAtualizacao: new Date()
+        dataAtualizacao: new Date(),
       };
 
       const updateDto: UpdateIntegradorDto = {
         nome: 'Integrador Atualizado',
-        descricao: 'Nova descrição'
+        descricao: 'Nova descrição',
       };
 
       const integradorAtualizado = {
         ...integrador,
         ...updateDto,
-        dataAtualizacao: new Date()
+        dataAtualizacao: new Date(),
       };
 
       // Mock para findById
@@ -215,10 +221,10 @@ describe('IntegradorService', () => {
 
       // Assert
       expect(mockRepository.findOne).toHaveBeenCalledWith({
-        where: { id: 'uuid-teste' }
+        where: { id: 'uuid-teste' },
       });
       expect(mockRepository.findOne).toHaveBeenCalledWith({
-        where: { nome: updateDto.nome }
+        where: { nome: updateDto.nome },
       });
       expect(mockRepository.save).toHaveBeenCalled();
       expect(result.nome).toEqual(updateDto.nome);
@@ -231,16 +237,16 @@ describe('IntegradorService', () => {
         id: 'uuid-teste',
         nome: 'Integrador Antigo',
         dataCriacao: new Date(),
-        dataAtualizacao: new Date()
+        dataAtualizacao: new Date(),
       };
 
       const updateDto: UpdateIntegradorDto = {
-        nome: 'Integrador Duplicado'
+        nome: 'Integrador Duplicado',
       };
 
       const integradorExistente = {
         id: 'outro-uuid',
-        nome: 'Integrador Duplicado'
+        nome: 'Integrador Duplicado',
       };
 
       // Mock para findById
@@ -249,12 +255,14 @@ describe('IntegradorService', () => {
       mockRepository.findOne.mockResolvedValueOnce(integradorExistente);
 
       // Act & Assert
-      await expect(service.update('uuid-teste', updateDto)).rejects.toThrow(ConflictException);
+      await expect(service.update('uuid-teste', updateDto)).rejects.toThrow(
+        ConflictException,
+      );
       expect(mockRepository.findOne).toHaveBeenCalledWith({
-        where: { id: 'uuid-teste' }
+        where: { id: 'uuid-teste' },
       });
       expect(mockRepository.findOne).toHaveBeenCalledWith({
-        where: { nome: updateDto.nome }
+        where: { nome: updateDto.nome },
       });
       expect(mockRepository.save).not.toHaveBeenCalled();
     });
@@ -265,7 +273,7 @@ describe('IntegradorService', () => {
       // Arrange
       const integrador = {
         id: 'uuid-teste',
-        nome: 'Integrador para Remover'
+        nome: 'Integrador para Remover',
       };
 
       mockRepository.findOne.mockResolvedValue(integrador);
@@ -276,7 +284,7 @@ describe('IntegradorService', () => {
 
       // Assert
       expect(mockRepository.findOne).toHaveBeenCalledWith({
-        where: { id: 'uuid-teste' }
+        where: { id: 'uuid-teste' },
       });
       expect(mockRepository.remove).toHaveBeenCalledWith(integrador);
     });
@@ -290,12 +298,12 @@ describe('IntegradorService', () => {
         nome: 'Integrador Test',
         ativo: false,
         dataCriacao: new Date(),
-        dataAtualizacao: new Date()
+        dataAtualizacao: new Date(),
       };
 
       const integradorAtivado = {
         ...integrador,
-        ativo: true
+        ativo: true,
       };
 
       mockRepository.findOne.mockResolvedValue(integrador);
@@ -306,11 +314,11 @@ describe('IntegradorService', () => {
 
       // Assert
       expect(mockRepository.findOne).toHaveBeenCalledWith({
-        where: { id: 'uuid-teste' }
+        where: { id: 'uuid-teste' },
       });
       expect(mockRepository.save).toHaveBeenCalledWith({
         ...integrador,
-        ativo: true
+        ativo: true,
       });
       expect(result.ativo).toBe(true);
     });
@@ -327,7 +335,7 @@ describe('IntegradorService', () => {
       // Assert
       expect(mockRepository.update).toHaveBeenCalledWith(
         { id: 'uuid-teste' },
-        { ultimoAcesso: expect.any(Date) }
+        { ultimoAcesso: expect.any(Date) },
       );
     });
   });

@@ -367,11 +367,12 @@ export class NotificationManagerService implements OnModuleInit {
       this.scheduleAdapter.scheduleOnce(
         timeoutName,
         notificacao.data_agendamento,
-        () => this.processarNotificacao(notificacao.id).catch((err) => {
-          this.logger.error(
-            `Erro ao processar notificação agendada ${notificacao.id}: ${err.message}`,
-          );
-        }),
+        () =>
+          this.processarNotificacao(notificacao.id).catch((err) => {
+            this.logger.error(
+              `Erro ao processar notificação agendada ${notificacao.id}: ${err.message}`,
+            );
+          }),
       );
 
       this.logger.debug(
@@ -401,7 +402,7 @@ export class NotificationManagerService implements OnModuleInit {
         const emailChannel = this.moduleRef.get('EmailChannelService', {
           strict: false,
         });
-        
+
         if (emailChannel && 'canal_id' in emailChannel) {
           this.canaisNotificacao.set(emailChannel.canal_id, emailChannel);
           this.logger.log(
@@ -410,7 +411,9 @@ export class NotificationManagerService implements OnModuleInit {
         }
       } catch (e) {
         // O EmailChannelService não está disponível, mas isso não deve impedir o funcionamento
-        this.logger.warn('EmailChannelService não está disponível. Notificações por email não serão enviadas.');
+        this.logger.warn(
+          'EmailChannelService não está disponível. Notificações por email não serão enviadas.',
+        );
       }
 
       // Você registraria outros canais aqui da mesma forma
@@ -467,7 +470,7 @@ export class NotificationManagerService implements OnModuleInit {
       this.scheduleAdapter.scheduleInterval(
         'verificar_notificacoes_pendentes',
         5 * 60 * 1000, // 5 minutos em milissegundos
-        () => this.verificarNotificacoesPendentes()
+        () => this.verificarNotificacoesPendentes(),
       );
     } catch (error) {
       this.logger.error(
@@ -487,7 +490,10 @@ export class NotificationManagerService implements OnModuleInit {
       // Buscar notificações pendentes que não estão agendadas para o futuro
       const notificacoesPendentes = await this.notificacaoRepository.find({
         where: [
-          { status: StatusNotificacaoProcessamento.PENDENTE, data_agendamento: IsNull() },
+          {
+            status: StatusNotificacaoProcessamento.PENDENTE,
+            data_agendamento: IsNull(),
+          },
           {
             status: StatusNotificacaoProcessamento.PENDENTE,
             data_agendamento: LessThanOrEqual(agora),

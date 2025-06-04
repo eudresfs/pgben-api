@@ -1,14 +1,24 @@
 import { applyDecorators } from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
-import { ApiCommonErrors, ApiValidationErrors } from './api-error-responses.decorator';
-import { ApiPaginatedResponse, ApiCreatedResponse, ApiNoContentResponse } from '../responses/success';
+import {
+  ApiCommonErrors,
+  ApiValidationErrors,
+} from './api-error-responses.decorator';
+import {
+  ApiPaginatedResponse,
+  ApiCreatedResponse,
+  ApiNoContentResponse,
+} from '../responses/success';
 
 /**
  * Decorador para endpoints de listagem
  * @param responseType - Tipo da resposta retornada na lista paginada
  * @param description - Descrição da operação
  */
-export const ApiListOperation = (responseType: any, description = 'Lista recursos com paginação, filtros e ordenação') => {
+export const ApiListOperation = (
+  responseType: any,
+  description = 'Lista recursos com paginação, filtros e ordenação',
+) => {
   return applyDecorators(
     ApiOperation({ summary: 'Listar', description }),
     ApiPaginatedResponse(responseType),
@@ -21,10 +31,17 @@ export const ApiListOperation = (responseType: any, description = 'Lista recurso
  * @param responseType - Tipo da resposta detalhada
  * @param description - Descrição da operação
  */
-export const ApiDetailOperation = (responseType: any, description = 'Obtém detalhes de um recurso específico') => {
+export const ApiDetailOperation = (
+  responseType: any,
+  description = 'Obtém detalhes de um recurso específico',
+) => {
   return applyDecorators(
     ApiOperation({ summary: 'Obter detalhes', description }),
-    ApiResponse({ status: 200, description: 'Recurso encontrado com sucesso', type: responseType }),
+    ApiResponse({
+      status: 200,
+      description: 'Recurso encontrado com sucesso',
+      type: responseType,
+    }),
     ApiParam({ name: 'id', description: 'ID do recurso', type: 'string' }),
     ApiCommonErrors(),
   );
@@ -35,7 +52,10 @@ export const ApiDetailOperation = (responseType: any, description = 'Obtém deta
  * @param responseType - Tipo da resposta de criação
  * @param description - Descrição da operação
  */
-export const ApiCreateOperation = (responseType: any, description = 'Cria um novo recurso') => {
+export const ApiCreateOperation = (
+  responseType: any,
+  description = 'Cria um novo recurso',
+) => {
   return applyDecorators(
     ApiOperation({ summary: 'Criar', description }),
     ApiCreatedResponse(responseType),
@@ -48,10 +68,17 @@ export const ApiCreateOperation = (responseType: any, description = 'Cria um nov
  * @param responseType - Tipo da resposta após atualização
  * @param description - Descrição da operação
  */
-export const ApiUpdateOperation = (responseType: any, description = 'Atualiza um recurso existente') => {
+export const ApiUpdateOperation = (
+  responseType: any,
+  description = 'Atualiza um recurso existente',
+) => {
   return applyDecorators(
     ApiOperation({ summary: 'Atualizar', description }),
-    ApiResponse({ status: 200, description: 'Recurso atualizado com sucesso', type: responseType }),
+    ApiResponse({
+      status: 200,
+      description: 'Recurso atualizado com sucesso',
+      type: responseType,
+    }),
     ApiParam({ name: 'id', description: 'ID do recurso', type: 'string' }),
     ApiValidationErrors(),
   );
@@ -61,7 +88,9 @@ export const ApiUpdateOperation = (responseType: any, description = 'Atualiza um
  * Decorador para endpoints de exclusão
  * @param description - Descrição da operação
  */
-export const ApiDeleteOperation = (description = 'Remove um recurso existente') => {
+export const ApiDeleteOperation = (
+  description = 'Remove um recurso existente',
+) => {
   return applyDecorators(
     ApiOperation({ summary: 'Excluir', description }),
     ApiNoContentResponse(),

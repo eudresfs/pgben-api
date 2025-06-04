@@ -71,16 +71,18 @@ export class InputSanitizerValidator implements ValidatorConstraintInterface {
     }
 
     const result = this.sanitizeInput(value);
-    
+
     // Log de tentativas de ataques
     if (result.blocked || result.warnings.length > 0) {
       this.logger.warn(
-        `Tentativa de input potencialmente malicioso detectada: ${JSON.stringify({
-          originalValue: result.originalValue.substring(0, 100),
-          warnings: result.warnings,
-          blocked: result.blocked,
-          property: args.property,
-        })}`,
+        `Tentativa de input potencialmente malicioso detectada: ${JSON.stringify(
+          {
+            originalValue: result.originalValue.substring(0, 100),
+            warnings: result.warnings,
+            blocked: result.blocked,
+            property: args.property,
+          },
+        )}`,
       );
     }
 
@@ -110,11 +112,7 @@ export class InputSanitizerValidator implements ValidatorConstraintInterface {
       strictMode?: boolean;
     } = {},
   ): InputSanitizationResult {
-    const {
-      allowHtml = false,
-      maxLength = 10000,
-      strictMode = true,
-    } = options;
+    const { allowHtml = false, maxLength = 10000, strictMode = true } = options;
 
     const result: InputSanitizationResult = {
       isValid: true,
@@ -126,7 +124,9 @@ export class InputSanitizerValidator implements ValidatorConstraintInterface {
 
     // Verificar comprimento máximo
     if (input.length > maxLength) {
-      result.warnings.push(`Input excede o comprimento máximo de ${maxLength} caracteres`);
+      result.warnings.push(
+        `Input excede o comprimento máximo de ${maxLength} caracteres`,
+      );
       result.sanitizedValue = input.substring(0, maxLength);
     }
 
@@ -148,7 +148,7 @@ export class InputSanitizerValidator implements ValidatorConstraintInterface {
     if (!allowHtml) {
       // Remover todas as tags HTML
       sanitized = DOMPurify.sanitize(sanitized, { ALLOWED_TAGS: [] });
-      
+
       // Escapar caracteres especiais
       sanitized = this.escapeHtmlChars(sanitized);
     } else {
@@ -193,13 +193,13 @@ export class InputSanitizerValidator implements ValidatorConstraintInterface {
 
     // Remover caracteres perigosos para nomes de arquivo
     let sanitized = filename.replace(/[<>:"\/\\|?*\x00-\x1F]/g, '_');
-    
+
     // Remover múltiplos pontos consecutivos
     sanitized = sanitized.replace(/\.{2,}/g, '.');
-    
+
     // Remover pontos no início e fim
     sanitized = sanitized.replace(/^\.|\.$/, '');
-    
+
     // Limitar comprimento
     if (sanitized.length > 255) {
       const ext = sanitized.substring(sanitized.lastIndexOf('.'));
@@ -226,7 +226,7 @@ export class InputSanitizerValidator implements ValidatorConstraintInterface {
     }
 
     const sanitized: any = {};
-    
+
     // Lista de campos permitidos nos metadados
     const allowedFields = [
       'titulo',
@@ -247,7 +247,7 @@ export class InputSanitizerValidator implements ValidatorConstraintInterface {
             maxLength: field === 'descricao' ? 2000 : 500,
             strictMode: true,
           });
-          
+
           if (!result.blocked) {
             sanitized[field] = result.sanitizedValue;
           }

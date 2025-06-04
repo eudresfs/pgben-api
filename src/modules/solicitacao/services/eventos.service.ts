@@ -1,11 +1,18 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { SolicitacaoEvent, SolicitacaoEventType, SolicitacaoEventUnion } from '../events/solicitacao-events';
-import { Solicitacao, StatusSolicitacao } from '../../../entities/solicitacao.entity';
+import {
+  SolicitacaoEvent,
+  SolicitacaoEventType,
+  SolicitacaoEventUnion,
+} from '../events/solicitacao-events';
+import {
+  Solicitacao,
+  StatusSolicitacao,
+} from '../../../entities/solicitacao.entity';
 
 /**
  * Serviço responsável pelo gerenciamento de eventos do módulo de solicitação
- * 
+ *
  * Este serviço centraliza a emissão de eventos relacionados ao ciclo de vida das solicitações,
  * facilitando a comunicação assíncrona entre os diferentes componentes do sistema.
  */
@@ -21,16 +28,18 @@ export class EventosService {
    */
   emitirEvento(evento: SolicitacaoEventUnion): void {
     try {
-      this.logger.debug(`Emitindo evento: ${evento.type} - Solicitação ID: ${evento.solicitacaoId}`);
-      
+      this.logger.debug(
+        `Emitindo evento: ${evento.type} - Solicitação ID: ${evento.solicitacaoId}`,
+      );
+
       // Define timestamp caso não tenha sido definido
       if (!evento.timestamp) {
         evento.timestamp = new Date();
       }
-      
+
       // Emite o evento
       this.eventEmitter.emit(evento.type, evento);
-      
+
       this.logger.debug(`Evento emitido com sucesso: ${evento.type}`);
     } catch (error) {
       this.logger.error(
@@ -98,7 +107,7 @@ export class EventosService {
           },
         });
         break;
-      
+
       case StatusSolicitacao.INDEFERIDA:
         this.emitirEvento({
           type: SolicitacaoEventType.REJECTED,
@@ -111,7 +120,7 @@ export class EventosService {
           },
         });
         break;
-      
+
       case StatusSolicitacao.LIBERADA:
         this.emitirEvento({
           type: SolicitacaoEventType.RELEASED,
@@ -130,7 +139,9 @@ export class EventosService {
         break;
 
       case StatusSolicitacao.CANCELADA:
-        this.logger.log(`Solicitação ${solicitacao.id} cancelada: ${observacao || 'Não especificado'}`);
+        this.logger.log(
+          `Solicitação ${solicitacao.id} cancelada: ${observacao || 'Não especificado'}`,
+        );
         break;
 
       case StatusSolicitacao.ARQUIVADA:
@@ -151,11 +162,11 @@ export class EventosService {
     diasRestantes: number,
   ): void {
     const dataPrazo = solicitacao[`prazo_${tipoPrazo}`] as Date;
-    
+
     if (!dataPrazo) {
       return;
     }
-    
+
     this.emitirEvento({
       type: SolicitacaoEventType.DEADLINE_APPROACHING,
       solicitacaoId: solicitacao.id,
@@ -181,11 +192,11 @@ export class EventosService {
     diasAtraso: number,
   ): void {
     const dataPrazo = solicitacao[`prazo_${tipoPrazo}`] as Date;
-    
+
     if (!dataPrazo) {
       return;
     }
-    
+
     this.emitirEvento({
       type: SolicitacaoEventType.DEADLINE_EXPIRED,
       solicitacaoId: solicitacao.id,

@@ -1,4 +1,12 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Index } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  Index,
+} from 'typeorm';
 import { IsNotEmpty, IsUUID, IsOptional } from 'class-validator';
 import { Permission } from './permission.entity';
 import { PermissionGroup } from './permission-group.entity';
@@ -6,7 +14,7 @@ import { Usuario } from './usuario.entity';
 
 /**
  * Entidade que representa o relacionamento muitos-para-muitos entre permissões e grupos.
- * 
+ *
  * Esta entidade permite associar permissões a grupos, facilitando a organização
  * e atribuição de permissões relacionadas.
  */
@@ -176,10 +184,10 @@ export class PermissionGroupMapping {
    */
   isCriadoRecentemente(): boolean {
     if (!this.created_at) return false;
-    
+
     const agora = new Date();
     const umDiaAtras = new Date(agora.getTime() - 24 * 60 * 60 * 1000);
-    
+
     return this.created_at > umDiaAtras;
   }
 
@@ -189,11 +197,11 @@ export class PermissionGroupMapping {
    */
   getIdadeEmDias(): number {
     if (!this.created_at) return 0;
-    
+
     const agora = new Date();
     const diffTime = Math.abs(agora.getTime() - this.created_at.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
+
     return diffDays;
   }
 
@@ -227,7 +235,7 @@ export class PermissionGroupMapping {
       created_at: this.created_at,
       idadeEmDias: this.getIdadeEmDias(),
       permissaoNome: this.permissao?.nome,
-      grupoNome: this.grupo?.nome
+      grupoNome: this.grupo?.nome,
     };
   }
 
@@ -254,10 +262,7 @@ export class PermissionGroupMapping {
    */
   isConsistente(): boolean {
     return (
-      !!this.id &&
-      !!this.permissao_id &&
-      !!this.grupo_id &&
-      !!this.created_at
+      !!this.id && !!this.permissao_id && !!this.grupo_id && !!this.created_at
     );
   }
 
@@ -289,7 +294,7 @@ export class PermissionGroupMapping {
     return {
       permissao_id: this.permissao_id,
       grupo_id: this.grupo_id,
-      criado_por: this.criado_por
+      criado_por: this.criado_por,
     };
   }
 
@@ -351,7 +356,7 @@ export class PermissionGroupMapping {
       month: '2-digit',
       day: '2-digit',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     });
   }
 
@@ -375,7 +380,7 @@ export class PermissionGroupMapping {
       criado_por: this.criado_por,
       created_at: this.created_at,
       isAtivo: this.isAtivo(),
-      criticalityLevel: this.getCriticalityLevel()
+      criticalityLevel: this.getCriticalityLevel(),
     };
   }
 }

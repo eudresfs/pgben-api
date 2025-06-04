@@ -1,5 +1,11 @@
 import { Controller, Get, Put, Body, Param } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiParam,
+} from '@nestjs/swagger';
 import { LimitesService } from '../services/limites.service';
 import { LimitesUploadDto } from '../dtos/limites/limites-upload.dto';
 import { PrazoUpdateDto } from '../dtos/limites/prazo-update.dto';
@@ -20,10 +26,10 @@ export class LimitesController {
    */
   @Get('upload')
   @ApiOperation({ summary: 'Buscar limites de upload configurados' })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Limites de upload encontrados',
-    type: LimitesUploadResponseDto
+    type: LimitesUploadResponseDto,
   })
   async buscarLimitesUpload(): Promise<LimitesUploadResponseDto> {
     return this.limitesService.buscarLimitesUpload();
@@ -36,17 +42,17 @@ export class LimitesController {
    */
   @Put('upload')
   @ApiOperation({ summary: 'Atualizar limites de upload' })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Limites de upload atualizados com sucesso',
-    type: LimitesUploadResponseDto
+    type: LimitesUploadResponseDto,
   })
-  @ApiResponse({ 
-    status: 400, 
-    description: 'Dados inválidos'
+  @ApiResponse({
+    status: 400,
+    description: 'Dados inválidos',
   })
   async atualizarLimitesUpload(
-    @Body() dto: LimitesUploadDto
+    @Body() dto: LimitesUploadDto,
   ): Promise<LimitesUploadResponseDto> {
     return this.limitesService.atualizarLimitesUpload(dto);
   }
@@ -58,13 +64,13 @@ export class LimitesController {
    */
   @Get('prazos/:tipo')
   @ApiOperation({ summary: 'Buscar prazo configurado para uma etapa' })
-  @ApiParam({ 
-    name: 'tipo', 
+  @ApiParam({
+    name: 'tipo',
     description: 'Tipo do prazo (analise, entrevista, recurso, validade)',
-    example: 'analise' 
+    example: 'analise',
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Prazo encontrado',
     schema: {
       type: 'object',
@@ -72,22 +78,22 @@ export class LimitesController {
         tipo: {
           type: 'string',
           description: 'Tipo do prazo',
-          example: 'analise'
+          example: 'analise',
         },
         dias: {
           type: 'number',
           description: 'Prazo em dias',
-          example: 15
-        }
-      }
-    }
+          example: 15,
+        },
+      },
+    },
   })
-  @ApiResponse({ 
-    status: 400, 
-    description: 'Tipo de prazo inválido'
+  @ApiResponse({
+    status: 400,
+    description: 'Tipo de prazo inválido',
   })
   async buscarPrazo(
-    @Param('tipo') tipo: string
+    @Param('tipo') tipo: string,
   ): Promise<{ tipo: string; dias: number }> {
     const dias = await this.limitesService.buscarPrazo(tipo);
     return { tipo, dias };
@@ -101,13 +107,13 @@ export class LimitesController {
    */
   @Put('prazos/:tipo')
   @ApiOperation({ summary: 'Atualizar prazo para uma etapa' })
-  @ApiParam({ 
-    name: 'tipo', 
+  @ApiParam({
+    name: 'tipo',
     description: 'Tipo do prazo (analise, entrevista, recurso, validade)',
-    example: 'analise' 
+    example: 'analise',
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Prazo atualizado com sucesso',
     schema: {
       type: 'object',
@@ -115,23 +121,23 @@ export class LimitesController {
         tipo: {
           type: 'string',
           description: 'Tipo do prazo',
-          example: 'analise'
+          example: 'analise',
         },
         dias: {
           type: 'number',
           description: 'Prazo em dias',
-          example: 15
-        }
-      }
-    }
+          example: 15,
+        },
+      },
+    },
   })
-  @ApiResponse({ 
-    status: 400, 
-    description: 'Dados inválidos ou tipo de prazo inválido'
+  @ApiResponse({
+    status: 400,
+    description: 'Dados inválidos ou tipo de prazo inválido',
   })
   async atualizarPrazo(
     @Param('tipo') tipo: string,
-    @Body() dto: PrazoUpdateDto
+    @Body() dto: PrazoUpdateDto,
   ): Promise<{ tipo: string; dias: number }> {
     const dias = await this.limitesService.atualizarPrazo(tipo, dto);
     return { tipo, dias };
@@ -143,14 +149,16 @@ export class LimitesController {
    * @returns Data limite
    */
   @Get('prazos/:tipo/data-limite')
-  @ApiOperation({ summary: 'Calcular data limite com base no prazo configurado' })
-  @ApiParam({ 
-    name: 'tipo', 
-    description: 'Tipo do prazo (analise, entrevista, recurso, validade)',
-    example: 'analise' 
+  @ApiOperation({
+    summary: 'Calcular data limite com base no prazo configurado',
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiParam({
+    name: 'tipo',
+    description: 'Tipo do prazo (analise, entrevista, recurso, validade)',
+    example: 'analise',
+  })
+  @ApiResponse({
+    status: 200,
     description: 'Data limite calculada',
     schema: {
       type: 'object',
@@ -158,27 +166,27 @@ export class LimitesController {
         tipo: {
           type: 'string',
           description: 'Tipo do prazo',
-          example: 'analise'
+          example: 'analise',
         },
         dias: {
           type: 'number',
           description: 'Prazo em dias',
-          example: 15
+          example: 15,
         },
         dataLimite: {
           type: 'string',
           description: 'Data limite calculada',
-          example: '2025-06-02T20:00:00.000Z'
-        }
-      }
-    }
+          example: '2025-06-02T20:00:00.000Z',
+        },
+      },
+    },
   })
-  @ApiResponse({ 
-    status: 400, 
-    description: 'Tipo de prazo inválido'
+  @ApiResponse({
+    status: 400,
+    description: 'Tipo de prazo inválido',
   })
   async calcularDataLimite(
-    @Param('tipo') tipo: string
+    @Param('tipo') tipo: string,
   ): Promise<{ tipo: string; dias: number; dataLimite: Date }> {
     const dias = await this.limitesService.buscarPrazo(tipo);
     const dataLimite = await this.limitesService.calcularDataLimite(tipo);

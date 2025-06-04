@@ -8,7 +8,7 @@ export class RelatorioSolicitacoesDto {
     description: 'Data inicial do período do relatório',
     example: '2025-01-01',
     type: 'string',
-    format: 'date'
+    format: 'date',
   })
   dataInicio: string;
 
@@ -16,14 +16,14 @@ export class RelatorioSolicitacoesDto {
     description: 'Data final do período do relatório',
     example: '2025-01-31',
     type: 'string',
-    format: 'date'
+    format: 'date',
   })
   dataFim: string;
 
   @ApiPropertyOptional({
     description: 'Filtrar por tipo de benefício específico',
     example: '507f1f77bcf86cd799439011',
-    type: 'string'
+    type: 'string',
   })
   tipoBeneficioId?: string;
 
@@ -31,14 +31,14 @@ export class RelatorioSolicitacoesDto {
     description: 'Filtrar por status das solicitações',
     example: 'APROVADA',
     enum: ['PENDENTE', 'EM_ANALISE', 'APROVADA', 'REJEITADA', 'CANCELADA'],
-    type: 'string'
+    type: 'string',
   })
   status?: string;
 
   @ApiPropertyOptional({
     description: 'Filtrar por analista responsável',
     example: '507f1f77bcf86cd799439014',
-    type: 'string'
+    type: 'string',
   })
   analistaId?: string;
 
@@ -47,7 +47,7 @@ export class RelatorioSolicitacoesDto {
     example: 'PDF',
     enum: ['PDF', 'EXCEL', 'CSV', 'JSON'],
     type: 'string',
-    default: 'PDF'
+    default: 'PDF',
   })
   formato?: string;
 
@@ -55,7 +55,7 @@ export class RelatorioSolicitacoesDto {
     description: 'Incluir detalhes dos cidadãos no relatório',
     example: true,
     type: 'boolean',
-    default: false
+    default: false,
   })
   incluirDetalhesCidadao?: boolean;
 
@@ -63,7 +63,7 @@ export class RelatorioSolicitacoesDto {
     description: 'Incluir documentos anexados',
     example: false,
     type: 'boolean',
-    default: false
+    default: false,
   })
   incluirDocumentos?: boolean;
 
@@ -71,7 +71,7 @@ export class RelatorioSolicitacoesDto {
     description: 'Agrupar resultados por campo específico',
     example: 'tipoBeneficio',
     enum: ['tipoBeneficio', 'status', 'analista', 'mes', 'bairro'],
-    type: 'string'
+    type: 'string',
   })
   agruparPor?: string;
 }
@@ -87,18 +87,18 @@ export class RelatorioSolicitacoesResponseDto {
       dataInicio: {
         type: 'string',
         format: 'date',
-        description: 'Data inicial'
+        description: 'Data inicial',
       },
       dataFim: {
         type: 'string',
         format: 'date',
-        description: 'Data final'
-      }
+        description: 'Data final',
+      },
     },
     example: {
       dataInicio: '2025-01-01',
-      dataFim: '2025-01-31'
-    }
+      dataFim: '2025-01-31',
+    },
   })
   periodo: {
     dataInicio: string;
@@ -111,39 +111,39 @@ export class RelatorioSolicitacoesResponseDto {
     properties: {
       totalSolicitacoes: {
         type: 'integer',
-        description: 'Total de solicitações no período'
+        description: 'Total de solicitações no período',
       },
       solicitacoesAprovadas: {
         type: 'integer',
-        description: 'Solicitações aprovadas'
+        description: 'Solicitações aprovadas',
       },
       solicitacoesRejeitadas: {
         type: 'integer',
-        description: 'Solicitações rejeitadas'
+        description: 'Solicitações rejeitadas',
       },
       solicitacoesPendentes: {
         type: 'integer',
-        description: 'Solicitações pendentes'
+        description: 'Solicitações pendentes',
       },
       valorTotalConcedido: {
         type: 'number',
         format: 'float',
-        description: 'Valor total concedido em benefícios'
+        description: 'Valor total concedido em benefícios',
       },
       tempoMedioAnalise: {
         type: 'number',
         format: 'float',
-        description: 'Tempo médio de análise em dias'
-      }
+        description: 'Tempo médio de análise em dias',
+      },
     },
     example: {
       totalSolicitacoes: 150,
       solicitacoesAprovadas: 120,
       solicitacoesRejeitadas: 25,
       solicitacoesPendentes: 5,
-      valorTotalConcedido: 45000.00,
-      tempoMedioAnalise: 3.5
-    }
+      valorTotalConcedido: 45000.0,
+      tempoMedioAnalise: 3.5,
+    },
   })
   resumo: {
     totalSolicitacoes: number;
@@ -162,38 +162,38 @@ export class RelatorioSolicitacoesResponseDto {
       properties: {
         tipoBeneficio: {
           type: 'string',
-          description: 'Nome do tipo de benefício'
+          description: 'Nome do tipo de benefício',
         },
         quantidade: {
           type: 'integer',
-          description: 'Quantidade de solicitações'
+          description: 'Quantidade de solicitações',
         },
         valorTotal: {
           type: 'number',
           format: 'float',
-          description: 'Valor total concedido'
+          description: 'Valor total concedido',
         },
         percentual: {
           type: 'number',
           format: 'float',
-          description: 'Percentual do total'
-        }
-      }
+          description: 'Percentual do total',
+        },
+      },
     },
     example: [
       {
         tipoBeneficio: 'Auxílio Natalidade',
         quantidade: 80,
-        valorTotal: 24000.00,
-        percentual: 53.3
+        valorTotal: 24000.0,
+        percentual: 53.3,
       },
       {
         tipoBeneficio: 'Aluguel Social',
         quantidade: 70,
-        valorTotal: 21000.00,
-        percentual: 46.7
-      }
-    ]
+        valorTotal: 21000.0,
+        percentual: 46.7,
+      },
+    ],
   })
   distribuicaoPorTipo: Array<{
     tipoBeneficio: string;
@@ -210,36 +210,36 @@ export class RelatorioSolicitacoesResponseDto {
       properties: {
         periodo: {
           type: 'string',
-          description: 'Período (dia, semana ou mês)'
+          description: 'Período (dia, semana ou mês)',
         },
         quantidade: {
           type: 'integer',
-          description: 'Quantidade de solicitações'
+          description: 'Quantidade de solicitações',
         },
         aprovadas: {
           type: 'integer',
-          description: 'Solicitações aprovadas'
+          description: 'Solicitações aprovadas',
         },
         rejeitadas: {
           type: 'integer',
-          description: 'Solicitações rejeitadas'
-        }
-      }
+          description: 'Solicitações rejeitadas',
+        },
+      },
     },
     example: [
       {
         periodo: '2025-01-01',
         quantidade: 15,
         aprovadas: 12,
-        rejeitadas: 3
+        rejeitadas: 3,
       },
       {
         periodo: '2025-01-02',
         quantidade: 18,
         aprovadas: 15,
-        rejeitadas: 3
-      }
-    ]
+        rejeitadas: 3,
+      },
+    ],
   })
   evolucaoTemporal: Array<{
     periodo: string;
@@ -252,22 +252,24 @@ export class RelatorioSolicitacoesResponseDto {
     description: 'Data e hora de geração do relatório',
     example: '2025-01-18T15:30:00.000Z',
     type: 'string',
-    format: 'date-time'
+    format: 'date-time',
   })
   dataGeracao: string;
 
   @ApiProperty({
     description: 'Usuário que gerou o relatório',
     example: 'João Silva Santos',
-    type: 'string'
+    type: 'string',
   })
   geradoPor: string;
 
   @ApiPropertyOptional({
-    description: 'URL para download do arquivo do relatório (quando formato != JSON)',
-    example: 'https://storage.example.com/reports/relatorio_20250118_153000.pdf',
+    description:
+      'URL para download do arquivo do relatório (quando formato != JSON)',
+    example:
+      'https://storage.example.com/reports/relatorio_20250118_153000.pdf',
     type: 'string',
-    format: 'uri'
+    format: 'uri',
   })
   urlDownload?: string;
 }
@@ -282,7 +284,7 @@ export class DashboardMetricasDto {
     type: 'integer',
     minimum: 1,
     maximum: 365,
-    default: 30
+    default: 30,
   })
   periodo?: number;
 
@@ -290,7 +292,7 @@ export class DashboardMetricasDto {
     description: 'Incluir comparação com período anterior',
     example: true,
     type: 'boolean',
-    default: true
+    default: true,
   })
   incluirComparacao?: boolean;
 }
@@ -305,50 +307,50 @@ export class DashboardMetricasResponseDto {
     properties: {
       totalSolicitacoes: {
         type: 'integer',
-        description: 'Total de solicitações'
+        description: 'Total de solicitações',
       },
       solicitacoesAprovadas: {
         type: 'integer',
-        description: 'Solicitações aprovadas'
+        description: 'Solicitações aprovadas',
       },
       solicitacoesPendentes: {
         type: 'integer',
-        description: 'Solicitações pendentes de análise'
+        description: 'Solicitações pendentes de análise',
       },
       taxaAprovacao: {
         type: 'number',
         format: 'float',
-        description: 'Taxa de aprovação em percentual'
+        description: 'Taxa de aprovação em percentual',
       },
       valorTotalConcedido: {
         type: 'number',
         format: 'float',
-        description: 'Valor total concedido'
+        description: 'Valor total concedido',
       },
       tempoMedioAnalise: {
         type: 'number',
         format: 'float',
-        description: 'Tempo médio de análise em horas'
+        description: 'Tempo médio de análise em horas',
       },
       cidadaosAtendidos: {
         type: 'integer',
-        description: 'Número de cidadãos únicos atendidos'
+        description: 'Número de cidadãos únicos atendidos',
       },
       documentosValidados: {
         type: 'integer',
-        description: 'Total de documentos validados'
-      }
+        description: 'Total de documentos validados',
+      },
     },
     example: {
       totalSolicitacoes: 245,
       solicitacoesAprovadas: 198,
       solicitacoesPendentes: 12,
       taxaAprovacao: 85.5,
-      valorTotalConcedido: 73500.00,
+      valorTotalConcedido: 73500.0,
       tempoMedioAnalise: 48.5,
       cidadaosAtendidos: 189,
-      documentosValidados: 456
-    }
+      documentosValidados: 456,
+    },
   })
   metricas: {
     totalSolicitacoes: number;
@@ -370,43 +372,43 @@ export class DashboardMetricasResponseDto {
         properties: {
           valor: { type: 'integer' },
           variacao: { type: 'number', format: 'float' },
-          percentual: { type: 'number', format: 'float' }
-        }
+          percentual: { type: 'number', format: 'float' },
+        },
       },
       taxaAprovacao: {
         type: 'object',
         properties: {
           valor: { type: 'number', format: 'float' },
           variacao: { type: 'number', format: 'float' },
-          percentual: { type: 'number', format: 'float' }
-        }
+          percentual: { type: 'number', format: 'float' },
+        },
       },
       valorTotalConcedido: {
         type: 'object',
         properties: {
           valor: { type: 'number', format: 'float' },
           variacao: { type: 'number', format: 'float' },
-          percentual: { type: 'number', format: 'float' }
-        }
-      }
+          percentual: { type: 'number', format: 'float' },
+        },
+      },
     },
     example: {
       totalSolicitacoes: {
         valor: 198,
         variacao: 47,
-        percentual: 23.7
+        percentual: 23.7,
       },
       taxaAprovacao: {
         valor: 82.1,
         variacao: 3.4,
-        percentual: 4.1
+        percentual: 4.1,
       },
       valorTotalConcedido: {
-        valor: 59400.00,
-        variacao: 14100.00,
-        percentual: 23.7
-      }
-    }
+        valor: 59400.0,
+        variacao: 14100.0,
+        percentual: 23.7,
+      },
+    },
   })
   comparacao?: {
     totalSolicitacoes: {
@@ -434,36 +436,36 @@ export class DashboardMetricasResponseDto {
       properties: {
         nome: {
           type: 'string',
-          description: 'Nome do tipo de benefício'
+          description: 'Nome do tipo de benefício',
         },
         quantidade: {
           type: 'integer',
-          description: 'Quantidade de solicitações'
+          description: 'Quantidade de solicitações',
         },
         percentual: {
           type: 'number',
           format: 'float',
-          description: 'Percentual do total'
-        }
-      }
+          description: 'Percentual do total',
+        },
+      },
     },
     example: [
       {
         nome: 'Auxílio Natalidade',
         quantidade: 125,
-        percentual: 51.0
+        percentual: 51.0,
       },
       {
         nome: 'Aluguel Social',
         quantidade: 98,
-        percentual: 40.0
+        percentual: 40.0,
       },
       {
         nome: 'Auxílio Funeral',
         quantidade: 22,
-        percentual: 9.0
-      }
-    ]
+        percentual: 9.0,
+      },
+    ],
   })
   topBeneficios: Array<{
     nome: string;
@@ -479,36 +481,36 @@ export class DashboardMetricasResponseDto {
       properties: {
         status: {
           type: 'string',
-          description: 'Status da solicitação'
+          description: 'Status da solicitação',
         },
         quantidade: {
           type: 'integer',
-          description: 'Quantidade de solicitações'
+          description: 'Quantidade de solicitações',
         },
         percentual: {
           type: 'number',
           format: 'float',
-          description: 'Percentual do total'
-        }
-      }
+          description: 'Percentual do total',
+        },
+      },
     },
     example: [
       {
         status: 'APROVADA',
         quantidade: 198,
-        percentual: 80.8
+        percentual: 80.8,
       },
       {
         status: 'REJEITADA',
         quantidade: 35,
-        percentual: 14.3
+        percentual: 14.3,
       },
       {
         status: 'PENDENTE',
         quantidade: 12,
-        percentual: 4.9
-      }
-    ]
+        percentual: 4.9,
+      },
+    ],
   })
   distribuicaoStatus: Array<{
     status: string;
@@ -525,36 +527,36 @@ export class DashboardMetricasResponseDto {
         tipo: {
           type: 'string',
           enum: ['INFO', 'WARNING', 'ERROR'],
-          description: 'Tipo do alerta'
+          description: 'Tipo do alerta',
         },
         titulo: {
           type: 'string',
-          description: 'Título do alerta'
+          description: 'Título do alerta',
         },
         mensagem: {
           type: 'string',
-          description: 'Mensagem detalhada'
+          description: 'Mensagem detalhada',
         },
         contador: {
           type: 'integer',
-          description: 'Contador relacionado ao alerta'
-        }
-      }
+          description: 'Contador relacionado ao alerta',
+        },
+      },
     },
     example: [
       {
         tipo: 'WARNING',
         titulo: 'Solicitações Pendentes',
         mensagem: 'Existem solicitações pendentes há mais de 5 dias',
-        contador: 3
+        contador: 3,
       },
       {
         tipo: 'INFO',
         titulo: 'Meta Mensal',
         mensagem: 'Meta de atendimento mensal atingida',
-        contador: 100
-      }
-    ]
+        contador: 100,
+      },
+    ],
   })
   alertas: Array<{
     tipo: 'INFO' | 'WARNING' | 'ERROR';
@@ -567,7 +569,7 @@ export class DashboardMetricasResponseDto {
     description: 'Data e hora da última atualização das métricas',
     example: '2025-01-18T15:45:00.000Z',
     type: 'string',
-    format: 'date-time'
+    format: 'date-time',
   })
   ultimaAtualizacao: string;
 }
@@ -581,7 +583,7 @@ export class RelatorioFinanceiroDto {
     example: 2025,
     type: 'integer',
     minimum: 2020,
-    maximum: 2030
+    maximum: 2030,
   })
   ano: number;
 
@@ -590,14 +592,14 @@ export class RelatorioFinanceiroDto {
     example: 1,
     type: 'integer',
     minimum: 1,
-    maximum: 12
+    maximum: 12,
   })
   mes?: number;
 
   @ApiPropertyOptional({
     description: 'Filtrar por tipo de benefício',
     example: '507f1f77bcf86cd799439011',
-    type: 'string'
+    type: 'string',
   })
   tipoBeneficioId?: string;
 
@@ -605,7 +607,7 @@ export class RelatorioFinanceiroDto {
     description: 'Incluir projeções para os próximos meses',
     example: true,
     type: 'boolean',
-    default: false
+    default: false,
   })
   incluirProjecoes?: boolean;
 }
@@ -620,17 +622,17 @@ export class RelatorioFinanceiroResponseDto {
     properties: {
       ano: {
         type: 'integer',
-        description: 'Ano de referência'
+        description: 'Ano de referência',
       },
       mes: {
         type: 'integer',
-        description: 'Mês específico (opcional)'
-      }
+        description: 'Mês específico (opcional)',
+      },
     },
     example: {
       ano: 2025,
-      mes: 1
-    }
+      mes: 1,
+    },
   })
   periodo: {
     ano: number;
@@ -644,40 +646,40 @@ export class RelatorioFinanceiroResponseDto {
       valorTotalConcedido: {
         type: 'number',
         format: 'float',
-        description: 'Valor total concedido em benefícios'
+        description: 'Valor total concedido em benefícios',
       },
       valorTotalPago: {
         type: 'number',
         format: 'float',
-        description: 'Valor total efetivamente pago'
+        description: 'Valor total efetivamente pago',
       },
       valorPendentePagamento: {
         type: 'number',
         format: 'float',
-        description: 'Valor pendente de pagamento'
+        description: 'Valor pendente de pagamento',
       },
       numeroTotalBeneficios: {
         type: 'integer',
-        description: 'Número total de benefícios concedidos'
+        description: 'Número total de benefícios concedidos',
       },
       numeroTotalBeneficiarios: {
         type: 'integer',
-        description: 'Número total de beneficiários únicos'
+        description: 'Número total de beneficiários únicos',
       },
       ticketMedio: {
         type: 'number',
         format: 'float',
-        description: 'Valor médio por benefício'
-      }
+        description: 'Valor médio por benefício',
+      },
     },
     example: {
-      valorTotalConcedido: 125000.00,
-      valorTotalPago: 118500.00,
-      valorPendentePagamento: 6500.00,
+      valorTotalConcedido: 125000.0,
+      valorTotalPago: 118500.0,
+      valorPendentePagamento: 6500.0,
       numeroTotalBeneficios: 312,
       numeroTotalBeneficiarios: 289,
-      ticketMedio: 400.64
-    }
+      ticketMedio: 400.64,
+    },
   })
   resumo: {
     valorTotalConcedido: number;
@@ -696,45 +698,45 @@ export class RelatorioFinanceiroResponseDto {
       properties: {
         tipoBeneficio: {
           type: 'string',
-          description: 'Nome do tipo de benefício'
+          description: 'Nome do tipo de benefício',
         },
         valorConcedido: {
           type: 'number',
           format: 'float',
-          description: 'Valor total concedido'
+          description: 'Valor total concedido',
         },
         valorPago: {
           type: 'number',
           format: 'float',
-          description: 'Valor total pago'
+          description: 'Valor total pago',
         },
         quantidade: {
           type: 'integer',
-          description: 'Quantidade de benefícios'
+          description: 'Quantidade de benefícios',
         },
         percentualOrcamento: {
           type: 'number',
           format: 'float',
-          description: 'Percentual do orçamento total'
-        }
-      }
+          description: 'Percentual do orçamento total',
+        },
+      },
     },
     example: [
       {
         tipoBeneficio: 'Auxílio Natalidade',
-        valorConcedido: 75000.00,
-        valorPago: 71250.00,
+        valorConcedido: 75000.0,
+        valorPago: 71250.0,
         quantidade: 250,
-        percentualOrcamento: 60.0
+        percentualOrcamento: 60.0,
       },
       {
         tipoBeneficio: 'Aluguel Social',
-        valorConcedido: 50000.00,
-        valorPago: 47250.00,
+        valorConcedido: 50000.0,
+        valorPago: 47250.0,
         quantidade: 62,
-        percentualOrcamento: 40.0
-      }
-    ]
+        percentualOrcamento: 40.0,
+      },
+    ],
   })
   distribuicaoPorTipo: Array<{
     tipoBeneficio: string;
@@ -752,32 +754,32 @@ export class RelatorioFinanceiroResponseDto {
       properties: {
         mes: {
           type: 'integer',
-          description: 'Mês (1-12)'
+          description: 'Mês (1-12)',
         },
         valorConcedido: {
           type: 'number',
           format: 'float',
-          description: 'Valor concedido no mês'
+          description: 'Valor concedido no mês',
         },
         valorPago: {
           type: 'number',
           format: 'float',
-          description: 'Valor pago no mês'
+          description: 'Valor pago no mês',
         },
         quantidade: {
           type: 'integer',
-          description: 'Quantidade de benefícios no mês'
-        }
-      }
+          description: 'Quantidade de benefícios no mês',
+        },
+      },
     },
     example: [
       {
         mes: 1,
-        valorConcedido: 125000.00,
-        valorPago: 118500.00,
-        quantidade: 312
-      }
-    ]
+        valorConcedido: 125000.0,
+        valorPago: 118500.0,
+        quantidade: 312,
+      },
+    ],
   })
   evolucaoMensal: Array<{
     mes: number;
@@ -794,32 +796,32 @@ export class RelatorioFinanceiroResponseDto {
       properties: {
         mes: {
           type: 'integer',
-          description: 'Mês da projeção'
+          description: 'Mês da projeção',
         },
         valorProjetado: {
           type: 'number',
           format: 'float',
-          description: 'Valor projetado'
+          description: 'Valor projetado',
         },
         quantidadeProjetada: {
           type: 'integer',
-          description: 'Quantidade projetada'
+          description: 'Quantidade projetada',
         },
         confianca: {
           type: 'number',
           format: 'float',
-          description: 'Nível de confiança da projeção (0-100)'
-        }
-      }
+          description: 'Nível de confiança da projeção (0-100)',
+        },
+      },
     },
     example: [
       {
         mes: 2,
-        valorProjetado: 130000.00,
+        valorProjetado: 130000.0,
         quantidadeProjetada: 325,
-        confianca: 85.5
-      }
-    ]
+        confianca: 85.5,
+      },
+    ],
   })
   projecoes?: Array<{
     mes: number;
@@ -832,7 +834,7 @@ export class RelatorioFinanceiroResponseDto {
     description: 'Data e hora de geração do relatório',
     example: '2025-01-18T16:00:00.000Z',
     type: 'string',
-    format: 'date-time'
+    format: 'date-time',
   })
   dataGeracao: string;
 }

@@ -1,0 +1,92 @@
+09977f0ef2fdd213d9fb3c130eb6e41b
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var _a, _b, _c;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Integrador = void 0;
+const typeorm_1 = require("typeorm");
+const integrador_token_entity_1 = require("./integrador-token.entity");
+/**
+ * Entidade que representa um integrador externo (sistema ou parceiro)
+ * que consome a API do PGBen.
+ */
+let Integrador = class Integrador {
+    id;
+    nome;
+    descricao;
+    responsavel;
+    emailContato;
+    telefoneContato;
+    ativo;
+    permissoesEscopo;
+    ipPermitidos;
+    ultimoAcesso;
+    dataCriacao;
+    dataAtualizacao;
+    tokens;
+};
+exports.Integrador = Integrador;
+__decorate([
+    (0, typeorm_1.PrimaryGeneratedColumn)('uuid'),
+    __metadata("design:type", String)
+], Integrador.prototype, "id", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ unique: true }),
+    __metadata("design:type", String)
+], Integrador.prototype, "nome", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ length: 500, nullable: true }),
+    __metadata("design:type", String)
+], Integrador.prototype, "descricao", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", String)
+], Integrador.prototype, "responsavel", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", String)
+], Integrador.prototype, "emailContato", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", String)
+], Integrador.prototype, "telefoneContato", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ default: true }),
+    __metadata("design:type", Boolean)
+], Integrador.prototype, "ativo", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'simple-array', nullable: true }),
+    __metadata("design:type", Array)
+], Integrador.prototype, "permissoesEscopo", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'simple-array', nullable: true }),
+    __metadata("design:type", Array)
+], Integrador.prototype, "ipPermitidos", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'timestamptz', nullable: true }),
+    __metadata("design:type", typeof (_a = typeof Date !== "undefined" && Date) === "function" ? _a : Object)
+], Integrador.prototype, "ultimoAcesso", void 0);
+__decorate([
+    (0, typeorm_1.CreateDateColumn)({ type: 'timestamptz' }),
+    __metadata("design:type", typeof (_b = typeof Date !== "undefined" && Date) === "function" ? _b : Object)
+], Integrador.prototype, "dataCriacao", void 0);
+__decorate([
+    (0, typeorm_1.UpdateDateColumn)({ type: 'timestamptz' }),
+    __metadata("design:type", typeof (_c = typeof Date !== "undefined" && Date) === "function" ? _c : Object)
+], Integrador.prototype, "dataAtualizacao", void 0);
+__decorate([
+    (0, typeorm_1.OneToMany)(() => integrador_token_entity_1.IntegradorToken, token => token.integrador),
+    __metadata("design:type", Array)
+], Integrador.prototype, "tokens", void 0);
+exports.Integrador = Integrador = __decorate([
+    (0, typeorm_1.Entity)('integradores')
+], Integrador);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXGVudGl0aWVzXFxpbnRlZ3JhZG9yLmVudGl0eS50cyIsIm1hcHBpbmdzIjoiOzs7Ozs7Ozs7Ozs7O0FBQUEscUNBQWdIO0FBQ2hILHVFQUE0RDtBQUU1RDs7O0dBR0c7QUFFSSxJQUFNLFVBQVUsR0FBaEIsTUFBTSxVQUFVO0lBRXJCLEVBQUUsQ0FBUztJQUdYLElBQUksQ0FBUztJQUdiLFNBQVMsQ0FBUztJQUdsQixXQUFXLENBQVM7SUFHcEIsWUFBWSxDQUFTO0lBR3JCLGVBQWUsQ0FBUztJQUd4QixLQUFLLENBQVU7SUFHZixnQkFBZ0IsQ0FBVztJQUczQixZQUFZLENBQVc7SUFHdkIsWUFBWSxDQUFPO0lBR25CLFdBQVcsQ0FBTztJQUdsQixlQUFlLENBQU87SUFHdEIsTUFBTSxDQUFvQjtDQUMzQixDQUFBO0FBdkNZLGdDQUFVO0FBRXJCO0lBREMsSUFBQSxnQ0FBc0IsRUFBQyxNQUFNLENBQUM7O3NDQUNwQjtBQUdYO0lBREMsSUFBQSxnQkFBTSxFQUFDLEVBQUUsTUFBTSxFQUFFLElBQUksRUFBRSxDQUFDOzt3Q0FDWjtBQUdiO0lBREMsSUFBQSxnQkFBTSxFQUFDLEVBQUUsTUFBTSxFQUFFLEdBQUcsRUFBRSxRQUFRLEVBQUUsSUFBSSxFQUFFLENBQUM7OzZDQUN0QjtBQUdsQjtJQURDLElBQUEsZ0JBQU0sRUFBQyxFQUFFLFFBQVEsRUFBRSxJQUFJLEVBQUUsQ0FBQzs7K0NBQ1A7QUFHcEI7SUFEQyxJQUFBLGdCQUFNLEVBQUMsRUFBRSxRQUFRLEVBQUUsSUFBSSxFQUFFLENBQUM7O2dEQUNOO0FBR3JCO0lBREMsSUFBQSxnQkFBTSxFQUFDLEVBQUUsUUFBUSxFQUFFLElBQUksRUFBRSxDQUFDOzttREFDSDtBQUd4QjtJQURDLElBQUEsZ0JBQU0sRUFBQyxFQUFFLE9BQU8sRUFBRSxJQUFJLEVBQUUsQ0FBQzs7eUNBQ1g7QUFHZjtJQURDLElBQUEsZ0JBQU0sRUFBQyxFQUFFLElBQUksRUFBRSxjQUFjLEVBQUUsUUFBUSxFQUFFLElBQUksRUFBRSxDQUFDOztvREFDdEI7QUFHM0I7SUFEQyxJQUFBLGdCQUFNLEVBQUMsRUFBRSxJQUFJLEVBQUUsY0FBYyxFQUFFLFFBQVEsRUFBRSxJQUFJLEVBQUUsQ0FBQzs7Z0RBQzFCO0FBR3ZCO0lBREMsSUFBQSxnQkFBTSxFQUFDLEVBQUUsSUFBSSxFQUFFLGFBQWEsRUFBRSxRQUFRLEVBQUUsSUFBSSxFQUFFLENBQUM7a0RBQ2xDLElBQUksb0JBQUosSUFBSTtnREFBQztBQUduQjtJQURDLElBQUEsMEJBQWdCLEVBQUMsRUFBRSxJQUFJLEVBQUUsYUFBYSxFQUFFLENBQUM7a0RBQzdCLElBQUksb0JBQUosSUFBSTsrQ0FBQztBQUdsQjtJQURDLElBQUEsMEJBQWdCLEVBQUMsRUFBRSxJQUFJLEVBQUUsYUFBYSxFQUFFLENBQUM7a0RBQ3pCLElBQUksb0JBQUosSUFBSTttREFBQztBQUd0QjtJQURDLElBQUEsbUJBQVMsRUFBQyxHQUFHLEVBQUUsQ0FBQyx5Q0FBZSxFQUFFLEtBQUssQ0FBQyxFQUFFLENBQUMsS0FBSyxDQUFDLFVBQVUsQ0FBQzs7MENBQ2xDO3FCQXRDZixVQUFVO0lBRHRCLElBQUEsZ0JBQU0sRUFBQyxjQUFjLENBQUM7R0FDVixVQUFVLENBdUN0QiIsIm5hbWVzIjpbXSwic291cmNlcyI6WyJDOlxcVXNlcnNcXGV1ZHJlXFxPbmVEcml2ZVxcRGVza3RvcFxcUHJvamV0b3NcXHBnYmVuXFxwZ2Jlbi1zZXJ2ZXJcXHNyY1xcZW50aXRpZXNcXGludGVncmFkb3IuZW50aXR5LnRzIl0sInNvdXJjZXNDb250ZW50IjpbImltcG9ydCB7IEVudGl0eSwgUHJpbWFyeUdlbmVyYXRlZENvbHVtbiwgQ29sdW1uLCBPbmVUb01hbnksIENyZWF0ZURhdGVDb2x1bW4sIFVwZGF0ZURhdGVDb2x1bW4gfSBmcm9tICd0eXBlb3JtJztcbmltcG9ydCB7IEludGVncmFkb3JUb2tlbiB9IGZyb20gJy4vaW50ZWdyYWRvci10b2tlbi5lbnRpdHknO1xuXG4vKipcbiAqIEVudGlkYWRlIHF1ZSByZXByZXNlbnRhIHVtIGludGVncmFkb3IgZXh0ZXJubyAoc2lzdGVtYSBvdSBwYXJjZWlybylcbiAqIHF1ZSBjb25zb21lIGEgQVBJIGRvIFBHQmVuLlxuICovXG5ARW50aXR5KCdpbnRlZ3JhZG9yZXMnKVxuZXhwb3J0IGNsYXNzIEludGVncmFkb3Ige1xuICBAUHJpbWFyeUdlbmVyYXRlZENvbHVtbigndXVpZCcpXG4gIGlkOiBzdHJpbmc7XG5cbiAgQENvbHVtbih7IHVuaXF1ZTogdHJ1ZSB9KVxuICBub21lOiBzdHJpbmc7XG5cbiAgQENvbHVtbih7IGxlbmd0aDogNTAwLCBudWxsYWJsZTogdHJ1ZSB9KVxuICBkZXNjcmljYW86IHN0cmluZztcblxuICBAQ29sdW1uKHsgbnVsbGFibGU6IHRydWUgfSlcbiAgcmVzcG9uc2F2ZWw6IHN0cmluZztcblxuICBAQ29sdW1uKHsgbnVsbGFibGU6IHRydWUgfSlcbiAgZW1haWxDb250YXRvOiBzdHJpbmc7XG5cbiAgQENvbHVtbih7IG51bGxhYmxlOiB0cnVlIH0pXG4gIHRlbGVmb25lQ29udGF0bzogc3RyaW5nO1xuXG4gIEBDb2x1bW4oeyBkZWZhdWx0OiB0cnVlIH0pXG4gIGF0aXZvOiBib29sZWFuO1xuXG4gIEBDb2x1bW4oeyB0eXBlOiAnc2ltcGxlLWFycmF5JywgbnVsbGFibGU6IHRydWUgfSlcbiAgcGVybWlzc29lc0VzY29wbzogc3RyaW5nW107XG4gIFxuICBAQ29sdW1uKHsgdHlwZTogJ3NpbXBsZS1hcnJheScsIG51bGxhYmxlOiB0cnVlIH0pXG4gIGlwUGVybWl0aWRvczogc3RyaW5nW107XG5cbiAgQENvbHVtbih7IHR5cGU6ICd0aW1lc3RhbXB0eicsIG51bGxhYmxlOiB0cnVlIH0pXG4gIHVsdGltb0FjZXNzbzogRGF0ZTtcblxuICBAQ3JlYXRlRGF0ZUNvbHVtbih7IHR5cGU6ICd0aW1lc3RhbXB0eicgfSlcbiAgZGF0YUNyaWFjYW86IERhdGU7XG5cbiAgQFVwZGF0ZURhdGVDb2x1bW4oeyB0eXBlOiAndGltZXN0YW1wdHonIH0pXG4gIGRhdGFBdHVhbGl6YWNhbzogRGF0ZTtcblxuICBAT25lVG9NYW55KCgpID0+IEludGVncmFkb3JUb2tlbiwgdG9rZW4gPT4gdG9rZW4uaW50ZWdyYWRvcilcbiAgdG9rZW5zOiBJbnRlZ3JhZG9yVG9rZW5bXTtcbn1cbiJdLCJ2ZXJzaW9uIjozfQ==

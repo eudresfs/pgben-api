@@ -43,22 +43,23 @@ export class BeneficioController {
    * Lista todos os tipos de benefícios
    */
   @Get()
-  @RequiresPermission({ 
-    permissionName: 'beneficio.listar',  
-    scopeType: ScopeType.GLOBAL 
+  @RequiresPermission({
+    permissionName: 'beneficio.listar',
+    scopeType: ScopeType.GLOBAL,
   })
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Listar tipos de benefícios',
-    description: 'Retorna uma lista paginada de todos os tipos de benefícios cadastrados no sistema.'
+    description:
+      'Retorna uma lista paginada de todos os tipos de benefícios cadastrados no sistema.',
   })
   @ApiResponse({
     status: 200,
     description: 'Lista de benefícios retornada com sucesso',
     content: {
       'application/json': {
-        example: ""
-      }
-    }
+        example: '',
+      },
+    },
   })
   @ApiQuery({
     name: 'page',
@@ -102,31 +103,32 @@ export class BeneficioController {
    * Obtém detalhes de um tipo de benefício específico
    */
   @Get(':id')
-  @RequiresPermission(
-  
-  { permissionName: 'beneficio.visualizar', scopeType: ScopeType.GLOBAL
+  @RequiresPermission({
+    permissionName: 'beneficio.visualizar',
+    scopeType: ScopeType.GLOBAL,
   })
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Obter detalhes de um benefício',
-    description: 'Retorna os detalhes completos de um tipo de benefício específico.'
+    description:
+      'Retorna os detalhes completos de um tipo de benefício específico.',
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Benefício encontrado com sucesso',
     content: {
       'application/json': {
-        example: ""
-      }
-    }
+        example: '',
+      },
+    },
   })
-  @ApiResponse({ 
-    status: 404, 
+  @ApiResponse({
+    status: 404,
     description: 'Benefício não encontrado',
     content: {
       'application/json': {
-        example: ""
-      }
-    }
+        example: '',
+      },
+    },
   })
   async findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.beneficioService.findById(id);
@@ -136,51 +138,48 @@ export class BeneficioController {
    * Cria um novo tipo de benefício
    */
   @Post()
-  @RequiresPermission(
-    
-    {
-      permissionName: 'beneficio.criar',
-      scopeType: ScopeType.GLOBAL
-    }
-  )
-  @ApiOperation({ 
+  @RequiresPermission({
+    permissionName: 'beneficio.criar',
+    scopeType: ScopeType.GLOBAL,
+  })
+  @ApiOperation({
     summary: 'Criar novo tipo de benefício',
-    description: 'Cria um novo tipo de benefício no sistema.'
+    description: 'Cria um novo tipo de benefício no sistema.',
   })
   @ApiBody({
     type: CreateTipoBeneficioDto,
     examples: {
       'Auxílio Emergencial': {
-        value: ""
-      }
-    }
+        value: '',
+      },
+    },
   })
-  @ApiResponse({ 
-    status: 201, 
+  @ApiResponse({
+    status: 201,
     description: 'Benefício criado com sucesso',
     content: {
       'application/json': {
-        example: ""
-      }
-    }
+        example: '',
+      },
+    },
   })
-  @ApiResponse({ 
-    status: 400, 
+  @ApiResponse({
+    status: 400,
     description: 'Dados inválidos',
     content: {
       'application/json': {
-        example: ""
-      }
-    }
+        example: '',
+      },
+    },
   })
-  @ApiResponse({ 
-    status: 409, 
+  @ApiResponse({
+    status: 409,
     description: 'Nome já em uso',
     content: {
       'application/json': {
-        example: ""
-      }
-    }
+        example: '',
+      },
+    },
   })
   async create(@Body() createTipoBeneficioDto: CreateTipoBeneficioDto) {
     return this.beneficioService.create(createTipoBeneficioDto);
@@ -190,60 +189,57 @@ export class BeneficioController {
    * Atualiza um tipo de benefício existente
    */
   @Put(':id')
-  @RequiresPermission(
-    
-    {
-      permissionName: 'beneficio.editar',
-      scopeType: ScopeType.GLOBAL
-    }
-  )
-  @ApiOperation({ 
+  @RequiresPermission({
+    permissionName: 'beneficio.editar',
+    scopeType: ScopeType.GLOBAL,
+  })
+  @ApiOperation({
     summary: 'Atualizar tipo de benefício existente',
-    description: 'Atualiza os dados de um tipo de benefício existente.'
+    description: 'Atualiza os dados de um tipo de benefício existente.',
   })
   @ApiBody({
     type: UpdateTipoBeneficioDto,
     examples: {
       'Atualização de Benefício': {
-        value: ""
-      }
-    }
+        value: '',
+      },
+    },
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Benefício atualizado com sucesso',
     content: {
       'application/json': {
-        example: ""
-      }
-    }
+        example: '',
+      },
+    },
   })
-  @ApiResponse({ 
-    status: 400, 
+  @ApiResponse({
+    status: 400,
     description: 'Dados inválidos',
     content: {
       'application/json': {
-        example: ""
-      }
-    }
+        example: '',
+      },
+    },
   })
-  @ApiResponse({ 
-    status: 404, 
+  @ApiResponse({
+    status: 404,
     description: 'Benefício não encontrado',
     content: {
       'application/json': {
-        example: ""
-      }
-    }
+        example: '',
+      },
+    },
   })
-  @ApiResponse({ 
-    status: 409, 
+  @ApiResponse({
+    status: 409,
     description: 'Nome já em uso',
     content: {
       'application/json': {
-        example: ""
-      }
-    }
+        example: '',
+      },
+    },
   })
   async update(
     @Param('id', ParseUUIDPipe) id: string,
@@ -256,13 +252,10 @@ export class BeneficioController {
    * Lista requisitos documentais de um benefício
    */
   @Get(':id/requisitos')
-  @RequiresPermission(
-    
-    {
-      permissionName: 'beneficio.requisito.listar',
-      scopeType: ScopeType.GLOBAL
-    }
-  )
+  @RequiresPermission({
+    permissionName: 'beneficio.requisito.listar',
+    scopeType: ScopeType.GLOBAL,
+  })
   @ApiOperation({ summary: 'Listar requisitos documentais' })
   @ApiResponse({
     status: 200,
@@ -277,13 +270,10 @@ export class BeneficioController {
    * Adiciona requisito documental a um benefício
    */
   @Post(':id/requisitos')
-  @RequiresPermission(
-    
-    {
-      permissionName: 'beneficio.requisito.adicionar',
-      scopeType: ScopeType.GLOBAL
-    }
-  )
+  @RequiresPermission({
+    permissionName: 'beneficio.requisito.adicionar',
+    scopeType: ScopeType.GLOBAL,
+  })
   @ApiOperation({ summary: 'Adicionar requisito documental' })
   @ApiResponse({ status: 201, description: 'Requisito adicionado com sucesso' })
   @ApiResponse({ status: 400, description: 'Dados inválidos' })
@@ -299,13 +289,10 @@ export class BeneficioController {
    * Configura fluxo de aprovação de um benefício
    */
   @Put(':id/fluxo')
-  @RequiresPermission(
-    
-    {
-      permissionName: 'beneficio.fluxo.configurar',
-      scopeType: ScopeType.GLOBAL
-    }
-  )
+  @RequiresPermission({
+    permissionName: 'beneficio.fluxo.configurar',
+    scopeType: ScopeType.GLOBAL,
+  })
   @ApiOperation({ summary: 'Configurar fluxo de aprovação' })
   @ApiResponse({ status: 200, description: 'Fluxo configurado com sucesso' })
   @ApiResponse({ status: 400, description: 'Dados inválidos' })

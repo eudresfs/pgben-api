@@ -1,12 +1,16 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 
 /**
  * Serviço de integração com o módulo de Solicitação
- * 
+ *
  * Implementa a comunicação entre o módulo de Pagamento e o módulo de Solicitação,
  * permitindo verificar o status de solicitações e atualizá-lo conforme o
  * andamento dos pagamentos.
- * 
+ *
  * @author Equipe PGBen
  */
 @Injectable()
@@ -16,7 +20,7 @@ export class IntegracaoSolicitacaoService {
 
   /**
    * Verifica se uma solicitação está aprovada e pronta para pagamento
-   * 
+   *
    * @param solicitacaoId ID da solicitação
    * @returns Dados da solicitação se estiver aprovada
    * @throws NotFoundException se a solicitação não existir
@@ -25,22 +29,24 @@ export class IntegracaoSolicitacaoService {
   async verificarSolicitacaoAprovada(solicitacaoId: string): Promise<any> {
     // Em uma implementação real, chamaria o serviço de solicitação
     // const solicitacao = await this.solicitacaoService.findOne(solicitacaoId);
-    
+
     // if (!solicitacao) {
     //   throw new NotFoundException('Solicitação não encontrada');
     // }
-    
+
     // if (solicitacao.status !== 'APROVADA') {
     //   throw new ConflictException(
     //     `Somente solicitações aprovadas podem receber pagamento. Status atual: ${solicitacao.status}`
     //   );
     // }
-    
+
     // return solicitacao;
 
     // Implementação de mock para desenvolvimento
-    console.log(`[INTEGRAÇÃO] Verificando status da solicitação ${solicitacaoId}`);
-    
+    console.log(
+      `[INTEGRAÇÃO] Verificando status da solicitação ${solicitacaoId}`,
+    );
+
     // Simular verificação bem-sucedida
     return {
       id: solicitacaoId,
@@ -48,15 +54,15 @@ export class IntegracaoSolicitacaoService {
       cidadaoId: 'mock-cidadao-id',
       tipoBeneficioId: 'mock-beneficio-id',
       unidadeId: 'mock-unidade-id',
-      valorAprovado: 500.00,
+      valorAprovado: 500.0,
       dataAprovacao: new Date(),
-      observacoes: 'Solicitação aprovada para pagamento'
+      observacoes: 'Solicitação aprovada para pagamento',
     };
   }
 
   /**
    * Atualiza o status de uma solicitação após a criação de um pagamento
-   * 
+   *
    * @param solicitacaoId ID da solicitação
    * @param pagamentoId ID do pagamento criado
    * @param usuarioId ID do usuário que está realizando a operação
@@ -65,7 +71,7 @@ export class IntegracaoSolicitacaoService {
   async atualizarStatusParaPagamentoCriado(
     solicitacaoId: string,
     pagamentoId: string,
-    usuarioId: string
+    usuarioId: string,
   ): Promise<any> {
     // Em uma implementação real, chamaria o serviço de solicitação
     // return this.solicitacaoService.atualizarStatus(
@@ -79,20 +85,22 @@ export class IntegracaoSolicitacaoService {
     // );
 
     // Implementação de mock para desenvolvimento
-    console.log(`[INTEGRAÇÃO] Atualizando status da solicitação ${solicitacaoId} para PAGAMENTO_CRIADO`);
-    
+    console.log(
+      `[INTEGRAÇÃO] Atualizando status da solicitação ${solicitacaoId} para PAGAMENTO_CRIADO`,
+    );
+
     return {
       id: solicitacaoId,
       status: 'PAGAMENTO_CRIADO',
       pagamentoId,
       atualizadoPor: usuarioId,
-      dataAtualizacao: new Date()
+      dataAtualizacao: new Date(),
     };
   }
 
   /**
    * Atualiza o status de uma solicitação após a liberação de um pagamento
-   * 
+   *
    * @param solicitacaoId ID da solicitação
    * @param pagamentoId ID do pagamento liberado
    * @param usuarioId ID do usuário que está realizando a operação
@@ -101,7 +109,7 @@ export class IntegracaoSolicitacaoService {
   async atualizarStatusParaPagamentoLiberado(
     solicitacaoId: string,
     pagamentoId: string,
-    usuarioId: string
+    usuarioId: string,
   ): Promise<any> {
     // Em uma implementação real, chamaria o serviço de solicitação
     // return this.solicitacaoService.atualizarStatus(
@@ -115,20 +123,22 @@ export class IntegracaoSolicitacaoService {
     // );
 
     // Implementação de mock para desenvolvimento
-    console.log(`[INTEGRAÇÃO] Atualizando status da solicitação ${solicitacaoId} para PAGAMENTO_LIBERADO`);
-    
+    console.log(
+      `[INTEGRAÇÃO] Atualizando status da solicitação ${solicitacaoId} para PAGAMENTO_LIBERADO`,
+    );
+
     return {
       id: solicitacaoId,
       status: 'PAGAMENTO_LIBERADO',
       pagamentoId,
       atualizadoPor: usuarioId,
-      dataAtualizacao: new Date()
+      dataAtualizacao: new Date(),
     };
   }
 
   /**
    * Atualiza o status de uma solicitação após a confirmação de recebimento
-   * 
+   *
    * @param solicitacaoId ID da solicitação
    * @param pagamentoId ID do pagamento confirmado
    * @param confirmacaoId ID da confirmação de recebimento
@@ -139,7 +149,7 @@ export class IntegracaoSolicitacaoService {
     solicitacaoId: string,
     pagamentoId: string,
     confirmacaoId: string,
-    usuarioId: string
+    usuarioId: string,
   ): Promise<any> {
     // Em uma implementação real, chamaria o serviço de solicitação
     // return this.solicitacaoService.atualizarStatus(
@@ -154,21 +164,23 @@ export class IntegracaoSolicitacaoService {
     // );
 
     // Implementação de mock para desenvolvimento
-    console.log(`[INTEGRAÇÃO] Atualizando status da solicitação ${solicitacaoId} para PAGAMENTO_CONFIRMADO`);
-    
+    console.log(
+      `[INTEGRAÇÃO] Atualizando status da solicitação ${solicitacaoId} para PAGAMENTO_CONFIRMADO`,
+    );
+
     return {
       id: solicitacaoId,
       status: 'PAGAMENTO_CONFIRMADO',
       pagamentoId,
       confirmacaoId,
       atualizadoPor: usuarioId,
-      dataAtualizacao: new Date()
+      dataAtualizacao: new Date(),
     };
   }
 
   /**
    * Atualiza o status de uma solicitação após o cancelamento de um pagamento
-   * 
+   *
    * @param solicitacaoId ID da solicitação
    * @param pagamentoId ID do pagamento cancelado
    * @param usuarioId ID do usuário que está realizando a operação
@@ -179,7 +191,7 @@ export class IntegracaoSolicitacaoService {
     solicitacaoId: string,
     pagamentoId: string,
     usuarioId: string,
-    motivoCancelamento: string
+    motivoCancelamento: string,
   ): Promise<any> {
     // Em uma implementação real, chamaria o serviço de solicitação
     // return this.solicitacaoService.atualizarStatus(
@@ -193,21 +205,23 @@ export class IntegracaoSolicitacaoService {
     // );
 
     // Implementação de mock para desenvolvimento
-    console.log(`[INTEGRAÇÃO] Atualizando status da solicitação ${solicitacaoId} para PAGAMENTO_CANCELADO`);
-    
+    console.log(
+      `[INTEGRAÇÃO] Atualizando status da solicitação ${solicitacaoId} para PAGAMENTO_CANCELADO`,
+    );
+
     return {
       id: solicitacaoId,
       status: 'PAGAMENTO_CANCELADO',
       pagamentoId,
       atualizadoPor: usuarioId,
       motivoCancelamento,
-      dataAtualizacao: new Date()
+      dataAtualizacao: new Date(),
     };
   }
 
   /**
    * Obtém os limites de valor para um tipo de benefício
-   * 
+   *
    * @param tipoBeneficioId ID do tipo de benefício
    * @returns Objeto com valores mínimo e máximo permitidos
    */
@@ -223,22 +237,26 @@ export class IntegracaoSolicitacaoService {
     // };
 
     // Implementação de mock para desenvolvimento
-    console.log(`[INTEGRAÇÃO] Obtendo limites para o benefício ${tipoBeneficioId}`);
-    
+    console.log(
+      `[INTEGRAÇÃO] Obtendo limites para o benefício ${tipoBeneficioId}`,
+    );
+
     // Valores de exemplo
     const limites = {
-      'mock-beneficio-id': { valorMinimo: 100.00, valorMaximo: 1000.00 },
-      'auxilio-moradia': { valorMinimo: 300.00, valorMaximo: 800.00 },
-      'auxilio-funeral': { valorMinimo: 500.00, valorMaximo: 1500.00 },
-      'cesta-basica': { valorMinimo: 100.00, valorMaximo: 300.00 }
+      'mock-beneficio-id': { valorMinimo: 100.0, valorMaximo: 1000.0 },
+      'auxilio-moradia': { valorMinimo: 300.0, valorMaximo: 800.0 },
+      'auxilio-funeral': { valorMinimo: 500.0, valorMaximo: 1500.0 },
+      'cesta-basica': { valorMinimo: 100.0, valorMaximo: 300.0 },
     };
-    
-    return limites[tipoBeneficioId] || { valorMinimo: 100.00, valorMaximo: 1000.00 };
+
+    return (
+      limites[tipoBeneficioId] || { valorMinimo: 100.0, valorMaximo: 1000.0 }
+    );
   }
 
   /**
    * Verifica se uma solicitação já possui pagamento
-   * 
+   *
    * @param solicitacaoId ID da solicitação
    * @returns true se a solicitação já possui pagamento
    */
@@ -248,8 +266,10 @@ export class IntegracaoSolicitacaoService {
     // return ['PAGAMENTO_CRIADO', 'PAGAMENTO_LIBERADO', 'PAGAMENTO_CONFIRMADO'].includes(solicitacao.status);
 
     // Implementação de mock para desenvolvimento
-    console.log(`[INTEGRAÇÃO] Verificando se solicitação ${solicitacaoId} já possui pagamento`);
-    
+    console.log(
+      `[INTEGRAÇÃO] Verificando se solicitação ${solicitacaoId} já possui pagamento`,
+    );
+
     // Simular que não existe pagamento para permitir testes
     return false;
   }

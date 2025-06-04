@@ -6,12 +6,19 @@ import {
   UpdateDateColumn,
   Index,
 } from 'typeorm';
-import { IsNotEmpty, IsUUID, IsString, IsEnum, IsOptional, Length } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsUUID,
+  IsString,
+  IsEnum,
+  IsOptional,
+  Length,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 /**
  * Entidade JWT Blacklist
- * 
+ *
  * Armazena tokens JWT invalidados para prevenir reutilização
  * de tokens comprometidos ou revogados
  */
@@ -52,12 +59,14 @@ export class JwtBlacklist {
     description: 'Tipo do token (access, refresh)',
     example: 'access',
   })
-  @Column({ 
-    type: 'enum', 
+  @Column({
+    type: 'enum',
     enum: ['access', 'refresh'],
-    default: 'access'
+    default: 'access',
   })
-  @IsEnum(['access', 'refresh'], { message: 'Tipo de token deve ser access ou refresh' })
+  @IsEnum(['access', 'refresh'], {
+    message: 'Tipo de token deve ser access ou refresh',
+  })
   token_type: 'access' | 'refresh';
 
   @ApiProperty({
@@ -244,7 +253,7 @@ export class JwtBlacklist {
       expires_at: this.expires_at,
       created_at: this.created_at,
       isStillBlacklisted: this.isStillBlacklisted(),
-      minutesUntilExpiration: this.getMinutesUntilExpiration()
+      minutesUntilExpiration: this.getMinutesUntilExpiration(),
     };
   }
 
@@ -262,16 +271,16 @@ export class JwtBlacklist {
    */
   getReasonDescription(): string {
     const reasonMap: Record<string, string> = {
-      'user_logout': 'Logout do usuário',
-      'token_compromised': 'Token comprometido',
-      'password_changed': 'Senha alterada',
-      'account_suspended': 'Conta suspensa',
-      'security_breach': 'Violação de segurança',
-      'admin_revoke': 'Revogado pelo administrador',
-      'expired': 'Token expirado',
-      'invalid_use': 'Uso inválido'
+      user_logout: 'Logout do usuário',
+      token_compromised: 'Token comprometido',
+      password_changed: 'Senha alterada',
+      account_suspended: 'Conta suspensa',
+      security_breach: 'Violação de segurança',
+      admin_revoke: 'Revogado pelo administrador',
+      expired: 'Token expirado',
+      invalid_use: 'Uso inválido',
     };
-    
+
     return reasonMap[this.reason] || this.reason;
   }
 
@@ -285,9 +294,9 @@ export class JwtBlacklist {
       'password_changed',
       'account_suspended',
       'security_breach',
-      'admin_revoke'
+      'admin_revoke',
     ];
-    
+
     return securityReasons.includes(this.reason);
   }
 
@@ -337,7 +346,7 @@ export class JwtBlacklist {
       reason: this.reason,
       expires_at: this.expires_at,
       created_at: this.created_at,
-      hasClientInfo: this.hasClientInfo()
+      hasClientInfo: this.hasClientInfo(),
     };
   }
 
@@ -351,7 +360,7 @@ export class JwtBlacklist {
       month: '2-digit',
       day: '2-digit',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     });
   }
 
@@ -365,7 +374,7 @@ export class JwtBlacklist {
       month: '2-digit',
       day: '2-digit',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     });
   }
 }

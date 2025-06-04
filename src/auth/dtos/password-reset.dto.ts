@@ -50,13 +50,10 @@ export class ResetPasswordDto {
   @IsNotEmpty({ message: 'Senha é obrigatória' })
   @MinLength(8, { message: 'Senha deve ter pelo menos 8 caracteres' })
   @MaxLength(128, { message: 'Senha deve ter no máximo 128 caracteres' })
-  @Matches(
-    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
-    {
-      message:
-        'Senha deve conter pelo menos: 1 letra minúscula, 1 maiúscula, 1 número e 1 caractere especial',
-    },
-  )
+  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/, {
+    message:
+      'Senha deve conter pelo menos: 1 letra minúscula, 1 maiúscula, 1 número e 1 caractere especial',
+  })
   newPassword: string;
 
   @ApiProperty({

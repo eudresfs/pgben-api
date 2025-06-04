@@ -2,7 +2,7 @@ import { MigrationInterface, QueryRunner, Table, TableIndex } from 'typeorm';
 
 /**
  * Migração para criar o esquema de permissões do sistema
- * 
+ *
  * Esta migração cria todas as tabelas necessárias para o sistema de permissões granulares:
  * - permissao: Armazena as permissões individuais
  * - grupo_permissao: Armazena os grupos de permissões
@@ -14,7 +14,6 @@ import { MigrationInterface, QueryRunner, Table, TableIndex } from 'typeorm';
 export class CreatePermissionSchema1704067206000 implements MigrationInterface {
   name = 'CreatePermissionSchema1704067206000';
   public async up(queryRunner: QueryRunner): Promise<void> {
-
     // Verificar se a tabela de grupos de permissões já existe
     const grupoPermissaoTableExists = await queryRunner.query(`
       SELECT EXISTS (
@@ -23,7 +22,7 @@ export class CreatePermissionSchema1704067206000 implements MigrationInterface {
         AND table_name = 'grupo_permissao'
       );
     `);
-    
+
     // Criar tabela de grupos de permissões apenas se não existir
     if (!grupoPermissaoTableExists[0].exists) {
       await queryRunner.query(`
@@ -54,7 +53,7 @@ export class CreatePermissionSchema1704067206000 implements MigrationInterface {
         AND table_name = 'mapeamento_grupo_permissao'
       );
     `);
-    
+
     // Criar tabela de mapeamento de permissões para grupos apenas se não existir
     if (!mapeamentoGrupoPermissaoTableExists[0].exists) {
       await queryRunner.query(`
@@ -75,7 +74,9 @@ export class CreatePermissionSchema1704067206000 implements MigrationInterface {
       `);
       console.log('✅ Tabela mapeamento_grupo_permissao criada com sucesso');
     } else {
-      console.log('⚠️ Tabela mapeamento_grupo_permissao já existe, pulando criação');
+      console.log(
+        '⚠️ Tabela mapeamento_grupo_permissao já existe, pulando criação',
+      );
     }
 
     // Verificar se a tabela de permissões de role já existe
@@ -86,7 +87,7 @@ export class CreatePermissionSchema1704067206000 implements MigrationInterface {
         AND table_name = 'role_permissao'
       );
     `);
-    
+
     // Criar tabela de permissões de role apenas se não existir
     if (!rolePermissaoTableExists[0].exists) {
       await queryRunner.query(`
@@ -118,7 +119,7 @@ export class CreatePermissionSchema1704067206000 implements MigrationInterface {
         AND table_name = 'permissao_usuario'
       );
     `);
-    
+
     // Criar tabela de permissões de usuário apenas se não existir
     if (!permissaoUsuarioTableExists[0].exists) {
       await queryRunner.query(`
@@ -148,7 +149,7 @@ export class CreatePermissionSchema1704067206000 implements MigrationInterface {
     } else {
       console.log('⚠️ Tabela permissao_usuario já existe, pulando criação');
     }
-    
+
     // Verificar se a tabela role_usuario já existe
     const roleUsuarioTableExists = await queryRunner.query(`
       SELECT EXISTS (
@@ -157,7 +158,7 @@ export class CreatePermissionSchema1704067206000 implements MigrationInterface {
         AND table_name = 'role_usuario'
       );
     `);
-    
+
     // Criar tabela role_usuario apenas se não existir
     if (!roleUsuarioTableExists[0].exists) {
       await queryRunner.query(`
@@ -191,7 +192,7 @@ export class CreatePermissionSchema1704067206000 implements MigrationInterface {
         AND table_name = 'escopo_permissao'
       );
     `);
-    
+
     // Criar tabela de escopos de permissão apenas se não existir
     if (!escopoPermissaoTableExists[0].exists) {
       await queryRunner.createTable(
@@ -256,16 +257,16 @@ export class CreatePermissionSchema1704067206000 implements MigrationInterface {
             },
           ],
         }),
-        true
+        true,
       );
-  
+
       await queryRunner.createIndex(
         'escopo_permissao',
         new TableIndex({
           name: 'IDX_ESCOPO_PERMISSAO_PERMISSAO',
           columnNames: ['permissao_id'],
           isUnique: true,
-        })
+        }),
       );
       console.log('✅ Tabela escopo_permissao criada com sucesso');
     } else {
@@ -273,7 +274,11 @@ export class CreatePermissionSchema1704067206000 implements MigrationInterface {
     }
 
     // Criar índices para melhorar a performance (verificando existência primeiro)
-    const createIndexIfNotExists = async (indexName: string, tableName: string, columnName: string) => {
+    const createIndexIfNotExists = async (
+      indexName: string,
+      tableName: string,
+      columnName: string,
+    ) => {
       // Verificar se o índice já existe
       const indexExists = await queryRunner.query(`
         SELECT EXISTS (
@@ -281,7 +286,7 @@ export class CreatePermissionSchema1704067206000 implements MigrationInterface {
           WHERE indexname = '${indexName}'
         );
       `);
-      
+
       // Verificar se a coluna existe na tabela
       const columnExists = await queryRunner.query(`
         SELECT EXISTS (
@@ -291,48 +296,116 @@ export class CreatePermissionSchema1704067206000 implements MigrationInterface {
           AND column_name = '${columnName}'
         );
       `);
-      
+
       if (!indexExists[0].exists) {
         if (columnExists[0].exists) {
           try {
-            await queryRunner.query(`CREATE INDEX "${indexName}" ON "${tableName}" ("${columnName}")`);
+            await queryRunner.query(
+              `CREATE INDEX "${indexName}" ON "${tableName}" ("${columnName}")`,
+            );
             console.log(`✅ Índice ${indexName} criado com sucesso`);
           } catch (error) {
-            console.log(`⚠️ Erro ao criar índice ${indexName}: ${error.message}`);
+            console.log(
+              `⚠️ Erro ao criar índice ${indexName}: ${error.message}`,
+            );
           }
         } else {
-          console.log(`⚠️ Coluna ${columnName} não existe na tabela ${tableName}, pulando criação do índice ${indexName}`);
+          console.log(
+            `⚠️ Coluna ${columnName} não existe na tabela ${tableName}, pulando criação do índice ${indexName}`,
+          );
         }
       } else {
         console.log(`⚠️ Índice ${indexName} já existe, pulando criação`);
       }
     };
-    
-    await createIndexIfNotExists('idx_permissao_pai_id', 'permissao', 'permissao_pai_id');
-    await createIndexIfNotExists('idx_grupo_permissao_nome', 'grupo_permissao', 'nome');
-    await createIndexIfNotExists('idx_mapeamento_grupo_permissao_permissao_id', 'mapeamento_grupo_permissao', 'permissao_id');
-    await createIndexIfNotExists('idx_mapeamento_grupo_permissao_grupo_id', 'mapeamento_grupo_permissao', 'grupo_id');
-    await createIndexIfNotExists('idx_permissao_usuario_usuario_id', 'permissao_usuario', 'usuario_id');
-    await createIndexIfNotExists('idx_permissao_usuario_permissao_id', 'permissao_usuario', 'permissao_id');
-    await createIndexIfNotExists('idx_permissao_usuario_tipo_escopo', 'permissao_usuario', 'tipo_escopo');
-    await createIndexIfNotExists('idx_permissao_usuario_escopo_id', 'permissao_usuario', 'escopo_id');
-    await createIndexIfNotExists('idx_escopo_permissao_permissao_usuario_id', 'escopo_permissao', 'permissao_usuario_id');
-    await createIndexIfNotExists('idx_escopo_permissao_tipo_escopo', 'escopo_permissao', 'tipo_escopo');
-    await createIndexIfNotExists('idx_escopo_permissao_escopo_id', 'escopo_permissao', 'escopo_id');
+
+    await createIndexIfNotExists(
+      'idx_permissao_pai_id',
+      'permissao',
+      'permissao_pai_id',
+    );
+    await createIndexIfNotExists(
+      'idx_grupo_permissao_nome',
+      'grupo_permissao',
+      'nome',
+    );
+    await createIndexIfNotExists(
+      'idx_mapeamento_grupo_permissao_permissao_id',
+      'mapeamento_grupo_permissao',
+      'permissao_id',
+    );
+    await createIndexIfNotExists(
+      'idx_mapeamento_grupo_permissao_grupo_id',
+      'mapeamento_grupo_permissao',
+      'grupo_id',
+    );
+    await createIndexIfNotExists(
+      'idx_permissao_usuario_usuario_id',
+      'permissao_usuario',
+      'usuario_id',
+    );
+    await createIndexIfNotExists(
+      'idx_permissao_usuario_permissao_id',
+      'permissao_usuario',
+      'permissao_id',
+    );
+    await createIndexIfNotExists(
+      'idx_permissao_usuario_tipo_escopo',
+      'permissao_usuario',
+      'tipo_escopo',
+    );
+    await createIndexIfNotExists(
+      'idx_permissao_usuario_escopo_id',
+      'permissao_usuario',
+      'escopo_id',
+    );
+    await createIndexIfNotExists(
+      'idx_escopo_permissao_permissao_usuario_id',
+      'escopo_permissao',
+      'permissao_usuario_id',
+    );
+    await createIndexIfNotExists(
+      'idx_escopo_permissao_tipo_escopo',
+      'escopo_permissao',
+      'tipo_escopo',
+    );
+    await createIndexIfNotExists(
+      'idx_escopo_permissao_escopo_id',
+      'escopo_permissao',
+      'escopo_id',
+    );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     console.log('Iniciando remoção de índices...');
     // Remover índices
-    await queryRunner.query(`DROP INDEX IF EXISTS "idx_escopo_permissao_escopo_id"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "idx_escopo_permissao_tipo_escopo"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "idx_escopo_permissao_permissao_usuario_id"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "idx_permissao_usuario_escopo_id"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "idx_permissao_usuario_tipo_escopo"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "idx_permissao_usuario_permissao_id"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "idx_permissao_usuario_usuario_id"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "idx_mapeamento_grupo_permissao_grupo_id"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "idx_mapeamento_grupo_permissao_permissao_id"`);
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "idx_escopo_permissao_escopo_id"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "idx_escopo_permissao_tipo_escopo"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "idx_escopo_permissao_permissao_usuario_id"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "idx_permissao_usuario_escopo_id"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "idx_permissao_usuario_tipo_escopo"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "idx_permissao_usuario_permissao_id"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "idx_permissao_usuario_usuario_id"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "idx_mapeamento_grupo_permissao_grupo_id"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "idx_mapeamento_grupo_permissao_permissao_id"`,
+    );
     await queryRunner.query(`DROP INDEX IF EXISTS "idx_grupo_permissao_nome"`);
     await queryRunner.query(`DROP INDEX IF EXISTS "idx_permissao_pai_id"`);
     console.log('✅ Índices removidos com sucesso');
@@ -341,25 +414,27 @@ export class CreatePermissionSchema1704067206000 implements MigrationInterface {
     // Remover tabelas na ordem inversa para evitar problemas de chave estrangeira
     await queryRunner.query(`DROP TABLE IF EXISTS "escopo_permissao"`);
     console.log('✅ Tabela escopo_permissao removida com sucesso');
-    
+
     await queryRunner.query(`DROP TABLE IF EXISTS "permissao_usuario"`);
     console.log('✅ Tabela permissao_usuario removida com sucesso');
-    
+
     await queryRunner.query(`DROP TABLE IF EXISTS "role_usuario"`);
     console.log('✅ Tabela role_usuario removida com sucesso');
-    
+
     await queryRunner.query(`DROP TABLE IF EXISTS "role_permissao"`);
     console.log('✅ Tabela role_permissao removida com sucesso');
-    
-    await queryRunner.query(`DROP TABLE IF EXISTS "mapeamento_grupo_permissao"`);
+
+    await queryRunner.query(
+      `DROP TABLE IF EXISTS "mapeamento_grupo_permissao"`,
+    );
     console.log('✅ Tabela mapeamento_grupo_permissao removida com sucesso');
-    
+
     await queryRunner.query(`DROP TABLE IF EXISTS "grupo_permissao"`);
     console.log('✅ Tabela grupo_permissao removida com sucesso');
-    
+
     await queryRunner.query(`DROP TABLE IF EXISTS "permissao"`);
     console.log('✅ Tabela permissao removida com sucesso');
-    
+
     console.log('✅ Migration revertida com sucesso');
   }
 }

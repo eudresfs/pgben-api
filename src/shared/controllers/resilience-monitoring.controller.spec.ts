@@ -16,7 +16,7 @@ describe('ResilienceMonitoringController', () => {
   const mockUser = {
     id: 1,
     email: 'admin@test.com',
-    perfil: 'ADMINISTRADOR'
+    perfil: 'ADMINISTRADOR',
   };
 
   beforeEach(async () => {
@@ -30,8 +30,8 @@ describe('ResilienceMonitoringController', () => {
             getStatus: jest.fn(),
             performCacheWarming: jest.fn(),
             resetMetrics: jest.fn(),
-            clear: jest.fn()
-          }
+            clear: jest.fn(),
+          },
         },
         {
           provide: ResilientAuditoriaService,
@@ -39,34 +39,36 @@ describe('ResilienceMonitoringController', () => {
             getMetrics: jest.fn(),
             getStatus: jest.fn(),
             processBackupLogs: jest.fn(),
-            resetMetrics: jest.fn()
-          }
+            resetMetrics: jest.fn(),
+          },
         },
         {
           provide: HealthCheckService,
           useValue: {
             getServicesStatus: jest.fn(),
             checkRedisConnection: jest.fn(),
-            checkDatabaseConnection: jest.fn()
-          }
-        }
-      ]
+            checkDatabaseConnection: jest.fn(),
+          },
+        },
+      ],
     })
-    .overrideGuard(JwtAuthGuard)
-    .useValue({
-      canActivate: (context: ExecutionContext) => {
-        const req = context.switchToHttp().getRequest();
-        req.user = mockUser;
-        return true;
-      }
-    })
-    .overrideGuard(RolesGuard)
-    .useValue({
-      canActivate: () => true
-    })
-    .compile();
+      .overrideGuard(JwtAuthGuard)
+      .useValue({
+        canActivate: (context: ExecutionContext) => {
+          const req = context.switchToHttp().getRequest();
+          req.user = mockUser;
+          return true;
+        },
+      })
+      .overrideGuard(RolesGuard)
+      .useValue({
+        canActivate: () => true,
+      })
+      .compile();
 
-    controller = module.get<ResilienceMonitoringController>(ResilienceMonitoringController);
+    controller = module.get<ResilienceMonitoringController>(
+      ResilienceMonitoringController,
+    );
     hybridCacheService = module.get(HybridCacheService);
     auditoriaService = module.get(ResilientAuditoriaService);
     healthCheckService = module.get(HealthCheckService);
@@ -82,20 +84,20 @@ describe('ResilienceMonitoringController', () => {
       const mockServicesStatus = {
         redis: { status: 'up', responseTime: 10 },
         database: { status: 'up', responseTime: 5 },
-        queue: { status: 'up', responseTime: 15 }
+        queue: { status: 'up', responseTime: 15 },
       };
 
       const mockCacheStatus = {
         l1Available: true,
         l2Available: true,
-        circuitBreakerState: 'CLOSED'
+        circuitBreakerState: 'CLOSED',
       };
 
       const mockAuditoriaStatus = {
         queueEnabled: true,
         syncFallbackEnabled: true,
         fileFallbackEnabled: true,
-        backupLogsCount: 0
+        backupLogsCount: 0,
       };
 
       healthCheckService.getServicesStatus.mockReturnValue(mockServicesStatus);
@@ -111,7 +113,7 @@ describe('ResilienceMonitoringController', () => {
         overallStatus: 'healthy',
         services: mockServicesStatus,
         cache: mockCacheStatus,
-        auditoria: mockAuditoriaStatus
+        auditoria: mockAuditoriaStatus,
       });
     });
 
@@ -120,20 +122,20 @@ describe('ResilienceMonitoringController', () => {
       const mockServicesStatus = {
         redis: { status: 'down', responseTime: null },
         database: { status: 'up', responseTime: 5 },
-        queue: { status: 'down', responseTime: null }
+        queue: { status: 'down', responseTime: null },
       };
 
       const mockCacheStatus = {
         l1Available: true,
         l2Available: false,
-        circuitBreakerState: 'OPEN'
+        circuitBreakerState: 'OPEN',
       };
 
       const mockAuditoriaStatus = {
         queueEnabled: false,
         syncFallbackEnabled: true,
         fileFallbackEnabled: true,
-        backupLogsCount: 5
+        backupLogsCount: 5,
       };
 
       healthCheckService.getServicesStatus.mockReturnValue(mockServicesStatus);
@@ -155,20 +157,20 @@ describe('ResilienceMonitoringController', () => {
       const mockServicesStatus = {
         redis: { status: 'down', responseTime: null },
         database: { status: 'down', responseTime: null },
-        queue: { status: 'down', responseTime: null }
+        queue: { status: 'down', responseTime: null },
       };
 
       const mockCacheStatus = {
         l1Available: false,
         l2Available: false,
-        circuitBreakerState: 'OPEN'
+        circuitBreakerState: 'OPEN',
       };
 
       const mockAuditoriaStatus = {
         queueEnabled: false,
         syncFallbackEnabled: false,
         fileFallbackEnabled: true,
-        backupLogsCount: 10
+        backupLogsCount: 10,
       };
 
       healthCheckService.getServicesStatus.mockReturnValue(mockServicesStatus);
@@ -198,7 +200,7 @@ describe('ResilienceMonitoringController', () => {
         evictions: 3,
         warmingOperations: 2,
         failovers: 1,
-        criticalKeysCount: 5
+        criticalKeysCount: 5,
       };
 
       hybridCacheService.getMetrics.mockReturnValue(mockMetrics);
@@ -209,7 +211,7 @@ describe('ResilienceMonitoringController', () => {
       // Assert
       expect(result).toEqual({
         timestamp: expect.any(String),
-        metrics: mockMetrics
+        metrics: mockMetrics,
       });
       expect(hybridCacheService.getMetrics).toHaveBeenCalledTimes(1);
     });
@@ -228,7 +230,7 @@ describe('ResilienceMonitoringController', () => {
         backupLogsCount: 3,
         averageProcessingTime: 150,
         queueSuccessRate: 95.0,
-        overallSuccessRate: 99.5
+        overallSuccessRate: 99.5,
       };
 
       auditoriaService.getMetrics.mockReturnValue(mockMetrics);
@@ -239,7 +241,7 @@ describe('ResilienceMonitoringController', () => {
       // Assert
       expect(result).toEqual({
         timestamp: expect.any(String),
-        metrics: mockMetrics
+        metrics: mockMetrics,
       });
       expect(auditoriaService.getMetrics).toHaveBeenCalledTimes(1);
     });
@@ -257,7 +259,7 @@ describe('ResilienceMonitoringController', () => {
       expect(result).toEqual({
         success: true,
         message: 'Cache warming iniciado com sucesso',
-        timestamp: expect.any(String)
+        timestamp: expect.any(String),
       });
       expect(hybridCacheService.performCacheWarming).toHaveBeenCalledTimes(1);
     });
@@ -274,7 +276,7 @@ describe('ResilienceMonitoringController', () => {
       expect(result).toEqual({
         success: false,
         message: 'Erro ao executar cache warming: Cache warming failed',
-        timestamp: expect.any(String)
+        timestamp: expect.any(String),
       });
     });
   });
@@ -293,7 +295,7 @@ describe('ResilienceMonitoringController', () => {
         success: true,
         message: `${processedCount} logs de backup processados com sucesso`,
         processedCount,
-        timestamp: expect.any(String)
+        timestamp: expect.any(String),
       });
       expect(auditoriaService.processBackupLogs).toHaveBeenCalledTimes(1);
     });
@@ -311,7 +313,7 @@ describe('ResilienceMonitoringController', () => {
         success: false,
         message: 'Erro ao processar logs de backup: Backup processing failed',
         processedCount: 0,
-        timestamp: expect.any(String)
+        timestamp: expect.any(String),
       });
     });
   });
@@ -328,7 +330,7 @@ describe('ResilienceMonitoringController', () => {
       expect(result).toEqual({
         success: true,
         message: 'Métricas do cache resetadas com sucesso',
-        timestamp: expect.any(String)
+        timestamp: expect.any(String),
       });
       expect(hybridCacheService.resetMetrics).toHaveBeenCalledTimes(1);
     });
@@ -347,7 +349,7 @@ describe('ResilienceMonitoringController', () => {
       expect(result).toEqual({
         success: false,
         message: 'Erro ao resetar métricas do cache: Reset failed',
-        timestamp: expect.any(String)
+        timestamp: expect.any(String),
       });
     });
   });
@@ -364,7 +366,7 @@ describe('ResilienceMonitoringController', () => {
       expect(result).toEqual({
         success: true,
         message: 'Métricas da auditoria resetadas com sucesso',
-        timestamp: expect.any(String)
+        timestamp: expect.any(String),
       });
       expect(auditoriaService.resetMetrics).toHaveBeenCalledTimes(1);
     });
@@ -382,8 +384,9 @@ describe('ResilienceMonitoringController', () => {
       // Assert
       expect(result).toEqual({
         success: false,
-        message: 'Erro ao resetar métricas da auditoria: Auditoria reset failed',
-        timestamp: expect.any(String)
+        message:
+          'Erro ao resetar métricas da auditoria: Auditoria reset failed',
+        timestamp: expect.any(String),
       });
     });
   });
@@ -400,7 +403,7 @@ describe('ResilienceMonitoringController', () => {
       expect(result).toEqual({
         success: true,
         message: 'Cache limpo com sucesso',
-        timestamp: expect.any(String)
+        timestamp: expect.any(String),
       });
       expect(hybridCacheService.clear).toHaveBeenCalledTimes(1);
     });
@@ -417,7 +420,7 @@ describe('ResilienceMonitoringController', () => {
       expect(result).toEqual({
         success: false,
         message: 'Erro ao limpar cache: Clear cache failed',
-        timestamp: expect.any(String)
+        timestamp: expect.any(String),
       });
     });
   });
@@ -425,13 +428,19 @@ describe('ResilienceMonitoringController', () => {
   describe('guards e decorators', () => {
     it('deve ter guards de autenticação e autorização configurados', () => {
       // Verificar se os guards estão aplicados através dos metadados
-      const guards = Reflect.getMetadata('__guards__', ResilienceMonitoringController);
+      const guards = Reflect.getMetadata(
+        '__guards__',
+        ResilienceMonitoringController,
+      );
       expect(guards).toBeDefined();
     });
 
     it('deve ter role de ADMINISTRADOR configurada', () => {
       // Verificar se a role está aplicada através dos metadados
-      const roles = Reflect.getMetadata('roles', ResilienceMonitoringController);
+      const roles = Reflect.getMetadata(
+        'roles',
+        ResilienceMonitoringController,
+      );
       expect(roles).toContain('ADMINISTRADOR');
     });
   });
@@ -444,7 +453,9 @@ describe('ResilienceMonitoringController', () => {
       });
 
       // Act & Assert
-      await expect(controller.getCacheMetrics()).rejects.toThrow('Unexpected error');
+      await expect(controller.getCacheMetrics()).rejects.toThrow(
+        'Unexpected error',
+      );
     });
 
     it('deve manter consistência nos formatos de resposta', async () => {
@@ -461,7 +472,7 @@ describe('ResilienceMonitoringController', () => {
         evictions: 0,
         warmingOperations: 0,
         failovers: 0,
-        criticalKeysCount: 0
+        criticalKeysCount: 0,
       };
 
       hybridCacheService.getMetrics.mockReturnValue(mockMetrics);
@@ -520,7 +531,7 @@ describe('ResilienceMonitoringController', () => {
         evictions: 3,
         warmingOperations: 2,
         failovers: 1,
-        criticalKeysCount: 5
+        criticalKeysCount: 5,
       });
 
       // Act
@@ -534,7 +545,7 @@ describe('ResilienceMonitoringController', () => {
     it('deve lidar com operações assíncronas longas', async () => {
       // Arrange
       hybridCacheService.performCacheWarming.mockImplementation(async () => {
-        await new Promise(resolve => setTimeout(resolve, 100)); // Simular operação lenta
+        await new Promise((resolve) => setTimeout(resolve, 100)); // Simular operação lenta
       });
 
       // Act

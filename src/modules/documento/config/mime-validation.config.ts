@@ -1,6 +1,6 @@
 /**
  * Configuração de Validação MIME
- * 
+ *
  * Define tipos MIME permitidos e configurações de segurança
  * para upload de documentos no sistema SEMTAS
  */
@@ -19,22 +19,22 @@ export interface MimeValidationConfig {
 export const ALLOWED_MIME_TYPES = {
   // Documentos PDF
   PDF: 'application/pdf',
-  
+
   // Imagens
   JPEG: 'image/jpeg',
   JPG: 'image/jpg',
   PNG: 'image/png',
-  
+
   // Documentos do Microsoft Office
   DOC: 'application/msword',
   DOCX: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   XLS: 'application/vnd.ms-excel',
   XLSX: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  
+
   // Documentos do LibreOffice/OpenOffice
   ODT: 'application/vnd.oasis.opendocument.text',
   ODS: 'application/vnd.oasis.opendocument.spreadsheet',
-  
+
   // Texto simples
   TXT: 'text/plain',
 } as const;
@@ -44,11 +44,16 @@ export const ALLOWED_MIME_TYPES = {
  */
 export const ALLOWED_EXTENSIONS = [
   '.pdf',
-  '.jpg', '.jpeg', '.png',
-  '.doc', '.docx',
-  '.xls', '.xlsx',
-  '.odt', '.ods',
-  '.txt'
+  '.jpg',
+  '.jpeg',
+  '.png',
+  '.doc',
+  '.docx',
+  '.xls',
+  '.xlsx',
+  '.odt',
+  '.ods',
+  '.txt',
 ] as const;
 
 /**
@@ -76,7 +81,7 @@ export const BENEFIT_SPECIFIC_MIME_CONFIG = {
     ],
     maxFileSize: 5 * 1024 * 1024, // 5MB para documentos de natalidade
   },
-  
+
   ALUGUEL_SOCIAL: {
     ...DEFAULT_MIME_VALIDATION_CONFIG,
     allowedMimeTypes: [
@@ -89,7 +94,7 @@ export const BENEFIT_SPECIFIC_MIME_CONFIG = {
     ],
     maxFileSize: 8 * 1024 * 1024, // 8MB para documentos de aluguel
   },
-  
+
   DEFAULT: DEFAULT_MIME_VALIDATION_CONFIG,
 } as const;
 
@@ -134,26 +139,33 @@ export const DANGEROUS_MIME_TYPES = [
 /**
  * Função para obter configuração MIME por tipo de benefício
  */
-export function getMimeConfigForBenefit(tipoBeneficio?: string): MimeValidationConfig {
+export function getMimeConfigForBenefit(
+  tipoBeneficio?: string,
+): MimeValidationConfig {
   if (!tipoBeneficio) {
     return BENEFIT_SPECIFIC_MIME_CONFIG.DEFAULT;
   }
-  
+
   const normalizedType = tipoBeneficio.toUpperCase().replace(/\s+/g, '_');
-  
-  return (BENEFIT_SPECIFIC_MIME_CONFIG as any)[normalizedType] 
-    || BENEFIT_SPECIFIC_MIME_CONFIG.DEFAULT;
+
+  return (
+    (BENEFIT_SPECIFIC_MIME_CONFIG as any)[normalizedType] ||
+    BENEFIT_SPECIFIC_MIME_CONFIG.DEFAULT
+  );
 }
 
 /**
  * Função para validar se um tipo MIME é permitido
  */
-export function isMimeTypeAllowed(mimeType: string, config: MimeValidationConfig): boolean {
+export function isMimeTypeAllowed(
+  mimeType: string,
+  config: MimeValidationConfig,
+): boolean {
   // Verificar se não é um tipo perigoso
   if (DANGEROUS_MIME_TYPES.includes(mimeType as any)) {
     return false;
   }
-  
+
   // Verificar se está na lista de permitidos
   return config.allowedMimeTypes.includes(mimeType);
 }
@@ -161,7 +173,10 @@ export function isMimeTypeAllowed(mimeType: string, config: MimeValidationConfig
 /**
  * Função para validar extensão de arquivo
  */
-export function isExtensionAllowed(filename: string, config: MimeValidationConfig): boolean {
+export function isExtensionAllowed(
+  filename: string,
+  config: MimeValidationConfig,
+): boolean {
   const extension = filename.toLowerCase().substring(filename.lastIndexOf('.'));
   return config.allowedExtensions.includes(extension);
 }
@@ -171,5 +186,8 @@ export function isExtensionAllowed(filename: string, config: MimeValidationConfi
  */
 export function getExpectedMimeType(filename: string): string | null {
   const extension = filename.toLowerCase().substring(filename.lastIndexOf('.'));
-  return EXTENSION_TO_MIME_MAP[extension as keyof typeof EXTENSION_TO_MIME_MAP] || null;
+  return (
+    EXTENSION_TO_MIME_MAP[extension as keyof typeof EXTENSION_TO_MIME_MAP] ||
+    null
+  );
 }

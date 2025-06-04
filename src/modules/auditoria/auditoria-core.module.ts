@@ -13,8 +13,8 @@ import { LogAuditoriaRepository } from './repositories/log-auditoria.repository'
  * Este módulo contém apenas os serviços essenciais de auditoria,
  * sem dependências circulares. É um módulo global que deve ser
  * importado apenas pelo módulo principal (AppModule).
- * 
- * Separa a lógica central de auditoria das funcionalidades que 
+ *
+ * Separa a lógica central de auditoria das funcionalidades que
  * dependem de autenticação para resolver dependências circulares.
  */
 @Global()
@@ -22,7 +22,7 @@ import { LogAuditoriaRepository } from './repositories/log-auditoria.repository'
   imports: [
     // Configuração do TypeORM para entidades do módulo
     TypeOrmModule.forFeature([LogAuditoria]),
-    
+
     // Configuração assíncrona do BullModule com ConfigService
     BullModule.registerQueueAsync({
       name: 'auditoria',
@@ -36,15 +36,7 @@ import { LogAuditoriaRepository } from './repositories/log-auditoria.repository'
       inject: [ConfigService],
     }),
   ],
-  providers: [
-    AuditoriaService,
-    AuditoriaQueueService,
-    LogAuditoriaRepository,
-  ],
-  exports: [
-    AuditoriaService,
-    AuditoriaQueueService,
-    LogAuditoriaRepository,
-  ],
+  providers: [AuditoriaService, AuditoriaQueueService, LogAuditoriaRepository],
+  exports: [AuditoriaService, AuditoriaQueueService, LogAuditoriaRepository],
 })
 export class AuditoriaCoreModule {}

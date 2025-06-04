@@ -7,10 +7,10 @@ import { MetodoPagamentoEnum } from '../../enums/metodo-pagamento.enum';
 
 /**
  * Testes unitários para o serviço de auditoria de pagamento
- * 
+ *
  * Verifica o funcionamento correto das operações de registro de logs
  * para ações sensíveis relacionadas a pagamentos.
- * 
+ *
  * @author Equipe PGBen
  */
 describe('AuditoriaPagamentoService', () => {
@@ -23,16 +23,20 @@ describe('AuditoriaPagamentoService', () => {
     log: jest.fn(),
     warn: jest.fn(),
     error: jest.fn(),
-    debug: jest.fn()
+    debug: jest.fn(),
   };
 
   // Mock do ConfigService
   const mockConfigService = {
     get: jest.fn().mockImplementation((key) => {
-      if (key === 'auditoria.nivel') {return 'completo';}
-      if (key === 'auditoria.mascaraDados') {return true;}
+      if (key === 'auditoria.nivel') {
+        return 'completo';
+      }
+      if (key === 'auditoria.mascaraDados') {
+        return true;
+      }
       return null;
-    })
+    }),
   };
 
   beforeEach(async () => {
@@ -41,12 +45,12 @@ describe('AuditoriaPagamentoService', () => {
         AuditoriaPagamentoService,
         {
           provide: Logger,
-          useValue: mockLogger
+          useValue: mockLogger,
         },
         {
           provide: ConfigService,
-          useValue: mockConfigService
-        }
+          useValue: mockConfigService,
+        },
       ],
     }).compile();
 
@@ -62,13 +66,13 @@ describe('AuditoriaPagamentoService', () => {
     const pagamento = {
       id: 'pagamento-id',
       solicitacaoId: 'solicitacao-id',
-      valor: 500.00,
+      valor: 500.0,
       status: StatusPagamentoEnum.AGENDADO,
       metodoPagamento: MetodoPagamentoEnum.PIX,
       dadosBancarios: {
         pixTipo: 'cpf',
-        pixChave: '12345678909'
-      }
+        pixChave: '12345678909',
+      },
     };
     const usuarioId = 'usuario-id';
 
@@ -79,9 +83,9 @@ describe('AuditoriaPagamentoService', () => {
       // Verificar resultado
       expect(mockLogger.log).toHaveBeenCalledWith(
         expect.stringContaining('Pagamento criado'),
-        expect.stringContaining('AuditoriaPagamento')
+        expect.stringContaining('AuditoriaPagamento'),
       );
-      
+
       // Verificar que o log contém dados mascarados
       const logMessage = mockLogger.log.mock.calls[0][0];
       expect(logMessage).not.toContain('12345678909');
@@ -91,8 +95,12 @@ describe('AuditoriaPagamentoService', () => {
     it('deve registrar log sem mascaramento quando configurado', () => {
       // Alterar configuração para não mascarar dados
       mockConfigService.get.mockImplementation((key) => {
-        if (key === 'auditoria.nivel') {return 'completo';}
-        if (key === 'auditoria.mascaraDados') {return false;}
+        if (key === 'auditoria.nivel') {
+          return 'completo';
+        }
+        if (key === 'auditoria.mascaraDados') {
+          return false;
+        }
         return null;
       });
 
@@ -102,9 +110,9 @@ describe('AuditoriaPagamentoService', () => {
       // Verificar resultado
       expect(mockLogger.log).toHaveBeenCalledWith(
         expect.stringContaining('Pagamento criado'),
-        expect.stringContaining('AuditoriaPagamento')
+        expect.stringContaining('AuditoriaPagamento'),
       );
-      
+
       // Verificar que o log contém dados completos
       const logMessage = mockLogger.log.mock.calls[0][0];
       expect(logMessage).toContain(pagamento.id);
@@ -120,14 +128,19 @@ describe('AuditoriaPagamentoService', () => {
 
     it('deve registrar log de mudança de status', () => {
       // Executar método
-      service.logMudancaStatus(pagamentoId, statusAntigo, statusNovo, usuarioId);
+      service.logMudancaStatus(
+        pagamentoId,
+        statusAntigo,
+        statusNovo,
+        usuarioId,
+      );
 
       // Verificar resultado
       expect(mockLogger.log).toHaveBeenCalledWith(
         expect.stringContaining('Status alterado'),
-        expect.stringContaining('AuditoriaPagamento')
+        expect.stringContaining('AuditoriaPagamento'),
       );
-      
+
       // Verificar que o log contém os status
       const logMessage = mockLogger.log.mock.calls[0][0];
       expect(logMessage).toContain(statusAntigo);
@@ -148,9 +161,9 @@ describe('AuditoriaPagamentoService', () => {
       // Verificar resultado
       expect(mockLogger.warn).toHaveBeenCalledWith(
         expect.stringContaining('Pagamento cancelado'),
-        expect.stringContaining('AuditoriaPagamento')
+        expect.stringContaining('AuditoriaPagamento'),
       );
-      
+
       // Verificar que o log contém o motivo
       const logMessage = mockLogger.warn.mock.calls[0][0];
       expect(logMessage).toContain(motivo);
@@ -166,14 +179,19 @@ describe('AuditoriaPagamentoService', () => {
 
     it('deve registrar log de upload de comprovante', () => {
       // Executar método
-      service.logUploadComprovante(pagamentoId, comprovanteId, nomeArquivo, usuarioId);
+      service.logUploadComprovante(
+        pagamentoId,
+        comprovanteId,
+        nomeArquivo,
+        usuarioId,
+      );
 
       // Verificar resultado
       expect(mockLogger.log).toHaveBeenCalledWith(
         expect.stringContaining('Comprovante enviado'),
-        expect.stringContaining('AuditoriaPagamento')
+        expect.stringContaining('AuditoriaPagamento'),
       );
-      
+
       // Verificar que o log contém os dados do comprovante
       const logMessage = mockLogger.log.mock.calls[0][0];
       expect(logMessage).toContain(pagamentoId);
@@ -190,14 +208,19 @@ describe('AuditoriaPagamentoService', () => {
 
     it('deve registrar log de remoção de comprovante', () => {
       // Executar método
-      service.logRemocaoComprovante(pagamentoId, comprovanteId, motivo, usuarioId);
+      service.logRemocaoComprovante(
+        pagamentoId,
+        comprovanteId,
+        motivo,
+        usuarioId,
+      );
 
       // Verificar resultado
       expect(mockLogger.warn).toHaveBeenCalledWith(
         expect.stringContaining('Comprovante removido'),
-        expect.stringContaining('AuditoriaPagamento')
+        expect.stringContaining('AuditoriaPagamento'),
       );
-      
+
       // Verificar que o log contém os dados da remoção
       const logMessage = mockLogger.warn.mock.calls[0][0];
       expect(logMessage).toContain(pagamentoId);
@@ -218,9 +241,9 @@ describe('AuditoriaPagamentoService', () => {
       // Verificar resultado
       expect(mockLogger.log).toHaveBeenCalledWith(
         expect.stringContaining('Recebimento confirmado'),
-        expect.stringContaining('AuditoriaPagamento')
+        expect.stringContaining('AuditoriaPagamento'),
       );
-      
+
       // Verificar que o log contém os dados da confirmação
       const logMessage = mockLogger.log.mock.calls[0][0];
       expect(logMessage).toContain(pagamentoId);
@@ -240,9 +263,9 @@ describe('AuditoriaPagamentoService', () => {
       // Verificar resultado
       expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('Erro ao processar pagamento'),
-        expect.stringContaining('AuditoriaPagamento')
+        expect.stringContaining('AuditoriaPagamento'),
       );
-      
+
       // Verificar que o log contém os dados do erro
       const logMessage = mockLogger.error.mock.calls[0][0];
       expect(logMessage).toContain(pagamentoId);

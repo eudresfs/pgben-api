@@ -1,0 +1,76 @@
+c5bb5b666efc98f1e91dc8c0f37f9948
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.RelatorioBeneficiosDto = void 0;
+const class_validator_1 = require("class-validator");
+const swagger_1 = require("@nestjs/swagger");
+/**
+ * DTO para geração de relatório de benefícios concedidos
+ *
+ * Define os parâmetros necessários para gerar o relatório de benefícios concedidos
+ */
+class RelatorioBeneficiosDto {
+    data_inicio;
+    data_fim;
+    unidade_id;
+    tipo_beneficio_id;
+    formato = 'pdf';
+}
+exports.RelatorioBeneficiosDto = RelatorioBeneficiosDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Data inicial (formato: YYYY-MM-DD)',
+        example: '2023-01-01',
+        required: true,
+    }),
+    (0, class_validator_1.IsDateString)(),
+    __metadata("design:type", String)
+], RelatorioBeneficiosDto.prototype, "data_inicio", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Data final (formato: YYYY-MM-DD)',
+        example: '2023-12-31',
+        required: true,
+    }),
+    (0, class_validator_1.IsDateString)(),
+    __metadata("design:type", String)
+], RelatorioBeneficiosDto.prototype, "data_fim", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'ID da unidade (opcional)',
+        required: false,
+        type: String,
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsUUID)(4),
+    __metadata("design:type", String)
+], RelatorioBeneficiosDto.prototype, "unidade_id", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'ID do tipo de benefício (opcional)',
+        required: false,
+        type: String,
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsUUID)(4),
+    __metadata("design:type", String)
+], RelatorioBeneficiosDto.prototype, "tipo_beneficio_id", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Formato de saída do relatório',
+        enum: ['pdf', 'excel', 'csv'],
+        default: 'pdf',
+    }),
+    (0, class_validator_1.IsEnum)(['pdf', 'excel', 'csv']),
+    __metadata("design:type", String)
+], RelatorioBeneficiosDto.prototype, "formato", void 0);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxldWRyZVxcT25lRHJpdmVcXERlc2t0b3BcXFByb2pldG9zXFxwZ2JlblxccGdiZW4tc2VydmVyXFxzcmNcXG1vZHVsZXNcXHJlbGF0b3Jpb3MtdW5pZmljYWRvXFxkdG9cXHJlbGF0b3Jpby1iZW5lZmljaW9zLmR0by50cyIsIm1hcHBpbmdzIjoiOzs7Ozs7Ozs7Ozs7QUFBQSxxREFBMkU7QUFDM0UsNkNBQThDO0FBRTlDOzs7O0dBSUc7QUFDSCxNQUFhLHNCQUFzQjtJQU9qQyxXQUFXLENBQVM7SUFRcEIsUUFBUSxDQUFTO0lBU2pCLFVBQVUsQ0FBVTtJQVNwQixpQkFBaUIsQ0FBVTtJQVEzQixPQUFPLEdBQTRCLEtBQUssQ0FBQztDQUMxQztBQTFDRCx3REEwQ0M7QUFuQ0M7SUFOQyxJQUFBLHFCQUFXLEVBQUM7UUFDWCxXQUFXLEVBQUUsb0NBQW9DO1FBQ2pELE9BQU8sRUFBRSxZQUFZO1FBQ3JCLFFBQVEsRUFBRSxJQUFJO0tBQ2YsQ0FBQztJQUNELElBQUEsOEJBQVksR0FBRTs7MkRBQ0s7QUFRcEI7SUFOQyxJQUFBLHFCQUFXLEVBQUM7UUFDWCxXQUFXLEVBQUUsa0NBQWtDO1FBQy9DLE9BQU8sRUFBRSxZQUFZO1FBQ3JCLFFBQVEsRUFBRSxJQUFJO0tBQ2YsQ0FBQztJQUNELElBQUEsOEJBQVksR0FBRTs7d0RBQ0U7QUFTakI7SUFQQyxJQUFBLHFCQUFXLEVBQUM7UUFDWCxXQUFXLEVBQUUsMEJBQTBCO1FBQ3ZDLFFBQVEsRUFBRSxLQUFLO1FBQ2YsSUFBSSxFQUFFLE1BQU07S0FDYixDQUFDO0lBQ0QsSUFBQSw0QkFBVSxHQUFFO0lBQ1osSUFBQSx3QkFBTSxFQUFDLENBQUMsQ0FBQzs7MERBQ1U7QUFTcEI7SUFQQyxJQUFBLHFCQUFXLEVBQUM7UUFDWCxXQUFXLEVBQUUsb0NBQW9DO1FBQ2pELFFBQVEsRUFBRSxLQUFLO1FBQ2YsSUFBSSxFQUFFLE1BQU07S0FDYixDQUFDO0lBQ0QsSUFBQSw0QkFBVSxHQUFFO0lBQ1osSUFBQSx3QkFBTSxFQUFDLENBQUMsQ0FBQzs7aUVBQ2lCO0FBUTNCO0lBTkMsSUFBQSxxQkFBVyxFQUFDO1FBQ1gsV0FBVyxFQUFFLCtCQUErQjtRQUM1QyxJQUFJLEVBQUUsQ0FBQyxLQUFLLEVBQUUsT0FBTyxFQUFFLEtBQUssQ0FBQztRQUM3QixPQUFPLEVBQUUsS0FBSztLQUNmLENBQUM7SUFDRCxJQUFBLHdCQUFNLEVBQUMsQ0FBQyxLQUFLLEVBQUUsT0FBTyxFQUFFLEtBQUssQ0FBQyxDQUFDOzt1REFDUyIsIm5hbWVzIjpbXSwic291cmNlcyI6WyJDOlxcVXNlcnNcXGV1ZHJlXFxPbmVEcml2ZVxcRGVza3RvcFxcUHJvamV0b3NcXHBnYmVuXFxwZ2Jlbi1zZXJ2ZXJcXHNyY1xcbW9kdWxlc1xccmVsYXRvcmlvcy11bmlmaWNhZG9cXGR0b1xccmVsYXRvcmlvLWJlbmVmaWNpb3MuZHRvLnRzIl0sInNvdXJjZXNDb250ZW50IjpbImltcG9ydCB7IElzRGF0ZVN0cmluZywgSXNFbnVtLCBJc09wdGlvbmFsLCBJc1VVSUQgfSBmcm9tICdjbGFzcy12YWxpZGF0b3InO1xuaW1wb3J0IHsgQXBpUHJvcGVydHkgfSBmcm9tICdAbmVzdGpzL3N3YWdnZXInO1xuXG4vKipcbiAqIERUTyBwYXJhIGdlcmHDp8OjbyBkZSByZWxhdMOzcmlvIGRlIGJlbmVmw61jaW9zIGNvbmNlZGlkb3NcbiAqXG4gKiBEZWZpbmUgb3MgcGFyw6JtZXRyb3MgbmVjZXNzw6FyaW9zIHBhcmEgZ2VyYXIgbyByZWxhdMOzcmlvIGRlIGJlbmVmw61jaW9zIGNvbmNlZGlkb3NcbiAqL1xuZXhwb3J0IGNsYXNzIFJlbGF0b3Jpb0JlbmVmaWNpb3NEdG8ge1xuICBAQXBpUHJvcGVydHkoe1xuICAgIGRlc2NyaXB0aW9uOiAnRGF0YSBpbmljaWFsIChmb3JtYXRvOiBZWVlZLU1NLUREKScsXG4gICAgZXhhbXBsZTogJzIwMjMtMDEtMDEnLFxuICAgIHJlcXVpcmVkOiB0cnVlLFxuICB9KVxuICBASXNEYXRlU3RyaW5nKClcbiAgZGF0YV9pbmljaW86IHN0cmluZztcblxuICBAQXBpUHJvcGVydHkoe1xuICAgIGRlc2NyaXB0aW9uOiAnRGF0YSBmaW5hbCAoZm9ybWF0bzogWVlZWS1NTS1ERCknLFxuICAgIGV4YW1wbGU6ICcyMDIzLTEyLTMxJyxcbiAgICByZXF1aXJlZDogdHJ1ZSxcbiAgfSlcbiAgQElzRGF0ZVN0cmluZygpXG4gIGRhdGFfZmltOiBzdHJpbmc7XG5cbiAgQEFwaVByb3BlcnR5KHtcbiAgICBkZXNjcmlwdGlvbjogJ0lEIGRhIHVuaWRhZGUgKG9wY2lvbmFsKScsXG4gICAgcmVxdWlyZWQ6IGZhbHNlLFxuICAgIHR5cGU6IFN0cmluZyxcbiAgfSlcbiAgQElzT3B0aW9uYWwoKVxuICBASXNVVUlEKDQpXG4gIHVuaWRhZGVfaWQ/OiBzdHJpbmc7XG5cbiAgQEFwaVByb3BlcnR5KHtcbiAgICBkZXNjcmlwdGlvbjogJ0lEIGRvIHRpcG8gZGUgYmVuZWbDrWNpbyAob3BjaW9uYWwpJyxcbiAgICByZXF1aXJlZDogZmFsc2UsXG4gICAgdHlwZTogU3RyaW5nLFxuICB9KVxuICBASXNPcHRpb25hbCgpXG4gIEBJc1VVSUQoNClcbiAgdGlwb19iZW5lZmljaW9faWQ/OiBzdHJpbmc7XG5cbiAgQEFwaVByb3BlcnR5KHtcbiAgICBkZXNjcmlwdGlvbjogJ0Zvcm1hdG8gZGUgc2HDrWRhIGRvIHJlbGF0w7NyaW8nLFxuICAgIGVudW06IFsncGRmJywgJ2V4Y2VsJywgJ2NzdiddLFxuICAgIGRlZmF1bHQ6ICdwZGYnLFxuICB9KVxuICBASXNFbnVtKFsncGRmJywgJ2V4Y2VsJywgJ2NzdiddKVxuICBmb3JtYXRvOiAncGRmJyB8ICdleGNlbCcgfCAnY3N2JyA9ICdwZGYnO1xufVxuIl0sInZlcnNpb24iOjN9

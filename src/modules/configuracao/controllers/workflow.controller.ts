@@ -18,10 +18,10 @@ export class WorkflowController {
    */
   @Get()
   @ApiOperation({ summary: 'Buscar todos os workflows de benefícios' })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Lista de workflows encontrados',
-    type: [WorkflowResponseDto]
+    type: [WorkflowResponseDto],
   })
   async buscarTodos(): Promise<WorkflowResponseDto[]> {
     return this.workflowService.buscarTodos();
@@ -34,22 +34,22 @@ export class WorkflowController {
    */
   @Get(':tipoBeneficioId')
   @ApiOperation({ summary: 'Buscar workflow por tipo de benefício' })
-  @ApiParam({ 
-    name: 'tipoBeneficioId', 
+  @ApiParam({
+    name: 'tipoBeneficioId',
     description: 'ID do tipo de benefício',
-    example: '550e8400-e29b-41d4-a716-446655440000' 
+    example: '550e8400-e29b-41d4-a716-446655440000',
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Workflow encontrado',
-    type: WorkflowResponseDto
+    type: WorkflowResponseDto,
   })
-  @ApiResponse({ 
-    status: 404, 
-    description: 'Workflow não encontrado'
+  @ApiResponse({
+    status: 404,
+    description: 'Workflow não encontrado',
   })
   async buscarPorTipoBeneficio(
-    @Param('tipoBeneficioId') tipoBeneficioId: string
+    @Param('tipoBeneficioId') tipoBeneficioId: string,
   ): Promise<WorkflowResponseDto> {
     return this.workflowService.buscarPorTipoBeneficio(tipoBeneficioId);
   }
@@ -61,24 +61,26 @@ export class WorkflowController {
    * @returns Workflow atualizado
    */
   @Put(':tipoBeneficioId')
-  @ApiOperation({ summary: 'Criar ou atualizar workflow para tipo de benefício' })
-  @ApiParam({ 
-    name: 'tipoBeneficioId', 
+  @ApiOperation({
+    summary: 'Criar ou atualizar workflow para tipo de benefício',
+  })
+  @ApiParam({
+    name: 'tipoBeneficioId',
     description: 'ID do tipo de benefício',
-    example: '550e8400-e29b-41d4-a716-446655440000' 
+    example: '550e8400-e29b-41d4-a716-446655440000',
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Workflow criado/atualizado com sucesso',
-    type: WorkflowResponseDto
+    type: WorkflowResponseDto,
   })
-  @ApiResponse({ 
-    status: 400, 
-    description: 'Dados inválidos ou workflow inconsistente'
+  @ApiResponse({
+    status: 400,
+    description: 'Dados inválidos ou workflow inconsistente',
   })
   async atualizarOuCriar(
     @Param('tipoBeneficioId') tipoBeneficioId: string,
-    @Body() dto: WorkflowUpdateDto
+    @Body() dto: WorkflowUpdateDto,
   ): Promise<WorkflowResponseDto> {
     return this.workflowService.atualizarOuCriar(tipoBeneficioId, dto);
   }
@@ -89,21 +91,21 @@ export class WorkflowController {
    */
   @Delete(':tipoBeneficioId')
   @ApiOperation({ summary: 'Remover workflow' })
-  @ApiParam({ 
-    name: 'tipoBeneficioId', 
+  @ApiParam({
+    name: 'tipoBeneficioId',
     description: 'ID do tipo de benefício',
-    example: '550e8400-e29b-41d4-a716-446655440000' 
+    example: '550e8400-e29b-41d4-a716-446655440000',
   })
-  @ApiResponse({ 
-    status: 204, 
-    description: 'Workflow removido com sucesso'
+  @ApiResponse({
+    status: 204,
+    description: 'Workflow removido com sucesso',
   })
-  @ApiResponse({ 
-    status: 404, 
-    description: 'Workflow não encontrado'
+  @ApiResponse({
+    status: 404,
+    description: 'Workflow não encontrado',
   })
   async remover(
-    @Param('tipoBeneficioId') tipoBeneficioId: string
+    @Param('tipoBeneficioId') tipoBeneficioId: string,
   ): Promise<void> {
     await this.workflowService.remover(tipoBeneficioId);
   }
@@ -116,23 +118,23 @@ export class WorkflowController {
    */
   @Put(':tipoBeneficioId/status')
   @ApiOperation({ summary: 'Ativar ou desativar workflow' })
-  @ApiParam({ 
-    name: 'tipoBeneficioId', 
+  @ApiParam({
+    name: 'tipoBeneficioId',
     description: 'ID do tipo de benefício',
-    example: '550e8400-e29b-41d4-a716-446655440000' 
+    example: '550e8400-e29b-41d4-a716-446655440000',
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Status do workflow atualizado com sucesso',
-    type: WorkflowResponseDto
+    type: WorkflowResponseDto,
   })
-  @ApiResponse({ 
-    status: 404, 
-    description: 'Workflow não encontrado'
+  @ApiResponse({
+    status: 404,
+    description: 'Workflow não encontrado',
   })
   async alterarStatus(
     @Param('tipoBeneficioId') tipoBeneficioId: string,
-    @Body() { ativo }: { ativo: boolean }
+    @Body() { ativo }: { ativo: boolean },
   ): Promise<WorkflowResponseDto> {
     return this.workflowService.alterarStatus(tipoBeneficioId, ativo);
   }

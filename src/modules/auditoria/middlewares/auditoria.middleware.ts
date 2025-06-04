@@ -50,7 +50,7 @@ export class AuditoriaMiddleware implements NestMiddleware {
    */
   use(req: Request, res: Response, next: NextFunction) {
     // ← CORREÇÃO: Remover async/await da assinatura principal
-    
+
     // Verifica se deve auditar ANTES de fazer qualquer coisa
     if (!this.shouldAudit(req)) {
       return next(); // ← CORREÇÃO: Return direto sem processamento
@@ -70,7 +70,7 @@ export class AuditoriaMiddleware implements NestMiddleware {
 
       // Intercepta res.json de forma mais segura
       const originalJson = res.json;
-      res.json = function(body) {
+      res.json = function (body) {
         responseBody = body;
         return originalJson.call(this, body);
       };
@@ -91,8 +91,8 @@ export class AuditoriaMiddleware implements NestMiddleware {
             entidade,
             entidadeId,
             dadosSensiveis,
-            res.statusCode
-          ).catch(error => {
+            res.statusCode,
+          ).catch((error) => {
             // ← CORREÇÃO: Capturar erros sem travar a aplicação
             this.logger.error(
               `Erro ao processar auditoria: ${error.message}`,
@@ -104,7 +104,6 @@ export class AuditoriaMiddleware implements NestMiddleware {
 
       // ← CORREÇÃO: Chamar next() após configurar tudo
       next();
-
     } catch (error) {
       // ← CORREÇÃO: Em caso de erro, apenas logar e continuar
       this.logger.error(
@@ -130,7 +129,7 @@ export class AuditoriaMiddleware implements NestMiddleware {
     entidade: string,
     entidadeId: string | undefined,
     dadosSensiveis: string[],
-    statusCode: number
+    statusCode: number,
   ): Promise<void> {
     try {
       // Só registra operações bem-sucedidas
@@ -143,23 +142,28 @@ export class AuditoriaMiddleware implements NestMiddleware {
         tipo_operacao: tipoOperacao,
         entidade_afetada: entidade,
         entidade_id: entidadeId || '',
-        dados_anteriores: (method === 'PUT' || method === 'PATCH') ? body : undefined,
-        dados_novos: (method === 'POST' || method === 'PUT' || method === 'PATCH') ? responseBody : undefined,
+        dados_anteriores:
+          method === 'PUT' || method === 'PATCH' ? body : undefined,
+        dados_novos:
+          method === 'POST' || method === 'PUT' || method === 'PATCH'
+            ? responseBody
+            : undefined,
         usuario_id: user?.id,
         ip_origem: ip, // ← Agora sempre será string
         user_agent: userAgent,
         endpoint: originalUrl,
         metodo_http: method,
         descricao: `${method} em ${entidade}${entidadeId ? ` (ID: ${entidadeId})` : ''}`,
-        dados_sensiveis_acessados: dadosSensiveis.length > 0 ? dadosSensiveis : undefined,
+        dados_sensiveis_acessados:
+          dadosSensiveis.length > 0 ? dadosSensiveis : undefined,
         validar: function (validationGroup?: string): void {
           throw new Error('Function not implemented.');
-        }
+        },
       };
 
       // ← CORREÇÃO: Usar Promise.allSettled para não travar se uma falhar
       const promises = [
-        this.auditoriaQueueService.enfileirarLogAuditoria(logAuditoriaDto)
+        this.auditoriaQueueService.enfileirarLogAuditoria(logAuditoriaDto),
       ];
 
       // Se houver dados sensíveis, adiciona à fila
@@ -174,13 +178,13 @@ export class AuditoriaMiddleware implements NestMiddleware {
             userAgent,
             originalUrl,
             method,
-          )
+          ),
         );
       }
 
       // Executa todas as operações em paralelo
       const results = await Promise.allSettled(promises);
-      
+
       // Loga erros das operações que falharam
       results.forEach((result, index) => {
         if (result.status === 'rejected') {
@@ -190,7 +194,6 @@ export class AuditoriaMiddleware implements NestMiddleware {
           );
         }
       });
-
     } catch (error) {
       this.logger.error(
         `Erro crítico no processamento de auditoria: ${error.message}`,

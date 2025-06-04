@@ -2,7 +2,10 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { DadosNatalidade } from '../../../entities/dados-natalidade.entity';
-import { CreateDadosNatalidadeDto, UpdateDadosNatalidadeDto } from '../dto/create-dados-natalidade.dto';
+import {
+  CreateDadosNatalidadeDto,
+  UpdateDadosNatalidadeDto,
+} from '../dto/create-dados-natalidade.dto';
 
 /**
  * Serviço para gerenciar dados específicos de Auxílio Natalidade
@@ -12,7 +15,7 @@ export class DadosNatalidadeService {
   constructor(
     @InjectRepository(DadosNatalidade)
     private readonly dadosNatalidadeRepository: Repository<DadosNatalidade>,
-  ) { }
+  ) {}
 
   /**
    * Criar dados de natalidade para uma solicitação
@@ -104,7 +107,12 @@ export class DadosNatalidadeService {
   async findAll(
     page: number = 1,
     limit: number = 10,
-  ): Promise<{ data: DadosNatalidade[]; total: number; page: number; limit: number }> {
+  ): Promise<{
+    data: DadosNatalidade[];
+    total: number;
+    page: number;
+    limit: number;
+  }> {
     const [data, total] = await this.dadosNatalidadeRepository.findAndCount({
       relations: ['solicitacao'],
       skip: (page - 1) * limit,

@@ -53,7 +53,10 @@ export class DadosNatalidade {
 
   @Column({ type: 'date', nullable: true })
   @IsOptional()
-  @IsDateString({}, { message: 'Data provável do parto deve ser uma data válida' })
+  @IsDateString(
+    {},
+    { message: 'Data provável do parto deve ser uma data válida' },
+  )
   data_provavel_parto?: Date;
 
   @Column({ default: false })
@@ -128,11 +131,11 @@ export class DadosNatalidade {
    */
   estaNoPrazoSolicitacao(prazoMaximoDias: number): boolean {
     if (!this.data_provavel_parto) return false;
-    
+
     const hoje = new Date();
     const dataLimite = new Date(this.data_provavel_parto);
     dataLimite.setDate(dataLimite.getDate() + prazoMaximoDias);
-    
+
     return hoje <= dataLimite;
   }
 
@@ -142,17 +145,22 @@ export class DadosNatalidade {
   validarDadosCompletos(): { valido: boolean; erros: string[] } {
     const erros: string[] = [];
 
-    if (this.ja_tem_filhos && (this.quantidade_filhos === null || this.quantidade_filhos === undefined)) {
+    if (
+      this.ja_tem_filhos &&
+      (this.quantidade_filhos === null || this.quantidade_filhos === undefined)
+    ) {
       erros.push('Quantidade de filhos é obrigatória quando já tem filhos');
     }
 
     if (this.realiza_pre_natal && !this.atendida_psf_ubs) {
-      erros.push('Quando realiza pré-natal, deve informar se é atendida pelo PSF/UBS');
+      erros.push(
+        'Quando realiza pré-natal, deve informar se é atendida pelo PSF/UBS',
+      );
     }
 
     return {
       valido: erros.length === 0,
-      erros
+      erros,
     };
   }
 }

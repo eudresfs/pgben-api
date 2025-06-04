@@ -3,7 +3,12 @@
  */
 
 // Configuração principal do Swagger
-export { swaggerConfig, swaggerDocumentOptions, swaggerSetupOptions, setupSwagger } from './swagger.config';
+export {
+  swaggerConfig,
+  swaggerDocumentOptions,
+  swaggerSetupOptions,
+  setupSwagger,
+} from './swagger.config';
 
 // Schemas (DTOs) básicos
 export * from './schemas/index';

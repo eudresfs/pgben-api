@@ -7,14 +7,14 @@ export enum MetodoConfirmacaoEnum {
    * Confirmação por assinatura física em documento impresso.
    */
   ASSINATURA = 'assinatura',
-  
+
   /**
    * Confirmação digital, realizada através de sistema eletrônico (app, portal, etc).
    */
   DIGITAL = 'digital',
-  
+
   /**
    * Confirmação realizada por terceiro autorizado a receber em nome do beneficiário.
    */
-  TERCEIRIZADO = 'terceirizado'
+  TERCEIRIZADO = 'terceirizado',
 }
