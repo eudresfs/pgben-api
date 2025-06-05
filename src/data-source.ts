@@ -4,8 +4,12 @@
  * Esta configuração resolve problemas de inicialização relacionados a entidades
  * com nomes duplicados, utilizando um carregamento faseado de entidades.
  */
+
+// IMPORTANTE: Carregar as variáveis de ambiente ANTES de qualquer outra importação
+import './config/env';
+
 import { DataSource } from 'typeorm';
-import { config as dotenvConfig } from 'dotenv';
+import { env } from './config/env';
 
 // Entidades do módulo de autenticação
 import { JwtBlacklist } from './entities/jwt-blacklist.entity';
@@ -118,8 +122,6 @@ import {
   Solicitacao,
 } from './entities';
 
-dotenvConfig();
-
 /**
  * Configuração do DataSource para carregamento faseado de entidades
  *
@@ -128,11 +130,11 @@ dotenvConfig();
  */
 export const AppDataSource = new DataSource({
   type: 'postgres',
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '5432', 10),
-  username: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASS || 'postgres',
-  database: process.env.DB_NAME || 'pgben',
+  host: env.DB_HOST,
+  port: env.DB_PORT,
+  username: env.DB_USER,
+  password: env.DB_PASS,
+  database: env.DB_NAME,
   entities: [
     // Entidades de autenticação
     JwtBlacklist,

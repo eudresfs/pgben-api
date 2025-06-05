@@ -1,3 +1,6 @@
+// IMPORTANTE: Carregar as variáveis de ambiente ANTES de qualquer outra operação
+require('dotenv').config();
+
 // Configuração específica para typeorm-seeding
 module.exports = {
   name: 'default',

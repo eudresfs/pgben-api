@@ -9,6 +9,10 @@
  * - Seeds de referência: categorias, modelos e requisitos de documentos
  * - Seeds de estrutura: schemas de tipos de benefício
  */
+
+// IMPORTANTE: Carregar as variáveis de ambiente ANTES de qualquer outra importação
+import '../../config/env';
+
 import { AppDataSource } from './seed-source';
 import { CoreSeedRunner } from './core/CoreSeedRunner';
 import { ReferenceSeedRunner } from './reference/ReferenceSeedRunner';

@@ -2,13 +2,15 @@
  * Configuração do banco de dados
  *
  * Este arquivo centraliza as configurações de conexão com o banco de dados,
- * permitindo fácil configuração através de variáveis de ambiente.
+ * utilizando as variáveis de ambiente carregadas de forma consistente.
  */
+import { env } from './env';
+
 export const databaseConfig = {
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '5432', 10),
-  username: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASS || 'postgres',
-  database: process.env.DB_NAME || 'pgben',
-  logging: process.env.DB_LOGGING === 'true',
+  host: env.DB_HOST,
+  port: env.DB_PORT,
+  username: env.DB_USER,
+  password: env.DB_PASS,
+  database: env.DB_NAME,
+  logging: env.DB_LOGGING,
 };

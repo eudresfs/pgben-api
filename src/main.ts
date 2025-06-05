@@ -1,3 +1,6 @@
+// IMPORTANTE: Carregar as variáveis de ambiente ANTES de qualquer outra importação
+import './config/env';
+
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import {

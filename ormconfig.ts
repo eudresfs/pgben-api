@@ -1,18 +1,18 @@
+// IMPORTANTE: Carregar as variáveis de ambiente ANTES de qualquer outra importação
+import './src/config/env';
+
 import { DataSource, DataSourceOptions } from 'typeorm';
 import { SeederOptions } from 'typeorm-extension';
-import { config } from 'dotenv';
-
-// Carrega as variáveis de ambiente
-config();
+import { env } from './src/config/env';
 
 // Configuração base do TypeORM
 const options: DataSourceOptions & SeederOptions = {
   type: 'postgres',
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '5432', 10),
-  username: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASS || 'postgres',
-  database: process.env.DB_NAME || 'pgben',
+  host: env.DB_HOST,
+  port: env.DB_PORT,
+  username: env.DB_USER,
+  password: env.DB_PASS,
+  database: env.DB_NAME,
   entities: ['src/**/*.entity{.ts,.js}'],
   migrations: ['src/database/migrations/**/*{.ts,.js}'],
   seeds: [
