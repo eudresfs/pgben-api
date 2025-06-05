@@ -16,7 +16,7 @@ services:
     networks:
       - pgben-network
     healthcheck:
-      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-pgben123}", "ping"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -118,7 +118,7 @@ services:
     container_name: pgben-redis-commander
     restart: unless-stopped
     environment:
-      - REDIS_HOSTS=pgben:pgben-redis:6379:0:${REDIS_PASSWORD:-pgben123}
+      - REDIS_HOSTS=local:pgben-redis:6379:0:${REDIS_PASSWORD:-pgben123}
       - HTTP_USER=${REDIS_COMMANDER_USER:-admin}
       - HTTP_PASSWORD=${REDIS_COMMANDER_PASSWORD:-admin123}
     ports:

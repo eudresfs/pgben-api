@@ -4,6 +4,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ScheduleModule } from '@nestjs/schedule';
 import { AuthModule } from '../../auth/auth.module';
 import { JudicialModule } from '../judicial/judicial.module';
+import { CidadaoModule } from '../cidadao/cidadao.module';
 import { SolicitacaoController } from './controllers/solicitacao.controller';
 import { SolicitacaoService } from './services/solicitacao.service';
 import { DeterminacaoJudicialController } from './controllers/determinacao-judicial.controller';
@@ -44,6 +45,8 @@ import { MonitoramentoAluguelSocialService } from './services/monitoramento-alug
     ]),
     // Importa o módulo judicial para acesso aos repositórios e serviços
     JudicialModule,
+    // Importa o módulo de cidadão para validações
+    CidadaoModule,
     // Importa o módulo compartilhado de autenticação
     AuthModule,
     // Módulo de eventos para notificações

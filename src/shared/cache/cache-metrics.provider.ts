@@ -1,4 +1,4 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
@@ -11,12 +11,15 @@ import { EnhancedMetricsService } from '../monitoring/enhanced-metrics.service';
  * para monitoramento e análise de performance.
  */
 @Injectable()
-export class CacheMetricsProvider implements OnModuleInit {
+export class CacheMetricsProvider implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(CacheMetricsProvider.name);
   private readonly cacheEnabled: boolean;
   private readonly cacheType: string;
   private readonly metricsInterval = 60000; // 1 minuto
   private metricsTimer: NodeJS.Timeout;
+  private consecutiveFailures = 0;
+  private readonly maxConsecutiveFailures = 3;
+  private metricsDisabled = false;
 
   // Contadores para cálculo de métricas
   private cacheHits = 0;
@@ -69,26 +72,112 @@ export class CacheMetricsProvider implements OnModuleInit {
    */
   private async collectMetrics(): Promise<void> {
     try {
-      if (!this.cacheEnabled) {
-        // Se o cache estiver desabilitado, apenas reporta métricas zeradas
+      // Verificar se as métricas foram desabilitadas devido a falhas consecutivas
+      if (this.metricsDisabled) {
+        this.logger.debug('Coleta de métricas de cache temporariamente desabilitada devido a falhas consecutivas');
         this.reportEmptyMetrics();
         return;
       }
 
-      // Coletar métricas do Redis via Bull
-      const jobCounts = await this.cacheQueue.getJobCounts();
-      const activeJobs = await this.cacheQueue.getJobs(['active']);
-      const waitingJobs = await this.cacheQueue.getJobs(['waiting']);
-      const completedJobs = await this.cacheQueue.getJobs(['completed']);
-      const failedJobs = await this.cacheQueue.getJobs(['failed']);
+      if (!this.cacheEnabled || !this.cacheQueue) {
+        // Se o cache estiver desabilitado ou fila não disponível, apenas reporta métricas zeradas
+        this.reportEmptyMetrics();
+        return;
+      }
 
-      // Calcular tamanho aproximado do cache em bytes
+      // Verificar se o Redis está acessível antes de tentar coletar métricas
+      try {
+        // Teste simples de conectividade com timeout reduzido
+        const testPromise = this.cacheQueue.getJobCounts();
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Timeout na verificação de conectividade')), 2000)
+        );
+        
+        await Promise.race([testPromise, timeoutPromise]);
+        
+        // Se chegou até aqui, resetar contador de falhas
+        this.consecutiveFailures = 0;
+        if (this.metricsDisabled) {
+          this.metricsDisabled = false;
+          this.logger.log('Coleta de métricas de cache reabilitada - Redis acessível novamente');
+        }
+      } catch (connectivityError) {
+        // Incrementar contador de falhas consecutivas
+        this.consecutiveFailures++;
+        
+        // Se houver erro de conectividade ou autenticação, reportar métricas vazias
+        if (connectivityError.message.includes('NOAUTH') || 
+            connectivityError.message.includes('Authentication') ||
+            connectivityError.message.includes('Timeout') ||
+            connectivityError.message.includes('Connection')) {
+          
+          this.logger.warn(
+            `Redis não acessível (${connectivityError.message}) - Falha ${this.consecutiveFailures}/${this.maxConsecutiveFailures}`
+          );
+          
+          // Desabilitar coleta após muitas falhas consecutivas
+          if (this.consecutiveFailures >= this.maxConsecutiveFailures) {
+            this.metricsDisabled = true;
+            this.logger.error(
+              `Coleta de métricas de cache desabilitada após ${this.maxConsecutiveFailures} falhas consecutivas`
+            );
+          }
+          
+          this.reportEmptyMetrics();
+          return;
+        }
+        throw connectivityError;
+      }
+
+      // Coletar métricas do Redis via Bull com timeout e limitação
+      const timeout = 5000; // 5 segundos de timeout
+      const maxJobs = 50; // Reduzir ainda mais para evitar sobrecarga
+      
+      const jobCounts = await Promise.race([
+        this.cacheQueue.getJobCounts(),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Timeout ao obter contadores de jobs')), timeout)
+        )
+      ]) as any;
+
+      // Coletar apenas jobs ativos e em espera para reduzir carga
+      const [activeJobs, waitingJobs] = await Promise.all([
+        Promise.race([
+          this.cacheQueue.getJobs(['active'], 0, maxJobs),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Timeout ao obter jobs ativos')), timeout)
+          )
+        ]),
+        Promise.race([
+          this.cacheQueue.getJobs(['waiting'], 0, maxJobs),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Timeout ao obter jobs em espera')), timeout)
+          )
+        ])
+      ]) as any[];
+
+      // Calcular tamanho aproximado do cache em bytes de forma mais eficiente
       let totalSizeBytes = 0;
-      const allJobs = [...activeJobs, ...waitingJobs, ...completedJobs];
-      for (const job of allJobs) {
-        // Estimar tamanho baseado no JSON stringificado
-        const jobSize = JSON.stringify(job.data).length;
-        totalSizeBytes += jobSize;
+      const allJobs = [...(activeJobs || []), ...(waitingJobs || [])];
+      
+      // Calcular tamanho apenas dos primeiros 20 jobs para reduzir processamento
+      const jobsToCalculate = allJobs.slice(0, 20);
+      for (const job of jobsToCalculate) {
+        try {
+          if (job && job.data) {
+            const jobSize = JSON.stringify(job.data).length;
+            totalSizeBytes += jobSize;
+          }
+        } catch (error) {
+          // Ignorar erros de serialização de jobs individuais
+          this.logger.debug(`Erro ao calcular tamanho do job: ${error.message}`);
+        }
+      }
+
+      // Estimar tamanho total baseado na amostra
+      if (allJobs.length > jobsToCalculate.length && jobsToCalculate.length > 0) {
+        const avgJobSize = totalSizeBytes / jobsToCalculate.length;
+        totalSizeBytes = Math.round(avgJobSize * allJobs.length);
       }
 
       // Atualizar métricas
@@ -235,5 +324,49 @@ export class CacheMetricsProvider implements OnModuleInit {
     if (times) {
       times.push(time);
     }
+  }
+
+  /**
+   * Cleanup quando o módulo for destruído
+   */
+  onModuleDestroy(): void {
+    if (this.metricsTimer) {
+      clearInterval(this.metricsTimer);
+      this.logger.log('Timer de métricas de cache limpo');
+    }
+  }
+
+  /**
+   * Reabilita manualmente a coleta de métricas
+   */
+  enableMetrics(): void {
+    this.metricsDisabled = false;
+    this.consecutiveFailures = 0;
+    this.logger.log('Coleta de métricas de cache reabilitada manualmente');
+  }
+
+  /**
+   * Desabilita manualmente a coleta de métricas
+   */
+  disableMetrics(): void {
+    this.metricsDisabled = true;
+    this.logger.log('Coleta de métricas de cache desabilitada manualmente');
+  }
+
+  /**
+   * Retorna o status atual das métricas
+   */
+  getMetricsStatus(): {
+    enabled: boolean;
+    consecutiveFailures: number;
+    maxFailures: number;
+    disabled: boolean;
+  } {
+    return {
+      enabled: this.cacheEnabled,
+      consecutiveFailures: this.consecutiveFailures,
+      maxFailures: this.maxConsecutiveFailures,
+      disabled: this.metricsDisabled,
+    };
   }
 }

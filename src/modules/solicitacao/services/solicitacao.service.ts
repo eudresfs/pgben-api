@@ -43,6 +43,7 @@ import { ConverterPapelDto } from '../dto/converter-papel.dto';
 import { ProcessoJudicialRepository } from '../../judicial/repositories/processo-judicial.repository';
 import { ROLES } from '../../../shared/constants/roles.constants';
 import { ValidacaoExclusividadeService } from './validacao-exclusividade.service';
+import { CidadaoService } from '../../cidadao/services/cidadao.service';
 
 /**
  * Serviço de Solicitações
@@ -72,6 +73,9 @@ export class SolicitacaoService {
 
     @Inject(forwardRef(() => ValidacaoExclusividadeService))
     private validacaoExclusividadeService: ValidacaoExclusividadeService,
+
+    @Inject(forwardRef(() => CidadaoService))
+    private cidadaoService: CidadaoService,
   ) {}
 
   /**
@@ -108,7 +112,35 @@ export class SolicitacaoService {
       .leftJoinAndSelect('solicitacao.beneficiario', 'beneficiario')
       .leftJoinAndSelect('solicitacao.tipo_beneficio', 'tipo_beneficio')
       .leftJoinAndSelect('solicitacao.unidade', 'unidade')
-      .leftJoinAndSelect('solicitacao.tecnico', 'tecnico');
+      .leftJoinAndSelect('solicitacao.tecnico', 'tecnico')
+      .leftJoinAndSelect('solicitacao.documentos', 'documentos')
+      .select([
+        // Dados básicos da solicitação
+        'solicitacao.id',
+        'solicitacao.protocolo',
+        'solicitacao.status',
+        'solicitacao.data_abertura',
+        'solicitacao.observacoes',
+        // Dados básicos do beneficiário
+        'beneficiario.id',
+        'beneficiario.nome',
+        // Dados básicos do benefício
+        'tipo_beneficio.id',
+        'tipo_beneficio.nome',
+        'tipo_beneficio.codigo',
+        // Dados básicos do técnico
+        'tecnico.id',
+        'tecnico.nome',
+        // Dados básicos da unidade
+        'unidade.id',
+        'unidade.nome',
+        // Dados dos documentos
+        'documentos.id',
+        'documentos.tipo',
+        'documentos.nome_original',
+        'documentos.verificado',
+        'documentos.data_upload',
+      ]);
 
     // Aplicar filtros
     if (status) {
@@ -186,10 +218,42 @@ export class SolicitacaoService {
    * Busca uma solicitação pelo ID
    */
   async findById(id: string): Promise<Solicitacao> {
-    const solicitacao = await this.solicitacaoRepository.findOne({
-      where: { id },
-      relations: ['beneficiario', 'tipo_beneficio', 'unidade', 'tecnico'],
-    });
+    const solicitacao = await this.solicitacaoRepository
+      .createQueryBuilder('solicitacao')
+      .leftJoinAndSelect('solicitacao.beneficiario', 'beneficiario')
+      .leftJoinAndSelect('solicitacao.tipo_beneficio', 'tipo_beneficio')
+      .leftJoinAndSelect('solicitacao.unidade', 'unidade')
+      .leftJoinAndSelect('solicitacao.tecnico', 'tecnico')
+      .leftJoinAndSelect('solicitacao.documentos', 'documentos')
+      .select([
+        // Dados básicos da solicitação
+        'solicitacao.id',
+        'solicitacao.protocolo',
+        'solicitacao.status',
+        'solicitacao.data_abertura',
+        'solicitacao.observacoes',
+        // Dados básicos do beneficiário
+        'beneficiario.id',
+        'beneficiario.nome',
+        // Dados básicos do benefício
+        'tipo_beneficio.id',
+        'tipo_beneficio.nome',
+        'tipo_beneficio.codigo',
+        // Dados básicos do técnico
+        'tecnico.id',
+        'tecnico.nome',
+        // Dados básicos da unidade
+        'unidade.id',
+        'unidade.nome',
+        // Dados dos documentos
+        'documentos.id',
+        'documentos.tipo',
+        'documentos.nome_original',
+        'documentos.verificado',
+        'documentos.data_upload',
+      ])
+      .where('solicitacao.id = :id', { id })
+      .getOne();
 
     if (!solicitacao) {
       throwSolicitacaoNotFound(id);
@@ -205,6 +269,28 @@ export class SolicitacaoService {
     createSolicitacaoDto: CreateSolicitacaoDto,
     user: any,
   ): Promise<Solicitacao> {
+    // Validar se o beneficiário existe
+    try {
+      await this.cidadaoService.findById(createSolicitacaoDto.beneficiario_id, false);
+    } catch (error) {
+      if (error.status === 404) {
+        throw new BadRequestException('Beneficiário não encontrado');
+      }
+      throw error;
+    }
+
+    // Validar se o solicitante existe (quando informado)
+    if (createSolicitacaoDto.solicitante_id) {
+      try {
+        await this.cidadaoService.findById(createSolicitacaoDto.solicitante_id, false);
+      } catch (error) {
+        if (error.status === 404) {
+          throw new BadRequestException('Solicitante não encontrado');
+        }
+        throw error;
+      }
+    }
+
     // Validar exclusividade de papel para o beneficiário
     await this.validacaoExclusividadeService.validarExclusividadeBeneficiario(
       createSolicitacaoDto.beneficiario_id,
@@ -296,6 +382,7 @@ export class SolicitacaoService {
         .leftJoinAndSelect('solicitacao.tipo_beneficio', 'tipo_beneficio')
         .leftJoinAndSelect('solicitacao.tecnico', 'tecnico')
         .leftJoinAndSelect('tecnico.unidade', 'tecnico_unidade')
+        .leftJoinAndSelect('solicitacao.documentos', 'documentos')
         .select([
           // Dados básicos da solicitação
           'solicitacao.id',
@@ -316,6 +403,12 @@ export class SolicitacaoService {
           // Dados básicos da unidade do técnico
           'tecnico_unidade.id',
           'tecnico_unidade.nome',
+          // Dados dos documentos
+          'documentos.id',
+          'documentos.tipo',
+          'documentos.nome_original',
+          'documentos.verificado',
+          'documentos.data_upload',
         ])
         .where('solicitacao.id = :id', { id: savedSolicitacao.id })
         .getOne();

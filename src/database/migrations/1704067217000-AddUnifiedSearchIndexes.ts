@@ -13,13 +13,6 @@ export class AddUnifiedSearchIndexes1704067218000
     // Garantir que a extensão pg_trgm está ativada (necessária para busca textual)
     await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS "pg_trgm";`);
 
-    // Índice UNIQUE para telefone (busca rápida e garantia de unicidade)
-    await queryRunner.query(`
-      CREATE UNIQUE INDEX IF NOT EXISTS "idx_cidadao_telefone_unique" 
-      ON "cidadao" ("telefone") 
-      WHERE "telefone" IS NOT NULL AND "telefone" != '' AND "removed_at" IS NULL;
-    `);
-
     // Índice GIN para busca textual avançada no nome (suporte a busca parcial e fuzzy)
     await queryRunner.query(`
       CREATE INDEX IF NOT EXISTS "idx_cidadao_nome_gin_trgm" 
