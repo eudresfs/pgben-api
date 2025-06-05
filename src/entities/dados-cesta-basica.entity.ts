@@ -45,7 +45,7 @@ export class DadosCestaBasica {
   @IsNumber({}, { message: 'Quantidade de cestas deve ser um número' })
   @Min(1, { message: 'Quantidade mínima é 1 cesta' })
   @Max(12, { message: 'Quantidade máxima é 12 cestas' })
-  quantidade_cestas_solicitadas: number;
+  quantidade: number;
 
   @Column({
     type: 'enum',
@@ -77,15 +77,7 @@ export class DadosCestaBasica {
 
   @Column('text', { nullable: true })
   @IsOptional()
-  observacoes_especiais?: string;
-
-  @Column({ nullable: true })
-  @IsOptional()
-  tecnico_responsavel?: string;
-
-  @Column({ nullable: true })
-  @IsOptional()
-  unidade_solicitante?: string;
+  observacoes?: string;
 
   @CreateDateColumn()
   created_at: Date;
@@ -126,7 +118,7 @@ export class DadosCestaBasica {
    */
   isQuantidadeDentroRecomendacao(): boolean {
     const recomendada = this.calcularQuantidadeRecomendada();
-    return this.quantidade_cestas_solicitadas <= recomendada + 1; // Tolerância de +1
+    return this.quantidade <= recomendada + 1; // Tolerância de +1
   }
 
   /**
@@ -175,11 +167,11 @@ export class DadosCestaBasica {
     const duracaoMeses = this.calcularDuracaoTotalMeses();
 
     if (this.periodo_concessao === PeriodicidadeEnum.UNICO) {
-      return this.quantidade_cestas_solicitadas;
+      return this.quantidade;
     }
 
     // Para períodos recorrentes, considera entrega mensal
-    return this.quantidade_cestas_solicitadas * duracaoMeses;
+    return this.quantidade * duracaoMeses;
   }
 
   /**
@@ -187,7 +179,7 @@ export class DadosCestaBasica {
    */
   precisaJustificativaQuantidade(): boolean {
     const recomendada = this.calcularQuantidadeRecomendada();
-    return this.quantidade_cestas_solicitadas > recomendada + 1;
+    return this.quantidade > recomendada + 1;
   }
 
   /**
@@ -235,8 +227,8 @@ export class DadosCestaBasica {
     const erros: string[] = [];
 
     if (
-      !this.quantidade_cestas_solicitadas ||
-      this.quantidade_cestas_solicitadas < 1
+      !this.quantidade ||
+      this.quantidade < 1
     ) {
       erros.push('Quantidade de cestas deve ser maior que zero');
     }
@@ -256,17 +248,6 @@ export class DadosCestaBasica {
     ) {
       erros.push(
         'Justificativa é obrigatória para quantidade acima do recomendado',
-      );
-    }
-
-    if (
-      this.origem_atendimento ===
-        OrigemAtendimentoEnum.ENCAMINHAMENTO_EXTERNO &&
-      (!this.unidade_solicitante ||
-        this.unidade_solicitante.trim().length === 0)
-    ) {
-      erros.push(
-        'Unidade solicitante é obrigatória para encaminhamentos externos',
       );
     }
 

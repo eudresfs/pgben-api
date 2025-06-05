@@ -114,7 +114,7 @@ export class CreateSolicitacaoSchema1704067226000
       CREATE TABLE IF NOT EXISTS "historico_status_solicitacao" (
         "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
         "solicitacao_id" uuid NOT NULL,
-        "status_anterior" "status_solicitacao_enum" NOT NULL,
+        "status_anterior" "status_solicitacao_enum",
         "status_atual" "status_solicitacao_enum" NOT NULL,
         "usuario_id" uuid NOT NULL,
         "observacao" text,

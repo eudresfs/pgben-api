@@ -68,7 +68,7 @@ export class CreateTipoBeneficioDto {
 
   @ApiProperty({
     description: 'Código do tipo de benefício',
-    example: 'BENEFICIO_NATALIDADE',
+    example: 'beneficio-natalidade',
   })
   @IsNotEmpty({ message: 'Código é obrigatório' })
   @IsString({ message: 'Código deve ser um texto' })

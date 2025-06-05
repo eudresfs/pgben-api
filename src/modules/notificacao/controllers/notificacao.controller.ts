@@ -28,10 +28,10 @@ import { SseService } from '../services/sse.service';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../auth/guards/roles.guard';
 import { SseGuard } from '../guards/sse.guard';
-import { Roles } from '../../../auth/decorators/role.decorator';
-import { ROLES } from '../../../shared/constants/roles.constants';
 import { StatusNotificacaoProcessamento } from '../../../entities/notification.entity';
 import { CreateNotificationDto } from '../dtos/create-notification.dto';
+import { RequiresPermission } from '@/auth/decorators/requires-permission.decorator';
+import { TipoEscopo } from '@/entities/user-permission.entity';
 
 /**
  * Controlador de Notificações
@@ -56,7 +56,12 @@ export class NotificacaoController {
    * Cria e envia uma nova notificação
    */
   @Post()
-  @Roles(ROLES.ADMIN, ROLES.GESTOR, ROLES.COORDENADOR, ROLES.TECNICO)
+  @RequiresPermission(
+    {
+      permissionName: 'notificacao.criar',
+      scopeType: TipoEscopo.GLOBAL
+    }
+  )
   @ApiOperation({ summary: 'Criar e enviar uma nova notificação' })
   @ApiResponse({
     status: 201,
@@ -118,6 +123,13 @@ export class NotificacaoController {
    * Lista as notificações do usuário logado (rota alternativa)
    */
   @Get('minhas')
+  @RequiresPermission(
+    {
+      permissionName: 'notificacao.ler',
+      scopeType: TipoEscopo.PROPRIO,
+      scopeIdExpression: 'params.id',
+    }
+  )
   @ApiOperation({ summary: 'Listar minhas notificações' })
   @ApiResponse({
     status: 200,
@@ -143,6 +155,13 @@ export class NotificacaoController {
    * Obtém detalhes de uma notificação específica
    */
   @Get(':id')
+  @RequiresPermission(
+    {
+      permissionName: 'notificacao.visualizar',
+      scopeType: TipoEscopo.PROPRIO,
+      scopeIdExpression: 'params.id',
+    }
+  )
   @ApiOperation({ summary: 'Obter detalhes de uma notificação' })
   @ApiResponse({
     status: 200,
@@ -158,6 +177,13 @@ export class NotificacaoController {
    * Marca uma notificação como lida
    */
   @Put(':id/ler')
+  @RequiresPermission(
+    {
+      permissionName: 'notificacao.ler',
+      scopeType: TipoEscopo.PROPRIO,
+      scopeIdExpression: 'params.id',
+    }
+  )
   @ApiOperation({ summary: 'Marcar notificação como lida' })
   @ApiResponse({
     status: 200,
@@ -176,6 +202,13 @@ export class NotificacaoController {
    * Marca uma notificação como arquivada
    */
   @Put(':id/arquivar')
+  @RequiresPermission(
+    {
+      permissionName: 'notificacao.arquivar',
+      scopeType: TipoEscopo.PROPRIO,
+      scopeIdExpression: 'params.id',
+    }
+  )
   @ApiOperation({ summary: 'Arquivar notificação' })
   @ApiResponse({
     status: 200,
@@ -192,6 +225,13 @@ export class NotificacaoController {
    * Marca todas as notificações do usuário como lidas
    */
   @Put('todas/ler')
+  @RequiresPermission(
+    {
+      permissionName: 'notificacao.ler',
+      scopeType: TipoEscopo.PROPRIO,
+      scopeIdExpression: 'params.id',
+    }
+  )
   @ApiOperation({ summary: 'Marcar todas as notificações como lidas' })
   @ApiResponse({
     status: 200,
@@ -209,6 +249,13 @@ export class NotificacaoController {
    * Obtém o contador de notificações não lidas do usuário
    */
   @Get('contador/nao-lidas')
+  @RequiresPermission(
+    {
+      permissionName: 'notificacao.ler',
+      scopeType: TipoEscopo.PROPRIO,
+      scopeIdExpression: 'params.id',
+    }
+  )
   @ApiOperation({ summary: 'Obter contador de notificações não lidas' })
   @ApiResponse({ status: 200, description: 'Contador retornado com sucesso' })
   async contadorNaoLidas(@Request() req) {
@@ -236,7 +283,11 @@ export class NotificacaoController {
    */
   @Get('sse/stats')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(ROLES.ADMIN, ROLES.GESTOR)
+  @RequiresPermission(
+    {
+      permissionName: '*.*'
+    }
+  )
   @ApiOperation({ summary: 'Obter estatísticas das conexões SSE' })
   @ApiResponse({
     status: 200,
@@ -251,7 +302,11 @@ export class NotificacaoController {
    */
   @Get('sse/status/:userId')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(ROLES.ADMIN, ROLES.GESTOR)
+  @RequiresPermission(
+    {
+      permissionName: '*.*'
+    }
+  )
   @ApiOperation({ summary: 'Verificar status de conexão SSE de um usuário' })
   @ApiResponse({
     status: 200,

@@ -48,7 +48,6 @@ import {
   // Entidades de Benefícios
   TipoBeneficio,
   CampoDinamicoBeneficio,
-  DadosBeneficios,
   FluxoBeneficio,
   WorkflowBeneficio,
 
@@ -185,7 +184,6 @@ export const AppDataSource = new DataSource({
 
     // Entidades de solicitação
     Solicitacao,
-    DadosBeneficios,
     Pendencia,
     HistoricoSolicitacao,
 

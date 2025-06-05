@@ -109,6 +109,11 @@
             "date": 1749028949000,
             "name": "C:\\Users\\eudre\\OneDrive\\Desktop\\Projetos\\pgben\\pgben-server\\logs\\error-2025-06-04.log",
             "hash": "491f705cd5aa912f7aec3ec2319d505c760b9b9d08b09e88bee044ace1539619"
+        },
+        {
+            "date": 1749125627324,
+            "name": "C:\\Users\\eudre\\OneDrive\\Desktop\\Projetos\\pgben\\pgben-server\\logs\\error-2025-06-05.log",
+            "hash": "e92b9c97fa6a1a8739b06e08387e9edc9e93c9a3f4c451a312ab6c7b73a86177"
         }
     ],
     "hashType": "sha256"

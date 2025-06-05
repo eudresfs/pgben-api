@@ -24,10 +24,8 @@ export { RegraAlerta } from './regra-alerta.entity';
 // Entidades de Benefícios
 export { TipoBeneficio } from './tipo-beneficio.entity';
 export { CampoDinamicoBeneficio } from './campo-dinamico-beneficio.entity';
-export { DadosSolicitacaoBeneficio } from './dados-beneficios.entity';
 export { TipoBeneficioSchema } from './tipo-beneficio-schema.entity';
 // Alias para compatibilidade
-export { DadosSolicitacaoBeneficio as DadosBeneficios } from './dados-beneficios.entity';
 export { FluxoBeneficio } from './fluxo-beneficio.entity';
 export { WorkflowBeneficio } from './workflow-beneficio.entity';
 

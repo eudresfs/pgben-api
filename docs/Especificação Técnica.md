@@ -277,14 +277,14 @@ VALIDAÇÕES OBRIGATÓRIAS:
 
 ### 7.2 Timeline Aluguel Social
 ```
-ATÉ DIA 25: Requerimento/Concessão
-ATÉ DIA 30: Renovação (no mês da 6ª parcela)
-ATÉ DIA 05: Relatório Informativo (quando necessário)
 ATÉ DIA 24: E-mail às descentralizadas
-ATÉ DIA 10: Lançamento de crédito
+ATÉ DIA 25: Requerimento/Concessão
 ATÉ DIA 05: Abertura de conta
-15º DIA ÚTIL: Pagamento do benefício
+ATÉ DIA 05: Relatório Informativo (quando necessário)
+ATÉ DIA 10: Lançamento de crédito
 ATÉ 10 DIAS ÚTEIS: Envio dos recibos
+15º DIA ÚTIL: Pagamento do benefício
+ATÉ DIA 30: Renovação (no mês da 6ª parcela)
 ```
 
 ### 7.3 Atores e Perfis

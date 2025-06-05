@@ -77,10 +77,11 @@ export class CreateDadosBeneficios1704067227000 implements MigrationInterface {
                 "gemeos_trigemeos" boolean NOT NULL DEFAULT false,
                 "ja_tem_filhos" boolean NOT NULL DEFAULT false,
                 "quantidade_filhos" integer DEFAULT 0,
-                "telefone_cadastrado_cpf" character varying,
                 "chave_pix" character varying,
+                "observacoes" text,
                 "created_at" TIMESTAMP NOT NULL DEFAULT now(),
                 "updated_at" TIMESTAMP NOT NULL DEFAULT now(),
+                "removed_at" TIMESTAMP,
                 CONSTRAINT "PK_dados_natalidade" PRIMARY KEY ("id"),
                 CONSTRAINT "FK_dados_natalidade_solicitacao" FOREIGN KEY ("solicitacao_id") REFERENCES "solicitacao"("id") ON DELETE CASCADE,
                 CONSTRAINT "UQ_dados_natalidade_solicitacao" UNIQUE ("solicitacao_id")
@@ -106,6 +107,7 @@ export class CreateDadosBeneficios1704067227000 implements MigrationInterface {
                 "observacoes" text,
                 "created_at" TIMESTAMP NOT NULL DEFAULT now(),
                 "updated_at" TIMESTAMP NOT NULL DEFAULT now(),
+                "removed_at" TIMESTAMP,
                 CONSTRAINT "PK_dados_aluguel_social" PRIMARY KEY ("id"),
                 CONSTRAINT "FK_dados_aluguel_social_solicitacao" FOREIGN KEY ("solicitacao_id") REFERENCES "solicitacao"("id") ON DELETE CASCADE,
                 CONSTRAINT "UQ_dados_aluguel_social_solicitacao" UNIQUE ("solicitacao_id")
@@ -120,6 +122,7 @@ export class CreateDadosBeneficios1704067227000 implements MigrationInterface {
                 "nome_completo_falecido" character varying NOT NULL,
                 "data_obito" date NOT NULL,
                 "local_obito" character varying NOT NULL,
+                "numero_certidao_obito" character varying,
                 "data_autorizacao" date,
                 "grau_parentesco_requerente" "parentesco_enum" NOT NULL,
                 "tipo_urna_necessaria" "tipo_urna_enum" NOT NULL DEFAULT 'padrao',
@@ -130,6 +133,7 @@ export class CreateDadosBeneficios1704067227000 implements MigrationInterface {
                 "servico_sobreaviso" character varying,
                 "created_at" TIMESTAMP NOT NULL DEFAULT now(),
                 "updated_at" TIMESTAMP NOT NULL DEFAULT now(),
+                "removed_at" TIMESTAMP,
                 CONSTRAINT "PK_dados_funeral" PRIMARY KEY ("id"),
                 CONSTRAINT "FK_dados_funeral_solicitacao" FOREIGN KEY ("solicitacao_id") REFERENCES "solicitacao"("id") ON DELETE CASCADE,
                 CONSTRAINT "UQ_dados_funeral_solicitacao" UNIQUE ("solicitacao_id")
@@ -141,7 +145,7 @@ export class CreateDadosBeneficios1704067227000 implements MigrationInterface {
             CREATE TABLE "dados_cesta_basica" (
                 "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
                 "solicitacao_id" uuid NOT NULL,
-                "quantidade_cestas_solicitadas" integer NOT NULL,
+                "quantidade" integer NOT NULL,
                 "periodo_concessao" "periodicidade_enum" NOT NULL DEFAULT 'unica',
                 "origem_atendimento" "origem_atendimento_enum" NOT NULL,
                 "numero_pessoas_familia" integer NOT NULL,
@@ -149,6 +153,7 @@ export class CreateDadosBeneficios1704067227000 implements MigrationInterface {
                 "observacoes" text,
                 "created_at" TIMESTAMP NOT NULL DEFAULT now(),
                 "updated_at" TIMESTAMP NOT NULL DEFAULT now(),
+                "removed_at" TIMESTAMP,
                 CONSTRAINT "PK_dados_cesta_basica" PRIMARY KEY ("id"),
                 CONSTRAINT "FK_dados_cesta_basica_solicitacao" FOREIGN KEY ("solicitacao_id") REFERENCES "solicitacao"("id") ON DELETE CASCADE,
                 CONSTRAINT "UQ_dados_cesta_basica_solicitacao" UNIQUE ("solicitacao_id")

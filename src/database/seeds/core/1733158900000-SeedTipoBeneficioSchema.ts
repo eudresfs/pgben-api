@@ -23,8 +23,8 @@ export class SeedTipoBeneficioSchema1733158900000 {
     const estruturas = this.definirEstruturas();
 
     for (const tipoBeneficio of tiposBeneficios) {
-      const nomeNormalizado = this.normalizarNome(tipoBeneficio.nome);
-      const estrutura = estruturas[nomeNormalizado];
+      const chaveEstrutura = this.obterChaveEstrutura(tipoBeneficio.nome);
+      const estrutura = estruturas[chaveEstrutura];
 
       if (estrutura) {
         // Verificar se já existe um schema para este tipo de benefício
@@ -42,7 +42,7 @@ export class SeedTipoBeneficioSchema1733158900000 {
                 versao: '1.0.0',
                 descricao: `Schema para ${tipoBeneficio.nome}`,
                 categoria: 'beneficio_eventual',
-                tags: [nomeNormalizado],
+                tags: [this.normalizarNome(tipoBeneficio.nome)],
               },
             },
             versao: '1.0.0',
@@ -50,17 +50,20 @@ export class SeedTipoBeneficioSchema1733158900000 {
           });
 
           await tipoBeneficioSchemaRepository.save(novoSchema);
-          console.log(`Schema criado para: ${tipoBeneficio.nome}`);
+          console.log(`✅ Schema criado para: ${tipoBeneficio.nome}`);
         } else {
-          console.log(`Schema já existe para: ${tipoBeneficio.nome}`);
+          console.log(`⚠️  Schema já existe para: ${tipoBeneficio.nome}`);
         }
       } else {
-        console.warn(`Estrutura não definida para: ${tipoBeneficio.nome}`);
+        console.warn(`❌ Estrutura não definida para: ${tipoBeneficio.nome} (chave: ${chaveEstrutura})`);
       }
     }
   }
 
-  private normalizarNome(nome: string): string {
+  /**
+   * Obtém a chave correspondente na estrutura baseado no nome do benefício
+   */
+  private obterChaveEstrutura(nome: string): string {
     const nomeNormalizado = nome
       .toLowerCase()
       .normalize('NFD')
@@ -69,15 +72,28 @@ export class SeedTipoBeneficioSchema1733158900000 {
       .replace(/_+/g, '_')
       .replace(/^_|_$/g, '');
 
-    // Mapeamento específico para os códigos dos benefícios existentes
+    // Mapeamento dos nomes para as chaves do objeto estruturas
     const mapeamento: Record<string, string> = {
-      beneficio_natalidade: 'BENEFICIO_NATALIDADE',
-      beneficio_funeral: 'BENEFICIO_FUNERAL',
-      cesta_basica: 'CESTA_BASICA',
-      aluguel_social: 'ALUGUEL_SOCIAL',
+      'beneficio_natalidade': 'beneficio_natalidade',
+      'beneficio_funeral': 'beneficio_funeral',
+      'cesta_basica': 'cesta_basica',
+      'aluguel_social': 'aluguel_social',
     };
 
     return mapeamento[nomeNormalizado] || nomeNormalizado;
+  }
+
+  /**
+   * Normaliza o nome para uso em tags e identificadores
+   */
+  private normalizarNome(nome: string): string {
+    return nome
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+      .replace(/[^a-z0-9]/g, '_')
+      .replace(/_+/g, '_')
+      .replace(/^_|_$/g, '');
   }
 
   /**
@@ -128,8 +144,9 @@ export class SeedTipoBeneficioSchema1733158900000 {
       case 'date':
         return 'date';
       case 'select':
-      case 'multiselect':
         return 'enum';
+      case 'multiselect':
+        return 'array';
       default:
         return 'string';
     }
@@ -140,7 +157,7 @@ export class SeedTipoBeneficioSchema1733158900000 {
     { entidade_dados: string; schema_estrutura: any }
   > {
     return {
-      BENEFICIO_NATALIDADE: {
+      beneficio_natalidade: {
         entidade_dados: 'DadosNatalidade',
         schema_estrutura: {
           realiza_pre_natal: {
@@ -251,7 +268,7 @@ export class SeedTipoBeneficioSchema1733158900000 {
           },
         },
       },
-      ALUGUEL_SOCIAL: {
+      aluguel_social: {
         entidade_dados: 'DadosAluguelSocial',
         schema_estrutura: {
           publico_prioritario: {
@@ -263,31 +280,31 @@ export class SeedTipoBeneficioSchema1733158900000 {
             options: [
               {
                 label: 'Mulheres vítimas de violência',
-                value: 'MULHERES_VITIMAS_VIOLENCIA',
+                value: 'mulheres_vitimas_violencia',
               },
               {
                 label: 'Atingidos por calamidade',
-                value: 'ATINGIDOS_CALAMIDADE',
+                value: 'atingidos_calamidade',
               },
-              { label: 'Situação de risco', value: 'SITUACAO_RISCO' },
+              { label: 'Situação de risco', value: 'situacao_risco' },
               {
                 label: 'Crianças e adolescentes',
-                value: 'CRIANCAS_ADOLESCENTES',
+                value: 'criancas_adolescentes',
               },
-              { label: 'Gestantes e nutrizes', value: 'GESTANTES_NUTRIZES' },
-              { label: 'Idosos', value: 'IDOSOS' },
-              { label: 'Pessoas com deficiência', value: 'PCD' },
+              { label: 'Gestantes e nutrizes', value: 'gestantes_nutrizes' },
+              { label: 'Idosos', value: 'idosos' },
+              { label: 'Pessoas com deficiência', value: 'pcd' },
             ],
             validation: {
               type: 'enum',
               enum: [
-                'MULHERES_VITIMAS_VIOLENCIA',
-                'ATINGIDOS_CALAMIDADE',
-                'SITUACAO_RISCO',
-                'CRIANCAS_ADOLESCENTES',
-                'GESTANTES_NUTRIZES',
-                'IDOSOS',
-                'PCD',
+                'mulheres_vitimas_violencia',
+                'atingidos_calamidade',
+                'situacao_risco',
+                'criancas_adolescentes',
+                'gestantes_nutrizes',
+                'idosos',
+                'pcd',
               ],
             },
           },
@@ -298,20 +315,20 @@ export class SeedTipoBeneficioSchema1733158900000 {
             colSpan: 2,
             placeholder: 'Selecione as especificações que se aplicam',
             options: [
-              { label: 'Exploração sexual', value: 'EXPLORACAO_SEXUAL' },
-              { label: 'Vítima de violência', value: 'VITIMA_VIOLENCIA' },
-              { label: 'Situação de rua', value: 'SITUACAO_RUA' },
-              { label: 'Drogadição', value: 'DROGADICAO' },
+              { label: 'Exploração sexual', value: 'exploracao_sexual' },
+              { label: 'Vítima de violência', value: 'vitima_violencia' },
+              { label: 'Situação de rua', value: 'situacao_rua' },
+              { label: 'Drogadição', value: 'drogadicao' },
             ],
             validation: {
               type: 'array',
               items: {
                 type: 'enum',
                 enum: [
-                  'EXPLORACAO_SEXUAL',
-                  'VITIMA_VIOLENCIA',
-                  'SITUACAO_RUA',
-                  'DROGADICAO',
+                  'exploracao_sexual',
+                  'vitima_violencia',
+                  'situacao_rua',
+                  'drogadicao',
                 ],
               },
               maxItems: 4,
@@ -367,7 +384,7 @@ export class SeedTipoBeneficioSchema1733158900000 {
           },
         },
       },
-      CESTA_BASICA: {
+      cesta_basica: {
         entidade_dados: 'DadosCestaBasica',
         schema_estrutura: {
           quantidade_cestas_solicitadas: {
@@ -392,15 +409,15 @@ export class SeedTipoBeneficioSchema1733158900000 {
             colSpan: 1,
             placeholder: 'Selecione a periodicidade da entrega',
             options: [
-              { label: 'Único', value: 'UNICO' },
-              { label: 'Mensal', value: 'MENSAL' },
-              { label: 'Bimestral', value: 'BIMESTRAL' },
-              { label: 'Trimestral', value: 'TRIMESTRAL' },
-              { label: 'Semestral', value: 'SEMESTRAL' },
+              { label: 'Único', value: 'unico' },
+              { label: 'Mensal', value: 'mensal' },
+              { label: 'Bimestral', value: 'bimestral' },
+              { label: 'Trimestral', value: 'trimestral' },
+              { label: 'Semestral', value: 'semestral' },
             ],
             validation: {
               type: 'enum',
-              enum: ['UNICO', 'MENSAL', 'BIMESTRAL', 'TRIMESTRAL', 'SEMESTRAL'],
+              enum: ['unico', 'mensal', 'bimestral', 'trimestral', 'semestral'],
             },
           },
           origem_atendimento: {
@@ -410,25 +427,25 @@ export class SeedTipoBeneficioSchema1733158900000 {
             colSpan: 1,
             placeholder: 'Selecione a origem do atendimento',
             options: [
-              { label: 'CRAS', value: 'CRAS' },
-              { label: 'CREAS', value: 'CREAS' },
-              { label: 'Busca ativa', value: 'BUSCA_ATIVA' },
+              { label: 'CRAS', value: 'cras' },
+              { label: 'CREAS', value: 'creas' },
+              { label: 'Busca ativa', value: 'busca_ativa' },
               {
                 label: 'Encaminhamento externo',
-                value: 'ENCAMINHAMENTO_EXTERNO',
+                value: 'encaminhamento_externo',
               },
-              { label: 'Unidade básica', value: 'UNIDADE_BASICA' },
-              { label: 'Demanda espontânea', value: 'DEMANDA_ESPONTANEA' },
+              { label: 'Unidade básica', value: 'unidade_basica' },
+              { label: 'Demanda espontânea', value: 'demanda_espontanea' },
             ],
             validation: {
               type: 'enum',
               enum: [
-                'CRAS',
-                'CREAS',
-                'BUSCA_ATIVA',
-                'ENCAMINHAMENTO_EXTERNO',
-                'UNIDADE_BASICA',
-                'DEMANDA_ESPONTANEA',
+                'cras',
+                'creas',
+                'busca_ativa',
+                'encaminhamento_externo',
+                'unidade_basica',
+                'demanda_espontanea',
               ],
             },
           },
@@ -500,7 +517,7 @@ export class SeedTipoBeneficioSchema1733158900000 {
           },
         },
       },
-      BENEFICIO_FUNERAL: {
+      beneficio_funeral: {
         entidade_dados: 'DadosFuneral',
         schema_estrutura: {
           nome_completo_falecido: {
@@ -557,26 +574,26 @@ export class SeedTipoBeneficioSchema1733158900000 {
             colSpan: 1,
             placeholder: 'Selecione o grau de parentesco',
             options: [
-              { label: 'Cônjuge', value: 'CONJUGE' },
-              { label: 'Filho(a)', value: 'FILHO' },
-              { label: 'Pai', value: 'PAI' },
-              { label: 'Mãe', value: 'MAE' },
-              { label: 'Irmão/Irmã', value: 'IRMAO' },
-              { label: 'Avô/Avó', value: 'AVO' },
-              { label: 'Neto(a)', value: 'NETO' },
-              { label: 'Outro', value: 'OUTRO' },
+              { label: 'Cônjuge', value: 'conjuge' },
+              { label: 'Filho(a)', value: 'filho' },
+              { label: 'Pai', value: 'pai' },
+              { label: 'Mãe', value: 'mae' },
+              { label: 'Irmão/Irmã', value: 'irmao' },
+              { label: 'Avô/Avó', value: 'avo' },
+              { label: 'Neto(a)', value: 'neto' },
+              { label: 'Outro', value: 'outro' },
             ],
             validation: {
               type: 'enum',
               enum: [
-                'CONJUGE',
-                'FILHO',
-                'PAI',
-                'MAE',
-                'IRMAO',
-                'AVO',
-                'NETO',
-                'OUTRO',
+                'conjuge',
+                'filho',
+                'pai',
+                'mae',
+                'irmao',
+                'avo',
+                'neto',
+                'outro',
               ],
             },
           },
@@ -587,14 +604,14 @@ export class SeedTipoBeneficioSchema1733158900000 {
             colSpan: 1,
             placeholder: 'Selecione o tipo de urna',
             options: [
-              { label: 'Padrão', value: 'PADRAO' },
-              { label: 'Infantil', value: 'INFANTIL' },
-              { label: 'Especial', value: 'ESPECIAL' },
-              { label: 'Para obeso', value: 'OBESO' },
+              { label: 'Padrão', value: 'padrao' },
+              { label: 'Infantil', value: 'infantil' },
+              { label: 'Especial', value: 'especial' },
+              { label: 'Para obeso', value: 'obeso' },
             ],
             validation: {
               type: 'enum',
-              enum: ['PADRAO', 'INFANTIL', 'ESPECIAL', 'OBESO'],
+              enum: ['padrao', 'infantil', 'especial', 'obeso'],
             },
           },
           observacoes_especiais: {

@@ -112,7 +112,12 @@ export class CidadaoRepository {
           { papelAtivo: true },
         )
         .leftJoinAndSelect('cidadao.composicao_familiar', 'composicao_familiar')
-        .leftJoinAndSelect('cidadao.unidade', 'unidade');
+        .leftJoinAndSelect('cidadao.unidade', 'unidade')
+        .leftJoinAndSelect('cidadao.solicitacoes', 'solicitacoes')
+        .leftJoinAndSelect('solicitacoes.tipo_beneficio', 'tipo_beneficio')
+        .leftJoinAndSelect('solicitacoes.documentos', 'solicitacao_documentos')
+        .leftJoinAndSelect('cidadao.documentos', 'documentos')
+        .leftJoinAndSelect('cidadao.dados_sociais', 'dados_sociais');
     }
 
     // Aplicar ordenação
@@ -163,7 +168,12 @@ export class CidadaoRepository {
           { papelAtivo: true },
         )
         .leftJoinAndSelect('cidadao.composicao_familiar', 'composicao_familiar')
-        .leftJoinAndSelect('cidadao.unidade', 'unidade');
+        .leftJoinAndSelect('cidadao.unidade', 'unidade')
+        .leftJoinAndSelect('cidadao.solicitacoes', 'solicitacoes')
+        .leftJoinAndSelect('solicitacoes.tipo_beneficio', 'tipo_beneficio')
+        .leftJoinAndSelect('solicitacoes.documentos', 'solicitacao_documentos')
+        .leftJoinAndSelect('cidadao.documentos', 'documentos')
+        .leftJoinAndSelect('cidadao.dados_sociais', 'dados_sociais');
     }
 
     // Log em ambiente de desenvolvimento
@@ -209,7 +219,12 @@ export class CidadaoRepository {
           { papelAtivo: true },
         )
         .leftJoinAndSelect('cidadao.composicao_familiar', 'composicao_familiar')
-        .leftJoinAndSelect('cidadao.unidade', 'unidade');
+        .leftJoinAndSelect('cidadao.unidade', 'unidade')
+        .leftJoinAndSelect('cidadao.solicitacoes', 'solicitacoes')
+        .leftJoinAndSelect('solicitacoes.tipo_beneficio', 'tipo_beneficio')
+        .leftJoinAndSelect('solicitacoes.documentos', 'solicitacao_documentos')
+        .leftJoinAndSelect('cidadao.documentos', 'documentos')
+        .leftJoinAndSelect('cidadao.dados_sociais', 'dados_sociais');
     }
 
     // Usar cache para CPF (identificador único e frequentemente consultado)
@@ -251,7 +266,12 @@ export class CidadaoRepository {
           { papelAtivo: true },
         )
         .leftJoinAndSelect('cidadao.composicao_familiar', 'composicao_familiar')
-        .leftJoinAndSelect('cidadao.unidade', 'unidade');
+        .leftJoinAndSelect('cidadao.unidade', 'unidade')
+        .leftJoinAndSelect('cidadao.solicitacoes', 'solicitacoes')
+        .leftJoinAndSelect('solicitacoes.tipo_beneficio', 'tipo_beneficio')
+        .leftJoinAndSelect('solicitacoes.documentos', 'solicitacao_documentos')
+        .leftJoinAndSelect('cidadao.documentos', 'documentos')
+        .leftJoinAndSelect('cidadao.dados_sociais', 'dados_sociais');
     }
 
     // Usar cache para NIS (identificador único e frequentemente consultado)
@@ -293,7 +313,12 @@ export class CidadaoRepository {
           { papelAtivo: true },
         )
         .leftJoinAndSelect('cidadao.composicao_familiar', 'composicao_familiar')
-        .leftJoinAndSelect('cidadao.unidade', 'unidade');
+        .leftJoinAndSelect('cidadao.unidade', 'unidade')
+        .leftJoinAndSelect('cidadao.solicitacoes', 'solicitacoes')
+        .leftJoinAndSelect('solicitacoes.tipo_beneficio', 'tipo_beneficio')
+        .leftJoinAndSelect('solicitacoes.documentos', 'solicitacao_documentos')
+        .leftJoinAndSelect('cidadao.documentos', 'documentos')
+        .leftJoinAndSelect('cidadao.dados_sociais', 'dados_sociais');
     }
 
     return query.getOne();
@@ -331,7 +356,12 @@ export class CidadaoRepository {
           { papelAtivo: true },
         )
         .leftJoinAndSelect('cidadao.composicao_familiar', 'composicao_familiar')
-        .leftJoinAndSelect('cidadao.unidade', 'unidade');
+        .leftJoinAndSelect('cidadao.unidade', 'unidade')
+        .leftJoinAndSelect('cidadao.solicitacoes', 'solicitacoes')
+        .leftJoinAndSelect('solicitacoes.tipo_beneficio', 'tipo_beneficio')
+        .leftJoinAndSelect('solicitacoes.documentos', 'solicitacao_documentos')
+        .leftJoinAndSelect('cidadao.documentos', 'documentos')
+        .leftJoinAndSelect('cidadao.dados_sociais', 'dados_sociais');
     }
 
     // Log em desenvolvimento

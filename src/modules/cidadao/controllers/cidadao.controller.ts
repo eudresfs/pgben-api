@@ -353,6 +353,13 @@ export class CidadaoController {
     description: 'ID do cidadão',
     example: '550e8400-e29b-41d4-a716-446655440000',
   })
+  @ApiQuery({
+    name: 'includeRelations',
+    required: false,
+    description: 'Se deve incluir relacionamentos (papéis, composição familiar, solicitações e documentos)',
+    type: Boolean,
+    example: true,
+  })
   @ApiOkResponse({
     description: 'Cidadão encontrado com sucesso',
     type: CidadaoResponseDto,
@@ -369,8 +376,9 @@ export class CidadaoController {
   })
   async findOne(
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Query('includeRelations', new DefaultValuePipe(false)) includeRelations: boolean,
   ): Promise<CidadaoResponseDto> {
-    return this.cidadaoService.findById(id, false); // Não carregar relacionamentos por padrão para melhor performance
+    return this.cidadaoService.findById(id, includeRelations);
   }
 
   /**

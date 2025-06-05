@@ -3,6 +3,7 @@ import {
   Logger,
   forwardRef,
   Inject,
+  BadRequestException,
 } from '@nestjs/common';
 import {
   throwSolicitacaoNotFound,
@@ -22,7 +23,7 @@ import {
   throwInternalError,
 } from '../../../shared/exceptions/error-catalog/domains/solicitacao.errors';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between, ILike, Connection } from 'typeorm';
+import { Repository, Between, ILike, Connection, In } from 'typeorm';
 import {
   Solicitacao,
   StatusSolicitacao,
@@ -209,23 +210,6 @@ export class SolicitacaoService {
       createSolicitacaoDto.beneficiario_id,
     );
 
-    // Se tiver composição familiar, validar para cada membro
-    if (
-      createSolicitacaoDto.dados_complementares &&
-      createSolicitacaoDto.dados_complementares.composicao_familiar &&
-      Array.isArray(
-        createSolicitacaoDto.dados_complementares.composicao_familiar,
-      ) &&
-      createSolicitacaoDto.dados_complementares.composicao_familiar.length > 0
-    ) {
-      const composicaoFamiliar =
-        createSolicitacaoDto.dados_complementares.composicao_familiar.map(
-          (membro) => membro.cidadao_id,
-        );
-      await this.validacaoExclusividadeService.validarComposicaoFamiliarCompleta(
-        composicaoFamiliar,
-      );
-    }
     return this.connection.transaction(async (manager) => {
       // Criar uma nova instância de Solicitacao
       const solicitacao = new Solicitacao();
@@ -246,11 +230,44 @@ export class SolicitacaoService {
 
       // Preencher os dados básicos
       solicitacao.beneficiario_id = createSolicitacaoDto.beneficiario_id;
+      solicitacao.solicitante_id = createSolicitacaoDto.solicitante_id;
       solicitacao.tipo_beneficio_id = createSolicitacaoDto.tipo_beneficio_id;
       solicitacao.unidade_id = unidadeId;
       solicitacao.tecnico_id = user.id;
       solicitacao.status = StatusSolicitacao.RASCUNHO;
       solicitacao.data_abertura = new Date();
+
+      // Validar que solicitante não pode ser o mesmo que beneficiário
+      if (createSolicitacaoDto.solicitante_id && 
+          createSolicitacaoDto.solicitante_id === createSolicitacaoDto.beneficiario_id) {
+        throw new BadRequestException('Solicitante não pode ser o mesmo que o beneficiário');
+      }
+
+      // Verificar se já existe uma solicitação em andamento para o mesmo cidadão e tipo de benefício
+      const statusEmAndamento = [
+        StatusSolicitacao.RASCUNHO,
+        StatusSolicitacao.ABERTA,
+        StatusSolicitacao.PENDENTE,
+        StatusSolicitacao.EM_ANALISE,
+        StatusSolicitacao.AGUARDANDO_DOCUMENTOS,
+        StatusSolicitacao.APROVADA,
+        StatusSolicitacao.LIBERADA,
+        StatusSolicitacao.EM_PROCESSAMENTO
+      ];
+
+      const solicitacaoExistente = await manager.findOne(Solicitacao, {
+        where: {
+          beneficiario_id: createSolicitacaoDto.beneficiario_id,
+          tipo_beneficio_id: createSolicitacaoDto.tipo_beneficio_id,
+          status: In(statusEmAndamento)
+        }
+      });
+
+      if (solicitacaoExistente) {
+        throw new BadRequestException(
+          'Já existe uma solicitação em andamento para este benefício e cidadão'
+        );
+      }
 
       // Normalizar enums nos dados complementares antes de salvar
       const dadosComplementares =
@@ -265,25 +282,43 @@ export class SolicitacaoService {
       const historico = new HistoricoSolicitacao();
       historico.solicitacao_id = savedSolicitacao.id;
       historico.usuario_id = user.id;
-      historico.status_anterior = StatusSolicitacao.ABERTA;
-      historico.status_atual = StatusSolicitacao.ABERTA;
+      historico.status_atual = StatusSolicitacao.RASCUNHO;
       historico.observacao = 'Solicitação criada';
       historico.dados_alterados = { acao: 'criacao' };
       historico.ip_usuario = user.ip || '0.0.0.0';
 
       await manager.save(historico);
 
-      // Buscar a solicitação criada dentro da transação com relações essenciais
-      const solicitacaoCompleta = await manager.findOne(Solicitacao, {
-        where: { id: savedSolicitacao.id },
-        relations: [
-          'beneficiario',
-          'tipo_beneficio',
-          'unidade',
-          'tecnico',
-          'historico',
-        ],
-      });
+      // Buscar a solicitação criada dentro da transação com relações básicas
+      const solicitacaoCompleta = await manager
+        .createQueryBuilder(Solicitacao, 'solicitacao')
+        .leftJoinAndSelect('solicitacao.beneficiario', 'beneficiario')
+        .leftJoinAndSelect('solicitacao.tipo_beneficio', 'tipo_beneficio')
+        .leftJoinAndSelect('solicitacao.tecnico', 'tecnico')
+        .leftJoinAndSelect('tecnico.unidade', 'tecnico_unidade')
+        .select([
+          // Dados básicos da solicitação
+          'solicitacao.id',
+          'solicitacao.protocolo',
+          'solicitacao.status',
+          'solicitacao.data_abertura',
+          'solicitacao.observacoes',
+          // Dados básicos do beneficiário
+          'beneficiario.id',
+          'beneficiario.nome',
+          // Dados básicos do benefício
+          'tipo_beneficio.id',
+          'tipo_beneficio.nome',
+          'tipo_beneficio.codigo',
+          // Dados básicos do técnico
+          'tecnico.id',
+          'tecnico.nome',
+          // Dados básicos da unidade do técnico
+          'tecnico_unidade.id',
+          'tecnico_unidade.nome',
+        ])
+        .where('solicitacao.id = :id', { id: savedSolicitacao.id })
+        .getOne();
 
       if (!solicitacaoCompleta) {
         throwSolicitacaoNotFound(savedSolicitacao.id);

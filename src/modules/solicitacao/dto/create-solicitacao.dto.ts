@@ -84,13 +84,13 @@ export class CreateSolicitacaoDto {
   @IsObject({ message: 'Dados complementares devem ser um objeto' })
   dados_complementares?: Record<string, any>;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'Documentos anexados à solicitação',
     type: [DocumentoSolicitacaoDto],
   })
+  @IsOptional()
   @IsArray({ message: 'Documentos deve ser um array' })
-  @ArrayMinSize(1, { message: 'Deve haver pelo menos um documento anexado' })
   @ValidateNested({ each: true })
   @Type(() => DocumentoSolicitacaoDto)
-  documentos: DocumentoSolicitacaoDto[];
+  documentos?: DocumentoSolicitacaoDto[];
 }
