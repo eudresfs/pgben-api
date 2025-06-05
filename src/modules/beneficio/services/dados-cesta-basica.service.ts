@@ -1,134 +1,39 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
 import { DadosCestaBasica } from '../../../entities/dados-cesta-basica.entity';
+import { CreateDadosCestaBasicaDto, UpdateDadosCestaBasicaDto } from '../dto/create-dados-cesta-basica.dto';
+import { AbstractDadosBeneficioService } from './base/abstract-dados-beneficio.service';
 import {
-  CreateDadosCestaBasicaDto,
-  UpdateDadosCestaBasicaDto,
-} from '../dto/create-dados-cesta-basica.dto';
+  BeneficioErrorContext,
+  BeneficioValidationErrorBuilder,
+  BENEFICIO_TECH_MESSAGES,
+} from '../../../shared/exceptions/error-catalog/domains/beneficio.errors';
+import { BENEFICIO_CONSTANTS } from '../../../shared/constants/beneficio.constants';
 
 /**
  * Serviço para gerenciar dados específicos de Cesta Básica
  */
 @Injectable()
-export class DadosCestaBasicaService {
+export class DadosCestaBasicaService extends AbstractDadosBeneficioService<
+  DadosCestaBasica,
+  CreateDadosCestaBasicaDto,
+  UpdateDadosCestaBasicaDto
+> {
   constructor(
     @InjectRepository(DadosCestaBasica)
     private readonly dadosCestaBasicaRepository: Repository<DadosCestaBasica>,
-  ) {}
-
-  /**
-   * Criar dados de cesta básica para uma solicitação
-   */
-  async create(
-    createDto: CreateDadosCestaBasicaDto,
-  ): Promise<DadosCestaBasica> {
-    // Verificar se já existem dados para esta solicitação
-    const existingData = await this.dadosCestaBasicaRepository.findOne({
-      where: { solicitacao_id: createDto.solicitacao_id },
-    });
-
-    if (existingData) {
-      throw new Error('Já existem dados de cesta básica para esta solicitação');
-    }
-
-    const dadosCestaBasica = this.dadosCestaBasicaRepository.create(createDto);
-    return this.dadosCestaBasicaRepository.save(dadosCestaBasica);
+    @Inject(CACHE_MANAGER) cacheManager: Cache,
+  ) {
+    super(dadosCestaBasicaRepository, 'DadosCestaBasica', CreateDadosCestaBasicaDto, cacheManager);
   }
 
-  /**
-   * Buscar dados de cesta básica por ID
-   */
-  async findOne(id: string): Promise<DadosCestaBasica> {
-    const dadosCestaBasica = await this.dadosCestaBasicaRepository.findOne({
-      where: { id },
-      relations: ['solicitacao'],
-    });
+  // Métodos CRUD básicos herdados da classe base
+  // create(), findOne(), findBySolicitacao(), update(), remove(), existsBySolicitacao(), findAll()
 
-    if (!dadosCestaBasica) {
-      throw new NotFoundException('Dados de cesta básica não encontrados');
-    }
-
-    return dadosCestaBasica;
-  }
-
-  /**
-   * Buscar dados de cesta básica por solicitação
-   */
-  async findBySolicitacao(solicitacaoId: string): Promise<DadosCestaBasica> {
-    const dadosCestaBasica = await this.dadosCestaBasicaRepository.findOne({
-      where: { solicitacao_id: solicitacaoId },
-      relations: ['solicitacao'],
-    });
-
-    if (!dadosCestaBasica) {
-      throw new NotFoundException(
-        'Dados de cesta básica não encontrados para esta solicitação',
-      );
-    }
-
-    return dadosCestaBasica;
-  }
-
-  /**
-   * Atualizar dados de cesta básica
-   */
-  async update(
-    id: string,
-    updateDto: UpdateDadosCestaBasicaDto,
-  ): Promise<DadosCestaBasica> {
-    const dadosCestaBasica = await this.findOne(id);
-
-    // Atualizar apenas os campos fornecidos
-    Object.assign(dadosCestaBasica, updateDto);
-
-    return this.dadosCestaBasicaRepository.save(dadosCestaBasica);
-  }
-
-  /**
-   * Remover dados de cesta básica
-   */
-  async remove(id: string): Promise<void> {
-    const dadosCestaBasica = await this.findOne(id);
-    await this.dadosCestaBasicaRepository.remove(dadosCestaBasica);
-  }
-
-  /**
-   * Verificar se existem dados de cesta básica para uma solicitação
-   */
-  async existsBySolicitacao(solicitacaoId: string): Promise<boolean> {
-    const count = await this.dadosCestaBasicaRepository.count({
-      where: { solicitacao_id: solicitacaoId },
-    });
-    return count > 0;
-  }
-
-  /**
-   * Buscar todos os dados de cesta básica com paginação
-   */
-  async findAll(
-    page: number = 1,
-    limit: number = 10,
-  ): Promise<{
-    data: DadosCestaBasica[];
-    total: number;
-    page: number;
-    limit: number;
-  }> {
-    const [data, total] = await this.dadosCestaBasicaRepository.findAndCount({
-      relations: ['solicitacao'],
-      skip: (page - 1) * limit,
-      take: limit,
-      order: { created_at: 'DESC' },
-    });
-
-    return {
-      data,
-      total,
-      page,
-      limit,
-    };
-  }
+  // Métodos existsBySolicitacao() e findAll() herdados da classe base
 
   /**
    * Buscar dados por período de concessão
@@ -239,4 +144,109 @@ export class DadosCestaBasicaService {
       porOrigem,
     };
   }
+
+  /**
+   * Construir contexto de erro específico para Cesta Básica
+   */
+  protected buildErrorContext(data: any): BeneficioErrorContext {
+    return {
+      data: {
+        tipoBeneficio: 'CESTA_BASICA',
+        solicitacao_id: data.solicitacao_id,
+        quantidade_solicitada: data.quantidade_cestas_solicitadas,
+      tamanho_familia: data.numero_pessoas_familia,
+        justificativa_quantidade: data.justificativa_quantidade,
+      },
+    };
+  }
+
+  /**
+   * Validação específica para criação de dados de Cesta Básica
+   */
+  protected async validateCreateData(data: CreateDadosCestaBasicaDto): Promise<void> {
+    const errorBuilder = new BeneficioValidationErrorBuilder();
+    const rules = BENEFICIO_CONSTANTS.BUSINESS_RULES.CESTA_BASICA;
+
+    // Validação de campos obrigatórios
+    if (!data.solicitacao_id) {
+      errorBuilder.add('solicitacao_id', BENEFICIO_TECH_MESSAGES.CESTA_BASICA.SOLICITACAO_ID_REQUIRED);
+    }
+
+    if (!data.quantidade_cestas_solicitadas || data.quantidade_cestas_solicitadas <= 0) {
+      errorBuilder.add('quantidade_cestas_solicitadas', BENEFICIO_TECH_MESSAGES.CESTA_BASICA.QUANTIDADE_REQUIRED);
+    }
+
+    if (!data.numero_pessoas_familia || data.numero_pessoas_familia <= 0) {
+      errorBuilder.add('numero_pessoas_familia', BENEFICIO_TECH_MESSAGES.CESTA_BASICA.TAMANHO_FAMILIA_REQUIRED);
+    }
+
+    // Validação de regras de negócio
+    if (data.quantidade_cestas_solicitadas && data.numero_pessoas_familia) {
+      const quantidadeRecomendada = this.calcularQuantidadeRecomendada(data.numero_pessoas_familia);
+      
+      if (data.quantidade_cestas_solicitadas > quantidadeRecomendada) {
+        if (!data.justificativa_quantidade || data.justificativa_quantidade.length < rules.MIN_JUSTIFICATIVA_LENGTH) {
+          errorBuilder.add('justificativa_quantidade', BENEFICIO_TECH_MESSAGES.CESTA_BASICA.JUSTIFICATIVA_REQUIRED);
+        }
+      }
+
+      if (data.quantidade_cestas_solicitadas > rules.MAX_QUANTIDADE_ABSOLUTA) {
+        errorBuilder.add('quantidade_cestas_solicitadas', BENEFICIO_TECH_MESSAGES.CESTA_BASICA.QUANTIDADE_EXCEDIDA);
+      }
+    }
+
+    errorBuilder.throwIfHasErrors();
+  }
+
+  /**
+   * Validação específica para atualização de dados de Cesta Básica
+   */
+  protected async validateUpdateData(
+    data: UpdateDadosCestaBasicaDto, 
+    entity: DadosCestaBasica
+  ): Promise<void> {
+    const errorBuilder = new BeneficioValidationErrorBuilder();
+    const rules = BENEFICIO_CONSTANTS.BUSINESS_RULES.CESTA_BASICA;
+
+    // Validação de quantidade solicitada
+    if (data.quantidade_cestas_solicitadas !== undefined && data.quantidade_cestas_solicitadas <= 0) {
+      errorBuilder.add('quantidade_cestas_solicitadas', BENEFICIO_TECH_MESSAGES.CESTA_BASICA.QUANTIDADE_REQUIRED);
+    }
+
+    // Validação de tamanho da família
+    if (data.numero_pessoas_familia !== undefined && data.numero_pessoas_familia <= 0) {
+      errorBuilder.add('numero_pessoas_familia', BENEFICIO_TECH_MESSAGES.CESTA_BASICA.TAMANHO_FAMILIA_REQUIRED);
+    }
+
+    // Validação de regras de negócio
+    const quantidadeFinal = data.quantidade_cestas_solicitadas ?? entity.quantidade;
+    const tamanhoFamiliaFinal = data.numero_pessoas_familia ?? entity.numero_pessoas_familia;
+    
+    if (quantidadeFinal && tamanhoFamiliaFinal) {
+      const quantidadeRecomendada = this.calcularQuantidadeRecomendada(tamanhoFamiliaFinal);
+      
+      if (quantidadeFinal > quantidadeRecomendada) {
+        const justificativaFinal = data.justificativa_quantidade ?? entity.justificativa_quantidade;
+        if (!justificativaFinal || justificativaFinal.length < rules.MIN_JUSTIFICATIVA_LENGTH) {
+          errorBuilder.add('justificativa_quantidade', BENEFICIO_TECH_MESSAGES.CESTA_BASICA.JUSTIFICATIVA_REQUIRED);
+        }
+      }
+
+      if (quantidadeFinal > rules.MAX_QUANTIDADE_ABSOLUTA) {
+        errorBuilder.add('quantidade_cestas_solicitadas', BENEFICIO_TECH_MESSAGES.CESTA_BASICA.QUANTIDADE_EXCEDIDA);
+      }
+    }
+
+    errorBuilder.throwIfHasErrors();
+  }
+
+  /**
+   * Calcula a quantidade recomendada de cestas básicas baseada no tamanho da família
+   */
+  private calcularQuantidadeRecomendada(tamanhoFamilia: number): number {
+    const rules = BENEFICIO_CONSTANTS.BUSINESS_RULES.CESTA_BASICA;
+    return Math.ceil(tamanhoFamilia / rules.PESSOAS_POR_CESTA);
+  }
+
+
 }

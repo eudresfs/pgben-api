@@ -98,6 +98,14 @@ export class Solicitacao {
   @JoinColumn({ name: 'beneficiario_id' })
   beneficiario: Cidadao;
 
+  @Column({ nullable: true })
+  @IsOptional()
+  solicitante_id?: string;
+
+  @ManyToOne(() => Cidadao, { eager: false })
+  @JoinColumn({ name: 'solicitante_id' })
+  solicitante?: Cidadao;
+
   @Column()
   @IsNotEmpty({ message: 'Tipo de benefício é obrigatório' })
   tipo_beneficio_id: string;

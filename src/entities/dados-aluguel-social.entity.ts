@@ -71,7 +71,7 @@ export class DadosAluguelSocial {
 
   @Column('text', { nullable: true })
   @IsOptional()
-  observacoes_adicionais?: string;
+  observacoes?: string;
 
   @CreateDateColumn()
   created_at: Date;

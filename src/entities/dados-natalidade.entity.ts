@@ -75,11 +75,11 @@ export class DadosNatalidade {
 
   @Column({ nullable: true })
   @IsOptional()
-  telefone_cadastrado_cpf?: string;
-
-  @Column({ nullable: true })
-  @IsOptional()
   chave_pix?: string;
+
+  @Column('text', { nullable: true })
+  @IsOptional()
+  observacoes?: string;
 
   @CreateDateColumn()
   created_at: Date;
@@ -104,13 +104,6 @@ export class DadosNatalidade {
   }
 
   // Métodos Utilitários
-
-  /**
-   * Verifica se todos os critérios para pecúnia estão preenchidos
-   */
-  temCriteriosPecunia(): boolean {
-    return !!(this.telefone_cadastrado_cpf && this.chave_pix);
-  }
 
   /**
    * Verifica se é uma gravidez múltipla

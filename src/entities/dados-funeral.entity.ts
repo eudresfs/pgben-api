@@ -71,7 +71,7 @@ export class DadosFuneral {
 
   @Column('text', { nullable: true })
   @IsOptional()
-  observacoes_especiais?: string;
+  observacoes?: string;
 
   @Column({ nullable: true })
   @IsOptional()

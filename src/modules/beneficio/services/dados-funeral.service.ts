@@ -1,132 +1,37 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
 import { DadosFuneral } from '../../../entities/dados-funeral.entity';
+import { CreateDadosFuneralDto, UpdateDadosFuneralDto } from '../dto/create-dados-funeral.dto';
+import { AbstractDadosBeneficioService } from './base/abstract-dados-beneficio.service';
 import {
-  CreateDadosFuneralDto,
-  UpdateDadosFuneralDto,
-} from '../dto/create-dados-funeral.dto';
+  BeneficioErrorContext,
+  BeneficioValidationErrorBuilder,
+  BENEFICIO_TECH_MESSAGES,
+} from '../../../shared/exceptions/error-catalog/domains/beneficio.errors';
+import { BENEFICIO_CONSTANTS } from '../../../shared/constants/beneficio.constants';
 
 /**
  * Serviço para gerenciar dados específicos de Auxílio Funeral
  */
 @Injectable()
-export class DadosFuneralService {
+export class DadosFuneralService extends AbstractDadosBeneficioService<
+  DadosFuneral,
+  CreateDadosFuneralDto,
+  UpdateDadosFuneralDto
+> {
   constructor(
     @InjectRepository(DadosFuneral)
     private readonly dadosFuneralRepository: Repository<DadosFuneral>,
-  ) {}
-
-  /**
-   * Criar dados de funeral para uma solicitação
-   */
-  async create(createDto: CreateDadosFuneralDto): Promise<DadosFuneral> {
-    // Verificar se já existem dados para esta solicitação
-    const existingData = await this.dadosFuneralRepository.findOne({
-      where: { solicitacao_id: createDto.solicitacao_id },
-    });
-
-    if (existingData) {
-      throw new Error('Já existem dados de funeral para esta solicitação');
-    }
-
-    const dadosFuneral = this.dadosFuneralRepository.create(createDto);
-    return this.dadosFuneralRepository.save(dadosFuneral);
+    @Inject(CACHE_MANAGER) cacheManager: Cache,
+  ) {
+    super(dadosFuneralRepository, 'DadosFuneral', CreateDadosFuneralDto, cacheManager);
   }
 
-  /**
-   * Buscar dados de funeral por ID
-   */
-  async findOne(id: string): Promise<DadosFuneral> {
-    const dadosFuneral = await this.dadosFuneralRepository.findOne({
-      where: { id },
-      relations: ['solicitacao'],
-    });
-
-    if (!dadosFuneral) {
-      throw new NotFoundException('Dados de funeral não encontrados');
-    }
-
-    return dadosFuneral;
-  }
-
-  /**
-   * Buscar dados de funeral por solicitação
-   */
-  async findBySolicitacao(solicitacaoId: string): Promise<DadosFuneral> {
-    const dadosFuneral = await this.dadosFuneralRepository.findOne({
-      where: { solicitacao_id: solicitacaoId },
-      relations: ['solicitacao'],
-    });
-
-    if (!dadosFuneral) {
-      throw new NotFoundException(
-        'Dados de funeral não encontrados para esta solicitação',
-      );
-    }
-
-    return dadosFuneral;
-  }
-
-  /**
-   * Atualizar dados de funeral
-   */
-  async update(
-    id: string,
-    updateDto: UpdateDadosFuneralDto,
-  ): Promise<DadosFuneral> {
-    const dadosFuneral = await this.findOne(id);
-
-    // Atualizar apenas os campos fornecidos
-    Object.assign(dadosFuneral, updateDto);
-
-    return this.dadosFuneralRepository.save(dadosFuneral);
-  }
-
-  /**
-   * Remover dados de funeral
-   */
-  async remove(id: string): Promise<void> {
-    const dadosFuneral = await this.findOne(id);
-    await this.dadosFuneralRepository.remove(dadosFuneral);
-  }
-
-  /**
-   * Verificar se existem dados de funeral para uma solicitação
-   */
-  async existsBySolicitacao(solicitacaoId: string): Promise<boolean> {
-    const count = await this.dadosFuneralRepository.count({
-      where: { solicitacao_id: solicitacaoId },
-    });
-    return count > 0;
-  }
-
-  /**
-   * Buscar todos os dados de funeral com paginação
-   */
-  async findAll(
-    page: number = 1,
-    limit: number = 10,
-  ): Promise<{
-    data: DadosFuneral[];
-    total: number;
-    page: number;
-    limit: number;
-  }> {
-    const [data, total] = await this.dadosFuneralRepository.findAndCount({
-      relations: ['solicitacao'],
-      skip: (page - 1) * limit,
-      take: limit,
-      order: { created_at: 'DESC' },
-    });
-
-    return {
-      data,
-      total,
-      page,
-      limit,
-    };
-  }
+  // Métodos CRUD básicos herdados da classe base AbstractDadosBeneficioService
+  // create, findOne, findBySolicitacao, update, remove, existsBySolicitacao, findAll
 
   /**
    * Buscar dados por grau de parentesco
@@ -190,5 +95,108 @@ export class DadosFuneralService {
       page,
       limit,
     };
+  }
+
+  /**
+   * Construir contexto de erro específico para Funeral
+   */
+  protected buildErrorContext(data: any): BeneficioErrorContext {
+    return {
+      data: {
+        beneficioId: data.id,
+        tipo: 'FUNERAL',
+        cidadaoId: data.cidadao_id
+      },
+      operationalContext: {
+        module: 'beneficio',
+        operation: 'dados-funeral',
+        entityId: data.id,
+        entityType: 'DadosFuneral'
+      },
+      metadata: {
+        nome_falecido: data.nome_falecido,
+        data_obito: data.data_obito,
+        solicitacao_id: data.solicitacao_id
+      }
+    };
+  }
+
+  /**
+   * Validação específica para criação de dados de Funeral
+   */
+  protected async validateCreateData(data: CreateDadosFuneralDto): Promise<void> {
+    const errorBuilder = new BeneficioValidationErrorBuilder();
+    const rules = BENEFICIO_CONSTANTS.BUSINESS_RULES.FUNERAL;
+
+    // Validação de campos obrigatórios
+    if (!data.solicitacao_id) {
+      errorBuilder.add('solicitacao_id', BENEFICIO_TECH_MESSAGES.FUNERAL.SOLICITACAO_ID_REQUIRED);
+    }
+
+    if (!data.nome_completo_falecido || data.nome_completo_falecido.trim().length < rules.MIN_NOME_LENGTH) {
+      errorBuilder.add('nome_falecido', BENEFICIO_TECH_MESSAGES.FUNERAL.NOME_FALECIDO_REQUIRED);
+    }
+
+    if (!data.data_obito) {
+      errorBuilder.add('data_obito', BENEFICIO_TECH_MESSAGES.FUNERAL.DATA_OBITO_REQUIRED);
+    }
+
+
+
+    // Validação de regras de negócio
+    if (data.data_obito) {
+      const dataObito = new Date(data.data_obito);
+      const hoje = new Date();
+      const diffDias = Math.ceil((hoje.getTime() - dataObito.getTime()) / (1000 * 60 * 60 * 24));
+      
+      if (diffDias > rules.MAX_DIAS_APOS_OBITO) {
+        errorBuilder.add('data_obito', BENEFICIO_TECH_MESSAGES.FUNERAL.DATA_OBITO_LIMITE_EXCEDIDO);
+      }
+
+      if (dataObito > hoje) {
+        errorBuilder.add('data_obito', BENEFICIO_TECH_MESSAGES.FUNERAL.DATA_OBITO_FUTURA);
+      }
+    }
+
+
+
+    errorBuilder.throwIfHasErrors();
+  }
+
+  /**
+   * Validação específica para atualização de dados de Funeral
+   */
+  protected async validateUpdateData(
+    data: UpdateDadosFuneralDto, 
+    entity: DadosFuneral
+  ): Promise<void> {
+    const errorBuilder = new BeneficioValidationErrorBuilder();
+    const rules = BENEFICIO_CONSTANTS.BUSINESS_RULES.FUNERAL;
+
+    // Validação de nome do falecido
+    if (data.nome_completo_falecido !== undefined && data.nome_completo_falecido.trim().length < rules.MIN_NOME_LENGTH) {
+      errorBuilder.add('nome_falecido', BENEFICIO_TECH_MESSAGES.FUNERAL.NOME_FALECIDO_REQUIRED);
+    }
+
+
+
+    // Validação de data de óbito
+    if (data.data_obito !== undefined) {
+      const dataObito = new Date(data.data_obito);
+      const hoje = new Date();
+      const diffDias = Math.ceil((hoje.getTime() - dataObito.getTime()) / (1000 * 60 * 60 * 24));
+      
+      if (diffDias > rules.MAX_DIAS_APOS_OBITO) {
+        errorBuilder.add('data_obito', BENEFICIO_TECH_MESSAGES.FUNERAL.DATA_OBITO_LIMITE_EXCEDIDO);
+      }
+
+      if (dataObito > hoje) {
+        errorBuilder.add('data_obito', BENEFICIO_TECH_MESSAGES.FUNERAL.DATA_OBITO_FUTURA);
+      }
+    }
+
+
+
+    errorBuilder.throwIfHasErrors();
   }
 }

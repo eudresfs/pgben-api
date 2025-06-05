@@ -1,137 +1,41 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
 import { DadosAluguelSocial } from '../../../entities/dados-aluguel-social.entity';
+import { CreateDadosAluguelSocialDto, UpdateDadosAluguelSocialDto } from '../dto/create-dados-aluguel-social.dto';
 import {
-  CreateDadosAluguelSocialDto,
-  UpdateDadosAluguelSocialDto,
-} from '../dto/create-dados-aluguel-social.dto';
+  AbstractDadosBeneficioService,
+  IPaginatedResult,
+} from './base/abstract-dados-beneficio.service';
+import {
+  BeneficioErrorContext,
+  BeneficioValidationErrorBuilder,
+  BENEFICIO_TECH_MESSAGES,
+} from '../../../shared/exceptions/error-catalog/domains/beneficio.errors';
+import { BENEFICIO_CONSTANTS } from '../../../shared/constants/beneficio.constants';
 
 /**
  * Serviço para gerenciar dados específicos de Aluguel Social
+ * Estende a classe base para reutilizar operações CRUD comuns
  */
 @Injectable()
-export class DadosAluguelSocialService {
+export class DadosAluguelSocialService extends AbstractDadosBeneficioService<
+  DadosAluguelSocial,
+  CreateDadosAluguelSocialDto,
+  UpdateDadosAluguelSocialDto
+> {
   constructor(
     @InjectRepository(DadosAluguelSocial)
     private readonly dadosAluguelSocialRepository: Repository<DadosAluguelSocial>,
-  ) {}
-
-  /**
-   * Criar dados de aluguel social para uma solicitação
-   */
-  async create(
-    createDto: CreateDadosAluguelSocialDto,
-  ): Promise<DadosAluguelSocial> {
-    // Verificar se já existem dados para esta solicitação
-    const existingData = await this.dadosAluguelSocialRepository.findOne({
-      where: { solicitacao_id: createDto.solicitacao_id },
-    });
-
-    if (existingData) {
-      throw new Error(
-        'Já existem dados de aluguel social para esta solicitação',
-      );
-    }
-
-    const dadosAluguelSocial =
-      this.dadosAluguelSocialRepository.create(createDto);
-    return this.dadosAluguelSocialRepository.save(dadosAluguelSocial);
+    @Inject(CACHE_MANAGER) cacheManager: Cache,
+  ) {
+    super(dadosAluguelSocialRepository, 'DadosAluguelSocial', CreateDadosAluguelSocialDto, cacheManager);
   }
 
-  /**
-   * Buscar dados de aluguel social por ID
-   */
-  async findOne(id: string): Promise<DadosAluguelSocial> {
-    const dadosAluguelSocial = await this.dadosAluguelSocialRepository.findOne({
-      where: { id },
-      relations: ['solicitacao'],
-    });
-
-    if (!dadosAluguelSocial) {
-      throw new NotFoundException('Dados de aluguel social não encontrados');
-    }
-
-    return dadosAluguelSocial;
-  }
-
-  /**
-   * Buscar dados de aluguel social por solicitação
-   */
-  async findBySolicitacao(solicitacaoId: string): Promise<DadosAluguelSocial> {
-    const dadosAluguelSocial = await this.dadosAluguelSocialRepository.findOne({
-      where: { solicitacao_id: solicitacaoId },
-      relations: ['solicitacao'],
-    });
-
-    if (!dadosAluguelSocial) {
-      throw new NotFoundException(
-        'Dados de aluguel social não encontrados para esta solicitação',
-      );
-    }
-
-    return dadosAluguelSocial;
-  }
-
-  /**
-   * Atualizar dados de aluguel social
-   */
-  async update(
-    id: string,
-    updateDto: UpdateDadosAluguelSocialDto,
-  ): Promise<DadosAluguelSocial> {
-    const dadosAluguelSocial = await this.findOne(id);
-
-    // Atualizar apenas os campos fornecidos
-    Object.assign(dadosAluguelSocial, updateDto);
-
-    return this.dadosAluguelSocialRepository.save(dadosAluguelSocial);
-  }
-
-  /**
-   * Remover dados de aluguel social
-   */
-  async remove(id: string): Promise<void> {
-    const dadosAluguelSocial = await this.findOne(id);
-    await this.dadosAluguelSocialRepository.remove(dadosAluguelSocial);
-  }
-
-  /**
-   * Verificar se existem dados de aluguel social para uma solicitação
-   */
-  async existsBySolicitacao(solicitacaoId: string): Promise<boolean> {
-    const count = await this.dadosAluguelSocialRepository.count({
-      where: { solicitacao_id: solicitacaoId },
-    });
-    return count > 0;
-  }
-
-  /**
-   * Buscar todos os dados de aluguel social com paginação
-   */
-  async findAll(
-    page: number = 1,
-    limit: number = 10,
-  ): Promise<{
-    data: DadosAluguelSocial[];
-    total: number;
-    page: number;
-    limit: number;
-  }> {
-    const [data, total] = await this.dadosAluguelSocialRepository.findAndCount({
-      relations: ['solicitacao'],
-      skip: (page - 1) * limit,
-      take: limit,
-      order: { created_at: 'DESC' },
-    });
-
-    return {
-      data,
-      total,
-      page,
-      limit,
-    };
-  }
+  // Métodos CRUD básicos herdados da classe base
+  // create(), findOne(), findBySolicitacao(), update(), remove(), existsBySolicitacao(), findAll()
 
   /**
    * Buscar dados por público prioritário
@@ -160,5 +64,73 @@ export class DadosAluguelSocialService {
       page,
       limit,
     };
+  }
+
+  // Implementação dos métodos abstratos da classe base
+  /**
+   * Construir contexto de erro específico para Aluguel Social
+   */
+  protected buildErrorContext(data: any): BeneficioErrorContext {
+    return {
+      data: {
+        tipoBeneficio: 'ALUGUEL_SOCIAL',
+        solicitacao_id: data.solicitacao_id,
+        publico_prioritario: data.publico_prioritario,
+        situacao_moradia_atual: data.situacao_moradia_atual,
+        especificacoes: data.especificacoes,
+      },
+    };
+  }
+
+  /**
+   * Validação específica para criação de dados de Aluguel Social
+   */
+  protected async validateCreateData(data: CreateDadosAluguelSocialDto): Promise<void> {
+    const errorBuilder = new BeneficioValidationErrorBuilder();
+    const rules = BENEFICIO_CONSTANTS.BUSINESS_RULES.ALUGUEL_SOCIAL;
+
+    // Validação de campos obrigatórios
+    if (!data.solicitacao_id) {
+      errorBuilder.add('solicitacao_id', BENEFICIO_TECH_MESSAGES.ALUGUEL_SOCIAL.SOLICITACAO_ID_REQUIRED);
+    }
+
+    if (!data.publico_prioritario) {
+      errorBuilder.add('publico_prioritario', BENEFICIO_TECH_MESSAGES.ALUGUEL_SOCIAL.PUBLICO_PRIORITARIO_REQUIRED);
+    }
+
+    // Validação de situação de moradia atual
+    if (data.situacao_moradia_atual && data.situacao_moradia_atual.length < rules.MIN_SITUACAO_MORADIA) {
+      errorBuilder.add('situacao_moradia_atual', BENEFICIO_TECH_MESSAGES.ALUGUEL_SOCIAL.SITUACAO_MORADIA_MIN_LENGTH);
+    }
+
+    // Validação de especificações
+    if (data.especificacoes && data.especificacoes.length > rules.MAX_ESPECIFICACOES) {
+      errorBuilder.add('especificacoes', BENEFICIO_TECH_MESSAGES.ALUGUEL_SOCIAL.ESPECIFICACOES_MAX_LENGTH);
+    }
+
+    errorBuilder.throwIfHasErrors();
+  }
+
+  /**
+   * Validação específica para atualização de dados de Aluguel Social
+   */
+  protected async validateUpdateData(
+    data: UpdateDadosAluguelSocialDto, 
+    entity: DadosAluguelSocial
+  ): Promise<void> {
+    const errorBuilder = new BeneficioValidationErrorBuilder();
+    const rules = BENEFICIO_CONSTANTS.BUSINESS_RULES.ALUGUEL_SOCIAL;
+
+    // Validação de situação de moradia atual
+    if (data.situacao_moradia_atual && data.situacao_moradia_atual.length < rules.MIN_SITUACAO_MORADIA) {
+      errorBuilder.add('situacao_moradia_atual', BENEFICIO_TECH_MESSAGES.ALUGUEL_SOCIAL.SITUACAO_MORADIA_MIN_LENGTH);
+    }
+
+    // Validação de especificações
+    if (data.especificacoes && data.especificacoes.length > rules.MAX_ESPECIFICACOES) {
+      errorBuilder.add('especificacoes', BENEFICIO_TECH_MESSAGES.ALUGUEL_SOCIAL.ESPECIFICACOES_MAX_LENGTH);
+    }
+
+    errorBuilder.throwIfHasErrors();
   }
 }

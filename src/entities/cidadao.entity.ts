@@ -9,6 +9,7 @@ import {
   OneToMany,
   ManyToOne,
   JoinColumn,
+  OneToOne,
 } from 'typeorm';
 import {
   IsEmail,
@@ -29,6 +30,9 @@ import { ComposicaoFamiliar } from './composicao-familiar.entity';
 import { Sexo } from '../enums/sexo.enum';
 import { Unidade } from './unidade.entity';
 import { EstadoCivil } from '../enums/estado-civil.enum';
+import { Solicitacao } from './solicitacao.entity';
+import { Documento } from './documento.entity';
+import { DadosSociais } from './dados-sociais.entity';
 
 @Entity('cidadao')
 @Index(['cpf'], { unique: true })
@@ -97,6 +101,15 @@ export class Cidadao {
     (composicaoFamiliar) => composicaoFamiliar.cidadao,
   )
   composicao_familiar: ComposicaoFamiliar[];
+
+  @OneToMany(() => Solicitacao, (solicitacao) => solicitacao.beneficiario)
+  solicitacoes: Solicitacao[];
+
+  @OneToMany(() => Documento, (documento) => documento.cidadao)
+  documentos: Documento[];
+
+  @OneToOne(() => DadosSociais, (dadosSociais) => dadosSociais.cidadao)
+  dados_sociais: DadosSociais;
 
   @Column({
     type: 'enum',

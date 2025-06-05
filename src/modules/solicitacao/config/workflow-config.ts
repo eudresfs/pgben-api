@@ -9,6 +9,7 @@ export const TRANSICOES_PERMITIDAS: Partial<
 > = {
   [StatusSolicitacao.RASCUNHO]: [
     StatusSolicitacao.ABERTA,
+    StatusSolicitacao.AGUARDANDO_DOCUMENTOS,
     StatusSolicitacao.PENDENTE,
     StatusSolicitacao.CANCELADA,
   ],

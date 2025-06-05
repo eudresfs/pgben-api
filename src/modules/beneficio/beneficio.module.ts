@@ -22,10 +22,6 @@ import {
 import { BeneficioController } from './controllers/beneficio.controller';
 import { CampoDinamicoController } from './controllers/campo-dinamico.controller';
 import { ExportacaoController } from '../solicitacao/controllers/exportacao.controller';
-import { DadosNatalidadeController } from './controllers/dados-natalidade.controller';
-import { DadosAluguelSocialController } from './controllers/dados-aluguel-social.controller';
-import { DadosFuneralController } from './controllers/dados-funeral.controller';
-import { DadosCestaBasicaController } from './controllers/dados-cesta-basica.controller';
 import { DadosBeneficioController } from './controllers/dados-beneficio.controller';
 import { RenovacaoAutomaticaController } from './controllers/renovacao-automatica.controller';
 
@@ -34,7 +30,7 @@ import { BeneficioService } from './services/beneficio.service';
 import { CampoDinamicoService } from './services/campo-dinamico.service';
 import { ValidacaoDinamicaService } from './services/validacao-dinamica.service';
 import { ExportacaoService } from '../solicitacao/services/exportacao.service';
-import { EstruturaEntidadeService } from './services/estrutura-entidade.service';
+
 import { DadosNatalidadeService } from './services/dados-natalidade.service';
 import { DadosAluguelSocialService } from './services/dados-aluguel-social.service';
 import { DadosFuneralService } from './services/dados-funeral.service';
@@ -81,10 +77,6 @@ import { ConfiguracaoRenovacaoRepository } from './repositories/configuracao-ren
     BeneficioController,
     CampoDinamicoController,
     ExportacaoController,
-    DadosNatalidadeController,
-    DadosAluguelSocialController,
-    DadosFuneralController,
-    DadosCestaBasicaController,
     DadosBeneficioController,
     RenovacaoAutomaticaController,
   ],
@@ -99,7 +91,6 @@ import { ConfiguracaoRenovacaoRepository } from './repositories/configuracao-ren
     DadosFuneralService,
     DadosCestaBasicaService,
     DadosBeneficioFactoryService,
-    EstruturaEntidadeService,
     RenovacaoAutomaticaService,
     NotificacaoRenovacaoService,
     TipoBeneficioRepository,
