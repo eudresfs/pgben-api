@@ -31,6 +31,7 @@ const options: DataSourceOptions & SeederOptions = {
   username: config.database.username,
   password: config.database.password,
   database: config.database.database,
+  ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
   synchronize: false,
   logging: config.database.logging,
   // Desativar construtores de entidades para evitar problemas de validação

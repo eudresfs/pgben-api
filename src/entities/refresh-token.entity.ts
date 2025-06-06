@@ -180,7 +180,7 @@ export class RefreshToken {
    * Verifica se o token foi criado recentemente (últimas X horas)
    */
   isCriadoRecentemente(horas: number = 1): boolean {
-    if (!this.created_at) return false;
+    if (!this.created_at) {return false;}
 
     const agora = new Date();
     const horasAtras = new Date(agora.getTime() - horas * 60 * 60 * 1000);
@@ -192,7 +192,7 @@ export class RefreshToken {
    * Calcula a idade do token em horas
    */
   getIdadeEmHoras(): number {
-    if (!this.created_at) return 0;
+    if (!this.created_at) {return 0;}
 
     const agora = new Date();
     const diffTime = Math.abs(agora.getTime() - this.created_at.getTime());
@@ -275,7 +275,7 @@ export class RefreshToken {
    * Obtém o tempo de vida útil do token em horas
    */
   getTempoVidaUtil(): number {
-    if (!this.created_at || !this.expires_at) return 0;
+    if (!this.created_at || !this.expires_at) {return 0;}
 
     const diffTime = this.expires_at.getTime() - this.created_at.getTime();
     return Math.floor(diffTime / (1000 * 60 * 60));

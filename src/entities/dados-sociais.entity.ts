@@ -215,7 +215,7 @@ export class DadosSociais {
    * Obtém a renda formatada
    */
   getRendaFormatada(): string {
-    if (!this.temRenda()) return 'Sem renda';
+    if (!this.temRenda()) {return 'Sem renda';}
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL',
@@ -233,7 +233,7 @@ export class DadosSociais {
    * Obtém o valor do PBF formatado
    */
   getValorPBFFormatado(): string {
-    if (!this.recebe_pbf || !this.valor_pbf) return 'Não recebe';
+    if (!this.recebe_pbf || !this.valor_pbf) {return 'Não recebe';}
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL',
@@ -251,7 +251,7 @@ export class DadosSociais {
    * Obtém o valor do BPC formatado
    */
   getValorBPCFormatado(): string {
-    if (!this.recebe_bpc || !this.valor_bpc) return 'Não recebe';
+    if (!this.recebe_bpc || !this.valor_bpc) {return 'Não recebe';}
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL',
@@ -270,8 +270,8 @@ export class DadosSociais {
    */
   getTotalBeneficios(): number {
     let total = 0;
-    if (this.recebe_pbf && this.valor_pbf) total += this.valor_pbf;
-    if (this.recebe_bpc && this.valor_bpc) total += this.valor_bpc;
+    if (this.recebe_pbf && this.valor_pbf) {total += this.valor_pbf;}
+    if (this.recebe_bpc && this.valor_bpc) {total += this.valor_bpc;}
     return total;
   }
 
@@ -280,7 +280,7 @@ export class DadosSociais {
    */
   getTotalBeneficiosFormatado(): string {
     const total = this.getTotalBeneficios();
-    if (total === 0) return 'Nenhum benefício';
+    if (total === 0) {return 'Nenhum benefício';}
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL',
@@ -366,7 +366,7 @@ export class DadosSociais {
    * Obtém a descrição da situação de trabalho
    */
   getDescricaoSituacaoTrabalho(): string {
-    if (!this.situacao_trabalho) return 'Não informado';
+    if (!this.situacao_trabalho) {return 'Não informado';}
 
     const descricoes = {
       [SituacaoTrabalhoEnum.EMPREGADO_FORMAL]: 'Empregado',
@@ -412,10 +412,10 @@ export class DadosSociais {
    */
   isConsistente(): boolean {
     // Verifica se tem cidadão
-    if (!this.cidadao_id) return false;
+    if (!this.cidadao_id) {return false;}
 
     // Verifica se tem escolaridade
-    if (!this.escolaridade) return false;
+    if (!this.escolaridade) {return false;}
 
     // Se recebe PBF, deve ter valor
     if (this.recebe_pbf && (!this.valor_pbf || this.valor_pbf <= 0)) {
@@ -443,7 +443,7 @@ export class DadosSociais {
    */
   podeSerRemovido(): boolean {
     // Não pode remover se já foi removido
-    if (this.foiRemovido()) return false;
+    if (this.foiRemovido()) {return false;}
 
     // Outras validações específicas podem ser adicionadas
     return true;
@@ -498,7 +498,7 @@ export class DadosSociais {
    */
   getRendaTotal(): number {
     let total = 0;
-    if (this.renda) total += this.renda;
+    if (this.renda) {total += this.renda;}
     total += this.getTotalBeneficios();
     return total;
   }
@@ -508,7 +508,7 @@ export class DadosSociais {
    */
   getRendaTotalFormatada(): string {
     const total = this.getRendaTotal();
-    if (total === 0) return 'Sem renda';
+    if (total === 0) {return 'Sem renda';}
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL',

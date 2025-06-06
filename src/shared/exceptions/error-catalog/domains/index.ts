@@ -33,6 +33,24 @@ export * from './auditoria.errors';
 // Domínio NOTIFICACAO
 export * from './notificacao.errors';
 
+// Domínio VALIDACOES_CRITICAS
+export * from './validacoes-criticas.errors';
+
+// Domínio BENEFICIOS_ESPECIFICOS
+export * from './beneficios-especificos.errors';
+
+// Domínio INTEGRACOES_ESPECIFICAS
+export * from './integracoes-especificas.errors';
+
+// Domínio FLUXO_OPERACIONAL
+export * from './fluxo-operacional.errors';
+
+// Domínio SISTEMA
+export * from './sistema.errors';
+
+// Domínio UNIDADE
+export * from './unidade.errors';
+
 // Domínio RELATORIO - exportações específicas para evitar conflitos
 export {
   throwRelatorioNotFound,
@@ -76,6 +94,12 @@ import { AUDITORIA_ERRORS } from './auditoria.errors';
 import { NOTIFICACAO_ERRORS } from './notificacao.errors';
 import { RELATORIO_ERRORS } from './relatorio.errors';
 import { INTEGRADOR_ERRORS } from './integrador.errors';
+import { VALIDACOES_CRITICAS_ERRORS } from './validacoes-criticas.errors';
+import { BENEFICIOS_ESPECIFICOS_ERRORS } from './beneficios-especificos.errors';
+import { INTEGRACOES_ESPECIFICAS_ERRORS } from './integracoes-especificas.errors';
+import { FLUXO_OPERACIONAL_ERRORS } from './fluxo-operacional.errors';
+import { SISTEMA_ERRORS } from './sistema.errors';
+import { UNIDADE_ERRORS } from './unidade.errors';
 
 /**
  * Catálogo consolidado de todos os erros de domínio
@@ -90,6 +114,12 @@ export const DOMAIN_ERRORS = {
   ...NOTIFICACAO_ERRORS,
   ...RELATORIO_ERRORS,
   ...INTEGRADOR_ERRORS,
+  ...VALIDACOES_CRITICAS_ERRORS,
+  ...BENEFICIOS_ESPECIFICOS_ERRORS,
+  ...INTEGRACOES_ESPECIFICAS_ERRORS,
+  ...FLUXO_OPERACIONAL_ERRORS,
+  ...SISTEMA_ERRORS,
+  ...UNIDADE_ERRORS,
 } as const;
 
 /**
@@ -132,6 +162,12 @@ export function getDomainStatistics() {
     NOTIFICACAO: Object.keys(NOTIFICACAO_ERRORS).length,
     RELATORIO: Object.keys(RELATORIO_ERRORS).length,
     INTEGRADOR: Object.keys(INTEGRADOR_ERRORS).length,
+    VALIDACOES_CRITICAS: Object.keys(VALIDACOES_CRITICAS_ERRORS).length,
+    BENEFICIOS_ESPECIFICOS: Object.keys(BENEFICIOS_ESPECIFICOS_ERRORS).length,
+    INTEGRACOES_ESPECIFICAS: Object.keys(INTEGRACOES_ESPECIFICAS_ERRORS).length,
+    FLUXO_OPERACIONAL: Object.keys(FLUXO_OPERACIONAL_ERRORS).length,
+    SISTEMA: Object.keys(SISTEMA_ERRORS).length,
+    UNIDADE: Object.keys(UNIDADE_ERRORS).length,
     TOTAL: Object.keys(DOMAIN_ERRORS).length,
   } as const;
 }
@@ -155,9 +191,15 @@ export function getDomainCoverage() {
       'NOTIFICACAO',
       'RELATORIO',
       'INTEGRADOR',
+      'VALIDACOES_CRITICAS',
+      'BENEFICIOS_ESPECIFICOS',
+      'INTEGRACOES_ESPECIFICAS',
+      'FLUXO_OPERACIONAL',
+      'SISTEMA',
+      'UNIDADE',
     ],
-    totalDomains: 9,
+    totalDomains: 15,
     totalErrors: stats.TOTAL,
-    averageErrorsPerDomain: Math.round(stats.TOTAL / 9),
+    averageErrorsPerDomain: Math.round(stats.TOTAL / 15),
   } as const;
 }

@@ -229,32 +229,26 @@ export class CampoDinamicoService {
     // Construir estrutura de campos
     const camposEstrutura = campos.map((campo) => {
       // Mapear TipoDado para os tipos aceitos por CampoEstrutura
-      let tipoMapeado:
-        | 'string'
-        | 'number'
-        | 'boolean'
-        | 'date'
-        | 'enum'
-        | 'array';
+      let tipoMapeado: 'text' | 'textarea' | 'number' | 'checkbox' | 'date' | 'select' | 'multiselect' | 'radio' | 'file';
       switch (campo.tipo) {
         case 'string':
-          tipoMapeado = 'string';
+          tipoMapeado = 'text';
           break;
         case 'number':
           tipoMapeado = 'number';
           break;
         case 'boolean':
-          tipoMapeado = 'boolean';
+          tipoMapeado = 'checkbox';
           break;
         case 'date':
           tipoMapeado = 'date';
           break;
         case 'array':
-          tipoMapeado = 'array';
+          tipoMapeado = 'multiselect';
           break;
         case 'object':
         default:
-          tipoMapeado = 'string'; // Fallback para string
+          tipoMapeado = 'text'; // Fallback para text
           break;
       }
 
@@ -265,6 +259,12 @@ export class CampoDinamicoService {
         label: campo.label,
         descricao: campo.descricao,
         validacoes: campo.validacoes,
+        ui: {
+          colSpan: 12,
+          placeholder: campo.label,
+          variant: 'outlined' as const,
+          size: 'medium' as const,
+        },
       };
     });
 
@@ -325,32 +325,26 @@ export class CampoDinamicoService {
     // Construir estrutura de campos
     const camposEstrutura = campos.map((campo) => {
       // Mapear TipoDado para os tipos aceitos por CampoEstrutura
-      let tipoMapeado:
-        | 'string'
-        | 'number'
-        | 'boolean'
-        | 'date'
-        | 'enum'
-        | 'array';
+      let tipoMapeado: 'text' | 'textarea' | 'number' | 'checkbox' | 'date' | 'select' | 'multiselect' | 'radio' | 'file';
       switch (campo.tipo) {
         case 'string':
-          tipoMapeado = 'string';
+          tipoMapeado = 'text';
           break;
         case 'number':
           tipoMapeado = 'number';
           break;
         case 'boolean':
-          tipoMapeado = 'boolean';
+          tipoMapeado = 'checkbox';
           break;
         case 'date':
           tipoMapeado = 'date';
           break;
         case 'array':
-          tipoMapeado = 'array';
+          tipoMapeado = 'multiselect';
           break;
         case 'object':
         default:
-          tipoMapeado = 'string'; // Fallback para string
+          tipoMapeado = 'text'; // Fallback para text
           break;
       }
 
@@ -361,6 +355,12 @@ export class CampoDinamicoService {
         label: campo.label,
         descricao: campo.descricao,
         validacoes: campo.validacoes,
+        ui: {
+          colSpan: 12,
+          placeholder: campo.label,
+          variant: 'outlined' as const,
+          size: 'medium' as const,
+        },
       };
     });
 

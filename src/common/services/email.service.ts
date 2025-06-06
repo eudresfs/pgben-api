@@ -192,7 +192,7 @@ export class EmailService {
    * Detecta MailHog por múltiplos critérios para garantir compatibilidade
    */
   private isMailHog(host: string | undefined, port: number): boolean {
-    if (!host) return false;
+    if (!host) {return false;}
 
     const lowerHost = host.toLowerCase();
 

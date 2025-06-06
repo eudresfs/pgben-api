@@ -20,8 +20,6 @@ import { CreateSetorDto } from '../dto/create-setor.dto';
 import { UpdateSetorDto } from '../dto/update-setor.dto';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../auth/guards/roles.guard';
-import { Roles } from '../../../auth/decorators/role.decorator';
-import { ROLES } from '../../../shared/constants/roles.constants';
 import { RequiresPermission } from '@/auth/decorators/requires-permission.decorator';
 import { ScopeType } from '@/entities/user-permission.entity';
 

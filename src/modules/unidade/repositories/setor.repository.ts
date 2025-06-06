@@ -1,10 +1,13 @@
 import {
   Injectable,
-  NotFoundException,
   Logger,
-  InternalServerErrorException,
 } from '@nestjs/common';
-import { Repository, DataSource, QueryFailedError } from 'typeorm';
+import {
+  throwSetorNotFound,
+  throwSetorOperationFailed,
+  throwUnidadeNotFound,
+} from '../../../shared/exceptions/error-catalog/domains/unidade.errors';
+import { Repository, DataSource, QueryFailedError, FindManyOptions } from 'typeorm';
 import { Setor } from '../../../entities/setor.entity';
 import { Unidade } from '../../../entities/unidade.entity';
 
@@ -30,8 +33,8 @@ export class SetorRepository {
   async findAll(options?: {
     skip?: number;
     take?: number;
-    where?: any;
-    order?: any;
+    where?: FindManyOptions<Setor>['where'];
+    order?: FindManyOptions<Setor>['order'];
   }): Promise<[Setor[], number]> {
     try {
       this.logger.log(
@@ -60,7 +63,7 @@ export class SetorRepository {
         `Erro ao buscar setores: ${error.message}`,
         error.stack,
       );
-      throw new InternalServerErrorException('Falha ao buscar setores');
+      throwSetorOperationFailed({ setorId: undefined });
     }
   }
 
@@ -86,7 +89,7 @@ export class SetorRepository {
         `Erro ao buscar setor por ID ${id}: ${error.message}`,
         error.stack,
       );
-      throw new InternalServerErrorException('Falha ao buscar setor');
+      throwSetorOperationFailed({ setorId: id });
     }
   }
 
@@ -113,9 +116,7 @@ export class SetorRepository {
         `Erro ao buscar setores da unidade ${unidadeId}: ${error.message}`,
         error.stack,
       );
-      throw new InternalServerErrorException(
-        'Falha ao buscar setores da unidade',
-      );
+      throwSetorOperationFailed({ unidadeId });
     }
   }
 
@@ -128,11 +129,13 @@ export class SetorRepository {
     try {
       this.logger.log('Criando novo setor com dados:', JSON.stringify(data));
 
-      // Extrai o relacionamento com a unidade, se existir
-      const { unidade, ...setorData } = data;
-
       // Cria o setor com os dados básicos
-      const setor = this.repository.create(setorData);
+      const setor = this.repository.create({
+        nome: data.nome,
+        descricao: data.descricao,
+        status: data.status,
+        unidade_id: data.unidade_id,
+      });
 
       // Se houver relacionamento com a unidade, carrega a unidade completa
       if (data.unidade_id) {
@@ -156,23 +159,17 @@ export class SetorRepository {
         // Tratamento para erros de restrição do banco de dados
         if (error.message.includes('null value in column')) {
           const column =
-            error.message.match(/column \"([^\"]+)\"/)?.[1] ||
+            error.message.match(/column "([^"]+)"/)?.[1] ||
             'não especificado';
-          throw new InternalServerErrorException(
-            `Campo obrigatório não informado: ${column}`,
-          );
+          throwSetorOperationFailed({ setorId: undefined });
         }
 
         if (error.message.includes('duplicate key')) {
-          throw new InternalServerErrorException(
-            'Já existe um setor com estes dados',
-          );
+          throwSetorOperationFailed({ setorId: undefined });
         }
       }
 
-      throw new InternalServerErrorException(
-        'Falha ao criar setor no banco de dados',
-      );
+      throwSetorOperationFailed({ setorId: undefined });
     }
   }
 
@@ -193,7 +190,7 @@ export class SetorRepository {
       const setorExistente = await this.findById(id);
       if (!setorExistente) {
         this.logger.warn(`Tentativa de atualizar setor não encontrado: ${id}`);
-        throw new NotFoundException(`Setor com ID ${id} não encontrado`);
+        throwSetorNotFound(id);
       }
 
       // Atualiza os campos básicos
@@ -206,9 +203,7 @@ export class SetorRepository {
         });
 
         if (!unidade) {
-          throw new NotFoundException(
-            `Unidade com ID ${data.unidade_id} não encontrada`,
-          );
+          throwUnidadeNotFound(data.unidade_id);
         }
 
         setorExistente.unidade = unidade;
@@ -226,18 +221,19 @@ export class SetorRepository {
         error.stack,
       );
 
-      if (error instanceof NotFoundException) {
+      // Re-throw erros do catálogo
+      if (error.name === 'AppError') {
         throw error;
       }
 
       if (error instanceof QueryFailedError) {
         // Tratamento para erros de restrição do banco de dados
         if (error.message.includes('violates foreign key constraint')) {
-          throw new NotFoundException('Unidade associada não encontrada');
+          throwUnidadeNotFound('associada');
         }
       }
 
-      throw new InternalServerErrorException('Falha ao atualizar setor');
+      throwSetorOperationFailed({ setorId: id });
     }
   }
 
@@ -254,7 +250,7 @@ export class SetorRepository {
 
       if (deleteResult.affected === 0) {
         this.logger.warn(`Tentativa de remover setor não encontrado: ${id}`);
-        throw new NotFoundException(`Setor com ID ${id} não encontrado`);
+        throwSetorNotFound(id);
       }
 
       this.logger.log(`Setor ${id} removido com sucesso`);
@@ -264,19 +260,18 @@ export class SetorRepository {
         error.stack,
       );
 
-      if (error instanceof NotFoundException) {
+      // Re-throw erros do catálogo
+      if (error.name === 'AppError') {
         throw error;
       }
 
       if (error instanceof QueryFailedError) {
         if (error.message.includes('violates foreign key constraint')) {
-          throw new InternalServerErrorException(
-            'Não é possível remover o setor pois existem registros vinculados',
-          );
+          throwSetorOperationFailed({ setorId: id });
         }
       }
 
-      throw new InternalServerErrorException('Falha ao remover setor');
+      throwSetorOperationFailed({ setorId: id });
     }
   }
 }

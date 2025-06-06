@@ -16,7 +16,7 @@ import { Throttle } from '@nestjs/throttler';
  */
 export const ThrottleAuth = () => {
   return applyDecorators(
-    Throttle({ default: { limit: 5, ttl: 300000 } }), // 5 tentativas em 5 minutos
+    Throttle({ default: { limit: 10, ttl: 300000 } }), // 10 tentativas em 5 minutos
   );
 };
 
@@ -28,7 +28,7 @@ export const ThrottleAuth = () => {
  */
 export const ThrottleUpload = () => {
   return applyDecorators(
-    Throttle({ default: { limit: 10, ttl: 60000 } }), // 10 uploads por minuto
+    Throttle({ default: { limit: 20, ttl: 60000 } }), // 20 uploads por minuto
   );
 };
 
@@ -76,7 +76,7 @@ export const ThrottlePasswordReset = () => {
  */
 export const ThrottleReports = () => {
   return applyDecorators(
-    Throttle({ default: { limit: 20, ttl: 300000 } }), // 20 requests em 5 minutos
+    Throttle({ default: { limit: 50, ttl: 300000 } }), // 50 requests em 5 minutos
   );
 };
 

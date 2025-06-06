@@ -12,7 +12,7 @@ import {
 @ValidatorConstraint({ name: 'isNotFutureDate', async: false })
 export class IsNotFutureDateConstraint implements ValidatorConstraintInterface {
   validate(date: any, args: ValidationArguments) {
-    if (!date) return true; // Deixar que outras validações (como @IsNotEmpty) lidem com valores nulos
+    if (!date) {return true;} // Deixar que outras validações (como @IsNotEmpty) lidem com valores nulos
 
     // Converter para Date se for string
     const dateToValidate = date instanceof Date ? date : new Date(date);
@@ -40,7 +40,7 @@ export class IsNotFutureDateConstraint implements ValidatorConstraintInterface {
  * @param validationOptions Opções adicionais para a validação
  */
 export function IsNotFutureDate(validationOptions?: ValidationOptions) {
-  return function (object: Object, propertyName: string) {
+  return function (object: object, propertyName: string) {
     registerDecorator({
       name: 'isNotFutureDate',
       target: object.constructor,

@@ -97,7 +97,8 @@ export class SeedTipoBeneficioSchema1733158900000 {
   }
 
   /**
-   * Converte a estrutura de schema atual para o formato CampoEstrutura[]
+   * Converte a estrutura de campos para o formato CampoEstrutura
+   * Compatível com formulários dinâmicos do frontend
    */
   private converterParaCampos(schemaEstrutura: any): CampoEstrutura[] {
     const campos: CampoEstrutura[] = [];
@@ -105,51 +106,174 @@ export class SeedTipoBeneficioSchema1733158900000 {
     for (const [nomeCampo, config] of Object.entries(schemaEstrutura)) {
       const campo = config as any;
 
-      campos.push({
+      // Construir objeto de validações de forma mais completa
+      const validacoes: any = {};
+      
+      // Mapear validações do campo principal
+      if (campo.min !== undefined) validacoes.min = campo.min;
+      if (campo.max !== undefined) validacoes.max = campo.max;
+      
+      // Mapear validações do objeto validation
+      if (campo.validation) {
+        if (campo.validation.min !== undefined) validacoes.min = campo.validation.min;
+        if (campo.validation.max !== undefined) validacoes.max = campo.validation.max;
+        if (campo.validation.minLength !== undefined) validacoes.minLength = campo.validation.minLength;
+        if (campo.validation.maxLength !== undefined) validacoes.maxLength = campo.validation.maxLength;
+        if (campo.validation.pattern) validacoes.pattern = campo.validation.pattern;
+        if (campo.validation.minDate) validacoes.minDate = campo.validation.minDate;
+        if (campo.validation.maxDate) validacoes.maxDate = campo.validation.maxDate;
+        if (campo.validation.integer !== undefined) validacoes.integer = campo.validation.integer;
+        if (campo.validation.maxItems !== undefined) validacoes.maxItems = campo.validation.maxItems;
+        if (campo.validation.items) validacoes.items = campo.validation.items;
+      }
+
+      // Mapear opções para select/multiselect/radio com novo formato
+      let opcoes: Array<{ value: string | number; label: string; disabled?: boolean }> | undefined;
+      if (campo.options && Array.isArray(campo.options)) {
+        opcoes = campo.options.map((option: any) => {
+          if (typeof option === 'string') {
+            return { value: option, label: option };
+          } else if (typeof option === 'object' && option.value !== undefined) {
+            return {
+              value: option.value,
+              label: option.label || option.value,
+              disabled: option.disabled || false
+            };
+          }
+          return { value: option, label: String(option) };
+        });
+      } else if (campo.validation?.enum) {
+        opcoes = campo.validation.enum.map((value: any) => ({
+          value: value,
+          label: String(value)
+        }));
+      }
+
+      // Construir objeto de dependência se existir
+      let dependeDe: any = undefined;
+      if (campo.dependeDe) {
+        dependeDe = {
+          campo: campo.dependeDe.campo,
+          valor: campo.dependeDe.valor,
+          condicao: campo.dependeDe.condicao || 'igual',
+          acao: campo.dependeDe.acao || 'mostrar'
+        };
+      }
+
+      // Mapear propriedades de UI expandidas
+      const ui: any = {
+        // Layout e posicionamento
+        colSpan: campo.colSpan || 1,
+        order: campo.order,
+        
+        // Formatação e máscara
+        placeholder: campo.placeholder,
+        mask: this.obterMascara(nomeCampo, campo.type),
+        
+        // Comportamento
+        disabled: campo.disabled || false,
+        readonly: campo.readonly || false,
+        hidden: campo.hidden || false,
+        
+        // Estilo e aparência
+        variant: campo.variant || 'outlined',
+        size: campo.size || 'medium',
+        color: campo.color || 'primary',
+        
+        // Propriedades específicas por tipo
+        multiple: campo.multiple,
+        accept: campo.accept,
+        step: campo.step,
+        
+        // Ajuda e documentação
+        helpText: campo.helpText,
+        tooltip: campo.tooltip,
+        
+        // Validação visual
+        showValidationIcon: campo.showValidationIcon !== false,
+        
+        // Agrupamento
+        group: campo.group,
+        section: campo.section
+      };
+
+      // Para textarea, mapear rows
+      if (campo.type === 'textarea' && campo.rows) {
+        ui.rows = campo.rows;
+      }
+
+      // Construir campo completo com todas as propriedades
+      const campoEstrutura: CampoEstrutura = {
         nome: nomeCampo,
-        tipo: this.mapearTipo(campo.type),
+        tipo: campo.type, // Usar o tipo diretamente da estrutura
         obrigatorio: campo.required || false,
         label: campo.label || nomeCampo,
-        descricao: campo.placeholder,
-        validacoes: {
-          min: campo.validation?.min || campo.min,
-          max: campo.validation?.max || campo.max,
-          pattern: campo.validation?.pattern,
-          opcoes:
-            campo.options?.map((opt: any) => opt.value) ||
-            campo.validation?.enum,
-        },
-        opcoes:
-          campo.options?.map((opt: any) => opt.value) || campo.validation?.enum,
-      });
+        descricao: campo.description || campo.placeholder,
+        validacoes: Object.keys(validacoes).length > 0 ? validacoes : undefined,
+        opcoes: opcoes,
+        dependeDe: dependeDe,
+        ui: ui
+      };
+
+      campos.push(campoEstrutura);
     }
 
     return campos;
   }
 
   /**
-   * Mapeia os tipos de campo para o formato esperado
+   * Valida se o tipo de campo é suportado
    */
-  private mapearTipo(
-    tipo: string,
-  ): 'string' | 'number' | 'boolean' | 'date' | 'enum' | 'array' {
-    switch (tipo) {
-      case 'text':
-      case 'textarea':
-        return 'string';
-      case 'number':
-        return 'number';
-      case 'checkbox':
-        return 'boolean';
-      case 'date':
-        return 'date';
-      case 'select':
-        return 'enum';
-      case 'multiselect':
-        return 'array';
-      default:
-        return 'string';
+  private validarTipoCampo(tipo: string): boolean {
+    const tiposSuportados = [
+      'text', 'textarea', 'number', 'checkbox', 'date', 
+      'select', 'multiselect', 'radio', 'file'
+    ];
+    return tiposSuportados.includes(tipo);
+  }
+
+  /**
+   * Obtém a máscara apropriada baseada no nome do campo ou tipo
+   */
+  private obterMascara(nomeCampo: string, tipo: string): string | undefined {
+    // Máscaras baseadas no nome do campo
+    const mascarasPorNome: Record<string, string> = {
+      'cpf': '000.000.000-00',
+      'cnpj': '00.000.000/0000-00',
+      'telefone': '(00) 00000-0000',
+      'telefone_cadastrado_cpf': '(00) 00000-0000',
+      'telefone_contato': '(00) 00000-0000',
+      'celular': '(00) 00000-0000',
+      'cep': '00000-000',
+      'rg': '00.000.000-0',
+      'numero_certidao_obito': '000000 00 00 0000 0 00000 000 0000000-00',
+      'numero_certidao_nascimento': '000000 00 00 0000 0 00000 000 0000000-00',
+      'numero_nis': '000.00000.00-0',
+      'numero_titulo_eleitor': '0000 0000 0000'
+    };
+
+    // Verificar se existe máscara específica para o nome do campo
+    for (const [campo, mascara] of Object.entries(mascarasPorNome)) {
+      if (nomeCampo.toLowerCase().includes(campo)) {
+        return mascara;
+      }
     }
+
+    // Máscaras baseadas no tipo de campo
+    switch (tipo) {
+      case 'date':
+        return '00/00/0000';
+      case 'number':
+        // Para campos numéricos que representam valores monetários
+        if (nomeCampo.toLowerCase().includes('valor') || 
+            nomeCampo.toLowerCase().includes('renda') ||
+            nomeCampo.toLowerCase().includes('salario')) {
+          return 'R$ 0.000,00';
+        }
+        break;
+    }
+
+    return undefined;
   }
 
   private definirEstruturas(): Record<
@@ -165,8 +289,9 @@ export class SeedTipoBeneficioSchema1733158900000 {
             label: 'Realiza pré-natal',
             required: false,
             colSpan: 1,
-            placeholder:
-              'Marque se a gestante realiza acompanhamento pré-natal',
+            placeholder: 'Marque se a gestante realiza acompanhamento pré-natal',
+            helpText: 'Indique se a gestante está fazendo acompanhamento médico regular',
+            section: 'dados_gestacao',
             validation: {
               type: 'boolean',
             },
@@ -196,8 +321,12 @@ export class SeedTipoBeneficioSchema1733158900000 {
             type: 'date',
             label: 'Data provável do parto',
             required: false,
-            colSpan: 1,
+            colSpan: 2,
             placeholder: 'Informe a data prevista para o nascimento',
+            helpText: 'Data estimada pelo médico para o nascimento do bebê',
+            section: 'dados_gestacao',
+            variant: 'outlined',
+            size: 'medium',
             validation: {
               type: 'date',
               minDate: 'today',
@@ -225,13 +354,21 @@ export class SeedTipoBeneficioSchema1733158900000 {
             },
           },
           quantidade_filhos: {
-            type: 'number',
+            type: 'select',
             label: 'Quantidade de filhos',
             required: false,
             colSpan: 1,
-            min: 0,
-            max: 20,
-            placeholder: 'Informe o número de filhos que já possui',
+            placeholder: 'Selecione a quantidade de filhos',
+            helpText: 'Número de filhos que a gestante já possui',
+            section: 'dados_familiares',
+            options: [
+              { value: 0, label: 'Nenhum filho' },
+              { value: 1, label: '1 filho' },
+              { value: 2, label: '2 filhos' },
+              { value: 3, label: '3 filhos' },
+              { value: 4, label: '4 filhos' },
+              { value: 5, label: '5 ou mais filhos' }
+            ],
             validation: {
               type: 'number',
               min: 0,

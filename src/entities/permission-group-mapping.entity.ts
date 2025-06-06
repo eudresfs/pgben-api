@@ -183,7 +183,7 @@ export class PermissionGroupMapping {
    * @returns true se foi criado recentemente
    */
   isCriadoRecentemente(): boolean {
-    if (!this.created_at) return false;
+    if (!this.created_at) {return false;}
 
     const agora = new Date();
     const umDiaAtras = new Date(agora.getTime() - 24 * 60 * 60 * 1000);
@@ -196,7 +196,7 @@ export class PermissionGroupMapping {
    * @returns idade em dias
    */
   getIdadeEmDias(): number {
-    if (!this.created_at) return 0;
+    if (!this.created_at) {return 0;}
 
     const agora = new Date();
     const diffTime = Math.abs(agora.getTime() - this.created_at.getTime());

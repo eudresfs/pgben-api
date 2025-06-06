@@ -209,14 +209,12 @@ export class CreateCidadaoDto {
   })
   naturalidade?: string;
 
-  @IsDate()
   @IsOptional()
-  @Type(() => Date)
   @ApiProperty({
     example: '1985-10-15',
     description: 'Data de nascimento do cidadão',
   })
-  data_nascimento?: Date;
+  data_nascimento?: string;
 
   @IsEnum(Sexo, { message: 'Sexo inválido' })
   @IsOptional()

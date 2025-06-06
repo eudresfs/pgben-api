@@ -189,7 +189,7 @@ export class InputSanitizerValidator implements ValidatorConstraintInterface {
    * @returns Nome do arquivo sanitizado
    */
   sanitizeFilename(filename: string): string {
-    if (!filename) return '';
+    if (!filename) {return '';}
 
     // Remover caracteres perigosos para nomes de arquivo
     let sanitized = filename.replace(/[<>:"\/\\|?*\x00-\x1F]/g, '_');
