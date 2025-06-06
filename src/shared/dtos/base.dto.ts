@@ -50,7 +50,6 @@ export abstract class BaseDto {
    * @returns Void se a validação for bem-sucedida, ou lança uma exceção em caso de erro
    */
   validar(validationGroup?: string): void {
-    // Este método será implementado pelas classes filhas ou mockado em testes
-    // Por padrão, não faz nada, mas serve como ponto de extensão
+    // Implementação padrão vazia - pode ser sobrescrita pelas classes filhas
   }
 }

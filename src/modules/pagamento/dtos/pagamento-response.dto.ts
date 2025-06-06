@@ -1,6 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Transform, Expose } from 'class-transformer';
 import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
 import { MetodoPagamentoEnum } from '../../../enums/metodo-pagamento.enum';
+import { DataMaskingUtil } from '../utils/data-masking.util';
 
 /**
  * DTO para resposta contendo dados de um pagamento
@@ -17,7 +19,7 @@ export class PagamentoResponseDto {
    */
   @ApiProperty({
     description: 'ID único do pagamento',
-    example: '123e4567-e89b-12d3-a456-426614174000',
+    example: 'uuid',
   })
   id: string;
 
@@ -26,7 +28,7 @@ export class PagamentoResponseDto {
    */
   @ApiProperty({
     description: 'ID da solicitação que originou o pagamento',
-    example: '123e4567-e89b-12d3-a456-426614174000',
+    example: 'uuid',
   })
   solicitacaoId: string;
 
@@ -36,10 +38,10 @@ export class PagamentoResponseDto {
   @ApiProperty({
     description: 'Dados resumidos da solicitação',
     example: {
-      numeroProceso: '2025.123456',
-      cidadaoNome: 'Maria Silva',
-      tipoBeneficio: 'Auxílio Moradia',
-      unidade: 'CRAS Centro',
+      numeroProcesso: 'string',
+      cidadaoNome: 'string',
+      tipoBeneficio: 'string',
+      unidade: 'string',
     },
     required: false,
   })
@@ -55,7 +57,7 @@ export class PagamentoResponseDto {
    */
   @ApiProperty({
     description: 'ID da informação bancária utilizada',
-    example: '123e4567-e89b-12d3-a456-426614174000',
+    example: 'uuid',
     required: false,
   })
   infoBancariaId?: string;
@@ -66,15 +68,40 @@ export class PagamentoResponseDto {
   @ApiProperty({
     description: 'Dados bancários utilizados (com mascaramento)',
     example: {
-      tipo: 'pix',
-      chavePix: 'c****@****.com',
-      banco: 'Banco do Brasil',
+      tipo: 'PIX',
+      chavePix: '***@domain.com',
+      banco: '001',
+      agencia: '***123',
+      conta: '****5678'
     },
     required: false,
+  })
+  @Transform(({ value, obj }) => {
+    if (!value) return value;
+    
+    // Aplica mascaramento nos dados bancários sensíveis
+    const maskedData = DataMaskingUtil.maskDadosBancarios({
+      pixKey: value.chavePix,
+      pixTipo: value.pixTipo,
+      banco: value.banco, // Código do banco não é mascarado (informação pública)
+      agencia: value.agencia,
+      conta: value.conta
+    });
+    
+    // Retorna o objeto completo com o campo 'tipo' preservado
+    return {
+      tipo: value.tipo,
+      chavePix: maskedData.pixKey,
+      pixTipo: maskedData.pixTipo,
+      banco: maskedData.banco,
+      agencia: maskedData.agencia,
+      conta: maskedData.conta
+    };
   })
   infoBancaria?: {
     tipo: string;
     chavePix?: string;
+    pixTipo?: 'CPF' | 'CNPJ' | 'EMAIL' | 'TELEFONE' | 'ALEATORIA';
     banco?: string;
     agencia?: string;
     conta?: string;
@@ -124,15 +151,15 @@ export class PagamentoResponseDto {
   @ApiProperty({
     description: 'Dados sobre quem liberou o pagamento',
     example: {
-      id: '123e4567-e89b-12d3-a456-426614174000',
-      nome: 'João Silva',
-      cargo: 'Técnico SEMTAS',
+      id: 'uuid',
+      nome: 'string',
+      role: 'string',
     },
   })
   responsavelLiberacao: {
     id: string;
     nome: string;
-    cargo: string;
+    role: string;
   };
 
   /**
@@ -150,12 +177,12 @@ export class PagamentoResponseDto {
   @ApiProperty({
     description: 'Dados da confirmação de recebimento',
     example: {
-      id: '123e4567-e89b-12d3-a456-426614174000',
-      dataConfirmacao: '2025-05-20T14:30:00Z',
-      metodoConfirmacao: 'assinatura',
+      id: 'uuid',
+      dataConfirmacao: 'ISO 8601 date string',
+      metodoConfirmacao: 'string',
       responsavel: {
-        id: '123e4567-e89b-12d3-a456-426614174000',
-        nome: 'Ana Souza',
+        id: 'uuid',
+        nome: 'string',
       },
     },
     required: false,
@@ -179,7 +206,7 @@ export class PagamentoResponseDto {
    */
   @ApiProperty({
     description: 'Observações sobre o pagamento',
-    example: 'Pagamento referente ao benefício eventual de auxílio moradia.',
+    example: 'string',
     required: false,
   })
   observacoes?: string;
@@ -189,7 +216,7 @@ export class PagamentoResponseDto {
    */
   @ApiProperty({
     description: 'Data de criação do registro',
-    example: '2025-05-18T10:00:00.000Z',
+    example: 'ISO 8601 date string',
   })
   createdAt: Date;
 
@@ -198,7 +225,7 @@ export class PagamentoResponseDto {
    */
   @ApiProperty({
     description: 'Data da última atualização do registro',
-    example: '2025-05-18T10:00:00.000Z',
+    example: 'ISO 8601 date string',
   })
   updatedAt: Date;
 }

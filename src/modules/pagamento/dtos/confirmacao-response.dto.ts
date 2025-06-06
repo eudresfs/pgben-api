@@ -15,7 +15,7 @@ export class ConfirmacaoResponseDto {
    */
   @ApiProperty({
     description: 'ID único da confirmação',
-    example: '123e4567-e89b-12d3-a456-426614174000',
+    example: 'uuid',
   })
   id: string;
 
@@ -24,7 +24,7 @@ export class ConfirmacaoResponseDto {
    */
   @ApiProperty({
     description: 'ID do pagamento relacionado',
-    example: '123e4567-e89b-12d3-a456-426614174000',
+    example: 'uuid',
   })
   pagamentoId: string;
 
@@ -33,7 +33,7 @@ export class ConfirmacaoResponseDto {
    */
   @ApiProperty({
     description: 'Data da confirmação de recebimento',
-    example: '2025-05-20T14:30:00.000Z',
+    example: 'ISO 8601 date string',
   })
   dataConfirmacao: Date;
 
@@ -53,15 +53,15 @@ export class ConfirmacaoResponseDto {
   @ApiProperty({
     description: 'Dados sobre quem confirmou o recebimento',
     example: {
-      id: '123e4567-e89b-12d3-a456-426614174000',
-      nome: 'Ana Souza',
-      cargo: 'Técnico SEMTAS',
+      id: 'uuid',
+      nome: 'string',
+      role: 'string',
     },
   })
   responsavelConfirmacao: {
     id: string;
     nome: string;
-    cargo?: string;
+    role?: string;
   };
 
   /**
@@ -71,9 +71,9 @@ export class ConfirmacaoResponseDto {
     description:
       'Dados do destinatário que recebeu (se diferente do beneficiário)',
     example: {
-      id: '123e4567-e89b-12d3-a456-426614174000',
-      nome: 'José Santos',
-      relacao: 'Filho',
+      id: 'uuid',
+      nome: 'string',
+      relacao: 'string',
     },
     required: false,
   })
@@ -88,8 +88,7 @@ export class ConfirmacaoResponseDto {
    */
   @ApiProperty({
     description: 'Observações sobre a confirmação',
-    example:
-      'Beneficiário confirmou recebimento com assinatura no formulário padrão.',
+    example: 'string',
     required: false,
   })
   observacoes?: string;
@@ -99,7 +98,7 @@ export class ConfirmacaoResponseDto {
    */
   @ApiProperty({
     description: 'Data de criação do registro',
-    example: '2025-05-20T14:30:00.000Z',
+    example: 'ISO 8601 date string',
   })
   createdAt: Date;
 
@@ -108,7 +107,7 @@ export class ConfirmacaoResponseDto {
    */
   @ApiProperty({
     description: 'Data da última atualização do registro',
-    example: '2025-05-20T14:30:00.000Z',
+    example: 'ISO 8601 date string',
   })
   updatedAt: Date;
 }

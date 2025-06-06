@@ -17,6 +17,8 @@ import { ConfirmacaoController } from './controllers/confirmacao.controller';
 import { PagamentoService } from './services/pagamento.service';
 import { ComprovanteService } from './services/comprovante.service';
 import { ConfirmacaoService } from './services/confirmacao.service';
+// import { MetricasPagamentoService } from './services/metricas-pagamento.service';
+// import { RelatorioPagamentoService } from './services/relatorio-pagamento.service';
 
 // Serviços de integração
 import { AuditoriaPagamentoService } from './services/auditoria-pagamento.service';
@@ -28,6 +30,11 @@ import { IntegracaoCidadaoService } from './services/integracao-cidadao.service'
 import { PixValidator } from './validators/pix-validator';
 import { StatusTransitionValidator } from './validators/status-transition-validator';
 import { DadosBancariosValidator } from './validators/dados-bancarios-validator';
+
+// Módulos
+import { UsuarioModule } from '../usuario/usuario.module';
+import { SolicitacaoModule } from '../solicitacao/solicitacao.module';
+import { AuditoriaModule } from '../auditoria/auditoria.module';
 
 /**
  * Módulo de Pagamento/Liberação
@@ -44,13 +51,9 @@ import { DadosBancariosValidator } from './validators/dados-bancarios-validator'
       ComprovantePagamento,
       ConfirmacaoRecebimento,
     ]),
-    // Outros módulos necessários serão importados aqui:
-    // SolicitacaoModule,
-    // UsuarioModule,
-    // CidadaoModule,
-    // DocumentoModule,
-    // AuditoriaModule,
-    // ConfiguracaoModule
+    UsuarioModule,
+    SolicitacaoModule,
+    AuditoriaModule,
   ],
   controllers: [
     PagamentoController,
@@ -62,6 +65,8 @@ import { DadosBancariosValidator } from './validators/dados-bancarios-validator'
     PagamentoService,
     ComprovanteService,
     ConfirmacaoService,
+    // MetricasPagamentoService,
+    // RelatorioPagamentoService,
 
     // Serviços de integração
     AuditoriaPagamentoService,
@@ -81,6 +86,8 @@ import { DadosBancariosValidator } from './validators/dados-bancarios-validator'
     PagamentoService,
     ComprovanteService,
     ConfirmacaoService,
+    // MetricasPagamentoService,
+    // RelatorioPagamentoService,
 
     // Serviços de integração
     AuditoriaPagamentoService,

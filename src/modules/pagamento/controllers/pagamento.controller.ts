@@ -8,6 +8,7 @@ import {
   Post,
   Query,
   UseGuards,
+  Request,
 } from '@nestjs/common';
 import {
   ApiOperation,
@@ -28,6 +29,8 @@ import {
   VerificarUnidade,
 } from '../decorators/pagamento-access.decorator';
 import { NotFoundException } from '@nestjs/common';
+import { UsuarioService } from '../../usuario/services/usuario.service';
+import { SolicitacaoService } from '../../solicitacao/services/solicitacao.service';
 
 /**
  * Controller para gerenciamento de pagamentos
@@ -42,7 +45,8 @@ import { NotFoundException } from '@nestjs/common';
 export class PagamentoController {
   constructor(
     private readonly pagamentoService: PagamentoService,
-    // Outros serviços necessários serão injetados aqui
+    private readonly usuarioService: UsuarioService,
+    private readonly solicitacaoService: SolicitacaoService,
   ) {}
 
   /**
@@ -51,10 +55,10 @@ export class PagamentoController {
   @Get()
   @ApiOperation({ summary: 'Lista pagamentos com filtros' })
   @ApiQuery({ name: 'status', required: false, enum: StatusPagamentoEnum })
-  @ApiQuery({ name: 'unidadeId', required: false })
-  @ApiQuery({ name: 'dataInicio', required: false, type: Date })
-  @ApiQuery({ name: 'dataFim', required: false, type: Date })
-  @ApiQuery({ name: 'metodoPagamento', required: false })
+  @ApiQuery({ name: 'unidade_id', required: false })
+  @ApiQuery({ name: 'data_inicio', required: false, type: Date })
+  @ApiQuery({ name: 'data_fim', required: false, type: Date })
+  @ApiQuery({ name: 'metodo_pagamento', required: false })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiResponse({
@@ -100,27 +104,46 @@ export class PagamentoController {
     });
 
     // Mapear para DTOs de resposta com dados sensíveis mascarados
-    const responseDtos = pagamentos.items.map((pagamento) => {
-      // Implementação do mapeamento para PagamentoResponseDto
-      return {
-        id: pagamento.id,
-        solicitacaoId: pagamento.solicitacaoId,
-        infoBancariaId: pagamento.infoBancariaId,
-        valor: pagamento.valor,
-        dataLiberacao: pagamento.dataLiberacao,
-        status: pagamento.status,
-        metodoPagamento: pagamento.metodoPagamento,
-        responsavelLiberacao: {
-          id: 'placeholder', // seria obtido da entidade Usuario
-          nome: 'Técnico Responsável',
-          cargo: 'Técnico SEMTAS',
-        },
-        quantidadeComprovantes: 0, // seria calculado pela relação
-        observacoes: pagamento.observacoes,
-        createdAt: pagamento.created_at,
-        updatedAt: pagamento.updated_at,
-      } as PagamentoResponseDto;
-    });
+    const responseDtos = await Promise.all(
+      pagamentos.data.map(async (pagamento) => {
+        // Buscar dados reais do responsável pela liberação
+        const responsavel = await this.usuarioService.findById(
+          pagamento.liberadoPor,
+        );
+
+        // Buscar dados da solicitação
+        const solicitacao = await this.solicitacaoService.findById(
+      pagamento.solicitacaoId,
+    );
+
+        return {
+          id: pagamento.id,
+          solicitacaoId: pagamento.solicitacaoId,
+          infoBancariaId: pagamento.infoBancariaId,
+          valor: pagamento.valor,
+          dataLiberacao: pagamento.dataLiberacao,
+          status: pagamento.status,
+          metodoPagamento: pagamento.metodoPagamento,
+          responsavelLiberacao: {
+            id: responsavel?.id || 'N/A',
+            nome: responsavel?.nome || 'Usuário não encontrado',
+            role: responsavel?.role?.nome || 'N/A',
+          },
+          solicitacao: solicitacao
+            ? {
+                numeroProcesso: solicitacao.id,
+                cidadaoNome: solicitacao.beneficiario?.nome || 'N/A',
+                tipoBeneficio: solicitacao.tipo_beneficio?.nome || 'N/A',
+                unidade: solicitacao.unidade?.nome || 'N/A',
+              }
+            : undefined,
+          quantidadeComprovantes: pagamento.comprovantes?.length || 0,
+          observacoes: pagamento.observacoes,
+          createdAt: pagamento.created_at,
+          updatedAt: pagamento.updated_at,
+        } as PagamentoResponseDto;
+      }),
+    );
 
     return {
       items: responseDtos,
@@ -153,7 +176,25 @@ export class PagamentoController {
       throw new NotFoundException('Pagamento não encontrado');
     }
 
-    // Mapear para DTO de resposta com dados sensíveis mascarados
+    // Buscar dados reais do responsável pela liberação
+    const responsavel = await this.usuarioService.findById(
+      pagamento.liberadoPor,
+    );
+
+    // Buscar dados da solicitação
+    const solicitacao = await this.solicitacaoService.findById(
+      pagamento.solicitacaoId,
+    );
+
+    // Buscar responsável pela confirmação se existir
+    let responsavelConfirmacao: any = null;
+    if (pagamento.confirmacoes?.length) {
+      responsavelConfirmacao = await this.usuarioService.findById(
+        pagamento.confirmacoes[0].responsavelId,
+      );
+    }
+
+    // Mapear para DTO de resposta com dados reais
     return {
       id: pagamento.id,
       solicitacaoId: pagamento.solicitacaoId,
@@ -163,10 +204,18 @@ export class PagamentoController {
       status: pagamento.status,
       metodoPagamento: pagamento.metodoPagamento,
       responsavelLiberacao: {
-        id: 'placeholder', // seria obtido da entidade Usuario
-        nome: 'Técnico Responsável',
-        cargo: 'Técnico SEMTAS',
+        id: responsavel?.id || 'N/A',
+        nome: responsavel?.nome || 'Usuário não encontrado',
+        role: responsavel?.role?.nome || 'N/A',
       },
+      solicitacao: solicitacao
+        ? {
+            numeroProcesso: solicitacao.processo_judicial?.numero_processo || null,
+            cidadaoNome: solicitacao.beneficiario?.nome || 'N/A',
+            tipoBeneficio: solicitacao.tipo_beneficio?.nome || 'N/A',
+            unidade: solicitacao.unidade?.nome || 'N/A',
+          }
+        : undefined,
       quantidadeComprovantes: pagamento.comprovantes?.length || 0,
       confirmacaoRecebimento: pagamento.confirmacoes?.length
         ? {
@@ -174,8 +223,8 @@ export class PagamentoController {
             dataConfirmacao: pagamento.confirmacoes[0].dataConfirmacao,
             metodoConfirmacao: pagamento.confirmacoes[0].metodoConfirmacao,
             responsavel: {
-              id: 'placeholder',
-              nome: 'Responsável Confirmação',
+              id: responsavelConfirmacao?.id || 'N/A',
+              nome: responsavelConfirmacao?.nome || 'Usuário não encontrado',
             },
           }
         : undefined,
@@ -214,10 +263,10 @@ export class PagamentoController {
   async createPagamento(
     @Param('solicitacaoId', ParseUUIDPipe) solicitacaoId: string,
     @Body() createDto: PagamentoCreateDto,
-    // @CurrentUser() usuario: Usuario
+    @Request() req: any,
   ) {
-    // Usar o ID do usuário atual
-    const usuarioId = 'placeholder'; // usuario.id;
+    // Usar o ID do usuário atual autenticado
+    const usuarioId = req.user.id;
 
     const pagamento = await this.pagamentoService.createPagamento(
       solicitacaoId,
@@ -225,7 +274,15 @@ export class PagamentoController {
       usuarioId,
     );
 
-    // Mapear para DTO de resposta
+    // Buscar dados reais do usuário responsável
+    const responsavel = await this.usuarioService.findById(usuarioId);
+
+    // Buscar dados da solicitação
+    const solicitacao = await this.solicitacaoService.findById(
+      pagamento.solicitacaoId,
+    );
+
+    // Mapear para DTO de resposta com dados reais
     return {
       id: pagamento.id,
       solicitacaoId: pagamento.solicitacaoId,
@@ -235,10 +292,18 @@ export class PagamentoController {
       status: pagamento.status,
       metodoPagamento: pagamento.metodoPagamento,
       responsavelLiberacao: {
-        id: usuarioId,
-        nome: 'Técnico Responsável',
-        cargo: 'Técnico SEMTAS',
+        id: responsavel?.id || usuarioId,
+        nome: responsavel?.nome || 'Usuário não encontrado',
+        role: responsavel?.role?.nome || 'N/A',
       },
+      solicitacao: solicitacao
+        ? {
+            numeroProcesso: solicitacao.processo_judicial?.numero_processo || null,
+            cidadaoNome: solicitacao.beneficiario?.nome || 'N/A',
+            tipoBeneficio: solicitacao.tipo_beneficio?.nome || 'N/A',
+            unidade: solicitacao.unidade?.nome || 'N/A',
+          }
+        : undefined,
       quantidadeComprovantes: 0,
       observacoes: pagamento.observacoes,
       createdAt: pagamento.created_at,
@@ -266,10 +331,10 @@ export class PagamentoController {
   async cancelPagamento(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() cancelDto: { motivoCancelamento: string },
-    // @CurrentUser() usuario: Usuario
+    @Request() req: any,
   ) {
-    // Usar o ID do usuário atual
-    const usuarioId = 'placeholder'; // usuario.id;
+    // Usar o ID do usuário atual autenticado
+    const usuarioId = req.user.id;
 
     const pagamento = await this.pagamentoService.cancelarPagamento(
       id,
@@ -277,7 +342,17 @@ export class PagamentoController {
       cancelDto.motivoCancelamento,
     );
 
-    // Mapear para DTO de resposta
+    // Buscar dados reais do responsável pela liberação original
+    const responsavelLiberacao = await this.usuarioService.findById(
+      pagamento.liberadoPor,
+    );
+
+    // Buscar dados da solicitação
+    const solicitacao = await this.solicitacaoService.findById(
+      pagamento.solicitacaoId,
+    );
+
+    // Mapear para DTO de resposta com dados reais
     return {
       id: pagamento.id,
       solicitacaoId: pagamento.solicitacaoId,
@@ -287,11 +362,19 @@ export class PagamentoController {
       status: pagamento.status,
       metodoPagamento: pagamento.metodoPagamento,
       responsavelLiberacao: {
-        id: 'placeholder',
-        nome: 'Técnico Responsável',
-        cargo: 'Técnico SEMTAS',
+        id: responsavelLiberacao?.id || 'N/A',
+        nome: responsavelLiberacao?.nome || 'Usuário não encontrado',
+        role: responsavelLiberacao?.role?.nome || 'N/A',
       },
-      quantidadeComprovantes: 0,
+      solicitacao: solicitacao
+        ? {
+            numeroProcesso: solicitacao.processo_judicial?.numero_processo || null,
+            cidadaoNome: solicitacao.beneficiario?.nome || 'N/A',
+            tipoBeneficio: solicitacao.tipo_beneficio?.nome || 'N/A',
+            unidade: solicitacao.unidade?.nome || 'N/A',
+          }
+        : undefined,
+      quantidadeComprovantes: pagamento.comprovantes?.length || 0,
       observacoes: pagamento.observacoes,
       createdAt: pagamento.created_at,
       updatedAt: pagamento.updated_at,
@@ -338,15 +421,14 @@ export class PagamentoController {
     @Query('page') page?: number,
     @Query('limit') limit?: number,
   ) {
-    const pagamentos = await this.pagamentoService.findPendentes({
-      unidadeId,
-      tipoBeneficioId,
-      page: page ? Number(page) : 1,
-      limit: limit ? Number(limit) : 10,
-    });
+    const pagamentos = await this.pagamentoService.findByStatus(
+      StatusPagamentoEnum.AGENDADO,
+      page ? Number(page) : 1,
+      limit ? Number(limit) : 10,
+    );
 
     // Mapear para DTOs de resposta
-    const responseDtos = pagamentos.items.map((pagamento) => {
+    const responseDtos = pagamentos.data.map((pagamento) => {
       return {
         id: pagamento.id,
         solicitacaoId: pagamento.solicitacaoId,
@@ -358,7 +440,7 @@ export class PagamentoController {
         responsavelLiberacao: {
           id: 'placeholder',
           nome: 'Técnico Responsável',
-          cargo: 'Técnico SEMTAS',
+          role: 'Técnico SEMTAS',
         },
         quantidadeComprovantes: 0,
         observacoes: pagamento.observacoes,

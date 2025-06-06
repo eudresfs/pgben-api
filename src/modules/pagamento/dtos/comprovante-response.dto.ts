@@ -14,7 +14,7 @@ export class ComprovanteResponseDto {
    */
   @ApiProperty({
     description: 'ID único do comprovante',
-    example: '123e4567-e89b-12d3-a456-426614174000',
+    example: 'uuid',
   })
   id: string;
 
@@ -23,7 +23,7 @@ export class ComprovanteResponseDto {
    */
   @ApiProperty({
     description: 'ID do pagamento relacionado',
-    example: '123e4567-e89b-12d3-a456-426614174000',
+    example: 'uuid',
   })
   pagamentoId: string;
 
@@ -32,7 +32,7 @@ export class ComprovanteResponseDto {
    */
   @ApiProperty({
     description: 'Tipo do documento',
-    example: 'comprovante_transferencia',
+    example: 'string',
   })
   tipoDocumento: string;
 
@@ -41,7 +41,7 @@ export class ComprovanteResponseDto {
    */
   @ApiProperty({
     description: 'Nome original do arquivo',
-    example: 'comprovante_transferencia_bb.pdf',
+    example: 'string',
   })
   nomeArquivo: string;
 
@@ -50,8 +50,7 @@ export class ComprovanteResponseDto {
    */
   @ApiProperty({
     description: 'URL para download/visualização do arquivo',
-    example:
-      'https://api.pgben.natal.rn.gov.br/api/pagamentos/123e4567-e89b-12d3-a456-426614174000/comprovantes/123e4567-e89b-12d3-a456-426614174000/download?token=abc123',
+    example: 'string',
   })
   url: string;
 
@@ -60,7 +59,7 @@ export class ComprovanteResponseDto {
    */
   @ApiProperty({
     description: 'Tamanho do arquivo em bytes',
-    example: 245367,
+    example: 0,
   })
   tamanho: number;
 
@@ -69,7 +68,7 @@ export class ComprovanteResponseDto {
    */
   @ApiProperty({
     description: 'Tipo MIME do arquivo',
-    example: 'application/pdf',
+    example: 'string',
   })
   mimeType: string;
 
@@ -78,7 +77,7 @@ export class ComprovanteResponseDto {
    */
   @ApiProperty({
     description: 'Data de upload do arquivo',
-    example: '2025-05-18T14:30:00.000Z',
+    example: 'ISO 8601 date string',
   })
   dataUpload: Date;
 
@@ -88,8 +87,8 @@ export class ComprovanteResponseDto {
   @ApiProperty({
     description: 'Dados sobre quem fez o upload do comprovante',
     example: {
-      id: '123e4567-e89b-12d3-a456-426614174000',
-      nome: 'João Silva',
+      id: 'uuid',
+      nome: 'string',
     },
   })
   responsavelUpload: {
@@ -102,7 +101,7 @@ export class ComprovanteResponseDto {
    */
   @ApiProperty({
     description: 'Data de criação do registro',
-    example: '2025-05-18T14:30:00.000Z',
+    example: 'ISO 8601 date string',
   })
   createdAt: Date;
 
@@ -111,7 +110,7 @@ export class ComprovanteResponseDto {
    */
   @ApiProperty({
     description: 'Data da última atualização do registro',
-    example: '2025-05-18T14:30:00.000Z',
+    example: 'ISO 8601 date string',
   })
   updatedAt: Date;
 }

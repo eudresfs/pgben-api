@@ -214,10 +214,9 @@ Cada resposta de erro inclui:
 
 - Todos os endpoints requerem autenticação via JWT
 - Dados sensíveis são mascarados nas respostas e logs
+- Todos os endpoints usam o decorator RequiresPermission para controlar permissões
+- Dados bancários são validados antes de criar um pagamento
+- Chaves PIX são validadas antes de criar um pagamento
 - Políticas de RLS garantem isolamento de dados entre unidades
 - Todas as operações são auditadas
 - Validações rigorosas são aplicadas para prevenir ataques de injeção
-
-## Suporte e Contato
-
-Para dúvidas ou suporte relacionados ao Módulo de Pagamento, entre em contato com a equipe de desenvolvimento do PGBen através do e-mail suporte@pgben.natal.rn.gov.br.

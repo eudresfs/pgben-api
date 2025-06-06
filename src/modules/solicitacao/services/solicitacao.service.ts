@@ -221,6 +221,7 @@ export class SolicitacaoService {
     const solicitacao = await this.solicitacaoRepository
       .createQueryBuilder('solicitacao')
       .leftJoinAndSelect('solicitacao.beneficiario', 'beneficiario')
+      .leftJoinAndSelect('solicitacao.solicitante', 'solicitante')
       .leftJoinAndSelect('solicitacao.tipo_beneficio', 'tipo_beneficio')
       .leftJoinAndSelect('solicitacao.unidade', 'unidade')
       .leftJoinAndSelect('solicitacao.tecnico', 'tecnico')
@@ -234,6 +235,7 @@ export class SolicitacaoService {
         'solicitacao.dados_complementares',
         'solicitacao.data_abertura',
         'solicitacao.observacoes',
+
         // Dados básicos do beneficiário
         'beneficiario.id',
         'beneficiario.nome',
@@ -247,6 +249,14 @@ export class SolicitacaoService {
         'beneficiario.estado_civil',
         'beneficiario.telefone',
         'beneficiario.email',
+
+        // Dados básicos do solicitante
+        'solicitante.id',
+        'solicitante.nome',
+        'solicitante.cpf',
+        'solicitante.nis',
+        'solicitante.data_nascimento',
+        'solicitante.telefone',
 
         // Dados básicos do benefício
         'tipo_beneficio.id',

@@ -2,6 +2,7 @@ import {
   ConflictException,
   Injectable,
   NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -10,6 +11,11 @@ import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
 import { PagamentoCreateDto } from '../dtos/pagamento-create.dto';
 import { StatusTransitionValidator } from '../validators/status-transition-validator';
 import { normalizeEnumFields } from '../../../shared/utils/enum-normalizer.util';
+import { SolicitacaoService } from '../../solicitacao/services/solicitacao.service';
+import { WorkflowSolicitacaoService } from '@/modules/solicitacao/services/workflow-solicitacao.service';
+import { AuditoriaService } from '../../auditoria/services/auditoria.service';
+import { TipoOperacao } from '../../../enums/tipo-operacao.enum';
+import { StatusSolicitacao } from '@/enums';
 
 /**
  * Serviço para gerenciamento de operações relacionadas a pagamentos
@@ -25,11 +31,10 @@ export class PagamentoService {
     @InjectRepository(Pagamento)
     private readonly pagamentoRepository: Repository<Pagamento>,
     private readonly statusValidator: StatusTransitionValidator,
-    // Outros serviços necessários serão injetados aqui
-    // private readonly solicitacaoService: SolicitacaoService,
-    // private readonly auditoriaService: AuditoriaService,
-    // etc.
-  ) {}
+    private readonly workflowSolicitacaoService: WorkflowSolicitacaoService,
+    private readonly solicitacaoService: SolicitacaoService,
+    private readonly auditoriaService: AuditoriaService,
+  ) { }
 
   /**
    * Cria um novo registro de pagamento para uma solicitação aprovada
@@ -45,28 +50,29 @@ export class PagamentoService {
     usuarioId: string,
   ): Promise<Pagamento> {
     // Validar se a solicitação existe e está aprovada
-    // const solicitacao = await this.solicitacaoService.findOne(solicitacaoId);
+    const solicitacao = await this.solicitacaoService.findById(solicitacaoId);
+    if (!solicitacao) {
+      throw new NotFoundException('Solicitação não encontrada');
+    }
 
-    // if (!solicitacao) {
-    //   throw new NotFoundException('Solicitação não encontrada');
-    // }
-
-    // if (solicitacao.status !== 'aprovada') {
-    //   throw new ConflictException('Somente solicitações aprovadas podem ter pagamentos liberados');
-    // }
-
-    // Validar método de pagamento e informações bancárias
-    if (
-      createDto.metodoPagamento !== 'presencial' &&
-      !createDto.infoBancariaId
-    ) {
+    if (solicitacao.status !== StatusSolicitacao.APROVADA) {
       throw new ConflictException(
-        'Informações bancárias são obrigatórias para pagamentos não presenciais',
+        'Só é possível criar pagamentos para solicitações aprovadas'
+      );
+    }
+
+    // Verificar se já existe um pagamento para esta solicitação
+    const pagamentoExistente = await this.pagamentoRepository.findOneBy({
+      solicitacaoId,
+    });
+    if (pagamentoExistente) {
+      throw new ConflictException(
+        'Já existe um pagamento para esta solicitação'
       );
     }
 
     // Validar limites de valor
-    // await this.validarLimitesPagamento(solicitacao.tipoBeneficioId, createDto.valor);
+    await this.validarLimitesPagamento(createDto.valor, solicitacao.tipo_beneficio);
 
     // Normalizar campos de enum antes de criar a entidade
     const dadosNormalizados = normalizeEnumFields({
@@ -86,18 +92,24 @@ export class PagamentoService {
     // Salvar o pagamento
     const result = await this.pagamentoRepository.save(pagamento);
 
-    // Atualizar status da solicitação
-    // await this.solicitacaoService.atualizarStatusParaPagamentoPendente(solicitacaoId);
+    await this.atualizarStatus(
+      result.solicitacaoId,
+      StatusPagamentoEnum.LIBERADO,
+      usuarioId
+    );
 
     // Registrar operação no log de auditoria
-    // await this.auditoriaService.registrarOperacao({
-    //   tipoOperacao: 'CRIACAO_PAGAMENTO',
-    //   usuarioId,
-    //   entidadeId: result.id,
-    //   tipoEntidade: 'PAGAMENTO',
-    //   dadosAnteriores: null,
-    //   dadosNovos: result
-    // });
+    const createLogDto = new (await import('../../auditoria/dto/create-log-auditoria.dto')).CreateLogAuditoriaDto();
+    Object.assign(createLogDto, {
+      tipo_operacao: TipoOperacao.CREATE,
+      entidade_afetada: 'Pagamento',
+      entidade_id: result.id,
+      usuario_id: usuarioId,
+      dados_anteriores: undefined,
+      dados_novos: result,
+      descricao: 'Pagamento criado no sistema',
+    });
+    await this.auditoriaService.create(createLogDto);
 
     return result;
   }
@@ -115,55 +127,41 @@ export class PagamentoService {
     novoStatus: StatusPagamentoEnum,
     usuarioId: string,
   ): Promise<Pagamento> {
-    // Buscar o pagamento pelo ID
-    const pagamento = await this.findOne(id);
-
+    // Buscar o pagamento existente
+    const pagamento = await this.pagamentoRepository.findOneBy({ id });
     if (!pagamento) {
       throw new NotFoundException('Pagamento não encontrado');
     }
 
     // Validar a transição de status
-    const transitionResult = this.statusValidator.canTransition(
-      pagamento.status,
-      novoStatus,
-    );
-
-    if (!transitionResult.allowed) {
+    if (!this.statusValidator.canTransition(pagamento.status, novoStatus)) {
       throw new ConflictException(
-        `Transição de status não permitida: ${transitionResult.reason}`,
+        `Transição de status inválida: ${pagamento.status} -> ${novoStatus}`
       );
     }
 
-    // Salvar dados anteriores para auditoria
+    // Armazenar dados anteriores para auditoria
     const dadosAnteriores = { ...pagamento };
 
-    // Normalizar o novo status antes de atualizar
-    const statusNormalizado = normalizeEnumFields({
-      status: novoStatus,
-    }).status;
-
     // Atualizar o status
-    pagamento.status = statusNormalizado;
+    pagamento.status = novoStatus;
+    pagamento.updated_at = new Date();
 
     // Salvar a atualização
     const result = await this.pagamentoRepository.save(pagamento);
 
-    // Atualizar status da solicitação, se necessário
-    // if (novoStatus === StatusPagamentoEnum.CONFIRMADO) {
-    //   await this.solicitacaoService.atualizarStatusParaConcluido(pagamento.solicitacaoId);
-    // } else if (novoStatus === StatusPagamentoEnum.CANCELADO) {
-    //   await this.solicitacaoService.atualizarStatusParaAprovado(pagamento.solicitacaoId);
-    // }
-
     // Registrar operação no log de auditoria
-    // await this.auditoriaService.registrarOperacao({
-    //   tipoOperacao: 'ATUALIZACAO_STATUS_PAGAMENTO',
-    //   usuarioId,
-    //   entidadeId: id,
-    //   tipoEntidade: 'PAGAMENTO',
-    //   dadosAnteriores,
-    //   dadosNovos: result
-    // });
+    const updateLogDto = new (await import('../../auditoria/dto/create-log-auditoria.dto')).CreateLogAuditoriaDto();
+    Object.assign(updateLogDto, {
+      tipo_operacao: TipoOperacao.UPDATE,
+      entidade_afetada: 'Pagamento',
+      entidade_id: id,
+      usuario_id: usuarioId,
+      dados_anteriores: dadosAnteriores,
+      dados_novos: result,
+      descricao: `Status alterado para ${novoStatus}`,
+    });
+    await this.auditoriaService.create(updateLogDto);
 
     return result;
   }
@@ -171,35 +169,39 @@ export class PagamentoService {
   /**
    * Cancela um pagamento existente
    *
-   * @param id ID do pagamento a ser cancelado
-   * @param usuarioId ID do usuário que está realizando a operação
+   * @param id ID do pagamento
    * @param motivoCancelamento Motivo do cancelamento
+   * @param usuarioId ID do usuário que está realizando a operação
    * @returns Pagamento cancelado
    */
   async cancelarPagamento(
     id: string,
-    usuarioId: string,
     motivoCancelamento: string,
+    usuarioId: string,
   ): Promise<Pagamento> {
-    // Buscar o pagamento pelo ID
-    const pagamento = await this.findOne(id);
-
+    // Buscar o pagamento existente
+    const pagamento = await this.pagamentoRepository.findOneBy({ id });
     if (!pagamento) {
       throw new NotFoundException('Pagamento não encontrado');
     }
 
     // Verificar se o pagamento pode ser cancelado
-    if (!this.statusValidator.canBeCanceled(pagamento.status)) {
-      throw new ConflictException(
-        'Este pagamento não pode ser cancelado devido ao seu status atual',
-      );
+    if (pagamento.status === StatusPagamentoEnum.CANCELADO) {
+      throw new ConflictException('Pagamento já está cancelado');
     }
 
-    // Salvar dados anteriores para auditoria
+    if (pagamento.status === StatusPagamentoEnum.LIBERADO) {
+      throw new ConflictException('Não é possível cancelar um pagamento já realizado');
+    }
+
+    // Armazenar dados anteriores para auditoria
     const dadosAnteriores = { ...pagamento };
 
-    // Atualizar o status e registrar motivo do cancelamento
+    // Atualizar o status para cancelado
     pagamento.status = StatusPagamentoEnum.CANCELADO;
+    pagamento.updated_at = new Date();
+
+    // Adicionar motivo do cancelamento às observações
     pagamento.observacoes = pagamento.observacoes
       ? `${pagamento.observacoes}\nMotivo do cancelamento: ${motivoCancelamento}`
       : `Motivo do cancelamento: ${motivoCancelamento}`;
@@ -207,19 +209,24 @@ export class PagamentoService {
     // Salvar a atualização
     const result = await this.pagamentoRepository.save(pagamento);
 
-    // Atualizar status da solicitação
-    // await this.solicitacaoService.atualizarStatusParaAprovado(pagamento.solicitacaoId);
+    await this.atualizarStatus(
+       pagamento.solicitacaoId,
+       StatusPagamentoEnum.CANCELADO,
+       usuarioId
+     );
 
     // Registrar operação no log de auditoria
-    // await this.auditoriaService.registrarOperacao({
-    //   tipoOperacao: 'CANCELAMENTO_PAGAMENTO',
-    //   usuarioId,
-    //   entidadeId: id,
-    //   tipoEntidade: 'PAGAMENTO',
-    //   dadosAnteriores,
-    //   dadosNovos: result,
-    //   observacoes: motivoCancelamento
-    // });
+    const deleteLogDto = new (await import('../../auditoria/dto/create-log-auditoria.dto')).CreateLogAuditoriaDto();
+    Object.assign(deleteLogDto, {
+      tipo_operacao: TipoOperacao.DELETE,
+      entidade_afetada: 'Pagamento',
+      entidade_id: id,
+      usuario_id: usuarioId,
+      dados_anteriores: dadosAnteriores,
+      dados_novos: result,
+      descricao: motivoCancelamento,
+    });
+    await this.auditoriaService.create(deleteLogDto);
 
     return result;
   }
@@ -250,78 +257,58 @@ export class PagamentoService {
   /**
    * Lista pagamentos com filtros e paginação
    *
-   * @param options Opções de filtro
-   * @returns Lista de pagamentos com meta-informações de paginação
+   * @param filters Filtros de busca
+   * @param page Página atual
+   * @param limit Limite de itens por página
+   * @returns Lista paginada de pagamentos
    */
-  async findAll(options: {
-    status?: StatusPagamentoEnum;
-    unidadeId?: string;
-    dataInicio?: Date;
-    dataFim?: Date;
-    metodoPagamento?: string;
-    page?: number;
-    limit?: number;
-  }): Promise<{
-    items: Pagamento[];
+  async findAll(
+    filters: any = {},
+    page: number = 1,
+    limit: number = 10,
+  ): Promise<{
+    data: Pagamento[];
     total: number;
     page: number;
     limit: number;
   }> {
-    const {
-      status,
-      unidadeId,
-      dataInicio,
-      dataFim,
-      metodoPagamento,
-      page = 1,
-      limit = 10,
-    } = options;
+    const queryBuilder = this.pagamentoRepository.createQueryBuilder('pagamento');
 
-    // Construir a query base
-    const queryBuilder =
-      this.pagamentoRepository.createQueryBuilder('pagamento');
-
-    // Adicionar condições
-    if (status) {
-      queryBuilder.andWhere('pagamento.status = :status', { status });
-    }
-
-    if (metodoPagamento) {
-      queryBuilder.andWhere('pagamento.metodo_pagamento = :metodoPagamento', {
-        metodoPagamento,
+    // Aplicar filtros
+    if (filters.status) {
+      queryBuilder.andWhere('pagamento.status = :status', {
+        status: filters.status,
       });
     }
 
-    if (dataInicio) {
-      queryBuilder.andWhere('pagamento.data_liberacao >= :dataInicio', {
-        dataInicio,
+    if (filters.solicitacaoId) {
+      queryBuilder.andWhere('pagamento.solicitacaoId = :solicitacaoId', {
+        solicitacaoId: filters.solicitacaoId,
       });
     }
 
-    if (dataFim) {
-      queryBuilder.andWhere('pagamento.data_liberacao <= :dataFim', {
-        dataFim,
-      });
+    if (filters.dataInicio && filters.dataFim) {
+      queryBuilder.andWhere(
+        'pagamento.dataLiberacao BETWEEN :dataInicio AND :dataFim',
+        {
+          dataInicio: filters.dataInicio,
+          dataFim: filters.dataFim,
+        }
+      );
     }
 
-    // Filtro por unidade (requer join com solicitação)
-    if (unidadeId) {
-      queryBuilder
-        .innerJoin('solicitacao', 's', 'pagamento.solicitacao_id = s.id')
-        .andWhere('s.unidade_id = :unidadeId', { unidadeId });
-    }
+    // Aplicar paginação
+    const offset = (page - 1) * limit;
+    queryBuilder.skip(offset).take(limit);
 
-    // Adicionar paginação
-    queryBuilder.skip((page - 1) * limit).take(limit);
+    // Ordenar por data de criação (mais recentes primeiro)
+     queryBuilder.orderBy('pagamento.created_at', 'DESC');
 
-    // Ordenar por data de liberação (mais recentes primeiro)
-    queryBuilder.orderBy('pagamento.data_liberacao', 'DESC');
-
-    // Executar a query
-    const [items, total] = await queryBuilder.getManyAndCount();
+    // Executar consulta
+    const [data, total] = await queryBuilder.getManyAndCount();
 
     return {
-      items,
+      data,
       total,
       page,
       limit,
@@ -329,63 +316,45 @@ export class PagamentoService {
   }
 
   /**
-   * Lista pagamentos pendentes (liberados mas não confirmados)
+   * Busca pagamentos por solicitação
    *
-   * @param options Opções de filtro
-   * @returns Lista de pagamentos pendentes
+   * @param solicitacaoId ID da solicitação
+   * @returns Lista de pagamentos da solicitação
    */
-  async findPendentes(options: {
-    unidadeId?: string;
-    tipoBeneficioId?: string;
-    page?: number;
-    limit?: number;
-  }): Promise<{
-    items: Pagamento[];
+  async findBySolicitacao(solicitacaoId: string): Promise<Pagamento[]> {
+    return this.pagamentoRepository.find({
+       where: { solicitacaoId },
+       order: { created_at: 'DESC' },
+     });
+  }
+
+  /**
+   * Busca pagamentos por status
+   *
+   * @param status Status dos pagamentos
+   * @param page Página atual
+   * @param limit Limite de itens por página
+   * @returns Lista paginada de pagamentos com o status especificado
+   */
+  async findByStatus(
+    status: StatusPagamentoEnum,
+    page: number = 1,
+    limit: number = 10,
+  ): Promise<{
+    data: Pagamento[];
     total: number;
     page: number;
     limit: number;
   }> {
-    const { unidadeId, tipoBeneficioId, page = 1, limit = 10 } = options;
-
-    // Construir a query base
-    const queryBuilder =
-      this.pagamentoRepository.createQueryBuilder('pagamento');
-
-    // Filtrar apenas pagamentos liberados
-    queryBuilder.where('pagamento.status = :status', {
-      status: StatusPagamentoEnum.LIBERADO,
-    });
-
-    // Filtros adicionais que requerem joins
-    if (unidadeId || tipoBeneficioId) {
-      queryBuilder.innerJoin(
-        'solicitacao',
-        's',
-        'pagamento.solicitacao_id = s.id',
-      );
-
-      if (unidadeId) {
-        queryBuilder.andWhere('s.unidade_id = :unidadeId', { unidadeId });
-      }
-
-      if (tipoBeneficioId) {
-        queryBuilder.andWhere('s.tipo_beneficio_id = :tipoBeneficioId', {
-          tipoBeneficioId,
-        });
-      }
-    }
-
-    // Adicionar paginação
-    queryBuilder.skip((page - 1) * limit).take(limit);
-
-    // Ordenar por data de liberação (mais antigos primeiro)
-    queryBuilder.orderBy('pagamento.data_liberacao', 'ASC');
-
-    // Executar a query
-    const [items, total] = await queryBuilder.getManyAndCount();
+    const [data, total] = await this.pagamentoRepository.findAndCount({
+       where: { status },
+       order: { created_at: 'DESC' },
+       skip: (page - 1) * limit,
+       take: limit,
+     });
 
     return {
-      items,
+      data,
       total,
       page,
       limit,
@@ -395,29 +364,30 @@ export class PagamentoService {
   /**
    * Valida se o valor está dentro dos limites permitidos para o tipo de benefício
    *
-   * @param tipoBeneficioId ID do tipo de benefício
    * @param valor Valor a ser validado
-   * @throws ConflictException se o valor exceder os limites permitidos
+   * @param tipoBeneficio Tipo de benefício
+   * @throws BadRequestException se o valor exceder os limites permitidos
    */
   private async validarLimitesPagamento(
-    tipoBeneficioId: string,
     valor: number,
+    tipoBeneficio: any,
   ): Promise<void> {
-    // Esta é uma implementação de placeholder
-    // Será integrada com o ConfiguracaoModule ou TipoBeneficioService
-    // const tipoBeneficio = await this.tipoBeneficioService.findOne(tipoBeneficioId);
-    // if (!tipoBeneficio) {
-    //   throw new NotFoundException('Tipo de benefício não encontrado');
-    // }
-    // if (valor > tipoBeneficio.valorMaximo) {
-    //   throw new ConflictException(
-    //     `O valor excede o limite máximo permitido (${tipoBeneficio.valorMaximo}) para este tipo de benefício`
-    //   );
-    // }
-    // if (valor < tipoBeneficio.valorMinimo) {
-    //   throw new ConflictException(
-    //     `O valor está abaixo do limite mínimo permitido (${tipoBeneficio.valorMinimo}) para este tipo de benefício`
-    //   );
-    // }
+    // Validação básica de valor
+    if (valor <= 0) {
+      throw new BadRequestException('Valor do pagamento deve ser positivo');
+    }
+
+    // Validar limites baseados no tipo de benefício
+    if (tipoBeneficio?.valorMaximo && valor > tipoBeneficio.valorMaximo) {
+      throw new BadRequestException(
+        `Valor de R$ ${valor.toFixed(2)} excede o limite máximo de R$ ${tipoBeneficio.valorMaximo.toFixed(2)} para o benefício ${tipoBeneficio.nome}`
+      );
+    }
+
+    if (tipoBeneficio?.valorMinimo && valor < tipoBeneficio.valorMinimo) {
+      throw new BadRequestException(
+        `Valor de R$ ${valor.toFixed(2)} é inferior ao limite mínimo de R$ ${tipoBeneficio.valorMinimo.toFixed(2)} para o benefício ${tipoBeneficio.nome}`
+      );
+    }
   }
 }

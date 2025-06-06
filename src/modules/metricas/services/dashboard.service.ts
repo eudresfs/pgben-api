@@ -346,4 +346,50 @@ export class DashboardService {
       solicitacoesPorBeneficio,
     };
   }
+
+  /**
+   * Obtém contagem de solicitações agrupadas por status
+   * @returns Contagem de solicitações por status com percentuais
+   */
+  async obterContagemSolicitacoesPorStatus(): Promise<{
+    total: number;
+    porStatus: Array<{
+      status: string;
+      quantidade: number;
+      percentual: number;
+    }>;
+  }> {
+    this.logger.log('Obtendo contagem de solicitações por status');
+
+    try {
+      // Obter total de solicitações
+      const total = await this.solicitacaoRepository.count();
+
+      // Obter contagem por status
+      const contagemPorStatus = await this.solicitacaoRepository
+        .createQueryBuilder('solicitacao')
+        .select('solicitacao.status', 'status')
+        .addSelect('COUNT(solicitacao.id)', 'quantidade')
+        .groupBy('solicitacao.status')
+        .orderBy('quantidade', 'DESC')
+        .getRawMany();
+
+      // Calcular percentuais e formatar resposta
+      const porStatus = contagemPorStatus.map((item) => ({
+        status: item.status,
+        quantidade: parseInt(item.quantidade, 10),
+        percentual: total > 0 ? Math.round((parseInt(item.quantidade, 10) / total) * 100 * 100) / 100 : 0,
+      }));
+
+      this.logger.log(`Contagem obtida: ${total} solicitações em ${porStatus.length} status diferentes`);
+
+      return {
+        total,
+        porStatus,
+      };
+    } catch (error) {
+      this.logger.error('Erro ao obter contagem de solicitações por status:', error);
+      throw error;
+    }
+  }
 }

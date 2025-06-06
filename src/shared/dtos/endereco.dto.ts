@@ -76,6 +76,15 @@ export class EnderecoDto extends BaseDto {
   cep: string;
 
   /**
+   * Implementação do método validar herdado de BaseDto
+   * @param validationGroup Grupo de validação opcional
+   */
+  validar(validationGroup?: string): void {
+    // Implementação específica de validação para endereços
+    // Por enquanto, utiliza apenas as validações dos decorators
+  }
+
+  /**
    * Verifica se o endereço está completo
    *
    * @returns true se todos os campos obrigatórios estão preenchidos

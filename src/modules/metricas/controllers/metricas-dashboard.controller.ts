@@ -24,6 +24,7 @@ import { DashboardService } from '../services/dashboard.service';
  * 3. Obter KPIs configurados para dashboard
  * 4. Obter dados para gráficos e visualizações
  * 5. Exportar dados para relatórios
+ * 6. Obter contagem de solicitações por status
  */
 @ApiTags('Métricas e Dashboard')
 @ApiBearerAuth()
@@ -82,6 +83,43 @@ export class MetricasDashboardController {
   })
   async obterGraficos(@Query('periodo') periodo?: number) {
     return this.dashboardService.obterGraficos(periodo ? +periodo : 30);
+  }
+
+  /**
+   * Obtém contagem de solicitações por status
+   */
+  @Get('solicitacoes/status')
+  @RequiresPermission({
+    permissionName: 'dashboard.visualizar',
+    scopeType: ScopeType.GLOBAL,
+  })
+  @ApiOperation({ 
+    summary: 'Obtém contagem de solicitações por status',
+    description: 'Retorna a quantidade de solicitações agrupadas por status para exibição no dashboard'
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Contagem por status obtida com sucesso',
+    schema: {
+      type: 'object',
+      properties: {
+        total: { type: 'number', description: 'Total de solicitações' },
+        porStatus: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              status: { type: 'string', description: 'Nome do status' },
+              quantidade: { type: 'number', description: 'Quantidade de solicitações neste status' },
+              percentual: { type: 'number', description: 'Percentual em relação ao total' }
+            }
+          }
+        }
+      }
+    }
+  })
+  async obterContagemPorStatus() {
+    return this.dashboardService.obterContagemSolicitacoesPorStatus();
   }
 
   /**
