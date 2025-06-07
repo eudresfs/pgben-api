@@ -123,7 +123,7 @@ export class DadosNatalidade {
    * Calcula se está no prazo para solicitação baseado na data provável do parto
    */
   estaNoPrazoSolicitacao(prazoMaximoDias: number): boolean {
-    if (!this.data_provavel_parto) return false;
+    if (!this.data_provavel_parto) {return false;}
 
     const hoje = new Date();
     const dataLimite = new Date(this.data_provavel_parto);

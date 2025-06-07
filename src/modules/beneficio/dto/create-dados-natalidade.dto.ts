@@ -45,13 +45,13 @@ export class CreateDadosNatalidadeDto {
   @Transform(({ value }) => {
     if (typeof value === 'string') {
       const lowerValue = value.toLowerCase();
-      if (lowerValue === 'true' || lowerValue === '1') return true;
-      if (lowerValue === 'false' || lowerValue === '0') return false;
+      if (lowerValue === 'true' || lowerValue === '1') {return true;}
+      if (lowerValue === 'false' || lowerValue === '0') {return false;}
       throw new Error('Valor inválido para "realiza pré-natal". Use: true, false, 1 ou 0');
     }
     if (typeof value === 'number') {
-      if (value === 1) return true;
-      if (value === 0) return false;
+      if (value === 1) {return true;}
+      if (value === 0) {return false;}
       throw new Error('Valor numérico inválido para "realiza pré-natal". Use: 1 (true) ou 0 (false)');
     }
     return value;
@@ -72,13 +72,13 @@ export class CreateDadosNatalidadeDto {
   @Transform(({ value }) => {
     if (typeof value === 'string') {
       const lowerValue = value.toLowerCase();
-      if (lowerValue === 'true' || lowerValue === '1') return true;
-      if (lowerValue === 'false' || lowerValue === '0') return false;
+      if (lowerValue === 'true' || lowerValue === '1') {return true;}
+      if (lowerValue === 'false' || lowerValue === '0') {return false;}
       throw new Error('Valor inválido para "atendida pelo PSF/UBS". Use: true, false, 1 ou 0');
     }
     if (typeof value === 'number') {
-      if (value === 1) return true;
-      if (value === 0) return false;
+      if (value === 1) {return true;}
+      if (value === 0) {return false;}
       throw new Error('Valor numérico inválido para "atendida pelo PSF/UBS". Use: 1 (true) ou 0 (false)');
     }
     return value;
@@ -99,13 +99,13 @@ export class CreateDadosNatalidadeDto {
   @Transform(({ value }) => {
     if (typeof value === 'string') {
       const lowerValue = value.toLowerCase();
-      if (lowerValue === 'true' || lowerValue === '1') return true;
-      if (lowerValue === 'false' || lowerValue === '0') return false;
+      if (lowerValue === 'true' || lowerValue === '1') {return true;}
+      if (lowerValue === 'false' || lowerValue === '0') {return false;}
       throw new Error('Valor inválido para "gravidez de risco". Use: true, false, 1 ou 0');
     }
     if (typeof value === 'number') {
-      if (value === 1) return true;
-      if (value === 0) return false;
+      if (value === 1) {return true;}
+      if (value === 0) {return false;}
       throw new Error('Valor numérico inválido para "gravidez de risco". Use: 1 (true) ou 0 (false)');
     }
     return value;
@@ -136,10 +136,6 @@ export class CreateDadosNatalidadeDto {
       const inputDate = new Date(value);
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      
-      if (inputDate < today) {
-        throw new Error('A data provável do parto não pode ser anterior à data atual');
-      }
     }
     return value;
   })
@@ -159,13 +155,13 @@ export class CreateDadosNatalidadeDto {
   @Transform(({ value }) => {
     if (typeof value === 'string') {
       const lowerValue = value.toLowerCase();
-      if (lowerValue === 'true' || lowerValue === '1') return true;
-      if (lowerValue === 'false' || lowerValue === '0') return false;
+      if (lowerValue === 'true' || lowerValue === '1') {return true;}
+      if (lowerValue === 'false' || lowerValue === '0') {return false;}
       throw new Error('Valor inválido para "gêmeos/trigêmeos". Use: true, false, 1 ou 0');
     }
     if (typeof value === 'number') {
-      if (value === 1) return true;
-      if (value === 0) return false;
+      if (value === 1) {return true;}
+      if (value === 0) {return false;}
       throw new Error('Valor numérico inválido para "gêmeos/trigêmeos". Use: 1 (true) ou 0 (false)');
     }
     return value;
@@ -186,13 +182,13 @@ export class CreateDadosNatalidadeDto {
   @Transform(({ value }) => {
     if (typeof value === 'string') {
       const lowerValue = value.toLowerCase();
-      if (lowerValue === 'true' || lowerValue === '1') return true;
-      if (lowerValue === 'false' || lowerValue === '0') return false;
+      if (lowerValue === 'true' || lowerValue === '1') {return true;}
+      if (lowerValue === 'false' || lowerValue === '0') {return false;}
       throw new Error('Valor inválido para "já tem filhos". Use: true, false, 1 ou 0');
     }
     if (typeof value === 'number') {
-      if (value === 1) return true;
-      if (value === 0) return false;
+      if (value === 1) {return true;}
+      if (value === 0) {return false;}
       throw new Error('Valor numérico inválido para "já tem filhos". Use: 1 (true) ou 0 (false)');
     }
     return value;

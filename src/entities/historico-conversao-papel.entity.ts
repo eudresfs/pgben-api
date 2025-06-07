@@ -261,20 +261,20 @@ export class HistoricoConversaoPapel {
    */
   isConsistente(): boolean {
     // Verifica se tem cidadão
-    if (!this.cidadao_id) return false;
+    if (!this.cidadao_id) {return false;}
 
     // Verifica se tem usuário
-    if (!this.usuario_id) return false;
+    if (!this.usuario_id) {return false;}
 
     // Verifica se tem papéis válidos
-    if (!this.papel_anterior || !this.papel_novo) return false;
+    if (!this.papel_anterior || !this.papel_novo) {return false;}
 
     // Verifica se os papéis são diferentes
-    if (this.papel_anterior === this.papel_novo) return false;
+    if (this.papel_anterior === this.papel_novo) {return false;}
 
     // Verifica se tem justificativa
     if (!this.justificativa || this.justificativa.trim().length === 0)
-      return false;
+      {return false;}
 
     return true;
   }
@@ -300,14 +300,14 @@ export class HistoricoConversaoPapel {
    */
   isCritico(): boolean {
     // Conversões para responsável familiar são críticas
-    if (this.papel_novo === TipoPapel.REQUERENTE) return true;
+    if (this.papel_novo === TipoPapel.REQUERENTE) {return true;}
 
     // Remoção de responsável familiar é crítica
-    if (this.papel_anterior === TipoPapel.REQUERENTE) return true;
+    if (this.papel_anterior === TipoPapel.REQUERENTE) {return true;}
 
     // Conversões recentes sem notificação são críticas
     if (this.isCriadoRecentemente() && !this.isNotificacaoEnviada())
-      return true;
+      {return true;}
 
     return false;
   }
@@ -317,10 +317,10 @@ export class HistoricoConversaoPapel {
    */
   requerAprovacao(): boolean {
     // Mudanças para responsável familiar requerem aprovação
-    if (this.papel_novo === TipoPapel.REQUERENTE) return true;
+    if (this.papel_novo === TipoPapel.REQUERENTE) {return true;}
 
     // Reduções de papel requerem aprovação
-    if (this.isReducao()) return true;
+    if (this.isReducao()) {return true;}
 
     return false;
   }
@@ -329,8 +329,8 @@ export class HistoricoConversaoPapel {
    * Obtém o tipo de impacto da conversão
    */
   getTipoImpacto(): 'ALTO' | 'MEDIO' | 'BAIXO' {
-    if (this.isCritico()) return 'ALTO';
-    if (this.requerAprovacao()) return 'MEDIO';
+    if (this.isCritico()) {return 'ALTO';}
+    if (this.requerAprovacao()) {return 'MEDIO';}
     return 'BAIXO';
   }
 
@@ -364,7 +364,7 @@ export class HistoricoConversaoPapel {
    * Verifica se a notificação está pendente há muito tempo
    */
   notificacaoPendenteMuitoTempo(): boolean {
-    if (this.isNotificacaoEnviada()) return false;
+    if (this.isNotificacaoEnviada()) {return false;}
 
     const seteDiasAtras = new Date();
     seteDiasAtras.setDate(seteDiasAtras.getDate() - 7);

@@ -172,7 +172,7 @@ export class RolePermission {
    * Verifica se o mapeamento foi criado recentemente (últimas 24 horas)
    */
   isCriadoRecentemente(): boolean {
-    if (!this.created_at) return false;
+    if (!this.created_at) {return false;}
 
     const agora = new Date();
     const umDiaAtras = new Date(agora.getTime() - 24 * 60 * 60 * 1000);
@@ -184,7 +184,7 @@ export class RolePermission {
    * Calcula a idade do mapeamento em dias
    */
   getIdadeEmDias(): number {
-    if (!this.created_at) return 0;
+    if (!this.created_at) {return 0;}
 
     const agora = new Date();
     const diffTime = Math.abs(agora.getTime() - this.created_at.getTime());

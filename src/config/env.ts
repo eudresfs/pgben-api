@@ -37,6 +37,7 @@ export interface EnvironmentVariables {
   DB_PASS: string;
   DB_NAME: string;
   DB_LOGGING: boolean;
+  DB_TIMEZONE?: string;
   
   // Aplicação
   NODE_ENV: string;
@@ -126,7 +127,7 @@ export interface EnvironmentVariables {
  * Função para converter string para boolean
  */
 function parseBoolean(value: string | undefined, defaultValue: boolean = false): boolean {
-  if (!value) return defaultValue;
+  if (!value) {return defaultValue;}
   return value.toLowerCase() === 'true';
 }
 
@@ -134,7 +135,7 @@ function parseBoolean(value: string | undefined, defaultValue: boolean = false):
  * Função para converter string para número
  */
 function parseNumber(value: string | undefined, defaultValue: number): number {
-  if (!value) return defaultValue;
+  if (!value) {return defaultValue;}
   const parsed = parseInt(value, 10);
   return isNaN(parsed) ? defaultValue : parsed;
 }
@@ -150,6 +151,7 @@ export const env: EnvironmentVariables = {
   DB_PASS: process.env.DB_PASS || 'postgres',
   DB_NAME: process.env.DB_NAME || 'pgben',
   DB_LOGGING: parseBoolean(process.env.DB_LOGGING, false),
+  DB_TIMEZONE: process.env.DB_TIMEZONE || 'America/Sao_Paulo',
   
   // Aplicação
   NODE_ENV: process.env.NODE_ENV || 'development',
@@ -205,9 +207,9 @@ export const env: EnvironmentVariables = {
   
   // Rate Limiting
   THROTTLE_TTL: parseNumber(process.env.THROTTLE_TTL, 60),
-  THROTTLE_LIMIT: parseNumber(process.env.THROTTLE_LIMIT, 100),
-  THROTTLE_LOGIN_LIMIT: parseNumber(process.env.THROTTLE_LOGIN_LIMIT, 5),
-  THROTTLE_REGISTER_LIMIT: parseNumber(process.env.THROTTLE_REGISTER_LIMIT, 3),
+  THROTTLE_LIMIT: parseNumber(process.env.THROTTLE_LIMIT, 200),
+  THROTTLE_LOGIN_LIMIT: parseNumber(process.env.THROTTLE_LOGIN_LIMIT, 10),
+  THROTTLE_REGISTER_LIMIT: parseNumber(process.env.THROTTLE_REGISTER_LIMIT, 5),
   
   // Logging
   LOG_LEVEL: process.env.LOG_LEVEL,

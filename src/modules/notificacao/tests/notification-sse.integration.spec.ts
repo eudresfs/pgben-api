@@ -130,7 +130,7 @@ describe('Notification SSE Integration', () => {
         .expect('Cache-Control', 'no-cache')
         .expect('Connection', 'keep-alive')
         .end((err, res) => {
-          if (err) return done(err);
+          if (err) {return done(err);}
 
           // Verificar se a conexão foi estabelecida
           const stats = sseService.getConnectionStats();

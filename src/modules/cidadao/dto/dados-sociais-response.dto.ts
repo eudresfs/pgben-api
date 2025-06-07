@@ -178,8 +178,8 @@ export class DadosSociaisResponseDto {
   @Expose()
   @Transform(({ obj }) => {
     let total = 0;
-    if (obj.valor_pbf) total += parseFloat(obj.valor_pbf);
-    if (obj.valor_bpc) total += parseFloat(obj.valor_bpc);
+    if (obj.valor_pbf) {total += parseFloat(obj.valor_pbf);}
+    if (obj.valor_bpc) {total += parseFloat(obj.valor_bpc);}
     return total > 0 ? total : null;
   })
   total_beneficios: number | null;
@@ -194,9 +194,9 @@ export class DadosSociaisResponseDto {
   @Expose()
   @Transform(({ obj }) => {
     let total = 0;
-    if (obj.renda) total += parseFloat(obj.renda);
-    if (obj.valor_pbf) total += parseFloat(obj.valor_pbf);
-    if (obj.valor_bpc) total += parseFloat(obj.valor_bpc);
+    if (obj.renda) {total += parseFloat(obj.renda);}
+    if (obj.valor_pbf) {total += parseFloat(obj.valor_pbf);}
+    if (obj.valor_bpc) {total += parseFloat(obj.valor_bpc);}
     return total > 0 ? total : null;
   })
   renda_total: number | null;
@@ -256,8 +256,8 @@ export class DadosSociaisResponseDto {
    */
   private calculateTotalBeneficios(): number | null {
     let total = 0;
-    if (this.valor_pbf) total += this.valor_pbf;
-    if (this.valor_bpc) total += this.valor_bpc;
+    if (this.valor_pbf) {total += this.valor_pbf;}
+    if (this.valor_bpc) {total += this.valor_bpc;}
     return total > 0 ? total : null;
   }
 
@@ -266,9 +266,9 @@ export class DadosSociaisResponseDto {
    */
   private calculateRendaTotal(): number | null {
     let total = 0;
-    if (this.renda) total += this.renda;
-    if (this.valor_pbf) total += this.valor_pbf;
-    if (this.valor_bpc) total += this.valor_bpc;
+    if (this.renda) {total += this.renda;}
+    if (this.valor_pbf) {total += this.valor_pbf;}
+    if (this.valor_bpc) {total += this.valor_bpc;}
     return total > 0 ? total : null;
   }
 }

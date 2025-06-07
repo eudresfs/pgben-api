@@ -4,7 +4,6 @@ import {
   IsString,
   IsOptional,
   IsUUID,
-  IsBoolean,
   IsNotEmpty,
   MinLength,
   MaxLength,

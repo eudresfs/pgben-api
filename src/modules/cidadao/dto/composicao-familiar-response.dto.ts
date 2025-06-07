@@ -170,7 +170,7 @@ export class ComposicaoFamiliarResponseDto {
   })
   @Expose()
   @Transform(({ obj }) => {
-    if (!obj.renda) return null;
+    if (!obj.renda) {return null;}
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL',

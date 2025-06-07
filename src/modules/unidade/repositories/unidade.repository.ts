@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { Repository, DataSource } from 'typeorm';
+import { Repository, DataSource, FindManyOptions } from 'typeorm';
 import { StatusUnidade, Unidade } from '../../../entities/unidade.entity';
-import { EntityNotFoundException } from '../../../shared/exceptions';
+import { throwUnidadeNotFound, throwUnidadeOperationFailed } from '../../../shared/exceptions/error-catalog/domains/unidade.errors';
 
 /**
  * Repositório de unidades
@@ -24,8 +24,8 @@ export class UnidadeRepository {
   async findAll(options?: {
     skip?: number;
     take?: number;
-    where?: any;
-    order?: any;
+    where?: FindManyOptions<Unidade>['where'];
+    order?: FindManyOptions<Unidade>['order'];
   }): Promise<[Unidade[], number]> {
     const {
       skip = 0,
@@ -77,12 +77,19 @@ export class UnidadeRepository {
    * @returns Unidade atualizada
    */
   async update(id: string, data: Partial<Unidade>): Promise<Unidade> {
-    await this.repository.update(id, data);
-    const unidade = await this.findById(id);
-    if (!unidade) {
-      throw new EntityNotFoundException('Unidade', id);
+    try {
+      await this.repository.update(id, data);
+      const unidade = await this.findById(id);
+      if (!unidade) {
+        throwUnidadeNotFound(id);
+      }
+      return unidade;
+    } catch (error) {
+      if (error.name === 'AppError') {
+        throw error;
+      }
+      throwUnidadeOperationFailed({ unidadeId: id });
     }
-    return unidade;
   }
 
   /**
@@ -92,12 +99,19 @@ export class UnidadeRepository {
    * @returns Unidade atualizada
    */
   async updateStatus(id: string, status: StatusUnidade): Promise<Unidade> {
-    await this.repository.update(id, { status });
-    const unidade = await this.findById(id);
-    if (!unidade) {
-      throw new EntityNotFoundException('Unidade', id);
+    try {
+      await this.repository.update(id, { status });
+      const unidade = await this.findById(id);
+      if (!unidade) {
+        throwUnidadeNotFound(id);
+      }
+      return unidade;
+    } catch (error) {
+      if (error.name === 'AppError') {
+        throw error;
+      }
+      throwUnidadeOperationFailed({ unidadeId: id });
     }
-    return unidade;
   }
 
   /**
@@ -106,6 +120,16 @@ export class UnidadeRepository {
    * @returns Resultado da operação
    */
   async remove(id: string): Promise<void> {
-    await this.repository.softDelete(id);
+    try {
+      const result = await this.repository.softDelete(id);
+      if (result.affected === 0) {
+        throwUnidadeNotFound(id);
+      }
+    } catch (error) {
+      if (error.name === 'AppError') {
+        throw error;
+      }
+      throwUnidadeOperationFailed({ unidadeId: id });
+    }
   }
 }

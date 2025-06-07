@@ -1,11 +1,11 @@
+import { Injectable, Logger } from '@nestjs/common';
 import {
-  Injectable,
-  NotFoundException,
-  ConflictException,
-  Logger,
-  InternalServerErrorException,
-} from '@nestjs/common';
-import { DataSource } from 'typeorm';
+  throwUnidadeNotFound,
+  throwUnidadeAlreadyExists,
+  throwUnidadeOperationFailed,
+} from '../../../shared/exceptions/error-catalog/domains/unidade.errors';
+import { DataSource, ILike } from 'typeorm';
+import { TipoUnidade, StatusUnidade } from '../../../entities/unidade.entity';
 import { UnidadeRepository } from '../repositories/unidade.repository';
 import { SetorRepository } from '../repositories/setor.repository';
 import { CreateUnidadeDto } from '../dto/create-unidade.dto';
@@ -43,18 +43,22 @@ export class UnidadeService {
     const { page = 1, limit = 10, search, tipo, status } = options || {};
 
     // Construir filtros
-    const where: any = {};
+    const where: {
+      nome?: any;
+      tipo?: TipoUnidade;
+      status?: StatusUnidade;
+    } = {};
 
     if (search) {
-      where.nome = { $iLike: `%${search}%` };
+      where.nome = ILike(`%${search}%`);
     }
 
     if (tipo) {
-      where.tipo = tipo;
+      where.tipo = tipo as TipoUnidade;
     }
 
     if (status) {
-      where.status = status;
+      where.status = status as StatusUnidade;
     }
 
     // Calcular skip para paginação
@@ -87,7 +91,7 @@ export class UnidadeService {
     const unidade = await this.unidadeRepository.findById(id);
 
     if (!unidade) {
-      throw new NotFoundException('Unidade não encontrada');
+      throwUnidadeNotFound(id);
     }
 
     return unidade;
@@ -109,7 +113,7 @@ export class UnidadeService {
     );
     if (codigoExistente) {
       this.logger.warn(`Código ${createUnidadeDto.codigo} já está em uso`);
-      throw new ConflictException('Código já está em uso');
+      throwUnidadeAlreadyExists({ codigo: createUnidadeDto.codigo });
     }
 
     try {
@@ -129,9 +133,7 @@ export class UnidadeService {
       });
     } catch (error) {
       this.logger.error(`Erro ao criar unidade: ${error.message}`, error.stack);
-      throw new InternalServerErrorException(
-        'Falha ao criar unidade. Por favor, tente novamente.',
-      );
+      throwUnidadeOperationFailed({ unidadeId: undefined });
     }
   }
 
@@ -150,7 +152,7 @@ export class UnidadeService {
     const unidade = await this.unidadeRepository.findById(id);
     if (!unidade) {
       this.logger.warn(`Unidade não encontrada: ${id}`);
-      throw new NotFoundException('Unidade não encontrada');
+      throwUnidadeNotFound(id);
     }
 
     // Verificar se código já existe (se fornecido)
@@ -160,7 +162,7 @@ export class UnidadeService {
       );
       if (codigoExistente) {
         this.logger.warn(`Código ${updateUnidadeDto.codigo} já está em uso`);
-        throw new ConflictException('Código já está em uso');
+        throwUnidadeAlreadyExists({ codigo: updateUnidadeDto.codigo });
       }
     }
 
@@ -176,9 +178,7 @@ export class UnidadeService {
 
         const unidadeAtualizada = await unidadeRepo.findOne({ where: { id } });
         if (!unidadeAtualizada) {
-          throw new NotFoundException(
-            'Unidade não encontrada após atualização',
-          );
+          throwUnidadeNotFound(id);
         }
 
         this.logger.log(`Unidade ${id} atualizada com sucesso`);
@@ -189,15 +189,11 @@ export class UnidadeService {
         `Erro ao atualizar unidade ${id}: ${error.message}`,
         error.stack,
       );
-      if (
-        error instanceof NotFoundException ||
-        error instanceof ConflictException
-      ) {
+      // Re-throw erros do catálogo
+      if (error.name === 'AppError') {
         throw error;
       }
-      throw new InternalServerErrorException(
-        'Falha ao atualizar unidade. Por favor, tente novamente.',
-      );
+      throwUnidadeOperationFailed({ unidadeId: id });
     }
   }
 
@@ -218,7 +214,7 @@ export class UnidadeService {
     const unidade = await this.findById(id);
     if (!unidade) {
       this.logger.warn(`Unidade não encontrada: ${id}`);
-      throw new NotFoundException(`Unidade com ID ${id} não encontrada`);
+      throwUnidadeNotFound(id);
     }
 
     // Verificar se há usuários vinculados à unidade (se estiver inativando)
@@ -242,9 +238,7 @@ export class UnidadeService {
 
         const unidadeAtualizada = await unidadeRepo.findOne({ where: { id } });
         if (!unidadeAtualizada) {
-          throw new NotFoundException(
-            'Unidade não encontrada após atualização de status',
-          );
+          throwUnidadeNotFound(id);
         }
 
         this.logger.log(
@@ -257,12 +251,11 @@ export class UnidadeService {
         `Erro ao atualizar status da unidade ${id}: ${error.message}`,
         error.stack,
       );
-      if (error instanceof NotFoundException) {
+      // Re-throw erros do catálogo
+      if (error.name === 'AppError') {
         throw error;
       }
-      throw new InternalServerErrorException(
-        'Falha ao atualizar status da unidade. Por favor, tente novamente.',
-      );
+      throwUnidadeOperationFailed({ unidadeId: id });
     }
   }
 
@@ -275,7 +268,7 @@ export class UnidadeService {
     // Verificar se unidade existe
     const unidade = await this.findById(unidadeId);
     if (!unidade) {
-      throw new NotFoundException(`Unidade com ID ${unidadeId} não encontrada`);
+      throwUnidadeNotFound(unidadeId);
     }
 
     // Buscar setores

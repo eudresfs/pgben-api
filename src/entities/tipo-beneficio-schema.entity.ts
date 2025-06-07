@@ -15,24 +15,82 @@ import { Status } from '@/enums';
 
 /**
  * Interface para definir a estrutura de um campo da entidade
+ * Compatível com padrões de formulários dinâmicos do frontend
  */
 export interface CampoEstrutura {
+  // Propriedades básicas do campo
   nome: string;
-  tipo: 'string' | 'number' | 'boolean' | 'date' | 'enum' | 'array';
+  tipo: 'text' | 'textarea' | 'number' | 'checkbox' | 'date' | 'select' | 'multiselect' | 'radio' | 'file';
   obrigatorio: boolean;
   label: string;
   descricao?: string;
+  
+  // Validações do campo
   validacoes?: {
     min?: number;
     max?: number;
+    minLength?: number;
+    maxLength?: number;
     pattern?: string;
-    opcoes?: string[];
+    minDate?: string;
+    maxDate?: string;
+    integer?: boolean;
+    maxItems?: number;
+    items?: any;
+    custom?: string; // Para validações customizadas
   };
-  opcoes?: string[];
+  
+  // Opções para campos select/multiselect/radio
+  opcoes?: Array<{
+    value: string | number;
+    label: string;
+    disabled?: boolean;
+  }>;
+  
+  // Dependências condicionais
   dependeDe?: {
     campo: string;
     valor: any;
-    condicao: 'igual' | 'diferente' | 'maior' | 'menor' | 'contem';
+    condicao: 'igual' | 'diferente' | 'maior' | 'menor' | 'contem' | 'vazio' | 'nao_vazio';
+    acao?: 'mostrar' | 'ocultar' | 'habilitar' | 'desabilitar';
+  };
+  
+  // Propriedades específicas de UI para renderização no frontend
+  ui: {
+    // Layout e posicionamento
+    colSpan?: number; // Número de colunas que o campo ocupa (1-12)
+    rows?: number; // Número de linhas para textarea
+    order?: number; // Ordem de exibição no formulário
+    
+    // Formatação e máscara
+    mask?: string; // Máscara de entrada (ex: '000.000.000-00')
+    placeholder?: string; // Texto de placeholder
+    
+    // Comportamento
+    disabled?: boolean; // Campo desabilitado
+    readonly?: boolean; // Campo somente leitura
+    hidden?: boolean; // Campo oculto
+    
+    // Estilo e aparência
+    variant?: 'outlined' | 'filled' | 'standard'; // Variante do campo (Material-UI)
+    size?: 'small' | 'medium' | 'large'; // Tamanho do campo
+    color?: 'primary' | 'secondary' | 'error' | 'warning' | 'info' | 'success';
+    
+    // Propriedades específicas por tipo
+    multiple?: boolean; // Para select múltiplo
+    accept?: string; // Para campos de arquivo (ex: 'image/*')
+    step?: number; // Para campos numéricos
+    
+    // Ajuda e documentação
+    helpText?: string; // Texto de ajuda
+    tooltip?: string; // Tooltip explicativo
+    
+    // Validação visual
+    showValidationIcon?: boolean; // Mostrar ícone de validação
+    
+    // Agrupamento
+    group?: string; // Nome do grupo para agrupar campos relacionados
+    section?: string; // Seção do formulário
   };
 }
 

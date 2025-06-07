@@ -186,13 +186,13 @@ export class RegraConflitoPapel {
    */
   isConsistente(): boolean {
     // Verifica se tem papéis origem e destino
-    if (!this.papel_origem_id || !this.papel_destino_id) return false;
+    if (!this.papel_origem_id || !this.papel_destino_id) {return false;}
 
     // Verifica se tem descrição
-    if (!this.descricao || this.descricao.trim().length === 0) return false;
+    if (!this.descricao || this.descricao.trim().length === 0) {return false;}
 
     // Verifica se a descrição não é muito curta
-    if (this.descricao.trim().length < 10) return false;
+    if (this.descricao.trim().length < 10) {return false;}
 
     return true;
   }
@@ -335,7 +335,7 @@ export class RegraConflitoPapel {
     papelOrigemId: string;
     papelDestinoId: string;
   }): boolean {
-    if (!this.isAtivo()) return false;
+    if (!this.isAtivo()) {return false;}
 
     // Verifica correspondência direta
     if (

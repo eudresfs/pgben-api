@@ -101,12 +101,12 @@ export class DadosBeneficioFactoryService {
   ): Promise<void> {
     const solicitacao = await this.solicitacaoService.findById(solicitacaoId);
     
-    if (!solicitacao.tipo_beneficio_id) {
+    if (!solicitacao.tipo_beneficio.id) {
       throw new BadRequestException('Solicitação não possui tipo de benefício definido');
     }
 
     const tipoBeneficioEntity = await this.tipoBeneficioRepository.findOne({
-      where: { id: solicitacao.tipo_beneficio_id }
+      where: { id: solicitacao.tipo_beneficio.id }
     });
 
     if (!tipoBeneficioEntity) {

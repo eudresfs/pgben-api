@@ -28,6 +28,7 @@ export enum ErrorCategory {
   INTEGRATIONS = 'INTEGRATIONS',
   OPERATIONAL_FLOW = 'OPERATIONAL_FLOW',
   SYSTEM = 'SYSTEM',
+  BUSINESS = 'BUSINESS',
 }
 
 /**
@@ -53,3 +54,8 @@ export interface ErrorDefinition {
   /** Contexto adicional ou metadados */
   metadata?: Record<string, any>;
 }
+
+/**
+ * Tipo para códigos de erro de domínio
+ */
+export type DomainErrorCode = string;

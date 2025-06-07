@@ -36,6 +36,8 @@ async function testarSeeds() {
     database: dbConfig.database,
     synchronize: false,
     logging: false,
+    ssl: false,
+    entities: [path.join(__dirname, '../../**/*.entity{.ts,.js}')],
   });
 
   try {

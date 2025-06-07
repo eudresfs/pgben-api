@@ -183,7 +183,7 @@ export class Permission {
    * Valida o formato do nome da permissão
    */
   validarFormatoNome(): boolean {
-    if (!this.nome) return false;
+    if (!this.nome) {return false;}
 
     // Formato esperado: modulo.recurso.operacao ou modulo.*
     const regex = /^[a-zA-Z][a-zA-Z0-9_-]*\.[a-zA-Z*][a-zA-Z0-9_.*-]*$/;

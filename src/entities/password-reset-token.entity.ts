@@ -321,9 +321,9 @@ export class PasswordResetToken {
    * @returns status do token
    */
   getStatus(): 'valid' | 'expired' | 'used' | 'too_many_attempts' {
-    if (this.is_used) return 'used';
-    if (this.isExpired()) return 'expired';
-    if (this.hasTooManyAttempts()) return 'too_many_attempts';
+    if (this.is_used) {return 'used';}
+    if (this.isExpired()) {return 'expired';}
+    if (this.hasTooManyAttempts()) {return 'too_many_attempts';}
     return 'valid';
   }
 

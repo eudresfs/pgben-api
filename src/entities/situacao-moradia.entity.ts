@@ -216,7 +216,7 @@ export class SituacaoMoradia {
    * Obtém o valor do aluguel formatado
    */
   getValorAluguelFormatado(): string {
-    if (!this.temValorAluguel()) return 'Não informado';
+    if (!this.temValorAluguel()) {return 'Não informado';}
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL',
@@ -251,10 +251,10 @@ export class SituacaoMoradia {
    */
   getItensInfraestrutura(): number {
     let count = 0;
-    if (this.possui_banheiro) count++;
-    if (this.possui_energia_eletrica) count++;
-    if (this.possui_agua_encanada) count++;
-    if (this.possui_coleta_lixo) count++;
+    if (this.possui_banheiro) {count++;}
+    if (this.possui_energia_eletrica) {count++;}
+    if (this.possui_agua_encanada) {count++;}
+    if (this.possui_coleta_lixo) {count++;}
     return count;
   }
 
@@ -265,12 +265,12 @@ export class SituacaoMoradia {
     let pontos = 0;
 
     // Tipo de moradia (40 pontos)
-    if (this.isMoradiaPropria()) pontos += 40;
-    else if (this.isMoradiaAlugada()) pontos += 35;
-    else if (this.isMoradiaCedida()) pontos += 25;
-    else if (this.isOcupacao()) pontos += 15;
-    else if (this.isAbrigo()) pontos += 10;
-    else if (this.isSituacaoRua()) pontos += 0;
+    if (this.isMoradiaPropria()) {pontos += 40;}
+    else if (this.isMoradiaAlugada()) {pontos += 35;}
+    else if (this.isMoradiaCedida()) {pontos += 25;}
+    else if (this.isOcupacao()) {pontos += 15;}
+    else if (this.isAbrigo()) {pontos += 10;}
+    else if (this.isSituacaoRua()) {pontos += 0;}
 
     // Infraestrutura (60 pontos - 15 cada)
     pontos += this.getItensInfraestrutura() * 15;
@@ -323,7 +323,7 @@ export class SituacaoMoradia {
    * Obtém a descrição do tempo de moradia
    */
   getDescricaoTempoMoradia(): string {
-    if (!this.temTempoMoradia()) return 'Não informado';
+    if (!this.temTempoMoradia()) {return 'Não informado';}
 
     if (this.tempo_moradia < 12) {
       return `${this.tempo_moradia} mês(es)`;
@@ -343,10 +343,10 @@ export class SituacaoMoradia {
    */
   getItensInfraestruturaDisponiveis(): string[] {
     const itens: string[] = [];
-    if (this.possui_banheiro) itens.push('Banheiro');
-    if (this.possui_energia_eletrica) itens.push('Energia Elétrica');
-    if (this.possui_agua_encanada) itens.push('Água Encanada');
-    if (this.possui_coleta_lixo) itens.push('Coleta de Lixo');
+    if (this.possui_banheiro) {itens.push('Banheiro');}
+    if (this.possui_energia_eletrica) {itens.push('Energia Elétrica');}
+    if (this.possui_agua_encanada) {itens.push('Água Encanada');}
+    if (this.possui_coleta_lixo) {itens.push('Coleta de Lixo');}
     return itens;
   }
 
@@ -355,10 +355,10 @@ export class SituacaoMoradia {
    */
   getItensInfraestruturaFaltantes(): string[] {
     const itens: string[] = [];
-    if (!this.possui_banheiro) itens.push('Banheiro');
-    if (!this.possui_energia_eletrica) itens.push('Energia Elétrica');
-    if (!this.possui_agua_encanada) itens.push('Água Encanada');
-    if (!this.possui_coleta_lixo) itens.push('Coleta de Lixo');
+    if (!this.possui_banheiro) {itens.push('Banheiro');}
+    if (!this.possui_energia_eletrica) {itens.push('Energia Elétrica');}
+    if (!this.possui_agua_encanada) {itens.push('Água Encanada');}
+    if (!this.possui_coleta_lixo) {itens.push('Coleta de Lixo');}
     return itens;
   }
 
@@ -393,7 +393,7 @@ export class SituacaoMoradia {
    */
   isConsistente(): boolean {
     // Verifica se tem cidadão
-    if (!this.cidadao_id) return false;
+    if (!this.cidadao_id) {return false;}
 
     // Se é alugada, deve ter valor do aluguel
     if (this.isMoradiaAlugada() && !this.temValorAluguel()) {
@@ -418,7 +418,7 @@ export class SituacaoMoradia {
    */
   podeSerRemovido(): boolean {
     // Não pode remover se já foi removido
-    if (this.foiRemovido()) return false;
+    if (this.foiRemovido()) {return false;}
 
     return true;
   }
@@ -469,10 +469,10 @@ export class SituacaoMoradia {
    * Obtém o nível de vulnerabilidade habitacional
    */
   getNivelVulnerabilidade(): 'BAIXO' | 'MEDIO' | 'ALTO' | 'CRITICO' {
-    if (this.isSituacaoRua()) return 'CRITICO';
-    if (this.isAbrigo() || this.isOcupacao()) return 'ALTO';
+    if (this.isSituacaoRua()) {return 'CRITICO';}
+    if (this.isAbrigo() || this.isOcupacao()) {return 'ALTO';}
     if (!this.isMoradiaAdequada() || this.getPontuacaoAdequacao() < 50)
-      return 'MEDIO';
+      {return 'MEDIO';}
     return 'BAIXO';
   }
 

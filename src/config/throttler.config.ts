@@ -22,17 +22,17 @@ export const createThrottlerConfig = (
       {
         name: 'default',
         ttl: configService.get<number>('THROTTLE_TTL', 60) * 1000, // Converter para ms
-        limit: configService.get<number>('THROTTLE_LIMIT', 100),
+        limit: configService.get<number>('THROTTLE_LIMIT', 200), // 200 requests por minuto
       },
       {
         name: 'auth',
         ttl: configService.get<number>('THROTTLE_AUTH_TTL', 300) * 1000, // 5 minutos
-        limit: configService.get<number>('THROTTLE_AUTH_LIMIT', 5), // 5 tentativas por 5 min
+        limit: configService.get<number>('THROTTLE_AUTH_LIMIT', 10), // 10 tentativas por 5 min
       },
       {
         name: 'upload',
         ttl: configService.get<number>('THROTTLE_UPLOAD_TTL', 60) * 1000, // 1 minuto
-        limit: configService.get<number>('THROTTLE_UPLOAD_LIMIT', 10), // 10 uploads por minuto
+        limit: configService.get<number>('THROTTLE_UPLOAD_LIMIT', 20), // 20 uploads por minuto
       },
       {
         name: 'api',
@@ -73,7 +73,7 @@ export const createThrottlerConfig = (
  */
 export const AUTH_THROTTLE_CONFIG = {
   default: {
-    limit: 5,
+    limit: 10,
     ttl: 300000, // 5 minutos em ms
   },
 };
@@ -83,7 +83,7 @@ export const AUTH_THROTTLE_CONFIG = {
  */
 export const UPLOAD_THROTTLE_CONFIG = {
   default: {
-    limit: 10,
+    limit: 20,
     ttl: 60000, // 1 minuto em ms
   },
 };

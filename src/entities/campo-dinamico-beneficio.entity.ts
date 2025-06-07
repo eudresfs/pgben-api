@@ -306,7 +306,7 @@ export class CampoDinamicoBeneficio {
    * Obtém o valor mínimo
    */
   getValorMinimo(): number | null {
-    if (!this.temValidacaoMin()) return null;
+    if (!this.temValidacaoMin()) {return null;}
     return this.validacoes.min ?? null;
   }
 
@@ -314,7 +314,7 @@ export class CampoDinamicoBeneficio {
    * Obtém o valor máximo
    */
   getValorMaximo(): number | null {
-    if (!this.temValidacaoMax()) return null;
+    if (!this.temValidacaoMax()) {return null;}
     return this.validacoes.max ?? null;
   }
 
@@ -322,7 +322,7 @@ export class CampoDinamicoBeneficio {
    * Obtém o comprimento mínimo
    */
   getComprimentoMinimo(): number | null {
-    if (!this.temValidacaoMinLength()) return null;
+    if (!this.temValidacaoMinLength()) {return null;}
     return this.validacoes.minLength ?? null;
   }
 
@@ -330,7 +330,7 @@ export class CampoDinamicoBeneficio {
    * Obtém o comprimento máximo
    */
   getComprimentoMaximo(): number | null {
-    if (!this.temValidacaoMaxLength()) return null;
+    if (!this.temValidacaoMaxLength()) {return null;}
     return this.validacoes.maxLength ?? null;
   }
 
@@ -338,7 +338,7 @@ export class CampoDinamicoBeneficio {
    * Obtém o padrão regex
    */
   getPadrao(): string | null {
-    if (!this.temValidacaoPattern()) return null;
+    if (!this.temValidacaoPattern()) {return null;}
     return this.validacoes.pattern ?? null;
   }
 
@@ -346,7 +346,7 @@ export class CampoDinamicoBeneficio {
    * Obtém os valores do enum
    */
   getValoresEnum(): string[] {
-    if (!this.temValidacaoEnum()) return [];
+    if (!this.temValidacaoEnum()) {return [];}
     return this.validacoes.enum ?? [];
   }
 
@@ -354,7 +354,7 @@ export class CampoDinamicoBeneficio {
    * Obtém o formato
    */
   getFormato(): string | null {
-    if (!this.temValidacaoFormat()) return null;
+    if (!this.temValidacaoFormat()) {return null;}
     return this.validacoes.format ?? null;
   }
 
@@ -529,19 +529,19 @@ export class CampoDinamicoBeneficio {
    */
   isConsistente(): boolean {
     // Verifica se tem tipo de benefício
-    if (!this.tipo_beneficio_id) return false;
+    if (!this.tipo_beneficio_id) {return false;}
 
     // Verifica se tem label
-    if (!this.label || this.label.trim().length === 0) return false;
+    if (!this.label || this.label.trim().length === 0) {return false;}
 
     // Verifica se tem nome
-    if (!this.nome || this.nome.trim().length === 0) return false;
+    if (!this.nome || this.nome.trim().length === 0) {return false;}
 
     // Verifica se tem tipo válido
-    if (!Object.values(TipoDado).includes(this.tipo)) return false;
+    if (!Object.values(TipoDado).includes(this.tipo)) {return false;}
 
     // Verifica se a ordem é válida
-    if (this.ordem < 1) return false;
+    if (this.ordem < 1) {return false;}
 
     // Verifica validações se existirem
     if (this.temValidacoes()) {
@@ -578,7 +578,7 @@ export class CampoDinamicoBeneficio {
    */
   podeSerRemovido(): boolean {
     // Não pode remover se já foi removido
-    if (this.foiRemovido()) return false;
+    if (this.foiRemovido()) {return false;}
 
     // Pode implementar lógica adicional aqui
     // Por exemplo, verificar se tem dados associados
@@ -610,10 +610,10 @@ export class CampoDinamicoBeneficio {
    */
   isCritico(): boolean {
     // Campos obrigatórios são críticos
-    if (this.isObrigatorio()) return true;
+    if (this.isObrigatorio()) {return true;}
 
     // Campos com ordem baixa (primeiros) são mais críticos
-    if (this.ordem <= 3) return true;
+    if (this.ordem <= 3) {return true;}
 
     return false;
   }
@@ -625,7 +625,7 @@ export class CampoDinamicoBeneficio {
     let pontos = 0;
 
     // Tipo de dado complexo
-    if (this.isCampoObjeto() || this.isCampoArray()) pontos += 2;
+    if (this.isCampoObjeto() || this.isCampoArray()) {pontos += 2;}
 
     // Validações
     if (this.temValidacoes()) {
@@ -633,10 +633,10 @@ export class CampoDinamicoBeneficio {
     }
 
     // Obrigatório
-    if (this.isObrigatorio()) pontos += 1;
+    if (this.isObrigatorio()) {pontos += 1;}
 
-    if (pontos <= 2) return 'BAIXA';
-    if (pontos <= 5) return 'MEDIA';
+    if (pontos <= 2) {return 'BAIXA';}
+    if (pontos <= 5) {return 'MEDIA';}
     return 'ALTA';
   }
 

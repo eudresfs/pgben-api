@@ -91,7 +91,7 @@ export class Cidadao {
 
   @Column({ type: 'date' })
   @IsNotEmpty({ message: 'Data de nascimento é obrigatória' })
-  data_nascimento: Date;
+  data_nascimento: string;
 
   @OneToMany(() => PapelCidadao, (papelCidadao) => papelCidadao.cidadao)
   papeis: PapelCidadao[];
@@ -271,7 +271,7 @@ export class Cidadao {
    * @returns endereço formatado
    */
   getEnderecoCompleto(): string {
-    if (!this.endereco) return 'Endereço não informado';
+    if (!this.endereco) {return 'Endereço não informado';}
 
     const { logradouro, numero, complemento, bairro, cidade, estado, cep } =
       this.endereco;
@@ -402,10 +402,10 @@ export class Cidadao {
   getFaixaEtaria(): string {
     const idade = this.getIdade();
 
-    if (idade <= 12) return 'Criança';
-    if (idade <= 17) return 'Adolescente';
-    if (idade <= 29) return 'Jovem';
-    if (idade <= 59) return 'Adulto';
+    if (idade <= 12) {return 'Criança';}
+    if (idade <= 17) {return 'Adolescente';}
+    if (idade <= 29) {return 'Jovem';}
+    if (idade <= 59) {return 'Adulto';}
     return 'Idoso';
   }
 

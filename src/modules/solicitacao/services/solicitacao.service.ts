@@ -230,27 +230,39 @@ export class SolicitacaoService {
         'solicitacao.id',
         'solicitacao.protocolo',
         'solicitacao.status',
+        'solicitacao.parecer_semtas',
+        'solicitacao.dados_complementares',
         'solicitacao.data_abertura',
         'solicitacao.observacoes',
         // Dados básicos do beneficiário
         'beneficiario.id',
         'beneficiario.nome',
+        'beneficiario.cpf',
+        'beneficiario.rg',
+        'beneficiario.nis',
+        'beneficiario.data_nascimento',
+        'beneficiario.nome_mae',
+        'beneficiario.naturalidade',
+        'beneficiario.sexo',
+        'beneficiario.estado_civil',
+        'beneficiario.telefone',
+        'beneficiario.email',
+
         // Dados básicos do benefício
         'tipo_beneficio.id',
         'tipo_beneficio.nome',
+        'tipo_beneficio.descricao',
         'tipo_beneficio.codigo',
+        'tipo_beneficio.valor',
+
         // Dados básicos do técnico
         'tecnico.id',
         'tecnico.nome',
+        
         // Dados básicos da unidade
         'unidade.id',
         'unidade.nome',
-        // Dados dos documentos
-        'documentos.id',
-        'documentos.tipo',
-        'documentos.nome_original',
-        'documentos.verificado',
-        'documentos.data_upload',
+        'unidade.sigla',
       ])
       .where('solicitacao.id = :id', { id })
       .getOne();

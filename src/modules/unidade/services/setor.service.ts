@@ -1,11 +1,13 @@
 import {
   Injectable,
-  NotFoundException,
-  InternalServerErrorException,
   Logger,
-  BadRequestException,
-  ConflictException,
 } from '@nestjs/common';
+import {
+  throwUnidadeNotFound,
+  throwSetorNotFound,
+  throwSetorAlreadyExists,
+  throwSetorOperationFailed,
+} from '../../../shared/exceptions/error-catalog/domains/unidade.errors';
 import { DataSource } from 'typeorm';
 import { SetorRepository } from '../repositories/setor.repository';
 import { UnidadeRepository } from '../repositories/unidade.repository';
@@ -41,7 +43,7 @@ export class SetorService {
     // Validações iniciais
     if (!createSetorDto.unidade_id) {
       this.logger.error('ID da unidade não fornecido');
-      throw new BadRequestException('ID da unidade é obrigatório');
+      throwSetorOperationFailed({ setorId: undefined });
     }
 
     try {
@@ -61,9 +63,7 @@ export class SetorService {
           this.logger.error(
             `Unidade não encontrada: ${createSetorDto.unidade_id}`,
           );
-          throw new NotFoundException(
-            `Unidade com ID ${createSetorDto.unidade_id} não encontrada`,
-          );
+          throwUnidadeNotFound(createSetorDto.unidade_id);
         }
 
         // Verificar se já existe um setor com o mesmo nome na mesma unidade
@@ -79,9 +79,7 @@ export class SetorService {
             this.logger.error(
               `Já existe um setor com o nome '${createSetorDto.nome}' nesta unidade`,
             );
-            throw new ConflictException(
-              `Já existe um setor com o nome '${createSetorDto.nome}' nesta unidade`,
-            );
+            throwSetorAlreadyExists({ setorId: undefined });
           }
         }
 
@@ -98,9 +96,7 @@ export class SetorService {
             this.logger.error(
               `Já existe um setor com a sigla '${createSetorDto.sigla}' nesta unidade`,
             );
-            throw new ConflictException(
-              `Já existe um setor com a sigla '${createSetorDto.sigla}' nesta unidade`,
-            );
+            throwSetorAlreadyExists({ setorId: undefined });
           }
         }
 
@@ -123,28 +119,23 @@ export class SetorService {
     } catch (error) {
       this.logger.error(`Erro ao criar setor: ${error.message}`, error.stack);
 
-      if (
-        error instanceof NotFoundException ||
-        error instanceof BadRequestException ||
-        error instanceof ConflictException
-      ) {
+      // Re-throw erros do catálogo
+      if (error.name === 'AppError') {
         throw error;
       }
 
       // Se for um erro de validação do banco de dados
       if (error.code === '23505') {
         // Código de violação de chave única
-        throw new ConflictException('Já existe um setor com estes dados');
+        throwSetorAlreadyExists({ setorId: undefined });
       }
 
       // Se for um erro de chave estrangeira
       if (error.code === '23503') {
-        throw new BadRequestException('Dados de relacionamento inválidos');
+        throwSetorOperationFailed({ setorId: undefined });
       }
 
-      throw new InternalServerErrorException(
-        'Falha ao criar setor. Por favor, tente novamente.',
-      );
+      throwSetorOperationFailed({ setorId: undefined });
     }
   }
 
@@ -169,7 +160,7 @@ export class SetorService {
         const setorExistente = await setorRepo.findOne({ where: { id } });
         if (!setorExistente) {
           this.logger.error(`Setor não encontrado: ${id}`);
-          throw new NotFoundException(`Setor com ID ${id} não encontrado`);
+          throwSetorNotFound(id);
         }
 
         // Verificar se a unidade existe (se fornecida)
@@ -188,9 +179,7 @@ export class SetorService {
             this.logger.error(
               `Unidade não encontrada: ${updateSetorDto.unidade_id}`,
             );
-            throw new NotFoundException(
-              `Unidade com ID ${updateSetorDto.unidade_id} não encontrada`,
-            );
+            throwUnidadeNotFound(updateSetorDto.unidade_id);
           }
           novaUnidadeId = updateSetorDto.unidade_id;
         }
@@ -212,9 +201,7 @@ export class SetorService {
             this.logger.error(
               `Já existe um setor com o nome '${updateSetorDto.nome}' nesta unidade`,
             );
-            throw new ConflictException(
-              `Já existe um setor com o nome '${updateSetorDto.nome}' nesta unidade`,
-            );
+            throwSetorAlreadyExists({ setorId: id });
           }
         }
 
@@ -235,27 +222,20 @@ export class SetorService {
             this.logger.error(
               `Já existe um setor com a sigla '${updateSetorDto.sigla}' nesta unidade`,
             );
-            throw new ConflictException(
-              `Já existe um setor com a sigla '${updateSetorDto.sigla}' nesta unidade`,
-            );
+            throwSetorAlreadyExists({ setorId: id });
           }
         }
 
-        // Atualizar os demais campos
-        const { unidade_id, ...setorData } = updateSetorDto;
-
         // Atualizar setor
         await setorRepo.update(id, {
-          ...setorData,
+          ...updateSetorDto,
           unidade_id: novaUnidadeId,
         });
 
         // Buscar setor atualizado
         const setorAtualizado = await setorRepo.findOne({ where: { id } });
         if (!setorAtualizado) {
-          throw new NotFoundException(
-            `Setor com ID ${id} não encontrado após atualização`,
-          );
+          throwSetorNotFound(id);
         }
 
         this.logger.log(`Setor ${id} atualizado com sucesso`);
@@ -268,23 +248,18 @@ export class SetorService {
         error.stack,
       );
 
-      if (
-        error instanceof NotFoundException ||
-        error instanceof BadRequestException ||
-        error instanceof ConflictException
-      ) {
+      // Re-throw erros do catálogo
+      if (error.name === 'AppError') {
         throw error;
       }
 
       // Se for um erro de validação do banco de dados
       if (error.code === '23505') {
         // Código de violação de chave única
-        throw new ConflictException('Já existe um setor com estes dados');
+        throwSetorAlreadyExists({ setorId: undefined });
       }
 
-      throw new InternalServerErrorException(
-        'Falha ao atualizar setor. Por favor, tente novamente.',
-      );
+      throwSetorOperationFailed({ setorId: id });
     }
   }
 
@@ -301,7 +276,7 @@ export class SetorService {
 
       if (!setor) {
         this.logger.warn(`Setor não encontrado: ${id}`);
-        throw new NotFoundException('Setor não encontrado');
+        throwSetorNotFound(id);
       }
 
       return setor;
@@ -310,12 +285,11 @@ export class SetorService {
         `Erro ao buscar setor ${id}: ${error.message}`,
         error.stack,
       );
-      if (error instanceof NotFoundException) {
+      // Re-throw erros do catálogo
+      if (error.name === 'AppError') {
         throw error;
       }
-      throw new InternalServerErrorException(
-        'Falha ao buscar setor. Por favor, tente novamente.',
-      );
+      throwSetorOperationFailed({ setorId: id });
     }
   }
 
@@ -332,7 +306,7 @@ export class SetorService {
       const unidade = await this.unidadeRepository.findById(unidadeId);
       if (!unidade) {
         this.logger.warn(`Unidade não encontrada: ${unidadeId}`);
-        throw new NotFoundException('Unidade não encontrada');
+        throwUnidadeNotFound(unidadeId);
       }
 
       // Buscar setores
@@ -353,12 +327,11 @@ export class SetorService {
         `Erro ao buscar setores da unidade ${unidadeId}: ${error.message}`,
         error.stack,
       );
-      if (error instanceof NotFoundException) {
+      // Re-throw erros do catálogo
+      if (error.name === 'AppError') {
         throw error;
       }
-      throw new InternalServerErrorException(
-        'Falha ao buscar setores. Por favor, tente novamente.',
-      );
+      throwSetorOperationFailed({ unidadeId });
     }
   }
 }

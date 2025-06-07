@@ -227,10 +227,10 @@ export class PapelCidadao {
    */
   isConsistente(): boolean {
     // Verifica se tem cidadão
-    if (!this.cidadao_id) return false;
+    if (!this.cidadao_id) {return false;}
 
     // Verifica se tem tipo de papel
-    if (!this.tipo_papel) return false;
+    if (!this.tipo_papel) {return false;}
 
     // Se é representante legal, deve ter documento
     if (this.isRepresentanteLegal() && !this.temDocumentoRepresentacao()) {
@@ -253,7 +253,7 @@ export class PapelCidadao {
    */
   podeSerRemovido(): boolean {
     // Não pode remover se já foi removido
-    if (this.foiRemovido()) return false;
+    if (this.foiRemovido()) {return false;}
 
     // Responsável familiar só pode ser removido se houver outro responsável
     // Esta verificação seria feita no serviço

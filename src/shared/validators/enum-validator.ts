@@ -203,7 +203,7 @@ export class EnumValidationHelper {
     enumObject: object,
     caseSensitive = true,
   ): any {
-    if (!value) return value;
+    if (!value) {return value;}
 
     const enumValues = Object.values(enumObject);
 

@@ -170,7 +170,7 @@ export class ConfiguracaoRenovacao {
    * Verifica se é hora de iniciar o processo de renovação
    */
   isHoraDeRenovar(dataVencimento: Date): boolean {
-    if (!this.isRenovacaoAutomaticaHabilitada()) return false;
+    if (!this.isRenovacaoAutomaticaHabilitada()) {return false;}
 
     const agora = new Date();
     const dataInicioRenovacao =
@@ -183,9 +183,9 @@ export class ConfiguracaoRenovacao {
    * Verifica se ainda pode renovar baseado no limite
    */
   podeRenovar(numeroRenovacoesRealizadas: number): boolean {
-    if (!this.isRenovacaoAutomaticaHabilitada()) return false;
+    if (!this.isRenovacaoAutomaticaHabilitada()) {return false;}
 
-    if (!this.temLimiteRenovacoes()) return true;
+    if (!this.temLimiteRenovacoes()) {return true;}
 
     return (
       this.numero_maximo_renovacoes !== undefined &&
@@ -197,7 +197,7 @@ export class ConfiguracaoRenovacao {
    * Calcula quantas renovações ainda são possíveis
    */
   getRenovacoesRestantes(numeroRenovacoesRealizadas: number): number {
-    if (!this.temLimiteRenovacoes()) return -1; // Ilimitado
+    if (!this.temLimiteRenovacoes()) {return -1;} // Ilimitado
 
     const restantes =
       (this.numero_maximo_renovacoes ?? 0) - numeroRenovacoesRealizadas;
@@ -247,13 +247,13 @@ export class ConfiguracaoRenovacao {
    */
   isConsistente(): boolean {
     // Verifica se tem tipo de benefício
-    if (!this.tipo_beneficio_id) return false;
+    if (!this.tipo_beneficio_id) {return false;}
 
     // Verifica se tem usuário
-    if (!this.usuario_id) return false;
+    if (!this.usuario_id) {return false;}
 
     // Verifica se dias de antecedência é válido
-    if (this.dias_antecedencia_renovacao < 1) return false;
+    if (this.dias_antecedencia_renovacao < 1) {return false;}
 
     // Se tem limite, deve ser positivo
     if (
@@ -306,8 +306,8 @@ export class ConfiguracaoRenovacao {
    * Obtém o nível de automação
    */
   getNivelAutomacao(): 'MANUAL' | 'SEMI_AUTOMATICO' | 'AUTOMATICO' {
-    if (!this.renovacao_automatica) return 'MANUAL';
-    if (this.requer_aprovacao_renovacao) return 'SEMI_AUTOMATICO';
+    if (!this.renovacao_automatica) {return 'MANUAL';}
+    if (this.requer_aprovacao_renovacao) {return 'SEMI_AUTOMATICO';}
     return 'AUTOMATICO';
   }
 
