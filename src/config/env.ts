@@ -273,9 +273,7 @@ if (process.env.NODE_ENV !== 'test') {
 if (env.DEBUG || env.NODE_ENV === 'development') {
   console.log('🔧 Configurações de ambiente carregadas:');
   console.log(`   - DB_HOST: ${env.DB_HOST}`);
-  console.log(`   - DB_PORT: ${env.DB_PORT}`);
   console.log(`   - DB_NAME: ${env.DB_NAME}`);
-  console.log(`   - DB_USER: ${env.DB_USER}`);
   console.log(`   - NODE_ENV: ${env.NODE_ENV}`);
   console.log(`   - APP_PORT: ${env.APP_PORT}`);
 }
