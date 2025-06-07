@@ -88,48 +88,49 @@ export class DataMaskingUtil {
    */
   static maskPixKey(
     chave: string, 
-    tipo: 'CPF' | 'CNPJ' | 'EMAIL' | 'TELEFONE' | 'ALEATORIA'
+    tipo: 'cpf' | 'cnpj' | 'email' | 'telefone' | 'aleatoria'
   ): string {
     if (!chave) {
       return chave;
     }
 
     switch (tipo) {
-      case 'CPF':
-        // Formato: ***.***.***-**
-        if (chave.length === 11) {
-          return '***.***.***-' + chave.slice(-2);
+      case 'cpf':
+        // Mascara CPF mantendo apenas os 3 primeiros e 2 últimos dígitos
+        // Ex: 123.456.789-01 -> 123.***.***-01
+        return chave.replace(/(\d{3})\.?(\d{3})\.?(\d{3})\-?(\d{2})/, '$1.***.***-$4');
+      
+      case 'cnpj':
+        // Mascara CNPJ mantendo apenas os 2 primeiros e 2 últimos dígitos
+        return chave.replace(/(\d{2})\.?(\d{3})\.?(\d{3})\/?([0-9]{4})\-?(\d{2})/, '$1.***.***/****-$5');
+      
+      case 'email':
+        // Mascara email mantendo apenas o primeiro caractere e o domínio
+        // Ex: usuario@dominio.com -> u*****@dominio.com
+        const [localPart, domain] = chave.split('@');
+        if (localPart && domain) {
+          const maskedLocal = localPart.charAt(0) + '*'.repeat(Math.max(localPart.length - 1, 3));
+          return `${maskedLocal}@${domain}`;
         }
-        return '***.***.***-**';
-        
-      case 'CNPJ':
-        // Formato: **.***.***/****-**
-        return '**.***.***/****-**';
-        
-      case 'EMAIL':
-        const emailParts = chave.split('@');
-        if (emailParts.length === 2) {
-          return '***@' + emailParts[1];
-        }
-        return '***@domain.com';
-        
-      case 'TELEFONE':
-        // Manter codigo do pais e mascarar o resto
-        if (chave.startsWith('+55')) {
-          return '+55***********';
-        }
-        return '***********';
-        
-      case 'ALEATORIA':
-        // Manter apenas os ultimos 4 caracteres
-        if (chave.length > 4) {
-          const maskLength = Math.min(chave.length - 4, 8);
-          return '*'.repeat(maskLength) + chave.slice(-4);
-        }
-        return '*'.repeat(chave.length);
-        
+        return chave;
+      
+      case 'telefone':
+        // Mascara telefone mantendo apenas os 2 primeiros e 4 últimos dígitos
+        // Ex: +5584999999999 -> +55****9999
+        return chave.replace(/(\+?\d{2})(\d+)(\d{4})/, '$1****$3');
+      
+      case 'aleatoria':
+         // Para chave aleatória, mascara mantendo apenas os 8 primeiros caracteres
+         // Ex: 123e4567-e89b-12d3-a456-426614174000 -> 123e4567-****-****-****-************
+         if (chave.length > 8) {
+           const prefix = chave.substring(0, 8);
+           const suffix = chave.substring(8);
+           return prefix + '*'.repeat(Math.min(suffix.length, 32));
+         }
+         return chave;
+      
       default:
-        return '*'.repeat(chave.length);
+        return chave;
     }
   }
 
@@ -147,7 +148,7 @@ export class DataMaskingUtil {
     conta?: string;
     agencia?: string;
     pixKey?: string;
-    pixTipo?: 'CPF' | 'CNPJ' | 'EMAIL' | 'TELEFONE' | 'ALEATORIA';
+    pixTipo?: 'cpf' | 'cnpj' | 'email' | 'telefone' | 'aleatoria';
     titular?: string;
   }): any {
     if (!dados) {

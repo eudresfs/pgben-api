@@ -463,9 +463,12 @@ describe('Segurança do Módulo de Pagamento (Integration)', () => {
 
       // Em um ambiente real, algumas requisições seriam limitadas
       // No ambiente de teste, isso depende da configuração do rate limiter
-      console.log(
-        `Requisições limitadas: ${limitedRequests.length} de ${promises.length}`,
-      );
+      // Log para debug dos testes
+      if (process.env.NODE_ENV === 'test' && process.env.DEBUG_TESTS) {
+        console.log(
+          `Requisições limitadas: ${limitedRequests.length} de ${promises.length}`,
+        );
+      }
     });
   });
 });

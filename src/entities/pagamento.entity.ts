@@ -3,12 +3,12 @@ import {
   PrimaryGeneratedColumn,
   Column,
   ManyToOne,
-  OneToMany,
   JoinColumn,
-  Index,
+  OneToMany,
   CreateDateColumn,
   UpdateDateColumn,
   DeleteDateColumn,
+  Index,
 } from 'typeorm';
 import {
   IsNotEmpty,
@@ -23,6 +23,7 @@ import { StatusPagamentoEnum } from '../enums/status-pagamento.enum';
 import { MetodoPagamentoEnum } from '../enums/metodo-pagamento.enum';
 import { Usuario } from './usuario.entity';
 import { Solicitacao } from './solicitacao.entity';
+import { InfoBancaria } from './info-bancaria.entity';
 
 /**
  * Entidade que representa um pagamento de benefício no sistema.
@@ -33,6 +34,22 @@ import { Solicitacao } from './solicitacao.entity';
  * @author Equipe PGBen
  */
 @Entity('pagamento')
+@Index('idx_pagamento_status_created_at', ['status', 'created_at'])
+@Index('idx_pagamento_solicitacao_id', ['solicitacaoId'])
+@Index('idx_pagamento_info_bancaria_id', ['infoBancariaId'], { 
+  where: 'info_bancaria_id IS NOT NULL' 
+})
+@Index('idx_pagamento_liberado_por', ['liberadoPor'])
+@Index('idx_pagamento_data_liberacao', ['dataLiberacao'])
+@Index('idx_pagamento_status_data_liberacao', ['status', 'dataLiberacao'])
+@Index('idx_pagamento_metodo_pagamento', ['metodoPagamento'])
+@Index('idx_pagamento_valor_status', ['valor', 'status'], {
+  where: "status IN ('PROCESSADO', 'PAGO', 'LIBERADO')"
+})
+@Index('idx_pagamento_removed_at', ['removed_at'], {
+  where: 'removed_at IS NULL'
+})
+@Index('idx_pagamento_liberado_por_created_at', ['liberadoPor', 'created_at'])
 export class Pagamento {
   /**
    * Identificador único do pagamento
@@ -135,9 +152,9 @@ export class Pagamento {
   @JoinColumn({ name: 'solicitacao_id' })
   solicitacao: Solicitacao;
 
-  /* @ManyToOne(() => InfoBancaria)
+  @ManyToOne(() => InfoBancaria)
   @JoinColumn({ name: 'info_bancaria_id' })
-  infoBancaria: InfoBancaria; */
+  infoBancaria: InfoBancaria; 
 
   @ManyToOne(() => Usuario)
   @JoinColumn({ name: 'liberado_por' })

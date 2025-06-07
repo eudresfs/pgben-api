@@ -28,6 +28,7 @@ import { CPFValidator } from '../validators/cpf-validator';
 import { NISValidator } from '../validators/nis-validator';
 import { isUUID } from 'class-validator';
 import { normalizeEnumFields } from '../../../shared/utils/enum-normalizer.util';
+// import { InfoBancariaService } from './info-bancaria.service'; // Removido para evitar dependência circular
 
 /**
  * Serviço de cidadãos
@@ -1424,4 +1425,93 @@ export class CidadaoService {
       );
     }
   }
+
+  /**
+   * Verifica se existe relação familiar entre dois cidadãos
+   * @param cidadaoId ID do cidadão principal
+   * @param familiarId ID do familiar a ser verificado
+   * @returns True se existe relação familiar, false caso contrário
+   */
+  async verificarRelacaoFamiliar(
+    cidadaoId: string,
+    familiarId: string,
+  ): Promise<boolean> {
+    try {
+      this.logger.log(
+        `Verificando relação familiar entre cidadão ${cidadaoId} e familiar ${familiarId}`,
+      );
+
+      // Buscar cidadão com composição familiar
+      const cidadao = await this.cidadaoRepository.findById(
+        cidadaoId,
+        true, // incluir relacionamentos
+      );
+
+      if (!cidadao || !cidadao.composicao_familiar) {
+        this.logger.debug(
+          `Cidadão ${cidadaoId} não encontrado ou sem composição familiar`,
+        );
+        return false;
+      }
+
+      // Verificar se o familiarId está na composição familiar
+      const temRelacao = cidadao.composicao_familiar.some(
+        (membro) => membro.id === familiarId,
+      );
+
+      this.logger.debug(
+        `Relação familiar ${temRelacao ? 'encontrada' : 'não encontrada'} entre ${cidadaoId} e ${familiarId}`,
+      );
+
+      return temRelacao;
+    } catch (error) {
+      this.logger.error(
+        `Erro ao verificar relação familiar: ${error.message}`,
+        error.stack,
+      );
+      return false;
+    }
+  }
+
+  /**
+   * Obtém as relações familiares de um cidadão
+   * @param cidadaoId ID do cidadão
+   * @returns Lista de membros da composição familiar
+   */
+  async getRelacoesFamiliares(cidadaoId: string): Promise<any[]> {
+    try {
+      this.logger.log(
+        `Obtendo relações familiares do cidadão ${cidadaoId}`,
+      );
+
+      // Buscar cidadão com composição familiar
+      const cidadao = await this.cidadaoRepository.findById(
+        cidadaoId,
+        true, // incluir relacionamentos
+      );
+
+      if (!cidadao || !cidadao.composicao_familiar) {
+        this.logger.debug(
+          `Cidadão ${cidadaoId} não encontrado ou sem composição familiar`,
+        );
+        return [];
+      }
+
+      return cidadao.composicao_familiar.map((membro) => ({
+        id: membro.id,
+        nome: membro.nome,
+        cpf: membro.cpf,
+        parentesco: membro.parentesco,
+        idade: membro.idade,
+        ocupacao: membro.ocupacao,
+        renda: membro.renda,
+      }));
+    } catch (error) {
+      this.logger.error(
+        `Erro ao obter relações familiares: ${error.message}`,
+        error.stack,
+      );
+      return [];
+     }
+   }
 }

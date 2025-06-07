@@ -98,18 +98,7 @@ export class PagamentoService {
       usuarioId
     );
 
-    // Registrar operação no log de auditoria
-    const createLogDto = new (await import('../../auditoria/dto/create-log-auditoria.dto')).CreateLogAuditoriaDto();
-    Object.assign(createLogDto, {
-      tipo_operacao: TipoOperacao.CREATE,
-      entidade_afetada: 'Pagamento',
-      entidade_id: result.id,
-      usuario_id: usuarioId,
-      dados_anteriores: undefined,
-      dados_novos: result,
-      descricao: 'Pagamento criado no sistema',
-    });
-    await this.auditoriaService.create(createLogDto);
+    // A auditoria será registrada automaticamente pelo AuditoriaInterceptor
 
     return result;
   }
@@ -150,18 +139,7 @@ export class PagamentoService {
     // Salvar a atualização
     const result = await this.pagamentoRepository.save(pagamento);
 
-    // Registrar operação no log de auditoria
-    const updateLogDto = new (await import('../../auditoria/dto/create-log-auditoria.dto')).CreateLogAuditoriaDto();
-    Object.assign(updateLogDto, {
-      tipo_operacao: TipoOperacao.UPDATE,
-      entidade_afetada: 'Pagamento',
-      entidade_id: id,
-      usuario_id: usuarioId,
-      dados_anteriores: dadosAnteriores,
-      dados_novos: result,
-      descricao: `Status alterado para ${novoStatus}`,
-    });
-    await this.auditoriaService.create(updateLogDto);
+    // A auditoria será registrada automaticamente pelo AuditoriaInterceptor
 
     return result;
   }
@@ -215,18 +193,7 @@ export class PagamentoService {
        usuarioId
      );
 
-    // Registrar operação no log de auditoria
-    const deleteLogDto = new (await import('../../auditoria/dto/create-log-auditoria.dto')).CreateLogAuditoriaDto();
-    Object.assign(deleteLogDto, {
-      tipo_operacao: TipoOperacao.DELETE,
-      entidade_afetada: 'Pagamento',
-      entidade_id: id,
-      usuario_id: usuarioId,
-      dados_anteriores: dadosAnteriores,
-      dados_novos: result,
-      descricao: motivoCancelamento,
-    });
-    await this.auditoriaService.create(deleteLogDto);
+    // A auditoria será registrada automaticamente pelo AuditoriaInterceptor
 
     return result;
   }

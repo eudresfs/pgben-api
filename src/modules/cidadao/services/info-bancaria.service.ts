@@ -123,6 +123,11 @@ export class InfoBancariaService {
     includeRelations?: boolean;
   }): Promise<{ data: InfoBancariaResponseDto[]; total: number }> {
     try {
+      // Valida UUID se cidadao_id for fornecido
+      if (options?.cidadao_id && !this.isValidUUID(options.cidadao_id)) {
+        throw new BadRequestException('Validation failed (uuid v 4 is expected)');
+      }
+
       const [infosBancarias, total] = await this.infoBancariaRepository.findAll(
         {
           skip: options?.skip,
@@ -424,6 +429,19 @@ export class InfoBancariaService {
         'Formato de agência inválido para Banco do Brasil',
       );
     }
+  }
+
+  /**
+   * Valida se uma string é um UUID v4 válido
+   * @param uuid String a ser validada
+   * @returns true se for um UUID v4 válido
+   */
+  private isValidUUID(uuid: string): boolean {
+    const uuidV4Regex = new RegExp(
+      '^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$',
+      'i'
+    );
+    return uuidV4Regex.test(uuid);
   }
 
   /**

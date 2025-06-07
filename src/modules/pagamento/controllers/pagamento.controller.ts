@@ -9,6 +9,7 @@ import {
   Query,
   UseGuards,
   Request,
+  UseInterceptors,
 } from '@nestjs/common';
 import {
   ApiOperation,
@@ -17,7 +18,13 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
+import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
+import { PermissionGuard } from '../../../auth/guards/permission.guard';
+import { TipoEscopo } from '../../../entities/user-permission.entity';
 import { PagamentoService } from '../services/pagamento.service';
+import { PagamentoMappingService } from '../services/pagamento-mapping.service';
+import { PagamentoResponseService } from '../services/pagamento-response.service';
 import { PagamentoCreateDto } from '../dtos/pagamento-create.dto';
 import { PagamentoResponseDto } from '../dtos/pagamento-response.dto';
 import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
@@ -29,8 +36,9 @@ import {
   VerificarUnidade,
 } from '../decorators/pagamento-access.decorator';
 import { NotFoundException } from '@nestjs/common';
-import { UsuarioService } from '../../usuario/services/usuario.service';
-import { SolicitacaoService } from '../../solicitacao/services/solicitacao.service';
+import { DataMaskingInterceptor } from '../interceptors/data-masking.interceptor';
+import { AuditoriaInterceptor } from '../interceptors/auditoria.interceptor';
+import { AuditoriaPagamento } from '../decorators/auditoria.decorator';
 
 /**
  * Controller para gerenciamento de pagamentos
@@ -42,17 +50,25 @@ import { SolicitacaoService } from '../../solicitacao/services/solicitacao.servi
  */
 @ApiTags('Pagamentos')
 @Controller('pagamentos')
+@UseGuards(JwtAuthGuard, PermissionGuard)
+@UseInterceptors(DataMaskingInterceptor, AuditoriaInterceptor)
 export class PagamentoController {
   constructor(
     private readonly pagamentoService: PagamentoService,
-    private readonly usuarioService: UsuarioService,
-    private readonly solicitacaoService: SolicitacaoService,
+    private readonly mappingService: PagamentoMappingService,
+    private readonly responseService: PagamentoResponseService,
   ) {}
 
   /**
    * Lista pagamentos com filtros e paginação
    */
   @Get()
+  @RequiresPermission({
+    permissionName: 'pagamento.listar',
+    scopeType: TipoEscopo.UNIDADE,
+    scopeIdExpression: 'query.unidadeId'
+  })
+  @AuditoriaPagamento.Consulta('Listagem de pagamentos')
   @ApiOperation({ summary: 'Lista pagamentos com filtros' })
   @ApiQuery({ name: 'status', required: false, enum: StatusPagamentoEnum })
   @ApiQuery({ name: 'unidade_id', required: false })
@@ -81,9 +97,6 @@ export class PagamentoController {
     },
   })
   @ApiResponse({ status: 403, description: 'Acesso negado' })
-  @UseGuards(PagamentoAccessGuard)
-  @OperadorOuAdmin()
-  @VerificarUnidade(false)
   async findAll(
     @Query('status') status?: StatusPagamentoEnum,
     @Query('unidadeId') unidadeId?: string,
@@ -92,8 +105,19 @@ export class PagamentoController {
     @Query('metodoPagamento') metodoPagamento?: string,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
+    @Request() req?: any,
   ) {
-    const pagamentos = await this.pagamentoService.findAll({
+    const contextoUsuario = {
+      id: req?.user?.id || '',
+      perfil: req?.user?.perfil || 'OPERADOR',
+      unidadeId: req?.user?.unidadeId,
+      permissoes: req?.user?.permissoes || [],
+      isAdmin: req?.user?.isAdmin || false,
+      isSupervisor: req?.user?.isSupervisor || false,
+    };
+
+    // Mapear filtros para critérios de busca
+    const criterios = this.mappingService.mapFiltersToCriteria({
       status,
       unidadeId,
       dataInicio,
@@ -101,62 +125,36 @@ export class PagamentoController {
       metodoPagamento,
       page: page ? Number(page) : 1,
       limit: limit ? Number(limit) : 10,
-    });
+    }, contextoUsuario);
 
-    // Mapear para DTOs de resposta com dados sensíveis mascarados
-    const responseDtos = await Promise.all(
-      pagamentos.data.map(async (pagamento) => {
-        // Buscar dados reais do responsável pela liberação
-        const responsavel = await this.usuarioService.findById(
-          pagamento.liberadoPor,
-        );
+    // Buscar pagamentos
+    const pagamentos = await this.pagamentoService.findAll(criterios);
 
-        // Buscar dados da solicitação
-        const solicitacao = await this.solicitacaoService.findById(
-      pagamento.solicitacaoId,
+    // Mapear entidades para DTOs de resposta
+    const responseDtos = await this.mappingService.mapEntitiesToResponseDtos(
+      pagamentos.data,
+      contextoUsuario,
     );
 
-        return {
-          id: pagamento.id,
-          solicitacaoId: pagamento.solicitacaoId,
-          infoBancariaId: pagamento.infoBancariaId,
-          valor: pagamento.valor,
-          dataLiberacao: pagamento.dataLiberacao,
-          status: pagamento.status,
-          metodoPagamento: pagamento.metodoPagamento,
-          responsavelLiberacao: {
-            id: responsavel?.id || 'N/A',
-            nome: responsavel?.nome || 'Usuário não encontrado',
-            role: responsavel?.role?.nome || 'N/A',
-          },
-          solicitacao: solicitacao
-            ? {
-                numeroProcesso: solicitacao.id,
-                cidadaoNome: solicitacao.beneficiario?.nome || 'N/A',
-                tipoBeneficio: solicitacao.tipo_beneficio?.nome || 'N/A',
-                unidade: solicitacao.unidade?.nome || 'N/A',
-              }
-            : undefined,
-          quantidadeComprovantes: pagamento.comprovantes?.length || 0,
-          observacoes: pagamento.observacoes,
-          createdAt: pagamento.created_at,
-          updatedAt: pagamento.updated_at,
-        } as PagamentoResponseDto;
-      }),
+    // Construir resposta paginada
+    return this.mappingService.buildPaginatedResponse(
+      responseDtos,
+      pagamentos.total,
+      page ? Number(page) : 1,
+      limit ? Number(limit) : 10,
     );
-
-    return {
-      items: responseDtos,
-      total: pagamentos.total,
-      page: pagamentos.page,
-      limit: pagamentos.limit,
-    };
   }
 
   /**
    * Retorna detalhes de um pagamento específico
    */
   @Get(':id')
+  @RequiresPermission({
+    permissionName: 'pagamento.visualizar',
+    scopeType: TipoEscopo.UNIDADE,
+    scopeIdExpression: 'params.id'
+  })
+  @AuditoriaPagamento.Consulta('Consulta de pagamento por ID')
   @ApiOperation({ summary: 'Retorna detalhes de um pagamento específico' })
   @ApiParam({ name: 'id', type: 'string', description: 'ID do pagamento' })
   @ApiResponse({
@@ -166,78 +164,43 @@ export class PagamentoController {
   })
   @ApiResponse({ status: 404, description: 'Pagamento não encontrado' })
   @ApiResponse({ status: 403, description: 'Acesso negado' })
-  @UseGuards(PagamentoAccessGuard)
-  @OperadorOuAdmin()
-  @VerificarUnidade(true)
-  async findOne(@Param('id', ParseUUIDPipe) id: string) {
+
+  async findOne(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Request() req?: any,
+  ) {
     const pagamento = await this.pagamentoService.findOneWithRelations(id);
 
     if (!pagamento) {
       throw new NotFoundException('Pagamento não encontrado');
     }
 
-    // Buscar dados reais do responsável pela liberação
-    const responsavel = await this.usuarioService.findById(
-      pagamento.liberadoPor,
+    const contextoUsuario = {
+      id: req?.user?.id || '',
+      perfil: req?.user?.perfil || 'OPERADOR',
+      unidadeId: req?.user?.unidadeId,
+      permissoes: req?.user?.permissoes || [],
+      isAdmin: req?.user?.isAdmin || false,
+      isSupervisor: req?.user?.isSupervisor || false,
+    };
+
+    // Mapear entidade para DTO de resposta
+    return this.mappingService.mapEntityToResponseDto(
+      pagamento,
+      contextoUsuario,
     );
-
-    // Buscar dados da solicitação
-    const solicitacao = await this.solicitacaoService.findById(
-      pagamento.solicitacaoId,
-    );
-
-    // Buscar responsável pela confirmação se existir
-    let responsavelConfirmacao: any = null;
-    if (pagamento.confirmacoes?.length) {
-      responsavelConfirmacao = await this.usuarioService.findById(
-        pagamento.confirmacoes[0].responsavelId,
-      );
-    }
-
-    // Mapear para DTO de resposta com dados reais
-    return {
-      id: pagamento.id,
-      solicitacaoId: pagamento.solicitacaoId,
-      infoBancariaId: pagamento.infoBancariaId,
-      valor: pagamento.valor,
-      dataLiberacao: pagamento.dataLiberacao,
-      status: pagamento.status,
-      metodoPagamento: pagamento.metodoPagamento,
-      responsavelLiberacao: {
-        id: responsavel?.id || 'N/A',
-        nome: responsavel?.nome || 'Usuário não encontrado',
-        role: responsavel?.role?.nome || 'N/A',
-      },
-      solicitacao: solicitacao
-        ? {
-            numeroProcesso: solicitacao.processo_judicial?.numero_processo || null,
-            cidadaoNome: solicitacao.beneficiario?.nome || 'N/A',
-            tipoBeneficio: solicitacao.tipo_beneficio?.nome || 'N/A',
-            unidade: solicitacao.unidade?.nome || 'N/A',
-          }
-        : undefined,
-      quantidadeComprovantes: pagamento.comprovantes?.length || 0,
-      confirmacaoRecebimento: pagamento.confirmacoes?.length
-        ? {
-            id: pagamento.confirmacoes[0].id,
-            dataConfirmacao: pagamento.confirmacoes[0].dataConfirmacao,
-            metodoConfirmacao: pagamento.confirmacoes[0].metodoConfirmacao,
-            responsavel: {
-              id: responsavelConfirmacao?.id || 'N/A',
-              nome: responsavelConfirmacao?.nome || 'Usuário não encontrado',
-            },
-          }
-        : undefined,
-      observacoes: pagamento.observacoes,
-      createdAt: pagamento.created_at,
-      updatedAt: pagamento.updated_at,
-    } as PagamentoResponseDto;
   }
 
   /**
    * Registra a liberação de um pagamento para uma solicitação aprovada
    */
   @Post('liberar/:solicitacaoId')
+  @RequiresPermission({
+    permissionName: 'pagamento.criar',
+    scopeType: TipoEscopo.UNIDADE,
+    scopeIdExpression: 'params.solicitacaoId'
+  })
+  @AuditoriaPagamento.Criacao()
   @ApiOperation({
     summary:
       'Registra a liberação de um pagamento para uma solicitação aprovada',
@@ -257,16 +220,22 @@ export class PagamentoController {
     description: 'Dados inválidos ou solicitação não aprovada',
   })
   @ApiResponse({ status: 403, description: 'Acesso negado' })
-  @UseGuards(PagamentoAccessGuard)
-  @OperadorOuAdmin()
-  @VerificarUnidade(true)
   async createPagamento(
     @Param('solicitacaoId', ParseUUIDPipe) solicitacaoId: string,
     @Body() createDto: PagamentoCreateDto,
-    @Request() req: any,
+    @Request() req?: any,
   ) {
     // Usar o ID do usuário atual autenticado
-    const usuarioId = req.user.id;
+    const usuarioId = req?.user?.id || '';
+
+    const contextoUsuario = {
+      id: req?.user?.id || '',
+      perfil: req?.user?.perfil || 'OPERADOR',
+      unidadeId: req?.user?.unidadeId,
+      permissoes: req?.user?.permissoes || [],
+      isAdmin: req?.user?.isAdmin || false,
+      isSupervisor: req?.user?.isSupervisor || false,
+    };
 
     const pagamento = await this.pagamentoService.createPagamento(
       solicitacaoId,
@@ -274,47 +243,24 @@ export class PagamentoController {
       usuarioId,
     );
 
-    // Buscar dados reais do usuário responsável
-    const responsavel = await this.usuarioService.findById(usuarioId);
-
-    // Buscar dados da solicitação
-    const solicitacao = await this.solicitacaoService.findById(
-      pagamento.solicitacaoId,
+    // Mapear entidade para DTO de resposta
+    const responseDto = await this.mappingService.mapEntityToResponseDto(
+      pagamento,
+      contextoUsuario,
     );
 
-    // Mapear para DTO de resposta com dados reais
-    return {
-      id: pagamento.id,
-      solicitacaoId: pagamento.solicitacaoId,
-      infoBancariaId: pagamento.infoBancariaId,
-      valor: pagamento.valor,
-      dataLiberacao: pagamento.dataLiberacao,
-      status: pagamento.status,
-      metodoPagamento: pagamento.metodoPagamento,
-      responsavelLiberacao: {
-        id: responsavel?.id || usuarioId,
-        nome: responsavel?.nome || 'Usuário não encontrado',
-        role: responsavel?.role?.nome || 'N/A',
-      },
-      solicitacao: solicitacao
-        ? {
-            numeroProcesso: solicitacao.processo_judicial?.numero_processo || null,
-            cidadaoNome: solicitacao.beneficiario?.nome || 'N/A',
-            tipoBeneficio: solicitacao.tipo_beneficio?.nome || 'N/A',
-            unidade: solicitacao.unidade?.nome || 'N/A',
-          }
-        : undefined,
-      quantidadeComprovantes: 0,
-      observacoes: pagamento.observacoes,
-      createdAt: pagamento.created_at,
-      updatedAt: pagamento.updated_at,
-    } as PagamentoResponseDto;
+    // Retornar resposta de criação
+    return this.responseService.created(
+      responseDto,
+      'Pagamento registrado com sucesso',
+    );
   }
 
   /**
    * Cancela um pagamento existente
    */
   @Patch(':id/cancelar')
+  @AuditoriaPagamento.Cancelamento()
   @ApiOperation({ summary: 'Cancela um pagamento existente' })
   @ApiParam({ name: 'id', type: 'string', description: 'ID do pagamento' })
   @ApiResponse({
@@ -331,10 +277,19 @@ export class PagamentoController {
   async cancelPagamento(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() cancelDto: { motivoCancelamento: string },
-    @Request() req: any,
+    @Request() req?: any,
   ) {
     // Usar o ID do usuário atual autenticado
-    const usuarioId = req.user.id;
+    const usuarioId = req?.user?.id || '';
+
+    const contextoUsuario = {
+      id: req?.user?.id || '',
+      perfil: req?.user?.perfil || 'OPERADOR',
+      unidadeId: req?.user?.unidadeId,
+      permissoes: req?.user?.permissoes || [],
+      isAdmin: req?.user?.isAdmin || false,
+      isSupervisor: req?.user?.isSupervisor || false,
+    };
 
     const pagamento = await this.pagamentoService.cancelarPagamento(
       id,
@@ -342,49 +297,29 @@ export class PagamentoController {
       cancelDto.motivoCancelamento,
     );
 
-    // Buscar dados reais do responsável pela liberação original
-    const responsavelLiberacao = await this.usuarioService.findById(
-      pagamento.liberadoPor,
+    // Mapear entidade para DTO de resposta
+    const responseDto = await this.mappingService.mapEntityToResponseDto(
+      pagamento,
+      contextoUsuario,
     );
 
-    // Buscar dados da solicitação
-    const solicitacao = await this.solicitacaoService.findById(
-      pagamento.solicitacaoId,
+    // Retornar resposta de atualização
+    return this.responseService.updated(
+      responseDto,
+      'Pagamento cancelado com sucesso',
     );
-
-    // Mapear para DTO de resposta com dados reais
-    return {
-      id: pagamento.id,
-      solicitacaoId: pagamento.solicitacaoId,
-      infoBancariaId: pagamento.infoBancariaId,
-      valor: pagamento.valor,
-      dataLiberacao: pagamento.dataLiberacao,
-      status: pagamento.status,
-      metodoPagamento: pagamento.metodoPagamento,
-      responsavelLiberacao: {
-        id: responsavelLiberacao?.id || 'N/A',
-        nome: responsavelLiberacao?.nome || 'Usuário não encontrado',
-        role: responsavelLiberacao?.role?.nome || 'N/A',
-      },
-      solicitacao: solicitacao
-        ? {
-            numeroProcesso: solicitacao.processo_judicial?.numero_processo || null,
-            cidadaoNome: solicitacao.beneficiario?.nome || 'N/A',
-            tipoBeneficio: solicitacao.tipo_beneficio?.nome || 'N/A',
-            unidade: solicitacao.unidade?.nome || 'N/A',
-          }
-        : undefined,
-      quantidadeComprovantes: pagamento.comprovantes?.length || 0,
-      observacoes: pagamento.observacoes,
-      createdAt: pagamento.created_at,
-      updatedAt: pagamento.updated_at,
-    } as PagamentoResponseDto;
   }
 
   /**
    * Lista pagamentos pendentes (liberados mas não confirmados)
    */
   @Get('pendentes')
+  @RequiresPermission({
+    permissionName: 'pagamento.listar',
+    scopeType: TipoEscopo.UNIDADE,
+    scopeIdExpression: 'query.unidadeId'
+  })
+  @AuditoriaPagamento.Consulta('Consulta de pagamentos pendentes')
   @ApiOperation({
     summary: 'Lista pagamentos pendentes (liberados mas não confirmados)',
   })
@@ -412,110 +347,40 @@ export class PagamentoController {
     },
   })
   @ApiResponse({ status: 403, description: 'Acesso negado' })
-  @UseGuards(PagamentoAccessGuard)
-  @OperadorOuAdmin()
-  @VerificarUnidade(false)
   async findPendentes(
     @Query('unidadeId') unidadeId?: string,
     @Query('tipoBeneficioId') tipoBeneficioId?: string,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
+    @Request() req?: any,
   ) {
+    const contextoUsuario = {
+      id: req?.user?.id || '',
+      perfil: req?.user?.perfil || 'OPERADOR',
+      unidadeId: req?.user?.unidadeId,
+      permissoes: req?.user?.permissoes || [],
+      isAdmin: req?.user?.isAdmin || false,
+      isSupervisor: req?.user?.isSupervisor || false,
+    };
+
     const pagamentos = await this.pagamentoService.findByStatus(
       StatusPagamentoEnum.AGENDADO,
       page ? Number(page) : 1,
       limit ? Number(limit) : 10,
     );
 
-    // Mapear para DTOs de resposta
-    const responseDtos = pagamentos.data.map((pagamento) => {
-      return {
-        id: pagamento.id,
-        solicitacaoId: pagamento.solicitacaoId,
-        infoBancariaId: pagamento.infoBancariaId,
-        valor: pagamento.valor,
-        dataLiberacao: pagamento.dataLiberacao,
-        status: pagamento.status,
-        metodoPagamento: pagamento.metodoPagamento,
-        responsavelLiberacao: {
-          id: 'placeholder',
-          nome: 'Técnico Responsável',
-          role: 'Técnico SEMTAS',
-        },
-        quantidadeComprovantes: 0,
-        observacoes: pagamento.observacoes,
-        createdAt: pagamento.created_at,
-        updatedAt: pagamento.updated_at,
-      } as PagamentoResponseDto;
-    });
+    // Mapear entidades para DTOs de resposta
+    const responseDtos = await this.mappingService.mapEntitiesToResponseDtos(
+      pagamentos.data,
+      contextoUsuario,
+    );
 
-    return {
-      items: responseDtos,
-      total: pagamentos.total,
-      page: pagamentos.page,
-      limit: pagamentos.limit,
-    };
-  }
-
-  /**
-   * Obtém informações bancárias/PIX cadastradas para o beneficiário
-   */
-  @Get('info-bancarias/:beneficiarioId')
-  @ApiOperation({
-    summary: 'Obtém informações bancárias/PIX cadastradas para o beneficiário',
-  })
-  @ApiParam({
-    name: 'beneficiarioId',
-    type: 'string',
-    description: 'ID do beneficiário',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Lista de informações bancárias',
-    schema: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          id: { type: 'string' },
-          banco: { type: 'string' },
-          agencia: { type: 'string' },
-          conta: { type: 'string' },
-          tipo_conta: { type: 'string' },
-          pix_tipo: { type: 'string' },
-          pix_chave: { type: 'string' },
-          created_at: { type: 'string', format: 'date-time' },
-        },
-      },
-    },
-  })
-  @ApiResponse({ status: 404, description: 'Beneficiário não encontrado' })
-  @ApiResponse({ status: 403, description: 'Acesso negado' })
-  @UseGuards(PagamentoAccessGuard)
-  @OperadorOuAdmin()
-  @VerificarUnidade(true)
-  async getInfoBancarias(
-    @Param('beneficiarioId', ParseUUIDPipe) beneficiarioId: string,
-  ) {
-    // Esta implementação seria integrada com o serviço de cidadão/beneficiário
-    // const infoBancarias = await this.cidadaoService.getInfoBancarias(beneficiarioId);
-
-    // Retorno mockado para demonstração
-    return [
-      {
-        id: 'placeholder-id-1',
-        banco: 'Banco do Brasil',
-        agencia: '1234',
-        conta: '12345-6',
-        tipo_conta: 'Corrente',
-        created_at: new Date().toISOString(),
-      },
-      {
-        id: 'placeholder-id-2',
-        pix_tipo: 'email',
-        pix_chave: 'b****@****.com', // mascarado para segurança
-        created_at: new Date().toISOString(),
-      },
-    ];
+    // Construir resposta paginada
+    return this.mappingService.buildPaginatedResponse(
+      responseDtos,
+      pagamentos.total,
+      page ? Number(page) : 1,
+      limit ? Number(limit) : 10,
+    );
   }
 }

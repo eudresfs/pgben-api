@@ -1,14 +1,19 @@
 import {
-  BadRequestException,
-  ConflictException,
   Injectable,
   NotFoundException,
+  BadRequestException,
+  ConflictException,
+  Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ComprovantePagamento } from '../../../entities/comprovante-pagamento.entity';
 import { ComprovanteUploadDto } from '../dtos/comprovante-upload.dto';
-import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
+import { AuditoriaPagamentoService } from './auditoria-pagamento.service';
+import { MinioService } from '../../../shared/services/minio.service';
+import { TipoOperacao } from '../../../enums/tipo-operacao.enum';
+import * as path from 'path';
+import * as crypto from 'crypto';
 
 /**
  * Serviço para gerenciamento de comprovantes de pagamento
@@ -33,11 +38,9 @@ export class ComprovanteService {
 
   constructor(
     @InjectRepository(ComprovantePagamento)
-    private readonly comprovanteRepository: Repository<ComprovantePagamento>,
-    // Outros serviços necessários serão injetados aqui
-    // private readonly pagamentoService: PagamentoService,
-    // private readonly documentoService: DocumentoService,
-    // private readonly auditoriaService: AuditoriaService,
+    private comprovanteRepository: Repository<ComprovantePagamento>,
+    private minioService: MinioService,
+    private auditoriaService: AuditoriaPagamentoService,
   ) {}
 
   /**
@@ -75,49 +78,42 @@ export class ComprovanteService {
     // Sanitizar o nome do arquivo
     const sanitizedFileName = this.sanitizeFileName(file.originalname);
 
-    // Processar o upload do arquivo (usando o serviço de documentos)
-    // const uploadResult = await this.documentoService.uploadDocumento({
-    //   file: file.buffer,
-    //   fileName: sanitizedFileName,
-    //   mimeType: file.mimetype,
-    //   categoria: 'comprovante_pagamento',
-    //   metadados: {
-    //     pagamentoId,
-    //     tipoDocumento: createDto.tipoDocumento
-    //   }
-    // });
+    // Fazer upload do arquivo para o MinIO
+    const uploadResult = await this.minioService.uploadArquivo(
+      file.buffer,
+      sanitizedFileName,
+      pagamentoId,
+      createDto.tipoDocumento,
+    );
 
     // Criar registro do comprovante
     const comprovante = this.comprovanteRepository.create({
       pagamento_id: pagamentoId,
       tipo_documento: createDto.tipoDocumento,
-      nome_arquivo: sanitizedFileName,
-      caminho_arquivo: 'placeholder', // uploadResult.path,
-      tamanho: file.size,
+      nome_arquivo: uploadResult.nomeArquivo,
+      caminho_arquivo: uploadResult.nomeArquivo,
+      tamanho: uploadResult.tamanho,
       mime_type: file.mimetype,
       data_upload: new Date(),
       uploaded_por: usuarioId,
     });
 
     // Salvar o registro
-    const result = await this.comprovanteRepository.save(comprovante);
+    const savedComprovante = await this.comprovanteRepository.save(comprovante);
+    const result = Array.isArray(savedComprovante) ? savedComprovante[0] : savedComprovante;
 
     // Registrar operação no log de auditoria
-    // await this.auditoriaService.registrarOperacao({
-    //   tipoOperacao: 'UPLOAD_COMPROVANTE',
-    //   usuarioId,
-    //   entidadeId: result.id,
-    //   tipoEntidade: 'COMPROVANTE_PAGAMENTO',
-    //   dadosAnteriores: null,
-    //   dadosNovos: {
-    //     id: result.id,
-    //     pagamentoId,
-    //     tipoDocumento: createDto.tipoDocumento,
-    //     nomeArquivo: sanitizedFileName,
-    //     tamanho: file.size,
-    //     mimeType: file.mimetype
-    //   }
-    // });
+    await this.auditoriaService.registrarUploadComprovante(
+      result.id,
+      pagamentoId,
+      usuarioId,
+      {
+        tipoDocumento: createDto.tipoDocumento,
+        nomeArquivo: sanitizedFileName,
+        tamanho: file.size,
+        mimeType: file.mimetype
+      }
+    );
 
     return result;
   }
@@ -164,11 +160,11 @@ export class ComprovanteService {
       throw new NotFoundException('Comprovante não encontrado');
     }
 
-    // Obter o arquivo do serviço de documentos
-    // const file = await this.documentoService.getDocumento(comprovante.caminhoArquivo);
+    // Obter o arquivo do MinIO
+    const file = await this.minioService.downloadArquivo(comprovante.caminho_arquivo);
 
     return {
-      buffer: Buffer.from(''), // file.content,
+      buffer: file.arquivo,
       fileName: comprovante.nome_arquivo,
       mimeType: comprovante.mime_type,
     };
@@ -200,21 +196,19 @@ export class ComprovanteService {
     // Salvar dados para auditoria
     const dadosAnteriores = { ...comprovante };
 
-    // Remover o arquivo do sistema de armazenamento
-    // await this.documentoService.removeDocumento(comprovante.caminhoArquivo);
+    // Remover o arquivo do MinIO
+    await this.minioService.removerArquivo(comprovante.caminho_arquivo);
 
     // Remover o registro do banco de dados
     await this.comprovanteRepository.remove(comprovante);
 
     // Registrar operação no log de auditoria
-    // await this.auditoriaService.registrarOperacao({
-    //   tipoOperacao: 'REMOCAO_COMPROVANTE',
-    //   usuarioId,
-    //   entidadeId: id,
-    //   tipoEntidade: 'COMPROVANTE_PAGAMENTO',
-    //   dadosAnteriores,
-    //   dadosNovos: null
-    // });
+    await this.auditoriaService.registrarRemocaoComprovante(
+      id,
+      comprovante.pagamento_id,
+      usuarioId,
+      dadosAnteriores
+    );
 
     return true;
   }

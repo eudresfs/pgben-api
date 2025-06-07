@@ -1,5 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
+import { AuditoriaService } from '../../auditoria/services/auditoria.service';
+import { TipoOperacao } from '../../../enums/tipo-operacao.enum';
+import { CreateLogAuditoriaDto } from '../../auditoria/dto/create-log-auditoria.dto';
 
 /**
  * Serviço para registro de auditoria de operações do módulo de pagamento
@@ -12,8 +15,9 @@ import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
  */
 @Injectable()
 export class AuditoriaPagamentoService {
-  // Em uma implementação real, este serviço injetaria o AuditoriaService do módulo de auditoria
-  // constructor(private readonly auditoriaService: AuditoriaService) {}
+  private readonly logger = new Logger(AuditoriaPagamentoService.name);
+
+  constructor(private readonly auditoriaService: AuditoriaService) {}
 
   /**
    * Registra uma operação de criação de pagamento
@@ -28,28 +32,34 @@ export class AuditoriaPagamentoService {
     solicitacaoId: string,
     usuarioId: string,
     dados: any,
+    contexto?: { ip?: string; userAgent?: string; endpoint?: string; metodoHttp?: string },
   ): Promise<void> {
-    // Mascarar dados sensíveis
-    const dadosMascarados = this.mascararDadosSensiveisPagamento(dados);
+    try {
+      // Mascarar dados sensíveis
+      const dadosMascarados = this.mascararDadosSensiveisPagamento(dados);
 
-    // Em uma implementação real, chamaria o serviço de auditoria
-    // await this.auditoriaService.registrarOperacao({
-    //   tipoOperacao: 'CRIACAO_PAGAMENTO',
-    //   entidadeId: pagamentoId,
-    //   tipoEntidade: 'PAGAMENTO',
-    //   entidadeRelacionadaId: solicitacaoId,
-    //   tipoEntidadeRelacionada: 'SOLICITACAO',
-    //   usuarioId,
-    //   dadosAnteriores: null,
-    //   dadosNovos: dadosMascarados,
-    //   ip: '0.0.0.0', // seria obtido do contexto da requisição
-    //   userAgent: 'Sistema', // seria obtido do contexto da requisição
-    //   timestamp: new Date()
-    // });
+      const logDto = new CreateLogAuditoriaDto();
+      logDto.tipo_operacao = TipoOperacao.CREATE;
+      logDto.entidade_afetada = 'Pagamento';
+      logDto.entidade_id = pagamentoId;
+      logDto.usuario_id = usuarioId;
+      logDto.endpoint = contexto?.endpoint || '/api/v1/pagamentos';
+      logDto.metodo_http = contexto?.metodoHttp || 'POST';
+      logDto.ip_origem = contexto?.ip;
+      logDto.user_agent = contexto?.userAgent;
+      logDto.descricao = `Criação de pagamento para solicitação ${solicitacaoId}`;
+      logDto.dados_novos = dadosMascarados;
+      logDto.dados_anteriores = undefined;
 
-    console.log(
-      `[AUDITORIA] Criação de pagamento ${pagamentoId} registrada por ${usuarioId}`,
-    );
+      await this.auditoriaService.create(logDto);
+      this.logger.log(`Auditoria de criação de pagamento registrada: ${pagamentoId}`);
+    } catch (error) {
+      this.logger.error(
+        `Erro ao registrar auditoria de criação de pagamento ${pagamentoId}:`,
+        error.stack,
+      );
+      // Não propagar o erro para não afetar o fluxo principal
+    }
   }
 
   /**
@@ -67,26 +77,31 @@ export class AuditoriaPagamentoService {
     statusNovo: StatusPagamentoEnum,
     usuarioId: string,
     observacoes?: string,
+    contexto?: { ip?: string; userAgent?: string; endpoint?: string; metodoHttp?: string },
   ): Promise<void> {
-    // Em uma implementação real, chamaria o serviço de auditoria
-    // await this.auditoriaService.registrarOperacao({
-    //   tipoOperacao: 'MUDANCA_STATUS_PAGAMENTO',
-    //   entidadeId: pagamentoId,
-    //   tipoEntidade: 'PAGAMENTO',
-    //   usuarioId,
-    //   dadosAnteriores: { status: statusAnterior },
-    //   dadosNovos: {
-    //     status: statusNovo,
-    //     observacoes
-    //   },
-    //   ip: '0.0.0.0', // seria obtido do contexto da requisição
-    //   userAgent: 'Sistema', // seria obtido do contexto da requisição
-    //   timestamp: new Date()
-    // });
+    try {
+      const logDto = new CreateLogAuditoriaDto();
+      logDto.tipo_operacao = TipoOperacao.UPDATE;
+      logDto.entidade_afetada = 'Pagamento';
+      logDto.entidade_id = pagamentoId;
+      logDto.usuario_id = usuarioId;
+      logDto.endpoint = contexto?.endpoint || '/api/v1/pagamentos';
+      logDto.metodo_http = contexto?.metodoHttp || 'PATCH';
+      logDto.ip_origem = contexto?.ip;
+      logDto.user_agent = contexto?.userAgent;
+      logDto.descricao = `Mudança de status de pagamento de ${statusAnterior} para ${statusNovo}${observacoes ? ` - ${observacoes}` : ''}`;
+      logDto.dados_anteriores = { status: statusAnterior };
+      logDto.dados_novos = { status: statusNovo, observacoes };
 
-    console.log(
-      `[AUDITORIA] Mudança de status do pagamento ${pagamentoId} de ${statusAnterior} para ${statusNovo} registrada por ${usuarioId}`,
-    );
+      await this.auditoriaService.create(logDto);
+      this.logger.log(`Auditoria de mudança de status registrada: ${pagamentoId}`);
+    } catch (error) {
+      this.logger.error(
+        `Erro ao registrar auditoria de mudança de status ${pagamentoId}:`,
+        error.stack,
+      );
+      // Não propagar o erro para não afetar o fluxo principal
+    }
   }
 
   /**
@@ -102,30 +117,40 @@ export class AuditoriaPagamentoService {
     pagamentoId: string,
     usuarioId: string,
     dadosComprovante: any,
+    contexto?: { ip?: string; userAgent?: string; endpoint?: string; metodoHttp?: string },
   ): Promise<void> {
-    // Em uma implementação real, chamaria o serviço de auditoria
-    // await this.auditoriaService.registrarOperacao({
-    //   tipoOperacao: 'UPLOAD_COMPROVANTE',
-    //   entidadeId: comprovanteId,
-    //   tipoEntidade: 'COMPROVANTE_PAGAMENTO',
-    //   entidadeRelacionadaId: pagamentoId,
-    //   tipoEntidadeRelacionada: 'PAGAMENTO',
-    //   usuarioId,
-    //   dadosAnteriores: null,
-    //   dadosNovos: {
-    //     tipoDocumento: dadosComprovante.tipoDocumento,
-    //     nomeArquivo: dadosComprovante.nomeArquivo,
-    //     tamanho: dadosComprovante.tamanho,
-    //     mimeType: dadosComprovante.mimeType
-    //   },
-    //   ip: '0.0.0.0', // seria obtido do contexto da requisição
-    //   userAgent: 'Sistema', // seria obtido do contexto da requisição
-    //   timestamp: new Date()
-    // });
+    try {
+      // Mascarar dados sensíveis do comprovante
+      const dadosMascarados = {
+        tipoDocumento: dadosComprovante.tipoDocumento,
+        nomeArquivo: dadosComprovante.nomeArquivo,
+        tamanho: dadosComprovante.tamanho,
+        mimeType: dadosComprovante.mimeType,
+        // Não incluir dados binários ou URLs completas
+      };
 
-    console.log(
-      `[AUDITORIA] Upload de comprovante ${comprovanteId} para o pagamento ${pagamentoId} registrado por ${usuarioId}`,
-    );
+      const logDto = new CreateLogAuditoriaDto();
+      logDto.tipo_operacao = TipoOperacao.CREATE;
+      logDto.entidade_afetada = 'ComprovantePagemento';
+      logDto.entidade_id = comprovanteId;
+      logDto.usuario_id = usuarioId;
+      logDto.endpoint = contexto?.endpoint || '/api/v1/comprovantes';
+      logDto.metodo_http = contexto?.metodoHttp || 'POST';
+      logDto.ip_origem = contexto?.ip;
+      logDto.user_agent = contexto?.userAgent;
+      logDto.descricao = `Upload de comprovante para pagamento ${pagamentoId}`;
+      logDto.dados_novos = dadosMascarados;
+      logDto.dados_anteriores = undefined;
+
+      await this.auditoriaService.create(logDto);
+      this.logger.log(`Auditoria de upload de comprovante registrada: ${comprovanteId}`);
+    } catch (error) {
+      this.logger.error(
+        `Erro ao registrar auditoria de upload de comprovante ${comprovanteId}:`,
+        error.stack,
+      );
+      // Não propagar o erro para não afetar o fluxo principal
+    }
   }
 
   /**
@@ -141,30 +166,40 @@ export class AuditoriaPagamentoService {
     pagamentoId: string,
     usuarioId: string,
     dadosComprovante: any,
+    contexto?: { ip?: string; userAgent?: string; endpoint?: string; metodoHttp?: string },
   ): Promise<void> {
-    // Em uma implementação real, chamaria o serviço de auditoria
-    // await this.auditoriaService.registrarOperacao({
-    //   tipoOperacao: 'REMOCAO_COMPROVANTE',
-    //   entidadeId: comprovanteId,
-    //   tipoEntidade: 'COMPROVANTE_PAGAMENTO',
-    //   entidadeRelacionadaId: pagamentoId,
-    //   tipoEntidadeRelacionada: 'PAGAMENTO',
-    //   usuarioId,
-    //   dadosAnteriores: {
-    //     tipoDocumento: dadosComprovante.tipoDocumento,
-    //     nomeArquivo: dadosComprovante.nomeArquivo,
-    //     tamanho: dadosComprovante.tamanho,
-    //     mimeType: dadosComprovante.mimeType
-    //   },
-    //   dadosNovos: null,
-    //   ip: '0.0.0.0', // seria obtido do contexto da requisição
-    //   userAgent: 'Sistema', // seria obtido do contexto da requisição
-    //   timestamp: new Date()
-    // });
+    try {
+      // Mascarar dados sensíveis do comprovante
+      const dadosMascarados = {
+        tipoDocumento: dadosComprovante.tipoDocumento,
+        nomeArquivo: dadosComprovante.nomeArquivo,
+        tamanho: dadosComprovante.tamanho,
+        mimeType: dadosComprovante.mimeType,
+        // Não incluir dados binários ou URLs completas
+      };
 
-    console.log(
-      `[AUDITORIA] Remoção de comprovante ${comprovanteId} do pagamento ${pagamentoId} registrada por ${usuarioId}`,
-    );
+      const logDto = new CreateLogAuditoriaDto();
+      logDto.tipo_operacao = TipoOperacao.DELETE;
+      logDto.entidade_afetada = 'ComprovantePagemento';
+      logDto.entidade_id = comprovanteId;
+      logDto.usuario_id = usuarioId;
+      logDto.endpoint = contexto?.endpoint || '/api/v1/comprovantes';
+      logDto.metodo_http = contexto?.metodoHttp || 'DELETE';
+      logDto.ip_origem = contexto?.ip;
+      logDto.user_agent = contexto?.userAgent;
+      logDto.descricao = `Remoção de comprovante do pagamento ${pagamentoId}`;
+      logDto.dados_anteriores = dadosMascarados;
+      logDto.dados_novos = undefined;
+
+      await this.auditoriaService.create(logDto);
+      this.logger.log(`Auditoria de remoção de comprovante registrada: ${comprovanteId}`);
+    } catch (error) {
+      this.logger.error(
+        `Erro ao registrar auditoria de remoção de comprovante ${comprovanteId}:`,
+        error.stack,
+      );
+      // Não propagar o erro para não afetar o fluxo principal
+    }
   }
 
   /**
@@ -180,30 +215,38 @@ export class AuditoriaPagamentoService {
     pagamentoId: string,
     usuarioId: string,
     dadosConfirmacao: any,
+    contexto?: { ip?: string; userAgent?: string; endpoint?: string; metodoHttp?: string },
   ): Promise<void> {
-    // Em uma implementação real, chamaria o serviço de auditoria
-    // await this.auditoriaService.registrarOperacao({
-    //   tipoOperacao: 'CONFIRMACAO_RECEBIMENTO',
-    //   entidadeId: confirmacaoId,
-    //   tipoEntidade: 'CONFIRMACAO_RECEBIMENTO',
-    //   entidadeRelacionadaId: pagamentoId,
-    //   tipoEntidadeRelacionada: 'PAGAMENTO',
-    //   usuarioId,
-    //   dadosAnteriores: null,
-    //   dadosNovos: {
-    //     dataConfirmacao: dadosConfirmacao.dataConfirmacao,
-    //     metodoConfirmacao: dadosConfirmacao.metodoConfirmacao,
-    //     destinatarioId: dadosConfirmacao.destinatarioId,
-    //     observacoes: dadosConfirmacao.observacoes
-    //   },
-    //   ip: '0.0.0.0', // seria obtido do contexto da requisição
-    //   userAgent: 'Sistema', // seria obtido do contexto da requisição
-    //   timestamp: new Date()
-    // });
+    try {
+      const dadosMascarados = {
+        dataConfirmacao: dadosConfirmacao.dataConfirmacao,
+        metodoConfirmacao: dadosConfirmacao.metodoConfirmacao,
+        destinatarioId: dadosConfirmacao.destinatarioId,
+        observacoes: dadosConfirmacao.observacoes,
+      };
 
-    console.log(
-      `[AUDITORIA] Confirmação de recebimento ${confirmacaoId} para o pagamento ${pagamentoId} registrada por ${usuarioId}`,
-    );
+      const logDto = new CreateLogAuditoriaDto();
+      logDto.tipo_operacao = TipoOperacao.CREATE;
+      logDto.entidade_afetada = 'ConfirmacaoRecebimento';
+      logDto.entidade_id = confirmacaoId;
+      logDto.usuario_id = usuarioId;
+      logDto.endpoint = contexto?.endpoint || '/api/v1/confirmacoes';
+      logDto.metodo_http = contexto?.metodoHttp || 'POST';
+      logDto.ip_origem = contexto?.ip;
+      logDto.user_agent = contexto?.userAgent;
+      logDto.descricao = `Confirmação de recebimento para pagamento ${pagamentoId}`;
+      logDto.dados_novos = dadosMascarados;
+      logDto.dados_anteriores = undefined;
+
+      await this.auditoriaService.create(logDto);
+      this.logger.log(`Auditoria de confirmação de recebimento registrada: ${confirmacaoId}`);
+    } catch (error) {
+      this.logger.error(
+        `Erro ao registrar auditoria de confirmação de recebimento ${confirmacaoId}:`,
+        error.stack,
+      );
+      // Não propagar o erro para não afetar o fluxo principal
+    }
   }
 
   /**
@@ -219,26 +262,34 @@ export class AuditoriaPagamentoService {
     tipoEntidade: string,
     usuarioId: string,
     dadosSensiveisAcessados: string[],
+    contexto?: { ip?: string; userAgent?: string; endpoint?: string; metodoHttp?: string; justificativa?: string },
   ): Promise<void> {
-    // Em uma implementação real, chamaria o serviço de auditoria
-    // await this.auditoriaService.registrarOperacao({
-    //   tipoOperacao: 'ACESSO_DADOS_SENSIVEIS',
-    //   entidadeId,
-    //   tipoEntidade,
-    //   usuarioId,
-    //   dadosAnteriores: null,
-    //   dadosNovos: {
-    //     camposAcessados: dadosSensiveisAcessados,
-    //     justificativa: 'Acesso operacional'
-    //   },
-    //   ip: '0.0.0.0', // seria obtido do contexto da requisição
-    //   userAgent: 'Sistema', // seria obtido do contexto da requisição
-    //   timestamp: new Date()
-    // });
+    try {
+      const logDto = new CreateLogAuditoriaDto();
+      logDto.tipo_operacao = TipoOperacao.READ;
+      logDto.entidade_afetada = tipoEntidade;
+      logDto.entidade_id = entidadeId;
+      logDto.usuario_id = usuarioId;
+      logDto.endpoint = contexto?.endpoint;
+      logDto.metodo_http = contexto?.metodoHttp || 'GET';
+      logDto.ip_origem = contexto?.ip;
+      logDto.user_agent = contexto?.userAgent;
+      logDto.descricao = `Acesso a dados sensíveis: ${dadosSensiveisAcessados.join(', ')}`;
+      logDto.dados_novos = {
+        camposAcessados: dadosSensiveisAcessados,
+        justificativa: contexto?.justificativa || 'Acesso operacional',
+      };
+      logDto.dados_anteriores = undefined;
 
-    console.log(
-      `[AUDITORIA] Acesso a dados sensíveis de ${tipoEntidade} ${entidadeId} registrado por ${usuarioId}`,
-    );
+      await this.auditoriaService.create(logDto);
+      this.logger.log(`Auditoria de acesso a dados sensíveis registrada: ${entidadeId}`);
+    } catch (error) {
+      this.logger.error(
+        `Erro ao registrar auditoria de acesso a dados sensíveis ${entidadeId}:`,
+        error.stack,
+      );
+      // Não propagar o erro para não afetar o fluxo principal
+    }
   }
 
   /**

@@ -1,6 +1,7 @@
 import {
   ConflictException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -9,6 +10,10 @@ import { ConfirmacaoRecebimento } from '../../../entities/confirmacao-recebiment
 import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
 import { ConfirmacaoRecebimentoDto } from '../dtos/confirmacao-recebimento.dto';
 import { ComprovanteService } from './comprovante.service';
+import { IntegracaoCidadaoService } from './integracao-cidadao.service';
+import { PagamentoService } from './pagamento.service';
+import { AuditoriaService } from '@/modules/auditoria/services/auditoria.service';
+import { TipoOperacao } from '@/enums';
 
 /**
  * Serviço para gerenciamento de confirmações de recebimento de pagamentos
@@ -20,13 +25,15 @@ import { ComprovanteService } from './comprovante.service';
  */
 @Injectable()
 export class ConfirmacaoService {
+  private readonly logger = new Logger(ConfirmacaoService.name);
+
   constructor(
     @InjectRepository(ConfirmacaoRecebimento)
     private readonly confirmacaoRepository: Repository<ConfirmacaoRecebimento>,
     private readonly comprovanteService: ComprovanteService,
-    // Outros serviços necessários serão injetados aqui
-    // private readonly pagamentoService: PagamentoService,
-    // private readonly auditoriaService: AuditoriaService,
+    private readonly integracaoCidadaoService: IntegracaoCidadaoService,
+    private readonly pagamentoService: PagamentoService,
+    private readonly auditoriaService: AuditoriaService,
   ) {}
 
   /**
@@ -43,18 +50,18 @@ export class ConfirmacaoService {
     usuarioId: string,
   ): Promise<ConfirmacaoRecebimento> {
     // Verificar se o pagamento existe
-    // const pagamento = await this.pagamentoService.findOne(pagamentoId);
+    const pagamento = await this.pagamentoService.findOne(pagamentoId);
 
-    // if (!pagamento) {
-    //   throw new NotFoundException('Pagamento não encontrado');
-    // }
+    if (!pagamento) {
+      throw new NotFoundException('Pagamento não encontrado');
+    }
 
     // Verificar se o pagamento está no status adequado
-    // if (pagamento.status !== StatusPagamentoEnum.LIBERADO) {
-    //   throw new ConflictException(
-    //     'Somente pagamentos liberados podem receber confirmação'
-    //   );
-    // }
+    if (pagamento.status !== StatusPagamentoEnum.LIBERADO) {
+      throw new ConflictException(
+        'Somente pagamentos liberados podem receber confirmação'
+      );
+    }
 
     // Verificar se já existe confirmação para este pagamento
     const existingConfirmacao = await this.findByPagamento(pagamentoId);
@@ -89,21 +96,23 @@ export class ConfirmacaoService {
     const result = await this.confirmacaoRepository.save(confirmacao);
 
     // Atualizar o status do pagamento para CONFIRMADO
-    // await this.pagamentoService.atualizarStatus(
-    //   pagamentoId,
-    //   StatusPagamentoEnum.CONFIRMADO,
-    //   usuarioId
-    // );
+    await this.pagamentoService.atualizarStatus(
+       pagamentoId,
+       StatusPagamentoEnum.CONFIRMADO,
+       usuarioId
+     );
 
     // Registrar operação no log de auditoria
-    // await this.auditoriaService.registrarOperacao({
-    //   tipoOperacao: 'CONFIRMACAO_RECEBIMENTO',
-    //   usuarioId,
-    //   entidadeId: result.id,
-    //   tipoEntidade: 'CONFIRMACAO_RECEBIMENTO',
-    //   dadosAnteriores: null,
-    //   dadosNovos: result
-    // });
+    const logDto = {
+       tipo_operacao: TipoOperacao.CREATE,
+       entidade_afetada: 'ConfirmacaoRecebimento',
+       usuario_id: usuarioId,
+       entidade_id: result.id,
+       dados_anteriores: undefined,
+       dados_novos: result,
+       validar: () => {} // Implementação do método validar obrigatório
+    };
+    await this.auditoriaService.criarLog(logDto);
 
     return result;
   }
@@ -163,30 +172,43 @@ export class ConfirmacaoService {
   }
 
   /**
-   * Validar destinatário se diferente do beneficiário
-   *
-   * @param pagamentoId ID do pagamento
+   * Valida se o destinatário tem relação com o beneficiário
+   * @param beneficiarioId ID do beneficiário
    * @param destinatarioId ID do destinatário
-   * @returns true se o destinatário é válido
+   * @returns True se válido
    */
   private async validarDestinatario(
-    pagamentoId: string,
-    destinatarioId?: string,
+    beneficiarioId: string,
+    destinatarioId: string,
   ): Promise<boolean> {
-    // Esta é uma implementação de placeholder
-    // Será integrada com o CidadaoService para validar a relação entre o beneficiário e o destinatário
+    try {
+      this.logger.log(
+        `Validando destinatário ${destinatarioId} para beneficiário ${beneficiarioId}`,
+      );
 
-    if (!destinatarioId) {
-      return true; // Sem destinatário específico, assume-se que é o próprio beneficiário
+      // Se o destinatário é o próprio beneficiário, é válido
+      if (beneficiarioId === destinatarioId) {
+        this.logger.debug('Destinatário é o próprio beneficiário');
+        return true;
+      }
+
+      // Verificar relação familiar através do IntegracaoCidadaoService
+      const temRelacao = await this.integracaoCidadaoService.verificarRelacaoFamiliar(
+        beneficiarioId,
+        destinatarioId,
+      );
+
+      this.logger.debug(
+        `Validação de destinatário: ${temRelacao ? 'aprovada' : 'rejeitada'}`,
+      );
+
+      return temRelacao;
+    } catch (error) {
+      this.logger.error(
+        `Erro ao validar destinatário: ${error.message}`,
+        error.stack,
+      );
+      return false;
     }
-
-    // Lógica para validar se o destinatário é válido (ex: familiar cadastrado)
-    // const pagamento = await this.pagamentoService.findOne(pagamentoId);
-    // const solicitacao = await this.solicitacaoService.findOne(pagamento.solicitacaoId);
-    // const beneficiarioId = solicitacao.cidadaoId;
-
-    // return this.cidadaoService.verificarRelacaoFamiliar(beneficiarioId, destinatarioId);
-
-    return true; // Temporariamente retornando true
   }
 }

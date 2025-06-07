@@ -17,6 +17,8 @@ import { ConfirmacaoController } from './controllers/confirmacao.controller';
 import { PagamentoService } from './services/pagamento.service';
 import { ComprovanteService } from './services/comprovante.service';
 import { ConfirmacaoService } from './services/confirmacao.service';
+import { PagamentoMappingService } from './services/pagamento-mapping.service';
+import { PagamentoResponseService } from './services/pagamento-response.service';
 // import { MetricasPagamentoService } from './services/metricas-pagamento.service';
 // import { RelatorioPagamentoService } from './services/relatorio-pagamento.service';
 
@@ -25,11 +27,18 @@ import { AuditoriaPagamentoService } from './services/auditoria-pagamento.servic
 import { IntegracaoSolicitacaoService } from './services/integracao-solicitacao.service';
 import { IntegracaoDocumentoService } from './services/integracao-documento.service';
 import { IntegracaoCidadaoService } from './services/integracao-cidadao.service';
+import { IntegracaoAuditoriaService } from './services/integracao-auditoria.service';
+import { IntegracaoNotificacaoService } from './services/integracao-notificacao.service';
 
 // Validadores
 import { PixValidator } from './validators/pix-validator';
 import { StatusTransitionValidator } from './validators/status-transition-validator';
 import { DadosBancariosValidator } from './validators/dados-bancarios-validator';
+
+// Interceptors
+import { DataMaskingInterceptor } from './interceptors/data-masking.interceptor';
+import { AuditoriaInterceptor } from './interceptors/auditoria.interceptor';
+import { Reflector } from '@nestjs/core';
 
 // Módulos
 import { UsuarioModule } from '../usuario/usuario.module';
@@ -65,6 +74,8 @@ import { AuditoriaModule } from '../auditoria/auditoria.module';
     PagamentoService,
     ComprovanteService,
     ConfirmacaoService,
+    PagamentoMappingService,
+    PagamentoResponseService,
     // MetricasPagamentoService,
     // RelatorioPagamentoService,
 
@@ -73,11 +84,18 @@ import { AuditoriaModule } from '../auditoria/auditoria.module';
     IntegracaoSolicitacaoService,
     IntegracaoDocumentoService,
     IntegracaoCidadaoService,
+    IntegracaoAuditoriaService,
+    IntegracaoNotificacaoService,
 
     // Validadores
     PixValidator,
     StatusTransitionValidator,
     DadosBancariosValidator,
+
+    // Interceptors
+    DataMaskingInterceptor,
+    AuditoriaInterceptor,
+    Reflector,
   ],
   exports: [
     TypeOrmModule,
@@ -86,6 +104,8 @@ import { AuditoriaModule } from '../auditoria/auditoria.module';
     PagamentoService,
     ComprovanteService,
     ConfirmacaoService,
+    PagamentoMappingService,
+    PagamentoResponseService,
     // MetricasPagamentoService,
     // RelatorioPagamentoService,
 
@@ -94,6 +114,8 @@ import { AuditoriaModule } from '../auditoria/auditoria.module';
     IntegracaoSolicitacaoService,
     IntegracaoDocumentoService,
     IntegracaoCidadaoService,
+    IntegracaoAuditoriaService,
+    IntegracaoNotificacaoService,
 
     // Validadores
     PixValidator,

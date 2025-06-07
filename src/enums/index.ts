@@ -38,6 +38,8 @@ export {
 // Enums de workflow e auditoria
 export { WorkflowAcaoEnum } from './workflow-acao.enum';
 export { TipoOperacao } from './tipo-operacao.enum';
+export { StatusAuditoria } from './status-auditoria.enum';
+export { StatusDocumento } from './status-documento.enum';
 
 // Enums de configuração
 export { ParametroTipoEnum } from './parametro-tipo.enum';

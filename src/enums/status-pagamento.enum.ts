@@ -6,6 +6,11 @@ export enum StatusPagamentoEnum {
   /**
    * Pagamento agendado, mas ainda não liberado efetivamente.
    */
+  PENDENTE = 'pendente',
+
+  /**
+   * Pagamento agendado, mas ainda não liberado efetivamente.
+   */
   AGENDADO = 'agendado',
 
   /**

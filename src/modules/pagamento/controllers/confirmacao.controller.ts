@@ -8,10 +8,16 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
+import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
+import { PermissionGuard } from '../../../auth/guards/permission.guard';
+import { TipoEscopo } from '../../../entities/user-permission.entity';
 import { ConfirmacaoService } from '../services/confirmacao.service';
 import { ConfirmacaoRecebimentoDto } from '../dtos/confirmacao-recebimento.dto';
 import { ConfirmacaoResponseDto } from '../dtos/confirmacao-response.dto';
 import { NotFoundException } from '@nestjs/common';
+import { GetUser } from '@/auth/decorators/get-user.decorator';
+import { Usuario } from '@/entities';
 
 /**
  * Controller para gerenciamento de confirmações de recebimento
@@ -23,6 +29,7 @@ import { NotFoundException } from '@nestjs/common';
  */
 @ApiTags('Pagamentos')
 @Controller('pagamentos/:pagamentoId/confirmacao')
+@UseGuards(JwtAuthGuard, PermissionGuard)
 export class ConfirmacaoController {
   constructor(private readonly confirmacaoService: ConfirmacaoService) {}
 
@@ -45,8 +52,11 @@ export class ConfirmacaoController {
   })
   @ApiResponse({ status: 404, description: 'Pagamento não encontrado' })
   @ApiResponse({ status: 403, description: 'Acesso negado' })
-  // @UseGuards(RolesGuard)
-  // @Roles('admin', 'gestor_semtas', 'tecnico')
+  @RequiresPermission({
+    permissionName: 'pagamento.visualizar',
+    scopeType: TipoEscopo.UNIDADE,
+    scopeIdExpression: 'params.pagamentoId'
+  })
   async findAll(@Param('pagamentoId', ParseUUIDPipe) pagamentoId: string) {
     const confirmacoes =
       await this.confirmacaoService.findByPagamento(pagamentoId);
@@ -89,8 +99,11 @@ export class ConfirmacaoController {
   })
   @ApiResponse({ status: 404, description: 'Confirmação não encontrada' })
   @ApiResponse({ status: 403, description: 'Acesso negado' })
-  // @UseGuards(RolesGuard)
-  // @Roles('admin', 'gestor_semtas', 'tecnico')
+  @RequiresPermission({
+    permissionName: 'pagamento.visualizar',
+    scopeType: TipoEscopo.UNIDADE,
+    scopeIdExpression: 'params.id'
+  })
   async findOne(@Param('id', ParseUUIDPipe) id: string) {
     const confirmacao = await this.confirmacaoService.findOneWithRelations(id);
 
@@ -150,15 +163,18 @@ export class ConfirmacaoController {
     description: 'Pagamento já confirmado ou não pode ser confirmado',
   })
   @ApiResponse({ status: 403, description: 'Acesso negado' })
-  // @UseGuards(RolesGuard)
-  // @Roles('admin', 'gestor_semtas', 'tecnico')
+  @RequiresPermission({
+    permissionName: 'pagamento.confirmar',
+    scopeType: TipoEscopo.UNIDADE,
+    scopeIdExpression: 'params.pagamentoId'
+  })
   async create(
     @Param('pagamentoId', ParseUUIDPipe) pagamentoId: string,
     @Body() createDto: ConfirmacaoRecebimentoDto,
-    // @CurrentUser() usuario: Usuario
+    @GetUser() usuario: Usuario
   ) {
     // Usar o ID do usuário atual
-    const usuarioId = 'placeholder'; // usuario.id;
+    const usuarioId = usuario.id;
 
     const confirmacao = await this.confirmacaoService.registrarConfirmacao(
       pagamentoId,
@@ -211,8 +227,11 @@ export class ConfirmacaoController {
   })
   @ApiResponse({ status: 404, description: 'Pagamento não encontrado' })
   @ApiResponse({ status: 403, description: 'Acesso negado' })
-  // @UseGuards(RolesGuard)
-  // @Roles('admin', 'gestor_semtas', 'tecnico')
+  @RequiresPermission({
+    permissionName: 'pagamento.visualizar',
+    scopeType: TipoEscopo.UNIDADE,
+    scopeIdExpression: 'params.pagamentoId'
+  })
   async verificaConfirmacao(
     @Param('pagamentoId', ParseUUIDPipe) pagamentoId: string,
   ) {

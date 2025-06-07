@@ -60,6 +60,9 @@ export class TipoBeneficio {
     idade_maxima?: number;
     renda_maxima?: number;
     tempo_minimo_residencia?: number;
+    valor_maximo: number;
+    valor_minimo?: number;
+    quantidade_maxima_parcelas?: number;
     outros?: string[];
   };
 

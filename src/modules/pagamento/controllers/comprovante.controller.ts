@@ -21,10 +21,16 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
+import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
+import { PermissionGuard } from '../../../auth/guards/permission.guard';
+import { TipoEscopo } from '../../../entities/user-permission.entity';
 import { ComprovanteService } from '../services/comprovante.service';
 import { ComprovanteUploadDto } from '../dtos/comprovante-upload.dto';
 import { ComprovanteResponseDto } from '../dtos/comprovante-response.dto';
 import { Response } from 'express';
+import { GetUser } from '@/auth/decorators/get-user.decorator';
+import { Usuario } from '@/entities';
 
 /**
  * Controller para gerenciamento de comprovantes de pagamento
@@ -36,6 +42,7 @@ import { Response } from 'express';
  */
 @ApiTags('Pagamentos')
 @Controller('pagamentos/:pagamentoId/comprovantes')
+@UseGuards(JwtAuthGuard, PermissionGuard)
 export class ComprovanteController {
   constructor(private readonly comprovanteService: ComprovanteService) {}
 
@@ -56,8 +63,11 @@ export class ComprovanteController {
   })
   @ApiResponse({ status: 404, description: 'Pagamento não encontrado' })
   @ApiResponse({ status: 403, description: 'Acesso negado' })
-  // @UseGuards(RolesGuard)
-  // @Roles('admin', 'gestor_semtas', 'tecnico')
+  @RequiresPermission({
+    permissionName: 'pagamento.visualizar',
+    scopeType: TipoEscopo.UNIDADE,
+    scopeIdExpression: 'params.pagamentoId'
+  })
   async findAll(@Param('pagamentoId', ParseUUIDPipe) pagamentoId: string) {
     const comprovantes =
       await this.comprovanteService.findAllByPagamento(pagamentoId);
@@ -103,20 +113,23 @@ export class ComprovanteController {
   })
   @ApiResponse({ status: 404, description: 'Pagamento não encontrado' })
   @ApiResponse({ status: 403, description: 'Acesso negado' })
-  // @UseGuards(RolesGuard)
-  // @Roles('admin', 'gestor_semtas', 'tecnico')
+  @RequiresPermission({
+    permissionName: 'pagamento.editar',
+    scopeType: TipoEscopo.UNIDADE,
+    scopeIdExpression: 'params.pagamentoId'
+  })
   async uploadComprovante(
     @Param('pagamentoId', ParseUUIDPipe) pagamentoId: string,
     @UploadedFile() file: any,
     @Body() uploadDto: ComprovanteUploadDto,
-    // @CurrentUser() usuario: Usuario
+    @GetUser() usuario: Usuario
   ) {
     if (!file) {
       throw new BadRequestException('Nenhum arquivo enviado');
     }
 
     // Usar o ID do usuário atual
-    const usuarioId = 'placeholder'; // usuario.id;
+    const usuarioId = usuario.id
 
     const comprovante = await this.comprovanteService.uploadComprovante(
       pagamentoId,
@@ -155,8 +168,11 @@ export class ComprovanteController {
   @ApiResponse({ status: 200, description: 'Arquivo enviado com sucesso' })
   @ApiResponse({ status: 404, description: 'Comprovante não encontrado' })
   @ApiResponse({ status: 403, description: 'Acesso negado' })
-  // @UseGuards(RolesGuard)
-  // @Roles('admin', 'gestor_semtas', 'tecnico')
+  @RequiresPermission({
+    permissionName: 'pagamento.visualizar',
+    scopeType: TipoEscopo.UNIDADE,
+    scopeIdExpression: 'params.id'
+  })
   async downloadComprovante(
     @Param('id', ParseUUIDPipe) id: string,
     @Res() res: Response,
@@ -191,8 +207,11 @@ export class ComprovanteController {
   })
   @ApiResponse({ status: 404, description: 'Comprovante não encontrado' })
   @ApiResponse({ status: 403, description: 'Acesso negado' })
-  // @UseGuards(RolesGuard)
-  // @Roles('admin', 'gestor_semtas', 'tecnico')
+  @RequiresPermission({
+    permissionName: 'pagamento.visualizar',
+    scopeType: TipoEscopo.UNIDADE,
+    scopeIdExpression: 'params.id'
+  })
   async findOne(@Param('id', ParseUUIDPipe) id: string) {
     const comprovante = await this.comprovanteService.findOne(id);
 
@@ -234,16 +253,18 @@ export class ComprovanteController {
     description: 'Comprovante não pode ser removido',
   })
   @ApiResponse({ status: 403, description: 'Acesso negado' })
-  // @UseGuards(RolesGuard)
-  // @Roles('admin', 'gestor_semtas', 'tecnico')
+  @RequiresPermission({
+    permissionName: 'pagamento.editar',
+    scopeType: TipoEscopo.UNIDADE,
+    scopeIdExpression: 'params.id'
+  })
   async remove(
     @Param('id', ParseUUIDPipe) id: string,
-    // @CurrentUser() usuario: Usuario
+    @GetUser() usuario: Usuario
   ) {
+    
     // Usar o ID do usuário atual
-    const usuarioId = 'placeholder'; // usuario.id;
-
-    await this.comprovanteService.removeComprovante(id, usuarioId);
+    await this.comprovanteService.removeComprovante(id, usuario.id);
 
     return { message: 'Comprovante removido com sucesso' };
   }

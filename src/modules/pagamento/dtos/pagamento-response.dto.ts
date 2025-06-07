@@ -46,10 +46,9 @@ export class PagamentoResponseDto {
     required: false,
   })
   solicitacao?: {
-    numeroProcesso: string;
-    cidadaoNome: string;
-    tipoBeneficio: string;
-    unidade: string;
+    id: string;
+    beneficiario: string;
+    tipoBeneficio: any;
   };
 
   /**
@@ -68,7 +67,7 @@ export class PagamentoResponseDto {
   @ApiProperty({
     description: 'Dados bancários utilizados (com mascaramento)',
     example: {
-      tipo: 'PIX',
+      tipo: 'POUPANCA_SOCIAL',
       chavePix: '***@domain.com',
       banco: '001',
       agencia: '***123',
@@ -81,8 +80,8 @@ export class PagamentoResponseDto {
     
     // Aplica mascaramento nos dados bancários sensíveis
     const maskedData = DataMaskingUtil.maskDadosBancarios({
-      pixKey: value.chavePix,
-      pixTipo: value.pixTipo,
+      pixKey: value.chave_pix,
+      pixTipo: value.tipo_chave_pix,
       banco: value.banco, // Código do banco não é mascarado (informação pública)
       agencia: value.agencia,
       conta: value.conta
@@ -90,7 +89,7 @@ export class PagamentoResponseDto {
     
     // Retorna o objeto completo com o campo 'tipo' preservado
     return {
-      tipo: value.tipo,
+      tipo: value.tipo_conta,
       chavePix: maskedData.pixKey,
       pixTipo: maskedData.pixTipo,
       banco: maskedData.banco,

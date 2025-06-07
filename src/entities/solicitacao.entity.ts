@@ -24,6 +24,8 @@ import { Pendencia } from './pendencia.entity';
 import { ProcessoJudicial } from './processo-judicial.entity';
 import { DeterminacaoJudicial } from './determinacao-judicial.entity';
 import { StatusSolicitacao } from '../enums/status-solicitacao.enum';
+import { InfoBancaria } from './info-bancaria.entity';
+import { Pagamento } from './pagamento.entity';
 
 @Entity('solicitacao')
 @Index(['protocolo'], { unique: true })
@@ -196,6 +198,24 @@ export class Solicitacao {
     onDelete: 'CASCADE',
   })
   pendencias: Pendencia[];
+
+  /**
+   * Relação com pagamentos da solicitação
+   */
+  @OneToMany(() => Pagamento, (pagamento) => pagamento.solicitacao, {
+    cascade: ['insert'],
+    onDelete: 'CASCADE',
+  })
+  pagamentos: Pagamento[];
+
+    /**
+   * Relação com histórico de status da solicitação
+   */
+    @OneToMany(() => InfoBancaria, (infoBancaria) => infoBancaria.cidadao, {
+      cascade: ['insert'],
+      onDelete: 'CASCADE',
+    })
+    info_bancaria: InfoBancaria[];
 
   /**
    * Controle de versão para detectar e prevenir atualizações concorrentes
