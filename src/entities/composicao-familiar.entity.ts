@@ -23,6 +23,7 @@ import { Cidadao } from './cidadao.entity';
 import { EscolaridadeEnum } from '../enums/escolaridade.enum';
 import { CPFValidator } from '../modules/cidadao/validators/cpf-validator';
 import { ParentescoEnum } from '../enums/parentesco.enum';
+import { IsNIS } from '@/shared/validators/br-validators';
 
 @Entity('composicao_familiar')
 @Index(['cidadao_id', 'nome'], { unique: true })
@@ -51,8 +52,9 @@ export class ComposicaoFamiliar {
   cpf: string;
 
   @Column({ nullable: true })
-  @IsNotEmpty({ message: 'NIS do parente é obrigatório' })
-  nis: string;
+  @IsOptional()
+  @Validate(IsNIS, { message: 'NIS inválido' })
+  nis?: string;
 
   @Column('integer')
   @IsNotEmpty({ message: 'Idade do parente é obrigatório' })

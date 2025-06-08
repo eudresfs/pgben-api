@@ -50,12 +50,12 @@ export class CreateComposicaoFamiliarDto {
   })
   cpf: string;
 
-  @IsNotEmpty({ message: 'NIS do parente é obrigatório' })
+  @IsOptional()
   @ApiProperty({
     example: '12345678901',
     description: 'NIS do membro familiar',
   })
-  nis: string;
+  nis?: string;
 
   @IsNotEmpty({ message: 'Idade do parente é obrigatório' })
   @IsNumber({}, { message: 'Idade deve ser um número' })
@@ -78,12 +78,6 @@ export class CreateComposicaoFamiliarDto {
   @IsEnum(EscolaridadeEnum, {
     message: 'Escolaridade deve ser um valor válido',
   })
-  @Transform(({ value }) => {
-    if (typeof value === 'string') {
-      return value.toUpperCase();
-    }
-    return value;
-  })
   @ApiProperty({
     example: EscolaridadeEnum.MEDIO_COMPLETO,
     description: 'Nível de escolaridade do membro familiar',
@@ -93,12 +87,6 @@ export class CreateComposicaoFamiliarDto {
 
   @IsNotEmpty({ message: 'Parentesco é obrigatório' })
   @IsEnum(ParentescoEnum, { message: 'Parentesco deve ser um valor válido' })
-  @Transform(({ value }) => {
-    if (typeof value === 'string') {
-      return value.toUpperCase();
-    }
-    return value;
-  })
   @ApiProperty({
     example: ParentescoEnum.FILHO,
     description: 'Grau de parentesco com o cidadão principal',
