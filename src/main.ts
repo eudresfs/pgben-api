@@ -12,6 +12,7 @@ import {
   VersioningType,
 } from '@nestjs/common';
 import { ResponseInterceptor } from './shared/interceptors/response.interceptor';
+import { RemoveEmptyParamsInterceptor } from './shared/interceptors/remove-empty-params.interceptor';
 import { CatalogAwareExceptionFilter } from './shared/exceptions/error-catalog';
 import { setupSwagger } from './shared/configs/swagger/index';
 import { applySecurity } from './config/security.config';
@@ -94,6 +95,9 @@ async function bootstrap(): Promise<INestApplication> {
 
     // === INTERCEPTORS E FILTROS GLOBAIS ===
     logger.log('🛡️ Configurando interceptors e filtros...');
+
+    // Interceptor para remover parâmetros vazios das requisições
+    app.useGlobalInterceptors(new RemoveEmptyParamsInterceptor());
 
     // Interceptor de resposta padronizada
     app.useGlobalInterceptors(new ResponseInterceptor());
