@@ -42,6 +42,6 @@ import { NotificacaoSistema, NotificationTemplate } from '../../entities';
     SseService,
     SseGuard,
   ],
-  exports: [NotificacaoService, NotificationManagerService, SseService],
+  exports: [TypeOrmModule, NotificacaoService, NotificationManagerService, SseService],
 })
 export class NotificacaoModule {}

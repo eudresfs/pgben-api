@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 // Entidades
@@ -6,6 +6,7 @@ import {
   Pagamento,
   ComprovantePagamento,
   ConfirmacaoRecebimento,
+  LogAuditoria,
 } from '../../entities';
 
 // Controllers
@@ -41,9 +42,14 @@ import { AuditoriaInterceptor } from './interceptors/auditoria.interceptor';
 import { Reflector } from '@nestjs/core';
 
 // Módulos
+import { AuthModule } from '../../auth/auth.module';
 import { UsuarioModule } from '../usuario/usuario.module';
 import { SolicitacaoModule } from '../solicitacao/solicitacao.module';
-import { AuditoriaModule } from '../auditoria/auditoria.module';
+import { AuditoriaSharedModule } from '../../shared/auditoria/auditoria-shared.module';
+import { DocumentoModule } from '../documento/documento.module';
+import { CidadaoModule } from '../cidadao/cidadao.module';
+import { NotificacaoModule } from '../notificacao/notificacao.module';
+import { SharedModule } from '../../shared/shared.module';
 
 /**
  * Módulo de Pagamento/Liberação
@@ -59,10 +65,16 @@ import { AuditoriaModule } from '../auditoria/auditoria.module';
       Pagamento,
       ComprovantePagamento,
       ConfirmacaoRecebimento,
+      LogAuditoria,
     ]),
+    AuthModule,
+    SharedModule,
     UsuarioModule,
     SolicitacaoModule,
-    AuditoriaModule,
+    DocumentoModule,
+    CidadaoModule,
+    NotificacaoModule,
+    AuditoriaSharedModule,
   ],
   controllers: [
     PagamentoController,

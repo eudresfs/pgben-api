@@ -93,6 +93,6 @@ import { SharedModule } from '../../shared/shared.module';
     },
     InputSanitizerValidator,
   ],
-  exports: [DocumentoService, StorageProviderFactory],
+  exports: [TypeOrmModule, DocumentoService, StorageProviderFactory],
 })
 export class DocumentoModule {}

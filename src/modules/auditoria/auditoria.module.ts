@@ -112,6 +112,7 @@ import { LogAuditoriaRepository } from './repositories/log-auditoria.repository'
   ],
   exports: [
     // Exporta os serviços principais para uso em outros módulos
+    TypeOrmModule,
     AuditoriaService,
     AuditoriaQueueService,
     LogAuditoriaRepository,

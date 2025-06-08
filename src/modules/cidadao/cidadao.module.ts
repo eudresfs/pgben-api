@@ -85,6 +85,7 @@ import { NotificacaoModule } from '../notificacao/notificacao.module';
     },
   ],
   exports: [
+    TypeOrmModule,
     CidadaoService,
     CidadaoRepository,
     PapelCidadaoService,

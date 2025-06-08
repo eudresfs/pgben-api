@@ -5,13 +5,14 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 
 import { LogAuditoria } from '../../entities/log-auditoria.entity';
+import { AuditoriaService } from '../../modules/auditoria/services/auditoria.service';
 import { AuditoriaQueueService } from '../../modules/auditoria/services/auditoria-queue.service';
 import { LogAuditoriaRepository } from '../../modules/auditoria/repositories/log-auditoria.repository';
 import { AuditoriaSignatureService } from '../../modules/auditoria/services/auditoria-signature.service';
 
 /**
  * Módulo compartilhado de Auditoria
- *
+ * 
  * Este módulo exporta os serviços essenciais de auditoria que podem
  * ser usados por outros módulos sem criar dependências circulares.
  *
@@ -48,12 +49,14 @@ import { AuditoriaSignatureService } from '../../modules/auditoria/services/audi
   ],
   providers: [
     // Serviços essenciais
+    AuditoriaService,
     AuditoriaQueueService,
     LogAuditoriaRepository,
     AuditoriaSignatureService,
   ],
   exports: [
     // Exporta os serviços principais para uso em outros módulos
+    AuditoriaService,
     AuditoriaQueueService,
     LogAuditoriaRepository,
     AuditoriaSignatureService,

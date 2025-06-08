@@ -76,6 +76,7 @@ import { MonitoramentoAluguelSocialService } from './services/monitoramento-alug
     SolicitacaoEventListener,
   ],
   exports: [
+    TypeOrmModule,
     SolicitacaoService,
     DeterminacaoJudicialService,
     DeterminacaoJudicialAdapterService,

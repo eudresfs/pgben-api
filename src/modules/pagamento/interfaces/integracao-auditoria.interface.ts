@@ -9,6 +9,7 @@ export interface IIntegracaoAuditoriaService {
   /**
    * Registra evento de auditoria
    * @param evento Dados do evento de auditoria
+   * 
    * @param contextoUsuario Contexto do usuário logado
    * @returns Resultado da operação
    */

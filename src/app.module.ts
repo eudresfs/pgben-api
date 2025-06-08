@@ -19,6 +19,7 @@ import { MetricasModule } from './modules/metricas/metricas.module';
 import { AuditModule } from './audit/audit.module';
 import { RecursoModule } from './modules/recurso/recurso.module';
 import { LogsModule } from './modules/logs/logs.module';
+import { PagamentoModule } from './modules/pagamento/pagamento.module';
 import { APP_GUARD } from '@nestjs/core';
 import { CatalogAwareExceptionFilter } from './shared/exceptions/error-catalog';
 import { UnifiedLoggerModule } from './shared/logging/unified-logger.module';
@@ -98,6 +99,9 @@ import { EmailModule } from './shared/modules/email.module';
 
     // Módulo de docuentos
     DocumentoModule,
+
+    // Módulo de pagamentos
+    PagamentoModule,
 
     // Módulo de auditoria e logging
     AuditModule,
