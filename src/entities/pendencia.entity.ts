@@ -21,6 +21,9 @@ export enum StatusPendencia {
 
 @Entity('pendencias')
 @Index(['solicitacao_id', 'created_at'])
+@Index(['status', 'prazo_resolucao'])
+@Index(['registrado_por_id'])
+@Index(['status', 'created_at'])
 export class Pendencia {
   @PrimaryGeneratedColumn('uuid')
   id: string;

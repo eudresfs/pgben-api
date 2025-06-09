@@ -4,7 +4,7 @@
  */
 export enum StatusPagamentoEnum {
   /**
-   * Pagamento agendado, mas ainda não liberado efetivamente.
+   * Pagamento criado, mas ainda não agendado.
    */
   PENDENTE = 'pendente',
 
@@ -14,12 +14,17 @@ export enum StatusPagamentoEnum {
   AGENDADO = 'agendado',
 
   /**
-   * Pagamento liberado para o beneficiário, mas ainda não confirmado o recebimento.
+   * Pagamento liberado para o beneficiário, mas ainda não pago.
    */
   LIBERADO = 'liberado',
 
   /**
-   * Pagamento confirmado como recebido pelo beneficiário.
+   * Pagamento efetuado, mas ainda não concluído.
+   */
+  PAGO = 'pago',
+
+  /**
+   * Pagamento concluído com comprovante anexado.
    */
   CONFIRMADO = 'confirmado',
 

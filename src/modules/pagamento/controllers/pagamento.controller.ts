@@ -26,6 +26,8 @@ import { PagamentoService } from '../services/pagamento.service';
 import { PagamentoMappingService } from '../services/pagamento-mapping.service';
 import { PagamentoResponseService } from '../services/pagamento-response.service';
 import { PagamentoCreateDto } from '../dtos/pagamento-create.dto';
+import { PagamentoPendenteCreateDto } from '../dtos/pagamento-pendente-create.dto';
+import { PagamentoUpdateStatusDto } from '../dtos/pagamento-update-status.dto';
 import { PagamentoResponseDto } from '../dtos/pagamento-response.dto';
 import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
 import { PagamentoAccessGuard } from '../guards/pagamento-access.guard';
@@ -192,71 +194,6 @@ export class PagamentoController {
   }
 
   /**
-   * Registra a liberação de um pagamento para uma solicitação aprovada
-   */
-  @Post('liberar/:solicitacaoId')
-  @RequiresPermission({
-    permissionName: 'pagamento.criar',
-    scopeType: TipoEscopo.UNIDADE,
-    scopeIdExpression: 'params.solicitacaoId'
-  })
-  @AuditoriaPagamento.Criacao()
-  @ApiOperation({
-    summary:
-      'Registra a liberação de um pagamento para uma solicitação aprovada',
-  })
-  @ApiParam({
-    name: 'solicitacaoId',
-    type: 'string',
-    description: 'ID da solicitação',
-  })
-  @ApiResponse({
-    status: 201,
-    description: 'Pagamento registrado com sucesso',
-    type: PagamentoResponseDto,
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Dados inválidos ou solicitação não aprovada',
-  })
-  @ApiResponse({ status: 403, description: 'Acesso negado' })
-  async createPagamento(
-    @Param('solicitacaoId', ParseUUIDPipe) solicitacaoId: string,
-    @Body() createDto: PagamentoCreateDto,
-    @Request() req?: any,
-  ) {
-    // Usar o ID do usuário atual autenticado
-    const usuarioId = req?.user?.id || '';
-
-    const contextoUsuario = {
-      id: req?.user?.id || '',
-      perfil: req?.user?.perfil || 'OPERADOR',
-      unidadeId: req?.user?.unidadeId,
-      permissoes: req?.user?.permissoes || [],
-      isAdmin: req?.user?.isAdmin || false,
-      isSupervisor: req?.user?.isSupervisor || false,
-    };
-
-    const pagamento = await this.pagamentoService.createPagamento(
-      solicitacaoId,
-      createDto,
-      usuarioId,
-    );
-
-    // Mapear entidade para DTO de resposta
-    const responseDto = await this.mappingService.mapEntityToResponseDto(
-      pagamento,
-      contextoUsuario,
-    );
-
-    // Retornar resposta de criação
-    return this.responseService.created(
-      responseDto,
-      'Pagamento registrado com sucesso',
-    );
-  }
-
-  /**
    * Cancela um pagamento existente
    */
   @Patch(':id/cancelar')
@@ -311,7 +248,121 @@ export class PagamentoController {
   }
 
   /**
-   * Lista pagamentos pendentes (liberados mas não confirmados)
+   * Cria um novo pagamento com status pendente
+   */
+  @Post()
+  @RequiresPermission({
+    permissionName: 'pagamento.criar',
+    scopeType: TipoEscopo.UNIDADE,
+    scopeIdExpression: 'body.solicitacaoId'
+  })
+  @AuditoriaPagamento.Criacao()
+  @ApiOperation({
+    summary: 'Cria um novo pagamento com status pendente',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Pagamento criado com sucesso',
+    type: PagamentoResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Dados inválidos',
+  })
+  @ApiResponse({ status: 403, description: 'Acesso negado' })
+  async createPagamentoPendente(
+    @Body() createDto: PagamentoPendenteCreateDto,
+    @Request() req?: any,
+  ) {
+    const usuarioId = req?.user?.id || '';
+
+    const contextoUsuario = {
+      id: req?.user?.id || '',
+      perfil: req?.user?.perfil || 'OPERADOR',
+      unidadeId: req?.user?.unidadeId,
+      permissoes: req?.user?.permissoes || [],
+      isAdmin: req?.user?.isAdmin || false,
+      isSupervisor: req?.user?.isSupervisor || false,
+    };
+
+    const pagamento = await this.pagamentoService.createPagamentoPendente(
+      createDto,
+      usuarioId,
+    );
+
+    // Mapear entidade para DTO de resposta
+    const responseDto = await this.mappingService.mapEntityToResponseDto(
+      pagamento,
+      contextoUsuario,
+    );
+
+    // Retornar resposta de criação
+    return this.responseService.created(
+      responseDto,
+      'Pagamento criado com sucesso',
+    );
+  }
+
+  /**
+   * Atualiza o status de um pagamento
+   */
+  @Patch(':id/status')
+  @RequiresPermission({
+    permissionName: 'pagamento.atualizar',
+    scopeType: TipoEscopo.UNIDADE,
+    scopeIdExpression: 'params.id'
+  })
+  @AuditoriaPagamento.AtualizacaoStatus()
+  @ApiOperation({ summary: 'Atualiza o status de um pagamento' })
+  @ApiParam({ name: 'id', type: 'string', description: 'ID do pagamento' })
+  @ApiResponse({
+    status: 200,
+    description: 'Status do pagamento atualizado com sucesso',
+    type: PagamentoResponseDto,
+  })
+  @ApiResponse({ status: 404, description: 'Pagamento não encontrado' })
+  @ApiResponse({ status: 400, description: 'Transição de status inválida' })
+  @ApiResponse({ status: 403, description: 'Acesso negado' })
+  @UseGuards(PagamentoAccessGuard)
+  @OperadorOuAdmin()
+  @VerificarUnidade(true)
+  async updateStatus(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() updateStatusDto: PagamentoUpdateStatusDto,
+    @Request() req?: any,
+  ) {
+    const usuarioId = req?.user?.id || '';
+
+    const contextoUsuario = {
+      id: req?.user?.id || '',
+      perfil: req?.user?.perfil || 'OPERADOR',
+      unidadeId: req?.user?.unidadeId,
+      permissoes: req?.user?.permissoes || [],
+      isAdmin: req?.user?.isAdmin || false,
+      isSupervisor: req?.user?.isSupervisor || false,
+    };
+
+    const pagamento = await this.pagamentoService.updateStatus(
+      id,
+      updateStatusDto,
+      usuarioId,
+    );
+
+    // Mapear entidade para DTO de resposta
+    const responseDto = await this.mappingService.mapEntityToResponseDto(
+      pagamento,
+      contextoUsuario,
+    );
+
+    // Retornar resposta de atualização
+    return this.responseService.updated(
+      responseDto,
+      'Status do pagamento atualizado com sucesso',
+    );
+  }
+
+  /**
+   * Lista pagamentos pendentes (criados mas não agendados)
    */
   @Get('pendentes')
   @RequiresPermission({
@@ -321,7 +372,7 @@ export class PagamentoController {
   })
   @AuditoriaPagamento.Consulta('Consulta de pagamentos pendentes')
   @ApiOperation({
-    summary: 'Lista pagamentos pendentes (liberados mas não confirmados)',
+    summary: 'Lista pagamentos pendentes (criados mas não agendados)',
   })
   @ApiQuery({ name: 'unidadeId', required: false })
   @ApiQuery({ name: 'tipoBeneficioId', required: false })
@@ -364,7 +415,7 @@ export class PagamentoController {
     };
 
     const pagamentos = await this.pagamentoService.findByStatus(
-      StatusPagamentoEnum.AGENDADO,
+      StatusPagamentoEnum.PENDENTE,
       page ? Number(page) : 1,
       limit ? Number(limit) : 10,
     );

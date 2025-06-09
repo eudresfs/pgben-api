@@ -5,6 +5,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { AuthModule } from '../../auth/auth.module';
 import { JudicialModule } from '../judicial/judicial.module';
 import { CidadaoModule } from '../cidadao/cidadao.module';
+import { UsuarioModule } from '../usuario/usuario.module';
 import { SolicitacaoController } from './controllers/solicitacao.controller';
 import { SolicitacaoService } from './services/solicitacao.service';
 import { DeterminacaoJudicialController } from './controllers/determinacao-judicial.controller';
@@ -12,6 +13,8 @@ import { DeterminacaoJudicialService } from './services/determinacao-judicial.se
 import { DeterminacaoJudicialAdapterService } from './services/determinacao-judicial-adapter.service';
 import { WorkflowSolicitacaoController } from './controllers/workflow-solicitacao.controller';
 import { MonitoramentoAluguelSocialController } from './controllers/monitoramento-aluguel-social.controller';
+import { PendenciaController } from './controllers/pendencia.controller';
+import { PendenciaService } from './services/pendencia.service';
 import { WorkflowSolicitacaoService } from './services/workflow-solicitacao.service';
 import { TransicaoEstadoService } from './services/transicao-estado.service';
 import { ValidacaoSolicitacaoService } from './services/validacao-solicitacao.service';
@@ -26,6 +29,7 @@ import {
   HistoricoSolicitacao,
   DeterminacaoJudicial,
   Pendencia,
+  Usuario,
 } from '../../entities';
 import { MonitoramentoAluguelSocialService } from './services/monitoramento-aluguel-social.service';
 
@@ -42,11 +46,14 @@ import { MonitoramentoAluguelSocialService } from './services/monitoramento-alug
       HistoricoSolicitacao,
       Pendencia,
       DeterminacaoJudicial,
+      Usuario, // Adicionado para permitir injeção do Repository<Usuario>
     ]),
     // Importa o módulo judicial para acesso aos repositórios e serviços
     JudicialModule,
     // Importa o módulo de cidadão para validações
     CidadaoModule,
+    // Importa o módulo de usuário para acesso ao UsuarioRepository
+    UsuarioModule,
     // Importa o módulo compartilhado de autenticação
     AuthModule,
     // Módulo de eventos para notificações
@@ -59,6 +66,7 @@ import { MonitoramentoAluguelSocialService } from './services/monitoramento-alug
     DeterminacaoJudicialController,
     WorkflowSolicitacaoController,
     MonitoramentoAluguelSocialController,
+    PendenciaController,
   ],
   providers: [
     SolicitacaoService,
@@ -73,6 +81,7 @@ import { MonitoramentoAluguelSocialService } from './services/monitoramento-alug
     EventosService,
     ValidacaoExclusividadeService,
     MonitoramentoAluguelSocialService,
+    PendenciaService,
     SolicitacaoEventListener,
   ],
   exports: [
@@ -86,6 +95,7 @@ import { MonitoramentoAluguelSocialService } from './services/monitoramento-alug
     NotificacaoService,
     EventosService,
     MonitoramentoAluguelSocialService,
+    PendenciaService,
   ],
 })
 export class SolicitacaoModule {}

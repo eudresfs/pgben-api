@@ -9,6 +9,7 @@ import { PrazoSolicitacaoService } from './prazo-solicitacao.service';
 import { PriorizacaoSolicitacaoService } from './priorizacao-solicitacao.service';
 import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { Pendencia, Usuario } from '@/entities';
 
 /**
  * Tipos de notificação disponíveis no sistema
@@ -52,6 +53,21 @@ export interface DadosNotificacao {
  */
 @Injectable()
 export class NotificacaoService {
+  /**
+   * Notifica sobre criação de pendência
+   */
+  async notificarPendenciaCriada(pendenciaSalva: Pendencia, solicitacao: Solicitacao, usuario: Usuario): Promise<void> {
+    this.logger.log(`Pendência criada: ${pendenciaSalva.id} para solicitação ${solicitacao.id}`);
+    // TODO: Implementar notificação real (email, SMS, etc.)
+  }
+
+  /**
+   * Notifica sobre resolução de pendência
+   */
+  async notificarPendenciaResolvida(pendenciaAtualizada: Pendencia, solicitacao: Solicitacao, usuario: Usuario): Promise<void> {
+    this.logger.log(`Pendência resolvida: ${pendenciaAtualizada.id} para solicitação ${solicitacao.id}`);
+    // TODO: Implementar notificação real (email, SMS, etc.)
+  }
   private readonly logger = new Logger(NotificacaoService.name);
 
   constructor(

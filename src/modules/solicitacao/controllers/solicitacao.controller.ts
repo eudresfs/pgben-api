@@ -542,30 +542,6 @@ export class SolicitacaoController {
   }
 
   /**
-   * Lista as pendências de uma solicitação
-   */
-  @Get(':id/pendencias')
-  @RequiresPermission({
-    permissionName: 'solicitacao.visualizar',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'solicitacao.unidadeId',
-  })
-  @RequiresPermission({
-    permissionName: 'solicitacao.pendencia.visualizar',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'solicitacao.unidadeId',
-  })
-  @ApiOperation({ summary: 'Listar pendências de uma solicitação' })
-  @ApiResponse({
-    status: 200,
-    description: 'Pendências retornadas com sucesso',
-  })
-  @ApiResponse({ status: 404, description: 'Solicitação não encontrada' })
-  async getPendencias(@Param('id', ParseUUIDPipe) id: string) {
-    return this.solicitacaoService.getPendencias(id);
-  }
-
-  /**
    * Vincula um processo judicial a uma solicitação
    */
   @Post(':id/processo-judicial')

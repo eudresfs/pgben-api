@@ -9,7 +9,10 @@ import { Repository } from 'typeorm';
 import { Pagamento } from '../../../entities/pagamento.entity';
 import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
 import { PagamentoCreateDto } from '../dtos/pagamento-create.dto';
+import { PagamentoPendenteCreateDto } from '../dtos/pagamento-pendente-create.dto';
+import { PagamentoUpdateStatusDto } from '../dtos/pagamento-update-status.dto';
 import { StatusTransitionValidator } from '../validators/status-transition-validator';
+import { CreateLogAuditoriaDto } from '../../auditoria/dto/create-log-auditoria.dto';
 import { normalizeEnumFields } from '../../../shared/utils/enum-normalizer.util';
 import { SolicitacaoService } from '../../solicitacao/services/solicitacao.service';
 import { WorkflowSolicitacaoService } from '@/modules/solicitacao/services/workflow-solicitacao.service';
@@ -35,6 +38,70 @@ export class PagamentoService {
     private readonly solicitacaoService: SolicitacaoService,
     private readonly auditoriaService: AuditoriaService,
   ) { }
+
+  /**
+   * Cria um novo registro de pagamento pendente
+   *
+   * @param createDto Dados para criação do pagamento pendente
+   * @param usuarioId ID do usuário que está realizando a operação
+   * @returns Pagamento criado com status pendente
+   */
+  async createPagamentoPendente(
+    createDto: PagamentoPendenteCreateDto,
+    usuarioId: string,
+  ): Promise<Pagamento> {
+    // Validar se a solicitação existe
+    const solicitacao = await this.solicitacaoService.findById(createDto.solicitacaoId);
+    if (!solicitacao) {
+      throw new NotFoundException('Solicitação não encontrada');
+    }
+
+    // Verificar se já existe um pagamento para esta solicitação
+    const pagamentoExistente = await this.pagamentoRepository.findOneBy({
+      solicitacaoId: createDto.solicitacaoId,
+    });
+    if (pagamentoExistente) {
+      throw new ConflictException(
+        'Já existe um pagamento para esta solicitação'
+      );
+    }
+
+    // Validar limites de valor
+    await this.validarLimitesPagamento(createDto.valor, solicitacao.tipo_beneficio);
+
+    // Normalizar campos de enum antes de criar a entidade
+    const dadosNormalizados = normalizeEnumFields({
+      solicitacaoId: createDto.solicitacaoId,
+      infoBancariaId: createDto.infoBancariaId,
+      valor: createDto.valor,
+      dataPrevistaLiberacao: createDto.dataPrevistaLiberacao,
+      status: StatusPagamentoEnum.PENDENTE, // Status inicial pendente
+      metodoPagamento: createDto.metodoPagamento,
+      criadoPor: usuarioId,
+      observacoes: createDto.observacoes,
+    });
+
+    // Criar nova entidade de pagamento
+    const pagamento = this.pagamentoRepository.create(dadosNormalizados);
+
+    // Salvar o pagamento
+    const result = await this.pagamentoRepository.save(pagamento);
+
+    // Registrar auditoria
+    const logDto = new CreateLogAuditoriaDto();
+    logDto.tipo_operacao = TipoOperacao.CREATE;
+    logDto.entidade_afetada = 'Pagamento';
+    logDto.entidade_id = result.id;
+    logDto.usuario_id = usuarioId;
+    logDto.dados_novos = result;
+    logDto.ip_origem = '127.0.0.1'; // TODO: Obter IP real da requisição
+    logDto.user_agent = 'Sistema Interno'; // TODO: Obter user agent real
+    logDto.endpoint = '/pagamentos';
+    logDto.metodo_http = 'POST';
+    await this.auditoriaService.create(logDto);
+
+    return result;
+  }
 
   /**
    * Cria um novo registro de pagamento para uma solicitação aprovada
@@ -104,7 +171,102 @@ export class PagamentoService {
   }
 
   /**
-   * Atualiza o status de um pagamento existente
+   * Atualiza o status de um pagamento com validações específicas
+   *
+   * @param id ID do pagamento
+   * @param updateDto Dados para atualização do status
+   * @param usuarioId ID do usuário que está realizando a operação
+   * @returns Pagamento atualizado
+   */
+  async updateStatus(
+    id: string,
+    updateDto: PagamentoUpdateStatusDto,
+    usuarioId: string,
+  ): Promise<Pagamento> {
+    // Buscar o pagamento existente
+    const pagamento = await this.pagamentoRepository.findOneBy({ id });
+    if (!pagamento) {
+      throw new NotFoundException('Pagamento não encontrado');
+    }
+
+    // Validar a transição de status
+    if (!this.statusValidator.canTransition(pagamento.status, updateDto.status)) {
+      throw new ConflictException(
+        `Transição de status inválida: ${pagamento.status} -> ${updateDto.status}`
+      );
+    }
+
+    // Validar se comprovante é obrigatório para status CONFIRMADO
+    if (updateDto.status === StatusPagamentoEnum.CONFIRMADO && !updateDto.comprovanteId) {
+      throw new BadRequestException(
+        'Comprovante é obrigatório para concluir um pagamento'
+      );
+    }
+
+    // Validar se data de agendamento é obrigatória para status AGENDADO
+    if (updateDto.status === StatusPagamentoEnum.AGENDADO && !updateDto.dataAgendamento) {
+      throw new BadRequestException(
+        'Data de agendamento é obrigatória para agendar um pagamento'
+      );
+    }
+
+    // Armazenar dados anteriores para auditoria
+    const dadosAnteriores = { ...pagamento };
+
+    // Atualizar os campos
+    pagamento.status = updateDto.status;
+    pagamento.updated_at = new Date();
+
+    // Atualizar campos específicos baseados no status
+    if (updateDto.status === StatusPagamentoEnum.AGENDADO && updateDto.dataAgendamento) {
+      pagamento.dataAgendamento = new Date(updateDto.dataAgendamento);
+    }
+
+    if (updateDto.status === StatusPagamentoEnum.LIBERADO) {
+      pagamento.dataLiberacao = new Date();
+      pagamento.liberadoPor = usuarioId;
+    }
+
+    if (updateDto.status === StatusPagamentoEnum.PAGO) {
+      pagamento.dataPagamento = new Date();
+    }
+
+    if (updateDto.status === StatusPagamentoEnum.CONFIRMADO) {
+      pagamento.dataConclusao = new Date();
+      if (updateDto.comprovanteId) {
+        pagamento.comprovanteId = updateDto.comprovanteId;
+      }
+    }
+
+    // Adicionar observações se fornecidas
+    if (updateDto.observacoes) {
+      pagamento.observacoes = pagamento.observacoes
+        ? `${pagamento.observacoes}\n${updateDto.observacoes}`
+        : updateDto.observacoes;
+    }
+
+    // Salvar a atualização
+    const result = await this.pagamentoRepository.save(pagamento);
+
+    // Registrar auditoria
+    const logDto = new CreateLogAuditoriaDto();
+    logDto.tipo_operacao = TipoOperacao.UPDATE;
+    logDto.entidade_afetada = 'Pagamento';
+    logDto.entidade_id = result.id;
+    logDto.usuario_id = usuarioId;
+    logDto.dados_anteriores = dadosAnteriores;
+    logDto.dados_novos = result;
+    logDto.ip_origem = '127.0.0.1'; // TODO: Obter IP real da requisição
+    logDto.user_agent = 'Sistema Interno'; // TODO: Obter user agent real
+    logDto.endpoint = '/pagamentos';
+    logDto.metodo_http = 'PUT';
+    await this.auditoriaService.create(logDto);
+
+    return result;
+  }
+
+  /**
+   * Atualiza o status de um pagamento existente (método legado)
    *
    * @param id ID do pagamento
    * @param novoStatus Novo status do pagamento

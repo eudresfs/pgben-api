@@ -1,14 +1,16 @@
 import { Injectable } from '@nestjs/common';
-import { Repository, DataSource } from 'typeorm';
+import { Repository, DataSource, SelectQueryBuilder } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Pendencia, StatusPendencia } from '../../../entities';
 import {
   EntityNotFoundException,
   InvalidOperationException,
 } from '../../../shared/exceptions';
+import { FiltrosPendenciaDto } from '../dto/pendencia';
 
 /**
- * Interface para filtros de busca de pendências
+ * Interface para filtros de busca de pendências (compatibilidade)
+ * @deprecated Use FiltrosPendenciaDto instead
  */
 export interface FiltrosPendencia {
   status?: StatusPendencia[];
@@ -18,6 +20,18 @@ export interface FiltrosPendencia {
   data_inicio?: Date;
   data_fim?: Date;
   prazo_vencido?: boolean;
+}
+
+/**
+ * Interface para estatísticas de pendências
+ */
+export interface EstatisticasPendencia {
+  total_abertas: number;
+  total_resolvidas: number;
+  total_canceladas: number;
+  total_vencidas: number;
+  proximas_vencimento: number;
+  tempo_medio_resolucao: number;
 }
 
 /**
@@ -406,5 +420,331 @@ export class PendenciaRepository {
       where: { id },
       relations: ['solicitacao', 'registrado_por', 'resolvido_por'],
     });
+  }
+
+  /**
+   * Busca pendências com filtros avançados e paginação
+   * @param filtros Filtros do DTO
+   * @param page Página
+   * @param limit Limite por página
+   * @returns Array com pendências e total
+   */
+  async buscarComFiltrosAvancados(
+    filtros: FiltrosPendenciaDto,
+    page: number = 1,
+    limit: number = 10,
+  ): Promise<[Pendencia[], number]> {
+    const queryBuilder = this.repository
+      .createQueryBuilder('pendencia')
+      .leftJoinAndSelect('pendencia.solicitacao', 'solicitacao')
+      .leftJoinAndSelect('pendencia.registrado_por', 'registrado_por')
+      .leftJoinAndSelect('pendencia.resolvido_por', 'resolvido_por')
+      .leftJoinAndSelect('solicitacao.beneficiario', 'beneficiario');
+
+    this.aplicarFiltrosAvancados(queryBuilder, filtros);
+    this.aplicarOrdenacao(queryBuilder, filtros);
+
+    return queryBuilder
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+  }
+
+  /**
+   * Aplica filtros avançados à consulta
+   */
+  private aplicarFiltrosAvancados(
+    queryBuilder: SelectQueryBuilder<Pendencia>,
+    filtros: FiltrosPendenciaDto,
+  ): void {
+    if (filtros.solicitacao_id) {
+      queryBuilder.andWhere('pendencia.solicitacao_id = :solicitacaoId', {
+        solicitacaoId: filtros.solicitacao_id,
+      });
+    }
+
+    if (filtros.status) {
+      queryBuilder.andWhere('pendencia.status = :status', {
+        status: filtros.status,
+      });
+    }
+
+    if (filtros.status_list && filtros.status_list.length > 0) {
+      queryBuilder.andWhere('pendencia.status IN (:...statusList)', {
+        statusList: filtros.status_list,
+      });
+    }
+
+    if (filtros.registrado_por_id) {
+      queryBuilder.andWhere('pendencia.registrado_por_id = :registradoPorId', {
+        registradoPorId: filtros.registrado_por_id,
+      });
+    }
+
+    if (filtros.resolvido_por_id) {
+      queryBuilder.andWhere('pendencia.resolvido_por_id = :resolvidoPorId', {
+        resolvidoPorId: filtros.resolvido_por_id,
+      });
+    }
+
+    if (filtros.data_criacao_inicio) {
+      queryBuilder.andWhere('pendencia.created_at >= :dataCriacaoInicio', {
+        dataCriacaoInicio: new Date(filtros.data_criacao_inicio),
+      });
+    }
+
+    if (filtros.data_criacao_fim) {
+      const dataFim = new Date(filtros.data_criacao_fim);
+      dataFim.setHours(23, 59, 59, 999);
+      queryBuilder.andWhere('pendencia.created_at <= :dataCriacaoFim', {
+        dataCriacaoFim: dataFim,
+      });
+    }
+
+    if (filtros.data_resolucao_inicio) {
+      queryBuilder.andWhere('pendencia.data_resolucao >= :dataResolucaoInicio', {
+        dataResolucaoInicio: new Date(filtros.data_resolucao_inicio),
+      });
+    }
+
+    if (filtros.data_resolucao_fim) {
+      const dataFim = new Date(filtros.data_resolucao_fim);
+      dataFim.setHours(23, 59, 59, 999);
+      queryBuilder.andWhere('pendencia.data_resolucao <= :dataResolucaoFim', {
+        dataResolucaoFim: dataFim,
+      });
+    }
+
+    if (filtros.prazo_resolucao_inicio) {
+      queryBuilder.andWhere('pendencia.prazo_resolucao >= :prazoResolucaoInicio', {
+        prazoResolucaoInicio: new Date(filtros.prazo_resolucao_inicio),
+      });
+    }
+
+    if (filtros.prazo_resolucao_fim) {
+      queryBuilder.andWhere('pendencia.prazo_resolucao <= :prazoResolucaoFim', {
+        prazoResolucaoFim: new Date(filtros.prazo_resolucao_fim),
+      });
+    }
+
+    if (filtros.busca_descricao) {
+      queryBuilder.andWhere('pendencia.descricao ILIKE :buscaDescricao', {
+        buscaDescricao: `%${filtros.busca_descricao}%`,
+      });
+    }
+
+    if (filtros.apenas_vencidas) {
+      const hoje = new Date();
+      hoje.setHours(0, 0, 0, 0);
+      queryBuilder
+        .andWhere('pendencia.status = :statusAberta', {
+          statusAberta: StatusPendencia.ABERTA,
+        })
+        .andWhere('pendencia.prazo_resolucao IS NOT NULL')
+        .andWhere('pendencia.prazo_resolucao < :hoje', { hoje });
+    }
+
+    if (filtros.proximas_vencimento) {
+      const hoje = new Date();
+      const seteDias = new Date();
+      seteDias.setDate(hoje.getDate() + 7);
+      
+      hoje.setHours(0, 0, 0, 0);
+      seteDias.setHours(23, 59, 59, 999);
+      
+      queryBuilder
+        .andWhere('pendencia.status = :statusAberta', {
+          statusAberta: StatusPendencia.ABERTA,
+        })
+        .andWhere('pendencia.prazo_resolucao IS NOT NULL')
+        .andWhere('pendencia.prazo_resolucao >= :hoje', { hoje })
+        .andWhere('pendencia.prazo_resolucao <= :seteDias', { seteDias });
+    }
+  }
+
+  /**
+   * Aplica ordenação à consulta
+   */
+  private aplicarOrdenacao(
+    queryBuilder: SelectQueryBuilder<Pendencia>,
+    filtros: FiltrosPendenciaDto,
+  ): void {
+    const campoOrdenacao = filtros.sort_by || 'created_at';
+    const direcaoOrdenacao = filtros.sort_order || 'DESC';
+
+    // Mapear campos para evitar SQL injection
+    const camposPermitidos = {
+      created_at: 'pendencia.created_at',
+      updated_at: 'pendencia.updated_at',
+      status: 'pendencia.status',
+      prazo_resolucao: 'pendencia.prazo_resolucao',
+      data_resolucao: 'pendencia.data_resolucao',
+    };
+
+    const campoFinal = camposPermitidos[campoOrdenacao] || 'pendencia.created_at';
+    queryBuilder.orderBy(campoFinal, direcaoOrdenacao as 'ASC' | 'DESC');
+
+    // Ordenação secundária por data de criação
+    if (campoOrdenacao !== 'created_at') {
+      queryBuilder.addOrderBy('pendencia.created_at', 'DESC');
+    }
+  }
+
+  /**
+   * Calcula estatísticas de pendências
+   * @param filtros Filtros opcionais
+   * @returns Estatísticas calculadas
+   */
+  async calcularEstatisticas(
+    filtros?: Partial<FiltrosPendenciaDto>,
+  ): Promise<EstatisticasPendencia> {
+    const queryBuilder = this.repository.createQueryBuilder('pendencia');
+
+    // Aplicar filtros se fornecidos
+    if (filtros?.solicitacao_id) {
+      queryBuilder.andWhere('pendencia.solicitacao_id = :solicitacaoId', {
+        solicitacaoId: filtros.solicitacao_id,
+      });
+    }
+
+    if (filtros?.data_criacao_inicio) {
+      queryBuilder.andWhere('pendencia.created_at >= :dataCriacaoInicio', {
+        dataCriacaoInicio: new Date(filtros.data_criacao_inicio),
+      });
+    }
+
+    if (filtros?.data_criacao_fim) {
+      const dataFim = new Date(filtros.data_criacao_fim);
+      dataFim.setHours(23, 59, 59, 999);
+      queryBuilder.andWhere('pendencia.created_at <= :dataCriacaoFim', {
+        dataCriacaoFim: dataFim,
+      });
+    }
+
+    // Contar por status
+    const contadorStatus = await this.repository
+      .createQueryBuilder('pendencia')
+      .select('pendencia.status', 'status')
+      .addSelect('COUNT(*)', 'total')
+      .groupBy('pendencia.status')
+      .getRawMany();
+
+    const estatisticas: EstatisticasPendencia = {
+      total_abertas: 0,
+      total_resolvidas: 0,
+      total_canceladas: 0,
+      total_vencidas: 0,
+      proximas_vencimento: 0,
+      tempo_medio_resolucao: 0,
+    };
+
+    // Processar contadores por status
+    contadorStatus.forEach((item) => {
+      const total = parseInt(item.total);
+      switch (item.status) {
+        case StatusPendencia.ABERTA:
+          estatisticas.total_abertas = total;
+          break;
+        case StatusPendencia.RESOLVIDA:
+          estatisticas.total_resolvidas = total;
+          break;
+        case StatusPendencia.CANCELADA:
+          estatisticas.total_canceladas = total;
+          break;
+      }
+    });
+
+    // Contar vencidas
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+    
+    estatisticas.total_vencidas = await this.repository.count({
+      where: {
+        status: StatusPendencia.ABERTA,
+      },
+    });
+
+    // Filtrar vencidas manualmente (devido à complexidade da consulta)
+    const pendenciasAbertas = await this.repository.find({
+      where: { status: StatusPendencia.ABERTA },
+      select: ['id', 'prazo_resolucao'],
+    });
+
+    estatisticas.total_vencidas = pendenciasAbertas.filter((p) => {
+      if (!p.prazo_resolucao) return false;
+      const prazo = new Date(p.prazo_resolucao);
+      prazo.setHours(0, 0, 0, 0);
+      return prazo < hoje;
+    }).length;
+
+    // Contar próximas do vencimento (próximos 7 dias)
+    const seteDias = new Date();
+    seteDias.setDate(hoje.getDate() + 7);
+    seteDias.setHours(23, 59, 59, 999);
+
+    estatisticas.proximas_vencimento = pendenciasAbertas.filter((p) => {
+      if (!p.prazo_resolucao) return false;
+      const prazo = new Date(p.prazo_resolucao);
+      return prazo >= hoje && prazo <= seteDias;
+    }).length;
+
+    // Calcular tempo médio de resolução
+    const pendenciasResolvidas = await this.repository.find({
+      where: { status: StatusPendencia.RESOLVIDA },
+      select: ['created_at', 'data_resolucao'],
+    });
+
+    if (pendenciasResolvidas.length > 0) {
+      const tempoTotal = pendenciasResolvidas.reduce((acc, p) => {
+        if (p.data_resolucao) {
+          const diffTime = new Date(p.data_resolucao).getTime() - new Date(p.created_at).getTime();
+          const diffDays = diffTime / (1000 * 60 * 60 * 24);
+          return acc + diffDays;
+        }
+        return acc;
+      }, 0);
+      
+      estatisticas.tempo_medio_resolucao = Math.round(
+        (tempoTotal / pendenciasResolvidas.length) * 100
+      ) / 100;
+    }
+
+    return estatisticas;
+  }
+
+  /**
+   * Busca pendências próximas do vencimento com dias configuráveis
+   * @param diasAntecedencia Número de dias de antecedência
+   * @param incluirVencidas Se deve incluir as já vencidas
+   * @returns Lista de pendências próximas do vencimento
+   */
+  async buscarProximasVencimentoAvancado(
+    diasAntecedencia: number = 7,
+    incluirVencidas: boolean = false,
+  ): Promise<Pendencia[]> {
+    const hoje = new Date();
+    const dataLimite = new Date();
+    dataLimite.setDate(hoje.getDate() + diasAntecedencia);
+
+    const queryBuilder = this.repository
+      .createQueryBuilder('pendencia')
+      .leftJoinAndSelect('pendencia.solicitacao', 'solicitacao')
+      .leftJoinAndSelect('pendencia.registrado_por', 'registrado_por')
+      .leftJoinAndSelect('solicitacao.beneficiario', 'beneficiario')
+      .where('pendencia.status = :status', { status: StatusPendencia.ABERTA })
+      .andWhere('pendencia.prazo_resolucao IS NOT NULL');
+
+    if (incluirVencidas) {
+      queryBuilder.andWhere('pendencia.prazo_resolucao <= :dataLimite', {
+        dataLimite,
+      });
+    } else {
+      queryBuilder.andWhere(
+        'pendencia.prazo_resolucao BETWEEN :hoje AND :dataLimite',
+        { hoje, dataLimite },
+      );
+    }
+
+    return queryBuilder.orderBy('pendencia.prazo_resolucao', 'ASC').getMany();
   }
 }

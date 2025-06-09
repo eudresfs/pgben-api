@@ -86,9 +86,37 @@ export class Pagamento {
   /**
    * Data efetiva da liberação do pagamento
    */
-  @Column({ name: 'data_liberacao', type: 'date' })
-  @IsNotEmpty({ message: 'Data de liberação é obrigatória' })
+  @Column({ name: 'data_liberacao', type: 'date', nullable: true })
+  @IsOptional()
   dataLiberacao: Date;
+
+  /**
+   * Data prevista para liberação do pagamento
+   */
+  @Column({ name: 'data_prevista_liberacao', type: 'date', nullable: true })
+  @IsOptional()
+  dataPrevistaLiberacao: Date;
+
+  /**
+   * Data de agendamento do pagamento
+   */
+  @Column({ name: 'data_agendamento', type: 'date', nullable: true })
+  @IsOptional()
+  dataAgendamento: Date;
+
+  /**
+   * Data efetiva do pagamento
+   */
+  @Column({ name: 'data_pagamento', type: 'date', nullable: true })
+  @IsOptional()
+  dataPagamento: Date;
+
+  /**
+   * Data de conclusão do pagamento
+   */
+  @Column({ name: 'data_conclusao', type: 'date', nullable: true })
+  @IsOptional()
+  dataConclusao: Date;
 
   /**
    * Status atual do pagamento no sistema
@@ -96,7 +124,7 @@ export class Pagamento {
   @Column({
     type: 'enum',
     enum: StatusPagamentoEnum,
-    default: StatusPagamentoEnum.AGENDADO,
+    default: StatusPagamentoEnum.PENDENTE,
   })
   @IsEnum(StatusPagamentoEnum, { message: 'Status inválido' })
   status: StatusPagamentoEnum;
@@ -115,10 +143,26 @@ export class Pagamento {
   /**
    * Referência ao usuário que liberou o pagamento
    */
-  @Column({ name: 'liberado_por' })
-  @IsNotEmpty({ message: 'ID do responsável pela liberação é obrigatório' })
+  @Column({ name: 'liberado_por', nullable: true })
+  @IsOptional()
   @IsUUID('4', { message: 'ID do responsável pela liberação inválido' })
   liberadoPor: string;
+
+  /**
+   * Referência ao usuário que criou o pagamento
+   */
+  @Column({ name: 'criado_por', nullable: true })
+  @IsOptional()
+  @IsUUID('4', { message: 'ID do criador inválido' })
+  criadoPor: string;
+
+  /**
+   * ID do comprovante de pagamento
+   */
+  @Column({ name: 'comprovante_id', nullable: true })
+  @IsOptional()
+  @IsUUID('4', { message: 'ID do comprovante inválido' })
+  comprovanteId: string;
 
   /**
    * Observações adicionais sobre o pagamento
@@ -159,6 +203,10 @@ export class Pagamento {
   @ManyToOne(() => Usuario)
   @JoinColumn({ name: 'liberado_por' })
   responsavelLiberacao: Usuario;
+
+  @ManyToOne(() => Usuario)
+  @JoinColumn({ name: 'criado_por' })
+  criador: Usuario;
 
   /**
    * Comprovantes anexados a este pagamento

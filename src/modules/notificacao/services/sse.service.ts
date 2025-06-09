@@ -17,11 +17,18 @@ import {
  */
 @Injectable()
 export class SseService {
-  isUserConnected(userId: string) {
-    throw new Error('Method not implemented.');
+  /**
+   * Verifica se o usuário está conectado
+   */
+  isUserConnected(userId: string): boolean {
+    return this.connections.has(userId) && this.connections.get(userId)!.size > 0;
   }
-  getUserConnectionCount(userId: string) {
-    throw new Error('Method not implemented.');
+
+  /**
+   * Retorna o número de conexões ativas do usuário
+   */
+  getUserConnectionCount(userId: string): number {
+    return this.connections.get(userId)?.size || 0;
   }
   private readonly logger = new Logger(SseService.name);
 

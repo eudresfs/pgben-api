@@ -147,7 +147,7 @@ export class CreateAllEnums1704067200000 implements MigrationInterface {
     await queryRunner.query(`
             DO $$ BEGIN
                 CREATE TYPE "status_pagamento_enum" AS ENUM (
-                    'pendente', 'processando', 'pago', 'cancelado', 'estornado'
+                    'pendente', 'processando', 'pago', 'cancelado', 'estornado', 'liberado'
                 );
             EXCEPTION
                 WHEN duplicate_object THEN null;

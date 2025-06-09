@@ -8,6 +8,7 @@ import { PermissionScopeRepository } from '../repositories/permission-scope.repo
 import { TipoEscopo } from '../../entities/user-permission.entity';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
+import { Usuario } from '@/entities';
 
 /**
  * Interface para verificação de permissão com escopo.
@@ -43,6 +44,12 @@ export interface PermissionCheckOptions {
  */
 @Injectable()
 export class PermissionService {
+  verificarPermissaoSolicitacao(usuarioId: string, solicitacao_id: string, arg2: string) {
+    throw new Error('Method not implemented.');
+  }
+  isAdministrador(usuario: Usuario) {
+    throw new Error('Method not implemented.');
+  }
   private readonly logger = new Logger(PermissionService.name);
   private readonly CACHE_TTL = 300; // 5 minutos em segundos
 

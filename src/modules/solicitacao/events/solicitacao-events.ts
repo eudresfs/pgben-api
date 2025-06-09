@@ -27,6 +27,7 @@ export enum SolicitacaoEventType {
   JUDICIAL_DETERMINATION_REMOVED = 'solicitacao.judicial_determination_removed',
   PENDENCY_CREATED = 'solicitacao.pendency_created',
   PENDENCY_RESOLVED = 'solicitacao.pendency_resolved',
+  PENDENCY_CANCELLED = 'solicitacao.pendency_cancelled',
 }
 
 /**
@@ -181,6 +182,18 @@ export interface SolicitacaoPendencyResolvedEvent extends SolicitacaoEvent {
 }
 
 /**
+ * Evento emitido quando uma pendência é cancelada
+ */
+export interface SolicitacaoPendencyCancelledEvent extends SolicitacaoEvent {
+  type: SolicitacaoEventType.PENDENCY_CANCELLED;
+  data: {
+    pendenciaId: string;
+    motivo: string;
+    usuarioId: string;
+  };
+}
+
+/**
  * Tipo união que representa todos os possíveis eventos de solicitação
  */
 export type SolicitacaoEventUnion =
@@ -194,4 +207,5 @@ export type SolicitacaoEventUnion =
   | SolicitacaoReleasedEvent
   | SolicitacaoJudicialDeterminationAttachedEvent
   | SolicitacaoPendencyCreatedEvent
-  | SolicitacaoPendencyResolvedEvent;
+  | SolicitacaoPendencyResolvedEvent
+  | SolicitacaoPendencyCancelledEvent;

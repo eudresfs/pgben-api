@@ -205,14 +205,6 @@ export class CreateLogAuditoriaDto extends BaseDto {
   })
   dados_sensiveis_acessados?: string[];
 
-  /**
-   * Implementação do método validar herdado de BaseDto
-   * @param validationGroup Grupo de validação opcional
-   */
-  validar(validationGroup?: string): void {
-    // Implementação específica de validação para logs de auditoria
-    // Por enquanto, utiliza apenas as validações dos decorators
-  }
 
   /**
    * Retorna uma representação textual do log de auditoria

@@ -11,15 +11,137 @@ import { validate as validateUUID } from 'uuid';
  */
 @Injectable()
 export class PixValidator {
-  validarChavePix(arg0: string, arg1: string): any {
-    throw new Error('Method not implemented.');
+  /**
+   * Valida uma chave PIX
+   */
+  validarChavePix(chave: string, tipo: string): boolean {
+    if (!chave || !tipo) return false;
+    
+    switch (tipo.toLowerCase()) {
+      case 'cpf':
+        return this.validarCPF(chave);
+      case 'email':
+        return this.validarEmail(chave);
+      case 'telefone':
+        return this.validarTelefone(chave);
+      case 'aleatorio':
+        return this.validarChaveAleatoria(chave);
+      default:
+        return false;
+    }
   }
-  mascaraChavePix(arg0: string, arg1: string) {
-    throw new Error('Method not implemented.');
+
+  /**
+   * Aplica máscara na chave PIX para exibição
+   */
+  mascaraChavePix(chave: string, tipo: string): string {
+    if (!chave || !tipo) return '';
+    
+    switch (tipo.toLowerCase()) {
+      case 'cpf':
+        return this.mascaraCPF(chave);
+      case 'email':
+        return this.mascaraEmail(chave);
+      case 'telefone':
+        return this.mascaraTelefone(chave);
+      case 'aleatorio':
+        return this.mascaraChaveAleatoria(chave);
+      default:
+        return chave;
+    }
   }
-  obterTipoChavePix(arg0: string): any {
-    // Mascara UUID: mostra apenas os primeiros 8 caracteres
-    throw new Error('Method not implemented.');
+
+  /**
+   * Identifica o tipo da chave PIX
+   */
+  obterTipoChavePix(chave: string): string | null {
+    if (!chave) return null;
+    
+    // Remove espaços e caracteres especiais para análise
+    const chaveClean = chave.replace(/\D/g, '');
+    
+    // CPF (11 dígitos)
+    if (chaveClean.length === 11 && this.validarCPF(chave)) {
+      return 'cpf';
+    }
+    
+    // Email
+    if (this.validarEmail(chave)) {
+      return 'email';
+    }
+    
+    // Telefone
+    if (this.validarTelefone(chave)) {
+      return 'telefone';
+    }
+    
+    // Chave aleatória (UUID)
+    if (this.validarChaveAleatoria(chave)) {
+      return 'aleatorio';
+    }
+    
+    return null;
+  }
+
+  /**
+   * Valida CPF
+   */
+  private validarCPF(cpf: string): boolean {
+    return this.validateCpfKey(cpf);
+  }
+
+  /**
+   * Valida email
+   */
+  private validarEmail(email: string): boolean {
+    return this.validateEmailKey(email);
+  }
+
+  /**
+   * Valida telefone
+   */
+  private validarTelefone(telefone: string): boolean {
+    return this.validatePhoneKey(telefone);
+  }
+
+  /**
+   * Valida chave aleatória
+   */
+  private validarChaveAleatoria(chave: string): boolean {
+    return this.validateRandomKey(chave);
+  }
+
+  /**
+   * Aplica máscara no CPF
+   */
+  private mascaraCPF(cpf: string): string {
+    const cpfClean = cpf.replace(/\D/g, '');
+    if (cpfClean.length === 11) {
+      const formatted = cpfClean.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+      return this.maskPixKey(formatted, 'cpf');
+    }
+    return cpf;
+  }
+
+  /**
+   * Aplica máscara no email
+   */
+  private mascaraEmail(email: string): string {
+    return this.maskPixKey(email, 'email');
+  }
+
+  /**
+   * Aplica máscara no telefone
+   */
+  private mascaraTelefone(telefone: string): string {
+    return this.maskPixKey(telefone, 'telefone');
+  }
+
+  /**
+   * Aplica máscara na chave aleatória
+   */
+  private mascaraChaveAleatoria(chave: string): string {
+    return this.maskPixKey(chave, 'aleatorio');
   }
   /**
    * Valida uma chave PIX baseada no seu tipo
