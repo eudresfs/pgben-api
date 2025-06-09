@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, SelectQueryBuilder } from 'typeorm';
 import { plainToClass } from 'class-transformer';
 import { Pendencia, StatusPendencia } from '../../../entities/pendencia.entity';
-import { Solicitacao } from '../../../entities/solicitacao.entity';
+import { Solicitacao, StatusSolicitacao } from '../../../entities/solicitacao.entity';
 import { Usuario } from '../../../entities/usuario.entity';
 import {
   CreatePendenciaDto,
@@ -58,6 +58,25 @@ export class PendenciaService {
       throw new NotFoundException('Solicitação não encontrada');
     }
 
+    // Verificar se a solicitação está com status em_analise
+    if (solicitacao.status !== StatusSolicitacao.EM_ANALISE) {
+      throw new BadRequestException(
+        'Só é possível criar pendência para solicitações com status "em análise"'
+      );
+    }
+
+    // Verificar se o prazo de resolução é maior que a data atual
+    if (createPendenciaDto.prazo_resolucao) {
+      const prazoResolucao = new Date(createPendenciaDto.prazo_resolucao);
+      const agora = new Date();
+      
+      if (prazoResolucao <= agora) {
+        throw new BadRequestException(
+          'O prazo de resolução deve ser maior que a data atual'
+        );
+      }
+    }
+
     // Verificar se o usuário existe
     const usuario = await this.usuarioRepository.findOne({
       where: { id: usuarioId },
@@ -79,6 +98,10 @@ export class PendenciaService {
     });
 
     const pendenciaSalva = await this.pendenciaRepository.save(pendencia);
+
+    // Alterar status da solicitação para PENDENTE
+    solicitacao.status = StatusSolicitacao.PENDENTE;
+    await this.solicitacaoRepository.save(solicitacao);
 
     // Emitir evento
     await this.eventosService.emitirEvento({
@@ -168,6 +191,21 @@ export class PendenciaService {
 
     const pendenciaAtualizada = await this.pendenciaRepository.save(pendencia);
 
+    // Verificar se todas as pendências da solicitação foram sanadas
+    const todasPendenciasSanadas = await this.verificarTodasPendenciasSanadas(pendencia.solicitacao_id);
+    
+    // Alterar status da solicitação para EM_ANALISE apenas se todas as pendências foram sanadas
+    if (todasPendenciasSanadas) {
+      const solicitacao = await this.solicitacaoRepository.findOne({
+        where: { id: pendencia.solicitacao_id },
+      });
+      
+      if (solicitacao) {
+        solicitacao.status = StatusSolicitacao.EM_ANALISE;
+        await this.solicitacaoRepository.save(solicitacao);
+      }
+    }
+
     // Registrar evento
     await this.eventosService.emitirEvento({
       type: SolicitacaoEventType.PENDENCY_RESOLVED,
@@ -252,6 +290,21 @@ export class PendenciaService {
     }
 
     const pendenciaAtualizada = await this.pendenciaRepository.save(pendencia);
+
+    // Verificar se todas as pendências da solicitação foram sanadas
+    const todasPendenciasSanadas = await this.verificarTodasPendenciasSanadas(pendencia.solicitacao_id);
+    
+    // Alterar status da solicitação para EM_ANALISE apenas se todas as pendências foram sanadas
+    if (todasPendenciasSanadas) {
+      const solicitacao = await this.solicitacaoRepository.findOne({
+        where: { id: pendencia.solicitacao_id },
+      });
+      
+      if (solicitacao) {
+        solicitacao.status = StatusSolicitacao.EM_ANALISE;
+        await this.solicitacaoRepository.save(solicitacao);
+      }
+    }
 
     // Registrar evento
     await this.eventosService.emitirEvento({
@@ -378,6 +431,20 @@ export class PendenciaService {
         excludeExtraneousValues: true,
       }),
     );
+  }
+
+  /**
+   * Verifica se todas as pendências de uma solicitação foram sanadas
+   */
+  private async verificarTodasPendenciasSanadas(solicitacaoId: string): Promise<boolean> {
+    const pendenciasAbertas = await this.pendenciaRepository.count({
+      where: {
+        solicitacao_id: solicitacaoId,
+        status: StatusPendencia.ABERTA,
+      },
+    });
+
+    return pendenciasAbertas === 0;
   }
 
   /**
