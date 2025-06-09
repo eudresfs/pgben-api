@@ -5,12 +5,13 @@ import { NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PendenciaService } from './pendencia.service';
 import { Pendencia } from '../../../entities/pendencia.entity';
 import { Solicitacao } from '../../../entities/solicitacao.entity';
+import { Usuario } from '../../../entities/usuario.entity';
 import { StatusPendencia } from '../../../entities/pendencia.entity';
 import { AuditoriaService } from '../../auditoria/services/auditoria.service';
 import { EventosService } from './eventos.service';
 import { NotificacaoService } from '../../notificacao/services/notificacao.service';
 import { PermissionService } from '../../../auth/services/permission.service';
-import { CriarPendenciaDto } from '../dto/pendencia/create-pendencia.dto';
+import { CreatePendenciaDto } from '../dto/pendencia/create-pendencia.dto';
 import { ResolverPendenciaDto } from '../dto/pendencia/resolver-pendencia.dto';
 import { CancelarPendenciaDto } from '../dto/pendencia/cancelar-pendencia.dto';
 
@@ -18,6 +19,7 @@ describe('PendenciaService', () => {
   let service: PendenciaService;
   let pendenciaRepository: Repository<Pendencia>;
   let solicitacaoRepository: Repository<Solicitacao>;
+  let usuarioRepository: Repository<Usuario>;
   let auditoriaService: AuditoriaService;
   let eventosService: EventosService;
   let notificacaoService: NotificacaoService;
@@ -31,6 +33,10 @@ describe('PendenciaService', () => {
   };
 
   const mockSolicitacaoRepository = {
+    findOne: jest.fn(),
+  };
+
+  const mockUsuarioRepository = {
     findOne: jest.fn(),
   };
 
@@ -63,6 +69,10 @@ describe('PendenciaService', () => {
           useValue: mockSolicitacaoRepository,
         },
         {
+          provide: getRepositoryToken(Usuario),
+          useValue: mockUsuarioRepository,
+        },
+        {
           provide: AuditoriaService,
           useValue: mockAuditoriaService,
         },
@@ -84,6 +94,7 @@ describe('PendenciaService', () => {
     service = module.get<PendenciaService>(PendenciaService);
     pendenciaRepository = module.get<Repository<Pendencia>>(getRepositoryToken(Pendencia));
     solicitacaoRepository = module.get<Repository<Solicitacao>>(getRepositoryToken(Solicitacao));
+    usuarioRepository = module.get<Repository<Usuario>>(getRepositoryToken(Usuario));
     auditoriaService = module.get<AuditoriaService>(AuditoriaService);
     eventosService = module.get<EventosService>(EventosService);
     notificacaoService = module.get<NotificacaoService>(NotificacaoService);
@@ -96,7 +107,7 @@ describe('PendenciaService', () => {
 
   describe('criarPendencia', () => {
     it('deve criar uma pendência com sucesso', async () => {
-      const criarPendenciaDto: CriarPendenciaDto = {
+      const criarPendenciaDto: CreatePendenciaDto = {
         solicitacao_id: 'solicitacao-id',
         descricao: 'Pendência de teste',
         prazo_resolucao: new Date('2024-12-31'),
@@ -138,7 +149,7 @@ describe('PendenciaService', () => {
     });
 
     it('deve lançar NotFoundException quando solicitação não existir', async () => {
-      const criarPendenciaDto: CriarPendenciaDto = {
+      const criarPendenciaDto: CreatePendenciaDto = {
         solicitacao_id: 'solicitacao-inexistente',
         descricao: 'Pendência de teste',
       };

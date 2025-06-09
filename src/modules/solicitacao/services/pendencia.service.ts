@@ -355,8 +355,9 @@ export class PendenciaService {
    */
   async listarPendencias(
     filtros: FiltrosPendenciaDto,
-    usuarioId: string,
   ): Promise<PaginatedResponseDto<PendenciaResponseDto>> {
+    // Aplicar filtros e retornar pendências paginadas
+    
     const queryBuilder = this.criarQueryBuilder(false);
 
     // Aplicar filtros específicos
@@ -471,8 +472,8 @@ export class PendenciaService {
     filtros: FiltrosPendenciaDto,
   ): void {
     if (filtros.solicitacao_id) {
-      queryBuilder.andWhere('pendencia.solicitacao_id = :solicitacaoId', {
-        solicitacaoId: filtros.solicitacao_id,
+      queryBuilder.andWhere('pendencia.solicitacao_id = :solicitacao_id', {
+        solicitacao_id: filtros.solicitacao_id,
       });
     }
 
@@ -483,8 +484,8 @@ export class PendenciaService {
     }
 
     if (filtros.status_list && filtros.status_list.length > 0) {
-      queryBuilder.andWhere('pendencia.status IN (:...statusList)', {
-        statusList: filtros.status_list,
+      queryBuilder.andWhere('pendencia.status IN (:...status_list)', {
+        status_list: filtros.status_list,
       });
     }
 

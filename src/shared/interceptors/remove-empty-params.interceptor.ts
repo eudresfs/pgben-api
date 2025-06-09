@@ -17,7 +17,9 @@ import { Observable } from 'rxjs';
  * - Objetos vazios ({})
  *
  * Características:
- * - Aplica-se apenas a requisições POST, PUT, PATCH
+ * - Aplica-se a todos os métodos HTTP (GET, POST, PUT, PATCH, DELETE)
+ * - Remove parâmetros vazios do body (POST, PUT, PATCH)
+ * - Remove parâmetros vazios dos query parameters (todos os métodos)
  * - Preserva valores falsy válidos como 0, false
  * - Processa objetos aninhados recursivamente
  * - Mantém estrutura de arrays com elementos válidos
@@ -26,11 +28,24 @@ import { Observable } from 'rxjs';
 export class RemoveEmptyParamsInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const request = context.switchToHttp().getRequest();
-    const { method, body } = request;
+    const { method, body, query } = request;
 
-    // Aplicar apenas em métodos que enviam dados no body
+    // Processar query parameters para todos os métodos
+    if (query && Object.keys(query).length > 0) {
+      const cleanedQuery = this.removeEmptyParams(query);
+      // Usar Object.defineProperty para modificar a propriedade query
+      Object.defineProperty(request, 'query', {
+        value: cleanedQuery || {},
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
+    }
+
+    // Processar body para métodos que enviam dados no body
     if (['POST', 'PUT', 'PATCH'].includes(method) && body) {
-      request.body = this.removeEmptyParams(body);
+      const cleanedBody = this.removeEmptyParams(body);
+      request.body = cleanedBody || {};
     }
 
     return next.handle();

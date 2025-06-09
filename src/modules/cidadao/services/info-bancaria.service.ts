@@ -123,11 +123,6 @@ export class InfoBancariaService {
     includeRelations?: boolean;
   }): Promise<{ data: InfoBancariaResponseDto[]; total: number }> {
     try {
-      // Valida UUID se cidadao_id for fornecido
-      if (options?.cidadao_id && !this.isValidUUID(options.cidadao_id)) {
-        throw new BadRequestException('Validation failed (uuid v 4 is expected)');
-      }
-
       const [infosBancarias, total] = await this.infoBancariaRepository.findAll(
         {
           skip: options?.skip,

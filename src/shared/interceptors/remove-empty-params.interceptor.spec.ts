@@ -238,45 +238,14 @@ describe('RemoveEmptyParamsInterceptor', () => {
       });
     });
 
-    it('não deve processar requisições GET', () => {
+    it('deve processar query parameters em requisições GET', () => {
       mockRequest.method = 'GET';
-      mockRequest.body = {
-        nome: '',
-        idade: 30,
-      };
-
-      const originalBody = { ...mockRequest.body };
-
-      interceptor.intercept(
-        mockExecutionContext as ExecutionContext,
-        mockCallHandler as CallHandler,
-      );
-
-      expect(mockRequest.body).toEqual(originalBody);
-    });
-
-    it('não deve processar requisições DELETE', () => {
-      mockRequest.method = 'DELETE';
-      mockRequest.body = {
-        nome: '',
-        idade: 30,
-      };
-
-      const originalBody = { ...mockRequest.body };
-
-      interceptor.intercept(
-        mockExecutionContext as ExecutionContext,
-        mockCallHandler as CallHandler,
-      );
-
-      expect(mockRequest.body).toEqual(originalBody);
-    });
-
-    it('deve processar requisições PUT', () => {
-      mockRequest.method = 'PUT';
-      mockRequest.body = {
-        nome: '',
-        idade: 30,
+      mockRequest.query = {
+        status: '',
+        nome: 'João',
+        idade: null,
+        ativo: undefined,
+        categoria: 'admin',
       };
 
       interceptor.intercept(
@@ -284,16 +253,22 @@ describe('RemoveEmptyParamsInterceptor', () => {
         mockCallHandler as CallHandler,
       );
 
-      expect(mockRequest.body).toEqual({
-        idade: 30,
+      expect(mockRequest.query).toEqual({
+        nome: 'João',
+        categoria: 'admin',
       });
     });
 
-    it('deve processar requisições PATCH', () => {
-      mockRequest.method = 'PATCH';
+    it('deve processar query parameters em requisições POST', () => {
+      mockRequest.method = 'POST';
+      mockRequest.query = {
+        filter: '',
+        page: '1',
+        limit: null,
+      };
       mockRequest.body = {
-        nome: '',
-        idade: 30,
+        nome: 'João',
+        email: '',
       };
 
       interceptor.intercept(
@@ -301,39 +276,23 @@ describe('RemoveEmptyParamsInterceptor', () => {
         mockCallHandler as CallHandler,
       );
 
+      expect(mockRequest.query).toEqual({
+        page: '1',
+      });
       expect(mockRequest.body).toEqual({
-        idade: 30,
+        nome: 'João',
       });
     });
 
-    it('deve lidar com body undefined ou null', () => {
-      mockRequest.body = null;
-
-      expect(() => {
-        interceptor.intercept(
-          mockExecutionContext as ExecutionContext,
-          mockCallHandler as CallHandler,
-        );
-      }).not.toThrow();
-
-      mockRequest.body = undefined;
-
-      expect(() => {
-        interceptor.intercept(
-          mockExecutionContext as ExecutionContext,
-          mockCallHandler as CallHandler,
-        );
-      }).not.toThrow();
-    });
-
-    it('deve retornar undefined para objetos que ficam completamente vazios', () => {
-      mockRequest.body = {
-        config: {
-          tema: '',
-          idioma: null,
-          opcoes: [],
-        },
-        nome: 'João',
+    it('deve processar query parameters complexos', () => {
+      mockRequest.method = 'GET';
+      mockRequest.query = {
+        solicitacao_id: '',
+        status: 'aberta',
+        registrado_por_id: null,
+        data_criacao_inicio: undefined,
+        busca_descricao: '   ',
+        apenas_vencidas: 'true',
       };
 
       interceptor.intercept(
@@ -341,8 +300,59 @@ describe('RemoveEmptyParamsInterceptor', () => {
         mockCallHandler as CallHandler,
       );
 
-      expect(mockRequest.body).toEqual({
-        nome: 'João',
+      expect(mockRequest.query).toEqual({
+        status: 'aberta',
+        apenas_vencidas: 'true',
+      });
+    });
+
+    it('deve manter query vazio quando todos os parâmetros são removidos', () => {
+      mockRequest.method = 'GET';
+      mockRequest.query = {
+        param1: '',
+        param2: null,
+        param3: undefined,
+      };
+
+      interceptor.intercept(
+        mockExecutionContext as ExecutionContext,
+        mockCallHandler as CallHandler,
+      );
+
+      expect(mockRequest.query).toEqual({});
+    });
+
+    it('não deve processar quando query não existe', () => {
+      mockRequest.method = 'GET';
+      mockRequest.query = undefined;
+
+      interceptor.intercept(
+        mockExecutionContext as ExecutionContext,
+        mockCallHandler as CallHandler,
+      );
+
+      expect(mockRequest.query).toBeUndefined();
+    });
+
+    it('deve preservar valores falsy válidos em query parameters', () => {
+      mockRequest.method = 'GET';
+      mockRequest.query = {
+        page: '0',
+        active: 'false',
+        count: '0',
+        empty: '',
+        nullValue: null,
+      };
+
+      interceptor.intercept(
+        mockExecutionContext as ExecutionContext,
+        mockCallHandler as CallHandler,
+      );
+
+      expect(mockRequest.query).toEqual({
+        page: '0',
+        active: 'false',
+        count: '0',
       });
     });
   });

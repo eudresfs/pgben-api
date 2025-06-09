@@ -7,10 +7,12 @@ import {
   IsString,
   IsArray,
   ArrayNotEmpty,
+  IsBoolean
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 import { StatusPendencia } from '../../../../entities/pendencia.entity';
 import { BaseFilterDto } from '../../../../shared/dtos/base-filter.dto';
+import { TransformEmptyUuid, TransformEmptyString } from '../../../../shared/decorators/transform-empty-string.decorator';
 
 /**
  * DTO para filtros de busca de pendências
@@ -24,6 +26,7 @@ export class FiltrosPendenciaDto extends BaseFilterDto {
   })
   @IsOptional()
   @IsUUID('4', { message: 'ID da solicitação deve ser um UUID válido' })
+  @TransformEmptyUuid()
   solicitacao_id?: string;
 
   @ApiPropertyOptional({
@@ -53,6 +56,7 @@ export class FiltrosPendenciaDto extends BaseFilterDto {
   })
   @IsOptional()
   @IsUUID('4', { message: 'ID do usuário deve ser um UUID válido' })
+  @TransformEmptyUuid()
   registrado_por_id?: string;
 
   @ApiPropertyOptional({
@@ -61,6 +65,7 @@ export class FiltrosPendenciaDto extends BaseFilterDto {
   })
   @IsOptional()
   @IsUUID('4', { message: 'ID do usuário deve ser um UUID válido' })
+  @TransformEmptyUuid()
   resolvido_por_id?: string;
 
   @ApiPropertyOptional({
@@ -124,11 +129,12 @@ export class FiltrosPendenciaDto extends BaseFilterDto {
   prazo_resolucao_fim?: string;
 
   @ApiPropertyOptional({
-    description: 'Termo de busca na descrição da pendência',
-    example: 'comprovante',
+    description: 'Busca por texto na descrição da pendência',
+    example: 'documento',
   })
   @IsOptional()
-  @IsString({ message: 'Termo de busca deve ser um texto' })
+  @IsString()
+  @TransformEmptyString()
   @Transform(({ value }) => value?.trim())
   busca_descricao?: string;
 

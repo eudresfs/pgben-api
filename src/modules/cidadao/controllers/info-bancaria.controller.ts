@@ -12,6 +12,7 @@ import {
   ValidationPipe,
   HttpCode,
   HttpStatus,
+  Req,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -50,7 +51,8 @@ export class InfoBancariaController {
   @HttpCode(HttpStatus.CREATED)
   @RequiresPermission({
     permissionName: 'info_bancaria.criar',
-    scopeType: TipoEscopo.GLOBAL,
+    scopeType: TipoEscopo.UNIDADE,
+    scopeIdExpression: 'user.unidadeId',
   })
   @ApiOperation({
     summary: 'Criar informação bancária',
@@ -87,7 +89,8 @@ export class InfoBancariaController {
   @Get()
   @RequiresPermission({
     permissionName: 'info_bancaria.visualizar',
-    scopeType: TipoEscopo.GLOBAL,
+    scopeType: TipoEscopo.UNIDADE,
+    scopeIdExpression: 'user.unidadeId',
   })
   @ApiOperation({
     summary: 'Listar informações bancárias',
@@ -153,6 +156,7 @@ export class InfoBancariaController {
     },
   })
   async findAll(
+    @Req() req: Request,
     @Query('skip') skip?: number,
     @Query('take') take?: number,
     @Query('cidadao_id') cidadao_id?: string,
@@ -176,7 +180,8 @@ export class InfoBancariaController {
   @Get(':id')
   @RequiresPermission({
     permissionName: 'info_bancaria.visualizar',
-    scopeType: TipoEscopo.GLOBAL,
+    scopeType: TipoEscopo.UNIDADE,
+    scopeIdExpression: 'user.unidadeId',
   })
   @ApiOperation({
     summary: 'Buscar informação bancária por ID',
@@ -217,7 +222,8 @@ export class InfoBancariaController {
   @Get('cidadao/:cidadaoId')
   @RequiresPermission({
     permissionName: 'info_bancaria.visualizar',
-    scopeType: TipoEscopo.GLOBAL,
+    scopeType: TipoEscopo.UNIDADE,
+    scopeIdExpression: 'user.unidadeId',
   })
   @ApiOperation({
     summary: 'Buscar informação bancária por ID do cidadão',
@@ -262,7 +268,8 @@ export class InfoBancariaController {
   @Patch(':id')
   @RequiresPermission({
     permissionName: 'info_bancaria.atualizar',
-    scopeType: TipoEscopo.GLOBAL,
+    scopeType: TipoEscopo.UNIDADE,
+    scopeIdExpression: 'user.unidadeId',
   })
   @ApiOperation({
     summary: 'Atualizar informação bancária',
@@ -304,7 +311,8 @@ export class InfoBancariaController {
   @Patch(':id/deactivate')
   @RequiresPermission({
     permissionName: 'info_bancaria.atualizar',
-    scopeType: TipoEscopo.GLOBAL,
+    scopeType: TipoEscopo.UNIDADE,
+    scopeIdExpression: 'user.unidadeId',
   })
   @ApiOperation({
     summary: 'Desativar informação bancária',
@@ -338,7 +346,8 @@ export class InfoBancariaController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @RequiresPermission({
     permissionName: 'info_bancaria.excluir',
-    scopeType: TipoEscopo.GLOBAL,
+    scopeType: TipoEscopo.UNIDADE,
+    scopeIdExpression: 'user.unidadeId',
   })
   @ApiOperation({
     summary: 'Remover informação bancária',

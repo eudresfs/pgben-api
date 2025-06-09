@@ -28,6 +28,7 @@ import {
   ApiExtraModels,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
+import { PermissionGuard } from '../../../auth/guards/permission.guard';
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
 import { ScopeType } from '../../../entities/user-permission.entity';
 import { ApiErrorResponse } from '../../../shared/dtos/api-error-response.dto';
@@ -52,7 +53,7 @@ import { UseInterceptors } from '@nestjs/common';
   ComposicaoFamiliarPaginatedResponseDto,
 )
 @Controller('composicao-familiar')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionGuard)
 @ApiBearerAuth()
 @UseInterceptors(CidadaoAuditInterceptor)
 export class ComposicaoFamiliarController {
