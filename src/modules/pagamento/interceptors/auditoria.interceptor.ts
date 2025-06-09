@@ -212,7 +212,7 @@ export class AuditoriaInterceptor implements NestInterceptor {
 
       // Preparar dados para auditoria
       let dadosNovos = data;
-      let dadosAnteriores = null;
+      const dadosAnteriores = null;
 
       // Mascarar dados sensíveis se necessário
       if (mascarDados && dadosNovos) {

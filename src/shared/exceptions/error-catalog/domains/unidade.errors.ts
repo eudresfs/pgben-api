@@ -225,8 +225,8 @@ export function throwUnidadeNotFound(unidadeId?: string): never {
  */
 export function throwUnidadeAlreadyExists(context?: Partial<UnidadeErrorContext>): never {
   const builder = new UnidadeValidationErrorBuilder();
-  if (context?.codigo) builder.withCodigo(context.codigo);
-  if (context?.nome) builder.withNome(context.nome);
+  if (context?.codigo) {builder.withCodigo(context.codigo);}
+  if (context?.nome) {builder.withNome(context.nome);}
   throw builder.build(UNIDADE_ERROR_CODES.UNIDADE_ALREADY_EXISTS);
 }
 
@@ -235,7 +235,7 @@ export function throwUnidadeAlreadyExists(context?: Partial<UnidadeErrorContext>
  */
 export function throwUnidadeOperationFailed(context?: Partial<UnidadeErrorContext>): never {
   const builder = new UnidadeValidationErrorBuilder();
-  if (context?.unidadeId) builder.withUnidadeId(context.unidadeId);
+  if (context?.unidadeId) {builder.withUnidadeId(context.unidadeId);}
   throw builder.build(UNIDADE_ERROR_CODES.UNIDADE_OPERATION_FAILED);
 }
 
@@ -255,9 +255,9 @@ export function throwSetorNotFound(setorId?: string): never {
  */
 export function throwSetorAlreadyExists(context?: Partial<SetorErrorContext>): never {
   const builder = new SetorValidationErrorBuilder();
-  if (context?.nome) builder.withNome(context.nome);
-  if (context?.sigla) builder.withSigla(context.sigla);
-  if (context?.unidadeId) builder.withUnidadeId(context.unidadeId);
+  if (context?.nome) {builder.withNome(context.nome);}
+  if (context?.sigla) {builder.withSigla(context.sigla);}
+  if (context?.unidadeId) {builder.withUnidadeId(context.unidadeId);}
   throw builder.build(UNIDADE_ERROR_CODES.SETOR_ALREADY_EXISTS);
 }
 
@@ -266,8 +266,8 @@ export function throwSetorAlreadyExists(context?: Partial<SetorErrorContext>): n
  */
 export function throwSetorOperationFailed(context?: Partial<SetorErrorContext>): never {
   const builder = new SetorValidationErrorBuilder();
-  if (context?.setorId) builder.withSetorId(context.setorId);
-  if (context?.unidadeId) builder.withUnidadeId(context.unidadeId);
+  if (context?.setorId) {builder.withSetorId(context.setorId);}
+  if (context?.unidadeId) {builder.withUnidadeId(context.unidadeId);}
   throw builder.build(UNIDADE_ERROR_CODES.SETOR_OPERATION_FAILED);
 }
 

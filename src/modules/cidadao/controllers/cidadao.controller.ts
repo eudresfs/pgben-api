@@ -11,6 +11,7 @@ import {
   UseGuards,
   Logger,
   Request,
+  UseInterceptors,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -24,6 +25,7 @@ import {
   ApiBadRequestResponse,
   ApiExtraModels,
 } from '@nestjs/swagger';
+import { CacheableShort, CacheableLong } from '../../../shared/interceptors/cache.interceptor';
 import { CreateCidadaoDto } from '../dto/create-cidadao.dto';
 import { CidadaoService } from '../services/cidadao.service';
 import { CidadaoRepository } from '../repositories/cidadao.repository';
@@ -58,6 +60,7 @@ export class CidadaoController {
    * Lista todos os cidadãos com filtros e paginação
    */
   @Get()
+  @CacheableShort({ includeQuery: true })
   @RequiresPermission({
     permissionName: 'cidadao.listar',
     scopeType: ScopeType.UNIT,
@@ -109,12 +112,20 @@ export class CidadaoController {
     description: 'Filtrar por bairro',
     example: 'Centro',
   })
+  @ApiQuery({
+    name: 'includeRelations',
+    required: false,
+    type: Boolean,
+    description: 'Se deve incluir relacionamentos completos (solicitações, documentos, pagamentos, info bancária, composição familiar e dados sociais)',
+    example: false,
+  })
   async findAll(
     @Request() req,
     @Query('page') page = 1,
     @Query('limit') limit = 10,
     @Query('search') search?: string,
     @Query('bairro') bairro?: string,
+    @Query('includeRelations', new DefaultValuePipe(false)) includeRelations?: boolean,
   ): Promise<any> {
     // Inicia medição de tempo para performance
     const startTime = Date.now();
@@ -124,14 +135,20 @@ export class CidadaoController {
     );
 
     try {
-      // Restaurando o código original com monitoramento de performance
+      // Definir campos baseado no includeRelations
+      const shouldIncludeRelations = includeRelations === true;
+      const fields = shouldIncludeRelations ? [] : ['id', 'nome', 'cpf', 'nis', 'telefone', 'endereco', 'created_at', 'unidade_id'];
+      
       const result = await this.cidadaoService.findAll({
-        page,
-        limit,
-        search,
-        bairro,
-        unidadeId: req?.user?.unidade_id,
-      });
+          page,
+          limit,
+          search,
+          bairro,
+          unidadeId: req?.user?.unidade_id,
+          includeRelations: shouldIncludeRelations,
+          useCache: true,
+          fields,
+        });
 
       // Registra tempo total da operação para monitoramento
       const totalTime = Date.now() - startTime;
@@ -158,6 +175,7 @@ export class CidadaoController {
    * Obtém detalhes de um cidadão específico
    */
   @Get(':id')
+  @CacheableLong({ includeQuery: false })
   @RequiresPermission({
     permissionName: 'cidadao.visualizar',
     scopeType: ScopeType.UNIT,
@@ -421,6 +439,7 @@ export class CidadaoController {
    * @returns Dados do cidadão encontrado
    */
   @Get('cpf/:cpf')
+  @CacheableLong({ includeQuery: false })
   @RequiresPermission({ permissionName: 'cidadao.buscar.cpf' })
   @ApiOperation({
     summary: 'Buscar cidadão por CPF',
@@ -480,6 +499,7 @@ export class CidadaoController {
    * Busca cidadão por NIS
    */
   @Get('nis/:nis')
+  @CacheableLong({ includeQuery: false })
   @RequiresPermission({ permissionName: 'cidadao.buscar.nis' })
   @ApiOperation({
     summary: 'Buscar cidadão por NIS',

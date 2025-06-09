@@ -5,6 +5,7 @@ import { CacheMetricsProvider } from './cache-metrics.provider';
 import { BullModule } from '@nestjs/bull';
 import { MonitoringModule } from '../monitoring/monitoring.module';
 import { getRedisConfig } from './redis.config';
+import { CacheService as MemoryCacheService } from '../services/cache.service';
 
 @Module({
   imports: [
@@ -29,7 +30,7 @@ import { getRedisConfig } from './redis.config';
     // Importamos o módulo de monitoramento para ter acesso ao serviço de métricas
     MonitoringModule,
   ],
-  providers: [CacheService, CacheMetricsProvider],
-  exports: [CacheService, CacheMetricsProvider],
+  providers: [CacheService, CacheMetricsProvider, MemoryCacheService],
+  exports: [CacheService, CacheMetricsProvider, MemoryCacheService],
 })
 export class CacheModule {}

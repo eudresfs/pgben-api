@@ -24,11 +24,11 @@ export const TRANSICOES_PERMITIDAS: Partial<
   [StatusSolicitacao.EM_ANALISE]: [
     StatusSolicitacao.APROVADA,
     StatusSolicitacao.INDEFERIDA,
-    StatusSolicitacao.AGUARDANDO_DOCUMENTOS,
     StatusSolicitacao.PENDENTE,
     StatusSolicitacao.CANCELADA,
   ],
   [StatusSolicitacao.AGUARDANDO_DOCUMENTOS]: [
+    StatusSolicitacao.ABERTA,
     StatusSolicitacao.EM_ANALISE,
     StatusSolicitacao.INDEFERIDA,
     StatusSolicitacao.CANCELADA,

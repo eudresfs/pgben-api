@@ -33,6 +33,7 @@ import { EstadoCivil } from '../enums/estado-civil.enum';
 import { Solicitacao } from './solicitacao.entity';
 import { Documento } from './documento.entity';
 import { DadosSociais } from './dados-sociais.entity';
+import { InfoBancaria } from './info-bancaria.entity';
 
 @Entity('cidadao')
 @Index(['cpf'], { unique: true })
@@ -93,6 +94,7 @@ export class Cidadao {
   @IsNotEmpty({ message: 'Data de nascimento é obrigatória' })
   data_nascimento: string;
 
+  // Relações
   @OneToMany(() => PapelCidadao, (papelCidadao) => papelCidadao.cidadao)
   papeis: PapelCidadao[];
 
@@ -110,6 +112,9 @@ export class Cidadao {
 
   @OneToOne(() => DadosSociais, (dadosSociais) => dadosSociais.cidadao)
   dados_sociais: DadosSociais;
+
+  @OneToOne(() => InfoBancaria, (infoBancaria) => infoBancaria.cidadao)
+  info_bancaria: InfoBancaria;
 
   @Column({
     type: 'enum',

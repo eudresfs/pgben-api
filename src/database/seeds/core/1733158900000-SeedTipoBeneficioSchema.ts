@@ -110,21 +110,21 @@ export class SeedTipoBeneficioSchema1733158900000 {
       const validacoes: any = {};
       
       // Mapear validações do campo principal
-      if (campo.min !== undefined) validacoes.min = campo.min;
-      if (campo.max !== undefined) validacoes.max = campo.max;
+      if (campo.min !== undefined) {validacoes.min = campo.min;}
+      if (campo.max !== undefined) {validacoes.max = campo.max;}
       
       // Mapear validações do objeto validation
       if (campo.validation) {
-        if (campo.validation.min !== undefined) validacoes.min = campo.validation.min;
-        if (campo.validation.max !== undefined) validacoes.max = campo.validation.max;
-        if (campo.validation.minLength !== undefined) validacoes.minLength = campo.validation.minLength;
-        if (campo.validation.maxLength !== undefined) validacoes.maxLength = campo.validation.maxLength;
-        if (campo.validation.pattern) validacoes.pattern = campo.validation.pattern;
-        if (campo.validation.minDate) validacoes.minDate = campo.validation.minDate;
-        if (campo.validation.maxDate) validacoes.maxDate = campo.validation.maxDate;
-        if (campo.validation.integer !== undefined) validacoes.integer = campo.validation.integer;
-        if (campo.validation.maxItems !== undefined) validacoes.maxItems = campo.validation.maxItems;
-        if (campo.validation.items) validacoes.items = campo.validation.items;
+        if (campo.validation.min !== undefined) {validacoes.min = campo.validation.min;}
+        if (campo.validation.max !== undefined) {validacoes.max = campo.validation.max;}
+        if (campo.validation.minLength !== undefined) {validacoes.minLength = campo.validation.minLength;}
+        if (campo.validation.maxLength !== undefined) {validacoes.maxLength = campo.validation.maxLength;}
+        if (campo.validation.pattern) {validacoes.pattern = campo.validation.pattern;}
+        if (campo.validation.minDate) {validacoes.minDate = campo.validation.minDate;}
+        if (campo.validation.maxDate) {validacoes.maxDate = campo.validation.maxDate;}
+        if (campo.validation.integer !== undefined) {validacoes.integer = campo.validation.integer;}
+        if (campo.validation.maxItems !== undefined) {validacoes.maxItems = campo.validation.maxItems;}
+        if (campo.validation.items) {validacoes.items = campo.validation.items;}
       }
 
       // Mapear opções para select/multiselect/radio com novo formato

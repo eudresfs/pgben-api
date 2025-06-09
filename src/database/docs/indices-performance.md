@@ -171,7 +171,7 @@ AND data_liberacao BETWEEN '2024-01-01' AND '2024-12-31';
 ## Considerações de Performance
 
 ### Uso do CONCURRENTLY
-Todos os índices são criados com `CREATE INDEX CONCURRENTLY` para evitar bloqueios durante a criação em produção.
+Todos os índices são criados com `CREATE INDEX` para evitar bloqueios durante a criação em produção.
 
 ### Índices Condicionais
 Vários índices utilizam cláusulas `WHERE` para:

@@ -671,7 +671,7 @@ export class PendenciaRepository {
     });
 
     estatisticas.total_vencidas = pendenciasAbertas.filter((p) => {
-      if (!p.prazo_resolucao) return false;
+      if (!p.prazo_resolucao) {return false;}
       const prazo = new Date(p.prazo_resolucao);
       prazo.setHours(0, 0, 0, 0);
       return prazo < hoje;
@@ -683,7 +683,7 @@ export class PendenciaRepository {
     seteDias.setHours(23, 59, 59, 999);
 
     estatisticas.proximas_vencimento = pendenciasAbertas.filter((p) => {
-      if (!p.prazo_resolucao) return false;
+      if (!p.prazo_resolucao) {return false;}
       const prazo = new Date(p.prazo_resolucao);
       return prazo >= hoje && prazo <= seteDias;
     }).length;

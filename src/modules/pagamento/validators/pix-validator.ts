@@ -15,7 +15,7 @@ export class PixValidator {
    * Valida uma chave PIX
    */
   validarChavePix(chave: string, tipo: string): boolean {
-    if (!chave || !tipo) return false;
+    if (!chave || !tipo) {return false;}
     
     switch (tipo.toLowerCase()) {
       case 'cpf':
@@ -35,7 +35,7 @@ export class PixValidator {
    * Aplica máscara na chave PIX para exibição
    */
   mascaraChavePix(chave: string, tipo: string): string {
-    if (!chave || !tipo) return '';
+    if (!chave || !tipo) {return '';}
     
     switch (tipo.toLowerCase()) {
       case 'cpf':
@@ -55,7 +55,7 @@ export class PixValidator {
    * Identifica o tipo da chave PIX
    */
   obterTipoChavePix(chave: string): string | null {
-    if (!chave) return null;
+    if (!chave) {return null;}
     
     // Remove espaços e caracteres especiais para análise
     const chaveClean = chave.replace(/\D/g, '');

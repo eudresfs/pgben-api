@@ -10,6 +10,8 @@ import { TipoBeneficioRepository } from '../repositories/tipo-beneficio.reposito
 import { TipoBeneficioSchema } from '../../../entities/tipo-beneficio-schema.entity';
 import { SolicitacaoService } from '../../solicitacao/services/solicitacao.service';
 import { TipoBeneficioSchemaRepository } from '../repositories/tipo-beneficio-schema.repository';
+import { WorkflowSolicitacaoService } from '../../solicitacao/services/workflow-solicitacao.service';
+import { StatusSolicitacao } from '@/enums';
 
 /**
  * Factory service para gerenciar diferentes tipos de dados de benefício
@@ -30,6 +32,7 @@ export class DadosBeneficioFactoryService {
     private readonly tipoBeneficioRepository: TipoBeneficioRepository,
     private readonly solicitacaoService: SolicitacaoService,
     private readonly tipoBeneficioSchemaRepository: TipoBeneficioSchemaRepository,
+    private readonly workflowSolicitacaoService: WorkflowSolicitacaoService,
   ) {
     // Mapear tipos de benefício para seus respectivos serviços
     this.serviceMap = new Map();
@@ -203,12 +206,18 @@ export class DadosBeneficioFactoryService {
         solicitacaoId: dadosBeneficio?.solicitacao_id
       });
 
-      // Atualizar o status da solicitação para AGUARDANDO_DOCUMENTOS
-      // await this.solicitacaoService.updateStatus(
-      //   createDto.solicitacao_id,
-      //   'AGUARDANDO_DOCUMENTOS',
-      //   usuarioId,
-      // );
+      // Atualizar status da solicitação para AGUARDANDO_DOCUMENTOS
+      const dadosAdicionais = {
+        observacao: 'Transição automática criada pelo sistema'
+      };
+      
+      await this.workflowSolicitacaoService.atualizarStatus(
+        createDto.solicitacao_id,
+        StatusSolicitacao.AGUARDANDO_DOCUMENTOS,
+        'Sistema',
+        dadosAdicionais
+      );
+
 
       this.logger.debug('Criação de dados de benefício concluída com sucesso');
       return dadosBeneficio;

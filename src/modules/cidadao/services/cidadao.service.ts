@@ -79,8 +79,24 @@ export class CidadaoService {
     search?: string;
     bairro?: string;
     unidadeId?: string;
-  }): Promise<CidadaoPaginatedResponseDto> {
-    const { page = 1, limit = 10, search, bairro, unidadeId } = options || {};
+    includeRelations?: boolean;
+    useCache?: boolean;
+    fields?: string[];
+  } = {}): Promise<CidadaoPaginatedResponseDto> {
+    const {
+      page = 1,
+      limit = 10,
+      search,
+      bairro,
+      unidadeId,
+      includeRelations = false,
+      useCache = true,
+      fields = [],
+    } = options;
+
+    // Validação de limites para performance
+    const validatedLimit = Math.min(Math.max(limit, 1), 100);
+    const skip = (page - 1) * validatedLimit;
 
     // Construir filtros no formato esperado pelo repositório
     const where: any = {};
@@ -91,44 +107,61 @@ export class CidadaoService {
     }
 
     // Aplicar filtro de bairro
-    if (bairro) {
-      where['endereco.bairro'] = { $iLike: `%${bairro}%` };
+    if (bairro && bairro.trim().length > 0) {
+      where['endereco.bairro'] = { $iLike: `%${bairro.trim()}%` };
     }
 
     // Aplicar filtro de busca (nome, CPF ou NIS) usando OR
-    if (search) {
+    if (search && search.trim().length > 0) {
       const searchTerm = search.trim();
       const numericSearch = searchTerm.replace(/\D/g, '');
       
       // Criar condições OR para busca no formato esperado pelo repositório
-      const searchConditions: any[] = [
-        { nome: { $iLike: `%${searchTerm}%` } },
-      ];
+      const searchConditions: any[] = [];
       
-      // Adicionar busca por CPF e NIS se houver números
-      if (numericSearch) {
+      // Otimização: diferentes estratégias baseadas no tipo de busca
+      if (/^\d{11}$/.test(numericSearch)) {
+        // Busca por CPF
         searchConditions.push({ cpf: { $iLike: `%${numericSearch}%` } });
+      } else if (/^\d{11,}$/.test(numericSearch)) {
+        // Busca por NIS
         searchConditions.push({ nis: { $iLike: `%${numericSearch}%` } });
+      } else {
+        // Busca por nome (mais comum)
+        searchConditions.push({ nome: { $iLike: `%${searchTerm}%` } });
+        
+        // Adicionar busca por CPF e NIS se houver números
+        if (numericSearch) {
+          searchConditions.push({ cpf: { $iLike: `%${numericSearch}%` } });
+          searchConditions.push({ nis: { $iLike: `%${numericSearch}%` } });
+        }
       }
       
       where.$or = searchConditions;
     }
 
-    // Calcular skip para paginação
-    const skip = (page - 1) * limit;
+    // Campos específicos para listagem otimizada
+    const specificFields = fields.length > 0 ? fields : (
+      !includeRelations ? [
+        'id', 'nome', 'cpf', 'nis', 'telefone', 
+        'endereco', 'created_at', 'unidade_id'
+      ] : []
+    );
 
     try {
-      // Buscar cidadãos sem relacionamentos para melhor performance
+      // Buscar cidadãos com configurações otimizadas
       const [cidadaos, total] = await this.cidadaoRepository.findAll({
         where,
         skip,
-        take: limit,
-        order: { nome: 'ASC' },
-        includeRelations: false, // Não carregar relacionamentos na listagem
+        take: validatedLimit,
+        order: { created_at: 'DESC', nome: 'ASC' }, // Ordenação otimizada
+        includeRelations,
+        useCache,
+        specificFields,
       });
 
       // Calcular totais para paginação
-      const pages = Math.ceil(total / limit);
+      const pages = Math.ceil(total / validatedLimit);
       const hasNext = page < pages;
       const hasPrev = page > 1;
 
@@ -145,7 +178,7 @@ export class CidadaoService {
         meta: {
           total,
           page,
-          limit,
+          limit: validatedLimit,
           pages,
           hasNext,
           hasPrev,

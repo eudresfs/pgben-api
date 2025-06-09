@@ -173,8 +173,8 @@ export class PagamentoMappingService implements IPagamentoMappingService {
 
     if (filtros.valorMinimo || filtros.valorMaximo) {
       where.valor = {};
-      if (filtros.valorMinimo) where.valor.gte = filtros.valorMinimo;
-      if (filtros.valorMaximo) where.valor.lte = filtros.valorMaximo;
+      if (filtros.valorMinimo) {where.valor.gte = filtros.valorMinimo;}
+      if (filtros.valorMaximo) {where.valor.lte = filtros.valorMaximo;}
     }
     
     return {

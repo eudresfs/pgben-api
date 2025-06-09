@@ -76,7 +76,7 @@ export class PagamentoResponseDto {
     required: false,
   })
   @Transform(({ value, obj }) => {
-    if (!value) return value;
+    if (!value) {return value;}
     
     // Aplica mascaramento nos dados bancários sensíveis
     const maskedData = DataMaskingUtil.maskDadosBancarios({
