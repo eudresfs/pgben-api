@@ -8,6 +8,7 @@ import {
   Inject,
   forwardRef,
 } from '@nestjs/common';
+import { Like, ILike } from 'typeorm';
 import {
   AppError,
   throwFromPostgresError,
@@ -28,7 +29,6 @@ import { CPFValidator } from '../validators/cpf-validator';
 import { NISValidator } from '../validators/nis-validator';
 import { isUUID } from 'class-validator';
 import { normalizeEnumFields } from '../../../shared/utils/enum-normalizer.util';
-// import { InfoBancariaService } from './info-bancaria.service'; // Removido para evitar dependência circular
 
 /**
  * Serviço de cidadãos
@@ -82,16 +82,12 @@ export class CidadaoService {
   }): Promise<CidadaoPaginatedResponseDto> {
     const { page = 1, limit = 10, search, bairro, unidadeId } = options || {};
 
-    // Construir filtros
+    // Construir filtros no formato esperado pelo repositório
     const where: any = {};
 
-    // Aplicar filtro de busca (nome, CPF ou NIS)
-    if (search) {
-      where.$or = [
-        { nome: { $iLike: `%${search}%` } },
-        { cpf: { $iLike: `%${search.replace(/\D/g, '')}%` } },
-        { nis: { $iLike: `%${search.replace(/\D/g, '')}%` } },
-      ];
+    // Aplicar filtro de unidade (se fornecido)
+    if (unidadeId) {
+      where.unidade_id = unidadeId;
     }
 
     // Aplicar filtro de bairro
@@ -99,9 +95,23 @@ export class CidadaoService {
       where['endereco.bairro'] = { $iLike: `%${bairro}%` };
     }
 
-    // Aplicar filtro de unidade (se fornecido)
-    if (unidadeId) {
-      where.unidade_id = unidadeId;
+    // Aplicar filtro de busca (nome, CPF ou NIS) usando OR
+    if (search) {
+      const searchTerm = search.trim();
+      const numericSearch = searchTerm.replace(/\D/g, '');
+      
+      // Criar condições OR para busca no formato esperado pelo repositório
+      const searchConditions: any[] = [
+        { nome: { $iLike: `%${searchTerm}%` } },
+      ];
+      
+      // Adicionar busca por CPF e NIS se houver números
+      if (numericSearch) {
+        searchConditions.push({ cpf: { $iLike: `%${numericSearch}%` } });
+        searchConditions.push({ nis: { $iLike: `%${numericSearch}%` } });
+      }
+      
+      where.$or = searchConditions;
     }
 
     // Calcular skip para paginação
@@ -142,6 +152,7 @@ export class CidadaoService {
         },
       };
     } catch (error) {
+      this.logger.error('Erro ao buscar cidadãos', error);
       throw new InternalServerErrorException('Erro ao buscar cidadãos');
     }
   }
@@ -1029,7 +1040,7 @@ export class CidadaoService {
    */
   async update(
     id: string,
-    updateCidadaoDto: UpdateCidadaoDto,
+    updateCidadaoDto: CreateCidadaoDto,
     userId: string,
   ): Promise<CidadaoResponseDto> {
     try {

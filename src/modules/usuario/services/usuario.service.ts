@@ -13,7 +13,7 @@ import {
   throwPasswordMismatch,
 } from '../../../shared/exceptions/error-catalog/domains/usuario.errors';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, DeepPartial, Repository } from 'typeorm';
+import { DataSource, DeepPartial, Repository, ILike } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { UsuarioRepository } from '../repositories/usuario.repository';
 import { CreateUsuarioDto } from '../dto/create-usuario.dto';
@@ -129,54 +129,112 @@ export class UsuarioService {
   }
 
   /**
-   * Busca todos os usuários com filtros e paginação
-   * @param options Opções de filtro e paginação
+   * Busca todos os usuários com filtros dinâmicos e paginação
+   * @param options Opções de filtro e paginação (aceita qualquer campo da entidade)
    * @returns Lista de usuários paginada
    */
   async findAll(options?: {
     page?: number;
     limit?: number;
     search?: string;
-    role?: string;
-    status?: string;
-    unidade_id?: string;
+    [key: string]: any; // Permite qualquer campo da entidade como filtro
   }) {
     const {
       page = 1,
       limit = 10,
       search,
-      role,
-      status,
-      unidade_id,
+      ...filters
     } = options || {};
 
-    // Construir filtros
+    // Construir filtros dinâmicos
     const where: any = {};
 
+    // Campos permitidos para filtro (baseados na entidade Usuario)
+    const allowedFields = [
+      'nome', 'email', 'cpf', 'telefone', 'matricula', 
+      'role_id', 'unidade_id', 'setor_id', 'status', 
+      'primeiro_acesso', 'tentativas_login'
+    ];
+
+    // Aplicar filtros dinâmicos para campos permitidos
+    Object.keys(filters).forEach(key => {
+      if (allowedFields.includes(key) && filters[key] !== undefined && filters[key] !== null && filters[key] !== '') {
+        const value = filters[key];
+        
+        // Para campos de texto, usar busca parcial (ILIKE)
+        if (['nome', 'email', 'telefone', 'matricula'].includes(key)) {
+          where[key] = ILike(`%${value}%`);
+        }
+        // Para campos exatos (IDs, status, etc.), usar igualdade
+        else {
+          where[key] = value;
+        }
+      }
+    });
+
+    // Aplicar filtro de busca geral (nome, email, CPF ou matrícula)
     if (search) {
-      where.nome = { $iLike: `%${search}%` };
-    }
+      const searchTerm = search.trim();
+      const numericSearch = searchTerm.replace(/\D/g, '');
+      
+      // Remover filtros individuais se houver busca geral
+      delete where.nome;
+      delete where.email;
+      delete where.cpf;
+      delete where.matricula;
+      
+      // Criar condições OR para busca geral
+      const searchConditions = [
+        { ...where, nome: ILike(`%${searchTerm}%`) },
+        { ...where, email: ILike(`%${searchTerm}%`) },
+        { ...where, matricula: ILike(`%${searchTerm}%`) },
+      ];
+      
+      // Adicionar busca por CPF se houver números
+      if (numericSearch) {
+        searchConditions.push({ ...where, cpf: ILike(`%${numericSearch}%`) });
+      }
+      
+      // Usar array de condições OR
+      const finalWhere = searchConditions;
+      
+      // Calcular skip para paginação
+      const skip = (page - 1) * limit;
 
-    if (role) {
-      where.role = role;
-    }
+      // Buscar usuários com condições OR
+      const [usuarios, total] = await this.usuarioRepository.findAll({
+        skip,
+        take: limit,
+        where: finalWhere,
+        order: { nome: 'ASC' },
+      });
 
-    if (status) {
-      where.status = status;
-    }
+      // Remover campos sensíveis
+      const usuariosSemSenha = usuarios.map((usuario) => {
+        const { senhaHash, ...usuarioSemSenha } = usuario;
+        return usuarioSemSenha;
+      });
 
-    if (unidade_id) {
-      where.unidade_id = unidade_id;
+      return {
+        items: usuariosSemSenha,
+        meta: {
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit),
+        },
+      };
     }
 
     // Calcular skip para paginação
     const skip = (page - 1) * limit;
 
-    // Buscar usuários
+    // Buscar usuários com filtros simples
     const [usuarios, total] = await this.usuarioRepository.findAll({
       skip,
       take: limit,
       where,
+      order: { nome: 'ASC' },
     });
 
     // Remover campos sensíveis

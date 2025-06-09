@@ -105,15 +105,6 @@ export class UpdateCidadaoDto {
   })
   endereco?: EnderecoDto;
 
-  @IsNumber({}, { message: 'Renda deve ser um número' })
-  @IsOptional()
-  @ApiProperty({
-    example: 1200.5,
-    description: 'Renda mensal do cidadão',
-    required: false,
-  })
-  renda?: number;
-
   @IsUUID('4', { message: 'ID da unidade deve ser um UUID válido' })
   @IsOptional()
   @ApiProperty({

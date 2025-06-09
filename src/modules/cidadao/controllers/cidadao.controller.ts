@@ -6,17 +6,9 @@ import {
   Param,
   Query,
   Put,
-  Delete,
   ParseUUIDPipe,
   DefaultValuePipe,
-  ParseIntPipe,
-  BadRequestException,
-  UseInterceptors,
-  UploadedFiles,
   UseGuards,
-  HttpStatus,
-  Res,
-  SetMetadata,
   Logger,
   Request,
 } from '@nestjs/common';
@@ -29,20 +21,14 @@ import {
   ApiParam,
   ApiOkResponse,
   ApiConflictResponse,
-  ApiNotFoundResponse,
   ApiBadRequestResponse,
   ApiExtraModels,
 } from '@nestjs/swagger';
 import { CreateCidadaoDto } from '../dto/create-cidadao.dto';
-import { UpdateCidadaoDto } from '../dto/update-cidadao.dto';
-import { CreateComposicaoFamiliarDto } from '../dto/create-composicao-familiar.dto';
-import { BuscaCidadaoDto } from '../dto/busca-cidadao.dto';
 import { CidadaoService } from '../services/cidadao.service';
 import { CidadaoRepository } from '../repositories/cidadao.repository';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
-// import { MulterUploader } from '../../common/uploaders/multer.uploader';
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
-import { Cidadao } from '../../../entities/cidadao.entity';
 import { ScopeType } from '../../../entities/user-permission.entity';
 import {
   CidadaoResponseDto,
@@ -66,7 +52,6 @@ export class CidadaoController {
 
   constructor(
     private readonly cidadaoService: CidadaoService,
-    private readonly cidadaoRepository: CidadaoRepository,
   ) {}
 
   /**
@@ -167,171 +152,6 @@ export class CidadaoController {
       );
       throw error;
     }
-  }
-
-  @Get('cursor')
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
-  @ApiOperation({
-    summary:
-      'Lista cidadãos com paginação por cursor (mais eficiente para grandes volumes)',
-    description:
-      'Implementa paginação baseada em cursor, que é mais eficiente que a paginação por offset para grandes volumes de dados.',
-  })
-  @ApiQuery({
-    name: 'cursor',
-    required: false,
-    type: String,
-    description:
-      'Cursor para a próxima página (ID do último item da página anterior)',
-    example: '550e8400-e29b-41d4-a716-446655440000',
-  })
-  @ApiQuery({
-    name: 'limit',
-    required: false,
-    type: Number,
-    description: 'Quantidade de itens por página',
-    example: 10,
-  })
-  @ApiQuery({
-    name: 'search',
-    required: false,
-    type: String,
-    description: 'Busca por nome, CPF ou NIS',
-    example: 'João',
-  })
-  @ApiQuery({
-    name: 'bairro',
-    required: false,
-    type: String,
-    description: 'Filtrar por bairro',
-    example: 'Centro',
-  })
-  @ApiQuery({
-    name: 'orderBy',
-    required: false,
-    type: String,
-    description: 'Campo para ordenação',
-    example: 'created_at',
-  })
-  @ApiQuery({
-    name: 'orderDirection',
-    required: false,
-    enum: ['ASC', 'DESC'],
-    description: 'Direção da ordenação',
-    example: 'DESC',
-  })
-  async findByCursor(
-    @Query('cursor') cursor?: string,
-    @Query('limit') limit = 10,
-    @Query('search') search?: string,
-    @Query('bairro') bairro?: string,
-    @Query('orderBy') orderBy?: string,
-    @Query('orderDirection') orderDirection?: 'ASC' | 'DESC',
-  ) {
-    return {
-      data: [],
-      message: 'Endpoint desativado temporariamente para diagnóstico',
-    };
-    // Código original comentado para permitir compilação
-    /*return this.cidadaoService.findByCursor({
-      cursor,
-      limit,
-      search,
-      bairro,
-      unidadeId: req?.user?.unidade_id,
-      orderBy,
-      orderDirection,
-    });*/
-  }
-
-  /**
-   * Busca unificada de cidadão por ID, CPF, NIS, telefone ou nome
-   */
-  @Get('busca')
-  @RequiresPermission({
-    permissionName: 'cidadao.visualizar',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'cidadao.unidadeId',
-  })
-  @ApiOperation({
-    summary: 'Buscar cidadão',
-    description:
-      'Busca um cidadão por ID, CPF, NIS, telefone ou nome. Permite apenas um parâmetro por vez.',
-  })
-  @ApiQuery({
-    name: 'id',
-    required: false,
-    type: String,
-    description: 'ID do cidadão (UUID)',
-    example: '550e8400-e29b-41d4-a716-446655440000',
-  })
-  @ApiQuery({
-    name: 'cpf',
-    required: false,
-    type: String,
-    description: 'CPF do cidadão (com ou sem formatação)',
-    example: '12345678901',
-  })
-  @ApiQuery({
-    name: 'nis',
-    required: false,
-    type: String,
-    description: 'NIS do cidadão',
-    example: '12345678901',
-  })
-  @ApiQuery({
-    name: 'telefone',
-    required: false,
-    type: String,
-    description: 'Telefone do cidadão (com ou sem formatação)',
-    example: '11987654321',
-  })
-  @ApiQuery({
-    name: 'nome',
-    required: false,
-    type: String,
-    description: 'Nome do cidadão (busca parcial)',
-    example: 'João Silva',
-  })
-  @ApiQuery({
-    name: 'includeRelations',
-    required: false,
-    type: Boolean,
-    description: 'Incluir relacionamentos (composição familiar, etc.)',
-    example: false,
-  })
-  @ApiOkResponse({
-    description: 'Cidadão(s) encontrado(s) com sucesso',
-    schema: {
-      oneOf: [
-        { $ref: '#/components/schemas/CidadaoResponseDto' },
-        {
-          type: 'array',
-          items: { $ref: '#/components/schemas/CidadaoResponseDto' },
-        },
-      ],
-    },
-  })
-  @ApiBadRequestResponse({
-    description: 'Parâmetros de busca inválidos',
-    type: ApiErrorResponse,
-    schema: {
-      example: {
-        statusCode: 400,
-        message: 'Forneça apenas um parâmetro de busca por vez',
-        error: 'Bad Request',
-      },
-    },
-  })
-  @ApiNotFoundResponse({
-    description: 'Cidadão não encontrado',
-    type: ApiErrorResponse,
-  })
-  async buscarCidadao(
-    @Query() query: BuscaCidadaoDto,
-  ): Promise<CidadaoResponseDto | CidadaoResponseDto[]> {
-    return this.cidadaoService.buscarCidadao(query);
   }
 
   /**
@@ -556,7 +376,7 @@ export class CidadaoController {
   })
   async update(
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
-    @Body() updateCidadaoDto: UpdateCidadaoDto,
+    @Body() updateCidadaoDto: CreateCidadaoDto,
     @Request() req,
   ): Promise<any> {
     // Inicia medição de tempo para performance

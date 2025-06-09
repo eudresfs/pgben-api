@@ -45,7 +45,8 @@ export class UsuarioController {
   constructor(private readonly usuarioService: UsuarioService) {}
 
   /**
-   * Lista todos os usuários com filtros e paginação
+   * Lista todos os usuários com filtros dinâmicos e paginação
+   * Aceita qualquer campo da entidade Usuario como filtro
    */
   @Get()
   @RequiresPermission({
@@ -53,7 +54,10 @@ export class UsuarioController {
     scopeType: ScopeType.UNIT,
     scopeIdExpression: 'query.unidade_id',
   })
-  @ApiOperation({ summary: 'Listar usuários' })
+  @ApiOperation({ 
+    summary: 'Listar usuários',
+    description: 'Lista usuários com filtros dinâmicos. Aceita qualquer campo da entidade como filtro: nome, email, cpf, telefone, matricula, role_id, unidade_id, setor_id, status, primeiro_acesso, tentativas_login'
+  })
   @ApiResponse({
     status: 200,
     description: 'Lista de usuários retornada com sucesso',
@@ -62,53 +66,96 @@ export class UsuarioController {
     name: 'page',
     required: false,
     type: Number,
-    description: 'Página atual',
+    description: 'Página atual (padrão: 1)',
   })
   @ApiQuery({
     name: 'limit',
     required: false,
     type: Number,
-    description: 'Itens por página',
+    description: 'Itens por página (padrão: 10)',
   })
   @ApiQuery({
     name: 'search',
     required: false,
     type: String,
-    description: 'Termo de busca',
+    description: 'Busca geral por nome, email, CPF ou matrícula',
   })
   @ApiQuery({
-    name: 'role',
+    name: 'nome',
     required: false,
     type: String,
-    description: 'Filtro por papel',
+    description: 'Filtro por nome (busca parcial)',
+  })
+  @ApiQuery({
+    name: 'email',
+    required: false,
+    type: String,
+    description: 'Filtro por email (busca parcial)',
+  })
+  @ApiQuery({
+    name: 'cpf',
+    required: false,
+    type: String,
+    description: 'Filtro por CPF (busca exata)',
+  })
+  @ApiQuery({
+    name: 'telefone',
+    required: false,
+    type: String,
+    description: 'Filtro por telefone (busca parcial)',
+  })
+  @ApiQuery({
+    name: 'matricula',
+    required: false,
+    type: String,
+    description: 'Filtro por matrícula (busca parcial)',
   })
   @ApiQuery({
     name: 'status',
     required: false,
     type: String,
-    description: 'Filtro por status',
+    description: 'Filtro por status (ativo/inativo)',
+  })
+  @ApiQuery({
+    name: 'role_id',
+    required: false,
+    type: String,
+    description: 'Filtro por ID do papel/role',
   })
   @ApiQuery({
     name: 'unidade_id',
     required: false,
     type: String,
-    description: 'Filtro por unidade',
+    description: 'Filtro por ID da unidade',
+  })
+  @ApiQuery({
+    name: 'setor_id',
+    required: false,
+    type: String,
+    description: 'Filtro por ID do setor',
+  })
+  @ApiQuery({
+    name: 'primeiro_acesso',
+    required: false,
+    type: Boolean,
+    description: 'Filtro por primeiro acesso (true/false)',
+  })
+  @ApiQuery({
+    name: 'tentativas_login',
+    required: false,
+    type: Number,
+    description: 'Filtro por número de tentativas de login',
   })
   async findAll(
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
-    @Query('search') search?: string,
-    @Query('role') role?: string,
-    @Query('status') status?: string,
-    @Query('unidade_id') unidade_id?: string,
+    @Query() query: any,
   ) {
+    // Extrair page e limit, convertendo para números
+    const { page, limit, ...filters } = query;
+    
     return this.usuarioService.findAll({
       page: page ? +page : undefined,
       limit: limit ? +limit : undefined,
-      search,
-      role,
-      status,
-      unidade_id,
+      ...filters,
     });
   }
 
