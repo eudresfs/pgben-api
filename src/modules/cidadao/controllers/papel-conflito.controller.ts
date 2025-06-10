@@ -21,7 +21,6 @@ import {
  * Responsável por expor os endpoints de verificação de papéis conflitantes
  * para cidadãos, garantindo a integridade das regras de negócio.
  */
-@ApiTags('Cidadão')
 @Controller('cidadao/papel-conflito')
 @UseGuards(JwtAuthGuard, PermissionGuard)
 @ApiBearerAuth()

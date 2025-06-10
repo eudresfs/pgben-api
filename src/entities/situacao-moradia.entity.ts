@@ -11,16 +11,13 @@ import {
 } from 'typeorm';
 import { IsNotEmpty, IsOptional, IsNumber, Min, IsEnum } from 'class-validator';
 import { Cidadao } from './cidadao.entity';
+import { 
+  TipoMoradiaEnum, 
+  ProgramaHabitacionalEnum, 
+  TipoDesastreEnum, 
+  TipoDespesaEnum 
+} from '../enums/situacao-moradia.enum'
 
-export enum TipoMoradiaEnum {
-  PROPRIA = 'propria',
-  ALUGADA = 'alugada',
-  CEDIDA = 'cedida',
-  OCUPACAO = 'ocupacao',
-  SITUACAO_RUA = 'situacao_rua',
-  ABRIGO = 'abrigo',
-  OUTRO = 'outro',
-}
 
 @Entity('situacao_moradia')
 @Index(['cidadao_id'], { unique: true })
@@ -76,6 +73,59 @@ export class SituacaoMoradia {
   @Column({ nullable: true })
   @IsOptional()
   possui_coleta_lixo: boolean;
+
+  // Seção 3 - Situações Especiais
+  @Column({ type: 'boolean', nullable: true })
+  @IsOptional()
+  moradia_cedida: boolean;
+
+  @Column({ type: 'boolean', nullable: true })
+  @IsOptional()
+  moradia_invadida: boolean;
+
+  @Column({
+    type: 'enum',
+    enum: TipoDesastreEnum,
+    nullable: true
+  })
+  @IsOptional()
+  @IsEnum(TipoDesastreEnum)
+  tipo_desastre: TipoDesastreEnum;
+
+  @Column({ nullable: true })
+  @IsOptional()
+  descricao_desastre: string;
+
+  @Column({ nullable: true })
+  @IsOptional()
+  outro_tipo_moradia: string;
+
+  // Seção 4 - Programas Habitacionais
+  @Column({
+    type: 'enum',
+    enum: ProgramaHabitacionalEnum,
+    nullable: true
+  })
+  @IsOptional()
+  @IsEnum(ProgramaHabitacionalEnum)
+  programa_habitacional: ProgramaHabitacionalEnum;
+
+  @Column({ type: 'boolean', nullable: true })
+  @IsOptional()
+  inscrito_programa_habitacional: boolean;
+
+  @Column({ type: 'boolean', nullable: true })
+  @IsOptional()
+  reside_2_anos_natal: boolean;
+
+  // Seção 5 - Despesas Mensais
+  @Column('jsonb', { nullable: true })
+  @IsOptional()
+  despesas_mensais: Array<{
+    tipo: TipoDespesaEnum;
+    valor: number;
+    descricao?: string;
+  }>;
 
   @Column({ nullable: true })
   @IsOptional()

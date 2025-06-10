@@ -40,7 +40,6 @@ import { ConfiguracaoRenovacaoResponseDto } from '../dto/configuracao-renovacao-
  * Responsável por expor os endpoints de gerenciamento das configurações de renovação
  * automática e do processo de renovação automática mensal.
  */
-@ApiTags('Benefícios')
 @Controller('beneficio/renovacao-automatica')
 @UseGuards(JwtAuthGuard, PermissionGuard)
 @ApiBearerAuth()

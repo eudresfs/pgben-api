@@ -13,6 +13,7 @@ import {
   RegraConflitoPapel,
   InfoBancaria,
   DadosSociais,
+  SituacaoMoradia,
 } from '../../entities';
 import { CacheModule } from '../../shared/cache';
 import { CidadaoAuditInterceptor } from './interceptors/cidadao-audit.interceptor';
@@ -30,6 +31,8 @@ import { DadosSociaisController } from './controllers/dados-sociais.controller';
 import { DadosSociaisService } from './services/dados-sociais.service';
 import { ComposicaoFamiliarController } from './controllers/composicao-familiar.controller';
 import { ComposicaoFamiliarService } from './services/composicao-familiar.service';
+import { SituacaoMoradiaController } from './controllers/situacao-moradia.controller';
+import { SituacaoMoradiaService } from './services/situacao-moradia.service';
 // import { DiagnosticoController } from './controllers/diagnostico.controller'; // Movido para módulo separado
 import { AuthModule } from '../../auth/auth.module';
 import { NotificacaoModule } from '../notificacao/notificacao.module';
@@ -50,6 +53,7 @@ import { NotificacaoModule } from '../notificacao/notificacao.module';
       RegraConflitoPapel,
       InfoBancaria,
       DadosSociais,
+      SituacaoMoradia,
     ]),
     CacheModule,
     AuthModule,
@@ -65,6 +69,7 @@ import { NotificacaoModule } from '../notificacao/notificacao.module';
     InfoBancariaController,
     DadosSociaisController,
     ComposicaoFamiliarController,
+    SituacaoMoradiaController,
     // DiagnosticoController // Movido para módulo separado
   ],
   providers: [
@@ -79,6 +84,7 @@ import { NotificacaoModule } from '../notificacao/notificacao.module';
     InfoBancariaRepository,
     DadosSociaisService,
     ComposicaoFamiliarService,
+    SituacaoMoradiaService,
     {
       provide: APP_INTERCEPTOR,
       useClass: CidadaoAuditInterceptor,
@@ -96,6 +102,7 @@ import { NotificacaoModule } from '../notificacao/notificacao.module';
     InfoBancariaRepository,
     DadosSociaisService,
     ComposicaoFamiliarService,
+    SituacaoMoradiaService,
   ],
 })
 export class CidadaoModule {}

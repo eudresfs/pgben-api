@@ -52,7 +52,6 @@ class UpdateRegraConflitoDto {
  * Responsável por expor os endpoints de gerenciamento das regras de conflito
  * entre papéis de cidadãos no sistema.
  */
-@ApiTags('Cidadão')
 @Controller('cidadao/regra-conflito')
 @UseGuards(JwtAuthGuard, PermissionGuard)
 @ApiBearerAuth()

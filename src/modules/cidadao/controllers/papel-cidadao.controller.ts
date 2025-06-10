@@ -36,7 +36,6 @@ import { TipoPapel, PaperType } from '../../../enums/tipo-papel.enum';
  * requerente ou representante legal. Cada papel possui regras específicas e
  * metadados associados.
  */
-@ApiTags('Cidadão')
 @Controller('cidadao/papel')
 @UseGuards(JwtAuthGuard, PermissionGuard)
 @ApiBearerAuth()

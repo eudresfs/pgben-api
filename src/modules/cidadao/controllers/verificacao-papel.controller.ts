@@ -56,7 +56,6 @@ interface AuthenticatedRequest extends Request {
  * Responsável por expor os endpoints de verificação e conversão de papéis
  * dos cidadãos no sistema.
  */
-@ApiTags('Cidadão')
 @Controller('cidadao/verificacao-papel')
 @UseGuards(JwtAuthGuard, PermissionGuard)
 @ApiBearerAuth()
