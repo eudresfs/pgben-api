@@ -1,4 +1,5 @@
 import {
+  IsString,
   IsNotEmpty,
   IsDateString,
   IsEnum,
@@ -8,6 +9,7 @@ import {
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ParentescoEnum, TipoUrnaEnum } from '@/enums';
+import { ValidateTipoBeneficio } from '@/shared/validators/tipo-beneficio.validator';
 
 /**
  * DTO para criação de dados específicos do cidadão para Auxílio Funeral
@@ -19,6 +21,7 @@ export class CreateDadosFuneralDto {
   })
   @IsNotEmpty({ message: 'ID da solicitação é obrigatório' })
   @IsUUID('4', { message: 'ID da solicitação inválido' })
+  @ValidateTipoBeneficio('funeral')
   solicitacao_id: string;
 
   @ApiProperty({

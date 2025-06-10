@@ -143,6 +143,8 @@ export class CreateDadosBeneficios1704067227000 implements MigrationInterface {
                 "grau_parentesco_requerente" "parentesco_enum" NOT NULL,
                 "tipo_urna_necessaria" "tipo_urna_enum" NOT NULL DEFAULT 'padrao',
                 "valor_solicitado" decimal(10,2),
+                "cartorio_emissor" character varying,
+                "numero_certidao_obito" character varying,
                 "declaracao_custos_funeral" text,
                 "observacoes" text,
                 "inclui_despesas_sepultamento" boolean NOT NULL DEFAULT true,

@@ -1,4 +1,5 @@
 import {
+  IsString,
   IsNotEmpty,
   IsNumber,
   IsEnum,
@@ -12,6 +13,7 @@ import {
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import { PeriodicidadeEnum, OrigemAtendimentoEnum } from '@/enums';
+import { ValidateTipoBeneficio } from '@/shared/validators/tipo-beneficio.validator';
 
 /**
  * DTO para criação de dados específicos do cidadão para Cesta Básica
@@ -23,6 +25,7 @@ export class CreateDadosCestaBasicaDto {
   })
   @IsNotEmpty({ message: 'ID da solicitação é obrigatório' })
   @IsUUID('4', { message: 'ID da solicitação inválido' })
+  @ValidateTipoBeneficio('cesta-basica')
   solicitacao_id: string;
 
   @ApiProperty({

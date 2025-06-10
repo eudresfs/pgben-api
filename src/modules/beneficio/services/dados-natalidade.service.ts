@@ -1,6 +1,9 @@
 import { Injectable, Inject, Logger, InternalServerErrorException } from '@nestjs/common';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
+import { UseInterceptors } from '@nestjs/common';
+import { WorkflowInterceptor } from '../../../interceptors/workflow.interceptor';
+import { CacheInterceptor } from '../../../shared/interceptors/cache.interceptor';
 import { CreateDadosNatalidadeDto, UpdateDadosNatalidadeDto } from '../dto/create-dados-natalidade.dto';
 import { DadosNatalidade } from '../../../entities/dados-natalidade.entity';
 import { DadosNatalidadeRepository } from '../repositories/dados-natalidade.repository';
@@ -13,6 +16,7 @@ import { BENEFICIO_CONSTANTS } from '../../../shared/constants/beneficio.constan
  * Serviço para gerenciar dados específicos de Auxílio Natalidade
  */
 @Injectable()
+@UseInterceptors(WorkflowInterceptor, CacheInterceptor)
 export class DadosNatalidadeService extends AbstractDadosBeneficioService<
   DadosNatalidade,
   CreateDadosNatalidadeDto,
@@ -22,7 +26,7 @@ export class DadosNatalidadeService extends AbstractDadosBeneficioService<
     private readonly dadosNatalidadeRepository: DadosNatalidadeRepository,
     @Inject(CACHE_MANAGER) protected readonly cacheManager: Cache,
   ) {
-    super(dadosNatalidadeRepository, 'DadosNatalidade', CreateDadosNatalidadeDto, cacheManager);
+    super(dadosNatalidadeRepository, 'DadosNatalidade');
   }
 
   // Métodos CRUD básicos herdados da classe base AbstractDadosBeneficioService
@@ -55,48 +59,86 @@ export class DadosNatalidadeService extends AbstractDadosBeneficioService<
     const rules = BENEFICIO_CONSTANTS.BUSINESS_RULES.NATALIDADE;
 
     try {
-      // Validação de campos obrigatórios com verificação otimizada
-      const requiredFields = [
-        { field: 'solicitacao_id', value: data.solicitacao_id, message: BENEFICIO_TECH_MESSAGES.GENERIC.CAMPO_OBRIGATORIO },
-        { field: 'realiza_pre_natal', value: data.realiza_pre_natal, message: BENEFICIO_TECH_MESSAGES.NATALIDADE.PRE_NATAL_REQUIRED },
-        { field: 'atendida_psf_ubs', value: data.atendida_psf_ubs, message: BENEFICIO_TECH_MESSAGES.NATALIDADE.PSF_UBS_REQUIRED },
-        { field: 'gravidez_risco', value: data.gravidez_risco, message: BENEFICIO_TECH_MESSAGES.NATALIDADE.GRAVIDEZ_RISCO_REQUIRED },
-        { field: 'gemeos_trigemeos', value: data.gemeos_trigemeos, message: BENEFICIO_TECH_MESSAGES.NATALIDADE.GEMEOS_REQUIRED },
-        { field: 'ja_tem_filhos', value: data.ja_tem_filhos, message: BENEFICIO_TECH_MESSAGES.NATALIDADE.JA_TEM_FILHOS_REQUIRED }
-      ];
+      // Validação de campos obrigatórios
+      if (!data.solicitacao_id?.trim()) {
+        errorBuilder.add('solicitacao_id', BENEFICIO_TECH_MESSAGES.NATALIDADE.SOLICITACAO_ID_REQUIRED);
+      }
 
-      // Verificação otimizada de campos obrigatórios
-      for (const { field, value, message } of requiredFields) {
-        if (value === undefined || value === null) {
-          errorBuilder.add(field, message);
+      // Validação de campos booleanos obrigatórios
+      if (data.realiza_pre_natal === undefined || data.realiza_pre_natal === null) {
+        errorBuilder.add('realiza_pre_natal', 'Campo realiza_pre_natal é obrigatório. Validação de campo obrigatório falhou.');
+      }
+
+      if (data.atendida_psf_ubs === undefined || data.atendida_psf_ubs === null) {
+        errorBuilder.add('atendida_psf_ubs', 'Campo atendida_psf_ubs é obrigatório. Validação de campo obrigatório falhou.');
+      }
+
+      if (data.gravidez_risco === undefined || data.gravidez_risco === null) {
+        errorBuilder.add('gravidez_risco', 'Campo gravidez_risco é obrigatório. Validação de campo obrigatório falhou.');
+      }
+
+      if (data.gemeos_trigemeos === undefined || data.gemeos_trigemeos === null) {
+        errorBuilder.add('gemeos_trigemeos', 'Campo gemeos_trigemeos é obrigatório. Validação de campo obrigatório falhou.');
+      }
+
+      if (data.ja_tem_filhos === undefined || data.ja_tem_filhos === null) {
+        errorBuilder.add('ja_tem_filhos', 'Campo ja_tem_filhos é obrigatório. Validação de campo obrigatório falhou.');
+      }
+
+      // Validação de data provável do parto
+      if (!data.data_provavel_parto) {
+        errorBuilder.add('data_provavel_parto', 'Campo data_provavel_parto é obrigatório. Validação de campo obrigatório falhou.');
+      } else {
+        const hoje = new Date();
+        const dataProvavel = new Date(data.data_provavel_parto);
+        
+        // Verificar se a data é válida
+        if (isNaN(dataProvavel.getTime())) {
+          errorBuilder.add('data_provavel_parto', 'Data provável do parto inválida. Validação de formato falhou.');
+        } else {
+          const diasDiferenca = Math.floor((dataProvavel.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+
+          // Não pode ser anterior a 30 dias atrás
+          if (diasDiferenca < -30) {
+            errorBuilder.add('data_provavel_parto', BENEFICIO_TECH_MESSAGES.NATALIDADE.DATA_PARTO_MUITO_ANTIGA);
+          }
+
+          // Não pode ser superior a 280 dias (gestação máxima)
+          if (diasDiferenca > rules.MAX_DIAS_GESTACAO) {
+            errorBuilder.add('data_provavel_parto', BENEFICIO_TECH_MESSAGES.NATALIDADE.DATA_PARTO_MUITO_FUTURA);
+          }
         }
       }
 
-      // Validação de data_provavel_parto
-      if (!data.data_provavel_parto) {
-        errorBuilder.add('data_provavel_parto', BENEFICIO_TECH_MESSAGES.NATALIDADE.DATA_PARTO_REQUIRED);
-      }
-
-      // Validação de chave_pix
-      if (!data.chave_pix?.trim()) {
-        errorBuilder.add('chave_pix', BENEFICIO_TECH_MESSAGES.NATALIDADE.CHAVE_PIX_FORMATO);
-      }
-
-      // Validação de regras de negócio para data_provavel_parto
-      if (data.data_provavel_parto) {
-        this.validateDataProvavelParto(data.data_provavel_parto, errorBuilder);
-      }
-
-      // Validação de quantidade de filhos quando ja_tem_filhos é true
-      if (data.ja_tem_filhos === true) {
+      // Validação de quantidade de filhos
+      if (data.ja_tem_filhos) {
         if (!data.quantidade_filhos || data.quantidade_filhos <= 0) {
-          errorBuilder.add('quantidade_filhos', BENEFICIO_TECH_MESSAGES.NATALIDADE.QUANTIDADE_FILHOS_OBRIGATORIA);
+          errorBuilder.add('quantidade_filhos', 'Campo quantidade_filhos é obrigatório quando ja_tem_filhos é verdadeiro. Validação de campo obrigatório falhou.');
         } else if (data.quantidade_filhos > rules.MAX_FILHOS) {
           errorBuilder.add('quantidade_filhos', BENEFICIO_TECH_MESSAGES.NATALIDADE.QUANTIDADE_FILHOS_EXCEDIDA);
         }
+      } else if (data.quantidade_filhos && data.quantidade_filhos > 0) {
+        errorBuilder.add('quantidade_filhos', 'Campo quantidade_filhos deve ser zero ou nulo quando ja_tem_filhos é falso. Validação de consistência falhou.');
       }
 
-      // Lançar erros se houver
+      // Validação de chave PIX
+      if (!data.chave_pix?.trim()) {
+        errorBuilder.add('chave_pix', BENEFICIO_TECH_MESSAGES.NATALIDADE.CHAVE_PIX_REQUIRED);
+      }
+
+      // Validação de observações adicionais (se fornecidas)
+      if (data.observacoes && data.observacoes.length > BENEFICIO_CONSTANTS.VALIDATION.MAX_OBSERVACOES) {
+        errorBuilder.add('observacoes', `Campo observacoes excede o limite máximo de ${BENEFICIO_CONSTANTS.VALIDATION.MAX_OBSERVACOES} caracteres. Validação de tamanho falhou.`);
+      }
+
+      // Verificar se já existe dados para esta solicitação
+      if (data.solicitacao_id) {
+        const existingData = await this.existsBySolicitacao(data.solicitacao_id);
+        if (existingData) {
+          errorBuilder.add('solicitacao_id', BENEFICIO_TECH_MESSAGES.GENERIC.JA_EXISTE);
+        }
+      }
+
       errorBuilder.throwIfHasErrors();
     } catch (error) {
       if (error instanceof AppError) {
@@ -180,65 +222,69 @@ export class DadosNatalidadeService extends AbstractDadosBeneficioService<
     const errorBuilder = new BeneficioValidationErrorBuilder();
     const rules = BENEFICIO_CONSTANTS.BUSINESS_RULES.NATALIDADE;
 
-    // Validar data_provavel_parto se fornecida
-    if (data.data_provavel_parto !== undefined) {
-      if (!data.data_provavel_parto) {
-        errorBuilder.add('data_provavel_parto', BENEFICIO_TECH_MESSAGES.NATALIDADE.DATA_PARTO_REQUIRED);
-      } else {
-        const dataProvavelParto = new Date(data.data_provavel_parto);
-        const hoje = new Date();
-        
-        // Normalizar as datas para comparação (apenas data, sem horário)
-        const dataProvavelPartoNormalizada = new Date(
-          dataProvavelParto.getFullYear(), 
-          dataProvavelParto.getMonth(), 
-          dataProvavelParto.getDate()
-        );
-        const hojeNormalizado = new Date(
-          hoje.getFullYear(), 
-          hoje.getMonth(), 
-          hoje.getDate()
-        );
-        
-        // Validar se a data não é anterior ao dia atual (permite data de hoje)
-        if (dataProvavelPartoNormalizada < hojeNormalizado) {
-          errorBuilder.add('data_provavel_parto', BENEFICIO_TECH_MESSAGES.NATALIDADE.DATA_PARTO_PASSADA);
-        }
-        
-        // Calcular data máxima (40 semanas = 280 dias a partir de hoje)
-        const dataMaxima = new Date(hojeNormalizado);
-        dataMaxima.setDate(dataMaxima.getDate() + rules.PRAZO_GESTACAO_SEMANAS * 7);
-        
-        // Validar se a data não excede 40 semanas
-        if (dataProvavelPartoNormalizada > dataMaxima) {
-          errorBuilder.add('data_provavel_parto', BENEFICIO_TECH_MESSAGES.NATALIDADE.DATA_PARTO_LIMITE_EXCEDIDO);
+    try {
+      // Validação de data provável do parto
+      if (data.data_provavel_parto !== undefined) {
+        if (!data.data_provavel_parto) {
+          errorBuilder.add('data_provavel_parto', 'Data provável do parto não pode estar vazia quando fornecida. Validação de conteúdo falhou.');
+        } else {
+          const hoje = new Date();
+          const dataProvavel = new Date(data.data_provavel_parto);
+          
+          // Verificar se a data é válida
+          if (isNaN(dataProvavel.getTime())) {
+            errorBuilder.add('data_provavel_parto', 'Data provável do parto inválida. Validação de formato falhou.');
+          } else {
+            const diasDiferenca = Math.floor((dataProvavel.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+
+            if (diasDiferenca < -30) {
+              errorBuilder.add('data_provavel_parto', BENEFICIO_TECH_MESSAGES.NATALIDADE.DATA_PARTO_MUITO_ANTIGA);
+            }
+
+            if (diasDiferenca > rules.MAX_DIAS_GESTACAO) {
+              errorBuilder.add('data_provavel_parto', BENEFICIO_TECH_MESSAGES.NATALIDADE.DATA_PARTO_MUITO_FUTURA);
+            }
+          }
         }
       }
-    }
 
-    // Validar quantidade_filhos se fornecida
-    if (data.quantidade_filhos !== undefined && data.quantidade_filhos <= 0) {
-      errorBuilder.add('quantidade_filhos', BENEFICIO_TECH_MESSAGES.NATALIDADE.QUANTIDADE_FILHOS_OBRIGATORIA);
-    }
+      // Validação de quantidade de filhos
+      const jaTemFilhos = data.ja_tem_filhos ?? entity.ja_tem_filhos;
+      const quantidadeFilhos = data.quantidade_filhos ?? entity.quantidade_filhos;
 
-    // Validar quantidade máxima de filhos
-    if (data.quantidade_filhos !== undefined && data.quantidade_filhos > rules.MAX_FILHOS) {
-      errorBuilder.add('quantidade_filhos', BENEFICIO_TECH_MESSAGES.NATALIDADE.QUANTIDADE_FILHOS_EXCEDIDA);
-    }
+      if (data.ja_tem_filhos !== undefined || data.quantidade_filhos !== undefined) {
+        if (jaTemFilhos) {
+          if (!quantidadeFilhos || quantidadeFilhos <= 0) {
+            errorBuilder.add('quantidade_filhos', 'Campo quantidade_filhos é obrigatório quando ja_tem_filhos é verdadeiro. Validação de campo obrigatório falhou.');
+          } else if (quantidadeFilhos > rules.MAX_FILHOS) {
+            errorBuilder.add('quantidade_filhos', BENEFICIO_TECH_MESSAGES.NATALIDADE.QUANTIDADE_FILHOS_EXCEDIDA);
+          }
+        } else if (quantidadeFilhos && quantidadeFilhos > 0) {
+          errorBuilder.add('quantidade_filhos', 'Campo quantidade_filhos deve ser zero ou nulo quando ja_tem_filhos é falso. Validação de consistência falhou.');
+        }
+      }
 
-    // Validar chave_pix se fornecida
-    if (data.chave_pix !== undefined && (!data.chave_pix || data.chave_pix.trim().length === 0)) {
-      errorBuilder.add('chave_pix', BENEFICIO_TECH_MESSAGES.NATALIDADE.CHAVE_PIX_FORMATO);
-    }
+      // Validação de chave PIX
+      if (data.chave_pix !== undefined && !data.chave_pix?.trim()) {
+        errorBuilder.add('chave_pix', 'Chave PIX não pode estar vazia quando fornecida. Validação de conteúdo falhou.');
+      }
 
-    // Validar consistência entre ja_tem_filhos e quantidade_filhos
-    const jaTemFilhosFinal = data.ja_tem_filhos ?? entity.ja_tem_filhos;
-    const quantidadeFilhosFinal = data.quantidade_filhos ?? entity.quantidade_filhos;
-    
-    if (jaTemFilhosFinal && (!quantidadeFilhosFinal || quantidadeFilhosFinal <= 0)) {
-      errorBuilder.add('quantidade_filhos', BENEFICIO_TECH_MESSAGES.NATALIDADE.QUANTIDADE_FILHOS_OBRIGATORIA);
-    }
+      // Validação de observações adicionais (se fornecidas)
+      if (data.observacoes !== undefined && data.observacoes && data.observacoes.length > BENEFICIO_CONSTANTS.VALIDATION.MAX_OBSERVACOES) {
+        errorBuilder.add('observacoes', `Campo observacoes excede o limite máximo de ${BENEFICIO_CONSTANTS.VALIDATION.MAX_OBSERVACOES} caracteres. Validação de tamanho falhou.`);
+      }
 
-    errorBuilder.throwIfHasErrors();
+      errorBuilder.throwIfHasErrors();
+    } catch (error) {
+      if (error instanceof AppError) {
+        throw error;
+      }
+      this.logger.error('Erro inesperado durante validação de atualização de natalidade', {
+        error: error.message,
+        stack: error.stack,
+        entity_id: entity.id
+      });
+      throw new InternalServerErrorException('Erro interno durante validação dos dados de natalidade');
+    }
   }
 }

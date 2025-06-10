@@ -512,7 +512,7 @@ export class WorkflowSolicitacaoService {
     solicitacaoId: string,
     novoStatus: StatusSolicitacao,
     usuarioId: string,
-    dadosAdicionais: {
+    dadosAdicionais?: {
       observacao?: string;
       processo_judicial_id?: string;
       determinacao_judicial_id?: string;
@@ -541,17 +541,17 @@ export class WorkflowSolicitacaoService {
       }
 
       // Construir a observação com os dados adicionais
-      let observacaoCompleta = dadosAdicionais.observacao || '';
+      let observacaoCompleta = dadosAdicionais?.observacao || '';
 
-      if (dadosAdicionais.justificativa) {
+      if (dadosAdicionais?.justificativa) {
         observacaoCompleta += `\nJustificativa: ${dadosAdicionais.justificativa}`;
       }
 
-      if (dadosAdicionais.processo_judicial_id) {
+      if (dadosAdicionais?.processo_judicial_id) {
         observacaoCompleta += `\nProcesso Judicial ID: ${dadosAdicionais.processo_judicial_id}`;
       }
 
-      if (dadosAdicionais.determinacao_judicial_id) {
+      if (dadosAdicionais?.determinacao_judicial_id) {
         observacaoCompleta += `\nDeterminação Judicial ID: ${dadosAdicionais.determinacao_judicial_id}`;
       }
 
@@ -565,12 +565,12 @@ export class WorkflowSolicitacaoService {
       };
 
       // Adicionar dados adicionais, se existirem
-      if (dadosAdicionais.processo_judicial_id) {
+      if (dadosAdicionais?.processo_judicial_id) {
         updateData.processo_judicial_id = dadosAdicionais.processo_judicial_id;
         updateData.determinacao_judicial_flag = true;
       }
 
-      if (dadosAdicionais.determinacao_judicial_id) {
+      if (dadosAdicionais?.determinacao_judicial_id) {
         updateData.determinacao_judicial_id =
           dadosAdicionais.determinacao_judicial_id;
         updateData.determinacao_judicial_flag = true;

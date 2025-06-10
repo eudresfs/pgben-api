@@ -109,8 +109,8 @@ export class DadosBeneficioController {
     const tipos = this.dadosBeneficioFactoryService.getSupportedTypes();
     return {
       tipos: tipos.map((tipo) => ({
-        codigo: tipo,
         ...this.dadosBeneficioFactoryService.getTypeMetadata(tipo),
+        codigo: tipo,
       })),
     };
   }
@@ -306,7 +306,7 @@ export class DadosBeneficioController {
     @Body() createDto: ICreateDadosBeneficioDto,
     @GetUser() usuario: Usuario,
   ): Promise<IDadosBeneficio> {
-    return this.dadosBeneficioFactoryService.create(codigoOrId, createDto, usuario.id);
+    return this.dadosBeneficioFactoryService.create(codigoOrId, createDto);
   }
 
   /**

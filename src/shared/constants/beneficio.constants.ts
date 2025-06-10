@@ -68,17 +68,20 @@ export const BENEFICIO_CONSTANTS = {
       PESSOAS_POR_CESTA: 3,
       TOLERANCIA_EXTRA: 1,
       MIN_JUSTIFICATIVA_LENGTH: 10,
+      MIN_JUSTIFICATIVA: 10,
+      MAX_PESSOAS_FAMILIA: 50,
     },
     FUNERAL: {
       PRAZO_SOLICITACAO_DIAS: 30,
       DIAS_URGENCIA: 3,
-      TIPOS_URNA_ESPECIAL: ['INFANTIL', 'ESPECIAL', 'OBESO'],
+      TIPOS_URNA_ESPECIAL: ['infantil', 'especial', 'obeso', 'padrao'],
       MIN_NOME_LENGTH: 3,
       MAX_DIAS_APOS_OBITO: 30,
     },
     NATALIDADE: {
       PRAZO_GESTACAO_SEMANAS: 40,
       PRAZO_GESTACAO_DIAS: 280,
+      MAX_DIAS_GESTACAO: 280,
       MAX_FILHOS: 20,
     },
   },
@@ -108,4 +111,4 @@ export const BENEFICIO_CONSTANTS = {
 } as const;
 
 // Type helper para as chaves do mapa
-export type TipoBeneficioMapeado = 'ALUGUEL_SOCIAL' | 'CESTA_BASICA' | 'FUNERAL' | 'NATALIDADE';
+export type TipoBeneficioMapeado = 'aluguel-social' | 'cesta-basica' | 'funeral' | 'natalidade';

@@ -3,7 +3,6 @@
  */
 
 export * from './beneficio.controller';
-export * from './campo-dinamico.controller';
 export * from './dados-beneficio.controller';
 export * from './renovacao-automatica.controller';
 export * from '../../solicitacao/controllers/exportacao.controller';

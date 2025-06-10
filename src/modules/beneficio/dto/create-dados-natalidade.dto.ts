@@ -14,6 +14,7 @@ import {
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
 import { IsCPF } from '@/shared/validators/br-validators';
+import { ValidateTipoBeneficio } from '@/shared/validators/tipo-beneficio.validator';
 
 /**
  * DTO para criação de dados específicos do cidadão para Auxílio Natalidade
@@ -29,6 +30,7 @@ export class CreateDadosNatalidadeDto {
   @IsUUID('4', { 
     message: 'O ID da solicitação deve ser um UUID válido no formato: xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx' 
   })
+  @ValidateTipoBeneficio('natalidade')
   solicitacao_id: string;
 
   @ApiProperty({

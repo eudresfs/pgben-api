@@ -50,7 +50,7 @@ export class DadosAluguelSocial {
   })
   publico_prioritario: PublicoPrioritarioAluguel;
 
-  @Column('simple-array', { nullable: true })
+  @Column('text', { array: true, nullable: true })
   @IsOptional()
   @IsArray({ message: 'Especificações devem ser um array' })
   especificacoes?: EspecificacaoAluguel[];

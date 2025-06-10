@@ -165,7 +165,7 @@ export class CreateSituacaoMoradiaBodyDto {
     enum: TipoDesastreEnum,
     description: 'Tipo de desastre que afetou a moradia',
     required: false,
-    example: 'enchente'
+    example: TipoDesastreEnum.ENCHENTE
   })
   @IsOptional()
   @IsEnum(TipoDesastreEnum, { message: 'Tipo de desastre inválido' })
@@ -196,7 +196,7 @@ export class CreateSituacaoMoradiaBodyDto {
     enum: ProgramaHabitacionalEnum,
     description: 'Programa habitacional do qual participa',
     required: false,
-    example: 'minha_casa_minha_vida'
+    example: ProgramaHabitacionalEnum.MINHA_CASA_MINHA_VIDA
   })
   @IsOptional()
   @IsEnum(ProgramaHabitacionalEnum, { message: 'Programa habitacional inválido' })

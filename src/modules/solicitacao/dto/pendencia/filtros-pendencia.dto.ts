@@ -45,6 +45,12 @@ export class FiltrosPendenciaDto extends BaseFilterDto {
     example: [StatusPendencia.ABERTA, StatusPendencia.RESOLVIDA],
   })
   @IsOptional()
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      return value.split(',').map(item => item.trim()).filter(item => item.length > 0);
+    }
+    return Array.isArray(value) ? value : [];
+  })
   @IsArray({ message: 'Status deve ser um array' })
   @ArrayNotEmpty({ message: 'Array de status não pode estar vazio' })
   @IsEnum(StatusPendencia, { each: true, message: 'Cada status deve ser um valor válido' })

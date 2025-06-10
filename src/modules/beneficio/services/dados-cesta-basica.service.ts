@@ -1,8 +1,11 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable, Inject, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
+import { UseInterceptors } from '@nestjs/common';
+import { WorkflowInterceptor } from '../../../interceptors/workflow.interceptor';
+import { CacheInterceptor } from '../../../shared/interceptors/cache.interceptor';
 import { DadosCestaBasica } from '../../../entities/dados-cesta-basica.entity';
 import { CreateDadosCestaBasicaDto, UpdateDadosCestaBasicaDto } from '../dto/create-dados-cesta-basica.dto';
 import { AbstractDadosBeneficioService } from './base/abstract-dados-beneficio.service';
@@ -12,11 +15,13 @@ import {
   BENEFICIO_TECH_MESSAGES,
 } from '../../../shared/exceptions/error-catalog/domains/beneficio.errors';
 import { BENEFICIO_CONSTANTS } from '../../../shared/constants/beneficio.constants';
+import { AppError } from '@/shared/exceptions';
 
 /**
  * Serviço para gerenciar dados específicos de Cesta Básica
  */
 @Injectable()
+@UseInterceptors(WorkflowInterceptor, CacheInterceptor)
 export class DadosCestaBasicaService extends AbstractDadosBeneficioService<
   DadosCestaBasica,
   CreateDadosCestaBasicaDto,
@@ -25,9 +30,9 @@ export class DadosCestaBasicaService extends AbstractDadosBeneficioService<
   constructor(
     @InjectRepository(DadosCestaBasica)
     private readonly dadosCestaBasicaRepository: Repository<DadosCestaBasica>,
-    @Inject(CACHE_MANAGER) cacheManager: Cache,
+    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
   ) {
-    super(dadosCestaBasicaRepository, 'DadosCestaBasica', CreateDadosCestaBasicaDto, cacheManager);
+    super(dadosCestaBasicaRepository, 'DadosCestaBasica');
   }
 
   // Métodos CRUD básicos herdados da classe base
@@ -167,35 +172,80 @@ export class DadosCestaBasicaService extends AbstractDadosBeneficioService<
     const errorBuilder = new BeneficioValidationErrorBuilder();
     const rules = BENEFICIO_CONSTANTS.BUSINESS_RULES.CESTA_BASICA;
 
-    // Validação de campos obrigatórios
-    if (!data.solicitacao_id) {
-      errorBuilder.add('solicitacao_id', BENEFICIO_TECH_MESSAGES.CESTA_BASICA.SOLICITACAO_ID_REQUIRED);
-    }
+    try {
+      // Validação de campos obrigatórios
+      if (!data.solicitacao_id?.trim()) {
+        errorBuilder.add('solicitacao_id', BENEFICIO_TECH_MESSAGES.CESTA_BASICA.SOLICITACAO_ID_REQUIRED);
+      }
 
-    if (!data.quantidade_cestas_solicitadas || data.quantidade_cestas_solicitadas <= 0) {
-      errorBuilder.add('quantidade_cestas_solicitadas', BENEFICIO_TECH_MESSAGES.CESTA_BASICA.QUANTIDADE_REQUIRED);
-    }
+      if (!data.quantidade_cestas_solicitadas || data.quantidade_cestas_solicitadas <= 0) {
+        errorBuilder.add('quantidade_cestas_solicitadas', BENEFICIO_TECH_MESSAGES.CESTA_BASICA.QUANTIDADE_CESTAS_REQUIRED);
+      } else if (data.quantidade_cestas_solicitadas > rules.MAX_CESTAS) {
+        errorBuilder.add('quantidade_cestas_solicitadas', `Quantidade de cestas não pode exceder ${rules.MAX_CESTAS}. Validação de limite falhou.`);
+      }
 
-    if (!data.numero_pessoas_familia || data.numero_pessoas_familia <= 0) {
-      errorBuilder.add('numero_pessoas_familia', BENEFICIO_TECH_MESSAGES.CESTA_BASICA.TAMANHO_FAMILIA_REQUIRED);
-    }
+      if (!data.periodo_concessao?.trim()) {
+        errorBuilder.add('periodo_concessao', 'Campo periodo_concessao é obrigatório. Validação de campo obrigatório falhou.');
+      }
 
-    // Validação de regras de negócio
-    if (data.quantidade_cestas_solicitadas && data.numero_pessoas_familia) {
-      const quantidadeRecomendada = this.calcularQuantidadeRecomendada(data.numero_pessoas_familia);
-      
-      if (data.quantidade_cestas_solicitadas > quantidadeRecomendada) {
-        if (!data.justificativa_quantidade || data.justificativa_quantidade.length < rules.MIN_JUSTIFICATIVA_LENGTH) {
-          errorBuilder.add('justificativa_quantidade', BENEFICIO_TECH_MESSAGES.CESTA_BASICA.JUSTIFICATIVA_REQUIRED);
+      if (!data.origem_atendimento?.trim()) {
+        errorBuilder.add('origem_atendimento', 'Campo origem_atendimento é obrigatório. Validação de campo obrigatório falhou.');
+      }
+
+      if (!data.numero_pessoas_familia || data.numero_pessoas_familia <= 0) {
+        errorBuilder.add('numero_pessoas_familia', BENEFICIO_TECH_MESSAGES.CESTA_BASICA.NUMERO_PESSOAS_REQUIRED);
+      } else if (data.numero_pessoas_familia > rules.MAX_PESSOAS_FAMILIA) {
+        errorBuilder.add('numero_pessoas_familia', `Número de pessoas na família não pode exceder ${rules.MAX_PESSOAS_FAMILIA}. Validação de limite falhou.`);
+      }
+
+      // Validação de regras de negócio
+      if (data.quantidade_cestas_solicitadas && data.numero_pessoas_familia) {
+        const quantidadeRecomendada = this.calcularQuantidadeRecomendada(data.numero_pessoas_familia);
+        
+        if (data.quantidade_cestas_solicitadas > quantidadeRecomendada) {
+          if (!data.justificativa_quantidade?.trim()) {
+            errorBuilder.add('justificativa_quantidade', BENEFICIO_TECH_MESSAGES.CESTA_BASICA.JUSTIFICATIVA_REQUIRED);
+          } else if (data.justificativa_quantidade.trim().length < rules.MIN_JUSTIFICATIVA) {
+            errorBuilder.add('justificativa_quantidade', `Justificativa deve ter pelo menos ${rules.MIN_JUSTIFICATIVA} caracteres. Validação de tamanho falhou.`);
+          }
         }
       }
 
-      if (data.quantidade_cestas_solicitadas > rules.MAX_QUANTIDADE_ABSOLUTA) {
-        errorBuilder.add('quantidade_cestas_solicitadas', BENEFICIO_TECH_MESSAGES.CESTA_BASICA.QUANTIDADE_EXCEDIDA);
+      // Validação de observações especiais (se fornecidas)
+      if (data.observacoes_especiais && data.observacoes_especiais.length > BENEFICIO_CONSTANTS.VALIDATION.MAX_OBSERVACOES) {
+        errorBuilder.add('observacoes_especiais', `Campo observacoes_especiais excede o limite máximo de ${BENEFICIO_CONSTANTS.VALIDATION.MAX_OBSERVACOES} caracteres. Validação de tamanho falhou.`);
       }
-    }
 
-    errorBuilder.throwIfHasErrors();
+      // Validação de técnico responsável (se fornecido)
+      if (data.tecnico_responsavel && data.tecnico_responsavel.trim().length === 0) {
+        errorBuilder.add('tecnico_responsavel', 'Campo tecnico_responsavel não pode estar vazio quando fornecido. Validação de conteúdo falhou.');
+      }
+
+      // Validação de unidade solicitante (se fornecida)
+      if (data.unidade_solicitante && data.unidade_solicitante.trim().length === 0) {
+        errorBuilder.add('unidade_solicitante', 'Campo unidade_solicitante não pode estar vazio quando fornecido. Validação de conteúdo falhou.');
+      }
+
+      // Verificar se já existe dados para esta solicitação
+      if (data.solicitacao_id) {
+        const existingData = await this.existsBySolicitacao(data.solicitacao_id);
+        if (existingData) {
+          errorBuilder.add('solicitacao_id', BENEFICIO_TECH_MESSAGES.GENERIC.JA_EXISTE);
+        }
+      }
+
+      errorBuilder.throwIfHasErrors();
+    } catch (error) {
+      if (error instanceof AppError) {
+        throw error;
+      }
+      this.logger.error('Erro inesperado durante validação de cesta básica', {
+        error: error.message,
+        stack: error.stack,
+        solicitacao_id: data.solicitacao_id
+      });
+      throw new InternalServerErrorException('Erro interno durante validação dos dados de cesta básica');
+    }
   }
 
   /**
@@ -208,36 +258,78 @@ export class DadosCestaBasicaService extends AbstractDadosBeneficioService<
     const errorBuilder = new BeneficioValidationErrorBuilder();
     const rules = BENEFICIO_CONSTANTS.BUSINESS_RULES.CESTA_BASICA;
 
-    // Validação de quantidade solicitada
-    if (data.quantidade_cestas_solicitadas !== undefined && data.quantidade_cestas_solicitadas <= 0) {
-      errorBuilder.add('quantidade_cestas_solicitadas', BENEFICIO_TECH_MESSAGES.CESTA_BASICA.QUANTIDADE_REQUIRED);
-    }
+    try {
+      // Validação de quantidade de cestas
+      if (data.quantidade_cestas_solicitadas !== undefined) {
+        if (data.quantidade_cestas_solicitadas <= 0) {
+          errorBuilder.add('quantidade_cestas_solicitadas', 'Quantidade de cestas deve ser maior que zero. Validação de valor falhou.');
+        } else if (data.quantidade_cestas_solicitadas > rules.MAX_CESTAS) {
+          errorBuilder.add('quantidade_cestas_solicitadas', `Quantidade de cestas não pode exceder ${rules.MAX_CESTAS}. Validação de limite falhou.`);
+        }
 
-    // Validação de tamanho da família
-    if (data.numero_pessoas_familia !== undefined && data.numero_pessoas_familia <= 0) {
-      errorBuilder.add('numero_pessoas_familia', BENEFICIO_TECH_MESSAGES.CESTA_BASICA.TAMANHO_FAMILIA_REQUIRED);
-    }
-
-    // Validação de regras de negócio
-    const quantidadeFinal = data.quantidade_cestas_solicitadas ?? entity.quantidade;
-    const tamanhoFamiliaFinal = data.numero_pessoas_familia ?? entity.numero_pessoas_familia;
-    
-    if (quantidadeFinal && tamanhoFamiliaFinal) {
-      const quantidadeRecomendada = this.calcularQuantidadeRecomendada(tamanhoFamiliaFinal);
-      
-      if (quantidadeFinal > quantidadeRecomendada) {
-        const justificativaFinal = data.justificativa_quantidade ?? entity.justificativa_quantidade;
-        if (!justificativaFinal || justificativaFinal.length < rules.MIN_JUSTIFICATIVA_LENGTH) {
-          errorBuilder.add('justificativa_quantidade', BENEFICIO_TECH_MESSAGES.CESTA_BASICA.JUSTIFICATIVA_REQUIRED);
+        const numeroFamilia = data.numero_pessoas_familia ?? entity.numero_pessoas_familia;
+        
+        if (numeroFamilia) {
+          const quantidadeRecomendada = this.calcularQuantidadeRecomendada(numeroFamilia);
+          
+          if (data.quantidade_cestas_solicitadas > quantidadeRecomendada) {
+            const justificativa = data.justificativa_quantidade ?? entity.justificativa_quantidade;
+            
+            if (!justificativa?.trim()) {
+              errorBuilder.add('justificativa_quantidade', BENEFICIO_TECH_MESSAGES.CESTA_BASICA.JUSTIFICATIVA_REQUIRED);
+            } else if (justificativa.trim().length < rules.MIN_JUSTIFICATIVA) {
+              errorBuilder.add('justificativa_quantidade', `Justificativa deve ter pelo menos ${rules.MIN_JUSTIFICATIVA} caracteres. Validação de tamanho falhou.`);
+            }
+          }
         }
       }
 
-      if (quantidadeFinal > rules.MAX_QUANTIDADE_ABSOLUTA) {
-        errorBuilder.add('quantidade_cestas_solicitadas', BENEFICIO_TECH_MESSAGES.CESTA_BASICA.QUANTIDADE_EXCEDIDA);
+      // Validação de número de pessoas na família
+      if (data.numero_pessoas_familia !== undefined) {
+        if (data.numero_pessoas_familia <= 0) {
+          errorBuilder.add('numero_pessoas_familia', 'Número de pessoas na família deve ser maior que zero. Validação de valor falhou.');
+        } else if (data.numero_pessoas_familia > rules.MAX_PESSOAS_FAMILIA) {
+          errorBuilder.add('numero_pessoas_familia', `Número de pessoas na família não pode exceder ${rules.MAX_PESSOAS_FAMILIA}. Validação de limite falhou.`);
+        }
       }
-    }
 
-    errorBuilder.throwIfHasErrors();
+      // Validação de período de concessão (se fornecido)
+      if (data.periodo_concessao !== undefined && !data.periodo_concessao?.trim()) {
+        errorBuilder.add('periodo_concessao', 'Campo periodo_concessao não pode estar vazio quando fornecido. Validação de conteúdo falhou.');
+      }
+
+      // Validação de origem do atendimento (se fornecida)
+      if (data.origem_atendimento !== undefined && !data.origem_atendimento?.trim()) {
+        errorBuilder.add('origem_atendimento', 'Campo origem_atendimento não pode estar vazio quando fornecido. Validação de conteúdo falhou.');
+      }
+
+      // Validação de observações especiais (se fornecidas)
+      if (data.observacoes_especiais !== undefined && data.observacoes_especiais && data.observacoes_especiais.length > BENEFICIO_CONSTANTS.VALIDATION.MAX_OBSERVACOES) {
+        errorBuilder.add('observacoes_especiais', `Campo observacoes_especiais excede o limite máximo de ${BENEFICIO_CONSTANTS.VALIDATION.MAX_OBSERVACOES} caracteres. Validação de tamanho falhou.`);
+      }
+
+      // Validação de técnico responsável (se fornecido)
+      if (data.tecnico_responsavel !== undefined && data.tecnico_responsavel && data.tecnico_responsavel.trim().length === 0) {
+        errorBuilder.add('tecnico_responsavel', 'Campo tecnico_responsavel não pode estar vazio quando fornecido. Validação de conteúdo falhou.');
+      }
+
+      // Validação de unidade solicitante (se fornecida)
+      if (data.unidade_solicitante !== undefined && data.unidade_solicitante && data.unidade_solicitante.trim().length === 0) {
+        errorBuilder.add('unidade_solicitante', 'Campo unidade_solicitante não pode estar vazio quando fornecido. Validação de conteúdo falhou.');
+      }
+
+      errorBuilder.throwIfHasErrors();
+    } catch (error) {
+      if (error instanceof AppError) {
+        throw error;
+      }
+      this.logger.error('Erro inesperado durante validação de atualização de cesta básica', {
+        error: error.message,
+        stack: error.stack,
+        entity_id: entity.id
+      });
+      throw new InternalServerErrorException('Erro interno durante validação dos dados de cesta básica');
+    }
   }
 
   /**

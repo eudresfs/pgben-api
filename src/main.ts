@@ -99,6 +99,9 @@ async function bootstrap(): Promise<INestApplication> {
     // Interceptor para remover parâmetros vazios das requisições
     app.useGlobalInterceptors(new RemoveEmptyParamsInterceptor());
 
+    // Ignorar parâmetros inexistentes nos DTOs
+    app.useGlobalPipes(new ValidationPipe({whitelist: true}))
+
     // Interceptor de resposta padronizada
     app.useGlobalInterceptors(new ResponseInterceptor());
 

@@ -900,23 +900,31 @@ export const BENEFICIO_TECH_MESSAGES = {
   },
   
   CESTA_BASICA: {
-    SOLICITACAO_ID_REQUIRED: 
-      'Campo solicitacao_id é obrigatório. Validação de campo obrigatório falhou.',
+    // Campos obrigatórios
+    SOLICITACAO_ID_REQUIRED: 'Campo solicitacao_id é obrigatório. Validação de campo obrigatório falhou.',
+    QUANTIDADE_CESTAS_REQUIRED: 'Campo quantidade_cestas é obrigatório. Validação de campo obrigatório falhou.',
+    NUMERO_PESSOAS_REQUIRED: 'Campo numero_pessoas é obrigatório. Validação de campo obrigatório falhou.',
+    QUANTIDADE_CESTAS_INVALID: 'Campo quantidade_cestas deve ser um número válido. Validação de tipo falhou.',
+    NUMERO_PESSOAS_INVALID: 'Campo numero_pessoas deve ser um número válido. Validação de tipo falhou.',
+    JUSTIFICATIVA_REQUIRED: 'Campo justificativa é obrigatório quando quantidade excede recomendação. Validação de regra de negócio falhou.',
     
-    QUANTIDADE_REQUIRED: 
-      'Campo quantidade_cestas_solicitadas é obrigatório. Validação de campo obrigatório falhou.',
+    // Limites
+    QUANTIDADE_CESTAS_MIN: 'Campo quantidade_cestas deve ser no mínimo 1. Validação de limite falhou.',
+    QUANTIDADE_CESTAS_MAX: 'Campo quantidade_cestas não pode exceder 12. Validação de limite falhou.',
+    NUMERO_PESSOAS_MIN: 'Campo numero_pessoas deve ser no mínimo 1. Validação de limite falhou.',
+    NUMERO_PESSOAS_MAX: 'Campo numero_pessoas não pode exceder 50. Validação de limite falhou.',
+    MAX_PESSOAS_FAMILIA: 'Campo numero_pessoas não pode exceder 50. Validação de limite falhou.',
     
-    TAMANHO_FAMILIA_REQUIRED: 
-      'Campo tamanho_familia é obrigatório. Validação de campo obrigatório falhou.',
+    // Regras de negócio
+    JUSTIFICATIVA_MIN_LENGTH: 'Campo justificativa deve ter pelo menos 10 caracteres quando obrigatório. Validação de tamanho falhou.',
+    MIN_JUSTIFICATIVA: 'Campo justificativa deve ter pelo menos 10 caracteres quando obrigatório. Validação de tamanho falhou.',
+    QUANTIDADE_EXCEDE_RECOMENDACAO: 'Quantidade de cestas excede recomendação para o tamanho da família. Justificativa obrigatória.',
     
     QUANTIDADE_EXCEDIDA: 
       'Quantidade de cestas solicitadas excede o limite máximo permitido. Validação de regra de negócio falhou.',
     
     QUANTIDADE_INVALIDA: 
       'Campo quantidade_cestas_solicitadas deve estar entre 1 e 12. Validação de range falhou.',
-    
-    JUSTIFICATIVA_REQUIRED: 
-      'Campo justificativa_quantidade é obrigatório quando solicitação excede recomendação. Regra de negócio condicional não atendida.',
     
     UNIDADE_ENCAMINHAMENTO: 
       'Campo unidade_solicitante é obrigatório para encaminhamentos externos. Validação condicional falhou.',
@@ -951,46 +959,42 @@ export const BENEFICIO_TECH_MESSAGES = {
   },
   
   NATALIDADE: {
-    SOLICITACAO_ID_REQUIRED: 
-      'Campo solicitacao_id é obrigatório. Validação de campo obrigatório falhou.',
+    // Campos obrigatórios
+    SOLICITACAO_ID_REQUIRED: 'Campo solicitacao_id é obrigatório. Validação de campo obrigatório falhou.',
+    DATA_PROVAVEL_PARTO_REQUIRED: 'Campo data_provavel_parto é obrigatório. Validação de campo obrigatório falhou.',
+    QUANTIDADE_FILHOS_REQUIRED: 'Campo quantidade_filhos é obrigatório. Validação de campo obrigatório falhou.',
+    CHAVE_PIX_REQUIRED: 'Campo chave_pix é obrigatório. Validação de campo obrigatório falhou.',
     
-    DATA_PARTO_REQUIRED: 
-      'Campo data_provavel_parto é obrigatório. Validação de campo obrigatório falhou.',
+    // Validações de data
+    DATA_PROVAVEL_PARTO_INVALID: 'Campo data_provavel_parto deve ser uma data válida. Validação de formato falhou.',
+    DATA_PROVAVEL_PARTO_PERIODO: 'Campo data_provavel_parto deve estar entre 30 dias atrás e 280 dias no futuro. Validação de período falhou.',
+    DATA_PROVAVEL_PARTO_PASSADO: 'Campo data_provavel_parto não pode ser anterior a 30 dias atrás. Validação temporal falhou.',
+    DATA_PARTO_MUITO_ANTIGA: 'Campo data_provavel_parto não pode ser anterior a 30 dias atrás. Validação temporal falhou.',
+    DATA_PROVAVEL_PARTO_LIMITE: 'Campo data_provavel_parto não pode ser superior a 280 dias no futuro. Validação de limite temporal falhou.',
+    DATA_PARTO_MUITO_FUTURA: 'Campo data_provavel_parto não pode ser superior a 280 dias no futuro. Validação de limite temporal falhou.',
+    MAX_DIAS_GESTACAO: 'Campo data_provavel_parto não pode ser superior a 280 dias no futuro. Validação de limite temporal falhou.',
     
-    DATA_PARTO_INVALIDA: 
-      'Campo data_provavel_parto deve ser uma data válida. Validação de formato falhou.',
+    // Campos booleanos obrigatórios
+    JA_TEM_FILHOS_REQUIRED: 'Campo ja_tem_filhos é obrigatório. Validação de campo obrigatório falhou.',
     
-    DATA_PARTO_PERIODO_INVALIDO: 
-      'Campo data_provavel_parto deve estar entre hoje e 40 semanas futuras. Validação de período gestacional falhou.',
+    // Validação condicional
+    QUANTIDADE_FILHOS_INCONSISTENTE: 'Campo quantidade_filhos deve ser maior que 0 quando ja_tem_filhos é true. Validação de consistência falhou.',
     
-    DATA_PARTO_PASSADA: 
-      'Campo data_provavel_parto não pode ser uma data passada. Validação temporal falhou.',
+    // Validação de formato
+    CHAVE_PIX_FORMAT: 'Campo chave_pix deve ter um formato válido. Validação de formato falhou.',
     
-    DATA_PARTO_LIMITE_EXCEDIDO: 
-      'Campo data_provavel_parto excede o limite máximo de 40 semanas futuras. Validação de limite temporal falhou.',
-    
-    JA_TEM_FILHOS_REQUIRED: 
-      'Campo possui_filhos é obrigatório. Validação de campo obrigatório falhou.',
-    
-    GEMEOS_REQUIRED: 
-      'Campo gememos_trigemeos é obrigatório. Validação de campo obrigatório falhou.',
-    
-    GRAVIDEZ_RISCO_REQUIRED: 
-      'Campo gravidez_risco é obrigatório. Validação de campo obrigatório falhou.',
-    
-    PSF_UBS_REQUIRED: 
-      'Campo psf_ubs_acompanhamento é obrigatório. Validação de campo obrigatório falhou.',
-    
-    PRE_NATAL_REQUIRED: 
-      'Campo acompanhamento_pre_natal é obrigatório. Validação de campo obrigatório falhou.',
-    
-    QUANTIDADE_FILHOS_OBRIGATORIA: 
-      'Campo quantidade_filhos é obrigatório quando possui_filhos = true. Validação condicional falhou.',
-    
-    CHAVE_PIX_FORMATO: 
-      'Campo chave_pix deve ser um CPF válido (apenas números ou formatado). Validação de formato falhou.',
-    
-    QUANTIDADE_FILHOS_EXCEDIDA: 
-      'Campo quantidade_filhos excede o limite máximo permitido. Validação de limite excedido falhou.',
+    // Campos legados mantidos para compatibilidade
+    DATA_PARTO_REQUIRED: 'Campo data_provavel_parto é obrigatório. Validação de campo obrigatório falhou.',
+    DATA_PARTO_INVALIDA: 'Campo data_provavel_parto deve ser uma data válida. Validação de formato falhou.',
+    DATA_PARTO_PERIODO_INVALIDO: 'Campo data_provavel_parto deve estar entre hoje e 40 semanas futuras. Validação de período gestacional falhou.',
+    DATA_PARTO_PASSADA: 'Campo data_provavel_parto não pode ser uma data passada. Validação temporal falhou.',
+    DATA_PARTO_LIMITE_EXCEDIDO: 'Campo data_provavel_parto excede o limite máximo de 40 semanas futuras. Validação de limite temporal falhou.',
+    GEMEOS_REQUIRED: 'Campo gememos_trigemeos é obrigatório. Validação de campo obrigatório falhou.',
+    GRAVIDEZ_RISCO_REQUIRED: 'Campo gravidez_risco é obrigatório. Validação de campo obrigatório falhou.',
+    PSF_UBS_REQUIRED: 'Campo psf_ubs_acompanhamento é obrigatório. Validação de campo obrigatório falhou.',
+    PRE_NATAL_REQUIRED: 'Campo acompanhamento_pre_natal é obrigatório. Validação de campo obrigatório falhou.',
+    QUANTIDADE_FILHOS_OBRIGATORIA: 'Campo quantidade_filhos é obrigatório quando possui_filhos = true. Validação condicional falhou.',
+    CHAVE_PIX_FORMATO: 'Campo chave_pix deve ser um CPF válido (apenas números ou formatado). Validação de formato falhou.',
+    QUANTIDADE_FILHOS_EXCEDIDA: 'Campo quantidade_filhos excede o limite máximo permitido. Validação de limite excedido falhou.',
   }
 };

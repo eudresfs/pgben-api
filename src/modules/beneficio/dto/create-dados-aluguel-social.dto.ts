@@ -1,4 +1,5 @@
 import {
+  IsString,
   IsNotEmpty,
   IsBoolean,
   IsEnum,
@@ -11,6 +12,7 @@ import {
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import { PublicoPrioritarioAluguel, EspecificacaoAluguel } from '@/enums';
+import { ValidateTipoBeneficio } from '@/shared/validators/tipo-beneficio.validator';
 
 /**
  * DTO para criação de dados específicos do cidadão para Aluguel Social
@@ -22,6 +24,7 @@ export class CreateDadosAluguelSocialDto {
   })
   @IsNotEmpty({ message: 'ID da solicitação é obrigatório' })
   @IsUUID('4', { message: 'ID da solicitação inválido' })
+  @ValidateTipoBeneficio('aluguel-social')
   solicitacao_id: string;
 
   @ApiProperty({

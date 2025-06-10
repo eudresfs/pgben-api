@@ -45,7 +45,7 @@ export class DadosCestaBasica {
   @IsNumber({}, { message: 'Quantidade de cestas deve ser um número' })
   @Min(1, { message: 'Quantidade mínima é 1 cesta' })
   @Max(12, { message: 'Quantidade máxima é 12 cestas' })
-  quantidade: number;
+  quantidade_cestas_solicitadas: number;
 
   @Column({
     type: 'enum',
@@ -118,7 +118,7 @@ export class DadosCestaBasica {
    */
   isQuantidadeDentroRecomendacao(): boolean {
     const recomendada = this.calcularQuantidadeRecomendada();
-    return this.quantidade <= recomendada + 1; // Tolerância de +1
+    return this.quantidade_cestas_solicitadas <= recomendada + 1; // Tolerância de +1
   }
 
   /**
@@ -167,11 +167,11 @@ export class DadosCestaBasica {
     const duracaoMeses = this.calcularDuracaoTotalMeses();
 
     if (this.periodo_concessao === PeriodicidadeEnum.UNICO) {
-      return this.quantidade;
+      return this.quantidade_cestas_solicitadas;
     }
 
     // Para períodos recorrentes, considera entrega mensal
-    return this.quantidade * duracaoMeses;
+    return this.quantidade_cestas_solicitadas * duracaoMeses;
   }
 
   /**
@@ -179,7 +179,7 @@ export class DadosCestaBasica {
    */
   precisaJustificativaQuantidade(): boolean {
     const recomendada = this.calcularQuantidadeRecomendada();
-    return this.quantidade > recomendada + 1;
+    return this.quantidade_cestas_solicitadas > recomendada + 1;
   }
 
   /**
@@ -227,8 +227,8 @@ export class DadosCestaBasica {
     const erros: string[] = [];
 
     if (
-      !this.quantidade ||
-      this.quantidade < 1
+      !this.quantidade_cestas_solicitadas ||
+      this.quantidade_cestas_solicitadas < 1
     ) {
       erros.push('Quantidade de cestas deve ser maior que zero');
     }

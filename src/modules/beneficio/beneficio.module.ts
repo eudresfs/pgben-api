@@ -1,5 +1,7 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { SharedModule } from '../../shared/shared.module';
+import { CacheModule } from '../../shared/cache/cache.module';
 import { AuthModule } from '../../auth/auth.module';
 import { SolicitacaoModule } from '../solicitacao/solicitacao.module';
 
@@ -20,16 +22,12 @@ import {
 
 // Controladores
 import { BeneficioController } from './controllers/beneficio.controller';
-import { CampoDinamicoController } from './controllers/campo-dinamico.controller';
-import { ExportacaoController } from '../solicitacao/controllers/exportacao.controller';
 import { DadosBeneficioController } from './controllers/dados-beneficio.controller';
 import { RenovacaoAutomaticaController } from './controllers/renovacao-automatica.controller';
 
-// Serviços
+// Services
 import { BeneficioService } from './services/beneficio.service';
-import { CampoDinamicoService } from './services/campo-dinamico.service';
 import { ValidacaoDinamicaService } from './services/validacao-dinamica.service';
-import { ExportacaoService } from '../solicitacao/services/exportacao.service';
 
 import { DadosNatalidadeService } from './services/dados-natalidade.service';
 import { DadosAluguelSocialService } from './services/dados-aluguel-social.service';
@@ -70,22 +68,20 @@ import { ConfiguracaoRenovacaoRepository } from './repositories/configuracao-ren
       ConfiguracaoRenovacao,
       Solicitacao,
     ]),
-    AuthModule,
-    SolicitacaoModule,
+    // Módulos essenciais
+    SharedModule, // Serviços compartilhados
+    CacheModule, // Para CacheService usado pelo CacheInterceptor
+    forwardRef(() => AuthModule), // Para autenticação e autorização
+    forwardRef(() => SolicitacaoModule), // Para WorkflowSolicitacaoService
   ],
   controllers: [
     BeneficioController,
-    CampoDinamicoController,
-    ExportacaoController,
     DadosBeneficioController,
     RenovacaoAutomaticaController,
   ],
   providers: [
     BeneficioService,
-    CampoDinamicoService,
     ValidacaoDinamicaService,
-    // Serviços de formulário dinâmico removidos
-    ExportacaoService,
     DadosNatalidadeService,
     DadosAluguelSocialService,
     DadosFuneralService,
@@ -104,7 +100,6 @@ import { ConfiguracaoRenovacaoRepository } from './repositories/configuracao-ren
   ],
   exports: [
     BeneficioService,
-    CampoDinamicoService,
     ValidacaoDinamicaService,
     DadosNatalidadeService,
     DadosAluguelSocialService,
