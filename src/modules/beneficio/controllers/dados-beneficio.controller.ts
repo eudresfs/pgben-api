@@ -53,7 +53,7 @@ import { CreateDadosCestaBasicaDto, UpdateDadosCestaBasicaDto } from '../dto/cre
  * - `situacao_moradia_atual`: Descrição detalhada da situação habitacional
  * - `possui_imovel_interditado`: Indica se possui imóvel interditado
  * - `caso_judicializado_maria_penha`: Casos sob Lei Maria da Penha
- * - `observacoes_adicionais`: Observações complementares
+ * - `observacoes`: Observações complementares
  *
  * ### Outros Benefícios
  * - Cesta Básica
@@ -194,7 +194,7 @@ export class DadosBeneficioController {
                 'Indica se é caso judicializado pela Lei Maria da Penha (Art. 23, inciso VI)',
               example: false,
             },
-            observacoes_adicionais: {
+            observacoes: {
               type: 'string',
               description: 'Observações adicionais sobre o caso',
               example:
@@ -266,7 +266,7 @@ export class DadosBeneficioController {
               type: 'boolean',
               example: false,
             },
-            observacoes_adicionais: {
+            observacoes: {
               type: 'string',
               example:
                 'Família em situação de extrema vulnerabilidade, necessita acompanhamento psicossocial.',
@@ -370,7 +370,7 @@ export class DadosBeneficioController {
               type: 'boolean',
               example: false,
             },
-            observacoes_adicionais: {
+            observacoes: {
               type: 'string',
               example:
                 'Família em situação de extrema vulnerabilidade, necessita acompanhamento psicossocial.',
@@ -465,7 +465,7 @@ export class DadosBeneficioController {
               example: true,
               description: 'Caso está sendo acompanhado pela Lei Maria da Penha',
             },
-            observacoes_adicionais: {
+            observacoes: {
               type: 'string',
               example:
                 'Medida protetiva deferida. Necessário acompanhamento do CREAS. Filhos menores precisam de vaga em creche.',
@@ -585,7 +585,7 @@ export class DadosBeneficioController {
               description: 'Atualização sobre judicialização',
               example: true,
             },
-            observacoes_adicionais: {
+            observacoes: {
               type: 'string',
               description: 'Novas observações sobre o caso',
               example:
@@ -644,7 +644,7 @@ export class DadosBeneficioController {
               type: 'boolean',
               example: true,
             },
-            observacoes_adicionais: {
+            observacoes: {
               type: 'string',
               example:
                 'Após reavaliação, identificada necessidade de acompanhamento psicológico especializado. Encaminhamento para CAPS.',

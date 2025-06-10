@@ -136,6 +136,92 @@ services:
         max-size: "5m"
         max-file: "2"
 
+  # Serviço principal da aplicação
+  pgben-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: pgben-server-dev
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_HOST=postgres
+      - DATABASE_PORT=5432
+      - DATABASE_USERNAME=pgben_user
+      - DATABASE_PASSWORD=pgben_password
+      - DATABASE_NAME=pgben_db
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - MINIO_ENDPOINT=minio
+      - MINIO_PORT=9000
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin123
+      - MINIO_USE_SSL=false
+      - MINIO_BUCKET_NAME=pgben-documents
+      - JWT_SECRET=dev-jwt-secret-key
+      - COOKIE_SECRET=dev-cookie-secret-key
+      - SESSION_SECRET=dev-session-secret-key
+      - CSRF_SECRET=dev-csrf-secret-key
+      - SMTP_HOST=mailhog
+      - SMTP_PORT=1025
+      - SMTP_USER=
+      - SMTP_PASSWORD=
+      - SMTP_FROM=noreply@pgben.local
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - ./keys:/app/keys
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    networks:
+      - pgben-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Banco de dados PostgreSQL
+  postgres:
+    image: postgres:15-alpine
+    container_name: pgben-postgres-dev
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=pgben_db
+      - POSTGRES_USER=pgben_user
+      - POSTGRES_PASSWORD=pgben_password
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./config/init-postgres.sh:/docker-entrypoint-initdb.d/init-postgres.sh
+    ports:
+      - "5432:5432"
+    networks:
+      - pgben-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pgben_user -d pgben_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
 # =============================================================================
 # Volumes
 # =============================================================================
@@ -146,6 +232,8 @@ volumes:
     driver: local
   minio_data:
     driver: local
+  postgres_data:
+    driver: local
 
 # =============================================================================
 # Networks
@@ -153,4 +241,3 @@ volumes:
 networks:
   pgben-network:
     driver: bridge
-    external: true

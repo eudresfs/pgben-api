@@ -37,7 +37,7 @@ data:
   
   # Rate Limiting
   THROTTLE_TTL: "60"
-  THROTTLE_LIMIT: "100"
+  THROTTLE_LIMIT: "200"
   
   # File Upload
   MAX_FILE_SIZE: "10485760"  # 10MB

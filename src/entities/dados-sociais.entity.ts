@@ -22,6 +22,8 @@ import {
 import { Cidadao } from './cidadao.entity';
 import { EscolaridadeEnum } from '../enums/escolaridade.enum';
 import { SituacaoTrabalhoEnum } from '../enums/situacao-trabalho.enum';
+import { ModalidadeBpcEnum } from '../enums/modalidade-bpc.enum';
+import { TipoInsercaoEnum } from '../enums/tipo-insercao.enum';
 
 @Entity('dados_sociais')
 @Index(['cidadao_id'], { unique: true })
@@ -62,7 +64,24 @@ export class DadosSociais {
 
   @Column({ nullable: true })
   @IsOptional()
-  ocupacao: string;
+  @IsString({ message: 'O campo ocupacao_beneficiario deve ser um texto' })
+  ocupacao_beneficiario: string;
+
+  @Column({ default: false })
+  @IsBoolean({ message: 'O campo exerce_atividade_remunerada deve ser um valor booleano' })
+  exerce_atividade_remunerada: boolean;
+
+  @Column({
+    type: 'enum',
+    enum: TipoInsercaoEnum,
+    enumName: 'tipo_insercao_enum',
+    nullable: true,
+  })
+  @IsOptional()
+  @IsEnum(TipoInsercaoEnum, { message: 'Tipo de inserção inválido' })
+  @ValidateIf((o) => o.exerce_atividade_remunerada === true)
+  @IsNotEmpty({ message: 'Tipo de inserção é obrigatório quando exerce atividade remunerada' })
+  tipo_insercao_beneficiario: TipoInsercaoEnum;
 
   @Column({ default: false })
   @IsBoolean({ message: 'O campo recebe_pbf deve ser um valor booleano' })
@@ -78,16 +97,56 @@ export class DadosSociais {
   @IsBoolean({ message: 'O campo recebe_bpc deve ser um valor booleano' })
   recebe_bpc: boolean;
 
-  @Column({ nullable: true })
+  @Column({
+    type: 'enum',
+    enum: ModalidadeBpcEnum,
+    enumName: 'modalidade_bpc_enum',
+    nullable: true,
+  })
   @IsOptional()
-  @IsString({ message: 'O campo tipo_bpc deve ser um texto' })
-  tipo_bpc: string;
+  @IsEnum(ModalidadeBpcEnum, { message: 'Modalidade BPC inválida' })
+  @ValidateIf((o) => o.recebe_bpc === true)
+  @IsNotEmpty({ message: 'Modalidade BPC é obrigatória quando recebe BPC' })
+  modalidade_bpc: ModalidadeBpcEnum;
 
   @Column('decimal', { precision: 10, scale: 2, nullable: true })
   @IsOptional()
-  @IsNumber({}, { message: 'Valor do BPC deve Rendaser um número' })
+  @IsNumber({}, { message: 'Valor do BPC deve ser um número' })
   @Min(0, { message: 'Valor do BPC não pode ser negativa' })
+  @ValidateIf((o) => o.recebe_bpc === true)
+  @IsNotEmpty({ message: 'Valor BPC é obrigatório quando recebe BPC' })
   valor_bpc: number;
+
+  @Column({ default: false })
+  @IsBoolean({ message: 'O campo recebe_tributo_crianca deve ser um valor booleano' })
+  recebe_tributo_crianca: boolean;
+
+  @Column('decimal', { precision: 10, scale: 2, nullable: true })
+  @IsOptional()
+  @IsNumber({}, { message: 'Valor do tributo criança deve ser um número' })
+  @Min(0, { message: 'Valor do tributo criança não pode ser negativo' })
+  @ValidateIf((o) => o.recebe_tributo_crianca === true)
+  @IsNotEmpty({ message: 'Valor tributo criança é obrigatório quando recebe tributo criança' })
+  valor_tributo_crianca: number;
+
+  @Column({ default: false })
+  @IsBoolean({ message: 'O campo pensao_morte deve ser um valor booleano' })
+  pensao_morte: boolean;
+
+  @Column({ default: false })
+  @IsBoolean({ message: 'O campo aposentadoria deve ser um valor booleano' })
+  aposentadoria: boolean;
+
+  @Column({ default: false })
+  @IsBoolean({ message: 'O campo outros_beneficios deve ser um valor booleano' })
+  outros_beneficios: boolean;
+
+  @Column({ nullable: true })
+  @IsOptional()
+  @IsString({ message: 'O campo descricao_outros_beneficios deve ser um texto' })
+  @ValidateIf((o) => o.outros_beneficios === true)
+  @IsNotEmpty({ message: 'Descrição outros benefícios é obrigatória quando outros benefícios é verdadeiro' })
+  descricao_outros_beneficios: string;
 
   @Column({ nullable: true })
   @IsOptional()
@@ -132,6 +191,33 @@ export class DadosSociais {
   @Column({ nullable: true })
   @IsOptional()
   observacoes: string;
+
+  @Column({ nullable: true })
+  @IsOptional()
+  @IsString({ message: 'O campo nome_conjuge deve ser um texto' })
+  nome_conjuge: string;
+
+  @Column({ nullable: true })
+  @IsOptional()
+  @IsString({ message: 'O campo ocupacao_conjuge deve ser um texto' })
+  ocupacao_conjuge: string;
+
+  @Column({ nullable: true })
+  @IsOptional()
+  @IsBoolean({ message: 'O campo exerce_atividade_remunerada_conjuge deve ser um valor booleano' })
+  exerce_atividade_remunerada_conjuge: boolean;
+
+  @Column({
+    type: 'enum',
+    enum: TipoInsercaoEnum,
+    enumName: 'tipo_insercao_conjuge_enum',
+    nullable: true,
+  })
+  @IsOptional()
+  @IsEnum(TipoInsercaoEnum, { message: 'Tipo de inserção do cônjuge inválido' })
+  @ValidateIf((o) => o.exerce_atividade_remunerada_conjuge === true)
+  @IsNotEmpty({ message: 'Tipo de inserção do cônjuge é obrigatório quando cônjuge exerce atividade remunerada' })
+  tipo_insercao_conjuge: TipoInsercaoEnum;
 
   @CreateDateColumn()
   created_at: Date;
@@ -262,7 +348,7 @@ export class DadosSociais {
    * Verifica se recebe algum benefício social
    */
   recebeBeneficioSocial(): boolean {
-    return this.recebePBF() || this.recebeBPC();
+    return this.recebePBF() || this.recebeBPC() || this.recebe_tributo_crianca || this.pensao_morte || this.aposentadoria || this.outros_beneficios;
   }
 
   /**
@@ -272,6 +358,7 @@ export class DadosSociais {
     let total = 0;
     if (this.recebe_pbf && this.valor_pbf) {total += this.valor_pbf;}
     if (this.recebe_bpc && this.valor_bpc) {total += this.valor_bpc;}
+    if (this.recebe_tributo_crianca && this.valor_tributo_crianca) {total += this.valor_tributo_crianca;}
     return total;
   }
 
@@ -422,10 +509,10 @@ export class DadosSociais {
       return false;
     }
 
-    // Se recebe BPC, deve ter valor e tipo
+    // Se recebe BPC, deve ter valor e modalidade
     if (
       this.recebe_bpc &&
-      (!this.valor_bpc || this.valor_bpc <= 0 || !this.tipo_bpc)
+      (!this.valor_bpc || this.valor_bpc <= 0 || !this.modalidade_bpc)
     ) {
       return false;
     }
@@ -458,12 +545,20 @@ export class DadosSociais {
       escolaridade: this.escolaridade,
       publico_prioritario: this.publico_prioritario,
       renda: this.renda,
-      ocupacao: this.ocupacao,
+      ocupacao_beneficiario: this.ocupacao_beneficiario,
+      exerce_atividade_remunerada: this.exerce_atividade_remunerada,
+      tipo_insercao_beneficiario: this.tipo_insercao_beneficiario,
       recebe_pbf: this.recebe_pbf,
       valor_pbf: this.valor_pbf,
       recebe_bpc: this.recebe_bpc,
-      tipo_bpc: this.tipo_bpc,
+      modalidade_bpc: this.modalidade_bpc,
       valor_bpc: this.valor_bpc,
+      recebe_tributo_crianca: this.recebe_tributo_crianca,
+      valor_tributo_crianca: this.valor_tributo_crianca,
+      pensao_morte: this.pensao_morte,
+      aposentadoria: this.aposentadoria,
+      outros_beneficios: this.outros_beneficios,
+      descricao_outros_beneficios: this.descricao_outros_beneficios,
       curso_profissionalizante: this.curso_profissionalizante,
       interesse_curso_profissionalizante:
         this.interesse_curso_profissionalizante,
@@ -471,6 +566,10 @@ export class DadosSociais {
       area_trabalho: this.area_trabalho,
       familiar_apto_trabalho: this.familiar_apto_trabalho,
       area_interesse_familiar: this.area_interesse_familiar,
+      nome_conjuge: this.nome_conjuge,
+      ocupacao_conjuge: this.ocupacao_conjuge,
+      exerce_atividade_remunerada_conjuge: this.exerce_atividade_remunerada_conjuge,
+      tipo_insercao_conjuge: this.tipo_insercao_conjuge,
       observacoes: this.observacoes,
     };
   }
@@ -553,7 +652,7 @@ export class DadosSociais {
   getSugestoesMelhoria(): string[] {
     const sugestoes: string[] = [];
 
-    if (!this.ocupacao && this.isEmpregado()) {
+    if (!this.ocupacao_beneficiario && this.isEmpregado()) {
       sugestoes.push('Definir ocupação para pessoa empregada');
     }
 
@@ -569,7 +668,7 @@ export class DadosSociais {
       sugestoes.push('Informar valor do Programa Bolsa Família');
     }
 
-    if (this.recebe_bpc && (!this.valor_bpc || !this.tipo_bpc)) {
+    if (this.recebe_bpc && (!this.valor_bpc || !this.modalidade_bpc)) {
       sugestoes.push('Completar informações do BPC (valor e tipo)');
     }
 
@@ -587,5 +686,179 @@ export class DadosSociais {
     const seiseMesesAtras = new Date();
     seiseMesesAtras.setMonth(seiseMesesAtras.getMonth() - 6);
     return this.updated_at < seiseMesesAtras;
+  }
+
+  /**
+   * Verifica se recebe tributo criança
+   */
+  recebeTributoCrianca(): boolean {
+    return this.recebe_tributo_crianca;
+  }
+
+  /**
+   * Obtém o valor do tributo criança formatado
+   */
+  getValorTributoCriancaFormatado(): string {
+    if (!this.recebe_tributo_crianca || !this.valor_tributo_crianca) {return 'Não recebe';}
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    }).format(this.valor_tributo_crianca);
+  }
+
+  /**
+   * Verifica se recebe pensão por morte
+   */
+  recebePensaoMorte(): boolean {
+    return this.pensao_morte;
+  }
+
+  /**
+   * Verifica se é aposentado
+   */
+  isAposentadoBeneficio(): boolean {
+    return this.aposentadoria;
+  }
+
+  /**
+   * Verifica se recebe outros benefícios
+   */
+  recebeOutrosBeneficios(): boolean {
+    return this.outros_beneficios;
+  }
+
+  /**
+   * Obtém a descrição da modalidade BPC
+   */
+  getDescricaoModalidadeBPC(): string {
+    if (!this.modalidade_bpc) {return 'Não informado';}
+    
+    const descricoes = {
+      [ModalidadeBpcEnum.IDOSO]: 'Idoso',
+      [ModalidadeBpcEnum.PCD]: 'Pessoa com Deficiência',
+    };
+    return descricoes[this.modalidade_bpc] || this.modalidade_bpc;
+  }
+
+  /**
+   * Verifica se o beneficiario exerce atividade remunerada
+   */
+  beneficiarioExerceAtividadeRemunerada(): boolean {
+    return this.exerce_atividade_remunerada;
+  }
+
+  /**
+   * Obtém a descrição do tipo de inserção do beneficiario
+   */
+  getDescricaoTipoInsercaobeneficiario(): string {
+    if (!this.tipo_insercao_beneficiario) {return 'Não informado';}
+    
+    const descricoes = {
+      [TipoInsercaoEnum.FORMAL]: 'Formal',
+      [TipoInsercaoEnum.INFORMAL]: 'Informal',
+    };
+    return descricoes[this.tipo_insercao_beneficiario] || this.tipo_insercao_beneficiario;
+  }
+
+  /**
+   * Verifica se tem cônjuge
+   */
+  temConjuge(): boolean {
+    return !!(this.nome_conjuge && this.nome_conjuge.trim());
+  }
+
+  /**
+   * Verifica se o cônjuge exerce atividade remunerada
+   */
+  conjugeExerceAtividadeRemunerada(): boolean {
+    return !!this.exerce_atividade_remunerada_conjuge;
+  }
+
+  /**
+   * Obtém a descrição do tipo de inserção do cônjuge
+   */
+  getDescricaoTipoInsercaoConjuge(): string {
+    if (!this.tipo_insercao_conjuge) {return 'Não informado';}
+    
+    const descricoes = {
+      [TipoInsercaoEnum.FORMAL]: 'Formal',
+      [TipoInsercaoEnum.INFORMAL]: 'Informal',
+    };
+    return descricoes[this.tipo_insercao_conjuge] || this.tipo_insercao_conjuge;
+  }
+
+  /**
+   * Obtém um resumo dos benefícios recebidos
+   */
+  getResumoBeneficios(): string {
+    const beneficios: string[] = [];
+    
+    if (this.recebePBF()) {
+      beneficios.push(`PBF: ${this.getValorPBFFormatado()}`);
+    }
+    
+    if (this.recebeBPC()) {
+      beneficios.push(`BPC ${this.getDescricaoModalidadeBPC()}: ${this.getValorBPCFormatado()}`);
+    }
+    
+    if (this.recebeTributoCrianca()) {
+      beneficios.push(`Tributo Criança: ${this.getValorTributoCriancaFormatado()}`);
+    }
+    
+    if (this.recebePensaoMorte()) {
+      beneficios.push('Pensão por Morte');
+    }
+    
+    if (this.isAposentadoBeneficio()) {
+      beneficios.push('Aposentadoria');
+    }
+    
+    if (this.recebeOutrosBeneficios()) {
+      beneficios.push(`Outros: ${this.descricao_outros_beneficios || 'Não especificado'}`);
+    }
+    
+    return beneficios.length > 0 ? beneficios.join(', ') : 'Nenhum benefício';
+  }
+
+  /**
+   * Obtém um resumo da situação de trabalho da família
+   */
+  getResumoTrabalhoFamilia(): string {
+    const situacoes: string[] = [];
+    
+    if (this.ocupacao_beneficiario) {
+      const tipoInsercao = this.beneficiarioExerceAtividadeRemunerada() 
+        ? ` (${this.getDescricaoTipoInsercaobeneficiario()})`
+        : '';
+      situacoes.push(`beneficiario: ${this.ocupacao_beneficiario}${tipoInsercao}`);
+    }
+    
+    if (this.temConjuge() && this.ocupacao_conjuge) {
+      const tipoInsercao = this.conjugeExerceAtividadeRemunerada() 
+        ? ` (${this.getDescricaoTipoInsercaoConjuge()})`
+        : '';
+      situacoes.push(`Cônjuge: ${this.ocupacao_conjuge}${tipoInsercao}`);
+    }
+    
+    return situacoes.length > 0 ? situacoes.join(', ') : 'Não informado';
+  }
+
+  /**
+   * Verifica se a família tem renda do trabalho
+   */
+  familiaTemRendaTrabalho(): boolean {
+    return this.beneficiarioExerceAtividadeRemunerada() || this.conjugeExerceAtividadeRemunerada();
+  }
+
+  /**
+   * Verifica se a família está em situação de vulnerabilidade
+   */
+  familiaEmVulnerabilidade(): boolean {
+    const temRendaBaixa = !this.renda || this.renda < 500; // Valor exemplo
+    const dependeBeneficios = this.recebeBeneficioSocial();
+    const semTrabalhoFormal = !this.beneficiarioExerceAtividadeRemunerada() || 
+                             (this.tipo_insercao_beneficiario === TipoInsercaoEnum.INFORMAL);
+    
+    return temRendaBaixa && (dependeBeneficios || semTrabalhoFormal);
   }
 }

@@ -42,7 +42,7 @@ export class TipoBeneficioSeed {
           codigo: 'natalidade',
           descricao:
             'Kit enxoval ou auxílio financeiro para recém-nascidos. Valor em pecúnia: R$ 500,00 (projeto de lei). Prazo: Até 30 dias após o parto.',
-          valor_referencia: 500.0, // Conforme projeto de lei
+          valor: 500.0, // Conforme projeto de lei
           periodicidade: 'unica',
           duracao_maxima: 1,
           duracao_padrao: 1,
@@ -55,7 +55,7 @@ export class TipoBeneficioSeed {
           codigo: 'funeral',
           descricao:
             'Urna funerária com translado. Tipos: Padrão (até 100kg), Obeso (até 150kg), Especial, Infantil (até 50kg). Melhorias previstas: Flores, formol, velas e roupa.',
-          valor_referencia: 0, // Benefício em espécie (urna)
+          valor: 0, // Benefício em espécie (urna)
           periodicidade: 'unica',
           duracao_maxima: 1,
           duracao_padrao: 1,
@@ -68,7 +68,7 @@ export class TipoBeneficioSeed {
           codigo: 'cesta-basica',
           descricao:
             'Gêneros alimentícios ou vale alimentação (R$ 200,00). Periodicidade: Máximo 6 meses, renovável por até 3 meses adicionais.',
-          valor_referencia: 200.0, // Conforme projeto de lei
+          valor: 200.0, // Conforme projeto de lei
           periodicidade: 'mensal',
           duracao_maxima: 9, // 6 meses + 3 meses de renovação
           duracao_padrao: 6,
@@ -81,7 +81,7 @@ export class TipoBeneficioSeed {
           codigo: 'aluguel-social',
           descricao:
             'R$ 600,00 mensais por até 6 meses (prorrogável por igual período mediante análise profissional). Finalidade exclusiva: locação em Natal.',
-          valor_referencia: 600.0, // Valor fixo conforme especificação
+          valor: 600.0, // Valor fixo conforme especificação
           periodicidade: 'mensal',
           duracao_maxima: 12, // 6 meses + 6 meses de prorrogação
           duracao_padrao: 6,
@@ -105,7 +105,7 @@ export class TipoBeneficioSeed {
               'nome',
               'codigo',
               'descricao',
-              'valor_referencia',
+              'valor',
               'periodicidade',
               'duracao_maxima',
               'duracao_padrao',
@@ -144,8 +144,8 @@ export class TipoBeneficioSeed {
                 valores.push(tipo.codigo);
               } else if (coluna === 'descricao') {
                 valores.push(tipo.descricao);
-              } else if (coluna === 'valor_referencia') {
-                valores.push(tipo.valor_referencia);
+              } else if (coluna === 'valor') {
+                valores.push(tipo.valor);
               } else if (coluna === 'periodicidade') {
                 valores.push(tipo.periodicidade);
               } else if (coluna === 'duracao_maxima') {
@@ -196,9 +196,9 @@ export class TipoBeneficioSeed {
               updateValues.push(tipo.descricao);
             }
 
-            if (columnNames.includes('valor_referencia')) {
-              updateColumns.push(`valor_referencia = $${paramIndex++}`);
-              updateValues.push(tipo.valor_referencia);
+            if (columnNames.includes('valor')) {
+              updateColumns.push(`valor = $${paramIndex++}`);
+              updateValues.push(tipo.valor);
             }
 
             if (columnNames.includes('periodicidade')) {

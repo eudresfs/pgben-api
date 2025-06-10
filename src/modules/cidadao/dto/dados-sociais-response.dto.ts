@@ -3,6 +3,8 @@ import { Expose, Transform } from 'class-transformer';
 import { DadosSociais } from '../../../entities/dados-sociais.entity';
 import { EscolaridadeEnum } from '../../../enums/escolaridade.enum';
 import { SituacaoTrabalhoEnum } from '../../../enums/situacao-trabalho.enum';
+import { ModalidadeBpcEnum } from '../../../enums/modalidade-bpc.enum';
+import { TipoInsercaoEnum } from '../../../enums/tipo-insercao.enum';
 
 /**
  * DTO de resposta para dados sociais de um cidadão
@@ -52,11 +54,11 @@ export class DadosSociaisResponseDto {
   renda: number | null;
 
   @ApiProperty({
-    description: 'Ocupação ou profissão do cidadão',
+    description: 'Ocupação ou profissão do beneficiário',
     example: 'Auxiliar de limpeza',
   })
   @Expose()
-  ocupacao: string;
+  ocupacao_beneficiario: string;
 
   @ApiProperty({
     description: 'Indica se o cidadão recebe Programa Bolsa Família',
@@ -84,11 +86,12 @@ export class DadosSociaisResponseDto {
   recebe_bpc: boolean;
 
   @ApiProperty({
-    description: 'Tipo do BPC recebido',
-    example: 'Pessoa com deficiência',
+    description: 'Modalidade do BPC recebido',
+    enum: ModalidadeBpcEnum,
+    example: ModalidadeBpcEnum.PCD,
   })
   @Expose()
-  tipo_bpc: string;
+  modalidade_bpc: ModalidadeBpcEnum;
 
   @ApiProperty({
     description: 'Valor mensal recebido do BPC',
@@ -100,6 +103,53 @@ export class DadosSociaisResponseDto {
   @Expose()
   @Transform(({ value }) => (value ? parseFloat(value) : null))
   valor_bpc: number | null;
+
+  @ApiProperty({
+    description: 'Indica se o cidadão recebe Tributo Criança',
+    example: false,
+  })
+  @Expose()
+  recebe_tributo_crianca: boolean;
+
+  @ApiProperty({
+    description: 'Valor mensal recebido do Tributo Criança',
+    example: 150.0,
+    type: 'number',
+    format: 'decimal',
+    nullable: true,
+  })
+  @Expose()
+  @Transform(({ value }) => (value ? parseFloat(value) : null))
+  valor_tributo_crianca: number | null;
+
+  @ApiProperty({
+    description: 'Indica se o cidadão recebe pensão por morte',
+    example: false,
+  })
+  @Expose()
+  pensao_morte: boolean;
+
+  @ApiProperty({
+    description: 'Indica se o cidadão é aposentado',
+    example: false,
+  })
+  @Expose()
+  aposentadoria: boolean;
+
+  @ApiProperty({
+    description: 'Indica se o cidadão recebe outros benefícios',
+    example: false,
+  })
+  @Expose()
+  outros_beneficios: boolean;
+
+  @ApiProperty({
+    description: 'Descrição dos outros benefícios recebidos',
+    example: 'Auxílio emergencial municipal',
+    nullable: true,
+  })
+  @Expose()
+  descricao_outros_beneficios: string | null;
 
   @ApiProperty({
     description:
@@ -148,6 +198,55 @@ export class DadosSociaisResponseDto {
   area_interesse_familiar: string;
 
   @ApiProperty({
+    description: 'Indica se o beneficiario exerce atividade remunerada',
+    example: true,
+  })
+  @Expose()
+  exerce_atividade_remunerada: boolean;
+
+  @ApiProperty({
+    description: 'Tipo de inserção no trabalho do beneficiario',
+    enum: TipoInsercaoEnum,
+    example: TipoInsercaoEnum.FORMAL,
+    nullable: true,
+  })
+  @Expose()
+  tipo_insercao_beneficiario: TipoInsercaoEnum | null;
+
+  @ApiProperty({
+    description: 'Nome do cônjuge',
+    example: 'Maria Silva Santos',
+    nullable: true,
+  })
+  @Expose()
+  nome_conjuge: string | null;
+
+  @ApiProperty({
+    description: 'Ocupação ou profissão do cônjuge',
+    example: 'Diarista',
+    nullable: true,
+  })
+  @Expose()
+  ocupacao_conjuge: string | null;
+
+  @ApiProperty({
+    description: 'Indica se o cônjuge exerce atividade remunerada',
+    example: false,
+    nullable: true,
+  })
+  @Expose()
+  exerce_atividade_remunerada_conjuge: boolean | null;
+
+  @ApiProperty({
+    description: 'Tipo de inserção no trabalho do cônjuge',
+    enum: TipoInsercaoEnum,
+    example: TipoInsercaoEnum.INFORMAL,
+    nullable: true,
+  })
+  @Expose()
+  tipo_insercao_conjuge: TipoInsercaoEnum | null;
+
+  @ApiProperty({
     description: 'Observações adicionais sobre a situação social',
     example: 'Família em situação de vulnerabilidade social',
   })
@@ -169,8 +268,8 @@ export class DadosSociaisResponseDto {
   renda_per_capita: number;
 
   @ApiProperty({
-    description: 'Total de benefícios recebidos (PBF + BPC)',
-    example: 1720.0,
+    description: 'Total de benefícios recebidos (PBF + BPC + Tributo Criança)',
+    example: 1870.0,
     type: 'number',
     format: 'decimal',
     nullable: true,
@@ -180,13 +279,14 @@ export class DadosSociaisResponseDto {
     let total = 0;
     if (obj.valor_pbf) {total += parseFloat(obj.valor_pbf);}
     if (obj.valor_bpc) {total += parseFloat(obj.valor_bpc);}
+    if (obj.valor_tributo_crianca) {total += parseFloat(obj.valor_tributo_crianca);}
     return total > 0 ? total : null;
   })
   total_beneficios: number | null;
 
   @ApiProperty({
     description: 'Renda total (renda + benefícios)',
-    example: 3220.0,
+    example: 3370.0,
     type: 'number',
     format: 'decimal',
     nullable: true,
@@ -197,6 +297,7 @@ export class DadosSociaisResponseDto {
     if (obj.renda) {total += parseFloat(obj.renda);}
     if (obj.valor_pbf) {total += parseFloat(obj.valor_pbf);}
     if (obj.valor_bpc) {total += parseFloat(obj.valor_bpc);}
+    if (obj.valor_tributo_crianca) {total += parseFloat(obj.valor_tributo_crianca);}
     return total > 0 ? total : null;
   })
   renda_total: number | null;
@@ -224,23 +325,36 @@ export class DadosSociaisResponseDto {
       this.renda = dadosSociais.renda
         ? parseFloat(dadosSociais.renda.toString())
         : null;
-      this.ocupacao = dadosSociais.ocupacao;
+      this.ocupacao_beneficiario = dadosSociais.ocupacao_beneficiario;
       this.recebe_pbf = dadosSociais.recebe_pbf;
       this.valor_pbf = dadosSociais.valor_pbf
         ? parseFloat(dadosSociais.valor_pbf.toString())
         : null;
       this.recebe_bpc = dadosSociais.recebe_bpc;
-      this.tipo_bpc = dadosSociais.tipo_bpc;
+      this.modalidade_bpc = dadosSociais.modalidade_bpc;
       this.valor_bpc = dadosSociais.valor_bpc
         ? parseFloat(dadosSociais.valor_bpc.toString())
         : null;
+      this.recebe_tributo_crianca = dadosSociais.recebe_tributo_crianca;
+      this.valor_tributo_crianca = dadosSociais.valor_tributo_crianca
+        ? parseFloat(dadosSociais.valor_tributo_crianca.toString())
+        : null;
+      this.pensao_morte = dadosSociais.pensao_morte;
+      this.aposentadoria = dadosSociais.aposentadoria;
+      this.outros_beneficios = dadosSociais.outros_beneficios;
+      this.descricao_outros_beneficios = dadosSociais.descricao_outros_beneficios;
       this.curso_profissionalizante = dadosSociais.curso_profissionalizante;
-      this.interesse_curso_profissionalizante =
-        dadosSociais.interesse_curso_profissionalizante;
+      this.interesse_curso_profissionalizante = dadosSociais.interesse_curso_profissionalizante;
       this.situacao_trabalho = dadosSociais.situacao_trabalho;
       this.area_trabalho = dadosSociais.area_trabalho;
       this.familiar_apto_trabalho = dadosSociais.familiar_apto_trabalho;
       this.area_interesse_familiar = dadosSociais.area_interesse_familiar;
+      this.exerce_atividade_remunerada = dadosSociais.exerce_atividade_remunerada;
+      this.tipo_insercao_beneficiario = dadosSociais.tipo_insercao_beneficiario;
+      this.nome_conjuge = dadosSociais.nome_conjuge;
+      this.ocupacao_conjuge = dadosSociais.ocupacao_conjuge;
+      this.exerce_atividade_remunerada_conjuge = dadosSociais.exerce_atividade_remunerada_conjuge;
+      this.tipo_insercao_conjuge = dadosSociais.tipo_insercao_conjuge;
       this.observacoes = dadosSociais.observacoes;
       this.created_at = dadosSociais.created_at;
       this.updated_at = dadosSociais.updated_at;
@@ -258,6 +372,7 @@ export class DadosSociaisResponseDto {
     let total = 0;
     if (this.valor_pbf) {total += this.valor_pbf;}
     if (this.valor_bpc) {total += this.valor_bpc;}
+    if (this.valor_tributo_crianca) {total += this.valor_tributo_crianca;}
     return total > 0 ? total : null;
   }
 
@@ -269,6 +384,7 @@ export class DadosSociaisResponseDto {
     if (this.renda) {total += this.renda;}
     if (this.valor_pbf) {total += this.valor_pbf;}
     if (this.valor_bpc) {total += this.valor_bpc;}
+    if (this.valor_tributo_crianca) {total += this.valor_tributo_crianca;}
     return total > 0 ? total : null;
   }
 }

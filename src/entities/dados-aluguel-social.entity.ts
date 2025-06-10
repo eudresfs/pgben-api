@@ -102,9 +102,9 @@ export class DadosAluguelSocial {
    */
   isAltaPrioridade(): boolean {
     const casosAltaPrioridade = [
-      PublicoPrioritarioAluguel.MULHERES_VITIMAS_VIOLENCIA,
-      PublicoPrioritarioAluguel.ATINGIDOS_CALAMIDADE,
-      PublicoPrioritarioAluguel.SITUACAO_RISCO,
+      PublicoPrioritarioAluguel.FAMILIAS_GESTANTES_NUTRIZES,
+      PublicoPrioritarioAluguel.FAMILIAS_ATINGIDAS_CALAMIDADE_PUBLICA,
+      PublicoPrioritarioAluguel.FAMILIAS_SITUACAO_RISCO_VULNERABILIDADE,
     ];
 
     return (
@@ -123,7 +123,7 @@ export class DadosAluguelSocial {
       EspecificacaoAluguel.EXPLORACAO_SEXUAL,
       EspecificacaoAluguel.VITIMA_VIOLENCIA,
       EspecificacaoAluguel.SITUACAO_RUA,
-      EspecificacaoAluguel.DROGADICAO,
+      EspecificacaoAluguel.SITUACAO_DROGADICAO,
     ];
 
     return this.especificacoes.some((esp) => vulnerabilidades.includes(esp));
@@ -137,25 +137,25 @@ export class DadosAluguelSocial {
 
     // Pontuação base por público prioritário
     switch (this.publico_prioritario) {
-      case PublicoPrioritarioAluguel.ATINGIDOS_CALAMIDADE:
+      case PublicoPrioritarioAluguel.FAMILIAS_ATINGIDAS_CALAMIDADE_PUBLICA:
         pontuacao += 100;
         break;
-      case PublicoPrioritarioAluguel.MULHERES_VITIMAS_VIOLENCIA:
+      case PublicoPrioritarioAluguel.MULHERES_VITIMAS_VIOLENCIA_DOMESTICA:
         pontuacao += 90;
         break;
-      case PublicoPrioritarioAluguel.SITUACAO_RISCO:
+      case PublicoPrioritarioAluguel.FAMILIAS_SITUACAO_RISCO_VULNERABILIDADE:
         pontuacao += 80;
         break;
-      case PublicoPrioritarioAluguel.CRIANCAS_ADOLESCENTES:
+      case PublicoPrioritarioAluguel.FAMILIAS_CRIANCAS_ADOLESCENTES:
         pontuacao += 70;
         break;
-      case PublicoPrioritarioAluguel.GESTANTES_NUTRIZES:
+      case PublicoPrioritarioAluguel.FAMILIAS_GESTANTES_NUTRIZES:
         pontuacao += 60;
         break;
-      case PublicoPrioritarioAluguel.IDOSOS:
+      case PublicoPrioritarioAluguel.FAMILIAS_IDOSOS:
         pontuacao += 50;
         break;
-      case PublicoPrioritarioAluguel.PCD:
+      case PublicoPrioritarioAluguel.FAMILIAS_PESSOAS_DEFICIENCIA:
         pontuacao += 40;
         break;
     }
@@ -168,7 +168,7 @@ export class DadosAluguelSocial {
         {pontuacao += 40;}
       if (this.especificacoes.includes(EspecificacaoAluguel.SITUACAO_RUA))
         {pontuacao += 30;}
-      if (this.especificacoes.includes(EspecificacaoAluguel.DROGADICAO))
+      if (this.especificacoes.includes(EspecificacaoAluguel.AUSENCIA_MORADIA))
         {pontuacao += 20;}
     }
 

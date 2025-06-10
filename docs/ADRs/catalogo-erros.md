@@ -222,23 +222,93 @@ export function throwPixIndisponivel(cpf: string, requestId?: string): never
 
 ---
 
-## IMPLEMENTAÇÃO INCREMENTAL
+## STATUS DA IMPLEMENTAÇÃO
 
-### Fase 1 (Prioridade ALTA)
-1. Implementar estrutura base (ErrorDefinition, AppError, middleware)
-2. Códigos VAL_2xxx (validações críticas de conflito de papéis)
-3. Códigos BEN_1xxx para Aluguel Social (benefício mais complexo)
-4. Helpers básicos para os erros mais frequentes
+### ✅ CONCLUÍDO
 
-### Fase 2 (Prioridade MÉDIA)
-1. Códigos para demais benefícios (natalidade, mortalidade, cesta, passagens)
-2. Códigos INT_3xxx para integrações críticas (Receita, CadÚnico)
-3. Códigos FLW_4xxx para fluxos operacionais
+#### Estrutura Base
+- [x] Interface `ErrorDefinition` com todos os campos obrigatórios
+- [x] Classe `AppError` para erros padronizados
+- [x] Enum `ErrorCategory` com todas as categorias
+- [x] Enum `ErrorSeverity` com níveis de severidade
+- [x] Middleware `CatalogAwareExceptionFilter` integrado
 
-### Fase 3 (Prioridade BAIXA)
-1. Códigos SYS_5xxx (sistema, rate limiting, etc.)
-2. Funcionalidades avançadas (métricas, alertas automatizados)
-3. Documentação automática do catálogo
+#### Catálogo Central
+- [x] Arquivo `catalog.ts` com códigos base (VAL_001-010, BEN_001-010, etc.)
+- [x] Mapeamento de erros PostgreSQL (`POSTGRES_ERROR_MAP`)
+- [x] Estrutura hierárquica de códigos implementada
+
+#### Domínios Específicos - Base
+- [x] `usuario.errors.ts` - Gestão de usuários
+- [x] `cidadao.errors.ts` - Gestão de cidadãos
+- [x] `beneficio.errors.ts` - Gestão de benefícios
+- [x] `solicitacao.errors.ts` - Gestão de solicitações
+- [x] `documento.errors.ts` - Gestão de documentos
+- [x] `auditoria.errors.ts` - Sistema de auditoria
+- [x] `notificacao.errors.ts` - Sistema de notificações
+- [x] `relatorio.errors.ts` - Sistema de relatórios
+- [x] `integrador.errors.ts` - Integrações externas
+
+#### Domínios Específicos - Expandidos
+- [x] `validacoes-criticas.errors.ts` - Códigos VAL_2xxx
+- [x] `beneficios-especificos.errors.ts` - Códigos BEN_1xxx
+- [x] `integracoes-especificas.errors.ts` - Códigos INT_1xxx
+- [x] `fluxo-operacional.errors.ts` - Códigos FLU_1xxx
+- [x] `sistema.errors.ts` - Códigos SIS_1xxx
+
+#### Helpers
+- [x] Funções auxiliares para lançamento de erros comuns
+- [x] Helpers específicos por domínio
+- [x] Helpers para códigos específicos expandidos
+- [x] Integração com contexto dinâmico
+
+#### Consolidação
+- [x] Arquivo `domains/index.ts` atualizado com todos os domínios
+- [x] Exportação centralizada de todos os catálogos
+- [x] Estatísticas de cobertura implementadas
+
+### 🔄 EM ANDAMENTO
+
+#### Validação e Testes
+- [ ] Testes unitários para novos domínios
+- [ ] Validação de integridade dos códigos
+- [ ] Testes de performance do catálogo
+
+### ⏳ PENDENTE
+
+#### Integração
+- [ ] Atualização de controladores para usar novos códigos
+- [ ] Migração gradual de `BaseApiException` para `AppError`
+- [ ] Testes de regressão completos
+
+#### Funcionalidades Avançadas
+- [ ] Sistema de métricas de erros
+- [ ] Dashboard de monitoramento
+- [ ] Alertas automáticos para erros críticos
+
+#### Documentação
+- [ ] Guia de migração para desenvolvedores
+- [ ] Documentação da API de erros
+- [ ] Exemplos de uso por cenário
+
+### 📊 ESTATÍSTICAS ATUAIS
+
+#### Cobertura de Domínios
+- **Total de Domínios**: 14
+- **Domínios Base**: 9 (usuário, cidadão, benefício, solicitação, documento, auditoria, notificação, relatório, integrador)
+- **Domínios Específicos**: 5 (validações críticas, benefícios específicos, integrações específicas, fluxo operacional, sistema)
+
+#### Códigos de Erro
+- **Códigos Base**: ~90 códigos (VAL_001-010, BEN_001-010, etc.)
+- **Códigos Específicos**: ~200+ códigos (VAL_2xxx, BEN_1xxx, INT_1xxx, FLU_1xxx, SIS_1xxx)
+- **Total Estimado**: ~290+ códigos de erro
+
+#### Categorias Implementadas
+- ✅ **VALIDATIONS** - Validações de entrada e regras de negócio
+- ✅ **BENEFITS** - Regras específicas de benefícios
+- ✅ **INTEGRATIONS** - Integrações com sistemas externos
+- ✅ **OPERATIONAL_FLOW** - Fluxo operacional e aprovações
+- ✅ **SYSTEM** - Erros de sistema e infraestrutura
 
 ---
 

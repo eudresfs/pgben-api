@@ -87,9 +87,10 @@ export class DadosSociaisService {
       });
 
       // Criar os dados sociais
-      const dadosSociais = manager.create(DadosSociais, dadosNormalizados);
+      const dadosSociais = manager.create(DadosSociais);
+      Object.assign(dadosSociais, dadosNormalizados);
 
-      const savedDadosSociais = await manager.save(DadosSociais, dadosSociais);
+      const savedDadosSociais = await manager.save(dadosSociais);
 
       // Calcular e atualizar renda per capita
       await this.calculateAndUpdateRendaPerCapita(cidadaoId, manager);
@@ -314,10 +315,10 @@ export class DadosSociaisService {
         errors.push('Valor do BPC não pode exceder R$ 10.000,00');
       }
 
-      if (!data.tipo_bpc || data.tipo_bpc.trim().length === 0) {
-        errors.push('Tipo do BPC é obrigatório quando recebe_bpc é verdadeiro');
-      } else if (data.tipo_bpc.length > 100) {
-        errors.push('Tipo do BPC deve ter no máximo 100 caracteres');
+      if (!data.modalidade_bpc || data.modalidade_bpc.trim().length === 0) {
+        errors.push('Modalidade do BPC é obrigatória quando recebe_bpc é verdadeiro');
+      } else if (data.modalidade_bpc.length > 100) {
+        errors.push('Modalidade do BPC deve ter no máximo 100 caracteres');
       }
     }
 
@@ -327,11 +328,67 @@ export class DadosSociaisService {
           'Valor do BPC não deve ser informado quando recebe_bpc é falso',
         );
       }
-      if (data.tipo_bpc && data.tipo_bpc.trim().length > 0) {
+      if (data.modalidade_bpc && data.modalidade_bpc.trim().length > 0) {
         errors.push(
-          'Tipo do BPC não deve ser informado quando recebe_bpc é falso',
+          'Modalidade do BPC não deve ser informada quando recebe_bpc é falso',
         );
       }
+    }
+
+    // Validar Tributo Criança
+    if (data.recebe_tributo_crianca === true) {
+      if (!data.valor_tributo_crianca || data.valor_tributo_crianca <= 0) {
+        errors.push(
+          'Valor do Tributo Criança é obrigatório e deve ser maior que zero quando recebe_tributo_crianca é verdadeiro',
+        );
+      } else if (data.valor_tributo_crianca > 10000) {
+        errors.push('Valor do Tributo Criança não pode exceder R$ 10.000,00');
+      }
+    }
+
+    if (data.recebe_tributo_crianca === false && data.valor_tributo_crianca) {
+      if (data.valor_tributo_crianca > 0) {
+        errors.push(
+          'Valor do Tributo Criança não deve ser informado quando recebe_tributo_crianca é falso',
+        );
+      }
+    }
+
+    // Validar Pensão por Morte
+    if (data.pensao_morte !== undefined) {
+      if (data.pensao_morte < 0) {
+        errors.push('Valor da Pensão por Morte não pode ser negativo');
+      } else if (data.pensao_morte > 50000) {
+        errors.push('Valor da Pensão por Morte não pode exceder R$ 50.000,00');
+      }
+    }
+
+    // Validar Aposentadoria
+    if (data.aposentadoria !== undefined) {
+      if (data.aposentadoria < 0) {
+        errors.push('Valor da Aposentadoria não pode ser negativo');
+      } else if (data.aposentadoria > 50000) {
+        errors.push('Valor da Aposentadoria não pode exceder R$ 50.000,00');
+      }
+    }
+
+    // Validar Outros Benefícios
+    if (data.outros_beneficios !== undefined) {
+      if (data.outros_beneficios < 0) {
+        errors.push('Valor de Outros Benefícios não pode ser negativo');
+      } else if (data.outros_beneficios > 50000) {
+        errors.push('Valor de Outros Benefícios não pode exceder R$ 50.000,00');
+      }
+
+      // Se há valor em outros benefícios, deve ter descrição
+      if (data.outros_beneficios > 0 && (!data.descricao_outros_beneficios || data.descricao_outros_beneficios.trim().length === 0)) {
+        errors.push('Descrição de Outros Benefícios é obrigatória quando há valor informado');
+      }
+    }
+
+    // Validar descrição de outros benefícios
+    if (data.descricao_outros_beneficios && data.descricao_outros_beneficios.length > 500) {
+      errors.push('Descrição de Outros Benefícios deve ter no máximo 500 caracteres');
     }
 
     // Validação de consistência entre benefícios
@@ -360,7 +417,13 @@ export class DadosSociaisService {
       data.valor_pbf !== undefined ||
       data.recebe_bpc !== undefined ||
       data.valor_bpc !== undefined ||
-      data.tipo_bpc !== undefined
+      data.modalidade_bpc !== undefined ||
+      data.recebe_tributo_crianca !== undefined ||
+      data.valor_tributo_crianca !== undefined ||
+      data.pensao_morte !== undefined ||
+      data.aposentadoria !== undefined ||
+      data.outros_beneficios !== undefined ||
+      data.descricao_outros_beneficios !== undefined
     );
   }
 

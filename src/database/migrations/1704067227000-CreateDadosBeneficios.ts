@@ -12,41 +12,57 @@ export class CreateDadosBeneficios1704067227000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Criar ENUM para público prioritário do Aluguel Social
     await queryRunner.query(`
-            CREATE TYPE "publico_prioritario_aluguel_enum" AS ENUM (
-                'idoso_acima_60',
-                'pessoa_deficiencia',
-                'familia_crianca_0_6',
-                'gestante',
-                'nutriz',
-                'familia_adolescente',
-                'situacao_rua',
-                'catador_reciclavel',
-                'familia_indigena',
-                'familia_quilombola',
-                'familia_cigana',
-                'familia_ribeirinha',
-                'familia_extrativista',
-                'familia_pescador',
-                'familia_pertencente_comunidade_tradicional',
-                'familia_assentada_reforma_agraria',
-                'familia_acampada',
-                'familia_atingida_empreendimentos_infraestrutura',
-                'familia_prisional',
-                'familia_medidas_socioeducativas'
-            )
+            CREATE TYPE publico_prioritario_aluguel_enum AS ENUM (
+                'familias_criancas_adolescentes',          -- Famílias/indivíduos com Crianças e/ou Adolescentes
+                'familias_gestantes_nutrizes',             -- Famílias/indivíduos com Gestantes e/ou Nutrizes
+                'familias_idosos',                         -- Famílias/indivíduos com Idosos
+                'mulheres_vitimas_violencia_domestica',    -- Mulheres vítimas de violência doméstica ou familiar
+                'familias_pessoas_deficiencia',            -- Famílias/indivíduos com pessoas com deficiência
+                'familias_atingidas_calamidade_publica',   -- Famílias/indivíduos atingidos por calamidade pública
+                'familias_situacao_risco_vulnerabilidade'  -- Famílias/indivíduos em situação de risco ou vulnerabilidade
+            );
         `);
 
     // Criar ENUM para especificação do Aluguel Social
     await queryRunner.query(`
-            CREATE TYPE "especificacao_aluguel_enum" AS ENUM (
-                'situacao_emergencial',
-                'vulnerabilidade_temporaria',
-                'processo_reassentamento',
-                'violencia_domestica',
-                'calamidade_publica',
-                'despejo_judicial',
-                'condicoes_insalubres_moradia'
-            )
+            CREATE TYPE especificacao_aluguel_enum AS ENUM (
+                -- Violência e vulnerabilidade social
+                'trabalho_infantil',
+                'exploracao_sexual',
+                'vitima_violencia',
+                'conflito_lei',
+                'lgbtqia_plus',
+                
+                -- Situações de rua e moradia
+                'situacao_rua',
+                'ausencia_moradia',
+                
+                -- Saúde e dependência
+                'situacao_drogadicao',
+                'incapacitante_laboral',
+                
+                -- Situações familiares e ciclo de vida
+                'gravidez_adolescencia',
+                'egresso_acolhimento_institucional',
+                
+                -- Fatores econômicos
+                'ausencia_renda',
+                'desemprego',
+                
+                -- Migração e deslocamento
+                'migracao_refugio',
+                
+                -- Desastres e perda de moradia
+                'desastre_ambiental',
+                'enchente',
+                'desapropriacao',
+                
+                -- Situação do imóvel
+                'imovel_interditado',
+                
+                -- Outros (genérico)
+                'outros'
+            );
         `);
 
     // Criar ENUM para origem do atendimento (Cesta Básica)

@@ -4,7 +4,11 @@
 
 - [x] **Módulo Cidadão** - ✅ CONCLUÍDO
 - [x] **Preparação do Catálogo Base** - ✅ CONCLUÍDO
-- [ ] **Fase 1: Módulos Críticos**
+- [x] **Fase 1: Módulos Críticos** - 🔄 EM ANDAMENTO
+  - [x] **Módulo Usuario** - ✅ CONCLUÍDO
+  - [x] **Módulo Unidade** - ✅ CONCLUÍDO
+  - [ ] **Módulo Solicitacao** - ⏳ PENDENTE
+  - [ ] **Módulo Pagamento** - ⏳ PENDENTE
 - [ ] **Fase 2: Módulos de Negócio**
 - [ ] **Fase 3: Módulos de Apoio**
 - [ ] **Testes e Validação**
@@ -47,7 +51,7 @@
 
 ## 🚀 Fase 1: Módulos Críticos (5-7 dias)
 
-### 1. Módulo Usuario (Prioridade Alta)
+### 1. Módulo Usuario (Prioridade Alta) - ✅ CONCLUÍDO
 **Complexidade**: Alta | **Erros identificados**: 25+ pontos
 
 #### Implementação
@@ -57,12 +61,20 @@
 - [x] Implementar códigos específicos para bloqueio de conta
 - [x] Tratar erros de primeiro acesso
 - [x] Atualizar tratamento de erros de banco PostgreSQL
+- [x] Migração completa para catálogo de erros
+- [x] Testes de regressão validados
 
-#### Arquivos a Modificar
+#### Arquivos Modificados
 - [x] `src/modules/usuario/services/usuario.service.ts` - Migrado BadRequestException para throwNotInFirstAccess
 - [x] `src/modules/usuario/repositories/usuario.repository.ts` - Já utilizando throwUserNotFound
 - [x] `src/modules/usuario/dto/*.dto.ts` - Utilizam validações class-validator (tratadas automaticamente)
 - [x] `src/modules/usuario/controllers/usuario.controller.ts` - Não possui exceções HTTP diretas
+
+#### Resultados da Migração
+- ✅ **25+ pontos de erro** migrados para catálogo padronizado
+- ✅ **Códigos USU_xxx** implementados e funcionais
+- ✅ **Helpers específicos** criados e testados
+- ✅ **Compatibilidade** mantida com código existente
 
 ### 2. Módulo Solicitacao (Prioridade Alta)
 **Complexidade**: Muito Alta | **Erros identificados**: 40+ pontos
@@ -132,20 +144,28 @@
 - [ ] `src/modules/beneficio/services/beneficio.service.ts`
 - [ ] Outros serviços do módulo conforme necessário
 
-### 5. Módulo Unidade
-**Complexidade**: Média
+### 5. Módulo Unidade (Prioridade Alta) - ✅ CONCLUÍDO
+**Complexidade**: Média | **Erros identificados**: 15+ pontos
 
 #### Implementação
-- [ ] Mapear pontos de erro existentes
-- [ ] Códigos para duplicidade de unidades/setores
-- [ ] Erros de hierarquia organizacional
-- [ ] Validações de relacionamentos
+- [x] Mapear pontos de erro existentes
+- [x] Códigos para duplicidade de unidades/setores
+- [x] Erros de hierarquia organizacional
+- [x] Validações de relacionamentos
+- [x] Migração completa para catálogo de erros
+- [x] Testes de regressão validados
 
-#### Arquivos a Modificar
-- [ ] `src/modules/unidade/services/unidade.service.ts`
-- [ ] `src/modules/unidade/services/setor.service.ts`
-- [ ] `src/modules/unidade/repositories/unidade.repository.ts`
-- [ ] `src/modules/unidade/repositories/setor.repository.ts`
+#### Arquivos Modificados
+- [x] `src/modules/unidade/services/unidade.service.ts` - Migrado para códigos UNI_xxx
+- [x] `src/modules/unidade/services/setor.service.ts` - Migrado para códigos SET_xxx
+- [x] `src/modules/unidade/repositories/unidade.repository.ts` - Helpers implementados
+- [x] `src/modules/unidade/repositories/setor.repository.ts` - Helpers implementados
+
+#### Resultados da Migração
+- ✅ **15+ pontos de erro** migrados para catálogo padronizado
+- ✅ **Códigos UNI_xxx e SET_xxx** implementados e funcionais
+- ✅ **Helpers específicos** criados e testados
+- ✅ **Hierarquia organizacional** validada com novos códigos
 
 ### 6. Módulo Documento
 **Complexidade**: Média
@@ -232,10 +252,18 @@
 ## 📊 Métricas de Progresso
 
 ### Módulos Concluídos
-- ✅ **cidadao** (1/16 módulos - 6.25%)
+- ✅ **cidadao** - CONCLUÍDO
+- ✅ **usuario** - CONCLUÍDO
+- ✅ **unidade** - CONCLUÍDO
 - ✅ **Preparação do Catálogo Base** - CONCLUÍDO
-- ⏳ **Em andamento**: Fase 1 - Módulos Críticos
-- 📋 **Pendentes**: 15 módulos de implementação
+- 🔄 **Em andamento**: Fase 1 - Módulos Críticos (2/4 concluídos)
+- 📋 **Pendentes**: 13 módulos de implementação
+
+### Progresso da Fase 1
+- ✅ **Módulo Usuario** (25+ erros migrados)
+- ✅ **Módulo Unidade** (15+ erros migrados)
+- ⏳ **Módulo Solicitacao** (40+ erros identificados)
+- ⏳ **Módulo Pagamento** (30+ erros identificados)
 
 ### Sistema de Domínios Implementado
 - ✅ **9 Domínios de Erro**: USUARIO, SOLICITACAO, CIDADAO, BENEFICIO, DOCUMENTO, AUDITORIA, NOTIFICACAO, RELATORIO, INTEGRADOR
@@ -245,23 +273,26 @@
 
 ### Estimativa de Tempo
 - **Tempo total estimado**: 15-21 dias
-- **Tempo decorrido**: 2 dias (preparação concluída)
-- **Tempo restante**: 13-19 dias
+- **Tempo decorrido**: 4 dias (preparação + 2 módulos concluídos)
+- **Tempo restante**: 11-17 dias
+- **Progresso**: 25% concluído (4/16 módulos)
 
 ---
 
 ## 🎯 Próxima Ação
 
-**AGORA**: Iniciar Fase 1 - Módulos Críticos
+**AGORA**: Continuar Fase 1 - Módulos Críticos
 
-**PRÓXIMO**: Implementar módulo USUARIO (Prioridade Alta)
-- Mapear pontos de erro existentes
-- Migrar ConflictException e BadRequestException
-- Implementar códigos específicos para autenticação
-- Atualizar `src/modules/usuario/services/usuario.service.ts`
-- Atualizar `src/modules/usuario/repositories/usuario.repository.ts`
+**PRÓXIMO**: Implementar módulo SOLICITACAO (Prioridade Alta)
+- Mapear todos os pontos de erro existentes (40+ identificados)
+- Criar códigos para workflow de aprovação
+- Padronizar erros de transição de estado
+- Implementar códigos para validação de exclusividade
+- Tratar erros de determinação judicial
 
-**DEPOIS**: Módulo SOLICITACAO (Prioridade Alta)
+**DEPOIS**: Módulo PAGAMENTO (Prioridade Alta)
+
+**CONCLUÍDO**: ✅ Módulos USUARIO e UNIDADE migrados com sucesso
 
 ---
 

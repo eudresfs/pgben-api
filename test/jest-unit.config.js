@@ -6,9 +6,13 @@ module.exports = {
   testEnvironment: 'node',
   rootDir: '..',
   testMatch: ['<rootDir>/test/**/*.unit.spec.ts'],
-  moduleNameMapper: pathsToModuleNameMapper(compilerOptions.paths, { prefix: '<rootDir>/' }),
-  modulePaths: ['<rootDir>'],
+  
+  moduleNameMapper: pathsToModuleNameMapper(compilerOptions.paths, { 
+    prefix: '<rootDir>/' 
+  }),
+  
   setupFilesAfterEnv: ['<rootDir>/test/setup.ts'],
+  
   collectCoverageFrom: [
     'src/**/*.ts',
     '!src/main.ts',
@@ -16,19 +20,9 @@ module.exports = {
     '!**/*.entity.ts',
     '!**/*.dto.ts',
     '!**/*.interface.ts',
-    '!**/node_modules/**',
-    '!**/dist/**',
   ],
+  
   coverageDirectory: './coverage/unit',
   coverageReporters: ['text', 'lcov'],
-  globals: {
-    'ts-jest': {
-      tsconfig: '<rootDir>/tsconfig.json',
-      diagnostics: false,
-    },
-  },
-  testPathIgnorePatterns: ['<rootDir>/node_modules/'],
-  moduleDirectories: ['node_modules', 'src'],
-  transformIgnorePatterns: ['<rootDir>/node_modules/'],
-  verbose: true,
+  testTimeout: 10000,
 };

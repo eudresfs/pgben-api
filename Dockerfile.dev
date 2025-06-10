@@ -132,7 +132,15 @@ USER nextjs
 # Expor porta da aplicação e porta de debug
 EXPOSE 3000 9229
 
-# Comando para desenvolvimento com hot reload
+# Criar diretório para chaves JWT se não existir
+RUN mkdir -p /app/keys
+
+# Copiar entrypoint e dar permissões
+COPY docker-entrypoint.dev.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.dev.sh
+
+# Usar entrypoint para desenvolvimento
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.dev.sh"]
 CMD ["npm", "run", "start:dev"]
 
 # =============================================================================

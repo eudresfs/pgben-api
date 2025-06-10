@@ -45,4 +45,6 @@ fi
 
 echo "🚀 Iniciando a aplicação PGBen-server em modo de desenvolvimento com hot reload..."
 echo "🔄 O servidor será reiniciado automaticamente quando detectar alterações nos arquivos..."
-exec nodemon --watch src --ext ts,js,json --exec "ts-node -r tsconfig-paths/register src/main.ts"
+
+# Executar o comando passado como argumento ou o padrão
+exec "$@"

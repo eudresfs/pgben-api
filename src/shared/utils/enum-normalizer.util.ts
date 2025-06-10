@@ -36,6 +36,9 @@ const ENUM_FIELDS = [
   'parentesco',
   'situacao_trabalho',
   'tipo_trabalho',
+  'modalidade_bpc',
+  'tipo_insercao_beneficiario',
+  'tipo_insercao_conjuge',
 
   // Pendências e confirmações
   'status_pendencia',

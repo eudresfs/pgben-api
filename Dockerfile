@@ -1,38 +1,38 @@
-# Estágio de construção
+# Build stage
 FROM node:20-alpine AS build
 
-# Diretório de trabalho
 WORKDIR /app
 
-# Copia os arquivos de configuração do projeto
+# Copy package files
 COPY package*.json ./
 COPY tsconfig*.json ./
 
-# Instala as dependências
+# Install all dependencies (including dev dependencies)
 RUN npm ci
 
-# Copia o código-fonte
+# Copy source code
 COPY . .
 
-# Compila a aplicação
+# Build the application
 RUN npm run build
 
-# Estágio de produção
+# Production stage
 FROM node:20-alpine AS production
 
-# Define variáveis de ambiente
-ENV NODE_ENV=production
-
-# Diretório de trabalho
 WORKDIR /app
 
-# Instala dependências necessárias para produção
+# Install curl and wget for healthcheck
 RUN apk add --no-cache curl wget
 
-# Copia arquivos da etapa de build
-COPY --from=build /app/node_modules ./node_modules
+# Copy package files and install production dependencies only
+COPY package*.json ./
+RUN npm ci --omit=dev && npm cache clean --force
+
+# Copy built application from build stage
 COPY --from=build /app/dist ./dist
-COPY --from=build /app/package*.json ./
+
+# Copy JWT keys
+COPY keys/ ./keys/
 
 # Portas expostas
 EXPOSE 3000

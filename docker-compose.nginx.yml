@@ -1,0 +1,92 @@
+# Docker Compose para Nginx Proxy Reverso - Produção
+# Este arquivo deve ser usado em conjunto com docker-compose.prod.yml
+# Comando: docker-compose -f docker-compose.prod.yml -f docker-compose.nginx.yml up -d
+
+version: '3.8'
+
+services:
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: nginx-proxy-prod
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      # Configuração do Nginx
+      - ./config/nginx/nginx.prod.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./config/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      
+      # Certificados SSL (criar diretório e certificados antes do deploy)
+      - ./ssl:/etc/nginx/ssl:ro
+      
+      # Logs do Nginx
+      - nginx_logs:/var/log/nginx
+      
+      # Para Let's Encrypt (se usar certbot)
+      - ./certbot/www:/var/www/certbot:ro
+      - ./certbot/conf:/etc/letsencrypt:ro
+    environment:
+      - TZ=America/Sao_Paulo
+    depends_on:
+      - pgben-server
+    networks:
+      - pgben-network-prod
+      - nginx-external
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        compress: "true"
+
+  # Serviço para renovação automática de certificados Let's Encrypt
+  certbot:
+    image: certbot/certbot:latest
+    container_name: certbot-prod
+    volumes:
+      - ./certbot/www:/var/www/certbot
+      - ./certbot/conf:/etc/letsencrypt
+    command: certonly --webroot --webroot-path=/var/www/certbot --email admin@semtas.local --agree-tos --no-eff-email -d pgben.semtas.local -d grafana.pgben.semtas.local -d prometheus.pgben.semtas.local
+    depends_on:
+      - nginx
+    networks:
+      - nginx-external
+    profiles:
+      - certbot  # Usar profile para executar apenas quando necessário
+
+  # Serviço para renovação automática (cron job)
+  certbot-renew:
+    image: certbot/certbot:latest
+    container_name: certbot-renew-prod
+    volumes:
+      - ./certbot/www:/var/www/certbot
+      - ./certbot/conf:/etc/letsencrypt
+    command: renew --webroot --webroot-path=/var/www/certbot
+    depends_on:
+      - nginx
+    networks:
+      - nginx-external
+    profiles:
+      - certbot-renew  # Usar profile para executar apenas quando necessário
+
+volumes:
+  nginx_logs:
+    driver: local
+    name: pgben_nginx_logs_prod
+
+networks:
+  # Rede externa para comunicação com internet
+  nginx-external:
+    driver: bridge
+    name: nginx-external-prod
+  
+  # Rede interna já definida no docker-compose.prod.yml
+  pgben-network-prod:
+    external: true

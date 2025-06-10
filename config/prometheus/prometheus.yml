@@ -18,9 +18,13 @@ scrape_configs:
       - targets: ['localhost:9090']
 
   - job_name: 'pgben-api'
-    metrics_path: '/metrics'
+    metrics_path: '/metrics' # O endpoint de métricas padrão do NestJS com Prometheus
     static_configs:
-      - targets: ['host.docker.internal:3000']
+      - targets: ['pgben-server:3000'] # Nome do serviço e porta definidos no docker-compose.prod.yml
+    # Se o APP_PORT for diferente de 3000 no .env.prod, ajuste a porta aqui também.
+    # Exemplo com variável de ambiente (requer que o Prometheus processe variáveis, o que não é padrão):
+    # - targets: ['pgben-server:${APP_PORT:-3000}'] 
+    # Docker DNS resolverá 'pgben-server' para o IP do container correto na rede 'pgben-network'.
     
   - job_name: 'node-exporter'
     static_configs:

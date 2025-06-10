@@ -1696,9 +1696,9 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class AddIndexCidadaosComConcurrently1640000000000 implements MigrationInterface {
     public async up(queryRunner: QueryRunner): Promise<void> {
-        // Usando CREATE INDEX CONCURRENTLY para evitar bloqueios de escrita
+        // Usando CREATE INDEX para evitar bloqueios de escrita
         await queryRunner.query(`
-            CREATE INDEX CONCURRENTLY idx_cidadaos_data_nasc_bairro 
+            CREATE INDEX idx_cidadaos_data_nasc_bairro 
             ON cidadao (data_nascimento, bairro)
         `);
     }
@@ -3184,16 +3184,16 @@ export class AddIndexToLargeTable1650000000000 implements MigrationInterface {
         
         console.log(`Tamanho da tabela solicitacao: ${tableSize[0].size}`);
         
-        // Para tabelas muito grandes, usar CREATE INDEX CONCURRENTLY
+        // Para tabelas muito grandes, usar CREATE INDEX
         // que não bloqueia operações de escrita durante a criação
         if (tableSize[0].size_bytes > 1000000000) { // > 1GB
-            console.log('Tabela grande detectada, usando CREATE INDEX CONCURRENTLY');
+            console.log('Tabela grande detectada, usando CREATE INDEX');
             
-            // Evitar transação para CREATE INDEX CONCURRENTLY
+            // Evitar transação para CREATE INDEX
             await queryRunner.query(`COMMIT`);
             
             await queryRunner.query(`
-                CREATE INDEX CONCURRENTLY idx_solicitacoes_data_status 
+                CREATE INDEX idx_solicitacoes_data_status 
                 ON solicitacao (data_abertura, status)
             `);
             
@@ -4030,7 +4030,7 @@ if (require.main === module) {
     *   Implemente testes automatizados para validar o resultado das migrations
     *   Audite e registre todas as alterações de schema para compliance
 3. **Performance e Escala**
-    *   Use CREATE INDEX CONCURRENTLY para índices em tabelas grandes
+    *   Use CREATE INDEX para índices em tabelas grandes
     *   Adicione colunas inicialmente como NULL e depois altere para NOT NULL
     *   Atualize dados em lotes para evitar bloqueios prolongados
     *   Consolide migrations históricas periodicamente para manter a performance

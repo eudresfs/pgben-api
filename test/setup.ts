@@ -25,5 +25,6 @@ if (process.env.TS_NODE_DEV === 'true') {
 // Configurações adicionais podem ser adicionadas aqui
 // Por exemplo, mocks globais, configurações de timezone, etc.
 
-// Configura o timezone para testes
-process.env.TZ = 'UTC';
+// Configura o timezone para testes - deve ser consistente com o TypeORM
+// Configurado para America/Sao_Paulo para manter consistência com o banco de dados
+process.env.TZ = 'America/Sao_Paulo';

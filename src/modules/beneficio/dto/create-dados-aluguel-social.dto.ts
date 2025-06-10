@@ -27,7 +27,7 @@ export class CreateDadosAluguelSocialDto {
   @ApiProperty({
     description: 'Público prioritário (apenas 1 opção)',
     enum: PublicoPrioritarioAluguel,
-    example: PublicoPrioritarioAluguel.GESTANTES_NUTRIZES,
+    example: PublicoPrioritarioAluguel.FAMILIAS_IDOSOS,
   })
   @IsNotEmpty({ message: 'Público prioritário é obrigatório' })
   @IsEnum(PublicoPrioritarioAluguel, {
@@ -41,7 +41,7 @@ export class CreateDadosAluguelSocialDto {
     isArray: true,
     example: [
       EspecificacaoAluguel.VITIMA_VIOLENCIA,
-      EspecificacaoAluguel.LGBTQIA,
+      EspecificacaoAluguel.LGBTQIA_PLUS,
     ],
   })
   @IsOptional()
@@ -99,7 +99,7 @@ export class CreateDadosAluguelSocialDto {
       'Família em situação de extrema vulnerabilidade, necessita acompanhamento psicossocial.',
   })
   @IsOptional()
-  observacoes_adicionais?: string;
+  observacoes?: string;
 }
 
 /**
@@ -109,7 +109,7 @@ export class UpdateDadosAluguelSocialDto {
   @ApiPropertyOptional({
     description: 'Público prioritário (apenas 1 opção)',
     enum: PublicoPrioritarioAluguel,
-    example: PublicoPrioritarioAluguel.GESTANTES_NUTRIZES,
+    example: PublicoPrioritarioAluguel.FAMILIAS_IDOSOS,
   })
   @IsOptional()
   @IsEnum(PublicoPrioritarioAluguel, {
@@ -177,5 +177,5 @@ export class UpdateDadosAluguelSocialDto {
     example: 'Observações atualizadas após reavaliação.',
   })
   @IsOptional()
-  observacoes_adicionais?: string;
+  observacoes?: string;
 }
