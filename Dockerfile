@@ -51,14 +51,15 @@ COPY --from=build --chown=nextjs:nodejs /app/dist ./dist
 # Copy scripts directory for JWT key generation
 COPY --chown=nextjs:nodejs scripts/ ./scripts/
 
-# Switch to non-root user
-USER nextjs
-
-# Generate JWT keys
-RUN npm run jwt:generate
+# Copy docker entrypoint script
+COPY --chown=nextjs:nodejs docker-entrypoint.sh ./docker-entrypoint.sh
+RUN chmod +x ./docker-entrypoint.sh
 
 # Create logs directory with proper permissions
-RUN mkdir -p /app/logs
+RUN mkdir -p /app/logs && chown nextjs:nodejs /app/logs
+
+# Switch to non-root user
+USER nextjs
 
 # Expose port
 EXPOSE 3000
@@ -70,5 +71,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=45s --retries=3 \
 # Use dumb-init for proper signal handling
 ENTRYPOINT ["dumb-init", "--"]
 
-# Start application
-CMD ["node", "dist/main"]
+# Start application using entrypoint script
+CMD ["./docker-entrypoint.sh"]
