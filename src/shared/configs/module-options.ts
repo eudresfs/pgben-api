@@ -20,6 +20,11 @@ export const configModuleOptions: ConfigModuleOptions = {
     JWT_REFRESH_SECRET: Joi.string().required(),
     JWT_ACCESS_TOKEN_EXPIRES_IN: Joi.string().required(),
     JWT_REFRESH_TOKEN_EXPIRES_IN: Joi.string().required(),
+    // Chaves JWT - opcionais pois suportamos estratégia híbrida (Base64 ou arquivos)
+    JWT_PRIVATE_KEY_PATH: Joi.string().optional(),
+    JWT_PUBLIC_KEY_PATH: Joi.string().optional(),
+    JWT_PRIVATE_KEY_BASE64: Joi.string().optional(),
+    JWT_PUBLIC_KEY_BASE64: Joi.string().optional(),
     DEFAULT_ADMIN_USER_PASSWORD: Joi.string().required(),
   }),
 };
