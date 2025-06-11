@@ -18,8 +18,6 @@ export const configModuleOptions: ConfigModuleOptions = {
     DB_PASS: Joi.string().required(),
     JWT_SECRET: Joi.string().required(),
     JWT_REFRESH_SECRET: Joi.string().required(),
-    JWT_PRIVATE_KEY_PATH: Joi.string().required(),
-    JWT_PUBLIC_KEY_PATH: Joi.string().required(),
     JWT_ACCESS_TOKEN_EXPIRES_IN: Joi.string().required(),
     JWT_REFRESH_TOKEN_EXPIRES_IN: Joi.string().required(),
     DEFAULT_ADMIN_USER_PASSWORD: Joi.string().required(),
