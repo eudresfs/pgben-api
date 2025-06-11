@@ -4,6 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { LogAuditoria } from '../../../entities/log-auditoria.entity';
 import { HealthCheckService } from '../../../shared/services/health-check.service';
+import * as Minio from 'minio';
 
 /**
  * Serviço responsável por verificar a saúde dos componentes do sistema
@@ -125,22 +126,43 @@ export class HealthService {
    * @returns Status da conexão com o MinIO
    */
   private async checkMinIO(): Promise<any> {
+    const startTime = Date.now();
     try {
-      // Aqui seria ideal ter uma injeção do serviço MinIO para verificar a conexão
-      // Como estamos apenas simulando, retornamos um status positivo
+      // Configurações do MinIO a partir das variáveis de ambiente
+      const useSSL = this.configService.get('MINIO_USE_SSL') === 'true';
+      const endPoint = this.configService.get<string>('MINIO_ENDPOINT', 'localhost');
+      const port = parseInt(this.configService.get<string>('MINIO_PORT', '9000'), 10);
+      const accessKey = this.configService.get<string>('MINIO_ACCESS_KEY', 'minioadmin');
+      const secretKey = this.configService.get<string>('MINIO_SECRET_KEY', 'minioadmin');
+      const bucketName =
+        this.configService.get<string>('MINIO_BUCKET_NAME') ||
+        this.configService.get<string>('MINIO_BUCKET', 'pgben-documentos');
 
+      // Inicializa cliente MinIO
+      const minioClient = new Minio.Client({
+        endPoint,
+        port,
+        useSSL,
+        accessKey,
+        secretKey,
+      });
+
+      // Verifica se o bucket existe (teste de conectividade e credenciais)
+      await minioClient.bucketExists(bucketName);
+
+      const responseTime = Date.now() - startTime;
       return {
         status: 'up',
-        responseTime: 0,
+        responseTime,
       };
     } catch (error) {
-      this.logger.error(
-        `Erro ao verificar conexão com MinIO: ${error.message}`,
-      );
+      const responseTime = Date.now() - startTime;
+      this.logger.error(`Erro ao verificar conexão com MinIO: ${error.message}`);
 
       return {
         status: 'down',
         error: error.message,
+        responseTime,
       };
     }
   }

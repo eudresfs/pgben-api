@@ -1,0 +1,67 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: minio-audit-config
+  namespace: pgben
+data:
+  audit.yaml: |
+    logger:
+      enable: on
+      level: info
+    
+    api:
+      enable: on
+      level: all
+    
+    audit:
+      enable: on
+      format: json
+      file:
+        enable: on
+        prefix: audit
+        address: /var/log/minio/audit
+        rotate:
+          enable: on
+          size: 100M
+          count: 10
+    
+      kafka:
+        enable: off
+        brokers:
+          - kafka-service:9092
+        topic: minio-audit
+        tls:
+          enable: off
+          skipVerify: off
+        sasl:
+          enable: off
+          username: ""
+          password: ""
+    
+      webhook:
+        enable: on
+        endpoint: http://pgben-audit-service:8080/api/auditoria/minio
+        auth_token: ${AUDIT_WEBHOOK_TOKEN}
+        client_cert: ""
+        client_key: ""
+        
+    filters:
+      - resources:
+          - arn:aws:s3:::pgben-documentos/*
+        actions:
+          - s3:GetObject*
+          - s3:PutObject*
+          - s3:DeleteObject*
+          - s3:ListBucket*
+        conditions:
+          - key: s3:ExistingObjectTag/sensivel
+            value: "true"
+            operator: eq
+      - resources:
+          - arn:aws:s3:::pgben-documentos/*
+        actions:
+          - s3:DeleteObject*
+        conditions:
+          - key: s3:ExistingObjectTag/tipo
+            value: "legal"
+            operator: eq

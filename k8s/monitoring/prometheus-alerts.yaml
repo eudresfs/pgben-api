@@ -1,0 +1,26 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: pgben-alerts
+  labels:
+    prometheus: pgben
+spec:
+  groups:
+  - name: pgben-health.rules
+    rules:
+    - alert: APIReadinessFailed
+      expr: probe_success{job="kubernetes", endpoint="health-ready"} == 0
+      for: 2m
+      labels:
+        severity: critical
+      annotations:
+        summary: "API não está pronta"
+        description: "O endpoint /health/ready está falhando há mais de 2 minutos."
+    - alert: MinIOOffline
+      expr: probe_success{job="kubernetes", endpoint="minio-health"} == 0
+      for: 2m
+      labels:
+        severity: warning
+      annotations:
+        summary: "MinIO não responde"
+        description: "Falha contínua no healthcheck do MinIO."

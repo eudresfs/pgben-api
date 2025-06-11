@@ -35,16 +35,53 @@ export interface EmailTemplate {
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
   private transporter: Transporter;
-  private templatesCache = new Map<string, EmailTemplate>();
+  /**
+   * Cache de templates com TTL (em produção).
+   * O valor armazenado contém o template e a data/hora do carregamento.
+   */
+  private templatesCache = new Map<
+    string,
+    { template: EmailTemplate; loadedAt: number }
+  >();
+  // TTL em milissegundos. Obtido de variável de ambiente ou padrão de 1 hora.
+  private readonly templateTtlMs: number;
   private readonly templatesDir: string;
   private readonly isEnabled: boolean;
   private readonly isDevelopment: boolean;
 
   constructor(private readonly configService: ConfigService) {
-    this.templatesDir = path.join(process.cwd(), 'src', 'templates', 'email');
-    this.isEnabled = this.configService.get<boolean>('EMAIL_ENABLED', false);
+    // Determinar diretório de templates compatível com ambientes de desenvolvimento (src) e produção (dist)
+    const devTemplatesDir = path.join(process.cwd(), 'src', 'templates', 'email');
+    const prodTemplatesDir = path.join(
+      __dirname,
+      '..',
+      '..',
+      '..',
+      'templates',
+      'email',
+    );
+    this.templatesDir = fs.existsSync(devTemplatesDir)
+      ? devTemplatesDir
+      : prodTemplatesDir;
+
+    // Converter variável de ambiente EMAIL_ENABLED (string) para booleano de forma robusta
+    const emailEnabledRaw =
+      this.configService.get<string>('EMAIL_ENABLED') || 'false';
+    this.isEnabled = ['true', '1', 'yes', 'y'].includes(
+      emailEnabledRaw.toString().toLowerCase(),
+    );
+
+    // Detectar ambiente de desenvolvimento de forma resiliente
     this.isDevelopment =
-      this.configService.get<string>('NODE_ENV') === 'development';
+      (this.configService.get<string>('NODE_ENV') || process.env.NODE_ENV) ===
+      'development';
+
+    // TTL do cache de templates (segundos) -> ms. Desabilitado em dev.
+    const ttlSeconds = this.configService.get<number>(
+      'EMAIL_TEMPLATE_TTL',
+      3600,
+    );
+    this.templateTtlMs = ttlSeconds * 1000;
 
     if (this.isEnabled) {
       // Inicialização síncrona para garantir que o transporter esteja disponível
@@ -168,10 +205,9 @@ export class EmailService {
         auth: { user: user!, pass: pass! },
         tls: {
           rejectUnauthorized: false,
-          ignoreTLS: true,
+          ignoreTLS: true, // Ignora completamente TLS se necessário
         },
         connectionTimeout: 30000,
-        greetingTimeout: 15000,
         socketTimeout: 30000,
         debug: true,
         logger: true,
@@ -442,7 +478,13 @@ export class EmailService {
   ): Promise<EmailTemplate | null> {
     // Verificar cache primeiro (apenas em produção)
     if (!this.isDevelopment && this.templatesCache.has(templateName)) {
-      return this.templatesCache.get(templateName)!;
+      const cached = this.templatesCache.get(templateName)!;
+      // Verificar TTL
+      if (Date.now() - cached.loadedAt < this.templateTtlMs) {
+        return cached.template;
+      }
+      // Caso expirado, remover e recarregar
+      this.templatesCache.delete(templateName);
     }
 
     try {
@@ -488,7 +530,10 @@ export class EmailService {
 
       // Cache do template (apenas em produção)
       if (!this.isDevelopment) {
-        this.templatesCache.set(templateName, template);
+        this.templatesCache.set(templateName, {
+          template,
+          loadedAt: Date.now(),
+        });
       }
 
       this.logger.debug(`Template '${templateName}' carregado com sucesso`);

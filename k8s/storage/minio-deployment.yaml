@@ -25,6 +25,10 @@ spec:
         - /data
         - --console-address
         - ":9001"
+        - --config-dir
+        - "/etc/minio/config"
+        - --certs-dir
+        - "/etc/minio/certs"
         ports:
         - containerPort: 9000
           name: api
@@ -47,6 +51,10 @@ spec:
         volumeMounts:
         - name: minio-data
           mountPath: /data
+        - name: minio-config
+          mountPath: /etc/minio/config
+        - name: minio-certs
+          mountPath: /etc/minio/certs
         resources:
           requests:
             cpu: "250m"
@@ -58,7 +66,7 @@ spec:
           httpGet:
             path: /minio/health/live
             port: api
-            scheme: HTTP
+            scheme: HTTPS
           initialDelaySeconds: 120
           periodSeconds: 20
           timeoutSeconds: 10
@@ -66,7 +74,7 @@ spec:
           httpGet:
             path: /minio/health/ready
             port: api
-            scheme: HTTP
+            scheme: HTTPS
           initialDelaySeconds: 60
           periodSeconds: 10
           timeoutSeconds: 5
@@ -74,6 +82,28 @@ spec:
       - name: minio-data
         persistentVolumeClaim:
           claimName: minio-pvc
+      - name: minio-config
+        projected:
+          sources:
+          - configMap:
+              name: minio-encryption-config
+          - configMap:
+              name: minio-audit-config
+      - name: minio-certs
+        secret:
+          secretName: minio-tls
+      initContainers:
+      - name: set-bucket-policy
+        image: minio/mc:RELEASE.2023-05-18T00-05-36Z
+        command:
+        - /bin/sh
+        - -c
+        - |
+          /usr/bin/mc alias set myminio https://minio:9000 $MINIO_ROOT_USER $MINIO_ROOT_PASSWORD --api S3v4 && \
+          /usr/bin/mc policy set none myminio/pgben-documents || true
+        envFrom:
+        - secretRef:
+            name: pgben-minio-secrets
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000

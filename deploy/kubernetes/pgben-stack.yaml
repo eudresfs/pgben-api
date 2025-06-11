@@ -1,0 +1,374 @@
+# Namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: pgben
+---
+# Secrets (PLACEHOLDERS – substitua pelos valores reais ou use "kubectl create secret")
+apiVersion: v1
+kind: Secret
+metadata:
+  name: pgben-secrets
+  namespace: pgben
+stringData:
+  DB_USER: "pgben"
+  DB_PASS: "superSecretDbPass"
+  JWT_SECRET: "change-me-jwt-secret"
+  REDIS_PASSWORD: "redisSecretPass"
+  MINIO_ACCESS_KEY: "minioadmin"
+  MINIO_SECRET_KEY: "minioadmin123"
+  COOKIE_SECRET: "cookie-secret"
+  SESSION_SECRET: "session-secret"
+  CSRF_SECRET: "csrf-secret"
+  SMTP_PASSWORD: "smtp-pass"
+---
+# ConfigMap for non-sensitive vars
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pgben-config
+  namespace: pgben
+  labels:
+    app: pgben-server
+
+data:
+  DB_HOST: "postgres"
+  DB_PORT: "5432"
+  DB_NAME: "pgben_prod"
+  REDIS_HOST: "redis"
+  REDIS_PORT: "6379"
+  MINIO_ENDPOINT: "minio"
+  MINIO_PORT: "9000"
+  MINIO_BUCKET_NAME: "pgben-documents"
+  MINIO_USE_SSL: "false"
+  SMTP_HOST: "mailhog"
+  SMTP_PORT: "1025"
+  PORT: "3000"
+---
+# PostgreSQL (StatefulSet + Service + PVC)
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: pgben
+spec:
+  selector:
+    matchLabels:
+      app: postgres
+  serviceName: "postgres"
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:15-alpine
+          env:
+            - name: POSTGRES_DB
+              valueFrom:
+                configMapKeyRef:
+                  name: pgben-config
+                  key: DB_NAME
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: pgben-secrets
+                  key: DB_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: pgben-secrets
+                  key: DB_PASS
+          ports:
+            - containerPort: 5432
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "$(POSTGRES_USER)"]
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "$(POSTGRES_USER)"]
+            initialDelaySeconds: 10
+            periodSeconds: 10
+      volumes:
+        - name: postgres-data
+          persistentVolumeClaim:
+            claimName: postgres-pvc
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+  namespace: pgben
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: pgben
+spec:
+  ports:
+    - port: 5432
+  selector:
+    app: postgres
+---
+# Redis Deployment + Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: pgben
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+        - name: redis
+          image: redis:7-alpine
+          command: ["sh", "-c", "redis-server --requirepass $REDIS_PASSWORD --appendonly yes"]
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: pgben-secrets
+                  key: REDIS_PASSWORD
+          ports:
+            - containerPort: 6379
+          readinessProbe:
+            tcpSocket:
+              port: 6379
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 6379
+            initialDelaySeconds: 15
+            periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: pgben
+spec:
+  ports:
+    - port: 6379
+  selector:
+    app: redis
+---
+# MinIO Deployment + Service (single-node)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: minio
+  namespace: pgben
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: minio
+  template:
+    metadata:
+      labels:
+        app: minio
+    spec:
+      containers:
+        - name: minio
+          image: minio/minio:latest
+          args: ["server", "/data", "--console-address", ":9001"]
+          env:
+            - name: MINIO_ROOT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: pgben-secrets
+                  key: MINIO_ACCESS_KEY
+            - name: MINIO_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: pgben-secrets
+                  key: MINIO_SECRET_KEY
+            - name: MINIO_BROWSER_REDIRECT_URL
+              value: "http://localhost:9001"
+          ports:
+            - containerPort: 9000
+            - containerPort: 9001
+          volumeMounts:
+            - name: minio-data
+              mountPath: /data
+          readinessProbe:
+            httpGet:
+              path: /minio/health/live
+              port: 9000
+            initialDelaySeconds: 20
+            periodSeconds: 10
+      volumes:
+        - name: minio-data
+          persistentVolumeClaim:
+            claimName: minio-pvc
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: minio-pvc
+  namespace: pgben
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio
+  namespace: pgben
+spec:
+  ports:
+    - port: 9000
+      name: api
+    - port: 9001
+      name: console
+  selector:
+    app: minio
+---
+# PGBEN Server Deployment + Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pgben-server
+  namespace: pgben
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pgben-server
+  template:
+    metadata:
+      labels:
+        app: pgben-server
+    spec:
+      containers:
+        - name: pgben-server
+          image: pgben-server:latest # Substitua pela imagem em seu registry
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef:
+                name: pgben-config
+          env:
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: pgben-secrets
+                  key: DB_USER
+            - name: DB_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: pgben-secrets
+                  key: DB_PASS
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: pgben-secrets
+                  key: JWT_SECRET
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: pgben-secrets
+                  key: REDIS_PASSWORD
+            - name: MINIO_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: pgben-secrets
+                  key: MINIO_ACCESS_KEY
+            - name: MINIO_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: pgben-secrets
+                  key: MINIO_SECRET_KEY
+            - name: COOKIE_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: pgben-secrets
+                  key: COOKIE_SECRET
+            - name: SESSION_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: pgben-secrets
+                  key: SESSION_SECRET
+            - name: CSRF_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: pgben-secrets
+                  key: CSRF_SECRET
+            - name: SMTP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: pgben-secrets
+                  key: SMTP_PASSWORD
+          ports:
+            - containerPort: 3000
+          readinessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pgben-server
+  namespace: pgben
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3000
+      targetPort: 3000
+  selector:
+    app: pgben-server
+---
+# Ingress (assumindo um controlador Ingress instalado – ajuste conforme necessário)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: pgben-ingress
+  namespace: pgben
+  annotations:
+    kubernetes.io/ingress.class: "nginx" # ajuste conforme seu Controller
+spec:
+  rules:
+    - host: pgben.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: pgben-server
+                port:
+                  number: 3000

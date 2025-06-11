@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: email-config
+  namespace: pgben
+data:
+  EMAIL_ENABLED: "true"
+  EMAIL_PROVIDER: "ses"  # ses|sendgrid|smtp
+  EMAIL_FROM: "no-reply@pgben.kemosoft.com.br"
+  EMAIL_REGION: "us-east-1"

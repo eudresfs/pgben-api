@@ -37,3 +37,32 @@ data:
     
     echo "[INFO] Processo de backup concluído em $(date)"
     exit 0
+
+  minio-backup.sh: |
+    #!/bin/bash
+    # Script simplificado para backup do MinIO usando mc mirror em modo incremental
+
+    BACKUP_DIR="/backups/minio"
+    TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+    RETENTION_DAYS=7
+
+    mkdir -p $BACKUP_DIR
+
+    echo "[INFO] Configurando mc client"
+    /usr/bin/mc alias set myminio http://$MINIO_ENDPOINT:$MINIO_PORT $MINIO_ACCESS_KEY $MINIO_SECRET_KEY --api S3v4
+
+    echo "[INFO] Iniciando backup incremental do bucket $MINIO_BUCKET_NAME para $BACKUP_DIR/$TIMESTAMP"
+    /usr/bin/mc mirror --overwrite --remove --quiet myminio/$MINIO_BUCKET_NAME $BACKUP_DIR/$TIMESTAMP
+
+    if [ $? -eq 0 ]; then
+      echo "[INFO] Backup do MinIO concluído com sucesso"
+    else
+      echo "[ERRO] Falha no backup do MinIO"
+      exit 1
+    fi
+
+    echo "[INFO] Removendo backups com mais de $RETENTION_DAYS dias"
+    find $BACKUP_DIR -maxdepth 1 -type d -mtime +$RETENTION_DAYS -exec rm -rf {} \;
+
+    echo "[INFO] Processo de backup do MinIO finalizado em $(date)"
+    exit 0

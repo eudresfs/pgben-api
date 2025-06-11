@@ -123,50 +123,44 @@ RUN apk add --no-cache git
 # Copiar dependências completas
 COPY --from=deps /app/node_modules ./node_modules
 
+# Garantir que o usuário não-root tenha permissão de escrita em node_modules
+RUN chown -R nextjs:nodejs /app/node_modules
+
 # Copiar código fonte
 COPY --chown=nextjs:nodejs . .
 
-# Mudar para usuário não-root
+# Criar diretório para chaves JWT se não existir (executado como root)
+RUN mkdir -p /app/keys
+
+# Copiar entrypoint e dar permissões (executado como root)
+COPY docker-entrypoint.dev.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.dev.sh
+
+# Alternar para usuário não-root após ajustes de permissão
 USER nextjs
 
 # Expor porta da aplicação e porta de debug
 EXPOSE 3000 9229
-
-# Criar diretório para chaves JWT se não existir
-RUN mkdir -p /app/keys
-
-# Copiar entrypoint e dar permissões
-COPY docker-entrypoint.dev.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/docker-entrypoint.dev.sh
 
 # Usar entrypoint para desenvolvimento
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.dev.sh"]
 CMD ["npm", "run", "start:dev"]
 
 # =============================================================================
-# Stage 6: Imagem para testes (opcional)
-# =============================================================================
-FROM development AS test
-
-# Definir ambiente de teste
-ENV NODE_ENV=test
-
-# Executar testes
-RUN npm run test:unit
-
-# Comando padrão para testes
-CMD ["npm", "run", "test"]
-
-# =============================================================================
 # Configurações de segurança adicionais
 # =============================================================================
 
-# Remover informações sensíveis
-RUN rm -rf /tmp/* /var/tmp/* /root/.npm /home/nextjs/.npm
+# Alternar temporariamente para root para limpar caches sensíveis
+USER root
+RUN rm -rf /tmp/* /var/tmp/* /root/.npm /home/nextjs/.npm || true
 
-# Configurar permissões restritivas
-RUN chmod -R 755 /app && \
+# Criar diretórios de runtime e configurar permissões restritivas
+RUN mkdir -p /app/logs /app/uploads /app/temp && \
+    chmod -R 755 /app && \
     chmod -R 700 /app/logs /app/uploads /app/temp
+
+# Retornar ao usuário não-root para execução da aplicação
+USER nextjs
 
 # Adicionar labels de segurança
 LABEL security.scan="enabled"
@@ -182,9 +176,6 @@ LABEL security.readonly-rootfs="false"
 
 # Para build de desenvolvimento:
 # docker build --target development -t pgben-server:dev .
-
-# Para build com testes:
-# docker build --target test -t pgben-server:test .
 
 # Para executar:
 # docker run -p 3000:3000 --env-file .env pgben-server:latest

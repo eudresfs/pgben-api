@@ -12,12 +12,14 @@ import {
   VersioningType,
 } from '@nestjs/common';
 import { ResponseInterceptor } from './shared/interceptors/response.interceptor';
+import { RedactLogsInterceptor } from './shared/interceptors/redact-logs.interceptor';
 import { RemoveEmptyParamsInterceptor } from './shared/interceptors/remove-empty-params.interceptor';
 import { CatalogAwareExceptionFilter } from './shared/exceptions/error-catalog';
 import { setupSwagger } from './shared/configs/swagger/index';
 import { applySecurity } from './config/security.config';
 import { ConfigService } from '@nestjs/config';
 import compression from 'compression';
+import { UnifiedLoggerService } from './shared/logging/unified-logger.service';
 
 /**
  * Configura e inicializa a aplicação NestJS
@@ -26,7 +28,7 @@ async function bootstrap(): Promise<INestApplication> {
   const logger = new Logger('Bootstrap');
 
   try {
-    logger.log('🚀 Iniciando aplicação SEMTAS...');
+    logger.log('🚀 Iniciando aplicação PGBEN...');
 
     // Criar a aplicação NestJS com configurações otimizadas
     const app = await NestFactory.create(AppModule, {
@@ -99,8 +101,9 @@ async function bootstrap(): Promise<INestApplication> {
     // Interceptor para remover parâmetros vazios das requisições
     app.useGlobalInterceptors(new RemoveEmptyParamsInterceptor());
 
-    // Ignorar parâmetros inexistentes nos DTOs
-    app.useGlobalPipes(new ValidationPipe({whitelist: true}))
+    // Interceptor de redaction de logs (LGPD compliance)
+    const unifiedLogger = await app.resolve(UnifiedLoggerService);
+    app.useGlobalInterceptors(new RedactLogsInterceptor(unifiedLogger));
 
     // Interceptor de resposta padronizada
     app.useGlobalInterceptors(new ResponseInterceptor());
@@ -143,6 +146,17 @@ async function bootstrap(): Promise<INestApplication> {
 
     // === LOGS DE INICIALIZAÇÃO ===
     logStartupInfo(port, environment, isDevelopment, configService);
+
+    // Redireciona todas as instâncias de Logger padrão para o UnifiedLoggerService
+    const nestLogger = Logger as any;
+    const methods = ['log', 'error', 'warn', 'debug', 'verbose'];
+    methods.forEach((method) => {
+      nestLogger.prototype[method] = function (...args: unknown[]) {
+        // Preserve contexto (first arg often message, second 'context')
+        // @ts-ignore
+        return unifiedLogger[method].call(unifiedLogger, ...args);
+      };
+    });
 
     return app;
   } catch (error) {
@@ -217,8 +231,8 @@ function logStartupInfo(
   logger.log(`📦 Versão da API: v1`);
 
   logger.log('📍 Rotas principais disponíveis:');
-  logger.log(`   ├─ GET  ${baseUrl}/ (health check raiz)`);
-  logger.log(`   ├─ GET  ${baseUrl}/health (health check detalhado)`);
+  logger.log(`   ├─ GET  ${baseUrl}/health (liveness)`);
+  logger.log(`   ├─ GET  ${baseUrl}/health/ready (readiness)`);
   logger.log(`   ├─ GET  ${baseUrl}/metrics (métricas do sistema)`);
   logger.log(`   └─ POST ${baseUrl}/api/auth/login (autenticação)`);
 

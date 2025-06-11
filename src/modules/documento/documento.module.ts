@@ -18,6 +18,7 @@ import { AuthModule } from '../../auth/auth.module';
 import { UnifiedLoggerModule } from '../../shared/logging/unified-logger.module';
 import { UnifiedLoggerService } from '../../shared/logging/unified-logger.service';
 import { SharedModule } from '../../shared/shared.module';
+import { StorageHealthService } from './services/storage-health.service';
 
 /**
  * Módulo de Documentos
@@ -68,6 +69,7 @@ import { SharedModule } from '../../shared/shared.module';
     MimeValidationService,
     StorageProviderFactory,
     LocalStorageAdapter,
+    StorageHealthService,
     {
       provide: S3StorageAdapter,
       useFactory: (
@@ -93,6 +95,11 @@ import { SharedModule } from '../../shared/shared.module';
     },
     InputSanitizerValidator,
   ],
-  exports: [TypeOrmModule, DocumentoService, StorageProviderFactory],
+  exports: [
+    TypeOrmModule,
+    DocumentoService,
+    StorageProviderFactory,
+    StorageHealthService,
+  ],
 })
 export class DocumentoModule {}

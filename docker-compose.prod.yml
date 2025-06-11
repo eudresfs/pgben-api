@@ -13,10 +13,12 @@ services:
       - "3000:3000"
     environment:
       - NODE_ENV=production
-      - PORT=3000
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_NAME=${DB_NAME:-pgben_prod}
+      # Configurações do PostgreSQL
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_USER=${DB_USER}
+      - DB_PASS=${DB_PASS}
+      - DB_NAME=${DB_NAME}
       # Secrets são montados como arquivos em /run/secrets/
       - DB_USER_FILE=/run/secrets/db_user
       - DB_PASS_FILE=/run/secrets/db_password
@@ -50,8 +52,6 @@ services:
       - csrf_secret
       - smtp_password
     depends_on:
-      postgres:
-        condition: service_healthy
       redis:
         condition: service_healthy
       minio:
@@ -59,44 +59,11 @@ services:
     networks:
       - pgben-network-prod
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/api/v1/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health/ready"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 60s
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-        compress: "true"
-
-  postgres:
-    image: postgres:15-alpine
-    container_name: postgres-prod
-    restart: unless-stopped
-    environment:
-      - POSTGRES_DB=${DB_NAME:-pgben_prod}
-      - POSTGRES_USER_FILE=/run/secrets/db_user
-      - POSTGRES_PASSWORD_FILE=/run/secrets/db_password
-      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
-    secrets:
-      - db_user
-      - db_password
-    volumes:
-      - postgres_data_prod:/var/lib/postgresql/data
-      - ./config/postgres/postgresql.conf:/etc/postgresql/postgresql.conf:ro
-      - ./config/postgres/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
-    ports:
-      - "5432:5432"
-    networks:
-      - pgben-network-prod
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $(cat /run/secrets/db_user) -d ${DB_NAME:-pgben_prod}"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 30s
     logging:
       driver: "json-file"
       options:
@@ -114,8 +81,9 @@ services:
     volumes:
       - redis_data_prod:/data
       - ./config/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
-    ports:
-      - "6379:6379"
+    # Redis não expõe porta externa em produção
+    #ports:
+    #  - "6379:6379"
     networks:
       - pgben-network-prod
     healthcheck:
@@ -143,9 +111,10 @@ services:
       - minio_secret_key
     volumes:
       - minio_data_prod:/data
-    ports:
-      - "9000:9000"
-      - "9001:9001"
+    # MinIO não expõe portas externas em produção; acessível apenas via rede interna
+    #ports:
+    #  - "9000:9000"
+    #  - "9001:9001"
     networks:
       - pgben-network-prod
     healthcheck:
@@ -246,8 +215,6 @@ services:
         compress: "true"
 
 volumes:
-  postgres_data_prod:
-    driver: local
   redis_data_prod:
     driver: local
   minio_data_prod:

@@ -10,7 +10,8 @@ import {
 import { Public } from '../../auth/decorators/public.decorator';
 import { ApiTags } from '@nestjs/swagger';
 import { HealthCheckService as AppHealthCheckService } from '../services/health-check.service';
-// import { StorageHealthService } from '../../modules/documento/services/storage-health.service';
+import { StorageHealthService } from '../../modules/documento/services/storage-health.service';
+import { UnifiedLoggerService } from '../logging/unified-logger.service';
 
 /**
  * Controlador de Health Check
@@ -19,7 +20,7 @@ import { HealthCheckService as AppHealthCheckService } from '../services/health-
  * e seus componentes (banco de dados, memória, disco, etc.)
  */
 @ApiTags('Métricas e Dashboard')
-@Controller({ path: 'health', version: '1' })
+@Controller('health')
 export class HealthController {
   constructor(
     private health: HealthCheckService,
@@ -28,75 +29,74 @@ export class HealthController {
     private memory: MemoryHealthIndicator,
     private disk: DiskHealthIndicator,
     private appHealthCheck: AppHealthCheckService,
-    // private storageHealth: StorageHealthService,
+    private storageHealth: StorageHealthService,
+    private readonly logger: UnifiedLoggerService,
   ) {
-    console.log('🔥 DEBUG: HealthController inicializado');
-    console.log('🔥 DEBUG: Caminho do controller:', '/health');
+    this.logger.setContext(HealthController.name);
   }
 
   /**
-   * Endpoint principal de health check
-   * Verifica todos os componentes da aplicação
+   * Endpoint de liveness – resposta rápida para indicar que a app está rodando
    */
   @Get()
   @Public()
-  @HealthCheck()
-  async check() {
-    console.log('🔥 HEALTH CONTROLLER: check() foi chamado!');
+  liveness() {
+    this.logger.debug('Liveness check');
+    return {
+      status: 'ok',
+      timestamp: new Date(),
+      version: process.env.npm_package_version || '1.0.0',
+    };
+  }
 
-    // Verificar disponibilidade do Redis
+  /**
+   * Endpoint de readiness – verifica dependências externas
+   */
+  @Get('ready')
+  @Public()
+  @HealthCheck()
+  async readiness() {
+    this.logger.debug('Readiness check');
+
     const isRedisAvailable = await this.appHealthCheck.isRedisAvailable();
     const disableRedis = process.env.DISABLE_REDIS === 'true';
 
     return this.health.check([
-      // Verificar se o banco de dados está funcionando
       () => this.db.pingCheck('database'),
-
-      // Verificar se o site oficial está acessível
-      () => this.http.pingCheck('site_oficial', 'https://www.natal.rn.gov.br/'),
-
-      // Verificar uso de memória
-      () => this.memory.checkHeap('memory_heap', 300 * 1024 * 1024), // 300MB
-
-      // Verificar uso de disco
+      () =>
+        this.http.pingCheck('frontend', 'https://pgben-front.kemosoft.com.br/'),
+      () => this.memory.checkHeap('memory_heap', 300 * 1024 * 1024),
       () =>
         this.disk.checkStorage('disk', {
           path: '/',
-          thresholdPercent: 0.9, // 90% de uso máximo
+          thresholdPercent: 0.9,
         }),
-
-      // Verificar Redis
+      async () => ({
+        redis: {
+          status: disableRedis
+            ? 'disabled'
+            : isRedisAvailable
+              ? 'up'
+              : 'down',
+          message: disableRedis
+            ? 'Redis desabilitado por configuração'
+            : isRedisAvailable
+              ? 'Conexão com Redis estabelecida'
+              : 'Não foi possível conectar ao Redis',
+        },
+      }) as unknown as Record<string, any>,
       async () => {
-        // Usando o formato correto para HealthIndicatorResult
+        const storageStatus = await this.storageHealth.checkHealth();
         return {
-          redis: {
-            status: disableRedis
-              ? 'disabled'
-              : isRedisAvailable
-                ? 'up'
-                : 'down',
-            message: disableRedis
-              ? 'Redis desabilitado por configuração'
-              : isRedisAvailable
-                ? 'Conexão com Redis estabelecida'
-                : 'Não foi possível conectar ao Redis',
+          storage: {
+            status: storageStatus.isHealthy ? 'up' : 'down',
+            provider: storageStatus.provider,
+            message: storageStatus.details.error || 'OK',
+            details: storageStatus.details,
+            lastChecked: storageStatus.timestamp,
           },
-        } as unknown as Record<string, any>; // Forçar tipo compatível com HealthIndicatorResult
+        } as unknown as Record<string, any>;
       },
-
-      // Verificar Storage (S3/MinIO) - Temporariamente desabilitado
-      // async () => {
-      //   const storageStatus = await this.storageHealth.checkHealth();
-      //   return {
-      //     storage: {
-      //       status: storageStatus.isHealthy ? 'up' : 'down',
-      //       provider: storageStatus.provider,
-      //       message: storageStatus.details.error || 'OK',
-      //       details: storageStatus.details,
-      //       lastChecked: storageStatus.timestamp,
-      //     }
-      //   } as unknown as Record<string, any>;
-      // },
     ]);
   }
 
@@ -107,7 +107,6 @@ export class HealthController {
   @Get('ping')
   @Public()
   ping() {
-    console.log('🔥 HEALTH CONTROLLER: ping() foi chamado!');
     return {
       status: 'ok',
       timestamp: new Date().toISOString(),
@@ -145,24 +144,6 @@ export class HealthController {
   }
 
   /**
-   * Verifica apenas o storage (S3/MinIO) - Temporariamente desabilitado
-   */
-  // @Get('storage')
-  // @Public()
-  // async checkStorage() {
-  //   const storageStatus = await this.storageHealth.checkHealth();
-  //   return {
-  //     storage: {
-  //       status: storageStatus.isHealthy ? 'up' : 'down',
-  //       provider: storageStatus.provider,
-  //       message: storageStatus.details.error || 'OK',
-  //       details: storageStatus.details,
-  //       lastChecked: storageStatus.timestamp,
-  //     }
-  //   };
-  // }
-
-  /**
    * Verifica a disponibilidade do Redis
    */
   @Get('redis')
@@ -183,6 +164,24 @@ export class HealthController {
               ? 'Conexão com Redis estabelecida'
               : 'Não foi possível conectar ao Redis',
         },
+      },
+    };
+  }
+
+  /**
+   * Verifica apenas o storage (S3/MinIO)
+   */
+  @Get('storage')
+  @Public()
+  async checkStorage() {
+    const storageStatus = await this.storageHealth.checkHealth();
+    return {
+      storage: {
+        status: storageStatus.isHealthy ? 'up' : 'down',
+        provider: storageStatus.provider,
+        message: storageStatus.details.error || 'OK',
+        details: storageStatus.details,
+        lastChecked: storageStatus.timestamp,
       },
     };
   }

@@ -11,8 +11,11 @@ data:
   MINIO_COMPRESS_MIME_TYPES: "text/csv,text/plain,application/json,application/xml,text/xml,text/html"
   # Configuração de buckets
   MINIO_DOMAIN: "minio.pgben.local"
+  # Forçar uso de SSL e definir URL completa
+  MINIO_USE_SSL: "on"
+  MINIO_SERVER_URL: "https://minio.pgben.local"
   # Configuração de segurança básica
-  MINIO_BROWSER_REDIRECT_URL: "https://minio-console.pgben.gov.br"
+  MINIO_BROWSER_REDIRECT_URL: "https://minio-console.pgben-server.kemosoft.com.br"
   # Configuração de notificações
   MINIO_NOTIFY_WEBHOOK_ENABLE: "off"
   # Configuração de logs

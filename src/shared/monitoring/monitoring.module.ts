@@ -11,6 +11,7 @@ import { EnhancedMetricsController } from './enhanced-metrics.controller';
 import { EnhancedMetricsInterceptor } from './enhanced-metrics.interceptor';
 import { CacheMetricsInterceptor } from './cache-metrics.interceptor';
 import { HealthCheckService } from '../services/health-check.service';
+import { DocumentoModule } from '../../modules/documento/documento.module';
 
 /**
  * Módulo Global de Monitoramento
@@ -20,7 +21,7 @@ import { HealthCheckService } from '../services/health-check.service';
  */
 // Módulo NÃO global para evitar problemas com interceptors
 @Module({
-  imports: [TerminusModule, HttpModule, ConfigModule],
+  imports: [TerminusModule, HttpModule, ConfigModule, forwardRef(() => DocumentoModule)],
   controllers: [HealthController, MetricsController, EnhancedMetricsController],
   providers: [
     MetricsService,

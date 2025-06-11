@@ -1,4 +1,5 @@
-import { Global, Module } from '@nestjs/common';
+
+import { Global, Module, forwardRef } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
@@ -20,7 +21,8 @@ import {
 import { UnifiedLoggerModule } from './logging/unified-logger.module';
 
 // Monitoramento
-import { MonitoringModule } from './monitoring/monitoring.module';
+// Removido para evitar dependência circular - importado diretamente no AppModule
+// import { MonitoringModule } from './monitoring/monitoring.module';
 
 // Services
 import { CriptografiaService } from './services/criptografia.service';
@@ -55,13 +57,12 @@ import { IsCPF } from './validators/cpf.validator';
     }),
     // Módulo unificado de logging
     UnifiedLoggerModule,
-    // Monitoramento
-    MonitoringModule,
+    // Monitoramento movido para AppModule para evitar dependência circular
   ],
   exports: [
     UnifiedLoggerModule,
     ConfigModule,
-    MonitoringModule,
+    // MonitoringModule removido para evitar dependência circular
     CriptografiaService,
     MinioService,
     ChaveMonitorService,

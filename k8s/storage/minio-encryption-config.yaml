@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: minio-encryption-config
+  namespace: pgben
+data:
+  encryption.json: |
+    {
+      "version": "1",
+      "config": {
+        "kms": {
+          "vault": {
+            "endpoint": "http://vault:8200",
+            "auth": {
+              "type": "token",
+              "token": "${VAULT_TOKEN}"
+            },
+            "key_name": "pgben-kms-key",
+            "namespace": ""
+          }
+        },
+        "encryption": {
+          "enabled": true,
+          "force_ssl": true,
+          "config": {
+            "pgben-documents": {
+              "key_id": "pgben-kms-key",
+              "sealed": false
+            }
+          }
+        }
+      }
+    }

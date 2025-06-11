@@ -72,6 +72,9 @@ import { EmailModule } from './shared/modules/email.module';
         },
       }),
     }),
+    // Módulo de documentos (necessário para StorageHealthService)
+    DocumentoModule,
+    
     // Módulo de monitoramento
     MonitoringModule,
 
