@@ -32,7 +32,5 @@ else
   echo "✅ Chaves JWT já existem!"
 fi
 
-
-
 echo "🚀 Iniciando a aplicação PGBen-server..."
 exec node dist/main
