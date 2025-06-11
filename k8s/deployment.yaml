@@ -30,43 +30,43 @@ spec:
         - name: DB_HOST
           valueFrom:
             secretKeyRef:
-              name: pgben-secrets
-              key: db-host
+              name: pgben-database-secrets
+              key: host
         - name: DB_PORT
           valueFrom:
             secretKeyRef:
-              name: pgben-secrets
-              key: db-port
-        - name: DB_USERNAME
+              name: pgben-database-secrets
+              key: port
+        - name: DB_USER
           valueFrom:
             secretKeyRef:
-              name: pgben-secrets
-              key: db-username
-        - name: DB_PASSWORD
+              name: pgben-database-secrets
+              key: username
+        - name: DB_PASS
           valueFrom:
             secretKeyRef:
-              name: pgben-secrets
-              key: db-password
-        - name: DB_DATABASE
+              name: pgben-database-secrets
+              key: password
+        - name: DB_NAME
           valueFrom:
             secretKeyRef:
-              name: pgben-secrets
-              key: db-database
+              name: pgben-database-secrets
+              key: database
         - name: JWT_SECRET
           valueFrom:
             secretKeyRef:
-              name: pgben-secrets
-              key: jwt-secret
+              name: pgben-api-secrets
+              key: jwt_secret
         - name: JWT_REFRESH_SECRET
           valueFrom:
             secretKeyRef:
-              name: pgben-secrets
-              key: jwt-refresh-secret
+              name: pgben-api-secrets
+              key: jwt_refresh_secret
         - name: ENCRYPTION_KEY
           valueFrom:
             secretKeyRef:
-              name: pgben-secrets
-              key: encryption-key
+              name: pgben-api-secrets
+              key: encryption_key
         resources:
           requests:
             memory: "256Mi"
@@ -76,7 +76,7 @@ spec:
             cpu: "500m"
         livenessProbe:
           httpGet:
-            path: /api/v1/health
+            path: /health
             port: 3000
           initialDelaySeconds: 30
           periodSeconds: 10
@@ -84,7 +84,7 @@ spec:
           failureThreshold: 3
         readinessProbe:
           httpGet:
-            path: /api/v1/health
+            path: /health/ready
             port: 3000
           initialDelaySeconds: 5
           periodSeconds: 5
@@ -92,7 +92,7 @@ spec:
           failureThreshold: 3
         startupProbe:
           httpGet:
-            path: /api/v1/health
+            path: /health
             port: 3000
           initialDelaySeconds: 10
           periodSeconds: 10
@@ -139,15 +139,21 @@ spec:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: pgben-secrets
+  name: pgben-database-secrets
 type: Opaque
 data:
-  # Base64 encoded values - replace with actual values
-  db-host: cG9zdGdyZXM=  # postgres
-  db-port: NTQzMg==      # 5432
-  db-username: cGdiZW4=  # pgben
-  db-password: cGFzc3dvcmQ=  # password
-  db-database: cGdiZW4=  # pgben
-  jwt-secret: eW91ci1qd3Qtc2VjcmV0LWhlcmU=  # your-jwt-secret-here
-  jwt-refresh-secret: eW91ci1qd3QtcmVmcmVzaC1zZWNyZXQtaGVyZQ==  # your-jwt-refresh-secret-here
-  encryption-key: eW91ci1lbmNyeXB0aW9uLWtleS1oZXJl  # your-encryption-key-here
+  host: cG9zdGdyZXM=  # postgres
+  port: NTQzMg==      # 5432
+  username: cGdiZW4=  # pgben
+  password: cGFzc3dvcmQ=  # password
+  database: cGdiZW4=  # pgben
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: pgben-api-secrets
+type: Opaque
+data:
+  jwt_secret: eW91ci1qd3Qtc2VjcmV0LWhlcmU=  # your-jwt-secret-here
+  jwt_refresh_secret: eW91ci1qd3QtcmVmcmVzaC1zZWNyZXQtaGVyZQ==  # your-jwt-refresh-secret-here
+  encryption_key: eW91ci1lbmNyeXB0aW9uLWtleS1oZXJl  # your-encryption-key-here
