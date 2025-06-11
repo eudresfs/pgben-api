@@ -55,8 +55,8 @@ COPY --chown=nextjs:nodejs scripts/ ./scripts/
 COPY --chown=nextjs:nodejs docker-entrypoint.sh ./docker-entrypoint.sh
 RUN chmod +x ./docker-entrypoint.sh
 
-# Create logs and uploads directories with proper permissions
-RUN mkdir -p /app/logs /app/uploads && chown -R nextjs:nodejs /app/logs /app/uploads
+# Create logs, uploads and keys directories with proper permissions
+RUN mkdir -p /app/logs /app/uploads /app/keys && chown -R nextjs:nodejs /app/logs /app/uploads /app/keys
 
 # Switch to non-root user
 USER nextjs
