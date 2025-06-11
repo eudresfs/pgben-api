@@ -111,7 +111,8 @@ docker-compose.override.yml
 *.csr
 *.srl
 /certs
-/keys
+*.key
+*.pem
 
 # Backup files
 *.backup

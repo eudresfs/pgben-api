@@ -28,11 +28,11 @@ RUN apk add --no-cache curl wget
 COPY package*.json ./
 RUN npm ci --omit=dev && npm cache clean --force
 
-# Generate JWT keys
-RUN npm run jwt:generate
-
 # Copy built application from build stage
 COPY --from=build /app/dist ./dist
+
+# Generate JWT keys
+RUN npm run jwt:generate
 
 # Copy JWT keys
 COPY keys/ ./keys/
