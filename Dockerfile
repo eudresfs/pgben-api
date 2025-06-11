@@ -38,7 +38,7 @@ COPY scripts/ ./scripts/
 RUN npm run jwt:generate
 
 # Copy JWT keys (if they exist locally)
-COPY keys/ ./keys/ 2>/dev/null || true
+COPY keys/ ./keys/
 
 # Portas expostas
 EXPOSE 3000
