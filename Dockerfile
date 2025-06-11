@@ -31,11 +31,14 @@ RUN npm ci --omit=dev && npm cache clean --force
 # Copy built application from build stage
 COPY --from=build /app/dist ./dist
 
+# Copy scripts directory for JWT key generation
+COPY scripts/ ./scripts/
+
 # Generate JWT keys
 RUN npm run jwt:generate
 
-# Copy JWT keys
-COPY keys/ ./keys/
+# Copy JWT keys (if they exist locally)
+COPY keys/ ./keys/ 2>/dev/null || true
 
 # Portas expostas
 EXPOSE 3000
