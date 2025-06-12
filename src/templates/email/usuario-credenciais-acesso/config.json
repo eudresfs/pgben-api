@@ -1,6 +1,6 @@
 {
   "codigo": "usuario-credenciais-acesso",
-  "subject": "Credenciais de Acesso - SEMTAS",
+  "subject": "Credenciais de Acesso - PGBen",
   "description": "Template para envio de credenciais de acesso para novos usuários",
   "variables": {
     "nome": "Nome do usuário",
@@ -13,6 +13,6 @@
     "year": "Ano atual"
   },
   "version": "1.0.0",
-  "author": "Tech Lead SEMTAS",
+  "author": "Tech Lead PGBen",
   "lastModified": "2024-12-19"
 }

@@ -25,6 +25,7 @@ import { CatalogAwareExceptionFilter } from './shared/exceptions/error-catalog';
 import { UnifiedLoggerModule } from './shared/logging/unified-logger.module';
 import { ResilienceModule } from './shared/modules/resilience.module';
 import { EmailModule } from './shared/modules/email.module';
+import { ConfiguracaoModule } from './modules/configuracao/configuracao.module';
 
 @Module({
   imports: [
@@ -117,6 +118,9 @@ import { EmailModule } from './shared/modules/email.module';
 
     // Módulo de logs de auditoria
     LogsModule,
+
+    // Módulo de configuração
+    ConfiguracaoModule,
   ],
   controllers: [AppController],
   providers: [

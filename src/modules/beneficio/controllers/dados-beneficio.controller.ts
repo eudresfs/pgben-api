@@ -10,6 +10,7 @@ import {
   UseGuards,
   HttpStatus,
   BadRequestException,
+  Query,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -18,13 +19,12 @@ import {
   ApiParam,
   ApiBody,
   ApiBearerAuth,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../auth/guards/roles.guard';
-import { Roles } from '../../../auth/decorators/role.decorator';
 import { GetUser } from '../../../auth/decorators/get-user.decorator';
 import { Usuario } from '../../../entities/usuario.entity';
-import { UserRole } from '../../../enums';
 import { DadosBeneficioFactoryService } from '../services/dados-beneficio-factory.service';
 import {
   TipoDadosBeneficio,
@@ -32,10 +32,6 @@ import {
   ICreateDadosBeneficioDto,
   IUpdateDadosBeneficioDto,
 } from '../interfaces/dados-beneficio.interface';
-import { CreateDadosAluguelSocialDto,UpdateDadosAluguelSocialDto } from '../dto/create-dados-aluguel-social.dto';
-import { CreateDadosNatalidadeDto, UpdateDadosNatalidadeDto } from '../dto/create-dados-natalidade.dto';
-import { CreateDadosFuneralDto,UpdateDadosFuneralDto } from '../dto/create-dados-funeral.dto';
-import { CreateDadosCestaBasicaDto, UpdateDadosCestaBasicaDto } from '../dto/create-dados-cesta-basica.dto';
 
 /**
  * Controlador centralizado para gerenciar dados de todos os tipos de benefícios
@@ -312,7 +308,7 @@ export class DadosBeneficioController {
   /**
    * Buscar dados específicos por ID
    */
-  @Get(':codigoOrId/:id')
+  @Get(':codigoOrId/dados/:id')
   @ApiOperation({
     summary: 'Buscar dados específicos de benefício por ID',
     description:
@@ -822,5 +818,27 @@ export class DadosBeneficioController {
       codigoOrId,
       createDto,
     );
+  }
+
+   /**
+   * Obtém o schema ativo de um tipo de benefício
+   * Aceita tanto o ID quanto o código do benefício
+   */
+  @Get(':codigoOrId/schema')
+  @ApiOperation({ summary: 'Obter schema ativo de um benefício' })
+  @ApiResponse({ status: 200, description: 'Schema retornado com sucesso' })
+  @ApiResponse({ status: 404, description: 'Tipo de benefício não encontrado' })
+  @ApiParam({
+    name: 'codigoOrId',
+    description: 'Código ou ID do tipo de benefício',
+    example: 'aluguel-social',
+  })
+  async getSchemaAtivo(
+    @Param('codigoOrId') codigoOrId: string,
+  ) {
+    if (!codigoOrId) {
+      throw new BadRequestException('O parâmetro codigoOrId é obrigatório');
+    }
+    return this.dadosBeneficioFactoryService.getSchemaAtivo(codigoOrId);
   }
 }

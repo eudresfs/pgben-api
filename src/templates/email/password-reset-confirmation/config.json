@@ -1,5 +1,6 @@
 {
-  "subject": "Senha Alterada com Sucesso - SEMTAS",
+  "codigo": "alteracao-senha",
+  "subject": "Senha Alterada com Sucesso - PGBEN",
   "description": "Template de confirmação após alteração de senha",
   "variables": {
     "name": "Nome do usuário",
@@ -11,6 +12,6 @@
     "year": "Ano atual"
   },
   "version": "1.0.0",
-  "author": "Tech Lead SEMTAS",
+  "author": "Tech Lead PGBEN",
   "lastModified": "2024-01-15"
 }

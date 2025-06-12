@@ -5,6 +5,7 @@ import { UsuarioService } from './services/usuario.service';
 import { UsuarioRepository } from './repositories/usuario.repository';
 import { AuthModule } from '../../auth/auth.module';
 import { NotificacaoModule } from '../notificacao/notificacao.module';
+import { EmailModule } from '../../common/email.module';
 import { Usuario, Role, NotificationTemplate } from '../../entities';
 
 /**
@@ -17,7 +18,8 @@ import { Usuario, Role, NotificationTemplate } from '../../entities';
   imports: [
     TypeOrmModule.forFeature([Usuario, Role, NotificationTemplate]),
     forwardRef(() => AuthModule),
-    NotificacaoModule,
+    forwardRef(() => NotificacaoModule),
+    EmailModule,
   ],
   controllers: [UsuarioController],
   providers: [UsuarioService, UsuarioRepository],

@@ -105,10 +105,11 @@ export class CreateUsuarioDto {
   matricula: string;
 
   @IsUUID(undefined, { message: 'ID da role inválido' })
+  @IsNotEmpty({ message: 'Role é obrigatório' })
   @ApiProperty({
     example: '123e4567-e89b-12d3-a456-426614174000',
     description: 'ID do perfil do nível de acesso do usuário',
-    required: false,
+    required: true,
   })
   role_id: string;
 

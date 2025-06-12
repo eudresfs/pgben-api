@@ -1,5 +1,6 @@
 {
-  "subject": "Recuperação de Senha - SEMTAS",
+  "codigo": "reset-senha",
+  "subject": "Recuperação de Senha - PGBen",
   "description": "Template para envio de link de recuperação de senha",
   "variables": {
     "name": "Nome do usuário",
@@ -10,6 +11,6 @@
     "year": "Ano atual"
   },
   "version": "1.0.0",
-  "author": "Tech Lead SEMTAS",
+  "author": "Tech Lead PGBen",
   "lastModified": "2024-01-15"
 }

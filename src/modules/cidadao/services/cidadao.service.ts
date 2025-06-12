@@ -8,7 +8,7 @@ import {
   Inject,
   forwardRef,
 } from '@nestjs/common';
-import { Like, ILike } from 'typeorm';
+import { Like, ILike, DataSource } from 'typeorm';
 import {
   AppError,
   throwFromPostgresError,
@@ -61,6 +61,7 @@ export class CidadaoService {
     private readonly cacheService: CacheService,
     @Inject(forwardRef(() => PapelCidadaoService))
     private readonly papelCidadaoService: PapelCidadaoService,
+    private readonly dataSource: DataSource,
   ) {}
 
   /**
@@ -1558,4 +1559,31 @@ export class CidadaoService {
       return [];
      }
    }
+
+  /**
+   * Busca todos os bairros únicos registrados no sistema
+   * @returns Lista de bairros únicos ordenados alfabeticamente
+   */
+  async findAllBairros(): Promise<string[]> {
+    this.logger.log('Buscando todos os bairros únicos');
+
+    try {
+      // Consulta para buscar bairros únicos a partir dos endereços dos cidadãos (campo JSONB)
+      const result = await this.dataSource.query(
+        `SELECT DISTINCT (endereco->>'bairro') as bairro 
+         FROM cidadao 
+         WHERE endereco->>'bairro' IS NOT NULL 
+           AND endereco->>'bairro' <> '' 
+           AND removed_at IS NULL
+         ORDER BY bairro ASC`
+      );
+
+      // Extrair apenas os nomes dos bairros do resultado
+      const bairros = result.map(item => item.bairro);
+      return bairros;
+    } catch (error) {
+      this.logger.error(`Erro ao buscar bairros: ${error.message}`, error.stack);
+      throw new BadRequestException('Erro ao buscar bairros');
+    }
+  }
 }

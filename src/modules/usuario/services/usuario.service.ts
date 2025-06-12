@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import {
   throwUserNotFound,
   throwDuplicateEmail,
@@ -25,9 +25,10 @@ import { Usuario } from '../../../entities/usuario.entity';
 import { Role } from '../../../entities/role.entity';
 import { Status } from '../../../enums/status.enum';
 import { NotificationManagerService } from '../../notificacao/services/notification-manager.service';
-import { NotificationTemplate } from '../../../entities/notification-template.entity';
+import { CanalNotificacao, NotificationTemplate } from '../../../entities/notification-template.entity';
 import { normalizeEnumFields } from '../../../shared/utils/enum-normalizer.util';
 import { throwDuplicateCpf } from '@/shared/exceptions/error-catalog/domains';
+import { EmailService } from '../../../common/services/email.service';
 
 /**
  * Serviço de usuários
@@ -49,6 +50,7 @@ export class UsuarioService {
     private readonly templateRepository: Repository<NotificationTemplate>,
     @InjectRepository(Role)
     private readonly roleRepository: Repository<Role>,
+    private readonly emailService: EmailService,
   ) {}
 
   /**
@@ -91,14 +93,36 @@ export class UsuarioService {
     senha: string,
   ): Promise<void> {
     try {
-      // Buscar template de credenciais
+      // Buscar template de credenciais na tabela notification_template
       const template = await this.templateRepository.findOne({
-        where: { nome: 'Credenciais de Acesso - Novo Usuário' },
+        where: { codigo: 'usuario-credenciais-acesso' },
       });
 
       if (!template) {
-        this.logger.error('Template de credenciais não encontrado');
-        return;
+        this.logger.warn('Template de credenciais não encontrado. Tentando enviar email direto.');
+        
+        // Fallback: enviar email direto usando o serviço de email
+        try {
+          await this.emailService.sendEmail({
+            to: usuario.email,
+            subject: 'Credenciais de Acesso - Sistema PGBEN',
+            template: 'usuario-credenciais-acesso',
+            context: {
+              nome: usuario.nome,
+              email: usuario.email,
+              senha: senha,
+              matricula: usuario.matricula,
+              sistema_url: process.env.FRONTEND_URL || 'https://pgben.natal.rn.gov.br',
+              data_criacao: new Date().toLocaleDateString('pt-BR'),
+            },
+          });
+          
+          this.logger.log(`Credenciais enviadas por email direto para: ${usuario.email}`);
+          return;
+        } catch (emailError) {
+          this.logger.error(`Erro ao enviar email direto: ${emailError.message}`);
+          return;
+        }
       }
 
       // Dados para o template
@@ -117,6 +141,7 @@ export class UsuarioService {
         template_id: template.id,
         destinatario_id: usuario.id,
         dados_contexto: dadosTemplate,
+        canal: CanalNotificacao.EMAIL
       });
 
       this.logger.log(`Credenciais enviadas por email para: ${usuario.email}`);
@@ -282,10 +307,25 @@ export class UsuarioService {
 
     try {
       // Usar transação para garantir consistência
-      return await this.dataSource.transaction(async (manager) => {
+      const resultado = await this.dataSource.transaction(async (manager) => {
         const usuarioRepo = manager.getRepository('usuario');
         const unidadeRepo = manager.getRepository('unidade');
         const setorRepo = manager.getRepository('setor');
+        const roleRepo = manager.getRepository('role');
+
+        // Verificar se role existe (obrigatório)
+        if (!createUsuarioDto.role_id) {
+          this.logger.warn('Role é obrigatório para criação de usuário');
+          throw new BadRequestException('Role é obrigatório');
+        }
+
+        const role = await roleRepo.findOne({
+          where: { id: createUsuarioDto.role_id },
+        });
+        if (!role) {
+          this.logger.warn(`Role não encontrada: ${createUsuarioDto.role_id}`);
+          throw new BadRequestException(`Role com ID ${createUsuarioDto.role_id} não encontrada`);
+        }
 
         // Verificar se email já existe
         const emailExistente = await usuarioRepo.findOne({
@@ -316,7 +356,7 @@ export class UsuarioService {
           throwDuplicateMatricula(createUsuarioDto.matricula);
         }
 
-        // Verificar se a unidade existe
+        // Verificar se a unidade existe (se informada)
         if (createUsuarioDto.unidade_id) {
           const unidade = await unidadeRepo.findOne({
             where: { id: createUsuarioDto.unidade_id },
@@ -325,23 +365,29 @@ export class UsuarioService {
             this.logger.warn(
               `Unidade não encontrada: ${createUsuarioDto.unidade_id}`,
             );
-            // Note: Unit not found check needs to be implemented with appropriate error
+            throw new BadRequestException(`Unidade com ID ${createUsuarioDto.unidade_id} não encontrada`);
+          }
+        }
+
+        // Verificar se o setor existe e pertence à unidade (se informado)
+        if (createUsuarioDto.setor_id) {
+          // Se setor é informado, unidade também deve ser informada
+          if (!createUsuarioDto.unidade_id) {
+            this.logger.warn('Setor informado sem unidade correspondente');
+            throw new BadRequestException('Quando setor é informado, a unidade também deve ser informada');
           }
 
-          // Verificar se o setor existe e pertence à unidade
-          if (createUsuarioDto.setor_id) {
-            const setor = await setorRepo.findOne({
-              where: {
-                id: createUsuarioDto.setor_id,
-                unidade_id: createUsuarioDto.unidade_id,
-              },
-            });
-            if (!setor) {
-              this.logger.warn(
-                `Setor não encontrado para a unidade: ${createUsuarioDto.setor_id}`,
-              );
-              // Note: Sector not found check needs to be implemented with appropriate error
-            }
+          const setor = await setorRepo.findOne({
+            where: {
+              id: createUsuarioDto.setor_id,
+              unidade_id: createUsuarioDto.unidade_id,
+            },
+          });
+          if (!setor) {
+            this.logger.warn(
+              `Setor não encontrado para a unidade: ${createUsuarioDto.setor_id}`,
+            );
+            throw new BadRequestException(`Setor com ID ${createUsuarioDto.setor_id} não encontrado para a unidade ${createUsuarioDto.unidade_id}`);
           }
         }
 
@@ -383,20 +429,15 @@ export class UsuarioService {
 
         const usuarioSalvo = await usuarioRepo.save(novoUsuario);
 
-        // Enviar credenciais por email se senha foi gerada
-        if (senhaGerada) {
-          await this.enviarCredenciaisPorEmail(
-            usuarioSalvo as Usuario,
-            senhaParaUso,
-          );
-        }
-
         this.logger.log(`Usuário criado com sucesso: ${usuarioSalvo.id}`);
 
         // Remover campos sensíveis
         const { senhaHash: _, ...usuarioSemSenha } = usuarioSalvo;
 
         return {
+          usuarioSalvo: usuarioSalvo as Usuario,
+          senhaGerada,
+          senhaParaUso,
           data: usuarioSemSenha,
           meta: null,
           message: senhaGerada
@@ -404,6 +445,21 @@ export class UsuarioService {
             : 'Usuário criado com sucesso.',
         };
       });
+
+      // Enviar credenciais por email após a transação ser commitada
+      if (resultado.senhaGerada) {
+        await this.enviarCredenciaisPorEmail(
+          resultado.usuarioSalvo,
+          resultado.senhaParaUso,
+        );
+      }
+
+      // Retornar apenas os dados necessários
+      return {
+        data: resultado.data,
+        meta: resultado.meta,
+        message: resultado.message,
+      };
     } catch (error) {
       this.logger.error(`Erro ao criar usuário: ${error.message}`, error.stack);
       if (error instanceof Error) {
@@ -826,16 +882,14 @@ export class UsuarioService {
         order: { nome: 'ASC' },
       });
 
-      return {
-        data: roles,
-        meta: { total: roles.length },
-        message: 'Roles retornadas com sucesso',
-      };
+      return roles;
     } catch (error) {
       this.logger.error(`Erro ao buscar roles: ${error.message}`, error.stack);
-      // Note: Internal error handling needs to be implemented with appropriate error
+      // Retorna um array vazio em caso de erro para evitar erros de tipagem
+      return [];
     }
   }
+
 
   async alterarSenhaPrimeiroAcesso(
     userId: string,

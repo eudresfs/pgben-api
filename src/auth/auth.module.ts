@@ -37,9 +37,9 @@ import { PermissionGuard } from './guards/permission.guard';
 import { createJwtConfig } from '../config/jwt.config';
 
 // Modules
+import { AuditModule } from '../audit/audit.module';
 import { UsuarioModule } from '../modules/usuario/usuario.module';
 import { forwardRef } from '@nestjs/common';
-import { AuditModule } from '../audit/audit.module';
 import { AppLoggerModule } from '../shared/logger/logger.module';
 import { PermissionModule } from './permission.module';
 
@@ -85,7 +85,8 @@ import { PermissionModule } from './permission.module';
       }),
     }),
 
-    // Módulos da aplicação
+    forwardRef(() => UsuarioModule),
+    forwardRef(() => AuditModule),
     ConfigModule,
     forwardRef(() => UsuarioModule),
     forwardRef(() => AuditModule),

@@ -9,10 +9,11 @@ import {
   NotificacaoSistema,
   StatusNotificacaoProcessamento,
 } from '../../../entities/notification.entity';
-import { CanalNotificacao } from '../interfaces/notification-channel.interface';
+import { CanalNotificacao, ResultadoEnvio } from '../interfaces/notification-channel.interface';
 import { TemplateRendererService } from './template-renderer.service';
 import { CreateNotificationDto } from '../dtos/create-notification.dto';
 import { CreateNotificationTemplateDto } from '../dtos/create-notification-template.dto';
+import { EmailService } from '../../../common/services/email.service';
 
 /**
  * Serviço Gerenciador de Notificações
@@ -33,7 +34,17 @@ export class NotificationManagerService implements OnModuleInit {
     private templateRenderer: TemplateRendererService,
     private moduleRef: ModuleRef,
     private scheduleAdapter: ScheduleAdapterService,
+    private emailService: EmailService,
   ) {}
+
+  /**
+   * Resolve o UsuarioService de forma lazy para evitar dependência circular
+   * @returns UsuarioService instance
+   */
+  private async getUsuarioService() {
+    const { UsuarioService } = await import('../../usuario/services/usuario.service');
+    return this.moduleRef.get(UsuarioService, { strict: false });
+  }
 
   /**
    * Inicializa os canais de notificação disponíveis
@@ -55,7 +66,7 @@ export class NotificationManagerService implements OnModuleInit {
     createTemplateDto: CreateNotificationTemplateDto,
   ): Promise<NotificationTemplate> {
     // Verificar se os canais informados estão disponíveis
-    for (const canal of createTemplateDto.canais_suportados) {
+    for (const canal of createTemplateDto.canais_disponiveis) {
       if (!this.canaisNotificacao.has(canal)) {
         this.logger.warn(
           `Canal ${canal} informado no template não está disponível no sistema`,
@@ -246,12 +257,26 @@ export class NotificationManagerService implements OnModuleInit {
       // Iterar sobre os canais suportados pelo template
       let sucessoEmAlgumCanal = false;
 
-      for (const canalId of notificacao.template.canais_suportados) {
-        const canal = this.canaisNotificacao.get(canalId);
+      // Garantir que canais_disponiveis seja sempre um array
+      const canaisDisponiveis = Array.isArray(notificacao.template.canais_disponiveis) 
+        ? notificacao.template.canais_disponiveis 
+        : [notificacao.template.canais_disponiveis];
+
+      this.logger.debug(
+        `Processando notificação ${notificacaoId} com canais: ${JSON.stringify(canaisDisponiveis)}`,
+      );
+      this.logger.debug(
+        `Canais registrados no momento: ${Array.from(this.canaisNotificacao.keys()).join(', ')}`,
+      );
+
+      for (const canalId of canaisDisponiveis) {
+        // Limpar possíveis espaços e garantir string
+        const canalIdLimpo = String(canalId).trim();
+        const canal = this.canaisNotificacao.get(canalIdLimpo);
 
         if (!canal) {
           this.logger.warn(
-            `Canal ${canalId} não encontrado para notificação ${notificacaoId}`,
+            `Canal ${canalIdLimpo} não encontrado para notificação ${notificacaoId}. Canais registrados: ${Array.from(this.canaisNotificacao.keys()).join(', ')}`,
           );
           continue;
         }
@@ -259,7 +284,7 @@ export class NotificationManagerService implements OnModuleInit {
         // Verificar disponibilidade do canal
         const disponivel = await canal.verificarDisponibilidade();
         if (!disponivel) {
-          this.logger.warn(`Canal ${canalId} não está disponível no momento`);
+          this.logger.warn(`Canal ${canalIdLimpo} não está disponível no momento`);
           continue;
         }
 
@@ -390,29 +415,76 @@ export class NotificationManagerService implements OnModuleInit {
    * Registra todos os canais de notificação disponíveis no sistema
    */
   private async registrarCanaisDisponiveis(): Promise<void> {
+    this.logger.log('Iniciando registro de canais de notificação disponíveis');
     try {
       // Buscar todos os serviços que implementam a interface CanalNotificacao
       // Na prática, você registraria cada canal explicitamente no módulo
       // Esta é uma abordagem mais dinâmica, mas na maioria dos casos você
       // faria o registro explícito de cada canal no NotificacaoModule
 
-      // Verificar se o EmailChannelService está disponível
+      // Verificar se o EmailService está disponível e configurado
       try {
-        // Registrar canal de email
-        const emailChannel = this.moduleRef.get('EmailChannelService', {
-          strict: false,
-        });
-
-        if (emailChannel && 'canal_id' in emailChannel) {
-          this.canaisNotificacao.set(emailChannel.canal_id, emailChannel);
-          this.logger.log(
-            `Canal de notificação registrado: ${emailChannel.canal_id}`,
+        // Verificar se o EmailService está habilitado e configurado
+        const emailDisponivel = this.emailService && this.emailService.isEmailEnabled();
+        
+        this.logger.debug(`EmailService disponível: ${!!this.emailService}, habilitado: ${emailDisponivel}`);
+        
+        if (emailDisponivel) {
+          // Criar um canal de email usando o EmailService compartilhado
+          const canalEmail: CanalNotificacao = {
+            canal_id: 'email',
+            verificarDisponibilidade: async () => emailDisponivel,
+            enviar: async (notificacao: NotificacaoSistema): Promise<ResultadoEnvio> => {
+              try {
+                this.logger.debug(`Tentando enviar email para usuário ID: ${notificacao.destinatario_id}`);
+                this.logger.debug(`Assunto: ${notificacao.template.assunto}`);
+                this.logger.debug(`Dados contexto: ${JSON.stringify(notificacao.dados_contexto)}`);
+                
+                // Buscar o email do usuário pelo ID
+                const usuarioService = await this.getUsuarioService();
+                const usuario = await usuarioService.findById(notificacao.destinatario_id);
+                if (!usuario || !usuario.email) {
+                  throw new Error(`Usuário com ID ${notificacao.destinatario_id} não encontrado ou sem email`);
+                }
+                
+                this.logger.debug(`Email do usuário encontrado: ${usuario.email}`);
+                
+                const sucesso = await this.emailService.sendEmail({
+                  to: usuario.email,
+                  subject: notificacao.template.assunto,
+                  template: notificacao.template.corpo_html || notificacao.template.corpo,
+                  context: notificacao.dados_contexto,
+                });
+                
+                return {
+                  sucesso,
+                  mensagem: sucesso ? 'Email enviado com sucesso' : 'Falha no envio do email',
+                  data_envio: new Date(),
+                  dados_resposta: { enviado: sucesso, email_destinatario: usuario.email }
+                };
+              } catch (error) {
+                this.logger.error(`Erro detalhado ao enviar email: ${error.message}`, error.stack);
+                return {
+                  sucesso: false,
+                  mensagem: `Erro ao enviar email: ${error.message}`,
+                  data_envio: new Date(),
+                  erro: error as Error
+                };
+              }
+            }
+          };
+          
+          this.canaisNotificacao.set('email', canalEmail);
+          this.logger.log('Canal de notificação registrado: email');
+        } else {
+          this.logger.warn(
+            'EmailService não está habilitado ou configurado. Notificações por email não serão enviadas.',
           );
         }
       } catch (e) {
-        // O EmailChannelService não está disponível, mas isso não deve impedir o funcionamento
         this.logger.warn(
-          'EmailChannelService não está disponível. Notificações por email não serão enviadas.',
+          'Erro ao verificar EmailService. Notificações por email não serão enviadas.',
+          e.message
         );
       }
 
@@ -421,6 +493,9 @@ export class NotificationManagerService implements OnModuleInit {
 
       this.logger.log(
         `Total de ${this.canaisNotificacao.size} canais de notificação registrados`,
+      );
+      this.logger.debug(
+        `Canais registrados: ${Array.from(this.canaisNotificacao.keys()).join(', ')}`,
       );
     } catch (error) {
       this.logger.error(

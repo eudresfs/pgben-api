@@ -1,5 +1,6 @@
 {
-  "subject": "⚠️ Atividade Suspeita Detectada - SEMTAS",
+  "codigo": "atividade-suspeita",
+  "subject": "⚠️ Atividade Suspeita Detectada - PGBen",
   "description": "Template para notificação de atividades suspeitas na conta",
   "variables": {
     "name": "Nome do usuário",
@@ -22,6 +23,6 @@
     "low": "Atividade de baixo risco"
   },
   "version": "1.0.0",
-  "author": "Tech Lead SEMTAS",
+  "author": "Tech Lead PGBen",
   "lastModified": "2024-01-15"
 }

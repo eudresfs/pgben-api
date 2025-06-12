@@ -1,6 +1,10 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from '../../auth/auth.module';
+import { BeneficioModule } from '../beneficio/beneficio.module';
+import { UnidadeModule } from '../unidade/unidade.module';
+import { UsuarioModule } from '../usuario/usuario.module';
+import { CidadaoModule } from '../cidadao/cidadao.module';
 import {
   ParametroService,
   TemplateService,
@@ -26,6 +30,7 @@ import {
   WorkflowController,
   IntegracaoController,
   LimitesController,
+  ReferenciaController,
 } from './controllers';
 
 /**
@@ -48,6 +53,11 @@ import {
     ]),
     // Importa o módulo compartilhado de autenticação
     AuthModule,
+    // Importa módulos necessários para o controller de referência
+    BeneficioModule,
+    UnidadeModule,
+    UsuarioModule,
+    CidadaoModule,
   ],
   controllers: [
     ParametroController,
@@ -55,6 +65,7 @@ import {
     WorkflowController,
     IntegracaoController,
     LimitesController,
+    ReferenciaController,
   ],
   providers: [
     // Repositórios

@@ -6,6 +6,10 @@ import { DadosFuneralService } from './dados-funeral.service';
 import { DadosNatalidadeService } from './dados-natalidade.service';
 import { AbstractDadosBeneficioService } from './base/abstract-dados-beneficio.service';
 import { TipoBeneficioRepository } from '../repositories/tipo-beneficio.repository';
+import { Status } from '@/enums';
+import { TipoBeneficioSchema } from '@/entities';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 
 /**
  * Factory service para gerenciar diferentes tipos de dados de benefício.
@@ -22,6 +26,9 @@ export class DadosBeneficioFactoryService {
     private readonly funeralService: DadosFuneralService,
     private readonly natalidadeService: DadosNatalidadeService,
     private readonly tipoBeneficioRepository: TipoBeneficioRepository,
+
+    @InjectRepository(TipoBeneficioSchema)
+    private tipoBeneficioSchemaRepository: Repository<TipoBeneficioSchema>,
   ) {
     // Mapear tipos de benefício para seus respectivos serviços
     this.serviceMap = new Map();
@@ -71,7 +78,7 @@ export class DadosBeneficioFactoryService {
     }
 
     const codigo = codigoOrId.trim();
-    
+
     // Primeiro, tentar como código
     const tipoPorCodigo = this.codigoToTipoMap.get(codigo);
     if (tipoPorCodigo) {
@@ -82,7 +89,7 @@ export class DadosBeneficioFactoryService {
     const tipoBeneficio = await this.tipoBeneficioRepository.findOne({
       where: { id: codigo }
     });
-    
+
     if (!tipoBeneficio) {
       const codigosDisponiveis = Array.from(this.codigoToTipoMap.keys()).join(', ');
       throw new NotFoundException(
@@ -210,7 +217,7 @@ export class DadosBeneficioFactoryService {
     try {
       const tipo = await this.resolveTipoFromCodigoOrId(codigoOrId);
       const service = this.getService(tipo);
-      
+
       // Tentar validar os dados
       try {
         await service['validateCreateData'](data);
@@ -223,11 +230,11 @@ export class DadosBeneficioFactoryService {
         // Extrair campos faltantes e erros da exceção
         const missingFields: string[] = [];
         const errors: string[] = [];
-        
+
         if (error.message) {
           errors.push(error.message);
         }
-        
+
         // Verificar campos obrigatórios básicos
         const requiredFields = ['solicitacao_id'];
         for (const field of requiredFields) {
@@ -235,7 +242,7 @@ export class DadosBeneficioFactoryService {
             missingFields.push(field);
           }
         }
-        
+
         return {
           isValid: false,
           missingFields,
@@ -248,6 +255,54 @@ export class DadosBeneficioFactoryService {
         missingFields: [],
         errors: [error.message || 'Erro na validação']
       };
+    }
+  }
+
+
+  /**
+* Obtém o schema ativo de um tipo de benefício
+*
+* @param codigoOrId ID ou código do tipo de benefício
+* @returns Schema ativo
+*/
+  async getSchemaAtivo(codigoOrId: string) {
+    try {
+      // Usar o método existente para resolver o tipo de benefício
+      const tipoBeneficio = await this.resolveTipoFromCodigoOrId(codigoOrId);
+      
+      // Obter metadados do tipo para buscar o código correto no banco
+      const metadata = this.getTypeMetadata(tipoBeneficio);
+      
+      // Buscar o tipo de benefício no banco pelo código
+      const tipoBeneficioEntity = await this.tipoBeneficioRepository.findOne({
+        where: { codigo: metadata.codigo },
+      });
+
+      if (!tipoBeneficioEntity) {
+        throw new NotFoundException(
+          `Tipo de benefício com código '${metadata.codigo}' não encontrado no banco de dados`,
+        );
+      }
+
+      // Buscar schema ativo
+      const schemaAtivo = await this.tipoBeneficioSchemaRepository.findOne({
+        where: { tipo_beneficio_id: tipoBeneficioEntity.id, status: Status.ATIVO },
+      });
+
+      if (!schemaAtivo) {
+        throw new NotFoundException(
+          `Schema ativo não encontrado para o tipo de benefício '${metadata.nome}'`,
+        );
+      }
+
+      return schemaAtivo;
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new BadRequestException(
+        `Erro ao buscar schema ativo para o tipo de benefício ${codigoOrId}: ${error.message}`,
+      );
     }
   }
 }

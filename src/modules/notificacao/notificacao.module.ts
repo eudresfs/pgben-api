@@ -3,16 +3,18 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleAdapterModule } from '../../shared/schedule/schedule-adapter.module';
 import { AuthModule } from '../../auth/auth.module';
+// import { UsuarioModule } from '../usuario/usuario.module'; // Removido - usando injeção lazy
 
 // Controladores
 import { NotificacaoController } from './controllers/notificacao.controller';
 import { NotificationTemplateController } from './controllers/notification-template.controller';
+// import { NotificationSseController } from './controllers/notification-sse.controller';
 
 // Serviços
 import { NotificacaoService } from './services/notificacao.service';
 import { NotificationManagerService } from './services/notification-manager.service';
 import { TemplateRendererService } from './services/template-renderer.service';
-import { EmailChannelService } from './channels/email-channel.service';
+import { EmailModule } from '../../common/email.module';
 import { SseService } from './services/sse.service';
 import { SseGuard } from './guards/sse.guard';
 
@@ -30,15 +32,18 @@ import { NotificacaoSistema, NotificationTemplate } from '../../entities';
     TypeOrmModule.forFeature([NotificacaoSistema, NotificationTemplate]),
     ScheduleAdapterModule,
     ConfigModule,
-    // Importa o módulo compartilhado de autenticação
+    EmailModule,
     forwardRef(() => AuthModule),
   ],
-  controllers: [NotificacaoController, NotificationTemplateController],
+  controllers: [
+   NotificacaoController, 
+   NotificationTemplateController, 
+   // NotificationSseController
+   ],
   providers: [
     NotificacaoService,
     NotificationManagerService,
     TemplateRendererService,
-    EmailChannelService,
     SseService,
     SseGuard,
   ],

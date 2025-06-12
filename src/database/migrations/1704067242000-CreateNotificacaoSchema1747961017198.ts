@@ -182,6 +182,7 @@ export class CreateNotificacaoSchema1704067235000
         "integracao_id" uuid,
         "ativo" boolean NOT NULL DEFAULT true,
         "maximo_tentativas" integer NOT NULL DEFAULT 3,
+        "canais_suportados" text[],
         "intervalo_tentativas_minutos" integer NOT NULL DEFAULT 15,
         "ordem_prioridade" integer NOT NULL DEFAULT 0,
         "created_at" TIMESTAMP NOT NULL DEFAULT now(),

@@ -64,17 +64,17 @@ export interface CursorPaginationResult<T> {
 function InvalidateCache(patterns: string[] = ['*']) {
   return function (target: unknown, propertyName: string, descriptor: PropertyDescriptor) {
     const originalMethod = descriptor.value;
-    
+
     descriptor.value = async function (...args: unknown[]) {
       const result = await originalMethod.apply(this, args);
-      
+
       for (const pattern of patterns) {
         await this.cacheService.deletePattern(`cidadao:${pattern}`);
       }
-      
+
       return result;
     };
-    
+
     return descriptor;
   };
 }
@@ -85,33 +85,33 @@ function InvalidateCache(patterns: string[] = ['*']) {
 function Cacheable(keyGenerator: (...args: unknown[]) => string, ttl?: number) {
   return function (target: unknown, propertyName: string, descriptor: PropertyDescriptor) {
     const originalMethod = descriptor.value;
-    
+
     descriptor.value = async function (...args: unknown[]) {
       const lastArg = args[args.length - 1] as { useCache?: boolean } | undefined;
       const useCache = lastArg?.useCache !== false;
-      
+
       if (!useCache) {
         return originalMethod.apply(this, args);
       }
-      
+
       const cacheKey = keyGenerator.apply(this, args);
       const cached = await this.cacheService.get(cacheKey);
-      
+
       if (cached) {
         this.logger.debug(`Cache hit: ${cacheKey}`);
         return cached;
       }
-      
+
       const result = await originalMethod.apply(this, args);
-      
+
       if (result) {
         const cacheTtl = ttl || this.cacheTtl;
         await this.cacheService.set(cacheKey, result, cacheTtl);
       }
-      
+
       return result;
     };
-    
+
     return descriptor;
   };
 }
@@ -129,14 +129,14 @@ const MIN_SEARCH_LENGTH = 3; // Para busca com trigram
  */
 abstract class BaseRepository<T extends ObjectLiteral> {
   protected abstract repository: Repository<T>;
-  
+
   /**
    * Normaliza string removendo caracteres não numéricos
    */
   protected normalizeNumericString(value?: string): string | undefined {
     return value?.replace(/\D/g, '');
   }
-  
+
   /**
    * Cria query builder com campos específicos
    */
@@ -145,12 +145,12 @@ abstract class BaseRepository<T extends ObjectLiteral> {
     fields?: string[]
   ): SelectQueryBuilder<T> {
     const query = this.repository.createQueryBuilder(alias);
-    
+
     if (fields && fields.length > 0) {
       const qualifiedFields = fields.map(field => `${alias}.${field}`);
       query.select(qualifiedFields);
     }
-    
+
     return query;
   }
 }
@@ -165,7 +165,7 @@ export class CidadaoRepository extends BaseRepository<Cidadao> {
   protected repository: Repository<Cidadao>;
   private readonly cacheTtl: number;
   private readonly maxPaginationLimit: number;
-  
+
   constructor(
     private readonly dataSource: DataSource,
     private readonly cacheService: CacheService,
@@ -177,9 +177,9 @@ export class CidadaoRepository extends BaseRepository<Cidadao> {
     this.cacheTtl = this.configService.get('CACHE_TTL', DEFAULT_CACHE_TTL);
     this.maxPaginationLimit = this.configService.get('MAX_PAGINATION_LIMIT', MAX_PAGINATION_LIMIT);
   }
-  
+
   // ========== MÉTODOS DE QUERY BUILDING ==========
-  
+
   /**
    * Adiciona relacionamentos otimizados à query
    */
@@ -190,11 +190,11 @@ export class CidadaoRepository extends BaseRepository<Cidadao> {
     if (!relations || (Array.isArray(relations) && relations.length === 0)) {
       return query;
     }
-    
-    const relationsToLoad = Array.isArray(relations) 
-      ? relations 
+
+    const relationsToLoad = Array.isArray(relations)
+      ? relations
       : this.getDefaultRelations();
-    
+
     // Adicionar apenas relações solicitadas
     relationsToLoad.forEach(relation => {
       switch (relation) {
@@ -206,30 +206,30 @@ export class CidadaoRepository extends BaseRepository<Cidadao> {
             { papelAtivo: true }
           );
           break;
-          
+
         case 'composicao_familiar':
           query.leftJoinAndSelect('cidadao.composicao_familiar', 'composicao_familiar');
           break;
-          
+
         case 'unidade':
           query.leftJoinAndSelect('cidadao.unidade', 'unidade');
           break;
-          
+
         case 'dados_sociais':
           query.leftJoinAndSelect('cidadao.dados_sociais', 'dados_sociais');
           break;
-          
+
         case 'solicitacoes':
           query.leftJoinAndSelect('cidadao.solicitacoes', 'solicitacoes')
             .leftJoinAndSelect('solicitacoes.tipo_beneficio', 'tipo_beneficio')
             .leftJoinAndSelect('solicitacoes.documentos', 'solicitacao_documentos')
             .leftJoinAndSelect('solicitacoes.pagamentos', 'pagamentos');
           break;
-          
+
         case 'documentos':
           query.leftJoinAndSelect('cidadao.documentos', 'documentos');
           break;
-          
+
         case 'info_bancaria':
           query.leftJoinAndSelect('cidadao.info_bancaria', 'info_bancaria')
             .addSelect([
@@ -243,10 +243,10 @@ export class CidadaoRepository extends BaseRepository<Cidadao> {
           break;
       }
     });
-    
+
     return query;
   }
-  
+
   /**
    * Retorna lista de relações padrão
    */
@@ -261,7 +261,7 @@ export class CidadaoRepository extends BaseRepository<Cidadao> {
       'info_bancaria'
     ];
   }
-  
+
   /**
    * Otimiza condições de busca usando índices
    */
@@ -270,14 +270,14 @@ export class CidadaoRepository extends BaseRepository<Cidadao> {
     searchTerm: string,
     searchFields: string[] = ['nome', 'cpf', 'nis']
   ): void {
-    if (!searchTerm || searchTerm.length === 0) {return;}
-    
+    if (!searchTerm || searchTerm.length === 0) { return; }
+
     const conditions: string[] = [];
     const params: Record<string, string> = {};
-    
+
     searchFields.forEach((field, index) => {
       const paramKey = `search_${field}_${index}`;
-      
+
       switch (field) {
         case 'nome':
           if (searchTerm.length >= MIN_SEARCH_LENGTH) {
@@ -289,7 +289,7 @@ export class CidadaoRepository extends BaseRepository<Cidadao> {
             params[paramKey] = `%${searchTerm}%`;
           }
           break;
-          
+
         case 'cpf': {
           const cpfNormalized = this.normalizeNumericString(searchTerm);
           if (cpfNormalized) {
@@ -298,14 +298,14 @@ export class CidadaoRepository extends BaseRepository<Cidadao> {
           }
           break;
         }
-          
+
         case 'nis':
           conditions.push(`cidadao.nis LIKE :${paramKey}`);
           params[paramKey] = `%${searchTerm}%`;
           break;
       }
     });
-    
+
     if (conditions.length > 0) {
       query.andWhere(`(${conditions.join(' OR ')})`);
       Object.entries(params).forEach(([key, value]) => {
@@ -313,7 +313,7 @@ export class CidadaoRepository extends BaseRepository<Cidadao> {
       });
     }
   }
-  
+
   /**
    * Aplica filtros de forma otimizada
    */
@@ -322,8 +322,8 @@ export class CidadaoRepository extends BaseRepository<Cidadao> {
     filters: Record<string, unknown>
   ): void {
     Object.entries(filters).forEach(([key, value]) => {
-      if (value === undefined || value === null) {return;}
-      
+      if (value === undefined || value === null) { return; }
+
       // Tratamento especial para campos JSONB
       if (key.startsWith('endereco.')) {
         const jsonField = key.split('.')[1];
@@ -351,14 +351,14 @@ export class CidadaoRepository extends BaseRepository<Cidadao> {
       }
     });
   }
-  
+
   // ========== MÉTODOS DE BUSCA ==========
-  
+
   /**
    * Busca todos os cidadãos com filtros e paginação
    */
   @Cacheable(
-    function(options: FindAllOptions) {
+    function (options: FindAllOptions) {
       return `cidadao:findAll:${JSON.stringify(options)}`;
     }
   )
@@ -371,39 +371,39 @@ export class CidadaoRepository extends BaseRepository<Cidadao> {
       includeRelations = false,
       specificFields = [],
     } = options;
-    
+
     // Validar limite de paginação
     const limit = Math.min(take, this.maxPaginationLimit);
-    
+
     // Criar query base
     let query = this.createQueryWithFields('cidadao', specificFields);
-    
+
     // Aplicar busca se houver termo
     const { search, ...filters } = where;
     if (search && typeof search === 'string') {
       this.applySearchConditions(query, search);
     }
-    
+
     // Aplicar filtros
     this.applyFilters(query, filters);
-    
+
     // Adicionar relacionamentos
     query = this.addOptimizedRelations(query, includeRelations);
-    
+
     // Ordenação
     Object.entries(order).forEach(([field, direction]) => {
       query.addOrderBy(`cidadao.${field}`, direction);
     });
-    
+
     // Paginação
     query.skip(skip).take(limit);
-    
+
     // Log em desenvolvimento
     this.logQuery(query);
-    
+
     return query.getManyAndCount();
   }
-  
+
   /**
    * Busca cidadão por campo genérico
    */
@@ -414,27 +414,27 @@ export class CidadaoRepository extends BaseRepository<Cidadao> {
     specificFields?: string[]
   ): Promise<Cidadao | null> {
     let query = this.createQueryWithFields('cidadao', specificFields);
-    
+
     // Normalizar valor se for campo numérico
     const normalizedValue = ['cpf', 'nis', 'telefone'].includes(field)
       ? this.normalizeNumericString(value)
       : value;
-    
+
     query.where(`cidadao.${field} = :value`, { value: normalizedValue });
-    
+
     // Adicionar relacionamentos
     query = this.addOptimizedRelations(query, includeRelations);
-    
+
     this.logQuery(query);
-    
+
     return query.getOne();
   }
-  
+
   /**
    * Busca cidadão por ID
    */
   @Cacheable(
-    function(id: string, includeRelations: boolean | string[], specificFields?: string[]) {
+    function (id: string, includeRelations: boolean | string[], specificFields?: string[]) {
       const relations = Array.isArray(includeRelations) ? includeRelations.join(',') : includeRelations;
       const fields = specificFields?.join(',') || '';
       return `cidadao:id:${id}:${relations}:${fields}`;
@@ -447,12 +447,12 @@ export class CidadaoRepository extends BaseRepository<Cidadao> {
   ): Promise<Cidadao | null> {
     return this.findByField('id', id, includeRelations, specificFields);
   }
-  
+
   /**
    * Busca cidadão por CPF
    */
   @Cacheable(
-    function(cpf: string, includeRelations: boolean | string[], specificFields?: string[]) {
+    function (cpf: string, includeRelations: boolean | string[], specificFields?: string[]) {
       const normalizedCpf = this.normalizeNumericString(cpf);
       const relations = Array.isArray(includeRelations) ? includeRelations.join(',') : includeRelations;
       const fields = specificFields?.join(',') || '';
@@ -466,12 +466,12 @@ export class CidadaoRepository extends BaseRepository<Cidadao> {
   ): Promise<Cidadao | null> {
     return this.findByField('cpf', cpf, includeRelations, specificFields);
   }
-  
+
   /**
    * Busca cidadão por NIS
    */
   @Cacheable(
-    function(nis: string, includeRelations: boolean | string[], specificFields?: string[]) {
+    function (nis: string, includeRelations: boolean | string[], specificFields?: string[]) {
       const normalizedNis = this.normalizeNumericString(nis);
       const relations = Array.isArray(includeRelations) ? includeRelations.join(',') : includeRelations;
       const fields = specificFields?.join(',') || '';
@@ -485,12 +485,12 @@ export class CidadaoRepository extends BaseRepository<Cidadao> {
   ): Promise<Cidadao | null> {
     return this.findByField('nis', nis, includeRelations, specificFields);
   }
-  
+
   /**
    * Busca cidadão por telefone
    */
   @Cacheable(
-    function(telefone: string, includeRelations: boolean | string[], specificFields?: string[]) {
+    function (telefone: string, includeRelations: boolean | string[], specificFields?: string[]) {
       const normalizedTelefone = this.normalizeNumericString(telefone);
       const relations = Array.isArray(includeRelations) ? includeRelations.join(',') : includeRelations;
       const fields = specificFields?.join(',') || '';
@@ -504,12 +504,12 @@ export class CidadaoRepository extends BaseRepository<Cidadao> {
   ): Promise<Cidadao | null> {
     return this.findByField('telefone', telefone, includeRelations, specificFields);
   }
-  
+
   /**
    * Busca cidadãos por nome (busca parcial)
    */
   @Cacheable(
-    function(nome: string, includeRelations: boolean | string[], specificFields?: string[]) {
+    function (nome: string, includeRelations: boolean | string[], specificFields?: string[]) {
       const relations = Array.isArray(includeRelations) ? includeRelations.join(',') : includeRelations;
       const fields = specificFields?.join(',') || '';
       return `cidadao:nome:${nome}:${relations}:${fields}`;
@@ -521,21 +521,21 @@ export class CidadaoRepository extends BaseRepository<Cidadao> {
     specificFields?: string[]
   ): Promise<Cidadao[]> {
     let query = this.createQueryWithFields('cidadao', specificFields);
-    
+
     // Aplicar busca por nome usando trigram se disponível
     this.applySearchConditions(query, nome, ['nome']);
-    
+
     // Adicionar relacionamentos
     query = this.addOptimizedRelations(query, includeRelations);
-    
+
     // Ordenar por relevância
     query.orderBy('cidadao.nome', 'ASC');
-    
+
     this.logQuery(query);
-    
+
     return query.getMany();
   }
-  
+
   /**
    * Paginação baseada em cursor (mais eficiente para grandes volumes)
    */
@@ -551,18 +551,18 @@ export class CidadaoRepository extends BaseRepository<Cidadao> {
       includeRelations = false,
       specificFields = [],
     } = options;
-    
+
     const validLimit = Math.min(limit, this.maxPaginationLimit);
-    
+
     let query = this.createQueryWithFields('cidadao', specificFields);
-    
+
     // Aplicar filtros
     const { search, ...filters } = where;
     if (search && typeof search === 'string') {
       this.applySearchConditions(query, search);
     }
     this.applyFilters(query, filters);
-    
+
     // Aplicar cursor
     if (cursor) {
       const operator = orderDirection === 'DESC' ? '<' : '>';
@@ -573,33 +573,33 @@ export class CidadaoRepository extends BaseRepository<Cidadao> {
         { cursorId: cursor }
       );
     }
-    
+
     // Relacionamentos
     query = this.addOptimizedRelations(query, includeRelations);
-    
+
     // Ordenação composta para garantir determinismo
     query
       .orderBy(`cidadao.${orderBy}`, orderDirection)
       .addOrderBy('cidadao.id', orderDirection);
-    
+
     // Buscar um item a mais para verificar próxima página
     query.take(validLimit + 1);
-    
+
     this.logQuery(query);
-    
+
     const items = await query.getMany();
-    
+
     // Verificar próxima página
     const hasNextPage = items.length > validLimit;
     if (hasNextPage) {
       items.pop();
     }
-    
+
     const nextCursor = hasNextPage ? items[items.length - 1]?.id : undefined;
-    
+
     // Obter contagem total (otimizada)
     const count = await this.getOptimizedCount(where);
-    
+
     return {
       items,
       count,
@@ -607,7 +607,7 @@ export class CidadaoRepository extends BaseRepository<Cidadao> {
       hasNextPage,
     };
   }
-  
+
   /**
    * Contagem otimizada usando estatísticas do PostgreSQL
    */
@@ -621,7 +621,7 @@ export class CidadaoRepository extends BaseRepository<Cidadao> {
            WHERE schemaname = current_schema() 
            AND tablename = 'cidadao'`
         );
-        
+
         if (result?.[0]?.estimate) {
           return parseInt(result[0].estimate, 10);
         }
@@ -629,15 +629,15 @@ export class CidadaoRepository extends BaseRepository<Cidadao> {
         this.logger.warn('Falha ao obter estimativa de contagem', error);
       }
     }
-    
+
     // Fallback para contagem exata
     const query = this.repository.createQueryBuilder('cidadao');
     this.applyFilters(query, where);
     return query.getCount();
   }
-  
+
   // ========== MÉTODOS DE ESCRITA ==========
-  
+
   /**
    * Cria novo cidadão
    */
@@ -645,14 +645,14 @@ export class CidadaoRepository extends BaseRepository<Cidadao> {
   async create(data: Partial<Cidadao>): Promise<Cidadao> {
     // Normalizar dados
     const normalizedData = this.normalizeCidadaoData(data);
-    
+
     // Validar dados únicos
     await this.validateUniqueFields(normalizedData);
-    
+
     const cidadao = this.repository.create(normalizedData);
     return this.repository.save(cidadao);
   }
-  
+
   /**
    * Atualiza cidadão existente
    */
@@ -663,37 +663,37 @@ export class CidadaoRepository extends BaseRepository<Cidadao> {
     if (!exists) {
       throw new NotFoundException('Cidadão não encontrado');
     }
-    
+
     // Normalizar dados
     const normalizedData = this.normalizeCidadaoData(data);
-    
+
     // Validar dados únicos (excluindo o próprio registro)
     await this.validateUniqueFields(normalizedData, id);
-    
+
     await this.repository.update(id, normalizedData);
-    
+
     const updated = await this.findById(id, true);
     if (!updated) {
       throw new InternalServerErrorException('Erro ao recuperar cidadão atualizado');
     }
-    
+
     return updated;
   }
-  
+
   /**
    * Remove cidadão (soft delete)
    */
   @InvalidateCache(['*'])
   async remove(id: string): Promise<void> {
     const result = await this.repository.softDelete(id);
-    
+
     if (result.affected === 0) {
       throw new NotFoundException('Cidadão não encontrado');
     }
   }
-  
+
   // ========== COMPOSIÇÃO FAMILIAR ==========
-  
+
   /**
    * Adiciona membro à composição familiar
    */
@@ -708,27 +708,27 @@ export class CidadaoRepository extends BaseRepository<Cidadao> {
         where: { id: cidadaoId },
         relations: ['papeis'],
       });
-      
+
       if (!cidadao) {
         throw new NotFoundException('Cidadão não encontrado');
       }
-      
+
       // Validar regras de negócio
       await this.validateComposicaoFamiliar(cidadao, membro, manager);
-      
+
       // Criar membro
       const novoMembro = manager.create(ComposicaoFamiliar, {
         cidadao: { id: cidadaoId },
         ...this.normalizeComposicaoFamiliarData(membro),
       });
-      
+
       await manager.save(ComposicaoFamiliar, novoMembro);
-      
+
       // Retornar cidadão atualizado
       return this.findById(cidadaoId, true) as Promise<Cidadao>;
     });
   }
-  
+
   /**
    * Remove membro da composição familiar
    */
@@ -745,44 +745,44 @@ export class CidadaoRepository extends BaseRepository<Cidadao> {
           cidadao_id: cidadaoId,
         },
       });
-      
+
       if (!membro) {
         throw new NotFoundException('Membro não encontrado na composição familiar');
       }
-      
+
       await manager.softDelete(ComposicaoFamiliar, membroId);
-      
+
       return this.findById(cidadaoId, true) as Promise<Cidadao>;
     });
   }
-  
+
   // ========== MÉTODOS AUXILIARES ==========
-  
+
   /**
    * Normaliza dados do cidadão
    */
   private normalizeCidadaoData(data: Partial<Cidadao>): Partial<Cidadao> {
     const normalized = { ...data };
-    
+
     if (normalized.cpf) {
       normalized.cpf = this.normalizeNumericString(normalized.cpf);
     }
-    
+
     if (normalized.nis) {
       normalized.nis = this.normalizeNumericString(normalized.nis);
     }
-    
+
     if (normalized.telefone) {
       normalized.telefone = this.normalizeNumericString(normalized.telefone);
     }
-    
+
     if (normalized.sexo) {
       normalized.sexo = normalized.sexo.toLowerCase() as Sexo;
     }
-    
+
     return normalized;
   }
-  
+
   /**
    * Normaliza dados da composição familiar
    */
@@ -801,40 +801,53 @@ export class CidadaoRepository extends BaseRepository<Cidadao> {
       observacoes: data.observacoes,
     };
   }
-  
+
   /**
-   * Valida campos únicos
-   */
+ * Valida campos únicos
+ */
   private async validateUniqueFields(
     data: Partial<Cidadao>,
     excludeId?: string
   ): Promise<void> {
-    const conditions: Array<Record<string, unknown>> = [];
-    
+    // Preparar condições WHERE
+    const whereConditions: string[] = [];
+    const parameters: Record<string, unknown> = {};
+
+    // Adicionar condições para CPF
     if (data.cpf) {
-      conditions.push({ cpf: data.cpf });
+      whereConditions.push('cidadao.cpf = :cpf');
+      parameters.cpf = data.cpf;
     }
-    
+
+    // Adicionar condições para NIS
     if (data.nis) {
-      conditions.push({ nis: data.nis });
+      whereConditions.push('cidadao.nis = :nis');
+      parameters.nis = data.nis;
     }
-    
-    if (conditions.length === 0) {return;}
-    
+
+    // Se não há condições, retornar
+    if (whereConditions.length === 0) {
+      return;
+    }
+
+    // Construir a query base
     const query = this.repository.createQueryBuilder('cidadao');
-    query.where('(' + conditions.map((_, i) => `cidadao.cpf = :cpf${i} OR cidadao.nis = :nis${i}`).join(' OR ') + ')');
-    
-    conditions.forEach((cond, i) => {
-      if (cond.cpf) {query.setParameter(`cpf${i}`, cond.cpf);}
-      if (cond.nis) {query.setParameter(`nis${i}`, cond.nis);}
-    });
-    
+
+    // Adicionar condições WHERE usando parâmetros nomeados
+    query.where('(' + whereConditions.join(' OR ') + ')', parameters);
+
+    // Adicionar condição para excluir o próprio registro em caso de atualização
     if (excludeId) {
       query.andWhere('cidadao.id != :excludeId', { excludeId });
     }
-    
+
+    // Adicionar log para debug
+    this.logQuery(query);
+
+    // Executar a query
     const existing = await query.getOne();
-    
+
+    // Verificar resultados
     if (existing) {
       if (existing.cpf === data.cpf) {
         throw new ConflictException('CPF já cadastrado');
@@ -844,7 +857,7 @@ export class CidadaoRepository extends BaseRepository<Cidadao> {
       }
     }
   }
-  
+
   /**
    * Valida regras de negócio da composição familiar
    */
@@ -857,13 +870,13 @@ export class CidadaoRepository extends BaseRepository<Cidadao> {
     const isBeneficiario = cidadao.papeis?.some(
       (papel) => papel.tipo_papel === TipoPapel.BENEFICIARIO && papel.ativo
     );
-    
+
     if (isBeneficiario) {
       throw new ConflictException(
         'Cidadão beneficiário não pode ser adicionado à composição familiar'
       );
     }
-    
+
     // Verificar duplicatas
     const existing = await manager.findOne(ComposicaoFamiliar, {
       where: [
@@ -871,7 +884,7 @@ export class CidadaoRepository extends BaseRepository<Cidadao> {
         ...(membro.cpf ? [{ cidadao: { id: cidadao.id }, cpf: this.normalizeNumericString(membro.cpf) }] : []),
       ],
     });
-    
+
     if (existing) {
       const field = existing.cpf === this.normalizeNumericString(membro.cpf) ? 'CPF' : 'nome';
       throw new ConflictException(
@@ -879,7 +892,7 @@ export class CidadaoRepository extends BaseRepository<Cidadao> {
       );
     }
   }
-  
+
   /**
    * Log de queries em desenvolvimento
    */

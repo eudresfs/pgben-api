@@ -20,34 +20,52 @@ export enum CanalNotificacao {
  * Entidade que representa um template de notificação
  * Usado para definir a estrutura e conteúdo de diferentes tipos de notificações
  */
-@Entity('notification_templates')
+@Entity('notification_template')
 export class NotificationTemplate {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ length: 100 })
+  @Column({ length: 100, unique: true })
+  codigo: string;
+
+  @Column({ length: 200 })
   nome: string;
 
-  @Column({ length: 255 })
+  @Column({ length: 50, default: 'sistema' })
+  tipo: string;
+
+  @Column({ type: 'text', nullable: true })
   descricao: string;
 
-  @Column({ length: 150 })
+  @Column({ length: 255 })
   assunto: string;
 
   @Column({ type: 'text' })
-  template_conteudo: string;
+  corpo: string;
 
-  @Column({
-    type: 'enum',
-    enum: CanalNotificacao,
-    enumName: 'canal_notificacao',
-    array: true,
-    default: [CanalNotificacao.EMAIL],
-  })
-  canais_suportados: CanalNotificacao[];
+  @Column({ type: 'text', nullable: true })
+  corpo_html: string;
+
+  @Column('text', { array: true, default: () => "'{email}'" })
+  canais_disponiveis: string[];
+
+  @Column('jsonb', { name: 'variaveis_requeridas', default: '[]' })
+  variaveis_requeridas: string;
 
   @Column({ default: true })
   ativo: boolean;
+
+  @Column({ length: 100, nullable: true })
+  categoria: string;
+
+  @Column({ length: 20, default: 'normal' })
+  prioridade: string;
+
+  @Column({ type: 'uuid', nullable: true })
+  criado_por: string;
+
+  @Column({ type: 'uuid', nullable: true })
+  atualizado_por: string;
 
   @CreateDateColumn({ name: 'created_at' })
   created_at: Date;
