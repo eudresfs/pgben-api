@@ -6,10 +6,16 @@ metadata:
     app: pgben-server
     version: v1
 spec:
+  progressDeadlineSeconds: 900  # 15 minutos para permitir inicialização completa
   replicas: 3
   selector:
     matchLabels:
       app: pgben-server
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0  # Garante zero downtime durante updates
   template:
     metadata:
       labels:
@@ -69,35 +75,35 @@ spec:
               key: encryption_key
         resources:
           requests:
-            memory: "256Mi"
-            cpu: "250m"
-          limits:
             memory: "512Mi"
             cpu: "500m"
-        livenessProbe:
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        startupProbe:
           httpGet:
             path: /health
             port: 3000
           initialDelaySeconds: 30
           periodSeconds: 10
           timeoutSeconds: 5
-          failureThreshold: 3
+          failureThreshold: 60  # 10 minutos total para inicialização
         readinessProbe:
           httpGet:
             path: /health/ready
             port: 3000
-          initialDelaySeconds: 5
-          periodSeconds: 5
-          timeoutSeconds: 3
+          initialDelaySeconds: 60  # Após startup
+          periodSeconds: 10
+          timeoutSeconds: 5
           failureThreshold: 3
-        startupProbe:
+        livenessProbe:
           httpGet:
             path: /health
             port: 3000
-          initialDelaySeconds: 10
-          periodSeconds: 10
-          timeoutSeconds: 5
-          failureThreshold: 30
+          initialDelaySeconds: 120  # Após readiness
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
         securityContext:
           runAsNonRoot: true
           runAsUser: 1001

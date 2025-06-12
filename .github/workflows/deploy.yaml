@@ -59,8 +59,74 @@ jobs:
             echo "Deployment exists, updating image..."
             kubectl -n $K8S_NAMESPACE set image deployment/$DEPLOYMENT_NAME $DEPLOYMENT_NAME=$CONTAINER_PATH --record
           fi
-          # kubectl -n $K8S_NAMESPACE set image deployment/$DEPLOYMENT_NAME $DEPLOYMENT_NAME=$CONTAINER_PATH --record
-          kubectl -n $K8S_NAMESPACE rollout status deployment/$DEPLOYMENT_NAME
+          
+          echo "Aguardando rollout do deployment (timeout aumentado para 15 minutos)..."
+          kubectl -n $K8S_NAMESPACE rollout status deployment/$DEPLOYMENT_NAME --timeout=15m
+          
+          # Aplicar configurações de progressDeadlineSeconds e probes se for uma nova criação
+          if [ "$?" -eq 0 ]; then
+            echo "Aplicando configurações otimizadas de health checks e recursos..."
+            kubectl -n $K8S_NAMESPACE patch deployment $DEPLOYMENT_NAME -p '
+            {
+              "spec": {
+                "progressDeadlineSeconds": 900,
+                "strategy": {
+                  "type": "RollingUpdate",
+                  "rollingUpdate": {
+                    "maxSurge": 1,
+                    "maxUnavailable": 0
+                  }
+                },
+                "template": {
+                  "spec": {
+                    "containers": [{
+                      "name": "'"$DEPLOYMENT_NAME"'",
+                      "resources": {
+                        "requests": {
+                          "memory": "512Mi",
+                          "cpu": "500m"
+                        },
+                        "limits": {
+                          "memory": "1Gi",
+                          "cpu": "1000m"
+                        }
+                      },
+                      "startupProbe": {
+                        "httpGet": {
+                          "path": "/health",
+                          "port": 3000
+                        },
+                        "initialDelaySeconds": 30,
+                        "periodSeconds": 10,
+                        "timeoutSeconds": 5,
+                        "failureThreshold": 60
+                      },
+                      "readinessProbe": {
+                        "httpGet": {
+                          "path": "/health/ready",
+                          "port": 3000
+                        },
+                        "initialDelaySeconds": 60,
+                        "periodSeconds": 10,
+                        "timeoutSeconds": 5,
+                        "failureThreshold": 3
+                      },
+                      "livenessProbe": {
+                        "httpGet": {
+                          "path": "/health",
+                          "port": 3000
+                        },
+                        "initialDelaySeconds": 120,
+                        "periodSeconds": 30,
+                        "timeoutSeconds": 10,
+                        "failureThreshold": 3
+                      }
+                    }]
+                  }
+                }
+              }
+            }'
+          fi
 
   deploy-kubernetes-resources:
     needs:
