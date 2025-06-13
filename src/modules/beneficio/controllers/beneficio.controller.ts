@@ -26,6 +26,7 @@ import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../../../auth/guards/permission.guard';
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
 import { ScopeType } from '../../../entities';
+import { QueryOptimization } from '../../../common/interceptors/query-optimization.interceptor';
 
 /**
  * Controlador de benefícios
@@ -43,6 +44,12 @@ export class BeneficioController {
    * Lista todos os tipos de benefícios
    */
   @Get()
+  @QueryOptimization({
+    enablePagination: true,
+    maxLimit: 100,
+    enableCaching: true,
+    cacheTTL: 300
+  })
   @RequiresPermission({
     permissionName: 'beneficio.listar',
     scopeType: ScopeType.GLOBAL,
@@ -103,6 +110,10 @@ export class BeneficioController {
    * Obtém detalhes de um tipo de benefício específico
    */
   @Get(':id')
+  @QueryOptimization({
+    enableCaching: true,
+    cacheTTL: 600
+  })
   @RequiresPermission({
     permissionName: 'beneficio.visualizar',
     scopeType: ScopeType.GLOBAL,

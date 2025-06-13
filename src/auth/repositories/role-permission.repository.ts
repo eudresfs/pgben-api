@@ -259,42 +259,17 @@ export class RolePermissionRepository extends Repository<RolePermission> {
    */
   async findPermissionsByUserRoles(userId: string): Promise<Permission[]> {
     try {
-      // Buscar o usuário com sua role
-      const usuario = await this.dataSource.manager.findOne(Usuario, {
-        where: { id: userId },
-        relations: ['role'],
-        cache: {
-          id: `usuario_role_${userId}`,
-          milliseconds: 300000, // 5 minutos
-        },
-      });
+      // Query otimizada com JOIN único para buscar permissões do usuário
+      const permissions = await this.dataSource.manager
+        .createQueryBuilder(Permission, 'p')
+        .innerJoin('role_permissao', 'rp', 'p.id = rp.permissao_id')
+        .innerJoin('usuario', 'u', 'u.role_id = rp.role_id')
+        .where('u.id = :userId', { userId })
+        .orderBy('p.nome', 'ASC')
+        .cache(`user_role_permissions_${userId}`, 300000) // Cache por 5 minutos
+        .getMany();
 
-      if (!usuario || !usuario.role) {
-        return [];
-      }
-
-      // Buscar permissões da role do usuário
-      const queryResult = await this.dataSource.manager.query(
-        `
-        SELECT DISTINCT p.*
-        FROM permissao p
-        INNER JOIN role_permissao rp ON p.id = rp.permissao_id
-        WHERE rp.role_id = $1
-        ORDER BY p.nome
-      `,
-        [usuario.role.id],
-      );
-
-      // Converter os resultados brutos para entidades Permission
-      return queryResult.map((row) => {
-        const permission = new Permission();
-        permission.id = row.id;
-        permission.nome = row.nome;
-        permission.descricao = row.descricao;
-        permission.created_at = row.created_at;
-        permission.updated_at = row.updated_at;
-        return permission;
-      });
+      return permissions;
     } catch (error) {
       console.error('Erro ao buscar permissões do usuário:', error);
       return [];

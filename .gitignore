@@ -170,6 +170,10 @@ tasks/
 .roo
 .trae
 .windsurf
+
 # Build output
 dist/
 build/
+
+# Logs de auditoria
+logs/.*-audit.json

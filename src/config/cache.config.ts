@@ -40,9 +40,18 @@ export const getCacheConfig = async (
       socket: {
         host,
         port,
+        connectTimeout: 5000, // 5 segundos para conectar
+        lazyConnect: true, // Conectar apenas quando necessário
       },
       password: password || undefined,
       ttl,
+      // Pool de conexões otimizado
+      database: 0,
+      keyPrefix: 'pgben:', // Prefixo para organizar chaves
+      // Configurações de performance
+      enableOfflineQueue: false, // Não enfileirar comandos quando offline
+      maxRetriesPerRequest: 2, // Máximo 2 tentativas por comando
+      retryDelayOnFailover: 100, // 100ms entre tentativas
       // Opções de conexão mais resilientes
       retryStrategy: (times: number) => {
         if (times > 3) {

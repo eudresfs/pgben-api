@@ -7,7 +7,7 @@ param(
     [string]$RestoreType = "full", # full, database-only, files-only, volumes-only
     [switch]$Force,
     [switch]$Verify,
-    [string]$TargetDatabase = "pgben_db",
+    [string]$TargetDatabase = "pgben",
     [string]$EncryptionKey = "",
     [switch]$StopServices,
     [switch]$StartServices,

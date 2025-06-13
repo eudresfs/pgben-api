@@ -91,14 +91,36 @@ export class NotificationManagerService implements OnModuleInit {
   async criarNotificacao(
     createNotificationDto: CreateNotificationDto,
   ): Promise<NotificacaoSistema> {
-    // Buscar o template
-    const template = await this.templateRepository.findOne({
-      where: { id: createNotificationDto.template_id },
-    });
+    // Função para verificar se é um UUID válido
+    const isValidUUID = (str: string): boolean => {
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      return uuidRegex.test(str);
+    };
+
+    let template;
+    
+    // Se o template_id é um UUID válido, busca por ID primeiro
+    if (isValidUUID(createNotificationDto.template_id)) {
+      template = await this.templateRepository.findOne({
+        where: { id: createNotificationDto.template_id },
+      });
+      
+      // Se não encontrou por ID, tenta buscar por código
+      if (!template) {
+        template = await this.templateRepository.findOne({
+          where: { codigo: createNotificationDto.template_id },
+        });
+      }
+    } else {
+      // Se não é um UUID válido, busca por código primeiro
+      template = await this.templateRepository.findOne({
+        where: { codigo: createNotificationDto.template_id },
+      });
+    }
 
     if (!template) {
       throw new Error(
-        `Template com ID ${createNotificationDto.template_id} não encontrado`,
+        `Template com ID/código ${createNotificationDto.template_id} não encontrado`,
       );
     }
 
@@ -452,7 +474,10 @@ export class NotificationManagerService implements OnModuleInit {
                 const sucesso = await this.emailService.sendEmail({
                   to: usuario.email,
                   subject: notificacao.template.assunto,
-                  template: notificacao.template.corpo_html || notificacao.template.corpo,
+                  template: {
+                    type: 'inline',
+                    source: notificacao.template.corpo_html || notificacao.template.corpo
+                  },
                   context: notificacao.dados_contexto,
                 });
                 

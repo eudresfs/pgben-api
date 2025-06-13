@@ -36,6 +36,7 @@ import { RequiresPermission } from '../../../auth/decorators/requires-permission
 import { ScopeType } from '../../../entities/user-permission.entity';
 import { StatusSolicitacao } from '../../../entities/solicitacao.entity';
 import { Request } from 'express';
+import { QueryOptimization } from '../../../common/interceptors/query-optimization.interceptor';
 
 /**
  * Controlador de Solicitações
@@ -53,6 +54,12 @@ export class SolicitacaoController {
    * Lista todas as solicitações com filtros e paginação
    */
   @Get()
+  @QueryOptimization({
+    enablePagination: true,
+    maxLimit: 100,
+    enableCaching: true,
+    cacheTTL: 120
+  })
   @RequiresPermission({
     permissionName: 'solicitacao.listar',
     scopeType: ScopeType.UNIT,

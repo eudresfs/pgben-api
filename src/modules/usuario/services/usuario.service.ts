@@ -1,34 +1,32 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
-import {
-  throwUserNotFound,
-  throwDuplicateEmail,
-  throwDuplicateMatricula,
-  throwInvalidCredentials,
-  throwAccountBlocked,
-  throwWeakPassword,
-  throwFirstAccessRequired,
-  throwNotInFirstAccess,
-  throwEmailSendFailed,
-  throwInsufficientPermissions,
-  throwPasswordMismatch,
-} from '../../../shared/exceptions/error-catalog/domains/usuario.errors';
+import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, DeepPartial, Repository, ILike } from 'typeorm';
+import { DataSource, Repository, DeepPartial, ILike } from 'typeorm';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import * as bcrypt from 'bcrypt';
+import { Usuario } from '../../../entities/usuario.entity';
+import { Role } from '../../../entities/role.entity';
 import { UsuarioRepository } from '../repositories/usuario.repository';
 import { CreateUsuarioDto } from '../dto/create-usuario.dto';
 import { UpdateUsuarioDto } from '../dto/update-usuario.dto';
 import { UpdateStatusUsuarioDto } from '../dto/update-status-usuario.dto';
 import { UpdateSenhaDto } from '../dto/update-senha.dto';
 import { AlterarSenhaPrimeiroAcessoDto } from '../dto/alterar-senha-primeiro-acesso.dto';
-import { Usuario } from '../../../entities/usuario.entity';
-import { Role } from '../../../entities/role.entity';
 import { Status } from '../../../enums/status.enum';
-import { NotificationManagerService } from '../../notificacao/services/notification-manager.service';
-import { CanalNotificacao, NotificationTemplate } from '../../../entities/notification-template.entity';
 import { normalizeEnumFields } from '../../../shared/utils/enum-normalizer.util';
-import { throwDuplicateCpf } from '@/shared/exceptions/error-catalog/domains';
+import {
+  throwUserNotFound,
+  throwDuplicateEmail,
+  throwDuplicateMatricula,
+  throwInvalidCredentials,
+  throwPasswordMismatch,
+  throwWeakPassword,
+  throwAccountBlocked,
+  throwNotInFirstAccess,
+} from '../../../shared/exceptions/error-catalog/domains/usuario.errors';
+import { throwDuplicateCpf } from '../../../shared/exceptions/error-catalog/domains/cidadao.errors';
+import { NotificationManagerService } from '../../notificacao/services/notification-manager.service';
 import { EmailService } from '../../../common/services/email.service';
+import { CanalNotificacao, NotificationTemplate } from '../../../entities/notification-template.entity';
 
 /**
  * Serviço de usuários
@@ -51,6 +49,7 @@ export class UsuarioService {
     @InjectRepository(Role)
     private readonly roleRepository: Repository<Role>,
     private readonly emailService: EmailService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   /**
@@ -108,11 +107,11 @@ export class UsuarioService {
             subject: 'Credenciais de Acesso - Sistema PGBEN',
             template: 'usuario-credenciais-acesso',
             context: {
-              nome: usuario.nome,
+              nome: usuario.nome.split(' ')[0],
               email: usuario.email,
               senha: senha,
               matricula: usuario.matricula,
-              sistema_url: process.env.FRONTEND_URL || 'https://pgben.natal.rn.gov.br',
+              sistema_url: process.env.FRONTEND_URL || 'https://pgben-front.kemosoft.com.br',
               data_criacao: new Date().toLocaleDateString('pt-BR'),
             },
           });
@@ -131,8 +130,7 @@ export class UsuarioService {
         email: usuario.email,
         senha: senha,
         matricula: usuario.matricula,
-        sistema_url:
-          process.env.FRONTEND_URL || 'https://pgben.natal.rn.gov.br',
+        sistema_url: process.env.FRONTEND_URL || 'https://pgben-front.kemosoft.com.br',
         data_criacao: new Date().toLocaleDateString('pt-BR'),
       };
 
@@ -446,12 +444,29 @@ export class UsuarioService {
         };
       });
 
-      // Enviar credenciais por email após a transação ser commitada
+      // Emitir eventos de notificação após a transação ser commitada
       if (resultado.senhaGerada) {
+        // Situação 1: Cadastro de usuário sem senha (primeiro acesso)
+        this.eventEmitter.emit('user.created.first-access', {
+          userId: resultado.usuarioSalvo.id,
+          email: resultado.usuarioSalvo.email,
+          nome: resultado.usuarioSalvo.nome,
+          senha: resultado.senhaParaUso,
+          timestamp: new Date(),
+        });
+        
         await this.enviarCredenciaisPorEmail(
           resultado.usuarioSalvo,
           resultado.senhaParaUso,
         );
+      } else {
+        // Situação 2: Cadastro de usuário com senha (validação de email)
+        this.eventEmitter.emit('user.created.email-validation', {
+          userId: resultado.usuarioSalvo.id,
+          email: resultado.usuarioSalvo.email,
+          nome: resultado.usuarioSalvo.nome,
+          timestamp: new Date(),
+        });
       }
 
       // Retornar apenas os dados necessários
@@ -952,6 +967,89 @@ export class UsuarioService {
         throw error;
       }
       // Note: Internal error handling needs to be implemented with appropriate error
+    }
+  }
+
+  /**
+   * Solicita recuperação de senha
+   * @param email Email do usuário
+   * @returns Resultado da operação
+   */
+  async solicitarRecuperacaoSenha(email: string) {
+    this.logger.log(`Iniciando recuperação de senha para email: ${email}`);
+
+    try {
+      // Normalizar email
+      const normalizedEmail = email.toLowerCase();
+      
+      // Buscar usuário pelo email
+      const usuario = await this.findByEmail(normalizedEmail);
+      
+      if (!usuario) {
+        // Por segurança, não revelar se o email existe ou não
+        this.logger.warn(`Tentativa de recuperação de senha para email inexistente: ${normalizedEmail}`);
+        return {
+          data: null,
+          meta: null,
+          message: 'Se o email estiver cadastrado, você receberá instruções para recuperação de senha.',
+        };
+      }
+
+      // Verificar se usuário está ativo
+      if (usuario.status !== Status.ATIVO) {
+        this.logger.warn(`Tentativa de recuperação de senha para usuário inativo: ${usuario.id}`);
+        return {
+          data: null,
+          meta: null,
+          message: 'Se o email estiver cadastrado, você receberá instruções para recuperação de senha.',
+        };
+      }
+
+      // Gerar nova senha temporária
+      const senhaTemporaria = this.generateRandomPassword();
+      const senhaHash = await bcrypt.hash(senhaTemporaria, this.SALT_ROUNDS);
+
+      // Usar transação para garantir consistência
+      await this.dataSource.transaction(async (manager) => {
+        const usuarioRepo = manager.getRepository('usuario');
+        
+        // Atualizar senha e marcar como primeiro acesso
+        await usuarioRepo.update(usuario.id, {
+          senhaHash,
+          primeiro_acesso: true,
+          tentativas_login: 0,
+          updated_at: new Date(),
+        });
+      });
+
+      // Situação 3: Recuperação de senha
+      this.eventEmitter.emit('user.password.reset', {
+        userId: usuario.id,
+        email: usuario.email,
+        nome: usuario.nome,
+        senhaTemporaria,
+        timestamp: new Date(),
+      });
+
+      this.logger.log(`Recuperação de senha processada com sucesso para usuário: ${usuario.id}`);
+
+      return {
+        data: null,
+        meta: null,
+        message: 'Se o email estiver cadastrado, você receberá instruções para recuperação de senha.',
+      };
+    } catch (error) {
+      this.logger.error(
+        `Erro ao processar recuperação de senha: ${error.message}`,
+        error.stack,
+      );
+      
+      // Por segurança, retornar sempre a mesma mensagem
+      return {
+        data: null,
+        meta: null,
+        message: 'Se o email estiver cadastrado, você receberá instruções para recuperação de senha.',
+      };
     }
   }
 }

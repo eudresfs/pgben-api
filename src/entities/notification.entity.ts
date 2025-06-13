@@ -31,6 +31,16 @@ export enum TipoNotificacao {
 }
 
 /**
+ * Enum para os níveis de prioridade de notificação
+ */
+export enum PrioridadeNotificacao {
+  BAIXA = 'baixa',
+  MEDIA = 'media',
+  ALTA = 'alta',
+  URGENTE = 'urgente',
+}
+
+/**
  * Enum para os possíveis estados de uma notificação do sistema
  */
 export enum StatusNotificacaoProcessamento {

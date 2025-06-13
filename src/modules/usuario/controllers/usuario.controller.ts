@@ -25,6 +25,7 @@ import { UpdateUsuarioDto } from '../dto/update-usuario.dto';
 import { UpdateStatusUsuarioDto } from '../dto/update-status-usuario.dto';
 import { UpdateSenhaDto } from '../dto/update-senha.dto';
 import { AlterarSenhaPrimeiroAcessoDto } from '../dto/alterar-senha-primeiro-acesso.dto';
+import { RecuperarSenhaDto } from '../dto/recuperar-senha.dto';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../../../auth/guards/permission.guard';
 import { PrimeiroAcessoGuard } from '../../../auth/guards/primeiro-acesso.guard';
@@ -39,7 +40,7 @@ import { ScopeType } from '../../../entities/user-permission.entity';
  */
 @ApiTags('Usuários')
 @Controller('usuario')
-@UseGuards(JwtAuthGuard, PrimeiroAcessoGuard) // PermissionGuard removido temporariamente para teste 1.1
+@UseGuards(JwtAuthGuard, PrimeiroAcessoGuard, PermissionGuard) 
 @ApiBearerAuth()
 export class UsuarioController {
   constructor(private readonly usuarioService: UsuarioService) {}
@@ -316,6 +317,24 @@ export class UsuarioController {
       userId,
       alterarSenhaDto,
     );
+  }
+
+  /**
+   * Solicita recuperação de senha
+   */
+  @Post('/recuperar-senha')
+  @UseGuards() // Remove guards de autenticação para endpoint público
+  @ApiOperation({ 
+    summary: 'Solicitar recuperação de senha',
+    description: 'Envia email com nova senha temporária para o usuário'
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Solicitação processada. Se o email estiver cadastrado, instruções serão enviadas.' 
+  })
+  @ApiResponse({ status: 400, description: 'Email inválido' })
+  async recuperarSenha(@Body() recuperarSenhaDto: RecuperarSenhaDto) {
+    return this.usuarioService.solicitarRecuperacaoSenha(recuperarSenhaDto.email);
   }
 
   /**

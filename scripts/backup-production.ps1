@@ -30,7 +30,7 @@ $BackupConfig = @{
     Database = @{
         Host = "localhost"
         Port = 5432
-        Database = "pgben_db"
+        Database = "pgben"
         User = "postgres"
         BackupFormat = "custom" # custom, plain, directory, tar
     }
@@ -194,14 +194,14 @@ function Backup-Database {
             Write-ColorOutput "Fazendo backup do banco via container rodando..." "Info"
             
             # Backup via pg_dump no container
-            $dumpFile = Join-Path $dbBackupPath "pgben_db_$BackupTimestamp.dump"
-            $dumpCommand = "pg_dump -h localhost -U postgres -d pgben_db -F c -b -v -f /backup/pgben_db_$BackupTimestamp.dump"
+            $dumpFile = Join-Path $dbBackupPath "pgben_$BackupTimestamp.dump"
+            $dumpCommand = "pg_dump -h localhost -U postgres -d pgben -F c -b -v -f /backup/pgben_$BackupTimestamp.dump"
             
             # Executar pg_dump no container
             docker-compose exec -T postgres bash -c "mkdir -p /backup && $dumpCommand" 2>$null
             
             # Copiar arquivo de backup do container
-            docker cp "$(docker-compose ps -q postgres):/backup/pgben_db_$BackupTimestamp.dump" $dumpFile
+            docker cp "$(docker-compose ps -q postgres):/backup/pgben_$BackupTimestamp.dump" $dumpFile
             
             if (Test-Path $dumpFile) {
                 $fileSize = [math]::Round((Get-Item $dumpFile).Length / 1MB, 2)
@@ -212,11 +212,11 @@ function Backup-Database {
             
             # Backup adicional em formato SQL
             if ($BackupConfig.Database.BackupFormat -eq "plain" -or $BackupType -eq "full") {
-                $sqlFile = Join-Path $dbBackupPath "pgben_db_$BackupTimestamp.sql"
-                $sqlCommand = "pg_dump -h localhost -U postgres -d pgben_db -f /backup/pgben_db_$BackupTimestamp.sql"
+                $sqlFile = Join-Path $dbBackupPath "pgben_$BackupTimestamp.sql"
+                $sqlCommand = "pg_dump -h localhost -U postgres -d pgben -f /backup/pgben_$BackupTimestamp.sql"
                 
                 docker-compose exec -T postgres bash -c $sqlCommand 2>$null
-                docker cp "$(docker-compose ps -q postgres):/backup/pgben_db_$BackupTimestamp.sql" $sqlFile
+                docker cp "$(docker-compose ps -q postgres):/backup/pgben_$BackupTimestamp.sql" $sqlFile
                 
                 if (Test-Path $sqlFile) {
                     $sqlSize = [math]::Round((Get-Item $sqlFile).Length / 1MB, 2)

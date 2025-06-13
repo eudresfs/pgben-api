@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { CacheService } from './cache.service';
 import { CacheMetricsProvider } from './cache-metrics.provider';
@@ -28,7 +28,7 @@ import { CacheService as MemoryCacheService } from '../services/cache.service';
       inject: [ConfigService],
     }),
     // Importamos o módulo de monitoramento para ter acesso ao serviço de métricas
-    MonitoringModule,
+    forwardRef(() => MonitoringModule),
   ],
   providers: [CacheService, CacheMetricsProvider, MemoryCacheService],
   exports: [CacheService, CacheMetricsProvider, MemoryCacheService],

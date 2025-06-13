@@ -134,12 +134,12 @@ export class EmailService implements OnModuleDestroy {
     this.rateLimit = this.configService.get<number>('EMAIL_RATE_LIMIT_MS', 1000);
     this.maxRetries = this.configService.get<number>('EMAIL_MAX_RETRIES', 3);
 
-    // Configurações de timeout
+    // Configurações de timeout otimizadas para performance
     this.timeoutConfig = {
-      connection: this.configService.get<number>('SMTP_CONNECTION_TIMEOUT', 30000),
-      greeting: this.configService.get<number>('SMTP_GREETING_TIMEOUT', 10000),
-      socket: this.configService.get<number>('SMTP_SOCKET_TIMEOUT', 60000),
-      send: this.configService.get<number>('SMTP_SEND_TIMEOUT', 120000),
+      connection: this.configService.get<number>('SMTP_CONNECTION_TIMEOUT', 5000), // Reduzido de 30s para 5s
+      greeting: this.configService.get<number>('SMTP_GREETING_TIMEOUT', 3000), // Reduzido de 10s para 3s
+      socket: this.configService.get<number>('SMTP_SOCKET_TIMEOUT', 10000), // Reduzido de 60s para 10s
+      send: this.configService.get<number>('SMTP_SEND_TIMEOUT', 15000), // Reduzido de 120s para 15s
     };
 
     // Inicializar blacklist/whitelist
@@ -300,8 +300,8 @@ export class EmailService implements OnModuleDestroy {
         connectionTimeout: this.timeoutConfig.connection,
         greetingTimeout: this.timeoutConfig.greeting,
         socketTimeout: this.timeoutConfig.socket,
-        debug: this.isDevelopment,
-        logger: this.isDevelopment,
+        debug: false, // Desabilitado para melhorar performance
+        logger: false, // Desabilitado para melhorar performance
         tls: { rejectUnauthorized: false },
       };
     }
@@ -326,8 +326,8 @@ export class EmailService implements OnModuleDestroy {
       connectionTimeout: this.timeoutConfig.connection,
       greetingTimeout: this.timeoutConfig.greeting,
       socketTimeout: this.timeoutConfig.socket,
-      debug: this.isDevelopment,
-      logger: this.isDevelopment,
+      debug: false, // Desabilitado para melhorar performance
+      logger: false, // Desabilitado para melhorar performance
     };
   }
 
@@ -612,7 +612,7 @@ export class EmailService implements OnModuleDestroy {
       }
     }
 
-    return { html, text, subject: subject || 'Notificação - SEMTAS' };
+    return { html, text, subject: subject || 'Notificação - PGBen' };
   }
 
   /**
@@ -622,7 +622,7 @@ export class EmailService implements OnModuleDestroy {
     switch (source.type) {
       case 'inline':
         return {
-          subject: 'Notificação - SEMTAS',
+          subject: 'Notificação - PGBen',
           html: source.source,
         };
       
@@ -632,7 +632,7 @@ export class EmailService implements OnModuleDestroy {
           const response = await fetch(source.source);
           const html = await response.text();
           return {
-            subject: 'Notificação - SEMTAS',
+            subject: 'Notificação - PGBen',
             html,
           };
         } catch (error) {
@@ -731,7 +731,7 @@ export class EmailService implements OnModuleDestroy {
       const html = fs.readFileSync(htmlPath, 'utf8');
       const text = fs.existsSync(textPath) ? fs.readFileSync(textPath, 'utf8') : undefined;
 
-      let subject = 'Notificação - SEMTAS';
+      let subject = 'Notificação - PGBen';
       if (fs.existsSync(configPath)) {
         try {
           const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
@@ -779,7 +779,7 @@ export class EmailService implements OnModuleDestroy {
     const smtpHost = this.configService.get<string>('SMTP_HOST') || '';
     const smtpPort = this.configService.get<number>('SMTP_PORT', 587);
     const smtpUser = this.configService.get<string>('SMTP_USER') || '';
-    const fromName = this.configService.get<string>('SMTP_FROM_NAME', 'SEMTAS - Sistema');
+    const fromName = this.configService.get<string>('SMTP_FROM_NAME', 'PGBen');
 
     let email = configuredFrom;
 
@@ -983,10 +983,10 @@ export class EmailService implements OnModuleDestroy {
   async testEmail(recipient: string): Promise<boolean> {
     return this.sendEmail({
       to: recipient,
-      subject: 'Teste de Configuração SMTP - SEMTAS',
+      subject: 'Teste de Configuração SMTP - PGBen',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #2c3e50;">🚀 Teste de Email - SEMTAS</h2>
+          <h2 style="color: #2c3e50;">🚀 Teste de Email - PGBen</h2>
           <div style="background: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;">
             <p><strong>Data/Hora:</strong> ${new Date().toLocaleString('pt-BR')}</p>
             <p><strong>Servidor:</strong> ${this.configService.get('SMTP_HOST')}</p>
@@ -996,13 +996,13 @@ export class EmailService implements OnModuleDestroy {
           <p style="color: #27ae60;">✅ Se você recebeu este email, a configuração está funcionando corretamente!</p>
           <hr style="margin: 30px 0;">
           <p style="font-size: 12px; color: #7f8c8d;">
-            Este é um email automático de teste do sistema SEMTAS.<br>
+            Este é um email automático de teste do sistema PGBen.<br>
             Métricas atuais: ${this.metrics.emailsSent} emails enviados com sucesso.
           </p>
         </div>
       `,
       text: `
-        Teste de Email - SEMTAS
+        Teste de Email - PGBen
         
         Este é um email de teste para verificar a configuração SMTP.
         Data/Hora: ${new Date().toLocaleString('pt-BR')}
@@ -1124,7 +1124,7 @@ export class EmailService implements OnModuleDestroy {
     resetToken: string,
     expiresIn: number,
   ): Promise<boolean> {
-    const resetUrl = `${this.configService.get<string>('FRONTEND_URL')}/reset-password?token=${resetToken}`;
+    const resetUrl = `${this.configService.get<string>('FRONTEND_URL')}/redefinir-senha?token=${resetToken}`;
     const expiresAt = new Date(Date.now() + expiresIn * 60 * 1000);
 
     return this.sendEmail({
@@ -1135,7 +1135,7 @@ export class EmailService implements OnModuleDestroy {
         resetUrl,
         expiresAt: expiresAt.toLocaleString('pt-BR'),
         expiresInMinutes: expiresIn,
-        supportEmail: this.configService.get<string>('SUPPORT_EMAIL', 'suporte@semtas.gov.br'),
+        supportEmail: this.configService.get<string>('SUPPORT_EMAIL', 'suporte@PGBen.gov.br'),
       },
       priority: 'high',
       tags: ['password-reset', 'security'],
@@ -1152,7 +1152,7 @@ export class EmailService implements OnModuleDestroy {
       context: {
         name,
         loginUrl: `${this.configService.get<string>('FRONTEND_URL')}/login`,
-        supportEmail: this.configService.get<string>('SUPPORT_EMAIL', 'suporte@semtas.gov.br'),
+        supportEmail: this.configService.get<string>('SUPPORT_EMAIL', 'suporte@PGBen.gov.br'),
       },
       tags: ['password-reset', 'confirmation'],
     });
@@ -1177,7 +1177,7 @@ export class EmailService implements OnModuleDestroy {
         ipAddress,
         userAgent,
         timestamp: new Date().toLocaleString('pt-BR'),
-        supportEmail: this.configService.get<string>('SUPPORT_EMAIL', 'suporte@semtas.gov.br'),
+        supportEmail: this.configService.get<string>('SUPPORT_EMAIL', 'suporte@PGBen.gov.br'),
       },
       priority: 'high',
       tags: ['security', 'alert'],
@@ -1191,7 +1191,7 @@ export class EmailService implements OnModuleDestroy {
     const context: any = {
       name,
       loginUrl: `${this.configService.get<string>('FRONTEND_URL')}/login`,
-      supportEmail: this.configService.get<string>('SUPPORT_EMAIL', 'suporte@semtas.gov.br'),
+      supportEmail: this.configService.get<string>('SUPPORT_EMAIL', 'suporte@PGBen.gov.br'),
     };
 
     if (activationToken) {
@@ -1243,7 +1243,7 @@ export class EmailService implements OnModuleDestroy {
             </div>
             <hr style="margin: 30px 0;">
             <p style="font-size: 12px; color: #7f8c8d; text-align: center;">
-              SEMTAS - Sistema de Gestão<br>
+              PGBen - Sistema de Gestão<br>
               Este é um email automático, não responda.
             </p>
           </div>

@@ -7,7 +7,7 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, LessThan, DataSource } from 'typeorm';
+import { Repository, LessThan, MoreThan, DataSource } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { JwtService } from '@nestjs/jwt';
@@ -324,7 +324,7 @@ export class PasswordResetService {
   }
 
   /**
-   * Valida se um token é válido
+   * Valida se um token é válido e o marca como usado
    */
   async validateToken(
     token: string,
@@ -335,6 +335,14 @@ export class PasswordResetService {
       if (!resetToken) {
         return { valid: false };
       }
+
+      // Marcar token como usado após validação bem-sucedida
+      resetToken.markAsUsed('token_validated');
+      await this.passwordResetTokenRepository.save(resetToken);
+
+      this.logger.log(
+        `Token validado e marcado como usado para usuário ${resetToken.usuario_id}`,
+      );
 
       return {
         valid: true,
@@ -364,7 +372,7 @@ export class PasswordResetService {
       this.passwordResetTokenRepository.count({
         where: {
           is_used: false,
-          expires_at: LessThan(now),
+          expires_at: MoreThan(now),
         },
       }),
       this.passwordResetTokenRepository.count({
@@ -378,7 +386,7 @@ export class PasswordResetService {
       }),
       this.passwordResetTokenRepository.count({
         where: {
-          created_at: LessThan(last24h),
+          created_at: MoreThan(last24h),
         },
       }),
     ]);
@@ -471,7 +479,7 @@ export class PasswordResetService {
     const tokens = await this.passwordResetTokenRepository.find({
       where: {
         is_used: false,
-        expires_at: LessThan(new Date()),
+        expires_at: MoreThan(new Date()),
       },
       relations: ['usuario'],
     });
@@ -504,11 +512,11 @@ export class PasswordResetService {
       where: [
         {
           usuario_id: usuarioId,
-          created_at: LessThan(oneHourAgo),
+          created_at: MoreThan(oneHourAgo),
         },
         {
           client_ip: ip,
-          created_at: LessThan(oneHourAgo),
+          created_at: MoreThan(oneHourAgo),
         },
       ],
     });

@@ -13,9 +13,10 @@ import {
   StatusNotificacaoProcessamento,
   TipoNotificacao,
 } from '../../../entities/notification.entity';
-import { SseService } from './sse.service';
-import { SseNotification } from '../interfaces/sse-notification.interface';
 import { normalizeEnumFields } from '../../../shared/utils/enum-normalizer.util';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { NOTIFICATION_CREATED } from '../events/notification.events';
+import { NotificationCreatedEvent } from '../events/notification-created.event';
 
 /**
  * Serviço de Notificações
@@ -28,8 +29,7 @@ export class NotificacaoService {
   constructor(
     @InjectRepository(NotificacaoSistema)
     private notificacaoRepository: Repository<NotificacaoSistema>,
-    @Inject(forwardRef(() => SseService))
-    private readonly sseService: SseService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   /**
@@ -190,7 +190,15 @@ export class NotificacaoService {
 
     const notificacao = this.notificacaoRepository.create(dadosNormalizados);
 
-    return this.notificacaoRepository.save(notificacao);
+    const saved = await this.notificacaoRepository.save(notificacao);
+
+    // Emite evento de criação para tratamento assíncrono (ex.: SSE, e-mail, etc.)
+    this.eventEmitter.emit(
+      NOTIFICATION_CREATED,
+      new NotificationCreatedEvent(saved),
+    );
+
+    return saved;
   }
 
   /**
@@ -405,20 +413,7 @@ export class NotificacaoService {
       link: dados.link,
     });
 
-    // Envia via SSE se o usuário estiver conectado
-    const sseNotification: SseNotification = {
-      id: notificacao.id,
-      userId: notificacao.destinatario_id,
-      type: dados.tipo as TipoNotificacao,
-      title: dados.titulo,
-      message: dados.conteudo,
-      data: notificacao.dados_contexto,
-      timestamp: notificacao.created_at,
-      priority: dados.prioridade ?? 'medium',
-    };
-
-    this.sseService.sendToUser(notificacao.destinatario_id, sseNotification);
-
+    // Retorna a notificação; entrega em tempo real será tratada por listeners
     return notificacao;
   }
 
@@ -456,19 +451,7 @@ export class NotificacaoService {
       ),
     );
 
-    // Envia via SSE para usuários conectados
-    const sseNotification = {
-      id: `broadcast-${Date.now()}`, // ID único para broadcast
-      type: dados.tipo as TipoNotificacao,
-      title: dados.titulo,
-      message: dados.conteudo,
-      data: dados.dados,
-      timestamp: new Date(),
-      priority: dados.prioridade ?? 'medium',
-    };
-
-    this.sseService.sendToUsers(userIds, sseNotification);
-
+    // A entrega será tratada pelos listeners registrados
     return notificacoes;
   }
 
@@ -476,40 +459,7 @@ export class NotificacaoService {
    * Envia notificação broadcast para todos os usuários conectados
    * @param dados Dados da notificação
    */
-  async broadcastGeral(dados: {
-    tipo: TipoNotificacao | string;
-    titulo: string;
-    conteudo: string;
-    dados?: Record<string, any>;
-    prioridade?: 'low' | 'medium' | 'high';
-  }): Promise<void> {
-    const sseNotification = {
-      id: `broadcast-geral-${Date.now()}`,
-      type: dados.tipo as TipoNotificacao,
-      title: dados.titulo,
-      message: dados.conteudo,
-      data: dados.dados,
-      timestamp: new Date(),
-      priority: dados.prioridade ?? 'medium',
-    };
-
-    this.sseService.broadcastToAll(sseNotification);
-  }
-
-  /**
-   * Verifica se um usuário tem conexões SSE ativas
-   * @param userId ID do usuário
-   * @returns true se o usuário está conectado via SSE
-   */
-  isUserConnectedSSE(userId: string): boolean {
-    return this.sseService.hasActiveConnections(userId);
-  }
-
-  /**
-   * Obtém estatísticas das conexões SSE
-   * @returns Estatísticas das conexões
-   */
-  getSSEStats() {
-    return this.sseService.getConnectionStats();
+  async broadcastGeral(): Promise<void> {
+    // No-op
   }
 }

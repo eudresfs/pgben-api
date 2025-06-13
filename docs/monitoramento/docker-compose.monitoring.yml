@@ -71,7 +71,7 @@ services:
     container_name: pgben_postgres_exporter
     restart: unless-stopped
     environment:
-      - DATA_SOURCE_NAME=postgresql://${DB_USER:-postgres}:${DB_PASS:-postgres}@postgres:5432/${DB_NAME:-pgben_db}?sslmode=disable
+      - DATA_SOURCE_NAME=postgresql://${DB_USER:-postgres}:${DB_PASS:-postgres}@postgres:5432/${DB_NAME:-pgben}?sslmode=disable
     ports:
       - "9187:9187"
     networks:

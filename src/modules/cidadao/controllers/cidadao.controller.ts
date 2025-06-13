@@ -26,6 +26,7 @@ import {
   ApiExtraModels,
 } from '@nestjs/swagger';
 import { CacheableShort, CacheableLong } from '../../../shared/interceptors/cache.interceptor';
+import { QueryOptimization } from '../../../common/interceptors/query-optimization.interceptor';
 import { CreateCidadaoDto } from '../dto/create-cidadao.dto';
 import { CidadaoService } from '../services/cidadao.service';
 import { CidadaoRepository } from '../repositories/cidadao.repository';
@@ -60,7 +61,12 @@ export class CidadaoController {
    * Lista todos os cidadãos com filtros e paginação
    */
   @Get()
-  @CacheableShort({ includeQuery: true })
+  @QueryOptimization({
+    enablePagination: true,
+    maxLimit: 100,
+    enableCaching: true,
+    cacheTTL: 180
+  })
   @RequiresPermission({
     permissionName: 'cidadao.listar',
     scopeType: ScopeType.UNIT,
@@ -175,7 +181,10 @@ export class CidadaoController {
    * Obtém detalhes de um cidadão específico
    */
   @Get(':id')
-  @CacheableLong({ includeQuery: false })
+  @QueryOptimization({
+    enableCaching: true,
+    cacheTTL: 600
+  })
   @RequiresPermission({
     permissionName: 'cidadao.visualizar',
     scopeType: ScopeType.UNIT,

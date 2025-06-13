@@ -10,11 +10,9 @@ import {
   UseGuards,
   Logger,
   Request,
-  Sse,
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import { Observable } from 'rxjs';
 import {
   ApiTags,
   ApiOperation,
@@ -24,10 +22,8 @@ import {
 } from '@nestjs/swagger';
 import { NotificacaoService } from '../services/notificacao.service';
 import { NotificationManagerService } from '../services/notification-manager.service';
-import { SseService } from '../services/sse.service';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../auth/guards/roles.guard';
-import { SseGuard } from '../guards/sse.guard';
 import { StatusNotificacaoProcessamento } from '../../../entities/notification.entity';
 import { CreateNotificationDto } from '../dtos/create-notification.dto';
 import { RequiresPermission } from '@/auth/decorators/requires-permission.decorator';
@@ -49,7 +45,6 @@ export class NotificacaoController {
   constructor(
     private readonly notificacaoService: NotificacaoService,
     private readonly notificationManagerService: NotificationManagerService,
-    private readonly sseService: SseService,
   ) {}
 
   /**
@@ -154,7 +149,7 @@ export class NotificacaoController {
   /**
    * Obtém detalhes de uma notificação específica
    */
-  @Get(':id')
+  @Get(':id/detalhes')
   @RequiresPermission(
     {
       permissionName: 'notificacao.visualizar',
@@ -261,64 +256,5 @@ export class NotificacaoController {
   async contadorNaoLidas(@Request() req) {
     const userId = req.user.id;
     return this.notificacaoService.contadorNaoLidas(userId);
-  }
-
-  /**
-   * Endpoint SSE para notificações em tempo real
-   */
-  @Sse('sse')
-  @UseGuards(SseGuard)
-  @ApiOperation({ summary: 'Conexão SSE para notificações em tempo real' })
-  @ApiResponse({
-    status: 200,
-    description: 'Conexão SSE estabelecida com sucesso',
-  })
-  sseNotifications(@Request() req): Observable<any> {
-    const userId = req.user.id;
-    return this.sseService.createConnection(userId, req);
-  }
-
-  /**
-   * Endpoint para obter estatísticas das conexões SSE
-   */
-  @Get('sse/stats')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @RequiresPermission(
-    {
-      permissionName: '*.*'
-    }
-  )
-  @ApiOperation({ summary: 'Obter estatísticas das conexões SSE' })
-  @ApiResponse({
-    status: 200,
-    description: 'Estatísticas retornadas com sucesso',
-  })
-  async getSseStats() {
-    return this.sseService.getConnectionStats();
-  }
-
-  /**
-   * Endpoint para verificar se um usuário está conectado via SSE
-   */
-  @Get('sse/status/:userId')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @RequiresPermission(
-    {
-      permissionName: '*.*'
-    }
-  )
-  @ApiOperation({ summary: 'Verificar status de conexão SSE de um usuário' })
-  @ApiResponse({
-    status: 200,
-    description: 'Status de conexão retornado com sucesso',
-  })
-  async getUserSseStatus(@Param('userId', ParseUUIDPipe) userId: string) {
-    const isConnected = this.sseService.isUserConnected(userId);
-    const connectionCount = this.sseService.getUserConnectionCount(userId);
-    return {
-      userId,
-      isConnected,
-      connectionCount,
-    };
   }
 }

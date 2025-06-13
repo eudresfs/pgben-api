@@ -477,9 +477,18 @@ export class PermissionService {
     includeInactive: boolean = false,
   ): Promise<Permission[]> {
     try {
-      // Busca permissões diretas do usuário
-      const userPermissions =
-        await this.userPermissionRepository.findByUserId(userId);
+      // Cache key para as permissões do usuário
+      const cacheKey = `user_permissions:${userId}:${includeInactive}`;
+      
+      // Tentar buscar do cache primeiro
+      const cachedPermissions = await this.cacheManager.get<Permission[]>(cacheKey);
+      if (cachedPermissions) {
+        this.logger.debug(`Permissões encontradas no cache para usuário ${userId}`);
+        return cachedPermissions;
+      }
+
+      // Busca permissões diretas do usuário com JOIN otimizado
+      const userPermissions = await this.userPermissionRepository.findByUserIdWithPermissions(userId);
 
       // Filtra permissões ativas, se necessário
       const filteredUserPermissions = includeInactive
@@ -489,28 +498,30 @@ export class PermissionService {
               up.granted && (!up.validUntil || up.validUntil > new Date()),
           );
 
-      // Obtém IDs das permissões
-      const permissionIds = filteredUserPermissions.map(
-        (up) => up.permissionId,
-      );
+      // Extrai permissões diretas
+      const directPermissions = filteredUserPermissions
+        .map(up => up.permissao)
+        .filter(p => p); // Remove nulls
 
-      // Busca permissões de role do usuário
+      // Busca permissões de role do usuário (já otimizada com JOIN)
       const rolePermissions =
         await this.rolePermissionRepository.findPermissionsByUserRoles(userId);
 
-      // Adiciona IDs de permissões de role
+      // Combina permissões diretas e de role, removendo duplicatas
+      const allPermissions = [...directPermissions];
+      const existingIds = new Set(directPermissions.map(p => p.id));
+      
       rolePermissions.forEach((permission) => {
-        if (!permissionIds.includes(permission.id)) {
-          permissionIds.push(permission.id);
+        if (!existingIds.has(permission.id)) {
+          allPermissions.push(permission);
+          existingIds.add(permission.id);
         }
       });
 
-      // Busca detalhes das permissões
-      if (permissionIds.length === 0) {
-        return [];
-      }
-
-      return this.permissionRepository.findByIds(permissionIds);
+      // Armazena no cache por 5 minutos
+      await this.cacheManager.set(cacheKey, allPermissions, this.CACHE_TTL);
+      
+      return allPermissions;
     } catch (error) {
       this.logger.error(
         `Erro ao obter permissões do usuário: ${error.message}`,

@@ -85,6 +85,7 @@
     "@aws-sdk/s3-request-presigner": "^3.812.0",
     "@faker-js/faker": "^9.8.0",
     "@fastify/cors": "^8.5.0",
+    "@nest-lab/throttler-storage-redis": "^1.1.0",
     "@nestjs/axios": "^4.0.0",
     "@nestjs/bull": "^11.0.2",
     "@nestjs/cache-manager": "^3.0.1",

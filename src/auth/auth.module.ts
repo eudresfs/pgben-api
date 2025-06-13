@@ -88,8 +88,6 @@ import { PermissionModule } from './permission.module';
     forwardRef(() => UsuarioModule),
     forwardRef(() => AuditModule),
     ConfigModule,
-    forwardRef(() => UsuarioModule),
-    forwardRef(() => AuditModule),
     AppLoggerModule,
     PermissionModule,
   ],

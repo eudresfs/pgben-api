@@ -17,34 +17,49 @@ export const getDatabasePerformanceConfig = (
     // Pool de conexões otimizado
     extra: {
       // Configurações do pool de conexões
-      max: isProduction ? 20 : 10, // Máximo de conexões
-      min: isProduction ? 5 : 2,   // Mínimo de conexões
-      acquire: 30000,              // Tempo máximo para obter conexão (30s)
-      idle: 10000,                 // Tempo máximo de inatividade (10s)
-      evict: 1000,                 // Intervalo de verificação de conexões inativas (1s)
+      max: isProduction ? 25 : 8,  // Aumentado para produção, reduzido para dev
+      min: isProduction ? 8 : 2,   // Mínimo otimizado
+      acquire: 15000,              // Reduzido para 15s (mais agressivo)
+      idle: 5000,                  // Reduzido para 5s (libera conexões mais rápido)
+      evict: 500,                  // Verificação mais frequente (500ms)
       
-      // Configurações específicas do PostgreSQL
-      statement_timeout: 30000,     // Timeout de statement (30s)
-      query_timeout: 25000,         // Timeout de query (25s)
+      // Configurações específicas do PostgreSQL otimizadas
+      statement_timeout: 15000,     // Reduzido para 15s
+      query_timeout: 10000,         // Reduzido para 10s
       application_name: 'PGBEN_API',
       
       // Otimizações de performance
       shared_preload_libraries: 'pg_stat_statements,pg_trgm',
       
-      // Configurações de memória
-      work_mem: '256MB',           // Memória para operações de ordenação
-      maintenance_work_mem: '512MB', // Memória para operações de manutenção
-      effective_cache_size: '2GB', // Tamanho estimado do cache do SO
+      // Configurações de memória otimizadas
+      work_mem: '128MB',           // Reduzido para evitar OOM
+      maintenance_work_mem: '256MB', // Reduzido
+      effective_cache_size: '1GB', // Mais conservador
       
-      // Configurações de checkpoint
+      // Configurações de checkpoint otimizadas
       checkpoint_completion_target: 0.9,
-      wal_buffers: '16MB',
+      wal_buffers: '8MB',          // Reduzido
       
-      // Configurações de logging (apenas em desenvolvimento)
+      // Configurações adicionais de performance
+      random_page_cost: 1.1,       // Para SSDs
+      effective_io_concurrency: 200, // Para SSDs
+      max_worker_processes: 8,
+      max_parallel_workers_per_gather: 2,
+      max_parallel_workers: 8,
+      
+      // Configurações de logging otimizadas
       ...(isDevelopment && {
-        log_statement: 'all',
+        log_statement: 'mod',        // Apenas modificações em dev
         log_duration: true,
-        log_min_duration_statement: 100, // Log queries > 100ms
+        log_min_duration_statement: 500, // Apenas queries > 500ms
+      }),
+      
+      // Configurações de produção
+      ...(isProduction && {
+        log_min_duration_statement: 1000, // Log apenas queries > 1s
+        log_checkpoints: true,
+        log_connections: true,
+        log_disconnections: true,
       }),
     },
 
