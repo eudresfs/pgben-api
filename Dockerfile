@@ -46,16 +46,16 @@ RUN addgroup -g 1001 -S nodejs && \
 
 WORKDIR /app
 
-# Copy package files and install production dependencies only
+# Copy package files and scripts directory first
 COPY package*.json ./
+COPY --chown=nextjs:nodejs scripts/ ./scripts/
+
+# Install production dependencies only
 RUN npm ci --omit=dev --no-audit --no-fund && \
     npm cache clean --force
 
 # Copy built application from build stage
 COPY --from=build --chown=nextjs:nodejs /app/dist ./dist
-
-# Copy scripts directory for JWT key generation
-COPY --chown=nextjs:nodejs scripts/ ./scripts/
 
 # Copy docker entrypoint script
 COPY --chown=nextjs:nodejs docker-entrypoint.sh ./docker-entrypoint.sh
