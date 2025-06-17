@@ -39,14 +39,16 @@ jobs:
           }
           EOF
 
+      - name: download kaniko executor
+        run: |
+          curl -sfL https://github.com/GoogleContainerTools/kaniko/releases/download/v1.20.0/kaniko-executor -o kaniko
+          chmod +x kaniko
+
       - name: build and push image to CPR
         run: |
-          docker run --rm \
-            -v ${{ github.workspace }}:/workspace \
-            -v $HOME/.docker:/kaniko/.docker \
-            gcr.io/kaniko-project/executor:v1.20.0-debug \
+          ./kaniko \
             --dockerfile=Dockerfile \
-            --context=/workspace \
+            --context=${{ github.workspace }} \
             --destination=${{ env.CONTAINER_PATH }} \
             ${{ env.KANIKO_CACHE_ARGS }} \
             --snapshotMode=redo \
