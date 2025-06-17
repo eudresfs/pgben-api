@@ -105,6 +105,40 @@ export class CreateNotificationDto {
   @IsOptional()
   @IsBoolean({ message: 'retryOnFailure deve ser um boolean' })
   retryOnFailure?: boolean;
+
+  // Propriedades para compatibilidade com o sistema legado
+  @ApiPropertyOptional({
+    description: 'ID do destinatário (compatibilidade)',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+    format: 'uuid'
+  })
+  @IsOptional()
+  @IsUUID('4', { message: 'ID do destinatário deve ser um UUID válido' })
+  destinatario_id?: string;
+
+  @ApiPropertyOptional({
+    description: 'ID ou código do template de notificação',
+    example: 'usuario-credenciais-acesso'
+  })
+  @IsOptional()
+  @IsString({ message: 'Template ID deve ser uma string' })
+  template_id?: string;
+
+  @ApiPropertyOptional({
+    description: 'Dados de contexto para o template',
+    example: { nome: 'João Silva', beneficio: 'Auxílio Natalidade' }
+  })
+  @IsOptional()
+  @IsObject({ message: 'Dados de contexto devem ser um objeto' })
+  dados_contexto?: Record<string, any>;
+
+  @ApiPropertyOptional({
+    description: 'Data de agendamento da notificação',
+    example: '2024-01-15T10:30:00Z'
+  })
+  @IsOptional()
+  @IsString({ message: 'Data de agendamento deve ser uma string' })
+  data_agendamento?: string;
 }
 
 /**

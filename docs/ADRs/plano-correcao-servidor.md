@@ -530,7 +530,7 @@ else
 fi
 
 # Verificar conectividade básica
-HEALTH_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/health)
+HEALTH_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/api/v1/health)
 ROOT_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/)
 
 echo "Status da rota /health: $HEALTH_STATUS"
@@ -663,7 +663,7 @@ sleep 20
 # Array de endpoints para testar
 declare -a endpoints=(
     "http://localhost:3000/"
-    "http://localhost:3000/health"
+    "http://localhost:3000/v1/health"
     "http://localhost:3000/api-docs"
     "http://localhost:3000/auth/status"
 )
@@ -681,7 +681,7 @@ done
 # Teste de carga básico
 echo "Executando teste de carga básico..."
 for i in {1..10}; do
-    curl -s http://localhost:3000/health > /dev/null &
+    curl -s http://localhost:3000/api/v1/health > /dev/null &
 done
 wait
 

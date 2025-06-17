@@ -108,7 +108,7 @@ EXPOSE 3000
 
 # Healthcheck
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:3000/health || exit 1
+  CMD curl -f http://localhost:3000/api/v1/health || exit 1
 
 # Comando de inicialização
 CMD ["/docker-entrypoint.sh"]
@@ -146,7 +146,7 @@ EXPOSE 3000
 
 # Healthcheck para desenvolvimento
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:3000/health || exit 1
+  CMD curl -f http://localhost:3000/api/v1/health || exit 1
 
 # Comando de inicialização para desenvolvimento
 CMD ["/docker-entrypoint.sh"]
@@ -201,7 +201,7 @@ services:
     networks:
       - pgben_network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/v1/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -428,7 +428,7 @@ services:
         reservations:
           memory: 1G
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/v1/health"]
       interval: 30s
       timeout: 10s
       retries: 3

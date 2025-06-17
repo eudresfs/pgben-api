@@ -19,7 +19,7 @@ import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../auth/guards/roles.guard';
 import { Roles } from '../../../auth/decorators/role.decorator';
 // import { NotificationManagerService } from '../services/notification-manager.service'; // TODO: Reativar após resolver dependência circular
-import { CreateNotificationTemplateDto } from '../dtos/create-notification-template.dto';
+import { CreateNotificationTemplateDto } from '../dto/create-notification-template.dto';
 import { ROLES } from '../../../shared/constants/roles.constants';
 
 /**

@@ -131,7 +131,7 @@ async function bootstrap(): Promise<INestApplication> {
         { path: 'openapi.json', method: RequestMethod.GET },
         { path: 'v2/swagger.json', method: RequestMethod.GET },
         { path: 'api-docs', method: RequestMethod.ALL },
-        { path: 'api-docs/*', method: RequestMethod.ALL },
+        { path: 'api-docs/*path', method: RequestMethod.ALL },
       ],
     });
 

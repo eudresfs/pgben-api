@@ -25,7 +25,7 @@ import { NotificationManagerService } from '../services/notification-manager.ser
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../auth/guards/roles.guard';
 import { StatusNotificacaoProcessamento } from '../../../entities/notification.entity';
-import { CreateNotificationDto } from '../dtos/create-notification.dto';
+import { CreateNotificationDto } from '../dto/create-notification.dto';
 import { RequiresPermission } from '@/auth/decorators/requires-permission.decorator';
 import { TipoEscopo } from '@/entities/user-permission.entity';
 

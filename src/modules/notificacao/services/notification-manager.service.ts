@@ -12,8 +12,8 @@ import {
 } from '../../../entities/notification.entity';
 import { CanalNotificacao, ResultadoEnvio } from '../interfaces/notification-channel.interface';
 import { TemplateRendererService } from './template-renderer.service';
-import { CreateNotificationDto } from '../dtos/create-notification.dto';
-import { CreateNotificationTemplateDto } from '../dtos/create-notification-template.dto';
+import { CreateNotificationDto } from '../dto/create-notification.dto';
+import { CreateNotificationTemplateDto } from '../dto/create-notification-template.dto';
 import { EmailService } from '../../../common/services/email.service';
 import { NOTIFICATION_CREATED } from '../events/notification.events';
 import { NotificationCreatedEvent } from '../events/notification-created.event';

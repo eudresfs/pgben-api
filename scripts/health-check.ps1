@@ -28,7 +28,7 @@ $HealthConfig = @{
         @{
             Name = "pgben-server"
             Type = "http"
-            Endpoint = "http://localhost:3000/health"
+            Endpoint = "http://localhost:3000/api/v1/health"
             ExpectedStatus = 200
             Timeout = 10
             Critical = $true

@@ -83,7 +83,7 @@ spec:
             cpu: "1000m"
         startupProbe:
           httpGet:
-            path: /health
+            path: /v1/health
             port: 3000
           initialDelaySeconds: 45  # Aumentado para dar mais tempo
           periodSeconds: 15
@@ -91,7 +91,7 @@ spec:
           failureThreshold: 60  # 15 minutos total para inicialização
         readinessProbe:
           httpGet:
-            path: /health/ready
+            path: /v1/health/ready
             port: 3000
           initialDelaySeconds: 90  # Após startup
           periodSeconds: 15
@@ -99,7 +99,7 @@ spec:
           failureThreshold: 3
         livenessProbe:
           httpGet:
-            path: /health
+            path: /v1/health
             port: 3000
           initialDelaySeconds: 180  # Após readiness
           periodSeconds: 30

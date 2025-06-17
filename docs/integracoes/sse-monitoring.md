@@ -434,7 +434,7 @@ curl -H "Authorization: Bearer $TOKEN" \
   http://localhost:3000/v1/notificacao/sse/stats
 
 # Verificar health check
-curl http://localhost:3000/health
+curl http://localhost:3000/api/v1/health
 
 # Verificar métricas Prometheus
 curl http://localhost:3000/metrics

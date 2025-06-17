@@ -59,7 +59,7 @@ services:
     networks:
       - pgben-network-prod
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health/ready"]
+      test: ["CMD", "curl", "-f", "http://localhost:3000/v1/health/ready"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -202,7 +202,7 @@ services:
     networks:
       - pgben-network-prod
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:3000/api/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/v1/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
