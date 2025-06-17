@@ -69,7 +69,7 @@ jobs:
             kubectl -n $K8S_NAMESPACE patch deployment $DEPLOYMENT_NAME -p '
             {
               "spec": {
-                "progressDeadlineSeconds": 900,
+                "progressDeadlineSeconds": 1200,
                 "strategy": {
                   "type": "RollingUpdate",
                   "rollingUpdate": {
@@ -93,33 +93,33 @@ jobs:
                       },
                       "startupProbe": {
                         "httpGet": {
-                          "path": "/health",
-                          "port": 3000
-                        },
-                        "initialDelaySeconds": 30,
-                        "periodSeconds": 10,
-                        "timeoutSeconds": 5,
-                        "failureThreshold": 60
-                      },
-                      "readinessProbe": {
-                        "httpGet": {
-                          "path": "/health/ready",
+                          "path": "/v1/health/system",
                           "port": 3000
                         },
                         "initialDelaySeconds": 60,
-                        "periodSeconds": 10,
-                        "timeoutSeconds": 5,
-                        "failureThreshold": 3
+                        "periodSeconds": 15,
+                        "timeoutSeconds": 10,
+                        "failureThreshold": 40
+                      },
+                      "readinessProbe": {
+                        "httpGet": {
+                          "path": "/v1/health/ready",
+                          "port": 3000
+                        },
+                        "initialDelaySeconds": 90,
+                        "periodSeconds": 15,
+                        "timeoutSeconds": 10,
+                        "failureThreshold": 5
                       },
                       "livenessProbe": {
                         "httpGet": {
-                          "path": "/health",
+                          "path": "/v1/health/system",
                           "port": 3000
                         },
-                        "initialDelaySeconds": 120,
+                        "initialDelaySeconds": 180,
                         "periodSeconds": 30,
-                        "timeoutSeconds": 10,
-                        "failureThreshold": 3
+                        "timeoutSeconds": 15,
+                        "failureThreshold": 5
                       }
                     }]
                   }

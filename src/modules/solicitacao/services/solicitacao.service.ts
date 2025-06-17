@@ -389,7 +389,7 @@ export class SolicitacaoService {
         }
       });
 
-      // Se existir, retorna os dados da solicitação
+      // Se existir, retorna os dados da solicitação existente
       if (solicitacaoExistente) {
         return solicitacaoExistente;
       }
