@@ -95,31 +95,61 @@ export class AblyService implements OnModuleInit, OnModuleDestroy {
    */
   async onModuleDestroy(): Promise<void> {
     try {
-      this.logger.log('Finalizando serviço Ably...');
+      this.logger.log('Iniciando finalização do serviço Ably...');
       
       // Para coleta de métricas
       if (this.metricsInterval) {
         clearInterval(this.metricsInterval);
+        this.metricsInterval = null;
+        this.logger.debug('Metrics interval finalizado');
       }
       
-      // Fecha canais
-      for (const [channelName, channel] of this.channels) {
+      // Fecha canais com timeout
+      const channelClosePromises = Array.from(this.channels.entries()).map(async ([channelName, channel]) => {
         try {
-          await channel.detach();
+          // Timeout de 3 segundos para cada canal
+          await Promise.race([
+            channel.detach(),
+            new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Timeout')), 3000)
+            )
+          ]);
           this.logger.debug(`Canal ${channelName} desconectado`);
         } catch (error) {
-          this.logger.warn(`Erro ao desconectar canal ${channelName}:`, error);
+          this.logger.warn(`Erro ao desconectar canal ${channelName}:`, error.message);
         }
-      }
+      });
       
-      // Fecha conexões
+      // Aguarda todos os canais serem fechados ou timeout
+      await Promise.allSettled(channelClosePromises);
+      this.channels.clear();
+      
+      // Fecha conexões com timeout
       if (this.ablyClient) {
-        this.ablyClient.close();
+        try {
+          await Promise.race([
+            new Promise<void>((resolve) => {
+              this.ablyClient?.close();
+              resolve();
+            }),
+            new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Timeout ao fechar cliente Ably')), 5000)
+            )
+          ]);
+          this.logger.debug('Cliente Ably fechado');
+        } catch (error) {
+          this.logger.warn('Timeout ao fechar cliente Ably, forçando finalização:', error.message);
+        }
+        this.ablyClient = null;
       }
       
-      this.logger.log('Serviço Ably finalizado');
+      this.ablyRest = null;
+      this.connectionStatus = 'disconnected';
+      
+      this.logger.log('✅ Serviço Ably finalizado com sucesso');
     } catch (error) {
-      this.logger.error('Erro ao finalizar serviço Ably:', error);
+      this.logger.error('❌ Erro ao finalizar serviço Ably:', error);
+      // Não re-throw para não travar o shutdown
     }
   }
 

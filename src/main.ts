@@ -265,20 +265,32 @@ function logStartupInfo(
  */
 function setupGracefulShutdown(app: INestApplication): void {
   const logger = new Logger('GracefulShutdown');
+  let isShuttingDown = false;
 
   const shutdown = async (signal: string): Promise<void> => {
+    if (isShuttingDown) {
+      logger.warn(`🔄 Shutdown já em andamento, ignorando sinal ${signal}`);
+      return;
+    }
+    
+    isShuttingDown = true;
     logger.log(`📴 Recebido sinal ${signal}. Iniciando graceful shutdown...`);
 
     try {
-      // Aguardar requests em andamento (timeout de 10s)
+      // Timeout aumentado para 25 segundos para permitir finalização de todos os serviços
       const shutdownTimeout = setTimeout(() => {
         logger.warn(
-          '⏰ Timeout do graceful shutdown. Forçando encerramento...',
+          '⏰ Timeout do graceful shutdown (25s). Forçando encerramento...',
         );
         process.exit(1);
-      }, 10000);
+      }, 25000);
+
+      // Aguardar um pouco para requests em andamento
+      logger.log('⏳ Aguardando finalização de requests em andamento...');
+      await new Promise(resolve => setTimeout(resolve, 2000));
 
       // Fechar aplicação
+      logger.log('🔄 Finalizando aplicação NestJS...');
       await app.close();
       clearTimeout(shutdownTimeout);
 

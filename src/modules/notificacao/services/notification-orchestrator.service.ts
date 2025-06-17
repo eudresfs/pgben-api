@@ -487,13 +487,27 @@ export class NotificationOrchestratorService implements OnModuleInit {
   }
 
   /**
-   * Limpa recursos ao destruir o serviço
+   * Limpa recursos ao destruir/**
+   * Finaliza o orquestrador
    */
   async onModuleDestroy(): Promise<void> {
-    if (this.healthCheckInterval) {
-      clearInterval(this.healthCheckInterval);
+    try {
+      this.logger.log('Iniciando finalização do orquestrador de notificações...');
+      
+      // Para monitoramento de saúde
+      if (this.healthCheckInterval) {
+        clearInterval(this.healthCheckInterval);
+        this.healthCheckInterval = null;
+        this.logger.debug('Health check interval finalizado');
+      }
+      
+      // Aguarda um pouco para finalizar operações pendentes
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      this.logger.log('✅ Orquestrador de notificações finalizado com sucesso');
+    } catch (error) {
+      this.logger.error('❌ Erro ao finalizar orquestrador de notificações:', error);
+      throw error;
     }
-    
-    this.logger.log('Orquestrador de notificações finalizado');
   }
 }

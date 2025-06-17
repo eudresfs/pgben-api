@@ -15,7 +15,8 @@ spec:
     type: RollingUpdate
     rollingUpdate:
       maxSurge: 1
-      maxUnavailable: 0  # Garante zero downtime durante updates
+      maxUnavailable: 1  # Permite que um pod seja terminado por vez
+      # Isso evita travamento quando pods antigos não conseguem ser terminados
   template:
     metadata:
       labels:
@@ -84,25 +85,25 @@ spec:
           httpGet:
             path: /health
             port: 3000
-          initialDelaySeconds: 30
-          periodSeconds: 10
-          timeoutSeconds: 5
-          failureThreshold: 60  # 10 minutos total para inicialização
+          initialDelaySeconds: 45  # Aumentado para dar mais tempo
+          periodSeconds: 15
+          timeoutSeconds: 10
+          failureThreshold: 60  # 15 minutos total para inicialização
         readinessProbe:
           httpGet:
             path: /health/ready
             port: 3000
-          initialDelaySeconds: 60  # Após startup
-          periodSeconds: 10
-          timeoutSeconds: 5
+          initialDelaySeconds: 90  # Após startup
+          periodSeconds: 15
+          timeoutSeconds: 10
           failureThreshold: 3
         livenessProbe:
           httpGet:
             path: /health
             port: 3000
-          initialDelaySeconds: 120  # Após readiness
+          initialDelaySeconds: 180  # Após readiness
           periodSeconds: 30
-          timeoutSeconds: 10
+          timeoutSeconds: 15
           failureThreshold: 3
         securityContext:
           runAsNonRoot: true
@@ -124,7 +125,7 @@ spec:
         emptyDir: {}
       securityContext:
         fsGroup: 1001
-      terminationGracePeriodSeconds: 30
+      terminationGracePeriodSeconds: 60  # Aumentado para permitir graceful shutdown completo
 ---
 apiVersion: v1
 kind: Service
