@@ -297,7 +297,7 @@ export class SseRedisCircuitBreakerService {
       case 'redis-publish':
         return (userId: string, notification: any) => this.redisService.publishNotification({ userId: parseInt(userId), ...notification });
       case 'redis-subscribe':
-        return (userId: string) => this.redisService.subscribeToUser(userId);
+        return (userId: string, callback: (notification: any) => void) => this.redisService.subscribeToUser(userId, callback);
       default:
         throw new Error(`Ação Redis desconhecida: ${name}`);
     }

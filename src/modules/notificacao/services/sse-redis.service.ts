@@ -114,6 +114,27 @@ export class SseRedisService implements OnModuleInit, OnModuleDestroy {
   }
   
   /**
+   * Publica uma notificação para um usuário específico
+   */
+  async publishToUser(userId: string, notification: SseNotification): Promise<void> {
+    try {
+      // Verificar se Redis está disponível
+      if (!this.publisher) {
+        this.logger.debug('Redis não disponível - ignorando publicação para usuário');
+        return;
+      }
+      
+      const channel = `${this.CHANNEL_PREFIX}:user:${userId}`;
+      await this.publisher.publish(channel, JSON.stringify(notification));
+      
+      this.logger.debug(`📤 Notificação enviada para usuário ${userId}`);
+    } catch (error) {
+      this.logger.error(`❌ Erro ao publicar para usuário ${userId}:`, error);
+      // Não propagar o erro para não quebrar o fluxo principal
+    }
+  }
+
+  /**
    * Publica uma notificação SSE para todas as instâncias
    */
   async publishNotification(notification: SseNotification): Promise<void> {
@@ -135,6 +156,12 @@ export class SseRedisService implements OnModuleInit, OnModuleDestroy {
    */
   async publishBroadcast(notification: Omit<SseNotification, 'userId'>): Promise<void> {
     try {
+      // Verificar se Redis está disponível
+      if (!this.publisher) {
+        this.logger.debug('Redis não disponível - ignorando publicação broadcast');
+        return;
+      }
+      
       const channel = `${this.CHANNEL_PREFIX}:broadcast`;
       const message = JSON.stringify(notification);
       
@@ -143,37 +170,71 @@ export class SseRedisService implements OnModuleInit, OnModuleDestroy {
       this.logger.debug('📤 Notificação broadcast publicada');
     } catch (error) {
       this.logger.error('❌ Erro ao publicar broadcast:', error);
-      throw error;
+      // Não propagar o erro para não quebrar o fluxo principal
     }
   }
   
   /**
-   * Subscreve aos canais de um usuário específico
+   * Subscreve para receber notificações de um usuário específico
    */
-  async subscribeToUser(userId: string): Promise<void> {
+  async subscribeToUser(userId: string, callback: (notification: SseNotification) => void): Promise<void> {
     try {
-      const channel = `${this.CHANNEL_PREFIX}:user:${userId}`;
-      await this.subscriber.subscribe(channel);
+      // Verificar se Redis está disponível
+      if (!this.subscriber) {
+        this.logger.debug('Redis não disponível - ignorando subscrição de usuário');
+        return;
+      }
       
-      this.logger.debug(`🔔 Subscrito ao canal do usuário ${userId}`);
+      const channel = `${this.CHANNEL_PREFIX}:user:${userId}`;
+      
+      await this.subscriber.subscribe(channel);
+      this.subscriber.on('message', (receivedChannel, message) => {
+        if (receivedChannel === channel) {
+          try {
+            const notification = JSON.parse(message) as SseNotification;
+            callback(notification);
+          } catch (error) {
+            this.logger.error('❌ Erro ao processar notificação:', error);
+          }
+        }
+      });
+      
+      this.logger.debug(`🔔 Subscrito para usuário ${userId}`);
     } catch (error) {
       this.logger.error(`❌ Erro ao subscrever usuário ${userId}:`, error);
-      throw error;
+      // Não propagar o erro para não quebrar o fluxo principal
     }
   }
   
   /**
-   * Subscreve ao canal de broadcast
+   * Subscreve para receber notificações broadcast
    */
-  async subscribeToBroadcast(): Promise<void> {
+  async subscribeToBroadcast(callback: (notification: SseNotification) => void): Promise<void> {
     try {
-      const channel = `${this.CHANNEL_PREFIX}:broadcast`;
-      await this.subscriber.subscribe(channel);
+      // Verificar se Redis está disponível
+      if (!this.subscriber) {
+        this.logger.debug('Redis não disponível - ignorando subscrição broadcast');
+        return;
+      }
       
-      this.logger.debug('🔔 Subscrito ao canal de broadcast');
+      const channel = `${this.CHANNEL_PREFIX}:broadcast`;
+      
+      await this.subscriber.subscribe(channel);
+      this.subscriber.on('message', (receivedChannel, message) => {
+        if (receivedChannel === channel) {
+          try {
+            const notification = JSON.parse(message) as SseNotification;
+            callback(notification);
+          } catch (error) {
+            this.logger.error('❌ Erro ao processar notificação broadcast:', error);
+          }
+        }
+      });
+      
+      this.logger.debug('🔔 Subscrito para broadcast');
     } catch (error) {
       this.logger.error('❌ Erro ao subscrever broadcast:', error);
-      throw error;
+      // Não propagar o erro para não quebrar o fluxo principal
     }
   }
   
@@ -182,6 +243,12 @@ export class SseRedisService implements OnModuleInit, OnModuleDestroy {
    */
   async unsubscribeFromUser(userId: string): Promise<void> {
     try {
+      // Verificar se Redis está disponível
+      if (!this.subscriber) {
+        this.logger.debug('Redis não disponível - ignorando remoção de subscrição');
+        return;
+      }
+      
       const channel = `${this.CHANNEL_PREFIX}:user:${userId}`;
       await this.subscriber.unsubscribe(channel);
       
@@ -196,6 +263,12 @@ export class SseRedisService implements OnModuleInit, OnModuleDestroy {
    */
   async storeConnection(connection: SseConnection): Promise<void> {
     try {
+      // Verificar se Redis está disponível
+      if (!this.storage) {
+        this.logger.debug('Redis não disponível - ignorando armazenamento de conexão');
+        return;
+      }
+      
       const connectionKey = `${this.CONNECTION_PREFIX}:${connection.connectionId}`;
       const userConnectionsKey = `${this.USER_CONNECTIONS_PREFIX}:${connection.userId}`;
       
@@ -213,7 +286,7 @@ export class SseRedisService implements OnModuleInit, OnModuleDestroy {
       this.logger.debug(`💾 Conexão ${connection.connectionId} armazenada para usuário ${connection.userId}`);
     } catch (error) {
       this.logger.error('❌ Erro ao armazenar conexão:', error);
-      throw error;
+      // Não propagar o erro para não quebrar o fluxo principal
     }
   }
   
@@ -222,6 +295,12 @@ export class SseRedisService implements OnModuleInit, OnModuleDestroy {
    */
   async removeConnection(connectionId: string, userId: string): Promise<void> {
     try {
+      // Verificar se Redis está disponível
+      if (!this.storage) {
+        this.logger.debug('Redis não disponível - ignorando remoção de conexão');
+        return;
+      }
+      
       const connectionKey = `${this.CONNECTION_PREFIX}:${connectionId}`;
       const userConnectionsKey = `${this.USER_CONNECTIONS_PREFIX}:${userId}`;
       
@@ -242,6 +321,12 @@ export class SseRedisService implements OnModuleInit, OnModuleDestroy {
    */
   async getUserConnections(userId: string): Promise<SseConnection[]> {
     try {
+      // Verificar se Redis está disponível
+      if (!this.storage) {
+        this.logger.debug('Redis não disponível - retornando lista vazia de conexões');
+        return [];
+      }
+      
       const userConnectionsKey = `${this.USER_CONNECTIONS_PREFIX}:${userId}`;
       const connectionIds = await this.storage.smembers(userConnectionsKey);
       
@@ -284,6 +369,12 @@ export class SseRedisService implements OnModuleInit, OnModuleDestroy {
    */
   async updateHeartbeat(connectionId: string): Promise<void> {
     try {
+      // Verificar se Redis está disponível
+      if (!this.storage) {
+        this.logger.debug('Redis não disponível - ignorando atualização de heartbeat');
+        return;
+      }
+      
       const connectionKey = `${this.CONNECTION_PREFIX}:${connectionId}`;
       const connectionData = await this.storage.get(connectionKey);
       
@@ -354,6 +445,16 @@ export class SseRedisService implements OnModuleInit, OnModuleDestroy {
     connectionsByUser: Record<string, number>;
   }> {
     try {
+      // Verificar se Redis está disponível
+      if (!this.storage) {
+        this.logger.debug('Redis não disponível - retornando estatísticas vazias');
+        return {
+          totalConnections: 0,
+          connectedUsers: 0,
+          connectionsByUser: {}
+        };
+      }
+      
       const userPattern = `${this.USER_CONNECTIONS_PREFIX}:*`;
       const userKeys = await this.storage.keys(userPattern);
       
@@ -386,15 +487,24 @@ export class SseRedisService implements OnModuleInit, OnModuleDestroy {
   }
   
   /**
-   * Verifica se o Redis está conectado e funcionando
+   * Verifica a saúde da conexão Redis
    */
-  async healthCheck(): Promise<boolean> {
+  async healthCheck(): Promise<{ status: 'healthy' | 'unhealthy'; latency?: number }> {
     try {
+      // Verificar se Redis está disponível
+      if (!this.storage) {
+        this.logger.debug('Redis não disponível - health check falhou');
+        return { status: 'unhealthy' };
+      }
+      
+      const start = Date.now();
       await this.storage.ping();
-      return true;
+      const latency = Date.now() - start;
+      
+      return { status: 'healthy', latency };
     } catch (error) {
       this.logger.error('❌ Health check Redis falhou:', error);
-      return false;
+      return { status: 'unhealthy' };
     }
   }
 

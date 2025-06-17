@@ -86,7 +86,9 @@ export class SseService implements OnModuleDestroy {
     if (!this.redisEnabled) return;
 
     try {
-      await this.redisService.subscribeToBroadcast();
+      await this.redisService.subscribeToBroadcast((notification) => {
+        this.handleBroadcastNotification(notification);
+      });
       this.logger.log('Subscriptions Redis configuradas com sucesso');
     } catch (error) {
       this.logger.error('Erro ao configurar subscriptions Redis:', error);
@@ -181,7 +183,9 @@ export class SseService implements OnModuleDestroy {
         const redisResult = await this.retryPolicyService.executeWithRetry(
           async () => {
             await this.redisService.storeConnection(connectionData);
-            await this.redisService.subscribeToUser(userId);
+            await this.redisService.subscribeToUser(userId, (notification) => {
+              this.handleUserNotification(userId, notification);
+            });
             return true;
           },
           { maxAttempts: 3, initialDelay: 1000 },
@@ -1205,6 +1209,54 @@ export class SseService implements OnModuleDestroy {
           operation: 'send-simplified-notification'
         }
       );
+    }
+  }
+
+  /**
+   * Manipula notificações broadcast recebidas do Redis
+   */
+  private handleBroadcastNotification(notification: SseNotification): void {
+    try {
+      // Enviar para todas as conexões locais
+      this.localConnections.forEach((userConnections, userId) => {
+        this.sendToUserLocal(userId, notification);
+      });
+      
+      this.loggingService.logNotification(LogLevel.INFO, 'Notificação broadcast processada', {
+        userId: 0, // broadcast não tem usuário específico
+        category: SseLogCategory.NOTIFICATION,
+        timestamp: new Date(),
+        notificationType: notification.type,
+        notificationId: parseInt(notification.id) || 0
+      });
+    } catch (error) {
+      this.loggingService.logError(error as Error, {
+        timestamp: new Date(),
+        operation: 'handle-broadcast-notification'
+      });
+    }
+  }
+
+  /**
+   * Manipula notificações de usuário específico recebidas do Redis
+   */
+  private handleUserNotification(userId: string, notification: SseNotification): void {
+    try {
+      this.sendToUserLocal(userId, notification);
+      
+      this.loggingService.logNotification(LogLevel.INFO, 'Notificação de usuário processada', {
+        userId: Number(userId),
+        category: SseLogCategory.NOTIFICATION,
+        timestamp: new Date(),
+        notificationType: notification.type,
+        notificationId: parseInt(notification.id) || 0
+      });
+    } catch (error) {
+      this.loggingService.logError(error as Error, {
+        timestamp: new Date(),
+        operation: 'handle-user-notification',
+        metadata: { userId }
+      });
     }
   }
 
