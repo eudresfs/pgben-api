@@ -21,7 +21,7 @@ Examine o Dockerfile fornecido e identifique:
 
 ### 2. **Análise da Aplicação NestJS**
 Verifique se a aplicação possui:
-- Endpoint `/api/v1/health` funcional
+- Endpoint `/v1/health` funcional
 - Graceful shutdown implementado
 - Logs estruturados
 - Métricas expostas (opcional mas recomendado)

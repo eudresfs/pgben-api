@@ -380,6 +380,7 @@ export class SolicitacaoService {
         StatusSolicitacao.EM_PROCESSAMENTO
       ];
 
+      // Verifica se existe uma solicitação em andamento para o mesmo beneficiário e benefício
       const solicitacaoExistente = await manager.findOne(Solicitacao, {
         where: {
           beneficiario_id: createSolicitacaoDto.beneficiario_id,
@@ -388,10 +389,9 @@ export class SolicitacaoService {
         }
       });
 
+      // Se existir, retorna os dados da solicitação
       if (solicitacaoExistente) {
-        throw new BadRequestException(
-          'Já existe uma solicitação em andamento para este benefício e cidadão'
-        );
+        return solicitacaoExistente;
       }
 
       // Normalizar enums nos dados complementares antes de salvar

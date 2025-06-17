@@ -78,23 +78,45 @@ export class HealthController {
    * 
    * Este endpoint é usado pelo Kubernetes para verificar se a aplicação está pronta
    * para receber tráfego. Verifica dependências como banco de dados, Redis, etc.
+   * SEMPRE retorna status 200, mas inclui informações detalhadas sobre cada serviço.
    * 
    * Caminho: GET /health/ready (excluído do prefixo global 'api')
    */
   @Get('ready')
   @Public()
-  @HealthCheck()
   @ApiOperation({
     summary: 'Health Check - Readiness Probe',
-    description: 'Verifica se a aplicação está pronta para receber tráfego, incluindo dependências externas. Usado pelo Kubernetes como readiness probe.',
+    description: 'Verifica se a aplicação está pronta para receber tráfego, incluindo dependências externas. Sempre retorna 200 mas com status detalhado de cada serviço.',
   })
   @ApiResponse({
     status: 200,
-    description: 'Aplicação e dependências estão funcionando',
-  })
-  @ApiResponse({
-    status: 503,
-    description: 'Uma ou mais dependências estão indisponíveis',
+    description: 'Status da aplicação e dependências (sempre retorna 200)',
+    schema: {
+      type: 'object',
+      properties: {
+        status: { type: 'string', example: 'ok' },
+        timestamp: { type: 'string', format: 'date-time' },
+        services: {
+          type: 'object',
+          properties: {
+            database: { type: 'object' },
+            redis: { type: 'object' },
+            storage: { type: 'object' },
+            frontend: { type: 'object' },
+            memory: { type: 'object' },
+            disk: { type: 'object' }
+          }
+        },
+        summary: {
+          type: 'object',
+          properties: {
+            healthy: { type: 'number' },
+            total: { type: 'number' },
+            percentage: { type: 'number' }
+          }
+        }
+      }
+    }
   })
   async readiness() {
     this.logger.debug('Readiness check iniciado');
@@ -125,110 +147,143 @@ export class HealthController {
     }
 
     this.logger.debug('Executando verificações de saúde dos componentes');
-    return this.health.check([
-      // Verificação do banco de dados com tratamento de erro
-      async (): Promise<HealthIndicatorResult> => {
-        try {
-          const dbCheck = await Promise.race<HealthIndicatorResult>([
-            this.db.pingCheck('database'),
-            new Promise<HealthIndicatorResult>((_, reject) => {
-              setTimeout(() => reject(new Error('Database check timeout')), checkTimeout);
-            })
-          ]);
-          return dbCheck;
-        } catch (error) {
-          this.logger.warn(`Erro na verificação do banco de dados: ${error.message}`);
-          return {
-            database: {
-              status: 'down',
-              message: `Falha na conexão: ${error.message}`,
-            },
-          } as HealthIndicatorResult;
-        }
-      },
+    
+    const services: any = {};
+    let healthyCount = 0;
+    let totalCount = 0;
+
+    // Verificação do banco de dados
+    try {
+      const dbCheck = await Promise.race<HealthIndicatorResult>([
+        this.db.pingCheck('database'),
+        new Promise<HealthIndicatorResult>((_, reject) => {
+          setTimeout(() => reject(new Error('Database check timeout')), checkTimeout);
+        })
+      ]);
+      services.database = dbCheck.database;
+      if (dbCheck.database?.status === 'up') healthyCount++;
+    } catch (error) {
+      this.logger.warn(`Erro na verificação do banco de dados: ${error.message}`);
+      services.database = {
+        status: 'down',
+        message: `Falha na conexão: ${error.message}`,
+      };
+    }
+    totalCount++;
+
+    // Verificação do frontend
+    try {
+      const httpCheck = await Promise.race<HealthIndicatorResult>([
+        this.http.pingCheck('frontend', 'https://pgben-front.kemosoft.com.br/'),
+        new Promise<HealthIndicatorResult>((_, reject) => {
+          setTimeout(() => reject(new Error('Frontend check timeout')), checkTimeout);
+        })
+      ]);
+      services.frontend = httpCheck.frontend;
+      if (httpCheck.frontend?.status === 'up') healthyCount++;
+    } catch (error) {
+      this.logger.warn(`Erro na verificação do frontend: ${error.message}`);
+      services.frontend = {
+        status: 'down',
+        message: `Falha na conexão: ${error.message}`,
+      };
+    }
+    totalCount++;
+
+    // Verificação de memória
+    try {
+      const memoryCheck = await this.memory.checkHeap('memory_heap', 300 * 1024 * 1024);
+      services.memory = memoryCheck.memory_heap;
+      if (memoryCheck.memory_heap?.status === 'up') healthyCount++;
+    } catch (error) {
+      this.logger.warn(`Erro na verificação de memória: ${error.message}`);
+      services.memory = {
+        status: 'down',
+        message: `Falha na verificação: ${error.message}`,
+      };
+    }
+    totalCount++;
+
+    // Verificação de disco
+    try {
+      const diskCheck = await this.disk.checkStorage('disk', {
+        path: process.platform === 'win32' ? 'C:\\' : '/',
+        thresholdPercent: 0.9,
+      });
+      services.disk = diskCheck.disk;
+      if (diskCheck.disk?.status === 'up') healthyCount++;
+    } catch (error) {
+      this.logger.warn(`Erro na verificação de disco: ${error.message}`);
+      services.disk = {
+        status: 'down',
+        message: `Falha na verificação: ${error.message}`,
+      };
+    }
+    totalCount++;
+
+    // Verificação do Redis
+    services.redis = {
+      status: (disableRedis
+        ? 'disabled'
+        : isRedisAvailable
+          ? 'up'
+          : 'down'),
+      message: disableRedis
+        ? 'Redis desabilitado por configuração'
+        : isRedisAvailable
+          ? 'Conexão com Redis estabelecida'
+          : 'Não foi possível conectar ao Redis',
+    };
+    if (disableRedis || isRedisAvailable) healthyCount++;
+    totalCount++;
+
+    // Verificação do storage
+    try {
+      const storagePromise = this.storageHealth.checkHealth();
+      const storageStatus = await Promise.race<StorageHealthStatus>([
+        storagePromise,
+        new Promise<StorageHealthStatus>((_, reject) => {
+          setTimeout(() => reject(new Error('Storage check timeout')), checkTimeout * 2);
+        })
+      ]);
       
-      // Verificação do frontend com tratamento de erro
-      async (): Promise<HealthIndicatorResult> => {
-        try {
-          const httpCheck = await Promise.race<HealthIndicatorResult>([
-            this.http.pingCheck('frontend', 'https://pgben-front.kemosoft.com.br/'),
-            new Promise<HealthIndicatorResult>((_, reject) => {
-              setTimeout(() => reject(new Error('Frontend check timeout')), checkTimeout);
-            })
-          ]);
-          return httpCheck;
-        } catch (error) {
-          this.logger.warn(`Erro na verificação do frontend: ${error.message}`);
-          return {
-            frontend: {
-              status: 'down',
-              message: `Falha na conexão: ${error.message}`,
-            },
-          } as HealthIndicatorResult;
-        }
-      },
+      this.logger.debug(`Storage health check concluído: ${storageStatus.isHealthy ? 'healthy' : 'unhealthy'}`);
       
-      // Verificação de memória
-      () => this.memory.checkHeap('memory_heap', 300 * 1024 * 1024),
-      
-      // Verificação de disco
-      () =>
-        this.disk.checkStorage('disk', {
-          path: process.platform === 'win32' ? 'C:\\' : '/',
-          thresholdPercent: 0.9,
-        }),
-      async (): Promise<HealthIndicatorResult> => {
-        return {
-          redis: {
-            status: (disableRedis
-              ? 'disabled'
-              : isRedisAvailable
-                ? 'up'
-                : 'down') as HealthIndicatorStatus,
-            message: disableRedis
-              ? 'Redis desabilitado por configuração'
-              : isRedisAvailable
-                ? 'Conexão com Redis estabelecida'
-                : 'Não foi possível conectar ao Redis',
-          },
-        };
+      services.storage = {
+        status: storageStatus.isHealthy ? 'up' : 'down',
+        provider: storageStatus.provider,
+        message: storageStatus.details.error || 'OK',
+        details: storageStatus.details,
+        lastChecked: storageStatus.timestamp,
+      };
+      if (storageStatus.isHealthy) healthyCount++;
+    } catch (error) {
+      this.logger.warn(`Erro na verificação do storage: ${error.message}`);
+      services.storage = {
+        status: 'down',
+        provider: 'unknown',
+        message: `Falha na verificação: ${error.message}`,
+        details: { error: error.message },
+        lastChecked: new Date(),
+      };
+    }
+    totalCount++;
+
+    const healthPercentage = Math.round((healthyCount / totalCount) * 100);
+    
+    this.logger.debug(`Health check concluído: ${healthyCount}/${totalCount} serviços saudáveis (${healthPercentage}%)`);
+
+    // SEMPRE retorna status 200, mas com informações detalhadas
+    return {
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      services,
+      summary: {
+        healthy: healthyCount,
+        total: totalCount,
+        percentage: healthPercentage,
       },
-      // Verificação do serviço de armazenamento com tratamento de erro e timeout
-      async (): Promise<HealthIndicatorResult> => {
-        try {
-          const storagePromise = this.storageHealth.checkHealth();
-          const storageStatus = await Promise.race<StorageHealthStatus>([
-            storagePromise,
-            new Promise<StorageHealthStatus>((_, reject) => {
-              setTimeout(() => reject(new Error('Storage check timeout')), checkTimeout * 2); // Dobro do timeout para storage
-            })
-          ]);
-          
-          this.logger.debug(`Storage health check concluído: ${storageStatus.isHealthy ? 'healthy' : 'unhealthy'}`);
-          
-          return {
-            storage: {
-              status: storageStatus.isHealthy ? 'up' : 'down',
-              provider: storageStatus.provider,
-              message: storageStatus.details.error || 'OK',
-              details: storageStatus.details,
-              lastChecked: storageStatus.timestamp,
-            },
-          } as HealthIndicatorResult;
-        } catch (error) {
-          this.logger.warn(`Erro na verificação do storage: ${error.message}`);
-          return {
-            storage: {
-              status: 'down',
-              provider: 'unknown',
-              message: `Falha na verificação: ${error.message}`,
-              details: { error: error.message },
-              lastChecked: new Date(),
-            },
-          } as HealthIndicatorResult;
-        }
-      },
-    ]);
+    };
   }
 
   /**

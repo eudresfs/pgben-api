@@ -138,7 +138,7 @@ describe('AuditoriaMiddleware', () => {
 
   it('não deve auditar endpoints excluídos', async () => {
     const req = mockRequest();
-    req.originalUrl = '/api/v1/health';
+    req.originalUrl = '/v1/health';
 
     const res = mockResponse();
 

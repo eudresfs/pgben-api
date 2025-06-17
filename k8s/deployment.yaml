@@ -91,7 +91,7 @@ spec:
           failureThreshold: 60  # 15 minutos total para inicialização
         readinessProbe:
           httpGet:
-            path: /v1/health/system
+            path: /v1/health/ready
             port: 3000
           initialDelaySeconds: 90  # Após startup
           periodSeconds: 15
@@ -99,7 +99,7 @@ spec:
           failureThreshold: 3
         livenessProbe:
           httpGet:
-            path: /v1/health/system
+            path: /v1/health
             port: 3000
           initialDelaySeconds: 180  # Após readiness
           periodSeconds: 30

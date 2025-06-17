@@ -153,7 +153,7 @@ fi
 # Teste de health check
 log "Testando health check..."
 SERVICE_IP=$(kubectl get service pgben-server-service -n "$NAMESPACE" -o jsonpath='{.spec.clusterIP}')
-if kubectl run test-pod --image=curlimages/curl --rm -i --restart=Never -- curl -f "http://$SERVICE_IP:80/api/v1/health" &> /dev/null; then
+if kubectl run test-pod --image=curlimages/curl --rm -i --restart=Never -- curl -f "http://$SERVICE_IP:80/v1/health" &> /dev/null; then
     log_success "Health check passou"
 else
     log_warning "Health check falhou ou ainda não está disponível"
@@ -176,7 +176,7 @@ if kubectl get ingress pgben-server-ingress -n "$NAMESPACE" &> /dev/null; then
     log "URL Externa: https://$INGRESS_HOST"
 fi
 
-log "Health Check: http://$SERVICE_IP:80/api/v1/health"
+log "Health Check: http://$SERVICE_IP:80/v1/health"
 log "Metrics: http://$SERVICE_IP:80/api/v1/metrics"
 log "Swagger: http://$SERVICE_IP:80/api/docs"
 

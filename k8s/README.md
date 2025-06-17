@@ -123,9 +123,9 @@ A aplicação expõe métricas no endpoint `/api/v1/metrics` que são coletadas 
 
 ### Health Checks
 
-- **Liveness**: `/api/v1/health`
-- **Readiness**: `/api/v1/health/ready`
-- **Startup**: `/api/v1/health` (com delay inicial)
+- **Liveness**: `/v1/health`
+- **Readiness**: `/v1/health/ready`
+- **Startup**: `/v1/health` (com delay inicial)
 
 ### Logs
 
@@ -210,7 +210,7 @@ kubectl logs pgben-server-xxx -n pgben --previous
 
 ```bash
 # Testar conectividade interna
-kubectl run test-pod --image=curlimages/curl --rm -i --restart=Never -- curl -f http://pgben-server-service.pgben.svc.cluster.local/api/v1/health
+kubectl run test-pod --image=curlimages/curl --rm -i --restart=Never -- curl -f http://pgben-server-service.pgben.svc.cluster.local/v1/health
 
 # Verificar DNS
 kubectl run test-pod --image=busybox --rm -i --restart=Never -- nslookup pgben-server-service.pgben.svc.cluster.local
