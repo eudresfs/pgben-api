@@ -79,9 +79,7 @@
     "jwt:setup:docker": "powershell -ExecutionPolicy Bypass -File scripts/setup-jwt-docker-clean.ps1 -OutputFormat compose",
     "jwt:setup:k8s": "powershell -ExecutionPolicy Bypass -File scripts/setup-jwt-k8s.ps1",
     "jwt:generate": "node scripts/gerar-chaves-jwt.js",
-    "jwt:regenerate": "powershell -ExecutionPolicy Bypass -File scripts/setup-jwt-docker-clean.ps1 -OutputFormat env -Force",
-    "check:versions": "node scripts/check-versions.js",
-    "preinstall": "node scripts/check-versions.js"
+    "jwt:regenerate": "powershell -ExecutionPolicy Bypass -File scripts/setup-jwt-docker-clean.ps1 -OutputFormat env -Force"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.812.0",

@@ -15,6 +15,9 @@ RUN npm install -g npm@11.4.2
 COPY package*.json ./
 COPY tsconfig*.json ./
 
+# Copy scripts directory for preinstall script
+COPY scripts/ ./scripts/
+
 # Install all dependencies (including dev dependencies for build)
 RUN npm ci --no-audit --no-fund
 
