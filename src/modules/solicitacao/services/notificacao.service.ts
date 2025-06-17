@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import {
@@ -10,11 +10,13 @@ import { PriorizacaoSolicitacaoService } from './priorizacao-solicitacao.service
 import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Pendencia, Usuario } from '@/entities';
+import { NotificacaoService as NotificacaoSistemaService } from '../../notificacao/services/notificacao.service';
+import { TipoNotificacao } from '../../../entities/notification.entity';
 
 /**
- * Tipos de notificação disponíveis no sistema
+ * Tipos de notificação específicos do módulo de solicitação
  */
-export enum TipoNotificacao {
+export enum TipoNotificacaoSolicitacao {
   PRAZO_EXPIRADO = 'prazo_expirado',
   PRAZO_PROXIMO = 'prazo_proximo',
   DETERMINACAO_JUDICIAL = 'determinacao_judicial',
@@ -27,10 +29,10 @@ export enum TipoNotificacao {
 }
 
 /**
- * Interface para os dados de uma notificação
+ * Interface para os dados de uma notificação de solicitação
  */
-export interface DadosNotificacao {
-  tipo: TipoNotificacao;
+export interface DadosNotificacaoSolicitacao {
+  tipo: TipoNotificacaoSolicitacao;
   titulo: string;
   mensagem: string;
   solicitacaoId?: string;
@@ -58,7 +60,18 @@ export class NotificacaoService {
    */
   async notificarPendenciaCriada(pendenciaSalva: Pendencia, solicitacao: Solicitacao, usuario: Usuario): Promise<void> {
     this.logger.log(`Pendência criada: ${pendenciaSalva.id} para solicitação ${solicitacao.id}`);
-    // TODO: Implementar notificação real (email, SMS, etc.)
+    
+    try {
+      await this.notificacaoSistemaService.criarNotificacaoPendencia({
+         destinatario_id: solicitacao.tecnico_id,
+         titulo: 'Nova pendência criada',
+         conteudo: `Pendência criada para a solicitação ${solicitacao.protocolo}`,
+         solicitacao_id: solicitacao.id,
+         link: `${this.configService.get('FRONTEND_URL') || 'https://pgben-front.kemosoft.com.br'}/solicitacoes/${solicitacao.id}`,
+       });
+    } catch (error) {
+      this.logger.error(`Erro ao enviar notificação de pendência criada: ${error.message}`, error.stack);
+    }
   }
 
   /**
@@ -66,7 +79,18 @@ export class NotificacaoService {
    */
   async notificarPendenciaResolvida(pendenciaAtualizada: Pendencia, solicitacao: Solicitacao, usuario: Usuario): Promise<void> {
     this.logger.log(`Pendência resolvida: ${pendenciaAtualizada.id} para solicitação ${solicitacao.id}`);
-    // TODO: Implementar notificação real (email, SMS, etc.)
+    
+    try {
+      await this.notificacaoSistemaService.criarNotificacaoPendencia({
+         destinatario_id: solicitacao.tecnico_id,
+         titulo: 'Pendência resolvida',
+         conteudo: `Pendência resolvida para a solicitação ${solicitacao.protocolo}`,
+         solicitacao_id: solicitacao.id,
+         link: `${this.configService.get('FRONTEND_URL') || 'http://localhost:3000'}/solicitacoes/${solicitacao.id}`,
+       });
+    } catch (error) {
+      this.logger.error(`Erro ao enviar notificação de pendência resolvida: ${error.message}`, error.stack);
+    }
   }
   private readonly logger = new Logger(NotificacaoService.name);
 
@@ -77,24 +101,39 @@ export class NotificacaoService {
     private readonly priorizacaoService: PriorizacaoSolicitacaoService,
     private readonly configService: ConfigService,
     private readonly eventEmitter: EventEmitter2,
+    @Inject(forwardRef(() => NotificacaoSistemaService))
+    private readonly notificacaoSistemaService: NotificacaoSistemaService,
   ) {}
 
   /**
    * Envia uma notificação para o sistema
    * @param notificacao Dados da notificação a ser enviada
    */
-  enviarNotificacao(notificacao: DadosNotificacao): void {
+  async enviarNotificacao(notificacao: DadosNotificacaoSolicitacao): Promise<void> {
     try {
       this.logger.log(`Enviando notificação: ${notificacao.titulo}`);
 
-      // Emitir evento para o sistema de notificações
-      this.eventEmitter.emit('notificacao.criada', notificacao);
+      // Criar notificação usando o serviço principal
+      await this.notificacaoSistemaService.criarNotificacaoSolicitacao({
+        destinatario_id: notificacao.destinatarioId!,
+        titulo: notificacao.titulo,
+        conteudo: notificacao.mensagem,
+        solicitacao_id: notificacao.solicitacaoId!,
+        link: notificacao.dados?.link,
+      });
 
-      // Em um ambiente real, aqui poderia haver integrações com:
-      // - Sistema de e-mail
-      // - Notificações push
-      // - SMS
-      // - Webhooks para sistemas externos
+      // Emitir evento SSE para notificação em tempo real
+      this.eventEmitter.emit('sse.notificacao', {
+        userId: notificacao.destinatarioId,
+        tipo: 'solicitacao_notificacao',
+        dados: {
+          titulo: notificacao.titulo,
+          mensagem: notificacao.mensagem,
+          solicitacaoId: notificacao.solicitacaoId,
+          protocolo: notificacao.protocolo,
+          prioridade: notificacao.prioridade,
+        },
+      });
 
       this.logger.log(`Notificação enviada com sucesso: ${notificacao.titulo}`);
     } catch (error) {
@@ -106,16 +145,35 @@ export class NotificacaoService {
   }
 
   /**
+   * Mapeia tipos de notificação específicos para tipos do sistema principal
+   */
+  private mapearTipoNotificacao(tipo: TipoNotificacaoSolicitacao): TipoNotificacao {
+    const mapeamento: Record<TipoNotificacaoSolicitacao, TipoNotificacao> = {
+      [TipoNotificacaoSolicitacao.PRAZO_EXPIRADO]: TipoNotificacao.ALERTA,
+      [TipoNotificacaoSolicitacao.PRAZO_PROXIMO]: TipoNotificacao.ALERTA,
+      [TipoNotificacaoSolicitacao.DETERMINACAO_JUDICIAL]: TipoNotificacao.SISTEMA,
+      [TipoNotificacaoSolicitacao.PENDENCIA_ABERTA]: TipoNotificacao.PENDENCIA,
+      [TipoNotificacaoSolicitacao.ALTERACAO_STATUS]: TipoNotificacao.SOLICITACAO,
+      [TipoNotificacaoSolicitacao.SOLICITACAO_ATRIBUIDA]: TipoNotificacao.SOLICITACAO,
+      [TipoNotificacaoSolicitacao.MONITORAMENTO_PENDENTE]: TipoNotificacao.ALERTA,
+      [TipoNotificacaoSolicitacao.MONITORAMENTO_PROXIMO]: TipoNotificacao.ALERTA,
+      [TipoNotificacaoSolicitacao.VISITA_MONITORAMENTO_REGISTRADA]: TipoNotificacao.SISTEMA,
+    };
+
+    return mapeamento[tipo] || TipoNotificacao.SOLICITACAO;
+  }
+
+  /**
    * Notifica sobre uma alteração de status de solicitação
    * @param solicitacao Solicitação que teve o status alterado
    * @param statusAnterior Status anterior da solicitação
    * @param observacao Observação opcional sobre a alteração
    */
-  notificarAlteracaoStatus(
+  async notificarAlteracaoStatus(
     solicitacao: Solicitacao,
     statusAnterior: StatusSolicitacao,
     observacao?: string,
-  ): void {
+  ): Promise<void> {
     // Identificar os destinatários da notificação
     const destinatarios = this.identificarDestinatariosAlteracao(solicitacao);
 
@@ -130,9 +188,9 @@ export class NotificacaoService {
       : 'normal';
 
     // Enviar notificação para cada destinatário
-    for (const destinatarioId of destinatarios) {
+    const promises = destinatarios.map(destinatarioId => 
       this.enviarNotificacao({
-        tipo: TipoNotificacao.ALTERACAO_STATUS,
+        tipo: TipoNotificacaoSolicitacao.ALTERACAO_STATUS,
         titulo: `Solicitação ${solicitacao.protocolo} - Alteração de Status`,
         mensagem,
         solicitacaoId: solicitacao.id,
@@ -144,8 +202,10 @@ export class NotificacaoService {
           determinacaoJudicial: solicitacao.determinacao_judicial_flag,
         },
         prioridade,
-      });
-    }
+      })
+    );
+
+    await Promise.all(promises);
   }
 
   /**
@@ -215,7 +275,7 @@ export class NotificacaoService {
     const destinatarios = this.identificarDestinatariosAlteracao(solicitacao);
     for (const destinatarioId of destinatarios) {
       this.enviarNotificacao({
-        tipo: TipoNotificacao.PRAZO_EXPIRADO,
+        tipo: TipoNotificacaoSolicitacao.PRAZO_EXPIRADO,
         titulo: `PRAZO EXPIRADO - Solicitação ${solicitacao.protocolo}`,
         mensagem,
         solicitacaoId: solicitacao.id,
@@ -255,7 +315,7 @@ export class NotificacaoService {
 
     // Enviar notificação para o técnico
     this.enviarNotificacao({
-      tipo: TipoNotificacao.SOLICITACAO_ATRIBUIDA,
+      tipo: TipoNotificacaoSolicitacao.SOLICITACAO_ATRIBUIDA,
       titulo: `Nova Solicitação Atribuída - ${solicitacao.protocolo}`,
       mensagem,
       solicitacaoId: solicitacao.id,
@@ -285,7 +345,7 @@ export class NotificacaoService {
     const destinatarios = this.identificarDestinatariosAlteracao(solicitacao);
     for (const destinatarioId of destinatarios) {
       this.enviarNotificacao({
-        tipo: TipoNotificacao.DETERMINACAO_JUDICIAL,
+        tipo: TipoNotificacaoSolicitacao.DETERMINACAO_JUDICIAL,
         titulo: `DETERMINAÇÃO JUDICIAL - Solicitação ${solicitacao.protocolo}`,
         mensagem,
         solicitacaoId: solicitacao.id,
@@ -327,7 +387,7 @@ export class NotificacaoService {
     // Enviar notificação para cada destinatário
     for (const destinatarioId of destinatarios) {
       this.enviarNotificacao({
-        tipo: TipoNotificacao.MONITORAMENTO_PENDENTE,
+        tipo: TipoNotificacaoSolicitacao.MONITORAMENTO_PENDENTE,
         titulo: `Monitoramento Pendente - Aluguel Social ${solicitacao.protocolo}`,
         mensagem,
         solicitacaoId: solicitacao.id,
@@ -373,7 +433,7 @@ export class NotificacaoService {
     // Enviar notificação para cada destinatário
     for (const destinatarioId of destinatarios) {
       this.enviarNotificacao({
-        tipo: TipoNotificacao.MONITORAMENTO_PROXIMO,
+        tipo: TipoNotificacaoSolicitacao.MONITORAMENTO_PROXIMO,
         titulo: `Monitoramento Próximo - Aluguel Social ${solicitacao.protocolo}`,
         mensagem,
         solicitacaoId: solicitacao.id,
@@ -420,7 +480,7 @@ export class NotificacaoService {
     // Enviar notificação para cada destinatário
     for (const destinatarioId of destinatarios) {
       this.enviarNotificacao({
-        tipo: TipoNotificacao.VISITA_MONITORAMENTO_REGISTRADA,
+        tipo: TipoNotificacaoSolicitacao.VISITA_MONITORAMENTO_REGISTRADA,
         titulo: `Visita de Monitoramento Registrada - Aluguel Social ${solicitacao.protocolo}`,
         mensagem,
         solicitacaoId: solicitacao.id,

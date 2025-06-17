@@ -28,6 +28,7 @@ export enum TipoNotificacao {
   APROVACAO = 'aprovacao',
   LIBERACAO = 'liberacao',
   ALERTA = 'alerta',
+  URGENTE = "urgente",
 }
 
 /**
@@ -85,10 +86,10 @@ export class NotificacaoSistema {
   @JoinColumn({ name: 'template_id' })
   template: NotificationTemplate;
 
-  @Column({ name: 'template_id' })
-  @IsNotEmpty({ message: 'ID do template é obrigatório' })
+  @Column({ name: 'template_id', nullable: true })
+  @IsOptional()
   @IsUUID('4', { message: 'ID do template inválido' })
-  template_id: string;
+  template_id: string | null;
 
   @Column({ type: 'jsonb', name: 'dados_contexto' })
   dados_contexto: Record<string, any>;

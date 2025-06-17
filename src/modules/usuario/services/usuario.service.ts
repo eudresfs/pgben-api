@@ -24,9 +24,9 @@ import {
   throwNotInFirstAccess,
 } from '../../../shared/exceptions/error-catalog/domains/usuario.errors';
 import { throwDuplicateCpf } from '../../../shared/exceptions/error-catalog/domains/cidadao.errors';
-import { NotificationManagerService } from '../../notificacao/services/notification-manager.service';
+// import { NotificationManagerService } from '../../notificacao/services/notification-manager.service';
 import { EmailService } from '../../../common/services/email.service';
-import { CanalNotificacao, NotificationTemplate } from '../../../entities/notification-template.entity';
+// import { CanalNotificacao, NotificationTemplate } from '../../../entities/notification-template.entity';
 
 /**
  * Serviço de usuários
@@ -43,9 +43,9 @@ export class UsuarioService {
   constructor(
     private readonly dataSource: DataSource,
     private readonly usuarioRepository: UsuarioRepository,
-    private readonly notificationManager: NotificationManagerService,
-    @InjectRepository(NotificationTemplate)
-    private readonly templateRepository: Repository<NotificationTemplate>,
+    // private readonly notificationManager: NotificationManagerService,
+    // @InjectRepository(NotificationTemplate)
+    // private readonly templateRepository: Repository<NotificationTemplate>,
     @InjectRepository(Role)
     private readonly roleRepository: Repository<Role>,
     private readonly emailService: EmailService,
@@ -92,55 +92,33 @@ export class UsuarioService {
     senha: string,
   ): Promise<void> {
     try {
-      // Buscar template de credenciais na tabela notification_template
-      const template = await this.templateRepository.findOne({
-        where: { codigo: 'usuario-credenciais-acesso' },
+      // TODO: Buscar template de credenciais quando o módulo de notificação for reimplementado
+      // const template = await this.templateRepository.findOne({
+      //   where: { codigo: 'usuario-credenciais-acesso' },
+      // });
+
+      // Enviar email direto usando o serviço de email
+      await this.emailService.sendEmail({
+        to: usuario.email,
+        subject: 'Credenciais de Acesso - Sistema PGBEN',
+        template: 'usuario-credenciais-acesso',
+        context: {
+          nome: usuario.nome.split(' ')[0],
+          email: usuario.email,
+          senha: senha,
+          matricula: usuario.matricula,
+          sistema_url: process.env.FRONTEND_URL || 'https://pgben-front.kemosoft.com.br',
+          data_criacao: new Date().toLocaleDateString('pt-BR'),
+        },
       });
-
-      if (!template) {
-        this.logger.warn('Template de credenciais não encontrado. Tentando enviar email direto.');
-        
-        // Fallback: enviar email direto usando o serviço de email
-        try {
-          await this.emailService.sendEmail({
-            to: usuario.email,
-            subject: 'Credenciais de Acesso - Sistema PGBEN',
-            template: 'usuario-credenciais-acesso',
-            context: {
-              nome: usuario.nome.split(' ')[0],
-              email: usuario.email,
-              senha: senha,
-              matricula: usuario.matricula,
-              sistema_url: process.env.FRONTEND_URL || 'https://pgben-front.kemosoft.com.br',
-              data_criacao: new Date().toLocaleDateString('pt-BR'),
-            },
-          });
-          
-          this.logger.log(`Credenciais enviadas por email direto para: ${usuario.email}`);
-          return;
-        } catch (emailError) {
-          this.logger.error(`Erro ao enviar email direto: ${emailError.message}`);
-          return;
-        }
-      }
-
-      // Dados para o template
-      const dadosTemplate = {
-        nome: usuario.nome,
-        email: usuario.email,
-        senha: senha,
-        matricula: usuario.matricula,
-        sistema_url: process.env.FRONTEND_URL || 'https://pgben-front.kemosoft.com.br',
-        data_criacao: new Date().toLocaleDateString('pt-BR'),
-      };
-
-      // Criar notificação
-      await this.notificationManager.criarNotificacao({
-        template_id: template.id,
-        destinatario_id: usuario.id,
-        dados_contexto: dadosTemplate,
-        canal: CanalNotificacao.EMAIL
-      });
+      
+      // TODO: Reativar notificação quando o módulo for reimplementado
+      // await this.notificationManager.criarNotificacao({
+      //   template_id: template.id,
+      //   destinatario_id: usuario.id,
+      //   dados_contexto: dadosTemplate,
+      //   canal: CanalNotificacao.EMAIL
+      // });
 
       this.logger.log(`Credenciais enviadas por email para: ${usuario.email}`);
     } catch (error) {

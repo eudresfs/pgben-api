@@ -8,6 +8,9 @@ LABEL description="Plataforma de Gestão de Benefícios Eventuais - PGBen"
 
 WORKDIR /app
 
+# Update npm to latest version to ensure compatibility with lockfileVersion 3
+RUN npm install -g npm@11.4.2
+
 # Copy package files first for better layer caching
 COPY package*.json ./
 COPY tsconfig*.json ./
@@ -33,6 +36,9 @@ LABEL description="Plataforma de Gestão de Benefícios Eventuais - PGBen"
 RUN apk update && apk upgrade && \
     apk add --no-cache curl wget dumb-init && \
     rm -rf /var/cache/apk/*
+
+# Update npm to latest version to ensure compatibility with lockfileVersion 3
+RUN npm install -g npm@11.4.2
 
 # Create non-root user for security
 RUN addgroup -g 1001 -S nodejs && \

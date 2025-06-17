@@ -20,7 +20,7 @@ import {
 } from './repositories';
 import {
   Parametro,
-  Template,
+  NotificationTemplate,
   WorkflowBeneficio,
   ConfiguracaoIntegracao,
 } from '../../entities';
@@ -47,7 +47,7 @@ import {
   imports: [
     TypeOrmModule.forFeature([
       Parametro,
-      Template,
+      NotificationTemplate,
       WorkflowBeneficio,
       ConfiguracaoIntegracao,
     ]),
@@ -88,6 +88,8 @@ import {
     WorkflowService,
     IntegracaoService,
     LimitesService,
+    // Exportamos os repositórios para uso em outros módulos
+    TemplateRepository,
   ],
 })
 export class ConfiguracaoModule {

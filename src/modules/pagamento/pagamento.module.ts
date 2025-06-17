@@ -1,5 +1,6 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { UnifiedLoggerService } from '../../shared/logging/unified-logger.service';
 
 // Entidades
 import {
@@ -108,6 +109,9 @@ import { SharedModule } from '../../shared/shared.module';
     DataMaskingInterceptor,
     AuditoriaInterceptor,
     Reflector,
+
+    // Logger
+    UnifiedLoggerService,
   ],
   exports: [
     TypeOrmModule,

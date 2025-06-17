@@ -71,7 +71,6 @@ export { ProcessoJudicial } from './processo-judicial.entity';
 // Entidades de Notificação
 export { Notificacao } from './notificacao.entity';
 export { NotificationTemplate } from './notification-template.entity';
-export { Template } from './template.entity';
 // Exportações do notification.entity.ts
 export {
   NotificacaoSistema,

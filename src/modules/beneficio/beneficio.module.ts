@@ -3,7 +3,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { SharedModule } from '../../shared/shared.module';
 import { CacheModule } from '../../shared/cache/cache.module';
 import { AuthModule } from '../../auth/auth.module';
-import { SolicitacaoModule } from '../solicitacao/solicitacao.module';
 
 // Entidades
 import {
@@ -36,6 +35,9 @@ import { DadosCestaBasicaService } from './services/dados-cesta-basica.service';
 import { DadosBeneficioFactoryService } from './services/dados-beneficio-factory.service';
 import { RenovacaoAutomaticaService } from './services/renovacao-automatica.service';
 import { NotificacaoRenovacaoService } from './services/notificacao-renovacao.service';
+
+// Interceptors
+import { WorkflowInterceptor } from '../../interceptors/workflow.interceptor';
 
 // Repositórios
 import { TipoBeneficioRepository } from './repositories/tipo-beneficio.repository';
@@ -72,7 +74,7 @@ import { ConfiguracaoRenovacaoRepository } from './repositories/configuracao-ren
     SharedModule, // Serviços compartilhados
     CacheModule, // Para CacheService usado pelo CacheInterceptor
     forwardRef(() => AuthModule), // Para autenticação e autorização
-    forwardRef(() => SolicitacaoModule), // Para WorkflowSolicitacaoService
+    forwardRef(() => import('../solicitacao/solicitacao.module').then(m => m.SolicitacaoModule)), // Para WorkflowSolicitacaoService
   ],
   controllers: [
     BeneficioController,
@@ -89,6 +91,7 @@ import { ConfiguracaoRenovacaoRepository } from './repositories/configuracao-ren
     DadosBeneficioFactoryService,
     RenovacaoAutomaticaService,
     NotificacaoRenovacaoService,
+    WorkflowInterceptor, // Interceptor para workflow automático
     TipoBeneficioRepository,
     TipoBeneficioSchemaRepository,
     CampoDinamicoRepository,

@@ -4,6 +4,7 @@ import {
   forwardRef,
   Inject,
   BadRequestException,
+  ConflictException,
 } from '@nestjs/common';
 import {
   throwSolicitacaoNotFound,
@@ -349,6 +350,22 @@ export class SolicitacaoService {
       if (createSolicitacaoDto.solicitante_id && 
           createSolicitacaoDto.solicitante_id === createSolicitacaoDto.beneficiario_id) {
         throw new BadRequestException('Solicitante não pode ser o mesmo que o beneficiário');
+      }
+
+      // Verificar se o cidadão possui solicitação suspensa (exceto por determinação judicial)
+      if (!createSolicitacaoDto.determinacao_judicial_id) {
+        const solicitacaoSuspensa = await manager.findOne(Solicitacao, {
+          where: {
+            beneficiario_id: createSolicitacaoDto.beneficiario_id,
+            status: StatusSolicitacao.SUSPENSO
+          }
+        });
+
+        if (solicitacaoSuspensa) {
+          throw new ConflictException(
+            'Cidadão possui solicitação suspensa. Não é possível solicitar novos benefícios, exceto por determinação judicial.'
+          );
+        }
       }
 
       // Verificar se já existe uma solicitação em andamento para o mesmo cidadão e tipo de benefício

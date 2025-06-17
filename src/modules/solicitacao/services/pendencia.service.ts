@@ -20,6 +20,7 @@ import { NotificacaoService } from './notificacao.service';
 import { PermissionService } from '../../../auth/services/permission.service';
 import { TipoOperacao } from '../../../enums/tipo-operacao.enum';
 import { SolicitacaoEventType } from '../events/solicitacao-events';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 /**
  * Service centralizado para gestão de pendências
@@ -39,6 +40,7 @@ export class PendenciaService {
     private readonly eventosService: EventosService,
     private readonly notificacaoService: NotificacaoService,
     private readonly permissionService: PermissionService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   /**
@@ -132,6 +134,19 @@ export class PendenciaService {
       solicitacao,
       usuario,
     );
+
+    // Emitir notificação SSE para pendência criada
+    this.eventEmitter.emit('sse.notificacao', {
+      userId: solicitacao.tecnico_id,
+      tipo: 'pendencia_criada',
+      dados: {
+        pendenciaId: pendenciaSalva.id,
+        solicitacaoId: solicitacao.id,
+        protocolo: solicitacao.protocolo, 
+        descricao: pendenciaSalva.descricao,
+        prioridade: 'high',
+      },
+    });
 
     // Buscar a pendência com os relacionamentos necessários
     const pendenciaCompleta = await this.pendenciaRepository.findOne({
@@ -237,6 +252,42 @@ export class PendenciaService {
       usuario,
     );
 
+    // Emitir notificação SSE para pendência resolvida
+    this.eventEmitter.emit('sse.notificacao', {
+      userId: pendencia.registrado_por_id,
+      tipo: 'pendencia_resolvida',
+      dados: {
+        pendenciaId: pendencia.id,
+        solicitacaoId: pendencia.solicitacao_id,
+        protocolo: pendencia.solicitacao?.protocolo,
+        resolucao: resolverPendenciaDto.observacao_resolucao,
+        prioridade: 'medium',
+        dataResolucao: new Date(),
+      },
+    });
+
+    // Se todas as pendências foram sanadas, notificar técnico
+    if (todasPendenciasSanadas) {
+      const solicitacao = await this.solicitacaoRepository.findOne({
+        where: { id: pendencia.solicitacao_id },
+        relations: ['tecnico'],
+      });
+      
+      if (solicitacao?.tecnico_id) {
+        this.eventEmitter.emit('sse.notificacao', {
+          userId: solicitacao.tecnico_id,
+          tipo: 'pendencias_sanadas',
+          dados: {
+            solicitacaoId: solicitacao.id,
+            protocolo: solicitacao.protocolo,
+            prioridade: 'high',
+            statusNovo: StatusSolicitacao.EM_ANALISE,
+            timestamp: new Date(),
+          },
+        });
+      }
+    }
+
     return this.buscarPorId(pendencia.id);
   }
 
@@ -328,6 +379,42 @@ export class PendenciaService {
     logDto.dados_novos = pendenciaAtualizada;
     logDto.descricao = `Pendência cancelada: ${cancelarPendenciaDto.motivo_cancelamento}`;
     await this.auditoriaService.criarLog(logDto);
+
+    // Emitir notificação SSE para pendência cancelada
+    this.eventEmitter.emit('sse.notificacao', {
+      userId: pendencia.registrado_por_id,
+      tipo: 'pendencia_cancelada',
+      dados: {
+        pendenciaId: pendencia.id,
+        solicitacaoId: pendencia.solicitacao_id,
+        protocolo: pendencia.solicitacao?.protocolo,
+        motivo: cancelarPendenciaDto.motivo_cancelamento,
+        prioridade: 'medium',
+        dataCancelamento: new Date(),
+      },
+    });
+
+    // Se todas as pendências foram sanadas após o cancelamento, notificar técnico
+    if (todasPendenciasSanadas) {
+      const solicitacao = await this.solicitacaoRepository.findOne({
+        where: { id: pendencia.solicitacao_id },
+        relations: ['tecnico'],
+      });
+      
+      if (solicitacao?.tecnico_id) {
+        this.eventEmitter.emit('sse.notificacao', {
+          userId: solicitacao.tecnico_id,
+          tipo: 'pendencias_sanadas',
+          dados: {
+            solicitacaoId: solicitacao.id,
+            protocolo: solicitacao.protocolo,
+            prioridade: 'high',
+            statusNovo: StatusSolicitacao.EM_ANALISE,
+            timestamp: new Date(),
+          },
+        });
+      }
+    }
 
     return this.buscarPorId(pendencia.id);
   }

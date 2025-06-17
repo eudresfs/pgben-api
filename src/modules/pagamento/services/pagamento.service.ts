@@ -4,6 +4,7 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Pagamento } from '../../../entities/pagamento.entity';
@@ -19,6 +20,8 @@ import { WorkflowSolicitacaoService } from '@/modules/solicitacao/services/workf
 import { AuditoriaService } from '../../auditoria/services/auditoria.service';
 import { TipoOperacao } from '../../../enums/tipo-operacao.enum';
 import { StatusSolicitacao } from '@/enums';
+import { NotificacaoService } from '../../notificacao/services/notificacao.service';
+import { UnifiedLoggerService } from '../../../shared/logging/unified-logger.service';
 
 /**
  * Serviço para gerenciamento de operações relacionadas a pagamentos
@@ -37,6 +40,9 @@ export class PagamentoService {
     private readonly workflowSolicitacaoService: WorkflowSolicitacaoService,
     private readonly solicitacaoService: SolicitacaoService,
     private readonly auditoriaService: AuditoriaService,
+    private readonly notificacaoService: NotificacaoService,
+    private readonly logger: UnifiedLoggerService,
+    private readonly eventEmitter: EventEmitter2,
   ) { }
 
   /**
@@ -100,6 +106,32 @@ export class PagamentoService {
     logDto.metodo_http = 'POST';
     await this.auditoriaService.create(logDto);
 
+    // Emitir notificação SSE para criação de pagamento pendente
+    if (solicitacao.tecnico_id) {
+      try {
+        this.eventEmitter.emit('sse.notificacao', {
+          userId: solicitacao.tecnico_id,
+          tipo: 'pagamento_pendente_criado',
+          dados: {
+            pagamentoId: result.id,
+            solicitacaoId: result.solicitacaoId,
+            protocolo: solicitacao.protocolo,
+            valor: result.valor,
+            metodoPagamento: result.metodoPagamento,
+            dataPrevistaLiberacao: result.dataPrevistaLiberacao,
+            status: StatusPagamentoEnum.PENDENTE,
+            prioridade: 'medium',
+            dataCriacao: new Date(),
+          },
+        });
+      } catch (sseError) {
+        this.logger.error(
+          `Erro ao emitir notificação SSE para criação de pagamento pendente ${result.id}: ${sseError.message}`,
+          sseError.stack,
+        );
+      }
+    }
+
     return result;
   }
 
@@ -122,9 +154,24 @@ export class PagamentoService {
       throw new NotFoundException('Solicitação não encontrada');
     }
 
-    if (solicitacao.status !== StatusSolicitacao.APROVADA) {
+    // Verificar se a solicitação não está bloqueada ou suspensa
+    if (solicitacao.status === StatusSolicitacao.BLOQUEADO) {
       throw new ConflictException(
-        'Só é possível criar pagamentos para solicitações aprovadas'
+        'Não é possível criar pagamentos para solicitações bloqueadas'
+      );
+    }
+
+    if (solicitacao.status === StatusSolicitacao.SUSPENSO) {
+      throw new ConflictException(
+        'Não é possível criar pagamentos para solicitações suspensas'
+      );
+    }
+
+    // Verificar se a solicitação está em status válido para pagamento
+    if (solicitacao.status !== StatusSolicitacao.APROVADA && 
+        solicitacao.status !== StatusSolicitacao.LIBERADA) {
+      throw new ConflictException(
+        'Só é possível criar pagamentos para solicitações aprovadas ou liberadas'
       );
     }
 
@@ -167,7 +214,90 @@ export class PagamentoService {
 
     // A auditoria será registrada automaticamente pelo AuditoriaInterceptor
 
+    // Emitir notificação SSE para criação de pagamento
+    if (solicitacao.tecnico_id) {
+      try {
+        this.eventEmitter.emit('sse.notificacao', {
+          userId: solicitacao.tecnico_id,
+          tipo: 'pagamento_criado',
+          dados: {
+            pagamentoId: result.id,
+            solicitacaoId: result.solicitacaoId,
+            protocolo: solicitacao.protocolo,
+            valor: result.valor,
+            metodoPagamento: result.metodoPagamento,
+            dataLiberacao: result.dataLiberacao,
+            status: StatusPagamentoEnum.LIBERADO,
+            prioridade: 'high',
+            dataCriacao: new Date(),
+          },
+        });
+      } catch (sseError) {
+        this.logger.error(
+          `Erro ao emitir notificação SSE para criação de pagamento ${result.id}: ${sseError.message}`,
+          sseError.stack,
+        );
+      }
+    }
+
     return result;
+  }
+
+  /**
+   * Atualiza o status da solicitação relacionada ao pagamento
+   *
+   * @param solicitacaoId ID da solicitação
+   * @param statusPagamento Status do pagamento
+   * @param usuarioId ID do usuário que está realizando a operação
+   */
+  async atualizarStatus(
+    solicitacaoId: string,
+    statusPagamento: StatusPagamentoEnum,
+    usuarioId: string,
+  ): Promise<void> {
+    try {
+      let statusSolicitacao: StatusSolicitacao;
+      let observacao: string;
+
+      // Mapear status do pagamento para status da solicitação
+      switch (statusPagamento) {
+        case StatusPagamentoEnum.PENDENTE:
+          statusSolicitacao = StatusSolicitacao.EM_PROCESSAMENTO;
+          observacao = 'Pagamento criado e pendente de liberação';
+          break;
+        case StatusPagamentoEnum.LIBERADO:
+          statusSolicitacao = StatusSolicitacao.LIBERADA;
+          observacao = 'Pagamento liberado para confirmação';
+          break;
+        case StatusPagamentoEnum.CONFIRMADO:
+          statusSolicitacao = StatusSolicitacao.CONCLUIDA;
+          observacao = 'Pagamento confirmado e concluído';
+          break;
+        case StatusPagamentoEnum.CANCELADO:
+          statusSolicitacao = StatusSolicitacao.CANCELADA;
+          observacao = 'Pagamento cancelado';
+          break;
+        default:
+          statusSolicitacao = StatusSolicitacao.EM_PROCESSAMENTO;
+          observacao = `Status do pagamento atualizado para ${statusPagamento}`;
+      }
+
+      await this.workflowSolicitacaoService.atualizarStatus(
+        solicitacaoId,
+        statusSolicitacao,
+        observacao
+      );
+
+      this.logger.log(
+        `Status da solicitação ${solicitacaoId} atualizado para ${statusSolicitacao} devido ao pagamento ${statusPagamento}`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Erro ao atualizar status da solicitação ${solicitacaoId} para pagamento ${statusPagamento}`,
+        error.stack,
+      );
+      throw error;
+    }
   }
 
   /**
@@ -184,7 +314,10 @@ export class PagamentoService {
     usuarioId: string,
   ): Promise<Pagamento> {
     // Buscar o pagamento existente
-    const pagamento = await this.pagamentoRepository.findOneBy({ id });
+    const pagamento = await this.pagamentoRepository.findOne({
+      where: { id },
+      relations: ['solicitacao', 'solicitacao.cidadao'],
+    });
     if (!pagamento) {
       throw new NotFoundException('Pagamento não encontrado');
     }
@@ -196,14 +329,13 @@ export class PagamentoService {
       );
     }
 
-    // Validar se comprovante é obrigatório para status CONFIRMADO
+    // Validações específicas por status
     if (updateDto.status === StatusPagamentoEnum.CONFIRMADO && !updateDto.comprovanteId) {
       throw new BadRequestException(
         'Comprovante é obrigatório para concluir um pagamento'
       );
     }
 
-    // Validar se data de agendamento é obrigatória para status AGENDADO
     if (updateDto.status === StatusPagamentoEnum.AGENDADO && !updateDto.dataAgendamento) {
       throw new BadRequestException(
         'Data de agendamento é obrigatória para agendar um pagamento'
@@ -212,12 +344,13 @@ export class PagamentoService {
 
     // Armazenar dados anteriores para auditoria
     const dadosAnteriores = { ...pagamento };
+    const statusAnterior = pagamento.status;
 
-    // Atualizar os campos
+    // Atualizar o status
     pagamento.status = updateDto.status;
     pagamento.updated_at = new Date();
 
-    // Atualizar campos específicos baseados no status
+    // Atualizações específicas por status
     if (updateDto.status === StatusPagamentoEnum.AGENDADO && updateDto.dataAgendamento) {
       pagamento.dataAgendamento = new Date(updateDto.dataAgendamento);
     }
@@ -248,6 +381,55 @@ export class PagamentoService {
     // Salvar a atualização
     const result = await this.pagamentoRepository.save(pagamento);
 
+    // Enviar notificação para o criador da solicitação
+    try {
+      const mensagemNotificacao = this.gerarMensagemNotificacaoPagamento(
+        updateDto.status,
+        pagamento.solicitacao?.tipo_beneficio.nome || 'benefício',
+        updateDto.observacoes
+      );
+
+      await this.notificacaoService.criarEBroadcast({
+        destinatario_id: pagamento.solicitacao?.tecnico_id || '',
+        titulo: `Pagamento ${this.getStatusDisplayName(updateDto.status)}`,
+        conteudo: mensagemNotificacao,
+        tipo: 'PAGAMENTO',
+        prioridade: 'high',
+        dados: {
+          pagamentoId: pagamento.id,
+          solicitacaoId: pagamento.solicitacaoId,
+          statusAnterior: statusAnterior,
+          statusNovo: updateDto.status,
+          valor: pagamento.valor,
+        },
+      });
+
+      // Emitir evento SSE para notificação em tempo real
+      this.eventEmitter.emit('sse.notificacao', {
+        userId: pagamento.solicitacao?.tecnico_id || '',
+        tipo: 'PAGAMENTO_STATUS_ATUALIZADO',
+        dados: {
+          pagamentoId: pagamento.id,
+          solicitacaoId: pagamento.solicitacaoId,
+          protocolo: pagamento.solicitacao?.protocolo,
+          valor: pagamento.valor,
+          metodoPagamento: pagamento.metodoPagamento,
+          statusAnterior: statusAnterior,
+          novoStatus: updateDto.status,
+          dataAtualizacao: new Date().toISOString(),
+          dataLiberacao: pagamento.dataLiberacao?.toISOString(),
+          dataPagamento: pagamento.dataPagamento?.toISOString(),
+          dataConfirmacao: pagamento.dataConclusao?.toISOString(),
+          prioridade: 'high'
+        }
+      });
+    } catch (notificationError) {
+      this.logger.error(
+        `Erro ao enviar notificação de atualização de pagamento ${id}: ${notificationError.message}`,
+        notificationError.stack,
+      );
+    }
+
     // Registrar auditoria
     const logDto = new CreateLogAuditoriaDto();
     logDto.tipo_operacao = TipoOperacao.UPDATE;
@@ -259,49 +441,8 @@ export class PagamentoService {
     logDto.ip_origem = '127.0.0.1'; // TODO: Obter IP real da requisição
     logDto.user_agent = 'Sistema Interno'; // TODO: Obter user agent real
     logDto.endpoint = '/pagamentos';
-    logDto.metodo_http = 'PUT';
+    logDto.metodo_http = 'PATCH';
     await this.auditoriaService.create(logDto);
-
-    return result;
-  }
-
-  /**
-   * Atualiza o status de um pagamento existente (método legado)
-   *
-   * @param id ID do pagamento
-   * @param novoStatus Novo status do pagamento
-   * @param usuarioId ID do usuário que está realizando a operação
-   * @returns Pagamento atualizado
-   */
-  async atualizarStatus(
-    id: string,
-    novoStatus: StatusPagamentoEnum,
-    usuarioId: string,
-  ): Promise<Pagamento> {
-    // Buscar o pagamento existente
-    const pagamento = await this.pagamentoRepository.findOneBy({ id });
-    if (!pagamento) {
-      throw new NotFoundException('Pagamento não encontrado');
-    }
-
-    // Validar a transição de status
-    if (!this.statusValidator.canTransition(pagamento.status, novoStatus)) {
-      throw new ConflictException(
-        `Transição de status inválida: ${pagamento.status} -> ${novoStatus}`
-      );
-    }
-
-    // Armazenar dados anteriores para auditoria
-    const dadosAnteriores = { ...pagamento };
-
-    // Atualizar o status
-    pagamento.status = novoStatus;
-    pagamento.updated_at = new Date();
-
-    // Salvar a atualização
-    const result = await this.pagamentoRepository.save(pagamento);
-
-    // A auditoria será registrada automaticamente pelo AuditoriaInterceptor
 
     return result;
   }
@@ -320,7 +461,10 @@ export class PagamentoService {
     usuarioId: string,
   ): Promise<Pagamento> {
     // Buscar o pagamento existente
-    const pagamento = await this.pagamentoRepository.findOneBy({ id });
+    const pagamento = await this.pagamentoRepository.findOne({
+      where: { id },
+      relations: ['solicitacao', 'solicitacao.cidadao'],
+    });
     if (!pagamento) {
       throw new NotFoundException('Pagamento não encontrado');
     }
@@ -330,12 +474,13 @@ export class PagamentoService {
       throw new ConflictException('Pagamento já está cancelado');
     }
 
-    if (pagamento.status === StatusPagamentoEnum.LIBERADO) {
-      throw new ConflictException('Não é possível cancelar um pagamento já realizado');
+    if (pagamento.status === StatusPagamentoEnum.CONFIRMADO) {
+      throw new ConflictException('Não é possível cancelar um pagamento já confirmado');
     }
 
     // Armazenar dados anteriores para auditoria
     const dadosAnteriores = { ...pagamento };
+    const statusAnterior = pagamento.status;
 
     // Atualizar o status para cancelado
     pagamento.status = StatusPagamentoEnum.CANCELADO;
@@ -349,11 +494,47 @@ export class PagamentoService {
     // Salvar a atualização
     const result = await this.pagamentoRepository.save(pagamento);
 
-    await this.atualizarStatus(
-       pagamento.solicitacaoId,
-       StatusPagamentoEnum.CANCELADO,
-       usuarioId
-     );
+    // Enviar notificação para o criador da solicitação
+    try {
+      await this.notificacaoService.criarEBroadcast({
+        destinatario_id: pagamento.solicitacao?.tecnico_id || '',
+        titulo: 'Pagamento Cancelado',
+        conteudo: `O pagamento do seu benefício de ${pagamento.solicitacao?.tipo_beneficio.nome || 'benefício'} foi cancelado. Motivo: ${motivoCancelamento}`,
+        tipo: 'CANCELAMENTO',
+        prioridade: 'high',
+        dados: {
+          pagamentoId: pagamento.id,
+          solicitacaoId: pagamento.solicitacaoId,
+          statusAnterior: statusAnterior,
+          statusNovo: StatusPagamentoEnum.CANCELADO,
+          motivo: motivoCancelamento,
+          valor: pagamento.valor,
+        },
+      });
+
+      // Emitir evento SSE para notificação em tempo real
+      this.eventEmitter.emit('sse.notificacao', {
+        usuarioId: pagamento.solicitacao?.tecnico_id || '',
+        tipo: 'PAGAMENTO_CANCELADO',
+        dados: {
+          pagamentoId: pagamento.id,
+          solicitacaoId: pagamento.solicitacaoId,
+          protocolo: pagamento.solicitacao?.protocolo,
+          valor: pagamento.valor,
+          metodoPagamento: pagamento.metodoPagamento,
+          statusAnterior: statusAnterior,
+          novoStatus: StatusPagamentoEnum.CANCELADO,
+          motivoCancelamento: motivoCancelamento,
+          dataCancelamento: new Date().toISOString(),
+          prioridade: 'high'
+        }
+      });
+    } catch (notificationError) {
+      this.logger.error(
+        `Erro ao enviar notificação de cancelamento de pagamento ${id}: ${notificationError.message}`,
+        notificationError.stack,
+      );
+    }
 
     // A auditoria será registrada automaticamente pelo AuditoriaInterceptor
 
@@ -517,6 +698,66 @@ export class PagamentoService {
       throw new BadRequestException(
         `Valor de R$ ${valor.toFixed(2)} é inferior ao limite mínimo de R$ ${tipoBeneficio.valorMinimo.toFixed(2)} para o benefício ${tipoBeneficio.nome}`
       );
+    }
+  }
+
+  /**
+   * Gera mensagem de notificação baseada no status do pagamento
+   */
+  private gerarMensagemNotificacaoPagamento(
+    status: StatusPagamentoEnum,
+    tipoBeneficio: string,
+    observacoes?: string
+  ): string {
+    const observacoesTexto = observacoes ? ` Observações: ${observacoes}` : '';
+    
+    switch (status) {
+      case StatusPagamentoEnum.AGENDADO:
+        return `O pagamento do seu benefício de ${tipoBeneficio} foi agendado.${observacoesTexto}`;
+      case StatusPagamentoEnum.LIBERADO:
+        return `O pagamento do seu benefício de ${tipoBeneficio} foi liberado e está disponível para saque.${observacoesTexto}`;
+      case StatusPagamentoEnum.PAGO:
+        return `O pagamento do seu benefício de ${tipoBeneficio} foi efetuado.${observacoesTexto}`;
+      case StatusPagamentoEnum.CONFIRMADO:
+        return `O pagamento do seu benefício de ${tipoBeneficio} foi confirmado e concluído.${observacoesTexto}`;
+      default:
+        return `O status do pagamento do seu benefício de ${tipoBeneficio} foi atualizado.${observacoesTexto}`;
+    }
+  }
+
+  /**
+   * Retorna o nome de exibição do status
+   */
+  private getStatusDisplayName(status: StatusPagamentoEnum): string {
+    switch (status) {
+      case StatusPagamentoEnum.AGENDADO:
+        return 'Agendado';
+      case StatusPagamentoEnum.LIBERADO:
+        return 'Liberado';
+      case StatusPagamentoEnum.PAGO:
+        return 'Efetuado';
+      case StatusPagamentoEnum.CONFIRMADO:
+        return 'Confirmado';
+      case StatusPagamentoEnum.CANCELADO:
+        return 'Cancelado';
+      default:
+        return 'Atualizado';
+    }
+  }
+
+  /**
+   * Determina a prioridade da notificação baseada no status
+   */
+  private getPrioridadeNotificacao(status: StatusPagamentoEnum): 'BAIXA' | 'MEDIA' | 'ALTA' {
+    switch (status) {
+      case StatusPagamentoEnum.LIBERADO:
+      case StatusPagamentoEnum.CONFIRMADO:
+        return 'ALTA';
+      case StatusPagamentoEnum.PAGO:
+      case StatusPagamentoEnum.CANCELADO:
+        return 'MEDIA';
+      default:
+        return 'BAIXA';
     }
   }
 }

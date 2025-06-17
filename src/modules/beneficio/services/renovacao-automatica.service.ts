@@ -15,7 +15,7 @@ import {
 } from '../../../entities/solicitacao.entity';
 import { CreateConfiguracaoRenovacaoDto } from '../dto/create-configuracao-renovacao.dto';
 import { UpdateConfiguracaoRenovacaoDto } from '../dto/update-configuracao-renovacao.dto';
-import { WorkflowSolicitacaoService } from '../../solicitacao/services/workflow-solicitacao.service';
+// Removido WorkflowSolicitacaoService para evitar dependência circular
 import { Cron, CronExpression } from '@nestjs/schedule';
 
 /**
@@ -33,7 +33,6 @@ export class RenovacaoAutomaticaService {
     private readonly configuracaoRepository: Repository<ConfiguracaoRenovacao>,
     @InjectRepository(Solicitacao)
     private readonly solicitacaoRepository: Repository<Solicitacao>,
-    private readonly workflowService: WorkflowSolicitacaoService,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -551,9 +550,13 @@ export class RenovacaoAutomaticaService {
 
       // Se não requer aprovação, avançar automaticamente para LIBERADA
       if (!configuracao.requer_aprovacao_renovacao) {
-        await this.workflowService.liberarSolicitacao(
-          novaSolicitacaoSalva.id,
-          'sistema', // ID do sistema como usuário
+        await queryRunner.manager.update(
+          Solicitacao,
+          { id: novaSolicitacaoSalva.id },
+          {
+            status: StatusSolicitacao.LIBERADA,
+            data_liberacao: new Date(),
+          },
         );
       }
 

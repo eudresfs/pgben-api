@@ -395,6 +395,24 @@ export class SseMetricsService {
   }
 
   /**
+   * Registra evento de circuit breaker
+   */
+  recordCircuitBreakerEvent(eventType: string, level: 'info' | 'warning' | 'error' = 'info') {
+    try {
+      this.enhancedMetricsService.recordSecurityEvent(
+        eventType,
+        level,
+        'notification_module'
+      );
+    } catch (error) {
+      this.logger.error(
+        `Erro ao registrar evento de circuit breaker: ${error.message}`,
+        { eventType, level }
+      );
+    }
+  }
+
+  /**
    * Atualiza métricas que precisam ser calculadas periodicamente
    */
   private updatePeriodicMetrics() {

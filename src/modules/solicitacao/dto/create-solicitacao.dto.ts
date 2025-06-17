@@ -1,4 +1,3 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsNotEmpty,
   IsString,
@@ -10,6 +9,7 @@ import {
   ArrayMinSize,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 /**
  * DTO para documento anexado à solicitação
@@ -93,4 +93,11 @@ export class CreateSolicitacaoDto {
   @ValidateNested({ each: true })
   @Type(() => DocumentoSolicitacaoDto)
   documentos?: DocumentoSolicitacaoDto[];
+
+  @ApiPropertyOptional({
+    description: 'ID da determinação judicial (quando aplicável)',
+  })
+  @IsOptional()
+  @IsUUID('4', { message: 'ID da determinação judicial inválido' })
+  determinacao_judicial_id?: string;
 }

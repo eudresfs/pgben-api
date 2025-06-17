@@ -45,6 +45,7 @@ export class NotificacaoService {
 
     const queryBuilder = this.notificacaoRepository
       .createQueryBuilder('notificacao')
+      .leftJoinAndSelect('notificacao.template', 'template')
       .where('notificacao.destinatario_id = :userId', { userId });
 
     if (status) {
@@ -78,6 +79,7 @@ export class NotificacaoService {
   async findById(id: string, userId: string) {
     const notificacao = await this.notificacaoRepository.findOne({
       where: { id },
+      relations: ['template'],
     });
 
     if (!notificacao) {
@@ -181,16 +183,20 @@ export class NotificacaoService {
     entidade_relacionada_id?: string;
     entidade_tipo?: string;
     link?: string;
-  }) {
+    dados_contexto?: Record<string, any>;
+    template_id?: string;
+  }): Promise<NotificacaoSistema> {
     // Normalizar campos de enum antes de criar a notificação
     const dadosNormalizados = normalizeEnumFields({
       ...dados,
       status: StatusNotificacaoProcessamento.NAO_LIDA,
+      dados_contexto: dados.dados_contexto || {},
+      template_id: dados.template_id || undefined,
     });
 
     const notificacao = this.notificacaoRepository.create(dadosNormalizados);
 
-    const saved = await this.notificacaoRepository.save(notificacao);
+    const saved = await this.notificacaoRepository.save(notificacao) as unknown as NotificacaoSistema;
 
     // Emite evento de criação para tratamento assíncrono (ex.: SSE, e-mail, etc.)
     this.eventEmitter.emit(
@@ -401,16 +407,48 @@ export class NotificacaoService {
     entidade_tipo?: string;
     link?: string;
     prioridade?: 'low' | 'medium' | 'high';
+    template_id?: string;
   }): Promise<NotificacaoSistema> {
+    // Determinar o tipo de notificação
+    let tipoNotificacao: TipoNotificacao;
+    if (typeof dados.tipo === 'string') {
+      switch (dados.tipo.toLowerCase()) {
+        case 'sistema':
+          tipoNotificacao = TipoNotificacao.SISTEMA;
+          break;
+        case 'solicitacao':
+          tipoNotificacao = TipoNotificacao.SOLICITACAO;
+          break;
+        case 'pendencia':
+          tipoNotificacao = TipoNotificacao.PENDENCIA;
+          break;
+        case 'aprovacao':
+          tipoNotificacao = TipoNotificacao.APROVACAO;
+          break;
+        case 'liberacao':
+          tipoNotificacao = TipoNotificacao.LIBERACAO;
+          break;
+        case 'alerta':
+          tipoNotificacao = TipoNotificacao.ALERTA;
+          break;
+        default:
+          tipoNotificacao = TipoNotificacao.SISTEMA;
+      }
+    } else {
+      tipoNotificacao = dados.tipo;
+    }
+
     // Cria a notificação no banco de dados
     const notificacao = await this.criar({
       destinatario_id: dados.destinatario_id,
-      tipo: dados.tipo as TipoNotificacao,
+      tipo: tipoNotificacao,
       titulo: dados.titulo,
       conteudo: dados.conteudo,
       entidade_relacionada_id: dados.entidade_relacionada_id,
       entidade_tipo: dados.entidade_tipo,
       link: dados.link,
+      dados_contexto: dados.dados,
+      template_id: dados.template_id,
     });
 
     // Retorna a notificação; entrega em tempo real será tratada por listeners
@@ -447,6 +485,8 @@ export class NotificacaoService {
           entidade_relacionada_id: dados.entidade_relacionada_id,
           entidade_tipo: dados.entidade_tipo,
           link: dados.link,
+          dados_contexto: dados.dados,
+          template_id: undefined,
         }),
       ),
     );

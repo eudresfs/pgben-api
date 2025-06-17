@@ -64,7 +64,17 @@ export class MinioService implements OnModuleInit {
    */
   async onModuleInit() {
     try {
-      const bucketExists = await this.minioClient.bucketExists(this.bucketName);
+      this.logger.log('Verificando conexão com MinIO...');
+      
+      // Timeout para evitar travamento
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Timeout na conexão com MinIO')), 5000);
+      });
+      
+      const bucketCheckPromise = this.minioClient.bucketExists(this.bucketName);
+      
+      const bucketExists = await Promise.race([bucketCheckPromise, timeoutPromise]) as boolean;
+      
       if (!bucketExists) {
         await this.minioClient.makeBucket(this.bucketName, 'us-east-1');
         this.logger.log(`Bucket '${this.bucketName}' criado com sucesso`);
@@ -72,7 +82,8 @@ export class MinioService implements OnModuleInit {
         this.logger.log(`Bucket '${this.bucketName}' já existe`);
       }
     } catch (error) {
-      this.logger.error(`Erro ao verificar/criar bucket: ${error.message}`);
+      this.logger.warn(`MinIO não disponível: ${error.message}. Continuando sem storage externo.`);
+      // Não falha a inicialização se MinIO não estiver disponível
     }
   }
 

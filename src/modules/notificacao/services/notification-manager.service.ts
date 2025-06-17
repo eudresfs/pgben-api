@@ -3,7 +3,8 @@ import { Injectable, Logger, Inject, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, LessThanOrEqual, IsNull } from 'typeorm';
 import { ModuleRef } from '@nestjs/core';
-import { ScheduleAdapterService } from '../../../shared/schedule/schedule-adapter.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+// import { ScheduleAdapterService } from '../../../shared/schedule/schedule-adapter.service'; // Removido temporariamente
 import { NotificationTemplate } from '../../../entities/notification-template.entity';
 import {
   NotificacaoSistema,
@@ -14,6 +15,8 @@ import { TemplateRendererService } from './template-renderer.service';
 import { CreateNotificationDto } from '../dtos/create-notification.dto';
 import { CreateNotificationTemplateDto } from '../dtos/create-notification-template.dto';
 import { EmailService } from '../../../common/services/email.service';
+import { NOTIFICATION_CREATED } from '../events/notification.events';
+import { NotificationCreatedEvent } from '../events/notification-created.event';
 
 /**
  * Serviço Gerenciador de Notificações
@@ -33,8 +36,9 @@ export class NotificationManagerService implements OnModuleInit {
     private notificacaoRepository: Repository<NotificacaoSistema>,
     private templateRenderer: TemplateRendererService,
     private moduleRef: ModuleRef,
-    private scheduleAdapter: ScheduleAdapterService,
+    // private scheduleAdapter: ScheduleAdapterService, // Removido temporariamente
     private emailService: EmailService,
+    private eventEmitter: EventEmitter2,
   ) {}
 
   /**
@@ -53,7 +57,7 @@ export class NotificationManagerService implements OnModuleInit {
   async onModuleInit() {
     this.logger.log('Inicializando o gerenciador de notificações');
     await this.registrarCanaisDisponiveis();
-    await this.iniciarProcessamentoFila();
+    // await this.iniciarProcessamentoFila(); // Removido temporariamente - depende do ScheduleAdapter
   }
 
   /**
@@ -99,8 +103,8 @@ export class NotificationManagerService implements OnModuleInit {
 
     let template;
     
-    // Se o template_id é um UUID válido, busca por ID primeiro
-    if (isValidUUID(createNotificationDto.template_id)) {
+    // Se o template_id é fornecido e é um UUID válido, busca por ID primeiro
+    if (createNotificationDto.template_id && isValidUUID(createNotificationDto.template_id)) {
       template = await this.templateRepository.findOne({
         where: { id: createNotificationDto.template_id },
       });
@@ -111,20 +115,22 @@ export class NotificationManagerService implements OnModuleInit {
           where: { codigo: createNotificationDto.template_id },
         });
       }
-    } else {
-      // Se não é um UUID válido, busca por código primeiro
+    } else if (createNotificationDto.template_id) {
+      // Se não é um UUID válido mas existe, busca por código primeiro
       template = await this.templateRepository.findOne({
         where: { codigo: createNotificationDto.template_id },
       });
     }
 
-    if (!template) {
+    // Se template_id foi fornecido mas não encontrado, lança erro
+    if (createNotificationDto.template_id && !template) {
       throw new Error(
         `Template com ID/código ${createNotificationDto.template_id} não encontrado`,
       );
     }
 
-    if (!template.ativo) {
+    // Se template foi encontrado mas está inativo, lança erro
+    if (template && !template.ativo) {
       throw new Error(
         `Template com ID ${createNotificationDto.template_id} está inativo`,
       );
@@ -133,7 +139,7 @@ export class NotificationManagerService implements OnModuleInit {
     // Criar a notificação
     const notificacao = this.notificacaoRepository.create({
       destinatario_id: createNotificationDto.destinatario_id,
-      template: template,
+      template_id: template?.id,
       dados_contexto: createNotificationDto.dados_contexto,
       status: StatusNotificacaoProcessamento.PENDENTE,
       tentativas_envio: 0,
@@ -276,6 +282,15 @@ export class NotificationManagerService implements OnModuleInit {
     await this.notificacaoRepository.save(notificacao);
 
     try {
+      // Se não há template, apenas marcar como enviada (notificação sem template)
+      if (!notificacao.template) {
+        this.logger.warn(`Notificação ${notificacaoId} não possui template configurado, marcando como enviada`);
+        notificacao.status = StatusNotificacaoProcessamento.ENVIADA;
+        notificacao.data_envio = new Date();
+        await this.notificacaoRepository.save(notificacao);
+        return;
+      }
+
       // Iterar sobre os canais suportados pelo template
       let sucessoEmAlgumCanal = false;
 
@@ -380,57 +395,18 @@ export class NotificationManagerService implements OnModuleInit {
 
   /**
    * Agenda o envio de uma notificação para uma data futura
+   * TEMPORARIAMENTE DESABILITADO - Depende do ScheduleAdapter
    *
    * @param notificacao Notificação a ser agendada
    */
   private agendarNotificacao(notificacao: NotificacaoSistema): void {
-    try {
-      if (!notificacao.data_agendamento) {
-        return;
-      }
-
-      const agora = new Date();
-      if (notificacao.data_agendamento <= agora) {
-        // Se a data de agendamento já passou, processar imediatamente
-        this.processarNotificacao(notificacao.id).catch((err) => {
-          this.logger.error(
-            `Erro ao processar notificação agendada ${notificacao.id}: ${err.message}`,
-          );
-        });
-        return;
-      }
-
-      // Calcular o tempo até o agendamento
-      const tempoAteAgendamento =
-        notificacao.data_agendamento.getTime() - agora.getTime();
-
-      // Criar um agendamento para processar a notificação no momento agendado
-      const timeoutName = `notificacao_${notificacao.id}`;
-
-      // Cancelar agendamento existente, se houver
-      this.scheduleAdapter.cancelTimeout(timeoutName);
-
-      // Criar novo agendamento
-      this.scheduleAdapter.scheduleOnce(
-        timeoutName,
-        notificacao.data_agendamento,
-        () =>
-          this.processarNotificacao(notificacao.id).catch((err) => {
-            this.logger.error(
-              `Erro ao processar notificação agendada ${notificacao.id}: ${err.message}`,
-            );
-          }),
-      );
-
-      this.logger.debug(
-        `Notificação ${notificacao.id} agendada para ${notificacao.data_agendamento.toISOString()}`,
-      );
-    } catch (error) {
+    this.logger.warn('Agendamento de notificações temporariamente desabilitado');
+    // Processar imediatamente como fallback
+    this.processarNotificacao(notificacao.id).catch((err) => {
       this.logger.error(
-        `Erro ao agendar notificação ${notificacao.id}: ${error.message}`,
-        error.stack,
+        `Erro ao processar notificação ${notificacao.id}: ${err.message}`,
       );
-    }
+    });
   }
 
   /**
@@ -513,6 +489,39 @@ export class NotificationManagerService implements OnModuleInit {
         );
       }
 
+      // Registrar canal sistema (SSE)
+      const canalSistema: CanalNotificacao = {
+        canal_id: 'sistema',
+        verificarDisponibilidade: async () => true, // SSE sempre disponível
+        enviar: async (notificacao) => {
+          try {
+            // Emitir evento para o listener SSE processar
+            this.eventEmitter.emit(
+              NOTIFICATION_CREATED,
+              new NotificationCreatedEvent(notificacao),
+            );
+            
+            return {
+              sucesso: true,
+              mensagem: 'Notificação SSE enviada com sucesso',
+              data_envio: new Date(),
+              dados_resposta: { canal: 'sistema', tipo: 'sse' }
+            };
+          } catch (error) {
+            this.logger.error(`Erro ao enviar notificação SSE: ${error.message}`, error.stack);
+            return {
+              sucesso: false,
+              mensagem: `Erro ao enviar notificação SSE: ${error.message}`,
+              data_envio: new Date(),
+              erro: error as Error
+            };
+          }
+        }
+      };
+      
+      this.canaisNotificacao.set('sistema', canalSistema);
+      this.logger.log('Canal de notificação registrado: sistema (SSE)');
+
       // Você registraria outros canais aqui da mesma forma
       // Ex: SMS, Push, WhatsApp, etc.
 
@@ -566,12 +575,9 @@ export class NotificationManagerService implements OnModuleInit {
         }, index * 500); // 500ms de intervalo entre cada processamento
       }
 
-      // Configurar job para verificar notificações pendentes periodicamente
-      this.scheduleAdapter.scheduleInterval(
-        'verificar_notificacoes_pendentes',
-        5 * 60 * 1000, // 5 minutos em milissegundos
-        () => this.verificarNotificacoesPendentes(),
-      );
+      // TODO: Configurar job para verificar notificações pendentes periodicamente
+      // Temporariamente desabilitado - depende do ScheduleAdapter
+      this.logger.warn('Verificação periódica de notificações pendentes temporariamente desabilitada');
     } catch (error) {
       this.logger.error(
         `Erro ao iniciar processamento da fila de notificações: ${error.message}`,

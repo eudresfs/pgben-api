@@ -20,12 +20,16 @@ export const TRANSICOES_PERMITIDAS: Partial<
   [StatusSolicitacao.PENDENTE]: [
     StatusSolicitacao.EM_ANALISE,
     StatusSolicitacao.CANCELADA,
+    StatusSolicitacao.BLOQUEADO,
+    StatusSolicitacao.SUSPENSO,
   ],
   [StatusSolicitacao.EM_ANALISE]: [
     StatusSolicitacao.APROVADA,
     StatusSolicitacao.INDEFERIDA,
     StatusSolicitacao.PENDENTE,
     StatusSolicitacao.CANCELADA,
+    StatusSolicitacao.BLOQUEADO,
+    StatusSolicitacao.SUSPENSO,
   ],
   [StatusSolicitacao.AGUARDANDO_DOCUMENTOS]: [
     StatusSolicitacao.ABERTA,
@@ -54,6 +58,14 @@ export const TRANSICOES_PERMITIDAS: Partial<
   ],
   [StatusSolicitacao.CONCLUIDA]: [StatusSolicitacao.ARQUIVADA],
   [StatusSolicitacao.ARQUIVADA]: [StatusSolicitacao.ABERTA],
+  [StatusSolicitacao.BLOQUEADO]: [
+    StatusSolicitacao.PENDENTE,
+  ],
+  [StatusSolicitacao.SUSPENSO]: [
+    StatusSolicitacao.PENDENTE,
+    StatusSolicitacao.EM_ANALISE,
+    StatusSolicitacao.CANCELADA,
+  ],
 };
 
 /**

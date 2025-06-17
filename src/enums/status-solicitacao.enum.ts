@@ -14,4 +14,6 @@ export enum StatusSolicitacao {
   CONCLUIDA = 'concluida',
   ARQUIVADA = 'arquivada',
   ABERTA = 'aberta',
+  BLOQUEADO = 'bloqueado',
+  SUSPENSO = 'suspenso',
 }

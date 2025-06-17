@@ -11,7 +11,7 @@ import {
 } from 'typeorm';
 import { IsNotEmpty, IsOptional } from 'class-validator';
 import { Solicitacao } from './solicitacao.entity';
-import { Usuario } from './index';
+import { Usuario } from './usuario.entity';
 
 export enum StatusPendencia {
   ABERTA = 'aberta',

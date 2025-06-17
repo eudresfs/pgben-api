@@ -18,6 +18,9 @@ import {
 import { TransicaoEstadoService } from './transicao-estado.service';
 import { ValidacaoSolicitacaoService } from './validacao-solicitacao.service';
 import { PrazoSolicitacaoService } from './prazo-solicitacao.service';
+import { NotificacaoService } from '../../notificacao/services/notificacao.service';
+import { TemplateMappingService } from './template-mapping.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 /**
  * Interface para o resultado da transição de estado
@@ -53,6 +56,9 @@ export class WorkflowSolicitacaoService {
     private readonly transicaoEstadoService: TransicaoEstadoService,
     private readonly validacaoService: ValidacaoSolicitacaoService,
     private readonly prazoService: PrazoSolicitacaoService,
+    private readonly notificacaoService: NotificacaoService,
+    private readonly templateMappingService: TemplateMappingService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   /**
@@ -198,6 +204,30 @@ export class WorkflowSolicitacaoService {
         `Transição da solicitação ${solicitacaoId} para ${novoEstado} concluída com sucesso`,
       );
 
+      // Emitir notificação SSE para transição de estado
+      if (resultado.sucesso && resultado.solicitacao) {
+        try {
+          this.eventEmitter.emit('sse.notificacao', {
+            userId: resultado.solicitacao.tecnico_id,
+            tipo: 'transicao_estado',
+            dados: {
+              solicitacaoId: resultado.solicitacao.id,
+              protocolo: resultado.solicitacao.protocolo,
+              statusAnterior: estadoAtual,
+              statusAtual: novoEstado,
+              observacao: observacao || `Transição de ${estadoAtual} para ${novoEstado}`,
+              prioridade: this.determinarPrioridadeTransicao(novoEstado),
+              dataTransicao: new Date(),
+            },
+          });
+        } catch (sseError) {
+          this.logger.error(
+            `Erro ao emitir notificação SSE para transição ${solicitacaoId}: ${sseError.message}`,
+            sseError.stack,
+          );
+        }
+      }
+
       // Atualizar os prazos com base no novo estado da solicitação
       try {
         await this.prazoService.atualizarPrazosTransicao(
@@ -270,7 +300,31 @@ export class WorkflowSolicitacaoService {
       updated_at: new Date(),
     });
 
-    return this.solicitacaoRepository.save(solicitacao);
+    const solicitacaoSalva = await this.solicitacaoRepository.save(solicitacao);
+
+    // Emitir notificação SSE para criação de rascunho
+    if (solicitacaoSalva.tecnico_id) {
+      try {
+        this.eventEmitter.emit('sse.notificacao', {
+          userId: solicitacaoSalva.tecnico_id,
+          tipo: 'rascunho_criado',
+          dados: {
+            solicitacaoId: solicitacaoSalva.id,
+            protocolo: solicitacaoSalva.protocolo,
+            status: StatusSolicitacao.RASCUNHO,
+            prioridade: 'low',
+            dataCriacao: new Date(),
+          },
+        });
+      } catch (sseError) {
+        this.logger.error(
+          `Erro ao emitir notificação SSE para criação de rascunho ${solicitacaoSalva.id}: ${sseError.message}`,
+          sseError.stack,
+        );
+      }
+    }
+
+    return solicitacaoSalva;
   }
 
   /**
@@ -283,12 +337,37 @@ export class WorkflowSolicitacaoService {
     solicitacaoId: string,
     usuarioId: string,
   ): Promise<ResultadoTransicaoEstado> {
-    return this.realizarTransicao(
+    const resultado = await this.realizarTransicao(
       solicitacaoId,
       StatusSolicitacao.ABERTA,
       usuarioId,
       'Solicitação submetida',
     );
+
+    // Emitir notificação SSE específica para submissão de rascunho
+    if (resultado.sucesso && resultado.solicitacao) {
+      try {
+        this.eventEmitter.emit('sse.notificacao', {
+          userId: resultado.solicitacao.tecnico_id,
+          tipo: 'rascunho_submetido',
+          dados: {
+            solicitacaoId: resultado.solicitacao.id,
+            protocolo: resultado.solicitacao.protocolo,
+            statusAnterior: StatusSolicitacao.RASCUNHO,
+            statusAtual: StatusSolicitacao.ABERTA,
+            prioridade: 'medium',
+            dataSubmissao: new Date(),
+          },
+        });
+      } catch (sseError) {
+        this.logger.error(
+          `Erro ao emitir notificação SSE para submissão de rascunho ${solicitacaoId}: ${sseError.message}`,
+          sseError.stack,
+        );
+      }
+    }
+
+    return resultado;
   }
 
   /**
@@ -340,6 +419,18 @@ export class WorkflowSolicitacaoService {
     observacao: string,
     parecerSemtas: string,
   ): Promise<ResultadoTransicaoEstado> {
+    // Buscar a solicitação para obter dados do criador
+    const solicitacao = await this.solicitacaoRepository.findOne({
+      where: { id: solicitacaoId },
+      relations: ['beneficiario', 'tipo_beneficio'],
+    });
+
+    if (!solicitacao) {
+      throw new NotFoundException(
+        `Solicitação com ID ${solicitacaoId} não encontrada`,
+      );
+    }
+
     // Primeiro, atualizar o parecer SEMTAS na solicitação
     await this.solicitacaoRepository.update(solicitacaoId, {
       parecer_semtas: parecerSemtas,
@@ -351,12 +442,76 @@ export class WorkflowSolicitacaoService {
     await this.validacaoService.validarAprovacao(solicitacaoId);
 
     // Se passar na validação, realizar a transição
-    return this.realizarTransicao(
+    const resultado = await this.realizarTransicao(
       solicitacaoId,
       StatusSolicitacao.APROVADA,
       usuarioId,
       observacao,
     );
+
+    // Enviar notificação para o criador da solicitação
+    if (resultado.sucesso && solicitacao.tecnico_id) {
+      try {
+        // Buscar o template de aprovação usando o serviço de mapeamento
+        const templateData = await this.templateMappingService.prepararDadosTemplate('APROVACAO');
+        
+        await this.notificacaoService.criarEBroadcast({
+          destinatario_id: solicitacao.tecnico_id,
+          titulo: 'Solicitação Aprovada',
+          conteudo: `Sua solicitação de ${solicitacao.tipo_beneficio.nome || 'benefício'} foi aprovada. ${observacao ? `Observação: ${observacao}` : ''}`,
+          tipo: 'aprovacao',
+          prioridade: 'high',
+          template_id: templateData.template_id,
+          dados: {
+            solicitacao_id: solicitacao.id,
+            tipo_beneficio: solicitacao.tipo_beneficio?.nome || 'Benefício',
+            beneficiario_nome: solicitacao.beneficiario?.nome || 'Beneficiário',
+            status_anterior: resultado.status_anterior,
+            status_novo: resultado.status_atual,
+            parecer_semtas: parecerSemtas,
+            observacao: observacao || 'Nenhuma observação',
+            data_aprovacao: new Date().toLocaleDateString('pt-BR'),
+            url_sistema: process.env.FRONTEND_URL || 'https://pgben-front.kemosoft.com.br',
+          },
+        });
+        
+        if (templateData.templateEncontrado) {
+          this.logger.log(`Notificação de aprovação enviada com template ${templateData.codigoTemplate} para usuário ${solicitacao.tecnico_id}`);
+        } else {
+          this.logger.warn(`Template para APROVACAO não encontrado. Notificação enviada sem template.`);
+        }
+      } catch (notificationError) {
+        this.logger.error(
+          `Erro ao enviar notificação de aprovação da solicitação ${solicitacaoId}: ${notificationError.message}`,
+          notificationError.stack,
+        );
+      }
+
+      // Emitir notificação SSE específica para aprovação
+      try {
+        this.eventEmitter.emit('sse.notificacao', {
+          userId: solicitacao.tecnico_id,
+          tipo: 'solicitacao_aprovada',
+          dados: {
+            solicitacaoId: solicitacao.id,
+            protocolo: solicitacao.protocolo,
+            tipoBeneficio: solicitacao.tipo_beneficio?.nome || 'Benefício',
+            beneficiarioNome: solicitacao.beneficiario?.nome || 'Beneficiário',
+            parecerSemtas: parecerSemtas,
+            observacao: observacao,
+            prioridade: 'high',
+            dataAprovacao: new Date(),
+          },
+        });
+      } catch (sseError) {
+        this.logger.error(
+          `Erro ao emitir notificação SSE para aprovação ${solicitacaoId}: ${sseError.message}`,
+          sseError.stack,
+        );
+      }
+    }
+
+    return resultado;
   }
 
   /**
@@ -386,12 +541,38 @@ export class WorkflowSolicitacaoService {
     }
 
     // Se passar na validação, realizar a transição
-    return this.realizarTransicao(
+    const resultado = await this.realizarTransicao(
       solicitacaoId,
       StatusSolicitacao.LIBERADA,
       usuarioId,
       'Solicitação liberada',
     );
+
+    // Emitir notificação SSE específica para liberação
+    if (resultado.sucesso && resultado.solicitacao) {
+      try {
+        this.eventEmitter.emit('sse.notificacao', {
+          userId: resultado.solicitacao.tecnico_id,
+          tipo: 'solicitacao_liberada',
+          dados: {
+            solicitacaoId: resultado.solicitacao.id,
+            protocolo: resultado.solicitacao.protocolo,
+            tipoBeneficio: resultado.solicitacao.tipo_beneficio?.nome || 'Benefício',
+            beneficiarioNome: resultado.solicitacao.beneficiario?.nome || 'Beneficiário',
+            liberadorId: usuarioId,
+            dataLiberacao: new Date(),
+            prioridade: 'high',
+          },
+        });
+      } catch (sseError) {
+        this.logger.error(
+          `Erro ao emitir notificação SSE para liberação ${solicitacaoId}: ${sseError.message}`,
+          sseError.stack,
+        );
+      }
+    }
+
+    return resultado;
   }
 
   /**
@@ -406,12 +587,86 @@ export class WorkflowSolicitacaoService {
     usuarioId: string,
     motivo: string,
   ): Promise<ResultadoTransicaoEstado> {
-    return this.realizarTransicao(
+    // Buscar a solicitação para obter dados do criador
+    const solicitacao = await this.solicitacaoRepository.findOne({
+      where: { id: solicitacaoId },
+      relations: ['beneficiario', 'tipo_beneficio'],
+    });
+
+    if (!solicitacao) {
+      throw new NotFoundException(
+        `Solicitação com ID ${solicitacaoId} não encontrada`,
+      );
+    }
+
+    const resultado = await this.realizarTransicao(
       solicitacaoId,
       StatusSolicitacao.INDEFERIDA,
       usuarioId,
       motivo || 'Solicitação reprovada',
     );
+
+    // Enviar notificação para o criador da solicitação
+    if (resultado.sucesso && solicitacao.tecnico_id) {
+      try {
+        // Buscar o template de rejeição usando o serviço de mapeamento
+        const templateData = await this.templateMappingService.prepararDadosTemplate('REJEICAO');
+        
+        await this.notificacaoService.criarEBroadcast({
+          destinatario_id: solicitacao.tecnico_id,
+          titulo: 'Solicitação Rejeitada',
+          conteudo: `Sua solicitação de ${solicitacao.tipo_beneficio.nome || 'benefício'} foi rejeitada. ${motivo ? `Motivo: ${motivo}` : ''}`,
+          tipo: 'REJEICAO',
+          prioridade: 'high',
+          template_id: templateData.template_id,
+          dados: {
+            solicitacao_id: solicitacao.id,
+            tipo_beneficio: solicitacao.tipo_beneficio?.nome || 'Benefício',
+            beneficiario_nome: solicitacao.beneficiario?.nome || 'Beneficiário',
+            status_anterior: resultado.status_anterior,
+            status_novo: resultado.status_atual,
+            motivo: motivo || 'Não informado',
+            data_rejeicao: new Date().toLocaleDateString('pt-BR'),
+            url_sistema: process.env.FRONTEND_URL || 'https://pgben-front.kemosoft.com.br',
+          },
+        });
+        
+        if (templateData.templateEncontrado) {
+          this.logger.log(`Notificação de rejeição enviada com template ${templateData.codigoTemplate} para usuário ${solicitacao.tecnico_id}`);
+        } else {
+          this.logger.warn(`Template para REJEICAO não encontrado. Notificação enviada sem template.`);
+        }
+      } catch (notificationError) {
+        this.logger.error(
+          `Erro ao enviar notificação de rejeição da solicitação ${solicitacaoId}: ${notificationError.message}`,
+          notificationError.stack,
+        );
+      }
+
+      // Emitir notificação SSE específica para rejeição
+      try {
+        this.eventEmitter.emit('sse.notificacao', {
+          userId: solicitacao.tecnico_id,
+          tipo: 'solicitacao_rejeitada',
+          dados: {
+            solicitacaoId: solicitacao.id,
+            protocolo: solicitacao.protocolo,
+            tipoBeneficio: solicitacao.tipo_beneficio?.nome || 'Benefício',
+            beneficiarioNome: solicitacao.beneficiario?.nome || 'Beneficiário',
+            motivo: motivo,
+            prioridade: 'high',
+            dataRejeicao: new Date(),
+          },
+        });
+      } catch (sseError) {
+        this.logger.error(
+          `Erro ao emitir notificação SSE para rejeição ${solicitacaoId}: ${sseError.message}`,
+          sseError.stack,
+        );
+      }
+    }
+
+    return resultado;
   }
 
   /**
@@ -426,16 +681,90 @@ export class WorkflowSolicitacaoService {
     usuarioId: string,
     motivo: string,
   ): Promise<ResultadoTransicaoEstado> {
+    // Buscar a solicitação para obter dados do criador
+    const solicitacao = await this.solicitacaoRepository.findOne({
+      where: { id: solicitacaoId },
+      relations: ['beneficiario', 'tipo_beneficio'],
+    });
+
+    if (!solicitacao) {
+      throw new NotFoundException(
+        `Solicitação com ID ${solicitacaoId} não encontrada`,
+      );
+    }
+
     // Validar se a solicitação pode ser cancelada (regras de negócio)
     await this.validacaoService.validarCancelamento(solicitacaoId);
 
     // Se passar na validação, realizar a transição
-    return this.realizarTransicao(
+    const resultado = await this.realizarTransicao(
       solicitacaoId,
       StatusSolicitacao.CANCELADA,
       usuarioId,
       motivo || 'Solicitação cancelada',
     );
+
+    // Enviar notificação para o criador da solicitação
+    if (resultado.sucesso && solicitacao.tecnico_id) {
+      try {
+        // Buscar o template de cancelamento usando o serviço de mapeamento
+        const templateData = await this.templateMappingService.prepararDadosTemplate('CANCELAMENTO');
+        
+        await this.notificacaoService.criarEBroadcast({
+          destinatario_id: solicitacao.tecnico_id,
+          titulo: 'Solicitação Cancelada',
+          conteudo: `Sua solicitação de ${solicitacao.tipo_beneficio.nome || 'benefício'} foi cancelada. ${motivo ? `Motivo: ${motivo}` : ''}`,
+          tipo: 'CANCELAMENTO',
+          prioridade: 'medium',
+          template_id: templateData.template_id,
+          dados: {
+            solicitacao_id: solicitacao.id,
+            tipo_beneficio: solicitacao.tipo_beneficio?.nome || 'Benefício',
+            beneficiario_nome: solicitacao.beneficiario?.nome || 'Beneficiário',
+            status_anterior: resultado.status_anterior,
+            status_novo: resultado.status_atual,
+            motivo: motivo || 'Não informado',
+            data_cancelamento: new Date().toLocaleDateString('pt-BR'),
+            url_sistema: process.env.FRONTEND_URL || 'https://pgben-front.kemosoft.com.br',
+          },
+        });
+        
+        if (templateData.templateEncontrado) {
+          this.logger.log(`Notificação de cancelamento enviada com template ${templateData.codigoTemplate} para usuário ${solicitacao.tecnico_id}`);
+        } else {
+          this.logger.warn(`Template para CANCELAMENTO não encontrado. Notificação enviada sem template.`);
+        }
+      } catch (notificationError) {
+        this.logger.error(
+          `Erro ao enviar notificação de cancelamento da solicitação ${solicitacaoId}: ${notificationError.message}`,
+          notificationError.stack,
+        );
+      }
+
+      // Emitir notificação SSE específica para cancelamento
+      try {
+        this.eventEmitter.emit('sse.notificacao', {
+          userId: solicitacao.tecnico_id,
+          tipo: 'solicitacao_cancelada',
+          dados: {
+            solicitacaoId: solicitacao.id,
+            protocolo: solicitacao.protocolo,
+            tipoBeneficio: solicitacao.tipo_beneficio?.nome || 'Benefício',
+            beneficiarioNome: solicitacao.beneficiario?.nome || 'Beneficiário',
+            motivo: motivo,
+            prioridade: 'medium',
+            dataCancelamento: new Date(),
+          },
+        });
+      } catch (sseError) {
+        this.logger.error(
+          `Erro ao emitir notificação SSE para cancelamento ${solicitacaoId}: ${sseError.message}`,
+          sseError.stack,
+        );
+      }
+    }
+
+    return resultado;
   }
 
   /**
@@ -498,6 +827,238 @@ export class WorkflowSolicitacaoService {
       usuarioId,
       'Solicitação arquivada',
     );
+  }
+
+  /**
+   * Bloqueia uma solicitação
+   * @param solicitacaoId ID da solicitação
+   * @param usuarioId ID do usuário que está bloqueando
+   * @param motivo Motivo do bloqueio
+   * @returns Resultado da operação
+   */
+  async bloquearSolicitacao(
+    solicitacaoId: string,
+    usuarioId: string,
+    motivo: string,
+  ): Promise<ResultadoTransicaoEstado> {
+    this.logger.log(`Bloqueando solicitação ${solicitacaoId}`);
+
+    const solicitacao = await this.solicitacaoRepository.findOne({
+      where: { id: solicitacaoId },
+      relations: ['beneficiario'],
+    });
+
+    if (!solicitacao) {
+      throw new NotFoundException('Solicitação não encontrada');
+    }
+
+    // Verificar se a transição é permitida
+    if (!this.isTransicaoPermitida(solicitacao.status, StatusSolicitacao.BLOQUEADO)) {
+      throw new BadRequestException(
+        `Não é possível bloquear uma solicitação com status ${solicitacao.status}`,
+      );
+    }
+
+    // Verificar se a solicitação pode gerar pagamento (regra 1)
+    if (solicitacao.status === StatusSolicitacao.APROVADA || 
+        solicitacao.status === StatusSolicitacao.LIBERADA) {
+      throw new BadRequestException(
+        'Não é possível bloquear uma solicitação que já foi aprovada ou liberada',
+      );
+    }
+
+    const statusAnterior = solicitacao.status;
+    const observacao = `Solicitação bloqueada. Motivo: ${motivo}`;
+
+    const resultado = await this.atualizarStatus(
+       solicitacaoId,
+       StatusSolicitacao.BLOQUEADO,
+       usuarioId,
+       {
+         observacao,
+         justificativa: motivo,
+       },
+     );
+
+    // Enviar notificação
+    try {
+      // Buscar o template de bloqueio usando o serviço de mapeamento
+      const templateData = await this.templateMappingService.prepararDadosTemplate('BLOQUEIO');
+      
+      await this.notificacaoService.criarEBroadcast({
+        destinatario_id: solicitacao.tecnico_id,
+        titulo: 'Solicitação Bloqueada',
+        conteudo: `Sua solicitação de benefício foi bloqueada. Motivo: ${motivo}`,
+        tipo: 'BLOQUEIO',
+        prioridade: 'high',
+        template_id: templateData.template_id,
+        dados: {
+          solicitacao_id: solicitacaoId,
+          tipo_beneficio: solicitacao.tipo_beneficio?.nome || 'Benefício',
+          beneficiario_nome: solicitacao.beneficiario?.nome || 'Beneficiário',
+          status_anterior: statusAnterior,
+          status_atual: StatusSolicitacao.BLOQUEADO,
+          motivo: motivo || 'Não informado',
+          data_bloqueio: new Date().toLocaleDateString('pt-BR'),
+          url_sistema: process.env.FRONTEND_URL || 'https://pgben-front.kemosoft.com.br',
+        },
+      });
+      
+      if (templateData.templateEncontrado) {
+        this.logger.log(`Notificação de bloqueio enviada com template ${templateData.codigoTemplate} para usuário ${solicitacao.tecnico_id}`);
+      } else {
+        this.logger.warn(`Template para BLOQUEIO não encontrado. Notificação enviada sem template.`);
+      }
+    } catch (error) {
+      this.logger.error(
+        `Erro ao enviar notificação de bloqueio para solicitação ${solicitacaoId}`,
+        error,
+      );
+    }
+
+    return resultado;
+  }
+
+  /**
+   * Suspende uma solicitação e seus pagamentos pendentes
+   * @param solicitacaoId ID da solicitação
+   * @param usuarioId ID do usuário que está suspendendo
+   * @param motivo Motivo da suspensão
+   * @returns Resultado da operação
+   */
+  async suspenderSolicitacao(
+    solicitacaoId: string,
+    usuarioId: string,
+    motivo: string,
+  ): Promise<ResultadoTransicaoEstado> {
+    this.logger.log(`Suspendendo solicitação ${solicitacaoId}`);
+
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const solicitacao = await queryRunner.manager.findOne(Solicitacao, {
+        where: { id: solicitacaoId },
+        relations: ['beneficiario', 'pagamentos'],
+      });
+
+      if (!solicitacao) {
+        throw new NotFoundException('Solicitação não encontrada');
+      }
+
+      // Verificar se a transição é permitida
+      if (!this.isTransicaoPermitida(solicitacao.status, StatusSolicitacao.SUSPENSO)) {
+        throw new BadRequestException(
+          `Não é possível suspender uma solicitação com status ${solicitacao.status}`,
+        );
+      }
+
+      const statusAnterior = solicitacao.status;
+      const observacao = `Solicitação suspensa. Motivo: ${motivo}`;
+
+      // Atualizar status da solicitação
+      await queryRunner.manager.update(
+        Solicitacao,
+        { id: solicitacaoId },
+        {
+          status: StatusSolicitacao.SUSPENSO,
+          updated_at: new Date(),
+        },
+      );
+
+      // Registrar no histórico
+      const historico = new HistoricoSolicitacao();
+      historico.solicitacao_id = solicitacaoId;
+      historico.status_anterior = statusAnterior;
+      historico.status_atual = StatusSolicitacao.SUSPENSO;
+      historico.usuario_id = usuarioId;
+      historico.observacao = observacao;
+      historico.created_at = new Date();
+      await queryRunner.manager.save(HistoricoSolicitacao, historico);
+
+      // Regra 3: Suspender pagamentos pendentes
+      if (solicitacao.pagamentos && solicitacao.pagamentos.length > 0) {
+        const pagamentosPendentes = solicitacao.pagamentos.filter(
+          (p) => p.status === 'pendente' || p.status === 'agendado',
+        );
+
+        for (const pagamento of pagamentosPendentes) {
+          await queryRunner.manager.update(
+            'Pagamento',
+            { id: pagamento.id },
+            {
+              status: 'suspenso',
+              updated_at: new Date(),
+            },
+          );
+
+          this.logger.log(
+            `Pagamento ${pagamento.id} suspenso devido à suspensão da solicitação ${solicitacaoId}`,
+          );
+        }
+      }
+
+      await queryRunner.commitTransaction();
+
+      // Enviar notificação
+      try {
+        // Buscar o template de suspensão usando o serviço de mapeamento
+        const templateData = await this.templateMappingService.prepararDadosTemplate('SUSPENSAO');
+        
+        await this.notificacaoService.criarEBroadcast({
+          destinatario_id: solicitacao.tecnico_id,
+          titulo: 'Solicitação Suspensa',
+          conteudo: `Sua solicitação de benefício foi suspensa. Motivo: ${motivo}`,
+          tipo: 'SUSPENSAO',
+          prioridade: 'high',
+          template_id: templateData.template_id,
+          dados: {
+            solicitacao_id: solicitacaoId,
+            status_anterior: statusAnterior,
+            status_atual: StatusSolicitacao.SUSPENSO,
+            motivo: motivo || 'Não informado',
+            data_suspensao: new Date().toLocaleDateString('pt-BR'),
+            url_sistema: process.env.FRONTEND_URL || 'https://pgben-front.kemosoft.com.br',
+          },
+        });
+        
+        if (templateData.templateEncontrado) {
+          this.logger.log(`Notificação de suspensão enviada com template ${templateData.codigoTemplate} para usuário ${solicitacao.tecnico_id}`);
+        } else {
+          this.logger.warn(`Template para SUSPENSAO não encontrado. Notificação enviada sem template.`);
+        }
+      } catch (error) {
+        this.logger.error(
+          `Erro ao enviar notificação de suspensão para solicitação ${solicitacaoId}`,
+          error,
+        );
+      }
+
+      return {
+        sucesso: true,
+        mensagem: `Solicitação suspensa com sucesso. Motivo: ${motivo}`,
+        status_anterior: statusAnterior,
+        status_atual: StatusSolicitacao.SUSPENSO,
+      };
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
+
+      this.logger.error(
+        `Erro ao suspender solicitação ${solicitacaoId}: ${error.message}`,
+        error.stack,
+      );
+      throw new InternalServerErrorException('Erro ao suspender solicitação');
+    } finally {
+      await queryRunner.release();
+    }
   }
 
   /**
@@ -637,5 +1198,31 @@ export class WorkflowSolicitacaoService {
     } finally {
       await queryRunner.release();
     }
+  }
+
+  /**
+   * Determina a prioridade de uma transição de estado
+   * @param novoEstado Novo estado da solicitação
+   * @returns Prioridade da transição (high, medium, low)
+   */
+  private determinarPrioridadeTransicao(novoEstado: StatusSolicitacao): string {
+    const estadosAlta = [
+      StatusSolicitacao.APROVADA,
+      StatusSolicitacao.INDEFERIDA,
+      StatusSolicitacao.LIBERADA,
+      StatusSolicitacao.BLOQUEADO,
+      StatusSolicitacao.SUSPENSO,
+      StatusSolicitacao.CANCELADA,
+    ];
+    const estadosMedia = [
+      StatusSolicitacao.EM_ANALISE,
+      StatusSolicitacao.PENDENTE,
+      StatusSolicitacao.AGUARDANDO_DOCUMENTOS,
+      StatusSolicitacao.EM_PROCESSAMENTO,
+    ];
+
+    if (estadosAlta.includes(novoEstado)) return 'high';
+    if (estadosMedia.includes(novoEstado)) return 'medium';
+    return 'low';
   }
 }

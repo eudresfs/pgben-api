@@ -23,7 +23,7 @@ export class DadosFuneralRepository extends Repository<DadosFuneral> {
       where: { solicitacao_id: solicitacaoId },
       relations: [
         'solicitacao',
-        'solicitacao.cidadao',
+        'solicitacao.beneficiario',
         'solicitacao.tipo_beneficio',
       ],
     });
@@ -38,7 +38,7 @@ export class DadosFuneralRepository extends Repository<DadosFuneral> {
   ): Promise<DadosFuneral[]> {
     return this.createQueryBuilder('dados')
       .leftJoinAndSelect('dados.solicitacao', 'solicitacao')
-      .leftJoinAndSelect('solicitacao.cidadao', 'cidadao')
+      .leftJoinAndSelect('solicitacao.beneficiario', 'cidadao')
       .where('dados.data_obito BETWEEN :dataInicio AND :dataFim', {
         dataInicio,
         dataFim,
@@ -55,7 +55,7 @@ export class DadosFuneralRepository extends Repository<DadosFuneral> {
   ): Promise<DadosFuneral[]> {
     return this.createQueryBuilder('dados')
       .leftJoinAndSelect('dados.solicitacao', 'solicitacao')
-      .leftJoinAndSelect('solicitacao.cidadao', 'cidadao')
+      .leftJoinAndSelect('solicitacao.beneficiario', 'cidadao')
       .where('dados.grau_parentesco_requerente = :grauParentesco', {
         grauParentesco,
       })
@@ -69,7 +69,7 @@ export class DadosFuneralRepository extends Repository<DadosFuneral> {
   async findByTipoUrna(tipoUrna: TipoUrnaEnum): Promise<DadosFuneral[]> {
     return this.createQueryBuilder('dados')
       .leftJoinAndSelect('dados.solicitacao', 'solicitacao')
-      .leftJoinAndSelect('solicitacao.cidadao', 'cidadao')
+      .leftJoinAndSelect('solicitacao.beneficiario', 'cidadao')
       .where('dados.tipo_urna_necessaria = :tipoUrna', { tipoUrna })
       .orderBy('dados.created_at', 'DESC')
       .getMany();
@@ -81,7 +81,7 @@ export class DadosFuneralRepository extends Repository<DadosFuneral> {
   async findByLocalObito(localObito: string): Promise<DadosFuneral[]> {
     return this.createQueryBuilder('dados')
       .leftJoinAndSelect('dados.solicitacao', 'solicitacao')
-      .leftJoinAndSelect('solicitacao.cidadao', 'cidadao')
+      .leftJoinAndSelect('solicitacao.beneficiario', 'cidadao')
       .where('LOWER(dados.local_obito) LIKE LOWER(:localObito)', {
         localObito: `%${localObito}%`,
       })
@@ -98,7 +98,7 @@ export class DadosFuneralRepository extends Repository<DadosFuneral> {
   ): Promise<DadosFuneral[]> {
     return this.createQueryBuilder('dados')
       .leftJoinAndSelect('dados.solicitacao', 'solicitacao')
-      .leftJoinAndSelect('solicitacao.cidadao', 'cidadao')
+      .leftJoinAndSelect('solicitacao.beneficiario', 'cidadao')
       .where('dados.data_autorizacao BETWEEN :dataInicio AND :dataFim', {
         dataInicio,
         dataFim,
@@ -217,7 +217,7 @@ export class DadosFuneralRepository extends Repository<DadosFuneral> {
   }): Promise<{ data: DadosFuneral[]; total: number }> {
     const query = this.createQueryBuilder('dados')
       .leftJoinAndSelect('dados.solicitacao', 'solicitacao')
-      .leftJoinAndSelect('solicitacao.cidadao', 'cidadao');
+      .leftJoinAndSelect('solicitacao.beneficiario', 'cidadao');
 
     if (filters.dataObitoInicio && filters.dataObitoFim) {
       query.andWhere(

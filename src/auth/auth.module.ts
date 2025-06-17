@@ -81,7 +81,19 @@ import { PermissionModule } from './permission.module';
         isGlobal: true,
         ttl: configService.get<number>('CACHE_TTL', 5 * 60 * 1000), // 5 minutos padrão
         max: configService.get<number>('CACHE_MAX_ITEMS', 1000), // 1000 itens padrão
-        store: 'memory', // Explicitamente definido para clareza
+        // Permite alternar entre Redis e memória via variável de ambiente
+        store: ((): any => {
+          const cacheStore = configService.get<string>('CACHE_STORE', 'memory');
+          if (cacheStore === 'redis') {
+            // Importação dinâmica evita adicionar dependência quando não necessário
+            // eslint-disable-next-line @typescript-eslint/no-var-requires
+            const redisStore = require('cache-manager-redis-yet');
+            return redisStore.create({
+              url: configService.get<string>('REDIS_URL', 'redis://localhost:6379'),
+            });
+          }
+          return 'memory';
+        })(),
       }),
     }),
 

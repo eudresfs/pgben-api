@@ -32,4 +32,9 @@ export enum StatusPagamentoEnum {
    * Pagamento cancelado por algum motivo específico.
    */
   CANCELADO = 'cancelado',
+
+  /**
+   * Pagamento suspenso devido à suspensão da solicitação.
+   */
+  SUSPENSO = 'suspenso',
 }

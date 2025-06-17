@@ -9,7 +9,6 @@ describe('SseMetricsService', () => {
 
   beforeEach(async () => {
     const mockEnhancedMetricsService = {
-      recordSystemEvent: jest.fn(),
       recordSecurityEvent: jest.fn(),
       recordLgpdDataAccess: jest.fn()
     };
@@ -60,15 +59,17 @@ describe('SseMetricsService', () => {
       expect(metrics.connectionsByUserAgent[userAgent]).toBe(1);
       expect(metrics.peakConnections).toBe(1);
 
-      expect(enhancedMetricsService.recordSystemEvent).toHaveBeenCalledWith(
+      expect(enhancedMetricsService.recordSecurityEvent).toHaveBeenCalledWith(
         'sse_connection_established',
-        'success'
+        'info',
+        'notification_module'
       );
 
       expect(enhancedMetricsService.recordLgpdDataAccess).toHaveBeenCalledWith(
         'sse_connection',
         'create',
-        userId
+        true,
+        'user'
       );
     });
 
@@ -120,7 +121,7 @@ describe('SseMetricsService', () => {
 
     it('deve tratar erro ao registrar conexão', () => {
       // Arrange
-      enhancedMetricsService.recordSystemEvent.mockImplementation(() => {
+      enhancedMetricsService.recordSecurityEvent.mockImplementation(() => {
         throw new Error('Erro no sistema de métricas');
       });
 
@@ -146,14 +147,16 @@ describe('SseMetricsService', () => {
       expect(metrics.activeConnections).toBe(0);
       expect(metrics.connectionsPerUser[userId]).toBeUndefined();
 
-      expect(enhancedMetricsService.recordSystemEvent).toHaveBeenCalledWith(
+      expect(enhancedMetricsService.recordSecurityEvent).toHaveBeenCalledWith(
         'sse_connection_closed',
-        'success'
+        'info',
+        'notification_module'
       );
 
-      expect(enhancedMetricsService.recordSystemEvent).toHaveBeenCalledWith(
+      expect(enhancedMetricsService.recordSecurityEvent).toHaveBeenCalledWith(
         'sse_connection_duration',
-        'measured'
+        'info',
+        'notification_module'
       );
     });
 
@@ -224,14 +227,16 @@ describe('SseMetricsService', () => {
       const connectionStats = service.getConnectionStats(connectionId);
       expect(connectionStats!.messagesSent).toBe(1);
 
-      expect(enhancedMetricsService.recordSystemEvent).toHaveBeenCalledWith(
+      expect(enhancedMetricsService.recordSecurityEvent).toHaveBeenCalledWith(
         'sse_message_sent',
-        'success'
+        'info',
+        'notification_module'
       );
 
-      expect(enhancedMetricsService.recordSystemEvent).toHaveBeenCalledWith(
+      expect(enhancedMetricsService.recordSecurityEvent).toHaveBeenCalledWith(
         'sse_message_type_notification',
-        'sent'
+        'info',
+        'notification_module'
       );
     });
 
@@ -239,17 +244,14 @@ describe('SseMetricsService', () => {
       // Arrange
       const connectionId = 'conn-456';
       service.recordConnection('user-123', connectionId);
-      const initialStats = service.getConnectionStats(connectionId)!;
-      const initialActivity = initialStats.lastActivity;
+      const initialActivity = service.getConnectionStats(connectionId)!.lastActivity;
 
       // Act
-      setTimeout(() => {
-        service.recordMessageSent(connectionId, 'notification');
-        
-        // Assert
-        const updatedStats = service.getConnectionStats(connectionId)!;
-        expect(updatedStats.lastActivity.getTime()).toBeGreaterThan(initialActivity.getTime());
-      }, 10);
+      service.recordMessageSent(connectionId, 'notification');
+
+      // Assert
+      const updatedActivity = service.getConnectionStats(connectionId)!.lastActivity;
+      expect(updatedActivity.getTime()).toBeGreaterThanOrEqual(initialActivity.getTime());
     });
 
     it('deve registrar múltiplas mensagens', () => {
@@ -288,9 +290,10 @@ describe('SseMetricsService', () => {
       const connectionStats = service.getConnectionStats(connectionId);
       expect(connectionStats!.messagesDelivered).toBe(1);
 
-      expect(enhancedMetricsService.recordSystemEvent).toHaveBeenCalledWith(
+      expect(enhancedMetricsService.recordSecurityEvent).toHaveBeenCalledWith(
         'sse_message_delivered',
-        'success'
+        'info',
+        'notification_module'
       );
     });
 
@@ -332,15 +335,16 @@ describe('SseMetricsService', () => {
       const connectionStats = service.getConnectionStats(connectionId);
       expect(connectionStats!.messagesFailed).toBe(1);
 
-      expect(enhancedMetricsService.recordSystemEvent).toHaveBeenCalledWith(
+      expect(enhancedMetricsService.recordSecurityEvent).toHaveBeenCalledWith(
         'sse_message_failed',
-        'failure'
+        'error',
+        'notification_module'
       );
 
       expect(enhancedMetricsService.recordSecurityEvent).toHaveBeenCalledWith(
         'sse_delivery_failure',
-        'Falha na entrega de mensagem SSE: Conexão perdida',
-        userId
+        'error',
+        'notification_module'
       );
     });
 
@@ -451,8 +455,8 @@ describe('SseMetricsService', () => {
       
       // Simular passagem de tempo
       jest.spyOn(Date.prototype, 'getTime')
-        .mockReturnValueOnce(1000) // Conexão
-        .mockReturnValueOnce(2000); // Desconexão
+        .mockReturnValueOnce(2000) // now
+        .mockReturnValueOnce(1000); // start time
 
       // Act
       service.recordDisconnection(connectionId);
@@ -475,7 +479,7 @@ describe('SseMetricsService', () => {
   describe('tratamento de erros', () => {
     it('deve continuar funcionando mesmo com erros nas métricas', () => {
       // Arrange
-      enhancedMetricsService.recordSystemEvent.mockImplementation(() => {
+      enhancedMetricsService.recordSecurityEvent.mockImplementation(() => {
         throw new Error('Erro no sistema de métricas');
       });
 

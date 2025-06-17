@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Template } from '../../../entities/template.entity';
+import { NotificationTemplate } from '../../../entities/notification-template.entity';
 import { TemplateTipoEnum } from '../../../enums/template-tipo.enum';
 
 /**
@@ -12,8 +12,8 @@ import { TemplateTipoEnum } from '../../../enums/template-tipo.enum';
 @Injectable()
 export class TemplateRepository {
   constructor(
-    @InjectRepository(Template)
-    private readonly repository: Repository<Template>,
+    @InjectRepository(NotificationTemplate)
+    private readonly repository: Repository<NotificationTemplate>,
   ) {}
 
   /**
@@ -21,7 +21,7 @@ export class TemplateRepository {
    * @param codigo Código do template
    * @returns Template encontrado ou null
    */
-  async findByCodigo(codigo: string): Promise<Template | null> {
+  async findByCodigo(codigo: string): Promise<NotificationTemplate | null> {
     return this.repository.findOne({ where: { codigo } });
   }
 
@@ -30,7 +30,7 @@ export class TemplateRepository {
    * @param tipo Tipo opcional para filtrar templates
    * @returns Lista de templates
    */
-  async findAll(tipo?: TemplateTipoEnum): Promise<Template[]> {
+  async findAll(tipo?: TemplateTipoEnum): Promise<NotificationTemplate[]> {
     const whereClause = tipo ? { tipo } : {};
     return this.repository.find({
       where: whereClause,
@@ -43,7 +43,7 @@ export class TemplateRepository {
    * @param template Template a ser salvo
    * @returns Template salvo
    */
-  async save(template: Template): Promise<Template> {
+  async save(template: NotificationTemplate): Promise<NotificationTemplate> {
     return this.repository.save(template);
   }
 
@@ -60,7 +60,7 @@ export class TemplateRepository {
    * @param tipo Tipo dos templates
    * @returns Lista de templates do tipo
    */
-  async findByTipo(tipo: TemplateTipoEnum): Promise<Template[]> {
+  async findByTipo(tipo: TemplateTipoEnum): Promise<NotificationTemplate[]> {
     return this.repository.find({
       where: { tipo },
       order: { codigo: 'ASC' },

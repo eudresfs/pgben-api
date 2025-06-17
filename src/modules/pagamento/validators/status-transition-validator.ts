@@ -183,6 +183,60 @@ export class StatusTransitionValidator {
       allowed: false,
       reasonIfBlocked: 'Não é possível confirmar um pagamento cancelado',
     },
+
+    // De SUSPENSO para...
+    {
+      from: StatusPagamentoEnum.SUSPENSO,
+      to: StatusPagamentoEnum.PENDENTE,
+      allowed: true,
+    },
+    {
+      from: StatusPagamentoEnum.SUSPENSO,
+      to: StatusPagamentoEnum.CANCELADO,
+      allowed: true,
+    },
+    {
+      from: StatusPagamentoEnum.SUSPENSO,
+      to: StatusPagamentoEnum.AGENDADO,
+      allowed: false,
+      reasonIfBlocked: 'Pagamento suspenso não pode ser agendado diretamente',
+    },
+    {
+      from: StatusPagamentoEnum.SUSPENSO,
+      to: StatusPagamentoEnum.LIBERADO,
+      allowed: false,
+      reasonIfBlocked: 'Pagamento suspenso não pode ser liberado diretamente',
+    },
+
+    // Para SUSPENSO de...
+    {
+      from: StatusPagamentoEnum.PENDENTE,
+      to: StatusPagamentoEnum.SUSPENSO,
+      allowed: true,
+    },
+    {
+      from: StatusPagamentoEnum.AGENDADO,
+      to: StatusPagamentoEnum.SUSPENSO,
+      allowed: true,
+    },
+    {
+      from: StatusPagamentoEnum.LIBERADO,
+      to: StatusPagamentoEnum.SUSPENSO,
+      allowed: false,
+      reasonIfBlocked: 'Não é possível suspender um pagamento já liberado',
+    },
+    {
+      from: StatusPagamentoEnum.PAGO,
+      to: StatusPagamentoEnum.SUSPENSO,
+      allowed: false,
+      reasonIfBlocked: 'Não é possível suspender um pagamento já pago',
+    },
+    {
+      from: StatusPagamentoEnum.CONFIRMADO,
+      to: StatusPagamentoEnum.SUSPENSO,
+      allowed: false,
+      reasonIfBlocked: 'Não é possível suspender um pagamento já confirmado',
+    },
   ];
 
   /**

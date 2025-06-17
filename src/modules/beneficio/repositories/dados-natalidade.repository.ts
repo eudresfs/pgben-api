@@ -37,7 +37,7 @@ export class DadosNatalidadeRepository extends Repository<DadosNatalidade> {
   ): Promise<DadosNatalidade[]> {
     return this.createQueryBuilder('dados')
       .leftJoinAndSelect('dados.solicitacao', 'solicitacao')
-      .leftJoinAndSelect('solicitacao.cidadao', 'cidadao')
+      .leftJoinAndSelect('solicitacao.beneficiario', 'cidadao')
       .where('dados.data_nascimento BETWEEN :dataInicio AND :dataFim', {
         dataInicio,
         dataFim,
@@ -52,7 +52,7 @@ export class DadosNatalidadeRepository extends Repository<DadosNatalidade> {
   async findByTipoParto(tipoParto: string): Promise<DadosNatalidade[]> {
     return this.createQueryBuilder('dados')
       .leftJoinAndSelect('dados.solicitacao', 'solicitacao')
-      .leftJoinAndSelect('solicitacao.cidadao', 'cidadao')
+      .leftJoinAndSelect('solicitacao.beneficiario', 'cidadao')
       .where('dados.tipo_parto = :tipoParto', { tipoParto })
       .orderBy('dados.created_at', 'DESC')
       .getMany();
@@ -156,7 +156,7 @@ export class DadosNatalidadeRepository extends Repository<DadosNatalidade> {
   }): Promise<{ data: DadosNatalidade[]; total: number }> {
     const query = this.createQueryBuilder('dados')
       .leftJoinAndSelect('dados.solicitacao', 'solicitacao')
-      .leftJoinAndSelect('solicitacao.cidadao', 'cidadao');
+      .leftJoinAndSelect('solicitacao.beneficiario', 'cidadao');
 
     if (filters.dataInicio && filters.dataFim) {
       query.andWhere('dados.data_nascimento BETWEEN :dataInicio AND :dataFim', {

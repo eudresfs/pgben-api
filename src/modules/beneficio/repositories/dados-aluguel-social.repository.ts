@@ -37,7 +37,7 @@ export class DadosAluguelSocialRepository extends Repository<DadosAluguelSocial>
   ): Promise<DadosAluguelSocial[]> {
     return this.createQueryBuilder('dados')
       .leftJoinAndSelect('dados.solicitacao', 'solicitacao')
-      .leftJoinAndSelect('solicitacao.cidadao', 'cidadao')
+      .leftJoinAndSelect('solicitacao.beneficiario', 'cidadao')
       .where('dados.publico_prioritario = :publicoPrioritario', {
         publicoPrioritario,
       })
@@ -53,7 +53,7 @@ export class DadosAluguelSocialRepository extends Repository<DadosAluguelSocial>
   ): Promise<DadosAluguelSocial[]> {
     return this.createQueryBuilder('dados')
       .leftJoinAndSelect('dados.solicitacao', 'solicitacao')
-      .leftJoinAndSelect('solicitacao.cidadao', 'cidadao')
+      .leftJoinAndSelect('solicitacao.beneficiario', 'cidadao')
       .where('dados.especificacao_aluguel = :especificacao', { especificacao })
       .orderBy('dados.created_at', 'DESC')
       .getMany();
@@ -68,7 +68,7 @@ export class DadosAluguelSocialRepository extends Repository<DadosAluguelSocial>
   ): Promise<DadosAluguelSocial[]> {
     return this.createQueryBuilder('dados')
       .leftJoinAndSelect('dados.solicitacao', 'solicitacao')
-      .leftJoinAndSelect('solicitacao.cidadao', 'cidadao')
+      .leftJoinAndSelect('solicitacao.beneficiario', 'cidadao')
       .where('dados.valor_aluguel BETWEEN :valorMinimo AND :valorMaximo', {
         valorMinimo,
         valorMaximo,
@@ -86,7 +86,7 @@ export class DadosAluguelSocialRepository extends Repository<DadosAluguelSocial>
   ): Promise<DadosAluguelSocial[]> {
     return this.createQueryBuilder('dados')
       .leftJoinAndSelect('dados.solicitacao', 'solicitacao')
-      .leftJoinAndSelect('solicitacao.cidadao', 'cidadao')
+      .leftJoinAndSelect('solicitacao.beneficiario', 'cidadao')
       .where('dados.data_inicio_aluguel BETWEEN :dataInicio AND :dataFim', {
         dataInicio,
         dataFim,
@@ -208,7 +208,7 @@ export class DadosAluguelSocialRepository extends Repository<DadosAluguelSocial>
   }): Promise<{ data: DadosAluguelSocial[]; total: number }> {
     const query = this.createQueryBuilder('dados')
       .leftJoinAndSelect('dados.solicitacao', 'solicitacao')
-      .leftJoinAndSelect('solicitacao.cidadao', 'cidadao');
+      .leftJoinAndSelect('solicitacao.beneficiario', 'cidadao');
 
     if (filters.publicoPrioritario) {
       query.andWhere('dados.publico_prioritario = :publicoPrioritario', {

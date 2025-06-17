@@ -37,7 +37,7 @@ export class DadosCestaBasicaRepository extends Repository<DadosCestaBasica> {
   ): Promise<DadosCestaBasica[]> {
     return this.createQueryBuilder('dados')
       .leftJoinAndSelect('dados.solicitacao', 'solicitacao')
-      .leftJoinAndSelect('solicitacao.cidadao', 'cidadao')
+      .leftJoinAndSelect('solicitacao.beneficiario', 'cidadao')
       .where('dados.periodo_concessao = :periodoConcessao', {
         periodoConcessao,
       })
@@ -53,7 +53,7 @@ export class DadosCestaBasicaRepository extends Repository<DadosCestaBasica> {
   ): Promise<DadosCestaBasica[]> {
     return this.createQueryBuilder('dados')
       .leftJoinAndSelect('dados.solicitacao', 'solicitacao')
-      .leftJoinAndSelect('solicitacao.cidadao', 'cidadao')
+      .leftJoinAndSelect('solicitacao.beneficiario', 'cidadao')
       .where('dados.origem_atendimento = :origemAtendimento', {
         origemAtendimento,
       })
@@ -70,7 +70,7 @@ export class DadosCestaBasicaRepository extends Repository<DadosCestaBasica> {
   ): Promise<DadosCestaBasica[]> {
     const query = this.createQueryBuilder('dados')
       .leftJoinAndSelect('dados.solicitacao', 'solicitacao')
-      .leftJoinAndSelect('solicitacao.cidadao', 'cidadao')
+      .leftJoinAndSelect('solicitacao.beneficiario', 'cidadao')
       .where('dados.quantidade_cestas_solicitadas >= :quantidadeMinima', {
         quantidadeMinima,
       });
@@ -179,7 +179,7 @@ export class DadosCestaBasicaRepository extends Repository<DadosCestaBasica> {
   }): Promise<{ data: DadosCestaBasica[]; total: number }> {
     const query = this.createQueryBuilder('dados')
       .leftJoinAndSelect('dados.solicitacao', 'solicitacao')
-      .leftJoinAndSelect('solicitacao.cidadao', 'cidadao');
+      .leftJoinAndSelect('solicitacao.beneficiario', 'cidadao');
 
     if (filters.periodoConcessao) {
       query.andWhere('dados.periodo_concessao = :periodoConcessao', {
@@ -271,12 +271,12 @@ export class DadosCestaBasicaRepository extends Repository<DadosCestaBasica> {
   > {
     return this.createQueryBuilder('dados')
       .leftJoin('dados.solicitacao', 'solicitacao')
-      .leftJoin('solicitacao.cidadao', 'cidadao')
-      .select('cidadao.id', 'cidadao_id')
-      .addSelect('cidadao.nome_completo', 'nome_cidadao')
+      .leftJoin('solicitacao.beneficiario', 'cidadao')
+      .select('beneficiario.id', 'cidadao_id')
+      .addSelect('cidadao.nome', 'nome_cidadao')
       .addSelect('COUNT(*)', 'total_solicitacoes')
       .addSelect('SUM(dados.quantidade_cestas_solicitadas)', 'total_cestas')
-      .groupBy('cidadao.id, cidadao.nome_completo')
+      .groupBy('cidadao.id, cidadao.nome')
       .having('COUNT(*) >= :minimoSolicitacoes', { minimoSolicitacoes })
       .orderBy('total_solicitacoes', 'DESC')
       .getRawMany()

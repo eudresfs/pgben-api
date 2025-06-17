@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { TemplateRepository } from '../repositories/template.repository';
-import { Template } from '../../../entities/template.entity';
+import { NotificationTemplate } from '../../../entities/notification-template.entity';
 import { TemplateCreateDto } from '../dtos/template/template-create.dto';
 import { TemplateUpdateDto } from '../dtos/template/template-update.dto';
 import { TemplateResponseDto } from '../dtos/template/template-response.dto';
@@ -73,12 +73,11 @@ export class TemplateService {
       );
     }
 
-    const template = new Template();
+    const template = new NotificationTemplate();
     template.codigo = dto.codigo;
     template.nome = dto.nome;
-    // A propriedade descricao não existe na entidade Template
     template.tipo = dto.tipo;
-    template.conteudo = dto.conteudo;
+    template.corpo = dto.conteudo;
     template.ativo = true;
 
     const salvo = await this.templateRepository.save(template);
@@ -111,7 +110,7 @@ export class TemplateService {
           `Template inválido: ${error.message}`,
         );
       }
-      template.conteudo = dto.conteudo;
+      template.corpo = dto.conteudo;
     }
 
     if (dto.nome !== undefined) {
@@ -150,7 +149,7 @@ export class TemplateService {
    * @throws TemplateInvalidoException se ocorrer erro na renderização
    */
   async testar(dto: TemplateTestDto): Promise<{ conteudo: string }> {
-    let template: Template | null = null;
+    let template: NotificationTemplate | null = null;
 
     // Se for um código, busca o template existente
     if (dto.codigo) {
@@ -162,9 +161,9 @@ export class TemplateService {
 
     // Se não encontrou o template pelo código ou não foi fornecido código, usa o conteúdo direto
     if (!template && dto.conteudo) {
-      const tempTemplate = new Template();
-      tempTemplate.conteudo = dto.conteudo;
-      tempTemplate.tipo = dto.tipo || TemplateTipoEnum.EMAIL;
+      const tempTemplate = new NotificationTemplate();
+      tempTemplate.corpo = dto.conteudo;
+      tempTemplate.tipo = dto.tipo || 'email';
       tempTemplate.codigo = 'temp-' + Date.now();
       tempTemplate.nome = 'Template Temporário';
       tempTemplate.ativo = true;
@@ -179,7 +178,7 @@ export class TemplateService {
 
     try {
       const conteudoRenderizado = await this.templateEngine.render(
-        template.conteudo,
+        template.corpo,
         dto.dados || {},
         { sanitize: true },
       );
@@ -217,7 +216,7 @@ export class TemplateService {
     }
 
     try {
-      return await this.templateEngine.render(template.conteudo, dados, opcoes);
+      return await this.templateEngine.render(template.corpo, dados, opcoes);
     } catch (error) {
       throw new TemplateInvalidoException(
         codigo,
@@ -264,13 +263,13 @@ export class TemplateService {
    * @param template Entidade a ser convertida
    * @returns DTO de resposta
    */
-  private mapearParaDto(template: Template): TemplateResponseDto {
+  private mapearParaDto(template: NotificationTemplate): TemplateResponseDto {
     const dto = new TemplateResponseDto();
     dto.codigo = template.codigo;
     dto.nome = template.nome;
     // Não existe a propriedade descricao
     dto.tipo = template.tipo;
-    dto.conteudo = template.conteudo;
+    dto.conteudo = template.corpo;
     dto.ativo = template.ativo;
     dto.created_at = template.created_at;
     dto.updated_at = template.updated_at;

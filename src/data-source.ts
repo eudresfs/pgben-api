@@ -93,7 +93,6 @@ import {
   Notificacao,
   Notification,
   NotificationTemplate,
-  Template,
 
   // Entidades de Ocorrências e Demandas
   DemandaMotivo,
@@ -202,7 +201,6 @@ export const AppDataSource = new DataSource({
     Notificacao,
     Notification,
     NotificationTemplate,
-    Template,
 
     // Entidades de ocorrência
     Ocorrencia,

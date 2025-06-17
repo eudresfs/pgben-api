@@ -3,31 +3,57 @@ import { OnEvent } from '@nestjs/event-emitter';
 import { NOTIFICATION_CREATED } from '../events/notification.events';
 import { NotificationCreatedEvent } from '../events/notification-created.event';
 import { EmailService } from '../../../common/services/email.service';
+import { UsuarioService } from '../../usuario/services/usuario.service';
 
 @Injectable()
 export class NotificationEmailListener {
   private readonly logger = new Logger(NotificationEmailListener.name);
 
-  constructor(private readonly emailService: EmailService) {}
+  constructor(
+    private readonly emailService: EmailService,
+    private readonly usuarioService: UsuarioService,
+  ) {}
 
   @OnEvent(NOTIFICATION_CREATED, { async: true })
   async handleNotificationCreated(event: NotificationCreatedEvent) {
     const n = event.notification;
-    // Exemplo simples: enviar e-mail ao destinatário
+    
     try {
+      // Buscar o email do usuário pelo ID
+      const usuario = await this.usuarioService.findById(n.destinatario_id);
+      
+      if (!usuario?.email) {
+        this.logger.warn(`Usuário ${n.destinatario_id} não possui email cadastrado`);
+        return;
+      }
+
+      // Verificar se há template configurado
+      if (!n.template) {
+        this.logger.warn(`Notificação ${n.id} não possui template configurado`);
+        return;
+      }
+
+      // Verificar se o template suporta email
+      if (!n.template.canais_disponiveis?.includes('email')) {
+        this.logger.debug(`Template ${n.template.codigo} não suporta canal de email`);
+        return;
+      }
+
       await this.emailService.sendEmail({
-        to: n.destinatario_id, // ou buscar e-mail pelo id
-        subject: `[Notificação] ${n.template?.assunto || 'Nova notificação'}`,
-        template: 'notificacao-basica',
+        to: usuario.email,
+        subject: n.template.assunto || 'Nova notificação',
+        html: n.template.corpo_html || n.template.corpo,
+        text: n.template.corpo,
         context: {
-          titulo: n.template?.assunto || 'Notificação',
-          conteudo: n.template?.corpo || 'Nova notificação disponível',
-          dados: n.dados_contexto,
+          ...n.dados_contexto,
+          nome_tecnico: usuario.nome,
+          email_tecnico: usuario.email,
         },
       });
-      this.logger.log(`E-mail enviado para ${n.destinatario_id}`);
+      
+      this.logger.log(`E-mail enviado para ${usuario.email} (usuário: ${n.destinatario_id})`);
     } catch (err) {
-      this.logger.error(`Erro ao enviar e-mail: ${err}`);
+      this.logger.error(`Erro ao enviar email: ${err.message}`, err.stack);
     }
   }
 }

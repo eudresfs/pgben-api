@@ -3,6 +3,7 @@
 REGRAS DE OURO:
 - Sempre avalie se a implementação tem overengineering e, em caso afirmativo, avalie se a implementação é realmente necessária.
 - Nunca implemente nada fora do escopo do projeto. Todas as documentações estão disponíveis no repositório na pasta /docs.
+- Aguarde de 30 a 45 segundos quando iniciar o servidor
 
 ## 1. Padrões de Código e Estilo
 

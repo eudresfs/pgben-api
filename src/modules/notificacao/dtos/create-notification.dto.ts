@@ -26,12 +26,13 @@ export class CreateNotificationDto {
   destinatario_id: string;
 
   @ApiProperty({
-    description: 'ID do template de notificação ou código do template',
-    example: '123e4567-e89b-12d3-a456-426614174999',
+    description: 'ID do template de notificação',
+    example: 'template-uuid-here',
+    required: false,
   })
   @IsString()
-  @IsNotEmpty()
-  template_id: string;
+  @IsOptional()
+  template_id?: string;
 
   @ApiProperty({
     description: 'Canal de notificação a ser utilizado',

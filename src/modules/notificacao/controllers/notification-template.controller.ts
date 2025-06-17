@@ -18,7 +18,7 @@ import {
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../auth/guards/roles.guard';
 import { Roles } from '../../../auth/decorators/role.decorator';
-import { NotificationManagerService } from '../services/notification-manager.service';
+// import { NotificationManagerService } from '../services/notification-manager.service'; // TODO: Reativar após resolver dependência circular
 import { CreateNotificationTemplateDto } from '../dtos/create-notification-template.dto';
 import { ROLES } from '../../../shared/constants/roles.constants';
 
@@ -33,7 +33,7 @@ export class NotificationTemplateController {
   private readonly logger = new Logger(NotificationTemplateController.name);
 
   constructor(
-    private readonly notificationManagerService: NotificationManagerService,
+    // private readonly notificationManagerService: NotificationManagerService, // TODO: Reativar após resolver dependência circular
   ) {}
 
   /**
@@ -50,7 +50,9 @@ export class NotificationTemplateController {
     @Body() createTemplateDto: CreateNotificationTemplateDto,
   ) {
     this.logger.log(`Criando novo template: ${createTemplateDto.nome}`);
-    return this.notificationManagerService.criarTemplate(createTemplateDto);
+    // TODO: Reativar após resolver dependência circular
+    // return this.notificationManagerService.criarTemplate(createTemplateDto);
+    throw new Error('Funcionalidade temporariamente desabilitada - dependência circular');
   }
 
   /**
@@ -68,11 +70,13 @@ export class NotificationTemplateController {
     @Query('limit') limit?: number,
     @Query('ativo') ativo?: boolean,
   ) {
-    return this.notificationManagerService.listarTemplates({
-      page: page ? Number(page) : undefined,
-      limit: limit ? Number(limit) : undefined,
-      ativo: ativo !== undefined ? ativo === true : undefined,
-    });
+    // TODO: Reativar após resolver dependência circular
+    // return this.notificationManagerService.listarTemplates({
+    //   page: page ? Number(page) : undefined,
+    //   limit: limit ? Number(limit) : undefined,
+    //   ativo: ativo !== undefined ? ativo === true : undefined,
+    // });
+    throw new Error('Funcionalidade temporariamente desabilitada - dependência circular');
   }
 
   /**
@@ -90,7 +94,9 @@ export class NotificationTemplateController {
     description: 'Template não encontrado',
   })
   async buscarTemplatePorId(@Param('id') id: string) {
-    return this.notificationManagerService.buscarTemplatePorId(id);
+    // TODO: Reativar após resolver dependência circular
+    // return this.notificationManagerService.buscarTemplatePorId(id);
+    throw new Error('Funcionalidade temporariamente desabilitada - dependência circular');
   }
 
   /**
@@ -105,7 +111,9 @@ export class NotificationTemplateController {
   })
   async ativarTemplate(@Param('id') id: string) {
     this.logger.log(`Ativando template ID: ${id}`);
-    return this.notificationManagerService.ativarTemplate(id);
+    // TODO: Reativar após resolver dependência circular
+    // return this.notificationManagerService.ativarTemplate(id);
+    throw new Error('Funcionalidade temporariamente desabilitada - dependência circular');
   }
 
   /**
@@ -120,6 +128,8 @@ export class NotificationTemplateController {
   })
   async desativarTemplate(@Param('id') id: string) {
     this.logger.log(`Desativando template ID: ${id}`);
-    return this.notificationManagerService.desativarTemplate(id);
+    // TODO: Reativar após resolver dependência circular
+    // return this.notificationManagerService.desativarTemplate(id);
+    throw new Error('Funcionalidade temporariamente desabilitada - dependência circular');
   }
 }

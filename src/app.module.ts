@@ -26,6 +26,7 @@ import { UnifiedLoggerModule } from './shared/logging/unified-logger.module';
 import { ResilienceModule } from './shared/modules/resilience.module';
 import { EmailModule } from './shared/modules/email.module';
 import { ConfiguracaoModule } from './modules/configuracao/configuracao.module';
+import { NotificacaoModule } from './modules/notificacao/notificacao.module';
 
 @Module({
   imports: [
@@ -84,7 +85,7 @@ import { ConfiguracaoModule } from './modules/configuracao/configuracao.module';
     UnifiedLoggerModule,
     PermissionSharedModule,
     AuditoriaSharedModule,
-    ResilienceModule, // Reabilitado após correções no Redis/Cache
+    // ResilienceModule, // Temporariamente desabilitado - depende do Redis
 
     // Módulo de autenticação
     AuthModule,
@@ -121,6 +122,9 @@ import { ConfiguracaoModule } from './modules/configuracao/configuracao.module';
 
     // Módulo de configuração
     ConfiguracaoModule,
+
+    // Módulo de notificações
+    NotificacaoModule,
   ],
   controllers: [AppController],
   providers: [
