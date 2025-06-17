@@ -214,6 +214,13 @@ export const SWAGGER_TAGS = {
     description:
       'Endpoints de exemplo para demonstração de integração com sistemas externos.',
   },
+
+  // Health Checks
+  HEALTH_CHECKS: {
+    name: 'Health Checks',
+    description:
+      'Endpoints para verificação de saúde do sistema, monitoramento de componentes e status operacional para Kubernetes e ferramentas de monitoramento.',
+  },
 } as const;
 
 /**
@@ -276,6 +283,7 @@ export const SWAGGER_TAG_GROUPS = {
     SWAGGER_TAGS.LOGS.name,
   ],
   'Monitoramento e Integrações': [
+    SWAGGER_TAGS.HEALTH_CHECKS.name,
     SWAGGER_TAGS.MONITORAMENTO.name,
     SWAGGER_TAGS.MONITORAMENTO_RESILIENCIA.name,
     SWAGGER_TAGS.INTEGRACOES.name,
@@ -343,6 +351,25 @@ export const SWAGGER_TAG_METADATA = {
       frequency: 'Primeiro dia útil de cada mês',
     },
   },
+  [SWAGGER_TAGS.HEALTH_CHECKS.name]: {
+    kubernetes: {
+      description: 'Endpoints utilizados pelos probes do Kubernetes',
+      probes: {
+        liveness: '/health - Verifica se a aplicação está viva',
+        readiness: '/health/ready - Verifica se a aplicação está pronta para receber tráfego',
+        startup: '/health - Verifica se a aplicação iniciou corretamente',
+      },
+    },
+    monitoring: {
+      description: 'Monitoramento de componentes críticos',
+      components: ['Database', 'Redis', 'Storage', 'Memory', 'Disk'],
+      alerting: 'Integração com sistemas de alertas externos',
+    },
+    security: {
+      description: 'Endpoints públicos sem autenticação',
+      rateLimiting: 'Rate limiting aplicado para prevenir abuso',
+    },
+  },
 };
 
 /**
@@ -388,6 +415,7 @@ export const SWAGGER_TAG_ORDER = [
   SWAGGER_TAGS.LOGS.name,
 
   // Monitoramento e Integrações
+  SWAGGER_TAGS.HEALTH_CHECKS.name,
   SWAGGER_TAGS.MONITORAMENTO.name,
   SWAGGER_TAGS.MONITORAMENTO_RESILIENCIA.name,
   SWAGGER_TAGS.INTEGRACOES.name,

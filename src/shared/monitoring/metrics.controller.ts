@@ -3,6 +3,7 @@ import { Response } from 'express';
 import { MetricsService } from './metrics.service';
 import { Public } from '../../auth/decorators/public.decorator';
 import { ApiTags } from '@nestjs/swagger';
+import { SWAGGER_TAGS } from '../configs/swagger/tags.config';
 
 /**
  * Controlador de Métricas
@@ -10,7 +11,7 @@ import { ApiTags } from '@nestjs/swagger';
  * Expõe endpoints para acesso às métricas da aplicação
  * no formato do Prometheus
  */
-@ApiTags('Métricas e Dashboard')
+@ApiTags(SWAGGER_TAGS.METRICAS.name)
 @Controller({ path: 'metrics', version: '1' })
 export class MetricsController {
   constructor(private readonly metricsService: MetricsService) {}

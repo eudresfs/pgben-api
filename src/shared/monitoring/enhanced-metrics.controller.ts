@@ -3,6 +3,7 @@ import { Response } from 'express';
 import { EnhancedMetricsService } from './enhanced-metrics.service';
 import { Public } from '../../auth/decorators/public.decorator';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { SWAGGER_TAGS } from '../configs/swagger/tags.config';
 
 /**
  * Controlador de Métricas Aprimorado
@@ -10,7 +11,7 @@ import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
  * Expõe endpoints para acesso às métricas avançadas da aplicação
  * no formato do Prometheus, com foco em segurança e compliance LGPD
  */
-@ApiTags('Métricas e Dashboard')
+@ApiTags(SWAGGER_TAGS.METRICAS.name)
 @Controller('monitoramento/metricas')
 export class EnhancedMetricsController {
   constructor(private readonly metricsService: EnhancedMetricsService) {}

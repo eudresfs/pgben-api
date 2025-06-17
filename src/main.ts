@@ -121,7 +121,12 @@ async function bootstrap(): Promise<INestApplication> {
       exclude: [
         { path: '', method: RequestMethod.ALL },
         { path: 'health', method: RequestMethod.ALL },
+        { path: 'health/ready', method: RequestMethod.ALL },
         { path: 'health/ping', method: RequestMethod.ALL },
+        { path: 'health/db', method: RequestMethod.ALL },
+        { path: 'health/system', method: RequestMethod.ALL },
+        { path: 'health/redis', method: RequestMethod.ALL },
+        { path: 'health/storage', method: RequestMethod.ALL },
         { path: 'metrics', method: RequestMethod.GET },
         { path: 'openapi.json', method: RequestMethod.GET },
         { path: 'v2/swagger.json', method: RequestMethod.GET },
