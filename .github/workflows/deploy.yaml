@@ -3,12 +3,19 @@ name: Build and Deploy
 on:
   push:
     branches: ['main']
+  pull_request:
+    branches: ['main']
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   CPR_ADDR: cpr.kemosoft.com.br
   K8S_NAMESPACE: consigmais
   DEPLOYMENT_NAME: ${{ github.event.repository.name }}
   CONTAINER_PATH: cpr.kemosoft.com.br/${{ github.event.repository.name }}:${{ github.sha }}
+  KANIKO_CACHE_ARGS: "--cache=true --cache-ttl=24h"
 
 jobs:
   build:
@@ -19,28 +26,30 @@ jobs:
       contents: read
 
     steps:
-      - name: build and push image to cpr
+      - uses: actions/checkout@v4
+
+      - name: authenticate to CPR registry
         run: |
+          mkdir -p /kaniko/.docker
           cat <<EOF > /kaniko/.docker/config.json
           {
             "auths": {
-              "$CPR_ADDR": {
-                "auth": "$(echo -n "$CPR_USERNAME:$CPR_PASSWORD" | base64 -w0)"
+              "${{ env.CPR_ADDR }}": {
+                "auth": "$(echo -n \"${{ secrets.CPR_USERNAME }}:${{ secrets.CPR_PASSWORD }}\" | base64 -w0)"
               }
             }
           }
           EOF
 
+      - name: build and push image to CPR
+        run: |
           /kaniko/executor --dockerfile="/Dockerfile" \
-            --context="${{ github.repositoryUrl }}#${{ github.ref }}#${{ github.sha }}"  \
-            --destination="${{ env.CONTAINER_PATH }}" \
+            --context "." \
+            --destination "${{ env.CONTAINER_PATH }}" \
             ${{ env.KANIKO_CACHE_ARGS }} \
+            --snapshotMode=redo \
+            --compressed-caching \
             --push-retry 5
-        env:
-          GIT_USERNAME: ${{ github.actor }}
-          GIT_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
-          CPR_USERNAME: ${{ secrets.CPR_USERNAME }}
-          CPR_PASSWORD: ${{ secrets.CPR_PASSWORD }}
 
   deploy:
     needs:

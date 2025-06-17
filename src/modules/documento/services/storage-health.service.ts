@@ -181,37 +181,40 @@ export class StorageHealthService {
     storageProvider: any,
   ): Promise<{ success: boolean; error?: string }> {
     const testKey = `health-checks/${Date.now()}-${this.testFileName}`;
+    let storedKey: string | undefined;
 
     try {
       // Teste 1: Upload
       this.logger.debug('Testando upload para storage', { testKey });
-      await storageProvider.salvarArquivo(
+      storedKey = await storageProvider.salvarArquivo(
         this.testContent,
         testKey,
         'text/plain',
         { healthCheck: true },
       );
+      // Caso o provedor retorne undefined, usar a chave original
+      const keyToCheck = storedKey ?? testKey;
 
       // Teste 2: Download
-      this.logger.debug('Testando download do storage', { testKey });
-      const downloadedContent = await storageProvider.obterArquivo(testKey);
+      this.logger.debug('Testando download do storage', { keyToCheck });
+      const downloadedContent = await storageProvider.obterArquivo(keyToCheck);
 
       if (!downloadedContent || !downloadedContent.equals(this.testContent)) {
         throw new Error('Conteúdo baixado não confere com o enviado');
       }
 
       // Teste 3: Remoção
-      this.logger.debug('Testando remoção do storage', { testKey });
-      await storageProvider.removerArquivo(testKey);
+      this.logger.debug('Testando remoção do storage', { keyToCheck });
+      await storageProvider.removerArquivo(keyToCheck);
 
       return { success: true };
     } catch (error) {
       // Tentar limpar o arquivo de teste em caso de erro
       try {
-        await storageProvider.removerArquivo(testKey);
+        await storageProvider.removerArquivo(storedKey ?? testKey);
       } catch (cleanupError) {
         this.logger.warn('Erro ao limpar arquivo de teste', {
-          testKey,
+          key: storedKey ?? testKey,
           cleanupError: cleanupError.message,
         });
       }

@@ -23,8 +23,8 @@ export class AblyConfig {
     return apiKey;
   }
 
-  get environment(): 'sandbox' | 'production' {
-    return this.configService.get<'sandbox' | 'production'>('ABLY_ENVIRONMENT', 'sandbox');
+  get environment(): 'sandbox' | 'production' | undefined {
+    return this.configService.get<'sandbox' | 'production' | undefined>('ABLY_ENVIRONMENT');
   }
 
   get clientId(): string {
@@ -192,7 +192,7 @@ export class AblyConfig {
     return {
       key: this.apiKey,
       clientId: this.clientId,
-      environment: this.environment,
+      ...(this.environment && this.environment !== 'production' && { environment: this.environment }),
       tls: this.enableTls,
       logLevel: this.logLevel,
       disconnectedRetryTimeout: this.connectionTimeout,

@@ -27,6 +27,19 @@ import {
 @Injectable()
 export class AblyService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(AblyService.name);
+
+  /**
+   * Formata erros para string legível no log.
+   */
+  private formatError(err: any): string {
+    if (!err) return 'undefined';
+    if (err instanceof Error) return `${err.message} | ${err.stack ?? ''}`;
+    try {
+      return JSON.stringify(err);
+    } catch {
+      return String(err);
+    }
+  }
   private ablyClient: Ably.Realtime | null = null;
   private ablyRest: Ably.Rest | null = null;
   private channels: Map<string, Ably.RealtimeChannel> = new Map();
@@ -203,7 +216,7 @@ export class AblyService implements OnModuleInit, OnModuleDestroy {
       this.connectionStatus = 'failed';
       const reason = stateChange?.reason;
       this.lastError = reason?.message || (typeof reason === 'string' ? reason : reason?.toString()) || 'Falha na conexão';
-      this.logger.error('Falha na conexão com Ably:', stateChange);
+      this.logger.error('Falha na conexão com Ably:', this.formatError(stateChange));
       this.emitConnectionEvent('failed');
     });
   }

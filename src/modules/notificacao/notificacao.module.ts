@@ -55,7 +55,7 @@ import { WorkflowProativoListener } from './listeners/workflow-proativo.listener
 import { AblyModule } from './ably.module';
 
 // Entidades
-import { Notificacao, NotificacaoSistema, NotificationTemplate } from '../../entities';
+import { Notificacao, NotificacaoSistema, NotificationTemplate, Usuario } from '../../entities';
 import { Solicitacao } from '../../entities/solicitacao.entity';
 import { NotificacaoProativaScheduler } from './schedulers/notificacao-proativa.scheduler';
 
@@ -101,6 +101,7 @@ import { NotificacaoProativaScheduler } from './schedulers/notificacao-proativa.
       NotificacaoSistema,
       NotificationTemplate,
       Solicitacao,
+      Usuario,
     ]),
     ConfigModule,
     ScheduleAdapterModule,

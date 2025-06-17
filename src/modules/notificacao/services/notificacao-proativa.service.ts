@@ -5,9 +5,11 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { NotificacaoSistema, TipoNotificacao, StatusNotificacaoProcessamento } from '../../../entities/notification.entity';
 import { Solicitacao } from '../../../entities/solicitacao.entity';
+import { Usuario } from '../../../entities/usuario.entity';
 import { StatusSolicitacao } from '../../../enums/status-solicitacao.enum';
 import { NotificacaoService } from './notificacao.service';
 import { addDays, addHours, isAfter, isBefore, differenceInDays } from 'date-fns';
+import { Status } from '../../../enums/status.enum';
 
 /**
  * Interface para configuração de alertas de prazo
@@ -51,6 +53,8 @@ export class NotificacaoProativaService {
     private notificacaoRepository: Repository<NotificacaoSistema>,
     @InjectRepository(Solicitacao)
     private solicitacaoRepository: Repository<Solicitacao>,
+    @InjectRepository(Usuario)
+    private usuarioRepository: Repository<Usuario>,
     private readonly notificacaoService: NotificacaoService,
     private readonly eventEmitter: EventEmitter2,
   ) {}
@@ -130,7 +134,7 @@ export class NotificacaoProativaService {
     descricaoPrazo: string,
   ): Promise<void> {
     const solicitacoes = await this.solicitacaoRepository
-      .createQueryBuilder('pendecias')
+      .createQueryBuilder('solicitacao')
       .where('solicitacao.status IN (:...status)', { status: config.statusAlvo })
       .andWhere('solicitacao.prazo_analise <= :dataLimite', { dataLimite })
       .andWhere('solicitacao.prazo_analise > :agora', { agora: new Date() })
@@ -341,9 +345,12 @@ export class NotificacaoProativaService {
       return;
     }
 
-    // TODO: Buscar IDs de administradores do sistema
-    // Por enquanto, usar um ID fixo para demonstração
-    const adminIds = ['admin-user-id']; // Substituir por busca real
+    // Buscar IDs de administradores ativos
+    const adminIds = await this.buscarAdministradores();
+    if (adminIds.length === 0) {
+      this.logger.warn('Nenhum administrador ativo encontrado para envio de alerta de sistema');
+      return;
+    }
 
     for (const adminId of adminIds) {
       await this.notificacaoService.criarEBroadcast({
@@ -362,6 +369,22 @@ export class NotificacaoProativaService {
     }
 
     this.logger.log(`Alerta de sistema '${tipoAlerta}' enviado para ${adminIds.length} administradores`);
+  }
+
+  /**
+   * Busca IDs de administradores ativos
+   * @returns Lista de IDs de usuários administradores ativos
+   */
+  private async buscarAdministradores(): Promise<string[]> {
+    const administradores = await this.usuarioRepository
+      .createQueryBuilder('usuario')
+      .leftJoin('usuario.role', 'role')
+      .select('usuario.id', 'id')
+      .where('role.nome = :nome', { nome: 'Administrador' })
+      .andWhere('usuario.status = :status', { status: Status.ATIVO })
+      .getRawMany<{ id: string }>();
+
+    return administradores.map((a) => a.id);
   }
 
   /**
