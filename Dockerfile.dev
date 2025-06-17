@@ -106,7 +106,7 @@ EXPOSE 3000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost:3000/api/v1/health || exit 1
+    CMD curl -f http://localhost:3000/v1/health || exit 1
 
 # Comando de inicialização com dumb-init para proper signal handling
 ENTRYPOINT ["dumb-init", "--"]
@@ -181,4 +181,4 @@ LABEL security.readonly-rootfs="false"
 # docker run -p 3000:3000 --env-file .env pgben-server:latest
 
 # Para executar com health check:
-# docker run -p 3000:3000 --health-cmd="curl -f http://localhost:3000/api/v1/health" pgben-server:latest
+# docker run -p 3000:3000 --health-cmd="curl -f http://localhost:3000/v1/health" pgben-server:latest
