@@ -170,7 +170,7 @@ export class PdfStrategy implements RelatorioStrategy {
    * @param opcoes Opções de configuração
    */
   private async gerarBeneficiosConcedidos(
-    doc: PDFKit.PDFDocument,
+    doc: PDFDocument,
     dados: any[],
     opcoes: any,
   ): Promise<void> {
@@ -241,7 +241,7 @@ export class PdfStrategy implements RelatorioStrategy {
    * @param opcoes Opções de configuração
    */
   private async gerarSolicitacoesPorStatus(
-    doc: PDFKit.PDFDocument,
+    doc: PDFDocument,
     dados: any,
     opcoes: any,
   ): Promise<void> {
@@ -341,7 +341,7 @@ export class PdfStrategy implements RelatorioStrategy {
    * @param opcoes Opções de configuração
    */
   private async gerarAtendimentosPorUnidade(
-    doc: PDFKit.PDFDocument,
+    doc: PDFDocument,
     dados: any[],
     opcoes: any,
   ): Promise<void> {
@@ -421,7 +421,7 @@ export class PdfStrategy implements RelatorioStrategy {
    * @param colunas Array com os títulos das colunas
    */
   private desenharCabecalhoTabela(
-    doc: PDFKit.PDFDocument,
+    doc: PDFDocument,
     colunas: string[],
   ): void {
     const y = 130;
