@@ -195,10 +195,10 @@ const INTERNAL_ENDPOINTS_TO_REMOVE = [
   '/v1/metrics',
   '/metrics',
   '/v1/health',
-  '/health',
-  '/health/check',
-  '/health/ready',
-  '/health/live',
+  '/v1/health',
+  '/v1/health/check',
+  '/v1/health/ready',
+  '/v1/health/live',
 
   // Endpoints de logs e debug
   '/api/v1/logs',

@@ -261,7 +261,7 @@ export class NotificacaoProativaService {
       // Usuários ativos (com atividade nas últimas 24h)
       this.solicitacaoRepository
         .createQueryBuilder('solicitacao')
-        .select('COUNT(DISTINCT solicitacao.usuario_id)', 'count')
+        .select('COUNT(DISTINCT solicitacao.tecnico_id)', 'count')
         .where('solicitacao.updated_at >= :ontem', { ontem: ontemAgo })
         .getRawOne()
         .then((result) => parseInt(result.count) || 0),

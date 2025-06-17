@@ -93,7 +93,7 @@ jobs:
                       },
                       "startupProbe": {
                         "httpGet": {
-                          "path": "/v1/health/system",
+                          "path": "/health",
                           "port": 3000
                         },
                         "initialDelaySeconds": 60,
@@ -103,7 +103,7 @@ jobs:
                       },
                       "readinessProbe": {
                         "httpGet": {
-                          "path": "/v1/health/ready",
+                          "path": "/health/ready",
                           "port": 3000
                         },
                         "initialDelaySeconds": 90,
@@ -113,7 +113,7 @@ jobs:
                       },
                       "livenessProbe": {
                         "httpGet": {
-                          "path": "/v1/health/system",
+                          "path": "/health",
                           "port": 3000
                         },
                         "initialDelaySeconds": 180,

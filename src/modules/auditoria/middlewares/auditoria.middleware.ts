@@ -17,7 +17,7 @@ export class AuditoriaMiddleware implements NestMiddleware {
 
   // Lista de endpoints que não devem ser auditados
   private readonly excludedEndpoints = [
-    '/api/health',
+    '/v1/health',
     '/api/metrics',
     '/api-docs',
     '/api/v1/auth/login',

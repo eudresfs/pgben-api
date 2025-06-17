@@ -236,10 +236,10 @@ function logStartupInfo(
   logger.log(`📦 Versão da API: v1`);
 
   logger.log('📍 Rotas principais disponíveis:');
-  logger.log(`   ├─ GET  ${baseUrl}/health (liveness)`);
-  logger.log(`   ├─ GET  ${baseUrl}/health/ready (readiness)`);
-  logger.log(`   ├─ GET  ${baseUrl}/metrics (métricas do sistema)`);
-  logger.log(`   └─ POST ${baseUrl}/api/auth/login (autenticação)`);
+  logger.log(`   ├─ GET  ${baseUrl}/v1/health (liveness)`);
+  logger.log(`   ├─ GET  ${baseUrl}/v1/health/ready (readiness)`);
+  logger.log(`   ├─ GET  ${baseUrl}/v1/metrics (métricas do sistema)`);
+  logger.log(`   └─ POST ${baseUrl}/api/v1/auth/login (autenticação)`);
 
   if (isDevelopment || configService.get<boolean>('SWAGGER_ENABLED', false)) {
     logger.log('📚 Documentação disponível:');

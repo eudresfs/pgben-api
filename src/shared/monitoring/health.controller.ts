@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, VERSION_NEUTRAL } from '@nestjs/common';
 import {
   HealthCheckService,
   HttpHealthIndicator,
@@ -23,7 +23,7 @@ import { UnifiedLoggerService } from '../logging/unified-logger.service';
  * e seus componentes (banco de dados, memória, disco, etc.)
  */
 @ApiTags(SWAGGER_TAGS.HEALTH_CHECKS.name)
-@Controller('health')
+@Controller({ path: 'health', version: VERSION_NEUTRAL })
 export class HealthController {
   constructor(
     private health: HealthCheckService,
