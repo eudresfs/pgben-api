@@ -20,8 +20,6 @@ env:
 jobs:
   build:
     runs-on: arc-runner-set
-    container:
-      image: gcr.io/kaniko-project/executor:v1.20.0-debug
     permissions:
       contents: read
 
@@ -30,8 +28,8 @@ jobs:
 
       - name: authenticate to CPR registry
         run: |
-          mkdir -p /kaniko/.docker
-          cat <<EOF > /kaniko/.docker/config.json
+          mkdir -p $HOME/.docker
+          cat <<EOF > $HOME/.docker/config.json
           {
             "auths": {
               "${{ env.CPR_ADDR }}": {
@@ -43,9 +41,13 @@ jobs:
 
       - name: build and push image to CPR
         run: |
-          /kaniko/executor --dockerfile="/Dockerfile" \
-            --context "." \
-            --destination "${{ env.CONTAINER_PATH }}" \
+          docker run --rm \
+            -v ${{ github.workspace }}:/workspace \
+            -v $HOME/.docker:/kaniko/.docker \
+            gcr.io/kaniko-project/executor:v1.20.0-debug \
+            --dockerfile=Dockerfile \
+            --context=/workspace \
+            --destination=${{ env.CONTAINER_PATH }} \
             ${{ env.KANIKO_CACHE_ARGS }} \
             --snapshotMode=redo \
             --compressed-caching \
