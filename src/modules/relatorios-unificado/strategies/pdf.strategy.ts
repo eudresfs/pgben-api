@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { RelatorioStrategy } from '../interfaces/relatorio-strategy.interface';
 import PDFDocument from 'pdfkit';
+import * as PDFKit from 'pdfkit';
 import * as fs from 'fs';
 import { TempFilesService } from '../services/temp-files.service';
 
@@ -170,7 +171,7 @@ export class PdfStrategy implements RelatorioStrategy {
    * @param opcoes Opções de configuração
    */
   private async gerarBeneficiosConcedidos(
-    doc: PDFDocument,
+    doc: PDFKit.PDFDocument,
     dados: any[],
     opcoes: any,
   ): Promise<void> {
@@ -241,7 +242,7 @@ export class PdfStrategy implements RelatorioStrategy {
    * @param opcoes Opções de configuração
    */
   private async gerarSolicitacoesPorStatus(
-    doc: PDFDocument,
+    doc: PDFKit.PDFDocument,
     dados: any,
     opcoes: any,
   ): Promise<void> {
@@ -341,7 +342,7 @@ export class PdfStrategy implements RelatorioStrategy {
    * @param opcoes Opções de configuração
    */
   private async gerarAtendimentosPorUnidade(
-    doc: PDFDocument,
+    doc: PDFKit.PDFDocument,
     dados: any[],
     opcoes: any,
   ): Promise<void> {
@@ -421,7 +422,7 @@ export class PdfStrategy implements RelatorioStrategy {
    * @param colunas Array com os títulos das colunas
    */
   private desenharCabecalhoTabela(
-    doc: PDFDocument,
+    doc: PDFKit.PDFDocument,
     colunas: string[],
   ): void {
     const y = 130;
