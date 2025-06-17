@@ -37,6 +37,7 @@ import { NotificacaoPreferenciasService } from './services/notificacao-preferenc
 import { NotificacaoProativaService } from './services/notificacao-proativa.service';
 import { SseDatabaseCircuitBreakerService } from './services/sse-database-circuit-breaker.service';
 
+
 // Listener
 import { NotificationSseListener } from './listeners/notification-sse.listener';
 import { NotificationEmailListener } from './listeners/notification-email.listener';
@@ -50,12 +51,8 @@ import { NotificationMetricsInterceptor } from './interceptors/notification-metr
 import { UsuarioEventsListener } from './listeners/usuario-events.listener';
 import { WorkflowProativoListener } from './listeners/workflow-proativo.listener';
 
-// Módulo Ably - Serviços importados diretamente para evitar dependência circular
-import { AblyService } from './services/ably.service';
-import { AblyAuthService } from './services/ably-auth.service';
-import { AblyChannelService } from './services/ably-channel.service';
-import { AblyController } from './controllers/ably.controller';
-import { AblyConfig, ablyConfigFactory } from '../../config/ably.config';
+// Módulo Ably - Importação limpa sem duplicação
+import { AblyModule } from './ably.module';
 
 // Entidades
 import { Notificacao, NotificacaoSistema, NotificationTemplate } from '../../entities';
@@ -70,6 +67,7 @@ import { NotificacaoProativaScheduler } from './schedulers/notificacao-proativa.
  *  - Expor endpoints REST e SSE para clientes
  *  - Emitir eventos de domínio para integração com outros módulos
  *  - Permitir extensão via listeners (SSE, e-mail, auditoria, etc)
+ *  - Integração com Ably via AblyModule (@Global)
  *
  * ## Exemplo de Integração com outros módulos
  *
@@ -91,6 +89,10 @@ import { NotificacaoProativaScheduler } from './schedulers/notificacao-proativa.
  * ## Registrando listeners adicionais
  * Basta implementar uma classe com @OnEvent('notification.created') e registrar no providers.
  * Veja exemplo em NotificationSseListener e NotificationEmailListener.
+ *
+ * ## Integração com Ably
+ * Os serviços Ably (AblyService, AblyAuthService, AblyChannelService) são fornecidos
+ * pelo AblyModule que é marcado como @Global(), evitando dependência circular.
  */
 @Module({
   imports: [
@@ -106,14 +108,14 @@ import { NotificacaoProativaScheduler } from './schedulers/notificacao-proativa.
     forwardRef(() => UsuarioModule),
     EventEmitterModule,
     EmailModule,
-    forwardRef(() => MonitoringModule)
+    forwardRef(() => MonitoringModule),
+    AblyModule
   ],
   controllers: [
     NotificacaoController,
     NotificationSseController,
     SseRateLimitController,
     NotificacaoAvancadaController,
-    AblyController, // Integrado diretamente para evitar dependência circular
   ],
   providers: [
     // Configurações
@@ -146,6 +148,7 @@ import { NotificacaoProativaScheduler } from './schedulers/notificacao-proativa.
     NotificacaoProativaService,
     NotificacaoPreferenciasService,
 
+
     // Listeners
     NotificationSseListener,
     NotificationEmailListener,
@@ -155,17 +158,6 @@ import { NotificacaoProativaScheduler } from './schedulers/notificacao-proativa.
 
     // Scheduler
     NotificacaoProativaScheduler,
-
-    // Serviços do Ably integrados diretamente
-    AblyConfig,
-    AblyService,
-    AblyAuthService,
-    AblyChannelService,
-    {
-      provide: 'ABLY_CONFIG',
-      useFactory: ablyConfigFactory,
-      inject: []
-    },
 
     // Interceptors
     NotificationMetricsInterceptor,
@@ -182,11 +174,6 @@ import { NotificacaoProativaScheduler } from './schedulers/notificacao-proativa.
     NotificacaoProativaService,
     NotificacaoPreferenciasService,
     TemplateRendererService,
-    // Serviços do Ably exportados
-    AblyService,
-    AblyAuthService,
-    AblyChannelService,
-    AblyConfig,
   ],
 })
 export class NotificacaoModule {}
