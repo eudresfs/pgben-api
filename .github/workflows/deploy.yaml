@@ -25,14 +25,54 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Setup Kaniko via wget/curl alternative
+        run: |
+          # Método alternativo: usar wget se curl falhar
+          echo "Tentando baixar Kaniko via wget..."
+          if command -v wget >/dev/null 2>&1; then
+            wget -q -O kaniko https://github.com/GoogleContainerTools/kaniko/releases/download/v1.23.2/executor-linux-amd64 || \
+            wget -q -O kaniko https://github.com/GoogleContainerTools/kaniko/releases/download/v1.22.0/executor-linux-amd64 || \
+            wget -q -O kaniko https://github.com/GoogleContainerTools/kaniko/releases/download/v1.21.1/executor-linux-amd64
+          else
+            echo "Tentando com curl e user-agent..."
+            curl -L -H "User-Agent: Mozilla/5.0" -o kaniko https://github.com/GoogleContainerTools/kaniko/releases/download/v1.23.2/executor-linux-amd64 || \
+            curl -L -H "User-Agent: Mozilla/5.0" -o kaniko https://github.com/GoogleContainerTools/kaniko/releases/download/v1.22.0/executor-linux-amd64
+          fi
+          
+          if [ ! -f kaniko ] || [ ! -s kaniko ]; then
+            echo "❌ Erro: Kaniko não foi baixado ou está vazio"
+            echo "Tentando método de backup..."
+            # Backup: usar container registry público
+            echo "FROM gcr.io/kaniko-project/executor:v1.23.2" > Dockerfile.kaniko
+            exit 1
+          fi
+          
+          chmod +x kaniko
+          echo "✅ Kaniko baixado com sucesso ($(du -h kaniko | cut -f1))"
+
       - name: authenticate to CPR registry
         run: |
-          echo "${{ secrets.CPR_PASSWORD }}" | docker login ${{ env.CPR_ADDR }} -u "${{ secrets.CPR_USERNAME }}" --password-stdin
+          mkdir -p $HOME/.docker
+          cat <<EOF > $HOME/.docker/config.json
+          {
+            "auths": {
+              "${{ env.CPR_ADDR }}": {
+                "auth": "$(echo -n \"${{ secrets.CPR_USERNAME }}:${{ secrets.CPR_PASSWORD }}\" | base64 -w0)"
+              }
+            }
+          }
+          EOF
 
       - name: build and push image to CPR
         run: |
-          docker build -t ${{ env.CONTAINER_PATH }} .
-          docker push ${{ env.CONTAINER_PATH }}
+          ./kaniko \
+            --dockerfile=Dockerfile \
+            --context=dir://. \
+            --destination=${{ env.CONTAINER_PATH }} \
+            --cache=true \
+            --cache-ttl=24h \
+            --snapshotMode=redo \
+            --push-retry 5
 
   deploy:
     needs:
