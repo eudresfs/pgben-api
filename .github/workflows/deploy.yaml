@@ -41,12 +41,19 @@ jobs:
 
       - name: download kaniko executor
         run: |
-          curl -sfL https://storage.googleapis.com/kaniko-project/releases/v1.20.0/executor-linux-amd64 -o executor
-          chmod +x executor
+          (curl -sfL https://github.com/GoogleContainerTools/kaniko/releases/download/v1.20.0/executor -o kaniko || curl -sfL https://storage.googleapis.com/kaniko-project/releases/v1.20.0/executor -o kaniko)
+          chmod +x kaniko
 
       - name: build and push image to CPR
         run: |
-          ./executor --dockerfile=Dockerfile --context=${{ github.workspace }} --destination=${{ env.CONTAINER_PATH }} ${{ env.KANIKO_CACHE_ARGS }} --snapshotMode=redo --compressed-caching --push-retry 5
+          ./kaniko \
+            --dockerfile=Dockerfile \
+            --context=${{ github.workspace }} \
+            --destination=${{ env.CONTAINER_PATH }} \
+            ${{ env.KANIKO_CACHE_ARGS }} \
+            --snapshotMode=redo \
+            --compressed-caching \
+            --push-retry 5
 
   deploy:
     needs:
