@@ -15,21 +15,21 @@ env:
   K8S_NAMESPACE: consigmais
   DEPLOYMENT_NAME: ${{ github.event.repository.name }}
   CONTAINER_PATH: cpr.kemosoft.com.br/${{ github.event.repository.name }}:${{ github.sha }}
-  KANIKO_CACHE_ARGS: "--cache=true --cache-ttl=24h"
 
 jobs:
   build:
     runs-on: arc-runner-set
+    container:
+      image: gcr.io/kaniko-project/executor:v1.23.2-debug
     permissions:
       contents: read
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: authenticate to CPR registry
+      - name: build and push image to CPR
         run: |
-          mkdir -p $HOME/.docker
-          cat <<EOF > $HOME/.docker/config.json
+          cat <<EOF > /kaniko/.docker/config.json
           {
             "auths": {
               "${{ env.CPR_ADDR }}": {
@@ -39,21 +39,18 @@ jobs:
           }
           EOF
 
-      - name: download kaniko executor
-        run: |
-          (curl -sfL https://github.com/GoogleContainerTools/kaniko/releases/download/v1.20.0/executor-linux-amd64 -o kaniko || curl -sfL https://storage.googleapis.com/kaniko-project/releases/v1.20.0/executor-linux-amd64 -o kaniko)
-          chmod +x kaniko
-
-      - name: build and push image to CPR
-        run: |
-          ./kaniko \
+          /kaniko/executor \
             --dockerfile=Dockerfile \
-            --context=${{ github.workspace }} \
+            --context=dir://${{ github.workspace }} \
             --destination=${{ env.CONTAINER_PATH }} \
-            ${{ env.KANIKO_CACHE_ARGS }} \
+            --cache=true \
+            --cache-ttl=24h \
             --snapshotMode=redo \
             --compressed-caching \
             --push-retry 5
+        env:
+          CPR_USERNAME: ${{ secrets.CPR_USERNAME }}
+          CPR_PASSWORD: ${{ secrets.CPR_PASSWORD }}
 
   deploy:
     needs:
@@ -76,7 +73,7 @@ jobs:
           echo "Aguardando rollout do deployment (timeout aumentado para 15 minutos)..."
           kubectl -n $K8S_NAMESPACE rollout status deployment/$DEPLOYMENT_NAME --timeout=15m
           
-          # Aplicar configurações de progressDeadlineSeconds e probes se for uma nova criação
+          # Aplicar configurações de progressDeadlineSeconds e probes
           if [ "$?" -eq 0 ]; then
             echo "Aplicando configurações otimizadas de health checks e recursos..."
             kubectl -n $K8S_NAMESPACE patch deployment $DEPLOYMENT_NAME -p '
