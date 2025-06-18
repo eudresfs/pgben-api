@@ -18,39 +18,28 @@ env:
 
 jobs:
   build:
-    runs-on: arc-runner-set
-    container:
-      image: gcr.io/kaniko-project/executor:v1.23.2-debug
-      options: --user root
+    runs-on: ubuntu-latest  # Usar runner público com Docker
     permissions:
       contents: read
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
         with:
-          path: workspace
+          registry: ${{ env.CPR_ADDR }}
+          username: ${{ secrets.CPR_USERNAME }}
+          password: ${{ secrets.CPR_PASSWORD }}
 
-      - name: build and push image to CPR
-        run: |
-          cd workspace
-          cat <<EOF > /kaniko/.docker/config.json
-          {
-            "auths": {
-              "${{ env.CPR_ADDR }}": {
-                "auth": "$(echo -n \"${{ secrets.CPR_USERNAME }}:${{ secrets.CPR_PASSWORD }}\" | base64 -w0)"
-              }
-            }
-          }
-          EOF
-
-          /kaniko/executor \
-            --dockerfile=Dockerfile \
-            --context=. \
-            --destination=${{ env.CONTAINER_PATH }} \
-            --cache=true \
-            --cache-ttl=24h \
-            --push-retry 5
-        working-directory: workspace
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ env.CONTAINER_PATH }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
   deploy:
     needs:
