@@ -19,41 +19,21 @@ env:
 jobs:
   build:
     runs-on: arc-runner-set
+    container:
+      image: gcr.io/kaniko-project/executor:v1.23.2-debug
+      options: --user root
     permissions:
       contents: read
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          path: workspace
 
-      - name: Setup Kaniko via wget/curl alternative
+      - name: build and push image to CPR
         run: |
-          # Método alternativo: usar wget se curl falhar
-          echo "Tentando baixar Kaniko via wget..."
-          if command -v wget >/dev/null 2>&1; then
-            wget -q -O kaniko https://github.com/GoogleContainerTools/kaniko/releases/download/v1.23.2/executor-linux-amd64 || \
-            wget -q -O kaniko https://github.com/GoogleContainerTools/kaniko/releases/download/v1.22.0/executor-linux-amd64 || \
-            wget -q -O kaniko https://github.com/GoogleContainerTools/kaniko/releases/download/v1.21.1/executor-linux-amd64
-          else
-            echo "Tentando com curl e user-agent..."
-            curl -L -H "User-Agent: Mozilla/5.0" -o kaniko https://github.com/GoogleContainerTools/kaniko/releases/download/v1.23.2/executor-linux-amd64 || \
-            curl -L -H "User-Agent: Mozilla/5.0" -o kaniko https://github.com/GoogleContainerTools/kaniko/releases/download/v1.22.0/executor-linux-amd64
-          fi
-          
-          if [ ! -f kaniko ] || [ ! -s kaniko ]; then
-            echo "❌ Erro: Kaniko não foi baixado ou está vazio"
-            echo "Tentando método de backup..."
-            # Backup: usar container registry público
-            echo "FROM gcr.io/kaniko-project/executor:v1.23.2" > Dockerfile.kaniko
-            exit 1
-          fi
-          
-          chmod +x kaniko
-          echo "✅ Kaniko baixado com sucesso ($(du -h kaniko | cut -f1))"
-
-      - name: authenticate to CPR registry
-        run: |
-          mkdir -p $HOME/.docker
-          cat <<EOF > $HOME/.docker/config.json
+          cd workspace
+          cat <<EOF > /kaniko/.docker/config.json
           {
             "auths": {
               "${{ env.CPR_ADDR }}": {
@@ -63,16 +43,14 @@ jobs:
           }
           EOF
 
-      - name: build and push image to CPR
-        run: |
-          ./kaniko \
+          /kaniko/executor \
             --dockerfile=Dockerfile \
-            --context=dir://. \
+            --context=. \
             --destination=${{ env.CONTAINER_PATH }} \
             --cache=true \
             --cache-ttl=24h \
-            --snapshotMode=redo \
             --push-retry 5
+        working-directory: workspace
 
   deploy:
     needs:
