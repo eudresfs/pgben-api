@@ -311,10 +311,10 @@ function outputBase64(privateKey, publicKey) {
   console.log(`  --namespace=default`);
   
   console.log('\n📝 CONFIGURAÇÃO PARA KUBERNETES:');
-  console.log('Variáveis de ambiente no Deployment:');
+  console.log('Variáveis de ambiente no Deployment (via Secret):');
   console.log(`JWT_ALGORITHM=${DEFAULT_CONFIG.algorithm}`);
-  console.log('JWT_PRIVATE_KEY_PATH=/etc/secrets/private.key');
-  console.log('JWT_PUBLIC_KEY_PATH=/etc/secrets/public.key');
+  console.log('JWT_PRIVATE_KEY_BASE64=from-secret:private.key');
+  console.log('JWT_PUBLIC_KEY_BASE64=from-secret:public.key');
   console.log('JWT_ACCESS_TOKEN_EXPIRES_IN=1h');
   console.log('JWT_REFRESH_TOKEN_EXPIRES_IN=7d');
 }
@@ -340,6 +340,7 @@ function outputEnv(privateKey, publicKey) {
   console.log('- Mantenha a chave privada segura');
   console.log('- Use Secrets do Kubernetes em produção');
   console.log('- Considere rotação periódica das chaves');
+  console.log('- Mantenha backups seguros das chaves');
 }
 
 /**
@@ -379,22 +380,14 @@ function outputK8s(privateKey, publicKey) {
   console.log('env:');
   console.log(`- name: JWT_ALGORITHM`);
   console.log(`  value: "${DEFAULT_CONFIG.algorithm}"`);
-  console.log('- name: JWT_PRIVATE_KEY_PATH');
-  console.log('  value: "/etc/secrets/private.key"');
-  console.log('- name: JWT_PUBLIC_KEY_PATH');
-  console.log('  value: "/etc/secrets/public.key"');
+  console.log('- name: JWT_PRIVATE_KEY_BASE64');
+  console.log('  value: "' + privateKeyBase64 + '"');
+  console.log('- name: JWT_PUBLIC_KEY_BASE64');
+  console.log('  value: "' + publicKeyBase64 + '"');
   console.log('- name: JWT_ACCESS_TOKEN_EXPIRES_IN');
   console.log('  value: "1h"');
   console.log('- name: JWT_REFRESH_TOKEN_EXPIRES_IN');
   console.log('  value: "7d"');
-  console.log('\nvolumeMounts:');
-  console.log('- name: jwt-keys');
-  console.log('  mountPath: "/etc/secrets"');
-  console.log('  readOnly: true');
-  console.log('\nvolumes:');
-  console.log('- name: jwt-keys');
-  console.log('  secret:');
-  console.log('    secretName: pgben-jwt-keys');
 }
 
 /**

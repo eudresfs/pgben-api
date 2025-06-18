@@ -37,44 +37,41 @@ export class JwtAuthStrategy extends PassportStrategy(
   }
 
   /**
-   * Carrega a chave pública do arquivo especificado nas configurações
+   * Carrega a chave pública de forma segura.
+   * Prioriza a variável JWT_PUBLIC_KEY_BASE64. Caso ausente, tenta JWT_PUBLIC_KEY_PATH.
    */
   private static loadPublicKey(configService: ConfigService): string {
-    // Obter o caminho para a chave pública
-    const publicKeyPath = configService.get<string>('JWT_PUBLIC_KEY_PATH');
-
-    if (!publicKeyPath) {
-      throw new Error('JWT_PUBLIC_KEY_PATH não está configurado');
+    // 1. Tentar carregar via Base64 (cenário recomendado para Kubernetes)
+    const keyBase64 = configService.get<string>('JWT_PUBLIC_KEY_BASE64');
+    if (keyBase64) {
+      try {
+        const publicKey = Buffer.from(keyBase64, 'base64').toString('utf8').trim();
+        if (!publicKey.includes('BEGIN PUBLIC KEY')) {
+          throw new Error('Chave pública Base64 inválida');
+        }
+        console.log('Chave pública JWT carregada a partir de JWT_PUBLIC_KEY_BASE64');
+        return publicKey;
+      } catch (error) {
+        throw new Error(`Falha ao decodificar chave pública Base64: ${error.message}`);
+      }
     }
 
-    // Construir o caminho absoluto para a chave pública
-    const projectRoot = process.cwd();
-    const fullPublicKeyPath = join(projectRoot, publicKeyPath);
+    // 2. Fallback para arquivo local (uso em desenvolvimento)
+    const publicKeyPath = configService.get<string>('JWT_PUBLIC_KEY_PATH');
+    if (!publicKeyPath) {
+      throw new Error('JWT_PUBLIC_KEY_BASE64 ou JWT_PUBLIC_KEY_PATH não configurados');
+    }
 
-    // Carregar a chave pública do arquivo
     try {
-      const publicKey = readFileSync(fullPublicKeyPath, 'utf8').trim();
-
-      // Validar o formato da chave
-      if (
-        !publicKey.includes('BEGIN PUBLIC KEY') &&
-        !publicKey.includes('BEGIN RSA PUBLIC KEY')
-      ) {
+      const fullPath = join(process.cwd(), publicKeyPath);
+      const publicKey = readFileSync(fullPath, 'utf8').trim();
+      if (!publicKey.includes('BEGIN PUBLIC KEY')) {
         throw new Error('Formato inválido para chave pública');
       }
-
-      // Usar console.log temporariamente, pois o logger ainda não está disponível
-      console.log('Chave pública JWT carregada com sucesso');
-      console.debug(`Caminho da chave pública: ${fullPublicKeyPath}`);
-      console.debug(`Tamanho da chave: ${publicKey.length} caracteres`);
-
+      console.log('Chave pública JWT carregada a partir do arquivo');
       return publicKey;
     } catch (error) {
-      console.error(`Falha ao carregar a chave pública JWT: ${error.message}`);
-      console.error(`Caminho da chave: ${fullPublicKeyPath}`);
-      throw new Error(
-        `Falha ao carregar a chave pública JWT: ${error.message}`,
-      );
+      throw new Error(`Falha ao carregar chave pública JWT do arquivo: ${error.message}`);
     }
   }
 

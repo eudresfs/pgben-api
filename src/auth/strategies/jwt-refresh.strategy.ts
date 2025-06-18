@@ -32,34 +32,37 @@ export class JwtRefreshStrategy extends PassportStrategy(
   }
 
   /**
-   * Carrega a chave pública do arquivo especificado em JWT_PUBLIC_KEY_PATH
+   * Carrega a chave pública de forma segura.
+   * Prioriza JWT_PUBLIC_KEY_BASE64, com fallback para JWT_PUBLIC_KEY_PATH (dev).
    */
   private static loadPublicKey(configService: ConfigService): string {
-    const publicKeyPath = configService.get<string>('JWT_PUBLIC_KEY_PATH');
+    const keyBase64 = configService.get<string>('JWT_PUBLIC_KEY_BASE64');
+    if (keyBase64) {
+      try {
+        const publicKey = Buffer.from(keyBase64, 'base64').toString('utf8').trim();
+        if (!publicKey.includes('BEGIN PUBLIC KEY')) {
+          throw new Error('Chave pública Base64 inválida');
+        }
+        return publicKey;
+      } catch (error) {
+        throw new Error(`Falha ao decodificar chave pública Base64: ${error.message}`);
+      }
+    }
 
+    const publicKeyPath = configService.get<string>('JWT_PUBLIC_KEY_PATH');
     if (!publicKeyPath) {
-      throw new Error('JWT_PUBLIC_KEY_PATH não está configurado');
+      throw new Error('JWT_PUBLIC_KEY_BASE64 ou JWT_PUBLIC_KEY_PATH não configurados');
     }
 
     try {
-      // Carregar a chave pública do arquivo
-      const publicKey = readFileSync(
-        join(process.cwd(), publicKeyPath),
-        'utf8',
-      ).trim();
-
-      // Validar o formato da chave
-      if (
-        !publicKey.startsWith('-----BEGIN PUBLIC KEY-----') ||
-        !publicKey.endsWith('-----END PUBLIC KEY-----')
-      ) {
+      const publicKey = readFileSync(join(process.cwd(), publicKeyPath), 'utf8').trim();
+      if (!publicKey.includes('BEGIN PUBLIC KEY')) {
         throw new Error('Formato de chave pública inválido');
       }
-
       return publicKey;
     } catch (error) {
       const logger = new Logger(JwtRefreshStrategy.name);
-      const errorMessage = `Falha ao carregar a chave pública JWT: ${error.message}`;
+      const errorMessage = `Falha ao carregar a chave pública JWT do arquivo: ${error.message}`;
       logger.error(errorMessage, error.stack);
       throw new Error(errorMessage);
     }
