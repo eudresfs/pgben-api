@@ -1,4 +1,4 @@
-import { Module, Global } from '@nestjs/common';
+import { Module, Global, forwardRef } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { EventEmitterModule } from '@nestjs/event-emitter';
@@ -19,6 +19,7 @@ import { AblyController } from './controllers/ably.controller';
 import { NotificacaoSistema } from '../../entities/notification.entity';
 import { NotificationTemplate } from '../../entities/notification-template.entity';
 import { PermissionModule } from '../../auth/permission.module';
+import { AuthModule } from '../../auth/auth.module';
 
 /**
  * Módulo Ably - Integração de Notificações em Tempo Real
@@ -42,6 +43,8 @@ import { PermissionModule } from '../../auth/permission.module';
   imports: [
     ConfigModule,
     EventEmitterModule,
+    forwardRef(() => AuthModule),
+
     PermissionModule,
     TypeOrmModule.forFeature([
       NotificacaoSistema,

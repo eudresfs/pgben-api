@@ -36,8 +36,8 @@ import { BroadcastNotificationDto } from '../dto/broadcast-notification.dto';
  * - Administração de canais
  */
 @ApiTags('Ably Notifications')
-@Controller('api/v1/notifications/ably')
-// @UseGuards(JwtAuthGuard) // Temporariamente removido para resolver dependência circular
+@Controller('notifications/ably')
+@UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class AblyController {
   private readonly logger = new Logger(AblyController.name);

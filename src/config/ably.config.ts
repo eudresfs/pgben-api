@@ -35,7 +35,21 @@ export class AblyConfig {
    * Configurações de autenticação JWT
    */
   get jwtExpiresIn(): number {
-    return this.configService.get<number>('ABLY_JWT_EXPIRES_IN', 3600);
+    // Pode vir como string ("3600" ou "1h"), então convertemos para segundos
+    const raw = this.configService.get<string>('ABLY_JWT_EXPIRES_IN', '3600');
+    // Se for no formato "1h", "30m" etc., converte manualmente
+    if (/^\d+$/.test(raw)) {
+      return Number(raw);
+    }
+    const durationMatch = raw.match(/^(\d+)([smhd])$/i);
+    if (durationMatch) {
+      const value = Number(durationMatch[1]);
+      const unit = durationMatch[2].toLowerCase();
+      const multipliers: Record<string, number> = { s: 1, m: 60, h: 3600, d: 86400 };
+      return value * (multipliers[unit] || 1);
+    }
+    // Fallback para 1 hora (3600s)
+    return 3600;
   }
 
   get jwtCapabilityAdmin(): string {

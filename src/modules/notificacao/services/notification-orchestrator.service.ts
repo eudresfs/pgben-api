@@ -73,7 +73,7 @@ export class NotificationOrchestratorService implements OnModuleInit {
    */
   private initializeFallbackConfig(): void {
     this.fallbackConfig = {
-      enabled: this.configService.get<boolean>('ABLY_ENABLE_FALLBACK', true),
+      enabled: (this.configService.get<string>('ABLY_ENABLE_FALLBACK', 'true') === 'true'),
       type: 'sse',
       timeout: this.configService.get<number>('ABLY_FALLBACK_TIMEOUT', 5000),
       maxRetries: this.configService.get<number>('ABLY_FALLBACK_MAX_RETRIES', 3)
@@ -233,10 +233,18 @@ export class NotificationOrchestratorService implements OnModuleInit {
       const deliveryMethod = this.determineDeliveryMethod(options?.forceMethod);
       
       if (deliveryMethod === 'ably') {
-        return await this.publishBroadcastViaAbly(notification, target);
-      } else {
-        return await this.publishBroadcastViaSSE(notification, target, options?.excludeUsers);
+        const result = await this.publishBroadcastViaAbly(notification, target);
+        
+        // Fallback automático se falhar
+        if (!result.success && this.fallbackConfig.enabled) {
+          this.logger.warn('Broadcast via Ably falhou, executando fallback para SSE');
+          return await this.publishBroadcastViaSSE(notification, target, options?.excludeUsers);
+        }
+        return result;
       }
+
+      // Método determinado foi SSE ou fallback já está habilitado
+      return await this.publishBroadcastViaSSE(notification, target, options?.excludeUsers);
     } catch (error) {
       this.logger.error('Erro ao publicar broadcast:', error);
       
@@ -269,7 +277,13 @@ export class NotificationOrchestratorService implements OnModuleInit {
         );
       }
     } catch (error) {
-      throw new Error(`Erro no broadcast via Ably: ${error.message}`);
+      this.logger.error('Erro no broadcast via Ably:', error);
+      return {
+        success: false,
+        error: error.message,
+        errorCode: 'ABLY_BROADCAST_FAILED',
+        timestamp: new Date()
+      };
     }
   }
 
@@ -296,7 +310,13 @@ export class NotificationOrchestratorService implements OnModuleInit {
         timestamp: new Date()
       };
     } catch (error) {
-      throw new Error(`Erro no broadcast via SSE: ${error.message}`);
+      this.logger.error('Erro no broadcast via SSE:', error);
+      return {
+        success: false,
+        error: error.message,
+        errorCode: 'SSE_BROADCAST_FAILED',
+        timestamp: new Date()
+      };
     }
   }
 

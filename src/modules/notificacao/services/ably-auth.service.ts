@@ -91,18 +91,19 @@ export class AblyAuthService {
    */
   private async createNewToken(config: IAblyAuthConfig): Promise<IAblyTokenDetails> {
     const now = Math.floor(Date.now() / 1000);
-    const expiresIn = config.expiresIn || this.ablyConfig.jwtExpiresIn;
+    const expiresInRaw = config.expiresIn ?? this.ablyConfig.jwtExpiresIn;
+    const expiresIn = Number(expiresInRaw);
+    if (Number.isNaN(expiresIn) || expiresIn <= 0) {
+      throw new Error('expiresIn inválido para geração do token');
+    }
     const expires = now + expiresIn;
     
     // Gera capacidades baseadas no perfil do usuário
     const capabilities = config.capabilities || await this.buildCapabilities(config.userId, config.isAdmin);
     
-    // Payload do JWT
+    // Payload do JWT (não incluir exp para evitar conflito com expiresIn)
     const payload = {
-      iss: this.ablyConfig.clientId, // Issuer
-      sub: config.userId, // Subject (user ID)
       iat: now, // Issued at
-      exp: expires, // Expires
       'x-ably-capability': JSON.stringify(capabilities),
       'x-ably-clientId': config.userId
     };
@@ -110,7 +111,8 @@ export class AblyAuthService {
     // Gera o token JWT
     const token = await this.jwtService.signAsync(payload, {
       algorithm: 'RS256',
-      keyid: this.getKeyId()
+      keyid: this.getKeyId(),
+      expiresIn // segundos
     });
     
     return {
