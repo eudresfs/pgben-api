@@ -196,7 +196,6 @@ export class PerformanceController {
     name: 'since',
     required: false,
     type: 'string',
-    format: 'date-time',
     description: 'Filtrar métricas desde esta data',
     example: '2024-01-01T00:00:00.000Z',
   })

@@ -21,22 +21,22 @@ export const createThrottlerConfig = (
     throttlers: [
       {
         name: 'default',
-        ttl: configService.get<number>('THROTTLE_TTL', 60) * 1000, // Converter para ms
+        ttl: configService.get<number>('THROTTLE_TTL', 60), // segundos
         limit: configService.get<number>('THROTTLE_LIMIT', 200), // 200 requests por minuto
       },
       {
         name: 'auth',
-        ttl: configService.get<number>('THROTTLE_AUTH_TTL', 300) * 1000, // 5 minutos
+        ttl: configService.get<number>('THROTTLE_AUTH_TTL', 300), // segundos (5 minutos)
         limit: configService.get<number>('THROTTLE_AUTH_LIMIT', 10), // 10 tentativas por 5 min
       },
       {
         name: 'upload',
-        ttl: configService.get<number>('THROTTLE_UPLOAD_TTL', 60) * 1000, // 1 minuto
+        ttl: configService.get<number>('THROTTLE_UPLOAD_TTL', 60), // segundos (1 minuto)
         limit: configService.get<number>('THROTTLE_UPLOAD_LIMIT', 20), // 20 uploads por minuto
       },
       {
         name: 'api',
-        ttl: configService.get<number>('THROTTLE_API_TTL', 60) * 1000, // 1 minuto
+        ttl: configService.get<number>('THROTTLE_API_TTL', 60), // segundos (1 minuto)
         limit: configService.get<number>('THROTTLE_API_LIMIT', 200), // 200 requests por minuto
       },
     ],

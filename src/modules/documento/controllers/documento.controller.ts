@@ -142,7 +142,6 @@ export class DocumentoController {
     description: 'ID do cidadão (opcional)',
     required: false,
     type: 'string',
-    format: 'uuid',
   })
   async findReutilizaveis(
     @Query('tipo') tipo?: string,
@@ -308,7 +307,6 @@ export class DocumentoController {
     description: 'ID do cidadão (opcional)',
     required: false,
     type: 'string',
-    format: 'uuid',
   })
   async getEstatisticas(@Query('cidadaoId') cidadaoId?: string) {
     return this.documentoService.getEstatisticas(cidadaoId);
