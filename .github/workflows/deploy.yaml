@@ -27,51 +27,12 @@ jobs:
 
       - name: authenticate to CPR registry
         run: |
-          mkdir -p $HOME/.docker
-          cat <<EOF > $HOME/.docker/config.json
-          {
-            "auths": {
-              "${{ env.CPR_ADDR }}": {
-                "auth": "$(echo -n \"${{ secrets.CPR_USERNAME }}:${{ secrets.CPR_PASSWORD }}\" | base64 -w0)"
-              }
-            }
-          }
-          EOF
-
-      - name: download kaniko executor
-        run: |
-          # Tenta múltiplas versões e URLs
-          for version in v1.23.2 v1.22.0 v1.21.1 v1.20.0; do
-            echo "Tentando versão $version..."
-            if curl -sfL "https://github.com/GoogleContainerTools/kaniko/releases/download/$version/executor-linux-amd64" -o kaniko; then
-              echo "Sucesso com versão $version"
-              break
-            elif curl -sfL "https://storage.googleapis.com/kaniko-project/releases/$version/executor-linux-amd64" -o kaniko; then
-              echo "Sucesso com versão $version (Google Storage)"
-              break
-            fi
-          done
-          
-          # Verifica se o download foi bem-sucedido
-          if [ ! -f kaniko ]; then
-            echo "Erro: Não foi possível baixar o Kaniko"
-            exit 1
-          fi
-          
-          chmod +x kaniko
-          echo "Kaniko baixado com sucesso!"
+          echo "${{ secrets.CPR_PASSWORD }}" | docker login ${{ env.CPR_ADDR }} -u "${{ secrets.CPR_USERNAME }}" --password-stdin
 
       - name: build and push image to CPR
         run: |
-          ./kaniko \
-            --dockerfile=Dockerfile \
-            --context=${{ github.workspace }} \
-            --destination=${{ env.CONTAINER_PATH }} \
-            --cache=true \
-            --cache-ttl=24h \
-            --snapshotMode=redo \
-            --compressed-caching \
-            --push-retry 5
+          docker build -t ${{ env.CONTAINER_PATH }} .
+          docker push ${{ env.CONTAINER_PATH }}
 
   deploy:
     needs:
