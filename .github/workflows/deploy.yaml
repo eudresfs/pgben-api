@@ -41,7 +41,7 @@ jobs:
 
       - name: download kaniko executor
         run: |
-          (curl -sfL https://github.com/GoogleContainerTools/kaniko/releases/download/v1.20.0/executor -o kaniko || curl -sfL https://storage.googleapis.com/kaniko-project/releases/v1.20.0/executor -o kaniko)
+          (curl -sfL https://github.com/GoogleContainerTools/kaniko/releases/download/v1.20.0/executor-linux-amd64 -o kaniko || curl -sfL https://storage.googleapis.com/kaniko-project/releases/v1.20.0/executor-linux-amd64 -o kaniko)
           chmod +x kaniko
 
       - name: build and push image to CPR
