@@ -19,17 +19,16 @@ env:
 jobs:
   build:
     runs-on: arc-runner-set
-    container:
-      image: gcr.io/kaniko-project/executor:v1.23.2-debug
     permissions:
       contents: read
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: build and push image to CPR
+      - name: authenticate to CPR registry
         run: |
-          cat <<EOF > /kaniko/.docker/config.json
+          mkdir -p $HOME/.docker
+          cat <<EOF > $HOME/.docker/config.json
           {
             "auths": {
               "${{ env.CPR_ADDR }}": {
@@ -39,18 +38,40 @@ jobs:
           }
           EOF
 
-          /kaniko/executor \
+      - name: download kaniko executor
+        run: |
+          # Tenta múltiplas versões e URLs
+          for version in v1.23.2 v1.22.0 v1.21.1 v1.20.0; do
+            echo "Tentando versão $version..."
+            if curl -sfL "https://github.com/GoogleContainerTools/kaniko/releases/download/$version/executor-linux-amd64" -o kaniko; then
+              echo "Sucesso com versão $version"
+              break
+            elif curl -sfL "https://storage.googleapis.com/kaniko-project/releases/$version/executor-linux-amd64" -o kaniko; then
+              echo "Sucesso com versão $version (Google Storage)"
+              break
+            fi
+          done
+          
+          # Verifica se o download foi bem-sucedido
+          if [ ! -f kaniko ]; then
+            echo "Erro: Não foi possível baixar o Kaniko"
+            exit 1
+          fi
+          
+          chmod +x kaniko
+          echo "Kaniko baixado com sucesso!"
+
+      - name: build and push image to CPR
+        run: |
+          ./kaniko \
             --dockerfile=Dockerfile \
-            --context=dir://${{ github.workspace }} \
+            --context=${{ github.workspace }} \
             --destination=${{ env.CONTAINER_PATH }} \
             --cache=true \
             --cache-ttl=24h \
             --snapshotMode=redo \
             --compressed-caching \
             --push-retry 5
-        env:
-          CPR_USERNAME: ${{ secrets.CPR_USERNAME }}
-          CPR_PASSWORD: ${{ secrets.CPR_PASSWORD }}
 
   deploy:
     needs:
