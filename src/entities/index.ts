@@ -85,6 +85,11 @@ export { NotificacaoSistema as Notification } from './notification.entity';
 export { DemandaMotivo } from './demanda-motivo.entity';
 export { Ocorrencia } from './ocorrencia.entity';
 
+// Entidades de Concessão
+export { Concessao } from './concessao.entity';
+export { StatusConcessao } from '../enums/status-concessao.enum';
+export { HistoricoConcessao } from './historico-concessao.entity';
+
 // Entidades de Pagamento
 export { ComprovantePagamento } from './comprovante-pagamento.entity';
 export { ConfirmacaoRecebimento } from './confirmacao-recebimento.entity';

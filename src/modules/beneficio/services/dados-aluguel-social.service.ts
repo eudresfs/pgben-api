@@ -1,4 +1,4 @@
-import { Injectable, Inject, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, Inject, forwardRef, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
@@ -6,6 +6,7 @@ import { Cache } from 'cache-manager';
 import { UseInterceptors } from '@nestjs/common';
 import { WorkflowInterceptor } from '../../../interceptors/workflow.interceptor';
 import { CacheInterceptor } from '../../../shared/interceptors/cache.interceptor';
+import { WorkflowSolicitacaoService } from '../../solicitacao/services/workflow-solicitacao.service';
 import { DadosAluguelSocial } from '../../../entities/dados-aluguel-social.entity';
 import { CreateDadosAluguelSocialDto, UpdateDadosAluguelSocialDto } from '../dto/create-dados-aluguel-social.dto';
 import {
@@ -35,8 +36,10 @@ export class DadosAluguelSocialService extends AbstractDadosBeneficioService<
     @InjectRepository(DadosAluguelSocial)
     private readonly dadosAluguelSocialRepository: Repository<DadosAluguelSocial>,
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
+    @Inject(forwardRef(() => WorkflowSolicitacaoService))
+    private readonly workflowSolicitacaoService: WorkflowSolicitacaoService,
   ) {
-    super(dadosAluguelSocialRepository, 'DadosAluguelSocial');
+    super(dadosAluguelSocialRepository, 'DadosAluguelSocial', workflowSolicitacaoService);
   }
 
   // Métodos CRUD básicos herdados da classe base

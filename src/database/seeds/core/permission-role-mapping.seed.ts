@@ -67,6 +67,7 @@ export class PermissionRoleMappingSeed {
         'judicial.*',
         'ocorrencia.*',
         'pagamento.*',
+        'monitoring.*',
         'recurso.*',
         'relatorios-unificado.*',
       ]);

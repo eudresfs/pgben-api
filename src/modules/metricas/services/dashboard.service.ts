@@ -122,9 +122,6 @@ export class DashboardService {
     const solicitacoesReprovadas = await this.solicitacaoRepository.count({
       where: { status: StatusSolicitacao.INDEFERIDA },
     });
-    const solicitacoesLiberadas = await this.solicitacaoRepository.count({
-      where: { status: StatusSolicitacao.LIBERADA },
-    });
     const solicitacoesCanceladas = await this.solicitacaoRepository.count({
       where: { status: StatusSolicitacao.CANCELADA },
     });
@@ -151,7 +148,7 @@ export class DashboardService {
       .addSelect('COUNT(solicitacao.id)', 'quantidade')
       .leftJoin('tipo.solicitacoes', 'solicitacao')
       .where('solicitacao.status = :status', {
-        status: StatusSolicitacao.LIBERADA,
+        status: StatusSolicitacao.APROVADA,
       })
       .groupBy('tipo.id')
       .orderBy('quantidade', 'DESC')
@@ -176,7 +173,7 @@ export class DashboardService {
         emAnalise: solicitacoesEmAnalise,
         aprovadas: solicitacoesAprovadas,
         reprovadas: solicitacoesReprovadas,
-        liberadas: solicitacoesLiberadas,
+        liberadas: solicitacoesAprovadas,
         canceladas: solicitacoesCanceladas,
       },
       recursos: {
@@ -187,7 +184,7 @@ export class DashboardService {
         indeferidos: recursosIndeferidos,
       },
       beneficios: {
-        total: solicitacoesLiberadas,
+        total: solicitacoesAprovadas,
         porTipo: beneficiosPorTipo,
       },
       unidades: {
@@ -273,8 +270,8 @@ export class DashboardService {
     // Benefícios por dia (últimos 30 dias)
     const totalBeneficios30Dias = await this.solicitacaoRepository.count({
       where: {
-        status: StatusSolicitacao.LIBERADA,
-        data_liberacao: Between(dataInicio, new Date()),
+        status: StatusSolicitacao.APROVADA,
+        data_aprovacao: Between(dataInicio, new Date()),
       },
     });
 

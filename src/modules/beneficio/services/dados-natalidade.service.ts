@@ -1,9 +1,10 @@
-import { Injectable, Inject, Logger, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, Inject, Logger, InternalServerErrorException, forwardRef } from '@nestjs/common';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { UseInterceptors } from '@nestjs/common';
 import { WorkflowInterceptor } from '../../../interceptors/workflow.interceptor';
 import { CacheInterceptor } from '../../../shared/interceptors/cache.interceptor';
+import { WorkflowSolicitacaoService } from '../../solicitacao/services/workflow-solicitacao.service';
 import { CreateDadosNatalidadeDto, UpdateDadosNatalidadeDto } from '../dto/create-dados-natalidade.dto';
 import { DadosNatalidade } from '../../../entities/dados-natalidade.entity';
 import { DadosNatalidadeRepository } from '../repositories/dados-natalidade.repository';
@@ -25,8 +26,10 @@ export class DadosNatalidadeService extends AbstractDadosBeneficioService<
   constructor(
     private readonly dadosNatalidadeRepository: DadosNatalidadeRepository,
     @Inject(CACHE_MANAGER) protected readonly cacheManager: Cache,
+    @Inject(forwardRef(() => WorkflowSolicitacaoService))
+    private readonly workflowSolicitacaoService: WorkflowSolicitacaoService,
   ) {
-    super(dadosNatalidadeRepository, 'DadosNatalidade');
+    super(dadosNatalidadeRepository, 'DadosNatalidade', workflowSolicitacaoService);
   }
 
   // Métodos CRUD básicos herdados da classe base AbstractDadosBeneficioService

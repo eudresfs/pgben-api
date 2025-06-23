@@ -33,12 +33,12 @@ export class WorkflowInterceptor implements NestInterceptor {
           try {
             await this.workflowService.atualizarStatus(
               result.solicitacao_id,
-              StatusSolicitacao.AGUARDANDO_DOCUMENTOS,
+              StatusSolicitacao.PENDENTE,
               'Sistema - Dados do benefício criados',
             );
 
             this.logger.log(
-              `Workflow atualizado para AGUARDANDO_DOCUMENTOS - Solicitação: ${result.solicitacao_id}`,
+              `Workflow atualizado para PENDENTE - Solicitação: ${result.solicitacao_id}`,
             );
           } catch (error) {
             // Log do erro mas não falha a operação principal

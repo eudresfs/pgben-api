@@ -93,17 +93,13 @@ A matriz de transições define quais mudanças de estado são permitidas:
 
 | Estado Atual | Estados Possíveis |
 |--------------|-------------------|
-| RASCUNHO | PENDENTE |
+| RASCUNHO | ABERTA, CANCELADA |
+| ABERTA | PENDENTE, EM_ANALISE, CANCELADA |
 | PENDENTE | EM_ANALISE, CANCELADA |
-| EM_ANALISE | AGUARDANDO_DOCUMENTOS, APROVADA, INDEFERIDA, CANCELADA |
-| AGUARDANDO_DOCUMENTOS | EM_ANALISE, CANCELADA |
-| APROVADA | LIBERADA, CANCELADA |
-| INDEFERIDA | ARQUIVADA |
-| LIBERADA | EM_PROCESSAMENTO, CANCELADA |
-| EM_PROCESSAMENTO | CONCLUIDA, CANCELADA |
-| CONCLUIDA | ARQUIVADA |
-| CANCELADA | ARQUIVADA |
-| ARQUIVADA | - |
+| EM_ANALISE | APROVADA, INDEFERIDA, PENDENTE, CANCELADA |
+| APROVADA | - (status final) |
+| INDEFERIDA | - (status final) |
+| CANCELADA | - (status final) |
 
 ## Orientações para Desenvolvimento
 

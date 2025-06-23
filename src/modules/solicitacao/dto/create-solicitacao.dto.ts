@@ -7,6 +7,7 @@ import {
   ValidateNested,
   IsArray,
   ArrayMinSize,
+  IsBoolean,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -100,4 +101,11 @@ export class CreateSolicitacaoDto {
   @IsOptional()
   @IsUUID('4', { message: 'ID da determinação judicial inválido' })
   determinacao_judicial_id?: string;
+
+  @ApiPropertyOptional({
+    description: 'Flag indicando se a solicitação é por determinação judicial',
+  })
+  @IsOptional()
+  @IsBoolean({ message: 'Flag de determinação judicial deve ser um booleano' })
+  determinacao_judicial_flag?: boolean;
 }

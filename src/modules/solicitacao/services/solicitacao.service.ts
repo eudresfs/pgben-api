@@ -352,32 +352,13 @@ export class SolicitacaoService {
         throw new BadRequestException('Solicitante não pode ser o mesmo que o beneficiário');
       }
 
-      // Verificar se o cidadão possui solicitação suspensa (exceto por determinação judicial)
-      if (!createSolicitacaoDto.determinacao_judicial_id) {
-        const solicitacaoSuspensa = await manager.findOne(Solicitacao, {
-          where: {
-            beneficiario_id: createSolicitacaoDto.beneficiario_id,
-            status: StatusSolicitacao.SUSPENSO
-          }
-        });
-
-        if (solicitacaoSuspensa) {
-          throw new ConflictException(
-            'Cidadão possui solicitação suspensa. Não é possível solicitar novos benefícios, exceto por determinação judicial.'
-          );
-        }
-      }
-
       // Verificar se já existe uma solicitação em andamento para o mesmo cidadão e tipo de benefício
       const statusEmAndamento = [
         StatusSolicitacao.RASCUNHO,
         StatusSolicitacao.ABERTA,
         StatusSolicitacao.PENDENTE,
         StatusSolicitacao.EM_ANALISE,
-        StatusSolicitacao.AGUARDANDO_DOCUMENTOS,
-        StatusSolicitacao.APROVADA,
-        StatusSolicitacao.LIBERADA,
-        StatusSolicitacao.EM_PROCESSAMENTO
+        StatusSolicitacao.APROVADA
       ];
 
       // Verifica se existe uma solicitação em andamento para o mesmo beneficiário e benefício
@@ -408,8 +389,20 @@ export class SolicitacaoService {
       historico.solicitacao_id = savedSolicitacao.id;
       historico.usuario_id = user.id;
       historico.status_atual = StatusSolicitacao.RASCUNHO;
-      historico.observacao = 'Solicitação criada';
-      historico.dados_alterados = { acao: 'criacao' };
+      
+      // Definir observação baseada em determinação judicial
+      if (createSolicitacaoDto.determinacao_judicial_flag) {
+        historico.observacao = 'Solicitação criada por determinação judicial';
+        historico.dados_alterados = { 
+          acao: 'criacao',
+          determinacao_judicial: true,
+          determinacao_judicial_id: createSolicitacaoDto.determinacao_judicial_id
+        };
+      } else {
+        historico.observacao = 'Solicitação criada';
+        historico.dados_alterados = { acao: 'criacao' };
+      }
+      
       historico.ip_usuario = user.ip || '0.0.0.0';
 
       await manager.save(historico);
@@ -608,7 +601,7 @@ export class SolicitacaoService {
       // Determinar o novo status
       const novoStatus = avaliarSolicitacaoDto.aprovado
         ? StatusSolicitacao.APROVADA
-        : StatusSolicitacao.AGUARDANDO_DOCUMENTOS;
+        : StatusSolicitacao.PENDENTE;
 
       // Atualizar o status usando o método preparar
       solicitacao.prepararAlteracaoStatus(
@@ -651,62 +644,8 @@ export class SolicitacaoService {
     });
   }
 
-  /**
-   * Libera um benefício aprovado
-   */
-  async liberarBeneficio(id: string, user: any): Promise<Solicitacao> {
-    return this.connection.transaction(async (manager) => {
-      // Buscar a solicitação
-      const solicitacao = await this.findById(id);
-
-      // Verificar se o usuário tem permissão
-      if (![ROLES.ADMIN, ROLES.GESTOR].includes(user.role)) {
-        throwAccessDenied(
-          id,
-          user.id,
-          {
-            data: {
-              acao: 'liberar_beneficio',
-              roleNecessaria: [ROLES.ADMIN, ROLES.GESTOR],
-              roleAtual: user.role,
-            },
-          },
-        );
-      }
-
-      // Verificar se a solicitação está aprovada
-      if (solicitacao.status !== StatusSolicitacao.APROVADA) {
-        throwInvalidStatusTransition(
-          solicitacao.status,
-          StatusSolicitacao.LIBERADA,
-          {
-            data: {
-              solicitacaoId: id,
-              statusNecessario: StatusSolicitacao.APROVADA,
-            },
-          },
-        );
-      }
-
-      // Atualizar o status usando o método preparar
-      solicitacao.prepararAlteracaoStatus(
-        StatusSolicitacao.LIBERADA,
-        user.id,
-        'Benefício liberado para pagamento/entrega',
-        user.ip || '0.0.0.0',
-      );
-      solicitacao.liberador_id = user.id;
-      solicitacao.data_liberacao = new Date();
-
-      // Salvar a solicitação com o manager da transação
-      await manager.save(solicitacao);
-
-      // Não é mais necessário registrar manualmente no histórico
-      // O método logStatusChange fará isso automaticamente através do listener @AfterUpdate
-
-      return this.findById(id);
-    });
-  }
+  // Método liberarBeneficio removido - no novo ciclo de vida simplificado,
+  // APROVADA é um status final que indica que o benefício foi deferido
 
   /**
    * Cancela uma solicitação
@@ -731,14 +670,14 @@ export class SolicitacaoService {
         );
       }
 
-      // Verificar se a solicitação pode ser cancelada
-      if (solicitacao.status === StatusSolicitacao.LIBERADA) {
+      // No novo ciclo de vida simplificado, solicitações aprovadas não podem ser canceladas
+      if (solicitacao.status === StatusSolicitacao.APROVADA) {
         throwSolicitacaoCannotDelete(
           id,
           solicitacao.status,
           {
             data: {
-              motivo: 'Solicitação já liberada não pode ser cancelada',
+              motivo: 'Solicitação aprovada não pode ser cancelada',
             },
           },
         );

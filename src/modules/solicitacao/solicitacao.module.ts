@@ -3,6 +3,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ScheduleModule } from '@nestjs/schedule';
 import { AuthModule } from '../../auth/auth.module';
+import { forwardRef } from '@nestjs/common';
+import { BeneficioModule } from '../beneficio/beneficio.module';
 import { JudicialModule } from '../judicial/judicial.module';
 import { CidadaoModule } from '../cidadao/cidadao.module';
 import { UsuarioModule } from '../usuario/usuario.module';
@@ -69,6 +71,7 @@ import { TemplateMappingService } from './services/template-mapping.service';
     EventEmitterModule.forRoot(),
     // Módulo de agendamento para tarefas programadas
     ScheduleModule.forRoot(),
+    forwardRef(() => BeneficioModule),
   ],
   controllers: [
     SolicitacaoController,

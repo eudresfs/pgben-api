@@ -306,9 +306,9 @@ export class RenovacaoAutomaticaService {
       }
 
       // Verificar se a solicitação está em um estado que permite renovação
-      if (solicitacao.status !== StatusSolicitacao.CONCLUIDA) {
+      if (solicitacao.status !== StatusSolicitacao.APROVADA) {
         throw new BadRequestException(
-          'Apenas solicitações concluídas podem ser configuradas para renovação automática',
+          'Apenas solicitações aprovadas podem ser configuradas para renovação automática',
         );
       }
 
@@ -435,13 +435,15 @@ export class RenovacaoAutomaticaService {
 
     try {
       // Buscar solicitações com renovação automática ativada e data de renovação menor ou igual à data atual
+      // TEMPORÁRIO: Funcionalidade de renovação automática desabilitada
+      // Os campos renovacao_automatica e data_proxima_renovacao foram removidos da entidade Solicitacao
+      // TODO: Implementar nova lógica usando ConfiguracaoRenovacao
       const solicitacoesPendentes = await this.solicitacaoRepository.find({
         where: {
-          renovacao_automatica: true,
-          data_proxima_renovacao: LessThanOrEqual(dataAtual),
-          status: StatusSolicitacao.CONCLUIDA,
+          status: StatusSolicitacao.APROVADA,
         },
         relations: ['tipo_beneficio'],
+        take: 0, // Desabilita temporariamente
       });
 
       this.logger.log(
@@ -492,21 +494,23 @@ export class RenovacaoAutomaticaService {
       const numeroMaximoRenovacoes = configuracao.numero_maximo_renovacoes || 0;
       if (
         numeroMaximoRenovacoes > 0 &&
-        solicitacao.contador_renovacoes >= numeroMaximoRenovacoes
+        // solicitacao.contador_renovacoes >= numeroMaximoRenovacoes
+        false // TEMPORÁRIO: Campo removido
       ) {
         this.logger.warn(
-          `Solicitação ${solicitacao.id} atingiu o número máximo de renovações (${configuracao.numero_maximo_renovacoes})`,
+          `Solicitação ${solicitacao.id} atingiu o número máximo de renovações (${configuracao?.numero_maximo_renovacoes || 'N/A'})`,
         );
 
         // Desativar renovação automática
-        await queryRunner.manager.update(
-          Solicitacao,
-          { id: solicitacao.id },
-          {
-            renovacao_automatica: false,
-            data_proxima_renovacao: undefined,
-          },
-        );
+        // TEMPORÁRIO: Campos removidos da entidade
+        // await queryRunner.manager.update(
+        //   Solicitacao,
+        //   { id: solicitacao.id },
+        //   {
+        //     renovacao_automatica: false,
+        //     data_proxima_renovacao: undefined,
+        //   },
+        // );
 
         await queryRunner.commitTransaction();
         return;
@@ -519,8 +523,8 @@ export class RenovacaoAutomaticaService {
         observacoes: `Renovação automática da solicitação ${solicitacao.id}`,
         solicitacao_original_id:
           solicitacao.solicitacao_original_id || solicitacao.id,
-        contador_renovacoes: solicitacao.contador_renovacoes + 1,
-        renovacao_automatica: true,
+        // contador_renovacoes: solicitacao.contador_renovacoes + 1, // Campo removido
+        // renovacao_automatica: true, // Campo removido
       });
 
       // Definir o status inicial da nova solicitação
@@ -540,28 +544,29 @@ export class RenovacaoAutomaticaService {
       );
 
       // Atualizar a solicitação original
-      await queryRunner.manager.update(
-        Solicitacao,
-        { id: solicitacao.id },
-        {
-          data_proxima_renovacao: dataProximaRenovacao,
-        },
-      );
+      // TEMPORÁRIO: Campo removido da entidade
+      // await queryRunner.manager.update(
+      //   Solicitacao,
+      //   { id: solicitacao.id },
+      //   {
+      //     data_proxima_renovacao: dataProximaRenovacao,
+      //   },
+      // );
 
-      // Se não requer aprovação, avançar automaticamente para LIBERADA
+      // Se não requer aprovação, avançar automaticamente para APROVADA
       if (!configuracao.requer_aprovacao_renovacao) {
         await queryRunner.manager.update(
           Solicitacao,
           { id: novaSolicitacaoSalva.id },
           {
-            status: StatusSolicitacao.LIBERADA,
-            data_liberacao: new Date(),
+            status: StatusSolicitacao.APROVADA,
+            data_aprovacao: new Date(),
           },
         );
       }
 
       this.logger.log(
-        `Renovação automática processada com sucesso para a solicitação ${solicitacao.id}. Nova solicitação: ${novaSolicitacaoSalva.id}`,
+        `Renovação automática processada com sucesso para a solicitação ${solicitacao.id}. Nova solicitação: ${Array.isArray(novaSolicitacaoSalva) ? novaSolicitacaoSalva[0]?.id : novaSolicitacaoSalva.id}`,
       );
 
       await queryRunner.commitTransaction();
@@ -575,6 +580,14 @@ export class RenovacaoAutomaticaService {
       await queryRunner.release();
     }
   }
+
+  // TEMPORÁRIO: Interface desabilitada - campos removidos da entidade
+  // private interface SolicitacaoComRenovacao {
+  //   id: string;
+  //   renovacao_automatica: boolean;
+  //   contador_renovacoes: number;
+  //   data_proxima_renovacao: Date | null;
+  // }
 
   /**
    * Verifica a configuração de renovação automática de uma solicitação
@@ -609,9 +622,10 @@ export class RenovacaoAutomaticaService {
 
       // Preparar resposta
       return {
-        renovacao_automatica: solicitacao.renovacao_automatica,
-        contador_renovacoes: solicitacao.contador_renovacoes,
-        data_proxima_renovacao: solicitacao.data_proxima_renovacao,
+        // TEMPORÁRIO: Campos removidos da entidade
+      renovacao_automatica: false, // solicitacao.renovacao_automatica,
+      contador_renovacoes: 0, // solicitacao.contador_renovacoes,
+      data_proxima_renovacao: null, // solicitacao.data_proxima_renovacao,
         solicitacao_original_id: solicitacao.solicitacao_original_id,
         configuracao_tipo_beneficio: configuracao
           ? configuracao.renovacao_automatica && configuracao.ativo
@@ -656,13 +670,15 @@ export class RenovacaoAutomaticaService {
 
     try {
       // Buscar solicitações com renovação automática ativada e data de renovação menor ou igual à data atual
+      // TEMPORÁRIO: Funcionalidade desabilitada - campos removidos
       const solicitacoesPendentes = await this.solicitacaoRepository.find({
         where: {
-          renovacao_automatica: true,
-          data_proxima_renovacao: LessThanOrEqual(dataAtual),
-          status: StatusSolicitacao.CONCLUIDA,
+          // renovacao_automatica: true, // Campo removido
+          // data_proxima_renovacao: LessThanOrEqual(dataAtual), // Campo removido
+          status: StatusSolicitacao.APROVADA,
         },
         relations: ['tipo_beneficio'],
+        take: 0, // Desabilita temporariamente
       });
 
       this.logger.log(

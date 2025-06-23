@@ -183,8 +183,8 @@ export class SolicitacaoController {
     - Dados da composição familiar devem ser válidos
     - Enums devem usar valores corretos (case-sensitive)
     
-    **Status considerados ativos:** pendente, em_analise, aguardando_documentos, aprovada, liberada, em_processamento
-    **Status considerados inativos:** cancelada, reprovada, arquivada, concluida`,
+    **Status considerados ativos:** rascunho, aberta, pendente, em_analise, aprovada
+    **Status considerados inativos:** cancelada, indeferida`,
     requestBody: {
       description: 'Dados da solicitação de benefício',
       required: true,
@@ -474,31 +474,8 @@ export class SolicitacaoController {
     );
   }
 
-  /**
-   * Libera um benefício aprovado
-   */
-  @Put(':id/liberar')
-  @RequiresPermission({
-    permissionName: 'solicitacao.status.transicao.APROVADA.CONCEDIDA',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'solicitacao.unidadeId',
-  })
-  @RequiresPermission({
-    permissionName: 'beneficio.conceder',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'solicitacao.unidadeId',
-  })
-  @ApiOperation({ summary: 'Liberar benefício aprovado' })
-  @ApiResponse({ status: 200, description: 'Benefício liberado com sucesso' })
-  @ApiResponse({ status: 400, description: 'Benefício não pode ser liberado' })
-  @ApiResponse({ status: 404, description: 'Solicitação não encontrada' })
-  async liberarBeneficio(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Req() req: Request,
-  ) {
-    const user = req.user;
-    return this.solicitacaoService.liberarBeneficio(id, user);
-  }
+  // Método liberarBeneficio removido - no novo ciclo de vida simplificado,
+  // APROVADA é um status final e não há mais transição para LIBERADA
 
   /**
    * Cancela uma solicitação

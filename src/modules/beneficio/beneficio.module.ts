@@ -34,6 +34,10 @@ import { DadosFuneralService } from './services/dados-funeral.service';
 import { DadosCestaBasicaService } from './services/dados-cesta-basica.service';
 import { DadosBeneficioFactoryService } from './services/dados-beneficio-factory.service';
 import { RenovacaoAutomaticaService } from './services/renovacao-automatica.service';
+import { Concessao, HistoricoConcessao } from '../../entities';
+import { ConcessaoService } from './services/concessao.service';
+import { ValidacaoBeneficioService } from './services/validacao-beneficio.service';
+import { ConcessaoController } from './controllers/concessao.controller';
 import { NotificacaoRenovacaoService } from './services/notificacao-renovacao.service';
 
 // Interceptors
@@ -69,21 +73,27 @@ import { ConfiguracaoRenovacaoRepository } from './repositories/configuracao-ren
       DadosCestaBasica,
       ConfiguracaoRenovacao,
       Solicitacao,
+      Concessao,
+      HistoricoConcessao,
     ]),
     // Módulos essenciais
     SharedModule, // Serviços compartilhados
     CacheModule, // Para CacheService usado pelo CacheInterceptor
     forwardRef(() => AuthModule), // Para autenticação e autorização
     forwardRef(() => import('../solicitacao/solicitacao.module').then(m => m.SolicitacaoModule)), // Para WorkflowSolicitacaoService
+    forwardRef(() => import('../pagamento/pagamento.module').then(m => m.PagamentoModule)),
   ],
   controllers: [
+    ConcessaoController,
     BeneficioController,
     DadosBeneficioController,
     RenovacaoAutomaticaController,
   ],
   providers: [
+    ConcessaoService,
     BeneficioService,
     ValidacaoDinamicaService,
+    ValidacaoBeneficioService,
     DadosNatalidadeService,
     DadosAluguelSocialService,
     DadosFuneralService,
@@ -91,7 +101,7 @@ import { ConfiguracaoRenovacaoRepository } from './repositories/configuracao-ren
     DadosBeneficioFactoryService,
     RenovacaoAutomaticaService,
     NotificacaoRenovacaoService,
-    WorkflowInterceptor, // Interceptor para workflow automático
+    WorkflowInterceptor, 
     TipoBeneficioRepository,
     TipoBeneficioSchemaRepository,
     CampoDinamicoRepository,
@@ -102,8 +112,10 @@ import { ConfiguracaoRenovacaoRepository } from './repositories/configuracao-ren
     ConfiguracaoRenovacaoRepository,
   ],
   exports: [
+    ConcessaoService,
     BeneficioService,
     ValidacaoDinamicaService,
+    ValidacaoBeneficioService,
     DadosNatalidadeService,
     DadosAluguelSocialService,
     DadosFuneralService,

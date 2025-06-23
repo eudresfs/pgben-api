@@ -119,7 +119,7 @@ export interface SolicitacaoApprovedEvent extends SolicitacaoEvent {
 }
 
 /**
- * Evento emitido quando uma solicitação é reprovada
+ * Evento emitido quando uma solicitação é indeferida
  */
 export interface SolicitacaoRejectedEvent extends SolicitacaoEvent {
   type: SolicitacaoEventType.REJECTED;
@@ -130,17 +130,8 @@ export interface SolicitacaoRejectedEvent extends SolicitacaoEvent {
   };
 }
 
-/**
- * Evento emitido quando uma solicitação é liberada
- */
-export interface SolicitacaoReleasedEvent extends SolicitacaoEvent {
-  type: SolicitacaoEventType.RELEASED;
-  data: {
-    liberadorId: string;
-    dataLiberacao: Date;
-    observacao?: string;
-  };
-}
+// Evento SolicitacaoReleasedEvent removido - não existe mais no novo ciclo de vida simplificado
+// No novo fluxo, APROVADA é um status final
 
 /**
  * Evento emitido quando uma determinação judicial é anexada à solicitação
@@ -204,7 +195,6 @@ export type SolicitacaoEventUnion =
   | SolicitacaoAssignedEvent
   | SolicitacaoApprovedEvent
   | SolicitacaoRejectedEvent
-  | SolicitacaoReleasedEvent
   | SolicitacaoJudicialDeterminationAttachedEvent
   | SolicitacaoPendencyCreatedEvent
   | SolicitacaoPendencyResolvedEvent

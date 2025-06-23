@@ -157,8 +157,7 @@ export class PriorizacaoSolicitacaoService {
   async buscarSolicitacoesPriorizadas(
     status: StatusSolicitacao[] = [
       StatusSolicitacao.PENDENTE,
-      StatusSolicitacao.EM_ANALISE,
-      StatusSolicitacao.AGUARDANDO_DOCUMENTOS,
+      StatusSolicitacao.EM_ANALISE
     ],
     limit = 100,
   ): Promise<Solicitacao[]> {
@@ -183,9 +182,7 @@ export class PriorizacaoSolicitacaoService {
     const estadosAtivos = [
       StatusSolicitacao.PENDENTE,
       StatusSolicitacao.EM_ANALISE,
-      StatusSolicitacao.AGUARDANDO_DOCUMENTOS,
       StatusSolicitacao.APROVADA,
-      StatusSolicitacao.EM_PROCESSAMENTO,
     ];
 
     return this.solicitacaoRepository.find({
@@ -209,8 +206,7 @@ export class PriorizacaoSolicitacaoService {
   ): Promise<Solicitacao[]> {
     const estadosAtivos = [
       StatusSolicitacao.PENDENTE,
-      StatusSolicitacao.EM_ANALISE,
-      StatusSolicitacao.AGUARDANDO_DOCUMENTOS,
+      StatusSolicitacao.EM_ANALISE
     ];
 
     const solicitacoes = await this.solicitacaoRepository.find({

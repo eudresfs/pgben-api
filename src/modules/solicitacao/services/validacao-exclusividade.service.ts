@@ -53,7 +53,6 @@ export class ValidacaoExclusividadeService {
         statusInativos: [
           StatusSolicitacao.CANCELADA,
           StatusSolicitacao.INDEFERIDA,
-          StatusSolicitacao.ARQUIVADA,
         ],
       })
       .getCount();
@@ -94,7 +93,6 @@ export class ValidacaoExclusividadeService {
         statusInativos: [
           StatusSolicitacao.CANCELADA,
           StatusSolicitacao.INDEFERIDA,
-          StatusSolicitacao.ARQUIVADA,
         ],
       })
       .getCount();

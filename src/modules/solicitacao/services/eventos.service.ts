@@ -121,31 +121,10 @@ export class EventosService {
         });
         break;
 
-      case StatusSolicitacao.LIBERADA:
-        this.emitirEvento({
-          type: SolicitacaoEventType.RELEASED,
-          solicitacaoId: solicitacao.id,
-          timestamp: new Date(),
-          data: {
-            liberadorId: usuarioId,
-            dataLiberacao: solicitacao.data_liberacao || new Date(),
-            observacao,
-          },
-        });
-        break;
-
-      case StatusSolicitacao.CONCLUIDA:
-        this.logger.log(`Solicitação ${solicitacao.id} concluída`);
-        break;
-
       case StatusSolicitacao.CANCELADA:
         this.logger.log(
           `Solicitação ${solicitacao.id} cancelada: ${observacao || 'Não especificado'}`,
         );
-        break;
-
-      case StatusSolicitacao.ARQUIVADA:
-        this.logger.log(`Solicitação ${solicitacao.id} arquivada`);
         break;
     }
   }

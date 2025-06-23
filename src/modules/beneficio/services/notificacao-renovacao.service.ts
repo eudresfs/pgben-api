@@ -19,33 +19,6 @@ export class NotificacaoRenovacaoService {
     private readonly solicitacaoRepository: Repository<Solicitacao>,
   ) {}
 
-  /**
-   * Notifica sobre renovações pendentes
-   * @param solicitacoes Lista de solicitações com renovações pendentes
-   */
-  async notificarRenovacoesPendentes(
-    solicitacoes: Solicitacao[],
-  ): Promise<void> {
-    if (solicitacoes.length === 0) {
-      this.logger.log('Nenhuma renovação pendente para notificar');
-      return;
-    }
-
-    this.logger.log(
-      `Notificando sobre ${solicitacoes.length} renovações pendentes`,
-    );
-
-    // Aqui seria implementada a lógica de envio de notificações
-    // por e-mail, SMS ou outro canal de comunicação
-
-    // Exemplo de log para cada solicitação
-    for (const solicitacao of solicitacoes) {
-      this.logger.log(
-        `Notificação enviada para renovação pendente: ID ${solicitacao.id}, ` +
-          `Data prevista: ${solicitacao.data_proxima_renovacao}`,
-      );
-    }
-  }
 
   /**
    * Notifica sobre renovações processadas
@@ -110,7 +83,8 @@ export class NotificacaoRenovacaoService {
   ): Promise<void> {
     this.logger.log(
       `Notificando proximidade de renovação: Solicitação ${solicitacao.id}, ` +
-        `Data prevista: ${solicitacao.data_proxima_renovacao}`,
+        // `Data prevista: ${solicitacao.data_proxima_renovacao}`, // Campo removido
+        `Data prevista: Não disponível (campo removido)`,
     );
 
     // Aqui seria implementada a lógica de envio de notificações
@@ -140,7 +114,8 @@ export class NotificacaoRenovacaoService {
     for (const solicitacao of solicitacoes) {
       this.logger.log(
         `Notificação enviada para aprovação de renovação: ID ${solicitacao.id}, ` +
-          `Data prevista: ${solicitacao.data_proxima_renovacao}`,
+          // `Data prevista: ${solicitacao.data_proxima_renovacao}`, // Campo removido
+          `Data prevista: Não disponível (campo removido)`,
       );
     }
   }

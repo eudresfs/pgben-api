@@ -3,11 +3,15 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { LessThanOrEqual, Repository } from 'typeorm';
 import { Pagamento } from '../../../entities/pagamento.entity';
+import { Concessao } from '../../../entities/concessao.entity';
+import { MetodoPagamentoEnum } from '../../../enums/metodo-pagamento.enum';
 import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
 import { PagamentoCreateDto } from '../dtos/pagamento-create.dto';
 import { PagamentoPendenteCreateDto } from '../dtos/pagamento-pendente-create.dto';
@@ -18,6 +22,7 @@ import { normalizeEnumFields } from '../../../shared/utils/enum-normalizer.util'
 import { SolicitacaoService } from '../../solicitacao/services/solicitacao.service';
 import { WorkflowSolicitacaoService } from '@/modules/solicitacao/services/workflow-solicitacao.service';
 import { AuditoriaService } from '../../auditoria/services/auditoria.service';
+import { AuditoriaPagamentoService } from './auditoria-pagamento.service';
 import { TipoOperacao } from '../../../enums/tipo-operacao.enum';
 import { StatusSolicitacao } from '@/enums';
 import { NotificacaoService } from '../../notificacao/services/notificacao.service';
@@ -37,13 +42,107 @@ export class PagamentoService {
     @InjectRepository(Pagamento)
     private readonly pagamentoRepository: Repository<Pagamento>,
     private readonly statusValidator: StatusTransitionValidator,
+    @Inject(forwardRef(() => WorkflowSolicitacaoService))
     private readonly workflowSolicitacaoService: WorkflowSolicitacaoService,
     private readonly solicitacaoService: SolicitacaoService,
     private readonly auditoriaService: AuditoriaService,
+    private readonly auditoriaPagamentoService: AuditoriaPagamentoService,
     private readonly notificacaoService: NotificacaoService,
     private readonly logger: UnifiedLoggerService,
     private readonly eventEmitter: EventEmitter2,
   ) { }
+
+    /**
+   * Gera todos os pagamentos para uma concessão aprovada.
+   * Cria todos os pagamentos com status PENDENTE baseado na quantidade de parcelas da solicitação.
+   *
+   * @param concessao Concessão ativa
+   * @param solicitacao Solicitação relacionada (para obter tipoBeneficio/valor)
+   */
+  async gerarPagamentosParaConcessao(
+    concessao: Concessao, 
+    solicitacao: any
+  ): Promise<Pagamento[]> {
+    // Determina a quantidade de parcelas baseada na solicitação
+    const quantidadeParcelas = solicitacao.quantidade_parcelas || 1;
+      // Validar número de parcelas
+    if (quantidadeParcelas <= 0) {
+      throw new BadRequestException('Quantidade de parcelas deve ser maior que zero');
+    }
+    
+    // Garantir valor do benefício
+    const valorParcela = solicitacao?.tipo_beneficio?.valor;
+    if (!valorParcela || valorParcela <= 0) {
+      this.logger.warn(`Valor de benefício não definido para solicitação ${solicitacao?.id}. Pagamento não gerado.`);
+      return [];
+    }
+
+    // Gerar pagamentos conforme quantidade de parcelas
+    const pagamentos: Pagamento[] = [];
+    const periodicidade = solicitacao?.tipo_beneficio?.periodicidade || 'mensal';
+    const dataInicio = new Date(concessao.dataInicio);
+    let numeroParcela = 1;
+    
+    for (let i = 0; i < quantidadeParcelas; i++) {
+      let dataPrevistaLiberacao: Date;
+      
+      // Calcula a data prevista com base na periodicidade e número da parcela
+      if (i === 0) {
+        // Regras específicas para Aluguel Social na primeira parcela
+        if (solicitacao?.tipo_beneficio?.codigo?.includes('aluguel-social')) {
+          dataPrevistaLiberacao = this.calcularDataLiberacaoAluguelSocial(concessao.dataInicio);
+        } else {
+          // Primeira parcela na data de início da concessão para outros benefícios
+          dataPrevistaLiberacao = dataInicio;
+        }
+      } else {
+        // Parcelas subsequentes baseadas na periodicidade
+        dataPrevistaLiberacao = this.calcularDataProximaParcela(
+          dataInicio, 
+          periodicidade, 
+          i
+        );
+      }
+      
+      const pagamento = this.pagamentoRepository.create({
+        solicitacaoId: solicitacao.id,
+        concessaoId: concessao.id,
+        valor: valorParcela,
+        metodoPagamento: MetodoPagamentoEnum.PIX, // default
+        status: StatusPagamentoEnum.PENDENTE,
+        dataPrevistaLiberacao,
+        numeroParcela: numeroParcela++,
+        totalParcelas: quantidadeParcelas,
+        liberadoPor: undefined,
+        ...(solicitacao.tecnico_id ? { criadoPor: solicitacao.tecnico_id } : {}),
+      });
+      
+      pagamentos.push(pagamento);
+    }
+    
+    const savedPagamentos = await this.pagamentoRepository.save(pagamentos);
+    
+    // Registrar histórico específico para renovações por determinação judicial
+    if (concessao.determinacaoJudicialFlag && quantidadeParcelas === 1) {
+      // Importar HistoricoConcessao dinamicamente para evitar dependência circular
+      const { HistoricoConcessao } = await import('../../../entities/historico-concessao.entity');
+      const historicoRepo = this.pagamentoRepository.manager.getRepository(HistoricoConcessao);
+      
+      const historico = historicoRepo.create({
+        concessaoId: concessao.id,
+        statusAnterior: concessao.status,
+        statusNovo: concessao.status,
+        motivo: 'Renovação automática de pagamento por determinação judicial',
+        alteradoPor: 'sistema'
+      });
+      
+      await historicoRepo.save(historico);
+      this.logger.debug(`Histórico de renovação por determinação judicial registrado para concessão ${concessao.id}`);
+    }
+    
+    this.logger.debug(`${quantidadeParcelas} pagamentos gerados automaticamente para concessão ${concessao.id}`);
+    return savedPagamentos;
+    }
 
   /**
    * Cria um novo registro de pagamento pendente
@@ -154,24 +253,23 @@ export class PagamentoService {
       throw new NotFoundException('Solicitação não encontrada');
     }
 
-    // Verificar se a solicitação não está bloqueada ou suspensa
-    if (solicitacao.status === StatusSolicitacao.BLOQUEADO) {
+    // Verificar se a solicitação não está cancelada ou indeferida
+    if (solicitacao.status === StatusSolicitacao.CANCELADA) {
       throw new ConflictException(
-        'Não é possível criar pagamentos para solicitações bloqueadas'
+        'Não é possível criar pagamentos para solicitações canceladas'
       );
     }
 
-    if (solicitacao.status === StatusSolicitacao.SUSPENSO) {
+    if (solicitacao.status === StatusSolicitacao.INDEFERIDA) {
       throw new ConflictException(
-        'Não é possível criar pagamentos para solicitações suspensas'
+        'Não é possível criar pagamentos para solicitações indeferidas'
       );
     }
 
     // Verificar se a solicitação está em status válido para pagamento
-    if (solicitacao.status !== StatusSolicitacao.APROVADA && 
-        solicitacao.status !== StatusSolicitacao.LIBERADA) {
+    if (solicitacao.status !== StatusSolicitacao.APROVADA) {
       throw new ConflictException(
-        'Só é possível criar pagamentos para solicitações aprovadas ou liberadas'
+        'Só é possível criar pagamentos para solicitações aprovadas'
       );
     }
 
@@ -205,14 +303,6 @@ export class PagamentoService {
 
     // Salvar o pagamento
     const result = await this.pagamentoRepository.save(pagamento);
-
-    await this.atualizarStatus(
-      result.solicitacaoId,
-      StatusPagamentoEnum.LIBERADO,
-      usuarioId
-    );
-
-    // A auditoria será registrada automaticamente pelo AuditoriaInterceptor
 
     // Emitir notificação SSE para criação de pagamento
     if (solicitacao.tecnico_id) {
@@ -262,15 +352,19 @@ export class PagamentoService {
       // Mapear status do pagamento para status da solicitação
       switch (statusPagamento) {
         case StatusPagamentoEnum.PENDENTE:
-          statusSolicitacao = StatusSolicitacao.EM_PROCESSAMENTO;
+          statusSolicitacao = StatusSolicitacao.APROVADA;
           observacao = 'Pagamento criado e pendente de liberação';
           break;
         case StatusPagamentoEnum.LIBERADO:
-          statusSolicitacao = StatusSolicitacao.LIBERADA;
+          // No novo ciclo de vida, APROVADA é o status final
+          // Pagamento liberado não altera mais o status da solicitação
+          statusSolicitacao = StatusSolicitacao.APROVADA;
           observacao = 'Pagamento liberado para confirmação';
           break;
         case StatusPagamentoEnum.CONFIRMADO:
-          statusSolicitacao = StatusSolicitacao.CONCLUIDA;
+          // No novo ciclo de vida, APROVADA é o status final
+          // Pagamento confirmado não altera mais o status da solicitação
+          statusSolicitacao = StatusSolicitacao.APROVADA;
           observacao = 'Pagamento confirmado e concluído';
           break;
         case StatusPagamentoEnum.CANCELADO:
@@ -278,7 +372,7 @@ export class PagamentoService {
           observacao = 'Pagamento cancelado';
           break;
         default:
-          statusSolicitacao = StatusSolicitacao.EM_PROCESSAMENTO;
+          statusSolicitacao = StatusSolicitacao.APROVADA;
           observacao = `Status do pagamento atualizado para ${statusPagamento}`;
       }
 
@@ -597,6 +691,12 @@ export class PagamentoService {
       });
     }
 
+    if (filters.concessaoId) {
+      queryBuilder.andWhere('pagamento.concessaoId = :concessaoId', {
+        concessaoId: filters.concessaoId,
+      });
+    }
+
     if (filters.dataInicio && filters.dataFim) {
       queryBuilder.andWhere(
         'pagamento.dataLiberacao BETWEEN :dataInicio AND :dataFim',
@@ -760,4 +860,337 @@ export class PagamentoService {
         return 'BAIXA';
     }
   }
-}
+
+  /**
+   * Calcula a data da próxima parcela baseada na periodicidade do benefício
+   * 
+   * Este método implementa o cálculo de datas para parcelas subsequentes considerando:
+   * - Diferentes periodicidades (mensal, bimestral, trimestral, semestral, anual, único)
+   * - Tratamento especial para fins de mês (ex: 31/01 -> 28/02 em anos não bissextos)
+   * - Validação de parâmetros de entrada
+   * - Logs para auditoria e debugging
+   * 
+   * @param dataInicio Data de início da concessão (deve ser uma data válida)
+   * @param periodicidade Periodicidade do benefício conforme PeriodicidadeEnum
+   * @param numeroParcela Índice da parcela (começando em 0 para primeira parcela)
+   * @returns Data calculada para a próxima parcela
+   * @throws Error se os parâmetros forem inválidos
+   */
+  private calcularDataProximaParcela(
+    dataInicio: Date, 
+    periodicidade: string, 
+    numeroParcela: number
+  ): Date {
+    // Validação de parâmetros de entrada
+    if (!dataInicio || !(dataInicio instanceof Date) || isNaN(dataInicio.getTime())) {
+      this.logger.error('Data de início inválida fornecida para cálculo de parcela', {
+        dataInicio,
+        periodicidade,
+        numeroParcela
+      });
+      throw new Error('Data de início deve ser uma data válida');
+    }
+
+    if (typeof numeroParcela !== 'number' || numeroParcela < 0) {
+      this.logger.error('Número da parcela inválido', {
+        dataInicio,
+        periodicidade,
+        numeroParcela
+      });
+      throw new Error('Número da parcela deve ser um número não negativo');
+    }
+
+    if (!periodicidade || typeof periodicidade !== 'string') {
+      this.logger.error('Periodicidade inválida fornecida', {
+        dataInicio,
+        periodicidade,
+        numeroParcela
+      });
+      throw new Error('Periodicidade deve ser uma string válida');
+    }
+
+    // Cria uma nova instância da data para evitar mutação do parâmetro original
+    const dataCalculada = new Date(dataInicio.getTime());
+    
+    // Para benefícios de parcela única, sempre retorna a data de início
+    if (periodicidade === 'unico') {
+      this.logger.debug('Calculando data para benefício de parcela única', {
+        dataInicio: dataInicio.toISOString(),
+        dataCalculada: dataCalculada.toISOString()
+      });
+      return dataCalculada;
+    }
+
+    // Se for a primeira parcela (índice 0), retorna a data de início
+    if (numeroParcela === 0) {
+      this.logger.debug('Retornando data de início para primeira parcela', {
+        dataInicio: dataInicio.toISOString(),
+        periodicidade,
+        numeroParcela
+      });
+      return dataCalculada;
+    }
+
+    // Armazena o dia original para tratamento de fins de mês
+    const diaOriginal = dataInicio.getDate();
+
+    try {
+      switch (periodicidade.toLowerCase()) {
+        case 'mensal':
+          // Adiciona N meses à data inicial
+          dataCalculada.setMonth(dataCalculada.getMonth() + numeroParcela);
+          break;
+          
+        case 'bimestral':
+          // Adiciona N*2 meses à data inicial
+          dataCalculada.setMonth(dataCalculada.getMonth() + (numeroParcela * 2));
+          break;
+          
+        case 'trimestral':
+          // Adiciona N*3 meses à data inicial
+          dataCalculada.setMonth(dataCalculada.getMonth() + (numeroParcela * 3));
+          break;
+          
+        case 'semestral':
+          // Adiciona N*6 meses à data inicial
+          dataCalculada.setMonth(dataCalculada.getMonth() + (numeroParcela * 6));
+          break;
+          
+        case 'anual':
+          // Adiciona N anos à data inicial
+          dataCalculada.setFullYear(dataCalculada.getFullYear() + numeroParcela);
+          break;
+          
+        default:
+          this.logger.warn('Periodicidade não reconhecida, usando padrão mensal', {
+            periodicidade,
+            dataInicio: dataInicio.toISOString(),
+            numeroParcela
+          });
+          // Por padrão considera mensal se não reconhecido
+          dataCalculada.setMonth(dataCalculada.getMonth() + numeroParcela);
+          break;
+      }
+
+      // Tratamento especial para fins de mês
+      // Se o dia original era maior que o último dia do mês calculado,
+      // ajusta para o último dia do mês
+      if (diaOriginal > 28 && dataCalculada.getDate() !== diaOriginal) {
+        const ultimoDiaDoMes = new Date(dataCalculada.getFullYear(), dataCalculada.getMonth() + 1, 0).getDate();
+        const diaAjustado = Math.min(diaOriginal, ultimoDiaDoMes);
+        dataCalculada.setDate(diaAjustado);
+        
+        this.logger.debug('Ajuste realizado para fim de mês', {
+          diaOriginal,
+          diaCalculado: dataCalculada.getDate(),
+          diaAjustado,
+          ultimoDiaDoMes,
+          dataFinal: dataCalculada.toISOString()
+        });
+      }
+
+      this.logger.debug('Data da próxima parcela calculada com sucesso', {
+        dataInicio: dataInicio.toISOString(),
+        periodicidade,
+        numeroParcela,
+        dataCalculada: dataCalculada.toISOString()
+      });
+
+      return dataCalculada;
+      
+    } catch (error) {
+      this.logger.error('Erro ao calcular data da próxima parcela', {
+        error: error.message,
+        dataInicio: dataInicio.toISOString(),
+        periodicidade,
+        numeroParcela
+      });
+      throw new Error(`Erro no cálculo da data da parcela: ${error.message}`);
+    }
+  }
+
+  /**
+   * Calcula a data de liberação da primeira parcela para Aluguel Social
+   * Regras:
+   * - Sempre o primeiro dia do mês subsequente à aprovação
+   * - Se aprovado após o dia 25, será o primeiro dia do segundo mês subsequente
+   */
+  private calcularDataLiberacaoAluguelSocial(dataAprovacao: Date): Date {
+    const dataLiberacao = new Date(dataAprovacao);
+    const diaAprovacao = dataAprovacao.getDate();
+    
+    if (diaAprovacao > 25) {
+      // Se aprovado após o dia 25, pula para o segundo mês subsequente
+      dataLiberacao.setMonth(dataLiberacao.getMonth() + 2);
+    } else {
+      // Caso contrário, vai para o mês subsequente
+      dataLiberacao.setMonth(dataLiberacao.getMonth() + 1);
+    }
+    
+    // Define sempre como primeiro dia do mês
+    dataLiberacao.setDate(1);
+    
+    this.logger.debug('Data de liberação calculada para Aluguel Social', {
+      dataAprovacao: dataAprovacao.toISOString(),
+      diaAprovacao,
+      dataLiberacao: dataLiberacao.toISOString()
+    });
+    
+    return dataLiberacao;
+   }
+
+   /**
+    * Processa vencimentos automáticos de pagamentos de Aluguel Social
+    * que possuem data de vencimento definida e já venceram
+    */
+   async processarVencimentoAutomatico(): Promise<Pagamento[]> {
+     const agora = new Date();
+
+     // Busca pagamentos pendentes do Aluguel Social com data de vencimento já passada
+     const pagamentosVencidos = await this.pagamentoRepository
+       .createQueryBuilder('pagamento')
+       .innerJoin('pagamento.concessao', 'concessao')
+       .innerJoin('concessao.solicitacao', 'solicitacao')
+       .innerJoin('solicitacao.tipoBeneficio', 'tipoBeneficio')
+       .where('pagamento.status = :status', { status: StatusPagamentoEnum.PENDENTE })
+       .andWhere('pagamento.dataVencimento < :agora', { agora })
+       .andWhere('tipoBeneficio.codigo = :codigoBeneficio', { codigoBeneficio: 'aluguel-social' })
+       .getMany();
+
+     const pagamentosProcessados: Pagamento[] = [];
+
+     for (const pagamento of pagamentosVencidos) {
+       try {
+         // Marca como vencido
+         pagamento.status = StatusPagamentoEnum.VENCIDO;
+         
+         const pagamentoSalvo = await this.pagamentoRepository.save(pagamento);
+         pagamentosProcessados.push(pagamentoSalvo);
+
+         // Registrar auditoria do vencimento automático
+         const logDto = new CreateLogAuditoriaDto();
+         logDto.tipo_operacao = TipoOperacao.UPDATE;
+         logDto.entidade_afetada = 'Pagamento';
+         logDto.entidade_id = pagamento.id;
+         logDto.usuario_id = 'sistema';
+         logDto.descricao = 'Vencimento automático por data de vencimento expirada';
+         logDto.dados_anteriores = { status: StatusPagamentoEnum.PENDENTE };
+         logDto.dados_novos = { 
+           status: StatusPagamentoEnum.VENCIDO,
+           dataVencimento: pagamento.dataVencimento
+         };
+         
+         await this.auditoriaService.create(logDto);
+
+         this.logger.log(`Pagamento ${pagamento.id} marcado automaticamente como vencido (data vencimento: ${pagamento.dataVencimento})`);
+       } catch (error) {
+         this.logger.error(`Erro ao processar vencimento do pagamento ${pagamento.id}:`, error);
+       }
+     }
+
+     if (pagamentosProcessados.length > 0) {
+       this.logger.log(`Processados ${pagamentosProcessados.length} pagamentos vencidos automaticamente`);
+     }
+
+     return pagamentosProcessados;
+   }
+
+   /**
+    * Marca pagamentos como vencidos por falta de documentação (Aluguel Social)
+    * Regra: Recibo deve ser entregue até o 10º dia útil do mês vigente
+    * 
+    * @param pagamentoId ID do pagamento
+    * @param motivo Motivo do vencimento
+    * @returns Pagamento atualizado
+    */
+   async marcarComoVencidoPorDocumentacao(pagamentoId: string, motivo: string): Promise<any> {
+     const pagamento = await this.pagamentoRepository.findOne({
+       where: { id: pagamentoId },
+       relations: ['concessao', 'concessao.solicitacao', 'concessao.solicitacao.tipo_beneficio']
+     });
+
+     if (!pagamento) {
+       throw new NotFoundException('Pagamento não encontrado');
+     }
+
+     // Verifica se é Aluguel Social
+     const isAluguelSocial = pagamento.concessao?.solicitacao?.tipo_beneficio?.codigo
+       ?.toLowerCase().includes('aluguel-social');
+
+     if (!isAluguelSocial) {
+       throw new BadRequestException('Esta funcionalidade é específica para Aluguel Social');
+     }
+
+     // Só pode marcar como vencido se estiver pendente
+     if (pagamento.status !== StatusPagamentoEnum.PENDENTE) {
+       throw new BadRequestException('Apenas pagamentos pendentes podem ser marcados como vencidos');
+     }
+
+     // Atualiza o status para vencido
+     pagamento.status = StatusPagamentoEnum.VENCIDO;
+     pagamento.observacoes = motivo;
+     pagamento.dataVencimento = new Date();
+
+     const pagamentoSalvo = await this.pagamentoRepository.save(pagamento);
+
+     this.logger.log(`Pagamento ${pagamentoId} marcado como vencido por falta de documentação: ${motivo}`);
+     return pagamentoSalvo;
+   }
+
+   /**
+    * Regulariza um pagamento vencido, retornando-o ao status PENDENTE
+    * Permite regularização dentro de 30 dias do vencimento
+    */
+   async regularizarPagamentoVencido(id: string, observacoes?: string): Promise<Pagamento> {
+     const pagamento = await this.pagamentoRepository.findOne({
+       where: { id },
+       relations: ['concessao', 'concessao.solicitacao', 'concessao.solicitacao.tipo_beneficio']
+     });
+
+     if (!pagamento) {
+       throw new NotFoundException('Pagamento não encontrado');
+     }
+
+     // Verifica se o pagamento está vencido
+     if (pagamento.status !== StatusPagamentoEnum.VENCIDO) {
+       throw new BadRequestException('Apenas pagamentos vencidos podem ser regularizados');
+     }
+
+     // Verifica prazo de regularização (30 dias a partir da data de vencimento)
+     if (pagamento.dataVencimento) {
+       const dataLimiteRegularizacao = new Date(pagamento.dataVencimento);
+       dataLimiteRegularizacao.setDate(dataLimiteRegularizacao.getDate() + 30);
+       
+       if (new Date() > dataLimiteRegularizacao) {
+         throw new BadRequestException('Prazo para regularização expirado (30 dias a partir do vencimento)');
+       }
+     }
+
+     // Retorna o pagamento ao status pendente e registra a data de regularização
+      pagamento.status = StatusPagamentoEnum.PENDENTE;
+      pagamento.dataRegularizacao = new Date();
+      if (observacoes) {
+        pagamento.observacoes = observacoes;
+      }
+      
+      const pagamentoAtualizado = await this.pagamentoRepository.save(pagamento);
+
+      // Registrar auditoria da regularização
+      const logDto = new CreateLogAuditoriaDto();
+      logDto.tipo_operacao = TipoOperacao.UPDATE;
+      logDto.entidade_afetada = 'Pagamento';
+      logDto.entidade_id = pagamento.id;
+      logDto.usuario_id = 'sistema';
+      logDto.descricao = 'Regularização de pagamento vencido';
+      logDto.dados_anteriores = { status: StatusPagamentoEnum.VENCIDO };
+      logDto.dados_novos = { 
+        status: StatusPagamentoEnum.PENDENTE,
+        dataRegularizacao: pagamento.dataRegularizacao,
+        observacoes: observacoes
+      };
+      
+      await this.auditoriaService.create(logDto);
+
+      return pagamentoAtualizado;
+   }
+ }

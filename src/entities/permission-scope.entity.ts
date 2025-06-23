@@ -57,7 +57,7 @@ export class PermissionScope {
   @IsEnum(['global', 'unidade', 'proprio'], {
     message: 'Tipo de escopo deve ser global, unidade ou proprio',
   })
-  tipo_escopo_padrao: 'global' | 'unidade' | 'proprio';
+  tipo_escopo_padrao: TipoEscopo;
 
   /**
    * Data de criação
@@ -118,11 +118,11 @@ export class PermissionScope {
     this.permissao = value;
   }
 
-  get defaultScopeType(): 'global' | 'unidade' | 'proprio' {
+  get defaultScopeType(): TipoEscopo {
     return this.tipo_escopo_padrao;
   }
 
-  set defaultScopeType(value: 'global' | 'unidade' | 'proprio') {
+  set defaultScopeType(value: TipoEscopo) {
     this.tipo_escopo_padrao = value;
   }
 
@@ -204,7 +204,7 @@ export class PermissionScope {
    * Define o tipo de escopo padrão
    * @param tipo Tipo de escopo
    */
-  definirTipoEscopo(tipo: 'global' | 'unidade' | 'proprio'): void {
+  definirTipoEscopo(tipo: TipoEscopo): void {
     this.tipo_escopo_padrao = tipo;
   }
 

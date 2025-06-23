@@ -182,20 +182,12 @@ export class PrazoSolicitacaoService {
           await this.definirPrazoAnalise(solicitacaoId);
           break;
 
-        case StatusSolicitacao.AGUARDANDO_DOCUMENTOS:
-          await this.definirPrazoDocumentos(solicitacaoId);
-          break;
-
-        case StatusSolicitacao.EM_PROCESSAMENTO:
-          await this.definirPrazoProcessamento(solicitacaoId);
-          break;
+        // Status AGUARDANDO_DOCUMENTOS removido no novo ciclo de vida simplificado
 
         // Para outros estados, os prazos anteriores são mantidos ou podem ser limpos
         case StatusSolicitacao.APROVADA:
         case StatusSolicitacao.INDEFERIDA:
         case StatusSolicitacao.CANCELADA:
-        case StatusSolicitacao.CONCLUIDA:
-        case StatusSolicitacao.ARQUIVADA:
           // Limpar prazos ativos pois não são mais relevantes
           await this.limparPrazos(solicitacaoId);
           break;

@@ -37,6 +37,11 @@ export enum TipoEscopo {
    * Escopo limitado ao próprio usuário
    */
   PROPRIO = 'proprio',
+  
+  /**
+   * Escopo limitado ao sistema
+   */
+  SISTEMA = 'sistema',
 }
 
 // Mapeamento para compatibilidade com código existente

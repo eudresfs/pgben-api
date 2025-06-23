@@ -63,11 +63,9 @@ export class MonitoramentoAluguelSocialService {
    * @returns Verdadeiro se estiver em estado que requer monitoramento
    */
   requiresMonitoring(solicitacao: Solicitacao): boolean {
-    // Solicitações aprovadas e em concessão requerem monitoramento
+    // Solicitações aprovadas requerem monitoramento
     const statusMonitorados = [
       StatusSolicitacao.APROVADA,
-      StatusSolicitacao.EM_PROCESSAMENTO,
-      StatusSolicitacao.LIBERADA,
     ];
 
     return statusMonitorados.includes(solicitacao.status);
@@ -177,8 +175,6 @@ export class MonitoramentoAluguelSocialService {
       .where('solicitacao.status IN (:...statusMonitorados)', {
         statusMonitorados: [
           StatusSolicitacao.APROVADA,
-          StatusSolicitacao.EM_PROCESSAMENTO,
-          StatusSolicitacao.LIBERADA,
         ],
       })
       .andWhere(
@@ -215,8 +211,6 @@ export class MonitoramentoAluguelSocialService {
       .where('solicitacao.status IN (:...statusMonitorados)', {
         statusMonitorados: [
           StatusSolicitacao.APROVADA,
-          StatusSolicitacao.EM_PROCESSAMENTO,
-          StatusSolicitacao.LIBERADA,
         ],
       })
       .andWhere(

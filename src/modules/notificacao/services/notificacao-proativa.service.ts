@@ -77,7 +77,7 @@ export class NotificacaoProativaService {
       tipo: 'documento',
       diasAntecedencia: [5, 2],
       horasAntecedencia: [48, 24],
-      statusAlvo: [StatusSolicitacao.APROVADA, StatusSolicitacao.LIBERADA],
+      statusAlvo: [StatusSolicitacao.APROVADA],
       template: {
         titulo: 'Documentos Pendentes',
         conteudo: 'Você possui documentos pendentes para a solicitação #{id}. Envie o quanto antes.',

@@ -1,5 +1,4 @@
-import { Injectable, Logger, Inject, OnModuleInit } from '@nestjs/common';
-
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, LessThanOrEqual, IsNull } from 'typeorm';
 import { ModuleRef } from '@nestjs/core';
@@ -410,15 +409,102 @@ export class NotificationManagerService implements OnModuleInit {
   }
 
   /**
-   * Registra todos os canais de notificação disponíveis no sistema
+   * Registra os canais de notificação disponíveis no sistema
+   * Cada canal implementa a interface CanalNotificacao
    */
   private async registrarCanaisDisponiveis(): Promise<void> {
-    this.logger.log('Iniciando registro de canais de notificação disponíveis');
     try {
-      // Buscar todos os serviços que implementam a interface CanalNotificacao
-      // Na prática, você registraria cada canal explicitamente no módulo
-      // Esta é uma abordagem mais dinâmica, mas na maioria dos casos você
-      // faria o registro explícito de cada canal no NotificacaoModule
+      // Canal Ably (Principal - Tempo Real)
+      const canalAbly: CanalNotificacao = {
+        canal_id: 'ably',
+        verificarDisponibilidade: async () => {
+          try {
+            const { AblyService } = await import('./ably.service');
+            const ablyService = this.moduleRef.get(AblyService, { strict: false });
+            return ablyService && await ablyService.isConnected();
+          } catch {
+            return false;
+          }
+        },
+        enviar: async (notificacao: NotificacaoSistema): Promise<ResultadoEnvio> => {
+          try {
+            const { AblyService } = await import('./ably.service');
+            const ablyService = this.moduleRef.get(AblyService, { strict: false });
+            
+            if (!ablyService) {
+              throw new Error('Serviço Ably não disponível');
+            }
+
+            // Buscar dados do usuário destinatário
+            const usuarioService = await this.getUsuarioService();
+            const usuario = await usuarioService.findById(notificacao.destinatario_id);
+            
+            if (!usuario) {
+              throw new Error('Usuário destinatário não encontrado');
+            }
+
+            // Renderizar template se disponível
+            let titulo = 'Nova Notificação';
+            let conteudo = 'Você tem uma nova notificação.';
+            
+            if (notificacao.template) {
+              const templateRenderizado = this.templateRenderer.renderizarNotificacao(
+                notificacao.template,
+                notificacao.dados_contexto || {}
+              );
+              titulo = templateRenderizado.assunto;
+              conteudo = templateRenderizado.conteudo;
+            }
+
+            // Preparar dados da notificação para o Ably
+            const dadosNotificacao = {
+              id: notificacao.id,
+              titulo,
+              conteudo,
+              tipo: notificacao.template?.tipo || 'info',
+              prioridade: notificacao.template?.prioridade || 'normal',
+              dados_contexto: notificacao.dados_contexto,
+              timestamp: new Date().toISOString(),
+              destinatario_id: notificacao.destinatario_id
+            };
+
+            // Enviar via Ably para canal específico do usuário
+            const canalUsuario = `user:${notificacao.destinatario_id}:notifications`;
+            const resultado = await ablyService.publishMessage(
+              canalUsuario,
+              'notification',
+              dadosNotificacao
+            );
+
+            if (resultado.success) {
+              return {
+                sucesso: true,
+                mensagem: 'Notificação Ably enviada com sucesso',
+                data_envio: new Date(),
+                identificador_externo: resultado.messageId,
+                dados_resposta: { 
+                  canal: canalUsuario, 
+                  messageId: resultado.messageId,
+                  tipo: 'ably_realtime'
+                }
+              };
+            } else {
+              throw new Error(resultado.error || 'Falha no envio via Ably');
+            }
+          } catch (error) {
+            this.logger.error(`Erro ao enviar notificação via Ably: ${error.message}`, error.stack);
+            return {
+              sucesso: false,
+              mensagem: `Erro ao enviar via Ably: ${error.message}`,
+              data_envio: new Date(),
+              erro: error as Error
+            };
+          }
+        }
+      };
+      
+      this.canaisNotificacao.set('ably', canalAbly);
+      this.logger.log('Canal de notificação registrado: ably (Principal)');
 
       // Verificar se o EmailService está disponível e configurado
       try {
@@ -489,7 +575,7 @@ export class NotificationManagerService implements OnModuleInit {
         );
       }
 
-      // Registrar canal sistema (SSE)
+      // Registrar canal sistema (SSE - Fallback)
       const canalSistema: CanalNotificacao = {
         canal_id: 'sistema',
         verificarDisponibilidade: async () => true, // SSE sempre disponível
@@ -503,9 +589,9 @@ export class NotificationManagerService implements OnModuleInit {
             
             return {
               sucesso: true,
-              mensagem: 'Notificação SSE enviada com sucesso',
+              mensagem: 'Notificação SSE enviada com sucesso (fallback)',
               data_envio: new Date(),
-              dados_resposta: { canal: 'sistema', tipo: 'sse' }
+              dados_resposta: { canal: 'sistema', tipo: 'sse_fallback' }
             };
           } catch (error) {
             this.logger.error(`Erro ao enviar notificação SSE: ${error.message}`, error.stack);
@@ -520,10 +606,7 @@ export class NotificationManagerService implements OnModuleInit {
       };
       
       this.canaisNotificacao.set('sistema', canalSistema);
-      this.logger.log('Canal de notificação registrado: sistema (SSE)');
-
-      // Você registraria outros canais aqui da mesma forma
-      // Ex: SMS, Push, WhatsApp, etc.
+      this.logger.log('Canal de notificação registrado: sistema (SSE - Fallback)');
 
       this.logger.log(
         `Total de ${this.canaisNotificacao.size} canais de notificação registrados`,

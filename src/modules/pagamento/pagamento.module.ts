@@ -17,12 +17,12 @@ import { ConfirmacaoController } from './controllers/confirmacao.controller';
 
 // Serviços principais
 import { PagamentoService } from './services/pagamento.service';
+import { PagamentoLiberacaoService } from './services/pagamento-liberacao.service';
+import { PagamentoLiberacaoScheduler } from './schedulers/pagamento-liberacao.scheduler';
 import { ComprovanteService } from './services/comprovante.service';
 import { ConfirmacaoService } from './services/confirmacao.service';
 import { PagamentoMappingService } from './services/pagamento-mapping.service';
 import { PagamentoResponseService } from './services/pagamento-response.service';
-// import { MetricasPagamentoService } from './services/metricas-pagamento.service';
-// import { RelatorioPagamentoService } from './services/relatorio-pagamento.service';
 
 // Serviços de integração
 import { AuditoriaPagamentoService } from './services/auditoria-pagamento.service';
@@ -71,7 +71,7 @@ import { SharedModule } from '../../shared/shared.module';
     AuthModule,
     SharedModule,
     UsuarioModule,
-    SolicitacaoModule,
+    forwardRef(() => SolicitacaoModule),
     DocumentoModule,
     CidadaoModule,
     NotificacaoModule,
@@ -85,12 +85,14 @@ import { SharedModule } from '../../shared/shared.module';
   providers: [
     // Serviços principais
     PagamentoService,
+    PagamentoLiberacaoService,
     ComprovanteService,
     ConfirmacaoService,
     PagamentoMappingService,
     PagamentoResponseService,
-    // MetricasPagamentoService,
-    // RelatorioPagamentoService,
+
+    // Schedulers
+    PagamentoLiberacaoScheduler,
 
     // Serviços de integração
     AuditoriaPagamentoService,
@@ -118,6 +120,7 @@ import { SharedModule } from '../../shared/shared.module';
 
     // Serviços principais
     PagamentoService,
+    PagamentoLiberacaoService,
     ComprovanteService,
     ConfirmacaoService,
     PagamentoMappingService,

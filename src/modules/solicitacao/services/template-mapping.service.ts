@@ -7,12 +7,11 @@ import { NotificationTemplate } from '../../../entities/notification-template.en
  */
 export enum TipoNotificacaoTemplate {
   APROVACAO = 'APROVACAO',
-  REJEICAO = 'REJEICAO',
+  INDEFERIMENTO = 'INDEFERIMENTO',
   CANCELAMENTO = 'CANCELAMENTO',
-  BLOQUEIO = 'BLOQUEIO',
-  SUSPENSAO = 'SUSPENSAO',
   PENDENCIA = 'PENDENCIA',
-  PENDENCIA_RESOLVIDA = 'PENDENCIA_RESOLVIDA',
+  DOCUMENTOS = 'DOCUMENTOS',
+  PRAZO = 'PRAZO',
 }
 
 /**
@@ -32,18 +31,17 @@ export class TemplateMappingService {
   /**
    * Mapeia tipos de notificação para códigos de template
    */
-  private obterCodigoTemplate(tipo: TipoNotificacaoTemplate): string {
-    const mapeamento = {
-      [TipoNotificacaoTemplate.APROVACAO]: 'solicitacao-aprovada',
-      [TipoNotificacaoTemplate.REJEICAO]: 'solicitacao-rejeitada',
-      [TipoNotificacaoTemplate.CANCELAMENTO]: 'solicitacao-cancelada',
-      [TipoNotificacaoTemplate.BLOQUEIO]: 'solicitacao-bloqueada',
-      [TipoNotificacaoTemplate.SUSPENSAO]: 'solicitacao-suspensa',
-      [TipoNotificacaoTemplate.PENDENCIA]: 'solicitacao-pendencia',
-      [TipoNotificacaoTemplate.PENDENCIA_RESOLVIDA]: 'solicitacao-pendencia-resolvida',
-    };
+  private readonly templateMappings: Record<TipoNotificacaoTemplate, string> = {
+    [TipoNotificacaoTemplate.APROVACAO]: 'solicitacao-aprovada',
+    [TipoNotificacaoTemplate.INDEFERIMENTO]: 'solicitacao-indeferida',
+    [TipoNotificacaoTemplate.CANCELAMENTO]: 'solicitacao-cancelada',
+    [TipoNotificacaoTemplate.PENDENCIA]: 'solicitacao-pendencia-criada',
+    [TipoNotificacaoTemplate.DOCUMENTOS]: 'solicitacao-documentos-solicitados',
+    [TipoNotificacaoTemplate.PRAZO]: 'solicitacao-prazo-vencimento',
+  };
 
-    return mapeamento[tipo];
+  private obterCodigoTemplate(tipo: TipoNotificacaoTemplate): string {
+    return this.templateMappings[tipo];
   }
 
   /**

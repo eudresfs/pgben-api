@@ -185,4 +185,40 @@ export const AuditoriaPagamento = {
       descricao: descricao || 'Validação de limites de pagamento',
       mascarDados: false, // Dados de limite não são sensíveis
     }),
+
+  /**
+   * Auditoria para liberação de pagamento
+   */
+  Liberacao: (descricao?: string) =>
+    Auditoria({
+      entidade: 'Pagamento',
+      operacao: TipoOperacao.UPDATE,
+      descricao: descricao || 'Liberação de pagamento',
+      mascarDados: true,
+      capturarDadosAnteriores: true,
+    }),
+
+  /**
+   * Auditoria para liberação em lote de pagamentos
+   */
+  LiberacaoLote: (descricao?: string) =>
+    Auditoria({
+      entidade: 'Pagamento',
+      operacao: TipoOperacao.UPDATE,
+      descricao: descricao || 'Liberação em lote de pagamentos',
+      mascarDados: true,
+      capturarDadosAnteriores: false, // Não capturar dados anteriores em lote por performance
+    }),
+
+  /**
+   * Auditoria para processamento automático de liberação
+   */
+  ProcessamentoAutomatico: (descricao?: string) =>
+    Auditoria({
+      entidade: 'Pagamento',
+      operacao: TipoOperacao.UPDATE,
+      descricao: descricao || 'Processamento automático de liberação de pagamentos',
+      mascarDados: false, // Processamento automático não expõe dados sensíveis
+      capturarDadosAnteriores: false,
+    }),
 };

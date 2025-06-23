@@ -83,10 +83,16 @@ export enum TipoDocumentoEnum {
   AUTORIZACAO_VIAGEM = 'autorizacao_viagem',
   BILHETE_PASSAGEM = 'bilhete_passagem',
 
+  // Documentos específicos para aluguel social
+  RECIBO_ALUGUEL = 'recibo_aluguel',
+
   // Documentos diversos
   PROCURACAO = 'procuracao',
   DECLARACAO_HIPOSSUFICIENCIA = 'declaracao_hipossuficiencia',
   TERMO_RESPONSABILIDADE = 'termo_responsabilidade',
   FOTO_3X4 = 'foto_3x4',
   OUTRO = 'outro',
+  
+  // Documentos do módulo de upload fácil
+  UPLOAD_FACIL = 'upload_facil',
 }

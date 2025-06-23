@@ -61,8 +61,6 @@ export class PagamentoMappingService implements IPagamentoMappingService {
     return pagamentoData;
   }
 
-
-
   /**
    * Mapeia entidade para DTO de resposta
    * Regra: Aplicar mascaramento baseado no contexto do usuário
@@ -75,7 +73,7 @@ export class PagamentoMappingService implements IPagamentoMappingService {
 
     // Dados básicos sempre visíveis
     dto.id = pagamento.id;
-    dto.solicitacaoId = pagamento.solicitacaoId;
+    dto.solicitacaoId = pagamento.solicitacaoId || 'não vinculado'; // Corrige erro de tipagem
     dto.valor = pagamento.valor;
     dto.status = pagamento.status;
     dto.observacoes = pagamento.observacoes;
@@ -87,10 +85,28 @@ export class PagamentoMappingService implements IPagamentoMappingService {
     // Dados de auditoria (apenas para usuários autorizados)
     if (contextoUsuario.isAdmin || contextoUsuario.isSupervisor) {
       if (pagamento.liberadoPor) {
+        try {
+          // Busca informações do usuário responsável pela liberação
+          const usuario = await this.usuarioService.findById(pagamento.liberadoPor);
+          dto.responsavelLiberacao = {
+            id: pagamento.liberadoPor,
+            nome: usuario?.nome || 'Não disponível',
+            role: usuario?.role?.nome || 'Não disponível'
+          };
+        } catch (error) {
+          this.logger.warn(`Erro ao buscar dados do usuário ${pagamento.liberadoPor}: ${error.message}`);
+          dto.responsavelLiberacao = {
+            id: pagamento.liberadoPor,
+            nome: 'Não disponível',
+            role: 'Não disponível'
+          };
+        }
+      } else {
+        // Caso não tenha responsável pela liberação, define valores padrão
         dto.responsavelLiberacao = {
-          id: pagamento.liberadoPor,
-          nome: 'N/A', // TODO: Buscar nome do usuário
-          role: 'N/A'  // TODO: Buscar role do usuário
+          id: 'não informado',
+          nome: 'Não disponível',
+          role: 'Não disponível'
         };
       }
     }

@@ -132,9 +132,9 @@ export class RelatoriosService {
         .leftJoin('solicitacao.tipo_beneficio', 'tipo_beneficio')
         .leftJoin('solicitacao.unidade', 'unidade')
         .where('solicitacao.status = :status', {
-          status: StatusSolicitacao.LIBERADA,
+          status: StatusSolicitacao.APROVADA,
         })
-        .andWhere('solicitacao.data_liberacao BETWEEN :inicio AND :fim', {
+        .andWhere('solicitacao.data_aprovacao BETWEEN :inicio AND :fim', {
           inicio,
           fim,
         });
@@ -410,16 +410,16 @@ export class RelatoriosService {
           },
         });
 
-        // Contar solicitações liberadas
+        // Contar solicitações aprovadas
         const solicitacoesLiberadas = await this.solicitacaoRepository.count({
           where: {
             unidade_id: unidade.id,
-            status: StatusSolicitacao.LIBERADA,
+            status: StatusSolicitacao.APROVADA,
             data_abertura: Between(inicio, fim),
           },
         });
 
-        // Contar solicitações pendentes (não liberadas)
+        // Contar solicitações pendentes (não aprovadas)
         const solicitacoesPendentes = totalSolicitacoes - solicitacoesLiberadas;
 
         // Adicionar ao resultado

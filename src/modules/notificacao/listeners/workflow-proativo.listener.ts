@@ -224,39 +224,8 @@ export class WorkflowProativoListener {
   // EVENTOS DE LIBERAÇÃO
   // ==========================================
 
-  @OnEvent('solicitacao.liberada')
-  async handleSolicitacaoLiberada(event: LiberacaoEvent) {
-    this.logger.log(`Processando solicitação liberada: ${event.solicitacaoId}`);
-
-    try {
-      // Notificar usuário sobre liberação
-      await this.enviarNotificacaoComPreferencias({
-        usuarioId: event.usuarioId,
-        tipo: TipoNotificacao.LIBERACAO,
-        titulo: 'Benefício Liberado',
-        mensagem: this.gerarMensagemLiberacao(event),
-        prioridade: 'high',
-        contexto: {
-          solicitacaoId: event.solicitacaoId,
-          valorLiberado: event.valorLiberado,
-          formaPagamento: event.formaPagamento,
-          contaBancaria: event.contaBancaria,
-          dataLiberacao: event.timestamp,
-        },
-      });
-
-      // Alertas de prazo são gerenciados automaticamente pelo scheduler
-      this.logger.log(`Solicitação ${event.solicitacaoId} liberada - alertas serão limpos automaticamente`);
-
-      // Agendar notificação de acompanhamento pós-liberação
-      await this.agendarAcompanhamentoPosLiberacao(event);
-    } catch (error) {
-      this.logger.error(
-        `Erro ao processar solicitação liberada ${event.solicitacaoId}:`,
-        error,
-      );
-    }
-  }
+  // Método handleSolicitacaoLiberada removido - no novo ciclo de vida simplificado
+  // APROVADA é o status final e não há mais transição para LIBERADA
 
   // ==========================================
   // EVENTOS DE SISTEMA
@@ -433,8 +402,7 @@ export class WorkflowProativoListener {
     // Status críticos têm prioridade alta
     if (
       statusNovo === StatusSolicitacao.APROVADA ||
-      statusNovo === StatusSolicitacao.INDEFERIDA ||
-      statusNovo === StatusSolicitacao.LIBERADA
+      statusNovo === StatusSolicitacao.INDEFERIDA
     ) {
       return 'high';
     }
@@ -455,8 +423,7 @@ export class WorkflowProativoListener {
       case StatusSolicitacao.APROVADA:
       case StatusSolicitacao.INDEFERIDA:
         return TipoNotificacao.APROVACAO;
-      case StatusSolicitacao.LIBERADA:
-        return TipoNotificacao.LIBERACAO;
+      // Status LIBERADA removido - no novo ciclo de vida APROVADA é final
       case StatusSolicitacao.PENDENTE:
         return TipoNotificacao.PENDENCIA;
       default:
@@ -478,7 +445,6 @@ export class WorkflowProativoListener {
       [StatusSolicitacao.PENDENTE]: `Sua solicitação de ${tipoBeneficio} está pendente de documentação.`,
       [StatusSolicitacao.APROVADA]: `Sua solicitação de ${tipoBeneficio} foi aprovada!`,
       [StatusSolicitacao.INDEFERIDA]: `Sua solicitação de ${tipoBeneficio} foi indeferida.`,
-      [StatusSolicitacao.LIBERADA]: `Seu benefício de ${tipoBeneficio} foi liberado!`,
       [StatusSolicitacao.CANCELADA]: `Sua solicitação de ${tipoBeneficio} foi cancelada.`,
     };
 
@@ -507,7 +473,7 @@ export class WorkflowProativoListener {
    */
   private isStatusFinal(status: StatusSolicitacao): boolean {
     return [
-      StatusSolicitacao.LIBERADA,
+      StatusSolicitacao.APROVADA,
       StatusSolicitacao.INDEFERIDA,
       StatusSolicitacao.CANCELADA,
     ].includes(status);

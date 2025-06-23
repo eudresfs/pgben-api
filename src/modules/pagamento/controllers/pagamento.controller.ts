@@ -10,6 +10,7 @@ import {
   UseGuards,
   Request,
   UseInterceptors,
+  BadRequestException,
 } from '@nestjs/common';
 import {
   ApiOperation,
@@ -25,6 +26,7 @@ import { TipoEscopo } from '../../../entities/user-permission.entity';
 import { PagamentoService } from '../services/pagamento.service';
 import { PagamentoMappingService } from '../services/pagamento-mapping.service';
 import { PagamentoResponseService } from '../services/pagamento-response.service';
+import { PagamentoLiberacaoService } from '../services/pagamento-liberacao.service';
 import { PagamentoCreateDto } from '../dtos/pagamento-create.dto';
 import { PagamentoPendenteCreateDto } from '../dtos/pagamento-pendente-create.dto';
 import { PagamentoUpdateStatusDto } from '../dtos/pagamento-update-status.dto';
@@ -59,6 +61,7 @@ export class PagamentoController {
     private readonly pagamentoService: PagamentoService,
     private readonly mappingService: PagamentoMappingService,
     private readonly responseService: PagamentoResponseService,
+    private readonly liberacaoService: PagamentoLiberacaoService,
   ) {}
 
   /**
@@ -432,6 +435,314 @@ export class PagamentoController {
       pagamentos.total,
       page ? Number(page) : 1,
       limit ? Number(limit) : 10,
+    );
+  }
+
+  /**
+   * Verifica se um pagamento pode ser liberado
+   */
+  @Get(':id/elegibilidade-liberacao')
+  @RequiresPermission({
+    permissionName: 'pagamento.visualizar',
+    scopeType: TipoEscopo.UNIDADE,
+    scopeIdExpression: 'params.id'
+  })
+  @AuditoriaPagamento.Consulta('Verificação de elegibilidade para liberação')
+  @ApiOperation({ summary: 'Verifica se um pagamento pode ser liberado' })
+  @ApiParam({ name: 'id', type: 'string', description: 'ID do pagamento' })
+  @ApiResponse({
+    status: 200,
+    description: 'Resultado da verificação de elegibilidade',
+    schema: {
+      type: 'object',
+      properties: {
+        podeLiberar: { type: 'boolean' },
+        motivo: { type: 'string' },
+        documentosObrigatorios: {
+          type: 'array',
+          items: { type: 'string' }
+        },
+        documentosFaltantes: {
+          type: 'array',
+          items: { type: 'string' }
+        }
+      }
+    }
+  })
+  @ApiResponse({ status: 404, description: 'Pagamento não encontrado' })
+  @ApiResponse({ status: 403, description: 'Acesso negado' })
+  async verificarElegibilidadeLiberacao(
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    const elegibilidade = await this.liberacaoService.verificarElegibilidadeLiberacao(id);
+    return this.responseService.success(elegibilidade, 'Elegibilidade verificada com sucesso');
+  }
+
+  /**
+   * Libera um pagamento específico
+   */
+  @Patch(':id/liberar')
+  @RequiresPermission({
+    permissionName: 'pagamento.liberar',
+    scopeType: TipoEscopo.UNIDADE,
+    scopeIdExpression: 'params.id'
+  })
+  @AuditoriaPagamento.Liberacao()
+  @ApiOperation({ summary: 'Libera um pagamento específico' })
+  @ApiParam({ name: 'id', type: 'string', description: 'ID do pagamento' })
+  @ApiResponse({
+    status: 200,
+    description: 'Pagamento liberado com sucesso',
+    type: PagamentoResponseDto,
+  })
+  @ApiResponse({ status: 404, description: 'Pagamento não encontrado' })
+  @ApiResponse({ status: 400, description: 'Pagamento não pode ser liberado' })
+  @ApiResponse({ status: 403, description: 'Acesso negado' })
+  @UseGuards(PagamentoAccessGuard)
+  @OperadorOuAdmin()
+  @VerificarUnidade(true)
+  async liberarPagamento(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Request() req?: any,
+  ) {
+    const usuarioId = req?.user?.id || '';
+
+    const contextoUsuario = {
+      id: req?.user?.id || '',
+      perfil: req?.user?.perfil || 'OPERADOR',
+      unidadeId: req?.user?.unidadeId,
+      permissoes: req?.user?.permissoes || [],
+      isAdmin: req?.user?.isAdmin || false,
+      isSupervisor: req?.user?.isSupervisor || false,
+    };
+
+    const pagamento = await this.liberacaoService.liberarPagamento(id, usuarioId);
+
+    // Mapear entidade para DTO de resposta
+    const responseDto = await this.mappingService.mapEntityToResponseDto(
+      pagamento,
+      contextoUsuario,
+    );
+
+    return this.responseService.updated(
+      responseDto,
+      'Pagamento liberado com sucesso',
+    );
+  }
+
+  /**
+   * Libera múltiplos pagamentos em lote
+   */
+  @Post('liberar-lote')
+  @RequiresPermission({
+    permissionName: 'pagamento.liberar',
+    scopeType: TipoEscopo.UNIDADE
+  })
+  @AuditoriaPagamento.LiberacaoLote()
+  @ApiOperation({ summary: 'Libera múltiplos pagamentos em lote' })
+  @ApiResponse({
+    status: 200,
+    description: 'Resultado da liberação em lote',
+    schema: {
+      type: 'object',
+      properties: {
+        liberados: {
+          type: 'array',
+          items: { type: 'string' }
+        },
+        falhas: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              pagamentoId: { type: 'string' },
+              motivo: { type: 'string' }
+            }
+          }
+        },
+        total: { type: 'number' }
+      }
+    }
+  })
+  @ApiResponse({ status: 400, description: 'Dados inválidos' })
+  @ApiResponse({ status: 403, description: 'Acesso negado' })
+  @UseGuards(PagamentoAccessGuard)
+  @OperadorOuAdmin()
+  async liberarPagamentosLote(
+    @Body() liberacaoDto: { pagamentoIds: string[] },
+    @Request() req?: any,
+  ) {
+    const usuarioId = req?.user?.id || '';
+
+    if (!liberacaoDto.pagamentoIds || liberacaoDto.pagamentoIds.length === 0) {
+      throw new BadRequestException('Lista de IDs de pagamentos é obrigatória');
+    }
+
+    const resultado = await this.liberacaoService.liberarPagamentosLote(
+      liberacaoDto.pagamentoIds,
+      usuarioId,
+    );
+
+    return this.responseService.success(
+      resultado,
+      `Liberação em lote concluída: ${resultado.liberados.length} sucessos, ${resultado.falhas.length} falhas`,
+    );
+  }
+
+  /**
+   * Lista pagamentos elegíveis para liberação
+   */
+  @Get('elegiveis-liberacao')
+  @RequiresPermission({
+    permissionName: 'pagamento.listar',
+    scopeType: TipoEscopo.UNIDADE
+  })
+  @AuditoriaPagamento.Consulta('Consulta de pagamentos elegíveis para liberação')
+  @ApiOperation({ summary: 'Lista pagamentos elegíveis para liberação' })
+  @ApiQuery({ name: 'limite', required: false, type: Number, description: 'Limite de resultados (padrão: 100)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de pagamentos elegíveis para liberação',
+    schema: {
+      type: 'object',
+      properties: {
+        items: {
+          type: 'array',
+          items: {
+            type: 'object',
+            $ref: '#/components/schemas/PagamentoResponseDto',
+          },
+        },
+        total: { type: 'number' },
+      },
+    },
+  })
+  @ApiResponse({ status: 403, description: 'Acesso negado' })
+  async findElegiveisLiberacao(
+    @Query('limite') limite?: number,
+    @Request() req?: any,
+  ) {
+    const contextoUsuario = {
+      id: req?.user?.id || '',
+      perfil: req?.user?.perfil || 'OPERADOR',
+      unidadeId: req?.user?.unidadeId,
+      permissoes: req?.user?.permissoes || [],
+      isAdmin: req?.user?.isAdmin || false,
+      isSupervisor: req?.user?.isSupervisor || false,
+    };
+
+    const pagamentos = await this.liberacaoService.buscarPagamentosElegiveis(
+      limite ? Number(limite) : 100,
+    );
+
+    // Mapear entidades para DTOs de resposta
+    const responseDtos = await this.mappingService.mapEntitiesToResponseDtos(
+      pagamentos,
+      contextoUsuario,
+    );
+
+    return this.responseService.success(
+      {
+        items: responseDtos,
+        total: responseDtos.length,
+      },
+      'Pagamentos elegíveis listados com sucesso',
+    );
+  }
+
+  /**
+   * Executa processo automatizado de liberação
+   */
+  @Post('processar-liberacao-automatica')
+  @RequiresPermission({
+    permissionName: 'pagamento.processar_automatico',
+    scopeType: TipoEscopo.SISTEMA
+  })
+  @AuditoriaPagamento.ProcessamentoAutomatico()
+  @ApiOperation({ summary: 'Executa processo automatizado de liberação de pagamentos' })
+  @ApiResponse({
+    status: 200,
+    description: 'Resultado do processamento automático',
+    schema: {
+      type: 'object',
+      properties: {
+        liberados: {
+          type: 'array',
+          items: { type: 'string' }
+        },
+        falhas: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              pagamentoId: { type: 'string' },
+              motivo: { type: 'string' }
+            }
+          }
+        },
+        total: { type: 'number' }
+      }
+    }
+  })
+  @ApiResponse({ status: 403, description: 'Acesso negado' })
+  @UseGuards(PagamentoAccessGuard)
+  @ApenasAdmin()
+  async processarLiberacaoAutomatica(
+    @Request() req?: any,
+  ) {
+    const usuarioSistema = req?.user?.id || 'sistema';
+
+    const resultado = await this.liberacaoService.processarLiberacaoAutomatica(usuarioSistema);
+
+    return this.responseService.success(
+      resultado,
+      `Processamento automático concluído: ${resultado.liberados.length} liberados, ${resultado.falhas.length} falhas`,
+    );
+  }
+
+
+
+  /**
+   * Regulariza pagamento vencido (permite liberação retroativa em até 30 dias)
+   */
+  @Patch(':id/regularizar')
+  @RequiresPermission({
+    permissionName: 'pagamento.regularizar',
+    scopeType: TipoEscopo.UNIDADE
+  })
+  @AuditoriaPagamento.AtualizacaoStatus('Regularização de pagamento vencido')
+  @ApiOperation({ summary: 'Regulariza pagamento vencido para permitir liberação retroativa' })
+  @ApiParam({ name: 'id', description: 'ID do pagamento' })
+  @ApiResponse({
+    status: 200,
+    description: 'Pagamento regularizado com sucesso',
+    type: PagamentoResponseDto
+  })
+  @ApiResponse({ status: 400, description: 'Dados inválidos ou prazo de regularização expirado' })
+  @ApiResponse({ status: 404, description: 'Pagamento não encontrado' })
+  @UseGuards(PagamentoAccessGuard)
+  @OperadorOuAdmin()
+  async regularizarPagamentoVencido(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: { observacoes: string },
+    @Request() req: any,
+  ) {
+    const pagamento = await this.pagamentoService.regularizarPagamentoVencido(
+      id,
+      body.observacoes
+    );
+
+    const response = await this.mappingService.mapEntityToResponseDto(pagamento, {
+      id: req.user.id,
+      perfil: req.user.perfil,
+      unidadeId: req.user.unidadeId,
+      permissoes: req.user.permissoes || [],
+      isAdmin: req.user.isAdmin || false,
+      isSupervisor: req.user.isSupervisor || false
+    });
+    return this.responseService.success(
+      response,
+      'Pagamento regularizado com sucesso'
     );
   }
 }

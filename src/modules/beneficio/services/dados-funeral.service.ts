@@ -1,4 +1,4 @@
-import { Injectable, Inject, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, Inject, forwardRef, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
@@ -6,6 +6,7 @@ import { Cache } from 'cache-manager';
 import { UseInterceptors } from '@nestjs/common';
 import { WorkflowInterceptor } from '../../../interceptors/workflow.interceptor';
 import { CacheInterceptor } from '../../../shared/interceptors/cache.interceptor';
+import { WorkflowSolicitacaoService } from '../../solicitacao/services/workflow-solicitacao.service';
 import { DadosFuneral } from '../../../entities/dados-funeral.entity';
 import { CreateDadosFuneralDto, UpdateDadosFuneralDto } from '../dto/create-dados-funeral.dto';
 import { AbstractDadosBeneficioService } from './base/abstract-dados-beneficio.service';
@@ -31,8 +32,10 @@ export class DadosFuneralService extends AbstractDadosBeneficioService<
     @InjectRepository(DadosFuneral)
     private readonly dadosFuneralRepository: Repository<DadosFuneral>,
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
+    @Inject(forwardRef(() => WorkflowSolicitacaoService))
+    private readonly workflowSolicitacaoService: WorkflowSolicitacaoService,
   ) {
-    super(dadosFuneralRepository, 'DadosFuneral');
+    super(dadosFuneralRepository, 'DadosFuneral', workflowSolicitacaoService);
   }
 
   // Métodos CRUD básicos herdados da classe base AbstractDadosBeneficioService

@@ -24,6 +24,7 @@ import { Pendencia } from './pendencia.entity';
 import { ProcessoJudicial } from './processo-judicial.entity';
 import { DeterminacaoJudicial } from './determinacao-judicial.entity';
 import { StatusSolicitacao } from '../enums/status-solicitacao.enum';
+import { SubStatusSolicitacao } from '../enums/sub-status-solicitacao.enum';
 import { InfoBancaria } from './info-bancaria.entity';
 import { Pagamento } from './pagamento.entity';
 
@@ -144,6 +145,19 @@ export class Solicitacao {
   })
   status: StatusSolicitacao;
 
+  /**
+   * Sub-status detalha o ponto exato dentro do fluxo do estado principal
+   * (ex.: aguardando_documentos, aguardando_solucao, etc.)
+   */
+  @Column({
+    name: 'sub_status',
+    type: 'enum',
+    enum: SubStatusSolicitacao,
+    enumName: 'sub_status_solicitacao',
+    nullable: true,
+  })
+  sub_status: SubStatusSolicitacao;
+
   @Column('text', { nullable: true })
   @IsOptional()
   parecer_semtas: string;
@@ -257,6 +271,18 @@ export class Solicitacao {
   determinacao_judicial_flag: boolean;
 
   /**
+   * Quantidade de parcelas solicitadas para o benefício
+   */
+  @Column({ name: 'quantidade_parcelas', type: 'integer', default: 1 })
+  quantidade_parcelas: number;
+
+  /**
+   * Prioridade da solicitação (menor valor = maior prioridade)
+   */
+  @Column({ type: 'integer', default: 3 })
+  prioridade: number;
+
+  /**
    * Relação com solicitação original (auto-relacionamento)
    * Usado para renovações, revisões ou outras solicitações derivadas
    */
@@ -266,18 +292,6 @@ export class Solicitacao {
   @ManyToOne(() => Solicitacao, { nullable: true })
   @JoinColumn({ name: 'solicitacao_original_id' })
   solicitacao_original: Solicitacao;
-
-  /**
-   * Campos para suporte a renovação automática
-   */
-  @Column({ name: 'renovacao_automatica', type: 'boolean', default: false })
-  renovacao_automatica: boolean;
-
-  @Column({ name: 'contador_renovacoes', type: 'integer', default: 0 })
-  contador_renovacoes: number;
-
-  @Column({ name: 'data_proxima_renovacao', type: 'timestamp', nullable: true })
-  data_proxima_renovacao: Date;
 
   /**
    * Dados dinâmicos específicos para cada tipo de benefício

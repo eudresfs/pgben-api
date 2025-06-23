@@ -37,4 +37,10 @@ export enum StatusPagamentoEnum {
    * Pagamento suspenso devido à suspensão da solicitação.
    */
   SUSPENSO = 'suspenso',
+
+  /**
+   * Pagamento vencido por falta de documentação (específico para Aluguel Social).
+   * Pode ser regularizado retroativamente em até 30 dias.
+   */
+  VENCIDO = 'vencido',
 }

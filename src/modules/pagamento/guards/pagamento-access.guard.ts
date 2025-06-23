@@ -97,6 +97,10 @@ export class PagamentoAccessGuard implements CanActivate {
 
         // Verificar status da solicitação associada ao pagamento
         // Usando o método que existe no serviço
+        if (!pagamento.solicitacaoId) {
+          throw new NotFoundException('Pagamento sem solicitação associada');
+        }
+        
         const solicitacaoStatus =
           await this.solicitacaoService.verificarSolicitacaoAprovada(
             pagamento.solicitacaoId,

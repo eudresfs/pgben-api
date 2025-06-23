@@ -20,6 +20,7 @@ import { PermissionMetricasSeed } from './permission-metricas.seed';
 import { PermissionIntegradorSeed } from './permission-integrador.seed';
 import { PermissionJudicialSeed } from './permission-judicial.seed';
 import { PermissionOcorrenciaSeed } from './permission-ocorrencia.seed';
+import { PermissionMonitoringSeed } from './permission-monitoring.seed';
 import { PermissionPagamentoSeed } from './permission-pagamento.seed';
 import { PermissionRecursoSeed } from './permission-recurso.seed';
 import { PermissionRelatoriosUnificadoSeed } from './permission-relatorios-unificado.seed';
@@ -258,6 +259,9 @@ export class PermissionSeeder implements Seeder {
 
       this.logger.log('Executando seed de permissões de métricas');
       await PermissionMetricasSeed.run(dataSource);
+
+      this.logger.log('Executando seed de permissões de monitoring');
+      await PermissionMonitoringSeed.run(dataSource);
 
       this.logger.log('Executando seed de permissões de integrador');
       await PermissionIntegradorSeed.run(dataSource);

@@ -23,6 +23,7 @@ import { Solicitacao } from './solicitacao.entity';
 import { Usuario } from './usuario.entity';
 import { Cidadao } from './cidadao.entity';
 import { TipoDocumentoEnum } from '../enums';
+import { UploadSession } from '../modules/easy-upload/entities/upload-session.entity';
 
 /**
  * Entidade Documento
@@ -146,6 +147,17 @@ export class Documento {
   @IsOptional()
   @IsString()
   hash_arquivo?: string;
+
+  @Column({ nullable: true })
+  @IsOptional()
+  @IsUUID('4', { message: 'ID da sessão de upload deve ser um UUID válido' })
+  upload_session_id?: string;
+
+  @ManyToOne(() => UploadSession, (session) => session.documentos, {
+    nullable: true,
+  })
+  @JoinColumn({ name: 'upload_session_id' })
+  upload_session?: UploadSession;
 
   @Column({ nullable: true, type: 'date' })
   @IsOptional()

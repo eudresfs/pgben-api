@@ -82,7 +82,7 @@ export class IntegracaoSolicitacaoService implements IIntegracaoSolicitacaoServi
     try {
       await this.workflowSolicitacaoService.atualizarStatus(
         solicitacaoId,
-        StatusSolicitacao.EM_PROCESSAMENTO,
+        StatusSolicitacao.APROVADA,
         'Pagamento criado no sistema',
         dadosAdicionais,
       );
@@ -109,7 +109,7 @@ export class IntegracaoSolicitacaoService implements IIntegracaoSolicitacaoServi
     try {
       await this.workflowSolicitacaoService.atualizarStatus(
         solicitacaoId,
-        StatusSolicitacao.LIBERADA,
+        StatusSolicitacao.APROVADA,
         'Pagamento liberado para confirmação',
         dadosAdicionais,
       );
@@ -136,7 +136,7 @@ export class IntegracaoSolicitacaoService implements IIntegracaoSolicitacaoServi
     try {
       await this.workflowSolicitacaoService.atualizarStatus(
         solicitacaoId,
-        StatusSolicitacao.CONCLUIDA,
+        StatusSolicitacao.APROVADA,
         'Pagamento confirmado com sucesso',
         dadosAdicionais,
       );
@@ -229,9 +229,7 @@ export class IntegracaoSolicitacaoService implements IIntegracaoSolicitacaoServi
       }
 
       const statusComPagamento = [
-        StatusSolicitacao.EM_PROCESSAMENTO,
-        StatusSolicitacao.LIBERADA,
-        StatusSolicitacao.CONCLUIDA,
+        StatusSolicitacao.APROVADA,
       ];
 
       const temPagamento = statusComPagamento.includes(solicitacao.status);
@@ -425,14 +423,14 @@ export class IntegracaoSolicitacaoService implements IIntegracaoSolicitacaoServi
       switch (statusPagamento) {
         case 'PROCESSADO':
         case 'PAGO':
-          novoStatus = StatusSolicitacao.CONCLUIDA;
+          novoStatus = StatusSolicitacao.APROVADA;
           break;
         case 'CANCELADO':
         case 'REJEITADO':
           novoStatus = StatusSolicitacao.CANCELADA;
           break;
         default:
-          novoStatus = StatusSolicitacao.EM_PROCESSAMENTO;
+          novoStatus = StatusSolicitacao.APROVADA;
       }
 
       // Atualizar status usando o serviço de workflow

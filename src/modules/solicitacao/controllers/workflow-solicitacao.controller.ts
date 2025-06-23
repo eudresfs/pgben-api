@@ -165,7 +165,7 @@ export class WorkflowSolicitacaoController {
   @ApiOperation({
     summary: 'Aprova uma solicitação',
     description:
-      'Altera o estado de uma solicitação de EM_ANALISE para APROVADA.',
+      'Altera o estado de uma solicitação de EM_ANALISE para APROVADA. No novo ciclo de vida simplificado, APROVADA é um status final que indica que a solicitação foi deferida.',
   })
   @ApiResponse({
     status: 200,
@@ -184,33 +184,7 @@ export class WorkflowSolicitacaoController {
     );
   }
 
-  /**
-   * Libera uma solicitação
-   * @param solicitacaoId ID da solicitação
-   * @param req Requisição
-   * @returns Resultado da transição
-   */
-  @Post(':solicitacaoId/liberar')
-  @RequiresPermission({
-    permissionName: 'solicitacao.liberar',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'solicitacao.unidadeId',
-  })
-  @ApiOperation({
-    summary: 'Libera uma solicitação',
-    description:
-      'Altera o estado de uma solicitação de APROVADA para LIBERADA.',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Solicitação liberada com sucesso',
-  })
-  async liberarSolicitacao(
-    @Param('solicitacaoId', ParseUUIDPipe) solicitacaoId: string,
-    @Req() req: any,
-  ): Promise<ResultadoTransicaoEstado> {
-    return this.workflowService.liberarSolicitacao(solicitacaoId, req.user.id);
-  }
+  // Endpoint de liberação removido - não faz parte do novo ciclo de vida simplificado
 
   /**
    * Rejeita uma solicitação
@@ -279,92 +253,7 @@ export class WorkflowSolicitacaoController {
     );
   }
 
-  /**
-   * Inicia o processamento de uma solicitação
-   * @param solicitacaoId ID da solicitação
-   * @param req Requisição
-   * @returns Resultado da transição
-   */
-  @Post(':solicitacaoId/iniciar-processamento')
-  @RequiresPermission({
-    permissionName: 'solicitacao.processar',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'solicitacao.unidadeId',
-  })
-  @ApiOperation({
-    summary: 'Inicia o processamento de uma solicitação',
-    description:
-      'Altera o estado de uma solicitação de LIBERADA para EM_PROCESSAMENTO.',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Processamento iniciado com sucesso',
-  })
-  async iniciarProcessamento(
-    @Param('solicitacaoId', ParseUUIDPipe) solicitacaoId: string,
-    @Req() req: any,
-  ): Promise<ResultadoTransicaoEstado> {
-    return this.workflowService.iniciarProcessamento(
-      solicitacaoId,
-      req.user.id,
-    );
-  }
-
-  /**
-   * Conclui uma solicitação
-   * @param solicitacaoId ID da solicitação
-   * @param req Requisição
-   * @returns Resultado da transição
-   */
-  @Post(':solicitacaoId/concluir')
-  @RequiresPermission({
-    permissionName: 'solicitacao.concluir',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'solicitacao.unidadeId',
-  })
-  @ApiOperation({
-    summary: 'Conclui uma solicitação',
-    description:
-      'Altera o estado de uma solicitação de EM_PROCESSAMENTO para CONCLUIDA.',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Solicitação concluída com sucesso',
-  })
-  async concluirSolicitacao(
-    @Param('solicitacaoId', ParseUUIDPipe) solicitacaoId: string,
-    @Req() req: any,
-  ): Promise<ResultadoTransicaoEstado> {
-    return this.workflowService.concluirSolicitacao(solicitacaoId, req.user.id);
-  }
-
-  /**
-   * Arquiva uma solicitação
-   * @param solicitacaoId ID da solicitação
-   * @param req Requisição
-   * @returns Resultado da transição
-   */
-  @Post(':solicitacaoId/arquivar')
-  @RequiresPermission({
-    permissionName: 'solicitacao.arquivar',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'solicitacao.unidadeId',
-  })
-  @ApiOperation({
-    summary: 'Arquiva uma solicitação',
-    description: 'Altera o estado de uma solicitação para ARQUIVADA.',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Solicitação arquivada com sucesso',
-  })
-  async arquivarSolicitacao(
-    @Param('solicitacaoId', ParseUUIDPipe) solicitacaoId: string,
-    @Req() req: any,
-  ): Promise<ResultadoTransicaoEstado> {
-    return this.workflowService.arquivarSolicitacao(solicitacaoId, req.user.id);
-  }
-
+  
   /**
    * Realiza uma transição de estado genérica
    * @param solicitacaoId ID da solicitação

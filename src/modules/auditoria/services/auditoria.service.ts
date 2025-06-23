@@ -21,6 +21,9 @@ import { QueryLogAuditoriaDto } from '../dto/query-log-auditoria.dto';
  */
 @Injectable()
 export class AuditoriaService {
+  registrarAuditoria(arg0: { usuario_id: null; acao: string; recurso: string; recurso_id: any; detalhes: { token_value: string; is_valid: boolean; validation_errors: any; }; ip_address: string | undefined; user_agent: string | undefined; }) {
+    throw new Error('Method not implemented.');
+  }
   constructor(
     @InjectRepository(LogAuditoria)
     private readonly logAuditoriaRepository: Repository<LogAuditoria>,

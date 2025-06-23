@@ -564,6 +564,94 @@ export class AblyService implements OnModuleInit, OnModuleDestroy {
   }
 
   /**
+   * Verifica se o cliente está conectado ao Ably
+   */
+  async isConnected(): Promise<boolean> {
+    try {
+      if (!this.ablyClient) {
+        return false;
+      }
+      
+      return this.connectionStatus === 'connected' && 
+             this.ablyClient.connection.state === 'connected';
+    } catch (error) {
+      this.logger.error('Erro ao verificar status de conexão:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Publica uma mensagem em um canal específico
+   * Método compatível com o notification-manager
+   */
+  async publishMessage(
+    channelName: string,
+    eventName: string,
+    data: any
+  ): Promise<{ success: boolean; messageId?: string; error?: string }> {
+    try {
+      // Verificar se está conectado
+      if (!await this.isConnected()) {
+        return {
+          success: false,
+          error: 'Cliente Ably não está conectado'
+        };
+      }
+
+      // Validar parâmetros
+      if (!channelName || !eventName) {
+        return {
+          success: false,
+          error: 'Nome do canal e evento são obrigatórios'
+        };
+      }
+
+      // Verificar se o canal está permitido
+      if (!this.ablyConfig.isChannelAllowed(channelName)) {
+        return {
+          success: false,
+          error: `Canal ${channelName} não permitido pela configuração`
+        };
+      }
+
+      // Obter canal
+      const fullChannelName = this.ablyConfig.getChannelName(channelName);
+      const channel = this.getChannel(fullChannelName);
+      
+      // Validar tamanho da mensagem
+      const payloadSize = Buffer.byteLength(JSON.stringify(data), 'utf8');
+      if (payloadSize > this.ablyConfig.maxMessageSize) {
+        return {
+          success: false,
+          error: `Tamanho da mensagem (${payloadSize} bytes) excede o limite configurado`
+        };
+      }
+
+      // Publicar mensagem
+      await channel.publish(eventName, data);
+      
+      // Atualizar métricas
+      this.metrics.totalMessages++;
+      this.metrics.messagesPublished++;
+      
+      const messageId = `${fullChannelName}-${Date.now()}`;
+      this.logger.debug(`Mensagem publicada no canal ${fullChannelName} com evento ${eventName}, ID: ${messageId}`);
+      
+      return {
+        success: true,
+        messageId
+      };
+    } catch (error) {
+      this.logger.error(`Erro ao publicar mensagem no canal ${channelName}:`, error);
+      
+      return {
+        success: false,
+        error: error.message || 'Erro desconhecido ao publicar mensagem'
+      };
+    }
+  }
+
+  /**
    * Retorna o último erro ocorrido
    */
   getLastError(): string | null {

@@ -157,8 +157,8 @@ export class SolicitacaoRepository {
       )
       .andWhere('solicitacao.status NOT IN (:...statusFinais)', {
         statusFinais: [
-          StatusSolicitacao.CONCLUIDA,
-          StatusSolicitacao.ARQUIVADA,
+          StatusSolicitacao.APROVADA,
+          StatusSolicitacao.INDEFERIDA,
           StatusSolicitacao.CANCELADA,
         ],
       })
@@ -188,8 +188,8 @@ export class SolicitacaoRepository {
       )
       .andWhere('solicitacao.status NOT IN (:...statusFinais)', {
         statusFinais: [
-          StatusSolicitacao.CONCLUIDA,
-          StatusSolicitacao.ARQUIVADA,
+          StatusSolicitacao.APROVADA,
+          StatusSolicitacao.INDEFERIDA,
           StatusSolicitacao.CANCELADA,
         ],
       })
@@ -235,12 +235,12 @@ export class SolicitacaoRepository {
   /**
    * Busca solicitações de um beneficiário
    * @param beneficiarioId ID do beneficiário
-   * @param incluirArquivadas Se deve incluir solicitações arquivadas
+   * @param incluirFinalizadas Se deve incluir solicitações finalizadas (aprovadas, indeferidas, canceladas)
    * @returns Lista de solicitações do beneficiário
    */
   async buscarPorBeneficiario(
     beneficiarioId: string,
-    incluirArquivadas: boolean = false,
+    incluirFinalizadas: boolean = false,
   ): Promise<Solicitacao[]> {
     const queryBuilder = this.repository
       .createQueryBuilder('solicitacao')
@@ -251,9 +251,13 @@ export class SolicitacaoRepository {
       })
       .orderBy('solicitacao.created_at', 'DESC');
 
-    if (!incluirArquivadas) {
-      queryBuilder.andWhere('solicitacao.status != :statusArquivada', {
-        statusArquivada: StatusSolicitacao.ARQUIVADA,
+    if (!incluirFinalizadas) {
+      queryBuilder.andWhere('solicitacao.status NOT IN (:...statusFinais)', {
+        statusFinais: [
+          StatusSolicitacao.APROVADA,
+          StatusSolicitacao.INDEFERIDA,
+          StatusSolicitacao.CANCELADA,
+        ],
       });
     }
 

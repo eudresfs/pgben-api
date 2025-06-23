@@ -1,13 +1,11 @@
-import { Injectable, Logger, ConflictException, NotFoundException, BadRequestException } from '@nestjs/common';
-import { Repository, FindManyOptions } from 'typeorm';
-import {
-  throwBeneficioNotFound,
-  throwBeneficioAlreadyExists,
-  BeneficioValidationErrorBuilder,
-  BENEFICIO_TECH_MESSAGES,
-  BeneficioErrorContext,
-} from '../../../../shared/exceptions/error-catalog/domains/beneficio.errors';
-import { BENEFICIO_CONSTANTS } from '../../../../shared/constants/beneficio.constants';
+import { Injectable, Logger, ConflictException, NotFoundException, BadRequestException, Inject, forwardRef } from '@nestjs/common';
+import { Repository, FindManyOptions, DeepPartial } from 'typeorm';
+import { WorkflowSolicitacaoService } from '../../../solicitacao/services/workflow-solicitacao.service';
+import { StatusSolicitacao } from '@/enums/status-solicitacao.enum';
+import { SubStatusSolicitacao } from '@/enums/sub-status-solicitacao.enum';
+import { Solicitacao } from '../../../../entities/solicitacao.entity';
+import { PaginationParamsDto } from '../../../../shared/dtos/pagination-params.dto';
+import { PaginatedResult } from '../../../../common/interfaces/paginated-result.interface';
 
 /**
  * Interface para entidade de dados de benefício
@@ -61,6 +59,8 @@ export abstract class AbstractDadosBeneficioService<
   constructor(
     protected readonly repository: Repository<TEntity>,
     protected readonly entityName: string,
+    @Inject(forwardRef(() => WorkflowSolicitacaoService))
+    protected readonly workflowService?: WorkflowSolicitacaoService,
   ) {}
 
   /**
@@ -92,6 +92,13 @@ export abstract class AbstractDadosBeneficioService<
     // Criar e salvar entidade
     const entity = this.repository.create(createDto as any);
     const savedEntity = await this.repository.save(entity);
+    
+    this.logger.log(
+      `Dados de ${this.entityName} criados com sucesso para solicitação ${createDto.solicitacao_id}`,
+    );
+
+    // Atualizar status e substatus da solicitação após criação bem-sucedida
+    await this.atualizarStatusSolicitacao(createDto.solicitacao_id, createDto.usuario_id);
     
     return savedEntity as unknown as TEntity;
   }
@@ -179,25 +186,88 @@ export abstract class AbstractDadosBeneficioService<
   /**
    * Buscar todos os dados com paginação
    */
-  async findAll(
-    page: number = 1,
-    limit: number = 10,
-    filters?: any,
-  ): Promise<IPaginatedResult<TEntity>> {
+  async findAll(paginationDto: PaginationParamsDto): Promise<PaginatedResult<TEntity>> {
+    const { limit = 10, offset = 0 } = paginationDto;
+    const page = Math.floor(offset / limit) + 1;
+
     const [data, total] = await this.repository.findAndCount({
-      relations: ['solicitacao'],
-      skip: (page - 1) * limit,
+      skip: offset,
       take: limit,
-      where: filters,
       order: { created_at: 'DESC' } as any,
     });
 
     return {
       data,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
     };
+  }
+
+  /**
+   * Atualizar status e substatus da solicitação após cadastro dos dados específicos
+   * @param solicitacaoId ID da solicitação
+   * @param usuarioId ID do usuário que realizou a operação
+   */
+  private async atualizarStatusSolicitacao(solicitacaoId: string, usuarioId?: string): Promise<void> {
+    try {
+      if (!this.workflowService) {
+        this.logger.warn('WorkflowSolicitacaoService não disponível para atualização de status');
+        return;
+      }
+
+      // Buscar a solicitação atual para verificar o status
+      const solicitacao = await this.repository.manager.findOne(Solicitacao, {
+        where: { id: solicitacaoId },
+        select: ['id', 'status', 'sub_status']
+      });
+
+      if (!solicitacao) {
+        this.logger.warn(`Solicitação ${solicitacaoId} não encontrada para atualização de status`);
+        return;
+      }
+
+      // Só atualizar se o status não for 'aberta' ou se o substatus não for 'aguardando_documentos'
+      const needsStatusUpdate = solicitacao.status !== StatusSolicitacao.ABERTA;
+      const needsSubstatusUpdate = solicitacao.sub_status !== SubStatusSolicitacao.AGUARDANDO_DOCUMENTOS;
+
+      if (needsStatusUpdate || needsSubstatusUpdate) {
+        // Atualizar status para 'aberta' se necessário
+        if (needsStatusUpdate) {
+          await this.workflowService.atualizarStatus(
+            solicitacaoId,
+            StatusSolicitacao.ABERTA,
+            usuarioId || 'system',
+            {
+              observacao: `Status atualizado automaticamente após cadastro dos dados específicos de ${this.entityName}`
+            }
+          );
+        }
+
+        // Atualizar substatus para 'aguardando_documentos'
+        if (needsSubstatusUpdate) {
+          await this.repository.manager.update('Solicitacao', 
+            { id: solicitacaoId },
+            { 
+              sub_status: SubStatusSolicitacao.AGUARDANDO_DOCUMENTOS,
+              updated_at: new Date()
+            }
+          );
+        }
+
+        this.logger.log(
+          `Status da solicitação ${solicitacaoId} atualizado para 'aberta' com substatus 'aguardando_documentos' após cadastro de dados de ${this.entityName}`
+        );
+      }
+    } catch (error) {
+      this.logger.error(
+        `Erro ao atualizar status da solicitação ${solicitacaoId}: ${error.message}`,
+        error.stack
+      );
+      // Não propagar o erro para não afetar a criação dos dados de benefício
+    }
   }
 }

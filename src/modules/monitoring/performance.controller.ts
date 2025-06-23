@@ -13,6 +13,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@ne
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
 import { Roles } from '../../auth/decorators/role.decorator';
+import { RequiresPermission } from '../../auth/decorators/requires-permission.decorator';
 import { PerformanceMonitorMiddleware, PerformanceMetrics } from '../../common/middleware/performance-monitor.middleware';
 import { IsOptional, IsEnum, IsDateString, IsNumber, Min } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
@@ -67,6 +68,7 @@ export class PerformanceController {
    * Obtém estatísticas gerais de performance
    */
   @Get('stats')
+  @RequiresPermission({ permissionName: 'monitoring.performance.stats.visualizar' })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Obter estatísticas de performance',
@@ -160,6 +162,7 @@ export class PerformanceController {
    * Obtém métricas detalhadas com filtros
    */
   @Get('metrics')
+  @RequiresPermission({ permissionName: 'monitoring.performance.metrics.visualizar' })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Obter métricas detalhadas',
@@ -285,6 +288,7 @@ export class PerformanceController {
    * Limpa o cache de métricas
    */
   @Get('clear')
+  @RequiresPermission({ permissionName: 'monitoring.performance.metrics.limpar' })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Limpar cache de métricas',
@@ -327,6 +331,7 @@ export class PerformanceController {
    * Obtém informações do sistema
    */
   @Get('system')
+  @RequiresPermission({ permissionName: 'monitoring.performance.system.visualizar' })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Obter informações do sistema',

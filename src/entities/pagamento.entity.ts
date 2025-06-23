@@ -23,6 +23,7 @@ import { StatusPagamentoEnum } from '../enums/status-pagamento.enum';
 import { MetodoPagamentoEnum } from '../enums/metodo-pagamento.enum';
 import { Usuario } from './usuario.entity';
 import { Solicitacao } from './solicitacao.entity';
+import { Concessao } from './concessao.entity';
 import { InfoBancaria } from './info-bancaria.entity';
 
 /**
@@ -36,6 +37,7 @@ import { InfoBancaria } from './info-bancaria.entity';
 @Entity('pagamento')
 @Index('idx_pagamento_status_created_at', ['status', 'created_at'])
 @Index('idx_pagamento_solicitacao_id', ['solicitacaoId'])
+@Index('idx_pagamento_concessao_id', ['concessaoId'])
 @Index('idx_pagamento_info_bancaria_id', ['infoBancariaId'], { 
   where: 'info_bancaria_id IS NOT NULL' 
 })
@@ -60,10 +62,18 @@ export class Pagamento {
   /**
    * Referência à solicitação aprovada que originou este pagamento
    */
-  @Column({ name: 'solicitacao_id' })
-  @IsNotEmpty({ message: 'ID da solicitação é obrigatório' })
+  @Column({ name: 'solicitacao_id', nullable: true })
+  @IsOptional()
   @IsUUID('4', { message: 'ID da solicitação inválido' })
-  solicitacaoId: string;
+  solicitacaoId: string | null;
+
+  /**
+   * Referência à concessão que originou este pagamento
+   */
+  @Column({ name: 'concessao_id', nullable: true })
+  @IsOptional()
+  @IsUUID('4', { message: 'ID da concessão inválido' })
+  concessaoId: string | null;
 
   /**
    * Referência às informações bancárias/PIX utilizadas para o pagamento
@@ -119,6 +129,20 @@ export class Pagamento {
   dataConclusao: Date;
 
   /**
+   * Data de vencimento do pagamento (específico para Aluguel Social)
+   */
+  @Column({ name: 'data_vencimento', type: 'date', nullable: true })
+  @IsOptional()
+  dataVencimento: Date;
+
+  /**
+   * Data de regularização do pagamento vencido
+   */
+  @Column({ name: 'data_regularizacao', type: 'date', nullable: true })
+  @IsOptional()
+  dataRegularizacao: Date;
+
+  /**
    * Status atual do pagamento no sistema
    */
   @Column({
@@ -163,7 +187,23 @@ export class Pagamento {
   @IsOptional()
   @IsUUID('4', { message: 'ID do comprovante inválido' })
   comprovanteId: string;
+  
+  /**
+   * Número da parcela atual (para pagamentos com múltiplas parcelas)
+   */
+  @Column({ name: 'numero_parcela', default: 1 })
+  @IsNumber({}, { message: 'Número da parcela deve ser um valor numérico' })
+  @Min(1, { message: 'Número da parcela deve ser maior ou igual a 1' })
+  numeroParcela: number;
 
+  /**
+   * Total de parcelas previstas para o benefício
+   */
+  @Column({ name: 'total_parcelas', default: 1 })
+  @IsNumber({}, { message: 'Total de parcelas deve ser um valor numérico' })
+  @Min(1, { message: 'Total de parcelas deve ser maior ou igual a 1' })
+  totalParcelas: number;
+  
   /**
    * Observações adicionais sobre o pagamento
    */
@@ -195,6 +235,10 @@ export class Pagamento {
   @ManyToOne(() => Solicitacao)
   @JoinColumn({ name: 'solicitacao_id' })
   solicitacao: Solicitacao;
+
+  @ManyToOne(() => Concessao)
+  @JoinColumn({ name: 'concessao_id' })
+  concessao: Concessao;
 
   @ManyToOne(() => InfoBancaria)
   @JoinColumn({ name: 'info_bancaria_id' })

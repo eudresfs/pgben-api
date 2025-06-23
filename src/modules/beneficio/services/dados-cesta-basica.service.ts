@@ -1,4 +1,4 @@
-import { Injectable, Inject, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, Inject, forwardRef, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
@@ -6,6 +6,7 @@ import { Cache } from 'cache-manager';
 import { UseInterceptors } from '@nestjs/common';
 import { WorkflowInterceptor } from '../../../interceptors/workflow.interceptor';
 import { CacheInterceptor } from '../../../shared/interceptors/cache.interceptor';
+import { WorkflowSolicitacaoService } from '../../solicitacao/services/workflow-solicitacao.service';
 import { DadosCestaBasica } from '../../../entities/dados-cesta-basica.entity';
 import { CreateDadosCestaBasicaDto, UpdateDadosCestaBasicaDto } from '../dto/create-dados-cesta-basica.dto';
 import { AbstractDadosBeneficioService } from './base/abstract-dados-beneficio.service';
@@ -31,8 +32,10 @@ export class DadosCestaBasicaService extends AbstractDadosBeneficioService<
     @InjectRepository(DadosCestaBasica)
     private readonly dadosCestaBasicaRepository: Repository<DadosCestaBasica>,
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
+    @Inject(forwardRef(() => WorkflowSolicitacaoService))
+    private readonly workflowSolicitacaoService: WorkflowSolicitacaoService,
   ) {
-    super(dadosCestaBasicaRepository, 'DadosCestaBasica');
+    super(dadosCestaBasicaRepository, 'DadosCestaBasica', workflowSolicitacaoService);
   }
 
   // Métodos CRUD básicos herdados da classe base
