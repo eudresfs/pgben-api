@@ -558,6 +558,44 @@ export class DocumentoService {
   }
 
   /**
+   * Busca documentos com base em um campo específico nos metadados
+   * @param chave Nome da chave no objeto metadados
+   * @param valor Valor a ser buscado
+   * @returns Lista de documentos que correspondem ao critério
+   */
+  async findByMetadata(chave: string, valor: any) {
+    const queryBuilder = this.documentoRepository
+      .createQueryBuilder('documento')
+      .leftJoinAndSelect('documento.usuario_upload', 'usuario_upload')
+      .leftJoinAndSelect('documento.usuario_verificacao', 'usuario_verificacao')
+      .where(`documento.metadados->>'${chave}' = :valor`, { valor })
+      .andWhere('documento.removed_at IS NULL')
+      .orderBy('documento.data_upload', 'DESC');
+
+    return queryBuilder.getMany();
+  }
+
+  /**
+   * Busca documentos por IDs de sessão de upload
+   * @param sessionIds Lista de IDs de sessões de upload
+   * @returns Lista de documentos associados às sessões de upload especificadas
+   */
+  async findByUploadSessionIds(sessionIds: string[]): Promise<Documento[]> {
+    if (!sessionIds || sessionIds.length === 0) {
+      return [];
+    }
+    
+    return this.documentoRepository
+      .createQueryBuilder('documento')
+      .leftJoinAndSelect('documento.usuario_upload', 'usuario_upload')
+      .leftJoinAndSelect('documento.usuario_verificacao', 'usuario_verificacao')
+      .where('documento.upload_session_id IN (:...sessionIds)', { sessionIds })
+      .andWhere('documento.removed_at IS NULL')
+      .orderBy('documento.data_upload', 'DESC')
+      .getMany();
+  }
+
+  /**
    * Obtém estatísticas de documentos
    */
   async getEstatisticas(cidadaoId?: string) {

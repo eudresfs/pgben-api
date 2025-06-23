@@ -27,6 +27,7 @@ import { ResilienceModule } from './shared/modules/resilience.module';
 import { EmailModule } from './shared/modules/email.module';
 import { ConfiguracaoModule } from './modules/configuracao/configuracao.module';
 import { NotificacaoModule } from './modules/notificacao/notificacao.module';
+import { EasyUploadModule } from './modules/easy-upload/easy-upload.module';
 
 @Module({
   imports: [
@@ -125,6 +126,9 @@ import { NotificacaoModule } from './modules/notificacao/notificacao.module';
 
     // Módulo de notificações
     NotificacaoModule,
+
+    // Módulo de upload facilitado
+    // EasyUploadModule,
   ],
   controllers: [AppController],
   providers: [

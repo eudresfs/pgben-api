@@ -6,26 +6,6 @@
     "auditLog": "C:\\Users\\eudre\\OneDrive\\Desktop\\Projetos\\pgben\\pgben-server\\logs\\.4e76890d2ac87c5c91525b19217924b5ffbab657-audit.json",
     "files": [
         {
-            "date": 1747736072803,
-            "name": "C:\\Users\\eudre\\OneDrive\\Desktop\\Projetos\\pgben\\pgben-server\\logs\\error-2025-05-20.log",
-            "hash": "578d9d3c473e89a8824a63d363792bc3d891caa7a592c312cd53a16a8d2cae39"
-        },
-        {
-            "date": 1747827870870,
-            "name": "C:\\Users\\eudre\\OneDrive\\Desktop\\Projetos\\pgben\\pgben-server\\logs\\error-2025-05-21.log",
-            "hash": "897400f6de7bb9ea16ec5094eaa9440e6418645100094052774bbe1f46334a60"
-        },
-        {
-            "date": 1747908203478,
-            "name": "C:\\Users\\eudre\\OneDrive\\Desktop\\Projetos\\pgben\\pgben-server\\logs\\error-2025-05-22.log",
-            "hash": "952c3218d07ab3f238cbf5f677cc6ed4cb77e81ea34c86cb6e7d1732c9276c64"
-        },
-        {
-            "date": 1747991787627,
-            "name": "C:\\Users\\eudre\\OneDrive\\Desktop\\Projetos\\pgben\\pgben-server\\logs\\error-2025-05-23.log",
-            "hash": "f529cf9e4ecbafe1b5f88ab7afac35355891d7276fb663dca0e3e7d289866b4d"
-        },
-        {
             "date": 1748208568211,
             "name": "C:\\Users\\eudre\\OneDrive\\Desktop\\Projetos\\pgben\\pgben-server\\logs\\error-2025-05-25.log",
             "hash": "701508486dad598c281cec1bb48f7f146eb112188db93bb43067cbd16f9586d3"
@@ -144,6 +124,21 @@
             "date": 1750252235550,
             "name": "C:\\Users\\eudre\\OneDrive\\Desktop\\Projetos\\pgben\\pgben-server\\logs\\error-2025-06-18.log",
             "hash": "1d40eba64df00f6005a66ed454cc92520788d33a0564a2fdb97b51172bbef2c4"
+        },
+        {
+            "date": 1750302000540,
+            "name": "C:\\Users\\eudre\\OneDrive\\Desktop\\Projetos\\pgben\\pgben-server\\logs\\error-2025-06-19.log",
+            "hash": "210cbbb89cb5941b59d4fd59e1a03e28633bcd434f83227d4a6a701dd2836104"
+        },
+        {
+            "date": 1750421642887,
+            "name": "C:\\Users\\eudre\\OneDrive\\Desktop\\Projetos\\pgben\\pgben-server\\logs\\error-2025-06-20.log",
+            "hash": "bfcdd4467720bf53a49588c1418df001f15fbf730afd53040c6761da9b018425"
+        },
+        {
+            "date": 1750685081629,
+            "name": "C:\\Users\\eudre\\OneDrive\\Desktop\\Projetos\\pgben\\pgben-server\\logs\\error-2025-06-23.log",
+            "hash": "c11c3750f00430d73617fb5b9fa7a71b21b2720e754b72b6471b5559370ea13d"
         }
     ],
     "hashType": "sha256"

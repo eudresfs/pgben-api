@@ -38,6 +38,14 @@ export class UploadDocumentoDto {
   @IsUUID('4', { message: 'ID da solicitação inválido' })
   solicitacao_id?: string;
 
+  @ApiPropertyOptional({
+    description: 'ID da sessão de upload (usado pelo módulo easy-upload)',
+    example: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
+  })
+  @IsOptional()
+  @IsUUID('4', { message: 'ID da sessão de upload inválido' })
+  upload_session_id?: string;
+
   @ApiProperty({
     description: 'Tipo do documento',
     enum: TipoDocumentoEnum,
