@@ -59,7 +59,7 @@ export class MimeValidationService {
    * Valida arquivo completo incluindo MIME type, extensão e segurança
    */
   async validateFile(
-    file: multer.File,
+    file: any,
     tipoBeneficio?: string,
     validationId?: string,
   ): Promise<MimeValidationResult> {
@@ -109,7 +109,7 @@ export class MimeValidationService {
    * Executa a validação completa do arquivo
    */
   private async performValidation(
-    file: multer.File,
+    file: any,
     config: MimeValidationConfig,
     validationId: string,
   ): Promise<MimeValidationResult> {
