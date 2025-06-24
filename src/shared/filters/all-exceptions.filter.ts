@@ -13,7 +13,7 @@ import { ValidationError } from 'class-validator';
 import { REQUEST_ID_TOKEN_HEADER } from '../constants';
 import { createRequestContext } from '../request-context/util';
 import { BaseApiException } from '../exceptions/base-api.exception';
-import { UnifiedLoggerService } from '../logging/unified-logger.service';
+import { LoggingService } from '../logging/logging.service';
 import { ApiErrorResponse } from '../dtos/api-error-response.dto';
 
 /**
@@ -34,9 +34,9 @@ import { ApiErrorResponse } from '../dtos/api-error-response.dto';
 export class AllExceptionsFilter<T> implements ExceptionFilter {
   constructor(
     private readonly config: ConfigService,
-    private readonly logger: UnifiedLoggerService,
+    private readonly logger: LoggingService,
   ) {
-    this.logger.setContext(AllExceptionsFilter.name);
+
   }
 
   catch(exception: T, host: ArgumentsHost): any {
@@ -139,9 +139,9 @@ export class AllExceptionsFilter<T> implements ExceptionFilter {
     };
 
     if (logLevel === 'error') {
-      this.logger.error(requestContext, logMessage, logMeta);
+      this.logger.error(logMessage, exception instanceof Error ? exception : undefined, AllExceptionsFilter.name, logMeta);
     } else {
-      this.logger.warn(requestContext, logMessage, logMeta);
+      this.logger.warn(logMessage, AllExceptionsFilter.name, logMeta);
     }
 
     // Proteger dados sensíveis em produção

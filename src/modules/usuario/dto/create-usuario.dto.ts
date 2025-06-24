@@ -47,16 +47,7 @@ export class CreateUsuarioDto {
   @IsOptional()
   @MinLength(8, { message: 'Senha deve ter no mínimo 8 caracteres' })
   @MaxLength(30, { message: 'Senha deve ter no máximo 30 caracteres' })
-  @Matches(
-    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$/,
-    {
-      message:
-        'Senha deve conter pelo menos uma letra maiúscula, uma minúscula, um número e um caractere especial',
-    },
-  )
-  @Validate(IsStrongPassword, {
-    message: 'A senha não pode conter informações pessoais ou palavras comuns',
-  })
+  @Validate(IsStrongPassword)
   @ApiProperty({
     example: 'Senha@123',
     description:

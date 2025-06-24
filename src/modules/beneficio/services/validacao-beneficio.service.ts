@@ -7,7 +7,7 @@ import { TipoBeneficio } from '../../../entities/tipo-beneficio.entity';
 import { StatusSolicitacao } from '../../../enums/status-solicitacao.enum';
 import { StatusConcessao } from '../../../enums/status-concessao.enum';
 import { addMonths, isAfter } from 'date-fns';
-import { UnifiedLoggerService } from '../../../shared/logging/unified-logger.service';
+import { LoggingService } from '../../../shared/logging/logging.service';
 
 /**
  * Serviço responsável por centralizar as validações específicas para benefícios
@@ -22,7 +22,7 @@ export class ValidacaoBeneficioService {
     private readonly concessaoRepository: Repository<Concessao>,
     @InjectRepository(TipoBeneficio)
     private readonly tipoBeneficioRepository: Repository<TipoBeneficio>,
-    private readonly logger: UnifiedLoggerService,
+    private readonly logger: LoggingService,
   ) {}
 
   /**
@@ -52,7 +52,10 @@ export class ValidacaoBeneficioService {
       // Validar se a determinação judicial existe e está ativa
       await this.validarDocumentoJudicial(determinacao_judicial_id);
       
-      this.logger.log(`Criando solicitação por determinação judicial para beneficiário ${beneficiario_id}`);
+      this.logger.info(
+        `Criando solicitação por determinação judicial para beneficiário ${beneficiario_id}`,
+        ValidacaoBeneficioService.name,
+      );
       // Ignoramos duplicidade e carência, mas validamos quantidade de parcelas
       await this.validarQuantidadeParcelas(tipo_beneficio_id, quantidade_parcelas, true);
       return;

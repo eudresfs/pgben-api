@@ -92,6 +92,7 @@ export class SolicitacaoService {
     data_inicio?: string;
     data_fim?: string;
     user: any;
+    scopeContext?: any;
   }) {
     const {
       page = 1,
@@ -103,6 +104,7 @@ export class SolicitacaoService {
       data_inicio,
       data_fim,
       user,
+      scopeContext,
     } = options;
 
     const queryBuilder =
@@ -143,20 +145,47 @@ export class SolicitacaoService {
         'documentos.data_upload',
       ]);
 
-    // Aplicar filtros
+    // Aplicar filtros baseados em parâmetros de consulta
     if (status) {
       queryBuilder.andWhere('solicitacao.status = :status', { status });
     }
+    
+    // Verificar se o usuário possui roles ADMIN ou GESTOR
+    const isAdminOrGestor = scopeContext && 
+      scopeContext.roles && 
+      (scopeContext.roles.includes(ROLES.ADMIN) || 
+       scopeContext.roles.includes(ROLES.GESTOR));
 
-    // Filtro por unidade com verificação de permissão
-    if (unidade_id) {
+    this.logger.debug(`Usuário é ADMIN ou GESTOR? ${isAdminOrGestor}`);
+    
+    // Filtro por escopo
+    if (!isAdminOrGestor && scopeContext) {
+      // Aplicar filtro baseado no escopo (UNIT, SELF, GLOBAL)
+      if (scopeContext.scopeType === 'UNIT') {
+        // Se foi passado unidade_id específico na query, usar ele
+        // Caso contrário, usar a unidade do usuário
+        const unidadeIdToFilter = unidade_id || scopeContext.unidadeId;
+        
+        if (unidadeIdToFilter) {
+          this.logger.debug(`Aplicando filtro por unidade: ${unidadeIdToFilter}`);
+          queryBuilder.andWhere('solicitacao.unidade_id = :unidade_id', {
+            unidade_id: unidadeIdToFilter,
+          });
+        } else {
+          this.logger.warn(`Escopo UNIT, mas nenhuma unidade_id disponível para filtro`);
+        }
+      } else if (scopeContext.scopeType === 'SELF') {
+        // Filtrar apenas solicitações onde o usuário é o técnico responsável
+        this.logger.debug(`Aplicando filtro SELF para usuário: ${scopeContext.userId}`);
+        queryBuilder.andWhere('solicitacao.tecnico_id = :userId', {
+          userId: scopeContext.userId,
+        });
+      }
+      // Para GLOBAL não aplicamos filtros adicionais
+    } else if (unidade_id) {
+      // Se usuário é ADMIN/GESTOR mas explicitamente solicitou filtrar por unidade
       queryBuilder.andWhere('solicitacao.unidade_id = :unidade_id', {
-        unidade_id,
-      });
-    } else if (![ROLES.ADMIN, ROLES.GESTOR].includes(user.role)) {
-      // Usuários que não são admin ou gestor SEMTAS só podem ver solicitações da sua unidade
-      queryBuilder.andWhere('solicitacao.unidade_id = :unidade_id', {
-        unidade_id: user.unidade_id,
+        unidade_id: unidade_id,
       });
     }
 

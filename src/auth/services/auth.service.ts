@@ -5,7 +5,7 @@ import { plainToClass } from 'class-transformer';
 import { Request } from 'express';
 import { RoleType } from '../../shared/constants/roles.constants';
 
-import { AppLogger } from '../../shared/logger/logger.service';
+import { LoggingService } from '../../shared/logging/logging.service';
 import { RequestContext } from '../../shared/request-context/request-context.dto';
 import { UsuarioService } from '../../modules/usuario/services/usuario.service';
 import { RegisterInput } from '../dtos/auth-register-input.dto';
@@ -42,20 +42,20 @@ export class AuthService {
     private refreshTokenService: RefreshTokenService,
     private jwtService: JwtService,
     private configService: ConfigService,
-    private readonly logger: AppLogger,
+    private readonly logger: LoggingService,
     private readonly permissionService: PermissionService,
   ) {
-    this.logger.setContext(AuthService.name);
+    // O contexto agora é passado diretamente nos métodos de log
 
     // Log das configurações de token
     const accessTokenExpiresIn = this.getAccessTokenExpiresIn();
     const refreshTokenExpiresIn = this.getRefreshTokenExpiresIn();
 
-    this.logger.log(
-      {} as RequestContext,
+    this.logger.info(
       `Configuração de tokens - Access Token: ${accessTokenExpiresIn}, ` +
-        `Refresh Token: ${refreshTokenExpiresIn} ` +
-        `(em segundos: ${this.timeToSeconds(refreshTokenExpiresIn)})`,
+      `Refresh Token: ${refreshTokenExpiresIn} ` +
+      `(em segundos: ${this.timeToSeconds(refreshTokenExpiresIn)})`,
+      AuthService.name
     );
 
     // Debug das variáveis de ambiente
@@ -122,8 +122,8 @@ export class AuthService {
 
     // Fallback para valores que não conseguimos interpretar
     this.logger.warn(
-      {} as RequestContext,
       `Não foi possível interpretar o formato de tempo: ${timeString}, usando 1 dia como padrão`,
+      AuthService.name
     );
     return 86400; // 1 dia em segundos
   }
@@ -133,7 +133,7 @@ export class AuthService {
     username: string,
     pass: string,
   ): Promise<UserAccessTokenClaims> {
-    this.logger.log(ctx, `${this.validateUser.name} foi chamado`);
+    this.logger.info(`${this.validateUser.name} foi chamado`, AuthService.name);
 
     // Buscar usuário pelo email (username)
     const usuario = await this.usuarioService.findByEmail(username);
@@ -172,7 +172,7 @@ export class AuthService {
   }
 
   async login(ctx: RequestContext): Promise<AuthTokenOutput> {
-    this.logger.log(ctx, `${this.login.name} foi chamado`);
+    this.logger.info(`${this.login.name} foi chamado`, AuthService.name);
 
     // Obter o token de autenticação
     const tokens = this.getAuthToken(ctx, ctx.user!);
@@ -187,9 +187,9 @@ export class AuthService {
     const refreshTokenExpiresIn = this.getRefreshTokenExpiresIn();
     const refreshTokenSeconds = this.timeToSeconds(refreshTokenExpiresIn);
 
-    this.logger.log(
-      ctx,
+    this.logger.info(
       `Criando refresh token com duração de ${refreshTokenExpiresIn} (${refreshTokenSeconds} segundos)`,
+      AuthService.name
     );
 
     const refreshToken = await this.refreshTokenService.createToken(
@@ -207,7 +207,7 @@ export class AuthService {
     ctx: RequestContext,
     refreshTokenInput: RefreshTokenInput,
   ): Promise<AuthTokenOutput> {
-    this.logger.log(ctx, `${this.refreshToken.name} foi chamado`);
+    this.logger.info(`${this.refreshToken.name} foi chamado`, AuthService.name);
 
     // Encontrar o token de refresh
     const refreshToken = await this.refreshTokenService.findToken(
@@ -250,9 +250,9 @@ export class AuthService {
     const refreshTokenExpiresIn = this.getRefreshTokenExpiresIn();
     const refreshTokenSeconds = this.timeToSeconds(refreshTokenExpiresIn);
 
-    this.logger.log(
-      ctx,
+    this.logger.info(
       `Criando novo refresh token com duração de ${refreshTokenExpiresIn} (${refreshTokenSeconds} segundos)`,
+      AuthService.name
     );
 
     const newRefreshToken = await this.refreshTokenService.createToken(
@@ -270,7 +270,7 @@ export class AuthService {
     ctx: RequestContext,
     user: UserAccessTokenClaims | UserOutput,
   ): AuthTokenOutput {
-    this.logger.log(ctx, `${this.getAuthToken.name} was called`);
+    this.logger.info(`${this.getAuthToken.name} was called`, AuthService.name);
 
     // Gerar um JTI (JWT ID) único para cada token
     const jti = this.generateJti();
@@ -307,9 +307,9 @@ export class AuthService {
     const accessTokenExpiresIn = this.getAccessTokenExpiresIn();
     const refreshTokenExpiresIn = this.getRefreshTokenExpiresIn();
 
-    this.logger.log(
-      ctx,
+    this.logger.info(
       `Gerando tokens - Access token expira em: ${accessTokenExpiresIn}, Refresh token expira em: ${refreshTokenExpiresIn}`,
+      AuthService.name
     );
 
     const accessToken = this.jwtService.sign(

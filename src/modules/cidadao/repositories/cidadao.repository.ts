@@ -9,7 +9,7 @@ import { ConfigService } from '@nestjs/config';
 import { Cidadao } from '../../../entities/cidadao.entity';
 import { ComposicaoFamiliar } from '../../../entities/composicao-familiar.entity';
 import { CacheService } from '../../../shared/services/cache.service';
-import { UnifiedLoggerService } from '../../../shared/logging/unified-logger.service';
+import { LoggingService } from '../../../shared/logging/logging.service';
 import { EscolaridadeEnum } from '../../../enums/escolaridade.enum';
 import { ParentescoEnum } from '../../../enums/parentesco.enum';
 import { TipoPapel } from '../../../enums/tipo-papel.enum';
@@ -170,7 +170,7 @@ export class CidadaoRepository extends BaseRepository<Cidadao> {
     private readonly dataSource: DataSource,
     private readonly cacheService: CacheService,
     private readonly configService: ConfigService,
-    private readonly logger: UnifiedLoggerService,
+    private readonly logger: LoggingService,
   ) {
     super();
     this.repository = this.dataSource.getRepository(Cidadao);
@@ -899,7 +899,7 @@ export class CidadaoRepository extends BaseRepository<Cidadao> {
   private logQuery(query: SelectQueryBuilder<Cidadao>): void {
     if (process.env.NODE_ENV === 'development') {
       const [sql, params] = query.getQueryAndParameters();
-      this.logger.debug('SQL Query', { sql, params });
+      this.logger.debug('SQL Query', CidadaoRepository.name, { sql, params });
     }
   }
 }
@@ -916,10 +916,10 @@ export const cidadaoRepositoryProviders = [
       dataSource: DataSource,
       cacheService: CacheService,
       configService: ConfigService,
-      logger: UnifiedLoggerService,
+      logger: LoggingService,
     ) => {
       return new CidadaoRepository(dataSource, cacheService, configService, logger);
     },
-    inject: [DataSource, CacheService, ConfigService, UnifiedLoggerService],
+    inject: [DataSource, CacheService, ConfigService, LoggingService],
   },
 ];

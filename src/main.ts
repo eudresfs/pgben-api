@@ -12,14 +12,18 @@ import {
   VersioningType,
 } from '@nestjs/common';
 import { ResponseInterceptor } from './shared/interceptors/response.interceptor';
-import { RedactLogsInterceptor } from './shared/interceptors/redact-logs.interceptor';
+// ❌ REMOVIDO: import { RedactLogsInterceptor } from './shared/interceptors/redact-logs.interceptor';
 import { RemoveEmptyParamsInterceptor } from './shared/interceptors/remove-empty-params.interceptor';
 import { CatalogAwareExceptionFilter } from './shared/exceptions/error-catalog';
 import { setupSwagger } from './shared/configs/swagger/index';
 import { applySecurity } from './config/security.config';
 import { ConfigService } from '@nestjs/config';
 import compression from 'compression';
-import { UnifiedLoggerService } from './shared/logging/unified-logger.service';
+// ✅ NOVO: Importar o novo sistema de logging
+import { LoggingService } from './shared/logging/logging.service';
+import { LoggingInterceptor } from './shared/logging/logging.interceptor';
+import { ErrorLoggerFilter } from './shared/logging/filters/error-logger.filter';
+import { isSensitiveField } from './shared/constants/sensitive-fields.constants';
 
 /**
  * Configura e inicializa a aplicação NestJS
@@ -101,12 +105,17 @@ async function bootstrap(): Promise<INestApplication> {
     // Interceptor para remover parâmetros vazios das requisições
     app.useGlobalInterceptors(new RemoveEmptyParamsInterceptor());
 
-    // Interceptor de redaction de logs (LGPD compliance)
-    const unifiedLogger = await app.resolve(UnifiedLoggerService);
-    app.useGlobalInterceptors(new RedactLogsInterceptor(unifiedLogger));
+    // ✅ NOVO: Sistema de logging unificado
+    const loggingService = app.get(LoggingService);
+    
+    // Interceptor de logging HTTP (substitui o RedactLogsInterceptor)
+    app.useGlobalInterceptors(new LoggingInterceptor(loggingService));
 
     // Interceptor de resposta padronizada
     app.useGlobalInterceptors(new ResponseInterceptor());
+
+    // ✅ NOVO: Filtro de erros com logging estruturado
+    app.useGlobalFilters(new ErrorLoggerFilter(loggingService));
 
     // Filtro de exceções unificado com catálogo de erros
     const catalogAwareExceptionFilter = app.get(CatalogAwareExceptionFilter);
@@ -152,15 +161,14 @@ async function bootstrap(): Promise<INestApplication> {
     // === LOGS DE INICIALIZAÇÃO ===
     logStartupInfo(port, environment, isDevelopment, configService);
 
-    // Redireciona todas as instâncias de Logger padrão para o UnifiedLoggerService
-    const nestLogger = Logger as any;
-    const methods = ['log', 'error', 'warn', 'debug', 'verbose'];
-    methods.forEach((method) => {
-      nestLogger.prototype[method] = function (...args: unknown[]) {
-        // Preserve contexto (first arg often message, second 'context')
-        // @ts-ignore
-        return unifiedLogger[method].call(unifiedLogger, ...args);
-      };
+    // ✅ NOVO: Configurar logger contextualizado para logs de sistema
+    loggingService.setContext('Application');
+    loggingService.info('🎉 Aplicação PGBEN iniciada com sucesso', undefined, {
+      port,
+      environment,
+      pid: process.pid,
+      nodeVersion: process.version,
+      memoryUsage: process.memoryUsage(),
     });
 
     return app;
@@ -180,22 +188,61 @@ function createValidationException(
   errors: any[],
   isDevelopment: boolean,
 ): BadRequestException {
+  // Lista de campos sensíveis que não devem ser incluídos nas respostas de erro
+  const sensitiveFields = [
+    'senha', 'password', 'token', 'secret', 'authorization', 'key',
+    'confirmPassword', 'confirmSenha', 'currentPassword', 'senhaAtual', 'newPassword', 'novaSenha',
+    'cpf', 'rg', 'cnpj', 'cardNumber', 'cartao', 'cvv', 'passaporte', 'biometria'
+  ];
+  
+  // Função para verificar se um campo é sensível
+  const isSensitiveField = (field: string): boolean => {
+    return sensitiveFields.some(sensitive => 
+      field.toLowerCase().includes(sensitive.toLowerCase())
+    );
+  };
+  
+  // Sanitizar valor sensível - transformação recursiva
+  const sanitizeValidationError = (error: any): any => {
+    if (!error) return error;
+    
+    // Cria uma cópia do objeto para não modificar o original
+    const sanitizedError = { ...error };
+    
+    // Sanitiza o valor se o campo for sensível
+    if (sanitizedError.property && isSensitiveField(sanitizedError.property)) {
+      sanitizedError.value = '[REDACTED]';
+    }
+    
+    // Sanitiza filhos recursivamente
+    if (sanitizedError.children && Array.isArray(sanitizedError.children)) {
+      sanitizedError.children = sanitizedError.children.map(child => sanitizeValidationError(child));
+    }
+    
+    return sanitizedError;
+  };
+  
+  // Sanitiza todos os erros antes de procesá-los
+  const sanitizedErrors = errors.map(error => sanitizeValidationError(error));
+
+  // Formatador de erros para exibição
   const formatError = (error: any, path = ''): any[] => {
     const currentPath = path ? `${path}.${error.property}` : error.property;
 
     if (error.children && error.children.length > 0) {
-      // Processar erros aninhados
+      // Process nested errors
       const childErrors: any[] = [];
       error.children.forEach((child: any) => {
         childErrors.push(...formatError(child, currentPath));
       });
       return childErrors;
     } else {
-      // Erro direto
+      // Direct error
       return [
         {
           field: currentPath,
-          value: error.value,
+          // Somente inclui o valor se o campo não for sensível
+          ...(isSensitiveField(currentPath) ? {} : { value: error.value }),
           constraints: error.constraints || {},
           messages: error.constraints
             ? Object.values(error.constraints)
@@ -206,16 +253,18 @@ function createValidationException(
   };
 
   const formattedErrors: any[] = [];
-  errors.forEach((error) => {
+  sanitizedErrors.forEach(error => {
     formattedErrors.push(...formatError(error));
   });
 
-  return new BadRequestException({
+  const response = {
     message: 'Dados de entrada inválidos',
     errors: formattedErrors,
     statusCode: 400,
     timestamp: new Date().toISOString(),
-  });
+  };
+
+  return new BadRequestException(response);
 }
 
 /**

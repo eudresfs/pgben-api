@@ -16,7 +16,7 @@ import { createHash } from 'crypto';
 import { extname } from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { normalizeEnumFields } from '../../../shared/utils/enum-normalizer.util';
-import { UnifiedLoggerService } from '../../../shared/logging/unified-logger.service';
+import { LoggingService } from '../../../shared/logging/logging.service';
 import { ConfigService } from '@nestjs/config';
 import {
   MimeValidationService,
@@ -25,7 +25,6 @@ import {
 
 @Injectable()
 export class DocumentoService {
-  private readonly logger = new UnifiedLoggerService();
   private readonly maxRetries: number;
   private readonly retryDelay: number;
 
@@ -37,8 +36,8 @@ export class DocumentoService {
     private readonly storageProviderFactory: StorageProviderFactory,
     private readonly configService: ConfigService,
     private readonly mimeValidationService: MimeValidationService,
+    private readonly logger: LoggingService,
   ) {
-    this.logger.setContext(DocumentoService.name);
     this.maxRetries = this.configService.get<number>(
       'DOCUMENTO_MAX_RETRIES',
       3,
@@ -148,20 +147,15 @@ export class DocumentoService {
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        this.logger.debug(
-          `Tentativa ${attempt}/${maxRetries} para ${operationName}`,
-        );
+        this.logger.debug(`Tentativa ${attempt}/${maxRetries} para ${operationName}`, DocumentoService.name);
         return await operation();
       } catch (error) {
         lastError = error;
-        this.logger.warn(
-          `Falha na tentativa ${attempt}/${maxRetries} para ${operationName}: ${error.message}`,
-          { error: error.message, attempt, maxRetries },
-        );
+        this.logger.warn(`Falha na tentativa ${attempt}/${maxRetries} para ${operationName}: ${error.message}`, DocumentoService.name, { error: error.message, attempt, maxRetries });
 
         if (attempt < maxRetries) {
           const delay = this.retryDelay * Math.pow(2, attempt - 1); // Backoff exponencial
-          this.logger.debug(`Aguardando ${delay}ms antes da próxima tentativa`);
+          this.logger.debug(`Aguardando ${delay}ms antes da próxima tentativa`, DocumentoService.name);
           await new Promise((resolve) => setTimeout(resolve, delay));
         }
       }
@@ -181,7 +175,7 @@ export class DocumentoService {
       );
     }
 
-    this.logger.debug(`Usando provedor de storage: ${storageProvider.nome}`);
+    this.logger.debug(`Usando provedor de storage: ${storageProvider.nome}`, DocumentoService.name);
   }
 
   /**
@@ -196,19 +190,7 @@ export class DocumentoService {
     let caminhoArmazenamento: string | null = null;
     const startTime = Date.now();
 
-    this.logger.info(`Iniciando upload de documento [${uploadId}]`, {
-      uploadId,
-      arquivo: {
-        nome: arquivo.originalname,
-        tamanho: arquivo.size,
-        mimetype: arquivo.mimetype,
-      },
-      tipo: uploadDocumentoDto.tipo,
-      cidadaoId: uploadDocumentoDto.cidadao_id,
-      solicitacaoId: uploadDocumentoDto.solicitacao_id,
-      usuarioId,
-      reutilizavel: uploadDocumentoDto.reutilizavel,
-    });
+    this.logger.info(`Iniciando upload de documento [${uploadId}]`, DocumentoService.name, { uploadId, arquivo: { nome: arquivo.originalname, tamanho: arquivo.size, mimetype: arquivo.mimetype }, tipo: uploadDocumentoDto.tipo, cidadaoId: uploadDocumentoDto.cidadao_id, solicitacaoId: uploadDocumentoDto.solicitacao_id, usuarioId, reutilizavel: uploadDocumentoDto.reutilizavel });
 
     try {
       // Validar configurações
@@ -226,6 +208,7 @@ export class DocumentoService {
 
       this.logger.debug(
         `Validando arquivo com validação MIME avançada [${uploadId}]`,
+        DocumentoService.name,
         {
           uploadId,
           mimetype: arquivo.mimetype,
@@ -247,7 +230,7 @@ export class DocumentoService {
       );
 
       if (!mimeValidationResult.isValid) {
-        this.logger.warn(`Arquivo rejeitado na validação [${uploadId}]`, {
+        this.logger.warn(`Arquivo rejeitado na validação [${uploadId}]`, DocumentoService.name, {
           uploadId,
           errors: mimeValidationResult.validationErrors,
           warnings: mimeValidationResult.securityWarnings,
@@ -259,7 +242,7 @@ export class DocumentoService {
       }
 
       if (mimeValidationResult.securityWarnings.length > 0) {
-        this.logger.warn(`Avisos de segurança detectados [${uploadId}]`, {
+        this.logger.warn(`Avisos de segurança detectados [${uploadId}]`, DocumentoService.name, {
           uploadId,
           warnings: mimeValidationResult.securityWarnings,
         });
@@ -276,6 +259,7 @@ export class DocumentoService {
       if (uploadDocumentoDto.reutilizavel) {
         this.logger.debug(
           `Verificando reutilização de documento [${uploadId}]`,
+          DocumentoService.name,
           {
             uploadId,
             hashArquivo,
@@ -296,7 +280,7 @@ export class DocumentoService {
           .getOne();
 
         if (documentoExistente) {
-          this.logger.info(`Documento reutilizado [${uploadId}]`, {
+          this.logger.info(`Documento reutilizado [${uploadId}]`, DocumentoService.name, {
             uploadId,
             documentoExistenteId: documentoExistente.id,
             hashArquivo,
@@ -321,7 +305,7 @@ export class DocumentoService {
       this.logger.debug(`Nome único gerado [${uploadId}]: ${nomeArquivo}`);
 
       // Salvar arquivo no storage com retry
-      this.logger.debug(`Salvando arquivo no storage [${uploadId}]`, {
+      this.logger.debug(`Salvando arquivo no storage [${uploadId}]`, DocumentoService.name, {
         uploadId,
         nomeArquivo,
         provedor: storageProvider.nome,
@@ -408,6 +392,7 @@ export class DocumentoService {
 
       this.logger.info(
         `Upload de documento concluído com sucesso [${uploadId}]`,
+        DocumentoService.name,
         {
           uploadId,
           documentoId,
@@ -424,10 +409,8 @@ export class DocumentoService {
       const tempoTotal = Date.now() - startTime;
       const storageProvider = this.storageProviderFactory.getProvider();
 
-      this.logger.error(`Falha no upload de documento [${uploadId}]`, {
+      this.logger.error(`Falha no upload de documento [${uploadId}]`, error, DocumentoService.name, {
         uploadId,
-        erro: error.message,
-        stack: error.stack,
         tempoProcessamento: tempoTotal,
         arquivo: {
           nome: arquivo?.originalname,
@@ -450,12 +433,12 @@ export class DocumentoService {
         } catch (cleanupError) {
           this.logger.error(
             `Erro ao limpar arquivo do storage após falha [${uploadId}]`,
+            cleanupError,
+            DocumentoService.name,
             {
-              uploadId,
-              caminhoArmazenamento,
-              cleanupError: cleanupError.message,
-              originalError: error.message,
-            },
+              caminhoStorage: caminhoArmazenamento,
+              originalError: error.message
+            }
           );
         }
       }

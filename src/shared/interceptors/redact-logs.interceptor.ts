@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
-import { UnifiedLoggerService } from '../logging/unified-logger.service';
+import { LoggingService } from '../logging/logging.service';
 
 /**
  * Interceptor que faz redaction de dados sensíveis nos logs.
@@ -19,8 +19,8 @@ export class RedactLogsInterceptor implements NestInterceptor {
   private readonly sensitiveSet: Set<string>;
   private readonly isDebugEnabled: boolean;
 
-  constructor(private readonly logger: UnifiedLoggerService) {
-    this.logger.setContext(RedactLogsInterceptor.name);
+  constructor(private readonly logger: LoggingService) {
+
     const extra = process.env.LOG_REDACT_FIELDS || '';
     this.sensitiveFields = [
       'password',
@@ -51,15 +51,15 @@ export class RedactLogsInterceptor implements NestInterceptor {
     const redactedBody = this.redactObject(req.body);
     const { method, originalUrl } = req;
 
-    this.logger.debug(`REQ ${method} ${originalUrl}`, { body: redactedBody });
+    this.logger.debug(`REQ ${method} ${originalUrl}`, RedactLogsInterceptor.name, { body: redactedBody });
 
     const startedAt = Date.now();
     return next.handle().pipe(
       tap((responseData) => {
         const durationMs = Date.now() - startedAt;
-        this.logger.debug(`RES ${method} ${originalUrl}`, {
+        this.logger.debug(`RES ${method} ${originalUrl}`, RedactLogsInterceptor.name, {
           durationMs,
-          response: this.redactObject(responseData),
+          response: this.redactObject(responseData)
         });
       }),
     );

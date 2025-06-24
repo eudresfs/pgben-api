@@ -68,26 +68,40 @@ export class PermissionGuard implements CanActivate {
 
     const userId = request.user.id;
 
-    // BYPASS PARA SUPER ADMIN: Verifica se o usuário possui permissão de super admin (*.*)
-    // Se sim, permite acesso a qualquer endpoint sem verificar outras permissões
-    const hasSuperAdminPermission = await this.permissionService.hasPermission({
-      userId,
-      permissionName: '*.*',
-      scopeType: TipoEscopo.GLOBAL,
-    });
+    // Verificar se o usuário tem permissões em memória
+    const userPermissions = request.user.permissions;
+    
+    // Se o usuário tem permissões em memória, verificar se tem a permissão de super admin
+    if (userPermissions && userPermissions.length > 0) {
+      // Verificar se o usuário tem permissão de super admin
+      if (this.permissionService.hasPermissionInMemory(userPermissions, '*.*')) {
+        this.logger.debug(
+          `Acesso concedido via super admin: usuário ${userId} possui permissão '*.*'`,
+        );
+        return true;
+      }
+    } else {
+      // FALLBACK: Se não tem permissões em memória, verificar no banco de dados
+      // Este código será removido quando todas as permissões estiverem no JWT
+      const hasSuperAdminPermission = await this.permissionService.hasPermission({
+        userId,
+        permissionName: '*.*',
+        scopeType: TipoEscopo.GLOBAL,
+      });
 
-    if (hasSuperAdminPermission) {
-      this.logger.debug(
-        `Acesso concedido via super admin: usuário ${userId} possui permissão '*.*'`,
-      );
-      return true;
+      if (hasSuperAdminPermission) {
+        this.logger.debug(
+          `Acesso concedido via super admin (banco): usuário ${userId} possui permissão '*.*'`,
+        );
+        return true;
+      }
     }
 
     // Verifica se o usuário tem pelo menos uma das permissões requeridas (OR lógico)
-    const permissionChecks: Promise<boolean>[] = [];
     const requirementDetails: Array<{
       requirement: PermissionRequirement;
       scopeId?: string;
+      hasPermission: boolean;
     }> = [];
 
     // Prepara todas as verificações de permissão
@@ -104,20 +118,37 @@ export class PermissionGuard implements CanActivate {
         scopeId = this.evaluateScopeIdExpression(scopeIdExpression, request);
       }
 
-      // Adiciona a verificação de permissão à lista
-      const permissionCheck = this.permissionService.hasPermission({
-        userId,
-        permissionName,
-        scopeType,
-        scopeId,
-      });
+      // Verificar permissões em memória primeiro
+      let hasPermission = false;
+      const userPermissions = request.user.permissions;
+      
+      if (userPermissions && userPermissions.length > 0) {
+        // Verificar permissão em memória
+        this.logger.debug(`Verificando permissão em memória: ${permissionName}`);
+        hasPermission = this.permissionService.hasPermissionInMemory(userPermissions, permissionName);
+        
+        if (hasPermission) {
+          this.logger.debug(`Permissão ${permissionName} encontrada em memória`);
+        } else {
+          this.logger.debug(`Permissão ${permissionName} NÃO encontrada em memória`);
+        }
+      } else {
+        // FALLBACK: Se não tem permissões em memória, verificar no banco de dados
+        // Este código será removido quando todas as permissões estiverem no JWT
+        this.logger.debug(`Verificando permissão no banco: ${permissionName}`);
+        hasPermission = await this.permissionService.hasPermission({
+          userId,
+          permissionName,
+          scopeType,
+          scopeId,
+        });
+      }
 
-      permissionChecks.push(permissionCheck);
-      requirementDetails.push({ requirement, scopeId });
+      requirementDetails.push({ requirement, scopeId, hasPermission });
     }
-
-    // Executa todas as verificações em paralelo
-    const results = await Promise.all(permissionChecks);
+    
+    // Verificar resultados
+    const results = requirementDetails.map(detail => detail.hasPermission);
 
     // Verifica se pelo menos uma permissão foi concedida
     const hasAnyPermission = results.some((result) => result === true);

@@ -7,13 +7,13 @@ import {
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 
-import { AppLogger } from '../logger/logger.service';
+import { LoggingService } from '../logging/logging.service';
 import { createRequestContext } from '../request-context/util';
 
 @Injectable()
 export class LoggingInterceptor implements NestInterceptor {
-  constructor(private appLogger: AppLogger) {
-    this.appLogger.setContext(LoggingInterceptor.name);
+  constructor(private logger: LoggingService) {
+    // O contexto agora é passado diretamente nos métodos de log
   }
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
@@ -31,7 +31,7 @@ export class LoggingInterceptor implements NestInterceptor {
 
         const resData = { method, statusCode, responseTime };
 
-        this.appLogger.log(ctx, 'Request completed', { resData });
+        this.logger.info('Request completed', LoggingInterceptor.name, { resData });
       }),
     );
   }

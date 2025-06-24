@@ -8,6 +8,7 @@ import {
  * Validador personalizado para senhas fortes
  *
  * Verifica se uma senha é forte o suficiente, considerando:
+ * - Tem pelo menos uma letra maiúscula, uma minúscula, um número e um caractere especial
  * - Não contém informações pessoais (nome, email, etc)
  * - Não é uma senha comum ou facilmente adivinhável
  */
@@ -32,17 +33,53 @@ export class IsStrongPassword implements ValidatorConstraintInterface {
     'usuario',
   ];
 
+  // Armazena o motivo da falha para mensagem personalizada
+  private failReason: string | null = null;
+
   validate(password: string, args: ValidationArguments): boolean {
+    // Resetar o motivo da falha no início da validação
+    this.failReason = null;
+
     if (!password) {
+      this.failReason = 'A senha não pode estar vazia';
       return false;
     }
 
-    // Verifica se a senha está na lista de senhas comuns
+    // 1. Verificar regras de complexidade de senha
+    
+    // Verificar se tem pelo menos uma letra minúscula
+    if (!/[a-z]/.test(password)) {
+      this.failReason = 'A senha deve conter pelo menos uma letra minúscula';
+      return false;
+    }
+    
+    // Verificar se tem pelo menos uma letra maiúscula
+    if (!/[A-Z]/.test(password)) {
+      this.failReason = 'A senha deve conter pelo menos uma letra maiúscula';
+      return false;
+    }
+    
+    // Verificar se tem pelo menos um número
+    if (!/\d/.test(password)) {
+      this.failReason = 'A senha deve conter pelo menos um número';
+      return false;
+    }
+    
+    // Verificar se tem pelo menos um caractere especial
+    if (!/[^A-Za-z0-9]/.test(password)) {
+      this.failReason = 'A senha deve conter pelo menos um caractere especial';
+      return false;
+    }
+
+    // Removida a restrição de caracteres permitidos para aceitar todos os caracteres especiais
+
+    // 2. Verificar se é uma senha comum
     if (this.commonPasswords.includes(password.toLowerCase())) {
+      this.failReason = 'A senha é muito comum e facilmente adivinhável';
       return false;
     }
 
-    // Obtém o objeto que está sendo validado (para verificar informações pessoais)
+    // 3. Verificar se contém informações pessoais
     const object = args.object as any;
 
     // Verifica se a senha contém o nome do usuário
@@ -50,6 +87,7 @@ export class IsStrongPassword implements ValidatorConstraintInterface {
       object.nome &&
       password.toLowerCase().includes(object.nome.toLowerCase().split(' ')[0])
     ) {
+      this.failReason = 'A senha não pode conter partes do seu nome';
       return false;
     }
 
@@ -58,11 +96,13 @@ export class IsStrongPassword implements ValidatorConstraintInterface {
       object.email &&
       password.toLowerCase().includes(object.email.split('@')[0].toLowerCase())
     ) {
+      this.failReason = 'A senha não pode conter partes do seu email';
       return false;
     }
 
     // Verifica se a senha contém a matrícula do usuário
     if (object.matricula && password.includes(object.matricula)) {
+      this.failReason = 'A senha não pode conter sua matrícula';
       return false;
     }
 
@@ -73,15 +113,18 @@ export class IsStrongPassword implements ValidatorConstraintInterface {
       for (let i = 0; i <= cpfNumbers.length - 4; i++) {
         const sequence = cpfNumbers.substring(i, i + 4);
         if (password.includes(sequence)) {
+          this.failReason = 'A senha não pode conter sequências do seu CPF';
           return false;
         }
       }
     }
 
+    // Se passou por todas as verificações, a senha é válida
     return true;
   }
 
-  defaultMessage(): string {
-    return 'A senha não pode conter informações pessoais ou ser uma senha comum';
+  defaultMessage(args: ValidationArguments): string {
+    // Retorna o motivo específico da falha ou uma mensagem genérica
+    return this.failReason || 'A senha não atende aos critérios de segurança';
   }
 }

@@ -2,14 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PagamentoLiberacaoService } from '../services/pagamento-liberacao.service';
 import { PagamentoService } from '../services/pagamento.service';
-import { UnifiedLoggerService } from '../../../shared/logging/unified-logger.service';
+import { LoggingService } from '../../../shared/logging/logging.service';
 
 @Injectable()
 export class PagamentoLiberacaoScheduler {
   constructor(
     private readonly pagamentoLiberacaoService: PagamentoLiberacaoService,
     private readonly pagamentoService: PagamentoService,
-    private readonly logger: UnifiedLoggerService,
+    private readonly logger: LoggingService,
   ) {}
 
   /**
@@ -18,20 +18,21 @@ export class PagamentoLiberacaoScheduler {
    */
   @Cron(CronExpression.EVERY_DAY_AT_6AM)
   async processarLiberacaoAutomatica(): Promise<void> {
-    this.logger.log('[PagamentoLiberacaoScheduler] Iniciando processamento de liberação automática de pagamentos.');
+    this.logger.info('Iniciando processamento de liberação automática de pagamentos.', PagamentoLiberacaoScheduler.name);
 
     try {
       const resultado = await this.pagamentoLiberacaoService.processarLiberacaoAutomatica('SISTEMA_SCHEDULER');
       
-      this.logger.log(
-        `[PagamentoLiberacaoScheduler] Processamento concluído. ` +
-        `Liberados: ${resultado.liberados.length}, Falhas: ${resultado.falhas.length}, ` +
-        `Total processados: ${resultado.total}`
+      this.logger.info(
+        `Processamento concluído. Liberados: ${resultado.liberados.length}, Falhas: ${resultado.falhas.length}, Total processados: ${resultado.total}`,
+        PagamentoLiberacaoScheduler.name, { liberados: resultado.liberados.length, falhas: resultado.falhas.length, total: resultado.total }
       );
     } catch (error) {
       this.logger.error(
-        '[PagamentoLiberacaoScheduler] Erro durante processamento de liberação automática:',
-        error.stack
+        'Erro ao processar liberação automática de pagamentos',
+        error,
+        PagamentoLiberacaoScheduler.name,
+        { stack: error.stack }
       );
     }
   }
@@ -42,19 +43,21 @@ export class PagamentoLiberacaoScheduler {
    */
   @Cron('0 0 8 * * *') // Todos os dias às 08:00
   async processarVencimentoAutomatico(): Promise<void> {
-    this.logger.log('[PagamentoLiberacaoScheduler] Iniciando processamento de vencimento automático de pagamentos.');
+    this.logger.info('Iniciando processamento de vencimento automático de pagamentos.', PagamentoLiberacaoScheduler.name);
 
     try {
       const resultado = await this.pagamentoService.processarVencimentoAutomatico();
       
-      this.logger.log(
-        `[PagamentoLiberacaoScheduler] Processamento de vencimento concluído. ` +
-        `Pagamentos marcados como vencidos: ${resultado.length}`
+      this.logger.info(
+        `Processamento de vencimento concluído. Pagamentos marcados como vencidos: ${resultado.length}`,
+        PagamentoLiberacaoScheduler.name, { vencidos: resultado.length }
       );
     } catch (error) {
       this.logger.error(
-        '[PagamentoLiberacaoScheduler] Erro durante processamento de vencimento automático:',
-        error.stack
+        'Erro ao processar vencimento automático de pagamentos',
+        error,
+        PagamentoLiberacaoScheduler.name,
+        { stack: error.stack }
       );
     }
   }
@@ -65,7 +68,7 @@ export class PagamentoLiberacaoScheduler {
    */
   @Cron('0 */4 * * *') // A cada 4 horas
   async verificarRecibosAluguelSocial(): Promise<void> {
-    this.logger.debug('[PagamentoLiberacaoScheduler] Verificando recibos de aluguel social pendentes.');
+    this.logger.debug('Verificando recibos de aluguel social pendentes.', PagamentoLiberacaoScheduler.name);
 
     try {
       // Buscar pagamentos de aluguel social elegíveis
@@ -86,14 +89,16 @@ export class PagamentoLiberacaoScheduler {
 
       if (pagamentosSemRecibo.length > 0) {
         this.logger.warn(
-          `[PagamentoLiberacaoScheduler] ${pagamentosSemRecibo.length} pagamentos de aluguel social ` +
-          'aguardando recibo do mês anterior.'
+          `${pagamentosSemRecibo.length} pagamentos de aluguel social aguardando recibo do mês anterior.`,
+          PagamentoLiberacaoScheduler.name, { pagamentosPendentes: pagamentosSemRecibo.length }
         );
       }
     } catch (error) {
       this.logger.error(
-        '[PagamentoLiberacaoScheduler] Erro ao verificar recibos de aluguel social:',
-        error.stack
+        'Erro ao verificar recibos de aluguel social pendentes',
+        error,
+        PagamentoLiberacaoScheduler.name,
+        { stack: error.stack }
       );
     }
   }

@@ -54,6 +54,18 @@ export const USUARIO_ERRORS: Record<string, ErrorDefinition> = {
     },
   },
 
+  USUARIO_EMAIL_DUPLICATE: {
+    code: 'USUARIO_EMAIL_DUPLICATE',
+    message: 'Email já está em uso',
+    httpStatus: HttpStatus.CONFLICT,
+    category: ErrorCategory.VALIDATIONS,
+    severity: ErrorSeverity.MEDIUM,
+    localizedMessages: {
+      'pt-BR': 'Este email já está cadastrado no sistema.',
+      'en-US': 'This email is already registered in the system.',
+    },
+  },
+
   USUARIO_ACCOUNT_INACTIVE: {
     code: 'USUARIO_ACCOUNT_INACTIVE',
     message: 'Conta de usuário inativa',
@@ -105,18 +117,6 @@ export const USUARIO_ERRORS: Record<string, ErrorDefinition> = {
   // ========================================
   // VALIDAÇÕES DE DADOS
   // ========================================
-
-  USUARIO_EMAIL_DUPLICATE: {
-    code: 'USUARIO_EMAIL_DUPLICATE',
-    message: 'Email já cadastrado',
-    httpStatus: HttpStatus.CONFLICT,
-    category: ErrorCategory.VALIDATIONS,
-    severity: ErrorSeverity.HIGH,
-    localizedMessages: {
-      'pt-BR': 'Este email já está cadastrado no sistema',
-      'en-US': 'This email is already registered in the system',
-    },
-  },
 
   USUARIO_MATRICULA_DUPLICATE: {
     code: 'USUARIO_MATRICULA_DUPLICATE',

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { UnifiedLoggerService } from '../../../shared/logging/unified-logger.service';
+import { LoggingService } from '../../../shared/logging/logging.service';
 import { StorageProviderFactory } from '../factories/storage-provider.factory';
 
 export interface StorageHealthStatus {
@@ -18,16 +18,14 @@ export interface StorageHealthStatus {
 
 @Injectable()
 export class StorageHealthService {
-  private readonly logger: UnifiedLoggerService;
   private readonly testFileName = 'health-check-test.txt';
   private readonly testContent = Buffer.from('Health check test file');
 
   constructor(
     private readonly storageProviderFactory: StorageProviderFactory,
     private readonly configService: ConfigService,
-    private readonly unifiedLogger: UnifiedLoggerService,
+    private readonly logger: LoggingService,
   ) {
-    this.logger = unifiedLogger.child({ context: StorageHealthService.name });
   }
 
   /**
@@ -41,8 +39,8 @@ export class StorageHealthService {
       const storageProvider = this.storageProviderFactory.getProvider();
       const providerName = this.getProviderName();
 
-      this.logger.debug('Iniciando verificação de saúde do storage', {
-        provider: providerName,
+      this.logger.debug('Iniciando verificação de saúde do storage', StorageHealthService.name, {
+        provider: providerName
       });
 
       // 1. Verificar configuração
@@ -73,26 +71,24 @@ export class StorageHealthService {
           configuration: true,
           permissions: connectivityResult.success,
           latency,
-          error: connectivityResult.error,
+          error: connectivityResult.errorMessage,
         },
         timestamp,
       };
 
       if (healthStatus.isHealthy) {
-        this.logger.info(
-          'Verificação de saúde do storage concluída com sucesso',
-          {
-            provider: providerName,
+        this.logger.info('Verificação de saúde do storage concluída com sucesso', StorageHealthService.name, {
+            providerName,
             latency,
-            timestamp,
-          },
+            timestamp
+          }
         );
       } else {
-        this.logger.error('Verificação de saúde do storage falhou', {
-          provider: providerName,
-          error: connectivityResult.error,
+        this.logger.error('Verificação de saúde do storage falhou', new Error('Falha na verificação de saúde'), StorageHealthService.name, {
+          providerName,
           latency,
           timestamp,
+          details: healthStatus.details
         });
       }
 
@@ -100,8 +96,7 @@ export class StorageHealthService {
     } catch (error) {
       const latency = Date.now() - startTime;
 
-      this.logger.error('Erro durante verificação de saúde do storage', {
-        error: error.message,
+      this.logger.error('Erro na verificação de saúde do storage', error, StorageHealthService.name, {
         stack: error.stack,
         latency,
       });
@@ -144,7 +139,7 @@ export class StorageHealthService {
         );
 
         if (missingConfigs.length > 0) {
-          this.logger.warn('Configurações S3 ausentes', { missingConfigs });
+          this.logger.warn('Configurações S3 ausentes', StorageHealthService.name, { missingConfigs });
           return false;
         }
       } else if (storageType === 'minio') {
@@ -160,16 +155,14 @@ export class StorageHealthService {
         );
 
         if (missingConfigs.length > 0) {
-          this.logger.warn('Configurações MinIO ausentes', { missingConfigs });
+          this.logger.warn('Configurações MinIO ausentes', StorageHealthService.name, { missingConfigs });
           return false;
         }
       }
 
       return true;
     } catch (error) {
-      this.logger.error('Erro ao verificar configuração', {
-        error: error.message,
-      });
+      this.logger.error('Erro ao verificar configuração', error, StorageHealthService.name);
       return false;
     }
   }
@@ -179,13 +172,13 @@ export class StorageHealthService {
    */
   private async testConnectivity(
     storageProvider: any,
-  ): Promise<{ success: boolean; error?: string }> {
+  ): Promise<{ success: boolean; errorMessage?: string }> {
     const testKey = `health-checks/${Date.now()}-${this.testFileName}`;
     let storedKey: string | undefined;
 
     try {
       // Teste 1: Upload
-      this.logger.debug('Testando upload para storage', { testKey });
+      this.logger.debug('Testando upload para storage', StorageHealthService.name, { testKey });
       storedKey = await storageProvider.salvarArquivo(
         this.testContent,
         testKey,
@@ -196,7 +189,7 @@ export class StorageHealthService {
       const keyToCheck = storedKey ?? testKey;
 
       // Teste 2: Download
-      this.logger.debug('Testando download do storage', { keyToCheck });
+      this.logger.debug('Testando download do storage', StorageHealthService.name, { keyToCheck });
       const downloadedContent = await storageProvider.obterArquivo(keyToCheck);
 
       if (!downloadedContent || !downloadedContent.equals(this.testContent)) {
@@ -204,7 +197,7 @@ export class StorageHealthService {
       }
 
       // Teste 3: Remoção
-      this.logger.debug('Testando remoção do storage', { keyToCheck });
+      this.logger.debug('Testando remoção do storage', StorageHealthService.name, { keyToCheck });
       await storageProvider.removerArquivo(keyToCheck);
 
       return { success: true };
@@ -213,16 +206,13 @@ export class StorageHealthService {
       try {
         await storageProvider.removerArquivo(storedKey ?? testKey);
       } catch (cleanupError) {
-        this.logger.warn('Erro ao limpar arquivo de teste', {
+        this.logger.warn('Erro ao limpar arquivo de teste', StorageHealthService.name, {
           key: storedKey ?? testKey,
-          cleanupError: cleanupError.message,
+          cleanupError: cleanupError.message
         });
       }
 
-      return {
-        success: false,
-        error: error.message,
-      };
+      return { success: false, errorMessage: error.message };
     }
   }
 

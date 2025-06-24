@@ -15,7 +15,7 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Readable } from 'stream';
 import { StorageProvider } from '../interfaces/storage-provider.interface';
 import { MetadadosDocumento } from '../interfaces/metadados.interface';
-import { UnifiedLoggerService } from '../../../shared/logging/unified-logger.service';
+import { LoggingService } from '../../../shared/logging/logging.service';
 
 /**
  * Adaptador para armazenamento de documentos no Amazon S3
@@ -25,8 +25,7 @@ import { UnifiedLoggerService } from '../../../shared/logging/unified-logger.ser
 @Injectable()
 export class S3StorageAdapter implements StorageProvider {
   readonly nome = 'S3';
-  private readonly logger = new Logger(S3StorageAdapter.name);
-  private readonly unifiedLogger: UnifiedLoggerService;
+  // Logger do NestJS substituído pelo LoggingService
   private readonly s3Client: S3Client;
   private readonly bucketName: string;
   private readonly maxRetries: number;
@@ -34,12 +33,8 @@ export class S3StorageAdapter implements StorageProvider {
 
   constructor(
     private readonly configService: ConfigService,
-    unifiedLoggerService: UnifiedLoggerService,
+    private readonly loggingService: LoggingService,
   ) {
-    this.unifiedLogger = unifiedLoggerService.child({
-      context: S3StorageAdapter.name,
-    });
-
     const bucketName = this.configService.get<string>('AWS_S3_BUCKET');
     if (!bucketName) {
       throw new Error('AWS_S3_BUCKET configuration is required');
@@ -90,11 +85,11 @@ export class S3StorageAdapter implements StorageProvider {
 
     if (missingConfigs.length > 0) {
       const error = `Configurações S3 ausentes: ${missingConfigs.join(', ')}`;
-      this.unifiedLogger.error('Configuração S3 inválida', { missingConfigs });
+      this.loggingService.error('Configuração S3 inválida', S3StorageAdapter.name, missingConfigs.join(', '));
       throw new Error(error);
     }
 
-    this.unifiedLogger.debug('Configuração S3 validada com sucesso', {
+    this.loggingService.debug('Configuração S3 validada com sucesso', S3StorageAdapter.name, {
       bucket: this.bucketName,
       region: this.configService.get('AWS_REGION'),
       maxRetries: this.maxRetries,
@@ -117,8 +112,10 @@ export class S3StorageAdapter implements StorageProvider {
         lastError = error;
 
         if (attempt === maxRetries) {
-          this.unifiedLogger.error(
+          this.loggingService.error(
             `Operação S3 falhou após ${maxRetries} tentativas: ${operationName}`,
+            error,
+            S3StorageAdapter.name,
             {
               operationName,
               attempts: maxRetries,
@@ -130,8 +127,9 @@ export class S3StorageAdapter implements StorageProvider {
         }
 
         const delay = this.retryDelay * Math.pow(2, attempt - 1);
-        this.unifiedLogger.warn(
+        this.loggingService.warn(
           `Tentativa ${attempt}/${maxRetries} falhou para ${operationName}, tentando novamente em ${delay}ms`,
+          S3StorageAdapter.name,
           {
             operationName,
             attempt,
@@ -157,7 +155,7 @@ export class S3StorageAdapter implements StorageProvider {
       errorMessage: error.message,
     };
 
-    this.unifiedLogger.error(`Erro S3 na operação ${operation}`, errorInfo);
+    this.loggingService.error(`Erro S3 na operação ${operation}`, error, S3StorageAdapter.name);
 
     if (error instanceof NoSuchKey) {
       return new Error(`Arquivo não encontrado: ${key}`);
@@ -232,7 +230,7 @@ export class S3StorageAdapter implements StorageProvider {
     const startTime = Date.now();
 
     try {
-      this.unifiedLogger.debug(`Iniciando upload S3`, {
+      this.loggingService.debug(`Iniciando upload S3`, S3StorageAdapter.name, {
         key,
         mimetype,
         tamanho: buffer.length,
@@ -265,7 +263,7 @@ export class S3StorageAdapter implements StorageProvider {
       await this.retryOperation(uploadOperation, `upload S3 [${key}]`);
 
       const duration = Date.now() - startTime;
-      this.unifiedLogger.info(`Upload S3 concluído com sucesso`, {
+      this.loggingService.info(`Upload S3 concluído com sucesso`, S3StorageAdapter.name, {
         key,
         bucket: this.bucketName,
         tamanho: buffer.length,
@@ -276,12 +274,11 @@ export class S3StorageAdapter implements StorageProvider {
       return key;
     } catch (error) {
       const duration = Date.now() - startTime;
-      this.unifiedLogger.error(`Falha no upload S3`, {
+      this.loggingService.error(`Falha no upload S3`, error, S3StorageAdapter.name, {
         key,
         bucket: this.bucketName,
         tamanho: buffer.length,
-        duracao: duration,
-        error: error.message,
+        duracao: duration
       });
 
       throw this.handleS3Error(error, 'upload', key);
@@ -297,7 +294,7 @@ export class S3StorageAdapter implements StorageProvider {
     const startTime = Date.now();
 
     try {
-      this.unifiedLogger.debug(`Iniciando download S3`, {
+      this.loggingService.debug(`Iniciando download S3`, S3StorageAdapter.name, {
         key,
         bucket: this.bucketName,
       });
@@ -332,7 +329,7 @@ export class S3StorageAdapter implements StorageProvider {
       const buffer = Buffer.concat(chunks);
       const duration = Date.now() - startTime;
 
-      this.unifiedLogger.info(`Download S3 concluído com sucesso`, {
+      this.loggingService.info(`Download S3 concluído com sucesso`, S3StorageAdapter.name, {
         key,
         bucket: this.bucketName,
         tamanho: buffer.length,
@@ -342,11 +339,10 @@ export class S3StorageAdapter implements StorageProvider {
       return buffer;
     } catch (error) {
       const duration = Date.now() - startTime;
-      this.unifiedLogger.error(`Falha no download S3`, {
+      this.loggingService.error(`Falha no download S3`, error, S3StorageAdapter.name, {
         key,
         bucket: this.bucketName,
-        duracao: duration,
-        error: error.message,
+        duracao: duration
       });
 
       throw this.handleS3Error(error, 'download', key);
@@ -361,7 +357,7 @@ export class S3StorageAdapter implements StorageProvider {
     const startTime = Date.now();
 
     try {
-      this.unifiedLogger.debug(`Iniciando remoção S3`, {
+      this.loggingService.debug(`Iniciando remoção S3`, S3StorageAdapter.name, {
         key,
         bucket: this.bucketName,
       });
@@ -379,23 +375,22 @@ export class S3StorageAdapter implements StorageProvider {
       await this.retryOperation(deleteOperation, `delete S3 [${key}]`);
 
       const duration = Date.now() - startTime;
-      this.unifiedLogger.info(`Remoção S3 concluída com sucesso`, {
+      this.loggingService.info(`Remoção S3 concluída com sucesso`, S3StorageAdapter.name, {
         key,
         bucket: this.bucketName,
         duracao: duration,
       });
     } catch (error) {
       const duration = Date.now() - startTime;
-      this.unifiedLogger.error(`Falha na remoção S3`, {
+      this.loggingService.error(`Falha na remoção S3`, error, S3StorageAdapter.name, {
         key,
         bucket: this.bucketName,
-        duracao: duration,
-        error: error.message,
+        duracao: duration
       });
 
       // Para delete, não é crítico se o arquivo não existir
       if (error instanceof NoSuchKey) {
-        this.unifiedLogger.warn(`Arquivo já não existe no S3`, { key });
+        this.loggingService.warn(`Arquivo já não existe no S3`, S3StorageAdapter.name, { key });
         return; // Sucesso silencioso
       }
 
@@ -411,7 +406,7 @@ export class S3StorageAdapter implements StorageProvider {
    */
   async getUrl(key: string, expiresIn: number = 3600): Promise<string> {
     try {
-      this.logger.debug(
+      this.loggingService.debug(
         `Gerando URL assinada para: ${key} (expira em ${expiresIn}s)`,
       );
 
@@ -424,7 +419,7 @@ export class S3StorageAdapter implements StorageProvider {
       const url = await getSignedUrl(this.s3Client, command, { expiresIn });
       return url;
     } catch (error) {
-      this.logger.error(`Erro ao gerar URL assinada: ${error.message}`);
+      this.loggingService.error(`Erro ao gerar URL assinada: ${error.message}`);
       throw new Error(`Erro ao gerar URL assinada: ${error.message}`);
     }
   }
@@ -436,7 +431,7 @@ export class S3StorageAdapter implements StorageProvider {
    */
   async exists(key: string): Promise<boolean> {
     try {
-      this.logger.debug(`Verificando existência do arquivo: ${key}`);
+      this.loggingService.debug(`Verificando existência do arquivo: ${key}`);
 
       // Verificar se o arquivo existe
       const command = new HeadObjectCommand({
@@ -451,7 +446,7 @@ export class S3StorageAdapter implements StorageProvider {
         return false;
       }
 
-      this.logger.error(
+      this.loggingService.error(
         `Erro ao verificar existência do arquivo: ${error.message}`,
       );
       throw new Error(
@@ -468,7 +463,7 @@ export class S3StorageAdapter implements StorageProvider {
    */
   async copy(sourceKey: string, destinationKey: string): Promise<string> {
     try {
-      this.logger.debug(
+      this.loggingService.debug(
         `Copiando arquivo de ${sourceKey} para ${destinationKey}`,
       );
 
@@ -480,11 +475,11 @@ export class S3StorageAdapter implements StorageProvider {
       });
 
       await this.s3Client.send(command);
-      this.logger.debug(`Arquivo copiado com sucesso para: ${destinationKey}`);
+      this.loggingService.debug(`Arquivo copiado com sucesso para: ${destinationKey}`);
 
       return destinationKey;
     } catch (error) {
-      this.logger.error(`Erro ao copiar arquivo: ${error.message}`);
+      this.loggingService.error(`Erro ao copiar arquivo: ${error.message}`);
       throw new Error(`Erro ao copiar arquivo: ${error.message}`);
     }
   }
@@ -497,7 +492,7 @@ export class S3StorageAdapter implements StorageProvider {
    */
   async list(prefix: string, maxKeys: number = 1000): Promise<string[]> {
     try {
-      this.logger.debug(
+      this.loggingService.debug(
         `Listando arquivos com prefixo: ${prefix} (max: ${maxKeys})`,
       );
 
@@ -514,13 +509,13 @@ export class S3StorageAdapter implements StorageProvider {
       const keys = (response.Contents || [])
         .map((item) => item.Key)
         .filter(Boolean) as string[];
-      this.logger.debug(
+      this.loggingService.debug(
         `Encontrados ${keys.length} arquivos com prefixo: ${prefix}`,
       );
 
       return keys;
     } catch (error) {
-      this.logger.error(`Erro ao listar arquivos: ${error.message}`);
+      this.loggingService.error(`Erro ao listar arquivos: ${error.message}`);
       throw new Error(`Erro ao listar arquivos: ${error.message}`);
     }
   }

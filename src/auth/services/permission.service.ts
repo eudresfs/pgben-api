@@ -9,6 +9,7 @@ import { TipoEscopo } from '../../entities/user-permission.entity';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { Usuario } from '@/entities';
+import { PermissionMatcher } from '../utils/permission-matcher';
 
 /**
  * Interface para verificação de permissão com escopo.
@@ -228,8 +229,8 @@ export class PermissionService {
         return false;
       }
 
-      // Verifica se o usuário tem a permissão direta
-      const userPermission =
+      // Verifica se o usuário tem a permissão direta considerando o escopo solicitado
+      let userPermission =
         await this.userPermissionRepository.findByUserAndPermission(
           userId,
           permission.id,
@@ -237,7 +238,22 @@ export class PermissionService {
           scopeId || undefined,
         );
 
-      // Se não encontrou a permissão ou ela não está concedida, retorna false
+      // Caso não exista permissão concedida para o escopo específico, tentamos
+      // utilizar uma permissão GLOBAL (fallback). Isto garante que o usuário
+      // que possua uma permissão global – por exemplo `solicitacao.*` com
+      // escopo GLOBAL – consiga executar ações que exijam a mesma permissão em
+      // um escopo mais restrito (ex.: UNIDADE), evitando duplicação de
+      // permissões.
+      if (!userPermission && scopeType !== TipoEscopo.GLOBAL) {
+        userPermission = await this.userPermissionRepository.findByUserAndPermission(
+          userId,
+          permission.id,
+          TipoEscopo.GLOBAL,
+          undefined,
+        );
+      }
+
+      // Se ainda não encontrou a permissão ou ela não está concedida, retorna false
       if (!userPermission || !userPermission.granted) {
         return false;
       }
@@ -910,6 +926,18 @@ export class PermissionService {
       });
       return [];
     }
+  }
+
+
+  /**
+   * Verifica se uma lista de permissões do usuário atende ao requisito solicitado em memória.
+   * Não faz acesso ao banco.
+   */
+  public hasPermissionInMemory(
+    userPermissions: string[] | undefined | null,
+    requiredPermission: string,
+  ): boolean {
+    return PermissionMatcher.hasPermission(userPermissions, requiredPermission);
   }
 
   /**

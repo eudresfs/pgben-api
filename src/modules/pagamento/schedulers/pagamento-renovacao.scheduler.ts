@@ -5,7 +5,7 @@ import { LessThanOrEqual, Repository } from 'typeorm';
 import { Concessao } from '../../../entities/concessao.entity';
 import { StatusConcessao } from '../../../enums/status-concessao.enum';
 import { PagamentoService } from '../services/pagamento.service';
-import { UnifiedLoggerService } from '../../../shared/logging/unified-logger.service';
+import { LoggingService } from '../../../shared/logging/logging.service';
 import { addMonths, isAfter } from 'date-fns';
 
 @Injectable()
@@ -14,7 +14,7 @@ export class PagamentoRenovacaoScheduler {
     @InjectRepository(Concessao)
     private readonly concessaoRepository: Repository<Concessao>,
     private readonly pagamentoService: PagamentoService,
-    private readonly logger: UnifiedLoggerService,
+    private readonly logger: LoggingService,
   ) {}
 
   /**

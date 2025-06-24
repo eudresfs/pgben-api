@@ -11,7 +11,7 @@ import {
 } from '@nestjs/terminus';
 import { HealthCheckService as AppHealthCheckService } from '../../services/health-check.service';
 import { StorageHealthService } from '../../../modules/documento/services/storage-health.service';
-import { UnifiedLoggerService } from '../../logging/unified-logger.service';
+import { UnifiedLoggerService } from '../../logging/unified-logger.module';
 
 /**
  * Testes unitários para o controlador de saúde

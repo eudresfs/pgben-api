@@ -23,7 +23,7 @@ import { ValidationError } from 'class-validator';
 import { REQUEST_ID_TOKEN_HEADER } from '../../constants';
 import { createRequestContext } from '../../request-context/util';
 import { BaseApiException } from '../base-api.exception';
-import { UnifiedLoggerService } from '../../logging/unified-logger.service';
+import { LoggingService } from '../../logging/logging.service';
 import { ApiErrorResponse } from '../../dtos/api-error-response.dto';
 import { AppError } from './AppError';
 import { ErrorCategory, ErrorSeverity } from './catalog';
@@ -39,9 +39,9 @@ import { ErrorCategory, ErrorSeverity } from './catalog';
 export class CatalogAwareExceptionFilter<T> implements ExceptionFilter {
   constructor(
     private readonly config: ConfigService,
-    private readonly logger: UnifiedLoggerService,
+    private readonly logger: LoggingService,
   ) {
-    this.logger.setContext(CatalogAwareExceptionFilter.name);
+
   }
 
   catch(exception: T, host: ArgumentsHost): any {
@@ -201,9 +201,9 @@ export class CatalogAwareExceptionFilter<T> implements ExceptionFilter {
       };
 
       if (logLevel === 'error') {
-        this.logger.error(requestContext, logMessage, logMeta);
+        this.logger.error(logMessage, exception instanceof Error ? exception : undefined, CatalogAwareExceptionFilter.name, logMeta);
       } else {
-        this.logger.warn(requestContext, logMessage, logMeta);
+        this.logger.warn(logMessage, CatalogAwareExceptionFilter.name, logMeta);
       }
     }
 
@@ -244,17 +244,17 @@ export class CatalogAwareExceptionFilter<T> implements ExceptionFilter {
     };
 
     if (logLevel === 'error') {
-      this.logger.error(requestContext, logMessage, logMeta);
+      this.logger.error(logMessage, appError, CatalogAwareExceptionFilter.name, logMeta);
     } else {
-      this.logger.warn(requestContext, logMessage, logMeta);
+      this.logger.warn(logMessage, CatalogAwareExceptionFilter.name, logMeta);
     }
 
     // Log adicional para erros críticos
     if (appError.isCritical()) {
-      this.logger.error(requestContext, `CRITICAL ERROR: ${logMessage}`, {
+      this.logger.error(`CRITICAL ERROR: ${logMessage}`, appError, CatalogAwareExceptionFilter.name, {
         ...logMeta,
         alert: true,
-        criticalError: true,
+        criticalError: true
       });
     }
   }
@@ -386,11 +386,24 @@ export class CatalogAwareExceptionFilter<T> implements ExceptionFilter {
 
   /**
    * Processa erros de validação do class-validator em formato estruturado
+   * e remove valores sensíveis das respostas de erro
    */
   private processValidationErrors(
     validationErrors: string[] | ValidationError[],
-  ): Array<{ field: string; messages: string[] }> {
-    const result: Array<{ field: string; messages: string[] }> = [];
+  ): Array<{ field: string; messages: string[]; value?: any }> {
+    const result: Array<{ field: string; messages: string[]; value?: any }> = [];
+    // Lista de campos sensíveis que não devem aparecer na resposta
+    const sensitiveFields = [
+      'senha', 'password', 'token', 'secret', 'authorization', 'key',
+      'confirmPassword', 'confirmSenha', 'currentPassword', 'senhaAtual', 'newPassword', 'novaSenha',
+      'cpf', 'rg', 'cnpj', 'cardNumber', 'cartao', 'cvv', 'passaporte', 'biometria'
+    ];
+
+    const isSensitiveField = (fieldName: string): boolean => {
+      return sensitiveFields.some(field => 
+        fieldName.toLowerCase().includes(field.toLowerCase())
+      );
+    };
 
     for (const error of validationErrors) {
       if (typeof error === 'string') {
@@ -404,20 +417,37 @@ export class CatalogAwareExceptionFilter<T> implements ExceptionFilter {
           ? Object.values(validationError.constraints)
           : ['Erro de validação'];
 
-        result.push({
+        const errorItem: { field: string; messages: string[]; value?: any } = {
           field: validationError.property,
           messages,
-        });
+        };
+
+        // Apenas adiciona o valor se não for um campo sensível
+        if (!isSensitiveField(validationError.property) && validationError.value !== undefined) {
+          errorItem.value = validationError.value;
+        }
+
+        result.push(errorItem);
 
         if (validationError.children && validationError.children.length > 0) {
           const childErrors = this.processValidationErrors(
             validationError.children,
           );
           result.push(
-            ...childErrors.map((childError) => ({
-              field: `${validationError.property}.${childError.field}`,
-              messages: childError.messages,
-            })),
+            ...childErrors.map((childError) => {
+              const nestedField = `${validationError.property}.${childError.field}`;
+              const newErrorItem: { field: string; messages: string[]; value?: any } = {
+                field: nestedField,
+                messages: childError.messages,
+              };
+              
+              // Apenas adiciona o valor se não for um campo sensível
+              if (!isSensitiveField(nestedField) && childError.value !== undefined) {
+                newErrorItem.value = childError.value;
+              }
+              
+              return newErrorItem;
+            }),
           );
         }
       }

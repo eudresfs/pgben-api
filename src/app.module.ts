@@ -22,7 +22,7 @@ import { LogsModule } from './modules/logs/logs.module';
 import { PagamentoModule } from './modules/pagamento/pagamento.module';
 import { APP_GUARD } from '@nestjs/core';
 import { CatalogAwareExceptionFilter } from './shared/exceptions/error-catalog';
-import { UnifiedLoggerModule } from './shared/logging/unified-logger.module';
+import { LoggingModule } from './shared/logging/logging.module';
 import { ResilienceModule } from './shared/modules/resilience.module';
 import { EmailModule } from './shared/modules/email.module';
 import { ConfiguracaoModule } from './modules/configuracao/configuracao.module';
@@ -82,10 +82,10 @@ import { EasyUploadModule } from './modules/easy-upload/easy-upload.module';
     MonitoringModule,
 
     // Módulos compartilhados
-    EmailModule, // Módulo de email
-    UnifiedLoggerModule,
+    EmailModule, 
     PermissionSharedModule,
     AuditoriaSharedModule,
+    LoggingModule,
     // ResilienceModule, // Temporariamente desabilitado - depende do Redis
 
     // Módulo de autenticação

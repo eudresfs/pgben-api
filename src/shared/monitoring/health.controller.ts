@@ -14,7 +14,7 @@ import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { SWAGGER_TAGS } from '../configs/swagger/tags.config';
 import { HealthCheckService as AppHealthCheckService } from '../services/health-check.service';
 import { StorageHealthService, StorageHealthStatus } from '../../modules/documento/services/storage-health.service';
-import { UnifiedLoggerService } from '../logging/unified-logger.service';
+import { LoggingService } from '../logging/logging.service';
 
 /**
  * Controlador de Health Check
@@ -33,7 +33,7 @@ export class HealthController {
     private disk: DiskHealthIndicator,
     private appHealthCheck: AppHealthCheckService,
     private storageHealth: StorageHealthService,
-    private readonly logger: UnifiedLoggerService,
+    private readonly logger: LoggingService,
   ) {
     this.logger.setContext(HealthController.name);
   }

@@ -51,7 +51,7 @@ export class ConcessaoController {
     } as any); // Cast simplificado
   }
 
-    /**
+  /**
    * Consulta uma concessão pelo seu identificador único (UUID).
    *
    * @param id UUID da concessão

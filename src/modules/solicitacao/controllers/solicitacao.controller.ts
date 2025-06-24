@@ -14,6 +14,7 @@ import {
   UnauthorizedException,
   ParseUUIDPipe,
 } from '@nestjs/common';
+import { LoggingService } from '../../../shared/logging/logging.service';
 import {
   ApiTags,
   ApiOperation,
@@ -48,7 +49,10 @@ import { QueryOptimization } from '../../../common/interceptors/query-optimizati
 @UseGuards(JwtAuthGuard, PermissionGuard)
 @ApiBearerAuth()
 export class SolicitacaoController {
-  constructor(private readonly solicitacaoService: SolicitacaoService) {}
+  constructor(
+    private readonly solicitacaoService: SolicitacaoService,
+    private readonly logger: LoggingService
+  ) {}
 
   /**
    * Lista todas as solicitações com filtros e paginação
@@ -129,8 +133,17 @@ export class SolicitacaoController {
     @Query('data_inicio') data_inicio?: string,
     @Query('data_fim') data_fim?: string,
   ) {
-    // Verificar permissões do usuário para filtrar solicitações por unidade
+    // Obter o contexto de escopo definido pelo guard
     const user = req.user;
+    const scopeContext = req.scopeContext || {
+      scopeType: unidade_id ? ScopeType.UNIT : ScopeType.GLOBAL,
+      scopeId: unidade_id,
+      roles: user.roles,
+      userId: user.id,
+      unidadeId: user.unidade_id,
+    };
+    
+    this.logger.debug(`Contexto de escopo: ${JSON.stringify(scopeContext)}`);
 
     return this.solicitacaoService.findAll({
       page: page ? +page : undefined,
@@ -142,6 +155,7 @@ export class SolicitacaoController {
       data_inicio,
       data_fim,
       user,
+      scopeContext, // Passar o contexto de escopo para o serviço
     });
   }
 

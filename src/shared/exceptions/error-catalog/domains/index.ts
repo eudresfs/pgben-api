@@ -8,27 +8,14 @@
  * @see docs/ADRs/catalogo-erros.md
  */
 
-// ========================================
-// EXPORTAÇÕES DOS DOMÍNIOS
-// ========================================
-
-// Domínio USUARIO
+// Exportar funções auxiliares para lançar erros
 export * from './usuario.errors';
-
-// Domínio SOLICITACAO
 export * from './solicitacao.errors';
-
-// Domínio CIDADAO
 export * from './cidadao.errors';
-
-// Domínio BENEFICIO
 export * from './beneficio.errors';
-
-// Domínio DOCUMENTO
 export * from './documento.errors';
-
-// Domínio AUDITORIA
 export * from './auditoria.errors';
+
 
 // Domínio NOTIFICACAO
 export * from './notificacao.errors';

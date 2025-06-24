@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { UnifiedLoggerService } from '../../../shared/logging/unified-logger.service';
+import { LoggingService } from '../../../shared/logging/logging.service';
 import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -42,9 +42,8 @@ export class MimeValidationService {
 
   constructor(
     private readonly configService: ConfigService,
-    private readonly logger: UnifiedLoggerService,
+    private readonly logger: LoggingService,
   ) {
-    this.logger.setContext('MimeValidationService');
     this.maxRetries = this.configService.get<number>(
       'MIME_VALIDATION_RETRIES',
       3,
@@ -66,13 +65,7 @@ export class MimeValidationService {
     const startTime = Date.now();
     const vId = validationId || crypto.randomUUID().substring(0, 8);
 
-    this.logger.info('Iniciando validação MIME completa', {
-      validationId: vId,
-      filename: file.originalname,
-      size: file.size,
-      detectedMimeType: file.mimetype,
-      tipoBeneficio,
-    });
+    this.logger.info('Iniciando validação MIME completa', MimeValidationService.name, { validationId: vId, filename: file.originalname, size: file.size, detectedMimeType: file.mimetype, tipoBeneficio });
 
     try {
       const config = getMimeConfigForBenefit(tipoBeneficio);
@@ -80,23 +73,15 @@ export class MimeValidationService {
 
       const processingTime = Date.now() - startTime;
 
-      this.logger.info('Validação MIME concluída', {
-        validationId: vId,
-        isValid: result.isValid,
-        processingTime,
-        errorsCount: result.validationErrors.length,
-        warningsCount: result.securityWarnings.length,
-      });
+      this.logger.info('Validação MIME concluída', MimeValidationService.name, { validationId: vId, isValid: result.isValid, processingTime, errorsCount: result.validationErrors.length, warningsCount: result.securityWarnings.length });
 
       return result;
     } catch (error) {
       const processingTime = Date.now() - startTime;
 
-      this.logger.error('Erro durante validação MIME', {
-        validationId: vId,
-        error: error.message,
+      this.logger.error('Erro durante validação MIME', error, MimeValidationService.name, {
         processingTime,
-        filename: file.originalname,
+        filename: file.originalname
       });
 
       throw new BadRequestException(
@@ -122,13 +107,7 @@ export class MimeValidationService {
     const expectedMimeType = getExpectedMimeType(file.originalname);
     const fileHash = this.calculateFileHash(file.buffer);
 
-    this.logger.debug('Informações do arquivo extraídas', {
-      validationId,
-      fileExtension,
-      detectedMimeType,
-      expectedMimeType,
-      fileHash: fileHash.substring(0, 16) + '...',
-    });
+    this.logger.debug('Informações do arquivo extraídas', MimeValidationService.name, { validationId, fileExtension, detectedMimeType, expectedMimeType, fileHash: fileHash.substring(0, 16) + '...' });
 
     // 1. Validar tamanho do arquivo
     if (file.size > config.maxFileSize) {
@@ -196,12 +175,7 @@ export class MimeValidationService {
     const isValid = validationErrors.length === 0;
 
     if (!isValid) {
-      this.logger.warn('Arquivo rejeitado na validação', {
-        validationId,
-        filename: file.originalname,
-        errors: validationErrors,
-        warnings: securityWarnings,
-      });
+      this.logger.warn('Arquivo rejeitado na validação', MimeValidationService.name, { validationId, filename: file.originalname, errors: validationErrors, warnings: securityWarnings });
     }
 
     return {
@@ -324,20 +298,5 @@ export class MimeValidationService {
     }
 
     return `${size.toFixed(2)} ${units[unitIndex]}`;
-  }
-
-  /**
-   * Obtém configuração MIME para um tipo de benefício
-   */
-  getMimeConfig(tipoBeneficio?: string): MimeValidationConfig {
-    return getMimeConfigForBenefit(tipoBeneficio);
-  }
-
-  /**
-   * Verifica se um tipo MIME é permitido
-   */
-  isMimeTypeAllowed(mimeType: string, tipoBeneficio?: string): boolean {
-    const config = getMimeConfigForBenefit(tipoBeneficio);
-    return isMimeTypeAllowed(mimeType, config);
   }
 }

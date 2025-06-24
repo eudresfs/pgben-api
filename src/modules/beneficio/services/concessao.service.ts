@@ -7,7 +7,7 @@ import { StatusConcessao } from '../../../enums/status-concessao.enum';
 import { PagamentoService } from '../../pagamento/services/pagamento.service';
 import { HistoricoConcessao } from '../../../entities/historico-concessao.entity';
 import { ValidacaoBeneficioService } from './validacao-beneficio.service';
-import { UnifiedLoggerService } from '../../../shared/logging/unified-logger.service';
+import { LoggingService } from '../../../shared/logging/logging.service';
 import { StatusPagamentoEnum } from '@/enums';
 
 @Injectable()
@@ -19,17 +19,34 @@ export class ConcessaoService {
     @InjectRepository(HistoricoConcessao)
     private readonly historicoRepo: Repository<HistoricoConcessao>,
     private readonly validacaoBeneficioService: ValidacaoBeneficioService,
-    private readonly logger: UnifiedLoggerService,
+    private readonly logger: LoggingService,
   ) {}
 
-  async findAll(): Promise<Concessao[]> {
-    return this.concessaoRepo.find();
+  async findAll(): Promise<any[]> {
+    return this.concessaoRepo
+      .createQueryBuilder('concessao')
+      .leftJoin('concessao.solicitacao', 'solicitacao')
+      .leftJoin('solicitacao.beneficiario', 'cidadao')
+      .leftJoin('solicitacao.tipo_beneficio', 'tipo_beneficio')
+      .select([
+        'concessao.id',
+        'concessao.dataInicio as data_inicio',
+        'concessao.status as status',
+        'concessao.ordem_prioridade as prioridade',
+        'solicitacao.protocolo as protocolo',
+        'solicitacao.determinacao_judicial_flag as determinacao_judicial',
+        'cidadao.nome as nome_beneficiario',
+        'cidadao.cpf as cpf_beneficiario',
+        'tipo_beneficio.nome as nome_beneficio',
+      ])
+      .getRawMany();
   }
+  
 
   async findById(id: string): Promise<Concessao | null> {
     return this.concessaoRepo.findOne({ 
       where: { id },
-      relations: ['pagamentos'] // Incluir pagamentos relacionados
+      relations: ['solicitacao', 'solicitacao.beneficiario', 'solicitacao.tipo_beneficio'],
     });
   }
 
@@ -37,7 +54,7 @@ export class ConcessaoService {
     const concessao = await this.concessaoRepo.findOne({ where: { id } });
     if (!concessao) return null;
     const statusAnterior = concessao.status;
-    if (statusAnterior === status) return concessao; // nada a fazer
+    if (statusAnterior === status) return concessao;
 
     concessao.status = status;
     await this.concessaoRepo.save(concessao);
@@ -154,7 +171,7 @@ export class ConcessaoService {
       solicitacaoOriginal
     );
 
-    this.logger.log(
+    this.logger.info(
       `Concessão ${concessaoId} prorrogada. Nova concessão ${concessaoSalva.id} criada com ${quantidadeParcelasOriginal} parcelas (mesmo período da concessão anterior)`
     );
 
@@ -241,7 +258,10 @@ export class ConcessaoService {
       dataAlteracao: new Date(),
     });
 
-    this.logger.log(`Concessão ${concessaoId} suspensa por ${usuarioId}. Motivo: ${motivo}`);
+    this.logger.warn(
+      `Concessão ${concessaoId} suspensa por ${usuarioId}. Motivo: ${motivo}`,
+      ConcessaoService.name,
+    );
     return concessaoSalva;
   }
 
@@ -287,7 +307,10 @@ export class ConcessaoService {
       dataAlteracao: new Date(),
     });
 
-    this.logger.log(`Concessão ${concessaoId} bloqueada por ${usuarioId}. Motivo: ${motivo}`);
+    this.logger.warn(
+      `Concessão ${concessaoId} bloqueada por ${usuarioId}. Motivo: ${motivo}`,
+      ConcessaoService.name,
+    );
     return concessaoSalva;
   }
 
@@ -334,7 +357,10 @@ export class ConcessaoService {
       dataAlteracao: new Date(),
     });
 
-    this.logger.log(`Concessão ${concessaoId} desbloqueada por ${usuarioId}. Motivo: ${motivo}`);
+    this.logger.info(
+      `Concessão ${concessaoId} desbloqueada por ${usuarioId}. Motivo: ${motivo}`,
+      ConcessaoService.name,
+    );
     return concessaoSalva;
   }
 
@@ -382,7 +408,10 @@ export class ConcessaoService {
     });
     await this.historicoRepo.save(historico);
 
-    this.logger.log(`Concessão ${concessaoId} cancelada por usuário ${usuarioId}`);
+    this.logger.warn(
+      `Concessão ${concessaoId} cancelada por usuário ${usuarioId}`,
+      ConcessaoService.name,
+    );
 
     return concessaoSalva;
   }
@@ -437,7 +466,10 @@ export class ConcessaoService {
         dataAlteracao: new Date(),
       });
 
-      this.logger.log(`Concessão ${concessaoId} encerrada automaticamente - todos os pagamentos liberados`);
+      this.logger.info(
+        `Concessão ${concessaoId} encerrada automaticamente - todos os pagamentos liberados`,
+        ConcessaoService.name,
+      );
       return concessaoSalva;
     }
 

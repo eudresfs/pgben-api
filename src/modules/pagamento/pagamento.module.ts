@@ -1,6 +1,6 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { UnifiedLoggerService } from '../../shared/logging/unified-logger.service';
+import { LoggingService } from '../../shared/logging/logging.service';
 
 // Entidades
 import {
@@ -113,7 +113,7 @@ import { SharedModule } from '../../shared/shared.module';
     Reflector,
 
     // Logger
-    UnifiedLoggerService,
+    LoggingService,
   ],
   exports: [
     TypeOrmModule,

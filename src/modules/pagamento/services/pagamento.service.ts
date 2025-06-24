@@ -26,7 +26,7 @@ import { AuditoriaPagamentoService } from './auditoria-pagamento.service';
 import { TipoOperacao } from '../../../enums/tipo-operacao.enum';
 import { StatusSolicitacao } from '@/enums';
 import { NotificacaoService } from '../../notificacao/services/notificacao.service';
-import { UnifiedLoggerService } from '../../../shared/logging/unified-logger.service';
+import { LoggingService } from '../../../shared/logging/logging.service';
 
 /**
  * Serviço para gerenciamento de operações relacionadas a pagamentos
@@ -48,7 +48,7 @@ export class PagamentoService {
     private readonly auditoriaService: AuditoriaService,
     private readonly auditoriaPagamentoService: AuditoriaPagamentoService,
     private readonly notificacaoService: NotificacaoService,
-    private readonly logger: UnifiedLoggerService,
+    private readonly logger: LoggingService,
     private readonly eventEmitter: EventEmitter2,
   ) { }
 
@@ -73,7 +73,11 @@ export class PagamentoService {
     // Garantir valor do benefício
     const valorParcela = solicitacao?.tipo_beneficio?.valor;
     if (!valorParcela || valorParcela <= 0) {
-      this.logger.warn(`Valor de benefício não definido para solicitação ${solicitacao?.id}. Pagamento não gerado.`);
+      this.logger.warn(
+        `Valor de benefício não definido para solicitação ${solicitacao?.id}. Pagamento não gerado.`,
+        PagamentoService.name,
+        { solicitacaoId: solicitacao?.id }
+      );
       return [];
     }
 
@@ -137,10 +141,13 @@ export class PagamentoService {
       });
       
       await historicoRepo.save(historico);
-      this.logger.debug(`Histórico de renovação por determinação judicial registrado para concessão ${concessao.id}`);
+      this.logger.debug(`Histórico de renovação por determinação judicial registrado para concessao ${concessao.id}`, PagamentoService.name);
     }
     
-    this.logger.debug(`${quantidadeParcelas} pagamentos gerados automaticamente para concessão ${concessao.id}`);
+    this.logger.info(`Gerados ${pagamentos.length} pagamentos para concessão ${concessao.id}`,
+      PagamentoService.name,
+      { quantidadeParcelas, concessaoId: concessao.id }
+    );
     return savedPagamentos;
     }
 
@@ -225,8 +232,10 @@ export class PagamentoService {
         });
       } catch (sseError) {
         this.logger.error(
-          `Erro ao emitir notificação SSE para criação de pagamento pendente ${result.id}: ${sseError.message}`,
-          sseError.stack,
+          `Erro ao enviar notificação para pagamento ${result.id}`,
+          sseError,
+          PagamentoService.name,
+          { pagamentoId: result.id }
         );
       }
     }
@@ -324,8 +333,10 @@ export class PagamentoService {
         });
       } catch (sseError) {
         this.logger.error(
-          `Erro ao emitir notificação SSE para criação de pagamento ${result.id}: ${sseError.message}`,
-          sseError.stack,
+          `Erro ao enviar notificação para pagamento ${result.id}`,
+          sseError,
+          PagamentoService.name,
+          { pagamentoId: result.id }
         );
       }
     }
@@ -382,13 +393,17 @@ export class PagamentoService {
         observacao
       );
 
-      this.logger.log(
+      this.logger.info(
         `Status da solicitação ${solicitacaoId} atualizado para ${statusSolicitacao} devido ao pagamento ${statusPagamento}`,
+        PagamentoService.name,
+        { solicitacaoId, statusSolicitacao, statusPagamento }
       );
     } catch (error) {
       this.logger.error(
-        `Erro ao atualizar status da solicitação ${solicitacaoId} para pagamento ${statusPagamento}`,
-        error.stack,
+        `Erro ao atualizar status da solicitação ${solicitacaoId} para ${statusPagamento}`,
+        error,
+        PagamentoService.name,
+        { solicitacaoId, statusPagamento }
       );
       throw error;
     }
@@ -519,8 +534,10 @@ export class PagamentoService {
       });
     } catch (notificationError) {
       this.logger.error(
-        `Erro ao enviar notificação de atualização de pagamento ${id}: ${notificationError.message}`,
-        notificationError.stack,
+        `Erro ao enviar notificação para pagamento ${id}`,
+        notificationError,
+        PagamentoService.name,
+        { pagamentoId: id }
       );
     }
 
@@ -625,8 +642,10 @@ export class PagamentoService {
       });
     } catch (notificationError) {
       this.logger.error(
-        `Erro ao enviar notificação de cancelamento de pagamento ${id}: ${notificationError.message}`,
-        notificationError.stack,
+        `Erro ao enviar notificação para pagamento ${id}`,
+        notificationError,
+        PagamentoService.name,
+        { pagamentoId: id }
       );
     }
 
@@ -825,6 +844,23 @@ export class PagamentoService {
     }
   }
 
+
+
+  /**
+   * Calcula a data da próxima parcela baseada na periodicidade do benefício
+   * 
+   * Este método implementa o cálculo de datas para parcelas subsequentes considerando:
+   * - Diferentes periodicidades (mensal, bimestral, trimestral, semestral, anual, único)
+   * - Tratamento especial para fins de mês (ex: 31/01 -> 28/02 em anos não bissextos)
+   * - Validação de parâmetros de entrada
+   * - Logs para auditoria e debugging
+   * 
+   * @param dataInicio Data de início da concessão (deve ser uma data válida)
+   * @param periodicidade Periodicidade do benefício conforme PeriodicidadeEnum
+   * @param numeroParcela Índice da parcela (começando em 0 para primeira parcela)
+   * @returns Data calculada para a próxima parcela
+   * @throws Error se os parâmetros forem inválidos
+   */
   /**
    * Retorna o nome de exibição do status
    */
@@ -863,13 +899,13 @@ export class PagamentoService {
 
   /**
    * Calcula a data da próxima parcela baseada na periodicidade do benefício
-   * 
+   *
    * Este método implementa o cálculo de datas para parcelas subsequentes considerando:
    * - Diferentes periodicidades (mensal, bimestral, trimestral, semestral, anual, único)
    * - Tratamento especial para fins de mês (ex: 31/01 -> 28/02 em anos não bissextos)
    * - Validação de parâmetros de entrada
    * - Logs para auditoria e debugging
-   * 
+   *
    * @param dataInicio Data de início da concessão (deve ser uma data válida)
    * @param periodicidade Periodicidade do benefício conforme PeriodicidadeEnum
    * @param numeroParcela Índice da parcela (começando em 0 para primeira parcela)
@@ -877,134 +913,157 @@ export class PagamentoService {
    * @throws Error se os parâmetros forem inválidos
    */
   private calcularDataProximaParcela(
-    dataInicio: Date, 
-    periodicidade: string, 
+    dataInicio: Date,
+    periodicidade: string,
     numeroParcela: number
   ): Date {
     // Validação de parâmetros de entrada
     if (!dataInicio || !(dataInicio instanceof Date) || isNaN(dataInicio.getTime())) {
-      this.logger.error('Data de início inválida fornecida para cálculo de parcela', {
-        dataInicio,
-        periodicidade,
-        numeroParcela
-      });
+      this.logger.error('Data de início inválida fornecida para cálculo de parcela', 
+        new Error('Data de início inválida'),
+        PagamentoService.name,
+        {
+          dataInicioStr: dataInicio ? dataInicio.toString() : 'undefined',
+          periodicidade,
+          numeroParcela
+        }
+      );
       throw new Error('Data de início deve ser uma data válida');
     }
 
-    if (typeof numeroParcela !== 'number' || numeroParcela < 0) {
-      this.logger.error('Número da parcela inválido', {
-        dataInicio,
+  if (typeof numeroParcela !== 'number' || numeroParcela < 0) {
+    this.logger.error('Número da parcela inválido', 
+      new Error('Número da parcela inválido'),
+      PagamentoService.name,
+      {
+        dataInicioStr: dataInicio.toISOString(),
         periodicidade,
         numeroParcela
-      });
-      throw new Error('Número da parcela deve ser um número não negativo');
-    }
-
-    if (!periodicidade || typeof periodicidade !== 'string') {
-      this.logger.error('Periodicidade inválida fornecida', {
-        dataInicio,
-        periodicidade,
-        numeroParcela
-      });
-      throw new Error('Periodicidade deve ser uma string válida');
-    }
-
-    // Cria uma nova instância da data para evitar mutação do parâmetro original
-    const dataCalculada = new Date(dataInicio.getTime());
-    
-    // Para benefícios de parcela única, sempre retorna a data de início
-    if (periodicidade === 'unico') {
-      this.logger.debug('Calculando data para benefício de parcela única', {
-        dataInicio: dataInicio.toISOString(),
-        dataCalculada: dataCalculada.toISOString()
-      });
-      return dataCalculada;
-    }
-
-    // Se for a primeira parcela (índice 0), retorna a data de início
-    if (numeroParcela === 0) {
-      this.logger.debug('Retornando data de início para primeira parcela', {
-        dataInicio: dataInicio.toISOString(),
-        periodicidade,
-        numeroParcela
-      });
-      return dataCalculada;
-    }
-
-    // Armazena o dia original para tratamento de fins de mês
-    const diaOriginal = dataInicio.getDate();
-
-    try {
-      switch (periodicidade.toLowerCase()) {
-        case 'mensal':
-          // Adiciona N meses à data inicial
-          dataCalculada.setMonth(dataCalculada.getMonth() + numeroParcela);
-          break;
-          
-        case 'bimestral':
-          // Adiciona N*2 meses à data inicial
-          dataCalculada.setMonth(dataCalculada.getMonth() + (numeroParcela * 2));
-          break;
-          
-        case 'trimestral':
-          // Adiciona N*3 meses à data inicial
-          dataCalculada.setMonth(dataCalculada.getMonth() + (numeroParcela * 3));
-          break;
-          
-        case 'semestral':
-          // Adiciona N*6 meses à data inicial
-          dataCalculada.setMonth(dataCalculada.getMonth() + (numeroParcela * 6));
-          break;
-          
-        case 'anual':
-          // Adiciona N anos à data inicial
-          dataCalculada.setFullYear(dataCalculada.getFullYear() + numeroParcela);
-          break;
-          
-        default:
-          this.logger.warn('Periodicidade não reconhecida, usando padrão mensal', {
-            periodicidade,
-            dataInicio: dataInicio.toISOString(),
-            numeroParcela
-          });
-          // Por padrão considera mensal se não reconhecido
-          dataCalculada.setMonth(dataCalculada.getMonth() + numeroParcela);
-          break;
       }
+    );
+    throw new Error('Número da parcela deve ser um número não negativo');
+  }
 
-      // Tratamento especial para fins de mês
-      // Se o dia original era maior que o último dia do mês calculado,
-      // ajusta para o último dia do mês
-      if (diaOriginal > 28 && dataCalculada.getDate() !== diaOriginal) {
-        const ultimoDiaDoMes = new Date(dataCalculada.getFullYear(), dataCalculada.getMonth() + 1, 0).getDate();
-        const diaAjustado = Math.min(diaOriginal, ultimoDiaDoMes);
-        dataCalculada.setDate(diaAjustado);
-        
-        this.logger.debug('Ajuste realizado para fim de mês', {
+  if (!periodicidade || typeof periodicidade !== 'string') {
+    this.logger.error('Periodicidade inválida fornecida', 
+      new Error('Periodicidade inválida'),
+      PagamentoService.name,
+      {
+        dataInicioStr: dataInicio.toISOString(),
+        periodicidade: periodicidade || 'undefined',
+        numeroParcela
+      }
+    );
+    throw new Error('Periodicidade deve ser uma string válida');
+  }
+
+  // Cria uma nova instância da data para evitar mutação do parâmetro original
+  const dataCalculada = new Date(dataInicio.getTime());
+
+  // Para benefícios de parcela única, sempre retorna a data de início
+  if (periodicidade === 'unico') {
+    this.logger.debug('Calculando data para benefício de parcela única', PagamentoService.name, {
+      dataInicio: dataInicio.toISOString(),
+      dataCalculada: dataCalculada.toISOString(),
+    });
+    return dataCalculada;
+  }
+
+  // Se for a primeira parcela (índice 0), retorna a data de início
+  if (numeroParcela === 0) {
+    this.logger.debug('Retornando data de início para primeira parcela', PagamentoService.name, {
+      dataInicio: dataInicio.toISOString(),
+      periodicidade,
+      numeroParcela,
+    });
+    return dataCalculada;
+  }
+
+  // Armazena o dia original para tratamento de fins de mês
+  const diaOriginal = dataInicio.getDate();
+
+  try {
+    switch (periodicidade.toLowerCase()) {
+      case 'mensal':
+        // Adiciona N meses à data inicial
+        dataCalculada.setMonth(dataCalculada.getMonth() + numeroParcela);
+        break;
+
+      case 'bimestral':
+        // Adiciona N*2 meses à data inicial
+        dataCalculada.setMonth(dataCalculada.getMonth() + numeroParcela * 2);
+        break;
+
+      case 'trimestral':
+        // Adiciona N*3 meses à data inicial
+        dataCalculada.setMonth(dataCalculada.getMonth() + numeroParcela * 3);
+        break;
+
+      case 'semestral':
+        // Adiciona N*6 meses à data inicial
+        dataCalculada.setMonth(dataCalculada.getMonth() + numeroParcela * 6);
+        break;
+
+      case 'anual':
+        // Adiciona N anos à data inicial
+        dataCalculada.setFullYear(dataCalculada.getFullYear() + numeroParcela);
+        break;
+
+      default:
+        this.logger.warn('Periodicidade não reconhecida, usando padrão mensal', 
+          PagamentoService.name, 
+          {
+            periodicidade,
+            numeroParcela,
+            dataCalculada: dataCalculada.toISOString()
+          }
+        );
+        // Por padrão considera mensal se não reconhecido
+        dataCalculada.setMonth(dataCalculada.getMonth() + numeroParcela);
+        break;
+    }
+
+    // Tratamento especial para fins de mês
+    // Se o dia original era maior que o último dia do mês calculado,
+    // ajusta para o último dia do mês
+    if (diaOriginal > 28 && dataCalculada.getDate() !== diaOriginal) {
+      const ultimoDiaDoMes = new Date(dataCalculada.getFullYear(), dataCalculada.getMonth() + 1, 0).getDate();
+      const diaAjustado = Math.min(diaOriginal, ultimoDiaDoMes);
+      dataCalculada.setDate(diaAjustado);
+      
+      this.logger.debug('Ajuste realizado para fim de mês', 
+        PagamentoService.name,
+        {
           diaOriginal,
           diaCalculado: dataCalculada.getDate(),
           diaAjustado,
           ultimoDiaDoMes,
           dataFinal: dataCalculada.toISOString()
-        });
-      }
+        }
+      );
+    }
 
-      this.logger.debug('Data da próxima parcela calculada com sucesso', {
-        dataInicio: dataInicio.toISOString(),
+    this.logger.debug('Data da próxima parcela calculada com sucesso', 
+      PagamentoService.name,
+      {
+        dataInicioStr: dataInicio.toISOString(),
         periodicidade,
         numeroParcela,
         dataCalculada: dataCalculada.toISOString()
-      });
+      }
+    );
 
-      return dataCalculada;
-      
-    } catch (error) {
-      this.logger.error('Erro ao calcular data da próxima parcela', {
-        error: error.message,
-        dataInicio: dataInicio.toISOString(),
-        periodicidade,
-        numeroParcela
-      });
+    return dataCalculada;
+  } catch (error) {
+      this.logger.error('Erro ao calcular data da próxima parcela', 
+        error,
+        PagamentoService.name,
+        {
+          dataInicioStr: dataInicio.toISOString(),
+          periodicidade,
+          numeroParcela
+        }
+      );
       throw new Error(`Erro no cálculo da data da parcela: ${error.message}`);
     }
   }
@@ -1030,11 +1089,14 @@ export class PagamentoService {
     // Define sempre como primeiro dia do mês
     dataLiberacao.setDate(1);
     
-    this.logger.debug('Data de liberação calculada para Aluguel Social', {
-      dataAprovacao: dataAprovacao.toISOString(),
-      diaAprovacao,
-      dataLiberacao: dataLiberacao.toISOString()
-    });
+    this.logger.debug('Data de liberação calculada para Aluguel Social', 
+      PagamentoService.name,
+      {
+        dataAprovacao: dataAprovacao.toISOString(),
+        diaAprovacao,
+        dataLiberacao: dataLiberacao.toISOString()
+      }
+    );
     
     return dataLiberacao;
    }
@@ -1082,14 +1144,14 @@ export class PagamentoService {
          
          await this.auditoriaService.create(logDto);
 
-         this.logger.log(`Pagamento ${pagamento.id} marcado automaticamente como vencido (data vencimento: ${pagamento.dataVencimento})`);
+         this.logger.info(`Pagamento ${pagamento.id} marcado automaticamente como vencido (data vencimento: ${pagamento.dataVencimento})`, PagamentoService.name);
        } catch (error) {
          this.logger.error(`Erro ao processar vencimento do pagamento ${pagamento.id}:`, error);
        }
      }
 
      if (pagamentosProcessados.length > 0) {
-       this.logger.log(`Processados ${pagamentosProcessados.length} pagamentos vencidos automaticamente`);
+       this.logger.info(`Processados ${pagamentosProcessados.length} pagamentos vencidos automaticamente`, PagamentoService.name);
      }
 
      return pagamentosProcessados;
@@ -1133,7 +1195,7 @@ export class PagamentoService {
 
      const pagamentoSalvo = await this.pagamentoRepository.save(pagamento);
 
-     this.logger.log(`Pagamento ${pagamentoId} marcado como vencido por falta de documentação: ${motivo}`);
+     this.logger.info(`Pagamento ${pagamentoId} marcado como vencido por falta de documentação: ${motivo}`, PagamentoService.name);
      return pagamentoSalvo;
    }
 

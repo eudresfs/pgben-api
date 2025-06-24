@@ -40,7 +40,7 @@ import { createJwtConfig } from '../config/jwt.config';
 import { AuditModule } from '../audit/audit.module';
 import { UsuarioModule } from '../modules/usuario/usuario.module';
 import { forwardRef } from '@nestjs/common';
-import { AppLoggerModule } from '../shared/logger/logger.module';
+import { LoggingModule } from '../shared/logging/logging.module';
 import { PermissionModule } from './permission.module';
 
 /**
@@ -100,7 +100,7 @@ import { PermissionModule } from './permission.module';
     forwardRef(() => UsuarioModule),
     forwardRef(() => AuditModule),
     ConfigModule,
-    AppLoggerModule,
+    LoggingModule,
     PermissionModule,
   ],
 

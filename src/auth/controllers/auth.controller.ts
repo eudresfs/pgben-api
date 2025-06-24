@@ -16,7 +16,7 @@ import {
   BaseApiResponse,
   SwaggerBaseApiResponse,
 } from '../../shared/dtos/base-api-response.dto';
-import { AppLogger } from '../../shared/logger/logger.service';
+import { LoggingService } from '../../shared/logging/logging.service';
 import { ReqContext } from '../../shared/request-context/req-context.decorator';
 import { RequestContext } from '../../shared/request-context/request-context.dto';
 import { LoginInput } from '../dtos/auth-login-input.dto';
@@ -32,9 +32,9 @@ import { Public } from '../decorators/public.decorator';
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
-    private readonly logger: AppLogger,
+    private readonly logger: LoggingService,
   ) {
-    this.logger.setContext(AuthController.name);
+    // O contexto agora é passado diretamente nos métodos de log
   }
   @Post('login')
   @Public()
@@ -95,7 +95,7 @@ export class AuthController {
     @ReqContext() ctx: RequestContext,
     @Body() credential: LoginInput,
   ): Promise<BaseApiResponse<AuthTokenOutput>> {
-    this.logger.log(ctx, `${this.login.name} was called`);
+    this.logger.info(`${this.login.name} was called`, AuthController.name);
 
     const authToken = await this.authService.login(ctx);
 
@@ -148,7 +148,7 @@ export class AuthController {
     @ReqContext() ctx: RequestContext,
     @Body() credential: RefreshTokenInput,
   ): Promise<BaseApiResponse<AuthTokenOutput>> {
-    this.logger.log(ctx, `${this.refreshToken.name} was called`);
+    this.logger.info(`${this.refreshToken.name} was called`, AuthController.name);
 
     const authToken = await this.authService.refreshToken(ctx, credential);
 

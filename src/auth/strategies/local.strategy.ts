@@ -3,7 +3,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { Request } from 'express';
 import { Strategy } from 'passport-local';
 
-import { AppLogger } from '../../shared/logger/logger.service';
+import { LoggingService } from '../../shared/logging/logging.service';
 import { createRequestContext } from '../../shared/request-context/util';
 import { STRATEGY_LOCAL } from '../constants/strategy.constant';
 import { UserAccessTokenClaims } from '../dtos/auth-token-output.dto';
@@ -13,7 +13,7 @@ import { AuthService } from '../services/auth.service';
 export class LocalStrategy extends PassportStrategy(Strategy, STRATEGY_LOCAL) {
   constructor(
     private authService: AuthService,
-    private readonly logger: AppLogger,
+    private readonly logger: LoggingService,
   ) {
     // Add option passReqToCallback: true to configure strategy to be request-scoped.
     super({
@@ -21,7 +21,7 @@ export class LocalStrategy extends PassportStrategy(Strategy, STRATEGY_LOCAL) {
       passwordField: 'password',
       passReqToCallback: true,
     });
-    this.logger.setContext(LocalStrategy.name);
+    // O contexto agora é passado diretamente nos métodos de log
   }
 
   async validate(
@@ -31,7 +31,7 @@ export class LocalStrategy extends PassportStrategy(Strategy, STRATEGY_LOCAL) {
   ): Promise<UserAccessTokenClaims> {
     const ctx = createRequestContext(request);
 
-    this.logger.log(ctx, `${this.validate.name} was called`);
+    this.logger.info(`${this.validate.name} was called`, LocalStrategy.name);
 
     const user = await this.authService.validateUser(ctx, username, password);
     // Passport automatically creates a user object, based on the value we return from the validate() method,

@@ -11,14 +11,13 @@ import { configModuleOptions } from './configs/module-options';
 
 // Interceptors
 import { LoggingInterceptor } from './interceptors/logging.interceptor';
-import { ResponseInterceptor } from './interceptors/response.interceptor';
 import {
   ValidationErrorInterceptor,
   ValidationMessageHelper,
 } from './interceptors/validation-error.interceptor';
 
 // Módulo unificado de logging
-import { UnifiedLoggerModule } from './logging/unified-logger.module';
+import { LoggingModule } from './logging/logging.module';
 
 // Monitoramento
 // Removido para evitar dependência circular - importado diretamente no AppModule
@@ -56,11 +55,11 @@ import { IsCPF } from './validators/cpf.validator';
       }),
     }),
     // Módulo unificado de logging
-    UnifiedLoggerModule,
+    LoggingModule,
     // Monitoramento movido para AppModule para evitar dependência circular
   ],
   exports: [
-    UnifiedLoggerModule,
+    LoggingModule,
     ConfigModule,
     // MonitoringModule removido para evitar dependência circular
     CriptografiaService,

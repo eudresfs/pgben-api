@@ -1,4 +1,5 @@
-import { Injectable, BadRequestException, Logger } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
+import { LoggingService } from '../../../shared/logging/logging.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository, DeepPartial, ILike } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
@@ -24,9 +25,7 @@ import {
   throwNotInFirstAccess,
 } from '../../../shared/exceptions/error-catalog/domains/usuario.errors';
 import { throwDuplicateCpf } from '../../../shared/exceptions/error-catalog/domains/cidadao.errors';
-// import { NotificationManagerService } from '../../notificacao/services/notification-manager.service';
 import { EmailService } from '../../../common/services/email.service';
-// import { CanalNotificacao, NotificationTemplate } from '../../../entities/notification-template.entity';
 
 /**
  * Serviço de usuários
@@ -35,7 +34,7 @@ import { EmailService } from '../../../common/services/email.service';
  */
 @Injectable()
 export class UsuarioService {
-  private readonly logger = new Logger(UsuarioService.name);
+  // Usando o LoggingService estruturado em vez do Logger padrão do NestJS
   private readonly SALT_ROUNDS = 12; // Aumentando a segurança do hash
   private readonly MAX_LOGIN_ATTEMPTS = 5; // Máximo de tentativas de login
   private readonly LOCKOUT_DURATION = 15 * 60 * 1000; // 15 minutos em ms
@@ -50,7 +49,11 @@ export class UsuarioService {
     private readonly roleRepository: Repository<Role>,
     private readonly emailService: EmailService,
     private readonly eventEmitter: EventEmitter2,
-  ) {}
+    private readonly logger: LoggingService,
+  ) {
+    // Definir o contexto do logger para este serviço
+    this.logger.setContext(UsuarioService.name);
+  }
 
   /**
    * Gera uma senha aleatória segura que atende aos critérios de validação
@@ -120,7 +123,7 @@ export class UsuarioService {
       //   canal: CanalNotificacao.EMAIL
       // });
 
-      this.logger.log(`Credenciais enviadas por email para: ${usuario.email}`);
+      this.logger.info(`Credenciais enviadas por email para: ${usuario.email}`);
     } catch (error) {
       this.logger.error(
         `Erro ao enviar credenciais por email: ${error.message}`,
@@ -279,7 +282,7 @@ export class UsuarioService {
    * @returns Usuário criado
    */
   async create(createUsuarioDto: CreateUsuarioDto) {
-    this.logger.log(`Iniciando criação de usuário: ${createUsuarioDto.email}`);
+    this.logger.info(`Iniciando criação de usuário: ${createUsuarioDto.email}`);
 
     try {
       // Usar transação para garantir consistência
@@ -376,7 +379,7 @@ export class UsuarioService {
         } else {
           senhaParaUso = this.generateRandomPassword();
           senhaGerada = true;
-          this.logger.log(
+          this.logger.info(
             `Senha gerada automaticamente para usuário: ${createUsuarioDto.email}`,
           );
         }
@@ -405,7 +408,7 @@ export class UsuarioService {
 
         const usuarioSalvo = await usuarioRepo.save(novoUsuario);
 
-        this.logger.log(`Usuário criado com sucesso: ${usuarioSalvo.id}`);
+        this.logger.info(`Usuário criado com sucesso: ${usuarioSalvo.id}`);
 
         // Remover campos sensíveis
         const { senhaHash: _, ...usuarioSemSenha } = usuarioSalvo;
@@ -469,7 +472,7 @@ export class UsuarioService {
    * @returns Usuário atualizado
    */
   async update(id: string, updateUsuarioDto: UpdateUsuarioDto) {
-    this.logger.log(`Iniciando atualização do usuário ${id}`);
+    this.logger.info(`Iniciando atualização do usuário ${id}`);
 
     try {
       // Usar transação para garantir consistência
@@ -538,7 +541,7 @@ export class UsuarioService {
           throwUserNotFound(id);
         }
 
-        this.logger.log(`Usuário ${id} atualizado com sucesso`);
+        this.logger.info(`Usuário ${id} atualizado com sucesso`);
 
         // Remover campos sensíveis
         const { senhaHash, ...usuarioSemSenha } = usuarioAtualizado;
@@ -592,7 +595,7 @@ export class UsuarioService {
    * @returns Mensagem de sucesso
    */
   async updateSenha(id: string, updateSenhaDto: UpdateSenhaDto) {
-    this.logger.log(`Iniciando atualização de senha do usuário ${id}`);
+    this.logger.info(`Iniciando atualização de senha do usuário ${id}`);
 
     try {
       // Usar transação para garantir consistência
@@ -647,7 +650,7 @@ export class UsuarioService {
           ultimo_login: new Date(),
         });
 
-        this.logger.log(`Senha do usuário ${id} atualizada com sucesso`);
+        this.logger.info(`Senha do usuário ${id} atualizada com sucesso`);
 
         return { message: 'Senha atualizada com sucesso' };
       });
@@ -678,7 +681,7 @@ export class UsuarioService {
    * @returns Usuário encontrado ou null
    */
   async findByEmail(email: string): Promise<Usuario | null> {
-    this.logger.log(`Buscando usuário por email: ${email}`);
+    this.logger.info(`Buscando usuário por email: ${email}`);
 
     try {
       // Normalizar email para minúsculas para evitar problemas de case sensitivity
@@ -686,9 +689,10 @@ export class UsuarioService {
       const usuario = await this.usuarioRepository.findByEmail(normalizedEmail);
 
       if (!usuario) {
-        this.logger.warn(
-          `Tentativa de login com email inexistente: ${normalizedEmail}`,
-          { context: 'SECURITY_LOGIN_ATTEMPT', email: normalizedEmail },
+        this.logger.info(
+          `Tentativa de login para: ${normalizedEmail}`,
+          'SECURITY_LOGIN_ATTEMPT',
+          { email: normalizedEmail }
         );
       }
 
@@ -737,7 +741,8 @@ export class UsuarioService {
 
       this.logger.warn(
         `Tentativa de login falhada incrementada para usuário: ${userId}`,
-        { context: 'SECURITY_LOGIN_FAILED', userId },
+        'SECURITY_LOGIN_FAILED',
+        { userId }
       );
     } catch (error) {
       this.logger.error(
@@ -762,9 +767,10 @@ export class UsuarioService {
         } as DeepPartial<Usuario>);
       });
 
-      this.logger.log(
+      this.logger.info(
         `Login bem-sucedido - tentativas resetadas para usuário: ${userId}`,
-        { context: 'SECURITY_LOGIN_SUCCESS', userId },
+        'SECURITY_LOGIN_SUCCESS',
+        { userId }
       );
     } catch (error) {
       this.logger.error(
@@ -792,12 +798,15 @@ export class UsuarioService {
 
     // Verificar se usuário está bloqueado
     if (this.isUserLocked(usuario)) {
-      this.logger.warn(`Tentativa de login em conta bloqueada: ${usuario.id}`, {
-        context: 'SECURITY_BLOCKED_LOGIN_ATTEMPT',
-        userId: usuario.id,
-        email: usuario.email,
-        attempts: usuario.tentativas_login,
-      });
+      this.logger.warn(
+        `Tentativa de login em conta bloqueada: ${usuario.id}`,
+        'SECURITY_BLOCKED_LOGIN_ATTEMPT',
+        {
+          userId: usuario.id,
+          email: usuario.email,
+          attempts: usuario.tentativas_login,
+        }
+      );
       throwAccountBlocked(usuario.id); // Note: Using userId instead of email
     }
 
@@ -809,14 +818,15 @@ export class UsuarioService {
 
       this.logger.warn(
         `Tentativa de login com senha incorreta: ${usuario.id}`,
+        'SECURITY_INVALID_PASSWORD',
         {
-          context: 'SECURITY_INVALID_PASSWORD',
           userId: usuario.id,
           email: usuario.email,
           attempts: (usuario.tentativas_login || 0) + 1,
-        },
+        }
       );
 
+      
       throwInvalidCredentials(email);
     }
 
@@ -832,7 +842,7 @@ export class UsuarioService {
    * @returns Promise<void>
    */
   async remove(id: string): Promise<void> {
-    this.logger.log(`Iniciando remoção do usuário: ${id}`);
+    this.logger.info(`Iniciando remoção do usuário: ${id}`);
 
     try {
       // Verifica se o usuário existe
@@ -845,7 +855,7 @@ export class UsuarioService {
       // Realiza o soft delete
       await this.usuarioRepository.remove(id);
 
-      this.logger.log(`Usuário removido com sucesso: ${id}`);
+      this.logger.info(`Usuário removido com sucesso: ${id}`);
     } catch (error) {
       this.logger.error(
         `Erro ao remover usuário ${id}: ${error.message}`,
@@ -866,7 +876,7 @@ export class UsuarioService {
    * @returns Lista de roles com id, nome e descrição
    */
   async findAllRoles() {
-    this.logger.log('Buscando todas as roles disponíveis');
+    this.logger.info('Buscando todas as roles disponíveis');
 
     try {
       const roles = await this.roleRepository.find({
@@ -888,7 +898,7 @@ export class UsuarioService {
     userId: string,
     alterarSenhaDto: AlterarSenhaPrimeiroAcessoDto,
   ) {
-    this.logger.log(
+    this.logger.info(
       `Iniciando alteração de senha no primeiro acesso para usuário ${userId}`,
     );
 
@@ -925,7 +935,7 @@ export class UsuarioService {
           updated_at: new Date(),
         });
 
-        this.logger.log(
+        this.logger.info(
           `Senha alterada com sucesso no primeiro acesso para usuário ${userId}`,
         );
 
@@ -954,7 +964,7 @@ export class UsuarioService {
    * @returns Resultado da operação
    */
   async solicitarRecuperacaoSenha(email: string) {
-    this.logger.log(`Iniciando recuperação de senha para email: ${email}`);
+    this.logger.info(`Iniciando recuperação de senha para email: ${email}`);
 
     try {
       // Normalizar email
@@ -1009,7 +1019,7 @@ export class UsuarioService {
         timestamp: new Date(),
       });
 
-      this.logger.log(`Recuperação de senha processada com sucesso para usuário: ${usuario.id}`);
+      this.logger.info(`Recuperação de senha processada com sucesso para usuário: ${usuario.id}`);
 
       return {
         data: null,

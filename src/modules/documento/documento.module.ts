@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { MulterModule } from '@nestjs/platform-express';
 import { DocumentoController } from './controllers/documento.controller';
 import { DocumentoService } from './services/documento.service';
+import { LoggingService } from '../../shared/logging/logging.service';
 import { StorageProviderFactory } from './factories/storage-provider.factory';
 import { LocalStorageAdapter } from './adapters/local-storage.adapter';
 import { S3StorageAdapter } from './adapters/s3-storage.adapter';
@@ -15,8 +16,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Documento } from '../../entities';
 import { AuthModule } from '../../auth/auth.module';
-import { UnifiedLoggerModule } from '../../shared/logging/unified-logger.module';
-import { UnifiedLoggerService } from '../../shared/logging/unified-logger.service';
+import { LoggingModule } from '../../shared/logging/logging.module';
 import { SharedModule } from '../../shared/shared.module';
 import { StorageHealthService } from './services/storage-health.service';
 
@@ -60,7 +60,7 @@ import { StorageHealthService } from './services/storage-health.service';
     }),
     ConfigModule,
     AuthModule,
-    UnifiedLoggerModule,
+    LoggingModule,
     SharedModule,
   ],
   controllers: [DocumentoController],
@@ -72,26 +72,16 @@ import { StorageHealthService } from './services/storage-health.service';
     StorageHealthService,
     {
       provide: S3StorageAdapter,
-      useFactory: (
-        configService: ConfigService,
-        unifiedLoggerService: UnifiedLoggerService,
-      ) => {
-        // Verifica se todas as configurações AWS estão presentes
-        const bucketName = configService.get<string>('AWS_S3_BUCKET');
-        const region = configService.get<string>('AWS_REGION');
-        const accessKeyId = configService.get<string>('AWS_ACCESS_KEY_ID');
-        const secretAccessKey = configService.get<string>(
-          'AWS_SECRET_ACCESS_KEY',
-        );
-
-        if (!bucketName || !region || !accessKeyId || !secretAccessKey) {
-          // Retorna null quando AWS não está configurado completamente
-          // Isso evita erros de injeção de dependência
+      useFactory: (configService: ConfigService, loggingService: LoggingService) => {
+        // Verifica se está usando S3
+        const useS3 = configService.get('USE_S3') === 'true';
+        if (!useS3) {
+          // Retorna null se não estiver usando S3
           return null;
         }
-        return new S3StorageAdapter(configService, unifiedLoggerService);
+        return new S3StorageAdapter(configService, loggingService);
       },
-      inject: [ConfigService, UnifiedLoggerService],
+      inject: [ConfigService, LoggingService],
     },
     InputSanitizerValidator,
   ],
