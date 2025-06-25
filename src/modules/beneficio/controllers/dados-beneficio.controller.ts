@@ -302,7 +302,12 @@ export class DadosBeneficioController {
     @Body() createDto: ICreateDadosBeneficioDto,
     @GetUser() usuario: Usuario,
   ): Promise<IDadosBeneficio> {
-    return this.dadosBeneficioFactoryService.create(codigoOrId, createDto);
+    return this.dadosBeneficioFactoryService.create(
+      codigoOrId, 
+      {
+        ...createDto,
+        usuario_id: usuario.id
+      });
   }
 
   /**

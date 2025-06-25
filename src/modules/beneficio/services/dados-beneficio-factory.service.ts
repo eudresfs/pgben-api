@@ -55,6 +55,7 @@ export class DadosBeneficioFactoryService {
   ): Promise<IDadosBeneficio> {
     const tipoBeneficio = await this.resolveTipoFromCodigoOrId(codigoOrId);
     const service = this.getService(tipoBeneficio);
+    // Garantir que o serviço específico receba o createDto contendo o usuario_id
     return service.create(createDto);
   }
 

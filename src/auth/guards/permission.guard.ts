@@ -110,12 +110,41 @@ export class PermissionGuard implements CanActivate {
         permissionName,
         scopeType = TipoEscopo.GLOBAL,
         scopeIdExpression,
+        bypassRoles,
       } = requirement;
+      
+      // Verificar se o usuário tem alguma role que permite bypass de escopo
+      // Se bypassRoles não for informado, usar valores padrão: 'super_admin', 'admin', 'gestor'
+      const defaultBypassRoles = ['super_admin', 'admin', 'gestor'];
+      const effectiveBypassRoles = bypassRoles && bypassRoles.length > 0 ? bypassRoles : defaultBypassRoles;
+      
+      let bypassScope = false;
+      if (request.user.roles) {
+        bypassScope = effectiveBypassRoles.some((role) => request.user.roles.includes(role));
+        
+        if (bypassScope) {
+          this.logger.debug(
+            `Bypass de escopo ativado: usuário ${request.user.id} com role(s) [${request.user.roles.join(', ')}] tem acesso a dados de todos os escopos via roles [${effectiveBypassRoles.join(', ')}]${bypassRoles ? '' : ' (padrão)'}`,
+          );
+        }
+      }
 
-      // Obtém o ID do escopo a partir da expressão
+      // Se o usuário tem bypass de escopo via roles, tratar como escopo global
+      const effectiveScopeType = bypassScope ? TipoEscopo.GLOBAL : scopeType;
+
+      // Obtém o ID do escopo apenas se não houver bypass e o escopo for de unidade
       let scopeId: string | undefined;
-      if (scopeType === TipoEscopo.UNIDADE && scopeIdExpression) {
-        scopeId = this.evaluateScopeIdExpression(scopeIdExpression, request);
+      if (!bypassScope && effectiveScopeType === TipoEscopo.UNIDADE) {
+        // Primeiro, tenta usar o ID da unidade do usuário logado
+        if (request.user.unidade_id) {
+          scopeId = request.user.unidade_id;
+          this.logger.debug(`Usando ID de unidade do usuário logado: ${scopeId}`);
+        } 
+        // Caso não tenha unidade_id no usuário, tenta usar scopeIdExpression (retrocompatibilidade)
+        else if (scopeIdExpression) {
+          scopeId = this.evaluateScopeIdExpression(scopeIdExpression, request);
+          this.logger.debug(`Usando ID de unidade da expressão ${scopeIdExpression}: ${scopeId}`);
+        }
       }
 
       // Verificar permissões em memória primeiro
@@ -139,7 +168,7 @@ export class PermissionGuard implements CanActivate {
         hasPermission = await this.permissionService.hasPermission({
           userId,
           permissionName,
-          scopeType,
+          scopeType: effectiveScopeType, // Usar o tipo de escopo efetivo
           scopeId,
         });
       }

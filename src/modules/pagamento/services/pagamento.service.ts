@@ -425,7 +425,7 @@ export class PagamentoService {
     // Buscar o pagamento existente
     const pagamento = await this.pagamentoRepository.findOne({
       where: { id },
-      relations: ['solicitacao', 'solicitacao.cidadao'],
+      relations: ['solicitacao', 'solicitacao.beneficiario'],
     });
     if (!pagamento) {
       throw new NotFoundException('Pagamento não encontrado');
@@ -574,7 +574,7 @@ export class PagamentoService {
     // Buscar o pagamento existente
     const pagamento = await this.pagamentoRepository.findOne({
       where: { id },
-      relations: ['solicitacao', 'solicitacao.cidadao'],
+      relations: ['solicitacao', 'solicitacao.beneficiario'],
     });
     if (!pagamento) {
       throw new NotFoundException('Pagamento não encontrado');

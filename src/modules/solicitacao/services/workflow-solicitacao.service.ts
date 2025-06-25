@@ -568,7 +568,7 @@ export class WorkflowSolicitacaoService {
         await this.notificacaoService.criarEBroadcast({
           destinatario_id: solicitacao.tecnico_id,
           titulo: 'Solicitação Rejeitada',
-          conteudo: `Sua solicitação de ${solicitacao.tipo_beneficio.nome || 'benefício'} foi rejeitada. ${motivo ? `Motivo: ${motivo}` : ''}`,
+          conteudo: `Sua solicitação de ${solicitacao.tipo_beneficio.nome || 'benefício'} foi indeferida. ${motivo ? `Motivo: ${motivo}` : ''}`,
           tipo: 'REJEICAO',
           prioridade: 'high',
           template_id: templateData.template_id,

@@ -199,7 +199,7 @@ export class ConfirmacaoService {
       );
 
       this.logger.debug(
-        `Validação de destinatário: ${temRelacao ? 'aprovada' : 'rejeitada'}`,
+        `Validação de destinatário: ${temRelacao ? 'aprovada' : 'indeferida'}`,
       );
 
       return temRelacao;

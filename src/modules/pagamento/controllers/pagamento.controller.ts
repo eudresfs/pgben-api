@@ -326,9 +326,7 @@ export class PagamentoController {
   @ApiResponse({ status: 404, description: 'Pagamento não encontrado' })
   @ApiResponse({ status: 400, description: 'Transição de status inválida' })
   @ApiResponse({ status: 403, description: 'Acesso negado' })
-  @UseGuards(PagamentoAccessGuard)
-  @OperadorOuAdmin()
-  @VerificarUnidade(true)
+  // Removido validação por role, mantendo apenas RequiresPermission
   async updateStatus(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateStatusDto: PagamentoUpdateStatusDto,
@@ -498,9 +496,6 @@ export class PagamentoController {
   @ApiResponse({ status: 404, description: 'Pagamento não encontrado' })
   @ApiResponse({ status: 400, description: 'Pagamento não pode ser liberado' })
   @ApiResponse({ status: 403, description: 'Acesso negado' })
-  @UseGuards(PagamentoAccessGuard)
-  @OperadorOuAdmin()
-  @VerificarUnidade(true)
   async liberarPagamento(
     @Param('id', ParseUUIDPipe) id: string,
     @Request() req?: any,

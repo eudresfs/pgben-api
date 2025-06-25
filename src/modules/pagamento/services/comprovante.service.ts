@@ -11,9 +11,8 @@ import { ComprovantePagamento } from '../../../entities/comprovante-pagamento.en
 import { ComprovanteUploadDto } from '../dtos/comprovante-upload.dto';
 import { AuditoriaPagamentoService } from './auditoria-pagamento.service';
 import { MinioService } from '../../../shared/services/minio.service';
-import { TipoOperacao } from '../../../enums/tipo-operacao.enum';
-import * as path from 'path';
-import * as crypto from 'crypto';
+import { StatusPagamentoEnum } from '@/enums';
+import { PagamentoService } from './pagamento.service';
 
 /**
  * Serviço para gerenciamento de comprovantes de pagamento
@@ -39,9 +38,10 @@ export class ComprovanteService {
   constructor(
     @InjectRepository(ComprovantePagamento)
     private comprovanteRepository: Repository<ComprovantePagamento>,
+    private readonly pagamentoService: PagamentoService,
     private minioService: MinioService,
     private auditoriaService: AuditoriaPagamentoService,
-  ) {}
+  ) { }
 
   /**
    * Processa o upload de um novo comprovante de pagamento
@@ -59,18 +59,18 @@ export class ComprovanteService {
     usuarioId: string,
   ): Promise<ComprovantePagamento> {
     // Verificar se o pagamento existe
-    // const pagamento = await this.pagamentoService.findOne(pagamentoId);
+    const pagamento = await this.pagamentoService.findOne(pagamentoId);
 
-    // if (!pagamento) {
-    //   throw new NotFoundException('Pagamento não encontrado');
-    // }
+    if (!pagamento) {
+      throw new NotFoundException('Pagamento não encontrado');
+    }
 
     // Verificar se o pagamento tem status que permite anexar comprovantes
-    // if (pagamento.status === StatusPagamentoEnum.CANCELADO) {
-    //   throw new ConflictException(
-    //     'Não é possível anexar comprovantes a um pagamento cancelado'
-    //   );
-    // }
+    if (pagamento.status === StatusPagamentoEnum.CANCELADO) {
+      throw new ConflictException(
+        'Não é possível anexar comprovantes a um pagamento cancelado'
+      );
+    }
 
     // Validar o arquivo
     this.validateFile(file);

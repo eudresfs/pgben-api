@@ -117,7 +117,7 @@ export class SseService implements OnModuleDestroy {
       // Verificar degradação
       const degradationStatus = await this.gracefulDegradationService.getCurrentStatus();
       if (degradationStatus.currentLevel === DegradationLevel.CRITICAL) {
-        this.loggingService.logConnection(LogLevel.WARN, 'Conexão rejeitada devido ao modo crítico', {
+        this.loggingService.logConnection(LogLevel.WARN, 'Conexão indeferida devido ao modo crítico', {
           userId: Number(userId),
           component: 'sse-connection',
           operation: 'create-connection',

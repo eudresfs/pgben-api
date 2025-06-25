@@ -107,38 +107,26 @@ export class CidadaoService {
       where.unidade_id = unidadeId;
     }
 
-    // Aplicar filtro de bairro
+    // Aplicar filtro de bairro como filtro especial que será tratado no repositório
     if (bairro && bairro.trim().length > 0) {
-      where['endereco.bairro'] = { $iLike: `%${bairro.trim()}%` };
+      where._filters = where._filters || {};
+      where._filters.bairro = bairro.trim();
     }
 
-    // Aplicar filtro de busca (nome, CPF ou NIS) usando OR
+    // Aplicar filtro de busca (nome, CPF ou NIS) usando o parâmetro search do TypeORM
     if (search && search.trim().length > 0) {
       const searchTerm = search.trim();
       const numericSearch = searchTerm.replace(/\D/g, '');
       
-      // Criar condições OR para busca no formato esperado pelo repositório
-      const searchConditions: any[] = [];
+      // Passamos o termo de busca diretamente no campo search para ser tratado pelo repositório
+      where.search = searchTerm;
       
-      // Otimização: diferentes estratégias baseadas no tipo de busca
-      if (/^\d{11}$/.test(numericSearch)) {
-        // Busca por CPF
-        searchConditions.push({ cpf: { $iLike: `%${numericSearch}%` } });
-      } else if (/^\d{11,}$/.test(numericSearch)) {
-        // Busca por NIS
-        searchConditions.push({ nis: { $iLike: `%${numericSearch}%` } });
-      } else {
-        // Busca por nome (mais comum)
-        searchConditions.push({ nome: { $iLike: `%${searchTerm}%` } });
-        
-        // Adicionar busca por CPF e NIS se houver números
-        if (numericSearch) {
-          searchConditions.push({ cpf: { $iLike: `%${numericSearch}%` } });
-          searchConditions.push({ nis: { $iLike: `%${numericSearch}%` } });
-        }
+      // Caso seja um numericSearch diferente do termo original, também o enviamos
+      // para que o repositório possa fazer buscas específicas
+      if (numericSearch !== searchTerm) {
+        where._filters = where._filters || {};
+        where._filters.numericSearch = numericSearch;
       }
-      
-      where.$or = searchConditions;
     }
 
     // Campos específicos para listagem otimizada

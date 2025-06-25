@@ -36,35 +36,43 @@ export class PermissionMatcher {
   ): boolean {
     this.logger.debug(`Verificando se usuário com permissões [${userPermissions.join(', ')}] possui permissão '${required}'`);
     
-    // Verificar permissão super admin
-    if (userPermissions.includes('*.*') || userPermissions.includes('*.*.*')) {
-      this.logger.debug(`Usuário possui permissão de super admin`);
-      return true;
-    }
-    
-    for (const up of userPermissions) {
-      // Correspondência exata
-      if (up === required) {
-        this.logger.debug(`Correspondência exata: ${up} === ${required}`);
+    // Verificar cada permissão do usuário
+    for (const userPermission of userPermissions) {
+      // Caso 1: Usuário tem permissão total (*.*)
+      if (userPermission === '*.*' || userPermission === '*.*.*') {
+        this.logger.debug(`Usuário possui permissão total (${userPermission})`);
+        return true;
+      }
+
+      // Caso 2: Correspondência exata (modulo.acao === modulo.acao)
+      if (userPermission === required) {
+        this.logger.debug(`Correspondência exata: ${userPermission} === ${required}`);
         return true;
       }
       
-      // Verificar wildcard no formato 'modulo.*'
-      if (up.endsWith('.*')) {
-        const modulePrefix = up.substring(0, up.length - 2);
-        if (required.startsWith(modulePrefix + '.')) {
-          this.logger.debug(`Correspondência por wildcard de módulo: ${up} cobre ${required}`);
+      // Caso 3: Permissão de módulo (modulo.* cobre modulo.qualquercoisa)
+      if (userPermission.endsWith('.*')) {
+        // Extrair o prefixo do módulo (ex: "modulo" de "modulo.*")
+        const modulePrefix = userPermission.substring(0, userPermission.length - 2); // Remove ".*"
+        
+        // Verifica se a permissão requerida começa com o mesmo módulo
+        // e tem apenas uma parte adicional após o módulo (modulo.acao)
+        const requiredParts = required.split('.');
+        const moduleParts = modulePrefix.split('.');
+        
+        if (requiredParts.length > 0 && 
+            moduleParts.length > 0 && 
+            requiredParts[0] === moduleParts[0]) {
+          
+          this.logger.debug(`Correspondência por wildcard de módulo: ${userPermission} cobre ${required}`);
           return true;
         }
       }
       
-      // Verificar wildcard no formato 'modulo.recurso.*'
-      if (up.endsWith('.*')) {
-        const prefix = up.substring(0, up.length - 1);
-        if (required.startsWith(prefix)) {
-          this.logger.debug(`Correspondência por wildcard de recurso: ${up} cobre ${required}`);
-          return true;
-        }
+      // Caso 4: Usar a implementação robusta de patternMatches para casos mais complexos
+      if (this.patternMatches(userPermission, required)) {
+        this.logger.debug(`Correspondência por padrão: ${userPermission} cobre ${required}`);
+        return true;
       }
     }
     

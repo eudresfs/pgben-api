@@ -684,21 +684,6 @@ export class SolicitacaoService {
       // Buscar a solicitação
       const solicitacao = await this.findById(id);
 
-      // Verificar se o usuário tem permissão
-      if (![ROLES.ADMIN, ROLES.GESTOR, ROLES.TECNICO].includes(user.role)) {
-        throwAccessDenied(
-          id,
-          user.id,
-          {
-            data: {
-              acao: 'cancelar_solicitacao',
-              roleNecessaria: [ROLES.ADMIN, ROLES.GESTOR, ROLES.TECNICO],
-              roleAtual: user.role,
-            },
-          },
-        );
-      }
-
       // No novo ciclo de vida simplificado, solicitações aprovadas não podem ser canceladas
       if (solicitacao.status === StatusSolicitacao.APROVADA) {
         throwSolicitacaoCannotDelete(
@@ -722,9 +707,6 @@ export class SolicitacaoService {
 
       // Salvar a solicitação com o manager da transação
       await manager.save(solicitacao);
-
-      // Não é mais necessário registrar manualmente no histórico
-      // O método logStatusChange fará isso automaticamente através do listener @AfterUpdate
 
       return this.findById(id);
     });

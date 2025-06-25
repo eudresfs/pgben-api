@@ -1,4 +1,5 @@
 import { Injectable, Logger, BadRequestException, NotFoundException } from '@nestjs/common';
+import { FiltroConcessaoDto } from '../dto/filtro-concessao.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Concessao } from '../../../entities/concessao.entity';
@@ -22,12 +23,13 @@ export class ConcessaoService {
     private readonly logger: LoggingService,
   ) {}
 
-  async findAll(): Promise<any[]> {
-    return this.concessaoRepo
+  async findAll(filtro?: FiltroConcessaoDto): Promise<any[]> {
+    const qb = this.concessaoRepo
       .createQueryBuilder('concessao')
       .leftJoin('concessao.solicitacao', 'solicitacao')
       .leftJoin('solicitacao.beneficiario', 'cidadao')
       .leftJoin('solicitacao.tipo_beneficio', 'tipo_beneficio')
+      .leftJoin('solicitacao.unidade', 'unidade')
       .select([
         'concessao.id',
         'concessao.dataInicio as data_inicio',
@@ -38,8 +40,43 @@ export class ConcessaoService {
         'cidadao.nome as nome_beneficiario',
         'cidadao.cpf as cpf_beneficiario',
         'tipo_beneficio.nome as nome_beneficio',
-      ])
-      .getRawMany();
+        'unidade.nome as nome_unidade',
+      ]);
+
+    if (!filtro) {
+      return qb.getRawMany();
+    }
+
+    if (filtro.dataInicioDe) {
+      qb.andWhere('concessao.dataInicio >= :dataInicioDe', { dataInicioDe: filtro.dataInicioDe });
+    }
+    if (filtro.dataInicioAte) {
+      qb.andWhere('concessao.dataInicio <= :dataInicioAte', { dataInicioAte: filtro.dataInicioAte });
+    }
+    if (filtro.status) {
+      qb.andWhere('concessao.status = :status', { status: filtro.status });
+    }
+    if (filtro.unidadeId) {
+      qb.andWhere('unidade.id = :unidadeId', { unidadeId: filtro.unidadeId });
+    }
+    if (filtro.tipoBeneficioId) {
+      qb.andWhere('tipo_beneficio.id = :tipoBeneficioId', { tipoBeneficioId: filtro.tipoBeneficioId });
+    }
+    if (filtro.determinacaoJudicial !== undefined) {
+      qb.andWhere('solicitacao.determinacao_judicial_flag = :dj', { dj: filtro.determinacaoJudicial });
+    }
+    if (filtro.prioridade) {
+      qb.andWhere('concessao.ordem_prioridade = :prioridade', { prioridade: filtro.prioridade });
+    }
+    if (filtro.search) {
+      const term = `%${filtro.search.toLowerCase()}%`;
+      qb.andWhere(
+        '(LOWER(cidadao.nome) LIKE :term OR cidadao.cpf LIKE :cpfTerm OR solicitacao.protocolo ILIKE :termProto)',
+        { term, cpfTerm: `%${filtro.search.replace(/\D/g, '')}%`, termProto: term },
+      );
+    }
+
+    return qb.getRawMany();
   }
   
 

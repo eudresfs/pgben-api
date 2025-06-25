@@ -182,146 +182,152 @@ export class PasswordResetService {
     }
   }
 
-  /**
-   * Redefine a senha usando o token
-   */
-  async resetPassword(
-    resetDto: ResetPasswordDto,
-    clientInfo: ClientInfo,
-  ): Promise<{ message: string }> {
-    const { token, newPassword, confirmPassword } = resetDto;
+/**
+ * Redefine a senha usando o token
+ */
+async resetPassword(
+  resetDto: ResetPasswordDto,
+  clientInfo: ClientInfo,
+): Promise<{ message: string }> {
+  const { token, newPassword, confirmPassword } = resetDto;
 
-    // Validar senhas
-    if (newPassword !== confirmPassword) {
-      throw new BadRequestException('As senhas não coincidem');
-    }
-
-    if (newPassword.length < 8) {
-      throw new BadRequestException('A senha deve ter pelo menos 8 caracteres');
-    }
-
-    try {
-      // Buscar token válido
-      const resetToken = await this.findValidToken(token);
-      if (!resetToken) {
-        await this.auditService.logSecurityEvent(
-          AuditAction.PASSWORD_RESET,
-          'Tentativa de uso de token inválido para reset de senha',
-          undefined,
-          AuditSeverity.HIGH,
-          { tokenPrefix: token.substring(0, 8) },
-          { ip: clientInfo.ip, userAgent: clientInfo.userAgent },
-        );
-        throw new UnauthorizedException('Token inválido ou expirado');
-      }
-
-      // Carregar usuário pelo ID
-      const usuario = await this.usuarioRepository.findById(
-        resetToken.usuario_id,
-      );
-
-      if (!usuario) {
-        throw new NotFoundException('Usuário não encontrado');
-      }
-
-      // Verificar se a nova senha é diferente da atual
-      const isSamePassword = await bcrypt.compare(
-        newPassword,
-        usuario.senhaHash,
-      );
-      if (isSamePassword) {
-        throw new BadRequestException(
-          'A nova senha deve ser diferente da senha atual',
-        );
-      }
-
-      // Hash da nova senha
-      const hashedPassword = await bcrypt.hash(newPassword, 12);
-
-      // Atualizar senha do usuário usando query builder
-      await this.passwordResetTokenRepository.manager
-        .createQueryBuilder()
-        .update('usuario')
-        .set({
-          senha: hashedPassword,
-          updated_at: new Date(),
-        })
-        .where('id = :id', { id: usuario.id })
-        .execute();
-
-      // Marcar token como usado
-      resetToken.markAsUsed('password_changed');
-      await this.passwordResetTokenRepository.save(resetToken);
-
-      // Invalidar outros tokens do usuário
-      await this.invalidateUserTokens(
-        usuario.id,
-        'password_changed',
-        resetToken.id,
-      );
-
-      // Enviar email de confirmação
-      await this.sendPasswordResetConfirmationEmail(usuario, clientInfo);
-
-      // Log de auditoria
-      await this.auditService.logUserAction(
-        usuario.id,
-        AuditAction.PASSWORD_RESET,
-        'usuario',
-        usuario.id,
-        'Senha redefinida com sucesso',
-        { ip: clientInfo.ip, userAgent: clientInfo.userAgent },
-      );
-
-      await this.auditService.logSecurityEvent(
-        AuditAction.PASSWORD_RESET,
-        `Senha redefinida com sucesso para o usuário ${usuario.email}`,
-        usuario.id,
-        AuditSeverity.MEDIUM,
-        { email: usuario.email },
-        { ip: clientInfo.ip, userAgent: clientInfo.userAgent },
-      );
-
-      this.logger.log(
-        `Senha redefinida com sucesso para usuário ${usuario.id}`,
-      );
-
-      return {
-        message:
-          'Senha redefinida com sucesso. Você pode fazer login com sua nova senha.',
-      };
-    } catch (error) {
-      // Registrar erro e redirecionar
-      const foundToken = await this.findValidToken(token);
-      if (foundToken) {
-        foundToken.markAsUsed('password_reset_error');
-        await this.passwordResetTokenRepository.save(foundToken);
-      }
-
-      this.logger.error('Erro ao redefinir senha', error.stack);
-
-      await this.auditService.logSecurityEvent(
-        AuditAction.PASSWORD_RESET,
-        `Erro ao redefinir senha: ${error.message}`,
-        foundToken?.usuario?.id,
-        AuditSeverity.HIGH,
-        { tokenPrefix: token.substring(0, 8), error: error.message },
-        { ip: clientInfo.ip, userAgent: clientInfo.userAgent },
-      );
-
-      if (
-        error instanceof BadRequestException ||
-        error instanceof UnauthorizedException ||
-        error instanceof NotFoundException
-      ) {
-        throw error;
-      }
-
-      throw new InternalServerErrorException(
-        'Erro interno. Tente novamente mais tarde.',
-      );
-    }
+  // Validar senhas
+  if (newPassword !== confirmPassword) {
+    throw new BadRequestException('As senhas não coincidem');
   }
+
+  try {
+    // Buscar token válido
+    const resetToken = await this.findValidToken(token);
+    if (!resetToken) {
+      await this.auditService.logSecurityEvent(
+        AuditAction.PASSWORD_RESET,
+        'Tentativa de uso de token inválido para reset de senha',
+        undefined,
+        AuditSeverity.HIGH,
+        { tokenPrefix: token.substring(0, 8) },
+        { ip: clientInfo.ip, userAgent: clientInfo.userAgent },
+      );
+      throw new UnauthorizedException('Token inválido ou expirado');
+    }
+
+    // Carregar usuário pelo ID
+    const usuario = await this.usuarioRepository.findById(
+      resetToken.usuario_id,
+    );
+
+    if (!usuario) {
+      throw new NotFoundException('Usuário não encontrado');
+    }
+
+    // Verificar se a nova senha é diferente da atual
+    const isSamePassword = await bcrypt.compare(
+      newPassword,
+      usuario.senhaHash,
+    );
+    if (isSamePassword) {
+      throw new BadRequestException(
+        'A nova senha deve ser diferente da senha atual',
+      );
+    }
+
+    // Hash da nova senha com o mesmo padrão usado em UsuarioService (SALT_ROUNDS = 12)
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+    
+    // Log para diagnóstico
+    this.logger.debug(`Gerando hash para nova senha: ${hashedPassword.substring(0, 10)}...`);
+    
+    try {
+      // Usar o método específico updateSenha que foi criado especialmente para este propósito
+      // em vez do método genérico update
+      const usuarioAtualizado = await this.usuarioRepository.updateSenha(usuario.id, hashedPassword);
+      
+      // Agora também atualizamos os outros campos em uma chamada separada para garantir que
+      // a atualização da senha teve sucesso
+      await this.usuarioRepository.update(
+        usuario.id,
+        {
+          updated_at: new Date(),
+          tentativas_login: 0, // Resetar tentativas de login
+          primeiro_acesso: false, // Não é mais primeiro acesso
+        }
+      );
+      
+      // Log de confirmação
+      this.logger.log(`Senha atualizada com sucesso para o usuário ${usuario.id}. Hash: ${hashedPassword.substring(0, 10)}...`);
+    } catch (error) {
+      this.logger.error(`Erro ao atualizar senha: ${error.message}`, error.stack);
+      throw new InternalServerErrorException('Erro ao salvar nova senha');
+    }
+
+    // Marcar token como usado APÓS a alteração bem-sucedida
+    resetToken.markAsUsed('password_changed');
+    await this.passwordResetTokenRepository.save(resetToken);
+
+    // Invalidar outros tokens do usuário
+    await this.invalidateUserTokens(
+      usuario.id,
+      'password_changed',
+      resetToken.id,
+    );
+
+    // Enviar email de confirmação
+    await this.sendPasswordResetConfirmationEmail(usuario, clientInfo);
+
+    // Log de auditoria
+    await this.auditService.logUserAction(
+      usuario.id,
+      AuditAction.PASSWORD_RESET,
+      'usuario',
+      usuario.id,
+      'Senha redefinida com sucesso',
+      { ip: clientInfo.ip, userAgent: clientInfo.userAgent },
+    );
+
+    await this.auditService.logSecurityEvent(
+      AuditAction.PASSWORD_RESET,
+      `Senha redefinida com sucesso para o usuário ${usuario.email}`,
+      usuario.id,
+      AuditSeverity.MEDIUM,
+      { email: usuario.email },
+      { ip: clientInfo.ip, userAgent: clientInfo.userAgent },
+    );
+
+    this.logger.log(
+      `Senha redefinida com sucesso para usuário ${usuario.id}`,
+    );
+
+    return {
+      message:
+        'Senha redefinida com sucesso. Você pode fazer login com sua nova senha.',
+    };
+  } catch (error) {
+    this.logger.error('Erro ao redefinir senha', error.stack);
+
+    // Registar erro de auditoria apenas se conseguirmos obter o usuário
+    const foundToken = await this.findValidToken(token);
+    await this.auditService.logSecurityEvent(
+      AuditAction.PASSWORD_RESET,
+      `Erro ao redefinir senha: ${error.message}`,
+      foundToken?.usuario?.id,
+      AuditSeverity.HIGH,
+      { tokenPrefix: token.substring(0, 8), error: error.message },
+      { ip: clientInfo.ip, userAgent: clientInfo.userAgent },
+    );
+
+    if (
+      error instanceof BadRequestException ||
+      error instanceof UnauthorizedException ||
+      error instanceof NotFoundException
+    ) {
+      throw error;
+    }
+
+    throw new InternalServerErrorException(
+      'Erro interno. Tente novamente mais tarde.',
+    );
+  }
+}
 
   /**
    * Valida se um token é válido e o marca como usado

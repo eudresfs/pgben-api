@@ -1,8 +1,9 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { plainToClass } from 'class-transformer';
 import { Request } from 'express';
+import * as bcrypt from 'bcrypt';
 import { RoleType } from '../../shared/constants/roles.constants';
 
 import { LoggingService } from '../../shared/logging/logging.service';
@@ -142,7 +143,11 @@ export class AuthService {
     }
 
     // Verificar se a senha está correta
-    const senhaCorreta = await require('bcrypt').compare(
+    // Log do hash armazenado para diagnóstico
+    this.logger.info(`Verificando senha para usuário ${username}`, AuthService.name);
+    this.logger.debug(`Hash armazenado: ${usuario.senhaHash.substring(0, 10)}...`, AuthService.name);
+
+    const senhaCorreta = await bcrypt.compare(
       pass,
       usuario.senhaHash,
     );

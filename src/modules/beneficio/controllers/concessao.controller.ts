@@ -1,16 +1,17 @@
-import { Controller, Get, Post, Body, Param, Patch, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Patch, UseGuards, Query } from '@nestjs/common';
 import { ConcessaoService } from '../services/concessao.service';
 import { CreateConcessaoDto } from '../dto/create-concessao.dto';
 import { UpdateStatusConcessaoDto } from '../dto/update-status-concessao.dto';
 import { ProrrogarConcessaoDto } from '../dto/prorrogar-concessao.dto';
 import { SuspenderConcessaoDto, BloquearConcessaoDto, DesbloquearConcessaoDto, CancelarConcessaoDto } from '../dto/suspender-concessao.dto';
 import { StatusConcessao } from '../../../enums/status-concessao.enum';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../../../auth/guards/permission.guard';
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
 import { GetUser } from '../../../auth/decorators/get-user.decorator';
 import { Usuario } from '../../../entities/usuario.entity';
+import { FiltroConcessaoDto } from '../dto/filtro-concessao.dto';
 
 @ApiTags('Benefícios')
 @Controller('concessoes')
@@ -80,10 +81,21 @@ export class ConcessaoController {
    */
   @Get()
   @RequiresPermission({ permissionName: 'concessao.listar'})
-  @ApiOperation({ summary: 'Lista todas as concessões', description: 'Retorna todas as concessões cadastradas.' })
+  @ApiOperation({ summary: 'Lista concessões', description: 'Lista concessões com filtros opcionais por data, status, unidade, tipo de benefício, determinação judicial, prioridade e busca por nome/CPF/protocolo.' })
+  @ApiQuery({ name: 'dataInicioDe', required: false, description: 'Data de início mínima (YYYY-MM-DD)' })
+  @ApiQuery({ name: 'dataInicioAte', required: false, description: 'Data de início máxima (YYYY-MM-DD)' })
+  @ApiQuery({ name: 'status', required: false, enum: StatusConcessao })
+  @ApiQuery({ name: 'unidadeId', required: false, description: 'UUID da unidade' })
+  @ApiQuery({ name: 'tipoBeneficioId', required: false, description: 'UUID do tipo de benefício' })
+  @ApiQuery({ name: 'determinacaoJudicial', required: false, description: 'Flag de determinação judicial', type: Boolean })
+  @ApiQuery({ name: 'prioridade', required: false, description: 'Prioridade (inteiro)' })
+  @ApiQuery({ name: 'search', required: false, description: 'Busca por nome, CPF ou protocolo' })
   @ApiResponse({ status: 200, description: 'Lista de concessões', type: [Object] })
-  async listar(@GetUser() usuario: Usuario) {
-    return this.concessaoService.findAll();
+  async listar(
+    @Query() filtro: FiltroConcessaoDto,
+    @GetUser() usuario: Usuario,
+  ) {
+    return this.concessaoService.findAll(filtro);
   }
 
     /**

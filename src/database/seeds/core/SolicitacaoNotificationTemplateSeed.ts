@@ -58,16 +58,16 @@ export class SolicitacaoNotificationTemplateSeed {
           prioridade: 'alta'
         },
         {
-          codigo: 'solicitacao-rejeitada',
-          nome: 'Solicitação Rejeitada',
+          codigo: 'solicitacao-indeferida',
+          nome: 'Solicitação Indeferida',
           tipo: 'solicitacao',
-          descricao: 'Template para notificar quando uma solicitação é rejeitada',
-          assunto: 'Solicitação {{numero_protocolo}} - Rejeitada',
-          corpo: 'Sua solicitação {{numero_protocolo}} para {{tipo_beneficio}} foi rejeitada. Motivo: {{motivo_rejeicao}}',
+          descricao: 'Template para notificar quando uma solicitação é indeferida',
+          assunto: 'Solicitação {{numero_protocolo}} - Indeferida',
+          corpo: 'Sua solicitação {{numero_protocolo}} para {{tipo_beneficio}} foi indeferida. Motivo: {{motivo_rejeicao}}',
           corpo_html: `
-            <h2>❌ Solicitação Rejeitada</h2>
+            <h2>❌ Solicitação Indeferida</h2>
             <p>Olá <strong>{{nome_cidadao}}</strong>,</p>
-            <p>Infelizmente, sua solicitação foi <strong>rejeitada</strong>.</p>
+            <p>Infelizmente, sua solicitação foi <strong>indeferida</strong>.</p>
             <div style="background-color: #f8d7da; border-left: 4px solid #dc3545; padding: 15px; margin: 20px 0;">
               <p><strong>📋 Protocolo:</strong> {{numero_protocolo}}</p>
               <p><strong>🎯 Benefício:</strong> {{tipo_beneficio}}</p>

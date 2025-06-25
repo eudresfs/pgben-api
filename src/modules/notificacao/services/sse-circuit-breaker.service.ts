@@ -277,7 +277,7 @@ export class SseCircuitBreakerService {
 
     // Rejeição (circuito aberto)
     breaker.on('reject', () => {
-      this.logger.warn(`Circuit breaker '${name}' - requisição rejeitada (circuito aberto)`);
+      this.logger.warn(`Circuit breaker '${name}' - requisição indeferida (circuito aberto)`);
       this.metricsService.recordCircuitBreakerEvent('sse_circuit_breaker_reject', 'error');
     });
   }

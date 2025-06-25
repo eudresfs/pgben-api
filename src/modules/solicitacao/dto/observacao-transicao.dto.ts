@@ -12,7 +12,7 @@ export class ObservacaoTransicaoDto {
    */
   @ApiProperty({
     description: 'Observação opcional sobre a transição do workflow',
-    example: 'Documentação rejeitada devido a inconsistências',
+    example: 'Documentação indeferida devido a inconsistências',
     required: false,
     type: String,
   })

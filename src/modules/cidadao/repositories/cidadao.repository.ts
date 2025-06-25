@@ -321,35 +321,70 @@ export class CidadaoRepository extends BaseRepository<Cidadao> {
     query: SelectQueryBuilder<Cidadao>,
     filters: Record<string, unknown>
   ): void {
-    Object.entries(filters).forEach(([key, value]) => {
+    // Contador para gerar nomes de parâmetros únicos e seguros
+    let paramCounter = 0;
+  
+    // Extrair filtros especiais
+    const { _filters = {}, search, ...standardFilters } = filters as any;
+  
+    // Processar filtros padrão
+    Object.entries(standardFilters).forEach(([key, value]) => {
       if (value === undefined || value === null) { return; }
-
-      // Tratamento especial para campos JSONB
+      
+      // Gerar um nome de parâmetro seguro usando um contador
+      const safeParamName = `param${paramCounter++}`;
+      
+      // Tratamento especial para campos JSONB (mantendo compatibilidade)
       if (key.startsWith('endereco.')) {
         const jsonField = key.split('.')[1];
-        query.andWhere(`cidadao.endereco->>'${jsonField}' ILIKE :${key}`, {
-          [key]: `%${value}%`
+        query.andWhere(`cidadao.endereco->>'${jsonField}' ILIKE :${safeParamName}`, {
+          [safeParamName]: `%${value}%`
         });
       }
       // Tratamento para arrays (operador IN)
       else if (Array.isArray(value)) {
-        query.andWhere(`cidadao.${key} IN (:...${key})`, { [key]: value });
+        query.andWhere(`cidadao.${key} IN (:...${safeParamName})`, { [safeParamName]: value });
       }
       // Tratamento para ranges
       else if (typeof value === 'object' && value !== null && ('min' in value || 'max' in value)) {
         const rangeValue = value as { min?: unknown; max?: unknown };
         if (rangeValue.min !== undefined) {
-          query.andWhere(`cidadao.${key} >= :${key}_min`, { [`${key}_min`]: rangeValue.min });
+          const minParamName = `param${paramCounter++}`;
+          query.andWhere(`cidadao.${key} >= :${minParamName}`, { [minParamName]: rangeValue.min });
         }
         if (rangeValue.max !== undefined) {
-          query.andWhere(`cidadao.${key} <= :${key}_max`, { [`${key}_max`]: rangeValue.max });
+          const maxParamName = `param${paramCounter++}`;
+          query.andWhere(`cidadao.${key} <= :${maxParamName}`, { [maxParamName]: rangeValue.max });
         }
       }
-      // Tratamento padrão
+      // Tratamento padrão para campos comuns
       else {
-        query.andWhere(`cidadao.${key} = :${key}`, { [key]: value });
+        query.andWhere(`cidadao.${key} = :${safeParamName}`, { [safeParamName]: value });
       }
     });
+  
+    // Processamento de filtros especiais
+    if (_filters) {
+      // Tratamento para filtro de bairro
+      if (_filters.bairro) {
+        const bairroParamName = `param${paramCounter++}`;
+        query.andWhere(`cidadao.endereco->>'bairro' ILIKE :${bairroParamName}`, {
+          [bairroParamName]: `%${_filters.bairro}%`
+        });
+      }
+      
+      // Tratamento para busca numérica (CPF/NIS)
+      if (_filters.numericSearch) {
+        const numericSearch = _filters.numericSearch as string;
+        const cpfParamName = `param${paramCounter++}`;
+        const nisParamName = `param${paramCounter++}`;
+        
+        query.andWhere(`(cidadao.cpf LIKE :${cpfParamName} OR cidadao.nis LIKE :${nisParamName})`, {
+          [cpfParamName]: `%${numericSearch}%`,
+          [nisParamName]: `%${numericSearch}%`
+        });
+      }
+    }
   }
 
   // ========== MÉTODOS DE BUSCA ==========

@@ -13,7 +13,7 @@ export class CreateAllEnums1704067200000 implements MigrationInterface {
                 CREATE TYPE "status_solicitacao_enum" AS ENUM (
                    'rascunho', 'aberta', 'em_analise', 'pendente', 'aguardando_documentos',
                    'aprovada', 'indeferida', 'liberada', 'em_processamento',
-                   'arquivada', 'rejeitada', 'cancelada', 'concluida'
+                   'arquivada', 'cancelada', 'concluida'
                 );
             EXCEPTION
                 WHEN duplicate_object THEN null;

@@ -16,6 +16,7 @@ import {
   InternalServerErrorException,
   NotFoundException,
   Logger,
+  Res,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -54,7 +55,7 @@ export class DadosSociaisController {
   constructor(
     private readonly dadosSociaisService: DadosSociaisService,
     private readonly logger: Logger,
-  ) {}
+  ) { }
 
   /**
    * Cria dados sociais para um cidadão específico
@@ -179,11 +180,12 @@ export class DadosSociaisController {
     type: DadosSociaisResponseDto,
   })
   @ApiResponse({
-    status: 404,
+    status: 204,
     description: 'Cidadão ou dados sociais não encontrados',
   })
   async findByCidadaoId(
     @Param('id', ParseUUIDPipe) cidadaoId: string,
+    @Res() res: Response
   ): Promise<DadosSociaisResponseDto> {
     const dadosSociais =
       await this.dadosSociaisService.findByCidadaoId(cidadaoId);

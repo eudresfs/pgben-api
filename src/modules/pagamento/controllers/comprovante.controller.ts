@@ -92,7 +92,7 @@ export class ComprovanteController {
    * Realiza o upload de um comprovante para um pagamento
    */
   @Post()
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('arquivo'))
   @ApiConsumes('multipart/form-data')
   @ApiOperation({
     summary: 'Realiza upload de um comprovante para um pagamento',
@@ -120,11 +120,11 @@ export class ComprovanteController {
   })
   async uploadComprovante(
     @Param('pagamentoId', ParseUUIDPipe) pagamentoId: string,
-    @UploadedFile() file: any,
+    @UploadedFile() arquivo: any,
     @Body() uploadDto: ComprovanteUploadDto,
     @GetUser() usuario: Usuario
   ) {
-    if (!file) {
+    if (!arquivo) {
       throw new BadRequestException('Nenhum arquivo enviado');
     }
 
@@ -133,7 +133,7 @@ export class ComprovanteController {
 
     const comprovante = await this.comprovanteService.uploadComprovante(
       pagamentoId,
-      file,
+      arquivo,
       uploadDto,
       usuarioId,
     );

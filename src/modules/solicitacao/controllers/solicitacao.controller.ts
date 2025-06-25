@@ -52,7 +52,7 @@ export class SolicitacaoController {
   constructor(
     private readonly solicitacaoService: SolicitacaoService,
     private readonly logger: LoggingService
-  ) {}
+  ) { }
 
   /**
    * Lista todas as solicitações com filtros e paginação
@@ -66,8 +66,7 @@ export class SolicitacaoController {
   })
   @RequiresPermission({
     permissionName: 'solicitacao.listar',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'query.unidade_id',
+    scopeType: ScopeType.UNIT
   })
   @ApiOperation({ summary: 'Listar solicitações' })
   @ApiResponse({
@@ -142,7 +141,7 @@ export class SolicitacaoController {
       userId: user.id,
       unidadeId: user.unidade_id,
     };
-    
+
     this.logger.debug(`Contexto de escopo: ${JSON.stringify(scopeContext)}`);
 
     return this.solicitacaoService.findAll({

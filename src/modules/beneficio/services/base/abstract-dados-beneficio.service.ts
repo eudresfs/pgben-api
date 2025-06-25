@@ -89,6 +89,9 @@ export abstract class AbstractDadosBeneficioService<
       );
     }
 
+    // Extrair usuarioId do createDto, se disponível
+    const usuarioId = createDto.usuario_id || null;
+
     // Criar e salvar entidade
     const entity = this.repository.create(createDto as any);
     const savedEntity = await this.repository.save(entity);
@@ -98,7 +101,7 @@ export abstract class AbstractDadosBeneficioService<
     );
 
     // Atualizar status e substatus da solicitação após criação bem-sucedida
-    await this.atualizarStatusSolicitacao(createDto.solicitacao_id, createDto.usuario_id);
+    await this.atualizarStatusSolicitacao(createDto.solicitacao_id, usuarioId);
     
     return savedEntity as unknown as TEntity;
   }
@@ -212,39 +215,44 @@ export abstract class AbstractDadosBeneficioService<
    * @param solicitacaoId ID da solicitação
    * @param usuarioId ID do usuário que realizou a operação
    */
-  private async atualizarStatusSolicitacao(solicitacaoId: string, usuarioId?: string): Promise<void> {
-    try {
-      if (!this.workflowService) {
-        this.logger.warn('WorkflowSolicitacaoService não disponível para atualização de status');
-        return;
-      }
+  protected async atualizarStatusSolicitacao(solicitacaoId: string, usuarioId?: string): Promise<void> {
+    if (!this.workflowService) {
+      this.logger.warn('WorkflowService não disponível para atualização de status');
+      return;
+    }
 
-      // Buscar a solicitação atual para verificar o status
-      const solicitacao = await this.repository.manager.findOne(Solicitacao, {
-        where: { id: solicitacaoId },
-        select: ['id', 'status', 'sub_status']
-      });
+    try {
+      // Buscar a solicitação atual
+      // Usar a API correta do TypeORM para evitar erros de tipagem
+      const solicitacao = await this.repository.manager
+        .createQueryBuilder(Solicitacao, 'solicitacao')
+        .select(['solicitacao.id', 'solicitacao.status', 'solicitacao.sub_status'])
+        .where('solicitacao.id = :id', { id: solicitacaoId })
+        .getOne();
 
       if (!solicitacao) {
         this.logger.warn(`Solicitação ${solicitacaoId} não encontrada para atualização de status`);
         return;
       }
-
-      // Só atualizar se o status não for 'aberta' ou se o substatus não for 'aguardando_documentos'
-      const needsStatusUpdate = solicitacao.status !== StatusSolicitacao.ABERTA;
+      
+      // Só atualizar se o status for 'rascunho' ou se o substatus não for 'aguardando_documentos'
+      const needsStatusUpdate = solicitacao.status === StatusSolicitacao.RASCUNHO;
       const needsSubstatusUpdate = solicitacao.sub_status !== SubStatusSolicitacao.AGUARDANDO_DOCUMENTOS;
 
       if (needsStatusUpdate || needsSubstatusUpdate) {
         // Atualizar status para 'aberta' se necessário
-        if (needsStatusUpdate) {
+        if (needsStatusUpdate && usuarioId) {
+          // Só atualiza status se tiver um usuarioId válido para evitar erro de UUID inválido
           await this.workflowService.atualizarStatus(
             solicitacaoId,
             StatusSolicitacao.ABERTA,
-            usuarioId || 'system',
+            usuarioId,
             {
               observacao: `Status atualizado automaticamente após cadastro dos dados específicos de ${this.entityName}`
             }
           );
+        } else if (needsStatusUpdate) {
+          this.logger.warn(`Não foi possível atualizar status para solicitação ${solicitacaoId} - usuário não informado`);
         }
 
         // Atualizar substatus para 'aguardando_documentos'

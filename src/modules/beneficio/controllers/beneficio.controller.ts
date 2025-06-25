@@ -50,10 +50,6 @@ export class BeneficioController {
     enableCaching: true,
     cacheTTL: 300
   })
-  @RequiresPermission({
-    permissionName: 'beneficio.listar',
-    scopeType: ScopeType.GLOBAL,
-  })
   @ApiOperation({
     summary: 'Listar tipos de benefícios',
     description:
@@ -113,10 +109,6 @@ export class BeneficioController {
   @QueryOptimization({
     enableCaching: true,
     cacheTTL: 600
-  })
-  @RequiresPermission({
-    permissionName: 'beneficio.visualizar',
-    scopeType: ScopeType.GLOBAL,
   })
   @ApiOperation({
     summary: 'Obter detalhes de um benefício',
@@ -263,10 +255,6 @@ export class BeneficioController {
    * Lista requisitos documentais de um benefício
    */
   @Get(':id/requisitos')
-  @RequiresPermission({
-    permissionName: 'beneficio.requisito.listar',
-    scopeType: ScopeType.GLOBAL,
-  })
   @ApiOperation({ summary: 'Listar requisitos documentais' })
   @ApiResponse({
     status: 200,

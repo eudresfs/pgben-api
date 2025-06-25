@@ -50,7 +50,6 @@ export class WorkflowSolicitacaoController {
    * @returns Lista de estados possíveis
    */
   @Get(':solicitacaoId/estados-possiveis')
-  @RequiresPermission({ permissionName: 'solicitacao.visualizar' })
   @ApiOperation({
     summary: 'Obtém os estados possíveis para uma solicitação',
     description:
@@ -103,7 +102,7 @@ export class WorkflowSolicitacaoController {
   @RequiresPermission({
     permissionName: 'solicitacao.enviar-para-analise',
     scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'solicitacao.unidadeId',
+    scopeIdExpression: 'solicitacao.unidadeId'
   })
   @ApiOperation({
     summary: 'Envia uma solicitação para análise',
@@ -122,34 +121,6 @@ export class WorkflowSolicitacaoController {
   }
 
   /**
-   * Inicia a análise de uma solicitação
-   * @param solicitacaoId ID da solicitação
-   * @param req Requisição
-   * @returns Resultado da transição
-   */
-  @Post(':solicitacaoId/iniciar-analise')
-  @RequiresPermission({
-    permissionName: 'solicitacao.analisar',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'solicitacao.unidadeId',
-  })
-  @ApiOperation({
-    summary: 'Inicia a análise de uma solicitação',
-    description:
-      'Altera o estado de uma solicitação de PENDENTE para EM_ANALISE.',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Análise iniciada com sucesso',
-  })
-  async iniciarAnalise(
-    @Param('solicitacaoId', ParseUUIDPipe) solicitacaoId: string,
-    @Req() req: any,
-  ): Promise<ResultadoTransicaoEstado> {
-    return this.workflowService.iniciarAnalise(solicitacaoId, req.user.id);
-  }
-
-  /**
    * Aprova uma solicitação
    * @param solicitacaoId ID da solicitação
    * @param body Corpo da requisição
@@ -158,9 +129,7 @@ export class WorkflowSolicitacaoController {
    */
   @Post(':solicitacaoId/aprovar')
   @RequiresPermission({
-    permissionName: 'solicitacao.aprovar',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'solicitacao.unidadeId',
+    permissionName: 'solicitacao.aprovar'
   })
   @ApiOperation({
     summary: 'Aprova uma solicitação',
@@ -206,7 +175,7 @@ export class WorkflowSolicitacaoController {
   })
   @ApiResponse({
     status: 200,
-    description: 'Solicitação rejeitada com sucesso',
+    description: 'Solicitação indeferida com sucesso',
   })
   async rejeitarSolicitacao(
     @Param('solicitacaoId', ParseUUIDPipe) solicitacaoId: string,

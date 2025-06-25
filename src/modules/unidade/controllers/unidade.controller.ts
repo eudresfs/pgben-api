@@ -42,10 +42,6 @@ export class UnidadeController {
    * Lista todas as unidades com filtros e paginação
    */
   @Get()
-  @RequiresPermission({
-    permissionName: 'unidade.listar',
-    scopeType: ScopeType.GLOBAL,
-  })
   @ApiOperation({ summary: 'Listar unidades' })
   @ApiResponse({
     status: 200,

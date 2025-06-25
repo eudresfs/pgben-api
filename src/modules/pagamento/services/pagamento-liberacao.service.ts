@@ -66,7 +66,7 @@ export class PagamentoLiberacaoService {
       relations: [
         'solicitacao',
         'solicitacao.tipo_beneficio',
-        'solicitacao.cidadao',
+        'solicitacao.beneficiario',        
         'concessao',
       ],
     });
@@ -217,6 +217,7 @@ export class PagamentoLiberacaoService {
       },
       relations: [
         'solicitacao',
+        'solicitacao.beneficiario',  
         'solicitacao.tipo_beneficio',
         'concessao',
       ],
