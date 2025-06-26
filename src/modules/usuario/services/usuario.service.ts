@@ -114,7 +114,7 @@ export class UsuarioService {
           data_criacao: new Date().toLocaleDateString('pt-BR'),
         },
       });
-      
+
       // TODO: Reativar notificação quando o módulo for reimplementado
       // await this.notificationManager.criarNotificacao({
       //   template_id: template.id,
@@ -155,8 +155,8 @@ export class UsuarioService {
 
     // Campos permitidos para filtro (baseados na entidade Usuario)
     const allowedFields = [
-      'nome', 'email', 'cpf', 'telefone', 'matricula', 
-      'role_id', 'unidade_id', 'setor_id', 'status', 
+      'nome', 'email', 'cpf', 'telefone', 'matricula',
+      'role_id', 'unidade_id', 'setor_id', 'status',
       'primeiro_acesso', 'tentativas_login'
     ];
 
@@ -164,7 +164,7 @@ export class UsuarioService {
     Object.keys(filters).forEach(key => {
       if (allowedFields.includes(key) && filters[key] !== undefined && filters[key] !== null && filters[key] !== '') {
         const value = filters[key];
-        
+
         // Para campos de texto, usar busca parcial (ILIKE)
         if (['nome', 'email', 'telefone', 'matricula'].includes(key)) {
           where[key] = ILike(`%${value}%`);
@@ -180,28 +180,28 @@ export class UsuarioService {
     if (search) {
       const searchTerm = search.trim();
       const numericSearch = searchTerm.replace(/\D/g, '');
-      
+
       // Remover filtros individuais se houver busca geral
       delete where.nome;
       delete where.email;
       delete where.cpf;
       delete where.matricula;
-      
+
       // Criar condições OR para busca geral
       const searchConditions = [
         { ...where, nome: ILike(`%${searchTerm}%`) },
         { ...where, email: ILike(`%${searchTerm}%`) },
         { ...where, matricula: ILike(`%${searchTerm}%`) },
       ];
-      
+
       // Adicionar busca por CPF se houver números
       if (numericSearch) {
         searchConditions.push({ ...where, cpf: ILike(`%${numericSearch}%`) });
       }
-      
+
       // Usar array de condições OR
       const finalWhere = searchConditions;
-      
+
       // Calcular skip para paginação
       const skip = (page - 1) * limit;
 
@@ -285,185 +285,132 @@ export class UsuarioService {
     this.logger.info(`Iniciando criação de usuário: ${createUsuarioDto.email}`);
 
     try {
-      // Usar transação para garantir consistência
-      const resultado = await this.dataSource.transaction(async (manager) => {
-        const usuarioRepo = manager.getRepository('usuario');
-        const unidadeRepo = manager.getRepository('unidade');
-        const setorRepo = manager.getRepository('setor');
-        const roleRepo = manager.getRepository('role');
+      // ------------ Validações e leituras fora da transação ------------
+      const usuarioRepo = this.usuarioRepository;
+      const unidadeRepo = this.dataSource.getRepository('unidade');
+      const setorRepo = this.dataSource.getRepository('setor');
+      const roleRepo = this.dataSource.getRepository('role');
 
-        // Verificar se role existe (obrigatório)
-        if (!createUsuarioDto.role_id) {
-          this.logger.warn('Role é obrigatório para criação de usuário');
-          throw new BadRequestException('Role é obrigatório');
+      // Role obrigatória
+      if (!createUsuarioDto.role_id) {
+        this.logger.warn('Role é obrigatório para criação de usuário');
+        throw new BadRequestException('Role é obrigatório');
+      }
+
+      const role = await roleRepo.findOne({ where: { id: createUsuarioDto.role_id } });
+      if (!role) {
+        this.logger.warn(`Role não encontrada: ${createUsuarioDto.role_id}`);
+        throw new BadRequestException(`Role com ID ${createUsuarioDto.role_id} não encontrada`);
+      }
+
+      // Duplicidades
+      const emailLower = createUsuarioDto.email.toLowerCase();
+      const [emailExists, cpfExists, matriculaExists] = await Promise.all([
+        usuarioRepo.findByEmail(emailLower),
+        usuarioRepo.findByCpf(createUsuarioDto.cpf),
+        usuarioRepo.findByMatricula(createUsuarioDto.matricula)
+      ]);
+
+      if (emailExists) throwDuplicateEmail(createUsuarioDto.email);
+      if (cpfExists) throwDuplicateCpf(createUsuarioDto.cpf);
+      if (matriculaExists) throwDuplicateMatricula(createUsuarioDto.matricula);
+
+      // Verificar unidade
+      if (createUsuarioDto.unidade_id) {
+        const unidade = await unidadeRepo.findOne({ where: { id: createUsuarioDto.unidade_id } });
+        if (!unidade) {
+          this.logger.warn(`Unidade não encontrada: ${createUsuarioDto.unidade_id}`);
+          throw new BadRequestException(`Unidade com ID ${createUsuarioDto.unidade_id} não encontrada`);
         }
+      }
 
-        const role = await roleRepo.findOne({
-          where: { id: createUsuarioDto.role_id },
+      // Verificar setor (e se pertence à unidade)
+      if (createUsuarioDto.setor_id) {
+        if (!createUsuarioDto.unidade_id) {
+          this.logger.warn('Setor informado sem unidade correspondente');
+          throw new BadRequestException('Quando setor é informado, a unidade também deve ser informada');
+        }
+        const setor = await setorRepo.findOne({
+          where: { id: createUsuarioDto.setor_id, unidade_id: createUsuarioDto.unidade_id },
         });
-        if (!role) {
-          this.logger.warn(`Role não encontrada: ${createUsuarioDto.role_id}`);
-          throw new BadRequestException(`Role com ID ${createUsuarioDto.role_id} não encontrada`);
+        if (!setor) {
+          this.logger.warn(`Setor não encontrado para a unidade: ${createUsuarioDto.setor_id}`);
+          throw new BadRequestException(`Setor com ID ${createUsuarioDto.setor_id} não encontrado para a unidade ${createUsuarioDto.unidade_id}`);
         }
+      }
 
-        // Verificar se email já existe
-        const emailExistente = await usuarioRepo.findOne({
-          where: { email: createUsuarioDto.email },
-        });
-        if (emailExistente) {
-          this.logger.warn(`Email já está em uso: ${createUsuarioDto.email}`);
-          throwDuplicateEmail(createUsuarioDto.email);
-        }
+      // Geração/validação de senha
+      let senhaParaUso = createUsuarioDto.senha;
+      let senhaGerada = false;
+      if (!senhaParaUso) {
+        senhaParaUso = this.generateRandomPassword();
+        senhaGerada = true;
+        this.logger.info(`Senha gerada automaticamente para usuário: ${createUsuarioDto.email}`);
+      }
 
-        // Verificar se CPF já existe
-        const cpfExistente = await usuarioRepo.findOne({
-          where: { cpf: createUsuarioDto.cpf },
-        });
-        if (cpfExistente) {
-          this.logger.warn(`CPF já está em uso: ${createUsuarioDto.cpf}`);
-          throwDuplicateCpf(createUsuarioDto.cpf);
-        }
+      const senhaHash = await bcrypt.hash(senhaParaUso, this.SALT_ROUNDS);
 
-        // Verificar se matrícula já existe
-        const matriculaExistente = await usuarioRepo.findOne({
-          where: { matricula: createUsuarioDto.matricula },
-        });
-        if (matriculaExistente) {
-          this.logger.warn(
-            `Matrícula já está em uso: ${createUsuarioDto.matricula}`,
-          );
-          throwDuplicateMatricula(createUsuarioDto.matricula);
-        }
+      const normalizedData = normalizeEnumFields({
+        nome: createUsuarioDto.nome,
+        email: emailLower,
+        senhaHash,
+        cpf: createUsuarioDto.cpf,
+        telefone: createUsuarioDto.telefone,
+        matricula: createUsuarioDto.matricula,
+        role_id: createUsuarioDto.role_id,
+        unidade_id: createUsuarioDto.unidade_id,
+        setor_id: createUsuarioDto.setor_id,
+        primeiro_acesso: true,
 
-        // Verificar se a unidade existe (se informada)
-        if (createUsuarioDto.unidade_id) {
-          const unidade = await unidadeRepo.findOne({
-            where: { id: createUsuarioDto.unidade_id },
-          });
-          if (!unidade) {
-            this.logger.warn(
-              `Unidade não encontrada: ${createUsuarioDto.unidade_id}`,
-            );
-            throw new BadRequestException(`Unidade com ID ${createUsuarioDto.unidade_id} não encontrada`);
-          }
-        }
-
-        // Verificar se o setor existe e pertence à unidade (se informado)
-        if (createUsuarioDto.setor_id) {
-          // Se setor é informado, unidade também deve ser informada
-          if (!createUsuarioDto.unidade_id) {
-            this.logger.warn('Setor informado sem unidade correspondente');
-            throw new BadRequestException('Quando setor é informado, a unidade também deve ser informada');
-          }
-
-          const setor = await setorRepo.findOne({
-            where: {
-              id: createUsuarioDto.setor_id,
-              unidade_id: createUsuarioDto.unidade_id,
-            },
-          });
-          if (!setor) {
-            this.logger.warn(
-              `Setor não encontrado para a unidade: ${createUsuarioDto.setor_id}`,
-            );
-            throw new BadRequestException(`Setor com ID ${createUsuarioDto.setor_id} não encontrado para a unidade ${createUsuarioDto.unidade_id}`);
-          }
-        }
-
-        // Determinar senha a ser usada
-        let senhaParaUso: string;
-        let senhaGerada = false;
-
-        if (createUsuarioDto.senha) {
-          senhaParaUso = createUsuarioDto.senha;
-        } else {
-          senhaParaUso = this.generateRandomPassword();
-          senhaGerada = true;
-          this.logger.info(
-            `Senha gerada automaticamente para usuário: ${createUsuarioDto.email}`,
-          );
-        }
-
-        // Gerar hash da senha com maior segurança
-        const senhaHash = await bcrypt.hash(senhaParaUso, this.SALT_ROUNDS);
-
-        // Normalizar campos de enum antes de criar
-        const normalizedData = normalizeEnumFields({
-          nome: createUsuarioDto.nome,
-          email: createUsuarioDto.email.toLowerCase(), // Normalizar email para minúsculas
-          senhaHash,
-          cpf: createUsuarioDto.cpf,
-          telefone: createUsuarioDto.telefone,
-          matricula: createUsuarioDto.matricula,
-          role_id: createUsuarioDto.role_id,
-          unidade_id: createUsuarioDto.unidade_id,
-          setor_id: createUsuarioDto.setor_id,
-          primeiro_acesso: true, // Sempre true para novos usuários
-          ultimo_login: null,
-          tentativas_login: 0,
-        });
-
-        // Criar usuário
-        const novoUsuario = usuarioRepo.create(normalizedData);
-
-        const usuarioSalvo = await usuarioRepo.save(novoUsuario);
-
-        this.logger.info(`Usuário criado com sucesso: ${usuarioSalvo.id}`);
-
-        // Remover campos sensíveis
-        const { senhaHash: _, ...usuarioSemSenha } = usuarioSalvo;
-
-        return {
-          usuarioSalvo: usuarioSalvo as Usuario,
-          senhaGerada,
-          senhaParaUso,
-          data: usuarioSemSenha,
-          meta: null,
-          message: senhaGerada
-            ? 'Usuário criado com sucesso. Credenciais enviadas por email.'
-            : 'Usuário criado com sucesso.',
-        };
+        tentativas_login: 0,
       });
 
-      // Emitir eventos de notificação após a transação ser commitada
-      if (resultado.senhaGerada) {
-        // Situação 1: Cadastro de usuário sem senha (primeiro acesso)
+      // ------------ Transação mínima (apenas INSERT) ------------
+      const usuarioSalvo = await this.dataSource.transaction(async (manager) => {
+        const repo = manager.getRepository(Usuario);
+        const novoUsuario = repo.create(normalizedData as DeepPartial<Usuario>);
+        return repo.save<Usuario>(novoUsuario);
+      });
+
+      this.logger.info(`Usuário criado com sucesso: ${usuarioSalvo.id}`);
+
+      const { senhaHash: _ignored, ...usuarioSemSenha } = usuarioSalvo;
+
+      // ------------ Pós-transação: eventos e e-mail ------------
+      if (senhaGerada) {
         this.eventEmitter.emit('user.created.first-access', {
-          userId: resultado.usuarioSalvo.id,
-          email: resultado.usuarioSalvo.email,
-          nome: resultado.usuarioSalvo.nome,
-          senha: resultado.senhaParaUso,
+          userId: usuarioSalvo.id,
+          email: usuarioSalvo.email,
+          nome: usuarioSalvo.nome,
+          senha: senhaParaUso,
           timestamp: new Date(),
         });
-        
-        await this.enviarCredenciaisPorEmail(
-          resultado.usuarioSalvo,
-          resultado.senhaParaUso,
-        );
+        await this.enviarCredenciaisPorEmail(usuarioSalvo, senhaParaUso);
       } else {
-        // Situação 2: Cadastro de usuário com senha (validação de email)
         this.eventEmitter.emit('user.created.email-validation', {
-          userId: resultado.usuarioSalvo.id,
-          email: resultado.usuarioSalvo.email,
-          nome: resultado.usuarioSalvo.nome,
+          userId: usuarioSalvo.id,
+          email: usuarioSalvo.email,
+          nome: usuarioSalvo.nome,
           timestamp: new Date(),
         });
       }
 
-      // Retornar apenas os dados necessários
       return {
-        data: resultado.data,
-        meta: resultado.meta,
-        message: resultado.message,
+        data: usuarioSemSenha,
+        meta: null,
+        message: senhaGerada
+          ? 'Usuário criado com sucesso. Credenciais enviadas por email.'
+          : 'Usuário criado com sucesso.',
       };
     } catch (error) {
       this.logger.error(`Erro ao criar usuário: ${error.message}`, error.stack);
       if (error instanceof Error) {
         throw error;
       }
-      // Note: Internal error handling needs to be implemented with appropriate error
     }
   }
+
+
 
   /**
    * Atualiza um usuário existente
@@ -473,81 +420,122 @@ export class UsuarioService {
    */
   async update(id: string, updateUsuarioDto: UpdateUsuarioDto) {
     this.logger.info(`Iniciando atualização do usuário ${id}`);
+    const startTime = Date.now();
 
     try {
-      // Usar transação para garantir consistência
-      return await this.dataSource.transaction(async (manager) => {
-        const usuarioRepo = manager.getRepository('usuario');
+      // ------------ Validações e leituras fora da transação ------------
+      const usuarioRepo = this.usuarioRepository;
+      
+      // Verificar se usuário existe
+      const usuario = await usuarioRepo.findById(id);
+      if (!usuario) {
+        this.logger.warn(`Usuário não encontrado: ${id}`);
+        throwUserNotFound(id);
+      }
 
-        // Verificar se usuário existe
-        const usuario = await usuarioRepo.findOne({ where: { id } });
-        if (!usuario) {
-          this.logger.warn(`Usuário não encontrado: ${id}`);
-          throwUserNotFound(id);
-        }
+      // Preparar validações em paralelo
+      interface ValidacaoItem {
+        tipo: 'email' | 'cpf' | 'matricula';
+        valor: string;
+        promessa: Promise<Usuario | null>;
+      }
+      
+      const validacoes: ValidacaoItem[] = [];
+      
+      // Verificar se email já existe (se fornecido)
+      if (
+        updateUsuarioDto.email &&
+        updateUsuarioDto.email.toLowerCase() !== usuario.email.toLowerCase()
+      ) {
+        const emailLower = updateUsuarioDto.email.toLowerCase();
+        validacoes.push({
+          tipo: 'email',
+          valor: emailLower,
+          promessa: usuarioRepo.findByEmail(emailLower)
+        });
+        // Normalizar email para minúsculas imediatamente
+        updateUsuarioDto.email = emailLower;
+      }
 
-        // Verificar se email já existe (se fornecido)
-        if (
-          updateUsuarioDto.email &&
-          updateUsuarioDto.email.toLowerCase() !== usuario.email.toLowerCase()
-        ) {
-          const emailExistente = await usuarioRepo.findOne({
-            where: { email: updateUsuarioDto.email.toLowerCase() },
-          });
-          if (emailExistente) {
-            this.logger.warn(`Email já está em uso: ${updateUsuarioDto.email}`);
-            throwDuplicateEmail(updateUsuarioDto.email);
+      // Verificar se CPF já existe (se fornecido)
+      if (updateUsuarioDto.cpf && updateUsuarioDto.cpf !== usuario.cpf) {
+        validacoes.push({
+          tipo: 'cpf',
+          valor: updateUsuarioDto.cpf,
+          promessa: usuarioRepo.findByCpf(updateUsuarioDto.cpf)
+        });
+      }
+
+      // Verificar se matrícula já existe (se fornecida)
+      if (
+        updateUsuarioDto.matricula &&
+        updateUsuarioDto.matricula !== usuario.matricula
+      ) {
+        validacoes.push({
+          tipo: 'matricula',
+          valor: updateUsuarioDto.matricula,
+          promessa: usuarioRepo.findByMatricula(updateUsuarioDto.matricula)
+        });
+      }
+      
+      // Executar todas as validações em paralelo
+      if (validacoes.length > 0) {
+        const resultados = await Promise.all(validacoes.map(v => v.promessa));
+        
+        // Verificar resultados das validações
+        for (let i = 0; i < validacoes.length; i++) {
+          const { tipo, valor } = validacoes[i];
+          const resultado = resultados[i];
+          
+          if (resultado) {
+            switch (tipo) {
+              case 'email':
+                this.logger.warn(`Email já está em uso: ${valor}`);
+                throwDuplicateEmail(valor);
+                break;
+              case 'cpf':
+                this.logger.warn(`CPF já está em uso: ${valor}`);
+                throwDuplicateCpf(valor);
+                break;
+              case 'matricula':
+                this.logger.warn(`Matrícula já está em uso: ${valor}`);
+                throwDuplicateMatricula(valor);
+                break;
+            }
           }
-          // Normalizar email para minúsculas
-          updateUsuarioDto.email = updateUsuarioDto.email.toLowerCase();
         }
+      }
 
-        // Verificar se CPF já existe (se fornecido)
-        if (updateUsuarioDto.cpf && updateUsuarioDto.cpf !== usuario.cpf) {
-          const cpfExistente = await usuarioRepo.findOne({
-            where: { cpf: updateUsuarioDto.cpf },
-          });
-          if (cpfExistente) {
-            this.logger.warn(`CPF já está em uso: ${updateUsuarioDto.cpf}`);
-            // Note: CPF duplication check needs to be implemented with appropriate error
-          }
-        }
+      // Normalizar campos de enum antes de atualizar
+      const normalizedData = normalizeEnumFields(updateUsuarioDto);
 
-        // Verificar se matrícula já existe (se fornecida)
-        if (
-          updateUsuarioDto.matricula &&
-          updateUsuarioDto.matricula !== usuario.matricula
-        ) {
-          const matriculaExistente = await usuarioRepo.findOne({
-            where: { matricula: updateUsuarioDto.matricula },
-          });
-          if (matriculaExistente) {
-            this.logger.warn(
-              `Matrícula já está em uso: ${updateUsuarioDto.matricula}`,
-            );
-            throwDuplicateMatricula(updateUsuarioDto.matricula);
-          }
-        }
-
-        // Normalizar campos de enum antes de atualizar
-        const normalizedData = normalizeEnumFields(updateUsuarioDto);
-
-        // Atualizar usuário
+      // ------------ Transação mínima (apenas UPDATE) ------------
+      await this.dataSource.transaction(async (manager) => {
+        const usuarioRepo = manager.getRepository(Usuario);
         await usuarioRepo.update(id, normalizedData);
-
-        // Buscar usuário atualizado
-        const usuarioAtualizado = await usuarioRepo.findOne({ where: { id } });
-        if (!usuarioAtualizado) {
-          throwUserNotFound(id);
-        }
-
-        this.logger.info(`Usuário ${id} atualizado com sucesso`);
-
-        // Remover campos sensíveis
-        const { senhaHash, ...usuarioSemSenha } = usuarioAtualizado;
-
-        return usuarioSemSenha;
       });
+
+      // ------------ Pós-transação: buscar dados atualizados ------------
+      const usuarioAtualizado = await usuarioRepo.findById(id);
+      if (!usuarioAtualizado) {
+        throwUserNotFound(id);
+      }
+
+      const executionTime = Date.now() - startTime;
+      if (executionTime > 1000) { // Alerta para operações que levam mais de 1 segundo
+        this.logger.warn(`Atualização do usuário ${id} levou ${executionTime}ms`);
+      }
+      
+      this.logger.info(`Usuário ${id} atualizado com sucesso`);
+
+      // Remover campos sensíveis
+      const { senhaHash, ...usuarioSemSenha } = usuarioAtualizado;
+
+      return {
+        data: usuarioSemSenha,
+        meta: null,
+        message: 'Usuário atualizado com sucesso.'
+      };
     } catch (error) {
       this.logger.error(
         `Erro ao atualizar usuário ${id}: ${error.message}`,
@@ -556,7 +544,8 @@ export class UsuarioService {
       if (error instanceof Error) {
         throw error;
       }
-      // Note: Internal error handling needs to be implemented with appropriate error
+      // Re-throw para garantir que o erro seja tratado adequadamente
+      throw new BadRequestException('Erro ao atualizar usuário');
     }
   }
 
@@ -596,64 +585,74 @@ export class UsuarioService {
    */
   async updateSenha(id: string, updateSenhaDto: UpdateSenhaDto) {
     this.logger.info(`Iniciando atualização de senha do usuário ${id}`);
+    const startTime = Date.now();
 
     try {
-      // Usar transação para garantir consistência
-      return await this.dataSource.transaction(async (manager) => {
-        const usuarioRepo = manager.getRepository('usuario');
+      // ------------ Validações e leituras fora da transação ------------
+      const usuarioRepo = this.usuarioRepository;
 
-        // Verificar se usuário existe
-        const usuario = await usuarioRepo.findOne({ where: { id } });
-        if (!usuario) {
-          this.logger.warn(`Usuário não encontrado: ${id}`);
-          throwUserNotFound(id);
-        }
+      // Verificar se usuário existe
+      const usuario = await usuarioRepo.findById(id);
+      if (!usuario) {
+        this.logger.warn(`Usuário não encontrado: ${id}`);
+        throwUserNotFound(id);
+      }
 
-        // Verificar se a senha atual está correta
-        const senhaCorreta = await bcrypt.compare(
-          updateSenhaDto.senhaAtual,
-          usuario.senhaHash,
+      // Verificar se a senha atual está correta
+      const senhaCorreta = await bcrypt.compare(
+        updateSenhaDto.senhaAtual,
+        usuario.senhaHash,
+      );
+      if (!senhaCorreta) {
+        this.logger.warn(
+          `Tentativa de alteração de senha com senha atual incorreta: ${id}`,
         );
-        if (!senhaCorreta) {
-          this.logger.warn(
-            `Tentativa de alteração de senha com senha atual incorreta: ${id}`,
-          );
-          // Incrementar contador de tentativas falhas para prevenção de ataques de força bruta
-          await usuarioRepo.update(id, {
-            tentativas_login: () => '"tentativas_login" + 1',
-          });
-          throwInvalidCredentials(usuario.email);
-        }
+        // Incrementar contador de tentativas falhas para prevenção de ataques de força bruta
+        await this.incrementLoginAttempts(id);
+        throwInvalidCredentials(usuario.email);
+      }
 
-        // Verificar se a nova senha e a confirmação coincidem
-        if (updateSenhaDto.novaSenha !== updateSenhaDto.confirmacaoSenha) {
-          this.logger.warn(`Nova senha e confirmação não coincidem: ${id}`);
-          throwPasswordMismatch();
-        }
+      // Verificar se a nova senha e a confirmação coincidem
+      if (updateSenhaDto.novaSenha !== updateSenhaDto.confirmacaoSenha) {
+        this.logger.warn(`Nova senha e confirmação não coincidem: ${id}`);
+        throwPasswordMismatch();
+      }
 
-        // Verificar se a nova senha é diferente da atual
-        if (updateSenhaDto.novaSenha === updateSenhaDto.senhaAtual) {
-          throwWeakPassword(); // Note: Same password logic needs review
-        }
+      // Verificar se a nova senha é diferente da atual
+      if (updateSenhaDto.novaSenha === updateSenhaDto.senhaAtual) {
+        this.logger.warn(`Nova senha igual à senha atual: ${id}`);
+        throwWeakPassword(); // Note: Same password logic needs review
+      }
 
-        // Gerar hash da nova senha com maior segurança
-        const senhaHash = await bcrypt.hash(
-          updateSenhaDto.novaSenha,
-          this.SALT_ROUNDS,
-        );
+      // Gerar hash da nova senha com maior segurança
+      const senhaHash = await bcrypt.hash(
+        updateSenhaDto.novaSenha,
+        this.SALT_ROUNDS,
+      );
 
-        // Atualizar senha e resetar contador de tentativas
-        await usuarioRepo.update(id, {
+      // ------------ Transação mínima (apenas UPDATE) ------------
+      await this.dataSource.transaction(async (manager) => {
+        const repo = manager.getRepository(Usuario);
+        await repo.update(id, {
           senhaHash,
           tentativas_login: 0,
           primeiro_acesso: false,
           ultimo_login: new Date(),
         });
-
-        this.logger.info(`Senha do usuário ${id} atualizada com sucesso`);
-
-        return { message: 'Senha atualizada com sucesso' };
       });
+
+      const executionTime = Date.now() - startTime;
+      if (executionTime > 1000) { // Alerta para operações que levam mais de 1 segundo
+        this.logger.warn(`Atualização de senha do usuário ${id} levou ${executionTime}ms`);
+      }
+
+      this.logger.info(`Senha do usuário ${id} atualizada com sucesso`);
+
+      return {
+        data: null,
+        meta: null,
+        message: 'Senha atualizada com sucesso'
+      };
     } catch (error) {
       this.logger.error(
         `Erro ao atualizar senha do usuário ${id}: ${error.message}`,
@@ -662,7 +661,8 @@ export class UsuarioService {
       if (error instanceof Error) {
         throw error;
       }
-      // Note: Internal error handling needs to be implemented with appropriate error
+      // Re-throw para garantir que o erro seja tratado adequadamente
+      throw new BadRequestException('Erro ao atualizar senha do usuário');
     }
   }
 
@@ -826,7 +826,7 @@ export class UsuarioService {
         }
       );
 
-      
+
       throwInvalidCredentials(email);
     }
 
@@ -894,6 +894,12 @@ export class UsuarioService {
   }
 
 
+  /**
+   * Altera a senha no primeiro acesso do usuário
+   * @param userId ID do usuário
+   * @param alterarSenhaDto Dados da nova senha
+   * @returns Mensagem de sucesso
+   */
   async alterarSenhaPrimeiroAcesso(
     userId: string,
     alterarSenhaDto: AlterarSenhaPrimeiroAcessoDto,
@@ -901,51 +907,61 @@ export class UsuarioService {
     this.logger.info(
       `Iniciando alteração de senha no primeiro acesso para usuário ${userId}`,
     );
+    const startTime = Date.now();
 
     try {
+      // ------------ Validações e leituras fora da transação ------------
       // Verificar se as senhas coincidem (validação adicional no backend)
       if (alterarSenhaDto.nova_senha !== alterarSenhaDto.confirmar_senha) {
+        this.logger.warn(`Nova senha e confirmação não coincidem: ${userId}`);
         throwPasswordMismatch();
       }
 
-      // Usar transação para garantir consistência
-      return await this.dataSource.transaction(async (manager) => {
-        const usuarioRepo = manager.getRepository('usuario');
+      const usuarioRepo = this.usuarioRepository;
 
-        // Buscar usuário
-        const usuario = await usuarioRepo.findOne({ where: { id: userId } });
-        if (!usuario) {
-          this.logger.warn(`Usuário não encontrado: ${userId}`);
-          throwUserNotFound(userId);
-        }
+      // Buscar usuário
+      const usuario = await usuarioRepo.findById(userId);
+      if (!usuario) {
+        this.logger.warn(`Usuário não encontrado: ${userId}`);
+        throwUserNotFound(userId);
+      }
 
-        // Verificar se está em primeiro acesso
-        if (!usuario.primeiro_acesso) {
-          this.logger.warn(`Usuário ${userId} não está em primeiro acesso`);
-          throwNotInFirstAccess(userId);
-        }
+      // Verificar se está em primeiro acesso
+      if (!usuario.primeiro_acesso) {
+        this.logger.warn(`Usuário ${userId} não está em primeiro acesso`);
+        throwNotInFirstAccess(userId);
+      }
 
-        // Gerar hash da nova senha
-        const novoHash = await bcrypt.hash(alterarSenhaDto.nova_senha, 12);
+      // Gerar hash da nova senha
+      const novoHash = await bcrypt.hash(alterarSenhaDto.nova_senha, this.SALT_ROUNDS);
 
+      // ------------ Transação mínima (apenas UPDATE) ------------
+      await this.dataSource.transaction(async (manager) => {
+        const repo = manager.getRepository(Usuario);
+        
         // Atualizar senha e marcar como não sendo mais primeiro acesso
-        await usuarioRepo.update(userId, {
+        await repo.update(userId, {
           senhaHash: novoHash,
           primeiro_acesso: false,
           updated_at: new Date(),
         });
-
-        this.logger.info(
-          `Senha alterada com sucesso no primeiro acesso para usuário ${userId}`,
-        );
-
-        return {
-          data: null,
-          meta: null,
-          message:
-            'Senha alterada com sucesso. Você pode agora acessar o sistema normalmente.',
-        };
       });
+
+      const executionTime = Date.now() - startTime;
+      if (executionTime > 1000) { // Alerta para operações que levam mais de 1 segundo
+        this.logger.warn(`Alteração de senha no primeiro acesso para usuário ${userId} levou ${executionTime}ms`);
+      }
+
+      this.logger.info(
+        `Senha alterada com sucesso no primeiro acesso para usuário ${userId}`,
+      );
+
+      return {
+        data: null,
+        meta: null,
+        message:
+          'Senha alterada com sucesso. Você pode agora acessar o sistema normalmente.',
+      };
     } catch (error) {
       this.logger.error(
         `Erro ao alterar senha no primeiro acesso para usuário ${userId}: ${error.message}`,
@@ -954,7 +970,8 @@ export class UsuarioService {
       if (error instanceof Error) {
         throw error;
       }
-      // Note: Internal error handling needs to be implemented with appropriate error
+      // Re-throw para garantir que o erro seja tratado adequadamente
+      throw new BadRequestException('Erro ao alterar senha no primeiro acesso');
     }
   }
 
@@ -965,14 +982,16 @@ export class UsuarioService {
    */
   async solicitarRecuperacaoSenha(email: string) {
     this.logger.info(`Iniciando recuperação de senha para email: ${email}`);
+    const startTime = Date.now();
 
     try {
+      // ------------ Validações e leituras fora da transação ------------
       // Normalizar email
       const normalizedEmail = email.toLowerCase();
-      
+
       // Buscar usuário pelo email
       const usuario = await this.findByEmail(normalizedEmail);
-      
+
       if (!usuario) {
         // Por segurança, não revelar se o email existe ou não
         this.logger.warn(`Tentativa de recuperação de senha para email inexistente: ${normalizedEmail}`);
@@ -997,10 +1016,10 @@ export class UsuarioService {
       const senhaTemporaria = this.generateRandomPassword();
       const senhaHash = await bcrypt.hash(senhaTemporaria, this.SALT_ROUNDS);
 
-      // Usar transação para garantir consistência
+      // ------------ Transação mínima (apenas UPDATE) ------------
       await this.dataSource.transaction(async (manager) => {
-        const usuarioRepo = manager.getRepository('usuario');
-        
+        const usuarioRepo = manager.getRepository(Usuario);
+
         // Atualizar senha e marcar como primeiro acesso
         await usuarioRepo.update(usuario.id, {
           senhaHash,
@@ -1010,6 +1029,7 @@ export class UsuarioService {
         });
       });
 
+      // ------------ Pós-transação: eventos e notificações ------------
       // Situação 3: Recuperação de senha
       this.eventEmitter.emit('user.password.reset', {
         userId: usuario.id,
@@ -1018,6 +1038,11 @@ export class UsuarioService {
         senhaTemporaria,
         timestamp: new Date(),
       });
+
+      const executionTime = Date.now() - startTime;
+      if (executionTime > 1000) { // Alerta para operações que levam mais de 1 segundo
+        this.logger.warn(`Recuperação de senha para usuário ${usuario.id} levou ${executionTime}ms`);
+      }
 
       this.logger.info(`Recuperação de senha processada com sucesso para usuário: ${usuario.id}`);
 
@@ -1031,7 +1056,7 @@ export class UsuarioService {
         `Erro ao processar recuperação de senha: ${error.message}`,
         error.stack,
       );
-      
+
       // Por segurança, retornar sempre a mesma mensagem
       return {
         data: null,

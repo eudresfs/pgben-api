@@ -52,8 +52,7 @@ export class UsuarioController {
   @Get()
   @RequiresPermission({
     permissionName: 'usuario.listar',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'query.unidade_id',
+    scopeType: ScopeType.UNIT
   })
   @ApiOperation({ 
     summary: 'Listar usuários',

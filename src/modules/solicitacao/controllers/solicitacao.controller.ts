@@ -24,7 +24,7 @@ import {
   ApiBody,
   getSchemaPath,
 } from '@nestjs/swagger';
-import { SolicitacaoService } from '../services/solicitacao.service';
+import { SolicitacaoService, PaginatedResponse } from '../services/solicitacao.service';
 import { CreateSolicitacaoDto } from '../dto/create-solicitacao.dto';
 import { UpdateSolicitacaoDto } from '../dto/update-solicitacao.dto';
 import { AvaliarSolicitacaoDto } from '../dto/avaliar-solicitacao.dto';
@@ -35,7 +35,7 @@ import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../../../auth/guards/permission.guard';
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
 import { ScopeType } from '../../../entities/user-permission.entity';
-import { StatusSolicitacao } from '../../../entities/solicitacao.entity';
+import { Solicitacao, StatusSolicitacao } from '../../../entities/solicitacao.entity';
 import { Request } from 'express';
 import { QueryOptimization } from '../../../common/interceptors/query-optimization.interceptor';
 
@@ -54,119 +54,162 @@ export class SolicitacaoController {
     private readonly logger: LoggingService
   ) { }
 
-  /**
-   * Lista todas as solicitações com filtros e paginação
-   */
-  @Get()
-  @QueryOptimization({
-    enablePagination: true,
-    maxLimit: 100,
-    enableCaching: true,
-    cacheTTL: 120
-  })
-  @RequiresPermission({
-    permissionName: 'solicitacao.listar',
-    scopeType: ScopeType.UNIT
-  })
-  @ApiOperation({ summary: 'Listar solicitações' })
-  @ApiResponse({
-    status: 200,
-    description: 'Lista de solicitações retornada com sucesso',
-  })
-  @ApiQuery({
-    name: 'page',
-    required: false,
-    type: Number,
-    description: 'Página atual',
-  })
-  @ApiQuery({
-    name: 'limit',
-    required: false,
-    type: Number,
-    description: 'Itens por página',
-  })
-  @ApiQuery({
-    name: 'status',
-    required: false,
-    enum: StatusSolicitacao,
-    description: 'Filtro por status',
-  })
-  @ApiQuery({
-    name: 'unidade_id',
-    required: false,
-    type: String,
-    description: 'Filtro por unidade',
-  })
-  @ApiQuery({
-    name: 'beneficio_id',
-    required: false,
-    type: String,
-    description: 'Filtro por tipo de benefício',
-  })
-  @ApiQuery({
-    name: 'protocolo',
-    required: false,
-    type: String,
-    description: 'Busca por protocolo',
-  })
-  @ApiQuery({
-    name: 'data_inicio',
-    required: false,
-    type: String,
-    description: 'Data inicial (formato: YYYY-MM-DD)',
-  })
-  @ApiQuery({
-    name: 'data_fim',
-    required: false,
-    type: String,
-    description: 'Data final (formato: YYYY-MM-DD)',
-  })
-  async findAll(
-    @Req() req: Request,
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
-    @Query('status') status?: StatusSolicitacao,
-    @Query('unidade_id') unidade_id?: string,
-    @Query('beneficio_id') beneficio_id?: string,
-    @Query('protocolo') protocolo?: string,
-    @Query('data_inicio') data_inicio?: string,
-    @Query('data_fim') data_fim?: string,
-  ) {
-    // Obter o contexto de escopo definido pelo guard
-    const user = req.user;
-    const scopeContext = req.scopeContext || {
-      scopeType: unidade_id ? ScopeType.UNIT : ScopeType.GLOBAL,
-      scopeId: unidade_id,
-      roles: user.roles,
-      userId: user.id,
-      unidadeId: user.unidade_id,
-    };
+/**
+ * Lista todas as solicitações com filtros e paginação
+ */
+@Get()
+@QueryOptimization({
+  enablePagination: true,
+  maxLimit: 100,
+  enableCaching: true,
+  cacheTTL: 120
+})
+@RequiresPermission({
+  permissionName: 'solicitacao.listar',
+  scopeType: ScopeType.UNIT
+})
+@ApiOperation({ summary: 'Listar solicitações' })
+@ApiResponse({
+  status: 200,
+  description: 'Lista de solicitações retornada com sucesso',
+})
+@ApiQuery({
+  name: 'page',
+  required: false,
+  type: Number,
+  description: 'Página atual (mínimo: 1)',
+  example: 1
+})
+@ApiQuery({
+  name: 'limit',
+  required: false,
+  type: Number,
+  description: 'Itens por página (mínimo: 1, máximo: 100)',
+  example: 10
+})
+@ApiQuery({
+  name: 'status',
+  required: false,
+  enum: StatusSolicitacao,
+  description: 'Filtro por status',
+})
+@ApiQuery({
+  name: 'unidade_id',
+  required: false,
+  type: String,
+  description: 'Filtro por unidade',
+})
+@ApiQuery({
+  name: 'beneficio_id',
+  required: false,
+  type: String,
+  description: 'Filtro por tipo de benefício',
+})
+@ApiQuery({
+  name: 'beneficiario_id',
+  required: false,
+  type: String,
+  description: 'Filtro por beneficiário',
+})
+@ApiQuery({
+  name: 'protocolo',
+  required: false,
+  type: String,
+  description: 'Busca por protocolo (busca parcial)',
+})
+@ApiQuery({
+  name: 'data_inicio',
+  required: false,
+  type: String,
+  description: 'Data inicial (formato: YYYY-MM-DD)',
+  example: '2024-01-01'
+})
+@ApiQuery({
+  name: 'data_fim',
+  required: false,
+  type: String,
+  description: 'Data final (formato: YYYY-MM-DD)',
+  example: '2024-12-31'
+})
+@ApiQuery({
+  name: 'sortBy',
+  required: false,
+  enum: ['data_abertura', 'protocolo', 'status'],
+  description: 'Campo para ordenação',
+  example: 'data_abertura'
+})
+@ApiQuery({
+  name: 'sortOrder',
+  required: false,
+  enum: ['ASC', 'DESC'],
+  description: 'Direção da ordenação',
+  example: 'DESC'
+})
+async findAll(
+  @Req() req: Request,
+  @Query('page') page?: number,
+  @Query('limit') limit?: number,
+  @Query('status') status?: StatusSolicitacao,
+  @Query('unidade_id') unidade_id?: string,
+  @Query('beneficio_id') beneficio_id?: string,
+  @Query('beneficiario_id') beneficiario_id?: string,
+  @Query('protocolo') protocolo?: string,
+  @Query('data_inicio') data_inicio?: string,
+  @Query('data_fim') data_fim?: string,
+  @Query('sortBy') sortBy?: 'data_abertura' | 'protocolo' | 'status',
+  @Query('sortOrder') sortOrder?: 'ASC' | 'DESC',
+) {
+  const parsedPage = page ? Math.max(1, +page) : undefined;
+  const parsedLimit = limit ? Math.min(100, Math.max(1, +limit)) : undefined;
 
-    this.logger.debug(`Contexto de escopo: ${JSON.stringify(scopeContext)}`);
-
-    return this.solicitacaoService.findAll({
-      page: page ? +page : undefined,
-      limit: limit ? +limit : undefined,
-      status,
-      unidade_id,
-      beneficio_id,
-      protocolo,
-      data_inicio,
-      data_fim,
-      user,
-      scopeContext, // Passar o contexto de escopo para o serviço
-    });
+  if (data_inicio && !this.isValidDateFormat(data_inicio)) {
+    throw new BadRequestException('Formato de data_inicio inválido. Use YYYY-MM-DD');
   }
+
+  if (data_fim && !this.isValidDateFormat(data_fim)) {
+    throw new BadRequestException('Formato de data_fim inválido. Use YYYY-MM-DD');
+  }
+
+  if (data_inicio && data_fim && new Date(data_inicio) > new Date(data_fim)) {
+    throw new BadRequestException('Data de início deve ser anterior ou igual à data de fim');
+  }
+
+  return this.solicitacaoService.findAll({
+    page: parsedPage,
+    limit: parsedLimit,
+    status,
+    unidade_id,
+    beneficio_id,
+    beneficiario_id,
+    protocolo,
+    data_inicio,
+    data_fim,
+    sortBy,
+    sortOrder,
+  });
+}
+
+/**
+ * Valida se a string está no formato de data YYYY-MM-DD
+ * @param dateString String da data a ser validada
+ * @returns true se o formato é válido
+ */
+private isValidDateFormat(dateString: string): boolean {
+  const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+  if (!dateRegex.test(dateString)) {
+    return false;
+  }
+  
+  const date = new Date(dateString);
+  return date instanceof Date && !isNaN(date.getTime()) && 
+         dateString === date.toISOString().split('T')[0];
+}
 
   /**
    * Obtém detalhes de uma solicitação específica
    */
   @Get(':id')
-  @RequiresPermission({
-    permissionName: 'solicitacao.visualizar',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'solicitacao.unidadeId',
-  })
+  @RequiresPermission({permissionName: 'solicitacao.visualizar'})
   @ApiOperation({ summary: 'Obter detalhes de uma solicitação' })
   @ApiResponse({
     status: 200,
@@ -664,8 +707,7 @@ export class SolicitacaoController {
   @Post('converter-papel')
   @RequiresPermission({
     permissionName: 'solicitacao.converter_papel',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'solicitacao.unidadeId',
+    scopeType: ScopeType.UNIT
   })
   @ApiOperation({
     summary:

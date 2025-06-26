@@ -38,7 +38,7 @@ export interface FindAllOptions {
   includeRelations?: boolean;
   specificFields?: string[];
   useCache?: boolean;
-  unidadeId?: string;
+  unidade_id?: string;
 }
 
 export interface CursorPaginationOptions {
@@ -145,7 +145,7 @@ abstract class BaseRepository<T extends ObjectLiteral> {
   protected createQueryWithFields(
     alias: string,
     fields?: string[],
-    options?: { unidadeId?: string },
+    options?: { unidade_id?: string },
   ): SelectQueryBuilder<T> {
     const query = this.repository.createQueryBuilder(alias);
 
@@ -155,8 +155,8 @@ abstract class BaseRepository<T extends ObjectLiteral> {
     }
 
     // Aplicar filtro de unidade se fornecido (não afeta transações)
-    if (options?.unidadeId) {
-      QueryScopeHelper.applyUnidadeFilter(query, options.unidadeId, alias);
+    if (options?.unidade_id) {
+      QueryScopeHelper.applyUnidadeFilter(query, options.unidade_id, alias);
     }
 
     return query;
@@ -413,14 +413,14 @@ export class CidadaoRepository extends BaseRepository<Cidadao> {
       order = { created_at: 'DESC' },
       includeRelations = false,
       specificFields = [],
-      unidadeId,
+      unidade_id,
     } = options;
 
     // Limitar paginação para evitar sobrecarga
     const limit = Math.min(take, this.maxPaginationLimit);
 
     // Criar query base aplicando filtro de unidade automaticamente via helper
-    let query = this.createQueryWithFields('cidadao', specificFields, { unidadeId });
+    let query = this.createQueryWithFields('cidadao', specificFields, { unidade_id });
 
     // Separar termo de busca dos demais filtros para tratamento otimizado
     const { search, ...filters } = where as any;

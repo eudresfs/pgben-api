@@ -79,7 +79,7 @@ export class CidadaoService {
     limit?: number;
     search?: string;
     bairro?: string;
-    unidadeId?: string;
+    unidade_id?: string;
     includeRelations?: boolean;
     useCache?: boolean;
     fields?: string[];
@@ -89,7 +89,7 @@ export class CidadaoService {
       limit = 10,
       search,
       bairro,
-      unidadeId,
+      unidade_id,
       includeRelations = false,
       useCache = true,
       fields = [],
@@ -142,7 +142,7 @@ export class CidadaoService {
         includeRelations,
         useCache,
         specificFields,
-        unidadeId, // novo parâmetro para helper
+        unidade_id, // novo parâmetro para helper
       });
 
       // Calcular totais para paginação
@@ -1280,16 +1280,6 @@ export class CidadaoService {
     }
   }
 
-  /**
-   * Obtém histórico de solicitações de um cidadão
-   * @param cidadaoId ID do cidadão
-   * @returns Lista de solicitações do cidadão
-   * @throws NotFoundException se o cidadão não for encontrado
-   */
-  async findSolicitacoesByCidadaoId(cidadaoId: string) {
-    // Implementação futura
-    return [];
-  }
 
   /**
    * Busca cidadãos usando paginação por cursor, que é mais eficiente para grandes volumes de dados

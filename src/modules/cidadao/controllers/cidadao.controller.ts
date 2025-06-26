@@ -131,7 +131,7 @@ export class CidadaoController {
     @GetUser() usuario: Usuario,
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
-    @Query('unidadeId') unidadeId?: string,
+    @Query('unidade_id') unidade_id?: string,
     @Query('search') search?: string,
     @Query('bairro') bairro?: string,
     @Query('includeRelations', new DefaultValuePipe(false)) includeRelations?: boolean,
@@ -153,7 +153,7 @@ export class CidadaoController {
           limit,
           search,
           bairro,
-          unidadeId,
+          unidade_id,
           includeRelations: shouldIncludeRelations,
           useCache: true,
           fields,
@@ -564,24 +564,5 @@ export class CidadaoController {
       );
       throw error;
     }
-  }
-
-  /**
-   * Obtém histórico de solicitações de um cidadão
-   */
-  @Get(':id/solicitacao')
-  @ApiOperation({ summary: 'Histórico de solicitações' })
-  @ApiResponse({ status: 200, description: 'Histórico retornado com sucesso' })
-  @ApiResponse({ status: 404, description: 'Cidadão não encontrado' })
-  @RequiresPermission(
-    {
-      permissionName: 'cidadao.visualizar',
-      scopeType: ScopeType.UNIT,
-      scopeIdExpression: 'cidadao.unidadeId',
-    },
-    { permissionName: 'solicitacao.listar' },
-  )
-  async findSolicitacoes(@Param('id') id: string) {
-    return this.cidadaoService.findSolicitacoesByCidadaoId(id);
   }
 }

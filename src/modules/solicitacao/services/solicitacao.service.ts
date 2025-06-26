@@ -1,10 +1,10 @@
 import {
   Injectable,
-  Logger,
   forwardRef,
   Inject,
   BadRequestException,
   ConflictException,
+  NotFoundException,
 } from '@nestjs/common';
 import {
   throwSolicitacaoNotFound,
@@ -24,7 +24,7 @@ import {
   throwInternalError,
 } from '../../../shared/exceptions/error-catalog/domains/solicitacao.errors';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between, ILike, Connection, In } from 'typeorm';
+import { Repository, Between, ILike, Connection, In, DataSource, SelectQueryBuilder } from 'typeorm';
 import {
   Solicitacao,
   StatusSolicitacao,
@@ -45,6 +45,34 @@ import { ProcessoJudicialRepository } from '../../judicial/repositories/processo
 import { ROLES } from '../../../shared/constants/roles.constants';
 import { ValidacaoExclusividadeService } from './validacao-exclusividade.service';
 import { CidadaoService } from '../../cidadao/services/cidadao.service';
+import { Logger } from '@nestjs/common';
+
+
+interface FindAllOptions {
+  page?: number;
+  limit?: number;
+  status?: StatusSolicitacao;
+  unidade_id?: string;
+  beneficio_id?: string;
+  beneficiario_id?: string;
+  protocolo?: string;
+  data_inicio?: string;
+  data_fim?: string;
+  sortBy?: 'data_abertura' | 'protocolo' | 'status';
+  sortOrder?: 'ASC' | 'DESC';
+}
+
+export interface PaginatedResponse<T> {
+  items: T[];
+  meta: {
+    currentPage: number;
+    itemsPerPage: number;
+    totalItems: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  };
+}
 
 /**
  * Serviço de Solicitações
@@ -53,7 +81,7 @@ import { CidadaoService } from '../../cidadao/services/cidadao.service';
  */
 @Injectable()
 export class SolicitacaoService {
-  private readonly logger = new Logger(SolicitacaoService.name);
+  private readonly logger: Logger;
 
   constructor(
     @InjectRepository(Solicitacao)
@@ -71,52 +99,58 @@ export class SolicitacaoService {
     private determinacaoJudicialRepository: Repository<DeterminacaoJudicial>,
 
     private connection: Connection,
+    private dataSource: DataSource,
 
     @Inject(forwardRef(() => ValidacaoExclusividadeService))
     private validacaoExclusividadeService: ValidacaoExclusividadeService,
 
     @Inject(forwardRef(() => CidadaoService))
     private cidadaoService: CidadaoService,
-  ) {}
+  ) {
+    this.logger = new Logger('SolicitacaoService');
+  }
 
+  
   /**
    * Lista todas as solicitações com paginação e filtros
+   * @param options Opções de filtro, paginação e ordenação
+   * @returns Lista paginada de solicitações
    */
-  async findAll(options: {
-    page?: number;
-    limit?: number;
-    status?: StatusSolicitacao;
-    unidade_id?: string;
-    beneficio_id?: string;
-    protocolo?: string;
-    data_inicio?: string;
-    data_fim?: string;
-    user: any;
-    scopeContext?: any;
-  }) {
-    const {
-      page = 1,
-      limit = 10,
-      status,
-      unidade_id,
-      beneficio_id,
-      protocolo,
-      data_inicio,
-      data_fim,
-      user,
-      scopeContext,
-    } = options;
-
-    const queryBuilder =
-      this.solicitacaoRepository.createQueryBuilder('solicitacao');
-
-    // Joins necessários
-    queryBuilder
+  async findAll(options: FindAllOptions): Promise<PaginatedResponse<Solicitacao>> {
+    const page = Math.max(1, options.page || 1);
+    const limit = Math.min(100, Math.max(1, options.limit || 10));
+    const sortBy = options.sortBy || 'data_abertura';
+    const sortOrder = options.sortOrder || 'DESC';
+    
+    const allowedSortFields = ['data_abertura', 'protocolo', 'status'];
+    if (!allowedSortFields.includes(sortBy)) {
+      throw new BadRequestException(`Campo de ordenação '${sortBy}' não permitido`);
+    }
+  
+    let dataInicio: Date | undefined;
+    let dataFim: Date | undefined;
+    
+    if (options.data_inicio) {
+      dataInicio = new Date(options.data_inicio);
+      if (isNaN(dataInicio.getTime())) {
+        throw new BadRequestException('Data de início inválida');
+      }
+    }
+    
+    if (options.data_fim) {
+      dataFim = new Date(options.data_fim);
+      if (isNaN(dataFim.getTime())) {
+        throw new BadRequestException('Data de fim inválida');
+      }
+      dataFim.setHours(23, 59, 59, 999);
+    }
+  
+    const queryBuilder = this.solicitacaoRepository
+      .createQueryBuilder('solicitacao')
       .leftJoinAndSelect('solicitacao.beneficiario', 'beneficiario')
       .leftJoinAndSelect('solicitacao.tipo_beneficio', 'tipo_beneficio')
       .leftJoinAndSelect('solicitacao.unidade', 'unidade')
       .leftJoinAndSelect('solicitacao.tecnico', 'tecnico')
-      .leftJoinAndSelect('solicitacao.documentos', 'documentos')
       .select([
         // Dados básicos da solicitação
         'solicitacao.id',
@@ -136,112 +170,100 @@ export class SolicitacaoService {
         'tecnico.nome',
         // Dados básicos da unidade
         'unidade.id',
-        'unidade.nome',
-        // Dados dos documentos
-        'documentos.id',
-        'documentos.tipo',
-        'documentos.nome_original',
-        'documentos.verificado',
-        'documentos.data_upload',
+        'unidade.nome'
       ]);
-
-    // Aplicar filtros baseados em parâmetros de consulta
-    if (status) {
-      queryBuilder.andWhere('solicitacao.status = :status', { status });
-    }
-    
-    // Verificar se o usuário possui roles ADMIN ou GESTOR
-    const isAdminOrGestor = scopeContext && 
-      scopeContext.roles && 
-      (scopeContext.roles.includes(ROLES.ADMIN) || 
-       scopeContext.roles.includes(ROLES.GESTOR));
-
-    this.logger.debug(`Usuário é ADMIN ou GESTOR? ${isAdminOrGestor}`);
-    
-    // Filtro por escopo
-    if (!isAdminOrGestor && scopeContext) {
-      // Aplicar filtro baseado no escopo (UNIT, SELF, GLOBAL)
-      if (scopeContext.scopeType === 'UNIT') {
-        // Se foi passado unidade_id específico na query, usar ele
-        // Caso contrário, usar a unidade do usuário
-        const unidadeIdToFilter = unidade_id || scopeContext.unidadeId;
-        
-        if (unidadeIdToFilter) {
-          this.logger.debug(`Aplicando filtro por unidade: ${unidadeIdToFilter}`);
-          queryBuilder.andWhere('solicitacao.unidade_id = :unidade_id', {
-            unidade_id: unidadeIdToFilter,
-          });
-        } else {
-          this.logger.warn(`Escopo UNIT, mas nenhuma unidade_id disponível para filtro`);
-        }
-      } else if (scopeContext.scopeType === 'SELF') {
-        // Filtrar apenas solicitações onde o usuário é o técnico responsável
-        this.logger.debug(`Aplicando filtro SELF para usuário: ${scopeContext.userId}`);
-        queryBuilder.andWhere('solicitacao.tecnico_id = :userId', {
-          userId: scopeContext.userId,
-        });
-      }
-      // Para GLOBAL não aplicamos filtros adicionais
-    } else if (unidade_id) {
-      // Se usuário é ADMIN/GESTOR mas explicitamente solicitou filtrar por unidade
-      queryBuilder.andWhere('solicitacao.unidade_id = :unidade_id', {
-        unidade_id: unidade_id,
-      });
-    }
-
-    if (beneficio_id) {
-      queryBuilder.andWhere('solicitacao.tipo_beneficio_id = :beneficio_id', {
-        beneficio_id,
-      });
-    }
-
-    if (protocolo) {
-      queryBuilder.andWhere('solicitacao.protocolo ILIKE :protocolo', {
-        protocolo: `%${protocolo}%`,
-      });
-    }
-
-    // Filtro por período
-    if (data_inicio && data_fim) {
-      const inicio = new Date(data_inicio);
-      const fim = new Date(data_fim);
-      fim.setHours(23, 59, 59, 999); // Ajusta para o final do dia
-
-      queryBuilder.andWhere(
-        'solicitacao.data_abertura BETWEEN :inicio AND :fim',
-        {
-          inicio,
-          fim,
-        },
-      );
-    } else if (data_inicio) {
-      const inicio = new Date(data_inicio);
-      queryBuilder.andWhere('solicitacao.data_abertura >= :inicio', { inicio });
-    } else if (data_fim) {
-      const fim = new Date(data_fim);
-      fim.setHours(23, 59, 59, 999); // Ajusta para o final do dia
-      queryBuilder.andWhere('solicitacao.data_abertura <= :fim', { fim });
-    }
-
-    // Calcular paginação
+  
+    this.applyFilters(queryBuilder, {
+      status: options.status,
+      unidade_id: options.unidade_id,
+      beneficio_id: options.beneficio_id,
+      beneficiario_id: options.beneficiario_id,
+      protocolo: options.protocolo,
+      data_inicio: dataInicio,
+      data_fim: dataFim,
+    });
+  
     const skip = (page - 1) * limit;
-    queryBuilder.skip(skip).take(limit);
-
-    // Ordenação padrão
-    queryBuilder.orderBy('solicitacao.data_abertura', 'DESC');
-
-    // Executar consulta
+    queryBuilder
+      .skip(skip)
+      .take(limit)
+      .orderBy(`solicitacao.${sortBy}`, sortOrder);
+  
+    const startTime = Date.now();
     const [items, total] = await queryBuilder.getManyAndCount();
-
+    const executionTime = Date.now() - startTime;
+    
+    if (executionTime > 1000) {
+      this.logger.warn(`Query lenta detectada: ${executionTime}ms`, {
+        filters: options,
+        resultCount: items.length,
+        totalCount: total,
+      });
+    }
+  
+    const totalPages = Math.ceil(total / limit);
+    
     return {
       items,
       meta: {
         currentPage: page,
         itemsPerPage: limit,
         totalItems: total,
-        totalPages: Math.ceil(total / limit),
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPreviousPage: page > 1,
       },
     };
+  }
+  
+  /**
+   * Aplica filtros condicionais ao query builder
+   * @param queryBuilder Instance do query builder
+   * @param filters Objeto com os filtros a serem aplicados
+   */
+  private applyFilters(queryBuilder: SelectQueryBuilder<Solicitacao>, filters: any) {
+    if (filters.status) {
+      queryBuilder.andWhere('solicitacao.status = :status', { status: filters.status });
+    }
+    
+    if (filters.unidade_id) {
+      queryBuilder.andWhere('solicitacao.unidade_id = :unidade_id', { 
+        unidade_id: filters.unidade_id 
+      });
+    }
+  
+    if (filters.beneficio_id) {
+      queryBuilder.andWhere('solicitacao.tipo_beneficio_id = :beneficio_id', {
+        beneficio_id: filters.beneficio_id,
+      });
+    }
+  
+    if (filters.beneficiario_id) {
+      queryBuilder.andWhere('solicitacao.beneficiario_id = :beneficiario_id', {
+        beneficiario_id: filters.beneficiario_id,
+      });
+    }
+  
+    if (filters.protocolo) {
+      queryBuilder.andWhere('solicitacao.protocolo ILIKE :protocolo', {
+        protocolo: `%${filters.protocolo}%`,
+      });
+    }
+  
+    if (filters.data_inicio && filters.data_fim) {
+      queryBuilder.andWhere(
+        'solicitacao.data_abertura BETWEEN :inicio AND :fim',
+        { inicio: filters.data_inicio, fim: filters.data_fim }
+      );
+    } else if (filters.data_inicio) {
+      queryBuilder.andWhere('solicitacao.data_abertura >= :inicio', { 
+        inicio: filters.data_inicio 
+      });
+    } else if (filters.data_fim) {
+      queryBuilder.andWhere('solicitacao.data_abertura <= :fim', { 
+        fim: filters.data_fim 
+      });
+    }
   }
 
   /**
@@ -321,36 +343,67 @@ export class SolicitacaoService {
     createSolicitacaoDto: CreateSolicitacaoDto,
     user: any,
   ): Promise<Solicitacao> {
-    // Validar se o beneficiário existe
+    this.logger.log(`Iniciando criação de solicitação para beneficiário: ${createSolicitacaoDto.beneficiario_id}`);
+    
     try {
-      await this.cidadaoService.findById(createSolicitacaoDto.beneficiario_id, false);
-    } catch (error) {
-      if (error.status === 404) {
-        throw new BadRequestException('Beneficiário não encontrado');
-      }
-      throw error;
-    }
-
-    // Validar se o solicitante existe (quando informado)
-    if (createSolicitacaoDto.solicitante_id) {
+      // ===== VALIDAÇÕES E LEITURAS FORA DA TRANSAÇÃO =====
+      
+      // Validar se o beneficiário existe
       try {
-        await this.cidadaoService.findById(createSolicitacaoDto.solicitante_id, false);
+        await this.cidadaoService.findById(createSolicitacaoDto.beneficiario_id, false);
       } catch (error) {
         if (error.status === 404) {
-          throw new BadRequestException('Solicitante não encontrado');
+          throw new BadRequestException('Beneficiário não encontrado');
         }
         throw error;
       }
-    }
 
-    // Validar exclusividade de papel para o beneficiário
-    await this.validacaoExclusividadeService.validarExclusividadeBeneficiario(
-      createSolicitacaoDto.beneficiario_id,
-    );
+      // Validar se o solicitante existe (quando informado)
+      if (createSolicitacaoDto.solicitante_id) {
+        try {
+          await this.cidadaoService.findById(createSolicitacaoDto.solicitante_id, false);
+        } catch (error) {
+          if (error.status === 404) {
+            throw new BadRequestException('Solicitante não encontrado');
+          }
+          throw error;
+        }
+      }
 
-    return this.connection.transaction(async (manager) => {
-      // Criar uma nova instância de Solicitacao
-      const solicitacao = new Solicitacao();
+      // Validar que solicitante não pode ser o mesmo que beneficiário
+      if (createSolicitacaoDto.solicitante_id && 
+          createSolicitacaoDto.solicitante_id === createSolicitacaoDto.beneficiario_id) {
+        throw new BadRequestException('Solicitante não pode ser o mesmo que o beneficiário');
+      }
+
+      // Validar exclusividade de papel para o beneficiário
+      await this.validacaoExclusividadeService.validarExclusividadeBeneficiario(
+        createSolicitacaoDto.beneficiario_id,
+      );
+
+      // Verificar se já existe uma solicitação em andamento para o mesmo cidadão e tipo de benefício
+      const statusEmAndamento = [
+        StatusSolicitacao.RASCUNHO,
+        StatusSolicitacao.ABERTA,
+        StatusSolicitacao.PENDENTE,
+        StatusSolicitacao.EM_ANALISE,
+        StatusSolicitacao.APROVADA
+      ];
+
+      // Verifica se existe uma solicitação em andamento para o mesmo beneficiário e benefício
+      const solicitacaoExistente = await this.solicitacaoRepository.findOne({
+        where: {
+          beneficiario_id: createSolicitacaoDto.beneficiario_id,
+          tipo_beneficio_id: createSolicitacaoDto.tipo_beneficio_id,
+          status: In(statusEmAndamento)
+        }
+      });
+
+      // Se existir, retorna os dados da solicitação existente
+      if (solicitacaoExistente) {
+        this.logger.log(`Solicitação já existe para este beneficiário e tipo de benefício: ${solicitacaoExistente.id}`);
+        return solicitacaoExistente;
+      }
 
       // Determinar a unidade: se usuário não tem unidade, usar do DTO (obrigatório)
       let unidadeId: string;
@@ -366,79 +419,58 @@ export class SolicitacaoService {
         unidadeId = user.unidade_id;
       }
 
-      // Preencher os dados básicos
-      solicitacao.beneficiario_id = createSolicitacaoDto.beneficiario_id;
-      solicitacao.solicitante_id = createSolicitacaoDto.solicitante_id;
-      solicitacao.tipo_beneficio_id = createSolicitacaoDto.tipo_beneficio_id;
-      solicitacao.unidade_id = unidadeId;
-      solicitacao.tecnico_id = user.id;
-      solicitacao.status = StatusSolicitacao.RASCUNHO;
-      solicitacao.data_abertura = new Date();
+      // Normalizar enums nos dados complementares antes de salvar
+      const dadosComplementares = createSolicitacaoDto.dados_complementares || {};
+      const normalizedDadosComplementares = normalizeEnumFields(dadosComplementares);
 
-      // Validar que solicitante não pode ser o mesmo que beneficiário
-      if (createSolicitacaoDto.solicitante_id && 
-          createSolicitacaoDto.solicitante_id === createSolicitacaoDto.beneficiario_id) {
-        throw new BadRequestException('Solicitante não pode ser o mesmo que o beneficiário');
-      }
-
-      // Verificar se já existe uma solicitação em andamento para o mesmo cidadão e tipo de benefício
-      const statusEmAndamento = [
-        StatusSolicitacao.RASCUNHO,
-        StatusSolicitacao.ABERTA,
-        StatusSolicitacao.PENDENTE,
-        StatusSolicitacao.EM_ANALISE,
-        StatusSolicitacao.APROVADA
-      ];
-
-      // Verifica se existe uma solicitação em andamento para o mesmo beneficiário e benefício
-      const solicitacaoExistente = await manager.findOne(Solicitacao, {
-        where: {
+      // ===== TRANSAÇÃO MÍNIMA APENAS PARA OPERAÇÕES DE ESCRITA =====
+      const solicitacaoSalva = await this.dataSource.transaction(async (manager) => {
+        // Criar uma nova instância de Solicitacao com repositório tipado
+        const repo = manager.getRepository(Solicitacao);
+        
+        // Criar objeto de solicitação
+        const solicitacao = repo.create({
           beneficiario_id: createSolicitacaoDto.beneficiario_id,
+          solicitante_id: createSolicitacaoDto.solicitante_id,
           tipo_beneficio_id: createSolicitacaoDto.tipo_beneficio_id,
-          status: In(statusEmAndamento)
-        }
+          unidade_id: unidadeId,
+          tecnico_id: user.id,
+          status: StatusSolicitacao.RASCUNHO,
+          data_abertura: new Date(),
+          dados_complementares: normalizedDadosComplementares
+        });
+
+        // Salvar a solicitação
+        const savedSolicitacao = await repo.save(solicitacao);
+
+        // Registrar no histórico
+        const historicoRepo = manager.getRepository(HistoricoSolicitacao);
+        const historico = historicoRepo.create({
+          solicitacao_id: savedSolicitacao.id,
+          usuario_id: user.id,
+          status_atual: StatusSolicitacao.RASCUNHO,
+          observacao: createSolicitacaoDto.determinacao_judicial_flag 
+            ? 'Solicitação criada por determinação judicial'
+            : 'Solicitação criada',
+          dados_alterados: createSolicitacaoDto.determinacao_judicial_flag
+            ? { 
+                acao: 'criacao',
+                determinacao_judicial: true,
+                determinacao_judicial_id: createSolicitacaoDto.determinacao_judicial_id
+              }
+            : { acao: 'criacao' },
+          ip_usuario: user.ip || '0.0.0.0'
+        });
+
+        await historicoRepo.save(historico);
+
+        return savedSolicitacao.id;
       });
 
-      // Se existir, retorna os dados da solicitação existente
-      if (solicitacaoExistente) {
-        return solicitacaoExistente;
-      }
-
-      // Normalizar enums nos dados complementares antes de salvar
-      const dadosComplementares =
-        createSolicitacaoDto.dados_complementares || {};
-      solicitacao.dados_complementares =
-        normalizeEnumFields(dadosComplementares);
-
-      // Salvar a solicitação
-      const savedSolicitacao = await manager.save(solicitacao);
-
-      // Registrar no histórico
-      const historico = new HistoricoSolicitacao();
-      historico.solicitacao_id = savedSolicitacao.id;
-      historico.usuario_id = user.id;
-      historico.status_atual = StatusSolicitacao.RASCUNHO;
-      
-      // Definir observação baseada em determinação judicial
-      if (createSolicitacaoDto.determinacao_judicial_flag) {
-        historico.observacao = 'Solicitação criada por determinação judicial';
-        historico.dados_alterados = { 
-          acao: 'criacao',
-          determinacao_judicial: true,
-          determinacao_judicial_id: createSolicitacaoDto.determinacao_judicial_id
-        };
-      } else {
-        historico.observacao = 'Solicitação criada';
-        historico.dados_alterados = { acao: 'criacao' };
-      }
-      
-      historico.ip_usuario = user.ip || '0.0.0.0';
-
-      await manager.save(historico);
-
-      // Buscar a solicitação criada dentro da transação com relações básicas
-      const solicitacaoCompleta = await manager
-        .createQueryBuilder(Solicitacao, 'solicitacao')
+      // ===== CONSULTA PÓS-TRANSAÇÃO =====
+      // Buscar a solicitação completa após a transação
+      const solicitacaoCompleta = await this.solicitacaoRepository
+        .createQueryBuilder('solicitacao')
         .leftJoinAndSelect('solicitacao.beneficiario', 'beneficiario')
         .leftJoinAndSelect('solicitacao.tipo_beneficio', 'tipo_beneficio')
         .leftJoinAndSelect('solicitacao.tecnico', 'tecnico')
@@ -471,15 +503,19 @@ export class SolicitacaoService {
           'documentos.verificado',
           'documentos.data_upload',
         ])
-        .where('solicitacao.id = :id', { id: savedSolicitacao.id })
+        .where('solicitacao.id = :id', { id: solicitacaoSalva })
         .getOne();
 
       if (!solicitacaoCompleta) {
-        throwSolicitacaoNotFound(savedSolicitacao.id);
+        throwSolicitacaoNotFound(solicitacaoSalva);
       }
 
+      this.logger.log(`Solicitação criada com sucesso: ${solicitacaoSalva}`);
       return solicitacaoCompleta;
-    });
+    } catch (error) {
+      this.logger.error(`Erro ao criar solicitação: ${error.message}`, error.stack);
+      throw error;
+    }
   }
 
   /**
@@ -490,8 +526,12 @@ export class SolicitacaoService {
     updateSolicitacaoDto: UpdateSolicitacaoDto,
     user: any,
   ): Promise<Solicitacao> {
-    return this.connection.transaction(async (manager) => {
-      // Buscar a solicitação
+    this.logger.log(`Iniciando atualização da solicitação: ${id}`);
+
+    try {
+      // ===== VALIDAÇÕES E LEITURAS FORA DA TRANSAÇÃO =====
+      
+      // Buscar a solicitação fora da transação
       const solicitacao = await this.findById(id);
 
       // Check if request status allows editing based on business rules
@@ -514,47 +554,76 @@ export class SolicitacaoService {
         );
       }
 
-      // Atualizar os dados
-      // Nota: beneficiario_id não pode ser atualizado conforme definido no DTO
+      // Preparar dados para atualização
+      const dadosAtualizacao: any = {};
+      const camposAlterados: string[] = [];
 
+      // Nota: beneficiario_id não pode ser atualizado conforme definido no DTO
       if (updateSolicitacaoDto.tipo_beneficio_id) {
-        solicitacao.tipo_beneficio_id = updateSolicitacaoDto.tipo_beneficio_id;
+        dadosAtualizacao.tipo_beneficio_id = updateSolicitacaoDto.tipo_beneficio_id;
+        camposAlterados.push('tipo_beneficio_id');
       }
 
       if (updateSolicitacaoDto.dados_complementares) {
         // Normalizar enums nos dados complementares antes de salvar
-        solicitacao.dados_complementares = normalizeEnumFields(
-          updateSolicitacaoDto.dados_complementares,
+        dadosAtualizacao.dados_complementares = normalizeEnumFields(
+          updateSolicitacaoDto.dados_complementares
         );
+        camposAlterados.push('dados_complementares');
       }
 
-      // Salvar a solicitação
-      await manager.save(solicitacao);
+      // Se não há dados para atualizar, retornar a solicitação sem modificações
+      if (camposAlterados.length === 0) {
+        this.logger.log(`Nenhum dado para atualizar na solicitação: ${id}`);
+        return solicitacao;
+      }
 
-      // Registrar no histórico
-      const historico = new HistoricoSolicitacao();
-      historico.solicitacao_id = id;
-      historico.usuario_id = user.id;
-      historico.status_anterior = solicitacao.status;
-      historico.status_atual = solicitacao.status;
-      historico.observacao = 'Solicitação atualizada';
-      historico.dados_alterados = {
-        campos_alterados: Object.keys(updateSolicitacaoDto),
-      };
-      historico.ip_usuario = user.ip || '0.0.0.0';
+      // ===== TRANSAÇÃO MÍNIMA APENAS PARA OPERAÇÕES DE ESCRITA =====
+      await this.connection.transaction(async (manager) => {
+        // Usar repositórios tipados
+        const solicitacaoRepo = manager.getRepository(Solicitacao);
+        const historicoRepo = manager.getRepository(HistoricoSolicitacao);
 
-      await manager.save(historico);
+        // Atualizar a solicitação
+        await solicitacaoRepo.update(id, dadosAtualizacao);
 
-      return this.findById(id);
-    });
+        // Registrar no histórico
+        const historico = historicoRepo.create({
+          solicitacao_id: id,
+          usuario_id: user.id,
+          status_anterior: solicitacao.status,
+          status_atual: solicitacao.status,
+          observacao: 'Solicitação atualizada',
+          dados_alterados: {
+            campos_alterados: camposAlterados,
+          },
+          ip_usuario: user.ip || '0.0.0.0'
+        });
+
+        await historicoRepo.save(historico);
+      });
+
+      // ===== CONSULTA PÓS-TRANSAÇÃO =====
+      const solicitacaoAtualizada = await this.findById(id);
+      
+      this.logger.log(`Solicitação ${id} atualizada com sucesso`);
+      return solicitacaoAtualizada;
+    } catch (error) {
+      this.logger.error(`Erro ao atualizar solicitação ${id}: ${error.message}`, error);
+      throw error;
+    }
   }
 
   /**
    * Submete uma solicitação para análise
    */
   async submeterSolicitacao(id: string, user: any): Promise<Solicitacao> {
-    return this.connection.transaction(async (manager) => {
-      // Buscar a solicitação
+    this.logger.log(`Iniciando submissão da solicitação: ${id}`);
+    
+    try {
+      // ===== VALIDAÇÕES E LEITURAS FORA DA TRANSAÇÃO =====
+      
+      // Buscar a solicitação fora da transação
       const solicitacao = await this.findById(id);
 
       // Verificar se a solicitação está em estado que permite submissão
@@ -570,32 +639,46 @@ export class SolicitacaoService {
         );
       }
 
-      // Atualizar o status usando o método preparar
-      solicitacao.prepararAlteracaoStatus(
-        StatusSolicitacao.EM_ANALISE,
-        user.id,
-        'Solicitação submetida para análise',
-        user.ip || '0.0.0.0',
-      );
-
-      await manager.save(solicitacao);
-
-      // Register in history
-      const historico = new HistoricoSolicitacao();
-      historico.solicitacao_id = id;
-      historico.usuario_id = user.id;
-      historico.status_anterior = StatusSolicitacao.RASCUNHO;
-      historico.status_atual = solicitacao.status;
-      historico.observacao = 'Solicitação submetida para análise';
-      historico.dados_alterados = {
-        campos_alterados: Object.keys(UpdateSolicitacaoDto),
+      // Preparar dados para atualização
+      const dadosAtualizacao = {
+        status: StatusSolicitacao.EM_ANALISE,
+        data_atualizacao: new Date()
       };
-      historico.ip_usuario = user.ip || '0.0.0.0';
 
-      await manager.save(historico);
+      // ===== TRANSAÇÃO MÍNIMA APENAS PARA OPERAÇÕES DE ESCRITA =====
+      await this.connection.transaction(async (manager) => {
+        // Usar repositórios tipados
+        const solicitacaoRepo = manager.getRepository(Solicitacao);
+        const historicoRepo = manager.getRepository(HistoricoSolicitacao);
 
-      return this.findById(id);
-    });
+        // Atualizar a solicitação
+        await solicitacaoRepo.update(id, dadosAtualizacao);
+
+        // Registrar no histórico
+        const historico = historicoRepo.create({
+          solicitacao_id: id,
+          usuario_id: user.id,
+          status_anterior: StatusSolicitacao.RASCUNHO,
+          status_atual: StatusSolicitacao.EM_ANALISE,
+          observacao: 'Solicitação submetida para análise',
+          dados_alterados: {
+            status: StatusSolicitacao.EM_ANALISE
+          },
+          ip_usuario: user.ip || '0.0.0.0'
+        });
+
+        await historicoRepo.save(historico);
+      });
+
+      // ===== CONSULTA PÓS-TRANSAÇÃO =====
+      const solicitacaoAtualizada = await this.findById(id);
+      
+      this.logger.log(`Solicitação ${id} submetida para análise com sucesso`);
+      return solicitacaoAtualizada;
+    } catch (error) {
+      this.logger.error(`Erro ao submeter solicitação ${id}: ${error.message}`, error);
+      throw error;
+    }
   }
 
   /**
@@ -606,8 +689,12 @@ export class SolicitacaoService {
     avaliarSolicitacaoDto: AvaliarSolicitacaoDto,
     user: any,
   ): Promise<Solicitacao> {
-    return this.connection.transaction(async (manager) => {
-      // Buscar a solicitação
+    this.logger.log(`Iniciando avaliação da solicitação: ${id}`);
+    
+    try {
+      // ===== VALIDAÇÕES E LEITURAS FORA DA TRANSAÇÃO =====
+      
+      // Buscar a solicitação fora da transação
       const solicitacao = await this.findById(id);
 
       // Verificar se a solicitação está em estado que permite avaliação
@@ -632,45 +719,75 @@ export class SolicitacaoService {
         ? StatusSolicitacao.APROVADA
         : StatusSolicitacao.PENDENTE;
 
-      // Atualizar o status usando o método preparar
-      solicitacao.prepararAlteracaoStatus(
-        novoStatus,
-        user.id,
-        avaliarSolicitacaoDto.parecer,
-        user.ip || '0.0.0.0',
-      );
+      // Preparar dados para atualização
+      const dadosAtualizacao: any = {
+        status: novoStatus,
+        data_atualizacao: new Date()
+      };
 
+      // Adicionar dados específicos para solicitações aprovadas
       if (avaliarSolicitacaoDto.aprovado) {
-        solicitacao.aprovador_id = user.id;
-        solicitacao.data_aprovacao = new Date();
-        solicitacao.parecer_semtas = avaliarSolicitacaoDto.parecer;
-      } else {
-        // Registrar pendências
-        if (
-          avaliarSolicitacaoDto.pendencias &&
-          avaliarSolicitacaoDto.pendencias.length > 0
-        ) {
-          for (const descricaoTexto of avaliarSolicitacaoDto.pendencias) {
-            // Criar uma nova instância de Pendencia diretamente para evitar problemas de tipagem
-            const pendencia = new Pendencia();
-            pendencia.solicitacao_id = id;
-            pendencia.descricao = descricaoTexto;
-            pendencia.status = StatusPendencia.ABERTA;
-            pendencia.registrado_por_id = user.id; // Usando registrado_por_id conforme definido na entidade
-
-            await manager.save(pendencia);
-          }
-        }
+        dadosAtualizacao.aprovador_id = user.id;
+        dadosAtualizacao.data_aprovacao = new Date();
+        dadosAtualizacao.parecer_semtas = avaliarSolicitacaoDto.parecer;
       }
 
-      // Salvar a solicitação com o manager da transação
-      await manager.save(solicitacao);
+      // ===== TRANSAÇÃO MÍNIMA APENAS PARA OPERAÇÕES DE ESCRITA =====
+      await this.connection.transaction(async (manager) => {
+        // Usar repositórios tipados
+        const solicitacaoRepo = manager.getRepository(Solicitacao);
+        const historicoRepo = manager.getRepository(HistoricoSolicitacao);
+        const pendenciaRepo = manager.getRepository(Pendencia);
 
-      // Não é mais necessário registrar manualmente no histórico
-      // O método logStatusChange fará isso automaticamente através do listener @AfterUpdate
+        // Atualizar a solicitação
+        await solicitacaoRepo.update(id, dadosAtualizacao);
 
-      return this.findById(id);
-    });
+        // Registrar no histórico
+        const historico = historicoRepo.create({
+          solicitacao_id: id,
+          usuario_id: user.id,
+          status_anterior: solicitacao.status,
+          status_atual: novoStatus,
+          observacao: avaliarSolicitacaoDto.parecer || 
+            (avaliarSolicitacaoDto.aprovado ? 'Solicitação aprovada' : 'Solicitação com pendências'),
+          dados_alterados: {
+            status: novoStatus,
+            aprovado: avaliarSolicitacaoDto.aprovado
+          },
+          ip_usuario: user.ip || '0.0.0.0'
+        });
+
+        await historicoRepo.save(historico);
+
+        // Registrar pendências quando não aprovado
+        if (!avaliarSolicitacaoDto.aprovado && 
+            avaliarSolicitacaoDto.pendencias && 
+            avaliarSolicitacaoDto.pendencias.length > 0) {
+          
+          // Criar array de pendências para inserção em lote
+          const pendencias = avaliarSolicitacaoDto.pendencias.map(descricaoTexto => {
+            return pendenciaRepo.create({
+              solicitacao_id: id,
+              descricao: descricaoTexto,
+              status: StatusPendencia.ABERTA,
+              registrado_por_id: user.id
+            });
+          });
+
+          // Salvar todas as pendências de uma vez
+          await pendenciaRepo.save(pendencias);
+        }
+      });
+
+      // ===== CONSULTA PÓS-TRANSAÇÃO =====
+      const solicitacaoAtualizada = await this.findById(id);
+      
+      this.logger.log(`Solicitação ${id} avaliada com sucesso. Status: ${novoStatus}`);
+      return solicitacaoAtualizada;
+    } catch (error) {
+      this.logger.error(`Erro ao avaliar solicitação ${id}: ${error.message}`, error);
+      throw error;
+    }
   }
 
   // Método liberarBeneficio removido - no novo ciclo de vida simplificado,
@@ -680,8 +797,12 @@ export class SolicitacaoService {
    * Cancela uma solicitação
    */
   async cancelarSolicitacao(id: string, user: any): Promise<Solicitacao> {
-    return this.connection.transaction(async (manager) => {
-      // Buscar a solicitação
+    this.logger.log(`Iniciando cancelamento da solicitação: ${id}`);
+    
+    try {
+      // ===== VALIDAÇÕES E LEITURAS FORA DA TRANSAÇÃO =====
+      
+      // Buscar a solicitação fora da transação
       const solicitacao = await this.findById(id);
 
       // No novo ciclo de vida simplificado, solicitações aprovadas não podem ser canceladas
@@ -697,19 +818,46 @@ export class SolicitacaoService {
         );
       }
 
-      // Atualizar o status usando o método preparar
-      solicitacao.prepararAlteracaoStatus(
-        StatusSolicitacao.CANCELADA,
-        user.id,
-        'Solicitação cancelada pelo usuário',
-        user.ip || '0.0.0.0',
-      );
+      // Preparar dados para atualização
+      const dadosAtualizacao = {
+        status: StatusSolicitacao.CANCELADA,
+        data_atualizacao: new Date()
+      };
 
-      // Salvar a solicitação com o manager da transação
-      await manager.save(solicitacao);
+      // ===== TRANSAÇÃO MÍNIMA APENAS PARA OPERAÇÕES DE ESCRITA =====
+      await this.connection.transaction(async (manager) => {
+        // Usar repositórios tipados
+        const solicitacaoRepo = manager.getRepository(Solicitacao);
+        const historicoRepo = manager.getRepository(HistoricoSolicitacao);
 
-      return this.findById(id);
-    });
+        // Atualizar a solicitação
+        await solicitacaoRepo.update(id, dadosAtualizacao);
+
+        // Registrar no histórico
+        const historico = historicoRepo.create({
+          solicitacao_id: id,
+          usuario_id: user.id,
+          status_anterior: solicitacao.status,
+          status_atual: StatusSolicitacao.CANCELADA,
+          observacao: 'Solicitação cancelada pelo usuário',
+          dados_alterados: {
+            status: StatusSolicitacao.CANCELADA
+          },
+          ip_usuario: user.ip || '0.0.0.0'
+        });
+
+        await historicoRepo.save(historico);
+      });
+
+      // ===== CONSULTA PÓS-TRANSAÇÃO =====
+      const solicitacaoAtualizada = await this.findById(id);
+      
+      this.logger.log(`Solicitação ${id} cancelada com sucesso`);
+      return solicitacaoAtualizada;
+    } catch (error) {
+      this.logger.error(`Erro ao cancelar solicitação ${id}: ${error.message}`, error);
+      throw error;
+    }
   }
 
   /**
