@@ -3,6 +3,7 @@ import { Expose, Transform, Type } from 'class-transformer';
 import { Sexo } from '../../../enums/sexo.enum';
 import { PapelCidadaoResponseDto } from './papel-cidadao-response.dto';
 import { ParentescoEnum } from '../../../enums/parentesco.enum';
+import { UnidadeResponseDto } from '@/modules/unidade/dto/unidade-response.dto';
 
 export class CidadaoComposicaoFamiliarDto {
   @ApiProperty({
@@ -466,6 +467,14 @@ export class CidadaoResponseDto {
   @Expose()
   @Type(() => CidadaoComposicaoFamiliarDto)
   composicao_familiar?: CidadaoComposicaoFamiliarDto[];
+
+  @ApiPropertyOptional({
+    description: 'Dados da unidade onde o cidadão está cadastrado',
+    type: UnidadeResponseDto
+  })
+  @Expose()
+  @Type(() => UnidadeResponseDto)
+  unidade?: UnidadeResponseDto; 
 }
 
 export class CidadaoPaginatedResponseDto {
