@@ -12,6 +12,7 @@ import {
   Logger,
   Request,
   UseInterceptors,
+  ParseIntPipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -39,6 +40,8 @@ import {
   CidadaoComposicaoFamiliarDto,
 } from '../dto/cidadao-response.dto';
 import { ApiErrorResponse } from '../../../shared/dtos/api-error-response.dto';
+import { GetUser } from '@/auth/decorators/get-user.decorator';
+import { Usuario } from '@/entities';
 
 /**
  * Controlador de cidadãos
@@ -69,8 +72,7 @@ export class CidadaoController {
   })
   @RequiresPermission({
     permissionName: 'cidadao.listar',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'user.unidadeId',
+    scopeType: ScopeType.UNIT
   })
   @ApiOperation({
     summary: 'Listar cidadãos',
@@ -126,9 +128,10 @@ export class CidadaoController {
     example: false,
   })
   async findAll(
-    @Request() req,
-    @Query('page') page = 1,
-    @Query('limit') limit = 10,
+    @GetUser() usuario: Usuario,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
+    @Query('unidadeId') unidadeId?: string,
     @Query('search') search?: string,
     @Query('bairro') bairro?: string,
     @Query('includeRelations', new DefaultValuePipe(false)) includeRelations?: boolean,
@@ -150,7 +153,7 @@ export class CidadaoController {
           limit,
           search,
           bairro,
-          unidadeId: req?.user?.unidade_id,
+          unidadeId,
           includeRelations: shouldIncludeRelations,
           useCache: true,
           fields,

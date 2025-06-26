@@ -14,6 +14,7 @@ import { EscolaridadeEnum } from '../../../enums/escolaridade.enum';
 import { ParentescoEnum } from '../../../enums/parentesco.enum';
 import { TipoPapel } from '../../../enums/tipo-papel.enum';
 import { Sexo } from '../../../enums/sexo.enum';
+import { QueryScopeHelper } from '../../../common/helpers/query-scope.helper';
 
 // ========== INTERFACES E TIPOS ==========
 
@@ -37,6 +38,7 @@ export interface FindAllOptions {
   includeRelations?: boolean;
   specificFields?: string[];
   useCache?: boolean;
+  unidadeId?: string;
 }
 
 export interface CursorPaginationOptions {
@@ -142,13 +144,19 @@ abstract class BaseRepository<T extends ObjectLiteral> {
    */
   protected createQueryWithFields(
     alias: string,
-    fields?: string[]
+    fields?: string[],
+    options?: { unidadeId?: string },
   ): SelectQueryBuilder<T> {
     const query = this.repository.createQueryBuilder(alias);
 
     if (fields && fields.length > 0) {
-      const qualifiedFields = fields.map(field => `${alias}.${field}`);
+      const qualifiedFields = fields.map((field) => `${alias}.${field}`);
       query.select(qualifiedFields);
+    }
+
+    // Aplicar filtro de unidade se fornecido (não afeta transações)
+    if (options?.unidadeId) {
+      QueryScopeHelper.applyUnidadeFilter(query, options.unidadeId, alias);
     }
 
     return query;
@@ -405,29 +413,31 @@ export class CidadaoRepository extends BaseRepository<Cidadao> {
       order = { created_at: 'DESC' },
       includeRelations = false,
       specificFields = [],
+      unidadeId,
     } = options;
 
-    // Validar limite de paginação
+    // Limitar paginação para evitar sobrecarga
     const limit = Math.min(take, this.maxPaginationLimit);
 
-    // Criar query base
-    let query = this.createQueryWithFields('cidadao', specificFields);
+    // Criar query base aplicando filtro de unidade automaticamente via helper
+    let query = this.createQueryWithFields('cidadao', specificFields, { unidadeId });
 
-    // Aplicar busca se houver termo
-    const { search, ...filters } = where;
+    // Separar termo de busca dos demais filtros para tratamento otimizado
+    const { search, ...filters } = where as any;
+
     if (search && typeof search === 'string') {
       this.applySearchConditions(query, search);
     }
 
-    // Aplicar filtros
+    // Aplicar filtros restantes
     this.applyFilters(query, filters);
 
-    // Adicionar relacionamentos
+    // Adicionar relacionamentos conforme solicitado
     query = this.addOptimizedRelations(query, includeRelations);
 
-    // Ordenação
+    // Ordenação dinâmica
     Object.entries(order).forEach(([field, direction]) => {
-      query.addOrderBy(`cidadao.${field}`, direction);
+      query.addOrderBy(`cidadao.${field}`, direction as 'ASC' | 'DESC');
     });
 
     // Paginação

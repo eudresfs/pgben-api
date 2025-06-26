@@ -99,13 +99,8 @@ export class CidadaoService {
     const validatedLimit = Math.min(Math.max(limit, 1), 100);
     const skip = (page - 1) * validatedLimit;
 
-    // Construir filtros no formato esperado pelo repositório
+    // Construir filtros no formato esperado pelo repositório (sem unidade_id, pois será tratado pelo helper)
     const where: any = {};
-
-    // Aplicar filtro de unidade (se fornecido)
-    if (unidadeId) {
-      where.unidade_id = unidadeId;
-    }
 
     // Aplicar filtro de bairro como filtro especial que será tratado no repositório
     if (bairro && bairro.trim().length > 0) {
@@ -147,6 +142,7 @@ export class CidadaoService {
         includeRelations,
         useCache,
         specificFields,
+        unidadeId, // novo parâmetro para helper
       });
 
       // Calcular totais para paginação

@@ -132,6 +132,12 @@ export class PermissionGuard implements CanActivate {
       // Se o usuário tem bypass de escopo via roles, tratar como escopo global
       const effectiveScopeType = bypassScope ? TipoEscopo.GLOBAL : scopeType;
 
+      // Preparar injeção de metadados de escopo no request
+      interface RequestScope {
+        type: TipoEscopo;
+        unidadeId?: string;
+      }
+
       // Obtém o ID do escopo apenas se não houver bypass e o escopo for de unidade
       let scopeId: string | undefined;
       if (!bypassScope && effectiveScopeType === TipoEscopo.UNIDADE) {
@@ -146,6 +152,13 @@ export class PermissionGuard implements CanActivate {
           this.logger.debug(`Usando ID de unidade da expressão ${scopeIdExpression}: ${scopeId}`);
         }
       }
+
+      // Anexar contexto de escopo ao request para uso posterior (interceptor, services)
+      const scopeContext: RequestScope = { type: effectiveScopeType };
+      if (effectiveScopeType === TipoEscopo.UNIDADE && scopeId) {
+        scopeContext.unidadeId = scopeId;
+      }
+      (request as any).scope = scopeContext;
 
       // Verificar permissões em memória primeiro
       let hasPermission = false;

@@ -23,6 +23,8 @@ import compression from 'compression';
 import { LoggingService } from './shared/logging/logging.service';
 import { LoggingInterceptor } from './shared/logging/logging.interceptor';
 import { ErrorLoggerFilter } from './shared/logging/filters/error-logger.filter';
+import { ScopedQueryInterceptor } from './auth/interceptors/scoped-query.interceptor';
+import { Reflector } from '@nestjs/core';
 import { isSensitiveField } from './shared/constants/sensitive-fields.constants';
 
 /**
@@ -110,6 +112,10 @@ async function bootstrap(): Promise<INestApplication> {
     
     // Interceptor de logging HTTP (substitui o RedactLogsInterceptor)
     app.useGlobalInterceptors(new LoggingInterceptor(loggingService));
+
+    // Interceptor para aplicar filtro de unidade automaticamente em GET
+    const reflector = app.get(Reflector);
+    app.useGlobalInterceptors(new ScopedQueryInterceptor(reflector));
 
     // Interceptor de resposta padronizada
     app.useGlobalInterceptors(new ResponseInterceptor());
