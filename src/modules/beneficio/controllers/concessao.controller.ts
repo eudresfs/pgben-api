@@ -90,7 +90,17 @@ export class ConcessaoController {
   @ApiQuery({ name: 'determinacaoJudicial', required: false, description: 'Flag de determinação judicial', type: Boolean })
   @ApiQuery({ name: 'prioridade', required: false, description: 'Prioridade (inteiro)' })
   @ApiQuery({ name: 'search', required: false, description: 'Busca por nome, CPF ou protocolo' })
-  @ApiResponse({ status: 200, description: 'Lista de concessões', type: [Object] })
+  @ApiQuery({ name: 'limit', required: false, description: 'Limite de registros por página (padrão: 100)', type: Number })
+  @ApiQuery({ name: 'offset', required: false, description: 'Deslocamento para paginação (padrão: 0)', type: Number })
+  @ApiResponse({ status: 200, description: 'Lista de concessões com informações de paginação', schema: { 
+    type: 'object',
+    properties: {
+      data: { type: 'array', items: { type: 'object' } },
+      total: { type: 'number', description: 'Total de registros' },
+      limit: { type: 'number', description: 'Limite de registros por página' },
+      offset: { type: 'number', description: 'Deslocamento atual' }
+    }
+  } })
   async listar(
     @Query() filtro: FiltroConcessaoDto,
     @GetUser() usuario: Usuario,

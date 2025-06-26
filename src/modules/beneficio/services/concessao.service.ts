@@ -23,7 +23,7 @@ export class ConcessaoService {
     private readonly logger: LoggingService,
   ) {}
 
-  async findAll(filtro?: FiltroConcessaoDto): Promise<any[]> {
+  async findAll(filtro?: FiltroConcessaoDto): Promise<{ data: any[], total: number, limit: number, offset: number }> {
     const qb = this.concessaoRepo
       .createQueryBuilder('concessao')
       .leftJoin('concessao.solicitacao', 'solicitacao')
@@ -43,10 +43,12 @@ export class ConcessaoService {
         'unidade.nome as nome_unidade',
       ]);
 
+    // Valor padrão para filtro
     if (!filtro) {
-      return qb.getRawMany();
+      filtro = new FiltroConcessaoDto();
     }
 
+    // Aplicar filtros de busca
     if (filtro.dataInicioDe) {
       qb.andWhere('concessao.dataInicio >= :dataInicioDe', { dataInicioDe: filtro.dataInicioDe });
     }
@@ -76,7 +78,30 @@ export class ConcessaoService {
       );
     }
 
-    return qb.getRawMany();
+    // Obter contagem total antes de aplicar paginação
+    const total = await qb.getCount();
+
+    // Calcular limit e offset considerando page
+    const limit = filtro.limit ?? 100;
+    let offset = filtro.offset ?? 0;
+    if (filtro.page !== undefined) {
+      offset = (filtro.page - 1) * limit;
+    }
+
+    // Aplicar paginação
+    qb.limit(limit);
+    qb.offset(offset);
+
+    // Buscar dados paginados
+    const data = await qb.getRawMany();
+
+    // Retornar estrutura de dados paginados
+    return {
+      data,
+      total,
+      limit,
+      offset,
+    };
   }
   
 
