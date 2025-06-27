@@ -278,6 +278,7 @@ export class SolicitacaoService {
       .leftJoinAndSelect('solicitacao.unidade', 'unidade')
       .leftJoinAndSelect('solicitacao.tecnico', 'tecnico')
       .leftJoinAndSelect('solicitacao.documentos', 'documentos')
+      .leftJoinAndSelect('solicitacao.concessao', 'concessao')
       .select([
         // Dados básicos da solicitação
         'solicitacao.id',
@@ -325,6 +326,9 @@ export class SolicitacaoService {
         'unidade.id',
         'unidade.nome',
         'unidade.sigla',
+
+        // Dados da concessão
+        'concessao.id'
       ])
       .where('solicitacao.id = :id', { id })
       .getOne();
@@ -1204,12 +1208,7 @@ export class SolicitacaoService {
     });
   }
 
-  /**
-   * Desvincula uma determinação judicial de uma solicitação
-   * @param solicitacaoId ID da solicitação
-   * @param user Usuário que está realizando a operação
-   * @returns Solicitação atualizada
-   */
+
   /**
    * Converte um cidadão da composição familiar para beneficiário principal de uma nova solicitação
    * @param converterPapelDto Dados para conversão de papel
@@ -1362,6 +1361,7 @@ export class SolicitacaoService {
       }
     });
   }
+
 
   async desvincularDeterminacaoJudicial(
     solicitacaoId: string,
