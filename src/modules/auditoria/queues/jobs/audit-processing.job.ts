@@ -7,6 +7,8 @@
 
 import { Injectable, Logger } from '@nestjs/common';
 import { AuditEvent, AuditEventConfig } from '../../events/types/audit-event.types';
+import { AuditCoreRepository } from '../../core/repositories/audit-core.repository';
+import { TipoOperacao } from '../../../../enums/tipo-operacao.enum';
 
 /**
  * Interface para dados do job
@@ -31,6 +33,8 @@ export interface AuditProcessingResult {
 @Injectable()
 export class AuditProcessingJob {
   private readonly logger = new Logger(AuditProcessingJob.name);
+
+  constructor(private readonly auditRepository: AuditCoreRepository) {}
 
   /**
    * Processa um evento de auditoria
@@ -163,17 +167,22 @@ export class AuditProcessingJob {
    * Persiste o log de auditoria no banco de dados
    */
   private async persistAuditLog(logData: any): Promise<string> {
-    // TODO: Implementar persistência real com o repositório
-    // Por enquanto, simula a persistência
-    
-    const logId = this.generateLogId();
-    
-    // Simula delay de persistência
-    await new Promise(resolve => setTimeout(resolve, 10));
-    
-    this.logger.debug(`Audit log persisted with ID: ${logId}`);
-    
-    return logId;
+    try {
+      // Converte o tipo de operação para enum se necessário
+      if (typeof logData.tipo_operacao === 'string') {
+        logData.tipo_operacao = logData.tipo_operacao as TipoOperacao;
+      }
+      
+      // Persiste usando o repositório real
+      const savedLog = await this.auditRepository.create(logData);
+      
+      this.logger.debug(`Audit log persisted with ID: ${savedLog.id}`);
+      
+      return savedLog.id;
+    } catch (error) {
+      this.logger.error(`Failed to persist audit log: ${error.message}`, error.stack);
+      throw error;
+    }
   }
 
   /**

@@ -351,7 +351,7 @@ import {
       }
   
       // Verificar se a concessão está ativa
-      if (!pagamento.concessao || pagamento.concessao.status !== StatusConcessao.CONCEDIDA) {
+      if (!pagamento.concessao || pagamento.concessao.status !== StatusConcessao.ATIVO) {
         return {
           podeLiberar: false,
           motivo: 'Concessão não está ativa',
@@ -409,7 +409,7 @@ import {
   
       // Filtrar apenas pagamentos com concessão ativa
       return pagamentosElegiveis.filter(p => 
-        p.concessao?.status === StatusConcessao.CONCEDIDA
+        p.concessao?.status === StatusConcessao.ATIVO
       );
     }
   

@@ -21,7 +21,7 @@ export function getRedisConfig(configService: ConfigService): RedisOptions {
     // Configurações de timeout e reconexão
     connectTimeout: configService.get<number>('REDIS_CONNECT_TIMEOUT', 5000),
     commandTimeout: configService.get<number>('REDIS_COMMAND_TIMEOUT', 2000),
-    maxRetriesPerRequest: configService.get<number>('REDIS_MAX_RETRIES', 3),
+    // Removido maxRetriesPerRequest para compatibilidade com Bull
 
     // Configurações de reconexão
     retryStrategy(times) {
@@ -31,7 +31,7 @@ export function getRedisConfig(configService: ConfigService): RedisOptions {
     },
 
     // Configurações de saúde da conexão
-    enableReadyCheck: true,
+    // Removido enableReadyCheck para compatibilidade com Bull
     enableOfflineQueue: true,
 
     // Configurações de desempenho

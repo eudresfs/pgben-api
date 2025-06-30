@@ -9,16 +9,14 @@ import { LocalStorageAdapter } from './adapters/local-storage.adapter';
 import { S3StorageAdapter } from './adapters/s3-storage.adapter';
 import { MimeValidationService } from './services/mime-validation.service';
 import { InputSanitizerValidator } from './validators/input-sanitizer.validator';
-import { TODOS_MIME_TYPES_PERMITIDOS } from './config/documento.config';
 import { diskStorage, memoryStorage } from 'multer';
-import { extname } from 'path';
-import { v4 as uuidv4 } from 'uuid';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Documento } from '../../entities';
 import { AuthModule } from '../../auth/auth.module';
 import { LoggingModule } from '../../shared/logging/logging.module';
 import { SharedModule } from '../../shared/shared.module';
 import { StorageHealthService } from './services/storage-health.service';
+import { AuditoriaSharedModule } from '../../shared/auditoria/auditoria-shared.module';
 
 /**
  * Módulo de Documentos
@@ -62,6 +60,7 @@ import { StorageHealthService } from './services/storage-health.service';
     AuthModule,
     LoggingModule,
     SharedModule,
+    AuditoriaSharedModule,
   ],
   controllers: [DocumentoController],
   providers: [

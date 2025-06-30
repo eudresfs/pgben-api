@@ -41,6 +41,7 @@ import { UsuarioModule } from '../modules/usuario/usuario.module';
 import { forwardRef } from '@nestjs/common';
 import { LoggingModule } from '../shared/logging/logging.module';
 import { PermissionModule } from './permission.module';
+// Removido AuditoriaSharedModule para evitar dependência circular
 
 /**
  * Módulo de Autenticação e Autorização

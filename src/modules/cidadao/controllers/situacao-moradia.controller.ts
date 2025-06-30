@@ -84,8 +84,7 @@ export class SituacaoMoradiaController {
   @RequiresPermission(
     {
       permissionName: 'situacao_moradia.criar',
-      scopeType: TipoEscopo.UNIDADE,
-      scopeIdExpression: 'user.unidade_id'
+      scopeType: TipoEscopo.UNIDADE
     }
   )
   @ApiOperation({
@@ -229,8 +228,7 @@ export class SituacaoMoradiaController {
   @RequiresPermission(
     {
       permissionName: 'situacao_moradia.atualizar',
-      scopeType: TipoEscopo.UNIDADE,
-      scopeIdExpression: 'user.unidade_id'
+      scopeType: TipoEscopo.UNIDADE
     }
   )
   @ApiOperation({
@@ -363,8 +361,7 @@ export class SituacaoMoradiaController {
   @RequiresPermission(
     {
       permissionName: 'situacao_moradia.listar',
-      scopeType: TipoEscopo.UNIDADE,
-      scopeIdExpression: 'user.unidade_id'
+      scopeType: TipoEscopo.UNIDADE
     }
   )
   @ApiOperation({
@@ -504,8 +501,7 @@ export class SituacaoMoradiaController {
   @RequiresPermission(
     {
       permissionName: 'situacao_moradia.visualizar',
-      scopeType: TipoEscopo.UNIDADE,
-      scopeIdExpression: 'user.unidade_id'
+      scopeType: TipoEscopo.UNIDADE
     }
   )
   @ApiOperation({
@@ -659,8 +655,7 @@ export class SituacaoMoradiaController {
   @RequiresPermission(
     {
       permissionName: 'situacao_moradia.atualizar',
-      scopeType: TipoEscopo.UNIDADE,
-      scopeIdExpression: 'user.unidade_id'
+      scopeType: TipoEscopo.UNIDADE
     }
   )
   @ApiOperation({
@@ -840,8 +835,7 @@ export class SituacaoMoradiaController {
   @RequiresPermission(
     {
       permissionName: 'situacao_moradia.excluir',
-      scopeType: TipoEscopo.UNIDADE,
-      scopeIdExpression: 'user.unidade_id'
+      scopeType: TipoEscopo.UNIDADE
     }
   )
   @ApiOperation({

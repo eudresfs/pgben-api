@@ -23,19 +23,6 @@ import { LogAuditoriaRepository } from './repositories/log-auditoria.repository'
   imports: [
     // Configuração do TypeORM para entidades do módulo
     TypeOrmModule.forFeature([LogAuditoria]),
-
-    // Configuração assíncrona do BullModule com ConfigService
-    BullModule.registerQueueAsync({
-      name: 'auditoria',
-      imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        redis: {
-          host: configService.get<string>('REDIS_HOST', 'localhost'),
-          port: configService.get<number>('REDIS_PORT', 6379),
-        },
-      }),
-      inject: [ConfigService],
-    }),
   ],
   providers: [AuditoriaService, AuditEventEmitter, AuditoriaQueueService, LogAuditoriaRepository],
   exports: [AuditoriaService, AuditEventEmitter, AuditoriaQueueService, LogAuditoriaRepository],

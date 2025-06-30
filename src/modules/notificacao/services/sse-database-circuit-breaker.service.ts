@@ -70,10 +70,6 @@ export class SseDatabaseCircuitBreakerService {
     this.updateCircuitBreaker = this.createDatabaseCircuitBreaker('db-update');
     this.deleteCircuitBreaker = this.createDatabaseCircuitBreaker('db-delete');
     this.transactionCircuitBreaker = this.createDatabaseCircuitBreaker('db-transaction');
-
-    this.logger.log('SseDatabaseCircuitBreakerService inicializado', {
-      config: this.dbConfig,
-    });
   }
 
   /**

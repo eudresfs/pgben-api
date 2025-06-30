@@ -345,7 +345,7 @@ export class SseAuthGuard implements CanActivate {
       return user;
     } catch (error) {
       this.loggingService.logError(error as Error, {
-        userId: Number(userId),
+        userId: this.parseUserId(userId),
         component: 'sse-auth-guard',
         operation: 'get_user_from_database',
         metadata: {},
@@ -468,5 +468,17 @@ export class SseAuthGuard implements CanActivate {
       request.socket.remoteAddress ||
       'unknown'
     );
+  }
+
+  /**
+   * Valida e converte userId para número, evitando NaN
+   */
+  private parseUserId(userId: any): number | undefined {
+    if (userId === null || userId === undefined || userId === '') {
+      return undefined;
+    }
+    
+    const parsed = Number(userId);
+    return isNaN(parsed) ? undefined : parsed;
   }
 }

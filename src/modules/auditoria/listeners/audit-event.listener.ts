@@ -19,6 +19,7 @@ import {
   RiskLevel,
   AuditEvent,
 } from '../events/types/audit-event.types';
+import { TipoOperacao } from '../../../enums/tipo-operacao.enum';
 
 @Injectable()
 export class AuditEventListener {
@@ -299,7 +300,7 @@ export class AuditEventListener {
         RiskLevel.HIGH : RiskLevel.LOW;
       
       await this.auditCoreService.createAuditLog({
-        tipo_operacao: 'SYSTEM',
+        tipo_operacao: this.mapEventTypeToTipoOperacao(event.eventType),
         entidade_afetada: 'Sistema',
         entidade_id: event.entityId,
         usuario_id: event.userId || 'sistema',
@@ -507,6 +508,38 @@ export class AuditEventListener {
   }
 
   /**
+   * Processa eventos síncronos de auditoria
+   */
+  // @ts-ignore: TS1270 - Decorator compatibility issue with TypeScript 5.x
+  @OnEvent('audit.process.sync')
+  async handleProcessSync(event: AuditEvent): Promise<void> {
+    try {
+      // Verificar se é um EntityAuditEvent para acessar previousData e newData
+      const isEntityEvent = 'previousData' in event || 'newData' in event;
+      const entityEvent = isEntityEvent ? event as any : null;
+      
+      await this.auditCoreService.createAuditLog({
+        tipo_operacao: this.mapEventTypeToTipoOperacao(event.eventType),
+        entidade_afetada: event.entityName,
+        entidade_id: event.entityId,
+        usuario_id: event.userId,
+        descricao: `Sincronização de processo: ${event.eventType}`,
+        nivel_risco: event.riskLevel || RiskLevel.LOW,
+        ip_origem: event.requestContext?.ip,
+        user_agent: event.requestContext?.userAgent,
+        endpoint: event.requestContext?.endpoint,
+        metodo_http: event.requestContext?.method,
+        dados_anteriores: entityEvent?.previousData,
+        dados_novos: entityEvent?.newData,
+        lgpd_relevante: event.lgpdRelevant || false,
+        metadata: event.metadata,
+      });
+    } catch (error) {
+      console.error('Erro ao processar evento audit.process.sync:', error);
+    }
+  }
+
+  /**
    * Processa eventos de segurança com padrão específico
    */
   // @ts-ignore: TS1270 - Decorator compatibility issue with TypeScript 5.x
@@ -546,26 +579,26 @@ export class AuditEventListener {
   /**
    * Mapeia o tipo de evento para o tipo de operação
    */
-  private mapEventTypeToTipoOperacao(eventType: AuditEventType): string {
+  private mapEventTypeToTipoOperacao(eventType: AuditEventType): TipoOperacao {
     switch (eventType) {
       case AuditEventType.ENTITY_CREATED:
-        return 'CREATE';
+        return TipoOperacao.CREATE;
       case AuditEventType.ENTITY_UPDATED:
-        return 'UPDATE';
+        return TipoOperacao.UPDATE;
       case AuditEventType.ENTITY_DELETED:
-        return 'DELETE';
+        return TipoOperacao.DELETE;
       case AuditEventType.ENTITY_ACCESSED:
-        return 'READ';
+        return TipoOperacao.READ;
       case AuditEventType.SENSITIVE_DATA_ACCESSED:
-        return 'ACCESS';
+        return TipoOperacao.ACCESS;
       case AuditEventType.SENSITIVE_DATA_EXPORTED:
-        return 'EXPORT';
+        return TipoOperacao.EXPORT;
       case AuditEventType.SYSTEM_ERROR:
       case AuditEventType.SYSTEM_WARNING:
       case AuditEventType.SYSTEM_INFO:
-        return 'ACCESS';
+        return TipoOperacao.ACCESS;
       default:
-        return 'ACCESS';
+        return TipoOperacao.ACCESS;
     }
   }
 }

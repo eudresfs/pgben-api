@@ -8,7 +8,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { EventEmitterModule } from '@nestjs/event-emitter';
-import { LogAuditoria } from '../entities/log-auditoria.entity';
+import { LogAuditoria } from '../../../entities/log-auditoria.entity';
 import { AuditCoreRepository } from './repositories/audit-core.repository';
 import { AuditCoreService } from './services/audit-core.service';
 

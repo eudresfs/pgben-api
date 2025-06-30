@@ -47,7 +47,7 @@ export class Concessao {
     type: 'enum',
     enum: StatusConcessao,
     enumName: 'status_concessao_enum',
-    default: StatusConcessao.PENDENTE,
+    default: StatusConcessao.APTO,
   })
   @IsEnum(StatusConcessao)
   status: StatusConcessao;

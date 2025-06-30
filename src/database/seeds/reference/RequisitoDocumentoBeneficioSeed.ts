@@ -79,7 +79,7 @@ export class RequisitoDocumentoBeneficioSeed {
           },
           {
             tipo_documento: TipoDocumentoEnum.FOLHA_RESUMO_CADUNICO,
-            nome: 'Folha resumo do CadÚnico',
+            nome: 'Comprovante de Cadastro Único',
             descricao: 'Folha resumo atualizada do Cadastro Único',
             obrigatorio: false,
           },
@@ -161,7 +161,7 @@ export class RequisitoDocumentoBeneficioSeed {
           },
           {
             tipo_documento: TipoDocumentoEnum.FOLHA_RESUMO_CADUNICO,
-            nome: 'Folha resumo do CadÚnico',
+            nome: 'Comprovante de Cadastro Único',
             descricao: 'Folha resumo atualizada do Cadastro Único',
             obrigatorio: false,
           },
@@ -239,7 +239,7 @@ export class RequisitoDocumentoBeneficioSeed {
           },
           {
             tipo_documento: TipoDocumentoEnum.FOLHA_RESUMO_CADUNICO,
-            nome: 'Folha resumo do CadÚnico',
+            nome: 'Comprovante de Cadastro Único',
             descricao: 'Folha resumo atualizada do Cadastro Único',
             obrigatorio: false,
           },
@@ -293,7 +293,7 @@ export class RequisitoDocumentoBeneficioSeed {
           },
           {
             tipo_documento: TipoDocumentoEnum.FOLHA_RESUMO_CADUNICO,
-            nome: 'Folha resumo do CadÚnico',
+            nome: 'Comprovante de Cadastro Único',
             descricao: 'Folha resumo atualizada do Cadastro Único',
             obrigatorio: false,
           },
@@ -386,7 +386,7 @@ export class RequisitoDocumentoBeneficioSeed {
           },
           {
             tipo_documento: TipoDocumentoEnum.FOLHA_RESUMO_CADUNICO,
-            nome: 'Folha resumo do CadÚnico',
+            nome: 'Comprovante de Cadastro Único',
             descricao: 'Folha resumo atualizada do Cadastro Único',
             obrigatorio: false,
           },

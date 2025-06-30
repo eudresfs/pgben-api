@@ -50,18 +50,50 @@ export class AuditEventEmitter {
       
       if (shouldProcessSync) {
         // Processamento síncrono para eventos críticos
-        this.eventEmitter.emit('audit.process.sync', enrichedEvent);
+        try {
+          this.eventEmitter.emit('audit.process.sync', enrichedEvent);
+        } catch (syncError) {
+          this.logger.error(`Failed to process sync audit event: ${syncError.message}`, {
+            eventType: enrichedEvent.eventType,
+            entityName: enrichedEvent.entityName,
+            error: syncError.stack
+          });
+          // Para eventos síncronos críticos, ainda propagamos o erro
+          if (enrichedEvent.riskLevel === 'CRITICAL') {
+            throw syncError;
+          }
+        }
       } else {
         // Adiciona à fila para processamento assíncrono
-        await this.addToQueue(enrichedEvent, config);
+        try {
+          await this.addToQueue(enrichedEvent, config);
+        } catch (queueError) {
+          this.logger.error(`Failed to add audit event to queue: ${queueError.message}`, {
+            eventType: enrichedEvent.eventType,
+            entityName: enrichedEvent.entityName,
+            error: queueError.stack
+          });
+          // Para eventos assíncronos, não propagamos o erro para não afetar a API
+          // O evento foi emitido sincronamente, então listeners imediatos já foram notificados
+        }
       }
       
       const duration = Date.now() - startTime;
       this.logger.debug(`Event emitted in ${duration}ms: ${enrichedEvent.eventType}`);
       
     } catch (error) {
-      this.logger.error(`Failed to emit audit event: ${error.message}`, error.stack);
-      throw error;
+      // Apenas erros de validação ou críticos são propagados
+      if (error.message.includes('is required') || event.riskLevel === 'CRITICAL') {
+        this.logger.error(`Critical audit event error: ${error.message}`, error.stack);
+        throw error;
+      } else {
+        // Outros erros são apenas logados
+        this.logger.error(`Non-critical audit event error: ${error.message}`, {
+          eventType: event.eventType,
+          entityName: event.entityName,
+          error: error.stack
+        });
+      }
     }
   }
 
@@ -289,12 +321,47 @@ export class AuditEventEmitter {
       attempts: config?.attempts || 3,
       removeOnComplete: 100,
       removeOnFail: 50,
+      backoff: {
+        type: 'exponential',
+        delay: 2000,
+      },
     };
 
-    await this.auditQueue.add('process-audit-event', {
-      event,
-      config,
-    }, jobOptions);
+    try {
+      // Verifica se a fila está disponível antes de tentar adicionar
+      if (!this.auditQueue) {
+        throw new Error('Audit queue not available');
+      }
+
+      await this.auditQueue.add('process-audit-event', {
+        event,
+        config,
+      }, jobOptions);
+      
+      this.logger.debug(`Event added to queue: ${event.eventType}`);
+    } catch (error) {
+      // Log detalhado do erro para diagnóstico
+      this.logger.error(`Failed to add event to queue: ${error.message}`, {
+        eventType: event.eventType,
+        entityName: event.entityName,
+        errorCode: error.code,
+        errorName: error.name,
+        isRedisError: error.message.includes('Redis') || error.message.includes('ECONNREFUSED'),
+      });
+      
+      // Para eventos críticos, tenta processamento síncrono como fallback
+      if (event.riskLevel === 'CRITICAL') {
+        this.logger.warn(`Attempting sync fallback for critical event: ${event.eventType}`);
+        try {
+          this.eventEmitter.emit('audit.process.sync', event);
+        } catch (syncError) {
+          this.logger.error(`Sync fallback also failed: ${syncError.message}`);
+          throw error; // Re-throw original error
+        }
+      }
+      
+      throw error;
+    }
   }
 
   /**

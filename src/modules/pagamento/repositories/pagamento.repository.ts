@@ -13,7 +13,7 @@ export class PagamentoRepository {
   constructor(
     @InjectRepository(Pagamento)
     private readonly repository: Repository<Pagamento>,
-  ) {}
+  ) { }
 
   /**
    * Cria um novo pagamento
@@ -85,7 +85,7 @@ export class PagamentoRepository {
    */
   async findElegiveisParaLiberacao(limite: number = 100): Promise<Pagamento[]> {
     const agora = new Date();
-    
+
     return await this.repository.find({
       where: [
         {
@@ -111,7 +111,7 @@ export class PagamentoRepository {
    */
   async findVencidos(): Promise<Pagamento[]> {
     const agora = new Date();
-    
+
     return await this.repository.find({
       where: {
         status: StatusPagamentoEnum.PENDENTE,
@@ -127,10 +127,10 @@ export class PagamentoRepository {
   async findPagamentosProximosVencimento(dataLimite: Date): Promise<Pagamento[]> {
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
-    
+
     const limite = new Date(dataLimite);
     limite.setHours(23, 59, 59, 999);
-    
+
     return await this.repository.find({
       where: {
         status: StatusPagamentoEnum.PENDENTE,
@@ -158,20 +158,21 @@ export class PagamentoRepository {
       .leftJoinAndSelect('pagamento.solicitacao', 'solicitacao')
       .leftJoinAndSelect('pagamento.concessao', 'concessao');
 
+
     // Aplicar filtros
     if (filtros.status) {
       queryBuilder.andWhere('pagamento.status = :status', { status: filtros.status });
     }
 
     if (filtros.solicitacaoId) {
-      queryBuilder.andWhere('pagamento.solicitacaoId = :solicitacaoId', { 
-        solicitacaoId: filtros.solicitacaoId 
+      queryBuilder.andWhere('pagamento.solicitacaoId = :solicitacaoId', {
+        solicitacaoId: filtros.solicitacaoId
       });
     }
 
     if (filtros.concessaoId) {
-      queryBuilder.andWhere('pagamento.concessaoId = :concessaoId', { 
-        concessaoId: filtros.concessaoId 
+      queryBuilder.andWhere('pagamento.concessaoId = :concessaoId', {
+        concessaoId: filtros.concessaoId
       });
     }
 
@@ -183,14 +184,14 @@ export class PagamentoRepository {
     }
 
     if (filtros.valorMinimo) {
-      queryBuilder.andWhere('pagamento.valor >= :valorMinimo', { 
-        valorMinimo: filtros.valorMinimo 
+      queryBuilder.andWhere('pagamento.valor >= :valorMinimo', {
+        valorMinimo: filtros.valorMinimo
       });
     }
 
     if (filtros.valorMaximo) {
-      queryBuilder.andWhere('pagamento.valor <= :valorMaximo', { 
-        valorMaximo: filtros.valorMaximo 
+      queryBuilder.andWhere('pagamento.valor <= :valorMaximo', {
+        valorMaximo: filtros.valorMaximo
       });
     }
 
@@ -202,7 +203,8 @@ export class PagamentoRepository {
     queryBuilder
       .skip(skip)
       .take(limit)
-      .orderBy('pagamento.created_at', 'DESC');
+      .orderBy('pagamento.created_at', 'DESC')
+      .addOrderBy('pagamento.numeroParcela', 'ASC');
 
     const [items, total] = await queryBuilder.getManyAndCount();
 
@@ -217,12 +219,12 @@ export class PagamentoRepository {
       ...dadosAtualizacao,
       updated_at: new Date()
     });
-    
+
     const pagamentoAtualizado = await this.findById(id);
     if (!pagamentoAtualizado) {
       throw new Error('Pagamento não encontrado após atualização');
     }
-    
+
     return pagamentoAtualizado;
   }
 

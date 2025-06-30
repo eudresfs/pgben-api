@@ -50,7 +50,7 @@ export const getCacheConfig = async (
       keyPrefix: 'pgben:', // Prefixo para organizar chaves
       // Configurações de performance
       enableOfflineQueue: false, // Não enfileirar comandos quando offline
-      maxRetriesPerRequest: 2, // Máximo 2 tentativas por comando
+      // Removido maxRetriesPerRequest para compatibilidade com Bull
       retryDelayOnFailover: 100, // 100ms entre tentativas
       // Opções de conexão mais resilientes
       retryStrategy: (times: number) => {

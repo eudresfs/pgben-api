@@ -292,13 +292,22 @@ export class NotificationManagerService implements OnModuleInit {
     await this.notificacaoRepository.save(notificacao);
 
     try {
-      // Se não há template, apenas marcar como enviada (notificação sem template)
+      // Se não há template, usar template padrão
       if (!notificacao.template) {
-        this.logger.warn(`Notificação ${notificacaoId} não possui template configurado, marcando como enviada`);
-        notificacao.status = StatusNotificacaoProcessamento.ENVIADA;
-        notificacao.data_envio = new Date();
-        await this.notificacaoRepository.save(notificacao);
-        return;
+        this.logger.debug(`Notificação ${notificacaoId} não possui template configurado, usando template padrão`);
+        
+        // Criar template padrão temporário
+         const mensagemPadrao = notificacao.dados_contexto?.mensagem || notificacao.dados_contexto?.titulo || 'Você tem uma nova notificação.';
+         const templatePadrao = {
+           codigo: 'default',
+           assunto: 'Nova Notificação',
+           corpo: mensagemPadrao,
+           corpo_html: `<p>${mensagemPadrao}</p>`,
+           canais_disponiveis: ['sse', 'email']
+         };
+        
+        // Atribuir template padrão temporariamente para processamento
+        notificacao.template = templatePadrao as any;
       }
 
       // Iterar sobre os canais suportados pelo template

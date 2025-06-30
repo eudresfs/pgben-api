@@ -12,13 +12,20 @@ import { RequiresPermission } from '../../../auth/decorators/requires-permission
 import { GetUser } from '../../../auth/decorators/get-user.decorator';
 import { Usuario } from '../../../entities/usuario.entity';
 import { FiltroConcessaoDto } from '../dto/filtro-concessao.dto';
+import { AuditEventEmitter } from '../../auditoria/events/emitters/audit-event.emitter';
+import { AuditEventType } from '../../auditoria/events/types/audit-event.types';
+import { ReqContext } from '../../../shared/request-context/req-context.decorator';
+import { RequestContext } from '@/shared/request-context/request-context.dto';
 
 @ApiTags('Benefícios')
 @Controller('concessoes')
 @UseGuards(JwtAuthGuard, PermissionGuard)
 @ApiBearerAuth()
 export class ConcessaoController {
-  constructor(private readonly concessaoService: ConcessaoService) {}
+  constructor(
+    private readonly concessaoService: ConcessaoService,
+    private readonly auditEventEmitter: AuditEventEmitter,
+  ) {}
 
     /**
    * Cria uma nova concessão para uma solicitação aprovada.
@@ -43,13 +50,28 @@ export class ConcessaoController {
   async criar(
     @Body() dto: CreateConcessaoDto,
     @GetUser() usuario: Usuario,
+    @ReqContext() ctx: any,
   ) {
     // A entidade Solicitacao deve ter sido previamente carregada no serviço
-    return this.concessaoService.criarSeNaoExistir({
+    const result = await this.concessaoService.criarSeNaoExistir({
       id: dto.solicitacaoId,
       prioridade: dto.ordemPrioridade,
       determinacao_judicial_flag: dto.determinacaoJudicialFlag,
     } as any); // Cast simplificado
+
+    // Auditoria: Criação de concessão
+    await this.auditEventEmitter.emitEntityCreated(
+      'Concessao',
+      result.id,
+      {
+        solicitacaoId: dto.solicitacaoId,
+        ordemPrioridade: dto.ordemPrioridade,
+        determinacaoJudicialFlag: dto.determinacaoJudicialFlag,
+      },
+      usuario.id,
+    );
+
+    return result;
   }
 
   /**
@@ -128,8 +150,27 @@ export class ConcessaoController {
     @Param('id') id: string,
     @Body() dto: UpdateStatusConcessaoDto,
     @GetUser() usuario: Usuario,
+    @ReqContext() ctx: any,
   ) {
-    return this.concessaoService.atualizarStatus(id, dto.status as StatusConcessao);
+    // Buscar estado anterior para auditoria
+    const concessaoAnterior = await this.concessaoService.findById(id);
+    
+    const result = await this.concessaoService.atualizarStatus(id, dto.status as StatusConcessao);
+
+    // Auditoria: Atualização de status da concessão
+    await this.auditEventEmitter.emitEntityUpdated(
+      'Concessao',
+      id,
+      {
+        status: concessaoAnterior?.status,
+      },
+      {
+        status: dto.status,
+      },
+      usuario.id,
+    );
+
+    return result;
   }
 
   /**
@@ -154,12 +195,27 @@ export class ConcessaoController {
     @Param('id') id: string,
     @Body() dto: ProrrogarConcessaoDto,
     @GetUser() usuario: Usuario,
+    @ReqContext() ctx: RequestContext,
   ) {
-    return this.concessaoService.prorrogarConcessao(
+    const result = await this.concessaoService.prorrogarConcessao(
       id,
       usuario.id,
       dto.documentoJudicialId,
     );
+
+    // Auditoria: Prorrogação de concessão
+    await this.auditEventEmitter.emitEntityCreated(
+      'Concessao',
+      result.id,
+      {
+        action: 'prorrogacao',
+        concessaoOriginalId: id,
+        documentoJudicialId: dto.documentoJudicialId,
+      },
+      usuario.id,
+    );
+
+    return result;
   }
 
   /**
@@ -184,13 +240,74 @@ export class ConcessaoController {
     @Param('id') id: string,
     @Body() dto: SuspenderConcessaoDto,
     @GetUser() usuario: Usuario,
+    @ReqContext() ctx: any,
   ) {
-    return this.concessaoService.suspenderConcessao(
+    const result = await this.concessaoService.suspenderConcessao(
       id,
       usuario.id,
       dto.motivo,
-      dto.dataRevisao,
     );
+
+    // Auditoria: Suspensão de concessão
+    await this.auditEventEmitter.emitEntityUpdated(
+      'Concessao',
+      id,
+      {},
+      {
+        action: 'suspensao',
+        motivo: dto.motivo,
+        status: 'SUSPENSA',
+      },
+      usuario.id,
+    );
+
+    return result;
+  }
+
+    /**
+   * Bloqueia uma concessão.
+   *
+   * @param id UUID da concessão a ser bloqueada
+   * @body Dados para bloqueio
+   * @returns Concessão bloqueada
+   */
+  @Patch(':id/reativar')
+  @RequiresPermission({ permissionName: 'concessao.reativar'})
+  @ApiOperation({ 
+    summary: 'Reativa uma concessão', 
+    description: 'Reativa uma concessão. Concessões com status SUSPENSA podem ser reativadas.' 
+  })
+  @ApiParam({ name: 'id', description: 'UUID da concessão a ser bloqueada' })
+  @ApiBody({ type: BloquearConcessaoDto })
+  @ApiResponse({ status: 200, description: 'Concessão reativada com sucesso', type: Object })
+  @ApiResponse({ status: 400, description: 'Concessão não pode ser reativada' })
+  @ApiResponse({ status: 404, description: 'Concessão não encontrada' })
+  async reativar(
+    @Param('id') id: string,
+    @Body() dto: DesbloquearConcessaoDto,
+    @GetUser() usuario: Usuario,
+    @ReqContext() ctx: any,
+  ) {
+    const result = await this.concessaoService.reativarConcessao(
+      id,
+      usuario.id,
+      dto.motivo,
+    );
+
+    // Auditoria: Bloqueio de concessão
+    await this.auditEventEmitter.emitEntityUpdated(
+      'Concessao',
+      id,
+      {},
+      {
+        action: 'reativação',
+        motivo: dto.motivo,
+        status: 'ATIVO',
+      },
+      usuario.id,
+    );
+
+    return result;
   }
 
   /**
@@ -215,12 +332,28 @@ export class ConcessaoController {
     @Param('id') id: string,
     @Body() dto: BloquearConcessaoDto,
     @GetUser() usuario: Usuario,
+    @ReqContext() ctx: any,
   ) {
-    return this.concessaoService.bloquearConcessao(
+    const result = await this.concessaoService.bloquearConcessao(
       id,
       usuario.id,
       dto.motivo,
     );
+
+    // Auditoria: Bloqueio de concessão
+    await this.auditEventEmitter.emitEntityUpdated(
+      'Concessao',
+      id,
+      {},
+      {
+        action: 'bloqueio',
+        motivo: dto.motivo,
+        status: 'BLOQUEADA',
+      },
+      usuario.id,
+    );
+
+    return result;
   }
 
   /**
@@ -245,12 +378,28 @@ export class ConcessaoController {
     @Param('id') id: string,
     @Body() dto: DesbloquearConcessaoDto,
     @GetUser() usuario: Usuario,
+    @ReqContext() ctx: any,
   ) {
-    return this.concessaoService.desbloquearConcessao(
+    const result = await this.concessaoService.desbloquearConcessao(
       id,
       usuario.id,
       dto.motivo,
     );
+
+    // Auditoria: Desbloqueio de concessão
+    await this.auditEventEmitter.emitEntityUpdated(
+      'Concessao',
+      id,
+      {},
+      {
+        action: 'desbloqueio',
+        motivo: dto.motivo,
+        status: 'CONCEDIDA',
+      },
+      usuario.id,
+    );
+
+    return result;
   }
 
   /**
@@ -275,11 +424,27 @@ export class ConcessaoController {
     @Param('id') id: string,
     @Body() dto: CancelarConcessaoDto,
     @GetUser() usuario: Usuario,
+    @ReqContext() ctx: any,
   ) {
-    return this.concessaoService.cancelarConcessao(
+    const result = await this.concessaoService.cancelarConcessao(
       id,
       usuario.id,
       dto.motivo,
     );
+
+    // Auditoria: Cancelamento de concessão
+    await this.auditEventEmitter.emitEntityUpdated(
+      'Concessao',
+      id,
+      {},
+      {
+        action: 'cancelamento',
+        motivo: dto.motivo,
+        status: 'CANCELADA',
+      },
+      usuario.id,
+    );
+
+    return result;
   }
 }

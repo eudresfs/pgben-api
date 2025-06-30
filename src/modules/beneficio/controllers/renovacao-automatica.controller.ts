@@ -28,6 +28,11 @@ import { UpdateConfiguracaoRenovacaoDto } from '../dto/update-configuracao-renov
 import { Solicitacao } from '../../../entities/solicitacao.entity';
 import { VerificacaoRenovacaoResponseDto } from '../dto/verificacao-renovacao-response.dto';
 import { VerificacaoRenovacoesPendentesResponseDto } from '../dto/verificacao-renovacoes-pendentes-response.dto';
+import { AuditEventEmitter } from '../../auditoria/events/emitters/audit-event.emitter';
+import { AuditEventType } from '../../auditoria/events/types/audit-event.types';
+import { ReqContext } from '../../../shared/request-context/req-context.decorator';
+import { GetUser } from '../../../auth/decorators/get-user.decorator';
+import { Usuario } from '../../../entities/usuario.entity';
 import { ConfigurarRenovacaoSolicitacaoDto } from '../dto/configurar-renovacao-solicitacao.dto';
 import { VerificacaoConfiguracaoRenovacaoResponseDto } from '../dto/verificacao-configuracao-renovacao-response.dto';
 import { ConfiguracaoRenovacaoResponseDto } from '../dto/configuracao-renovacao-response.dto';
@@ -44,7 +49,10 @@ import { ConfiguracaoRenovacaoResponseDto } from '../dto/configuracao-renovacao-
 @UseGuards(JwtAuthGuard, PermissionGuard)
 @ApiBearerAuth()
 export class RenovacaoAutomaticaController {
-  constructor(private readonly renovacaoService: RenovacaoAutomaticaService) {}
+  constructor(
+    private readonly renovacaoService: RenovacaoAutomaticaService,
+    private readonly auditEventEmitter: AuditEventEmitter,
+  ) {}
 
   /**
    * Cria uma nova configuração de renovação automática
@@ -66,9 +74,27 @@ export class RenovacaoAutomaticaController {
   })
   async create(
     @Body() createConfiguracaoDto: CreateConfiguracaoRenovacaoDto,
-    @Req() req: any,
+    @GetUser() usuario: Usuario,
+    @ReqContext() ctx: any,
   ): Promise<ConfiguracaoRenovacao> {
-    return this.renovacaoService.create(createConfiguracaoDto, req.user.id);
+    const result = await this.renovacaoService.create(createConfiguracaoDto, usuario.id);
+
+    // Auditoria: Criação de configuração de renovação automática
+    await this.auditEventEmitter.emitEntityCreated(
+      'ConfiguracaoRenovacao',
+      result.id,
+      {
+        tipoBeneficioId: createConfiguracaoDto.tipo_beneficio_id,
+        renovacaoAutomatica: createConfiguracaoDto.renovacao_automatica,
+        diasAntecedenciaRenovacao: createConfiguracaoDto.dias_antecedencia_renovacao,
+        numeroMaximoRenovacoes: createConfiguracaoDto.numero_maximo_renovacoes,
+        requerAprovacaoRenovacao: createConfiguracaoDto.requer_aprovacao_renovacao,
+        observacoes: createConfiguracaoDto.observacoes,
+      },
+      usuario.id,
+    );
+
+    return result;
   }
 
   /**
@@ -156,8 +182,28 @@ export class RenovacaoAutomaticaController {
   async update(
     @Param('id') id: string,
     @Body() updateConfiguracaoDto: UpdateConfiguracaoRenovacaoDto,
+    @GetUser() usuario: Usuario,
+    @ReqContext() ctx: any,
   ): Promise<ConfiguracaoRenovacao> {
-    return this.renovacaoService.update(id, updateConfiguracaoDto);
+    // Buscar estado anterior para auditoria
+    const configuracaoAnterior = await this.renovacaoService.findById(id);
+    
+    const result = await this.renovacaoService.update(id, updateConfiguracaoDto);
+
+    // Auditoria: Atualização de configuração de renovação automática
+    await this.auditEventEmitter.emitEntityUpdated(
+      'ConfiguracaoRenovacao',
+      id,
+      {
+        diasAntecedenciaRenovacao: configuracaoAnterior?.dias_antecedencia_renovacao,
+        renovacaoAutomatica: configuracaoAnterior?.renovacao_automatica,
+        observacoes: configuracaoAnterior?.observacoes,
+      },
+      updateConfiguracaoDto,
+      usuario.id,
+    );
+
+    return result;
   }
 
   /**
@@ -176,8 +222,28 @@ export class RenovacaoAutomaticaController {
     status: 204,
     description: 'Configuração removida com sucesso',
   })
-  async remove(@Param('id') id: string): Promise<void> {
-    return this.renovacaoService.remove(id);
+  async remove(
+    @Param('id') id: string,
+    @GetUser() usuario: Usuario,
+    @ReqContext() ctx: any,
+  ): Promise<void> {
+    // Buscar configuração antes da exclusão para auditoria
+    const configuracao = await this.renovacaoService.findById(id);
+    
+    await this.renovacaoService.remove(id);
+
+    // Auditoria: Remoção de configuração de renovação automática
+    await this.auditEventEmitter.emitEntityDeleted(
+      'ConfiguracaoRenovacao',
+      id,
+      {
+        tipoBeneficioId: configuracao?.tipo_beneficio_id,
+        diasAntecedenciaRenovacao: configuracao?.dias_antecedencia_renovacao,
+        renovacaoAutomatica: configuracao?.renovacao_automatica,
+        observacoes: configuracao?.observacoes,
+      },
+      usuario.id,
+    );
   }
 
   /**
@@ -201,8 +267,24 @@ export class RenovacaoAutomaticaController {
   async toggleAtivo(
     @Param('id') id: string,
     @Body() body: { ativo: boolean },
+    @GetUser() usuario: Usuario,
+    @ReqContext() ctx: any,
   ): Promise<ConfiguracaoRenovacao> {
-    return this.renovacaoService.toggleAtivo(id, body.ativo);
+    // Buscar estado anterior para auditoria
+    const configuracaoAnterior = await this.renovacaoService.findById(id);
+    
+    const result = await this.renovacaoService.toggleAtivo(id, body.ativo);
+
+    // Auditoria: Alteração de status de configuração de renovação automática
+    await this.auditEventEmitter.emitEntityUpdated(
+      'ConfiguracaoRenovacao',
+      id,
+      { ativo: configuracaoAnterior?.ativo },
+      { ativo: body.ativo },
+      usuario.id,
+    );
+
+    return result;
   }
 
   /**

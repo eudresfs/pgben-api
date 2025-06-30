@@ -10,7 +10,7 @@ export interface RedisConfig {
   password?: string;
   db: number;
   retryDelayOnFailover: number;
-  maxRetriesPerRequest: number;
+  // Removido maxRetriesPerRequest para compatibilidade com Bull
   lazyConnect: boolean;
   keepAlive: number;
   family: number;
@@ -28,7 +28,7 @@ export const createRedisInstance = (configService: ConfigService): Redis => {
     port: configService.get<number>('REDIS_PORT', 6379),
     db: configService.get<number>('REDIS_DB', 0),
     retryDelayOnFailover: 100,
-    maxRetriesPerRequest: 3,
+    // Removido maxRetriesPerRequest para compatibilidade com Bull
     lazyConnect: true,
     keepAlive: 30000,
     family: 4,
@@ -85,7 +85,7 @@ export const getRedisConfig = (configService: ConfigService) => {
         ...baseConfig,
         db: 0,
         retryDelayOnFailover: 100,
-        maxRetriesPerRequest: 3,
+        // Removido maxRetriesPerRequest para compatibilidade com Bull
         lazyConnect: true,
         keepAlive: 30000,
         connectTimeout: 10000,
@@ -97,7 +97,7 @@ export const getRedisConfig = (configService: ConfigService) => {
         ...baseConfig,
         db: 1,
         retryDelayOnFailover: 50,
-        maxRetriesPerRequest: 1,
+        // Removido maxRetriesPerRequest para compatibilidade com Bull
         lazyConnect: false,
         keepAlive: 1000,
       };
@@ -107,7 +107,7 @@ export const getRedisConfig = (configService: ConfigService) => {
         ...baseConfig,
         db: 0,
         retryDelayOnFailover: 100,
-        maxRetriesPerRequest: 3,
+        // Removido maxRetriesPerRequest para compatibilidade com Bull
         lazyConnect: true,
         keepAlive: 30000,
       };

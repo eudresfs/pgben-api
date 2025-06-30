@@ -161,10 +161,6 @@ export class SseStructuredLoggingService {
         },
       } : undefined,
     });
-
-    this.logger.log('SseStructuredLoggingService inicializado', {
-      config: this.config,
-    });
   }
 
   /**

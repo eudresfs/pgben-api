@@ -8,7 +8,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, SelectQueryBuilder, Between, In } from 'typeorm';
-import { LogAuditoria } from '../../entities/log-auditoria.entity';
+import { LogAuditoria } from '../../../../entities/log-auditoria.entity';
 import { RiskLevel } from '../../events/types/audit-event.types';
 
 /**

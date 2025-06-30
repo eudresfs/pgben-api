@@ -148,7 +148,6 @@ export class AuditoriaService {
       order: { created_at: 'DESC' },
       skip,
       take,
-      relations: ['usuario'],
     };
 
     // Buscar logs e contar total
@@ -174,7 +173,6 @@ export class AuditoriaService {
   async findOne(id: string): Promise<LogAuditoria | null> {
     return this.logAuditoriaRepository.findOne({
       where: { id },
-      relations: ['usuario'],
     });
   }
 
@@ -194,7 +192,6 @@ export class AuditoriaService {
         entidade_id: entidadeId,
       },
       order: { created_at: 'DESC' },
-      relations: ['usuario'],
     });
   }
 
@@ -295,7 +292,6 @@ export class AuditoriaService {
         created_at: Between(dataInicial, dataFinal),
         dados_sensiveis_acessados: Not(IsNull()),
       },
-      relations: ['usuario'],
       order: { created_at: 'DESC' },
     });
 

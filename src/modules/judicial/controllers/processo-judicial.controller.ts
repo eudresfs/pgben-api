@@ -29,6 +29,9 @@ import {
   FindProcessoJudicialFilterDto,
 } from '../dtos/processo-judicial.dto';
 import { PaginatedResult } from '../../../common/interfaces/paginated-result.interface';
+import { AuditEventEmitter } from '../../auditoria/events/emitters/audit-event.emitter';
+import { ReqContext } from '../../../shared/request-context/req-context.decorator';
+import { RequestContext } from '../../../shared/request-context/request-context.dto';
 
 /**
  * Controller para gerenciamento de processos judiciais
@@ -42,6 +45,7 @@ import { PaginatedResult } from '../../../common/interfaces/paginated-result.int
 export class ProcessoJudicialController {
   constructor(
     private readonly processoJudicialService: ProcessoJudicialService,
+    private readonly auditEventEmitter: AuditEventEmitter,
   ) {}
 
   /**
@@ -65,11 +69,25 @@ export class ProcessoJudicialController {
   async create(
     @Body() createProcessoJudicialDto: CreateProcessoJudicialDto,
     @Request() req,
+    @ReqContext() context: RequestContext,
   ): Promise<ProcessoJudicial> {
-    return this.processoJudicialService.create(
+    const resultado = await this.processoJudicialService.create(
       createProcessoJudicialDto,
       req.user.id,
     );
+
+    // Auditoria da criação de processo judicial
+    await this.auditEventEmitter.emitEntityCreated(
+      'ProcessoJudicial',
+      resultado.id,
+      resultado,
+      req.user.id?.toString(),
+      {
+        synchronous: false,
+
+    });
+
+    return resultado;
   }
 
   /**
@@ -170,12 +188,30 @@ export class ProcessoJudicialController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateProcessoJudicialDto: UpdateProcessoJudicialDto,
     @Request() req,
+    @ReqContext() context: RequestContext,
   ): Promise<ProcessoJudicial> {
-    return this.processoJudicialService.update(
+    // Buscar dados do processo antes da atualização
+    const processoAntes = await this.processoJudicialService.findById(id);
+
+    const resultado = await this.processoJudicialService.update(
       id,
       updateProcessoJudicialDto,
       req.user.id,
     );
+
+    // Auditoria da atualização de processo judicial
+    await this.auditEventEmitter.emitEntityUpdated(
+      'ProcessoJudicial',
+      id,
+      processoAntes,
+      resultado,
+      req.user.id?.toString(),
+      {
+        synchronous: false,
+
+    });
+
+    return resultado;
   }
 
   /**
@@ -204,12 +240,31 @@ export class ProcessoJudicialController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateStatusDto: UpdateStatusProcessoJudicialDto,
     @Request() req,
+    @ReqContext() context: RequestContext,
   ): Promise<ProcessoJudicial> {
-    return this.processoJudicialService.updateStatus(
+    // Buscar dados anteriores para auditoria
+    const previousData = await this.processoJudicialService.findById(id);
+    
+    // Atualizar status do processo judicial
+    const result = await this.processoJudicialService.updateStatus(
       id,
       updateStatusDto.status,
       req.user.id,
     );
+    
+    // Emitir evento de auditoria para atualização de status
+    await this.auditEventEmitter.emitEntityUpdated(
+      'ProcessoJudicial',
+      id,
+      previousData,
+      result,
+      req.user.id?.toString(),
+      {
+        synchronous: false,
+
+    });
+    
+    return result;
   }
 
   /**
@@ -233,7 +288,23 @@ export class ProcessoJudicialController {
   async remove(
     @Param('id', ParseUUIDPipe) id: string,
     @Request() req,
+    @ReqContext() context: RequestContext,
   ): Promise<void> {
+    // Buscar dados anteriores para auditoria
+    const previousData = await this.processoJudicialService.findById(id);
+    
+    // Desativar processo judicial
     await this.processoJudicialService.desativar(id, req.user.id);
+    
+    // Emitir evento de auditoria para remoção
+    await this.auditEventEmitter.emitEntityDeleted(
+      'ProcessoJudicial',
+      id,
+      previousData,
+      req.user.id?.toString(),
+      {
+        synchronous: false,
+
+    });
   }
 }

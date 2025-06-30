@@ -50,7 +50,7 @@ export { AuditUtils } from './utils/audit.utils';
 export { AuditoriaModule } from './auditoria.module';
 
 // === ENTIDADES (re-export das entidades existentes) ===
-export { LogAuditoria } from './entities/log-auditoria.entity';
+export { LogAuditoria } from '../../entities/log-auditoria.entity';
 
 // === INTERFACES DE CONFIGURAÇÃO ===
 export interface AuditModuleOptions {

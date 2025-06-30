@@ -13,20 +13,21 @@ import {
   PaginatedAuditResult,
   AuditStatistics,
 } from '../repositories/audit-core.repository';
-import { LogAuditoria } from '../../entities/log-auditoria.entity';
+import { LogAuditoria } from '../../../../entities/log-auditoria.entity';
 import {
   AuditEvent,
   AuditEventType,
   RiskLevel,
   AuditEventConfig,
 } from '../../events/types/audit-event.types';
+import { TipoOperacao } from '../../../../enums/tipo-operacao.enum';
 import { AuditJobData } from '../../queues/jobs/audit-processing.job';
 
 /**
  * Interface para criação de log de auditoria
  */
 export interface CreateAuditLogDto {
-  tipo_operacao: string;
+  tipo_operacao: TipoOperacao;
   entidade_afetada: string;
   entidade_id?: string;
   usuario_id?: string;
@@ -338,7 +339,7 @@ export class AuditCoreService implements OnModuleInit {
    */
   private eventToCreateDto(event: AuditEvent): CreateAuditLogDto {
     const dto: CreateAuditLogDto = {
-      tipo_operacao: event.eventType,
+      tipo_operacao: this.mapEventTypeToTipoOperacao(event.eventType),
       entidade_afetada: event.entityName,
       entidade_id: event.entityId,
       usuario_id: event.userId,
@@ -536,5 +537,31 @@ export class AuditCoreService implements OnModuleInit {
       hash = hash & hash; // Convert to 32bit integer
     }
     return Math.abs(hash).toString(16);
+  }
+
+  /**
+   * Mapeia o tipo de evento para o tipo de operação
+   */
+  private mapEventTypeToTipoOperacao(eventType: AuditEventType): TipoOperacao {
+    switch (eventType) {
+      case AuditEventType.ENTITY_CREATED:
+        return TipoOperacao.CREATE;
+      case AuditEventType.ENTITY_UPDATED:
+        return TipoOperacao.UPDATE;
+      case AuditEventType.ENTITY_DELETED:
+        return TipoOperacao.DELETE;
+      case AuditEventType.ENTITY_ACCESSED:
+        return TipoOperacao.READ;
+      case AuditEventType.SENSITIVE_DATA_ACCESSED:
+        return TipoOperacao.ACCESS;
+      case AuditEventType.SENSITIVE_DATA_EXPORTED:
+        return TipoOperacao.EXPORT;
+      case AuditEventType.SYSTEM_ERROR:
+      case AuditEventType.SYSTEM_WARNING:
+      case AuditEventType.SYSTEM_INFO:
+        return TipoOperacao.ACCESS;
+      default:
+        return TipoOperacao.ACCESS;
+    }
   }
 }

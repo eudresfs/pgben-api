@@ -118,7 +118,7 @@ export class ValidacaoBeneficioService {
       .innerJoin('solicitacao.tipo_beneficio', 'tipo_beneficio')
       .where('solicitacao.beneficiario_id = :beneficiarioId', { beneficiarioId })
       .andWhere('tipo_beneficio.id = :tipoBeneficioId', { tipoBeneficioId })
-      .andWhere('concessao.status != :encerradaStatus', { encerradaStatus: StatusConcessao.ENCERRADA })
+      .andWhere('concessao.status != :encerradaStatus', { encerradaStatus: StatusConcessao.CESSADO })
       .getMany();
 
     if (concessoes.length > 0) {
@@ -130,7 +130,7 @@ export class ValidacaoBeneficioService {
 
   /**
    * Valida período de carência para nova solicitação
-   * - Após a 2ª concessão ENCERRADA, o beneficiário deve aguardar 12 meses
+   * - Após a 2ª concessão CESSADO, o beneficiário deve aguardar 12 meses
    * - Aplica-se apenas a benefícios com periodicidade diferente de 'unico'
    * 
    * @param beneficiarioId ID do beneficiário
@@ -155,7 +155,7 @@ export class ValidacaoBeneficioService {
       .innerJoin('solicitacao.tipo_beneficio', 'tipo_beneficio')
       .where('solicitacao.beneficiario_id = :beneficiarioId', { beneficiarioId })
       .andWhere('tipo_beneficio.id = :tipoBeneficioId', { tipoBeneficioId })
-      .andWhere('concessao.status = :encerradaStatus', { encerradaStatus: StatusConcessao.ENCERRADA })
+      .andWhere('concessao.status = :encerradaStatus', { encerradaStatus: StatusConcessao.CESSADO })
       .andWhere('concessao.data_encerramento IS NOT NULL')
       .orderBy('concessao.data_encerramento', 'DESC')
       .getMany();

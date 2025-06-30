@@ -39,7 +39,6 @@ import { EnderecoController } from './controllers/endereco.controller';
 import { EnderecoService } from './services/endereco.service';
 import { AuthModule } from '../../auth/auth.module';
 import { NotificacaoModule } from '../notificacao/notificacao.module';
-import { AuditEventsModule } from '../auditoria';
 
 /**
  * Módulo de cidadãos
@@ -64,7 +63,6 @@ import { AuditEventsModule } from '../auditoria';
     CacheModule,
     AuthModule,
     NotificacaoModule,
-    AuditEventsModule,
   ],
   controllers: [
     CidadaoController,

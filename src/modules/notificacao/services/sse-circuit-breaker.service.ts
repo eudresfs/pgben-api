@@ -70,10 +70,6 @@ export class SseCircuitBreakerService {
       capacity: this.configService.get<number>('SSE_CIRCUIT_BREAKER_CAPACITY', 10),
       bucketSpan: this.configService.get<number>('SSE_CIRCUIT_BREAKER_BUCKET_SPAN', 30000),
     };
-
-    this.logger.log('SseCircuitBreakerService inicializado com configuração padrão', {
-      config: this.defaultConfig,
-    });
   }
 
   /**
@@ -102,10 +98,10 @@ export class SseCircuitBreakerService {
 
     this.circuitBreakers.set(name, breaker);
     
-    this.logger.log(`Circuit breaker '${name}' criado`, {
+    /* this.logger.log(`Circuit breaker '${name}' criado`, {
       config: finalConfig,
       hasFallback: !!fallback,
-    });
+    }); */
 
     return breaker;
   }

@@ -15,20 +15,6 @@ import { AuditCoreModule } from '../core/audit-core.module';
 
 @Module({
   imports: [
-    // BullMQ para processamento assíncrono
-    BullModule.registerQueue({
-      name: 'auditoria',
-      defaultJobOptions: {
-        removeOnComplete: 100,
-        removeOnFail: 50,
-        attempts: 3,
-        backoff: {
-          type: 'exponential',
-          delay: 2000,
-        },
-      },
-    }),
-    
     // Módulo core para persistência
     AuditCoreModule,
   ],

@@ -9,7 +9,7 @@ import { AppService } from './app.service';
 import { MonitoringModule } from './shared/monitoring/monitoring.module';
 import { AuthModule } from './auth/auth.module';
 import { PermissionSharedModule } from './shared/permission/permission-shared.module';
-import { AuditoriaSharedModule } from './shared/auditoria/auditoria-shared.module';
+import { AuditoriaModule } from './modules/auditoria/auditoria.module';
 import { UsuarioModule } from './modules/usuario/usuario.module';
 import { UnidadeModule } from './modules/unidade/unidade.module';
 import { CidadaoModule } from './modules/cidadao/cidadao.module';
@@ -104,8 +104,10 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
     // Módulos compartilhados
     EmailModule, 
     PermissionSharedModule,
-    AuditoriaSharedModule,
     LoggingModule,
+    
+    // Módulo de auditoria consolidado
+    AuditoriaModule,
     // ResilienceModule, // Temporariamente desabilitado - depende do Redis
 
     // Módulo de autenticação

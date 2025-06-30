@@ -1,5 +1,5 @@
 import { Process, Processor } from '@nestjs/bull';
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { Job } from 'bull';
 import { PagamentoCreateDto } from '../dtos/pagamento-create.dto';
 import { CancelarPagamentoDto } from '../dtos/cancelar-pagamento.dto';
@@ -15,7 +15,7 @@ import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
  */
 @Injectable()
 @Processor('pagamentos')
-export class PagamentoQueueProcessor {
+export class PagamentoQueueProcessor implements OnModuleDestroy {
   private readonly logger = new Logger(PagamentoQueueProcessor.name);
 
   constructor(
@@ -245,6 +245,22 @@ export class PagamentoQueueProcessor {
     } catch (error) {
       this.logger.error(`Erro ao processar validação de comprovante: ${error.message}`, error.stack);
       throw error;
+    }
+  }
+
+  /**
+   * Cleanup quando o módulo é destruído
+   */
+  async onModuleDestroy(): Promise<void> {
+    this.logger.log('Finalizando processador de pagamentos...');
+    
+    try {
+      // Aguardar um pouco para jobs em andamento
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      this.logger.log('Processador de pagamentos finalizado com sucesso');
+    } catch (error) {
+      this.logger.error('Erro ao finalizar processador de pagamentos:', error);
     }
   }
 }

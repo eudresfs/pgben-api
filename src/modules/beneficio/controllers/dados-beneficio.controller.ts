@@ -25,6 +25,9 @@ import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../auth/guards/roles.guard';
 import { GetUser } from '../../../auth/decorators/get-user.decorator';
 import { Usuario } from '../../../entities/usuario.entity';
+import { AuditEventEmitter } from '../../auditoria/events/emitters/audit-event.emitter';
+import { AuditEventType } from '../../auditoria/events/types/audit-event.types';
+import { ReqContext } from '../../../shared/request-context/req-context.decorator';
 import { DadosBeneficioFactoryService } from '../services/dados-beneficio-factory.service';
 import {
   TipoDadosBeneficio,
@@ -67,6 +70,7 @@ import {
 export class DadosBeneficioController {
   constructor(
     private readonly dadosBeneficioFactoryService: DadosBeneficioFactoryService,
+    private readonly auditEventEmitter: AuditEventEmitter,
   ) {}
 
   /**
@@ -301,13 +305,28 @@ export class DadosBeneficioController {
     @Param('codigoOrId') codigoOrId: string,
     @Body() createDto: ICreateDadosBeneficioDto,
     @GetUser() usuario: Usuario,
+    @ReqContext() ctx: any,
   ): Promise<IDadosBeneficio> {
-    return this.dadosBeneficioFactoryService.create(
+    const result = await this.dadosBeneficioFactoryService.create(
       codigoOrId, 
       {
         ...createDto,
         usuario_id: usuario.id
       });
+
+    // Auditoria: Criação de dados específicos de benefício
+    await this.auditEventEmitter.emitEntityCreated(
+      'DadosBeneficio',
+      result.id,
+      {
+        tipoBeneficio: codigoOrId,
+        solicitacaoId: createDto.solicitacao_id,
+        dadosEspecificos: createDto,
+      },
+      usuario.id,
+    );
+
+    return result;
   }
 
   /**
@@ -684,8 +703,27 @@ export class DadosBeneficioController {
     @Param('codigoOrId') codigoOrId: string,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDto: IUpdateDadosBeneficioDto,
+    @GetUser() usuario: Usuario,
+    @ReqContext() ctx: any,
   ): Promise<IDadosBeneficio> {
-    return this.dadosBeneficioFactoryService.update(codigoOrId, id, updateDto);
+    // Buscar estado anterior para auditoria
+    const dadosAnteriores = await this.dadosBeneficioFactoryService.findOne(codigoOrId, id);
+    
+    const result = await this.dadosBeneficioFactoryService.update(codigoOrId, id, updateDto);
+
+    // Auditoria: Atualização de dados específicos de benefício
+    await this.auditEventEmitter.emitEntityUpdated(
+      'DadosBeneficio',
+      id,
+      dadosAnteriores,
+      {
+        tipoBeneficio: codigoOrId,
+        ...updateDto,
+      },
+      usuario.id,
+    );
+
+    return result;
   }
 
   /**
@@ -717,8 +755,24 @@ export class DadosBeneficioController {
   async remove(
     @Param('codigoOrId') codigoOrId: string,
     @Param('id', ParseUUIDPipe) id: string,
+    @GetUser() usuario: Usuario,
+    @ReqContext() ctx: any,
   ): Promise<void> {
-    return this.dadosBeneficioFactoryService.remove(codigoOrId, id);
+    // Buscar dados antes da exclusão para auditoria
+    const dadosExcluidos = await this.dadosBeneficioFactoryService.findOne(codigoOrId, id);
+    
+    await this.dadosBeneficioFactoryService.remove(codigoOrId, id);
+
+    // Auditoria: Exclusão de dados específicos de benefício
+    await this.auditEventEmitter.emitEntityDeleted(
+      'DadosBeneficio',
+      id,
+      {
+        tipoBeneficio: codigoOrId,
+        ...dadosExcluidos,
+      },
+      usuario.id,
+    );
   }
 
   /**

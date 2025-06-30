@@ -29,7 +29,31 @@ export class NotificationEmailListener {
 
       // Verificar se há template configurado
       if (!n.template) {
-        this.logger.warn(`Notificação ${n.id} não possui template configurado`);
+        this.logger.debug(`Notificação ${n.id} não possui template configurado, usando template padrão`);
+        
+        // Usar template padrão para notificações sem template específico
+         const mensagemPadrao = n.dados_contexto?.mensagem || n.dados_contexto?.titulo || 'Você tem uma nova notificação.';
+         const templatePadrao = {
+           codigo: 'default',
+           assunto: 'Nova Notificação',
+           corpo: mensagemPadrao,
+           corpo_html: `<p>${mensagemPadrao}</p>`,
+           canais_disponiveis: ['email']
+         };
+        
+        await this.emailService.sendEmail({
+          to: usuario.email,
+          subject: templatePadrao.assunto,
+          html: templatePadrao.corpo_html,
+          text: templatePadrao.corpo,
+          context: {
+            ...n.dados_contexto,
+            nome_tecnico: usuario.nome,
+            email_tecnico: usuario.email,
+          },
+        });
+        
+        this.logger.log(`E-mail com template padrão enviado para ${usuario.email} (usuário: ${n.destinatario_id})`);
         return;
       }
 

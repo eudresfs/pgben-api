@@ -6,6 +6,7 @@ import { UsuarioRepository } from './repositories/usuario.repository';
 import { AuthModule } from '../../auth/auth.module';
 import { EmailModule } from '../../common/email.module';
 import { Usuario, Role, NotificationTemplate } from '../../entities';
+import { AuditoriaSharedModule } from '../../shared/auditoria/auditoria-shared.module';
 
 /**
  * Módulo de usuários
@@ -18,6 +19,7 @@ import { Usuario, Role, NotificationTemplate } from '../../entities';
     TypeOrmModule.forFeature([Usuario, Role, NotificationTemplate]),
     forwardRef(() => AuthModule),
     EmailModule,
+    AuditoriaSharedModule,
   ],
   controllers: [UsuarioController],
   providers: [UsuarioService, UsuarioRepository],

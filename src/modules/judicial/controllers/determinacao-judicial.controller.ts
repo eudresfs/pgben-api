@@ -29,6 +29,9 @@ import {
   CreateDeterminacaoJudicialDto,
   UpdateDeterminacaoJudicialDto,
 } from '../dtos/determinacao-judicial.dto';
+import { AuditEventEmitter } from '../../auditoria/events/emitters/audit-event.emitter';
+import { ReqContext } from '../../../shared/request-context/req-context.decorator';
+import { RequestContext } from '../../../shared/request-context/request-context.dto';
 
 /**
  * DTO para marcar determinação como cumprida
@@ -50,6 +53,7 @@ class CumprimentoDeterminacaoDto {
 export class DeterminacaoJudicialController {
   constructor(
     private readonly determinacaoJudicialService: DeterminacaoJudicialConsolidadoService,
+    private readonly auditEventEmitter: AuditEventEmitter,
   ) {}
 
   /**
@@ -59,7 +63,7 @@ export class DeterminacaoJudicialController {
    * @returns Determinação criada
    */
   @Post()
-  @RequiresPermission({ permissionName: 'judicial.criar-determinacao' })
+  @RequiresPermission({ permissionName: 'judicial.criar.determinacao' })
   @ApiOperation({
     summary: 'Cria uma nova determinação judicial',
     description:
@@ -73,11 +77,25 @@ export class DeterminacaoJudicialController {
   async create(
     @Body() createDeterminacaoDto: CreateDeterminacaoJudicialDto,
     @Req() req: any,
+    @ReqContext() context: RequestContext,
   ): Promise<DeterminacaoJudicial> {
-    return this.determinacaoJudicialService.create(
+    const resultado = await this.determinacaoJudicialService.create(
       createDeterminacaoDto,
       req.user.id,
     );
+
+    // Auditoria da criação de determinação judicial
+    await this.auditEventEmitter.emitEntityCreated(
+      'DeterminacaoJudicial',
+      resultado.id,
+      resultado,
+      req.user.id?.toString(),
+      {
+        synchronous: false,
+
+    });
+
+    return resultado;
   }
 
   /**
@@ -99,9 +117,9 @@ export class DeterminacaoJudicialController {
   async findAll(
     @Query('page') page?: number,
     @Query('limit') limit?: number,
-    @Query('processoJudicialId') processoJudicialId?: string,
-    @Query('solicitacaoId') solicitacaoId?: string,
-    @Query('cidadaoId') cidadaoId?: string,
+    @Query('processo_judicial_id') processoJudicialId?: string,
+    @Query('solicitacao_id') solicitacaoId?: string,
+    @Query('cidadao_id') cidadaoId?: string,
     @Query('tipo') tipo?: string,
     @Query('cumprida') cumprida?: boolean,
     @Query('termo') termo?: string,
@@ -170,7 +188,7 @@ export class DeterminacaoJudicialController {
    * @param includeInactive Se deve incluir determinações inativas
    * @returns Lista de determinações
    */
-  @Get('cidadao/:cidadaoId')
+  @Get('cidadao/:cidadao_id')
   @RequiresPermission({ permissionName: 'judicial.listar-determinacao' })
   @ApiOperation({
     summary: 'Busca determinações por cidadão',
@@ -183,7 +201,7 @@ export class DeterminacaoJudicialController {
     type: [DeterminacaoJudicial],
   })
   async findByCidadao(
-    @Param('cidadaoId') cidadaoId: string,
+    @Param('cidadao_id') cidadaoId: string,
   ): Promise<DeterminacaoJudicial[]> {
     return this.determinacaoJudicialService.findByCidadao(cidadaoId);
   }
@@ -194,7 +212,7 @@ export class DeterminacaoJudicialController {
    * @param includeInactive Se deve incluir determinações inativas
    * @returns Lista de determinações
    */
-  @Get('solicitacao/:solicitacaoId')
+  @Get('solicitacao/:solicitacao_id')
   @RequiresPermission({ permissionName: 'judicial.listar-determinacao' })
   @ApiOperation({
     summary: 'Busca determinações por solicitação',
@@ -207,7 +225,7 @@ export class DeterminacaoJudicialController {
     type: [DeterminacaoJudicial],
   })
   async findBySolicitacao(
-    @Param('solicitacaoId') solicitacaoId: string,
+    @Param('solicitacao_id') solicitacaoId: string,
   ): Promise<DeterminacaoJudicial[]> {
     return this.determinacaoJudicialService.findBySolicitacao(solicitacaoId);
   }
@@ -245,12 +263,30 @@ export class DeterminacaoJudicialController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDeterminacaoDto: UpdateDeterminacaoJudicialDto,
     @Req() req: any,
+    @ReqContext() context: RequestContext,
   ): Promise<DeterminacaoJudicial> {
-    return this.determinacaoJudicialService.update(
+    // Buscar dados da determinação antes da atualização
+    const determinacaoAntes = await this.determinacaoJudicialService.findById(id);
+
+    const resultado = await this.determinacaoJudicialService.update(
       id,
       updateDeterminacaoDto,
       req.user.id,
     );
+
+    // Auditoria da atualização de determinação judicial
+    await this.auditEventEmitter.emitEntityUpdated(
+      'DeterminacaoJudicial',
+      id,
+      determinacaoAntes,
+      resultado,
+      req.user.id?.toString(),
+      {
+        synchronous: false,
+
+    });
+
+    return resultado;
   }
 
   /**
@@ -276,12 +312,30 @@ export class DeterminacaoJudicialController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() body: CumprimentoDeterminacaoDto,
     @Req() req: any,
+    @ReqContext() context: RequestContext,
   ): Promise<DeterminacaoJudicial> {
-    return this.determinacaoJudicialService.marcarComoCumprida(
+    // Buscar dados da determinação antes do cumprimento
+    const determinacaoAntes = await this.determinacaoJudicialService.findById(id);
+
+    const resultado = await this.determinacaoJudicialService.marcarComoCumprida(
       id,
       body.observacao,
       req.user.id,
     );
+
+    // Auditoria do cumprimento de determinação judicial
+    await this.auditEventEmitter.emitEntityUpdated(
+      'DeterminacaoJudicial',
+      id,
+      determinacaoAntes,
+      resultado,
+      req.user.id?.toString(),
+      {
+        synchronous: false,
+
+    });
+
+    return resultado;
   }
 
   @Patch(':id/ativar')
@@ -319,7 +373,25 @@ export class DeterminacaoJudicialController {
     status: 204,
     description: 'Determinação removida com sucesso',
   })
-  async remove(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
-    return this.determinacaoJudicialService.remove(id);
+  async remove(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: any,
+    @ReqContext() context: RequestContext,
+  ): Promise<void> {
+    // Buscar dados da determinação antes da remoção
+    const determinacaoAntes = await this.determinacaoJudicialService.findById(id);
+
+    await this.determinacaoJudicialService.remove(id);
+
+    // Auditoria da remoção de determinação judicial
+    await this.auditEventEmitter.emitEntityDeleted(
+      'DeterminacaoJudicial',
+      id,
+      determinacaoAntes,
+      req.user.id?.toString(),
+      {
+        synchronous: false,
+
+    });
   }
 }
