@@ -69,8 +69,17 @@ export class MetricasColetaService implements OnModuleInit {
       () => this.coletarMetricasDiarias(),
     );
 
-    // Inicializar o serviço de coleta
-    await this.inicializar();
+    // Inicializar o serviço de coleta de forma assíncrona
+    setImmediate(async () => {
+      try {
+        await this.inicializar();
+      } catch (error) {
+        this.logger.error(
+          `Erro durante inicialização do MetricasColetaService: ${error.message}`,
+          error.stack,
+        );
+      }
+    });
   }
 
   /**

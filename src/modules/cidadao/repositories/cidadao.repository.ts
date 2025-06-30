@@ -88,11 +88,6 @@ export class CidadaoRepository {
       query.leftJoinAndSelect('cidadao.unidade', 'unidade');
     }
 
-    // Log da query para debug
-    const [sql, params] = query.getQueryAndParameters();
-    console.log('🔍 SQL:', sql);
-    console.log('🔍 Params:', params);
-
     return query
       .orderBy('cidadao.created_at', 'DESC')
       .skip(skip)

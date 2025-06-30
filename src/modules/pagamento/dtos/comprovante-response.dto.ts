@@ -1,22 +1,17 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { ComprovanteBaseDto, ResponsavelUploadInfo } from './base/comprovante-base.dto';
 
 /**
  * DTO para resposta contendo dados de um comprovante de pagamento
  *
  * Este DTO define a estrutura de dados retornada pela API ao consultar
- * informações sobre um comprovante específico.
+ * informações sobre um comprovante específico. Estende ComprovanteBaseDto
+ * para reutilizar campos comuns.
  *
  * @author Equipe PGBen
  */
-export class ComprovanteResponseDto {
-  /**
-   * Identificador único do comprovante
-   */
-  @ApiProperty({
-    description: 'ID único do comprovante',
-    example: 'uuid',
-  })
-  id: string;
+export class ComprovanteResponseDto extends ComprovanteBaseDto {
+  // Campo 'id' herdado de ComprovanteBaseDto
 
   /**
    * Referência ao pagamento relacionado a este comprovante
@@ -91,26 +86,7 @@ export class ComprovanteResponseDto {
       nome: 'string',
     },
   })
-  responsavelUpload: {
-    id: string;
-    nome: string;
-  };
+  responsavelUpload: ResponsavelUploadInfo;
 
-  /**
-   * Data de criação do registro
-   */
-  @ApiProperty({
-    description: 'Data de criação do registro',
-    example: 'ISO 8601 date string',
-  })
-  createdAt: Date;
-
-  /**
-   * Data da última atualização do registro
-   */
-  @ApiProperty({
-    description: 'Data da última atualização do registro',
-    example: 'ISO 8601 date string',
-  })
-  updatedAt: Date;
+  // Campos 'createdAt' e 'updatedAt' herdados de ComprovanteBaseDto
 }

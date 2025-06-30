@@ -9,12 +9,12 @@ import {
 import { Observable } from 'rxjs';
 import { tap, catchError } from 'rxjs/operators';
 import { Request, Response } from 'express';
-import { AuditoriaService } from '../../auditoria/services/auditoria.service';
-import { CreateLogAuditoriaDto } from '../../auditoria/dto/create-log-auditoria.dto';
-import { TipoOperacao } from '../../../enums/tipo-operacao.enum';
+import { AuditEventEmitter } from '../../auditoria/events/emitters/audit-event.emitter';
+import { AuditEventType } from '../../auditoria/events/types/audit-event.types';
 import { Reflector } from '@nestjs/core';
 import { AUDITORIA_METADATA_KEY } from '../decorators/auditoria.decorator';
 import { DataMaskingUtil } from '../utils/data-masking.util';
+import { TipoOperacao } from '../../../enums/tipo-operacao.enum';
 
 /**
  * Interface para metadados de auditoria
@@ -46,7 +46,7 @@ export class AuditoriaInterceptor implements NestInterceptor {
   private readonly logger = new Logger(AuditoriaInterceptor.name);
 
   constructor(
-    private readonly auditoriaService: AuditoriaService,
+    private readonly auditEventEmitter: AuditEventEmitter,
     private readonly reflector: Reflector,
   ) {}
 
@@ -222,18 +222,14 @@ export class AuditoriaInterceptor implements NestInterceptor {
       // Extrair ID da entidade da resposta ou parâmetros
       const entidadeId = this.extrairEntidadeId(dadosRequisicao, data);
 
-      // Criar DTO de auditoria
-      const logDto = new CreateLogAuditoriaDto();
-      Object.assign(logDto, {
-        tipo_operacao: operacao,
-        entidade_afetada: entidade,
-        entidade_id: entidadeId,
-        usuario_id: usuario?.id,
-        endpoint: dadosRequisicao.endpoint,
-        metodo_http: dadosRequisicao.metodo,
-        ip_origem: dadosRequisicao.ip,
-        user_agent: dadosRequisicao.userAgent,
-        descricao: this.gerarDescricao({
+      // Registrar na auditoria usando o novo AuditEventEmitter
+      const auditData = {
+        entityName: entidade,
+        entityId: entidadeId,
+        userId: usuario?.id,
+        previousData: dadosAnteriores,
+        newData: dadosNovos,
+        description: this.gerarDescricao({
           operacao,
           entidade,
           descricao,
@@ -241,31 +237,71 @@ export class AuditoriaInterceptor implements NestInterceptor {
           error,
           tempoExecucao,
         }),
-        dados_anteriores: dadosAnteriores,
-        dados_novos: dadosNovos,
-        status_http: response.statusCode,
-        tempo_execucao: tempoExecucao,
-        sucesso,
-        detalhes_erro: error ? {
-          message: error.message,
-          stack: error.stack?.split('\n').slice(0, 5).join('\n'), // Limitar stack trace
-          name: error.name,
-        } : null,
-        metadados: {
+        riskLevel: this.determinarNivelRisco(operacao, entidade, error),
+        sensitiveFields: this.identificarCamposSensiveis(dadosNovos),
+        metadata: {
           modulo: 'pagamento',
           controller: dadosRequisicao.endpoint,
+          endpoint: dadosRequisicao.endpoint,
+          metodo_http: dadosRequisicao.metodo,
+          ip_origem: dadosRequisicao.ip,
+          user_agent: dadosRequisicao.userAgent,
           query: dadosRequisicao.query,
           params: dadosRequisicao.params,
+          status_http: response.statusCode,
+          tempo_execucao: tempoExecucao,
+          sucesso,
+          detalhes_erro: error ? {
+            message: error.message,
+            stack: error.stack?.split('\n').slice(0, 5).join('\n'),
+            name: error.name,
+          } : null,
           usuario: {
             email: usuario?.email,
             perfil: usuario?.perfil,
             unidadeId: usuario?.unidadeId,
           },
         },
-      });
+      };
 
-      // Registrar na auditoria
-      await this.auditoriaService.create(logDto);
+      // Emitir evento baseado no tipo de operação
+      switch (operacao) {
+        case TipoOperacao.CREATE:
+          await this.auditEventEmitter.emitEntityCreated(
+            auditData.entityName,
+            auditData.entityId,
+            auditData.newData || {},
+            auditData.userId
+          );
+          break;
+        case TipoOperacao.UPDATE:
+          await this.auditEventEmitter.emitEntityUpdated(
+            auditData.entityName,
+            auditData.entityId,
+            auditData.previousData || {},
+            auditData.newData || {},
+            auditData.userId
+          );
+          break;
+        case TipoOperacao.DELETE:
+          await this.auditEventEmitter.emitEntityDeleted(
+            auditData.entityName,
+            auditData.entityId,
+            auditData.previousData || {},
+            auditData.userId
+          );
+          break;
+        default:
+          await this.auditEventEmitter.emitSystemEvent(
+            AuditEventType.SYSTEM_INFO,
+            {
+              description: auditData.description || `${operacao} em ${entidade}`,
+              userId: auditData.userId,
+              entityName: auditData.entityName,
+              entityId: auditData.entityId
+            }
+          );
+      }
 
       this.logger.debug(
         `Auditoria registrada: ${operacao} em ${entidade} por usuário ${usuario?.id}`,
@@ -370,9 +406,10 @@ export class AuditoriaInterceptor implements NestInterceptor {
     }
 
     const operacaoTexto = {
-      [TipoOperacao.CREATE]: 'Criação',
-      [TipoOperacao.UPDATE]: 'Atualização',
-      [TipoOperacao.DELETE]: 'Exclusão',
+      'CREATE': 'Criação',
+      'UPDATE': 'Atualização',
+      'DELETE': 'Exclusão',
+      'READ': 'Consulta',
       [TipoOperacao.READ]: 'Consulta',
     }[operacao] || operacao;
 
@@ -386,5 +423,58 @@ export class AuditoriaInterceptor implements NestInterceptor {
     }
 
     return resultado;
+  }
+
+  /**
+   * Determina o nível de risco baseado na operação e contexto
+   */
+  private determinarNivelRisco(operacao: string, entidade: string, error?: any): 'LOW' | 'MEDIUM' | 'HIGH' {
+    // Operações de pagamento são sempre de alto risco
+    if (entidade.toLowerCase().includes('pagamento')) {
+      return 'HIGH';
+    }
+
+    // Operações com erro são de risco médio
+    if (error) {
+      return 'MEDIUM';
+    }
+
+    // Operações de criação e exclusão são de risco médio
+    if (operacao === 'CREATE' || operacao === 'DELETE') {
+      return 'MEDIUM';
+    }
+
+    // Outras operações são de baixo risco
+    return 'LOW';
+  }
+
+  /**
+   * Identifica campos sensíveis nos dados
+   */
+  private identificarCamposSensiveis(dados: any): string[] {
+    if (!dados || typeof dados !== 'object') {
+      return [];
+    }
+
+    const camposSensiveis = [];
+    const chavesComuns = Object.keys(dados);
+
+    // Campos financeiros
+    const camposFinanceiros = ['valor', 'conta_bancaria', 'agencia', 'banco', 'pix'];
+    camposFinanceiros.forEach(campo => {
+      if (chavesComuns.some(key => key.toLowerCase().includes(campo))) {
+        camposSensiveis.push(campo);
+      }
+    });
+
+    // Campos de identificação
+    const camposIdentificacao = ['cpf', 'cnpj', 'rg', 'documento'];
+    camposIdentificacao.forEach(campo => {
+      if (chavesComuns.some(key => key.toLowerCase().includes(campo))) {
+        camposSensiveis.push(campo);
+      }
+    });
+
+    return camposSensiveis;
   }
 }

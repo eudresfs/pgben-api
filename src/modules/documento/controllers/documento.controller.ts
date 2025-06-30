@@ -37,6 +37,9 @@ import { PermissionGuard } from '../../../auth/guards/permission.guard';
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
 import { GetUser } from '../../../auth/decorators/get-user.decorator';
 import { Usuario } from '../../../entities/usuario.entity';
+import { AuditEventEmitter } from '../../auditoria/events/emitters/audit-event.emitter';
+import { ReqContext } from '../../../shared/request-context/req-context.decorator';
+import { RequestContext } from '../../../shared/request-context/request-context.dto';
 
 /**
  * Controlador de Documentos
@@ -49,7 +52,10 @@ import { Usuario } from '../../../entities/usuario.entity';
 @UseGuards(JwtAuthGuard, PermissionGuard)
 @ApiBearerAuth()
 export class DocumentoController {
-  constructor(private readonly documentoService: DocumentoService) {}
+  constructor(
+    private readonly documentoService: DocumentoService,
+    private readonly auditEventEmitter: AuditEventEmitter,
+  ) {}
 
   /**
    * Lista documentos de um cidadão
@@ -182,8 +188,22 @@ export class DocumentoController {
     type: 'string',
     format: 'uuid',
   })
-  async download(@Param('id', ParseUUIDPipe) id: string, @Res() res: Response) {
+  async download(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Res() res: Response,
+    @ReqContext() context: RequestContext,
+  ) {
     const resultado = await this.documentoService.download(id);
+
+    // Auditoria do download de documento
+    await this.auditEventEmitter.emitEntityAccessed(
+      'Documento',
+      id,
+      context.user?.id?.toString(),
+      {
+        synchronous: false,
+      },
+    );
 
     res.set({
       'Content-Type': resultado.mimetype,
@@ -216,6 +236,7 @@ export class DocumentoController {
     @UploadedFile() arquivo: any,
     @Body() uploadDto: UploadDocumentoDto,
     @GetUser() usuario: Usuario,
+    @ReqContext() context: RequestContext,
   ) {
     if (!arquivo) {
       throw new BadRequestException('Arquivo é obrigatório');
@@ -225,6 +246,17 @@ export class DocumentoController {
       arquivo,
       uploadDto,
       usuario.id,
+    );
+
+    // Auditoria do upload de documento
+    await this.auditEventEmitter.emitEntityCreated(
+      'Documento',
+      resultado.id,
+      resultado,
+      usuario.id?.toString(),
+      {
+        synchronous: false,
+      },
     );
 
     // Transformar o resultado para excluir dados sensíveis
@@ -269,8 +301,26 @@ export class DocumentoController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body('observacoes') observacoes: string,
     @GetUser() usuario: Usuario,
+    @ReqContext() context: RequestContext,
   ) {
-    return this.documentoService.verificar(id, usuario.id, observacoes);
+    // Buscar dados do documento antes da verificação
+    const documentoAntes = await this.documentoService.findById(id);
+    
+    const resultado = await this.documentoService.verificar(id, usuario.id, observacoes);
+    
+    // Auditoria de verificação
+    await this.auditEventEmitter.emitEntityUpdated(
+      'Documento',
+      id,
+      documentoAntes,
+      resultado,
+      usuario.id?.toString(),
+      {
+        synchronous: false,
+      },
+    );
+    
+    return resultado;
   }
 
   /**
@@ -288,8 +338,26 @@ export class DocumentoController {
     type: 'string',
     format: 'uuid',
   })
-  async remover(@Param('id', ParseUUIDPipe) id: string, @Request() req: any) {
+  async remover(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Request() req: any,
+    @ReqContext() context: RequestContext,
+  ) {
+    // Buscar dados do documento antes da remoção
+    const documentoAntes = await this.documentoService.findById(id);
+    
     await this.documentoService.remover(id, req.user.id);
+    
+    // Auditoria da remoção de documento
+    await this.auditEventEmitter.emitEntityDeleted(
+      'Documento',
+      id,
+      documentoAntes,
+      req.user.id?.toString(),
+      {
+        synchronous: false,
+      },
+    );
   }
 
   /**

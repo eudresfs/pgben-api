@@ -44,6 +44,8 @@ import {
   ThrottleCritical,
 } from '../../common/decorators/throttle.decorator';
 import { LoggingInterceptor } from '../../common/interceptors/logging.interceptor';
+import { AuditEventEmitter } from '../../modules/auditoria/events/emitters/audit-event.emitter';
+import { AuditEventType } from '../../modules/auditoria/events/types/audit-event.types';
 
 /**
  * Controller de Blacklist de Tokens JWT
@@ -56,7 +58,10 @@ import { LoggingInterceptor } from '../../common/interceptors/logging.intercepto
 @UseInterceptors(LoggingInterceptor)
 @ApiBearerAuth()
 export class JwtBlacklistController {
-  constructor(private readonly jwtBlacklistService: JwtBlacklistService) {}
+  constructor(
+    private readonly jwtBlacklistService: JwtBlacklistService,
+    private readonly auditEmitter: AuditEventEmitter,
+  ) {}
 
   /**
    * Adiciona um token à blacklist
@@ -475,6 +480,23 @@ export class JwtBlacklistController {
       },
     };
 
+    // ✅ Auditoria de logout
+    await this.auditEmitter.emitSecurityEvent(
+      AuditEventType.LOGOUT,
+      user.id,
+      {
+        operation: 'logout',
+        riskLevel: 'low',
+        username: user.email,
+        logoutType: 'single_session',
+        clientIp,
+        userAgent,
+        sessionEnd: new Date(),
+        userInitiated: true,
+        tokensInvalidated: 1,
+      }
+    );
+
     return this.jwtBlacklistService.addToBlacklist(addToBlacklistDto);
   }
 
@@ -566,6 +588,23 @@ export class JwtBlacklistController {
 
     // Obter tokens ativos do usuário (simulação - implemente conforme sua lógica)
     const activeTokens = []; // Substitua por sua lógica para obter tokens ativos
+
+    // ✅ Auditoria de logout global
+    await this.auditEmitter.emitSecurityEvent(
+      AuditEventType.LOGOUT,
+      user.id,
+      {
+        operation: 'logout_all',
+        riskLevel: 'medium',
+        username: user.email,
+        logoutType: 'all_sessions',
+        clientIp,
+        userAgent,
+        sessionEnd: new Date(),
+        userInitiated: true,
+        tokensInvalidated: activeTokens.length,
+      }
+    );
 
     const result = await this.jwtBlacklistService.invalidateUserTokens(
       invalidateDto,

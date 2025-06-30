@@ -17,7 +17,7 @@ import { QrCodeService } from './services/qr-code.service';
 // Módulos externos necessários
 import { DocumentoModule } from '../documento/documento.module';
 import { AuthModule } from '../../auth/auth.module';
-import { AuditoriaModule } from '../auditoria/auditoria.module';
+
 import { NotificacaoModule } from '../notificacao/notificacao.module';
 import { SharedModule } from '../../shared/shared.module';
 
@@ -43,7 +43,7 @@ import { SharedModule } from '../../shared/shared.module';
     // Módulos necessários
     DocumentoModule,
     forwardRef(() => AuthModule),
-    forwardRef(() => AuditoriaModule),
+
     NotificacaoModule,
     SharedModule,
   ],

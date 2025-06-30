@@ -143,10 +143,6 @@ export class SseErrorBoundaryService {
       enableLogThrottling: this.configService.get<boolean>('SSE_ERROR_LOG_THROTTLING', true),
       enableErrorMetrics: this.configService.get<boolean>('SSE_ERROR_METRICS', true),
     };
-
-    this.logger.log('SseErrorBoundaryService inicializado', {
-      config: this.config,
-    });
   }
 
   /**

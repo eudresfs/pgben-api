@@ -1,148 +1,168 @@
-import {
-  Global,
-  Module,
-  NestModule,
-  MiddlewareConsumer,
-  RequestMethod,
-  Logger,
-  forwardRef,
-} from '@nestjs/common';
+/**
+ * AuditoriaModule
+ * 
+ * Módulo principal de auditoria consolidado.
+ * Integra todos os componentes necessários para o sistema de auditoria:
+ * - Core services e repositories
+ * - Event emitters e listeners
+ * - Queue processors e jobs
+ * - Controllers e middleware
+ */
+
+import { Module, OnModuleInit } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { BullModule } from '@nestjs/bull';
-import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { JwtModule } from '@nestjs/jwt';
+import { EventEmitterModule } from '@nestjs/event-emitter';
+
+// Entities
+import { LogAuditoria } from '../../entities/log-auditoria.entity';
+
+// Guards Module (separado para evitar dependência circular)
+import { AuthGuardsModule } from '../../shared/guards/auth-guards.module';
 import { ScheduleAdapterModule } from '../../shared/schedule/schedule-adapter.module';
-import { AuthModule } from '../../auth/auth.module';
 
-// Entidades
-import { LogAuditoria } from '../../entities';
+// Core Components
+import { AuditCoreRepository } from './core/repositories/audit-core.repository';
+import { AuditCoreService } from './core/services/audit-core.service';
 
-// Serviços Core
+// Event Components
+import { AuditEventEmitter } from './events/emitters/audit-event.emitter';
+import { AuditEventListener } from './listeners/audit-event.listener';
+
+// Queue Components
+import { AuditProcessor } from './queues/processors/audit.processor';
+import { AuditProcessingJob } from './queues/jobs/audit-processing.job';
+
+// Legacy Services (mantidos para compatibilidade)
 import { AuditoriaService } from './services/auditoria.service';
-import { AuditoriaQueueService } from './services/auditoria-queue.service';
-import { AuditoriaQueueProcessor } from './services/auditoria-queue.processor';
-
-// Serviços Especializados
 import { AuditoriaSignatureService } from './services/auditoria-signature.service';
+import { AuditoriaQueueService } from './services/auditoria-queue.service';
 import { AuditoriaExportacaoService } from './services/auditoria-exportacao.service';
 import { AuditoriaMonitoramentoService } from './services/auditoria-monitoramento.service';
 
-// Controladores
+// Controllers
 import { AuditoriaController } from './controllers/auditoria.controller';
-import { AuditoriaExportacaoController } from './controllers/auditoria-exportacao.controller';
-import { AuditoriaMonitoramentoController } from './controllers/auditoria-monitoramento.controller';
 
 // Middleware
 import { AuditoriaMiddleware } from './middlewares/auditoria.middleware';
 
-// Repositórios
+// Legacy Repository
 import { LogAuditoriaRepository } from './repositories/log-auditoria.repository';
 
-/**
- * Módulo de Auditoria Unificado
- *
- * Responsável por registrar e gerenciar logs de auditoria do sistema,
- * garantindo a rastreabilidade das operações e compliance com LGPD.
- *
- * Funcionalidades:
- * - Registro automático de operações via middleware e interceptores
- * - Proteção contra tampering usando assinaturas JWT
- * - Compressão de dados para otimização de espaço
- * - Particionamento de tabelas para melhor performance
- * - Exportação de logs em diferentes formatos
- * - Monitoramento de performance e integridade
- * - Processamento assíncrono via filas
- *
- * Este módulo é global e deve ser importado apenas pelo módulo principal (AppModule).
- * Os serviços são exportados para serem usados em qualquer outro módulo sem necessidade de reimportação.
- */
-@Global()
 @Module({
   imports: [
-    // Configuração do TypeORM para entidades do módulo
+    // TypeORM para entidades
     TypeOrmModule.forFeature([LogAuditoria]),
-
-    // Configuração assíncrona do BullModule
+    
+    // EventEmitter para eventos síncronos
+    EventEmitterModule,
+    
+    // BullMQ para processamento assíncrono
     BullModule.registerQueueAsync({
       name: 'auditoria',
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        redis: {
-          host: configService.get<string>('REDIS_HOST', 'localhost'),
-          port: configService.get<number>('REDIS_PORT', 6379),
-        },
-      }),
+      useFactory: async (configService: ConfigService) => {
+        const { getBullConfig } = await import('../../config/bull.config');
+        const bullConfig = getBullConfig(configService);
+        return {
+          redis: bullConfig.redis,
+          defaultJobOptions: {
+            removeOnComplete: 100,
+            removeOnFail: 50,
+            attempts: 3,
+            backoff: {
+              type: 'exponential',
+              delay: 2000,
+            },
+          },
+        };
+      },
       inject: [ConfigService],
     }),
-
-    // Módulo de agendamento de tarefas
-    ScheduleAdapterModule,
-
-    // Módulo de autenticação (para JwtAuthGuard e JwtBlacklistService)
-    forwardRef(() => AuthModule),
-
-    // Configuração assíncrona do JwtModule
+    
+    // JWT para assinatura digital
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
         secret: configService.get<string>('JWT_SECRET'),
-        signOptions: { expiresIn: '1d' },
+        signOptions: { expiresIn: '1h' },
       }),
       inject: [ConfigService],
     }),
+    
+    // Guards Module (sem dependência circular)
+    AuthGuardsModule,
+    ScheduleAdapterModule,
   ],
   controllers: [
     AuditoriaController,
-    AuditoriaExportacaoController,
-    AuditoriaMonitoramentoController,
   ],
   providers: [
-    // Serviços Core
+    // Core Components
+    AuditCoreRepository,
+    AuditCoreService,
+    
+    // Event Components
+    AuditEventEmitter,
+    AuditEventListener,
+    
+    // Queue Components
+    AuditProcessor,
+    AuditProcessingJob,
+    
+    // Legacy Services (mantidos para compatibilidade)
     AuditoriaService,
-    AuditoriaQueueService,
-    AuditoriaQueueProcessor,
-
-    // Repositórios
-    LogAuditoriaRepository,
-
-    // Serviços Especializados
     AuditoriaSignatureService,
+    AuditoriaQueueService,
     AuditoriaExportacaoService,
     AuditoriaMonitoramentoService,
+    
+    // Middleware
+    AuditoriaMiddleware,
+    
+    // Legacy Repository
+    LogAuditoriaRepository,
   ],
   exports: [
-    // Exporta os serviços principais para uso em outros módulos
-    TypeOrmModule,
+    // Core Components
+    AuditCoreRepository,
+    AuditCoreService,
+    
+    // Event Components
+    AuditEventEmitter,
+    AuditEventListener,
+    
+    // Queue Components
+    AuditProcessor,
+    AuditProcessingJob,
+    
+    // Legacy Services (para compatibilidade)
     AuditoriaService,
-    AuditoriaQueueService,
-    LogAuditoriaRepository,
     AuditoriaSignatureService,
+    AuditoriaQueueService,
+    AuditoriaExportacaoService,
+    AuditoriaMonitoramentoService,
+    
+    // Middleware
+    AuditoriaMiddleware,
+    
+    // Legacy Repository
+    LogAuditoriaRepository,
   ],
 })
-export class AuditoriaModule implements NestModule {
-  private readonly logger = new Logger(AuditoriaModule.name);
-  /**
-   * Configura o middleware de auditoria para todas as rotas da API
-   * Restaurado com tratamento de erros
-   */
-  configure(consumer: MiddlewareConsumer) {
-    try {
-      consumer
-        .apply(AuditoriaMiddleware)
-        .exclude(
-          { path: 'health', method: RequestMethod.ALL },
-          { path: 'metrics', method: RequestMethod.ALL },
-          { path: 'api-docs', method: RequestMethod.ALL },
-          { path: 'auditoria/monitoramento', method: RequestMethod.ALL }, // Evitar recursão
-        )
-        .forRoutes({ path: '*', method: RequestMethod.ALL });
-
-      this.logger.log('Middleware de auditoria configurado com sucesso');
-    } catch (error) {
-      this.logger.error(
-        `Erro ao configurar middleware de auditoria: ${error.message}`,
-      );
-      // Não propagar erro para não bloquear a inicialização da aplicação
-    }
+export class AuditoriaModule implements OnModuleInit {
+  constructor() {
+    console.log('🚨 AUDITORIA MODULE INICIALIZADO');
+    console.log('🚨 AuditProcessor deve estar registrado agora');
+    console.log('✅ AuditoriaModule inicializado - arquitetura consolidada');
+  }
+  
+  onModuleInit() {
+    console.log('🚨 AUDITORIA MODULE INIT COMPLETO');
+    console.log('🚨 Todos os providers foram inicializados');
+    console.log('🚨 BullModule configurado para fila "auditoria"');
+    console.log('🚨 AuditProcessor pronto para consumir jobs');
   }
 }

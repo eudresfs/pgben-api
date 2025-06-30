@@ -322,7 +322,7 @@ export class MonitoramentoAluguelSocialService {
     const dadosAtualizador = {
       usuario_id: usuario.id,
       nome_usuario: usuario.nome || 'Sistema',
-      data_atualizacao: dataAtualizacao,
+      updated_at: dataAtualizacao,
     };
 
     // Atualizar dados da visita

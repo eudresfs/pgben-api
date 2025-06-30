@@ -7,7 +7,7 @@ import { Pendencia } from '../../../entities/pendencia.entity';
 import { Solicitacao } from '../../../entities/solicitacao.entity';
 import { Usuario } from '../../../entities/usuario.entity';
 import { StatusPendencia } from '../../../entities/pendencia.entity';
-import { AuditoriaService } from '../../auditoria/services/auditoria.service';
+import { AuditEventEmitter } from '../../auditoria/events/emitters/audit-event.emitter';
 import { EventosService } from './eventos.service';
 import { NotificacaoService } from '../../notificacao/services/notificacao.service';
 import { PermissionService } from '../../../auth/services/permission.service';
@@ -20,7 +20,7 @@ describe('PendenciaService', () => {
   let pendenciaRepository: Repository<Pendencia>;
   let solicitacaoRepository: Repository<Solicitacao>;
   let usuarioRepository: Repository<Usuario>;
-  let auditoriaService: AuditoriaService;
+  let auditEventEmitter: AuditEventEmitter;
   let eventosService: EventosService;
   let notificacaoService: NotificacaoService;
   let permissionService: PermissionService;
@@ -40,8 +40,10 @@ describe('PendenciaService', () => {
     findOne: jest.fn(),
   };
 
-  const mockAuditoriaService = {
-    registrarAcao: jest.fn(),
+  const mockAuditEventEmitter = {
+    emitEntityCreated: jest.fn(),
+    emitEntityUpdated: jest.fn(),
+    emitEntityDeleted: jest.fn(),
   };
 
   const mockEventosService = {
@@ -73,8 +75,8 @@ describe('PendenciaService', () => {
           useValue: mockUsuarioRepository,
         },
         {
-          provide: AuditoriaService,
-          useValue: mockAuditoriaService,
+          provide: AuditEventEmitter,
+          useValue: mockAuditEventEmitter,
         },
         {
           provide: EventosService,
@@ -95,7 +97,7 @@ describe('PendenciaService', () => {
     pendenciaRepository = module.get<Repository<Pendencia>>(getRepositoryToken(Pendencia));
     solicitacaoRepository = module.get<Repository<Solicitacao>>(getRepositoryToken(Solicitacao));
     usuarioRepository = module.get<Repository<Usuario>>(getRepositoryToken(Usuario));
-    auditoriaService = module.get<AuditoriaService>(AuditoriaService);
+    auditEventEmitter = module.get<AuditEventEmitter>(AuditEventEmitter);
     eventosService = module.get<EventosService>(EventosService);
     notificacaoService = module.get<NotificacaoService>(NotificacaoService);
     permissionService = module.get<PermissionService>(PermissionService);
@@ -143,7 +145,7 @@ describe('PendenciaService', () => {
         status: StatusPendencia.ABERTA,
       });
       expect(mockPendenciaRepository.save).toHaveBeenCalledWith(pendenciaCriada);
-      expect(mockAuditoriaService.registrarAcao).toHaveBeenCalled();
+      expect(mockAuditEventEmitter.emitEntityCreated).toHaveBeenCalled();
       expect(mockEventosService.emitirEvento).toHaveBeenCalled();
       expect(resultado).toBeDefined();
     });
@@ -205,7 +207,7 @@ describe('PendenciaService', () => {
           data_resolucao: expect.any(Date),
         })
       );
-      expect(mockAuditoriaService.registrarAcao).toHaveBeenCalled();
+      expect(mockAuditEventEmitter.emitEntityUpdated).toHaveBeenCalled();
       expect(mockEventosService.emitirEvento).toHaveBeenCalled();
       expect(resultado).toBeDefined();
     });

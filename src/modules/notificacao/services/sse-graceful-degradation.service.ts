@@ -234,7 +234,7 @@ export class SseGracefulDegradationService {
 
     this.loggingService.logConnection(LogLevel.INFO, 'SseGracefulDegradationService inicializado', {
       component: 'graceful-degradation',
-      metadata: { config: this.config },
+      /* metadata: { config: this.config }, */
     });
   }
 

@@ -6,163 +6,189 @@ import {
   ParseUUIDPipe,
   Post,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../../../auth/guards/permission.guard';
 import { TipoEscopo } from '../../../entities/user-permission.entity';
+import { GetUser } from '../../../auth/decorators/get-user.decorator';
+import { Usuario } from '../../../entities';
 import { ConfirmacaoService } from '../services/confirmacao.service';
 import { ConfirmacaoRecebimentoDto } from '../dtos/confirmacao-recebimento.dto';
+import { DataMaskingResponseInterceptor } from '../interceptors/data-masking-response.interceptor';
 import { ConfirmacaoResponseDto } from '../dtos/confirmacao-response.dto';
-import { NotFoundException } from '@nestjs/common';
-import { GetUser } from '@/auth/decorators/get-user.decorator';
-import { Usuario } from '@/entities';
+import { PagamentoUnifiedMapper as ConfirmacaoMapper } from '../mappers';
 
 /**
  * Controller para gerenciamento de confirmações de recebimento
- *
- * Implementa endpoints para registrar e consultar as confirmações
- * de recebimento de pagamentos pelos beneficiários.
- *
- * @author Equipe PGBen
+ * Implementa endpoints para registrar e consultar confirmações de pagamentos
  */
-@ApiTags('Pagamentos')
+@ApiTags('Pagamentos - Confirmações')
 @Controller('pagamentos/:pagamentoId/confirmacao')
 @UseGuards(JwtAuthGuard, PermissionGuard)
+@UseInterceptors(DataMaskingResponseInterceptor)
 export class ConfirmacaoController {
-  constructor(private readonly confirmacaoService: ConfirmacaoService) {}
+  constructor(
+    private readonly confirmacaoService: ConfirmacaoService,
+  ) {}
 
   /**
-   * Lista confirmações para um determinado pagamento
+   * Lista confirmações de um pagamento
    */
   @Get()
   @ApiOperation({
-    summary: 'Lista confirmações de recebimento para um pagamento',
+    summary: 'Lista confirmações de recebimento de um pagamento',
+    description: 'Retorna todas as confirmações registradas para o pagamento especificado'
   })
   @ApiParam({
     name: 'pagamentoId',
     type: 'string',
+    format: 'uuid',
     description: 'ID do pagamento',
+    example: '123e4567-e89b-12d3-a456-426614174000'
   })
   @ApiResponse({
     status: 200,
-    description: 'Lista de confirmações',
+    description: 'Lista de confirmações retornada com sucesso',
     type: [ConfirmacaoResponseDto],
   })
-  @ApiResponse({ status: 404, description: 'Pagamento não encontrado' })
-  @ApiResponse({ status: 403, description: 'Acesso negado' })
+  @ApiResponse({ 
+    status: 404, 
+    description: 'Pagamento não encontrado',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: false },
+        message: { type: 'string', example: 'Pagamento não encontrado' }
+      }
+    }
+  })
+  @ApiResponse({ 
+    status: 403, 
+    description: 'Acesso negado - Usuário não possui permissão' 
+  })
   @RequiresPermission({
     permissionName: 'pagamento.visualizar',
     scopeType: TipoEscopo.UNIDADE,
     scopeIdExpression: 'params.pagamentoId'
   })
-  async findAll(@Param('pagamentoId', ParseUUIDPipe) pagamentoId: string) {
-    const confirmacoes =
-      await this.confirmacaoService.findByPagamento(pagamentoId);
-
-    // Mapear para DTO de resposta
-    return confirmacoes.map((confirmacao) => ({
-      id: confirmacao.id,
-      pagamentoId: confirmacao.pagamento_id,
-      dataConfirmacao: confirmacao.data_confirmacao,
-      metodoConfirmacao: confirmacao.metodo_confirmacao,
-      responsavel: {
-        id: confirmacao.confirmado_por,
-        nome: 'Responsável Confirmação', // seria obtido da entidade Usuario
-      },
-      destinatario: confirmacao.destinatario_id
-        ? {
-            id: confirmacao.destinatario_id,
-            nome: 'Nome do Destinatário', // seria obtido da entidade Cidadao
-          }
-        : undefined,
-      observacoes: confirmacao.observacoes,
-    }));
-  }
-
-  /**
-   * Obtém uma confirmação específica por ID
-   */
-  @Get(':id')
-  @ApiOperation({ summary: 'Obtém detalhes de uma confirmação específica' })
-  @ApiParam({
-    name: 'pagamentoId',
-    type: 'string',
-    description: 'ID do pagamento',
-  })
-  @ApiParam({ name: 'id', type: 'string', description: 'ID da confirmação' })
-  @ApiResponse({
-    status: 200,
-    description: 'Detalhes da confirmação',
-    type: ConfirmacaoResponseDto,
-  })
-  @ApiResponse({ status: 404, description: 'Confirmação não encontrada' })
-  @ApiResponse({ status: 403, description: 'Acesso negado' })
-  @RequiresPermission({
-    permissionName: 'pagamento.visualizar',
-    scopeType: TipoEscopo.UNIDADE,
-    scopeIdExpression: 'params.id'
-  })
-  async findOne(@Param('id', ParseUUIDPipe) id: string) {
-    const confirmacao = await this.confirmacaoService.findOneWithRelations(id);
-
-    if (!confirmacao) {
-      throw new NotFoundException('Confirmação não encontrada');
-    }
-
-    // Mapear para DTO de resposta
+  async findAll(
+    @Param('pagamentoId', ParseUUIDPipe) pagamentoId: string
+  ) {
+    const confirmacoes = await this.confirmacaoService.findByPagamento(pagamentoId);
+    
     return {
-      id: confirmacao.id,
-      pagamentoId: confirmacao.pagamento_id,
-      dataConfirmacao: confirmacao.data_confirmacao,
-      metodoConfirmacao: confirmacao.metodo_confirmacao,
-      responsavel: {
-        id: confirmacao.confirmado_por,
-        nome: 'Responsável Confirmação', // seria obtido da entidade Usuario
-      },
-      destinatario: confirmacao.destinatario_id
-        ? {
-            id: confirmacao.destinatario_id,
-            nome: 'Nome do Destinatário', // seria obtido da entidade Cidadao
-          }
-        : undefined,
-      pagamento: confirmacao.pagamento
-        ? {
-            id: confirmacao.pagamento.id,
-            valor: confirmacao.pagamento.valor,
-            dataLiberacao: confirmacao.pagamento.dataLiberacao,
-            metodoPagamento: confirmacao.pagamento.metodoPagamento,
-          }
-        : undefined,
-      observacoes: confirmacao.observacoes,
+      success: true,
+      data: ConfirmacaoMapper.confirmacaoToResponseDtoList(confirmacoes),
+      meta: {
+        total: confirmacoes.length,
+        pagamentoId
+      }
     };
   }
 
   /**
-   * Registra uma nova confirmação de recebimento
+   * Obtém detalhes de uma confirmação específica
    */
-  @Post()
-  @ApiOperation({
-    summary: 'Registra uma confirmação de recebimento para um pagamento',
+  @Get(':id')
+  @ApiOperation({ 
+    summary: 'Obtém detalhes de uma confirmação específica',
+    description: 'Retorna informações completas de uma confirmação incluindo dados relacionados'
   })
   @ApiParam({
     name: 'pagamentoId',
     type: 'string',
-    description: 'ID do pagamento',
+    format: 'uuid',
+    description: 'ID do pagamento'
+  })
+  @ApiParam({ 
+    name: 'id', 
+    type: 'string', 
+    format: 'uuid',
+    description: 'ID da confirmação',
+    example: '123e4567-e89b-12d3-a456-426614174000'
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Detalhes da confirmação retornados com sucesso',
+    type: ConfirmacaoResponseDto,
+  })
+  @ApiResponse({ 
+    status: 404, 
+    description: 'Confirmação não encontrada' 
+  })
+  @RequiresPermission({
+    permissionName: 'pagamento.visualizar',
+    scopeType: TipoEscopo.UNIDADE,
+    scopeIdExpression: 'params.pagamentoId'
+  })
+  async findOne(
+    @Param('pagamentoId', ParseUUIDPipe) pagamentoId: string,
+    @Param('id', ParseUUIDPipe) id: string
+  ) {
+    const confirmacao = await this.confirmacaoService.findByIdWithRelations(id);
+    
+    return {
+      success: true,
+      data: ConfirmacaoMapper.confirmacaoToResponseDto(confirmacao),
+      meta: {
+        pagamentoId
+      }
+    };
+  }
+
+  /**
+   * Registra nova confirmação de recebimento
+   */
+  @Post()
+  @ApiOperation({
+    summary: 'Registra confirmação de recebimento',
+    description: 'Cria uma nova confirmação de recebimento para o pagamento especificado'
+  })
+  @ApiParam({
+    name: 'pagamentoId',
+    type: 'string',
+    format: 'uuid',
+    description: 'ID do pagamento a ser confirmado'
   })
   @ApiResponse({
     status: 201,
     description: 'Confirmação registrada com sucesso',
     type: ConfirmacaoResponseDto,
   })
-  @ApiResponse({ status: 400, description: 'Dados inválidos' })
-  @ApiResponse({ status: 404, description: 'Pagamento não encontrado' })
+  @ApiResponse({ 
+    status: 400, 
+    description: 'Dados de entrada inválidos',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: false },
+        message: { type: 'string', example: 'Dados inválidos' },
+        errors: { 
+          type: 'array', 
+          items: { type: 'string' },
+          example: ['Data de confirmação é obrigatória', 'Método de confirmação inválido']
+        }
+      }
+    }
+  })
+  @ApiResponse({ 
+    status: 404, 
+    description: 'Pagamento não encontrado' 
+  })
   @ApiResponse({
     status: 409,
-    description: 'Pagamento já confirmado ou não pode ser confirmado',
+    description: 'Conflito - Pagamento já confirmado ou em status inválido',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: false },
+        message: { type: 'string', example: 'Pagamento já possui confirmação de recebimento' }
+      }
+    }
   })
-  @ApiResponse({ status: 403, description: 'Acesso negado' })
   @RequiresPermission({
     permissionName: 'pagamento.confirmar',
     scopeType: TipoEscopo.UNIDADE,
@@ -173,74 +199,84 @@ export class ConfirmacaoController {
     @Body() createDto: ConfirmacaoRecebimentoDto,
     @GetUser() usuario: Usuario
   ) {
-    // Usar o ID do usuário atual
-    const usuarioId = usuario.id;
-
-    const confirmacao = await this.confirmacaoService.registrarConfirmacao(
+    const confirmacao = await this.confirmacaoService.create(
       pagamentoId,
       createDto,
-      usuarioId,
+      usuario.id,
     );
 
-    // Mapear para DTO de resposta
     return {
-      id: confirmacao.id,
-      pagamentoId: confirmacao.pagamento_id,
-      dataConfirmacao: confirmacao.data_confirmacao,
-      metodoConfirmacao: confirmacao.metodo_confirmacao,
-      responsavel: {
-        id: usuarioId,
-        nome: 'Responsável Confirmação', // seria obtido da entidade Usuario
-      },
-      destinatario: confirmacao.destinatario_id
-        ? {
-            id: confirmacao.destinatario_id,
-            nome: 'Nome do Destinatário', // seria obtido da entidade Cidadao
-          }
-        : undefined,
-      observacoes: confirmacao.observacoes,
+      success: true,
+      data: ConfirmacaoMapper.confirmacaoToResponseDto(confirmacao),
+      message: 'Confirmação de recebimento registrada com sucesso',
+      meta: {
+        pagamentoId,
+        criadoPor: usuario.id
+      }
     };
   }
 
   /**
-   * Verifica se um pagamento tem confirmação
+   * Verifica status de confirmação do pagamento
    */
-  @Get('verificar')
+  @Get('status')
   @ApiOperation({
-    summary: 'Verifica se um pagamento tem confirmação de recebimento',
+    summary: 'Verifica status de confirmação do pagamento',
+    description: 'Retorna se o pagamento possui confirmação e qual o status atual'
   })
   @ApiParam({
     name: 'pagamentoId',
     type: 'string',
-    description: 'ID do pagamento',
+    format: 'uuid',
+    description: 'ID do pagamento'
   })
   @ApiResponse({
     status: 200,
-    description: 'Status da confirmação',
+    description: 'Status da confirmação retornado com sucesso',
     schema: {
       type: 'object',
       properties: {
-        temConfirmacao: { type: 'boolean' },
-        status: { type: 'string' },
-      },
-    },
+        success: { type: 'boolean', example: true },
+        data: {
+          type: 'object',
+          properties: {
+            temConfirmacao: { type: 'boolean', example: true },
+            status: { 
+              type: 'string', 
+              enum: ['CONFIRMADO', 'PENDENTE_CONFIRMACAO'],
+              example: 'CONFIRMADO' 
+            },
+            quantidadeConfirmacoes: { type: 'number', example: 1 },
+            ultimaConfirmacao: {
+              type: 'object',
+              properties: {
+                dataConfirmacao: { type: 'string', format: 'date-time' },
+                metodoConfirmacao: { type: 'string' }
+              },
+              nullable: true
+            }
+          }
+        }
+      }
+    }
   })
-  @ApiResponse({ status: 404, description: 'Pagamento não encontrado' })
-  @ApiResponse({ status: 403, description: 'Acesso negado' })
   @RequiresPermission({
     permissionName: 'pagamento.visualizar',
     scopeType: TipoEscopo.UNIDADE,
     scopeIdExpression: 'params.pagamentoId'
   })
-  async verificaConfirmacao(
+  async verificarStatus(
     @Param('pagamentoId', ParseUUIDPipe) pagamentoId: string,
   ) {
-    const temConfirmacao =
-      await this.confirmacaoService.temConfirmacao(pagamentoId);
+    const statusConfirmacao = await this.confirmacaoService.getStatusConfirmacao(pagamentoId);
 
     return {
-      temConfirmacao,
-      status: temConfirmacao ? 'CONFIRMADO' : 'PENDENTE_CONFIRMACAO',
+      success: true,
+      data: statusConfirmacao,
+      meta: {
+        pagamentoId,
+        consultadoEm: new Date().toISOString()
+      }
     };
   }
 }

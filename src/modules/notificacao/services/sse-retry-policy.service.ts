@@ -152,11 +152,6 @@ export class SseRetryPolicyService {
       enableExponentialBackoff: this.configService.get<boolean>('SSE_RETRY_ENABLE_EXPONENTIAL_BACKOFF', true),
       enableJitter: this.configService.get<boolean>('SSE_RETRY_ENABLE_JITTER', true),
     };
-
-    this.logger.log('SseRetryPolicyService inicializado', {
-      defaultConfig: this.defaultConfig,
-      presetConfigs: Object.keys(this.presetConfigs),
-    });
   }
 
   /**

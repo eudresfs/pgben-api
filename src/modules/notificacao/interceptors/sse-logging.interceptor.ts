@@ -135,7 +135,7 @@ export class SseLoggingInterceptor implements NestInterceptor {
     const logLevel = this.determineLogLevel(metrics.duration);
     
     const logData = {
-      userId: Number(context.userId) || 0,
+      userId: this.parseUserId(context.userId),
       component: 'sse-interceptor',
       operation: `${context.method}_${this.sanitizeUrl(context.url)}`,
       duration: metrics.duration,
@@ -188,7 +188,7 @@ export class SseLoggingInterceptor implements NestInterceptor {
     const metrics = this.calculatePerformanceMetrics(context.startTime, cpuUsageStart);
     
     this.loggingService.logError(error, {
-      userId: Number(context.userId) || 0,
+      userId: this.parseUserId(context.userId),
       component: 'sse-interceptor',
       operation: `${context.method}_${this.sanitizeUrl(context.url)}_error`,
       metadata: {
@@ -218,7 +218,7 @@ export class SseLoggingInterceptor implements NestInterceptor {
     // Log apenas se a duração for significativa ou se houver problemas de performance
     if (metrics.duration > this.performanceThresholds.slow) {
       this.loggingService.logPerformance('Request finalizado', {
-        userId: context.userId ? Number(context.userId) : undefined,
+        userId: this.parseUserId(context.userId),
         component: 'sse-interceptor',
         operation: `${context.method}_${this.sanitizeUrl(context.url)}_finalize`,
         duration: metrics.duration,
@@ -345,5 +345,17 @@ export class SseLoggingInterceptor implements NestInterceptor {
       request.socket.remoteAddress ||
       'unknown'
     );
+  }
+
+  /**
+   * Valida e converte userId para número, evitando NaN
+   */
+  private parseUserId(userId: any): number | undefined {
+    if (userId === null || userId === undefined || userId === '') {
+      return undefined;
+    }
+    
+    const parsed = Number(userId);
+    return isNaN(parsed) ? undefined : parsed;
   }
 }

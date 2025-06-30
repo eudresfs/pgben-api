@@ -4,6 +4,8 @@ import { NotFoundException, ConflictException } from '@nestjs/common';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Cidadao, Sexo } from '../entities/cidadao.entity';
 import { CidadaoRepository } from '../repositories/cidadao.repository';
+import { AuditEventEmitter } from '../../auditoria/events/emitters/audit-event.emitter';
+import { AuditEvent } from '../../../shared/audit/entities/audit-event.entity';
 
 /**
  * Testes unitários para o serviço de cidadão
@@ -13,6 +15,15 @@ import { CidadaoRepository } from '../repositories/cidadao.repository';
  */
 describe('CidadaoService', () => {
   let service: CidadaoService;
+
+  // Mock do AuditEventEmitter
+  const mockAuditEventEmitter = {
+    emitEntityCreated: jest.fn(),
+    emitEntityUpdated: jest.fn(),
+    emitEntityDeleted: jest.fn(),
+    emitEntityAccessed: jest.fn(),
+    emitSensitiveDataEvent: jest.fn(),
+  };
 
   // Mock do repositório de cidadãos
   const mockCidadaoRepository = {
@@ -48,6 +59,10 @@ describe('CidadaoService', () => {
         {
           provide: CidadaoRepository,
           useValue: mockCidadaoRepository,
+        },
+        {
+          provide: AuditEventEmitter,
+          useValue: mockAuditEventEmitter,
         },
       ],
     }).compile();
@@ -297,13 +312,20 @@ describe('CidadaoService', () => {
       mockCidadaoRepository.findById.mockResolvedValue(mockCidadao);
       mockCidadaoRepository.update.mockResolvedValue(mockUpdatedCidadao);
 
-      const result = await service.update('1', updateCidadaoDto);
+      const result = await service.update('1', updateCidadaoDto, 'user-123');
 
       expect(result).toEqual(mockUpdatedCidadao);
       expect(mockCidadaoRepository.findById).toHaveBeenCalledWith('1');
       expect(mockCidadaoRepository.update).toHaveBeenCalledWith(
         '1',
         updateCidadaoDto,
+      );
+      expect(mockAuditEventEmitter.emitEntityUpdated).toHaveBeenCalledWith(
+        'Cidadao',
+        '1',
+        'user-123',
+        updateCidadaoDto,
+        mockCidadao,
       );
     });
 
@@ -315,7 +337,7 @@ describe('CidadaoService', () => {
       // Simular que o cidadão não existe
       mockCidadaoRepository.findById.mockResolvedValue(null);
 
-      await expect(service.update('999', updateCidadaoDto)).rejects.toThrow(
+      await expect(service.update('999', updateCidadaoDto, 'user-123')).rejects.toThrow(
         NotFoundException,
       );
       expect(mockCidadaoRepository.findById).toHaveBeenCalledWith('999');
@@ -344,7 +366,7 @@ describe('CidadaoService', () => {
         nis: '12345678901',
       });
 
-      await expect(service.update('1', updateCidadaoDto)).rejects.toThrow(
+      await expect(service.update('1', updateCidadaoDto, 'user-123')).rejects.toThrow(
         ConflictException,
       );
       expect(mockCidadaoRepository.findById).toHaveBeenCalledWith('1');

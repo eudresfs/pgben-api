@@ -1,16 +1,12 @@
-import { Injectable, UnauthorizedException, Logger } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { plainToClass } from 'class-transformer';
-import { Request } from 'express';
 import * as bcrypt from 'bcrypt';
-import { RoleType } from '../../shared/constants/roles.constants';
 
 import { LoggingService } from '../../shared/logging/logging.service';
 import { RequestContext } from '../../shared/request-context/request-context.dto';
 import { UsuarioService } from '../../modules/usuario/services/usuario.service';
-import { RegisterInput } from '../dtos/auth-register-input.dto';
-import { RegisterOutput } from '../dtos/auth-register-output.dto';
 import {
   AuthTokenOutput,
   UserAccessTokenClaims,
@@ -20,6 +16,8 @@ import { RefreshTokenService } from './refresh-token.service';
 import { RefreshTokenInput } from '../dtos/auth-refresh-token-input.dto';
 import { Usuario } from '../../entities/usuario.entity';
 import { PermissionService } from './permission.service';
+import { AuditEventEmitter } from '../../modules/auditoria/events/emitters/audit-event.emitter';
+import { AuditEventType } from '../../modules/auditoria/events/types/audit-event.types';
 
 @Injectable()
 export class AuthService {
@@ -45,6 +43,7 @@ export class AuthService {
     private configService: ConfigService,
     private readonly logger: LoggingService,
     private readonly permissionService: PermissionService,
+    private readonly auditEmitter: AuditEventEmitter,
   ) {
     // O contexto agora é passado diretamente nos métodos de log
 
@@ -136,28 +135,77 @@ export class AuthService {
   ): Promise<UserAccessTokenClaims> {
     this.logger.info(`${this.validateUser.name} foi chamado`, AuthService.name);
 
+    const clientIp = (ctx as any).req?.ip || 'unknown';
+    const userAgent = (ctx as any).req?.headers?.['user-agent'] || 'unknown';
+
     // Buscar usuário pelo email (username)
     const usuario = await this.usuarioService.findByEmail(username);
-    if (!usuario) {
-      throw new UnauthorizedException('Nome de usuário ou senha inválidos');
-    }
 
-    // Verificar se a senha está correta
-    // Log do hash armazenado para diagnóstico
-    this.logger.info(`Verificando senha para usuário ${username}`, AuthService.name);
-    this.logger.debug(`Hash armazenado: ${usuario.senhaHash.substring(0, 10)}...`, AuthService.name);
+    try {
+      if (!usuario) {
+        // Auditoria de tentativa de login com usuário inexistente
+        await this.auditEmitter.emitSecurityEvent(
+          AuditEventType.FAILED_LOGIN,
+          null,
+          {
+            operation: 'login_attempt',
+            riskLevel: 'high',
+            email: username,
+            clientIp: clientIp,
+            userAgent: userAgent,
+            reason: 'user_not_found',
+          }
+        );
+        throw new UnauthorizedException('Nome de usuário ou senha inválidos');
+      }
 
-    const senhaCorreta = await bcrypt.compare(
-      pass,
-      usuario.senhaHash,
-    );
-    if (!senhaCorreta) {
-      throw new UnauthorizedException('Nome de usuário ou senha inválidos');
-    }
+      // Verificar se a senha está correta
+      // Log do hash armazenado para diagnóstico
+      this.logger.info(`Verificando senha para usuário ${username}`, AuthService.name);
+      this.logger.debug(`Hash armazenado: ${usuario.senhaHash.substring(0, 10)}...`, AuthService.name);
 
-    // Verificar se o usuário está ativo
-    if (usuario.status === 'inativo') {
-      throw new UnauthorizedException('Esta conta de usuário foi desativada');
+      const senhaCorreta = await bcrypt.compare(
+        pass,
+        usuario.senhaHash,
+      );
+      if (!senhaCorreta) {
+        // Auditoria de tentativa de login com senha incorreta
+        await this.auditEmitter.emitSecurityEvent(
+          AuditEventType.FAILED_LOGIN,
+          usuario.id,
+          {
+            operation: 'login_attempt',
+            riskLevel: 'high',
+            email: usuario.email,
+            clientIp: clientIp,
+            userAgent: userAgent,
+            reason: 'invalid_password',
+            consecutiveFailures: 1, // TODO: implementar contador
+          }
+        );
+        throw new UnauthorizedException('Nome de usuário ou senha inválidos');
+      }
+
+      // Verificar se o usuário está ativo
+      if (usuario.status === 'inativo') {
+        // Auditoria de tentativa de login com conta inativa
+        await this.auditEmitter.emitSecurityEvent(
+          AuditEventType.FAILED_LOGIN,
+          usuario.id,
+          {
+            operation: 'login_attempt',
+            riskLevel: 'medium',
+            email: usuario.email,
+            clientIp: clientIp,
+            userAgent: userAgent,
+            reason: 'account_inactive',
+          }
+        );
+        throw new UnauthorizedException('Esta conta de usuário foi desativada');
+      }
+    } catch (error) {
+      // Re-throw para manter o comportamento original
+      throw error;
     }
 
     // Obter as permissões do usuário
@@ -167,6 +215,23 @@ export class AuthService {
 
     // Obter os escopos das permissões
     const permissionScopes: Record<string, string> = {};
+
+    // ✅ Auditoria de login bem-sucedido (validação de credenciais)
+    await this.auditEmitter.emitSecurityEvent(
+      AuditEventType.SUCCESSFUL_LOGIN,
+      usuario.id,
+      {
+        operation: 'login_validation_success',
+        riskLevel: 'LOW',
+        username: usuario.nome,
+        email: usuario.email,
+        roles: usuario.role ? [usuario.role.nome] : [],
+        permissions: permissions || [],
+        clientIp,
+        userAgent,
+        loginMethod: 'password',
+      }
+    );
 
     // Converter para o formato esperado incluindo permissões
     return UsuarioAdapter.toUserAccessTokenClaims(
@@ -178,6 +243,9 @@ export class AuthService {
 
   async login(ctx: RequestContext): Promise<AuthTokenOutput> {
     this.logger.info(`${this.login.name} foi chamado`, AuthService.name);
+
+    const clientIp = (ctx as any).req?.ip || 'unknown';
+    const userAgent = (ctx as any).req?.headers?.['user-agent'] || 'unknown';
 
     // Obter o token de autenticação
     const tokens = this.getAuthToken(ctx, ctx.user!);
@@ -200,6 +268,25 @@ export class AuthService {
     const refreshToken = await this.refreshTokenService.createToken(
       usuario as Usuario,
       refreshTokenSeconds, // Converte para segundos para o RefreshTokenService
+    );
+
+    // ✅ Auditoria de login completo (geração de tokens)
+    await this.auditEmitter.emitSecurityEvent(
+      AuditEventType.SUCCESSFUL_LOGIN,
+      String(ctx.user!.id),
+      {
+        operation: 'login_success',
+        riskLevel: 'LOW',
+        username: ctx.user!.username,
+        roles: ctx.user!.roles || [],
+        permissions: ctx.user!.permissions || [],
+        unidadeId: ctx.user!.unidade_id,
+        clientIp,
+        userAgent,
+        tokenGenerated: true,
+        refreshTokenId: refreshToken.id,
+        sessionStart: new Date().toISOString(),
+      }
     );
 
     return {
@@ -263,6 +350,25 @@ export class AuthService {
     const newRefreshToken = await this.refreshTokenService.createToken(
       usuario as Usuario,
       refreshTokenSeconds, // Converte para segundos para o RefreshTokenService
+    );
+
+    const clientIp = (ctx as any).req?.ip || 'unknown';
+    const userAgent = (ctx as any).req?.headers?.['user-agent'] || 'unknown';
+
+    // Auditoria de renovação de token
+    await this.auditEmitter.emitSecurityEvent(
+      AuditEventType.TOKEN_REFRESH,
+      usuario.id,
+      {
+        operation: 'token_refresh',
+        riskLevel: 'LOW',
+        username: usuario.nome,
+        oldRefreshTokenId: refreshToken.id,
+        newRefreshTokenId: newRefreshToken.id,
+        clientIp,
+        userAgent,
+        tokenRenewed: true,
+      }
     );
 
     return {

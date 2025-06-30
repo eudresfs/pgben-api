@@ -9,19 +9,25 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { plainToInstance } from 'class-transformer';
 import { CidadaoService } from '@modules/cidadao/services/cidadao.service';
 import { CidadaoRepository } from '@modules/cidadao/repositories/cidadao.repository';
-import { Cidadao, Sexo } from '@modules/cidadao/entities/cidadao.entity';
-import { TipoPapel, PaperType } from '@modules/cidadao/enums/tipo-papel.enum';
+import { Cidadao, Sexo } from '@/entities/cidadao.entity';
+import { TipoPapel, PaperType } from '@/enums/tipo-papel.enum';
 import { CreateCidadaoDto } from '@modules/cidadao/dto/create-cidadao.dto';
 import { UpdateCidadaoDto } from '@modules/cidadao/dto/update-cidadao.dto';
 import { CidadaoResponseDto } from '@modules/cidadao/dto/cidadao-response.dto';
 import { CacheService } from '@/shared/cache/cache.service';
 import { PapelCidadaoService } from '@modules/cidadao/services/papel-cidadao.service';
+import { AuditEventEmitter } from '@modules/auditoria/audit-event.emitter';
+import { ContatoService } from '@modules/cidadao/services/contato.service';
+import { EnderecoService } from '@modules/cidadao/services/endereco.service';
 
 describe('CidadaoService', () => {
   let service: CidadaoService;
   let repository: CidadaoRepository;
   let cacheService: CacheService;
   let papelCidadaoService: PapelCidadaoService;
+  let auditEventEmitter: AuditEventEmitter;
+  let contatoService: ContatoService;
+  let enderecoService: EnderecoService;
 
   const mockCidadaoRepository = {
     create: jest.fn(),
@@ -48,11 +54,34 @@ describe('CidadaoService', () => {
     create: jest.fn(),
     createMany: jest.fn(),
     findAll: jest.fn(),
-    findOne: jest.fn(),
     update: jest.fn(),
     remove: jest.fn(),
     findByTipo: jest.fn(),
   };
+
+  const mockAuditEventEmitter = {
+    emit: jest.fn(),
+    emitEntityCreated: jest.fn(),
+    emitEntityUpdated: jest.fn(),
+    emitEntityDeleted: jest.fn(),
+    emitEntityAccessed: jest.fn(),
+    emitSensitiveDataEvent: jest.fn(),
+    emitSecurityEvent: jest.fn(),
+  };
+
+  const mockContatoService = {
+    upsertMany: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+    remove: jest.fn(),
+  };
+
+  const mockEnderecoService = {
+    upsertMany: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+    remove: jest.fn(),
+  }; };
 
   const mockCidadao: Cidadao = {
     id: '550e8400-e29b-41d4-a716-446655440000',
@@ -105,6 +134,18 @@ describe('CidadaoService', () => {
           provide: PapelCidadaoService,
           useValue: mockPapelCidadaoService,
         },
+        {
+          provide: AuditEventEmitter,
+          useValue: mockAuditEventEmitter,
+        },
+        {
+          provide: ContatoService,
+          useValue: mockContatoService,
+        },
+        {
+          provide: EnderecoService,
+          useValue: mockEnderecoService,
+        },
       ],
     }).compile();
 
@@ -112,6 +153,9 @@ describe('CidadaoService', () => {
     repository = module.get<CidadaoRepository>(CidadaoRepository);
     cacheService = module.get<CacheService>(CacheService);
     papelCidadaoService = module.get<PapelCidadaoService>(PapelCidadaoService);
+    auditEventEmitter = module.get<AuditEventEmitter>(AuditEventEmitter);
+    contatoService = module.get<ContatoService>(ContatoService);
+    enderecoService = module.get<EnderecoService>(EnderecoService);
 
     // Resetar mocks
     jest.clearAllMocks();
@@ -228,7 +272,7 @@ describe('CidadaoService', () => {
     it('deve retornar um cidadão pelo ID', async () => {
       mockCidadaoRepository.findById.mockResolvedValue(mockCidadao);
 
-      const result = await service.findById(mockCidadao.id);
+      const result = await service.findById(mockCidadao.id, true, 'user-123');
 
       expect(result).toEqual(
         plainToInstance(CidadaoResponseDto, mockCidadao, {
@@ -240,12 +284,17 @@ describe('CidadaoService', () => {
         mockCidadao.id,
         true,
       );
+      expect(mockAuditEventEmitter.emitEntityAccessed).toHaveBeenCalledWith(
+        'Cidadao',
+        mockCidadao.id,
+        'user-123',
+      );
     });
 
     it('deve retornar cidadão sem relacionamentos quando includeRelations for false', async () => {
       mockCidadaoRepository.findById.mockResolvedValue(mockCidadao);
 
-      const result = await service.findById(mockCidadao.id, false);
+      const result = await service.findById(mockCidadao.id, false, 'user-123');
 
       expect(result).toEqual(
         plainToInstance(CidadaoResponseDto, mockCidadao, {
@@ -257,7 +306,12 @@ describe('CidadaoService', () => {
         mockCidadao.id,
         false,
       );
-    });
+      expect(mockAuditEventEmitter.emitEntityAccessed).toHaveBeenCalledWith(
+        'Cidadao',
+        mockCidadao.id,
+        'user-123',
+      );
+    });}]}}
 
     it('deve retornar os dados corretos no DTO de resposta', async () => {
       const cidadaoCompleto = {
@@ -341,7 +395,7 @@ describe('CidadaoService', () => {
     it('deve retornar um cidadão pelo CPF', async () => {
       mockCidadaoRepository.findByCpf.mockResolvedValue(mockCidadao);
 
-      const result = await service.findByCpf('123.456.789-09');
+      const result = await service.findByCpf('123.456.789-09', false, 'user-123');
 
       expect(result).toEqual(
         plainToInstance(CidadaoResponseDto, mockCidadao, {
@@ -352,13 +406,20 @@ describe('CidadaoService', () => {
       expect(mockCidadaoRepository.findByCpf).toHaveBeenCalledWith(
         '12345678909',
         false,
+      );
+      expect(mockAuditEventEmitter.emitSensitiveDataEvent).toHaveBeenCalledWith(
+        'Cidadao',
+        mockCidadao.id,
+        'user-123',
+        ['cpf'],
+        'Consulta por CPF: 123.456.789-09',
       );
     });
 
     it('deve retornar cidadão sem relacionamentos quando includeRelations for false', async () => {
       mockCidadaoRepository.findByCpf.mockResolvedValue(mockCidadao);
 
-      const result = await service.findByCpf('123.456.789-09', false);
+      const result = await service.findByCpf('123.456.789-09', false, 'user-123');
 
       expect(result).toEqual(
         plainToInstance(CidadaoResponseDto, mockCidadao, {
@@ -370,12 +431,19 @@ describe('CidadaoService', () => {
         '12345678909',
         false,
       );
+      expect(mockAuditEventEmitter.emitSensitiveDataEvent).toHaveBeenCalledWith(
+        'Cidadao',
+        mockCidadao.id,
+        'user-123',
+        ['cpf'],
+        'Consulta por CPF: 123.456.789-09',
+      );
     });
 
     it('deve formatar o CPF removendo caracteres não numéricos', async () => {
       mockCidadaoRepository.findByCpf.mockResolvedValue(mockCidadao);
 
-      await service.findByCpf('123.456.789-09');
+      await service.findByCpf('123.456.789-09', false, 'user-123');
 
       expect(mockCidadaoRepository.findByCpf).toHaveBeenCalledWith(
         '12345678909',
@@ -431,7 +499,7 @@ describe('CidadaoService', () => {
     it('deve retornar um cidadão pelo NIS', async () => {
       mockCidadaoRepository.findByNis.mockResolvedValue(mockCidadao);
 
-      const result = await service.findByNis('12345678901');
+      const result = await service.findByNis('12345678901', false, 'user-123');
 
       expect(result).toEqual(
         plainToInstance(CidadaoResponseDto, mockCidadao, {
@@ -442,13 +510,20 @@ describe('CidadaoService', () => {
       expect(mockCidadaoRepository.findByNis).toHaveBeenCalledWith(
         '12345678901',
         false,
+      );
+      expect(mockAuditEventEmitter.emitSensitiveDataEvent).toHaveBeenCalledWith(
+        'Cidadao',
+        mockCidadao.id,
+        'user-123',
+        ['nis'],
+        'Consulta por NIS: 12345678901',
       );
     });
 
     it('deve retornar cidadão sem relacionamentos quando includeRelations for false', async () => {
       mockCidadaoRepository.findByNis.mockResolvedValue(mockCidadao);
 
-      const result = await service.findByNis('12345678901', false);
+      const result = await service.findByNis('12345678901', false, 'user-123');
 
       expect(result).toEqual(
         plainToInstance(CidadaoResponseDto, mockCidadao, {
@@ -459,6 +534,13 @@ describe('CidadaoService', () => {
       expect(mockCidadaoRepository.findByNis).toHaveBeenCalledWith(
         '12345678901',
         false,
+      );
+      expect(mockAuditEventEmitter.emitSensitiveDataEvent).toHaveBeenCalledWith(
+        'Cidadao',
+        mockCidadao.id,
+        'user-123',
+        ['nis'],
+        'Consulta por NIS: 12345678901',
       );
     });
 
@@ -564,6 +646,16 @@ describe('CidadaoService', () => {
         cpf: '12345678901',
         nis: '12345678901',
       });
+      expect(mockAuditEventEmitter.emitEntityCreated).toHaveBeenCalledWith(
+        'Cidadao',
+        mockCidadao.id,
+        'user-1',
+        {
+          cpf: mockCidadao.cpf,
+          nis: mockCidadao.nis,
+          nome: mockCidadao.nome,
+        },
+      );
     });
 
     it('deve formatar CPF e NIS removendo caracteres não numéricos', async () => {

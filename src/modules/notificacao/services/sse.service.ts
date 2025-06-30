@@ -40,7 +40,7 @@ export class SseService implements OnModuleDestroy {
       return this.getUserLocalConnectionCount(userId) + redisConnections.length;
     } catch (error) {
       this.loggingService.logError(error as Error, {
-        userId: Number(userId),
+        userId: this.parseUserId(userId),
         component: 'sse-connection',
         operation: 'get-total-count',
         timestamp: new Date(),
@@ -1260,4 +1260,15 @@ export class SseService implements OnModuleDestroy {
     }
   }
 
+  /**
+   * Valida e converte userId para número, evitando NaN
+   */
+  private parseUserId(userId: any): number | undefined {
+    if (userId === null || userId === undefined || userId === '') {
+      return undefined;
+    }
+    
+    const parsed = Number(userId);
+    return isNaN(parsed) ? undefined : parsed;
+  }
 }

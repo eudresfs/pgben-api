@@ -37,11 +37,11 @@ import { PermissionGuard } from './guards/permission.guard';
 import { createJwtConfig } from '../config/jwt.config';
 
 // Modules
-import { AuditModule } from '../audit/audit.module';
 import { UsuarioModule } from '../modules/usuario/usuario.module';
 import { forwardRef } from '@nestjs/common';
 import { LoggingModule } from '../shared/logging/logging.module';
 import { PermissionModule } from './permission.module';
+// Removido AuditoriaSharedModule para evitar dependência circular
 
 /**
  * Módulo de Autenticação e Autorização
@@ -98,7 +98,6 @@ import { PermissionModule } from './permission.module';
     }),
 
     forwardRef(() => UsuarioModule),
-    forwardRef(() => AuditModule),
     ConfigModule,
     LoggingModule,
     PermissionModule,

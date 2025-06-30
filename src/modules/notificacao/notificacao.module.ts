@@ -105,7 +105,7 @@ import { NotificacaoProativaScheduler } from './schedulers/notificacao-proativa.
     ]),
     ConfigModule,
     ScheduleAdapterModule,
-    forwardRef(() => AuthModule),
+    AuthModule,
     forwardRef(() => UsuarioModule),
     EventEmitterModule,
     EmailModule,

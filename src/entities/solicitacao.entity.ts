@@ -27,6 +27,7 @@ import { StatusSolicitacao } from '../enums/status-solicitacao.enum';
 import { SubStatusSolicitacao } from '../enums/sub-status-solicitacao.enum';
 import { InfoBancaria } from './info-bancaria.entity';
 import { Pagamento } from './pagamento.entity';
+import { Concessao } from './concessao.entity';
 
 @Entity('solicitacao')
 @Index(['protocolo'], { unique: true })
@@ -86,12 +87,6 @@ export class Solicitacao {
     this.observacaoAlteracao = observacao;
     this.ipUsuario = ip;
   }
-
-  // REMOVIDO: @AfterUpdate logStatusChange()
-  // O logging de histórico agora é feito diretamente nos serviços
-  // que têm acesso ao DataSource e repositórios adequados.
-  // Isso evita o erro ConnectionNotFoundError que ocorria quando
-  // o método tentava usar getRepository() sem contexto de conexão.
 
   @Column()
   @IsNotEmpty({ message: 'Beneficiário é obrigatório' })
@@ -204,7 +199,7 @@ export class Solicitacao {
   })
   historico: HistoricoSolicitacao[];
 
-  /**
+   /**
    * Relação com histórico de status da solicitação
    */
   @OneToMany(() => Pendencia, (pendencia) => pendencia.solicitacao, {
@@ -222,7 +217,7 @@ export class Solicitacao {
   })
   pagamentos: Pagamento[];
 
-    /**
+   /**
    * Relação com histórico de status da solicitação
    */
     @OneToMany(() => InfoBancaria, (infoBancaria) => infoBancaria.cidadao, {
@@ -230,6 +225,13 @@ export class Solicitacao {
       onDelete: 'CASCADE',
     })
     info_bancaria: InfoBancaria[];
+
+   /**
+   * Relação com histórico de status da solicitação
+   */
+   @OneToMany(() => Concessao, concessao => concessao.solicitacao)
+   @JoinColumn({ name: 'id', referencedColumnName: 'solicitacao_id' })
+   concessao: Concessao;
 
   /**
    * Controle de versão para detectar e prevenir atualizações concorrentes

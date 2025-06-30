@@ -38,7 +38,7 @@ export class Concessao {
   @IsUUID('4', { message: 'ID da solicitação inválido' })
   solicitacaoId: string;
 
-  @OneToOne(() => Solicitacao)
+  @OneToOne(() => Solicitacao, solicitacao => solicitacao.concessao)
   @JoinColumn({ name: 'solicitacao_id' })
   solicitacao: Solicitacao;
 
@@ -47,7 +47,7 @@ export class Concessao {
     type: 'enum',
     enum: StatusConcessao,
     enumName: 'status_concessao_enum',
-    default: StatusConcessao.PENDENTE,
+    default: StatusConcessao.APTO,
   })
   @IsEnum(StatusConcessao)
   status: StatusConcessao;

@@ -226,6 +226,30 @@ describe('ComposicaoFamiliarService', () => {
       expect(queryRunner.rollbackTransaction).toHaveBeenCalled();
       expect(queryRunner.release).toHaveBeenCalled();
     });
+
+    it('should throw ConflictException with proper error details when citizen is already a beneficiary', async () => {
+      const constraintError = new Error(
+        'Cidadão não pode ser adicionado à composição familiar, pois já é beneficiário',
+      );
+      
+      mockComposicaoFamiliarRepository.save.mockRejectedValue(constraintError);
+
+      await expect(service.create(createDto, userId)).rejects.toThrow(
+        expect.objectContaining({
+          message: expect.objectContaining({
+            code: 'VAL_2004',
+            message: 'Conflito de papéis: não pode ser beneficiário e membro familiar simultaneamente',
+            details: expect.objectContaining({
+              cpf: '12345678901',
+              reason: 'O cidadão já possui papel de beneficiário ativo no sistema',
+              action: 'Remova o papel de beneficiário antes de adicionar à composição familiar',
+            }),
+            localizedMessage: 'Cidadão não pode ser beneficiário principal e membro da composição familiar simultaneamente',
+          }),
+        }),
+      );
+      expect(queryRunner.rollbackTransaction).toHaveBeenCalled();
+    });
   });
 
   describe('findByCidadao', () => {

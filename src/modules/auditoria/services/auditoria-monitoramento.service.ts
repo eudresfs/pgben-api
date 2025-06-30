@@ -174,30 +174,33 @@ export class AuditoriaMonitoramentoService implements OnModuleInit {
   }
 
   /**
-   * Configura o agendamento quando o módulo é inicializado
+   * Configura o agendamento quando o módulo é inicializado de forma assíncrona
    */
   async onModuleInit(): Promise<void> {
-    try {
-      // TEMPORARIAMENTE DESABILITADO: Executar uma vez inicialmente (sem await para não bloquear a inicialização)
-      // this.atualizarEstatisticas().catch(error => {
-      //   this.logger.error(`Erro na atualização inicial de estatísticas: ${error.message}`);
-      // });
+    // Inicialização assíncrona sem bloqueio
+    setImmediate(async () => {
+      try {
+        // TEMPORARIAMENTE DESABILITADO: Executar uma vez inicialmente (sem await para não bloquear a inicialização)
+        // this.atualizarEstatisticas().catch(error => {
+        //   this.logger.error(`Erro na atualização inicial de estatísticas: ${error.message}`);
+        // });
 
-      // Configurar a atualização de estatísticas a cada 15 minutos (reduzir frequência)
-      this.scheduleAdapter.scheduleInterval(
-        'atualizar_estatisticas_auditoria',
-        15 * 60 * 1000, // 15 minutos em milissegundos
-        () => this.atualizarEstatisticas(),
-      );
+        // Configurar a atualização de estatísticas a cada 15 minutos (reduzir frequência)
+        this.scheduleAdapter.scheduleInterval(
+          'atualizar_estatisticas_auditoria',
+          15 * 60 * 1000, // 15 minutos em milissegundos
+          () => this.atualizarEstatisticas(),
+        );
 
-      this.logger.log(
-        'Agendamento de estatísticas de auditoria configurado com sucesso (execução inicial desabilitada)',
-      );
-    } catch (error) {
-      this.logger.error(
-        `Erro ao configurar agendamento de estatísticas: ${error.message}`,
-      );
-    }
+        this.logger.log(
+          'Agendamento de estatísticas de auditoria configurado com sucesso (execução inicial desabilitada)',
+        );
+      } catch (error) {
+        this.logger.error(
+          `Erro ao configurar agendamento de estatísticas: ${error.message}`,
+        );
+      }
+    });
   }
 
   /**

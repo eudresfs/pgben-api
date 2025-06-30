@@ -586,12 +586,11 @@ export class SeedTipoBeneficioSchema1733158900000 {
               { label: 'Único', value: 'unico' },
               { label: 'Mensal', value: 'mensal' },
               { label: 'Bimestral', value: 'bimestral' },
-              { label: 'Trimestral', value: 'trimestral' },
-              { label: 'Semestral', value: 'semestral' },
+              { label: 'Trimestral', value: 'trimestral' }
             ],
             validation: {
               type: 'enum',
-              enum: ['unico', 'mensal', 'bimestral', 'trimestral', 'semestral'],
+              enum: ['unico', 'mensal', 'bimestral', 'trimestral'],
             },
           },
           origem_atendimento: {
@@ -662,31 +661,6 @@ export class SeedTipoBeneficioSchema1733158900000 {
             validation: {
               type: 'string',
               maxLength: 500,
-            },
-          },
-          tecnico_responsavel: {
-            type: 'text',
-            label: 'Técnico responsável',
-            required: false,
-            colSpan: 1,
-            placeholder: 'Nome do técnico responsável pelo atendimento',
-            validation: {
-              type: 'string',
-              minLength: 2,
-              maxLength: 100,
-              pattern: '^[A-Za-zÀ-ÿ\\s]+$',
-            },
-          },
-          unidade_solicitante: {
-            type: 'text',
-            label: 'Unidade solicitante',
-            required: false,
-            colSpan: 1,
-            placeholder: 'Nome da unidade que está solicitando o benefício',
-            validation: {
-              type: 'string',
-              minLength: 2,
-              maxLength: 100,
             },
           },
         },

@@ -9,7 +9,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, FindOptionsWhere } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { UploadSession, UploadSessionStatus } from '../entities/upload-session.entity';
-import { AuditoriaService } from '../../auditoria/services/auditoria.service';
+import { AuditEventEmitter } from '../../auditoria/events/emitters/audit-event.emitter';
 import { TipoOperacao } from '../../../enums/tipo-operacao.enum';
 import { CreateLogAuditoriaDto } from '../../auditoria/dto/create-log-auditoria.dto';
 import { BaseDto } from '../../../shared/dtos/base.dto';
@@ -26,7 +26,7 @@ export class UploadSessionService {
     @InjectRepository(UploadSession)
     private readonly uploadSessionRepository: Repository<UploadSession>,
     private readonly configService: ConfigService,
-    private readonly auditoriaService: AuditoriaService,
+    private readonly auditEventEmitter: AuditEventEmitter,
   ) {
     this.sessionTimeoutMinutes = this.configService.get<number>('EASY_UPLOAD_SESSION_TIMEOUT_MINUTES', 30);
     this.logger.log('UploadSessionService inicializado');
@@ -68,16 +68,15 @@ export class UploadSessionService {
       this.logger.debug(`Sessão de upload criada: ${savedSession.id} para token ${tokenId}`);
 
       // Registrar na auditoria
-      const logDto = BaseDto.plainToInstance({
-        entidade_afetada: 'UploadSession',
-        entidade_id: savedSession.id,
-        tipo_operacao: TipoOperacao.CREATE,
-        dados_novos: {
+      await this.auditEventEmitter.emitEntityCreated(
+        'UploadSession',
+        savedSession.id,
+        {
           token_id: tokenId,
           ip: sessionData.ip_address,
         },
-      }, CreateLogAuditoriaDto);
-      await this.auditoriaService.create(logDto);
+        null // Sistema interno
+      );
 
       return savedSession;
     } catch (error) {
@@ -169,16 +168,16 @@ export class UploadSessionService {
       this.logger.debug(`Sessão ${id} atualizada para status: ${status}`);
       
       // Registrar na auditoria
-      const logDto = BaseDto.plainToInstance({
-        entidade_afetada: 'UploadSession',
-        entidade_id: id,
-        tipo_operacao: TipoOperacao.UPDATE,
-        dados_novos: {
+      await this.auditEventEmitter.emitEntityUpdated(
+        'UploadSession',
+        id,
+        { status: session.status },
+        {
           status,
           error_message: errorMessage,
         },
-      }, CreateLogAuditoriaDto);
-      await this.auditoriaService.create(logDto);
+        null // Sistema interno
+      );
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw error;
@@ -245,24 +244,24 @@ export class UploadSessionService {
         await this.updateSessionStatus(id, UploadSessionStatus.COMPLETADA);
         
         // Registrar na auditoria
-        const completeLogDto = BaseDto.plainToInstance({
-          entidade_afetada: 'UploadSession',
-          entidade_id: id,
-          tipo_operacao: TipoOperacao.UPDATE,
-          dados_novos: { success: true },
-        }, CreateLogAuditoriaDto);
-        await this.auditoriaService.create(completeLogDto);
+        await this.auditEventEmitter.emitEntityUpdated(
+          'UploadSession',
+          id,
+          {},
+          { success: true },
+          null // Sistema interno
+        );
       } else {
         await this.updateSessionStatus(id, UploadSessionStatus.ERRO, errorMessage);
         
         // Registrar na auditoria
-        const errorLogDto = BaseDto.plainToInstance({
-          entidade_afetada: 'UploadSession',
-          entidade_id: id,
-          tipo_operacao: TipoOperacao.UPDATE,
-          dados_novos: { error_message: errorMessage },
-        }, CreateLogAuditoriaDto);
-        await this.auditoriaService.create(errorLogDto);
+        await this.auditEventEmitter.emitEntityUpdated(
+          'UploadSession',
+          id,
+          {},
+          { error: errorMessage },
+          null // Sistema interno
+        );
       }
       
       this.logger.debug(`Sessão ${id} marcada como ${success ? 'completada' : 'falha'}`);

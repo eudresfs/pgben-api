@@ -37,38 +37,31 @@ export class SseRedisService implements OnModuleInit, OnModuleDestroy {
   ) {}
   
   async onModuleInit() {
+    this.logger.log('Inicializando SseRedisService...');
+    
+    // Verificar se Redis está desabilitado
+    const redisDisabled = this.configService.get<boolean>('DISABLE_REDIS', false);
+    if (redisDisabled) {
+      this.logger.warn('Redis desabilitado - SSE funcionará apenas localmente');
+      return;
+    }
+    
+    // Criar instâncias Redis sem testar conectividade (lazy connection)
+    // Isso evita bloqueio durante a inicialização da aplicação
     try {
-      this.logger.log('Inicializando SseRedisService...');
-      
-      // Verificar se Redis está desabilitado
-      const redisDisabled = this.configService.get<boolean>('DISABLE_REDIS', false);
-      if (redisDisabled) {
-        this.logger.warn('Redis desabilitado - SSE funcionará apenas localmente');
-        return;
-      }
-      
-      // Criar três instâncias Redis separadas para diferentes propósitos
       this.publisher = createRedisInstance(this.configService);
       this.subscriber = createRedisInstance(this.configService);
       this.storage = createRedisInstance(this.configService);
       
-      // Testar conexão com timeout
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Timeout na conexão com Redis')), 5000);
-      });
-      
-      await Promise.race([
-        this.publisher.ping(),
-        timeoutPromise
-      ]);
-      
-      // Configurar subscriber para receber eventos
+      // Configurar subscriber para receber eventos (sem aguardar conexão)
       this.setupSubscriber();
       
-      this.logger.log('✅ SseRedisService inicializado com sucesso');
+      this.logger.log('✅ SseRedisService inicializado (conexões lazy)');
+      
+      // Iniciar health check em background (não-bloqueante)
+      this.startBackgroundHealthCheck();
     } catch (error) {
-      this.logger.warn(`Redis não disponível: ${error.message}. SSE funcionará apenas localmente.`);
-      // Não falha a inicialização se Redis não estiver disponível
+      this.logger.warn(`Erro ao configurar Redis: ${error.message}. SSE funcionará apenas localmente.`);
     }
   }
   
@@ -487,25 +480,80 @@ export class SseRedisService implements OnModuleInit, OnModuleDestroy {
   }
   
   /**
+   * Inicia health check em background para monitorar Redis
+   */
+  private startBackgroundHealthCheck(): void {
+    // Health check inicial após 2 segundos
+    setTimeout(() => this.performHealthCheck(), 2000);
+    
+    // Health check periódico a cada 30 segundos
+    setInterval(() => this.performHealthCheck(), 30000);
+  }
+  
+  /**
+   * Executa health check sem bloquear operações
+   */
+  private async performHealthCheck(): Promise<void> {
+    try {
+      if (!this.storage) return;
+      
+      const result = await Promise.race([
+        this.storage.ping(),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Health check timeout')), 3000)
+        )
+      ]);
+      
+      if (result === 'PONG') {
+        this.logger.debug('✅ Redis health check passou');
+      }
+    } catch (error) {
+      this.logger.debug(`⚠️ Redis health check falhou: ${error.message}`);
+    }
+  }
+  
+  /**
    * Verifica a saúde da conexão Redis
    */
-  async healthCheck(): Promise<{ status: 'healthy' | 'unhealthy'; latency?: number }> {
+  async healthCheck(): Promise<boolean> {
     try {
       // Verificar se Redis está disponível
       if (!this.storage) {
         this.logger.debug('Redis não disponível - health check falhou');
-        return { status: 'unhealthy' };
+        return false;
       }
       
-      const start = Date.now();
-      await this.storage.ping();
-      const latency = Date.now() - start;
+      const result = await Promise.race([
+        this.storage.ping(),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Health check timeout')), 2000)
+        )
+      ]);
       
-      return { status: 'healthy', latency };
+      return result === 'PONG';
     } catch (error) {
-      this.logger.error('❌ Health check Redis falhou:', error);
-      return { status: 'unhealthy' };
+      this.logger.debug(`❌ Health check Redis falhou: ${error.message}`);
+      return false;
     }
+  }
+
+  /**
+   * Verifica se o Redis está disponível
+   */
+  private isRedisAvailable(): boolean {
+    // Verificar se Redis está desabilitado
+    const redisDisabled = this.configService.get<boolean>('DISABLE_REDIS', false);
+    if (redisDisabled) {
+      return false;
+    }
+    
+    // Verificar se as instâncias existem e estão conectadas
+    return this.publisher && 
+           this.subscriber && 
+           this.storage &&
+           this.publisher.status === 'ready' &&
+           this.subscriber.status === 'ready' &&
+           this.storage.status === 'ready';
   }
 
   /**

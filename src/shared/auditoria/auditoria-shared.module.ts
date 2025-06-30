@@ -6,6 +6,7 @@ import { JwtModule } from '@nestjs/jwt';
 
 import { LogAuditoria } from '../../entities/log-auditoria.entity';
 import { AuditoriaService } from '../../modules/auditoria/services/auditoria.service';
+import { AuditEventEmitter } from '../../modules/auditoria/events/emitters/audit-event.emitter';
 import { AuditoriaQueueService } from '../../modules/auditoria/services/auditoria-queue.service';
 import { LogAuditoriaRepository } from '../../modules/auditoria/repositories/log-auditoria.repository';
 import { AuditoriaSignatureService } from '../../modules/auditoria/services/auditoria-signature.service';
@@ -24,16 +25,17 @@ import { AuditoriaSignatureService } from '../../modules/auditoria/services/audi
     // Configuração do TypeORM para entidades do módulo
     TypeOrmModule.forFeature([LogAuditoria]),
 
-    // Configuração assíncrona do BullModule
+    // Configuração assíncrona do BullModule - usando mesma config do AppModule
     BullModule.registerQueueAsync({
-      name: 'auditoria',
+      name: 'auditoria', // ✅ NECESSÁRIO para AuditEventEmitter
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        redis: {
-          host: configService.get<string>('REDIS_HOST', 'localhost'),
-          port: configService.get<number>('REDIS_PORT', 6379),
-        },
-      }),
+      useFactory: async (configService: ConfigService) => {
+        const { getBullConfig } = await import('../../config/bull.config');
+        const bullConfig = getBullConfig(configService);
+        return {
+          redis: bullConfig.redis,
+        };
+      },
       inject: [ConfigService],
     }),
 
@@ -50,6 +52,7 @@ import { AuditoriaSignatureService } from '../../modules/auditoria/services/audi
   providers: [
     // Serviços essenciais
     AuditoriaService,
+    AuditEventEmitter,
     AuditoriaQueueService,
     LogAuditoriaRepository,
     AuditoriaSignatureService,
@@ -57,6 +60,7 @@ import { AuditoriaSignatureService } from '../../modules/auditoria/services/audi
   exports: [
     // Exporta os serviços principais para uso em outros módulos
     AuditoriaService,
+    AuditEventEmitter,
     AuditoriaQueueService,
     LogAuditoriaRepository,
     AuditoriaSignatureService,

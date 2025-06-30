@@ -10,7 +10,9 @@ import {
   UseGuards,
   HttpStatus,
   ParseUUIDPipe,
+  Req,
 } from '@nestjs/common';
+import { Request } from 'express';
 import {
   ApiTags,
   ApiOperation,
@@ -54,7 +56,7 @@ export class PendenciaController {
    * Cria uma nova pendência
    */
   @Post()
-  @RequiresPermission({ permissionName: 'pendencia.criar', scopeType: TipoEscopo.UNIDADE, scopeIdExpression: 'user.unidadeId' })
+  @RequiresPermission({ permissionName: 'pendencia.criar', scopeType: TipoEscopo.UNIDADE })
   @ApiOperation({
     summary: 'Criar nova pendência',
     description: 'Registra uma nova pendência para uma solicitação',
@@ -83,10 +85,15 @@ export class PendenciaController {
   async criarPendencia(
     @Body() createPendenciaDto: CreatePendenciaDto,
     @GetUser() usuario: Usuario,
+    @Req() req: Request,
   ): Promise<PendenciaResponseDto> {
     return this.pendenciaService.criarPendencia(
       createPendenciaDto,
       usuario.id,
+      {
+        ip: req.ip,
+        userAgent: req.headers['user-agent'],
+      },
     );
   }
 
@@ -94,7 +101,7 @@ export class PendenciaController {
    * Busca uma pendência por ID
    */
   @Get(':pendenciaId')
-  @RequiresPermission({ permissionName: 'pendencia.ler', scopeType: TipoEscopo.UNIDADE, scopeIdExpression: 'user.unidadeId' })
+  @RequiresPermission({ permissionName: 'pendencia.ler', scopeType: TipoEscopo.UNIDADE})
   @ApiOperation({
     summary: 'Buscar pendência por ID',
     description: 'Retorna os detalhes de uma pendência específica',
@@ -117,8 +124,17 @@ export class PendenciaController {
   })
   async buscarPorId(
     @Param('pendenciaId', ParseUUIDPipe) pendenciaId: string,
+    @GetUser() usuario: Usuario,
+    @Req() req: Request,
   ): Promise<PendenciaResponseDto> {
-    return this.pendenciaService.buscarPorId(pendenciaId);
+    return this.pendenciaService.buscarPorId(
+      pendenciaId,
+      usuario.id,
+      {
+        ip: req.ip,
+        userAgent: req.headers['user-agent'],
+      },
+    );
   }
 
   /**
@@ -127,8 +143,7 @@ export class PendenciaController {
   @Get()
   @RequiresPermission({
     permissionName: 'pendencia.listar',
-    scopeType: TipoEscopo.UNIDADE, 
-    scopeIdExpression: 'user.unidadeId', 
+    scopeType: TipoEscopo.UNIDADE,
   })
   @ApiOperation({
     summary: 'Listar pendências',
@@ -155,7 +170,7 @@ export class PendenciaController {
    * Resolve uma pendência
    */
   @Put(':pendenciaId/resolver')
-  @RequiresPermission({ permissionName: 'pendencia.atualizar', scopeType: TipoEscopo.UNIDADE, scopeIdExpression: 'user.unidadeId' })
+  @RequiresPermission({ permissionName: 'pendencia.atualizar', scopeType: TipoEscopo.UNIDADE })
   @ApiOperation({
     summary: 'Resolver pendência',
     description: 'Marca uma pendência como resolvida',
@@ -191,11 +206,16 @@ export class PendenciaController {
     @Param('pendenciaId', ParseUUIDPipe) pendenciaId: string,
     @Body() resolverPendenciaDto: ResolverPendenciaDto,
     @GetUser() usuario: Usuario,
+    @Req() req: Request,
   ): Promise<PendenciaResponseDto> {
     return this.pendenciaService.resolverPendencia(
       pendenciaId,
       resolverPendenciaDto,
       usuario.id,
+      {
+        ip: req.ip,
+        userAgent: req.headers['user-agent'],
+      },
     );
   }
 
@@ -203,7 +223,7 @@ export class PendenciaController {
    * Cancela uma pendência
    */
   @Put(':pendenciaId/cancelar')
-  @RequiresPermission({ permissionName: 'pendencia.atualizar', scopeType: TipoEscopo.UNIDADE, scopeIdExpression: 'user.unidadeId' })
+  @RequiresPermission({ permissionName: 'pendencia.atualizar', scopeType: TipoEscopo.UNIDADE})
   @ApiOperation({
     summary: 'Cancelar pendência',
     description: 'Marca uma pendência como cancelada',
@@ -239,11 +259,16 @@ export class PendenciaController {
     @Param('pendenciaId', ParseUUIDPipe) pendenciaId: string,
     @Body() cancelarPendenciaDto: CancelarPendenciaDto,
     @GetUser() usuario: Usuario,
+    @Req() req: Request,
   ): Promise<PendenciaResponseDto> {
     return this.pendenciaService.cancelarPendencia(
       pendenciaId,
       cancelarPendenciaDto,
       usuario.id,
+      {
+        ip: req.ip,
+        userAgent: req.headers['user-agent'],
+      },
     );
   }
 
@@ -251,7 +276,7 @@ export class PendenciaController {
    * Lista pendências de uma solicitação específica
    */
   @Get('solicitacao/:solicitacaoId')
-  @RequiresPermission({ permissionName: 'pendencia.ler', scopeType: TipoEscopo.UNIDADE, scopeIdExpression: 'user.unidadeId' })
+  @RequiresPermission({ permissionName: 'pendencia.ler', scopeType: TipoEscopo.UNIDADE })
   @ApiOperation({
     summary: 'Listar pendências de uma solicitação',
     description: 'Retorna todas as pendências de uma solicitação específica',
@@ -291,7 +316,7 @@ export class PendenciaController {
    * Lista pendências vencidas
    */
   @Get('relatorios/vencidas')
-  @RequiresPermission({ permissionName: 'pendencia.ler', scopeType: TipoEscopo.UNIDADE, scopeIdExpression: 'user.unidadeId' })
+  @RequiresPermission({ permissionName: 'pendencia.ler', scopeType: TipoEscopo.UNIDADE })
   @ApiOperation({
     summary: 'Listar pendências vencidas',
     description: 'Retorna todas as pendências que passaram do prazo de resolução',

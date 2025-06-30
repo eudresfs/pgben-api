@@ -70,23 +70,29 @@ export class ResilientAuditoriaService implements OnModuleInit {
    */
   async onModuleInit() {
     try {
-      // Aguarda um pouco para garantir que os módulos estejam inicializados
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      // Inicialização assíncrona sem bloqueio
+      setImmediate(async () => {
+        try {
+          this.auditoriaService = this.moduleRef.get('AuditoriaService', {
+            strict: false,
+          });
+          this.auditoriaQueueService = this.moduleRef.get('AuditoriaQueueService', {
+            strict: false,
+          });
 
-      this.auditoriaService = this.moduleRef.get('AuditoriaService', {
-        strict: false,
+          this.logger.log('Serviços de auditoria inicializados via lazy loading');
+        } catch (error) {
+          this.logger.warn(
+            `Falha ao inicializar serviços de auditoria: ${error.message}`,
+          );
+          this.logger.warn(
+            'ResilientAuditoriaService funcionará apenas com backup em arquivo',
+          );
+        }
       });
-      this.auditoriaQueueService = this.moduleRef.get('AuditoriaQueueService', {
-        strict: false,
-      });
-
-      this.logger.log('Serviços de auditoria inicializados via lazy loading');
     } catch (error) {
       this.logger.warn(
-        `Falha ao inicializar serviços de auditoria: ${error.message}`,
-      );
-      this.logger.warn(
-        'ResilientAuditoriaService funcionará apenas com backup em arquivo',
+        `Erro durante inicialização do ResilientAuditoriaService: ${error.message}`,
       );
     }
   }

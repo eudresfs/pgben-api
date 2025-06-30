@@ -157,6 +157,7 @@ export class SolicitacaoService {
         'solicitacao.protocolo',
         'solicitacao.status',
         'solicitacao.data_abertura',
+        'solicitacao.data_aprovacao',
         'solicitacao.observacoes',
         // Dados básicos do beneficiário
         'beneficiario.id',
@@ -631,7 +632,7 @@ export class SolicitacaoService {
       const solicitacao = await this.findById(id);
 
       // Verificar se a solicitação está em estado que permite submissão
-      if (solicitacao.status !== StatusSolicitacao.RASCUNHO) {
+      if (![StatusSolicitacao.ABERTA, StatusSolicitacao.PENDENTE].includes(solicitacao.status)) {
         throwInvalidStatusTransition(
           solicitacao.status,
           StatusSolicitacao.EM_ANALISE,
@@ -646,7 +647,7 @@ export class SolicitacaoService {
       // Preparar dados para atualização
       const dadosAtualizacao = {
         status: StatusSolicitacao.EM_ANALISE,
-        data_atualizacao: new Date()
+        updated_at: new Date()
       };
 
       // ===== TRANSAÇÃO MÍNIMA APENAS PARA OPERAÇÕES DE ESCRITA =====
@@ -662,7 +663,7 @@ export class SolicitacaoService {
         const historico = historicoRepo.create({
           solicitacao_id: id,
           usuario_id: user.id,
-          status_anterior: StatusSolicitacao.RASCUNHO,
+          status_anterior: StatusSolicitacao.ABERTA,
           status_atual: StatusSolicitacao.EM_ANALISE,
           observacao: 'Solicitação submetida para análise',
           dados_alterados: {
@@ -726,7 +727,7 @@ export class SolicitacaoService {
       // Preparar dados para atualização
       const dadosAtualizacao: any = {
         status: novoStatus,
-        data_atualizacao: new Date()
+        updated_at: new Date()
       };
 
       // Adicionar dados específicos para solicitações aprovadas
@@ -825,7 +826,7 @@ export class SolicitacaoService {
       // Preparar dados para atualização
       const dadosAtualizacao = {
         status: StatusSolicitacao.CANCELADA,
-        data_atualizacao: new Date()
+        updated_at: new Date()
       };
 
       // ===== TRANSAÇÃO MÍNIMA APENAS PARA OPERAÇÕES DE ESCRITA =====

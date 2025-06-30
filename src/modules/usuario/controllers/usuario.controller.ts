@@ -32,6 +32,9 @@ import { PrimeiroAcessoGuard } from '../../../auth/guards/primeiro-acesso.guard'
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
 import { AllowPrimeiroAcesso } from '../../../auth/decorators/allow-primeiro-acesso.decorator';
 import { ScopeType } from '../../../entities/user-permission.entity';
+import { AuditEventEmitter } from '../../auditoria/events/emitters/audit-event.emitter';
+import { ReqContext } from '../../../shared/request-context/req-context.decorator';
+import { RequestContext } from '../../../shared/request-context/request-context.dto';
 
 /**
  * Controlador de usuários
@@ -43,7 +46,10 @@ import { ScopeType } from '../../../entities/user-permission.entity';
 @UseGuards(JwtAuthGuard, PrimeiroAcessoGuard, PermissionGuard) 
 @ApiBearerAuth()
 export class UsuarioController {
-  constructor(private readonly usuarioService: UsuarioService) {}
+  constructor(
+    private readonly usuarioService: UsuarioService,
+    private readonly auditEventEmitter: AuditEventEmitter,
+  ) {}
 
   /**
    * Lista todos os usuários com filtros dinâmicos e paginação
@@ -222,8 +228,24 @@ export class UsuarioController {
     status: 409,
     description: 'Email, CPF ou matrícula já em uso',
   })
-  async create(@Body() createUsuarioDto: CreateUsuarioDto) {
-    return this.usuarioService.create(createUsuarioDto);
+  async create(
+    @Body() createUsuarioDto: CreateUsuarioDto,
+    @ReqContext() context: RequestContext,
+  ) {
+    const result = await this.usuarioService.create(createUsuarioDto);
+    
+    // Auditoria da criação de usuário
+    await this.auditEventEmitter.emitEntityCreated(
+      'Usuario',
+      result.data.id,
+      result.data,
+      context.user?.id?.toString(),
+      {
+        synchronous: false,
+      },
+    );
+    
+    return result;
   }
 
   /**
@@ -246,8 +268,26 @@ export class UsuarioController {
   async update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateUsuarioDto: UpdateUsuarioDto,
+    @ReqContext() context: RequestContext,
   ) {
-    return this.usuarioService.update(id, updateUsuarioDto);
+    // Buscar dados anteriores para auditoria
+    const previousData = await this.usuarioService.findById(id);
+    
+    const result = await this.usuarioService.update(id, updateUsuarioDto);
+    
+    // Auditoria da atualização de usuário
+    await this.auditEventEmitter.emitEntityUpdated(
+      'Usuario',
+      id,
+      previousData,
+      result.data,
+      context.user?.id?.toString(),
+      {
+        synchronous: false,
+      },
+    );
+    
+    return result;
   }
 
   /**
@@ -265,14 +305,33 @@ export class UsuarioController {
   async updateStatus(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateStatusUsuarioDto: UpdateStatusUsuarioDto,
+    @ReqContext() context: RequestContext,
   ) {
-    return this.usuarioService.updateStatus(id, updateStatusUsuarioDto);
+    // Buscar dados anteriores para auditoria
+    const previousData = await this.usuarioService.findById(id);
+    
+    const result = await this.usuarioService.updateStatus(id, updateStatusUsuarioDto);
+    
+    // Auditoria da alteração de status
+    await this.auditEventEmitter.emitEntityUpdated(
+      'Usuario',
+      id,
+      previousData,
+      result,
+      context.user?.id?.toString(),
+      {
+        synchronous: false,
+      },
+    );
+    
+    return result;
   }
 
   /**
    * Altera a senha do usuário
    */
   @Put(':id/senha')
+  @AllowPrimeiroAcesso()
   @RequiresPermission({
     permissionName: 'usuario.senha.alterar',
     scopeType: ScopeType.SELF,
@@ -289,10 +348,34 @@ export class UsuarioController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateSenhaDto: UpdateSenhaDto,
     @Request() req,
+    @ReqContext() context: RequestContext,
   ) {
     // A verificação agora é feita pelo sistema de permissões granulares
-
-    return this.usuarioService.updateSenha(id, updateSenhaDto);
+    const userData = await this.usuarioService.findById(id);
+    
+    const result = await this.usuarioService.updateSenha(id, updateSenhaDto);
+    
+    // Auditoria da alteração de senha (dados sensíveis não são logados)
+    await this.auditEventEmitter.emitEntityUpdated(
+      'Usuario',
+      id,
+      {
+        nome: userData.nome,
+        email: userData.email,
+        passwordChanged: false,
+      },
+      {
+        nome: userData.nome,
+        email: userData.email,
+        passwordChanged: true,
+      },
+      context.user.id?.toString(),
+      {
+        synchronous: true,
+      },
+    );
+    
+    return result;
   }
 
   /**
@@ -310,12 +393,37 @@ export class UsuarioController {
   async alterarSenhaPrimeiroAcesso(
     @Body() alterarSenhaDto: AlterarSenhaPrimeiroAcessoDto,
     @Request() req,
+    @ReqContext() context: RequestContext,
   ) {
     const userId = req.user.id;
-    return this.usuarioService.alterarSenhaPrimeiroAcesso(
+    const userData = await this.usuarioService.findById(userId);
+    
+    const result = await this.usuarioService.alterarSenhaPrimeiroAcesso(
       userId,
       alterarSenhaDto,
     );
+    
+    // Auditoria da alteração de senha no primeiro acesso
+    await this.auditEventEmitter.emitEntityUpdated(
+      'Usuario',
+      userId,
+      {
+        nome: userData.nome,
+        email: userData.email,
+        primeiro_acesso: true,
+      },
+      {
+        nome: userData.nome,
+        email: userData.email,
+        primeiro_acesso: false,
+      },
+      context.user?.id?.toString(),
+      {
+        synchronous: true,
+      },
+    );
+    
+    return result;
   }
 
   /**
@@ -348,7 +456,35 @@ export class UsuarioController {
   @ApiOperation({ summary: 'Remover usuário (soft delete)' })
   @ApiResponse({ status: 200, description: 'Usuário removido com sucesso' })
   @ApiResponse({ status: 404, description: 'Usuário não encontrado' })
-  async remove(@Param('id', ParseUUIDPipe) id: string) {
-    return this.usuarioService.remove(id);
+  async remove(
+    @Param('id', ParseUUIDPipe) id: string,
+    @ReqContext() context: RequestContext,
+  ) {
+    // Buscar dados do usuário antes da remoção
+    const userData = await this.usuarioService.findById(id);
+    
+    const result = await this.usuarioService.remove(id);
+    
+    // Auditoria da remoção de usuário
+    await this.auditEventEmitter.emitEntityDeleted(
+      'Usuario',
+      id,
+      {
+        nome: userData.nome,
+        email: userData.email,
+        cpf: userData.cpf,
+        matricula: userData.matricula,
+        role_id: userData.role_id,
+        unidade_id: userData.unidade_id,
+        setor_id: userData.setor_id,
+        status: userData.status,
+      },
+      context.user?.id?.toString(),
+      {
+        synchronous: true,
+      },
+    );
+    
+    return result;
   }
 }

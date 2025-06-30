@@ -157,8 +157,8 @@ export class ConcessaoService {
       throw new BadRequestException('Concessão não encontrada');
     }
 
-    if (concessaoOriginal.status !== StatusConcessao.ENCERRADA) {
-      throw new BadRequestException('Apenas concessões com status ENCERRADA podem ser prorrogadas');
+    if (concessaoOriginal.status !== StatusConcessao.CESSADO) {
+      throw new BadRequestException('Apenas concessões com status CESSADO podem ser prorrogadas');
     }
 
     const solicitacaoOriginal = concessaoOriginal.solicitacao;
@@ -184,9 +184,9 @@ export class ConcessaoService {
     // Obter quantidade de parcelas da concessão original
     const pagamentosOriginais = await this.pagamentoService.findAll({
       concessaoId: concessaoOriginal.id
-    }, 1, 1000); // Buscar todos os pagamentos da concessão
+    }); // Buscar todos os pagamentos da concessão
     
-    const quantidadeParcelasOriginal = pagamentosOriginais.total;
+    const quantidadeParcelasOriginal = pagamentosOriginais.pagination.totalItems;
     
     if (quantidadeParcelasOriginal === 0) {
       throw new BadRequestException('Concessão original não possui pagamentos gerados');
@@ -207,7 +207,7 @@ export class ConcessaoService {
     // Criar nova concessão vinculada à mesma solicitação
     const novaConcessao = this.concessaoRepo.create({
       solicitacaoId: solicitacaoOriginal.id,
-      status: StatusConcessao.PENDENTE,
+      status: StatusConcessao.APTO,
       ordemPrioridade: solicitacaoOriginal.prioridade ?? 3,
       determinacaoJudicialFlag: solicitacaoOriginal.determinacao_judicial_flag,
       dataInicio: new Date(),
@@ -218,8 +218,8 @@ export class ConcessaoService {
     // Registrar no histórico
     const historico = this.historicoRepo.create({
       concessaoId: concessaoSalva.id,
-      statusAnterior: StatusConcessao.PENDENTE,
-      statusNovo: StatusConcessao.PENDENTE,
+      statusAnterior: StatusConcessao.APTO,
+      statusNovo: StatusConcessao.APTO,
       motivo: solicitacaoOriginal.determinacao_judicial_flag
         ? 'Prorrogação por determinação judicial'
         : 'Prorrogação de concessão anterior',
@@ -229,8 +229,9 @@ export class ConcessaoService {
 
     // Gerar pagamentos para a nova concessão com a mesma quantidade da original
     await this.pagamentoService.gerarPagamentosParaConcessao(
-      concessaoSalva, 
-      solicitacaoOriginal
+      concessaoSalva,
+      solicitacaoOriginal,
+      usuarioId
     );
 
     this.logger.info(
@@ -261,7 +262,7 @@ export class ConcessaoService {
 
     const concessao = this.concessaoRepo.create({
       solicitacaoId: solicitacao.id,
-      status: StatusConcessao.CONCEDIDA,
+      status: StatusConcessao.ATIVO,
       ordemPrioridade: solicitacao.prioridade ?? 3,
       determinacaoJudicialFlag: solicitacao.determinacao_judicial_flag,
       dataInicio,
@@ -269,8 +270,9 @@ export class ConcessaoService {
     });
 
     const saved = await this.concessaoRepo.save(concessao);
-    // Gera pagamentos com status PENDENTE
-    await this.pagamentoService.gerarPagamentosParaConcessao(saved, solicitacao);
+    // Gera pagamentos com status PENDENTE para a concessão criada
+    // Nota: usuarioId não está disponível neste contexto, usando 'system'
+    await this.pagamentoService.gerarPagamentosParaConcessao(saved, solicitacao, 'system');
     return saved;
   }
 
@@ -297,12 +299,8 @@ export class ConcessaoService {
       throw new NotFoundException('Concessão não encontrada');
     }
 
-    if (concessao.status !== StatusConcessao.CONCEDIDA) {
-      throw new BadRequestException('Apenas concessões com status CONCEDIDA podem ser suspensas');
-    }
-
     const statusAnterior = concessao.status;
-    concessao.status = StatusConcessao.SUSPENSA;
+    concessao.status = StatusConcessao.SUSPENSO;
     concessao.motivoSuspensao = motivo;
     if (dataRevisao) {
       concessao.dataRevisaoSuspensao = new Date(dataRevisao);
@@ -314,7 +312,7 @@ export class ConcessaoService {
     await this.historicoRepo.save({
       concessaoId: concessao.id,
       statusAnterior,
-      statusNovo: StatusConcessao.SUSPENSA,
+      statusNovo: StatusConcessao.SUSPENSO,
       usuarioId,
       motivo,
       dataAlteracao: new Date(),
@@ -348,12 +346,8 @@ export class ConcessaoService {
       throw new NotFoundException('Concessão não encontrada');
     }
 
-    if (![StatusConcessao.CONCEDIDA, StatusConcessao.SUSPENSA].includes(concessao.status)) {
-      throw new BadRequestException('Apenas concessões com status CONCEDIDA ou SUSPENSA podem ser bloqueadas');
-    }
-
     const statusAnterior = concessao.status;
-    concessao.status = StatusConcessao.BLOQUEADA;
+    concessao.status = StatusConcessao.BLOQUEADO;
     concessao.motivoBloqueio = motivo;
     concessao.dataBloqueio = new Date();
 
@@ -363,7 +357,52 @@ export class ConcessaoService {
     await this.historicoRepo.save({
       concessaoId: concessao.id,
       statusAnterior,
-      statusNovo: StatusConcessao.BLOQUEADA,
+      statusNovo: StatusConcessao.BLOQUEADO,
+      usuarioId,
+      motivo,
+      dataAlteracao: new Date(),
+    });
+
+    this.logger.warn(
+      `Concessão ${concessaoId} bloqueada por ${usuarioId}. Motivo: ${motivo}`,
+      ConcessaoService.name,
+    );
+    return concessaoSalva;
+  }
+
+    /**
+   * Bloqueia uma concessão
+   * @param concessaoId ID da concessão a ser bloqueada
+   * @param usuarioId ID do usuário que está realizando o bloqueio
+   * @param motivo Motivo do bloqueio
+   * @returns Concessão bloqueada
+   */
+  async reativarConcessao(
+    concessaoId: string,
+    usuarioId: string,
+    motivo: string,
+  ): Promise<Concessao> {
+    const concessao = await this.concessaoRepo.findOne({
+      where: { id: concessaoId },
+      relations: ['solicitacao'],
+    });
+
+    if (!concessao) {
+      throw new NotFoundException('Concessão não encontrada');
+    }
+
+    const statusAnterior = concessao.status;
+    concessao.status = StatusConcessao.ATIVO;
+    concessao.motivoBloqueio = motivo;
+    concessao.dataBloqueio = new Date();
+
+    const concessaoSalva = await this.concessaoRepo.save(concessao);
+
+    // Registra no histórico
+    await this.historicoRepo.save({
+      concessaoId: concessao.id,
+      statusAnterior,
+      statusNovo: StatusConcessao.BLOQUEADO,
       usuarioId,
       motivo,
       dataAlteracao: new Date(),
@@ -397,13 +436,13 @@ export class ConcessaoService {
       throw new NotFoundException('Concessão não encontrada');
     }
 
-    if (concessao.status !== StatusConcessao.BLOQUEADA) {
-      throw new BadRequestException('Apenas concessões com status BLOQUEADA podem ser desbloqueadas');
+    if (concessao.status !== StatusConcessao.BLOQUEADO) {
+      throw new BadRequestException('Apenas concessões com status BLOQUEADO podem ser desbloqueadas');
     }
 
     const statusAnterior = concessao.status;
-    // Retorna ao status anterior ao bloqueio (geralmente CONCEDIDA)
-    concessao.status = StatusConcessao.CONCEDIDA;
+    // Retorna ao status anterior ao bloqueio (geralmente ATIVO)
+    concessao.status = StatusConcessao.ATIVO;
     concessao.motivoDesbloqueio = motivo;
     concessao.dataDesbloqueio = new Date();
 
@@ -413,7 +452,7 @@ export class ConcessaoService {
     await this.historicoRepo.save({
       concessaoId: concessao.id,
       statusAnterior,
-      statusNovo: StatusConcessao.CONCEDIDA,
+      statusNovo: StatusConcessao.ATIVO,
       usuarioId,
       motivo,
       dataAlteracao: new Date(),
@@ -448,13 +487,13 @@ export class ConcessaoService {
       throw new NotFoundException('Concessão não encontrada');
     }
 
-    if (concessao.status !== StatusConcessao.CONCEDIDA) {
+    if (concessao.status !== StatusConcessao.ATIVO) {
       throw new BadRequestException('Apenas concessões ativas podem ser canceladas');
     }
 
     // Atualizar status da concessão
      const statusAnterior = concessao.status;
-     concessao.status = StatusConcessao.CANCELADA;
+     concessao.status = StatusConcessao.CANCELADO;
      concessao.dataEncerramento = new Date();
      concessao.motivoEncerramento = motivo;
 
@@ -464,7 +503,7 @@ export class ConcessaoService {
     const historico = this.historicoRepo.create({
       concessaoId: concessaoSalva.id,
       statusAnterior,
-      statusNovo: StatusConcessao.CANCELADA,
+      statusNovo: StatusConcessao.CANCELADO,
       motivo,
       alteradoPor: usuarioId,
     });
@@ -496,7 +535,7 @@ export class ConcessaoService {
     }
 
     // Só verifica concessões ativas
-    if (concessao.status !== StatusConcessao.CONCEDIDA) {
+    if (concessao.status !== StatusConcessao.ATIVO) {
       return null;
     }
 
@@ -512,7 +551,7 @@ export class ConcessaoService {
 
     if (todosLiberados) {
       const statusAnterior = concessao.status;
-      concessao.status = StatusConcessao.ENCERRADA;
+      concessao.status = StatusConcessao.CESSADO;
       concessao.dataEncerramento = new Date();
       concessao.motivoEncerramento = 'Encerramento automático - todos os pagamentos liberados';
 
@@ -522,7 +561,7 @@ export class ConcessaoService {
       await this.historicoRepo.save({
         concessaoId: concessao.id,
         statusAnterior,
-        statusNovo: StatusConcessao.ENCERRADA,
+        statusNovo: StatusConcessao.CESSADO,
         motivo: 'Encerramento automático - todos os pagamentos liberados',
         alteradoPor: 'SISTEMA',
         dataAlteracao: new Date(),

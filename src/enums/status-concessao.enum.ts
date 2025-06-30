@@ -3,20 +3,20 @@
  */
 export enum StatusConcessao {
   /** Benefício criado, aguardando ativação */
-  PENDENTE = 'pendente',
+  APTO = 'apto',
 
   /** Benefício ativo/liberado para o cidadão */
-  CONCEDIDA = 'concedido',
+  ATIVO = 'ativo',
 
   /** Benefício temporariamente suspenso */
-  SUSPENSA = 'suspenso',
+  SUSPENSO = 'suspenso',
 
   /** Benefício bloqueado por descumprimento de regra */
-  BLOQUEADA = 'bloqueado',
+  BLOQUEADO = 'bloqueado',
 
   /** Benefício encerrado (fim de prazo, óbito, etc.) */
-  ENCERRADA = 'encerrado',
+  CESSADO = 'cessado',
 
   /** Benefício cancelado pelo cidadão */
-  CANCELADA = 'cancelado',
+  CANCELADO = 'cancelado',
 }

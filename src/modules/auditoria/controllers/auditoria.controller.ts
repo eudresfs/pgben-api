@@ -17,13 +17,18 @@ import {
   ApiParam,
   ApiQuery,
 } from '@nestjs/swagger';
+import { AuditEventEmitter } from '../events/emitters/audit-event.emitter';
+import { AuditEventType } from '../events/types/audit-event.types';
+import { TipoOperacao } from '../../../enums/tipo-operacao.enum';
 import { AuditoriaService } from '../services/auditoria.service';
+import { AuditProcessor } from '../queues/processors/audit.processor';
 import { CreateLogAuditoriaDto } from '../dto/create-log-auditoria.dto';
 import { QueryLogAuditoriaDto } from '../dto/query-log-auditoria.dto';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../../../auth/guards/permission.guard';
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
 import { ScopeType } from '../../../entities/user-permission.entity';
+import { Public } from '@/auth/decorators/public.decorator';
 
 /**
  * Controlador de Auditoria
@@ -36,7 +41,11 @@ import { ScopeType } from '../../../entities/user-permission.entity';
 @UseGuards(JwtAuthGuard, PermissionGuard)
 @ApiBearerAuth()
 export class AuditoriaController {
-  constructor(private readonly auditoriaService: AuditoriaService) {}
+  constructor(
+    private readonly auditoriaService: AuditoriaService,
+    private readonly auditEventEmitter: AuditEventEmitter,
+    private readonly auditProcessor: AuditProcessor,
+  ) {}
 
   /**
    * Cria um novo log de auditoria manualmente
@@ -68,7 +77,59 @@ export class AuditoriaController {
       createLogAuditoriaDto.user_agent = req.headers['user-agent'];
     }
 
-    return this.auditoriaService.create(createLogAuditoriaDto);
+    // Migração para o novo sistema de eventos de auditoria
+    // Determina o tipo de evento baseado no tipo_operacao
+    const operacao = createLogAuditoriaDto.tipo_operacao;
+    const entidade = createLogAuditoriaDto.entidade_afetada || 'Unknown';
+    const entidadeId = createLogAuditoriaDto.entidade_id;
+    const userId = createLogAuditoriaDto.usuario_id;
+    const dadosAnteriores = createLogAuditoriaDto.dados_anteriores;
+    const dadosNovos = createLogAuditoriaDto.dados_novos;
+    const descricao = createLogAuditoriaDto.descricao || `${operacao} em ${entidade}`;
+    const camposSensiveis = createLogAuditoriaDto.dados_sensiveis_acessados || [];
+
+    // Emite o evento apropriado baseado na operação
+    switch (operacao) {
+      case TipoOperacao.CREATE:
+        this.auditEventEmitter.emitEntityCreated(
+          entidade,
+          entidadeId,
+          dadosNovos,
+          userId
+        );
+        break;
+      case TipoOperacao.UPDATE:
+        this.auditEventEmitter.emitEntityUpdated(
+          entidade,
+          entidadeId,
+          dadosAnteriores,
+          dadosNovos
+        );
+        break;
+      case TipoOperacao.DELETE:
+        this.auditEventEmitter.emitEntityDeleted(
+          entidade,
+          entidadeId,
+          dadosAnteriores,
+          userId
+        );
+        break;
+      default:
+        this.auditEventEmitter.emitSystemEvent(
+          AuditEventType.SYSTEM_INFO,
+          { 
+            entidade, 
+            entityId: entidadeId, 
+            dados_anteriores: dadosAnteriores, 
+            dados_novos: dadosNovos, 
+            userId 
+          }
+        );
+        break;
+    }
+
+    // Mantém compatibilidade retornando o DTO original
+    return Promise.resolve(createLogAuditoriaDto);
   }
 
   /**
@@ -84,6 +145,28 @@ export class AuditoriaController {
   @ApiResponse({ status: 403, description: 'Acesso negado' })
   findAll(@Query() queryParams: QueryLogAuditoriaDto) {
     return this.auditoriaService.findAll(queryParams);
+  }
+
+  /**
+   * Endpoint para testar o worker de auditoria diretamente
+   */
+  @Get('/test-worker-direct')
+  @ApiOperation({ summary: 'Testa o worker de auditoria diretamente' })
+  @ApiResponse({
+    status: 200,
+    description: 'Teste do worker executado com sucesso',
+  })
+  @RequiresPermission({
+    permissionName: 'auditoria.teste.executar',
+    scopeType: ScopeType.GLOBAL,
+  })
+  async testWorkerDirect() {
+    try {
+      const result = await this.auditProcessor.testDirectProcessing();
+      return { success: true, result };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
   }
 
   /**
@@ -180,4 +263,5 @@ export class AuditoriaController {
       new Date(dataFinal),
     );
   }
+
 }

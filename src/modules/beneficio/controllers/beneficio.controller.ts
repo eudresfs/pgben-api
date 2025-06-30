@@ -27,6 +27,11 @@ import { PermissionGuard } from '../../../auth/guards/permission.guard';
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
 import { ScopeType } from '../../../entities';
 import { QueryOptimization } from '../../../common/interceptors/query-optimization.interceptor';
+import { AuditEventEmitter } from '../../auditoria/events/emitters/audit-event.emitter';
+import { AuditEventType } from '../../auditoria/events/types/audit-event.types';
+import { ReqContext } from '../../../shared/request-context/req-context.decorator';
+import { GetUser } from '../../../auth/decorators/get-user.decorator';
+import { Usuario } from '../../../entities/usuario.entity';
 
 /**
  * Controlador de benefícios
@@ -38,7 +43,10 @@ import { QueryOptimization } from '../../../common/interceptors/query-optimizati
 @UseGuards(JwtAuthGuard, PermissionGuard)
 @ApiBearerAuth()
 export class BeneficioController {
-  constructor(private readonly beneficioService: BeneficioService) {}
+  constructor(
+    private readonly beneficioService: BeneficioService,
+    private readonly auditEventEmitter: AuditEventEmitter,
+  ) {}
 
   /**
    * Lista todos os tipos de benefícios
@@ -184,8 +192,27 @@ export class BeneficioController {
       },
     },
   })
-  async create(@Body() createTipoBeneficioDto: CreateTipoBeneficioDto) {
-    return this.beneficioService.create(createTipoBeneficioDto);
+  async create(
+    @Body() createTipoBeneficioDto: CreateTipoBeneficioDto,
+    @GetUser() usuario: Usuario,
+    @ReqContext() ctx: any,
+  ) {
+    const result = await this.beneficioService.create(createTipoBeneficioDto);
+
+    // Auditoria: Criação de tipo de benefício
+    await this.auditEventEmitter.emitEntityCreated(
+      'TipoBeneficio',
+      result.id,
+      {
+        nome: createTipoBeneficioDto.nome,
+        descricao: createTipoBeneficioDto.descricao,
+        valor: createTipoBeneficioDto.valor,
+        periodicidade: createTipoBeneficioDto.periodicidade,
+      },
+      usuario.id,
+    );
+
+    return result;
   }
 
   /**
@@ -247,8 +274,29 @@ export class BeneficioController {
   async update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateTipoBeneficioDto: UpdateTipoBeneficioDto,
+    @GetUser() usuario: Usuario,
+    @ReqContext() ctx: any,
   ) {
-    return this.beneficioService.update(id, updateTipoBeneficioDto);
+    // Buscar estado anterior para auditoria
+    const beneficioAnterior = await this.beneficioService.findById(id);
+    
+    const result = await this.beneficioService.update(id, updateTipoBeneficioDto);
+
+    // Auditoria: Atualização de tipo de benefício
+    await this.auditEventEmitter.emitEntityUpdated(
+      'TipoBeneficio',
+      id,
+      {
+        nome: beneficioAnterior?.nome,
+        descricao: beneficioAnterior?.descricao,
+        valor: beneficioAnterior?.valor,
+        periodicidade: beneficioAnterior?.periodicidade,
+      },
+      updateTipoBeneficioDto,
+      usuario.id,
+    );
+
+    return result;
   }
 
   /**
@@ -280,8 +328,25 @@ export class BeneficioController {
   async addRequisito(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() createRequisitoDocumentoDto: CreateRequisitoDocumentoDto,
+    @GetUser() usuario: Usuario,
+    @ReqContext() ctx: any,
   ) {
-    return this.beneficioService.addRequisito(id, createRequisitoDocumentoDto);
+    const result = await this.beneficioService.addRequisito(id, createRequisitoDocumentoDto);
+
+    // Auditoria: Adição de requisito documental
+    await this.auditEventEmitter.emitEntityCreated(
+      'RequisitoDocumento',
+      result.id,
+      {
+        tipoBeneficioId: id,
+        tipoDocumento: createRequisitoDocumentoDto.tipo_documento,
+        obrigatorio: createRequisitoDocumentoDto.obrigatorio,
+        descricao: createRequisitoDocumentoDto.descricao,
+      },
+      usuario.id,
+    );
+
+    return result;
   }
 
   /**
@@ -299,7 +364,23 @@ export class BeneficioController {
   async configurarFluxo(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() configurarFluxoDto: ConfigurarFluxoDto,
+    @GetUser() usuario: Usuario,
+    @ReqContext() ctx: any,
   ) {
-    return this.beneficioService.configurarFluxo(id, configurarFluxoDto);
+    const result = await this.beneficioService.configurarFluxo(id, configurarFluxoDto);
+
+    // Auditoria: Configuração de fluxo de aprovação
+    await this.auditEventEmitter.emitEntityUpdated(
+      'TipoBeneficio',
+      id,
+      {},
+      {
+        action: 'configurar_fluxo',
+        fluxoAprovacao: configurarFluxoDto,
+      },
+      usuario.id,
+    );
+
+    return result;
   }
 }

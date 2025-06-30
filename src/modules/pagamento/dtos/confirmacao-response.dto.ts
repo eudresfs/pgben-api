@@ -1,23 +1,18 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { MetodoConfirmacaoEnum } from '../../../enums/metodo-confirmacao.enum';
+import { ConfirmacaoBaseDto, ResponsavelConfirmacaoInfo, DestinatarioInfo } from './base/confirmacao-base.dto';
 
 /**
  * DTO para resposta contendo dados de uma confirmação de recebimento
  *
  * Este DTO define a estrutura de dados retornada pela API ao consultar
- * informações sobre uma confirmação de recebimento específica.
+ * informações sobre uma confirmação de recebimento específica. Estende ConfirmacaoBaseDto
+ * para reutilizar campos comuns.
  *
  * @author Equipe PGBen
  */
-export class ConfirmacaoResponseDto {
-  /**
-   * Identificador único da confirmação
-   */
-  @ApiProperty({
-    description: 'ID único da confirmação',
-    example: 'uuid',
-  })
-  id: string;
+export class ConfirmacaoResponseDto extends ConfirmacaoBaseDto {
+  // Campo 'id' herdado de ConfirmacaoBaseDto
 
   /**
    * Referência ao pagamento relacionado a esta confirmação
@@ -58,11 +53,7 @@ export class ConfirmacaoResponseDto {
       role: 'string',
     },
   })
-  responsavelConfirmacao: {
-    id: string;
-    nome: string;
-    role?: string;
-  };
+  responsavelConfirmacao: ResponsavelConfirmacaoInfo;
 
   /**
    * Informações sobre o destinatário que recebeu (se diferente do beneficiário)
@@ -77,37 +68,7 @@ export class ConfirmacaoResponseDto {
     },
     required: false,
   })
-  destinatario?: {
-    id: string;
-    nome: string;
-    relacao?: string;
-  };
+  destinatario?: DestinatarioInfo;
 
-  /**
-   * Observações sobre a confirmação
-   */
-  @ApiProperty({
-    description: 'Observações sobre a confirmação',
-    example: 'string',
-    required: false,
-  })
-  observacoes?: string;
-
-  /**
-   * Data de criação do registro
-   */
-  @ApiProperty({
-    description: 'Data de criação do registro',
-    example: 'ISO 8601 date string',
-  })
-  createdAt: Date;
-
-  /**
-   * Data da última atualização do registro
-   */
-  @ApiProperty({
-    description: 'Data da última atualização do registro',
-    example: 'ISO 8601 date string',
-  })
-  updatedAt: Date;
+  // Campos 'observacoes', 'createdAt' e 'updatedAt' herdados de ConfirmacaoBaseDto
 }

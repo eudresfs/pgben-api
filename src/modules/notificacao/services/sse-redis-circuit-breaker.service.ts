@@ -57,9 +57,6 @@ export class SseRedisCircuitBreakerService {
     this.publishCircuitBreaker = this.createRedisCircuitBreaker('redis-publish');
     this.subscribeCircuitBreaker = this.createRedisCircuitBreaker('redis-subscribe');
 
-    this.logger.log('SseRedisCircuitBreakerService inicializado', {
-      config: this.redisConfig,
-    });
   }
 
   /**

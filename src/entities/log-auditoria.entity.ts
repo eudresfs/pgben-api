@@ -157,6 +157,17 @@ export class LogAuditoria {
   // Campos não essenciais para o MVP foram removidos
 
   /**
+   * Nível de risco da operação
+   */
+  @Column({
+    type: 'varchar',
+    length: 20,
+    nullable: true,
+    comment: 'Nível de risco da operação (LOW, MEDIUM, HIGH, CRITICAL)',
+  })
+  nivel_risco: string;
+
+  /**
    * Data e hora da operação
    */
   @Column({

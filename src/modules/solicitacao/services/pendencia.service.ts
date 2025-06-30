@@ -13,14 +13,18 @@ import {
   PendenciaResponseDto,
 } from '../dto/pendencia';
 import { PaginatedResponseDto } from '../../../shared/dtos/pagination.dto';
-import { AuditoriaService } from '../../auditoria/services/auditoria.service';
-import { CreateLogAuditoriaDto } from '../../auditoria/dto/create-log-auditoria.dto';
+import { AuditEventEmitter } from '../../auditoria/events/emitters/audit-event.emitter';
 import { EventosService } from './eventos.service';
 import { NotificacaoService } from './notificacao.service';
 import { PermissionService } from '../../../auth/services/permission.service';
 import { TipoOperacao } from '../../../enums/tipo-operacao.enum';
 import { SolicitacaoEventType } from '../events/solicitacao-events';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+
+interface AuditContext {
+  ip?: string;
+  userAgent?: string;
+}
 
 /**
  * Service centralizado para gestão de pendências
@@ -36,7 +40,7 @@ export class PendenciaService {
     private readonly solicitacaoRepository: Repository<Solicitacao>,
     @InjectRepository(Usuario)
     private readonly usuarioRepository: Repository<Usuario>,
-    private readonly auditoriaService: AuditoriaService,
+    private readonly auditEmitter: AuditEventEmitter,
     private readonly eventosService: EventosService,
     private readonly notificacaoService: NotificacaoService,
     private readonly permissionService: PermissionService,
@@ -49,6 +53,7 @@ export class PendenciaService {
   async criarPendencia(
     createPendenciaDto: CreatePendenciaDto,
     usuarioId: string,
+    auditContext?: AuditContext,
   ): Promise<PendenciaResponseDto> {
     // Verificar se a solicitação existe
     const solicitacao = await this.solicitacaoRepository.findOne({
@@ -58,13 +63,6 @@ export class PendenciaService {
 
     if (!solicitacao) {
       throw new NotFoundException('Solicitação não encontrada');
-    }
-
-    // Verificar se a solicitação está com status em_analise
-    if (solicitacao.status !== StatusSolicitacao.EM_ANALISE) {
-      throw new BadRequestException(
-        'Só é possível criar pendência para solicitações com status "em análise"'
-      );
     }
 
     // Verificar se o prazo de resolução é maior que a data atual
@@ -119,14 +117,27 @@ export class PendenciaService {
     });
 
     // Registrar auditoria
-    const logDto = new CreateLogAuditoriaDto();
-    logDto.tipo_operacao = TipoOperacao.CREATE;
-    logDto.entidade_afetada = 'Pendencia';
-    logDto.entidade_id = pendenciaSalva.id;
-    logDto.usuario_id = usuarioId;
-    logDto.dados_novos = pendenciaSalva;
-    logDto.descricao = `Pendência criada: ${createPendenciaDto.descricao}`;
-    await this.auditoriaService.criarLog(logDto);
+    await this.auditEmitter.emitEntityCreated(
+      'Pendencia',
+      pendenciaSalva.id,
+      {
+        solicitacao_id: pendenciaSalva.solicitacao_id,
+        descricao: pendenciaSalva.descricao,
+        status: pendenciaSalva.status,
+        prazo_resolucao: pendenciaSalva.prazo_resolucao,
+        registrado_por_id: pendenciaSalva.registrado_por_id,
+        // Campos sensíveis identificados
+        _sensitive_fields: ['descricao'],
+        // Contexto adicional
+        _context: {
+          ip: auditContext?.ip,
+          userAgent: auditContext?.userAgent,
+          action: 'Criação de pendência para solicitação',
+          solicitacao_id: solicitacao.id,
+        },
+      },
+      usuarioId
+    );
 
     // Enviar notificação
     await this.notificacaoService.notificarPendenciaCriada(
@@ -170,6 +181,7 @@ export class PendenciaService {
     pendenciaId: string,
     resolverPendenciaDto: ResolverPendenciaDto,
     usuarioId: string,
+    auditContext?: AuditContext,
   ): Promise<PendenciaResponseDto> {
     const pendencia = await this.pendenciaRepository.findOne({
       where: { id: pendenciaId },
@@ -235,15 +247,43 @@ export class PendenciaService {
     });
 
     // Registrar auditoria
-    const logDto = new CreateLogAuditoriaDto();
-    logDto.tipo_operacao = TipoOperacao.UPDATE;
-    logDto.entidade_afetada = 'Pendencia';
-    logDto.entidade_id = pendencia.id;
-    logDto.usuario_id = usuarioId;
-    logDto.dados_anteriores = dadosAnteriores;
-    logDto.dados_novos = pendenciaAtualizada;
-    logDto.descricao = `Pendência resolvida: ${resolverPendenciaDto.resolucao}`;
-    await this.auditoriaService.criarLog(logDto);
+    await this.auditEmitter.emitEntityUpdated(
+      'Pendencia',
+      pendencia.id,
+      {
+        status: dadosAnteriores.status,
+        resolvido_por_id: dadosAnteriores.resolvido_por_id,
+        data_resolucao: dadosAnteriores.data_resolucao,
+        observacao_resolucao: dadosAnteriores.observacao_resolucao,
+        // Campos sensíveis identificados
+        _sensitive_fields: ['observacao_resolucao'],
+        // Contexto adicional
+        _context: {
+          ip: auditContext?.ip,
+          userAgent: auditContext?.userAgent,
+          action: 'Resolução de pendência',
+          solicitacao_id: pendencia.solicitacao?.id,
+          pendencia_descricao: pendencia.descricao,
+        },
+      },
+      {
+        status: pendenciaAtualizada.status,
+        resolvido_por_id: pendenciaAtualizada.resolvido_por_id,
+        data_resolucao: pendenciaAtualizada.data_resolucao,
+        observacao_resolucao: pendenciaAtualizada.observacao_resolucao,
+        // Campos sensíveis identificados
+        _sensitive_fields: ['observacao_resolucao'],
+        // Contexto adicional
+        _context: {
+          ip: auditContext?.ip,
+          userAgent: auditContext?.userAgent,
+          action: 'Resolução de pendência',
+          solicitacao_id: pendencia.solicitacao?.id,
+          pendencia_descricao: pendencia.descricao,
+        },
+      },
+      usuarioId
+    );
 
     // Enviar notificação
     await this.notificacaoService.notificarPendenciaResolvida(
@@ -298,6 +338,7 @@ export class PendenciaService {
     pendenciaId: string,
     cancelarPendenciaDto: CancelarPendenciaDto,
     usuarioId: string,
+    auditContext?: AuditContext,
   ): Promise<PendenciaResponseDto> {
     const pendencia = await this.pendenciaRepository.findOne({
       where: { id: pendenciaId },
@@ -310,22 +351,6 @@ export class PendenciaService {
 
     if (pendencia.status !== StatusPendencia.ABERTA) {
       throw new BadRequestException('Apenas pendências abertas podem ser canceladas');
-    }
-
-    // Verificar permissões
-    await this.permissionService.verificarPermissaoSolicitacao(
-      usuarioId,
-      pendencia.solicitacao_id,
-      'cancelar_pendencia',
-    );
-
-    // Verificar se o usuário existe
-    const usuario = await this.usuarioRepository.findOne({
-      where: { id: usuarioId },
-    });
-
-    if (!usuario) {
-      throw new NotFoundException('Usuário não encontrado');
     }
 
     const dadosAnteriores = { ...pendencia };
@@ -370,15 +395,45 @@ export class PendenciaService {
     });
 
     // Registrar auditoria
-    const logDto = new CreateLogAuditoriaDto();
-    logDto.tipo_operacao = TipoOperacao.UPDATE;
-    logDto.entidade_afetada = 'Pendencia';
-    logDto.entidade_id = pendencia.id;
-    logDto.usuario_id = usuarioId;
-    logDto.dados_anteriores = dadosAnteriores;
-    logDto.dados_novos = pendenciaAtualizada;
-    logDto.descricao = `Pendência cancelada: ${cancelarPendenciaDto.motivo_cancelamento}`;
-    await this.auditoriaService.criarLog(logDto);
+    await this.auditEmitter.emitEntityUpdated(
+      'Pendencia',
+      pendencia.id,
+      {
+        status: dadosAnteriores.status,
+        resolvido_por_id: dadosAnteriores.resolvido_por_id,
+        data_resolucao: dadosAnteriores.data_resolucao,
+        observacao_resolucao: dadosAnteriores.observacao_resolucao,
+        // Campos sensíveis identificados
+        _sensitive_fields: ['observacao_resolucao'],
+        // Contexto adicional
+        _context: {
+          ip: auditContext?.ip,
+          userAgent: auditContext?.userAgent,
+          action: 'Cancelamento de pendência',
+          solicitacao_id: pendencia.solicitacao?.id,
+          pendencia_descricao: pendencia.descricao,
+          motivo_cancelamento: cancelarPendenciaDto.motivo_cancelamento,
+        },
+      },
+      {
+        status: pendenciaAtualizada.status,
+        resolvido_por_id: pendenciaAtualizada.resolvido_por_id,
+        data_resolucao: pendenciaAtualizada.data_resolucao,
+        observacao_resolucao: pendenciaAtualizada.observacao_resolucao,
+        // Campos sensíveis identificados
+        _sensitive_fields: ['observacao_resolucao'],
+        // Contexto adicional
+        _context: {
+          ip: auditContext?.ip,
+          userAgent: auditContext?.userAgent,
+          action: 'Cancelamento de pendência',
+          solicitacao_id: pendencia.solicitacao?.id,
+          pendencia_descricao: pendencia.descricao,
+          motivo_cancelamento: cancelarPendenciaDto.motivo_cancelamento,
+        },
+      },
+      usuarioId
+    );
 
     // Emitir notificação SSE para pendência cancelada
     this.eventEmitter.emit('sse.notificacao', {
@@ -422,10 +477,14 @@ export class PendenciaService {
   /**
    * Busca uma pendência por ID
    */
-  async buscarPorId(pendenciaId: string): Promise<PendenciaResponseDto> {
+  async buscarPorId(
+    pendenciaId: string,
+    usuarioId?: string,
+    auditContext?: AuditContext,
+  ): Promise<PendenciaResponseDto> {
     const pendencia = await this.pendenciaRepository.findOne({
       where: { id: pendenciaId },
-      relations: ['registrado_por', 'resolvido_por'],
+      relations: ['registrado_por', 'resolvido_por', 'solicitacao'],
     });
 
     if (!pendencia) {

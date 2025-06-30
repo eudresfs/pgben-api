@@ -119,7 +119,7 @@ export const createHelmetConfig = (configService: ConfigService) => {
         ],
         fontSrc: ["'self'", 'https://fonts.gstatic.com'],
         imgSrc: ["'self'", 'data:', 'https:', 'blob:'],
-        connectSrc: ["'self'", 'wss:', 'https:'],
+        connectSrc: ["'self'", 'http://localhost:3000', 'wss:', 'https:'],
         mediaSrc: ["'self'"],
         objectSrc: ["'none'"],
         frameSrc: ["'none'"],

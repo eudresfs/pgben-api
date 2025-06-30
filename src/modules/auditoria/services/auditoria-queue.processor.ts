@@ -29,48 +29,51 @@ export class AuditoriaQueueProcessor implements OnModuleInit {
   ) {}
 
   /**
-   * Registra o processador manualmente na fila quando o módulo é inicializado
+   * Registra o processador manualmente na fila quando o módulo é inicializado de forma assíncrona
    */
   async onModuleInit() {
-    try {
-      // Registra o processador de logs de auditoria
-      if (!registeredProcessors.has('registrar-log')) {
-        await this.auditoriaQueue.process('registrar-log', async (job) => {
-          return this.processarLogAuditoria(job);
-        });
+    // Inicialização assíncrona sem bloqueio
+    setImmediate(async () => {
+      try {
+        // Registra o processador de logs de auditoria
+        if (!registeredProcessors.has('registrar-log')) {
+          await this.auditoriaQueue.process('registrar-log', async (job) => {
+            return this.processarLogAuditoria(job);
+          });
 
-        registeredProcessors.add('registrar-log');
-        this.logger.log('Processador registrar-log registrado com sucesso');
-      } else {
-        this.logger.warn(
-          'Processador registrar-log já registrado, ignorando registro duplicado',
+          registeredProcessors.add('registrar-log');
+          this.logger.log('Processador registrar-log registrado com sucesso');
+        } else {
+          this.logger.warn(
+            'Processador registrar-log já registrado, ignorando registro duplicado',
+          );
+        }
+
+        // Registra o processador de acesso a dados sensíveis
+        if (!registeredProcessors.has('registrar-acesso-dados-sensiveis')) {
+          await this.auditoriaQueue.process(
+            'registrar-acesso-dados-sensiveis',
+            async (job) => {
+              return this.processarAcessoDadosSensiveis(job);
+            },
+          );
+
+          registeredProcessors.add('registrar-acesso-dados-sensiveis');
+          this.logger.log(
+            'Processador registrar-acesso-dados-sensiveis registrado com sucesso',
+          );
+        } else {
+          this.logger.warn(
+            'Processador registrar-acesso-dados-sensiveis já registrado, ignorando registro duplicado',
+          );
+        }
+      } catch (error) {
+        this.logger.error(
+          `Erro ao registrar processadores: ${error.message}`,
+          error.stack,
         );
       }
-
-      // Registra o processador de acesso a dados sensíveis
-      if (!registeredProcessors.has('registrar-acesso-dados-sensiveis')) {
-        await this.auditoriaQueue.process(
-          'registrar-acesso-dados-sensiveis',
-          async (job) => {
-            return this.processarAcessoDadosSensiveis(job);
-          },
-        );
-
-        registeredProcessors.add('registrar-acesso-dados-sensiveis');
-        this.logger.log(
-          'Processador registrar-acesso-dados-sensiveis registrado com sucesso',
-        );
-      } else {
-        this.logger.warn(
-          'Processador registrar-acesso-dados-sensiveis já registrado, ignorando registro duplicado',
-        );
-      }
-    } catch (error) {
-      this.logger.error(
-        `Erro ao registrar processadores: ${error.message}`,
-        error.stack,
-      );
-    }
+    });
   }
 
   /**
