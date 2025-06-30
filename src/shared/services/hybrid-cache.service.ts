@@ -96,25 +96,29 @@ export class HybridCacheService implements OnModuleInit {
   }
 
   async onModuleInit() {
-    this.logger.log('Inicializando Hybrid Cache Service');
+    // Inicialização assíncrona sem bloqueio
+    setImmediate(async () => {
+      try {
+        this.logger.log('Inicializando Hybrid Cache Service');
 
-    // TEMPORÁRIO: Desabilitando inicialização para evitar travamento
-    this.logger.warn(
-      '⚠️ Inicialização do HybridCacheService desabilitada temporariamente',
-    );
+        if (this.enableCacheWarming) {
+          this.logger.log('Cache warming habilitado');
+        }
+        
+        // Registrar chaves críticas padrão
+        this.registerCriticalKey('system:config', async () => {
+          // Exemplo: carregar configurações do sistema
+          return { loaded: true, timestamp: Date.now() };
+        });
 
-    // TODO: Reabilitar após resolver problemas de conectividade com Redis
-    /*
-    if (this.enableCacheWarming) {
-      this.logger.log('Cache warming habilitado');
-    }
-    
-    // Registrar chaves críticas padrão
-    this.registerCriticalKey('system:config', async () => {
-      // Exemplo: carregar configurações do sistema
-      return { loaded: true, timestamp: Date.now() };
+        this.logger.log('HybridCacheService inicializado com sucesso');
+      } catch (error) {
+        this.logger.error(
+          `Erro na inicialização do HybridCacheService: ${error.message}`,
+          error.stack,
+        );
+      }
     });
-    */
   }
 
   /**

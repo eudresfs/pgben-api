@@ -50,13 +50,24 @@ export class NotificationManagerService implements OnModuleInit {
   }
 
   /**
-   * Inicializa os canais de notificação disponíveis
+   * Inicializa os canais de notificação disponíveis de forma assíncrona
    * Método chamado automaticamente na inicialização do módulo
    */
   async onModuleInit() {
-    this.logger.log('Inicializando o gerenciador de notificações');
-    await this.registrarCanaisDisponiveis();
-    // await this.iniciarProcessamentoFila(); // Removido temporariamente - depende do ScheduleAdapter
+    // Inicialização assíncrona sem bloqueio
+    setImmediate(async () => {
+      try {
+        this.logger.log('Inicializando o gerenciador de notificações');
+        await this.registrarCanaisDisponiveis();
+        // await this.iniciarProcessamentoFila(); // Removido temporariamente - depende do ScheduleAdapter
+        this.logger.log('Gerenciador de notificações inicializado com sucesso');
+      } catch (error) {
+        this.logger.error(
+          `Erro na inicialização do gerenciador de notificações: ${error.message}`,
+          error.stack,
+        );
+      }
+    });
   }
 
   /**

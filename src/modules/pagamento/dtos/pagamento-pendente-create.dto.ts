@@ -1,4 +1,3 @@
-import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
   IsDate,
@@ -11,17 +10,20 @@ import {
   Max,
   Min,
 } from 'class-validator';
-import { MetodoPagamentoEnum } from '../../../enums/metodo-pagamento.enum';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { PagamentoBaseDto } from './base/pagamento-base.dto';
+import { MetodoPagamentoEnum } from '@/enums';
 
 /**
  * DTO para criação de um pagamento pendente
  *
  * Este DTO é utilizado para validar os dados de entrada ao criar
- * um novo pagamento com status pendente no sistema.
+ * um novo pagamento com status pendente no sistema. Estende PagamentoBaseDto
+ * para reutilizar validações comuns.
  *
  * @author Equipe PGBen
  */
-export class PagamentoPendenteCreateDto {
+export class PagamentoPendenteCreateDto extends PagamentoBaseDto {
   /**
    * ID da solicitação de benefício
    */
@@ -32,33 +34,6 @@ export class PagamentoPendenteCreateDto {
   @IsNotEmpty()
   @IsUUID('4')
   solicitacaoId: string;
-
-  /**
-   * Valor do pagamento
-   */
-  @ApiProperty({
-    description: 'Valor do pagamento (em reais)',
-    example: 250.0,
-    minimum: 0.01,
-    maximum: 50000.0,
-  })
-  @IsNotEmpty()
-  @IsNumber({ maxDecimalPlaces: 2 })
-  @Min(0.01)
-  @Max(50000.0)
-  valor: number;
-
-  /**
-   * Método de pagamento
-   */
-  @ApiProperty({
-    description: 'Método de pagamento',
-    enum: MetodoPagamentoEnum,
-    example: MetodoPagamentoEnum.PIX,
-  })
-  @IsNotEmpty()
-  @IsEnum(MetodoPagamentoEnum)
-  metodoPagamento: MetodoPagamentoEnum;
 
   /**
    * Referência à informação bancária utilizada para o pagamento
@@ -72,18 +47,6 @@ export class PagamentoPendenteCreateDto {
   @IsOptional()
   @IsUUID('4')
   infoBancariaId?: string;
-
-  /**
-   * Observações sobre o pagamento
-   */
-  @ApiProperty({
-    description: 'Observações sobre o pagamento',
-    example: 'Pagamento de auxílio natalidade',
-    required: false,
-  })
-  @IsOptional()
-  @IsString()
-  observacoes?: string;
 
   /**
    * Data prevista para liberação do pagamento

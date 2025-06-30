@@ -184,9 +184,9 @@ export class ConcessaoService {
     // Obter quantidade de parcelas da concessão original
     const pagamentosOriginais = await this.pagamentoService.findAll({
       concessaoId: concessaoOriginal.id
-    }, 1, 1000); // Buscar todos os pagamentos da concessão
+    }); // Buscar todos os pagamentos da concessão
     
-    const quantidadeParcelasOriginal = pagamentosOriginais.total;
+    const quantidadeParcelasOriginal = pagamentosOriginais.pagination.totalItems;
     
     if (quantidadeParcelasOriginal === 0) {
       throw new BadRequestException('Concessão original não possui pagamentos gerados');
@@ -229,8 +229,9 @@ export class ConcessaoService {
 
     // Gerar pagamentos para a nova concessão com a mesma quantidade da original
     await this.pagamentoService.gerarPagamentosParaConcessao(
-      concessaoSalva, 
-      solicitacaoOriginal
+      concessaoSalva,
+      solicitacaoOriginal,
+      usuarioId
     );
 
     this.logger.info(
@@ -269,8 +270,9 @@ export class ConcessaoService {
     });
 
     const saved = await this.concessaoRepo.save(concessao);
-    // Gera pagamentos com status PENDENTE
-    await this.pagamentoService.gerarPagamentosParaConcessao(saved, solicitacao);
+    // Gera pagamentos com status PENDENTE para a concessão criada
+    // Nota: usuarioId não está disponível neste contexto, usando 'system'
+    await this.pagamentoService.gerarPagamentosParaConcessao(saved, solicitacao, 'system');
     return saved;
   }
 

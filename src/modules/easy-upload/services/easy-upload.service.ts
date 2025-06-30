@@ -10,7 +10,7 @@ import { UploadTokenService } from './upload-token.service';
 import { UploadSessionService } from './upload-session.service';
 import { UploadToken } from '../entities/upload-token.entity';
 import { UploadSession, UploadSessionStatus } from '../entities/upload-session.entity';
-import { AuditoriaService } from '../../auditoria/services/auditoria.service';
+import { AuditEventEmitter } from '../../auditoria/events/emitters/audit-event.emitter';
 import { NotificacaoService } from '../../notificacao/services/notificacao.service';
 import { DocumentoService } from '../../documento/services/documento.service';
 import { Documento } from '../../../entities/documento.entity';
@@ -31,7 +31,7 @@ export class EasyUploadService {
     private readonly uploadTokenService: UploadTokenService,
     private readonly uploadSessionService: UploadSessionService,
     private readonly documentoService: DocumentoService,
-    private readonly auditoriaService: AuditoriaService,
+    private readonly auditEventEmitter: AuditEventEmitter,
     private readonly notificacaoService: NotificacaoService,
   ) {
     this.logger.log('EasyUploadService inicializado');
@@ -153,15 +153,17 @@ export class EasyUploadService {
       const uploadToken = await this.uploadTokenService.validateToken(token);
       
       // Registrar na auditoria
-      const logDto = new CreateLogAuditoriaDto();
-      logDto.entidade_afetada = 'UploadToken';
-      logDto.entidade_id = uploadToken.id;
-      logDto.tipo_operacao = TipoOperacao.UPDATE;
-      logDto.usuario_id = uploadToken.usuario_id || '';
-      logDto.dados_novos = { status: 'VALIDADO', ip_address: ipAddress, user_agent: userAgent?.substring(0, 255) };
-      logDto.descricao = 'Validação de token de upload';
-      
-      await this.auditoriaService.create(logDto);
+      await this.auditEventEmitter.emitEntityUpdated(
+        'UploadToken',
+        uploadToken.id,
+        {},
+        { 
+          status: 'VALIDADO', 
+          ip_address: ipAddress, 
+          user_agent: userAgent?.substring(0, 255) 
+        },
+        uploadToken.usuario_id || null
+      );
       
       // Retornar informações relevantes (sem expor dados sensíveis)
       return {
@@ -175,15 +177,18 @@ export class EasyUploadService {
     } catch (error) {
       if (error instanceof NotFoundException || error instanceof BadRequestException) {
         // Registrar falha de validação sem revelar detalhes ao cliente
-        const logDto = new CreateLogAuditoriaDto();
-        logDto.entidade_afetada = 'UploadToken';
-        logDto.entidade_id = token || '';
-        logDto.tipo_operacao = TipoOperacao.UPDATE;
-        logDto.usuario_id = '';
-        logDto.dados_novos = { status: 'INVALIDO', ip_address: ipAddress || '', user_agent: userAgent?.substring(0, 255) || '', erro: error.message || 'Erro desconhecido' };
-        logDto.descricao = 'Falha na validação de token de upload';
-        
-        await this.auditoriaService.create(logDto);
+        await this.auditEventEmitter.emitEntityUpdated(
+          'UploadToken',
+          token || 'unknown',
+          {},
+          { 
+            status: 'INVALIDO', 
+            ip_address: ipAddress || '', 
+            user_agent: userAgent?.substring(0, 255) || '', 
+            erro: error.message || 'Erro desconhecido' 
+          },
+          null
+        );
         
         return {
           valid: false,

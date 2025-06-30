@@ -17,19 +17,11 @@ export class HealthCheckService {
    * @returns true se o Redis estiver disponível, false caso contrário
    */
   async isRedisAvailable(): Promise<boolean> {
-    // TEMPORÁRIO: Desabilitando verificação do Redis para evitar travamento
-    this.logger.warn(
-      '⚠️ Verificação do Redis desabilitada temporariamente para evitar travamento',
-    );
-    return false;
-
-    // TODO: Reabilitar após resolver problemas de conectividade
-    /*
     // Verificar se o Redis está desabilitado por configuração
     const disableRedis = this.configService.get('DISABLE_REDIS') === 'true';
     
     if (disableRedis) {
-      this.logger.warn('Redis desabilitado por configuração. Algumas funcionalidades não estarão disponíveis.');
+      this.logger.debug('Redis desabilitado por configuração.');
       return false;
     }
     
@@ -41,25 +33,31 @@ export class HealthCheckService {
       host,
       port,
       password,
-      connectTimeout: 3000,
+      connectTimeout: 2000,
+      commandTimeout: 1000,
       maxRetriesPerRequest: 1,
       retryStrategy: () => null,
+      lazyConnect: true,
     });
 
     try {
-      this.logger.log(`Verificando conexão com Redis em ${host}:${port}...`);
-      await redis.ping();
-      this.logger.log('Conexão com Redis estabelecida com sucesso');
+      // Usar Promise.race para garantir timeout rígido
+      const result = await Promise.race([
+        redis.ping(),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Redis health check timeout')), 2000)
+        )
+      ]);
+      
       await redis.quit();
-      return true;
+      return result === 'PONG';
     } catch (error) {
-      this.logger.warn(`Redis não disponível: ${error.message}`);
+      this.logger.debug(`Redis não disponível: ${error.message}`);
       try {
         await redis.quit();
       } catch {}
       return false;
     }
-    */
   }
 
   /**

@@ -29,11 +29,18 @@ import {
   CidadaoResponseDto,
   CidadaoPaginatedResponseDto,
 } from '../dto/cidadao-response.dto';
+import { AutoAudit, SensitiveDataAccess } from '../../auditoria';
 
 @ApiTags('Cidadão')
 @Controller('cidadao')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
+@AutoAudit({
+  enabled: true,
+  includeRequest: true,
+  includeResponse: false,
+  async: true,
+})
 export class CidadaoController {
   constructor(private readonly cidadaoService: CidadaoService) {}
 
@@ -57,16 +64,6 @@ export class CidadaoController {
     @Query('bairro') bairro?: string,
     @Query('includeRelations', new DefaultValuePipe(false)) includeRelations?: boolean,
   ): Promise<CidadaoPaginatedResponseDto> {
-    
-    // Log para debug
-    console.log('🎯 Controller params:', {
-      page,
-      limit,
-      search,
-      bairro,
-      unidade_id,
-      includeRelations
-    });
 
     return this.cidadaoService.findAll({
       page,
@@ -81,8 +78,11 @@ export class CidadaoController {
   @Get(':id')
   @RequiresPermission({
     permissionName: 'cidadao.visualizar',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'cidadao.unidadeId',
+    scopeType: ScopeType.UNIT
+  })
+  @SensitiveDataAccess(['cpf', 'nis', 'nome', 'data_nascimento'], {
+    requiresConsent: false,
+    maskInLogs: true,
   })
   @ApiOperation({ summary: 'Obter cidadão por ID' })
   @ApiParam({ name: 'id', description: 'ID do cidadão' })
@@ -92,36 +92,35 @@ export class CidadaoController {
   async findOne(
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
     @Query('includeRelations', new DefaultValuePipe(false)) includeRelations: boolean,
+    @Request() req,
   ): Promise<CidadaoResponseDto> {
-    return this.cidadaoService.findById(id, includeRelations);
+    return this.cidadaoService.findById(id, includeRelations, req.user.id);
   }
 
   @Post()
-  @RequiresPermission({
-    permissionName: 'cidadao.criar',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'user.unidadeId',
+  @RequiresPermission({ permissionName: 'cidadao.criar' })
+  @SensitiveDataAccess(['cpf', 'nis', 'nome', 'data_nascimento'], {
+    requiresConsent: false,
+    maskInLogs: true,
   })
-  @ApiOperation({ summary: 'Criar cidadão' })
+  @ApiOperation({ summary: 'Criar novo cidadão' })
   @ApiResponse({ status: 201, type: CidadaoResponseDto })
   @ApiResponse({ status: 400, description: 'Dados inválidos' })
-  @ApiResponse({ status: 409, description: 'CPF ou NIS já cadastrado' })
   async create(
     @Body() createCidadaoDto: CreateCidadaoDto,
     @Request() req,
   ): Promise<CidadaoResponseDto> {
-    return this.cidadaoService.create(
-      createCidadaoDto,
-      req.user.unidade_id,
-      req.user.id,
-    );
+    return this.cidadaoService.create(createCidadaoDto, req.user.unidade_id, req.user.id);
   }
 
   @Put(':id')
   @RequiresPermission({
-    permissionName: 'cidadao.editar',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'cidadao.unidadeId',
+    permissionName: 'cidadao.atualizar',
+    scopeType: ScopeType.UNIT
+  })
+  @SensitiveDataAccess(['cpf', 'nis', 'nome', 'data_nascimento'], {
+    requiresConsent: false,
+    maskInLogs: true,
   })
   @ApiOperation({ summary: 'Atualizar cidadão' })
   @ApiParam({ name: 'id', description: 'ID do cidadão' })
@@ -137,21 +136,35 @@ export class CidadaoController {
 
   @Get('cpf/:cpf')
   @RequiresPermission({ permissionName: 'cidadao.buscar.cpf' })
+  @SensitiveDataAccess(['cpf'], {
+    requiresConsent: true,
+    maskInLogs: true,
+  })
   @ApiOperation({ summary: 'Buscar cidadão por CPF' })
   @ApiParam({ name: 'cpf', description: 'CPF do cidadão' })
   @ApiResponse({ status: 200, type: CidadaoResponseDto })
   @ApiResponse({ status: 404, description: 'Cidadão não encontrado' })
-  async findByCpf(@Param('cpf') cpf: string): Promise<CidadaoResponseDto> {
-    return this.cidadaoService.findByCpf(cpf, true);
+  async findByCpf(
+    @Param('cpf') cpf: string,
+    @Request() req,
+  ): Promise<CidadaoResponseDto> {
+    return this.cidadaoService.findByCpf(cpf, true, req.user.id);
   }
 
   @Get('nis/:nis')
   @RequiresPermission({ permissionName: 'cidadao.buscar.nis' })
+  @SensitiveDataAccess(['nis'], {
+    requiresConsent: true,
+    maskInLogs: true,
+  })
   @ApiOperation({ summary: 'Buscar cidadão por NIS' })
   @ApiParam({ name: 'nis', description: 'NIS do cidadão' })
   @ApiResponse({ status: 200, type: CidadaoResponseDto })
   @ApiResponse({ status: 404, description: 'Cidadão não encontrado' })
-  async findByNis(@Param('nis') nis: string): Promise<CidadaoResponseDto> {
-    return this.cidadaoService.findByNis(nis, true);
+  async findByNis(
+    @Param('nis') nis: string,
+    @Request() req,
+  ): Promise<CidadaoResponseDto> {
+    return this.cidadaoService.findByNis(nis, true, req.user.id);
   }
 }

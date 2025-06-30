@@ -38,7 +38,7 @@ import {
 } from '../dto/conversao-papel.dto';
 import { TipoEscopo } from '../../../entities/user-permission.entity';
 import { Sexo } from '../../../enums/sexo.enum';
-import { EnderecoDto } from '../dto/create-cidadao.dto';
+import { EnderecoDto } from '../dto/endereco.dto';
 
 interface AuthenticatedUser {
   id: string;

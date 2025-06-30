@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ScheduleModule } from '@nestjs/schedule';
 import { AuthModule } from '../../auth/auth.module';
+
 import { forwardRef } from '@nestjs/common';
 import { BeneficioModule } from '../beneficio/beneficio.module';
 import { JudicialModule } from '../judicial/judicial.module';
@@ -67,6 +68,7 @@ import { TemplateMappingService } from './services/template-mapping.service';
     ConfiguracaoModule,
     // Importa o módulo compartilhado de autenticação
     AuthModule,
+
     // Módulo de eventos para notificações
     EventEmitterModule.forRoot(),
     // Módulo de agendamento para tarefas programadas

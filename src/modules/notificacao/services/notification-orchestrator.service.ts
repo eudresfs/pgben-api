@@ -46,26 +46,29 @@ export class NotificationOrchestratorService implements OnModuleInit {
   }
 
   /**
-   * Inicializa o orquestrador
+   * Inicializa o orquestrador de forma assíncrona
    */
   async onModuleInit(): Promise<void> {
-    try {
-      this.logger.log('Inicializando orquestrador de notificações...');
-      
-      // Verifica saúde inicial dos sistemas
-      await this.checkSystemsHealth();
-      
-      // Inicia monitoramento contínuo
-      this.startHealthMonitoring();
-      
-      // Configura listeners de eventos
-      this.setupEventListeners();
-      
-      this.logger.log('Orquestrador de notificações inicializado');
-    } catch (error) {
-      this.logger.error('Erro ao inicializar orquestrador:', error);
-      throw error;
-    }
+    this.logger.log('Inicializando orquestrador de notificações...');
+    
+    // Inicialização assíncrona sem bloqueio
+    setImmediate(async () => {
+      try {
+        // Verifica saúde inicial dos sistemas
+        await this.checkSystemsHealth();
+        
+        // Inicia monitoramento contínuo
+        this.startHealthMonitoring();
+        
+        // Configura listeners de eventos
+        this.setupEventListeners();
+        
+        this.logger.log('Orquestrador de notificações inicializado');
+      } catch (error) {
+        this.logger.error('Erro ao inicializar orquestrador:', error);
+        // Não propagar o erro para não quebrar a aplicação
+      }
+    });
   }
 
   /**

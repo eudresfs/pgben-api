@@ -1,295 +1,472 @@
-# Módulo de Auditoria
+# Módulo de Auditoria - PGBen Server
 
 ## Visão Geral
 
-O módulo de auditoria é responsável por registrar e gerenciar logs de todas as operações realizadas no Sistema de Gestão de Benefícios Eventuais, garantindo rastreabilidade, compliance com LGPD e segurança da informação. Projetado para lidar com grandes volumes de dados, o módulo implementa técnicas avançadas de otimização, monitoramento e proteção de integridade.
+O Módulo de Auditoria é um sistema abrangente e robusto para rastreamento, monitoramento e conformidade de operações dentro da aplicação PGBen. Implementa uma arquitetura event-driven moderna com processamento síncrono e assíncrono, garantindo alta performance e conformidade com regulamentações como LGPD.
 
 ## Características Principais
 
-- **Registro automático de operações**: Intercepta requisições HTTP e registra operações CRUD
-- **Suporte a LGPD**: Identifica e registra acesso a dados sensíveis
-- **Assinatura de logs**: Garante integridade e não-repúdio dos registros usando JWT
-- **Particionamento de tabelas**: Melhora performance com grandes volumes de dados
-- **Compressão de dados**: Reduz espaço em disco para logs com dados grandes
-- **Múltiplas formas de implementação**: Middleware, interceptor e decoradores
-- **Exportação de logs**: Suporte a múltiplos formatos (JSON, CSV, Excel, PDF)
-- **Monitoramento em tempo real**: Estatísticas, métricas de performance e alertas
-- **Processamento assíncrono**: Filas para operações de alta carga
-- **Testes de carga**: Scripts para validação de performance
+### 🏗️ Arquitetura Event-Driven
+- **Processamento Síncrono**: Para eventos críticos que requerem resposta imediata
+- **Processamento Assíncrono**: Para eventos de baixa prioridade usando BullMQ
+- **Sistema de Filas**: Múltiplas filas especializadas por tipo de evento e prioridade
+
+### 🔒 Segurança e Conformidade
+- **Conformidade LGPD**: Rastreamento de dados pessoais e consentimento
+- **Detecção de Dados Sensíveis**: Identificação automática e sanitização
+- **Assinatura Digital**: Integridade dos logs de auditoria
+- **Níveis de Risco**: Classificação automática baseada em múltiplos fatores
+
+### 🚀 Performance e Escalabilidade
+- **Processamento em Lote**: Para operações de alto volume
+- **Compressão de Dados**: Otimização de armazenamento
+- **Cache Inteligente**: Redução de latência
+- **Monitoramento de Performance**: Métricas em tempo real
+
+### 🎯 Facilidade de Uso
+- **Decorators**: Auditoria automática com anotações simples
+- **Interceptors**: Captura transparente de operações
+- **Middleware**: Rastreamento de requisições HTTP
+- **Guards**: Controle de acesso com auditoria
 
 ## Estrutura do Módulo
 
 ```
-auditoria/
-├── controllers/
-│   ├── auditoria.controller.ts
-│   ├── auditoria-exportacao.controller.ts
-│   └── auditoria-monitoramento.controller.ts
-├── decorators/
-│   └── audit.decorator.ts
-├── dto/
-│   ├── create-log-auditoria.dto.ts
-│   └── query-log-auditoria.dto.ts
-├── entities/
+src/modules/auditoria/
+├── config/                 # Configurações centralizadas
+│   └── audit-config.ts
+├── constants/              # Constantes e enums
+│   └── audit.constants.ts
+├── core/                   # Serviços core isolados
+│   ├── audit-core.repository.ts
+│   ├── audit-core.service.ts
+│   └── audit-core.module.ts
+├── decorators/             # Decorators para auditoria automática
+│   └── audit.decorators.ts
+├── entities/               # Entidades de banco de dados
 │   └── log-auditoria.entity.ts
-├── enums/
-│   └── tipo-operacao.enum.ts
-├── examples/
-│   └── auditoria-controller.example.ts
-├── interceptors/
+├── events/                 # Sistema de eventos
+│   ├── types/
+│   │   └── audit-event.types.ts
+│   ├── audit-event.emitter.ts
+│   ├── audit-event.listener.ts
+│   └── audit-events.module.ts
+├── guards/                 # Guards com auditoria
+│   └── audit.guard.ts
+├── interceptors/           # Interceptors de auditoria
 │   └── audit.interceptor.ts
-├── interfaces/
-│   └── audit-event.interface.ts
-├── middlewares/
-│   └── auditoria.middleware.ts
-├── repositories/
-│   └── log-auditoria.repository.ts
-├── services/
-│   ├── auditoria-queue.processor.ts
-│   ├── auditoria-queue.service.ts
-│   ├── auditoria-signature.service.ts
-│   ├── auditoria-exportacao.service.ts
-│   ├── auditoria-monitoramento.service.ts
-│   └── auditoria.service.ts
-├── tests/
-│   ├── auditoria.service.spec.ts
-│   ├── auditoria-load-test.ts
-│   └── middlewares/
-│       ├── auditoria.middleware.fixed.ts
-│       └── auditoria.middleware.spec.ts
-├── auditoria.module.ts
-└── README.md
+├── middleware/             # Middleware de auditoria
+│   └── audit.middleware.ts
+├── queues/                 # Sistema de filas
+│   ├── jobs/
+│   │   └── audit-processing.job.ts
+│   ├── audit.processor.ts
+│   └── audit-queues.module.ts
+├── utils/                  # Utilitários
+│   └── audit.utils.ts
+├── auditoria.module.ts     # Módulo principal
+├── index.ts               # Exports centralizados
+└── README.md              # Esta documentação
 ```
 
-## Migração do Banco de Dados
+## Instalação e Configuração
 
-O módulo inclui uma migração (`1090001-CreateAuditoriaSchema.ts`) que cria:
-
-- Tipo enumerado para operações de auditoria
-- Tabela principal de logs com particionamento por data
-- Tabela de histórico para logs antigos
-- Índices para melhorar a performance das consultas
-- Partições iniciais para os próximos 12 meses
-- Funções para manutenção automática de partições
-
-## Como Utilizar
-
-### 1. Middleware Global
-
-Para auditar todas as requisições HTTP automaticamente:
+### 1. Importar o Módulo
 
 ```typescript
-// main.ts
-import { AuditoriaMiddleware } from './modules/auditoria/middlewares/auditoria.middleware';
-
-async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
-  app.use(app.get(AuditoriaMiddleware).use.bind(app.get(AuditoriaMiddleware)));
-  await app.listen(3000);
-}
-```
-
-### 2. Middleware por Módulo
-
-Para auditar apenas rotas específicas:
-
-```typescript
-// seu-modulo.module.ts
-import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
-import { AuditoriaMiddleware } from '../auditoria/middlewares/auditoria.middleware';
+import { Module } from '@nestjs/common';
+import { AuditoriaModule } from './modules/auditoria';
 
 @Module({
-  // ...
+  imports: [
+    AuditoriaModule.forRoot({
+      enableAsync: true,
+      enableGlobalInterceptor: true,
+      enableGlobalMiddleware: true,
+      config: {
+        performance: {
+          batchSize: 50,
+          syncTimeout: 5000,
+        },
+        lgpd: {
+          enabled: true,
+          retentionDays: 2555,
+        },
+      },
+    }),
+  ],
 })
-export class SeuModulo implements NestModule {
-  configure(consumer: MiddlewareConsumer) {
-    consumer
-      .apply(AuditoriaMiddleware)
-      .forRoutes('sua-rota');
-  }
-}
+export class AppModule {}
 ```
 
-### 3. Interceptor por Controlador
+### 2. Configuração de Banco de Dados
 
-Para auditar todas as rotas de um controlador:
+Certifique-se de que a entidade `LogAuditoria` está incluída na configuração do TypeORM:
 
 ```typescript
-// seu-controlador.controller.ts
-import { Controller, UseInterceptors } from '@nestjs/common';
-import { AuditInterceptor } from '../auditoria/interceptors/audit.interceptor';
-
-@Controller('sua-rota')
-@UseInterceptors(AuditInterceptor)
-export class SeuControlador {
-  // ...
-}
+TypeOrmModule.forRoot({
+  // ... outras configurações
+  entities: [LogAuditoria, /* outras entidades */],
+  synchronize: false, // Use migrations em produção
+})
 ```
 
-### 4. Decoradores por Método
-
-Para auditar métodos específicos com configuração personalizada:
+### 3. Configuração do Redis (para filas)
 
 ```typescript
-// seu-controlador.controller.ts
-import { Controller, Post, Body } from '@nestjs/common';
-import { AuditCreate } from '../auditoria/decorators/audit.decorator';
+BullModule.forRoot({
+  redis: {
+    host: process.env.REDIS_HOST || 'localhost',
+    port: parseInt(process.env.REDIS_PORT) || 6379,
+    password: process.env.REDIS_PASSWORD,
+  },
+})
+```
 
-@Controller('sua-rota')
-export class SeuControlador {
+## Uso Básico
+
+### Decorators de Auditoria
+
+#### @Audit - Auditoria Manual
+```typescript
+import { Audit } from '@modules/auditoria';
+
+@Controller('users')
+export class UsersController {
   @Post()
-  @AuditCreate('SuaEntidade', 'Criação de entidade')
-  async criar(@Body() createDto: any) {
-    // ...
+  @Audit({
+    eventType: AuditEventType.ENTITY_CREATE,
+    entity: 'User',
+    operation: 'create',
+    riskLevel: RiskLevel.MEDIUM,
+  })
+  async createUser(@Body() userData: CreateUserDto) {
+    return this.usersService.create(userData);
   }
 }
 ```
 
-## Decoradores Disponíveis
+#### @AutoAudit - Auditoria Automática
+```typescript
+@Controller('users')
+@AutoAudit({ entity: 'User' })
+export class UsersController {
+  // Todos os métodos serão auditados automaticamente
+  @Post()
+  async createUser(@Body() userData: CreateUserDto) {
+    return this.usersService.create(userData);
+  }
+}
+```
 
-- `@AuditCreate(entidade, descricao?)`: Para operações de criação
-- `@AuditRead(entidade, descricao?)`: Para operações de leitura
-- `@AuditUpdate(entidade, descricao?)`: Para operações de atualização
-- `@AuditDelete(entidade, descricao?)`: Para operações de exclusão
-- `@AuditSensitiveAccess(entidade, descricao?)`: Para acesso a dados sensíveis
-- `@AuditExport(entidade, descricao?)`: Para exportação de dados
-- `@AuditAnonymize(entidade, descricao?)`: Para anonimização de dados
-- `@AuditLogin(descricao?)`: Para login no sistema
-- `@AuditLogout(descricao?)`: Para logout do sistema
-- `@AuditFailedLogin(descricao?)`: Para tentativas de login falhas
+#### @SensitiveData - Dados Sensíveis
+```typescript
+@Controller('users')
+export class UsersController {
+  @Get(':id/profile')
+  @SensitiveDataAccess({
+    dataTypes: ['personal_info', 'contact'],
+    requiresConsent: true,
+  })
+  async getUserProfile(@Param('id') id: string) {
+    return this.usersService.getProfile(id);
+  }
+}
+```
 
-## Configuração para LGPD
+#### @SecurityAudit - Eventos de Segurança
+```typescript
+@Controller('auth')
+export class AuthController {
+  @Post('login')
+  @SecurityAudit({
+    operation: 'login',
+    riskLevel: RiskLevel.MEDIUM,
+  })
+  async login(@Body() credentials: LoginDto) {
+    return this.authService.login(credentials);
+  }
+}
+```
 
-O módulo inclui suporte para compliance com LGPD, identificando automaticamente campos sensíveis e registrando acessos a esses dados. Os campos sensíveis padrão incluem:
-
-- CPF, RG, passaporte
-- Data de nascimento, idade
-- Endereço, telefone, email
-- Dados de saúde, religião, etnia
-- Dados financeiros (renda, salário)
-- Credenciais (senha, token)
-
-## Manutenção de Logs
-
-O módulo inclui funções para manutenção automática de logs:
-
-- Criação automática de partições para novos meses
-- Arquivamento de logs antigos para tabela histórica
-- Compressão de dados grandes para economia de espaço
-
-## Exemplo de Consulta de Logs
+### Emissão Manual de Eventos
 
 ```typescript
-// Exemplo de consulta de logs por entidade
-const logs = await logAuditoriaRepository.findByEntity('Usuario', '123e4567-e89b-12d3-a456-426614174000');
+import { AuditEventEmitter, AuditEventType, RiskLevel } from '@modules/auditoria';
 
-// Exemplo de consulta de logs por usuário
-const logs = await logAuditoriaRepository.findByUser('123e4567-e89b-12d3-a456-426614174000');
+@Injectable()
+export class UsersService {
+  constructor(
+    private readonly auditEmitter: AuditEventEmitter,
+  ) {}
 
-// Exemplo de consulta de logs de acesso a dados sensíveis
-const logs = await logAuditoriaRepository.findSensitiveDataAccess();
+  async deleteUser(id: string, userId: string) {
+    // Operação de negócio
+    await this.userRepository.delete(id);
+
+    // Emitir evento de auditoria
+    await this.auditEmitter.emitEntityDeleted({
+      entityType: 'User',
+      entityId: id,
+      userId,
+      riskLevel: RiskLevel.HIGH,
+      metadata: {
+        reason: 'User requested account deletion',
+        gdprCompliant: true,
+      },
+    });
+  }
+}
 ```
 
-## Verificação de Integridade
-
-O módulo inclui um serviço para verificar a integridade dos logs, garantindo que não foram adulterados:
+### Consulta de Logs
 
 ```typescript
-// Verificar integridade de um conjunto de logs
-const resultados = await auditoriaSignatureService.verificarIntegridadeLogs(logs);
+import { AuditCoreService, AuditFilter } from '@modules/auditoria';
+
+@Injectable()
+export class AuditReportsService {
+  constructor(
+    private readonly auditService: AuditCoreService,
+  ) {}
+
+  async getUserAuditTrail(userId: string) {
+    const filter: AuditFilter = {
+      userId,
+      startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 dias
+      page: 1,
+      limit: 100,
+    };
+
+    return this.auditService.findWithFilters(filter);
+  }
+
+  async getSecurityEvents() {
+    return this.auditService.findWithFilters({
+      eventType: AuditEventType.SECURITY_EVENT,
+      riskLevel: RiskLevel.HIGH,
+    });
+  }
+
+  async getStatistics() {
+    return this.auditService.getStatistics();
+  }
+}
 ```
 
-## Considerações de Performance
+## Configuração Avançada
 
-- Logs são processados de forma assíncrona para não impactar a performance da aplicação
-- Particionamento de tabelas melhora a performance de consultas
-- Compressão de dados reduz o espaço em disco para logs grandes
-- Índices otimizados para consultas frequentes
-- Processamento em lote para operações de alta carga
-- Monitoramento contínuo de métricas de performance
-
-## Exportação de Logs
-
-O módulo oferece funcionalidades de exportação de logs em diferentes formatos:
+### Configuração Personalizada
 
 ```typescript
-// Exportar logs para CSV
-await auditoriaExportacaoService.exportarLogs(
-  { tipo_operacao: TipoOperacao.CREATE },
-  { formato: FormatoExportacao.CSV, comprimido: true }
-);
+import { createAuditConfig } from '@modules/auditoria';
 
-// Exportar logs para Excel
-await auditoriaExportacaoService.exportarLogs(
-  { entidade_afetada: 'Usuario' },
-  { formato: FormatoExportacao.EXCEL }
-);
-
-// Exportar logs para PDF
-await auditoriaExportacaoService.exportarLogs(
-  { data_inicio: '2023-01-01', data_fim: '2023-12-31' },
-  { formato: FormatoExportacao.PDF }
-);
+const customConfig = createAuditConfig({
+  performance: {
+    batchSize: 100,
+    syncTimeout: 10000,
+    asyncThreshold: RiskLevel.LOW,
+  },
+  queues: {
+    processing: {
+      concurrency: 10,
+      maxRetries: 5,
+    },
+    critical: {
+      concurrency: 5,
+      maxRetries: 3,
+    },
+  },
+  lgpd: {
+    enabled: true,
+    retentionDays: 2555,
+    anonymizationDelay: 30,
+    consentRequired: true,
+  },
+  compression: {
+    enabled: true,
+    threshold: 1024,
+    algorithm: 'gzip',
+  },
+});
 ```
 
-### Formatos Suportados
-
-- **JSON**: Formato padrão, ideal para processamento posterior
-- **CSV**: Formato simples para importação em planilhas
-- **Excel**: Formato nativo do Microsoft Excel com formatação
-- **PDF**: Formato para relatórios formais com layout estruturado
-
-## Monitoramento e Saúde do Sistema
-
-O módulo inclui um serviço de monitoramento que coleta estatísticas e métricas de performance:
+### Listeners Personalizados
 
 ```typescript
-// Obter estatísticas atuais
-const estatisticas = auditoriaMonitoramentoService.getEstatisticas();
+import { Injectable } from '@nestjs/common';
+import { OnEvent } from '@nestjs/event-emitter';
+import { AUDIT_EVENTS } from '@modules/auditoria';
 
-// Gerar relatório de saúde
-const relatorioSaude = await auditoriaMonitoramentoService.gerarRelatorioSaude();
+@Injectable()
+export class CustomAuditListener {
+  @OnEvent(AUDIT_EVENTS.SECURITY_EVENT)
+  async handleSecurityEvent(event: SecurityAuditEvent) {
+    // Lógica personalizada para eventos de segurança
+    if (event.riskLevel === RiskLevel.CRITICAL) {
+      await this.notificationService.sendSecurityAlert(event);
+    }
+  }
+
+  @OnEvent(AUDIT_EVENTS.SENSITIVE_DATA_ACCESS)
+  async handleSensitiveDataAccess(event: SensitiveDataAuditEvent) {
+    // Verificar conformidade LGPD
+    await this.lgpdService.validateDataAccess(event);
+  }
+}
 ```
 
-### Métricas Coletadas
+## Monitoramento e Métricas
 
-- Volume de logs por período (24h, 7 dias, 30 dias)
-- Distribuição por tipo de operação e entidade
-- Tempo médio de inserção e consulta
-- Taxa de erros
-- Tamanho do banco de dados e índices
-- Uso de partições e eficiência de índices
+### Health Check
 
-### Alertas Automáticos
+```typescript
+@Controller('health')
+export class HealthController {
+  constructor(
+    private readonly auditService: AuditCoreService,
+  ) {}
 
-O sistema gera alertas automáticos quando:
-
-- Taxa de erros ultrapassa limites configurados
-- Tempo médio de operações excede thresholds
-- Volume de logs cresce rapidamente
-- Índices não estão sendo utilizados
-
-## Testes de Carga
-
-O módulo inclui scripts para testes de carga que validam a performance com grandes volumes de dados:
-
-```bash
-# Executar teste de carga
-npm run test:load:auditoria
+  @Get('audit')
+  async checkAuditHealth() {
+    const stats = await this.auditService.getStatistics();
+    
+    return {
+      status: stats.errorRate < 0.05 ? 'healthy' : 'degraded',
+      metrics: {
+        totalEvents: stats.totalEvents,
+        errorRate: stats.errorRate,
+        averageProcessingTime: stats.performanceMetrics.averageProcessingTime,
+      },
+    };
+  }
+}
 ```
 
-O teste de carga simula diferentes cenários:
+### Métricas Prometheus (exemplo)
 
-- Inserção individual de logs
-- Inserção em lote (batch)
-- Consultas com diferentes filtros
-- Verificação de integridade
+```typescript
+import { Injectable } from '@nestjs/common';
+import { OnEvent } from '@nestjs/event-emitter';
+import { Counter, Histogram } from 'prom-client';
 
-### Resultados Esperados
+@Injectable()
+export class AuditMetricsService {
+  private readonly eventCounter = new Counter({
+    name: 'audit_events_total',
+    help: 'Total number of audit events',
+    labelNames: ['event_type', 'risk_level'],
+  });
 
-O módulo foi projetado para suportar:
+  private readonly processingDuration = new Histogram({
+    name: 'audit_processing_duration_seconds',
+    help: 'Duration of audit event processing',
+    labelNames: ['event_type'],
+  });
 
-- Até 10.000 operações por minuto em modo assíncrono
-- Consultas com tempo de resposta < 500ms para filtros otimizados
-- Tempo médio de inserção < 50ms por log em modo batch
-- Verificação de integridade < 100ms por log
+  @OnEvent('audit.**')
+  recordEvent(event: BaseAuditEvent) {
+    this.eventCounter.inc({
+      event_type: event.eventType,
+      risk_level: event.riskLevel,
+    });
+  }
+}
+```
+
+## Conformidade LGPD
+
+### Configuração LGPD
+
+```typescript
+const lgpdConfig = {
+  enabled: true,
+  retentionDays: 2555, // ~7 anos para dados fiscais
+  anonymizationDelay: 30, // dias
+  consentRequired: true,
+  dataSubjectRights: [
+    'access',
+    'rectification', 
+    'erasure',
+    'portability',
+    'restriction',
+    'objection',
+  ],
+};
+```
+
+### Relatórios LGPD
+
+```typescript
+@Injectable()
+export class LgpdReportsService {
+  constructor(
+    private readonly auditService: AuditCoreService,
+  ) {}
+
+  async getDataSubjectReport(userId: string) {
+    // Todos os logs relacionados ao titular dos dados
+    return this.auditService.findLgpdRelevant(userId);
+  }
+
+  async scheduleDataAnonymization(userId: string) {
+    // Agendar anonimização após período de retenção
+    const retentionDate = new Date();
+    retentionDate.setDate(retentionDate.getDate() + 30);
+    
+    // Implementar lógica de agendamento
+  }
+}
+```
+
+## Troubleshooting
+
+### Problemas Comuns
+
+1. **Eventos não sendo processados**
+   - Verificar configuração do Redis
+   - Verificar se as filas estão ativas
+   - Verificar logs de erro
+
+2. **Performance degradada**
+   - Ajustar `batchSize` na configuração
+   - Verificar uso de memória
+   - Considerar processamento assíncrono
+
+3. **Dados sensíveis não sendo detectados**
+   - Verificar configuração de `sensitiveFields`
+   - Adicionar padrões regex personalizados
+   - Usar decorator `@SensitiveData`
+
+### Logs de Debug
+
+```typescript
+// Habilitar logs verbosos
+process.env.AUDIT_VERBOSE = 'true';
+process.env.AUDIT_LOG_LEVEL = 'debug';
+```
+
+## Roadmap
+
+- [ ] Integração com Elasticsearch para busca avançada
+- [ ] Dashboard web para visualização de métricas
+- [ ] Exportação de relatórios em PDF/Excel
+- [ ] Integração com sistemas de SIEM
+- [ ] Suporte a múltiplos bancos de dados
+- [ ] Criptografia de dados em repouso
+- [ ] Auditoria de mudanças de schema
+- [ ] Alertas em tempo real via webhook
+
+## Contribuição
+
+Para contribuir com o módulo de auditoria:
+
+1. Siga os padrões de código estabelecidos
+2. Adicione testes para novas funcionalidades
+3. Atualize a documentação
+4. Considere impacto na performance
+5. Mantenha compatibilidade com LGPD
+
+## Licença
+
+Este módulo é parte do projeto PGBen e segue a mesma licença do projeto principal.

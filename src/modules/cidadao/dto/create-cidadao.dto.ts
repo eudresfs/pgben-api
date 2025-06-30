@@ -14,6 +14,7 @@ import {
   IsArray,
   IsUUID,
   IsObject,
+  IsBoolean,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { Sexo } from '../../../enums/sexo.enum';
@@ -24,13 +25,16 @@ import { TelefoneValidator } from '../validators/telefone-validator';
 import { CEPValidator } from '../validators/cep-validator';
 import { CreateComposicaoFamiliarDto } from './create-composicao-familiar.dto';
 import { EstadoCivil } from '../../../enums/estado-civil.enum';
+import { ContatoDto } from './contato.dto';
+import { EnderecoDto } from './endereco.dto';
 
 /**
- * DTO para endereço do cidadão
+ * DTO para endereço inline do cidadão (estrutura legada)
  *
  * Contém todos os campos necessários para registrar o endereço completo de um cidadão
+ * na estrutura legada (embutida no objeto cidadão)
  */
-export class EnderecoDto {
+export class EnderecoInlineDto {
   @IsString({ message: 'Logradouro deve ser uma string' })
   @IsNotEmpty({ message: 'Logradouro é obrigatório' })
   @ApiProperty({
@@ -166,6 +170,26 @@ export class CreateCidadaoDto {
     description: 'Composição familiar do cidadão',
   })
   composicao_familiar?: CreateComposicaoFamiliarDto[];
+  
+  @IsArray()
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => ContatoDto)
+  @ApiPropertyOptional({
+    type: [ContatoDto],
+    description: 'Contatos do cidadão (nova estrutura normalizada)',
+  })
+  contatos?: ContatoDto[];
+
+  @IsArray()
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => EnderecoDto)
+  @ApiPropertyOptional({
+    type: [EnderecoDto],
+    description: 'Endereços do cidadão (nova estrutura normalizada)',
+  })
+  enderecos?: EnderecoDto[];
 
   @IsString({ message: 'Nome deve ser uma string' })
   @IsNotEmpty({ message: 'Nome é obrigatório' })
@@ -270,28 +294,41 @@ export class CreateCidadaoDto {
   @Validate(TelefoneValidator, { message: 'Telefone inválido' })
   @ApiPropertyOptional({
     example: '(84) 98765-4321',
-    description: 'Telefone do cidadão para contato',
+    description: 'Telefone do cidadão para contato (estrutura legada)',
     required: false,
+    deprecated: true,
   })
   telefone?: string;
+  
+  @IsBoolean()
+  @IsOptional()
+  @ApiPropertyOptional({
+    example: true,
+    description: 'Indica se o telefone é WhatsApp (estrutura legada)',
+    required: false,
+    deprecated: true,
+  })
+  is_whatsapp?: boolean;
 
   @IsEmail({}, { message: 'Email inválido' })
   @IsOptional()
   @ApiPropertyOptional({
     example: 'email@exemplo.com',
-    description: 'Endereço de email do cidadão para contato',
+    description: 'Endereço de email do cidadão para contato (estrutura legada)',
     required: false,
+    deprecated: true,
   })
   email?: string;
 
   @ValidateNested()
   @IsOptional()
-  @Type(() => EnderecoDto)
+  @Type(() => EnderecoInlineDto)
   @ApiProperty({
-    type: EnderecoDto,
-    description: 'Endereço do cidadão',
+    type: EnderecoInlineDto,
+    description: 'Endereço do cidadão (estrutura legada)',
+    deprecated: true,
   })
-  endereco?: EnderecoDto;
+  endereco?: EnderecoInlineDto;
 
   @IsUUID('4', { message: 'ID da unidade deve ser um UUID válido' })
   @IsOptional()

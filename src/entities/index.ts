@@ -42,6 +42,9 @@ export { DadosSociais } from './dados-sociais.entity';
 export { InfoBancaria } from './info-bancaria.entity';
 export { PapelCidadao } from './papel-cidadao.entity';
 export { SituacaoMoradia } from './situacao-moradia.entity';
+// Entidades de Contato e Endereço
+export { Contato } from './contato.entity';
+export { Endereco } from './endereco.entity';
 
 // Entidades de Configuração
 export { ConfiguracaoIntegracao } from './configuracao-integracao.entity';

@@ -3,8 +3,14 @@ import { Injectable } from '@nestjs/common';
 /**
  * Validador de dados bancários
  *
- * Implementa validações específicas para informações bancárias,
+ * Implementa validações flexíveis para informações bancárias,
  * incluindo validação de agência, conta e dígitos verificadores.
+ * 
+ * MELHORIAS IMPLEMENTADAS:
+ * - Aceita códigos de qualquer banco válido do BACEN (001-999)
+ * - Validações flexíveis para bancos digitais e fintechs
+ * - Mantém validações específicas apenas para bancos tradicionais conhecidos
+ * - Suporte expandido para novos formatos de conta e agência
  *
  * @author Equipe PGBen
  */
@@ -12,8 +18,9 @@ import { Injectable } from '@nestjs/common';
 export class DadosBancariosValidator {
   /**
    * Códigos dos principais bancos brasileiros
+   * Lista não exaustiva - aceita outros códigos válidos do BACEN
    */
-  private readonly codigosBancos = {
+  private readonly codigosBancosConhecidos = {
     '001': 'Banco do Brasil',
     '033': 'Santander',
     '104': 'Caixa Econômica Federal',
@@ -25,11 +32,16 @@ export class DadosBancariosValidator {
     '336': 'C6 Bank',
     '756': 'Sicoob',
     '748': 'Sicredi',
-    // Outros bancos podem ser adicionados conforme necessário
+    '323': 'Mercado Pago',
+    '290': 'PagSeguro',
+    '364': 'Gerencianet',
+    '380': 'PicPay',
+    // Lista pode ser expandida conforme novos bancos surgem
   };
 
   /**
    * Valida um código de banco
+   * Aceita qualquer código de 3 dígitos válido do BACEN
    *
    * @param codigo Código do banco (3 dígitos)
    * @returns true se o código for válido
@@ -39,7 +51,10 @@ export class DadosBancariosValidator {
       return false;
     }
 
-    return Object.keys(this.codigosBancos).includes(codigo);
+    // Aceita qualquer código de 3 dígitos (flexível para novos bancos)
+    // Códigos válidos do BACEN estão na faixa 001-999
+    const codigoNum = parseInt(codigo, 10);
+    return codigoNum >= 1 && codigoNum <= 999;
   }
 
   /**
@@ -49,65 +64,66 @@ export class DadosBancariosValidator {
    * @returns Nome do banco ou 'Banco não cadastrado'
    */
   obterNomeBanco(codigo: string): string {
-    return this.codigosBancos[codigo] || 'Banco não cadastrado';
+    return this.codigosBancosConhecidos[codigo] || `Banco ${codigo}`;
   }
 
   /**
    * Valida um número de agência bancária
+   * Validação flexível que aceita diferentes formatos de bancos
    *
    * @param agencia Número da agência
-   * @param codigoBanco Código do banco (opcional)
+   * @param codigoBanco Código do banco (opcional, usado apenas para validações específicas conhecidas)
    * @returns true se a agência for válida
    */
   validarAgencia(agencia: string, codigoBanco?: string): boolean {
     // Remover caracteres não numéricos
     const agenciaLimpa = agencia.replace(/\D/g, '');
 
-    // Verificação básica (a maioria dos bancos usa 4 dígitos)
-    if (!agenciaLimpa || agenciaLimpa.length < 2 || agenciaLimpa.length > 5) {
+    // Verificação básica flexível (aceita de 1 a 6 dígitos)
+    if (!agenciaLimpa || agenciaLimpa.length < 1 || agenciaLimpa.length > 6) {
       return false;
     }
 
-    // Validações específicas por banco
-    if (codigoBanco) {
+    // Validações específicas apenas para bancos tradicionais conhecidos
+    if (codigoBanco && this.codigosBancosConhecidos[codigoBanco]) {
       switch (codigoBanco) {
         case '001': // Banco do Brasil
           return /^\d{4,5}$/.test(agenciaLimpa);
         case '104': // Caixa
           return /^\d{4}$/.test(agenciaLimpa);
         case '341': // Itaú
-          return /^\d{4}$/.test(agenciaLimpa);
         case '033': // Santander
-          return /^\d{4}$/.test(agenciaLimpa);
         case '237': // Bradesco
           return /^\d{4}$/.test(agenciaLimpa);
         default:
-          return /^\d{2,5}$/.test(agenciaLimpa);
+          // Para outros bancos conhecidos, usar validação flexível
+          return /^\d{1,6}$/.test(agenciaLimpa);
       }
     }
 
-    // Validação genérica
-    return /^\d{2,5}$/.test(agenciaLimpa);
+    // Validação genérica flexível para bancos digitais e novos
+    return /^\d{1,6}$/.test(agenciaLimpa);
   }
 
   /**
    * Valida um número de conta bancária
+   * Validação flexível que aceita diferentes formatos de bancos
    *
    * @param conta Número da conta com ou sem dígito
-   * @param codigoBanco Código do banco (opcional)
+   * @param codigoBanco Código do banco (opcional, usado apenas para validações específicas conhecidas)
    * @returns true se a conta for válida
    */
   validarConta(conta: string, codigoBanco?: string): boolean {
-    // Remover caracteres não numéricos e traços
+    // Remover caracteres não numéricos (exceto X para dígito)
     const contaLimpa = conta.replace(/[^\dXx]/g, '');
 
-    // Verificação básica
-    if (!contaLimpa || contaLimpa.length < 3 || contaLimpa.length > 13) {
+    // Verificação básica flexível (aceita de 1 a 15 dígitos)
+    if (!contaLimpa || contaLimpa.length < 1 || contaLimpa.length > 15) {
       return false;
     }
 
-    // Validações específicas por banco
-    if (codigoBanco) {
+    // Validações específicas apenas para bancos tradicionais conhecidos
+    if (codigoBanco && this.codigosBancosConhecidos[codigoBanco]) {
       switch (codigoBanco) {
         case '001': // Banco do Brasil
           return /^\d{5,8}[\dXx]$/.test(contaLimpa);
@@ -120,12 +136,13 @@ export class DadosBancariosValidator {
         case '237': // Bradesco
           return /^\d{6,7}[\dXx]$/.test(contaLimpa);
         default:
-          return /^\d{2,12}[\dXx]?$/.test(contaLimpa);
+          // Para outros bancos conhecidos, usar validação flexível
+          return /^\d{1,14}[\dXx]?$/.test(contaLimpa);
       }
     }
 
-    // Validação genérica
-    return /^\d{2,12}[\dXx]?$/.test(contaLimpa);
+    // Validação genérica flexível para bancos digitais e novos
+    return /^\d{1,14}[\dXx]?$/.test(contaLimpa);
   }
 
   /**

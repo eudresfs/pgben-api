@@ -8,10 +8,22 @@ import { CidadaoRepository } from '../repositories/cidadao.repository';
 import { CreateCidadaoDto } from '../dto/create-cidadao.dto';
 import { CidadaoResponseDto, CidadaoPaginatedResponseDto } from '../dto/cidadao-response.dto';
 import { plainToInstance } from 'class-transformer';
+import { ContatoService } from './contato.service';
+import { EnderecoService } from './endereco.service';
+import { ContatoDto } from '../dto/contato.dto';
+import { EnderecoDto } from '../dto/endereco.dto';
+import { ConfigService } from '@nestjs/config';
+import { AuditEventEmitter, AuditEventType } from '../../auditoria';
 
 @Injectable()
 export class CidadaoService {
-  constructor(private readonly cidadaoRepository: CidadaoRepository) {}
+  constructor(
+    private readonly cidadaoRepository: CidadaoRepository,
+    private readonly contatoService: ContatoService,
+    private readonly enderecoService: EnderecoService,
+    private readonly configService: ConfigService,
+    private readonly auditEmitter: AuditEventEmitter,
+  ) {}
 
   async findAll(options: {
     page?: number;
@@ -30,16 +42,6 @@ export class CidadaoService {
       includeRelations = false,
     } = options;
 
-    // Log para debug
-    console.log('🔧 Service params:', { 
-      page, 
-      limit, 
-      search, 
-      bairro, 
-      unidade_id, 
-      includeRelations 
-    });
-
     const skip = (page - 1) * limit;
     const take = Math.min(limit, 100);
 
@@ -51,8 +53,6 @@ export class CidadaoService {
       unidade_id,
       includeRelations,
     });
-
-    console.log('📊 Results:', { found: cidadaos.length, total });
 
     const items = cidadaos.map(cidadao =>
       plainToInstance(CidadaoResponseDto, cidadao, {
@@ -73,7 +73,7 @@ export class CidadaoService {
     };
   }
 
-  async findById(id: string, includeRelations = false): Promise<CidadaoResponseDto> {
+  async findById(id: string, includeRelations = false, userId?: string): Promise<CidadaoResponseDto> {
     if (!id || typeof id !== 'string') {
       throw new BadRequestException('ID inválido');
     }
@@ -83,12 +83,19 @@ export class CidadaoService {
       throw new NotFoundException('Cidadão não encontrado');
     }
 
+    // Auditoria de acesso a dados sensíveis
+    await this.auditEmitter.emitEntityAccessed(
+      'Cidadao',
+      id,
+      userId,
+    );
+
     return plainToInstance(CidadaoResponseDto, cidadao, {
       excludeExtraneousValues: true,
     });
   }
 
-  async findByCpf(cpf: string, includeRelations = false): Promise<CidadaoResponseDto> {
+  async findByCpf(cpf: string, includeRelations = false, userId?: string): Promise<CidadaoResponseDto> {
     if (!cpf || cpf.trim() === '') {
       throw new BadRequestException('CPF é obrigatório');
     }
@@ -103,12 +110,22 @@ export class CidadaoService {
       throw new NotFoundException('Cidadão não encontrado');
     }
 
+    // Auditoria de acesso a dados sensíveis por CPF
+    await this.auditEmitter.emitSensitiveDataEvent(
+      AuditEventType.SENSITIVE_DATA_ACCESSED,
+      'Cidadao',
+      cidadao.id,
+      userId || 'system',
+      ['cpf'],
+      'Consulta por CPF',
+    );
+
     return plainToInstance(CidadaoResponseDto, cidadao, {
       excludeExtraneousValues: true,
     });
   }
 
-  async findByNis(nis: string, includeRelations = false): Promise<CidadaoResponseDto> {
+  async findByNis(nis: string, includeRelations = false, userId?: string): Promise<CidadaoResponseDto> {
     if (!nis || nis.trim() === '') {
       throw new BadRequestException('NIS é obrigatório');
     }
@@ -123,9 +140,26 @@ export class CidadaoService {
       throw new NotFoundException('Cidadão não encontrado');
     }
 
+    // Auditoria de acesso a dados sensíveis por NIS
+    await this.auditEmitter.emitSensitiveDataEvent(
+      AuditEventType.SENSITIVE_DATA_ACCESSED,
+      'Cidadao',
+      cidadao.id,
+      userId || 'system',
+      ['nis'],
+      'Consulta por NIS',
+    );
+
     return plainToInstance(CidadaoResponseDto, cidadao, {
       excludeExtraneousValues: true,
     });
+  }
+
+  /**
+   * Verifica se o feature flag para nova estrutura está ativado
+   */
+  private isNovaEstruturaAtiva(): boolean {
+    return this.configService.get<boolean>('READ_NOVA_ESTRUTURA_CONTATO', false);
   }
 
   async create(
@@ -152,7 +186,13 @@ export class CidadaoService {
     }
 
     // Separar campos que não pertencem à entidade Cidadao
-    const { papeis, composicao_familiar, ...cidadaoData } = createCidadaoDto;
+    const { 
+      papeis, 
+      composicao_familiar, 
+      contatos, 
+      enderecos, 
+      ...cidadaoData 
+    } = createCidadaoDto;
 
     // Preparar dados para criação
     const dadosParaCriacao = {
@@ -164,6 +204,75 @@ export class CidadaoService {
     };
 
     const cidadao = await this.cidadaoRepository.create(dadosParaCriacao);
+    
+    // Processar contatos normalizados se existirem e a feature flag estiver ativa
+    if (this.isNovaEstruturaAtiva() && contatos && contatos.length > 0) {
+      await this.contatoService.upsertMany(cidadao.id, contatos);
+      
+      // Se temos contatos normalizados e também dados inline, migramos os dados inline
+      if (cidadao.telefone || cidadao.email) {
+        const contatosLegados: ContatoDto[] = [];
+        
+        if (cidadao.telefone) {
+          contatosLegados.push({
+            cidadao_id: cidadao.id,
+            telefone: cidadao.telefone,
+            is_whatsapp: false, // Valor padrão, já que a entidade Cidadao não tem essa propriedade
+            proprietario: true
+          });
+        }
+        
+        if (cidadao.email) {
+          contatosLegados.push({
+            cidadao_id: cidadao.id,
+            email: cidadao.email,
+            proprietario: true
+          });
+        }
+        
+        if (contatosLegados.length > 0) {
+          await this.contatoService.upsertMany(cidadao.id, contatosLegados);
+        }
+      }
+    }
+    
+    // Processar endereços normalizados se existirem e a feature flag estiver ativa
+    if (this.isNovaEstruturaAtiva() && enderecos && enderecos.length > 0) {
+      await this.enderecoService.upsertMany(cidadao.id, enderecos);
+      
+      // Se temos endereço normalizado e também dados inline, migramos os dados inline
+      if (cidadao.endereco) {
+        const enderecoLegado: EnderecoDto = {
+          cidadao_id: cidadao.id,
+          logradouro: cidadao.endereco.logradouro,
+          numero: cidadao.endereco.numero,
+          complemento: cidadao.endereco.complemento,
+          bairro: cidadao.endereco.bairro,
+          cidade: cidadao.endereco.cidade,
+          estado: cidadao.endereco.estado,
+          cep: cidadao.endereco.cep,
+          ponto_referencia: cidadao.endereco.ponto_referencia,
+          tempo_de_residencia: cidadao.endereco.tempo_de_residencia,
+          data_inicio_vigencia: new Date().toISOString(),
+          data_fim_vigencia: null
+        };
+        
+        await this.enderecoService.create(enderecoLegado);
+      }
+    }
+
+    // Auditoria de criação de cidadão
+    await this.auditEmitter.emitEntityCreated(
+      'Cidadao',
+      cidadao.id,
+      {
+        cpf: cpfClean,
+        nis: nisClean,
+        nome: cidadao.nome,
+        unidade_id,
+      },
+      usuario_id,
+    );
 
     return plainToInstance(CidadaoResponseDto, cidadao, {
       excludeExtraneousValues: true,
@@ -181,7 +290,13 @@ export class CidadaoService {
     }
 
     // Separar campos que não pertencem à entidade Cidadao
-    const { papeis, composicao_familiar, ...dadosAtualizacao } = updateCidadaoDto;
+    const { 
+      papeis, 
+      composicao_familiar, 
+      contatos, 
+      enderecos, 
+      ...dadosAtualizacao 
+    } = updateCidadaoDto;
 
     // Validar CPF se foi alterado
     if (dadosAtualizacao.cpf) {
@@ -208,6 +323,88 @@ export class CidadaoService {
     }
 
     const cidadaoAtualizado = await this.cidadaoRepository.update(id, dadosAtualizacao);
+    
+    // Auditoria de atualização de cidadão
+    await this.auditEmitter.emitEntityUpdated(
+      'Cidadao',
+      id,
+      {
+        cpf: cidadao.cpf,
+        nis: cidadao.nis,
+        nome: cidadao.nome,
+      },
+      {
+        cpf: cidadaoAtualizado.cpf,
+        nis: cidadaoAtualizado.nis,
+        nome: cidadaoAtualizado.nome,
+      },
+      usuario_id,
+    );
+    
+    // Processar contatos normalizados se existirem e a feature flag estiver ativa
+    if (this.isNovaEstruturaAtiva() && contatos && contatos.length > 0) {
+      await this.contatoService.upsertMany(id, contatos);
+      
+      // Se temos contatos normalizados e também dados inline, migramos os dados inline
+      if (dadosAtualizacao.telefone || dadosAtualizacao.email) {
+        const contatosLegados: ContatoDto[] = [];
+        
+        if (dadosAtualizacao.telefone) {
+          contatosLegados.push({
+            cidadao_id: id,
+            telefone: dadosAtualizacao.telefone,
+            is_whatsapp: dadosAtualizacao.is_whatsapp || false, // Aqui está ok porque dadosAtualizacao é do tipo CreateCidadaoDto
+            proprietario: true
+          });
+        }
+        
+        if (dadosAtualizacao.email) {
+          contatosLegados.push({
+            cidadao_id: id,
+            email: dadosAtualizacao.email,
+            proprietario: true
+          });
+        }
+        
+        if (contatosLegados.length > 0) {
+          await this.contatoService.upsertMany(id, contatosLegados);
+        }
+      }
+    }
+    
+    // Processar endereços normalizados se existirem e a feature flag estiver ativa
+    if (this.isNovaEstruturaAtiva() && enderecos && enderecos.length > 0) {
+      await this.enderecoService.upsertMany(id, enderecos);
+      
+      // Se temos endereço normalizado e também dados inline, migramos os dados inline
+      if (dadosAtualizacao.endereco) {
+        const enderecoLegado: EnderecoDto = {
+          cidadao_id: id,
+          logradouro: dadosAtualizacao.endereco.logradouro,
+          numero: dadosAtualizacao.endereco.numero,
+          complemento: dadosAtualizacao.endereco.complemento,
+          bairro: dadosAtualizacao.endereco.bairro,
+          cidade: dadosAtualizacao.endereco.cidade,
+          estado: dadosAtualizacao.endereco.estado,
+          cep: dadosAtualizacao.endereco.cep,
+          ponto_referencia: dadosAtualizacao.endereco.ponto_referencia,
+          tempo_de_residencia: dadosAtualizacao.endereco.tempo_de_residencia,
+          data_inicio_vigencia: new Date().toISOString(),
+          data_fim_vigencia: null
+        };
+        
+        // Encerra a vigência do endereço atual se existir
+        const enderecoAtual = await this.enderecoService.findEnderecoAtual(id);
+        if (enderecoAtual) {
+          await this.enderecoService.update(enderecoAtual.id, {
+            ...enderecoAtual,
+            data_fim_vigencia: new Date().toISOString()
+          });
+        }
+        
+        await this.enderecoService.create(enderecoLegado);
+      }
+    }
 
     return plainToInstance(CidadaoResponseDto, cidadaoAtualizado, {
       excludeExtraneousValues: true,

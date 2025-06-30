@@ -54,10 +54,10 @@ export class CacheService {
     if (disableRedis) {
       this.logger.warn('Redis está desabilitado. Usando apenas cache local.');
       this.circuitState = CircuitState.OPEN; // Forçar uso do cache local
+    } else {
+      // Verificar conexão com Redis de forma assíncrona e não-bloqueante
+      setImmediate(() => this.checkRedisConnection());
     }
-
-    // Verificar conexão com Redis na inicialização
-    this.checkRedisConnection();
   }
 
   /**

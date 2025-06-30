@@ -1,17 +1,18 @@
 import {
+  Body,
   Controller,
-  Get,
-  Post,
   Delete,
+  Get,
   Param,
   ParseUUIDPipe,
-  UseInterceptors,
-  UploadedFile,
-  BadRequestException,
-  Body,
+  Post,
+  Put,
+  Query,
   Res,
+  UploadedFile,
   UseGuards,
-  NotFoundException,
+  UseInterceptors,
+  UseInterceptors as NestUseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
@@ -21,36 +22,34 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { Response } from 'express';
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../../../auth/guards/permission.guard';
+import { GetUser } from '../../../auth/decorators/get-user.decorator';
 import { TipoEscopo } from '../../../entities/user-permission.entity';
+import { Usuario } from '../../../entities';
 import { ComprovanteService } from '../services/comprovante.service';
 import { ComprovanteUploadDto } from '../dtos/comprovante-upload.dto';
 import { ComprovanteResponseDto } from '../dtos/comprovante-response.dto';
-import { Response } from 'express';
-import { GetUser } from '@/auth/decorators/get-user.decorator';
-import { Usuario } from '@/entities';
+import { DataMaskingResponseInterceptor } from '../interceptors/data-masking-response.interceptor';
 
 /**
  * Controller para gerenciamento de comprovantes de pagamento
- *
- * Implementa endpoints para upload, visualização e remoção de
- * documentos comprobatórios anexados aos pagamentos.
- *
- * @author Equipe PGBen
+ * Implementa endpoints otimizados seguindo padrão prepare-then-execute
  */
 @ApiTags('Pagamentos')
 @Controller('pagamentos/:pagamentoId/comprovantes')
 @UseGuards(JwtAuthGuard, PermissionGuard)
+@UseInterceptors(DataMaskingResponseInterceptor)
 export class ComprovanteController {
   constructor(private readonly comprovanteService: ComprovanteService) {}
 
   /**
-   * Lista todos os comprovantes associados a um pagamento
+   * Lista comprovantes de um pagamento
    */
   @Get()
-  @ApiOperation({ summary: 'Lista comprovantes para um determinado pagamento' })
+  @ApiOperation({ summary: 'Lista comprovantes de um pagamento' })
   @ApiParam({
     name: 'pagamentoId',
     type: 'string',
@@ -58,45 +57,32 @@ export class ComprovanteController {
   })
   @ApiResponse({
     status: 200,
-    description: 'Lista de comprovantes',
+    description: 'Lista de comprovantes retornada com sucesso',
     type: [ComprovanteResponseDto],
   })
-  @ApiResponse({ status: 404, description: 'Pagamento não encontrado' })
-  @ApiResponse({ status: 403, description: 'Acesso negado' })
   @RequiresPermission({
     permissionName: 'pagamento.visualizar',
-    scopeType: TipoEscopo.UNIDADE,
-    scopeIdExpression: 'params.pagamentoId'
+    scopeType: TipoEscopo.UNIDADE
   })
   async findAll(@Param('pagamentoId', ParseUUIDPipe) pagamentoId: string) {
-    const comprovantes =
-      await this.comprovanteService.findAllByPagamento(pagamentoId);
+    const comprovantes = await this.comprovanteService.findByPagamento(pagamentoId);
 
-    // Mapear para DTO de resposta
-    return comprovantes.map((comprovante) => ({
-      id: comprovante.id,
-      pagamentoId: comprovante.pagamento_id,
-      tipoDocumento: comprovante.tipo_documento,
-      nomeArquivo: comprovante.nome_arquivo,
-      tamanho: comprovante.tamanho,
-      mimeType: comprovante.mime_type,
-      dataUpload: comprovante.data_upload,
-      uploadedPor: {
-        id: comprovante.uploaded_por,
-        nome: 'Usuário Responsável', // seria obtido da entidade Usuario
+    return {
+      data: comprovantes.map(this.mapToResponseDto),
+      meta: {
+        total: comprovantes.length,
+        pagamentoId,
       },
-    }));
+    };
   }
 
   /**
-   * Realiza o upload de um comprovante para um pagamento
+   * Upload de comprovante
    */
   @Post()
   @UseInterceptors(FileInterceptor('arquivo'))
   @ApiConsumes('multipart/form-data')
-  @ApiOperation({
-    summary: 'Realiza upload de um comprovante para um pagamento',
-  })
+  @ApiOperation({ summary: 'Faz upload de comprovante' })
   @ApiParam({
     name: 'pagamentoId',
     type: 'string',
@@ -107,165 +93,155 @@ export class ComprovanteController {
     description: 'Comprovante enviado com sucesso',
     type: ComprovanteResponseDto,
   })
-  @ApiResponse({
-    status: 400,
-    description: 'Arquivo inválido ou dados incorretos',
-  })
-  @ApiResponse({ status: 404, description: 'Pagamento não encontrado' })
-  @ApiResponse({ status: 403, description: 'Acesso negado' })
   @RequiresPermission({
     permissionName: 'pagamento.editar',
-    scopeType: TipoEscopo.UNIDADE,
-    scopeIdExpression: 'params.pagamentoId'
+    scopeType: TipoEscopo.UNIDADE
   })
-  async uploadComprovante(
+  async upload(
     @Param('pagamentoId', ParseUUIDPipe) pagamentoId: string,
-    @UploadedFile() arquivo: any,
+    @UploadedFile() arquivo: Express.Multer.File,
     @Body() uploadDto: ComprovanteUploadDto,
-    @GetUser() usuario: Usuario
+    @GetUser() usuario: Usuario,
   ) {
-    if (!arquivo) {
-      throw new BadRequestException('Nenhum arquivo enviado');
-    }
-
-    // Usar o ID do usuário atual
-    const usuarioId = usuario.id
-
-    const comprovante = await this.comprovanteService.uploadComprovante(
-      pagamentoId,
+    const comprovante = await this.comprovanteService.upload(
       arquivo,
-      uploadDto,
-      usuarioId,
+      pagamentoId,
+      uploadDto.tipoDocumento,
+      usuario.id,
     );
 
-    // Mapear para DTO de resposta
     return {
-      id: comprovante.id,
-      pagamentoId: comprovante.pagamento_id,
-      tipoDocumento: comprovante.tipo_documento,
-      nomeArquivo: comprovante.nome_arquivo,
-      tamanho: comprovante.tamanho,
-      mimeType: comprovante.mime_type,
-      dataUpload: comprovante.data_upload,
-      uploadedPor: {
-        id: usuarioId,
-        nome: 'Usuário Responsável', // seria obtido da entidade Usuario
-      },
+      data: this.mapToResponseDto(comprovante),
+      message: 'Comprovante enviado com sucesso',
     };
   }
 
   /**
-   * Obtém um comprovante específico para download
+   * Busca comprovante por ID
    */
-  @Get(':id/download')
-  @ApiOperation({ summary: 'Faz download de um comprovante' })
+  @Get(':id')
+  @ApiOperation({ summary: 'Busca comprovante por ID' })
   @ApiParam({
     name: 'pagamentoId',
     type: 'string',
     description: 'ID do pagamento',
   })
-  @ApiParam({ name: 'id', type: 'string', description: 'ID do comprovante' })
-  @ApiResponse({ status: 200, description: 'Arquivo enviado com sucesso' })
-  @ApiResponse({ status: 404, description: 'Comprovante não encontrado' })
-  @ApiResponse({ status: 403, description: 'Acesso negado' })
+  @ApiParam({
+    name: 'id',
+    type: 'string',
+    description: 'ID do comprovante',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Comprovante encontrado',
+    type: ComprovanteResponseDto,
+  })
   @RequiresPermission({
     permissionName: 'pagamento.visualizar',
-    scopeType: TipoEscopo.UNIDADE,
-    scopeIdExpression: 'params.id'
+    scopeType: TipoEscopo.UNIDADE
   })
-  async downloadComprovante(
+  async findOne(@Param('id', ParseUUIDPipe) id: string) {
+    const comprovante = await this.comprovanteService.findById(id);
+
+    return {
+      data: this.mapToResponseDto(comprovante),
+    };
+  }
+
+  /**
+   * Download de comprovante
+   */
+  @Get(':id/download')
+  @ApiOperation({ summary: 'Download de comprovante' })
+  @ApiParam({
+    name: 'pagamentoId',
+    type: 'string',
+    description: 'ID do pagamento',
+  })
+  @ApiParam({
+    name: 'id',
+    type: 'string',
+    description: 'ID do comprovante',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Arquivo do comprovante',
+  })
+  @RequiresPermission({
+    permissionName: 'pagamento.visualizar',
+    scopeType: TipoEscopo.UNIDADE
+  })
+  async download(
     @Param('id', ParseUUIDPipe) id: string,
     @Res() res: Response,
   ) {
-    const { buffer, fileName, mimeType } =
-      await this.comprovanteService.getComprovanteContent(id);
+    const { buffer, fileName, mimeType } = await this.comprovanteService.getContent(id);
 
     res.set({
       'Content-Type': mimeType,
       'Content-Disposition': `attachment; filename="${encodeURIComponent(fileName)}"`,
       'Content-Length': buffer.length.toString(),
+      'Cache-Control': 'no-cache',
     });
 
     res.end(buffer);
   }
 
   /**
-   * Busca um comprovante pelo ID
+   * Remove comprovante
    */
-  @Get(':id')
-  @ApiOperation({ summary: 'Busca um comprovante pelo ID' })
+  @Delete(':id')
+  @ApiOperation({ summary: 'Remove comprovante' })
   @ApiParam({
     name: 'pagamentoId',
     type: 'string',
     description: 'ID do pagamento',
   })
-  @ApiParam({ name: 'id', type: 'string', description: 'ID do comprovante' })
+  @ApiParam({
+    name: 'id',
+    type: 'string',
+    description: 'ID do comprovante',
+  })
   @ApiResponse({
     status: 200,
-    description: 'Comprovante encontrado',
-    type: ComprovanteResponseDto,
+    description: 'Comprovante removido com sucesso',
   })
-  @ApiResponse({ status: 404, description: 'Comprovante não encontrado' })
-  @ApiResponse({ status: 403, description: 'Acesso negado' })
   @RequiresPermission({
-    permissionName: 'pagamento.visualizar',
-    scopeType: TipoEscopo.UNIDADE,
-    scopeIdExpression: 'params.id'
+    permissionName: 'pagamento.editar',
+    scopeType: TipoEscopo.UNIDADE
   })
-  async findOne(@Param('id', ParseUUIDPipe) id: string) {
-    const comprovante = await this.comprovanteService.findOne(id);
+  async remove(
+    @Param('id', ParseUUIDPipe) id: string,
+    @GetUser() usuario: Usuario,
+  ) {
+    await this.comprovanteService.remove(id);
 
-    if (!comprovante) {
-      throw new NotFoundException('Comprovante não encontrado');
-    }
+    return {
+      message: 'Comprovante removido com sucesso',
+    };
+  }
 
-    // Mapear para DTO de resposta
+  // ========== MÉTODO AUXILIAR PRIVADO ==========
+
+  /**
+   * Mapeia entidade para DTO de resposta
+   */
+  private mapToResponseDto(comprovante: any): ComprovanteResponseDto {
     return {
       id: comprovante.id,
       pagamentoId: comprovante.pagamento_id,
       tipoDocumento: comprovante.tipo_documento,
       nomeArquivo: comprovante.nome_arquivo,
+      url: comprovante.url || '',
       tamanho: comprovante.tamanho,
       mimeType: comprovante.mime_type,
       dataUpload: comprovante.data_upload,
-      uploadedPor: {
-        id: comprovante.uploaded_por,
-        nome: 'Usuário Responsável', // seria obtido da entidade Usuario
+      responsavelUpload: {
+        id: comprovante.responsavel_upload_id || '',
+        nome: comprovante.responsavel_upload_nome || ''
       },
+      createdAt: comprovante.created_at,
+      updatedAt: comprovante.updated_at
     };
-  }
-
-  /**
-   * Remove um comprovante
-   */
-  @Delete(':id')
-  @ApiOperation({ summary: 'Remove um comprovante' })
-  @ApiParam({
-    name: 'pagamentoId',
-    type: 'string',
-    description: 'ID do pagamento',
-  })
-  @ApiParam({ name: 'id', type: 'string', description: 'ID do comprovante' })
-  @ApiResponse({ status: 200, description: 'Comprovante removido com sucesso' })
-  @ApiResponse({ status: 404, description: 'Comprovante não encontrado' })
-  @ApiResponse({
-    status: 409,
-    description: 'Comprovante não pode ser removido',
-  })
-  @ApiResponse({ status: 403, description: 'Acesso negado' })
-  @RequiresPermission({
-    permissionName: 'pagamento.editar',
-    scopeType: TipoEscopo.UNIDADE,
-    scopeIdExpression: 'params.id'
-  })
-  async remove(
-    @Param('id', ParseUUIDPipe) id: string,
-    @GetUser() usuario: Usuario
-  ) {
-    
-    // Usar o ID do usuário atual
-    await this.comprovanteService.removeComprovante(id, usuario.id);
-
-    return { message: 'Comprovante removido com sucesso' };
   }
 }

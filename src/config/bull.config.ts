@@ -31,27 +31,30 @@ export const getBullConfig = (
     };
   }
 
-  return {
-    redis: {
-      host: configService.get('REDIS_HOST', 'localhost'),
-      port: parseInt(configService.get('REDIS_PORT', '6379')),
-      password: configService.get('REDIS_PASSWORD', ''),
-      // Opções de conexão mais resilientes
-      maxRetriesPerRequest: 2,
-      enableReadyCheck: false,
-      connectTimeout: 5000,
-      // Estratégia de reconexão mais inteligente
-      retryStrategy: (times: number) => {
-        if (times > 3) {
-          // Após 3 tentativas, esperar mais tempo entre tentativas
-          logger.warn(
-            `Falha ao conectar ao Redis após ${times} tentativas. Nova tentativa em 10s.`,
-          );
-          return 10000; // 10 segundos
-        }
-        return Math.min(times * 1000, 3000); // Espera crescente até 3 segundos
-      },
+  const redisConfig: any = {
+    host: configService.get('REDIS_HOST', 'localhost'),
+    port: parseInt(configService.get('REDIS_PORT', '6379')),
+    maxRetriesPerRequest: 2,
+    enableReadyCheck: false,
+    connectTimeout: 5000,
+    retryStrategy: (times: number) => {
+      if (times > 3) {
+        logger.warn(
+          `Falha ao conectar ao Redis após ${times} tentativas. Nova tentativa em 10s.`,
+        );
+        return 10000; // 10 segundos
+      }
+      return Math.min(times * 1000, 3000); // Espera crescente até 3 segundos
     },
+  };
+
+  const password = configService.get('REDIS_PASSWORD');
+  if (password) {
+    redisConfig.password = password;
+  }
+
+  return {
+    redis: redisConfig,
     defaultJobOptions: {
       attempts: 3,
       backoff: {

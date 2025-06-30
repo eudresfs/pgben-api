@@ -1,6 +1,5 @@
 import { Module, Logger } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { APP_INTERCEPTOR } from '@nestjs/core';
 import { CidadaoController } from './controllers/cidadao.controller';
 import { CidadaoService } from './services/cidadao.service';
 import { CidadaoRepository } from './repositories/cidadao.repository';
@@ -14,9 +13,10 @@ import {
   InfoBancaria,
   DadosSociais,
   SituacaoMoradia,
+  Contato,
+  Endereco,
 } from '../../entities';
 import { CacheModule } from '../../shared/cache';
-import { CidadaoAuditInterceptor } from './interceptors/cidadao-audit.interceptor';
 import { PapelCidadaoService } from './services/papel-cidadao.service';
 import { PapelCidadaoController } from './controllers/papel-cidadao.controller';
 import { VerificacaoPapelService } from './services/verificacao-papel.service';
@@ -33,9 +33,13 @@ import { ComposicaoFamiliarController } from './controllers/composicao-familiar.
 import { ComposicaoFamiliarService } from './services/composicao-familiar.service';
 import { SituacaoMoradiaController } from './controllers/situacao-moradia.controller';
 import { SituacaoMoradiaService } from './services/situacao-moradia.service';
-// import { DiagnosticoController } from './controllers/diagnostico.controller'; // Movido para módulo separado
+import { ContatoController } from './controllers/contato.controller';
+import { ContatoService } from './services/contato.service';
+import { EnderecoController } from './controllers/endereco.controller';
+import { EnderecoService } from './services/endereco.service';
 import { AuthModule } from '../../auth/auth.module';
 import { NotificacaoModule } from '../notificacao/notificacao.module';
+import { AuditEventsModule } from '../auditoria';
 
 /**
  * Módulo de cidadãos
@@ -54,11 +58,13 @@ import { NotificacaoModule } from '../notificacao/notificacao.module';
       InfoBancaria,
       DadosSociais,
       SituacaoMoradia,
+      Contato,
+      Endereco,
     ]),
     CacheModule,
     AuthModule,
     NotificacaoModule,
-    // AuditoriaSharedModule é global, não precisa ser importado
+    AuditEventsModule,
   ],
   controllers: [
     CidadaoController,
@@ -70,7 +76,8 @@ import { NotificacaoModule } from '../notificacao/notificacao.module';
     DadosSociaisController,
     ComposicaoFamiliarController,
     SituacaoMoradiaController,
-    // DiagnosticoController // Movido para módulo separado
+    ContatoController,
+    EnderecoController,
   ],
   providers: [
     Logger,
@@ -85,10 +92,8 @@ import { NotificacaoModule } from '../notificacao/notificacao.module';
     DadosSociaisService,
     ComposicaoFamiliarService,
     SituacaoMoradiaService,
-    {
-      provide: APP_INTERCEPTOR,
-      useClass: CidadaoAuditInterceptor,
-    },
+    ContatoService,
+    EnderecoService,
   ],
   exports: [
     TypeOrmModule,
@@ -103,6 +108,8 @@ import { NotificacaoModule } from '../notificacao/notificacao.module';
     DadosSociaisService,
     ComposicaoFamiliarService,
     SituacaoMoradiaService,
+    ContatoService,
+    EnderecoService,
   ],
 })
 export class CidadaoModule {}

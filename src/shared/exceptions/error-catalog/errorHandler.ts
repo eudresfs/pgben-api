@@ -34,9 +34,8 @@ import { ErrorCategory, ErrorSeverity } from './catalog';
  * Mantém compatibilidade total com o sistema existente enquanto
  * adiciona suporte completo para o novo catálogo de erros.
  */
-@Injectable()
 @Catch()
-export class CatalogAwareExceptionFilter<T> implements ExceptionFilter {
+export class CatalogAwareExceptionFilter implements ExceptionFilter {
   constructor(
     private readonly config: ConfigService,
     private readonly logger: LoggingService,
@@ -44,7 +43,7 @@ export class CatalogAwareExceptionFilter<T> implements ExceptionFilter {
 
   }
 
-  catch(exception: T, host: ArgumentsHost): any {
+  catch(exception: any, host: ArgumentsHost): any {
     const ctx = host.switchToHttp();
     const req: Request = ctx.getRequest<Request>();
     const res: Response = ctx.getResponse<Response>();

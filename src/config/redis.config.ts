@@ -21,10 +21,11 @@ export interface RedisConfig {
  * Factory para criar instância do Redis
  */
 export const createRedisInstance = (configService: ConfigService): Redis => {
+  const password = configService.get<string>('REDIS_PASSWORD');
+
   const config: RedisConfig = {
     host: configService.get<string>('REDIS_HOST', 'localhost'),
     port: configService.get<number>('REDIS_PORT', 6379),
-    password: configService.get<string>('REDIS_PASSWORD'),
     db: configService.get<number>('REDIS_DB', 0),
     retryDelayOnFailover: 100,
     maxRetriesPerRequest: 3,
@@ -33,6 +34,10 @@ export const createRedisInstance = (configService: ConfigService): Redis => {
     family: 4,
     keyPrefix: configService.get<string>('REDIS_KEY_PREFIX', 'pgben:'),
   };
+
+  if (password) {
+    config.password = password;
+  }
 
   const redis = new Redis(config);
 
@@ -62,12 +67,17 @@ export const createRedisInstance = (configService: ConfigService): Redis => {
 export const getRedisConfig = (configService: ConfigService) => {
   const environment = configService.get<string>('NODE_ENV', 'development');
   
-  const baseConfig = {
+  const password = configService.get<string>('REDIS_PASSWORD');
+
+  const baseConfig: Partial<RedisConfig> = {
     host: configService.get<string>('REDIS_HOST', 'localhost'),
     port: configService.get<number>('REDIS_PORT', 6379),
-    password: configService.get<string>('REDIS_PASSWORD'),
     keyPrefix: configService.get<string>('REDIS_KEY_PREFIX', 'pgben:'),
   };
+
+  if (password) {
+    baseConfig.password = password;
+  }
 
   switch (environment) {
     case 'production':

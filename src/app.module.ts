@@ -16,7 +16,6 @@ import { CidadaoModule } from './modules/cidadao/cidadao.module';
 import { BeneficioModule } from './modules/beneficio/beneficio.module';
 import { DocumentoModule } from './modules/documento/documento.module';
 import { MetricasModule } from './modules/metricas/metricas.module';
-import { AuditModule } from './audit/audit.module';
 import { RecursoModule } from './modules/recurso/recurso.module';
 import { LogsModule } from './modules/logs/logs.module';
 import { PagamentoModule } from './modules/pagamento/pagamento.module';
@@ -28,12 +27,24 @@ import { EmailModule } from './shared/modules/email.module';
 import { ConfiguracaoModule } from './modules/configuracao/configuracao.module';
 import { NotificacaoModule } from './modules/notificacao/notificacao.module';
 import { EasyUploadModule } from './modules/easy-upload/easy-upload.module';
+import { BullModule } from '@nestjs/bull';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
+    }),
+    // EventEmitter global para eventos de auditoria
+    EventEmitterModule.forRoot({
+      wildcard: false,
+      delimiter: '.',
+      newListener: false,
+      removeListener: false,
+      maxListeners: 50,
+      verboseMemoryLeak: false,
+      ignoreErrors: false,
     }),
     // Cache para relatórios e autenticação
     CacheModule.register({
@@ -46,6 +57,15 @@ import { EasyUploadModule } from './modules/easy-upload/easy-upload.module';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: createThrottlerConfig,
+    }),
+    // Configuração de filas com BullMQ - usando configuração dinâmica
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: async (configService: ConfigService) => {
+        const { getBullConfig } = await import('./config/bull.config');
+        return getBullConfig(configService);
+      },
     }),
     // Configuração do TypeORM
     TypeOrmModule.forRootAsync({
@@ -108,9 +128,6 @@ import { EasyUploadModule } from './modules/easy-upload/easy-upload.module';
 
     // Módulo de pagamentos
     PagamentoModule,
-
-    // Módulo de auditoria e logging
-    AuditModule,
 
     // Módulo de métricas
     MetricasModule,

@@ -71,36 +71,44 @@ export class AblyService implements OnModuleInit, OnModuleDestroy {
   ) {}
 
   /**
-   * Inicializa o serviço Ably
+   * Inicialização do módulo de forma assíncrona
    */
   async onModuleInit(): Promise<void> {
-    try {
-      this.logger.log('Inicializando serviço Ably...');
-      
-      // Valida configurações
-      this.ablyConfig.validateConfig();
-      
-      // Verifica se Ably está habilitado
-      const apiKey = this.configService.get<string>('ABLY_API_KEY');
-      if (!apiKey || apiKey === 'disabled') {
-        this.logger.warn('Ably desabilitado - serviço iniciado em modo offline');
-        return;
+    this.logger.log('Inicializando AblyService...');
+
+    // Inicialização assíncrona sem bloqueio
+    setImmediate(async () => {
+      try {
+        // Validar configuração
+        this.ablyConfig.validateConfig();
+
+        // Se não há API key, desabilitar o serviço
+        const apiKey = this.configService.get<string>('ABLY_API_KEY');
+        if (!apiKey || apiKey === 'disabled') {
+          this.logger.warn(
+            '⚠️ Ably API Key não configurada. Serviço desabilitado.',
+          );
+          return;
+        }
+
+        // Inicializar clientes
+        await this.initializeClients();
+
+        // Configurar listeners de conexão
+        this.setupConnectionListeners();
+
+        // Iniciar coleta de métricas
+        this.startMetricsCollection();
+
+        this.logger.log('AblyService inicializado com sucesso');
+      } catch (error) {
+        this.logger.error(
+          `❌ Erro ao inicializar AblyService: ${error.message}`,
+          error.stack,
+        );
+        // Não propagar o erro para não quebrar a aplicação
       }
-      
-      // Inicializa clientes
-      await this.initializeClients();
-      
-      // Configura listeners de conexão
-      this.setupConnectionListeners();
-      
-      // Inicia coleta de métricas
-      this.startMetricsCollection();
-      
-      this.logger.log('Serviço Ably inicializado com sucesso');
-    } catch (error) {
-      this.logger.error('Erro ao inicializar serviço Ably:', error);
-      throw error;
-    }
+    });
   }
 
   /**

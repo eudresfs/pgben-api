@@ -17,9 +17,8 @@ import { PasswordResetToken } from '../../entities/password-reset-token.entity';
 import { Usuario } from '../../entities/usuario.entity';
 import { UsuarioRepository } from '../../modules/usuario/repositories/usuario.repository';
 import { EmailService } from '../../common/services/email.service';
-import { AuditService } from '../../audit/services/audit.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ClientInfo } from '../../common/interfaces/client-info.interface';
-import { AuditAction, AuditSeverity } from '../../entities/audit-log.entity';
 
 export interface RequestPasswordResetDto {
   email: string;
@@ -52,7 +51,7 @@ export class PasswordResetService {
     private readonly passwordResetTokenRepository: Repository<PasswordResetToken>,
     private readonly usuarioRepository: UsuarioRepository,
     private readonly emailService: EmailService,
-    private readonly auditService: AuditService,
+    private readonly eventEmitter: EventEmitter2,
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
     private readonly dataSource: DataSource,
@@ -99,14 +98,15 @@ export class PasswordResetService {
           },
         );
 
-        await this.auditService.logSecurityEvent(
-          AuditAction.PASSWORD_RESET,
-          `Tentativa de reset para email inexistente: ${email}`,
-          undefined,
-          AuditSeverity.MEDIUM,
-          { email },
-          { ip: clientInfo.ip, userAgent: clientInfo.userAgent },
-        );
+        // Emitir evento de auditoria para tentativa de reset com email inexistente
+        this.eventEmitter.emit('audit.security.event', {
+          action: 'PASSWORD_RESET_ATTEMPT',
+          description: `Tentativa de reset para email inexistente: ${email}`,
+          severity: 'MEDIUM',
+          metadata: { email },
+          clientInfo: { ip: clientInfo.ip, userAgent: clientInfo.userAgent },
+          lgpdRelevant: true
+        });
 
         return {
           message:
@@ -147,15 +147,16 @@ export class PasswordResetService {
       // Enviar email
       await this.sendPasswordResetEmail(usuario, token, expiresAt);
 
-      // Log de auditoria
-      await this.auditService.logUserAction(
-        usuario.id,
-        AuditAction.PASSWORD_RESET,
-        'password_reset_token',
-        passwordResetToken.id,
-        'Solicitação de recuperação de senha',
-        { ip: clientInfo.ip, userAgent: clientInfo.userAgent },
-      );
+      // Emitir evento de auditoria para solicitação de recuperação
+      this.eventEmitter.emit('audit.user.action', {
+        userId: usuario.id,
+        action: 'PASSWORD_RESET_REQUEST',
+        resourceType: 'password_reset_token',
+        resourceId: passwordResetToken.id,
+        description: 'Solicitação de recuperação de senha',
+        clientInfo: { ip: clientInfo.ip, userAgent: clientInfo.userAgent },
+        lgpdRelevant: true
+      });
 
       this.logger.log(`Token de recuperação gerado para usuário ${usuario.id}`);
 
@@ -167,14 +168,15 @@ export class PasswordResetService {
     } catch (error) {
       this.logger.error('Erro ao solicitar recuperação de senha', error.stack);
 
-      await this.auditService.logSecurityEvent(
-        AuditAction.PASSWORD_RESET,
-        `Erro ao processar solicitação de reset: ${error.message}`,
-        undefined,
-        AuditSeverity.HIGH,
-        { email, error: error.message },
-        { ip: clientInfo.ip, userAgent: clientInfo.userAgent },
-      );
+      // Emitir evento de auditoria para erro na solicitação
+      this.eventEmitter.emit('audit.security.event', {
+        action: 'PASSWORD_RESET_ERROR',
+        description: `Erro ao processar solicitação de reset: ${error.message}`,
+        severity: 'HIGH',
+        metadata: { email, error: error.message },
+        clientInfo: { ip: clientInfo.ip, userAgent: clientInfo.userAgent },
+        lgpdRelevant: true
+      });
 
       throw new InternalServerErrorException(
         'Erro interno. Tente novamente mais tarde.',
@@ -200,14 +202,15 @@ async resetPassword(
     // Buscar token válido
     const resetToken = await this.findValidToken(token);
     if (!resetToken) {
-      await this.auditService.logSecurityEvent(
-        AuditAction.PASSWORD_RESET,
-        'Tentativa de uso de token inválido para reset de senha',
-        undefined,
-        AuditSeverity.HIGH,
-        { tokenPrefix: token.substring(0, 8) },
-        { ip: clientInfo.ip, userAgent: clientInfo.userAgent },
-      );
+      // Emitir evento de auditoria para token inválido
+      this.eventEmitter.emit('audit.security.event', {
+        action: 'PASSWORD_RESET_INVALID_TOKEN',
+        description: 'Tentativa de uso de token inválido para reset de senha',
+        severity: 'HIGH',
+        metadata: { tokenPrefix: token.substring(0, 8) },
+        clientInfo: { ip: clientInfo.ip, userAgent: clientInfo.userAgent },
+        lgpdRelevant: true
+      });
       throw new UnauthorizedException('Token inválido ou expirado');
     }
 
@@ -274,24 +277,27 @@ async resetPassword(
     // Enviar email de confirmação
     await this.sendPasswordResetConfirmationEmail(usuario, clientInfo);
 
-    // Log de auditoria
-    await this.auditService.logUserAction(
-      usuario.id,
-      AuditAction.PASSWORD_RESET,
-      'usuario',
-      usuario.id,
-      'Senha redefinida com sucesso',
-      { ip: clientInfo.ip, userAgent: clientInfo.userAgent },
-    );
+    // Emitir evento de auditoria para senha redefinida
+    this.eventEmitter.emit('audit.user.action', {
+      userId: usuario.id,
+      action: 'PASSWORD_RESET_SUCCESS',
+      resourceType: 'usuario',
+      resourceId: usuario.id,
+      description: 'Senha redefinida com sucesso',
+      clientInfo: { ip: clientInfo.ip, userAgent: clientInfo.userAgent },
+      lgpdRelevant: true
+    });
 
-    await this.auditService.logSecurityEvent(
-      AuditAction.PASSWORD_RESET,
-      `Senha redefinida com sucesso para o usuário ${usuario.email}`,
-      usuario.id,
-      AuditSeverity.MEDIUM,
-      { email: usuario.email },
-      { ip: clientInfo.ip, userAgent: clientInfo.userAgent },
-    );
+    // Emitir evento de auditoria de segurança para senha redefinida
+    this.eventEmitter.emit('audit.security.event', {
+      action: 'PASSWORD_RESET_COMPLETED',
+      description: `Senha redefinida com sucesso para o usuário ${usuario.email}`,
+      userId: usuario.id,
+      severity: 'MEDIUM',
+      metadata: { email: usuario.email },
+      clientInfo: { ip: clientInfo.ip, userAgent: clientInfo.userAgent },
+      lgpdRelevant: true
+    });
 
     this.logger.log(
       `Senha redefinida com sucesso para usuário ${usuario.id}`,
@@ -304,16 +310,17 @@ async resetPassword(
   } catch (error) {
     this.logger.error('Erro ao redefinir senha', error.stack);
 
-    // Registar erro de auditoria apenas se conseguirmos obter o usuário
+    // Emitir evento de auditoria para erro na redefinição
     const foundToken = await this.findValidToken(token);
-    await this.auditService.logSecurityEvent(
-      AuditAction.PASSWORD_RESET,
-      `Erro ao redefinir senha: ${error.message}`,
-      foundToken?.usuario?.id,
-      AuditSeverity.HIGH,
-      { tokenPrefix: token.substring(0, 8), error: error.message },
-      { ip: clientInfo.ip, userAgent: clientInfo.userAgent },
-    );
+    this.eventEmitter.emit('audit.security.event', {
+      action: 'PASSWORD_RESET_ERROR',
+      description: `Erro ao redefinir senha: ${error.message}`,
+      userId: foundToken?.usuario?.id,
+      severity: 'HIGH',
+      metadata: { tokenPrefix: token.substring(0, 8), error: error.message },
+      clientInfo: { ip: clientInfo.ip, userAgent: clientInfo.userAgent },
+      lgpdRelevant: true
+    });
 
     if (
       error instanceof BadRequestException ||

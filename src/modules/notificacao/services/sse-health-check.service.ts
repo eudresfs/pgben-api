@@ -144,11 +144,11 @@ export class SseHealthCheckService {
 
     this.lastHealthStatus = healthStatus;
 
-    this.logger.log('Verificação de saúde concluída', {
+    /* this.logger.log('Verificação de saúde concluída', {
       healthy: overallHealthy,
       totalTime: totalCheckTime,
       summary: healthStatus.summary,
-    });
+    }); */
 
     return healthStatus;
   }

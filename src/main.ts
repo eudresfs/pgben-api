@@ -12,14 +12,12 @@ import {
   VersioningType,
 } from '@nestjs/common';
 import { ResponseInterceptor } from './shared/interceptors/response.interceptor';
-// ❌ REMOVIDO: import { RedactLogsInterceptor } from './shared/interceptors/redact-logs.interceptor';
 import { RemoveEmptyParamsInterceptor } from './shared/interceptors/remove-empty-params.interceptor';
 import { CatalogAwareExceptionFilter } from './shared/exceptions/error-catalog';
 import { setupSwagger } from './shared/configs/swagger/index';
 import { applySecurity } from './config/security.config';
 import { ConfigService } from '@nestjs/config';
 import compression from 'compression';
-// ✅ NOVO: Importar o novo sistema de logging
 import { LoggingService } from './shared/logging/logging.service';
 import { LoggingInterceptor } from './shared/logging/logging.interceptor';
 import { ErrorLoggerFilter } from './shared/logging/filters/error-logger.filter';

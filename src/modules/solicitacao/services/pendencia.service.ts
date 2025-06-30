@@ -13,8 +13,7 @@ import {
   PendenciaResponseDto,
 } from '../dto/pendencia';
 import { PaginatedResponseDto } from '../../../shared/dtos/pagination.dto';
-import { AuditoriaService } from '../../auditoria/services/auditoria.service';
-import { CreateLogAuditoriaDto } from '../../auditoria/dto/create-log-auditoria.dto';
+import { AuditEventEmitter } from '../../auditoria/events/emitters/audit-event.emitter';
 import { EventosService } from './eventos.service';
 import { NotificacaoService } from './notificacao.service';
 import { PermissionService } from '../../../auth/services/permission.service';
@@ -36,7 +35,7 @@ export class PendenciaService {
     private readonly solicitacaoRepository: Repository<Solicitacao>,
     @InjectRepository(Usuario)
     private readonly usuarioRepository: Repository<Usuario>,
-    private readonly auditoriaService: AuditoriaService,
+    private readonly auditEmitter: AuditEventEmitter,
     private readonly eventosService: EventosService,
     private readonly notificacaoService: NotificacaoService,
     private readonly permissionService: PermissionService,
@@ -119,14 +118,12 @@ export class PendenciaService {
     });
 
     // Registrar auditoria
-    const logDto = new CreateLogAuditoriaDto();
-    logDto.tipo_operacao = TipoOperacao.CREATE;
-    logDto.entidade_afetada = 'Pendencia';
-    logDto.entidade_id = pendenciaSalva.id;
-    logDto.usuario_id = usuarioId;
-    logDto.dados_novos = pendenciaSalva;
-    logDto.descricao = `Pendência criada: ${createPendenciaDto.descricao}`;
-    await this.auditoriaService.criarLog(logDto);
+    await this.auditEmitter.emitEntityCreated(
+      'Pendencia',
+      pendenciaSalva.id,
+      pendenciaSalva,
+      usuarioId
+    );
 
     // Enviar notificação
     await this.notificacaoService.notificarPendenciaCriada(
@@ -235,15 +232,13 @@ export class PendenciaService {
     });
 
     // Registrar auditoria
-    const logDto = new CreateLogAuditoriaDto();
-    logDto.tipo_operacao = TipoOperacao.UPDATE;
-    logDto.entidade_afetada = 'Pendencia';
-    logDto.entidade_id = pendencia.id;
-    logDto.usuario_id = usuarioId;
-    logDto.dados_anteriores = dadosAnteriores;
-    logDto.dados_novos = pendenciaAtualizada;
-    logDto.descricao = `Pendência resolvida: ${resolverPendenciaDto.resolucao}`;
-    await this.auditoriaService.criarLog(logDto);
+    await this.auditEmitter.emitEntityUpdated(
+      'Pendencia',
+      pendencia.id,
+      dadosAnteriores,
+      pendenciaAtualizada,
+      usuarioId
+    );
 
     // Enviar notificação
     await this.notificacaoService.notificarPendenciaResolvida(
@@ -312,22 +307,6 @@ export class PendenciaService {
       throw new BadRequestException('Apenas pendências abertas podem ser canceladas');
     }
 
-    // Verificar permissões
-    await this.permissionService.verificarPermissaoSolicitacao(
-      usuarioId,
-      pendencia.solicitacao_id,
-      'cancelar_pendencia',
-    );
-
-    // Verificar se o usuário existe
-    const usuario = await this.usuarioRepository.findOne({
-      where: { id: usuarioId },
-    });
-
-    if (!usuario) {
-      throw new NotFoundException('Usuário não encontrado');
-    }
-
     const dadosAnteriores = { ...pendencia };
 
     // Atualizar a pendência
@@ -370,15 +349,13 @@ export class PendenciaService {
     });
 
     // Registrar auditoria
-    const logDto = new CreateLogAuditoriaDto();
-    logDto.tipo_operacao = TipoOperacao.UPDATE;
-    logDto.entidade_afetada = 'Pendencia';
-    logDto.entidade_id = pendencia.id;
-    logDto.usuario_id = usuarioId;
-    logDto.dados_anteriores = dadosAnteriores;
-    logDto.dados_novos = pendenciaAtualizada;
-    logDto.descricao = `Pendência cancelada: ${cancelarPendenciaDto.motivo_cancelamento}`;
-    await this.auditoriaService.criarLog(logDto);
+    await this.auditEmitter.emitEntityUpdated(
+      'Pendencia',
+      pendencia.id,
+      dadosAnteriores,
+      pendenciaAtualizada,
+      usuarioId
+    );
 
     // Emitir notificação SSE para pendência cancelada
     this.eventEmitter.emit('sse.notificacao', {

@@ -1,28 +1,18 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { Transform, Expose } from 'class-transformer';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
 import { MetodoPagamentoEnum } from '../../../enums/metodo-pagamento.enum';
-import { DataMaskingUtil } from '../utils/data-masking.util';
+import { PagamentoResponseBaseDto, ResponsavelInfo, SolicitacaoResumo } from './base/pagamento-base.dto';
 
 /**
  * DTO para resposta contendo dados de um pagamento
  *
  * Este DTO define a estrutura de dados retornada pela API ao consultar
- * informações sobre um pagamento específico. Inclui mascaramento para
- * dados sensíveis.
+ * informações sobre um pagamento específico. Estende PagamentoResponseBaseDto
+ * para reutilizar campos comuns.
  *
  * @author Equipe PGBen
  */
-export class PagamentoResponseDto {
-  /**
-   * Identificador único do pagamento
-   */
-  @ApiProperty({
-    description: 'ID único do pagamento',
-    example: 'uuid',
-  })
-  id: string;
-
+export class PagamentoResponseDto extends PagamentoResponseBaseDto {
   /**
    * Referência à solicitação que originou o pagamento
    */
@@ -62,40 +52,18 @@ export class PagamentoResponseDto {
   infoBancariaId?: string;
 
   /**
-   * Informações bancárias com mascaramento de dados sensíveis
+   * Informações bancárias (mascaramento aplicado via interceptor)
    */
   @ApiProperty({
-    description: 'Dados bancários utilizados (com mascaramento)',
+    description: 'Dados bancários utilizados',
     example: {
       tipo: 'POUPANCA_SOCIAL',
-      chavePix: '***@domain.com',
+      chavePix: 'user@domain.com',
       banco: '001',
-      agencia: '***123',
-      conta: '****5678'
+      agencia: '12345',
+      conta: '123456789'
     },
     required: false,
-  })
-  @Transform(({ value, obj }) => {
-    if (!value) {return value;}
-    
-    // Aplica mascaramento nos dados bancários sensíveis
-    const maskedData = DataMaskingUtil.maskDadosBancarios({
-      pixKey: value.chave_pix,
-      pixTipo: value.tipo_chave_pix,
-      banco: value.banco, // Código do banco não é mascarado (informação pública)
-      agencia: value.agencia,
-      conta: value.conta
-    });
-    
-    // Retorna o objeto completo com o campo 'tipo' preservado
-    return {
-      tipo: value.tipo_conta,
-      chavePix: maskedData.pixKey,
-      pixTipo: maskedData.pixTipo,
-      banco: maskedData.banco,
-      agencia: maskedData.agencia,
-      conta: maskedData.conta
-    };
   })
   infoBancaria?: {
     tipo: string;
@@ -107,15 +75,6 @@ export class PagamentoResponseDto {
   };
 
   /**
-   * Valor do pagamento
-   */
-  @ApiProperty({
-    description: 'Valor do pagamento em reais',
-    example: 250.0,
-  })
-  valor: number;
-
-  /**
    * Data de liberação do pagamento
    */
   @ApiProperty({
@@ -123,26 +82,6 @@ export class PagamentoResponseDto {
     example: '2025-05-18T10:00:00.000Z',
   })
   dataLiberacao: Date;
-
-  /**
-   * Status atual do pagamento
-   */
-  @ApiProperty({
-    description: 'Status atual do pagamento',
-    enum: StatusPagamentoEnum,
-    example: StatusPagamentoEnum.LIBERADO,
-  })
-  status: StatusPagamentoEnum;
-
-  /**
-   * Método de pagamento utilizado
-   */
-  @ApiProperty({
-    description: 'Método de pagamento utilizado',
-    enum: MetodoPagamentoEnum,
-    example: MetodoPagamentoEnum.PIX,
-  })
-  metodoPagamento: MetodoPagamentoEnum;
 
   /**
    * Informações sobre o responsável pela liberação
@@ -199,32 +138,4 @@ export class PagamentoResponseDto {
       nome: string;
     };
   };
-
-  /**
-   * Observações sobre o pagamento
-   */
-  @ApiProperty({
-    description: 'Observações sobre o pagamento',
-    example: 'string',
-    required: false,
-  })
-  observacoes?: string;
-
-  /**
-   * Data de criação do registro
-   */
-  @ApiProperty({
-    description: 'Data de criação do registro',
-    example: 'ISO 8601 date string',
-  })
-  createdAt: Date;
-
-  /**
-   * Data da última atualização do registro
-   */
-  @ApiProperty({
-    description: 'Data da última atualização do registro',
-    example: 'ISO 8601 date string',
-  })
-  updatedAt: Date;
 }

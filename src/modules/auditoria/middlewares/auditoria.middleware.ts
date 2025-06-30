@@ -1,9 +1,9 @@
 import { Injectable, NestMiddleware, Logger } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
-import { AuditoriaService } from '../services/auditoria.service';
+import { AuditEventEmitter } from '../events/emitters/audit-event.emitter';
 import { AuditoriaQueueService } from '../services/auditoria-queue.service';
-import { TipoOperacao } from '../../../enums/tipo-operacao.enum';
 import { CreateLogAuditoriaDto } from '../dto/create-log-auditoria.dto';
+import { TipoOperacao } from '../../../enums/tipo-operacao.enum';
 
 /**
  * Middleware de Auditoria - VERSÃO CORRIGIDA
@@ -41,7 +41,7 @@ export class AuditoriaMiddleware implements NestMiddleware {
   ];
 
   constructor(
-    private readonly auditoriaService: AuditoriaService,
+    private readonly auditEventEmitter: AuditEventEmitter,
     private readonly auditoriaQueueService: AuditoriaQueueService,
   ) {}
 

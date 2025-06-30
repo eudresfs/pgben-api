@@ -4,6 +4,7 @@ import { BullModule } from '@nestjs/bull';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { LogAuditoria } from '../../entities';
 import { AuditoriaService } from './services/auditoria.service';
+import { AuditEventEmitter } from './events/emitters/audit-event.emitter';
 import { AuditoriaQueueService } from './services/auditoria-queue.service';
 import { LogAuditoriaRepository } from './repositories/log-auditoria.repository';
 
@@ -36,7 +37,7 @@ import { LogAuditoriaRepository } from './repositories/log-auditoria.repository'
       inject: [ConfigService],
     }),
   ],
-  providers: [AuditoriaService, AuditoriaQueueService, LogAuditoriaRepository],
-  exports: [AuditoriaService, AuditoriaQueueService, LogAuditoriaRepository],
+  providers: [AuditoriaService, AuditEventEmitter, AuditoriaQueueService, LogAuditoriaRepository],
+  exports: [AuditoriaService, AuditEventEmitter, AuditoriaQueueService, LogAuditoriaRepository],
 })
 export class AuditoriaCoreModule {}

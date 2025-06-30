@@ -1,214 +1,180 @@
 import {
-  ConflictException,
   Injectable,
-  Logger,
   NotFoundException,
+  ConflictException,
+  BadRequestException,
+  Logger,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { ConfirmacaoRepository } from '../repositories/confirmacao.repository';
+import { PagamentoRepository } from '../repositories/pagamento.repository';
 import { ConfirmacaoRecebimento } from '../../../entities/confirmacao-recebimento.entity';
 import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
 import { ConfirmacaoRecebimentoDto } from '../dtos/confirmacao-recebimento.dto';
-import { ComprovanteService } from './comprovante.service';
-import { IntegracaoCidadaoService } from './integracao-cidadao.service';
-import { PagamentoService } from './pagamento.service';
-import { AuditoriaService } from '@/modules/auditoria/services/auditoria.service';
-import { TipoOperacao } from '@/enums';
+import { PagamentoUnifiedMapper } from '../mappers';
+import { ConfirmacaoMapper } from '../utils/confirmacao-mapper.util';
+import { PagamentoValidationUtil } from '../utils/pagamento-validation.util';
 
 /**
- * Serviço para gerenciamento de confirmações de recebimento de pagamentos
- *
- * Implementa a lógica para registrar e consultar confirmações de recebimento
- * por parte dos beneficiários, validando regras de negócio específicas.
- *
- * @author Equipe PGBen
+ * Service simplificado para gerenciamento de confirmações de recebimento
+ * Foca apenas na lógica de negócio essencial, delegando operações de dados para o repository
  */
 @Injectable()
 export class ConfirmacaoService {
   private readonly logger = new Logger(ConfirmacaoService.name);
 
   constructor(
-    @InjectRepository(ConfirmacaoRecebimento)
-    private readonly confirmacaoRepository: Repository<ConfirmacaoRecebimento>,
-    private readonly comprovanteService: ComprovanteService,
-    private readonly integracaoCidadaoService: IntegracaoCidadaoService,
-    private readonly pagamentoService: PagamentoService,
-    private readonly auditoriaService: AuditoriaService,
+    private readonly confirmacaoRepository: ConfirmacaoRepository,
+    private readonly pagamentoRepository: PagamentoRepository,
   ) {}
 
   /**
-   * Registra uma nova confirmação de recebimento para um pagamento
-   *
-   * @param pagamentoId ID do pagamento
-   * @param createDto Dados da confirmação
-   * @param usuarioId ID do usuário que está registrando a confirmação
-   * @returns Confirmação registrada
+   * Cria uma nova confirmação de recebimento
    */
-  async registrarConfirmacao(
+  async create(
     pagamentoId: string,
     createDto: ConfirmacaoRecebimentoDto,
     usuarioId: string,
   ): Promise<ConfirmacaoRecebimento> {
-    // Verificar se o pagamento existe
-    const pagamento = await this.pagamentoService.findOne(pagamentoId);
+    this.logger.log(`Criando confirmação para pagamento ${pagamentoId}`);
 
+    // Validações fora da transação
+    const errors = ConfirmacaoMapper.validateConfirmacaoData(createDto);
+    if (errors.length > 0) {
+      throw new BadRequestException(`Dados inválidos: ${errors.join(', ')}`);
+    }
+
+    const pagamento = await this.pagamentoRepository.findById(pagamentoId);
+    PagamentoValidationUtil.validarExistencia(pagamento, pagamentoId);
+    
+    if (!pagamento) {
+      throw new NotFoundException(`Pagamento com ID ${pagamentoId} não encontrado`);
+    }
+    
+    PagamentoValidationUtil.validarParaConfirmacao(pagamento);
+    await this.verificarConfirmacaoExistente(pagamentoId);
+
+    // Preparar dados
+    const dadosConfirmacao = ConfirmacaoMapper.fromCreateDto(createDto, pagamentoId, usuarioId);
+
+    // Transação mínima - apenas inserção
+    const confirmacao = await this.confirmacaoRepository.create(dadosConfirmacao);
+
+    // Atualizar status do pagamento para confirmado (reutilizando pagamento já buscado)
+    await this.pagamentoRepository.update(pagamento.id, {
+      status: StatusPagamentoEnum.CONFIRMADO,
+      dataConclusao: new Date(),
+    });
+
+    this.logger.log(`Confirmação ${confirmacao.id} criada com sucesso`);
+    return confirmacao;
+  }
+
+  /**
+   * Busca confirmação por ID
+   */
+  async findById(id: string): Promise<ConfirmacaoRecebimento> {
+    const confirmacao = await this.confirmacaoRepository.findById(id);
+    
+    if (!confirmacao) {
+      throw new NotFoundException('Confirmação não encontrada');
+    }
+    
+    return confirmacao;
+  }
+
+  /**
+   * Busca confirmação por ID com relacionamentos
+   */
+  async findByIdWithRelations(id: string): Promise<ConfirmacaoRecebimento> {
+    const confirmacao = await this.confirmacaoRepository.findByIdWithRelations(id, [
+      'pagamento',
+      'pagamento.solicitacao',
+      'pagamento.solicitacao.beneficiario',
+      'usuario',
+      'destinatario'
+    ]);
+    
+    if (!confirmacao) {
+      throw new NotFoundException('Confirmação não encontrada');
+    }
+    
+    return confirmacao;
+  }
+
+  /**
+   * Busca confirmações de um pagamento
+   */
+  async findByPagamento(pagamentoId: string): Promise<ConfirmacaoRecebimento[]> {
+    // Validar se pagamento existe
+    const pagamento = await this.pagamentoRepository.findById(pagamentoId);
     if (!pagamento) {
       throw new NotFoundException('Pagamento não encontrado');
     }
 
-    // Verificar se o pagamento está no status adequado
-    if (pagamento.status !== StatusPagamentoEnum.LIBERADO) {
-      throw new ConflictException(
-        'Somente pagamentos liberados podem receber confirmação'
-      );
+    return await this.confirmacaoRepository.findByPagamento(pagamentoId);
+  }
+
+  /**
+   * Verifica se pagamento tem confirmação
+   */
+  async hasConfirmacao(pagamentoId: string): Promise<boolean> {
+    return await this.confirmacaoRepository.hasConfirmacao(pagamentoId);
+  }
+
+  /**
+   * Obtém status completo de confirmação do pagamento
+   */
+  async getStatusConfirmacao(pagamentoId: string): Promise<{
+    temConfirmacao: boolean;
+    status: string;
+    quantidadeConfirmacoes: number;
+    ultimaConfirmacao?: any;
+  }> {
+    const confirmacoes = await this.findByPagamento(pagamentoId);
+    return ConfirmacaoMapper.createStatusResponse(confirmacoes);
+  }
+
+  /**
+   * Remove uma confirmação (cancelamento)
+   */
+  async remove(id: string, motivo: string, usuarioId: string): Promise<void> {
+    this.logger.log(`Removendo confirmação ${id}`);
+
+    const confirmacao = await this.findById(id);
+
+    // Verificar se pode ser removida (ex: não pode remover confirmação antiga)
+    const diasLimite = 7;
+    const dataLimite = new Date();
+    dataLimite.setDate(dataLimite.getDate() - diasLimite);
+
+    if (confirmacao.created_at < dataLimite) {
+      throw new BadRequestException(`Não é possível remover confirmação criada há mais de ${diasLimite} dias`);
     }
 
-    // Verificar se já existe confirmação para este pagamento
-    const existingConfirmacao = await this.findByPagamento(pagamentoId);
-
-    if (existingConfirmacao.length > 0) {
-      throw new ConflictException(
-        'Este pagamento já possui uma confirmação de recebimento registrada',
-      );
-    }
-
-    // Verificar se o pagamento tem pelo menos um comprovante
-    const hasComprovantes =
-      await this.comprovanteService.hasComprovantes(pagamentoId);
-
-    if (!hasComprovantes) {
-      throw new ConflictException(
-        'É necessário anexar pelo menos um comprovante antes de confirmar o recebimento',
-      );
-    }
-
-    // Criar nova confirmação
-    const confirmacao = this.confirmacaoRepository.create({
-      pagamento_id: pagamentoId,
-      data_confirmacao: createDto.dataConfirmacao,
-      metodo_confirmacao: createDto.metodoConfirmacao,
-      confirmado_por: usuarioId,
-      destinatario_id: createDto.destinatarioId,
-      observacoes: createDto.observacoes,
+    // Reverter status do pagamento
+    await this.pagamentoRepository.update(confirmacao.pagamento_id, {
+      status: StatusPagamentoEnum.LIBERADO,
+      dataConclusao: undefined,
     });
 
-    // Salvar a confirmação
-    const result = await this.confirmacaoRepository.save(confirmacao);
-
-    // Atualizar o status do pagamento para CONFIRMADO
-    await this.pagamentoService.atualizarStatus(
-       pagamentoId,
-       StatusPagamentoEnum.CONFIRMADO,
-       usuarioId
-     );
-
-    // Registrar operação no log de auditoria
-    const logDto = {
-       tipo_operacao: TipoOperacao.CREATE,
-       entidade_afetada: 'ConfirmacaoRecebimento',
-       usuario_id: usuarioId,
-       entidade_id: result.id,
-       dados_anteriores: undefined,
-       dados_novos: result,
-       validar: () => {} // Implementação do método validar obrigatório
-    };
-    await this.auditoriaService.criarLog(logDto);
-
-    return result;
-  }
-
-  /**
-   * Busca uma confirmação pelo ID
-   *
-   * @param id ID da confirmação
-   * @returns Confirmação encontrada ou null
-   */
-  async findOne(id: string): Promise<ConfirmacaoRecebimento | null> {
-    return this.confirmacaoRepository.findOneBy({ id });
-  }
-
-  /**
-   * Busca confirmações de um pagamento específico
-   *
-   * @param pagamentoId ID do pagamento
-   * @returns Lista de confirmações para o pagamento
-   */
-  async findByPagamento(
-    pagamentoId: string,
-  ): Promise<ConfirmacaoRecebimento[]> {
-    return this.confirmacaoRepository.find({
-      where: { pagamento_id: pagamentoId },
-      order: { data_confirmacao: 'DESC' },
-    });
-  }
-
-  /**
-   * Busca uma confirmação pelo ID com todos os relacionamentos
-   *
-   * @param id ID da confirmação
-   * @returns Confirmação encontrada com relacionamentos ou null
-   */
-  async findOneWithRelations(
-    id: string,
-  ): Promise<ConfirmacaoRecebimento | null> {
-    return this.confirmacaoRepository.findOne({
-      where: { id },
-      relations: ['pagamento'],
-    });
-  }
-
-  /**
-   * Verifica se um pagamento tem confirmação de recebimento
-   *
-   * @param pagamentoId ID do pagamento
-   * @returns true se o pagamento tem confirmação
-   */
-  async temConfirmacao(pagamentoId: string): Promise<boolean> {
-    const count = await this.confirmacaoRepository.count({
-      where: { pagamento_id: pagamentoId },
+    // Adicionar observação sobre remoção
+    await this.confirmacaoRepository.update(id, {
+      observacoes: `${confirmacao.observacoes || ''}\n[REMOVIDA] ${motivo} - Por: ${usuarioId} em ${new Date().toISOString()}`,
     });
 
-    return count > 0;
+    this.logger.log(`Confirmação ${id} removida com sucesso`);
   }
 
+  // ========== MÉTODOS PRIVADOS DE VALIDAÇÃO ==========
+
   /**
-   * Valida se o destinatário tem relação com o beneficiário
-   * @param beneficiarioId ID do beneficiário
-   * @param destinatarioId ID do destinatário
-   * @returns True se válido
+   * Verifica se já existe confirmação para o pagamento
    */
-  private async validarDestinatario(
-    beneficiarioId: string,
-    destinatarioId: string,
-  ): Promise<boolean> {
-    try {
-      this.logger.log(
-        `Validando destinatário ${destinatarioId} para beneficiário ${beneficiarioId}`,
-      );
-
-      // Se o destinatário é o próprio beneficiário, é válido
-      if (beneficiarioId === destinatarioId) {
-        this.logger.debug('Destinatário é o próprio beneficiário');
-        return true;
-      }
-
-      // Verificar relação familiar através do IntegracaoCidadaoService
-      const temRelacao = await this.integracaoCidadaoService.verificarRelacaoFamiliar(
-        beneficiarioId,
-        destinatarioId,
-      );
-
-      this.logger.debug(
-        `Validação de destinatário: ${temRelacao ? 'aprovada' : 'indeferida'}`,
-      );
-
-      return temRelacao;
-    } catch (error) {
-      this.logger.error(
-        `Erro ao validar destinatário: ${error.message}`,
-        error.stack,
-      );
-      return false;
+  private async verificarConfirmacaoExistente(pagamentoId: string): Promise<void> {
+    const existeConfirmacao = await this.confirmacaoRepository.hasConfirmacao(pagamentoId);
+    
+    if (existeConfirmacao) {
+      throw new ConflictException('Este pagamento já possui confirmação de recebimento');
     }
   }
 }

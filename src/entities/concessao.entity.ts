@@ -38,7 +38,7 @@ export class Concessao {
   @IsUUID('4', { message: 'ID da solicitação inválido' })
   solicitacaoId: string;
 
-  @OneToOne(() => Solicitacao)
+  @OneToOne(() => Solicitacao, solicitacao => solicitacao.concessao)
   @JoinColumn({ name: 'solicitacao_id' })
   solicitacao: Solicitacao;
 

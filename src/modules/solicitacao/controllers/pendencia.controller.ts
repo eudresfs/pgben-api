@@ -54,7 +54,7 @@ export class PendenciaController {
    * Cria uma nova pendência
    */
   @Post()
-  @RequiresPermission({ permissionName: 'pendencia.criar', scopeType: TipoEscopo.UNIDADE, scopeIdExpression: 'user.unidadeId' })
+  @RequiresPermission({ permissionName: 'pendencia.criar', scopeType: TipoEscopo.UNIDADE })
   @ApiOperation({
     summary: 'Criar nova pendência',
     description: 'Registra uma nova pendência para uma solicitação',
@@ -203,7 +203,7 @@ export class PendenciaController {
    * Cancela uma pendência
    */
   @Put(':pendenciaId/cancelar')
-  @RequiresPermission({ permissionName: 'pendencia.atualizar', scopeType: TipoEscopo.UNIDADE, scopeIdExpression: 'user.unidadeId' })
+  @RequiresPermission({ permissionName: 'pendencia.atualizar', scopeType: TipoEscopo.UNIDADE})
   @ApiOperation({
     summary: 'Cancelar pendência',
     description: 'Marca uma pendência como cancelada',

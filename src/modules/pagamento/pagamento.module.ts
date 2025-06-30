@@ -1,6 +1,8 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { BullModule } from '@nestjs/bull';
 import { LoggingService } from '../../shared/logging/logging.service';
+import { StorageService } from '../../shared/services/storage.service';
 
 // Entidades
 import {
@@ -14,23 +16,33 @@ import {
 import { PagamentoController } from './controllers/pagamento.controller';
 import { ComprovanteController } from './controllers/comprovante.controller';
 import { ConfirmacaoController } from './controllers/confirmacao.controller';
+import { PagamentoBatchController } from './controllers/pagamento-batch.controller';
 
 // Serviços principais
 import { PagamentoService } from './services/pagamento.service';
-import { PagamentoLiberacaoService } from './services/pagamento-liberacao.service';
+import { PagamentoWorkflowService } from './services/pagamento-workflow.service';
+import { PagamentoValidationService } from './services/pagamento-validation.service';
 import { PagamentoLiberacaoScheduler } from './schedulers/pagamento-liberacao.scheduler';
 import { ComprovanteService } from './services/comprovante.service';
 import { ConfirmacaoService } from './services/confirmacao.service';
-import { PagamentoMappingService } from './services/pagamento-mapping.service';
-import { PagamentoResponseService } from './services/pagamento-response.service';
 
-// Serviços de integração
-import { AuditoriaPagamentoService } from './services/auditoria-pagamento.service';
-import { IntegracaoSolicitacaoService } from './services/integracao-solicitacao.service';
-import { IntegracaoDocumentoService } from './services/integracao-documento.service';
-import { IntegracaoCidadaoService } from './services/integracao-cidadao.service';
-import { IntegracaoAuditoriaService } from './services/integracao-auditoria.service';
-import { IntegracaoNotificacaoService } from './services/integracao-notificacao.service';
+// Novos serviços de otimização
+import { PagamentoCacheService } from './services/pagamento-cache.service';
+import { PagamentoBatchService } from './services/pagamento-batch.service';
+import { PagamentoQueueService } from './services/pagamento-queue.service';
+import { PagamentoQueueProcessor } from './services/pagamento-queue.processor';
+
+// Command/Query Handlers
+import {
+  CreatePagamentoHandler,
+  LiberarPagamentoHandler,
+  GetPagamentosHandler,
+} from './handlers';
+
+// Repositórios
+import { PagamentoRepository } from './repositories/pagamento.repository';
+import { ComprovanteRepository } from './repositories/comprovante.repository';
+import { ConfirmacaoRepository } from './repositories/confirmacao.repository';
 
 // Validadores
 import { PixValidator } from './validators/pix-validator';
@@ -40,6 +52,7 @@ import { DadosBancariosValidator } from './validators/dados-bancarios-validator'
 // Interceptors
 import { DataMaskingInterceptor } from './interceptors/data-masking.interceptor';
 import { AuditoriaInterceptor } from './interceptors/auditoria.interceptor';
+import { PagamentoPerformanceInterceptor } from './interceptors/pagamento-performance.interceptor';
 import { Reflector } from '@nestjs/core';
 
 // Módulos
@@ -51,6 +64,8 @@ import { DocumentoModule } from '../documento/documento.module';
 import { CidadaoModule } from '../cidadao/cidadao.module';
 import { NotificacaoModule } from '../notificacao/notificacao.module';
 import { SharedModule } from '../../shared/shared.module';
+import { CacheModule } from '../../shared/cache/cache.module';
+
 
 /**
  * Módulo de Pagamento/Liberação
@@ -68,8 +83,22 @@ import { SharedModule } from '../../shared/shared.module';
       ConfirmacaoRecebimento,
       LogAuditoria,
     ]),
+    // Configuração da fila BullMQ para pagamentos
+    BullModule.registerQueue({
+      name: 'pagamentos',
+      defaultJobOptions: {
+        removeOnComplete: 10,
+        removeOnFail: 5,
+        attempts: 3,
+        backoff: {
+          type: 'exponential',
+          delay: 2000,
+        },
+      },
+    }),
     AuthModule,
     SharedModule,
+    CacheModule,
     UsuarioModule,
     forwardRef(() => SolicitacaoModule),
     DocumentoModule,
@@ -81,26 +110,34 @@ import { SharedModule } from '../../shared/shared.module';
     PagamentoController,
     ComprovanteController,
     ConfirmacaoController,
+    PagamentoBatchController,
   ],
   providers: [
+    // Repositórios
+    PagamentoRepository,
+    ComprovanteRepository,
+    ConfirmacaoRepository,
+
     // Serviços principais
     PagamentoService,
-    PagamentoLiberacaoService,
+    PagamentoWorkflowService,
+    PagamentoValidationService,
     ComprovanteService,
     ConfirmacaoService,
-    PagamentoMappingService,
-    PagamentoResponseService,
+
+    // Novos serviços de otimização
+    PagamentoCacheService,
+    PagamentoBatchService,
+    PagamentoQueueService,
+    PagamentoQueueProcessor,
+
+    // Command/Query Handlers
+    CreatePagamentoHandler,
+    LiberarPagamentoHandler,
+    GetPagamentosHandler,
 
     // Schedulers
     PagamentoLiberacaoScheduler,
-
-    // Serviços de integração
-    AuditoriaPagamentoService,
-    IntegracaoSolicitacaoService,
-    IntegracaoDocumentoService,
-    IntegracaoCidadaoService,
-    IntegracaoAuditoriaService,
-    IntegracaoNotificacaoService,
 
     // Validadores
     PixValidator,
@@ -110,31 +147,40 @@ import { SharedModule } from '../../shared/shared.module';
     // Interceptors
     DataMaskingInterceptor,
     AuditoriaInterceptor,
+    PagamentoPerformanceInterceptor,
     Reflector,
 
     // Logger
     LoggingService,
+
+    // Storage
+    StorageService,
   ],
   exports: [
     TypeOrmModule,
+    BullModule,
+
+    // Repositórios
+    PagamentoRepository,
+    ComprovanteRepository,
+    ConfirmacaoRepository,
 
     // Serviços principais
     PagamentoService,
-    PagamentoLiberacaoService,
+    PagamentoWorkflowService,
+    PagamentoValidationService,
     ComprovanteService,
     ConfirmacaoService,
-    PagamentoMappingService,
-    PagamentoResponseService,
-    // MetricasPagamentoService,
-    // RelatorioPagamentoService,
 
-    // Serviços de integração
-    AuditoriaPagamentoService,
-    IntegracaoSolicitacaoService,
-    IntegracaoDocumentoService,
-    IntegracaoCidadaoService,
-    IntegracaoAuditoriaService,
-    IntegracaoNotificacaoService,
+    // Novos serviços de otimização
+    PagamentoCacheService,
+    PagamentoBatchService,
+    PagamentoQueueService,
+
+    // Command/Query Handlers
+    CreatePagamentoHandler,
+    LiberarPagamentoHandler,
+    GetPagamentosHandler,
 
     // Validadores
     PixValidator,
