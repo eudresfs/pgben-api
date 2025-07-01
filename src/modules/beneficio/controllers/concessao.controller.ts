@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Patch, UseGuards, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Patch, UseGuards, Query, BadRequestException } from '@nestjs/common';
 import { ConcessaoService } from '../services/concessao.service';
 import { CreateConcessaoDto } from '../dto/create-concessao.dto';
 import { UpdateStatusConcessaoDto } from '../dto/update-status-concessao.dto';
@@ -16,6 +16,8 @@ import { AuditEventEmitter } from '../../auditoria/events/emitters/audit-event.e
 import { AuditEventType } from '../../auditoria/events/types/audit-event.types';
 import { ReqContext } from '../../../shared/request-context/req-context.decorator';
 import { RequestContext } from '@/shared/request-context/request-context.dto';
+import { MotivosOperacaoResponseDto } from '../dto/motivos-operacao.dto';
+import { OperacaoConcessao } from '../../../enums/operacao-concessao.enum';
 
 @ApiTags('Benefícios')
 @Controller('concessoes')
@@ -446,5 +448,54 @@ export class ConcessaoController {
     );
 
     return result;
+  }
+
+  /**
+   * Busca os motivos disponíveis para uma operação específica de concessão.
+   *
+   * @param operacao Tipo de operação (bloqueio, desbloqueio, suspensão, reativação, cancelamento)
+   * @returns Lista de motivos disponíveis para a operação
+   */
+  @Get('motivos/:operacao')
+  @RequiresPermission({ permissionName: 'concessao.visualizar'})
+  @ApiOperation({ 
+    summary: 'Busca motivos por operação', 
+    description: 'Retorna a lista de motivos disponíveis para uma operação específica de concessão (bloqueio, desbloqueio, suspensão, reativação, cancelamento).' 
+  })
+  @ApiParam({ 
+    name: 'operacao', 
+    description: 'Tipo de operação para filtrar motivos',
+    enum: OperacaoConcessao,
+    example: OperacaoConcessao.BLOQUEIO 
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Lista de motivos disponíveis para a operação', 
+    type: MotivosOperacaoResponseDto 
+  })
+  @ApiResponse({ 
+    status: 400, 
+    description: 'Operação inválida' 
+  })
+  async buscarMotivosPorOperacao(
+    @Param('operacao') operacao: string,
+    @GetUser() usuario: Usuario,
+  ): Promise<MotivosOperacaoResponseDto> {
+    // Validar se a operação é válida
+    const operacaoEnum = operacao as OperacaoConcessao;
+    
+    if (!Object.values(OperacaoConcessao).includes(operacaoEnum)) {
+      throw new BadRequestException(
+        `Operação '${operacao}' inválida. Valores aceitos: ${Object.values(OperacaoConcessao).join(', ')}`
+      );
+    }
+
+    const motivos = await this.concessaoService.buscarMotivosPorOperacao(operacaoEnum);
+
+    return {
+      operacao: operacaoEnum,
+      motivos,
+      total: motivos.length,
+    };
   }
 }

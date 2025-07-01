@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common';
 import { ResponseInterceptor } from './shared/interceptors/response.interceptor';
 import { RemoveEmptyParamsInterceptor } from './shared/interceptors/remove-empty-params.interceptor';
+import { ErrorHandlingInterceptor } from './shared/interceptors/error-handling.interceptor';
 import { CatalogAwareExceptionFilter } from './shared/exceptions/error-catalog';
 import { setupSwagger } from './shared/configs/swagger/index';
 import { applySecurity } from './config/security.config';
@@ -110,6 +111,9 @@ async function bootstrap(): Promise<INestApplication> {
     
     // Interceptor de logging HTTP (substitui o RedactLogsInterceptor)
     app.useGlobalInterceptors(new LoggingInterceptor(loggingService));
+
+    // ✅ NOVO: Interceptor de tratamento de erros avançado
+    app.useGlobalInterceptors(new ErrorHandlingInterceptor());
 
     // Interceptor para aplicar filtro de unidade automaticamente em GET
     const reflector = app.get(Reflector);

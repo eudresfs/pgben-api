@@ -33,34 +33,150 @@ export class NotificacaoService {
   ) {}
 
   /**
-   * Lista todas as notificações de um usuário com paginação e filtros
+   * Lista todas as notificações de um usuário com paginação e filtros avançados
    */
   async findAll(options: {
     page?: number;
     limit?: number;
     status?: StatusNotificacaoProcessamento;
+    tipo?: string;
+    categoria?: string;
+    prioridade?: string;
+    dataInicio?: Date;
+    dataFim?: Date;
+    lidas?: boolean;
+    arquivadas?: boolean;
+    ordenarPor?: string;
+    ordem?: 'ASC' | 'DESC';
+    busca?: string;
     userId: string;
   }) {
-    const { page = 1, limit = 10, status, userId } = options;
+    const {
+      page = 1,
+      limit = 10,
+      status,
+      tipo,
+      categoria,
+      prioridade,
+      dataInicio,
+      dataFim,
+      lidas,
+      arquivadas = false,
+      ordenarPor = 'created_at',
+      ordem = 'DESC',
+      busca,
+      userId,
+    } = options;
 
     const queryBuilder = this.notificacaoRepository
       .createQueryBuilder('notificacao')
       .leftJoinAndSelect('notificacao.template', 'template')
       .where('notificacao.destinatario_id = :userId', { userId });
 
+    // Filtro por status específico
     if (status) {
       queryBuilder.andWhere('notificacao.status = :status', { status });
+    }
+
+    // Filtro por notificações lidas/não lidas
+    if (lidas !== undefined) {
+      if (lidas) {
+        queryBuilder.andWhere('notificacao.status = :statusLida', {
+          statusLida: StatusNotificacaoProcessamento.LIDA,
+        });
+      } else {
+        queryBuilder.andWhere('notificacao.status = :statusNaoLida', {
+          statusNaoLida: StatusNotificacaoProcessamento.NAO_LIDA,
+        });
+      }
+    }
+
+    // Filtro para incluir/excluir notificações arquivadas
+    if (!arquivadas) {
+      queryBuilder.andWhere('notificacao.status != :statusArquivada', {
+        statusArquivada: StatusNotificacaoProcessamento.ARQUIVADA,
+      });
+    }
+
+    // Filtros relacionados ao template
+    if (tipo) {
+      queryBuilder.andWhere('template.tipo = :tipo', { tipo });
+    }
+
+    if (categoria) {
+      queryBuilder.andWhere('template.categoria = :categoria', { categoria });
+    }
+
+    if (prioridade) {
+      queryBuilder.andWhere('template.prioridade = :prioridade', { prioridade });
+    }
+
+    // Filtro por período de criação
+    if (dataInicio) {
+      queryBuilder.andWhere('notificacao.created_at >= :dataInicio', {
+        dataInicio,
+      });
+    }
+
+    if (dataFim) {
+      queryBuilder.andWhere('notificacao.created_at <= :dataFim', {
+        dataFim,
+      });
+    }
+
+    // Busca textual no assunto e corpo do template
+    if (busca) {
+      queryBuilder.andWhere(
+        '(template.assunto ILIKE :busca OR template.corpo ILIKE :busca)',
+        { busca: `%${busca}%` },
+      );
     }
 
     // Calcular paginação
     const skip = (page - 1) * limit;
     queryBuilder.skip(skip).take(limit);
 
-    // Ordenação padrão (mais recentes primeiro)
-    queryBuilder.orderBy('notificacao.created_at', 'DESC');
+    // Aplicar ordenação
+    switch (ordenarPor) {
+      case 'data_leitura':
+        queryBuilder.orderBy('notificacao.data_leitura', ordem, 'NULLS LAST');
+        break;
+      case 'prioridade':
+        // Ordenação customizada por prioridade (urgente > alta > normal > baixa)
+        queryBuilder.addOrderBy(
+          `CASE template.prioridade 
+           WHEN 'urgente' THEN 1 
+           WHEN 'alta' THEN 2 
+           WHEN 'normal' THEN 3 
+           WHEN 'baixa' THEN 4 
+           ELSE 5 END`,
+          ordem === 'DESC' ? 'ASC' : 'DESC', // Invertido para que urgente apareça primeiro em DESC
+        );
+        // Ordenação secundária por data de criação
+        queryBuilder.addOrderBy('notificacao.created_at', 'DESC');
+        break;
+      case 'status':
+        queryBuilder.orderBy('notificacao.status', ordem);
+        // Ordenação secundária por data de criação
+        queryBuilder.addOrderBy('notificacao.created_at', 'DESC');
+        break;
+      case 'created_at':
+      default:
+        queryBuilder.orderBy('notificacao.created_at', ordem);
+        break;
+    }
 
     // Executar consulta
     const [items, total] = await queryBuilder.getManyAndCount();
+
+    // Calcular estatísticas adicionais
+    const naoLidas = await this.contadorNaoLidas(userId);
+    const arquivadasCount = await this.notificacaoRepository.count({
+      where: {
+        destinatario_id: userId,
+        status: StatusNotificacaoProcessamento.ARQUIVADA,
+      },
+    });
 
     return {
       items,
@@ -69,6 +185,26 @@ export class NotificacaoService {
         page,
         limit,
         pages: Math.ceil(total / limit),
+        filtros_aplicados: {
+          status,
+          tipo,
+          categoria,
+          prioridade,
+          dataInicio,
+          dataFim,
+          lidas,
+          arquivadas,
+          busca,
+        },
+        estatisticas: {
+          nao_lidas: naoLidas.count,
+          arquivadas: arquivadasCount,
+          total_geral: total,
+        },
+        ordenacao: {
+          campo: ordenarPor,
+          direcao: ordem,
+        },
       },
     };
   }
