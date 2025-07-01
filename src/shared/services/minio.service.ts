@@ -290,17 +290,24 @@ export class MinioService implements OnModuleInit {
       this.logger.debug(`Arquivo baixado com sucesso, tamanho do buffer: ${arquivoCriptografado.length}`);
 
       // Verificar se o arquivo está criptografado
-      const criptografado = stat.metaData['x-amz-meta-encrypted'] === 'true';
+      const encryptedMeta = stat.metaData['x-amz-meta-encrypted'] || 
+                           stat.metaData['encrypted'] || 
+                           stat.metaData['X-Amz-Meta-Encrypted'];
+      const criptografado = encryptedMeta === 'true';
 
       let arquivoFinal = arquivoCriptografado;
 
       // Se estiver criptografado, descriptografar
       if (criptografado) {
-        const iv = Buffer.from(stat.metaData['x-amz-meta-iv'], 'base64');
-        const authTag = Buffer.from(
-          stat.metaData['x-amz-meta-authtag'],
-          'base64',
-        );
+        const ivMeta = stat.metaData['x-amz-meta-iv'] || 
+                      stat.metaData['iv'] || 
+                      stat.metaData['X-Amz-Meta-IV'];
+        const authTagMeta = stat.metaData['x-amz-meta-authtag'] || 
+                           stat.metaData['authtag'] || 
+                           stat.metaData['X-Amz-Meta-AuthTag'];
+        
+        const iv = Buffer.from(ivMeta, 'base64');
+        const authTag = Buffer.from(authTagMeta, 'base64');
 
         try {
           arquivoFinal = this.criptografiaService.descriptografarBuffer(
@@ -325,7 +332,12 @@ export class MinioService implements OnModuleInit {
       // Verificar integridade do arquivo
       this.logger.debug(`Metadados disponíveis: ${JSON.stringify(Object.keys(stat.metaData))}`);
       
-      const hashOriginal = stat.metaData['x-amz-meta-hash'];
+      // MinIO pode retornar metadados com chaves em diferentes formatos
+      // Tentar múltiplas variações da chave do hash
+      const hashOriginal = stat.metaData['x-amz-meta-hash'] || 
+                          stat.metaData['hash'] || 
+                          stat.metaData['X-Amz-Meta-Hash'];
+      
       this.logger.debug(`Hash original dos metadados: ${hashOriginal} (tipo: ${typeof hashOriginal})`);
       
       if (!hashOriginal) {
@@ -357,10 +369,14 @@ export class MinioService implements OnModuleInit {
 
       this.logger.debug(`Verificação de integridade bem-sucedida para ${nomeArquivo}`);
 
+      const nomeOriginalMeta = stat.metaData['x-amz-meta-original-name'] || 
+                              stat.metaData['original-name'] || 
+                              stat.metaData['X-Amz-Meta-Original-Name'];
+      
       return {
         arquivo: arquivoFinal,
         metadados: {
-          nomeOriginal: stat.metaData['x-amz-meta-original-name'],
+          nomeOriginal: nomeOriginalMeta,
           contentType: stat.metaData['content-type'],
           tamanho: arquivoFinal.length,
           criptografado,
