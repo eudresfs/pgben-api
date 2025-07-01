@@ -147,8 +147,34 @@ export class MinioService implements OnModuleInit {
       tipoDocumento,
     );
 
+    // Validar arquivo antes do cálculo do hash
+    if (!arquivo || !Buffer.isBuffer(arquivo)) {
+      this.logger.error(`Arquivo inválido para upload: tipo=${typeof arquivo}, isBuffer=${Buffer.isBuffer(arquivo)}`);
+      throw new Error('Arquivo deve ser um Buffer válido');
+    }
+
+    if (arquivo.length === 0) {
+      this.logger.error('Tentativa de upload de arquivo vazio');
+      throw new Error('Arquivo não pode estar vazio');
+    }
+
+    this.logger.debug(`Iniciando cálculo de hash para arquivo de ${arquivo.length} bytes`);
+
     // Calcular hash do arquivo original para verificação de integridade
-    const hash = this.criptografiaService.gerarHash(arquivo);
+    let hash: string;
+    try {
+      hash = this.criptografiaService.gerarHash(arquivo);
+      this.logger.debug(`Hash calculado com sucesso: ${hash}`);
+    } catch (error) {
+      this.logger.error(`Falha ao calcular hash do arquivo: ${error.message}`);
+      throw new Error(`Não foi possível calcular hash do arquivo: ${error.message}`);
+    }
+
+    // Validar se o hash foi gerado corretamente
+    if (!hash || typeof hash !== 'string' || hash.length !== 64) {
+      this.logger.error(`Hash inválido gerado: ${hash}`);
+      throw new Error('Hash gerado é inválido');
+    }
 
     // Verificar se o documento deve ser criptografado
     const criptografar = this.documentoRequerCriptografia(tipoDocumento);
@@ -183,6 +209,8 @@ export class MinioService implements OnModuleInit {
     }
 
     try {
+      this.logger.debug(`Metadados que serão salvos: ${JSON.stringify(metadados)}`);
+      
       // Fazer upload do arquivo para o MinIO
       await this.minioClient.putObject(
         this.bucketName,
@@ -195,6 +223,19 @@ export class MinioService implements OnModuleInit {
       this.logger.log(
         `Arquivo ${nomeArquivo} enviado para o MinIO com sucesso`,
       );
+      
+      // Verificar se os metadados foram salvos corretamente
+      try {
+        const statVerificacao = await this.minioClient.statObject(this.bucketName, nomeArquivo);
+        const hashSalvo = statVerificacao.metaData['x-amz-meta-hash'];
+        this.logger.debug(`Verificação pós-upload - Hash salvo: ${hashSalvo}, Hash esperado: ${hash}`);
+        
+        if (hashSalvo !== hash) {
+          this.logger.warn(`Hash nos metadados não corresponde ao esperado. Salvo: ${hashSalvo}, Esperado: ${hash}`);
+        }
+      } catch (verifyError) {
+        this.logger.warn(`Não foi possível verificar metadados pós-upload: ${verifyError.message}`);
+      }
 
       return {
         nomeArquivo,
@@ -282,8 +323,24 @@ export class MinioService implements OnModuleInit {
       }
 
       // Verificar integridade do arquivo
+      this.logger.debug(`Metadados disponíveis: ${JSON.stringify(Object.keys(stat.metaData))}`);
+      
       const hashOriginal = stat.metaData['x-amz-meta-hash'];
-      const hashCalculado = this.criptografiaService.gerarHash(arquivoFinal);
+      this.logger.debug(`Hash original dos metadados: ${hashOriginal} (tipo: ${typeof hashOriginal})`);
+      
+      if (!hashOriginal) {
+        this.logger.error(`Hash original não encontrado nos metadados. Metadados completos: ${JSON.stringify(stat.metaData)}`);
+        throw new Error('Hash original não encontrado nos metadados do arquivo');
+      }
+      
+      let hashCalculado: string;
+      try {
+        hashCalculado = this.criptografiaService.gerarHash(arquivoFinal);
+        this.logger.debug(`Hash calculado: ${hashCalculado}`);
+      } catch (error) {
+        this.logger.error(`Erro ao calcular hash para verificação: ${error.message}`);
+        throw new Error(`Falha na verificação de integridade: ${error.message}`);
+      }
 
       this.logger.debug(`Verificação de integridade - Hash original: ${hashOriginal}, Hash calculado: ${hashCalculado}`);
 

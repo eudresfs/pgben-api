@@ -285,7 +285,29 @@ export class CriptografiaService {
    * @returns Hash SHA-256 em formato hexadecimal
    */
   gerarHash(data: Buffer): string {
-    return crypto.createHash('sha256').update(data).digest('hex');
+    // Validação robusta de entrada
+    if (!data) {
+      this.logger.error('Tentativa de gerar hash com dados nulos ou undefined');
+      throw new Error('Dados para hash não podem ser nulos ou undefined');
+    }
+
+    if (!Buffer.isBuffer(data)) {
+      this.logger.error(`Tentativa de gerar hash com tipo inválido: ${typeof data}`);
+      throw new Error('Dados para hash devem ser um Buffer válido');
+    }
+
+    if (data.length === 0) {
+      this.logger.warn('Gerando hash para buffer vazio');
+    }
+
+    try {
+      const hash = crypto.createHash('sha256').update(data).digest('hex');
+      this.logger.debug(`Hash gerado com sucesso para buffer de ${data.length} bytes: ${hash.substring(0, 16)}...`);
+      return hash;
+    } catch (error) {
+      this.logger.error(`Erro ao gerar hash: ${error.message}`);
+      throw new Error(`Falha ao calcular hash: ${error.message}`);
+    }
   }
 
   /**
