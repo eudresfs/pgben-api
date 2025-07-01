@@ -28,7 +28,8 @@ export class MinioService implements OnModuleInit {
   ) {
     // Configuração do cliente MinIO
     const useSSL = this.configService.get('MINIO_USE_SSL') === 'true';
-    this.logger.log(`Configurando MinIO com SSL: ${useSSL}`);
+    const region = this.configService.get<string>('MINIO_REGION', 'us-east-1');
+    this.logger.log(`Configurando MinIO com SSL: ${useSSL}, Região: ${region}`);
 
     this.minioClient = new Minio.Client({
       endPoint: this.configService.get<string>('MINIO_ENDPOINT', 'localhost'),
@@ -42,6 +43,7 @@ export class MinioService implements OnModuleInit {
         'MINIO_SECRET_KEY',
         'minioadmin',
       ),
+      region: region,
     });
 
     // Nome do bucket para armazenamento de documentos
@@ -78,8 +80,9 @@ export class MinioService implements OnModuleInit {
         const bucketExists = await Promise.race([bucketCheckPromise, timeoutPromise]) as boolean;
         
         if (!bucketExists) {
-          await this.minioClient.makeBucket(this.bucketName, 'us-east-1');
-          this.logger.log(`Bucket '${this.bucketName}' criado com sucesso`);
+          const region = this.configService.get<string>('MINIO_REGION', 'us-east-1');
+          await this.minioClient.makeBucket(this.bucketName, region);
+          this.logger.log(`Bucket '${this.bucketName}' criado com sucesso na região ${region}`);
         } else {
           this.logger.log(`Bucket '${this.bucketName}' já existe`);
         }
@@ -228,21 +231,22 @@ export class MinioService implements OnModuleInit {
         nomeArquivo,
       );
 
-      // Criar arquivo temporário para download
-      const tempFilePath = path.join(
-        this.tempDir,
-        `download-${Date.now()}-${path.basename(nomeArquivo)}`,
-      );
+      this.logger.debug(`Baixando arquivo ${nomeArquivo}, tamanho: ${stat.size}`);
 
-      // Baixar arquivo do MinIO
-      await this.minioClient.fGetObject(
+      // Baixar arquivo do MinIO usando stream para evitar problemas de arquivo temporário
+      const stream = await this.minioClient.getObject(
         this.bucketName,
         nomeArquivo,
-        tempFilePath,
       );
 
-      // Ler arquivo baixado
-      const arquivoCriptografado = fs.readFileSync(tempFilePath);
+      // Converter stream para buffer
+      const chunks: Buffer[] = [];
+      for await (const chunk of stream) {
+        chunks.push(chunk);
+      }
+      const arquivoCriptografado = Buffer.concat(chunks);
+
+      this.logger.debug(`Arquivo baixado com sucesso, tamanho do buffer: ${arquivoCriptografado.length}`);
 
       // Verificar se o arquivo está criptografado
       const criptografado = stat.metaData['x-amz-meta-encrypted'] === 'true';
@@ -281,15 +285,20 @@ export class MinioService implements OnModuleInit {
       const hashOriginal = stat.metaData['x-amz-meta-hash'];
       const hashCalculado = this.criptografiaService.gerarHash(arquivoFinal);
 
+      this.logger.debug(`Verificação de integridade - Hash original: ${hashOriginal}, Hash calculado: ${hashCalculado}`);
+
       if (hashOriginal !== hashCalculado) {
-        this.logger.error(`Integridade do arquivo ${nomeArquivo} comprometida`);
+        this.logger.error(
+          `Integridade do arquivo ${nomeArquivo} comprometida. ` +
+          `Hash original: ${hashOriginal}, Hash calculado: ${hashCalculado}, ` +
+          `Tamanho arquivo final: ${arquivoFinal.length}, Criptografado: ${criptografado}`
+        );
         throw new Error(
           'A integridade do documento foi comprometida. O hash não corresponde ao original.',
         );
       }
 
-      // Remover arquivo temporário
-      fs.unlinkSync(tempFilePath);
+      this.logger.debug(`Verificação de integridade bem-sucedida para ${nomeArquivo}`);
 
       return {
         arquivo: arquivoFinal,

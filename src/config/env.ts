@@ -74,6 +74,7 @@ export interface EnvironmentVariables {
   MINIO_SECRET_KEY?: string;
   MINIO_BUCKET?: string;
   MINIO_USE_SSL?: boolean;
+  MINIO_REGION?: string;
   
   // Redis
   REDIS_HOST?: string;
@@ -188,6 +189,7 @@ export const env: EnvironmentVariables = {
   MINIO_SECRET_KEY: process.env.MINIO_SECRET_KEY,
   MINIO_BUCKET: process.env.MINIO_BUCKET,
   MINIO_USE_SSL: parseBoolean(process.env.MINIO_USE_SSL, false),
+  MINIO_REGION: process.env.MINIO_REGION,
   
   // Redis
   REDIS_HOST: process.env.REDIS_HOST,
