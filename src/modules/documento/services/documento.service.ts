@@ -3,6 +3,7 @@ import {
   BadRequestException,
   NotFoundException,
   InternalServerErrorException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -22,6 +23,8 @@ import {
   MimeValidationService,
   MimeValidationResult,
 } from './mime-validation.service';
+import { DocumentoAuditService, DocumentoAuditContext } from './documento-audit.service';
+import { DocumentoPathService } from './documento-path.service';
 
 @Injectable()
 export class DocumentoService {
@@ -37,6 +40,8 @@ export class DocumentoService {
     private readonly configService: ConfigService,
     private readonly mimeValidationService: MimeValidationService,
     private readonly logger: LoggingService,
+    private readonly auditService: DocumentoAuditService,
+    private readonly pathService: DocumentoPathService,
   ) {
     this.maxRetries = this.configService.get<number>(
       'DOCUMENTO_MAX_RETRIES',
@@ -110,16 +115,217 @@ export class DocumentoService {
   }
 
   /**
-   * Faz o download de um documento
+   * Verifica se o usuário tem acesso ao documento
+   * @param documentoId ID do documento
+   * @param usuarioId ID do usuário
+   * @param userRoles Roles do usuário
+   * @param auditContext Contexto para auditoria (opcional)
+   * @returns true se o usuário tem acesso, false caso contrário
+   */
+  async checkUserDocumentAccess(
+    documentoId: string,
+    usuarioId: string,
+    userRoles: string[] = [],
+    auditContext?: DocumentoAuditContext,
+  ): Promise<boolean> {
+    try {
+      const documento = await this.documentoRepository
+        .createQueryBuilder('documento')
+        .leftJoinAndSelect('documento.solicitacao', 'solicitacao')
+        .leftJoinAndSelect('documento.cidadao', 'cidadao')
+        .where('documento.id = :documentoId', { documentoId })
+        .andWhere('documento.removed_at IS NULL')
+        .getOne();
+
+      if (!documento) {
+        this.logger.warn(
+          `Tentativa de acesso a documento inexistente: ${documentoId}`,
+          DocumentoService.name,
+          { documentoId, usuarioId }
+        );
+        return false;
+      }
+
+      // Administradores têm acesso total
+      if (userRoles.includes('admin') || userRoles.includes('super_admin')) {
+        this.logger.debug(
+          `Acesso administrativo concedido ao documento ${documentoId}`,
+          DocumentoService.name,
+          { documentoId, usuarioId, roles: userRoles }
+        );
+        if (auditContext) {
+          await this.auditService.auditSecurityOperation(auditContext, {
+            documentoId: documento.id,
+            operationType: 'access_check',
+            operationDetails: { accessGranted: true, reason: 'admin_access' },
+            success: true,
+          });
+        }
+        return true;
+      }
+
+      // Usuário que fez upload tem acesso
+      if (documento.usuario_upload_id === usuarioId) {
+        this.logger.debug(
+          `Acesso concedido ao uploader do documento ${documentoId}`,
+          DocumentoService.name,
+          { documentoId, usuarioId }
+        );
+        if (auditContext) {
+          await this.auditService.auditSecurityOperation(auditContext, {
+            documentoId: documento.id,
+            operationType: 'access_check',
+            operationDetails: { accessGranted: true, reason: 'uploader_access' },
+            success: true,
+          });
+        }
+        return true;
+      }
+
+      // Usuário que verificou o documento tem acesso
+      if (documento.usuario_verificacao_id === usuarioId) {
+        this.logger.debug(
+          `Acesso concedido ao verificador do documento ${documentoId}`,
+          DocumentoService.name,
+          { documentoId, usuarioId }
+        );
+        if (auditContext) {
+          await this.auditService.auditSecurityOperation(auditContext, {
+            documentoId: documento.id,
+            operationType: 'access_check',
+            operationDetails: { accessGranted: true, reason: 'verifier_access' },
+            success: true,
+          });
+        }
+        return true;
+      }
+
+      // Verificar se o usuário é o cidadão dono do documento
+      if (documento.cidadao_id === usuarioId) {
+        this.logger.debug(
+          `Acesso concedido ao cidadão proprietário do documento ${documentoId}`,
+          DocumentoService.name,
+          { documentoId, usuarioId }
+        );
+        if (auditContext) {
+          await this.auditService.auditSecurityOperation(auditContext, {
+            documentoId: documento.id,
+            operationType: 'access_check',
+            operationDetails: { accessGranted: true, reason: 'owner_access' },
+            success: true,
+          });
+        }
+        return true;
+      }
+
+      // Verificar se o usuário tem acesso através da solicitação
+      if (documento.solicitacao) {
+        // Aqui você pode implementar lógica adicional para verificar
+        // se o usuário tem acesso à solicitação associada
+        // Por exemplo, se for um analista responsável pela solicitação
+        this.logger.debug(
+          `Verificando acesso via solicitação para documento ${documentoId}`,
+          DocumentoService.name,
+          { documentoId, usuarioId, solicitacaoId: documento.solicitacao_id }
+        );
+      }
+
+      // Analistas podem ter acesso a documentos verificados
+      if (userRoles.includes('analista') && documento.verificado) {
+        this.logger.debug(
+          `Acesso de analista concedido ao documento verificado ${documentoId}`,
+          DocumentoService.name,
+          { documentoId, usuarioId }
+        );
+        if (auditContext) {
+          await this.auditService.auditSecurityOperation(auditContext, {
+            documentoId: documento.id,
+            operationType: 'access_check',
+            operationDetails: { accessGranted: true, reason: 'analyst_verified_access' },
+            success: true,
+          });
+        }
+        return true;
+      }
+
+      this.logger.warn(
+        `Acesso negado ao documento ${documentoId}`,
+        DocumentoService.name,
+        { documentoId, usuarioId, roles: userRoles }
+      );
+      
+      // Acesso negado - auditar
+      if (auditContext) {
+        await this.auditService.auditAccessDenied(
+          documento.id,
+          auditContext,
+          'Usuário não possui permissão para acessar este documento',
+          'document_access'
+        );
+      }
+      
+      return false;
+    } catch (error) {
+      this.logger.error(
+        `Erro ao verificar acesso ao documento ${documentoId}`,
+        error,
+        DocumentoService.name,
+        { documentoId, usuarioId }
+      );
+      return false;
+    }
+  }
+
+  /**
+   * Busca um documento pelo ID com verificação de acesso
+   */
+  async findByIdWithAccess(
+    id: string,
+    usuarioId: string,
+    userRoles: string[] = [],
+  ) {
+    const hasAccess = await this.checkUserDocumentAccess(id, usuarioId, userRoles);
+    
+    if (!hasAccess) {
+      throw new ForbiddenException('Acesso negado ao documento');
+    }
+
+    return this.findById(id);
+  }
+
+  /**
+   * Faz o download de um documento com verificação de acesso
    */
   async download(
     id: string,
+    usuarioId?: string,
+    userRoles: string[] = [],
   ): Promise<{ buffer: Buffer; mimetype: string; nomeOriginal: string }> {
-    const documento = await this.findById(id);
+    let documento: Documento;
+    
+    if (usuarioId) {
+      // Usar método com verificação de acesso
+      documento = await this.findByIdWithAccess(id, usuarioId, userRoles);
+    } else {
+      // Manter compatibilidade com código existente (temporário)
+      documento = await this.findById(id);
+      this.logger.warn(
+        `Download sem verificação de acesso para documento ${id}`,
+        DocumentoService.name,
+        { documentoId: id }
+      );
+    }
+    
     const storageProvider = this.storageProviderFactory.getProvider();
 
     try {
       const buffer = await storageProvider.obterArquivo(documento.caminho);
+
+      this.logger.info(
+        `Download realizado com sucesso para documento ${id}`,
+        DocumentoService.name,
+        { documentoId: id, usuarioId, tamanho: buffer.length }
+      );
 
       return {
         buffer,
@@ -127,6 +333,12 @@ export class DocumentoService {
         nomeOriginal: documento.nome_original,
       };
     } catch (error) {
+      this.logger.error(
+        `Erro ao fazer download do documento ${id}`,
+        error,
+        DocumentoService.name,
+        { documentoId: id, usuarioId }
+      );
       throw new InternalServerErrorException(
         'Erro ao fazer download do documento',
       );
@@ -302,12 +514,20 @@ export class DocumentoService {
       const extensao = extname(arquivo.originalname);
       const nomeArquivo = `${uuidv4()}${extensao}`;
 
-      this.logger.debug(`Nome único gerado [${uploadId}]: ${nomeArquivo}`);
+      // Gerar caminho hierárquico usando DocumentoPathService
+      const caminhoHierarquico = this.pathService.generateDocumentPath({
+        cidadaoId: uploadDocumentoDto.cidadao_id,
+        tipoDocumento: uploadDocumentoDto.tipo,
+        nomeArquivo: nomeArquivo,
+        solicitacaoId: uploadDocumentoDto.solicitacao_id,
+      });
 
-      // Salvar arquivo no storage com retry
+      this.logger.debug(`Caminho hierárquico gerado [${uploadId}]: ${caminhoHierarquico}`);
+
+      // Salvar arquivo no storage com retry usando caminho hierárquico
       this.logger.debug(`Salvando arquivo no storage [${uploadId}]`, DocumentoService.name, {
         uploadId,
-        nomeArquivo,
+        caminhoHierarquico,
         provedor: storageProvider.nome,
       });
 
@@ -315,8 +535,13 @@ export class DocumentoService {
         () =>
           storageProvider.salvarArquivo(
             arquivo.buffer,
-            nomeArquivo,
+            caminhoHierarquico,
             arquivo.mimetype,
+            {
+              solicitacaoId: uploadDocumentoDto.solicitacao_id,
+              tipoDocumento: uploadDocumentoDto.tipo,
+              cidadaoId: uploadDocumentoDto.cidadao_id,
+            },
           ),
         `upload para storage [${uploadId}]`,
       );

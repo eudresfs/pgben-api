@@ -121,6 +121,125 @@ export class MinioService implements OnModuleInit {
   }
 
   /**
+   * Faz upload de um arquivo para o MinIO com caminho hierárquico personalizado
+   * @param arquivo Buffer do arquivo
+   * @param caminhoCompleto Caminho completo hierárquico do arquivo
+   * @param nomeOriginal Nome original do arquivo
+   * @param mimetype Tipo MIME do arquivo
+   * @param tipoDocumento Tipo do documento para verificar criptografia
+   * @returns Caminho do arquivo armazenado
+   */
+  async uploadArquivoHierarquico(
+    arquivo: Buffer,
+    caminhoCompleto: string,
+    nomeOriginal: string,
+    mimetype: string,
+    tipoDocumento: string,
+  ): Promise<string> {
+    // Validar arquivo antes do cálculo do hash
+    if (!arquivo || !Buffer.isBuffer(arquivo)) {
+      this.logger.error(`Arquivo inválido para upload: tipo=${typeof arquivo}, isBuffer=${Buffer.isBuffer(arquivo)}`);
+      throw new Error('Arquivo deve ser um Buffer válido');
+    }
+
+    if (arquivo.length === 0) {
+      this.logger.error('Tentativa de upload de arquivo vazio');
+      throw new Error('Arquivo não pode estar vazio');
+    }
+
+    this.logger.debug(`Iniciando cálculo de hash para arquivo de ${arquivo.length} bytes`);
+
+    // Calcular hash do arquivo original para verificação de integridade
+    let hash: string;
+    try {
+      hash = this.criptografiaService.gerarHash(arquivo);
+      this.logger.debug(`Hash calculado com sucesso: ${hash}`);
+    } catch (error) {
+      this.logger.error(`Falha ao calcular hash do arquivo: ${error.message}`);
+      throw new Error(`Não foi possível calcular hash do arquivo: ${error.message}`);
+    }
+
+    // Validar se o hash foi gerado corretamente
+    if (!hash || typeof hash !== 'string' || hash.length !== 64) {
+      this.logger.error(`Hash inválido gerado: ${hash}`);
+      throw new Error('Hash gerado é inválido');
+    }
+
+    // Verificar se o documento deve ser criptografado
+    const criptografar = this.documentoRequerCriptografia(tipoDocumento);
+
+    let arquivoFinal = arquivo;
+    const metadados: any = {
+      'Content-Type': mimetype,
+      'X-Amz-Meta-Original-Name': nomeOriginal,
+      'X-Amz-Meta-Hash': hash,
+      'X-Amz-Meta-Encrypted': criptografar ? 'true' : 'false',
+    };
+
+    // Se o documento for sensível, criptografar
+    if (criptografar) {
+      try {
+        // Criptografar o arquivo
+        const { dadosCriptografados, iv, authTag } =
+          this.criptografiaService.criptografarBuffer(arquivo);
+
+        // Usar o arquivo criptografado
+        arquivoFinal = dadosCriptografados;
+
+        // Adicionar metadados de criptografia
+        metadados['X-Amz-Meta-IV'] = iv.toString('base64');
+        metadados['X-Amz-Meta-AuthTag'] = authTag.toString('base64');
+
+        this.logger.log(`Arquivo ${caminhoCompleto} criptografado com sucesso`);
+      } catch (error) {
+        this.logger.error(`Erro ao criptografar arquivo: ${error.message}`);
+        throw new Error(`Falha ao criptografar documento: ${error.message}`);
+      }
+    }
+
+    try {
+      this.logger.debug(`Metadados que serão salvos: ${JSON.stringify(metadados)}`);
+      
+      // Fazer upload do arquivo para o MinIO
+      await this.minioClient.putObject(
+        this.bucketName,
+        caminhoCompleto,
+        arquivoFinal,
+        arquivoFinal.length,
+        metadados,
+      );
+
+      this.logger.log(
+        `Arquivo ${caminhoCompleto} enviado para o MinIO com sucesso`,
+      );
+      
+      // Verificar se os metadados foram salvos corretamente
+        try {
+          const statVerificacao = await this.minioClient.statObject(this.bucketName, caminhoCompleto);
+          this.logger.debug(`Metadados retornados pelo MinIO: ${JSON.stringify(statVerificacao.metaData)}`);
+          
+          const hashSalvo = statVerificacao.metaData['x-amz-meta-hash'] || 
+                           statVerificacao.metaData['X-Amz-Meta-Hash'] ||
+                           statVerificacao.metaData['hash'];
+          this.logger.debug(`Verificação pós-upload - Hash salvo: ${hashSalvo}, Hash esperado: ${hash}`);
+          
+          if (hashSalvo !== hash) {
+            this.logger.warn(`Hash nos metadados não corresponde ao esperado. Salvo: ${hashSalvo}, Esperado: ${hash}`);
+          }
+        } catch (verifyError) {
+          this.logger.warn(`Não foi possível verificar metadados pós-upload: ${verifyError.message}`);
+        }
+
+      return caminhoCompleto;
+    } catch (error) {
+      this.logger.error(
+        `Erro ao enviar arquivo para o MinIO: ${error.message}`,
+      );
+      throw new Error(`Falha ao armazenar documento: ${error.message}`);
+    }
+  }
+
+  /**
    * Faz upload de um arquivo para o MinIO
    * @param arquivo Buffer do arquivo
    * @param nomeOriginal Nome original do arquivo

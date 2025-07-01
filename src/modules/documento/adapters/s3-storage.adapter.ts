@@ -35,6 +35,14 @@ export class S3StorageAdapter implements StorageProvider {
     private readonly configService: ConfigService,
     private readonly loggingService: LoggingService,
   ) {
+    // Só inicializar S3 se for o provider configurado
+    const storageProvider = this.configService.get<string>('STORAGE_PROVIDER', 'minio');
+    
+    if (storageProvider !== 's3') {
+      this.loggingService.debug('S3StorageAdapter não será inicializado - provider configurado é: ' + storageProvider, S3StorageAdapter.name);
+      return;
+    }
+
     const bucketName = this.configService.get<string>('AWS_S3_BUCKET');
     if (!bucketName) {
       throw new Error('AWS_S3_BUCKET configuration is required');

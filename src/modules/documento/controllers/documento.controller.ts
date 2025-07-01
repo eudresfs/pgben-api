@@ -40,6 +40,7 @@ import { Usuario } from '../../../entities/usuario.entity';
 import { AuditEventEmitter } from '../../auditoria/events/emitters/audit-event.emitter';
 import { ReqContext } from '../../../shared/request-context/req-context.decorator';
 import { RequestContext } from '../../../shared/request-context/request-context.dto';
+import { DocumentoAccessGuard } from '../guards/documento-access.guard';
 
 /**
  * Controlador de Documentos
@@ -157,31 +158,56 @@ export class DocumentoController {
   }
 
   /**
-   * Obtém detalhes de um documento específico
+   * Obtém detalhes de um documento específico com verificação de acesso
    */
   @Get(':id')
+  @UseGuards(DocumentoAccessGuard)
   @RequiresPermission({ permissionName: 'documento.visualizar' })
   @ApiOperation({ summary: 'Obter detalhes de um documento' })
   @ApiResponse({ status: 200, description: 'Documento encontrado com sucesso' })
   @ApiResponse({ status: 404, description: 'Documento não encontrado' })
+  @ApiResponse({ status: 403, description: 'Acesso negado ao documento' })
   @ApiParam({
     name: 'id',
     description: 'ID do documento',
     type: 'string',
     format: 'uuid',
   })
-  async findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return this.documentoService.findById(id);
+  async findOne(
+    @Param('id', ParseUUIDPipe) id: string,
+    @GetUser() usuario: Usuario,
+    @ReqContext() context: RequestContext,
+  ) {
+    // Extrair roles do usuário do contexto
+    const userRoles = context.user?.roles || [];
+    
+    const documento = await this.documentoService.findByIdWithAccess(
+      id,
+      usuario.id,
+      userRoles,
+    );
+
+    // Auditoria do acesso ao documento
+    await this.auditEventEmitter.emitEntityAccessed(
+      'Documento',
+      id,
+      usuario.id?.toString(),
+      {        synchronous: false,      },
+    );
+
+    return documento;
   }
 
   /**
-   * Faz download de um documento
+   * Faz download de um documento com verificação de acesso
    */
   @Get(':id/download')
+  @UseGuards(DocumentoAccessGuard)
   @RequiresPermission({ permissionName: 'documento.download' })
   @ApiOperation({ summary: 'Fazer download de um documento' })
   @ApiResponse({ status: 200, description: 'Documento baixado com sucesso' })
   @ApiResponse({ status: 404, description: 'Documento não encontrado' })
+  @ApiResponse({ status: 403, description: 'Acesso negado ao documento' })
   @ApiParam({
     name: 'id',
     description: 'ID do documento',
@@ -191,24 +217,35 @@ export class DocumentoController {
   async download(
     @Param('id', ParseUUIDPipe) id: string,
     @Res() res: Response,
+    @GetUser() usuario: Usuario,
     @ReqContext() context: RequestContext,
   ) {
-    const resultado = await this.documentoService.download(id);
+    // Extrair roles do usuário do contexto
+    const userRoles = context.user?.roles || [];
+    
+    const resultado = await this.documentoService.download(
+      id,
+      usuario.id,
+      userRoles,
+    );
 
-    // Auditoria do download de documento
+    // Auditoria do download de documento com informações detalhadas
     await this.auditEventEmitter.emitEntityAccessed(
       'Documento',
       id,
-      context.user?.id?.toString(),
-      {
-        synchronous: false,
-      },
+      usuario.id?.toString(),
+      {        synchronous: false,      },
     );
 
+    // Headers de segurança para download
     res.set({
       'Content-Type': resultado.mimetype,
       'Content-Disposition': `attachment; filename="${resultado.nomeOriginal}"`,
       'Content-Length': resultado.buffer.length.toString(),
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0',
+      'X-Content-Type-Options': 'nosniff',
     });
 
     res.send(resultado.buffer);
@@ -270,15 +307,17 @@ export class DocumentoController {
   }
 
   /**
-   * Marca um documento como verificado
+   * Marca um documento como verificado com verificação de acesso
    */
   @Post(':id/verificar')
+  @UseGuards(DocumentoAccessGuard)
   @RequiresPermission({ permissionName: 'documento.verificar' })
   @ApiOperation({ summary: 'Marcar documento como verificado' })
   @ApiResponse({
     status: 200,
     description: 'Documento verificado com sucesso',
   })
+  @ApiResponse({ status: 403, description: 'Acesso negado ao documento' })
   @ApiParam({
     name: 'id',
     description: 'ID do documento',
@@ -303,12 +342,19 @@ export class DocumentoController {
     @GetUser() usuario: Usuario,
     @ReqContext() context: RequestContext,
   ) {
-    // Buscar dados do documento antes da verificação
-    const documentoAntes = await this.documentoService.findById(id);
+    // Extrair roles do usuário do contexto
+    const userRoles = context.user?.roles || [];
+    
+    // Buscar dados do documento antes da verificação com verificação de acesso
+    const documentoAntes = await this.documentoService.findByIdWithAccess(
+      id,
+      usuario.id,
+      userRoles,
+    );
     
     const resultado = await this.documentoService.verificar(id, usuario.id, observacoes);
     
-    // Auditoria de verificação
+    // Auditoria de verificação com informações detalhadas
     await this.auditEventEmitter.emitEntityUpdated(
       'Documento',
       id,
@@ -324,14 +370,16 @@ export class DocumentoController {
   }
 
   /**
-   * Remove um documento (soft delete)
+   * Remove um documento (soft delete) com verificação de acesso
    */
   @Delete(':id')
+  @UseGuards(DocumentoAccessGuard)
   @RequiresPermission({ permissionName: 'documento.excluir' })
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Remover um documento' })
   @ApiResponse({ status: 204, description: 'Documento removido com sucesso' })
   @ApiResponse({ status: 404, description: 'Documento não encontrado' })
+  @ApiResponse({ status: 403, description: 'Acesso negado ao documento' })
   @ApiParam({
     name: 'id',
     description: 'ID do documento',
@@ -340,20 +388,27 @@ export class DocumentoController {
   })
   async remover(
     @Param('id', ParseUUIDPipe) id: string,
-    @Request() req: any,
+    @GetUser() usuario: Usuario,
     @ReqContext() context: RequestContext,
   ) {
-    // Buscar dados do documento antes da remoção
-    const documentoAntes = await this.documentoService.findById(id);
+    // Extrair roles do usuário do contexto
+    const userRoles = context.user?.roles || [];
     
-    await this.documentoService.remover(id, req.user.id);
+    // Buscar dados do documento antes da remoção com verificação de acesso
+    const documentoAntes = await this.documentoService.findByIdWithAccess(
+      id,
+      usuario.id,
+      userRoles,
+    );
     
-    // Auditoria da remoção de documento
+    await this.documentoService.remover(id, usuario.id);
+    
+    // Auditoria da remoção de documento com informações detalhadas
     await this.auditEventEmitter.emitEntityDeleted(
       'Documento',
       id,
       documentoAntes,
-      req.user.id?.toString(),
+      usuario.id?.toString(),
       {
         synchronous: false,
       },

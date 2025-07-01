@@ -68,6 +68,10 @@ export enum TipoDocumentoEnum {
   HISTORICO_ESCOLAR = 'historico_escolar',
   MATRICULA_ESCOLAR = 'matricula_escolar',
 
+  // Documentos jurídicos
+  DETEMINACAO_JUDICIAL = 'determinacao_judicial',
+  PROCESSO_JUDICIAL = 'processo_judicial',
+
   // Documentos específicos para mortalidade
   DECLARACAO_OBITO = 'declaracao_obito',
   AUTORIZACAO_SEPULTAMENTO = 'autorizacao_sepultamento',

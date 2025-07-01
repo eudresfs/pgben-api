@@ -140,6 +140,7 @@
     "mathjs": "^14.4.0",
     "mime-types": "^3.0.1",
     "minio": "^8.0.5",
+    "nest-commander": "^3.17.0",
     "nest-winston": "^1.10.2",
     "node-cache": "^5.1.2",
     "nodemailer": "^7.0.3",
