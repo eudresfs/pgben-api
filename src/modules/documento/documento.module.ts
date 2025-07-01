@@ -5,6 +5,7 @@ import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { DocumentoController } from './controllers/documento.controller';
 import { DocumentoOrganizacionalController } from './controllers/documento-organizacional.controller';
 import { DocumentoService } from './services/documento.service';
+import { DocumentoAccessService } from './services/documento-access.service';
 import { LoggingService } from '../../shared/logging/logging.service';
 import { StorageProviderFactory } from './factories/storage-provider.factory';
 import { LocalStorageAdapter } from './adapters/local-storage.adapter';
@@ -27,6 +28,17 @@ import { InputValidationInterceptor } from './interceptors/input-validation.inte
 import { UrlSanitizerInterceptor } from './interceptors/url-sanitizer.interceptor';
 import { DocumentoRateLimitMiddleware } from './middleware/documento-rate-limit.middleware';
 import { DocumentoPathService } from './services/documento-path.service';
+import { CacheModule } from '../../shared/cache/cache.module';
+
+// Novos serviços especializados de upload
+import {
+  DocumentoUploadValidationService,
+  DocumentoFileProcessingService,
+  DocumentoReuseService,
+  DocumentoStorageService,
+  DocumentoMetadataService,
+  DocumentoPersistenceService,
+} from './services/upload';
 
 
 /**
@@ -72,10 +84,12 @@ import { DocumentoPathService } from './services/documento-path.service';
     LoggingModule,
     SharedModule,
     AuditoriaSharedModule,
+    CacheModule,
   ],
   controllers: [DocumentoController, DocumentoOrganizacionalController],
   providers: [
     DocumentoService,
+    DocumentoAccessService,
     LoggingService,
     StorageProviderFactory,
     LocalStorageAdapter,
@@ -85,6 +99,14 @@ import { DocumentoPathService } from './services/documento-path.service';
     DocumentoPathService,
     InputSanitizerValidator,
     StorageHealthService,
+    
+    // Novos serviços especializados de upload
+    DocumentoUploadValidationService,
+    DocumentoFileProcessingService,
+    DocumentoReuseService,
+    DocumentoStorageService,
+    DocumentoMetadataService,
+    DocumentoPersistenceService,
     
     // Guards de segurança (aplicados localmente nos controllers)
     DocumentoAccessGuard,
@@ -104,6 +126,7 @@ import { DocumentoPathService } from './services/documento-path.service';
   ],
   exports: [
     DocumentoService,
+    DocumentoAccessService,
     StorageProviderFactory,
     MimeValidationService,
     DocumentoPathService,

@@ -8,12 +8,9 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Documento } from '../../../entities/documento.entity';
-
 import { InputSanitizerValidator } from '../validators/input-sanitizer.validator';
 import { StorageProviderFactory } from '../factories/storage-provider.factory';
 import { UploadDocumentoDto } from '../dto/upload-documento.dto';
-import { TipoDocumentoEnum } from '@/enums';
-import { createHash } from 'crypto';
 import { extname } from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { normalizeEnumFields } from '../../../shared/utils/enum-normalizer.util';
@@ -25,6 +22,39 @@ import {
 } from './mime-validation.service';
 import { DocumentoAuditService, DocumentoAuditContext } from './documento-audit.service';
 import { DocumentoPathService } from './documento-path.service';
+import {
+  DocumentoUploadValidationService,
+  DocumentoFileProcessingService,
+  DocumentoReuseService,
+  DocumentoStorageService,
+  DocumentoMetadataService,
+  DocumentoPersistenceService,
+  UploadValidationResult,
+} from './upload';
+
+// Interfaces para refatoração do método upload
+
+interface FileProcessingResult {
+  mimeValidation: MimeValidationResult;
+  fileHash: string;
+  fileName: string;
+  storagePath: string;
+}
+
+interface DocumentReusabilityCheck {
+  canReuse: boolean;
+  existingDocument?: Documento;
+}
+
+interface UploadMetadata {
+  uploadId: string;
+  timestamp: string;
+  fileHash: string;
+  validationResult: MimeValidationResult;
+  storageProvider: string;
+  ip?: string;
+  userAgent?: string;
+}
 
 @Injectable()
 export class DocumentoService {
@@ -42,6 +72,14 @@ export class DocumentoService {
     private readonly logger: LoggingService,
     private readonly auditService: DocumentoAuditService,
     private readonly pathService: DocumentoPathService,
+    
+    // Novos serviços especializados para upload
+    private readonly uploadValidationService: DocumentoUploadValidationService,
+    private readonly fileProcessingService: DocumentoFileProcessingService,
+    private readonly reuseService: DocumentoReuseService,
+    private readonly storageService: DocumentoStorageService,
+    private readonly metadataService: DocumentoMetadataService,
+    private readonly persistenceService: DocumentoPersistenceService,
   ) {
     this.maxRetries = this.configService.get<number>(
       'DOCUMENTO_MAX_RETRIES',
@@ -71,6 +109,10 @@ export class DocumentoService {
 
     if (tipo) {
       queryBuilder.andWhere('documento.tipo = :tipo', { tipo });
+    }
+
+    if (reutilizavel) {
+      queryBuilder.andWhere('documento.reutilizavel = :reutilizavel', { reutilizavel });
     }
 
     return queryBuilder.getMany();
@@ -376,327 +418,201 @@ export class DocumentoService {
     throw lastError;
   }
 
-  /**
-   * Valida as configurações necessárias para o upload
-   */
-  private validateUploadConfiguration(): void {
-    const storageProvider = this.storageProviderFactory.getProvider();
-    if (!storageProvider) {
-      throw new InternalServerErrorException(
-        'Provedor de storage não configurado',
-      );
-    }
-
-    this.logger.debug(`Usando provedor de storage: ${storageProvider.nome}`, DocumentoService.name);
-  }
+  // Métodos privados removidos - funcionalidades movidas para serviços especializados:
+  // - validateUploadConfiguration -> DocumentoUploadValidationService
+  // - validateUploadInput -> DocumentoUploadValidationService
+  // - processFileValidation -> DocumentoFileProcessingService
+  // - checkDocumentReuse -> DocumentoReuseService
+  // - saveToStorage -> DocumentoStorageService
+  // - saveToDatabase -> DocumentoPersistenceService
+  // - handleUploadCleanup -> DocumentoStorageService
 
   /**
-   * Faz upload de um novo documento com logging detalhado e retry automático
+   * Método principal de upload refatorado - atua como orquestrador
+   * Utiliza os novos serviços especializados para cada responsabilidade
    */
   async upload(
     arquivo: any,
     uploadDocumentoDto: UploadDocumentoDto,
     usuarioId: string,
   ) {
-    const uploadId = uuidv4();
     let caminhoArmazenamento: string | null = null;
     const startTime = Date.now();
 
-    this.logger.info(`Iniciando upload de documento [${uploadId}]`, DocumentoService.name, { uploadId, arquivo: { nome: arquivo.originalname, tamanho: arquivo.size, mimetype: arquivo.mimetype }, tipo: uploadDocumentoDto.tipo, cidadaoId: uploadDocumentoDto.cidadao_id, solicitacaoId: uploadDocumentoDto.solicitacao_id, usuarioId, reutilizavel: uploadDocumentoDto.reutilizavel });
-
     try {
-      // Validar configurações
-      this.validateUploadConfiguration();
-      const storageProvider = this.storageProviderFactory.getProvider();
-
-      // Validar entrada básica
-      if (!arquivo || !arquivo.buffer || arquivo.buffer.length === 0) {
-        throw new BadRequestException('Arquivo não fornecido ou vazio');
-      }
-
-      if (!uploadDocumentoDto.cidadao_id) {
-        throw new BadRequestException('ID do cidadão é obrigatório');
-      }
-
-      this.logger.debug(
-        `Validando arquivo com validação MIME avançada [${uploadId}]`,
-        DocumentoService.name,
-        {
-          uploadId,
-          mimetype: arquivo.mimetype,
-          tamanho: arquivo.size,
-          tipoBeneficio: uploadDocumentoDto.tipo,
-        },
+      // 1. Validação de configuração e entrada
+      this.uploadValidationService.validateConfiguration();
+      const validation = this.uploadValidationService.validateInput(
+        arquivo,
+        uploadDocumentoDto,
+        usuarioId,
       );
 
-      // Validar arquivo com validação MIME avançada
-      const mimeValidationResult = await this.retryOperation(
-        () =>
-          this.mimeValidationService.validateFile(
-            arquivo,
-            uploadDocumentoDto.tipo,
-            uploadId,
-          ),
-        `validação MIME avançada [${uploadId}]`,
-        2, // Menos tentativas para validação
-      );
-
-      if (!mimeValidationResult.isValid) {
-        this.logger.warn(`Arquivo rejeitado na validação [${uploadId}]`, DocumentoService.name, {
-          uploadId,
-          errors: mimeValidationResult.validationErrors,
-          warnings: mimeValidationResult.securityWarnings,
-        });
-
+      if (!validation.isValid) {
         throw new BadRequestException(
-          `Arquivo inválido: ${mimeValidationResult.validationErrors.join(', ')}`,
+          `Dados inválidos: ${validation.errors.join(', ')}`,
         );
       }
 
-      if (mimeValidationResult.securityWarnings.length > 0) {
-        this.logger.warn(`Avisos de segurança detectados [${uploadId}]`, DocumentoService.name, {
-          uploadId,
-          warnings: mimeValidationResult.securityWarnings,
-        });
-      }
-
-      // Usar hash da validação MIME avançada
-      const hashArquivo = mimeValidationResult.fileHash;
-
       this.logger.debug(
-        `Hash do arquivo obtido da validação [${uploadId}]: ${hashArquivo.substring(0, 16)}...`,
+        `Upload iniciado - ID: ${validation.uploadId}`,
+        DocumentoService.name,
       );
 
-      // Verificar se já existe um documento com o mesmo hash (reutilização)
-      if (uploadDocumentoDto.reutilizavel) {
-        this.logger.debug(
-          `Verificando reutilização de documento [${uploadId}]`,
+      // 2. Processamento do arquivo (validação MIME, hash, nome único)
+      const fileProcessingResult = await this.fileProcessingService.processFile(
+        arquivo,
+        uploadDocumentoDto,
+        validation.uploadId,
+      );
+
+      this.logger.debug(
+        `Arquivo processado - Hash: ${fileProcessingResult.fileHash}`,
+        DocumentoService.name,
+      );
+
+      // 3. Verificação de reutilização
+      const reuseCheck = await this.reuseService.checkReusability(
+        uploadDocumentoDto,
+        fileProcessingResult.fileHash,
+        validation.uploadId,
+      );
+
+      if (reuseCheck.canReuse && reuseCheck.existingDocument) {
+        this.logger.info(
+          `Documento reutilizado: ${reuseCheck.existingDocument.id}`,
           DocumentoService.name,
+        );
+
+        // Auditar reutilização
+        await this.auditService.auditAccess(
           {
-            uploadId,
-            hashArquivo,
-            tipo: uploadDocumentoDto.tipo,
-            cidadaoId: uploadDocumentoDto.cidadao_id,
+            userId: usuarioId,
+            userRoles: [], // TODO: Implementar roles
+            ip: 'unknown', // TODO: Capturar IP
+            userAgent: 'unknown', // TODO: Capturar User Agent
+          },
+          {
+            documentoId: reuseCheck.existingDocument.id,
+            filename: reuseCheck.existingDocument.nome_original,
+            mimetype: reuseCheck.existingDocument.mimetype,
+            fileSize: reuseCheck.existingDocument.tamanho,
+            cidadaoId: reuseCheck.existingDocument.cidadao_id,
+            solicitacaoId: reuseCheck.existingDocument.solicitacao_id,
+            accessType: 'upload',
+            success: true,
           },
         );
 
-        const documentoExistente = await this.documentoRepository
-          .createQueryBuilder('documento')
-          .leftJoinAndSelect('documento.usuario_upload', 'usuario_upload')
-          .where('documento.hash_arquivo = :hashArquivo', { hashArquivo })
-          .andWhere('documento.tipo = :tipo', { tipo: uploadDocumentoDto.tipo })
-          .andWhere('documento.cidadao_id = :cidadaoId', {
-            cidadaoId: uploadDocumentoDto.cidadao_id,
-          })
-          .andWhere('documento.removed_at IS NULL')
-          .getOne();
-
-        if (documentoExistente) {
-          this.logger.info(`Documento reutilizado [${uploadId}]`, DocumentoService.name, {
-            uploadId,
-            documentoExistenteId: documentoExistente.id,
-            hashArquivo,
-            tempoProcessamento: Date.now() - startTime,
-          });
-
-          // Retornar documento existente se for reutilizável
-          if (uploadDocumentoDto.solicitacao_id) {
-            // Atualizar para associar à nova solicitação se necessário
-            documentoExistente.solicitacao_id =
-              uploadDocumentoDto.solicitacao_id;
-            return this.documentoRepository.save(documentoExistente);
-          }
-          return documentoExistente;
-        }
+        return reuseCheck.existingDocument;
       }
 
-      // Gerar nome único para o arquivo
-      const extensao = extname(arquivo.originalname);
-      const nomeArquivo = `${uuidv4()}${extensao}`;
-
-      // Gerar caminho hierárquico usando DocumentoPathService
-      const caminhoHierarquico = this.pathService.generateDocumentPath({
-        cidadaoId: uploadDocumentoDto.cidadao_id,
-        tipoDocumento: uploadDocumentoDto.tipo,
-        nomeArquivo: nomeArquivo,
-        solicitacaoId: uploadDocumentoDto.solicitacao_id,
-      });
-
-      this.logger.debug(`Caminho hierárquico gerado [${uploadId}]: ${caminhoHierarquico}`);
-
-      // Salvar arquivo no storage com retry usando caminho hierárquico
-      this.logger.debug(`Salvando arquivo no storage [${uploadId}]`, DocumentoService.name, {
-        uploadId,
-        caminhoHierarquico,
-        provedor: storageProvider.nome,
-      });
-
-      caminhoArmazenamento = await this.retryOperation(
-        () =>
-          storageProvider.salvarArquivo(
-            arquivo.buffer,
-            caminhoHierarquico,
-            arquivo.mimetype,
-            {
-              solicitacaoId: uploadDocumentoDto.solicitacao_id,
-              tipoDocumento: uploadDocumentoDto.tipo,
-              cidadaoId: uploadDocumentoDto.cidadao_id,
-            },
-          ),
-        `upload para storage [${uploadId}]`,
+      // 4. Geração do caminho de armazenamento
+      const storagePath = this.storageService.generateStoragePath(
+        uploadDocumentoDto,
+        fileProcessingResult.fileName,
       );
-
-      if (!caminhoArmazenamento) {
-        throw new InternalServerErrorException(
-          'Falha ao salvar arquivo no storage - caminho vazio',
-        );
-      }
 
       this.logger.debug(
-        `Arquivo salvo no storage [${uploadId}]: ${caminhoArmazenamento}`,
+        `Caminho de storage gerado: ${storagePath}`,
+        DocumentoService.name,
       );
 
-      // Criar metadados enriquecidos
-      const metadados = {
-        upload_info: {
-          upload_id: uploadId,
-          timestamp: new Date().toISOString(),
-          file_hash: hashArquivo,
-          validation_result: mimeValidationResult,
-          storage_provider: storageProvider.nome,
-          ip: 'unknown', // Pode ser obtido do request se necessário
-          user_agent: 'unknown', // Pode ser obtido do request se necessário
-        },
-      };
-
-      // Normalizar campos de enum antes de salvar
-      const dadosDocumento = normalizeEnumFields({
-        cidadao_id: uploadDocumentoDto.cidadao_id,
-        solicitacao_id: uploadDocumentoDto.solicitacao_id,
-        tipo: uploadDocumentoDto.tipo,
-        nome_arquivo: nomeArquivo,
-        nome_original: arquivo.originalname,
-        caminho: caminhoArmazenamento,
-        tamanho: arquivo.size,
-        mimetype: arquivo.mimetype,
-        hash_arquivo: hashArquivo,
-        reutilizavel: uploadDocumentoDto.reutilizavel || false,
-        descricao: uploadDocumentoDto.descricao,
-        usuario_upload_id: usuarioId,
-        data_upload: new Date(),
-        metadados: metadados,
-      });
-
-      this.logger.debug(`Salvando metadados no banco [${uploadId}]`);
-
-      // Salvar documento no banco de dados
-      const novoDocumento = new Documento();
-      Object.assign(novoDocumento, dadosDocumento);
-
-      // Salvar documento no banco com retry
-      const resultado = await this.retryOperation(
-        () => this.documentoRepository.save(novoDocumento),
-        `salvamento no banco [${uploadId}]`,
-        2, // Menos tentativas para operações de banco
+      // 5. Salvamento no storage
+      caminhoArmazenamento = await this.storageService.saveFile(
+        arquivo,
+        storagePath,
+        uploadDocumentoDto,
+        validation.uploadId,
       );
-
-      const documentoId = (resultado as unknown as Documento).id;
 
       this.logger.debug(
-        `Documento salvo no banco [${uploadId}]: ${documentoId}`,
+        `Arquivo salvo no storage: ${caminhoArmazenamento}`,
+        DocumentoService.name,
       );
 
-      // Buscar o documento com as relações
-      const documentoComRelacoes = await this.documentoRepository
-        .createQueryBuilder('documento')
-        .leftJoinAndSelect('documento.usuario_upload', 'usuario_upload')
-        .where('documento.id = :id', { id: documentoId })
-        .getOne();
+      // 6. Criação dos metadados
+      const metadata = this.metadataService.createMetadata(
+        validation.uploadId,
+        fileProcessingResult,
+        uploadDocumentoDto,
+      );
 
-      const tempoTotal = Date.now() - startTime;
+      const enrichedMetadata = this.metadataService.enrichMetadata(
+        metadata,
+        { storagePath: caminhoArmazenamento },
+      );
+
+      // 7. Persistência no banco de dados
+      const savedDocument = await this.persistenceService.saveDocument(
+        arquivo,
+        uploadDocumentoDto,
+        usuarioId,
+        fileProcessingResult,
+        caminhoArmazenamento,
+        enrichedMetadata,
+        validation.uploadId,
+      );
 
       this.logger.info(
-        `Upload de documento concluído com sucesso [${uploadId}]`,
+        `Documento salvo com sucesso: ${savedDocument.id}`,
         DocumentoService.name,
+      );
+
+      // 8. Auditoria do upload
+      await this.auditService.auditUpload(
         {
-          uploadId,
-          documentoId,
-          hashArquivo,
-          caminhoArmazenamento,
-          tempoProcessamento: tempoTotal,
-          tamanhoArquivo: arquivo.size,
-          tipo: uploadDocumentoDto.tipo,
+          userId: usuarioId,
+          userRoles: [], // TODO: Implementar roles
+          ip: 'unknown', // TODO: Capturar IP
+          userAgent: 'unknown', // TODO: Capturar User Agent
+        },
+        {
+          documentoId: savedDocument.id,
+          operationType: 'upload',
+          operationDetails: {
+            fileName: arquivo.originalname,
+            fileSize: arquivo.size,
+            mimetype: arquivo.mimetype,
+            uploadId: validation.uploadId || 'unknown',
+          },
+          success: true,
         },
       );
 
-      return documentoComRelacoes;
+      const duration = Date.now() - startTime;
+      this.logger.info(
+        `Upload concluído em ${duration}ms - Documento: ${savedDocument.id}`,
+        DocumentoService.name,
+      );
+
+      return savedDocument;
     } catch (error) {
-      const tempoTotal = Date.now() - startTime;
-      const storageProvider = this.storageProviderFactory.getProvider();
-
-      this.logger.error(`Falha no upload de documento [${uploadId}]`, error, DocumentoService.name, {
-        uploadId,
-        tempoProcessamento: tempoTotal,
-        arquivo: {
-          nome: arquivo?.originalname,
-          tamanho: arquivo?.size,
-          mimetype: arquivo?.mimetype,
-        },
-        caminhoArmazenamento,
-        tipo: uploadDocumentoDto.tipo,
-        cidadaoId: uploadDocumentoDto.cidadao_id,
-      });
-
-      // Limpar arquivo do storage em caso de erro
-      if (caminhoArmazenamento && storageProvider) {
+      // Cleanup em caso de erro usando o serviço especializado
+      if (caminhoArmazenamento) {
         try {
+          await this.storageService.cleanupFile(caminhoArmazenamento, 'unknown');
           this.logger.debug(
-            `Limpando arquivo do storage após erro [${uploadId}]: ${caminhoArmazenamento}`,
+            `Arquivo removido do storage após erro: ${caminhoArmazenamento}`,
+            DocumentoService.name,
           );
-          await storageProvider.removerArquivo(caminhoArmazenamento);
-          this.logger.debug(`Arquivo removido do storage [${uploadId}]`);
         } catch (cleanupError) {
           this.logger.error(
-            `Erro ao limpar arquivo do storage após falha [${uploadId}]`,
-            cleanupError,
+            `Erro ao limpar arquivo do storage: ${cleanupError.message}`,
+            cleanupError.stack,
             DocumentoService.name,
-            {
-              caminhoStorage: caminhoArmazenamento,
-              originalError: error.message
-            }
           );
         }
       }
 
-      // Re-lançar exceções conhecidas
-      if (
-        error instanceof BadRequestException ||
-        error instanceof NotFoundException
-      ) {
-        throw error;
-      }
-
-      // Tratar erros específicos do storage
-      if (error.message?.includes('S3') || error.message?.includes('storage')) {
-        throw new InternalServerErrorException(
-          'Erro no sistema de armazenamento. Tente novamente em alguns minutos.',
-        );
-      }
-
-      // Tratar erros de banco de dados
-      if (
-        error.message?.includes('database') ||
-        error.message?.includes('connection')
-      ) {
-        throw new InternalServerErrorException(
-          'Erro de conexão com banco de dados. Tente novamente.',
-        );
-      }
-
-      // Erro genérico
-      throw new InternalServerErrorException(
-        'Erro interno no upload do documento. Contate o suporte se o problema persistir.',
+      const duration = Date.now() - startTime;
+      this.logger.error(
+        `Erro no upload após ${duration}ms: ${error.message}`,
+        error.stack,
+        DocumentoService.name,
       );
+
+      throw error;
     }
   }
 

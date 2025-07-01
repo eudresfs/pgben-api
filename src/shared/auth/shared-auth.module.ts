@@ -8,6 +8,9 @@ import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
 import { JwtAuthStrategy } from '../../auth/strategies/jwt-auth.strategy';
 
+// Config
+import { createJwtConfig } from '../../config/jwt.config';
+
 /**
  * Módulo compartilhado de autenticação
  *
@@ -20,12 +23,7 @@ import { JwtAuthStrategy } from '../../auth/strategies/jwt-auth.strategy';
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        secret: configService.get('JWT_SECRET'),
-        signOptions: {
-          expiresIn: configService.get('JWT_ACCESS_TOKEN_EXPIRES_IN'),
-        },
-      }),
+      useFactory: createJwtConfig,
     }),
   ],
   providers: [JwtAuthStrategy, JwtAuthGuard, RolesGuard],

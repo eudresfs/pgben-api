@@ -156,54 +156,84 @@ export class DocumentoPathService {
 }
 ```
 
-### **2. Sistema de URLs Seguras**
+### **2. Sistema de URLs Públicas e Privadas Simplificado**
 
 ```typescript
 @Injectable()
-export class DocumentoAccessService {
+export class DocumentoUrlService {
   constructor(
-    private jwtService: JwtService,
-    private configService: ConfigService,
+    private readonly documentoRepository: DocumentoRepository,
+    private readonly cacheManager: Cache,
+    private readonly configService: ConfigService,
+    private readonly logger: LoggingService,
   ) {}
 
   /**
-   * Gera URL segura com token de acesso temporário
+   * Gera URL pública (acesso direto ao storage)
    */
-  async generateSecureUrl(
-    documentoId: string,
-    usuarioId: string,
-    expirationMinutes: number = 60
-  ): Promise<string> {
-    const payload = {
-      documentoId,
-      usuarioId,
-      type: 'document_access',
-      exp: Math.floor(Date.now() / 1000) + (expirationMinutes * 60)
-    };
+  async generatePublicUrl(documentoId: string): Promise<string> {
+    const documento = await this.documentoRepository.findById(documentoId);
+    if (!documento) {
+      throw new NotFoundException('Documento não encontrado');
+    }
 
-    const token = this.jwtService.sign(payload);
-    const baseUrl = this.configService.get('BASE_URL');
-    
-    return `${baseUrl}/api/documento/secure/${documentoId}?token=${token}`;
+    const baseUrl = this.configService.get('APP_URL');
+    return `${baseUrl}/api/v1/documento/${documentoId}/download`;
   }
 
   /**
-   * Valida token de acesso ao documento
+   * Gera URL privada com token hash
    */
-  async validateDocumentAccess(
-    documentoId: string,
-    token: string,
-    usuarioId: string
-  ): Promise<boolean> {
-    try {
-      const payload = this.jwtService.verify(token);
-      
-      return payload.documentoId === documentoId && 
-             payload.usuarioId === usuarioId &&
-             payload.type === 'document_access';
-    } catch (error) {
-      return false;
+  async generatePrivateUrl(documentoId: string, ttlHours: number = 24): Promise<string> {
+    const documento = await this.documentoRepository.findById(documentoId);
+    if (!documento) {
+      throw new NotFoundException('Documento não encontrado');
     }
+
+    // Gerar hash único
+    const timestamp = Date.now();
+    const randomBytes = crypto.randomBytes(16).toString('hex');
+    const hash = crypto
+      .createHash('sha256')
+      .update(`${documentoId}:${timestamp}:${randomBytes}`)
+      .digest('hex');
+
+    // Armazenar no cache com TTL
+    const cacheKey = `doc_private:${hash}`;
+    const ttlMs = ttlHours * 60 * 60 * 1000;
+    
+    await this.cacheManager.set(cacheKey, {
+      documentoId,
+      createdAt: new Date(),
+      expiresAt: new Date(Date.now() + ttlMs)
+    }, ttlMs);
+
+    const baseUrl = this.configService.get('APP_URL');
+    return `${baseUrl}/api/documento/private/${hash}`;
+  }
+
+  /**
+   * Valida acesso via URL privada
+   */
+  async validatePrivateAccess(hash: string): Promise<{ documentoId: string }> {
+    const cacheKey = `doc_private:${hash}`;
+    const cachedData = await this.cacheManager.get(cacheKey);
+    
+    if (!cachedData) {
+      throw new UnauthorizedException('URL privada inválida ou expirada');
+    }
+
+    return { documentoId: cachedData.documentoId };
+  }
+
+  /**
+   * Remove URL privada do cache (revogação)
+   */
+  async revokePrivateUrl(hash: string): Promise<void> {
+    const cacheKey = `doc_private:${hash}`;
+    await this.cacheManager.del(cacheKey);
+    
+    this.logger.info(`URL privada revogada: ${hash}`, DocumentoUrlService.name);
   }
 }
 ```
@@ -300,59 +330,42 @@ export class ThumbnailService {
 }
 ```
 
-### **4. Novos Endpoints do Controller**
+### **4. Endpoints Atualizados do Controller**
 
 ```typescript
 export class DocumentoController {
-  
+  constructor(
+    private readonly documentoService: DocumentoService,
+    private readonly documentoUrlService: DocumentoUrlService, // NOVO
+    private readonly auditEventEmitter: AuditEventEmitter,
+  ) {}
+
   /**
-   * Gera URL segura para documento
+   * Upload com geração automática de URLs
    */
-  @Post(':id/generate-url')
-  @RequiresPermission({ permissionName: 'documento.gerar_url' })
-  async generateSecureUrl(
-    @Param('id', ParseUUIDPipe) id: string,
+  @Post('upload')
+  @RequiresPermission({ permissionName: 'documento.upload' })
+  async upload(
+    @UploadedFile() arquivo: Express.Multer.File,
+    @Body() uploadDto: DocumentoUploadDto,
     @GetUser() usuario: Usuario,
-    @Body() dto: { expirationMinutes?: number },
-  ) {
-    await this.documentoService.findById(id);
-    const hasAccess = await this.documentoService.checkUserDocumentAccess(id, usuario.id);
+  ): Promise<DocumentoResponseDto> {
+    const resultado = await this.documentoService.upload(uploadDto, arquivo);
     
-    if (!hasAccess) {
-      throw new ForbiddenException('Sem permissão para gerar URL deste documento');
-    }
-
-    const url = await this.documentoAccessService.generateSecureUrl(
-      id, usuario.id, dto.expirationMinutes || 60
-    );
-
-    return { url, expiresIn: dto.expirationMinutes || 60 };
+    // URLs são geradas automaticamente no service
+    return resultado; // Já inclui urlPublica e urlPrivada
   }
 
   /**
-   * Acesso via URL segura
+   * Acesso via URL privada
    */
-  @Get('secure/:id')
-  async accessSecureDocument(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Query('token') token: string,
-    @GetUser() usuario: Usuario,
+  @Get('private/:hash')
+  async accessPrivateDocument(
+    @Param('hash') hash: string,
     @Res() res: Response,
   ) {
-    const isValidAccess = await this.documentoAccessService.validateDocumentAccess(
-      id, token, usuario.id
-    );
-
-    if (!isValidAccess) {
-      throw new UnauthorizedException('Token de acesso inválido ou expirado');
-    }
-
-    const hasPermission = await this.documentoService.checkUserDocumentAccess(id, usuario.id);
-    if (!hasPermission) {
-      throw new ForbiddenException('Sem permissão para acessar este documento');
-    }
-
-    const resultado = await this.documentoService.download(id);
+    const { documentoId } = await this.documentoUrlService.validatePrivateAccess(hash);
+    const resultado = await this.documentoService.download(documentoId);
     
     res.set({
       'Content-Type': resultado.mimetype,
@@ -435,21 +448,178 @@ export class DocumentoController {
 }
 ```
 
+### **5. Entidade TipoDocumento Atualizada**
+
+```typescript
+// tipo-documento.entity.ts - ATUALIZADA
+@Entity('tipos_documento')
+export class TipoDocumento {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Column({ length: 100, unique: true })
+  nome: string;
+
+  @Column({ length: 500, nullable: true })
+  descricao?: string;
+
+  @Column({ type: 'simple-array', nullable: true })
+  extensoes_permitidas?: string[];
+
+  @Column({ type: 'bigint', nullable: true })
+  tamanho_maximo?: number;
+
+  @Column({ default: true })
+  ativo: boolean;
+
+  @Column({ default: false })
+  requer_verificacao: boolean;
+
+  // NOVOS CAMPOS PARA ESTRUTURA
+  @Column({ length: 200, nullable: true })
+  categoria?: string;
+
+  @Column({ type: 'int', default: 0 })
+  ordem_exibicao: number;
+
+  @Column({ type: 'json', nullable: true })
+  metadados_obrigatorios?: Record<string, any>;
+
+  // NOVO: URL de template do documento
+  @Column({ length: 500, nullable: true })
+  template_url?: string;
+
+  @CreateDateColumn()
+  created_at: Date;
+
+  @UpdateDateColumn()
+  updated_at: Date;
+
+  // Relacionamentos
+  @OneToMany(() => Documento, documento => documento.tipo_documento)
+  documentos: Documento[];
+}
+```
+
+### **6. Migração para Template URL**
+
+```typescript
+// 1672531200000-AddTemplateUrlToTipoDocumento.ts
+import { MigrationInterface, QueryRunner, TableColumn } from 'typeorm';
+
+export class AddTemplateUrlToTipoDocumento1672531200000 implements MigrationInterface {
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.addColumn(
+      'tipos_documento',
+      new TableColumn({
+        name: 'template_url',
+        type: 'varchar',
+        length: '500',
+        isNullable: true,
+        comment: 'URL do template do documento para download'
+      })
+    );
+
+    // Adicionar alguns templates padrão
+    await queryRunner.query(`
+      UPDATE tipos_documento 
+      SET template_url = CASE 
+        WHEN nome = 'RG' THEN 'https://templates.pgben.gov.br/rg-template.pdf'
+        WHEN nome = 'CPF' THEN 'https://templates.pgben.gov.br/cpf-template.pdf'
+        WHEN nome = 'COMPROVANTE_RENDA' THEN 'https://templates.pgben.gov.br/comprovante-renda-template.pdf'
+        ELSE NULL
+      END
+      WHERE nome IN ('RG', 'CPF', 'COMPROVANTE_RENDA')
+    `);
+  }
+
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.dropColumn('tipos_documento', 'template_url');
+  }
+}
+```
+
+### **7. Endpoint Requisito-Documental Atualizado**
+
+```typescript
+// requisitos-documentais.controller.ts - ATUALIZADO
+export class RequisitosDocumentaisController {
+  
+  @Get(':solicitacaoId')
+  @RequiresPermission({ permissionName: 'requisito_documental.listar' })
+  async findBySolicitacao(
+    @Param('solicitacaoId', ParseUUIDPipe) solicitacaoId: string,
+  ) {
+    const requisitos = await this.requisitosDocumentaisService.findBySolicitacao(solicitacaoId);
+    
+    // Incluir template_url na resposta
+    return requisitos.map(requisito => ({
+      ...requisito,
+      template_url: requisito.tipo_documento?.template_url || null
+    }));
+  }
+}
+```
+
+### **8. Interfaces e DTOs Simplificados**
+
+```typescript
+// Interfaces para URLs simplificadas
+interface PrivateUrlData {
+  documentoId: string;
+  createdAt: Date;
+  expiresAt: Date;
+}
+
+interface DocumentoUrlResponse {
+  urlPublica: string;
+  urlPrivada: string;
+}
+
+// DTO para resposta de upload atualizado
+export class DocumentoResponseDto {
+  id: string;
+  nome_original: string;
+  tipo: string;
+  tamanho: number;
+  mime_type: string;
+  data_upload: Date;
+  verificado: boolean;
+  urlPublica: string;  // NOVO
+  urlPrivada: string;  // NOVO
+  // ... outros campos existentes
+}
+
+// DTO para requisito documental atualizado
+export class RequisitoDocumentalResponseDto {
+  id: string;
+  obrigatorio: boolean;
+  status: string;
+  tipo_documento: {
+    id: string;
+    nome: string;
+    template_url?: string; // NOVO
+  };
+  // ... outros campos existentes
+}
+```
+
 ---
 
 ## 📦 **DEPENDÊNCIAS E CONFIGURAÇÕES**
 
-### **Novas Dependências:**
+### **Dependências Atualizadas:**
 ```json
 {
   "dependencies": {
     "pdf-thumbnail": "^1.0.6",
     "sharp": "^0.33.0",
     "puppeteer": "^21.0.0",
-    "@nestjs/jwt": "^10.2.0",
     "file-type": "^18.0.0",
     "imagemagick": "^0.1.3",
-    "ghostscript4js": "^3.2.1"
+    "ghostscript4js": "^3.2.1",
+    "redis": "^4.6.0",
+    "crypto": "built-in"
   },
   "devDependencies": {
     "@types/sharp": "^0.32.0"
@@ -457,17 +627,29 @@ export class DocumentoController {
 }
 ```
 
+**📝 Nota:** Removida dependência `@nestjs/jwt` devido à simplificação do sistema de URLs.
+
 ### **Variáveis de Ambiente:**
 ```env
-# URLs e Tokens
+# URLs e Storage
 BASE_URL=https://api.pgben.gov.br
-JWT_SECRET=your-super-secret-key
-DOCUMENT_TOKEN_EXPIRY=3600
-
-# Storage
 STORAGE_PROVIDER=MINIO
+STORAGE_PUBLIC_URL=https://storage.pgben.gov.br
 UPLOADS_DIR=./storage/uploads
 THUMBNAILS_DIR=./storage/thumbnails
+
+# Hash para URLs Privadas (substitui JWT)
+DOCUMENT_HASH_SECRET=sua_chave_secreta_muito_forte
+DOCUMENT_PRIVATE_URL_TTL=86400  # 24 horas em segundos
+
+# Redis para Cache de URLs Privadas
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_PASSWORD=
+REDIS_DB=0
+
+# Templates de Documentos
+TEMPLATE_BASE_URL=https://templates.pgben.gov.br
 
 # Thumbnail Generation
 ENABLE_THUMBNAILS=true
@@ -500,10 +682,10 @@ METRICS_ENDPOINT=/metrics
   - Atualizar todos os endpoints para verificar permissões específicas
   - Adicionar testes unitários para validação de acesso
 
-- **Dia 3-4:** Corrigir URLs públicas do local storage
-  - Implementar DocumentoAccessService com tokens JWT
-  - Criar endpoint `/secure/:id` com validação de token
-  - Deprecar URLs diretas do local storage
+- **Dia 3-4:** Implementar sistema de URLs simplificado
+  - Implementar DocumentoUrlService com hash básico
+  - Configurar cache Redis para URLs privadas
+  - Manter URLs públicas diretas para documentos não sensíveis
 
 - **Dia 5:** Refatorar configurações hardcoded
   - Mover todas as configurações para variáveis de ambiente
@@ -523,13 +705,13 @@ METRICS_ENDPOINT=/metrics
 
 **📊 Entregáveis:**
 - ✅ Sistema de controle de acesso implementado
-- ⚠️ URLs seguras funcionando (PENDENTE - DocumentoAccessService não implementado)
+- ✅ Sistema de URLs simplificado funcionando (DocumentoUrlService implementado)
 - ✅ Configurações externalizadas
 - ⚠️ Método upload refatorado (PENDENTE - ainda monolítico com 200+ linhas)
 - ✅ Suite de testes de segurança
 
-**🔄 Status da Fase 1:** PARCIALMENTE COMPLETA (3/5 itens)
-**📝 Observações:** Itens críticos de segurança funcionando. Pode prosseguir para Fase 2.
+**🔄 Status da Fase 1:** QUASE COMPLETA (4/5 itens)
+**📝 Observações:** Sistema de URLs simplificado implementado com hash e cache Redis. Apenas refatoração do upload pendente.
 
 ---
 
@@ -585,48 +767,37 @@ cidadao_id/
 
 ---
 
-### **FASE 3: SISTEMA DE URLs SEGURAS E ACESSO**
-**⏱️ Duração:** 2 semanas  
+### **FASE 3: SISTEMA DE URLs PÚBLICAS/PRIVADAS SIMPLIFICADO**
+**⏱️ Duração:** 1 semana  
 **👥 Recursos:** 2 desenvolvedores backend  
 **🎯 Prioridade:** ALTA
 
 #### **Semana 1:**
-- **Dia 1-2:** Implementar DocumentoAccessService completo
-  - Sistema de tokens JWT para documentos
-  - Validação robusta de tokens
-  - Configuração de tempo de expiração
+- **Dia 1-2:** Implementar DocumentoUrlService simplificado
+  - Método generatePublicUrl() para URLs diretas
+  - Método generatePrivateUrl() com hash e cache Redis
+  - Validação de acesso via cache
 
-- **Dia 3-4:** Criar endpoints de geração de URLs
-  - POST `/documento/:id/generate-url`
-  - GET `/documento/secure/:id`
-  - Implementar rate limiting
+- **Dia 3:** Integração no upload de documentos
+  - Geração automática de URLs públicas e privadas
+  - Atualização do DocumentoResponseDto
+  - Testes de integração
 
-- **Dia 5:** Sistema de revogação de URLs
-  - Blacklist de tokens revogados
-  - Endpoint para revogar acesso
-  - Limpeza automática de tokens expirados
+- **Dia 4:** Implementar endpoint de acesso privado
+  - GET `/documento/private/:hash`
+  - Validação via cache Redis
+  - Tratamento de URLs expiradas
 
-#### **Semana 2:**
-- **Dia 1-2:** Implementar cache de validação
-  - Cache Redis para tokens válidos
-  - Otimização de performance de validação
-  - Monitoramento de uso de cache
-
-- **Dia 3-4:** Testes de segurança e performance
-  - Teste de penetração básico
-  - Teste de carga nos endpoints
-  - Validação de cenários de ataque
-
-- **Dia 5:** Documentação e treinamento
-  - Documentar APIs de URL segura
-  - Criar guia de uso para desenvolvedores
-  - Treinamento da equipe de suporte
+- **Dia 5:** Adição de template_url em TipoDocumento
+  - Migração de banco para adicionar campo template_url
+  - Atualização da entidade TipoDocumento
+  - Modificação do endpoint requisito-documental
 
 **📊 Entregáveis:**
-- ✅ Sistema de URLs seguras funcionando
-- ✅ Tokens JWT com expiração configurável
-- ✅ Cache otimizado implementado
-- ✅ Documentação completa da API
+- ✅ Sistema de URLs públicas/privadas funcionando
+- ✅ Cache Redis para URLs privadas com TTL
+- ✅ Template URLs em tipos de documento
+- ✅ Endpoint requisito-documental atualizado
 
 ---
 
@@ -1800,24 +1971,24 @@ documentos_2025-01-15_abc123.zip
 ## 🚀 **CRONOGRAMA ATUALIZADO**
 
 ```
-📅 TIMELINE GERAL ATUALIZADO (14 semanas):
+📅 TIMELINE GERAL ATUALIZADO (13 semanas):
 
 Semanas 1-2:  [████████████████████] FASE 1 - Correções Críticas
 Semanas 3-4:  [████████████████████] FASE 2 - Estrutura de Pastas  
-Semanas 5-6:  [████████████████████] FASE 3 - URLs Seguras
-Semanas 7-9:  [████████████████████] FASE 4 - Sistema Thumbnails
-Semanas 10-11:[████████████████████] FASE 5 - Otimizações
-Semanas 12-13:[████████████████████] FASE 6 - Download em Lote 🆕
-Semana 14:    [████████████████████] Entrega e Documentação Final
+Semana 5:     [████████████████████] FASE 3 - URLs Simplificadas (reduzida)
+Semanas 6-8:  [████████████████████] FASE 4 - Sistema Thumbnails
+Semanas 9-10: [████████████████████] FASE 5 - Otimizações
+Semanas 11-12:[████████████████████] FASE 6 - Download em Lote 🆕
+Semana 13:    [████████████████████] Entrega e Documentação Final
 
 🎯 MARCOS PRINCIPAIS ATUALIZADOS:
 ├── Semana 2:  ✅ Sistema seguro em produção
 ├── Semana 4:  ✅ Estrutura hierárquica implementada
-├── Semana 6:  ✅ URLs seguras funcionando
-├── Semana 9:  ✅ Preview de documentos disponível
-├── Semana 11: ✅ Sistema otimizado e monitorado
-├── Semana 13: 🆕 Download em lote funcionando
-└── Semana 14: 🎉 Projeto concluído e documentado
+├── Semana 5:  ✅ URLs simplificadas funcionando (1 semana economizada)
+├── Semana 8:  ✅ Preview de documentos disponível
+├── Semana 10: ✅ Sistema otimizado e monitorado
+├── Semana 12: 🆕 Download em lote funcionando
+└── Semana 13: 🎉 Projeto concluído e documentado
 ```
 
 ---
