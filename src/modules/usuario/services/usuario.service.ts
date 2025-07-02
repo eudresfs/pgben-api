@@ -95,11 +95,6 @@ export class UsuarioService {
     senha: string,
   ): Promise<void> {
     try {
-      // TODO: Buscar template de credenciais quando o módulo de notificação for reimplementado
-      // const template = await this.templateRepository.findOne({
-      //   where: { codigo: 'usuario-credenciais-acesso' },
-      // });
-
       // Enviar email direto usando o serviço de email
       await this.emailService.sendEmail({
         to: usuario.email,
@@ -115,20 +110,11 @@ export class UsuarioService {
         },
       });
 
-      // TODO: Reativar notificação quando o módulo for reimplementado
-      // await this.notificationManager.criarNotificacao({
-      //   template_id: template.id,
-      //   destinatario_id: usuario.id,
-      //   dados_contexto: dadosTemplate,
-      //   canal: CanalNotificacao.EMAIL
-      // });
-
       this.logger.info(`Credenciais enviadas por email para: ${usuario.email}`);
     } catch (error) {
       this.logger.error(
         `Erro ao enviar credenciais por email: ${error.message}`,
       );
-      // Não falhar a criação do usuário por erro no envio do email
     }
   }
 
@@ -432,7 +418,7 @@ export class UsuarioService {
         this.logger.warn(`Usuário não encontrado: ${id}`);
         throwUserNotFound(id);
       }
-
+      
       // Preparar validações em paralelo
       interface ValidacaoItem {
         tipo: 'email' | 'cpf' | 'matricula';
