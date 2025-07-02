@@ -252,6 +252,36 @@ export class BeneficioService {
   }
 
   /**
+   * Remove um requisito documental de um benefício
+   */
+  async removeRequisito(beneficioId: string, requisitoId: string) {
+    // Verificar se o benefício existe
+    await this.findById(beneficioId);
+
+    // Verificar se o requisito existe e pertence ao benefício
+    const requisito = await this.requisitoDocumentoRepository.findOne({
+      where: {
+        id: requisitoId,
+        tipo_beneficio: { id: beneficioId },
+      },
+    });
+
+    if (!requisito) {
+      throw new NotFoundException(
+        `Requisito com ID ${requisitoId} não encontrado para o benefício ${beneficioId}`,
+      );
+    }
+
+    // Remover o requisito
+    await this.requisitoDocumentoRepository.remove(requisito);
+
+    return {
+      message: 'Requisito removido com sucesso',
+      requisitoId,
+    };
+  }
+
+  /**
    * Configura fluxo de aprovação de um benefício
    */
   async configurarFluxo(

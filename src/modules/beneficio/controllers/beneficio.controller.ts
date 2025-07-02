@@ -8,6 +8,7 @@ import {
   ParseUUIDPipe,
   Query,
   UseGuards,
+  Delete,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -16,6 +17,7 @@ import {
   ApiBearerAuth,
   ApiQuery,
   ApiBody,
+  ApiParam,
 } from '@nestjs/swagger';
 import { BeneficioService } from '../services/beneficio.service';
 import { CreateTipoBeneficioDto } from '../dto/create-tipo-beneficio.dto';
@@ -382,5 +384,28 @@ export class BeneficioController {
     );
 
     return result;
+  }
+
+  @Delete(':id/requisitos/:requisitoId')
+  @ApiOperation({ summary: 'Remove um requisito documental de um benefício' })
+  @ApiParam({ name: 'id', description: 'ID do benefício' })
+  @ApiParam({ name: 'requisitoId', description: 'ID do requisito documental' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Requisito removido com sucesso',
+    schema: {
+      type: 'object',
+      properties: {
+        message: { type: 'string', example: 'Requisito removido com sucesso' },
+        requisitoId: { type: 'string', format: 'uuid' }
+      }
+    }
+  })
+  @ApiResponse({ status: 404, description: 'Benefício ou requisito não encontrado' })
+  async removeRequisito(
+    @Param('id') id: string,
+    @Param('requisitoId') requisitoId: string,
+  ) {
+    return this.beneficioService.removeRequisito(id, requisitoId);
   }
 }
