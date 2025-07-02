@@ -101,22 +101,21 @@ export class DocumentoReuseService implements IDocumentoReuseService {
     const queryBuilder = this.documentoRepository
       .createQueryBuilder('documento')
       .leftJoinAndSelect('documento.cidadao', 'cidadao')
-      .leftJoinAndSelect('documento.tipo', 'tipo')
-      .leftJoinAndSelect('documento.usuario', 'usuario')
-      .where('documento.hash = :hash', { hash: fileHash })
+      .leftJoinAndSelect('documento.usuario_upload', 'usuario_upload')
+      .where('documento.hash_arquivo = :hash', { hash: fileHash })
       .andWhere('documento.cidadao_id = :cidadaoId', {
         cidadaoId: uploadDocumentoDto.cidadao_id,
       });
 
     // Se tipo foi especificado, filtrar por tipo
     if (uploadDocumentoDto.tipo) {
-      queryBuilder.andWhere('documento.tipo = :tipoId', {
-        tipoId: uploadDocumentoDto.tipo,
+      queryBuilder.andWhere('documento.tipo = :tipo', {
+        tipo: uploadDocumentoDto.tipo,
       });
     }
 
-    // Buscar apenas documentos ativos
-    queryBuilder.andWhere('documento.ativo = :ativo', { ativo: true });
+    // Buscar apenas documentos não removidos
+    queryBuilder.andWhere('documento.removed_at IS NULL');
 
     return await queryBuilder.getOne();
   }
@@ -131,8 +130,8 @@ export class DocumentoReuseService implements IDocumentoReuseService {
     existingDocument: Documento,
     uploadDocumentoDto: UploadDocumentoDto,
   ): boolean {
-    // Verificar se documento está ativo
-    if (!existingDocument.removed_at) {
+    // Verificar se documento está ativo (não foi removido)
+    if (existingDocument.removed_at) {
       return false;
     }
 

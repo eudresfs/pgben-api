@@ -29,6 +29,8 @@ import { NotificacaoModule } from './modules/notificacao/notificacao.module';
 import { EasyUploadModule } from './modules/easy-upload/easy-upload.module';
 import { BullModule } from '@nestjs/bull';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { addTransactionalDataSource } from 'typeorm-transactional';
+import { DataSource } from 'typeorm';
 
 @Module({
   imports: [
@@ -72,12 +74,12 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        host: configService.get('DB_HOST', 'localhost'),
-        port: parseInt(configService.get('DB_PORT', '5432')),
-        username: configService.get('DB_USER', 'postgres'),
-        password: configService.get('DB_PASS', 'postgres'),
-        database: configService.get('DB_NAME', 'pgben'),
+         type: 'postgres' as const,
+         host: configService.get('DB_HOST', 'localhost'),
+         port: parseInt(configService.get('DB_PORT', '5432')),
+         username: configService.get('DB_USER', 'postgres'),
+         password: configService.get('DB_PASS', 'postgres'),
+         database: configService.get('DB_NAME', 'pgben') as string,
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
         synchronize: false,
         logging: configService.get('NODE_ENV') === 'development',
@@ -94,6 +96,12 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
           allowExitOnIdle: false,
         },
       }),
+      async dataSourceFactory(options) {
+        if (!options) {
+          throw new Error('Invalid options passed');
+        }
+        return addTransactionalDataSource(new DataSource(options));
+      },
     }),
     // Módulo de documentos (necessário para StorageHealthService)
     DocumentoModule,
@@ -124,9 +132,6 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 
     // Módulo de benefícios
     BeneficioModule,
-
-    // Módulo de docuentos
-    DocumentoModule,
 
     // Módulo de pagamentos
     PagamentoModule,

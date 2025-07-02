@@ -397,6 +397,15 @@ export class AuditEventEmitter {
   private getChangedFields(previousData: Record<string, any>, newData: Record<string, any>): string[] {
     const changedFields: string[] = [];
     
+    // Validação para evitar erro de null reference
+    if (!previousData || !newData) {
+      this.logger.warn('getChangedFields: previousData ou newData é null/undefined', {
+        previousData: !!previousData,
+        newData: !!newData
+      });
+      return Object.keys(newData || {});
+    }
+    
     for (const key in newData) {
       if (JSON.stringify(previousData[key]) !== JSON.stringify(newData[key])) {
         changedFields.push(key);

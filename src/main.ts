@@ -1,6 +1,9 @@
 // IMPORTANTE: Carregar as variáveis de ambiente ANTES de qualquer outra importação
 import './config/env';
 
+// Inicializar contexto transacional ANTES de qualquer outra importação do TypeORM
+import { initializeTransactionalContext, StorageDriver } from 'typeorm-transactional';
+
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import {
@@ -24,7 +27,6 @@ import { LoggingInterceptor } from './shared/logging/logging.interceptor';
 import { ErrorLoggerFilter } from './shared/logging/filters/error-logger.filter';
 import { ScopedQueryInterceptor } from './auth/interceptors/scoped-query.interceptor';
 import { Reflector } from '@nestjs/core';
-import { isSensitiveField } from './shared/constants/sensitive-fields.constants';
 
 /**
  * Configura e inicializa a aplicação NestJS
@@ -33,6 +35,9 @@ async function bootstrap(): Promise<INestApplication> {
   const logger = new Logger('Bootstrap');
 
   try {
+    // Inicializar contexto transacional
+    initializeTransactionalContext({ storageDriver: StorageDriver.AUTO });
+    
     logger.log('🚀 Iniciando aplicação PGBEN...');
 
     // Criar a aplicação NestJS com configurações otimizadas

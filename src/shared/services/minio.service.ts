@@ -340,7 +340,11 @@ export class MinioService implements OnModuleInit {
       );
 
       this.logger.log(
-        `Arquivo ${nomeArquivo} enviado para o MinIO com sucesso`,
+        `Arquivo ${arquivoFinal} enviado para o MinIO com sucesso`,
+      );
+      
+      this.logger.debug(
+        `Upload concluído - Caminho completo no MinIO: ${arquivoFinal}`,
       );
       
       // Verificar se os metadados foram salvos corretamente
@@ -385,6 +389,8 @@ export class MinioService implements OnModuleInit {
     metadados: any;
   }> {
     try {
+      this.logger.debug(`Tentando baixar arquivo do MinIO: ${nomeArquivo} do bucket: ${this.bucketName}`);
+      
       // Obter metadados do arquivo
       const stat = await this.minioClient.statObject(
         this.bucketName,
@@ -502,7 +508,36 @@ export class MinioService implements OnModuleInit {
         },
       };
     } catch (error) {
-      this.logger.error(`Erro ao baixar arquivo do MinIO: ${error.message}`);
+      // Tratamento específico para diferentes tipos de erro
+      if (error.code === 'NoSuchKey' || error.message?.includes('Not Found') || error.message?.includes('does not exist')) {
+        this.logger.warn(`Arquivo não encontrado no MinIO: ${nomeArquivo} (bucket: ${this.bucketName})`);
+        throw new Error(`Documento não encontrado: ${nomeArquivo}`);
+      }
+      
+      if (error.code === 'NoSuchBucket') {
+        this.logger.error(`Bucket não encontrado: ${this.bucketName}`);
+        throw new Error(`Erro de configuração: bucket de armazenamento não encontrado`);
+      }
+      
+      if (error.code === 'AccessDenied') {
+        this.logger.error(`Acesso negado ao arquivo: ${nomeArquivo}`);
+        throw new Error(`Acesso negado ao documento`);
+      }
+      
+      if (error.code === 'InvalidBucketName') {
+        this.logger.error(`Nome do bucket inválido: ${this.bucketName}`);
+        throw new Error(`Erro de configuração: nome do bucket inválido`);
+      }
+      
+      // Log detalhado para outros erros
+      this.logger.error(`Erro ao baixar arquivo do MinIO: ${error.message}`, {
+        nomeArquivo,
+        bucket: this.bucketName,
+        errorCode: error.code,
+        errorName: error.name,
+        stack: error.stack
+      });
+      
       throw new Error(`Falha ao recuperar documento: ${error.message}`);
     }
   }
@@ -516,7 +551,33 @@ export class MinioService implements OnModuleInit {
       await this.minioClient.removeObject(this.bucketName, nomeArquivo);
       this.logger.log(`Arquivo ${nomeArquivo} removido do MinIO com sucesso`);
     } catch (error) {
-      this.logger.error(`Erro ao remover arquivo do MinIO: ${error.message}`);
+      // Tratamento específico para diferentes tipos de erro
+      if (error.code === 'NoSuchKey' || error.message?.includes('Not Found') || error.message?.includes('does not exist')) {
+        this.logger.warn(`Arquivo não encontrado para remoção: ${nomeArquivo} (bucket: ${this.bucketName})`);
+        // Para remoção, não é necessariamente um erro se o arquivo não existe
+        this.logger.log(`Arquivo ${nomeArquivo} já não existe no MinIO`);
+        return;
+      }
+      
+      if (error.code === 'NoSuchBucket') {
+        this.logger.error(`Bucket não encontrado: ${this.bucketName}`);
+        throw new Error(`Erro de configuração: bucket de armazenamento não encontrado`);
+      }
+      
+      if (error.code === 'AccessDenied') {
+        this.logger.error(`Acesso negado para remover arquivo: ${nomeArquivo}`);
+        throw new Error(`Acesso negado para remover documento`);
+      }
+      
+      // Log detalhado para outros erros
+      this.logger.error(`Erro ao remover arquivo do MinIO: ${error.message}`, {
+        nomeArquivo,
+        bucket: this.bucketName,
+        errorCode: error.code,
+        errorName: error.name,
+        stack: error.stack
+      });
+      
       throw new Error(`Falha ao remover documento: ${error.message}`);
     }
   }

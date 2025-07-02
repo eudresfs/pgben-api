@@ -147,6 +147,13 @@ export class DocumentoResponseDto {
   nome_original: string;
 
   @ApiProperty({
+    description: 'URL pública do arquivo no sistema',
+    example: 'https://pgben-server.kemosoft.com.br/api/v1/documento/{documentoId}/public',
+  })
+  @Expose()
+  url_publica: string;
+
+  @ApiProperty({
     description: 'Caminho do arquivo no sistema de armazenamento',
     example: 'documentos/2025/01/documento_123456.pdf',
   })

@@ -8,6 +8,7 @@ import { FileProcessingResult } from './interfaces/documento-file-processing.int
 import { UploadMetadata } from './interfaces/documento-metadata.interface';
 import { LoggingService } from '../../../../shared/logging/logging.service';
 import { IDocumentoPersistenceService } from './interfaces/documento-persistence.interface';
+import { DocumentoUrlService } from '../documento-url.service';
 
 /**
  * Serviço especializado para persistência de documentos
@@ -21,6 +22,7 @@ export class DocumentoPersistenceService
     @InjectRepository(Documento)
     private readonly documentoRepository: Repository<Documento>,
     private readonly logger: LoggingService,
+    private readonly documentoUrlService: DocumentoUrlService,
   ) {}
 
   /**
@@ -84,6 +86,40 @@ export class DocumentoPersistenceService
       // Salvar documento
       const savedDocument = await this.documentoRepository.save(documento) as unknown as Documento;
 
+      // Gerar URL pública após salvar o documento
+      try {
+        const urlPublica = await this.documentoUrlService.generatePublicUrl(savedDocument.id);
+        
+        // Atualizar documento com a URL pública
+        await this.documentoRepository.update(savedDocument.id, {
+          url_publica: urlPublica
+        });
+        
+        // Atualizar o objeto em memória
+        savedDocument.url_publica = urlPublica;
+        
+        this.logger.debug(
+          `URL pública gerada e salva [${uploadId}]`,
+          DocumentoPersistenceService.name,
+          {
+            uploadId,
+            documentoId: savedDocument.id,
+            urlPublica,
+          },
+        );
+      } catch (urlError) {
+        this.logger.warn(
+          `Erro ao gerar URL pública [${uploadId}] - documento salvo sem URL`,
+          DocumentoPersistenceService.name,
+          {
+            uploadId,
+            documentoId: savedDocument.id,
+            error: urlError.message,
+          },
+        );
+        // Não falha o upload se a URL pública não puder ser gerada
+      }
+
       this.logger.debug(
         `Documento salvo com sucesso [${uploadId}]`,
         DocumentoPersistenceService.name,
@@ -92,6 +128,7 @@ export class DocumentoPersistenceService
           documentoId: savedDocument.id,
           cidadaoId: savedDocument.cidadao_id,
           tipoId: savedDocument.tipo,
+          hasUrlPublica: !!savedDocument.url_publica,
         },
       );
 
@@ -142,8 +179,7 @@ export class DocumentoPersistenceService
       const documentWithRelations = await this.documentoRepository
         .createQueryBuilder('documento')
         .leftJoinAndSelect('documento.cidadao', 'cidadao')
-        .leftJoinAndSelect('documento.tipo', 'tipo')
-        .leftJoinAndSelect('documento.usuario', 'usuario')
+        .leftJoinAndSelect('documento.usuario_upload', 'usuario_upload')
         .where('documento.id = :id', { id: documento.id })
         .getOne();
 

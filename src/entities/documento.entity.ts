@@ -177,6 +177,11 @@ export class Documento {
     };
   };
 
+  @Column({ nullable: true })
+  @IsOptional()
+  @IsString()
+  url_publica?: string;
+
   @CreateDateColumn()
   created_at: Date;
 

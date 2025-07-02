@@ -5,7 +5,7 @@ import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { DocumentoController } from './controllers/documento.controller';
 import { DocumentoOrganizacionalController } from './controllers/documento-organizacional.controller';
 import { DocumentoService } from './services/documento.service';
-import { DocumentoAccessService } from './services/documento-access.service';
+import { DocumentoUrlService } from './services/documento-url.service';
 import { LoggingService } from '../../shared/logging/logging.service';
 import { StorageProviderFactory } from './factories/storage-provider.factory';
 import { LocalStorageAdapter } from './adapters/local-storage.adapter';
@@ -39,6 +39,10 @@ import {
   DocumentoMetadataService,
   DocumentoPersistenceService,
 } from './services/upload';
+
+// Serviços de thumbnail
+import { ThumbnailService } from './services/thumbnail/thumbnail.service';
+import { ThumbnailQueueService } from './services/thumbnail/thumbnail-queue.service';
 
 
 /**
@@ -89,7 +93,7 @@ import {
   controllers: [DocumentoController, DocumentoOrganizacionalController],
   providers: [
     DocumentoService,
-    DocumentoAccessService,
+    DocumentoUrlService,
     LoggingService,
     StorageProviderFactory,
     LocalStorageAdapter,
@@ -107,6 +111,16 @@ import {
     DocumentoStorageService,
     DocumentoMetadataService,
     DocumentoPersistenceService,
+    
+    // Serviços de thumbnail
+    {
+      provide: ThumbnailService,
+      useFactory: (storageProviderFactory: StorageProviderFactory) => {
+        return new ThumbnailService(storageProviderFactory);
+      },
+      inject: [StorageProviderFactory],
+    },
+    ThumbnailQueueService,
     
     // Guards de segurança (aplicados localmente nos controllers)
     DocumentoAccessGuard,
@@ -126,11 +140,13 @@ import {
   ],
   exports: [
     DocumentoService,
-    DocumentoAccessService,
+    DocumentoUrlService,
     StorageProviderFactory,
     MimeValidationService,
     DocumentoPathService,
     StorageHealthService,
+    ThumbnailService,
+    ThumbnailQueueService,
   ],
 })
 export class DocumentoModule implements NestModule {
