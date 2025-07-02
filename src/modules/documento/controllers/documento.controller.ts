@@ -266,7 +266,7 @@ export class DocumentoController {
   /**
    * Acesso a documento via URL pública (ID do documento)
    */
-  @Get('public/:documentoId')
+  @Get(':documentoId/public')
   @Public()
   @ApiOperation({ summary: 'Acesso a documento via URL pública' })
   @ApiResponse({
