@@ -53,6 +53,7 @@ export { Parametro } from './parametro.entity';
 
 // Entidades de Documentos
 export { Documento } from './documento.entity';
+export { DocumentoBatchJob } from './documento-batch-job.entity'
 export { RequisitoDocumento } from './requisito-documento.entity';
 
 // Entidades de Histórico e Logs

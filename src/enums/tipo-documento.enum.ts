@@ -42,7 +42,10 @@ export enum TipoDocumentoEnum {
   // Documentos bancários
   EXTRATO_BANCARIO = 'extrato_bancario',
   COMPROVANTE_PIX = 'comprovante_pix',
+  COMPROVANTE_TED = 'comprovante_ted',
+  COMPROVANTE_TRANSFERENCIA = 'comprovante_transferencia',
   DADOS_BANCARIOS = 'dados_bancarios',
+  COMPROVNATE_PAGAMENTO = 'comprovante_pagamento',
 
   // Documentos familiares e sociais
   DECLARACAO_COMPOSICAO_FAMILIAR = 'declaracao_composicao_familiar',

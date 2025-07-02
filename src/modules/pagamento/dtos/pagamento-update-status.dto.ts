@@ -46,7 +46,7 @@ export class PagamentoUpdateStatusDto {
   })
   @IsOptional()
   @IsUUID('4')
-  comprovanteId?: string;
+  comprovante_id?: string;
 
   /**
    * Data de agendamento do pagamento
@@ -60,5 +60,5 @@ export class PagamentoUpdateStatusDto {
   })
   @IsOptional()
   @IsString()
-  dataAgendamento?: string;
+  data_agendamento?: string;
 }

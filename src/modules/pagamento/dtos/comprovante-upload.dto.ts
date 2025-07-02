@@ -1,5 +1,7 @@
+import { TipoDocumentoEnum } from '@/enums';
+import { MimeTypeValidator } from '@/modules/documento/validators/mime-type.validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsOptional, IsString, MaxLength, Validate } from 'class-validator';
 
 /**
  * DTO para upload de comprovante de pagamento
@@ -23,8 +25,20 @@ export class ComprovanteUploadDto {
   })
   @IsNotEmpty()
   @IsString()
+  @IsEnum(TipoDocumentoEnum, { message: 'Tipo de documento inválido' })
   @MaxLength(100)
-  tipoDocumento: string;
+  tipo_documento: TipoDocumentoEnum;
+
+  @ApiProperty({
+    description: 'Arquivo do comprovante',
+    type: 'string',
+    format: 'binary',
+  })
+  @Validate(MimeTypeValidator, {
+    message:
+      'Arquivo inválido. Verifique o tipo, tamanho e integridade do arquivo.',
+  })
+  arquivo: any;
 
   /**
    * Observações sobre o documento

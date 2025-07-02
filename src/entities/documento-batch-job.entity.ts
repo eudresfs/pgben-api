@@ -65,7 +65,7 @@ export class DocumentoBatchJob {
   tamanho_real: number;
 
   @Column('decimal', { precision: 5, scale: 2, default: 0 })
-  progresso: number;
+  progresso_percentual: number;
 
   @Column('text', { nullable: true })
   caminho_arquivo: string;
@@ -80,10 +80,10 @@ export class DocumentoBatchJob {
   iniciado_em: Date;
 
   @Column('timestamp', { nullable: true })
-  concluido_em: Date;
+  data_conclusao: Date;
 
   @Column('timestamp', { nullable: true })
-  expira_em: Date;
+  data_expiracao: Date;
 
   @CreateDateColumn()
   created_at: Date;
@@ -122,24 +122,24 @@ export class DocumentoBatchJob {
   }
 
   isExpired(): boolean {
-    return this.expira_em && new Date() > this.expira_em;
+    return this.data_expiracao && new Date() > this.data_expiracao;
   }
 
   getProgressPercentage(): number {
-    return Math.min(Math.max(Number(this.progresso), 0), 100);
+    return Math.min(Math.max(Number(this.progresso_percentual), 0), 100);
   }
 
   getDurationInSeconds(): number | null {
     if (!this.iniciado_em) return null;
-    const endTime = this.concluido_em || new Date();
+    const endTime = this.data_conclusao || new Date();
     return Math.floor((endTime.getTime() - this.iniciado_em.getTime()) / 1000);
   }
 
   getEstimatedTimeRemaining(): number | null {
-    if (!this.iniciado_em || this.progresso <= 0) return null;
+    if (!this.iniciado_em || this.progresso_percentual <= 0) return null;
 
     const elapsed = Date.now() - this.iniciado_em.getTime();
-    const progressRatio = Number(this.progresso) / 100;
+    const progressRatio = Number(this.progresso_percentual) / 100;
     const estimatedTotal = elapsed / progressRatio;
     const remaining = estimatedTotal - elapsed;
 

@@ -151,14 +151,14 @@ export class PagamentoService {
         break;
       case StatusPagamentoEnum.CONFIRMADO:
         dadosAtualizacao.dataConclusao = new Date();
-        if (updateDto.comprovanteId) {
-          dadosAtualizacao.comprovanteId = updateDto.comprovanteId;
+        if (updateDto.comprovante_id) {
+          dadosAtualizacao.comprovanteId = updateDto.comprovante_id;
         }
         break;
       case StatusPagamentoEnum.AGENDADO:
-        if (updateDto.dataAgendamento) {
+        if (updateDto.data_agendamento) {
           dadosAtualizacao.dataAgendamento = new Date(
-            updateDto.dataAgendamento,
+            updateDto.data_agendamento,
           );
         }
         break;

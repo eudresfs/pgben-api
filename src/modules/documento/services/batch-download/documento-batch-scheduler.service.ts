@@ -21,13 +21,15 @@ export class DocumentoBatchSchedulerService {
   private readonly DEFAULT_TTL_HORAS = env.DOWNLOAD_LOTE_TTL_HORAS;
   private readonly DEFAULT_TTL_ARQUIVOS_HORAS = env.DOWNLOAD_LOTE_TTL_HORAS;
 
+  constructor(private readonly documentoBatchService: DocumentoBatchService) {}
+
   /**
    * Executa limpeza automática baseada na configuração do cron
    */
   @Cron(env.DOWNLOAD_LOTE_CLEANUP_CRON)
   async executarLimpezaAutomatica(): Promise<{
-    jobsLimpos: any;
-    arquivosLimpos: any;
+    jobsLimpos: number;
+    arquivosLimpos: number;
     espacoLiberado: string;
     timestamp: Date;
     erro?: string;
@@ -37,15 +39,25 @@ export class DocumentoBatchSchedulerService {
     );
 
     try {
-      // Implementar limpeza automática aqui
+      const estatisticasAntes = await this.obterEstatisticasTemp();
+      
+      // Limpar jobs expirados do banco de dados
+      const jobsLimpos = await this.documentoBatchService.limparJobsExpirados();
+      
+      // Limpar arquivos temporários órfãos
+      const arquivosLimpos = await this.limparArquivosTemporarios();
+      
+      const estatisticasDepois = await this.obterEstatisticasTemp();
+      const espacoLiberado = this.formatFileSize(estatisticasAntes.tamanhoTotal - estatisticasDepois.tamanhoTotal);
+
       const resultado = {
-        jobsLimpos: 0,
-        arquivosLimpos: 0,
-        espacoLiberado: '0 MB',
+        jobsLimpos,
+        arquivosLimpos,
+        espacoLiberado,
         timestamp: new Date(),
       };
 
-      this.logger.log('Limpeza automática concluída com sucesso');
+      this.logger.log(`Limpeza automática concluída: ${jobsLimpos} jobs e ${arquivosLimpos} arquivos removidos, ${espacoLiberado} liberados`);
       return resultado;
     } catch (error) {
       this.logger.error('Erro durante limpeza automática:', error);
@@ -62,23 +74,17 @@ export class DocumentoBatchSchedulerService {
   /**
    * Remove jobs que estão há mais de 24 horas no sistema
    */
-  private async limparJobsAntigos(): Promise<void> {
-    const agora = Date.now();
-    const jobsRemovidos: string[] = [];
-
-    // Aqui você pode implementar a lógica para remover jobs antigos
-    // do banco de dados ou cache, dependendo de onde estão armazenados
-
-    this.logger.log(`Removidos ${jobsRemovidos.length} jobs antigos`);
+  private async limparJobsAntigos(): Promise<number> {
+    return await this.documentoBatchService.limparJobsExpirados();
   }
 
   /**
    * Remove arquivos ZIP temporários antigos
    */
-  private async limparArquivosTemporarios(): Promise<void> {
+  private async limparArquivosTemporarios(): Promise<number> {
     try {
       if (!fs.existsSync(this.BATCH_TEMP_DIR)) {
-        return;
+        return 0;
       }
 
       const arquivos = await readdir(this.BATCH_TEMP_DIR);
@@ -103,8 +109,10 @@ export class DocumentoBatchSchedulerService {
       }
 
       this.logger.log(`Removidos ${arquivosRemovidos} arquivos temporários`);
+      return arquivosRemovidos;
     } catch (error) {
       this.logger.error('Erro ao limpar arquivos temporários:', error);
+      return 0;
     }
   }
 
@@ -119,12 +127,12 @@ export class DocumentoBatchSchedulerService {
     this.logger.log('Iniciando limpeza manual');
 
     try {
-      await this.limparJobsAntigos();
-      await this.limparArquivosTemporarios();
+      const jobsRemovidos = await this.limparJobsAntigos();
+      const arquivosRemovidos = await this.limparArquivosTemporarios();
 
       return {
-        jobsRemovidos: 0, // Implementar contagem real
-        arquivosRemovidos: 0, // Implementar contagem real
+        jobsRemovidos,
+        arquivosRemovidos,
         sucesso: true,
       };
     } catch (error) {
@@ -191,5 +199,18 @@ export class DocumentoBatchSchedulerService {
         tamanhoTotal: 0,
       };
     }
+  }
+
+  /**
+   * Formata tamanho de arquivo em formato legível
+   */
+  private formatFileSize(bytes: number): string {
+    if (bytes === 0) return '0 B';
+    
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   }
 }

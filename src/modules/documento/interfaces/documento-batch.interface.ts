@@ -44,6 +44,7 @@ export interface IDocumentoBatchEstatisticas {
   tamanho_total: number;
   tamanho_processado: number;
   tempo_estimado_restante?: number;
+  tempo_processamento?: number;
   velocidade_processamento?: number;
   arquivos_por_tipo: Record<string, number>;
   erros_por_tipo: Record<string, number>;
@@ -61,9 +62,13 @@ export interface IDocumentoBatchProgresso {
   arquivo_atual?: string;
   tempo_decorrido: number;
   tempo_estimado_restante?: number;
+  tamanho_estimado?: number;
   velocidade_media?: number;
   erros: string[];
   avisos: string[];
+  data_inicio?: Date;
+  updated_at?: Date;
+  mensagem_status?: string;
 }
 
 /**
@@ -87,18 +92,27 @@ export interface IDocumentoBatchConfig {
 export interface IDocumentoBatchResultado {
   job_id: string;
   status: StatusDownloadLoteEnum;
-  caminho_arquivo?: string;
-  nome_arquivo?: string;
-  tamanho_arquivo?: number;
   total_documentos: number;
   documentos_processados: number;
   documentos_com_erro: number;
   tempo_processamento: number;
+  caminho_arquivo?: string;
+  nome_arquivo?: string;
+  tamanho_arquivo?: number;
   url_download?: string;
   data_expiracao?: Date;
   erros: string[];
   avisos: string[];
   estatisticas: IDocumentoBatchEstatisticas;
+  data_conclusao?: Date;
+  metadados?: any;
+  arquivo_zip?: {
+    url_download?: string;
+    nome?: string;
+    tamanho?: number;
+    data_expiracao?: Date;
+  };
+  estrutura?: any[];
 }
 
 /**

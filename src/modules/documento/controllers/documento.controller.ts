@@ -58,6 +58,7 @@ import {
   BatchDownloadResponseDto,
   BatchJobStatusResponseDto,
 } from '../dto/batch-download.dto';
+import { StatusDownloadLoteEnum } from '@/entities/documento-batch-job.entity';
 
 /**
  * Controlador de Documentos
@@ -849,18 +850,30 @@ export class DocumentoController {
     @Body() filtros: BatchDownloadDto,
     @GetUser() usuario: Usuario,
   ): Promise<BatchDownloadResponseDto> {
-    const resultado = await this.documentoBatchService.startBatchDownload(
-      filtros,
-      usuario,
+    // Converter BatchDownloadDto para IDocumentoBatchFiltros
+    const filtrosConvertidos: any = {
+      unidade_id: undefined, // Será definido pelo contexto do usuário
+      data_inicio: filtros.dataInicio,
+      data_fim: filtros.dataFim,
+      tipo_documento: filtros.tiposDocumento,
+      cidadao_ids: filtros.cidadaoIds,
+      solicitacao_ids: filtros.solicitacaoIds,
+      apenas_verificados: filtros.apenasVerificados,
+      incluir_metadados: filtros.incluirMetadados,
+    };
+
+    const jobId = await this.documentoBatchService.iniciarJob(
+      filtrosConvertidos,
+      usuario.id,
     );
 
     return {
-      jobId: resultado.jobId,
-      estimatedSize: resultado.estimatedSize,
-      documentCount: resultado.documentCount,
+      jobId: jobId,
+      estimatedSize: 0, // Será calculado durante o processamento
+      documentCount: 0, // Será calculado durante o processamento
       message:
         'Download em lote iniciado. Use o jobId para verificar o progresso.',
-      statusUrl: `/api/documento/download-lote/${resultado.jobId}/status`,
+      statusUrl: `/api/documento/download-lote/${jobId}/status`,
     };
   }
 
@@ -889,21 +902,21 @@ export class DocumentoController {
     @Param('jobId', ParseUUIDPipe) jobId: string,
     @GetUser() usuario: Usuario,
   ): Promise<BatchJobStatusResponseDto> {
-    const job = this.documentoBatchService.getBatchStatus(jobId, usuario.id);
+    const job = await this.documentoBatchService.obterProgresso(jobId);
 
     const response: BatchJobStatusResponseDto = {
-      id: job.id,
-      status: job.status,
-      progress: job.progress,
-      documentCount: job.documentCount,
-      estimatedSize: job.estimatedSize,
-      actualSize: job.actualSize,
-      createdAt: job.createdAt,
-      completedAt: job.completedAt,
-      error: job.error,
+      id: job.job_id,
+      status: this.mapStatusToResponseFormat(job.status),
+      progress: job.progresso,
+      documentCount: job.total_documentos,
+      estimatedSize: job.tamanho_estimado || 0,
+      actualSize: 0, // Será calculado quando o job for concluído
+      createdAt: new Date(), // Será obtido da entidade quando necessário
+      completedAt: undefined, // Será obtido da entidade quando necessário
+      error: job.erros.join(', ') || undefined,
     };
 
-    if (job.status === 'COMPLETED') {
+    if (job.status === StatusDownloadLoteEnum.COMPLETED) {
       response.downloadUrl = `/api/v1/documento/download-lote/${jobId}/download`;
     }
 
@@ -947,17 +960,20 @@ export class DocumentoController {
     @GetUser() usuario: Usuario,
     @Res() res: Response,
   ): Promise<void> {
-    const { filePath, fileName } =
-      await this.documentoBatchService.downloadBatchFile(jobId, usuario.id);
+    const resultado = await this.documentoBatchService.obterResultado(jobId);
+    
+    if (!resultado.caminho_arquivo) {
+      throw new Error('Arquivo não disponível para download');
+    }
 
     // Obter informações do arquivo
     const fs = require('fs');
-    const stats = await fs.promises.stat(filePath);
+    const stats = await fs.promises.stat(resultado.caminho_arquivo);
 
     // Headers para download do ZIP
     res.set({
       'Content-Type': 'application/zip',
-      'Content-Disposition': `attachment; filename="${fileName}"`,
+      'Content-Disposition': `attachment; filename="${resultado.nome_arquivo || 'documentos.zip'}"`,
       'Content-Length': stats.size.toString(),
       'Cache-Control': 'no-cache, no-store, must-revalidate',
       Pragma: 'no-cache',
@@ -965,7 +981,7 @@ export class DocumentoController {
     });
 
     // Stream do arquivo
-    const fileStream = fs.createReadStream(filePath);
+    const fileStream = fs.createReadStream(resultado.caminho_arquivo);
     fileStream.pipe(res);
   }
 
@@ -986,24 +1002,37 @@ export class DocumentoController {
   async getUserJobs(
     @GetUser() usuario: Usuario,
   ): Promise<BatchJobStatusResponseDto[]> {
-    const jobs = this.documentoBatchService.getUserJobs(usuario.id);
+    const jobs = await this.documentoBatchService.listarJobs(usuario.id);
 
     return jobs.map((job) => ({
-      id: job.id,
-      status: job.status,
-      progress: job.progress,
-      documentCount: job.documentCount,
-      estimatedSize: job.estimatedSize,
-      actualSize: job.actualSize,
-      createdAt: job.createdAt,
-      completedAt: job.completedAt,
-      error: job.error,
+      id: job.job_id,
+      status: this.mapStatusToResponseFormat(job.status),
+      progress: Math.round((job.documentos_processados / job.total_documentos) * 100) || 0,
+      documentCount: job.total_documentos,
+      estimatedSize: job.tamanho_arquivo || 0,
+      actualSize: job.tamanho_arquivo || 0,
+      createdAt: new Date(), // Será obtido da entidade quando necessário
+      completedAt: undefined, // Será obtido da entidade quando necessário
+      error: job.erros.join(', ') || undefined,
       downloadUrl:
-        job.status === 'COMPLETED'
-          ? `/api/v1/documento/download-lote/${job.id}/download`
+        job.status === StatusDownloadLoteEnum.COMPLETED
+          ? `/api/v1/documento/download-lote/${job.job_id}/download`
           : undefined,
     }));
   }
+
+  private mapStatusToResponseFormat(status: StatusDownloadLoteEnum): 'PROCESSING' | 'COMPLETED' | 'FAILED' {
+     switch (status) {
+       case StatusDownloadLoteEnum.PROCESSING:
+         return 'PROCESSING';
+       case StatusDownloadLoteEnum.COMPLETED:
+         return 'COMPLETED';
+       case StatusDownloadLoteEnum.FAILED:
+         return 'FAILED';
+       default:
+         return 'PROCESSING';
+     }
+   }
 
   /**
    * Cancela um job de download em processamento
@@ -1028,6 +1057,6 @@ export class DocumentoController {
     @Param('jobId', ParseUUIDPipe) jobId: string,
     @GetUser() usuario: Usuario,
   ): Promise<void> {
-    this.documentoBatchService.cancelJob(jobId, usuario.id);
+    await this.documentoBatchService.cancelarJob(jobId);
   }
 }

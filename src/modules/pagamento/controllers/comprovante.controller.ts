@@ -85,7 +85,7 @@ export class ComprovanteController {
   @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Faz upload de comprovante' })
   @ApiParam({
-    name: 'pagamentoId',
+    name: 'pagamento_id',
     type: 'string',
     description: 'ID do pagamento',
   })
@@ -99,7 +99,7 @@ export class ComprovanteController {
     scopeType: TipoEscopo.UNIDADE,
   })
   async upload(
-    @Param('pagamentoId', ParseUUIDPipe) pagamentoId: string,
+    @Param('pagamento_id', ParseUUIDPipe) pagamentoId: string,
     @UploadedFile() arquivo: Express.Multer.File,
     @Body() uploadDto: ComprovanteUploadDto,
     @GetUser() usuario: Usuario,
@@ -107,7 +107,7 @@ export class ComprovanteController {
     const comprovante = await this.comprovanteService.upload(
       arquivo,
       pagamentoId,
-      uploadDto.tipoDocumento,
+      uploadDto.tipo_documento,
       usuario.id,
     );
 

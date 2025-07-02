@@ -17,7 +17,7 @@ import { DocumentoAuditService } from './services/documento-audit.service';
 import { InputSanitizerValidator } from './validators/input-sanitizer.validator';
 import { memoryStorage } from 'multer';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { Documento } from '../../entities';
+import { Documento, DocumentoBatchJob } from '../../entities';
 import { AuthModule } from '../../auth/auth.module';
 import { LoggingModule } from '../../shared/logging/logging.module';
 import { SharedModule } from '../../shared/shared.module';
@@ -54,7 +54,7 @@ import { ThumbnailQueueService } from './services/thumbnail/thumbnail-queue.serv
  */
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Documento]),
+    TypeOrmModule.forFeature([Documento, DocumentoBatchJob]),
     MulterModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
