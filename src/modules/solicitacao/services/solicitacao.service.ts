@@ -33,6 +33,7 @@ import {
   DeterminacaoJudicial,
   StatusPendencia,
   Pendencia,
+  Contato,
 } from '../../../entities';
 import { CreateSolicitacaoDto } from '../dto/create-solicitacao.dto';
 import { UpdateSolicitacaoDto } from '../dto/update-solicitacao.dto';
@@ -269,79 +270,86 @@ export class SolicitacaoService {
     }
   }
 
-  /**
-   * Busca uma solicitação pelo ID
-   */
-  async findById(id: string): Promise<Solicitacao> {
-    const solicitacao = await this.solicitacaoRepository
-      .createQueryBuilder('solicitacao')
-      .leftJoinAndSelect('solicitacao.beneficiario', 'beneficiario')
-      .leftJoinAndSelect('solicitacao.solicitante', 'solicitante')
-      .leftJoinAndSelect('solicitacao.tipo_beneficio', 'tipo_beneficio')
-      .leftJoinAndSelect('solicitacao.unidade', 'unidade')
-      .leftJoinAndSelect('solicitacao.tecnico', 'tecnico')
-      .leftJoinAndSelect('solicitacao.documentos', 'documentos')
-      .leftJoinAndSelect('solicitacao.concessao', 'concessao')
-      .select([
-        // Dados básicos da solicitação
-        'solicitacao.id',
-        'solicitacao.protocolo',
-        'solicitacao.status',
-        'solicitacao.parecer_semtas',
-        'solicitacao.dados_complementares',
-        'solicitacao.data_abertura',
-        'solicitacao.observacoes',
+/**
+ * Busca uma solicitação pelo ID
+ */
+async findById(id: string): Promise<Solicitacao> {
+  const solicitacao = await this.solicitacaoRepository
+    .createQueryBuilder('solicitacao')
+    .leftJoinAndSelect('solicitacao.beneficiario', 'beneficiario')
+    .leftJoinAndSelect('solicitacao.solicitante', 'solicitante')
+    .leftJoinAndSelect('solicitacao.tipo_beneficio', 'tipo_beneficio')
+    .leftJoinAndSelect('solicitacao.unidade', 'unidade')
+    .leftJoinAndSelect('solicitacao.tecnico', 'tecnico')
+    .leftJoinAndSelect('solicitacao.documentos', 'documentos')
+    .leftJoinAndSelect('solicitacao.concessao', 'concessao')
+    .select([
+      'solicitacao.id', 'solicitacao.protocolo', 'solicitacao.status',
+      'solicitacao.parecer_semtas', 'solicitacao.dados_complementares',
+      'solicitacao.data_abertura', 'solicitacao.observacoes',
+      'beneficiario.id', 'beneficiario.nome', 'beneficiario.cpf',
+      'beneficiario.rg', 'beneficiario.nis', 'beneficiario.data_nascimento',
+      'beneficiario.nome_mae', 'beneficiario.naturalidade', 'beneficiario.sexo',
+      'beneficiario.estado_civil',
+      'solicitante.id', 'solicitante.nome', 'solicitante.cpf',
+      'solicitante.nis', 'solicitante.data_nascimento',
+      'tipo_beneficio.id', 'tipo_beneficio.nome', 'tipo_beneficio.descricao',
+      'tipo_beneficio.codigo', 'tipo_beneficio.valor',
+      'tecnico.id', 'tecnico.nome',
+      'unidade.id', 'unidade.nome', 'unidade.sigla',
+      'concessao.id'
+    ])
+    .where('solicitacao.id = :id', { id })
+    .getOne();
 
-        // Dados básicos do beneficiário
-        'beneficiario.id',
-        'beneficiario.nome',
-        'beneficiario.cpf',
-        'beneficiario.rg',
-        'beneficiario.nis',
-        'beneficiario.data_nascimento',
-        'beneficiario.nome_mae',
-        'beneficiario.naturalidade',
-        'beneficiario.sexo',
-        'beneficiario.estado_civil',
-        'beneficiario.telefone',
-        'beneficiario.email',
-
-        // Dados básicos do solicitante
-        'solicitante.id',
-        'solicitante.nome',
-        'solicitante.cpf',
-        'solicitante.nis',
-        'solicitante.data_nascimento',
-        'solicitante.telefone',
-
-        // Dados básicos do benefício
-        'tipo_beneficio.id',
-        'tipo_beneficio.nome',
-        'tipo_beneficio.descricao',
-        'tipo_beneficio.codigo',
-        'tipo_beneficio.valor',
-
-        // Dados básicos do técnico
-        'tecnico.id',
-        'tecnico.nome',
-        
-        // Dados básicos da unidade
-        'unidade.id',
-        'unidade.nome',
-        'unidade.sigla',
-
-        // Dados da concessão
-        'concessao.id'
-      ])
-      .where('solicitacao.id = :id', { id })
-      .getOne();
-
-    if (!solicitacao) {
-      throwSolicitacaoNotFound(id);
-    }
-
-    return solicitacao;
+  if (!solicitacao) {
+    throwSolicitacaoNotFound(id);
   }
+
+  // Busca contatos em paralelo
+  const [contatoBeneficiario, contatoSolicitante] = await Promise.all([
+    solicitacao.beneficiario ? this.buscarContatoMaisRecente(solicitacao.beneficiario.id) : null,
+    solicitacao.solicitante ? this.buscarContatoMaisRecente(solicitacao.solicitante.id) : null
+  ]);
+
+  // Adiciona os contatos encontrados
+  if (contatoBeneficiario && solicitacao.beneficiario) {
+    solicitacao.beneficiario.contatos = [contatoBeneficiario];
+  }
+  if (contatoSolicitante && solicitacao.solicitante) {
+    solicitacao.solicitante.contatos = [contatoSolicitante];
+  }
+
+  return solicitacao;
+}
+
+/**
+ * Busca o contato mais recente de um cidadão
+ * Prioriza contatos com proprietario = true, depois proprietario = false
+ */
+private async buscarContatoMaisRecente(cidadaoId: string): Promise<Contato | null> {
+  // Tenta buscar contato com proprietario = true primeiro
+  let contato = await this.dataSource
+    .getRepository(Contato)
+    .createQueryBuilder('contato')
+    .where('contato.cidadao_id = :cidadaoId', { cidadaoId })
+    .andWhere('contato.proprietario = :proprietario', { proprietario: true })
+    .orderBy('contato.created_at', 'DESC')
+    .getOne();
+
+  // Se não encontrou, busca com proprietario = false
+  if (!contato) {
+    contato = await this.dataSource
+      .getRepository(Contato)
+      .createQueryBuilder('contato')
+      .where('contato.cidadao_id = :cidadaoId', { cidadaoId })
+      .andWhere('contato.proprietario = :proprietario', { proprietario: false })
+      .orderBy('contato.created_at', 'DESC')
+      .getOne();
+  }
+
+  return contato;
+}
 
   /**
    * Cria uma nova solicitação

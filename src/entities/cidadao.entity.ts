@@ -32,6 +32,8 @@ import { Solicitacao } from './solicitacao.entity';
 import { Documento } from './documento.entity';
 import { DadosSociais } from './dados-sociais.entity';
 import { InfoBancaria } from './info-bancaria.entity';
+import { Contato } from './contato.entity';
+import { Endereco } from './endereco.entity';
 
 @Entity('cidadao')
 @Index(['cpf'], { unique: true })
@@ -143,6 +145,12 @@ export class Cidadao {
 
   @OneToOne(() => InfoBancaria, (infoBancaria) => infoBancaria.cidadao)
   info_bancaria: InfoBancaria;
+
+  @OneToMany(() => Contato, (contato) => contato.cidadao)
+  contatos: Contato[];
+
+  @OneToMany(() => Endereco, (endereco) => endereco.cidadao)
+  enderecos: Endereco[];
 
   /**
    * Verifica se o cidadão foi criado recentemente (últimas 24 horas)
