@@ -69,7 +69,7 @@ export class ConfirmacaoService {
     // Atualizar status do pagamento para confirmado (reutilizando pagamento já buscado)
     await this.pagamentoRepository.update(pagamento.id, {
       status: StatusPagamentoEnum.CONFIRMADO,
-      dataConclusao: new Date(),
+      data_conclusao: new Date(),
     });
 
     this.logger.log(`Confirmação ${confirmacao.id} criada com sucesso`);
@@ -168,7 +168,7 @@ export class ConfirmacaoService {
     // Reverter status do pagamento
     await this.pagamentoRepository.update(confirmacao.pagamento_id, {
       status: StatusPagamentoEnum.LIBERADO,
-      dataConclusao: undefined,
+      data_conclusao: undefined,
     });
 
     // Adicionar observação sobre remoção

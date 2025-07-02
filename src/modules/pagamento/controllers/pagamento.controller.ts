@@ -60,19 +60,19 @@ export class PagamentoController {
   @ApiResponse({ status: 200, description: 'Lista paginada de pagamentos' })
   async findAll(
     @Query('status') status?: StatusPagamentoEnum,
-    @Query('solicitacao_id') solicitacaoId?: string,
-    @Query('concessao_id') concessaoId?: string,
-    @Query('data_inicio') dataInicio?: string,
-    @Query('data_fim') dataFim?: string,
+    @Query('solicitacao_id') solicitacao_id?: string,
+    @Query('concessao_id') concessao_id?: string,
+    @Query('data_inicio') data_inicio?: string,
+    @Query('data_fim') data_fim?: string,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
   ) {
     const filtros = {
       status,
-      solicitacaoId,
-      concessaoId,
-      dataInicio,
-      dataFim,
+      solicitacao_id: solicitacao_id,
+      concessao_id: concessao_id,
+      data_inicio: data_inicio,
+      data_fim: data_fim,
       page: page || 1,
       limit: Math.min(limit || 10, 100), // Limita a 100 itens
     };
@@ -188,14 +188,14 @@ export class PagamentoController {
   /**
    * Busca pagamentos por solicitação
    */
-  @Get('solicitacao/:solicitacaoId')
+  @Get('solicitacao/:solicitacao_id')
   @RequiresPermission({
     permissionName: 'pagamento.listar',
     scopeType: TipoEscopo.UNIDADE,
   })
   @ApiOperation({ summary: 'Busca pagamentos de uma solicitação' })
   @ApiParam({
-    name: 'solicitacaoId',
+    name: 'solicitacao_id',
     type: 'string',
     description: 'ID da solicitação',
   })
@@ -204,10 +204,10 @@ export class PagamentoController {
     description: 'Lista de pagamentos da solicitação',
   })
   async findBySolicitacao(
-    @Param('solicitacaoId', ParseUUIDPipe) solicitacaoId: string,
+    @Param('solicitacao_id', ParseUUIDPipe) solicitacao_id: string,
   ) {
     const pagamentos =
-      await this.pagamentoService.findBySolicitacao(solicitacaoId);
+      await this.pagamentoService.findBySolicitacao(solicitacao_id);
 
     return {
       success: true,
@@ -219,22 +219,22 @@ export class PagamentoController {
   /**
    * Busca pagamentos por concessão
    */
-  @Get('concessao/:concessaoId')
+  @Get('concessao/:concessao_id')
   @RequiresPermission({
     permissionName: 'pagamento.listar',
     scopeType: TipoEscopo.UNIDADE,
   })
   @ApiOperation({ summary: 'Busca pagamentos de uma concessão' })
   @ApiParam({
-    name: 'concessaoId',
+    name: 'concessao_id',
     type: 'string',
     description: 'ID da concessão',
   })
   @ApiResponse({ status: 200, description: 'Lista de pagamentos da concessão' })
   async findByConcessao(
-    @Param('concessaoId', ParseUUIDPipe) concessaoId: string,
+    @Param('concessao_id', ParseUUIDPipe) concessao_id: string,
   ) {
-    const pagamentos = await this.pagamentoService.findByConcessao(concessaoId);
+    const pagamentos = await this.pagamentoService.findByConcessao(concessao_id);
 
     return {
       success: true,

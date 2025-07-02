@@ -274,7 +274,7 @@ export class PagamentoPerformanceInterceptor implements NestInterceptor {
         // await this.cacheService.clear(); // Alternativa temporária
 
         // Invalidar cache de validações se necessário
-        if (body?.status || body?.metodoPagamento) {
+        if (body?.status || body?.metodo_pagamento) {
           await this.pagamentoCacheService.invalidateValidationCache();
         }
       }

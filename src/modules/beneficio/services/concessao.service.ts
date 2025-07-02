@@ -413,7 +413,7 @@ export class ConcessaoService {
 
     // Obter quantidade de parcelas da concessão original
     const pagamentosOriginais = await this.pagamentoService.findAll({
-      concessaoId: concessaoOriginal.id,
+      concessao_id: concessaoOriginal.id,
     }); // Buscar todos os pagamentos da concessão
 
     const quantidadeParcelasOriginal =

@@ -212,24 +212,24 @@ export class PagamentoQueueProcessor implements OnModuleDestroy {
    */
   @Process('validar-comprovante')
   async processarValidacaoComprovante(job: Job<any>) {
-    const { comprovanteId, usuarioId } = job.data;
+    const { comprovante_id, usuarioId } = job.data;
 
     try {
-      this.logger.log(`Processando validação de comprovante: ${comprovanteId}`);
+      this.logger.log(`Processando validação de comprovante: ${comprovante_id}`);
 
       // Buscar comprovante
-      const comprovante = await this.comprovanteService.findById(comprovanteId);
+      const comprovante = await this.comprovanteService.findById(comprovante_id);
 
       // Registrar auditoria
       const logDto = new CreateLogAuditoriaDto();
       logDto.tipo_operacao = TipoOperacao.READ;
       logDto.entidade_afetada = 'ComprovantePagamento';
-      logDto.entidade_id = comprovanteId;
+      logDto.entidade_id = comprovante_id;
       logDto.usuario_id = usuarioId;
 
       await this.auditoriaService.create(logDto);
 
-      this.logger.log(`Comprovante validado com sucesso: ${comprovanteId}`);
+      this.logger.log(`Comprovante validado com sucesso: ${comprovante_id}`);
       return comprovante;
     } catch (error) {
       this.logger.error(

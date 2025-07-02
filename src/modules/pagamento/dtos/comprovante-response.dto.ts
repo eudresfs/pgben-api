@@ -23,7 +23,7 @@ export class ComprovanteResponseDto extends ComprovanteBaseDto {
     description: 'ID do pagamento relacionado',
     example: 'uuid',
   })
-  pagamentoId: string;
+  pagamento_id: string;
 
   /**
    * Tipo de documento (ex: comprovante_transferencia, recibo, etc.)
@@ -32,7 +32,7 @@ export class ComprovanteResponseDto extends ComprovanteBaseDto {
     description: 'Tipo do documento',
     example: 'string',
   })
-  tipoDocumento: string;
+  tipo_documento: string;
 
   /**
    * Nome original do arquivo enviado
@@ -41,7 +41,7 @@ export class ComprovanteResponseDto extends ComprovanteBaseDto {
     description: 'Nome original do arquivo',
     example: 'string',
   })
-  nomeArquivo: string;
+  nome_arquivo: string;
 
   /**
    * URL segura temporária para acesso ao arquivo
@@ -68,7 +68,7 @@ export class ComprovanteResponseDto extends ComprovanteBaseDto {
     description: 'Tipo MIME do arquivo',
     example: 'string',
   })
-  mimeType: string;
+  mime_type: string;
 
   /**
    * Data de upload do comprovante
@@ -77,7 +77,7 @@ export class ComprovanteResponseDto extends ComprovanteBaseDto {
     description: 'Data de upload do arquivo',
     example: 'ISO 8601 date string',
   })
-  dataUpload: Date;
+  data_upload: Date;
 
   /**
    * Informações sobre o responsável pelo upload
@@ -89,7 +89,7 @@ export class ComprovanteResponseDto extends ComprovanteBaseDto {
       nome: 'string',
     },
   })
-  responsavelUpload: ResponsavelUploadInfo;
+  responsavel_upload: ResponsavelUploadInfo;
 
-  // Campos 'createdAt' e 'updatedAt' herdados de ComprovanteBaseDto
+  // Campos 'created_at' e 'updated_at' herdados de ComprovanteBaseDto
 }

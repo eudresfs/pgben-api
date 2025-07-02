@@ -53,7 +53,8 @@ export abstract class PagamentoBaseDto {
   @IsEnum(MetodoPagamentoEnum, {
     message: 'Método de pagamento deve ser um valor válido',
   })
-  metodoPagamento: MetodoPagamentoEnum;
+  @IsString({ message: 'Método de pagamento deve ser uma string' })
+  metodo_pagamento: MetodoPagamentoEnum;
 
   /**
    * Observações adicionais sobre o pagamento
@@ -110,7 +111,7 @@ export abstract class PagamentoResponseBaseDto {
     enum: MetodoPagamentoEnum,
     example: MetodoPagamentoEnum.PIX,
   })
-  metodoPagamento: MetodoPagamentoEnum;
+  metodo_pagamento: MetodoPagamentoEnum;
 
   /**
    * Data de criação do registro
@@ -119,7 +120,7 @@ export abstract class PagamentoResponseBaseDto {
     description: 'Data de criação do pagamento',
     example: '2024-01-15T10:30:00.000Z',
   })
-  createdAt: Date;
+  created_at: Date;
 
   /**
    * Data da última atualização
@@ -128,7 +129,7 @@ export abstract class PagamentoResponseBaseDto {
     description: 'Data da última atualização',
     example: '2024-01-15T14:20:00.000Z',
   })
-  updatedAt: Date;
+  updated_at: Date;
 
   /**
    * Número da parcela atual
@@ -138,7 +139,7 @@ export abstract class PagamentoResponseBaseDto {
     example: 1,
     minimum: 1,
   })
-  numeroParcela: number;
+  numero_parcela: number;
 
   /**
    * Total de parcelas previstas para o benefício
@@ -148,7 +149,7 @@ export abstract class PagamentoResponseBaseDto {
     example: 1,
     minimum: 1,
   })
-  totalParcelas: number;
+  total_parcelas: number;
 
   /**
    * Data efetiva do pagamento
@@ -157,7 +158,7 @@ export abstract class PagamentoResponseBaseDto {
     description: 'Data em que o pagamento foi efetivamente realizado',
     example: '2025-05-18T10:00:00.000Z',
   })
-  dataPagamento?: Date;
+  data_pagamento?: Date;
 
   /**
    * Observações sobre o pagamento
@@ -184,5 +185,5 @@ export interface ResponsavelInfo {
 export interface SolicitacaoResumo {
   id: string;
   beneficiario: string;
-  tipoBeneficio: string;
+  tipo_beneficio: string;
 }

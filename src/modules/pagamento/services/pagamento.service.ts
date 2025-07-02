@@ -35,7 +35,7 @@ export class PagamentoService {
 
     // Verificar se já existe pagamento para a solicitação
     // const pagamentoExistente = await this.pagamentoRepository.existsBySolicitacao(
-    //   createDto.solicitacaoId
+    //   createDto.solicitacao_id
     // );
 
     // if (pagamentoExistente) {
@@ -79,18 +79,18 @@ export class PagamentoService {
    */
   async findAll(filtros: {
     status?: StatusPagamentoEnum;
-    solicitacaoId?: string;
-    concessaoId?: string;
-    dataInicio?: string;
-    dataFim?: string;
+    solicitacao_id?: string;
+    concessao_id?: string;
+    data_inicio?: string;
+    data_fim?: string;
     page?: number;
     limit?: number;
   }) {
     // Converter strings de data para Date objects
     const filtrosProcessados = {
       ...filtros,
-      dataInicio: filtros.dataInicio ? new Date(filtros.dataInicio) : undefined,
-      dataFim: filtros.dataFim ? new Date(filtros.dataFim) : undefined,
+      data_inicio: filtros.data_inicio ? new Date(filtros.data_inicio) : undefined,
+      data_fim: filtros.data_fim ? new Date(filtros.data_fim) : undefined,
     };
 
     const { items, total } =
@@ -143,21 +143,21 @@ export class PagamentoService {
     // Atualizações específicas por status
     switch (updateDto.status) {
       case StatusPagamentoEnum.LIBERADO:
-        dadosAtualizacao.dataLiberacao = new Date();
-        dadosAtualizacao.liberadoPor = usuarioId;
+        dadosAtualizacao.data_liberacao = new Date();
+        dadosAtualizacao.liberado_por = usuarioId;
         break;
       case StatusPagamentoEnum.PAGO:
-        dadosAtualizacao.dataPagamento = new Date();
+        dadosAtualizacao.data_pagamento = new Date();
         break;
       case StatusPagamentoEnum.CONFIRMADO:
-        dadosAtualizacao.dataConclusao = new Date();
+        dadosAtualizacao.data_conclusao = new Date();
         if (updateDto.comprovante_id) {
-          dadosAtualizacao.comprovanteId = updateDto.comprovante_id;
+          dadosAtualizacao.comprovante_id = updateDto.comprovante_id;
         }
         break;
       case StatusPagamentoEnum.AGENDADO:
         if (updateDto.data_agendamento) {
-          dadosAtualizacao.dataAgendamento = new Date(
+          dadosAtualizacao.data_agendamento = new Date(
             updateDto.data_agendamento,
           );
         }
@@ -203,8 +203,6 @@ export class PagamentoService {
     const dadosAtualizacao = {
       status: StatusPagamentoEnum.CANCELADO,
       observacoes: `Cancelado: ${motivo}`,
-      dataCancelamento: new Date(),
-      canceladoPor: usuarioId,
       updated_at: new Date(),
     };
 
@@ -220,15 +218,15 @@ export class PagamentoService {
   /**
    * Busca pagamentos por solicitação
    */
-  async findBySolicitacao(solicitacaoId: string): Promise<Pagamento[]> {
-    return await this.pagamentoRepository.findBySolicitacao(solicitacaoId);
+  async findBySolicitacao(solicitacao_id: string): Promise<Pagamento[]> {
+    return await this.pagamentoRepository.findBySolicitacao(solicitacao_id);
   }
 
   /**
    * Busca pagamentos por concessão
    */
-  async findByConcessao(concessaoId: string): Promise<Pagamento[]> {
-    return await this.pagamentoRepository.findByConcessao(concessaoId);
+  async findByConcessao(concessao_id: string): Promise<Pagamento[]> {
+    return await this.pagamentoRepository.findByConcessao(concessao_id);
   }
 
   /**
@@ -289,14 +287,14 @@ export class PagamentoService {
 
     // Gerar pagamentos
     for (let i = 1; i <= quantidadeParcelas; i++) {
-      const dataLiberacao = new Date(concessao.dataInicio);
+      const data_liberacao = new Date(concessao.data_inicio);
 
       // Para benefícios mensais, adicionar meses
       if (
         quantidadeParcelas > 1 &&
         tipoBeneficio?.especificacoes?.duracao_maxima_meses
       ) {
-        dataLiberacao.setMonth(dataLiberacao.getMonth() + (i - 1));
+        data_liberacao.setMonth(data_liberacao.getMonth() + (i - 1));
       }
 
       // Ajustar valor da última parcela para compensar arredondamentos
@@ -308,21 +306,21 @@ export class PagamentoService {
         );
       }
 
-      const dadosPagamento = {
-        concessaoId: concessao.id,
-        solicitacaoId: solicitacao.id,
+      const dados_pagamento = {
+        concessao_id: concessao.id,
+        solicitacao_id: solicitacao.id,
         valor: valorFinal,
-        dataLiberacao: dataLiberacao,
-        metodoPagamento: solicitacao.info_bancaria
+        data_liberacao: data_liberacao,
+        metodo_pagamento: solicitacao.info_bancaria
           ? MetodoPagamentoEnum.PIX
           : MetodoPagamentoEnum.PRESENCIAL,
-        infoBancariaId: solicitacao.info_bancaria?.id || undefined,
-        numeroParcela: i,
-        totalParcelas: quantidadeParcelas,
+        info_bancaria_id: solicitacao.info_bancaria?.id || undefined,
+        numero_parcela: i,
+        total_parcelas: quantidadeParcelas,
         observacoes: `Pagamento ${i}/${quantidadeParcelas} - ${tipoBeneficio.nome}`,
       };
 
-      const pagamento = await this.create(dadosPagamento, usuarioId);
+      const pagamento = await this.create(dados_pagamento, usuarioId);
       pagamentosGerados.push(pagamento);
     }
 

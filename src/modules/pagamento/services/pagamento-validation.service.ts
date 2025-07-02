@@ -64,12 +64,12 @@ export class PagamentoValidationService {
     }
 
     // Validação de solicitação
-    if (!data.solicitacaoId) {
+    if (!data.solicitacao_id) {
       errors.push('ID da solicitação é obrigatório');
     }
 
     // Validação de informação bancária
-    if (!data.infoBancariaId) {
+    if (!data.info_bancaria_id) {
       errors.push('Informação bancária é obrigatória');
     }
 

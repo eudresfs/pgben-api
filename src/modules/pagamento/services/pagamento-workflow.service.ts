@@ -21,10 +21,10 @@ import { PagamentoUnifiedMapper } from '../mappers';
  * Interface para resultado de verificação de elegibilidade
  */
 export interface ElegibilidadeResult {
-  podeLiberar: boolean;
+  pode_liberar: boolean;
   motivo?: string;
-  documentosObrigatorios?: TipoDocumentoEnum[];
-  documentosFaltantes?: TipoDocumentoEnum[];
+  documentos_obrigatorios?: TipoDocumentoEnum[];
+  documentos_faltantes?: TipoDocumentoEnum[];
 }
 
 /**
@@ -181,16 +181,16 @@ export class PagamentoWorkflowService {
     }
 
     // Verificar se já existe pagamento para a solicitação
-    if (!createDto.solicitacaoId) {
+    if (!createDto.solicitacao_id) {
       return {
         success: false,
         message: 'ID da solicitação é obrigatório',
-        errors: ['solicitacaoId não fornecido'],
+        errors: ['solicitacao_id não fornecido'],
       };
     }
 
     const existente = await this.pagamentoRepository.findBySolicitacao(
-      createDto.solicitacaoId,
+      createDto.solicitacao_id,
     );
 
     if (existente) {
@@ -202,11 +202,11 @@ export class PagamentoWorkflowService {
     }
 
     // Criar pagamento
-    const dadosPagamento = PagamentoUnifiedMapper.fromCreateDto(
+    const dados_pagamento = PagamentoUnifiedMapper.fromCreateDto(
       createDto,
       usuarioId,
     );
-    const pagamento = await this.pagamentoRepository.create(dadosPagamento);
+    const pagamento = await this.pagamentoRepository.create(dados_pagamento);
 
     return {
       success: true,
@@ -378,7 +378,7 @@ export class PagamentoWorkflowService {
     // Verificar status do pagamento
     if (pagamento.status !== StatusPagamentoEnum.PENDENTE) {
       return {
-        podeLiberar: false,
+        pode_liberar: false,
         motivo: `Pagamento não está pendente. Status atual: ${pagamento.status}`,
       };
     }
@@ -389,19 +389,19 @@ export class PagamentoWorkflowService {
       pagamento.concessao.status !== StatusConcessao.ATIVO
     ) {
       return {
-        podeLiberar: false,
+        pode_liberar: false,
         motivo: 'Concessão não está ativa',
       };
     }
 
     // Verificar data prevista de liberação
     if (
-      pagamento.dataPrevistaLiberacao &&
-      pagamento.dataPrevistaLiberacao > new Date()
+      pagamento.data_prevista_liberacao &&
+      pagamento.data_prevista_liberacao > new Date()
     ) {
       return {
-        podeLiberar: false,
-        motivo: `Data prevista ainda não chegou: ${pagamento.dataPrevistaLiberacao.toLocaleDateString()}`,
+        pode_liberar: false,
+        motivo: `Data prevista ainda não chegou: ${pagamento.data_prevista_liberacao.toLocaleDateString()}`,
       };
     }
 
@@ -412,7 +412,7 @@ export class PagamentoWorkflowService {
       return await this.verificarElegibilidadeAluguelSocial(pagamento);
     }
 
-    return { podeLiberar: true };
+    return { pode_liberar: true };
   }
 
   /**
@@ -428,7 +428,7 @@ export class PagamentoWorkflowService {
     const elegibilidade =
       await this.verificarElegibilidadeLiberacao(pagamentoId);
 
-    if (!elegibilidade.podeLiberar) {
+    if (!elegibilidade.pode_liberar) {
       throw new BadRequestException(
         `Não é possível liberar: ${elegibilidade.motivo}`,
       );
@@ -439,8 +439,8 @@ export class PagamentoWorkflowService {
       pagamentoId,
       {
         status: StatusPagamentoEnum.LIBERADO,
-        dataLiberacao: new Date(),
-        liberadoPor: usuarioId,
+        data_liberacao: new Date(),
+        liberado_por: usuarioId,
         observacoes: 'Liberado pelo sistema',
       },
     );
@@ -520,7 +520,7 @@ export class PagamentoWorkflowService {
           pagamento.id,
         );
 
-        if (elegibilidade.podeLiberar) {
+        if (elegibilidade.pode_liberar) {
           await this.liberarPagamento(pagamento.id, usuarioSistema);
           resultado.liberados.push(pagamento.id);
         } else {
@@ -583,7 +583,7 @@ export class PagamentoWorkflowService {
 
     return await this.pagamentoRepository.update(pagamentoId, {
       status: StatusPagamentoEnum.VENCIDO,
-      dataVencimento: new Date(),
+      data_vencimento: new Date(),
       observacoes: motivo,
     });
   }
@@ -608,8 +608,8 @@ export class PagamentoWorkflowService {
     }
 
     // Verificar prazo de regularização (30 dias)
-    if (pagamento.dataVencimento) {
-      const dataLimite = new Date(pagamento.dataVencimento);
+    if (pagamento.data_vencimento) {
+      const dataLimite = new Date(pagamento.data_vencimento);
       dataLimite.setDate(dataLimite.getDate() + 30);
 
       if (new Date() > dataLimite) {
@@ -621,7 +621,7 @@ export class PagamentoWorkflowService {
 
     return await this.pagamentoRepository.update(id, {
       status: StatusPagamentoEnum.PENDENTE,
-      dataRegularizacao: new Date(),
+      data_regularizacao: new Date(),
       observacoes: observacoes || 'Pagamento regularizado',
     });
   }
@@ -641,7 +641,7 @@ export class PagamentoWorkflowService {
           pagamento.id,
           {
             status: StatusPagamentoEnum.VENCIDO,
-            dataVencimento: new Date(),
+            data_vencimento: new Date(),
             observacoes: 'Vencido automaticamente pelo sistema',
           },
         );
@@ -670,12 +670,12 @@ export class PagamentoWorkflowService {
     pagamento: Pagamento,
   ): Promise<ElegibilidadeResult> {
     // Para a primeira parcela, não é necessário recibo
-    if (pagamento.numeroParcela === 1) {
-      return { podeLiberar: true };
+    if (pagamento.numero_parcela === 1) {
+      return { pode_liberar: true };
     }
 
     // Para demais parcelas, verificar recibo do mês anterior
-    const documentosObrigatorios = [TipoDocumentoEnum.RECIBO_ALUGUEL];
+    const documentos_obrigatorios = [TipoDocumentoEnum.RECIBO_ALUGUEL];
 
     // Buscar recibos de aluguel
     const recibos = await this.comprovanteRepository.findByPagamento(
@@ -687,10 +687,10 @@ export class PagamentoWorkflowService {
 
     if (recibosAluguel.length === 0) {
       return {
-        podeLiberar: false,
+        pode_liberar: false,
         motivo: 'Recibo de aluguel do mês anterior é obrigatório',
-        documentosObrigatorios,
-        documentosFaltantes: documentosObrigatorios,
+        documentos_obrigatorios,
+        documentos_faltantes: documentos_obrigatorios,
       };
     }
 
@@ -703,14 +703,14 @@ export class PagamentoWorkflowService {
 
     if (dataRecibo < mesAnterior || dataRecibo >= mesAtual) {
       return {
-        podeLiberar: false,
+        pode_liberar: false,
         motivo: 'Recibo de aluguel deve ser do mês anterior',
-        documentosObrigatorios,
-        documentosFaltantes: documentosObrigatorios,
+        documentos_obrigatorios,
+        documentos_faltantes: documentos_obrigatorios,
       };
     }
 
-    return { podeLiberar: true };
+    return { pode_liberar: true };
   }
 
   /**

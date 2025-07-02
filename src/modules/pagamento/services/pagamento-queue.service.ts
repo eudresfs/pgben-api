@@ -177,7 +177,7 @@ export class PagamentoQueueService {
    * Adiciona job para validar comprovante
    */
   async adicionarJobValidarComprovante(
-    comprovanteId: string,
+    comprovante_id: string,
     usuarioId: string,
     priority: number = 4,
   ) {
@@ -185,7 +185,7 @@ export class PagamentoQueueService {
       const job = await this.pagamentosQueue.add(
         'validar-comprovante',
         {
-          comprovanteId,
+          comprovante_id,
           usuarioId,
         },
         {

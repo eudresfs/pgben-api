@@ -76,7 +76,7 @@ export class CreatePagamentoHandler {
       throw new Error('ID do usuário é obrigatório');
     }
 
-    if (!pagamentoData.solicitacaoId) {
+    if (!pagamentoData.solicitacao_id) {
       throw new Error('ID da solicitação é obrigatório');
     }
 

@@ -143,12 +143,12 @@ export class PagamentoCacheService {
   /**
    * Cache para validação de método de pagamento
    */
-  async validateMetodoPagamento(
-    metodoPagamento: MetodoPagamentoEnum,
+  async validatemetodo_pagamento(
+    metodo_pagamento: MetodoPagamentoEnum,
     valor: number,
     dadosAdicionais?: any,
   ): Promise<{ isValid: boolean; errors: string[] }> {
-    const cacheKey = `metodo_pagamento:${metodoPagamento}:${valor}:${JSON.stringify(dadosAdicionais || {})}`;
+    const cacheKey = `metodo_pagamento:${metodo_pagamento}:${valor}:${JSON.stringify(dadosAdicionais || {})}`;
 
     try {
       // Buscar no cache primeiro
@@ -162,10 +162,10 @@ export class PagamentoCacheService {
         const validationResult = this.validationService.validatePaymentCreation(
           {
             valor,
-            metodoPagamento,
-            solicitacaoId: 'temp',
-            infoBancariaId: undefined,
-            dataLiberacao: new Date(),
+            metodo_pagamento,
+            solicitacao_id: 'temp',
+            info_bancaria_id: undefined,
+            data_liberacao: new Date(),
           },
         );
 
@@ -180,7 +180,7 @@ export class PagamentoCacheService {
           this.CACHE_TTL.VALIDATION,
         );
         this.logger.log(
-          `Método pagamento validation cached: ${metodoPagamento}`,
+          `Método pagamento validation cached: ${metodo_pagamento}`,
         );
       }
 
@@ -202,9 +202,9 @@ export class PagamentoCacheService {
    */
   async validateValorLimites(
     valor: number,
-    metodoPagamento: MetodoPagamentoEnum,
+    metodo_pagamento: MetodoPagamentoEnum,
   ): Promise<{ isValid: boolean; errors: string[] }> {
-    const cacheKey = `valor_limites:${valor}:${metodoPagamento}`;
+    const cacheKey = `valor_limites:${valor}:${metodo_pagamento}`;
 
     try {
       // Buscar no cache primeiro
@@ -218,10 +218,10 @@ export class PagamentoCacheService {
         const validationResult = this.validationService.validatePaymentCreation(
           {
             valor,
-            metodoPagamento,
-            solicitacaoId: 'temp',
-            infoBancariaId: undefined,
-            dataLiberacao: new Date(),
+            metodo_pagamento,
+            solicitacao_id: 'temp',
+            info_bancaria_id: undefined,
+            data_liberacao: new Date(),
           },
         );
 
@@ -244,10 +244,10 @@ export class PagamentoCacheService {
       // Fallback para validação direta
       const validationResult = this.validationService.validatePaymentCreation({
         valor,
-        metodoPagamento,
-        solicitacaoId: 'temp',
-        infoBancariaId: undefined,
-        dataLiberacao: new Date(),
+        metodo_pagamento,
+        solicitacao_id: 'temp',
+        info_bancaria_id: undefined,
+        data_liberacao: new Date(),
       });
 
       return {

@@ -84,17 +84,17 @@ export class ConfirmacaoRepository {
    * Busca confirmações por período
    */
   async findByPeriodo(
-    dataInicio: Date,
-    dataFim: Date,
+    data_inicio: Date,
+    data_fim: Date,
   ): Promise<ConfirmacaoRecebimento[]> {
     return await this.repository
       .createQueryBuilder('confirmacao')
       .leftJoinAndSelect('confirmacao.pagamento', 'pagamento')
       .leftJoinAndSelect('confirmacao.usuario', 'usuario')
       .leftJoinAndSelect('confirmacao.destinatario', 'destinatario')
-      .where('confirmacao.data_confirmacao BETWEEN :dataInicio AND :dataFim', {
-        dataInicio,
-        dataFim,
+      .where('confirmacao.data_confirmacao BETWEEN :data_inicio AND :data_fim', {
+        data_inicio,
+        data_fim,
       })
       .orderBy('confirmacao.data_confirmacao', 'DESC')
       .getMany();
@@ -108,8 +108,8 @@ export class ConfirmacaoRepository {
     usuarioId?: string;
     destinatarioId?: string;
     metodoConfirmacao?: string;
-    dataInicio?: Date;
-    dataFim?: Date;
+    data_inicio?: Date;
+    data_fim?: Date;
     page?: number;
     limit?: number;
   }): Promise<{ items: ConfirmacaoRecebimento[]; total: number }> {
@@ -147,12 +147,12 @@ export class ConfirmacaoRepository {
       );
     }
 
-    if (filtros.dataInicio && filtros.dataFim) {
+    if (filtros.data_inicio && filtros.data_fim) {
       queryBuilder.andWhere(
-        'confirmacao.data_confirmacao BETWEEN :dataInicio AND :dataFim',
+        'confirmacao.data_confirmacao BETWEEN :data_inicio AND :data_fim',
         {
-          dataInicio: filtros.dataInicio,
-          dataFim: filtros.dataFim,
+          data_inicio: filtros.data_inicio,
+          data_fim: filtros.data_fim,
         },
       );
     }

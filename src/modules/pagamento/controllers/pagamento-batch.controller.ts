@@ -322,13 +322,13 @@ export class PagamentoBatchController {
     description: 'Comprovantes validados com sucesso',
   })
   async validarComprovantesInBatch(
-    @Body() comprovanteIds: string[],
+    @Body() comprovante_ids: string[],
     @GetUser('id') userId: string,
     @Query('batchSize') batchSize?: number,
     @Query('maxConcurrency') maxConcurrency?: number,
   ) {
     this.logger.log(
-      `Iniciando validação em lote de ${comprovanteIds.length} comprovantes`,
+      `Iniciando validação em lote de ${comprovante_ids.length} comprovantes`,
     );
 
     const options = {
@@ -338,7 +338,7 @@ export class PagamentoBatchController {
     };
 
     const result = await this.batchService.validarComprovantesInBatch(
-      comprovanteIds,
+      comprovante_ids,
       userId,
       options,
     );

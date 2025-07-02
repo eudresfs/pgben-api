@@ -228,19 +228,19 @@ export class ComprovanteController {
   private mapToResponseDto(comprovante: any): ComprovanteResponseDto {
     return {
       id: comprovante.id,
-      pagamentoId: comprovante.pagamento_id,
-      tipoDocumento: comprovante.tipo_documento,
-      nomeArquivo: comprovante.nome_arquivo,
+      pagamento_id: comprovante.pagamento_id,
+      tipo_documento: comprovante.tipo_documento,
+      nome_arquivo: comprovante.nome_arquivo,
       url: comprovante.url || '',
       tamanho: comprovante.tamanho,
-      mimeType: comprovante.mime_type,
-      dataUpload: comprovante.data_upload,
-      responsavelUpload: {
+      mime_type: comprovante.mime_type,
+      data_upload: comprovante.data_upload,
+      responsavel_upload: {
         id: comprovante.responsavel_upload_id || '',
         nome: comprovante.responsavel_upload_nome || '',
       },
-      createdAt: comprovante.created_at,
-      updatedAt: comprovante.updated_at,
+      created_at: comprovante.created_at,
+      updated_at: comprovante.updated_at,
     };
   }
 }

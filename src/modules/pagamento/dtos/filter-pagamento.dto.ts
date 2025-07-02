@@ -34,7 +34,7 @@ export class FilterPagamentoDto {
   })
   @IsOptional()
   @IsString({ message: 'ID da solicitação deve ser uma string' })
-  solicitacaoId?: string;
+  solicitacao_id?: string;
 
   @ApiPropertyOptional({
     description: 'Data inicial para filtro por período (ISO 8601)',
@@ -42,7 +42,7 @@ export class FilterPagamentoDto {
   })
   @IsOptional()
   @IsDateString({}, { message: 'Data inicial deve estar no formato ISO 8601' })
-  dataInicial?: string;
+  data_inicial?: string;
 
   @ApiPropertyOptional({
     description: 'Data final para filtro por período (ISO 8601)',
@@ -50,7 +50,7 @@ export class FilterPagamentoDto {
   })
   @IsOptional()
   @IsDateString({}, { message: 'Data final deve estar no formato ISO 8601' })
-  dataFinal?: string;
+  data_final?: string;
 
   @ApiPropertyOptional({
     description: 'Método de pagamento para filtrar',
@@ -58,7 +58,7 @@ export class FilterPagamentoDto {
   })
   @IsOptional()
   @IsString({ message: 'Método de pagamento deve ser uma string' })
-  metodoPagamento?: string;
+  metodo_pagamento?: string;
 
   @ApiPropertyOptional({
     description: 'Página para paginação',
@@ -84,11 +84,11 @@ export class FilterPagamentoDto {
 
   @ApiPropertyOptional({
     description: 'Campo para ordenação',
-    example: 'dataCriacao',
+    example: 'data_criacao',
   })
   @IsOptional()
   @IsString({ message: 'Campo de ordenação deve ser uma string' })
-  sortBy?: string = 'dataCriacao';
+  sort_by?: string = 'data_criacao';
 
   @ApiPropertyOptional({
     description: 'Direção da ordenação',
@@ -97,5 +97,5 @@ export class FilterPagamentoDto {
   })
   @IsOptional()
   @IsString({ message: 'Direção da ordenação deve ser uma string' })
-  sortOrder?: 'ASC' | 'DESC' = 'DESC';
+  sort_order?: 'ASC' | 'DESC' = 'DESC';
 }

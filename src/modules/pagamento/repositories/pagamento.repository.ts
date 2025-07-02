@@ -19,13 +19,13 @@ export class PagamentoRepository {
   constructor(
     @InjectRepository(Pagamento)
     private readonly repository: Repository<Pagamento>,
-  ) {}
+  ) { }
 
   /**
    * Cria um novo pagamento
    */
-  async create(dadosPagamento: Partial<Pagamento>): Promise<Pagamento> {
-    const pagamento = this.repository.create(dadosPagamento);
+  async create(dados_pagamento: Partial<Pagamento>): Promise<Pagamento> {
+    const pagamento = this.repository.create(dados_pagamento);
     return await this.repository.save(pagamento);
   }
 
@@ -55,9 +55,9 @@ export class PagamentoRepository {
   /**
    * Busca pagamentos por solicitação
    */
-  async findBySolicitacao(solicitacaoId: string): Promise<Pagamento[]> {
+  async findBySolicitacao(solicitacao_id: string): Promise<Pagamento[]> {
     return await this.repository.find({
-      where: { solicitacaoId },
+      where: { solicitacao_id },
       order: { created_at: 'DESC' },
     });
   }
@@ -65,10 +65,10 @@ export class PagamentoRepository {
   /**
    * Busca pagamentos por concessão
    */
-  async findByConcessao(concessaoId: string): Promise<Pagamento[]> {
+  async findByConcessao(concessao_id: string): Promise<Pagamento[]> {
     return await this.repository.find({
-      where: { concessaoId },
-      order: { numeroParcela: 'ASC' },
+      where: { concessao_id },
+      order: { numero_parcela: 'ASC' },
     });
   }
 
@@ -102,16 +102,16 @@ export class PagamentoRepository {
       where: [
         {
           status: StatusPagamentoEnum.PENDENTE,
-          dataPrevistaLiberacao: LessThanOrEqual(agora),
+          data_prevista_liberacao: LessThanOrEqual(agora),
         },
         {
           status: StatusPagamentoEnum.PENDENTE,
-          dataPrevistaLiberacao: IsNull(),
+          data_prevista_liberacao: IsNull(),
         },
       ],
       relations: ['solicitacao', 'concessao'],
       order: {
-        dataPrevistaLiberacao: 'ASC',
+        data_prevista_liberacao: 'ASC',
         created_at: 'ASC',
       },
       take: limite,
@@ -127,7 +127,7 @@ export class PagamentoRepository {
     return await this.repository.find({
       where: {
         status: StatusPagamentoEnum.PENDENTE,
-        dataVencimento: LessThanOrEqual(agora),
+        data_vencimento: LessThanOrEqual(agora),
       },
       relations: ['solicitacao', 'concessao'],
     });
@@ -148,7 +148,7 @@ export class PagamentoRepository {
     return await this.repository.find({
       where: {
         status: StatusPagamentoEnum.PENDENTE,
-        dataVencimento: Between(hoje, limite),
+        data_vencimento: Between(hoje, limite),
       },
       relations: ['solicitacao', 'concessao'],
     });
@@ -156,13 +156,14 @@ export class PagamentoRepository {
 
   /**
    * Lista com filtros e paginação
+   * Retorna também o nome do benefício, unidade e usuário
    */
   async findWithFilters(filtros: {
     status?: StatusPagamentoEnum;
-    solicitacaoId?: string;
-    concessaoId?: string;
-    dataInicio?: Date;
-    dataFim?: Date;
+    solicitacao_id?: string;
+    concessao_id?: string;
+    data_inicio?: Date;
+    data_fim?: Date;
     valorMinimo?: number;
     valorMaximo?: number;
     page?: number;
@@ -171,7 +172,34 @@ export class PagamentoRepository {
     const queryBuilder = this.repository
       .createQueryBuilder('pagamento')
       .leftJoinAndSelect('pagamento.solicitacao', 'solicitacao')
-      .leftJoinAndSelect('pagamento.concessao', 'concessao');
+      .leftJoin('solicitacao.tipo_beneficio', 'tipo_beneficio')
+      .leftJoin('solicitacao.unidade', 'unidade')
+      .leftJoin('solicitacao.tecnico', 'tecnico')
+      .leftJoin('pagamento.responsavel_liberacao', 'responsavel_liberacao')
+      .leftJoin('pagamento.info_bancaria', 'info_bancaria')
+      .addSelect([
+        // Beneficio
+        'tipo_beneficio.id',
+        'tipo_beneficio.nome',
+        // Unidade
+        'unidade.id',
+        'unidade.nome',
+        // Técnico responsável
+        'tecnico.id',
+        'tecnico.nome',
+        // Usuário liberador
+        'responsavel_liberacao.id',
+        'responsavel_liberacao.nome',
+        // Informações bancárias
+        'info_bancaria.id',
+        'info_bancaria.tipo_chave_pix',
+        'info_bancaria.chave_pix',
+        'info_bancaria.tipo_conta',
+        'info_bancaria.banco',
+        'info_bancaria.agencia',
+        'info_bancaria.conta',
+      ]);
+
 
     // Aplicar filtros
     if (filtros.status) {
@@ -180,24 +208,24 @@ export class PagamentoRepository {
       });
     }
 
-    if (filtros.solicitacaoId) {
-      queryBuilder.andWhere('pagamento.solicitacaoId = :solicitacaoId', {
-        solicitacaoId: filtros.solicitacaoId,
+    if (filtros.solicitacao_id) {
+      queryBuilder.andWhere('pagamento.solicitacao_id = :solicitacao_id', {
+        solicitacao_id: filtros.solicitacao_id,
       });
     }
 
-    if (filtros.concessaoId) {
-      queryBuilder.andWhere('pagamento.concessaoId = :concessaoId', {
-        concessaoId: filtros.concessaoId,
+    if (filtros.concessao_id) {
+      queryBuilder.andWhere('pagamento.concessao_id = :concessao_id', {
+        concessao_id: filtros.concessao_id,
       });
     }
 
-    if (filtros.dataInicio && filtros.dataFim) {
+    if (filtros.data_inicio && filtros.data_fim) {
       queryBuilder.andWhere(
-        'pagamento.created_at BETWEEN :dataInicio AND :dataFim',
+        'pagamento.created_at BETWEEN :data_inicio AND :data_fim',
         {
-          dataInicio: filtros.dataInicio,
-          dataFim: filtros.dataFim,
+          data_inicio: filtros.data_inicio,
+          data_fim: filtros.data_fim,
         },
       );
     }
@@ -223,7 +251,7 @@ export class PagamentoRepository {
       .skip(skip)
       .take(limit)
       .orderBy('pagamento.created_at', 'DESC')
-      .addOrderBy('pagamento.numeroParcela', 'ASC');
+      .addOrderBy('pagamento.numero_parcela', 'ASC');
 
     const [items, total] = await queryBuilder.getManyAndCount();
 
@@ -281,8 +309,8 @@ export class PagamentoRepository {
   /**
    * Verifica se existe pagamento para solicitação
    */
-  async existsBySolicitacao(solicitacaoId: string): Promise<boolean> {
-    const count = await this.repository.count({ where: { solicitacaoId } });
+  async existsBySolicitacao(solicitacao_id: string): Promise<boolean> {
+    const count = await this.repository.count({ where: { solicitacao_id } });
     return count > 0;
   }
 

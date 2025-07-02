@@ -18,10 +18,10 @@ export class ConfirmacaoMapper {
 
     return {
       id: confirmacao.id,
-      pagamentoId: confirmacao.pagamento_id,
-      dataConfirmacao: confirmacao.data_confirmacao,
-      metodoConfirmacao: confirmacao.metodo_confirmacao,
-      responsavelConfirmacao: {
+      pagamento_id: confirmacao.pagamento_id,
+      data_confirmacao: confirmacao.data_confirmacao,
+      metodo_confirmacao: confirmacao.metodo_confirmacao,
+      responsavel_confirmacao: {
         id: confirmacao.responsavel_confirmacao?.id || 'sistema',
         nome: confirmacao.responsavel_confirmacao?.nome || 'Sistema',
         role: 'Sistema',
@@ -34,8 +34,8 @@ export class ConfirmacaoMapper {
           }
         : undefined,
       observacoes: confirmacao.observacoes,
-      createdAt: confirmacao.created_at,
-      updatedAt: confirmacao.updated_at,
+      created_at: confirmacao.created_at,
+      updated_at: confirmacao.updated_at,
     };
   }
 

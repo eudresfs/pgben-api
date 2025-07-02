@@ -7,9 +7,6 @@ import { PagamentoResponseDto } from '../dtos/pagamento-response.dto';
 import { ComprovanteResponseDto } from '../dtos/comprovante-response.dto';
 import { ConfirmacaoResponseDto } from '../dtos/confirmacao-response.dto';
 import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
-import { MetodoPagamentoEnum } from '../../../enums/metodo-pagamento.enum';
-import { TipoDocumentoEnum } from '../../../enums/tipo-documento.enum';
-import { MetodoConfirmacaoEnum } from '../../../enums/metodo-confirmacao.enum';
 
 /**
  * Mapper unificado para todas as operações de mapeamento do módulo de pagamento
@@ -39,14 +36,14 @@ export class PagamentoUnifiedMapper {
     usuarioId: string,
   ): Partial<Pagamento> {
     return {
-      solicitacaoId: dto.solicitacaoId,
-      infoBancariaId: dto.infoBancariaId,
+      solicitacao_id: dto.solicitacao_id,
+      info_bancaria_id: dto.info_bancaria_id,
       valor: dto.valor,
-      dataLiberacao: dto.dataLiberacao,
-      metodoPagamento: dto.metodoPagamento,
+      data_liberacao: dto.data_liberacao,
+      metodo_pagamento: dto.metodo_pagamento,
       observacoes: dto.observacoes,
       status: StatusPagamentoEnum.PENDENTE,
-      criadoPor: usuarioId,
+      criado_por: usuarioId,
       created_at: new Date(),
       updated_at: new Date(),
     };
@@ -65,55 +62,65 @@ export class PagamentoUnifiedMapper {
   ): PagamentoResponseDto {
     const dto: PagamentoResponseDto = {
       id: pagamento.id,
-      solicitacaoId: pagamento.solicitacaoId || '',
-      infoBancariaId: pagamento.infoBancariaId,
+      solicitacao_id: pagamento.solicitacao_id || '',
+      info_bancaria_id: pagamento.info_bancaria_id,
       valor: pagamento.valor,
       status: pagamento.status,
-      metodoPagamento: pagamento.metodoPagamento,
-      dataLiberacao: pagamento.dataLiberacao,
-      dataPagamento: pagamento.dataPagamento,
+      metodo_pagamento: pagamento.metodo_pagamento,
+      data_liberacao: pagamento.data_liberacao,
+      data_pagamento: pagamento.data_pagamento,
       observacoes: pagamento.observacoes,
-      numeroParcela: pagamento.numeroParcela || 1,
-      totalParcelas: pagamento.totalParcelas || 1,
-      responsavelLiberacao: {
-        id: pagamento.liberadoPor || 'sistema',
+      numero_parcela: pagamento.numero_parcela || 1,
+      total_parcelas: pagamento.total_parcelas || 1,
+      responsavel_liberacao: {
+        id: pagamento.liberado_por || 'sistema',
         nome: 'Sistema',
         role: 'Sistema',
       },
-      quantidadeComprovantes: 0,
-      createdAt: pagamento.created_at,
-      updatedAt: pagamento.updated_at,
+      quantidade_comprovantes: 0,
+      created_at: pagamento.created_at,
+      updated_at: pagamento.updated_at,
 
       // Informações relacionadas
       solicitacao: pagamento.solicitacao
         ? {
             id: pagamento.solicitacao.id,
             beneficiario: pagamento.solicitacao.beneficiario?.nome || 'N/A',
-            tipoBeneficio:
-              pagamento.solicitacao.tipo_beneficio?.nome || 'EVENTUAL',
+            tipo_beneficio: {
+              id: pagamento.solicitacao.tipo_beneficio?.id || '',
+              nome: pagamento.solicitacao.tipo_beneficio?.nome || 'EVENTUAL',
+            },
+            unidade: {
+              id: pagamento.solicitacao.unidade?.id || '',
+              nome: pagamento.solicitacao.unidade?.nome || 'N/A',
+            },
+            tecnico: {
+              id: pagamento.solicitacao.tecnico?.id || '',
+              nome: pagamento.solicitacao.tecnico?.nome || 'N/A',
+            },
           }
         : undefined,
 
-      infoBancaria: pagamento.infoBancaria
+      info_bancaria: pagamento.info_bancaria
         ? {
-            tipo: pagamento.infoBancaria.tipo_conta || 'POUPANCA_SOCIAL',
-            chavePix: incluirDadosSensiveis
-              ? pagamento.infoBancaria.chave_pix
+            tipo: pagamento.info_bancaria.tipo_conta || 'POUPANCA_SOCIAL',
+            chave_pix: incluirDadosSensiveis
+              ? pagamento.info_bancaria.chave_pix
               : undefined,
-            pixTipo: pagamento.infoBancaria.tipo_chave_pix?.toUpperCase() as
+            pix_tipo: pagamento.info_bancaria.tipo_chave_pix?.toUpperCase() as
               | 'CPF'
               | 'CNPJ'
               | 'EMAIL'
               | 'TELEFONE'
               | 'ALEATORIA',
             banco: incluirDadosSensiveis
-              ? pagamento.infoBancaria.banco
+              ? pagamento.info_bancaria.banco
               : undefined,
             agencia: incluirDadosSensiveis
-              ? pagamento.infoBancaria.agencia
+              ? pagamento.info_bancaria.agencia
               : undefined,
             conta: incluirDadosSensiveis
-              ? pagamento.infoBancaria.conta
+              ? pagamento.info_bancaria.conta
               : undefined,
           }
         : undefined,
@@ -220,15 +227,15 @@ export class PagamentoUnifiedMapper {
       // Campos herdados de ConfirmacaoBaseDto
       id: confirmacao.id,
       observacoes: confirmacao.observacoes,
-      createdAt: confirmacao.created_at,
-      updatedAt: confirmacao.updated_at,
+      created_at: confirmacao.created_at,
+      updated_at: confirmacao.updated_at,
 
       // Campos específicos do ConfirmacaoResponseDto
-      pagamentoId: confirmacao.pagamento_id,
-      dataConfirmacao: confirmacao.data_confirmacao,
-      metodoConfirmacao: confirmacao.metodo_confirmacao,
+      pagamento_id: confirmacao.pagamento_id,
+      data_confirmacao: confirmacao.data_confirmacao,
+      metodo_confirmacao: confirmacao.metodo_confirmacao,
 
-      responsavelConfirmacao: {
+      responsavel_confirmacao: {
         id: confirmacao.responsavel_confirmacao?.id || 'sistema',
         nome: confirmacao.responsavel_confirmacao?.nome || 'Sistema',
         role: 'Sistema',
@@ -282,18 +289,18 @@ export class PagamentoUnifiedMapper {
     return {
       // Campos herdados de ComprovanteBaseDto
       id: comprovante.id,
-      createdAt: comprovante.created_at,
-      updatedAt: comprovante.updated_at,
+      created_at: comprovante.created_at,
+      updated_at: comprovante.updated_at,
 
       // Campos específicos do ComprovanteResponseDto
-      pagamentoId: comprovante.pagamento_id,
-      tipoDocumento: comprovante.tipo_documento,
-      nomeArquivo: comprovante.nome_arquivo || 'documento.pdf',
+      pagamento_id: comprovante.pagamento_id,
+      tipo_documento: comprovante.tipo_documento,
+      nome_arquivo: comprovante.nome_arquivo || 'documento.pdf',
       url: comprovante.caminho_arquivo || '', // Usando caminho_arquivo como URL
       tamanho: comprovante.tamanho || 0,
-      mimeType: comprovante.mime_type || 'application/pdf',
-      dataUpload: comprovante.data_upload || comprovante.created_at,
-      responsavelUpload: {
+      mime_type: comprovante.mime_type || 'application/pdf',
+      data_upload: comprovante.data_upload || comprovante.created_at,
+      responsavel_upload: {
         id: comprovante.uploaded_por,
         nome:
           comprovante.responsavel_upload?.nome || 'Usuário não identificado',

@@ -53,10 +53,10 @@ export class GetPagamentosHandler {
       // Buscar no banco de dados
       const serviceResult = await this.pagamentoService.findAll({
         status: query.filtros.status?.[0], // Pegar apenas o primeiro status se for array
-        solicitacaoId: query.filtros.solicitacaoId,
-        concessaoId: query.filtros.cidadaoId, // Mapear cidadaoId para concessaoId
-        dataInicio: query.filtros.dataInicio?.toISOString(),
-        dataFim: query.filtros.dataFim?.toISOString(),
+        solicitacao_id: query.filtros.solicitacao_id,
+        concessao_id: query.filtros.cidadao_id, // Mapear cidadao_id para concessao_id
+        data_inicio: query.filtros.data_inicio?.toISOString(),
+        data_fim: query.filtros.data_fim?.toISOString(),
         page: query.paginacao?.page,
         limit: query.paginacao?.limit,
       });
@@ -69,30 +69,29 @@ export class GetPagamentosHandler {
               id: pagamento.id,
               valor: pagamento.valor,
               status: pagamento.status,
-              metodoPagamento: pagamento.metodoPagamento,
-              createdAt: pagamento.created_at,
-              updatedAt: pagamento.updated_at,
-              numeroParcela: pagamento.numeroParcela || 1,
-              totalParcelas: pagamento.totalParcelas || 1,
-              dataPagamento: pagamento.dataPagamento,
+              metodo_pagamento: pagamento.metodo_pagamento,
+              created_at: pagamento.created_at,
+              updated_at: pagamento.updated_at,
+              numero_parcela: pagamento.numero_parcela || 1,
+              total_parcelas: pagamento.total_parcelas || 1,
+              data_pagamento: pagamento.data_pagamento,
               observacoes: pagamento.observacoes,
-              solicitacaoId: pagamento.solicitacaoId || '',
-              dataLiberacao: pagamento.dataLiberacao || new Date(),
-              responsavelLiberacao: {
+              solicitacao_id: pagamento.solicitacao_id || '',
+              data_liberacao: pagamento.data_liberacao || new Date(),
+              responsavel_liberacao: {
                 id: '',
                 nome: '',
-                role: '',
               },
-              infoBancariaId: '',
-              infoBancaria: {
+              info_bancaria_id: '',
+              info_bancaria: {
                 tipo: 'PIX',
-                chavePix: '',
+                chave_pix: '',
                 banco: '',
                 agencia: '',
                 conta: '',
               },
-              quantidadeComprovantes: 0,
-            }) as PagamentoResponseDto,
+              quantidade_comprovantes: 0,
+            }) as unknown as PagamentoResponseDto,
         ),
         total: serviceResult.pagination.totalItems,
         page: serviceResult.pagination.currentPage,
@@ -144,21 +143,21 @@ export class GetPagamentosHandler {
         id: pagamento.id,
         valor: pagamento.valor,
         status: pagamento.status,
-        metodoPagamento: pagamento.metodoPagamento,
-        createdAt: pagamento.created_at,
-        updatedAt: pagamento.updated_at,
-        numeroParcela: pagamento.numeroParcela || 1,
-        totalParcelas: pagamento.totalParcelas || 1,
-        dataPagamento: pagamento.dataPagamento,
+        metodo_pagamento: pagamento.metodo_pagamento,
+        created_at: pagamento.created_at,
+        updated_at: pagamento.updated_at,
+        numero_parcela: pagamento.numero_parcela || 1,
+        total_parcelas: pagamento.total_parcelas || 1,
+        data_pagamento: pagamento.data_pagamento,
         observacoes: pagamento.observacoes,
-        solicitacaoId: pagamento.solicitacaoId || '',
-        dataLiberacao: pagamento.dataLiberacao || new Date(),
-        responsavelLiberacao: {
-          id: pagamento.liberadoPor || '',
+        solicitacao_id: pagamento.solicitacao_id || '',
+        data_liberacao: pagamento.data_liberacao || new Date(),
+        responsavel_liberacao: {
+          id: pagamento.liberado_por || '',
           nome: 'Sistema',
           role: 'SISTEMA',
         },
-        quantidadeComprovantes: 0,
+        quantidade_comprovantes: 0,
       };
 
       // Armazenar no cache por 10 minutos

@@ -4,17 +4,17 @@
 export class GetPagamentosEstatisticasQuery {
   constructor(
     public readonly periodo: {
-      dataInicio: Date;
-      dataFim: Date;
+      data_inicio: Date;
+      data_fim: Date;
     },
     public readonly agrupamento: {
       porStatus?: boolean;
-      porMetodoPagamento?: boolean;
+      pormetodo_pagamento?: boolean;
       porPeriodo?: 'dia' | 'semana' | 'mes' | 'ano';
       porResponsavel?: boolean;
     } = {
       porStatus: true,
-      porMetodoPagamento: true,
+      pormetodo_pagamento: true,
       porPeriodo: 'mes',
     },
   ) {}

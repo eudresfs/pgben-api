@@ -247,11 +247,11 @@ export class PagamentoQueueProcessor implements OnModuleDestroy {
   async processValidarComprovante(
     job: Job<{
       pagamentoId: string;
-      comprovanteId: string;
+      comprovante_id: string;
       userId: string;
     }>,
   ): Promise<any> {
-    const { pagamentoId, comprovanteId, userId } = job.data;
+    const { pagamentoId, comprovante_id, userId } = job.data;
 
     try {
       this.logger.log(
@@ -266,7 +266,7 @@ export class PagamentoQueueProcessor implements OnModuleDestroy {
         'Pagamento',
         pagamentoId,
         { comprovante_validado: false },
-        { comprovante_validado: true, comprovanteId, resultado },
+        { comprovante_validado: true, comprovante_id, resultado },
         userId,
       );
 
@@ -276,7 +276,7 @@ export class PagamentoQueueProcessor implements OnModuleDestroy {
         destinatario_id: userId,
         titulo: 'Comprovante Validado',
         conteudo: 'O comprovante do pagamento foi validado',
-        dados: { pagamentoId, comprovanteId, resultado },
+        dados: { pagamentoId, comprovante_id, resultado },
       });
 
       this.logger.log(

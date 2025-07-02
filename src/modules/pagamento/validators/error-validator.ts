@@ -17,25 +17,25 @@ import { MetodoPagamentoEnum } from '../../../enums/metodo-pagamento.enum';
 export class ErrorValidator {
   /**
    * Gera exceção para solicitação não encontrada
-   * @param solicitacaoId ID da solicitação
+   * @param solicitacao_id ID da solicitação
    */
-  static solicitacaoNaoEncontrada(solicitacaoId: string): NotFoundException {
+  static solicitacaoNaoEncontrada(solicitacao_id: string): NotFoundException {
     return new NotFoundException(
-      `Solicitação com ID ${solicitacaoId} não encontrada.`,
+      `Solicitação com ID ${solicitacao_id} não encontrada.`,
     );
   }
 
   /**
    * Gera exceção para solicitação não elegível para pagamento
-   * @param solicitacaoId ID da solicitação
+   * @param solicitacao_id ID da solicitação
    * @param status Status atual da solicitação
    */
   static solicitacaoNaoElegivel(
-    solicitacaoId: string,
+    solicitacao_id: string,
     status: string,
   ): ConflictException {
     return new ConflictException(
-      `Solicitação com ID ${solicitacaoId} não está elegível para pagamento. Status atual: ${status}.`,
+      `Solicitação com ID ${solicitacao_id} não está elegível para pagamento. Status atual: ${status}.`,
     );
   }
 
@@ -51,11 +51,11 @@ export class ErrorValidator {
 
   /**
    * Gera exceção para comprovante não encontrado
-   * @param comprovanteId ID do comprovante
+   * @param comprovante_id ID do comprovante
    */
-  static comprovanteNaoEncontrado(comprovanteId: string): NotFoundException {
+  static comprovanteNaoEncontrado(comprovante_id: string): NotFoundException {
     return new NotFoundException(
-      `Comprovante com ID ${comprovanteId} não encontrado.`,
+      `Comprovante com ID ${comprovante_id} não encontrado.`,
     );
   }
 
@@ -82,10 +82,10 @@ export class ErrorValidator {
    * @param infoBancariaId ID da informação bancária
    */
   static dadosBancariosNaoEncontrados(
-    infoBancariaId: string,
+    info_bancaria_id: string,
   ): NotFoundException {
     return new NotFoundException(
-      `Dados bancários com ID ${infoBancariaId} não encontrados.`,
+      `Dados bancários com ID ${info_bancaria_id} não encontrados.`,
     );
   }
 
@@ -118,7 +118,7 @@ export class ErrorValidator {
    * Gera exceção para método de pagamento inválido
    * @param metodo Método de pagamento informado
    */
-  static metodoPagamentoInvalido(metodo: string): BadRequestException {
+  static metodo_pagamentoInvalido(metodo: string): BadRequestException {
     return new BadRequestException(
       `Método de pagamento "${metodo}" inválido. Métodos válidos: ${Object.values(MetodoPagamentoEnum).join(', ')}.`,
     );
@@ -154,7 +154,7 @@ export class ErrorValidator {
    * Gera exceção para data de liberação inválida
    * @param data Data informada
    */
-  static dataLiberacaoInvalida(data: Date): BadRequestException {
+  static data_liberacaoInvalida(data: Date): BadRequestException {
     return new BadRequestException(
       `Data de liberação inválida: ${data}. A data não pode ser anterior à data atual.`,
     );

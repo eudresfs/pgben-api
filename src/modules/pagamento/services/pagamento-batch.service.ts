@@ -250,7 +250,7 @@ export class PagamentoBatchService {
    * Valida múltiplos comprovantes em lote
    */
   async validarComprovantesInBatch(
-    comprovanteIds: string[],
+    comprovante_ids: string[],
     userId: string,
     options: BatchProcessOptions = {},
   ): Promise<BatchResult<ComprovantePagamento>> {
@@ -260,19 +260,19 @@ export class PagamentoBatchService {
     } = options;
 
     this.logger.log(
-      `Iniciando validação em lote de ${comprovanteIds.length} comprovantes`,
+      `Iniciando validação em lote de ${comprovante_ids.length} comprovantes`,
     );
 
     const result: BatchResult<ComprovantePagamento> = {
       success: [],
       errors: [],
-      total: comprovanteIds.length,
+      total: comprovante_ids.length,
       successCount: 0,
       errorCount: 0,
     };
 
     // Dividir em lotes
-    const batches = this.chunkArray(comprovanteIds, batchSize);
+    const batches = this.chunkArray(comprovante_ids, batchSize);
 
     // Processar lotes com controle de concorrência
     const semaphore = new Array(maxConcurrency).fill(null);
@@ -358,7 +358,7 @@ export class PagamentoBatchService {
           const pagamento = this.pagamentoRepository.create({
             ...pagamentoData,
             status: StatusPagamentoEnum.PENDENTE,
-            criadoPor: userId,
+            criado_por: userId,
           });
 
           const savedPagamento = await this.pagamentoRepository.save(pagamento);
@@ -504,17 +504,17 @@ export class PagamentoBatchService {
       errorCount: 0,
     };
 
-    for (const comprovanteId of batch) {
+    for (const comprovante_id of batch) {
       try {
         // Adicionar job de validação à fila
         await this.queueService.adicionarJobValidarComprovante(
-          comprovanteId,
+          comprovante_id,
           userId,
         );
 
         // Para o resultado, buscar o comprovante
         const comprovante = await this.comprovanteRepository.findOne({
-          where: { id: comprovanteId },
+          where: { id: comprovante_id },
         });
 
         if (comprovante) {
@@ -522,7 +522,7 @@ export class PagamentoBatchService {
         }
       } catch (error) {
         result.errors.push({
-          item: comprovanteId,
+          item: comprovante_id,
           error: error.message,
         });
       }

@@ -31,7 +31,7 @@ export class PagamentoCreateDto extends PagamentoBaseDto {
   })
   @IsOptional()
   @IsUUID('4')
-  solicitacaoId?: string;
+  solicitacao_id?: string;
 
   /**
    * Referência à concessão que originou este pagamento
@@ -43,7 +43,7 @@ export class PagamentoCreateDto extends PagamentoBaseDto {
   })
   @IsOptional()
   @IsUUID('4')
-  concessaoId?: string;
+  concessao_id?: string;
 
   /**
    * Referência à informação bancária utilizada para o pagamento
@@ -56,7 +56,8 @@ export class PagamentoCreateDto extends PagamentoBaseDto {
   })
   @IsOptional()
   @IsUUID('4')
-  infoBancariaId?: string;
+  @IsOptional()
+  info_bancaria_id?: string;
 
   /**
    * Data efetiva da liberação do pagamento
@@ -69,7 +70,7 @@ export class PagamentoCreateDto extends PagamentoBaseDto {
   @IsNotEmpty()
   @IsDate()
   @Type(() => Date)
-  dataLiberacao: Date;
+  data_liberacao?: Date;
 
   /**
    * Número da parcela atual (para pagamentos parcelados)
@@ -83,7 +84,7 @@ export class PagamentoCreateDto extends PagamentoBaseDto {
   @IsOptional()
   @IsNumber({}, { message: 'Número da parcela deve ser um valor numérico' })
   @Min(1, { message: 'Número da parcela deve ser maior ou igual a 1' })
-  numeroParcela?: number;
+  numero_parcela?: number;
 
   /**
    * Total de parcelas previstas para o benefício
@@ -97,5 +98,5 @@ export class PagamentoCreateDto extends PagamentoBaseDto {
   @IsOptional()
   @IsNumber({}, { message: 'Total de parcelas deve ser um valor numérico' })
   @Min(1, { message: 'Total de parcelas deve ser maior ou igual a 1' })
-  totalParcelas?: number;
+  total_parcelas?: number;
 }
