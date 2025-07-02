@@ -12,7 +12,6 @@ import {
   OneToOne,
 } from 'typeorm';
 import {
-  IsEmail,
   IsNotEmpty,
   Length,
   IsOptional,
@@ -24,8 +23,7 @@ import {
 } from 'class-validator';
 import { CPFValidator } from '../modules/cidadao/validators/cpf-validator';
 import { NISValidator } from '../modules/cidadao/validators/nis-validator';
-import { TelefoneValidator } from '../modules/cidadao/validators/telefone-validator';
-import { PapelCidadao } from './papel-cidadao.entity';
+
 import { ComposicaoFamiliar } from './composicao-familiar.entity';
 import { Sexo } from '../enums/sexo.enum';
 import { Unidade } from './unidade.entity';
@@ -39,11 +37,8 @@ import { InfoBancaria } from './info-bancaria.entity';
 @Index(['cpf'], { unique: true })
 @Index(['nis'], { unique: true, where: 'nis IS NOT NULL' })
 @Index(['nome'])
-@Index(['telefone'])
 @Index(['created_at'])
 @Index(['unidade_id'])
-@Index('idx_cidadao_endereco_bairro')
-@Index('idx_cidadao_endereco_cidade')
 @Index('idx_cidadao_nome_trgm')
 export class Cidadao {
   @PrimaryGeneratedColumn('uuid')
@@ -94,10 +89,43 @@ export class Cidadao {
   @IsNotEmpty({ message: 'Data de nascimento é obrigatória' })
   data_nascimento: string;
 
-  // Relações
-  @OneToMany(() => PapelCidadao, (papelCidadao) => papelCidadao.cidadao)
-  papeis: PapelCidadao[];
+  @Column({
+    type: 'enum',
+    enum: Sexo,
+    enumName: 'sexo_enum',
+  })
+  @IsEnum(Sexo, { message: 'Sexo inválido' })
+  @IsNotEmpty({ message: 'Sexo é obrigatório' })
+  sexo: Sexo;
 
+  @Column({
+    type: 'enum',
+    enum: EstadoCivil,
+    enumName: 'estado_civil_enum',
+  })
+  @IsEnum(EstadoCivil, { message: 'Estado civil inválido' })
+  @IsNotEmpty({ message: 'Estado Civil é obrigatório' })
+  estado_civil: EstadoCivil;
+
+  @Column({ type: 'uuid', nullable: false })
+  unidade_id: string;
+
+  @ManyToOne(() => Unidade, { nullable: false })
+  @JoinColumn({ name: 'unidade_id' })
+  unidade: Unidade;
+
+  @CreateDateColumn()
+  created_at: Date;
+
+  @UpdateDateColumn()
+  updated_at: Date;
+
+  @DeleteDateColumn()
+  removed_at: Date;
+
+  /*
+   * Relacionamentos
+   */
   @OneToMany(
     () => ComposicaoFamiliar,
     (composicaoFamiliar) => composicaoFamiliar.cidadao,
@@ -115,65 +143,6 @@ export class Cidadao {
 
   @OneToOne(() => InfoBancaria, (infoBancaria) => infoBancaria.cidadao)
   info_bancaria: InfoBancaria;
-
-  @Column({
-    type: 'enum',
-    enum: Sexo,
-    enumName: 'sexo_enum',
-  })
-  @IsEnum(Sexo, { message: 'Sexo inválido' })
-  @IsNotEmpty({ message: 'Sexo é obrigatório' })
-  sexo: Sexo;
-
-  @Column({ nullable: false })
-  @IsNotEmpty({ message: 'Telefone é obrigatório' })
-  @Validate(TelefoneValidator, { message: 'Telefone inválido' })
-  telefone: string;
-
-  @Column({ nullable: true })
-  @IsOptional()
-  @IsEmail({}, { message: 'Email inválido' })
-  email: string;
-
-  @Column({
-    type: 'enum',
-    enum: EstadoCivil,
-    enumName: 'estado_civil_enum',
-  })
-  @IsEnum(Sexo, { message: 'Estado civil inválido' })
-  @IsNotEmpty({ message: 'Estado Civil é obrigatório' })
-  estado_civil: EstadoCivil;
-
-  @Column('jsonb')
-  @IsNotEmpty({ message: 'Endereço é obrigatório' })
-  @Index()
-  endereco: {
-    logradouro: string;
-    numero: string;
-    complemento?: string;
-    bairro: string;
-    cidade: string;
-    estado: string;
-    cep: string;
-    ponto_referencia?: string;
-    tempo_de_residencia: number;
-  };
-
-  @Column({ type: 'uuid', nullable: false })
-  unidade_id: string;
-
-  @ManyToOne(() => Unidade, { nullable: false })
-  @JoinColumn({ name: 'unidade_id' })
-  unidade: Unidade;
-
-  @CreateDateColumn()
-  created_at: Date;
-
-  @UpdateDateColumn()
-  updated_at: Date;
-
-  @DeleteDateColumn()
-  removed_at: Date;
 
   /**
    * Verifica se o cidadão foi criado recentemente (últimas 24 horas)
@@ -259,36 +228,7 @@ export class Cidadao {
     return this.temNomeSocial() ? this.nome_social : this.nome;
   }
 
-  /**
-   * Verifica se tem email cadastrado
-   * @returns true se tem email
-   */
-  temEmail(): boolean {
-    return (
-      this.email !== null &&
-      this.email !== undefined &&
-      this.email.trim() !== ''
-    );
-  }
 
-  /**
-   * Obtém o endereço completo formatado
-   * @returns endereço formatado
-   */
-  getEnderecoCompleto(): string {
-    if (!this.endereco) {return 'Endereço não informado';}
-
-    const { logradouro, numero, complemento, bairro, cidade, estado, cep } =
-      this.endereco;
-    let endereco = `${logradouro}, ${numero}`;
-
-    if (complemento) {
-      endereco += `, ${complemento}`;
-    }
-
-    endereco += ` - ${bairro}, ${cidade}/${estado} - CEP: ${cep}`;
-    return endereco;
-  }
 
   /**
    * Verifica se o cidadão pertence a uma unidade específica
@@ -326,8 +266,6 @@ export class Cidadao {
     cpf: string;
     idade: number;
     sexo: string;
-    telefone: string;
-    temEmail: boolean;
     unidadeId: string;
     ativo: boolean;
     criadoEm: Date;
@@ -339,8 +277,6 @@ export class Cidadao {
       cpf: this.cpf,
       idade: this.getIdade(),
       sexo: this.sexo,
-      telefone: this.telefone,
-      temEmail: this.temEmail(),
       unidadeId: this.unidade_id,
       ativo: this.isAtivo(),
       criadoEm: this.created_at,
@@ -382,23 +318,7 @@ export class Cidadao {
     return this.naturalidade.toLowerCase().includes(cidade.toLowerCase());
   }
 
-  /**
-   * Verifica se o cidadão mora em uma cidade específica
-   * @param cidade nome da cidade
-   * @returns true se mora na cidade
-   */
-  moraEm(cidade: string): boolean {
-    return this.endereco?.cidade?.toLowerCase() === cidade.toLowerCase();
-  }
 
-  /**
-   * Verifica se o cidadão mora em um bairro específico
-   * @param bairro nome do bairro
-   * @returns true se mora no bairro
-   */
-  moraNoBairro(bairro: string): boolean {
-    return this.endereco?.bairro?.toLowerCase() === bairro.toLowerCase();
-  }
 
   /**
    * Obtém a faixa etária do cidadão
@@ -412,14 +332,6 @@ export class Cidadao {
     if (idade <= 29) {return 'Jovem';}
     if (idade <= 59) {return 'Adulto';}
     return 'Idoso';
-  }
-
-  /**
-   * Verifica se o cidadão tem papéis ativos
-   * @returns true se tem papéis ativos
-   */
-  temPapeisAtivos(): boolean {
-    return this.papeis && this.papeis.some((papel) => papel.ativo);
   }
 
   /**
@@ -447,19 +359,7 @@ export class Cidadao {
     return cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
   }
 
-  /**
-   * Formata o telefone para exibição
-   * @returns telefone formatado
-   */
-  getTelefoneFormatado(): string {
-    const telefone = this.telefone.replace(/\D/g, '');
-    if (telefone.length === 11) {
-      return telefone.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
-    } else if (telefone.length === 10) {
-      return telefone.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
-    }
-    return this.telefone;
-  }
+
 
   /**
    * Formata a data de nascimento
@@ -526,9 +426,6 @@ export class Cidadao {
     novoCidadao.prontuario_suas = this.prontuario_suas;
     novoCidadao.data_nascimento = this.data_nascimento;
     novoCidadao.sexo = this.sexo;
-    novoCidadao.telefone = this.telefone;
-    novoCidadao.email = this.email;
-    novoCidadao.endereco = { ...this.endereco };
     novoCidadao.unidade_id = this.unidade_id;
     return novoCidadao;
   }
@@ -548,16 +445,10 @@ export class Cidadao {
   getSugestoesVerificacao(): string[] {
     const sugestoes: string[] = [];
 
-    if (!this.temEmail()) {
-      sugestoes.push('Considere cadastrar um email para contato');
-    }
+
 
     if (!this.temComposicaoFamiliar()) {
       sugestoes.push('Cadastre a composição familiar para análise completa');
-    }
-
-    if (!this.temPapeisAtivos()) {
-      sugestoes.push('Defina papéis para o cidadão no sistema');
     }
 
     const idade = this.getIdade();

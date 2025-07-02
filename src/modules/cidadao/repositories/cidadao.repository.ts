@@ -71,17 +71,20 @@ export class CidadaoRepository {
       }
     }
 
-    // Filtro por bairro
+    // Filtro por bairro (nova estrutura normalizada)
     if (bairro && bairro.trim() !== '') {
-      query.andWhere("cidadao.endereco->>'bairro' ILIKE :bairro", {
-        bairro: `%${bairro.trim()}%`
-      });
+      query.leftJoin('cidadao.enderecos', 'endereco_filter')
+           .andWhere('endereco_filter.bairro ILIKE :bairro', {
+             bairro: `%${bairro.trim()}%`
+           })
+           .andWhere('endereco_filter.removed_at IS NULL');
     }
 
     // Relacionamentos
     if (includeRelations) {
       query.leftJoinAndSelect('cidadao.unidade', 'unidade');
-      query.leftJoinAndSelect('cidadao.papeis', 'papeis');
+      query.leftJoinAndSelect('cidadao.contatos', 'contatos');
+      query.leftJoinAndSelect('cidadao.enderecos', 'enderecos');
       query.leftJoinAndSelect('cidadao.composicao_familiar', 'composicao_familiar');
     } else {
       // Sempre incluir unidade, mesmo quando includeRelations for false
@@ -96,7 +99,7 @@ export class CidadaoRepository {
   }
 
   async findById(id: string, includeRelations = false): Promise<Cidadao | null> {
-    const relations = includeRelations ? ['unidade', 'papeis', 'composicao_familiar'] : ['unidade'];
+    const relations = includeRelations ? ['unidade', 'contatos', 'enderecos', 'composicao_familiar'] : ['unidade'];
     return this.repository.findOne({
       where: { id },
       relations
@@ -105,7 +108,7 @@ export class CidadaoRepository {
 
   async findByCpf(cpf: string, includeRelations = false): Promise<Cidadao | null> {
     const cpfClean = cpf.replace(/\D/g, '');
-    const relations = includeRelations ? ['unidade', 'papeis', 'composicao_familiar'] : ['unidade'];
+    const relations = includeRelations ? ['unidade', 'contatos', 'enderecos', 'composicao_familiar'] : ['unidade'];
     return this.repository.findOne({
       where: { cpf: cpfClean },
       relations
@@ -114,7 +117,7 @@ export class CidadaoRepository {
 
   async findByNis(nis: string, includeRelations = false): Promise<Cidadao | null> {
     const nisClean = nis.replace(/\D/g, '');
-    const relations = includeRelations ? ['unidade', 'papeis', 'composicao_familiar'] : ['unidade'];
+    const relations = includeRelations ? ['unidade', 'contatos', 'enderecos', 'composicao_familiar'] : ['unidade'];
     return this.repository.findOne({
       where: { nis: nisClean },
       relations
@@ -161,16 +164,20 @@ export class CidadaoRepository {
   async findAllBairros(): Promise<string[]> {
     try {
       const result = await this.dataSource.query(
-        `SELECT DISTINCT (endereco->>'bairro') as bairro 
-         FROM cidadao 
-         WHERE endereco->>'bairro' IS NOT NULL 
-           AND endereco->>'bairro' <> '' 
-           AND removed_at IS NULL
-         ORDER BY bairro ASC`
+        `SELECT DISTINCT e.bairro 
+         FROM endereco e 
+         INNER JOIN cidadao c ON e.cidadao_id = c.id 
+         WHERE e.bairro IS NOT NULL 
+           AND e.bairro <> '' 
+           AND TRIM(e.bairro) <> ''
+           AND c.removed_at IS NULL
+           AND e.removed_at IS NULL
+         ORDER BY e.bairro ASC`
       );
 
-      return result.map(item => item.bairro);
+      return result.map(item => item.bairro.trim()).filter(bairro => bairro.length > 0);
     } catch (error) {
+      console.error('Erro ao buscar bairros:', error);
       throw new Error('Erro ao buscar bairros');
     }
   }

@@ -155,12 +155,7 @@ export class CidadaoService {
     });
   }
 
-  /**
-   * Verifica se o feature flag para nova estrutura está ativado
-   */
-  private isNovaEstruturaAtiva(): boolean {
-    return this.configService.get<boolean>('READ_NOVA_ESTRUTURA_CONTATO', false);
-  }
+
 
   async create(
     createCidadaoDto: CreateCidadaoDto,
@@ -187,7 +182,6 @@ export class CidadaoService {
 
     // Separar campos que não pertencem à entidade Cidadao
     const { 
-      papeis, 
       composicao_familiar, 
       contatos, 
       enderecos, 
@@ -205,60 +199,14 @@ export class CidadaoService {
 
     const cidadao = await this.cidadaoRepository.create(dadosParaCriacao);
     
-    // Processar contatos normalizados se existirem e a feature flag estiver ativa
-    if (this.isNovaEstruturaAtiva() && contatos && contatos.length > 0) {
+    // Processar contatos normalizados se existirem
+    if (contatos && contatos.length > 0) {
       await this.contatoService.upsertMany(cidadao.id, contatos);
-      
-      // Se temos contatos normalizados e também dados inline, migramos os dados inline
-      if (cidadao.telefone || cidadao.email) {
-        const contatosLegados: ContatoDto[] = [];
-        
-        if (cidadao.telefone) {
-          contatosLegados.push({
-            cidadao_id: cidadao.id,
-            telefone: cidadao.telefone,
-            is_whatsapp: false, // Valor padrão, já que a entidade Cidadao não tem essa propriedade
-            proprietario: true
-          });
-        }
-        
-        if (cidadao.email) {
-          contatosLegados.push({
-            cidadao_id: cidadao.id,
-            email: cidadao.email,
-            proprietario: true
-          });
-        }
-        
-        if (contatosLegados.length > 0) {
-          await this.contatoService.upsertMany(cidadao.id, contatosLegados);
-        }
-      }
     }
     
-    // Processar endereços normalizados se existirem e a feature flag estiver ativa
-    if (this.isNovaEstruturaAtiva() && enderecos && enderecos.length > 0) {
+    // Processar endereços normalizados se existirem
+    if (enderecos && enderecos.length > 0) {
       await this.enderecoService.upsertMany(cidadao.id, enderecos);
-      
-      // Se temos endereço normalizado e também dados inline, migramos os dados inline
-      if (cidadao.endereco) {
-        const enderecoLegado: EnderecoDto = {
-          cidadao_id: cidadao.id,
-          logradouro: cidadao.endereco.logradouro,
-          numero: cidadao.endereco.numero,
-          complemento: cidadao.endereco.complemento,
-          bairro: cidadao.endereco.bairro,
-          cidade: cidadao.endereco.cidade,
-          estado: cidadao.endereco.estado,
-          cep: cidadao.endereco.cep,
-          ponto_referencia: cidadao.endereco.ponto_referencia,
-          tempo_de_residencia: cidadao.endereco.tempo_de_residencia,
-          data_inicio_vigencia: new Date().toISOString(),
-          data_fim_vigencia: null
-        };
-        
-        await this.enderecoService.create(enderecoLegado);
-      }
     }
 
     // Auditoria de criação de cidadão
@@ -290,8 +238,7 @@ export class CidadaoService {
     }
 
     // Separar campos que não pertencem à entidade Cidadao
-    const { 
-      papeis, 
+    const {
       composicao_familiar, 
       contatos, 
       enderecos, 
@@ -341,69 +288,14 @@ export class CidadaoService {
       usuario_id,
     );
     
-    // Processar contatos normalizados se existirem e a feature flag estiver ativa
-    if (this.isNovaEstruturaAtiva() && contatos && contatos.length > 0) {
+    // Processar contatos normalizados se existirem
+    if (contatos && contatos.length > 0) {
       await this.contatoService.upsertMany(id, contatos);
-      
-      // Se temos contatos normalizados e também dados inline, migramos os dados inline
-      if (dadosAtualizacao.telefone || dadosAtualizacao.email) {
-        const contatosLegados: ContatoDto[] = [];
-        
-        if (dadosAtualizacao.telefone) {
-          contatosLegados.push({
-            cidadao_id: id,
-            telefone: dadosAtualizacao.telefone,
-            is_whatsapp: dadosAtualizacao.is_whatsapp || false, // Aqui está ok porque dadosAtualizacao é do tipo CreateCidadaoDto
-            proprietario: true
-          });
-        }
-        
-        if (dadosAtualizacao.email) {
-          contatosLegados.push({
-            cidadao_id: id,
-            email: dadosAtualizacao.email,
-            proprietario: true
-          });
-        }
-        
-        if (contatosLegados.length > 0) {
-          await this.contatoService.upsertMany(id, contatosLegados);
-        }
-      }
     }
     
-    // Processar endereços normalizados se existirem e a feature flag estiver ativa
-    if (this.isNovaEstruturaAtiva() && enderecos && enderecos.length > 0) {
+    // Processar endereços normalizados se existirem
+    if (enderecos && enderecos.length > 0) {
       await this.enderecoService.upsertMany(id, enderecos);
-      
-      // Se temos endereço normalizado e também dados inline, migramos os dados inline
-      if (dadosAtualizacao.endereco) {
-        const enderecoLegado: EnderecoDto = {
-          cidadao_id: id,
-          logradouro: dadosAtualizacao.endereco.logradouro,
-          numero: dadosAtualizacao.endereco.numero,
-          complemento: dadosAtualizacao.endereco.complemento,
-          bairro: dadosAtualizacao.endereco.bairro,
-          cidade: dadosAtualizacao.endereco.cidade,
-          estado: dadosAtualizacao.endereco.estado,
-          cep: dadosAtualizacao.endereco.cep,
-          ponto_referencia: dadosAtualizacao.endereco.ponto_referencia,
-          tempo_de_residencia: dadosAtualizacao.endereco.tempo_de_residencia,
-          data_inicio_vigencia: new Date().toISOString(),
-          data_fim_vigencia: null
-        };
-        
-        // Encerra a vigência do endereço atual se existir
-        const enderecoAtual = await this.enderecoService.findEnderecoAtual(id);
-        if (enderecoAtual) {
-          await this.enderecoService.update(enderecoAtual.id, {
-            ...enderecoAtual,
-            data_fim_vigencia: new Date().toISOString()
-          });
-        }
-        
-        await this.enderecoService.create(enderecoLegado);
-      }
     }
 
     return plainToInstance(CidadaoResponseDto, cidadaoAtualizado, {

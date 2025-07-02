@@ -64,7 +64,6 @@ import {
   ComposicaoFamiliar,
   DadosSociais,
   InfoBancaria,
-  PapelCidadao,
   SituacaoMoradia,
 
   // Entidades de Configuração
@@ -79,7 +78,6 @@ import {
 
   // Entidades de Histórico e Logs
   CategoriaLog,
-  HistoricoConversaoPapel,
   HistoricoSolicitacao,
   LogAuditoria,
 
@@ -104,9 +102,6 @@ import {
   ComprovantePagamento,
   ConfirmacaoRecebimento,
   Pagamento,
-
-  // Entidades de Regras
-  RegraConflitoPapel,
 
   // Entidades de Segurança e Autenticação
   Role,
@@ -163,13 +158,10 @@ export const AppDataSource = new DataSource({
 
     // Entidades de cidadão
     Cidadao,
-    PapelCidadao,
     ComposicaoFamiliar,
     DadosSociais,
     InfoBancaria,
     SituacaoMoradia,
-    HistoricoConversaoPapel,
-    RegraConflitoPapel,
 
     // Entidades de benefício
     TipoBeneficio,

@@ -156,11 +156,13 @@ describe('CidadaoController', () => {
         new NotFoundException('Cidadão não encontrado'),
       );
 
-      await expect(controller.findByCpf('999.999.999-99')).rejects.toThrow(
+      await expect(controller.findByCpf('999.999.999-99', mockRequest as any)).rejects.toThrow(
         NotFoundException,
       );
       expect(mockCidadaoService.findByCpf).toHaveBeenCalledWith(
         '999.999.999-99',
+        true,
+        'user-123',
       );
     });
   });
@@ -174,16 +176,24 @@ describe('CidadaoController', () => {
         data_nascimento: new Date('1990-01-01'),
         sexo: Sexo.MASCULINO,
         renda: 1500,
-        telefone: '(84) 99999-9999',
-        email: 'joao@example.com',
-        endereco: {
-          cep: '59000-000',
-          logradouro: 'Rua Principal',
-          numero: '123',
-          bairro: 'Centro',
-          cidade: 'Natal',
-          estado: 'RN',
-        },
+        contatos: [
+          {
+            telefone: '(84) 99999-9999',
+            email: 'joao@example.com',
+            proprietario: true,
+            is_whatsapp: false
+          }
+        ],
+        enderecos: [
+          {
+            cep: '59000-000',
+            logradouro: 'Rua Principal',
+            numero: '123',
+            bairro: 'Centro',
+            cidade: 'Natal',
+            estado: 'RN'
+          }
+        ]
       };
 
       const mockCidadao = {
@@ -239,14 +249,27 @@ describe('CidadaoController', () => {
     it('deve atualizar um cidadão existente', async () => {
       const updateCidadaoDto = {
         nome: 'João Silva Atualizado',
-        telefone: '(84) 88888-8888',
+        contatos: [
+          {
+            telefone: '(84) 88888-8888',
+            proprietario: true,
+            is_whatsapp: false
+          }
+        ]
       };
 
       const mockUpdatedCidadao = {
         id: '1',
         nome: 'João Silva Atualizado',
         cpf: '123.456.789-00',
-        telefone: '(84) 88888-8888',
+        contatos: [
+          {
+            id: 'contato-1',
+            telefone: '(84) 88888-8888',
+            proprietario: true,
+            is_whatsapp: false
+          }
+        ]
       };
 
       mockCidadaoService.update.mockResolvedValue(mockUpdatedCidadao);

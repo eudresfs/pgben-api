@@ -13,23 +13,15 @@ export class ContatoService {
     private readonly configService: ConfigService,
   ) {}
 
-  /**
-   * Verifica se o feature flag para nova estrutura está ativado
-   */
-  private isNovaEstruturaAtiva(): boolean {
-    return this.configService.get<boolean>('READ_NOVA_ESTRUTURA_CONTATO', false);
-  }
+
 
   /**
    * Busca todos os contatos de um cidadão
    */
   async findByCidadaoId(cidadaoId: string): Promise<Contato[]> {
-    if (!this.isNovaEstruturaAtiva()) {
-      return [];
-    }
-
     return this.contatoRepository.find({
       where: { cidadao_id: cidadaoId },
+      order: { created_at: 'DESC' },
     });
   }
 
@@ -37,10 +29,6 @@ export class ContatoService {
    * Busca um contato específico pelo ID
    */
   async findById(id: string): Promise<Contato> {
-    if (!this.isNovaEstruturaAtiva()) {
-      throw new NotFoundException('Contato não encontrado');
-    }
-
     const contato = await this.contatoRepository.findOne({
       where: { id },
     });

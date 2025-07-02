@@ -1,116 +1,157 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
-  IsEmail,
   IsString,
   IsOptional,
   IsEnum,
-  IsDate,
-  IsNumber,
   ValidateNested,
   Validate,
   IsUUID,
+  IsArray,
+  ValidateIf,
+  IsDate,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { Sexo } from '../../../enums/sexo.enum';
+import { EstadoCivil } from '../../../enums/estado-civil.enum';
 import { CPFValidator } from '../validators/cpf-validator';
 import { NISValidator } from '../validators/nis-validator';
+import { CreateComposicaoFamiliarDto } from './create-composicao-familiar.dto';
+import { ContatoDto } from './contato.dto';
 import { EnderecoDto } from './endereco.dto';
+
 
 /**
  * DTO para atualização de cidadão
+ * Aceita os mesmos dados da criação, todos opcionais
  */
 export class UpdateCidadaoDto {
-  [x: string]: any;
   @IsString({ message: 'Nome deve ser uma string' })
   @IsOptional()
-  @ApiProperty({
+  @ApiPropertyOptional({
     example: 'Maria da Silva',
     description: 'Nome completo do cidadão',
-    required: false,
   })
   nome?: string;
 
+  @IsString({ message: 'CPF deve ser uma string' })
+  @IsOptional()
+  @Validate(CPFValidator, { message: 'CPF inválido' })
+  @ApiPropertyOptional({
+    example: '123.456.789-00',
+    description: 'CPF do cidadão',
+  })
+  cpf?: string;
+
   @IsString({ message: 'RG deve ser uma string' })
   @IsOptional()
-  @ApiProperty({
+  @ApiPropertyOptional({
     example: '1234567',
     description: 'RG do cidadão',
-    required: false,
   })
   rg?: string;
 
-  @IsString({ message: 'Prontuario SUAS é obrigatório' })
+  @IsString({ message: 'Prontuário SUAS deve ser uma string' })
   @IsOptional()
-  @ApiProperty({
+  @ApiPropertyOptional({
     example: 'SUAS1234567',
     description: 'Nº do Prontuário SUAS do cidadão',
   })
   prontuario_suas?: string;
 
-  @IsDate()
-  @Type(() => Date)
+  @IsString({ message: 'Naturalidade deve ser uma string' })
   @IsOptional()
-  @ApiProperty({
+  @ApiPropertyOptional({
+    example: 'Natal',
+    description: 'Cidade de Naturalidade',
+  })
+  naturalidade?: string;
+
+  @IsOptional()
+  @ApiPropertyOptional({
     example: '1985-10-15',
     description: 'Data de nascimento do cidadão',
-    required: false,
   })
-  data_nascimento?: Date;
+  data_nascimento?: string;
 
   @IsEnum(Sexo, { message: 'Sexo inválido' })
   @IsOptional()
-  @ApiProperty({
+  @ApiPropertyOptional({
     enum: Sexo,
     example: Sexo.FEMININO,
     description: 'Sexo do cidadão',
-    required: false,
   })
   sexo?: Sexo;
 
   @IsString({ message: 'NIS deve ser uma string' })
+  @ValidateIf((o) => o.nis !== undefined)
   @IsOptional()
   @Validate(NISValidator, { message: 'NIS inválido' })
-  @ApiProperty({
+  @ApiPropertyOptional({
     example: '12345678901',
-    description: 'Número de Identificação Social (NIS)',
-    required: false,
+    description: 'Número de Identificação Social (NIS) do cidadão, utilizado para programas sociais',
   })
   nis?: string;
 
-  @IsString({ message: 'Telefone deve ser uma string' })
+  @IsString({ message: 'Nome social deve ser uma string' })
   @IsOptional()
-  @ApiProperty({
-    example: '(84) 98765-4321',
-    description: 'Telefone do cidadão',
-    required: false,
+  @ApiPropertyOptional({
+    example: 'Maria Santos',
+    description: 'Nome social do cidadão (usado para pessoas trans)',
   })
-  telefone?: string;
+  nome_social?: string;
 
-  @IsEmail({}, { message: 'Email inválido' })
+  @IsEnum(EstadoCivil, { message: 'Estado civil inválido' })
   @IsOptional()
-  @ApiProperty({
-    example: 'maria.silva@email.com',
-    description: 'Email do cidadão',
-    required: false,
+  @ApiPropertyOptional({
+    enum: EstadoCivil,
+    example: EstadoCivil.CASADO,
+    description: 'Estado civil do cidadão',
   })
-  email?: string;
+  estado_civil?: EstadoCivil;
 
-  @ValidateNested()
-  @Type(() => EnderecoDto)
+  @IsString({ message: 'Nome da mãe deve ser uma string' })
   @IsOptional()
-  @ApiProperty({
-    type: EnderecoDto,
-    description: 'Endereço do cidadão',
-    required: false,
+  @ApiPropertyOptional({
+    example: 'Maria da Silva',
+    description: 'Nome completo da mãe do cidadão',
   })
-  endereco?: EnderecoDto;
+  nome_mae?: string;
 
   @IsUUID('4', { message: 'ID da unidade deve ser um UUID válido' })
   @IsOptional()
-  @ApiProperty({
+  @ApiPropertyOptional({
     example: '550e8400-e29b-41d4-a716-446655440000',
     description: 'ID da unidade onde o cidadão está cadastrado',
-    required: false,
   })
   unidade_id?: string;
+
+  @IsArray()
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => CreateComposicaoFamiliarDto)
+  @ApiPropertyOptional({
+    type: [CreateComposicaoFamiliarDto],
+    description: 'Composição familiar do cidadão',
+  })
+  composicao_familiar?: CreateComposicaoFamiliarDto[];
+
+  @IsArray()
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => ContatoDto)
+  @ApiPropertyOptional({
+    type: [ContatoDto],
+    description: 'Contatos do cidadão (nova estrutura normalizada)',
+  })
+  contatos?: ContatoDto[];
+
+  @IsArray()
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => EnderecoDto)
+  @ApiPropertyOptional({
+    type: [EnderecoDto],
+    description: 'Endereços do cidadão (nova estrutura normalizada)',
+  })
+  enderecos?: EnderecoDto[];
 }

@@ -3,13 +3,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { CidadaoController } from './controllers/cidadao.controller';
 import { CidadaoService } from './services/cidadao.service';
 import { CidadaoRepository } from './repositories/cidadao.repository';
-import { RegraConflitoPapelRepository } from './repositories/regra-conflito-papel.repository';
 import {
   Cidadao,
-  PapelCidadao,
   ComposicaoFamiliar,
-  HistoricoConversaoPapel,
-  RegraConflitoPapel,
   InfoBancaria,
   DadosSociais,
   SituacaoMoradia,
@@ -17,13 +13,6 @@ import {
   Endereco,
 } from '../../entities';
 import { CacheModule } from '../../shared/cache';
-import { PapelCidadaoService } from './services/papel-cidadao.service';
-import { PapelCidadaoController } from './controllers/papel-cidadao.controller';
-import { VerificacaoPapelService } from './services/verificacao-papel.service';
-import { HistoricoConversaoPapelService } from './services/historico-conversao-papel.service';
-import { VerificacaoPapelController } from './controllers/verificacao-papel.controller';
-import { PapelConflitoController } from './controllers/papel-conflito.controller';
-import { RegraConflitoPapelController } from './controllers/regra-conflito-papel.controller';
 import { InfoBancariaController } from './controllers/info-bancaria.controller';
 import { InfoBancariaService } from './services/info-bancaria.service';
 import { InfoBancariaRepository } from './repositories/info-bancaria.repository';
@@ -50,10 +39,7 @@ import { NotificacaoModule } from '../notificacao/notificacao.module';
   imports: [
     TypeOrmModule.forFeature([
       Cidadao,
-      PapelCidadao,
       ComposicaoFamiliar,
-      HistoricoConversaoPapel,
-      RegraConflitoPapel,
       InfoBancaria,
       DadosSociais,
       SituacaoMoradia,
@@ -66,10 +52,6 @@ import { NotificacaoModule } from '../notificacao/notificacao.module';
   ],
   controllers: [
     CidadaoController,
-    PapelCidadaoController,
-    VerificacaoPapelController,
-    PapelConflitoController,
-    RegraConflitoPapelController,
     InfoBancariaController,
     DadosSociaisController,
     ComposicaoFamiliarController,
@@ -81,10 +63,6 @@ import { NotificacaoModule } from '../notificacao/notificacao.module';
     Logger,
     CidadaoService,
     CidadaoRepository,
-    PapelCidadaoService,
-    VerificacaoPapelService,
-    HistoricoConversaoPapelService,
-    RegraConflitoPapelRepository,
     InfoBancariaService,
     InfoBancariaRepository,
     DadosSociaisService,
@@ -97,10 +75,6 @@ import { NotificacaoModule } from '../notificacao/notificacao.module';
     TypeOrmModule,
     CidadaoService,
     CidadaoRepository,
-    PapelCidadaoService,
-    VerificacaoPapelService,
-    HistoricoConversaoPapelService,
-    RegraConflitoPapelRepository,
     InfoBancariaService,
     InfoBancariaRepository,
     DadosSociaisService,

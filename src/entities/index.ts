@@ -40,7 +40,6 @@ export { Cidadao } from './cidadao.entity';
 export { ComposicaoFamiliar } from './composicao-familiar.entity';
 export { DadosSociais } from './dados-sociais.entity';
 export { InfoBancaria } from './info-bancaria.entity';
-export { PapelCidadao } from './papel-cidadao.entity';
 export { SituacaoMoradia } from './situacao-moradia.entity';
 // Entidades de Contato e Endereço
 export { Contato } from './contato.entity';
@@ -58,7 +57,6 @@ export { RequisitoDocumento } from './requisito-documento.entity';
 
 // Entidades de Histórico e Logs
 export { CategoriaLog } from './categoria-log.entity';
-export { HistoricoConversaoPapel } from './historico-conversao-papel.entity';
 export { HistoricoSolicitacao } from './historico-solicitacao.entity';
 export { LogAuditoria } from './log-auditoria.entity';
 export { RecursoHistorico } from './recurso-historico.entity';
@@ -101,9 +99,6 @@ export { Pagamento } from './pagamento.entity';
 // Entidades de Pendências e Recursos
 export { Pendencia, StatusPendencia } from './pendencia.entity';
 export { Recurso } from './recurso.entity';
-
-// Entidades de Regras
-export { RegraConflitoPapel } from './regra-conflito-papel.entity';
 
 // Entidades de Segurança e Autenticação
 export { Role } from './role.entity';

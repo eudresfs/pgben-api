@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CacheModule } from '@nestjs/cache-manager';
+import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { createThrottlerConfig } from './config/throttler.config';
 import { AppController } from './app.controller';
@@ -60,6 +61,8 @@ import { DataSource } from 'typeorm';
       inject: [ConfigService],
       useFactory: createThrottlerConfig,
     }),
+    // Configuração do agendamento de tarefas
+    ScheduleModule.forRoot(),
     // Configuração de filas com BullMQ - usando configuração dinâmica
     BullModule.forRootAsync({
       imports: [ConfigModule],

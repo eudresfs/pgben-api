@@ -1,7 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Expose, Transform, Type } from 'class-transformer';
 import { Sexo } from '../../../enums/sexo.enum';
-import { PapelCidadaoResponseDto } from './papel-cidadao-response.dto';
 import { ParentescoEnum } from '../../../enums/parentesco.enum';
 import { UnidadeResponseDto } from '@/modules/unidade/dto/unidade-response.dto';
 
@@ -451,14 +450,6 @@ export class CidadaoResponseDto {
   })
   @Expose()
   deleted_at?: Date;
-
-  @ApiPropertyOptional({
-    type: [PapelCidadaoResponseDto],
-    description: 'Papéis que o cidadão possui no sistema',
-  })
-  @Expose()
-  @Type(() => PapelCidadaoResponseDto)
-  papeis?: PapelCidadaoResponseDto[];
 
   @ApiPropertyOptional({
     type: [CidadaoComposicaoFamiliarDto],

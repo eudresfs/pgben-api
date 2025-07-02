@@ -13,21 +13,12 @@ export class EnderecoService {
     private readonly configService: ConfigService,
   ) {}
 
-  /**
-   * Verifica se o feature flag para nova estrutura está ativado
-   */
-  private isNovaEstruturaAtiva(): boolean {
-    return this.configService.get<boolean>('READ_NOVA_ESTRUTURA_CONTATO', false);
-  }
+
 
   /**
    * Busca todos os endereços de um cidadão
    */
   async findByCidadaoId(cidadaoId: string): Promise<Endereco[]> {
-    if (!this.isNovaEstruturaAtiva()) {
-      return [];
-    }
-
     return this.enderecoRepository.find({
       where: { cidadao_id: cidadaoId },
       order: { data_inicio_vigencia: 'DESC' },
@@ -38,10 +29,6 @@ export class EnderecoService {
    * Busca o endereço atual de um cidadão
    */
   async findEnderecoAtual(cidadaoId: string): Promise<Endereco | null> {
-    if (!this.isNovaEstruturaAtiva()) {
-      return null;
-    }
-
     // Usando QueryBuilder para poder usar IS NULL corretamente
     return this.enderecoRepository
       .createQueryBuilder('endereco')
@@ -54,10 +41,6 @@ export class EnderecoService {
    * Busca um endereço específico pelo ID
    */
   async findById(id: string): Promise<Endereco> {
-    if (!this.isNovaEstruturaAtiva()) {
-      throw new NotFoundException('Endereço não encontrado');
-    }
-
     const endereco = await this.enderecoRepository.findOne({
       where: { id },
     });

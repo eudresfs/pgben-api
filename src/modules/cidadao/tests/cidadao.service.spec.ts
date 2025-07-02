@@ -216,16 +216,24 @@ describe('CidadaoService', () => {
         data_nascimento: new Date('1990-01-01'),
         sexo: Sexo.MASCULINO,
         renda: 1500,
-        telefone: '(84) 99999-9999',
-        email: 'joao@example.com',
-        endereco: {
-          cep: '59000-000',
-          logradouro: 'Rua Principal',
-          numero: '123',
-          bairro: 'Centro',
-          cidade: 'Natal',
-          estado: 'RN',
-        },
+        contatos: [
+          {
+            telefone: '(84) 99999-9999',
+            email: 'joao@example.com',
+            proprietario: true,
+            is_whatsapp: false
+          }
+        ],
+        enderecos: [
+          {
+            cep: '59000-000',
+            logradouro: 'Rua Principal',
+            numero: '123',
+            bairro: 'Centro',
+            cidade: 'Natal',
+            estado: 'RN'
+          }
+        ]
       };
 
       const mockCidadao = {
@@ -292,16 +300,29 @@ describe('CidadaoService', () => {
     it('deve atualizar um cidadão existente', async () => {
       const updateCidadaoDto = {
         nome: 'João Silva Atualizado',
-        telefone: '(84) 88888-8888',
-        email: 'joao.atualizado@example.com',
+        contatos: [
+          {
+            telefone: '(84) 88888-8888',
+            email: 'joao.atualizado@example.com',
+            proprietario: true,
+            is_whatsapp: false
+          }
+        ]
       };
 
       const mockCidadao = {
         id: '1',
         nome: 'João Silva',
         cpf: '123.456.789-00',
-        telefone: '(84) 99999-9999',
-        email: 'joao@example.com',
+        contatos: [
+          {
+            id: 'contato-1',
+            telefone: '(84) 99999-9999',
+            email: 'joao@example.com',
+            proprietario: true,
+            is_whatsapp: false
+          }
+        ]
       };
 
       const mockUpdatedCidadao = {
