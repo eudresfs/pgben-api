@@ -481,21 +481,17 @@ export class JwtBlacklistController {
     };
 
     // ✅ Auditoria de logout
-    await this.auditEmitter.emitSecurityEvent(
-      AuditEventType.LOGOUT,
-      user.id,
-      {
-        operation: 'logout',
-        riskLevel: 'low',
-        username: user.email,
-        logoutType: 'single_session',
-        clientIp,
-        userAgent,
-        sessionEnd: new Date(),
-        userInitiated: true,
-        tokensInvalidated: 1,
-      }
-    );
+    await this.auditEmitter.emitSecurityEvent(AuditEventType.LOGOUT, user.id, {
+      operation: 'logout',
+      riskLevel: 'low',
+      username: user.email,
+      logoutType: 'single_session',
+      clientIp,
+      userAgent,
+      sessionEnd: new Date(),
+      userInitiated: true,
+      tokensInvalidated: 1,
+    });
 
     return this.jwtBlacklistService.addToBlacklist(addToBlacklistDto);
   }
@@ -590,21 +586,17 @@ export class JwtBlacklistController {
     const activeTokens = []; // Substitua por sua lógica para obter tokens ativos
 
     // ✅ Auditoria de logout global
-    await this.auditEmitter.emitSecurityEvent(
-      AuditEventType.LOGOUT,
-      user.id,
-      {
-        operation: 'logout_all',
-        riskLevel: 'medium',
-        username: user.email,
-        logoutType: 'all_sessions',
-        clientIp,
-        userAgent,
-        sessionEnd: new Date(),
-        userInitiated: true,
-        tokensInvalidated: activeTokens.length,
-      }
-    );
+    await this.auditEmitter.emitSecurityEvent(AuditEventType.LOGOUT, user.id, {
+      operation: 'logout_all',
+      riskLevel: 'medium',
+      username: user.email,
+      logoutType: 'all_sessions',
+      clientIp,
+      userAgent,
+      sessionEnd: new Date(),
+      userInitiated: true,
+      tokensInvalidated: activeTokens.length,
+    });
 
     const result = await this.jwtBlacklistService.invalidateUserTokens(
       invalidateDto,

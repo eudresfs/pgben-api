@@ -1,8 +1,4 @@
-import {
-  Controller,
-  Get,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, UseGuards } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -22,7 +18,7 @@ import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
 
 /**
  * Controller para dados de referência do sistema
- * 
+ *
  * Fornece endpoints para obter dados de referência utilizados em diversos módulos
  * como tipos de benefício, status, unidades, etc.
  */
@@ -39,14 +35,14 @@ export class ReferenciaController {
 
   /**
    * Retorna dados de referência do sistema
-   * 
+   *
    * Inclui tipos de benefício, status de solicitação, unidades, status de pagamento,
    * bairros, usuários e roles.
    */
   @Get()
   @RequiresPermission({
     permissionName: 'sistema.filtros.listar',
-    scopeType: ScopeType.GLOBAL
+    scopeType: ScopeType.GLOBAL,
   })
   @ApiOperation({ summary: 'Obter dados de referência do sistema' })
   @ApiResponse({
@@ -58,9 +54,9 @@ export class ReferenciaController {
     const tiposBeneficio = await this.beneficioService.findAll({
       limit: 1000,
     });
-    
+
     // Mapear tipos de benefício para o formato desejado
-    const tiposBeneficioFormatados = tiposBeneficio.items.map(tipo => ({
+    const tiposBeneficioFormatados = tiposBeneficio.items.map((tipo) => ({
       id: tipo.id,
       nome: tipo.nome,
       codigo: tipo.codigo,
@@ -72,7 +68,7 @@ export class ReferenciaController {
     });
 
     // Mapear unidades para o formato desejado
-    const unidadesFormatadas = unidades.items.map(unidade => ({
+    const unidadesFormatadas = unidades.items.map((unidade) => ({
       id: unidade.id,
       nome: unidade.nome,
       sigla: unidade.sigla,
@@ -84,7 +80,7 @@ export class ReferenciaController {
     });
 
     // Mapear usuários para o formato desejado
-    const usuariosFormatados = usuarios.items.map(usuario => ({
+    const usuariosFormatados = usuarios.items.map((usuario) => ({
       id: usuario.id,
       nome: usuario.nome,
     }));
@@ -93,25 +89,31 @@ export class ReferenciaController {
     const roles = await this.usuarioService.findAllRoles();
 
     // Mapear roles para o formato desejado
-    const rolesFormatadas = roles ? roles.map(role => ({
-      id: role.id,
-      nome: role.nome,
-    })) : [];
+    const rolesFormatadas = roles
+      ? roles.map((role) => ({
+          id: role.id,
+          nome: role.nome,
+        }))
+      : [];
 
     // Extrair bairros únicos dos cidadãos
     const bairros = await this.cidadaoService.findAllBairros();
 
     // Mapear status de solicitação
-    const statusSolicitacao = Object.entries(StatusSolicitacao).map(([key, value]) => ({
-      nome: key,
-      valor: value,
-    }));
+    const statusSolicitacao = Object.entries(StatusSolicitacao).map(
+      ([key, value]) => ({
+        nome: key,
+        valor: value,
+      }),
+    );
 
     // Mapear status de pagamento
-    const statusPagamento = Object.entries(StatusPagamentoEnum).map(([key, value]) => ({
-      nome: key,
-      valor: value,
-    }));
+    const statusPagamento = Object.entries(StatusPagamentoEnum).map(
+      ([key, value]) => ({
+        nome: key,
+        valor: value,
+      }),
+    );
 
     return {
       tiposBeneficio: tiposBeneficioFormatados,

@@ -19,12 +19,12 @@ export class HealthCheckService {
   async isRedisAvailable(): Promise<boolean> {
     // Verificar se o Redis está desabilitado por configuração
     const disableRedis = this.configService.get('DISABLE_REDIS') === 'true';
-    
+
     if (disableRedis) {
       this.logger.debug('Redis desabilitado por configuração.');
       return false;
     }
-    
+
     const host = this.configService.get('REDIS_HOST', 'localhost');
     const port = parseInt(this.configService.get('REDIS_PORT', '6379'));
     const password = this.configService.get('REDIS_PASSWORD', '');
@@ -44,11 +44,14 @@ export class HealthCheckService {
       // Usar Promise.race para garantir timeout rígido
       const result = await Promise.race([
         redis.ping(),
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Redis health check timeout')), 2000)
-        )
+        new Promise((_, reject) =>
+          setTimeout(
+            () => reject(new Error('Redis health check timeout')),
+            2000,
+          ),
+        ),
       ]);
-      
+
       await redis.quit();
       return result === 'PONG';
     } catch (error) {

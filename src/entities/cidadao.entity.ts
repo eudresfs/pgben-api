@@ -236,8 +236,6 @@ export class Cidadao {
     return this.temNomeSocial() ? this.nome_social : this.nome;
   }
 
-
-
   /**
    * Verifica se o cidadão pertence a uma unidade específica
    * @param unidadeId ID da unidade
@@ -326,8 +324,6 @@ export class Cidadao {
     return this.naturalidade.toLowerCase().includes(cidade.toLowerCase());
   }
 
-
-
   /**
    * Obtém a faixa etária do cidadão
    * @returns faixa etária
@@ -335,10 +331,18 @@ export class Cidadao {
   getFaixaEtaria(): string {
     const idade = this.getIdade();
 
-    if (idade <= 12) {return 'Criança';}
-    if (idade <= 17) {return 'Adolescente';}
-    if (idade <= 29) {return 'Jovem';}
-    if (idade <= 59) {return 'Adulto';}
+    if (idade <= 12) {
+      return 'Criança';
+    }
+    if (idade <= 17) {
+      return 'Adolescente';
+    }
+    if (idade <= 29) {
+      return 'Jovem';
+    }
+    if (idade <= 59) {
+      return 'Adulto';
+    }
     return 'Idoso';
   }
 
@@ -366,8 +370,6 @@ export class Cidadao {
     const cpf = this.cpf.replace(/\D/g, '');
     return cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
   }
-
-
 
   /**
    * Formata a data de nascimento
@@ -452,8 +454,6 @@ export class Cidadao {
    */
   getSugestoesVerificacao(): string[] {
     const sugestoes: string[] = [];
-
-
 
     if (!this.temComposicaoFamiliar()) {
       sugestoes.push('Cadastre a composição familiar para análise completa');

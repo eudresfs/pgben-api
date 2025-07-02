@@ -1,4 +1,10 @@
-import { Injectable, Logger, OnModuleInit, OnModuleDestroy, Inject } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  OnModuleInit,
+  OnModuleDestroy,
+  Inject,
+} from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ConfigService } from '@nestjs/config';
 import * as Ably from 'ably';
@@ -11,12 +17,12 @@ import {
   IAblyMetrics,
   IAblyOperationResult,
   NotificationType,
-  NotificationPriority
+  NotificationPriority,
 } from '../interfaces/ably.interface';
 
 /**
  * Serviço principal do Ably para gerenciamento de notificações em tempo real
- * 
+ *
  * Este serviço é responsável por:
  * - Inicializar e gerenciar a conexão com o Ably
  * - Publicar mensagens em canais
@@ -43,7 +49,11 @@ export class AblyService implements OnModuleInit, OnModuleDestroy {
   private ablyClient: Ably.Realtime | null = null;
   private ablyRest: Ably.Rest | null = null;
   private channels: Map<string, Ably.RealtimeChannel> = new Map();
-  private connectionStatus: 'connected' | 'disconnected' | 'suspended' | 'failed' = 'disconnected';
+  private connectionStatus:
+    | 'connected'
+    | 'disconnected'
+    | 'suspended'
+    | 'failed' = 'disconnected';
   private metrics: IAblyMetrics = {
     totalConnections: 0,
     activeConnections: 0,
@@ -58,7 +68,7 @@ export class AblyService implements OnModuleInit, OnModuleDestroy {
     averageLatency: 0,
     errorRate: 0,
     bandwidthUsage: 0,
-    timestamp: new Date()
+    timestamp: new Date(),
   };
   private metricsInterval: NodeJS.Timeout | null = null;
   private lastError: string | null = null;
@@ -67,7 +77,7 @@ export class AblyService implements OnModuleInit, OnModuleDestroy {
   constructor(
     @Inject('ABLY_CONFIG') private readonly ablyConfig: AblyConfig,
     private readonly configService: ConfigService,
-    private readonly eventEmitter: EventEmitter2
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   /**
@@ -117,34 +127,39 @@ export class AblyService implements OnModuleInit, OnModuleDestroy {
   async onModuleDestroy(): Promise<void> {
     try {
       this.logger.log('Iniciando finalização do serviço Ably...');
-      
+
       // Para coleta de métricas
       if (this.metricsInterval) {
         clearInterval(this.metricsInterval);
         this.metricsInterval = null;
         this.logger.debug('Metrics interval finalizado');
       }
-      
+
       // Fecha canais com timeout
-      const channelClosePromises = Array.from(this.channels.entries()).map(async ([channelName, channel]) => {
-        try {
-          // Timeout de 3 segundos para cada canal
-          await Promise.race([
-            channel.detach(),
-            new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('Timeout')), 3000)
-            )
-          ]);
-          this.logger.debug(`Canal ${channelName} desconectado`);
-        } catch (error) {
-          this.logger.warn(`Erro ao desconectar canal ${channelName}:`, error.message);
-        }
-      });
-      
+      const channelClosePromises = Array.from(this.channels.entries()).map(
+        async ([channelName, channel]) => {
+          try {
+            // Timeout de 3 segundos para cada canal
+            await Promise.race([
+              channel.detach(),
+              new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('Timeout')), 3000),
+              ),
+            ]);
+            this.logger.debug(`Canal ${channelName} desconectado`);
+          } catch (error) {
+            this.logger.warn(
+              `Erro ao desconectar canal ${channelName}:`,
+              error.message,
+            );
+          }
+        },
+      );
+
       // Aguarda todos os canais serem fechados ou timeout
       await Promise.allSettled(channelClosePromises);
       this.channels.clear();
-      
+
       // Fecha conexões com timeout
       if (this.ablyClient) {
         try {
@@ -153,20 +168,26 @@ export class AblyService implements OnModuleInit, OnModuleDestroy {
               this.ablyClient?.close();
               resolve();
             }),
-            new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('Timeout ao fechar cliente Ably')), 5000)
-            )
+            new Promise((_, reject) =>
+              setTimeout(
+                () => reject(new Error('Timeout ao fechar cliente Ably')),
+                5000,
+              ),
+            ),
           ]);
           this.logger.debug('Cliente Ably fechado');
         } catch (error) {
-          this.logger.warn('Timeout ao fechar cliente Ably, forçando finalização:', error.message);
+          this.logger.warn(
+            'Timeout ao fechar cliente Ably, forçando finalização:',
+            error.message,
+          );
         }
         this.ablyClient = null;
       }
-      
+
       this.ablyRest = null;
       this.connectionStatus = 'disconnected';
-      
+
       this.logger.log('✅ Serviço Ably finalizado com sucesso');
     } catch (error) {
       this.logger.error('❌ Erro ao finalizar serviço Ably:', error);
@@ -179,14 +200,14 @@ export class AblyService implements OnModuleInit, OnModuleDestroy {
    */
   private async initializeClients(): Promise<void> {
     const clientOptions = this.ablyConfig.getClientOptions();
-    
+
     try {
       // Cliente Realtime para conexões em tempo real
       this.ablyClient = new Ably.Realtime(clientOptions);
-      
+
       // Cliente REST para operações síncronas
       this.ablyRest = new Ably.Rest(clientOptions);
-      
+
       this.logger.debug('Clientes Ably inicializados');
     } catch (error) {
       this.logger.error('Erro ao inicializar clientes Ably:', error);
@@ -209,7 +230,10 @@ export class AblyService implements OnModuleInit, OnModuleDestroy {
 
     this.ablyClient.connection.on('disconnected', () => {
       this.connectionStatus = 'disconnected';
-      this.metrics.activeConnections = Math.max(0, this.metrics.activeConnections - 1);
+      this.metrics.activeConnections = Math.max(
+        0,
+        this.metrics.activeConnections - 1,
+      );
       this.logger.warn('Desconectado do Ably');
       this.emitConnectionEvent('disconnected');
     });
@@ -223,8 +247,14 @@ export class AblyService implements OnModuleInit, OnModuleDestroy {
     this.ablyClient.connection.on('failed', (stateChange) => {
       this.connectionStatus = 'failed';
       const reason = stateChange?.reason;
-      this.lastError = reason?.message || (typeof reason === 'string' ? reason : reason?.toString()) || 'Falha na conexão';
-      this.logger.error('Falha na conexão com Ably:', this.formatError(stateChange));
+      this.lastError =
+        reason?.message ||
+        (typeof reason === 'string' ? reason : reason?.toString()) ||
+        'Falha na conexão';
+      this.logger.error(
+        'Falha na conexão com Ably:',
+        this.formatError(stateChange),
+      );
       this.emitConnectionEvent('failed');
     });
   }
@@ -232,13 +262,15 @@ export class AblyService implements OnModuleInit, OnModuleDestroy {
   /**
    * Emite evento de conexão
    */
-  private emitConnectionEvent(type: 'connected' | 'disconnected' | 'suspended' | 'failed'): void {
+  private emitConnectionEvent(
+    type: 'connected' | 'disconnected' | 'suspended' | 'failed',
+  ): void {
     const clientOptions = this.ablyConfig.getClientOptions();
     const event: IAblyConnectionEvent = {
       type,
       connectionId: this.ablyClient?.connection.id || 'unknown',
       clientId: clientOptions.clientId,
-      timestamp: new Date()
+      timestamp: new Date(),
     };
 
     // Emite o evento para outros serviços
@@ -250,8 +282,11 @@ export class AblyService implements OnModuleInit, OnModuleDestroy {
    * Inicia a coleta de métricas
    */
   private startMetricsCollection(): void {
-    const interval = this.configService.get<number>('ABLY_METRICS_INTERVAL', 60000);
-    
+    const interval = this.configService.get<number>(
+      'ABLY_METRICS_INTERVAL',
+      60000,
+    );
+
     this.metricsInterval = setInterval(() => {
       this.collectMetrics();
     }, interval);
@@ -266,7 +301,7 @@ export class AblyService implements OnModuleInit, OnModuleDestroy {
         ...this.metrics,
         totalConnections: this.metrics.totalConnections,
         activeConnections: this.connectionStatus === 'connected' ? 1 : 0,
-        timestamp: new Date()
+        timestamp: new Date(),
       };
 
       this.logger.debug('Métricas coletadas:', this.metrics);
@@ -278,28 +313,36 @@ export class AblyService implements OnModuleInit, OnModuleDestroy {
   /**
    * Obtém ou cria um canal
    */
-  getChannel(channelName: string, config?: IAblyChannelConfig): Ably.RealtimeChannel {
+  getChannel(
+    channelName: string,
+    config?: IAblyChannelConfig,
+  ): Ably.RealtimeChannel {
     if (!this.ablyClient) {
       throw new Error('Cliente Ably não inicializado');
     }
 
     const fullChannelName = this.ablyConfig.getChannelName(channelName);
-    
+
     if (this.channels.has(fullChannelName)) {
       return this.channels.get(fullChannelName)!;
     }
 
     try {
       const channel = this.ablyClient.channels.get(fullChannelName);
-      
+
       // Configura o canal se necessário
       if (config) {
-        this.configureChannel(channel, config).catch((err) => this.logger.error(`Erro ao configurar canal ${fullChannelName}:`, err));
+        this.configureChannel(channel, config).catch((err) =>
+          this.logger.error(
+            `Erro ao configurar canal ${fullChannelName}:`,
+            err,
+          ),
+        );
       }
-      
+
       this.channels.set(fullChannelName, channel);
       this.logger.debug(`Canal ${fullChannelName} criado`);
-      
+
       return channel;
     } catch (error) {
       this.logger.error(`Erro ao criar canal ${fullChannelName}:`, error);
@@ -310,15 +353,18 @@ export class AblyService implements OnModuleInit, OnModuleDestroy {
   /**
    * Configura um canal com as opções especificadas
    */
-  private async configureChannel(channel: Ably.RealtimeChannel, config: IAblyChannelConfig): Promise<void> {
+  private async configureChannel(
+    channel: Ably.RealtimeChannel,
+    config: IAblyChannelConfig,
+  ): Promise<void> {
     try {
       // Aqui você pode adicionar configurações específicas do canal
       // Por exemplo, configurar presença, persistência, etc.
-      
+
       if (config.presence) {
         // Configurar presença se necessário
       }
-      
+
       this.logger.debug(`Canal ${config.name} configurado`);
     } catch (error) {
       this.logger.error(`Erro ao configurar canal ${config.name}:`, error);
@@ -332,10 +378,10 @@ export class AblyService implements OnModuleInit, OnModuleDestroy {
   async publishNotification(
     channelName: string,
     notification: IAblyNotificationData,
-    userId?: string
+    userId?: string,
   ): Promise<IAblyOperationResult> {
     const startTime = Date.now();
-    
+
     // Validação do nome do canal
     if (!channelName || channelName.trim() === '') {
       return {
@@ -343,71 +389,84 @@ export class AblyService implements OnModuleInit, OnModuleDestroy {
         error: 'Nome do canal é obrigatório',
         errorCode: 'INVALID_CHANNEL_NAME',
         timestamp: new Date(),
-        executionTime: Date.now() - startTime
+        executionTime: Date.now() - startTime,
       };
     }
 
     // Verifica se o canal está permitido
-  if (!this.ablyConfig.isChannelAllowed(channelName)) {
-    return {
-      success: false,
-      error: `Canal ${channelName} não permitido pela configuração (ABLY_ALLOWED_CHANNELS)` ,
-      errorCode: 'CHANNEL_NOT_ALLOWED',
-      timestamp: new Date(),
-      executionTime: Date.now() - startTime
-    };
-  }
+    if (!this.ablyConfig.isChannelAllowed(channelName)) {
+      return {
+        success: false,
+        error: `Canal ${channelName} não permitido pela configuração (ABLY_ALLOWED_CHANNELS)`,
+        errorCode: 'CHANNEL_NOT_ALLOWED',
+        timestamp: new Date(),
+        executionTime: Date.now() - startTime,
+      };
+    }
 
-  // Validação dos dados da notificação
-    if (!notification.id || !notification.title || !notification.message || !notification.senderId) {
+    // Validação dos dados da notificação
+    if (
+      !notification.id ||
+      !notification.title ||
+      !notification.message ||
+      !notification.senderId
+    ) {
       return {
         success: false,
         error: 'Dados da notificação são obrigatórios',
         errorCode: 'INVALID_NOTIFICATION_DATA',
         timestamp: new Date(),
-        executionTime: Date.now() - startTime
+        executionTime: Date.now() - startTime,
       };
     }
-    
+
     try {
-      const fullChannelName = userId 
+      const fullChannelName = userId
         ? this.ablyConfig.getChannelName(channelName, userId)
         : this.ablyConfig.getChannelName(channelName);
-      
+
       const channel = this.getChannel(fullChannelName);
-      
+
       // Valida tamanho antes de enviar
-      const payloadSize = Buffer.byteLength(JSON.stringify(notification), 'utf8');
+      const payloadSize = Buffer.byteLength(
+        JSON.stringify(notification),
+        'utf8',
+      );
       if (payloadSize > this.ablyConfig.maxMessageSize) {
-        throw new Error(`Tamanho da mensagem (${payloadSize} bytes) excede o limite configurado ${this.ablyConfig.maxMessageSize}`);
+        throw new Error(
+          `Tamanho da mensagem (${payloadSize} bytes) excede o limite configurado ${this.ablyConfig.maxMessageSize}`,
+        );
       }
 
       await channel.publish('notification', notification);
-      
+
       this.metrics.totalMessages++;
       this.metrics.messagesPublished++;
-      
+
       const executionTime = Date.now() - startTime;
-      
-      this.logger.debug(`Notificação publicada no canal ${fullChannelName}:`, notification.id);
-      
+
+      this.logger.debug(
+        `Notificação publicada no canal ${fullChannelName}:`,
+        notification.id,
+      );
+
       return {
         success: true,
         data: notification,
         timestamp: new Date(),
-        executionTime
+        executionTime,
       };
     } catch (error) {
       const executionTime = Date.now() - startTime;
-      
+
       this.logger.error('Erro ao publicar notificação:', error);
-      
+
       return {
         success: false,
         error: error.message,
         errorCode: error.code,
         timestamp: new Date(),
-        executionTime
+        executionTime,
       };
     }
   }
@@ -417,7 +476,7 @@ export class AblyService implements OnModuleInit, OnModuleDestroy {
    */
   async publishSystemMessage(
     message: string,
-    data?: Record<string, any>
+    data?: Record<string, any>,
   ): Promise<IAblyOperationResult> {
     const notification: IAblyNotificationData = {
       id: `system-${Date.now()}`,
@@ -427,10 +486,13 @@ export class AblyService implements OnModuleInit, OnModuleDestroy {
       data,
       timestamp: new Date(),
       priority: NotificationPriority.HIGH,
-      metadata: {}
+      metadata: {},
     };
 
-    return this.publishNotification(this.ablyConfig.channelSystem, notification);
+    return this.publishNotification(
+      this.ablyConfig.channelSystem,
+      notification,
+    );
   }
 
   /**
@@ -440,7 +502,7 @@ export class AblyService implements OnModuleInit, OnModuleDestroy {
     try {
       const fullChannelName = this.ablyConfig.getChannelName(channelName);
       const channel = this.channels.get(fullChannelName);
-      
+
       if (!channel) {
         throw new Error(`Canal ${fullChannelName} não encontrado`);
       }
@@ -453,10 +515,13 @@ export class AblyService implements OnModuleInit, OnModuleDestroy {
         messagesSent: this.metrics.totalMessages,
         messagesReceived: 0,
         lastActivity: new Date(),
-        averageMessageSize: 1024
+        averageMessageSize: 1024,
       };
     } catch (error) {
-      this.logger.error(`Erro ao obter estatísticas do canal ${channelName}:`, error);
+      this.logger.error(
+        `Erro ao obter estatísticas do canal ${channelName}:`,
+        error,
+      );
       throw error;
     }
   }
@@ -471,7 +536,7 @@ export class AblyService implements OnModuleInit, OnModuleDestroy {
       connectionState: this.connectionStatus,
       lastError: this.lastError,
       uptime,
-      activeChannels: this.channels.size
+      activeChannels: this.channels.size,
     };
   }
 
@@ -498,19 +563,26 @@ export class AblyService implements OnModuleInit, OnModuleDestroy {
   /**
    * Inscreve-se em um canal Ably
    */
-  async subscribeToChannel(channelName: string, callback: (msg: any) => void): Promise<IAblyOperationResult> {
+  async subscribeToChannel(
+    channelName: string,
+    callback: (msg: any) => void,
+  ): Promise<IAblyOperationResult> {
     const startTime = Date.now();
     try {
       const channel = this.getChannel(channelName);
       channel.subscribe('notification', callback);
-      return { success: true, timestamp: new Date(), executionTime: Date.now() - startTime };
+      return {
+        success: true,
+        timestamp: new Date(),
+        executionTime: Date.now() - startTime,
+      };
     } catch (error) {
       return {
         success: false,
         error: error.message,
         errorCode: 'SUBSCRIBE_FAILED',
         timestamp: new Date(),
-        executionTime: Date.now() - startTime
+        executionTime: Date.now() - startTime,
       };
     }
   }
@@ -518,24 +590,28 @@ export class AblyService implements OnModuleInit, OnModuleDestroy {
   /**
    * Cancela inscrição de um canal Ably
    */
-  async unsubscribeFromChannel(channelName: string): Promise<IAblyOperationResult> {
+  async unsubscribeFromChannel(
+    channelName: string,
+  ): Promise<IAblyOperationResult> {
     const startTime = Date.now();
     try {
       const channel = this.getChannel(channelName);
       channel.unsubscribe();
-      return { success: true, timestamp: new Date(), executionTime: Date.now() - startTime };
+      return {
+        success: true,
+        timestamp: new Date(),
+        executionTime: Date.now() - startTime,
+      };
     } catch (error) {
       return {
         success: false,
         error: error.message,
         errorCode: 'UNSUBSCRIBE_FAILED',
         timestamp: new Date(),
-        executionTime: Date.now() - startTime
+        executionTime: Date.now() - startTime,
       };
     }
   }
-
-
 
   /**
    * Força reconexão
@@ -559,7 +635,7 @@ export class AblyService implements OnModuleInit, OnModuleDestroy {
     try {
       const fullChannelName = this.ablyConfig.getChannelName(channelName);
       const channel = this.channels.get(fullChannelName);
-      
+
       if (channel) {
         await channel.detach();
         this.channels.delete(fullChannelName);
@@ -579,9 +655,11 @@ export class AblyService implements OnModuleInit, OnModuleDestroy {
       if (!this.ablyClient) {
         return false;
       }
-      
-      return this.connectionStatus === 'connected' && 
-             this.ablyClient.connection.state === 'connected';
+
+      return (
+        this.connectionStatus === 'connected' &&
+        this.ablyClient.connection.state === 'connected'
+      );
     } catch (error) {
       this.logger.error('Erro ao verificar status de conexão:', error);
       return false;
@@ -595,14 +673,14 @@ export class AblyService implements OnModuleInit, OnModuleDestroy {
   async publishMessage(
     channelName: string,
     eventName: string,
-    data: any
+    data: any,
   ): Promise<{ success: boolean; messageId?: string; error?: string }> {
     try {
       // Verificar se está conectado
-      if (!await this.isConnected()) {
+      if (!(await this.isConnected())) {
         return {
           success: false,
-          error: 'Cliente Ably não está conectado'
+          error: 'Cliente Ably não está conectado',
         };
       }
 
@@ -610,7 +688,7 @@ export class AblyService implements OnModuleInit, OnModuleDestroy {
       if (!channelName || !eventName) {
         return {
           success: false,
-          error: 'Nome do canal e evento são obrigatórios'
+          error: 'Nome do canal e evento são obrigatórios',
         };
       }
 
@@ -618,43 +696,48 @@ export class AblyService implements OnModuleInit, OnModuleDestroy {
       if (!this.ablyConfig.isChannelAllowed(channelName)) {
         return {
           success: false,
-          error: `Canal ${channelName} não permitido pela configuração`
+          error: `Canal ${channelName} não permitido pela configuração`,
         };
       }
 
       // Obter canal
       const fullChannelName = this.ablyConfig.getChannelName(channelName);
       const channel = this.getChannel(fullChannelName);
-      
+
       // Validar tamanho da mensagem
       const payloadSize = Buffer.byteLength(JSON.stringify(data), 'utf8');
       if (payloadSize > this.ablyConfig.maxMessageSize) {
         return {
           success: false,
-          error: `Tamanho da mensagem (${payloadSize} bytes) excede o limite configurado`
+          error: `Tamanho da mensagem (${payloadSize} bytes) excede o limite configurado`,
         };
       }
 
       // Publicar mensagem
       await channel.publish(eventName, data);
-      
+
       // Atualizar métricas
       this.metrics.totalMessages++;
       this.metrics.messagesPublished++;
-      
+
       const messageId = `${fullChannelName}-${Date.now()}`;
-      this.logger.debug(`Mensagem publicada no canal ${fullChannelName} com evento ${eventName}, ID: ${messageId}`);
-      
+      this.logger.debug(
+        `Mensagem publicada no canal ${fullChannelName} com evento ${eventName}, ID: ${messageId}`,
+      );
+
       return {
         success: true,
-        messageId
+        messageId,
       };
     } catch (error) {
-      this.logger.error(`Erro ao publicar mensagem no canal ${channelName}:`, error);
-      
+      this.logger.error(
+        `Erro ao publicar mensagem no canal ${channelName}:`,
+        error,
+      );
+
       return {
         success: false,
-        error: error.message || 'Erro desconhecido ao publicar mensagem'
+        error: error.message || 'Erro desconhecido ao publicar mensagem',
       };
     }
   }

@@ -623,9 +623,9 @@ export class RenovacaoAutomaticaService {
       // Preparar resposta
       return {
         // TEMPORÁRIO: Campos removidos da entidade
-      renovacao_automatica: false, // solicitacao.renovacao_automatica,
-      contador_renovacoes: 0, // solicitacao.contador_renovacoes,
-      data_proxima_renovacao: null, // solicitacao.data_proxima_renovacao,
+        renovacao_automatica: false, // solicitacao.renovacao_automatica,
+        contador_renovacoes: 0, // solicitacao.contador_renovacoes,
+        data_proxima_renovacao: null, // solicitacao.data_proxima_renovacao,
         solicitacao_original_id: solicitacao.solicitacao_original_id,
         configuracao_tipo_beneficio: configuracao
           ? configuracao.renovacao_automatica && configuracao.ativo

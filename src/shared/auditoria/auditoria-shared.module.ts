@@ -13,7 +13,7 @@ import { AuditoriaSignatureService } from '../../modules/auditoria/services/audi
 
 /**
  * Módulo compartilhado de Auditoria
- * 
+ *
  * Este módulo exporta os serviços essenciais de auditoria que podem
  * ser usados por outros módulos sem criar dependências circulares.
  *

@@ -3,7 +3,7 @@ import { IsString, IsNotEmpty, MaxLength, IsOptional } from 'class-validator';
 
 /**
  * DTO para cancelamento de pagamento
- * 
+ *
  * Define os dados necessários para cancelar um pagamento,
  * incluindo o motivo obrigatório e observações opcionais.
  */

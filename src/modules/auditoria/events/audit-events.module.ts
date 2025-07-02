@@ -1,6 +1,6 @@
 /**
  * AuditEventsModule
- * 
+ *
  * Módulo responsável pela infraestrutura de eventos de auditoria.
  * Gerencia EventEmitter, BullMQ e processamento de eventos.
  */
@@ -18,15 +18,7 @@ import { AuditCoreModule } from '../core/audit-core.module';
     // Módulo core para persistência
     AuditCoreModule,
   ],
-  providers: [
-    AuditEventEmitter,
-    AuditProcessor,
-    AuditProcessingJob,
-  ],
-  exports: [
-    AuditEventEmitter,
-    AuditProcessor,
-    AuditProcessingJob,
-  ],
+  providers: [AuditEventEmitter, AuditProcessor, AuditProcessingJob],
+  exports: [AuditEventEmitter, AuditProcessor, AuditProcessingJob],
 })
 export class AuditEventsModule {}

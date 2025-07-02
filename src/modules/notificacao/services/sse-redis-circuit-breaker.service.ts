@@ -1,6 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { SseCircuitBreakerService, SseCircuitBreakerConfig } from './sse-circuit-breaker.service';
+import {
+  SseCircuitBreakerService,
+  SseCircuitBreakerConfig,
+} from './sse-circuit-breaker.service';
 import { SseRedisService } from './sse-redis.service';
 import CircuitBreaker from 'opossum';
 
@@ -23,7 +26,10 @@ export interface RedisCircuitBreakerConfig extends SseCircuitBreakerConfig {
 @Injectable()
 export class SseRedisCircuitBreakerService {
   private readonly logger = new Logger(SseRedisCircuitBreakerService.name);
-  private readonly localCache = new Map<string, { data: any; expires: number }>();
+  private readonly localCache = new Map<
+    string,
+    { data: any; expires: number }
+  >();
   private readonly redisConfig: RedisCircuitBreakerConfig;
 
   // Circuit breakers específicos para operações Redis
@@ -40,23 +46,48 @@ export class SseRedisCircuitBreakerService {
   ) {
     // Configuração específica para Redis
     this.redisConfig = {
-      timeout: this.configService.get<number>('SSE_REDIS_CIRCUIT_BREAKER_TIMEOUT', 3000),
-      errorThresholdPercentage: this.configService.get<number>('SSE_REDIS_CIRCUIT_BREAKER_ERROR_THRESHOLD', 60),
-      resetTimeout: this.configService.get<number>('SSE_REDIS_CIRCUIT_BREAKER_RESET_TIMEOUT', 20000),
-      volumeThreshold: this.configService.get<number>('SSE_REDIS_CIRCUIT_BREAKER_VOLUME_THRESHOLD', 5),
-      capacity: this.configService.get<number>('SSE_REDIS_CIRCUIT_BREAKER_CAPACITY', 10),
-      bucketSpan: this.configService.get<number>('SSE_REDIS_CIRCUIT_BREAKER_BUCKET_SPAN', 30000),
-      enableLocalCache: this.configService.get<boolean>('SSE_REDIS_ENABLE_LOCAL_CACHE', true),
-      localCacheTtl: this.configService.get<number>('SSE_REDIS_LOCAL_CACHE_TTL', 60000), // 1 minuto
+      timeout: this.configService.get<number>(
+        'SSE_REDIS_CIRCUIT_BREAKER_TIMEOUT',
+        3000,
+      ),
+      errorThresholdPercentage: this.configService.get<number>(
+        'SSE_REDIS_CIRCUIT_BREAKER_ERROR_THRESHOLD',
+        60,
+      ),
+      resetTimeout: this.configService.get<number>(
+        'SSE_REDIS_CIRCUIT_BREAKER_RESET_TIMEOUT',
+        20000,
+      ),
+      volumeThreshold: this.configService.get<number>(
+        'SSE_REDIS_CIRCUIT_BREAKER_VOLUME_THRESHOLD',
+        5,
+      ),
+      capacity: this.configService.get<number>(
+        'SSE_REDIS_CIRCUIT_BREAKER_CAPACITY',
+        10,
+      ),
+      bucketSpan: this.configService.get<number>(
+        'SSE_REDIS_CIRCUIT_BREAKER_BUCKET_SPAN',
+        30000,
+      ),
+      enableLocalCache: this.configService.get<boolean>(
+        'SSE_REDIS_ENABLE_LOCAL_CACHE',
+        true,
+      ),
+      localCacheTtl: this.configService.get<number>(
+        'SSE_REDIS_LOCAL_CACHE_TTL',
+        60000,
+      ), // 1 minuto
     };
 
     // Inicializar circuit breakers para operações específicas
     this.getCircuitBreaker = this.createRedisCircuitBreaker('redis-get');
     this.setCircuitBreaker = this.createRedisCircuitBreaker('redis-set');
     this.delCircuitBreaker = this.createRedisCircuitBreaker('redis-del');
-    this.publishCircuitBreaker = this.createRedisCircuitBreaker('redis-publish');
-    this.subscribeCircuitBreaker = this.createRedisCircuitBreaker('redis-subscribe');
-
+    this.publishCircuitBreaker =
+      this.createRedisCircuitBreaker('redis-publish');
+    this.subscribeCircuitBreaker =
+      this.createRedisCircuitBreaker('redis-subscribe');
   }
 
   /**
@@ -64,19 +95,22 @@ export class SseRedisCircuitBreakerService {
    */
   async get(key: string): Promise<string | null> {
     try {
-      const result = await this.getCircuitBreaker.fire(key) as string | null;
-      
+      const result = (await this.getCircuitBreaker.fire(key)) as string | null;
+
       // Atualizar cache local em caso de sucesso
       if (this.redisConfig.enableLocalCache && result !== null) {
         this.setLocalCache(key, result);
       }
-      
+
       return result;
     } catch (error) {
-      this.logger.warn(`Redis GET falhou para chave '${key}', tentando cache local`, {
-        error: error.message,
-      });
-      
+      this.logger.warn(
+        `Redis GET falhou para chave '${key}', tentando cache local`,
+        {
+          error: error.message,
+        },
+      );
+
       // Tentar cache local como fallback
       return this.getLocalCache(key);
     }
@@ -88,23 +122,23 @@ export class SseRedisCircuitBreakerService {
   async set(key: string, value: string, ttl?: number): Promise<boolean> {
     try {
       await this.setCircuitBreaker.fire(key, value, ttl);
-      
+
       // Atualizar cache local também
       if (this.redisConfig.enableLocalCache) {
         this.setLocalCache(key, value);
       }
-      
+
       return true;
     } catch (error) {
       this.logger.error(`Redis SET falhou para chave '${key}'`, {
         error: error.message,
       });
-      
+
       // Em caso de falha, pelo menos manter no cache local
       if (this.redisConfig.enableLocalCache) {
         this.setLocalCache(key, value);
       }
-      
+
       return false;
     }
   }
@@ -115,19 +149,19 @@ export class SseRedisCircuitBreakerService {
   async del(key: string): Promise<boolean> {
     try {
       await this.delCircuitBreaker.fire(key);
-      
+
       // Remover do cache local também
       this.localCache.delete(key);
-      
+
       return true;
     } catch (error) {
       this.logger.error(`Redis DEL falhou para chave '${key}'`, {
         error: error.message,
       });
-      
+
       // Remover do cache local mesmo se Redis falhou
       this.localCache.delete(key);
-      
+
       return false;
     }
   }
@@ -151,7 +185,10 @@ export class SseRedisCircuitBreakerService {
   /**
    * Operação SUBSCRIBE com circuit breaker
    */
-  async subscribe(channel: string, callback: (message: string) => void): Promise<boolean> {
+  async subscribe(
+    channel: string,
+    callback: (message: string) => void,
+  ): Promise<boolean> {
     try {
       await this.subscribeCircuitBreaker.fire(channel, callback);
       return true;
@@ -166,7 +203,9 @@ export class SseRedisCircuitBreakerService {
   /**
    * Verifica se uma operação específica está disponível (circuito fechado)
    */
-  isOperationAvailable(operation: 'get' | 'set' | 'del' | 'publish' | 'subscribe'): boolean {
+  isOperationAvailable(
+    operation: 'get' | 'set' | 'del' | 'publish' | 'subscribe',
+  ): boolean {
     const breakers = {
       get: this.getCircuitBreaker,
       set: this.setCircuitBreaker,
@@ -187,8 +226,10 @@ export class SseRedisCircuitBreakerService {
       get: this.circuitBreakerService.getCircuitBreakerMetrics('redis-get'),
       set: this.circuitBreakerService.getCircuitBreakerMetrics('redis-set'),
       del: this.circuitBreakerService.getCircuitBreakerMetrics('redis-del'),
-      publish: this.circuitBreakerService.getCircuitBreakerMetrics('redis-publish'),
-      subscribe: this.circuitBreakerService.getCircuitBreakerMetrics('redis-subscribe'),
+      publish:
+        this.circuitBreakerService.getCircuitBreakerMetrics('redis-publish'),
+      subscribe:
+        this.circuitBreakerService.getCircuitBreakerMetrics('redis-subscribe'),
       localCache: {
         size: this.localCache.size,
         enabled: this.redisConfig.enableLocalCache,
@@ -205,8 +246,10 @@ export class SseRedisCircuitBreakerService {
     this.circuitBreakerService.openCircuitBreaker('redis-del');
     this.circuitBreakerService.openCircuitBreaker('redis-publish');
     this.circuitBreakerService.openCircuitBreaker('redis-subscribe');
-    
-    this.logger.warn('Todos os circuit breakers Redis foram forçados para estado OPEN');
+
+    this.logger.warn(
+      'Todos os circuit breakers Redis foram forçados para estado OPEN',
+    );
   }
 
   /**
@@ -218,8 +261,10 @@ export class SseRedisCircuitBreakerService {
     this.circuitBreakerService.closeCircuitBreaker('redis-del');
     this.circuitBreakerService.closeCircuitBreaker('redis-publish');
     this.circuitBreakerService.closeCircuitBreaker('redis-subscribe');
-    
-    this.logger.log('Todos os circuit breakers Redis foram forçados para estado CLOSED');
+
+    this.logger.log(
+      'Todos os circuit breakers Redis foram forçados para estado CLOSED',
+    );
   }
 
   /**
@@ -262,7 +307,7 @@ export class SseRedisCircuitBreakerService {
   private createRedisCircuitBreaker(name: string): CircuitBreaker {
     const action = this.getRedisAction(name);
     const fallback = this.getRedisActionFallback(name);
-    
+
     return this.circuitBreakerService.getCircuitBreaker(
       name,
       action,
@@ -278,23 +323,31 @@ export class SseRedisCircuitBreakerService {
     switch (name) {
       case 'redis-get':
         return async (userId: string) => {
-          const connections = await this.redisService.getUserConnections(userId);
+          const connections =
+            await this.redisService.getUserConnections(userId);
           return connections.length > 0 ? connections[0] : null;
         };
       case 'redis-set':
-        return (connectionId: string, userId: string) => this.redisService.storeConnection({ 
-          connectionId, 
-          userId, 
-          connectedAt: new Date(), 
-          lastHeartbeat: new Date(),
-          instanceId: process.env.INSTANCE_ID || 'default'
-        });
+        return (connectionId: string, userId: string) =>
+          this.redisService.storeConnection({
+            connectionId,
+            userId,
+            connectedAt: new Date(),
+            lastHeartbeat: new Date(),
+            instanceId: process.env.INSTANCE_ID || 'default',
+          });
       case 'redis-del':
-        return (connectionId: string, userId: string) => this.redisService.removeConnection(connectionId, userId);
+        return (connectionId: string, userId: string) =>
+          this.redisService.removeConnection(connectionId, userId);
       case 'redis-publish':
-        return (userId: string, notification: any) => this.redisService.publishNotification({ userId: parseInt(userId), ...notification });
+        return (userId: string, notification: any) =>
+          this.redisService.publishNotification({
+            userId: parseInt(userId),
+            ...notification,
+          });
       case 'redis-subscribe':
-        return (userId: string, callback: (notification: any) => void) => this.redisService.subscribeToUser(userId, callback);
+        return (userId: string, callback: (notification: any) => void) =>
+          this.redisService.subscribeToUser(userId, callback);
       default:
         throw new Error(`Ação Redis desconhecida: ${name}`);
     }
@@ -303,7 +356,9 @@ export class SseRedisCircuitBreakerService {
   /**
    * Obtém a função de fallback para operações Redis
    */
-  private getRedisActionFallback(name: string): ((...args: any[]) => Promise<any>) | undefined {
+  private getRedisActionFallback(
+    name: string,
+  ): ((...args: any[]) => Promise<any>) | undefined {
     switch (name) {
       case 'redis-get':
         return async (key: string) => {
@@ -397,7 +452,9 @@ export class SseRedisCircuitBreakerService {
     }
 
     if (cleaned > 0) {
-      this.logger.debug(`Cache local limpo: ${cleaned} entradas expiradas removidas`);
+      this.logger.debug(
+        `Cache local limpo: ${cleaned} entradas expiradas removidas`,
+      );
     }
   }
 }

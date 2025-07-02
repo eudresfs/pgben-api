@@ -101,7 +101,7 @@ export class DocumentoFileProcessingService
     const extension = extname(originalName);
     const uniqueId = uuidv4();
     const timestamp = Date.now();
-    
+
     return `${timestamp}_${uniqueId}${extension}`;
   }
 }

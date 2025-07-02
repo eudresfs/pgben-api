@@ -1,6 +1,6 @@
 /**
  * AuditInterceptor
- * 
+ *
  * Interceptor para auditoria automática baseada em decorators.
  * Captura execução de métodos e emite eventos de auditoria.
  */
@@ -44,18 +44,18 @@ export class AuditInterceptor implements NestInterceptor {
     const startTime = Date.now();
     const request = context.switchToHttp().getRequest<Request>();
     const response = context.switchToHttp().getResponse<Response>();
-    
+
     // Extrair metadados dos decorators
     const auditConfig = this.reflector.get<AuditDecoratorConfig>(
       AUDIT_METADATA_KEY,
       context.getHandler(),
     );
-    
+
     const sensitiveConfig = this.reflector.get<SensitiveDataConfig>(
       SENSITIVE_DATA_METADATA_KEY,
       context.getHandler(),
     );
-    
+
     const autoAuditConfig = this.reflector.getAllAndOverride<AutoAuditConfig>(
       AUTO_AUDIT_METADATA_KEY,
       [context.getHandler(), context.getClass()],
@@ -111,7 +111,7 @@ export class AuditInterceptor implements NestInterceptor {
     const userId = this.extractUserId(request);
     const userAgent = request.headers['user-agent'];
     const ip = this.extractClientIp(request);
-    
+
     return {
       controller: controllerName,
       method: methodName,
@@ -172,17 +172,32 @@ export class AuditInterceptor implements NestInterceptor {
 
       // Evento específico baseado no decorator @Audit
       if (auditConfig) {
-        this.emitConfiguredAuditEvent(auditContext, auditConfig, result, duration);
+        this.emitConfiguredAuditEvent(
+          auditContext,
+          auditConfig,
+          result,
+          duration,
+        );
       }
 
       // Evento de dados sensíveis baseado no decorator @SensitiveData
       if (sensitiveConfig) {
-        this.emitSensitiveDataEvent(auditContext, sensitiveConfig, result, duration);
+        this.emitSensitiveDataEvent(
+          auditContext,
+          sensitiveConfig,
+          result,
+          duration,
+        );
       }
 
       // Evento automático baseado no decorator @AutoAudit
       if (autoAuditConfig?.enabled) {
-        this.emitAutoAuditEvent(auditContext, autoAuditConfig, result, duration);
+        this.emitAutoAuditEvent(
+          auditContext,
+          autoAuditConfig,
+          result,
+          duration,
+        );
       }
     } catch (error) {
       this.logger.error('Erro ao emitir evento de sucesso:', error);
@@ -195,7 +210,7 @@ export class AuditInterceptor implements NestInterceptor {
   private emitErrorEvent(auditContext: any, error: any, startTime: number) {
     try {
       const duration = Date.now() - startTime;
-      
+
       const errorEvent: BaseAuditEvent = {
         eventType: AuditEventType.SYSTEM_ERROR,
         entityName: auditContext.controller || 'unknown',
@@ -309,7 +324,7 @@ export class AuditInterceptor implements NestInterceptor {
       'sensitive_data',
       'unknown',
       event.userId,
-      config.fields || []
+      config.fields || [],
     );
   }
 
@@ -341,13 +356,16 @@ export class AuditInterceptor implements NestInterceptor {
         duration,
         includeRequest: config.includeRequest,
         includeResponse: config.includeResponse,
-        request: config.includeRequest ? {
-          params: auditContext.params,
-          query: auditContext.query,
-          body: auditContext.body,
-        } : undefined,
-        response: config.includeResponse ? 
-          this.sanitizeResult(result, config.excludeFields) : undefined,
+        request: config.includeRequest
+          ? {
+              params: auditContext.params,
+              query: auditContext.query,
+              body: auditContext.body,
+            }
+          : undefined,
+        response: config.includeResponse
+          ? this.sanitizeResult(result, config.excludeFields)
+          : undefined,
       },
     };
 
@@ -366,7 +384,7 @@ export class AuditInterceptor implements NestInterceptor {
     return (
       request.user?.['id'] ||
       request.user?.['userId'] ||
-      request.headers['x-user-id'] as string ||
+      (request.headers['x-user-id'] as string) ||
       undefined
     );
   }
@@ -377,7 +395,7 @@ export class AuditInterceptor implements NestInterceptor {
   private extractClientIp(request: Request): string {
     return (
       (request.headers['x-forwarded-for'] as string)?.split(',')[0] ||
-      request.headers['x-real-ip'] as string ||
+      (request.headers['x-real-ip'] as string) ||
       request.connection?.remoteAddress ||
       request.socket?.remoteAddress ||
       'unknown'
@@ -393,10 +411,12 @@ export class AuditInterceptor implements NestInterceptor {
     }
 
     const sanitized = { ...body };
-    
+
     for (const field of sensitiveConfig.fields) {
       if (sanitized[field]) {
-        sanitized[field] = sensitiveConfig.maskInLogs ? '***MASKED***' : '[SENSITIVE]';
+        sanitized[field] = sensitiveConfig.maskInLogs
+          ? '***MASKED***'
+          : '[SENSITIVE]';
       }
     }
 
@@ -412,7 +432,7 @@ export class AuditInterceptor implements NestInterceptor {
     }
 
     const sanitized = { ...result };
-    
+
     for (const field of excludeFields) {
       if (sanitized[field]) {
         delete sanitized[field];

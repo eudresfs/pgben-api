@@ -7,7 +7,10 @@ import { NotificacaoSistema } from '../entities/notificacao-sistema.entity';
 import { TipoNotificacao } from '../enums/tipo-notificacao.enum';
 import { PrioridadeNotificacao } from '../enums/prioridade-notificacao.enum';
 import { StatusNotificacao } from '../enums/status-notificacao.enum';
-import { NOTIFICATION_READ, NOTIFICATION_ARCHIVED } from '../events/notification.events';
+import {
+  NOTIFICATION_READ,
+  NOTIFICATION_ARCHIVED,
+} from '../events/notification.events';
 
 describe('NotificationMetricsListener', () => {
   let listener: NotificationMetricsListener;
@@ -24,14 +27,14 @@ describe('NotificationMetricsListener', () => {
     metadados: {
       origem: 'sistema',
       categoria: 'beneficio',
-      acao: 'aprovacao'
+      acao: 'aprovacao',
     },
     criadoEm: new Date('2024-01-15T10:00:00Z'),
     atualizadoEm: new Date('2024-01-15T10:00:00Z'),
     lida: false,
     arquivada: false,
     lidaEm: null,
-    arquivadaEm: null
+    arquivadaEm: null,
   } as NotificacaoSistema;
 
   beforeEach(async () => {
@@ -40,7 +43,7 @@ describe('NotificationMetricsListener', () => {
       recordSecurityEvent: jest.fn(),
       recordLgpdDataAccess: jest.fn(),
       recordDocumentEvent: jest.fn(),
-      recordAuditoriaEvent: jest.fn()
+      recordAuditoriaEvent: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -48,12 +51,14 @@ describe('NotificationMetricsListener', () => {
         NotificationMetricsListener,
         {
           provide: EnhancedMetricsService,
-          useValue: mockMetricsService
-        }
-      ]
+          useValue: mockMetricsService,
+        },
+      ],
     }).compile();
 
-    listener = module.get<NotificationMetricsListener>(NotificationMetricsListener);
+    listener = module.get<NotificationMetricsListener>(
+      NotificationMetricsListener,
+    );
     metricsService = module.get(EnhancedMetricsService);
 
     // Mock do logger para evitar logs durante os testes
@@ -78,23 +83,23 @@ describe('NotificationMetricsListener', () => {
       // Assert
       expect(metricsService.recordSystemEvent).toHaveBeenCalledWith(
         'notification_created',
-        'success'
+        'success',
       );
 
       expect(metricsService.recordSystemEvent).toHaveBeenCalledWith(
         `notification_type_${mockNotificacao.tipo}`,
-        'created'
+        'created',
       );
 
       expect(metricsService.recordSystemEvent).toHaveBeenCalledWith(
         `notification_priority_${mockNotificacao.prioridade}`,
-        'created'
+        'created',
       );
 
       expect(metricsService.recordLgpdDataAccess).toHaveBeenCalledWith(
         'notification',
         'create',
-        mockNotificacao.usuarioId
+        mockNotificacao.usuarioId,
       );
 
       expect(metricsService.recordAuditoriaEvent).toHaveBeenCalledWith(
@@ -104,8 +109,8 @@ describe('NotificationMetricsListener', () => {
           notificationId: mockNotificacao.id,
           tipo: mockNotificacao.tipo,
           prioridade: mockNotificacao.prioridade,
-          metadados: mockNotificacao.metadados
-        }
+          metadados: mockNotificacao.metadados,
+        },
       );
     });
 
@@ -115,19 +120,19 @@ describe('NotificationMetricsListener', () => {
         TipoNotificacao.SISTEMA,
         TipoNotificacao.ALERTA,
         TipoNotificacao.INFO,
-        TipoNotificacao.URGENTE
+        TipoNotificacao.URGENTE,
       ];
 
       // Act & Assert
       for (const tipo of tiposNotificacao) {
         const notificacao = { ...mockNotificacao, tipo };
         const event = new NotificationCreatedEvent(notificacao);
-        
+
         await listener.handleNotificationCreated(event);
-        
+
         expect(metricsService.recordSystemEvent).toHaveBeenCalledWith(
           `notification_type_${tipo}`,
-          'created'
+          'created',
         );
       }
     });
@@ -137,19 +142,19 @@ describe('NotificationMetricsListener', () => {
       const prioridades = [
         PrioridadeNotificacao.BAIXA,
         PrioridadeNotificacao.MEDIA,
-        PrioridadeNotificacao.ALTA
+        PrioridadeNotificacao.ALTA,
       ];
 
       // Act & Assert
       for (const prioridade of prioridades) {
         const notificacao = { ...mockNotificacao, prioridade };
         const event = new NotificationCreatedEvent(notificacao);
-        
+
         await listener.handleNotificationCreated(event);
-        
+
         expect(metricsService.recordSystemEvent).toHaveBeenCalledWith(
           `notification_priority_${prioridade}`,
-          'created'
+          'created',
         );
       }
     });
@@ -158,7 +163,7 @@ describe('NotificationMetricsListener', () => {
       // Arrange
       const notificacaoSemMetadados = {
         ...mockNotificacao,
-        metadados: {}
+        metadados: {},
       };
       const event = new NotificationCreatedEvent(notificacaoSemMetadados);
 
@@ -173,8 +178,8 @@ describe('NotificationMetricsListener', () => {
           notificationId: notificacaoSemMetadados.id,
           tipo: notificacaoSemMetadados.tipo,
           prioridade: notificacaoSemMetadados.prioridade,
-          metadados: {}
-        }
+          metadados: {},
+        },
       );
     });
 
@@ -201,7 +206,7 @@ describe('NotificationMetricsListener', () => {
       const eventData = {
         notificationId: mockNotificacao.id,
         userId: mockNotificacao.usuarioId,
-        readAt: new Date()
+        readAt: new Date(),
       };
 
       // Act
@@ -210,13 +215,13 @@ describe('NotificationMetricsListener', () => {
       // Assert
       expect(metricsService.recordSystemEvent).toHaveBeenCalledWith(
         'notification_read',
-        'success'
+        'success',
       );
 
       expect(metricsService.recordLgpdDataAccess).toHaveBeenCalledWith(
         'notification',
         'read',
-        eventData.userId
+        eventData.userId,
       );
 
       expect(metricsService.recordAuditoriaEvent).toHaveBeenCalledWith(
@@ -224,8 +229,8 @@ describe('NotificationMetricsListener', () => {
         eventData.userId,
         {
           notificationId: eventData.notificationId,
-          readAt: eventData.readAt
-        }
+          readAt: eventData.readAt,
+        },
       );
     });
 
@@ -234,7 +239,7 @@ describe('NotificationMetricsListener', () => {
       const eventData = {
         notificationId: mockNotificacao.id,
         userId: mockNotificacao.usuarioId,
-        readAt: new Date()
+        readAt: new Date(),
       };
       const error = new Error('Erro ao registrar métrica de leitura');
       metricsService.recordSystemEvent.mockImplementation(() => {
@@ -255,7 +260,7 @@ describe('NotificationMetricsListener', () => {
       const eventData = {
         notificationId: mockNotificacao.id,
         userId: mockNotificacao.usuarioId,
-        archivedAt: new Date()
+        archivedAt: new Date(),
       };
 
       // Act
@@ -264,13 +269,13 @@ describe('NotificationMetricsListener', () => {
       // Assert
       expect(metricsService.recordSystemEvent).toHaveBeenCalledWith(
         'notification_archived',
-        'success'
+        'success',
       );
 
       expect(metricsService.recordLgpdDataAccess).toHaveBeenCalledWith(
         'notification',
         'archive',
-        eventData.userId
+        eventData.userId,
       );
 
       expect(metricsService.recordAuditoriaEvent).toHaveBeenCalledWith(
@@ -278,8 +283,8 @@ describe('NotificationMetricsListener', () => {
         eventData.userId,
         {
           notificationId: eventData.notificationId,
-          archivedAt: eventData.archivedAt
-        }
+          archivedAt: eventData.archivedAt,
+        },
       );
     });
 
@@ -288,7 +293,7 @@ describe('NotificationMetricsListener', () => {
       const eventData = {
         notificationId: mockNotificacao.id,
         userId: mockNotificacao.usuarioId,
-        archivedAt: new Date()
+        archivedAt: new Date(),
       };
       const error = new Error('Erro ao registrar métrica de arquivamento');
       metricsService.recordSystemEvent.mockImplementation(() => {
@@ -309,7 +314,7 @@ describe('NotificationMetricsListener', () => {
       const eventData = {
         notificationId: mockNotificacao.id,
         userId: mockNotificacao.usuarioId,
-        success: true
+        success: true,
       };
 
       // Act
@@ -318,7 +323,7 @@ describe('NotificationMetricsListener', () => {
       // Assert
       expect(metricsService.recordSystemEvent).toHaveBeenCalledWith(
         'notification_email_delivery',
-        'success'
+        'success',
       );
 
       expect(metricsService.recordAuditoriaEvent).toHaveBeenCalledWith(
@@ -326,8 +331,8 @@ describe('NotificationMetricsListener', () => {
         eventData.userId,
         {
           notificationId: eventData.notificationId,
-          success: true
-        }
+          success: true,
+        },
       );
     });
 
@@ -337,7 +342,7 @@ describe('NotificationMetricsListener', () => {
         notificationId: mockNotificacao.id,
         userId: mockNotificacao.usuarioId,
         success: false,
-        error: 'Falha na conexão SMTP'
+        error: 'Falha na conexão SMTP',
       };
 
       // Act
@@ -346,13 +351,13 @@ describe('NotificationMetricsListener', () => {
       // Assert
       expect(metricsService.recordSystemEvent).toHaveBeenCalledWith(
         'notification_email_delivery',
-        'failure'
+        'failure',
       );
 
       expect(metricsService.recordSecurityEvent).toHaveBeenCalledWith(
         'notification_email_failure',
         `Falha no envio de email: ${eventData.error}`,
-        eventData.userId
+        eventData.userId,
       );
 
       expect(metricsService.recordAuditoriaEvent).toHaveBeenCalledWith(
@@ -360,8 +365,8 @@ describe('NotificationMetricsListener', () => {
         eventData.userId,
         {
           notificationId: eventData.notificationId,
-          error: eventData.error
-        }
+          error: eventData.error,
+        },
       );
     });
   });
@@ -372,7 +377,7 @@ describe('NotificationMetricsListener', () => {
       const eventData = {
         notificationId: mockNotificacao.id,
         userId: mockNotificacao.usuarioId,
-        success: true
+        success: true,
       };
 
       // Act
@@ -381,7 +386,7 @@ describe('NotificationMetricsListener', () => {
       // Assert
       expect(metricsService.recordSystemEvent).toHaveBeenCalledWith(
         'notification_sse_delivery',
-        'success'
+        'success',
       );
 
       expect(metricsService.recordAuditoriaEvent).toHaveBeenCalledWith(
@@ -389,8 +394,8 @@ describe('NotificationMetricsListener', () => {
         eventData.userId,
         {
           notificationId: eventData.notificationId,
-          success: true
-        }
+          success: true,
+        },
       );
     });
 
@@ -400,7 +405,7 @@ describe('NotificationMetricsListener', () => {
         notificationId: mockNotificacao.id,
         userId: mockNotificacao.usuarioId,
         success: false,
-        error: 'Conexão SSE perdida'
+        error: 'Conexão SSE perdida',
       };
 
       // Act
@@ -409,13 +414,13 @@ describe('NotificationMetricsListener', () => {
       // Assert
       expect(metricsService.recordSystemEvent).toHaveBeenCalledWith(
         'notification_sse_delivery',
-        'failure'
+        'failure',
       );
 
       expect(metricsService.recordSecurityEvent).toHaveBeenCalledWith(
         'notification_sse_failure',
         `Falha no envio SSE: ${eventData.error}`,
-        eventData.userId
+        eventData.userId,
       );
 
       expect(metricsService.recordAuditoriaEvent).toHaveBeenCalledWith(
@@ -423,8 +428,8 @@ describe('NotificationMetricsListener', () => {
         eventData.userId,
         {
           notificationId: eventData.notificationId,
-          error: eventData.error
-        }
+          error: eventData.error,
+        },
       );
     });
   });
@@ -441,7 +446,7 @@ describe('NotificationMetricsListener', () => {
       expect(metricsService.recordLgpdDataAccess).toHaveBeenCalledWith(
         'notification',
         'create',
-        mockNotificacao.usuarioId
+        mockNotificacao.usuarioId,
       );
     });
 
@@ -459,8 +464,8 @@ describe('NotificationMetricsListener', () => {
         expect.objectContaining({
           notificationId: mockNotificacao.id,
           tipo: mockNotificacao.tipo,
-          prioridade: mockNotificacao.prioridade
-        })
+          prioridade: mockNotificacao.prioridade,
+        }),
       );
     });
 
@@ -475,7 +480,7 @@ describe('NotificationMetricsListener', () => {
       expect(metricsService.recordSystemEvent).toHaveBeenCalledTimes(3);
       expect(metricsService.recordSystemEvent).toHaveBeenCalledWith(
         'notification_created',
-        'success'
+        'success',
       );
     });
   });
@@ -489,7 +494,9 @@ describe('NotificationMetricsListener', () => {
       });
 
       // Act & Assert
-      await expect(listener.handleNotificationCreated(event)).resolves.not.toThrow();
+      await expect(
+        listener.handleNotificationCreated(event),
+      ).resolves.not.toThrow();
     });
 
     it('deve logar erros sem interromper o fluxo', async () => {

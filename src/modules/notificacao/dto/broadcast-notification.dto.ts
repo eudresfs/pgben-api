@@ -10,7 +10,7 @@ import {
   MaxLength,
   MinLength,
   ValidateNested,
-  ArrayNotEmpty
+  ArrayNotEmpty,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -21,17 +21,18 @@ export class BroadcastTargetDto {
   @ApiProperty({
     description: 'Tipo do alvo do broadcast',
     enum: ['all', 'unit', 'role', 'region'],
-    example: 'unit'
+    example: 'unit',
   })
   @IsNotEmpty({ message: 'Tipo do alvo é obrigatório' })
   @IsEnum(['all', 'unit', 'role', 'region'], {
-    message: 'Tipo de alvo inválido'
+    message: 'Tipo de alvo inválido',
   })
   type: 'all' | 'unit' | 'role' | 'region';
 
   @ApiPropertyOptional({
-    description: 'Valor específico do alvo (obrigatório para tipos diferentes de "all")',
-    example: 'assistencia_social'
+    description:
+      'Valor específico do alvo (obrigatório para tipos diferentes de "all")',
+    example: 'assistencia_social',
   })
   @IsOptional()
   @IsString({ message: 'Valor do alvo deve ser uma string' })
@@ -44,20 +45,41 @@ export class BroadcastTargetDto {
 export class BroadcastNotificationDto {
   @ApiProperty({
     description: 'Tipo da notificação',
-    enum: ['system', 'user', 'admin', 'security', 'workflow', 'reminder', 'alert', 'info'],
-    example: 'system'
+    enum: [
+      'system',
+      'user',
+      'admin',
+      'security',
+      'workflow',
+      'reminder',
+      'alert',
+      'info',
+    ],
+    example: 'system',
   })
   @IsNotEmpty({ message: 'Tipo da notificação é obrigatório' })
-  @IsEnum(['system', 'user', 'admin', 'security', 'workflow', 'reminder', 'alert', 'info'], {
-    message: 'Tipo de notificação inválido'
-  })
+  @IsEnum(
+    [
+      'system',
+      'user',
+      'admin',
+      'security',
+      'workflow',
+      'reminder',
+      'alert',
+      'info',
+    ],
+    {
+      message: 'Tipo de notificação inválido',
+    },
+  )
   type: string;
 
   @ApiProperty({
     description: 'Título da notificação',
     example: 'Manutenção programada do sistema',
     minLength: 1,
-    maxLength: 100
+    maxLength: 100,
   })
   @IsNotEmpty({ message: 'Título é obrigatório' })
   @IsString({ message: 'Título deve ser uma string' })
@@ -67,9 +89,10 @@ export class BroadcastNotificationDto {
 
   @ApiProperty({
     description: 'Mensagem da notificação',
-    example: 'O sistema estará em manutenção das 02:00 às 04:00. Durante este período, alguns serviços podem ficar indisponíveis.',
+    example:
+      'O sistema estará em manutenção das 02:00 às 04:00. Durante este período, alguns serviços podem ficar indisponíveis.',
     minLength: 1,
-    maxLength: 1000
+    maxLength: 1000,
   })
   @IsNotEmpty({ message: 'Mensagem é obrigatória' })
   @IsString({ message: 'Mensagem deve ser uma string' })
@@ -81,17 +104,17 @@ export class BroadcastNotificationDto {
     description: 'Prioridade da notificação',
     enum: ['low', 'normal', 'high', 'urgent'],
     example: 'high',
-    default: 'normal'
+    default: 'normal',
   })
   @IsOptional()
   @IsEnum(['low', 'normal', 'high', 'urgent'], {
-    message: 'Prioridade inválida'
+    message: 'Prioridade inválida',
   })
   priority?: string;
 
   @ApiProperty({
     description: 'Configuração do alvo do broadcast',
-    type: BroadcastTargetDto
+    type: BroadcastTargetDto,
   })
   @ValidateNested()
   @Type(() => BroadcastTargetDto)
@@ -102,8 +125,8 @@ export class BroadcastNotificationDto {
     example: {
       maintenanceType: 'scheduled',
       estimatedDuration: '2 hours',
-      affectedServices: ['api', 'frontend', 'database']
-    }
+      affectedServices: ['api', 'frontend', 'database'],
+    },
   })
   @IsOptional()
   @IsObject({ message: 'Dados devem ser um objeto' })
@@ -111,22 +134,28 @@ export class BroadcastNotificationDto {
 
   @ApiPropertyOptional({
     description: 'Lista de IDs de usuários a serem excluídos do broadcast',
-    example: ['123e4567-e89b-12d3-a456-426614174000', '987fcdeb-51a2-43d1-b789-123456789abc'],
-    type: [String]
+    example: [
+      '123e4567-e89b-12d3-a456-426614174000',
+      '987fcdeb-51a2-43d1-b789-123456789abc',
+    ],
+    type: [String],
   })
   @IsOptional()
   @IsArray({ message: 'excludeUsers deve ser um array' })
-  @IsUUID('4', { each: true, message: 'Cada ID de usuário deve ser um UUID válido' })
+  @IsUUID('4', {
+    each: true,
+    message: 'Cada ID de usuário deve ser um UUID válido',
+  })
   excludeUsers?: string[];
 
   @ApiPropertyOptional({
     description: 'Forçar método de entrega específico',
     enum: ['ably', 'sse'],
-    example: 'ably'
+    example: 'ably',
   })
   @IsOptional()
   @IsEnum(['ably', 'sse'], {
-    message: 'Método de entrega inválido'
+    message: 'Método de entrega inválido',
   })
   forceMethod?: 'ably' | 'sse';
 }
@@ -143,8 +172,8 @@ export class MaintenanceBroadcastDto extends BroadcastNotificationDto {
       endTime: '2024-01-15T04:00:00Z',
       affectedServices: ['api', 'frontend'],
       impact: 'partial_downtime',
-      contactInfo: 'suporte@semtas.gov.br'
-    }
+      contactInfo: 'suporte@semtas.gov.br',
+    },
   })
   @IsObject({ message: 'Dados de manutenção devem ser um objeto' })
   data: {
@@ -170,14 +199,22 @@ export class EmergencyBroadcastDto extends BroadcastNotificationDto {
       actionRequired: 'immediate_logout',
       instructions: 'Faça logout imediatamente e aguarde novas instruções.',
       contactInfo: 'emergencia@semtas.gov.br',
-      incidentId: 'INC-2024-001'
-    }
+      incidentId: 'INC-2024-001',
+    },
   })
   @IsObject({ message: 'Dados de emergência devem ser um objeto' })
   data: {
-    emergencyType: 'security_breach' | 'system_failure' | 'data_corruption' | 'external_threat';
+    emergencyType:
+      | 'security_breach'
+      | 'system_failure'
+      | 'data_corruption'
+      | 'external_threat';
     severity: 'low' | 'medium' | 'high' | 'critical';
-    actionRequired: 'none' | 'immediate_logout' | 'change_password' | 'contact_support';
+    actionRequired:
+      | 'none'
+      | 'immediate_logout'
+      | 'change_password'
+      | 'contact_support';
     instructions: string;
     contactInfo: string;
     incidentId?: string;
@@ -197,12 +234,16 @@ export class AnnouncementBroadcastDto extends BroadcastNotificationDto {
       effectiveDate: '2024-02-01T00:00:00Z',
       documentUrl: '/documents/policy-update-2024-001.pdf',
       requiresAcknowledgment: true,
-      expirationDate: '2024-02-15T23:59:59Z'
-    }
+      expirationDate: '2024-02-15T23:59:59Z',
+    },
   })
   @IsObject({ message: 'Dados do comunicado devem ser um objeto' })
   data: {
-    announcementType: 'policy_update' | 'new_feature' | 'training' | 'general_info';
+    announcementType:
+      | 'policy_update'
+      | 'new_feature'
+      | 'training'
+      | 'general_info';
     category: 'benefits' | 'system' | 'training' | 'administrative' | 'legal';
     effectiveDate?: string;
     documentUrl?: string;
@@ -220,8 +261,8 @@ export class DepartmentBroadcastDto extends BroadcastNotificationDto {
     description: 'Configuração específica para broadcast por departamento',
     example: {
       type: 'unit',
-      value: 'assistencia_social'
-    }
+      value: 'assistencia_social',
+    },
   })
   target: {
     type: 'unit';
@@ -233,8 +274,8 @@ export class DepartmentBroadcastDto extends BroadcastNotificationDto {
     example: {
       departmentCode: 'ASSIS_SOC',
       managerNotification: true,
-      cascadeToSubdepartments: false
-    }
+      cascadeToSubdepartments: false,
+    },
   })
   @IsOptional()
   @IsObject({ message: 'Dados do departamento devem ser um objeto' })
@@ -253,8 +294,8 @@ export class RoleBroadcastDto extends BroadcastNotificationDto {
     description: 'Configuração específica para broadcast por função',
     example: {
       type: 'role',
-      value: 'analista_beneficios'
-    }
+      value: 'analista_beneficios',
+    },
   })
   target: {
     type: 'role';
@@ -266,13 +307,18 @@ export class RoleBroadcastDto extends BroadcastNotificationDto {
     example: {
       roleLevel: 'tecnico',
       includeSubordinates: false,
-      temporaryAssignments: true
-    }
+      temporaryAssignments: true,
+    },
   })
   @IsOptional()
   @IsObject({ message: 'Dados da função devem ser um objeto' })
   roleData?: {
-    roleLevel?: 'tecnico' | 'cidadao' | 'gestor' | 'coordenador' | 'administrador';
+    roleLevel?:
+      | 'tecnico'
+      | 'cidadao'
+      | 'gestor'
+      | 'coordenador'
+      | 'administrador';
     includeSubordinates?: boolean;
     temporaryAssignments?: boolean;
   };
@@ -286,8 +332,8 @@ export class RegionBroadcastDto extends BroadcastNotificationDto {
     description: 'Configuração específica para broadcast por região',
     example: {
       type: 'region',
-      value: 'zona_norte'
-    }
+      value: 'zona_norte',
+    },
   })
   target: {
     type: 'region';
@@ -299,8 +345,8 @@ export class RegionBroadcastDto extends BroadcastNotificationDto {
     example: {
       regionCode: 'ZN',
       includeNeighboringRegions: false,
-      urgentDelivery: false
-    }
+      urgentDelivery: false,
+    },
   })
   @IsOptional()
   @IsObject({ message: 'Dados da região devem ser um objeto' })

@@ -66,7 +66,7 @@ export const createRedisInstance = (configService: ConfigService): Redis => {
  */
 export const getRedisConfig = (configService: ConfigService) => {
   const environment = configService.get<string>('NODE_ENV', 'development');
-  
+
   const password = configService.get<string>('REDIS_PASSWORD');
 
   const baseConfig: Partial<RedisConfig> = {
@@ -91,7 +91,7 @@ export const getRedisConfig = (configService: ConfigService) => {
         connectTimeout: 10000,
         commandTimeout: 5000,
       };
-    
+
     case 'test':
       return {
         ...baseConfig,
@@ -101,7 +101,7 @@ export const getRedisConfig = (configService: ConfigService) => {
         lazyConnect: false,
         keepAlive: 1000,
       };
-    
+
     default: // development
       return {
         ...baseConfig,

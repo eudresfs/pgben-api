@@ -22,9 +22,9 @@ export class ComprovanteService {
   private readonly MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
   private readonly ALLOWED_TYPES = [
     'application/pdf',
-    'image/jpeg', 
+    'image/jpeg',
     'image/png',
-    'image/jpg'
+    'image/jpg',
   ];
 
   constructor(
@@ -42,22 +42,33 @@ export class ComprovanteService {
     tipoDocumento: string,
     usuarioId: string,
   ): Promise<ComprovantePagamento> {
-    this.logger.log(`Fazendo upload de comprovante para pagamento ${pagamentoId}`);
+    this.logger.log(
+      `Fazendo upload de comprovante para pagamento ${pagamentoId}`,
+    );
 
     // Validações fora da transação
-    PagamentoValidationUtil.validarArquivo(file, this.MAX_FILE_SIZE, this.ALLOWED_TYPES);
-    
+    PagamentoValidationUtil.validarArquivo(
+      file,
+      this.MAX_FILE_SIZE,
+      this.ALLOWED_TYPES,
+    );
+
     const pagamento = await this.pagamentoRepository.findById(pagamentoId);
     PagamentoValidationUtil.validarExistencia(pagamento, pagamentoId);
-    
+
     if (!pagamento) {
-      throw new NotFoundException(`Pagamento com ID ${pagamentoId} não encontrado`);
+      throw new NotFoundException(
+        `Pagamento com ID ${pagamentoId} não encontrado`,
+      );
     }
-    
+
     PagamentoValidationUtil.validarParaComprovante(pagamento);
 
     // Upload do arquivo (reutilizando pagamento já buscado)
-    const { url, nomeArquivo } = await this.storageService.upload(file, pagamento.id);
+    const { url, nomeArquivo } = await this.storageService.upload(
+      file,
+      pagamento.id,
+    );
 
     // Transação mínima - apenas inserção (reutilizando pagamento já buscado)
     const comprovante = await this.comprovanteRepository.create({
@@ -80,7 +91,7 @@ export class ComprovanteService {
    */
   async findById(id: string): Promise<ComprovantePagamento> {
     const comprovante = await this.comprovanteRepository.findById(id);
-    
+
     if (!comprovante) {
       throw new NotFoundException('Comprovante não encontrado');
     }
@@ -123,7 +134,9 @@ export class ComprovanteService {
   }> {
     const comprovante = await this.findById(id);
 
-    const buffer = await this.storageService.getContent(comprovante.caminho_arquivo);
+    const buffer = await this.storageService.getContent(
+      comprovante.caminho_arquivo,
+    );
 
     return {
       buffer,

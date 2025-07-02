@@ -39,7 +39,7 @@ interface LiberacaoEvent extends WorkflowEvent {
 
 /**
  * Listener para eventos de workflow que dispara notificações proativas
- * 
+ *
  * Este listener integra o sistema de notificações com os eventos do workflow,
  * implementando as funcionalidades das Fases 4 e 5:
  * - Notificações proativas baseadas em eventos
@@ -106,7 +106,9 @@ export class WorkflowProativoListener {
 
   @OnEvent('solicitacao.atualizada')
   async handleSolicitacaoAtualizada(event: SolicitacaoEvent) {
-    this.logger.log(`Processando solicitação atualizada: ${event.solicitacaoId}`);
+    this.logger.log(
+      `Processando solicitação atualizada: ${event.solicitacaoId}`,
+    );
 
     try {
       // Determinar prioridade baseada na mudança de status
@@ -136,7 +138,9 @@ export class WorkflowProativoListener {
 
       // Alertas de prazo são gerenciados automaticamente pelo scheduler
       if (this.isStatusFinal(event.statusNovo)) {
-        this.logger.log(`Solicitação ${event.solicitacaoId} finalizada - alertas serão limpos automaticamente`);
+        this.logger.log(
+          `Solicitação ${event.solicitacaoId} finalizada - alertas serão limpos automaticamente`,
+        );
       }
     } catch (error) {
       this.logger.error(
@@ -160,7 +164,8 @@ export class WorkflowProativoListener {
         usuarioId: event.usuarioId,
         tipo: TipoNotificacao.APROVACAO,
         titulo: 'Solicitação Aprovada',
-        mensagem: 'Sua solicitação foi aprovada! Aguarde a liberação do benefício.',
+        mensagem:
+          'Sua solicitação foi aprovada! Aguarde a liberação do benefício.',
         prioridade: 'high',
         contexto: {
           solicitacaoId: event.solicitacaoId,
@@ -192,7 +197,9 @@ export class WorkflowProativoListener {
 
   @OnEvent('solicitacao.indeferida')
   async handleSolicitacaoIndeferida(event: AprovacaoEvent) {
-    this.logger.log(`Processando solicitação indeferida: ${event.solicitacaoId}`);
+    this.logger.log(
+      `Processando solicitação indeferida: ${event.solicitacaoId}`,
+    );
 
     try {
       // Notificar usuário sobre indeferimento
@@ -200,7 +207,8 @@ export class WorkflowProativoListener {
         usuarioId: event.usuarioId,
         tipo: TipoNotificacao.APROVACAO,
         titulo: 'Solicitação Indeferida',
-        mensagem: 'Sua solicitação foi indeferida. Verifique os motivos e documentação necessária.',
+        mensagem:
+          'Sua solicitação foi indeferida. Verifique os motivos e documentação necessária.',
         prioridade: 'high',
         contexto: {
           solicitacaoId: event.solicitacaoId,
@@ -211,7 +219,9 @@ export class WorkflowProativoListener {
       });
 
       // Alertas de prazo são gerenciados automaticamente pelo scheduler
-      this.logger.log(`Solicitação ${event.solicitacaoId} indeferida - alertas serão limpos automaticamente`);
+      this.logger.log(
+        `Solicitação ${event.solicitacaoId} indeferida - alertas serão limpos automaticamente`,
+      );
     } catch (error) {
       this.logger.error(
         `Erro ao processar solicitação indeferida ${event.solicitacaoId}:`,
@@ -260,7 +270,8 @@ export class WorkflowProativoListener {
       await this.notificarTodosUsuarios({
         tipo: TipoNotificacao.SISTEMA,
         titulo: 'Sistema Disponível',
-        mensagem: 'A manutenção foi concluída. O sistema está novamente disponível.',
+        mensagem:
+          'A manutenção foi concluída. O sistema está novamente disponível.',
         prioridade: 'medium',
         contexto: {
           tipo: 'manutencao_finalizada',
@@ -338,7 +349,9 @@ export class WorkflowProativoListener {
     //     ...dados,
     //   });
     // }
-    this.logger.debug('Notificação para administradores (implementação pendente)');
+    this.logger.debug(
+      'Notificação para administradores (implementação pendente)',
+    );
   }
 
   /**
@@ -352,7 +365,9 @@ export class WorkflowProativoListener {
     contexto?: Record<string, any>;
   }) {
     // TODO: Implementar busca de usuários do setor financeiro
-    this.logger.debug('Notificação para setor financeiro (implementação pendente)');
+    this.logger.debug(
+      'Notificação para setor financeiro (implementação pendente)',
+    );
   }
 
   /**
@@ -366,7 +381,9 @@ export class WorkflowProativoListener {
     contexto?: Record<string, any>;
   }) {
     // TODO: Implementar notificação em massa
-    this.logger.debug('Notificação para todos os usuários (implementação pendente)');
+    this.logger.debug(
+      'Notificação para todos os usuários (implementação pendente)',
+    );
   }
 
   /**
@@ -448,7 +465,10 @@ export class WorkflowProativoListener {
       [StatusSolicitacao.CANCELADA]: `Sua solicitação de ${tipoBeneficio} foi cancelada.`,
     };
 
-    return mensagens[statusNovo] || `Status da solicitação atualizado para ${statusNovo}.`;
+    return (
+      mensagens[statusNovo] ||
+      `Status da solicitação atualizado para ${statusNovo}.`
+    );
   }
 
   /**

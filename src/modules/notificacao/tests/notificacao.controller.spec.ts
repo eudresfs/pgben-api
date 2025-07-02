@@ -151,10 +151,10 @@ describe('NotificacaoController', () => {
         dataInicio: 'data-invalida',
       };
 
-      await expect(
-        controller.findAll(mockRequest, filtros)
-      ).rejects.toThrow(
-        new BadRequestException('Data de início inválida. Use o formato YYYY-MM-DD')
+      await expect(controller.findAll(mockRequest, filtros)).rejects.toThrow(
+        new BadRequestException(
+          'Data de início inválida. Use o formato YYYY-MM-DD',
+        ),
       );
     });
 
@@ -163,10 +163,10 @@ describe('NotificacaoController', () => {
         dataFim: 'data-invalida',
       };
 
-      await expect(
-        controller.findAll(mockRequest, filtros)
-      ).rejects.toThrow(
-        new BadRequestException('Data de fim inválida. Use o formato YYYY-MM-DD')
+      await expect(controller.findAll(mockRequest, filtros)).rejects.toThrow(
+        new BadRequestException(
+          'Data de fim inválida. Use o formato YYYY-MM-DD',
+        ),
       );
     });
 
@@ -176,10 +176,10 @@ describe('NotificacaoController', () => {
         dataFim: '2024-01-01',
       };
 
-      await expect(
-        controller.findAll(mockRequest, filtros)
-      ).rejects.toThrow(
-        new BadRequestException('Data de início não pode ser posterior à data de fim')
+      await expect(controller.findAll(mockRequest, filtros)).rejects.toThrow(
+        new BadRequestException(
+          'Data de início não pode ser posterior à data de fim',
+        ),
       );
     });
 

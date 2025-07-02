@@ -174,8 +174,10 @@ export const SOLICITACAO_ERRORS: Record<string, ErrorDefinition> = {
     category: ErrorCategory.VALIDATIONS,
     severity: ErrorSeverity.MEDIUM,
     localizedMessages: {
-      'pt-BR': 'Esta determinação judicial já está vinculada a outra solicitação',
-      'en-US': 'This judicial determination is already linked to another request',
+      'pt-BR':
+        'Esta determinação judicial já está vinculada a outra solicitação',
+      'en-US':
+        'This judicial determination is already linked to another request',
     },
   },
 
@@ -186,7 +188,8 @@ export const SOLICITACAO_ERRORS: Record<string, ErrorDefinition> = {
     category: ErrorCategory.VALIDATIONS,
     severity: ErrorSeverity.MEDIUM,
     localizedMessages: {
-      'pt-BR': 'Nenhuma determinação judicial está vinculada a esta solicitação',
+      'pt-BR':
+        'Nenhuma determinação judicial está vinculada a esta solicitação',
       'en-US': 'No judicial determination is linked to this request',
     },
   },
@@ -203,7 +206,8 @@ export const SOLICITACAO_ERRORS: Record<string, ErrorDefinition> = {
     severity: ErrorSeverity.MEDIUM,
     localizedMessages: {
       'pt-BR': 'Este cidadão já é beneficiário de outra solicitação ativa',
-      'en-US': 'This citizen is already a beneficiary of another active request',
+      'en-US':
+        'This citizen is already a beneficiary of another active request',
     },
   },
 
@@ -214,8 +218,10 @@ export const SOLICITACAO_ERRORS: Record<string, ErrorDefinition> = {
     category: ErrorCategory.VALIDATIONS,
     severity: ErrorSeverity.MEDIUM,
     localizedMessages: {
-      'pt-BR': 'Este cidadão já faz parte da composição familiar de outra solicitação ativa',
-      'en-US': 'This citizen is already part of the family composition of another active request',
+      'pt-BR':
+        'Este cidadão já faz parte da composição familiar de outra solicitação ativa',
+      'en-US':
+        'This citizen is already part of the family composition of another active request',
     },
   },
 
@@ -226,8 +232,10 @@ export const SOLICITACAO_ERRORS: Record<string, ErrorDefinition> = {
     category: ErrorCategory.VALIDATIONS,
     severity: ErrorSeverity.MEDIUM,
     localizedMessages: {
-      'pt-BR': 'Este cidadão não faz parte da composição familiar desta solicitação',
-      'en-US': 'This citizen is not part of the family composition of this request',
+      'pt-BR':
+        'Este cidadão não faz parte da composição familiar desta solicitação',
+      'en-US':
+        'This citizen is not part of the family composition of this request',
     },
   },
 
@@ -278,8 +286,10 @@ export const SOLICITACAO_ERRORS: Record<string, ErrorDefinition> = {
     category: ErrorCategory.OPERATIONAL_FLOW,
     severity: ErrorSeverity.MEDIUM,
     localizedMessages: {
-      'pt-BR': 'Existem pendências que devem ser resolvidas antes de prosseguir',
-      'en-US': 'There are pending issues that must be resolved before proceeding',
+      'pt-BR':
+        'Existem pendências que devem ser resolvidas antes de prosseguir',
+      'en-US':
+        'There are pending issues that must be resolved before proceeding',
     },
   },
 

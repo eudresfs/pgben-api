@@ -75,7 +75,7 @@ export class DocumentoPersistenceService
         descricao: uploadDocumentoDto.descricao,
         upload_session_id: uploadDocumentoDto.upload_session_id,
         metadados: metadata as any,
-        data_upload: new Date()
+        data_upload: new Date(),
       });
 
       // Validar dados antes de salvar
@@ -84,20 +84,24 @@ export class DocumentoPersistenceService
       }
 
       // Salvar documento
-      const savedDocument = await this.documentoRepository.save(documento) as unknown as Documento;
+      const savedDocument = (await this.documentoRepository.save(
+        documento,
+      )) as unknown as Documento;
 
       // Gerar URL pública após salvar o documento
       try {
-        const urlPublica = await this.documentoUrlService.generatePublicUrl(savedDocument.id);
-        
+        const urlPublica = await this.documentoUrlService.generatePublicUrl(
+          savedDocument.id,
+        );
+
         // Atualizar documento com a URL pública
         await this.documentoRepository.update(savedDocument.id, {
-          url_publica: urlPublica
+          url_publica: urlPublica,
         });
-        
+
         // Atualizar o objeto em memória
         savedDocument.url_publica = urlPublica;
-        
+
         this.logger.debug(
           `URL pública gerada e salva [${uploadId}]`,
           DocumentoPersistenceService.name,
@@ -184,7 +188,9 @@ export class DocumentoPersistenceService
         .getOne();
 
       if (!documentWithRelations) {
-        throw new Error(`Documento não encontrado após salvamento: ${documento.id}`);
+        throw new Error(
+          `Documento não encontrado após salvamento: ${documento.id}`,
+        );
       }
 
       this.logger.debug(
@@ -251,7 +257,10 @@ export class DocumentoPersistenceService
     }
 
     // Validar formato do hash
-    if (documentData.hash_arquivo && !/^[a-f0-9]{64}$/i.test(documentData.hash_arquivo)) {
+    if (
+      documentData.hash_arquivo &&
+      !/^[a-f0-9]{64}$/i.test(documentData.hash_arquivo)
+    ) {
       errors.push('hash_arquivo deve ser um SHA-256 válido');
     }
 

@@ -6,7 +6,11 @@ import { DataSource } from 'typeorm';
 import { CreateSetorDto } from '../dto/create-setor.dto';
 import { UpdateSetorDto } from '../dto/update-setor.dto';
 import { Setor } from '../../../entities/setor.entity';
-import { Unidade, TipoUnidade, StatusUnidade } from '../../../entities/unidade.entity';
+import {
+  Unidade,
+  TipoUnidade,
+  StatusUnidade,
+} from '../../../entities/unidade.entity';
 // Comentando as importações de funções de erro por enquanto
 // import {
 //   throwSetorNotFound,
@@ -156,7 +160,7 @@ describe('SetorService', () => {
     it('deve retornar lista de setores com paginação', async () => {
       const mockSetores = [mockSetor];
       const mockUnidade = { id: 'unidade-id-1', nome: 'Unidade Teste' };
-      
+
       unidadeRepository.findById.mockResolvedValue(mockUnidade);
       setorRepository.findByUnidadeId.mockResolvedValue(mockSetores);
 
@@ -169,7 +173,9 @@ describe('SetorService', () => {
           unidadeId: 'unidade-id-1',
         },
       });
-      expect(setorRepository.findByUnidadeId).toHaveBeenCalledWith('unidade-id-1');
+      expect(setorRepository.findByUnidadeId).toHaveBeenCalledWith(
+        'unidade-id-1',
+      );
       expect(unidadeRepository.findById).toHaveBeenCalledWith('unidade-id-1');
     });
 
@@ -234,7 +240,7 @@ describe('SetorService', () => {
   describe('findByUnidade', () => {
     it('deve retornar setores de uma unidade específica', async () => {
       const mockSetores = [mockSetor];
-      
+
       setorRepository.findAll.mockResolvedValue({
         data: mockSetores,
         total: 1,
@@ -429,9 +435,7 @@ describe('SetorService', () => {
 
       unidadeRepository.findById.mockResolvedValue(mockUnidade);
 
-      await expect(
-        service.create(createDtoComNomeCurto),
-      ).rejects.toThrow();
+      await expect(service.create(createDtoComNomeCurto)).rejects.toThrow();
     });
 
     it('deve validar comprimento máximo do nome', async () => {
@@ -442,9 +446,7 @@ describe('SetorService', () => {
 
       unidadeRepository.findById.mockResolvedValue(mockUnidade);
 
-      await expect(
-        service.create(createDtoComNomeLongo),
-      ).rejects.toThrow();
+      await expect(service.create(createDtoComNomeLongo)).rejects.toThrow();
     });
 
     it('deve validar formato UUID da unidade', async () => {
@@ -469,17 +471,17 @@ describe('SetorService', () => {
     });
 
     it('deve tratar erro de conexão com banco', async () => {
-      setorRepository.findByUnidadeId.mockRejectedValue(new Error('Connection error'));
+      setorRepository.findByUnidadeId.mockRejectedValue(
+        new Error('Connection error'),
+      );
 
-      await expect(
-        service.findByUnidadeId('unidade-123'),
-      ).rejects.toThrow();
+      await expect(service.findByUnidadeId('unidade-123')).rejects.toThrow();
     });
 
     it('deve tratar erro de violação de constraint', async () => {
       unidadeRepository.findById.mockResolvedValue(mockUnidade);
       setorRepository.findByNomeAndUnidade.mockResolvedValue(null);
-      
+
       const constraintError = new Error('Constraint violation');
       (constraintError as any).code = '23505';
       setorRepository.create.mockRejectedValue(constraintError);

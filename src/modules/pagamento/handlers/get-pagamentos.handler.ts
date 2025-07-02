@@ -33,12 +33,21 @@ export class GetPagamentosHandler {
 
       // Gerar chave de cache baseada nos filtros
       const cacheKey = this.generateCacheKey('pagamentos', query);
-      
+
       // Tentar buscar no cache primeiro
       const cachedResult = await this.cacheService.get(cacheKey);
-      if (cachedResult && typeof cachedResult === 'object' && 'data' in cachedResult) {
+      if (
+        cachedResult &&
+        typeof cachedResult === 'object' &&
+        'data' in cachedResult
+      ) {
         this.logger.log('Resultado encontrado no cache');
-        return cachedResult as { data: PagamentoResponseDto[]; total: number; page: number; limit: number; };
+        return cachedResult as {
+          data: PagamentoResponseDto[];
+          total: number;
+          page: number;
+          limit: number;
+        };
       }
 
       // Buscar no banco de dados
@@ -49,42 +58,45 @@ export class GetPagamentosHandler {
         dataInicio: query.filtros.dataInicio?.toISOString(),
         dataFim: query.filtros.dataFim?.toISOString(),
         page: query.paginacao?.page,
-        limit: query.paginacao?.limit
+        limit: query.paginacao?.limit,
       });
 
       // Mapear para o formato esperado
       const result = {
-        data: serviceResult.data.map(pagamento => ({
-          id: pagamento.id,
-          valor: pagamento.valor,
-          status: pagamento.status,
-          metodoPagamento: pagamento.metodoPagamento,
-          createdAt: pagamento.created_at,
-           updatedAt: pagamento.updated_at,
-          numeroParcela: pagamento.numeroParcela || 1,
-            totalParcelas: pagamento.totalParcelas || 1,
-           dataPagamento: pagamento.dataPagamento,
-           observacoes: pagamento.observacoes,
-           solicitacaoId: pagamento.solicitacaoId || '',
-            dataLiberacao: pagamento.dataLiberacao || new Date(),
-          responsavelLiberacao: {
-            id: '',
-            nome: '',
-            role: ''
-          },
-          infoBancariaId: '',
-          infoBancaria: {
-            tipo: 'PIX',
-            chavePix: '',
-            banco: '',
-            agencia: '',
-            conta: ''
-          },
-          quantidadeComprovantes: 0
-        } as PagamentoResponseDto)),
+        data: serviceResult.data.map(
+          (pagamento) =>
+            ({
+              id: pagamento.id,
+              valor: pagamento.valor,
+              status: pagamento.status,
+              metodoPagamento: pagamento.metodoPagamento,
+              createdAt: pagamento.created_at,
+              updatedAt: pagamento.updated_at,
+              numeroParcela: pagamento.numeroParcela || 1,
+              totalParcelas: pagamento.totalParcelas || 1,
+              dataPagamento: pagamento.dataPagamento,
+              observacoes: pagamento.observacoes,
+              solicitacaoId: pagamento.solicitacaoId || '',
+              dataLiberacao: pagamento.dataLiberacao || new Date(),
+              responsavelLiberacao: {
+                id: '',
+                nome: '',
+                role: '',
+              },
+              infoBancariaId: '',
+              infoBancaria: {
+                tipo: 'PIX',
+                chavePix: '',
+                banco: '',
+                agencia: '',
+                conta: '',
+              },
+              quantidadeComprovantes: 0,
+            }) as PagamentoResponseDto,
+        ),
         total: serviceResult.pagination.totalItems,
         page: serviceResult.pagination.currentPage,
-        limit: serviceResult.pagination.itemsPerPage
+        limit: serviceResult.pagination.itemsPerPage,
       };
 
       // Armazenar no cache por 5 minutos
@@ -92,9 +104,11 @@ export class GetPagamentosHandler {
 
       this.logger.log(`Encontrados ${result.total} pagamentos`);
       return result;
-
     } catch (error) {
-      this.logger.error(`Erro ao executar busca de pagamentos: ${error.message}`, error.stack);
+      this.logger.error(
+        `Erro ao executar busca de pagamentos: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }
@@ -102,16 +116,22 @@ export class GetPagamentosHandler {
   /**
    * Executa query para buscar pagamento por ID
    */
-  async executeGetPagamentoById(query: GetPagamentoByIdQuery): Promise<PagamentoResponseDto> {
+  async executeGetPagamentoById(
+    query: GetPagamentoByIdQuery,
+  ): Promise<PagamentoResponseDto> {
     try {
       this.logger.log(`Executando busca de pagamento por ID: ${query.id}`);
 
       // Gerar chave de cache
       const cacheKey = `pagamento:${query.id}:${JSON.stringify(query.incluirRelacionamentos)}`;
-      
+
       // Tentar buscar no cache primeiro
       const cachedResult = await this.cacheService.get(cacheKey);
-      if (cachedResult && typeof cachedResult === 'object' && 'id' in cachedResult) {
+      if (
+        cachedResult &&
+        typeof cachedResult === 'object' &&
+        'id' in cachedResult
+      ) {
         this.logger.log('Pagamento encontrado no cache');
         return cachedResult as PagamentoResponseDto;
       }
@@ -128,17 +148,17 @@ export class GetPagamentosHandler {
         createdAt: pagamento.created_at,
         updatedAt: pagamento.updated_at,
         numeroParcela: pagamento.numeroParcela || 1,
-         totalParcelas: pagamento.totalParcelas || 1,
+        totalParcelas: pagamento.totalParcelas || 1,
         dataPagamento: pagamento.dataPagamento,
         observacoes: pagamento.observacoes,
         solicitacaoId: pagamento.solicitacaoId || '',
-         dataLiberacao: pagamento.dataLiberacao || new Date(),
+        dataLiberacao: pagamento.dataLiberacao || new Date(),
         responsavelLiberacao: {
           id: pagamento.liberadoPor || '',
           nome: 'Sistema',
-          role: 'SISTEMA'
+          role: 'SISTEMA',
         },
-        quantidadeComprovantes: 0
+        quantidadeComprovantes: 0,
       };
 
       // Armazenar no cache por 10 minutos
@@ -146,9 +166,11 @@ export class GetPagamentosHandler {
 
       this.logger.log(`Pagamento encontrado: ${query.id}`);
       return response;
-
     } catch (error) {
-      this.logger.error(`Erro ao executar busca de pagamento por ID: ${error.message}`, error.stack);
+      this.logger.error(
+        `Erro ao executar busca de pagamento por ID: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }
@@ -156,13 +178,15 @@ export class GetPagamentosHandler {
   /**
    * Executa query para obter estatísticas de pagamentos
    */
-  async executeGetEstatisticas(query: GetPagamentosEstatisticasQuery): Promise<any> {
+  async executeGetEstatisticas(
+    query: GetPagamentosEstatisticasQuery,
+  ): Promise<any> {
     try {
       this.logger.log('Executando busca de estatísticas de pagamentos');
 
       // Gerar chave de cache
       const cacheKey = this.generateCacheKey('estatisticas', query);
-      
+
       // Tentar buscar no cache primeiro (cache mais longo para estatísticas)
       const cachedResult = await this.cacheService.get(cacheKey);
       if (cachedResult) {
@@ -178,9 +202,11 @@ export class GetPagamentosHandler {
 
       this.logger.log('Estatísticas calculadas com sucesso');
       return estatisticas;
-
     } catch (error) {
-      this.logger.error(`Erro ao executar busca de estatísticas: ${error.message}`, error.stack);
+      this.logger.error(
+        `Erro ao executar busca de estatísticas: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }
@@ -208,7 +234,7 @@ export class GetPagamentosHandler {
       // TODO: Implementar invalidação de cache por padrão
       // await this.cacheService.deleteByPattern('pagamento:pagamentos:*');
       // await this.cacheService.deleteByPattern('pagamento:estatisticas:*');
-      
+
       // Alternativa temporária: limpar todo o cache
       // await this.cacheService.clear();
 

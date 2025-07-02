@@ -49,7 +49,7 @@ export class PagamentoBatchService {
   async createPagamentosInBatch(
     pagamentosData: PagamentoCreateDto[],
     userId: string,
-    options: BatchProcessOptions = {}
+    options: BatchProcessOptions = {},
   ): Promise<BatchResult<Pagamento>> {
     const {
       batchSize = this.DEFAULT_BATCH_SIZE,
@@ -58,7 +58,9 @@ export class PagamentoBatchService {
       useTransaction = true,
     } = options;
 
-    this.logger.log(`Iniciando criação em lote de ${pagamentosData.length} pagamentos`);
+    this.logger.log(
+      `Iniciando criação em lote de ${pagamentosData.length} pagamentos`,
+    );
 
     const result: BatchResult<Pagamento> = {
       success: [],
@@ -70,15 +72,15 @@ export class PagamentoBatchService {
 
     // Dividir em lotes
     const batches = this.chunkArray(pagamentosData, batchSize);
-    
+
     // Processar lotes com controle de concorrência
     const semaphore = new Array(maxConcurrency).fill(null);
-    const batchPromises = batches.map((batch, index) => 
+    const batchPromises = batches.map((batch, index) =>
       this.processBatchWithSemaphore(
         semaphore,
         () => this.processPagamentoBatch(batch, userId, useTransaction),
-        index
-      )
+        index,
+      ),
     );
 
     const batchResults = await Promise.allSettled(batchPromises);
@@ -89,9 +91,13 @@ export class PagamentoBatchService {
         result.success.push(...batchResult.value.success);
         result.errors.push(...batchResult.value.errors);
       } else {
-        this.logger.error(`Erro no processamento do lote: ${batchResult.reason}`);
+        this.logger.error(
+          `Erro no processamento do lote: ${batchResult.reason}`,
+        );
         if (!continueOnError) {
-          throw new Error(`Falha no processamento em lote: ${batchResult.reason}`);
+          throw new Error(
+            `Falha no processamento em lote: ${batchResult.reason}`,
+          );
         }
       }
     }
@@ -100,20 +106,22 @@ export class PagamentoBatchService {
     result.errorCount = result.errors.length;
 
     this.logger.log(
-      `Criação em lote concluída: ${result.successCount} sucessos, ${result.errorCount} erros`
+      `Criação em lote concluída: ${result.successCount} sucessos, ${result.errorCount} erros`,
     );
 
     // Adicionar jobs de notificação para pagamentos criados com sucesso
     if (result.success.length > 0) {
       await this.queueService.adicionarJobProcessamentoBatch(
         'notificar-batch-criacao',
-        [{
-          operacao: 'criar-pagamentos',
-          total: pagamentosData.length,
-          sucesso: result.success.length,
-          erros: result.errors.length,
-        }],
-        userId
+        [
+          {
+            operacao: 'criar-pagamentos',
+            total: pagamentosData.length,
+            sucesso: result.success.length,
+            erros: result.errors.length,
+          },
+        ],
+        userId,
       );
     }
 
@@ -126,7 +134,7 @@ export class PagamentoBatchService {
   async liberarPagamentosInBatch(
     liberacoes: { pagamentoId: string; dados: CancelarPagamentoDto }[],
     userId: string,
-    options: BatchProcessOptions = {}
+    options: BatchProcessOptions = {},
   ): Promise<BatchResult<Pagamento>> {
     const {
       batchSize = this.DEFAULT_BATCH_SIZE,
@@ -134,7 +142,9 @@ export class PagamentoBatchService {
       continueOnError = true,
     } = options;
 
-    this.logger.log(`Iniciando liberação em lote de ${liberacoes.length} pagamentos`);
+    this.logger.log(
+      `Iniciando liberação em lote de ${liberacoes.length} pagamentos`,
+    );
 
     const result: BatchResult<Pagamento> = {
       success: [],
@@ -146,15 +156,15 @@ export class PagamentoBatchService {
 
     // Dividir em lotes
     const batches = this.chunkArray(liberacoes, batchSize);
-    
+
     // Processar lotes com controle de concorrência
     const semaphore = new Array(maxConcurrency).fill(null);
-    const batchPromises = batches.map((batch, index) => 
+    const batchPromises = batches.map((batch, index) =>
       this.processBatchWithSemaphore(
         semaphore,
         () => this.processLiberacaoBatch(batch, userId),
-        index
-      )
+        index,
+      ),
     );
 
     const batchResults = await Promise.allSettled(batchPromises);
@@ -165,9 +175,13 @@ export class PagamentoBatchService {
         result.success.push(...batchResult.value.success);
         result.errors.push(...batchResult.value.errors);
       } else {
-        this.logger.error(`Erro no processamento do lote: ${batchResult.reason}`);
+        this.logger.error(
+          `Erro no processamento do lote: ${batchResult.reason}`,
+        );
         if (!continueOnError) {
-          throw new Error(`Falha no processamento em lote: ${batchResult.reason}`);
+          throw new Error(
+            `Falha no processamento em lote: ${batchResult.reason}`,
+          );
         }
       }
     }
@@ -176,7 +190,7 @@ export class PagamentoBatchService {
     result.errorCount = result.errors.length;
 
     this.logger.log(
-      `Liberação em lote concluída: ${result.successCount} sucessos, ${result.errorCount} erros`
+      `Liberação em lote concluída: ${result.successCount} sucessos, ${result.errorCount} erros`,
     );
 
     return result;
@@ -186,16 +200,20 @@ export class PagamentoBatchService {
    * Atualiza status de múltiplos pagamentos em lote
    */
   async updateStatusInBatch(
-    updates: { pagamentoId: string; novoStatus: StatusPagamentoEnum; observacoes?: string }[],
+    updates: {
+      pagamentoId: string;
+      novoStatus: StatusPagamentoEnum;
+      observacoes?: string;
+    }[],
     userId: string,
-    options: BatchProcessOptions = {}
+    options: BatchProcessOptions = {},
   ): Promise<BatchResult<Pagamento>> {
-    const {
-      batchSize = this.DEFAULT_BATCH_SIZE,
-      useTransaction = true,
-    } = options;
+    const { batchSize = this.DEFAULT_BATCH_SIZE, useTransaction = true } =
+      options;
 
-    this.logger.log(`Iniciando atualização de status em lote de ${updates.length} pagamentos`);
+    this.logger.log(
+      `Iniciando atualização de status em lote de ${updates.length} pagamentos`,
+    );
 
     const result: BatchResult<Pagamento> = {
       success: [],
@@ -209,7 +227,11 @@ export class PagamentoBatchService {
     const batches = this.chunkArray(updates, batchSize);
 
     for (const batch of batches) {
-      const batchResult = await this.processStatusUpdateBatch(batch, userId, useTransaction);
+      const batchResult = await this.processStatusUpdateBatch(
+        batch,
+        userId,
+        useTransaction,
+      );
       result.success.push(...batchResult.success);
       result.errors.push(...batchResult.errors);
     }
@@ -218,7 +240,7 @@ export class PagamentoBatchService {
     result.errorCount = result.errors.length;
 
     this.logger.log(
-      `Atualização de status em lote concluída: ${result.successCount} sucessos, ${result.errorCount} erros`
+      `Atualização de status em lote concluída: ${result.successCount} sucessos, ${result.errorCount} erros`,
     );
 
     return result;
@@ -230,14 +252,16 @@ export class PagamentoBatchService {
   async validarComprovantesInBatch(
     comprovanteIds: string[],
     userId: string,
-    options: BatchProcessOptions = {}
+    options: BatchProcessOptions = {},
   ): Promise<BatchResult<ComprovantePagamento>> {
     const {
       batchSize = this.DEFAULT_BATCH_SIZE,
       maxConcurrency = this.DEFAULT_MAX_CONCURRENCY,
     } = options;
 
-    this.logger.log(`Iniciando validação em lote de ${comprovanteIds.length} comprovantes`);
+    this.logger.log(
+      `Iniciando validação em lote de ${comprovanteIds.length} comprovantes`,
+    );
 
     const result: BatchResult<ComprovantePagamento> = {
       success: [],
@@ -249,15 +273,15 @@ export class PagamentoBatchService {
 
     // Dividir em lotes
     const batches = this.chunkArray(comprovanteIds, batchSize);
-    
+
     // Processar lotes com controle de concorrência
     const semaphore = new Array(maxConcurrency).fill(null);
-    const batchPromises = batches.map((batch, index) => 
+    const batchPromises = batches.map((batch, index) =>
       this.processBatchWithSemaphore(
         semaphore,
         () => this.processValidacaoComprovantesBatch(batch, userId),
-        index
-      )
+        index,
+      ),
     );
 
     const batchResults = await Promise.allSettled(batchPromises);
@@ -274,7 +298,7 @@ export class PagamentoBatchService {
     result.errorCount = result.errors.length;
 
     this.logger.log(
-      `Validação em lote concluída: ${result.successCount} sucessos, ${result.errorCount} erros`
+      `Validação em lote concluída: ${result.successCount} sucessos, ${result.errorCount} erros`,
     );
 
     return result;
@@ -286,7 +310,7 @@ export class PagamentoBatchService {
   private async processPagamentoBatch(
     batch: PagamentoCreateDto[],
     userId: string,
-    useTransaction: boolean
+    useTransaction: boolean,
   ): Promise<BatchResult<Pagamento>> {
     const result: BatchResult<Pagamento> = {
       success: [],
@@ -309,7 +333,7 @@ export class PagamentoBatchService {
               status: StatusPagamentoEnum.PENDENTE,
               createdBy: userId,
             });
-            
+
             const savedPagamento = await queryRunner.manager.save(pagamento);
             result.success.push(savedPagamento);
           } catch (error) {
@@ -336,7 +360,7 @@ export class PagamentoBatchService {
             status: StatusPagamentoEnum.PENDENTE,
             criadoPor: userId,
           });
-          
+
           const savedPagamento = await this.pagamentoRepository.save(pagamento);
           result.success.push(savedPagamento);
         } catch (error) {
@@ -359,7 +383,7 @@ export class PagamentoBatchService {
    */
   private async processLiberacaoBatch(
     batch: { pagamentoId: string; dados: CancelarPagamentoDto }[],
-    userId: string
+    userId: string,
   ): Promise<BatchResult<Pagamento>> {
     const result: BatchResult<Pagamento> = {
       success: [],
@@ -375,7 +399,7 @@ export class PagamentoBatchService {
         await this.queueService.adicionarJobLiberarPagamento(
           pagamentoId,
           dados,
-          userId
+          userId,
         );
 
         // Para o resultado, buscar o pagamento atualizado
@@ -404,9 +428,13 @@ export class PagamentoBatchService {
    * Processa um lote de atualização de status
    */
   private async processStatusUpdateBatch(
-    batch: { pagamentoId: string; novoStatus: StatusPagamentoEnum; observacoes?: string }[],
+    batch: {
+      pagamentoId: string;
+      novoStatus: StatusPagamentoEnum;
+      observacoes?: string;
+    }[],
     userId: string,
-    useTransaction: boolean
+    useTransaction: boolean,
   ): Promise<BatchResult<Pagamento>> {
     const result: BatchResult<Pagamento> = {
       success: [],
@@ -466,7 +494,7 @@ export class PagamentoBatchService {
    */
   private async processValidacaoComprovantesBatch(
     batch: string[],
-    userId: string
+    userId: string,
   ): Promise<BatchResult<ComprovantePagamento>> {
     const result: BatchResult<ComprovantePagamento> = {
       success: [],
@@ -480,9 +508,9 @@ export class PagamentoBatchService {
       try {
         // Adicionar job de validação à fila
         await this.queueService.adicionarJobValidarComprovante(
-           comprovanteId,
-           userId
-         );
+          comprovanteId,
+          userId,
+        );
 
         // Para o resultado, buscar o comprovante
         const comprovante = await this.comprovanteRepository.findOne({
@@ -512,7 +540,7 @@ export class PagamentoBatchService {
   private async processBatchWithSemaphore<T>(
     semaphore: any[],
     task: () => Promise<T>,
-    index: number
+    index: number,
   ): Promise<T> {
     // Aguardar slot disponível
     const slot = index % semaphore.length;

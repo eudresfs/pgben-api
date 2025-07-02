@@ -105,7 +105,7 @@ export class PasswordResetService {
           severity: 'MEDIUM',
           metadata: { email },
           clientInfo: { ip: clientInfo.ip, userAgent: clientInfo.userAgent },
-          lgpdRelevant: true
+          lgpdRelevant: true,
         });
 
         return {
@@ -155,7 +155,7 @@ export class PasswordResetService {
         resourceId: passwordResetToken.id,
         description: 'Solicitação de recuperação de senha',
         clientInfo: { ip: clientInfo.ip, userAgent: clientInfo.userAgent },
-        lgpdRelevant: true
+        lgpdRelevant: true,
       });
 
       this.logger.log(`Token de recuperação gerado para usuário ${usuario.id}`);
@@ -175,7 +175,7 @@ export class PasswordResetService {
         severity: 'HIGH',
         metadata: { email, error: error.message },
         clientInfo: { ip: clientInfo.ip, userAgent: clientInfo.userAgent },
-        lgpdRelevant: true
+        lgpdRelevant: true,
       });
 
       throw new InternalServerErrorException(
@@ -184,157 +184,164 @@ export class PasswordResetService {
     }
   }
 
-/**
- * Redefine a senha usando o token
- */
-async resetPassword(
-  resetDto: ResetPasswordDto,
-  clientInfo: ClientInfo,
-): Promise<{ message: string }> {
-  const { token, newPassword, confirmPassword } = resetDto;
+  /**
+   * Redefine a senha usando o token
+   */
+  async resetPassword(
+    resetDto: ResetPasswordDto,
+    clientInfo: ClientInfo,
+  ): Promise<{ message: string }> {
+    const { token, newPassword, confirmPassword } = resetDto;
 
-  // Validar senhas
-  if (newPassword !== confirmPassword) {
-    throw new BadRequestException('As senhas não coincidem');
-  }
-
-  try {
-    // Buscar token válido
-    const resetToken = await this.findValidToken(token);
-    if (!resetToken) {
-      // Emitir evento de auditoria para token inválido
-      this.eventEmitter.emit('audit.security.event', {
-        action: 'PASSWORD_RESET_INVALID_TOKEN',
-        description: 'Tentativa de uso de token inválido para reset de senha',
-        severity: 'HIGH',
-        metadata: { tokenPrefix: token.substring(0, 8) },
-        clientInfo: { ip: clientInfo.ip, userAgent: clientInfo.userAgent },
-        lgpdRelevant: true
-      });
-      throw new UnauthorizedException('Token inválido ou expirado');
+    // Validar senhas
+    if (newPassword !== confirmPassword) {
+      throw new BadRequestException('As senhas não coincidem');
     }
 
-    // Carregar usuário pelo ID
-    const usuario = await this.usuarioRepository.findById(
-      resetToken.usuario_id,
-    );
-
-    if (!usuario) {
-      throw new NotFoundException('Usuário não encontrado');
-    }
-
-    // Verificar se a nova senha é diferente da atual
-    const isSamePassword = await bcrypt.compare(
-      newPassword,
-      usuario.senhaHash,
-    );
-    if (isSamePassword) {
-      throw new BadRequestException(
-        'A nova senha deve ser diferente da senha atual',
-      );
-    }
-
-    // Hash da nova senha com o mesmo padrão usado em UsuarioService (SALT_ROUNDS = 12)
-    const hashedPassword = await bcrypt.hash(newPassword, 12);
-    
-    // Log para diagnóstico
-    this.logger.debug(`Gerando hash para nova senha: ${hashedPassword.substring(0, 10)}...`);
-    
     try {
-      // Usar o método específico updateSenha que foi criado especialmente para este propósito
-      // em vez do método genérico update
-      const usuarioAtualizado = await this.usuarioRepository.updateSenha(usuario.id, hashedPassword);
-      
-      // Agora também atualizamos os outros campos em uma chamada separada para garantir que
-      // a atualização da senha teve sucesso
-      await this.usuarioRepository.update(
-        usuario.id,
-        {
+      // Buscar token válido
+      const resetToken = await this.findValidToken(token);
+      if (!resetToken) {
+        // Emitir evento de auditoria para token inválido
+        this.eventEmitter.emit('audit.security.event', {
+          action: 'PASSWORD_RESET_INVALID_TOKEN',
+          description: 'Tentativa de uso de token inválido para reset de senha',
+          severity: 'HIGH',
+          metadata: { tokenPrefix: token.substring(0, 8) },
+          clientInfo: { ip: clientInfo.ip, userAgent: clientInfo.userAgent },
+          lgpdRelevant: true,
+        });
+        throw new UnauthorizedException('Token inválido ou expirado');
+      }
+
+      // Carregar usuário pelo ID
+      const usuario = await this.usuarioRepository.findById(
+        resetToken.usuario_id,
+      );
+
+      if (!usuario) {
+        throw new NotFoundException('Usuário não encontrado');
+      }
+
+      // Verificar se a nova senha é diferente da atual
+      const isSamePassword = await bcrypt.compare(
+        newPassword,
+        usuario.senhaHash,
+      );
+      if (isSamePassword) {
+        throw new BadRequestException(
+          'A nova senha deve ser diferente da senha atual',
+        );
+      }
+
+      // Hash da nova senha com o mesmo padrão usado em UsuarioService (SALT_ROUNDS = 12)
+      const hashedPassword = await bcrypt.hash(newPassword, 12);
+
+      // Log para diagnóstico
+      this.logger.debug(
+        `Gerando hash para nova senha: ${hashedPassword.substring(0, 10)}...`,
+      );
+
+      try {
+        // Usar o método específico updateSenha que foi criado especialmente para este propósito
+        // em vez do método genérico update
+        const usuarioAtualizado = await this.usuarioRepository.updateSenha(
+          usuario.id,
+          hashedPassword,
+        );
+
+        // Agora também atualizamos os outros campos em uma chamada separada para garantir que
+        // a atualização da senha teve sucesso
+        await this.usuarioRepository.update(usuario.id, {
           updated_at: new Date(),
           tentativas_login: 0, // Resetar tentativas de login
           primeiro_acesso: false, // Não é mais primeiro acesso
-        }
+        });
+
+        // Log de confirmação
+        this.logger.log(
+          `Senha atualizada com sucesso para o usuário ${usuario.id}. Hash: ${hashedPassword.substring(0, 10)}...`,
+        );
+      } catch (error) {
+        this.logger.error(
+          `Erro ao atualizar senha: ${error.message}`,
+          error.stack,
+        );
+        throw new InternalServerErrorException('Erro ao salvar nova senha');
+      }
+
+      // Marcar token como usado APÓS a alteração bem-sucedida
+      resetToken.markAsUsed('password_changed');
+      await this.passwordResetTokenRepository.save(resetToken);
+
+      // Invalidar outros tokens do usuário
+      await this.invalidateUserTokens(
+        usuario.id,
+        'password_changed',
+        resetToken.id,
       );
-      
-      // Log de confirmação
-      this.logger.log(`Senha atualizada com sucesso para o usuário ${usuario.id}. Hash: ${hashedPassword.substring(0, 10)}...`);
+
+      // Enviar email de confirmação
+      await this.sendPasswordResetConfirmationEmail(usuario, clientInfo);
+
+      // Emitir evento de auditoria para senha redefinida
+      this.eventEmitter.emit('audit.user.action', {
+        userId: usuario.id,
+        action: 'PASSWORD_RESET_SUCCESS',
+        resourceType: 'usuario',
+        resourceId: usuario.id,
+        description: 'Senha redefinida com sucesso',
+        clientInfo: { ip: clientInfo.ip, userAgent: clientInfo.userAgent },
+        lgpdRelevant: true,
+      });
+
+      // Emitir evento de auditoria de segurança para senha redefinida
+      this.eventEmitter.emit('audit.security.event', {
+        action: 'PASSWORD_RESET_COMPLETED',
+        description: `Senha redefinida com sucesso para o usuário ${usuario.email}`,
+        userId: usuario.id,
+        severity: 'MEDIUM',
+        metadata: { email: usuario.email },
+        clientInfo: { ip: clientInfo.ip, userAgent: clientInfo.userAgent },
+        lgpdRelevant: true,
+      });
+
+      this.logger.log(
+        `Senha redefinida com sucesso para usuário ${usuario.id}`,
+      );
+
+      return {
+        message:
+          'Senha redefinida com sucesso. Você pode fazer login com sua nova senha.',
+      };
     } catch (error) {
-      this.logger.error(`Erro ao atualizar senha: ${error.message}`, error.stack);
-      throw new InternalServerErrorException('Erro ao salvar nova senha');
+      this.logger.error('Erro ao redefinir senha', error.stack);
+
+      // Emitir evento de auditoria para erro na redefinição
+      const foundToken = await this.findValidToken(token);
+      this.eventEmitter.emit('audit.security.event', {
+        action: 'PASSWORD_RESET_ERROR',
+        description: `Erro ao redefinir senha: ${error.message}`,
+        userId: foundToken?.usuario?.id,
+        severity: 'HIGH',
+        metadata: { tokenPrefix: token.substring(0, 8), error: error.message },
+        clientInfo: { ip: clientInfo.ip, userAgent: clientInfo.userAgent },
+        lgpdRelevant: true,
+      });
+
+      if (
+        error instanceof BadRequestException ||
+        error instanceof UnauthorizedException ||
+        error instanceof NotFoundException
+      ) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException(
+        'Erro interno. Tente novamente mais tarde.',
+      );
     }
-
-    // Marcar token como usado APÓS a alteração bem-sucedida
-    resetToken.markAsUsed('password_changed');
-    await this.passwordResetTokenRepository.save(resetToken);
-
-    // Invalidar outros tokens do usuário
-    await this.invalidateUserTokens(
-      usuario.id,
-      'password_changed',
-      resetToken.id,
-    );
-
-    // Enviar email de confirmação
-    await this.sendPasswordResetConfirmationEmail(usuario, clientInfo);
-
-    // Emitir evento de auditoria para senha redefinida
-    this.eventEmitter.emit('audit.user.action', {
-      userId: usuario.id,
-      action: 'PASSWORD_RESET_SUCCESS',
-      resourceType: 'usuario',
-      resourceId: usuario.id,
-      description: 'Senha redefinida com sucesso',
-      clientInfo: { ip: clientInfo.ip, userAgent: clientInfo.userAgent },
-      lgpdRelevant: true
-    });
-
-    // Emitir evento de auditoria de segurança para senha redefinida
-    this.eventEmitter.emit('audit.security.event', {
-      action: 'PASSWORD_RESET_COMPLETED',
-      description: `Senha redefinida com sucesso para o usuário ${usuario.email}`,
-      userId: usuario.id,
-      severity: 'MEDIUM',
-      metadata: { email: usuario.email },
-      clientInfo: { ip: clientInfo.ip, userAgent: clientInfo.userAgent },
-      lgpdRelevant: true
-    });
-
-    this.logger.log(
-      `Senha redefinida com sucesso para usuário ${usuario.id}`,
-    );
-
-    return {
-      message:
-        'Senha redefinida com sucesso. Você pode fazer login com sua nova senha.',
-    };
-  } catch (error) {
-    this.logger.error('Erro ao redefinir senha', error.stack);
-
-    // Emitir evento de auditoria para erro na redefinição
-    const foundToken = await this.findValidToken(token);
-    this.eventEmitter.emit('audit.security.event', {
-      action: 'PASSWORD_RESET_ERROR',
-      description: `Erro ao redefinir senha: ${error.message}`,
-      userId: foundToken?.usuario?.id,
-      severity: 'HIGH',
-      metadata: { tokenPrefix: token.substring(0, 8), error: error.message },
-      clientInfo: { ip: clientInfo.ip, userAgent: clientInfo.userAgent },
-      lgpdRelevant: true
-    });
-
-    if (
-      error instanceof BadRequestException ||
-      error instanceof UnauthorizedException ||
-      error instanceof NotFoundException
-    ) {
-      throw error;
-    }
-
-    throw new InternalServerErrorException(
-      'Erro interno. Tente novamente mais tarde.',
-    );
   }
-}
 
   /**
    * Valida se um token é válido e o marca como usado

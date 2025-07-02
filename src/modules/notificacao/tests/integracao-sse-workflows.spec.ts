@@ -9,7 +9,11 @@ import { NotificacaoProativaService } from '../services/notificacao-proativa.ser
 import { NotificacaoPreferenciasService } from '../services/notificacao-preferencias.service';
 import { WorkflowProativoListener } from '../listeners/workflow-proativo.listener';
 import { NotificacaoProativaScheduler } from '../services/notificacao-proativa.scheduler';
-import { NotificacaoSistema, TipoNotificacao, PrioridadeNotificacao } from '../../../entities/notification.entity';
+import {
+  NotificacaoSistema,
+  TipoNotificacao,
+  PrioridadeNotificacao,
+} from '../../../entities/notification.entity';
 import { Usuario } from '../../../entities/usuario.entity';
 import { Solicitacao } from '../../../entities/solicitacao.entity';
 import { StatusSolicitacao } from '../../../enums/status-solicitacao.enum';
@@ -23,7 +27,7 @@ describe('Integração SSE + Workflows (E2E)', () => {
   let workflowListener: WorkflowProativoListener;
   let scheduler: NotificacaoProativaScheduler;
   let eventEmitter: EventEmitter2;
-  
+
   let notificacaoRepository: jest.Mocked<Repository<NotificacaoSistema>>;
   let usuarioRepository: jest.Mocked<Repository<Usuario>>;
   let solicitacaoRepository: jest.Mocked<Repository<Solicitacao>>;
@@ -72,12 +76,12 @@ describe('Integração SSE + Workflows (E2E)', () => {
   const mockConfigService = {
     get: jest.fn((key: string) => {
       const config = {
-        'NOTIFICACAO_CACHE_TTL': '300000',
-        'NOTIFICACAO_LIMITE_DIARIO_DEFAULT': '50',
-        'NOTIFICACAO_PRAZO_ALERTA_DIAS': '3',
-        'NOTIFICACAO_CLEANUP_DIAS': '30',
-        'AZURE_STORAGE_CONNECTION_STRING': 'test-connection',
-        'AZURE_STORAGE_CONTAINER': 'test-container',
+        NOTIFICACAO_CACHE_TTL: '300000',
+        NOTIFICACAO_LIMITE_DIARIO_DEFAULT: '50',
+        NOTIFICACAO_PRAZO_ALERTA_DIAS: '3',
+        NOTIFICACAO_CLEANUP_DIAS: '30',
+        AZURE_STORAGE_CONNECTION_STRING: 'test-connection',
+        AZURE_STORAGE_CONTAINER: 'test-container',
       };
       return config[key];
     }),
@@ -162,12 +166,20 @@ describe('Integração SSE + Workflows (E2E)', () => {
     }).compile();
 
     notificacaoService = module.get<NotificacaoService>(NotificacaoService);
-    notificacaoProativaService = module.get<NotificacaoProativaService>(NotificacaoProativaService);
-    notificacaoPreferenciasService = module.get<NotificacaoPreferenciasService>(NotificacaoPreferenciasService);
-    workflowListener = module.get<WorkflowProativoListener>(WorkflowProativoListener);
-    scheduler = module.get<NotificacaoProativaScheduler>(NotificacaoProativaScheduler);
+    notificacaoProativaService = module.get<NotificacaoProativaService>(
+      NotificacaoProativaService,
+    );
+    notificacaoPreferenciasService = module.get<NotificacaoPreferenciasService>(
+      NotificacaoPreferenciasService,
+    );
+    workflowListener = module.get<WorkflowProativoListener>(
+      WorkflowProativoListener,
+    );
+    scheduler = module.get<NotificacaoProativaScheduler>(
+      NotificacaoProativaScheduler,
+    );
     eventEmitter = module.get<EventEmitter2>(EventEmitter2);
-    
+
     notificacaoRepository = module.get(getRepositoryToken(NotificacaoSistema));
     usuarioRepository = module.get(getRepositoryToken(Usuario));
     solicitacaoRepository = module.get(getRepositoryToken(Solicitacao));
@@ -176,9 +188,11 @@ describe('Integração SSE + Workflows (E2E)', () => {
 
     // Configurar mocks padrão
     mockUsuarioRepository.findOne.mockResolvedValue(usuarioTeste as any);
-    mockSolicitacaoRepository.findOne.mockResolvedValue(solicitacaoTeste as any);
-    mockNotificacaoRepository.save.mockImplementation((notificacao) => 
-      Promise.resolve({ ...notificacao, id: 'notif-' + Date.now() })
+    mockSolicitacaoRepository.findOne.mockResolvedValue(
+      solicitacaoTeste as any,
+    );
+    mockNotificacaoRepository.save.mockImplementation((notificacao) =>
+      Promise.resolve({ ...notificacao, id: 'notif-' + Date.now() }),
     );
     mockNotificacaoRepository.create.mockImplementation((data) => data as any);
   });
@@ -210,7 +224,7 @@ describe('Integração SSE + Workflows (E2E)', () => {
           destinatario_id: usuarioTeste.id,
           tipo: TipoNotificacao.SOLICITACAO,
           titulo: expect.stringContaining('Solicitação criada'),
-        })
+        }),
       );
 
       // Verificar se alerta de prazo foi agendado
@@ -231,7 +245,9 @@ describe('Integração SSE + Workflows (E2E)', () => {
         },
       };
 
-      mockUsuarioRepository.findOne.mockResolvedValue(usuarioComPreferencias as any);
+      mockUsuarioRepository.findOne.mockResolvedValue(
+        usuarioComPreferencias as any,
+      );
 
       const eventoSolicitacao = {
         solicitacaoId: solicitacaoTeste.id,
@@ -244,12 +260,13 @@ describe('Integração SSE + Workflows (E2E)', () => {
       await workflowListener.handleSolicitacaoCriada(eventoSolicitacao);
 
       // Verificar que notificação não foi enviada devido às preferências
-      const deveEnviar = await notificacaoPreferenciasService.deveEnviarNotificacao(
-        usuarioTeste.id,
-        TipoNotificacao.SOLICITACAO,
-        'medium',
-        'sse'
-      );
+      const deveEnviar =
+        await notificacaoPreferenciasService.deveEnviarNotificacao(
+          usuarioTeste.id,
+          TipoNotificacao.SOLICITACAO,
+          'medium',
+          'sse',
+        );
 
       expect(deveEnviar).toBe(false);
     });
@@ -274,7 +291,7 @@ describe('Integração SSE + Workflows (E2E)', () => {
           tipo: TipoNotificacao.APROVACAO,
           titulo: expect.stringContaining('aprovada'),
           prioridade: PrioridadeNotificacao.ALTA,
-        })
+        }),
       );
     });
 
@@ -284,7 +301,7 @@ describe('Integração SSE + Workflows (E2E)', () => {
         solicitacaoTeste.id,
         usuarioTeste.id,
         new Date(Date.now() + 24 * 60 * 60 * 1000), // 1 dia
-        'Prazo de análise se aproximando'
+        'Prazo de análise se aproximando',
       );
 
       // Simular finalização da solicitação
@@ -299,11 +316,12 @@ describe('Integração SSE + Workflows (E2E)', () => {
       await workflowListener.handleSolicitacaoFinalizada(eventoFinalizacao);
 
       // Verificar se alertas foram cancelados
-      const alertasPendentes = await notificacaoProativaService.obterAlertasPendentes();
+      const alertasPendentes =
+        await notificacaoProativaService.obterAlertasPendentes();
       const alertasSolicitacao = alertasPendentes.filter(
-        alerta => alerta.contexto?.solicitacao_id === solicitacaoTeste.id
+        (alerta) => alerta.contexto?.solicitacao_id === solicitacaoTeste.id,
       );
-      
+
       expect(alertasSolicitacao.length).toBe(0);
     });
   });
@@ -330,7 +348,9 @@ describe('Integração SSE + Workflows (E2E)', () => {
         },
       };
 
-      mockUsuarioRepository.findOne.mockResolvedValue(usuarioComAgrupamento as any);
+      mockUsuarioRepository.findOne.mockResolvedValue(
+        usuarioComAgrupamento as any,
+      );
 
       // Adicionar múltiplas notificações ao grupo
       for (let i = 0; i < 3; i++) {
@@ -343,12 +363,15 @@ describe('Integração SSE + Workflows (E2E)', () => {
             prioridade: 'medium',
             contexto: { indice: i },
             timestamp: new Date(),
-          }
+          },
         );
       }
 
       // Processar grupos
-      const resultado = await notificacaoPreferenciasService.processarGruposPorFrequencia('CADA_30_MIN');
+      const resultado =
+        await notificacaoPreferenciasService.processarGruposPorFrequencia(
+          'CADA_30_MIN',
+        );
 
       expect(resultado.gruposProcessados).toBeGreaterThan(0);
       expect(resultado.notificacoesEnviadas).toBeGreaterThan(0);
@@ -371,7 +394,9 @@ describe('Integração SSE + Workflows (E2E)', () => {
         },
       ];
 
-      mockSolicitacaoRepository.createQueryBuilder().getMany.mockResolvedValue(solicitacoesPrazo);
+      mockSolicitacaoRepository
+        .createQueryBuilder()
+        .getMany.mockResolvedValue(solicitacoesPrazo);
 
       // Executar verificação de prazos
       await scheduler.verificarPrazos();
@@ -392,8 +417,12 @@ describe('Integração SSE + Workflows (E2E)', () => {
         },
       ];
 
-      mockNotificacaoRepository.createQueryBuilder().getMany.mockResolvedValue(notificacoesAntigas);
-      mockNotificacaoRepository.delete.mockResolvedValue({ affected: 2 } as any);
+      mockNotificacaoRepository
+        .createQueryBuilder()
+        .getMany.mockResolvedValue(notificacoesAntigas);
+      mockNotificacaoRepository.delete.mockResolvedValue({
+        affected: 2,
+      } as any);
 
       const resultado = await scheduler.limpezaAutomatica();
 
@@ -405,12 +434,15 @@ describe('Integração SSE + Workflows (E2E)', () => {
       // Configurar dados para relatório
       mockNotificacaoRepository.count
         .mockResolvedValueOnce(150) // Total enviadas
-        .mockResolvedValueOnce(25)  // Pendentes
-        .mockResolvedValueOnce(5);  // Com falha
+        .mockResolvedValueOnce(25) // Pendentes
+        .mockResolvedValueOnce(5); // Com falha
 
       mockUsuarioRepository.createQueryBuilder().getMany.mockResolvedValue([
         { id: 'user-1', ultimo_acesso: new Date() },
-        { id: 'user-2', ultimo_acesso: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000) },
+        {
+          id: 'user-2',
+          ultimo_acesso: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000),
+        },
       ]);
 
       const relatorio = await scheduler.gerarRelatorioAtividades();
@@ -432,7 +464,9 @@ describe('Integração SSE + Workflows (E2E)', () => {
 
   describe('Tratamento de Erros e Recuperação', () => {
     it('deve lidar com falha na criação de notificação', async () => {
-      mockNotificacaoRepository.save.mockRejectedValue(new Error('Erro de banco'));
+      mockNotificacaoRepository.save.mockRejectedValue(
+        new Error('Erro de banco'),
+      );
 
       const eventoSolicitacao = {
         solicitacaoId: solicitacaoTeste.id,
@@ -444,7 +478,7 @@ describe('Integração SSE + Workflows (E2E)', () => {
 
       // Não deve gerar exceção não tratada
       await expect(
-        workflowListener.handleSolicitacaoCriada(eventoSolicitacao)
+        workflowListener.handleSolicitacaoCriada(eventoSolicitacao),
       ).resolves.not.toThrow();
     });
 
@@ -461,8 +495,12 @@ describe('Integração SSE + Workflows (E2E)', () => {
         },
       };
 
-      mockNotificacaoRepository.createQueryBuilder().getMany.mockResolvedValue([notificacaoComFalha]);
-      mockNotificacaoRepository.save.mockResolvedValue(notificacaoComFalha as any);
+      mockNotificacaoRepository
+        .createQueryBuilder()
+        .getMany.mockResolvedValue([notificacaoComFalha]);
+      mockNotificacaoRepository.save.mockResolvedValue(
+        notificacaoComFalha as any,
+      );
 
       const resultado = await scheduler.reprocessarFalhas();
 
@@ -478,7 +516,7 @@ describe('Integração SSE + Workflows (E2E)', () => {
         'Sistema em manutenção',
         'O sistema estará em manutenção das 02:00 às 04:00',
         'medium',
-        { manutencao: true }
+        { manutencao: true },
       );
 
       const metricas = await notificacaoProativaService.obterMetricas();
@@ -493,12 +531,14 @@ describe('Integração SSE + Workflows (E2E)', () => {
 
     it('deve monitorar saúde do sistema', async () => {
       const saudeServicos = await Promise.all([
-        notificacaoService.verificarSaude?.() || Promise.resolve({ status: 'ok' }),
+        notificacaoService.verificarSaude?.() ||
+          Promise.resolve({ status: 'ok' }),
         notificacaoProativaService.verificarSaude(),
-        notificacaoPreferenciasService.verificarSaude?.() || Promise.resolve({ status: 'ok' }),
+        notificacaoPreferenciasService.verificarSaude?.() ||
+          Promise.resolve({ status: 'ok' }),
       ]);
 
-      saudeServicos.forEach(saude => {
+      saudeServicos.forEach((saude) => {
         expect(saude.status).toBeDefined();
       });
     });
@@ -514,7 +554,7 @@ describe('Integração SSE + Workflows (E2E)', () => {
         'Teste SSE',
         'Mensagem de teste para SSE',
         'medium',
-        { teste: true }
+        { teste: true },
       );
 
       expect(spyEmit).toHaveBeenCalledWith(
@@ -525,7 +565,7 @@ describe('Integração SSE + Workflows (E2E)', () => {
             titulo: 'Teste SSE',
             mensagem: 'Mensagem de teste para SSE',
           }),
-        })
+        }),
       );
     });
   });

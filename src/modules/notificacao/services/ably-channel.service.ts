@@ -11,12 +11,12 @@ import {
   IAblyOperationResult,
   IAblyNotificationData,
   NotificationType,
-  NotificationPriority
+  NotificationPriority,
 } from '../interfaces/ably.interface';
 
 /**
  * Serviço de gerenciamento de canais do Ably
- * 
+ *
  * Este serviço é responsável por:
  * - Criar e configurar canais específicos
  * - Gerenciar subscrições e publicações
@@ -36,7 +36,7 @@ export class AblyChannelService {
     @Inject('ABLY_CONFIG') private readonly ablyConfig: AblyConfig,
     private readonly ablyService: AblyService,
     private readonly configService: ConfigService,
-    private readonly eventEmitter: EventEmitter2
+    private readonly eventEmitter: EventEmitter2,
   ) {
     this.initializeDefaultChannels();
   }
@@ -51,7 +51,7 @@ export class AblyChannelService {
       private: false,
       presence: true,
       persist: true,
-      messageTtl: 3600 // 1 hora
+      messageTtl: 3600, // 1 hora
     });
 
     // Canal do sistema
@@ -60,7 +60,7 @@ export class AblyChannelService {
       private: false,
       presence: false,
       persist: true,
-      messageTtl: 86400 // 24 horas
+      messageTtl: 86400, // 24 horas
     });
 
     // Canal de auditoria
@@ -69,7 +69,7 @@ export class AblyChannelService {
       private: true,
       presence: false,
       persist: true,
-      messageTtl: 604800 // 7 dias
+      messageTtl: 604800, // 7 dias
     });
 
     this.logger.debug('Canais padrão inicializados');
@@ -80,54 +80,57 @@ export class AblyChannelService {
    */
   async createUserChannel(
     userId: string,
-    channelType: 'notifications' | 'private' | 'status' = 'notifications'
+    channelType: 'notifications' | 'private' | 'status' = 'notifications',
   ): Promise<IAblyOperationResult<Ably.RealtimeChannel>> {
     const startTime = Date.now();
-    
+
     try {
       const channelName = `user-${userId}-${channelType}`;
       const fullChannelName = this.ablyConfig.getChannelName(channelName);
-      
+
       const config: IAblyChannelConfig = {
         name: channelName,
         private: true,
         presence: channelType === 'status',
         persist: true,
-        messageTtl: 3600
+        messageTtl: 3600,
       };
-      
+
       const channel = await this.ablyService.getChannel(channelName, config);
-      
+
       // Armazena configuração
       this.channelConfigs.set(fullChannelName, config);
-      
+
       // Inicializa estatísticas
       this.initializeChannelStats(fullChannelName);
-      
+
       // Configura listeners
       this.setupChannelListeners(channel, fullChannelName);
-      
+
       const executionTime = Date.now() - startTime;
-      
+
       this.logger.debug(`Canal de usuário criado: ${fullChannelName}`);
-      
+
       return {
         success: true,
         data: channel,
         timestamp: new Date(),
-        executionTime
+        executionTime,
       };
     } catch (error) {
       const executionTime = Date.now() - startTime;
-      
-      this.logger.error(`Erro ao criar canal de usuário para ${userId}:`, error);
-      
+
+      this.logger.error(
+        `Erro ao criar canal de usuário para ${userId}:`,
+        error,
+      );
+
       return {
         success: false,
         error: error.message,
         errorCode: 'USER_CHANNEL_CREATION_FAILED',
         timestamp: new Date(),
-        executionTime
+        executionTime,
       };
     }
   }
@@ -137,54 +140,57 @@ export class AblyChannelService {
    */
   async createBroadcastChannel(
     groupId: string,
-    scope: 'unit' | 'role' | 'region' = 'unit'
+    scope: 'unit' | 'role' | 'region' = 'unit',
   ): Promise<IAblyOperationResult<Ably.RealtimeChannel>> {
     const startTime = Date.now();
-    
+
     try {
       const channelName = `broadcast-${scope}-${groupId}`;
       const fullChannelName = this.ablyConfig.getChannelName(channelName);
-      
+
       const config: IAblyChannelConfig = {
         name: channelName,
         private: false,
         presence: true,
         persist: true,
-        messageTtl: 7200 // 2 horas
+        messageTtl: 7200, // 2 horas
       };
-      
+
       const channel = await this.ablyService.getChannel(channelName, config);
-      
+
       // Armazena configuração
       this.channelConfigs.set(fullChannelName, config);
-      
+
       // Inicializa estatísticas
       this.initializeChannelStats(fullChannelName);
-      
+
       // Configura listeners
       this.setupChannelListeners(channel, fullChannelName);
-      
+
       const executionTime = Date.now() - startTime;
-      
+
       this.logger.debug(`Canal de broadcast criado: ${fullChannelName}`);
-      
+
       return {
         success: true,
         data: channel,
         timestamp: new Date(),
-        executionTime
+        executionTime,
       };
     } catch (error) {
       const executionTime = Date.now() - startTime;
-      
-      this.logger.error(`Erro ao criar canal de broadcast para ${scope} ${groupId}:`, error);
-      
+
+      this.logger.error(
+        `Erro ao criar canal de broadcast para ${scope} ${groupId}:`,
+        error,
+      );
+
       return {
         success: false,
         error: error.message,
         errorCode: 'BROADCAST_CHANNEL_CREATION_FAILED',
         timestamp: new Date(),
-        executionTime
+        executionTime,
       };
     }
   }
@@ -195,29 +201,38 @@ export class AblyChannelService {
   async publishToUserChannel(
     userId: string,
     notification: IAblyNotificationData,
-    channelType: 'notifications' | 'private' | 'status' = 'notifications'
+    channelType: 'notifications' | 'private' | 'status' = 'notifications',
   ): Promise<IAblyOperationResult> {
     try {
       const channelName = `user-${userId}-${channelType}`;
-      
+
       // Garante que o canal existe
       await this.createUserChannel(userId, channelType);
-      
+
       // Publica a notificação
-      const result = await this.ablyService.publishNotification(channelName, notification);
-      
+      const result = await this.ablyService.publishNotification(
+        channelName,
+        notification,
+      );
+
       // Atualiza estatísticas
-      this.updateChannelStats(this.ablyConfig.getChannelName(channelName), 'message_sent');
-      
+      this.updateChannelStats(
+        this.ablyConfig.getChannelName(channelName),
+        'message_sent',
+      );
+
       return result;
     } catch (error) {
-      this.logger.error(`Erro ao publicar no canal do usuário ${userId}:`, error);
-      
+      this.logger.error(
+        `Erro ao publicar no canal do usuário ${userId}:`,
+        error,
+      );
+
       return {
         success: false,
         error: error.message,
         errorCode: 'USER_CHANNEL_PUBLISH_FAILED',
-        timestamp: new Date()
+        timestamp: new Date(),
       };
     }
   }
@@ -228,29 +243,38 @@ export class AblyChannelService {
   async publishToBroadcastChannel(
     groupId: string,
     notification: IAblyNotificationData,
-    scope: 'unit' | 'role' | 'region' = 'unit'
+    scope: 'unit' | 'role' | 'region' = 'unit',
   ): Promise<IAblyOperationResult> {
     try {
       const channelName = `broadcast-${scope}-${groupId}`;
-      
+
       // Garante que o canal existe
       await this.createBroadcastChannel(groupId, scope);
-      
+
       // Publica a notificação
-      const result = await this.ablyService.publishNotification(channelName, notification);
-      
+      const result = await this.ablyService.publishNotification(
+        channelName,
+        notification,
+      );
+
       // Atualiza estatísticas
-      this.updateChannelStats(this.ablyConfig.getChannelName(channelName), 'message_sent');
-      
+      this.updateChannelStats(
+        this.ablyConfig.getChannelName(channelName),
+        'message_sent',
+      );
+
       return result;
     } catch (error) {
-      this.logger.error(`Erro ao publicar no canal de broadcast ${scope} ${groupId}:`, error);
-      
+      this.logger.error(
+        `Erro ao publicar no canal de broadcast ${scope} ${groupId}:`,
+        error,
+      );
+
       return {
         success: false,
         error: error.message,
         errorCode: 'BROADCAST_CHANNEL_PUBLISH_FAILED',
-        timestamp: new Date()
+        timestamp: new Date(),
       };
     }
   }
@@ -262,7 +286,7 @@ export class AblyChannelService {
     userId: string,
     beneficioId: string,
     tipoBeneficio: string,
-    valor?: number
+    valor?: number,
   ): Promise<IAblyOperationResult> {
     const notification: IAblyNotificationData = {
       id: `beneficio-aprovado-${beneficioId}`,
@@ -273,13 +297,13 @@ export class AblyChannelService {
         beneficioId,
         tipoBeneficio,
         valor,
-        actionUrl: `/beneficios/${beneficioId}`
+        actionUrl: `/beneficios/${beneficioId}`,
       },
       timestamp: new Date(),
       userId,
       priority: NotificationPriority.HIGH,
       requiresAction: true,
-      actionUrl: `/beneficios/${beneficioId}`
+      actionUrl: `/beneficios/${beneficioId}`,
     };
 
     return this.publishToUserChannel(userId, notification);
@@ -292,7 +316,7 @@ export class AblyChannelService {
     userId: string,
     beneficioId: string,
     tipoBeneficio: string,
-    motivo: string
+    motivo: string,
   ): Promise<IAblyOperationResult> {
     const notification: IAblyNotificationData = {
       id: `beneficio-rejeitado-${beneficioId}`,
@@ -303,13 +327,13 @@ export class AblyChannelService {
         beneficioId,
         tipoBeneficio,
         motivo,
-        actionUrl: `/beneficios/${beneficioId}`
+        actionUrl: `/beneficios/${beneficioId}`,
       },
       timestamp: new Date(),
       userId,
       priority: NotificationPriority.HIGH,
       requiresAction: true,
-      actionUrl: `/beneficios/${beneficioId}`
+      actionUrl: `/beneficios/${beneficioId}`,
     };
 
     return this.publishToUserChannel(userId, notification);
@@ -322,7 +346,7 @@ export class AblyChannelService {
     userId: string,
     beneficioId: string,
     documentos: string[],
-    prazo: Date
+    prazo: Date,
   ): Promise<IAblyOperationResult> {
     const notification: IAblyNotificationData = {
       id: `documento-solicitado-${beneficioId}`,
@@ -333,13 +357,13 @@ export class AblyChannelService {
         beneficioId,
         documentos,
         prazo: prazo.toISOString(),
-        actionUrl: `/beneficios/${beneficioId}/documentos`
+        actionUrl: `/beneficios/${beneficioId}/documentos`,
       },
       timestamp: new Date(),
       userId,
       priority: NotificationPriority.HIGH,
       requiresAction: true,
-      actionUrl: `/beneficios/${beneficioId}/documentos`
+      actionUrl: `/beneficios/${beneficioId}/documentos`,
     };
 
     return this.publishToUserChannel(userId, notification);
@@ -348,11 +372,17 @@ export class AblyChannelService {
   /**
    * Configura listeners para um canal
    */
-  private setupChannelListeners(channel: Ably.RealtimeChannel, channelName: string): void {
+  private setupChannelListeners(
+    channel: Ably.RealtimeChannel,
+    channelName: string,
+  ): void {
     // Listener para mensagens
     channel.subscribe('notification', (message) => {
       this.updateChannelStats(channelName, 'message_received');
-      this.logger.debug(`Mensagem recebida no canal ${channelName}:`, message.data?.id);
+      this.logger.debug(
+        `Mensagem recebida no canal ${channelName}:`,
+        message.data?.id,
+      );
     });
 
     // Listener para presença (se habilitado)
@@ -389,14 +419,14 @@ export class AblyChannelService {
   private handlePresenceEvent(
     action: 'enter' | 'leave' | 'update',
     presenceMessage: any,
-    channelName: string
+    channelName: string,
   ): void {
     const event: IAblyPresenceEvent = {
       action,
       clientId: presenceMessage.clientId,
       data: presenceMessage.data,
       timestamp: new Date(),
-      channelName
+      channelName,
     };
 
     // Armazena evento (limitado)
@@ -408,7 +438,10 @@ export class AblyChannelService {
     // Atualiza estatísticas
     this.updateChannelStats(channelName, `presence_${action}`);
 
-    this.logger.debug(`Evento de presença ${action} no canal ${channelName}:`, presenceMessage.clientId);
+    this.logger.debug(
+      `Evento de presença ${action} no canal ${channelName}:`,
+      presenceMessage.clientId,
+    );
   }
 
   /**
@@ -422,7 +455,7 @@ export class AblyChannelService {
         messagesSent: 0,
         messagesReceived: 0,
         lastActivity: new Date(),
-        averageMessageSize: 0
+        averageMessageSize: 0,
       });
     }
   }
@@ -472,14 +505,17 @@ export class AblyChannelService {
   /**
    * Obtém eventos de presença recentes
    */
-  getRecentPresenceEvents(channelName?: string, limit: number = 50): IAblyPresenceEvent[] {
+  getRecentPresenceEvents(
+    channelName?: string,
+    limit: number = 50,
+  ): IAblyPresenceEvent[] {
     let events = this.presenceEvents;
-    
+
     if (channelName) {
       const fullChannelName = this.ablyConfig.getChannelName(channelName);
-      events = events.filter(event => event.channelName === fullChannelName);
+      events = events.filter((event) => event.channelName === fullChannelName);
     }
-    
+
     return events.slice(-limit).reverse();
   }
 
@@ -489,28 +525,28 @@ export class AblyChannelService {
   async removeChannel(channelName: string): Promise<IAblyOperationResult> {
     try {
       const fullChannelName = this.ablyConfig.getChannelName(channelName);
-      
+
       // Remove do serviço Ably
       await this.ablyService.removeChannel(channelName);
-      
+
       // Remove configuração e estatísticas
       this.channelConfigs.delete(fullChannelName);
       this.channelStats.delete(fullChannelName);
-      
+
       this.logger.debug(`Canal ${fullChannelName} removido`);
-      
+
       return {
         success: true,
-        timestamp: new Date()
+        timestamp: new Date(),
       };
     } catch (error) {
       this.logger.error(`Erro ao remover canal ${channelName}:`, error);
-      
+
       return {
         success: false,
         error: error.message,
         errorCode: 'CHANNEL_REMOVAL_FAILED',
-        timestamp: new Date()
+        timestamp: new Date(),
       };
     }
   }

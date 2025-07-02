@@ -64,7 +64,7 @@ interface RateLimitMetrics {
 
 /**
  * Serviço de Rate Limiting específico para SSE
- * 
+ *
  * Implementa rate limiting granular com diferentes perfis de usuário,
  * sliding window algorithm e métricas detalhadas.
  */
@@ -93,7 +93,7 @@ export class SseRateLimiterService {
     }
     this.profiles = this.loadRateLimitProfiles();
     this.whitelistedIPs = this.loadWhitelistedIPs();
-    
+
     this.logger.log('SSE Rate Limiter Service inicializado');
     this.logConfiguration();
 
@@ -125,26 +125,26 @@ export class SseRateLimiterService {
 
     const config = this.profiles[userProfile];
     const key = this.buildRateLimitKey(identifier, userProfile);
-    
+
     try {
       // Usar sliding window algorithm com Redis
       const result = await this.slidingWindowCheck(key, config);
-      
+
       // Registrar métricas
       await this.recordMetrics(userProfile, ip, result.allowed);
-      
+
       if (!result.allowed) {
         this.logger.warn(
           `Rate limit excedido para ${identifier} (perfil: ${userProfile})`,
         );
       }
-      
+
       return result;
     } catch (error) {
       this.logger.error(
         `Erro ao verificar rate limit para ${identifier}: ${error.message}`,
       );
-      
+
       // Em caso de erro, permitir a requisição (fail-open)
       return this.createAllowedResult(config);
     }
@@ -161,8 +161,8 @@ export class SseRateLimiterService {
     config: RateLimitConfig,
   ): Promise<RateLimitResult> {
     const now = Date.now();
-    const windowStart = now - (config.windowSeconds * 1000);
-    
+    const windowStart = now - config.windowSeconds * 1000;
+
     // Script Lua para operação atômica
     const luaScript = `
       local key = KEYS[1]
@@ -203,8 +203,8 @@ export class SseRateLimiterService {
         current_count
       }
     `;
-    
-    const result = await this.redis.eval(
+
+    const result = (await this.redis.eval(
       luaScript,
       1,
       key,
@@ -213,8 +213,8 @@ export class SseRateLimiterService {
       config.limit.toString(),
       config.windowSeconds.toString(),
       (config.burstLimit || config.limit).toString(),
-    ) as [number, number, number, number];
-    
+    )) as [number, number, number, number];
+
     return {
       allowed: result[0] === 1,
       remaining: result[1],
@@ -232,25 +232,26 @@ export class SseRateLimiterService {
   async getMetrics(timeRange: number = 3600): Promise<RateLimitMetrics> {
     try {
       const metricsData = await this.redis.hgetall(this.metricsKey);
-      
+
       const totalRequests = parseInt(metricsData.total_requests || '0');
       const blockedRequests = parseInt(metricsData.blocked_requests || '0');
-      
+
       // Obter top IPs
       const topIPs = await this.getTopIPs(10);
-      
+
       // Calcular métricas por perfil
       const requestsByProfile: Record<string, number> = {};
-      Object.keys(this.profiles).forEach(profile => {
+      Object.keys(this.profiles).forEach((profile) => {
         requestsByProfile[profile] = parseInt(
-          metricsData[`requests_${profile}`] || '0'
+          metricsData[`requests_${profile}`] || '0',
         );
       });
-      
+
       return {
         totalRequests,
         blockedRequests,
-        blockRate: totalRequests > 0 ? (blockedRequests / totalRequests) * 100 : 0,
+        blockRate:
+          totalRequests > 0 ? (blockedRequests / totalRequests) * 100 : 0,
         requestsByProfile,
         topIPs,
       };
@@ -277,7 +278,7 @@ export class SseRateLimiterService {
   ): Promise<void> {
     const key = this.buildRateLimitKey(identifier, userProfile);
     await this.redis.del(key);
-    
+
     this.logger.log(
       `Rate limit resetado para ${identifier} (perfil: ${userProfile})`,
     );
@@ -290,7 +291,7 @@ export class SseRateLimiterService {
   async addToWhitelist(ip: string): Promise<void> {
     this.whitelistedIPs.add(ip);
     await this.redis.sadd('sse:rate_limit:whitelist', ip);
-    
+
     this.logger.log(`IP ${ip} adicionado à whitelist`);
   }
 
@@ -301,7 +302,7 @@ export class SseRateLimiterService {
   async removeFromWhitelist(ip: string): Promise<void> {
     this.whitelistedIPs.delete(ip);
     await this.redis.srem('sse:rate_limit:whitelist', ip);
-    
+
     this.logger.log(`IP ${ip} removido da whitelist`);
   }
 
@@ -321,23 +322,44 @@ export class SseRateLimiterService {
     return {
       default: {
         limit: this.configService.get<number>('SSE_RATE_LIMIT_DEFAULT', 10),
-        windowSeconds: this.configService.get<number>('SSE_RATE_WINDOW_DEFAULT', 60),
-        burstLimit: this.configService.get<number>('SSE_RATE_BURST_DEFAULT', 15),
+        windowSeconds: this.configService.get<number>(
+          'SSE_RATE_WINDOW_DEFAULT',
+          60,
+        ),
+        burstLimit: this.configService.get<number>(
+          'SSE_RATE_BURST_DEFAULT',
+          15,
+        ),
       },
       admin: {
         limit: this.configService.get<number>('SSE_RATE_LIMIT_ADMIN', 50),
-        windowSeconds: this.configService.get<number>('SSE_RATE_WINDOW_ADMIN', 60),
+        windowSeconds: this.configService.get<number>(
+          'SSE_RATE_WINDOW_ADMIN',
+          60,
+        ),
         burstLimit: this.configService.get<number>('SSE_RATE_BURST_ADMIN', 75),
       },
       system: {
         limit: this.configService.get<number>('SSE_RATE_LIMIT_SYSTEM', 100),
-        windowSeconds: this.configService.get<number>('SSE_RATE_WINDOW_SYSTEM', 60),
-        burstLimit: this.configService.get<number>('SSE_RATE_BURST_SYSTEM', 150),
+        windowSeconds: this.configService.get<number>(
+          'SSE_RATE_WINDOW_SYSTEM',
+          60,
+        ),
+        burstLimit: this.configService.get<number>(
+          'SSE_RATE_BURST_SYSTEM',
+          150,
+        ),
       },
       premium: {
         limit: this.configService.get<number>('SSE_RATE_LIMIT_PREMIUM', 25),
-        windowSeconds: this.configService.get<number>('SSE_RATE_WINDOW_PREMIUM', 60),
-        burstLimit: this.configService.get<number>('SSE_RATE_BURST_PREMIUM', 35),
+        windowSeconds: this.configService.get<number>(
+          'SSE_RATE_WINDOW_PREMIUM',
+          60,
+        ),
+        burstLimit: this.configService.get<number>(
+          'SSE_RATE_BURST_PREMIUM',
+          35,
+        ),
       },
     };
   }
@@ -350,12 +372,12 @@ export class SseRateLimiterService {
     const defaultIPs = this.configService
       .get<string>('SSE_RATE_LIMIT_WHITELIST', '127.0.0.1,::1')
       .split(',')
-      .map(ip => ip.trim())
-      .filter(ip => ip.length > 0);
-    
+      .map((ip) => ip.trim())
+      .filter((ip) => ip.length > 0);
+
     // Carregar IPs adicionais do Redis de forma assíncrona
     this.loadWhitelistFromRedis();
-    
+
     return new Set(defaultIPs);
   }
 
@@ -365,7 +387,7 @@ export class SseRateLimiterService {
   private async loadWhitelistFromRedis(): Promise<void> {
     try {
       const ips = await this.redis.smembers('sse:rate_limit:whitelist');
-      ips.forEach(ip => this.whitelistedIPs.add(ip));
+      ips.forEach((ip) => this.whitelistedIPs.add(ip));
     } catch (error) {
       this.logger.warn(`Erro ao carregar whitelist do Redis: ${error.message}`);
     }
@@ -377,10 +399,7 @@ export class SseRateLimiterService {
    * @param profile Perfil do usuário
    * @returns Chave Redis
    */
-  private buildRateLimitKey(
-    identifier: string,
-    profile: string,
-  ): string {
+  private buildRateLimitKey(identifier: string, profile: string): string {
     return `${this.keyPrefix}:${profile}:${identifier}`;
   }
 
@@ -412,25 +431,25 @@ export class SseRateLimiterService {
   ): Promise<void> {
     try {
       const pipeline = this.redis.pipeline();
-      
+
       // Incrementar contadores
       pipeline.hincrby(this.metricsKey, 'total_requests', 1);
       pipeline.hincrby(this.metricsKey, `requests_${profile}`, 1);
-      
+
       if (!allowed) {
         pipeline.hincrby(this.metricsKey, 'blocked_requests', 1);
       }
-      
+
       // Registrar IP se fornecido
       if (ip) {
         const ipKey = `sse:rate_limit:ips:${ip}`;
         pipeline.incr(ipKey);
         pipeline.expire(ipKey, 3600); // Expirar em 1 hora
       }
-      
+
       // Definir TTL para métricas (24 horas)
       pipeline.expire(this.metricsKey, 86400);
-      
+
       await pipeline.exec();
     } catch (error) {
       this.logger.error(`Erro ao registrar métricas: ${error.message}`);
@@ -442,28 +461,30 @@ export class SseRateLimiterService {
    * @param limit Número máximo de IPs
    * @returns Array de IPs e contadores
    */
-  private async getTopIPs(limit: number): Promise<Array<{ ip: string; count: number }>> {
+  private async getTopIPs(
+    limit: number,
+  ): Promise<Array<{ ip: string; count: number }>> {
     try {
       const pattern = 'sse:rate_limit:ips:*';
       const keys = await this.redis.keys(pattern);
-      
+
       if (keys.length === 0) {
         return [];
       }
-      
+
       const pipeline = this.redis.pipeline();
-      keys.forEach(key => pipeline.get(key));
-      
+      keys.forEach((key) => pipeline.get(key));
+
       const results = await pipeline.exec();
-      
+
       const ipCounts = keys
         .map((key, index) => ({
           ip: key.replace('sse:rate_limit:ips:', ''),
-          count: parseInt(results?.[index]?.[1] as string || '0'),
+          count: parseInt((results?.[index]?.[1] as string) || '0'),
         }))
         .sort((a, b) => b.count - a.count)
         .slice(0, limit);
-      
+
       return ipCounts;
     } catch (error) {
       this.logger.error(`Erro ao obter top IPs: ${error.message}`);

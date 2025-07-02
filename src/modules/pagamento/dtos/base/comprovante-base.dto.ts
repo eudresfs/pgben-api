@@ -2,10 +2,10 @@ import { ApiProperty } from '@nestjs/swagger';
 
 /**
  * DTO base para comprovantes
- * 
+ *
  * Define campos comuns compartilhados entre diferentes DTOs de comprovante
  * para seguir o princípio DRY (Don't Repeat Yourself).
- * 
+ *
  * @author Equipe PGBen
  */
 export abstract class ComprovanteBaseDto {

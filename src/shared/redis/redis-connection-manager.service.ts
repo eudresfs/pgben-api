@@ -10,7 +10,13 @@ export interface RedisConnectionConfig {
   username?: string;
 }
 
-export type ConnectionType = 'client' | 'subscriber' | 'bclient' | 'cache' | 'health' | 'sse';
+export type ConnectionType =
+  | 'client'
+  | 'subscriber'
+  | 'bclient'
+  | 'cache'
+  | 'health'
+  | 'sse';
 
 export interface ConnectionPoolConfig {
   maxRetriesPerRequest: number | null;
@@ -26,7 +32,7 @@ export class RedisConnectionManager implements OnModuleDestroy {
   private readonly connections = new Map<string, Redis>();
   private readonly config: RedisConnectionConfig;
   private readonly baseOptions: RedisOptions;
-  
+
   // Pools compartilhados para BullMQ
   private clientPool: Redis | null = null;
   private subscriberPool: Redis | null = null;
@@ -66,7 +72,9 @@ export class RedisConnectionManager implements OnModuleDestroy {
     if (!this.config.port || this.config.port <= 0) {
       throw new Error('REDIS_PORT must be a positive number');
     }
-    this.logger.log(`Redis configuration validated: ${this.config.host}:${this.config.port}`);
+    this.logger.log(
+      `Redis configuration validated: ${this.config.host}:${this.config.port}`,
+    );
   }
 
   private createRetryStrategy() {
@@ -116,10 +124,13 @@ export class RedisConnectionManager implements OnModuleDestroy {
     return configs[type];
   }
 
-  async createConnection(type: ConnectionType, redisOpts?: Partial<RedisOptions>): Promise<Redis> {
+  async createConnection(
+    type: ConnectionType,
+    redisOpts?: Partial<RedisOptions>,
+  ): Promise<Redis> {
     const connectionKey = `${type}-${Date.now()}`;
     const typeConfig = this.getConnectionConfig(type);
-    
+
     const options: RedisOptions = {
       ...this.baseOptions,
       ...typeConfig,
@@ -139,7 +150,10 @@ export class RedisConnectionManager implements OnModuleDestroy {
     });
 
     connection.on('error', (err) => {
-      this.logger.error(`Redis ${type} connection error: ${err.message}`, err.stack);
+      this.logger.error(
+        `Redis ${type} connection error: ${err.message}`,
+        err.stack,
+      );
     });
 
     connection.on('close', () => {
@@ -147,19 +161,27 @@ export class RedisConnectionManager implements OnModuleDestroy {
     });
 
     connection.on('reconnecting', () => {
-      this.logger.warn(`Redis ${type} connection reconnecting: ${connectionKey}`);
+      this.logger.warn(
+        `Redis ${type} connection reconnecting: ${connectionKey}`,
+      );
     });
 
     // Aguarda conexão estar pronta antes de retornar
     await this.waitForConnection(connection, type);
-    
+
     return connection;
   }
 
-  private async waitForConnection(connection: Redis, type: ConnectionType, timeout = 10000): Promise<void> {
+  private async waitForConnection(
+    connection: Redis,
+    type: ConnectionType,
+    timeout = 10000,
+  ): Promise<void> {
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
-        reject(new Error(`Redis ${type} connection timeout after ${timeout}ms`));
+        reject(
+          new Error(`Redis ${type} connection timeout after ${timeout}ms`),
+        );
       }, timeout);
 
       const onReady = () => {
@@ -191,7 +213,10 @@ export class RedisConnectionManager implements OnModuleDestroy {
   }
 
   // Implementação do padrão createClient para BullMQ
-  createClient = (type: 'client' | 'subscriber' | 'bclient', redisOpts?: any): Redis => {
+  createClient = (
+    type: 'client' | 'subscriber' | 'bclient',
+    redisOpts?: any,
+  ): Redis => {
     switch (type) {
       case 'client':
         if (!this.clientPool) {
@@ -259,7 +284,7 @@ export class RedisConnectionManager implements OnModuleDestroy {
 
   getConnectionStats(): { total: number; types: Record<string, number> } {
     const stats = { total: this.connections.size, types: {} };
-    
+
     for (const [key] of this.connections) {
       const type = key.split('-')[0];
       stats.types[type] = (stats.types[type] || 0) + 1;
@@ -270,22 +295,24 @@ export class RedisConnectionManager implements OnModuleDestroy {
 
   async onModuleDestroy(): Promise<void> {
     this.logger.log('Shutting down Redis connections...');
-    
-    const closePromises = Array.from(this.connections.values()).map(async (connection) => {
-      try {
-        if (connection.status !== 'end') {
-          await connection.quit();
+
+    const closePromises = Array.from(this.connections.values()).map(
+      async (connection) => {
+        try {
+          if (connection.status !== 'end') {
+            await connection.quit();
+          }
+        } catch (error) {
+          this.logger.error('Error closing Redis connection', error);
         }
-      } catch (error) {
-        this.logger.error('Error closing Redis connection', error);
-      }
-    });
+      },
+    );
 
     await Promise.allSettled(closePromises);
     this.connections.clear();
     this.clientPool = null;
     this.subscriberPool = null;
-    
+
     this.logger.log('All Redis connections closed');
   }
 }

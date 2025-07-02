@@ -6,6 +6,6 @@ export class CancelarPagamentoCommand {
     public readonly pagamentoId: string,
     public readonly motivo: string,
     public readonly usuarioId: string,
-    public readonly async: boolean = false
+    public readonly async: boolean = false,
   ) {}
 }

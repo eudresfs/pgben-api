@@ -117,7 +117,9 @@ export class DadosAluguelSocial {
    * Verifica se tem especificações de vulnerabilidade
    */
   temVulnerabilidadeEspecifica(): boolean {
-    if (!this.especificacoes || this.especificacoes.length === 0) {return false;}
+    if (!this.especificacoes || this.especificacoes.length === 0) {
+      return false;
+    }
 
     const vulnerabilidades = [
       EspecificacaoAluguel.EXPLORACAO_SEXUAL,
@@ -162,19 +164,29 @@ export class DadosAluguelSocial {
 
     // Pontuação adicional por especificações
     if (this.especificacoes) {
-      if (this.especificacoes.includes(EspecificacaoAluguel.EXPLORACAO_SEXUAL))
-        {pontuacao += 50;}
-      if (this.especificacoes.includes(EspecificacaoAluguel.VITIMA_VIOLENCIA))
-        {pontuacao += 40;}
-      if (this.especificacoes.includes(EspecificacaoAluguel.SITUACAO_RUA))
-        {pontuacao += 30;}
-      if (this.especificacoes.includes(EspecificacaoAluguel.AUSENCIA_MORADIA))
-        {pontuacao += 20;}
+      if (
+        this.especificacoes.includes(EspecificacaoAluguel.EXPLORACAO_SEXUAL)
+      ) {
+        pontuacao += 50;
+      }
+      if (this.especificacoes.includes(EspecificacaoAluguel.VITIMA_VIOLENCIA)) {
+        pontuacao += 40;
+      }
+      if (this.especificacoes.includes(EspecificacaoAluguel.SITUACAO_RUA)) {
+        pontuacao += 30;
+      }
+      if (this.especificacoes.includes(EspecificacaoAluguel.AUSENCIA_MORADIA)) {
+        pontuacao += 20;
+      }
     }
 
     // Pontuação por situações especiais
-    if (this.caso_judicializado_maria_penha) {pontuacao += 50;}
-    if (this.possui_imovel_interditado) {pontuacao += 30;}
+    if (this.caso_judicializado_maria_penha) {
+      pontuacao += 50;
+    }
+    if (this.possui_imovel_interditado) {
+      pontuacao += 30;
+    }
 
     return pontuacao;
   }

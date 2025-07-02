@@ -77,12 +77,12 @@ import { DataSource } from 'typeorm';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
-         type: 'postgres' as const,
-         host: configService.get('DB_HOST', 'localhost'),
-         port: parseInt(configService.get('DB_PORT', '5432')),
-         username: configService.get('DB_USER', 'postgres'),
-         password: configService.get('DB_PASS', 'postgres'),
-         database: configService.get('DB_NAME', 'pgben') as string,
+        type: 'postgres' as const,
+        host: configService.get('DB_HOST', 'localhost'),
+        port: parseInt(configService.get('DB_PORT', '5432')),
+        username: configService.get('DB_USER', 'postgres'),
+        password: configService.get('DB_PASS', 'postgres'),
+        database: configService.get('DB_NAME', 'pgben') as string,
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
         synchronize: false,
         logging: configService.get('NODE_ENV') === 'development',
@@ -108,15 +108,15 @@ import { DataSource } from 'typeorm';
     }),
     // Módulo de documentos (necessário para StorageHealthService)
     DocumentoModule,
-    
+
     // Módulo de monitoramento
     MonitoringModule,
 
     // Módulos compartilhados
-    EmailModule, 
+    EmailModule,
     PermissionSharedModule,
     LoggingModule,
-    
+
     // Módulo de auditoria consolidado
     AuditoriaModule,
     // ResilienceModule, // Temporariamente desabilitado - depende do Redis

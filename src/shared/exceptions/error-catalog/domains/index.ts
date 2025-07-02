@@ -16,7 +16,6 @@ export * from './beneficio.errors';
 export * from './documento.errors';
 export * from './auditoria.errors';
 
-
 // Domínio NOTIFICACAO
 export * from './notificacao.errors';
 

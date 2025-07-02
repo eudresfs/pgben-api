@@ -49,7 +49,8 @@ export class ThumbnailQueueService {
     delay: number = 0,
   ): Promise<void> {
     // Verificar se já existe thumbnail
-    const thumbnailExists = await this.thumbnailService.thumbnailExists(documentoId);
+    const thumbnailExists =
+      await this.thumbnailService.thumbnailExists(documentoId);
     if (thumbnailExists) {
       this.logger.debug(
         `Thumbnail já existe para documento ${documentoId}, ignorando`,
@@ -77,7 +78,7 @@ export class ThumbnailQueueService {
     };
 
     this.queue.set(documentoId, job);
-    
+
     this.logger.info(
       `Documento ${documentoId} adicionado à fila de thumbnails (prioridade: ${priority})`,
       ThumbnailQueueService.name,
@@ -102,7 +103,7 @@ export class ThumbnailQueueService {
     byPriority: { high: number; normal: number; low: number };
   } {
     const byPriority = { high: 0, normal: 0, low: 0 };
-    
+
     for (const job of this.queue.values()) {
       byPriority[job.priority]++;
     }
@@ -139,7 +140,7 @@ export class ThumbnailQueueService {
     if (this.processingInterval) {
       clearInterval(this.processingInterval);
       this.processingInterval = null;
-      
+
       this.logger.info(
         'Processamento de fila de thumbnails parado',
         ThumbnailQueueService.name,
@@ -176,7 +177,7 @@ export class ThumbnailQueueService {
   private getNextJobs(count: number): ThumbnailJob[] {
     const now = new Date();
     const availableJobs = Array.from(this.queue.values())
-      .filter(job => {
+      .filter((job) => {
         // Filtrar jobs que ainda não chegaram na hora de execução
         if (job.scheduledFor && job.scheduledFor > now) {
           return false;
@@ -187,12 +188,13 @@ export class ThumbnailQueueService {
       .sort((a, b) => {
         // Ordenar por prioridade e depois por data de criação
         const priorityOrder = { high: 3, normal: 2, low: 1 };
-        const priorityDiff = priorityOrder[b.priority] - priorityOrder[a.priority];
-        
+        const priorityDiff =
+          priorityOrder[b.priority] - priorityOrder[a.priority];
+
         if (priorityDiff !== 0) {
           return priorityDiff;
         }
-        
+
         return a.createdAt.getTime() - b.createdAt.getTime();
       });
 
@@ -205,7 +207,7 @@ export class ThumbnailQueueService {
    */
   private async processJob(job: ThumbnailJob): Promise<void> {
     this.processing.add(job.documentoId);
-    
+
     try {
       this.logger.debug(
         `Iniciando geração de thumbnail para documento ${job.documentoId}`,
@@ -214,7 +216,7 @@ export class ThumbnailQueueService {
 
       // Buscar documento no banco
       const documento = await this.documentoRepository.findOne({
-        where: { id: job.documentoId }
+        where: { id: job.documentoId },
       });
 
       if (!documento) {
@@ -227,7 +229,8 @@ export class ThumbnailQueueService {
       }
 
       // Obter arquivo do storage
-      const storageProvider = this.thumbnailService['storageProviderFactory'].getProvider();
+      const storageProvider =
+        this.thumbnailService['storageProviderFactory'].getProvider();
       const fileBuffer = await storageProvider.obterArquivo(documento.caminho);
 
       // Gerar thumbnail
@@ -251,7 +254,6 @@ export class ThumbnailQueueService {
 
       // Remover da fila após sucesso
       this.removeFromQueue(job.documentoId);
-
     } catch (error) {
       this.logger.error(
         `Erro ao gerar thumbnail para documento ${job.documentoId}: ${error.message}`,
@@ -272,9 +274,9 @@ export class ThumbnailQueueService {
         // Reagendar para retry com delay exponencial
         const delay = Math.pow(2, job.retryCount) * 60000; // 1min, 2min, 4min...
         job.scheduledFor = new Date(Date.now() + delay);
-        
+
         this.logger.info(
-          `Reagendando thumbnail para documento ${job.documentoId} em ${delay/1000}s (tentativa ${job.retryCount}/${job.maxRetries})`,
+          `Reagendando thumbnail para documento ${job.documentoId} em ${delay / 1000}s (tentativa ${job.retryCount}/${job.maxRetries})`,
           ThumbnailQueueService.name,
         );
       }
@@ -333,9 +335,9 @@ export class ThumbnailQueueService {
       }
 
       offset += batchSize;
-      
+
       // Pequeno delay para não sobrecarregar o sistema
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
     }
 
     this.logger.info(
@@ -354,7 +356,7 @@ export class ThumbnailQueueService {
 
     for (const [documentoId, job] of this.queue.entries()) {
       const age = now.getTime() - job.createdAt.getTime();
-      
+
       if (age > maxAge) {
         this.removeFromQueue(documentoId);
         removedCount++;
@@ -392,15 +394,17 @@ export class ThumbnailQueueService {
     const job = this.queue.get(documentoId);
     if (job) {
       const queueArray = Array.from(this.queue.values())
-        .filter(j => !this.processing.has(j.documentoId))
+        .filter((j) => !this.processing.has(j.documentoId))
         .sort((a, b) => {
           const priorityOrder = { high: 3, normal: 2, low: 1 };
-          const priorityDiff = priorityOrder[b.priority] - priorityOrder[a.priority];
+          const priorityDiff =
+            priorityOrder[b.priority] - priorityOrder[a.priority];
           if (priorityDiff !== 0) return priorityDiff;
           return a.createdAt.getTime() - b.createdAt.getTime();
         });
 
-      const position = queueArray.findIndex(j => j.documentoId === documentoId) + 1;
+      const position =
+        queueArray.findIndex((j) => j.documentoId === documentoId) + 1;
       const estimatedTime = position * 30; // Estimativa de 30s por job
 
       return {
@@ -412,7 +416,8 @@ export class ThumbnailQueueService {
     }
 
     // Verificar se já existe thumbnail
-    const thumbnailExists = await this.thumbnailService.thumbnailExists(documentoId);
+    const thumbnailExists =
+      await this.thumbnailService.thumbnailExists(documentoId);
     if (thumbnailExists) {
       return { status: 'completed' };
     }
@@ -437,7 +442,7 @@ export class ThumbnailQueueService {
     };
   }> {
     const queueStatus = this.getQueueStatus();
-    
+
     // Encontrar job mais antigo
     let oldestJob: Date | undefined;
     for (const job of this.queue.values()) {

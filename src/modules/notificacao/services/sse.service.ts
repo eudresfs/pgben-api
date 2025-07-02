@@ -2,13 +2,26 @@ import { Injectable, Logger, OnModuleDestroy, Inject } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Observable, Subject } from 'rxjs';
 import { Request } from 'express';
-import { SseConnection, SseNotification, SseConnectionStats, HeartbeatResponse, EventReplayResponse } from '../interfaces/sse-notification.interface';
+import {
+  SseConnection,
+  SseNotification,
+  SseConnectionStats,
+  HeartbeatResponse,
+  EventReplayResponse,
+} from '../interfaces/sse-notification.interface';
 import { SseRedisService } from './sse-redis.service';
 import { SseEventStoreService } from './sse-event-store.service';
 import { SseRetryPolicyService } from './sse-retry-policy.service';
 import { SseRateLimiterService } from './sse-rate-limiter.service';
-import { SseGracefulDegradationService, DegradationLevel } from './sse-graceful-degradation.service';
-import { SseStructuredLoggingService, LogLevel, SseLogCategory } from './sse-structured-logging.service';
+import {
+  SseGracefulDegradationService,
+  DegradationLevel,
+} from './sse-graceful-degradation.service';
+import {
+  SseStructuredLoggingService,
+  LogLevel,
+  SseLogCategory,
+} from './sse-structured-logging.service';
 import { SseErrorBoundaryService } from './sse-error-boundary.service';
 import { SseResilienceConfig } from '../config/sse-resilience.config';
 import { SseConfig, SSE_CONFIG } from '../../../config/sse.config';
@@ -16,7 +29,10 @@ import { SseConfig, SSE_CONFIG } from '../../../config/sse.config';
 @Injectable()
 export class SseService implements OnModuleDestroy {
   private readonly logger = new Logger(SseService.name);
-  private readonly localConnections = new Map<string, Map<string, Subject<MessageEvent>>>();
+  private readonly localConnections = new Map<
+    string,
+    Map<string, Subject<MessageEvent>>
+  >();
   private readonly connectionMetadata = new Map<string, SseConnection>();
   private redisEnabled: boolean;
 
@@ -36,7 +52,8 @@ export class SseService implements OnModuleDestroy {
     }
 
     try {
-      const redisConnections = await this.redisService.getUserConnections(userId);
+      const redisConnections =
+        await this.redisService.getUserConnections(userId);
       return this.getUserLocalConnectionCount(userId) + redisConnections.length;
     } catch (error) {
       this.loggingService.logError(error as Error, {
@@ -71,7 +88,9 @@ export class SseService implements OnModuleDestroy {
     if (this.redisEnabled) {
       this.setupRedisSubscriptions();
     } else {
-      this.logger.warn('Redis desabilitado - funcionando apenas com conexões locais');
+      this.logger.warn(
+        'Redis desabilitado - funcionando apenas com conexões locais',
+      );
     }
   }
 
@@ -115,27 +134,36 @@ export class SseService implements OnModuleDestroy {
 
     try {
       // Verificar degradação
-      const degradationStatus = await this.gracefulDegradationService.getCurrentStatus();
+      const degradationStatus =
+        await this.gracefulDegradationService.getCurrentStatus();
       if (degradationStatus.currentLevel === DegradationLevel.CRITICAL) {
-        this.loggingService.logConnection(LogLevel.WARN, 'Conexão indeferida devido ao modo crítico', {
-          userId: Number(userId),
-          component: 'sse-connection',
-          operation: 'create-connection',
-          timestamp: new Date(),
-          category: SseLogCategory.CONNECTION,
-          metadata: {
-            degradationLevel: degradationStatus.currentLevel,
-            reason: 'critical_mode',
+        this.loggingService.logConnection(
+          LogLevel.WARN,
+          'Conexão indeferida devido ao modo crítico',
+          {
+            userId: Number(userId),
+            component: 'sse-connection',
+            operation: 'create-connection',
+            timestamp: new Date(),
+            category: SseLogCategory.CONNECTION,
+            metadata: {
+              degradationLevel: degradationStatus.currentLevel,
+              reason: 'critical_mode',
+            },
           },
-        });
-        throw new Error('Serviço em modo crítico - conexões temporariamente indisponíveis');
+        );
+        throw new Error(
+          'Serviço em modo crítico - conexões temporariamente indisponíveis',
+        );
       }
 
-      const clientInfo = req ? {
-        userAgent: req.headers['user-agent'] || 'unknown',
-        ip: req.ip || 'unknown',
-        lastEventId: req.headers['last-event-id'] as string,
-      } : { userAgent: 'unknown', ip: 'unknown' };
+      const clientInfo = req
+        ? {
+            userAgent: req.headers['user-agent'] || 'unknown',
+            ip: req.ip || 'unknown',
+            lastEventId: req.headers['last-event-id'] as string,
+          }
+        : { userAgent: 'unknown', ip: 'unknown' };
 
       // Verificar limites de conexão
       if (!this.localConnections.has(userId)) {
@@ -144,19 +172,25 @@ export class SseService implements OnModuleDestroy {
 
       const userConnections = this.localConnections.get(userId)!;
       if (userConnections.size >= this.sseConfig.maxConnectionsPerUser) {
-        this.loggingService.logConnection(LogLevel.WARN, 'Limite de conexões atingido', {
-          userId: Number(userId),
-          component: 'sse-connection',
-          operation: 'create-connection',
-          timestamp: new Date(),
-          category: SseLogCategory.CONNECTION,
-          metadata: {
-            currentConnections: userConnections.size,
-            maxConnections: this.sseConfig.maxConnectionsPerUser,
-            ...clientInfo,
+        this.loggingService.logConnection(
+          LogLevel.WARN,
+          'Limite de conexões atingido',
+          {
+            userId: Number(userId),
+            component: 'sse-connection',
+            operation: 'create-connection',
+            timestamp: new Date(),
+            category: SseLogCategory.CONNECTION,
+            metadata: {
+              currentConnections: userConnections.size,
+              maxConnections: this.sseConfig.maxConnectionsPerUser,
+              ...clientInfo,
+            },
           },
-        });
-        throw new Error(`Limite de ${this.sseConfig.maxConnectionsPerUser} conexões por usuário atingido`);
+        );
+        throw new Error(
+          `Limite de ${this.sseConfig.maxConnectionsPerUser} conexões por usuário atingido`,
+        );
       }
 
       const connectionId = this.generateConnectionId();
@@ -192,33 +226,40 @@ export class SseService implements OnModuleDestroy {
         );
 
         if (!redisResult.success) {
-          this.loggingService.logError(new Error('Falha ao armazenar conexão no Redis'), {
-            userId: Number(userId),
-            component: 'sse-redis',
-            operation: 'store-connection',
-            timestamp: new Date(),
-            category: SseLogCategory.REDIS,
-            metadata: {
-              connectionId,
-              error: redisResult.error?.message,
+          this.loggingService.logError(
+            new Error('Falha ao armazenar conexão no Redis'),
+            {
+              userId: Number(userId),
+              component: 'sse-redis',
+              operation: 'store-connection',
+              timestamp: new Date(),
+              category: SseLogCategory.REDIS,
+              metadata: {
+                connectionId,
+                error: redisResult.error?.message,
+              },
             },
-          });
+          );
         }
       }
 
-      this.loggingService.logConnection(LogLevel.INFO, 'Nova conexão SSE criada', {
-        userId: Number(userId),
-        component: 'sse-connection',
-        operation: 'create-connection',
-        timestamp: new Date(),
-        category: SseLogCategory.CONNECTION,
-        metadata: {
-          connectionId,
-          duration: Date.now() - startTime,
-          redisEnabled: this.redisEnabled,
-          ...clientInfo,
+      this.loggingService.logConnection(
+        LogLevel.INFO,
+        'Nova conexão SSE criada',
+        {
+          userId: Number(userId),
+          component: 'sse-connection',
+          operation: 'create-connection',
+          timestamp: new Date(),
+          category: SseLogCategory.CONNECTION,
+          metadata: {
+            connectionId,
+            duration: Date.now() - startTime,
+            redisEnabled: this.redisEnabled,
+            ...clientInfo,
+          },
         },
-      });
+      );
 
       return new Observable<MessageEvent>((observer) => {
         // Enviar evento inicial de conexão
@@ -234,74 +275,88 @@ export class SseService implements OnModuleDestroy {
 
         // Recuperar eventos perdidos se lastEventId fornecido
         if (clientInfo?.lastEventId) {
-          this.loggingService.logConnection(LogLevel.INFO, 'Recuperando eventos perdidos', {
-            userId: Number(userId),
-            component: 'sse-event-recovery',
-            operation: 'recover-events',
-            timestamp: new Date(),
-            category: SseLogCategory.CONNECTION,
-          });
-
-          this.retryPolicyService.executeWithRetry(
-            async () => {
-              const replayResponse = await this.eventStoreService.replayEvents({
-                userId,
-                lastEventId: clientInfo.lastEventId!,
-                limit: 50
-              });
-              return replayResponse.events;
-            },
-            { maxAttempts: 3, initialDelay: 500 },
-          )
-          .then((result) => {
-            if (result.success && result.result && result.result.length > 0) {
-              this.loggingService.logConnection(LogLevel.INFO, 'Eventos perdidos recuperados', {
-                userId: Number(userId),
-                component: 'sse-event-recovery',
-                operation: 'recover-events',
-                timestamp: new Date(),
-                category: SseLogCategory.CONNECTION,
-                metadata: { eventsCount: result.result.length },
-              });
-
-              result.result.forEach((event) => {
-                observer.next({
-                  data: JSON.stringify({
-                    ...event,
-                    timestamp: event.createdAt.toISOString(),
-                  }),
-                  lastEventId: event.eventId,
-                  type: event.notification.type,
-                } as MessageEvent);
-              });
-
-              observer.next({
-                data: JSON.stringify({
-                  type: 'recovery-complete',
-                  message: `${result.result.length} eventos recuperados`,
-                  timestamp: new Date().toISOString(),
-                }),
-                type: 'recovery-complete',
-              } as MessageEvent);
-            } else {
-              this.loggingService.logConnection(LogLevel.DEBUG, 'Nenhum evento perdido encontrado', {
-                userId: Number(userId),
-                component: 'sse-event-recovery',
-                operation: 'recover-events',
-                timestamp: new Date(),
-                category: SseLogCategory.CONNECTION,
-              });
-            }
-          })
-          .catch((error) => {
-            this.loggingService.logError(error as Error, {
+          this.loggingService.logConnection(
+            LogLevel.INFO,
+            'Recuperando eventos perdidos',
+            {
               userId: Number(userId),
               component: 'sse-event-recovery',
               operation: 'recover-events',
               timestamp: new Date(),
               category: SseLogCategory.CONNECTION,
+            },
+          );
+
+          this.retryPolicyService
+            .executeWithRetry(
+              async () => {
+                const replayResponse =
+                  await this.eventStoreService.replayEvents({
+                    userId,
+                    lastEventId: clientInfo.lastEventId!,
+                    limit: 50,
+                  });
+                return replayResponse.events;
+              },
+              { maxAttempts: 3, initialDelay: 500 },
+            )
+            .then((result) => {
+              if (result.success && result.result && result.result.length > 0) {
+                this.loggingService.logConnection(
+                  LogLevel.INFO,
+                  'Eventos perdidos recuperados',
+                  {
+                    userId: Number(userId),
+                    component: 'sse-event-recovery',
+                    operation: 'recover-events',
+                    timestamp: new Date(),
+                    category: SseLogCategory.CONNECTION,
+                    metadata: { eventsCount: result.result.length },
+                  },
+                );
+
+                result.result.forEach((event) => {
+                  observer.next({
+                    data: JSON.stringify({
+                      ...event,
+                      timestamp: event.createdAt.toISOString(),
+                    }),
+                    lastEventId: event.eventId,
+                    type: event.notification.type,
+                  } as MessageEvent);
+                });
+
+                observer.next({
+                  data: JSON.stringify({
+                    type: 'recovery-complete',
+                    message: `${result.result.length} eventos recuperados`,
+                    timestamp: new Date().toISOString(),
+                  }),
+                  type: 'recovery-complete',
+                } as MessageEvent);
+              } else {
+                this.loggingService.logConnection(
+                  LogLevel.DEBUG,
+                  'Nenhum evento perdido encontrado',
+                  {
+                    userId: Number(userId),
+                    component: 'sse-event-recovery',
+                    operation: 'recover-events',
+                    timestamp: new Date(),
+                    category: SseLogCategory.CONNECTION,
+                  },
+                );
+              }
+            })
+            .catch((error) => {
+              this.loggingService.logError(error as Error, {
+                userId: Number(userId),
+                component: 'sse-event-recovery',
+                operation: 'recover-events',
+                timestamp: new Date(),
+                category: SseLogCategory.CONNECTION,
+              });
             });
-          });
         }
 
         // Enviar heartbeat inicial
@@ -326,18 +381,15 @@ export class SseService implements OnModuleDestroy {
       const duration = Date.now() - startTime;
 
       // Capturar erro com error boundary
-      await this.errorBoundaryService.captureError(
-        error as Error,
-        {
-          userId: Number(userId),
-          timestamp: new Date(),
-          additionalData: {
-            component: 'sse-connection',
-            operation: 'create-connection',
-            category: SseLogCategory.CONNECTION,
-          },
+      await this.errorBoundaryService.captureError(error as Error, {
+        userId: Number(userId),
+        timestamp: new Date(),
+        additionalData: {
+          component: 'sse-connection',
+          operation: 'create-connection',
+          category: SseLogCategory.CONNECTION,
         },
-      );
+      });
 
       this.loggingService.logError(error as Error, {
         userId: Number(userId),
@@ -355,22 +407,34 @@ export class SseService implements OnModuleDestroy {
     }
   }
 
-  async sendToUser(userId: string, notification: SseNotification): Promise<void> {
+  async sendToUser(
+    userId: string,
+    notification: SseNotification,
+  ): Promise<void> {
     const startTime = Date.now();
 
     try {
       // Verificar se a funcionalidade está disponível
-      if (!this.gracefulDegradationService.isFeatureAvailable('sse-notifications')) {
-        const activeStrategy = this.gracefulDegradationService.getActiveStrategy('sse-notifications');
+      if (
+        !this.gracefulDegradationService.isFeatureAvailable('sse-notifications')
+      ) {
+        const activeStrategy =
+          this.gracefulDegradationService.getActiveStrategy(
+            'sse-notifications',
+          );
 
-        this.loggingService.logNotification(LogLevel.WARN, 'Funcionalidade SSE indisponível', {
-          userId: Number(userId),
-          component: 'sse-notification',
-          operation: 'send-notification',
-          timestamp: new Date(),
-          category: SseLogCategory.NOTIFICATION,
-          metadata: { activeStrategy },
-        });
+        this.loggingService.logNotification(
+          LogLevel.WARN,
+          'Funcionalidade SSE indisponível',
+          {
+            userId: Number(userId),
+            component: 'sse-notification',
+            operation: 'send-notification',
+            timestamp: new Date(),
+            category: SseLogCategory.NOTIFICATION,
+            metadata: { activeStrategy },
+          },
+        );
 
         if (activeStrategy === 'simplified_notifications') {
           await this.sendSimplifiedNotification(userId, notification);
@@ -389,20 +453,17 @@ export class SseService implements OnModuleDestroy {
       );
 
       if (!storeResult.success) {
-        this.loggingService.logError(
-          new Error('Falha ao armazenar evento'),
-          {
-            userId: Number(userId),
-            component: 'sse-event-store',
-            operation: 'store-event',
-            timestamp: new Date(),
-            category: SseLogCategory.DATABASE,
-            metadata: {
-              notificationId: notification.id,
-              error: storeResult.error?.message,
-            },
+        this.loggingService.logError(new Error('Falha ao armazenar evento'), {
+          userId: Number(userId),
+          component: 'sse-event-store',
+          operation: 'store-event',
+          timestamp: new Date(),
+          category: SseLogCategory.DATABASE,
+          metadata: {
+            notificationId: notification.id,
+            error: storeResult.error?.message,
           },
-        );
+        });
       }
 
       // Adicionar eventId se não existir
@@ -416,10 +477,15 @@ export class SseService implements OnModuleDestroy {
       await this.sendToUserLocalWithResilience(userId, notificationWithEventId);
 
       // Publicar no Redis se habilitado
-      if (this.redisEnabled && this.gracefulDegradationService.isFeatureAvailable('redis-operations')) {
+      if (
+        this.redisEnabled &&
+        this.gracefulDegradationService.isFeatureAvailable('redis-operations')
+      ) {
         const redisResult = await this.retryPolicyService.executeWithRetry(
           async () => {
-            await this.redisService.publishNotification(notificationWithEventId);
+            await this.redisService.publishNotification(
+              notificationWithEventId,
+            );
           },
           { maxAttempts: 3, initialDelay: 1000 },
         );
@@ -442,18 +508,22 @@ export class SseService implements OnModuleDestroy {
         }
       }
 
-      this.loggingService.logNotification(LogLevel.INFO, 'Notificação enviada com sucesso', {
-        userId: Number(userId),
-        component: 'sse-notification',
-        operation: 'send-notification',
-        timestamp: new Date(),
-        category: SseLogCategory.NOTIFICATION,
-        metadata: {
-          notificationId: notificationWithEventId.id,
-          type: notificationWithEventId.type,
-          duration: Date.now() - startTime,
+      this.loggingService.logNotification(
+        LogLevel.INFO,
+        'Notificação enviada com sucesso',
+        {
+          userId: Number(userId),
+          component: 'sse-notification',
+          operation: 'send-notification',
+          timestamp: new Date(),
+          category: SseLogCategory.NOTIFICATION,
+          metadata: {
+            notificationId: notificationWithEventId.id,
+            type: notificationWithEventId.type,
+            duration: Date.now() - startTime,
+          },
         },
-      });
+      );
 
       this.loggingService.logPerformance('Notificação processada', {
         userId: Number(userId),
@@ -467,18 +537,15 @@ export class SseService implements OnModuleDestroy {
       const duration = Date.now() - startTime;
 
       // Capturar erro com error boundary
-      await this.errorBoundaryService.captureError(
-        error as Error,
-        {
-          userId: Number(userId),
-          timestamp: new Date(),
-          additionalData: {
-            component: 'sse-notification',
-            operation: 'send-notification',
-            category: SseLogCategory.NOTIFICATION,
-          },
+      await this.errorBoundaryService.captureError(error as Error, {
+        userId: Number(userId),
+        timestamp: new Date(),
+        additionalData: {
+          component: 'sse-notification',
+          operation: 'send-notification',
+          category: SseLogCategory.NOTIFICATION,
         },
-      );
+      });
 
       this.loggingService.logError(error as Error, {
         userId: Number(userId),
@@ -551,14 +618,18 @@ export class SseService implements OnModuleDestroy {
         if (connectionData) {
           connectionData.lastHeartbeat = new Date();
 
-          this.loggingService.logNotification(LogLevel.DEBUG, 'Notificação enviada localmente', {
-            userId: Number(userId),
-            component: 'sse-local',
-            operation: 'send-local',
-            timestamp: new Date(),
-            category: SseLogCategory.NOTIFICATION,
-            metadata: { connectionId, notificationId: notification.id },
-          });
+          this.loggingService.logNotification(
+            LogLevel.DEBUG,
+            'Notificação enviada localmente',
+            {
+              userId: Number(userId),
+              component: 'sse-local',
+              operation: 'send-local',
+              timestamp: new Date(),
+              category: SseLogCategory.NOTIFICATION,
+              metadata: { connectionId, notificationId: notification.id },
+            },
+          );
         }
       } catch (error) {
         this.loggingService.logError(error as Error, {
@@ -572,17 +643,21 @@ export class SseService implements OnModuleDestroy {
       }
     });
 
-    this.loggingService.logNotification(LogLevel.INFO, 'Notificação enviada para conexões locais', {
-      userId: Number(userId),
-      component: 'sse-local',
-      operation: 'send-local',
-      timestamp: new Date(),
-      category: SseLogCategory.NOTIFICATION,
-      metadata: {
-        connectionsCount: userConnections.size,
-        notificationId: notification.id,
+    this.loggingService.logNotification(
+      LogLevel.INFO,
+      'Notificação enviada para conexões locais',
+      {
+        userId: Number(userId),
+        component: 'sse-local',
+        operation: 'send-local',
+        timestamp: new Date(),
+        category: SseLogCategory.NOTIFICATION,
+        metadata: {
+          connectionsCount: userConnections.size,
+          notificationId: notification.id,
+        },
       },
-    });
+    );
   }
 
   async sendToUsers(
@@ -605,7 +680,9 @@ export class SseService implements OnModuleDestroy {
     await Promise.allSettled(promises);
   }
 
-  async broadcastToAll(notification: Omit<SseNotification, 'userId'>): Promise<void> {
+  async broadcastToAll(
+    notification: Omit<SseNotification, 'userId'>,
+  ): Promise<void> {
     const localUserIds = Array.from(this.localConnections.keys());
 
     this.logger.log(
@@ -649,7 +726,12 @@ export class SseService implements OnModuleDestroy {
           }
 
           // Remover do Redis se habilitado
-          if (this.redisEnabled && this.gracefulDegradationService.isFeatureAvailable('redis-operations')) {
+          if (
+            this.redisEnabled &&
+            this.gracefulDegradationService.isFeatureAvailable(
+              'redis-operations',
+            )
+          ) {
             const redisResult = await this.retryPolicyService.executeWithRetry(
               async () => {
                 await this.redisService.removeConnection(connectionId, userId);
@@ -676,7 +758,12 @@ export class SseService implements OnModuleDestroy {
           }
 
           // Unsubscribe do Redis se não há mais conexões locais
-          if (this.redisEnabled && this.gracefulDegradationService.isFeatureAvailable('redis-operations')) {
+          if (
+            this.redisEnabled &&
+            this.gracefulDegradationService.isFeatureAvailable(
+              'redis-operations',
+            )
+          ) {
             const redisResult = await this.retryPolicyService.executeWithRetry(
               async () => {
                 await this.redisService.unsubscribeFromUser(userId);
@@ -714,32 +801,33 @@ export class SseService implements OnModuleDestroy {
             },
           });
         } else {
-          this.loggingService.logConnection(LogLevel.WARN, 'Tentativa de remover conexão inexistente', {
-            userId: Number(userId),
-            component: 'sse-connection',
-            operation: 'remove-connection',
-            timestamp: new Date(),
-            category: SseLogCategory.CONNECTION,
-            metadata: { connectionId },
-          });
+          this.loggingService.logConnection(
+            LogLevel.WARN,
+            'Tentativa de remover conexão inexistente',
+            {
+              userId: Number(userId),
+              component: 'sse-connection',
+              operation: 'remove-connection',
+              timestamp: new Date(),
+              category: SseLogCategory.CONNECTION,
+              metadata: { connectionId },
+            },
+          );
         }
       }
     } catch (error) {
       const duration = Date.now() - startTime;
 
       // Capturar erro com error boundary
-      await this.errorBoundaryService.captureError(
-        error as Error,
-        {
-          userId: Number(userId),
-          timestamp: new Date(),
-          additionalData: {
-            component: 'sse-connection',
-            operation: 'remove-connection',
-            category: SseLogCategory.CONNECTION,
-          },
+      await this.errorBoundaryService.captureError(error as Error, {
+        userId: Number(userId),
+        timestamp: new Date(),
+        additionalData: {
+          component: 'sse-connection',
+          operation: 'remove-connection',
+          category: SseLogCategory.CONNECTION,
         },
-      );
+      });
 
       this.loggingService.logError(error as Error, {
         userId: Number(userId),
@@ -770,27 +858,35 @@ export class SseService implements OnModuleDestroy {
           subject.complete();
           this.connectionMetadata.delete(connectionId);
 
-          this.loggingService.logConnection(LogLevel.DEBUG, 'Conexão individual removida', {
-            userId: Number(userId),
-            component: 'sse-connection',
-            operation: 'remove-user-connections',
-            timestamp: new Date(),
-            category: SseLogCategory.CONNECTION,
-            metadata: { connectionId },
-          });
+          this.loggingService.logConnection(
+            LogLevel.DEBUG,
+            'Conexão individual removida',
+            {
+              userId: Number(userId),
+              component: 'sse-connection',
+              operation: 'remove-user-connections',
+              timestamp: new Date(),
+              category: SseLogCategory.CONNECTION,
+              metadata: { connectionId },
+            },
+          );
         });
 
         this.localConnections.delete(userId);
 
         // Remover do Redis se habilitado
-        if (this.redisEnabled && this.gracefulDegradationService.isFeatureAvailable('redis-operations')) {
+        if (
+          this.redisEnabled &&
+          this.gracefulDegradationService.isFeatureAvailable('redis-operations')
+        ) {
           // Unsubscribe primeiro
-          const unsubscribeResult = await this.retryPolicyService.executeWithRetry(
-            async () => {
-              await this.redisService.unsubscribeFromUser(userId);
-            },
-            { maxAttempts: 3, initialDelay: 500 },
-          );
+          const unsubscribeResult =
+            await this.retryPolicyService.executeWithRetry(
+              async () => {
+                await this.redisService.unsubscribeFromUser(userId);
+              },
+              { maxAttempts: 3, initialDelay: 500 },
+            );
 
           if (!unsubscribeResult.success) {
             this.loggingService.logError(
@@ -836,43 +932,48 @@ export class SseService implements OnModuleDestroy {
           await Promise.allSettled(removePromises);
         }
 
-        this.loggingService.logConnection(LogLevel.INFO, 'Todas as conexões do usuário removidas', {
-          userId: Number(userId),
-          component: 'sse-connection',
-          operation: 'remove-user-connections',
-          timestamp: new Date(),
-          category: SseLogCategory.CONNECTION,
-          metadata: {
-            connectionsRemoved: connectionIds.length,
-            duration: Date.now() - startTime,
+        this.loggingService.logConnection(
+          LogLevel.INFO,
+          'Todas as conexões do usuário removidas',
+          {
+            userId: Number(userId),
+            component: 'sse-connection',
+            operation: 'remove-user-connections',
+            timestamp: new Date(),
+            category: SseLogCategory.CONNECTION,
+            metadata: {
+              connectionsRemoved: connectionIds.length,
+              duration: Date.now() - startTime,
+            },
           },
-        });
+        );
       } else {
-        this.loggingService.logConnection(LogLevel.WARN, 'Tentativa de remover conexões de usuário sem conexões', {
-          userId: Number(userId),
-          component: 'sse-connection',
-          operation: 'remove-user-connections',
-          timestamp: new Date(),
-          category: SseLogCategory.CONNECTION,
-        });
+        this.loggingService.logConnection(
+          LogLevel.WARN,
+          'Tentativa de remover conexões de usuário sem conexões',
+          {
+            userId: Number(userId),
+            component: 'sse-connection',
+            operation: 'remove-user-connections',
+            timestamp: new Date(),
+            category: SseLogCategory.CONNECTION,
+          },
+        );
       }
     } catch (error) {
       const duration = Date.now() - startTime;
-      
+
       // Capturar erro com error boundary
-      await this.errorBoundaryService.captureError(
-        error as Error,
-        {
-          userId: Number(userId),
-          timestamp: new Date(),
-          additionalData: {
-            operation: 'remove-user-connections',
-            category: SseLogCategory.CONNECTION,
-            duration,
-            error: (error as Error).message,
-          },
+      await this.errorBoundaryService.captureError(error as Error, {
+        userId: Number(userId),
+        timestamp: new Date(),
+        additionalData: {
+          operation: 'remove-user-connections',
+          category: SseLogCategory.CONNECTION,
+          duration,
+          error: (error as Error).message,
         },
-      );
+      });
 
       this.loggingService.logError(error as Error, {
         userId: Number(userId),
@@ -899,7 +1000,8 @@ export class SseService implements OnModuleDestroy {
 
     if (this.redisEnabled) {
       try {
-        const redisConnections = await this.redisService.getUserConnections(userId);
+        const redisConnections =
+          await this.redisService.getUserConnections(userId);
         return redisConnections.length > 0;
       } catch (error) {
         this.logger.error('Erro ao verificar conexões no Redis:', error);
@@ -921,11 +1023,11 @@ export class SseService implements OnModuleDestroy {
     });
 
     return {
-        totalConnections,
-        totalUsers: this.localConnections.size,
-        connectionsPerUser: userCounts,
-        lastUpdated: new Date(),
-      };
+      totalConnections,
+      totalUsers: this.localConnections.size,
+      connectionsPerUser: userCounts,
+      lastUpdated: new Date(),
+    };
   }
 
   async getGlobalConnectionStats(): Promise<SseConnectionStats> {
@@ -936,11 +1038,11 @@ export class SseService implements OnModuleDestroy {
     try {
       const globalStats = await this.redisService.getGlobalStats();
       return {
-          totalConnections: globalStats.totalConnections,
-          totalUsers: globalStats.connectedUsers,
-          connectionsPerUser: globalStats.connectionsByUser,
-          lastUpdated: new Date(),
-        };
+        totalConnections: globalStats.totalConnections,
+        totalUsers: globalStats.connectedUsers,
+        connectionsPerUser: globalStats.connectionsByUser,
+        lastUpdated: new Date(),
+      };
     } catch (error) {
       this.logger.error('Erro ao obter estatísticas globais:', error);
       return this.getLocalConnectionStats();
@@ -958,7 +1060,7 @@ export class SseService implements OnModuleDestroy {
 
     try {
       const globalStats = await this.redisService.getGlobalStats();
-    return Object.keys(globalStats.connectionsByUser);
+      return Object.keys(globalStats.connectionsByUser);
     } catch (error) {
       this.logger.error('Erro ao obter usuários globais conectados:', error);
       return this.getLocalConnectedUsers();
@@ -1047,7 +1149,10 @@ export class SseService implements OnModuleDestroy {
     };
   }
 
-  async processHeartbeatResponse(connectionId: string, response: HeartbeatResponse): Promise<void> {
+  async processHeartbeatResponse(
+    connectionId: string,
+    response: HeartbeatResponse,
+  ): Promise<void> {
     const connection = this.connectionMetadata.get(connectionId);
     if (!connection) {
       return;
@@ -1056,12 +1161,12 @@ export class SseService implements OnModuleDestroy {
     // Processar resposta do heartbeat
     connection.lastHeartbeat = new Date();
     if (response.timestamp) {
-        const latency = Date.now() - new Date(response.timestamp).getTime();
-        // TODO: Implementar metadata se necessário
-         // if (connection.metadata) {
-         //   connection.metadata.latency = latency;
-         // }
-      }
+      const latency = Date.now() - new Date(response.timestamp).getTime();
+      // TODO: Implementar metadata se necessário
+      // if (connection.metadata) {
+      //   connection.metadata.latency = latency;
+      // }
+    }
   }
 
   getHeartbeatStats(connectionId: string) {
@@ -1117,7 +1222,10 @@ export class SseService implements OnModuleDestroy {
     }
   }
 
-  private async sendToConnection(connectionId: string, notification: SseNotification): Promise<void> {
+  private async sendToConnection(
+    connectionId: string,
+    notification: SseNotification,
+  ): Promise<void> {
     const metadata = this.connectionMetadata.get(connectionId);
     if (!metadata) {
       throw new Error(`Metadata para conexão ${connectionId} não encontrada`);
@@ -1148,28 +1256,28 @@ export class SseService implements OnModuleDestroy {
   /**
    * Obtém eventos armazenados a partir de um lastEventId
    */
-  async getStoredEvents(lastEventId?: string, userId?: string): Promise<EventReplayResponse> {
+  async getStoredEvents(
+    lastEventId?: string,
+    userId?: string,
+  ): Promise<EventReplayResponse> {
     try {
       const replayResponse = await this.eventStoreService.replayEvents({
         userId: userId || 'system',
         lastEventId,
-        limit: 50
+        limit: 50,
       });
-      
+
       return replayResponse;
     } catch (error) {
-      this.loggingService.logError(
-        error as Error,
-        {
-          timestamp: new Date(),
-          operation: 'get-stored-events'
-        }
-      );
+      this.loggingService.logError(error as Error, {
+        timestamp: new Date(),
+        operation: 'get-stored-events',
+      });
       return {
         events: [],
         totalEvents: 0,
         hasMore: false,
-        timestamp: new Date()
+        timestamp: new Date(),
       };
     }
   }
@@ -1194,21 +1302,22 @@ export class SseService implements OnModuleDestroy {
 
       this.sendToUserLocal(userId, simplifiedNotification);
 
-      this.loggingService.logNotification(LogLevel.INFO, 'Notificação simplificada enviada', {
-        userId: Number(userId),
-        category: SseLogCategory.NOTIFICATION,
-        timestamp: new Date(),
-        notificationType: notification.type,
-        notificationId: parseInt(simplifiedNotification.id) || 0
-      });
-    } catch (error) {
-      this.loggingService.logError(
-        error as Error,
+      this.loggingService.logNotification(
+        LogLevel.INFO,
+        'Notificação simplificada enviada',
         {
+          userId: Number(userId),
+          category: SseLogCategory.NOTIFICATION,
           timestamp: new Date(),
-          operation: 'send-simplified-notification'
-        }
+          notificationType: notification.type,
+          notificationId: parseInt(simplifiedNotification.id) || 0,
+        },
       );
+    } catch (error) {
+      this.loggingService.logError(error as Error, {
+        timestamp: new Date(),
+        operation: 'send-simplified-notification',
+      });
     }
   }
 
@@ -1221,18 +1330,22 @@ export class SseService implements OnModuleDestroy {
       this.localConnections.forEach((userConnections, userId) => {
         this.sendToUserLocal(userId, notification);
       });
-      
-      this.loggingService.logNotification(LogLevel.INFO, 'Notificação broadcast processada', {
-        userId: 0, // broadcast não tem usuário específico
-        category: SseLogCategory.NOTIFICATION,
-        timestamp: new Date(),
-        notificationType: notification.type,
-        notificationId: parseInt(notification.id) || 0
-      });
+
+      this.loggingService.logNotification(
+        LogLevel.INFO,
+        'Notificação broadcast processada',
+        {
+          userId: 0, // broadcast não tem usuário específico
+          category: SseLogCategory.NOTIFICATION,
+          timestamp: new Date(),
+          notificationType: notification.type,
+          notificationId: parseInt(notification.id) || 0,
+        },
+      );
     } catch (error) {
       this.loggingService.logError(error as Error, {
         timestamp: new Date(),
-        operation: 'handle-broadcast-notification'
+        operation: 'handle-broadcast-notification',
       });
     }
   }
@@ -1240,22 +1353,29 @@ export class SseService implements OnModuleDestroy {
   /**
    * Manipula notificações de usuário específico recebidas do Redis
    */
-  private handleUserNotification(userId: string, notification: SseNotification): void {
+  private handleUserNotification(
+    userId: string,
+    notification: SseNotification,
+  ): void {
     try {
       this.sendToUserLocal(userId, notification);
-      
-      this.loggingService.logNotification(LogLevel.INFO, 'Notificação de usuário processada', {
-        userId: Number(userId),
-        category: SseLogCategory.NOTIFICATION,
-        timestamp: new Date(),
-        notificationType: notification.type,
-        notificationId: parseInt(notification.id) || 0
-      });
+
+      this.loggingService.logNotification(
+        LogLevel.INFO,
+        'Notificação de usuário processada',
+        {
+          userId: Number(userId),
+          category: SseLogCategory.NOTIFICATION,
+          timestamp: new Date(),
+          notificationType: notification.type,
+          notificationId: parseInt(notification.id) || 0,
+        },
+      );
     } catch (error) {
       this.loggingService.logError(error as Error, {
         timestamp: new Date(),
         operation: 'handle-user-notification',
-        metadata: { userId }
+        metadata: { userId },
       });
     }
   }
@@ -1267,7 +1387,7 @@ export class SseService implements OnModuleDestroy {
     if (userId === null || userId === undefined || userId === '') {
       return undefined;
     }
-    
+
     const parsed = Number(userId);
     return isNaN(parsed) ? undefined : parsed;
   }

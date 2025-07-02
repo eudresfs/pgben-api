@@ -18,9 +18,7 @@ import { StatusSolicitacao } from '@/enums';
 export class WorkflowInterceptor implements NestInterceptor {
   private readonly logger = new Logger(WorkflowInterceptor.name);
 
-  constructor(
-    private readonly workflowService: WorkflowSolicitacaoService,
-  ) {}
+  constructor(private readonly workflowService: WorkflowSolicitacaoService) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const handler = context.getHandler();
@@ -46,7 +44,7 @@ export class WorkflowInterceptor implements NestInterceptor {
               `Erro ao atualizar workflow para solicitação ${result.solicitacao_id}:`,
               error.stack,
             );
-            
+
             // Não propaga o erro para não afetar a resposta principal
             // O dado foi criado com sucesso, apenas o workflow falhou
           }

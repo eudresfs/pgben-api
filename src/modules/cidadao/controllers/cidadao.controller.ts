@@ -47,7 +47,7 @@ export class CidadaoController {
   @Get()
   @RequiresPermission({
     permissionName: 'cidadao.listar',
-    scopeType: ScopeType.UNIT
+    scopeType: ScopeType.UNIT,
   })
   @ApiOperation({ summary: 'Listar cidadãos' })
   @ApiResponse({ status: 200, type: CidadaoPaginatedResponseDto })
@@ -62,9 +62,9 @@ export class CidadaoController {
     @Query('unidade_id') unidade_id?: string,
     @Query('search') search?: string,
     @Query('bairro') bairro?: string,
-    @Query('includeRelations', new DefaultValuePipe(false)) includeRelations?: boolean,
+    @Query('includeRelations', new DefaultValuePipe(false))
+    includeRelations?: boolean,
   ): Promise<CidadaoPaginatedResponseDto> {
-
     return this.cidadaoService.findAll({
       page,
       limit,
@@ -78,7 +78,7 @@ export class CidadaoController {
   @Get(':id')
   @RequiresPermission({
     permissionName: 'cidadao.visualizar',
-    scopeType: ScopeType.UNIT
+    scopeType: ScopeType.UNIT,
   })
   @SensitiveDataAccess(['cpf', 'nis', 'nome', 'data_nascimento'], {
     requiresConsent: false,
@@ -91,7 +91,8 @@ export class CidadaoController {
   @ApiResponse({ status: 404, description: 'Cidadão não encontrado' })
   async findOne(
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
-    @Query('includeRelations', new DefaultValuePipe(false)) includeRelations: boolean,
+    @Query('includeRelations', new DefaultValuePipe(false))
+    includeRelations: boolean,
     @Request() req,
   ): Promise<CidadaoResponseDto> {
     return this.cidadaoService.findById(id, includeRelations, req.user.id);
@@ -110,13 +111,17 @@ export class CidadaoController {
     @Body() createCidadaoDto: CreateCidadaoDto,
     @Request() req,
   ): Promise<CidadaoResponseDto> {
-    return this.cidadaoService.create(createCidadaoDto, req.user.unidade_id, req.user.id);
+    return this.cidadaoService.create(
+      createCidadaoDto,
+      req.user.unidade_id,
+      req.user.id,
+    );
   }
 
   @Put(':id')
   @RequiresPermission({
     permissionName: 'cidadao.atualizar',
-    scopeType: ScopeType.UNIT
+    scopeType: ScopeType.UNIT,
   })
   @SensitiveDataAccess(['cpf', 'nis', 'nome', 'data_nascimento'], {
     requiresConsent: false,

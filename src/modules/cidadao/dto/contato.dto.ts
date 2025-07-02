@@ -93,7 +93,9 @@ export class ContatoDto {
     required: false,
   })
   @ValidateIf((o) => o.proprietario === false)
-  @IsNotEmpty({ message: 'Nome do contato é obrigatório se não for o proprietário' })
+  @IsNotEmpty({
+    message: 'Nome do contato é obrigatório se não for o proprietário',
+  })
   @IsString()
   nome_contato?: string;
 

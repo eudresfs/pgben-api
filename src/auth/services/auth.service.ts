@@ -53,9 +53,9 @@ export class AuthService {
 
     this.logger.info(
       `Configuração de tokens - Access Token: ${accessTokenExpiresIn}, ` +
-      `Refresh Token: ${refreshTokenExpiresIn} ` +
-      `(em segundos: ${this.timeToSeconds(refreshTokenExpiresIn)})`,
-      AuthService.name
+        `Refresh Token: ${refreshTokenExpiresIn} ` +
+        `(em segundos: ${this.timeToSeconds(refreshTokenExpiresIn)})`,
+      AuthService.name,
     );
 
     // Debug das variáveis de ambiente
@@ -123,7 +123,7 @@ export class AuthService {
     // Fallback para valores que não conseguimos interpretar
     this.logger.warn(
       `Não foi possível interpretar o formato de tempo: ${timeString}, usando 1 dia como padrão`,
-      AuthService.name
+      AuthService.name,
     );
     return 86400; // 1 dia em segundos
   }
@@ -154,20 +154,23 @@ export class AuthService {
             clientIp: clientIp,
             userAgent: userAgent,
             reason: 'user_not_found',
-          }
+          },
         );
         throw new UnauthorizedException('Nome de usuário ou senha inválidos');
       }
 
       // Verificar se a senha está correta
       // Log do hash armazenado para diagnóstico
-      this.logger.info(`Verificando senha para usuário ${username}`, AuthService.name);
-      this.logger.debug(`Hash armazenado: ${usuario.senhaHash.substring(0, 10)}...`, AuthService.name);
-
-      const senhaCorreta = await bcrypt.compare(
-        pass,
-        usuario.senhaHash,
+      this.logger.info(
+        `Verificando senha para usuário ${username}`,
+        AuthService.name,
       );
+      this.logger.debug(
+        `Hash armazenado: ${usuario.senhaHash.substring(0, 10)}...`,
+        AuthService.name,
+      );
+
+      const senhaCorreta = await bcrypt.compare(pass, usuario.senhaHash);
       if (!senhaCorreta) {
         // Auditoria de tentativa de login com senha incorreta
         await this.auditEmitter.emitSecurityEvent(
@@ -181,7 +184,7 @@ export class AuthService {
             userAgent: userAgent,
             reason: 'invalid_password',
             consecutiveFailures: 1, // TODO: implementar contador
-          }
+          },
         );
         throw new UnauthorizedException('Nome de usuário ou senha inválidos');
       }
@@ -199,7 +202,7 @@ export class AuthService {
             clientIp: clientIp,
             userAgent: userAgent,
             reason: 'account_inactive',
-          }
+          },
         );
         throw new UnauthorizedException('Esta conta de usuário foi desativada');
       }
@@ -230,7 +233,7 @@ export class AuthService {
         clientIp,
         userAgent,
         loginMethod: 'password',
-      }
+      },
     );
 
     // Converter para o formato esperado incluindo permissões
@@ -262,7 +265,7 @@ export class AuthService {
 
     this.logger.info(
       `Criando refresh token com duração de ${refreshTokenExpiresIn} (${refreshTokenSeconds} segundos)`,
-      AuthService.name
+      AuthService.name,
     );
 
     const refreshToken = await this.refreshTokenService.createToken(
@@ -286,7 +289,7 @@ export class AuthService {
         tokenGenerated: true,
         refreshTokenId: refreshToken.id,
         sessionStart: new Date().toISOString(),
-      }
+      },
     );
 
     return {
@@ -344,7 +347,7 @@ export class AuthService {
 
     this.logger.info(
       `Criando novo refresh token com duração de ${refreshTokenExpiresIn} (${refreshTokenSeconds} segundos)`,
-      AuthService.name
+      AuthService.name,
     );
 
     const newRefreshToken = await this.refreshTokenService.createToken(
@@ -368,7 +371,7 @@ export class AuthService {
         clientIp,
         userAgent,
         tokenRenewed: true,
-      }
+      },
     );
 
     return {
@@ -420,7 +423,7 @@ export class AuthService {
 
     this.logger.info(
       `Gerando tokens - Access token expira em: ${accessTokenExpiresIn}, Refresh token expira em: ${refreshTokenExpiresIn}`,
-      AuthService.name
+      AuthService.name,
     );
 
     const accessToken = this.jwtService.sign(

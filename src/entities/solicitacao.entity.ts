@@ -199,7 +199,7 @@ export class Solicitacao {
   })
   historico: HistoricoSolicitacao[];
 
-   /**
+  /**
    * Relação com histórico de status da solicitação
    */
   @OneToMany(() => Pendencia, (pendencia) => pendencia.solicitacao, {
@@ -217,21 +217,21 @@ export class Solicitacao {
   })
   pagamentos: Pagamento[];
 
-   /**
+  /**
    * Relação com histórico de status da solicitação
    */
-    @OneToMany(() => InfoBancaria, (infoBancaria) => infoBancaria.cidadao, {
-      cascade: ['insert'],
-      onDelete: 'CASCADE',
-    })
-    info_bancaria: InfoBancaria[];
+  @OneToMany(() => InfoBancaria, (infoBancaria) => infoBancaria.cidadao, {
+    cascade: ['insert'],
+    onDelete: 'CASCADE',
+  })
+  info_bancaria: InfoBancaria[];
 
-   /**
+  /**
    * Relação com histórico de status da solicitação
    */
-   @OneToMany(() => Concessao, concessao => concessao.solicitacao)
-   @JoinColumn({ name: 'id', referencedColumnName: 'solicitacao_id' })
-   concessao: Concessao;
+  @OneToMany(() => Concessao, (concessao) => concessao.solicitacao)
+  @JoinColumn({ name: 'id', referencedColumnName: 'solicitacao_id' })
+  concessao: Concessao;
 
   /**
    * Controle de versão para detectar e prevenir atualizações concorrentes

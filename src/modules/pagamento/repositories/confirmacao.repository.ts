@@ -16,7 +16,9 @@ export class ConfirmacaoRepository {
   /**
    * Cria uma nova confirmação
    */
-  async create(dadosConfirmacao: Partial<ConfirmacaoRecebimento>): Promise<ConfirmacaoRecebimento> {
+  async create(
+    dadosConfirmacao: Partial<ConfirmacaoRecebimento>,
+  ): Promise<ConfirmacaoRecebimento> {
     const confirmacao = this.repository.create(dadosConfirmacao);
     return await this.repository.save(confirmacao);
   }
@@ -31,21 +33,26 @@ export class ConfirmacaoRepository {
   /**
    * Busca confirmação por ID com relacionamentos
    */
-  async findByIdWithRelations(id: string, relations: string[] = []): Promise<ConfirmacaoRecebimento | null> {
+  async findByIdWithRelations(
+    id: string,
+    relations: string[] = [],
+  ): Promise<ConfirmacaoRecebimento | null> {
     return await this.repository.findOne({
       where: { id },
-      relations
+      relations,
     });
   }
 
   /**
    * Busca confirmações por pagamento
    */
-  async findByPagamento(pagamentoId: string): Promise<ConfirmacaoRecebimento[]> {
+  async findByPagamento(
+    pagamentoId: string,
+  ): Promise<ConfirmacaoRecebimento[]> {
     return await this.repository.find({
       where: { pagamento_id: pagamentoId },
       relations: ['usuario', 'destinatario'],
-      order: { data_confirmacao: 'DESC' }
+      order: { data_confirmacao: 'DESC' },
     });
   }
 
@@ -56,25 +63,30 @@ export class ConfirmacaoRepository {
     return await this.repository.find({
       where: { confirmado_por: usuarioId },
       relations: ['pagamento'],
-      order: { data_confirmacao: 'DESC' }
+      order: { data_confirmacao: 'DESC' },
     });
   }
 
   /**
    * Busca confirmações por destinatário
    */
-  async findByDestinatario(destinatarioId: string): Promise<ConfirmacaoRecebimento[]> {
+  async findByDestinatario(
+    destinatarioId: string,
+  ): Promise<ConfirmacaoRecebimento[]> {
     return await this.repository.find({
       where: { destinatario_id: destinatarioId },
       relations: ['pagamento', 'usuario'],
-      order: { data_confirmacao: 'DESC' }
+      order: { data_confirmacao: 'DESC' },
     });
   }
 
   /**
    * Busca confirmações por período
    */
-  async findByPeriodo(dataInicio: Date, dataFim: Date): Promise<ConfirmacaoRecebimento[]> {
+  async findByPeriodo(
+    dataInicio: Date,
+    dataFim: Date,
+  ): Promise<ConfirmacaoRecebimento[]> {
     return await this.repository
       .createQueryBuilder('confirmacao')
       .leftJoinAndSelect('confirmacao.pagamento', 'pagamento')
@@ -82,7 +94,7 @@ export class ConfirmacaoRepository {
       .leftJoinAndSelect('confirmacao.destinatario', 'destinatario')
       .where('confirmacao.data_confirmacao BETWEEN :dataInicio AND :dataFim', {
         dataInicio,
-        dataFim
+        dataFim,
       })
       .orderBy('confirmacao.data_confirmacao', 'DESC')
       .getMany();
@@ -101,41 +113,48 @@ export class ConfirmacaoRepository {
     page?: number;
     limit?: number;
   }): Promise<{ items: ConfirmacaoRecebimento[]; total: number }> {
-    const queryBuilder = this.repository.createQueryBuilder('confirmacao')
+    const queryBuilder = this.repository
+      .createQueryBuilder('confirmacao')
       .leftJoinAndSelect('confirmacao.pagamento', 'pagamento')
       .leftJoinAndSelect('confirmacao.usuario', 'usuario')
       .leftJoinAndSelect('confirmacao.destinatario', 'destinatario');
 
     // Aplicar filtros
     if (filtros.pagamentoId) {
-      queryBuilder.andWhere('confirmacao.pagamento_id = :pagamentoId', { 
-        pagamentoId: filtros.pagamentoId 
+      queryBuilder.andWhere('confirmacao.pagamento_id = :pagamentoId', {
+        pagamentoId: filtros.pagamentoId,
       });
     }
 
     if (filtros.usuarioId) {
-      queryBuilder.andWhere('confirmacao.confirmado_por = :usuarioId', { 
-        usuarioId: filtros.usuarioId 
+      queryBuilder.andWhere('confirmacao.confirmado_por = :usuarioId', {
+        usuarioId: filtros.usuarioId,
       });
     }
 
     if (filtros.destinatarioId) {
-      queryBuilder.andWhere('confirmacao.destinatario_id = :destinatarioId', { 
-        destinatarioId: filtros.destinatarioId 
+      queryBuilder.andWhere('confirmacao.destinatario_id = :destinatarioId', {
+        destinatarioId: filtros.destinatarioId,
       });
     }
 
     if (filtros.metodoConfirmacao) {
-      queryBuilder.andWhere('confirmacao.metodo_confirmacao = :metodoConfirmacao', { 
-        metodoConfirmacao: filtros.metodoConfirmacao 
-      });
+      queryBuilder.andWhere(
+        'confirmacao.metodo_confirmacao = :metodoConfirmacao',
+        {
+          metodoConfirmacao: filtros.metodoConfirmacao,
+        },
+      );
     }
 
     if (filtros.dataInicio && filtros.dataFim) {
-      queryBuilder.andWhere('confirmacao.data_confirmacao BETWEEN :dataInicio AND :dataFim', {
-        dataInicio: filtros.dataInicio,
-        dataFim: filtros.dataFim
-      });
+      queryBuilder.andWhere(
+        'confirmacao.data_confirmacao BETWEEN :dataInicio AND :dataFim',
+        {
+          dataInicio: filtros.dataInicio,
+          dataFim: filtros.dataFim,
+        },
+      );
     }
 
     // Paginação
@@ -156,17 +175,20 @@ export class ConfirmacaoRepository {
   /**
    * Atualiza confirmação
    */
-  async update(id: string, dados: Partial<ConfirmacaoRecebimento>): Promise<ConfirmacaoRecebimento> {
+  async update(
+    id: string,
+    dados: Partial<ConfirmacaoRecebimento>,
+  ): Promise<ConfirmacaoRecebimento> {
     await this.repository.update(id, {
       ...dados,
-      updated_at: new Date()
+      updated_at: new Date(),
     });
-    
+
     const confirmacao = await this.findById(id);
     if (!confirmacao) {
       throw new Error('Confirmação não encontrada após atualização');
     }
-    
+
     return confirmacao;
   }
 
@@ -182,7 +204,7 @@ export class ConfirmacaoRepository {
    */
   async hasConfirmacao(pagamentoId: string): Promise<boolean> {
     const count = await this.repository.count({
-      where: { pagamento_id: pagamentoId }
+      where: { pagamento_id: pagamentoId },
     });
     return count > 0;
   }
@@ -199,7 +221,7 @@ export class ConfirmacaoRepository {
       .getRawMany();
 
     const contagem: Record<string, number> = {};
-    result.forEach(item => {
+    result.forEach((item) => {
       contagem[item.metodo] = parseInt(item.count);
     });
 
@@ -213,7 +235,7 @@ export class ConfirmacaoRepository {
     return await this.repository.find({
       relations: ['pagamento', 'usuario', 'destinatario'],
       order: { data_confirmacao: 'DESC' },
-      take: limite
+      take: limite,
     });
   }
 
@@ -244,9 +266,9 @@ export class ConfirmacaoRepository {
     const confirmacoesMes = await this.repository.count({
       where: {
         data_confirmacao: {
-          gte: inicioMes
-        } as any
-      }
+          gte: inicioMes,
+        } as any,
+      },
     });
 
     // Média por dia (baseada no mês atual)
@@ -257,7 +279,7 @@ export class ConfirmacaoRepository {
       total,
       porMetodo,
       confirmacoesMes,
-      mediaPorDia: Math.round(mediaPorDia * 100) / 100 // 2 casas decimais
+      mediaPorDia: Math.round(mediaPorDia * 100) / 100, // 2 casas decimais
     };
   }
 
@@ -267,25 +289,25 @@ export class ConfirmacaoRepository {
    */
   async getEstatisticasPorMes(ano: number): Promise<Record<string, number>> {
     const estatisticas: Record<string, number> = {};
-    
+
     // Para cada mês do ano, busca as confirmações
     for (let mes = 1; mes <= 12; mes++) {
       const inicioMes = new Date(ano, mes - 1, 1);
       const fimMes = new Date(ano, mes, 0, 23, 59, 59, 999);
-      
+
       const count = await this.repository.count({
         where: {
           data_confirmacao: {
             gte: inicioMes,
-            lte: fimMes
-          } as any
-        }
+            lte: fimMes,
+          } as any,
+        },
       });
-      
+
       const chaveAnoMes = `${ano}-${mes.toString().padStart(2, '0')}`;
       estatisticas[chaveAnoMes] = count;
     }
-    
+
     return estatisticas;
   }
 }

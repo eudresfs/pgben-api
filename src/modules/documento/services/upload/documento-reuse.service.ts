@@ -64,7 +64,10 @@ export class DocumentoReuseService implements IDocumentoReuseService {
     }
 
     // Verificar se pode ser reutilizado
-    const canReuse = this.canReuseDocument(existingDocument, uploadDocumentoDto);
+    const canReuse = this.canReuseDocument(
+      existingDocument,
+      uploadDocumentoDto,
+    );
 
     const result: DocumentReusabilityCheck = {
       canReuse,

@@ -144,13 +144,28 @@ export class SseRetryPolicyService {
   constructor(private readonly configService: ConfigService) {
     this.defaultConfig = {
       maxAttempts: this.configService.get<number>('SSE_RETRY_MAX_ATTEMPTS', 3),
-      initialDelay: this.configService.get<number>('SSE_RETRY_INITIAL_DELAY', 1000),
-      backoffMultiplier: this.configService.get<number>('SSE_RETRY_BACKOFF_MULTIPLIER', 2),
+      initialDelay: this.configService.get<number>(
+        'SSE_RETRY_INITIAL_DELAY',
+        1000,
+      ),
+      backoffMultiplier: this.configService.get<number>(
+        'SSE_RETRY_BACKOFF_MULTIPLIER',
+        2,
+      ),
       maxDelay: this.configService.get<number>('SSE_RETRY_MAX_DELAY', 10000),
       maxJitter: this.configService.get<number>('SSE_RETRY_MAX_JITTER', 500),
-      attemptTimeout: this.configService.get<number>('SSE_RETRY_ATTEMPT_TIMEOUT', 5000),
-      enableExponentialBackoff: this.configService.get<boolean>('SSE_RETRY_ENABLE_EXPONENTIAL_BACKOFF', true),
-      enableJitter: this.configService.get<boolean>('SSE_RETRY_ENABLE_JITTER', true),
+      attemptTimeout: this.configService.get<number>(
+        'SSE_RETRY_ATTEMPT_TIMEOUT',
+        5000,
+      ),
+      enableExponentialBackoff: this.configService.get<boolean>(
+        'SSE_RETRY_ENABLE_EXPONENTIAL_BACKOFF',
+        true,
+      ),
+      enableJitter: this.configService.get<boolean>(
+        'SSE_RETRY_ENABLE_JITTER',
+        true,
+      ),
     };
   }
 
@@ -174,11 +189,14 @@ export class SseRetryPolicyService {
 
     for (let attempt = 1; attempt <= finalConfig.maxAttempts; attempt++) {
       const attemptStartTime = new Date();
-      const delayBefore = attempt === 1 ? 0 : this.calculateDelay(attempt - 1, finalConfig);
+      const delayBefore =
+        attempt === 1 ? 0 : this.calculateDelay(attempt - 1, finalConfig);
 
       // Aplicar delay antes da tentativa (exceto na primeira)
       if (delayBefore > 0) {
-        this.logger.debug(`Aguardando ${delayBefore}ms antes da tentativa ${attempt}`);
+        this.logger.debug(
+          `Aguardando ${delayBefore}ms antes da tentativa ${attempt}`,
+        );
         await this.sleep(delayBefore);
       }
 
@@ -189,13 +207,18 @@ export class SseRetryPolicyService {
       });
 
       try {
-        this.logger.debug(`Executando tentativa ${attempt}/${finalConfig.maxAttempts}`);
-        
+        this.logger.debug(
+          `Executando tentativa ${attempt}/${finalConfig.maxAttempts}`,
+        );
+
         // Executar função com timeout
-        const result = await this.executeWithTimeout(fn, finalConfig.attemptTimeout);
-        
+        const result = await this.executeWithTimeout(
+          fn,
+          finalConfig.attemptTimeout,
+        );
+
         const duration = Date.now() - attemptStartTime.getTime();
-        
+
         attemptDetails.push({
           attempt,
           startTime: attemptStartTime,
@@ -224,7 +247,7 @@ export class SseRetryPolicyService {
       } catch (error) {
         lastError = error as Error;
         const duration = Date.now() - attemptStartTime.getTime();
-        
+
         attemptDetails.push({
           attempt,
           startTime: attemptStartTime,
@@ -243,7 +266,9 @@ export class SseRetryPolicyService {
 
         // Verificar se deve tentar novamente
         const isLastAttempt = attempt === finalConfig.maxAttempts;
-        const shouldRetryError = shouldRetry ? shouldRetry(lastError, attempt) : this.defaultShouldRetry(lastError, attempt);
+        const shouldRetryError = shouldRetry
+          ? shouldRetry(lastError, attempt)
+          : this.defaultShouldRetry(lastError, attempt);
 
         if (isLastAttempt || !shouldRetryError) {
           onRetryEvent?.({
@@ -311,10 +336,13 @@ export class SseRetryPolicyService {
       this.isDatabaseRetryableError,
       (event) => {
         if (event.type === 'retry') {
-          this.logger.warn(`Retentar operação de banco (tentativa ${event.attempt})`, {
-            error: event.error?.message,
-            delay: event.delay,
-          });
+          this.logger.warn(
+            `Retentar operação de banco (tentativa ${event.attempt})`,
+            {
+              error: event.error?.message,
+              delay: event.delay,
+            },
+          );
         }
       },
     );
@@ -334,10 +362,13 @@ export class SseRetryPolicyService {
       this.isRedisRetryableError,
       (event) => {
         if (event.type === 'retry') {
-          this.logger.warn(`Retentar operação Redis (tentativa ${event.attempt})`, {
-            error: event.error?.message,
-            delay: event.delay,
-          });
+          this.logger.warn(
+            `Retentar operação Redis (tentativa ${event.attempt})`,
+            {
+              error: event.error?.message,
+              delay: event.delay,
+            },
+          );
         }
       },
     );
@@ -357,10 +388,13 @@ export class SseRetryPolicyService {
       this.isNotificationRetryableError,
       (event) => {
         if (event.type === 'retry') {
-          this.logger.warn(`Retentar envio de notificação (tentativa ${event.attempt})`, {
-            error: event.error?.message,
-            delay: event.delay,
-          });
+          this.logger.warn(
+            `Retentar envio de notificação (tentativa ${event.attempt})`,
+            {
+              error: event.error?.message,
+              delay: event.delay,
+            },
+          );
         }
       },
     );
@@ -380,10 +414,13 @@ export class SseRetryPolicyService {
       this.isSseRetryableError,
       (event) => {
         if (event.type === 'retry') {
-          this.logger.warn(`Retentar operação SSE (tentativa ${event.attempt})`, {
-            error: event.error?.message,
-            delay: event.delay,
-          });
+          this.logger.warn(
+            `Retentar operação SSE (tentativa ${event.attempt})`,
+            {
+              error: event.error?.message,
+              delay: event.delay,
+            },
+          );
         }
       },
     );
@@ -403,10 +440,13 @@ export class SseRetryPolicyService {
       this.isExternalRetryableError,
       (event) => {
         if (event.type === 'retry') {
-          this.logger.warn(`Retentar chamada externa (tentativa ${event.attempt})`, {
-            error: event.error?.message,
-            delay: event.delay,
-          });
+          this.logger.warn(
+            `Retentar chamada externa (tentativa ${event.attempt})`,
+            {
+              error: event.error?.message,
+              delay: event.delay,
+            },
+          );
         }
       },
     );
@@ -437,7 +477,8 @@ export class SseRetryPolicyService {
     let delay = config.initialDelay;
 
     if (config.enableExponentialBackoff) {
-      delay = config.initialDelay * Math.pow(config.backoffMultiplier, attempt - 1);
+      delay =
+        config.initialDelay * Math.pow(config.backoffMultiplier, attempt - 1);
     }
 
     // Aplicar limite máximo
@@ -455,7 +496,10 @@ export class SseRetryPolicyService {
   /**
    * Executa função com timeout
    */
-  private async executeWithTimeout<T>(fn: RetryableFunction<T>, timeout: number): Promise<T> {
+  private async executeWithTimeout<T>(
+    fn: RetryableFunction<T>,
+    timeout: number,
+  ): Promise<T> {
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
         reject(new Error(`Operação excedeu timeout de ${timeout}ms`));
@@ -477,7 +521,7 @@ export class SseRetryPolicyService {
    * Função de sleep
    */
   private sleep(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   /**
@@ -492,7 +536,11 @@ export class SseRetryPolicyService {
       'BadRequestError',
     ];
 
-    if (nonRetryableErrors.some(errorType => error.constructor.name.includes(errorType))) {
+    if (
+      nonRetryableErrors.some((errorType) =>
+        error.constructor.name.includes(errorType),
+      )
+    ) {
       return false;
     }
 
@@ -505,7 +553,11 @@ export class SseRetryPolicyService {
       'bad request',
     ];
 
-    if (nonRetryableMessages.some(msg => error.message.toLowerCase().includes(msg))) {
+    if (
+      nonRetryableMessages.some((msg) =>
+        error.message.toLowerCase().includes(msg),
+      )
+    ) {
       return false;
     }
 
@@ -515,7 +567,10 @@ export class SseRetryPolicyService {
   /**
    * Determina se erro de banco de dados deve ser retentado
    */
-  private isDatabaseRetryableError = (error: Error, attempt: number): boolean => {
+  private isDatabaseRetryableError = (
+    error: Error,
+    attempt: number,
+  ): boolean => {
     const retryableErrors = [
       'connection',
       'timeout',
@@ -527,8 +582,8 @@ export class SseRetryPolicyService {
       'deadlock',
     ];
 
-    return retryableErrors.some(errorType => 
-      error.message.toLowerCase().includes(errorType.toLowerCase())
+    return retryableErrors.some((errorType) =>
+      error.message.toLowerCase().includes(errorType.toLowerCase()),
     );
   };
 
@@ -547,15 +602,18 @@ export class SseRetryPolicyService {
       'cluster',
     ];
 
-    return retryableErrors.some(errorType => 
-      error.message.toLowerCase().includes(errorType.toLowerCase())
+    return retryableErrors.some((errorType) =>
+      error.message.toLowerCase().includes(errorType.toLowerCase()),
     );
   };
 
   /**
    * Determina se erro de notificação deve ser retentado
    */
-  private isNotificationRetryableError = (error: Error, attempt: number): boolean => {
+  private isNotificationRetryableError = (
+    error: Error,
+    attempt: number,
+  ): boolean => {
     const retryableErrors = [
       'network',
       'timeout',
@@ -565,8 +623,8 @@ export class SseRetryPolicyService {
       'gateway timeout',
     ];
 
-    return retryableErrors.some(errorType => 
-      error.message.toLowerCase().includes(errorType.toLowerCase())
+    return retryableErrors.some((errorType) =>
+      error.message.toLowerCase().includes(errorType.toLowerCase()),
     );
   };
 
@@ -574,22 +632,20 @@ export class SseRetryPolicyService {
    * Determina se erro SSE deve ser retentado
    */
   private isSseRetryableError = (error: Error, attempt: number): boolean => {
-    const retryableErrors = [
-      'connection',
-      'network',
-      'ECONNRESET',
-      'EPIPE',
-    ];
+    const retryableErrors = ['connection', 'network', 'ECONNRESET', 'EPIPE'];
 
-    return retryableErrors.some(errorType => 
-      error.message.toLowerCase().includes(errorType.toLowerCase())
+    return retryableErrors.some((errorType) =>
+      error.message.toLowerCase().includes(errorType.toLowerCase()),
     );
   };
 
   /**
    * Determina se erro de chamada externa deve ser retentado
    */
-  private isExternalRetryableError = (error: Error, attempt: number): boolean => {
+  private isExternalRetryableError = (
+    error: Error,
+    attempt: number,
+  ): boolean => {
     const retryableErrors = [
       'network',
       'timeout',
@@ -603,8 +659,8 @@ export class SseRetryPolicyService {
       'gateway timeout',
     ];
 
-    return retryableErrors.some(errorType => 
-      error.message.toLowerCase().includes(errorType.toLowerCase())
+    return retryableErrors.some((errorType) =>
+      error.message.toLowerCase().includes(errorType.toLowerCase()),
     );
   };
 }

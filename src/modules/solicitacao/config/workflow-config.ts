@@ -3,7 +3,7 @@ import { StatusSolicitacao } from '../../../entities/solicitacao.entity';
 /**
  * Configuração de transições de estados para solicitações
  * Define quais transições são permitidas a partir de cada estado
- * 
+ *
  * Ciclo de vida simplificado:
  * RASCUNHO -> ABERTA -> PENDENTE -> EM_ANALISE -> [APROVADA|INDEFERIDA|CANCELADA]
  */

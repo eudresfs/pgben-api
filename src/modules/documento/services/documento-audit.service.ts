@@ -30,7 +30,13 @@ export interface DocumentoAccessAuditData {
 
 export interface DocumentoOperationAuditData {
   documentoId?: string;
-  operationType: 'upload' | 'verify' | 'delete' | 'access_check' | 'rate_limit' | 'validation';
+  operationType:
+    | 'upload'
+    | 'verify'
+    | 'delete'
+    | 'access_check'
+    | 'rate_limit'
+    | 'validation';
   operationDetails: Record<string, any>;
   success: boolean;
   errorDetails?: string;
@@ -43,7 +49,7 @@ export interface DocumentoOperationAuditData {
 
 /**
  * Serviço especializado para auditoria de operações de documentos
- * 
+ *
  * Centraliza e padroniza o logging de auditoria para todas as operações
  * relacionadas a documentos, fornecendo rastreabilidade completa.
  */
@@ -71,7 +77,10 @@ export class DocumentoAuditService {
         },
       );
     } catch (error) {
-      this.logger.error(`Erro ao auditar acesso: ${error.message}`, error.stack);
+      this.logger.error(
+        `Erro ao auditar acesso: ${error.message}`,
+        error.stack,
+      );
     }
   }
 
@@ -98,7 +107,10 @@ export class DocumentoAuditService {
         context.userId,
       );
     } catch (error) {
-      this.logger.error(`Erro ao auditar upload: ${error.message}`, error.stack);
+      this.logger.error(
+        `Erro ao auditar upload: ${error.message}`,
+        error.stack,
+      );
     }
   }
 
@@ -125,7 +137,10 @@ export class DocumentoAuditService {
         context.userId,
       );
     } catch (error) {
-      this.logger.error(`Erro ao auditar verificação: ${error.message}`, error.stack);
+      this.logger.error(
+        `Erro ao auditar verificação: ${error.message}`,
+        error.stack,
+      );
     }
   }
 
@@ -150,7 +165,10 @@ export class DocumentoAuditService {
         context.userId,
       );
     } catch (error) {
-      this.logger.error(`Erro ao auditar remoção: ${error.message}`, error.stack);
+      this.logger.error(
+        `Erro ao auditar remoção: ${error.message}`,
+        error.stack,
+      );
     }
   }
 
@@ -198,10 +216,13 @@ export class DocumentoAuditService {
           denialReason,
           attemptedAction,
           ip: context.ip,
-        }
+        },
       );
     } catch (error) {
-      this.logger.error(`Erro ao auditar acesso negado: ${error.message}`, error.stack);
+      this.logger.error(
+        `Erro ao auditar acesso negado: ${error.message}`,
+        error.stack,
+      );
     }
   }
 
@@ -215,7 +236,7 @@ export class DocumentoAuditService {
     try {
       // Mapeia operações para eventos de segurança apropriados
       let eventType: any;
-      
+
       switch (operationData.operationType.toLowerCase()) {
         case 'acesso_negado':
         case 'access_denied':
@@ -264,21 +285,20 @@ export class DocumentoAuditService {
 
       const logLevel = operationData.success ? 'info' : 'warn';
       const logMessage = `Operação de segurança: ${operationData.operationType}`;
-      
-      this.logger[logLevel](
-        logMessage,
-        DocumentoAuditService.name,
-        {
-          userId: context.userId,
-          operationType: operationData.operationType,
-          success: operationData.success,
-          documentoId: operationData.documentoId,
-          ip: context.ip,
-          errorDetails: operationData.errorDetails,
-        }
-      );
+
+      this.logger[logLevel](logMessage, DocumentoAuditService.name, {
+        userId: context.userId,
+        operationType: operationData.operationType,
+        success: operationData.success,
+        documentoId: operationData.documentoId,
+        ip: context.ip,
+        errorDetails: operationData.errorDetails,
+      });
     } catch (error) {
-      this.logger.error(`Erro ao auditar operação de segurança: ${error.message}`, error.stack);
+      this.logger.error(
+        `Erro ao auditar operação de segurança: ${error.message}`,
+        error.stack,
+      );
     }
   }
 
@@ -288,7 +308,7 @@ export class DocumentoAuditService {
   extractAuditContext(request: Request): DocumentoAuditContext {
     const user = (request as any).user;
     const requestContext = (request as any).requestContext;
-    
+
     return {
       userId: user?.id || 'anonymous',
       userRoles: user?.roles || [],

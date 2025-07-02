@@ -45,21 +45,29 @@ export class JwtAuthStrategy extends PassportStrategy(
     const keyBase64 = configService.get<string>('JWT_PUBLIC_KEY_BASE64');
     if (keyBase64) {
       try {
-        const publicKey = Buffer.from(keyBase64, 'base64').toString('utf8').trim();
+        const publicKey = Buffer.from(keyBase64, 'base64')
+          .toString('utf8')
+          .trim();
         if (!publicKey.includes('BEGIN PUBLIC KEY')) {
           throw new Error('Chave pública Base64 inválida');
         }
-        console.log('Chave pública JWT carregada a partir de JWT_PUBLIC_KEY_BASE64');
+        console.log(
+          'Chave pública JWT carregada a partir de JWT_PUBLIC_KEY_BASE64',
+        );
         return publicKey;
       } catch (error) {
-        throw new Error(`Falha ao decodificar chave pública Base64: ${error.message}`);
+        throw new Error(
+          `Falha ao decodificar chave pública Base64: ${error.message}`,
+        );
       }
     }
 
     // 2. Fallback para arquivo local (uso em desenvolvimento)
     const publicKeyPath = configService.get<string>('JWT_PUBLIC_KEY_PATH');
     if (!publicKeyPath) {
-      throw new Error('JWT_PUBLIC_KEY_BASE64 ou JWT_PUBLIC_KEY_PATH não configurados');
+      throw new Error(
+        'JWT_PUBLIC_KEY_BASE64 ou JWT_PUBLIC_KEY_PATH não configurados',
+      );
     }
 
     try {
@@ -71,7 +79,9 @@ export class JwtAuthStrategy extends PassportStrategy(
       console.log('Chave pública JWT carregada a partir do arquivo');
       return publicKey;
     } catch (error) {
-      throw new Error(`Falha ao carregar chave pública JWT do arquivo: ${error.message}`);
+      throw new Error(
+        `Falha ao carregar chave pública JWT do arquivo: ${error.message}`,
+      );
     }
   }
 

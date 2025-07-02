@@ -28,8 +28,12 @@ export class SituacaoMoradiaService {
   /**
    * Cria uma nova situação de moradia
    */
-  async create(dto: CreateSituacaoMoradiaDto): Promise<SituacaoMoradiaResponseDto> {
-    this.logger.log(`Criando situação de moradia para cidadão: ${dto.cidadao_id}`);
+  async create(
+    dto: CreateSituacaoMoradiaDto,
+  ): Promise<SituacaoMoradiaResponseDto> {
+    this.logger.log(
+      `Criando situação de moradia para cidadão: ${dto.cidadao_id}`,
+    );
 
     // Verifica se o cidadão existe
     const cidadao = await this.cidadaoRepository.findOne({
@@ -37,7 +41,9 @@ export class SituacaoMoradiaService {
     });
 
     if (!cidadao) {
-      throw new NotFoundException(`Cidadão com ID ${dto.cidadao_id} não encontrado`);
+      throw new NotFoundException(
+        `Cidadão com ID ${dto.cidadao_id} não encontrado`,
+      );
     }
 
     // Verifica se já existe situação de moradia para este cidadão
@@ -47,20 +53,26 @@ export class SituacaoMoradiaService {
 
     if (existingSituacao) {
       throw new ConflictException(
-        `Já existe situação de moradia cadastrada para o cidadão ${dto.cidadao_id}`
+        `Já existe situação de moradia cadastrada para o cidadão ${dto.cidadao_id}`,
       );
     }
 
     try {
       const situacaoMoradia = this.situacaoMoradiaRepository.create(dto);
-      const savedSituacao = await this.situacaoMoradiaRepository.save(situacaoMoradia);
+      const savedSituacao =
+        await this.situacaoMoradiaRepository.save(situacaoMoradia);
 
-      this.logger.log(`Situação de moradia criada com sucesso: ${savedSituacao.id}`);
+      this.logger.log(
+        `Situação de moradia criada com sucesso: ${savedSituacao.id}`,
+      );
       return plainToClass(SituacaoMoradiaResponseDto, savedSituacao, {
         excludeExtraneousValues: true,
       });
     } catch (error) {
-      this.logger.error(`Erro ao criar situação de moradia: ${error.message}`, error.stack);
+      this.logger.error(
+        `Erro ao criar situação de moradia: ${error.message}`,
+        error.stack,
+      );
       throw new BadRequestException('Erro ao criar situação de moradia');
     }
   }
@@ -68,8 +80,12 @@ export class SituacaoMoradiaService {
   /**
    * Cria ou atualiza situação de moradia (upsert)
    */
-  async createOrUpdate(dto: CreateSituacaoMoradiaDto): Promise<SituacaoMoradiaResponseDto> {
-    this.logger.log(`Criando ou atualizando situação de moradia para cidadão: ${dto.cidadao_id}`);
+  async createOrUpdate(
+    dto: CreateSituacaoMoradiaDto,
+  ): Promise<SituacaoMoradiaResponseDto> {
+    this.logger.log(
+      `Criando ou atualizando situação de moradia para cidadão: ${dto.cidadao_id}`,
+    );
 
     // Verifica se o cidadão existe
     const cidadao = await this.cidadaoRepository.findOne({
@@ -77,7 +93,9 @@ export class SituacaoMoradiaService {
     });
 
     if (!cidadao) {
-      throw new NotFoundException(`Cidadão com ID ${dto.cidadao_id} não encontrado`);
+      throw new NotFoundException(
+        `Cidadão com ID ${dto.cidadao_id} não encontrado`,
+      );
     }
 
     // Verifica se já existe registro
@@ -99,14 +117,18 @@ export class SituacaoMoradiaService {
       } else {
         // Cria novo registro
         const situacaoMoradia = this.situacaoMoradiaRepository.create(dto);
-        const saved = await this.situacaoMoradiaRepository.save(situacaoMoradia);
+        const saved =
+          await this.situacaoMoradiaRepository.save(situacaoMoradia);
         this.logger.log(`Situação de moradia criada: ${saved.id}`);
         return plainToClass(SituacaoMoradiaResponseDto, saved, {
           excludeExtraneousValues: true,
         });
       }
     } catch (error) {
-      this.logger.error(`Erro ao criar/atualizar situação de moradia: ${error.message}`, error.stack);
+      this.logger.error(
+        `Erro ao criar/atualizar situação de moradia: ${error.message}`,
+        error.stack,
+      );
       throw new BadRequestException('Erro ao processar situação de moradia');
     }
   }
@@ -119,7 +141,9 @@ export class SituacaoMoradiaService {
     limit?: number;
     search?: string;
   }): Promise<SituacaoMoradiaResponseDto[]> {
-    this.logger.log(`Buscando situações de moradia - Página: ${options?.page}, Limite: ${options?.limit}, Busca: ${options?.search}`);
+    this.logger.log(
+      `Buscando situações de moradia - Página: ${options?.page}, Limite: ${options?.limit}, Busca: ${options?.search}`,
+    );
 
     const queryBuilder = this.situacaoMoradiaRepository
       .createQueryBuilder('situacao')
@@ -130,7 +154,7 @@ export class SituacaoMoradiaService {
     if (options?.search) {
       queryBuilder.where(
         '(cidadao.nome ILIKE :search OR cidadao.cpf ILIKE :search OR situacao.tipo_moradia ILIKE :search OR situacao.programa_habitacional ILIKE :search)',
-        { search: `%${options.search}%` }
+        { search: `%${options.search}%` },
       );
     }
 
@@ -142,10 +166,10 @@ export class SituacaoMoradiaService {
 
     const situacoes = await queryBuilder.getMany();
 
-    return situacoes.map(situacao =>
+    return situacoes.map((situacao) =>
       plainToClass(SituacaoMoradiaResponseDto, situacao, {
         excludeExtraneousValues: true,
-      })
+      }),
     );
   }
 
@@ -161,7 +185,9 @@ export class SituacaoMoradiaService {
     });
 
     if (!situacao) {
-      throw new NotFoundException(`Situação de moradia com ID ${id} não encontrada`);
+      throw new NotFoundException(
+        `Situação de moradia com ID ${id} não encontrada`,
+      );
     }
 
     return plainToClass(SituacaoMoradiaResponseDto, situacao, {
@@ -172,7 +198,9 @@ export class SituacaoMoradiaService {
   /**
    * Busca situação de moradia por ID do cidadão
    */
-  async findByCidadaoId(cidadaoId: string): Promise<SituacaoMoradiaResponseDto | null> {
+  async findByCidadaoId(
+    cidadaoId: string,
+  ): Promise<SituacaoMoradiaResponseDto | null> {
     this.logger.log(`Buscando situação de moradia do cidadão: ${cidadaoId}`);
 
     const situacao = await this.situacaoMoradiaRepository.findOne({
@@ -192,7 +220,10 @@ export class SituacaoMoradiaService {
   /**
    * Atualiza situação de moradia
    */
-  async update(id: string, dto: UpdateSituacaoMoradiaDto): Promise<SituacaoMoradiaResponseDto> {
+  async update(
+    id: string,
+    dto: UpdateSituacaoMoradiaDto,
+  ): Promise<SituacaoMoradiaResponseDto> {
     this.logger.log(`Atualizando situação de moradia: ${id}`);
 
     const situacao = await this.situacaoMoradiaRepository.findOne({
@@ -200,7 +231,9 @@ export class SituacaoMoradiaService {
     });
 
     if (!situacao) {
-      throw new NotFoundException(`Situação de moradia com ID ${id} não encontrada`);
+      throw new NotFoundException(
+        `Situação de moradia com ID ${id} não encontrada`,
+      );
     }
 
     try {
@@ -214,7 +247,10 @@ export class SituacaoMoradiaService {
         excludeExtraneousValues: true,
       });
     } catch (error) {
-      this.logger.error(`Erro ao atualizar situação de moradia: ${error.message}`, error.stack);
+      this.logger.error(
+        `Erro ao atualizar situação de moradia: ${error.message}`,
+        error.stack,
+      );
       throw new BadRequestException('Erro ao atualizar situação de moradia');
     }
   }
@@ -230,14 +266,19 @@ export class SituacaoMoradiaService {
     });
 
     if (!situacao) {
-      throw new NotFoundException(`Situação de moradia com ID ${id} não encontrada`);
+      throw new NotFoundException(
+        `Situação de moradia com ID ${id} não encontrada`,
+      );
     }
 
     try {
       await this.situacaoMoradiaRepository.softDelete(id);
       this.logger.log(`Situação de moradia removida com sucesso: ${id}`);
     } catch (error) {
-      this.logger.error(`Erro ao remover situação de moradia: ${error.message}`, error.stack);
+      this.logger.error(
+        `Erro ao remover situação de moradia: ${error.message}`,
+        error.stack,
+      );
       throw new BadRequestException('Erro ao remover situação de moradia');
     }
   }

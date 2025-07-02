@@ -18,13 +18,13 @@ export interface PermissionRequirement {
   /**
    * Expressão para obter o ID do escopo a partir dos parâmetros da requisição
    * (opcional, não necessário quando o escopo é UNIDADE e o usuário logado já possui unidade_id)
-   * 
+   *
    * Usado apenas como fallback se o usuário não tiver unidade_id definido.
    *
    * Exemplo: 'params.unidadeId' para obter o ID da unidade dos parâmetros da rota
    */
   scopeIdExpression?: string;
-  
+
   /**
    * Roles que podem ignorar as restrições de escopo e acessar dados globalmente
    * (opcional, se não informado, assume os valores padrão: ['super_admin', 'admin', 'gestor'])

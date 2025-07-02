@@ -27,7 +27,7 @@ export interface SseCircuitBreakerConfig {
 export enum CircuitBreakerState {
   CLOSED = 'closed',
   OPEN = 'open',
-  HALF_OPEN = 'halfOpen'
+  HALF_OPEN = 'halfOpen',
 }
 
 /**
@@ -63,12 +63,30 @@ export class SseCircuitBreakerService {
   ) {
     // Configuração padrão baseada em variáveis de ambiente
     this.defaultConfig = {
-      timeout: this.configService.get<number>('SSE_CIRCUIT_BREAKER_TIMEOUT', 5000),
-      errorThresholdPercentage: this.configService.get<number>('SSE_CIRCUIT_BREAKER_ERROR_THRESHOLD', 50),
-      resetTimeout: this.configService.get<number>('SSE_CIRCUIT_BREAKER_RESET_TIMEOUT', 30000),
-      volumeThreshold: this.configService.get<number>('SSE_CIRCUIT_BREAKER_VOLUME_THRESHOLD', 10),
-      capacity: this.configService.get<number>('SSE_CIRCUIT_BREAKER_CAPACITY', 10),
-      bucketSpan: this.configService.get<number>('SSE_CIRCUIT_BREAKER_BUCKET_SPAN', 30000),
+      timeout: this.configService.get<number>(
+        'SSE_CIRCUIT_BREAKER_TIMEOUT',
+        5000,
+      ),
+      errorThresholdPercentage: this.configService.get<number>(
+        'SSE_CIRCUIT_BREAKER_ERROR_THRESHOLD',
+        50,
+      ),
+      resetTimeout: this.configService.get<number>(
+        'SSE_CIRCUIT_BREAKER_RESET_TIMEOUT',
+        30000,
+      ),
+      volumeThreshold: this.configService.get<number>(
+        'SSE_CIRCUIT_BREAKER_VOLUME_THRESHOLD',
+        10,
+      ),
+      capacity: this.configService.get<number>(
+        'SSE_CIRCUIT_BREAKER_CAPACITY',
+        10,
+      ),
+      bucketSpan: this.configService.get<number>(
+        'SSE_CIRCUIT_BREAKER_BUCKET_SPAN',
+        30000,
+      ),
     };
   }
 
@@ -97,7 +115,7 @@ export class SseCircuitBreakerService {
     this.setupCircuitBreakerListeners(name, breaker);
 
     this.circuitBreakers.set(name, breaker);
-    
+
     /* this.logger.log(`Circuit breaker '${name}' criado`, {
       config: finalConfig,
       hasFallback: !!fallback,
@@ -130,9 +148,11 @@ export class SseCircuitBreakerService {
     }
 
     return {
-      state: breaker.opened ? CircuitBreakerState.OPEN : 
-             breaker.halfOpen ? CircuitBreakerState.HALF_OPEN : 
-             CircuitBreakerState.CLOSED,
+      state: breaker.opened
+        ? CircuitBreakerState.OPEN
+        : breaker.halfOpen
+          ? CircuitBreakerState.HALF_OPEN
+          : CircuitBreakerState.CLOSED,
       stats: {
         fires: breaker.stats.fires,
         successes: breaker.stats.successes,
@@ -142,13 +162,13 @@ export class SseCircuitBreakerService {
         rejects: breaker.stats.rejects,
       },
       config: {
-         timeout: 5000,
-         errorThresholdPercentage: 50,
-         resetTimeout: 30000,
-         volumeThreshold: 10,
-         capacity: 10,
-         bucketSpan: 30000
-       } as SseCircuitBreakerConfig,
+        timeout: 5000,
+        errorThresholdPercentage: 50,
+        resetTimeout: 30000,
+        volumeThreshold: 10,
+        capacity: 10,
+        bucketSpan: 30000,
+      } as SseCircuitBreakerConfig,
       lastStateChange: new Date(), // opossum não expõe isso diretamente
     };
   }
@@ -158,7 +178,7 @@ export class SseCircuitBreakerService {
    */
   getAllCircuitBreakerMetrics(): Record<string, CircuitBreakerMetrics> {
     const metrics: Record<string, CircuitBreakerMetrics> = {};
-    
+
     for (const [name] of this.circuitBreakers) {
       const metric = this.getCircuitBreakerMetrics(name);
       if (metric) {
@@ -226,28 +246,49 @@ export class SseCircuitBreakerService {
   /**
    * Configura listeners para eventos do circuit breaker
    */
-  private setupCircuitBreakerListeners(name: string, breaker: CircuitBreaker): void {
+  private setupCircuitBreakerListeners(
+    name: string,
+    breaker: CircuitBreaker,
+  ): void {
     // Estado aberto
     breaker.on('open', () => {
-      this.logger.warn(`Circuit breaker '${name}' ABERTO - muitas falhas detectadas`);
-      this.metricsService.recordCircuitBreakerEvent('sse_circuit_breaker_state_change', 'info');
+      this.logger.warn(
+        `Circuit breaker '${name}' ABERTO - muitas falhas detectadas`,
+      );
+      this.metricsService.recordCircuitBreakerEvent(
+        'sse_circuit_breaker_state_change',
+        'info',
+      );
     });
 
     // Estado fechado
     breaker.on('close', () => {
-      this.logger.log(`Circuit breaker '${name}' FECHADO - operação normal restaurada`);
-      this.metricsService.recordCircuitBreakerEvent('sse_circuit_breaker_state_change', 'info');
+      this.logger.log(
+        `Circuit breaker '${name}' FECHADO - operação normal restaurada`,
+      );
+      this.metricsService.recordCircuitBreakerEvent(
+        'sse_circuit_breaker_state_change',
+        'info',
+      );
     });
 
     // Estado meio-aberto
     breaker.on('halfOpen', () => {
-      this.logger.log(`Circuit breaker '${name}' MEIO-ABERTO - testando recuperação`);
-      this.metricsService.recordCircuitBreakerEvent('sse_circuit_breaker_state_change', 'info');
+      this.logger.log(
+        `Circuit breaker '${name}' MEIO-ABERTO - testando recuperação`,
+      );
+      this.metricsService.recordCircuitBreakerEvent(
+        'sse_circuit_breaker_state_change',
+        'info',
+      );
     });
 
     // Sucesso
     breaker.on('success', (result) => {
-      this.metricsService.recordCircuitBreakerEvent('sse_circuit_breaker_success', 'info');
+      this.metricsService.recordCircuitBreakerEvent(
+        'sse_circuit_breaker_success',
+        'info',
+      );
     });
 
     // Falha
@@ -256,25 +297,39 @@ export class SseCircuitBreakerService {
         error: error.message,
         stack: error.stack,
       });
-      this.metricsService.recordCircuitBreakerEvent('sse_circuit_breaker_failure', 'error');
+      this.metricsService.recordCircuitBreakerEvent(
+        'sse_circuit_breaker_failure',
+        'error',
+      );
     });
 
     // Timeout
     breaker.on('timeout', () => {
       this.logger.warn(`Circuit breaker '${name}' - timeout detectado`);
-      this.metricsService.recordCircuitBreakerEvent('sse_circuit_breaker_timeout', 'warning');
+      this.metricsService.recordCircuitBreakerEvent(
+        'sse_circuit_breaker_timeout',
+        'warning',
+      );
     });
 
     // Fallback
     breaker.on('fallback', (result) => {
       this.logger.warn(`Circuit breaker '${name}' - fallback executado`);
-      this.metricsService.recordCircuitBreakerEvent('sse_circuit_breaker_fallback', 'warning');
+      this.metricsService.recordCircuitBreakerEvent(
+        'sse_circuit_breaker_fallback',
+        'warning',
+      );
     });
 
     // Rejeição (circuito aberto)
     breaker.on('reject', () => {
-      this.logger.warn(`Circuit breaker '${name}' - requisição indeferida (circuito aberto)`);
-      this.metricsService.recordCircuitBreakerEvent('sse_circuit_breaker_reject', 'error');
+      this.logger.warn(
+        `Circuit breaker '${name}' - requisição indeferida (circuito aberto)`,
+      );
+      this.metricsService.recordCircuitBreakerEvent(
+        'sse_circuit_breaker_reject',
+        'error',
+      );
     });
   }
 
@@ -285,15 +340,20 @@ export class SseCircuitBreakerService {
     healthy: boolean;
     circuitBreakers: Record<string, { state: string; healthy: boolean }>;
   } {
-    const circuitBreakers: Record<string, { state: string; healthy: boolean }> = {};
+    const circuitBreakers: Record<string, { state: string; healthy: boolean }> =
+      {};
     let allHealthy = true;
 
     for (const [name, breaker] of this.circuitBreakers) {
-      const state = breaker.opened ? 'open' : breaker.halfOpen ? 'half-open' : 'closed';
+      const state = breaker.opened
+        ? 'open'
+        : breaker.halfOpen
+          ? 'half-open'
+          : 'closed';
       const healthy = !breaker.opened; // Considera saudável se não estiver aberto
-      
+
       circuitBreakers[name] = { state, healthy };
-      
+
       if (!healthy) {
         allHealthy = false;
       }

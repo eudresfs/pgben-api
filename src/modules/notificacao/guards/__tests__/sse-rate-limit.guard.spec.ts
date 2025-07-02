@@ -23,7 +23,10 @@ const mockReflector = {
 };
 
 // Helper para criar mock do ExecutionContext
-const createMockExecutionContext = (request: Partial<Request>, response: Partial<Response> = {}) => {
+const createMockExecutionContext = (
+  request: Partial<Request>,
+  response: Partial<Response> = {},
+) => {
   const mockResponse = {
     setHeader: jest.fn(),
     ...response,
@@ -73,7 +76,9 @@ describe('SseRateLimitGuard', () => {
     }).compile();
 
     guard = module.get<SseRateLimitGuard>(SseRateLimitGuard);
-    rateLimiterService = module.get<SseRateLimiterService>(SseRateLimiterService);
+    rateLimiterService = module.get<SseRateLimiterService>(
+      SseRateLimiterService,
+    );
     reflector = module.get<Reflector>(Reflector);
     jwtService = module.get<JwtService>(JwtService);
 
@@ -220,9 +225,18 @@ describe('SseRateLimitGuard', () => {
 
       await guard.canActivate(context);
 
-      expect(mockResponse.setHeader).toHaveBeenCalledWith('X-RateLimit-Limit', '10');
-      expect(mockResponse.setHeader).toHaveBeenCalledWith('X-RateLimit-Remaining', '5');
-      expect(mockResponse.setHeader).toHaveBeenCalledWith('X-RateLimit-Reset', expect.any(String));
+      expect(mockResponse.setHeader).toHaveBeenCalledWith(
+        'X-RateLimit-Limit',
+        '10',
+      );
+      expect(mockResponse.setHeader).toHaveBeenCalledWith(
+        'X-RateLimit-Remaining',
+        '5',
+      );
+      expect(mockResponse.setHeader).toHaveBeenCalledWith(
+        'X-RateLimit-Reset',
+        expect.any(String),
+      );
     });
   });
 
@@ -396,7 +410,11 @@ describe('SseRateLimitGuard', () => {
         throw new Error('Invalid token');
       });
 
-      const identifier = guard['getIdentifier'](request, config, 'invalid-token');
+      const identifier = guard['getIdentifier'](
+        request,
+        config,
+        'invalid-token',
+      );
       expect(identifier).toBe('ip:192.168.1.1');
     });
   });
@@ -419,7 +437,9 @@ describe('SseRateLimitGuard', () => {
     });
 
     it('deve logar erros mas não falhar', async () => {
-      const loggerSpy = jest.spyOn(guard['logger'], 'error').mockImplementation();
+      const loggerSpy = jest
+        .spyOn(guard['logger'], 'error')
+        .mockImplementation();
       const context = createMockExecutionContext({
         ip: '192.168.1.1',
       });

@@ -58,7 +58,15 @@ export class FiltrosNotificacaoDto {
   @ApiPropertyOptional({
     description: 'Filtro por tipo do template',
     example: 'sistema',
-    enum: ['sistema', 'solicitacao', 'pendencia', 'aprovacao', 'liberacao', 'alerta', 'urgente'],
+    enum: [
+      'sistema',
+      'solicitacao',
+      'pendencia',
+      'aprovacao',
+      'liberacao',
+      'alerta',
+      'urgente',
+    ],
   })
   @IsOptional()
   @IsString({ message: 'Tipo deve ser uma string' })
@@ -90,7 +98,10 @@ export class FiltrosNotificacaoDto {
     format: 'date',
   })
   @IsOptional()
-  @IsDateString({}, { message: 'Data de início deve estar no formato YYYY-MM-DD' })
+  @IsDateString(
+    {},
+    { message: 'Data de início deve estar no formato YYYY-MM-DD' },
+  )
   dataInicio?: string;
 
   @ApiPropertyOptional({
@@ -103,7 +114,8 @@ export class FiltrosNotificacaoDto {
   dataFim?: string;
 
   @ApiPropertyOptional({
-    description: 'Filtrar apenas notificações lidas (true) ou não lidas (false)',
+    description:
+      'Filtrar apenas notificações lidas (true) ou não lidas (false)',
     example: false,
   })
   @IsOptional()
@@ -137,7 +149,8 @@ export class FiltrosNotificacaoDto {
   @IsOptional()
   @IsString({ message: 'Campo de ordenação deve ser uma string' })
   @IsIn(['created_at', 'data_leitura', 'prioridade', 'status'], {
-    message: 'Campo de ordenação deve ser: created_at, data_leitura, prioridade ou status',
+    message:
+      'Campo de ordenação deve ser: created_at, data_leitura, prioridade ou status',
   })
   ordenarPor?: string = 'created_at';
 

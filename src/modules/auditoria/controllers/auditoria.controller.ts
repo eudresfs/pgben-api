@@ -85,8 +85,10 @@ export class AuditoriaController {
     const userId = createLogAuditoriaDto.usuario_id;
     const dadosAnteriores = createLogAuditoriaDto.dados_anteriores;
     const dadosNovos = createLogAuditoriaDto.dados_novos;
-    const descricao = createLogAuditoriaDto.descricao || `${operacao} em ${entidade}`;
-    const camposSensiveis = createLogAuditoriaDto.dados_sensiveis_acessados || [];
+    const descricao =
+      createLogAuditoriaDto.descricao || `${operacao} em ${entidade}`;
+    const camposSensiveis =
+      createLogAuditoriaDto.dados_sensiveis_acessados || [];
 
     // Emite o evento apropriado baseado na operação
     switch (operacao) {
@@ -95,7 +97,7 @@ export class AuditoriaController {
           entidade,
           entidadeId,
           dadosNovos,
-          userId
+          userId,
         );
         break;
       case TipoOperacao.UPDATE:
@@ -103,7 +105,7 @@ export class AuditoriaController {
           entidade,
           entidadeId,
           dadosAnteriores,
-          dadosNovos
+          dadosNovos,
         );
         break;
       case TipoOperacao.DELETE:
@@ -111,20 +113,17 @@ export class AuditoriaController {
           entidade,
           entidadeId,
           dadosAnteriores,
-          userId
+          userId,
         );
         break;
       default:
-        this.auditEventEmitter.emitSystemEvent(
-          AuditEventType.SYSTEM_INFO,
-          { 
-            entidade, 
-            entityId: entidadeId, 
-            dados_anteriores: dadosAnteriores, 
-            dados_novos: dadosNovos, 
-            userId 
-          }
-        );
+        this.auditEventEmitter.emitSystemEvent(AuditEventType.SYSTEM_INFO, {
+          entidade,
+          entityId: entidadeId,
+          dados_anteriores: dadosAnteriores,
+          dados_novos: dadosNovos,
+          userId,
+        });
         break;
     }
 
@@ -263,5 +262,4 @@ export class AuditoriaController {
       new Date(dataFinal),
     );
   }
-
 }

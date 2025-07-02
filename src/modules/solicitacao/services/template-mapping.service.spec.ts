@@ -1,4 +1,7 @@
-import { TemplateMappingService, TipoNotificacaoTemplate } from './template-mapping.service';
+import {
+  TemplateMappingService,
+  TipoNotificacaoTemplate,
+} from './template-mapping.service';
 
 describe('TemplateMappingService - Unit Tests', () => {
   let service: TemplateMappingService;
@@ -10,10 +13,18 @@ describe('TemplateMappingService - Unit Tests', () => {
 
   describe('temTemplateMapeado', () => {
     it('should return true for valid notification types', () => {
-      expect(service.temTemplateMapeado(TipoNotificacaoTemplate.APROVACAO)).toBe(true);
-      expect(service.temTemplateMapeado(TipoNotificacaoTemplate.INDEFERIMENTO)).toBe(true);
-      expect(service.temTemplateMapeado(TipoNotificacaoTemplate.CANCELAMENTO)).toBe(true);
-      expect(service.temTemplateMapeado(TipoNotificacaoTemplate.PENDENCIA)).toBe(true);
+      expect(
+        service.temTemplateMapeado(TipoNotificacaoTemplate.APROVACAO),
+      ).toBe(true);
+      expect(
+        service.temTemplateMapeado(TipoNotificacaoTemplate.INDEFERIMENTO),
+      ).toBe(true);
+      expect(
+        service.temTemplateMapeado(TipoNotificacaoTemplate.CANCELAMENTO),
+      ).toBe(true);
+      expect(
+        service.temTemplateMapeado(TipoNotificacaoTemplate.PENDENCIA),
+      ).toBe(true);
     });
 
     it('should return false for invalid notification type', () => {
@@ -24,7 +35,7 @@ describe('TemplateMappingService - Unit Tests', () => {
   describe('obterTodosMapeamentos', () => {
     it('should return all template mappings', () => {
       const mappings = service.obterTodosMapeamentos();
-      
+
       expect(mappings).toHaveProperty(TipoNotificacaoTemplate.APROVACAO);
       expect(mappings).toHaveProperty(TipoNotificacaoTemplate.INDEFERIMENTO);
       expect(mappings).toHaveProperty(TipoNotificacaoTemplate.CANCELAMENTO);

@@ -12,17 +12,17 @@ import { Role } from '../../../enums/role.enum';
 
 /**
  * Interceptor de Mascaramento de Dados para o Módulo de Pagamento
- * 
+ *
  * Este interceptor aplica automaticamente mascaramento de dados sensíveis
  * nas respostas das APIs do módulo de pagamento, baseado no perfil do usuário
  * e suas permissões específicas.
- * 
+ *
  * Funcionalidades:
  * - Mascara dados bancários (conta, agência, chave PIX)
  * - Aplica mascaramento baseado no perfil do usuário
  * - Preserva dados completos para usuários autorizados
  * - Funciona com respostas individuais e arrays
- * 
+ *
  * @author Equipe PGBen
  */
 @Injectable()
@@ -70,11 +70,15 @@ export class DataMaskingInterceptor implements NestInterceptor {
 
     // Mascarar dados bancários se presentes
     if (maskedData.dadosBancarios) {
-      maskedData.dadosBancarios = this.maskDadosBancarios(maskedData.dadosBancarios);
+      maskedData.dadosBancarios = this.maskDadosBancarios(
+        maskedData.dadosBancarios,
+      );
     }
 
     if (maskedData.infoBancaria) {
-      maskedData.infoBancaria = this.maskDadosBancarios(maskedData.infoBancaria);
+      maskedData.infoBancaria = this.maskDadosBancarios(
+        maskedData.infoBancaria,
+      );
     }
 
     // Mascarar outros campos sensíveis
@@ -113,7 +117,7 @@ export class DataMaskingInterceptor implements NestInterceptor {
 
     // Remove formatação
     const cleanCPF = cpf.replace(/\D/g, '');
-    
+
     if (cleanCPF.length !== 11) {
       return cpf; // Retorna original se não for um CPF válido
     }

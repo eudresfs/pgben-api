@@ -11,7 +11,7 @@ import { LoggingService } from '../../../shared/logging/logging.service';
 
 /**
  * Guard para controle de acesso granular a documentos
- * 
+ *
  * Este guard verifica se o usuário tem permissão para acessar
  * um documento específico baseado em regras de negócio
  */
@@ -38,18 +38,19 @@ export class DocumentoAccessGuard implements CanActivate {
       this.logger.warn(
         `Tentativa de acesso a documento sem autenticação: ${documentoId}`,
         DocumentoAccessGuard.name,
-        { documentoId }
+        { documentoId },
       );
       throw new ForbiddenException('Usuário não autenticado');
     }
 
     // Validar formato do UUID
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(documentoId)) {
       this.logger.warn(
         `Tentativa de acesso com ID inválido: ${documentoId}`,
         DocumentoAccessGuard.name,
-        { documentoId, userId: user.id }
+        { documentoId, userId: user.id },
       );
       throw new BadRequestException('ID do documento inválido');
     }
@@ -57,7 +58,7 @@ export class DocumentoAccessGuard implements CanActivate {
     try {
       // Extrair roles do usuário
       const userRoles = user.roles || [];
-      
+
       // Verificar acesso usando o serviço
       const hasAccess = await this.documentoService.checkUserDocumentAccess(
         documentoId,
@@ -69,7 +70,7 @@ export class DocumentoAccessGuard implements CanActivate {
         this.logger.warn(
           `Acesso negado pelo DocumentoAccessGuard: ${documentoId}`,
           DocumentoAccessGuard.name,
-          { documentoId, userId: user.id, userRoles }
+          { documentoId, userId: user.id, userRoles },
         );
         throw new ForbiddenException('Acesso negado ao documento');
       }
@@ -77,12 +78,15 @@ export class DocumentoAccessGuard implements CanActivate {
       this.logger.debug(
         `Acesso concedido pelo DocumentoAccessGuard: ${documentoId}`,
         DocumentoAccessGuard.name,
-        { documentoId, userId: user.id }
+        { documentoId, userId: user.id },
       );
 
       return true;
     } catch (error) {
-      if (error instanceof ForbiddenException || error instanceof BadRequestException) {
+      if (
+        error instanceof ForbiddenException ||
+        error instanceof BadRequestException
+      ) {
         throw error;
       }
 
@@ -90,7 +94,7 @@ export class DocumentoAccessGuard implements CanActivate {
         `Erro no DocumentoAccessGuard para documento ${documentoId}`,
         error,
         DocumentoAccessGuard.name,
-        { documentoId, userId: user.id }
+        { documentoId, userId: user.id },
       );
 
       // Em caso de erro interno, negar acesso por segurança

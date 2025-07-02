@@ -69,25 +69,40 @@ export class MinioService implements OnModuleInit {
     setImmediate(async () => {
       try {
         this.logger.log('Verificando conexão com MinIO...');
-        
+
         // Timeout para evitar travamento
         const timeoutPromise = new Promise((_, reject) => {
-          setTimeout(() => reject(new Error('Timeout na conexão com MinIO')), 5000);
+          setTimeout(
+            () => reject(new Error('Timeout na conexão com MinIO')),
+            5000,
+          );
         });
-        
-        const bucketCheckPromise = this.minioClient.bucketExists(this.bucketName);
-        
-        const bucketExists = await Promise.race([bucketCheckPromise, timeoutPromise]) as boolean;
-        
+
+        const bucketCheckPromise = this.minioClient.bucketExists(
+          this.bucketName,
+        );
+
+        const bucketExists = (await Promise.race([
+          bucketCheckPromise,
+          timeoutPromise,
+        ])) as boolean;
+
         if (!bucketExists) {
-          const region = this.configService.get<string>('MINIO_REGION', 'us-east-1');
+          const region = this.configService.get<string>(
+            'MINIO_REGION',
+            'us-east-1',
+          );
           await this.minioClient.makeBucket(this.bucketName, region);
-          this.logger.log(`Bucket '${this.bucketName}' criado com sucesso na região ${region}`);
+          this.logger.log(
+            `Bucket '${this.bucketName}' criado com sucesso na região ${region}`,
+          );
         } else {
           this.logger.log(`Bucket '${this.bucketName}' já existe`);
         }
       } catch (error) {
-        this.logger.warn(`MinIO não disponível: ${error.message}. Continuando sem storage externo.`);
+        this.logger.warn(
+          `MinIO não disponível: ${error.message}. Continuando sem storage externo.`,
+        );
         // Não falha a inicialização se MinIO não estiver disponível
       }
     });
@@ -138,7 +153,9 @@ export class MinioService implements OnModuleInit {
   ): Promise<string> {
     // Validar arquivo antes do cálculo do hash
     if (!arquivo || !Buffer.isBuffer(arquivo)) {
-      this.logger.error(`Arquivo inválido para upload: tipo=${typeof arquivo}, isBuffer=${Buffer.isBuffer(arquivo)}`);
+      this.logger.error(
+        `Arquivo inválido para upload: tipo=${typeof arquivo}, isBuffer=${Buffer.isBuffer(arquivo)}`,
+      );
       throw new Error('Arquivo deve ser um Buffer válido');
     }
 
@@ -147,7 +164,9 @@ export class MinioService implements OnModuleInit {
       throw new Error('Arquivo não pode estar vazio');
     }
 
-    this.logger.debug(`Iniciando cálculo de hash para arquivo de ${arquivo.length} bytes`);
+    this.logger.debug(
+      `Iniciando cálculo de hash para arquivo de ${arquivo.length} bytes`,
+    );
 
     // Calcular hash do arquivo original para verificação de integridade
     let hash: string;
@@ -156,7 +175,9 @@ export class MinioService implements OnModuleInit {
       this.logger.debug(`Hash calculado com sucesso: ${hash}`);
     } catch (error) {
       this.logger.error(`Falha ao calcular hash do arquivo: ${error.message}`);
-      throw new Error(`Não foi possível calcular hash do arquivo: ${error.message}`);
+      throw new Error(
+        `Não foi possível calcular hash do arquivo: ${error.message}`,
+      );
     }
 
     // Validar se o hash foi gerado corretamente
@@ -198,8 +219,10 @@ export class MinioService implements OnModuleInit {
     }
 
     try {
-      this.logger.debug(`Metadados que serão salvos: ${JSON.stringify(metadados)}`);
-      
+      this.logger.debug(
+        `Metadados que serão salvos: ${JSON.stringify(metadados)}`,
+      );
+
       // Fazer upload do arquivo para o MinIO
       await this.minioClient.putObject(
         this.bucketName,
@@ -212,23 +235,35 @@ export class MinioService implements OnModuleInit {
       this.logger.log(
         `Arquivo ${caminhoCompleto} enviado para o MinIO com sucesso`,
       );
-      
+
       // Verificar se os metadados foram salvos corretamente
-        try {
-          const statVerificacao = await this.minioClient.statObject(this.bucketName, caminhoCompleto);
-          this.logger.debug(`Metadados retornados pelo MinIO: ${JSON.stringify(statVerificacao.metaData)}`);
-          
-          const hashSalvo = statVerificacao.metaData['x-amz-meta-hash'] || 
-                           statVerificacao.metaData['X-Amz-Meta-Hash'] ||
-                           statVerificacao.metaData['hash'];
-          this.logger.debug(`Verificação pós-upload - Hash salvo: ${hashSalvo}, Hash esperado: ${hash}`);
-          
-          if (hashSalvo !== hash) {
-            this.logger.warn(`Hash nos metadados não corresponde ao esperado. Salvo: ${hashSalvo}, Esperado: ${hash}`);
-          }
-        } catch (verifyError) {
-          this.logger.warn(`Não foi possível verificar metadados pós-upload: ${verifyError.message}`);
+      try {
+        const statVerificacao = await this.minioClient.statObject(
+          this.bucketName,
+          caminhoCompleto,
+        );
+        this.logger.debug(
+          `Metadados retornados pelo MinIO: ${JSON.stringify(statVerificacao.metaData)}`,
+        );
+
+        const hashSalvo =
+          statVerificacao.metaData['x-amz-meta-hash'] ||
+          statVerificacao.metaData['X-Amz-Meta-Hash'] ||
+          statVerificacao.metaData['hash'];
+        this.logger.debug(
+          `Verificação pós-upload - Hash salvo: ${hashSalvo}, Hash esperado: ${hash}`,
+        );
+
+        if (hashSalvo !== hash) {
+          this.logger.warn(
+            `Hash nos metadados não corresponde ao esperado. Salvo: ${hashSalvo}, Esperado: ${hash}`,
+          );
         }
+      } catch (verifyError) {
+        this.logger.warn(
+          `Não foi possível verificar metadados pós-upload: ${verifyError.message}`,
+        );
+      }
 
       return caminhoCompleto;
     } catch (error) {
@@ -268,7 +303,9 @@ export class MinioService implements OnModuleInit {
 
     // Validar arquivo antes do cálculo do hash
     if (!arquivo || !Buffer.isBuffer(arquivo)) {
-      this.logger.error(`Arquivo inválido para upload: tipo=${typeof arquivo}, isBuffer=${Buffer.isBuffer(arquivo)}`);
+      this.logger.error(
+        `Arquivo inválido para upload: tipo=${typeof arquivo}, isBuffer=${Buffer.isBuffer(arquivo)}`,
+      );
       throw new Error('Arquivo deve ser um Buffer válido');
     }
 
@@ -277,7 +314,9 @@ export class MinioService implements OnModuleInit {
       throw new Error('Arquivo não pode estar vazio');
     }
 
-    this.logger.debug(`Iniciando cálculo de hash para arquivo de ${arquivo.length} bytes`);
+    this.logger.debug(
+      `Iniciando cálculo de hash para arquivo de ${arquivo.length} bytes`,
+    );
 
     // Calcular hash do arquivo original para verificação de integridade
     let hash: string;
@@ -286,7 +325,9 @@ export class MinioService implements OnModuleInit {
       this.logger.debug(`Hash calculado com sucesso: ${hash}`);
     } catch (error) {
       this.logger.error(`Falha ao calcular hash do arquivo: ${error.message}`);
-      throw new Error(`Não foi possível calcular hash do arquivo: ${error.message}`);
+      throw new Error(
+        `Não foi possível calcular hash do arquivo: ${error.message}`,
+      );
     }
 
     // Validar se o hash foi gerado corretamente
@@ -328,8 +369,10 @@ export class MinioService implements OnModuleInit {
     }
 
     try {
-      this.logger.debug(`Metadados que serão salvos: ${JSON.stringify(metadados)}`);
-      
+      this.logger.debug(
+        `Metadados que serão salvos: ${JSON.stringify(metadados)}`,
+      );
+
       // Fazer upload do arquivo para o MinIO
       await this.minioClient.putObject(
         this.bucketName,
@@ -342,22 +385,31 @@ export class MinioService implements OnModuleInit {
       this.logger.log(
         `Arquivo ${arquivoFinal} enviado para o MinIO com sucesso`,
       );
-      
+
       this.logger.debug(
         `Upload concluído - Caminho completo no MinIO: ${arquivoFinal}`,
       );
-      
+
       // Verificar se os metadados foram salvos corretamente
       try {
-        const statVerificacao = await this.minioClient.statObject(this.bucketName, nomeArquivo);
+        const statVerificacao = await this.minioClient.statObject(
+          this.bucketName,
+          nomeArquivo,
+        );
         const hashSalvo = statVerificacao.metaData['x-amz-meta-hash'];
-        this.logger.debug(`Verificação pós-upload - Hash salvo: ${hashSalvo}, Hash esperado: ${hash}`);
-        
+        this.logger.debug(
+          `Verificação pós-upload - Hash salvo: ${hashSalvo}, Hash esperado: ${hash}`,
+        );
+
         if (hashSalvo !== hash) {
-          this.logger.warn(`Hash nos metadados não corresponde ao esperado. Salvo: ${hashSalvo}, Esperado: ${hash}`);
+          this.logger.warn(
+            `Hash nos metadados não corresponde ao esperado. Salvo: ${hashSalvo}, Esperado: ${hash}`,
+          );
         }
       } catch (verifyError) {
-        this.logger.warn(`Não foi possível verificar metadados pós-upload: ${verifyError.message}`);
+        this.logger.warn(
+          `Não foi possível verificar metadados pós-upload: ${verifyError.message}`,
+        );
       }
 
       return {
@@ -389,15 +441,19 @@ export class MinioService implements OnModuleInit {
     metadados: any;
   }> {
     try {
-      this.logger.debug(`Tentando baixar arquivo do MinIO: ${nomeArquivo} do bucket: ${this.bucketName}`);
-      
+      this.logger.debug(
+        `Tentando baixar arquivo do MinIO: ${nomeArquivo} do bucket: ${this.bucketName}`,
+      );
+
       // Obter metadados do arquivo
       const stat = await this.minioClient.statObject(
         this.bucketName,
         nomeArquivo,
       );
 
-      this.logger.debug(`Baixando arquivo ${nomeArquivo}, tamanho: ${stat.size}`);
+      this.logger.debug(
+        `Baixando arquivo ${nomeArquivo}, tamanho: ${stat.size}`,
+      );
 
       // Baixar arquivo do MinIO usando stream para evitar problemas de arquivo temporário
       const stream = await this.minioClient.getObject(
@@ -412,25 +468,30 @@ export class MinioService implements OnModuleInit {
       }
       const arquivoCriptografado = Buffer.concat(chunks);
 
-      this.logger.debug(`Arquivo baixado com sucesso, tamanho do buffer: ${arquivoCriptografado.length}`);
+      this.logger.debug(
+        `Arquivo baixado com sucesso, tamanho do buffer: ${arquivoCriptografado.length}`,
+      );
 
       // Verificar se o arquivo está criptografado
-      const encryptedMeta = stat.metaData['x-amz-meta-encrypted'] || 
-                           stat.metaData['encrypted'] || 
-                           stat.metaData['X-Amz-Meta-Encrypted'];
+      const encryptedMeta =
+        stat.metaData['x-amz-meta-encrypted'] ||
+        stat.metaData['encrypted'] ||
+        stat.metaData['X-Amz-Meta-Encrypted'];
       const criptografado = encryptedMeta === 'true';
 
       let arquivoFinal = arquivoCriptografado;
 
       // Se estiver criptografado, descriptografar
       if (criptografado) {
-        const ivMeta = stat.metaData['x-amz-meta-iv'] || 
-                      stat.metaData['iv'] || 
-                      stat.metaData['X-Amz-Meta-IV'];
-        const authTagMeta = stat.metaData['x-amz-meta-authtag'] || 
-                           stat.metaData['authtag'] || 
-                           stat.metaData['X-Amz-Meta-AuthTag'];
-        
+        const ivMeta =
+          stat.metaData['x-amz-meta-iv'] ||
+          stat.metaData['iv'] ||
+          stat.metaData['X-Amz-Meta-IV'];
+        const authTagMeta =
+          stat.metaData['x-amz-meta-authtag'] ||
+          stat.metaData['authtag'] ||
+          stat.metaData['X-Amz-Meta-AuthTag'];
+
         const iv = Buffer.from(ivMeta, 'base64');
         const authTag = Buffer.from(authTagMeta, 'base64');
 
@@ -455,49 +516,67 @@ export class MinioService implements OnModuleInit {
       }
 
       // Verificar integridade do arquivo
-      this.logger.debug(`Metadados disponíveis: ${JSON.stringify(Object.keys(stat.metaData))}`);
-      
+      this.logger.debug(
+        `Metadados disponíveis: ${JSON.stringify(Object.keys(stat.metaData))}`,
+      );
+
       // MinIO pode retornar metadados com chaves em diferentes formatos
       // Tentar múltiplas variações da chave do hash
-      const hashOriginal = stat.metaData['x-amz-meta-hash'] || 
-                          stat.metaData['hash'] || 
-                          stat.metaData['X-Amz-Meta-Hash'];
-      
-      this.logger.debug(`Hash original dos metadados: ${hashOriginal} (tipo: ${typeof hashOriginal})`);
-      
+      const hashOriginal =
+        stat.metaData['x-amz-meta-hash'] ||
+        stat.metaData['hash'] ||
+        stat.metaData['X-Amz-Meta-Hash'];
+
+      this.logger.debug(
+        `Hash original dos metadados: ${hashOriginal} (tipo: ${typeof hashOriginal})`,
+      );
+
       if (!hashOriginal) {
-        this.logger.error(`Hash original não encontrado nos metadados. Metadados completos: ${JSON.stringify(stat.metaData)}`);
-        throw new Error('Hash original não encontrado nos metadados do arquivo');
+        this.logger.error(
+          `Hash original não encontrado nos metadados. Metadados completos: ${JSON.stringify(stat.metaData)}`,
+        );
+        throw new Error(
+          'Hash original não encontrado nos metadados do arquivo',
+        );
       }
-      
+
       let hashCalculado: string;
       try {
         hashCalculado = this.criptografiaService.gerarHash(arquivoFinal);
         this.logger.debug(`Hash calculado: ${hashCalculado}`);
       } catch (error) {
-        this.logger.error(`Erro ao calcular hash para verificação: ${error.message}`);
-        throw new Error(`Falha na verificação de integridade: ${error.message}`);
+        this.logger.error(
+          `Erro ao calcular hash para verificação: ${error.message}`,
+        );
+        throw new Error(
+          `Falha na verificação de integridade: ${error.message}`,
+        );
       }
 
-      this.logger.debug(`Verificação de integridade - Hash original: ${hashOriginal}, Hash calculado: ${hashCalculado}`);
+      this.logger.debug(
+        `Verificação de integridade - Hash original: ${hashOriginal}, Hash calculado: ${hashCalculado}`,
+      );
 
       if (hashOriginal !== hashCalculado) {
         this.logger.error(
           `Integridade do arquivo ${nomeArquivo} comprometida. ` +
-          `Hash original: ${hashOriginal}, Hash calculado: ${hashCalculado}, ` +
-          `Tamanho arquivo final: ${arquivoFinal.length}, Criptografado: ${criptografado}`
+            `Hash original: ${hashOriginal}, Hash calculado: ${hashCalculado}, ` +
+            `Tamanho arquivo final: ${arquivoFinal.length}, Criptografado: ${criptografado}`,
         );
         throw new Error(
           'A integridade do documento foi comprometida. O hash não corresponde ao original.',
         );
       }
 
-      this.logger.debug(`Verificação de integridade bem-sucedida para ${nomeArquivo}`);
+      this.logger.debug(
+        `Verificação de integridade bem-sucedida para ${nomeArquivo}`,
+      );
 
-      const nomeOriginalMeta = stat.metaData['x-amz-meta-original-name'] || 
-                              stat.metaData['original-name'] || 
-                              stat.metaData['X-Amz-Meta-Original-Name'];
-      
+      const nomeOriginalMeta =
+        stat.metaData['x-amz-meta-original-name'] ||
+        stat.metaData['original-name'] ||
+        stat.metaData['X-Amz-Meta-Original-Name'];
+
       return {
         arquivo: arquivoFinal,
         metadados: {
@@ -509,35 +588,43 @@ export class MinioService implements OnModuleInit {
       };
     } catch (error) {
       // Tratamento específico para diferentes tipos de erro
-      if (error.code === 'NoSuchKey' || error.message?.includes('Not Found') || error.message?.includes('does not exist')) {
-        this.logger.warn(`Arquivo não encontrado no MinIO: ${nomeArquivo} (bucket: ${this.bucketName})`);
+      if (
+        error.code === 'NoSuchKey' ||
+        error.message?.includes('Not Found') ||
+        error.message?.includes('does not exist')
+      ) {
+        this.logger.warn(
+          `Arquivo não encontrado no MinIO: ${nomeArquivo} (bucket: ${this.bucketName})`,
+        );
         throw new Error(`Documento não encontrado: ${nomeArquivo}`);
       }
-      
+
       if (error.code === 'NoSuchBucket') {
         this.logger.error(`Bucket não encontrado: ${this.bucketName}`);
-        throw new Error(`Erro de configuração: bucket de armazenamento não encontrado`);
+        throw new Error(
+          `Erro de configuração: bucket de armazenamento não encontrado`,
+        );
       }
-      
+
       if (error.code === 'AccessDenied') {
         this.logger.error(`Acesso negado ao arquivo: ${nomeArquivo}`);
         throw new Error(`Acesso negado ao documento`);
       }
-      
+
       if (error.code === 'InvalidBucketName') {
         this.logger.error(`Nome do bucket inválido: ${this.bucketName}`);
         throw new Error(`Erro de configuração: nome do bucket inválido`);
       }
-      
+
       // Log detalhado para outros erros
       this.logger.error(`Erro ao baixar arquivo do MinIO: ${error.message}`, {
         nomeArquivo,
         bucket: this.bucketName,
         errorCode: error.code,
         errorName: error.name,
-        stack: error.stack
+        stack: error.stack,
       });
-      
+
       throw new Error(`Falha ao recuperar documento: ${error.message}`);
     }
   }
@@ -552,32 +639,40 @@ export class MinioService implements OnModuleInit {
       this.logger.log(`Arquivo ${nomeArquivo} removido do MinIO com sucesso`);
     } catch (error) {
       // Tratamento específico para diferentes tipos de erro
-      if (error.code === 'NoSuchKey' || error.message?.includes('Not Found') || error.message?.includes('does not exist')) {
-        this.logger.warn(`Arquivo não encontrado para remoção: ${nomeArquivo} (bucket: ${this.bucketName})`);
+      if (
+        error.code === 'NoSuchKey' ||
+        error.message?.includes('Not Found') ||
+        error.message?.includes('does not exist')
+      ) {
+        this.logger.warn(
+          `Arquivo não encontrado para remoção: ${nomeArquivo} (bucket: ${this.bucketName})`,
+        );
         // Para remoção, não é necessariamente um erro se o arquivo não existe
         this.logger.log(`Arquivo ${nomeArquivo} já não existe no MinIO`);
         return;
       }
-      
+
       if (error.code === 'NoSuchBucket') {
         this.logger.error(`Bucket não encontrado: ${this.bucketName}`);
-        throw new Error(`Erro de configuração: bucket de armazenamento não encontrado`);
+        throw new Error(
+          `Erro de configuração: bucket de armazenamento não encontrado`,
+        );
       }
-      
+
       if (error.code === 'AccessDenied') {
         this.logger.error(`Acesso negado para remover arquivo: ${nomeArquivo}`);
         throw new Error(`Acesso negado para remover documento`);
       }
-      
+
       // Log detalhado para outros erros
       this.logger.error(`Erro ao remover arquivo do MinIO: ${error.message}`, {
         nomeArquivo,
         bucket: this.bucketName,
         errorCode: error.code,
         errorName: error.name,
-        stack: error.stack
+        stack: error.stack,
       });
-      
+
       throw new Error(`Falha ao remover documento: ${error.message}`);
     }
   }

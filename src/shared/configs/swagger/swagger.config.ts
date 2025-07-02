@@ -148,9 +148,15 @@ export const swaggerSetupOptions: SwaggerCustomOptions = {
       const indexA = SWAGGER_TAG_ORDER.indexOf(a as any);
       const indexB = SWAGGER_TAG_ORDER.indexOf(b as any);
 
-      if (indexA === -1 && indexB === -1) {return a.localeCompare(b);}
-      if (indexA === -1) {return 1;}
-      if (indexB === -1) {return -1;}
+      if (indexA === -1 && indexB === -1) {
+        return a.localeCompare(b);
+      }
+      if (indexA === -1) {
+        return 1;
+      }
+      if (indexB === -1) {
+        return -1;
+      }
 
       return indexA - indexB;
     },
@@ -359,7 +365,9 @@ const INTERNAL_ENDPOINTS_TO_REMOVE = [
  * @param document - Documento OpenAPI gerado
  */
 function filterInternalEndpoints(document: any): void {
-  if (!document.paths) {return;}
+  if (!document.paths) {
+    return;
+  }
 
   // Remove endpoints específicos da lista
   INTERNAL_ENDPOINTS_TO_REMOVE.forEach((path) => {

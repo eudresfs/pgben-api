@@ -21,8 +21,6 @@ import { EstadoCivil } from '../../../enums/estado-civil.enum';
 import { ContatoDto } from './contato.dto';
 import { EnderecoDto } from './endereco.dto';
 
-
-
 /**
  * DTO para criação de cidadão
  *
@@ -129,12 +127,12 @@ export class CreateCidadaoDto {
   @IsOptional()
   @ApiPropertyOptional({
     example: '550e8400-e29b-41d4-a716-446655440000',
-    description: 'ID da unidade onde o cidadão será cadastrado. Se não fornecido, será usado o ID da unidade do usuário logado.',
+    description:
+      'ID da unidade onde o cidadão será cadastrado. Se não fornecido, será usado o ID da unidade do usuário logado.',
     required: false,
   })
   unidade_id?: string;
 
-  
   @IsArray()
   @IsOptional()
   @ValidateNested({ each: true })
@@ -144,7 +142,7 @@ export class CreateCidadaoDto {
     description: 'Composição familiar do cidadão',
   })
   composicao_familiar?: CreateComposicaoFamiliarDto[];
-  
+
   @IsArray()
   @IsOptional()
   @ValidateNested({ each: true })

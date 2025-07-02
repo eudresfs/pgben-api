@@ -502,9 +502,12 @@ export class PendenciaRepository {
     }
 
     if (filtros.data_resolucao_inicio) {
-      queryBuilder.andWhere('pendencia.data_resolucao >= :dataResolucaoInicio', {
-        dataResolucaoInicio: new Date(filtros.data_resolucao_inicio),
-      });
+      queryBuilder.andWhere(
+        'pendencia.data_resolucao >= :dataResolucaoInicio',
+        {
+          dataResolucaoInicio: new Date(filtros.data_resolucao_inicio),
+        },
+      );
     }
 
     if (filtros.data_resolucao_fim) {
@@ -516,9 +519,12 @@ export class PendenciaRepository {
     }
 
     if (filtros.prazo_resolucao_inicio) {
-      queryBuilder.andWhere('pendencia.prazo_resolucao >= :prazoResolucaoInicio', {
-        prazoResolucaoInicio: new Date(filtros.prazo_resolucao_inicio),
-      });
+      queryBuilder.andWhere(
+        'pendencia.prazo_resolucao >= :prazoResolucaoInicio',
+        {
+          prazoResolucaoInicio: new Date(filtros.prazo_resolucao_inicio),
+        },
+      );
     }
 
     if (filtros.prazo_resolucao_fim) {
@@ -548,10 +554,10 @@ export class PendenciaRepository {
       const hoje = new Date();
       const seteDias = new Date();
       seteDias.setDate(hoje.getDate() + 7);
-      
+
       hoje.setHours(0, 0, 0, 0);
       seteDias.setHours(23, 59, 59, 999);
-      
+
       queryBuilder
         .andWhere('pendencia.status = :statusAberta', {
           statusAberta: StatusPendencia.ABERTA,
@@ -581,7 +587,8 @@ export class PendenciaRepository {
       data_resolucao: 'pendencia.data_resolucao',
     };
 
-    const campoFinal = camposPermitidos[campoOrdenacao] || 'pendencia.created_at';
+    const campoFinal =
+      camposPermitidos[campoOrdenacao] || 'pendencia.created_at';
     queryBuilder.orderBy(campoFinal, direcaoOrdenacao as 'ASC' | 'DESC');
 
     // Ordenação secundária por data de criação
@@ -657,7 +664,7 @@ export class PendenciaRepository {
     // Contar vencidas
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
-    
+
     estatisticas.total_vencidas = await this.repository.count({
       where: {
         status: StatusPendencia.ABERTA,
@@ -671,7 +678,9 @@ export class PendenciaRepository {
     });
 
     estatisticas.total_vencidas = pendenciasAbertas.filter((p) => {
-      if (!p.prazo_resolucao) {return false;}
+      if (!p.prazo_resolucao) {
+        return false;
+      }
       const prazo = new Date(p.prazo_resolucao);
       prazo.setHours(0, 0, 0, 0);
       return prazo < hoje;
@@ -683,7 +692,9 @@ export class PendenciaRepository {
     seteDias.setHours(23, 59, 59, 999);
 
     estatisticas.proximas_vencimento = pendenciasAbertas.filter((p) => {
-      if (!p.prazo_resolucao) {return false;}
+      if (!p.prazo_resolucao) {
+        return false;
+      }
       const prazo = new Date(p.prazo_resolucao);
       return prazo >= hoje && prazo <= seteDias;
     }).length;
@@ -697,16 +708,17 @@ export class PendenciaRepository {
     if (pendenciasResolvidas.length > 0) {
       const tempoTotal = pendenciasResolvidas.reduce((acc, p) => {
         if (p.data_resolucao) {
-          const diffTime = new Date(p.data_resolucao).getTime() - new Date(p.created_at).getTime();
+          const diffTime =
+            new Date(p.data_resolucao).getTime() -
+            new Date(p.created_at).getTime();
           const diffDays = diffTime / (1000 * 60 * 60 * 24);
           return acc + diffDays;
         }
         return acc;
       }, 0);
-      
-      estatisticas.tempo_medio_resolucao = Math.round(
-        (tempoTotal / pendenciasResolvidas.length) * 100
-      ) / 100;
+
+      estatisticas.tempo_medio_resolucao =
+        Math.round((tempoTotal / pendenciasResolvidas.length) * 100) / 100;
     }
 
     return estatisticas;

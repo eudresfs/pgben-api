@@ -97,8 +97,10 @@ export const USUARIO_ERRORS: Record<string, ErrorDefinition> = {
     category: ErrorCategory.OPERATIONAL_FLOW,
     severity: ErrorSeverity.MEDIUM,
     localizedMessages: {
-      'pt-BR': 'Usuário não está em primeiro acesso. Esta operação só é permitida para usuários que ainda não alteraram sua senha inicial.',
-      'en-US': 'User is not in first access. This operation is only allowed for users who have not yet changed their initial password.',
+      'pt-BR':
+        'Usuário não está em primeiro acesso. Esta operação só é permitida para usuários que ainda não alteraram sua senha inicial.',
+      'en-US':
+        'User is not in first access. This operation is only allowed for users who have not yet changed their initial password.',
     },
   },
 

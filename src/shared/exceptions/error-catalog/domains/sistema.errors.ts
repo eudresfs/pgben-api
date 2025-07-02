@@ -47,8 +47,10 @@ export const SISTEMA_ERRORS: Record<string, ErrorDefinition> = {
     category: ErrorCategory.SYSTEM,
     severity: ErrorSeverity.MEDIUM,
     localizedMessages: {
-      'pt-BR': 'Limite de requisições por minuto foi excedido. Tente novamente em alguns instantes',
-      'en-US': 'Request rate limit per minute exceeded. Please try again in a few moments',
+      'pt-BR':
+        'Limite de requisições por minuto foi excedido. Tente novamente em alguns instantes',
+      'en-US':
+        'Request rate limit per minute exceeded. Please try again in a few moments',
     },
   },
 
@@ -83,8 +85,10 @@ export const SISTEMA_ERRORS: Record<string, ErrorDefinition> = {
     category: ErrorCategory.SYSTEM,
     severity: ErrorSeverity.MEDIUM,
     localizedMessages: {
-      'pt-BR': 'Sistema temporariamente sobrecarregado. Tente novamente em alguns instantes',
-      'en-US': 'System temporarily overloaded. Please try again in a few moments',
+      'pt-BR':
+        'Sistema temporariamente sobrecarregado. Tente novamente em alguns instantes',
+      'en-US':
+        'System temporarily overloaded. Please try again in a few moments',
     },
   },
 
@@ -111,8 +115,10 @@ export const SISTEMA_ERRORS: Record<string, ErrorDefinition> = {
     category: ErrorCategory.SYSTEM,
     severity: ErrorSeverity.MEDIUM,
     localizedMessages: {
-      'pt-BR': 'Sistema está temporariamente em manutenção. Tente novamente mais tarde',
-      'en-US': 'System is temporarily under maintenance. Please try again later',
+      'pt-BR':
+        'Sistema está temporariamente em manutenção. Tente novamente mais tarde',
+      'en-US':
+        'System is temporarily under maintenance. Please try again later',
     },
   },
 
@@ -147,7 +153,8 @@ export const SISTEMA_ERRORS: Record<string, ErrorDefinition> = {
     category: ErrorCategory.SYSTEM,
     severity: ErrorSeverity.MEDIUM,
     localizedMessages: {
-      'pt-BR': 'Atualização do sistema em andamento. Serviço temporariamente indisponível',
+      'pt-BR':
+        'Atualização do sistema em andamento. Serviço temporariamente indisponível',
       'en-US': 'System update in progress. Service temporarily unavailable',
     },
   },

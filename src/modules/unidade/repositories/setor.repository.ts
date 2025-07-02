@@ -1,13 +1,15 @@
-import {
-  Injectable,
-  Logger,
-} from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import {
   throwSetorNotFound,
   throwSetorOperationFailed,
   throwUnidadeNotFound,
 } from '../../../shared/exceptions/error-catalog/domains/unidade.errors';
-import { Repository, DataSource, QueryFailedError, FindManyOptions } from 'typeorm';
+import {
+  Repository,
+  DataSource,
+  QueryFailedError,
+  FindManyOptions,
+} from 'typeorm';
 import { Setor } from '../../../entities/setor.entity';
 import { Unidade } from '../../../entities/unidade.entity';
 
@@ -159,8 +161,7 @@ export class SetorRepository {
         // Tratamento para erros de restrição do banco de dados
         if (error.message.includes('null value in column')) {
           const column =
-            error.message.match(/column "([^"]+)"/)?.[1] ||
-            'não especificado';
+            error.message.match(/column "([^"]+)"/)?.[1] || 'não especificado';
           throwSetorOperationFailed({ setorId: undefined });
         }
 

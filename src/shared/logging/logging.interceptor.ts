@@ -9,7 +9,10 @@ import { Observable, throwError } from 'rxjs';
 import { tap, catchError } from 'rxjs/operators';
 import { Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { SENSITIVE_FIELDS, isSensitiveField } from '../constants/sensitive-fields.constants';
+import {
+  SENSITIVE_FIELDS,
+  isSensitiveField,
+} from '../constants/sensitive-fields.constants';
 
 // Estender a interface Request
 declare module 'express' {
@@ -22,7 +25,7 @@ declare module 'express' {
 
 /**
  * Interceptor de Logging Otimizado
- * 
+ *
  * Intercepta requisições HTTP e registra informações detalhadas
  * com correlação de requests e métricas de performance.
  */
@@ -41,16 +44,11 @@ export class LoggingInterceptor implements NestInterceptor {
     request.startTime = Date.now();
 
     // Extrair informações da requisição
-    const {
-      method,
-      url: originalUrl,
-      ip,
-      headers,
-    } = request;
+    const { method, url: originalUrl, ip, headers } = request;
 
     const userAgent = headers['user-agent'] || '';
     const userId = request.user?.id || 'anonymous';
-    const correlationId = headers['x-correlation-id'] as string || requestId;
+    const correlationId = (headers['x-correlation-id'] as string) || requestId;
 
     // Adicionar o requestId no header de resposta para facilitar debugging
     response.setHeader('X-Request-ID', requestId);
@@ -84,8 +82,9 @@ export class LoggingInterceptor implements NestInterceptor {
     error?: any,
   ): void {
     const duration = Date.now() - (request.startTime || 0);
-    const statusCode = type === 'error' ? (error.status || 500) : response.statusCode;
-    const contentLength = response.getHeader('content-length') as number || 0;
+    const statusCode =
+      type === 'error' ? error.status || 500 : response.statusCode;
+    const contentLength = (response.getHeader('content-length') as number) || 0;
 
     const httpMeta = {
       method: request.method,
@@ -109,26 +108,33 @@ export class LoggingInterceptor implements NestInterceptor {
         if (obj === null || obj === undefined) {
           return obj;
         }
-        
+
         // Caso seja um objeto plano
         if (typeof obj === 'object' && !Array.isArray(obj)) {
           const result: any = {};
-          
+
           for (const [key, value] of Object.entries(obj)) {
             const currentPath = path ? `${path}.${key}` : key;
-            
+
             // Verifica se o campo atual é sensível
             const isSensitive = isSensitiveField(key);
-            
+
             if (isSensitive && typeof value !== 'object') {
               // Redacted para campos sensíveis
               result[key] = '[REDACTED]';
-            } else if (key === 'value' && path.split('.').some(part => 
-              SENSITIVE_FIELDS.includes(part.toLowerCase())
-            )) {
+            } else if (
+              key === 'value' &&
+              path
+                .split('.')
+                .some((part) => SENSITIVE_FIELDS.includes(part.toLowerCase()))
+            ) {
               // Caso especial para campo 'value' dentro da pilha de validação
               result[key] = '[REDACTED]';
-            } else if (key === 'errors' || key === 'validationErrors' || key === 'details') {
+            } else if (
+              key === 'errors' ||
+              key === 'validationErrors' ||
+              key === 'details'
+            ) {
               // Campos especiais que podem conter erros de validação
               result[key] = sanitize(value, currentPath);
             } else if (typeof value === 'object' && value !== null) {
@@ -140,12 +146,12 @@ export class LoggingInterceptor implements NestInterceptor {
           }
           return result;
         }
-        
+
         // Caso seja um array
         if (Array.isArray(obj)) {
           return obj.map((item, index) => sanitize(item, `${path}[${index}]`));
         }
-        
+
         // Valores primitivos retornam sem alterações
         return obj;
       };
@@ -161,28 +167,35 @@ export class LoggingInterceptor implements NestInterceptor {
         errorMessage: error.message,
         errorStack: error.stack,
       };
-      
+
       // Sanitizar o response se existir
       if (error.response) {
         const sanitizedResponse = sanitizeErrorData(error.response);
         // Não permitir que o erro exponha valores sensíveis
         if (sanitizedResponse && typeof sanitizedResponse === 'object') {
           // Se houver erros de validação, sanitizar valores sensíveis
-          if (sanitizedResponse.message && Array.isArray(sanitizedResponse.message)) {
-            sanitizedResponse.message = sanitizedResponse.message.map((validationError: any) => {
-              if (validationError && validationError.property) {
-                const isSensitive = isSensitiveField(validationError.property);
-                if (isSensitive && validationError.value !== undefined) {
-                  validationError.value = '[REDACTED]';
+          if (
+            sanitizedResponse.message &&
+            Array.isArray(sanitizedResponse.message)
+          ) {
+            sanitizedResponse.message = sanitizedResponse.message.map(
+              (validationError: any) => {
+                if (validationError && validationError.property) {
+                  const isSensitive = isSensitiveField(
+                    validationError.property,
+                  );
+                  if (isSensitive && validationError.value !== undefined) {
+                    validationError.value = '[REDACTED]';
+                  }
                 }
-              }
-              return validationError;
-            });
+                return validationError;
+              },
+            );
           }
         }
         error.response = sanitizedResponse;
       }
-      
+
       this.loggingService.error(
         `HTTP Request Failed: ${request.method} ${request.url}`,
         sanitizedError,
@@ -238,8 +251,10 @@ export class LoggingInterceptor implements NestInterceptor {
   private isCriticalOperation(method: string, url: string): boolean {
     const criticalMethods = ['POST', 'PUT', 'DELETE', 'PATCH'];
     const criticalPaths = ['/auth/', '/usuario/', '/pagamentos/'];
-    
-    return criticalMethods.includes(method) || 
-           criticalPaths.some(path => url.includes(path));
+
+    return (
+      criticalMethods.includes(method) ||
+      criticalPaths.some((path) => url.includes(path))
+    );
   }
 }

@@ -3,7 +3,12 @@ import { LoggingService } from '../../../../shared/logging/logging.service';
 import { StorageProviderFactory } from '../../factories/storage-provider.factory';
 import * as fs from 'fs';
 import * as path from 'path';
-import { ThumbnailConfig, DEFAULT_THUMBNAIL_CONFIG, mergeConfig, validateConfig } from './thumbnail.config';
+import {
+  ThumbnailConfig,
+  DEFAULT_THUMBNAIL_CONFIG,
+  mergeConfig,
+  validateConfig,
+} from './thumbnail.config';
 
 /**
  * Serviço responsável pela geração de thumbnails de documentos
@@ -20,12 +25,14 @@ export class ThumbnailService implements OnModuleInit {
   ) {
     // Mesclar configuração personalizada com a padrão
     this.config = mergeConfig(customConfig);
-    
+
     // Validar configuração
     try {
       validateConfig(this.config);
     } catch (error) {
-      this.logger.error(`Configuração inválida do ThumbnailService: ${error.message}`);
+      this.logger.error(
+        `Configuração inválida do ThumbnailService: ${error.message}`,
+      );
       throw error;
     }
   }
@@ -35,35 +42,47 @@ export class ThumbnailService implements OnModuleInit {
    */
   async onModuleInit() {
     this.logger.log('Inicializando ThumbnailService...');
-    
+
     if (this.config.general.enableDependencyCheck) {
       // Verificar dependências disponíveis
       const dependencies = {
         pdf2pic: this.checkDependency('pdf2pic'),
         sharp: this.checkDependency('sharp'),
-        pdfThumbnail: this.checkDependency('pdf-thumbnail')
+        pdfThumbnail: this.checkDependency('pdf-thumbnail'),
       };
 
       if (this.config.general.enableDebugLogs) {
-        this.logger.debug(`pdf2pic disponível: ${dependencies.pdf2pic ? 'OK' : 'AUSENTE'}`);
-        this.logger.debug(`sharp disponível: ${dependencies.sharp ? 'OK' : 'AUSENTE'}`);
-        this.logger.debug(`pdf-thumbnail disponível: ${dependencies.pdfThumbnail ? 'OK' : 'AUSENTE'}`);
+        this.logger.debug(
+          `pdf2pic disponível: ${dependencies.pdf2pic ? 'OK' : 'AUSENTE'}`,
+        );
+        this.logger.debug(
+          `sharp disponível: ${dependencies.sharp ? 'OK' : 'AUSENTE'}`,
+        );
+        this.logger.debug(
+          `pdf-thumbnail disponível: ${dependencies.pdfThumbnail ? 'OK' : 'AUSENTE'}`,
+        );
       }
 
       // Avisos críticos
       if (!dependencies.sharp) {
-        this.logger.warn('⚠️  Sharp não encontrado - processamento de imagem será limitado');
+        this.logger.warn(
+          '⚠️  Sharp não encontrado - processamento de imagem será limitado',
+        );
       }
-      
+
       if (!dependencies.pdf2pic && !dependencies.pdfThumbnail) {
-        this.logger.warn('⚠️  Nenhuma biblioteca de PDF encontrada - thumbnails de PDF serão limitados');
+        this.logger.warn(
+          '⚠️  Nenhuma biblioteca de PDF encontrada - thumbnails de PDF serão limitados',
+        );
       }
 
       if (this.config.general.enableDebugLogs) {
-        this.logger.log(`Thumbnail dependencies status: ${JSON.stringify(dependencies)}`);
+        this.logger.log(
+          `Thumbnail dependencies status: ${JSON.stringify(dependencies)}`,
+        );
       }
     }
-    
+
     this.logger.log('ThumbnailService inicializado com sucesso');
   }
 
@@ -105,10 +124,16 @@ export class ThumbnailService implements OnModuleInit {
           thumbnailBuffer = await this.generateImageThumbnail(buffer);
           break;
         case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
-          thumbnailBuffer = await this.generateDocumentThumbnail(buffer, 'docx');
+          thumbnailBuffer = await this.generateDocumentThumbnail(
+            buffer,
+            'docx',
+          );
           break;
         case 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
-          thumbnailBuffer = await this.generateDocumentThumbnail(buffer, 'xlsx');
+          thumbnailBuffer = await this.generateDocumentThumbnail(
+            buffer,
+            'xlsx',
+          );
           break;
         case 'application/msword':
           thumbnailBuffer = await this.generateDocumentThumbnail(buffer, 'doc');
@@ -135,16 +160,16 @@ export class ThumbnailService implements OnModuleInit {
 
       const thumbnailPath = `thumbnails/${documentoId}.jpg`;
       const storageProvider = this.storageProviderFactory.getProvider();
-      
+
       await storageProvider.salvarArquivo(
         thumbnailBuffer,
         thumbnailPath,
         'image/jpeg',
-        { 
-          type: 'thumbnail', 
+        {
+          type: 'thumbnail',
           originalDocument: documentoId,
-          generatedAt: new Date().toISOString()
-        }
+          generatedAt: new Date().toISOString(),
+        },
       );
 
       this.logger.log(
@@ -153,7 +178,6 @@ export class ThumbnailService implements OnModuleInit {
       );
 
       return { thumbnailBuffer, thumbnailPath };
-      
     } catch (error) {
       this.logger.error(
         `Erro ao gerar thumbnail para documento ${documentoId}: ${error.message}`,
@@ -170,8 +194,10 @@ export class ThumbnailService implements OnModuleInit {
    * @returns Buffer do thumbnail gerado
    */
   private async generatePdfThumbnail(pdfBuffer: Buffer): Promise<Buffer> {
-    this.logger.debug(`Iniciando geração de thumbnail PDF - Buffer size: ${pdfBuffer.length} bytes`);
-    
+    this.logger.debug(
+      `Iniciando geração de thumbnail PDF - Buffer size: ${pdfBuffer.length} bytes`,
+    );
+
     // Validação básica do PDF usando magic bytes
     if (!pdfBuffer || pdfBuffer.length === 0) {
       this.logger.warn('PDF buffer está vazio, usando thumbnail padrão');
@@ -181,44 +207,54 @@ export class ThumbnailService implements OnModuleInit {
     // Verificar se é realmente um PDF (magic bytes)
     const pdfMagicBytes = pdfBuffer.slice(0, 4).toString();
     if (!pdfMagicBytes.startsWith('%PDF')) {
-      this.logger.warn(`Arquivo não é um PDF válido (magic bytes: ${pdfMagicBytes}), usando thumbnail padrão`);
+      this.logger.warn(
+        `Arquivo não é um PDF válido (magic bytes: ${pdfMagicBytes}), usando thumbnail padrão`,
+      );
       return this.getDefaultThumbnail('pdf');
     }
 
     try {
       const { fromBuffer } = require('pdf2pic');
-      
+
       const options = {
         density: this.config.pdf.density,
         format: this.config.pdf.format,
         width: this.config.pdf.width,
         height: this.config.pdf.height,
-        quality: this.config.pdf.quality
+        quality: this.config.pdf.quality,
       };
 
       if (this.config.general.enableDebugLogs) {
         this.logger.debug('Configurações pdf2pic:', JSON.stringify(options));
       }
-      
+
       const convert = fromBuffer(pdfBuffer, options);
-      const result = await convert(1, { responseType: "buffer" });
-      
+      const result = await convert(1, { responseType: 'buffer' });
+
       if (!result || !result.buffer || result.buffer.length === 0) {
-        this.logger.warn('pdf2pic retornou buffer vazio, usando thumbnail padrão');
+        this.logger.warn(
+          'pdf2pic retornou buffer vazio, usando thumbnail padrão',
+        );
         return this.getDefaultThumbnail('pdf');
       }
-      
-      this.logger.debug(`Thumbnail PDF gerado com sucesso usando pdf2pic - Tamanho: ${result.buffer.length} bytes`);
+
+      this.logger.debug(
+        `Thumbnail PDF gerado com sucesso usando pdf2pic - Tamanho: ${result.buffer.length} bytes`,
+      );
       return result.buffer;
-      
     } catch (error) {
-      this.logger.error(`Erro ao gerar thumbnail PDF com pdf2pic: ${error.message}`, JSON.stringify({
-        bufferSize: pdfBuffer.length,
-        errorStack: error.stack
-      }));
-      
+      this.logger.error(
+        `Erro ao gerar thumbnail PDF com pdf2pic: ${error.message}`,
+        JSON.stringify({
+          bufferSize: pdfBuffer.length,
+          errorStack: error.stack,
+        }),
+      );
+
       // Fallback para o método anterior como backup
-      this.logger.log('Tentando fallback para método anterior de geração de thumbnail PDF');
+      this.logger.log(
+        'Tentando fallback para método anterior de geração de thumbnail PDF',
+      );
       return this.generatePdfThumbnailFallback(pdfBuffer);
     }
   }
@@ -228,30 +264,55 @@ export class ThumbnailService implements OnModuleInit {
    * @param pdfBuffer Buffer do PDF
    * @returns Buffer do thumbnail
    */
-  private async generatePdfThumbnailFallback(pdfBuffer: Buffer): Promise<Buffer> {
+  private async generatePdfThumbnailFallback(
+    pdfBuffer: Buffer,
+  ): Promise<Buffer> {
     // Tentar diferentes configurações de geração de thumbnail
     const configs = [
-      { compress: { type: 'JPEG', quality: 80 }, resize: { width: 200, height: 200, fit: 'cover' } },
-      { compress: { type: 'JPEG', quality: 60 }, resize: { width: 150, height: 150, fit: 'contain' } },
-      { compress: { type: 'JPEG', quality: 40 }, resize: { width: 100, height: 100, fit: 'inside' } }
+      {
+        compress: { type: 'JPEG', quality: 80 },
+        resize: { width: 200, height: 200, fit: 'cover' },
+      },
+      {
+        compress: { type: 'JPEG', quality: 60 },
+        resize: { width: 150, height: 150, fit: 'contain' },
+      },
+      {
+        compress: { type: 'JPEG', quality: 40 },
+        resize: { width: 100, height: 100, fit: 'inside' },
+      },
     ];
 
     for (let i = 0; i < configs.length; i++) {
       try {
-        this.logger.debug(`Tentativa ${i + 1} de geração de thumbnail PDF fallback com config:`, JSON.stringify(configs[i]));
-        
-        const thumbnailBuffer = await this.generatePdfThumbnailWithConfig(pdfBuffer, configs[i]);
-        
+        this.logger.debug(
+          `Tentativa ${i + 1} de geração de thumbnail PDF fallback com config:`,
+          JSON.stringify(configs[i]),
+        );
+
+        const thumbnailBuffer = await this.generatePdfThumbnailWithConfig(
+          pdfBuffer,
+          configs[i],
+        );
+
         if (thumbnailBuffer && thumbnailBuffer.length > 0) {
-          this.logger.debug(`Thumbnail PDF fallback gerado com sucesso na tentativa ${i + 1}, tamanho: ${thumbnailBuffer.length} bytes`);
+          this.logger.debug(
+            `Thumbnail PDF fallback gerado com sucesso na tentativa ${i + 1}, tamanho: ${thumbnailBuffer.length} bytes`,
+          );
           return thumbnailBuffer;
         } else {
-          this.logger.warn(`Tentativa ${i + 1} de fallback resultou em thumbnail vazio`);
+          this.logger.warn(
+            `Tentativa ${i + 1} de fallback resultou em thumbnail vazio`,
+          );
         }
       } catch (error) {
-        this.logger.warn(`Tentativa ${i + 1} de geração de thumbnail PDF fallback falhou: ${error.message}`);
+        this.logger.warn(
+          `Tentativa ${i + 1} de geração de thumbnail PDF fallback falhou: ${error.message}`,
+        );
         if (i === configs.length - 1) {
-          this.logger.error('Todas as tentativas de geração de thumbnail PDF fallback falharam');
+          this.logger.error(
+            'Todas as tentativas de geração de thumbnail PDF fallback falharam',
+          );
         }
       }
     }
@@ -263,7 +324,10 @@ export class ThumbnailService implements OnModuleInit {
   /**
    * Gera thumbnail do PDF com configuração específica e timeout
    */
-  private async generatePdfThumbnailWithConfig(pdfBuffer: Buffer, config: any): Promise<Buffer> {
+  private async generatePdfThumbnailWithConfig(
+    pdfBuffer: Buffer,
+    config: any,
+  ): Promise<Buffer> {
     return new Promise(async (resolve, reject) => {
       const timeout = setTimeout(() => {
         reject(new Error('Timeout na geração de thumbnail (30s)'));
@@ -273,9 +337,9 @@ export class ThumbnailService implements OnModuleInit {
         const pdf = require('pdf-thumbnail');
         const thumbnailStream = await pdf(pdfBuffer, config);
         const thumbnailBuffer = await this.streamToBuffer(thumbnailStream);
-        
+
         clearTimeout(timeout);
-        
+
         // Verificar se o thumbnail gerado não está vazio
         if (!thumbnailBuffer || thumbnailBuffer.length === 0) {
           reject(new Error('Thumbnail gerado está vazio'));
@@ -304,7 +368,9 @@ export class ThumbnailService implements OnModuleInit {
 
       // Verificar tamanho máximo do buffer usando config
       if (imageBuffer.length > this.config.image.maxBufferSize) {
-        throw new Error(`Buffer de imagem muito grande: ${imageBuffer.length} bytes (máximo: ${this.config.image.maxBufferSize} bytes)`);
+        throw new Error(
+          `Buffer de imagem muito grande: ${imageBuffer.length} bytes (máximo: ${this.config.image.maxBufferSize} bytes)`,
+        );
       }
 
       // Validar tipo MIME através de magic bytes
@@ -312,22 +378,39 @@ export class ThumbnailService implements OnModuleInit {
         throw new Error('Tipo de arquivo não suportado ou buffer corrompido');
       }
 
-      this.logger.debug(`Processando thumbnail de imagem - Tamanho original: ${imageBuffer.length} bytes`);
+      this.logger.debug(
+        `Processando thumbnail de imagem - Tamanho original: ${imageBuffer.length} bytes`,
+      );
 
       const sharp = require('sharp');
-      
+
       // Timeout para evitar travamentos usando config
       const timeoutPromise = new Promise<Buffer>((_, reject) => {
-        setTimeout(() => reject(new Error(`Timeout na geração de thumbnail de imagem (${this.config.image.timeoutMs}ms)`)), this.config.image.timeoutMs);
+        setTimeout(
+          () =>
+            reject(
+              new Error(
+                `Timeout na geração de thumbnail de imagem (${this.config.image.timeoutMs}ms)`,
+              ),
+            ),
+          this.config.image.timeoutMs,
+        );
       });
 
-      const processPromise = this.processImageWithOptimizedSettings(imageBuffer, sharp);
+      const processPromise = this.processImageWithOptimizedSettings(
+        imageBuffer,
+        sharp,
+      );
 
-      const result = await Promise.race([processPromise, timeoutPromise]) as Buffer;
-      
-      this.logger.debug(`Thumbnail de imagem gerado com sucesso - Tamanho final: ${result.length} bytes`);
+      const result = (await Promise.race([
+        processPromise,
+        timeoutPromise,
+      ])) as Buffer;
+
+      this.logger.debug(
+        `Thumbnail de imagem gerado com sucesso - Tamanho final: ${result.length} bytes`,
+      );
       return result;
-      
     } catch (error) {
       this.logger.warn(
         `Falha ao gerar thumbnail de imagem, usando thumbnail padrão: ${error.message}`,
@@ -343,28 +426,33 @@ export class ThumbnailService implements OnModuleInit {
    * @param sharp Instância do Sharp
    * @returns Buffer do thumbnail processado
    */
-  private async processImageWithOptimizedSettings(imageBuffer: Buffer, sharp: any): Promise<Buffer> {
+  private async processImageWithOptimizedSettings(
+    imageBuffer: Buffer,
+    sharp: any,
+  ): Promise<Buffer> {
     // Obter metadados da imagem para otimização
     const metadata = await sharp(imageBuffer).metadata();
-    
-    this.logger.debug(`Metadados da imagem:`, JSON.stringify({
-      format: metadata.format,
-      width: metadata.width,
-      height: metadata.height,
-      channels: metadata.channels,
-      density: metadata.density
-    }));
+
+    this.logger.debug(
+      `Metadados da imagem:`,
+      JSON.stringify({
+        format: metadata.format,
+        width: metadata.width,
+        height: metadata.height,
+        channels: metadata.channels,
+        density: metadata.density,
+      }),
+    );
 
     // Configurações otimizadas baseadas no formato
     const config = this.getOptimizedImageConfig(metadata);
-    
-    let pipeline = sharp(imageBuffer)
-      .resize(config.width, config.height, {
-        fit: config.fit,
-        position: config.position,
-        withoutEnlargement: true,
-        kernel: sharp.kernel.lanczos3 // Melhor qualidade de redimensionamento
-      });
+
+    let pipeline = sharp(imageBuffer).resize(config.width, config.height, {
+      fit: config.fit,
+      position: config.position,
+      withoutEnlargement: true,
+      kernel: sharp.kernel.lanczos3, // Melhor qualidade de redimensionamento
+    });
 
     // Aplicar configurações específicas do formato usando config
     switch (config.outputFormat) {
@@ -372,27 +460,28 @@ export class ThumbnailService implements OnModuleInit {
         pipeline = pipeline.jpeg({
           quality: config.quality,
           progressive: this.config.image.formatSettings.jpeg.progressive,
-          mozjpeg: this.config.image.formatSettings.jpeg.mozjpeg
+          mozjpeg: this.config.image.formatSettings.jpeg.mozjpeg,
         });
         break;
       case 'png':
         pipeline = pipeline.png({
           quality: config.quality,
-          compressionLevel: this.config.image.formatSettings.png.compressionLevel,
-          progressive: this.config.image.formatSettings.png.progressive
+          compressionLevel:
+            this.config.image.formatSettings.png.compressionLevel,
+          progressive: this.config.image.formatSettings.png.progressive,
         });
         break;
       case 'webp':
         pipeline = pipeline.webp({
           quality: config.quality,
-          effort: this.config.image.formatSettings.webp.effort
+          effort: this.config.image.formatSettings.webp.effort,
         });
         break;
       default:
         // Fallback para JPEG usando config
         pipeline = pipeline.jpeg({
           quality: config.quality,
-          progressive: this.config.image.formatSettings.jpeg.progressive
+          progressive: this.config.image.formatSettings.jpeg.progressive,
         });
     }
 
@@ -411,7 +500,7 @@ export class ThumbnailService implements OnModuleInit {
       fit: 'cover' as const,
       position: 'center' as const,
       quality: this.config.image.quality,
-      outputFormat: 'jpeg'
+      outputFormat: 'jpeg',
     };
 
     // Otimizações baseadas no formato original
@@ -422,52 +511,56 @@ export class ThumbnailService implements OnModuleInit {
           return {
             ...baseConfig,
             outputFormat: 'png',
-            quality: this.config.image.formatSettings.png.quality
+            quality: this.config.image.formatSettings.png.quality,
           };
         }
         break;
-      
+
       case 'gif':
         // GIF - converter para JPEG com qualidade menor
         return {
           ...baseConfig,
-          quality: this.config.image.formatSettings.gif.quality
+          quality: this.config.image.formatSettings.gif.quality,
         };
-      
+
       case 'webp':
         // WebP - manter formato com qualidade otimizada
         return {
           ...baseConfig,
           outputFormat: 'webp',
-          quality: this.config.image.formatSettings.webp.quality
+          quality: this.config.image.formatSettings.webp.quality,
         };
-      
+
       case 'tiff':
       case 'tif':
         // TIFF - converter para JPEG com alta qualidade
         return {
           ...baseConfig,
-          quality: this.config.image.formatSettings.tiff.quality
+          quality: this.config.image.formatSettings.tiff.quality,
         };
     }
 
     // Otimizações baseadas no tamanho usando config
     if (metadata.width && metadata.height) {
       const totalPixels = metadata.width * metadata.height;
-      
+
       // Imagens muito grandes - reduzir qualidade
-      if (totalPixels > this.config.image.sizeOptimization.largeImageThreshold) {
+      if (
+        totalPixels > this.config.image.sizeOptimization.largeImageThreshold
+      ) {
         return {
           ...baseConfig,
-          quality: this.config.image.sizeOptimization.largeImageQuality
+          quality: this.config.image.sizeOptimization.largeImageQuality,
         };
       }
-      
+
       // Imagens pequenas - manter qualidade alta
-      if (totalPixels < this.config.image.sizeOptimization.smallImageThreshold) {
+      if (
+        totalPixels < this.config.image.sizeOptimization.smallImageThreshold
+      ) {
         return {
           ...baseConfig,
-          quality: this.config.image.sizeOptimization.smallImageQuality
+          quality: this.config.image.sizeOptimization.smallImageQuality,
         };
       }
     }
@@ -481,7 +574,10 @@ export class ThumbnailService implements OnModuleInit {
    * @param type Tipo do documento (docx, xlsx, etc.)
    * @returns Buffer do thumbnail padrão
    */
-  private async generateDocumentThumbnail(buffer: Buffer, type: string): Promise<Buffer> {
+  private async generateDocumentThumbnail(
+    buffer: Buffer,
+    type: string,
+  ): Promise<Buffer> {
     // Para documentos Office, usamos thumbnails padrão por enquanto
     // TODO: Implementar conversão real usando LibreOffice ou similar
     return this.getDefaultThumbnail(type);
@@ -493,10 +589,15 @@ export class ThumbnailService implements OnModuleInit {
    * @returns Buffer do thumbnail padrão
    */
   private async getDefaultThumbnail(type: string): Promise<Buffer> {
-    const thumbnailFileName = this.config.general.defaultThumbnails[type] || this.config.general.defaultThumbnails.default;
-    const thumbnailPath = path.join(this.config.general.defaultThumbnailsPath, thumbnailFileName);
+    const thumbnailFileName =
+      this.config.general.defaultThumbnails[type] ||
+      this.config.general.defaultThumbnails.default;
+    const thumbnailPath = path.join(
+      this.config.general.defaultThumbnailsPath,
+      thumbnailFileName,
+    );
     const fullPath = path.join(process.cwd(), thumbnailPath);
-    
+
     try {
       if (fs.existsSync(fullPath)) {
         return fs.readFileSync(fullPath);
@@ -520,7 +621,7 @@ export class ThumbnailService implements OnModuleInit {
   private async generateFallbackThumbnail(type: string): Promise<Buffer> {
     try {
       const sharp = require('sharp');
-      
+
       // Criar uma imagem simples com texto indicando o tipo
       const svg = `
         <svg width="200" height="200" xmlns="http://www.w3.org/2000/svg">
@@ -536,16 +637,14 @@ export class ThumbnailService implements OnModuleInit {
         </svg>
       `;
 
-      return await sharp(Buffer.from(svg))
-        .jpeg({ quality: 80 })
-        .toBuffer();
+      return await sharp(Buffer.from(svg)).jpeg({ quality: 80 }).toBuffer();
     } catch (error) {
       this.logger.error(
         `Erro ao gerar thumbnail de fallback: ${error.message}`,
         error.stack,
         ThumbnailService.name,
       );
-      
+
       // Último recurso: criar uma imagem sólida simples
       try {
         const sharp = require('sharp');
@@ -554,11 +653,11 @@ export class ThumbnailService implements OnModuleInit {
             width: 200,
             height: 200,
             channels: 3,
-            background: { r: 240, g: 240, b: 240 }
-          }
+            background: { r: 240, g: 240, b: 240 },
+          },
         })
-        .jpeg({ quality: 80 })
-        .toBuffer();
+          .jpeg({ quality: 80 })
+          .toBuffer();
       } catch (fallbackError) {
         this.logger.error(
           `Erro crítico ao gerar thumbnail: ${fallbackError.message}`,
@@ -578,7 +677,7 @@ export class ThumbnailService implements OnModuleInit {
   private async streamToBuffer(stream: any): Promise<Buffer> {
     return new Promise((resolve, reject) => {
       const chunks: Buffer[] = [];
-      
+
       stream.on('data', (chunk: Buffer) => chunks.push(chunk));
       stream.on('end', () => resolve(Buffer.concat(chunks)));
       stream.on('error', reject);
@@ -594,7 +693,7 @@ export class ThumbnailService implements OnModuleInit {
     try {
       const thumbnailPath = `thumbnails/${documentoId}.jpg`;
       const storageProvider = this.storageProviderFactory.getProvider();
-      
+
       // Tentar obter o arquivo para verificar se existe
       await storageProvider.obterArquivo(thumbnailPath);
       return true;
@@ -611,9 +710,9 @@ export class ThumbnailService implements OnModuleInit {
     try {
       const thumbnailPath = `thumbnails/${documentoId}.jpg`;
       const storageProvider = this.storageProviderFactory.getProvider();
-      
+
       await storageProvider.removerArquivo(thumbnailPath);
-      
+
       this.logger.log(
         `Thumbnail removido com sucesso: ${thumbnailPath}`,
         ThumbnailService.name,
@@ -635,7 +734,7 @@ export class ThumbnailService implements OnModuleInit {
     if (!buffer || buffer.length < 4) {
       return false;
     }
-    
+
     // PDF magic bytes: %PDF
     const pdfSignature = buffer.slice(0, 4).toString('ascii');
     return pdfSignature === '%PDF';
@@ -652,13 +751,21 @@ export class ThumbnailService implements OnModuleInit {
     }
 
     // JPEG magic bytes: FF D8 FF
-    if (buffer[0] === 0xFF && buffer[1] === 0xD8 && buffer[2] === 0xFF) {
+    if (buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) {
       return true;
     }
 
     // PNG magic bytes: 89 50 4E 47 0D 0A 1A 0A
-    if (buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4E && buffer[3] === 0x47 &&
-        buffer[4] === 0x0D && buffer[5] === 0x0A && buffer[6] === 0x1A && buffer[7] === 0x0A) {
+    if (
+      buffer[0] === 0x89 &&
+      buffer[1] === 0x50 &&
+      buffer[2] === 0x4e &&
+      buffer[3] === 0x47 &&
+      buffer[4] === 0x0d &&
+      buffer[5] === 0x0a &&
+      buffer[6] === 0x1a &&
+      buffer[7] === 0x0a
+    ) {
       return true;
     }
 
@@ -669,25 +776,46 @@ export class ThumbnailService implements OnModuleInit {
     }
 
     // WebP magic bytes: RIFF....WEBP
-    if (buffer.length >= 12 &&
-        buffer[0] === 0x52 && buffer[1] === 0x49 && buffer[2] === 0x46 && buffer[3] === 0x46 &&
-        buffer[8] === 0x57 && buffer[9] === 0x45 && buffer[10] === 0x42 && buffer[11] === 0x50) {
+    if (
+      buffer.length >= 12 &&
+      buffer[0] === 0x52 &&
+      buffer[1] === 0x49 &&
+      buffer[2] === 0x46 &&
+      buffer[3] === 0x46 &&
+      buffer[8] === 0x57 &&
+      buffer[9] === 0x45 &&
+      buffer[10] === 0x42 &&
+      buffer[11] === 0x50
+    ) {
       return true;
     }
 
     // BMP magic bytes: BM
-    if (buffer[0] === 0x42 && buffer[1] === 0x4D) {
+    if (buffer[0] === 0x42 && buffer[1] === 0x4d) {
       return true;
     }
 
     // TIFF magic bytes: II*\0 ou MM\0*
-    if ((buffer[0] === 0x49 && buffer[1] === 0x49 && buffer[2] === 0x2A && buffer[3] === 0x00) ||
-        (buffer[0] === 0x4D && buffer[1] === 0x4D && buffer[2] === 0x00 && buffer[3] === 0x2A)) {
+    if (
+      (buffer[0] === 0x49 &&
+        buffer[1] === 0x49 &&
+        buffer[2] === 0x2a &&
+        buffer[3] === 0x00) ||
+      (buffer[0] === 0x4d &&
+        buffer[1] === 0x4d &&
+        buffer[2] === 0x00 &&
+        buffer[3] === 0x2a)
+    ) {
       return true;
     }
 
     // ICO magic bytes: \0\0\1\0
-    if (buffer[0] === 0x00 && buffer[1] === 0x00 && buffer[2] === 0x01 && buffer[3] === 0x00) {
+    if (
+      buffer[0] === 0x00 &&
+      buffer[1] === 0x00 &&
+      buffer[2] === 0x01 &&
+      buffer[3] === 0x00
+    ) {
       return true;
     }
 

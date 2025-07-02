@@ -9,13 +9,28 @@ import {
   ParseEnumPipe,
   ValidationPipe,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
 import { Roles } from '../../auth/decorators/role.decorator';
 import { RequiresPermission } from '../../auth/decorators/requires-permission.decorator';
-import { PerformanceMonitorMiddleware, PerformanceMetrics } from '../../common/middleware/performance-monitor.middleware';
-import { IsOptional, IsEnum, IsDateString, IsNumber, Min } from 'class-validator';
+import {
+  PerformanceMonitorMiddleware,
+  PerformanceMetrics,
+} from '../../common/middleware/performance-monitor.middleware';
+import {
+  IsOptional,
+  IsEnum,
+  IsDateString,
+  IsNumber,
+  Min,
+} from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 import { ROLES } from '@/shared/constants/roles.constants';
 
@@ -68,11 +83,14 @@ export class PerformanceController {
    * Obtém estatísticas gerais de performance
    */
   @Get('stats')
-  @RequiresPermission({ permissionName: 'monitoring.performance.stats.visualizar' })
+  @RequiresPermission({
+    permissionName: 'monitoring.performance.stats.visualizar',
+  })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Obter estatísticas de performance',
-    description: 'Retorna estatísticas gerais de performance do sistema incluindo tempo de resposta, taxa de erro e uso de memória.',
+    description:
+      'Retorna estatísticas gerais de performance do sistema incluindo tempo de resposta, taxa de erro e uso de memória.',
   })
   @ApiResponse({
     status: 200,
@@ -162,11 +180,14 @@ export class PerformanceController {
    * Obtém métricas detalhadas com filtros
    */
   @Get('metrics')
-  @RequiresPermission({ permissionName: 'monitoring.performance.metrics.visualizar' })
+  @RequiresPermission({
+    permissionName: 'monitoring.performance.metrics.visualizar',
+  })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Obter métricas detalhadas',
-    description: 'Retorna métricas detalhadas de requisições com opções de filtro.',
+    description:
+      'Retorna métricas detalhadas de requisições com opções de filtro.',
   })
   @ApiQuery({
     name: 'method',
@@ -236,8 +257,14 @@ export class PerformanceController {
               rss: { type: 'number', description: 'RSS em bytes' },
               heapUsed: { type: 'number', description: 'Heap usado em bytes' },
               heapTotal: { type: 'number', description: 'Heap total em bytes' },
-              external: { type: 'number', description: 'Memória externa em bytes' },
-              arrayBuffers: { type: 'number', description: 'Array buffers em bytes' },
+              external: {
+                type: 'number',
+                description: 'Memória externa em bytes',
+              },
+              arrayBuffers: {
+                type: 'number',
+                description: 'Array buffers em bytes',
+              },
             },
           },
           timestamp: {
@@ -288,7 +315,9 @@ export class PerformanceController {
    * Limpa o cache de métricas
    */
   @Get('clear')
-  @RequiresPermission({ permissionName: 'monitoring.performance.metrics.limpar' })
+  @RequiresPermission({
+    permissionName: 'monitoring.performance.metrics.limpar',
+  })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Limpar cache de métricas',
@@ -331,7 +360,9 @@ export class PerformanceController {
    * Obtém informações do sistema
    */
   @Get('system')
-  @RequiresPermission({ permissionName: 'monitoring.performance.system.visualizar' })
+  @RequiresPermission({
+    permissionName: 'monitoring.performance.system.visualizar',
+  })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Obter informações do sistema',
@@ -350,7 +381,10 @@ export class PerformanceController {
             heapUsed: { type: 'number', description: 'Heap usado em MB' },
             heapTotal: { type: 'number', description: 'Heap total em MB' },
             external: { type: 'number', description: 'Memória externa em MB' },
-            arrayBuffers: { type: 'number', description: 'Array buffers em MB' },
+            arrayBuffers: {
+              type: 'number',
+              description: 'Array buffers em MB',
+            },
           },
         },
         uptime: {
@@ -360,8 +394,14 @@ export class PerformanceController {
         cpuUsage: {
           type: 'object',
           properties: {
-            user: { type: 'number', description: 'Tempo de CPU do usuário em microssegundos' },
-            system: { type: 'number', description: 'Tempo de CPU do sistema em microssegundos' },
+            user: {
+              type: 'number',
+              description: 'Tempo de CPU do usuário em microssegundos',
+            },
+            system: {
+              type: 'number',
+              description: 'Tempo de CPU do sistema em microssegundos',
+            },
           },
         },
         nodeVersion: {
@@ -393,11 +433,13 @@ export class PerformanceController {
 
     return {
       memory: {
-        rss: Math.round(memoryUsage.rss / 1024 / 1024 * 100) / 100,
-        heapUsed: Math.round(memoryUsage.heapUsed / 1024 / 1024 * 100) / 100,
-        heapTotal: Math.round(memoryUsage.heapTotal / 1024 / 1024 * 100) / 100,
-        external: Math.round(memoryUsage.external / 1024 / 1024 * 100) / 100,
-        arrayBuffers: Math.round(memoryUsage.arrayBuffers / 1024 / 1024 * 100) / 100,
+        rss: Math.round((memoryUsage.rss / 1024 / 1024) * 100) / 100,
+        heapUsed: Math.round((memoryUsage.heapUsed / 1024 / 1024) * 100) / 100,
+        heapTotal:
+          Math.round((memoryUsage.heapTotal / 1024 / 1024) * 100) / 100,
+        external: Math.round((memoryUsage.external / 1024 / 1024) * 100) / 100,
+        arrayBuffers:
+          Math.round((memoryUsage.arrayBuffers / 1024 / 1024) * 100) / 100,
       },
       uptime: Math.round(process.uptime()),
       cpuUsage: {

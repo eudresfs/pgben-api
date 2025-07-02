@@ -307,12 +307,10 @@ export class DadosBeneficioController {
     @GetUser() usuario: Usuario,
     @ReqContext() ctx: any,
   ): Promise<IDadosBeneficio> {
-    const result = await this.dadosBeneficioFactoryService.create(
-      codigoOrId, 
-      {
-        ...createDto,
-        usuario_id: usuario.id
-      });
+    const result = await this.dadosBeneficioFactoryService.create(codigoOrId, {
+      ...createDto,
+      usuario_id: usuario.id,
+    });
 
     // Auditoria: Criação de dados específicos de benefício
     await this.auditEventEmitter.emitEntityCreated(
@@ -432,7 +430,8 @@ export class DadosBeneficioController {
   @Get(':codigoOrId/solicitacao/:solicitacaoId')
   @ApiOperation({
     summary: 'Buscar dados específicos por solicitação',
-    description: 'Retorna os dados específicos de uma solicitação de benefício usando código/ID do tipo',
+    description:
+      'Retorna os dados específicos de uma solicitação de benefício usando código/ID do tipo',
   })
   @ApiParam({
     name: 'codigoOrId',
@@ -483,7 +482,8 @@ export class DadosBeneficioController {
             caso_judicializado_maria_penha: {
               type: 'boolean',
               example: true,
-              description: 'Caso está sendo acompanhado pela Lei Maria da Penha',
+              description:
+                'Caso está sendo acompanhado pela Lei Maria da Penha',
             },
             observacoes: {
               type: 'string',
@@ -707,9 +707,16 @@ export class DadosBeneficioController {
     @ReqContext() ctx: any,
   ): Promise<IDadosBeneficio> {
     // Buscar estado anterior para auditoria
-    const dadosAnteriores = await this.dadosBeneficioFactoryService.findOne(codigoOrId, id);
-    
-    const result = await this.dadosBeneficioFactoryService.update(codigoOrId, id, updateDto);
+    const dadosAnteriores = await this.dadosBeneficioFactoryService.findOne(
+      codigoOrId,
+      id,
+    );
+
+    const result = await this.dadosBeneficioFactoryService.update(
+      codigoOrId,
+      id,
+      updateDto,
+    );
 
     // Auditoria: Atualização de dados específicos de benefício
     await this.auditEventEmitter.emitEntityUpdated(
@@ -759,8 +766,11 @@ export class DadosBeneficioController {
     @ReqContext() ctx: any,
   ): Promise<void> {
     // Buscar dados antes da exclusão para auditoria
-    const dadosExcluidos = await this.dadosBeneficioFactoryService.findOne(codigoOrId, id);
-    
+    const dadosExcluidos = await this.dadosBeneficioFactoryService.findOne(
+      codigoOrId,
+      id,
+    );
+
     await this.dadosBeneficioFactoryService.remove(codigoOrId, id);
 
     // Auditoria: Exclusão de dados específicos de benefício
@@ -781,7 +791,8 @@ export class DadosBeneficioController {
   @Get(':codigoOrId/solicitacao/:solicitacaoId/exists')
   @ApiOperation({
     summary: 'Verificar existência de dados por solicitação',
-    description: 'Verifica se existem dados específicos para uma solicitação usando código/ID do tipo',
+    description:
+      'Verifica se existem dados específicos para uma solicitação usando código/ID do tipo',
   })
   @ApiParam({
     name: 'codigoOrId',
@@ -816,7 +827,8 @@ export class DadosBeneficioController {
   @Post(':codigoOrId/validate')
   @ApiOperation({
     summary: 'Validar dados de benefício e retornar campos faltantes',
-    description: 'Valida os dados fornecidos para um tipo de benefício específico e retorna informações sobre campos obrigatórios faltantes e erros de validação.',
+    description:
+      'Valida os dados fornecidos para um tipo de benefício específico e retorna informações sobre campos obrigatórios faltantes e erros de validação.',
   })
   @ApiParam({
     name: 'codigoOrId',
@@ -831,7 +843,7 @@ export class DadosBeneficioController {
       properties: {
         isValid: {
           type: 'boolean',
-          description: 'Indica se os dados são válidos'
+          description: 'Indica se os dados são válidos',
         },
         missingFields: {
           type: 'array',
@@ -842,10 +854,13 @@ export class DadosBeneficioController {
               nome: { type: 'string', description: 'Nome do campo' },
               label: { type: 'string', description: 'Rótulo do campo' },
               tipo: { type: 'string', description: 'Tipo do campo' },
-              obrigatorio: { type: 'boolean', description: 'Se o campo é obrigatório' },
-              descricao: { type: 'string', description: 'Descrição do campo' }
-            }
-          }
+              obrigatorio: {
+                type: 'boolean',
+                description: 'Se o campo é obrigatório',
+              },
+              descricao: { type: 'string', description: 'Descrição do campo' },
+            },
+          },
         },
         errors: {
           type: 'array',
@@ -854,12 +869,12 @@ export class DadosBeneficioController {
             type: 'object',
             properties: {
               campo: { type: 'string', description: 'Nome do campo com erro' },
-              mensagem: { type: 'string', description: 'Mensagem de erro' }
-            }
-          }
-        }
-      }
-    }
+              mensagem: { type: 'string', description: 'Mensagem de erro' },
+            },
+          },
+        },
+      },
+    },
   })
   @ApiResponse({
     status: 400,
@@ -879,7 +894,7 @@ export class DadosBeneficioController {
     );
   }
 
-   /**
+  /**
    * Obtém o schema ativo de um tipo de benefício
    * Aceita tanto o ID quanto o código do benefício
    */
@@ -892,9 +907,7 @@ export class DadosBeneficioController {
     description: 'Código ou ID do tipo de benefício',
     example: 'aluguel-social',
   })
-  async getSchemaAtivo(
-    @Param('codigoOrId') codigoOrId: string,
-  ) {
+  async getSchemaAtivo(@Param('codigoOrId') codigoOrId: string) {
     if (!codigoOrId) {
       throw new BadRequestException('O parâmetro codigoOrId é obrigatório');
     }

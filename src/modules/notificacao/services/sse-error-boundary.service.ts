@@ -136,12 +136,30 @@ export class SseErrorBoundaryService {
 
   constructor(private readonly configService: ConfigService) {
     this.config = {
-      enableDetailedLogging: this.configService.get<boolean>('SSE_ERROR_DETAILED_LOGGING', true),
-      enableCriticalErrorNotification: this.configService.get<boolean>('SSE_ERROR_CRITICAL_NOTIFICATION', true),
-      enableStackTraceInProduction: this.configService.get<boolean>('SSE_ERROR_STACK_TRACE_PROD', false),
-      maxErrorsPerMinute: this.configService.get<number>('SSE_ERROR_MAX_PER_MINUTE', 100),
-      enableLogThrottling: this.configService.get<boolean>('SSE_ERROR_LOG_THROTTLING', true),
-      enableErrorMetrics: this.configService.get<boolean>('SSE_ERROR_METRICS', true),
+      enableDetailedLogging: this.configService.get<boolean>(
+        'SSE_ERROR_DETAILED_LOGGING',
+        true,
+      ),
+      enableCriticalErrorNotification: this.configService.get<boolean>(
+        'SSE_ERROR_CRITICAL_NOTIFICATION',
+        true,
+      ),
+      enableStackTraceInProduction: this.configService.get<boolean>(
+        'SSE_ERROR_STACK_TRACE_PROD',
+        false,
+      ),
+      maxErrorsPerMinute: this.configService.get<number>(
+        'SSE_ERROR_MAX_PER_MINUTE',
+        100,
+      ),
+      enableLogThrottling: this.configService.get<boolean>(
+        'SSE_ERROR_LOG_THROTTLING',
+        true,
+      ),
+      enableErrorMetrics: this.configService.get<boolean>(
+        'SSE_ERROR_METRICS',
+        true,
+      ),
     };
   }
 
@@ -154,25 +172,28 @@ export class SseErrorBoundaryService {
     response?: Response,
   ): ProcessedError {
     const processedError = this.processError(error, context);
-    
+
     // Registrar erro
     this.recordError(processedError);
-    
+
     // Logar erro se necessário
     if (processedError.shouldLog && this.shouldLogError(processedError)) {
       this.logError(processedError);
     }
-    
+
     // Enviar resposta de erro se response fornecido
     if (response && !response.headersSent) {
       this.sendErrorResponse(response, processedError);
     }
-    
+
     // Notificar erro crítico se necessário
-    if (processedError.severity === ErrorSeverity.CRITICAL && this.config.enableCriticalErrorNotification) {
+    if (
+      processedError.severity === ErrorSeverity.CRITICAL &&
+      this.config.enableCriticalErrorNotification
+    ) {
       this.notifyCriticalError(processedError);
     }
-    
+
     return processedError;
   }
 
@@ -185,13 +206,17 @@ export class SseErrorBoundaryService {
     sessionId: string,
     response?: Response,
   ): ProcessedError {
-    return this.captureError(error, {
-      userId,
-      sessionId,
-      additionalData: {
-        component: 'sse-connection',
+    return this.captureError(
+      error,
+      {
+        userId,
+        sessionId,
+        additionalData: {
+          component: 'sse-connection',
+        },
       },
-    }, response);
+      response,
+    );
   }
 
   /**
@@ -202,13 +227,17 @@ export class SseErrorBoundaryService {
     context: Partial<ErrorContext> = {},
     response?: Response,
   ): ProcessedError {
-    return this.captureError(error, {
-      ...context,
-      additionalData: {
-        ...context.additionalData,
-        component: 'authentication',
+    return this.captureError(
+      error,
+      {
+        ...context,
+        additionalData: {
+          ...context.additionalData,
+          component: 'authentication',
+        },
       },
-    }, response);
+      response,
+    );
   }
 
   /**
@@ -305,23 +334,35 @@ export class SseErrorBoundaryService {
     const lastHour = new Date(now.getTime() - 60 * 60 * 1000);
     const lastMinute = new Date(now.getTime() - 60 * 1000);
 
-    const errorsLast24Hours = this.errorHistory.filter(e => e.context.timestamp >= last24Hours).length;
-    const errorsLastHour = this.errorHistory.filter(e => e.context.timestamp >= lastHour).length;
-    const errorsLastMinute = this.errorHistory.filter(e => e.context.timestamp >= lastMinute).length;
+    const errorsLast24Hours = this.errorHistory.filter(
+      (e) => e.context.timestamp >= last24Hours,
+    ).length;
+    const errorsLastHour = this.errorHistory.filter(
+      (e) => e.context.timestamp >= lastHour,
+    ).length;
+    const errorsLastMinute = this.errorHistory.filter(
+      (e) => e.context.timestamp >= lastMinute,
+    ).length;
 
-    const errorsByType: Record<SseErrorType, number> = {} as Record<SseErrorType, number>;
-    const errorsBySeverity: Record<ErrorSeverity, number> = {} as Record<ErrorSeverity, number>;
+    const errorsByType: Record<SseErrorType, number> = {} as Record<
+      SseErrorType,
+      number
+    >;
+    const errorsBySeverity: Record<ErrorSeverity, number> = {} as Record<
+      ErrorSeverity,
+      number
+    >;
 
     // Inicializar contadores
-    Object.values(SseErrorType).forEach(type => {
+    Object.values(SseErrorType).forEach((type) => {
       errorsByType[type] = 0;
     });
-    Object.values(ErrorSeverity).forEach(severity => {
+    Object.values(ErrorSeverity).forEach((severity) => {
       errorsBySeverity[severity] = 0;
     });
 
     // Contar erros
-    this.errorHistory.forEach(error => {
+    this.errorHistory.forEach((error) => {
       errorsByType[error.type]++;
       errorsBySeverity[error.severity]++;
     });
@@ -359,16 +400,16 @@ export class SseErrorBoundaryService {
    */
   isInCriticalErrorState(): boolean {
     const metrics = this.getErrorMetrics();
-    
+
     // Considerar crítico se:
     // - Taxa de erro atual > 50 por minuto
     // - Mais de 10 erros críticos na última hora
-    const criticalErrorsLastHour = this.errorHistory
-      .filter(e => {
-        const hourAgo = new Date(Date.now() - 60 * 60 * 1000);
-        return e.context.timestamp >= hourAgo && e.severity === ErrorSeverity.CRITICAL;
-      })
-      .length;
+    const criticalErrorsLastHour = this.errorHistory.filter((e) => {
+      const hourAgo = new Date(Date.now() - 60 * 60 * 1000);
+      return (
+        e.context.timestamp >= hourAgo && e.severity === ErrorSeverity.CRITICAL
+      );
+    }).length;
 
     return metrics.currentErrorRate > 50 || criticalErrorsLastHour > 10;
   }
@@ -376,13 +417,16 @@ export class SseErrorBoundaryService {
   /**
    * Processa um erro e determina suas características
    */
-  private processError(error: Error, context: Partial<ErrorContext>): ProcessedError {
+  private processError(
+    error: Error,
+    context: Partial<ErrorContext>,
+  ): ProcessedError {
     const errorId = this.generateErrorId();
     const errorType = this.determineErrorType(error);
     const severity = this.determineSeverity(error, errorType);
     const userMessage = this.generateUserMessage(errorType, severity);
     const recoveryActions = this.generateRecoveryActions(errorType);
-    
+
     const fullContext: ErrorContext = {
       timestamp: new Date(),
       ...context,
@@ -398,7 +442,10 @@ export class SseErrorBoundaryService {
       context: fullContext,
       originalError: error,
       shouldReport: this.shouldReportError(errorType, severity),
-      shouldLog: this.shouldLogError({ type: errorType, severity } as ProcessedError),
+      shouldLog: this.shouldLogError({
+        type: errorType,
+        severity,
+      } as ProcessedError),
       recoveryActions,
     };
   }
@@ -411,27 +458,47 @@ export class SseErrorBoundaryService {
     const name = error.constructor.name.toLowerCase();
 
     // Erros de conexão
-    if (message.includes('connection') || message.includes('econnreset') || message.includes('enotfound')) {
+    if (
+      message.includes('connection') ||
+      message.includes('econnreset') ||
+      message.includes('enotfound')
+    ) {
       return SseErrorType.CONNECTION_ERROR;
     }
 
     // Erros de autenticação
-    if (name.includes('unauthorized') || message.includes('authentication') || message.includes('token')) {
+    if (
+      name.includes('unauthorized') ||
+      message.includes('authentication') ||
+      message.includes('token')
+    ) {
       return SseErrorType.AUTHENTICATION_ERROR;
     }
 
     // Erros de autorização
-    if (name.includes('forbidden') || message.includes('authorization') || message.includes('permission')) {
+    if (
+      name.includes('forbidden') ||
+      message.includes('authorization') ||
+      message.includes('permission')
+    ) {
       return SseErrorType.AUTHORIZATION_ERROR;
     }
 
     // Erros de validação
-    if (name.includes('validation') || message.includes('invalid') || message.includes('required')) {
+    if (
+      name.includes('validation') ||
+      message.includes('invalid') ||
+      message.includes('required')
+    ) {
       return SseErrorType.VALIDATION_ERROR;
     }
 
     // Erros de banco de dados
-    if (message.includes('database') || message.includes('sql') || message.includes('query')) {
+    if (
+      message.includes('database') ||
+      message.includes('sql') ||
+      message.includes('query')
+    ) {
       return SseErrorType.DATABASE_ERROR;
     }
 
@@ -441,7 +508,11 @@ export class SseErrorBoundaryService {
     }
 
     // Erros de circuit breaker
-    if (message.includes('circuit') || message.includes('breaker') || name.includes('circuitbreaker')) {
+    if (
+      message.includes('circuit') ||
+      message.includes('breaker') ||
+      name.includes('circuitbreaker')
+    ) {
       return SseErrorType.CIRCUIT_BREAKER_ERROR;
     }
 
@@ -451,12 +522,19 @@ export class SseErrorBoundaryService {
     }
 
     // Erros de rate limit
-    if (message.includes('rate limit') || message.includes('too many requests')) {
+    if (
+      message.includes('rate limit') ||
+      message.includes('too many requests')
+    ) {
       return SseErrorType.RATE_LIMIT_ERROR;
     }
 
     // Erros de serviço externo
-    if (message.includes('external') || message.includes('service unavailable') || message.includes('bad gateway')) {
+    if (
+      message.includes('external') ||
+      message.includes('service unavailable') ||
+      message.includes('bad gateway')
+    ) {
       return SseErrorType.EXTERNAL_SERVICE_ERROR;
     }
 
@@ -473,29 +551,32 @@ export class SseErrorBoundaryService {
    */
   private determineSeverity(error: Error, type: SseErrorType): ErrorSeverity {
     // Erros críticos
-    if ([
-      SseErrorType.DATABASE_ERROR,
-      SseErrorType.INTERNAL_ERROR,
-    ].includes(type)) {
+    if (
+      [SseErrorType.DATABASE_ERROR, SseErrorType.INTERNAL_ERROR].includes(type)
+    ) {
       return ErrorSeverity.CRITICAL;
     }
 
     // Erros de alta severidade
-    if ([
-      SseErrorType.AUTHENTICATION_ERROR,
-      SseErrorType.REDIS_ERROR,
-      SseErrorType.CIRCUIT_BREAKER_ERROR,
-    ].includes(type)) {
+    if (
+      [
+        SseErrorType.AUTHENTICATION_ERROR,
+        SseErrorType.REDIS_ERROR,
+        SseErrorType.CIRCUIT_BREAKER_ERROR,
+      ].includes(type)
+    ) {
       return ErrorSeverity.HIGH;
     }
 
     // Erros de média severidade
-    if ([
-      SseErrorType.CONNECTION_ERROR,
-      SseErrorType.TIMEOUT_ERROR,
-      SseErrorType.EXTERNAL_SERVICE_ERROR,
-      SseErrorType.NOTIFICATION_ERROR,
-    ].includes(type)) {
+    if (
+      [
+        SseErrorType.CONNECTION_ERROR,
+        SseErrorType.TIMEOUT_ERROR,
+        SseErrorType.EXTERNAL_SERVICE_ERROR,
+        SseErrorType.NOTIFICATION_ERROR,
+      ].includes(type)
+    ) {
       return ErrorSeverity.MEDIUM;
     }
 
@@ -506,21 +587,37 @@ export class SseErrorBoundaryService {
   /**
    * Gera mensagem amigável para o usuário
    */
-  private generateUserMessage(type: SseErrorType, severity: ErrorSeverity): string {
+  private generateUserMessage(
+    type: SseErrorType,
+    severity: ErrorSeverity,
+  ): string {
     const messages = {
-      [SseErrorType.CONNECTION_ERROR]: 'Problema de conexão. Tente novamente em alguns instantes.',
-      [SseErrorType.AUTHENTICATION_ERROR]: 'Erro de autenticação. Faça login novamente.',
-      [SseErrorType.AUTHORIZATION_ERROR]: 'Você não tem permissão para realizar esta ação.',
-      [SseErrorType.VALIDATION_ERROR]: 'Dados inválidos fornecidos. Verifique as informações.',
-      [SseErrorType.DATABASE_ERROR]: 'Erro interno do sistema. Nossa equipe foi notificada.',
-      [SseErrorType.REDIS_ERROR]: 'Problema temporário no sistema. Tente novamente.',
-      [SseErrorType.CIRCUIT_BREAKER_ERROR]: 'Serviço temporariamente indisponível. Tente novamente em alguns minutos.',
-      [SseErrorType.TIMEOUT_ERROR]: 'Operação demorou muito para responder. Tente novamente.',
-      [SseErrorType.RATE_LIMIT_ERROR]: 'Muitas tentativas. Aguarde alguns minutos antes de tentar novamente.',
-      [SseErrorType.INTERNAL_ERROR]: 'Erro interno do sistema. Nossa equipe foi notificada.',
-      [SseErrorType.EXTERNAL_SERVICE_ERROR]: 'Serviço externo indisponível. Tente novamente mais tarde.',
-      [SseErrorType.NOTIFICATION_ERROR]: 'Problema ao enviar notificação. Tente novamente.',
-      [SseErrorType.UNKNOWN_ERROR]: 'Erro inesperado. Nossa equipe foi notificada.',
+      [SseErrorType.CONNECTION_ERROR]:
+        'Problema de conexão. Tente novamente em alguns instantes.',
+      [SseErrorType.AUTHENTICATION_ERROR]:
+        'Erro de autenticação. Faça login novamente.',
+      [SseErrorType.AUTHORIZATION_ERROR]:
+        'Você não tem permissão para realizar esta ação.',
+      [SseErrorType.VALIDATION_ERROR]:
+        'Dados inválidos fornecidos. Verifique as informações.',
+      [SseErrorType.DATABASE_ERROR]:
+        'Erro interno do sistema. Nossa equipe foi notificada.',
+      [SseErrorType.REDIS_ERROR]:
+        'Problema temporário no sistema. Tente novamente.',
+      [SseErrorType.CIRCUIT_BREAKER_ERROR]:
+        'Serviço temporariamente indisponível. Tente novamente em alguns minutos.',
+      [SseErrorType.TIMEOUT_ERROR]:
+        'Operação demorou muito para responder. Tente novamente.',
+      [SseErrorType.RATE_LIMIT_ERROR]:
+        'Muitas tentativas. Aguarde alguns minutos antes de tentar novamente.',
+      [SseErrorType.INTERNAL_ERROR]:
+        'Erro interno do sistema. Nossa equipe foi notificada.',
+      [SseErrorType.EXTERNAL_SERVICE_ERROR]:
+        'Serviço externo indisponível. Tente novamente mais tarde.',
+      [SseErrorType.NOTIFICATION_ERROR]:
+        'Problema ao enviar notificação. Tente novamente.',
+      [SseErrorType.UNKNOWN_ERROR]:
+        'Erro inesperado. Nossa equipe foi notificada.',
     };
 
     return messages[type] || 'Erro inesperado. Tente novamente.';
@@ -590,7 +687,9 @@ export class SseErrorBoundaryService {
       ],
     };
 
-    return actions[type] || ['Tentar novamente', 'Contatar suporte se persistir'];
+    return (
+      actions[type] || ['Tentar novamente', 'Contatar suporte se persistir']
+    );
   }
 
   /**
@@ -599,13 +698,13 @@ export class SseErrorBoundaryService {
   private recordError(error: ProcessedError): void {
     this.errorHistory.push(error);
     this.errorTimestamps.push(error.context.timestamp);
-    
+
     // Manter apenas os últimos 1000 erros
     if (this.errorHistory.length > 1000) {
       this.errorHistory.shift();
       this.errorTimestamps.shift();
     }
-    
+
     // Atualizar contadores
     const key = `${error.type}:${error.severity}`;
     this.errorCounts.set(key, (this.errorCounts.get(key) || 0) + 1);
@@ -622,17 +721,25 @@ export class SseErrorBoundaryService {
   /**
    * Determina se deve reportar o erro
    */
-  private shouldReportError(type: SseErrorType, severity: ErrorSeverity): boolean {
+  private shouldReportError(
+    type: SseErrorType,
+    severity: ErrorSeverity,
+  ): boolean {
     // Sempre reportar erros críticos e de alta severidade
     if ([ErrorSeverity.CRITICAL, ErrorSeverity.HIGH].includes(severity)) {
       return true;
     }
-    
+
     // Não reportar erros de validação e autorização
-    if ([SseErrorType.VALIDATION_ERROR, SseErrorType.AUTHORIZATION_ERROR].includes(type)) {
+    if (
+      [
+        SseErrorType.VALIDATION_ERROR,
+        SseErrorType.AUTHORIZATION_ERROR,
+      ].includes(type)
+    ) {
       return false;
     }
-    
+
     return true;
   }
 
@@ -643,12 +750,14 @@ export class SseErrorBoundaryService {
     if (!this.config.enableLogThrottling) {
       return true;
     }
-    
+
     // Verificar throttling
     const now = new Date();
     const oneMinuteAgo = new Date(now.getTime() - 60 * 1000);
-    const recentErrors = this.errorTimestamps.filter(timestamp => timestamp >= oneMinuteAgo);
-    
+    const recentErrors = this.errorTimestamps.filter(
+      (timestamp) => timestamp >= oneMinuteAgo,
+    );
+
     return recentErrors.length < this.config.maxErrorsPerMinute;
   }
 
@@ -686,7 +795,7 @@ export class SseErrorBoundaryService {
    */
   private sendErrorResponse(response: Response, error: ProcessedError): void {
     const statusCode = this.getHttpStatusCode(error.type);
-    
+
     const errorResponse = {
       error: {
         id: error.id,
@@ -739,12 +848,15 @@ export class SseErrorBoundaryService {
   private notifyCriticalError(error: ProcessedError): void {
     // Implementar notificação para equipe técnica
     // Pode ser via email, Slack, PagerDuty, etc.
-    this.logger.error('🚨 ERRO CRÍTICO DETECTADO - Equipe técnica deve ser notificada', {
-      errorId: error.id,
-      type: error.type,
-      message: error.originalMessage,
-      context: error.context,
-    });
+    this.logger.error(
+      '🚨 ERRO CRÍTICO DETECTADO - Equipe técnica deve ser notificada',
+      {
+        errorId: error.id,
+        type: error.type,
+        message: error.originalMessage,
+        context: error.context,
+      },
+    );
   }
 
   /**

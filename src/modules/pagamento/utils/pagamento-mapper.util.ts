@@ -8,11 +8,13 @@ import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
  * Substitui o pagamento-mapping.service.ts com implementação mais simples
  */
 export class PagamentoMapper {
-  
   /**
    * Mapeia DTO de criação para dados da entidade
    */
-  static fromCreateDto(dto: PagamentoCreateDto, usuarioId: string): Partial<Pagamento> {
+  static fromCreateDto(
+    dto: PagamentoCreateDto,
+    usuarioId: string,
+  ): Partial<Pagamento> {
     return {
       valor: dto.valor,
       metodoPagamento: dto.metodoPagamento,
@@ -40,7 +42,10 @@ export class PagamentoMapper {
   /**
    * Mapeia entidade para DTO de resposta
    */
-  static toResponseDto(pagamento: Pagamento, incluirDadosSensiveis: boolean = false): PagamentoResponseDto {
+  static toResponseDto(
+    pagamento: Pagamento,
+    incluirDadosSensiveis: boolean = false,
+  ): PagamentoResponseDto {
     const dto: PagamentoResponseDto = {
       id: pagamento.id,
       solicitacaoId: pagamento.solicitacaoId || '',
@@ -55,7 +60,7 @@ export class PagamentoMapper {
       responsavelLiberacao: {
         id: pagamento.liberadoPor || 'sistema',
         nome: 'Sistema',
-        role: 'Sistema'
+        role: 'Sistema',
       },
       quantidadeComprovantes: 0,
       createdAt: pagamento.created_at,
@@ -82,9 +87,12 @@ export class PagamentoMapper {
   /**
    * Mapeia lista de entidades para DTOs de resposta
    */
-  static toResponseDtos(pagamentos: Pagamento[], incluirDadosSensiveis: boolean = false): PagamentoResponseDto[] {
-    return pagamentos.map(pagamento => 
-      this.toResponseDto(pagamento, incluirDadosSensiveis)
+  static toResponseDtos(
+    pagamentos: Pagamento[],
+    incluirDadosSensiveis: boolean = false,
+  ): PagamentoResponseDto[] {
+    return pagamentos.map((pagamento) =>
+      this.toResponseDto(pagamento, incluirDadosSensiveis),
     );
   }
 
@@ -106,8 +114,12 @@ export class PagamentoMapper {
       concessaoId: filtros.concessaoId,
       dataInicio: filtros.dataInicio ? new Date(filtros.dataInicio) : undefined,
       dataFim: filtros.dataFim ? new Date(filtros.dataFim) : undefined,
-      valorMinimo: filtros.valorMinimo ? parseFloat(filtros.valorMinimo) : undefined,
-      valorMaximo: filtros.valorMaximo ? parseFloat(filtros.valorMaximo) : undefined,
+      valorMinimo: filtros.valorMinimo
+        ? parseFloat(filtros.valorMinimo)
+        : undefined,
+      valorMaximo: filtros.valorMaximo
+        ? parseFloat(filtros.valorMaximo)
+        : undefined,
     };
   }
 
@@ -118,7 +130,7 @@ export class PagamentoMapper {
     items: T[],
     total: number,
     page: number,
-    limit: number
+    limit: number,
   ): {
     data: T[];
     pagination: {
@@ -150,9 +162,9 @@ export class PagamentoMapper {
    */
   static normalizeInput<T extends Record<string, any>>(data: T): Partial<T> {
     const normalized = { ...data };
-    
+
     // Remove campos undefined, null ou strings vazias
-    Object.keys(normalized).forEach(key => {
+    Object.keys(normalized).forEach((key) => {
       const value = normalized[key];
       if (value === undefined || value === null || value === '') {
         delete normalized[key];
@@ -181,7 +193,10 @@ export class PagamentoMapper {
       // Remove possíveis dados pessoais das observações
       masked.observacoes = masked.observacoes
         .replace(/\b\d{3}\.\d{3}\.\d{3}-\d{2}\b/g, '***.***.***-**') // CPF
-        .replace(/\b\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}\b/g, '**.***.***\/****-**'); // CNPJ
+        .replace(
+          /\b\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}\b/g,
+          '**.***.***\/****-**',
+        ); // CNPJ
     }
 
     return masked;
@@ -222,9 +237,9 @@ export class PagamentoMapper {
       valorMedio: 0,
     };
 
-    pagamentos.forEach(pagamento => {
+    pagamentos.forEach((pagamento) => {
       stats.valorTotal += pagamento.valor;
-      
+
       const status = pagamento.status;
       stats.porStatus[status] = (stats.porStatus[status] || 0) + 1;
     });

@@ -28,6 +28,6 @@ export class GetPagamentosQuery {
       infoBancaria?: boolean;
       comprovantes?: boolean;
       confirmacaoRecebimento?: boolean;
-    } = {}
+    } = {},
   ) {}
 }

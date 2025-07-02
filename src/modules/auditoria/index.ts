@@ -1,6 +1,6 @@
 /**
  * Módulo de Auditoria - Exports Principais
- * 
+ *
  * Arquivo de índice que exporta todos os componentes principais
  * do módulo de auditoria para facilitar importações.
  */
@@ -58,27 +58,27 @@ export interface AuditModuleOptions {
    * Configurações personalizadas de auditoria
    */
   config?: Partial<import('./config/audit-config').AuditConfig>;
-  
+
   /**
    * Habilitar processamento assíncrono
    */
   enableAsync?: boolean;
-  
+
   /**
    * Habilitar interceptor global
    */
   enableGlobalInterceptor?: boolean;
-  
+
   /**
    * Habilitar middleware global
    */
   enableGlobalMiddleware?: boolean;
-  
+
   /**
    * Habilitar guard global
    */
   enableGlobalGuard?: boolean;
-  
+
   /**
    * Configurações de filas personalizadas
    */
@@ -102,7 +102,9 @@ export interface AuditModuleOptions {
 }
 
 // === TIPOS AUXILIARES ===
-export type AuditEventHandler = (event: import('./events/types/audit-event.types').BaseAuditEvent) => void | Promise<void>;
+export type AuditEventHandler = (
+  event: import('./events/types/audit-event.types').BaseAuditEvent,
+) => void | Promise<void>;
 
 export type AuditFilter = {
   startDate?: Date;
@@ -150,7 +152,7 @@ export const AUDIT_MODULE_METADATA = {
  * Cria uma configuração de auditoria personalizada
  */
 export function createAuditConfig(
-  overrides?: Partial<import('./config/audit-config').AuditConfig>
+  overrides?: Partial<import('./config/audit-config').AuditConfig>,
 ): import('./config/audit-config').AuditConfig {
   const { createAuditConfig } = require('./config/audit-config');
   return createAuditConfig(overrides);
@@ -170,11 +172,13 @@ export function createAuditFilter(filter?: Partial<AuditFilter>): AuditFilter {
 /**
  * Utilitário para criar eventos de auditoria tipados
  */
-export function createAuditEvent<T extends import('./events/types/audit-event.types').BaseAuditEvent>(
-  eventData: Omit<T, 'timestamp' | 'correlationId'>
-): T {
-  const correlationId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-  
+export function createAuditEvent<
+  T extends import('./events/types/audit-event.types').BaseAuditEvent,
+>(eventData: Omit<T, 'timestamp' | 'correlationId'>): T {
+  const correlationId =
+    Math.random().toString(36).substring(2, 15) +
+    Math.random().toString(36).substring(2, 15);
+
   return {
     ...eventData,
     timestamp: new Date(),
@@ -187,7 +191,7 @@ export function createAuditEvent<T extends import('./events/types/audit-event.ty
  * Valida se um evento de auditoria está bem formado
  */
 export function validateAuditEvent(
-  event: import('./events/types/audit-event.types').BaseAuditEvent
+  event: import('./events/types/audit-event.types').BaseAuditEvent,
 ): { valid: boolean; errors: string[] } {
   const { AuditUtils } = require('./utils/audit.utils');
   return AuditUtils.validateAuditEvent(event);
@@ -207,7 +211,7 @@ export function containsSensitiveData(data: any): boolean {
 export function sanitizeSensitiveData(
   data: any,
   sensitiveFields?: string[],
-  maskValue?: string
+  maskValue?: string,
 ): any {
   const { AuditUtils } = require('./utils/audit.utils');
   return AuditUtils.sanitizeSensitiveData(data, sensitiveFields, maskValue);

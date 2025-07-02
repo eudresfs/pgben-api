@@ -1,5 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { ComprovanteBaseDto, ResponsavelUploadInfo } from './base/comprovante-base.dto';
+import {
+  ComprovanteBaseDto,
+  ResponsavelUploadInfo,
+} from './base/comprovante-base.dto';
 
 /**
  * DTO para resposta contendo dados de um comprovante de pagamento

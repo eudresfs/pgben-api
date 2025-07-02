@@ -8,7 +8,10 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, FindOptionsWhere } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
-import { UploadSession, UploadSessionStatus } from '../entities/upload-session.entity';
+import {
+  UploadSession,
+  UploadSessionStatus,
+} from '../entities/upload-session.entity';
 import { AuditEventEmitter } from '../../auditoria/events/emitters/audit-event.emitter';
 import { TipoOperacao } from '../../../enums/tipo-operacao.enum';
 import { CreateLogAuditoriaDto } from '../../auditoria/dto/create-log-auditoria.dto';
@@ -28,7 +31,10 @@ export class UploadSessionService {
     private readonly configService: ConfigService,
     private readonly auditEventEmitter: AuditEventEmitter,
   ) {
-    this.sessionTimeoutMinutes = this.configService.get<number>('EASY_UPLOAD_SESSION_TIMEOUT_MINUTES', 30);
+    this.sessionTimeoutMinutes = this.configService.get<number>(
+      'EASY_UPLOAD_SESSION_TIMEOUT_MINUTES',
+      30,
+    );
     this.logger.log('UploadSessionService inicializado');
   }
 
@@ -38,7 +44,10 @@ export class UploadSessionService {
    * @param sessionData Dados da sessão (IP, User-Agent, etc.)
    * @returns A sessão criada
    */
-  async createSession(tokenId: string, sessionData: Partial<UploadSession>): Promise<UploadSession> {
+  async createSession(
+    tokenId: string,
+    sessionData: Partial<UploadSession>,
+  ): Promise<UploadSession> {
     try {
       const now = new Date();
 
@@ -64,8 +73,10 @@ export class UploadSessionService {
       });
 
       const savedSession = await this.uploadSessionRepository.save(session);
-      
-      this.logger.debug(`Sessão de upload criada: ${savedSession.id} para token ${tokenId}`);
+
+      this.logger.debug(
+        `Sessão de upload criada: ${savedSession.id} para token ${tokenId}`,
+      );
 
       // Registrar na auditoria
       await this.auditEventEmitter.emitEntityCreated(
@@ -75,12 +86,15 @@ export class UploadSessionService {
           token_id: tokenId,
           ip: sessionData.ip_address,
         },
-        null // Sistema interno
+        null, // Sistema interno
       );
 
       return savedSession;
     } catch (error) {
-      this.logger.error(`Erro ao criar sessão de upload: ${error.message}`, error.stack);
+      this.logger.error(
+        `Erro ao criar sessão de upload: ${error.message}`,
+        error.stack,
+      );
       throw new InternalServerErrorException('Falha ao criar sessão de upload');
     }
   }
@@ -107,8 +121,13 @@ export class UploadSessionService {
       if (error instanceof NotFoundException) {
         throw error;
       }
-      this.logger.error(`Erro ao buscar sessão de upload: ${error.message}`, error.stack);
-      throw new InternalServerErrorException('Falha ao buscar sessão de upload');
+      this.logger.error(
+        `Erro ao buscar sessão de upload: ${error.message}`,
+        error.stack,
+      );
+      throw new InternalServerErrorException(
+        'Falha ao buscar sessão de upload',
+      );
     }
   }
 
@@ -124,8 +143,13 @@ export class UploadSessionService {
         order: { started_at: 'DESC' },
       });
     } catch (error) {
-      this.logger.error(`Erro ao buscar sessões por token: ${error.message}`, error.stack);
-      throw new InternalServerErrorException('Falha ao buscar sessões de upload');
+      this.logger.error(
+        `Erro ao buscar sessões por token: ${error.message}`,
+        error.stack,
+      );
+      throw new InternalServerErrorException(
+        'Falha ao buscar sessões de upload',
+      );
     }
   }
 
@@ -136,13 +160,13 @@ export class UploadSessionService {
    * @param errorMessage Mensagem de erro (opcional, para status de erro)
    */
   async updateSessionStatus(
-    id: string, 
+    id: string,
     status: UploadSessionStatus,
-    errorMessage?: string
+    errorMessage?: string,
   ): Promise<void> {
     try {
       const session = await this.findById(id);
-      
+
       switch (status) {
         case UploadSessionStatus.COMPLETADA:
           session.complete();
@@ -164,9 +188,9 @@ export class UploadSessionService {
       }
 
       await this.uploadSessionRepository.save(session);
-      
+
       this.logger.debug(`Sessão ${id} atualizada para status: ${status}`);
-      
+
       // Registrar na auditoria
       await this.auditEventEmitter.emitEntityUpdated(
         'UploadSession',
@@ -176,14 +200,19 @@ export class UploadSessionService {
           status,
           error_message: errorMessage,
         },
-        null // Sistema interno
+        null, // Sistema interno
       );
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw error;
       }
-      this.logger.error(`Erro ao atualizar status da sessão: ${error.message}`, error.stack);
-      throw new InternalServerErrorException('Falha ao atualizar status da sessão');
+      this.logger.error(
+        `Erro ao atualizar status da sessão: ${error.message}`,
+        error.stack,
+      );
+      throw new InternalServerErrorException(
+        'Falha ao atualizar status da sessão',
+      );
     }
   }
 
@@ -192,19 +221,27 @@ export class UploadSessionService {
    * @param id ID da sessão
    * @param fileSize Tamanho do arquivo em bytes
    */
-  async incrementFilesUploaded(id: string, fileSize: number = 0): Promise<void> {
+  async incrementFilesUploaded(
+    id: string,
+    fileSize: number = 0,
+  ): Promise<void> {
     try {
       const session = await this.findById(id);
       session.incrementFilesUploaded(fileSize);
       await this.uploadSessionRepository.save(session);
-      
+
       this.logger.debug(`Incrementado contador de arquivos para sessão ${id}`);
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw error;
       }
-      this.logger.error(`Erro ao incrementar contador de arquivos: ${error.message}`, error.stack);
-      throw new InternalServerErrorException('Falha ao atualizar contador de arquivos');
+      this.logger.error(
+        `Erro ao incrementar contador de arquivos: ${error.message}`,
+        error.stack,
+      );
+      throw new InternalServerErrorException(
+        'Falha ao atualizar contador de arquivos',
+      );
     }
   }
 
@@ -221,14 +258,19 @@ export class UploadSessionService {
       const session = await this.findById(id);
       session.updateProgress(progress);
       await this.uploadSessionRepository.save(session);
-      
+
       this.logger.debug(`Progresso atualizado para sessão ${id}`);
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw error;
       }
-      this.logger.error(`Erro ao atualizar progresso: ${error.message}`, error.stack);
-      throw new InternalServerErrorException('Falha ao atualizar progresso de upload');
+      this.logger.error(
+        `Erro ao atualizar progresso: ${error.message}`,
+        error.stack,
+      );
+      throw new InternalServerErrorException(
+        'Falha ao atualizar progresso de upload',
+      );
     }
   }
 
@@ -238,36 +280,51 @@ export class UploadSessionService {
    * @param success Indica se o upload foi bem-sucedido
    * @param errorMessage Mensagem de erro (opcional, para uploads com falha)
    */
-  async completeSession(id: string, success: boolean, errorMessage?: string): Promise<void> {
+  async completeSession(
+    id: string,
+    success: boolean,
+    errorMessage?: string,
+  ): Promise<void> {
     try {
       if (success) {
         await this.updateSessionStatus(id, UploadSessionStatus.COMPLETADA);
-        
+
         // Registrar na auditoria
         await this.auditEventEmitter.emitEntityUpdated(
           'UploadSession',
           id,
           {},
           { success: true },
-          null // Sistema interno
+          null, // Sistema interno
         );
       } else {
-        await this.updateSessionStatus(id, UploadSessionStatus.ERRO, errorMessage);
-        
+        await this.updateSessionStatus(
+          id,
+          UploadSessionStatus.ERRO,
+          errorMessage,
+        );
+
         // Registrar na auditoria
         await this.auditEventEmitter.emitEntityUpdated(
           'UploadSession',
           id,
           {},
           { error: errorMessage },
-          null // Sistema interno
+          null, // Sistema interno
         );
       }
-      
-      this.logger.debug(`Sessão ${id} marcada como ${success ? 'completada' : 'falha'}`);
+
+      this.logger.debug(
+        `Sessão ${id} marcada como ${success ? 'completada' : 'falha'}`,
+      );
     } catch (error) {
-      this.logger.error(`Erro ao completar sessão: ${error.message}`, error.stack);
-      throw new InternalServerErrorException('Falha ao completar sessão de upload');
+      this.logger.error(
+        `Erro ao completar sessão: ${error.message}`,
+        error.stack,
+      );
+      throw new InternalServerErrorException(
+        'Falha ao completar sessão de upload',
+      );
     }
   }
 
@@ -276,7 +333,9 @@ export class UploadSessionService {
    * @param filters Filtros para a listagem
    * @returns Lista paginada de sessões
    */
-  async listSessions(filters: any): Promise<{ items: UploadSession[]; total: number }> {
+  async listSessions(
+    filters: any,
+  ): Promise<{ items: UploadSession[]; total: number }> {
     try {
       const where: FindOptionsWhere<UploadSession> = {};
 
@@ -311,8 +370,13 @@ export class UploadSessionService {
         total,
       };
     } catch (error) {
-      this.logger.error(`Erro ao listar sessões: ${error.message}`, error.stack);
-      throw new InternalServerErrorException('Falha ao listar sessões de upload');
+      this.logger.error(
+        `Erro ao listar sessões: ${error.message}`,
+        error.stack,
+      );
+      throw new InternalServerErrorException(
+        'Falha ao listar sessões de upload',
+      );
     }
   }
 
@@ -325,14 +389,19 @@ export class UploadSessionService {
       const sessions = await this.uploadSessionRepository.find({
         where: [
           { status: UploadSessionStatus.INICIADA },
-          { status: UploadSessionStatus.ATIVA }
+          { status: UploadSessionStatus.ATIVA },
         ],
       });
 
       // Filtrar sessões que estão inativas há muito tempo
-      return sessions.filter(session => session.isInactive(this.sessionTimeoutMinutes));
+      return sessions.filter((session) =>
+        session.isInactive(this.sessionTimeoutMinutes),
+      );
     } catch (error) {
-      this.logger.error(`Erro ao buscar sessões inativas: ${error.message}`, error.stack);
+      this.logger.error(
+        `Erro ao buscar sessões inativas: ${error.message}`,
+        error.stack,
+      );
       return [];
     }
   }
@@ -343,7 +412,7 @@ export class UploadSessionService {
   async processInactiveSessions(): Promise<void> {
     try {
       const inactiveSessions = await this.findInactiveSessions();
-      
+
       for (const session of inactiveSessions) {
         await this.updateSessionStatus(
           session.id,
@@ -352,12 +421,17 @@ export class UploadSessionService {
         );
         this.logger.debug(`Sessão inativa processada: ${session.id}`);
       }
-      
+
       if (inactiveSessions.length > 0) {
-        this.logger.log(`${inactiveSessions.length} sessões inativas foram encerradas`);
+        this.logger.log(
+          `${inactiveSessions.length} sessões inativas foram encerradas`,
+        );
       }
     } catch (error) {
-      this.logger.error(`Erro ao processar sessões inativas: ${error.message}`, error.stack);
+      this.logger.error(
+        `Erro ao processar sessões inativas: ${error.message}`,
+        error.stack,
+      );
     }
   }
 
@@ -389,10 +463,15 @@ export class UploadSessionService {
         .execute();
 
       const count = result.affected || 0;
-      this.logger.debug(`${count} sessões antigas foram removidas (${days} dias)`);
+      this.logger.debug(
+        `${count} sessões antigas foram removidas (${days} dias)`,
+      );
       return count;
     } catch (error) {
-      this.logger.error(`Erro ao limpar sessões antigas: ${error.message}`, error.stack);
+      this.logger.error(
+        `Erro ao limpar sessões antigas: ${error.message}`,
+        error.stack,
+      );
       throw new InternalServerErrorException('Falha ao limpar sessões antigas');
     }
   }
@@ -404,7 +483,7 @@ export class UploadSessionService {
   async getSessionStats(): Promise<Record<string, any>> {
     try {
       const totalSessions = await this.uploadSessionRepository.count();
-      
+
       // Obter contagem por status
       const statusCounts = await this.uploadSessionRepository
         .createQueryBuilder('session')
@@ -418,7 +497,7 @@ export class UploadSessionService {
         acc[curr.status] = parseInt(curr.count, 10);
         return acc;
       }, {});
-      
+
       // Obter totais de arquivos e bytes
       const totalQuery = await this.uploadSessionRepository
         .createQueryBuilder('session')
@@ -434,8 +513,13 @@ export class UploadSessionService {
         total_bytes: parseInt(totalQuery.bytes || '0', 10),
       };
     } catch (error) {
-      this.logger.error(`Erro ao obter estatísticas: ${error.message}`, error.stack);
-      throw new InternalServerErrorException('Falha ao obter estatísticas de sessões');
+      this.logger.error(
+        `Erro ao obter estatísticas: ${error.message}`,
+        error.stack,
+      );
+      throw new InternalServerErrorException(
+        'Falha ao obter estatísticas de sessões',
+      );
     }
   }
 }

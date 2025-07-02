@@ -30,11 +30,21 @@ export class HistoricoConcessao {
   @JoinColumn({ name: 'concessao_id' })
   concessao: Concessao;
 
-  @Column({ name: 'status_anterior', type: 'enum', enum: StatusConcessao, enumName: 'status_concessao_enum' })
+  @Column({
+    name: 'status_anterior',
+    type: 'enum',
+    enum: StatusConcessao,
+    enumName: 'status_concessao_enum',
+  })
   @IsEnum(StatusConcessao)
   statusAnterior: StatusConcessao;
 
-  @Column({ name: 'status_novo', type: 'enum', enum: StatusConcessao, enumName: 'status_concessao_enum' })
+  @Column({
+    name: 'status_novo',
+    type: 'enum',
+    enum: StatusConcessao,
+    enumName: 'status_concessao_enum',
+  })
   @IsEnum(StatusConcessao)
   statusNovo: StatusConcessao;
 

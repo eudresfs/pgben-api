@@ -36,10 +36,17 @@ export class S3StorageAdapter implements StorageProvider {
     private readonly loggingService: LoggingService,
   ) {
     // Só inicializar S3 se for o provider configurado
-    const storageProvider = this.configService.get<string>('STORAGE_PROVIDER', 'minio');
-    
+    const storageProvider = this.configService.get<string>(
+      'STORAGE_PROVIDER',
+      'minio',
+    );
+
     if (storageProvider !== 's3') {
-      this.loggingService.debug('S3StorageAdapter não será inicializado - provider configurado é: ' + storageProvider, S3StorageAdapter.name);
+      this.loggingService.debug(
+        'S3StorageAdapter não será inicializado - provider configurado é: ' +
+          storageProvider,
+        S3StorageAdapter.name,
+      );
       return;
     }
 
@@ -93,15 +100,23 @@ export class S3StorageAdapter implements StorageProvider {
 
     if (missingConfigs.length > 0) {
       const error = `Configurações S3 ausentes: ${missingConfigs.join(', ')}`;
-      this.loggingService.error('Configuração S3 inválida', S3StorageAdapter.name, missingConfigs.join(', '));
+      this.loggingService.error(
+        'Configuração S3 inválida',
+        S3StorageAdapter.name,
+        missingConfigs.join(', '),
+      );
       throw new Error(error);
     }
 
-    this.loggingService.debug('Configuração S3 validada com sucesso', S3StorageAdapter.name, {
-      bucket: this.bucketName,
-      region: this.configService.get('AWS_REGION'),
-      maxRetries: this.maxRetries,
-    });
+    this.loggingService.debug(
+      'Configuração S3 validada com sucesso',
+      S3StorageAdapter.name,
+      {
+        bucket: this.bucketName,
+        region: this.configService.get('AWS_REGION'),
+        maxRetries: this.maxRetries,
+      },
+    );
   }
 
   private async retryOperation<T>(
@@ -163,7 +178,11 @@ export class S3StorageAdapter implements StorageProvider {
       errorMessage: error.message,
     };
 
-    this.loggingService.error(`Erro S3 na operação ${operation}`, error, S3StorageAdapter.name);
+    this.loggingService.error(
+      `Erro S3 na operação ${operation}`,
+      error,
+      S3StorageAdapter.name,
+    );
 
     if (error instanceof NoSuchKey) {
       return new Error(`Arquivo não encontrado: ${key}`);
@@ -271,23 +290,32 @@ export class S3StorageAdapter implements StorageProvider {
       await this.retryOperation(uploadOperation, `upload S3 [${key}]`);
 
       const duration = Date.now() - startTime;
-      this.loggingService.info(`Upload S3 concluído com sucesso`, S3StorageAdapter.name, {
-        key,
-        bucket: this.bucketName,
-        tamanho: buffer.length,
-        duracao: duration,
-        mimetype,
-      });
+      this.loggingService.info(
+        `Upload S3 concluído com sucesso`,
+        S3StorageAdapter.name,
+        {
+          key,
+          bucket: this.bucketName,
+          tamanho: buffer.length,
+          duracao: duration,
+          mimetype,
+        },
+      );
 
       return key;
     } catch (error) {
       const duration = Date.now() - startTime;
-      this.loggingService.error(`Falha no upload S3`, error, S3StorageAdapter.name, {
-        key,
-        bucket: this.bucketName,
-        tamanho: buffer.length,
-        duracao: duration
-      });
+      this.loggingService.error(
+        `Falha no upload S3`,
+        error,
+        S3StorageAdapter.name,
+        {
+          key,
+          bucket: this.bucketName,
+          tamanho: buffer.length,
+          duracao: duration,
+        },
+      );
 
       throw this.handleS3Error(error, 'upload', key);
     }
@@ -302,10 +330,14 @@ export class S3StorageAdapter implements StorageProvider {
     const startTime = Date.now();
 
     try {
-      this.loggingService.debug(`Iniciando download S3`, S3StorageAdapter.name, {
-        key,
-        bucket: this.bucketName,
-      });
+      this.loggingService.debug(
+        `Iniciando download S3`,
+        S3StorageAdapter.name,
+        {
+          key,
+          bucket: this.bucketName,
+        },
+      );
 
       // Obter arquivo do S3 com retry
       const downloadOperation = async () => {
@@ -337,21 +369,30 @@ export class S3StorageAdapter implements StorageProvider {
       const buffer = Buffer.concat(chunks);
       const duration = Date.now() - startTime;
 
-      this.loggingService.info(`Download S3 concluído com sucesso`, S3StorageAdapter.name, {
-        key,
-        bucket: this.bucketName,
-        tamanho: buffer.length,
-        duracao: duration,
-      });
+      this.loggingService.info(
+        `Download S3 concluído com sucesso`,
+        S3StorageAdapter.name,
+        {
+          key,
+          bucket: this.bucketName,
+          tamanho: buffer.length,
+          duracao: duration,
+        },
+      );
 
       return buffer;
     } catch (error) {
       const duration = Date.now() - startTime;
-      this.loggingService.error(`Falha no download S3`, error, S3StorageAdapter.name, {
-        key,
-        bucket: this.bucketName,
-        duracao: duration
-      });
+      this.loggingService.error(
+        `Falha no download S3`,
+        error,
+        S3StorageAdapter.name,
+        {
+          key,
+          bucket: this.bucketName,
+          duracao: duration,
+        },
+      );
 
       throw this.handleS3Error(error, 'download', key);
     }
@@ -383,22 +424,35 @@ export class S3StorageAdapter implements StorageProvider {
       await this.retryOperation(deleteOperation, `delete S3 [${key}]`);
 
       const duration = Date.now() - startTime;
-      this.loggingService.info(`Remoção S3 concluída com sucesso`, S3StorageAdapter.name, {
-        key,
-        bucket: this.bucketName,
-        duracao: duration,
-      });
+      this.loggingService.info(
+        `Remoção S3 concluída com sucesso`,
+        S3StorageAdapter.name,
+        {
+          key,
+          bucket: this.bucketName,
+          duracao: duration,
+        },
+      );
     } catch (error) {
       const duration = Date.now() - startTime;
-      this.loggingService.error(`Falha na remoção S3`, error, S3StorageAdapter.name, {
-        key,
-        bucket: this.bucketName,
-        duracao: duration
-      });
+      this.loggingService.error(
+        `Falha na remoção S3`,
+        error,
+        S3StorageAdapter.name,
+        {
+          key,
+          bucket: this.bucketName,
+          duracao: duration,
+        },
+      );
 
       // Para delete, não é crítico se o arquivo não existir
       if (error instanceof NoSuchKey) {
-        this.loggingService.warn(`Arquivo já não existe no S3`, S3StorageAdapter.name, { key });
+        this.loggingService.warn(
+          `Arquivo já não existe no S3`,
+          S3StorageAdapter.name,
+          { key },
+        );
         return; // Sucesso silencioso
       }
 
@@ -483,7 +537,9 @@ export class S3StorageAdapter implements StorageProvider {
       });
 
       await this.s3Client.send(command);
-      this.loggingService.debug(`Arquivo copiado com sucesso para: ${destinationKey}`);
+      this.loggingService.debug(
+        `Arquivo copiado com sucesso para: ${destinationKey}`,
+      );
 
       return destinationKey;
     } catch (error) {

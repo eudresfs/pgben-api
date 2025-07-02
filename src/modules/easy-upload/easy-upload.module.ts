@@ -24,7 +24,7 @@ import { SharedModule } from '../../shared/shared.module';
 /**
  * Módulo responsável pela funcionalidade EasyUpload
  * Permite upload de documentos via QR Code de forma simplificada
- * 
+ *
  * Funcionalidades principais:
  * - Geração de tokens de upload com QR Code
  * - Validação de tokens
@@ -35,11 +35,8 @@ import { SharedModule } from '../../shared/shared.module';
 @Module({
   imports: [
     // Entidades TypeORM
-    TypeOrmModule.forFeature([
-      UploadToken,
-      UploadSession,
-    ]),
-    
+    TypeOrmModule.forFeature([UploadToken, UploadSession]),
+
     // Módulos necessários
     DocumentoModule,
     forwardRef(() => AuthModule),
@@ -47,9 +44,7 @@ import { SharedModule } from '../../shared/shared.module';
     NotificacaoModule,
     SharedModule,
   ],
-  controllers: [
-    EasyUploadController,
-  ],
+  controllers: [EasyUploadController],
   providers: [
     EasyUploadService,
     UploadTokenService,

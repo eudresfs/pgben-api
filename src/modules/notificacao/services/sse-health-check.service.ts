@@ -75,9 +75,15 @@ export class SseHealthCheckService {
   ) {
     this.config = {
       timeout: this.configService.get<number>('SSE_HEALTH_CHECK_TIMEOUT', 5000),
-      interval: this.configService.get<number>('SSE_HEALTH_CHECK_INTERVAL', 30000),
+      interval: this.configService.get<number>(
+        'SSE_HEALTH_CHECK_INTERVAL',
+        30000,
+      ),
       retries: this.configService.get<number>('SSE_HEALTH_CHECK_RETRIES', 3),
-      enableAutoCheck: this.configService.get<boolean>('SSE_HEALTH_CHECK_AUTO_ENABLE', true),
+      enableAutoCheck: this.configService.get<boolean>(
+        'SSE_HEALTH_CHECK_AUTO_ENABLE',
+        true,
+      ),
     };
 
     if (this.config.enableAutoCheck) {
@@ -111,7 +117,7 @@ export class SseHealthCheckService {
 
     // Executar todas as verificações em paralelo
     const results = await Promise.allSettled(checks);
-    
+
     for (const result of results) {
       if (result.status === 'fulfilled') {
         components.push(result.value);
@@ -126,7 +132,7 @@ export class SseHealthCheckService {
     }
 
     const totalCheckTime = Date.now() - startTime;
-    const healthyCount = components.filter(c => c.healthy).length;
+    const healthyCount = components.filter((c) => c.healthy).length;
     const unhealthyCount = components.length - healthyCount;
     const overallHealthy = unhealthyCount === 0;
 
@@ -173,7 +179,7 @@ export class SseHealthCheckService {
   private async checkDatabaseHealth(): Promise<ComponentHealthStatus> {
     const startTime = Date.now();
     const name = 'database';
-    
+
     try {
       // Verificar conexão básica
       if (!this.dataSource.isInitialized) {
@@ -187,17 +193,20 @@ export class SseHealthCheckService {
 
       // Executar query simples para testar conectividade
       await this.dataSource.query('SELECT 1');
-      
+
       // Verificar status dos circuit breakers de banco
-      const dbHealth = this.databaseCircuitBreakerService.getDatabaseHealthStatus();
-      
+      const dbHealth =
+        this.databaseCircuitBreakerService.getDatabaseHealthStatus();
+
       const responseTime = Date.now() - startTime;
-      
+
       return {
         name,
         healthy: dbHealth.healthy && dbHealth.connection.isConnected,
         responseTime,
-        message: dbHealth.healthy ? 'Banco de dados operacional' : 'Circuit breakers de banco com problemas',
+        message: dbHealth.healthy
+          ? 'Banco de dados operacional'
+          : 'Circuit breakers de banco com problemas',
         details: {
           connection: dbHealth.connection,
           operations: dbHealth.operations,
@@ -222,24 +231,24 @@ export class SseHealthCheckService {
   private async checkRedisHealth(): Promise<ComponentHealthStatus> {
     const startTime = Date.now();
     const name = 'redis';
-    
+
     try {
       // Testar operação básica no Redis
       const testKey = 'health-check-test';
       const testValue = Date.now().toString();
-      
+
       await this.redisCircuitBreakerService.set(testKey, testValue, 10); // 10 segundos TTL
       const retrieved = await this.redisCircuitBreakerService.get(testKey);
-      
+
       if (retrieved !== testValue) {
         throw new Error('Valor recuperado do Redis não confere');
       }
-      
+
       // Limpar chave de teste
       await this.redisCircuitBreakerService.del(testKey);
-      
+
       const responseTime = Date.now() - startTime;
-      
+
       return {
         name,
         healthy: true,
@@ -268,42 +277,50 @@ export class SseHealthCheckService {
   private async checkCircuitBreakersHealth(): Promise<ComponentHealthStatus> {
     const startTime = Date.now();
     const name = 'circuit-breakers';
-    
+
     try {
       const generalHealth = this.circuitBreakerService.getHealthStatus();
-      const dbMetrics = this.databaseCircuitBreakerService.getDatabaseCircuitBreakerMetrics();
-      
+      const dbMetrics =
+        this.databaseCircuitBreakerService.getDatabaseCircuitBreakerMetrics();
+
       // Contar circuit breakers abertos
       let openBreakers = 0;
       let totalBreakers = 0;
-      
+
       // Verificar circuit breakers gerais
-      for (const [name, metrics] of Object.entries(generalHealth.circuitBreakers)) {
+      for (const [name, metrics] of Object.entries(
+        generalHealth.circuitBreakers,
+      )) {
         totalBreakers++;
         if (metrics.state === 'OPEN') {
           openBreakers++;
         }
       }
-      
+
       // Verificar circuit breakers de banco
       for (const [operation, metrics] of Object.entries(dbMetrics)) {
-        if (operation !== 'queryCache' && typeof metrics === 'object' && metrics && 'state' in metrics) {
+        if (
+          operation !== 'queryCache' &&
+          typeof metrics === 'object' &&
+          metrics &&
+          'state' in metrics
+        ) {
           totalBreakers++;
           if (metrics.state === 'open') {
             openBreakers++;
           }
         }
       }
-      
+
       const responseTime = Date.now() - startTime;
       const healthy = openBreakers === 0;
-      
+
       return {
         name,
         healthy,
         responseTime,
-        message: healthy 
-          ? 'Todos os circuit breakers operacionais' 
+        message: healthy
+          ? 'Todos os circuit breakers operacionais'
           : `${openBreakers} de ${totalBreakers} circuit breakers abertos`,
         details: {
           openBreakers,
@@ -331,17 +348,17 @@ export class SseHealthCheckService {
   private async checkSseConnections(): Promise<ComponentHealthStatus> {
     const startTime = Date.now();
     const name = 'sse-connections';
-    
+
     try {
       // Implementação simplificada - verificação básica sem dependência do SseService
       // TODO: Implementar verificação mais robusta quando a arquitetura permitir
       const connectionCount = 0; // Placeholder
-       const healthyConnections = 0; // Placeholder
-       const problematicConnections = 0; // Placeholder
-      
+      const healthyConnections = 0; // Placeholder
+      const problematicConnections = 0; // Placeholder
+
       const responseTime = Date.now() - startTime;
       const healthy = true; // Assumindo saudável por enquanto
-      
+
       return {
         name,
         healthy,
@@ -371,19 +388,19 @@ export class SseHealthCheckService {
   private async checkMemoryHealth(): Promise<ComponentHealthStatus> {
     const startTime = Date.now();
     const name = 'memory';
-    
+
     try {
       const memoryUsage = process.memoryUsage();
       const totalMemory = memoryUsage.heapTotal;
       const usedMemory = memoryUsage.heapUsed;
       const freeMemory = totalMemory - usedMemory;
       const memoryUsagePercentage = (usedMemory / totalMemory) * 100;
-      
+
       // Considerar não saudável se uso de memória > 90%
       const healthy = memoryUsagePercentage < 90;
-      
+
       const responseTime = Date.now() - startTime;
-      
+
       return {
         name,
         healthy,
@@ -416,16 +433,16 @@ export class SseHealthCheckService {
   private async checkSystemResourcesHealth(): Promise<ComponentHealthStatus> {
     const startTime = Date.now();
     const name = 'system-resources';
-    
+
     try {
       const uptime = process.uptime();
       const cpuUsage = process.cpuUsage();
-      
+
       // Verificar se o processo está rodando há tempo suficiente
       const healthy = uptime > 10; // Pelo menos 10 segundos de uptime
-      
+
       const responseTime = Date.now() - startTime;
-      
+
       return {
         name,
         healthy,
@@ -473,7 +490,9 @@ export class SseHealthCheckService {
       }
     }, this.config.interval);
 
-    this.logger.log(`Verificações automáticas de saúde iniciadas (intervalo: ${this.config.interval}ms)`);
+    this.logger.log(
+      `Verificações automáticas de saúde iniciadas (intervalo: ${this.config.interval}ms)`,
+    );
   }
 
   /**

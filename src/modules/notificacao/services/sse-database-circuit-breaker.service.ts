@@ -2,7 +2,10 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
-import { SseCircuitBreakerService, SseCircuitBreakerConfig } from './sse-circuit-breaker.service';
+import {
+  SseCircuitBreakerService,
+  SseCircuitBreakerConfig,
+} from './sse-circuit-breaker.service';
 import { Notificacao } from '../../../entities/notificacao.entity';
 import CircuitBreaker from 'opossum';
 
@@ -53,15 +56,42 @@ export class SseDatabaseCircuitBreakerService {
   ) {
     // Configuração específica para banco de dados
     this.dbConfig = {
-      timeout: this.configService.get<number>('SSE_DB_CIRCUIT_BREAKER_TIMEOUT', 5000),
-      errorThresholdPercentage: this.configService.get<number>('SSE_DB_CIRCUIT_BREAKER_ERROR_THRESHOLD', 70),
-      resetTimeout: this.configService.get<number>('SSE_DB_CIRCUIT_BREAKER_RESET_TIMEOUT', 30000),
-      volumeThreshold: this.configService.get<number>('SSE_DB_CIRCUIT_BREAKER_VOLUME_THRESHOLD', 8),
-      capacity: this.configService.get<number>('SSE_DB_CIRCUIT_BREAKER_CAPACITY', 15),
-      bucketSpan: this.configService.get<number>('SSE_DB_CIRCUIT_BREAKER_BUCKET_SPAN', 30000),
-      enableQueryCache: this.configService.get<boolean>('SSE_DB_ENABLE_QUERY_CACHE', true),
-      queryCacheTtl: this.configService.get<number>('SSE_DB_QUERY_CACHE_TTL', 120000), // 2 minutos
-      maxCacheSize: this.configService.get<number>('SSE_DB_MAX_CACHE_SIZE', 1000),
+      timeout: this.configService.get<number>(
+        'SSE_DB_CIRCUIT_BREAKER_TIMEOUT',
+        5000,
+      ),
+      errorThresholdPercentage: this.configService.get<number>(
+        'SSE_DB_CIRCUIT_BREAKER_ERROR_THRESHOLD',
+        70,
+      ),
+      resetTimeout: this.configService.get<number>(
+        'SSE_DB_CIRCUIT_BREAKER_RESET_TIMEOUT',
+        30000,
+      ),
+      volumeThreshold: this.configService.get<number>(
+        'SSE_DB_CIRCUIT_BREAKER_VOLUME_THRESHOLD',
+        8,
+      ),
+      capacity: this.configService.get<number>(
+        'SSE_DB_CIRCUIT_BREAKER_CAPACITY',
+        15,
+      ),
+      bucketSpan: this.configService.get<number>(
+        'SSE_DB_CIRCUIT_BREAKER_BUCKET_SPAN',
+        30000,
+      ),
+      enableQueryCache: this.configService.get<boolean>(
+        'SSE_DB_ENABLE_QUERY_CACHE',
+        true,
+      ),
+      queryCacheTtl: this.configService.get<number>(
+        'SSE_DB_QUERY_CACHE_TTL',
+        120000,
+      ), // 2 minutos
+      maxCacheSize: this.configService.get<number>(
+        'SSE_DB_MAX_CACHE_SIZE',
+        1000,
+      ),
     };
 
     // Inicializar circuit breakers para operações específicas
@@ -69,7 +99,8 @@ export class SseDatabaseCircuitBreakerService {
     this.insertCircuitBreaker = this.createDatabaseCircuitBreaker('db-insert');
     this.updateCircuitBreaker = this.createDatabaseCircuitBreaker('db-update');
     this.deleteCircuitBreaker = this.createDatabaseCircuitBreaker('db-delete');
-    this.transactionCircuitBreaker = this.createDatabaseCircuitBreaker('db-transaction');
+    this.transactionCircuitBreaker =
+      this.createDatabaseCircuitBreaker('db-transaction');
   }
 
   /**
@@ -77,38 +108,43 @@ export class SseDatabaseCircuitBreakerService {
    */
   async executeQuery<T = any>(query: string, parameters?: any[]): Promise<T[]> {
     const cacheKey = this.generateCacheKey(query, parameters);
-    
+
     // Tentar cache primeiro
     if (this.dbConfig.enableQueryCache) {
       const cached = this.getFromCache<T[]>(cacheKey);
       if (cached !== null) {
-        this.logger.debug(`Cache hit para consulta: ${query.substring(0, 50)}...`);
+        this.logger.debug(
+          `Cache hit para consulta: ${query.substring(0, 50)}...`,
+        );
         return cached;
       }
     }
 
     try {
-      const result = await this.queryCircuitBreaker.fire(query, parameters) as T[];
-      
+      const result = (await this.queryCircuitBreaker.fire(
+        query,
+        parameters,
+      )) as T[];
+
       // Armazenar no cache em caso de sucesso
       if (this.dbConfig.enableQueryCache && result) {
         this.setInCache(cacheKey, result, query);
       }
-      
+
       return result as T[];
     } catch (error) {
       this.logger.error(`Consulta falhou: ${query.substring(0, 50)}...`, {
         error: error.message,
         parameters,
       });
-      
+
       // Tentar retornar dados em cache mesmo expirados como último recurso
       const staleCache = this.getFromCache<T[]>(cacheKey, true);
       if (staleCache !== null) {
         this.logger.warn('Retornando dados em cache expirados como fallback');
         return staleCache;
       }
-      
+
       throw error;
     }
   }
@@ -118,11 +154,11 @@ export class SseDatabaseCircuitBreakerService {
    */
   async insert<T>(entity: any, data: Partial<T>): Promise<T> {
     try {
-      const result = await this.insertCircuitBreaker.fire(entity, data) as T;
-      
+      const result = (await this.insertCircuitBreaker.fire(entity, data)) as T;
+
       // Invalidar cache relacionado após inserção
       this.invalidateRelatedCache(entity.name);
-      
+
       return result;
     } catch (error) {
       this.logger.error(`Inserção falhou para entidade ${entity.name}`, {
@@ -139,10 +175,10 @@ export class SseDatabaseCircuitBreakerService {
   async update<T>(entity: any, id: any, data: Partial<T>): Promise<T> {
     try {
       const result = await this.updateCircuitBreaker.fire(entity, id, data);
-      
+
       // Invalidar cache relacionado após atualização
       this.invalidateRelatedCache(entity.name);
-      
+
       return result as T;
     } catch (error) {
       this.logger.error(`Atualização falhou para entidade ${entity.name}`, {
@@ -160,10 +196,10 @@ export class SseDatabaseCircuitBreakerService {
   async delete(entity: any, id: any): Promise<boolean> {
     try {
       await this.deleteCircuitBreaker.fire(entity, id);
-      
+
       // Invalidar cache relacionado após remoção
       this.invalidateRelatedCache(entity.name);
-      
+
       return true;
     } catch (error) {
       this.logger.error(`Remoção falhou para entidade ${entity.name}`, {
@@ -179,7 +215,7 @@ export class SseDatabaseCircuitBreakerService {
    */
   async executeTransaction<T>(operation: () => Promise<T>): Promise<T> {
     try {
-      return await this.transactionCircuitBreaker.fire(operation) as T;
+      return (await this.transactionCircuitBreaker.fire(operation)) as T;
     } catch (error) {
       this.logger.error('Transação falhou', {
         error: error.message,
@@ -206,7 +242,7 @@ export class SseDatabaseCircuitBreakerService {
       ORDER BY created_at DESC
       LIMIT $4 OFFSET $5
     `;
-    
+
     const parameters = [
       filters.usuarioId || null,
       filters.tipo || null,
@@ -222,8 +258,11 @@ export class SseDatabaseCircuitBreakerService {
    * Conta notificações não lidas com circuit breaker e cache
    */
   async countUnreadNotifications(usuarioId: number): Promise<number> {
-    const query = 'SELECT COUNT(*) as count FROM notificacao WHERE usuario_id = $1 AND lida = false';
-    const result = await this.executeQuery<{ count: string }>(query, [usuarioId]);
+    const query =
+      'SELECT COUNT(*) as count FROM notificacao WHERE usuario_id = $1 AND lida = false';
+    const result = await this.executeQuery<{ count: string }>(query, [
+      usuarioId,
+    ]);
     return parseInt(result[0]?.count || '0', 10);
   }
 
@@ -231,17 +270,20 @@ export class SseDatabaseCircuitBreakerService {
    * Marca notificação como lida com circuit breaker
    */
   async markAsRead(notificationId: number): Promise<boolean> {
-    return this.update(
-      this.notificacaoRepository.target,
-      notificationId,
-      { lida: true, dataLeitura: new Date() },
-    ).then(() => true).catch(() => false);
+    return this.update(this.notificacaoRepository.target, notificationId, {
+      lida: true,
+      dataLeitura: new Date(),
+    })
+      .then(() => true)
+      .catch(() => false);
   }
 
   /**
    * Verifica se uma operação específica está disponível
    */
-  isOperationAvailable(operation: 'query' | 'insert' | 'update' | 'delete' | 'transaction'): boolean {
+  isOperationAvailable(
+    operation: 'query' | 'insert' | 'update' | 'delete' | 'transaction',
+  ): boolean {
     const breakers = {
       query: this.queryCircuitBreaker,
       insert: this.insertCircuitBreaker,
@@ -263,7 +305,8 @@ export class SseDatabaseCircuitBreakerService {
       insert: this.circuitBreakerService.getCircuitBreakerMetrics('db-insert'),
       update: this.circuitBreakerService.getCircuitBreakerMetrics('db-update'),
       delete: this.circuitBreakerService.getCircuitBreakerMetrics('db-delete'),
-      transaction: this.circuitBreakerService.getCircuitBreakerMetrics('db-transaction'),
+      transaction:
+        this.circuitBreakerService.getCircuitBreakerMetrics('db-transaction'),
       queryCache: {
         size: this.queryCache.size,
         enabled: this.dbConfig.enableQueryCache,
@@ -276,7 +319,13 @@ export class SseDatabaseCircuitBreakerService {
    * Health check específico para banco de dados
    */
   getDatabaseHealthStatus() {
-    const operations = ['query', 'insert', 'update', 'delete', 'transaction'] as const;
+    const operations = [
+      'query',
+      'insert',
+      'update',
+      'delete',
+      'transaction',
+    ] as const;
     const status: Record<string, boolean> = {};
     let allHealthy = true;
 
@@ -319,8 +368,10 @@ export class SseDatabaseCircuitBreakerService {
     this.circuitBreakerService.openCircuitBreaker('db-update');
     this.circuitBreakerService.openCircuitBreaker('db-delete');
     this.circuitBreakerService.openCircuitBreaker('db-transaction');
-    
-    this.logger.warn('Todos os circuit breakers de banco foram forçados para estado OPEN');
+
+    this.logger.warn(
+      'Todos os circuit breakers de banco foram forçados para estado OPEN',
+    );
   }
 
   /**
@@ -332,8 +383,10 @@ export class SseDatabaseCircuitBreakerService {
     this.circuitBreakerService.closeCircuitBreaker('db-update');
     this.circuitBreakerService.closeCircuitBreaker('db-delete');
     this.circuitBreakerService.closeCircuitBreaker('db-transaction');
-    
-    this.logger.log('Todos os circuit breakers de banco foram forçados para estado CLOSED');
+
+    this.logger.log(
+      'Todos os circuit breakers de banco foram forçados para estado CLOSED',
+    );
   }
 
   /**
@@ -342,7 +395,7 @@ export class SseDatabaseCircuitBreakerService {
   private createDatabaseCircuitBreaker(name: string): CircuitBreaker {
     const action = this.getDatabaseAction(name);
     const fallback = this.getDatabaseActionFallback(name);
-    
+
     return this.circuitBreakerService.getCircuitBreaker(
       name,
       action,
@@ -389,21 +442,27 @@ export class SseDatabaseCircuitBreakerService {
   /**
    * Obtém a função de fallback para operações de banco
    */
-  private getDatabaseActionFallback(name: string): ((...args: any[]) => Promise<any>) | undefined {
+  private getDatabaseActionFallback(
+    name: string,
+  ): ((...args: any[]) => Promise<any>) | undefined {
     switch (name) {
       case 'db-query':
         return async (query: string, parameters?: any[]) => {
-          this.logger.warn(`Fallback ativado para consulta: ${query.substring(0, 50)}...`);
-          
+          this.logger.warn(
+            `Fallback ativado para consulta: ${query.substring(0, 50)}...`,
+          );
+
           // Tentar retornar dados em cache como fallback
           const cacheKey = this.generateCacheKey(query, parameters);
           const cached = this.getFromCache(cacheKey, true); // Aceitar cache expirado
-          
+
           if (cached !== null) {
-            this.logger.warn('Retornando dados em cache expirados como fallback');
+            this.logger.warn(
+              'Retornando dados em cache expirados como fallback',
+            );
             return cached;
           }
-          
+
           // Se não há cache, retornar array vazio
           return [];
         };
@@ -416,7 +475,9 @@ export class SseDatabaseCircuitBreakerService {
         };
       case 'db-update':
         return async (entity: any, id: any, data: any) => {
-          this.logger.warn(`Fallback ativado para atualização em ${entity.name}`);
+          this.logger.warn(
+            `Fallback ativado para atualização em ${entity.name}`,
+          );
           // Retornar os dados atualizados sem persistir
           return { id, ...data, _fallback: true };
         };
@@ -488,19 +549,21 @@ export class SseDatabaseCircuitBreakerService {
    */
   private invalidateRelatedCache(entityName: string): void {
     const keysToDelete: string[] = [];
-    
+
     for (const [key, cached] of this.queryCache.entries()) {
       if (cached.query.toLowerCase().includes(entityName.toLowerCase())) {
         keysToDelete.push(key);
       }
     }
-    
+
     for (const key of keysToDelete) {
       this.queryCache.delete(key);
     }
-    
+
     if (keysToDelete.length > 0) {
-      this.logger.debug(`Cache invalidado: ${keysToDelete.length} entradas removidas para ${entityName}`);
+      this.logger.debug(
+        `Cache invalidado: ${keysToDelete.length} entradas removidas para ${entityName}`,
+      );
     }
   }
 
@@ -510,13 +573,15 @@ export class SseDatabaseCircuitBreakerService {
   private cleanupOldestCache(): void {
     const entries = Array.from(this.queryCache.entries());
     entries.sort((a, b) => a[1].expires - b[1].expires);
-    
+
     // Remover 10% das entradas mais antigas
     const toRemove = Math.ceil(entries.length * 0.1);
     for (let i = 0; i < toRemove; i++) {
       this.queryCache.delete(entries[i][0]);
     }
-    
-    this.logger.debug(`Cache limpo: ${toRemove} entradas mais antigas removidas`);
+
+    this.logger.debug(
+      `Cache limpo: ${toRemove} entradas mais antigas removidas`,
+    );
   }
 }

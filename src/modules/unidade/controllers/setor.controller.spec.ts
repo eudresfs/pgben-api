@@ -4,7 +4,11 @@ import { SetorService } from '../services/setor.service';
 import { CreateSetorDto } from '../dto/create-setor.dto';
 import { UpdateSetorDto } from '../dto/update-setor.dto';
 import { Setor } from '../../../entities/setor.entity';
-import { Unidade, TipoUnidade, StatusUnidade } from '../../../entities/unidade.entity';
+import {
+  Unidade,
+  TipoUnidade,
+  StatusUnidade,
+} from '../../../entities/unidade.entity';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from '../../../auth/guards/roles.guard';
 import { ExecutionContext } from '@nestjs/common';
@@ -267,9 +271,7 @@ describe('SetorController', () => {
     });
 
     it('deve propagar erro de unidade não encontrada', async () => {
-      service.create.mockRejectedValue(
-        new Error('Unidade não encontrada'),
-      );
+      service.create.mockRejectedValue(new Error('Unidade não encontrada'));
 
       await expect(controller.create(mockCreateSetorDto)).rejects.toThrow(
         'Unidade não encontrada',
@@ -306,10 +308,7 @@ describe('SetorController', () => {
 
       service.update.mockResolvedValue(setorAtualizado);
 
-      const result = await controller.update(
-        mockSetor.id,
-        mockUpdateSetorDto,
-      );
+      const result = await controller.update(mockSetor.id, mockUpdateSetorDto);
 
       expect(result).toEqual(setorAtualizado);
       expect(service.update).toHaveBeenCalledWith(
@@ -319,9 +318,7 @@ describe('SetorController', () => {
     });
 
     it('deve propagar erro quando setor não encontrado', async () => {
-      service.update.mockRejectedValue(
-        new Error('Setor não encontrado'),
-      );
+      service.update.mockRejectedValue(new Error('Setor não encontrado'));
 
       await expect(
         controller.update('invalid-id', mockUpdateSetorDto),
@@ -350,10 +347,7 @@ describe('SetorController', () => {
       const result = await controller.update(mockSetor.id, updateParcial);
 
       expect(result).toEqual(setorAtualizado);
-      expect(service.update).toHaveBeenCalledWith(
-        mockSetor.id,
-        updateParcial,
-      );
+      expect(service.update).toHaveBeenCalledWith(mockSetor.id, updateParcial);
     });
 
     it('deve propagar erro de nome duplicado', async () => {
@@ -377,9 +371,7 @@ describe('SetorController', () => {
     });
 
     it('deve propagar erro quando setor não encontrado', async () => {
-      service.remove.mockRejectedValue(
-        new Error('Setor não encontrado'),
-      );
+      service.remove.mockRejectedValue(new Error('Setor não encontrado'));
 
       await expect(controller.remove('invalid-id')).rejects.toThrow(
         'Setor não encontrado',
@@ -444,9 +436,7 @@ describe('SetorController', () => {
 
   describe('tratamento de erros HTTP', () => {
     it('deve retornar 404 para setor não encontrado', async () => {
-      service.findById.mockRejectedValue(
-        new Error('Setor não encontrado'),
-      );
+      service.findById.mockRejectedValue(new Error('Setor não encontrado'));
 
       await expect(controller.findById('invalid-id')).rejects.toThrow(
         'Setor não encontrado',
@@ -454,9 +444,7 @@ describe('SetorController', () => {
     });
 
     it('deve retornar 400 para dados inválidos', async () => {
-      service.create.mockRejectedValue(
-        new Error('Dados de entrada inválidos'),
-      );
+      service.create.mockRejectedValue(new Error('Dados de entrada inválidos'));
 
       await expect(controller.create(mockCreateSetorDto)).rejects.toThrow(
         'Dados de entrada inválidos',
@@ -474,9 +462,7 @@ describe('SetorController', () => {
     });
 
     it('deve retornar 422 para unidade não encontrada', async () => {
-      service.create.mockRejectedValue(
-        new Error('Unidade não encontrada'),
-      );
+      service.create.mockRejectedValue(new Error('Unidade não encontrada'));
 
       await expect(controller.create(mockCreateSetorDto)).rejects.toThrow(
         'Unidade não encontrada',
@@ -484,13 +470,11 @@ describe('SetorController', () => {
     });
 
     it('deve retornar 500 para erro interno', async () => {
-      service.findAll.mockRejectedValue(
-        new Error('Erro interno do servidor'),
-      );
+      service.findAll.mockRejectedValue(new Error('Erro interno do servidor'));
 
-      await expect(
-        controller.findAll({ page: 1, limit: 10 }),
-      ).rejects.toThrow('Erro interno do servidor');
+      await expect(controller.findAll({ page: 1, limit: 10 })).rejects.toThrow(
+        'Erro interno do servidor',
+      );
     });
   });
 
@@ -510,9 +494,7 @@ describe('SetorController', () => {
     });
 
     it('deve validar se unidade está ativa ao criar setor', async () => {
-      service.create.mockRejectedValue(
-        new Error('Unidade não está ativa'),
-      );
+      service.create.mockRejectedValue(new Error('Unidade não está ativa'));
 
       await expect(controller.create(mockCreateSetorDto)).rejects.toThrow(
         'Unidade não está ativa',

@@ -92,8 +92,8 @@ export class DeterminacaoJudicialController {
       req.user.id?.toString(),
       {
         synchronous: false,
-
-    });
+      },
+    );
 
     return resultado;
   }
@@ -266,7 +266,8 @@ export class DeterminacaoJudicialController {
     @ReqContext() context: RequestContext,
   ): Promise<DeterminacaoJudicial> {
     // Buscar dados da determinação antes da atualização
-    const determinacaoAntes = await this.determinacaoJudicialService.findById(id);
+    const determinacaoAntes =
+      await this.determinacaoJudicialService.findById(id);
 
     const resultado = await this.determinacaoJudicialService.update(
       id,
@@ -283,8 +284,8 @@ export class DeterminacaoJudicialController {
       req.user.id?.toString(),
       {
         synchronous: false,
-
-    });
+      },
+    );
 
     return resultado;
   }
@@ -315,7 +316,8 @@ export class DeterminacaoJudicialController {
     @ReqContext() context: RequestContext,
   ): Promise<DeterminacaoJudicial> {
     // Buscar dados da determinação antes do cumprimento
-    const determinacaoAntes = await this.determinacaoJudicialService.findById(id);
+    const determinacaoAntes =
+      await this.determinacaoJudicialService.findById(id);
 
     const resultado = await this.determinacaoJudicialService.marcarComoCumprida(
       id,
@@ -332,8 +334,8 @@ export class DeterminacaoJudicialController {
       req.user.id?.toString(),
       {
         synchronous: false,
-
-    });
+      },
+    );
 
     return resultado;
   }
@@ -379,7 +381,8 @@ export class DeterminacaoJudicialController {
     @ReqContext() context: RequestContext,
   ): Promise<void> {
     // Buscar dados da determinação antes da remoção
-    const determinacaoAntes = await this.determinacaoJudicialService.findById(id);
+    const determinacaoAntes =
+      await this.determinacaoJudicialService.findById(id);
 
     await this.determinacaoJudicialService.remove(id);
 
@@ -391,7 +394,7 @@ export class DeterminacaoJudicialController {
       req.user.id?.toString(),
       {
         synchronous: false,
-
-    });
+      },
+    );
   }
 }

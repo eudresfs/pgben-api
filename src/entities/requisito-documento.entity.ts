@@ -320,7 +320,9 @@ export class RequisitoDocumento {
    * Obtém os formatos aceitos
    */
   getFormatosAceitos(): string[] {
-    if (!this.temValidacaoFormato()) {return [];}
+    if (!this.temValidacaoFormato()) {
+      return [];
+    }
     return this.validacoes.formato || [];
   }
 
@@ -328,7 +330,9 @@ export class RequisitoDocumento {
    * Obtém o tamanho máximo em MB
    */
   getTamanhoMaximo(): number | null {
-    if (!this.temValidacaoTamanho()) {return null;}
+    if (!this.temValidacaoTamanho()) {
+      return null;
+    }
     return this.validacoes.tamanho_maximo ?? null;
   }
 
@@ -336,7 +340,9 @@ export class RequisitoDocumento {
    * Obtém a validade máxima em dias
    */
   getValidadeMaxima(): number | null {
-    if (!this.temValidacaoValidade()) {return null;}
+    if (!this.temValidacaoValidade()) {
+      return null;
+    }
     return this.validacoes.validade_maxima ?? null;
   }
 
@@ -345,7 +351,9 @@ export class RequisitoDocumento {
    */
   getTamanhoMaximoFormatado(): string {
     const tamanho = this.getTamanhoMaximo();
-    if (!tamanho) {return 'Sem limite de tamanho';}
+    if (!tamanho) {
+      return 'Sem limite de tamanho';
+    }
 
     if (tamanho < 1) {
       return `${(tamanho * 1024).toFixed(0)} KB`;
@@ -359,7 +367,9 @@ export class RequisitoDocumento {
    */
   getValidadeMaximaFormatada(): string {
     const validade = this.getValidadeMaxima();
-    if (!validade) {return 'Sem limite de validade';}
+    if (!validade) {
+      return 'Sem limite de validade';
+    }
 
     if (validade < 30) {
       return `${validade} dia(s)`;
@@ -376,7 +386,9 @@ export class RequisitoDocumento {
    * Verifica se um formato é aceito
    */
   formatoEhAceito(formato: string): boolean {
-    if (!this.temValidacaoFormato()) {return true;}
+    if (!this.temValidacaoFormato()) {
+      return true;
+    }
     return this.getFormatosAceitos().includes(formato.toLowerCase());
   }
 
@@ -385,7 +397,9 @@ export class RequisitoDocumento {
    */
   tamanhoEhValido(tamanhoBytes: number): boolean {
     const tamanhoMaximo = this.getTamanhoMaximo();
-    if (!tamanhoMaximo) {return true;}
+    if (!tamanhoMaximo) {
+      return true;
+    }
 
     const tamanhoMaximoBytes = tamanhoMaximo * 1024 * 1024; // Converte MB para bytes
     return tamanhoBytes <= tamanhoMaximoBytes;
@@ -396,7 +410,9 @@ export class RequisitoDocumento {
    */
   dataEmissaoEhValida(dataEmissao: Date): boolean {
     const validadeMaxima = this.getValidadeMaxima();
-    if (!validadeMaxima) {return true;}
+    if (!validadeMaxima) {
+      return true;
+    }
 
     const agora = new Date();
     const diffTime = Math.abs(agora.getTime() - dataEmissao.getTime());
@@ -433,11 +449,14 @@ export class RequisitoDocumento {
    */
   isConsistente(): boolean {
     // Verifica se tem tipo de benefício
-    if (!this.tipo_beneficio_id) {return false;}
+    if (!this.tipo_beneficio_id) {
+      return false;
+    }
 
     // Verifica se tem tipo de documento válido
-    if (!Object.values(TipoDocumentoEnum).includes(this.tipo_documento))
-      {return false;}
+    if (!Object.values(TipoDocumentoEnum).includes(this.tipo_documento)) {
+      return false;
+    }
 
     // Verifica validações se existirem
     if (this.temValidacoes()) {
@@ -466,7 +485,9 @@ export class RequisitoDocumento {
    */
   podeSerRemovido(): boolean {
     // Não pode remover se já foi removido
-    if (this.foiRemovido()) {return false;}
+    if (this.foiRemovido()) {
+      return false;
+    }
 
     // Pode implementar lógica adicional aqui
     // Por exemplo, verificar se tem documentos associados
@@ -494,10 +515,14 @@ export class RequisitoDocumento {
    */
   isCritico(): boolean {
     // Documentos de identificação são sempre críticos
-    if (this.isDocumentoIdentificacao()) {return true;}
+    if (this.isDocumentoIdentificacao()) {
+      return true;
+    }
 
     // Documentos obrigatórios são críticos
-    if (this.isObrigatorio()) {return true;}
+    if (this.isObrigatorio()) {
+      return true;
+    }
 
     return false;
   }
@@ -512,11 +537,21 @@ export class RequisitoDocumento {
     | 'MEDICO'
     | 'MORADIA'
     | 'OUTRO' {
-    if (this.isDocumentoIdentificacao()) {return 'IDENTIFICACAO';}
-    if (this.isDocumentoComprovacao()) {return 'COMPROVACAO';}
-    if (this.isCertidao()) {return 'CERTIDAO';}
-    if (this.isDocumentoMedico()) {return 'MEDICO';}
-    if (this.isDocumentoMoradia()) {return 'MORADIA';}
+    if (this.isDocumentoIdentificacao()) {
+      return 'IDENTIFICACAO';
+    }
+    if (this.isDocumentoComprovacao()) {
+      return 'COMPROVACAO';
+    }
+    if (this.isCertidao()) {
+      return 'CERTIDAO';
+    }
+    if (this.isDocumentoMedico()) {
+      return 'MEDICO';
+    }
+    if (this.isDocumentoMoradia()) {
+      return 'MORADIA';
+    }
     return 'OUTRO';
   }
 
@@ -524,8 +559,12 @@ export class RequisitoDocumento {
    * Obtém a prioridade do documento (1 = mais prioritário)
    */
   getPrioridade(): number {
-    if (this.isDocumentoIdentificacao()) {return 1;}
-    if (this.isObrigatorio()) {return 2;}
+    if (this.isDocumentoIdentificacao()) {
+      return 1;
+    }
+    if (this.isObrigatorio()) {
+      return 2;
+    }
     return 3;
   }
 

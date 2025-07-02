@@ -39,7 +39,9 @@ export class DadosSociaisService {
     });
 
     if (dadosExistentes) {
-      throw new ConflictException('Cidadão já possui dados sociais cadastrados');
+      throw new ConflictException(
+        'Cidadão já possui dados sociais cadastrados',
+      );
     }
 
     // Validações básicas de benefícios
@@ -93,7 +95,7 @@ export class DadosSociaisService {
 
     // Atualizar dados
     Object.assign(dadosSociais, updateDadosSociaisDto);
-    
+
     return this.dadosSociaisRepository.save(dadosSociais);
   }
 
@@ -116,24 +118,32 @@ export class DadosSociaisService {
     // Validar PBF
     if (data.recebe_pbf === true) {
       if (!data.valor_pbf || data.valor_pbf <= 0) {
-        errors.push('Valor do PBF é obrigatório quando recebe_pbf é verdadeiro');
+        errors.push(
+          'Valor do PBF é obrigatório quando recebe_pbf é verdadeiro',
+        );
       }
     }
 
     // Validar BPC
     if (data.recebe_bpc === true) {
       if (!data.valor_bpc || data.valor_bpc <= 0) {
-        errors.push('Valor do BPC é obrigatório quando recebe_bpc é verdadeiro');
+        errors.push(
+          'Valor do BPC é obrigatório quando recebe_bpc é verdadeiro',
+        );
       }
       if (!data.modalidade_bpc) {
-        errors.push('Modalidade do BPC é obrigatória quando recebe_bpc é verdadeiro');
+        errors.push(
+          'Modalidade do BPC é obrigatória quando recebe_bpc é verdadeiro',
+        );
       }
     }
 
     // Validar Tributo Criança
     if (data.recebe_tributo_crianca === true) {
       if (!data.valor_tributo_crianca || data.valor_tributo_crianca <= 0) {
-        errors.push('Valor do Tributo Criança é obrigatório quando recebe_tributo_crianca é verdadeiro');
+        errors.push(
+          'Valor do Tributo Criança é obrigatório quando recebe_tributo_crianca é verdadeiro',
+        );
       }
     }
 

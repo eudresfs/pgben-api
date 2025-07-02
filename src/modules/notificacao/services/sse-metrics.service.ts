@@ -34,7 +34,7 @@ export interface ConnectionStats {
 
 /**
  * Serviço para monitoramento e métricas específicas de SSE
- * 
+ *
  * Responsabilidades:
  * - Monitorar conexões SSE ativas
  * - Calcular métricas de entrega de mensagens
@@ -45,7 +45,7 @@ export interface ConnectionStats {
 @Injectable()
 export class SseMetricsService {
   private readonly logger = new Logger(SseMetricsService.name);
-  
+
   // Armazenamento em memória das métricas (em produção, considerar Redis)
   private metrics: SseMetrics = {
     activeConnections: 0,
@@ -58,7 +58,7 @@ export class SseMetricsService {
     deliveryRate: 0,
     errorRate: 0,
     peakConnections: 0,
-    connectionsByUserAgent: {}
+    connectionsByUserAgent: {},
   };
 
   private connectionStats: Map<string, ConnectionStats> = new Map();
@@ -75,26 +75,26 @@ export class SseMetricsService {
   recordConnection(userId: string, connectionId: string, userAgent?: string) {
     try {
       const now = new Date();
-      
+
       // Atualizar métricas básicas
       this.metrics.activeConnections++;
       this.metrics.totalConnections++;
-      
+
       // Atualizar conexões por usuário
-      this.metrics.connectionsPerUser[userId] = 
+      this.metrics.connectionsPerUser[userId] =
         (this.metrics.connectionsPerUser[userId] || 0) + 1;
-      
+
       // Atualizar conexões por user agent
       if (userAgent) {
-        this.metrics.connectionsByUserAgent[userAgent] = 
+        this.metrics.connectionsByUserAgent[userAgent] =
           (this.metrics.connectionsByUserAgent[userAgent] || 0) + 1;
       }
-      
+
       // Atualizar pico de conexões
       if (this.metrics.activeConnections > this.metrics.peakConnections) {
         this.metrics.peakConnections = this.metrics.activeConnections;
       }
-      
+
       // Registrar estatísticas da conexão
       this.connectionStats.set(connectionId, {
         userId,
@@ -104,38 +104,38 @@ export class SseMetricsService {
         messagesSent: 0,
         messagesDelivered: 0,
         messagesFailed: 0,
-        lastActivity: now
+        lastActivity: now,
       });
-      
+
       this.connectionStartTimes.set(connectionId, now);
-      
+
       // Registrar no sistema de métricas global
       this.enhancedMetricsService.recordSecurityEvent(
         'sse_connection_established',
         'info',
-        'notification_module'
+        'notification_module',
       );
-      
+
       this.enhancedMetricsService.recordLgpdDataAccess(
         'sse_connection',
         'create',
         true,
-        'user'
+        'user',
       );
-      
+
       this.logger.debug(
         `Nova conexão SSE registrada: ${connectionId} para usuário ${userId}`,
         {
           activeConnections: this.metrics.activeConnections,
-          userAgent
-        }
+          userAgent,
+        },
       );
-      
     } catch (error) {
-      this.logger.error(
-        `Erro ao registrar conexão SSE: ${error.message}`,
-        { userId, connectionId, userAgent }
-      );
+      this.logger.error(`Erro ao registrar conexão SSE: ${error.message}`, {
+        userId,
+        connectionId,
+        userAgent,
+      });
     }
   }
 
@@ -146,60 +146,60 @@ export class SseMetricsService {
     try {
       const connectionStat = this.connectionStats.get(connectionId);
       const startTime = this.connectionStartTimes.get(connectionId);
-      
+
       if (connectionStat && startTime) {
         const now = new Date();
         const duration = now.getTime() - startTime.getTime();
-        
+
         // Atualizar métricas básicas
-        this.metrics.activeConnections = Math.max(0, this.metrics.activeConnections - 1);
-        
+        this.metrics.activeConnections = Math.max(
+          0,
+          this.metrics.activeConnections - 1,
+        );
+
         // Atualizar conexões por usuário
         const userId = connectionStat.userId;
         if (this.metrics.connectionsPerUser[userId]) {
-          this.metrics.connectionsPerUser[userId] = 
-            Math.max(0, this.metrics.connectionsPerUser[userId] - 1);
-          
+          this.metrics.connectionsPerUser[userId] = Math.max(
+            0,
+            this.metrics.connectionsPerUser[userId] - 1,
+          );
+
           if (this.metrics.connectionsPerUser[userId] === 0) {
             delete this.metrics.connectionsPerUser[userId];
           }
         }
-        
+
         // Atualizar duração média das conexões
         this.updateAverageConnectionDuration(duration);
-        
+
         // Limpar dados da conexão
         this.connectionStats.delete(connectionId);
         this.connectionStartTimes.delete(connectionId);
-        
+
         // Registrar no sistema de métricas global
         this.enhancedMetricsService.recordSecurityEvent(
           'sse_connection_closed',
           'info',
-          'notification_module'
+          'notification_module',
         );
-        
+
         this.enhancedMetricsService.recordSecurityEvent(
           'sse_connection_duration',
           'info',
-          'notification_module'
+          'notification_module',
         );
-        
-        this.logger.debug(
-          `Conexão SSE fechada: ${connectionId}`,
-          {
-            duration,
-            activeConnections: this.metrics.activeConnections,
-            userId
-          }
-        );
+
+        this.logger.debug(`Conexão SSE fechada: ${connectionId}`, {
+          duration,
+          activeConnections: this.metrics.activeConnections,
+          userId,
+        });
       }
-      
     } catch (error) {
-      this.logger.error(
-        `Erro ao registrar desconexão SSE: ${error.message}`,
-        { connectionId }
-      );
+      this.logger.error(`Erro ao registrar desconexão SSE: ${error.message}`, {
+        connectionId,
+      });
     }
   }
 
@@ -209,30 +209,29 @@ export class SseMetricsService {
   recordMessageSent(connectionId: string, messageType: string) {
     try {
       this.metrics.messagesSent++;
-      
+
       const connectionStat = this.connectionStats.get(connectionId);
       if (connectionStat) {
         connectionStat.messagesSent++;
         connectionStat.lastActivity = new Date();
       }
-      
+
       // Registrar no sistema de métricas global
       this.enhancedMetricsService.recordSecurityEvent(
         'sse_message_sent',
         'info',
-        'notification_module'
+        'notification_module',
       );
-      
+
       this.enhancedMetricsService.recordSecurityEvent(
         `sse_message_type_${messageType}`,
         'info',
-        'notification_module'
+        'notification_module',
       );
-      
     } catch (error) {
       this.logger.error(
         `Erro ao registrar envio de mensagem SSE: ${error.message}`,
-        { connectionId, messageType }
+        { connectionId, messageType },
       );
     }
   }
@@ -243,26 +242,25 @@ export class SseMetricsService {
   recordMessageDelivered(connectionId: string) {
     try {
       this.metrics.messagesDelivered++;
-      
+
       const connectionStat = this.connectionStats.get(connectionId);
       if (connectionStat) {
         connectionStat.messagesDelivered++;
       }
-      
+
       // Atualizar taxa de entrega
       this.updateDeliveryRate();
-      
+
       // Registrar no sistema de métricas global
       this.enhancedMetricsService.recordSecurityEvent(
         'sse_message_delivered',
         'info',
-        'notification_module'
+        'notification_module',
       );
-      
     } catch (error) {
       this.logger.error(
         `Erro ao registrar entrega de mensagem SSE: ${error.message}`,
-        { connectionId }
+        { connectionId },
       );
     }
   }
@@ -273,32 +271,31 @@ export class SseMetricsService {
   recordMessageFailed(connectionId: string, error: string) {
     try {
       this.metrics.messagesFailed++;
-      
+
       const connectionStat = this.connectionStats.get(connectionId);
       if (connectionStat) {
         connectionStat.messagesFailed++;
       }
-      
+
       // Atualizar taxa de erro
       this.updateErrorRate();
-      
+
       // Registrar no sistema de métricas global
       this.enhancedMetricsService.recordSecurityEvent(
         'sse_message_failed',
         'error',
-        'notification_module'
+        'notification_module',
       );
-      
+
       this.enhancedMetricsService.recordSecurityEvent(
         'sse_delivery_failure',
         'error',
-        'notification_module'
+        'notification_module',
       );
-      
     } catch (metricsError) {
       this.logger.error(
         `Erro ao registrar falha de mensagem SSE: ${metricsError.message}`,
-        { connectionId, originalError: error }
+        { connectionId, originalError: error },
       );
     }
   }
@@ -339,9 +336,9 @@ export class SseMetricsService {
       deliveryRate: 0,
       errorRate: 0,
       peakConnections: 0,
-      connectionsByUserAgent: {}
+      connectionsByUserAgent: {},
     };
-    
+
     this.connectionStats.clear();
     this.connectionStartTimes.clear();
   }
@@ -352,8 +349,9 @@ export class SseMetricsService {
   private updateAverageConnectionDuration(newDuration: number) {
     // Implementação simples de média móvel
     const alpha = 0.1; // Fator de suavização
-    this.metrics.averageConnectionDuration = 
-      (1 - alpha) * this.metrics.averageConnectionDuration + alpha * newDuration;
+    this.metrics.averageConnectionDuration =
+      (1 - alpha) * this.metrics.averageConnectionDuration +
+      alpha * newDuration;
   }
 
   /**
@@ -362,7 +360,7 @@ export class SseMetricsService {
   private updateDeliveryRate() {
     const totalMessages = this.metrics.messagesSent;
     if (totalMessages > 0) {
-      this.metrics.deliveryRate = 
+      this.metrics.deliveryRate =
         (this.metrics.messagesDelivered / totalMessages) * 100;
     }
   }
@@ -373,7 +371,7 @@ export class SseMetricsService {
   private updateErrorRate() {
     const totalMessages = this.metrics.messagesSent;
     if (totalMessages > 0) {
-      this.metrics.errorRate = 
+      this.metrics.errorRate =
         (this.metrics.messagesFailed / totalMessages) * 100;
     }
   }
@@ -388,7 +386,7 @@ export class SseMetricsService {
         this.updatePeriodicMetrics();
       } catch (error) {
         this.logger.error(
-          `Erro na atualização periódica de métricas: ${error.message}`
+          `Erro na atualização periódica de métricas: ${error.message}`,
         );
       }
     }, 30000);
@@ -397,17 +395,20 @@ export class SseMetricsService {
   /**
    * Registra evento de circuit breaker
    */
-  recordCircuitBreakerEvent(eventType: string, level: 'info' | 'warning' | 'error' = 'info') {
+  recordCircuitBreakerEvent(
+    eventType: string,
+    level: 'info' | 'warning' | 'error' = 'info',
+  ) {
     try {
       this.enhancedMetricsService.recordSecurityEvent(
         eventType,
         level,
-        'notification_module'
+        'notification_module',
       );
     } catch (error) {
       this.logger.error(
         `Erro ao registrar evento de circuit breaker: ${error.message}`,
-        { eventType, level }
+        { eventType, level },
       );
     }
   }
@@ -421,18 +422,18 @@ export class SseMetricsService {
     this.enhancedMetricsService.recordSecurityEvent(
       'sse_metrics_update',
       'info',
-      'notification_module'
+      'notification_module',
     );
-    
+
     // Atualizar métricas de sistema
     this.enhancedMetricsService.updateMemoryUsage();
-    
+
     // Log de métricas para debug
     this.logger.debug('Métricas SSE atualizadas', {
       activeConnections: this.metrics.activeConnections,
       deliveryRate: this.metrics.deliveryRate,
       errorRate: this.metrics.errorRate,
-      totalMessages: this.metrics.messagesSent
+      totalMessages: this.metrics.messagesSent,
     });
   }
 }

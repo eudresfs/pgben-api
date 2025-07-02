@@ -3,12 +3,22 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, LessThan, MoreThan, Between } from 'typeorm';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { NotificacaoSistema, TipoNotificacao, StatusNotificacaoProcessamento } from '../../../entities/notification.entity';
+import {
+  NotificacaoSistema,
+  TipoNotificacao,
+  StatusNotificacaoProcessamento,
+} from '../../../entities/notification.entity';
 import { Solicitacao } from '../../../entities/solicitacao.entity';
 import { Usuario } from '../../../entities/usuario.entity';
 import { StatusSolicitacao } from '../../../enums/status-solicitacao.enum';
 import { NotificacaoService } from './notificacao.service';
-import { addDays, addHours, isAfter, isBefore, differenceInDays } from 'date-fns';
+import {
+  addDays,
+  addHours,
+  isAfter,
+  isBefore,
+  differenceInDays,
+} from 'date-fns';
 import { Status } from '../../../enums/status.enum';
 
 /**
@@ -38,7 +48,7 @@ interface MetricasSistema {
 
 /**
  * Serviço de Notificações Proativas
- * 
+ *
  * Implementa a Fase 4 do plano de integração SSE:
  * - Alertas de prazos automáticos
  * - Notificações de sistema baseadas em métricas
@@ -70,7 +80,8 @@ export class NotificacaoProativaService {
       statusAlvo: [StatusSolicitacao.PENDENTE, StatusSolicitacao.APROVADA],
       template: {
         titulo: 'Prazo de Solicitação se Aproximando',
-        conteudo: 'Sua solicitação #{id} tem prazo se aproximando. Verifique os detalhes.',
+        conteudo:
+          'Sua solicitação #{id} tem prazo se aproximando. Verifique os detalhes.',
       },
     },
     {
@@ -80,7 +91,8 @@ export class NotificacaoProativaService {
       statusAlvo: [StatusSolicitacao.APROVADA],
       template: {
         titulo: 'Documentos Pendentes',
-        conteudo: 'Você possui documentos pendentes para a solicitação #{id}. Envie o quanto antes.',
+        conteudo:
+          'Você possui documentos pendentes para a solicitação #{id}. Envie o quanto antes.',
       },
     },
   ];
@@ -107,7 +119,9 @@ export class NotificacaoProativaService {
   /**
    * Processa alertas de prazo para uma configuração específica
    */
-  private async processarAlertasPrazo(config: ConfiguracaoAlertaPrazo): Promise<void> {
+  private async processarAlertasPrazo(
+    config: ConfiguracaoAlertaPrazo,
+  ): Promise<void> {
     const agora = new Date();
 
     // Verificar alertas por dias
@@ -135,7 +149,9 @@ export class NotificacaoProativaService {
   ): Promise<void> {
     const solicitacoes = await this.solicitacaoRepository
       .createQueryBuilder('solicitacao')
-      .where('solicitacao.status IN (:...status)', { status: config.statusAlvo })
+      .where('solicitacao.status IN (:...status)', {
+        status: config.statusAlvo,
+      })
       .andWhere('solicitacao.prazo_analise <= :dataLimite', { dataLimite })
       .andWhere('solicitacao.prazo_analise > :agora', { agora: new Date() })
       .getMany();
@@ -213,11 +229,19 @@ export class NotificacaoProativaService {
   /**
    * Determina a prioridade do alerta baseado no prazo
    */
-  private determinarPrioridadePrazo(descricaoPrazo: string): 'low' | 'medium' | 'high' {
-    if (descricaoPrazo.includes('6 horas') || descricaoPrazo.includes('1 dia')) {
+  private determinarPrioridadePrazo(
+    descricaoPrazo: string,
+  ): 'low' | 'medium' | 'high' {
+    if (
+      descricaoPrazo.includes('6 horas') ||
+      descricaoPrazo.includes('1 dia')
+    ) {
       return 'high';
     }
-    if (descricaoPrazo.includes('12 horas') || descricaoPrazo.includes('2 dias')) {
+    if (
+      descricaoPrazo.includes('12 horas') ||
+      descricaoPrazo.includes('2 dias')
+    ) {
       return 'medium';
     }
     return 'low';
@@ -248,28 +272,29 @@ export class NotificacaoProativaService {
     const agora = new Date();
     const ontemAgo = addDays(agora, -1);
 
-    const [solicitacoesPendentes, solicitacoesVencidas, usuariosAtivos] = await Promise.all([
-      // Solicitações pendentes
-      this.solicitacaoRepository.count({
-        where: { status: StatusSolicitacao.PENDENTE },
-      }),
+    const [solicitacoesPendentes, solicitacoesVencidas, usuariosAtivos] =
+      await Promise.all([
+        // Solicitações pendentes
+        this.solicitacaoRepository.count({
+          where: { status: StatusSolicitacao.PENDENTE },
+        }),
 
-      // Solicitações vencidas
-      this.solicitacaoRepository.count({
-        where: {
-          status: StatusSolicitacao.PENDENTE,
-          prazo_analise: LessThan(agora),
-        },
-      }),
+        // Solicitações vencidas
+        this.solicitacaoRepository.count({
+          where: {
+            status: StatusSolicitacao.PENDENTE,
+            prazo_analise: LessThan(agora),
+          },
+        }),
 
-      // Usuários ativos (com atividade nas últimas 24h)
-      this.solicitacaoRepository
-        .createQueryBuilder('solicitacao')
-        .select('COUNT(DISTINCT solicitacao.tecnico_id)', 'count')
-        .where('solicitacao.updated_at >= :ontem', { ontem: ontemAgo })
-        .getRawOne()
-        .then((result) => parseInt(result.count) || 0),
-    ]);
+        // Usuários ativos (com atividade nas últimas 24h)
+        this.solicitacaoRepository
+          .createQueryBuilder('solicitacao')
+          .select('COUNT(DISTINCT solicitacao.tecnico_id)', 'count')
+          .where('solicitacao.updated_at >= :ontem', { ontem: ontemAgo })
+          .getRawOne()
+          .then((result) => parseInt(result.count) || 0),
+      ]);
 
     return {
       solicitacoesPendentes,
@@ -283,7 +308,9 @@ export class NotificacaoProativaService {
   /**
    * Processa notificações baseadas nas métricas do sistema
    */
-  private async processarNotificacoesSistema(metricas: MetricasSistema): Promise<void> {
+  private async processarNotificacoesSistema(
+    metricas: MetricasSistema,
+  ): Promise<void> {
     // Alerta para muitas solicitações pendentes
     if (metricas.solicitacoesPendentes > 50) {
       await this.enviarAlertaSistema(
@@ -341,14 +368,18 @@ export class NotificacaoProativaService {
     });
 
     if (alertaRecente) {
-      this.logger.log(`Alerta de sistema '${tipoAlerta}' já enviado recentemente`);
+      this.logger.log(
+        `Alerta de sistema '${tipoAlerta}' já enviado recentemente`,
+      );
       return;
     }
 
     // Buscar IDs de administradores ativos
     const adminIds = await this.buscarAdministradores();
     if (adminIds.length === 0) {
-      this.logger.warn('Nenhum administrador ativo encontrado para envio de alerta de sistema');
+      this.logger.warn(
+        'Nenhum administrador ativo encontrado para envio de alerta de sistema',
+      );
       return;
     }
 
@@ -368,7 +399,9 @@ export class NotificacaoProativaService {
       });
     }
 
-    this.logger.log(`Alerta de sistema '${tipoAlerta}' enviado para ${adminIds.length} administradores`);
+    this.logger.log(
+      `Alerta de sistema '${tipoAlerta}' enviado para ${adminIds.length} administradores`,
+    );
   }
 
   /**

@@ -111,7 +111,9 @@ export class CreateUploadTokenDto {
   })
   @IsOptional()
   @IsArray({ message: 'Documentos obrigatórios deve ser um array' })
-  @ArrayMinSize(0, { message: 'Array de documentos não pode estar vazio se fornecido' })
+  @ArrayMinSize(0, {
+    message: 'Array de documentos não pode estar vazio se fornecido',
+  })
   @ArrayMaxSize(20, { message: 'Máximo de 20 tipos de documentos permitidos' })
   @ValidateNested({ each: true })
   @Type(() => RequiredDocumentDto)

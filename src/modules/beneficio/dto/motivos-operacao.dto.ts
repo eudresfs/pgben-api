@@ -1,5 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { MotivoOperacao, OperacaoConcessao } from '../../../enums/operacao-concessao.enum';
+import {
+  MotivoOperacao,
+  OperacaoConcessao,
+} from '../../../enums/operacao-concessao.enum';
 
 /**
  * DTO para resposta dos motivos disponíveis por operação

@@ -38,7 +38,7 @@ export class RemoveEmptyParamsInterceptor implements NestInterceptor {
         value: cleanedQuery || {},
         writable: true,
         enumerable: true,
-        configurable: true
+        configurable: true,
       });
     }
 
@@ -66,7 +66,7 @@ export class RemoveEmptyParamsInterceptor implements NestInterceptor {
       const filteredArray = obj
         .map((item) => this.removeEmptyParams(item))
         .filter((item) => !this.isEmpty(item));
-      
+
       // Retornar array apenas se tiver elementos válidos
       return filteredArray.length > 0 ? filteredArray : undefined;
     }
@@ -74,16 +74,16 @@ export class RemoveEmptyParamsInterceptor implements NestInterceptor {
     // Se for um objeto, processar suas propriedades
     if (typeof obj === 'object') {
       const cleanedObj: any = {};
-      
+
       for (const [key, value] of Object.entries(obj)) {
         const cleanedValue = this.removeEmptyParams(value);
-        
+
         // Adicionar apenas se o valor não estiver vazio
         if (!this.isEmpty(cleanedValue)) {
           cleanedObj[key] = cleanedValue;
         }
       }
-      
+
       // Retornar objeto apenas se tiver propriedades válidas
       return Object.keys(cleanedObj).length > 0 ? cleanedObj : undefined;
     }

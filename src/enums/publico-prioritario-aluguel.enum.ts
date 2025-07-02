@@ -5,5 +5,5 @@ export enum PublicoPrioritarioAluguel {
   MULHERES_VITIMAS_VIOLENCIA_DOMESTICA = 'mulheres_vitimas_violencia_domestica',
   FAMILIAS_PESSOAS_DEFICIENCIA = 'familias_pessoas_deficiencia',
   FAMILIAS_ATINGIDAS_CALAMIDADE_PUBLICA = 'familias_atingidas_calamidade_publica',
-  FAMILIAS_SITUACAO_RISCO_VULNERABILIDADE = 'familias_situacao_risco_vulnerabilidade'
+  FAMILIAS_SITUACAO_RISCO_VULNERABILIDADE = 'familias_situacao_risco_vulnerabilidade',
 }

@@ -5,6 +5,8 @@ import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { DocumentoController } from './controllers/documento.controller';
 import { DocumentoOrganizacionalController } from './controllers/documento-organizacional.controller';
 import { DocumentoService } from './services/documento.service';
+import { DocumentoBatchService } from './services/batch-download/documento-batch.service';
+import { DocumentoBatchSchedulerService } from './services/batch-download/documento-batch-scheduler.service';
 import { DocumentoUrlService } from './services/documento-url.service';
 import { LoggingService } from '../../shared/logging/logging.service';
 import { StorageProviderFactory } from './factories/storage-provider.factory';
@@ -44,7 +46,6 @@ import {
 import { ThumbnailService } from './services/thumbnail/thumbnail.service';
 import { ThumbnailQueueService } from './services/thumbnail/thumbnail-queue.service';
 
-
 /**
  * Módulo de Documentos
  *
@@ -77,7 +78,10 @@ import { ThumbnailQueueService } from './services/thumbnail/thumbnail-queue.serv
           }
         },
         limits: {
-          fileSize: configService.get<number>('UPLOAD_MAX_FILE_SIZE', 5 * 1024 * 1024), // 5MB default
+          fileSize: configService.get<number>(
+            'UPLOAD_MAX_FILE_SIZE',
+            5 * 1024 * 1024,
+          ), // 5MB default
           files: 1,
         },
       }),
@@ -93,6 +97,8 @@ import { ThumbnailQueueService } from './services/thumbnail/thumbnail-queue.serv
   controllers: [DocumentoController, DocumentoOrganizacionalController],
   providers: [
     DocumentoService,
+    DocumentoBatchService,
+    DocumentoBatchSchedulerService,
     DocumentoUrlService,
     LoggingService,
     StorageProviderFactory,
@@ -103,7 +109,7 @@ import { ThumbnailQueueService } from './services/thumbnail/thumbnail-queue.serv
     DocumentoPathService,
     InputSanitizerValidator,
     StorageHealthService,
-    
+
     // Novos serviços especializados de upload
     DocumentoUploadValidationService,
     DocumentoFileProcessingService,
@@ -111,7 +117,7 @@ import { ThumbnailQueueService } from './services/thumbnail/thumbnail-queue.serv
     DocumentoStorageService,
     DocumentoMetadataService,
     DocumentoPersistenceService,
-    
+
     // Serviços de thumbnail
     {
       provide: ThumbnailService,
@@ -121,10 +127,10 @@ import { ThumbnailQueueService } from './services/thumbnail/thumbnail-queue.serv
       inject: [StorageProviderFactory],
     },
     ThumbnailQueueService,
-    
+
     // Guards de segurança (aplicados localmente nos controllers)
     DocumentoAccessGuard,
-    
+
     // Interceptors de segurança
     {
       provide: APP_INTERCEPTOR,
@@ -134,12 +140,13 @@ import { ThumbnailQueueService } from './services/thumbnail/thumbnail-queue.serv
       provide: APP_INTERCEPTOR,
       useClass: UrlSanitizerInterceptor,
     },
-    
+
     // Middleware será registrado via configure()
     DocumentoRateLimitMiddleware,
   ],
   exports: [
     DocumentoService,
+    DocumentoBatchService,
     DocumentoUrlService,
     StorageProviderFactory,
     MimeValidationService,
@@ -152,8 +159,6 @@ import { ThumbnailQueueService } from './services/thumbnail/thumbnail-queue.serv
 export class DocumentoModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     // Aplicar rate limiting apenas nas rotas de documentos
-    consumer
-      .apply(DocumentoRateLimitMiddleware)
-      .forRoutes('documento');
+    consumer.apply(DocumentoRateLimitMiddleware).forRoutes('documento');
   }
 }

@@ -1,6 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { MetodoConfirmacaoEnum } from '../../../enums/metodo-confirmacao.enum';
-import { ConfirmacaoBaseDto, ResponsavelConfirmacaoInfo, DestinatarioInfo } from './base/confirmacao-base.dto';
+import {
+  ConfirmacaoBaseDto,
+  ResponsavelConfirmacaoInfo,
+  DestinatarioInfo,
+} from './base/confirmacao-base.dto';
 
 /**
  * DTO para resposta contendo dados de uma confirmação de recebimento

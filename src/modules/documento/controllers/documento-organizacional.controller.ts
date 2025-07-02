@@ -8,7 +8,13 @@ import {
   ParseUUIDPipe,
   BadRequestException,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiQuery,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../../../auth/guards/permission.guard';
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
@@ -82,18 +88,44 @@ export class DocumentoOrganizacionalController {
   @RequiresPermission({ permissionName: 'documento.listar' })
   @ApiOperation({
     summary: 'Lista documentos por estrutura hierárquica',
-    description: 'Retorna documentos organizados por pastas hierárquicas (documentos-gerais e solicitações)',
+    description:
+      'Retorna documentos organizados por pastas hierárquicas (documentos-gerais e solicitações)',
   })
   @ApiResponse({
     status: 200,
     description: 'Documentos listados com sucesso',
     type: Object, // Seria ideal criar um DTO específico
   })
-  @ApiQuery({ name: 'pagina', required: false, type: Number, description: 'Número da página (padrão: 1)' })
-  @ApiQuery({ name: 'limite', required: false, type: Number, description: 'Itens por página (padrão: 20, máx: 100)' })
-  @ApiQuery({ name: 'tipo', required: false, enum: TipoDocumentoEnum, description: 'Filtrar por tipo de documento' })
-  @ApiQuery({ name: 'categoria', required: false, enum: ['documentos-gerais', 'solicitacoes'], description: 'Filtrar por categoria' })
-  @ApiQuery({ name: 'solicitacaoId', required: false, type: String, description: 'Filtrar por ID da solicitação' })
+  @ApiQuery({
+    name: 'pagina',
+    required: false,
+    type: Number,
+    description: 'Número da página (padrão: 1)',
+  })
+  @ApiQuery({
+    name: 'limite',
+    required: false,
+    type: Number,
+    description: 'Itens por página (padrão: 20, máx: 100)',
+  })
+  @ApiQuery({
+    name: 'tipo',
+    required: false,
+    enum: TipoDocumentoEnum,
+    description: 'Filtrar por tipo de documento',
+  })
+  @ApiQuery({
+    name: 'categoria',
+    required: false,
+    enum: ['documentos-gerais', 'solicitacoes'],
+    description: 'Filtrar por categoria',
+  })
+  @ApiQuery({
+    name: 'solicitacaoId',
+    required: false,
+    type: String,
+    description: 'Filtrar por ID da solicitação',
+  })
   async listarDocumentosHierarquicos(
     @GetUser() usuario: Usuario,
     @Param('cidadaoId', ParseUUIDPipe) cidadaoId: string,
@@ -109,75 +141,88 @@ export class DocumentoOrganizacionalController {
       if (limite < 1 || limite > 100) limite = 20;
 
       this.logger.log(
-        `Listando documentos hierárquicos para cidadão ${cidadaoId} - Página: ${pagina}, Limite: ${limite}`
+        `Listando documentos hierárquicos para cidadão ${cidadaoId} - Página: ${pagina}, Limite: ${limite}`,
       );
 
       // Buscar documentos do cidadão
       const documentos = await this.documentoService.findByCidadao(
         cidadaoId,
-        tipo
+        tipo,
       );
-      
+
       // Simular paginação (implementar paginação adequada se necessário)
       const total = documentos.length;
 
       // Filtrar documentos que estão na estrutura hierárquica
-      const documentosHierarquicos = documentos.filter(doc => 
-        this.pathService.isValidHierarchicalPath(doc.caminho)
+      const documentosHierarquicos = documentos.filter((doc) =>
+        this.pathService.isValidHierarchicalPath(doc.caminho),
       );
 
       // Aplicar filtros adicionais
       let documentosFiltrados = documentosHierarquicos;
 
       if (tipo) {
-        documentosFiltrados = documentosFiltrados.filter(doc => doc.tipo === tipo);
+        documentosFiltrados = documentosFiltrados.filter(
+          (doc) => doc.tipo === tipo,
+        );
       }
 
       if (categoria || solicitacaoId) {
-        documentosFiltrados = documentosFiltrados.filter(doc => {
+        documentosFiltrados = documentosFiltrados.filter((doc) => {
           try {
             const pathInfo = this.pathService.parseDocumentPath(doc.caminho);
-            
+
             if (categoria && pathInfo.categoria !== categoria) {
               return false;
             }
-            
+
             if (solicitacaoId && pathInfo.solicitacaoId !== solicitacaoId) {
               return false;
             }
-            
+
             return true;
           } catch (error) {
-            this.logger.warn(`Erro ao analisar caminho ${doc.caminho}: ${error.message}`);
+            this.logger.warn(
+              `Erro ao analisar caminho ${doc.caminho}: ${error.message}`,
+            );
             return false;
           }
         });
       }
 
       // Converter para DTO hierárquico
-      const documentosDto: DocumentoHierarquicoDto[] = documentosFiltrados.map(doc => {
-        try {
-          const estruturaCaminho = this.pathService.parseDocumentPath(doc.caminho);
-          
-          return {
-            id: doc.id,
-            nome_arquivo: doc.nome_arquivo,
-            tipo: doc.tipo,
-            tamanho: doc.tamanho,
-            mimetype: doc.mimetype,
-            data_upload: doc.data_upload,
-            caminho_hierarquico: doc.caminho,
-            estrutura_caminho: estruturaCaminho,
-            metadados: doc.metadados,
-          };
-        } catch (error) {
-          this.logger.warn(`Erro ao processar documento ${doc.id}: ${error.message}`);
-          return null;
-        }
-      }).filter(Boolean);
+      const documentosDto: DocumentoHierarquicoDto[] = documentosFiltrados
+        .map((doc) => {
+          try {
+            const estruturaCaminho = this.pathService.parseDocumentPath(
+              doc.caminho,
+            );
+
+            return {
+              id: doc.id,
+              nome_arquivo: doc.nome_arquivo,
+              tipo: doc.tipo,
+              tamanho: doc.tamanho,
+              mimetype: doc.mimetype,
+              data_upload: doc.data_upload,
+              caminho_hierarquico: doc.caminho,
+              estrutura_caminho: estruturaCaminho,
+              metadados: doc.metadados,
+            };
+          } catch (error) {
+            this.logger.warn(
+              `Erro ao processar documento ${doc.id}: ${error.message}`,
+            );
+            return null;
+          }
+        })
+        .filter(Boolean);
 
       // Gerar estrutura de pastas
-      const estrutura = await this.gerarEstruturaPastas(cidadaoId, documentosHierarquicos);
+      const estrutura = await this.gerarEstruturaPastas(
+        cidadaoId,
+        documentosHierarquicos,
+      );
 
       // Calcular paginação
       const totalFiltrado = documentosDto.length;
@@ -195,11 +240,10 @@ export class DocumentoOrganizacionalController {
           totalPaginas,
         },
       };
-
     } catch (error) {
       this.logger.error(
         `Erro ao listar documentos hierárquicos para cidadão ${cidadaoId}`,
-        error.stack
+        error.stack,
       );
       throw error;
     }
@@ -212,7 +256,8 @@ export class DocumentoOrganizacionalController {
   @RequiresPermission({ permissionName: 'documento.listar' })
   @ApiOperation({
     summary: 'Obtém estrutura de pastas',
-    description: 'Retorna a estrutura hierárquica de pastas e tipos de documentos de um cidadão',
+    description:
+      'Retorna a estrutura hierárquica de pastas e tipos de documentos de um cidadão',
   })
   @ApiResponse({
     status: 200,
@@ -230,21 +275,18 @@ export class DocumentoOrganizacionalController {
       // await this.documentoService.checkUserDocumentAccess(documentoId, usuario.id, usuario.roles);
 
       // Buscar todos os documentos do cidadão
-      const documentos = await this.documentoService.findByCidadao(
-        cidadaoId
-      );
+      const documentos = await this.documentoService.findByCidadao(cidadaoId);
 
       // Filtrar apenas documentos hierárquicos
-      const documentosHierarquicos = documentos.filter(doc => 
-        this.pathService.isValidHierarchicalPath(doc.caminho)
+      const documentosHierarquicos = documentos.filter((doc) =>
+        this.pathService.isValidHierarchicalPath(doc.caminho),
       );
 
       return await this.gerarEstruturaPastas(cidadaoId, documentosHierarquicos);
-
     } catch (error) {
       this.logger.error(
         `Erro ao obter estrutura de pastas para cidadão ${cidadaoId}`,
-        error.stack
+        error.stack,
       );
       throw error;
     }
@@ -257,14 +299,25 @@ export class DocumentoOrganizacionalController {
   @RequiresPermission({ permissionName: 'documento.listar' })
   @ApiOperation({
     summary: 'Lista documentos de uma pasta específica',
-    description: 'Retorna documentos de uma categoria específica (documentos-gerais ou solicitações)',
+    description:
+      'Retorna documentos de uma categoria específica (documentos-gerais ou solicitações)',
   })
   @ApiResponse({
     status: 200,
     description: 'Documentos da pasta listados com sucesso',
   })
-  @ApiQuery({ name: 'tipo', required: false, enum: TipoDocumentoEnum, description: 'Filtrar por tipo de documento' })
-  @ApiQuery({ name: 'solicitacaoId', required: false, type: String, description: 'ID da solicitação (apenas para categoria solicitacoes)' })
+  @ApiQuery({
+    name: 'tipo',
+    required: false,
+    enum: TipoDocumentoEnum,
+    description: 'Filtrar por tipo de documento',
+  })
+  @ApiQuery({
+    name: 'solicitacaoId',
+    required: false,
+    type: String,
+    description: 'ID da solicitação (apenas para categoria solicitacoes)',
+  })
   async listarDocumentosPasta(
     @GetUser() usuario: Usuario,
     @Param('cidadaoId', ParseUUIDPipe) cidadaoId: string,
@@ -275,56 +328,62 @@ export class DocumentoOrganizacionalController {
     try {
       // Validar categoria
       if (!['documentos-gerais', 'solicitacoes'].includes(categoria)) {
-        throw new BadRequestException('Categoria deve ser "documentos-gerais" ou "solicitacoes"');
+        throw new BadRequestException(
+          'Categoria deve ser "documentos-gerais" ou "solicitacoes"',
+        );
       }
 
       // Se categoria é solicitacoes, solicitacaoId é obrigatório
       if (categoria === 'solicitacoes' && !solicitacaoId) {
-        throw new BadRequestException('solicitacaoId é obrigatório para categoria "solicitacoes"');
+        throw new BadRequestException(
+          'solicitacaoId é obrigatório para categoria "solicitacoes"',
+        );
       }
 
       this.logger.log(
-        `Listando documentos da pasta ${categoria} para cidadão ${cidadaoId}`
+        `Listando documentos da pasta ${categoria} para cidadão ${cidadaoId}`,
       );
 
       // Buscar documentos do cidadão
-      const documentos = await this.documentoService.findByCidadao(
-        cidadaoId
-      );
+      const documentos = await this.documentoService.findByCidadao(cidadaoId);
 
       // Filtrar por pasta e critérios
       const documentosFiltrados = documentos
-        .filter(doc => this.pathService.isValidHierarchicalPath(doc.caminho))
-        .filter(doc => {
+        .filter((doc) => this.pathService.isValidHierarchicalPath(doc.caminho))
+        .filter((doc) => {
           try {
             const pathInfo = this.pathService.parseDocumentPath(doc.caminho);
-            
+
             // Filtrar por categoria
             if (pathInfo.categoria !== categoria) {
               return false;
             }
-            
+
             // Filtrar por solicitação se especificado
             if (solicitacaoId && pathInfo.solicitacaoId !== solicitacaoId) {
               return false;
             }
-            
+
             // Filtrar por tipo se especificado
             if (tipo && doc.tipo !== tipo) {
               return false;
             }
-            
+
             return true;
           } catch (error) {
-            this.logger.warn(`Erro ao analisar caminho ${doc.caminho}: ${error.message}`);
+            this.logger.warn(
+              `Erro ao analisar caminho ${doc.caminho}: ${error.message}`,
+            );
             return false;
           }
         });
 
       // Converter para DTO
-      return documentosFiltrados.map(doc => {
-        const estruturaCaminho = this.pathService.parseDocumentPath(doc.caminho);
-        
+      return documentosFiltrados.map((doc) => {
+        const estruturaCaminho = this.pathService.parseDocumentPath(
+          doc.caminho,
+        );
+
         return {
           id: doc.id,
           nome_arquivo: doc.nome_arquivo,
@@ -337,11 +396,10 @@ export class DocumentoOrganizacionalController {
           metadados: doc.metadados,
         };
       });
-
     } catch (error) {
       this.logger.error(
         `Erro ao listar documentos da pasta ${categoria} para cidadão ${cidadaoId}`,
-        error.stack
+        error.stack,
       );
       throw error;
     }
@@ -352,7 +410,7 @@ export class DocumentoOrganizacionalController {
    */
   private async gerarEstruturaPastas(
     cidadaoId: string,
-    documentos: Documento[]
+    documentos: Documento[],
   ): Promise<EstruturaPastasDto> {
     const estrutura: EstruturaPastasDto = {
       cidadaoId,
@@ -367,35 +425,45 @@ export class DocumentoOrganizacionalController {
     };
 
     const tiposDocumentosGerais = new Set<string>();
-    const solicitacoesMap = new Map<string, { tipos: Set<string>; total: number }>();
+    const solicitacoesMap = new Map<
+      string,
+      { tipos: Set<string>; total: number }
+    >();
 
     for (const documento of documentos) {
       try {
         const pathInfo = this.pathService.parseDocumentPath(documento.caminho);
-        
+
         if (pathInfo.categoria === 'documentos-gerais') {
           tiposDocumentosGerais.add(pathInfo.tipoDocumento);
           estrutura.pastas.documentosGerais.totalDocumentos++;
-        } else if (pathInfo.categoria === 'solicitacoes' && pathInfo.solicitacaoId) {
+        } else if (
+          pathInfo.categoria === 'solicitacoes' &&
+          pathInfo.solicitacaoId
+        ) {
           if (!solicitacoesMap.has(pathInfo.solicitacaoId)) {
             solicitacoesMap.set(pathInfo.solicitacaoId, {
               tipos: new Set<string>(),
               total: 0,
             });
           }
-          
+
           const solicitacao = solicitacoesMap.get(pathInfo.solicitacaoId);
           solicitacao.tipos.add(pathInfo.tipoDocumento);
           solicitacao.total++;
         }
       } catch (error) {
-        this.logger.warn(`Erro ao processar documento ${documento.id}: ${error.message}`);
+        this.logger.warn(
+          `Erro ao processar documento ${documento.id}: ${error.message}`,
+        );
       }
     }
 
     // Converter sets para arrays
-    estrutura.pastas.documentosGerais.tipos = Array.from(tiposDocumentosGerais).sort();
-    
+    estrutura.pastas.documentosGerais.tipos = Array.from(
+      tiposDocumentosGerais,
+    ).sort();
+
     estrutura.pastas.solicitacoes = Array.from(solicitacoesMap.entries())
       .map(([solicitacaoId, data]) => ({
         solicitacaoId,

@@ -28,7 +28,7 @@ export enum TipoNotificacao {
   APROVACAO = 'aprovacao',
   LIBERACAO = 'liberacao',
   ALERTA = 'alerta',
-  URGENTE = "urgente",
+  URGENTE = 'urgente',
 }
 
 /**

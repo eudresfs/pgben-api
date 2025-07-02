@@ -32,7 +32,16 @@ import {
   PreferenciasUsuario,
 } from '../services/notificacao-preferencias.service';
 import { TipoNotificacao } from '../../../entities/notification.entity';
-import { IsOptional, IsEnum, IsBoolean, IsNumber, IsString, IsArray, ValidateNested, IsDateString } from 'class-validator';
+import {
+  IsOptional,
+  IsEnum,
+  IsBoolean,
+  IsNumber,
+  IsString,
+  IsArray,
+  ValidateNested,
+  IsDateString,
+} from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 
 /**
@@ -89,7 +98,7 @@ class ConfiguracoesGlobaisDto {
 
   @IsOptional()
   @IsDateString()
-  @Transform(({ value }) => value ? new Date(value) : null)
+  @Transform(({ value }) => (value ? new Date(value) : null))
   pausar_ate: Date | null;
 
   @IsNumber()
@@ -134,7 +143,7 @@ class PausarNotificacoesDto {
 
 /**
  * Controlador para funcionalidades avançadas de notificação
- * 
+ *
  * Implementa as APIs para:
  * - Notificações proativas (Fase 4)
  * - Preferências de usuário (Fase 5)
@@ -157,7 +166,8 @@ export class NotificacaoAvancadaController {
   @Get('proativas/estatisticas')
   @ApiOperation({
     summary: 'Obter estatísticas das notificações proativas',
-    description: 'Retorna métricas sobre alertas de prazo, notificações de sistema e limpeza automática',
+    description:
+      'Retorna métricas sobre alertas de prazo, notificações de sistema e limpeza automática',
   })
   @ApiResponse({
     status: 200,
@@ -220,7 +230,8 @@ export class NotificacaoAvancadaController {
   @Get('preferencias')
   @ApiOperation({
     summary: 'Obter preferências de notificação do usuário',
-    description: 'Retorna as configurações de notificação do usuário autenticado',
+    description:
+      'Retorna as configurações de notificação do usuário autenticado',
   })
   @ApiResponse({
     status: 200,
@@ -244,13 +255,17 @@ export class NotificacaoAvancadaController {
     @GetUser() user: any,
     @Body(ValidationPipe) preferencias: AtualizarPreferenciasDto,
   ) {
-    return this.preferenciasService.atualizarPreferencias(user.id, preferencias);
+    return this.preferenciasService.atualizarPreferencias(
+      user.id,
+      preferencias,
+    );
   }
 
   @Post('preferencias/pausar')
   @ApiOperation({
     summary: 'Pausar notificações temporariamente',
-    description: 'Pausa todas as notificações do usuário por um período determinado',
+    description:
+      'Pausa todas as notificações do usuário por um período determinado',
   })
   @ApiBody({ type: PausarNotificacoesDto })
   @ApiResponse({
@@ -284,7 +299,8 @@ export class NotificacaoAvancadaController {
   @Get('preferencias/validar')
   @ApiOperation({
     summary: 'Validar se notificação deve ser enviada',
-    description: 'Verifica se uma notificação deve ser enviada baseada nas preferências do usuário',
+    description:
+      'Verifica se uma notificação deve ser enviada baseada nas preferências do usuário',
   })
   @ApiQuery({ name: 'tipo', enum: TipoNotificacao })
   @ApiQuery({ name: 'prioridade', enum: ['low', 'medium', 'high'] })
@@ -328,7 +344,8 @@ export class NotificacaoAvancadaController {
   @Get('agrupamento/estatisticas')
   @ApiOperation({
     summary: 'Obter estatísticas de agrupamento',
-    description: 'Retorna informações sobre grupos de notificações ativos e na fila',
+    description:
+      'Retorna informações sobre grupos de notificações ativos e na fila',
   })
   @ApiResponse({
     status: 200,
@@ -359,7 +376,8 @@ export class NotificacaoAvancadaController {
   @Post('agrupamento/limpar-cache')
   @ApiOperation({
     summary: 'Limpar cache de preferências',
-    description: 'Remove todas as preferências do cache em memória (útil para desenvolvimento)',
+    description:
+      'Remove todas as preferências do cache em memória (útil para desenvolvimento)',
   })
   @ApiResponse({
     status: 200,
@@ -378,7 +396,8 @@ export class NotificacaoAvancadaController {
   @Get('configuracao/canais')
   @ApiOperation({
     summary: 'Listar canais de notificação disponíveis',
-    description: 'Retorna todos os canais de notificação suportados pelo sistema',
+    description:
+      'Retorna todos os canais de notificação suportados pelo sistema',
   })
   @ApiResponse({
     status: 200,
@@ -397,7 +416,8 @@ export class NotificacaoAvancadaController {
   @Get('configuracao/frequencias')
   @ApiOperation({
     summary: 'Listar frequências de agrupamento disponíveis',
-    description: 'Retorna todas as opções de frequência para agrupamento de notificações',
+    description:
+      'Retorna todas as opções de frequência para agrupamento de notificações',
   })
   @ApiResponse({
     status: 200,
@@ -416,7 +436,8 @@ export class NotificacaoAvancadaController {
   @Get('configuracao/tipos')
   @ApiOperation({
     summary: 'Listar tipos de notificação disponíveis',
-    description: 'Retorna todos os tipos de notificação suportados pelo sistema',
+    description:
+      'Retorna todos os tipos de notificação suportados pelo sistema',
   })
   @ApiResponse({
     status: 200,

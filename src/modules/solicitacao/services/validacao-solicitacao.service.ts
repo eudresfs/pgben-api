@@ -38,7 +38,9 @@ export class ValidacaoSolicitacaoService {
     });
 
     if (!solicitacao) {
-      throwSolicitacaoNotFound(solicitacaoId, { data: { context: 'validacao_aprovacao' } });
+      throwSolicitacaoNotFound(solicitacaoId, {
+        data: { context: 'validacao_aprovacao' },
+      });
     }
 
     // Verificar se a transição para APROVADA é válida
@@ -51,7 +53,7 @@ export class ValidacaoSolicitacaoService {
       throwInvalidStatusTransition(
         solicitacao.status,
         StatusSolicitacao.APROVADA,
-        { data: { solicitacaoId, context: 'validacao_aprovacao' } }
+        { data: { solicitacaoId, context: 'validacao_aprovacao' } },
       );
     }
 
@@ -64,18 +66,16 @@ export class ValidacaoSolicitacaoService {
     });
 
     if (pendenciasAbertas.length > 0) {
-      throwPendingIssues(
-        pendenciasAbertas.length,
-        { data: { solicitacaoId, context: 'validacao_aprovacao' } }
-      );
+      throwPendingIssues(pendenciasAbertas.length, {
+        data: { solicitacaoId, context: 'validacao_aprovacao' },
+      });
     }
 
     // Verificar se a solicitação tem os campos obrigatórios preenchidos
     if (!solicitacao.parecer_semtas) {
-      throwWorkflowStepRequired(
-        'parecer_semtas',
-        { data: { solicitacaoId, context: 'validacao_aprovacao' } }
-      );
+      throwWorkflowStepRequired('parecer_semtas', {
+        data: { solicitacaoId, context: 'validacao_aprovacao' },
+      });
     }
   }
 
@@ -93,7 +93,9 @@ export class ValidacaoSolicitacaoService {
     });
 
     if (!solicitacao) {
-      throwSolicitacaoNotFound(solicitacaoId, { data: { context: 'validacao_cancelamento' } });
+      throwSolicitacaoNotFound(solicitacaoId, {
+        data: { context: 'validacao_cancelamento' },
+      });
     }
 
     // Verificar se a transição para CANCELADA é válida
@@ -106,7 +108,7 @@ export class ValidacaoSolicitacaoService {
       throwInvalidStatusTransition(
         solicitacao.status,
         StatusSolicitacao.CANCELADA,
-        { data: { solicitacaoId, context: 'validacao_cancelamento' } }
+        { data: { solicitacaoId, context: 'validacao_cancelamento' } },
       );
     }
   }

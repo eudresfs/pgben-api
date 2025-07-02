@@ -13,8 +13,6 @@ export class ContatoService {
     private readonly configService: ConfigService,
   ) {}
 
-
-
   /**
    * Busca todos os contatos de um cidadão
    */
@@ -53,10 +51,10 @@ export class ContatoService {
    */
   async update(id: string, contatoDto: ContatoDto): Promise<Contato> {
     const contato = await this.findById(id);
-    
+
     // Atualiza apenas os campos fornecidos
     Object.assign(contato, contatoDto);
-    
+
     return this.contatoRepository.save(contato);
   }
 
@@ -72,16 +70,19 @@ export class ContatoService {
    * Cria ou atualiza múltiplos contatos para um cidadão
    * Usado na migração e na atualização via cidadão
    */
-  async upsertMany(cidadaoId: string, contatos: ContatoDto[]): Promise<Contato[]> {
+  async upsertMany(
+    cidadaoId: string,
+    contatos: ContatoDto[],
+  ): Promise<Contato[]> {
     // Remove contatos que não estão na lista e pertencem ao cidadão
     if (contatos.length > 0) {
       const contatosExistentes = await this.findByCidadaoId(cidadaoId);
-      const idsNovos = contatos.filter(c => c.id).map(c => c.id);
-      
+      const idsNovos = contatos.filter((c) => c.id).map((c) => c.id);
+
       const contatosParaRemover = contatosExistentes.filter(
-        c => !idsNovos.includes(c.id)
+        (c) => !idsNovos.includes(c.id),
       );
-      
+
       if (contatosParaRemover.length > 0) {
         await this.contatoRepository.remove(contatosParaRemover);
       }
@@ -89,10 +90,10 @@ export class ContatoService {
 
     // Cria ou atualiza os contatos
     const contatosSalvos: Contato[] = [];
-    
+
     for (const contatoDto of contatos) {
       contatoDto.cidadao_id = cidadaoId;
-      
+
       if (contatoDto.id) {
         // Atualiza contato existente
         const contatoAtualizado = await this.update(contatoDto.id, contatoDto);
@@ -103,7 +104,7 @@ export class ContatoService {
         contatosSalvos.push(novoContato);
       }
     }
-    
+
     return contatosSalvos;
   }
 }

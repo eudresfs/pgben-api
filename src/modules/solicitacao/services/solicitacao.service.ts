@@ -24,7 +24,15 @@ import {
   throwInternalError,
 } from '../../../shared/exceptions/error-catalog/domains/solicitacao.errors';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between, ILike, Connection, In, DataSource, SelectQueryBuilder } from 'typeorm';
+import {
+  Repository,
+  Between,
+  ILike,
+  Connection,
+  In,
+  DataSource,
+  SelectQueryBuilder,
+} from 'typeorm';
 import {
   Solicitacao,
   StatusSolicitacao,
@@ -47,7 +55,6 @@ import { ROLES } from '../../../shared/constants/roles.constants';
 import { ValidacaoExclusividadeService } from './validacao-exclusividade.service';
 import { CidadaoService } from '../../cidadao/services/cidadao.service';
 import { Logger } from '@nestjs/common';
-
 
 interface FindAllOptions {
   page?: number;
@@ -111,33 +118,36 @@ export class SolicitacaoService {
     this.logger = new Logger('SolicitacaoService');
   }
 
-  
   /**
    * Lista todas as solicitações com paginação e filtros
    * @param options Opções de filtro, paginação e ordenação
    * @returns Lista paginada de solicitações
    */
-  async findAll(options: FindAllOptions): Promise<PaginatedResponse<Solicitacao>> {
+  async findAll(
+    options: FindAllOptions,
+  ): Promise<PaginatedResponse<Solicitacao>> {
     const page = Math.max(1, options.page || 1);
     const limit = Math.min(100, Math.max(1, options.limit || 10));
     const sortBy = options.sortBy || 'data_abertura';
     const sortOrder = options.sortOrder || 'DESC';
-    
+
     const allowedSortFields = ['data_abertura', 'protocolo', 'status'];
     if (!allowedSortFields.includes(sortBy)) {
-      throw new BadRequestException(`Campo de ordenação '${sortBy}' não permitido`);
+      throw new BadRequestException(
+        `Campo de ordenação '${sortBy}' não permitido`,
+      );
     }
-  
+
     let dataInicio: Date | undefined;
     let dataFim: Date | undefined;
-    
+
     if (options.data_inicio) {
       dataInicio = new Date(options.data_inicio);
       if (isNaN(dataInicio.getTime())) {
         throw new BadRequestException('Data de início inválida');
       }
     }
-    
+
     if (options.data_fim) {
       dataFim = new Date(options.data_fim);
       if (isNaN(dataFim.getTime())) {
@@ -145,7 +155,7 @@ export class SolicitacaoService {
       }
       dataFim.setHours(23, 59, 59, 999);
     }
-  
+
     const queryBuilder = this.solicitacaoRepository
       .createQueryBuilder('solicitacao')
       .leftJoinAndSelect('solicitacao.beneficiario', 'beneficiario')
@@ -174,9 +184,9 @@ export class SolicitacaoService {
         'tecnico.nome',
         // Dados básicos da unidade
         'unidade.id',
-        'unidade.nome'
+        'unidade.nome',
       ]);
-  
+
     this.applyFilters(queryBuilder, {
       status: options.status,
       unidade_id: options.unidade_id,
@@ -186,17 +196,17 @@ export class SolicitacaoService {
       data_inicio: dataInicio,
       data_fim: dataFim,
     });
-  
+
     const skip = (page - 1) * limit;
     queryBuilder
       .skip(skip)
       .take(limit)
       .orderBy(`solicitacao.${sortBy}`, sortOrder);
-  
+
     const startTime = Date.now();
     const [items, total] = await queryBuilder.getManyAndCount();
     const executionTime = Date.now() - startTime;
-    
+
     if (executionTime > 1000) {
       this.logger.warn(`Query lenta detectada: ${executionTime}ms`, {
         filters: options,
@@ -204,9 +214,9 @@ export class SolicitacaoService {
         totalCount: total,
       });
     }
-  
+
     const totalPages = Math.ceil(total / limit);
-    
+
     return {
       items,
       meta: {
@@ -219,137 +229,169 @@ export class SolicitacaoService {
       },
     };
   }
-  
+
   /**
    * Aplica filtros condicionais ao query builder
    * @param queryBuilder Instance do query builder
    * @param filters Objeto com os filtros a serem aplicados
    */
-  private applyFilters(queryBuilder: SelectQueryBuilder<Solicitacao>, filters: any) {
+  private applyFilters(
+    queryBuilder: SelectQueryBuilder<Solicitacao>,
+    filters: any,
+  ) {
     if (filters.status) {
-      queryBuilder.andWhere('solicitacao.status = :status', { status: filters.status });
-    }
-    
-    if (filters.unidade_id) {
-      queryBuilder.andWhere('solicitacao.unidade_id = :unidade_id', { 
-        unidade_id: filters.unidade_id 
+      queryBuilder.andWhere('solicitacao.status = :status', {
+        status: filters.status,
       });
     }
-  
+
+    if (filters.unidade_id) {
+      queryBuilder.andWhere('solicitacao.unidade_id = :unidade_id', {
+        unidade_id: filters.unidade_id,
+      });
+    }
+
     if (filters.beneficio_id) {
       queryBuilder.andWhere('solicitacao.tipo_beneficio_id = :beneficio_id', {
         beneficio_id: filters.beneficio_id,
       });
     }
-  
+
     if (filters.beneficiario_id) {
       queryBuilder.andWhere('solicitacao.beneficiario_id = :beneficiario_id', {
         beneficiario_id: filters.beneficiario_id,
       });
     }
-  
+
     if (filters.protocolo) {
       queryBuilder.andWhere('solicitacao.protocolo ILIKE :protocolo', {
         protocolo: `%${filters.protocolo}%`,
       });
     }
-  
+
     if (filters.data_inicio && filters.data_fim) {
       queryBuilder.andWhere(
         'solicitacao.data_abertura BETWEEN :inicio AND :fim',
-        { inicio: filters.data_inicio, fim: filters.data_fim }
+        { inicio: filters.data_inicio, fim: filters.data_fim },
       );
     } else if (filters.data_inicio) {
-      queryBuilder.andWhere('solicitacao.data_abertura >= :inicio', { 
-        inicio: filters.data_inicio 
+      queryBuilder.andWhere('solicitacao.data_abertura >= :inicio', {
+        inicio: filters.data_inicio,
       });
     } else if (filters.data_fim) {
-      queryBuilder.andWhere('solicitacao.data_abertura <= :fim', { 
-        fim: filters.data_fim 
+      queryBuilder.andWhere('solicitacao.data_abertura <= :fim', {
+        fim: filters.data_fim,
       });
     }
   }
 
-/**
- * Busca uma solicitação pelo ID
- */
-async findById(id: string): Promise<Solicitacao> {
-  const solicitacao = await this.solicitacaoRepository
-    .createQueryBuilder('solicitacao')
-    .leftJoinAndSelect('solicitacao.beneficiario', 'beneficiario')
-    .leftJoinAndSelect('solicitacao.solicitante', 'solicitante')
-    .leftJoinAndSelect('solicitacao.tipo_beneficio', 'tipo_beneficio')
-    .leftJoinAndSelect('solicitacao.unidade', 'unidade')
-    .leftJoinAndSelect('solicitacao.tecnico', 'tecnico')
-    .leftJoinAndSelect('solicitacao.documentos', 'documentos')
-    .leftJoinAndSelect('solicitacao.concessao', 'concessao')
-    .select([
-      'solicitacao.id', 'solicitacao.protocolo', 'solicitacao.status',
-      'solicitacao.parecer_semtas', 'solicitacao.dados_complementares',
-      'solicitacao.data_abertura', 'solicitacao.observacoes',
-      'beneficiario.id', 'beneficiario.nome', 'beneficiario.cpf',
-      'beneficiario.rg', 'beneficiario.nis', 'beneficiario.data_nascimento',
-      'beneficiario.nome_mae', 'beneficiario.naturalidade', 'beneficiario.sexo',
-      'beneficiario.estado_civil',
-      'solicitante.id', 'solicitante.nome', 'solicitante.cpf',
-      'solicitante.nis', 'solicitante.data_nascimento',
-      'tipo_beneficio.id', 'tipo_beneficio.nome', 'tipo_beneficio.descricao',
-      'tipo_beneficio.codigo', 'tipo_beneficio.valor',
-      'tecnico.id', 'tecnico.nome',
-      'unidade.id', 'unidade.nome', 'unidade.sigla',
-      'concessao.id'
-    ])
-    .where('solicitacao.id = :id', { id })
-    .getOne();
+  /**
+   * Busca uma solicitação pelo ID
+   */
+  async findById(id: string): Promise<Solicitacao> {
+    const solicitacao = await this.solicitacaoRepository
+      .createQueryBuilder('solicitacao')
+      .leftJoinAndSelect('solicitacao.beneficiario', 'beneficiario')
+      .leftJoinAndSelect('solicitacao.solicitante', 'solicitante')
+      .leftJoinAndSelect('solicitacao.tipo_beneficio', 'tipo_beneficio')
+      .leftJoinAndSelect('solicitacao.unidade', 'unidade')
+      .leftJoinAndSelect('solicitacao.tecnico', 'tecnico')
+      .leftJoinAndSelect('solicitacao.documentos', 'documentos')
+      .leftJoinAndSelect('solicitacao.concessao', 'concessao')
+      .select([
+        'solicitacao.id',
+        'solicitacao.protocolo',
+        'solicitacao.status',
+        'solicitacao.parecer_semtas',
+        'solicitacao.dados_complementares',
+        'solicitacao.data_abertura',
+        'solicitacao.observacoes',
+        'beneficiario.id',
+        'beneficiario.nome',
+        'beneficiario.cpf',
+        'beneficiario.rg',
+        'beneficiario.nis',
+        'beneficiario.data_nascimento',
+        'beneficiario.nome_mae',
+        'beneficiario.naturalidade',
+        'beneficiario.sexo',
+        'beneficiario.estado_civil',
+        'solicitante.id',
+        'solicitante.nome',
+        'solicitante.cpf',
+        'solicitante.nis',
+        'solicitante.data_nascimento',
+        'tipo_beneficio.id',
+        'tipo_beneficio.nome',
+        'tipo_beneficio.descricao',
+        'tipo_beneficio.codigo',
+        'tipo_beneficio.valor',
+        'tecnico.id',
+        'tecnico.nome',
+        'unidade.id',
+        'unidade.nome',
+        'unidade.sigla',
+        'concessao.id',
+      ])
+      .where('solicitacao.id = :id', { id })
+      .getOne();
 
-  if (!solicitacao) {
-    throwSolicitacaoNotFound(id);
+    if (!solicitacao) {
+      throwSolicitacaoNotFound(id);
+    }
+
+    // Busca contatos em paralelo
+    const [contatoBeneficiario, contatoSolicitante] = await Promise.all([
+      solicitacao.beneficiario
+        ? this.buscarContatoMaisRecente(solicitacao.beneficiario.id)
+        : null,
+      solicitacao.solicitante
+        ? this.buscarContatoMaisRecente(solicitacao.solicitante.id)
+        : null,
+    ]);
+
+    // Adiciona os contatos encontrados
+    if (contatoBeneficiario && solicitacao.beneficiario) {
+      solicitacao.beneficiario.contatos = [contatoBeneficiario];
+    }
+    if (contatoSolicitante && solicitacao.solicitante) {
+      solicitacao.solicitante.contatos = [contatoSolicitante];
+    }
+
+    return solicitacao;
   }
 
-  // Busca contatos em paralelo
-  const [contatoBeneficiario, contatoSolicitante] = await Promise.all([
-    solicitacao.beneficiario ? this.buscarContatoMaisRecente(solicitacao.beneficiario.id) : null,
-    solicitacao.solicitante ? this.buscarContatoMaisRecente(solicitacao.solicitante.id) : null
-  ]);
-
-  // Adiciona os contatos encontrados
-  if (contatoBeneficiario && solicitacao.beneficiario) {
-    solicitacao.beneficiario.contatos = [contatoBeneficiario];
-  }
-  if (contatoSolicitante && solicitacao.solicitante) {
-    solicitacao.solicitante.contatos = [contatoSolicitante];
-  }
-
-  return solicitacao;
-}
-
-/**
- * Busca o contato mais recente de um cidadão
- * Prioriza contatos com proprietario = true, depois proprietario = false
- */
-private async buscarContatoMaisRecente(cidadaoId: string): Promise<Contato | null> {
-  // Tenta buscar contato com proprietario = true primeiro
-  let contato = await this.dataSource
-    .getRepository(Contato)
-    .createQueryBuilder('contato')
-    .where('contato.cidadao_id = :cidadaoId', { cidadaoId })
-    .andWhere('contato.proprietario = :proprietario', { proprietario: true })
-    .orderBy('contato.created_at', 'DESC')
-    .getOne();
-
-  // Se não encontrou, busca com proprietario = false
-  if (!contato) {
-    contato = await this.dataSource
+  /**
+   * Busca o contato mais recente de um cidadão
+   * Prioriza contatos com proprietario = true, depois proprietario = false
+   */
+  private async buscarContatoMaisRecente(
+    cidadaoId: string,
+  ): Promise<Contato | null> {
+    // Tenta buscar contato com proprietario = true primeiro
+    let contato = await this.dataSource
       .getRepository(Contato)
       .createQueryBuilder('contato')
       .where('contato.cidadao_id = :cidadaoId', { cidadaoId })
-      .andWhere('contato.proprietario = :proprietario', { proprietario: false })
+      .andWhere('contato.proprietario = :proprietario', { proprietario: true })
       .orderBy('contato.created_at', 'DESC')
       .getOne();
-  }
 
-  return contato;
-}
+    // Se não encontrou, busca com proprietario = false
+    if (!contato) {
+      contato = await this.dataSource
+        .getRepository(Contato)
+        .createQueryBuilder('contato')
+        .where('contato.cidadao_id = :cidadaoId', { cidadaoId })
+        .andWhere('contato.proprietario = :proprietario', {
+          proprietario: false,
+        })
+        .orderBy('contato.created_at', 'DESC')
+        .getOne();
+    }
+
+    return contato;
+  }
 
   /**
    * Cria uma nova solicitação
@@ -358,14 +400,19 @@ private async buscarContatoMaisRecente(cidadaoId: string): Promise<Contato | nul
     createSolicitacaoDto: CreateSolicitacaoDto,
     user: any,
   ): Promise<Solicitacao> {
-    this.logger.log(`Iniciando criação de solicitação para beneficiário: ${createSolicitacaoDto.beneficiario_id}`);
-    
+    this.logger.log(
+      `Iniciando criação de solicitação para beneficiário: ${createSolicitacaoDto.beneficiario_id}`,
+    );
+
     try {
       // ===== VALIDAÇÕES E LEITURAS FORA DA TRANSAÇÃO =====
-      
+
       // Validar se o beneficiário existe
       try {
-        await this.cidadaoService.findById(createSolicitacaoDto.beneficiario_id, false);
+        await this.cidadaoService.findById(
+          createSolicitacaoDto.beneficiario_id,
+          false,
+        );
       } catch (error) {
         if (error.status === 404) {
           throw new BadRequestException('Beneficiário não encontrado');
@@ -376,7 +423,10 @@ private async buscarContatoMaisRecente(cidadaoId: string): Promise<Contato | nul
       // Validar se o solicitante existe (quando informado)
       if (createSolicitacaoDto.solicitante_id) {
         try {
-          await this.cidadaoService.findById(createSolicitacaoDto.solicitante_id, false);
+          await this.cidadaoService.findById(
+            createSolicitacaoDto.solicitante_id,
+            false,
+          );
         } catch (error) {
           if (error.status === 404) {
             throw new BadRequestException('Solicitante não encontrado');
@@ -386,9 +436,14 @@ private async buscarContatoMaisRecente(cidadaoId: string): Promise<Contato | nul
       }
 
       // Validar que solicitante não pode ser o mesmo que beneficiário
-      if (createSolicitacaoDto.solicitante_id && 
-          createSolicitacaoDto.solicitante_id === createSolicitacaoDto.beneficiario_id) {
-        throw new BadRequestException('Solicitante não pode ser o mesmo que o beneficiário');
+      if (
+        createSolicitacaoDto.solicitante_id &&
+        createSolicitacaoDto.solicitante_id ===
+          createSolicitacaoDto.beneficiario_id
+      ) {
+        throw new BadRequestException(
+          'Solicitante não pode ser o mesmo que o beneficiário',
+        );
       }
 
       // Validar exclusividade de papel para o beneficiário
@@ -402,7 +457,7 @@ private async buscarContatoMaisRecente(cidadaoId: string): Promise<Contato | nul
         StatusSolicitacao.ABERTA,
         StatusSolicitacao.PENDENTE,
         StatusSolicitacao.EM_ANALISE,
-        StatusSolicitacao.APROVADA
+        StatusSolicitacao.APROVADA,
       ];
 
       // Verifica se existe uma solicitação em andamento para o mesmo beneficiário e benefício
@@ -410,13 +465,15 @@ private async buscarContatoMaisRecente(cidadaoId: string): Promise<Contato | nul
         where: {
           beneficiario_id: createSolicitacaoDto.beneficiario_id,
           tipo_beneficio_id: createSolicitacaoDto.tipo_beneficio_id,
-          status: In(statusEmAndamento)
-        }
+          status: In(statusEmAndamento),
+        },
       });
 
       // Se existir, retorna os dados da solicitação existente
       if (solicitacaoExistente) {
-        this.logger.log(`Solicitação já existe para este beneficiário e tipo de benefício: ${solicitacaoExistente.id}`);
+        this.logger.log(
+          `Solicitação já existe para este beneficiário e tipo de benefício: ${solicitacaoExistente.id}`,
+        );
         return solicitacaoExistente;
       }
 
@@ -424,10 +481,9 @@ private async buscarContatoMaisRecente(cidadaoId: string): Promise<Contato | nul
       let unidadeId: string;
       if (!user.unidade_id) {
         if (!createSolicitacaoDto.unidade_id) {
-          throwWorkflowStepRequired(
-            'unidade_id',
-            { data: { context: 'unidade_validation' } }
-          );
+          throwWorkflowStepRequired('unidade_id', {
+            data: { context: 'unidade_validation' },
+          });
         }
         unidadeId = createSolicitacaoDto.unidade_id;
       } else {
@@ -435,52 +491,57 @@ private async buscarContatoMaisRecente(cidadaoId: string): Promise<Contato | nul
       }
 
       // Normalizar enums nos dados complementares antes de salvar
-      const dadosComplementares = createSolicitacaoDto.dados_complementares || {};
-      const normalizedDadosComplementares = normalizeEnumFields(dadosComplementares);
+      const dadosComplementares =
+        createSolicitacaoDto.dados_complementares || {};
+      const normalizedDadosComplementares =
+        normalizeEnumFields(dadosComplementares);
 
       // ===== TRANSAÇÃO MÍNIMA APENAS PARA OPERAÇÕES DE ESCRITA =====
-      const solicitacaoSalva = await this.dataSource.transaction(async (manager) => {
-        // Criar uma nova instância de Solicitacao com repositório tipado
-        const repo = manager.getRepository(Solicitacao);
-        
-        // Criar objeto de solicitação
-        const solicitacao = repo.create({
-          beneficiario_id: createSolicitacaoDto.beneficiario_id,
-          solicitante_id: createSolicitacaoDto.solicitante_id,
-          tipo_beneficio_id: createSolicitacaoDto.tipo_beneficio_id,
-          unidade_id: unidadeId,
-          tecnico_id: user.id,
-          status: StatusSolicitacao.RASCUNHO,
-          data_abertura: new Date(),
-          dados_complementares: normalizedDadosComplementares
-        });
+      const solicitacaoSalva = await this.dataSource.transaction(
+        async (manager) => {
+          // Criar uma nova instância de Solicitacao com repositório tipado
+          const repo = manager.getRepository(Solicitacao);
 
-        // Salvar a solicitação
-        const savedSolicitacao = await repo.save(solicitacao);
+          // Criar objeto de solicitação
+          const solicitacao = repo.create({
+            beneficiario_id: createSolicitacaoDto.beneficiario_id,
+            solicitante_id: createSolicitacaoDto.solicitante_id,
+            tipo_beneficio_id: createSolicitacaoDto.tipo_beneficio_id,
+            unidade_id: unidadeId,
+            tecnico_id: user.id,
+            status: StatusSolicitacao.RASCUNHO,
+            data_abertura: new Date(),
+            dados_complementares: normalizedDadosComplementares,
+          });
 
-        // Registrar no histórico
-        const historicoRepo = manager.getRepository(HistoricoSolicitacao);
-        const historico = historicoRepo.create({
-          solicitacao_id: savedSolicitacao.id,
-          usuario_id: user.id,
-          status_atual: StatusSolicitacao.RASCUNHO,
-          observacao: createSolicitacaoDto.determinacao_judicial_flag 
-            ? 'Solicitação criada por determinação judicial'
-            : 'Solicitação criada',
-          dados_alterados: createSolicitacaoDto.determinacao_judicial_flag
-            ? { 
-                acao: 'criacao',
-                determinacao_judicial: true,
-                determinacao_judicial_id: createSolicitacaoDto.determinacao_judicial_id
-              }
-            : { acao: 'criacao' },
-          ip_usuario: user.ip || '0.0.0.0'
-        });
+          // Salvar a solicitação
+          const savedSolicitacao = await repo.save(solicitacao);
 
-        await historicoRepo.save(historico);
+          // Registrar no histórico
+          const historicoRepo = manager.getRepository(HistoricoSolicitacao);
+          const historico = historicoRepo.create({
+            solicitacao_id: savedSolicitacao.id,
+            usuario_id: user.id,
+            status_atual: StatusSolicitacao.RASCUNHO,
+            observacao: createSolicitacaoDto.determinacao_judicial_flag
+              ? 'Solicitação criada por determinação judicial'
+              : 'Solicitação criada',
+            dados_alterados: createSolicitacaoDto.determinacao_judicial_flag
+              ? {
+                  acao: 'criacao',
+                  determinacao_judicial: true,
+                  determinacao_judicial_id:
+                    createSolicitacaoDto.determinacao_judicial_id,
+                }
+              : { acao: 'criacao' },
+            ip_usuario: user.ip || '0.0.0.0',
+          });
 
-        return savedSolicitacao.id;
-      });
+          await historicoRepo.save(historico);
+
+          return savedSolicitacao.id;
+        },
+      );
 
       // ===== CONSULTA PÓS-TRANSAÇÃO =====
       // Buscar a solicitação completa após a transação
@@ -528,7 +589,10 @@ private async buscarContatoMaisRecente(cidadaoId: string): Promise<Contato | nul
       this.logger.log(`Solicitação criada com sucesso: ${solicitacaoSalva}`);
       return solicitacaoCompleta;
     } catch (error) {
-      this.logger.error(`Erro ao criar solicitação: ${error.message}`, error.stack);
+      this.logger.error(
+        `Erro ao criar solicitação: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }
@@ -545,7 +609,7 @@ private async buscarContatoMaisRecente(cidadaoId: string): Promise<Contato | nul
 
     try {
       // ===== VALIDAÇÕES E LEITURAS FORA DA TRANSAÇÃO =====
-      
+
       // Buscar a solicitação fora da transação
       const solicitacao = await this.findById(id);
 
@@ -556,17 +620,13 @@ private async buscarContatoMaisRecente(cidadaoId: string): Promise<Contato | nul
       ];
 
       if (!EDITABLE_STATUSES.includes(solicitacao.status)) {
-        throwInvalidStatusTransition(
-          solicitacao.status,
-          'EDITABLE',
-          {
-            data: {
-              solicitacaoId: id,
-              statusAtual: solicitacao.status,
-              statusPossiveis: EDITABLE_STATUSES,
-            },
+        throwInvalidStatusTransition(solicitacao.status, 'EDITABLE', {
+          data: {
+            solicitacaoId: id,
+            statusAtual: solicitacao.status,
+            statusPossiveis: EDITABLE_STATUSES,
           },
-        );
+        });
       }
 
       // Preparar dados para atualização
@@ -575,14 +635,15 @@ private async buscarContatoMaisRecente(cidadaoId: string): Promise<Contato | nul
 
       // Nota: beneficiario_id não pode ser atualizado conforme definido no DTO
       if (updateSolicitacaoDto.tipo_beneficio_id) {
-        dadosAtualizacao.tipo_beneficio_id = updateSolicitacaoDto.tipo_beneficio_id;
+        dadosAtualizacao.tipo_beneficio_id =
+          updateSolicitacaoDto.tipo_beneficio_id;
         camposAlterados.push('tipo_beneficio_id');
       }
 
       if (updateSolicitacaoDto.dados_complementares) {
         // Normalizar enums nos dados complementares antes de salvar
         dadosAtualizacao.dados_complementares = normalizeEnumFields(
-          updateSolicitacaoDto.dados_complementares
+          updateSolicitacaoDto.dados_complementares,
         );
         camposAlterados.push('dados_complementares');
       }
@@ -612,7 +673,7 @@ private async buscarContatoMaisRecente(cidadaoId: string): Promise<Contato | nul
           dados_alterados: {
             campos_alterados: camposAlterados,
           },
-          ip_usuario: user.ip || '0.0.0.0'
+          ip_usuario: user.ip || '0.0.0.0',
         });
 
         await historicoRepo.save(historico);
@@ -620,11 +681,14 @@ private async buscarContatoMaisRecente(cidadaoId: string): Promise<Contato | nul
 
       // ===== CONSULTA PÓS-TRANSAÇÃO =====
       const solicitacaoAtualizada = await this.findById(id);
-      
+
       this.logger.log(`Solicitação ${id} atualizada com sucesso`);
       return solicitacaoAtualizada;
     } catch (error) {
-      this.logger.error(`Erro ao atualizar solicitação ${id}: ${error.message}`, error);
+      this.logger.error(
+        `Erro ao atualizar solicitação ${id}: ${error.message}`,
+        error,
+      );
       throw error;
     }
   }
@@ -634,15 +698,19 @@ private async buscarContatoMaisRecente(cidadaoId: string): Promise<Contato | nul
    */
   async submeterSolicitacao(id: string, user: any): Promise<Solicitacao> {
     this.logger.log(`Iniciando submissão da solicitação: ${id}`);
-    
+
     try {
       // ===== VALIDAÇÕES E LEITURAS FORA DA TRANSAÇÃO =====
-      
+
       // Buscar a solicitação fora da transação
       const solicitacao = await this.findById(id);
 
       // Verificar se a solicitação está em estado que permite submissão
-      if (![StatusSolicitacao.ABERTA, StatusSolicitacao.PENDENTE].includes(solicitacao.status)) {
+      if (
+        ![StatusSolicitacao.ABERTA, StatusSolicitacao.PENDENTE].includes(
+          solicitacao.status,
+        )
+      ) {
         throwInvalidStatusTransition(
           solicitacao.status,
           StatusSolicitacao.EM_ANALISE,
@@ -657,7 +725,7 @@ private async buscarContatoMaisRecente(cidadaoId: string): Promise<Contato | nul
       // Preparar dados para atualização
       const dadosAtualizacao = {
         status: StatusSolicitacao.EM_ANALISE,
-        updated_at: new Date()
+        updated_at: new Date(),
       };
 
       // ===== TRANSAÇÃO MÍNIMA APENAS PARA OPERAÇÕES DE ESCRITA =====
@@ -677,9 +745,9 @@ private async buscarContatoMaisRecente(cidadaoId: string): Promise<Contato | nul
           status_atual: StatusSolicitacao.EM_ANALISE,
           observacao: 'Solicitação submetida para análise',
           dados_alterados: {
-            status: StatusSolicitacao.EM_ANALISE
+            status: StatusSolicitacao.EM_ANALISE,
           },
-          ip_usuario: user.ip || '0.0.0.0'
+          ip_usuario: user.ip || '0.0.0.0',
         });
 
         await historicoRepo.save(historico);
@@ -687,11 +755,14 @@ private async buscarContatoMaisRecente(cidadaoId: string): Promise<Contato | nul
 
       // ===== CONSULTA PÓS-TRANSAÇÃO =====
       const solicitacaoAtualizada = await this.findById(id);
-      
+
       this.logger.log(`Solicitação ${id} submetida para análise com sucesso`);
       return solicitacaoAtualizada;
     } catch (error) {
-      this.logger.error(`Erro ao submeter solicitação ${id}: ${error.message}`, error);
+      this.logger.error(
+        `Erro ao submeter solicitação ${id}: ${error.message}`,
+        error,
+      );
       throw error;
     }
   }
@@ -705,10 +776,10 @@ private async buscarContatoMaisRecente(cidadaoId: string): Promise<Contato | nul
     user: any,
   ): Promise<Solicitacao> {
     this.logger.log(`Iniciando avaliação da solicitação: ${id}`);
-    
+
     try {
       // ===== VALIDAÇÕES E LEITURAS FORA DA TRANSAÇÃO =====
-      
+
       // Buscar a solicitação fora da transação
       const solicitacao = await this.findById(id);
 
@@ -717,16 +788,15 @@ private async buscarContatoMaisRecente(cidadaoId: string): Promise<Contato | nul
         solicitacao.status !== StatusSolicitacao.PENDENTE &&
         solicitacao.status !== StatusSolicitacao.EM_ANALISE
       ) {
-        throwInvalidStatusTransition(
-          solicitacao.status,
-          'AVALIACAO',
-          {
-            data: {
-              solicitacaoId: id,
-              statusesPermitidos: [StatusSolicitacao.PENDENTE, StatusSolicitacao.EM_ANALISE],
-            },
+        throwInvalidStatusTransition(solicitacao.status, 'AVALIACAO', {
+          data: {
+            solicitacaoId: id,
+            statusesPermitidos: [
+              StatusSolicitacao.PENDENTE,
+              StatusSolicitacao.EM_ANALISE,
+            ],
           },
-        );
+        });
       }
 
       // Determinar o novo status
@@ -737,7 +807,7 @@ private async buscarContatoMaisRecente(cidadaoId: string): Promise<Contato | nul
       // Preparar dados para atualização
       const dadosAtualizacao: any = {
         status: novoStatus,
-        updated_at: new Date()
+        updated_at: new Date(),
       };
 
       // Adicionar dados específicos para solicitações aprovadas
@@ -763,31 +833,37 @@ private async buscarContatoMaisRecente(cidadaoId: string): Promise<Contato | nul
           usuario_id: user.id,
           status_anterior: solicitacao.status,
           status_atual: novoStatus,
-          observacao: avaliarSolicitacaoDto.parecer || 
-            (avaliarSolicitacaoDto.aprovado ? 'Solicitação aprovada' : 'Solicitação com pendências'),
+          observacao:
+            avaliarSolicitacaoDto.parecer ||
+            (avaliarSolicitacaoDto.aprovado
+              ? 'Solicitação aprovada'
+              : 'Solicitação com pendências'),
           dados_alterados: {
             status: novoStatus,
-            aprovado: avaliarSolicitacaoDto.aprovado
+            aprovado: avaliarSolicitacaoDto.aprovado,
           },
-          ip_usuario: user.ip || '0.0.0.0'
+          ip_usuario: user.ip || '0.0.0.0',
         });
 
         await historicoRepo.save(historico);
 
         // Registrar pendências quando não aprovado
-        if (!avaliarSolicitacaoDto.aprovado && 
-            avaliarSolicitacaoDto.pendencias && 
-            avaliarSolicitacaoDto.pendencias.length > 0) {
-          
+        if (
+          !avaliarSolicitacaoDto.aprovado &&
+          avaliarSolicitacaoDto.pendencias &&
+          avaliarSolicitacaoDto.pendencias.length > 0
+        ) {
           // Criar array de pendências para inserção em lote
-          const pendencias = avaliarSolicitacaoDto.pendencias.map(descricaoTexto => {
-            return pendenciaRepo.create({
-              solicitacao_id: id,
-              descricao: descricaoTexto,
-              status: StatusPendencia.ABERTA,
-              registrado_por_id: user.id
-            });
-          });
+          const pendencias = avaliarSolicitacaoDto.pendencias.map(
+            (descricaoTexto) => {
+              return pendenciaRepo.create({
+                solicitacao_id: id,
+                descricao: descricaoTexto,
+                status: StatusPendencia.ABERTA,
+                registrado_por_id: user.id,
+              });
+            },
+          );
 
           // Salvar todas as pendências de uma vez
           await pendenciaRepo.save(pendencias);
@@ -796,11 +872,16 @@ private async buscarContatoMaisRecente(cidadaoId: string): Promise<Contato | nul
 
       // ===== CONSULTA PÓS-TRANSAÇÃO =====
       const solicitacaoAtualizada = await this.findById(id);
-      
-      this.logger.log(`Solicitação ${id} avaliada com sucesso. Status: ${novoStatus}`);
+
+      this.logger.log(
+        `Solicitação ${id} avaliada com sucesso. Status: ${novoStatus}`,
+      );
       return solicitacaoAtualizada;
     } catch (error) {
-      this.logger.error(`Erro ao avaliar solicitação ${id}: ${error.message}`, error);
+      this.logger.error(
+        `Erro ao avaliar solicitação ${id}: ${error.message}`,
+        error,
+      );
       throw error;
     }
   }
@@ -813,30 +894,26 @@ private async buscarContatoMaisRecente(cidadaoId: string): Promise<Contato | nul
    */
   async cancelarSolicitacao(id: string, user: any): Promise<Solicitacao> {
     this.logger.log(`Iniciando cancelamento da solicitação: ${id}`);
-    
+
     try {
       // ===== VALIDAÇÕES E LEITURAS FORA DA TRANSAÇÃO =====
-      
+
       // Buscar a solicitação fora da transação
       const solicitacao = await this.findById(id);
 
       // No novo ciclo de vida simplificado, solicitações aprovadas não podem ser canceladas
       if (solicitacao.status === StatusSolicitacao.APROVADA) {
-        throwSolicitacaoCannotDelete(
-          id,
-          solicitacao.status,
-          {
-            data: {
-              motivo: 'Solicitação aprovada não pode ser cancelada',
-            },
+        throwSolicitacaoCannotDelete(id, solicitacao.status, {
+          data: {
+            motivo: 'Solicitação aprovada não pode ser cancelada',
           },
-        );
+        });
       }
 
       // Preparar dados para atualização
       const dadosAtualizacao = {
         status: StatusSolicitacao.CANCELADA,
-        updated_at: new Date()
+        updated_at: new Date(),
       };
 
       // ===== TRANSAÇÃO MÍNIMA APENAS PARA OPERAÇÕES DE ESCRITA =====
@@ -856,9 +933,9 @@ private async buscarContatoMaisRecente(cidadaoId: string): Promise<Contato | nul
           status_atual: StatusSolicitacao.CANCELADA,
           observacao: 'Solicitação cancelada pelo usuário',
           dados_alterados: {
-            status: StatusSolicitacao.CANCELADA
+            status: StatusSolicitacao.CANCELADA,
           },
-          ip_usuario: user.ip || '0.0.0.0'
+          ip_usuario: user.ip || '0.0.0.0',
         });
 
         await historicoRepo.save(historico);
@@ -866,11 +943,14 @@ private async buscarContatoMaisRecente(cidadaoId: string): Promise<Contato | nul
 
       // ===== CONSULTA PÓS-TRANSAÇÃO =====
       const solicitacaoAtualizada = await this.findById(id);
-      
+
       this.logger.log(`Solicitação ${id} cancelada com sucesso`);
       return solicitacaoAtualizada;
     } catch (error) {
-      this.logger.error(`Erro ao cancelar solicitação ${id}: ${error.message}`, error);
+      this.logger.error(
+        `Erro ao cancelar solicitação ${id}: ${error.message}`,
+        error,
+      );
       throw error;
     }
   }
@@ -927,14 +1007,11 @@ private async buscarContatoMaisRecente(cidadaoId: string): Promise<Contato | nul
         });
 
         if (!processoJudicial) {
-          throwProcessoJudicialNotFound(
-            vincularDto.processo_judicial_id,
-            {
-              data: {
-                solicitacaoId,
-              },
+          throwProcessoJudicialNotFound(vincularDto.processo_judicial_id, {
+            data: {
+              solicitacaoId,
             },
-          );
+          });
         }
 
         // Verificar se a solicitação já tem este processo vinculado
@@ -988,16 +1065,13 @@ private async buscarContatoMaisRecente(cidadaoId: string): Promise<Contato | nul
           `Erro ao vincular processo judicial: ${error.message}`,
           error.stack,
         );
-        throwInternalError(
-          'Erro ao vincular processo judicial à solicitação',
-          {
-            data: {
-              solicitacaoId,
-              processoJudicialId: vincularDto.processo_judicial_id,
-              errorMessage: error.message,
-            },
+        throwInternalError('Erro ao vincular processo judicial à solicitação', {
+          data: {
+            solicitacaoId,
+            processoJudicialId: vincularDto.processo_judicial_id,
+            errorMessage: error.message,
           },
-        );
+        });
       }
     });
   }
@@ -1019,29 +1093,22 @@ private async buscarContatoMaisRecente(cidadaoId: string): Promise<Contato | nul
 
         // Verificar se o usuário tem permissão
         if (![ROLES.ADMIN, ROLES.GESTOR].includes(user.role)) {
-          throwAccessDenied(
-            solicitacaoId,
-            user.id,
-            {
-              data: {
-                acao: 'desvincular_processo_judicial',
-                roleNecessaria: [ROLES.ADMIN, ROLES.GESTOR],
-                roleAtual: user.role,
-              },
+          throwAccessDenied(solicitacaoId, user.id, {
+            data: {
+              acao: 'desvincular_processo_judicial',
+              roleNecessaria: [ROLES.ADMIN, ROLES.GESTOR],
+              roleAtual: user.role,
             },
-          );
+          });
         }
 
         // Verificar se a solicitação tem processo vinculado
         if (!solicitacao.processo_judicial_id) {
-          throwProcessoJudicialNotLinked(
-            solicitacaoId,
-            {
-              data: {
-                motivo: 'Solicitação não possui processo judicial vinculado',
-              },
+          throwProcessoJudicialNotLinked(solicitacaoId, {
+            data: {
+              motivo: 'Solicitação não possui processo judicial vinculado',
             },
-          );
+          });
         }
 
         // Guardar informação do processo para o histórico
@@ -1121,17 +1188,13 @@ private async buscarContatoMaisRecente(cidadaoId: string): Promise<Contato | nul
 
         // Verificar se o usuário tem permissão
         if (![ROLES.ADMIN, ROLES.GESTOR, ROLES.TECNICO].includes(user.role)) {
-          throwAccessDenied(
-            solicitacaoId,
-            user.id,
-            {
-              data: {
-                acao: 'vincular_determinacao_judicial',
-                roleNecessaria: [ROLES.ADMIN, ROLES.GESTOR, ROLES.TECNICO],
-                roleAtual: user.role,
-              },
+          throwAccessDenied(solicitacaoId, user.id, {
+            data: {
+              acao: 'vincular_determinacao_judicial',
+              roleNecessaria: [ROLES.ADMIN, ROLES.GESTOR, ROLES.TECNICO],
+              roleAtual: user.role,
             },
-          );
+          });
         }
 
         // Verificar se a determinação judicial existe
@@ -1219,7 +1282,6 @@ private async buscarContatoMaisRecente(cidadaoId: string): Promise<Contato | nul
     });
   }
 
-
   /**
    * Converte um cidadão da composição familiar para beneficiário principal de uma nova solicitação
    * @param converterPapelDto Dados para conversão de papel
@@ -1242,14 +1304,11 @@ private async buscarContatoMaisRecente(cidadaoId: string): Promise<Contato | nul
         );
 
         if (!solicitacaoOrigem) {
-          throwSolicitacaoNotFound(
-            converterPapelDto.solicitacao_origem_id,
-            {
-              data: {
-                contexto: 'conversao_papel',
-              },
+          throwSolicitacaoNotFound(converterPapelDto.solicitacao_origem_id, {
+            data: {
+              contexto: 'conversao_papel',
             },
-          );
+          });
         }
 
         // Verificar se o cidadão está na composição familiar da solicitação
@@ -1373,7 +1432,6 @@ private async buscarContatoMaisRecente(cidadaoId: string): Promise<Contato | nul
     });
   }
 
-
   async desvincularDeterminacaoJudicial(
     solicitacaoId: string,
     user: any,
@@ -1385,29 +1443,22 @@ private async buscarContatoMaisRecente(cidadaoId: string): Promise<Contato | nul
 
         // Verificar se o usuário tem permissão
         if (![ROLES.ADMIN, ROLES.GESTOR].includes(user.role)) {
-          throwAccessDenied(
-            solicitacaoId,
-            user.id,
-            {
-              data: {
-                acao: 'desvincular_determinacao_judicial',
-                roleNecessaria: [ROLES.ADMIN, ROLES.GESTOR],
-                roleAtual: user.role,
-              },
+          throwAccessDenied(solicitacaoId, user.id, {
+            data: {
+              acao: 'desvincular_determinacao_judicial',
+              roleNecessaria: [ROLES.ADMIN, ROLES.GESTOR],
+              roleAtual: user.role,
             },
-          );
+          });
         }
 
         // Verificar se a solicitação tem determinação vinculada
         if (!solicitacao.determinacao_judicial_id) {
-          throwDeterminacaoJudicialNotLinked(
-            solicitacaoId,
-            {
-              data: {
-                motivo: 'Solicitação não possui determinação judicial vinculada',
-              },
+          throwDeterminacaoJudicialNotLinked(solicitacaoId, {
+            data: {
+              motivo: 'Solicitação não possui determinação judicial vinculada',
             },
-          );
+          });
         }
 
         // Guardar informação da determinação para o histórico

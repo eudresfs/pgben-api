@@ -66,7 +66,6 @@ import { NotificacaoModule } from '../notificacao/notificacao.module';
 import { SharedModule } from '../../shared/shared.module';
 import { CacheModule } from '../../shared/cache/cache.module';
 
-
 /**
  * Módulo de Pagamento/Liberação
  *

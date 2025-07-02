@@ -12,7 +12,7 @@ import { SseConfig, SSE_CONFIG } from '../../../config/sse.config';
 
 /**
  * Serviço de Heartbeat Adaptativo para SSE
- * 
+ *
  * Responsável por:
  * - Gerenciar heartbeats bidirecionais
  * - Detectar conexões mortas
@@ -26,11 +26,12 @@ export class SseHeartbeatService implements OnModuleDestroy {
   private heartbeatSubscriptions = new Map<string, Subscription>();
   private deadConnectionCheckSubscription?: Subscription;
   private heartbeatSequences = new Map<string, number>();
-  private pendingHeartbeats = new Map<string, { timestamp: Date; sequence: number }>();
+  private pendingHeartbeats = new Map<
+    string,
+    { timestamp: Date; sequence: number }
+  >();
 
-  constructor(
-    @Inject(SSE_CONFIG) private readonly sseConfig: SseConfig,
-  ) {
+  constructor(@Inject(SSE_CONFIG) private readonly sseConfig: SseConfig) {
     this.startDeadConnectionDetection();
   }
 
@@ -56,7 +57,9 @@ export class SseHeartbeatService implements OnModuleDestroy {
     // Inicializar sequência de heartbeat
     this.heartbeatSequences.set(connectionId, 0);
 
-    this.logger.debug(`Iniciando heartbeat para conexão ${connectionId} com intervalo ${heartbeatConfig.baseInterval}ms`);
+    this.logger.debug(
+      `Iniciando heartbeat para conexão ${connectionId} com intervalo ${heartbeatConfig.baseInterval}ms`,
+    );
 
     // Criar observable de heartbeat com intervalo adaptativo
     const heartbeatSubscription = interval(connection.currentHeartbeatInterval!)
@@ -80,7 +83,7 @@ export class SseHeartbeatService implements OnModuleDestroy {
 
     this.heartbeatSequences.delete(connectionId);
     this.pendingHeartbeats.delete(connectionId);
-    
+
     this.logger.debug(`Heartbeat parado para conexão ${connectionId}`);
   }
 
@@ -93,23 +96,28 @@ export class SseHeartbeatService implements OnModuleDestroy {
     response: HeartbeatResponse,
   ): void {
     const pendingHeartbeat = this.pendingHeartbeats.get(connectionId);
-    if (!pendingHeartbeat || pendingHeartbeat.sequence !== response.originalSequence) {
-      this.logger.warn(`Resposta de heartbeat inválida ou atrasada para conexão ${connectionId}`);
+    if (
+      !pendingHeartbeat ||
+      pendingHeartbeat.sequence !== response.originalSequence
+    ) {
+      this.logger.warn(
+        `Resposta de heartbeat inválida ou atrasada para conexão ${connectionId}`,
+      );
       return;
     }
 
     // Calcular latência
     const latency = Date.now() - pendingHeartbeat.timestamp.getTime();
-    
+
     // Atualizar estatísticas da conexão
     this.updateConnectionStats(connection, latency);
-    
+
     // Adaptar intervalo de heartbeat baseado na latência
     this.adaptHeartbeatInterval(connectionId, connection, latency);
-    
+
     // Remover heartbeat pendente
     this.pendingHeartbeats.delete(connectionId);
-    
+
     // Resetar contador de heartbeats perdidos
     connection.missedHeartbeats = 0;
     connection.lastHeartbeatResponse = new Date();
@@ -117,7 +125,7 @@ export class SseHeartbeatService implements OnModuleDestroy {
 
     this.logger.debug(
       `Heartbeat respondido para conexão ${connectionId}: latência ${latency}ms, ` +
-      `intervalo atual ${connection.currentHeartbeatInterval}ms`
+        `intervalo atual ${connection.currentHeartbeatInterval}ms`,
     );
   }
 
@@ -132,16 +140,19 @@ export class SseHeartbeatService implements OnModuleDestroy {
     const now = new Date();
     const lastActivity = connection.lastActivity || connection.connectedAt;
     const timeSinceLastActivity = now.getTime() - lastActivity.getTime();
-    
+
     // Verificar timeout de atividade
-    if (timeSinceLastActivity > this.sseConfig.deadConnectionDetection.timeout) {
+    if (
+      timeSinceLastActivity > this.sseConfig.deadConnectionDetection.timeout
+    ) {
       return true;
     }
 
     // Verificar heartbeats perdidos
-    const maxMissed = connection.heartbeatConfig?.maxMissedHeartbeats || 
-                     this.sseConfig.adaptiveHeartbeat.maxMissedHeartbeats;
-    
+    const maxMissed =
+      connection.heartbeatConfig?.maxMissedHeartbeats ||
+      this.sseConfig.adaptiveHeartbeat.maxMissedHeartbeats;
+
     return (connection.missedHeartbeats || 0) >= maxMissed;
   }
 
@@ -156,7 +167,8 @@ export class SseHeartbeatService implements OnModuleDestroy {
   } {
     return {
       averageLatency: connection.averageLatency || 0,
-      currentInterval: connection.currentHeartbeatInterval || this.sseConfig.heartbeatInterval,
+      currentInterval:
+        connection.currentHeartbeatInterval || this.sseConfig.heartbeatInterval,
       missedHeartbeats: connection.missedHeartbeats || 0,
       isDead: connection.isDead || false,
     };
@@ -172,7 +184,9 @@ export class SseHeartbeatService implements OnModuleDestroy {
   ): void {
     // Verificar se conexão está morta
     if (this.isConnectionDead(connection)) {
-      this.logger.warn(`Conexão ${connectionId} detectada como morta, parando heartbeat`);
+      this.logger.warn(
+        `Conexão ${connectionId} detectada como morta, parando heartbeat`,
+      );
       connection.isDead = true;
       this.stopHeartbeat(connectionId);
       return;
@@ -181,17 +195,18 @@ export class SseHeartbeatService implements OnModuleDestroy {
     // Verificar heartbeat pendente (não respondido)
     const pendingHeartbeat = this.pendingHeartbeats.get(connectionId);
     if (pendingHeartbeat) {
-      const responseTimeout = connection.heartbeatConfig?.responseTimeout || 
-                             this.sseConfig.adaptiveHeartbeat.responseTimeout;
-      
+      const responseTimeout =
+        connection.heartbeatConfig?.responseTimeout ||
+        this.sseConfig.adaptiveHeartbeat.responseTimeout;
+
       if (Date.now() - pendingHeartbeat.timestamp.getTime() > responseTimeout) {
         // Heartbeat anterior não foi respondido
         connection.missedHeartbeats = (connection.missedHeartbeats || 0) + 1;
         this.logger.warn(
           `Heartbeat não respondido para conexão ${connectionId} ` +
-          `(${connection.missedHeartbeats} perdidos)`
+            `(${connection.missedHeartbeats} perdidos)`,
         );
-        
+
         // Aumentar intervalo de heartbeat como penalidade
         this.increaseHeartbeatInterval(connectionId, connection);
       }
@@ -199,7 +214,7 @@ export class SseHeartbeatService implements OnModuleDestroy {
 
     // Gerar próximo número sequencial
     const sequence = this.getNextHeartbeatSequence(connectionId);
-    
+
     // Criar evento de heartbeat
     const heartbeatEvent: HeartbeatEvent = {
       type: 'heartbeat',
@@ -218,7 +233,7 @@ export class SseHeartbeatService implements OnModuleDestroy {
 
     // Enviar heartbeat
     heartbeatCallback(heartbeatEvent);
-    
+
     connection.lastHeartbeat = new Date();
     connection.lastHeartbeatSequence = sequence;
   }
@@ -226,7 +241,9 @@ export class SseHeartbeatService implements OnModuleDestroy {
   /**
    * Inicializa configuração de heartbeat adaptativo para uma conexão
    */
-  private initializeHeartbeatConfig(connection: SseConnection): AdaptiveHeartbeatConfig {
+  private initializeHeartbeatConfig(
+    connection: SseConnection,
+  ): AdaptiveHeartbeatConfig {
     return {
       baseInterval: this.sseConfig.adaptiveHeartbeat.baseInterval,
       minInterval: this.sseConfig.adaptiveHeartbeat.minInterval,
@@ -240,7 +257,10 @@ export class SseHeartbeatService implements OnModuleDestroy {
   /**
    * Atualiza estatísticas de latência da conexão
    */
-  private updateConnectionStats(connection: SseConnection, latency: number): void {
+  private updateConnectionStats(
+    connection: SseConnection,
+    latency: number,
+  ): void {
     // Inicializar histórico se necessário
     if (!connection.latencyHistory) {
       connection.latencyHistory = [];
@@ -265,12 +285,16 @@ export class SseHeartbeatService implements OnModuleDestroy {
     connection: SseConnection,
     latency: number,
   ): void {
-    if (!this.sseConfig.adaptiveHeartbeat.enabled || !connection.heartbeatConfig) {
+    if (
+      !this.sseConfig.adaptiveHeartbeat.enabled ||
+      !connection.heartbeatConfig
+    ) {
       return;
     }
 
     const config = connection.heartbeatConfig;
-    let newInterval = connection.currentHeartbeatInterval || config.baseInterval;
+    let newInterval =
+      connection.currentHeartbeatInterval || config.baseInterval;
 
     // Adaptar baseado na latência
     if (latency < 100) {
@@ -278,19 +302,22 @@ export class SseHeartbeatService implements OnModuleDestroy {
       newInterval = Math.max(newInterval * 0.9, config.minInterval);
     } else if (latency > 1000) {
       // Latência alta - aumentar intervalo
-      newInterval = Math.min(newInterval * config.backoffFactor, config.maxInterval);
+      newInterval = Math.min(
+        newInterval * config.backoffFactor,
+        config.maxInterval,
+      );
     }
 
     // Atualizar intervalo se mudou significativamente
     if (Math.abs(newInterval - connection.currentHeartbeatInterval!) > 1000) {
       connection.currentHeartbeatInterval = newInterval;
-      
+
       // Reiniciar heartbeat com novo intervalo
       this.restartHeartbeatWithNewInterval(connectionId, connection);
-      
+
       this.logger.debug(
         `Intervalo de heartbeat adaptado para conexão ${connectionId}: ${newInterval}ms ` +
-        `(latência: ${latency}ms)`
+          `(latência: ${latency}ms)`,
       );
     }
   }
@@ -298,22 +325,26 @@ export class SseHeartbeatService implements OnModuleDestroy {
   /**
    * Aumenta o intervalo de heartbeat como penalidade
    */
-  private increaseHeartbeatInterval(connectionId: string, connection: SseConnection): void {
+  private increaseHeartbeatInterval(
+    connectionId: string,
+    connection: SseConnection,
+  ): void {
     if (!connection.heartbeatConfig) return;
 
     const config = connection.heartbeatConfig;
     const newInterval = Math.min(
-      (connection.currentHeartbeatInterval || config.baseInterval) * config.backoffFactor,
-      config.maxInterval
+      (connection.currentHeartbeatInterval || config.baseInterval) *
+        config.backoffFactor,
+      config.maxInterval,
     );
 
     if (newInterval !== connection.currentHeartbeatInterval) {
       connection.currentHeartbeatInterval = newInterval;
       this.restartHeartbeatWithNewInterval(connectionId, connection);
-      
+
       this.logger.debug(
         `Intervalo de heartbeat aumentado para conexão ${connectionId}: ${newInterval}ms ` +
-        `(penalidade por heartbeat perdido)`
+          `(penalidade por heartbeat perdido)`,
       );
     }
   }
@@ -327,7 +358,9 @@ export class SseHeartbeatService implements OnModuleDestroy {
   ): void {
     // Implementação seria necessária no SseService para reiniciar o observable
     // Por enquanto, apenas logamos a mudança
-    this.logger.debug(`Heartbeat precisa ser reiniciado para conexão ${connectionId}`);
+    this.logger.debug(
+      `Heartbeat precisa ser reiniciado para conexão ${connectionId}`,
+    );
   }
 
   /**
@@ -349,7 +382,7 @@ export class SseHeartbeatService implements OnModuleDestroy {
     }
 
     this.deadConnectionCheckSubscription = interval(
-      this.sseConfig.deadConnectionDetection.checkInterval
+      this.sseConfig.deadConnectionDetection.checkInterval,
     )
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => {
@@ -364,18 +397,18 @@ export class SseHeartbeatService implements OnModuleDestroy {
   onModuleDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
-    
+
     // Parar todos os heartbeats
     this.heartbeatSubscriptions.forEach((subscription) => {
       subscription.unsubscribe();
     });
     this.heartbeatSubscriptions.clear();
-    
+
     // Parar verificação de conexões mortas
     if (this.deadConnectionCheckSubscription) {
       this.deadConnectionCheckSubscription.unsubscribe();
     }
-    
+
     this.logger.log('SseHeartbeatService destruído');
   }
 }

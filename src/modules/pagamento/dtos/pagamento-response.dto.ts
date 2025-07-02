@@ -1,7 +1,11 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
 import { MetodoPagamentoEnum } from '../../../enums/metodo-pagamento.enum';
-import { PagamentoResponseBaseDto, ResponsavelInfo, SolicitacaoResumo } from './base/pagamento-base.dto';
+import {
+  PagamentoResponseBaseDto,
+  ResponsavelInfo,
+  SolicitacaoResumo,
+} from './base/pagamento-base.dto';
 
 /**
  * DTO para resposta contendo dados de um pagamento
@@ -61,7 +65,7 @@ export class PagamentoResponseDto extends PagamentoResponseBaseDto {
       chavePix: 'user@domain.com',
       banco: '001',
       agencia: '12345',
-      conta: '123456789'
+      conta: '123456789',
     },
     required: false,
   })

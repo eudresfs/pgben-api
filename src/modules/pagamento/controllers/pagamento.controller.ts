@@ -11,7 +11,7 @@ import {
   UseInterceptors,
   BadRequestException,
 } from '@nestjs/common';
-import { 
+import {
   ApiTags,
   ApiOperation,
   ApiParam,
@@ -39,9 +39,7 @@ import { DataMaskingResponseInterceptor } from '../interceptors/data-masking-res
 @UseGuards(JwtAuthGuard, PermissionGuard)
 @UseInterceptors(DataMaskingResponseInterceptor)
 export class PagamentoController {
-  constructor(
-    private readonly pagamentoService: PagamentoService,
-  ) {}
+  constructor(private readonly pagamentoService: PagamentoService) {}
 
   /**
    * Lista pagamentos com filtros e paginação
@@ -49,7 +47,7 @@ export class PagamentoController {
   @Get()
   @RequiresPermission({
     permissionName: 'pagamento.listar',
-    scopeType: TipoEscopo.UNIDADE
+    scopeType: TipoEscopo.UNIDADE,
   })
   @ApiOperation({ summary: 'Lista pagamentos com filtros' })
   @ApiQuery({ name: 'status', required: false, enum: StatusPagamentoEnum })
@@ -88,7 +86,7 @@ export class PagamentoController {
   @Get(':id')
   @RequiresPermission({
     permissionName: 'pagamento.visualizar',
-    scopeType: TipoEscopo.UNIDADE
+    scopeType: TipoEscopo.UNIDADE,
   })
   @ApiOperation({ summary: 'Busca pagamento por ID' })
   @ApiParam({ name: 'id', type: 'string', description: 'ID do pagamento' })
@@ -104,7 +102,7 @@ export class PagamentoController {
   @Post()
   @RequiresPermission({
     permissionName: 'pagamento.criar',
-    scopeType: TipoEscopo.UNIDADE
+    scopeType: TipoEscopo.UNIDADE,
   })
   @ApiOperation({ summary: 'Cria um novo pagamento' })
   @ApiResponse({ status: 201, description: 'Pagamento criado com sucesso' })
@@ -114,7 +112,7 @@ export class PagamentoController {
     @GetUser() usuario: Usuario,
   ) {
     const pagamento = await this.pagamentoService.create(createDto, usuario.id);
-    
+
     return {
       success: true,
       data: pagamento,
@@ -128,7 +126,7 @@ export class PagamentoController {
   @Patch(':id/status')
   @RequiresPermission({
     permissionName: 'pagamento.atualizar',
-    scopeType: TipoEscopo.UNIDADE
+    scopeType: TipoEscopo.UNIDADE,
   })
   @ApiOperation({ summary: 'Atualiza status do pagamento' })
   @ApiParam({ name: 'id', type: 'string', description: 'ID do pagamento' })
@@ -140,8 +138,12 @@ export class PagamentoController {
     @Body() updateDto: PagamentoUpdateStatusDto,
     @GetUser() usuario: Usuario,
   ) {
-    const pagamento = await this.pagamentoService.updateStatus(id, updateDto, usuario.id);
-    
+    const pagamento = await this.pagamentoService.updateStatus(
+      id,
+      updateDto,
+      usuario.id,
+    );
+
     return {
       success: true,
       data: pagamento,
@@ -155,7 +157,7 @@ export class PagamentoController {
   @Patch(':id/cancelar')
   @RequiresPermission({
     permissionName: 'pagamento.cancelar',
-    scopeType: TipoEscopo.UNIDADE
+    scopeType: TipoEscopo.UNIDADE,
   })
   @ApiOperation({ summary: 'Cancela um pagamento' })
   @ApiParam({ name: 'id', type: 'string', description: 'ID do pagamento' })
@@ -170,8 +172,12 @@ export class PagamentoController {
       throw new BadRequestException('Motivo do cancelamento é obrigatório');
     }
 
-    const pagamento = await this.pagamentoService.cancelar(id, body.motivo, usuario.id);
-    
+    const pagamento = await this.pagamentoService.cancelar(
+      id,
+      body.motivo,
+      usuario.id,
+    );
+
     return {
       success: true,
       data: pagamento,
@@ -185,16 +191,24 @@ export class PagamentoController {
   @Get('solicitacao/:solicitacaoId')
   @RequiresPermission({
     permissionName: 'pagamento.listar',
-    scopeType: TipoEscopo.UNIDADE
+    scopeType: TipoEscopo.UNIDADE,
   })
   @ApiOperation({ summary: 'Busca pagamentos de uma solicitação' })
-  @ApiParam({ name: 'solicitacaoId', type: 'string', description: 'ID da solicitação' })
-  @ApiResponse({ status: 200, description: 'Lista de pagamentos da solicitação' })
+  @ApiParam({
+    name: 'solicitacaoId',
+    type: 'string',
+    description: 'ID da solicitação',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de pagamentos da solicitação',
+  })
   async findBySolicitacao(
     @Param('solicitacaoId', ParseUUIDPipe) solicitacaoId: string,
   ) {
-    const pagamentos = await this.pagamentoService.findBySolicitacao(solicitacaoId);
-    
+    const pagamentos =
+      await this.pagamentoService.findBySolicitacao(solicitacaoId);
+
     return {
       success: true,
       data: pagamentos,
@@ -208,16 +222,20 @@ export class PagamentoController {
   @Get('concessao/:concessaoId')
   @RequiresPermission({
     permissionName: 'pagamento.listar',
-    scopeType: TipoEscopo.UNIDADE
+    scopeType: TipoEscopo.UNIDADE,
   })
   @ApiOperation({ summary: 'Busca pagamentos de uma concessão' })
-  @ApiParam({ name: 'concessaoId', type: 'string', description: 'ID da concessão' })
+  @ApiParam({
+    name: 'concessaoId',
+    type: 'string',
+    description: 'ID da concessão',
+  })
   @ApiResponse({ status: 200, description: 'Lista de pagamentos da concessão' })
   async findByConcessao(
     @Param('concessaoId', ParseUUIDPipe) concessaoId: string,
   ) {
     const pagamentos = await this.pagamentoService.findByConcessao(concessaoId);
-    
+
     return {
       success: true,
       data: pagamentos,
@@ -225,20 +243,19 @@ export class PagamentoController {
     };
   }
 
-
   /**
    * Processa vencimentos automáticos
    */
   @Post('processar-vencimentos')
   @RequiresPermission({
     permissionName: 'pagamento.processar_vencimentos',
-    scopeType: TipoEscopo.SISTEMA
+    scopeType: TipoEscopo.SISTEMA,
   })
   @ApiOperation({ summary: 'Processa vencimentos automáticos' })
   @ApiResponse({ status: 200, description: 'Vencimentos processados' })
   async processarVencimentos(@GetUser() usuario: Usuario) {
     // const pagamentosVencidos = await this.pagamentoService.processarVencimentos();
-    
+
     return {
       success: true,
       data: [],
@@ -252,13 +269,13 @@ export class PagamentoController {
   @Get('estatisticas')
   @RequiresPermission({
     permissionName: 'pagamento.estatisticas',
-    scopeType: TipoEscopo.UNIDADE
+    scopeType: TipoEscopo.UNIDADE,
   })
   @ApiOperation({ summary: 'Obtém estatísticas de pagamentos' })
   @ApiResponse({ status: 200, description: 'Estatísticas de pagamentos' })
   async getEstatisticas() {
     const estatisticas = await this.pagamentoService.getEstatisticas();
-    
+
     return {
       success: true,
       data: estatisticas,

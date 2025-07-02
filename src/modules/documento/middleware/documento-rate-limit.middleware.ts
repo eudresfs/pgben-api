@@ -22,7 +22,7 @@ interface UserRateLimit {
 
 /**
  * Middleware de rate limiting específico para operações de documentos
- * 
+ *
  * Implementa limites diferenciados por tipo de operação:
  * - Downloads: 50 por hora por usuário
  * - Uploads: 20 por hora por usuário
@@ -37,15 +37,24 @@ export class DocumentoRateLimitMiddleware implements NestMiddleware {
   private readonly limits = {
     downloads: {
       max: this.configService.get<number>('DOCUMENTO_DOWNLOAD_RATE_LIMIT', 50),
-      windowMs: this.configService.get<number>('DOCUMENTO_DOWNLOAD_WINDOW_MS', 3600000), // 1 hora
+      windowMs: this.configService.get<number>(
+        'DOCUMENTO_DOWNLOAD_WINDOW_MS',
+        3600000,
+      ), // 1 hora
     },
     uploads: {
       max: this.configService.get<number>('DOCUMENTO_UPLOAD_RATE_LIMIT', 20),
-      windowMs: this.configService.get<number>('DOCUMENTO_UPLOAD_WINDOW_MS', 3600000), // 1 hora
+      windowMs: this.configService.get<number>(
+        'DOCUMENTO_UPLOAD_WINDOW_MS',
+        3600000,
+      ), // 1 hora
     },
     views: {
       max: this.configService.get<number>('DOCUMENTO_VIEW_RATE_LIMIT', 200),
-      windowMs: this.configService.get<number>('DOCUMENTO_VIEW_WINDOW_MS', 3600000), // 1 hora
+      windowMs: this.configService.get<number>(
+        'DOCUMENTO_VIEW_WINDOW_MS',
+        3600000,
+      ), // 1 hora
     },
   };
 
@@ -61,7 +70,7 @@ export class DocumentoRateLimitMiddleware implements NestMiddleware {
 
   use(req: Request, res: Response, next: NextFunction): void {
     const user = (req as any).user;
-    
+
     // Se não há usuário autenticado, permitir (será bloqueado por outros guards)
     if (!user || !user.id) {
       return next();
@@ -69,7 +78,7 @@ export class DocumentoRateLimitMiddleware implements NestMiddleware {
 
     const userId = user.id;
     const operationType = this.getOperationType(req);
-    
+
     // Se não é uma operação que precisa de rate limiting, continuar
     if (!operationType) {
       return next();
@@ -77,11 +86,11 @@ export class DocumentoRateLimitMiddleware implements NestMiddleware {
 
     try {
       const isAllowed = this.checkRateLimit(userId, operationType, req);
-      
+
       if (!isAllowed) {
         const limit = this.limits[operationType];
         const resetTime = Math.ceil(limit.windowMs / 1000 / 60); // em minutos
-        
+
         this.logger.warn(
           `Rate limit excedido para usuário ${userId} na operação ${operationType}`,
           DocumentoRateLimitMiddleware.name,
@@ -92,14 +101,16 @@ export class DocumentoRateLimitMiddleware implements NestMiddleware {
             windowMinutes: resetTime,
             ip: req.ip,
             userAgent: req.headers['user-agent'],
-          }
+          },
         );
 
         // Headers informativos sobre o rate limit
         res.set({
           'X-RateLimit-Limit': limit.max.toString(),
           'X-RateLimit-Remaining': '0',
-          'X-RateLimit-Reset': new Date(Date.now() + limit.windowMs).toISOString(),
+          'X-RateLimit-Reset': new Date(
+            Date.now() + limit.windowMs,
+          ).toISOString(),
           'Retry-After': resetTime.toString(),
         });
 
@@ -118,12 +129,17 @@ export class DocumentoRateLimitMiddleware implements NestMiddleware {
       const userLimit = this.rateLimits.get(userId);
       if (userLimit && userLimit[operationType]) {
         const limit = this.limits[operationType];
-        const remaining = Math.max(0, limit.max - userLimit[operationType].count);
-        
+        const remaining = Math.max(
+          0,
+          limit.max - userLimit[operationType].count,
+        );
+
         res.set({
           'X-RateLimit-Limit': limit.max.toString(),
           'X-RateLimit-Remaining': remaining.toString(),
-          'X-RateLimit-Reset': new Date(userLimit[operationType].resetTime).toISOString(),
+          'X-RateLimit-Reset': new Date(
+            userLimit[operationType].resetTime,
+          ).toISOString(),
         });
       }
 
@@ -132,14 +148,14 @@ export class DocumentoRateLimitMiddleware implements NestMiddleware {
       if (error instanceof HttpException) {
         throw error;
       }
-      
+
       this.logger.error(
         `Erro no rate limiting para usuário ${userId}`,
         error,
         DocumentoRateLimitMiddleware.name,
-        { userId, operationType }
+        { userId, operationType },
       );
-      
+
       // Em caso de erro, permitir a requisição
       next();
     }
@@ -174,7 +190,7 @@ export class DocumentoRateLimitMiddleware implements NestMiddleware {
   ): boolean {
     const now = Date.now();
     const limit = this.limits[operationType];
-    
+
     // Obter ou criar entrada do usuário
     let userLimit = this.rateLimits.get(userId);
     if (!userLimit) {
@@ -187,7 +203,7 @@ export class DocumentoRateLimitMiddleware implements NestMiddleware {
     }
 
     const operationLimit = userLimit[operationType];
-    
+
     // Se o tempo de reset passou, resetar contador
     if (now >= operationLimit.resetTime) {
       operationLimit.count = 0;
@@ -202,13 +218,13 @@ export class DocumentoRateLimitMiddleware implements NestMiddleware {
 
     // Incrementar contador
     operationLimit.count++;
-    
+
     // Log para monitoramento
     if (operationLimit.count === 1) {
       this.logger.debug(
         `Iniciando janela de rate limit para usuário ${userId} - ${operationType}`,
         DocumentoRateLimitMiddleware.name,
-        { userId, operationType, windowMs: limit.windowMs }
+        { userId, operationType, windowMs: limit.windowMs },
       );
     }
 
@@ -223,7 +239,7 @@ export class DocumentoRateLimitMiddleware implements NestMiddleware {
           count: operationLimit.count,
           max: limit.max,
           ip: req.ip,
-        }
+        },
       );
     }
 
@@ -236,15 +252,20 @@ export class DocumentoRateLimitMiddleware implements NestMiddleware {
 
     for (const [userId, userLimit] of this.rateLimits.entries()) {
       let hasActiveLimit = false;
-      
+
       // Verificar se alguma operação ainda está ativa
-      for (const operationType of Object.keys(this.limits) as Array<keyof typeof this.limits>) {
-        if (now < userLimit[operationType].resetTime && userLimit[operationType].count > 0) {
+      for (const operationType of Object.keys(this.limits) as Array<
+        keyof typeof this.limits
+      >) {
+        if (
+          now < userLimit[operationType].resetTime &&
+          userLimit[operationType].count > 0
+        ) {
           hasActiveLimit = true;
           break;
         }
       }
-      
+
       // Se não há limites ativos, remover entrada
       if (!hasActiveLimit) {
         this.rateLimits.delete(userId);
@@ -256,7 +277,7 @@ export class DocumentoRateLimitMiddleware implements NestMiddleware {
       this.logger.debug(
         `Limpeza de rate limits: ${cleanedCount} entradas removidas`,
         DocumentoRateLimitMiddleware.name,
-        { cleanedCount, totalEntries: this.rateLimits.size }
+        { cleanedCount, totalEntries: this.rateLimits.size },
       );
     }
   }
@@ -274,8 +295,13 @@ export class DocumentoRateLimitMiddleware implements NestMiddleware {
     };
 
     for (const userLimit of this.rateLimits.values()) {
-      for (const operationType of Object.keys(this.limits) as Array<keyof typeof this.limits>) {
-        if (now < userLimit[operationType].resetTime && userLimit[operationType].count > 0) {
+      for (const operationType of Object.keys(this.limits) as Array<
+        keyof typeof this.limits
+      >) {
+        if (
+          now < userLimit[operationType].resetTime &&
+          userLimit[operationType].count > 0
+        ) {
           activeWindows[operationType]++;
         }
       }

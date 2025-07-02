@@ -6,7 +6,10 @@ import {
 } from '@nestjs/common';
 import { CidadaoRepository } from '../repositories/cidadao.repository';
 import { CreateCidadaoDto } from '../dto/create-cidadao.dto';
-import { CidadaoResponseDto, CidadaoPaginatedResponseDto } from '../dto/cidadao-response.dto';
+import {
+  CidadaoResponseDto,
+  CidadaoPaginatedResponseDto,
+} from '../dto/cidadao-response.dto';
 import { plainToInstance } from 'class-transformer';
 import { ContatoService } from './contato.service';
 import { EnderecoService } from './endereco.service';
@@ -25,14 +28,16 @@ export class CidadaoService {
     private readonly auditEmitter: AuditEventEmitter,
   ) {}
 
-  async findAll(options: {
-    page?: number;
-    limit?: number;
-    search?: string;
-    bairro?: string;
-    unidade_id?: string;
-    includeRelations?: boolean;
-  } = {}): Promise<CidadaoPaginatedResponseDto> {
+  async findAll(
+    options: {
+      page?: number;
+      limit?: number;
+      search?: string;
+      bairro?: string;
+      unidade_id?: string;
+      includeRelations?: boolean;
+    } = {},
+  ): Promise<CidadaoPaginatedResponseDto> {
     const {
       page = 1,
       limit = 10,
@@ -54,10 +59,10 @@ export class CidadaoService {
       includeRelations,
     });
 
-    const items = cidadaos.map(cidadao =>
+    const items = cidadaos.map((cidadao) =>
       plainToInstance(CidadaoResponseDto, cidadao, {
         excludeExtraneousValues: true,
-      })
+      }),
     );
 
     return {
@@ -73,7 +78,11 @@ export class CidadaoService {
     };
   }
 
-  async findById(id: string, includeRelations = false, userId?: string): Promise<CidadaoResponseDto> {
+  async findById(
+    id: string,
+    includeRelations = false,
+    userId?: string,
+  ): Promise<CidadaoResponseDto> {
     if (!id || typeof id !== 'string') {
       throw new BadRequestException('ID inválido');
     }
@@ -84,18 +93,18 @@ export class CidadaoService {
     }
 
     // Auditoria de acesso a dados sensíveis
-    await this.auditEmitter.emitEntityAccessed(
-      'Cidadao',
-      id,
-      userId,
-    );
+    await this.auditEmitter.emitEntityAccessed('Cidadao', id, userId);
 
     return plainToInstance(CidadaoResponseDto, cidadao, {
       excludeExtraneousValues: true,
     });
   }
 
-  async findByCpf(cpf: string, includeRelations = false, userId?: string): Promise<CidadaoResponseDto> {
+  async findByCpf(
+    cpf: string,
+    includeRelations = false,
+    userId?: string,
+  ): Promise<CidadaoResponseDto> {
     if (!cpf || cpf.trim() === '') {
       throw new BadRequestException('CPF é obrigatório');
     }
@@ -105,7 +114,10 @@ export class CidadaoService {
       throw new BadRequestException('CPF deve ter 11 dígitos');
     }
 
-    const cidadao = await this.cidadaoRepository.findByCpf(cpfClean, includeRelations);
+    const cidadao = await this.cidadaoRepository.findByCpf(
+      cpfClean,
+      includeRelations,
+    );
     if (!cidadao) {
       throw new NotFoundException('Cidadão não encontrado');
     }
@@ -125,7 +137,11 @@ export class CidadaoService {
     });
   }
 
-  async findByNis(nis: string, includeRelations = false, userId?: string): Promise<CidadaoResponseDto> {
+  async findByNis(
+    nis: string,
+    includeRelations = false,
+    userId?: string,
+  ): Promise<CidadaoResponseDto> {
     if (!nis || nis.trim() === '') {
       throw new BadRequestException('NIS é obrigatório');
     }
@@ -135,7 +151,10 @@ export class CidadaoService {
       throw new BadRequestException('NIS deve ter 11 dígitos');
     }
 
-    const cidadao = await this.cidadaoRepository.findByNis(nisClean, includeRelations);
+    const cidadao = await this.cidadaoRepository.findByNis(
+      nisClean,
+      includeRelations,
+    );
     if (!cidadao) {
       throw new NotFoundException('Cidadão não encontrado');
     }
@@ -154,8 +173,6 @@ export class CidadaoService {
       excludeExtraneousValues: true,
     });
   }
-
-
 
   async create(
     createCidadaoDto: CreateCidadaoDto,
@@ -181,12 +198,8 @@ export class CidadaoService {
     }
 
     // Separar campos que não pertencem à entidade Cidadao
-    const { 
-      composicao_familiar, 
-      contatos, 
-      enderecos, 
-      ...cidadaoData 
-    } = createCidadaoDto;
+    const { composicao_familiar, contatos, enderecos, ...cidadaoData } =
+      createCidadaoDto;
 
     // Preparar dados para criação
     const dadosParaCriacao = {
@@ -198,12 +211,12 @@ export class CidadaoService {
     };
 
     const cidadao = await this.cidadaoRepository.create(dadosParaCriacao);
-    
+
     // Processar contatos normalizados se existirem
     if (contatos && contatos.length > 0) {
       await this.contatoService.upsertMany(cidadao.id, contatos);
     }
-    
+
     // Processar endereços normalizados se existirem
     if (enderecos && enderecos.length > 0) {
       await this.enderecoService.upsertMany(cidadao.id, enderecos);
@@ -238,12 +251,8 @@ export class CidadaoService {
     }
 
     // Separar campos que não pertencem à entidade Cidadao
-    const {
-      composicao_familiar, 
-      contatos, 
-      enderecos, 
-      ...dadosAtualizacao 
-    } = updateCidadaoDto;
+    const { composicao_familiar, contatos, enderecos, ...dadosAtualizacao } =
+      updateCidadaoDto;
 
     // Validar CPF se foi alterado
     if (dadosAtualizacao.cpf) {
@@ -269,8 +278,11 @@ export class CidadaoService {
       dadosAtualizacao.nis = nisClean;
     }
 
-    const cidadaoAtualizado = await this.cidadaoRepository.update(id, dadosAtualizacao);
-    
+    const cidadaoAtualizado = await this.cidadaoRepository.update(
+      id,
+      dadosAtualizacao,
+    );
+
     // Auditoria de atualização de cidadão
     await this.auditEmitter.emitEntityUpdated(
       'Cidadao',
@@ -287,12 +299,12 @@ export class CidadaoService {
       },
       usuario_id,
     );
-    
+
     // Processar contatos normalizados se existirem
     if (contatos && contatos.length > 0) {
       await this.contatoService.upsertMany(id, contatos);
     }
-    
+
     // Processar endereços normalizados se existirem
     if (enderecos && enderecos.length > 0) {
       await this.enderecoService.upsertMany(id, enderecos);

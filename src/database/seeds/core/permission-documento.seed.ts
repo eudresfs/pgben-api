@@ -90,6 +90,13 @@ export class PermissionDocumentoSeed {
       false,
     );
 
+    const documentoDownloadLote = await this.createPermission(
+      permissionRepository,
+      'documento.download_lote',
+      'Download em lote de documentos',
+      false,
+    );
+
     // Permissões para tipos de documento
     const tipoDocumentoListar = await this.createPermission(
       permissionRepository,
@@ -200,6 +207,12 @@ export class PermissionDocumentoSeed {
     await this.createPermissionScope(
       permissionScopeRepository,
       documentoExportar.id,
+      ScopeType.UNIT,
+    );
+
+    await this.createPermissionScope(
+      permissionScopeRepository,
+      documentoDownloadLote.id,
       ScopeType.UNIT,
     );
 

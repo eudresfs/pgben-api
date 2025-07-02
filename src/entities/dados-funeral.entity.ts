@@ -160,8 +160,12 @@ export class DadosFuneral {
    * Determina prioridade baseada no grau de parentesco
    */
   calcularPrioridadeParentesco(): number {
-    if (this.isParentePrimeiroGrau()) {return 100;}
-    if (this.isParenteSegundoGrau()) {return 80;}
+    if (this.isParentePrimeiroGrau()) {
+      return 100;
+    }
+    if (this.isParenteSegundoGrau()) {
+      return 80;
+    }
     return 60;
   }
 

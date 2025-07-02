@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 
 /**
  * Serviço de cache em memória para otimização de performance
- * 
+ *
  * Este serviço implementa um cache LRU (Least Recently Used) em memória
  * para armazenar resultados de consultas frequentes e reduzir a carga no banco de dados.
  */
@@ -18,7 +18,10 @@ export class CacheService {
 
   constructor(private configService: ConfigService) {
     this.maxSize = this.configService.get<number>('CACHE_MAX_SIZE', 1000);
-    this.defaultTTL = this.configService.get<number>('CACHE_DEFAULT_TTL', 300000); // 5 minutos
+    this.defaultTTL = this.configService.get<number>(
+      'CACHE_DEFAULT_TTL',
+      300000,
+    ); // 5 minutos
   }
 
   /**
@@ -47,7 +50,10 @@ export class CacheService {
 
       this.logger.debug(`Cache SET: ${key} (TTL: ${ttl}ms)`);
     } catch (error) {
-      this.logger.error(`Erro ao armazenar no cache: ${error.message}`, error.stack);
+      this.logger.error(
+        `Erro ao armazenar no cache: ${error.message}`,
+        error.stack,
+      );
     }
   }
 
@@ -57,7 +63,7 @@ export class CacheService {
   async get<T>(key: string): Promise<T | null> {
     try {
       const item = this.cache.get(key);
-      
+
       if (!item) {
         this.logger.debug(`Cache MISS: ${key}`);
         return null;
@@ -75,7 +81,10 @@ export class CacheService {
       this.logger.debug(`Cache HIT: ${key}`);
       return item.value as T;
     } catch (error) {
-      this.logger.error(`Erro ao recuperar do cache: ${error.message}`, error.stack);
+      this.logger.error(
+        `Erro ao recuperar do cache: ${error.message}`,
+        error.stack,
+      );
       return null;
     }
   }
@@ -87,14 +96,17 @@ export class CacheService {
     try {
       const deleted = this.cache.delete(key);
       this.accessOrder.delete(key);
-      
+
       if (deleted) {
         this.logger.debug(`Cache DELETE: ${key}`);
       }
-      
+
       return deleted;
     } catch (error) {
-      this.logger.error(`Erro ao remover do cache: ${error.message}`, error.stack);
+      this.logger.error(
+        `Erro ao remover do cache: ${error.message}`,
+        error.stack,
+      );
       return false;
     }
   }
@@ -115,10 +127,15 @@ export class CacheService {
         }
       }
 
-      this.logger.debug(`Cache DELETE_PATTERN: ${pattern} (${deletedCount} items)`);
+      this.logger.debug(
+        `Cache DELETE_PATTERN: ${pattern} (${deletedCount} items)`,
+      );
       return deletedCount;
     } catch (error) {
-      this.logger.error(`Erro ao remover padrão do cache: ${error.message}`, error.stack);
+      this.logger.error(
+        `Erro ao remover padrão do cache: ${error.message}`,
+        error.stack,
+      );
       return 0;
     }
   }
@@ -132,7 +149,7 @@ export class CacheService {
       this.cache.clear();
       this.accessOrder.clear();
       this.accessCounter = 0;
-      
+
       this.logger.debug(`Cache CLEAR: ${size} items removed`);
     } catch (error) {
       this.logger.error(`Erro ao limpar cache: ${error.message}`, error.stack);
@@ -145,7 +162,7 @@ export class CacheService {
   getStats(): CacheStats {
     const now = Date.now();
     let expiredCount = 0;
-    
+
     for (const [key, item] of this.cache.entries()) {
       if (now > item.expiresAt) {
         expiredCount++;
@@ -177,12 +194,17 @@ export class CacheService {
       }
 
       if (cleanedCount > 0) {
-        this.logger.debug(`Cache CLEANUP: ${cleanedCount} expired items removed`);
+        this.logger.debug(
+          `Cache CLEANUP: ${cleanedCount} expired items removed`,
+        );
       }
 
       return cleanedCount;
     } catch (error) {
-      this.logger.error(`Erro na limpeza do cache: ${error.message}`, error.stack);
+      this.logger.error(
+        `Erro na limpeza do cache: ${error.message}`,
+        error.stack,
+      );
       return 0;
     }
   }
@@ -207,7 +229,10 @@ export class CacheService {
       await this.set(key, value, ttl);
       return value;
     } catch (error) {
-      this.logger.error(`Erro no getOrSet para chave ${key}: ${error.message}`, error.stack);
+      this.logger.error(
+        `Erro no getOrSet para chave ${key}: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }
@@ -245,14 +270,14 @@ export class CacheService {
    */
   private estimateMemoryUsage(): number {
     let totalSize = 0;
-    
+
     for (const [key, item] of this.cache.entries()) {
       // Estimativa básica: tamanho da chave + tamanho serializado do valor
       totalSize += key.length * 2; // UTF-16
       totalSize += JSON.stringify(item.value).length * 2;
       totalSize += 24; // overhead do objeto CacheItem
     }
-    
+
     return totalSize;
   }
 }

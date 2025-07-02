@@ -21,7 +21,7 @@ export class DespesaMensalDto {
   @ApiProperty({
     enum: TipoDespesaEnum,
     description: 'Tipo de despesa mensal',
-    example: 'agua'
+    example: 'agua',
   })
   @IsEnum(TipoDespesaEnum, { message: 'Tipo de despesa inválido' })
   tipo: TipoDespesaEnum;
@@ -29,8 +29,8 @@ export class DespesaMensalDto {
   @ApiProperty({
     type: 'number',
     description: 'Valor da despesa em reais',
-    example: 50.00,
-    minimum: 0
+    example: 50.0,
+    minimum: 0,
   })
   @IsNumber({}, { message: 'Valor deve ser um número' })
   @Min(0, { message: 'Valor não pode ser negativo' })
@@ -40,7 +40,7 @@ export class DespesaMensalDto {
     type: 'string',
     description: 'Descrição adicional da despesa',
     required: false,
-    example: 'Conta de água da CAERN'
+    example: 'Conta de água da CAERN',
   })
   @IsOptional()
   @IsString({ message: 'Descrição deve ser uma string' })
@@ -57,7 +57,7 @@ export class CreateSituacaoMoradiaBodyDto {
     enum: TipoMoradiaEnum,
     description: 'Tipo de moradia do cidadão',
     required: false,
-    example: 'alugada'
+    example: 'alugada',
   })
   @IsOptional()
   @IsEnum(TipoMoradiaEnum, { message: 'Tipo de moradia inválido' })
@@ -68,7 +68,7 @@ export class CreateSituacaoMoradiaBodyDto {
     description: 'Número de cômodos da moradia',
     required: false,
     example: 3,
-    minimum: 1
+    minimum: 1,
   })
   @IsOptional()
   @IsNumber({}, { message: 'Número de cômodos deve ser um número' })
@@ -79,8 +79,8 @@ export class CreateSituacaoMoradiaBodyDto {
     type: 'number',
     description: 'Valor do aluguel em reais',
     required: false,
-    example: 800.00,
-    minimum: 0
+    example: 800.0,
+    minimum: 0,
   })
   @IsOptional()
   @IsNumber({}, { message: 'Valor do aluguel deve ser um número' })
@@ -92,7 +92,7 @@ export class CreateSituacaoMoradiaBodyDto {
     description: 'Tempo de moradia no local em anos',
     required: false,
     example: 2,
-    minimum: 0
+    minimum: 0,
   })
   @IsOptional()
   @IsNumber({}, { message: 'Tempo de moradia deve ser um número' })
@@ -104,7 +104,7 @@ export class CreateSituacaoMoradiaBodyDto {
     type: 'boolean',
     description: 'Indica se a moradia possui banheiro',
     required: false,
-    example: true
+    example: true,
   })
   @IsOptional()
   @IsBoolean({ message: 'Possui banheiro deve ser verdadeiro ou falso' })
@@ -114,17 +114,19 @@ export class CreateSituacaoMoradiaBodyDto {
     type: 'boolean',
     description: 'Indica se a moradia possui energia elétrica',
     required: false,
-    example: true
+    example: true,
   })
   @IsOptional()
-  @IsBoolean({ message: 'Possui energia elétrica deve ser verdadeiro ou falso' })
+  @IsBoolean({
+    message: 'Possui energia elétrica deve ser verdadeiro ou falso',
+  })
   possui_energia_eletrica?: boolean;
 
   @ApiProperty({
     type: 'boolean',
     description: 'Indica se a moradia possui água encanada',
     required: false,
-    example: true
+    example: true,
   })
   @IsOptional()
   @IsBoolean({ message: 'Possui água encanada deve ser verdadeiro ou falso' })
@@ -134,7 +136,7 @@ export class CreateSituacaoMoradiaBodyDto {
     type: 'boolean',
     description: 'Indica se a moradia possui coleta de lixo',
     required: false,
-    example: true
+    example: true,
   })
   @IsOptional()
   @IsBoolean({ message: 'Possui coleta de lixo deve ser verdadeiro ou falso' })
@@ -145,7 +147,7 @@ export class CreateSituacaoMoradiaBodyDto {
     type: 'boolean',
     description: 'Indica se a moradia é cedida',
     required: false,
-    example: false
+    example: false,
   })
   @IsOptional()
   @IsBoolean({ message: 'Moradia cedida deve ser verdadeiro ou falso' })
@@ -155,7 +157,7 @@ export class CreateSituacaoMoradiaBodyDto {
     type: 'boolean',
     description: 'Indica se a moradia é invadida',
     required: false,
-    example: false
+    example: false,
   })
   @IsOptional()
   @IsBoolean({ message: 'Moradia invadida deve ser verdadeiro ou falso' })
@@ -165,7 +167,7 @@ export class CreateSituacaoMoradiaBodyDto {
     enum: TipoDesastreEnum,
     description: 'Tipo de desastre que afetou a moradia',
     required: false,
-    example: TipoDesastreEnum.ENCHENTE
+    example: TipoDesastreEnum.ENCHENTE,
   })
   @IsOptional()
   @IsEnum(TipoDesastreEnum, { message: 'Tipo de desastre inválido' })
@@ -175,7 +177,7 @@ export class CreateSituacaoMoradiaBodyDto {
     type: 'string',
     description: 'Descrição detalhada do desastre',
     required: false,
-    example: 'Casa foi atingida por enchente em dezembro de 2023'
+    example: 'Casa foi atingida por enchente em dezembro de 2023',
   })
   @IsOptional()
   @IsString({ message: 'Descrição do desastre deve ser uma string' })
@@ -185,7 +187,7 @@ export class CreateSituacaoMoradiaBodyDto {
     type: 'string',
     description: 'Descrição de outro tipo de moradia não listado',
     required: false,
-    example: 'Moradia em área de risco'
+    example: 'Moradia em área de risco',
   })
   @IsOptional()
   @IsString({ message: 'Outro tipo de moradia deve ser uma string' })
@@ -196,30 +198,36 @@ export class CreateSituacaoMoradiaBodyDto {
     enum: ProgramaHabitacionalEnum,
     description: 'Programa habitacional do qual participa',
     required: false,
-    example: ProgramaHabitacionalEnum.MINHA_CASA_MINHA_VIDA
+    example: ProgramaHabitacionalEnum.MINHA_CASA_MINHA_VIDA,
   })
   @IsOptional()
-  @IsEnum(ProgramaHabitacionalEnum, { message: 'Programa habitacional inválido' })
+  @IsEnum(ProgramaHabitacionalEnum, {
+    message: 'Programa habitacional inválido',
+  })
   programa_habitacional?: ProgramaHabitacionalEnum;
 
   @ApiProperty({
     type: 'boolean',
     description: 'Indica se está inscrito em programa habitacional',
     required: false,
-    example: true
+    example: true,
   })
   @IsOptional()
-  @IsBoolean({ message: 'Inscrito em programa habitacional deve ser verdadeiro ou falso' })
+  @IsBoolean({
+    message: 'Inscrito em programa habitacional deve ser verdadeiro ou falso',
+  })
   inscrito_programa_habitacional?: boolean;
 
   @ApiProperty({
     type: 'boolean',
     description: 'Indica se reside há pelo menos 2 anos em Natal',
     required: false,
-    example: true
+    example: true,
   })
   @IsOptional()
-  @IsBoolean({ message: 'Reside há 2 anos em Natal deve ser verdadeiro ou falso' })
+  @IsBoolean({
+    message: 'Reside há 2 anos em Natal deve ser verdadeiro ou falso',
+  })
   reside_2_anos_natal?: boolean;
 
   // Seção 5 - Despesas Mensais
@@ -228,9 +236,9 @@ export class CreateSituacaoMoradiaBodyDto {
     description: 'Lista de despesas mensais da moradia',
     required: false,
     example: [
-      { tipo: 'agua', valor: 50.00, descricao: 'Conta de água' },
-      { tipo: 'energia', valor: 120.00, descricao: 'Conta de luz' }
-    ]
+      { tipo: 'agua', valor: 50.0, descricao: 'Conta de água' },
+      { tipo: 'energia', valor: 120.0, descricao: 'Conta de luz' },
+    ],
   })
   @IsOptional()
   @IsArray({ message: 'Despesas mensais deve ser um array' })
@@ -242,7 +250,7 @@ export class CreateSituacaoMoradiaBodyDto {
     type: 'string',
     description: 'Observações adicionais sobre a situação de moradia',
     required: false,
-    example: 'Moradia em boas condições, próxima ao centro'
+    example: 'Moradia em boas condições, próxima ao centro',
   })
   @IsOptional()
   @IsString({ message: 'Observações deve ser uma string' })

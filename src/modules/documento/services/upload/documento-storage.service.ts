@@ -43,7 +43,7 @@ export class DocumentoStorageService implements IDocumentoStorageService {
 
     try {
       const storageProvider = this.storageProviderFactory.getProvider();
-      
+
       if (!storageProvider) {
         throw new InternalServerErrorException(
           'Provedor de storage não configurado',
@@ -144,7 +144,7 @@ export class DocumentoStorageService implements IDocumentoStorageService {
 
     try {
       const storageProvider = this.storageProviderFactory.getProvider();
-      
+
       if (!storageProvider) {
         this.logger.warn(
           `Provedor de storage não configurado para limpeza [${uploadId}]`,
@@ -198,7 +198,7 @@ export class DocumentoStorageService implements IDocumentoStorageService {
   async fileExists(storagePath: string): Promise<boolean> {
     try {
       const storageProvider = this.storageProviderFactory.getProvider();
-      
+
       if (!storageProvider) {
         return false;
       }

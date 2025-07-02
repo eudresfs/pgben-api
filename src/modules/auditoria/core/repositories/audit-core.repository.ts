@@ -1,6 +1,6 @@
 /**
  * AuditCoreRepository
- * 
+ *
  * Repositório core isolado para operações de auditoria.
  * Implementa persistência otimizada, particionamento e compressão.
  */
@@ -65,24 +65,26 @@ export class AuditCoreRepository {
    */
   async create(auditData: Partial<LogAuditoria>): Promise<LogAuditoria> {
     const startTime = Date.now();
-    
+
     try {
       // Enriquece os dados com informações padrão
       const enrichedData = this.enrichAuditData(auditData);
-      
+
       // Cria a entidade
       const auditLog = this.repository.create(enrichedData);
-      
+
       // Persiste no banco
       const savedLog = await this.repository.save(auditLog);
-      
+
       const duration = Date.now() - startTime;
       this.logger.debug(`Audit log created in ${duration}ms: ${savedLog.id}`);
-      
+
       return savedLog;
-      
     } catch (error) {
-      this.logger.error(`Failed to create audit log: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to create audit log: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }
@@ -90,26 +92,34 @@ export class AuditCoreRepository {
   /**
    * Cria múltiplos logs em lote para otimização
    */
-  async createBatch(auditDataArray: Partial<LogAuditoria>[]): Promise<LogAuditoria[]> {
+  async createBatch(
+    auditDataArray: Partial<LogAuditoria>[],
+  ): Promise<LogAuditoria[]> {
     const startTime = Date.now();
-    
+
     try {
       // Enriquece todos os dados
-      const enrichedDataArray = auditDataArray.map(data => this.enrichAuditData(data));
-      
+      const enrichedDataArray = auditDataArray.map((data) =>
+        this.enrichAuditData(data),
+      );
+
       // Cria as entidades
       const auditLogs = this.repository.create(enrichedDataArray);
-      
+
       // Persiste em lote
       const savedLogs = await this.repository.save(auditLogs);
-      
+
       const duration = Date.now() - startTime;
-      this.logger.debug(`${savedLogs.length} audit logs created in batch in ${duration}ms`);
-      
+      this.logger.debug(
+        `${savedLogs.length} audit logs created in batch in ${duration}ms`,
+      );
+
       return savedLogs;
-      
     } catch (error) {
-      this.logger.error(`Failed to create audit logs in batch: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to create audit logs in batch: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }
@@ -117,24 +127,28 @@ export class AuditCoreRepository {
   /**
    * Busca logs de auditoria com filtros
    */
-  async findWithFilters(filters: AuditSearchFilters): Promise<PaginatedAuditResult> {
+  async findWithFilters(
+    filters: AuditSearchFilters,
+  ): Promise<PaginatedAuditResult> {
     const startTime = Date.now();
-    
+
     try {
       const queryBuilder = this.createFilteredQuery(filters);
-      
+
       // Aplica paginação
       const limit = filters.limit || 50;
       const offset = filters.offset || 0;
-      
+
       queryBuilder.limit(limit).offset(offset);
-      
+
       // Executa a consulta
       const [data, total] = await queryBuilder.getManyAndCount();
-      
+
       const duration = Date.now() - startTime;
-      this.logger.debug(`Found ${data.length}/${total} audit logs in ${duration}ms`);
-      
+      this.logger.debug(
+        `Found ${data.length}/${total} audit logs in ${duration}ms`,
+      );
+
       return {
         data,
         total,
@@ -142,9 +156,11 @@ export class AuditCoreRepository {
         limit,
         totalPages: Math.ceil(total / limit),
       };
-      
     } catch (error) {
-      this.logger.error(`Failed to search audit logs: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to search audit logs: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }
@@ -156,7 +172,10 @@ export class AuditCoreRepository {
     try {
       return await this.repository.findOne({ where: { id } });
     } catch (error) {
-      this.logger.error(`Failed to find audit log by ID ${id}: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to find audit log by ID ${id}: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }
@@ -164,20 +183,22 @@ export class AuditCoreRepository {
   /**
    * Busca logs por entidade
    */
-  async findByEntity(entityName: string, entityId?: string): Promise<LogAuditoria[]> {
+  async findByEntity(
+    entityName: string,
+    entityId?: string,
+  ): Promise<LogAuditoria[]> {
     try {
       const where: any = { entidade_afetada: entityName };
-      
+
       if (entityId) {
         where.entidade_id = entityId;
       }
-      
+
       return await this.repository.find({
         where,
         order: { created_at: 'DESC' },
         take: 100, // Limita para evitar sobrecarga
       });
-      
     } catch (error) {
       this.logger.error(
         `Failed to find audit logs for entity ${entityName}:${entityId}: ${error.message}`,
@@ -197,7 +218,6 @@ export class AuditCoreRepository {
         order: { created_at: 'DESC' },
         take: limit,
       });
-      
     } catch (error) {
       this.logger.error(
         `Failed to find audit logs for user ${userId}: ${error.message}`,
@@ -210,61 +230,66 @@ export class AuditCoreRepository {
   /**
    * Busca logs relevantes para LGPD
    */
-  async findLgpdRelevant(filters: Omit<AuditSearchFilters, 'lgpdRelevant'>): Promise<PaginatedAuditResult> {
+  async findLgpdRelevant(
+    filters: Omit<AuditSearchFilters, 'lgpdRelevant'>,
+  ): Promise<PaginatedAuditResult> {
     return this.findWithFilters({ ...filters, lgpdRelevant: true });
   }
 
   /**
    * Obtém estatísticas de auditoria
    */
-  async getStatistics(startDate?: Date, endDate?: Date): Promise<AuditStatistics> {
+  async getStatistics(
+    startDate?: Date,
+    endDate?: Date,
+  ): Promise<AuditStatistics> {
     const startTime = Date.now();
-    
+
     try {
       const queryBuilder = this.repository.createQueryBuilder('audit');
-      
+
       if (startDate && endDate) {
         queryBuilder.where('audit.timestamp BETWEEN :startDate AND :endDate', {
           startDate,
           endDate,
         });
       }
-      
+
       // Total de eventos
       const totalEvents = await queryBuilder.getCount();
-      
+
       // Eventos por tipo
       const eventsByTypeQuery = queryBuilder
         .clone()
         .select('audit.tipo_operacao', 'eventType')
         .addSelect('COUNT(*)', 'count')
         .groupBy('audit.tipo_operacao');
-      
+
       const eventsByTypeResult = await eventsByTypeQuery.getRawMany();
       const eventsByType = eventsByTypeResult.reduce((acc, item) => {
         acc[item.eventType] = parseInt(item.count);
         return acc;
       }, {});
-      
+
       // Eventos por nível de risco
       const eventsByRiskQuery = queryBuilder
         .clone()
         .select('audit.nivel_risco', 'riskLevel')
         .addSelect('COUNT(*)', 'count')
         .groupBy('audit.nivel_risco');
-      
+
       const eventsByRiskResult = await eventsByRiskQuery.getRawMany();
       const eventsByRiskLevel = eventsByRiskResult.reduce((acc, item) => {
         acc[item.riskLevel] = parseInt(item.count);
         return acc;
       }, {});
-      
+
       // Eventos LGPD
       const lgpdEvents = await queryBuilder
         .clone()
         .where('audit.lgpd_relevante = :lgpd', { lgpd: true })
         .getCount();
-      
+
       // Top entidades
       const topEntitiesQuery = queryBuilder
         .clone()
@@ -273,13 +298,13 @@ export class AuditCoreRepository {
         .groupBy('audit.entidade_afetada')
         .orderBy('count', 'DESC')
         .limit(10);
-      
+
       const topEntitiesResult = await topEntitiesQuery.getRawMany();
-      const topEntities = topEntitiesResult.map(item => ({
+      const topEntities = topEntitiesResult.map((item) => ({
         entityName: item.entityName,
         count: parseInt(item.count),
       }));
-      
+
       // Top usuários
       const topUsersQuery = queryBuilder
         .clone()
@@ -289,16 +314,16 @@ export class AuditCoreRepository {
         .groupBy('audit.usuario_id')
         .orderBy('count', 'DESC')
         .limit(10);
-      
+
       const topUsersResult = await topUsersQuery.getRawMany();
-      const topUsers = topUsersResult.map(item => ({
+      const topUsers = topUsersResult.map((item) => ({
         userId: item.userId,
         count: parseInt(item.count),
       }));
-      
+
       const duration = Date.now() - startTime;
       this.logger.debug(`Statistics calculated in ${duration}ms`);
-      
+
       return {
         totalEvents,
         eventsByType,
@@ -308,9 +333,11 @@ export class AuditCoreRepository {
         topEntities,
         topUsers,
       };
-      
     } catch (error) {
-      this.logger.error(`Failed to get audit statistics: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to get audit statistics: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }
@@ -320,27 +347,29 @@ export class AuditCoreRepository {
    */
   async cleanupOldLogs(olderThanDays: number): Promise<number> {
     const startTime = Date.now();
-    
+
     try {
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - olderThanDays);
-      
+
       const result = await this.repository
         .createQueryBuilder()
         .delete()
         .where('created_at < :cutoffDate', { cutoffDate })
         .andWhere('nivel_risco != :critical', { critical: RiskLevel.CRITICAL }) // Preserva eventos críticos
         .execute();
-      
+
       const duration = Date.now() - startTime;
       this.logger.log(
         `Cleaned up ${result.affected} old audit logs in ${duration}ms (older than ${olderThanDays} days)`,
       );
-      
+
       return result.affected || 0;
-      
     } catch (error) {
-      this.logger.error(`Failed to cleanup old logs: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to cleanup old logs: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }
@@ -348,11 +377,11 @@ export class AuditCoreRepository {
   /**
    * Enriquece dados de auditoria com informações padrão
    */
-  private enrichAuditData(auditData: Partial<LogAuditoria>): Partial<LogAuditoria> {
+  private enrichAuditData(
+    auditData: Partial<LogAuditoria>,
+  ): Partial<LogAuditoria> {
     const nivelRisco = auditData.nivel_risco || RiskLevel.LOW;
-    
 
-    
     return {
       ...auditData,
       data_hora: auditData.data_hora || new Date(),
@@ -363,9 +392,11 @@ export class AuditCoreRepository {
   /**
    * Cria query builder com filtros aplicados
    */
-  private createFilteredQuery(filters: AuditSearchFilters): SelectQueryBuilder<LogAuditoria> {
+  private createFilteredQuery(
+    filters: AuditSearchFilters,
+  ): SelectQueryBuilder<LogAuditoria> {
     const queryBuilder = this.repository.createQueryBuilder('audit');
-    
+
     // Filtro por data
     if (filters.startDate && filters.endDate) {
       queryBuilder.where('audit.timestamp BETWEEN :startDate AND :endDate', {
@@ -381,51 +412,51 @@ export class AuditCoreRepository {
         endDate: filters.endDate,
       });
     }
-    
+
     // Filtro por entidade
     if (filters.entityName) {
       queryBuilder.andWhere('audit.entidade_afetada = :entityName', {
         entityName: filters.entityName,
       });
     }
-    
+
     if (filters.entityId) {
       queryBuilder.andWhere('audit.entidade_id = :entityId', {
         entityId: filters.entityId,
       });
     }
-    
+
     // Filtro por usuário
     if (filters.userId) {
       queryBuilder.andWhere('audit.usuario_id = :userId', {
         userId: filters.userId,
       });
     }
-    
+
     // Filtro por tipos de evento
     if (filters.eventTypes && filters.eventTypes.length > 0) {
       queryBuilder.andWhere('audit.tipo_operacao IN (:...eventTypes)', {
         eventTypes: filters.eventTypes,
       });
     }
-    
+
     // Filtro por níveis de risco
     if (filters.riskLevels && filters.riskLevels.length > 0) {
       queryBuilder.andWhere('audit.nivel_risco IN (:...riskLevels)', {
         riskLevels: filters.riskLevels,
       });
     }
-    
+
     // Filtro LGPD
     if (filters.lgpdRelevant !== undefined) {
       queryBuilder.andWhere('audit.lgpd_relevante = :lgpdRelevant', {
         lgpdRelevant: filters.lgpdRelevant,
       });
     }
-    
+
     // Ordenação padrão
     queryBuilder.orderBy('audit.timestamp', 'DESC');
-    
+
     return queryBuilder;
   }
 }

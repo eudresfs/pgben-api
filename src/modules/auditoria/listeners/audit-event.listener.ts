@@ -1,6 +1,6 @@
 /**
  * AuditEventListener
- * 
+ *
  * Listener para eventos de auditoria síncronos.
  * Processa eventos emitidos pelo EventEmitter2 de forma síncrona.
  */
@@ -25,9 +25,7 @@ import { TipoOperacao } from '../../../enums/tipo-operacao.enum';
 export class AuditEventListener {
   private readonly logger = new Logger(AuditEventListener.name);
 
-  constructor(
-    private readonly auditCoreService: AuditCoreService,
-  ) {}
+  constructor(private readonly auditCoreService: AuditCoreService) {}
 
   /**
    * Processa eventos genéricos de auditoria
@@ -75,9 +73,11 @@ export class AuditEventListener {
         user_agent: event.requestContext?.userAgent,
         endpoint: event.requestContext?.endpoint,
         metodo_http: event.requestContext?.method,
-        dados_novos: event.newData
+        dados_novos: event.newData,
       });
-      this.logger.debug(`Evento de entidade processado: ${event.entityName} - ${event.eventType}`);
+      this.logger.debug(
+        `Evento de entidade processado: ${event.entityName} - ${event.eventType}`,
+      );
     } catch (error) {
       this.logger.error('Erro ao processar evento de entidade:', error);
     }
@@ -90,8 +90,10 @@ export class AuditEventListener {
   @OnEvent('audit.entity.created')
   async handleEntityCreated(event: EntityAuditEvent): Promise<void> {
     try {
-      const riskLevel = event.sensitiveFieldsChanged ? RiskLevel.HIGH : RiskLevel.LOW;
-      
+      const riskLevel = event.sensitiveFieldsChanged
+        ? RiskLevel.HIGH
+        : RiskLevel.LOW;
+
       await this.auditCoreService.createAuditLog({
         tipo_operacao: this.mapEventTypeToTipoOperacao(event.eventType),
         entidade_afetada: event.entityName,
@@ -108,9 +110,9 @@ export class AuditEventListener {
         metodo_http: event.requestContext?.method,
         dados_novos: event.newData,
       });
-      
+
       this.logger.debug(
-        `Entidade criada: ${event.entityName} (ID: ${event.entityId})`
+        `Entidade criada: ${event.entityName} (ID: ${event.entityId})`,
       );
     } catch (error) {
       this.logger.error('Erro ao processar criação de entidade:', error);
@@ -126,7 +128,7 @@ export class AuditEventListener {
     try {
       // Calcula o nível de risco baseado nos campos alterados
       const riskLevel = this.calculateUpdateRiskLevel(event);
-      
+
       await this.auditCoreService.createAuditLog({
         tipo_operacao: this.mapEventTypeToTipoOperacao(event.eventType),
         entidade_afetada: event.entityName,
@@ -144,9 +146,9 @@ export class AuditEventListener {
         dados_anteriores: event.previousData,
         dados_novos: event.newData,
       });
-      
+
       this.logger.debug(
-        `Entidade atualizada: ${event.entityName} - Campos: ${event.changedFields?.join(', ')}`
+        `Entidade atualizada: ${event.entityName} - Campos: ${event.changedFields?.join(', ')}`,
       );
     } catch (error) {
       this.logger.error('Erro ao processar atualização de entidade:', error);
@@ -177,8 +179,10 @@ export class AuditEventListener {
         metodo_http: event.requestContext?.method,
         dados_anteriores: event.previousData,
       });
-      
-      this.logger.warn(`Entidade excluída: ${event.entityName} - ID: ${event.entityId}`);
+
+      this.logger.warn(
+        `Entidade excluída: ${event.entityName} - ID: ${event.entityId}`,
+      );
     } catch (error) {
       this.logger.error('Erro ao processar exclusão de entidade:', error);
     }
@@ -191,8 +195,10 @@ export class AuditEventListener {
   @OnEvent('audit.entity.accessed')
   async handleEntityAccessed(event: EntityAuditEvent): Promise<void> {
     try {
-      const riskLevel = event.sensitiveFieldsChanged ? RiskLevel.MEDIUM : RiskLevel.LOW;
-      
+      const riskLevel = event.sensitiveFieldsChanged
+        ? RiskLevel.MEDIUM
+        : RiskLevel.LOW;
+
       await this.auditCoreService.createAuditLog({
         tipo_operacao: this.mapEventTypeToTipoOperacao(event.eventType),
         entidade_afetada: event.entityName,
@@ -207,10 +213,14 @@ export class AuditEventListener {
         user_agent: event.requestContext?.userAgent,
         endpoint: event.requestContext?.endpoint,
         metodo_http: event.requestContext?.method,
-        dados_sensiveis_acessados: event.sensitiveFieldsChanged ? ['dados_sensíveis'] : undefined,
+        dados_sensiveis_acessados: event.sensitiveFieldsChanged
+          ? ['dados_sensíveis']
+          : undefined,
       });
-      
-      this.logger.debug(`Entidade acessada: ${event.entityName} - ID: ${event.entityId}`);
+
+      this.logger.debug(
+        `Entidade acessada: ${event.entityName} - ID: ${event.entityId}`,
+      );
     } catch (error) {
       this.logger.error('Erro ao processar acesso a entidade:', error);
     }
@@ -242,9 +252,9 @@ export class AuditEventListener {
           metadata: event.metadata,
         },
       });
-      
+
       this.logger.warn(
-        `Evento de segurança: ${event.eventType} - Usuário: ${event.userId}`
+        `Evento de segurança: ${event.eventType} - Usuário: ${event.userId}`,
       );
     } catch (error) {
       this.logger.error('Erro ao processar evento de segurança:', error);
@@ -256,7 +266,9 @@ export class AuditEventListener {
    */
   // @ts-ignore: TS1270 - Decorator compatibility issue with TypeScript 5.x
   @OnEvent('audit.sensitive')
-  async handleSensitiveDataEvent(event: SensitiveDataAuditEvent): Promise<void> {
+  async handleSensitiveDataEvent(
+    event: SensitiveDataAuditEvent,
+  ): Promise<void> {
     try {
       // Dados sensíveis sempre têm risco alto para compliance LGPD
       await this.auditCoreService.createAuditLog({
@@ -280,9 +292,9 @@ export class AuditEventListener {
           metadata: event.metadata,
         },
       });
-      
+
       this.logger.warn(
-        `Acesso a dados sensíveis: ${event.eventType} - Campos: ${event.sensitiveFields?.join(', ')}`
+        `Acesso a dados sensíveis: ${event.eventType} - Campos: ${event.sensitiveFields?.join(', ')}`,
       );
     } catch (error) {
       this.logger.error('Erro ao processar evento de dados sensíveis:', error);
@@ -296,9 +308,11 @@ export class AuditEventListener {
   @OnEvent('audit.system')
   async handleSystemEvent(event: SystemAuditEvent): Promise<void> {
     try {
-      const riskLevel = event.eventType === AuditEventType.SYSTEM_ERROR ? 
-        RiskLevel.HIGH : RiskLevel.LOW;
-      
+      const riskLevel =
+        event.eventType === AuditEventType.SYSTEM_ERROR
+          ? RiskLevel.HIGH
+          : RiskLevel.LOW;
+
       await this.auditCoreService.createAuditLog({
         tipo_operacao: this.mapEventTypeToTipoOperacao(event.eventType),
         entidade_afetada: 'Sistema',
@@ -317,10 +331,8 @@ export class AuditEventListener {
           metadata: event.metadata,
         },
       });
-      
-      this.logger.debug(
-        `Evento de sistema: ${event.eventType}`
-      );
+
+      this.logger.debug(`Evento de sistema: ${event.eventType}`);
     } catch (error) {
       this.logger.error('Erro ao processar evento de sistema:', error);
     }
@@ -346,9 +358,9 @@ export class AuditEventListener {
         metodo_http: event.requestContext?.method,
         dados_novos: event.metadata,
       });
-      
+
       this.logger.debug(
-        `Método auditado: ${event.metadata?.controller}.${event.metadata?.method}`
+        `Método auditado: ${event.metadata?.controller}.${event.metadata?.method}`,
       );
     } catch (error) {
       this.logger.error('Erro ao processar evento de método:', error);
@@ -375,9 +387,9 @@ export class AuditEventListener {
         metodo_http: event.requestContext?.method,
         dados_novos: event.metadata,
       });
-      
+
       this.logger.debug(
-        `Requisição auditada: ${event.metadata?.method} ${event.metadata?.url}`
+        `Requisição auditada: ${event.metadata?.method} ${event.metadata?.url}`,
       );
     } catch (error) {
       this.logger.error('Erro ao processar evento de requisição:', error);
@@ -393,7 +405,8 @@ export class AuditEventListener {
     try {
       await this.auditCoreService.createAuditLog({
         tipo_operacao: this.mapEventTypeToTipoOperacao(event.eventType),
-        entidade_afetada: event.entityName || event.metadata?.entity || 'Configurado',
+        entidade_afetada:
+          event.entityName || event.metadata?.entity || 'Configurado',
         entidade_id: event.entityId,
         usuario_id: event.userId,
         descricao: `Evento configurado: ${event.metadata?.entity} - ${event.metadata?.operation}`,
@@ -404,9 +417,9 @@ export class AuditEventListener {
         metodo_http: event.requestContext?.method,
         dados_novos: event.metadata,
       });
-      
+
       this.logger.debug(
-        `Evento configurado processado: ${event.metadata?.entity} - ${event.metadata?.operation}`
+        `Evento configurado processado: ${event.metadata?.entity} - ${event.metadata?.operation}`,
       );
     } catch (error) {
       this.logger.error('Erro ao processar evento configurado:', error);
@@ -434,9 +447,9 @@ export class AuditEventListener {
         dados_novos: event.metadata,
         nivel_risco: event.riskLevel || RiskLevel.LOW,
       });
-      
+
       this.logger.debug(
-        `Evento automático processado: ${event.metadata?.controller}.${event.metadata?.method}`
+        `Evento automático processado: ${event.metadata?.controller}.${event.metadata?.method}`,
       );
     } catch (error) {
       this.logger.error('Erro ao processar evento automático:', error);
@@ -448,27 +461,33 @@ export class AuditEventListener {
    */
   private calculateUpdateRiskLevel(event: EntityAuditEvent): RiskLevel {
     const changedFields = event.changedFields || [];
-    
+
     // Campos críticos que elevam o risco
-    const criticalFields = ['password', 'email', 'role', 'permissions', 'status'];
+    const criticalFields = [
+      'password',
+      'email',
+      'role',
+      'permissions',
+      'status',
+    ];
     const sensitiveFields = ['cpf', 'rg', 'phone', 'address', 'salary'];
-    
-    const hasCriticalChanges = changedFields.some(field => 
-      criticalFields.includes(field.toLowerCase())
+
+    const hasCriticalChanges = changedFields.some((field) =>
+      criticalFields.includes(field.toLowerCase()),
     );
-    
-    const hasSensitiveChanges = changedFields.some(field => 
-      sensitiveFields.includes(field.toLowerCase())
+
+    const hasSensitiveChanges = changedFields.some((field) =>
+      sensitiveFields.includes(field.toLowerCase()),
     );
-    
+
     if (hasCriticalChanges) {
       return RiskLevel.HIGH;
     }
-    
+
     if (hasSensitiveChanges) {
       return RiskLevel.MEDIUM;
     }
-    
+
     return RiskLevel.LOW;
   }
 
@@ -496,7 +515,7 @@ export class AuditEventListener {
         dados_novos: {
           action: event.action,
           details: event.details,
-          ...event.metadata
+          ...event.metadata,
         },
       });
     } catch (error) {
@@ -516,8 +535,8 @@ export class AuditEventListener {
     try {
       // Verificar se é um EntityAuditEvent para acessar previousData e newData
       const isEntityEvent = 'previousData' in event || 'newData' in event;
-      const entityEvent = isEntityEvent ? event as any : null;
-      
+      const entityEvent = isEntityEvent ? (event as any) : null;
+
       await this.auditCoreService.createAuditLog({
         tipo_operacao: this.mapEventTypeToTipoOperacao(event.eventType),
         entidade_afetada: event.entityName,
@@ -551,9 +570,14 @@ export class AuditEventListener {
         entidade_afetada: event.entityName || 'Sistema',
         entidade_id: event.entityId,
         usuario_id: event.userId,
-        descricao: event.description || `Evento de segurança: ${event.eventType}`,
-        nivel_risco: event.severity === 'HIGH' ? RiskLevel.HIGH : 
-                    event.severity === 'MEDIUM' ? RiskLevel.MEDIUM : RiskLevel.LOW,
+        descricao:
+          event.description || `Evento de segurança: ${event.eventType}`,
+        nivel_risco:
+          event.severity === 'HIGH'
+            ? RiskLevel.HIGH
+            : event.severity === 'MEDIUM'
+              ? RiskLevel.MEDIUM
+              : RiskLevel.LOW,
         lgpd_relevante: event.lgpdRelevant || false,
         metadata: event.metadata,
         data_hora: event.timestamp || new Date(),
@@ -565,7 +589,7 @@ export class AuditEventListener {
           eventType: event.eventType,
           severity: event.severity,
           details: event.details,
-          ...event.metadata
+          ...event.metadata,
         },
       });
     } catch (error) {

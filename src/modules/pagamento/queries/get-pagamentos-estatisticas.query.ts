@@ -16,6 +16,6 @@ export class GetPagamentosEstatisticasQuery {
       porStatus: true,
       porMetodoPagamento: true,
       porPeriodo: 'mes',
-    }
+    },
   ) {}
 }

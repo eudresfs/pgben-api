@@ -9,7 +9,10 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Request, Response } from 'express';
-import { SseRateLimiterService, RateLimitResult } from '../services/sse-rate-limiter.service';
+import {
+  SseRateLimiterService,
+  RateLimitResult,
+} from '../services/sse-rate-limiter.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 
@@ -35,7 +38,7 @@ export const SseRateLimit = (options: SseRateLimitOptions = {}) => {
 
 /**
  * Guard para rate limiting específico de SSE
- * 
+ *
  * Integra autenticação JWT com rate limiting granular,
  * suportando diferentes perfis de usuário e identificadores customizados.
  */
@@ -55,10 +58,11 @@ export class SseRateLimitGuard implements CanActivate {
     const response = context.switchToHttp().getResponse<Response>();
 
     // Obter configurações do decorator
-    const options = this.reflector.get<SseRateLimitOptions>(
-      'sse-rate-limit',
-      context.getHandler(),
-    ) || {};
+    const options =
+      this.reflector.get<SseRateLimitOptions>(
+        'sse-rate-limit',
+        context.getHandler(),
+      ) || {};
 
     // Pular rate limiting se configurado
     if (options.skip) {
@@ -111,10 +115,7 @@ export class SseRateLimitGuard implements CanActivate {
         throw error;
       }
 
-      this.logger.error(
-        `Erro no rate limiting: ${error.message}`,
-        error.stack,
-      );
+      this.logger.error(`Erro no rate limiting: ${error.message}`, error.stack);
 
       // Em caso de erro interno, permitir requisição (fail-open)
       return true;
@@ -136,7 +137,7 @@ export class SseRateLimitGuard implements CanActivate {
     ip: string;
   }> {
     const ip = this.extractClientIP(request);
-    
+
     // Usar identificador customizado se fornecido
     if (options.customIdentifier) {
       return {
@@ -148,7 +149,7 @@ export class SseRateLimitGuard implements CanActivate {
 
     // Tentar extrair token JWT
     const token = this.extractToken(request);
-    
+
     if (token) {
       try {
         const payload = await this.jwtService.verifyAsync(token, {
@@ -157,7 +158,7 @@ export class SseRateLimitGuard implements CanActivate {
 
         // Determinar perfil baseado no usuário
         const profile = this.determineUserProfile(payload);
-        
+
         return {
           identifier: `user:${payload.sub || payload.userId}`,
           profile,
@@ -243,7 +244,7 @@ export class SseRateLimitGuard implements CanActivate {
 
     // Verificar roles/permissions
     const roles = payload.roles || payload.permissions || [];
-    
+
     if (roles.includes('admin') || roles.includes('administrator')) {
       return 'admin';
     }
@@ -265,10 +266,19 @@ export class SseRateLimitGuard implements CanActivate {
     rateLimitResult: RateLimitResult,
   ): void {
     response.setHeader('X-RateLimit-Limit', rateLimitResult.limit.toString());
-    response.setHeader('X-RateLimit-Remaining', rateLimitResult.remaining.toString());
-    response.setHeader('X-RateLimit-Reset', rateLimitResult.resetTime.toString());
-    response.setHeader('X-RateLimit-Window', rateLimitResult.windowSeconds.toString());
-    
+    response.setHeader(
+      'X-RateLimit-Remaining',
+      rateLimitResult.remaining.toString(),
+    );
+    response.setHeader(
+      'X-RateLimit-Reset',
+      rateLimitResult.resetTime.toString(),
+    );
+    response.setHeader(
+      'X-RateLimit-Window',
+      rateLimitResult.windowSeconds.toString(),
+    );
+
     if (!rateLimitResult.allowed) {
       response.setHeader('Retry-After', rateLimitResult.resetTime.toString());
     }

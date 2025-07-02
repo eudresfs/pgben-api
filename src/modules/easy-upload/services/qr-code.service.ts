@@ -14,8 +14,14 @@ export class QrCodeService {
   private readonly baseUrl: string;
 
   constructor(private readonly configService: ConfigService) {
-    this.defaultQrSize = this.configService.get<number>('EASY_UPLOAD_QR_CODE_SIZE', 300);
-    this.baseUrl = this.configService.get<string>('EASY_UPLOAD_BASE_URL', 'https://pgben.gov.br/upload');
+    this.defaultQrSize = this.configService.get<number>(
+      'EASY_UPLOAD_QR_CODE_SIZE',
+      300,
+    );
+    this.baseUrl = this.configService.get<string>(
+      'EASY_UPLOAD_BASE_URL',
+      'https://pgben.gov.br/upload',
+    );
     this.logger.log('QrCodeService inicializado');
   }
 
@@ -29,7 +35,7 @@ export class QrCodeService {
     try {
       const uploadUrl = `${this.baseUrl}/${token}`;
       const qrSize = size || this.defaultQrSize;
-      
+
       const qrOptions: QRCodeToDataURLOptions = {
         type: 'image/png',
         width: qrSize,
@@ -43,8 +49,10 @@ export class QrCodeService {
 
       // Gerar o QR Code como DataURL
       const qrCodeDataUrl = await QRCode.toDataURL(uploadUrl, qrOptions);
-      this.logger.debug(`QR Code gerado com sucesso para o token: ${token.substring(0, 8)}...`);
-      
+      this.logger.debug(
+        `QR Code gerado com sucesso para o token: ${token.substring(0, 8)}...`,
+      );
+
       return qrCodeDataUrl;
     } catch (error) {
       this.logger.error(`Erro ao gerar QR Code: ${error.message}`, error.stack);
@@ -62,7 +70,7 @@ export class QrCodeService {
     try {
       const uploadUrl = `${this.baseUrl}/${token}`;
       const qrSize = size || this.defaultQrSize;
-      
+
       const qrOptions: QRCodeToBufferOptions = {
         type: 'png',
         width: qrSize,
@@ -76,11 +84,16 @@ export class QrCodeService {
 
       // Gerar o QR Code como buffer
       const qrCodeBuffer = await QRCode.toBuffer(uploadUrl, qrOptions);
-      this.logger.debug(`QR Code buffer gerado com sucesso para o token: ${token.substring(0, 8)}...`);
-      
+      this.logger.debug(
+        `QR Code buffer gerado com sucesso para o token: ${token.substring(0, 8)}...`,
+      );
+
       return qrCodeBuffer;
     } catch (error) {
-      this.logger.error(`Erro ao gerar buffer do QR Code: ${error.message}`, error.stack);
+      this.logger.error(
+        `Erro ao gerar buffer do QR Code: ${error.message}`,
+        error.stack,
+      );
       throw new Error(`Falha ao gerar buffer do QR Code: ${error.message}`);
     }
   }

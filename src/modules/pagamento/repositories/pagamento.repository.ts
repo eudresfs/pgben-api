@@ -1,6 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, FindOptionsWhere, Between, LessThanOrEqual, IsNull } from 'typeorm';
+import {
+  Repository,
+  FindOptionsWhere,
+  Between,
+  LessThanOrEqual,
+  IsNull,
+} from 'typeorm';
 import { Pagamento } from '../../../entities/pagamento.entity';
 import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
 
@@ -13,7 +19,7 @@ export class PagamentoRepository {
   constructor(
     @InjectRepository(Pagamento)
     private readonly repository: Repository<Pagamento>,
-  ) { }
+  ) {}
 
   /**
    * Cria um novo pagamento
@@ -29,17 +35,20 @@ export class PagamentoRepository {
   async findById(id: string): Promise<Pagamento | null> {
     return await this.repository.findOne({
       where: { id },
-      relations: ['solicitacao', 'concessao', 'comprovantes']
+      relations: ['solicitacao', 'concessao', 'comprovantes'],
     });
   }
 
   /**
    * Busca pagamento por ID com relacionamentos específicos
    */
-  async findByIdWithRelations(id: string, relations: string[] = []): Promise<Pagamento | null> {
+  async findByIdWithRelations(
+    id: string,
+    relations: string[] = [],
+  ): Promise<Pagamento | null> {
     return await this.repository.findOne({
       where: { id },
-      relations
+      relations,
     });
   }
 
@@ -49,7 +58,7 @@ export class PagamentoRepository {
   async findBySolicitacao(solicitacaoId: string): Promise<Pagamento[]> {
     return await this.repository.find({
       where: { solicitacaoId },
-      order: { created_at: 'DESC' }
+      order: { created_at: 'DESC' },
     });
   }
 
@@ -59,18 +68,21 @@ export class PagamentoRepository {
   async findByConcessao(concessaoId: string): Promise<Pagamento[]> {
     return await this.repository.find({
       where: { concessaoId },
-      order: { numeroParcela: 'ASC' }
+      order: { numeroParcela: 'ASC' },
     });
   }
 
   /**
    * Busca pagamentos por status
    */
-  async findByStatus(status: StatusPagamentoEnum, limit?: number): Promise<Pagamento[]> {
+  async findByStatus(
+    status: StatusPagamentoEnum,
+    limit?: number,
+  ): Promise<Pagamento[]> {
     const options: any = {
       where: { status },
       order: { created_at: 'DESC' },
-      relations: ['solicitacao', 'concessao']
+      relations: ['solicitacao', 'concessao'],
     };
 
     if (limit) {
@@ -90,19 +102,19 @@ export class PagamentoRepository {
       where: [
         {
           status: StatusPagamentoEnum.PENDENTE,
-          dataPrevistaLiberacao: LessThanOrEqual(agora)
+          dataPrevistaLiberacao: LessThanOrEqual(agora),
         },
         {
           status: StatusPagamentoEnum.PENDENTE,
-          dataPrevistaLiberacao: IsNull()
-        }
+          dataPrevistaLiberacao: IsNull(),
+        },
       ],
       relations: ['solicitacao', 'concessao'],
       order: {
         dataPrevistaLiberacao: 'ASC',
-        created_at: 'ASC'
+        created_at: 'ASC',
       },
-      take: limite
+      take: limite,
     });
   }
 
@@ -115,16 +127,18 @@ export class PagamentoRepository {
     return await this.repository.find({
       where: {
         status: StatusPagamentoEnum.PENDENTE,
-        dataVencimento: LessThanOrEqual(agora)
+        dataVencimento: LessThanOrEqual(agora),
       },
-      relations: ['solicitacao', 'concessao']
+      relations: ['solicitacao', 'concessao'],
     });
   }
 
   /**
    * Busca pagamentos próximos ao vencimento (para notificação)
    */
-  async findPagamentosProximosVencimento(dataLimite: Date): Promise<Pagamento[]> {
+  async findPagamentosProximosVencimento(
+    dataLimite: Date,
+  ): Promise<Pagamento[]> {
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
 
@@ -134,9 +148,9 @@ export class PagamentoRepository {
     return await this.repository.find({
       where: {
         status: StatusPagamentoEnum.PENDENTE,
-        dataVencimento: Between(hoje, limite)
+        dataVencimento: Between(hoje, limite),
       },
-      relations: ['solicitacao', 'concessao']
+      relations: ['solicitacao', 'concessao'],
     });
   }
 
@@ -154,44 +168,49 @@ export class PagamentoRepository {
     page?: number;
     limit?: number;
   }): Promise<{ items: Pagamento[]; total: number }> {
-    const queryBuilder = this.repository.createQueryBuilder('pagamento')
+    const queryBuilder = this.repository
+      .createQueryBuilder('pagamento')
       .leftJoinAndSelect('pagamento.solicitacao', 'solicitacao')
       .leftJoinAndSelect('pagamento.concessao', 'concessao');
 
-
     // Aplicar filtros
     if (filtros.status) {
-      queryBuilder.andWhere('pagamento.status = :status', { status: filtros.status });
+      queryBuilder.andWhere('pagamento.status = :status', {
+        status: filtros.status,
+      });
     }
 
     if (filtros.solicitacaoId) {
       queryBuilder.andWhere('pagamento.solicitacaoId = :solicitacaoId', {
-        solicitacaoId: filtros.solicitacaoId
+        solicitacaoId: filtros.solicitacaoId,
       });
     }
 
     if (filtros.concessaoId) {
       queryBuilder.andWhere('pagamento.concessaoId = :concessaoId', {
-        concessaoId: filtros.concessaoId
+        concessaoId: filtros.concessaoId,
       });
     }
 
     if (filtros.dataInicio && filtros.dataFim) {
-      queryBuilder.andWhere('pagamento.created_at BETWEEN :dataInicio AND :dataFim', {
-        dataInicio: filtros.dataInicio,
-        dataFim: filtros.dataFim
-      });
+      queryBuilder.andWhere(
+        'pagamento.created_at BETWEEN :dataInicio AND :dataFim',
+        {
+          dataInicio: filtros.dataInicio,
+          dataFim: filtros.dataFim,
+        },
+      );
     }
 
     if (filtros.valorMinimo) {
       queryBuilder.andWhere('pagamento.valor >= :valorMinimo', {
-        valorMinimo: filtros.valorMinimo
+        valorMinimo: filtros.valorMinimo,
       });
     }
 
     if (filtros.valorMaximo) {
       queryBuilder.andWhere('pagamento.valor <= :valorMaximo', {
-        valorMaximo: filtros.valorMaximo
+        valorMaximo: filtros.valorMaximo,
       });
     }
 
@@ -214,10 +233,13 @@ export class PagamentoRepository {
   /**
    * Atualiza um pagamento
    */
-  async update(id: string, dadosAtualizacao: Partial<Pagamento>): Promise<Pagamento> {
+  async update(
+    id: string,
+    dadosAtualizacao: Partial<Pagamento>,
+  ): Promise<Pagamento> {
     await this.repository.update(id, {
       ...dadosAtualizacao,
-      updated_at: new Date()
+      updated_at: new Date(),
     });
 
     const pagamentoAtualizado = await this.findById(id);
@@ -284,7 +306,7 @@ export class PagamentoRepository {
       .getRawMany();
 
     const porStatus = {} as Record<StatusPagamentoEnum, number>;
-    statusCounts.forEach(item => {
+    statusCounts.forEach((item) => {
       porStatus[item.status] = parseInt(item.count);
     });
 
@@ -299,7 +321,7 @@ export class PagamentoRepository {
     return {
       totalPagamentos,
       porStatus,
-      valorTotal: parseFloat(valorTotal)
+      valorTotal: parseFloat(valorTotal),
     };
   }
 }

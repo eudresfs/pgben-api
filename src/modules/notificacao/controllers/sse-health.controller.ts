@@ -4,7 +4,10 @@ import { SseService } from '../services/sse.service';
 import { SseHealthCheckService } from '../services/sse-health-check.service';
 import { SseCircuitBreakerService } from '../services/sse-circuit-breaker.service';
 import { SseGracefulDegradationService } from '../services/sse-graceful-degradation.service';
-import { SseStructuredLoggingService, LogLevel } from '../services/sse-structured-logging.service';
+import {
+  SseStructuredLoggingService,
+  LogLevel,
+} from '../services/sse-structured-logging.service';
 
 @ApiTags('SSE Health')
 @Controller('sse/health')
@@ -60,22 +63,24 @@ export class SseHealthController {
   })
   async getHealthStatus() {
     const startTime = Date.now();
-    
+
     try {
       // Realizar verificação completa de saúde
       const healthStatus = await this.healthCheckService.checkHealth();
-      
+
       // Obter status de degradação
-      const degradationStatus = this.gracefulDegradationService.getCurrentStatus();
-      
+      const degradationStatus =
+        this.gracefulDegradationService.getCurrentStatus();
+
       // Obter métricas dos circuit breakers
-      const circuitBreakerMetrics = this.circuitBreakerService.getAllCircuitBreakerMetrics();
-      
+      const circuitBreakerMetrics =
+        this.circuitBreakerService.getAllCircuitBreakerMetrics();
+
       // Obter estatísticas de conexões SSE
       const connectionStats = this.sseService.getLocalConnectionStats();
-      
+
       const duration = Date.now() - startTime;
-      
+
       const response = {
         status: healthStatus.healthy ? 'healthy' : 'unhealthy',
         timestamp: healthStatus.timestamp.toISOString(),
@@ -87,15 +92,20 @@ export class SseHealthController {
           activeStrategies: degradationStatus.activeStrategies,
           affectedFeatures: degradationStatus.affectedFeatures,
         },
-        circuitBreakers: Object.keys(circuitBreakerMetrics).length > 0 ? 
-          Object.entries(circuitBreakerMetrics).reduce((acc, [name, metrics]) => {
-            acc[name] = {
-              state: metrics.state,
-              stats: metrics.stats,
-              lastStateChange: metrics.lastStateChange,
-            };
-            return acc;
-          }, {} as Record<string, any>) : {},
+        circuitBreakers:
+          Object.keys(circuitBreakerMetrics).length > 0
+            ? Object.entries(circuitBreakerMetrics).reduce(
+                (acc, [name, metrics]) => {
+                  acc[name] = {
+                    state: metrics.state,
+                    stats: metrics.stats,
+                    lastStateChange: metrics.lastStateChange,
+                  };
+                  return acc;
+                },
+                {} as Record<string, any>,
+              )
+            : {},
         connections: {
           total: connectionStats.totalConnections,
           byUser: connectionStats.connectionsPerUser,
@@ -105,7 +115,7 @@ export class SseHealthController {
           healthCheckDuration: duration,
         },
       };
-      
+
       // Log da verificação de saúde
       this.loggingService.logSecurity('Health check realizado', {
         userId: 0,
@@ -119,18 +129,18 @@ export class SseHealthController {
           totalConnections: connectionStats.totalConnections,
         },
       });
-      
+
       return response;
     } catch (error) {
       const duration = Date.now() - startTime;
-      
+
       this.loggingService.logError(error as Error, {
         userId: 0,
         component: 'sse-health',
         operation: 'health-check',
         metadata: { duration },
       });
-      
+
       return {
         status: 'unhealthy',
         timestamp: new Date().toISOString(),
@@ -150,37 +160,39 @@ export class SseHealthController {
   })
   async getDetailedHealthStatus() {
     const startTime = Date.now();
-    
+
     try {
       // Realizar verificação completa de saúde
       const healthStatus = await this.healthCheckService.checkHealth();
 
       // Obter status de degradação
-      const degradationStatus = this.gracefulDegradationService.getCurrentStatus();
+      const degradationStatus =
+        this.gracefulDegradationService.getCurrentStatus();
 
       // Obter métricas dos circuit breakers (usando um nome específico)
-      const circuitBreakerMetrics = this.circuitBreakerService.getCircuitBreakerMetrics('sse-main') || {
-        state: 'CLOSED' as any,
-        stats: {
-          fires: 0,
-          successes: 0,
-          failures: 0,
-          timeouts: 0,
-          fallbacks: 0,
-          rejects: 0
-        },
-        config: {} as any,
-        lastStateChange: new Date()
-      };
-      
+      const circuitBreakerMetrics =
+        this.circuitBreakerService.getCircuitBreakerMetrics('sse-main') || {
+          state: 'CLOSED' as any,
+          stats: {
+            fires: 0,
+            successes: 0,
+            failures: 0,
+            timeouts: 0,
+            fallbacks: 0,
+            rejects: 0,
+          },
+          config: {} as any,
+          lastStateChange: new Date(),
+        };
+
       // Obter estatísticas detalhadas de conexões
       const connectionStats = this.sseService.getLocalConnectionStats();
-      
+
       // Obter métricas de logging
       const loggingMetrics = this.loggingService.getMetrics();
-      
+
       const duration = Date.now() - startTime;
-      
+
       const response = {
         status: healthStatus.healthy ? 'healthy' : 'unhealthy',
         timestamp: new Date().toISOString(),
@@ -219,7 +231,7 @@ export class SseHealthController {
           healthCheckDuration: duration,
         },
       };
-      
+
       // Log da verificação detalhada
       this.loggingService.logSecurity('Health check detalhado realizado', {
         userId: 0,
@@ -233,18 +245,18 @@ export class SseHealthController {
           circuitBreakersOpen: circuitBreakerMetrics.state === 'OPEN' ? 1 : 0,
         },
       });
-      
+
       return response;
     } catch (error) {
       const duration = Date.now() - startTime;
-      
+
       this.loggingService.logError(error as Error, {
         userId: 0,
         component: 'sse-health',
         operation: 'detailed-health-check',
         metadata: { duration },
       });
-      
+
       return {
         status: 'unhealthy',
         timestamp: new Date().toISOString(),
@@ -264,21 +276,30 @@ export class SseHealthController {
   })
   async getMetrics() {
     const startTime = Date.now();
-    
+
     try {
       // Obter métricas de todos os serviços
-      const circuitBreakerMetrics = this.circuitBreakerService.getCircuitBreakerMetrics('sse-main') || {
-        state: 'CLOSED' as any,
-        stats: { fires: 0, successes: 0, failures: 0, timeouts: 0, fallbacks: 0, rejects: 0 },
-        config: {} as any,
-        lastStateChange: new Date()
-      };
-      const degradationStatus = this.gracefulDegradationService.getCurrentStatus();
+      const circuitBreakerMetrics =
+        this.circuitBreakerService.getCircuitBreakerMetrics('sse-main') || {
+          state: 'CLOSED' as any,
+          stats: {
+            fires: 0,
+            successes: 0,
+            failures: 0,
+            timeouts: 0,
+            fallbacks: 0,
+            rejects: 0,
+          },
+          config: {} as any,
+          lastStateChange: new Date(),
+        };
+      const degradationStatus =
+        this.gracefulDegradationService.getCurrentStatus();
       const loggingMetrics = this.loggingService.getMetrics();
       const connectionStats = this.sseService.getLocalConnectionStats();
-      
+
       const duration = Date.now() - startTime;
-      
+
       const response = {
         timestamp: new Date().toISOString(),
         circuitBreakers: circuitBreakerMetrics,
@@ -289,7 +310,7 @@ export class SseHealthController {
           metricsCollectionDuration: duration,
         },
       };
-      
+
       // Log da coleta de métricas
       this.loggingService.logPerformance('Métricas coletadas', {
         userId: 0,
@@ -301,18 +322,18 @@ export class SseHealthController {
           circuitBreakersOpen: circuitBreakerMetrics.state === 'OPEN' ? 1 : 0,
         },
       });
-      
+
       return response;
     } catch (error) {
       const duration = Date.now() - startTime;
-      
+
       this.loggingService.logError(error as Error, {
         userId: 0,
         component: 'sse-health',
         operation: 'collect-metrics',
         metadata: { duration },
       });
-      
+
       return {
         timestamp: new Date().toISOString(),
         error: 'Falha na coleta de métricas',
@@ -331,13 +352,22 @@ export class SseHealthController {
   })
   async getCircuitBreakersStatus() {
     try {
-      const metrics = this.circuitBreakerService.getCircuitBreakerMetrics('sse-main') || {
+      const metrics = this.circuitBreakerService.getCircuitBreakerMetrics(
+        'sse-main',
+      ) || {
         state: 'CLOSED' as any,
-        stats: { fires: 0, successes: 0, failures: 0, timeouts: 0, fallbacks: 0, rejects: 0 },
+        stats: {
+          fires: 0,
+          successes: 0,
+          failures: 0,
+          timeouts: 0,
+          fallbacks: 0,
+          rejects: 0,
+        },
         config: {} as any,
-        lastStateChange: new Date()
+        lastStateChange: new Date(),
       };
-      
+
       return {
         timestamp: new Date().toISOString(),
         summary: {
@@ -357,7 +387,7 @@ export class SseHealthController {
         operation: 'get-circuit-breakers-status',
         metadata: {},
       });
-      
+
       return {
         timestamp: new Date().toISOString(),
         error: 'Falha ao obter status dos circuit breakers',
@@ -374,7 +404,7 @@ export class SseHealthController {
   async getDegradationStatus() {
     try {
       const status = this.gracefulDegradationService.getCurrentStatus();
-      
+
       return {
         timestamp: new Date().toISOString(),
         current: {
@@ -391,7 +421,7 @@ export class SseHealthController {
         operation: 'get-degradation-status',
         metadata: {},
       });
-      
+
       return {
         timestamp: new Date().toISOString(),
         error: 'Falha ao obter status de degradação',

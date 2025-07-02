@@ -87,9 +87,18 @@ describe('SseRateLimiterService', () => {
     });
 
     it('deve carregar configurações corretamente', () => {
-      expect(configService.get).toHaveBeenCalledWith('SSE_RATE_LIMIT_DEFAULT', 10);
-      expect(configService.get).toHaveBeenCalledWith('SSE_RATE_LIMIT_ADMIN', 50);
-      expect(configService.get).toHaveBeenCalledWith('SSE_RATE_LIMIT_WHITELIST', '127.0.0.1,::1');
+      expect(configService.get).toHaveBeenCalledWith(
+        'SSE_RATE_LIMIT_DEFAULT',
+        10,
+      );
+      expect(configService.get).toHaveBeenCalledWith(
+        'SSE_RATE_LIMIT_ADMIN',
+        50,
+      );
+      expect(configService.get).toHaveBeenCalledWith(
+        'SSE_RATE_LIMIT_WHITELIST',
+        '127.0.0.1,::1',
+      );
     });
   });
 
@@ -134,7 +143,11 @@ describe('SseRateLimiterService', () => {
     });
 
     it('deve pular rate limiting para IPs na whitelist', async () => {
-      const result = await service.checkRateLimit('user:123', 'default', '127.0.0.1');
+      const result = await service.checkRateLimit(
+        'user:123',
+        'default',
+        '127.0.0.1',
+      );
 
       expect(result.allowed).toBe(true);
       expect(mockRedis.eval).not.toHaveBeenCalled();
@@ -212,7 +225,9 @@ describe('SseRateLimiterService', () => {
 
       await service.resetRateLimit('user:123', 'default');
 
-      expect(mockRedis.del).toHaveBeenCalledWith('sse:rate_limit:default:user:123');
+      expect(mockRedis.del).toHaveBeenCalledWith(
+        'sse:rate_limit:default:user:123',
+      );
     });
   });
 
@@ -268,17 +283,19 @@ describe('SseRateLimiterService', () => {
     it('deve calcular janela deslizante corretamente', async () => {
       const now = Date.now();
       const windowSeconds = 60;
-      const expectedWindowStart = now - (windowSeconds * 1000);
+      const expectedWindowStart = now - windowSeconds * 1000;
 
-      mockRedis.eval.mockImplementation((script, numKeys, key, nowStr, windowStartStr) => {
-        const actualNow = parseInt(nowStr);
-        const actualWindowStart = parseInt(windowStartStr);
-        
-        expect(actualNow).toBeCloseTo(now, -2); // Tolerância de ~100ms
-        expect(actualWindowStart).toBeCloseTo(expectedWindowStart, -2);
-        
-        return Promise.resolve([1, 9, 0, 1]);
-      });
+      mockRedis.eval.mockImplementation(
+        (script, numKeys, key, nowStr, windowStartStr) => {
+          const actualNow = parseInt(nowStr);
+          const actualWindowStart = parseInt(windowStartStr);
+
+          expect(actualNow).toBeCloseTo(now, -2); // Tolerância de ~100ms
+          expect(actualWindowStart).toBeCloseTo(expectedWindowStart, -2);
+
+          return Promise.resolve([1, 9, 0, 1]);
+        },
+      );
 
       await service.checkRateLimit('user:123', 'default');
     });
@@ -316,7 +333,9 @@ describe('SseRateLimiterService', () => {
 
   describe('Error Handling', () => {
     it('deve logar erros mas não falhar', async () => {
-      const loggerSpy = jest.spyOn(Logger.prototype, 'error').mockImplementation();
+      const loggerSpy = jest
+        .spyOn(Logger.prototype, 'error')
+        .mockImplementation();
       mockRedis.eval.mockRejectedValue(new Error('Connection failed'));
 
       const result = await service.checkRateLimit('user:123', 'default');
@@ -330,7 +349,9 @@ describe('SseRateLimiterService', () => {
     });
 
     it('deve tratar erro nas métricas graciosamente', async () => {
-      const loggerSpy = jest.spyOn(Logger.prototype, 'error').mockImplementation();
+      const loggerSpy = jest
+        .spyOn(Logger.prototype, 'error')
+        .mockImplementation();
       mockRedis.hgetall.mockRejectedValue(new Error('Redis down'));
 
       const metrics = await service.getMetrics();
@@ -365,7 +386,9 @@ describe('SseRateLimiterService', () => {
         'requests_default',
         1,
       );
-      expect(pipelineMock.incr).toHaveBeenCalledWith('sse:rate_limit:ips:192.168.1.1');
+      expect(pipelineMock.incr).toHaveBeenCalledWith(
+        'sse:rate_limit:ips:192.168.1.1',
+      );
     });
 
     it('deve registrar requisições bloqueadas', async () => {

@@ -205,7 +205,6 @@ export class CreateLogAuditoriaDto extends BaseDto {
   })
   dados_sensiveis_acessados?: string[];
 
-
   /**
    * Retorna uma representação textual do log de auditoria
    *

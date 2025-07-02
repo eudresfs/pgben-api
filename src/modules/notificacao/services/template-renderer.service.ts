@@ -58,7 +58,7 @@ export class TemplateRendererService {
   ): { assunto: string; conteudo: string } {
     return {
       assunto: this.renderizar(template.assunto, contexto),
-      conteudo: this.renderizar(template.corpo_html, contexto), 
+      conteudo: this.renderizar(template.corpo_html, contexto),
     };
   }
 

@@ -10,7 +10,13 @@ import {
   DeleteDateColumn,
   Index,
 } from 'typeorm';
-import { IsNotEmpty, IsUUID, IsEnum, IsOptional, IsDate } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsUUID,
+  IsEnum,
+  IsOptional,
+  IsDate,
+} from 'class-validator';
 import { Solicitacao } from './solicitacao.entity';
 import { Pagamento } from './pagamento.entity';
 import { StatusConcessao } from '../enums/status-concessao.enum';
@@ -38,7 +44,7 @@ export class Concessao {
   @IsUUID('4', { message: 'ID da solicitação inválido' })
   solicitacaoId: string;
 
-  @OneToOne(() => Solicitacao, solicitacao => solicitacao.concessao)
+  @OneToOne(() => Solicitacao, (solicitacao) => solicitacao.concessao)
   @JoinColumn({ name: 'solicitacao_id' })
   solicitacao: Solicitacao;
 
@@ -57,7 +63,11 @@ export class Concessao {
   ordemPrioridade: number;
 
   /** Flag de determinação judicial herdada da solicitação */
-  @Column({ name: 'determinacao_judicial_flag', type: 'boolean', default: false })
+  @Column({
+    name: 'determinacao_judicial_flag',
+    type: 'boolean',
+    default: false,
+  })
   determinacaoJudicialFlag: boolean;
 
   /** Data de início da concessão */

@@ -2,7 +2,10 @@
 import './config/env';
 
 // Inicializar contexto transacional ANTES de qualquer outra importação do TypeORM
-import { initializeTransactionalContext, StorageDriver } from 'typeorm-transactional';
+import {
+  initializeTransactionalContext,
+  StorageDriver,
+} from 'typeorm-transactional';
 
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
@@ -37,7 +40,7 @@ async function bootstrap(): Promise<INestApplication> {
   try {
     // Inicializar contexto transacional
     initializeTransactionalContext({ storageDriver: StorageDriver.AUTO });
-    
+
     logger.log('🚀 Iniciando aplicação PGBEN...');
 
     // Criar a aplicação NestJS com configurações otimizadas
@@ -113,7 +116,7 @@ async function bootstrap(): Promise<INestApplication> {
 
     // ✅ NOVO: Sistema de logging unificado
     const loggingService = app.get(LoggingService);
-    
+
     // Interceptor de logging HTTP (substitui o RedactLogsInterceptor)
     app.useGlobalInterceptors(new LoggingInterceptor(loggingService));
 
@@ -203,40 +206,59 @@ function createValidationException(
 ): BadRequestException {
   // Lista de campos sensíveis que não devem ser incluídos nas respostas de erro
   const sensitiveFields = [
-    'senha', 'password', 'token', 'secret', 'authorization', 'key',
-    'confirmPassword', 'confirmSenha', 'currentPassword', 'senhaAtual', 'newPassword', 'novaSenha',
-    'cpf', 'rg', 'cnpj', 'cardNumber', 'cartao', 'cvv', 'passaporte', 'biometria'
+    'senha',
+    'password',
+    'token',
+    'secret',
+    'authorization',
+    'key',
+    'confirmPassword',
+    'confirmSenha',
+    'currentPassword',
+    'senhaAtual',
+    'newPassword',
+    'novaSenha',
+    'cpf',
+    'rg',
+    'cnpj',
+    'cardNumber',
+    'cartao',
+    'cvv',
+    'passaporte',
+    'biometria',
   ];
-  
+
   // Função para verificar se um campo é sensível
   const isSensitiveField = (field: string): boolean => {
-    return sensitiveFields.some(sensitive => 
-      field.toLowerCase().includes(sensitive.toLowerCase())
+    return sensitiveFields.some((sensitive) =>
+      field.toLowerCase().includes(sensitive.toLowerCase()),
     );
   };
-  
+
   // Sanitizar valor sensível - transformação recursiva
   const sanitizeValidationError = (error: any): any => {
     if (!error) return error;
-    
+
     // Cria uma cópia do objeto para não modificar o original
     const sanitizedError = { ...error };
-    
+
     // Sanitiza o valor se o campo for sensível
     if (sanitizedError.property && isSensitiveField(sanitizedError.property)) {
       sanitizedError.value = '[REDACTED]';
     }
-    
+
     // Sanitiza filhos recursivamente
     if (sanitizedError.children && Array.isArray(sanitizedError.children)) {
-      sanitizedError.children = sanitizedError.children.map(child => sanitizeValidationError(child));
+      sanitizedError.children = sanitizedError.children.map((child) =>
+        sanitizeValidationError(child),
+      );
     }
-    
+
     return sanitizedError;
   };
-  
+
   // Sanitiza todos os erros antes de procesá-los
-  const sanitizedErrors = errors.map(error => sanitizeValidationError(error));
+  const sanitizedErrors = errors.map((error) => sanitizeValidationError(error));
 
   // Formatador de erros para exibição
   const formatError = (error: any, path = ''): any[] => {
@@ -266,7 +288,7 @@ function createValidationException(
   };
 
   const formattedErrors: any[] = [];
-  sanitizedErrors.forEach(error => {
+  sanitizedErrors.forEach((error) => {
     formattedErrors.push(...formatError(error));
   });
 
@@ -339,7 +361,7 @@ function setupGracefulShutdown(app: INestApplication): void {
       logger.warn(`🔄 Shutdown já em andamento, ignorando sinal ${signal}`);
       return;
     }
-    
+
     isShuttingDown = true;
     logger.log(`📴 Recebido sinal ${signal}. Iniciando graceful shutdown...`);
 
@@ -354,7 +376,7 @@ function setupGracefulShutdown(app: INestApplication): void {
 
       // Aguardar um pouco para requests em andamento
       logger.log('⏳ Aguardando finalização de requests em andamento...');
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise((resolve) => setTimeout(resolve, 2000));
 
       // Fechar aplicação
       logger.log('🔄 Finalizando aplicação NestJS...');

@@ -1,4 +1,9 @@
-import { Injectable, Logger, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { FiltroConcessaoDto } from '../dto/filtro-concessao.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -10,7 +15,11 @@ import { HistoricoConcessao } from '../../../entities/historico-concessao.entity
 import { ValidacaoBeneficioService } from './validacao-beneficio.service';
 import { LoggingService } from '../../../shared/logging/logging.service';
 import { StatusPagamentoEnum } from '@/enums';
-import { OperacaoConcessao, MOTIVOS_POR_OPERACAO, MotivoOperacao } from '../../../enums/operacao-concessao.enum';
+import {
+  OperacaoConcessao,
+  MOTIVOS_POR_OPERACAO,
+  MotivoOperacao,
+} from '../../../enums/operacao-concessao.enum';
 
 @Injectable()
 export class ConcessaoService {
@@ -30,43 +39,46 @@ export class ConcessaoService {
    * @param novoStatus Novo status desejado
    * @returns true se a transição é válida, false caso contrário
    */
-  private isValidStatusTransition(statusAtual: StatusConcessao, novoStatus: StatusConcessao): boolean {
+  private isValidStatusTransition(
+    statusAtual: StatusConcessao,
+    novoStatus: StatusConcessao,
+  ): boolean {
     // Mapeamento das transições válidas
     const transicoesValidas: Record<StatusConcessao, StatusConcessao[]> = {
       [StatusConcessao.APTO]: [
         StatusConcessao.ATIVO,
         StatusConcessao.CANCELADO,
         StatusConcessao.SUSPENSO,
-        StatusConcessao.BLOQUEADO
+        StatusConcessao.BLOQUEADO,
       ],
       [StatusConcessao.ATIVO]: [
         StatusConcessao.SUSPENSO,
         StatusConcessao.BLOQUEADO,
         StatusConcessao.CESSADO,
-        StatusConcessao.CANCELADO
+        StatusConcessao.CANCELADO,
       ],
       [StatusConcessao.SUSPENSO]: [
         StatusConcessao.ATIVO,
         StatusConcessao.BLOQUEADO,
-        StatusConcessao.CANCELADO
+        StatusConcessao.CANCELADO,
       ],
       [StatusConcessao.BLOQUEADO]: [
         StatusConcessao.ATIVO,
-        StatusConcessao.CANCELADO
+        StatusConcessao.CANCELADO,
       ],
-      [StatusConcessao.CESSADO]: [
-        StatusConcessao.ATIVO 
-      ],
+      [StatusConcessao.CESSADO]: [StatusConcessao.ATIVO],
       [StatusConcessao.CANCELADO]: [
         // Status final - não permite transições
-      ]
+      ],
     };
 
     const transicoesPermitidas = transicoesValidas[statusAtual] || [];
     return transicoesPermitidas.includes(novoStatus);
   }
 
-  async findAll(filtro?: FiltroConcessaoDto): Promise<{ data: any[], total: number, limit: number, offset: number }> {
+  async findAll(
+    filtro?: FiltroConcessaoDto,
+  ): Promise<{ data: any[]; total: number; limit: number; offset: number }> {
     try {
       const qb = this.concessaoRepo
         .createQueryBuilder('concessao')
@@ -95,14 +107,19 @@ export class ConcessaoService {
       // Validação de filtros de data
       if (filtro.dataInicioDe && filtro.dataInicioAte) {
         if (new Date(filtro.dataInicioDe) > new Date(filtro.dataInicioAte)) {
-          throw new BadRequestException('Data de início deve ser anterior à data final');
+          throw new BadRequestException(
+            'Data de início deve ser anterior à data final',
+          );
         }
       }
 
       // Validação de status
-      if (filtro.status && !Object.values(StatusConcessao).includes(filtro.status)) {
+      if (
+        filtro.status &&
+        !Object.values(StatusConcessao).includes(filtro.status)
+      ) {
         throw new BadRequestException(
-          `Status '${filtro.status}' inválido. Valores aceitos: ${Object.values(StatusConcessao).join(', ')}`
+          `Status '${filtro.status}' inválido. Valores aceitos: ${Object.values(StatusConcessao).join(', ')}`,
         );
       }
 
@@ -122,10 +139,14 @@ export class ConcessaoService {
 
       // Aplicar filtros de busca
       if (filtro.dataInicioDe) {
-        qb.andWhere('concessao.dataInicio >= :dataInicioDe', { dataInicioDe: filtro.dataInicioDe });
+        qb.andWhere('concessao.dataInicio >= :dataInicioDe', {
+          dataInicioDe: filtro.dataInicioDe,
+        });
       }
       if (filtro.dataInicioAte) {
-        qb.andWhere('concessao.dataInicio <= :dataInicioAte', { dataInicioAte: filtro.dataInicioAte });
+        qb.andWhere('concessao.dataInicio <= :dataInicioAte', {
+          dataInicioAte: filtro.dataInicioAte,
+        });
       }
       if (filtro.status) {
         qb.andWhere('concessao.status = :status', { status: filtro.status });
@@ -134,19 +155,29 @@ export class ConcessaoService {
         qb.andWhere('unidade.id = :unidadeId', { unidadeId: filtro.unidadeId });
       }
       if (filtro.tipoBeneficioId) {
-        qb.andWhere('tipo_beneficio.id = :tipoBeneficioId', { tipoBeneficioId: filtro.tipoBeneficioId });
+        qb.andWhere('tipo_beneficio.id = :tipoBeneficioId', {
+          tipoBeneficioId: filtro.tipoBeneficioId,
+        });
       }
       if (filtro.determinacaoJudicial !== undefined) {
-        qb.andWhere('solicitacao.determinacao_judicial_flag = :dj', { dj: filtro.determinacaoJudicial });
+        qb.andWhere('solicitacao.determinacao_judicial_flag = :dj', {
+          dj: filtro.determinacaoJudicial,
+        });
       }
       if (filtro.prioridade) {
-        qb.andWhere('concessao.ordem_prioridade = :prioridade', { prioridade: filtro.prioridade });
+        qb.andWhere('concessao.ordem_prioridade = :prioridade', {
+          prioridade: filtro.prioridade,
+        });
       }
       if (filtro.search?.trim()) {
         const term = `%${filtro.search.toLowerCase().trim()}%`;
         qb.andWhere(
           '(LOWER(cidadao.nome) LIKE :term OR cidadao.cpf LIKE :cpfTerm OR solicitacao.protocolo ILIKE :termProto)',
-          { term, cpfTerm: `%${filtro.search.replace(/\D/g, '')}%`, termProto: term },
+          {
+            term,
+            cpfTerm: `%${filtro.search.replace(/\D/g, '')}%`,
+            termProto: term,
+          },
         );
       }
 
@@ -178,19 +209,18 @@ export class ConcessaoService {
         error.stack,
         ConcessaoService.name,
       );
-      
+
       // Re-throw erros conhecidos
       if (error instanceof BadRequestException) {
         throw error;
       }
-      
+
       // Para erros não tratados, lança um erro genérico mas informativo
       throw new BadRequestException(
-        `Erro interno ao listar concessões. Verifique os logs para mais detalhes.`
+        `Erro interno ao listar concessões. Verifique os logs para mais detalhes.`,
       );
     }
   }
-  
 
   async findById(id: string): Promise<Concessao | null> {
     try {
@@ -199,13 +229,20 @@ export class ConcessaoService {
         throw new BadRequestException('ID da concessão é obrigatório');
       }
 
-      const concessao = await this.concessaoRepo.findOne({ 
+      const concessao = await this.concessaoRepo.findOne({
         where: { id },
-        relations: ['solicitacao', 'solicitacao.beneficiario', 'solicitacao.tipo_beneficio'],
+        relations: [
+          'solicitacao',
+          'solicitacao.beneficiario',
+          'solicitacao.tipo_beneficio',
+        ],
       });
 
       if (!concessao) {
-        this.logger.warn(`Concessão com ID ${id} não encontrada`, ConcessaoService.name);
+        this.logger.warn(
+          `Concessão com ID ${id} não encontrada`,
+          ConcessaoService.name,
+        );
       }
 
       return concessao;
@@ -215,49 +252,60 @@ export class ConcessaoService {
         error.stack,
         ConcessaoService.name,
       );
-      
+
       // Re-throw erros conhecidos
       if (error instanceof BadRequestException) {
         throw error;
       }
-      
+
       // Para erros não tratados, lança um erro genérico mas informativo
       throw new BadRequestException(
-        `Erro interno ao buscar concessão. Verifique os logs para mais detalhes.`
+        `Erro interno ao buscar concessão. Verifique os logs para mais detalhes.`,
       );
     }
   }
 
-  async atualizarStatus(id: string, status: StatusConcessao, usuarioId?: string, motivo?: string): Promise<Concessao | null> {
+  async atualizarStatus(
+    id: string,
+    status: StatusConcessao,
+    usuarioId?: string,
+    motivo?: string,
+  ): Promise<Concessao | null> {
     try {
       // Validação de parâmetros de entrada
       if (!id?.trim()) {
         throw new BadRequestException('ID da concessão é obrigatório');
       }
-      
+
       // Validação do enum de status
       if (!Object.values(StatusConcessao).includes(status)) {
         throw new BadRequestException(
-          `Status '${status}' inválido. Valores aceitos: ${Object.values(StatusConcessao).join(', ')}`
+          `Status '${status}' inválido. Valores aceitos: ${Object.values(StatusConcessao).join(', ')}`,
         );
       }
 
       const concessao = await this.concessaoRepo.findOne({ where: { id } });
       if (!concessao) {
-        this.logger.warn(`Tentativa de atualizar status de concessão inexistente: ${id}`, ConcessaoService.name);
+        this.logger.warn(
+          `Tentativa de atualizar status de concessão inexistente: ${id}`,
+          ConcessaoService.name,
+        );
         return null;
       }
-      
+
       const statusAnterior = concessao.status;
       if (statusAnterior === status) {
-        this.logger.info(`Concessão ${id} já possui o status ${status}`, ConcessaoService.name);
+        this.logger.info(
+          `Concessão ${id} já possui o status ${status}`,
+          ConcessaoService.name,
+        );
         return concessao;
       }
 
       // Validações de transição de status
       if (!this.isValidStatusTransition(statusAnterior, status)) {
         throw new BadRequestException(
-          `Transição de status inválida: de '${statusAnterior}' para '${status}'`
+          `Transição de status inválida: de '${statusAnterior}' para '${status}'`,
         );
       }
 
@@ -295,15 +343,15 @@ export class ConcessaoService {
         error.stack,
         ConcessaoService.name,
       );
-      
+
       // Re-throw erros conhecidos
       if (error instanceof BadRequestException) {
         throw error;
       }
-      
+
       // Para erros não tratados, lança um erro genérico mas informativo
       throw new BadRequestException(
-        `Erro interno ao atualizar status da concessão. Verifique os logs para mais detalhes.`
+        `Erro interno ao atualizar status da concessão. Verifique os logs para mais detalhes.`,
       );
     }
   }
@@ -332,18 +380,24 @@ export class ConcessaoService {
     }
 
     if (concessaoOriginal.status !== StatusConcessao.CESSADO) {
-      throw new BadRequestException('Apenas concessões com status CESSADO podem ser prorrogadas');
+      throw new BadRequestException(
+        'Apenas concessões com status CESSADO podem ser prorrogadas',
+      );
     }
 
     const solicitacaoOriginal = concessaoOriginal.solicitacao;
 
     // Para solicitações com determinação judicial, verifica se documento está sendo fornecido
-    if (solicitacaoOriginal.determinacao_judicial_flag && !documentoJudicialId && !solicitacaoOriginal.determinacao_judicial_id) {
+    if (
+      solicitacaoOriginal.determinacao_judicial_flag &&
+      !documentoJudicialId &&
+      !solicitacaoOriginal.determinacao_judicial_id
+    ) {
       throw new BadRequestException(
-        'Documento judicial é obrigatório para prorrogações de concessões com determinação judicial'
+        'Documento judicial é obrigatório para prorrogações de concessões com determinação judicial',
       );
     }
-    
+
     // Validar limite de prorrogações (máximo 1), exceto por determinação judicial
     if (!solicitacaoOriginal.determinacao_judicial_flag) {
       const concessoesRelacionadas = await this.concessaoRepo.find({
@@ -351,19 +405,24 @@ export class ConcessaoService {
       });
 
       if (concessoesRelacionadas.length > 1) {
-        throw new BadRequestException('Esta concessão já foi prorrogada uma vez. Limite máximo atingido.');
+        throw new BadRequestException(
+          'Esta concessão já foi prorrogada uma vez. Limite máximo atingido.',
+        );
       }
     }
 
     // Obter quantidade de parcelas da concessão original
     const pagamentosOriginais = await this.pagamentoService.findAll({
-      concessaoId: concessaoOriginal.id
+      concessaoId: concessaoOriginal.id,
     }); // Buscar todos os pagamentos da concessão
-    
-    const quantidadeParcelasOriginal = pagamentosOriginais.pagination.totalItems;
-    
+
+    const quantidadeParcelasOriginal =
+      pagamentosOriginais.pagination.totalItems;
+
     if (quantidadeParcelasOriginal === 0) {
-      throw new BadRequestException('Concessão original não possui pagamentos gerados');
+      throw new BadRequestException(
+        'Concessão original não possui pagamentos gerados',
+      );
     }
 
     // Validar se o tipo de benefício permite prorrogação
@@ -374,7 +433,9 @@ export class ConcessaoService {
 
     if (!solicitacaoOriginal.determinacao_judicial_flag) {
       if (tipoBeneficio.periodicidade === 'unico') {
-        throw new BadRequestException('Benefícios de periodicidade única não podem ser prorrogados');
+        throw new BadRequestException(
+          'Benefícios de periodicidade única não podem ser prorrogados',
+        );
       }
     }
 
@@ -405,11 +466,11 @@ export class ConcessaoService {
     await this.pagamentoService.gerarPagamentosParaConcessao(
       concessaoSalva,
       solicitacaoOriginal,
-      usuarioId
+      usuarioId,
     );
 
     this.logger.info(
-      `Concessão ${concessaoId} prorrogada. Nova concessão ${concessaoSalva.id} criada com ${quantidadeParcelasOriginal} parcelas (mesmo período da concessão anterior)`
+      `Concessão ${concessaoId} prorrogada. Nova concessão ${concessaoSalva.id} criada com ${quantidadeParcelasOriginal} parcelas (mesmo período da concessão anterior)`,
     );
 
     return concessaoSalva;
@@ -446,7 +507,10 @@ export class ConcessaoService {
       // Para benefícios com duração definida, calcular data de encerramento
       if (solicitacao.tipo_beneficio?.especificacoes?.duracao_maxima_meses) {
         dataEncerramento = new Date(dataInicio);
-        dataEncerramento.setMonth(dataEncerramento.getMonth() + solicitacao.tipo_beneficio.especificacoes.duracao_maxima_meses);
+        dataEncerramento.setMonth(
+          dataEncerramento.getMonth() +
+            solicitacao.tipo_beneficio.especificacoes.duracao_maxima_meses,
+        );
       }
 
       const concessao = this.concessaoRepo.create({
@@ -459,11 +523,15 @@ export class ConcessaoService {
       });
 
       const saved = await this.concessaoRepo.save(concessao);
-      
+
       // Gera pagamentos com status PENDENTE para a concessão criada
       // Nota: usuarioId não está disponível neste contexto, usando 'system'
       try {
-        await this.pagamentoService.gerarPagamentosParaConcessao(saved, solicitacao, 'system');
+        await this.pagamentoService.gerarPagamentosParaConcessao(
+          saved,
+          solicitacao,
+          'system',
+        );
       } catch (pagamentoError) {
         this.logger.error(
           `Erro ao gerar pagamentos para concessão ${saved.id}: ${pagamentoError.message}`,
@@ -478,7 +546,7 @@ export class ConcessaoService {
         `Nova concessão criada: ${saved.id} para solicitação ${solicitacao.id}`,
         ConcessaoService.name,
       );
-      
+
       return saved;
     } catch (error) {
       this.logger.error(
@@ -486,15 +554,15 @@ export class ConcessaoService {
         error.stack,
         ConcessaoService.name,
       );
-      
+
       // Re-throw erros conhecidos
       if (error instanceof BadRequestException) {
         throw error;
       }
-      
+
       // Para erros não tratados, lança um erro genérico mas informativo
       throw new BadRequestException(
-        `Erro interno ao criar concessão. Verifique os logs para mais detalhes.`
+        `Erro interno ao criar concessão. Verifique os logs para mais detalhes.`,
       );
     }
   }
@@ -623,13 +691,19 @@ export class ConcessaoService {
       });
 
       if (!concessao) {
-        throw new NotFoundException(`Concessão com ID ${concessaoId} não encontrada`);
+        throw new NotFoundException(
+          `Concessão com ID ${concessaoId} não encontrada`,
+        );
       }
 
       // Validação de status - apenas concessões suspensas ou cessadas podem ser reativadas
-      if (![StatusConcessao.SUSPENSO, StatusConcessao.CESSADO].includes(concessao.status)) {
+      if (
+        ![StatusConcessao.SUSPENSO, StatusConcessao.CESSADO].includes(
+          concessao.status,
+        )
+      ) {
         throw new BadRequestException(
-          `Concessão está com status '${concessao.status}'. Apenas concessões com status 'SUSPENSO' ou 'CESSADO' podem ser reativadas`
+          `Concessão está com status '${concessao.status}'. Apenas concessões com status 'SUSPENSO' ou 'CESSADO' podem ser reativadas`,
         );
       }
 
@@ -671,15 +745,18 @@ export class ConcessaoService {
         error.stack,
         ConcessaoService.name,
       );
-      
+
       // Re-throw erros conhecidos
-      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
         throw error;
       }
-      
+
       // Para erros não tratados, lança um erro genérico mas informativo
       throw new BadRequestException(
-        `Erro interno ao reativar concessão. Verifique os logs para mais detalhes.`
+        `Erro interno ao reativar concessão. Verifique os logs para mais detalhes.`,
       );
     }
   }
@@ -714,13 +791,15 @@ export class ConcessaoService {
       });
 
       if (!concessao) {
-        throw new NotFoundException(`Concessão com ID ${concessaoId} não encontrada`);
+        throw new NotFoundException(
+          `Concessão com ID ${concessaoId} não encontrada`,
+        );
       }
 
       // Validação de status com mensagem mais específica
       if (concessao.status !== StatusConcessao.BLOQUEADO) {
         throw new BadRequestException(
-          `Concessão está com status '${concessao.status}'. Apenas concessões com status 'BLOQUEADO' podem ser desbloqueadas`
+          `Concessão está com status '${concessao.status}'. Apenas concessões com status 'BLOQUEADO' podem ser desbloqueadas`,
         );
       }
 
@@ -763,22 +842,25 @@ export class ConcessaoService {
         error.stack,
         ConcessaoService.name,
       );
-      
+
       // Re-throw erros conhecidos
-      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
         throw error;
       }
-      
+
       // Para erros não tratados, lança um erro genérico mas informativo
       throw new BadRequestException(
-        `Erro interno ao desbloquear concessão. Verifique os logs para mais detalhes.`
+        `Erro interno ao desbloquear concessão. Verifique os logs para mais detalhes.`,
       );
     }
   }
 
   /**
    * Cancela uma concessão ativa
-   * 
+   *
    * @param concessaoId ID da concessão
    * @param motivo Motivo do cancelamento
    * @param usuarioId ID do usuário que está cancelando
@@ -787,11 +869,11 @@ export class ConcessaoService {
   async cancelarConcessao(
     concessaoId: string,
     motivo: string,
-    usuarioId: string
+    usuarioId: string,
   ): Promise<Concessao> {
     const concessao = await this.concessaoRepo.findOne({
       where: { id: concessaoId },
-      relations: ['solicitacao', 'solicitacao.cidadao']
+      relations: ['solicitacao', 'solicitacao.cidadao'],
     });
 
     if (!concessao) {
@@ -799,14 +881,16 @@ export class ConcessaoService {
     }
 
     if (concessao.status !== StatusConcessao.ATIVO) {
-      throw new BadRequestException('Apenas concessões ativas podem ser canceladas');
+      throw new BadRequestException(
+        'Apenas concessões ativas podem ser canceladas',
+      );
     }
 
     // Atualizar status da concessão
-     const statusAnterior = concessao.status;
-     concessao.status = StatusConcessao.CANCELADO;
-     concessao.dataEncerramento = new Date();
-     concessao.motivoEncerramento = motivo;
+    const statusAnterior = concessao.status;
+    concessao.status = StatusConcessao.CANCELADO;
+    concessao.dataEncerramento = new Date();
+    concessao.motivoEncerramento = motivo;
 
     const concessaoSalva = await this.concessaoRepo.save(concessao);
 
@@ -831,11 +915,13 @@ export class ConcessaoService {
   /**
    * Verifica se todos os pagamentos de uma concessão estão liberados
    * e encerra automaticamente a concessão se necessário
-   * 
+   *
    * @param concessaoId ID da concessão
    * @returns Concessão atualizada ou null se não precisou ser alterada
    */
-  async verificarEncerramentoAutomatico(concessaoId: string): Promise<Concessao | null> {
+  async verificarEncerramentoAutomatico(
+    concessaoId: string,
+  ): Promise<Concessao | null> {
     try {
       // Validação de parâmetros de entrada
       if (!concessaoId?.trim()) {
@@ -844,7 +930,7 @@ export class ConcessaoService {
 
       const concessao = await this.concessaoRepo.findOne({
         where: { id: concessaoId },
-        relations: ['pagamentos']
+        relations: ['pagamentos'],
       });
 
       if (!concessao) {
@@ -852,7 +938,9 @@ export class ConcessaoService {
           `Tentativa de verificar encerramento de concessão inexistente: ${concessaoId}`,
           ConcessaoService.name,
         );
-        throw new NotFoundException(`Concessão com ID ${concessaoId} não encontrada`);
+        throw new NotFoundException(
+          `Concessão com ID ${concessaoId} não encontrada`,
+        );
       }
 
       // Só verifica concessões ativas
@@ -875,14 +963,15 @@ export class ConcessaoService {
 
       // Verifica se todos os pagamentos estão liberados
       const todosLiberados = concessao.pagamentos.every(
-        pagamento => pagamento.status === StatusPagamentoEnum.LIBERADO
+        (pagamento) => pagamento.status === StatusPagamentoEnum.LIBERADO,
       );
 
       if (todosLiberados) {
         const statusAnterior = concessao.status;
         concessao.status = StatusConcessao.CESSADO;
         concessao.dataEncerramento = new Date();
-        concessao.motivoEncerramento = 'Encerramento automático - todos os pagamentos liberados';
+        concessao.motivoEncerramento =
+          'Encerramento automático - todos os pagamentos liberados';
 
         const concessaoSalva = await this.concessaoRepo.save(concessao);
 
@@ -912,7 +1001,7 @@ export class ConcessaoService {
         return concessaoSalva;
       } else {
         const pagamentosLiberados = concessao.pagamentos.filter(
-          pagamento => pagamento.status === StatusPagamentoEnum.LIBERADO
+          (pagamento) => pagamento.status === StatusPagamentoEnum.LIBERADO,
         ).length;
         this.logger.debug(
           `Concessão ${concessaoId}: ${pagamentosLiberados}/${concessao.pagamentos.length} pagamentos liberados`,
@@ -927,26 +1016,31 @@ export class ConcessaoService {
         error.stack,
         ConcessaoService.name,
       );
-      
+
       // Re-throw erros conhecidos
-      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
         throw error;
       }
-      
+
       // Para erros não tratados, lança um erro genérico mas informativo
       throw new BadRequestException(
-        `Erro interno ao verificar encerramento automático. Verifique os logs para mais detalhes.`
+        `Erro interno ao verificar encerramento automático. Verifique os logs para mais detalhes.`,
       );
     }
   }
 
   /**
    * Busca os motivos disponíveis para uma operação específica
-   * 
+   *
    * @param operacao Tipo de operação (bloqueio, desbloqueio, suspensão, reativação, cancelamento)
    * @returns Lista de motivos disponíveis para a operação
    */
-  async buscarMotivosPorOperacao(operacao: OperacaoConcessao): Promise<MotivoOperacao[]> {
+  async buscarMotivosPorOperacao(
+    operacao: OperacaoConcessao,
+  ): Promise<MotivoOperacao[]> {
     try {
       // Validação de parâmetros de entrada
       if (!operacao) {
@@ -956,15 +1050,15 @@ export class ConcessaoService {
       // Verifica se a operação é válida
       if (!Object.values(OperacaoConcessao).includes(operacao)) {
         throw new BadRequestException(
-          `Operação '${operacao}' inválida. Valores aceitos: ${Object.values(OperacaoConcessao).join(', ')}`
+          `Operação '${operacao}' inválida. Valores aceitos: ${Object.values(OperacaoConcessao).join(', ')}`,
         );
       }
 
       // Busca os motivos para a operação específica
       const motivos = MOTIVOS_POR_OPERACAO[operacao] || [];
-      
+
       // Filtra apenas motivos ativos
-      const motivosAtivos = motivos.filter(motivo => motivo.ativo);
+      const motivosAtivos = motivos.filter((motivo) => motivo.ativo);
 
       this.logger.info(
         `Busca de motivos para operação '${operacao}': ${motivosAtivos.length} motivos encontrados`,
@@ -978,15 +1072,15 @@ export class ConcessaoService {
         error.stack,
         ConcessaoService.name,
       );
-      
+
       // Re-throw erros conhecidos
       if (error instanceof BadRequestException) {
         throw error;
       }
-      
+
       // Para erros não tratados, lança um erro genérico mas informativo
       throw new BadRequestException(
-        `Erro interno ao buscar motivos. Verifique os logs para mais detalhes.`
+        `Erro interno ao buscar motivos. Verifique os logs para mais detalhes.`,
       );
     }
   }

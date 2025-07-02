@@ -107,7 +107,9 @@ export class DadosCestaBasica {
    * Calcula quantidade recomendada baseada no número de pessoas na família
    */
   calcularQuantidadeRecomendada(): number {
-    if (!this.numero_pessoas_familia) {return 1;}
+    if (!this.numero_pessoas_familia) {
+      return 1;
+    }
 
     // Regra: 1 cesta para até 3 pessoas, +1 cesta a cada 3 pessoas adicionais
     return Math.ceil(this.numero_pessoas_familia / 3);
@@ -212,9 +214,13 @@ export class DadosCestaBasica {
 
     // Pontuação por tamanho da família
     if (this.numero_pessoas_familia) {
-      if (this.numero_pessoas_familia >= 6) {pontuacao += 30;}
-      else if (this.numero_pessoas_familia >= 4) {pontuacao += 20;}
-      else if (this.numero_pessoas_familia >= 2) {pontuacao += 10;}
+      if (this.numero_pessoas_familia >= 6) {
+        pontuacao += 30;
+      } else if (this.numero_pessoas_familia >= 4) {
+        pontuacao += 20;
+      } else if (this.numero_pessoas_familia >= 2) {
+        pontuacao += 10;
+      }
     }
 
     return pontuacao;

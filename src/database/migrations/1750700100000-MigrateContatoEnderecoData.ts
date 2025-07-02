@@ -3,12 +3,14 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 /**
  * Migração idempotente para transferir dados existentes de cidadão para as novas tabelas
  * de contato e endereço. Este script:
- * 
+ *
  * 1. Cria um contato para cada cidadão com os dados de telefone e email
  * 2. Cria um endereço para cada cidadão com os dados do endereço JSONB
  * 3. Usa ON CONFLICT DO NOTHING para garantir idempotência
  */
-export class MigrateContatoEnderecoData1750700100000 implements MigrationInterface {
+export class MigrateContatoEnderecoData1750700100000
+  implements MigrationInterface
+{
   name = 'MigrateContatoEnderecoData1750700100000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

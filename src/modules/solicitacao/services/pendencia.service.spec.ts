@@ -55,8 +55,8 @@ describe('PendenciaService', () => {
   };
 
   const mockPermissionService = {
-  verificarPermissaoSolicitacao: jest.fn(),
-};
+    verificarPermissaoSolicitacao: jest.fn(),
+  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -94,9 +94,15 @@ describe('PendenciaService', () => {
     }).compile();
 
     service = module.get<PendenciaService>(PendenciaService);
-    pendenciaRepository = module.get<Repository<Pendencia>>(getRepositoryToken(Pendencia));
-    solicitacaoRepository = module.get<Repository<Solicitacao>>(getRepositoryToken(Solicitacao));
-    usuarioRepository = module.get<Repository<Usuario>>(getRepositoryToken(Usuario));
+    pendenciaRepository = module.get<Repository<Pendencia>>(
+      getRepositoryToken(Pendencia),
+    );
+    solicitacaoRepository = module.get<Repository<Solicitacao>>(
+      getRepositoryToken(Solicitacao),
+    );
+    usuarioRepository = module.get<Repository<Usuario>>(
+      getRepositoryToken(Usuario),
+    );
     auditEventEmitter = module.get<AuditEventEmitter>(AuditEventEmitter);
     eventosService = module.get<EventosService>(EventosService);
     notificacaoService = module.get<NotificacaoService>(NotificacaoService);
@@ -134,7 +140,10 @@ describe('PendenciaService', () => {
         resolvido_por: null,
       });
 
-      const resultado = await service.criarPendencia(criarPendenciaDto, usuarioId);
+      const resultado = await service.criarPendencia(
+        criarPendenciaDto,
+        usuarioId,
+      );
 
       expect(mockSolicitacaoRepository.findOne).toHaveBeenCalledWith({
         where: { id: criarPendenciaDto.solicitacao_id },
@@ -144,7 +153,9 @@ describe('PendenciaService', () => {
         registrado_por_id: usuarioId,
         status: StatusPendencia.ABERTA,
       });
-      expect(mockPendenciaRepository.save).toHaveBeenCalledWith(pendenciaCriada);
+      expect(mockPendenciaRepository.save).toHaveBeenCalledWith(
+        pendenciaCriada,
+      );
       expect(mockAuditEventEmitter.emitEntityCreated).toHaveBeenCalled();
       expect(mockEventosService.emitirEvento).toHaveBeenCalled();
       expect(resultado).toBeDefined();
@@ -160,7 +171,7 @@ describe('PendenciaService', () => {
       mockSolicitacaoRepository.findOne.mockResolvedValue(null);
 
       await expect(
-        service.criarPendencia(criarPendenciaDto, usuarioId)
+        service.criarPendencia(criarPendenciaDto, usuarioId),
       ).rejects.toThrow(NotFoundException);
     });
   });
@@ -194,7 +205,7 @@ describe('PendenciaService', () => {
       const resultado = await service.resolverPendencia(
         pendenciaId,
         resolverDto,
-        usuarioId
+        usuarioId,
       );
 
       expect(mockPendenciaRepository.findOne).toHaveBeenCalledWith({
@@ -205,7 +216,7 @@ describe('PendenciaService', () => {
           status: StatusPendencia.RESOLVIDA,
           resolvido_por_id: usuarioId,
           data_resolucao: expect.any(Date),
-        })
+        }),
       );
       expect(mockAuditEventEmitter.emitEntityUpdated).toHaveBeenCalled();
       expect(mockEventosService.emitirEvento).toHaveBeenCalled();
@@ -222,7 +233,7 @@ describe('PendenciaService', () => {
       mockPendenciaRepository.findOne.mockResolvedValue(null);
 
       await expect(
-        service.resolverPendencia(pendenciaId, resolverDto, usuarioId)
+        service.resolverPendencia(pendenciaId, resolverDto, usuarioId),
       ).rejects.toThrow(NotFoundException);
     });
   });
@@ -255,7 +266,7 @@ describe('PendenciaService', () => {
       mockPendenciaRepository.findOne.mockResolvedValue(null);
 
       await expect(service.buscarPorId(pendenciaId)).rejects.toThrow(
-        NotFoundException
+        NotFoundException,
       );
     });
   });
@@ -278,19 +289,21 @@ describe('PendenciaService', () => {
         getMany: jest.fn().mockResolvedValue(pendencias),
       };
 
-      mockPermissionService.verificarPermissaoSolicitacao.mockResolvedValue(true);
-      mockPendenciaRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+      mockPermissionService.verificarPermissaoSolicitacao.mockResolvedValue(
+        true,
+      );
+      mockPendenciaRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder,
+      );
 
       const resultado = await service.listarPendenciasPorSolicitacao(
         solicitacaoId,
-        usuarioId
+        usuarioId,
       );
 
-      expect(mockPermissionService.verificarPermissaoSolicitacao).toHaveBeenCalledWith(
-        usuarioId,
-        solicitacaoId,
-        'pendencia.ler'
-      );
+      expect(
+        mockPermissionService.verificarPermissaoSolicitacao,
+      ).toHaveBeenCalledWith(usuarioId, solicitacaoId, 'pendencia.ler');
       expect(resultado).toHaveLength(1);
     });
 
@@ -298,10 +311,12 @@ describe('PendenciaService', () => {
       const solicitacaoId = 'solicitacao-id';
       const usuarioId = 'usuario-id';
 
-      mockPermissionService.verificarPermissaoSolicitacao.mockResolvedValue(false);
+      mockPermissionService.verificarPermissaoSolicitacao.mockResolvedValue(
+        false,
+      );
 
       await expect(
-        service.listarPendenciasPorSolicitacao(solicitacaoId, usuarioId)
+        service.listarPendenciasPorSolicitacao(solicitacaoId, usuarioId),
       ).rejects.toThrow(ForbiddenException);
     });
   });

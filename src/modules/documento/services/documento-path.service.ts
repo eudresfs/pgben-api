@@ -19,7 +19,7 @@ export interface DocumentoPathOptions {
 
 /**
  * Serviço responsável por gerenciar a estrutura hierárquica de pastas dos documentos
- * 
+ *
  * Estrutura implementada:
  * - COM solicitação: cidadao_id/solicitacoes/solicitacao_id/tipo_documento/arquivo
  * - SEM solicitação: cidadao_id/documentos-gerais/tipo_documento/arquivo
@@ -30,89 +30,96 @@ export class DocumentoPathService {
 
   /**
    * Gera caminho hierárquico para documento
-   * 
+   *
    * @param options Opções para geração do caminho
    * @returns Caminho completo do documento
    */
   generateDocumentPath(options: DocumentoPathOptions): string {
     const { cidadaoId, tipoDocumento, nomeArquivo, solicitacaoId } = options;
-    
+
     // Sanitizar componentes do caminho
     const sanitizedCidadaoId = this.sanitizePath(cidadaoId);
     const sanitizedTipo = this.sanitizePath(tipoDocumento);
     const sanitizedNomeArquivo = this.sanitizeFileName(nomeArquivo);
-    
+
     let path: string;
-    
+
     if (solicitacaoId) {
       const sanitizedSolicitacaoId = this.sanitizePath(solicitacaoId);
       path = `${sanitizedCidadaoId}/solicitacoes/${sanitizedSolicitacaoId}/${sanitizedTipo}/${sanitizedNomeArquivo}`;
     } else {
       path = `${sanitizedCidadaoId}/documentos-gerais/${sanitizedTipo}/${sanitizedNomeArquivo}`;
     }
-    
-    this.logger.debug(
-      `Caminho gerado: ${path}`,
-      DocumentoPathService.name,
-      { cidadaoId, tipoDocumento, solicitacaoId, nomeArquivo }
-    );
-    
+
+    this.logger.debug(`Caminho gerado: ${path}`, DocumentoPathService.name, {
+      cidadaoId,
+      tipoDocumento,
+      solicitacaoId,
+      nomeArquivo,
+    });
+
     return path;
   }
 
   /**
    * Analisa um caminho de documento e extrai suas informações
-   * 
+   *
    * @param path Caminho do documento
    * @returns Informações extraídas do caminho
    */
   parseDocumentPath(path: string): DocumentoPathInfo {
     if (!path || typeof path !== 'string') {
-      throw new Error('Caminho do documento é obrigatório e deve ser uma string');
+      throw new Error(
+        'Caminho do documento é obrigatório e deve ser uma string',
+      );
     }
-    
-    const parts = path.split('/').filter(part => part.length > 0);
-    
+
+    const parts = path.split('/').filter((part) => part.length > 0);
+
     if (parts.length < 3) {
-      throw new Error(`Caminho inválido: ${path}. Formato esperado: cidadao/categoria/tipo/arquivo`);
+      throw new Error(
+        `Caminho inválido: ${path}. Formato esperado: cidadao/categoria/tipo/arquivo`,
+      );
     }
-    
+
     const cidadaoId = parts[0];
     const categoria = parts[1];
-    
+
     if (categoria === 'documentos-gerais') {
       if (parts.length < 3) {
         throw new Error(`Caminho inválido para documento geral: ${path}`);
       }
-      
+
       return {
         cidadaoId,
         tipoDocumento: parts[2],
         nomeArquivo: parts.slice(3).join('/'), // Suporta arquivos com / no nome
         isDocumentoGeral: true,
-        categoria: 'documentos-gerais'
+        categoria: 'documentos-gerais',
       };
     } else if (categoria === 'solicitacoes') {
       if (parts.length < 4) {
-        throw new Error(`Caminho inválido para documento de solicitação: ${path}`);
+        throw new Error(
+          `Caminho inválido para documento de solicitação: ${path}`,
+        );
       }
-      
+
       return {
         cidadaoId,
         solicitacaoId: parts[2],
         tipoDocumento: parts[3],
         nomeArquivo: parts.slice(4).join('/'), // Suporta arquivos com / no nome
         isDocumentoGeral: false,
-        categoria: 'solicitacoes'
+        categoria: 'solicitacoes',
       };
     }
-    
+
     throw new Error(`Categoria de documento não reconhecida: ${categoria}`);
   }
 
   /**
    * Gera caminho para migração de documento existente
-   * 
+   *
    * @param documentoAtual Informações do documento atual
    * @param novaCategoria Nova categoria do documento
    * @param novaSolicitacaoId Nova solicitação (se aplicável)
@@ -121,27 +128,29 @@ export class DocumentoPathService {
   generateMigrationPath(
     documentoAtual: DocumentoPathInfo,
     novaCategoria: 'documentos-gerais' | 'solicitacoes',
-    novaSolicitacaoId?: string
+    novaSolicitacaoId?: string,
   ): string {
     const options: DocumentoPathOptions = {
       cidadaoId: documentoAtual.cidadaoId,
       tipoDocumento: documentoAtual.tipoDocumento,
       nomeArquivo: documentoAtual.nomeArquivo,
     };
-    
+
     if (novaCategoria === 'solicitacoes') {
       if (!novaSolicitacaoId) {
-        throw new Error('ID da solicitação é obrigatório para categoria "solicitacoes"');
+        throw new Error(
+          'ID da solicitação é obrigatório para categoria "solicitacoes"',
+        );
       }
       options.solicitacaoId = novaSolicitacaoId;
     }
-    
+
     return this.generateDocumentPath(options);
   }
 
   /**
    * Verifica se um caminho segue o padrão hierárquico
-   * 
+   *
    * @param path Caminho a ser verificado
    * @returns true se o caminho é válido
    */
@@ -156,16 +165,18 @@ export class DocumentoPathService {
 
   /**
    * Gera caminho de diretório (sem o nome do arquivo)
-   * 
+   *
    * @param options Opções para geração do caminho
    * @returns Caminho do diretório
    */
-  generateDirectoryPath(options: Omit<DocumentoPathOptions, 'nomeArquivo'>): string {
+  generateDirectoryPath(
+    options: Omit<DocumentoPathOptions, 'nomeArquivo'>,
+  ): string {
     const { cidadaoId, tipoDocumento, solicitacaoId } = options;
-    
+
     const sanitizedCidadaoId = this.sanitizePath(cidadaoId);
     const sanitizedTipo = this.sanitizePath(tipoDocumento);
-    
+
     if (solicitacaoId) {
       const sanitizedSolicitacaoId = this.sanitizePath(solicitacaoId);
       return `${sanitizedCidadaoId}/solicitacoes/${sanitizedSolicitacaoId}/${sanitizedTipo}`;
@@ -176,7 +187,7 @@ export class DocumentoPathService {
 
   /**
    * Lista todos os tipos de documento de um cidadão
-   * 
+   *
    * @param cidadaoId ID do cidadão
    * @param categoria Categoria dos documentos
    * @param solicitacaoId ID da solicitação (se categoria for 'solicitacoes')
@@ -185,29 +196,29 @@ export class DocumentoPathService {
   generateSearchPattern(
     cidadaoId: string,
     categoria?: 'documentos-gerais' | 'solicitacoes',
-    solicitacaoId?: string
+    solicitacaoId?: string,
   ): string {
     const sanitizedCidadaoId = this.sanitizePath(cidadaoId);
-    
+
     if (!categoria) {
       return `${sanitizedCidadaoId}/`;
     }
-    
+
     if (categoria === 'solicitacoes' && solicitacaoId) {
       const sanitizedSolicitacaoId = this.sanitizePath(solicitacaoId);
       return `${sanitizedCidadaoId}/solicitacoes/${sanitizedSolicitacaoId}/`;
     }
-    
+
     if (categoria === 'documentos-gerais') {
       return `${sanitizedCidadaoId}/documentos-gerais/`;
     }
-    
+
     return `${sanitizedCidadaoId}/${categoria}/`;
   }
 
   /**
    * Sanitiza componente do caminho removendo caracteres perigosos
-   * 
+   *
    * @param input String a ser sanitizada
    * @returns String sanitizada
    */
@@ -215,7 +226,7 @@ export class DocumentoPathService {
     if (!input || typeof input !== 'string') {
       throw new Error('Input para sanitização deve ser uma string não vazia');
     }
-    
+
     // Remove caracteres perigosos e limita tamanho
     return input
       .replace(/[<>:"|?*\x00-\x1f]/g, '_') // Caracteres perigosos
@@ -227,7 +238,7 @@ export class DocumentoPathService {
 
   /**
    * Sanitiza nome de arquivo preservando extensão
-   * 
+   *
    * @param fileName Nome do arquivo
    * @returns Nome sanitizado
    */
@@ -235,29 +246,29 @@ export class DocumentoPathService {
     if (!fileName || typeof fileName !== 'string') {
       throw new Error('Nome do arquivo deve ser uma string não vazia');
     }
-    
+
     // Separa nome e extensão
     const lastDotIndex = fileName.lastIndexOf('.');
     let name = fileName;
     let extension = '';
-    
+
     if (lastDotIndex > 0) {
       name = fileName.substring(0, lastDotIndex);
       extension = fileName.substring(lastDotIndex);
     }
-    
+
     // Sanitiza o nome preservando a extensão
     const sanitizedName = name
       .replace(/[<>:"|?*\x00-\x1f]/g, '_')
       .replace(/\.\.+/g, '_')
       .substring(0, 100)
       .trim();
-    
+
     // Sanitiza a extensão
     const sanitizedExtension = extension
       .replace(/[<>:"|?*\x00-\x1f]/g, '')
       .substring(0, 10);
-    
+
     return sanitizedName + sanitizedExtension;
   }
 }

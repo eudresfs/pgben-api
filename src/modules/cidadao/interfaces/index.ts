@@ -1,4 +1,3 @@
-import { IComposicaoFamiliar } from "./composicao-familiar.interface";
+import { IComposicaoFamiliar } from './composicao-familiar.interface';
 
-
-export { IComposicaoFamiliar }
+export { IComposicaoFamiliar };

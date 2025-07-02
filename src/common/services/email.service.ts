@@ -67,7 +67,7 @@ export class EmailService implements OnModuleDestroy {
   private readonly logger = new Logger(EmailService.name);
   private transporter: Transporter;
   private fallbackTransporter?: Transporter;
-  
+
   /**
    * Cache de templates com TTL
    */
@@ -75,12 +75,12 @@ export class EmailService implements OnModuleDestroy {
     string,
     { template: EmailTemplate; loadedAt: number }
   >();
-  
+
   /**
    * Rate limiting por destinatário
    */
   private emailQueue = new Map<string, Date>();
-  
+
   /**
    * Métricas de negócio
    */
@@ -92,13 +92,13 @@ export class EmailService implements OnModuleDestroy {
     responseTimes: [] as number[],
     startTime: Date.now(),
   };
-  
+
   /**
    * Blacklist e whitelist de domínios
    */
   private domainBlacklist = new Set<string>();
   private domainWhitelist = new Set<string>();
-  
+
   /**
    * Configurações de timeout
    */
@@ -108,7 +108,7 @@ export class EmailService implements OnModuleDestroy {
     socket: number;
     send: number;
   };
-  
+
   private readonly templateTtlMs: number;
   private readonly templatesDir: string;
   private readonly isEnabled: boolean;
@@ -118,25 +118,53 @@ export class EmailService implements OnModuleDestroy {
 
   constructor(private readonly configService: ConfigService) {
     // Configurações básicas
-    const devTemplatesDir = path.join(process.cwd(), 'src', 'templates', 'email');
-    const prodTemplatesDir = path.join(__dirname, '..', '..', '..', 'templates', 'email');
-    this.templatesDir = fs.existsSync(devTemplatesDir) ? devTemplatesDir : prodTemplatesDir;
+    const devTemplatesDir = path.join(
+      process.cwd(),
+      'src',
+      'templates',
+      'email',
+    );
+    const prodTemplatesDir = path.join(
+      __dirname,
+      '..',
+      '..',
+      '..',
+      'templates',
+      'email',
+    );
+    this.templatesDir = fs.existsSync(devTemplatesDir)
+      ? devTemplatesDir
+      : prodTemplatesDir;
 
-    const emailEnabledRaw = this.configService.get<string>('EMAIL_ENABLED') || 'false';
-    this.isEnabled = ['true', '1', 'yes', 'y'].includes(emailEnabledRaw.toString().toLowerCase());
+    const emailEnabledRaw =
+      this.configService.get<string>('EMAIL_ENABLED') || 'false';
+    this.isEnabled = ['true', '1', 'yes', 'y'].includes(
+      emailEnabledRaw.toString().toLowerCase(),
+    );
 
-    this.isDevelopment = (this.configService.get<string>('NODE_ENV') || process.env.NODE_ENV) === 'development';
+    this.isDevelopment =
+      (this.configService.get<string>('NODE_ENV') || process.env.NODE_ENV) ===
+      'development';
 
-    const ttlSeconds = this.configService.get<number>('EMAIL_TEMPLATE_TTL', 3600);
+    const ttlSeconds = this.configService.get<number>(
+      'EMAIL_TEMPLATE_TTL',
+      3600,
+    );
     this.templateTtlMs = ttlSeconds * 1000;
 
     // Configurações avançadas
-    this.rateLimit = this.configService.get<number>('EMAIL_RATE_LIMIT_MS', 1000);
+    this.rateLimit = this.configService.get<number>(
+      'EMAIL_RATE_LIMIT_MS',
+      1000,
+    );
     this.maxRetries = this.configService.get<number>('EMAIL_MAX_RETRIES', 3);
 
     // Configurações de timeout otimizadas para performance
     this.timeoutConfig = {
-      connection: this.configService.get<number>('SMTP_CONNECTION_TIMEOUT', 5000), // Reduzido de 30s para 5s
+      connection: this.configService.get<number>(
+        'SMTP_CONNECTION_TIMEOUT',
+        5000,
+      ), // Reduzido de 30s para 5s
       greeting: this.configService.get<number>('SMTP_GREETING_TIMEOUT', 3000), // Reduzido de 10s para 3s
       socket: this.configService.get<number>('SMTP_SOCKET_TIMEOUT', 10000), // Reduzido de 60s para 10s
       send: this.configService.get<number>('SMTP_SEND_TIMEOUT', 15000), // Reduzido de 120s para 15s
@@ -150,7 +178,9 @@ export class EmailService implements OnModuleDestroy {
       this.initializeFallbackTransporter();
       this.startHealthCheckInterval();
     } else {
-      this.logger.warn('Serviço de email desabilitado. Configure EMAIL_ENABLED=true para habilitar.');
+      this.logger.warn(
+        'Serviço de email desabilitado. Configure EMAIL_ENABLED=true para habilitar.',
+      );
     }
   }
 
@@ -171,7 +201,7 @@ export class EmailService implements OnModuleDestroy {
         this.transporter.close();
         this.logger.log('Conexão SMTP principal fechada');
       }
-      
+
       if (this.fallbackTransporter) {
         this.fallbackTransporter.close();
         this.logger.log('Conexão SMTP fallback fechada');
@@ -185,17 +215,23 @@ export class EmailService implements OnModuleDestroy {
    * Inicializa listas de domínios permitidos/bloqueados
    */
   private initializeDomainLists(): void {
-    const blacklistStr = this.configService.get<string>('EMAIL_DOMAIN_BLACKLIST', '');
-    const whitelistStr = this.configService.get<string>('EMAIL_DOMAIN_WHITELIST', '');
+    const blacklistStr = this.configService.get<string>(
+      'EMAIL_DOMAIN_BLACKLIST',
+      '',
+    );
+    const whitelistStr = this.configService.get<string>(
+      'EMAIL_DOMAIN_WHITELIST',
+      '',
+    );
 
     if (blacklistStr) {
-      blacklistStr.split(',').forEach(domain => {
+      blacklistStr.split(',').forEach((domain) => {
         this.domainBlacklist.add(domain.trim().toLowerCase());
       });
     }
 
     if (whitelistStr) {
-      whitelistStr.split(',').forEach(domain => {
+      whitelistStr.split(',').forEach((domain) => {
         this.domainWhitelist.add(domain.trim().toLowerCase());
       });
     }
@@ -206,7 +242,7 @@ export class EmailService implements OnModuleDestroy {
    */
   private initializeTransporter(): void {
     this.logger.debug('=== INICIANDO CONFIGURAÇÃO SMTP ===');
-    
+
     const config = this.getSmtpConfig('primary');
     if (!config) {
       this.logger.error('Configuração SMTP principal não disponível');
@@ -218,32 +254,42 @@ export class EmailService implements OnModuleDestroy {
       port: config.port,
       secure: config.secure,
       requireTLS: config.requireTLS,
-      auth: config.auth ? { user: config.auth.user, pass: config.auth.pass ? '[CONFIGURADO]' : '[NÃO CONFIGURADO]' } : 'não configurado',
+      auth: config.auth
+        ? {
+            user: config.auth.user,
+            pass: config.auth.pass ? '[CONFIGURADO]' : '[NÃO CONFIGURADO]',
+          }
+        : 'não configurado',
       pool: config.pool,
       maxConnections: config.maxConnections,
       connectionTimeout: config.connectionTimeout,
       greetingTimeout: config.greetingTimeout,
-      socketTimeout: config.socketTimeout
+      socketTimeout: config.socketTimeout,
     });
 
     try {
       this.transporter = nodemailer.createTransport(config);
-      this.logger.debug('Transporter criado com sucesso, iniciando verificação...');
-      
-      this.verifyConnection(this.transporter, 'primary').catch(error => {
-        this.logger.error('Falha na verificação inicial da conexão SMTP principal:', {
-          error: error.message,
-          code: error.code,
-          command: error.command,
-          response: error.response,
-          responseCode: error.responseCode,
-          stack: error.stack
-        });
+      this.logger.debug(
+        'Transporter criado com sucesso, iniciando verificação...',
+      );
+
+      this.verifyConnection(this.transporter, 'primary').catch((error) => {
+        this.logger.error(
+          'Falha na verificação inicial da conexão SMTP principal:',
+          {
+            error: error.message,
+            code: error.code,
+            command: error.command,
+            response: error.response,
+            responseCode: error.responseCode,
+            stack: error.stack,
+          },
+        );
       });
     } catch (error) {
       this.logger.error('Erro ao criar transporter SMTP:', {
         error: error.message,
-        stack: error.stack
+        stack: error.stack,
       });
     }
   }
@@ -256,9 +302,14 @@ export class EmailService implements OnModuleDestroy {
     if (!config) return;
 
     this.fallbackTransporter = nodemailer.createTransport(config);
-    this.verifyConnection(this.fallbackTransporter, 'fallback').catch(error => {
-      this.logger.warn('Transporter de fallback não disponível:', error.message);
-    });
+    this.verifyConnection(this.fallbackTransporter, 'fallback').catch(
+      (error) => {
+        this.logger.warn(
+          'Transporter de fallback não disponível:',
+          error.message,
+        );
+      },
+    );
   }
 
   /**
@@ -266,7 +317,7 @@ export class EmailService implements OnModuleDestroy {
    */
   private getSmtpConfig(type: 'primary' | 'fallback'): any {
     const prefix = type === 'primary' ? 'SMTP' : 'SMTP_FALLBACK';
-    
+
     const host = this.configService.get<string>(`${prefix}_HOST`);
     const port = this.configService.get<number>(`${prefix}_PORT`, 587);
     const user = this.configService.get<string>(`${prefix}_USER`);
@@ -307,7 +358,10 @@ export class EmailService implements OnModuleDestroy {
     }
 
     const tlsOptions = {
-      rejectUnauthorized: this.configService.get<boolean>(`${prefix}_REJECT_UNAUTHORIZED`, false),
+      rejectUnauthorized: this.configService.get<boolean>(
+        `${prefix}_REJECT_UNAUTHORIZED`,
+        false,
+      ),
       minVersion: 'TLSv1' as const,
       maxVersion: 'TLSv1.3' as const,
     };
@@ -320,8 +374,14 @@ export class EmailService implements OnModuleDestroy {
       auth: { user, pass },
       tls: tlsOptions,
       pool: true,
-      maxConnections: this.configService.get<number>(`${prefix}_MAX_CONNECTIONS`, 5),
-      maxMessages: this.configService.get<number>(`${prefix}_MAX_MESSAGES`, 100),
+      maxConnections: this.configService.get<number>(
+        `${prefix}_MAX_CONNECTIONS`,
+        5,
+      ),
+      maxMessages: this.configService.get<number>(
+        `${prefix}_MAX_MESSAGES`,
+        100,
+      ),
       rateLimit: this.configService.get<number>(`${prefix}_RATE_LIMIT`, 10),
       connectionTimeout: this.timeoutConfig.connection,
       greetingTimeout: this.timeoutConfig.greeting,
@@ -349,9 +409,13 @@ export class EmailService implements OnModuleDestroy {
   /**
    * Verifica conexão com retry
    */
-  private async verifyConnection(transporter: Transporter, type: string, retries = 3): Promise<void> {
+  private async verifyConnection(
+    transporter: Transporter,
+    type: string,
+    retries = 3,
+  ): Promise<void> {
     this.logger.debug(`Verificando conexão SMTP ${type}...`);
-    
+
     try {
       await transporter.verify();
       this.logger.log(`✅ Servidor SMTP ${type} configurado com sucesso`);
@@ -365,17 +429,26 @@ export class EmailService implements OnModuleDestroy {
         errno: error.errno,
         syscall: error.syscall,
         hostname: error.hostname,
-        stack: error.stack
+        stack: error.stack,
       });
-      
-      this.metrics.providerErrors.set(error.code || 'UNKNOWN', 
-        (this.metrics.providerErrors.get(error.code || 'UNKNOWN') || 0) + 1);
+
+      this.metrics.providerErrors.set(
+        error.code || 'UNKNOWN',
+        (this.metrics.providerErrors.get(error.code || 'UNKNOWN') || 0) + 1,
+      );
 
       if (retries > 0) {
-        this.logger.warn(`🔄 Tentando reconectar ${type} (${retries} tentativas restantes)...`);
-        setTimeout(() => this.verifyConnection(transporter, type, retries - 1), 2000);
+        this.logger.warn(
+          `🔄 Tentando reconectar ${type} (${retries} tentativas restantes)...`,
+        );
+        setTimeout(
+          () => this.verifyConnection(transporter, type, retries - 1),
+          2000,
+        );
       } else {
-        this.logger.error(`💥 Falha definitiva na conexão ${type} após todas as tentativas`);
+        this.logger.error(
+          `💥 Falha definitiva na conexão ${type} após todas as tentativas`,
+        );
       }
     }
   }
@@ -384,8 +457,11 @@ export class EmailService implements OnModuleDestroy {
    * Inicia health check periódico
    */
   private startHealthCheckInterval(): void {
-    const interval = this.configService.get<number>('EMAIL_HEALTH_CHECK_INTERVAL', 300000); // 5 min
-    
+    const interval = this.configService.get<number>(
+      'EMAIL_HEALTH_CHECK_INTERVAL',
+      300000,
+    ); // 5 min
+
     setInterval(async () => {
       try {
         await this.healthCheck();
@@ -414,8 +490,11 @@ export class EmailService implements OnModuleDestroy {
         if (this.domainBlacklist.has(domain)) {
           throw new Error(`Domínio bloqueado: ${domain}`);
         }
-        
-        if (this.domainWhitelist.size > 0 && !this.domainWhitelist.has(domain)) {
+
+        if (
+          this.domainWhitelist.size > 0 &&
+          !this.domainWhitelist.has(domain)
+        ) {
           throw new Error(`Domínio não autorizado: ${domain}`);
         }
       }
@@ -428,18 +507,23 @@ export class EmailService implements OnModuleDestroy {
 
     // Validar tamanho de anexos
     if (options.attachments) {
-      const maxSize = this.configService.get<number>('EMAIL_MAX_ATTACHMENT_SIZE', 25 * 1024 * 1024); // 25MB
+      const maxSize = this.configService.get<number>(
+        'EMAIL_MAX_ATTACHMENT_SIZE',
+        25 * 1024 * 1024,
+      ); // 25MB
       let totalSize = 0;
 
       for (const attachment of options.attachments) {
-        const size = Buffer.isBuffer(attachment.content) 
-          ? attachment.content.length 
+        const size = Buffer.isBuffer(attachment.content)
+          ? attachment.content.length
           : Buffer.byteLength(attachment.content.toString());
         totalSize += size;
       }
 
       if (totalSize > maxSize) {
-        throw new Error(`Anexos excedem o tamanho máximo permitido: ${totalSize} > ${maxSize}`);
+        throw new Error(
+          `Anexos excedem o tamanho máximo permitido: ${totalSize} > ${maxSize}`,
+        );
       }
     }
   }
@@ -453,16 +537,16 @@ export class EmailService implements OnModuleDestroy {
     const lastSent = this.emailQueue.get(recipient);
     const now = new Date();
 
-    if (lastSent && (now.getTime() - lastSent.getTime()) < this.rateLimit) {
+    if (lastSent && now.getTime() - lastSent.getTime() < this.rateLimit) {
       this.logger.warn(`Rate limit aplicado para ${recipient}`);
       return false;
     }
 
     this.emailQueue.set(recipient, now);
-    
+
     // Limpeza periódica do cache de rate limiting
     if (this.emailQueue.size > 10000) {
-      const cutoff = now.getTime() - (this.rateLimit * 10);
+      const cutoff = now.getTime() - this.rateLimit * 10;
       for (const [email, time] of this.emailQueue.entries()) {
         if (time.getTime() < cutoff) {
           this.emailQueue.delete(email);
@@ -478,7 +562,9 @@ export class EmailService implements OnModuleDestroy {
    */
   async sendEmail(options: EmailOptions): Promise<boolean> {
     if (!this.isEnabled) {
-      this.logger.warn('Tentativa de envio com serviço desabilitado', { to: options.to });
+      this.logger.warn('Tentativa de envio com serviço desabilitado', {
+        to: options.to,
+      });
       return false;
     }
 
@@ -517,16 +603,16 @@ export class EmailService implements OnModuleDestroy {
 
       // Tentar envio com retry
       const result = await this.sendWithRetry(mailOptions);
-      
+
       // Métricas de sucesso
       const responseTime = Date.now() - startTime;
       this.metrics.emailsSent++;
       this.metrics.responseTimes.push(responseTime);
-      
+
       if (options.template && typeof options.template === 'string') {
         this.metrics.templateUsage.set(
           options.template,
-          (this.metrics.templateUsage.get(options.template) || 0) + 1
+          (this.metrics.templateUsage.get(options.template) || 0) + 1,
         );
       }
 
@@ -538,7 +624,6 @@ export class EmailService implements OnModuleDestroy {
       });
 
       return true;
-
     } catch (error) {
       // Métricas de erro
       const responseTime = Date.now() - startTime;
@@ -546,7 +631,7 @@ export class EmailService implements OnModuleDestroy {
       this.metrics.responseTimes.push(responseTime);
       this.metrics.providerErrors.set(
         error.code || 'UNKNOWN',
-        (this.metrics.providerErrors.get(error.code || 'UNKNOWN') || 0) + 1
+        (this.metrics.providerErrors.get(error.code || 'UNKNOWN') || 0) + 1,
       );
 
       // Serialize error details properly to avoid [object Object] in logs
@@ -554,29 +639,32 @@ export class EmailService implements OnModuleDestroy {
         message: error?.message || 'Unknown error',
         stack: error?.stack || 'No stack trace available',
         code: error?.code || 'NO_CODE',
-        command: error?.command || 'NO_COMMAND', 
-        response: typeof error?.response === 'string' ? error.response : JSON.stringify(error?.response || 'NO_RESPONSE'),
+        command: error?.command || 'NO_COMMAND',
+        response:
+          typeof error?.response === 'string'
+            ? error.response
+            : JSON.stringify(error?.response || 'NO_RESPONSE'),
         responseCode: error?.responseCode || 'NO_RESPONSE_CODE',
         name: error?.name || 'NO_NAME',
         errno: error?.errno || 'NO_ERRNO',
         syscall: error?.syscall || 'NO_SYSCALL',
         hostname: error?.hostname || 'NO_HOSTNAME',
         port: error?.port || 'NO_PORT',
-        fullError: JSON.stringify(error, Object.getOwnPropertyNames(error))
+        fullError: JSON.stringify(error, Object.getOwnPropertyNames(error)),
       };
-      
+
       this.logger.error(`Erro ao enviar email: ${errorDetails.message}`, {
         errorDetails,
         smtpConfig: {
           host: this.configService.get('SMTP_HOST'),
           port: this.configService.get('SMTP_PORT'),
           user: this.configService.get('SMTP_USER')?.substring(0, 15) + '...',
-          secure: this.configService.get('SMTP_PORT') === '465'
+          secure: this.configService.get('SMTP_PORT') === '465',
         },
         emailInfo: {
           to: options.to,
           subject: options.subject,
-          template: options.template
+          template: options.template,
         },
         responseTime,
         suggestion: this.getSuggestionForError(error),
@@ -599,13 +687,14 @@ export class EmailService implements OnModuleDestroy {
     let subject = options.subject;
 
     if (options.template) {
-      const template = typeof options.template === 'string' 
-        ? await this.loadTemplate(options.template)
-        : await this.loadTemplateFromSource(options.template);
+      const template =
+        typeof options.template === 'string'
+          ? await this.loadTemplate(options.template)
+          : await this.loadTemplateFromSource(options.template);
 
       if (template) {
         html = this.compileTemplate(template.html, options.context || {});
-        text = template.text 
+        text = template.text
           ? this.compileTemplate(template.text, options.context || {})
           : undefined;
         subject = this.compileTemplate(template.subject, options.context || {});
@@ -618,14 +707,16 @@ export class EmailService implements OnModuleDestroy {
   /**
    * Carrega template de diferentes fontes
    */
-  private async loadTemplateFromSource(source: TemplateSource): Promise<EmailTemplate | null> {
+  private async loadTemplateFromSource(
+    source: TemplateSource,
+  ): Promise<EmailTemplate | null> {
     switch (source.type) {
       case 'inline':
         return {
           subject: 'Notificação - PGBen',
           html: source.source,
         };
-      
+
       case 'remote':
         try {
           // Implementar fetch de template remoto
@@ -639,7 +730,7 @@ export class EmailService implements OnModuleDestroy {
           this.logger.error('Erro ao carregar template remoto:', error);
           return null;
         }
-      
+
       case 'file':
       default:
         return this.loadTemplate(source.source);
@@ -649,17 +740,20 @@ export class EmailService implements OnModuleDestroy {
   /**
    * Envia email com retry e fallback
    */
-  private async sendWithRetry(mailOptions: any, retries = this.maxRetries): Promise<any> {
+  private async sendWithRetry(
+    mailOptions: any,
+    retries = this.maxRetries,
+  ): Promise<any> {
     try {
       if (!this.transporter) {
         throw new Error('Transporter principal não disponível');
       }
-      
+
       this.logger.debug('Tentando enviar email via transporter principal', {
         to: mailOptions.to,
-        subject: mailOptions.subject
+        subject: mailOptions.subject,
       });
-      
+
       return await this.transporter.sendMail(mailOptions);
     } catch (error) {
       this.logger.error('Erro no transporter principal:', {
@@ -668,12 +762,15 @@ export class EmailService implements OnModuleDestroy {
         command: error.command,
         response: error.response,
         responseCode: error.responseCode,
-        stack: error.stack
+        stack: error.stack,
       });
-      
+
       if (retries > 0) {
-        this.logger.warn(`Tentativa de reenvio (${retries} restantes):`, error.message);
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        this.logger.warn(
+          `Tentativa de reenvio (${retries} restantes):`,
+          error.message,
+        );
+        await new Promise((resolve) => setTimeout(resolve, 1000));
         return this.sendWithRetry(mailOptions, retries - 1);
       }
 
@@ -689,7 +786,7 @@ export class EmailService implements OnModuleDestroy {
             command: fallbackError.command,
             response: fallbackError.response,
             responseCode: fallbackError.responseCode,
-            stack: fallbackError.stack
+            stack: fallbackError.stack,
           });
         }
       }
@@ -701,7 +798,9 @@ export class EmailService implements OnModuleDestroy {
   /**
    * Carrega template com cache
    */
-  private async loadTemplate(templateName: string): Promise<EmailTemplate | null> {
+  private async loadTemplate(
+    templateName: string,
+  ): Promise<EmailTemplate | null> {
     // Verificar cache (apenas em produção)
     if (!this.isDevelopment && this.templatesCache.has(templateName)) {
       const cached = this.templatesCache.get(templateName)!;
@@ -729,7 +828,9 @@ export class EmailService implements OnModuleDestroy {
       }
 
       const html = fs.readFileSync(htmlPath, 'utf8');
-      const text = fs.existsSync(textPath) ? fs.readFileSync(textPath, 'utf8') : undefined;
+      const text = fs.existsSync(textPath)
+        ? fs.readFileSync(textPath, 'utf8')
+        : undefined;
 
       let subject = 'Notificação - PGBen';
       if (fs.existsSync(configPath)) {
@@ -737,7 +838,10 @@ export class EmailService implements OnModuleDestroy {
           const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
           subject = config.subject || subject;
         } catch (parseError) {
-          this.logger.warn(`Erro ao parsear config.json para ${templateName}:`, parseError.message);
+          this.logger.warn(
+            `Erro ao parsear config.json para ${templateName}:`,
+            parseError.message,
+          );
         }
       }
 
@@ -761,7 +865,10 @@ export class EmailService implements OnModuleDestroy {
   /**
    * Compila template Handlebars
    */
-  private compileTemplate(template: string, context: Record<string, any>): string {
+  private compileTemplate(
+    template: string,
+    context: Record<string, any>,
+  ): string {
     try {
       const compiledTemplate = handlebars.compile(template);
       return compiledTemplate(context);
@@ -810,7 +917,7 @@ export class EmailService implements OnModuleDestroy {
     }
 
     if (errorCode === 'EAUTH') {
-      return this.isMailHog(smtpHost, smtpPort) 
+      return this.isMailHog(smtpHost, smtpPort)
         ? 'MailHog não requer autenticação'
         : 'Verifique credenciais SMTP_USER e SMTP_PASS';
     }
@@ -827,12 +934,15 @@ export class EmailService implements OnModuleDestroy {
   /**
    * Teste de stress do serviço
    */
-  async stressTest(recipients: string[], concurrency = 10): Promise<StressTestResult> {
-    const results = { 
-      success: 0, 
-      failed: 0, 
+  async stressTest(
+    recipients: string[],
+    concurrency = 10,
+  ): Promise<StressTestResult> {
+    const results = {
+      success: 0,
+      failed: 0,
       times: [] as number[],
-      startTime: Date.now()
+      startTime: Date.now(),
     };
 
     const chunks = this.chunkArray(recipients, concurrency);
@@ -851,7 +961,8 @@ export class EmailService implements OnModuleDestroy {
     }
 
     const totalTime = Date.now() - results.startTime;
-    const avgTime = results.times.reduce((a, b) => a + b, 0) / results.times.length;
+    const avgTime =
+      results.times.reduce((a, b) => a + b, 0) / results.times.length;
 
     return {
       success: results.success,
@@ -888,7 +999,7 @@ export class EmailService implements OnModuleDestroy {
       return true;
     } catch (error) {
       this.logger.error('Health check falhou:', error.message);
-      
+
       // Tentar reconectar
       try {
         this.initializeTransporter();
@@ -896,7 +1007,10 @@ export class EmailService implements OnModuleDestroy {
         this.logger.log('Reconexão automática bem-sucedida');
         return true;
       } catch (reconnectError) {
-        this.logger.error('Reconexão automática falhou:', reconnectError.message);
+        this.logger.error(
+          'Reconexão automática falhou:',
+          reconnectError.message,
+        );
         return false;
       }
     }
@@ -907,24 +1021,26 @@ export class EmailService implements OnModuleDestroy {
    */
   getMetrics(): EmailMetrics {
     const uptime = Date.now() - this.metrics.startTime;
-    const avgResponseTime = this.metrics.responseTimes.length > 0
-      ? this.metrics.responseTimes.reduce((a, b) => a + b, 0) / this.metrics.responseTimes.length
-      : 0;
+    const avgResponseTime =
+      this.metrics.responseTimes.length > 0
+        ? this.metrics.responseTimes.reduce((a, b) => a + b, 0) /
+          this.metrics.responseTimes.length
+        : 0;
 
     const total = this.metrics.emailsSent + this.metrics.emailsFailed;
     const successRate = total > 0 ? this.metrics.emailsSent / total : 0;
 
     const templateUsage = Array.from(this.metrics.templateUsage.entries())
-      .sort(([,a], [,b]) => b - a)
+      .sort(([, a], [, b]) => b - a)
       .slice(0, 10);
 
     const topErrors = Array.from(this.metrics.providerErrors.entries())
-      .sort(([,a], [,b]) => b - a)
+      .sort(([, a], [, b]) => b - a)
       .slice(0, 5);
 
     const smtpHost = this.configService.get<string>('SMTP_HOST') || 'N/A';
     const smtpPort = this.configService.get<number>('SMTP_PORT', 587);
-    
+
     let provider = 'Generic SMTP';
     if (this.isMailHog(smtpHost, smtpPort)) {
       provider = 'MailHog (Development)';
@@ -966,10 +1082,10 @@ export class EmailService implements OnModuleDestroy {
       if (this.fallbackTransporter) {
         this.fallbackTransporter.close();
       }
-      
+
       this.initializeTransporter();
       this.initializeFallbackTransporter();
-      
+
       return await this.healthCheck();
     } catch (error) {
       this.logger.error('Erro ao reconectar:', error);
@@ -1062,9 +1178,11 @@ export class EmailService implements OnModuleDestroy {
     const uptime = Date.now() - this.metrics.startTime;
     const total = this.metrics.emailsSent + this.metrics.emailsFailed;
     const successRate = total > 0 ? (this.metrics.emailsSent / total) * 100 : 0;
-    const avgResponseTime = this.metrics.responseTimes.length > 0
-      ? this.metrics.responseTimes.reduce((a, b) => a + b, 0) / this.metrics.responseTimes.length
-      : 0;
+    const avgResponseTime =
+      this.metrics.responseTimes.length > 0
+        ? this.metrics.responseTimes.reduce((a, b) => a + b, 0) /
+          this.metrics.responseTimes.length
+        : 0;
 
     return {
       service: {
@@ -1096,7 +1214,7 @@ export class EmailService implements OnModuleDestroy {
         cached: this.templatesCache.size,
         cacheTtl: this.templateTtlMs,
         topUsed: Array.from(this.metrics.templateUsage.entries())
-          .sort(([,a], [,b]) => b - a)
+          .sort(([, a], [, b]) => b - a)
           .slice(0, 5),
       },
       domains: {
@@ -1105,7 +1223,7 @@ export class EmailService implements OnModuleDestroy {
       },
       errors: {
         recent: Array.from(this.metrics.providerErrors.entries())
-          .sort(([,a], [,b]) => b - a)
+          .sort(([, a], [, b]) => b - a)
           .slice(0, 10),
       },
     };
@@ -1135,7 +1253,10 @@ export class EmailService implements OnModuleDestroy {
         resetUrl,
         expiresAt: expiresAt.toLocaleString('pt-BR'),
         expiresInMinutes: expiresIn,
-        supportEmail: this.configService.get<string>('SUPPORT_EMAIL', 'suporte@PGBen.gov.br'),
+        supportEmail: this.configService.get<string>(
+          'SUPPORT_EMAIL',
+          'suporte@PGBen.gov.br',
+        ),
       },
       priority: 'high',
       tags: ['password-reset', 'security'],
@@ -1145,14 +1266,20 @@ export class EmailService implements OnModuleDestroy {
   /**
    * Envia email de confirmação de reset de senha
    */
-  async sendPasswordResetConfirmationEmail(email: string, name: string): Promise<boolean> {
+  async sendPasswordResetConfirmationEmail(
+    email: string,
+    name: string,
+  ): Promise<boolean> {
     return this.sendEmail({
       to: email,
       template: 'password-reset-confirmation',
       context: {
         name,
         loginUrl: `${this.configService.get<string>('FRONTEND_URL')}/login`,
-        supportEmail: this.configService.get<string>('SUPPORT_EMAIL', 'suporte@PGBen.gov.br'),
+        supportEmail: this.configService.get<string>(
+          'SUPPORT_EMAIL',
+          'suporte@PGBen.gov.br',
+        ),
       },
       tags: ['password-reset', 'confirmation'],
     });
@@ -1177,7 +1304,10 @@ export class EmailService implements OnModuleDestroy {
         ipAddress,
         userAgent,
         timestamp: new Date().toLocaleString('pt-BR'),
-        supportEmail: this.configService.get<string>('SUPPORT_EMAIL', 'suporte@PGBen.gov.br'),
+        supportEmail: this.configService.get<string>(
+          'SUPPORT_EMAIL',
+          'suporte@PGBen.gov.br',
+        ),
       },
       priority: 'high',
       tags: ['security', 'alert'],
@@ -1187,11 +1317,18 @@ export class EmailService implements OnModuleDestroy {
   /**
    * Envia email de boas-vindas
    */
-  async sendWelcomeEmail(email: string, name: string, activationToken?: string): Promise<boolean> {
+  async sendWelcomeEmail(
+    email: string,
+    name: string,
+    activationToken?: string,
+  ): Promise<boolean> {
     const context: any = {
       name,
       loginUrl: `${this.configService.get<string>('FRONTEND_URL')}/login`,
-      supportEmail: this.configService.get<string>('SUPPORT_EMAIL', 'suporte@PGBen.gov.br'),
+      supportEmail: this.configService.get<string>(
+        'SUPPORT_EMAIL',
+        'suporte@PGBen.gov.br',
+      ),
     };
 
     if (activationToken) {
@@ -1263,8 +1400,13 @@ export class EmailService implements OnModuleDestroy {
     options: Omit<EmailOptions, 'to'>,
     batchSize = 50,
     delayMs = 1000,
-  ): Promise<{ success: number; failed: number; results: Array<{ email: string; success: boolean; error?: string }> }> {
-    const results: Array<{ email: string; success: boolean; error?: string }> = [];
+  ): Promise<{
+    success: number;
+    failed: number;
+    results: Array<{ email: string; success: boolean; error?: string }>;
+  }> {
+    const results: Array<{ email: string; success: boolean; error?: string }> =
+      [];
     let success = 0;
     let failed = 0;
 
@@ -1272,15 +1414,17 @@ export class EmailService implements OnModuleDestroy {
 
     for (let i = 0; i < batches.length; i++) {
       const batch = batches[i];
-      
-      this.logger.log(`Processando lote ${i + 1}/${batches.length} (${batch.length} emails)`);
+
+      this.logger.log(
+        `Processando lote ${i + 1}/${batches.length} (${batch.length} emails)`,
+      );
 
       const promises = batch.map(async (email) => {
         try {
           const result = await this.sendEmail({ ...options, to: email });
           const status = { email, success: result };
           results.push(status);
-          
+
           if (result) {
             success++;
           } else {
@@ -1301,11 +1445,13 @@ export class EmailService implements OnModuleDestroy {
 
       // Delay entre lotes para evitar rate limiting
       if (i < batches.length - 1) {
-        await new Promise(resolve => setTimeout(resolve, delayMs));
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
       }
     }
 
-    this.logger.log(`Envio em lote concluído: ${success} sucessos, ${failed} falhas`);
+    this.logger.log(
+      `Envio em lote concluído: ${success} sucessos, ${failed} falhas`,
+    );
 
     return { success, failed, results };
   }
@@ -1331,13 +1477,17 @@ export class EmailService implements OnModuleDestroy {
   updateDomainLists(blacklist?: string[], whitelist?: string[]): void {
     if (blacklist) {
       this.domainBlacklist.clear();
-      blacklist.forEach(domain => this.domainBlacklist.add(domain.toLowerCase()));
+      blacklist.forEach((domain) =>
+        this.domainBlacklist.add(domain.toLowerCase()),
+      );
       this.logger.log(`Blacklist atualizada: ${blacklist.length} domínios`);
     }
 
     if (whitelist) {
       this.domainWhitelist.clear();
-      whitelist.forEach(domain => this.domainWhitelist.add(domain.toLowerCase()));
+      whitelist.forEach((domain) =>
+        this.domainWhitelist.add(domain.toLowerCase()),
+      );
       this.logger.log(`Whitelist atualizada: ${whitelist.length} domínios`);
     }
   }
@@ -1347,39 +1497,69 @@ export class EmailService implements OnModuleDestroy {
    */
   async getServiceStatus(): Promise<{
     status: 'healthy' | 'degraded' | 'unhealthy';
-    checks: Record<string, { status: boolean; message: string; timestamp: Date }>;
+    checks: Record<
+      string,
+      { status: boolean; message: string; timestamp: Date }
+    >;
   }> {
     const timestamp = new Date();
-    const checks: Record<string, { status: boolean; message: string; timestamp: Date }> = {};
+    const checks: Record<
+      string,
+      { status: boolean; message: string; timestamp: Date }
+    > = {};
 
     // Verificar transporter principal
     try {
       if (this.transporter) {
         await this.transporter.verify();
-        checks.primarySmtp = { status: true, message: 'Conexão SMTP principal OK', timestamp };
+        checks.primarySmtp = {
+          status: true,
+          message: 'Conexão SMTP principal OK',
+          timestamp,
+        };
       } else {
-        checks.primarySmtp = { status: false, message: 'Transporter principal não inicializado', timestamp };
+        checks.primarySmtp = {
+          status: false,
+          message: 'Transporter principal não inicializado',
+          timestamp,
+        };
       }
     } catch (error) {
-      checks.primarySmtp = { status: false, message: `Erro SMTP principal: ${error.message}`, timestamp };
+      checks.primarySmtp = {
+        status: false,
+        message: `Erro SMTP principal: ${error.message}`,
+        timestamp,
+      };
     }
 
     // Verificar transporter fallback
     if (this.fallbackTransporter) {
       try {
         await this.fallbackTransporter.verify();
-        checks.fallbackSmtp = { status: true, message: 'Conexão SMTP fallback OK', timestamp };
+        checks.fallbackSmtp = {
+          status: true,
+          message: 'Conexão SMTP fallback OK',
+          timestamp,
+        };
       } catch (error) {
-        checks.fallbackSmtp = { status: false, message: `Erro SMTP fallback: ${error.message}`, timestamp };
+        checks.fallbackSmtp = {
+          status: false,
+          message: `Erro SMTP fallback: ${error.message}`,
+          timestamp,
+        };
       }
     } else {
-      checks.fallbackSmtp = { status: true, message: 'Fallback não configurado', timestamp };
+      checks.fallbackSmtp = {
+        status: true,
+        message: 'Fallback não configurado',
+        timestamp,
+      };
     }
 
     // Verificar diretório de templates
     checks.templates = {
       status: fs.existsSync(this.templatesDir),
-      message: fs.existsSync(this.templatesDir) 
+      message: fs.existsSync(this.templatesDir)
         ? `Diretório de templates OK: ${this.templatesDir}`
         : `Diretório de templates não encontrado: ${this.templatesDir}`,
       timestamp,
@@ -1387,7 +1567,8 @@ export class EmailService implements OnModuleDestroy {
 
     // Verificar taxa de sucesso
     const total = this.metrics.emailsSent + this.metrics.emailsFailed;
-    const successRate = total > 0 ? (this.metrics.emailsSent / total) * 100 : 100;
+    const successRate =
+      total > 0 ? (this.metrics.emailsSent / total) * 100 : 100;
     checks.successRate = {
       status: successRate >= 95,
       message: `Taxa de sucesso: ${successRate.toFixed(1)}% (${this.metrics.emailsSent}/${total})`,
@@ -1395,7 +1576,9 @@ export class EmailService implements OnModuleDestroy {
     };
 
     // Determinar status geral
-    const healthyChecks = Object.values(checks).filter(check => check.status).length;
+    const healthyChecks = Object.values(checks).filter(
+      (check) => check.status,
+    ).length;
     const totalChecks = Object.values(checks).length;
 
     let status: 'healthy' | 'degraded' | 'unhealthy';

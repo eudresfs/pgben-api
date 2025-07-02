@@ -20,20 +20,17 @@ export class ErrorHandlingInterceptor implements NestInterceptor {
       catchError((error) => {
         const request = context.switchToHttp().getRequest();
         const response = context.switchToHttp().getResponse();
-        
+
         // Log detalhado do erro
-        this.logger.error(
-          `Erro capturado no interceptor: ${error.message}`,
-          {
-            stack: error.stack,
-            url: request.url,
-            method: request.method,
-            body: request.body,
-            params: request.params,
-            query: request.query,
-            user: request.user?.id || 'anonymous',
-          },
-        );
+        this.logger.error(`Erro capturado no interceptor: ${error.message}`, {
+          stack: error.stack,
+          url: request.url,
+          method: request.method,
+          body: request.body,
+          params: request.params,
+          query: request.query,
+          user: request.user?.id || 'anonymous',
+        });
 
         // Se já é uma HttpException, apenas re-throw
         if (error instanceof HttpException) {
@@ -47,39 +44,49 @@ export class ErrorHandlingInterceptor implements NestInterceptor {
 
         // Tratamento para erros de validação
         if (error.name === 'ValidationError') {
-          return throwError(() => new HttpException(
-            {
-              statusCode: HttpStatus.BAD_REQUEST,
-              message: 'Dados de entrada inválidos',
-              details: error.message,
-              timestamp: new Date().toISOString(),
-            },
-            HttpStatus.BAD_REQUEST,
-          ));
+          return throwError(
+            () =>
+              new HttpException(
+                {
+                  statusCode: HttpStatus.BAD_REQUEST,
+                  message: 'Dados de entrada inválidos',
+                  details: error.message,
+                  timestamp: new Date().toISOString(),
+                },
+                HttpStatus.BAD_REQUEST,
+              ),
+          );
         }
 
         // Tratamento para erros de timeout
         if (error.code === 'ETIMEDOUT' || error.message.includes('timeout')) {
-          return throwError(() => new HttpException(
-            {
-              statusCode: HttpStatus.REQUEST_TIMEOUT,
-              message: 'Operação expirou. Tente novamente.',
-              timestamp: new Date().toISOString(),
-            },
-            HttpStatus.REQUEST_TIMEOUT,
-          ));
+          return throwError(
+            () =>
+              new HttpException(
+                {
+                  statusCode: HttpStatus.REQUEST_TIMEOUT,
+                  message: 'Operação expirou. Tente novamente.',
+                  timestamp: new Date().toISOString(),
+                },
+                HttpStatus.REQUEST_TIMEOUT,
+              ),
+          );
         }
 
         // Erro genérico - não expor detalhes internos
-        return throwError(() => new HttpException(
-          {
-            statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-            message: 'Erro interno do servidor. Contate o suporte se o problema persistir.',
-            timestamp: new Date().toISOString(),
-            errorId: this.generateErrorId(),
-          },
-          HttpStatus.INTERNAL_SERVER_ERROR,
-        ));
+        return throwError(
+          () =>
+            new HttpException(
+              {
+                statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+                message:
+                  'Erro interno do servidor. Contate o suporte se o problema persistir.',
+                timestamp: new Date().toISOString(),
+                errorId: this.generateErrorId(),
+              },
+              HttpStatus.INTERNAL_SERVER_ERROR,
+            ),
+        );
       }),
     );
   }
@@ -129,7 +136,9 @@ export class ErrorHandlingInterceptor implements NestInterceptor {
 
     // Erro de enum inválido
     if (message.includes('invalid input value for enum')) {
-      const enumMatch = message.match(/invalid input value for enum (\w+): "([^"]+)"/i);
+      const enumMatch = message.match(
+        /invalid input value for enum (\w+): "([^"]+)"/i,
+      );
       if (enumMatch) {
         const enumName = enumMatch[1];
         const invalidValue = enumMatch[2];
@@ -150,7 +159,8 @@ export class ErrorHandlingInterceptor implements NestInterceptor {
       return new HttpException(
         {
           statusCode: HttpStatus.SERVICE_UNAVAILABLE,
-          message: 'Serviço temporariamente indisponível. Tente novamente em alguns instantes.',
+          message:
+            'Serviço temporariamente indisponível. Tente novamente em alguns instantes.',
           details: 'Erro de conexão com banco de dados',
           timestamp: new Date().toISOString(),
         },

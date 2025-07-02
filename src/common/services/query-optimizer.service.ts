@@ -1,5 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Repository, SelectQueryBuilder, EntityTarget, ObjectLiteral } from 'typeorm';
+import {
+  Repository,
+  SelectQueryBuilder,
+  EntityTarget,
+  ObjectLiteral,
+} from 'typeorm';
 import { performance } from 'perf_hooks';
 
 /**
@@ -54,8 +59,11 @@ interface SortOptions {
 @Injectable()
 export class QueryOptimizerService {
   private readonly logger = new Logger(QueryOptimizerService.name);
-  private readonly queryCache = new Map<string, { data: any; timestamp: number; ttl: number }>();
-  
+  private readonly queryCache = new Map<
+    string,
+    { data: any; timestamp: number; ttl: number }
+  >();
+
   private readonly defaultConfig: QueryOptimizationConfig = {
     enablePagination: true,
     defaultLimit: 20,
@@ -81,10 +89,11 @@ export class QueryOptimizerService {
   ): Promise<OptimizedQueryResult<T>> {
     const config = { ...this.defaultConfig, ...options.config };
     const startTime = performance.now();
-    
+
     // Gerar chave de cache se não fornecida
-    const cacheKey = options.cacheKey || this.generateCacheKey(queryBuilder, options);
-    
+    const cacheKey =
+      options.cacheKey || this.generateCacheKey(queryBuilder, options);
+
     // Verificar cache primeiro
     if (config.enableCaching) {
       const cached = this.getFromCache<T>(cacheKey);
@@ -97,61 +106,59 @@ export class QueryOptimizerService {
         };
       }
     }
-    
+
     // Aplicar ordenação
     if (options.sort && options.sort.length > 0) {
       this.applySorting(queryBuilder, options.sort);
     }
-    
+
     let result: OptimizedQueryResult<T>;
-    
+
     // Aplicar paginação se habilitada
     if (config.enablePagination && options.pagination) {
-      result = await this.executePaginatedQuery(queryBuilder, options.pagination, config);
+      result = await this.executePaginatedQuery(
+        queryBuilder,
+        options.pagination,
+        config,
+      );
     } else {
       const data = await this.executeQuery(queryBuilder, config);
       result = { data };
     }
-    
+
     const endTime = performance.now();
     const executionTime = Math.round((endTime - startTime) * 100) / 100;
-    
+
     result.executionTime = executionTime;
     result.fromCache = false;
-    
+
     // Log de queries lentas
     if (config.logSlowQueries && executionTime > config.slowQueryThreshold!) {
-      this.logger.warn(
-        `Slow query detected: ${executionTime}ms`,
-        {
-          sql: queryBuilder.getSql(),
-          parameters: queryBuilder.getParameters(),
-          executionTime,
-        },
-      );
+      this.logger.warn(`Slow query detected: ${executionTime}ms`, {
+        sql: queryBuilder.getSql(),
+        parameters: queryBuilder.getParameters(),
+        executionTime,
+      });
     }
-    
+
     // Salvar no cache
     if (config.enableCaching) {
       this.saveToCache(cacheKey, result, config.cacheTTL!);
     }
-    
+
     // Log de profiling
     if (config.enableProfiling) {
-      this.logger.debug(
-        `Query executed in ${executionTime}ms`,
-        {
-          sql: queryBuilder.getSql(),
-          parameters: queryBuilder.getParameters(),
-          resultCount: result.data.length,
-          fromCache: false,
-        },
-      );
+      this.logger.debug(`Query executed in ${executionTime}ms`, {
+        sql: queryBuilder.getSql(),
+        parameters: queryBuilder.getParameters(),
+        resultCount: result.data.length,
+        fromCache: false,
+      });
     }
-    
+
     return result;
   }
-  
+
   /**
    * Executa uma consulta paginada
    */
@@ -166,18 +173,18 @@ export class QueryOptimizerService {
       Math.max(1, pagination.limit || config.defaultLimit!),
     );
     const offset = pagination.offset || (page - 1) * limit;
-    
+
     // Clonar query builder para contar total
     const countQueryBuilder = queryBuilder.clone();
-    
+
     // Executar contagem e consulta em paralelo
     const [data, total] = await Promise.all([
       queryBuilder.skip(offset).take(limit).getMany(),
       countQueryBuilder.getCount(),
     ]);
-    
+
     const totalPages = Math.ceil(total / limit);
-    
+
     return {
       data,
       total,
@@ -187,7 +194,7 @@ export class QueryOptimizerService {
       hasPrevious: page > 1,
     };
   }
-  
+
   /**
    * Executa uma consulta simples
    */
@@ -197,7 +204,7 @@ export class QueryOptimizerService {
   ): Promise<T[]> {
     return queryBuilder.getMany();
   }
-  
+
   /**
    * Aplica ordenação ao query builder
    */
@@ -213,7 +220,7 @@ export class QueryOptimizerService {
       }
     });
   }
-  
+
   /**
    * Gera uma chave de cache baseada na consulta
    */
@@ -224,30 +231,30 @@ export class QueryOptimizerService {
     const sql = queryBuilder.getSql();
     const parameters = JSON.stringify(queryBuilder.getParameters());
     const optionsStr = JSON.stringify(options);
-    
+
     // Usar hash simples para a chave
     return Buffer.from(`${sql}:${parameters}:${optionsStr}`).toString('base64');
   }
-  
+
   /**
    * Obtém dados do cache
    */
   private getFromCache<T>(key: string): OptimizedQueryResult<T> | null {
     const cached = this.queryCache.get(key);
-    
+
     if (!cached) {
       return null;
     }
-    
+
     // Verificar se o cache expirou
     if (Date.now() - cached.timestamp > cached.ttl) {
       this.queryCache.delete(key);
       return null;
     }
-    
+
     return cached.data;
   }
-  
+
   /**
    * Salva dados no cache
    */
@@ -261,31 +268,33 @@ export class QueryOptimizerService {
       timestamp: Date.now(),
       ttl,
     });
-    
+
     // Limpar cache antigo periodicamente
     if (this.queryCache.size > 1000) {
       this.cleanupCache();
     }
   }
-  
+
   /**
    * Limpa entradas expiradas do cache
    */
   private cleanupCache(): void {
     const now = Date.now();
     const keysToDelete: string[] = [];
-    
+
     for (const [key, cached] of this.queryCache.entries()) {
       if (now - cached.timestamp > cached.ttl) {
         keysToDelete.push(key);
       }
     }
-    
-    keysToDelete.forEach(key => this.queryCache.delete(key));
-    
-    this.logger.debug(`Cache cleanup: removed ${keysToDelete.length} expired entries`);
+
+    keysToDelete.forEach((key) => this.queryCache.delete(key));
+
+    this.logger.debug(
+      `Cache cleanup: removed ${keysToDelete.length} expired entries`,
+    );
   }
-  
+
   /**
    * Limpa todo o cache
    */
@@ -293,7 +302,7 @@ export class QueryOptimizerService {
     this.queryCache.clear();
     this.logger.log('Query cache cleared');
   }
-  
+
   /**
    * Obtém estatísticas do cache
    */
@@ -304,14 +313,14 @@ export class QueryOptimizerService {
   } {
     const size = this.queryCache.size;
     const memoryUsage = JSON.stringify([...this.queryCache.entries()]).length;
-    
+
     return {
       size,
       hitRate: 0, // TODO: Implementar tracking de hit rate
       memoryUsage,
     };
   }
-  
+
   /**
    * Cria um query builder otimizado para uma entidade
    */
@@ -321,16 +330,16 @@ export class QueryOptimizerService {
     config?: Partial<QueryOptimizationConfig>,
   ): SelectQueryBuilder<T> {
     const queryBuilder = repository.createQueryBuilder(alias);
-    
+
     // Aplicar otimizações padrão
     if (config?.enableProfiling !== false) {
       // Adicionar comentário para identificar a query
       queryBuilder.comment(`Optimized query for ${alias}`);
     }
-    
+
     return queryBuilder;
   }
-  
+
   /**
    * Otimiza consultas com joins para evitar N+1
    */
@@ -338,13 +347,16 @@ export class QueryOptimizerService {
     queryBuilder: SelectQueryBuilder<T>,
     relations: string[],
   ): SelectQueryBuilder<T> {
-    relations.forEach(relation => {
-      queryBuilder.leftJoinAndSelect(`${queryBuilder.alias}.${relation}`, relation);
+    relations.forEach((relation) => {
+      queryBuilder.leftJoinAndSelect(
+        `${queryBuilder.alias}.${relation}`,
+        relation,
+      );
     });
-    
+
     return queryBuilder;
   }
-  
+
   /**
    * Aplica filtros de forma otimizada
    */
@@ -354,11 +366,11 @@ export class QueryOptimizerService {
     allowedFields: string[],
   ): SelectQueryBuilder<T> {
     const entityAlias = queryBuilder.alias;
-    
+
     Object.entries(filters).forEach(([key, value], index) => {
       if (value !== undefined && value !== null && value !== '') {
         const paramName = `filter_${key}_${index}`;
-        
+
         if (Array.isArray(value)) {
           queryBuilder.andWhere(`${entityAlias}.${key} IN (:...${paramName})`, {
             [paramName]: value,
@@ -374,7 +386,7 @@ export class QueryOptimizerService {
         }
       }
     });
-    
+
     return queryBuilder;
   }
 }

@@ -526,11 +526,7 @@ export function throwBeneficioAlreadyExists(
   context: BeneficioErrorContext = {},
   language: string = 'pt-BR',
 ): never {
-  throw new AppError(
-    'BENEFICIO_ALREADY_EXISTS',
-    context,
-    language,
-  );
+  throw new AppError('BENEFICIO_ALREADY_EXISTS', context, language);
 }
 
 /**
@@ -768,22 +764,16 @@ export enum BeneficioDomain {
  */
 export const throwBeneficioValidationError = (
   message: string,
-  context?: BeneficioErrorContext
+  context?: BeneficioErrorContext,
 ): never => {
-  throw new AppError(
-    'BENEFICIO_VALIDATION_ERROR',
-    context
-  );
+  throw new AppError('BENEFICIO_VALIDATION_ERROR', context);
 };
 
 export const throwBeneficioBusinessRuleError = (
   message: string,
-  context?: BeneficioErrorContext
+  context?: BeneficioErrorContext,
 ): never => {
-  throw new AppError(
-    'BENEFICIO_BUSINESS_RULE_ERROR',
-    context
-  );
+  throw new AppError('BENEFICIO_BUSINESS_RULE_ERROR', context);
 };
 
 /**
@@ -791,50 +781,51 @@ export const throwBeneficioBusinessRuleError = (
  */
 export class BeneficioValidationErrorBuilder {
   private errors: Array<{ field: string; message: string }> = [];
-  
+
   add(field: string, message: string): this {
     this.errors.push({ field, message });
     return this;
   }
-  
+
   addIf(condition: boolean, field: string, message: string): this {
     if (condition) {
       this.add(field, message);
     }
     return this;
   }
-  
+
   hasErrors(): boolean {
     return this.errors.length > 0;
   }
-  
+
   throwIfHasErrors(): void {
     if (this.hasErrors()) {
       this.throw();
     }
   }
-  
+
   throw(): never {
     if (!this.hasErrors()) {
       throw new Error('Nenhum erro de validação encontrado');
     }
-    
+
     if (this.errors.length === 1) {
       throwBeneficioValidationError(this.errors[0].message, {
-        data: { field: this.errors[0].field }
+        data: { field: this.errors[0].field },
       });
     }
-    
-    const message = 'Erro de validação técnica - múltiplos campos:\n' +
-      this.errors.map(e => `• ${e.field}: ${e.message}`).join('\n');
-    
+
+    const message =
+      'Erro de validação técnica - múltiplos campos:\n' +
+      this.errors.map((e) => `• ${e.field}: ${e.message}`).join('\n');
+
     throwBeneficioValidationError(message, {
       data: {
-        fields: this.errors.map(e => e.field),
-        details: this.errors
-      }
+        fields: this.errors.map((e) => e.field),
+        details: this.errors,
+      },
     });
-    
+
     // Esta linha nunca será alcançada, mas é necessária para satisfazer o TypeScript
     throw new Error('Erro inesperado na validação');
   }
@@ -846,155 +837,199 @@ export class BeneficioValidationErrorBuilder {
 export const BENEFICIO_TECH_MESSAGES = {
   // Mensagens genéricas reutilizáveis
   GENERIC: {
-    CAMPO_OBRIGATORIO: (campo: string) => 
+    CAMPO_OBRIGATORIO: (campo: string) =>
       `Campo obrigatório não informado: ${campo}. Verifique se está enviando todos os campos necessários.`,
-    
-    TAMANHO_MINIMO: (campo: string, min: number) => 
+
+    TAMANHO_MINIMO: (campo: string, min: number) =>
       `Campo ${campo} deve ter pelo menos ${min} caracteres. Valor atual não atende ao critério mínimo estabelecido.`,
-    
-    VALOR_MINIMO: (campo: string, min: number) => 
+
+    VALOR_MINIMO: (campo: string, min: number) =>
       `Campo ${campo} deve ser no mínimo ${min}. Validação de regra de negócio falhou.`,
-    
-    VALOR_MAXIMO: (campo: string, max: number) => 
+
+    VALOR_MAXIMO: (campo: string, max: number) =>
       `Campo ${campo} não pode ser maior que ${max}. Limite técnico excedido.`,
-    
-    DATA_FUTURA: (campo: string) => 
+
+    DATA_FUTURA: (campo: string) =>
       `Campo ${campo} não pode ser uma data futura. Validação temporal falhou.`,
-    
-    DATA_PASSADA: (campo: string) => 
+
+    DATA_PASSADA: (campo: string) =>
       `Campo ${campo} não pode ser uma data passada. Validação temporal falhou.`,
-    
-    JA_EXISTE: 'Registro duplicado detectado. Já existe um cadastro para esta solicitação.',
-    
-    NAO_ENCONTRADO: 'Registro não encontrado no banco de dados. Verifique se o ID está correto.',
-    
-    OPERACAO_SUCESSO: 'Dados salvos com sucesso. Status atualizado para "Aguardando Documentos".',
-    
+
+    JA_EXISTE:
+      'Registro duplicado detectado. Já existe um cadastro para esta solicitação.',
+
+    NAO_ENCONTRADO:
+      'Registro não encontrado no banco de dados. Verifique se o ID está correto.',
+
+    OPERACAO_SUCESSO:
+      'Dados salvos com sucesso. Status atualizado para "Aguardando Documentos".',
+
     STATUS_ATUALIZADO: 'Status da solicitação atualizado com sucesso.',
-    
-    STATUS_NAO_ATUALIZADO: 'Dados salvos com sucesso, mas falha na atualização do workflow. Verificar logs do sistema.'
+
+    STATUS_NAO_ATUALIZADO:
+      'Dados salvos com sucesso, mas falha na atualização do workflow. Verificar logs do sistema.',
   },
-  
+
   // Mensagens específicas por benefício
   ALUGUEL_SOCIAL: {
-    SOLICITACAO_ID_REQUIRED: 
+    SOLICITACAO_ID_REQUIRED:
       'Campo solicitacao_id é obrigatório. Validação de campo obrigatório falhou.',
-    
-    PUBLICO_PRIORITARIO_REQUIRED: 
+
+    PUBLICO_PRIORITARIO_REQUIRED:
       'Campo publico_prioritario é obrigatório. Validação de campo obrigatório falhou.',
-    
-    SITUACAO_MORADIA_MIN_LENGTH: 
+
+    SITUACAO_MORADIA_MIN_LENGTH:
       'Campo situacao_moradia_atual deve ter pelo menos 10 caracteres. Validação de conteúdo mínimo falhou.',
-    
-    ESPECIFICACOES_MAX_LENGTH: 
+
+    ESPECIFICACOES_MAX_LENGTH:
       'Campo especificacoes excede o limite máximo permitido. Validação de tamanho falhou.',
-    
-    MAX_ESPECIFICACOES: 
+
+    MAX_ESPECIFICACOES:
       'Limite de especificações excedido. Máximo permitido: 2 especificações. Validar regra de negócio no frontend.',
-    
-    SITUACAO_MORADIA_CURTA: 
+
+    SITUACAO_MORADIA_CURTA:
       'Campo situacao_moradia_atual deve ter pelo menos 10 caracteres. Validação de conteúdo mínimo falhou.',
-    
+
     UNIDADE_REQUERIDA: (origem: string) =>
       `Campo unidade_solicitante é obrigatório para origem ${origem}. Regra de negócio condicional não atendida.`,
   },
-  
+
   CESTA_BASICA: {
     // Campos obrigatórios
-    SOLICITACAO_ID_REQUIRED: 'Campo solicitacao_id é obrigatório. Validação de campo obrigatório falhou.',
-    QUANTIDADE_CESTAS_REQUIRED: 'Campo quantidade_cestas é obrigatório. Validação de campo obrigatório falhou.',
-    NUMERO_PESSOAS_REQUIRED: 'Campo numero_pessoas é obrigatório. Validação de campo obrigatório falhou.',
-    QUANTIDADE_CESTAS_INVALID: 'Campo quantidade_cestas deve ser um número válido. Validação de tipo falhou.',
-    NUMERO_PESSOAS_INVALID: 'Campo numero_pessoas deve ser um número válido. Validação de tipo falhou.',
-    JUSTIFICATIVA_REQUIRED: 'Campo justificativa é obrigatório quando quantidade excede recomendação. Validação de regra de negócio falhou.',
-    
+    SOLICITACAO_ID_REQUIRED:
+      'Campo solicitacao_id é obrigatório. Validação de campo obrigatório falhou.',
+    QUANTIDADE_CESTAS_REQUIRED:
+      'Campo quantidade_cestas é obrigatório. Validação de campo obrigatório falhou.',
+    NUMERO_PESSOAS_REQUIRED:
+      'Campo numero_pessoas é obrigatório. Validação de campo obrigatório falhou.',
+    QUANTIDADE_CESTAS_INVALID:
+      'Campo quantidade_cestas deve ser um número válido. Validação de tipo falhou.',
+    NUMERO_PESSOAS_INVALID:
+      'Campo numero_pessoas deve ser um número válido. Validação de tipo falhou.',
+    JUSTIFICATIVA_REQUIRED:
+      'Campo justificativa é obrigatório quando quantidade excede recomendação. Validação de regra de negócio falhou.',
+
     // Limites
-    QUANTIDADE_CESTAS_MIN: 'Campo quantidade_cestas deve ser no mínimo 1. Validação de limite falhou.',
-    QUANTIDADE_CESTAS_MAX: 'Campo quantidade_cestas não pode exceder 12. Validação de limite falhou.',
-    NUMERO_PESSOAS_MIN: 'Campo numero_pessoas deve ser no mínimo 1. Validação de limite falhou.',
-    NUMERO_PESSOAS_MAX: 'Campo numero_pessoas não pode exceder 50. Validação de limite falhou.',
-    MAX_PESSOAS_FAMILIA: 'Campo numero_pessoas não pode exceder 50. Validação de limite falhou.',
-    
+    QUANTIDADE_CESTAS_MIN:
+      'Campo quantidade_cestas deve ser no mínimo 1. Validação de limite falhou.',
+    QUANTIDADE_CESTAS_MAX:
+      'Campo quantidade_cestas não pode exceder 12. Validação de limite falhou.',
+    NUMERO_PESSOAS_MIN:
+      'Campo numero_pessoas deve ser no mínimo 1. Validação de limite falhou.',
+    NUMERO_PESSOAS_MAX:
+      'Campo numero_pessoas não pode exceder 50. Validação de limite falhou.',
+    MAX_PESSOAS_FAMILIA:
+      'Campo numero_pessoas não pode exceder 50. Validação de limite falhou.',
+
     // Regras de negócio
-    JUSTIFICATIVA_MIN_LENGTH: 'Campo justificativa deve ter pelo menos 10 caracteres quando obrigatório. Validação de tamanho falhou.',
-    MIN_JUSTIFICATIVA: 'Campo justificativa deve ter pelo menos 10 caracteres quando obrigatório. Validação de tamanho falhou.',
-    QUANTIDADE_EXCEDE_RECOMENDACAO: 'Quantidade de cestas excede recomendação para o tamanho da família. Justificativa obrigatória.',
-    
-    QUANTIDADE_EXCEDIDA: 
+    JUSTIFICATIVA_MIN_LENGTH:
+      'Campo justificativa deve ter pelo menos 10 caracteres quando obrigatório. Validação de tamanho falhou.',
+    MIN_JUSTIFICATIVA:
+      'Campo justificativa deve ter pelo menos 10 caracteres quando obrigatório. Validação de tamanho falhou.',
+    QUANTIDADE_EXCEDE_RECOMENDACAO:
+      'Quantidade de cestas excede recomendação para o tamanho da família. Justificativa obrigatória.',
+
+    QUANTIDADE_EXCEDIDA:
       'Quantidade de cestas solicitadas excede o limite máximo permitido. Validação de regra de negócio falhou.',
-    
-    QUANTIDADE_INVALIDA: 
+
+    QUANTIDADE_INVALIDA:
       'Campo quantidade_cestas_solicitadas deve estar entre 1 e 12. Validação de range falhou.',
-    
-    UNIDADE_ENCAMINHAMENTO: 
+
+    UNIDADE_ENCAMINHAMENTO:
       'Campo unidade_solicitante é obrigatório para encaminhamentos externos. Validação condicional falhou.',
-    
+
     CALCULO_RECOMENDACAO: (pessoas: number) => {
       const recomendado = Math.ceil(pessoas / 3);
       return `Cálculo automático: ${pessoas} pessoas = ${recomendado} cesta${recomendado > 1 ? 's' : ''} recomendada${recomendado > 1 ? 's' : ''}. Limite sem justificativa: ${recomendado + 1}.`;
-    }
+    },
   },
-  
+
   FUNERAL: {
-    SOLICITACAO_ID_REQUIRED: 
+    SOLICITACAO_ID_REQUIRED:
       'Campo solicitacao_id é obrigatório. Validação de campo obrigatório falhou.',
-    
-    NOME_FALECIDO_REQUIRED: 
+
+    NOME_FALECIDO_REQUIRED:
       'Campo nome_falecido é obrigatório. Validação de campo obrigatório falhou.',
-    
-    DATA_OBITO_REQUIRED: 
+
+    DATA_OBITO_REQUIRED:
       'Campo data_obito é obrigatório. Validação de campo obrigatório falhou.',
-    
-    PRAZO_EXCEDIDO: 
+
+    PRAZO_EXCEDIDO:
       'Prazo de 30 dias para solicitação excedido. Regra de negócio temporal não atendida.',
-    
-    DATA_OBITO_FUTURA: 
+
+    DATA_OBITO_FUTURA:
       'Campo data_obito não pode ser futura. Validação lógica temporal falhou.',
-    
-    DATA_AUTORIZACAO_INVALIDA: 
+
+    DATA_AUTORIZACAO_INVALIDA:
       'Campo data_autorizacao deve ser igual ou posterior à data_obito. Validação de sequência temporal falhou.',
-    
-    DATA_OBITO_LIMITE_EXCEDIDO: 
+
+    DATA_OBITO_LIMITE_EXCEDIDO:
       'Data do óbito excede o limite permitido para solicitação. Validação de prazo falhou.',
   },
-  
+
   NATALIDADE: {
     // Campos obrigatórios
-    SOLICITACAO_ID_REQUIRED: 'Campo solicitacao_id é obrigatório. Validação de campo obrigatório falhou.',
-    DATA_PROVAVEL_PARTO_REQUIRED: 'Campo data_provavel_parto é obrigatório. Validação de campo obrigatório falhou.',
-    QUANTIDADE_FILHOS_REQUIRED: 'Campo quantidade_filhos é obrigatório. Validação de campo obrigatório falhou.',
-    CHAVE_PIX_REQUIRED: 'Campo chave_pix é obrigatório. Validação de campo obrigatório falhou.',
-    
+    SOLICITACAO_ID_REQUIRED:
+      'Campo solicitacao_id é obrigatório. Validação de campo obrigatório falhou.',
+    DATA_PROVAVEL_PARTO_REQUIRED:
+      'Campo data_provavel_parto é obrigatório. Validação de campo obrigatório falhou.',
+    QUANTIDADE_FILHOS_REQUIRED:
+      'Campo quantidade_filhos é obrigatório. Validação de campo obrigatório falhou.',
+    CHAVE_PIX_REQUIRED:
+      'Campo chave_pix é obrigatório. Validação de campo obrigatório falhou.',
+
     // Validações de data
-    DATA_PROVAVEL_PARTO_INVALID: 'Campo data_provavel_parto deve ser uma data válida. Validação de formato falhou.',
-    DATA_PROVAVEL_PARTO_PERIODO: 'Campo data_provavel_parto deve estar entre 30 dias atrás e 280 dias no futuro. Validação de período falhou.',
-    DATA_PROVAVEL_PARTO_PASSADO: 'Campo data_provavel_parto não pode ser anterior a 30 dias atrás. Validação temporal falhou.',
-    DATA_PARTO_MUITO_ANTIGA: 'Campo data_provavel_parto não pode ser anterior a 30 dias atrás. Validação temporal falhou.',
-    DATA_PROVAVEL_PARTO_LIMITE: 'Campo data_provavel_parto não pode ser superior a 280 dias no futuro. Validação de limite temporal falhou.',
-    DATA_PARTO_MUITO_FUTURA: 'Campo data_provavel_parto não pode ser superior a 280 dias no futuro. Validação de limite temporal falhou.',
-    MAX_DIAS_GESTACAO: 'Campo data_provavel_parto não pode ser superior a 280 dias no futuro. Validação de limite temporal falhou.',
-    
+    DATA_PROVAVEL_PARTO_INVALID:
+      'Campo data_provavel_parto deve ser uma data válida. Validação de formato falhou.',
+    DATA_PROVAVEL_PARTO_PERIODO:
+      'Campo data_provavel_parto deve estar entre 30 dias atrás e 280 dias no futuro. Validação de período falhou.',
+    DATA_PROVAVEL_PARTO_PASSADO:
+      'Campo data_provavel_parto não pode ser anterior a 30 dias atrás. Validação temporal falhou.',
+    DATA_PARTO_MUITO_ANTIGA:
+      'Campo data_provavel_parto não pode ser anterior a 30 dias atrás. Validação temporal falhou.',
+    DATA_PROVAVEL_PARTO_LIMITE:
+      'Campo data_provavel_parto não pode ser superior a 280 dias no futuro. Validação de limite temporal falhou.',
+    DATA_PARTO_MUITO_FUTURA:
+      'Campo data_provavel_parto não pode ser superior a 280 dias no futuro. Validação de limite temporal falhou.',
+    MAX_DIAS_GESTACAO:
+      'Campo data_provavel_parto não pode ser superior a 280 dias no futuro. Validação de limite temporal falhou.',
+
     // Campos booleanos obrigatórios
-    JA_TEM_FILHOS_REQUIRED: 'Campo ja_tem_filhos é obrigatório. Validação de campo obrigatório falhou.',
-    
+    JA_TEM_FILHOS_REQUIRED:
+      'Campo ja_tem_filhos é obrigatório. Validação de campo obrigatório falhou.',
+
     // Validação condicional
-    QUANTIDADE_FILHOS_INCONSISTENTE: 'Campo quantidade_filhos deve ser maior que 0 quando ja_tem_filhos é true. Validação de consistência falhou.',
-    
+    QUANTIDADE_FILHOS_INCONSISTENTE:
+      'Campo quantidade_filhos deve ser maior que 0 quando ja_tem_filhos é true. Validação de consistência falhou.',
+
     // Validação de formato
-    CHAVE_PIX_FORMAT: 'Campo chave_pix deve ter um formato válido. Validação de formato falhou.',
-    
+    CHAVE_PIX_FORMAT:
+      'Campo chave_pix deve ter um formato válido. Validação de formato falhou.',
+
     // Campos legados mantidos para compatibilidade
-    DATA_PARTO_REQUIRED: 'Campo data_provavel_parto é obrigatório. Validação de campo obrigatório falhou.',
-    DATA_PARTO_INVALIDA: 'Campo data_provavel_parto deve ser uma data válida. Validação de formato falhou.',
-    DATA_PARTO_PERIODO_INVALIDO: 'Campo data_provavel_parto deve estar entre hoje e 40 semanas futuras. Validação de período gestacional falhou.',
-    DATA_PARTO_PASSADA: 'Campo data_provavel_parto não pode ser uma data passada. Validação temporal falhou.',
-    DATA_PARTO_LIMITE_EXCEDIDO: 'Campo data_provavel_parto excede o limite máximo de 40 semanas futuras. Validação de limite temporal falhou.',
-    GEMEOS_REQUIRED: 'Campo gememos_trigemeos é obrigatório. Validação de campo obrigatório falhou.',
-    GRAVIDEZ_RISCO_REQUIRED: 'Campo gravidez_risco é obrigatório. Validação de campo obrigatório falhou.',
-    PSF_UBS_REQUIRED: 'Campo psf_ubs_acompanhamento é obrigatório. Validação de campo obrigatório falhou.',
-    PRE_NATAL_REQUIRED: 'Campo acompanhamento_pre_natal é obrigatório. Validação de campo obrigatório falhou.',
-    QUANTIDADE_FILHOS_OBRIGATORIA: 'Campo quantidade_filhos é obrigatório quando possui_filhos = true. Validação condicional falhou.',
-    CHAVE_PIX_FORMATO: 'Campo chave_pix deve ser um CPF válido (apenas números ou formatado). Validação de formato falhou.',
-    QUANTIDADE_FILHOS_EXCEDIDA: 'Campo quantidade_filhos excede o limite máximo permitido. Validação de limite excedido falhou.',
-  }
+    DATA_PARTO_REQUIRED:
+      'Campo data_provavel_parto é obrigatório. Validação de campo obrigatório falhou.',
+    DATA_PARTO_INVALIDA:
+      'Campo data_provavel_parto deve ser uma data válida. Validação de formato falhou.',
+    DATA_PARTO_PERIODO_INVALIDO:
+      'Campo data_provavel_parto deve estar entre hoje e 40 semanas futuras. Validação de período gestacional falhou.',
+    DATA_PARTO_PASSADA:
+      'Campo data_provavel_parto não pode ser uma data passada. Validação temporal falhou.',
+    DATA_PARTO_LIMITE_EXCEDIDO:
+      'Campo data_provavel_parto excede o limite máximo de 40 semanas futuras. Validação de limite temporal falhou.',
+    GEMEOS_REQUIRED:
+      'Campo gememos_trigemeos é obrigatório. Validação de campo obrigatório falhou.',
+    GRAVIDEZ_RISCO_REQUIRED:
+      'Campo gravidez_risco é obrigatório. Validação de campo obrigatório falhou.',
+    PSF_UBS_REQUIRED:
+      'Campo psf_ubs_acompanhamento é obrigatório. Validação de campo obrigatório falhou.',
+    PRE_NATAL_REQUIRED:
+      'Campo acompanhamento_pre_natal é obrigatório. Validação de campo obrigatório falhou.',
+    QUANTIDADE_FILHOS_OBRIGATORIA:
+      'Campo quantidade_filhos é obrigatório quando possui_filhos = true. Validação condicional falhou.',
+    CHAVE_PIX_FORMATO:
+      'Campo chave_pix deve ser um CPF válido (apenas números ou formatado). Validação de formato falhou.',
+    QUANTIDADE_FILHOS_EXCEDIDA:
+      'Campo quantidade_filhos excede o limite máximo permitido. Validação de limite excedido falhou.',
+  },
 };

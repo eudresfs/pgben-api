@@ -96,7 +96,7 @@ export enum TipoDocumentoEnum {
   TERMO_RESPONSABILIDADE = 'termo_responsabilidade',
   FOTO_3X4 = 'foto_3x4',
   OUTRO = 'outro',
-  
+
   // Documentos do módulo de upload fácil
   UPLOAD_FACIL = 'upload_facil',
 }

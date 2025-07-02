@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import {fileTypeFromBuffer} from 'file-type';
+import { fileTypeFromBuffer } from 'file-type';
 import {
   MIME_TYPE_CONFIGS,
   BLOCKED_MIME_TYPES,

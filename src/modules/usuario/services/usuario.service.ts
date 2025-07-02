@@ -105,7 +105,8 @@ export class UsuarioService {
           email: usuario.email,
           senha: senha,
           matricula: usuario.matricula,
-          sistema_url: process.env.FRONTEND_URL || 'https://pgben-front.kemosoft.com.br',
+          sistema_url:
+            process.env.FRONTEND_URL || 'https://pgben-front.kemosoft.com.br',
           data_criacao: new Date().toLocaleDateString('pt-BR'),
         },
       });
@@ -129,26 +130,34 @@ export class UsuarioService {
     search?: string;
     [key: string]: any; // Permite qualquer campo da entidade como filtro
   }) {
-    const {
-      page = 1,
-      limit = 10,
-      search,
-      ...filters
-    } = options || {};
+    const { page = 1, limit = 10, search, ...filters } = options || {};
 
     // Construir filtros dinâmicos
     const where: any = {};
 
     // Campos permitidos para filtro (baseados na entidade Usuario)
     const allowedFields = [
-      'nome', 'email', 'cpf', 'telefone', 'matricula',
-      'role_id', 'unidade_id', 'setor_id', 'status',
-      'primeiro_acesso', 'tentativas_login'
+      'nome',
+      'email',
+      'cpf',
+      'telefone',
+      'matricula',
+      'role_id',
+      'unidade_id',
+      'setor_id',
+      'status',
+      'primeiro_acesso',
+      'tentativas_login',
     ];
 
     // Aplicar filtros dinâmicos para campos permitidos
-    Object.keys(filters).forEach(key => {
-      if (allowedFields.includes(key) && filters[key] !== undefined && filters[key] !== null && filters[key] !== '') {
+    Object.keys(filters).forEach((key) => {
+      if (
+        allowedFields.includes(key) &&
+        filters[key] !== undefined &&
+        filters[key] !== null &&
+        filters[key] !== ''
+      ) {
         const value = filters[key];
 
         // Para campos de texto, usar busca parcial (ILIKE)
@@ -283,10 +292,14 @@ export class UsuarioService {
         throw new BadRequestException('Role é obrigatório');
       }
 
-      const role = await roleRepo.findOne({ where: { id: createUsuarioDto.role_id } });
+      const role = await roleRepo.findOne({
+        where: { id: createUsuarioDto.role_id },
+      });
       if (!role) {
         this.logger.warn(`Role não encontrada: ${createUsuarioDto.role_id}`);
-        throw new BadRequestException(`Role com ID ${createUsuarioDto.role_id} não encontrada`);
+        throw new BadRequestException(
+          `Role com ID ${createUsuarioDto.role_id} não encontrada`,
+        );
       }
 
       // Duplicidades
@@ -294,7 +307,7 @@ export class UsuarioService {
       const [emailExists, cpfExists, matriculaExists] = await Promise.all([
         usuarioRepo.findByEmail(emailLower),
         usuarioRepo.findByCpf(createUsuarioDto.cpf),
-        usuarioRepo.findByMatricula(createUsuarioDto.matricula)
+        usuarioRepo.findByMatricula(createUsuarioDto.matricula),
       ]);
 
       if (emailExists) throwDuplicateEmail(createUsuarioDto.email);
@@ -303,10 +316,16 @@ export class UsuarioService {
 
       // Verificar unidade
       if (createUsuarioDto.unidade_id) {
-        const unidade = await unidadeRepo.findOne({ where: { id: createUsuarioDto.unidade_id } });
+        const unidade = await unidadeRepo.findOne({
+          where: { id: createUsuarioDto.unidade_id },
+        });
         if (!unidade) {
-          this.logger.warn(`Unidade não encontrada: ${createUsuarioDto.unidade_id}`);
-          throw new BadRequestException(`Unidade com ID ${createUsuarioDto.unidade_id} não encontrada`);
+          this.logger.warn(
+            `Unidade não encontrada: ${createUsuarioDto.unidade_id}`,
+          );
+          throw new BadRequestException(
+            `Unidade com ID ${createUsuarioDto.unidade_id} não encontrada`,
+          );
         }
       }
 
@@ -314,14 +333,23 @@ export class UsuarioService {
       if (createUsuarioDto.setor_id) {
         if (!createUsuarioDto.unidade_id) {
           this.logger.warn('Setor informado sem unidade correspondente');
-          throw new BadRequestException('Quando setor é informado, a unidade também deve ser informada');
+          throw new BadRequestException(
+            'Quando setor é informado, a unidade também deve ser informada',
+          );
         }
         const setor = await setorRepo.findOne({
-          where: { id: createUsuarioDto.setor_id, unidade_id: createUsuarioDto.unidade_id },
+          where: {
+            id: createUsuarioDto.setor_id,
+            unidade_id: createUsuarioDto.unidade_id,
+          },
         });
         if (!setor) {
-          this.logger.warn(`Setor não encontrado para a unidade: ${createUsuarioDto.setor_id}`);
-          throw new BadRequestException(`Setor com ID ${createUsuarioDto.setor_id} não encontrado para a unidade ${createUsuarioDto.unidade_id}`);
+          this.logger.warn(
+            `Setor não encontrado para a unidade: ${createUsuarioDto.setor_id}`,
+          );
+          throw new BadRequestException(
+            `Setor com ID ${createUsuarioDto.setor_id} não encontrado para a unidade ${createUsuarioDto.unidade_id}`,
+          );
         }
       }
 
@@ -331,7 +359,9 @@ export class UsuarioService {
       if (!senhaParaUso) {
         senhaParaUso = this.generateRandomPassword();
         senhaGerada = true;
-        this.logger.info(`Senha gerada automaticamente para usuário: ${createUsuarioDto.email}`);
+        this.logger.info(
+          `Senha gerada automaticamente para usuário: ${createUsuarioDto.email}`,
+        );
       }
 
       const senhaHash = await bcrypt.hash(senhaParaUso, this.SALT_ROUNDS);
@@ -352,11 +382,15 @@ export class UsuarioService {
       });
 
       // ------------ Transação mínima (apenas INSERT) ------------
-      const usuarioSalvo = await this.dataSource.transaction(async (manager) => {
-        const repo = manager.getRepository(Usuario);
-        const novoUsuario = repo.create(normalizedData as DeepPartial<Usuario>);
-        return repo.save<Usuario>(novoUsuario);
-      });
+      const usuarioSalvo = await this.dataSource.transaction(
+        async (manager) => {
+          const repo = manager.getRepository(Usuario);
+          const novoUsuario = repo.create(
+            normalizedData as DeepPartial<Usuario>,
+          );
+          return repo.save<Usuario>(novoUsuario);
+        },
+      );
 
       this.logger.info(`Usuário criado com sucesso: ${usuarioSalvo.id}`);
 
@@ -396,8 +430,6 @@ export class UsuarioService {
     }
   }
 
-
-
   /**
    * Atualiza um usuário existente
    * @param id ID do usuário
@@ -411,23 +443,23 @@ export class UsuarioService {
     try {
       // ------------ Validações e leituras fora da transação ------------
       const usuarioRepo = this.usuarioRepository;
-      
+
       // Verificar se usuário existe
       const usuario = await usuarioRepo.findById(id);
       if (!usuario) {
         this.logger.warn(`Usuário não encontrado: ${id}`);
         throwUserNotFound(id);
       }
-      
+
       // Preparar validações em paralelo
       interface ValidacaoItem {
         tipo: 'email' | 'cpf' | 'matricula';
         valor: string;
         promessa: Promise<Usuario | null>;
       }
-      
+
       const validacoes: ValidacaoItem[] = [];
-      
+
       // Verificar se email já existe (se fornecido)
       if (
         updateUsuarioDto.email &&
@@ -437,7 +469,7 @@ export class UsuarioService {
         validacoes.push({
           tipo: 'email',
           valor: emailLower,
-          promessa: usuarioRepo.findByEmail(emailLower)
+          promessa: usuarioRepo.findByEmail(emailLower),
         });
         // Normalizar email para minúsculas imediatamente
         updateUsuarioDto.email = emailLower;
@@ -448,7 +480,7 @@ export class UsuarioService {
         validacoes.push({
           tipo: 'cpf',
           valor: updateUsuarioDto.cpf,
-          promessa: usuarioRepo.findByCpf(updateUsuarioDto.cpf)
+          promessa: usuarioRepo.findByCpf(updateUsuarioDto.cpf),
         });
       }
 
@@ -460,19 +492,19 @@ export class UsuarioService {
         validacoes.push({
           tipo: 'matricula',
           valor: updateUsuarioDto.matricula,
-          promessa: usuarioRepo.findByMatricula(updateUsuarioDto.matricula)
+          promessa: usuarioRepo.findByMatricula(updateUsuarioDto.matricula),
         });
       }
-      
+
       // Executar todas as validações em paralelo
       if (validacoes.length > 0) {
-        const resultados = await Promise.all(validacoes.map(v => v.promessa));
-        
+        const resultados = await Promise.all(validacoes.map((v) => v.promessa));
+
         // Verificar resultados das validações
         for (let i = 0; i < validacoes.length; i++) {
           const { tipo, valor } = validacoes[i];
           const resultado = resultados[i];
-          
+
           if (resultado) {
             switch (tipo) {
               case 'email':
@@ -508,10 +540,13 @@ export class UsuarioService {
       }
 
       const executionTime = Date.now() - startTime;
-      if (executionTime > 1000) { // Alerta para operações que levam mais de 1 segundo
-        this.logger.warn(`Atualização do usuário ${id} levou ${executionTime}ms`);
+      if (executionTime > 1000) {
+        // Alerta para operações que levam mais de 1 segundo
+        this.logger.warn(
+          `Atualização do usuário ${id} levou ${executionTime}ms`,
+        );
       }
-      
+
       this.logger.info(`Usuário ${id} atualizado com sucesso`);
 
       // Remover campos sensíveis
@@ -520,7 +555,7 @@ export class UsuarioService {
       return {
         data: usuarioSemSenha,
         meta: null,
-        message: 'Usuário atualizado com sucesso.'
+        message: 'Usuário atualizado com sucesso.',
       };
     } catch (error) {
       this.logger.error(
@@ -628,8 +663,11 @@ export class UsuarioService {
       });
 
       const executionTime = Date.now() - startTime;
-      if (executionTime > 1000) { // Alerta para operações que levam mais de 1 segundo
-        this.logger.warn(`Atualização de senha do usuário ${id} levou ${executionTime}ms`);
+      if (executionTime > 1000) {
+        // Alerta para operações que levam mais de 1 segundo
+        this.logger.warn(
+          `Atualização de senha do usuário ${id} levou ${executionTime}ms`,
+        );
       }
 
       this.logger.info(`Senha do usuário ${id} atualizada com sucesso`);
@@ -637,7 +675,7 @@ export class UsuarioService {
       return {
         data: null,
         meta: null,
-        message: 'Senha atualizada com sucesso'
+        message: 'Senha atualizada com sucesso',
       };
     } catch (error) {
       this.logger.error(
@@ -678,7 +716,7 @@ export class UsuarioService {
         this.logger.info(
           `Tentativa de login para: ${normalizedEmail}`,
           'SECURITY_LOGIN_ATTEMPT',
-          { email: normalizedEmail }
+          { email: normalizedEmail },
         );
       }
 
@@ -728,7 +766,7 @@ export class UsuarioService {
       this.logger.warn(
         `Tentativa de login falhada incrementada para usuário: ${userId}`,
         'SECURITY_LOGIN_FAILED',
-        { userId }
+        { userId },
       );
     } catch (error) {
       this.logger.error(
@@ -756,7 +794,7 @@ export class UsuarioService {
       this.logger.info(
         `Login bem-sucedido - tentativas resetadas para usuário: ${userId}`,
         'SECURITY_LOGIN_SUCCESS',
-        { userId }
+        { userId },
       );
     } catch (error) {
       this.logger.error(
@@ -791,7 +829,7 @@ export class UsuarioService {
           userId: usuario.id,
           email: usuario.email,
           attempts: usuario.tentativas_login,
-        }
+        },
       );
       throwAccountBlocked(usuario.id); // Note: Using userId instead of email
     }
@@ -809,9 +847,8 @@ export class UsuarioService {
           userId: usuario.id,
           email: usuario.email,
           attempts: (usuario.tentativas_login || 0) + 1,
-        }
+        },
       );
-
 
       throwInvalidCredentials(email);
     }
@@ -879,7 +916,6 @@ export class UsuarioService {
     }
   }
 
-
   /**
    * Altera a senha no primeiro acesso do usuário
    * @param userId ID do usuário
@@ -919,12 +955,15 @@ export class UsuarioService {
       }
 
       // Gerar hash da nova senha
-      const novoHash = await bcrypt.hash(alterarSenhaDto.nova_senha, this.SALT_ROUNDS);
+      const novoHash = await bcrypt.hash(
+        alterarSenhaDto.nova_senha,
+        this.SALT_ROUNDS,
+      );
 
       // ------------ Transação mínima (apenas UPDATE) ------------
       await this.dataSource.transaction(async (manager) => {
         const repo = manager.getRepository(Usuario);
-        
+
         // Atualizar senha e marcar como não sendo mais primeiro acesso
         await repo.update(userId, {
           senhaHash: novoHash,
@@ -934,8 +973,11 @@ export class UsuarioService {
       });
 
       const executionTime = Date.now() - startTime;
-      if (executionTime > 1000) { // Alerta para operações que levam mais de 1 segundo
-        this.logger.warn(`Alteração de senha no primeiro acesso para usuário ${userId} levou ${executionTime}ms`);
+      if (executionTime > 1000) {
+        // Alerta para operações que levam mais de 1 segundo
+        this.logger.warn(
+          `Alteração de senha no primeiro acesso para usuário ${userId} levou ${executionTime}ms`,
+        );
       }
 
       this.logger.info(
@@ -980,21 +1022,27 @@ export class UsuarioService {
 
       if (!usuario) {
         // Por segurança, não revelar se o email existe ou não
-        this.logger.warn(`Tentativa de recuperação de senha para email inexistente: ${normalizedEmail}`);
+        this.logger.warn(
+          `Tentativa de recuperação de senha para email inexistente: ${normalizedEmail}`,
+        );
         return {
           data: null,
           meta: null,
-          message: 'Se o email estiver cadastrado, você receberá instruções para recuperação de senha.',
+          message:
+            'Se o email estiver cadastrado, você receberá instruções para recuperação de senha.',
         };
       }
 
       // Verificar se usuário está ativo
       if (usuario.status !== Status.ATIVO) {
-        this.logger.warn(`Tentativa de recuperação de senha para usuário inativo: ${usuario.id}`);
+        this.logger.warn(
+          `Tentativa de recuperação de senha para usuário inativo: ${usuario.id}`,
+        );
         return {
           data: null,
           meta: null,
-          message: 'Se o email estiver cadastrado, você receberá instruções para recuperação de senha.',
+          message:
+            'Se o email estiver cadastrado, você receberá instruções para recuperação de senha.',
         };
       }
 
@@ -1026,16 +1074,22 @@ export class UsuarioService {
       });
 
       const executionTime = Date.now() - startTime;
-      if (executionTime > 1000) { // Alerta para operações que levam mais de 1 segundo
-        this.logger.warn(`Recuperação de senha para usuário ${usuario.id} levou ${executionTime}ms`);
+      if (executionTime > 1000) {
+        // Alerta para operações que levam mais de 1 segundo
+        this.logger.warn(
+          `Recuperação de senha para usuário ${usuario.id} levou ${executionTime}ms`,
+        );
       }
 
-      this.logger.info(`Recuperação de senha processada com sucesso para usuário: ${usuario.id}`);
+      this.logger.info(
+        `Recuperação de senha processada com sucesso para usuário: ${usuario.id}`,
+      );
 
       return {
         data: null,
         meta: null,
-        message: 'Se o email estiver cadastrado, você receberá instruções para recuperação de senha.',
+        message:
+          'Se o email estiver cadastrado, você receberá instruções para recuperação de senha.',
       };
     } catch (error) {
       this.logger.error(
@@ -1047,7 +1101,8 @@ export class UsuarioService {
       return {
         data: null,
         meta: null,
-        message: 'Se o email estiver cadastrado, você receberá instruções para recuperação de senha.',
+        message:
+          'Se o email estiver cadastrado, você receberá instruções para recuperação de senha.',
       };
     }
   }

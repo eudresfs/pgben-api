@@ -61,10 +61,9 @@ export class ValidacaoExclusividadeService {
       this.logger.warn(
         `Cidadão ${cidadaoId} já faz parte da composição familiar de outra solicitação ativa`,
       );
-      throwCidadaoAlreadyInComposicaoFamiliar(
-        cidadaoId,
-        { data: { context: 'validacao_exclusividade_beneficiario' } }
-      );
+      throwCidadaoAlreadyInComposicaoFamiliar(cidadaoId, {
+        data: { context: 'validacao_exclusividade_beneficiario' },
+      });
     }
 
     return true;
@@ -101,10 +100,9 @@ export class ValidacaoExclusividadeService {
       this.logger.warn(
         `Cidadão ${cidadaoId} já é beneficiário principal em outra solicitação ativa`,
       );
-      throwCidadaoAlreadyBeneficiario(
-        cidadaoId,
-        { data: { context: 'validacao_exclusividade_composicao_familiar' } }
-      );
+      throwCidadaoAlreadyBeneficiario(cidadaoId, {
+        data: { context: 'validacao_exclusividade_composicao_familiar' },
+      });
     }
 
     return true;

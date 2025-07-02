@@ -1,6 +1,8 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddSuspensaoBloqueioConcessao1750294000000 implements MigrationInterface {
+export class AddSuspensaoBloqueioConcessao1750294000000
+  implements MigrationInterface
+{
   name = 'AddSuspensaoBloqueioConcessao1750294000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

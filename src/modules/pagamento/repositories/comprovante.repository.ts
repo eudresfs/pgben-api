@@ -16,7 +16,9 @@ export class ComprovanteRepository {
   /**
    * Cria um novo comprovante
    */
-  async create(dadosComprovante: Partial<ComprovantePagamento>): Promise<ComprovantePagamento> {
+  async create(
+    dadosComprovante: Partial<ComprovantePagamento>,
+  ): Promise<ComprovantePagamento> {
     const comprovante = this.repository.create(dadosComprovante);
     return await this.repository.save(comprovante);
   }
@@ -31,10 +33,13 @@ export class ComprovanteRepository {
   /**
    * Busca comprovante por ID com relacionamentos específicos
    */
-  async findByIdWithRelations(id: string, relations: string[] = []): Promise<ComprovantePagamento | null> {
+  async findByIdWithRelations(
+    id: string,
+    relations: string[] = [],
+  ): Promise<ComprovantePagamento | null> {
     return await this.repository.findOne({
       where: { id },
-      relations
+      relations,
     });
   }
 
@@ -44,7 +49,7 @@ export class ComprovanteRepository {
   async findByPagamento(pagamentoId: string): Promise<ComprovantePagamento[]> {
     return await this.repository.find({
       where: { pagamento_id: pagamentoId },
-      order: { data_upload: 'DESC' }
+      order: { data_upload: 'DESC' },
     });
   }
 
@@ -58,7 +63,10 @@ export class ComprovanteRepository {
   /**
    * Atualiza comprovante
    */
-  async update(id: string, dados: Partial<ComprovantePagamento>): Promise<ComprovantePagamento> {
+  async update(
+    id: string,
+    dados: Partial<ComprovantePagamento>,
+  ): Promise<ComprovantePagamento> {
     await this.repository.update(id, dados);
     const comprovante = await this.findById(id);
     if (!comprovante) {
@@ -72,7 +80,7 @@ export class ComprovanteRepository {
    */
   async hasComprovantes(pagamentoId: string): Promise<boolean> {
     const count = await this.repository.count({
-      where: { pagamento_id: pagamentoId }
+      where: { pagamento_id: pagamentoId },
     });
     return count > 0;
   }

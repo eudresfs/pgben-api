@@ -461,11 +461,11 @@ export class CidadaoResponseDto {
 
   @ApiPropertyOptional({
     description: 'Dados da unidade onde o cidadão está cadastrado',
-    type: UnidadeResponseDto
+    type: UnidadeResponseDto,
   })
   @Expose()
   @Type(() => UnidadeResponseDto)
-  unidade?: UnidadeResponseDto; 
+  unidade?: UnidadeResponseDto;
 }
 
 export class CidadaoPaginatedResponseDto {

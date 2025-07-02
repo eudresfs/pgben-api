@@ -54,12 +54,16 @@ export class ComposicaoFamiliarService {
     });
 
     if (membroExistente) {
-      throw new ConflictException('Já existe um membro com este CPF na composição familiar');
+      throw new ConflictException(
+        'Já existe um membro com este CPF na composição familiar',
+      );
     }
 
     // Verificar se CPF não é igual ao do cidadão responsável
     if (cidadao.cpf === cpfLimpo) {
-      throw new ConflictException('O CPF do membro não pode ser igual ao CPF do cidadão responsável');
+      throw new ConflictException(
+        'O CPF do membro não pode ser igual ao CPF do cidadão responsável',
+      );
     }
 
     // Criar membro
@@ -69,23 +73,32 @@ export class ComposicaoFamiliarService {
     });
 
     try {
-      const membroSalvo = await this.composicaoFamiliarRepository.save(novoMembro);
+      const membroSalvo =
+        await this.composicaoFamiliarRepository.save(novoMembro);
 
       return plainToInstance(ComposicaoFamiliarResponseDto, membroSalvo, {
         excludeExtraneousValues: true,
       });
     } catch (error) {
       // Capturar erro específico do constraint de exclusividade de papéis
-      if (error.message?.includes('Cidadão não pode ser adicionado à composição familiar, pois já é beneficiário')) {
+      if (
+        error.message?.includes(
+          'Cidadão não pode ser adicionado à composição familiar, pois já é beneficiário',
+        )
+      ) {
         throw new ConflictException({
           code: 'VAL_2004',
-          message: 'Conflito de papéis: O cidadão já possui papel de beneficiário ativo no sistema',
+          message:
+            'Conflito de papéis: O cidadão já possui papel de beneficiário ativo no sistema',
           details: {
             cpf: cpfLimpo,
-            reason: 'O cidadão já possui papel de beneficiário ativo no sistema',
-            action: 'Remova o papel de beneficiário antes de adicionar à composição familiar',
+            reason:
+              'O cidadão já possui papel de beneficiário ativo no sistema',
+            action:
+              'Remova o papel de beneficiário antes de adicionar à composição familiar',
           },
-          localizedMessage: 'Cidadão não pode ser beneficiário principal e membro da composição familiar simultaneamente',
+          localizedMessage:
+            'Cidadão não pode ser beneficiário principal e membro da composição familiar simultaneamente',
         });
       }
 
@@ -111,26 +124,27 @@ export class ComposicaoFamiliarService {
     }
 
     // Buscar membros
-    const [membros, total] = await this.composicaoFamiliarRepository.findAndCount({
-      where: {
-        cidadao_id: cidadaoId,
-        removed_at: IsNull(),
-      },
-      order: {
-        created_at: 'DESC',
-      },
-      skip: offset,
-      take: Math.min(limit, 100),
-    });
+    const [membros, total] =
+      await this.composicaoFamiliarRepository.findAndCount({
+        where: {
+          cidadao_id: cidadaoId,
+          removed_at: IsNull(),
+        },
+        order: {
+          created_at: 'DESC',
+        },
+        skip: offset,
+        take: Math.min(limit, 100),
+      });
 
     const data = membros.map((membro) =>
       plainToInstance(ComposicaoFamiliarResponseDto, membro, {
         excludeExtraneousValues: true,
-      })
+      }),
     );
 
     const totalPages = Math.ceil(total / limit);
-    
+
     return {
       data,
       meta: {
@@ -154,7 +168,9 @@ export class ComposicaoFamiliarService {
     });
 
     if (!membro) {
-      throw new NotFoundException('Membro da composição familiar não encontrado');
+      throw new NotFoundException(
+        'Membro da composição familiar não encontrado',
+      );
     }
 
     return plainToInstance(ComposicaoFamiliarResponseDto, membro, {
@@ -176,7 +192,9 @@ export class ComposicaoFamiliarService {
     });
 
     if (!membro) {
-      throw new NotFoundException('Membro da composição familiar não encontrado');
+      throw new NotFoundException(
+        'Membro da composição familiar não encontrado',
+      );
     }
 
     // Validar CPF se foi alterado
@@ -197,12 +215,16 @@ export class ComposicaoFamiliarService {
       });
 
       if (membroExistente) {
-        throw new ConflictException('Já existe um membro com este CPF na composição familiar');
+        throw new ConflictException(
+          'Já existe um membro com este CPF na composição familiar',
+        );
       }
 
       // Verificar se CPF não é igual ao do cidadão responsável
       if (membro.cidadao.cpf === cpfLimpo) {
-        throw new ConflictException('O CPF do membro não pode ser igual ao CPF do cidadão responsável');
+        throw new ConflictException(
+          'O CPF do membro não pode ser igual ao CPF do cidadão responsável',
+        );
       }
 
       updateComposicaoFamiliarDto.cpf = cpfLimpo;
@@ -220,7 +242,9 @@ export class ComposicaoFamiliarService {
       });
 
       if (nomeExistente) {
-        throw new ConflictException('Já existe um membro com este nome na composição familiar');
+        throw new ConflictException(
+          'Já existe um membro com este nome na composição familiar',
+        );
       }
     }
 
@@ -228,7 +252,8 @@ export class ComposicaoFamiliarService {
     Object.assign(membro, updateComposicaoFamiliarDto);
     membro.updated_at = new Date();
 
-    const membroAtualizado = await this.composicaoFamiliarRepository.save(membro);
+    const membroAtualizado =
+      await this.composicaoFamiliarRepository.save(membro);
 
     return plainToInstance(ComposicaoFamiliarResponseDto, membroAtualizado, {
       excludeExtraneousValues: true,
@@ -244,7 +269,9 @@ export class ComposicaoFamiliarService {
     });
 
     if (!membro) {
-      throw new NotFoundException('Membro da composição familiar não encontrado');
+      throw new NotFoundException(
+        'Membro da composição familiar não encontrado',
+      );
     }
 
     // Soft delete
@@ -273,7 +300,7 @@ export class ComposicaoFamiliarService {
     return membros.map((membro) =>
       plainToInstance(ComposicaoFamiliarResponseDto, membro, {
         excludeExtraneousValues: true,
-      })
+      }),
     );
   }
 }

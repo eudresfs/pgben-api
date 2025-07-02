@@ -9,11 +9,7 @@
  */
 
 import { HttpException } from '@nestjs/common';
-import {
-  ErrorDefinition,
-  ErrorCategory,
-  ErrorSeverity,
-} from './types';
+import { ErrorDefinition, ErrorCategory, ErrorSeverity } from './types';
 
 // Removida a importação estática do ERROR_CATALOG para evitar dependência circular
 
@@ -67,7 +63,7 @@ export class AppError extends HttpException {
     // Importação dinâmica do catálogo para evitar dependência circular
     // Isso garante que o catálogo já esteja completamente construído quando for usado
     const { ERROR_CATALOG } = require('./catalog');
-    
+
     const definition = ERROR_CATALOG[errorCode];
 
     if (!definition) {

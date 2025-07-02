@@ -49,7 +49,7 @@ export class ComposicaoFamiliarController {
   @Post()
   @RequiresPermission({
     permissionName: 'cidadao.editar',
-    scopeType: ScopeType.UNIT
+    scopeType: ScopeType.UNIT,
   })
   @ApiOperation({ summary: 'Criar membro da composição familiar' })
   @ApiOkResponse({ type: ComposicaoFamiliarResponseDto })
@@ -69,7 +69,7 @@ export class ComposicaoFamiliarController {
   @Get('cidadao/:cidadaoId')
   @RequiresPermission({
     permissionName: 'cidadao.visualizar',
-    scopeType: ScopeType.UNIT
+    scopeType: ScopeType.UNIT,
   })
   @ApiOperation({ summary: 'Listar membros da composição familiar' })
   @ApiParam({ name: 'cidadaoId', description: 'ID do cidadão' })
@@ -82,16 +82,16 @@ export class ComposicaoFamiliarController {
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
   ): Promise<ComposicaoFamiliarPaginatedResponseDto> {
-    return this.composicaoFamiliarService.findByCidadao(
-      cidadaoId,
-      { page, limit },
-    );
+    return this.composicaoFamiliarService.findByCidadao(cidadaoId, {
+      page,
+      limit,
+    });
   }
 
   @Get(':id')
   @RequiresPermission({
     permissionName: 'cidadao.visualizar',
-    scopeType: ScopeType.UNIT
+    scopeType: ScopeType.UNIT,
   })
   @ApiOperation({ summary: 'Buscar membro da composição familiar' })
   @ApiParam({ name: 'id', description: 'ID do membro' })
@@ -106,7 +106,7 @@ export class ComposicaoFamiliarController {
   @Put(':id')
   @RequiresPermission({
     permissionName: 'cidadao.editar',
-    scopeType: ScopeType.UNIT
+    scopeType: ScopeType.UNIT,
   })
   @ApiOperation({ summary: 'Atualizar membro da composição familiar' })
   @ApiParam({ name: 'id', description: 'ID do membro' })
@@ -129,7 +129,7 @@ export class ComposicaoFamiliarController {
   @Delete(':id')
   @RequiresPermission({
     permissionName: 'cidadao.editar',
-    scopeType: ScopeType.UNIT
+    scopeType: ScopeType.UNIT,
   })
   @ApiOperation({ summary: 'Remover membro da composição familiar' })
   @ApiParam({ name: 'id', description: 'ID do membro' })
@@ -146,7 +146,7 @@ export class ComposicaoFamiliarController {
   @Get('buscar/cpf/:cpf')
   @RequiresPermission({
     permissionName: 'cidadao.visualizar',
-    scopeType: ScopeType.UNIT
+    scopeType: ScopeType.UNIT,
   })
   @ApiOperation({ summary: 'Buscar membro por CPF' })
   @ApiParam({ name: 'cpf', description: 'CPF do membro' })

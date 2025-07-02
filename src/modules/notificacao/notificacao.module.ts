@@ -37,7 +37,6 @@ import { NotificacaoPreferenciasService } from './services/notificacao-preferenc
 import { NotificacaoProativaService } from './services/notificacao-proativa.service';
 import { SseDatabaseCircuitBreakerService } from './services/sse-database-circuit-breaker.service';
 
-
 // Listener
 import { NotificationSseListener } from './listeners/notification-sse.listener';
 import { NotificationEmailListener } from './listeners/notification-email.listener';
@@ -55,7 +54,12 @@ import { WorkflowProativoListener } from './listeners/workflow-proativo.listener
 import { AblyModule } from './ably.module';
 
 // Entidades
-import { Notificacao, NotificacaoSistema, NotificationTemplate, Usuario } from '../../entities';
+import {
+  Notificacao,
+  NotificacaoSistema,
+  NotificationTemplate,
+  Usuario,
+} from '../../entities';
 import { Solicitacao } from '../../entities/solicitacao.entity';
 import { NotificacaoProativaScheduler } from './schedulers/notificacao-proativa.scheduler';
 
@@ -110,7 +114,7 @@ import { NotificacaoProativaScheduler } from './schedulers/notificacao-proativa.
     EventEmitterModule,
     EmailModule,
     forwardRef(() => MonitoringModule),
-    AblyModule
+    AblyModule,
   ],
   controllers: [
     NotificacaoController,
@@ -149,13 +153,12 @@ import { NotificacaoProativaScheduler } from './schedulers/notificacao-proativa.
     NotificacaoProativaService,
     NotificacaoPreferenciasService,
 
-
     // Listeners
     NotificationSseListener,
     NotificationEmailListener,
     NotificationMetricsListener,
     UsuarioEventsListener,
-    WorkflowProativoListener, 
+    WorkflowProativoListener,
 
     // Scheduler
     NotificacaoProativaScheduler,
@@ -164,9 +167,9 @@ import { NotificacaoProativaScheduler } from './schedulers/notificacao-proativa.
     NotificationMetricsInterceptor,
   ],
   exports: [
-    TypeOrmModule, 
-    NotificacaoService, 
-    NotificationManagerService, 
+    TypeOrmModule,
+    NotificacaoService,
+    NotificationManagerService,
     SseService,
     SseEventStoreService,
     SseMetricsService,

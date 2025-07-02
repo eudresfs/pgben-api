@@ -6,7 +6,11 @@ import { DataSource } from 'typeorm';
 import { CreateUnidadeDto } from '../dto/create-unidade.dto';
 import { UpdateUnidadeDto } from '../dto/update-unidade.dto';
 import { UpdateStatusUnidadeDto } from '../dto/update-status-unidade.dto';
-import { Unidade, TipoUnidade, StatusUnidade } from '../../../entities/unidade.entity';
+import {
+  Unidade,
+  TipoUnidade,
+  StatusUnidade,
+} from '../../../entities/unidade.entity';
 import {
   throwUnidadeNotFound,
   throwUnidadeAlreadyExists,
@@ -139,7 +143,7 @@ describe('UnidadeService', () => {
     it('deve retornar lista de unidades com paginação', async () => {
       const mockUnidades = [mockUnidade];
       const mockTotal = 1;
-      
+
       repository.findAll.mockResolvedValue({
         data: mockUnidades,
         total: mockTotal,
@@ -206,9 +210,7 @@ describe('UnidadeService', () => {
     it('deve lançar erro quando unidade não encontrada', async () => {
       repository.findById.mockResolvedValue(null);
 
-      await expect(
-        service.findById('invalid-id'),
-      ).rejects.toThrow();
+      await expect(service.findById('invalid-id')).rejects.toThrow();
     });
   });
 
@@ -235,15 +237,16 @@ describe('UnidadeService', () => {
         mockCreateUnidadeDto.sigla,
       );
       expect(repository.create).toHaveBeenCalled();
-      expect(repository.save).toHaveBeenCalledWith({ ...novaUnidade, id: 'new-id' });
+      expect(repository.save).toHaveBeenCalledWith({
+        ...novaUnidade,
+        id: 'new-id',
+      });
     });
 
     it('deve lançar erro quando código já existe', async () => {
       repository.findByCodigo.mockResolvedValue(mockUnidade);
 
-      await expect(
-        service.create(mockCreateUnidadeDto),
-      ).rejects.toThrow();
+      await expect(service.create(mockCreateUnidadeDto)).rejects.toThrow();
 
       expect(repository.create).not.toHaveBeenCalled();
     });
@@ -252,9 +255,7 @@ describe('UnidadeService', () => {
       repository.findByCodigo.mockResolvedValue(null);
       repository.findBySigla.mockResolvedValue(mockUnidade);
 
-      await expect(
-        service.create(mockCreateUnidadeDto),
-      ).rejects.toThrow();
+      await expect(service.create(mockCreateUnidadeDto)).rejects.toThrow();
 
       expect(repository.create).not.toHaveBeenCalled();
     });
@@ -271,10 +272,7 @@ describe('UnidadeService', () => {
       repository.findById.mockResolvedValue(mockUnidade);
       repository.update.mockResolvedValue(unidadeAtualizada);
 
-      const result = await service.update(
-        mockUnidade.id,
-        mockUpdateUnidadeDto,
-      );
+      const result = await service.update(mockUnidade.id, mockUpdateUnidadeDto);
 
       expect(result).toEqual(unidadeAtualizada);
       expect(repository.findById).toHaveBeenCalledWith(mockUnidade.id);
@@ -388,9 +386,7 @@ describe('UnidadeService', () => {
       repository.findBySigla.mockResolvedValue(null);
 
       // Assumindo que a validação é feita no DTO ou no service
-      await expect(
-        service.create(createDtoComEmailInvalido),
-      ).rejects.toThrow();
+      await expect(service.create(createDtoComEmailInvalido)).rejects.toThrow();
     });
 
     it('deve validar formato do telefone', async () => {
@@ -415,17 +411,13 @@ describe('UnidadeService', () => {
       repository.findBySigla.mockResolvedValue(null);
       repository.create.mockRejectedValue(new Error('Database error'));
 
-      await expect(
-        service.create(mockCreateUnidadeDto),
-      ).rejects.toThrow();
+      await expect(service.create(mockCreateUnidadeDto)).rejects.toThrow();
     });
 
     it('deve tratar erro de conexão com banco', async () => {
       repository.findAll.mockRejectedValue(new Error('Connection error'));
 
-      await expect(
-        service.findAll({ page: 1, limit: 10 }),
-      ).rejects.toThrow();
+      await expect(service.findAll({ page: 1, limit: 10 })).rejects.toThrow();
     });
   });
 });

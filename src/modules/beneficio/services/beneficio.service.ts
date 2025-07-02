@@ -109,7 +109,6 @@ export class BeneficioService {
     };
   }
 
-
   /**
    * Busca um tipo de benefício por ID com schema
    */

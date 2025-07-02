@@ -112,7 +112,8 @@ export const BENEFICIOS_ESPECIFICOS_ERRORS: Record<string, ErrorDefinition> = {
     category: ErrorCategory.BENEFITS,
     severity: ErrorSeverity.MEDIUM,
     localizedMessages: {
-      'pt-BR': 'Prazo de 30 dias para solicitação do benefício natalidade expirado',
+      'pt-BR':
+        'Prazo de 30 dias para solicitação do benefício natalidade expirado',
       'en-US': '30-day deadline for maternity benefit application has expired',
     },
     legalReference: 'Decreto 12.346/2021',
@@ -184,12 +185,14 @@ export const BENEFICIOS_ESPECIFICOS_ERRORS: Record<string, ErrorDefinition> = {
 
   BEN_1023: {
     code: 'BEN_1023',
-    message: 'Prazo para solicitação de benefício mortalidade expirado (7 dias)',
+    message:
+      'Prazo para solicitação de benefício mortalidade expirado (7 dias)',
     httpStatus: HttpStatus.BAD_REQUEST,
     category: ErrorCategory.BENEFITS,
     severity: ErrorSeverity.MEDIUM,
     localizedMessages: {
-      'pt-BR': 'Prazo de 7 dias para solicitação do benefício mortalidade expirado',
+      'pt-BR':
+        'Prazo de 7 dias para solicitação do benefício mortalidade expirado',
       'en-US': '7-day deadline for mortality benefit application has expired',
     },
   },
@@ -217,8 +220,10 @@ export const BENEFICIOS_ESPECIFICOS_ERRORS: Record<string, ErrorDefinition> = {
     category: ErrorCategory.VALIDATIONS,
     severity: ErrorSeverity.MEDIUM,
     localizedMessages: {
-      'pt-BR': 'Modalidade deve ser "generos_alimenticios" ou "vale_alimentacao_200"',
-      'en-US': 'Modality must be "generos_alimenticios" or "vale_alimentacao_200"',
+      'pt-BR':
+        'Modalidade deve ser "generos_alimenticios" ou "vale_alimentacao_200"',
+      'en-US':
+        'Modality must be "generos_alimenticios" or "vale_alimentacao_200"',
     },
   },
 
@@ -230,7 +235,8 @@ export const BENEFICIOS_ESPECIFICOS_ERRORS: Record<string, ErrorDefinition> = {
     severity: ErrorSeverity.MEDIUM,
     localizedMessages: {
       'pt-BR': 'Limite mensal de cestas básicas por família foi excedido',
-      'en-US': 'Monthly limit of basic food baskets per family has been exceeded',
+      'en-US':
+        'Monthly limit of basic food baskets per family has been exceeded',
     },
   },
 
@@ -402,9 +408,9 @@ export function throwModalidadeBeneficioInvalida(
   language: string = 'pt-BR',
 ): never {
   const errorCodes = {
-    'natalidade': 'BEN_1013',
-    'cesta_basica': 'BEN_1031',
-    'passagem': 'BEN_1041',
+    natalidade: 'BEN_1013',
+    cesta_basica: 'BEN_1031',
+    passagem: 'BEN_1041',
   };
 
   const errorCode = errorCodes[tipoBeneficio] || 'BEN_1013';
@@ -433,9 +439,9 @@ export function throwDocumentoBeneficioObrigatorio(
   language: string = 'pt-BR',
 ): never {
   const errorCodes = {
-    'natalidade_certidao': 'BEN_1012',
-    'mortalidade_certidao': 'BEN_1021',
-    'aluguel_contrato': 'BEN_1003',
+    natalidade_certidao: 'BEN_1012',
+    mortalidade_certidao: 'BEN_1021',
+    aluguel_contrato: 'BEN_1003',
   };
 
   const errorKey = `${tipoBeneficio}_${documentoTipo}`;

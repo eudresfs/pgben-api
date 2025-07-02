@@ -221,8 +221,8 @@ describe('CidadaoService', () => {
             telefone: '(84) 99999-9999',
             email: 'joao@example.com',
             proprietario: true,
-            is_whatsapp: false
-          }
+            is_whatsapp: false,
+          },
         ],
         enderecos: [
           {
@@ -231,9 +231,9 @@ describe('CidadaoService', () => {
             numero: '123',
             bairro: 'Centro',
             cidade: 'Natal',
-            estado: 'RN'
-          }
-        ]
+            estado: 'RN',
+          },
+        ],
       };
 
       const mockCidadao = {
@@ -305,9 +305,9 @@ describe('CidadaoService', () => {
             telefone: '(84) 88888-8888',
             email: 'joao.atualizado@example.com',
             proprietario: true,
-            is_whatsapp: false
-          }
-        ]
+            is_whatsapp: false,
+          },
+        ],
       };
 
       const mockCidadao = {
@@ -320,9 +320,9 @@ describe('CidadaoService', () => {
             telefone: '(84) 99999-9999',
             email: 'joao@example.com',
             proprietario: true,
-            is_whatsapp: false
-          }
-        ]
+            is_whatsapp: false,
+          },
+        ],
       };
 
       const mockUpdatedCidadao = {
@@ -358,9 +358,9 @@ describe('CidadaoService', () => {
       // Simular que o cidadão não existe
       mockCidadaoRepository.findById.mockResolvedValue(null);
 
-      await expect(service.update('999', updateCidadaoDto, 'user-123')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        service.update('999', updateCidadaoDto, 'user-123'),
+      ).rejects.toThrow(NotFoundException);
       expect(mockCidadaoRepository.findById).toHaveBeenCalledWith('999');
       expect(mockCidadaoRepository.update).not.toHaveBeenCalled();
     });
@@ -387,9 +387,9 @@ describe('CidadaoService', () => {
         nis: '12345678901',
       });
 
-      await expect(service.update('1', updateCidadaoDto, 'user-123')).rejects.toThrow(
-        ConflictException,
-      );
+      await expect(
+        service.update('1', updateCidadaoDto, 'user-123'),
+      ).rejects.toThrow(ConflictException);
       expect(mockCidadaoRepository.findById).toHaveBeenCalledWith('1');
       expect(mockCidadaoRepository.findByNis).toHaveBeenCalledWith(
         '12345678901',

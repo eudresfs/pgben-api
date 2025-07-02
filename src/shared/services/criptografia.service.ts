@@ -292,7 +292,9 @@ export class CriptografiaService {
     }
 
     if (!Buffer.isBuffer(data)) {
-      this.logger.error(`Tentativa de gerar hash com tipo inválido: ${typeof data}`);
+      this.logger.error(
+        `Tentativa de gerar hash com tipo inválido: ${typeof data}`,
+      );
       throw new Error('Dados para hash devem ser um Buffer válido');
     }
 
@@ -302,7 +304,9 @@ export class CriptografiaService {
 
     try {
       const hash = crypto.createHash('sha256').update(data).digest('hex');
-      this.logger.debug(`Hash gerado com sucesso para buffer de ${data.length} bytes: ${hash.substring(0, 16)}...`);
+      this.logger.debug(
+        `Hash gerado com sucesso para buffer de ${data.length} bytes: ${hash.substring(0, 16)}...`,
+      );
       return hash;
     } catch (error) {
       this.logger.error(`Erro ao gerar hash: ${error.message}`);

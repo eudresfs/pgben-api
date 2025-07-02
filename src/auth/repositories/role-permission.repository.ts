@@ -39,7 +39,9 @@ export class RolePermissionRepository extends Repository<RolePermission> {
    * @returns Lista de mapeamentos encontrados
    */
   async findByRoleIds(roleIds: string[]): Promise<RolePermission[]> {
-    if (roleIds.length === 0) {return [];}
+    if (roleIds.length === 0) {
+      return [];
+    }
 
     return this.find({
       where: { role_id: In(roleIds) },
@@ -141,7 +143,9 @@ export class RolePermissionRepository extends Repository<RolePermission> {
   async createMultipleMappings(
     mappings: Partial<RolePermission>[],
   ): Promise<RolePermission[]> {
-    if (mappings.length === 0) {return [];}
+    if (mappings.length === 0) {
+      return [];
+    }
 
     const entities = mappings.map((mapping) => this.create(mapping));
     const saved = await this.save(entities);
@@ -283,7 +287,9 @@ export class RolePermissionRepository extends Repository<RolePermission> {
    * @returns Lista de permissões únicas
    */
   async findPermissionsByRoleIds(roleIds: string[]): Promise<Permission[]> {
-    if (roleIds.length === 0) {return [];}
+    if (roleIds.length === 0) {
+      return [];
+    }
 
     return this.createQueryBuilder('role_permissao')
       .leftJoinAndSelect('role_permissao.permissao', 'permissao')

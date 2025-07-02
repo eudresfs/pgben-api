@@ -27,7 +27,10 @@ export function createLoggerConfig(configService: ConfigService): LoggerConfig {
   const isDevelopment = nodeEnv !== 'production';
 
   return {
-    level: configService.get<string>('LOG_LEVEL', isDevelopment ? 'debug' : 'info'),
+    level: configService.get<string>(
+      'LOG_LEVEL',
+      isDevelopment ? 'debug' : 'info',
+    ),
     silent: configService.get<boolean>('SILENT_LOGS', false),
     logDir: configService.get<string>('LOG_DIR', 'logs'),
     maxFileSize: configService.get<string>('LOG_MAX_FILE_SIZE', '50m'),
@@ -37,11 +40,18 @@ export function createLoggerConfig(configService: ConfigService): LoggerConfig {
     enableHttp: configService.get<boolean>('LOG_ENABLE_HTTP', true),
     enableDatabase: configService.get<boolean>('LOG_ENABLE_DATABASE', true),
     enableAudit: configService.get<boolean>('LOG_ENABLE_AUDIT', true),
-    sensitiveFields: configService.get<string>('LOG_SENSITIVE_FIELDS', 'password,token,secret,key')
+    sensitiveFields: configService
+      .get<string>('LOG_SENSITIVE_FIELDS', 'password,token,secret,key')
       .split(',')
-      .map(field => field.trim()),
-    slowQueryThreshold: configService.get<number>('LOG_SLOW_QUERY_THRESHOLD', 1000),
-    slowRequestThreshold: configService.get<number>('LOG_SLOW_REQUEST_THRESHOLD', 2000),
+      .map((field) => field.trim()),
+    slowQueryThreshold: configService.get<number>(
+      'LOG_SLOW_QUERY_THRESHOLD',
+      1000,
+    ),
+    slowRequestThreshold: configService.get<number>(
+      'LOG_SLOW_REQUEST_THRESHOLD',
+      2000,
+    ),
   };
 }
 
@@ -50,9 +60,11 @@ export function createLoggerConfig(configService: ConfigService): LoggerConfig {
  */
 export function validateLoggerConfig(config: LoggerConfig): void {
   const validLevels = ['error', 'warn', 'info', 'debug', 'verbose'];
-  
+
   if (!validLevels.includes(config.level)) {
-    throw new Error(`Invalid log level: ${config.level}. Valid levels: ${validLevels.join(', ')}`);
+    throw new Error(
+      `Invalid log level: ${config.level}. Valid levels: ${validLevels.join(', ')}`,
+    );
   }
 
   if (config.slowQueryThreshold < 0) {
@@ -71,10 +83,13 @@ export class LoggerConfigUtils {
   /**
    * Verifica se um campo é sensível e deve ser omitido dos logs
    */
-  static isSensitiveField(fieldName: string, sensitiveFields: string[]): boolean {
+  static isSensitiveField(
+    fieldName: string,
+    sensitiveFields: string[],
+  ): boolean {
     const lowerFieldName = fieldName.toLowerCase();
-    return sensitiveFields.some(sensitive => 
-      lowerFieldName.includes(sensitive.toLowerCase())
+    return sensitiveFields.some((sensitive) =>
+      lowerFieldName.includes(sensitive.toLowerCase()),
     );
   }
 
@@ -87,11 +102,11 @@ export class LoggerConfigUtils {
     }
 
     if (Array.isArray(obj)) {
-      return obj.map(item => this.sanitizeObject(item, sensitiveFields));
+      return obj.map((item) => this.sanitizeObject(item, sensitiveFields));
     }
 
     const sanitized: any = {};
-    
+
     for (const [key, value] of Object.entries(obj)) {
       if (this.isSensitiveField(key, sensitiveFields)) {
         sanitized[key] = '[REDACTED]';
@@ -131,7 +146,10 @@ export class LoggerConfigUtils {
   /**
    * Determina o nível de log baseado na duração
    */
-  static getPerformanceLogLevel(duration: number, thresholds: { warn: number; error: number }): string {
+  static getPerformanceLogLevel(
+    duration: number,
+    thresholds: { warn: number; error: number },
+  ): string {
     if (duration >= thresholds.error) return 'error';
     if (duration >= thresholds.warn) return 'warn';
     return 'debug';

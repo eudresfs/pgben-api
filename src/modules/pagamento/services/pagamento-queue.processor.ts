@@ -28,26 +28,28 @@ export class PagamentoQueueProcessor implements OnModuleDestroy {
    * Processa a criação de um pagamento
    */
   @Process('create-pagamento')
-  async processCreatePagamento(job: Job<{
-    data: PagamentoCreateDto;
-    userId: string;
-  }>): Promise<any> {
+  async processCreatePagamento(
+    job: Job<{
+      data: PagamentoCreateDto;
+      userId: string;
+    }>,
+  ): Promise<any> {
     const { data, userId } = job.data;
-    
+
     try {
       this.logger.log(`Processando criação de pagamento - Job ID: ${job.id}`);
-      
+
       // Criar o pagamento
       const pagamento = await this.pagamentoService.create(data, userId);
-      
+
       // Registrar auditoria
       await this.auditEventEmitter.emitEntityCreated(
         'Pagamento',
         pagamento.id,
         { pagamentoData: data },
-        userId
+        userId,
       );
-      
+
       // Enviar notificação
       await this.notificacaoService.enviarNotificacao({
         tipo: 'PAGAMENTO_CRIADO',
@@ -56,12 +58,14 @@ export class PagamentoQueueProcessor implements OnModuleDestroy {
         conteudo: 'Seu pagamento foi criado com sucesso',
         dados: { pagamento },
       });
-      
+
       this.logger.log(`Pagamento criado com sucesso - ID: ${pagamento.id}`);
       return pagamento;
-      
     } catch (error) {
-      this.logger.error(`Erro ao processar criação de pagamento: ${error.message}`, error.stack);
+      this.logger.error(
+        `Erro ao processar criação de pagamento: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }
@@ -70,31 +74,39 @@ export class PagamentoQueueProcessor implements OnModuleDestroy {
    * Processa a liberação de um pagamento
    */
   @Process('liberar-pagamento')
-  async processLiberarPagamento(job: Job<{
-    pagamentoId: string;
-    data: any;
-    userId: string;
-  }>): Promise<any> {
+  async processLiberarPagamento(
+    job: Job<{
+      pagamentoId: string;
+      data: any;
+      userId: string;
+    }>,
+  ): Promise<any> {
     const { pagamentoId, data, userId } = job.data;
-    
+
     try {
-      this.logger.log(`Processando liberação de pagamento - ID: ${pagamentoId}`);
-      
+      this.logger.log(
+        `Processando liberação de pagamento - ID: ${pagamentoId}`,
+      );
+
       // Liberar pagamento (usando updateStatus)
-      const pagamento = await this.pagamentoService.updateStatus(pagamentoId, {
-        status: StatusPagamentoEnum.LIBERADO,
-        observacoes: 'Pagamento liberado via fila',
-      }, userId);
-      
+      const pagamento = await this.pagamentoService.updateStatus(
+        pagamentoId,
+        {
+          status: StatusPagamentoEnum.LIBERADO,
+          observacoes: 'Pagamento liberado via fila',
+        },
+        userId,
+      );
+
       // Registrar auditoria
       await this.auditEventEmitter.emitEntityUpdated(
         'Pagamento',
         pagamentoId,
         { status: 'PENDENTE' },
         { status: StatusPagamentoEnum.LIBERADO, liberacaoData: data },
-        userId
+        userId,
       );
-      
+
       // Enviar notificação
       await this.notificacaoService.enviarNotificacao({
         tipo: 'PAGAMENTO_LIBERADO',
@@ -103,12 +115,14 @@ export class PagamentoQueueProcessor implements OnModuleDestroy {
         conteudo: 'Seu pagamento foi liberado com sucesso',
         dados: { pagamento },
       });
-      
+
       this.logger.log(`Pagamento liberado com sucesso - ID: ${pagamentoId}`);
       return pagamento;
-      
     } catch (error) {
-      this.logger.error(`Erro ao processar liberação de pagamento: ${error.message}`, error.stack);
+      this.logger.error(
+        `Erro ao processar liberação de pagamento: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }
@@ -117,28 +131,36 @@ export class PagamentoQueueProcessor implements OnModuleDestroy {
    * Processa o cancelamento de um pagamento
    */
   @Process('cancelar-pagamento')
-  async processCancelarPagamento(job: Job<{
-    pagamentoId: string;
-    motivo: string;
-    userId: string;
-  }>): Promise<any> {
+  async processCancelarPagamento(
+    job: Job<{
+      pagamentoId: string;
+      motivo: string;
+      userId: string;
+    }>,
+  ): Promise<any> {
     const { pagamentoId, motivo, userId } = job.data;
-    
+
     try {
-      this.logger.log(`Processando cancelamento de pagamento - ID: ${pagamentoId}`);
-      
+      this.logger.log(
+        `Processando cancelamento de pagamento - ID: ${pagamentoId}`,
+      );
+
       // Cancelar o pagamento
-      const pagamento = await this.pagamentoService.cancelar(pagamentoId, motivo, userId);
-      
+      const pagamento = await this.pagamentoService.cancelar(
+        pagamentoId,
+        motivo,
+        userId,
+      );
+
       // Registrar auditoria
       await this.auditEventEmitter.emitEntityUpdated(
         'Pagamento',
         pagamentoId,
         { status: pagamento.status },
         { status: StatusPagamentoEnum.CANCELADO, motivo },
-        userId
+        userId,
       );
-      
+
       // Enviar notificação
       await this.notificacaoService.enviarNotificacao({
         tipo: 'PAGAMENTO_CANCELADO',
@@ -147,12 +169,14 @@ export class PagamentoQueueProcessor implements OnModuleDestroy {
         conteudo: 'Seu pagamento foi cancelado',
         dados: { pagamento, motivo },
       });
-      
+
       this.logger.log(`Pagamento cancelado com sucesso - ID: ${pagamentoId}`);
       return pagamento;
-      
     } catch (error) {
-      this.logger.error(`Erro ao processar cancelamento de pagamento: ${error.message}`, error.stack);
+      this.logger.error(
+        `Erro ao processar cancelamento de pagamento: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }
@@ -161,31 +185,39 @@ export class PagamentoQueueProcessor implements OnModuleDestroy {
    * Processa a confirmação de recebimento
    */
   @Process('confirmar-recebimento')
-  async processConfirmarRecebimento(job: Job<{
-    pagamentoId: string;
-    data: ConfirmacaoRecebimentoDto;
-    userId: string;
-  }>): Promise<any> {
+  async processConfirmarRecebimento(
+    job: Job<{
+      pagamentoId: string;
+      data: ConfirmacaoRecebimentoDto;
+      userId: string;
+    }>,
+  ): Promise<any> {
     const { pagamentoId, data, userId } = job.data;
-    
+
     try {
-      this.logger.log(`Processando confirmação de recebimento - ID: ${pagamentoId}`);
-      
+      this.logger.log(
+        `Processando confirmação de recebimento - ID: ${pagamentoId}`,
+      );
+
       // Confirmar recebimento (usando updateStatus)
-      const confirmacao = await this.pagamentoService.updateStatus(pagamentoId, {
-        status: StatusPagamentoEnum.CONFIRMADO,
-        observacoes: 'Recebimento confirmado',
-      }, userId);
-      
+      const confirmacao = await this.pagamentoService.updateStatus(
+        pagamentoId,
+        {
+          status: StatusPagamentoEnum.CONFIRMADO,
+          observacoes: 'Recebimento confirmado',
+        },
+        userId,
+      );
+
       // Registrar auditoria
       await this.auditEventEmitter.emitEntityUpdated(
         'Pagamento',
         pagamentoId,
         { status: 'LIBERADO' },
         { status: StatusPagamentoEnum.CONFIRMADO, confirmacaoData: data },
-        userId
+        userId,
       );
-      
+
       // Enviar notificação
       await this.notificacaoService.enviarNotificacao({
         tipo: 'RECEBIMENTO_CONFIRMADO',
@@ -194,12 +226,16 @@ export class PagamentoQueueProcessor implements OnModuleDestroy {
         conteudo: 'O recebimento do pagamento foi confirmado',
         dados: { confirmacao },
       });
-      
-      this.logger.log(`Recebimento confirmado com sucesso - ID: ${pagamentoId}`);
+
+      this.logger.log(
+        `Recebimento confirmado com sucesso - ID: ${pagamentoId}`,
+      );
       return confirmacao;
-      
     } catch (error) {
-      this.logger.error(`Erro ao processar confirmação de recebimento: ${error.message}`, error.stack);
+      this.logger.error(
+        `Erro ao processar confirmação de recebimento: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }
@@ -208,28 +244,32 @@ export class PagamentoQueueProcessor implements OnModuleDestroy {
    * Processa a validação de comprovante
    */
   @Process('validar-comprovante')
-  async processValidarComprovante(job: Job<{
-    pagamentoId: string;
-    comprovanteId: string;
-    userId: string;
-  }>): Promise<any> {
+  async processValidarComprovante(
+    job: Job<{
+      pagamentoId: string;
+      comprovanteId: string;
+      userId: string;
+    }>,
+  ): Promise<any> {
     const { pagamentoId, comprovanteId, userId } = job.data;
-    
+
     try {
-      this.logger.log(`Processando validação de comprovante - Pagamento ID: ${pagamentoId}`);
-      
+      this.logger.log(
+        `Processando validação de comprovante - Pagamento ID: ${pagamentoId}`,
+      );
+
       // Validar comprovante (simulação - implementar conforme necessário)
       const resultado = { valido: true, observacoes: 'Comprovante validado' };
-      
+
       // Registrar auditoria
       await this.auditEventEmitter.emitEntityUpdated(
         'Pagamento',
         pagamentoId,
         { comprovante_validado: false },
         { comprovante_validado: true, comprovanteId, resultado },
-        userId
+        userId,
       );
-      
+
       // Enviar notificação
       await this.notificacaoService.enviarNotificacao({
         tipo: 'COMPROVANTE_VALIDADO',
@@ -238,12 +278,16 @@ export class PagamentoQueueProcessor implements OnModuleDestroy {
         conteudo: 'O comprovante do pagamento foi validado',
         dados: { pagamentoId, comprovanteId, resultado },
       });
-      
-      this.logger.log(`Comprovante validado com sucesso - Pagamento ID: ${pagamentoId}`);
+
+      this.logger.log(
+        `Comprovante validado com sucesso - Pagamento ID: ${pagamentoId}`,
+      );
       return resultado;
-      
     } catch (error) {
-      this.logger.error(`Erro ao processar validação de comprovante: ${error.message}`, error.stack);
+      this.logger.error(
+        `Erro ao processar validação de comprovante: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }
@@ -253,11 +297,11 @@ export class PagamentoQueueProcessor implements OnModuleDestroy {
    */
   async onModuleDestroy(): Promise<void> {
     this.logger.log('Finalizando processador de pagamentos...');
-    
+
     try {
       // Aguardar um pouco para jobs em andamento
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
       this.logger.log('Processador de pagamentos finalizado com sucesso');
     } catch (error) {
       this.logger.error('Erro ao finalizar processador de pagamentos:', error);

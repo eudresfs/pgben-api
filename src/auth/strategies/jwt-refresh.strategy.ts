@@ -39,23 +39,32 @@ export class JwtRefreshStrategy extends PassportStrategy(
     const keyBase64 = configService.get<string>('JWT_PUBLIC_KEY_BASE64');
     if (keyBase64) {
       try {
-        const publicKey = Buffer.from(keyBase64, 'base64').toString('utf8').trim();
+        const publicKey = Buffer.from(keyBase64, 'base64')
+          .toString('utf8')
+          .trim();
         if (!publicKey.includes('BEGIN PUBLIC KEY')) {
           throw new Error('Chave pública Base64 inválida');
         }
         return publicKey;
       } catch (error) {
-        throw new Error(`Falha ao decodificar chave pública Base64: ${error.message}`);
+        throw new Error(
+          `Falha ao decodificar chave pública Base64: ${error.message}`,
+        );
       }
     }
 
     const publicKeyPath = configService.get<string>('JWT_PUBLIC_KEY_PATH');
     if (!publicKeyPath) {
-      throw new Error('JWT_PUBLIC_KEY_BASE64 ou JWT_PUBLIC_KEY_PATH não configurados');
+      throw new Error(
+        'JWT_PUBLIC_KEY_BASE64 ou JWT_PUBLIC_KEY_PATH não configurados',
+      );
     }
 
     try {
-      const publicKey = readFileSync(join(process.cwd(), publicKeyPath), 'utf8').trim();
+      const publicKey = readFileSync(
+        join(process.cwd(), publicKeyPath),
+        'utf8',
+      ).trim();
       if (!publicKey.includes('BEGIN PUBLIC KEY')) {
         throw new Error('Formato de chave pública inválido');
       }

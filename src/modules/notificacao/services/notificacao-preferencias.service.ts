@@ -87,7 +87,7 @@ interface NotificacaoAgrupada {
 
 /**
  * Serviço de Preferências de Notificação
- * 
+ *
  * Implementa a Fase 5 do plano de integração SSE:
  * - Agrupamento de notificações
  * - Preferências de usuário
@@ -132,10 +132,10 @@ export class NotificacaoPreferenciasService {
 
     // Por enquanto, retornar preferências padrão
     const preferenciasDefault = this.criarPreferenciasDefault(usuarioId);
-    
+
     // Adicionar ao cache
     this.cachePreferencias.set(usuarioId, preferenciasDefault);
-    
+
     return preferenciasDefault;
   }
 
@@ -147,7 +147,7 @@ export class NotificacaoPreferenciasService {
     novasPreferencias: Partial<PreferenciasUsuario>,
   ): Promise<PreferenciasUsuario> {
     const preferenciasAtuais = await this.obterPreferencias(usuarioId);
-    
+
     const preferenciasAtualizadas: PreferenciasUsuario = {
       ...preferenciasAtuais,
       ...novasPreferencias,
@@ -162,7 +162,7 @@ export class NotificacaoPreferenciasService {
     this.cachePreferencias.set(usuarioId, preferenciasAtualizadas);
 
     this.logger.log(`Preferências atualizadas para usuário ${usuarioId}`);
-    
+
     return preferenciasAtualizadas;
   }
 
@@ -297,7 +297,7 @@ export class NotificacaoPreferenciasService {
     grupo.quantidade++;
     grupo.ultima_notificacao = agora;
     grupo.notificacoes_ids.push(notificacaoId);
-    
+
     // Atualizar prioridade máxima
     const prioridades = { low: 1, medium: 2, high: 3 };
     if (prioridades[prioridade] > prioridades[grupo.prioridade_maxima]) {
@@ -386,7 +386,9 @@ export class NotificacaoPreferenciasService {
   /**
    * Envia um grupo de notificações imediatamente
    */
-  private async enviarGrupoImediatamente(chaveAgrupamento: string): Promise<void> {
+  private async enviarGrupoImediatamente(
+    chaveAgrupamento: string,
+  ): Promise<void> {
     const grupo = this.filaAgrupamento.get(chaveAgrupamento);
     if (!grupo) return;
 
@@ -406,7 +408,7 @@ export class NotificacaoPreferenciasService {
       });
 
       grupo.status = 'enviado';
-      
+
       this.logger.log(
         `Grupo de notificações enviado: ${grupo.quantidade} notificações para usuário ${grupo.usuario_id}`,
       );
@@ -419,7 +421,9 @@ export class NotificacaoPreferenciasService {
   /**
    * Envia notificação individual imediatamente
    */
-  private async enviarNotificacaoImediata(notificacaoId: string): Promise<void> {
+  private async enviarNotificacaoImediata(
+    notificacaoId: string,
+  ): Promise<void> {
     this.eventEmitter.emit('notificacao.individual.enviar', {
       notificacaoId,
       timestamp: new Date(),
@@ -454,7 +458,9 @@ export class NotificacaoPreferenciasService {
     }
 
     if (gruposParaEnviar.length > 0) {
-      this.logger.log(`Processados ${gruposParaEnviar.length} grupos de notificações`);
+      this.logger.log(
+        `Processados ${gruposParaEnviar.length} grupos de notificações`,
+      );
     }
   }
 
@@ -463,7 +469,7 @@ export class NotificacaoPreferenciasService {
    */
   private criarPreferenciasDefault(usuarioId: string): PreferenciasUsuario {
     const agora = new Date();
-    
+
     return {
       usuario_id: usuarioId,
       ativo: true,
@@ -516,7 +522,10 @@ export class NotificacaoPreferenciasService {
   /**
    * Conta notificações enviadas em um dia específico
    */
-  private async contarNotificacoesDia(usuarioId: string, data: Date): Promise<number> {
+  private async contarNotificacoesDia(
+    usuarioId: string,
+    data: Date,
+  ): Promise<number> {
     // TODO: Implementar consulta real ao banco
     // Por enquanto, retornar 0
     return 0;
@@ -542,7 +551,9 @@ export class NotificacaoPreferenciasService {
       },
     });
 
-    this.logger.log(`Notificações pausadas para usuário ${usuarioId} até ${pausarAte}`);
+    this.logger.log(
+      `Notificações pausadas para usuário ${usuarioId} até ${pausarAte}`,
+    );
   }
 
   /**
@@ -568,11 +579,19 @@ export class NotificacaoPreferenciasService {
   obterEstatisticasAgrupamento(): {
     gruposAtivos: number;
     notificacoesNaFila: number;
-    proximosEnvios: Array<{ chave: string; dataEnvio: Date; quantidade: number }>;
+    proximosEnvios: Array<{
+      chave: string;
+      dataEnvio: Date;
+      quantidade: number;
+    }>;
   } {
     const gruposAtivos = this.filaAgrupamento.size;
     let notificacoesNaFila = 0;
-    const proximosEnvios: Array<{ chave: string; dataEnvio: Date; quantidade: number }> = [];
+    const proximosEnvios: Array<{
+      chave: string;
+      dataEnvio: Date;
+      quantidade: number;
+    }> = [];
 
     for (const [chave, grupo] of this.filaAgrupamento.entries()) {
       notificacoesNaFila += grupo.quantidade;
@@ -586,7 +605,9 @@ export class NotificacaoPreferenciasService {
     }
 
     // Ordenar por data de envio
-    proximosEnvios.sort((a, b) => a.dataEnvio.getTime() - b.dataEnvio.getTime());
+    proximosEnvios.sort(
+      (a, b) => a.dataEnvio.getTime() - b.dataEnvio.getTime(),
+    );
 
     return {
       gruposAtivos,

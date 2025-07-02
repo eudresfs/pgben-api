@@ -13,7 +13,7 @@ import { Request, Response } from 'express';
 
 /**
  * Interceptor de cache HTTP
- * 
+ *
  * Este interceptor automatiza o cache de responses HTTP baseado em decorators,
  * melhorando significativamente a performance de endpoints frequentemente acessados.
  */
@@ -51,10 +51,10 @@ export class CacheInterceptor implements NestInterceptor {
       const cachedResponse = await this.cacheService.get(cacheKey);
       if (cachedResponse) {
         this.logger.debug(`Cache HIT para: ${cacheKey}`);
-        
+
         // Definir headers de cache
         this.setCacheHeaders(response, true);
-        
+
         return of(cachedResponse);
       }
 
@@ -71,7 +71,10 @@ export class CacheInterceptor implements NestInterceptor {
         }),
       );
     } catch (error) {
-      this.logger.error(`Erro no cache interceptor: ${error.message}`, error.stack);
+      this.logger.error(
+        `Erro no cache interceptor: ${error.message}`,
+        error.stack,
+      );
       return next.handle();
     }
   }
@@ -105,7 +108,7 @@ export class CacheInterceptor implements NestInterceptor {
       '/notifications',
     ];
 
-    return userSpecificPaths.some(path => request.path.includes(path));
+    return userSpecificPaths.some((path) => request.path.includes(path));
   }
 
   /**
@@ -113,12 +116,12 @@ export class CacheInterceptor implements NestInterceptor {
    */
   private generateCacheKey(request: Request, options: CacheOptions): string {
     const baseKey = `http:${request.method}:${request.path}`;
-    
+
     // Incluir query parameters se especificado
     if (options.includeQuery && Object.keys(request.query).length > 0) {
       const sortedQuery = Object.keys(request.query)
         .sort()
-        .map(key => `${key}=${request.query[key]}`)
+        .map((key) => `${key}=${request.query[key]}`)
         .join('&');
       return `${baseKey}?${sortedQuery}`;
     }

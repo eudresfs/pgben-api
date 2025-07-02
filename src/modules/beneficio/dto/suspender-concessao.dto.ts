@@ -16,7 +16,9 @@ export class SuspenderConcessaoDto {
     required: false,
   })
   @IsOptional()
-  @IsString({ message: 'Data de revisão deve ser uma string no formato YYYY-MM-DD' })
+  @IsString({
+    message: 'Data de revisão deve ser uma string no formato YYYY-MM-DD',
+  })
   data_revisao?: string;
 }
 

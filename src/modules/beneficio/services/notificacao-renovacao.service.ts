@@ -19,7 +19,6 @@ export class NotificacaoRenovacaoService {
     private readonly solicitacaoRepository: Repository<Solicitacao>,
   ) {}
 
-
   /**
    * Notifica sobre renovações processadas
    * @param solicitacoes Lista de solicitações renovadas

@@ -102,7 +102,7 @@ export class WorkflowSolicitacaoController {
   @RequiresPermission({
     permissionName: 'solicitacao.enviar-para-analise',
     scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'solicitacao.unidadeId'
+    scopeIdExpression: 'solicitacao.unidadeId',
   })
   @ApiOperation({
     summary: 'Envia uma solicitação para análise',
@@ -129,7 +129,7 @@ export class WorkflowSolicitacaoController {
    */
   @Post(':solicitacaoId/aprovar')
   @RequiresPermission({
-    permissionName: 'solicitacao.aprovar'
+    permissionName: 'solicitacao.aprovar',
   })
   @ApiOperation({
     summary: 'Aprova uma solicitação',
@@ -222,7 +222,6 @@ export class WorkflowSolicitacaoController {
     );
   }
 
-  
   /**
    * Realiza uma transição de estado genérica
    * @param solicitacaoId ID da solicitação

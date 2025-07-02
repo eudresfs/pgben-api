@@ -80,8 +80,14 @@ import { ConfiguracaoRenovacaoRepository } from './repositories/configuracao-ren
     SharedModule, // Serviços compartilhados
     CacheModule, // Para CacheService usado pelo CacheInterceptor
     forwardRef(() => AuthModule), // Para autenticação e autorização
-    forwardRef(() => import('../solicitacao/solicitacao.module').then(m => m.SolicitacaoModule)), // Para WorkflowSolicitacaoService
-    forwardRef(() => import('../pagamento/pagamento.module').then(m => m.PagamentoModule)),
+    forwardRef(() =>
+      import('../solicitacao/solicitacao.module').then(
+        (m) => m.SolicitacaoModule,
+      ),
+    ), // Para WorkflowSolicitacaoService
+    forwardRef(() =>
+      import('../pagamento/pagamento.module').then((m) => m.PagamentoModule),
+    ),
   ],
   controllers: [
     ConcessaoController,
@@ -101,7 +107,7 @@ import { ConfiguracaoRenovacaoRepository } from './repositories/configuracao-ren
     DadosBeneficioFactoryService,
     RenovacaoAutomaticaService,
     NotificacaoRenovacaoService,
-    WorkflowInterceptor, 
+    WorkflowInterceptor,
     TipoBeneficioRepository,
     TipoBeneficioSchemaRepository,
     CampoDinamicoRepository,

@@ -58,7 +58,7 @@ export class BeneficioController {
     enablePagination: true,
     maxLimit: 100,
     enableCaching: true,
-    cacheTTL: 300
+    cacheTTL: 300,
   })
   @ApiOperation({
     summary: 'Listar tipos de benefícios',
@@ -118,7 +118,7 @@ export class BeneficioController {
   @Get(':id')
   @QueryOptimization({
     enableCaching: true,
-    cacheTTL: 600
+    cacheTTL: 600,
   })
   @ApiOperation({
     summary: 'Obter detalhes de um benefício',
@@ -281,8 +281,11 @@ export class BeneficioController {
   ) {
     // Buscar estado anterior para auditoria
     const beneficioAnterior = await this.beneficioService.findById(id);
-    
-    const result = await this.beneficioService.update(id, updateTipoBeneficioDto);
+
+    const result = await this.beneficioService.update(
+      id,
+      updateTipoBeneficioDto,
+    );
 
     // Auditoria: Atualização de tipo de benefício
     await this.auditEventEmitter.emitEntityUpdated(
@@ -333,7 +336,10 @@ export class BeneficioController {
     @GetUser() usuario: Usuario,
     @ReqContext() ctx: any,
   ) {
-    const result = await this.beneficioService.addRequisito(id, createRequisitoDocumentoDto);
+    const result = await this.beneficioService.addRequisito(
+      id,
+      createRequisitoDocumentoDto,
+    );
 
     // Auditoria: Adição de requisito documental
     await this.auditEventEmitter.emitEntityCreated(
@@ -369,7 +375,10 @@ export class BeneficioController {
     @GetUser() usuario: Usuario,
     @ReqContext() ctx: any,
   ) {
-    const result = await this.beneficioService.configurarFluxo(id, configurarFluxoDto);
+    const result = await this.beneficioService.configurarFluxo(
+      id,
+      configurarFluxoDto,
+    );
 
     // Auditoria: Configuração de fluxo de aprovação
     await this.auditEventEmitter.emitEntityUpdated(
@@ -390,18 +399,21 @@ export class BeneficioController {
   @ApiOperation({ summary: 'Remove um requisito documental de um benefício' })
   @ApiParam({ name: 'id', description: 'ID do benefício' })
   @ApiParam({ name: 'requisitoId', description: 'ID do requisito documental' })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Requisito removido com sucesso',
     schema: {
       type: 'object',
       properties: {
         message: { type: 'string', example: 'Requisito removido com sucesso' },
-        requisitoId: { type: 'string', format: 'uuid' }
-      }
-    }
+        requisitoId: { type: 'string', format: 'uuid' },
+      },
+    },
   })
-  @ApiResponse({ status: 404, description: 'Benefício ou requisito não encontrado' })
+  @ApiResponse({
+    status: 404,
+    description: 'Benefício ou requisito não encontrado',
+  })
   async removeRequisito(
     @Param('id') id: string,
     @Param('requisitoId') requisitoId: string,

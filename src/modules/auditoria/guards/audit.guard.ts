@@ -1,6 +1,6 @@
 /**
  * AuditGuard
- * 
+ *
  * Guard para auditoria automática baseada em decorators.
  * Integra com a arquitetura event-driven para capturar eventos de segurança.
  */
@@ -39,13 +39,13 @@ export class AuditGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
-    
+
     // Extrair configurações dos decorators
     const securityConfig = this.reflector.get<SecurityAuditConfig>(
       SECURITY_AUDIT_METADATA_KEY,
       context.getHandler(),
     );
-    
+
     const sensitiveConfig = this.reflector.get<SensitiveDataConfig>(
       SENSITIVE_DATA_METADATA_KEY,
       context.getHandler(),
@@ -62,25 +62,54 @@ export class AuditGuard implements CanActivate {
 
       // Verificar autenticação se necessário
       if (securityConfig?.requiresAuth && !this.isAuthenticated(request)) {
-        this.emitSecurityEvent(auditContext, 'authentication_failed', RiskLevel.HIGH);
+        this.emitSecurityEvent(
+          auditContext,
+          'authentication_failed',
+          RiskLevel.HIGH,
+        );
         throw new UnauthorizedException('Acesso não autorizado');
       }
 
       // Verificar autorização se necessário
-      if (securityConfig?.requiredRoles && !this.hasRequiredRoles(request, securityConfig.requiredRoles)) {
-        this.emitSecurityEvent(auditContext, 'authorization_failed', RiskLevel.HIGH);
-        throw new ForbiddenException('Acesso negado - permissões insuficientes');
+      if (
+        securityConfig?.requiredRoles &&
+        !this.hasRequiredRoles(request, securityConfig.requiredRoles)
+      ) {
+        this.emitSecurityEvent(
+          auditContext,
+          'authorization_failed',
+          RiskLevel.HIGH,
+        );
+        throw new ForbiddenException(
+          'Acesso negado - permissões insuficientes',
+        );
       }
 
       // Verificar consentimento para dados sensíveis
-      if (sensitiveConfig?.requiresConsent && !this.hasConsent(request, sensitiveConfig)) {
-        this.emitSecurityEvent(auditContext, 'consent_required', RiskLevel.MEDIUM);
-        throw new ForbiddenException('Consentimento necessário para acesso a dados sensíveis');
+      if (
+        sensitiveConfig?.requiresConsent &&
+        !this.hasConsent(request, sensitiveConfig)
+      ) {
+        this.emitSecurityEvent(
+          auditContext,
+          'consent_required',
+          RiskLevel.MEDIUM,
+        );
+        throw new ForbiddenException(
+          'Consentimento necessário para acesso a dados sensíveis',
+        );
       }
 
       // Verificar rate limiting para operações sensíveis
-      if (securityConfig?.rateLimit && !this.checkRateLimit(request, securityConfig)) {
-        this.emitSecurityEvent(auditContext, 'rate_limit_exceeded', RiskLevel.HIGH);
+      if (
+        securityConfig?.rateLimit &&
+        !this.checkRateLimit(request, securityConfig)
+      ) {
+        this.emitSecurityEvent(
+          auditContext,
+          'rate_limit_exceeded',
+          RiskLevel.HIGH,
+        );
         throw new ForbiddenException('Limite de requisições excedido');
       }
 
@@ -90,7 +119,10 @@ export class AuditGuard implements CanActivate {
       return true;
     } catch (error) {
       // Se é uma exceção conhecida, re-lançar
-      if (error instanceof UnauthorizedException || error instanceof ForbiddenException) {
+      if (
+        error instanceof UnauthorizedException ||
+        error instanceof ForbiddenException
+      ) {
         throw error;
       }
 
@@ -119,7 +151,7 @@ export class AuditGuard implements CanActivate {
     const userId = this.extractUserId(request);
     const userAgent = request.headers['user-agent'];
     const ip = this.extractClientIp(request);
-    
+
     return {
       controller: controllerName,
       method: methodName,
@@ -144,13 +176,16 @@ export class AuditGuard implements CanActivate {
    */
   private hasRequiredRoles(request: Request, requiredRoles: string[]): boolean {
     const userRoles = request.user?.['roles'] || [];
-    return requiredRoles.some(role => userRoles.includes(role));
+    return requiredRoles.some((role) => userRoles.includes(role));
   }
 
   /**
    * Verifica se há consentimento para dados sensíveis
    */
-  private hasConsent(request: Request, sensitiveConfig: SensitiveDataConfig): boolean {
+  private hasConsent(
+    request: Request,
+    sensitiveConfig: SensitiveDataConfig,
+  ): boolean {
     // Implementação simplificada - em produção, verificar contra base de dados de consentimentos
     const consentHeader = request.headers['x-data-consent'] as string;
     return consentHeader === 'granted' || !sensitiveConfig.requiresConsent;
@@ -159,7 +194,10 @@ export class AuditGuard implements CanActivate {
   /**
    * Verifica rate limiting
    */
-  private checkRateLimit(request: Request, securityConfig: SecurityAuditConfig): boolean {
+  private checkRateLimit(
+    request: Request,
+    securityConfig: SecurityAuditConfig,
+  ): boolean {
     // Implementação simplificada - em produção, usar Redis ou similar
     // Por enquanto, sempre permitir (rate limiting seria implementado em middleware separado)
     return true;
@@ -206,7 +244,7 @@ export class AuditGuard implements CanActivate {
           httpMethod: auditContext.httpMethod,
           timestamp: auditContext.timestamp,
           ...additionalMetadata,
-        }
+        },
       );
     } catch (error) {
       this.logger.error('Erro ao emitir evento de segurança:', error);
@@ -220,7 +258,7 @@ export class AuditGuard implements CanActivate {
     return (
       request.user?.['id'] ||
       request.user?.['userId'] ||
-      request.headers['x-user-id'] as string ||
+      (request.headers['x-user-id'] as string) ||
       undefined
     );
   }
@@ -231,7 +269,7 @@ export class AuditGuard implements CanActivate {
   private extractClientIp(request: Request): string {
     return (
       (request.headers['x-forwarded-for'] as string)?.split(',')[0] ||
-      request.headers['x-real-ip'] as string ||
+      (request.headers['x-real-ip'] as string) ||
       request.connection?.remoteAddress ||
       request.socket?.remoteAddress ||
       'unknown'

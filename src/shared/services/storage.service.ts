@@ -21,7 +21,7 @@ export class StorageService {
     entityId: string,
   ): Promise<{ url: string; nomeArquivo: string }> {
     const storageProvider = this.storageProviderFactory.getProvider();
-    
+
     // Gerar nome único para o arquivo
     const timestamp = Date.now();
     const extension = file.originalname.split('.').pop();

@@ -1,6 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { Logger } from '@nestjs/common';
-import { SseMetricsService, SseMetrics, ConnectionStats } from './sse-metrics.service';
+import {
+  SseMetricsService,
+  SseMetrics,
+  ConnectionStats,
+} from './sse-metrics.service';
 import { EnhancedMetricsService } from '../../../shared/monitoring/enhanced-metrics.service';
 
 describe('SseMetricsService', () => {
@@ -10,7 +14,7 @@ describe('SseMetricsService', () => {
   beforeEach(async () => {
     const mockEnhancedMetricsService = {
       recordSecurityEvent: jest.fn(),
-      recordLgpdDataAccess: jest.fn()
+      recordLgpdDataAccess: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -18,9 +22,9 @@ describe('SseMetricsService', () => {
         SseMetricsService,
         {
           provide: EnhancedMetricsService,
-          useValue: mockEnhancedMetricsService
-        }
-      ]
+          useValue: mockEnhancedMetricsService,
+        },
+      ],
     }).compile();
 
     service = module.get<SseMetricsService>(SseMetricsService);
@@ -62,14 +66,14 @@ describe('SseMetricsService', () => {
       expect(enhancedMetricsService.recordSecurityEvent).toHaveBeenCalledWith(
         'sse_connection_established',
         'info',
-        'notification_module'
+        'notification_module',
       );
 
       expect(enhancedMetricsService.recordLgpdDataAccess).toHaveBeenCalledWith(
         'sse_connection',
         'create',
         true,
-        'user'
+        'user',
       );
     });
 
@@ -150,13 +154,13 @@ describe('SseMetricsService', () => {
       expect(enhancedMetricsService.recordSecurityEvent).toHaveBeenCalledWith(
         'sse_connection_closed',
         'info',
-        'notification_module'
+        'notification_module',
       );
 
       expect(enhancedMetricsService.recordSecurityEvent).toHaveBeenCalledWith(
         'sse_connection_duration',
         'info',
-        'notification_module'
+        'notification_module',
       );
     });
 
@@ -230,13 +234,13 @@ describe('SseMetricsService', () => {
       expect(enhancedMetricsService.recordSecurityEvent).toHaveBeenCalledWith(
         'sse_message_sent',
         'info',
-        'notification_module'
+        'notification_module',
       );
 
       expect(enhancedMetricsService.recordSecurityEvent).toHaveBeenCalledWith(
         'sse_message_type_notification',
         'info',
-        'notification_module'
+        'notification_module',
       );
     });
 
@@ -244,14 +248,18 @@ describe('SseMetricsService', () => {
       // Arrange
       const connectionId = 'conn-456';
       service.recordConnection('user-123', connectionId);
-      const initialActivity = service.getConnectionStats(connectionId)!.lastActivity;
+      const initialActivity =
+        service.getConnectionStats(connectionId)!.lastActivity;
 
       // Act
       service.recordMessageSent(connectionId, 'notification');
 
       // Assert
-      const updatedActivity = service.getConnectionStats(connectionId)!.lastActivity;
-      expect(updatedActivity.getTime()).toBeGreaterThanOrEqual(initialActivity.getTime());
+      const updatedActivity =
+        service.getConnectionStats(connectionId)!.lastActivity;
+      expect(updatedActivity.getTime()).toBeGreaterThanOrEqual(
+        initialActivity.getTime(),
+      );
     });
 
     it('deve registrar múltiplas mensagens', () => {
@@ -293,7 +301,7 @@ describe('SseMetricsService', () => {
       expect(enhancedMetricsService.recordSecurityEvent).toHaveBeenCalledWith(
         'sse_message_delivered',
         'info',
-        'notification_module'
+        'notification_module',
       );
     });
 
@@ -301,7 +309,7 @@ describe('SseMetricsService', () => {
       // Arrange
       const connectionId = 'conn-456';
       service.recordConnection('user-123', connectionId);
-      
+
       // Enviar 4 mensagens, entregar 3
       for (let i = 0; i < 4; i++) {
         service.recordMessageSent(connectionId, 'notification');
@@ -338,13 +346,13 @@ describe('SseMetricsService', () => {
       expect(enhancedMetricsService.recordSecurityEvent).toHaveBeenCalledWith(
         'sse_message_failed',
         'error',
-        'notification_module'
+        'notification_module',
       );
 
       expect(enhancedMetricsService.recordSecurityEvent).toHaveBeenCalledWith(
         'sse_delivery_failure',
         'error',
-        'notification_module'
+        'notification_module',
       );
     });
 
@@ -352,7 +360,7 @@ describe('SseMetricsService', () => {
       // Arrange
       const connectionId = 'conn-456';
       service.recordConnection('user-123', connectionId);
-      
+
       // Enviar 5 mensagens, falhar 2
       for (let i = 0; i < 5; i++) {
         service.recordMessageSent(connectionId, 'notification');
@@ -412,9 +420,9 @@ describe('SseMetricsService', () => {
 
       // Assert
       expect(allStats).toHaveLength(3);
-      expect(allStats.map(s => s.connectionId)).toContain('conn1');
-      expect(allStats.map(s => s.connectionId)).toContain('conn2');
-      expect(allStats.map(s => s.connectionId)).toContain('conn3');
+      expect(allStats.map((s) => s.connectionId)).toContain('conn1');
+      expect(allStats.map((s) => s.connectionId)).toContain('conn2');
+      expect(allStats.map((s) => s.connectionId)).toContain('conn3');
     });
 
     it('deve retornar array vazio quando não há conexões', () => {
@@ -441,7 +449,7 @@ describe('SseMetricsService', () => {
       expect(metrics.totalConnections).toBe(0);
       expect(metrics.messagesSent).toBe(0);
       expect(Object.keys(metrics.connectionsPerUser)).toHaveLength(0);
-      
+
       const allStats = service.getAllConnectionStats();
       expect(allStats).toHaveLength(0);
     });
@@ -452,9 +460,10 @@ describe('SseMetricsService', () => {
       // Arrange
       const connectionId = 'conn-456';
       service.recordConnection('user-123', connectionId);
-      
+
       // Simular passagem de tempo
-      jest.spyOn(Date.prototype, 'getTime')
+      jest
+        .spyOn(Date.prototype, 'getTime')
         .mockReturnValueOnce(2000) // now
         .mockReturnValueOnce(1000); // start time
 

@@ -9,7 +9,10 @@ import {
   NotificacaoSistema,
   StatusNotificacaoProcessamento,
 } from '../../../entities/notification.entity';
-import { CanalNotificacao, ResultadoEnvio } from '../interfaces/notification-channel.interface';
+import {
+  CanalNotificacao,
+  ResultadoEnvio,
+} from '../interfaces/notification-channel.interface';
 import { TemplateRendererService } from './template-renderer.service';
 import { CreateNotificationDto } from '../dto/create-notification.dto';
 import { CreateNotificationTemplateDto } from '../dto/create-notification-template.dto';
@@ -45,7 +48,9 @@ export class NotificationManagerService implements OnModuleInit {
    * @returns UsuarioService instance
    */
   private async getUsuarioService() {
-    const { UsuarioService } = await import('../../usuario/services/usuario.service');
+    const { UsuarioService } = await import(
+      '../../usuario/services/usuario.service'
+    );
     return this.moduleRef.get(UsuarioService, { strict: false });
   }
 
@@ -107,18 +112,22 @@ export class NotificationManagerService implements OnModuleInit {
   ): Promise<NotificacaoSistema> {
     // Função para verificar se é um UUID válido
     const isValidUUID = (str: string): boolean => {
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      const uuidRegex =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
       return uuidRegex.test(str);
     };
 
     let template;
-    
+
     // Se o template_id é fornecido e é um UUID válido, busca por ID primeiro
-    if (createNotificationDto.template_id && isValidUUID(createNotificationDto.template_id)) {
+    if (
+      createNotificationDto.template_id &&
+      isValidUUID(createNotificationDto.template_id)
+    ) {
       template = await this.templateRepository.findOne({
         where: { id: createNotificationDto.template_id },
       });
-      
+
       // Se não encontrou por ID, tenta buscar por código
       if (!template) {
         template = await this.templateRepository.findOne({
@@ -294,18 +303,23 @@ export class NotificationManagerService implements OnModuleInit {
     try {
       // Se não há template, usar template padrão
       if (!notificacao.template) {
-        this.logger.debug(`Notificação ${notificacaoId} não possui template configurado, usando template padrão`);
-        
+        this.logger.debug(
+          `Notificação ${notificacaoId} não possui template configurado, usando template padrão`,
+        );
+
         // Criar template padrão temporário
-         const mensagemPadrao = notificacao.dados_contexto?.mensagem || notificacao.dados_contexto?.titulo || 'Você tem uma nova notificação.';
-         const templatePadrao = {
-           codigo: 'default',
-           assunto: 'Nova Notificação',
-           corpo: mensagemPadrao,
-           corpo_html: `<p>${mensagemPadrao}</p>`,
-           canais_disponiveis: ['sse', 'email']
-         };
-        
+        const mensagemPadrao =
+          notificacao.dados_contexto?.mensagem ||
+          notificacao.dados_contexto?.titulo ||
+          'Você tem uma nova notificação.';
+        const templatePadrao = {
+          codigo: 'default',
+          assunto: 'Nova Notificação',
+          corpo: mensagemPadrao,
+          corpo_html: `<p>${mensagemPadrao}</p>`,
+          canais_disponiveis: ['sse', 'email'],
+        };
+
         // Atribuir template padrão temporariamente para processamento
         notificacao.template = templatePadrao as any;
       }
@@ -314,8 +328,10 @@ export class NotificationManagerService implements OnModuleInit {
       let sucessoEmAlgumCanal = false;
 
       // Garantir que canais_disponiveis seja sempre um array
-      const canaisDisponiveis = Array.isArray(notificacao.template.canais_disponiveis) 
-        ? notificacao.template.canais_disponiveis 
+      const canaisDisponiveis = Array.isArray(
+        notificacao.template.canais_disponiveis,
+      )
+        ? notificacao.template.canais_disponiveis
         : [notificacao.template.canais_disponiveis];
 
       this.logger.debug(
@@ -340,7 +356,9 @@ export class NotificationManagerService implements OnModuleInit {
         // Verificar disponibilidade do canal
         const disponivel = await canal.verificarDisponibilidade();
         if (!disponivel) {
-          this.logger.warn(`Canal ${canalIdLimpo} não está disponível no momento`);
+          this.logger.warn(
+            `Canal ${canalIdLimpo} não está disponível no momento`,
+          );
           continue;
         }
 
@@ -419,7 +437,9 @@ export class NotificationManagerService implements OnModuleInit {
    * @param notificacao Notificação a ser agendada
    */
   private agendarNotificacao(notificacao: NotificacaoSistema): void {
-    this.logger.warn('Agendamento de notificações temporariamente desabilitado');
+    this.logger.warn(
+      'Agendamento de notificações temporariamente desabilitado',
+    );
     // Processar imediatamente como fallback
     this.processarNotificacao(notificacao.id).catch((err) => {
       this.logger.error(
@@ -440,25 +460,33 @@ export class NotificationManagerService implements OnModuleInit {
         verificarDisponibilidade: async () => {
           try {
             const { AblyService } = await import('./ably.service');
-            const ablyService = this.moduleRef.get(AblyService, { strict: false });
-            return ablyService && await ablyService.isConnected();
+            const ablyService = this.moduleRef.get(AblyService, {
+              strict: false,
+            });
+            return ablyService && (await ablyService.isConnected());
           } catch {
             return false;
           }
         },
-        enviar: async (notificacao: NotificacaoSistema): Promise<ResultadoEnvio> => {
+        enviar: async (
+          notificacao: NotificacaoSistema,
+        ): Promise<ResultadoEnvio> => {
           try {
             const { AblyService } = await import('./ably.service');
-            const ablyService = this.moduleRef.get(AblyService, { strict: false });
-            
+            const ablyService = this.moduleRef.get(AblyService, {
+              strict: false,
+            });
+
             if (!ablyService) {
               throw new Error('Serviço Ably não disponível');
             }
 
             // Buscar dados do usuário destinatário
             const usuarioService = await this.getUsuarioService();
-            const usuario = await usuarioService.findById(notificacao.destinatario_id);
-            
+            const usuario = await usuarioService.findById(
+              notificacao.destinatario_id,
+            );
+
             if (!usuario) {
               throw new Error('Usuário destinatário não encontrado');
             }
@@ -466,12 +494,13 @@ export class NotificationManagerService implements OnModuleInit {
             // Renderizar template se disponível
             let titulo = 'Nova Notificação';
             let conteudo = 'Você tem uma nova notificação.';
-            
+
             if (notificacao.template) {
-              const templateRenderizado = this.templateRenderer.renderizarNotificacao(
-                notificacao.template,
-                notificacao.dados_contexto || {}
-              );
+              const templateRenderizado =
+                this.templateRenderer.renderizarNotificacao(
+                  notificacao.template,
+                  notificacao.dados_contexto || {},
+                );
               titulo = templateRenderizado.assunto;
               conteudo = templateRenderizado.conteudo;
             }
@@ -485,7 +514,7 @@ export class NotificationManagerService implements OnModuleInit {
               prioridade: notificacao.template?.prioridade || 'normal',
               dados_contexto: notificacao.dados_contexto,
               timestamp: new Date().toISOString(),
-              destinatario_id: notificacao.destinatario_id
+              destinatario_id: notificacao.destinatario_id,
             };
 
             // Enviar via Ably para canal específico do usuário
@@ -493,7 +522,7 @@ export class NotificationManagerService implements OnModuleInit {
             const resultado = await ablyService.publishMessage(
               canalUsuario,
               'notification',
-              dadosNotificacao
+              dadosNotificacao,
             );
 
             if (resultado.success) {
@@ -502,85 +531,113 @@ export class NotificationManagerService implements OnModuleInit {
                 mensagem: 'Notificação Ably enviada com sucesso',
                 data_envio: new Date(),
                 identificador_externo: resultado.messageId,
-                dados_resposta: { 
-                  canal: canalUsuario, 
+                dados_resposta: {
+                  canal: canalUsuario,
                   messageId: resultado.messageId,
-                  tipo: 'ably_realtime'
-                }
+                  tipo: 'ably_realtime',
+                },
               };
             } else {
               throw new Error(resultado.error || 'Falha no envio via Ably');
             }
           } catch (error) {
-            this.logger.error(`Erro ao enviar notificação via Ably: ${error.message}`, error.stack);
+            this.logger.error(
+              `Erro ao enviar notificação via Ably: ${error.message}`,
+              error.stack,
+            );
             return {
               sucesso: false,
               mensagem: `Erro ao enviar via Ably: ${error.message}`,
               data_envio: new Date(),
-              erro: error as Error
+              erro: error as Error,
             };
           }
-        }
+        },
       };
-      
+
       this.canaisNotificacao.set('ably', canalAbly);
       this.logger.log('Canal de notificação registrado: ably (Principal)');
 
       // Verificar se o EmailService está disponível e configurado
       try {
         // Verificar se o EmailService está habilitado e configurado
-        const emailDisponivel = this.emailService && this.emailService.isEmailEnabled();
-        
-        this.logger.debug(`EmailService disponível: ${!!this.emailService}, habilitado: ${emailDisponivel}`);
-        
+        const emailDisponivel =
+          this.emailService && this.emailService.isEmailEnabled();
+
+        this.logger.debug(
+          `EmailService disponível: ${!!this.emailService}, habilitado: ${emailDisponivel}`,
+        );
+
         if (emailDisponivel) {
           // Criar um canal de email usando o EmailService compartilhado
           const canalEmail: CanalNotificacao = {
             canal_id: 'email',
             verificarDisponibilidade: async () => emailDisponivel,
-            enviar: async (notificacao: NotificacaoSistema): Promise<ResultadoEnvio> => {
+            enviar: async (
+              notificacao: NotificacaoSistema,
+            ): Promise<ResultadoEnvio> => {
               try {
-                this.logger.debug(`Tentando enviar email para usuário ID: ${notificacao.destinatario_id}`);
+                this.logger.debug(
+                  `Tentando enviar email para usuário ID: ${notificacao.destinatario_id}`,
+                );
                 this.logger.debug(`Assunto: ${notificacao.template.assunto}`);
-                this.logger.debug(`Dados contexto: ${JSON.stringify(notificacao.dados_contexto)}`);
-                
+                this.logger.debug(
+                  `Dados contexto: ${JSON.stringify(notificacao.dados_contexto)}`,
+                );
+
                 // Buscar o email do usuário pelo ID
                 const usuarioService = await this.getUsuarioService();
-                const usuario = await usuarioService.findById(notificacao.destinatario_id);
+                const usuario = await usuarioService.findById(
+                  notificacao.destinatario_id,
+                );
                 if (!usuario || !usuario.email) {
-                  throw new Error(`Usuário com ID ${notificacao.destinatario_id} não encontrado ou sem email`);
+                  throw new Error(
+                    `Usuário com ID ${notificacao.destinatario_id} não encontrado ou sem email`,
+                  );
                 }
-                
-                this.logger.debug(`Email do usuário encontrado: ${usuario.email}`);
-                
+
+                this.logger.debug(
+                  `Email do usuário encontrado: ${usuario.email}`,
+                );
+
                 const sucesso = await this.emailService.sendEmail({
                   to: usuario.email,
                   subject: notificacao.template.assunto,
                   template: {
                     type: 'inline',
-                    source: notificacao.template.corpo_html || notificacao.template.corpo
+                    source:
+                      notificacao.template.corpo_html ||
+                      notificacao.template.corpo,
                   },
                   context: notificacao.dados_contexto,
                 });
-                
+
                 return {
                   sucesso,
-                  mensagem: sucesso ? 'Email enviado com sucesso' : 'Falha no envio do email',
+                  mensagem: sucesso
+                    ? 'Email enviado com sucesso'
+                    : 'Falha no envio do email',
                   data_envio: new Date(),
-                  dados_resposta: { enviado: sucesso, email_destinatario: usuario.email }
+                  dados_resposta: {
+                    enviado: sucesso,
+                    email_destinatario: usuario.email,
+                  },
                 };
               } catch (error) {
-                this.logger.error(`Erro detalhado ao enviar email: ${error.message}`, error.stack);
+                this.logger.error(
+                  `Erro detalhado ao enviar email: ${error.message}`,
+                  error.stack,
+                );
                 return {
                   sucesso: false,
                   mensagem: `Erro ao enviar email: ${error.message}`,
                   data_envio: new Date(),
-                  erro: error as Error
+                  erro: error as Error,
                 };
               }
-            }
+            },
           };
-          
+
           this.canaisNotificacao.set('email', canalEmail);
           this.logger.log('Canal de notificação registrado: email');
         } else {
@@ -591,7 +648,7 @@ export class NotificationManagerService implements OnModuleInit {
       } catch (e) {
         this.logger.warn(
           'Erro ao verificar EmailService. Notificações por email não serão enviadas.',
-          e.message
+          e.message,
         );
       }
 
@@ -606,27 +663,32 @@ export class NotificationManagerService implements OnModuleInit {
               NOTIFICATION_CREATED,
               new NotificationCreatedEvent(notificacao),
             );
-            
+
             return {
               sucesso: true,
               mensagem: 'Notificação SSE enviada com sucesso (fallback)',
               data_envio: new Date(),
-              dados_resposta: { canal: 'sistema', tipo: 'sse_fallback' }
+              dados_resposta: { canal: 'sistema', tipo: 'sse_fallback' },
             };
           } catch (error) {
-            this.logger.error(`Erro ao enviar notificação SSE: ${error.message}`, error.stack);
+            this.logger.error(
+              `Erro ao enviar notificação SSE: ${error.message}`,
+              error.stack,
+            );
             return {
               sucesso: false,
               mensagem: `Erro ao enviar notificação SSE: ${error.message}`,
               data_envio: new Date(),
-              erro: error as Error
+              erro: error as Error,
             };
           }
-        }
+        },
       };
-      
+
       this.canaisNotificacao.set('sistema', canalSistema);
-      this.logger.log('Canal de notificação registrado: sistema (SSE - Fallback)');
+      this.logger.log(
+        'Canal de notificação registrado: sistema (SSE - Fallback)',
+      );
 
       this.logger.log(
         `Total de ${this.canaisNotificacao.size} canais de notificação registrados`,
@@ -680,7 +742,9 @@ export class NotificationManagerService implements OnModuleInit {
 
       // TODO: Configurar job para verificar notificações pendentes periodicamente
       // Temporariamente desabilitado - depende do ScheduleAdapter
-      this.logger.warn('Verificação periódica de notificações pendentes temporariamente desabilitada');
+      this.logger.warn(
+        'Verificação periódica de notificações pendentes temporariamente desabilitada',
+      );
     } catch (error) {
       this.logger.error(
         `Erro ao iniciar processamento da fila de notificações: ${error.message}`,

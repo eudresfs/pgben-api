@@ -71,8 +71,10 @@ export const INTEGRACOES_ESPECIFICAS_ERRORS: Record<string, ErrorDefinition> = {
     category: ErrorCategory.VALIDATIONS,
     severity: ErrorSeverity.HIGH,
     localizedMessages: {
-      'pt-BR': 'Renda per capita familiar excede limite do CadÚnico (meio salário mínimo)',
-      'en-US': 'Family per capita income exceeds CadÚnico limit (half minimum wage)',
+      'pt-BR':
+        'Renda per capita familiar excede limite do CadÚnico (meio salário mínimo)',
+      'en-US':
+        'Family per capita income exceeds CadÚnico limit (half minimum wage)',
     },
     legalReference: 'Lei 10.836/2004',
   },
@@ -269,7 +271,8 @@ export const INTEGRACOES_ESPECIFICAS_ERRORS: Record<string, ErrorDefinition> = {
     category: ErrorCategory.VALIDATIONS,
     severity: ErrorSeverity.MEDIUM,
     localizedMessages: {
-      'pt-BR': 'Certidão de nascimento não foi encontrada no sistema de cartórios',
+      'pt-BR':
+        'Certidão de nascimento não foi encontrada no sistema de cartórios',
       'en-US': 'Birth certificate not found in registry office system',
     },
   },
@@ -293,8 +296,10 @@ export const INTEGRACOES_ESPECIFICAS_ERRORS: Record<string, ErrorDefinition> = {
     category: ErrorCategory.VALIDATIONS,
     severity: ErrorSeverity.HIGH,
     localizedMessages: {
-      'pt-BR': 'Dados da certidão não conferem com os informados na solicitação',
-      'en-US': 'Certificate data does not match the information provided in the request',
+      'pt-BR':
+        'Dados da certidão não conferem com os informados na solicitação',
+      'en-US':
+        'Certificate data does not match the information provided in the request',
     },
   },
 
@@ -470,8 +475,8 @@ export function throwIntegraçãoTimeout(
   language: string = 'pt-BR',
 ): never {
   const errorCodes = {
-    'CadÚnico': 'INT_1005',
-    'SIAFI': 'INT_1014',
+    CadÚnico: 'INT_1005',
+    SIAFI: 'INT_1014',
     'Receita Federal': 'INT_1023',
   };
 
@@ -502,8 +507,8 @@ export function throwServicoIndisponivel(
   language: string = 'pt-BR',
 ): never {
   const errorCodes = {
-    'CadÚnico': 'INT_1006',
-    'SIAFI': 'INT_1014',
+    CadÚnico: 'INT_1006',
+    SIAFI: 'INT_1014',
     'Banco Central': 'INT_1033',
   };
 

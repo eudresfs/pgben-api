@@ -1,6 +1,6 @@
 /**
  * AuditEventEmitter
- * 
+ *
  * Emissor de eventos de auditoria que substitui o AuditoriaService.
  * Utiliza EventEmitter2 para emissão síncrona e BullMQ para processamento assíncrono.
  */
@@ -34,30 +34,34 @@ export class AuditEventEmitter {
    */
   async emit(event: AuditEvent, config?: AuditEventConfig): Promise<void> {
     const startTime = Date.now();
-    
+
     try {
       // Validação básica
       this.validateEvent(event);
-      
+
       // Enriquece o evento com dados padrão
       const enrichedEvent = this.enrichEvent(event);
-      
+
       // Emite evento síncrono para listeners imediatos
       this.eventEmitter.emit(enrichedEvent.eventType, enrichedEvent);
-      
+
       // Determina se deve processar de forma síncrona
-      const shouldProcessSync = config?.synchronous || this.shouldProcessSynchronously(enrichedEvent);
-      
+      const shouldProcessSync =
+        config?.synchronous || this.shouldProcessSynchronously(enrichedEvent);
+
       if (shouldProcessSync) {
         // Processamento síncrono para eventos críticos
         try {
           this.eventEmitter.emit('audit.process.sync', enrichedEvent);
         } catch (syncError) {
-          this.logger.error(`Failed to process sync audit event: ${syncError.message}`, {
-            eventType: enrichedEvent.eventType,
-            entityName: enrichedEvent.entityName,
-            error: syncError.stack
-          });
+          this.logger.error(
+            `Failed to process sync audit event: ${syncError.message}`,
+            {
+              eventType: enrichedEvent.eventType,
+              entityName: enrichedEvent.entityName,
+              error: syncError.stack,
+            },
+          );
           // Para eventos síncronos críticos, ainda propagamos o erro
           if (enrichedEvent.riskLevel === 'CRITICAL') {
             throw syncError;
@@ -68,30 +72,40 @@ export class AuditEventEmitter {
         try {
           await this.addToQueue(enrichedEvent, config);
         } catch (queueError) {
-          this.logger.error(`Failed to add audit event to queue: ${queueError.message}`, {
-            eventType: enrichedEvent.eventType,
-            entityName: enrichedEvent.entityName,
-            error: queueError.stack
-          });
+          this.logger.error(
+            `Failed to add audit event to queue: ${queueError.message}`,
+            {
+              eventType: enrichedEvent.eventType,
+              entityName: enrichedEvent.entityName,
+              error: queueError.stack,
+            },
+          );
           // Para eventos assíncronos, não propagamos o erro para não afetar a API
           // O evento foi emitido sincronamente, então listeners imediatos já foram notificados
         }
       }
-      
+
       const duration = Date.now() - startTime;
-      this.logger.debug(`Event emitted in ${duration}ms: ${enrichedEvent.eventType}`);
-      
+      this.logger.debug(
+        `Event emitted in ${duration}ms: ${enrichedEvent.eventType}`,
+      );
     } catch (error) {
       // Apenas erros de validação ou críticos são propagados
-      if (error.message.includes('is required') || event.riskLevel === 'CRITICAL') {
-        this.logger.error(`Critical audit event error: ${error.message}`, error.stack);
+      if (
+        error.message.includes('is required') ||
+        event.riskLevel === 'CRITICAL'
+      ) {
+        this.logger.error(
+          `Critical audit event error: ${error.message}`,
+          error.stack,
+        );
         throw error;
       } else {
         // Outros erros são apenas logados
         this.logger.error(`Non-critical audit event error: ${error.message}`, {
           eventType: event.eventType,
           entityName: event.entityName,
-          error: error.stack
+          error: error.stack,
         });
       }
     }
@@ -133,7 +147,8 @@ export class AuditEventEmitter {
     config?: AuditEventConfig,
   ): Promise<void> {
     const changedFields = this.getChangedFields(previousData, newData);
-    const sensitiveFieldsChanged = this.hasSensitiveFieldsChanged(changedFields);
+    const sensitiveFieldsChanged =
+      this.hasSensitiveFieldsChanged(changedFields);
 
     const event: EntityAuditEvent = {
       eventType: AuditEventType.ENTITY_UPDATED,
@@ -146,7 +161,8 @@ export class AuditEventEmitter {
       changedFields,
       sensitiveFieldsChanged,
       riskLevel: sensitiveFieldsChanged ? RiskLevel.MEDIUM : RiskLevel.LOW,
-      lgpdRelevant: sensitiveFieldsChanged || this.containsSensitiveData(newData),
+      lgpdRelevant:
+        sensitiveFieldsChanged || this.containsSensitiveData(newData),
     };
 
     await this.emit(event, config);
@@ -276,11 +292,11 @@ export class AuditEventEmitter {
     if (!event.eventType) {
       throw new Error('Event type is required');
     }
-    
+
     if (!event.entityName) {
       throw new Error('Entity name is required');
     }
-    
+
     if (!event.timestamp) {
       throw new Error('Timestamp is required');
     }
@@ -314,7 +330,10 @@ export class AuditEventEmitter {
   /**
    * Adiciona evento à fila para processamento assíncrono
    */
-  private async addToQueue(event: AuditEvent, config?: AuditEventConfig): Promise<void> {
+  private async addToQueue(
+    event: AuditEvent,
+    config?: AuditEventConfig,
+  ): Promise<void> {
     const jobOptions = {
       priority: config?.priority || this.getEventPriority(event),
       delay: config?.delay || 0,
@@ -333,11 +352,15 @@ export class AuditEventEmitter {
         throw new Error('Audit queue not available');
       }
 
-      await this.auditQueue.add('process-audit-event', {
-        event,
-        config,
-      }, jobOptions);
-      
+      await this.auditQueue.add(
+        'process-audit-event',
+        {
+          event,
+          config,
+        },
+        jobOptions,
+      );
+
       this.logger.debug(`Event added to queue: ${event.eventType}`);
     } catch (error) {
       // Log detalhado do erro para diagnóstico
@@ -346,12 +369,16 @@ export class AuditEventEmitter {
         entityName: event.entityName,
         errorCode: error.code,
         errorName: error.name,
-        isRedisError: error.message.includes('Redis') || error.message.includes('ECONNREFUSED'),
+        isRedisError:
+          error.message.includes('Redis') ||
+          error.message.includes('ECONNREFUSED'),
       });
-      
+
       // Para eventos críticos, tenta processamento síncrono como fallback
       if (event.riskLevel === 'CRITICAL') {
-        this.logger.warn(`Attempting sync fallback for critical event: ${event.eventType}`);
+        this.logger.warn(
+          `Attempting sync fallback for critical event: ${event.eventType}`,
+        );
         try {
           this.eventEmitter.emit('audit.process.sync', event);
         } catch (syncError) {
@@ -359,7 +386,7 @@ export class AuditEventEmitter {
           throw error; // Re-throw original error
         }
       }
-      
+
       throw error;
     }
   }
@@ -385,33 +412,47 @@ export class AuditEventEmitter {
    * Verifica se os dados contêm informações sensíveis
    */
   private containsSensitiveData(data: Record<string, any>): boolean {
-    const sensitiveFields = ['cpf', 'rg', 'email', 'telefone', 'endereco', 'senha', 'password'];
-    return Object.keys(data || {}).some(key => 
-      sensitiveFields.some(field => key.toLowerCase().includes(field))
+    const sensitiveFields = [
+      'cpf',
+      'rg',
+      'email',
+      'telefone',
+      'endereco',
+      'senha',
+      'password',
+    ];
+    return Object.keys(data || {}).some((key) =>
+      sensitiveFields.some((field) => key.toLowerCase().includes(field)),
     );
   }
 
   /**
    * Obtém os campos que foram alterados
    */
-  private getChangedFields(previousData: Record<string, any>, newData: Record<string, any>): string[] {
+  private getChangedFields(
+    previousData: Record<string, any>,
+    newData: Record<string, any>,
+  ): string[] {
     const changedFields: string[] = [];
-    
+
     // Validação para evitar erro de null reference
     if (!previousData || !newData) {
-      this.logger.warn('getChangedFields: previousData ou newData é null/undefined', {
-        previousData: !!previousData,
-        newData: !!newData
-      });
+      this.logger.warn(
+        'getChangedFields: previousData ou newData é null/undefined',
+        {
+          previousData: !!previousData,
+          newData: !!newData,
+        },
+      );
       return Object.keys(newData || {});
     }
-    
+
     for (const key in newData) {
       if (JSON.stringify(previousData[key]) !== JSON.stringify(newData[key])) {
         changedFields.push(key);
       }
     }
-    
+
     return changedFields;
   }
 
@@ -419,9 +460,19 @@ export class AuditEventEmitter {
    * Verifica se campos sensíveis foram alterados
    */
   private hasSensitiveFieldsChanged(changedFields: string[]): boolean {
-    const sensitiveFields = ['cpf', 'rg', 'email', 'telefone', 'endereco', 'senha', 'password'];
-    return changedFields.some(field => 
-      sensitiveFields.some(sensitive => field.toLowerCase().includes(sensitive))
+    const sensitiveFields = [
+      'cpf',
+      'rg',
+      'email',
+      'telefone',
+      'endereco',
+      'senha',
+      'password',
+    ];
+    return changedFields.some((field) =>
+      sensitiveFields.some((sensitive) =>
+        field.toLowerCase().includes(sensitive),
+      ),
     );
   }
 
@@ -429,14 +480,25 @@ export class AuditEventEmitter {
    * Verifica se a entidade é sensível
    */
   private isEntitySensitive(entityName: string): boolean {
-    const sensitiveEntities = ['user', 'citizen', 'beneficiary', 'usuario', 'cidadao', 'beneficiario'];
-    return sensitiveEntities.some(entity => entityName.toLowerCase().includes(entity));
+    const sensitiveEntities = [
+      'user',
+      'citizen',
+      'beneficiary',
+      'usuario',
+      'cidadao',
+      'beneficiario',
+    ];
+    return sensitiveEntities.some((entity) =>
+      entityName.toLowerCase().includes(entity),
+    );
   }
 
   /**
    * Obtém o nível de risco para eventos de segurança
    */
-  private getSecurityEventRiskLevel(eventType: SecurityAuditEvent['eventType']): RiskLevel {
+  private getSecurityEventRiskLevel(
+    eventType: SecurityAuditEvent['eventType'],
+  ): RiskLevel {
     switch (eventType) {
       case AuditEventType.FAILED_LOGIN:
       case AuditEventType.ACCOUNT_LOCKED:

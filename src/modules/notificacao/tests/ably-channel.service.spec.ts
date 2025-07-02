@@ -3,7 +3,12 @@ import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { AblyChannelService } from '../services/ably-channel.service';
 import { AblyService } from '../services/ably.service';
-import { IAblyNotificationData, NotificationType, NotificationPriority, IAblyChannelStats } from '../interfaces/ably.interface';
+import {
+  IAblyNotificationData,
+  NotificationType,
+  NotificationPriority,
+  IAblyChannelStats,
+} from '../interfaces/ably.interface';
 import * as Ably from 'ably';
 
 describe('AblyChannelService', () => {
@@ -20,7 +25,7 @@ describe('AblyChannelService', () => {
       leave: jest.fn(),
       get: jest.fn(),
       subscribe: jest.fn(),
-      unsubscribe: jest.fn()
+      unsubscribe: jest.fn(),
     } as any;
 
     mockChannel = {
@@ -30,7 +35,7 @@ describe('AblyChannelService', () => {
       presence: mockPresence,
       history: jest.fn(),
       state: 'attached',
-      name: 'test-channel'
+      name: 'test-channel',
     } as any;
 
     const module: TestingModule = await Test.createTestingModule({
@@ -43,13 +48,13 @@ describe('AblyChannelService', () => {
             getClientOptions: jest.fn().mockReturnValue({
               key: 'test-api-key',
               environment: 'test',
-              clientId: 'test-client'
+              clientId: 'test-client',
             }),
             getChannelName: jest.fn().mockReturnValue('test-channel'),
             channelNotifications: 'notifications',
             channelSystem: 'system',
-            channelUser: 'user'
-          }
+            channelUser: 'user',
+          },
         },
         {
           provide: AblyService,
@@ -58,22 +63,22 @@ describe('AblyChannelService', () => {
             publishNotification: jest.fn(),
             subscribeToChannel: jest.fn(),
             unsubscribeFromChannel: jest.fn(),
-            isHealthy: jest.fn().mockReturnValue(true)
-          }
+            isHealthy: jest.fn().mockReturnValue(true),
+          },
         },
         {
           provide: ConfigService,
           useValue: {
-            get: jest.fn().mockReturnValue('test-value')
-          }
+            get: jest.fn().mockReturnValue('test-value'),
+          },
         },
         {
           provide: EventEmitter2,
           useValue: {
-            emit: jest.fn()
-          }
-        }
-      ]
+            emit: jest.fn(),
+          },
+        },
+      ],
     }).compile();
 
     service = module.get<AblyChannelService>(AblyChannelService);
@@ -92,8 +97,10 @@ describe('AblyChannelService', () => {
 
     it('deve inicializar canais padrão', async () => {
       await service.onModuleInit();
-      
-      expect(ablyService.getChannel).toHaveBeenCalledWith('notifications:general');
+
+      expect(ablyService.getChannel).toHaveBeenCalledWith(
+        'notifications:general',
+      );
       expect(ablyService.getChannel).toHaveBeenCalledWith('system:alerts');
       expect(ablyService.getChannel).toHaveBeenCalledWith('audit:logs');
     });
@@ -105,7 +112,7 @@ describe('AblyChannelService', () => {
 
     it('deve criar canal de usuário com sucesso', async () => {
       const result = await service.createUserChannel(userId);
-      
+
       expect(result.success).toBe(true);
       expect(result.channelName).toBe(expectedChannelName);
       expect(ablyService.getChannel).toHaveBeenCalledWith(expectedChannelName);
@@ -113,15 +120,24 @@ describe('AblyChannelService', () => {
 
     it('deve configurar listeners para canal de usuário', async () => {
       await service.createUserChannel(userId);
-      
-      expect(mockChannel.subscribe).toHaveBeenCalledWith('notification', expect.any(Function));
-      expect(mockPresence.subscribe).toHaveBeenCalledWith('enter', expect.any(Function));
-      expect(mockPresence.subscribe).toHaveBeenCalledWith('leave', expect.any(Function));
+
+      expect(mockChannel.subscribe).toHaveBeenCalledWith(
+        'notification',
+        expect.any(Function),
+      );
+      expect(mockPresence.subscribe).toHaveBeenCalledWith(
+        'enter',
+        expect.any(Function),
+      );
+      expect(mockPresence.subscribe).toHaveBeenCalledWith(
+        'leave',
+        expect.any(Function),
+      );
     });
 
     it('deve retornar erro para userId inválido', async () => {
       const result = await service.createUserChannel('');
-      
+
       expect(result.success).toBe(false);
       expect(result.error).toBe('ID do usuário é obrigatório');
       expect(result.errorCode).toBe('INVALID_USER_ID');
@@ -132,9 +148,9 @@ describe('AblyChannelService', () => {
       (ablyService.getChannel as jest.Mock).mockImplementation(() => {
         throw error;
       });
-      
+
       const result = await service.createUserChannel(userId);
-      
+
       expect(result.success).toBe(false);
       expect(result.error).toBe('Falha na criação do canal');
       expect(result.errorCode).toBe('CHANNEL_CREATION_FAILED');
@@ -147,8 +163,11 @@ describe('AblyChannelService', () => {
     const expectedChannelName = `broadcast:${channelType}:${targetId}`;
 
     it('deve criar canal de broadcast com sucesso', async () => {
-      const result = await service.createBroadcastChannel(channelType, targetId);
-      
+      const result = await service.createBroadcastChannel(
+        channelType,
+        targetId,
+      );
+
       expect(result.success).toBe(true);
       expect(result.channelName).toBe(expectedChannelName);
       expect(ablyService.getChannel).toHaveBeenCalledWith(expectedChannelName);
@@ -156,13 +175,16 @@ describe('AblyChannelService', () => {
 
     it('deve configurar listeners para canal de broadcast', async () => {
       await service.createBroadcastChannel(channelType, targetId);
-      
-      expect(mockChannel.subscribe).toHaveBeenCalledWith('broadcast', expect.any(Function));
+
+      expect(mockChannel.subscribe).toHaveBeenCalledWith(
+        'broadcast',
+        expect.any(Function),
+      );
     });
 
     it('deve retornar erro para parâmetros inválidos', async () => {
       const result = await service.createBroadcastChannel('', targetId);
-      
+
       expect(result.success).toBe(false);
       expect(result.error).toBe('Tipo de canal e ID do alvo são obrigatórios');
       expect(result.errorCode).toBe('INVALID_BROADCAST_PARAMS');
@@ -179,27 +201,33 @@ describe('AblyChannelService', () => {
       priority: 'normal' as NotificationPriority,
       data: { test: true },
       timestamp: new Date(),
-      senderId: 'sender-123'
+      senderId: 'sender-123',
     };
 
     beforeEach(() => {
       (ablyService.publishNotification as jest.Mock).mockResolvedValue({
         success: true,
-        data: mockNotification
+        data: mockNotification,
       });
     });
 
     it('deve publicar notificação com sucesso', async () => {
-      const result = await service.publishToChannel(channelName, mockNotification);
-      
+      const result = await service.publishToChannel(
+        channelName,
+        mockNotification,
+      );
+
       expect(result.success).toBe(true);
       expect(result.data).toEqual(mockNotification);
-      expect(ablyService.publishNotification).toHaveBeenCalledWith(channelName, mockNotification);
+      expect(ablyService.publishNotification).toHaveBeenCalledWith(
+        channelName,
+        mockNotification,
+      );
     });
 
     it('deve atualizar estatísticas do canal', async () => {
       await service.publishToChannel(channelName, mockNotification);
-      
+
       const stats = service.getChannelStats(channelName);
       expect(stats?.messagesSent).toBe(1);
       expect(stats?.lastActivity).toBeInstanceOf(Date);
@@ -207,23 +235,29 @@ describe('AblyChannelService', () => {
 
     it('deve emitir evento de publicação', async () => {
       await service.publishToChannel(channelName, mockNotification);
-      
-      expect(eventEmitter.emit).toHaveBeenCalledWith('ably.channel.message.published', {
-        channelName,
-        notification: mockNotification,
-        timestamp: expect.any(Date)
-      });
+
+      expect(eventEmitter.emit).toHaveBeenCalledWith(
+        'ably.channel.message.published',
+        {
+          channelName,
+          notification: mockNotification,
+          timestamp: expect.any(Date),
+        },
+      );
     });
 
     it('deve retornar erro quando publicação falha', async () => {
       (ablyService.publishNotification as jest.Mock).mockResolvedValue({
         success: false,
         error: 'Falha na publicação',
-        errorCode: 'PUBLISH_FAILED'
+        errorCode: 'PUBLISH_FAILED',
       });
-      
-      const result = await service.publishToChannel(channelName, mockNotification);
-      
+
+      const result = await service.publishToChannel(
+        channelName,
+        mockNotification,
+      );
+
       expect(result.success).toBe(false);
       expect(result.error).toBe('Falha na publicação');
       expect(result.errorCode).toBe('PUBLISH_FAILED');
@@ -235,20 +269,22 @@ describe('AblyChannelService', () => {
     const callback = jest.fn();
 
     it('deve inscrever-se no canal do usuário', async () => {
-      (ablyService.subscribeToChannel as jest.Mock).mockResolvedValue({ success: true });
-      
+      (ablyService.subscribeToChannel as jest.Mock).mockResolvedValue({
+        success: true,
+      });
+
       const result = await service.subscribeToUserChannel(userId, callback);
-      
+
       expect(result.success).toBe(true);
       expect(ablyService.subscribeToChannel).toHaveBeenCalledWith(
         `user:${userId}:notifications`,
-        callback
+        callback,
       );
     });
 
     it('deve retornar erro para userId inválido', async () => {
       const result = await service.subscribeToUserChannel('', callback);
-      
+
       expect(result.success).toBe(false);
       expect(result.error).toBe('ID do usuário é obrigatório');
     });
@@ -258,13 +294,15 @@ describe('AblyChannelService', () => {
     const userId = 'user-123';
 
     it('deve cancelar inscrição do canal do usuário', async () => {
-      (ablyService.unsubscribeFromChannel as jest.Mock).mockResolvedValue({ success: true });
-      
+      (ablyService.unsubscribeFromChannel as jest.Mock).mockResolvedValue({
+        success: true,
+      });
+
       const result = await service.unsubscribeFromUserChannel(userId);
-      
+
       expect(result.success).toBe(true);
       expect(ablyService.unsubscribeFromChannel).toHaveBeenCalledWith(
-        `user:${userId}:notifications`
+        `user:${userId}:notifications`,
       );
     });
   });
@@ -276,23 +314,31 @@ describe('AblyChannelService', () => {
 
     it('deve entrar na presença do canal', async () => {
       mockPresence.enter.mockResolvedValue(undefined);
-      
-      const result = await service.enterChannelPresence(channelName, userId, userData);
-      
+
+      const result = await service.enterChannelPresence(
+        channelName,
+        userId,
+        userData,
+      );
+
       expect(result.success).toBe(true);
       expect(mockPresence.enter).toHaveBeenCalledWith({
         userId,
         ...userData,
-        timestamp: expect.any(Date)
+        timestamp: expect.any(Date),
       });
     });
 
     it('deve retornar erro quando entrada na presença falha', async () => {
       const error = new Error('Falha na presença');
       mockPresence.enter.mockRejectedValue(error);
-      
-      const result = await service.enterChannelPresence(channelName, userId, userData);
-      
+
+      const result = await service.enterChannelPresence(
+        channelName,
+        userId,
+        userData,
+      );
+
       expect(result.success).toBe(false);
       expect(result.error).toBe('Falha na presença');
     });
@@ -304,13 +350,13 @@ describe('AblyChannelService', () => {
 
     it('deve sair da presença do canal', async () => {
       mockPresence.leave.mockResolvedValue(undefined);
-      
+
       const result = await service.leaveChannelPresence(channelName, userId);
-      
+
       expect(result.success).toBe(true);
       expect(mockPresence.leave).toHaveBeenCalledWith({
         userId,
-        timestamp: expect.any(Date)
+        timestamp: expect.any(Date),
       });
     });
   });
@@ -319,14 +365,14 @@ describe('AblyChannelService', () => {
     const channelName = 'test-channel';
     const mockPresenceMembers = [
       { clientId: 'user-1', data: { name: 'User 1' } },
-      { clientId: 'user-2', data: { name: 'User 2' } }
+      { clientId: 'user-2', data: { name: 'User 2' } },
     ];
 
     it('deve retornar membros presentes no canal', async () => {
       mockPresence.get.mockResolvedValue(mockPresenceMembers as any);
-      
+
       const result = await service.getChannelPresence(channelName);
-      
+
       expect(result.success).toBe(true);
       expect(result.members).toEqual(mockPresenceMembers);
     });
@@ -334,9 +380,9 @@ describe('AblyChannelService', () => {
     it('deve retornar erro quando busca de presença falha', async () => {
       const error = new Error('Falha na busca de presença');
       mockPresence.get.mockRejectedValue(error);
-      
+
       const result = await service.getChannelPresence(channelName);
-      
+
       expect(result.success).toBe(false);
       expect(result.error).toBe('Falha na busca de presença');
     });
@@ -354,11 +400,11 @@ describe('AblyChannelService', () => {
         activeSubscribers: 2,
         presenceMembers: 1,
         lastActivity: new Date(),
-        createdAt: new Date()
+        createdAt: new Date(),
       });
-      
+
       const stats = service.getChannelStats(channelName);
-      
+
       expect(stats).toBeDefined();
       expect(stats?.messagesSent).toBe(5);
       expect(stats?.messagesReceived).toBe(3);
@@ -380,9 +426,9 @@ describe('AblyChannelService', () => {
         activeSubscribers: 2,
         presenceMembers: 1,
         lastActivity: new Date(),
-        createdAt: new Date()
+        createdAt: new Date(),
       };
-      
+
       const channel2Stats: IAblyChannelStats = {
         channelName: 'channel-2',
         messagesSent: 10,
@@ -390,14 +436,14 @@ describe('AblyChannelService', () => {
         activeSubscribers: 4,
         presenceMembers: 2,
         lastActivity: new Date(),
-        createdAt: new Date()
+        createdAt: new Date(),
       };
-      
+
       service['channelStats'].set('channel-1', channel1Stats);
       service['channelStats'].set('channel-2', channel2Stats);
-      
+
       const allStats = service.getAllChannelStats();
-      
+
       expect(allStats).toHaveLength(2);
       expect(allStats).toContain(channel1Stats);
       expect(allStats).toContain(channel2Stats);
@@ -421,30 +467,36 @@ describe('AblyChannelService', () => {
         activeSubscribers: 2,
         presenceMembers: 1,
         lastActivity: new Date(),
-        createdAt: new Date()
+        createdAt: new Date(),
       });
     });
 
     it('deve remover canal com sucesso', async () => {
-      (ablyService.unsubscribeFromChannel as jest.Mock).mockResolvedValue({ success: true });
+      (ablyService.unsubscribeFromChannel as jest.Mock).mockResolvedValue({
+        success: true,
+      });
       mockPresence.leave.mockResolvedValue(undefined);
-      
+
       const result = await service.removeChannel(channelName);
-      
+
       expect(result.success).toBe(true);
       expect(service.getChannelStats(channelName)).toBeNull();
-      expect(ablyService.unsubscribeFromChannel).toHaveBeenCalledWith(channelName);
+      expect(ablyService.unsubscribeFromChannel).toHaveBeenCalledWith(
+        channelName,
+      );
     });
 
     it('deve emitir evento de remoção de canal', async () => {
-      (ablyService.unsubscribeFromChannel as jest.Mock).mockResolvedValue({ success: true });
+      (ablyService.unsubscribeFromChannel as jest.Mock).mockResolvedValue({
+        success: true,
+      });
       mockPresence.leave.mockResolvedValue(undefined);
-      
+
       await service.removeChannel(channelName);
-      
+
       expect(eventEmitter.emit).toHaveBeenCalledWith('ably.channel.removed', {
         channelName,
-        timestamp: expect.any(Date)
+        timestamp: expect.any(Date),
       });
     });
 
@@ -452,11 +504,11 @@ describe('AblyChannelService', () => {
       (ablyService.unsubscribeFromChannel as jest.Mock).mockResolvedValue({
         success: false,
         error: 'Falha na remoção',
-        errorCode: 'UNSUBSCRIBE_FAILED'
+        errorCode: 'UNSUBSCRIBE_FAILED',
       });
-      
+
       const result = await service.removeChannel(channelName);
-      
+
       expect(result.success).toBe(false);
       expect(result.error).toBe('Falha na remoção');
     });
@@ -469,8 +521,8 @@ describe('AblyChannelService', () => {
         id: 'notif-123',
         type: 'system',
         title: 'Test',
-        message: 'Test message'
-      }
+        message: 'Test message',
+      },
     };
 
     beforeEach(async () => {
@@ -485,17 +537,20 @@ describe('AblyChannelService', () => {
           messageHandler.mockImplementation(handler);
         }
       });
-      
+
       service.createUserChannel('user-123');
-      
+
       // Simula recebimento de mensagem
       messageHandler(mockMessage);
-      
-      expect(eventEmitter.emit).toHaveBeenCalledWith('ably.channel.message.received', {
-        channelName: expect.stringContaining('user:user-123'),
-        message: mockMessage,
-        timestamp: expect.any(Date)
-      });
+
+      expect(eventEmitter.emit).toHaveBeenCalledWith(
+        'ably.channel.message.received',
+        {
+          channelName: expect.stringContaining('user:user-123'),
+          message: mockMessage,
+          timestamp: expect.any(Date),
+        },
+      );
     });
 
     it('deve processar eventos de presença', () => {
@@ -505,20 +560,20 @@ describe('AblyChannelService', () => {
           presenceHandler.mockImplementation(handler);
         }
       });
-      
+
       service.createUserChannel('user-123');
-      
+
       const presenceMessage = {
         clientId: 'user-456',
-        data: { name: 'Test User' }
+        data: { name: 'Test User' },
       };
-      
+
       presenceHandler(presenceMessage);
-      
+
       expect(eventEmitter.emit).toHaveBeenCalledWith('ably.presence.enter', {
         channelName: expect.stringContaining('user:user-123'),
         member: presenceMessage,
-        timestamp: expect.any(Date)
+        timestamp: expect.any(Date),
       });
     });
   });
@@ -528,9 +583,9 @@ describe('AblyChannelService', () => {
       // Adiciona alguns canais
       await service.createUserChannel('user-1');
       await service.createUserChannel('user-2');
-      
+
       await service.onModuleDestroy();
-      
+
       expect(service.getAllChannelStats()).toEqual([]);
     });
   });
@@ -545,11 +600,11 @@ describe('AblyChannelService', () => {
         priority: 'normal' as NotificationPriority,
         data: {},
         timestamp: new Date(),
-        senderId: 'test'
+        senderId: 'test',
       };
-      
+
       const result = await service.publishToChannel('', mockNotification);
-      
+
       expect(result.success).toBe(false);
       expect(result.errorCode).toBe('INVALID_CHANNEL_NAME');
     });
@@ -563,11 +618,14 @@ describe('AblyChannelService', () => {
         priority: 'normal' as NotificationPriority,
         data: {},
         timestamp: new Date(),
-        senderId: ''
+        senderId: '',
       };
-      
-      const result = await service.publishToChannel('test-channel', invalidNotification);
-      
+
+      const result = await service.publishToChannel(
+        'test-channel',
+        invalidNotification,
+      );
+
       expect(result.success).toBe(false);
       expect(result.errorCode).toBe('INVALID_NOTIFICATION_DATA');
     });

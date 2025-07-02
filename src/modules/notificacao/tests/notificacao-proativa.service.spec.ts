@@ -74,7 +74,9 @@ describe('NotificacaoProativaService', () => {
       ],
     }).compile();
 
-    service = module.get<NotificacaoProativaService>(NotificacaoProativaService);
+    service = module.get<NotificacaoProativaService>(
+      NotificacaoProativaService,
+    );
     notificacaoService = module.get(NotificacaoService);
     notificacaoRepository = module.get(getRepositoryToken(NotificacaoSistema));
     solicitacaoRepository = module.get(getRepositoryToken(Solicitacao));
@@ -84,9 +86,9 @@ describe('NotificacaoProativaService', () => {
     // Configurar valores padrão
     mockConfigService.get.mockImplementation((key: string) => {
       const config = {
-        'NOTIFICACAO_PRAZO_ALERTA_HORAS': '24,6,1',
-        'NOTIFICACAO_LIMPEZA_DIAS': '30',
-        'NOTIFICACAO_MAX_TENTATIVAS': '3',
+        NOTIFICACAO_PRAZO_ALERTA_HORAS: '24,6,1',
+        NOTIFICACAO_LIMPEZA_DIAS: '30',
+        NOTIFICACAO_MAX_TENTATIVAS: '3',
       };
       return config[key];
     });
@@ -117,7 +119,7 @@ describe('NotificacaoProativaService', () => {
 
       // Deve criar 3 alertas (24h, 6h, 1h antes)
       expect(mockNotificacaoService.criar).toHaveBeenCalledTimes(3);
-      
+
       // Verificar se os alertas foram agendados com os horários corretos
       const calls = mockNotificacaoService.criar.mock.calls;
       expect(calls[0][0]).toMatchObject({
@@ -132,7 +134,9 @@ describe('NotificacaoProativaService', () => {
       const prazoLimite = new Date();
       const usuarioId = 'user-id';
 
-      mockNotificacaoService.criar.mockRejectedValue(new Error('Erro de banco'));
+      mockNotificacaoService.criar.mockRejectedValue(
+        new Error('Erro de banco'),
+      );
 
       await expect(
         service.agendarAlertaPrazo(solicitacaoId, prazoLimite, usuarioId),
@@ -143,7 +147,7 @@ describe('NotificacaoProativaService', () => {
   describe('cancelarAlertasPrazo', () => {
     it('deve cancelar alertas de prazo existentes', async () => {
       const solicitacaoId = 'test-id';
-      
+
       const mockQueryBuilder = {
         where: jest.fn().mockReturnThis(),
         andWhere: jest.fn().mockReturnThis(),
@@ -153,7 +157,9 @@ describe('NotificacaoProativaService', () => {
         ]),
       };
 
-      mockNotificacaoRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
+      mockNotificacaoRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
       mockNotificacaoRepository.save.mockResolvedValue({} as any);
 
       const resultado = await service.cancelarAlertasPrazo(solicitacaoId);
@@ -167,7 +173,7 @@ describe('NotificacaoProativaService', () => {
     it('deve verificar prazos e enviar alertas necessários', async () => {
       const agora = new Date();
       const prazoProximo = new Date(agora.getTime() + 2 * 60 * 60 * 1000); // 2 horas
-      
+
       const solicitacoesPendentes = [
         {
           id: 'sol-1',
@@ -183,8 +189,12 @@ describe('NotificacaoProativaService', () => {
         getMany: jest.fn().mockResolvedValue(solicitacoesPendentes),
       };
 
-      mockSolicitacaoRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
-      mockNotificacaoService.criarNotificacaoAlerta.mockResolvedValue({} as any);
+      mockSolicitacaoRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
+      mockNotificacaoService.criarNotificacaoAlerta.mockResolvedValue(
+        {} as any,
+      );
 
       await service.executarVerificacaoPrazos();
 
@@ -205,8 +215,12 @@ describe('NotificacaoProativaService', () => {
         }),
       };
 
-      mockNotificacaoRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
-      mockNotificacaoService.criarNotificacaoSistema.mockResolvedValue({} as any);
+      mockNotificacaoRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
+      mockNotificacaoService.criarNotificacaoSistema.mockResolvedValue(
+        {} as any,
+      );
 
       await service.executarMonitoramentoSistema();
 
@@ -223,14 +237,17 @@ describe('NotificacaoProativaService', () => {
       const mockQueryBuilder = {
         where: jest.fn().mockReturnThis(),
         andWhere: jest.fn().mockReturnThis(),
-        getMany: jest.fn().mockResolvedValue([
-          { id: 'old-1' },
-          { id: 'old-2' },
-        ]),
+        getMany: jest
+          .fn()
+          .mockResolvedValue([{ id: 'old-1' }, { id: 'old-2' }]),
       };
 
-      mockNotificacaoRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
-      mockNotificacaoRepository.delete.mockResolvedValue({ affected: 2 } as any);
+      mockNotificacaoRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
+      mockNotificacaoRepository.delete.mockResolvedValue({
+        affected: 2,
+      } as any);
 
       const resultado = await service.executarLimpezaAutomatica();
 
@@ -252,7 +269,9 @@ describe('NotificacaoProativaService', () => {
         }),
       };
 
-      mockNotificacaoRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
+      mockNotificacaoRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
 
       const estatisticas = await service.obterEstatisticas();
 
@@ -322,7 +341,9 @@ describe('NotificacaoProativaService', () => {
         }),
       };
 
-      mockNotificacaoRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
+      mockNotificacaoRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
 
       const saude = await service.verificarSaudeSistema();
 
@@ -339,7 +360,10 @@ describe('NotificacaoProativaService', () => {
         const horasAntes = 24;
 
         // Usar reflexão para acessar método privado
-        const dataAlerta = (service as any).calcularDataAlerta(prazoLimite, horasAntes);
+        const dataAlerta = (service as any).calcularDataAlerta(
+          prazoLimite,
+          horasAntes,
+        );
 
         const esperado = new Date('2024-12-30T12:00:00Z');
         expect(dataAlerta.getTime()).toBe(esperado.getTime());
@@ -372,8 +396,12 @@ describe('NotificacaoProativaService', () => {
         const foraDosHorarios = new Date('2024-01-15T22:00:00'); // Segunda, 22h
         const fimDeSemana = new Date('2024-01-13T14:00:00'); // Sábado, 14h
 
-        expect((service as any).isHorarioComercial(horarioComercial)).toBe(true);
-        expect((service as any).isHorarioComercial(foraDosHorarios)).toBe(false);
+        expect((service as any).isHorarioComercial(horarioComercial)).toBe(
+          true,
+        );
+        expect((service as any).isHorarioComercial(foraDosHorarios)).toBe(
+          false,
+        );
         expect((service as any).isHorarioComercial(fimDeSemana)).toBe(false);
       });
     });
@@ -385,7 +413,9 @@ describe('NotificacaoProativaService', () => {
         throw new Error('Conexão perdida');
       });
 
-      await expect(service.executarVerificacaoPrazos()).rejects.toThrow('Conexão perdida');
+      await expect(service.executarVerificacaoPrazos()).rejects.toThrow(
+        'Conexão perdida',
+      );
     });
 
     it('deve lidar com erro na criação de notificação', async () => {
@@ -393,7 +423,9 @@ describe('NotificacaoProativaService', () => {
       const prazoLimite = new Date();
       const usuarioId = 'user-id';
 
-      mockNotificacaoService.criar.mockRejectedValue(new Error('Falha na criação'));
+      mockNotificacaoService.criar.mockRejectedValue(
+        new Error('Falha na criação'),
+      );
 
       await expect(
         service.agendarAlertaPrazo(solicitacaoId, prazoLimite, usuarioId),

@@ -19,7 +19,6 @@ import { CreateComposicaoFamiliarDto } from './create-composicao-familiar.dto';
 import { ContatoDto } from './contato.dto';
 import { EnderecoDto } from './endereco.dto';
 
-
 /**
  * DTO para atualização de cidadão
  * Aceita os mesmos dados da criação, todos opcionais
@@ -88,7 +87,8 @@ export class UpdateCidadaoDto {
   @Validate(NISValidator, { message: 'NIS inválido' })
   @ApiPropertyOptional({
     example: '12345678901',
-    description: 'Número de Identificação Social (NIS) do cidadão, utilizado para programas sociais',
+    description:
+      'Número de Identificação Social (NIS) do cidadão, utilizado para programas sociais',
   })
   nis?: string;
 

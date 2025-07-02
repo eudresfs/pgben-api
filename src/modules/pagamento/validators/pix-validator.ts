@@ -15,8 +15,10 @@ export class PixValidator {
    * Valida uma chave PIX
    */
   validarChavePix(chave: string, tipo: string): boolean {
-    if (!chave || !tipo) {return false;}
-    
+    if (!chave || !tipo) {
+      return false;
+    }
+
     switch (tipo.toLowerCase()) {
       case 'cpf':
         return this.validarCPF(chave);
@@ -35,8 +37,10 @@ export class PixValidator {
    * Aplica máscara na chave PIX para exibição
    */
   mascaraChavePix(chave: string, tipo: string): string {
-    if (!chave || !tipo) {return '';}
-    
+    if (!chave || !tipo) {
+      return '';
+    }
+
     switch (tipo.toLowerCase()) {
       case 'cpf':
         return this.mascaraCPF(chave);
@@ -55,31 +59,33 @@ export class PixValidator {
    * Identifica o tipo da chave PIX
    */
   obterTipoChavePix(chave: string): string | null {
-    if (!chave) {return null;}
-    
+    if (!chave) {
+      return null;
+    }
+
     // Remove espaços e caracteres especiais para análise
     const chaveClean = chave.replace(/\D/g, '');
-    
+
     // CPF (11 dígitos)
     if (chaveClean.length === 11 && this.validarCPF(chave)) {
       return 'cpf';
     }
-    
+
     // Email
     if (this.validarEmail(chave)) {
       return 'email';
     }
-    
+
     // Telefone
     if (this.validarTelefone(chave)) {
       return 'telefone';
     }
-    
+
     // Chave aleatória (UUID)
     if (this.validarChaveAleatoria(chave)) {
       return 'aleatorio';
     }
-    
+
     return null;
   }
 
@@ -117,7 +123,10 @@ export class PixValidator {
   private mascaraCPF(cpf: string): string {
     const cpfClean = cpf.replace(/\D/g, '');
     if (cpfClean.length === 11) {
-      const formatted = cpfClean.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+      const formatted = cpfClean.replace(
+        /(\d{3})(\d{3})(\d{3})(\d{2})/,
+        '$1.$2.$3-$4',
+      );
       return this.maskPixKey(formatted, 'cpf');
     }
     return cpf;

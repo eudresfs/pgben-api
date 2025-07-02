@@ -39,7 +39,8 @@ export class PagamentoUpdateStatusDto {
    * Obrigatório quando o status for alterado para CONFIRMADO
    */
   @ApiProperty({
-    description: 'ID do comprovante de pagamento (obrigatório para status CONFIRMADO)',
+    description:
+      'ID do comprovante de pagamento (obrigatório para status CONFIRMADO)',
     example: '123e4567-e89b-12d3-a456-426614174000',
     required: false,
   })
@@ -52,7 +53,8 @@ export class PagamentoUpdateStatusDto {
    * Obrigatório quando o status for alterado para AGENDADO
    */
   @ApiProperty({
-    description: 'Data de agendamento do pagamento (obrigatório para status AGENDADO)',
+    description:
+      'Data de agendamento do pagamento (obrigatório para status AGENDADO)',
     example: '2024-01-15T10:00:00.000Z',
     required: false,
   })

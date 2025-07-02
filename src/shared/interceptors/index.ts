@@ -1,6 +1,6 @@
 /**
  * Índice de interceptors compartilhados
- * 
+ *
  * Este arquivo centraliza a exportação de todos os interceptors
  * compartilhados da aplicação para facilitar importações.
  */

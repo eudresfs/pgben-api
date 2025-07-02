@@ -2,7 +2,10 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { AblyAuthService } from '../services/ably-auth.service';
-import { IAblyTokenDetails, IAblyAuthConfig } from '../interfaces/ably.interface';
+import {
+  IAblyTokenDetails,
+  IAblyAuthConfig,
+} from '../interfaces/ably.interface';
 import * as jwt from 'jsonwebtoken';
 
 // Mock do jsonwebtoken
@@ -11,16 +14,16 @@ jest.mock('jsonwebtoken');
 describe('AblyAuthService', () => {
   let service: AblyAuthService;
   let configService: ConfigService;
-  
+
   const mockConfig = {
     ABLY_API_KEY: 'test-api-key',
     ABLY_JWT_EXPIRES_IN: '1h',
     ABLY_JWT_CAPABILITIES: JSON.stringify({
       '*': ['*'],
       'notifications:*': ['subscribe', 'publish'],
-      'user:*': ['subscribe']
+      'user:*': ['subscribe'],
     }),
-    ABLY_CLIENT_ID: 'test-client'
+    ABLY_CLIENT_ID: 'test-client',
   };
 
   const mockJwtSign = jwt.sign as jest.MockedFunction<typeof jwt.sign>;
@@ -37,25 +40,25 @@ describe('AblyAuthService', () => {
             getClientOptions: jest.fn().mockReturnValue({
               key: 'test-api-key',
               environment: 'test',
-              clientId: 'test-client'
+              clientId: 'test-client',
             }),
-            getChannelName: jest.fn().mockReturnValue('test-channel')
-          }
+            getChannelName: jest.fn().mockReturnValue('test-channel'),
+          },
         },
         {
           provide: ConfigService,
           useValue: {
-            get: jest.fn((key: string) => mockConfig[key])
-          }
+            get: jest.fn((key: string) => mockConfig[key]),
+          },
         },
         {
           provide: JwtService,
           useValue: {
             sign: jest.fn().mockReturnValue('mock-jwt-token'),
-            verify: jest.fn()
-          }
-        }
-      ]
+            verify: jest.fn(),
+          },
+        },
+      ],
     }).compile();
 
     service = module.get<AblyAuthService>(AblyAuthService);
@@ -82,7 +85,7 @@ describe('AblyAuthService', () => {
     const mockUser = {
       id: 'user-123',
       email: 'test@example.com',
-      perfil: 'ADMIN'
+      perfil: 'ADMIN',
     };
 
     beforeEach(() => {
@@ -92,7 +95,7 @@ describe('AblyAuthService', () => {
     it('deve gerar token com sucesso para usuário admin', async () => {
       const result = await service.generateToken(mockUser.id, mockUser.perfil, {
         channels: ['notifications:*', 'system:*'],
-        permissions: ['subscribe', 'publish']
+        permissions: ['subscribe', 'publish'],
       });
 
       expect(result.success).toBe(true);
@@ -101,21 +104,25 @@ describe('AblyAuthService', () => {
       expect(result.token?.clientId).toBe(mockUser.id);
       expect(result.token?.capability).toEqual({
         'notifications:*': ['subscribe', 'publish'],
-        'system:*': ['subscribe', 'publish']
+        'system:*': ['subscribe', 'publish'],
       });
     });
 
     it('deve gerar token com capacidades limitadas para usuário comum', async () => {
       const commonUser = { ...mockUser, perfil: 'USUARIO' };
-      
-      const result = await service.generateToken(commonUser.id, commonUser.perfil, {
-        channels: ['user:notifications'],
-        permissions: ['subscribe']
-      });
+
+      const result = await service.generateToken(
+        commonUser.id,
+        commonUser.perfil,
+        {
+          channels: ['user:notifications'],
+          permissions: ['subscribe'],
+        },
+      );
 
       expect(result.success).toBe(true);
       expect(result.token?.capability).toEqual({
-        'user:notifications': ['subscribe']
+        'user:notifications': ['subscribe'],
       });
     });
 
@@ -126,7 +133,7 @@ describe('AblyAuthService', () => {
       expect(result.token?.capability).toEqual({
         'notifications:*': ['subscribe', 'publish'],
         'user:*': ['subscribe'],
-        'department:*': ['subscribe', 'publish']
+        'department:*': ['subscribe', 'publish'],
       });
     });
 
@@ -153,7 +160,7 @@ describe('AblyAuthService', () => {
     it('deve usar cache para tokens válidos', async () => {
       // Primeira chamada
       const result1 = await service.generateToken(mockUser.id, mockUser.perfil);
-      
+
       // Segunda chamada (deve usar cache)
       const result2 = await service.generateToken(mockUser.id, mockUser.perfil);
 
@@ -168,9 +175,9 @@ describe('AblyAuthService', () => {
       iat: Math.floor(Date.now() / 1000),
       exp: Math.floor(Date.now() / 1000) + 3600,
       capability: {
-        'notifications:*': ['subscribe', 'publish']
+        'notifications:*': ['subscribe', 'publish'],
       },
-      clientId: 'user-123'
+      clientId: 'user-123',
     };
 
     beforeEach(() => {
@@ -199,7 +206,7 @@ describe('AblyAuthService', () => {
     it('deve rejeitar token expirado', async () => {
       const expiredPayload = {
         ...mockTokenPayload,
-        exp: Math.floor(Date.now() / 1000) - 3600 // Expirado há 1 hora
+        exp: Math.floor(Date.now() / 1000) - 3600, // Expirado há 1 hora
       };
       mockJwtVerify.mockReturnValue(expiredPayload as any);
 
@@ -211,7 +218,7 @@ describe('AblyAuthService', () => {
 
     it('deve validar token sem expiração definida', async () => {
       const noExpPayload = {
-        ...mockTokenPayload
+        ...mockTokenPayload,
       };
       delete noExpPayload.exp;
       mockJwtVerify.mockReturnValue(noExpPayload as any);
@@ -226,35 +233,55 @@ describe('AblyAuthService', () => {
     const mockCapability = {
       'notifications:*': ['subscribe', 'publish'],
       'user:123': ['subscribe'],
-      'system:alerts': ['subscribe']
+      'system:alerts': ['subscribe'],
     };
 
     it('deve permitir acesso com permissão exata', () => {
-      const result = service.hasPermission(mockCapability, 'notifications:general', 'publish');
+      const result = service.hasPermission(
+        mockCapability,
+        'notifications:general',
+        'publish',
+      );
       expect(result).toBe(true);
     });
 
     it('deve permitir acesso com wildcard', () => {
-      const result = service.hasPermission(mockCapability, 'notifications:alerts', 'subscribe');
+      const result = service.hasPermission(
+        mockCapability,
+        'notifications:alerts',
+        'subscribe',
+      );
       expect(result).toBe(true);
     });
 
     it('deve negar acesso sem permissão', () => {
-      const result = service.hasPermission(mockCapability, 'admin:users', 'publish');
+      const result = service.hasPermission(
+        mockCapability,
+        'admin:users',
+        'publish',
+      );
       expect(result).toBe(false);
     });
 
     it('deve negar acesso com canal correto mas permissão incorreta', () => {
-      const result = service.hasPermission(mockCapability, 'user:123', 'publish');
+      const result = service.hasPermission(
+        mockCapability,
+        'user:123',
+        'publish',
+      );
       expect(result).toBe(false);
     });
 
     it('deve permitir acesso com permissão wildcard (*)', () => {
       const wildcardCapability = {
-        '*': ['*']
+        '*': ['*'],
       };
-      
-      const result = service.hasPermission(wildcardCapability, 'any:channel', 'any-permission');
+
+      const result = service.hasPermission(
+        wildcardCapability,
+        'any:channel',
+        'any-permission',
+      );
       expect(result).toBe(true);
     });
   });
@@ -263,16 +290,16 @@ describe('AblyAuthService', () => {
     it('deve revogar token do cache', async () => {
       const userId = 'user-123';
       const userRole = 'ADMIN';
-      
+
       // Gera token primeiro
       mockJwtSign.mockReturnValue('mock-token' as any);
       await service.generateToken(userId, userRole);
-      
+
       // Revoga token
       const result = await service.revokeToken(userId);
-      
+
       expect(result.success).toBe(true);
-      
+
       // Verifica se token foi removido do cache
       const newTokenResult = await service.generateToken(userId, userRole);
       expect(mockJwtSign).toHaveBeenCalledTimes(2); // Deve gerar novo token
@@ -287,38 +314,38 @@ describe('AblyAuthService', () => {
   describe('getCapabilitiesForRole', () => {
     it('deve retornar capacidades para ADMIN', () => {
       const capabilities = service.getCapabilitiesForRole('ADMIN');
-      
+
       expect(capabilities).toEqual({
-        '*': ['*']
+        '*': ['*'],
       });
     });
 
     it('deve retornar capacidades para GESTOR', () => {
       const capabilities = service.getCapabilitiesForRole('GESTOR');
-      
+
       expect(capabilities).toEqual({
         'notifications:*': ['subscribe', 'publish'],
         'user:*': ['subscribe'],
-        'department:*': ['subscribe', 'publish']
+        'department:*': ['subscribe', 'publish'],
       });
     });
 
     it('deve retornar capacidades para OPERADOR', () => {
       const capabilities = service.getCapabilitiesForRole('OPERADOR');
-      
+
       expect(capabilities).toEqual({
         'notifications:*': ['subscribe'],
         'user:*': ['subscribe'],
-        'benefits:*': ['subscribe', 'publish']
+        'benefits:*': ['subscribe', 'publish'],
       });
     });
 
     it('deve retornar capacidades para USUARIO', () => {
       const capabilities = service.getCapabilitiesForRole('USUARIO');
-      
+
       expect(capabilities).toEqual({
         'user:notifications': ['subscribe'],
-        'public:announcements': ['subscribe']
+        'public:announcements': ['subscribe'],
       });
     });
 
@@ -336,24 +363,24 @@ describe('AblyAuthService', () => {
     it('deve limpar cache expirado automaticamente', async () => {
       const userId = 'user-123';
       const userRole = 'ADMIN';
-      
+
       // Mock para token que expira rapidamente
       const shortExpiryConfig = {
         ...mockConfig,
-        ABLY_JWT_EXPIRES_IN: '1ms' // 1 milissegundo
+        ABLY_JWT_EXPIRES_IN: '1ms', // 1 milissegundo
       };
-      
+
       configService.get = jest.fn((key: string) => shortExpiryConfig[key]);
-      
+
       // Gera token
       await service.generateToken(userId, userRole);
-      
+
       // Aguarda expiração
-      await new Promise(resolve => setTimeout(resolve, 10));
-      
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
       // Gera novo token (deve criar novo, não usar cache)
       await service.generateToken(userId, userRole);
-      
+
       expect(mockJwtSign).toHaveBeenCalledTimes(2);
     });
 
@@ -361,14 +388,14 @@ describe('AblyAuthService', () => {
       // Gera alguns tokens
       await service.generateToken('user-1', 'ADMIN');
       await service.generateToken('user-2', 'GESTOR');
-      
+
       // Limpa cache
       service.clearCache();
-      
+
       // Gera tokens novamente (deve criar novos)
       await service.generateToken('user-1', 'ADMIN');
       await service.generateToken('user-2', 'GESTOR');
-      
+
       expect(mockJwtSign).toHaveBeenCalledTimes(4);
     });
   });
@@ -376,7 +403,7 @@ describe('AblyAuthService', () => {
   describe('Error Handling', () => {
     it('deve tratar erro de configuração ausente', () => {
       configService.get = jest.fn().mockReturnValue(undefined);
-      
+
       expect(() => {
         new AblyAuthService(configService);
       }).toThrow('Configuração do Ably não encontrada');
@@ -385,11 +412,11 @@ describe('AblyAuthService', () => {
     it('deve tratar capacidades JSON inválidas', () => {
       const invalidConfig = {
         ...mockConfig,
-        ABLY_JWT_CAPABILITIES: 'invalid-json'
+        ABLY_JWT_CAPABILITIES: 'invalid-json',
       };
-      
+
       configService.get = jest.fn((key: string) => invalidConfig[key]);
-      
+
       expect(() => {
         new AblyAuthService(configService);
       }).toThrow('Configuração de capacidades JWT inválida');
@@ -402,7 +429,7 @@ describe('AblyAuthService', () => {
         { input: '1h', expected: 3600 },
         { input: '30m', expected: 1800 },
         { input: '24h', expected: 86400 },
-        { input: '1d', expected: 86400 }
+        { input: '1d', expected: 86400 },
       ];
 
       for (const testCase of testCases) {
@@ -413,20 +440,20 @@ describe('AblyAuthService', () => {
 
         const authService = new AblyAuthService(configService);
         mockJwtSign.mockClear();
-        
+
         await authService.generateToken('user-123', 'ADMIN');
-        
+
         expect(mockJwtSign).toHaveBeenCalledWith(
           expect.objectContaining({
-            exp: expect.any(Number)
+            exp: expect.any(Number),
           }),
-          'test-api-key'
+          'test-api-key',
         );
-        
+
         const call = mockJwtSign.mock.calls[0];
         const payload = call[0] as any;
         const expectedExp = Math.floor(Date.now() / 1000) + testCase.expected;
-        
+
         // Permite uma diferença de 1 segundo devido ao tempo de execução
         expect(payload.exp).toBeCloseTo(expectedExp, -1);
       }

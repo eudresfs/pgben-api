@@ -62,7 +62,9 @@ export class CreateSituacaoMoradiaDto {
   possui_banheiro?: boolean;
 
   @IsOptional()
-  @IsBoolean({ message: 'Possui energia elétrica deve ser verdadeiro ou falso' })
+  @IsBoolean({
+    message: 'Possui energia elétrica deve ser verdadeiro ou falso',
+  })
   possui_energia_eletrica?: boolean;
 
   @IsOptional()
@@ -96,15 +98,21 @@ export class CreateSituacaoMoradiaDto {
 
   // Seção 4 - Programas Habitacionais
   @IsOptional()
-  @IsEnum(ProgramaHabitacionalEnum, { message: 'Programa habitacional inválido' })
+  @IsEnum(ProgramaHabitacionalEnum, {
+    message: 'Programa habitacional inválido',
+  })
   programa_habitacional?: ProgramaHabitacionalEnum;
 
   @IsOptional()
-  @IsBoolean({ message: 'Inscrito em programa habitacional deve ser verdadeiro ou falso' })
+  @IsBoolean({
+    message: 'Inscrito em programa habitacional deve ser verdadeiro ou falso',
+  })
   inscrito_programa_habitacional?: boolean;
 
   @IsOptional()
-  @IsBoolean({ message: 'Reside há 2 anos em Natal deve ser verdadeiro ou falso' })
+  @IsBoolean({
+    message: 'Reside há 2 anos em Natal deve ser verdadeiro ou falso',
+  })
   reside_2_anos_natal?: boolean;
 
   // Seção 5 - Despesas Mensais

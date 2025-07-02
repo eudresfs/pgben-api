@@ -29,37 +29,37 @@ describe('NotificationSseListener', () => {
     metadados: {
       origem: 'sistema',
       categoria: 'beneficio',
-      acao: 'aprovacao'
+      acao: 'aprovacao',
     },
     criadoEm: new Date('2024-01-15T10:00:00Z'),
     atualizadoEm: new Date('2024-01-15T10:00:00Z'),
     lida: false,
     arquivada: false,
     lidaEm: null,
-    arquivadaEm: null
+    arquivadaEm: null,
   } as NotificacaoSistema;
 
   beforeEach(async () => {
     const mockSseService = {
       sendToUser: jest.fn(),
       hasActiveConnections: jest.fn().mockReturnValue(true),
-      getActiveConnectionsCount: jest.fn().mockReturnValue(2)
+      getActiveConnectionsCount: jest.fn().mockReturnValue(2),
     };
 
     const mockSseMetricsService = {
       recordMessageSent: jest.fn(),
       recordMessageDelivered: jest.fn(),
-      recordMessageFailed: jest.fn()
+      recordMessageFailed: jest.fn(),
     };
 
     const mockMetricsService = {
       recordSystemEvent: jest.fn(),
       recordSecurityEvent: jest.fn(),
-      recordLgpdDataAccess: jest.fn()
+      recordLgpdDataAccess: jest.fn(),
     };
 
     const mockEventEmitter = {
-      emit: jest.fn()
+      emit: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -67,21 +67,21 @@ describe('NotificationSseListener', () => {
         NotificationSseListener,
         {
           provide: SseService,
-          useValue: mockSseService
+          useValue: mockSseService,
         },
         {
           provide: SseMetricsService,
-          useValue: mockSseMetricsService
+          useValue: mockSseMetricsService,
         },
         {
           provide: EnhancedMetricsService,
-          useValue: mockMetricsService
+          useValue: mockMetricsService,
         },
         {
           provide: EventEmitter2,
-          useValue: mockEventEmitter
-        }
-      ]
+          useValue: mockEventEmitter,
+        },
+      ],
     }).compile();
 
     listener = module.get<NotificationSseListener>(NotificationSseListener);
@@ -121,34 +121,31 @@ describe('NotificationSseListener', () => {
           tipo: mockNotificacao.tipo,
           prioridade: mockNotificacao.prioridade,
           metadados: mockNotificacao.metadados,
-          criadoEm: mockNotificacao.criadoEm
-        }
+          criadoEm: mockNotificacao.criadoEm,
+        },
       );
 
       expect(sseMetricsService.recordMessageSent).toHaveBeenCalledWith(
         expect.any(String),
-        'notification'
+        'notification',
       );
 
       expect(metricsService.recordSystemEvent).toHaveBeenCalledWith(
         'notification_sse_sent',
-        'success'
+        'success',
       );
 
       expect(metricsService.recordLgpdDataAccess).toHaveBeenCalledWith(
         'notification_sse',
         'send',
-        mockNotificacao.usuarioId
+        mockNotificacao.usuarioId,
       );
 
-      expect(eventEmitter.emit).toHaveBeenCalledWith(
-        'notification.sse.sent',
-        {
-          notificationId: mockNotificacao.id,
-          userId: mockNotificacao.usuarioId,
-          success: true
-        }
-      );
+      expect(eventEmitter.emit).toHaveBeenCalledWith('notification.sse.sent', {
+        notificationId: mockNotificacao.id,
+        userId: mockNotificacao.usuarioId,
+        success: true,
+      });
     });
 
     it('deve pular envio quando não há conexões ativas', async () => {
@@ -163,7 +160,7 @@ describe('NotificationSseListener', () => {
       expect(sseService.sendToUser).not.toHaveBeenCalled();
       expect(metricsService.recordSystemEvent).toHaveBeenCalledWith(
         'notification_sse_skipped',
-        'no_connections'
+        'no_connections',
       );
       expect(eventEmitter.emit).not.toHaveBeenCalled();
     });
@@ -179,21 +176,21 @@ describe('NotificationSseListener', () => {
 
       // Assert
       expect(sseService.sendToUser).toHaveBeenCalled();
-      
+
       expect(sseMetricsService.recordMessageFailed).toHaveBeenCalledWith(
         expect.any(String),
-        sseError.message
+        sseError.message,
       );
 
       expect(metricsService.recordSystemEvent).toHaveBeenCalledWith(
         'notification_sse_failed',
-        'error'
+        'error',
       );
 
       expect(metricsService.recordSecurityEvent).toHaveBeenCalledWith(
         'notification_sse_failure',
         `Falha no envio de notificação SSE: ${sseError.message}`,
-        mockNotificacao.usuarioId
+        mockNotificacao.usuarioId,
       );
 
       expect(eventEmitter.emit).toHaveBeenCalledWith(
@@ -201,8 +198,8 @@ describe('NotificationSseListener', () => {
         {
           notificationId: mockNotificacao.id,
           userId: mockNotificacao.usuarioId,
-          error: sseError.message
-        }
+          error: sseError.message,
+        },
       );
     });
 
@@ -210,7 +207,7 @@ describe('NotificationSseListener', () => {
       // Arrange
       const notificacaoSemMetadados = {
         ...mockNotificacao,
-        metadados: {}
+        metadados: {},
       };
       const event = new NotificationCreatedEvent(notificacaoSemMetadados);
       sseService.sendToUser.mockResolvedValue(undefined);
@@ -229,8 +226,8 @@ describe('NotificationSseListener', () => {
           tipo: notificacaoSemMetadados.tipo,
           prioridade: notificacaoSemMetadados.prioridade,
           metadados: {},
-          criadoEm: notificacaoSemMetadados.criadoEm
-        }
+          criadoEm: notificacaoSemMetadados.criadoEm,
+        },
       );
     });
 
@@ -239,7 +236,7 @@ describe('NotificationSseListener', () => {
       const notificacaoUrgente = {
         ...mockNotificacao,
         tipo: TipoNotificacao.URGENTE,
-        prioridade: PrioridadeNotificacao.ALTA
+        prioridade: PrioridadeNotificacao.ALTA,
       };
       const event = new NotificationCreatedEvent(notificacaoUrgente);
       sseService.sendToUser.mockResolvedValue(undefined);
@@ -253,8 +250,8 @@ describe('NotificationSseListener', () => {
         'notification',
         expect.objectContaining({
           tipo: TipoNotificacao.URGENTE,
-          prioridade: PrioridadeNotificacao.ALTA
-        })
+          prioridade: PrioridadeNotificacao.ALTA,
+        }),
       );
     });
 
@@ -262,7 +259,7 @@ describe('NotificationSseListener', () => {
       // Arrange
       const notificacaoAlerta = {
         ...mockNotificacao,
-        tipo: TipoNotificacao.ALERTA
+        tipo: TipoNotificacao.ALERTA,
       };
       const event = new NotificationCreatedEvent(notificacaoAlerta);
       sseService.sendToUser.mockResolvedValue(undefined);
@@ -275,8 +272,8 @@ describe('NotificationSseListener', () => {
         notificacaoAlerta.usuarioId,
         'notification',
         expect.objectContaining({
-          tipo: TipoNotificacao.ALERTA
-        })
+          tipo: TipoNotificacao.ALERTA,
+        }),
       );
     });
 
@@ -285,7 +282,7 @@ describe('NotificationSseListener', () => {
       const notificacaoInfo = {
         ...mockNotificacao,
         tipo: TipoNotificacao.INFO,
-        prioridade: PrioridadeNotificacao.BAIXA
+        prioridade: PrioridadeNotificacao.BAIXA,
       };
       const event = new NotificationCreatedEvent(notificacaoInfo);
       sseService.sendToUser.mockResolvedValue(undefined);
@@ -299,8 +296,8 @@ describe('NotificationSseListener', () => {
         'notification',
         expect.objectContaining({
           tipo: TipoNotificacao.INFO,
-          prioridade: PrioridadeNotificacao.BAIXA
-        })
+          prioridade: PrioridadeNotificacao.BAIXA,
+        }),
       );
     });
 
@@ -308,7 +305,7 @@ describe('NotificationSseListener', () => {
       // Arrange
       const notificacaoBaixa = {
         ...mockNotificacao,
-        prioridade: PrioridadeNotificacao.BAIXA
+        prioridade: PrioridadeNotificacao.BAIXA,
       };
       const event = new NotificationCreatedEvent(notificacaoBaixa);
       sseService.sendToUser.mockResolvedValue(undefined);
@@ -320,7 +317,7 @@ describe('NotificationSseListener', () => {
       expect(sseService.sendToUser).toHaveBeenCalled();
       expect(metricsService.recordSystemEvent).toHaveBeenCalledWith(
         'notification_sse_sent',
-        'success'
+        'success',
       );
     });
 
@@ -328,7 +325,7 @@ describe('NotificationSseListener', () => {
       // Arrange
       const notificacaoMedia = {
         ...mockNotificacao,
-        prioridade: PrioridadeNotificacao.MEDIA
+        prioridade: PrioridadeNotificacao.MEDIA,
       };
       const event = new NotificationCreatedEvent(notificacaoMedia);
       sseService.sendToUser.mockResolvedValue(undefined);
@@ -340,7 +337,7 @@ describe('NotificationSseListener', () => {
       expect(sseService.sendToUser).toHaveBeenCalled();
       expect(metricsService.recordSystemEvent).toHaveBeenCalledWith(
         'notification_sse_sent',
-        'success'
+        'success',
       );
     });
   });
@@ -357,7 +354,7 @@ describe('NotificationSseListener', () => {
       // Assert
       expect(sseMetricsService.recordMessageSent).toHaveBeenCalledWith(
         expect.any(String),
-        'notification'
+        'notification',
       );
       expect(sseMetricsService.recordMessageDelivered).not.toHaveBeenCalled();
       expect(sseMetricsService.recordMessageFailed).not.toHaveBeenCalled();
@@ -375,11 +372,11 @@ describe('NotificationSseListener', () => {
       // Assert
       expect(sseMetricsService.recordMessageSent).toHaveBeenCalledWith(
         expect.any(String),
-        'notification'
+        'notification',
       );
       expect(sseMetricsService.recordMessageFailed).toHaveBeenCalledWith(
         expect.any(String),
-        error.message
+        error.message,
       );
       expect(sseMetricsService.recordMessageDelivered).not.toHaveBeenCalled();
     });
@@ -397,12 +394,12 @@ describe('NotificationSseListener', () => {
       // Assert
       expect(metricsService.recordSystemEvent).toHaveBeenCalledWith(
         'notification_sse_sent',
-        'success'
+        'success',
       );
       expect(metricsService.recordLgpdDataAccess).toHaveBeenCalledWith(
         'notification_sse',
         'send',
-        mockNotificacao.usuarioId
+        mockNotificacao.usuarioId,
       );
       expect(metricsService.recordSecurityEvent).not.toHaveBeenCalled();
     });
@@ -419,12 +416,12 @@ describe('NotificationSseListener', () => {
       // Assert
       expect(metricsService.recordSystemEvent).toHaveBeenCalledWith(
         'notification_sse_failed',
-        'error'
+        'error',
       );
       expect(metricsService.recordSecurityEvent).toHaveBeenCalledWith(
         'notification_sse_failure',
         `Falha no envio de notificação SSE: ${error.message}`,
-        mockNotificacao.usuarioId
+        mockNotificacao.usuarioId,
       );
     });
 
@@ -439,7 +436,7 @@ describe('NotificationSseListener', () => {
       // Assert
       expect(metricsService.recordSystemEvent).toHaveBeenCalledWith(
         'notification_sse_skipped',
-        'no_connections'
+        'no_connections',
       );
       expect(metricsService.recordLgpdDataAccess).not.toHaveBeenCalled();
       expect(metricsService.recordSecurityEvent).not.toHaveBeenCalled();
@@ -456,14 +453,11 @@ describe('NotificationSseListener', () => {
       await listener.handleNotificationCreated(event);
 
       // Assert
-      expect(eventEmitter.emit).toHaveBeenCalledWith(
-        'notification.sse.sent',
-        {
-          notificationId: mockNotificacao.id,
-          userId: mockNotificacao.usuarioId,
-          success: true
-        }
-      );
+      expect(eventEmitter.emit).toHaveBeenCalledWith('notification.sse.sent', {
+        notificationId: mockNotificacao.id,
+        userId: mockNotificacao.usuarioId,
+        success: true,
+      });
     });
 
     it('deve emitir evento de falha', async () => {
@@ -481,8 +475,8 @@ describe('NotificationSseListener', () => {
         {
           notificationId: mockNotificacao.id,
           userId: mockNotificacao.usuarioId,
-          error: error.message
-        }
+          error: error.message,
+        },
       );
     });
 
@@ -505,7 +499,7 @@ describe('NotificationSseListener', () => {
       const event1 = new NotificationCreatedEvent(mockNotificacao);
       const event2 = new NotificationCreatedEvent({
         ...mockNotificacao,
-        id: 'different-id'
+        id: 'different-id',
       });
       sseService.sendToUser.mockResolvedValue(undefined);
 

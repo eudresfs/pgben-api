@@ -148,7 +148,8 @@ export class DocumentoResponseDto {
 
   @ApiProperty({
     description: 'URL pública do arquivo no sistema',
-    example: 'https://pgben-server.kemosoft.com.br/api/v1/documento/{documentoId}/public',
+    example:
+      'https://pgben-server.kemosoft.com.br/api/v1/documento/{documentoId}/public',
   })
   @Expose()
   url_publica: string;
@@ -209,7 +210,9 @@ export class DocumentoResponseDto {
   @Expose()
   @Type(() => UsuarioSafeResponseDto)
   @Transform(({ value }) => {
-    if (!value) {return null;}
+    if (!value) {
+      return null;
+    }
     // Aplicar transformação para excluir campos sensíveis
     const safeUser = new UsuarioSafeResponseDto();
     Object.assign(safeUser, value);

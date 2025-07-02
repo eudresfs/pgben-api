@@ -9,5 +9,5 @@ export enum StatusAuditoria {
   ERRO = 'erro',
   ARQUIVADO = 'arquivado',
   VERIFICADO = 'verificado',
-  CORROMPIDO = 'corrompido'
+  CORROMPIDO = 'corrompido',
 }

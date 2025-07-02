@@ -43,7 +43,7 @@ import { RequestContext } from '../../../shared/request-context/request-context.
  */
 @ApiTags('Usuários')
 @Controller('usuario')
-@UseGuards(JwtAuthGuard, PrimeiroAcessoGuard, PermissionGuard) 
+@UseGuards(JwtAuthGuard, PrimeiroAcessoGuard, PermissionGuard)
 @ApiBearerAuth()
 export class UsuarioController {
   constructor(
@@ -58,11 +58,12 @@ export class UsuarioController {
   @Get()
   @RequiresPermission({
     permissionName: 'usuario.listar',
-    scopeType: ScopeType.UNIT
+    scopeType: ScopeType.UNIT,
   })
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Listar usuários',
-    description: 'Lista usuários com filtros dinâmicos. Aceita qualquer campo da entidade como filtro: nome, email, cpf, telefone, matricula, role_id, unidade_id, setor_id, status, primeiro_acesso, tentativas_login'
+    description:
+      'Lista usuários com filtros dinâmicos. Aceita qualquer campo da entidade como filtro: nome, email, cpf, telefone, matricula, role_id, unidade_id, setor_id, status, primeiro_acesso, tentativas_login',
   })
   @ApiResponse({
     status: 200,
@@ -152,12 +153,10 @@ export class UsuarioController {
     type: Number,
     description: 'Filtro por número de tentativas de login',
   })
-  async findAll(
-    @Query() query: any,
-  ) {
+  async findAll(@Query() query: any) {
     // Extrair page e limit, convertendo para números
     const { page, limit, ...filters } = query;
-    
+
     return this.usuarioService.findAll({
       page: page ? +page : undefined,
       limit: limit ? +limit : undefined,
@@ -233,7 +232,7 @@ export class UsuarioController {
     @ReqContext() context: RequestContext,
   ) {
     const result = await this.usuarioService.create(createUsuarioDto);
-    
+
     // Auditoria da criação de usuário
     await this.auditEventEmitter.emitEntityCreated(
       'Usuario',
@@ -244,7 +243,7 @@ export class UsuarioController {
         synchronous: false,
       },
     );
-    
+
     return result;
   }
 
@@ -272,9 +271,9 @@ export class UsuarioController {
   ) {
     // Buscar dados anteriores para auditoria
     const previousData = await this.usuarioService.findById(id);
-    
+
     const result = await this.usuarioService.update(id, updateUsuarioDto);
-    
+
     // Auditoria da atualização de usuário
     await this.auditEventEmitter.emitEntityUpdated(
       'Usuario',
@@ -286,7 +285,7 @@ export class UsuarioController {
         synchronous: false,
       },
     );
-    
+
     return result;
   }
 
@@ -309,9 +308,12 @@ export class UsuarioController {
   ) {
     // Buscar dados anteriores para auditoria
     const previousData = await this.usuarioService.findById(id);
-    
-    const result = await this.usuarioService.updateStatus(id, updateStatusUsuarioDto);
-    
+
+    const result = await this.usuarioService.updateStatus(
+      id,
+      updateStatusUsuarioDto,
+    );
+
     // Auditoria da alteração de status
     await this.auditEventEmitter.emitEntityUpdated(
       'Usuario',
@@ -323,7 +325,7 @@ export class UsuarioController {
         synchronous: false,
       },
     );
-    
+
     return result;
   }
 
@@ -352,9 +354,9 @@ export class UsuarioController {
   ) {
     // A verificação agora é feita pelo sistema de permissões granulares
     const userData = await this.usuarioService.findById(id);
-    
+
     const result = await this.usuarioService.updateSenha(id, updateSenhaDto);
-    
+
     // Auditoria da alteração de senha (dados sensíveis não são logados)
     await this.auditEventEmitter.emitEntityUpdated(
       'Usuario',
@@ -374,7 +376,7 @@ export class UsuarioController {
         synchronous: true,
       },
     );
-    
+
     return result;
   }
 
@@ -397,12 +399,12 @@ export class UsuarioController {
   ) {
     const userId = req.user.id;
     const userData = await this.usuarioService.findById(userId);
-    
+
     const result = await this.usuarioService.alterarSenhaPrimeiroAcesso(
       userId,
       alterarSenhaDto,
     );
-    
+
     // Auditoria da alteração de senha no primeiro acesso
     await this.auditEventEmitter.emitEntityUpdated(
       'Usuario',
@@ -422,7 +424,7 @@ export class UsuarioController {
         synchronous: true,
       },
     );
-    
+
     return result;
   }
 
@@ -431,17 +433,20 @@ export class UsuarioController {
    */
   @Post('/recuperar-senha')
   @UseGuards() // Remove guards de autenticação para endpoint público
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Solicitar recuperação de senha',
-    description: 'Envia email com nova senha temporária para o usuário'
+    description: 'Envia email com nova senha temporária para o usuário',
   })
-  @ApiResponse({ 
-    status: 200, 
-    description: 'Solicitação processada. Se o email estiver cadastrado, instruções serão enviadas.' 
+  @ApiResponse({
+    status: 200,
+    description:
+      'Solicitação processada. Se o email estiver cadastrado, instruções serão enviadas.',
   })
   @ApiResponse({ status: 400, description: 'Email inválido' })
   async recuperarSenha(@Body() recuperarSenhaDto: RecuperarSenhaDto) {
-    return this.usuarioService.solicitarRecuperacaoSenha(recuperarSenhaDto.email);
+    return this.usuarioService.solicitarRecuperacaoSenha(
+      recuperarSenhaDto.email,
+    );
   }
 
   /**
@@ -462,9 +467,9 @@ export class UsuarioController {
   ) {
     // Buscar dados do usuário antes da remoção
     const userData = await this.usuarioService.findById(id);
-    
+
     const result = await this.usuarioService.remove(id);
-    
+
     // Auditoria da remoção de usuário
     await this.auditEventEmitter.emitEntityDeleted(
       'Usuario',
@@ -484,7 +489,7 @@ export class UsuarioController {
         synchronous: true,
       },
     );
-    
+
     return result;
   }
 }

@@ -218,7 +218,8 @@ export class WorkflowSolicitacaoService {
               protocolo: resultado.solicitacao.protocolo,
               statusAnterior: estadoAtual,
               statusAtual: novoEstado,
-              observacao: observacao || `Transição de ${estadoAtual} para ${novoEstado}`,
+              observacao:
+                observacao || `Transição de ${estadoAtual} para ${novoEstado}`,
               prioridade: this.determinarPrioridadeTransicao(novoEstado),
               dataTransicao: new Date(),
             },
@@ -455,11 +456,17 @@ export class WorkflowSolicitacaoService {
     // Criação automática de concessão vinculada à solicitação aprovada
     if (resultado.sucesso) {
       try {
-        const concessao = await this.concessaoService.criarSeNaoExistir(solicitacao);
+        const concessao =
+          await this.concessaoService.criarSeNaoExistir(solicitacao);
         resultado.concessao = concessao; // Incluir dados da concessão no retorno
-        this.logger.debug(`Concessão criada/recuperada para solicitação ${solicitacao.id}`);
+        this.logger.debug(
+          `Concessão criada/recuperada para solicitação ${solicitacao.id}`,
+        );
       } catch (concessaoErr) {
-        this.logger.error(`Erro ao criar concessão automática para solicitação ${solicitacao.id}: ${concessaoErr.message}`, concessaoErr.stack);
+        this.logger.error(
+          `Erro ao criar concessão automática para solicitação ${solicitacao.id}: ${concessaoErr.message}`,
+          concessaoErr.stack,
+        );
       }
     }
 
@@ -467,8 +474,9 @@ export class WorkflowSolicitacaoService {
     if (resultado.sucesso && solicitacao.tecnico_id) {
       try {
         // Buscar o template de aprovação usando o serviço de mapeamento
-        const templateData = await this.templateMappingService.prepararDadosTemplate('APROVACAO');
-        
+        const templateData =
+          await this.templateMappingService.prepararDadosTemplate('APROVACAO');
+
         await this.notificacaoService.criarEBroadcast({
           destinatario_id: solicitacao.tecnico_id,
           titulo: 'Solicitação Aprovada',
@@ -485,14 +493,19 @@ export class WorkflowSolicitacaoService {
             parecer_semtas: parecerSemtas,
             observacao: observacao || 'Nenhuma observação',
             data_aprovacao: new Date().toLocaleDateString('pt-BR'),
-            url_sistema: process.env.FRONTEND_URL || 'https://pgben-front.kemosoft.com.br',
+            url_sistema:
+              process.env.FRONTEND_URL || 'https://pgben-front.kemosoft.com.br',
           },
         });
-        
+
         if (templateData.templateEncontrado) {
-          this.logger.log(`Notificação de aprovação enviada com template ${templateData.codigoTemplate} para usuário ${solicitacao.tecnico_id}`);
+          this.logger.log(
+            `Notificação de aprovação enviada com template ${templateData.codigoTemplate} para usuário ${solicitacao.tecnico_id}`,
+          );
         } else {
-          this.logger.warn(`Template para APROVACAO não encontrado. Notificação enviada sem template.`);
+          this.logger.warn(
+            `Template para APROVACAO não encontrado. Notificação enviada sem template.`,
+          );
         }
       } catch (notificationError) {
         this.logger.error(
@@ -563,8 +576,11 @@ export class WorkflowSolicitacaoService {
     if (resultado.sucesso && solicitacao.tecnico_id) {
       try {
         // Buscar o template de rejeição usando o serviço de mapeamento
-        const templateData = await this.templateMappingService.prepararDadosTemplate('INDEFERIMENTO');
-        
+        const templateData =
+          await this.templateMappingService.prepararDadosTemplate(
+            'INDEFERIMENTO',
+          );
+
         await this.notificacaoService.criarEBroadcast({
           destinatario_id: solicitacao.tecnico_id,
           titulo: 'Solicitação Rejeitada',
@@ -580,14 +596,19 @@ export class WorkflowSolicitacaoService {
             status_novo: resultado.status_atual,
             motivo: motivo || 'Não informado',
             data_rejeicao: new Date().toLocaleDateString('pt-BR'),
-            url_sistema: process.env.FRONTEND_URL || 'https://pgben-front.kemosoft.com.br',
+            url_sistema:
+              process.env.FRONTEND_URL || 'https://pgben-front.kemosoft.com.br',
           },
         });
-        
+
         if (templateData.templateEncontrado) {
-          this.logger.log(`Notificação de rejeição enviada com template ${templateData.codigoTemplate} para usuário ${solicitacao.tecnico_id}`);
+          this.logger.log(
+            `Notificação de rejeição enviada com template ${templateData.codigoTemplate} para usuário ${solicitacao.tecnico_id}`,
+          );
         } else {
-          this.logger.warn(`Template para REJEICAO não encontrado. Notificação enviada sem template.`);
+          this.logger.warn(
+            `Template para REJEICAO não encontrado. Notificação enviada sem template.`,
+          );
         }
       } catch (notificationError) {
         this.logger.error(
@@ -658,8 +679,11 @@ export class WorkflowSolicitacaoService {
     if (resultado.sucesso && solicitacao.tecnico_id) {
       try {
         // Buscar o template de cancelamento usando o serviço de mapeamento
-        const templateData = await this.templateMappingService.prepararDadosTemplate('CANCELAMENTO');
-        
+        const templateData =
+          await this.templateMappingService.prepararDadosTemplate(
+            'CANCELAMENTO',
+          );
+
         await this.notificacaoService.criarEBroadcast({
           destinatario_id: solicitacao.tecnico_id,
           titulo: 'Solicitação Cancelada',
@@ -675,14 +699,19 @@ export class WorkflowSolicitacaoService {
             status_novo: resultado.status_atual,
             motivo: motivo || 'Não informado',
             data_cancelamento: new Date().toLocaleDateString('pt-BR'),
-            url_sistema: process.env.FRONTEND_URL || 'https://pgben-front.kemosoft.com.br',
+            url_sistema:
+              process.env.FRONTEND_URL || 'https://pgben-front.kemosoft.com.br',
           },
         });
-        
+
         if (templateData.templateEncontrado) {
-          this.logger.log(`Notificação de cancelamento enviada com template ${templateData.codigoTemplate} para usuário ${solicitacao.tecnico_id}`);
+          this.logger.log(
+            `Notificação de cancelamento enviada com template ${templateData.codigoTemplate} para usuário ${solicitacao.tecnico_id}`,
+          );
         } else {
-          this.logger.warn(`Template para CANCELAMENTO não encontrado. Notificação enviada sem template.`);
+          this.logger.warn(
+            `Template para CANCELAMENTO não encontrado. Notificação enviada sem template.`,
+          );
         }
       } catch (notificationError) {
         this.logger.error(

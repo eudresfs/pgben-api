@@ -62,10 +62,11 @@ export class ComprovanteController {
   })
   @RequiresPermission({
     permissionName: 'pagamento.visualizar',
-    scopeType: TipoEscopo.UNIDADE
+    scopeType: TipoEscopo.UNIDADE,
   })
   async findAll(@Param('pagamentoId', ParseUUIDPipe) pagamentoId: string) {
-    const comprovantes = await this.comprovanteService.findByPagamento(pagamentoId);
+    const comprovantes =
+      await this.comprovanteService.findByPagamento(pagamentoId);
 
     return {
       data: comprovantes.map(this.mapToResponseDto),
@@ -95,7 +96,7 @@ export class ComprovanteController {
   })
   @RequiresPermission({
     permissionName: 'pagamento.editar',
-    scopeType: TipoEscopo.UNIDADE
+    scopeType: TipoEscopo.UNIDADE,
   })
   async upload(
     @Param('pagamentoId', ParseUUIDPipe) pagamentoId: string,
@@ -138,7 +139,7 @@ export class ComprovanteController {
   })
   @RequiresPermission({
     permissionName: 'pagamento.visualizar',
-    scopeType: TipoEscopo.UNIDADE
+    scopeType: TipoEscopo.UNIDADE,
   })
   async findOne(@Param('id', ParseUUIDPipe) id: string) {
     const comprovante = await this.comprovanteService.findById(id);
@@ -169,13 +170,11 @@ export class ComprovanteController {
   })
   @RequiresPermission({
     permissionName: 'pagamento.visualizar',
-    scopeType: TipoEscopo.UNIDADE
+    scopeType: TipoEscopo.UNIDADE,
   })
-  async download(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Res() res: Response,
-  ) {
-    const { buffer, fileName, mimeType } = await this.comprovanteService.getContent(id);
+  async download(@Param('id', ParseUUIDPipe) id: string, @Res() res: Response) {
+    const { buffer, fileName, mimeType } =
+      await this.comprovanteService.getContent(id);
 
     res.set({
       'Content-Type': mimeType,
@@ -208,7 +207,7 @@ export class ComprovanteController {
   })
   @RequiresPermission({
     permissionName: 'pagamento.editar',
-    scopeType: TipoEscopo.UNIDADE
+    scopeType: TipoEscopo.UNIDADE,
   })
   async remove(
     @Param('id', ParseUUIDPipe) id: string,
@@ -238,10 +237,10 @@ export class ComprovanteController {
       dataUpload: comprovante.data_upload,
       responsavelUpload: {
         id: comprovante.responsavel_upload_id || '',
-        nome: comprovante.responsavel_upload_nome || ''
+        nome: comprovante.responsavel_upload_nome || '',
       },
       createdAt: comprovante.created_at,
-      updatedAt: comprovante.updated_at
+      updatedAt: comprovante.updated_at,
     };
   }
 }

@@ -2,10 +2,10 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 /**
  * DTO base para confirmações
- * 
+ *
  * Define campos comuns compartilhados entre diferentes DTOs de confirmação
  * para seguir o princípio DRY (Don't Repeat Yourself).
- * 
+ *
  * @author Equipe PGBen
  */
 export abstract class ConfirmacaoBaseDto {

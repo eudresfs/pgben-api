@@ -14,7 +14,7 @@ export enum ProgramaHabitacionalEnum {
   AUXILIO_MORADIA = 'auxilio_moradia',
   PROGRAMA_MUNICIPAL = 'programa_municipal',
   OUTRO = 'outro',
-  NENHUM = 'nenhum'
+  NENHUM = 'nenhum',
 }
 
 export enum TipoDesastreEnum {
@@ -40,5 +40,5 @@ export enum TipoDespesaEnum {
   ALIMENTACAO_HIGIENE = 'alimentacao_higiene',
   MEDICAMENTOS = 'medicamentos',
   TELEFONE = 'telefone',
-  OUTRO = 'outro'
+  OUTRO = 'outro',
 }

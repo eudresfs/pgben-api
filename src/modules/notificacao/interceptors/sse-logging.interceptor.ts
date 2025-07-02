@@ -7,7 +7,10 @@ import {
 import { Observable, throwError } from 'rxjs';
 import { tap, catchError, finalize } from 'rxjs/operators';
 import { Request, Response } from 'express';
-import { SseStructuredLoggingService, LogLevel } from '../services/sse-structured-logging.service';
+import {
+  SseStructuredLoggingService,
+  LogLevel,
+} from '../services/sse-structured-logging.service';
 import { SseGracefulDegradationService } from '../services/sse-graceful-degradation.service';
 import { SseErrorBoundaryService } from '../services/sse-error-boundary.service';
 
@@ -56,16 +59,16 @@ export class SseLoggingInterceptor implements NestInterceptor {
     const httpContext = context.switchToHttp();
     const request = httpContext.getRequest<Request>();
     const response = httpContext.getResponse<Response>();
-    
+
     // Criar contexto do request
     const requestContext = this.createRequestContext(request);
-    
+
     // Iniciar monitoramento de CPU
     const cpuUsageStart = process.cpuUsage();
-    
+
     // Log do início do request
     this.logRequestStart(requestContext, context);
-    
+
     return next.handle().pipe(
       tap((data) => {
         // Log de sucesso
@@ -74,16 +77,16 @@ export class SseLoggingInterceptor implements NestInterceptor {
       catchError((error) => {
         // Log de erro
         this.logRequestError(requestContext, response, error, cpuUsageStart);
-        
+
         // Capturar erro com error boundary
         this.captureErrorWithBoundary(error, requestContext);
-        
+
         return throwError(() => error);
       }),
       finalize(() => {
         // Log de finalização
         this.logRequestFinalization(requestContext, cpuUsageStart);
-      })
+      }),
     );
   }
 
@@ -105,10 +108,14 @@ export class SseLoggingInterceptor implements NestInterceptor {
   /**
    * Log do início do request
    */
-  private logRequestStart(context: RequestContext, executionContext: ExecutionContext) {
+  private logRequestStart(
+    context: RequestContext,
+    executionContext: ExecutionContext,
+  ) {
     // Verificar se logging está disponível
-    const isLoggingAvailable = this.gracefulDegradationService.isFeatureAvailable('logging');
-    
+    const isLoggingAvailable =
+      this.gracefulDegradationService.isFeatureAvailable('logging');
+
     if (!isLoggingAvailable) {
       return; // Skip logging se não disponível
     }
@@ -116,7 +123,7 @@ export class SseLoggingInterceptor implements NestInterceptor {
     const request = executionContext.switchToHttp().getRequest<Request>();
     const response = executionContext.switchToHttp().getResponse<Response>();
     const duration = Date.now() - context.startTime;
-    
+
     this.loggingService.logHttpRequest(request, response, duration);
   }
 
@@ -127,13 +134,16 @@ export class SseLoggingInterceptor implements NestInterceptor {
     context: RequestContext,
     response: Response,
     data: any,
-    cpuUsageStart: NodeJS.CpuUsage
+    cpuUsageStart: NodeJS.CpuUsage,
   ) {
-    const metrics = this.calculatePerformanceMetrics(context.startTime, cpuUsageStart);
-    
+    const metrics = this.calculatePerformanceMetrics(
+      context.startTime,
+      cpuUsageStart,
+    );
+
     // Determinar nível de log baseado na performance
     const logLevel = this.determineLogLevel(metrics.duration);
-    
+
     const logData = {
       userId: this.parseUserId(context.userId),
       component: 'sse-interceptor',
@@ -147,29 +157,34 @@ export class SseLoggingInterceptor implements NestInterceptor {
         memoryUsage: metrics.memoryUsage,
         cpuUsage: metrics.cpuUsage,
         responseSize: this.getResponseSize(data),
-        degradationLevel: this.gracefulDegradationService.getCurrentStatus().currentLevel,
+        degradationLevel:
+          this.gracefulDegradationService.getCurrentStatus().currentLevel,
       },
     };
 
     // Log baseado no nível determinado
     switch (logLevel) {
       case 'performance':
-        this.loggingService.logPerformance('Request processado com sucesso', logData);
+        this.loggingService.logPerformance(
+          'Request processado com sucesso',
+          logData,
+        );
         break;
       case 'warning':
-        this.loggingService.logConnection(LogLevel.WARN, 'Request lento processado', logData);
+        this.loggingService.logConnection(
+          LogLevel.WARN,
+          'Request lento processado',
+          logData,
+        );
         break;
       case 'error':
-        this.loggingService.logError(
-          new Error('Request muito lento'),
-          {
-            ...logData,
-            metadata: {
-              ...logData.metadata,
-              performanceIssue: 'very_slow_request',
-            },
-          }
-        );
+        this.loggingService.logError(new Error('Request muito lento'), {
+          ...logData,
+          metadata: {
+            ...logData.metadata,
+            performanceIssue: 'very_slow_request',
+          },
+        });
         break;
       default:
         this.loggingService.logPerformance('Request processado', logData);
@@ -183,10 +198,13 @@ export class SseLoggingInterceptor implements NestInterceptor {
     context: RequestContext,
     response: Response,
     error: any,
-    cpuUsageStart: NodeJS.CpuUsage
+    cpuUsageStart: NodeJS.CpuUsage,
   ) {
-    const metrics = this.calculatePerformanceMetrics(context.startTime, cpuUsageStart);
-    
+    const metrics = this.calculatePerformanceMetrics(
+      context.startTime,
+      cpuUsageStart,
+    );
+
     this.loggingService.logError(error, {
       userId: this.parseUserId(context.userId),
       component: 'sse-interceptor',
@@ -201,7 +219,8 @@ export class SseLoggingInterceptor implements NestInterceptor {
         cpuUsage: metrics.cpuUsage,
         errorType: error.constructor.name,
         errorMessage: error.message,
-        degradationLevel: this.gracefulDegradationService.getCurrentStatus().currentLevel,
+        degradationLevel:
+          this.gracefulDegradationService.getCurrentStatus().currentLevel,
       },
     });
   }
@@ -211,10 +230,13 @@ export class SseLoggingInterceptor implements NestInterceptor {
    */
   private logRequestFinalization(
     context: RequestContext,
-    cpuUsageStart: NodeJS.CpuUsage
+    cpuUsageStart: NodeJS.CpuUsage,
   ) {
-    const metrics = this.calculatePerformanceMetrics(context.startTime, cpuUsageStart);
-    
+    const metrics = this.calculatePerformanceMetrics(
+      context.startTime,
+      cpuUsageStart,
+    );
+
     // Log apenas se a duração for significativa ou se houver problemas de performance
     if (metrics.duration > this.performanceThresholds.slow) {
       this.loggingService.logPerformance('Request finalizado', {
@@ -260,12 +282,12 @@ export class SseLoggingInterceptor implements NestInterceptor {
    */
   private calculatePerformanceMetrics(
     startTime: number,
-    cpuUsageStart: NodeJS.CpuUsage
+    cpuUsageStart: NodeJS.CpuUsage,
   ): PerformanceMetrics {
     const duration = Date.now() - startTime;
     const memoryUsage = process.memoryUsage();
     const cpuUsage = process.cpuUsage(cpuUsageStart);
-    
+
     return {
       duration,
       memoryUsage,
@@ -276,7 +298,9 @@ export class SseLoggingInterceptor implements NestInterceptor {
   /**
    * Determinar nível de log baseado na duração
    */
-  private determineLogLevel(duration: number): 'performance' | 'warning' | 'error' {
+  private determineLogLevel(
+    duration: number,
+  ): 'performance' | 'warning' | 'error' {
     if (duration > this.performanceThresholds.verySlow) {
       return 'error';
     } else if (duration > this.performanceThresholds.slow) {
@@ -304,7 +328,7 @@ export class SseLoggingInterceptor implements NestInterceptor {
    */
   private getResponseSize(data: any): number {
     if (!data) return 0;
-    
+
     try {
       return JSON.stringify(data).length;
     } catch {
@@ -354,7 +378,7 @@ export class SseLoggingInterceptor implements NestInterceptor {
     if (userId === null || userId === undefined || userId === '') {
       return undefined;
     }
-    
+
     const parsed = Number(userId);
     return isNaN(parsed) ? undefined : parsed;
   }

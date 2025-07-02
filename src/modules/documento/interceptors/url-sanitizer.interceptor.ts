@@ -10,7 +10,7 @@ import { LoggingService } from '../../../shared/logging/logging.service';
 
 /**
  * Interceptor para sanitização de URLs e prevenção de ataques
- * 
+ *
  * Este interceptor:
  * - Previne ataques de path traversal
  * - Sanitiza parâmetros de URL
@@ -24,16 +24,16 @@ export class UrlSanitizerInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const request = context.switchToHttp().getRequest();
     const user = request.user;
-    
+
     // Sanitizar parâmetros da URL
     this.sanitizeParams(request.params, user?.id);
-    
+
     // Sanitizar query parameters
     this.sanitizeQuery(request.query, user?.id);
-    
+
     // Sanitizar headers suspeitos
     this.sanitizeHeaders(request.headers, user?.id);
-    
+
     return next.handle();
   }
 
@@ -47,9 +47,11 @@ export class UrlSanitizerInterceptor implements NestInterceptor {
           this.logger.warn(
             `Tentativa de path traversal detectada no parâmetro ${key}: ${value}`,
             UrlSanitizerInterceptor.name,
-            { key, value, userId, type: 'path_traversal' }
+            { key, value, userId, type: 'path_traversal' },
           );
-          throw new BadRequestException(`Parâmetro ${key} contém caracteres inválidos`);
+          throw new BadRequestException(
+            `Parâmetro ${key} contém caracteres inválidos`,
+          );
         }
 
         // Verificar caracteres suspeitos
@@ -57,19 +59,27 @@ export class UrlSanitizerInterceptor implements NestInterceptor {
           this.logger.warn(
             `Caracteres suspeitos detectados no parâmetro ${key}: ${value}`,
             UrlSanitizerInterceptor.name,
-            { key, value, userId, type: 'suspicious_chars' }
+            { key, value, userId, type: 'suspicious_chars' },
           );
-          throw new BadRequestException(`Parâmetro ${key} contém caracteres não permitidos`);
+          throw new BadRequestException(
+            `Parâmetro ${key} contém caracteres não permitidos`,
+          );
         }
 
         // Validar UUIDs se aplicável (exceto codigoOrId que pode ser código ou UUID)
-        if (key.toLowerCase().includes('id') && key !== 'codigoOrId' && !this.isValidUUID(value)) {
+        if (
+          key.toLowerCase().includes('id') &&
+          key !== 'codigoOrId' &&
+          !this.isValidUUID(value)
+        ) {
           this.logger.warn(
             `UUID inválido detectado no parâmetro ${key}: ${value}`,
             UrlSanitizerInterceptor.name,
-            { key, value, userId, type: 'invalid_uuid' }
+            { key, value, userId, type: 'invalid_uuid' },
           );
-          throw new BadRequestException(`Parâmetro ${key} deve ser um UUID válido`);
+          throw new BadRequestException(
+            `Parâmetro ${key} deve ser um UUID válido`,
+          );
         }
 
         // Validar codigoOrId especificamente (aceita UUID ou código alfanumérico)
@@ -77,9 +87,11 @@ export class UrlSanitizerInterceptor implements NestInterceptor {
           this.logger.warn(
             `Código ou ID inválido detectado no parâmetro ${key}: ${value}`,
             UrlSanitizerInterceptor.name,
-            { key, value, userId, type: 'invalid_codigo_or_id' }
+            { key, value, userId, type: 'invalid_codigo_or_id' },
           );
-          throw new BadRequestException(`Parâmetro ${key} deve ser um UUID válido ou código alfanumérico`);
+          throw new BadRequestException(
+            `Parâmetro ${key} deve ser um UUID válido ou código alfanumérico`,
+          );
         }
       }
     }
@@ -95,9 +107,11 @@ export class UrlSanitizerInterceptor implements NestInterceptor {
           this.logger.warn(
             `Tentativa de SQL injection detectada no query ${key}: ${value}`,
             UrlSanitizerInterceptor.name,
-            { key, value, userId, type: 'sql_injection' }
+            { key, value, userId, type: 'sql_injection' },
           );
-          throw new BadRequestException(`Query parameter ${key} contém caracteres não permitidos`);
+          throw new BadRequestException(
+            `Query parameter ${key} contém caracteres não permitidos`,
+          );
         }
 
         // Verificar XSS básico
@@ -105,9 +119,11 @@ export class UrlSanitizerInterceptor implements NestInterceptor {
           this.logger.warn(
             `Tentativa de XSS detectada no query ${key}: ${value}`,
             UrlSanitizerInterceptor.name,
-            { key, value, userId, type: 'xss_attempt' }
+            { key, value, userId, type: 'xss_attempt' },
           );
-          throw new BadRequestException(`Query parameter ${key} contém caracteres não permitidos`);
+          throw new BadRequestException(
+            `Query parameter ${key} contém caracteres não permitidos`,
+          );
         }
       }
     }
@@ -130,7 +146,7 @@ export class UrlSanitizerInterceptor implements NestInterceptor {
         this.logger.warn(
           `Header suspeito detectado ${header}: ${value}`,
           UrlSanitizerInterceptor.name,
-          { header, value, userId, type: 'suspicious_header' }
+          { header, value, userId, type: 'suspicious_header' },
         );
       }
     }
@@ -141,7 +157,7 @@ export class UrlSanitizerInterceptor implements NestInterceptor {
       this.logger.warn(
         `User-Agent suspeito detectado: ${userAgent}`,
         UrlSanitizerInterceptor.name,
-        { userAgent, userId, type: 'suspicious_user_agent' }
+        { userAgent, userId, type: 'suspicious_user_agent' },
       );
     }
   }
@@ -159,19 +175,21 @@ export class UrlSanitizerInterceptor implements NestInterceptor {
     ];
 
     const lowerValue = value.toLowerCase();
-    return pathTraversalPatterns.some(pattern => lowerValue.includes(pattern));
+    return pathTraversalPatterns.some((pattern) =>
+      lowerValue.includes(pattern),
+    );
   }
 
   private containsSuspiciousChars(value: string): boolean {
     // Caracteres que podem indicar tentativas de ataque
     const suspiciousPatterns = [
-      /[<>"']/,  // XSS básico
-      /\x00/,    // Null bytes
-      /\x1f/,    // Caracteres de controle
+      /[<>"']/, // XSS básico
+      /\x00/, // Null bytes
+      /\x1f/, // Caracteres de controle
       /[\x7f-\xff]/, // Caracteres não ASCII
     ];
 
-    return suspiciousPatterns.some(pattern => pattern.test(value));
+    return suspiciousPatterns.some((pattern) => pattern.test(value));
   }
 
   private containsSQLInjection(value: string): boolean {
@@ -181,7 +199,7 @@ export class UrlSanitizerInterceptor implements NestInterceptor {
       /(script|javascript|vbscript|onload|onerror|onclick)/i,
     ];
 
-    return sqlPatterns.some(pattern => pattern.test(value));
+    return sqlPatterns.some((pattern) => pattern.test(value));
   }
 
   private containsXSS(value: string): boolean {
@@ -193,19 +211,21 @@ export class UrlSanitizerInterceptor implements NestInterceptor {
       /<[^>]*on\w+[^>]*>/gi,
     ];
 
-    return xssPatterns.some(pattern => pattern.test(value));
+    return xssPatterns.some((pattern) => pattern.test(value));
   }
 
   private isValidUUID(value: string): boolean {
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     return uuidRegex.test(value);
   }
 
   private isValidCodigoOrId(value: string): boolean {
     // Aceita UUID ou código alfanumérico (letras, números, hífen, underscore)
     const isValidUUID = this.isValidUUID(value);
-    const isValidCode = /^[a-zA-Z0-9_-]+$/.test(value) && value.length >= 1 && value.length <= 50;
-    
+    const isValidCode =
+      /^[a-zA-Z0-9_-]+$/.test(value) && value.length >= 1 && value.length <= 50;
+
     return isValidUUID || isValidCode;
   }
 
@@ -222,6 +242,6 @@ export class UrlSanitizerInterceptor implements NestInterceptor {
       /appscan/i,
     ];
 
-    return suspiciousPatterns.some(pattern => pattern.test(userAgent));
+    return suspiciousPatterns.some((pattern) => pattern.test(userAgent));
   }
 }

@@ -5,7 +5,7 @@ import { Injectable } from '@nestjs/common';
  *
  * Implementa validações flexíveis para informações bancárias,
  * incluindo validação de agência, conta e dígitos verificadores.
- * 
+ *
  * MELHORIAS IMPLEMENTADAS:
  * - Aceita códigos de qualquer banco válido do BACEN (001-999)
  * - Validações flexíveis para bancos digitais e fintechs

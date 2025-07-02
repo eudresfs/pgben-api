@@ -113,10 +113,18 @@ describe('CidadaoController', () => {
 
       mockCidadaoService.findById.mockResolvedValue(mockCidadao);
 
-      const result = await controller.findOne('1', undefined, mockRequest as any);
+      const result = await controller.findOne(
+        '1',
+        undefined,
+        mockRequest as any,
+      );
 
       expect(result).toEqual(mockCidadao);
-      expect(mockCidadaoService.findById).toHaveBeenCalledWith('1', undefined, 'user-123');
+      expect(mockCidadaoService.findById).toHaveBeenCalledWith(
+        '1',
+        undefined,
+        'user-123',
+      );
     });
 
     it('deve propagar NotFoundException quando o cidadão não é encontrado', async () => {
@@ -124,10 +132,14 @@ describe('CidadaoController', () => {
         new NotFoundException('Cidadão não encontrado'),
       );
 
-      await expect(controller.findOne('999', undefined, mockRequest as any)).rejects.toThrow(
-        NotFoundException,
+      await expect(
+        controller.findOne('999', undefined, mockRequest as any),
+      ).rejects.toThrow(NotFoundException);
+      expect(mockCidadaoService.findById).toHaveBeenCalledWith(
+        '999',
+        undefined,
+        'user-123',
       );
-      expect(mockCidadaoService.findById).toHaveBeenCalledWith('999', undefined, 'user-123');
     });
   });
 
@@ -141,7 +153,10 @@ describe('CidadaoController', () => {
 
       mockCidadaoService.findByCpf.mockResolvedValue(mockCidadao);
 
-      const result = await controller.findByCpf('123.456.789-00', mockRequest as any);
+      const result = await controller.findByCpf(
+        '123.456.789-00',
+        mockRequest as any,
+      );
 
       expect(result).toEqual(mockCidadao);
       expect(mockCidadaoService.findByCpf).toHaveBeenCalledWith(
@@ -156,9 +171,9 @@ describe('CidadaoController', () => {
         new NotFoundException('Cidadão não encontrado'),
       );
 
-      await expect(controller.findByCpf('999.999.999-99', mockRequest as any)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        controller.findByCpf('999.999.999-99', mockRequest as any),
+      ).rejects.toThrow(NotFoundException);
       expect(mockCidadaoService.findByCpf).toHaveBeenCalledWith(
         '999.999.999-99',
         true,
@@ -181,8 +196,8 @@ describe('CidadaoController', () => {
             telefone: '(84) 99999-9999',
             email: 'joao@example.com',
             proprietario: true,
-            is_whatsapp: false
-          }
+            is_whatsapp: false,
+          },
         ],
         enderecos: [
           {
@@ -191,9 +206,9 @@ describe('CidadaoController', () => {
             numero: '123',
             bairro: 'Centro',
             cidade: 'Natal',
-            estado: 'RN'
-          }
-        ]
+            estado: 'RN',
+          },
+        ],
       };
 
       const mockCidadao = {
@@ -203,7 +218,10 @@ describe('CidadaoController', () => {
 
       mockCidadaoService.create.mockResolvedValue(mockCidadao);
 
-      const result = await controller.create(createCidadaoDto, mockRequest as any);
+      const result = await controller.create(
+        createCidadaoDto,
+        mockRequest as any,
+      );
 
       expect(result).toEqual(mockCidadao);
       expect(mockCidadaoService.create).toHaveBeenCalledWith(
@@ -253,9 +271,9 @@ describe('CidadaoController', () => {
           {
             telefone: '(84) 88888-8888',
             proprietario: true,
-            is_whatsapp: false
-          }
-        ]
+            is_whatsapp: false,
+          },
+        ],
       };
 
       const mockUpdatedCidadao = {
@@ -267,14 +285,18 @@ describe('CidadaoController', () => {
             id: 'contato-1',
             telefone: '(84) 88888-8888',
             proprietario: true,
-            is_whatsapp: false
-          }
-        ]
+            is_whatsapp: false,
+          },
+        ],
       };
 
       mockCidadaoService.update.mockResolvedValue(mockUpdatedCidadao);
 
-      const result = await controller.update('1', updateCidadaoDto, mockRequest as any);
+      const result = await controller.update(
+        '1',
+        updateCidadaoDto,
+        mockRequest as any,
+      );
 
       expect(result).toEqual(mockUpdatedCidadao);
       expect(mockCidadaoService.update).toHaveBeenCalledWith(
@@ -293,9 +315,9 @@ describe('CidadaoController', () => {
         new NotFoundException('Cidadão não encontrado'),
       );
 
-      await expect(controller.update('999', updateCidadaoDto, mockRequest as any)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        controller.update('999', updateCidadaoDto, mockRequest as any),
+      ).rejects.toThrow(NotFoundException);
       expect(mockCidadaoService.update).toHaveBeenCalledWith(
         '999',
         updateCidadaoDto,
@@ -314,10 +336,17 @@ describe('CidadaoController', () => {
 
       mockCidadaoService.findByNis.mockResolvedValue(mockCidadao);
 
-      const result = await controller.findByNis('12345678901', mockRequest as any);
+      const result = await controller.findByNis(
+        '12345678901',
+        mockRequest as any,
+      );
 
       expect(result).toEqual(mockCidadao);
-      expect(mockCidadaoService.findByNis).toHaveBeenCalledWith('12345678901', true, 'user-123');
+      expect(mockCidadaoService.findByNis).toHaveBeenCalledWith(
+        '12345678901',
+        true,
+        'user-123',
+      );
     });
 
     it('deve propagar NotFoundException quando o cidadão não é encontrado pelo NIS', async () => {
@@ -325,10 +354,14 @@ describe('CidadaoController', () => {
         new NotFoundException('Cidadão não encontrado'),
       );
 
-      await expect(controller.findByNis('99999999999', mockRequest as any)).rejects.toThrow(
-        NotFoundException,
+      await expect(
+        controller.findByNis('99999999999', mockRequest as any),
+      ).rejects.toThrow(NotFoundException);
+      expect(mockCidadaoService.findByNis).toHaveBeenCalledWith(
+        '99999999999',
+        true,
+        'user-123',
       );
-      expect(mockCidadaoService.findByNis).toHaveBeenCalledWith('99999999999', true, 'user-123');
     });
   });
 });

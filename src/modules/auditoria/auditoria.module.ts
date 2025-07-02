@@ -1,6 +1,6 @@
 /**
  * AuditoriaModule
- * 
+ *
  * Módulo principal de auditoria consolidado.
  * Integra todos os componentes necessários para o sistema de auditoria:
  * - Core services e repositories
@@ -55,10 +55,10 @@ import { LogAuditoriaRepository } from './repositories/log-auditoria.repository'
   imports: [
     // TypeORM para entidades
     TypeOrmModule.forFeature([LogAuditoria]),
-    
+
     // EventEmitter para eventos síncronos
     EventEmitterModule,
-    
+
     // BullMQ para processamento assíncrono
     BullModule.registerQueueAsync({
       name: 'auditoria',
@@ -81,7 +81,7 @@ import { LogAuditoriaRepository } from './repositories/log-auditoria.repository'
       },
       inject: [ConfigService],
     }),
-    
+
     // JWT para assinatura digital
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -91,37 +91,35 @@ import { LogAuditoriaRepository } from './repositories/log-auditoria.repository'
       }),
       inject: [ConfigService],
     }),
-    
+
     // Guards Module (sem dependência circular)
     AuthGuardsModule,
     ScheduleAdapterModule,
   ],
-  controllers: [
-    AuditoriaController,
-  ],
+  controllers: [AuditoriaController],
   providers: [
     // Core Components
     AuditCoreRepository,
     AuditCoreService,
-    
+
     // Event Components
     AuditEventEmitter,
     AuditEventListener,
-    
+
     // Queue Components
     AuditProcessor,
     AuditProcessingJob,
-    
+
     // Legacy Services (mantidos para compatibilidade)
     AuditoriaService,
     AuditoriaSignatureService,
     AuditoriaQueueService,
     AuditoriaExportacaoService,
     AuditoriaMonitoramentoService,
-    
+
     // Middleware
     AuditoriaMiddleware,
-    
+
     // Legacy Repository
     LogAuditoriaRepository,
   ],
@@ -129,25 +127,25 @@ import { LogAuditoriaRepository } from './repositories/log-auditoria.repository'
     // Core Components
     AuditCoreRepository,
     AuditCoreService,
-    
+
     // Event Components
     AuditEventEmitter,
     AuditEventListener,
-    
+
     // Queue Components
     AuditProcessor,
     AuditProcessingJob,
-    
+
     // Legacy Services (para compatibilidade)
     AuditoriaService,
     AuditoriaSignatureService,
     AuditoriaQueueService,
     AuditoriaExportacaoService,
     AuditoriaMonitoramentoService,
-    
+
     // Middleware
     AuditoriaMiddleware,
-    
+
     // Legacy Repository
     LogAuditoriaRepository,
   ],
@@ -158,7 +156,7 @@ export class AuditoriaModule implements OnModuleInit {
     console.log('🚨 AuditProcessor deve estar registrado agora');
     console.log('✅ AuditoriaModule inicializado - arquitetura consolidada');
   }
-  
+
   onModuleInit() {
     console.log('🚨 AUDITORIA MODULE INIT COMPLETO');
     console.log('🚨 Todos os providers foram inicializados');

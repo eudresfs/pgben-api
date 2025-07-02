@@ -197,7 +197,9 @@ export class TipoBeneficio {
    * Obtém o valor formatado em moeda brasileira
    */
   getValorFormatado(): string {
-    if (!this.temValor()) {return 'Valor não definido';}
+    if (!this.temValor()) {
+      return 'Valor não definido';
+    }
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL',
@@ -277,7 +279,9 @@ export class TipoBeneficio {
    * Verifica se uma idade atende aos critérios
    */
   idadeAtendeAosCriterios(idade: number): boolean {
-    if (!this.temCriteriosElegibilidade()) {return true;}
+    if (!this.temCriteriosElegibilidade()) {
+      return true;
+    }
 
     if (
       this.temIdadeMinima() &&
@@ -300,7 +304,9 @@ export class TipoBeneficio {
    * Verifica se uma renda atende aos critérios
    */
   rendaAtendeAosCriterios(renda: number): boolean {
-    if (!this.temRendaMaxima()) {return true;}
+    if (!this.temRendaMaxima()) {
+      return true;
+    }
     return (
       this.criterios_elegibilidade.renda_maxima !== undefined &&
       renda <= this.criterios_elegibilidade.renda_maxima
@@ -311,7 +317,9 @@ export class TipoBeneficio {
    * Verifica se o tempo de residência atende aos critérios
    */
   tempoResidenciaAtendeAosCriterios(tempoMeses: number): boolean {
-    if (!this.temTempoMinimoResidencia()) {return true;}
+    if (!this.temTempoMinimoResidencia()) {
+      return true;
+    }
     return (
       this.criterios_elegibilidade.tempo_minimo_residencia !== undefined &&
       tempoMeses >= this.criterios_elegibilidade.tempo_minimo_residencia
@@ -344,8 +352,9 @@ export class TipoBeneficio {
     if (
       !this.temRendaMaxima() ||
       this.criterios_elegibilidade.renda_maxima === undefined
-    )
-      {return 'Sem limite de renda';}
+    ) {
+      return 'Sem limite de renda';
+    }
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL',
@@ -356,7 +365,9 @@ export class TipoBeneficio {
    * Obtém o tempo mínimo de residência formatado
    */
   getTempoMinimoResidenciaFormatado(): string {
-    if (!this.temTempoMinimoResidencia()) {return 'Sem exigência de tempo';}
+    if (!this.temTempoMinimoResidencia()) {
+      return 'Sem exigência de tempo';
+    }
 
     const meses = this.criterios_elegibilidade.tempo_minimo_residencia;
     if (meses === undefined || meses < 12) {
@@ -396,7 +407,9 @@ export class TipoBeneficio {
    * Obtém número de requisitos obrigatórios
    */
   getNumeroRequisitosObrigatorios(): number {
-    if (!this.temRequisitosDocumentos()) {return 0;}
+    if (!this.temRequisitosDocumentos()) {
+      return 0;
+    }
     return this.requisito_documento.filter((req) => req.obrigatorio).length;
   }
 
@@ -411,7 +424,9 @@ export class TipoBeneficio {
    * Obtém número de campos dinâmicos obrigatórios
    */
   getNumeroCamposDinamicosObrigatorios(): number {
-    if (!this.temCamposDinamicos()) {return 0;}
+    if (!this.temCamposDinamicos()) {
+      return 0;
+    }
     return this.campos_dinamicos.filter((campo) => campo.obrigatorio).length;
   }
 
@@ -444,13 +459,19 @@ export class TipoBeneficio {
    */
   isConsistente(): boolean {
     // Verifica se tem nome
-    if (!this.nome || this.nome.trim().length === 0) {return false;}
+    if (!this.nome || this.nome.trim().length === 0) {
+      return false;
+    }
 
     // Verifica se tem descrição
-    if (!this.descricao || this.descricao.trim().length === 0) {return false;}
+    if (!this.descricao || this.descricao.trim().length === 0) {
+      return false;
+    }
 
     // Verifica se tem valor válido
-    if (!this.temValor()) {return false;}
+    if (!this.temValor()) {
+      return false;
+    }
 
     // Verifica critérios de elegibilidade
     if (this.temCriteriosElegibilidade()) {
@@ -490,7 +511,9 @@ export class TipoBeneficio {
    */
   podeSerRemovido(): boolean {
     // Não pode remover se já foi removido
-    if (this.foiRemovido()) {return false;}
+    if (this.foiRemovido()) {
+      return false;
+    }
 
     // Pode implementar lógica adicional aqui
     // Por exemplo, verificar se tem solicitações ativas
@@ -543,8 +566,12 @@ export class TipoBeneficio {
       pontos += this.campos_dinamicos.length;
     }
 
-    if (pontos <= 3) {return 'BAIXA';}
-    if (pontos <= 7) {return 'MEDIA';}
+    if (pontos <= 3) {
+      return 'BAIXA';
+    }
+    if (pontos <= 7) {
+      return 'MEDIA';
+    }
     return 'ALTA';
   }
 

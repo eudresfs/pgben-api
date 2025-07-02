@@ -14,15 +14,23 @@ export class DadosSociaisResponseDto {
   @Expose()
   cidadao_id: string;
 
-  @ApiProperty({ description: 'Nível de escolaridade do cidadão', enum: EscolaridadeEnum })
+  @ApiProperty({
+    description: 'Nível de escolaridade do cidadão',
+    enum: EscolaridadeEnum,
+  })
   @Expose()
   escolaridade: EscolaridadeEnum;
 
-  @ApiProperty({ description: 'Indica se o cidadão faz parte de público prioritário' })
+  @ApiProperty({
+    description: 'Indica se o cidadão faz parte de público prioritário',
+  })
   @Expose()
   publico_prioritario: boolean;
 
-  @ApiProperty({ description: 'Renda mensal do cidadão em reais', nullable: true })
+  @ApiProperty({
+    description: 'Renda mensal do cidadão em reais',
+    nullable: true,
+  })
   @Expose()
   @Transform(({ value }) => (value ? parseFloat(value) : null))
   renda: number | null;
@@ -31,20 +39,30 @@ export class DadosSociaisResponseDto {
   @Expose()
   ocupacao_beneficiario: string;
 
-  @ApiProperty({ description: 'Indica se o cidadão recebe Programa Bolsa Família' })
+  @ApiProperty({
+    description: 'Indica se o cidadão recebe Programa Bolsa Família',
+  })
   @Expose()
   recebe_pbf: boolean;
 
-  @ApiProperty({ description: 'Valor mensal recebido do Programa Bolsa Família', nullable: true })
+  @ApiProperty({
+    description: 'Valor mensal recebido do Programa Bolsa Família',
+    nullable: true,
+  })
   @Expose()
   @Transform(({ value }) => (value ? parseFloat(value) : null))
   valor_pbf: number | null;
 
-  @ApiProperty({ description: 'Indica se o cidadão recebe Benefício de Prestação Continuada' })
+  @ApiProperty({
+    description: 'Indica se o cidadão recebe Benefício de Prestação Continuada',
+  })
   @Expose()
   recebe_bpc: boolean;
 
-  @ApiProperty({ description: 'Modalidade do BPC recebido', enum: ModalidadeBpcEnum })
+  @ApiProperty({
+    description: 'Modalidade do BPC recebido',
+    enum: ModalidadeBpcEnum,
+  })
   @Expose()
   modalidade_bpc: ModalidadeBpcEnum;
 
@@ -57,7 +75,10 @@ export class DadosSociaisResponseDto {
   @Expose()
   recebe_tributo_crianca: boolean;
 
-  @ApiProperty({ description: 'Valor mensal recebido do Tributo Criança', nullable: true })
+  @ApiProperty({
+    description: 'Valor mensal recebido do Tributo Criança',
+    nullable: true,
+  })
   @Expose()
   @Transform(({ value }) => (value ? parseFloat(value) : null))
   valor_tributo_crianca: number | null;
@@ -74,19 +95,31 @@ export class DadosSociaisResponseDto {
   @Expose()
   outros_beneficios: boolean;
 
-  @ApiProperty({ description: 'Descrição dos outros benefícios recebidos', nullable: true })
+  @ApiProperty({
+    description: 'Descrição dos outros benefícios recebidos',
+    nullable: true,
+  })
   @Expose()
   descricao_outros_beneficios: string | null;
 
-  @ApiProperty({ description: 'Curso profissionalizante que o cidadão possui ou está cursando' })
+  @ApiProperty({
+    description:
+      'Curso profissionalizante que o cidadão possui ou está cursando',
+  })
   @Expose()
   curso_profissionalizante: string;
 
-  @ApiProperty({ description: 'Indica se o cidadão tem interesse em fazer curso profissionalizante' })
+  @ApiProperty({
+    description:
+      'Indica se o cidadão tem interesse em fazer curso profissionalizante',
+  })
   @Expose()
   interesse_curso_profissionalizante: boolean;
 
-  @ApiProperty({ description: 'Situação atual de trabalho do cidadão', enum: SituacaoTrabalhoEnum })
+  @ApiProperty({
+    description: 'Situação atual de trabalho do cidadão',
+    enum: SituacaoTrabalhoEnum,
+  })
   @Expose()
   situacao_trabalho: SituacaoTrabalhoEnum;
 
@@ -94,7 +127,10 @@ export class DadosSociaisResponseDto {
   @Expose()
   area_trabalho: string;
 
-  @ApiProperty({ description: 'Indica se há familiar apto para trabalhar na composição familiar' })
+  @ApiProperty({
+    description:
+      'Indica se há familiar apto para trabalhar na composição familiar',
+  })
   @Expose()
   familiar_apto_trabalho: boolean;
 
@@ -102,11 +138,17 @@ export class DadosSociaisResponseDto {
   @Expose()
   area_interesse_familiar: string;
 
-  @ApiProperty({ description: 'Indica se o beneficiario exerce atividade remunerada' })
+  @ApiProperty({
+    description: 'Indica se o beneficiario exerce atividade remunerada',
+  })
   @Expose()
   exerce_atividade_remunerada: boolean;
 
-  @ApiProperty({ description: 'Tipo de inserção no trabalho do beneficiario', enum: TipoInsercaoEnum, nullable: true })
+  @ApiProperty({
+    description: 'Tipo de inserção no trabalho do beneficiario',
+    enum: TipoInsercaoEnum,
+    nullable: true,
+  })
   @Expose()
   tipo_insercao_beneficiario: TipoInsercaoEnum | null;
 
@@ -114,19 +156,31 @@ export class DadosSociaisResponseDto {
   @Expose()
   nome_conjuge: string | null;
 
-  @ApiProperty({ description: 'Ocupação ou profissão do cônjuge', nullable: true })
+  @ApiProperty({
+    description: 'Ocupação ou profissão do cônjuge',
+    nullable: true,
+  })
   @Expose()
   ocupacao_conjuge: string | null;
 
-  @ApiProperty({ description: 'Indica se o cônjuge exerce atividade remunerada', nullable: true })
+  @ApiProperty({
+    description: 'Indica se o cônjuge exerce atividade remunerada',
+    nullable: true,
+  })
   @Expose()
   exerce_atividade_remunerada_conjuge: boolean | null;
 
-  @ApiProperty({ description: 'Tipo de inserção no trabalho do cônjuge', enum: TipoInsercaoEnum, nullable: true })
+  @ApiProperty({
+    description: 'Tipo de inserção no trabalho do cônjuge',
+    enum: TipoInsercaoEnum,
+    nullable: true,
+  })
   @Expose()
   tipo_insercao_conjuge: TipoInsercaoEnum | null;
 
-  @ApiProperty({ description: 'Observações adicionais sobre a situação social' })
+  @ApiProperty({
+    description: 'Observações adicionais sobre a situação social',
+  })
   @Expose()
   observacoes: string;
 

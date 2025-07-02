@@ -30,7 +30,8 @@ interface QueryOptimizationConfig {
 /**
  * Decorator para configurar otimização de consultas
  */
-export const QueryOptimization = Reflector.createDecorator<QueryOptimizationConfig>();
+export const QueryOptimization =
+  Reflector.createDecorator<QueryOptimizationConfig>();
 
 /**
  * Interceptor para aplicar otimizações automáticas de consulta
@@ -39,7 +40,7 @@ export const QueryOptimization = Reflector.createDecorator<QueryOptimizationConf
 @Injectable()
 export class QueryOptimizationInterceptor implements NestInterceptor {
   private readonly logger = new Logger(QueryOptimizationInterceptor.name);
-  
+
   constructor(private reflector: Reflector) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
@@ -47,33 +48,33 @@ export class QueryOptimizationInterceptor implements NestInterceptor {
     const response = context.switchToHttp().getResponse();
     const handler = context.getHandler();
     const controller = context.getClass();
-    
+
     // Obter configuração de otimização do metadata
     const optimizationConfig = this.reflector.getAllAndOverride(
       QueryOptimization,
       [handler, controller],
     );
-    
+
     const startTime = performance.now();
     const startMemory = process.memoryUsage();
-    
+
     // Aplicar configurações de paginação automática
     if (optimizationConfig?.enablePagination) {
       this.applyPaginationDefaults(request, optimizationConfig);
     }
-    
+
     // Adicionar headers de cache se habilitado
     if (optimizationConfig?.enableCaching) {
       this.applyCacheHeaders(response, optimizationConfig);
     }
-    
+
     return next.handle().pipe(
       tap({
         next: (data) => {
           const endTime = performance.now();
           const endMemory = process.memoryUsage();
           const duration = endTime - startTime;
-          
+
           // Log de performance se habilitado
           if (optimizationConfig?.enableProfiling) {
             this.logPerformanceMetrics({
@@ -85,7 +86,7 @@ export class QueryOptimizationInterceptor implements NestInterceptor {
               config: optimizationConfig,
             });
           }
-          
+
           // Log de queries lentas
           if (
             optimizationConfig?.slowQueryThreshold &&
@@ -100,17 +101,20 @@ export class QueryOptimizationInterceptor implements NestInterceptor {
               },
             );
           }
-          
+
           // Adicionar headers de performance
           response.setHeader('X-Response-Time', `${duration.toFixed(2)}ms`);
-          response.setHeader('X-Memory-Usage', `${Math.round((endMemory.heapUsed - startMemory.heapUsed) / 1024)}KB`);
-          
+          response.setHeader(
+            'X-Memory-Usage',
+            `${Math.round((endMemory.heapUsed - startMemory.heapUsed) / 1024)}KB`,
+          );
+
           return data;
         },
         error: (error) => {
           const endTime = performance.now();
           const duration = endTime - startTime;
-          
+
           this.logger.error(
             `Error in optimized endpoint: ${request.method} ${request.url} - ${duration.toFixed(2)}ms`,
             {
@@ -120,13 +124,13 @@ export class QueryOptimizationInterceptor implements NestInterceptor {
               config: optimizationConfig,
             },
           );
-          
+
           throw error;
         },
       }),
     );
   }
-  
+
   /**
    * Aplica configurações padrão de paginação
    */
@@ -135,43 +139,40 @@ export class QueryOptimizationInterceptor implements NestInterceptor {
     config: QueryOptimizationConfig,
   ): void {
     const query = request.query;
-    
+
     // Aplicar limite padrão se não especificado
     if (!query.limit) {
       query.limit = '20'; // String porque vem da query
     }
-    
+
     // Aplicar limite máximo
     if (config.maxLimit && parseInt(query.limit) > config.maxLimit) {
       query.limit = config.maxLimit.toString();
-      this.logger.warn(
-        `Limit reduced to maximum allowed: ${config.maxLimit}`,
-        {
-          originalLimit: query.limit,
-          maxLimit: config.maxLimit,
-          url: request.url,
-        },
-      );
+      this.logger.warn(`Limit reduced to maximum allowed: ${config.maxLimit}`, {
+        originalLimit: query.limit,
+        maxLimit: config.maxLimit,
+        url: request.url,
+      });
     }
-    
+
     // Aplicar página padrão se não especificada
     if (!query.page) {
       query.page = '1';
     }
-    
+
     // Validar valores numéricos
     const limit = parseInt(query.limit);
     const page = parseInt(query.page);
-    
+
     if (isNaN(limit) || limit < 1) {
       query.limit = '20';
     }
-    
+
     if (isNaN(page) || page < 1) {
       query.page = '1';
     }
   }
-  
+
   /**
    * Aplica headers de cache
    */
@@ -180,12 +181,12 @@ export class QueryOptimizationInterceptor implements NestInterceptor {
     config: QueryOptimizationConfig,
   ): void {
     const ttl = config.cacheTTL || 300; // 5 minutos padrão
-    
+
     response.setHeader('Cache-Control', `public, max-age=${ttl}`);
     response.setHeader('ETag', this.generateETag());
     response.setHeader('Vary', 'Accept-Encoding, Authorization');
   }
-  
+
   /**
    * Gera ETag simples baseado no timestamp
    */
@@ -193,7 +194,7 @@ export class QueryOptimizationInterceptor implements NestInterceptor {
     const timestamp = Date.now();
     return `"${Buffer.from(timestamp.toString()).toString('base64')}"`;
   }
-  
+
   /**
    * Calcula o tamanho aproximado do resultado
    */
@@ -204,7 +205,7 @@ export class QueryOptimizationInterceptor implements NestInterceptor {
       return 0;
     }
   }
-  
+
   /**
    * Log de métricas de performance
    */
@@ -217,20 +218,17 @@ export class QueryOptimizationInterceptor implements NestInterceptor {
     config: QueryOptimizationConfig;
   }): void {
     const { method, url, duration, memoryDelta, resultSize, config } = metrics;
-    
-    this.logger.debug(
-      `Performance metrics: ${method} ${url}`,
-      {
-        duration: `${duration.toFixed(2)}ms`,
-        memoryDelta: `${Math.round(memoryDelta / 1024)}KB`,
-        resultSize: `${Math.round(resultSize / 1024)}KB`,
-        optimizations: {
-          pagination: config.enablePagination,
-          caching: config.enableCaching,
-          profiling: config.enableProfiling,
-        },
+
+    this.logger.debug(`Performance metrics: ${method} ${url}`, {
+      duration: `${duration.toFixed(2)}ms`,
+      memoryDelta: `${Math.round(memoryDelta / 1024)}KB`,
+      resultSize: `${Math.round(resultSize / 1024)}KB`,
+      optimizations: {
+        pagination: config.enablePagination,
+        caching: config.enableCaching,
+        profiling: config.enableProfiling,
       },
-    );
+    });
   }
 }
 
@@ -265,7 +263,9 @@ export const OptimizeListQuery = (config?: Partial<QueryOptimizationConfig>) =>
 /**
  * Decorator para endpoints de detalhes
  */
-export const OptimizeDetailQuery = (config?: Partial<QueryOptimizationConfig>) =>
+export const OptimizeDetailQuery = (
+  config?: Partial<QueryOptimizationConfig>,
+) =>
   QueryOptimization({
     enablePagination: false,
     enableCaching: true,

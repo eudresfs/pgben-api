@@ -21,7 +21,12 @@ import { DocumentoModule } from '../../modules/documento/documento.module';
  */
 // Módulo NÃO global para evitar problemas com interceptors
 @Module({
-  imports: [TerminusModule, HttpModule, ConfigModule, forwardRef(() => DocumentoModule)],
+  imports: [
+    TerminusModule,
+    HttpModule,
+    ConfigModule,
+    forwardRef(() => DocumentoModule),
+  ],
   controllers: [HealthController, MetricsController, EnhancedMetricsController],
   providers: [
     MetricsService,

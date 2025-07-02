@@ -4,7 +4,7 @@ import { registerAs } from '@nestjs/config';
 
 /**
  * Configuração do Ably para notificações em tempo real
- * 
+ *
  * Esta classe centraliza todas as configurações relacionadas ao Ably,
  * incluindo autenticação, canais, performance e segurança.
  */
@@ -24,7 +24,9 @@ export class AblyConfig {
   }
 
   get environment(): 'sandbox' | 'production' | undefined {
-    return this.configService.get<'sandbox' | 'production' | undefined>('ABLY_ENVIRONMENT');
+    return this.configService.get<'sandbox' | 'production' | undefined>(
+      'ABLY_ENVIRONMENT',
+    );
   }
 
   get clientId(): string {
@@ -45,7 +47,12 @@ export class AblyConfig {
     if (durationMatch) {
       const value = Number(durationMatch[1]);
       const unit = durationMatch[2].toLowerCase();
-      const multipliers: Record<string, number> = { s: 1, m: 60, h: 3600, d: 86400 };
+      const multipliers: Record<string, number> = {
+        s: 1,
+        m: 60,
+        h: 3600,
+        d: 86400,
+      };
       return value * (multipliers[unit] || 1);
     }
     // Fallback para 1 hora (3600s)
@@ -91,7 +98,10 @@ export class AblyConfig {
   }
 
   get channelNotifications(): string {
-    return this.configService.get<string>('ABLY_CHANNEL_NOTIFICATIONS', 'notifications');
+    return this.configService.get<string>(
+      'ABLY_CHANNEL_NOTIFICATIONS',
+      'notifications',
+    );
   }
 
   get channelSystem(): string {
@@ -129,7 +139,10 @@ export class AblyConfig {
   }
 
   get logLevel(): 'debug' | 'info' | 'warn' | 'error' {
-    return this.configService.get<'debug' | 'info' | 'warn' | 'error'>('ABLY_LOG_LEVEL', 'warn');
+    return this.configService.get<'debug' | 'info' | 'warn' | 'error'>(
+      'ABLY_LOG_LEVEL',
+      'warn',
+    );
   }
 
   get enableFallback(): boolean {
@@ -183,19 +196,22 @@ export class AblyConfig {
   /**
    * Gera as capacidades JWT baseadas no perfil do usuário
    */
-  getJwtCapabilities(isAdmin: boolean, userId?: string): Record<string, string[]> {
+  getJwtCapabilities(
+    isAdmin: boolean,
+    userId?: string,
+  ): Record<string, string[]> {
     if (isAdmin) {
       return {
-        [this.jwtCapabilityAdmin]: ['*']
+        [this.jwtCapabilityAdmin]: ['*'],
       };
     }
 
-    const userCapability = userId 
+    const userCapability = userId
       ? `${this.channelPrefix}:user-${userId}:*`
       : this.jwtCapabilityUser;
 
     return {
-      [userCapability]: ['subscribe', 'presence']
+      [userCapability]: ['subscribe', 'presence'],
     };
   }
 
@@ -206,7 +222,8 @@ export class AblyConfig {
     return {
       key: this.apiKey,
       clientId: this.clientId,
-      ...(this.environment && this.environment !== 'production' && { environment: this.environment }),
+      ...(this.environment &&
+        this.environment !== 'production' && { environment: this.environment }),
       tls: this.enableTls,
       logLevel: this.logLevel,
       disconnectedRetryTimeout: this.connectionTimeout,
@@ -217,8 +234,8 @@ export class AblyConfig {
       // Configurações específicas para o ambiente
       ...(this.environment === 'sandbox' && {
         restHost: 'sandbox-rest.ably.io',
-        realtimeHost: 'sandbox-realtime.ably.io'
-      })
+        realtimeHost: 'sandbox-realtime.ably.io',
+      }),
     };
   }
 
@@ -230,25 +247,29 @@ export class AblyConfig {
     const apiKeyRaw = this.configService.get<string>('ABLY_API_KEY');
     const apiKeyRegex = /^[a-zA-Z0-9._-]+:[a-zA-Z0-9._-]+$/;
     if (apiKeyRaw && apiKeyRaw !== 'disabled' && !apiKeyRegex.test(apiKeyRaw)) {
-      throw new Error('ABLY_API_KEY em formato inválido. Verifique a documentação do Ably.');
+      throw new Error(
+        'ABLY_API_KEY em formato inválido. Verifique a documentação do Ably.',
+      );
     }
     const apiKey = this.configService.get<string>('ABLY_API_KEY');
-    
+
     // Permite inicialização mesmo com Ably desabilitado
     if (!apiKey || apiKey === 'disabled') {
-      console.warn('⚠️ Ably desabilitado - notificações em tempo real não estarão disponíveis');
+      console.warn(
+        '⚠️ Ably desabilitado - notificações em tempo real não estarão disponíveis',
+      );
       return;
     }
 
-    const requiredConfigs = [
-      { key: 'ABLY_API_KEY', value: apiKey }
-    ];
+    const requiredConfigs = [{ key: 'ABLY_API_KEY', value: apiKey }];
 
-    const missingConfigs = requiredConfigs.filter(config => !config.value);
-    
+    const missingConfigs = requiredConfigs.filter((config) => !config.value);
+
     if (missingConfigs.length > 0) {
-      const missing = missingConfigs.map(config => config.key).join(', ');
-      throw new Error(`Configurações obrigatórias do Ably não encontradas: ${missing}`);
+      const missing = missingConfigs.map((config) => config.key).join(', ');
+      throw new Error(
+        `Configurações obrigatórias do Ably não encontradas: ${missing}`,
+      );
     }
   }
 }
@@ -262,7 +283,7 @@ export const ablyConfigFactory = registerAs('ably', () => ({
   clientId: process.env.ABLY_CLIENT_ID || 'pgben-server',
   jwtExpiresIn: parseInt(process.env.ABLY_JWT_EXPIRES_IN || '3600'),
   jwtCapabilityAdmin: process.env.ABLY_JWT_CAPABILITY_ADMIN || '*',
-  jwtCapabilityUser: process.env.ABLY_JWT_CAPABILITY_USER || 'user-*'
+  jwtCapabilityUser: process.env.ABLY_JWT_CAPABILITY_USER || 'user-*',
 }));
 
 /**

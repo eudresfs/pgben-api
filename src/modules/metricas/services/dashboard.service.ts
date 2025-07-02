@@ -375,17 +375,26 @@ export class DashboardService {
       const porStatus = contagemPorStatus.map((item) => ({
         status: item.status,
         quantidade: parseInt(item.quantidade, 10),
-        percentual: total > 0 ? Math.round((parseInt(item.quantidade, 10) / total) * 100 * 100) / 100 : 0,
+        percentual:
+          total > 0
+            ? Math.round((parseInt(item.quantidade, 10) / total) * 100 * 100) /
+              100
+            : 0,
       }));
 
-      this.logger.log(`Contagem obtida: ${total} solicitações em ${porStatus.length} status diferentes`);
+      this.logger.log(
+        `Contagem obtida: ${total} solicitações em ${porStatus.length} status diferentes`,
+      );
 
       return {
         total,
         porStatus,
       };
     } catch (error) {
-      this.logger.error('Erro ao obter contagem de solicitações por status:', error);
+      this.logger.error(
+        'Erro ao obter contagem de solicitações por status:',
+        error,
+      );
       throw error;
     }
   }

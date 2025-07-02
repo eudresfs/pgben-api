@@ -12,36 +12,36 @@ export const AUDITORIA_METADATA_KEY = 'auditoria';
 export interface AuditoriaOptions {
   /** Nome da entidade sendo auditada */
   entidade: string;
-  
+
   /** Tipo de operação sendo realizada */
   operacao: TipoOperacao;
-  
+
   /** Descrição personalizada da operação (opcional) */
   descricao?: string;
-  
+
   /** Se deve mascarar dados sensíveis (padrão: true) */
   mascarDados?: boolean;
-  
+
   /** Se deve capturar dados anteriores para operações de UPDATE (padrão: false) */
   capturarDadosAnteriores?: boolean;
 }
 
 /**
  * Decorator de Auditoria para Métodos do Módulo de Pagamento
- * 
+ *
  * Este decorator marca métodos que devem ser auditados automaticamente
  * pelo AuditoriaInterceptor. Quando aplicado a um método, todas as
  * chamadas para esse método serão registradas no log de auditoria.
- * 
+ *
  * Funcionalidades:
  * - Marca métodos para auditoria automática
  * - Define tipo de operação e entidade
  * - Permite personalização da descrição
  * - Controla mascaramento de dados sensíveis
  * - Suporte para captura de dados anteriores
- * 
+ *
  * @param options Opções de configuração da auditoria
- * 
+ *
  * @example
  * ```typescript
  * @Auditoria({
@@ -53,7 +53,7 @@ export interface AuditoriaOptions {
  *   // implementação
  * }
  * ```
- * 
+ *
  * @example
  * ```typescript
  * @Auditoria({
@@ -66,19 +66,23 @@ export interface AuditoriaOptions {
  *   // implementação
  * }
  * ```
- * 
+ *
  * @author Equipe PGBen
  */
 export const Auditoria = (options: AuditoriaOptions) => {
   // Validar opções obrigatórias
   if (!options.entidade) {
-    throw new Error('Opção "entidade" é obrigatória para o decorator @Auditoria');
+    throw new Error(
+      'Opção "entidade" é obrigatória para o decorator @Auditoria',
+    );
   }
-  
+
   if (!options.operacao) {
-    throw new Error('Opção "operacao" é obrigatória para o decorator @Auditoria');
+    throw new Error(
+      'Opção "operacao" é obrigatória para o decorator @Auditoria',
+    );
   }
-  
+
   // Definir valores padrão
   const metadata = {
     entidade: options.entidade,
@@ -87,7 +91,7 @@ export const Auditoria = (options: AuditoriaOptions) => {
     mascarDados: options.mascarDados ?? true,
     capturarDadosAnteriores: options.capturarDadosAnteriores ?? false,
   };
-  
+
   return SetMetadata(AUDITORIA_METADATA_KEY, metadata);
 };
 
@@ -150,13 +154,16 @@ export const AuditoriaPagamento = {
    */
   Criacao: (descricao?: string) =>
     AuditoriaCriacao('Pagamento', descricao || 'Criação de pagamento'),
-  
+
   /**
    * Auditoria para atualização de status de pagamento
    */
   AtualizacaoStatus: (descricao?: string) =>
-    AuditoriaAtualizacao('Pagamento', descricao || 'Atualização de status de pagamento'),
-  
+    AuditoriaAtualizacao(
+      'Pagamento',
+      descricao || 'Atualização de status de pagamento',
+    ),
+
   /**
    * Auditoria para cancelamento de pagamento
    */
@@ -168,13 +175,13 @@ export const AuditoriaPagamento = {
       mascarDados: true,
       capturarDadosAnteriores: true,
     }),
-  
+
   /**
    * Auditoria para consulta de pagamentos
    */
   Consulta: (descricao?: string) =>
     AuditoriaConsulta('Pagamento', descricao || 'Consulta de pagamentos'),
-  
+
   /**
    * Auditoria para validação de limites
    */
@@ -217,7 +224,8 @@ export const AuditoriaPagamento = {
     Auditoria({
       entidade: 'Pagamento',
       operacao: TipoOperacao.UPDATE,
-      descricao: descricao || 'Processamento automático de liberação de pagamentos',
+      descricao:
+        descricao || 'Processamento automático de liberação de pagamentos',
       mascarDados: false, // Processamento automático não expõe dados sensíveis
       capturarDadosAnteriores: false,
     }),

@@ -33,10 +33,12 @@ export class StorageProviderFactory {
       'STORAGE_PROVIDER',
       'minio',
     );
-    
+
     // Normalizar o valor para lowercase para compatibilidade com o enum
-    const normalizedValue = normalizeEnumValue(storageProviderValue) as TipoStorageProvider;
-    
+    const normalizedValue = normalizeEnumValue(
+      storageProviderValue,
+    ) as TipoStorageProvider;
+
     // Validar se o valor normalizado é um valor válido do enum
     if (Object.values(TipoStorageProvider).includes(normalizedValue)) {
       this.defaultProvider = normalizedValue;
@@ -134,11 +136,10 @@ export class StorageProviderFactory {
         mimetype: string,
         metadados?: Record<string, any>,
       ): Promise<string> => {
-        
         // Usar o novo método uploadArquivoHierarquico do MinioService
         const nomeOriginal = nomeArquivo.split('/').pop() || nomeArquivo;
         const tipoDocumento = metadados?.tipoDocumento || 'OUTRO';
-        
+
         return await this.minioService.uploadArquivoHierarquico(
           buffer,
           nomeArquivo,

@@ -77,7 +77,10 @@ export class RenovacaoAutomaticaController {
     @GetUser() usuario: Usuario,
     @ReqContext() ctx: any,
   ): Promise<ConfiguracaoRenovacao> {
-    const result = await this.renovacaoService.create(createConfiguracaoDto, usuario.id);
+    const result = await this.renovacaoService.create(
+      createConfiguracaoDto,
+      usuario.id,
+    );
 
     // Auditoria: Criação de configuração de renovação automática
     await this.auditEventEmitter.emitEntityCreated(
@@ -86,9 +89,11 @@ export class RenovacaoAutomaticaController {
       {
         tipoBeneficioId: createConfiguracaoDto.tipo_beneficio_id,
         renovacaoAutomatica: createConfiguracaoDto.renovacao_automatica,
-        diasAntecedenciaRenovacao: createConfiguracaoDto.dias_antecedencia_renovacao,
+        diasAntecedenciaRenovacao:
+          createConfiguracaoDto.dias_antecedencia_renovacao,
         numeroMaximoRenovacoes: createConfiguracaoDto.numero_maximo_renovacoes,
-        requerAprovacaoRenovacao: createConfiguracaoDto.requer_aprovacao_renovacao,
+        requerAprovacaoRenovacao:
+          createConfiguracaoDto.requer_aprovacao_renovacao,
         observacoes: createConfiguracaoDto.observacoes,
       },
       usuario.id,
@@ -187,15 +192,19 @@ export class RenovacaoAutomaticaController {
   ): Promise<ConfiguracaoRenovacao> {
     // Buscar estado anterior para auditoria
     const configuracaoAnterior = await this.renovacaoService.findById(id);
-    
-    const result = await this.renovacaoService.update(id, updateConfiguracaoDto);
+
+    const result = await this.renovacaoService.update(
+      id,
+      updateConfiguracaoDto,
+    );
 
     // Auditoria: Atualização de configuração de renovação automática
     await this.auditEventEmitter.emitEntityUpdated(
       'ConfiguracaoRenovacao',
       id,
       {
-        diasAntecedenciaRenovacao: configuracaoAnterior?.dias_antecedencia_renovacao,
+        diasAntecedenciaRenovacao:
+          configuracaoAnterior?.dias_antecedencia_renovacao,
         renovacaoAutomatica: configuracaoAnterior?.renovacao_automatica,
         observacoes: configuracaoAnterior?.observacoes,
       },
@@ -229,7 +238,7 @@ export class RenovacaoAutomaticaController {
   ): Promise<void> {
     // Buscar configuração antes da exclusão para auditoria
     const configuracao = await this.renovacaoService.findById(id);
-    
+
     await this.renovacaoService.remove(id);
 
     // Auditoria: Remoção de configuração de renovação automática
@@ -272,7 +281,7 @@ export class RenovacaoAutomaticaController {
   ): Promise<ConfiguracaoRenovacao> {
     // Buscar estado anterior para auditoria
     const configuracaoAnterior = await this.renovacaoService.findById(id);
-    
+
     const result = await this.renovacaoService.toggleAtivo(id, body.ativo);
 
     // Auditoria: Alteração de status de configuração de renovação automática

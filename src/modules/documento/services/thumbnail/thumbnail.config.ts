@@ -150,7 +150,9 @@ export const DEFAULT_THUMBNAIL_CONFIG: ThumbnailConfig = {
  * @param customConfig Configurações personalizadas
  * @returns Configuração mesclada
  */
-export function mergeConfig(customConfig: Partial<ThumbnailConfig> = {}): ThumbnailConfig {
+export function mergeConfig(
+  customConfig: Partial<ThumbnailConfig> = {},
+): ThumbnailConfig {
   return {
     pdf: {
       ...DEFAULT_THUMBNAIL_CONFIG.pdf,
@@ -189,11 +191,11 @@ export function validateConfig(config: ThumbnailConfig): void {
   if (config.pdf.density <= 0 || config.pdf.density > 600) {
     throw new Error('PDF density deve estar entre 1 e 600 DPI');
   }
-  
+
   if (config.pdf.quality < 1 || config.pdf.quality > 100) {
     throw new Error('PDF quality deve estar entre 1 e 100');
   }
-  
+
   if (config.pdf.timeoutMs < 1000) {
     throw new Error('PDF timeout deve ser pelo menos 1000ms');
   }
@@ -202,15 +204,15 @@ export function validateConfig(config: ThumbnailConfig): void {
   if (config.image.width <= 0 || config.image.height <= 0) {
     throw new Error('Dimensões da imagem devem ser positivas');
   }
-  
+
   if (config.image.quality < 1 || config.image.quality > 100) {
     throw new Error('Image quality deve estar entre 1 e 100');
   }
-  
+
   if (config.image.timeoutMs < 1000) {
     throw new Error('Image timeout deve ser pelo menos 1000ms');
   }
-  
+
   if (config.image.maxBufferSize < 1024) {
     throw new Error('Max buffer size deve ser pelo menos 1KB');
   }
@@ -218,11 +220,17 @@ export function validateConfig(config: ThumbnailConfig): void {
   // Validar otimizações de tamanho
   const sizeOpt = config.image.sizeOptimization;
   if (sizeOpt.largeImageThreshold <= sizeOpt.smallImageThreshold) {
-    throw new Error('Large image threshold deve ser maior que small image threshold');
+    throw new Error(
+      'Large image threshold deve ser maior que small image threshold',
+    );
   }
-  
-  if (sizeOpt.largeImageQuality < 1 || sizeOpt.largeImageQuality > 100 ||
-      sizeOpt.smallImageQuality < 1 || sizeOpt.smallImageQuality > 100) {
+
+  if (
+    sizeOpt.largeImageQuality < 1 ||
+    sizeOpt.largeImageQuality > 100 ||
+    sizeOpt.smallImageQuality < 1 ||
+    sizeOpt.smallImageQuality > 100
+  ) {
     throw new Error('Qualidades de otimização devem estar entre 1 e 100');
   }
 }

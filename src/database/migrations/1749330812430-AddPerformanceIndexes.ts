@@ -95,16 +95,30 @@ export class AddPerformanceIndexes1749330812430 implements MigrationInterface {
   public async down(queryRunner: QueryRunner): Promise<void> {
     // Remover índices criados
     await queryRunner.query(`DROP INDEX IF EXISTS "idx_usuario_email_status";`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "idx_role_permission_role_id";`);
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "idx_role_permission_role_id";`,
+    );
     await queryRunner.query(`DROP INDEX IF EXISTS "idx_permission_nome";`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "idx_solicitacao_status_data";`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "idx_solicitacao_cidadao_tipo";`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "idx_documento_solicitacao";`);
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "idx_solicitacao_status_data";`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "idx_solicitacao_cidadao_tipo";`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "idx_documento_solicitacao";`,
+    );
     await queryRunner.query(`DROP INDEX IF EXISTS "idx_documento_cidadao";`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "idx_audit_logs_usuario_data";`);
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "idx_audit_logs_usuario_data";`,
+    );
     await queryRunner.query(`DROP INDEX IF EXISTS "idx_audit_logs_entidade";`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "idx_pagamento_beneficiario_status";`);
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "idx_pagamento_beneficiario_status";`,
+    );
     await queryRunner.query(`DROP INDEX IF EXISTS "idx_pagamento_vencimento";`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "idx_refresh_tokens_usuario_ativo";`);
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "idx_refresh_tokens_usuario_ativo";`,
+    );
   }
 }

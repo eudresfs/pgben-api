@@ -93,12 +93,13 @@ export class MetricasDashboardController {
     permissionName: 'dashboard.visualizar',
     scopeType: ScopeType.GLOBAL,
   })
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Obtém contagem de solicitações por status',
-    description: 'Retorna a quantidade de solicitações agrupadas por status para exibição no dashboard'
+    description:
+      'Retorna a quantidade de solicitações agrupadas por status para exibição no dashboard',
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Contagem por status obtida com sucesso',
     schema: {
       type: 'object',
@@ -110,13 +111,19 @@ export class MetricasDashboardController {
             type: 'object',
             properties: {
               status: { type: 'string', description: 'Nome do status' },
-              quantidade: { type: 'number', description: 'Quantidade de solicitações neste status' },
-              percentual: { type: 'number', description: 'Percentual em relação ao total' }
-            }
-          }
-        }
-      }
-    }
+              quantidade: {
+                type: 'number',
+                description: 'Quantidade de solicitações neste status',
+              },
+              percentual: {
+                type: 'number',
+                description: 'Percentual em relação ao total',
+              },
+            },
+          },
+        },
+      },
+    },
   })
   async obterContagemPorStatus() {
     return this.dashboardService.obterContagemSolicitacoesPorStatus();

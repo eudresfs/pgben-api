@@ -20,7 +20,10 @@ import {
   MimeValidationService,
   MimeValidationResult,
 } from './mime-validation.service';
-import { DocumentoAuditService, DocumentoAuditContext } from './documento-audit.service';
+import {
+  DocumentoAuditService,
+  DocumentoAuditContext,
+} from './documento-audit.service';
 import { DocumentoPathService } from './documento-path.service';
 import {
   DocumentoUploadValidationService,
@@ -72,7 +75,7 @@ export class DocumentoService {
     private readonly logger: LoggingService,
     private readonly auditService: DocumentoAuditService,
     private readonly pathService: DocumentoPathService,
-    
+
     // Novos serviços especializados para upload
     private readonly uploadValidationService: DocumentoUploadValidationService,
     private readonly fileProcessingService: DocumentoFileProcessingService,
@@ -112,7 +115,9 @@ export class DocumentoService {
     }
 
     if (reutilizavel) {
-      queryBuilder.andWhere('documento.reutilizavel = :reutilizavel', { reutilizavel });
+      queryBuilder.andWhere('documento.reutilizavel = :reutilizavel', {
+        reutilizavel,
+      });
     }
 
     return queryBuilder.getMany();
@@ -183,7 +188,7 @@ export class DocumentoService {
         this.logger.warn(
           `Tentativa de acesso a documento inexistente: ${documentoId}`,
           DocumentoService.name,
-          { documentoId, usuarioId }
+          { documentoId, usuarioId },
         );
         return false;
       }
@@ -193,7 +198,7 @@ export class DocumentoService {
         this.logger.debug(
           `Acesso administrativo concedido ao documento ${documentoId}`,
           DocumentoService.name,
-          { documentoId, usuarioId, roles: userRoles }
+          { documentoId, usuarioId, roles: userRoles },
         );
         if (auditContext) {
           await this.auditService.auditSecurityOperation(auditContext, {
@@ -211,13 +216,16 @@ export class DocumentoService {
         this.logger.debug(
           `Acesso concedido ao uploader do documento ${documentoId}`,
           DocumentoService.name,
-          { documentoId, usuarioId }
+          { documentoId, usuarioId },
         );
         if (auditContext) {
           await this.auditService.auditSecurityOperation(auditContext, {
             documentoId: documento.id,
             operationType: 'access_check',
-            operationDetails: { accessGranted: true, reason: 'uploader_access' },
+            operationDetails: {
+              accessGranted: true,
+              reason: 'uploader_access',
+            },
             success: true,
           });
         }
@@ -229,13 +237,16 @@ export class DocumentoService {
         this.logger.debug(
           `Acesso concedido ao verificador do documento ${documentoId}`,
           DocumentoService.name,
-          { documentoId, usuarioId }
+          { documentoId, usuarioId },
         );
         if (auditContext) {
           await this.auditService.auditSecurityOperation(auditContext, {
             documentoId: documento.id,
             operationType: 'access_check',
-            operationDetails: { accessGranted: true, reason: 'verifier_access' },
+            operationDetails: {
+              accessGranted: true,
+              reason: 'verifier_access',
+            },
             success: true,
           });
         }
@@ -247,7 +258,7 @@ export class DocumentoService {
         this.logger.debug(
           `Acesso concedido ao cidadão proprietário do documento ${documentoId}`,
           DocumentoService.name,
-          { documentoId, usuarioId }
+          { documentoId, usuarioId },
         );
         if (auditContext) {
           await this.auditService.auditSecurityOperation(auditContext, {
@@ -268,7 +279,7 @@ export class DocumentoService {
         this.logger.debug(
           `Verificando acesso via solicitação para documento ${documentoId}`,
           DocumentoService.name,
-          { documentoId, usuarioId, solicitacaoId: documento.solicitacao_id }
+          { documentoId, usuarioId, solicitacaoId: documento.solicitacao_id },
         );
       }
 
@@ -277,13 +288,16 @@ export class DocumentoService {
         this.logger.debug(
           `Acesso de analista concedido ao documento verificado ${documentoId}`,
           DocumentoService.name,
-          { documentoId, usuarioId }
+          { documentoId, usuarioId },
         );
         if (auditContext) {
           await this.auditService.auditSecurityOperation(auditContext, {
             documentoId: documento.id,
             operationType: 'access_check',
-            operationDetails: { accessGranted: true, reason: 'analyst_verified_access' },
+            operationDetails: {
+              accessGranted: true,
+              reason: 'analyst_verified_access',
+            },
             success: true,
           });
         }
@@ -293,26 +307,26 @@ export class DocumentoService {
       this.logger.warn(
         `Acesso negado ao documento ${documentoId}`,
         DocumentoService.name,
-        { documentoId, usuarioId, roles: userRoles }
+        { documentoId, usuarioId, roles: userRoles },
       );
-      
+
       // Acesso negado - auditar
       if (auditContext) {
         await this.auditService.auditAccessDenied(
           documento.id,
           auditContext,
           'Usuário não possui permissão para acessar este documento',
-          'document_access'
+          'document_access',
         );
       }
-      
+
       return false;
     } catch (error) {
       this.logger.error(
         `Erro ao verificar acesso ao documento ${documentoId}`,
         error,
         DocumentoService.name,
-        { documentoId, usuarioId }
+        { documentoId, usuarioId },
       );
       return false;
     }
@@ -326,8 +340,12 @@ export class DocumentoService {
     usuarioId: string,
     userRoles: string[] = [],
   ) {
-    const hasAccess = await this.checkUserDocumentAccess(id, usuarioId, userRoles);
-    
+    const hasAccess = await this.checkUserDocumentAccess(
+      id,
+      usuarioId,
+      userRoles,
+    );
+
     if (!hasAccess) {
       throw new ForbiddenException('Acesso negado ao documento');
     }
@@ -344,7 +362,7 @@ export class DocumentoService {
     userRoles: string[] = [],
   ): Promise<{ buffer: Buffer; mimetype: string; nomeOriginal: string }> {
     let documento: Documento;
-    
+
     if (usuarioId) {
       // Usar método com verificação de acesso
       documento = await this.findByIdWithAccess(id, usuarioId, userRoles);
@@ -354,10 +372,10 @@ export class DocumentoService {
       this.logger.warn(
         `Download sem verificação de acesso para documento ${id}`,
         DocumentoService.name,
-        { documentoId: id }
+        { documentoId: id },
       );
     }
-    
+
     const storageProvider = this.storageProviderFactory.getProvider();
 
     try {
@@ -366,7 +384,7 @@ export class DocumentoService {
       this.logger.info(
         `Download realizado com sucesso para documento ${id}`,
         DocumentoService.name,
-        { documentoId: id, usuarioId, tamanho: buffer.length }
+        { documentoId: id, usuarioId, tamanho: buffer.length },
       );
 
       return {
@@ -379,7 +397,7 @@ export class DocumentoService {
         `Erro ao fazer download do documento ${id}`,
         error,
         DocumentoService.name,
-        { documentoId: id, usuarioId }
+        { documentoId: id, usuarioId },
       );
       throw new InternalServerErrorException(
         'Erro ao fazer download do documento',
@@ -401,15 +419,25 @@ export class DocumentoService {
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        this.logger.debug(`Tentativa ${attempt}/${maxRetries} para ${operationName}`, DocumentoService.name);
+        this.logger.debug(
+          `Tentativa ${attempt}/${maxRetries} para ${operationName}`,
+          DocumentoService.name,
+        );
         return await operation();
       } catch (error) {
         lastError = error;
-        this.logger.warn(`Falha na tentativa ${attempt}/${maxRetries} para ${operationName}: ${error.message}`, DocumentoService.name, { error: error.message, attempt, maxRetries });
+        this.logger.warn(
+          `Falha na tentativa ${attempt}/${maxRetries} para ${operationName}: ${error.message}`,
+          DocumentoService.name,
+          { error: error.message, attempt, maxRetries },
+        );
 
         if (attempt < maxRetries) {
           const delay = this.retryDelay * Math.pow(2, attempt - 1); // Backoff exponencial
-          this.logger.debug(`Aguardando ${delay}ms antes da próxima tentativa`, DocumentoService.name);
+          this.logger.debug(
+            `Aguardando ${delay}ms antes da próxima tentativa`,
+            DocumentoService.name,
+          );
           await new Promise((resolve) => setTimeout(resolve, delay));
         }
       }
@@ -538,10 +566,9 @@ export class DocumentoService {
         uploadDocumentoDto,
       );
 
-      const enrichedMetadata = this.metadataService.enrichMetadata(
-        metadata,
-        { storagePath: caminhoArmazenamento },
-      );
+      const enrichedMetadata = this.metadataService.enrichMetadata(metadata, {
+        storagePath: caminhoArmazenamento,
+      });
 
       // 7. Persistência no banco de dados
       const savedDocument = await this.persistenceService.saveDocument(
@@ -591,7 +618,10 @@ export class DocumentoService {
       // Cleanup em caso de erro usando o serviço especializado
       if (caminhoArmazenamento) {
         try {
-          await this.storageService.cleanupFile(caminhoArmazenamento, 'unknown');
+          await this.storageService.cleanupFile(
+            caminhoArmazenamento,
+            'unknown',
+          );
           this.logger.debug(
             `Arquivo removido do storage após erro: ${caminhoArmazenamento}`,
             DocumentoService.name,
@@ -708,7 +738,7 @@ export class DocumentoService {
     if (!sessionIds || sessionIds.length === 0) {
       return [];
     }
-    
+
     return this.documentoRepository
       .createQueryBuilder('documento')
       .leftJoinAndSelect('documento.usuario_upload', 'usuario_upload')

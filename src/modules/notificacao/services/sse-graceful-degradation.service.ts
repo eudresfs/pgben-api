@@ -2,7 +2,11 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SseHealthCheckService } from './sse-health-check.service';
 import { SseCircuitBreakerService } from './sse-circuit-breaker.service';
-import { SseStructuredLoggingService, LogLevel, SseLogCategory } from './sse-structured-logging.service';
+import {
+  SseStructuredLoggingService,
+  LogLevel,
+  SseLogCategory,
+} from './sse-structured-logging.service';
 
 /**
  * Níveis de degradação do sistema
@@ -157,8 +161,14 @@ export class SseGracefulDegradationService {
     private readonly loggingService: SseStructuredLoggingService,
   ) {
     this.config = {
-      enableAutoDegradation: this.configService.get<boolean>('SSE_ENABLE_AUTO_DEGRADATION', true),
-      checkInterval: this.configService.get<number>('SSE_DEGRADATION_CHECK_INTERVAL', 30000),
+      enableAutoDegradation: this.configService.get<boolean>(
+        'SSE_ENABLE_AUTO_DEGRADATION',
+        true,
+      ),
+      checkInterval: this.configService.get<number>(
+        'SSE_DEGRADATION_CHECK_INTERVAL',
+        30000,
+      ),
       thresholds: {
         light: {
           errorRate: 5,
@@ -194,15 +204,39 @@ export class SseGracefulDegradationService {
         },
       },
       fallbackStrategies: {
-        'sse-notifications': [FallbackStrategy.POLLING, FallbackStrategy.SIMPLIFIED_NOTIFICATIONS],
-        'real-time-updates': [FallbackStrategy.LOCAL_CACHE, FallbackStrategy.POLLING],
-        'user-presence': [FallbackStrategy.STATIC_DATA, FallbackStrategy.DISABLE_FEATURE],
-        'file-uploads': [FallbackStrategy.LOCAL_CACHE, FallbackStrategy.BACKUP_SERVICE],
-        'database-operations': [FallbackStrategy.LOCAL_CACHE, FallbackStrategy.STATIC_DATA],
-        'redis-operations': [FallbackStrategy.LOCAL_CACHE, FallbackStrategy.DISABLE_FEATURE],
+        'sse-notifications': [
+          FallbackStrategy.POLLING,
+          FallbackStrategy.SIMPLIFIED_NOTIFICATIONS,
+        ],
+        'real-time-updates': [
+          FallbackStrategy.LOCAL_CACHE,
+          FallbackStrategy.POLLING,
+        ],
+        'user-presence': [
+          FallbackStrategy.STATIC_DATA,
+          FallbackStrategy.DISABLE_FEATURE,
+        ],
+        'file-uploads': [
+          FallbackStrategy.LOCAL_CACHE,
+          FallbackStrategy.BACKUP_SERVICE,
+        ],
+        'database-operations': [
+          FallbackStrategy.LOCAL_CACHE,
+          FallbackStrategy.STATIC_DATA,
+        ],
+        'redis-operations': [
+          FallbackStrategy.LOCAL_CACHE,
+          FallbackStrategy.DISABLE_FEATURE,
+        ],
       },
-      recoveryTime: this.configService.get<number>('SSE_DEGRADATION_RECOVERY_TIME', 300000),
-      enableDegradationNotifications: this.configService.get<boolean>('SSE_ENABLE_DEGRADATION_NOTIFICATIONS', true),
+      recoveryTime: this.configService.get<number>(
+        'SSE_DEGRADATION_RECOVERY_TIME',
+        300000,
+      ),
+      enableDegradationNotifications: this.configService.get<boolean>(
+        'SSE_ENABLE_DEGRADATION_NOTIFICATIONS',
+        true,
+      ),
     };
 
     this.currentStatus = {
@@ -232,10 +266,14 @@ export class SseGracefulDegradationService {
     this.initializeFeatures();
     this.startMonitoring();
 
-    this.loggingService.logConnection(LogLevel.INFO, 'SseGracefulDegradationService inicializado', {
-      component: 'graceful-degradation',
-      /* metadata: { config: this.config }, */
-    });
+    this.loggingService.logConnection(
+      LogLevel.INFO,
+      'SseGracefulDegradationService inicializado',
+      {
+        component: 'graceful-degradation',
+        /* metadata: { config: this.config }, */
+      },
+    );
   }
 
   /**
@@ -252,11 +290,15 @@ export class SseGracefulDegradationService {
     level: DegradationLevel,
     reason: string,
   ): Promise<void> {
-    this.loggingService.logConnection(LogLevel.WARN, `Degradação forçada para nível ${level}`, {
-      component: 'graceful-degradation',
-      operation: 'force-degradation',
-      metadata: { level, reason },
-    });
+    this.loggingService.logConnection(
+      LogLevel.WARN,
+      `Degradação forçada para nível ${level}`,
+      {
+        component: 'graceful-degradation',
+        operation: 'force-degradation',
+        metadata: { level, reason },
+      },
+    );
 
     await this.changeDegradationLevel(level, reason, {});
   }
@@ -265,16 +307,24 @@ export class SseGracefulDegradationService {
    * Tenta recuperar o sistema para o nível normal
    */
   async attemptRecovery(): Promise<boolean> {
-    this.loggingService.logConnection(LogLevel.INFO, 'Tentando recuperação do sistema', {
-      component: 'graceful-degradation',
-      operation: 'attempt-recovery',
-      metadata: { currentLevel: this.currentStatus.currentLevel },
-    });
+    this.loggingService.logConnection(
+      LogLevel.INFO,
+      'Tentando recuperação do sistema',
+      {
+        component: 'graceful-degradation',
+        operation: 'attempt-recovery',
+        metadata: { currentLevel: this.currentStatus.currentLevel },
+      },
+    );
 
     const healthStatus = await this.healthCheckService.checkHealth();
-    
+
     if (healthStatus.healthy) {
-      await this.changeDegradationLevel(DegradationLevel.NORMAL, 'Recuperação automática', {});
+      await this.changeDegradationLevel(
+        DegradationLevel.NORMAL,
+        'Recuperação automática',
+        {},
+      );
       return true;
     }
 
@@ -331,10 +381,14 @@ export class SseGracefulDegradationService {
     if (this.checkIntervalId) {
       clearInterval(this.checkIntervalId);
       this.checkIntervalId = undefined;
-      this.loggingService.logConnection(LogLevel.INFO, 'Monitoramento de degradação parado', {
-        component: 'graceful-degradation',
-        operation: 'stop-monitoring',
-      });
+      this.loggingService.logConnection(
+        LogLevel.INFO,
+        'Monitoramento de degradação parado',
+        {
+          component: 'graceful-degradation',
+          operation: 'stop-monitoring',
+        },
+      );
     }
   }
 
@@ -347,7 +401,7 @@ export class SseGracefulDegradationService {
     }
 
     this.stopMonitoring();
-    
+
     this.checkIntervalId = setInterval(async () => {
       try {
         await this.checkSystemHealth();
@@ -359,11 +413,15 @@ export class SseGracefulDegradationService {
       }
     }, this.config.checkInterval);
 
-    this.loggingService.logConnection(LogLevel.INFO, 'Monitoramento de degradação iniciado', {
-      component: 'graceful-degradation',
-      operation: 'start-monitoring',
-      metadata: { interval: this.config.checkInterval },
-    });
+    this.loggingService.logConnection(
+      LogLevel.INFO,
+      'Monitoramento de degradação iniciado',
+      {
+        component: 'graceful-degradation',
+        operation: 'start-monitoring',
+        metadata: { interval: this.config.checkInterval },
+      },
+    );
   }
 
   /**
@@ -375,7 +433,10 @@ export class SseGracefulDegradationService {
         name: 'sse-notifications',
         description: 'Notificações em tempo real via SSE',
         priority: 9,
-        availableStrategies: [FallbackStrategy.POLLING, FallbackStrategy.SIMPLIFIED_NOTIFICATIONS],
+        availableStrategies: [
+          FallbackStrategy.POLLING,
+          FallbackStrategy.SIMPLIFIED_NOTIFICATIONS,
+        ],
         status: 'active',
         dependencies: ['redis-operations', 'database-operations'],
       },
@@ -383,7 +444,10 @@ export class SseGracefulDegradationService {
         name: 'real-time-updates',
         description: 'Atualizações em tempo real de dados',
         priority: 8,
-        availableStrategies: [FallbackStrategy.LOCAL_CACHE, FallbackStrategy.POLLING],
+        availableStrategies: [
+          FallbackStrategy.LOCAL_CACHE,
+          FallbackStrategy.POLLING,
+        ],
         status: 'active',
         dependencies: ['database-operations'],
       },
@@ -391,7 +455,10 @@ export class SseGracefulDegradationService {
         name: 'user-presence',
         description: 'Detecção de presença de usuários',
         priority: 5,
-        availableStrategies: [FallbackStrategy.STATIC_DATA, FallbackStrategy.DISABLE_FEATURE],
+        availableStrategies: [
+          FallbackStrategy.STATIC_DATA,
+          FallbackStrategy.DISABLE_FEATURE,
+        ],
         status: 'active',
         dependencies: ['redis-operations'],
       },
@@ -399,7 +466,10 @@ export class SseGracefulDegradationService {
         name: 'file-uploads',
         description: 'Upload de arquivos',
         priority: 7,
-        availableStrategies: [FallbackStrategy.LOCAL_CACHE, FallbackStrategy.BACKUP_SERVICE],
+        availableStrategies: [
+          FallbackStrategy.LOCAL_CACHE,
+          FallbackStrategy.BACKUP_SERVICE,
+        ],
         status: 'active',
         dependencies: [],
       },
@@ -407,7 +477,10 @@ export class SseGracefulDegradationService {
         name: 'database-operations',
         description: 'Operações de banco de dados',
         priority: 10,
-        availableStrategies: [FallbackStrategy.LOCAL_CACHE, FallbackStrategy.STATIC_DATA],
+        availableStrategies: [
+          FallbackStrategy.LOCAL_CACHE,
+          FallbackStrategy.STATIC_DATA,
+        ],
         status: 'active',
         dependencies: [],
       },
@@ -415,13 +488,16 @@ export class SseGracefulDegradationService {
         name: 'redis-operations',
         description: 'Operações do Redis',
         priority: 8,
-        availableStrategies: [FallbackStrategy.LOCAL_CACHE, FallbackStrategy.DISABLE_FEATURE],
+        availableStrategies: [
+          FallbackStrategy.LOCAL_CACHE,
+          FallbackStrategy.DISABLE_FEATURE,
+        ],
         status: 'active',
         dependencies: [],
       },
     ];
 
-    features.forEach(feature => {
+    features.forEach((feature) => {
       this.features.set(feature.name, feature);
     });
   }
@@ -431,14 +507,18 @@ export class SseGracefulDegradationService {
    */
   private async checkSystemHealth(): Promise<void> {
     const healthStatus = await this.healthCheckService.checkHealth();
-    const circuitBreakerMetrics = this.circuitBreakerService.getAllCircuitBreakerMetrics();
-    
+    const circuitBreakerMetrics =
+      this.circuitBreakerService.getAllCircuitBreakerMetrics();
+
     // Calcular métricas agregadas
-    const metrics = this.calculateAggregatedMetrics(healthStatus, circuitBreakerMetrics);
-    
+    const metrics = this.calculateAggregatedMetrics(
+      healthStatus,
+      circuitBreakerMetrics,
+    );
+
     // Determinar nível de degradação necessário
     const requiredLevel = this.determineDegradationLevel(metrics);
-    
+
     // Aplicar mudança se necessário
     if (requiredLevel !== this.currentStatus.currentLevel) {
       const reason = this.generateDegradationReason(metrics, requiredLevel);
@@ -464,21 +544,25 @@ export class SseGracefulDegradationService {
       (sum: number, cb: any) => sum + (cb.failures || 0),
       0,
     ) as number;
-    
-    metrics.errorRate = totalRequests > 0 ? (totalFailures / totalRequests) * 100 : 0;
-    
+
+    metrics.errorRate =
+      totalRequests > 0 ? (totalFailures / totalRequests) * 100 : 0;
+
     // Usar métricas do health check
     metrics.responseTime = healthStatus.responseTime || 0;
-    metrics.memoryUsage = healthStatus.components?.memory?.details?.usagePercentage || 0;
+    metrics.memoryUsage =
+      healthStatus.components?.memory?.details?.usagePercentage || 0;
     metrics.cpuUsage = healthStatus.components?.system?.details?.cpuUsage || 0;
-    
+
     // Calcular conexões saudáveis (simulado)
-    const healthyComponents = Object.values(healthStatus.components || {})
-      .filter((comp: any) => comp.status === 'healthy').length;
+    const healthyComponents = Object.values(
+      healthStatus.components || {},
+    ).filter((comp: any) => comp.status === 'healthy').length;
     const totalComponents = Object.keys(healthStatus.components || {}).length;
-    
-    metrics.healthyConnections = totalComponents > 0 ? (healthyComponents / totalComponents) * 100 : 100;
-    
+
+    metrics.healthyConnections =
+      totalComponents > 0 ? (healthyComponents / totalComponents) * 100 : 100;
+
     // Calcular taxa de sucesso
     metrics.successRate = 100 - metrics.errorRate;
 
@@ -488,7 +572,9 @@ export class SseGracefulDegradationService {
   /**
    * Determina o nível de degradação baseado nas métricas
    */
-  private determineDegradationLevel(metrics: Record<string, number>): DegradationLevel {
+  private determineDegradationLevel(
+    metrics: Record<string, number>,
+  ): DegradationLevel {
     const { thresholds } = this.config;
 
     // Verificar nível crítico
@@ -550,7 +636,8 @@ export class SseGracefulDegradationService {
     level: DegradationLevel,
   ): string {
     const issues: string[] = [];
-    const threshold = this.config.thresholds[level as keyof typeof this.config.thresholds];
+    const threshold =
+      this.config.thresholds[level as keyof typeof this.config.thresholds];
 
     if (metrics.errorRate >= threshold.errorRate) {
       issues.push(`Taxa de erro alta: ${metrics.errorRate.toFixed(1)}%`);
@@ -565,13 +652,17 @@ export class SseGracefulDegradationService {
       issues.push(`Uso de CPU alto: ${metrics.cpuUsage.toFixed(1)}%`);
     }
     if (metrics.healthyConnections <= threshold.healthyConnections) {
-      issues.push(`Poucas conexões saudáveis: ${metrics.healthyConnections.toFixed(1)}%`);
+      issues.push(
+        `Poucas conexões saudáveis: ${metrics.healthyConnections.toFixed(1)}%`,
+      );
     }
     if (metrics.successRate <= threshold.successRate) {
       issues.push(`Taxa de sucesso baixa: ${metrics.successRate.toFixed(1)}%`);
     }
 
-    return issues.length > 0 ? issues.join(', ') : `Sistema degradado para nível ${level}`;
+    return issues.length > 0
+      ? issues.join(', ')
+      : `Sistema degradado para nível ${level}`;
   }
 
   /**
@@ -586,11 +677,13 @@ export class SseGracefulDegradationService {
     const now = new Date();
 
     // Atualizar métricas de tempo
-    const timeInPreviousLevel = now.getTime() - this.currentStatus.lastChange.getTime();
+    const timeInPreviousLevel =
+      now.getTime() - this.currentStatus.lastChange.getTime();
     this.metrics.timeInLevels[previousLevel] += timeInPreviousLevel;
 
     // Aplicar estratégias de fallback
-    const { affectedFeatures, activeStrategies } = await this.applyFallbackStrategies(newLevel);
+    const { affectedFeatures, activeStrategies } =
+      await this.applyFallbackStrategies(newLevel);
 
     // Atualizar status
     this.currentStatus = {
@@ -601,14 +694,15 @@ export class SseGracefulDegradationService {
       affectedFeatures,
       activeStrategies,
       triggerMetrics,
-      estimatedRecoveryTime: newLevel !== DegradationLevel.NORMAL 
-        ? new Date(now.getTime() + this.config.recoveryTime)
-        : undefined,
+      estimatedRecoveryTime:
+        newLevel !== DegradationLevel.NORMAL
+          ? new Date(now.getTime() + this.config.recoveryTime)
+          : undefined,
     };
 
     // Adicionar ao histórico
     this.degradationHistory.push({ ...this.currentStatus });
-    
+
     // Manter apenas os últimos 100 registros
     if (this.degradationHistory.length > 100) {
       this.degradationHistory.shift();
@@ -642,23 +736,29 @@ export class SseGracefulDegradationService {
    */
   private async applyFallbackStrategies(
     level: DegradationLevel,
-  ): Promise<{ affectedFeatures: string[]; activeStrategies: Record<string, FallbackStrategy> }> {
+  ): Promise<{
+    affectedFeatures: string[];
+    activeStrategies: Record<string, FallbackStrategy>;
+  }> {
     const affectedFeatures: string[] = [];
     const activeStrategies: Record<string, FallbackStrategy> = {};
 
     for (const [featureName, feature] of this.features.entries()) {
       const shouldDegrade = this.shouldDegradeFeature(feature, level);
-      
+
       if (shouldDegrade) {
         const strategy = this.selectFallbackStrategy(feature, level);
-        
+
         if (strategy) {
           affectedFeatures.push(featureName);
           activeStrategies[featureName] = strategy;
-          
+
           // Atualizar status da funcionalidade
           feature.currentStrategy = strategy;
-          feature.status = strategy === FallbackStrategy.DISABLE_FEATURE ? 'disabled' : 'degraded';
+          feature.status =
+            strategy === FallbackStrategy.DISABLE_FEATURE
+              ? 'disabled'
+              : 'degraded';
         }
       } else {
         // Restaurar funcionalidade se estava degradada
@@ -675,7 +775,10 @@ export class SseGracefulDegradationService {
   /**
    * Determina se uma funcionalidade deve ser degradada
    */
-  private shouldDegradeFeature(feature: SystemFeature, level: DegradationLevel): boolean {
+  private shouldDegradeFeature(
+    feature: SystemFeature,
+    level: DegradationLevel,
+  ): boolean {
     switch (level) {
       case DegradationLevel.NORMAL:
         return false;
@@ -700,7 +803,7 @@ export class SseGracefulDegradationService {
     level: DegradationLevel,
   ): FallbackStrategy | undefined {
     const strategies = feature.availableStrategies;
-    
+
     if (strategies.length === 0) {
       return undefined;
     }
@@ -728,10 +831,14 @@ export class SseGracefulDegradationService {
     reason: string,
   ): Promise<void> {
     // Implementar notificação (email, webhook, etc.)
-    this.loggingService.logConnection(LogLevel.INFO, 'Notificação de degradação enviada', {
-      component: 'graceful-degradation',
-      operation: 'notify-change',
-      metadata: { previousLevel, newLevel, reason },
-    });
+    this.loggingService.logConnection(
+      LogLevel.INFO,
+      'Notificação de degradação enviada',
+      {
+        component: 'graceful-degradation',
+        operation: 'notify-change',
+        metadata: { previousLevel, newLevel, reason },
+      },
+    );
   }
 }

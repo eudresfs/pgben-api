@@ -1,15 +1,11 @@
 /**
  * AuditMiddleware
- * 
+ *
  * Middleware para configuração global de auditoria.
  * Integra o interceptor de auditoria na aplicação.
  */
 
-import {
-  Injectable,
-  NestMiddleware,
-  Logger,
-} from '@nestjs/common';
+import { Injectable, NestMiddleware, Logger } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
@@ -23,9 +19,7 @@ import { AUDIT_EVENTS } from '../constants/audit.constants';
 export class AuditMiddleware implements NestMiddleware {
   private readonly logger = new Logger(AuditMiddleware.name);
 
-  constructor(
-    private readonly eventEmitter: EventEmitter2,
-  ) {}
+  constructor(private readonly eventEmitter: EventEmitter2) {}
 
   use(req: Request, res: Response, next: NextFunction) {
     const startTime = Date.now();
@@ -46,14 +40,14 @@ export class AuditMiddleware implements NestMiddleware {
     this.emitRequestStartEvent(requestInfo, startTime);
 
     // Interceptar resposta
-    res.send = function(body) {
+    res.send = function (body) {
       const duration = Date.now() - startTime;
       res.locals.responseBody = body;
       res.locals.duration = duration;
       return originalSend.call(this, body);
     };
 
-    res.json = function(body) {
+    res.json = function (body) {
       const duration = Date.now() - startTime;
       res.locals.responseBody = body;
       res.locals.duration = duration;
@@ -102,14 +96,21 @@ export class AuditMiddleware implements NestMiddleware {
 
       this.eventEmitter.emit(AUDIT_EVENTS.REQUEST_START, event);
     } catch (error) {
-      this.logger.error('Erro ao emitir evento de início da requisição:', error);
+      this.logger.error(
+        'Erro ao emitir evento de início da requisição:',
+        error,
+      );
     }
   }
 
   /**
    * Emite evento de fim da requisição
    */
-  private emitRequestEndEvent(requestInfo: any, res: Response, duration: number) {
+  private emitRequestEndEvent(
+    requestInfo: any,
+    res: Response,
+    duration: number,
+  ) {
     try {
       const event: BaseAuditEvent = {
         eventType: AuditEventType.SYSTEM_INFO,
@@ -142,7 +143,11 @@ export class AuditMiddleware implements NestMiddleware {
   /**
    * Emite evento de erro da requisição
    */
-  private emitRequestErrorEvent(requestInfo: any, error: any, duration: number) {
+  private emitRequestErrorEvent(
+    requestInfo: any,
+    error: any,
+    duration: number,
+  ) {
     try {
       const event: BaseAuditEvent = {
         eventType: AuditEventType.SYSTEM_ERROR,
@@ -171,7 +176,10 @@ export class AuditMiddleware implements NestMiddleware {
 
       this.eventEmitter.emit(AUDIT_EVENTS.REQUEST_ERROR, event);
     } catch (emitError) {
-      this.logger.error('Erro ao emitir evento de erro da requisição:', emitError);
+      this.logger.error(
+        'Erro ao emitir evento de erro da requisição:',
+        emitError,
+      );
     }
   }
 
@@ -205,7 +213,7 @@ export class AuditMiddleware implements NestMiddleware {
     return (
       request.user?.['id'] ||
       request.user?.['userId'] ||
-      request.headers['x-user-id'] as string ||
+      (request.headers['x-user-id'] as string) ||
       undefined
     );
   }
@@ -216,7 +224,7 @@ export class AuditMiddleware implements NestMiddleware {
   private extractClientIp(request: Request): string {
     return (
       (request.headers['x-forwarded-for'] as string)?.split(',')[0] ||
-      request.headers['x-real-ip'] as string ||
+      (request.headers['x-real-ip'] as string) ||
       request.connection?.remoteAddress ||
       request.socket?.remoteAddress ||
       'unknown'

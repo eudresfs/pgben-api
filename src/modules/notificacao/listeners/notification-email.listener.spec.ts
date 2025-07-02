@@ -5,7 +5,12 @@ import { NotificationEmailListener } from './notification-email.listener';
 import { NotificationCreatedEvent } from '../events/notification-created.event';
 import { EmailService } from '../../../common/services/email.service';
 import { EnhancedMetricsService } from '../../../shared/monitoring/enhanced-metrics.service';
-import { NotificacaoSistema, TipoNotificacao, StatusNotificacaoProcessamento, PrioridadeNotificacao } from '../../../entities/notification.entity';
+import {
+  NotificacaoSistema,
+  TipoNotificacao,
+  StatusNotificacaoProcessamento,
+  PrioridadeNotificacao,
+} from '../../../entities/notification.entity';
 
 describe('NotificationEmailListener', () => {
   let listener: NotificationEmailListener;
@@ -20,13 +25,13 @@ describe('NotificationEmailListener', () => {
     template: {
       assunto: 'Assunto do Template',
       corpo: 'Corpo do template de notificação',
-      canais_disponiveis: ['email']
+      canais_disponiveis: ['email'],
     },
     dados_contexto: {
       titulo: 'Teste de Notificação',
       conteudo: 'Conteúdo da notificação de teste',
       tipo: TipoNotificacao.SISTEMA,
-      prioridade: PrioridadeNotificacao.ALTA
+      prioridade: PrioridadeNotificacao.ALTA,
     },
     status: StatusNotificacaoProcessamento.PENDENTE,
     tentativas_entrega: [],
@@ -40,27 +45,29 @@ describe('NotificationEmailListener', () => {
     data_agendamento: null,
     data_leitura: null,
     created_at: new Date('2024-01-15T10:00:00Z'),
-    updated_at: new Date('2024-01-15T10:00:00Z')
+    updated_at: new Date('2024-01-15T10:00:00Z'),
   } as unknown as NotificacaoSistema;
 
   beforeEach(async () => {
     const mockEmailService = {
       sendEmail: jest.fn(),
-      isEmailEnabled: jest.fn().mockReturnValue(true)
+      isEmailEnabled: jest.fn().mockReturnValue(true),
     };
 
     const mockUsuarioService = {
-      findById: jest.fn().mockImplementation((id: string) => ({ email: id, nome: 'Teste' }))
+      findById: jest
+        .fn()
+        .mockImplementation((id: string) => ({ email: id, nome: 'Teste' })),
     };
 
     const mockMetricsService = {
       recordSystemEvent: jest.fn(),
       recordSecurityEvent: jest.fn(),
-      recordLgpdDataAccess: jest.fn()
+      recordLgpdDataAccess: jest.fn(),
     };
 
     const mockEventEmitter = {
-      emit: jest.fn()
+      emit: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -68,21 +75,22 @@ describe('NotificationEmailListener', () => {
         NotificationEmailListener,
         {
           provide: EmailService,
-          useValue: mockEmailService
+          useValue: mockEmailService,
         },
         {
           provide: EnhancedMetricsService,
-          useValue: mockMetricsService
+          useValue: mockMetricsService,
         },
         {
           provide: EventEmitter2,
-          useValue: mockEventEmitter
+          useValue: mockEventEmitter,
         },
         {
-          provide: require('../../usuario/services/usuario.service').UsuarioService,
-          useValue: mockUsuarioService
-        }
-      ]
+          provide: require('../../usuario/services/usuario.service')
+            .UsuarioService,
+          useValue: mockUsuarioService,
+        },
+      ],
     }).compile();
 
     listener = module.get<NotificationEmailListener>(NotificationEmailListener);
@@ -130,7 +138,7 @@ describe('NotificationEmailListener', () => {
       // Arrange
       const notificacaoBaixaPrioridade = {
         ...mockNotificacao,
-        prioridade: PrioridadeNotificacao.BAIXA
+        prioridade: PrioridadeNotificacao.BAIXA,
       };
       const event = new NotificationCreatedEvent(notificacaoBaixaPrioridade);
 
@@ -145,7 +153,7 @@ describe('NotificationEmailListener', () => {
       // Arrange
       const notificacaoInfo = {
         ...mockNotificacao,
-        tipo: TipoNotificacao.INFO
+        tipo: TipoNotificacao.INFO,
       };
       const event = new NotificationCreatedEvent(notificacaoInfo);
 
@@ -173,7 +181,7 @@ describe('NotificationEmailListener', () => {
       // Arrange
       const notificacaoSemMetadados = {
         ...mockNotificacao,
-        metadados: {}
+        metadados: {},
       };
       const event = new NotificationCreatedEvent(notificacaoSemMetadados);
       emailService.sendEmail.mockResolvedValue(undefined);
@@ -189,7 +197,7 @@ describe('NotificationEmailListener', () => {
       // Arrange
       const notificacaoMediaPrioridade = {
         ...mockNotificacao,
-        prioridade: PrioridadeNotificacao.MEDIA
+        prioridade: PrioridadeNotificacao.MEDIA,
       };
       const event = new NotificationCreatedEvent(notificacaoMediaPrioridade);
       emailService.sendEmail.mockResolvedValue(undefined);
@@ -205,7 +213,7 @@ describe('NotificationEmailListener', () => {
       // Arrange
       const notificacaoAlerta = {
         ...mockNotificacao,
-        tipo: TipoNotificacao.ALERTA
+        tipo: TipoNotificacao.ALERTA,
       };
       const event = new NotificationCreatedEvent(notificacaoAlerta);
       emailService.sendEmail.mockResolvedValue(undefined);
@@ -221,7 +229,7 @@ describe('NotificationEmailListener', () => {
       // Arrange
       const notificacaoUrgente = {
         ...mockNotificacao,
-        tipo: TipoNotificacao.URGENTE
+        tipo: TipoNotificacao.URGENTE,
       };
       const event = new NotificationCreatedEvent(notificacaoUrgente);
       emailService.sendEmail.mockResolvedValue(undefined);

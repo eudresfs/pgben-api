@@ -1,4 +1,12 @@
-import { IsUUID, IsNotEmpty, IsOptional, IsBoolean, IsDateString, IsInt, Min } from 'class-validator';
+import {
+  IsUUID,
+  IsNotEmpty,
+  IsOptional,
+  IsBoolean,
+  IsDateString,
+  IsInt,
+  Min,
+} from 'class-validator';
 
 export class CreateConcessaoDto {
   @IsUUID('4')

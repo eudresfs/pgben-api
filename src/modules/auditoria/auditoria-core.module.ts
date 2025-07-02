@@ -24,7 +24,17 @@ import { LogAuditoriaRepository } from './repositories/log-auditoria.repository'
     // Configuração do TypeORM para entidades do módulo
     TypeOrmModule.forFeature([LogAuditoria]),
   ],
-  providers: [AuditoriaService, AuditEventEmitter, AuditoriaQueueService, LogAuditoriaRepository],
-  exports: [AuditoriaService, AuditEventEmitter, AuditoriaQueueService, LogAuditoriaRepository],
+  providers: [
+    AuditoriaService,
+    AuditEventEmitter,
+    AuditoriaQueueService,
+    LogAuditoriaRepository,
+  ],
+  exports: [
+    AuditoriaService,
+    AuditEventEmitter,
+    AuditoriaQueueService,
+    LogAuditoriaRepository,
+  ],
 })
 export class AuditoriaCoreModule {}

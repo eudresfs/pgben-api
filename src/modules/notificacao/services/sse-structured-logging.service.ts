@@ -134,14 +134,38 @@ export class SseStructuredLoggingService {
     // Configuração do serviço
     this.config = {
       level: this.configService.get<LogLevel>('SSE_LOG_LEVEL', LogLevel.INFO),
-      enablePerformanceLogs: this.configService.get<boolean>('SSE_LOG_ENABLE_PERFORMANCE', true),
-      enableSecurityLogs: this.configService.get<boolean>('SSE_LOG_ENABLE_SECURITY', true),
-      enableRequestCorrelation: this.configService.get<boolean>('SSE_LOG_ENABLE_REQUEST_CORRELATION', true),
-      outputFormat: this.configService.get<'json' | 'pretty'>('SSE_LOG_OUTPUT_FORMAT', 'json'),
-      includeStackTrace: this.configService.get<boolean>('SSE_LOG_INCLUDE_STACK_TRACE', true),
-      maxLogsPerMinute: this.configService.get<number>('SSE_LOG_MAX_PER_MINUTE', 1000),
-      enableLogSampling: this.configService.get<boolean>('SSE_LOG_ENABLE_SAMPLING', false),
-      samplingRate: this.configService.get<number>('SSE_LOG_SAMPLING_RATE', 0.1),
+      enablePerformanceLogs: this.configService.get<boolean>(
+        'SSE_LOG_ENABLE_PERFORMANCE',
+        true,
+      ),
+      enableSecurityLogs: this.configService.get<boolean>(
+        'SSE_LOG_ENABLE_SECURITY',
+        true,
+      ),
+      enableRequestCorrelation: this.configService.get<boolean>(
+        'SSE_LOG_ENABLE_REQUEST_CORRELATION',
+        true,
+      ),
+      outputFormat: this.configService.get<'json' | 'pretty'>(
+        'SSE_LOG_OUTPUT_FORMAT',
+        'json',
+      ),
+      includeStackTrace: this.configService.get<boolean>(
+        'SSE_LOG_INCLUDE_STACK_TRACE',
+        true,
+      ),
+      maxLogsPerMinute: this.configService.get<number>(
+        'SSE_LOG_MAX_PER_MINUTE',
+        1000,
+      ),
+      enableLogSampling: this.configService.get<boolean>(
+        'SSE_LOG_ENABLE_SAMPLING',
+        false,
+      ),
+      samplingRate: this.configService.get<number>(
+        'SSE_LOG_SAMPLING_RATE',
+        0.1,
+      ),
     };
 
     // Configurar Pino logger
@@ -152,14 +176,17 @@ export class SseStructuredLoggingService {
         bindings: () => ({}),
       },
       timestamp: pino.stdTimeFunctions.isoTime,
-      transport: this.config.outputFormat === 'pretty' ? {
-        target: 'pino-pretty',
-        options: {
-          colorize: true,
-          translateTime: 'SYS:standard',
-          ignore: 'pid,hostname',
-        },
-      } : undefined,
+      transport:
+        this.config.outputFormat === 'pretty'
+          ? {
+              target: 'pino-pretty',
+              options: {
+                colorize: true,
+                translateTime: 'SYS:standard',
+                ignore: 'pid,hostname',
+              },
+            }
+          : undefined,
     });
   }
 
@@ -317,10 +344,7 @@ export class SseStructuredLoggingService {
   /**
    * Log de métricas
    */
-  logMetrics(
-    message: string,
-    context: Partial<BaseLogContext>,
-  ): void {
+  logMetrics(message: string, context: Partial<BaseLogContext>): void {
     this.log(LogLevel.DEBUG, message, {
       ...context,
       category: SseLogCategory.METRICS,
@@ -331,10 +355,7 @@ export class SseStructuredLoggingService {
   /**
    * Log de segurança
    */
-  logSecurity(
-    message: string,
-    context: Partial<BaseLogContext>,
-  ): void {
+  logSecurity(message: string, context: Partial<BaseLogContext>): void {
     this.log(LogLevel.WARN, message, {
       ...context,
       category: SseLogCategory.SECURITY,
@@ -345,11 +366,7 @@ export class SseStructuredLoggingService {
   /**
    * Log de requisição HTTP
    */
-  logHttpRequest(
-    req: Request,
-    res: Response,
-    duration: number,
-  ): void {
+  logHttpRequest(req: Request, res: Response, duration: number): void {
     const context: Partial<BaseLogContext> = {
       requestId: req.headers['x-request-id'] as string,
       userId: (req as any).user?.id,
@@ -369,16 +386,17 @@ export class SseStructuredLoggingService {
     };
 
     const level = res.statusCode >= 400 ? LogLevel.WARN : LogLevel.INFO;
-    this.log(level, `HTTP ${req.method} ${req.path} - ${res.statusCode}`, context);
+    this.log(
+      level,
+      `HTTP ${req.method} ${req.path} - ${res.statusCode}`,
+      context,
+    );
   }
 
   /**
    * Log de erro com stack trace
    */
-  logError(
-    error: Error,
-    context: Partial<BaseLogContext> = {},
-  ): void {
+  logError(error: Error, context: Partial<BaseLogContext> = {}): void {
     const errorContext = {
       ...context,
       category: SseLogCategory.ERROR_BOUNDARY,
@@ -413,14 +431,21 @@ export class SseStructuredLoggingService {
   getMetrics() {
     const now = new Date();
     const oneMinuteAgo = new Date(now.getTime() - 60000);
-    
-    const recentLogs = this.logTimestamps.filter(timestamp => timestamp > oneMinuteAgo);
-    
+
+    const recentLogs = this.logTimestamps.filter(
+      (timestamp) => timestamp > oneMinuteAgo,
+    );
+
     return {
       totalLogs: this.logCounter,
       logsLastMinute: recentLogs.length,
       logCounts: Object.fromEntries(this.logCounts),
-      averageLogsPerMinute: this.logCounter / Math.max(1, (now.getTime() - this.logTimestamps[0]?.getTime() || 0) / 60000),
+      averageLogsPerMinute:
+        this.logCounter /
+        Math.max(
+          1,
+          (now.getTime() - this.logTimestamps[0]?.getTime() || 0) / 60000,
+        ),
     };
   }
 
@@ -438,9 +463,11 @@ export class SseStructuredLoggingService {
   private checkRateLimit(): boolean {
     const now = new Date();
     const oneMinuteAgo = new Date(now.getTime() - 60000);
-    
-    const recentLogs = this.logTimestamps.filter(timestamp => timestamp > oneMinuteAgo);
-    
+
+    const recentLogs = this.logTimestamps.filter(
+      (timestamp) => timestamp > oneMinuteAgo,
+    );
+
     return recentLogs.length < this.config.maxLogsPerMinute;
   }
 
@@ -454,7 +481,7 @@ export class SseStructuredLoggingService {
   ): void {
     // Verificar sampling
     if (!this.shouldSample()) return;
-    
+
     // Verificar rate limiting
     if (!this.checkRateLimit()) return;
 
@@ -521,7 +548,7 @@ export class SseStructuredLoggingService {
     // Atualizar contadores
     const levelKey = `level:${level}`;
     const categoryKey = `category:${category}`;
-    
+
     this.logCounts.set(levelKey, (this.logCounts.get(levelKey) || 0) + 1);
     this.logCounts.set(categoryKey, (this.logCounts.get(categoryKey) || 0) + 1);
 

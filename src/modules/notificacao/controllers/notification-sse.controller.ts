@@ -15,12 +15,27 @@ import {
 import { SseService } from '../services/sse.service';
 import { SseEventStoreService } from '../services/sse-event-store.service';
 import { SseGuard } from '../guards/sse.guard';
-import { SseRateLimitGuard, SseRateLimit, SseRateLimitAdmin } from '../guards/sse-rate-limit.guard';
+import {
+  SseRateLimitGuard,
+  SseRateLimit,
+  SseRateLimitAdmin,
+} from '../guards/sse-rate-limit.guard';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../auth/guards/roles.guard';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery, ApiBody } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiQuery,
+  ApiBody,
+} from '@nestjs/swagger';
 import { Observable } from 'rxjs';
-import { EventReplayRequest, EventReplayResponse, HeartbeatResponse } from '../interfaces/sse-notification.interface';
+import {
+  EventReplayRequest,
+  EventReplayResponse,
+  HeartbeatResponse,
+} from '../interfaces/sse-notification.interface';
 
 @ApiTags('Notificações SSE')
 @Controller('notificacao/sse')
@@ -40,9 +55,15 @@ export class NotificationSseController {
   @UseGuards(SseRateLimitGuard, SseGuard)
   @SseRateLimit({ profile: 'default' })
   @ApiOperation({ summary: 'Conexão SSE para notificações em tempo real' })
-  @ApiResponse({ status: 200, description: 'Conexão SSE estabelecida com sucesso' })
+  @ApiResponse({
+    status: 200,
+    description: 'Conexão SSE estabelecida com sucesso',
+  })
   @ApiResponse({ status: 429, description: 'Rate limit excedido' })
-  async sseNotifications(@Request() req, @Res({ passthrough: true }) res): Promise<Observable<any>> {
+  async sseNotifications(
+    @Request() req,
+    @Res({ passthrough: true }) res,
+  ): Promise<Observable<any>> {
     // Headers de robustez SSE
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
@@ -51,7 +72,7 @@ export class NotificationSseController {
 
     const userId = req.user.id;
     this.logger.log(`SSE conectado: ${userId}`);
-        return this.sseService.createConnection(userId, req);
+    return this.sseService.createConnection(userId, req);
   }
 
   /**
@@ -74,50 +95,61 @@ export class NotificationSseController {
   @UseGuards(SseRateLimitGuard, JwtAuthGuard)
   @SseRateLimit({ profile: 'default' })
   @ApiOperation({ summary: 'Recuperar eventos perdidos usando Last-Event-ID' })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Eventos recuperados com sucesso',
-    type: 'object'
+    type: 'object',
   })
   @ApiResponse({ status: 429, description: 'Rate limit excedido' })
-  @ApiBody({ 
+  @ApiBody({
     description: 'Dados para recuperação de eventos',
     schema: {
       type: 'object',
       properties: {
-        lastEventId: { type: 'string', description: 'ID do último evento recebido' },
-        maxEvents: { type: 'number', description: 'Número máximo de eventos para recuperar (padrão: 50)' }
-      }
-    }
+        lastEventId: {
+          type: 'string',
+          description: 'ID do último evento recebido',
+        },
+        maxEvents: {
+          type: 'number',
+          description: 'Número máximo de eventos para recuperar (padrão: 50)',
+        },
+      },
+    },
   })
   async replayEvents(
     @Request() req: any,
     @Body() replayRequest: EventReplayRequest,
   ): Promise<EventReplayResponse> {
     const userId = req.user.id;
-    
-    this.logger.log(`Replay de eventos solicitado para usuário ${userId}, lastEventId: ${replayRequest.lastEventId}`);
-    
+
+    this.logger.log(
+      `Replay de eventos solicitado para usuário ${userId}, lastEventId: ${replayRequest.lastEventId}`,
+    );
+
     try {
       const events = await this.sseService.getStoredEvents(
         replayRequest.lastEventId,
-        userId
+        userId,
       );
-      
+
       return {
         events: events.events,
         totalEvents: events.totalEvents,
         hasMore: events.hasMore,
         lastEventId: events.lastEventId,
-        timestamp: events.timestamp
+        timestamp: events.timestamp,
       };
     } catch (error) {
-      this.logger.error(`Erro ao recuperar eventos para usuário ${userId}:`, error);
+      this.logger.error(
+        `Erro ao recuperar eventos para usuário ${userId}:`,
+        error,
+      );
       return {
         events: [],
         totalEvents: 0,
         hasMore: false,
-        timestamp: new Date()
+        timestamp: new Date(),
       };
     }
   }
@@ -128,21 +160,25 @@ export class NotificationSseController {
   @Get('last-event-id')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Obter o ID do último evento para o usuário' })
-  @ApiResponse({ 
-    status: 200, 
-    description: 'ID do último evento obtido com sucesso'
+  @ApiResponse({
+    status: 200,
+    description: 'ID do último evento obtido com sucesso',
   })
   async getLastEventId(@Request() req: any) {
     const userId = req.user.id;
-    
+
     try {
-      const lastEventId = await this.sseEventStoreService.getLastEventId(userId);
+      const lastEventId =
+        await this.sseEventStoreService.getLastEventId(userId);
       return {
         userId,
-        lastEventId
+        lastEventId,
       };
     } catch (error) {
-      this.logger.error(`Erro ao obter último event ID para usuário ${userId}:`, error);
+      this.logger.error(
+        `Erro ao obter último event ID para usuário ${userId}:`,
+        error,
+      );
       throw error;
     }
   }
@@ -153,7 +189,10 @@ export class NotificationSseController {
   @Get('stats/local')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiOperation({ summary: 'Obter estatísticas locais das conexões SSE' })
-  @ApiResponse({ status: 200, description: 'Estatísticas locais retornadas com sucesso' })
+  @ApiResponse({
+    status: 200,
+    description: 'Estatísticas locais retornadas com sucesso',
+  })
   async getLocalSseStats() {
     return this.sseService.getLocalConnectionStats();
   }
@@ -165,12 +204,17 @@ export class NotificationSseController {
   @UseGuards(SseRateLimitGuard, JwtAuthGuard, RolesGuard)
   @SseRateLimitAdmin()
   @ApiOperation({ summary: 'Verificar status de conexão SSE de um usuário' })
-  @ApiResponse({ status: 200, description: 'Status de conexão retornado com sucesso' })
+  @ApiResponse({
+    status: 200,
+    description: 'Status de conexão retornado com sucesso',
+  })
   @ApiResponse({ status: 429, description: 'Rate limit excedido' })
   async getUserSseStatus(@Param('userId', ParseUUIDPipe) userId: string) {
     const isConnected = await this.sseService.hasActiveConnections(userId);
-    const connectionCount = await this.sseService.getUserTotalConnectionCount(userId);
-    const localConnectionCount = this.sseService.getUserLocalConnectionCount(userId);
+    const connectionCount =
+      await this.sseService.getUserTotalConnectionCount(userId);
+    const localConnectionCount =
+      this.sseService.getUserLocalConnectionCount(userId);
     return {
       userId,
       isConnected,
@@ -186,7 +230,10 @@ export class NotificationSseController {
   @UseGuards(SseRateLimitGuard, JwtAuthGuard)
   @SseRateLimit({ profile: 'default' })
   @ApiOperation({ summary: 'Processar resposta de heartbeat do cliente' })
-  @ApiResponse({ status: 200, description: 'Resposta de heartbeat processada com sucesso' })
+  @ApiResponse({
+    status: 200,
+    description: 'Resposta de heartbeat processada com sucesso',
+  })
   @ApiResponse({ status: 429, description: 'Rate limit excedido' })
   @ApiBody({ type: Object, description: 'Dados da resposta de heartbeat' })
   async processHeartbeatResponse(
@@ -204,7 +251,10 @@ export class NotificationSseController {
   @UseGuards(SseRateLimitGuard, JwtAuthGuard)
   @SseRateLimit({ profile: 'default' })
   @ApiOperation({ summary: 'Obter estatísticas de heartbeat para uma conexão' })
-  @ApiResponse({ status: 200, description: 'Estatísticas de heartbeat retornadas com sucesso' })
+  @ApiResponse({
+    status: 200,
+    description: 'Estatísticas de heartbeat retornadas com sucesso',
+  })
   @ApiResponse({ status: 429, description: 'Rate limit excedido' })
   async getHeartbeatStats(@Param('connectionId') connectionId: string) {
     return this.sseService.getHeartbeatStats(connectionId);

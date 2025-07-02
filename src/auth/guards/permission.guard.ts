@@ -70,11 +70,13 @@ export class PermissionGuard implements CanActivate {
 
     // Verificar se o usuário tem permissões em memória
     const userPermissions = request.user.permissions;
-    
+
     // Se o usuário tem permissões em memória, verificar se tem a permissão de super admin
     if (userPermissions && userPermissions.length > 0) {
       // Verificar se o usuário tem permissão de super admin
-      if (this.permissionService.hasPermissionInMemory(userPermissions, '*.*')) {
+      if (
+        this.permissionService.hasPermissionInMemory(userPermissions, '*.*')
+      ) {
         this.logger.debug(
           `Acesso concedido via super admin: usuário ${userId} possui permissão '*.*'`,
         );
@@ -83,11 +85,12 @@ export class PermissionGuard implements CanActivate {
     } else {
       // FALLBACK: Se não tem permissões em memória, verificar no banco de dados
       // Este código será removido quando todas as permissões estiverem no JWT
-      const hasSuperAdminPermission = await this.permissionService.hasPermission({
-        userId,
-        permissionName: '*.*',
-        scopeType: TipoEscopo.GLOBAL,
-      });
+      const hasSuperAdminPermission =
+        await this.permissionService.hasPermission({
+          userId,
+          permissionName: '*.*',
+          scopeType: TipoEscopo.GLOBAL,
+        });
 
       if (hasSuperAdminPermission) {
         this.logger.debug(
@@ -112,16 +115,21 @@ export class PermissionGuard implements CanActivate {
         scopeIdExpression,
         bypassRoles,
       } = requirement;
-      
+
       // Verificar se o usuário tem alguma role que permite bypass de escopo
       // Se bypassRoles não for informado, usar valores padrão: 'super_admin', 'admin', 'gestor'
       const defaultBypassRoles = ['super_admin', 'admin', 'gestor'];
-      const effectiveBypassRoles = bypassRoles && bypassRoles.length > 0 ? bypassRoles : defaultBypassRoles;
-      
+      const effectiveBypassRoles =
+        bypassRoles && bypassRoles.length > 0
+          ? bypassRoles
+          : defaultBypassRoles;
+
       let bypassScope = false;
       if (request.user.roles) {
-        bypassScope = effectiveBypassRoles.some((role) => request.user.roles.includes(role));
-        
+        bypassScope = effectiveBypassRoles.some((role) =>
+          request.user.roles.includes(role),
+        );
+
         if (bypassScope) {
           this.logger.debug(
             `Bypass de escopo ativado: usuário ${request.user.id} com role(s) [${request.user.roles.join(', ')}] tem acesso a dados de todos os escopos via roles [${effectiveBypassRoles.join(', ')}]${bypassRoles ? '' : ' (padrão)'}`,
@@ -144,12 +152,16 @@ export class PermissionGuard implements CanActivate {
         // Primeiro, tenta usar o ID da unidade do usuário logado
         if (request.user.unidade_id) {
           scopeId = request.user.unidade_id;
-          this.logger.debug(`Usando ID de unidade do usuário logado: ${scopeId}`);
-        } 
+          this.logger.debug(
+            `Usando ID de unidade do usuário logado: ${scopeId}`,
+          );
+        }
         // Caso não tenha unidade_id no usuário, tenta usar scopeIdExpression (retrocompatibilidade)
         else if (scopeIdExpression) {
           scopeId = this.evaluateScopeIdExpression(scopeIdExpression, request);
-          this.logger.debug(`Usando ID de unidade da expressão ${scopeIdExpression}: ${scopeId}`);
+          this.logger.debug(
+            `Usando ID de unidade da expressão ${scopeIdExpression}: ${scopeId}`,
+          );
         }
       }
 
@@ -163,16 +175,25 @@ export class PermissionGuard implements CanActivate {
       // Verificar permissões em memória primeiro
       let hasPermission = false;
       const userPermissions = request.user.permissions;
-      
+
       if (userPermissions && userPermissions.length > 0) {
         // Verificar permissão em memória
-        this.logger.debug(`Verificando permissão em memória: ${permissionName}`);
-        hasPermission = this.permissionService.hasPermissionInMemory(userPermissions, permissionName);
-        
+        this.logger.debug(
+          `Verificando permissão em memória: ${permissionName}`,
+        );
+        hasPermission = this.permissionService.hasPermissionInMemory(
+          userPermissions,
+          permissionName,
+        );
+
         if (hasPermission) {
-          this.logger.debug(`Permissão ${permissionName} encontrada em memória`);
+          this.logger.debug(
+            `Permissão ${permissionName} encontrada em memória`,
+          );
         } else {
-          this.logger.debug(`Permissão ${permissionName} NÃO encontrada em memória`);
+          this.logger.debug(
+            `Permissão ${permissionName} NÃO encontrada em memória`,
+          );
         }
       } else {
         // FALLBACK: Se não tem permissões em memória, verificar no banco de dados
@@ -188,9 +209,9 @@ export class PermissionGuard implements CanActivate {
 
       requirementDetails.push({ requirement, scopeId, hasPermission });
     }
-    
+
     // Verificar resultados
-    const results = requirementDetails.map(detail => detail.hasPermission);
+    const results = requirementDetails.map((detail) => detail.hasPermission);
 
     // Verifica se pelo menos uma permissão foi concedida
     const hasAnyPermission = results.some((result) => result === true);

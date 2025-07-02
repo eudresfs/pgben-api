@@ -89,7 +89,10 @@ import { PermissionModule } from './permission.module';
             // eslint-disable-next-line @typescript-eslint/no-var-requires
             const redisStore = require('cache-manager-redis-yet');
             return redisStore.create({
-              url: configService.get<string>('REDIS_URL', 'redis://localhost:6379'),
+              url: configService.get<string>(
+                'REDIS_URL',
+                'redis://localhost:6379',
+              ),
             });
           }
           return 'memory';

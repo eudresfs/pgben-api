@@ -45,7 +45,11 @@ export interface PermissionCheckOptions {
  */
 @Injectable()
 export class PermissionService {
-  verificarPermissaoSolicitacao(usuarioId: string, solicitacao_id: string, arg2: string) {
+  verificarPermissaoSolicitacao(
+    usuarioId: string,
+    solicitacao_id: string,
+    arg2: string,
+  ) {
     throw new Error('Method not implemented.');
   }
   isAdministrador(usuario: Usuario) {
@@ -245,12 +249,13 @@ export class PermissionService {
       // um escopo mais restrito (ex.: UNIDADE), evitando duplicação de
       // permissões.
       if (!userPermission && scopeType !== TipoEscopo.GLOBAL) {
-        userPermission = await this.userPermissionRepository.findByUserAndPermission(
-          userId,
-          permission.id,
-          TipoEscopo.GLOBAL,
-          undefined,
-        );
+        userPermission =
+          await this.userPermissionRepository.findByUserAndPermission(
+            userId,
+            permission.id,
+            TipoEscopo.GLOBAL,
+            undefined,
+          );
       }
 
       // Se ainda não encontrou a permissão ou ela não está concedida, retorna false
@@ -495,16 +500,20 @@ export class PermissionService {
     try {
       // Cache key para as permissões do usuário
       const cacheKey = `user_permissions:${userId}:${includeInactive}`;
-      
+
       // Tentar buscar do cache primeiro
-      const cachedPermissions = await this.cacheManager.get<Permission[]>(cacheKey);
+      const cachedPermissions =
+        await this.cacheManager.get<Permission[]>(cacheKey);
       if (cachedPermissions) {
-        this.logger.debug(`Permissões encontradas no cache para usuário ${userId}`);
+        this.logger.debug(
+          `Permissões encontradas no cache para usuário ${userId}`,
+        );
         return cachedPermissions;
       }
 
       // Busca permissões diretas do usuário com JOIN otimizado
-      const userPermissions = await this.userPermissionRepository.findByUserIdWithPermissions(userId);
+      const userPermissions =
+        await this.userPermissionRepository.findByUserIdWithPermissions(userId);
 
       // Filtra permissões ativas, se necessário
       const filteredUserPermissions = includeInactive
@@ -516,8 +525,8 @@ export class PermissionService {
 
       // Extrai permissões diretas
       const directPermissions = filteredUserPermissions
-        .map(up => up.permissao)
-        .filter(p => p); // Remove nulls
+        .map((up) => up.permissao)
+        .filter((p) => p); // Remove nulls
 
       // Busca permissões de role do usuário (já otimizada com JOIN)
       const rolePermissions =
@@ -525,8 +534,8 @@ export class PermissionService {
 
       // Combina permissões diretas e de role, removendo duplicatas
       const allPermissions = [...directPermissions];
-      const existingIds = new Set(directPermissions.map(p => p.id));
-      
+      const existingIds = new Set(directPermissions.map((p) => p.id));
+
       rolePermissions.forEach((permission) => {
         if (!existingIds.has(permission.id)) {
           allPermissions.push(permission);
@@ -536,7 +545,7 @@ export class PermissionService {
 
       // Armazena no cache por 5 minutos
       await this.cacheManager.set(cacheKey, allPermissions, this.CACHE_TTL);
-      
+
       return allPermissions;
     } catch (error) {
       this.logger.error(
@@ -927,7 +936,6 @@ export class PermissionService {
       return [];
     }
   }
-
 
   /**
    * Verifica se uma lista de permissões do usuário atende ao requisito solicitado em memória.

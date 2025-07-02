@@ -13,7 +13,10 @@ import { Public } from '../../auth/decorators/public.decorator';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { SWAGGER_TAGS } from '../configs/swagger/tags.config';
 import { HealthCheckService as AppHealthCheckService } from '../services/health-check.service';
-import { StorageHealthService, StorageHealthStatus } from '../../modules/documento/services/storage-health.service';
+import {
+  StorageHealthService,
+  StorageHealthStatus,
+} from '../../modules/documento/services/storage-health.service';
 import { LoggingService } from '../logging/logging.service';
 
 /**
@@ -40,17 +43,18 @@ export class HealthController {
 
   /**
    * Endpoint de liveness – resposta rápida para indicar que a app está rodando
-   * 
+   *
    * Este endpoint é usado pelo Kubernetes para verificar se o container está vivo.
    * Deve responder rapidamente sem verificar dependências externas.
-   * 
+   *
    * Caminho: GET /health (excluído do prefixo global 'api')
    */
   @Get()
   @Public()
   @ApiOperation({
     summary: 'Health Check - Liveness Probe',
-    description: 'Endpoint rápido para verificar se a aplicação está rodando. Usado pelo Kubernetes como liveness probe.',
+    description:
+      'Endpoint rápido para verificar se a aplicação está rodando. Usado pelo Kubernetes como liveness probe.',
   })
   @ApiResponse({
     status: 200,
@@ -75,18 +79,19 @@ export class HealthController {
 
   /**
    * Endpoint de readiness – verifica dependências externas
-   * 
+   *
    * Este endpoint é usado pelo Kubernetes para verificar se a aplicação está pronta
    * para receber tráfego. Verifica dependências como banco de dados, Redis, etc.
    * SEMPRE retorna status 200, mas inclui informações detalhadas sobre cada serviço.
-   * 
+   *
    * Caminho: GET /health/ready (excluído do prefixo global 'api')
    */
   @Get('ready')
   @Public()
   @ApiOperation({
     summary: 'Health Check - Readiness Probe',
-    description: 'Verifica se a aplicação está pronta para receber tráfego, incluindo dependências externas. Sempre retorna 200 mas com status detalhado de cada serviço.',
+    description:
+      'Verifica se a aplicação está pronta para receber tráfego, incluindo dependências externas. Sempre retorna 200 mas com status detalhado de cada serviço.',
   })
   @ApiResponse({
     status: 200,
@@ -104,39 +109,42 @@ export class HealthController {
             storage: { type: 'object' },
             frontend: { type: 'object' },
             memory: { type: 'object' },
-            disk: { type: 'object' }
-          }
+            disk: { type: 'object' },
+          },
         },
         summary: {
           type: 'object',
           properties: {
             healthy: { type: 'number' },
             total: { type: 'number' },
-            percentage: { type: 'number' }
-          }
-        }
-      }
-    }
+            percentage: { type: 'number' },
+          },
+        },
+      },
+    },
   })
   async readiness() {
     this.logger.debug('Readiness check iniciado');
-    
+
     // Configuração de timeout para evitar bloqueios longos
     const checkTimeout = 5000; // 5 segundos
-    
+
     // Verificar Redis com timeout
     let isRedisAvailable = false;
     const disableRedis = process.env.DISABLE_REDIS === 'true';
-    
+
     if (!disableRedis) {
       try {
         const redisPromise = this.appHealthCheck.isRedisAvailable();
         isRedisAvailable = await Promise.race([
           redisPromise,
           new Promise<boolean>((_, reject) => {
-            setTimeout(() => reject(new Error('Redis check timeout')), checkTimeout);
-          })
-        ]).catch(err => {
+            setTimeout(
+              () => reject(new Error('Redis check timeout')),
+              checkTimeout,
+            );
+          }),
+        ]).catch((err) => {
           this.logger.warn(`Redis health check falhou: ${err.message}`);
           return false;
         });
@@ -147,7 +155,7 @@ export class HealthController {
     }
 
     this.logger.debug('Executando verificações de saúde dos componentes');
-    
+
     const services: any = {};
     let healthyCount = 0;
     let totalCount = 0;
@@ -157,13 +165,18 @@ export class HealthController {
       const dbCheck = await Promise.race<HealthIndicatorResult>([
         this.db.pingCheck('database'),
         new Promise<HealthIndicatorResult>((_, reject) => {
-          setTimeout(() => reject(new Error('Database check timeout')), checkTimeout);
-        })
+          setTimeout(
+            () => reject(new Error('Database check timeout')),
+            checkTimeout,
+          );
+        }),
       ]);
       services.database = dbCheck.database;
       if (dbCheck.database?.status === 'up') healthyCount++;
     } catch (error) {
-      this.logger.warn(`Erro na verificação do banco de dados: ${error.message}`);
+      this.logger.warn(
+        `Erro na verificação do banco de dados: ${error.message}`,
+      );
       services.database = {
         status: 'down',
         message: `Falha na conexão: ${error.message}`,
@@ -176,8 +189,11 @@ export class HealthController {
       const httpCheck = await Promise.race<HealthIndicatorResult>([
         this.http.pingCheck('frontend', 'https://pgben-front.kemosoft.com.br/'),
         new Promise<HealthIndicatorResult>((_, reject) => {
-          setTimeout(() => reject(new Error('Frontend check timeout')), checkTimeout);
-        })
+          setTimeout(
+            () => reject(new Error('Frontend check timeout')),
+            checkTimeout,
+          );
+        }),
       ]);
       services.frontend = httpCheck.frontend;
       if (httpCheck.frontend?.status === 'up') healthyCount++;
@@ -192,7 +208,10 @@ export class HealthController {
 
     // Verificação de memória
     try {
-      const memoryCheck = await this.memory.checkHeap('memory_heap', 300 * 1024 * 1024);
+      const memoryCheck = await this.memory.checkHeap(
+        'memory_heap',
+        300 * 1024 * 1024,
+      );
       services.memory = memoryCheck.memory_heap;
       if (memoryCheck.memory_heap?.status === 'up') healthyCount++;
     } catch (error) {
@@ -223,11 +242,7 @@ export class HealthController {
 
     // Verificação do Redis
     services.redis = {
-      status: (disableRedis
-        ? 'disabled'
-        : isRedisAvailable
-          ? 'up'
-          : 'down'),
+      status: disableRedis ? 'disabled' : isRedisAvailable ? 'up' : 'down',
       message: disableRedis
         ? 'Redis desabilitado por configuração'
         : isRedisAvailable
@@ -243,12 +258,17 @@ export class HealthController {
       const storageStatus = await Promise.race<StorageHealthStatus>([
         storagePromise,
         new Promise<StorageHealthStatus>((_, reject) => {
-          setTimeout(() => reject(new Error('Storage check timeout')), checkTimeout * 2);
-        })
+          setTimeout(
+            () => reject(new Error('Storage check timeout')),
+            checkTimeout * 2,
+          );
+        }),
       ]);
-      
-      this.logger.debug(`Storage health check concluído: ${storageStatus.isHealthy ? 'healthy' : 'unhealthy'}`);
-      
+
+      this.logger.debug(
+        `Storage health check concluído: ${storageStatus.isHealthy ? 'healthy' : 'unhealthy'}`,
+      );
+
       services.storage = {
         status: storageStatus.isHealthy ? 'up' : 'down',
         provider: storageStatus.provider,
@@ -270,8 +290,10 @@ export class HealthController {
     totalCount++;
 
     const healthPercentage = Math.round((healthyCount / totalCount) * 100);
-    
-    this.logger.debug(`Health check concluído: ${healthyCount}/${totalCount} serviços saudáveis (${healthPercentage}%)`);
+
+    this.logger.debug(
+      `Health check concluído: ${healthyCount}/${totalCount} serviços saudáveis (${healthPercentage}%)`,
+    );
 
     // SEMPRE retorna status 200, mas com informações detalhadas
     return {
@@ -288,17 +310,18 @@ export class HealthController {
 
   /**
    * Endpoint simplificado para verificações rápidas
-   * 
+   *
    * Retorna apenas status OK se a aplicação estiver funcionando.
    * Mais leve que o endpoint de liveness, ideal para monitoramento básico.
-   * 
+   *
    * Caminho: GET /health/ping (excluído do prefixo global 'api')
    */
   @Get('ping')
   @Public()
   @ApiOperation({
     summary: 'Health Check - Ping',
-    description: 'Endpoint ultra-rápido para verificação básica de funcionamento da aplicação.',
+    description:
+      'Endpoint ultra-rápido para verificação básica de funcionamento da aplicação.',
   })
   @ApiResponse({
     status: 200,
@@ -324,10 +347,10 @@ export class HealthController {
 
   /**
    * Verifica apenas o banco de dados
-   * 
+   *
    * Endpoint específico para verificar a conectividade com PostgreSQL.
    * Útil para diagnósticos isolados de problemas de banco de dados.
-   * 
+   *
    * Caminho: GET /health/db (excluído do prefixo global 'api')
    */
   @Get('db')
@@ -335,7 +358,8 @@ export class HealthController {
   @HealthCheck()
   @ApiOperation({
     summary: 'Health Check - Database',
-    description: 'Verifica especificamente a conectividade com o banco de dados PostgreSQL.',
+    description:
+      'Verifica especificamente a conectividade com o banco de dados PostgreSQL.',
   })
   @ApiResponse({
     status: 200,
@@ -351,10 +375,10 @@ export class HealthController {
 
   /**
    * Verifica uso de recursos do sistema
-   * 
+   *
    * Endpoint específico para verificar recursos do sistema como memória e disco.
    * Útil para monitoramento de performance e capacidade.
-   * 
+   *
    * Caminho: GET /health/system (excluído do prefixo global 'api')
    */
   @Get('system')
@@ -362,7 +386,8 @@ export class HealthController {
   @HealthCheck()
   @ApiOperation({
     summary: 'Health Check - System Resources',
-    description: 'Verifica o uso de recursos do sistema como memória heap, RSS e espaço em disco.',
+    description:
+      'Verifica o uso de recursos do sistema como memória heap, RSS e espaço em disco.',
   })
   @ApiResponse({
     status: 200,
@@ -386,10 +411,10 @@ export class HealthController {
 
   /**
    * Verifica a disponibilidade do Redis
-   * 
+   *
    * Endpoint específico para verificar a conectividade com Redis.
    * Considera a configuração DISABLE_REDIS para ambientes sem Redis.
-   * 
+   *
    * Caminho: GET /health/redis (excluído do prefixo global 'api')
    */
   @Get('redis')
@@ -397,7 +422,8 @@ export class HealthController {
   @HealthCheck()
   @ApiOperation({
     summary: 'Health Check - Redis',
-    description: 'Verifica especificamente a conectividade com Redis. Respeita a configuração DISABLE_REDIS.',
+    description:
+      'Verifica especificamente a conectividade com Redis. Respeita a configuração DISABLE_REDIS.',
   })
   @ApiResponse({
     status: 200,
@@ -442,17 +468,18 @@ export class HealthController {
 
   /**
    * Verifica apenas o storage (S3/MinIO)
-   * 
+   *
    * Endpoint específico para verificar a conectividade com o serviço de armazenamento.
    * Suporta tanto S3 quanto MinIO dependendo da configuração.
-   * 
+   *
    * Caminho: GET /health/storage (excluído do prefixo global 'api')
    */
   @Get('storage')
   @Public()
   @ApiOperation({
     summary: 'Health Check - Storage',
-    description: 'Verifica especificamente a conectividade com o serviço de armazenamento (S3/MinIO).',
+    description:
+      'Verifica especificamente a conectividade com o serviço de armazenamento (S3/MinIO).',
   })
   @ApiResponse({
     status: 200,

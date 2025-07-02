@@ -14,7 +14,7 @@ import { validate } from 'class-validator';
 
 /**
  * Interceptor para validação e sanitização de entrada em endpoints de documentos
- * 
+ *
  * Funcionalidades:
  * - Sanitização de parâmetros de rota e query
  * - Validação de formatos (UUID, números, etc.)
@@ -55,20 +55,19 @@ export class InputValidationInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const request = context.switchToHttp().getRequest<Request>();
     const user = (request as any).user;
-    
+
     try {
       // Validar e sanitizar parâmetros de rota
       this.validateAndSanitizeParams(request);
-      
+
       // Validar e sanitizar query parameters
       this.validateAndSanitizeQuery(request);
-      
+
       // Validar headers críticos
       this.validateHeaders(request);
-      
+
       // Validar body se presente
       this.validateBody(request);
-      
     } catch (error) {
       this.logger.warn(
         'Tentativa de entrada inválida detectada',
@@ -82,9 +81,9 @@ export class InputValidationInterceptor implements NestInterceptor {
           params: request.params,
           query: request.query,
           error: error.message,
-        }
+        },
       );
-      
+
       throw error;
     }
 
@@ -164,15 +163,15 @@ export class InputValidationInterceptor implements NestInterceptor {
   private validateHeaders(request: Request): void {
     const userAgent = request.headers['user-agent'];
     const contentType = request.headers['content-type'];
-    
+
     // Validar User-Agent
     if (userAgent) {
       if (userAgent.length > 500) {
         throw new BadRequestException('User-Agent muito longo');
       }
-      
+
       this.checkSuspiciousPatterns(userAgent, 'User-Agent');
-      
+
       // Detectar User-Agents suspeitos
       const suspiciousUserAgents = [
         /sqlmap/i,
@@ -185,7 +184,7 @@ export class InputValidationInterceptor implements NestInterceptor {
         /gobuster/i,
         /dirb/i,
       ];
-      
+
       for (const pattern of suspiciousUserAgents) {
         if (pattern.test(userAgent)) {
           throw new BadRequestException('User-Agent não permitido');
@@ -206,7 +205,8 @@ export class InputValidationInterceptor implements NestInterceptor {
 
     // Verificar tamanho do body (proteção contra DoS)
     const bodyString = JSON.stringify(request.body);
-    if (bodyString.length > 50000) { // 50KB
+    if (bodyString.length > 50000) {
+      // 50KB
       throw new BadRequestException('Body da requisição muito grande');
     }
 
@@ -217,16 +217,16 @@ export class InputValidationInterceptor implements NestInterceptor {
   private validateObjectRecursively(obj: any, path: string): void {
     for (const [key, value] of Object.entries(obj)) {
       const currentPath = `${path}.${key}`;
-      
+
       if (typeof value === 'string') {
         // Verificar tamanho
         if (value.length > this.sizeLimits.general) {
           throw new BadRequestException(`Campo '${currentPath}' muito longo`);
         }
-        
+
         // Verificar padrões suspeitos
         this.checkSuspiciousPatterns(value, currentPath);
-        
+
         // Sanitizar
         obj[key] = this.sanitizeString(value);
       } else if (typeof value === 'object' && value !== null) {
@@ -239,7 +239,7 @@ export class InputValidationInterceptor implements NestInterceptor {
     for (const pattern of this.suspiciousPatterns) {
       if (pattern.test(value)) {
         throw new BadRequestException(
-          `Padrão suspeito detectado em ${context}`
+          `Padrão suspeito detectado em ${context}`,
         );
       }
     }
@@ -254,11 +254,12 @@ export class InputValidationInterceptor implements NestInterceptor {
   private validateCodigoOrId(value: string, fieldName: string): void {
     // Aceita UUID ou código alfanumérico (letras, números, hífen, underscore)
     const isValidUUID = isUUID(value);
-    const isValidCode = /^[a-zA-Z0-9_-]+$/.test(value) && value.length >= 1 && value.length <= 50;
-    
+    const isValidCode =
+      /^[a-zA-Z0-9_-]+$/.test(value) && value.length >= 1 && value.length <= 50;
+
     if (!isValidUUID && !isValidCode) {
       throw new BadRequestException(
-        `${fieldName} deve ser um UUID válido ou um código alfanumérico (letras, números, hífen, underscore)`
+        `${fieldName} deve ser um UUID válido ou um código alfanumérico (letras, números, hífen, underscore)`,
       );
     }
   }
@@ -279,12 +280,14 @@ export class InputValidationInterceptor implements NestInterceptor {
       'mimetype',
       'verified',
     ];
-    
+
     const sortParts = value.split(',');
     for (const part of sortParts) {
       const field = part.replace(/^-/, ''); // Remove o sinal de menos
       if (!allowedSortFields.includes(field)) {
-        throw new BadRequestException(`Campo de ordenação '${field}' não permitido`);
+        throw new BadRequestException(
+          `Campo de ordenação '${field}' não permitido`,
+        );
       }
     }
   }
@@ -292,15 +295,14 @@ export class InputValidationInterceptor implements NestInterceptor {
   private validateFilterParameter(value: string): void {
     try {
       const filter = JSON.parse(value);
-      
+
       // Verificar se é um objeto válido
       if (typeof filter !== 'object' || filter === null) {
         throw new BadRequestException('Filtro deve ser um objeto JSON válido');
       }
-      
+
       // Limitar profundidade do objeto
       this.checkObjectDepth(filter, 0, 3);
-      
     } catch (error) {
       if (error instanceof BadRequestException) {
         throw error;
@@ -309,11 +311,17 @@ export class InputValidationInterceptor implements NestInterceptor {
     }
   }
 
-  private checkObjectDepth(obj: any, currentDepth: number, maxDepth: number): void {
+  private checkObjectDepth(
+    obj: any,
+    currentDepth: number,
+    maxDepth: number,
+  ): void {
     if (currentDepth > maxDepth) {
-      throw new BadRequestException('Filtro muito complexo (profundidade máxima excedida)');
+      throw new BadRequestException(
+        'Filtro muito complexo (profundidade máxima excedida)',
+      );
     }
-    
+
     if (typeof obj === 'object' && obj !== null) {
       for (const value of Object.values(obj)) {
         this.checkObjectDepth(value, currentDepth + 1, maxDepth);
@@ -332,12 +340,12 @@ export class InputValidationInterceptor implements NestInterceptor {
   async validateDTO(dto: any, dtoClass: any): Promise<void> {
     const object = plainToClass(dtoClass, dto);
     const errors = await validate(object);
-    
+
     if (errors.length > 0) {
-      const messages = errors.map(error => 
-        Object.values(error.constraints || {}).join(', ')
-      ).join('; ');
-      
+      const messages = errors
+        .map((error) => Object.values(error.constraints || {}).join(', '))
+        .join('; ');
+
       throw new BadRequestException(`Dados inválidos: ${messages}`);
     }
   }

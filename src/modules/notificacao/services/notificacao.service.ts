@@ -108,7 +108,9 @@ export class NotificacaoService {
     }
 
     if (prioridade) {
-      queryBuilder.andWhere('template.prioridade = :prioridade', { prioridade });
+      queryBuilder.andWhere('template.prioridade = :prioridade', {
+        prioridade,
+      });
     }
 
     // Filtro por período de criação
@@ -332,7 +334,9 @@ export class NotificacaoService {
 
     const notificacao = this.notificacaoRepository.create(dadosNormalizados);
 
-    const saved = await this.notificacaoRepository.save(notificacao) as unknown as NotificacaoSistema;
+    const saved = (await this.notificacaoRepository.save(
+      notificacao,
+    )) as unknown as NotificacaoSistema;
 
     // Emite evento de criação para tratamento assíncrono (ex.: SSE, e-mail, etc.)
     this.eventEmitter.emit(

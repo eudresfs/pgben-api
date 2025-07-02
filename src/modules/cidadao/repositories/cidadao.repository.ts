@@ -1,4 +1,8 @@
-import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { Repository, DataSource } from 'typeorm';
 import { Cidadao } from '../../../entities/cidadao.entity';
 
@@ -27,7 +31,7 @@ export class CidadaoRepository {
       search,
       bairro,
       unidade_id,
-      includeRelations = false
+      includeRelations = false,
     } = options;
 
     const query = this.repository.createQueryBuilder('cidadao');
@@ -41,11 +45,11 @@ export class CidadaoRepository {
     if (search && search.trim() !== '') {
       const searchTerm = search.trim();
       const searchClean = searchTerm.replace(/\D/g, ''); // Remove formatação para CPF/NIS
-      
+
       // Log para debug
       console.log('🔍 Search term:', searchTerm);
       console.log('🔍 Search clean:', searchClean);
-      
+
       const conditions: string[] = [];
       const parameters: any = {};
 
@@ -73,11 +77,12 @@ export class CidadaoRepository {
 
     // Filtro por bairro (nova estrutura normalizada)
     if (bairro && bairro.trim() !== '') {
-      query.leftJoin('cidadao.enderecos', 'endereco_filter')
-           .andWhere('endereco_filter.bairro ILIKE :bairro', {
-             bairro: `%${bairro.trim()}%`
-           })
-           .andWhere('endereco_filter.removed_at IS NULL');
+      query
+        .leftJoin('cidadao.enderecos', 'endereco_filter')
+        .andWhere('endereco_filter.bairro ILIKE :bairro', {
+          bairro: `%${bairro.trim()}%`,
+        })
+        .andWhere('endereco_filter.removed_at IS NULL');
     }
 
     // Relacionamentos
@@ -85,7 +90,10 @@ export class CidadaoRepository {
       query.leftJoinAndSelect('cidadao.unidade', 'unidade');
       query.leftJoinAndSelect('cidadao.contatos', 'contatos');
       query.leftJoinAndSelect('cidadao.enderecos', 'enderecos');
-      query.leftJoinAndSelect('cidadao.composicao_familiar', 'composicao_familiar');
+      query.leftJoinAndSelect(
+        'cidadao.composicao_familiar',
+        'composicao_familiar',
+      );
     } else {
       // Sempre incluir unidade, mesmo quando includeRelations for false
       query.leftJoinAndSelect('cidadao.unidade', 'unidade');
@@ -98,29 +106,44 @@ export class CidadaoRepository {
       .getManyAndCount();
   }
 
-  async findById(id: string, includeRelations = false): Promise<Cidadao | null> {
-    const relations = includeRelations ? ['unidade', 'contatos', 'enderecos', 'composicao_familiar'] : ['unidade'];
+  async findById(
+    id: string,
+    includeRelations = false,
+  ): Promise<Cidadao | null> {
+    const relations = includeRelations
+      ? ['unidade', 'contatos', 'enderecos', 'composicao_familiar']
+      : ['unidade'];
     return this.repository.findOne({
       where: { id },
-      relations
+      relations,
     });
   }
 
-  async findByCpf(cpf: string, includeRelations = false): Promise<Cidadao | null> {
+  async findByCpf(
+    cpf: string,
+    includeRelations = false,
+  ): Promise<Cidadao | null> {
     const cpfClean = cpf.replace(/\D/g, '');
-    const relations = includeRelations ? ['unidade', 'contatos', 'enderecos', 'composicao_familiar'] : ['unidade'];
+    const relations = includeRelations
+      ? ['unidade', 'contatos', 'enderecos', 'composicao_familiar']
+      : ['unidade'];
     return this.repository.findOne({
       where: { cpf: cpfClean },
-      relations
+      relations,
     });
   }
 
-  async findByNis(nis: string, includeRelations = false): Promise<Cidadao | null> {
+  async findByNis(
+    nis: string,
+    includeRelations = false,
+  ): Promise<Cidadao | null> {
     const nisClean = nis.replace(/\D/g, '');
-    const relations = includeRelations ? ['unidade', 'contatos', 'enderecos', 'composicao_familiar'] : ['unidade'];
+    const relations = includeRelations
+      ? ['unidade', 'contatos', 'enderecos', 'composicao_familiar']
+      : ['unidade'];
     return this.repository.findOne({
       where: { nis: nisClean },
-      relations
+      relations,
     });
   }
 
@@ -172,10 +195,12 @@ export class CidadaoRepository {
            AND TRIM(e.bairro) <> ''
            AND c.removed_at IS NULL
            AND e.removed_at IS NULL
-         ORDER BY e.bairro ASC`
+         ORDER BY e.bairro ASC`,
       );
 
-      return result.map(item => item.bairro.trim()).filter(bairro => bairro.length > 0);
+      return result
+        .map((item) => item.bairro.trim())
+        .filter((bairro) => bairro.length > 0);
     } catch (error) {
       console.error('Erro ao buscar bairros:', error);
       throw new Error('Erro ao buscar bairros');

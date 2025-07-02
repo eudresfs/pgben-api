@@ -68,15 +68,18 @@ export class CreateNotificationTemplateDto {
 
   @ApiProperty({
     description: 'Conteúdo em texto simples do template',
-    example: 'Suas credenciais de acesso foram criadas. Login: {{email}}, Senha: {{senha}}',
+    example:
+      'Suas credenciais de acesso foram criadas. Login: {{email}}, Senha: {{senha}}',
   })
   @IsString()
   @IsNotEmpty()
   corpo: string;
 
   @ApiProperty({
-    description: 'Conteúdo HTML do template com variáveis no formato {{variavel}}',
-    example: '<h2>Bem-vindo!</h2><p>Suas credenciais: <strong>{{email}}</strong></p>',
+    description:
+      'Conteúdo HTML do template com variáveis no formato {{variavel}}',
+    example:
+      '<h2>Bem-vindo!</h2><p>Suas credenciais: <strong>{{email}}</strong></p>',
     required: false,
   })
   @IsString()

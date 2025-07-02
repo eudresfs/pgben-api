@@ -1,6 +1,6 @@
 /**
  * Configurações de segurança para o módulo de documentos
- * 
+ *
  * Centraliza todas as configurações relacionadas à segurança,
  * incluindo rate limiting, validação de entrada e controle de acesso.
  */
@@ -83,7 +83,7 @@ export const DEFAULT_SECURITY_CONFIG: SecurityConfig = {
     },
     cleanupIntervalMs: 600000, // 10 minutos
   },
-  
+
   validation: {
     maxInputLength: {
       uuid: 36,
@@ -117,7 +117,7 @@ export const DEFAULT_SECURITY_CONFIG: SecurityConfig = {
       'verified',
     ],
   },
-  
+
   access: {
     adminRoles: ['ADMIN', 'SUPER_ADMIN'],
     analystRoles: ['ANALISTA'],
@@ -129,19 +129,13 @@ export const DEFAULT_SECURITY_CONFIG: SecurityConfig = {
     allowUploaderAccess: true,
     allowVerifierAccess: true,
   },
-  
+
   audit: {
     enableDetailedLogging: true,
     logSecurityEvents: true,
     logPerformanceMetrics: true,
     retentionDays: 90,
-    sensitiveFieldsToMask: [
-      'password',
-      'token',
-      'secret',
-      'key',
-      'hash',
-    ],
+    sensitiveFieldsToMask: ['password', 'token', 'secret', 'key', 'hash'],
   },
 };
 
@@ -170,8 +164,10 @@ export const SUSPICIOUS_USER_AGENTS = [
  * Headers HTTP suspeitos
  */
 export const SUSPICIOUS_HEADERS = {
-  'x-forwarded-for': /^(10\.|172\.(1[6-9]|2[0-9]|3[01])\.|192\.168\.|127\.|169\.254\.|::1|localhost)/,
-  'x-real-ip': /^(10\.|172\.(1[6-9]|2[0-9]|3[01])\.|192\.168\.|127\.|169\.254\.|::1|localhost)/,
+  'x-forwarded-for':
+    /^(10\.|172\.(1[6-9]|2[0-9]|3[01])\.|192\.168\.|127\.|169\.254\.|::1|localhost)/,
+  'x-real-ip':
+    /^(10\.|172\.(1[6-9]|2[0-9]|3[01])\.|192\.168\.|127\.|169\.254\.|::1|localhost)/,
   'user-agent': SUSPICIOUS_USER_AGENTS,
 };
 
@@ -224,9 +220,11 @@ export const BACKUP_CONFIG = {
 /**
  * Função para obter configuração de segurança baseada no ambiente
  */
-export function getSecurityConfig(environment: string = 'production'): SecurityConfig {
+export function getSecurityConfig(
+  environment: string = 'production',
+): SecurityConfig {
   const config = { ...DEFAULT_SECURITY_CONFIG };
-  
+
   switch (environment) {
     case 'development':
       // Configurações mais permissivas para desenvolvimento
@@ -235,7 +233,7 @@ export function getSecurityConfig(environment: string = 'production'): SecurityC
       config.rateLimiting.views.max = 500;
       config.audit.enableDetailedLogging = true;
       break;
-      
+
     case 'testing':
       // Configurações para testes
       config.rateLimiting.downloads.max = 1000;
@@ -243,19 +241,19 @@ export function getSecurityConfig(environment: string = 'production'): SecurityC
       config.rateLimiting.views.max = 1000;
       config.audit.enableDetailedLogging = false;
       break;
-      
+
     case 'staging':
       // Configurações similares à produção, mas com logs mais detalhados
       config.audit.enableDetailedLogging = true;
       config.audit.logPerformanceMetrics = true;
       break;
-      
+
     case 'production':
     default:
       // Configurações padrão (mais restritivas)
       break;
   }
-  
+
   return config;
 }
 
@@ -264,38 +262,38 @@ export function getSecurityConfig(environment: string = 'production'): SecurityC
  */
 export function validateSecurityConfig(config: SecurityConfig): string[] {
   const errors: string[] = [];
-  
+
   // Validar rate limiting
   if (config.rateLimiting.downloads.max <= 0) {
     errors.push('Rate limit para downloads deve ser maior que 0');
   }
-  
+
   if (config.rateLimiting.uploads.max <= 0) {
     errors.push('Rate limit para uploads deve ser maior que 0');
   }
-  
+
   if (config.rateLimiting.views.max <= 0) {
     errors.push('Rate limit para visualizações deve ser maior que 0');
   }
-  
+
   // Validar tamanhos
   if (config.validation.maxBodySize <= 0) {
     errors.push('Tamanho máximo do body deve ser maior que 0');
   }
-  
+
   if (config.validation.maxUserAgentLength <= 0) {
     errors.push('Tamanho máximo do User-Agent deve ser maior que 0');
   }
-  
+
   // Validar roles
   if (!config.access.adminRoles || config.access.adminRoles.length === 0) {
     errors.push('Pelo menos uma role de administrador deve ser definida');
   }
-  
+
   // Validar auditoria
   if (config.audit.retentionDays <= 0) {
     errors.push('Período de retenção de auditoria deve ser maior que 0');
   }
-  
+
   return errors;
 }

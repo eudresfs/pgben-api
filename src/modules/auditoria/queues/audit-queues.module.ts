@@ -1,6 +1,6 @@
 /**
  * AuditQueuesModule
- * 
+ *
  * Módulo responsável pela infraestrutura de filas de auditoria.
  * Gerencia BullMQ, processadores e jobs de auditoria.
  */
@@ -26,7 +26,7 @@ import { AuditCoreModule } from '../core/audit-core.module';
         },
       },
     }),
-    
+
     // Fila para eventos críticos (alta prioridade)
     BullModule.registerQueue({
       name: 'audit-critical',
@@ -41,7 +41,7 @@ import { AuditCoreModule } from '../core/audit-core.module';
         priority: 10,
       },
     }),
-    
+
     // Fila para dados sensíveis (LGPD)
     BullModule.registerQueue({
       name: 'audit-sensitive',
@@ -56,18 +56,11 @@ import { AuditCoreModule } from '../core/audit-core.module';
         priority: 8,
       },
     }),
-    
+
     // Módulo core para persistência
     AuditCoreModule,
   ],
-  providers: [
-    AuditProcessor,
-    AuditProcessingJob,
-  ],
-  exports: [
-    AuditProcessor,
-    AuditProcessingJob,
-    BullModule,
-  ],
+  providers: [AuditProcessor, AuditProcessingJob],
+  exports: [AuditProcessor, AuditProcessingJob, BullModule],
 })
 export class AuditQueuesModule {}

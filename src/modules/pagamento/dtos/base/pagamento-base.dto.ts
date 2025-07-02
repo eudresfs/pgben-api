@@ -16,10 +16,10 @@ import { StatusPagamentoEnum } from '../../../../enums/status-pagamento.enum';
 
 /**
  * DTO base para operações de pagamento
- * 
+ *
  * Centraliza campos comuns utilizados em diferentes DTOs de pagamento,
  * seguindo o princípio DRY (Don't Repeat Yourself).
- * 
+ *
  * @author Equipe PGBen
  */
 export abstract class PagamentoBaseDto {
@@ -35,7 +35,7 @@ export abstract class PagamentoBaseDto {
   @IsNotEmpty({ message: 'Valor é obrigatório' })
   @IsNumber(
     { maxDecimalPlaces: 2 },
-    { message: 'Valor deve ser um número com até 2 casas decimais' }
+    { message: 'Valor deve ser um número com até 2 casas decimais' },
   )
   @Min(0.01, { message: 'Valor deve ser maior que zero' })
   @Max(50000.0, { message: 'Valor não pode exceder R$ 50.000,00' })
@@ -70,7 +70,7 @@ export abstract class PagamentoBaseDto {
 
 /**
  * DTO base para respostas de pagamento
- * 
+ *
  * Define estrutura comum para DTOs de resposta relacionados a pagamentos.
  */
 export abstract class PagamentoResponseBaseDto {

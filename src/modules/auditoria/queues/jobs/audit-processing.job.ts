@@ -1,12 +1,15 @@
 /**
  * AuditProcessingJob
- * 
+ *
  * Job responsável pelo processamento assíncrono de eventos de auditoria.
  * Implementa compressão, assinatura digital e persistência otimizada.
  */
 
 import { Injectable, Logger } from '@nestjs/common';
-import { AuditEvent, AuditEventConfig } from '../../events/types/audit-event.types';
+import {
+  AuditEvent,
+  AuditEventConfig,
+} from '../../events/types/audit-event.types';
 import { AuditCoreRepository } from '../../core/repositories/audit-core.repository';
 import { TipoOperacao } from '../../../../enums/tipo-operacao.enum';
 
@@ -41,26 +44,28 @@ export class AuditProcessingJob {
    */
   async process(data: AuditJobData): Promise<AuditProcessingResult> {
     const startTime = Date.now();
-    
+
     try {
       this.logger.debug(`Processing audit event: ${data.event.eventType}`);
-      
+
       // Valida os dados do evento
       this.validateJobData(data);
-      
+
       // Prepara os dados para persistência
       const processedData = await this.prepareDataForPersistence(data);
-      
+
       // Persiste o log de auditoria
       const logId = await this.persistAuditLog(processedData);
-      
+
       // Executa pós-processamento se necessário
       await this.executePostProcessing(data.event, logId);
-      
+
       const processingTime = Date.now() - startTime;
-      
-      this.logger.debug(`Audit event processed successfully in ${processingTime}ms: ${logId}`);
-      
+
+      this.logger.debug(
+        `Audit event processed successfully in ${processingTime}ms: ${logId}`,
+      );
+
       return {
         success: true,
         logId,
@@ -68,15 +73,14 @@ export class AuditProcessingJob {
         compressed: data.config?.compress || false,
         signed: data.config?.sign || false,
       };
-      
     } catch (error) {
       const processingTime = Date.now() - startTime;
-      
+
       this.logger.error(
         `Failed to process audit event: ${error.message}`,
         error.stack,
       );
-      
+
       return {
         success: false,
         processingTime,
@@ -92,15 +96,15 @@ export class AuditProcessingJob {
     if (!data || !data.event) {
       throw new Error('Invalid job data: event is required');
     }
-    
+
     if (!data.event.eventType) {
       throw new Error('Invalid event: eventType is required');
     }
-    
+
     if (!data.event.entityName) {
       throw new Error('Invalid event: entityName is required');
     }
-    
+
     if (!data.event.timestamp) {
       throw new Error('Invalid event: timestamp is required');
     }
@@ -111,7 +115,7 @@ export class AuditProcessingJob {
    */
   private async prepareDataForPersistence(data: AuditJobData): Promise<any> {
     const { event, config } = data;
-    
+
     // Estrutura base do log
     let logData = {
       tipo_operacao: event.eventType,
@@ -127,39 +131,40 @@ export class AuditProcessingJob {
       metadata: event.metadata || {},
       contexto_requisicao: event.requestContext || {},
     };
-    
+
     // Adiciona dados específicos do tipo de evento
     if ('previousData' in event && event.previousData) {
       logData.dados_anteriores = event.previousData;
     }
-    
+
     if ('newData' in event && event.newData) {
       logData.dados_novos = event.newData;
     }
-    
+
     // Adiciona metadados específicos para eventos de entidade
     if ('changedFields' in event && event.changedFields) {
       logData.metadata.changedFields = event.changedFields;
-      logData.metadata.sensitiveFieldsChanged = event.sensitiveFieldsChanged || false;
+      logData.metadata.sensitiveFieldsChanged =
+        event.sensitiveFieldsChanged || false;
     }
-    
+
     // Adiciona metadados específicos para eventos de dados sensíveis
     if ('sensitiveFields' in event && event.sensitiveFields) {
       logData.metadata.sensitiveFields = event.sensitiveFields;
       logData.metadata.legalBasis = event.legalBasis;
       logData.metadata.purpose = event.purpose;
     }
-    
+
     // Aplica compressão se configurado
     if (config?.compress) {
       logData = await this.compressData(logData);
     }
-    
+
     // Aplica assinatura digital se configurado
     if (config?.sign) {
       logData = await this.signData(logData);
     }
-    
+
     return logData;
   }
 
@@ -172,15 +177,18 @@ export class AuditProcessingJob {
       if (typeof logData.tipo_operacao === 'string') {
         logData.tipo_operacao = logData.tipo_operacao as TipoOperacao;
       }
-      
+
       // Persiste usando o repositório real
       const savedLog = await this.auditRepository.create(logData);
-      
+
       this.logger.debug(`Audit log persisted with ID: ${savedLog.id}`);
-      
+
       return savedLog.id;
     } catch (error) {
-      this.logger.error(`Failed to persist audit log: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to persist audit log: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }
@@ -188,17 +196,20 @@ export class AuditProcessingJob {
   /**
    * Executa pós-processamento do evento
    */
-  private async executePostProcessing(event: AuditEvent, logId: string): Promise<void> {
+  private async executePostProcessing(
+    event: AuditEvent,
+    logId: string,
+  ): Promise<void> {
     // Notificações para eventos críticos
     if (event.riskLevel === 'CRITICAL') {
       await this.sendCriticalEventNotification(event, logId);
     }
-    
+
     // Alertas LGPD
     if (event.lgpdRelevant) {
       await this.processLgpdCompliance(event, logId);
     }
-    
+
     // Métricas e monitoramento
     await this.updateMetrics(event);
   }
@@ -208,11 +219,11 @@ export class AuditProcessingJob {
    */
   private generateDescription(event: AuditEvent): string {
     const baseDescription = `${event.eventType} em ${event.entityName}`;
-    
+
     if (event.entityId) {
       return `${baseDescription} (ID: ${event.entityId})`;
     }
-    
+
     return baseDescription;
   }
 
@@ -222,7 +233,7 @@ export class AuditProcessingJob {
   private async compressData(data: any): Promise<any> {
     // TODO: Implementar compressão real (gzip, lz4, etc.)
     // Por enquanto, apenas marca como comprimido
-    
+
     return {
       ...data,
       _compressed: true,
@@ -236,10 +247,10 @@ export class AuditProcessingJob {
   private async signData(data: any): Promise<any> {
     // TODO: Implementar assinatura digital real
     // Por enquanto, apenas adiciona hash simulado
-    
+
     const dataString = JSON.stringify(data);
     const hash = this.generateHash(dataString);
-    
+
     return {
       ...data,
       _signature: hash,
@@ -250,18 +261,28 @@ export class AuditProcessingJob {
   /**
    * Envia notificação para eventos críticos
    */
-  private async sendCriticalEventNotification(event: AuditEvent, logId: string): Promise<void> {
-    this.logger.warn(`CRITICAL EVENT DETECTED: ${event.eventType} - Log ID: ${logId}`);
-    
+  private async sendCriticalEventNotification(
+    event: AuditEvent,
+    logId: string,
+  ): Promise<void> {
+    this.logger.warn(
+      `CRITICAL EVENT DETECTED: ${event.eventType} - Log ID: ${logId}`,
+    );
+
     // TODO: Implementar notificação real (email, Slack, etc.)
   }
 
   /**
    * Processa conformidade LGPD
    */
-  private async processLgpdCompliance(event: AuditEvent, logId: string): Promise<void> {
-    this.logger.debug(`Processing LGPD compliance for event: ${event.eventType}`);
-    
+  private async processLgpdCompliance(
+    event: AuditEvent,
+    logId: string,
+  ): Promise<void> {
+    this.logger.debug(
+      `Processing LGPD compliance for event: ${event.eventType}`,
+    );
+
     // TODO: Implementar verificações de conformidade LGPD
     // - Verificar base legal
     // - Validar consentimento
@@ -276,7 +297,7 @@ export class AuditProcessingJob {
     // - Contadores por tipo de evento
     // - Métricas de performance
     // - Alertas de volume
-    
+
     this.logger.debug(`Metrics updated for event: ${event.eventType}`);
   }
 
@@ -295,7 +316,7 @@ export class AuditProcessingJob {
     let hash = 0;
     for (let i = 0; i < data.length; i++) {
       const char = data.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32bit integer
     }
     return Math.abs(hash).toString(16);

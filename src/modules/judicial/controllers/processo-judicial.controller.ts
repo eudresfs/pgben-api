@@ -84,8 +84,8 @@ export class ProcessoJudicialController {
       req.user.id?.toString(),
       {
         synchronous: false,
-
-    });
+      },
+    );
 
     return resultado;
   }
@@ -208,8 +208,8 @@ export class ProcessoJudicialController {
       req.user.id?.toString(),
       {
         synchronous: false,
-
-    });
+      },
+    );
 
     return resultado;
   }
@@ -244,14 +244,14 @@ export class ProcessoJudicialController {
   ): Promise<ProcessoJudicial> {
     // Buscar dados anteriores para auditoria
     const previousData = await this.processoJudicialService.findById(id);
-    
+
     // Atualizar status do processo judicial
     const result = await this.processoJudicialService.updateStatus(
       id,
       updateStatusDto.status,
       req.user.id,
     );
-    
+
     // Emitir evento de auditoria para atualização de status
     await this.auditEventEmitter.emitEntityUpdated(
       'ProcessoJudicial',
@@ -261,9 +261,9 @@ export class ProcessoJudicialController {
       req.user.id?.toString(),
       {
         synchronous: false,
+      },
+    );
 
-    });
-    
     return result;
   }
 
@@ -292,10 +292,10 @@ export class ProcessoJudicialController {
   ): Promise<void> {
     // Buscar dados anteriores para auditoria
     const previousData = await this.processoJudicialService.findById(id);
-    
+
     // Desativar processo judicial
     await this.processoJudicialService.desativar(id, req.user.id);
-    
+
     // Emitir evento de auditoria para remoção
     await this.auditEventEmitter.emitEntityDeleted(
       'ProcessoJudicial',
@@ -304,7 +304,7 @@ export class ProcessoJudicialController {
       req.user.id?.toString(),
       {
         synchronous: false,
-
-    });
+      },
+    );
   }
 }

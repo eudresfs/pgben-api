@@ -1,11 +1,18 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsEnum, IsString, IsDateString, IsNumber, Min } from 'class-validator';
+import {
+  IsOptional,
+  IsEnum,
+  IsString,
+  IsDateString,
+  IsNumber,
+  Min,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
 
 /**
  * DTO para filtros de busca de pagamentos
- * 
+ *
  * Define os critérios de filtro disponíveis para busca e listagem
  * de pagamentos, incluindo paginação e ordenação.
  */

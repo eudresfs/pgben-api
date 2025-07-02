@@ -1,6 +1,6 @@
 /**
  * AuditCoreService
- * 
+ *
  * Serviço core isolado para operações de auditoria.
  * Implementa a lógica de negócio sem dependências externas.
  */
@@ -75,19 +75,19 @@ export class AuditCoreService implements OnModuleInit {
   async onModuleInit(): Promise<void> {
     try {
       this.logger.debug('Initializing AuditCoreService...');
-      
+
       // Aguarda um tick para garantir que todos os módulos estejam inicializados
-      await new Promise(resolve => setImmediate(resolve));
-      
+      await new Promise((resolve) => setImmediate(resolve));
+
       // Registra listeners para eventos síncronos
       this.registerSyncEventListeners();
-      
+
       // Marca como inicializado
       this.isInitialized = true;
-      
+
       // Processa eventos pendentes
       await this.processPendingEvents();
-      
+
       this.logger.debug('AuditCoreService initialized successfully');
     } catch (error) {
       this.logger.error('Failed to initialize AuditCoreService', error.stack);
@@ -100,42 +100,44 @@ export class AuditCoreService implements OnModuleInit {
    */
   async processSyncEvent(jobData: AuditJobData): Promise<ProcessingResult> {
     const startTime = Date.now();
-    
+
     try {
       this.logger.debug(`Processing sync event: ${jobData.event.eventType}`);
-      
+
       // Converte evento para DTO de criação
       const createDto = this.eventToCreateDto(jobData.event);
-      
+
       // Aplica configurações específicas
-      const processedDto = await this.applyEventConfig(createDto, jobData.config);
-      
+      const processedDto = await this.applyEventConfig(
+        createDto,
+        jobData.config,
+      );
+
       // Persiste o log
       const auditLog = await this.auditRepository.create(processedDto);
-      
+
       // Executa pós-processamento
       await this.executePostProcessing(jobData.event, auditLog);
-      
+
       const processingTime = Date.now() - startTime;
-      
+
       this.logger.debug(
         `Sync event processed successfully in ${processingTime}ms: ${auditLog.id}`,
       );
-      
+
       return {
         success: true,
         logId: auditLog.id,
         processingTime,
       };
-      
     } catch (error) {
       const processingTime = Date.now() - startTime;
-      
+
       this.logger.error(
         `Failed to process sync event: ${error.message}`,
         error.stack,
       );
-      
+
       return {
         success: false,
         processingTime,
@@ -151,19 +153,21 @@ export class AuditCoreService implements OnModuleInit {
     try {
       // Valida dados de entrada
       this.validateCreateDto(createDto);
-      
+
       // Enriquece com dados padrão
       const enrichedDto = this.enrichCreateDto(createDto);
-      
+
       // Persiste no repositório
       const auditLog = await this.auditRepository.create(enrichedDto);
-      
+
       this.logger.debug(`Audit log created: ${auditLog.id}`);
-      
+
       return auditLog;
-      
     } catch (error) {
-      this.logger.error(`Failed to create audit log: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to create audit log: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }
@@ -171,7 +175,9 @@ export class AuditCoreService implements OnModuleInit {
   /**
    * Cria múltiplos logs em lote
    */
-  async createAuditLogsBatch(createDtos: CreateAuditLogDto[]): Promise<LogAuditoria[]> {
+  async createAuditLogsBatch(
+    createDtos: CreateAuditLogDto[],
+  ): Promise<LogAuditoria[]> {
     try {
       // Valida todos os DTOs
       createDtos.forEach((dto, index) => {
@@ -181,19 +187,21 @@ export class AuditCoreService implements OnModuleInit {
           throw new Error(`Invalid DTO at index ${index}: ${error.message}`);
         }
       });
-      
+
       // Enriquece todos os DTOs
-      const enrichedDtos = createDtos.map(dto => this.enrichCreateDto(dto));
-      
+      const enrichedDtos = createDtos.map((dto) => this.enrichCreateDto(dto));
+
       // Persiste em lote
       const auditLogs = await this.auditRepository.createBatch(enrichedDtos);
-      
+
       this.logger.debug(`${auditLogs.length} audit logs created in batch`);
-      
+
       return auditLogs;
-      
     } catch (error) {
-      this.logger.error(`Failed to create audit logs batch: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to create audit logs batch: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }
@@ -201,11 +209,16 @@ export class AuditCoreService implements OnModuleInit {
   /**
    * Busca logs com filtros
    */
-  async findAuditLogs(filters: AuditSearchFilters): Promise<PaginatedAuditResult> {
+  async findAuditLogs(
+    filters: AuditSearchFilters,
+  ): Promise<PaginatedAuditResult> {
     try {
       return await this.auditRepository.findWithFilters(filters);
     } catch (error) {
-      this.logger.error(`Failed to find audit logs: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to find audit logs: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }
@@ -217,7 +230,10 @@ export class AuditCoreService implements OnModuleInit {
     try {
       return await this.auditRepository.findById(id);
     } catch (error) {
-      this.logger.error(`Failed to find audit log by ID: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to find audit log by ID: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }
@@ -225,11 +241,17 @@ export class AuditCoreService implements OnModuleInit {
   /**
    * Busca logs por entidade
    */
-  async findAuditLogsByEntity(entityName: string, entityId?: string): Promise<LogAuditoria[]> {
+  async findAuditLogsByEntity(
+    entityName: string,
+    entityId?: string,
+  ): Promise<LogAuditoria[]> {
     try {
       return await this.auditRepository.findByEntity(entityName, entityId);
     } catch (error) {
-      this.logger.error(`Failed to find audit logs by entity: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to find audit logs by entity: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }
@@ -237,11 +259,17 @@ export class AuditCoreService implements OnModuleInit {
   /**
    * Busca logs por usuário
    */
-  async findAuditLogsByUser(userId: string, limit = 100): Promise<LogAuditoria[]> {
+  async findAuditLogsByUser(
+    userId: string,
+    limit = 100,
+  ): Promise<LogAuditoria[]> {
     try {
       return await this.auditRepository.findByUser(userId, limit);
     } catch (error) {
-      this.logger.error(`Failed to find audit logs by user: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to find audit logs by user: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }
@@ -249,11 +277,16 @@ export class AuditCoreService implements OnModuleInit {
   /**
    * Busca logs relevantes para LGPD
    */
-  async findLgpdRelevantLogs(filters: Omit<AuditSearchFilters, 'lgpdRelevant'>): Promise<PaginatedAuditResult> {
+  async findLgpdRelevantLogs(
+    filters: Omit<AuditSearchFilters, 'lgpdRelevant'>,
+  ): Promise<PaginatedAuditResult> {
     try {
       return await this.auditRepository.findLgpdRelevant(filters);
     } catch (error) {
-      this.logger.error(`Failed to find LGPD relevant logs: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to find LGPD relevant logs: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }
@@ -261,11 +294,17 @@ export class AuditCoreService implements OnModuleInit {
   /**
    * Obtém estatísticas de auditoria
    */
-  async getAuditStatistics(startDate?: Date, endDate?: Date): Promise<AuditStatistics> {
+  async getAuditStatistics(
+    startDate?: Date,
+    endDate?: Date,
+  ): Promise<AuditStatistics> {
     try {
       return await this.auditRepository.getStatistics(startDate, endDate);
     } catch (error) {
-      this.logger.error(`Failed to get audit statistics: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to get audit statistics: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }
@@ -275,13 +314,17 @@ export class AuditCoreService implements OnModuleInit {
    */
   async cleanupOldLogs(olderThanDays: number): Promise<number> {
     try {
-      const deletedCount = await this.auditRepository.cleanupOldLogs(olderThanDays);
-      
+      const deletedCount =
+        await this.auditRepository.cleanupOldLogs(olderThanDays);
+
       this.logger.log(`Cleaned up ${Number(deletedCount)} old audit logs`);
-      
+
       return deletedCount;
     } catch (error) {
-      this.logger.error(`Failed to cleanup old logs: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to cleanup old logs: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }
@@ -294,11 +337,13 @@ export class AuditCoreService implements OnModuleInit {
       return;
     }
 
-    this.logger.debug(`Processing ${this.pendingEvents.length} pending audit events`);
-    
+    this.logger.debug(
+      `Processing ${this.pendingEvents.length} pending audit events`,
+    );
+
     const events = [...this.pendingEvents];
     this.pendingEvents = [];
-    
+
     for (const event of events) {
       try {
         await this.processSyncEvent({ event });
@@ -323,7 +368,7 @@ export class AuditCoreService implements OnModuleInit {
           this.logger.debug('Event queued for processing after initialization');
           return;
         }
-        
+
         await this.processSyncEvent({ event });
       } catch (error) {
         this.logger.error(
@@ -362,7 +407,8 @@ export class AuditCoreService implements OnModuleInit {
     // Enriquece metadados para eventos de entidade
     if ('changedFields' in event && event.changedFields) {
       dto.metadata.changedFields = event.changedFields;
-      dto.metadata.sensitiveFieldsChanged = event.sensitiveFieldsChanged || false;
+      dto.metadata.sensitiveFieldsChanged =
+        event.sensitiveFieldsChanged || false;
     }
 
     // Enriquece metadados para eventos de dados sensíveis
@@ -400,7 +446,10 @@ export class AuditCoreService implements OnModuleInit {
   /**
    * Executa pós-processamento do evento
    */
-  private async executePostProcessing(event: AuditEvent, auditLog: LogAuditoria): Promise<void> {
+  private async executePostProcessing(
+    event: AuditEvent,
+    auditLog: LogAuditoria,
+  ): Promise<void> {
     // Emite evento de log criado
     this.eventEmitter.emit('audit.log.created', {
       logId: auditLog.id,
@@ -438,7 +487,10 @@ export class AuditCoreService implements OnModuleInit {
     }
 
     // Valida nível de risco
-    if (dto.nivel_risco && !Object.values(RiskLevel).includes(dto.nivel_risco)) {
+    if (
+      dto.nivel_risco &&
+      !Object.values(RiskLevel).includes(dto.nivel_risco)
+    ) {
       throw new Error(`Invalid nivel_risco: ${dto.nivel_risco}`);
     }
   }
@@ -494,7 +546,9 @@ export class AuditCoreService implements OnModuleInit {
   /**
    * Comprime dados de auditoria
    */
-  private async compressAuditData(dto: CreateAuditLogDto): Promise<CreateAuditLogDto> {
+  private async compressAuditData(
+    dto: CreateAuditLogDto,
+  ): Promise<CreateAuditLogDto> {
     // TODO: Implementar compressão real
     // Por enquanto, apenas marca como comprimido
     return {
@@ -510,7 +564,9 @@ export class AuditCoreService implements OnModuleInit {
   /**
    * Assina digitalmente os dados
    */
-  private async signAuditData(dto: CreateAuditLogDto): Promise<CreateAuditLogDto> {
+  private async signAuditData(
+    dto: CreateAuditLogDto,
+  ): Promise<CreateAuditLogDto> {
     // TODO: Implementar assinatura digital real
     // Por enquanto, apenas adiciona hash simulado
     const dataString = JSON.stringify(dto);
@@ -533,7 +589,7 @@ export class AuditCoreService implements OnModuleInit {
     let hash = 0;
     for (let i = 0; i < data.length; i++) {
       const char = data.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32bit integer
     }
     return Math.abs(hash).toString(16);

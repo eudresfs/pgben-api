@@ -104,7 +104,7 @@ export class HybridCacheService implements OnModuleInit {
         if (this.enableCacheWarming) {
           this.logger.log('Cache warming habilitado');
         }
-        
+
         // Registrar chaves críticas padrão
         this.registerCriticalKey('system:config', async () => {
           // Exemplo: carregar configurações do sistema

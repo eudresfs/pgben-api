@@ -38,18 +38,18 @@ import { InfoBancaria } from './info-bancaria.entity';
 @Index('idx_pagamento_status_created_at', ['status', 'created_at'])
 @Index('idx_pagamento_solicitacao_id', ['solicitacaoId'])
 @Index('idx_pagamento_concessao_id', ['concessaoId'])
-@Index('idx_pagamento_info_bancaria_id', ['infoBancariaId'], { 
-  where: 'info_bancaria_id IS NOT NULL' 
+@Index('idx_pagamento_info_bancaria_id', ['infoBancariaId'], {
+  where: 'info_bancaria_id IS NOT NULL',
 })
 @Index('idx_pagamento_liberado_por', ['liberadoPor'])
 @Index('idx_pagamento_data_liberacao', ['dataLiberacao'])
 @Index('idx_pagamento_status_data_liberacao', ['status', 'dataLiberacao'])
 @Index('idx_pagamento_metodo_pagamento', ['metodoPagamento'])
 @Index('idx_pagamento_valor_status', ['valor', 'status'], {
-  where: "status IN ('PROCESSADO', 'PAGO', 'LIBERADO')"
+  where: "status IN ('PROCESSADO', 'PAGO', 'LIBERADO')",
 })
 @Index('idx_pagamento_removed_at', ['removed_at'], {
-  where: 'removed_at IS NULL'
+  where: 'removed_at IS NULL',
 })
 @Index('idx_pagamento_liberado_por_created_at', ['liberadoPor', 'created_at'])
 export class Pagamento {
@@ -187,7 +187,7 @@ export class Pagamento {
   @IsOptional()
   @IsUUID('4', { message: 'ID do comprovante inválido' })
   comprovanteId: string;
-  
+
   /**
    * Número da parcela atual (para pagamentos com múltiplas parcelas)
    */
@@ -203,7 +203,7 @@ export class Pagamento {
   @IsNumber({}, { message: 'Total de parcelas deve ser um valor numérico' })
   @Min(1, { message: 'Total de parcelas deve ser maior ou igual a 1' })
   totalParcelas: number;
-  
+
   /**
    * Observações adicionais sobre o pagamento
    */
@@ -242,7 +242,7 @@ export class Pagamento {
 
   @ManyToOne(() => InfoBancaria)
   @JoinColumn({ name: 'info_bancaria_id' })
-  infoBancaria: InfoBancaria; 
+  infoBancaria: InfoBancaria;
 
   @ManyToOne(() => Usuario)
   @JoinColumn({ name: 'liberado_por' })
