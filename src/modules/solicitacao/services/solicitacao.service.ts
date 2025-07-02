@@ -159,6 +159,8 @@ export class SolicitacaoService {
         'solicitacao.data_abertura',
         'solicitacao.data_aprovacao',
         'solicitacao.observacoes',
+        'solicitacao.determinacao_judicial_flag',
+        'solicitacao.prioridade',
         // Dados básicos do beneficiário
         'beneficiario.id',
         'beneficiario.nome',
