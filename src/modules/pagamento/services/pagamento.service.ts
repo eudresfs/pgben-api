@@ -49,7 +49,7 @@ export class PagamentoService {
     const dadosNormalizados = normalizeEnumFields({
       ...createDto,
       status: StatusPagamentoEnum.PENDENTE,
-      criadoPor: usuarioId,
+      criado_por: usuarioId,
       created_at: new Date(),
       updated_at: new Date(),
     });
@@ -251,7 +251,7 @@ export class PagamentoService {
 
     // Determinar quantidade de parcelas
     let quantidadeParcelas = 1;
-    let valorParcela = solicitacao.valor_solicitado || 0;
+    let valorParcela = tipoBeneficio.valor || 0;
 
     if (tipoBeneficio?.especificacoes?.permite_parcelamento) {
       // Para benefícios que permitem parcelamento
@@ -278,16 +278,22 @@ export class PagamentoService {
         solicitacao.dados_especificos.quantidade_cestas_solicitadas;
     }
 
-    // Calcular valor por parcela
-    if (quantidadeParcelas > 1) {
-      valorParcela = Number(
-        (solicitacao.valor_solicitado / quantidadeParcelas).toFixed(2),
-      );
-    }
+    // O valor do benefício já é o valor por parcela
+    // Garantir que o valor seja um número antes de usar toFixed
+    const valorBeneficio = Number(tipoBeneficio.valor) || 0;
+    valorParcela = Number(valorBeneficio.toFixed(2));
 
     // Gerar pagamentos
     for (let i = 1; i <= quantidadeParcelas; i++) {
-      const data_liberacao = new Date(concessao.data_inicio);
+      // Garantir que a data de início seja válida
+      const dataInicio = concessao.data_inicio ? new Date(concessao.data_inicio) : new Date();
+      
+      // Verificar se a data é válida
+      if (isNaN(dataInicio.getTime())) {
+        throw new Error(`Data de início da concessão inválida: ${concessao.data_inicio}`);
+      }
+      
+      const data_liberacao = new Date(dataInicio);
 
       // Para benefícios mensais, adicionar meses
       if (
@@ -302,7 +308,7 @@ export class PagamentoService {
       if (i === quantidadeParcelas && quantidadeParcelas > 1) {
         const totalCalculado = valorParcela * (quantidadeParcelas - 1);
         valorFinal = Number(
-          (solicitacao.valor_solicitado - totalCalculado).toFixed(2),
+          (valorBeneficio - totalCalculado).toFixed(2),
         );
       }
 
@@ -313,19 +319,20 @@ export class PagamentoService {
         data_liberacao: data_liberacao,
         metodo_pagamento: solicitacao.info_bancaria
           ? MetodoPagamentoEnum.PIX
-          : MetodoPagamentoEnum.PRESENCIAL,
+          : MetodoPagamentoEnum.DEPOSITO,
         info_bancaria_id: solicitacao.info_bancaria?.id || undefined,
         numero_parcela: i,
         total_parcelas: quantidadeParcelas,
         observacoes: `Pagamento ${i}/${quantidadeParcelas} - ${tipoBeneficio.nome}`,
       };
 
-      const pagamento = await this.create(dados_pagamento, usuarioId);
+      const user = usuarioId || solicitacao.liberador_id || solicitacao.tecnico_id;
+      const pagamento = await this.create(dados_pagamento, user);
       pagamentosGerados.push(pagamento);
     }
 
     this.logger.log(
-      `${quantidadeParcelas} pagamentos gerados para concessão ${concessao.id} - Total: R$ ${solicitacao.valor_solicitado}`,
+      `${quantidadeParcelas} pagamentos gerados para concessão ${concessao.id} - Total: R$ ${valorBeneficio}`,
     );
 
     return pagamentosGerados;

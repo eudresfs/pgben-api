@@ -515,7 +515,7 @@ export class ConcessaoService {
 
       const concessao = this.concessaoRepo.create({
         solicitacaoId: solicitacao.id,
-        status: StatusConcessao.ATIVO,
+        status: StatusConcessao.APTO,
         ordemPrioridade: solicitacao.prioridade ?? 3,
         determinacaoJudicialFlag: solicitacao.determinacao_judicial_flag,
         dataInicio,
@@ -530,7 +530,7 @@ export class ConcessaoService {
         await this.pagamentoService.gerarPagamentosParaConcessao(
           saved,
           solicitacao,
-          'system',
+          solicitacao.liberador_id,
         );
       } catch (pagamentoError) {
         this.logger.error(

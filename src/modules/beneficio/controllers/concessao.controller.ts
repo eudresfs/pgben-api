@@ -35,6 +35,8 @@ import { RequiresPermission } from '../../../auth/decorators/requires-permission
 import { GetUser } from '../../../auth/decorators/get-user.decorator';
 import { Usuario } from '../../../entities/usuario.entity';
 import { FiltroConcessaoDto } from '../dto/filtro-concessao.dto';
+import { ConcessaoListResponseDto } from '../dto/concessao-response.dto';
+import { PaginatedResponseDto, PaginationMetaDto } from '../../../shared/dtos/pagination.dto';
 import { AuditEventEmitter } from '../../auditoria/events/emitters/audit-event.emitter';
 import { AuditEventType } from '../../auditoria/events/types/audit-event.types';
 import { ReqContext } from '../../../shared/request-context/req-context.decorator';
@@ -136,99 +138,156 @@ export class ConcessaoController {
   }
 
   /**
-   * Lista todas as concessões cadastradas no sistema.
+   * Lista todas as concessões cadastradas no sistema com paginação.
    *
-   * Útil para auditoria, administração ou integração.
-   * Pode ser filtrada/futuramente paginada conforme necessidade.
+   * Endpoint paginado para listagem de concessões com filtros avançados.
+   * Suporta busca por múltiplos critérios e retorna dados estruturados com metadados de paginação.
    *
-   * @returns Lista de objetos de concessão.
+   * @param filtro Parâmetros de filtro e paginação
+   * @param usuario Usuário autenticado
+   * @returns Resposta paginada com lista de concessões e metadados
    */
   @Get()
   @RequiresPermission({ permissionName: 'concessao.listar' })
   @ApiOperation({
-    summary: 'Lista concessões',
+    summary: 'Lista concessões com paginação',
     description:
-      'Lista concessões com filtros opcionais por data, status, unidade, tipo de benefício, determinação judicial, prioridade e busca por nome/CPF/protocolo.',
+      'Lista concessões com filtros opcionais por data, status, unidade, tipo de benefício, determinação judicial, prioridade e busca por nome/CPF/protocolo. Suporta paginação via page/limit ou offset/limit.',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    description: 'Número da página (começa em 1). Se informado, sobrescreve o offset',
+    type: Number,
+    example: 1,
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Limite de registros por página (padrão: 100, máximo: 1000)',
+    type: Number,
+    example: 100,
+  })
+  @ApiQuery({
+    name: 'offset',
+    required: false,
+    description: 'Deslocamento para paginação (padrão: 0). Ignorado se page for informado',
+    type: Number,
+    example: 0,
   })
   @ApiQuery({
     name: 'dataInicioDe',
     required: false,
     description: 'Data de início mínima (YYYY-MM-DD)',
+    example: '2025-01-01',
   })
   @ApiQuery({
     name: 'dataInicioAte',
     required: false,
     description: 'Data de início máxima (YYYY-MM-DD)',
+    example: '2025-12-31',
   })
-  @ApiQuery({ name: 'status', required: false, enum: StatusConcessao })
+  @ApiQuery({ 
+    name: 'status', 
+    required: false, 
+    enum: StatusConcessao,
+    description: 'Status da concessão para filtrar'
+  })
   @ApiQuery({
     name: 'unidadeId',
     required: false,
-    description: 'UUID da unidade',
+    description: 'UUID da unidade para filtrar',
+    example: 'c9e1a5b2-4b7d-4a4b-8f5d-2a6b1e7a9c4e',
   })
   @ApiQuery({
     name: 'tipoBeneficioId',
     required: false,
-    description: 'UUID do tipo de benefício',
+    description: 'UUID do tipo de benefício para filtrar',
+    example: 'c9e1a5b2-4b7d-4a4b-8f5d-2a6b1e7a9c4e',
   })
   @ApiQuery({
     name: 'determinacaoJudicial',
     required: false,
-    description: 'Flag de determinação judicial',
+    description: 'Flag de determinação judicial (true/false)',
     type: Boolean,
+    example: false,
   })
   @ApiQuery({
     name: 'prioridade',
     required: false,
-    description: 'Prioridade (inteiro)',
+    description: 'Prioridade da concessão (1-5)',
+    type: Number,
+    example: 1,
   })
   @ApiQuery({
     name: 'search',
     required: false,
-    description: 'Busca por nome, CPF ou protocolo',
-  })
-  @ApiQuery({
-    name: 'limit',
-    required: false,
-    description: 'Limite de registros por página (padrão: 100)',
-    type: Number,
-  })
-  @ApiQuery({
-    name: 'offset',
-    required: false,
-    description: 'Deslocamento para paginação (padrão: 0)',
-    type: Number,
+    description: 'Busca textual por nome do beneficiário, CPF ou protocolo',
+    example: 'João Silva',
   })
   @ApiResponse({
     status: 200,
-    description: 'Lista de concessões com informações de paginação',
+    description: 'Lista paginada de concessões retornada com sucesso',
+    type: PaginatedResponseDto<ConcessaoListResponseDto>,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Parâmetros de filtro ou paginação inválidos',
     schema: {
       type: 'object',
       properties: {
-        data: { type: 'array', items: { type: 'object' } },
-        total: { type: 'number', description: 'Total de registros' },
-        limit: {
-          type: 'number',
-          description: 'Limite de registros por página',
-        },
-        offset: { type: 'number', description: 'Deslocamento atual' },
+        statusCode: { type: 'number', example: 400 },
+        message: { type: 'string', example: 'Data de início deve ser anterior à data final' },
+        error: { type: 'string', example: 'Bad Request' },
       },
     },
   })
   async listar(
     @Query() filtro: FiltroConcessaoDto,
     @GetUser() usuario: Usuario,
-  ) {
-    return this.concessaoService.findAll(filtro);
+  ): Promise<PaginatedResponseDto<ConcessaoListResponseDto>> {
+    const result = await this.concessaoService.findAll(filtro);
+    
+    // Calcular metadados de paginação seguindo o padrão do projeto
+    const page = filtro.page || Math.floor(result.offset / result.limit) + 1;
+    const totalPages = Math.ceil(result.total / result.limit);
+    const hasNext = page < totalPages;
+    const hasPrevious = page > 1;
+
+    // Criar metadados de paginação
+    const meta: PaginationMetaDto = {
+      page,
+      limit: result.limit,
+      total: result.total,
+      pages: totalPages,
+      hasNext,
+      hasPrev: hasPrevious,
+    };
+
+    // Mapear dados para o DTO de resposta
+    const items: ConcessaoListResponseDto[] = result.data.map((item) => ({
+      concessao_id: item.concessao_id,
+      data_inicio: item.data_inicio,
+      status: item.status,
+      prioridade: item.prioridade,
+      protocolo: item.protocolo,
+      determinacao_judicial: item.determinacao_judicial,
+      nome_beneficiario: item.nome_beneficiario,
+      cpf_beneficiario: item.cpf_beneficiario,
+      nome_beneficio: item.nome_beneficio,
+      nome_unidade: item.nome_unidade,
+    }));
+
+    return new PaginatedResponseDto(items, meta);
   }
 
   /**
    * Atualiza o status de uma concessão existente.
    *
-   * Permite transitar entre os estados do ciclo de vida da concessão: pendente, concedido, suspenso, bloqueado, encerrado.
+   * Permite transitar entre os estados do ciclo de vida da concessão: apto, ativo, suspenso, bloqueado, cessado, cancelado.
    *
    * @param id UUID da concessão
-   * @body Exemplo: { "status": "concedido" }
+   * @body Exemplo: { "status": "ativo" }
    * @returns Concessão atualizada.
    */
   @Patch(':id/status')

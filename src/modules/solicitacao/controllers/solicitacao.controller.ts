@@ -495,7 +495,7 @@ export class SolicitacaoController {
   }
 
   /**
-   * Avalia uma solicitação (aprovar/reprovar)
+   * Avalia uma solicitação (aprovar/indeferir)
    */
   @Put(':id/avaliar')
   @RequiresPermission({
@@ -509,11 +509,11 @@ export class SolicitacaoController {
     scopeIdExpression: 'solicitacao.unidadeId',
   })
   @RequiresPermission({
-    permissionName: 'solicitacao.status.transicao.EM_ANALISE.REJEITADA',
+    permissionName: 'solicitacao.status.transicao.EM_ANALISE.INDEFERIDA',
     scopeType: ScopeType.UNIT,
     scopeIdExpression: 'solicitacao.unidadeId',
   })
-  @ApiOperation({ summary: 'Avaliar solicitação (aprovar/reprovar)' })
+  @ApiOperation({ summary: 'Avaliar solicitação (aprovar/indeferir)' })
   @ApiBody({
     description: 'Dados da avaliação da solicitação',
     schema: {
@@ -544,9 +544,6 @@ export class SolicitacaoController {
       user,
     );
   }
-
-  // Método liberarBeneficio removido - no novo ciclo de vida simplificado,
-  // APROVADA é um status final e não há mais transição para LIBERADA
 
   /**
    * Cancela uma solicitação
