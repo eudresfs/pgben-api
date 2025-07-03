@@ -47,14 +47,10 @@ export class DadosCestaBasica {
   @Max(12, { message: 'Quantidade máxima é 12 cestas' })
   quantidade_cestas_solicitadas: number;
 
-  @Column({
-    type: 'enum',
-    enum: PeriodicidadeEnum,
-    enumName: 'periodo_concessao_cesta',
-  })
+  @Column()
   @IsNotEmpty({ message: 'Período de concessão é obrigatório' })
-  @IsEnum(PeriodicidadeEnum, { message: 'Período de concessão inválido' })
-  periodo_concessao: PeriodicidadeEnum;
+  @IsNumber()
+  quantidade_parcelas: number;
 
   @Column({
     type: 'enum',
@@ -136,47 +132,6 @@ export class DadosCestaBasica {
   }
 
   /**
-   * Calcula duração total do benefício em meses
-   */
-  calcularDuracaoTotalMeses(): number {
-    let multiplicador = 1;
-
-    switch (this.periodo_concessao) {
-      case PeriodicidadeEnum.MENSAL:
-        multiplicador = 1;
-        break;
-      case PeriodicidadeEnum.BIMESTRAL:
-        multiplicador = 2;
-        break;
-      case PeriodicidadeEnum.TRIMESTRAL:
-        multiplicador = 3;
-        break;
-      case PeriodicidadeEnum.SEMESTRAL:
-        multiplicador = 6;
-        break;
-      case PeriodicidadeEnum.UNICO:
-        multiplicador = 0; // Entrega única
-        break;
-    }
-
-    return multiplicador;
-  }
-
-  /**
-   * Calcula total de cestas que serão entregues no período
-   */
-  calcularTotalCestasNoPeriodo(): number {
-    const duracaoMeses = this.calcularDuracaoTotalMeses();
-
-    if (this.periodo_concessao === PeriodicidadeEnum.UNICO) {
-      return this.quantidade_cestas_solicitadas;
-    }
-
-    // Para períodos recorrentes, considera entrega mensal
-    return this.quantidade_cestas_solicitadas * duracaoMeses;
-  }
-
-  /**
    * Verifica se precisa de justificativa para quantidade
    */
   precisaJustificativaQuantidade(): boolean {
@@ -239,8 +194,8 @@ export class DadosCestaBasica {
       erros.push('Quantidade de cestas deve ser maior que zero');
     }
 
-    if (!this.periodo_concessao) {
-      erros.push('Período de concessão é obrigatório');
+    if (!this.quantidade_parcelas) {
+      erros.push('Quantidade de parcelas é obrigatório');
     }
 
     if (!this.origem_atendimento) {

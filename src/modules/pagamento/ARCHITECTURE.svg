@@ -1,0 +1,157 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <!-- Estilo do diagrama -->
+  <style>
+    .module { fill: #e6f7ff; stroke: #1890ff; stroke-width: 2; }
+    .service { fill: #f6ffed; stroke: #52c41a; stroke-width: 2; }
+    .strategy { fill: #fff7e6; stroke: #fa8c16; stroke-width: 2; }
+    .interface { fill: #f9f0ff; stroke: #722ed1; stroke-width: 2; }
+    .entity { fill: #fff1f0; stroke: #f5222d; stroke-width: 2; }
+    .shared { fill: #f0f5ff; stroke: #2f54eb; stroke-width: 2; }
+    .arrow { stroke: #8c8c8c; stroke-width: 1.5; }
+    .label { font-family: Arial; font-size: 12px; fill: #262626; }
+    .title { font-family: Arial; font-size: 14px; font-weight: bold; fill: #262626; }
+    .subtitle { font-family: Arial; font-size: 12px; font-style: italic; fill: #595959; }
+  </style>
+
+  <!-- Título do diagrama -->
+  <text x="400" y="30" text-anchor="middle" class="title" font-size="20">Arquitetura do Módulo de Pagamento</text>
+  <text x="400" y="50" text-anchor="middle" class="subtitle">Implementação do Strategy Pattern para Cálculo de Benefícios</text>
+
+  <!-- Módulo Principal -->
+  <rect x="300" y="80" width="200" height="60" rx="5" class="module" />
+  <text x="400" y="115" text-anchor="middle" class="title">PagamentoModule</text>
+
+  <!-- Serviços -->
+  <rect x="100" y="180" width="180" height="50" rx="5" class="service" />
+  <text x="190" y="210" text-anchor="middle" class="title">PagamentoService</text>
+
+  <rect x="310" y="180" width="180" height="50" rx="5" class="service" />
+  <text x="400" y="210" text-anchor="middle" class="title">PagamentoCalculatorService</text>
+
+  <rect x="520" y="180" width="180" height="50" rx="5" class="service" />
+  <text x="610" y="210" text-anchor="middle" class="title">BeneficioDataService</text>
+
+  <rect x="520" y="80" width="180" height="50" rx="5" class="shared" />
+  <text x="610" y="110" text-anchor="middle" class="title">FeriadoService (Shared)</text>
+
+  <!-- Interfaces -->
+  <rect x="310" y="260" width="180" height="50" rx="5" class="interface" />
+  <text x="400" y="290" text-anchor="middle" class="title">IBeneficioCalculationStrategy</text>
+
+  <rect x="520" y="260" width="180" height="50" rx="5" class="interface" />
+  <text x="610" y="290" text-anchor="middle" class="title">IBeneficioDataProvider</text>
+
+  <!-- Estratégias -->
+  <rect x="100" y="340" width="150" height="50" rx="5" class="strategy" />
+  <text x="175" y="370" text-anchor="middle" class="title">AluguelSocialStrategy</text>
+
+  <rect x="270" y="340" width="150" height="50" rx="5" class="strategy" />
+  <text x="345" y="370" text-anchor="middle" class="title">CestaBasicaStrategy</text>
+
+  <rect x="440" y="340" width="150" height="50" rx="5" class="strategy" />
+  <text x="515" y="370" text-anchor="middle" class="title">FuneralStrategy</text>
+
+  <rect x="610" y="340" width="150" height="50" rx="5" class="strategy" />
+  <text x="685" y="370" text-anchor="middle" class="title">NatalidadeStrategy</text>
+
+  <!-- Entidades -->
+  <rect x="100" y="420" width="150" height="50" rx="5" class="entity" />
+  <text x="175" y="450" text-anchor="middle" class="title">Pagamento</text>
+
+  <rect x="270" y="420" width="150" height="50" rx="5" class="entity" />
+  <text x="345" y="450" text-anchor="middle" class="title">Solicitacao</text>
+
+  <rect x="440" y="420" width="150" height="50" rx="5" class="entity" />
+  <text x="515" y="450" text-anchor="middle" class="title">TipoBeneficio</text>
+
+  <!-- Fluxo de Dados -->
+  <rect x="100" y="500" width="660" height="80" rx="5" fill="#fafafa" stroke="#d9d9d9" stroke-width="1" />
+  <text x="430" y="520" text-anchor="middle" class="title">Fluxo de Cálculo de Pagamento</text>
+  <text x="430" y="540" text-anchor="middle" class="label">Solicitação → PagamentoService → BeneficioDataService → PagamentoCalculatorService</text>
+  <text x="430" y="560" text-anchor="middle" class="label">→ Estratégia Específica → Cálculo de Parcelas → Resultado</text>
+
+  <!-- Conexões -->
+  <!-- Módulo para Serviços -->
+  <line x1="400" y1="140" x2="400" y2="180" class="arrow" marker-end="url(#arrowhead)" />
+  <line x1="350" y1="140" x2="190" y2="180" class="arrow" marker-end="url(#arrowhead)" />
+  <line x1="450" y1="140" x2="610" y2="180" class="arrow" marker-end="url(#arrowhead)" />
+
+  <!-- Serviço para Serviço -->
+  <line x1="280" y1="205" x2="310" y2="205" class="arrow" marker-end="url(#arrowhead)" />
+  <line x1="490" y1="205" x2="520" y2="205" class="arrow" marker-end="url(#arrowhead)" />
+
+  <!-- Serviço para Interface -->
+  <line x1="400" y1="230" x2="400" y2="260" class="arrow" marker-end="url(#arrowhead)" />
+  <line x1="610" y1="230" x2="610" y2="260" class="arrow" marker-end="url(#arrowhead)" />
+
+  <!-- Interface para Estratégias -->
+  <line x1="400" y1="310" x2="400" y2="325" class="arrow" />
+  <line x1="400" y1="325" x2="175" y2="325" class="arrow" />
+  <line x1="175" y1="325" x2="175" y2="340" class="arrow" marker-end="url(#arrowhead)" />
+
+  <line x1="400" y1="325" x2="345" y2="325" class="arrow" />
+  <line x1="345" y1="325" x2="345" y2="340" class="arrow" marker-end="url(#arrowhead)" />
+
+  <line x1="400" y1="325" x2="515" y2="325" class="arrow" />
+  <line x1="515" y1="325" x2="515" y2="340" class="arrow" marker-end="url(#arrowhead)" />
+
+  <line x1="400" y1="325" x2="685" y2="325" class="arrow" />
+  <line x1="685" y1="325" x2="685" y2="340" class="arrow" marker-end="url(#arrowhead)" />
+
+  <!-- Estratégias para FeriadoService -->
+  <line x1="175" y1="340" x2="175" y2="105" class="arrow" stroke-dasharray="4" />
+  <line x1="175" y1="105" x2="520" y2="105" class="arrow" stroke-dasharray="4" marker-end="url(#arrowhead)" />
+
+  <line x1="345" y1="340" x2="345" y2="95" class="arrow" stroke-dasharray="4" />
+  <line x1="345" y1="95" x2="520" y2="95" class="arrow" stroke-dasharray="4" marker-end="url(#arrowhead)" />
+
+  <line x1="515" y1="340" x2="515" y2="115" class="arrow" stroke-dasharray="4" />
+  <line x1="515" y1="115" x2="520" y2="115" class="arrow" stroke-dasharray="4" marker-end="url(#arrowhead)" />
+
+  <line x1="685" y1="340" x2="685" y2="125" class="arrow" stroke-dasharray="4" />
+  <line x1="685" y1="125" x2="520" y2="125" class="arrow" stroke-dasharray="4" marker-end="url(#arrowhead)" />
+
+  <!-- Serviço para Entidades -->
+  <line x1="190" y1="230" x2="190" y2="405" class="arrow" />
+  <line x1="190" y1="405" x2="175" y2="405" class="arrow" />
+  <line x1="175" y1="405" x2="175" y2="420" class="arrow" marker-end="url(#arrowhead)" />
+
+  <line x1="610" y1="230" x2="610" y2="405" class="arrow" />
+  <line x1="610" y1="405" x2="345" y2="405" class="arrow" />
+  <line x1="345" y1="405" x2="345" y2="420" class="arrow" marker-end="url(#arrowhead)" />
+
+  <line x1="610" y1="405" x2="515" y2="405" class="arrow" />
+  <line x1="515" y1="405" x2="515" y2="420" class="arrow" marker-end="url(#arrowhead)" />
+
+  <!-- Definição de marcadores -->
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#8c8c8c" />
+    </marker>
+  </defs>
+
+  <!-- Legenda -->
+  <rect x="650" y="500" width="15" height="15" class="module" />
+  <text x="670" y="512" class="label">Módulo</text>
+
+  <rect x="650" y="520" width="15" height="15" class="service" />
+  <text x="670" y="532" class="label">Serviço</text>
+
+  <rect x="650" y="540" width="15" height="15" class="strategy" />
+  <text x="670" y="552" class="label">Estratégia</text>
+
+  <rect x="650" y="560" width="15" height="15" class="interface" />
+  <text x="670" y="572" class="label">Interface</text>
+
+  <rect x="720" y="500" width="15" height="15" class="entity" />
+  <text x="740" y="512" class="label">Entidade</text>
+
+  <rect x="720" y="520" width="15" height="15" class="shared" />
+  <text x="740" y="532" class="label">Shared</text>
+
+  <line x1="720" y1="550" x2="735" y2="550" class="arrow" marker-end="url(#arrowhead)" />
+  <text x="740" y="552" class="label">Dependência</text>
+
+  <line x1="720" y1="570" x2="735" y2="570" class="arrow" stroke-dasharray="4" marker-end="url(#arrowhead)" />
+  <text x="740" y="572" class="label">Injeção</text>
+</svg>

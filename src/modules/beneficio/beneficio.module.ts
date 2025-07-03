@@ -86,8 +86,10 @@ import { ConfiguracaoRenovacaoRepository } from './repositories/configuracao-ren
       ),
     ), // Para WorkflowSolicitacaoService
     forwardRef(() =>
-      import('../pagamento/pagamento.module').then((m) => m.PagamentoModule),
-    ),
+      import('../pagamento/pagamento.module').then(
+        (m) => m.PagamentoModule,
+      ),
+    ), // Para PagamentoService usado pelo ConcessaoService
   ],
   controllers: [
     ConcessaoController,

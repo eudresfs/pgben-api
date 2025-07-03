@@ -59,6 +59,7 @@ export class PagamentoController {
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiResponse({ status: 200, description: 'Lista paginada de pagamentos' })
   async findAll(
+    @Query('search') search?: string,
     @Query('status') status?: StatusPagamentoEnum,
     @Query('solicitacao_id') solicitacao_id?: string,
     @Query('concessao_id') concessao_id?: string,
@@ -68,6 +69,7 @@ export class PagamentoController {
     @Query('limit') limit?: number,
   ) {
     const filtros = {
+      search,
       status,
       solicitacao_id: solicitacao_id,
       concessao_id: concessao_id,

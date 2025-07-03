@@ -50,16 +50,11 @@ export class DadosCestaBasicaService extends AbstractDadosBeneficioService<
     );
   }
 
-  // Métodos CRUD básicos herdados da classe base
-  // create(), findOne(), findBySolicitacao(), update(), remove(), existsBySolicitacao(), findAll()
-
-  // Métodos existsBySolicitacao() e findAll() herdados da classe base
-
   /**
-   * Buscar dados por período de concessão
+   * Buscar dados por quantidade de parcelas
    */
-  async findByPeriodoConcessao(
-    periodoConcessao: string,
+  async findByQuantidadeParcelas(
+    quantidadeParcelas: string,
     page: number = 1,
     limit: number = 10,
   ): Promise<{
@@ -69,7 +64,7 @@ export class DadosCestaBasicaService extends AbstractDadosBeneficioService<
     limit: number;
   }> {
     const [data, total] = await this.dadosCestaBasicaRepository.findAndCount({
-      where: { periodo_concessao: periodoConcessao as any },
+      where: { quantidade_parcelas: quantidadeParcelas as any },
       relations: ['solicitacao'],
       skip: (page - 1) * limit,
       take: limit,

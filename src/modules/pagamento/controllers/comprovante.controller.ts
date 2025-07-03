@@ -99,7 +99,7 @@ export class ComprovanteController {
     scopeType: TipoEscopo.UNIDADE,
   })
   async upload(
-    @Param('pagamento_id', ParseUUIDPipe) pagamentoId: string,
+    @Param('pagamento_id') pagamentoId: string,
     @UploadedFile() arquivo: Express.Multer.File,
     @Body() uploadDto: ComprovanteUploadDto,
     @GetUser() usuario: Usuario,

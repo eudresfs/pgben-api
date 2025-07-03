@@ -6,6 +6,7 @@ import {
   Between,
   LessThanOrEqual,
   IsNull,
+  Brackets,
 } from 'typeorm';
 import { Pagamento } from '../../../entities/pagamento.entity';
 import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
@@ -159,6 +160,7 @@ export class PagamentoRepository {
    * Retorna também o nome do benefício, unidade e usuário
    */
   async findWithFilters(filtros: {
+    search?: string;
     status?: StatusPagamentoEnum;
     solicitacao_id?: string;
     concessao_id?: string;
@@ -173,6 +175,7 @@ export class PagamentoRepository {
       .createQueryBuilder('pagamento')
       .leftJoinAndSelect('pagamento.solicitacao', 'solicitacao')
       .leftJoin('solicitacao.tipo_beneficio', 'tipo_beneficio')
+      .leftJoin('solicitacao.beneficiario', 'beneficiario')
       .leftJoin('solicitacao.unidade', 'unidade')
       .leftJoin('solicitacao.tecnico', 'tecnico')
       .leftJoin('pagamento.responsavel_liberacao', 'responsavel_liberacao')
@@ -181,6 +184,11 @@ export class PagamentoRepository {
         // Beneficio
         'tipo_beneficio.id',
         'tipo_beneficio.nome',
+        'tipo_beneficio.codigo',
+        // Beneficiário
+        'beneficiario.id',
+        'beneficiario.nome',
+        'beneficiario.cpf',
         // Unidade
         'unidade.id',
         'unidade.nome',
@@ -202,6 +210,28 @@ export class PagamentoRepository {
 
 
     // Aplicar filtros
+    if (filtros.search) {
+      queryBuilder.andWhere(
+        new Brackets((qb) => {
+          qb.where('LOWER(beneficiario.nome) LIKE LOWER(:search)', {
+            search: `%${filtros.search}%`,
+          })
+            .orWhere('beneficiario.cpf LIKE :searchExact', {
+              searchExact: `%${filtros.search}%`,
+            })
+            .orWhere('LOWER(solicitacao.protocolo) LIKE LOWER(:search)', {
+              search: `%${filtros.search}%`,
+            })
+            .orWhere('LOWER(tipo_beneficio.nome) LIKE LOWER(:search)', {
+              search: `%${filtros.search}%`,
+            })
+            .orWhere('LOWER(tipo_beneficio.codigo) LIKE LOWER(:search)', {
+              search: `%${filtros.search}%`,
+            });
+        }),
+      );
+    }
+
     if (filtros.status) {
       queryBuilder.andWhere('pagamento.status = :status', {
         status: filtros.status,

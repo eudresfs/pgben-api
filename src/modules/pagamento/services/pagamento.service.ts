@@ -13,6 +13,12 @@ import { PagamentoCreateDto } from '../dtos/pagamento-create.dto';
 import { PagamentoUpdateStatusDto } from '../dtos/pagamento-update-status.dto';
 import { normalizeEnumFields } from '../../../shared/utils/enum-normalizer.util';
 import { PagamentoValidationUtil } from '../utils/pagamento-validation.util';
+import { PagamentoCalculatorService } from './pagamento-calculator.service';
+import { 
+  DadosPagamento, 
+  ResultadoCalculoPagamento 
+} from '../interfaces/pagamento-calculator.interface';
+import { format } from 'date-fns';
 
 /**
  * Service simplificado para gerenciamento de pagamentos
@@ -22,7 +28,10 @@ import { PagamentoValidationUtil } from '../utils/pagamento-validation.util';
 export class PagamentoService {
   private readonly logger = new Logger(PagamentoService.name);
 
-  constructor(private readonly pagamentoRepository: PagamentoRepository) {}
+  constructor(
+    private readonly pagamentoRepository: PagamentoRepository,
+    private readonly pagamentoCalculatorService: PagamentoCalculatorService,
+  ) {}
 
   /**
    * Cria um novo pagamento
@@ -32,15 +41,6 @@ export class PagamentoService {
     usuarioId: string,
   ): Promise<Pagamento> {
     this.logger.log(`Criando pagamento`);
-
-    // Verificar se já existe pagamento para a solicitação
-    // const pagamentoExistente = await this.pagamentoRepository.existsBySolicitacao(
-    //   createDto.solicitacao_id
-    // );
-
-    // if (pagamentoExistente) {
-    //   throw new ConflictException('Já existe um pagamento para esta solicitação');
-    // }
 
     // Validar valor
     PagamentoValidationUtil.validarValor(createDto.valor);
@@ -78,6 +78,7 @@ export class PagamentoService {
    * Lista pagamentos com filtros
    */
   async findAll(filtros: {
+    search?: string;
     status?: StatusPagamentoEnum;
     solicitacao_id?: string;
     concessao_id?: string;
@@ -236,8 +237,15 @@ export class PagamentoService {
     return await this.pagamentoRepository.getEstatisticas();
   }
 
+
+
   /**
    * Gera pagamentos para uma concessão baseado no tipo de benefício
+   * 
+   * Este método agora segue os princípios SOLID:
+   * - Single Responsibility: apenas orquestra a criação de pagamentos
+   * - Open/Closed: extensível via estratégias de cálculo
+   * - Dependency Inversion: depende de abstrações (PagamentoCalculatorService)
    */
   async gerarPagamentosParaConcessao(
     concessao: any,
@@ -246,95 +254,182 @@ export class PagamentoService {
   ): Promise<Pagamento[]> {
     this.logger.log(`Gerando pagamentos para concessão ${concessao.id}`);
 
-    const tipoBeneficio = solicitacao.tipo_beneficio;
+    try {
+      // 1. Validar e preparar dados de entrada
+      const dadosPagamento = this.prepararDadosPagamento(concessao, solicitacao);
+      
+      // 2. Calcular dados do pagamento usando o serviço especializado
+      const resultadoCalculo = await this.pagamentoCalculatorService.calcularPagamento(dadosPagamento);
+      
+      // 3. Gerar as entidades de pagamento
+      const pagamentosGerados = await this.criarPagamentos(
+        concessao,
+        solicitacao,
+        resultadoCalculo,
+        usuarioId
+      );
+
+      this.logger.log(
+        `${pagamentosGerados.length} pagamentos gerados para concessão ${concessao.id} - ` +
+        `Total: R$ ${dadosPagamento.valor.toFixed(2)}`
+      );
+
+      return pagamentosGerados;
+    } catch (error) {
+      this.logger.error(
+        `Erro ao gerar pagamentos para concessão ${concessao.id}:`,
+        error.message
+      );
+      throw new BadRequestException(
+        `Falha ao gerar pagamentos: ${error.message}`
+      );
+    }
+  }
+
+  /**
+   * Prepara e valida os dados necessários para o cálculo do pagamento
+   */
+  private prepararDadosPagamento(concessao: any, solicitacao: any): DadosPagamento {
+    // Validar data de início
+    const dataInicio = concessao.data_inicio ? new Date(concessao.data_inicio) : new Date();
+    if (isNaN(dataInicio.getTime())) {
+      throw new Error(`Data de início da concessão inválida: ${concessao.data_inicio}`);
+    }
+
+    // Validar valor do benefício
+    const valor = Number(solicitacao.tipo_beneficio?.valor) || 0;
+    if (valor < 0) {
+      throw new Error(`Valor do benefício inválido: ${solicitacao.tipo_beneficio?.valor}`);
+    }
+
+    // Validar tipo de benefício
+    const tipoBeneficio = solicitacao.tipo_beneficio?.codigo;
+    if (!tipoBeneficio) {
+      throw new Error('Tipo de benefício não informado');
+    }
+
+    return {
+      tipoBeneficio,
+      valor,
+      dataInicio,
+      dadosEspecificos: solicitacao.dados_especificos
+    };
+  }
+
+  /**
+   * Cria as entidades de pagamento baseadas no resultado do cálculo
+   */
+  private async criarPagamentos(
+    concessao: any,
+    solicitacao: any,
+    resultado: ResultadoCalculoPagamento,
+    usuarioId: string
+  ): Promise<Pagamento[]> {
     const pagamentosGerados: Pagamento[] = [];
+    const { quantidadeParcelas, valorParcela, dataLiberacao, dataVencimento, intervaloParcelas } = resultado;
 
-    // Determinar quantidade de parcelas
-    let quantidadeParcelas = 1;
-    let valorParcela = tipoBeneficio.valor || 0;
+    this.logger.log(
+      `Criando ${quantidadeParcelas} parcelas de R$ ${valorParcela.toFixed(2)} ` +
+      `para ${solicitacao.tipo_beneficio?.nome}`
+    );
 
-    if (tipoBeneficio?.especificacoes?.permite_parcelamento) {
-      // Para benefícios que permitem parcelamento
-      if (
-        solicitacao.quantidade_parcelas &&
-        solicitacao.quantidade_parcelas > 1
-      ) {
-        quantidadeParcelas = Math.min(
-          solicitacao.quantidade_parcelas,
-          tipoBeneficio.especificacoes.quantidade_maxima_parcelas || 12,
-        );
-      } else if (tipoBeneficio.especificacoes.duracao_maxima_meses) {
-        // Para benefícios como Aluguel Social (duração em meses)
-        quantidadeParcelas = tipoBeneficio.especificacoes.duracao_maxima_meses;
-      }
-    }
-
-    // Para Cesta Básica, usar quantidade específica
-    if (
-      tipoBeneficio?.codigo === 'cesta-basica' &&
-      solicitacao.dados_especificos?.quantidade_cestas_solicitadas
-    ) {
-      quantidadeParcelas =
-        solicitacao.dados_especificos.quantidade_cestas_solicitadas;
-    }
-
-    // O valor do benefício já é o valor por parcela
-    // Garantir que o valor seja um número antes de usar toFixed
-    const valorBeneficio = Number(tipoBeneficio.valor) || 0;
-    valorParcela = Number(valorBeneficio.toFixed(2));
-
-    // Gerar pagamentos
     for (let i = 1; i <= quantidadeParcelas; i++) {
-      // Garantir que a data de início seja válida
-      const dataInicio = concessao.data_inicio ? new Date(concessao.data_inicio) : new Date();
-      
-      // Verificar se a data é válida
-      if (isNaN(dataInicio.getTime())) {
-        throw new Error(`Data de início da concessão inválida: ${concessao.data_inicio}`);
-      }
-      
-      const data_liberacao = new Date(dataInicio);
-
-      // Para benefícios mensais, adicionar meses
-      if (
-        quantidadeParcelas > 1 &&
-        tipoBeneficio?.especificacoes?.duracao_maxima_meses
-      ) {
-        data_liberacao.setMonth(data_liberacao.getMonth() + (i - 1));
-      }
-
-      // Ajustar valor da última parcela para compensar arredondamentos
-      let valorFinal = valorParcela;
-      if (i === quantidadeParcelas && quantidadeParcelas > 1) {
-        const totalCalculado = valorParcela * (quantidadeParcelas - 1);
-        valorFinal = Number(
-          (valorBeneficio - totalCalculado).toFixed(2),
-        );
-      }
-
-      const dados_pagamento = {
-        concessao_id: concessao.id,
-        solicitacao_id: solicitacao.id,
-        valor: valorFinal,
-        data_liberacao: data_liberacao,
-        metodo_pagamento: solicitacao.info_bancaria
-          ? MetodoPagamentoEnum.PIX
-          : MetodoPagamentoEnum.DEPOSITO,
-        info_bancaria_id: solicitacao.info_bancaria?.id || undefined,
-        numero_parcela: i,
-        total_parcelas: quantidadeParcelas,
-        observacoes: `Pagamento ${i}/${quantidadeParcelas} - ${tipoBeneficio.nome}`,
-      };
+      const dadosPagamento = this.calcularDadosParcela(
+        concessao,
+        solicitacao,
+        resultado,
+        i
+      );
 
       const user = usuarioId || solicitacao.liberador_id || solicitacao.tecnico_id;
-      const pagamento = await this.create(dados_pagamento, user);
+      const pagamento = await this.create(dadosPagamento, user);
       pagamentosGerados.push(pagamento);
     }
 
-    this.logger.log(
-      `${quantidadeParcelas} pagamentos gerados para concessão ${concessao.id} - Total: R$ ${valorBeneficio}`,
-    );
-
     return pagamentosGerados;
+  }
+
+  /**
+   * Calcula os dados específicos de uma parcela
+   */
+  private calcularDadosParcela(
+    concessao: any,
+    solicitacao: any,
+    resultado: ResultadoCalculoPagamento,
+    numeroParcela: number
+  ): any {
+    const { quantidadeParcelas, valorParcela, dataLiberacao, dataVencimento, intervaloParcelas } = resultado;
+    
+    // Calcular datas da parcela
+    const dataLiberacaoParcela = this.calcularDataParcela(dataLiberacao, numeroParcela - 1, intervaloParcelas);
+    const dataVencimentoParcela = this.calcularDataParcela(dataVencimento, numeroParcela - 1, intervaloParcelas);
+    
+    // Ajustar valor da última parcela para compensar arredondamentos
+    let valorFinal = valorParcela;
+    if (numeroParcela === quantidadeParcelas && quantidadeParcelas > 1) {
+      const totalCalculado = valorParcela * (quantidadeParcelas - 1);
+      // Usar o valor total correto baseado no cálculo das parcelas
+      const valorTotalCalculado = valorParcela * quantidadeParcelas;
+      valorFinal = Number((valorTotalCalculado - totalCalculado).toFixed(2));
+      
+      // Garantir que o valor final seja sempre positivo
+      if (valorFinal <= 0) {
+        this.logger.warn(
+          `Valor da última parcela calculado como ${valorFinal}, usando valor da parcela padrão: ${valorParcela}`
+        );
+        valorFinal = valorParcela;
+      }
+    }
+
+    return {
+      concessao_id: concessao.id,
+      solicitacao_id: solicitacao.id,
+      valor: valorFinal,
+      data_liberacao: dataLiberacaoParcela,
+      data_vencimento: dataVencimentoParcela,
+      metodo_pagamento: solicitacao.info_bancaria
+        ? MetodoPagamentoEnum.PIX
+        : MetodoPagamentoEnum.DEPOSITO,
+      info_bancaria_id: solicitacao.info_bancaria?.id || undefined,
+      numero_parcela: numeroParcela,
+      total_parcelas: quantidadeParcelas,
+      observacoes: this.gerarObservacoesParcela(
+        numeroParcela,
+        quantidadeParcelas,
+        solicitacao.tipo_beneficio?.nome,
+        dataLiberacaoParcela,
+        dataVencimentoParcela
+      ),
+    };
+  }
+
+  /**
+   * Calcula a data de uma parcela específica
+   */
+  private calcularDataParcela(dataBase: Date, indiceParcela: number, intervaloDias: number): Date {
+    if (intervaloDias === 0 || indiceParcela === 0) {
+      return new Date(dataBase);
+    }
+    
+    const novaData = new Date(dataBase);
+    novaData.setDate(novaData.getDate() + (indiceParcela * intervaloDias));
+    return novaData;
+  }
+
+  /**
+   * Gera observações padronizadas para uma parcela
+   */
+  private gerarObservacoesParcela(
+    numeroParcela: number,
+    totalParcelas: number,
+    nomeBeneficio: string,
+    dataLiberacao: Date,
+    dataVencimento: Date
+  ): string {
+    return (
+      `Pagamento ${numeroParcela}/${totalParcelas} - ${nomeBeneficio} - ` +
+      `Liberação: ${format(dataLiberacao, 'dd/MM/yyyy')} - ` +
+      `Vencimento: ${format(dataVencimento, 'dd/MM/yyyy')}`
+    );
   }
 }

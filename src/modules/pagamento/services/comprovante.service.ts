@@ -9,6 +9,7 @@ import { PagamentoRepository } from '../repositories/pagamento.repository';
 import { ComprovantePagamento } from '../../../entities/comprovante-pagamento.entity';
 import { StorageService } from '../../../shared/services/storage.service';
 import { PagamentoValidationUtil } from '../utils/pagamento-validation.util';
+import { StatusPagamentoEnum } from '@/enums';
 
 /**
  * Service simplificado para gerenciamento de comprovantes
@@ -31,7 +32,7 @@ export class ComprovanteService {
     private readonly comprovanteRepository: ComprovanteRepository,
     private readonly pagamentoRepository: PagamentoRepository,
     private readonly storageService: StorageService,
-  ) {}
+  ) { }
 
   /**
    * Faz upload de um comprovante
@@ -62,7 +63,7 @@ export class ComprovanteService {
       );
     }
 
-    PagamentoValidationUtil.validarParaComprovante(pagamento);
+    // PagamentoValidationUtil.validarParaComprovante(pagamento);
 
     // Upload do arquivo (reutilizando pagamento já buscado)
     const { url, nomeArquivo } = await this.storageService.upload(
@@ -80,6 +81,14 @@ export class ComprovanteService {
       mime_type: file.mimetype,
       uploaded_por: usuarioId,
       data_upload: new Date(),
+    });
+
+    // Update payment with proof of payment details
+    await this.pagamentoRepository.update(pagamento.id, {
+      comprovante_id: comprovante.id,
+      data_pagamento: new Date(), 
+      data_conclusao: new Date(),
+      status: StatusPagamentoEnum.CONFIRMADO
     });
 
     this.logger.log(`Comprovante ${comprovante.id} criado com sucesso`);

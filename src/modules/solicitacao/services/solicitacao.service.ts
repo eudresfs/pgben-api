@@ -32,6 +32,7 @@ import {
   In,
   DataSource,
   SelectQueryBuilder,
+  Brackets,
 } from 'typeorm';
 import {
   Solicitacao,
@@ -57,6 +58,7 @@ import { CidadaoService } from '../../cidadao/services/cidadao.service';
 import { Logger } from '@nestjs/common';
 
 interface FindAllOptions {
+  search?: string;
   page?: number;
   limit?: number;
   status?: StatusSolicitacao;
@@ -175,6 +177,7 @@ export class SolicitacaoService {
         // Dados básicos do beneficiário
         'beneficiario.id',
         'beneficiario.nome',
+        'beneficiario.cpf',
         // Dados básicos do benefício
         'tipo_beneficio.id',
         'tipo_beneficio.nome',
@@ -186,6 +189,29 @@ export class SolicitacaoService {
         'unidade.id',
         'unidade.nome',
       ]);
+
+    // Aplicar filtro de busca se fornecido
+    if (options.search) {
+      queryBuilder.andWhere(
+        new Brackets((qb) => {
+          qb.where('LOWER(beneficiario.nome) LIKE LOWER(:search)', {
+            search: `%${options.search}%`,
+          })
+            .orWhere('beneficiario.cpf LIKE :searchExact', {
+              searchExact: `%${options.search}%`,
+            })
+            .orWhere('LOWER(solicitacao.protocolo) LIKE LOWER(:search)', {
+              search: `%${options.search}%`,
+            })
+            .orWhere('LOWER(tipo_beneficio.nome) LIKE LOWER(:search)', {
+              search: `%${options.search}%`,
+            })
+            .orWhere('LOWER(tipo_beneficio.codigo) LIKE LOWER(:search)', {
+              search: `%${options.search}%`,
+            });
+        }),
+      );
+    }
 
     this.applyFilters(queryBuilder, {
       status: options.status,

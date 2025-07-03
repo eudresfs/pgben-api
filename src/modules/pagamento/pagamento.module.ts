@@ -1,6 +1,7 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { BullModule } from '@nestjs/bull';
+import { HttpModule } from '@nestjs/axios';
 import { LoggingService } from '../../shared/logging/logging.service';
 import { StorageService } from '../../shared/services/storage.service';
 
@@ -10,6 +11,8 @@ import {
   ComprovantePagamento,
   ConfirmacaoRecebimento,
   LogAuditoria,
+  TipoBeneficio,
+  Solicitacao,
 } from '../../entities';
 
 // Controllers
@@ -31,6 +34,14 @@ import { PagamentoCacheService } from './services/pagamento-cache.service';
 import { PagamentoBatchService } from './services/pagamento-batch.service';
 import { PagamentoQueueService } from './services/pagamento-queue.service';
 import { PagamentoQueueProcessor } from './services/pagamento-queue.processor';
+
+// Serviços de cálculo e estratégias
+import { PagamentoCalculatorService } from './services/pagamento-calculator.service';
+import { BeneficioDataService } from './services/beneficio-data.service';
+import { AluguelSocialStrategy } from './strategies/aluguel-social.strategy';
+import { CestaBasicaStrategy } from './strategies/cesta-basica.strategy';
+import { FuneralStrategy } from './strategies/funeral.strategy';
+import { NatalidadeStrategy } from './strategies/natalidade.strategy';
 
 // Command/Query Handlers
 import {
@@ -81,6 +92,8 @@ import { CacheModule } from '../../shared/cache/cache.module';
       ComprovantePagamento,
       ConfirmacaoRecebimento,
       LogAuditoria,
+      TipoBeneficio,
+      Solicitacao,
     ]),
     // Configuração da fila BullMQ para pagamentos
     BullModule.registerQueue({
@@ -94,6 +107,10 @@ import { CacheModule } from '../../shared/cache/cache.module';
           delay: 2000,
         },
       },
+    }),
+    HttpModule.register({
+      timeout: 5000,
+      maxRedirects: 5,
     }),
     AuthModule,
     SharedModule,
@@ -129,6 +146,14 @@ import { CacheModule } from '../../shared/cache/cache.module';
     PagamentoBatchService,
     PagamentoQueueService,
     PagamentoQueueProcessor,
+
+    // Serviços de cálculo e estratégias
+    PagamentoCalculatorService,
+    BeneficioDataService,
+    AluguelSocialStrategy,
+    CestaBasicaStrategy,
+    FuneralStrategy,
+    NatalidadeStrategy,
 
     // Command/Query Handlers
     CreatePagamentoHandler,

@@ -5,6 +5,7 @@ import { PassportModule } from '@nestjs/passport';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { HttpModule } from '@nestjs/axios';
 
 import { configModuleOptions } from './configs/module-options';
 
@@ -27,6 +28,7 @@ import { CriptografiaService } from './services/criptografia.service';
 import { MinioService } from './services/minio.service';
 import { ChaveMonitorService } from './services/chave-monitor.service';
 import { HealthCheckService } from './services/health-check.service';
+import { FeriadoService } from './services/feriado.service';
 
 // Validators
 import {
@@ -38,6 +40,10 @@ import { IsCPF } from './validators/cpf.validator';
 @Module({
   imports: [
     ConfigModule.forRoot(configModuleOptions),
+    HttpModule.register({
+      timeout: 5000,
+      maxRedirects: 5,
+    }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -65,6 +71,7 @@ import { IsCPF } from './validators/cpf.validator';
     MinioService,
     ChaveMonitorService,
     HealthCheckService,
+    FeriadoService,
     // Validators
     IsCPF,
     IsEnumValueConstraint,
@@ -77,6 +84,7 @@ import { IsCPF } from './validators/cpf.validator';
     CriptografiaService,
     MinioService,
     HealthCheckService,
+    FeriadoService,
 
     // Validators
     IsCPF,

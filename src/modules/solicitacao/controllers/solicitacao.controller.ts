@@ -153,6 +153,7 @@ export class SolicitacaoController {
   })
   async findAll(
     @Req() req: Request,
+    @Query('search') search?: string,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('status') status?: StatusSolicitacao,
@@ -187,6 +188,7 @@ export class SolicitacaoController {
     }
 
     return this.solicitacaoService.findAll({
+      search,
       page: parsedPage,
       limit: parsedLimit,
       status,

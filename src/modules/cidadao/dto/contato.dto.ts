@@ -46,7 +46,8 @@ export class ContatoDto {
   })
   @IsBoolean()
   @ValidateIf((o) => o.telefone)
-  is_whatsapp?: boolean;
+  @IsOptional()
+  is_whatsapp: boolean = false;
 
   @ApiProperty({
     description: 'Indica se o proprietário do telefone possui smartphone',
