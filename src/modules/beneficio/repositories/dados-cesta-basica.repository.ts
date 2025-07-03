@@ -23,7 +23,7 @@ export class DadosCestaBasicaRepository extends Repository<DadosCestaBasica> {
       where: { solicitacao_id: solicitacaoId },
       relations: [
         'solicitacao',
-        'solicitacao.cidadao',
+        'solicitacao.beneficiario',
         'solicitacao.tipo_beneficio',
       ],
     });
@@ -302,7 +302,7 @@ export class DadosCestaBasicaRepository extends Repository<DadosCestaBasica> {
 
     return this.createQueryBuilder('dados')
       .leftJoin('dados.solicitacao', 'solicitacao')
-      .where('solicitacao.cidadao_id = :cidadaoId', { cidadaoId })
+      .where('solicitacao.beneficiario_id = :cidadaoId', { cidadaoId })
       .andWhere('solicitacao.created_at >= :dataLimite', { dataLimite })
       .orderBy('solicitacao.created_at', 'DESC')
       .getOne();

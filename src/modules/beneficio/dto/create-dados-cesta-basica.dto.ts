@@ -48,13 +48,24 @@ export class CreateDadosCestaBasicaDto {
   quantidade_cestas_solicitadas: number;
 
   @ApiProperty({
-    description: 'Período de concessão do benefício',
-    enum: PeriodicidadeEnum,
-    example: PeriodicidadeEnum.MENSAL,
+    description: 'Quantidade de parcelas solicitadas',
+    example: 2,
+    minimum: 1,
+    maximum: 3,
   })
-  @IsNotEmpty({ message: 'Período de concessão é obrigatório' })
-  @IsEnum(PeriodicidadeEnum, { message: 'Período de concessão inválido' })
-  periodo_concessao: PeriodicidadeEnum;
+  @IsOptional()
+  @IsNotEmpty({ message: 'Quantidade de parcelas é obrigatório' })
+  @IsNumber({}, { message: 'Quantidade de cestas deve ser um número' })
+  @Min(1, { message: 'Quantidade mínima é 1 cesta' })
+  @Max(12, { message: 'Quantidade máxima é 12 cestas' })
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      const num = parseInt(value, 10);
+      return isNaN(num) ? value : num;
+    }
+    return value;
+  })
+  quantidade_parcelas: number;
 
   @ApiProperty({
     description: 'Origem do atendimento que gerou a solicitação',
@@ -110,7 +121,7 @@ export class CreateDadosCestaBasicaDto {
       'Família acompanhada pelo PAIF devido a situação de vulnerabilidade.',
   })
   @IsOptional()
-  observacoes_especiais?: string;
+  observacoes?: string;
 
   @ApiPropertyOptional({
     description: 'Nome do técnico responsável pelo acompanhamento',

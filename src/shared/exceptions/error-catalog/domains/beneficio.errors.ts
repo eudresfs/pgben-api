@@ -471,25 +471,25 @@ export const BENEFICIO_ERRORS: Record<string, ErrorDefinition> = {
 
   BENEFICIO_VALIDATION_ERROR: {
     code: 'BENEFICIO_VALIDATION_ERROR',
-    message: 'Erro de validação de benefício',
+    message: '{message}',
     httpStatus: HttpStatus.BAD_REQUEST,
     category: ErrorCategory.VALIDATIONS,
     severity: ErrorSeverity.HIGH,
     localizedMessages: {
-      'pt-BR': 'Erro na validação dos dados do benefício',
-      'en-US': 'Benefit data validation error',
+      'pt-BR': '{message}',
+      'en-US': '{message}',
     },
   },
 
   BENEFICIO_BUSINESS_RULE_ERROR: {
     code: 'BENEFICIO_BUSINESS_RULE_ERROR',
-    message: 'Violação de regra de negócio',
+    message: '{message}',
     httpStatus: HttpStatus.UNPROCESSABLE_ENTITY,
     category: ErrorCategory.VALIDATIONS,
     severity: ErrorSeverity.HIGH,
     localizedMessages: {
-      'pt-BR': 'Violação de regra de negócio do benefício',
-      'en-US': 'Benefit business rule violation',
+      'pt-BR': '{message}',
+      'en-US': '{message}',
     },
   },
 };
@@ -766,14 +766,26 @@ export const throwBeneficioValidationError = (
   message: string,
   context?: BeneficioErrorContext,
 ): never => {
-  throw new AppError('BENEFICIO_VALIDATION_ERROR', context);
+  throw new AppError('BENEFICIO_VALIDATION_ERROR', {
+    ...context,
+    data: {
+      ...context?.data,
+      message,
+    },
+  });
 };
 
 export const throwBeneficioBusinessRuleError = (
   message: string,
   context?: BeneficioErrorContext,
 ): never => {
-  throw new AppError('BENEFICIO_BUSINESS_RULE_ERROR', context);
+  throw new AppError('BENEFICIO_BUSINESS_RULE_ERROR', {
+    ...context,
+    data: {
+      ...context?.data,
+      message,
+    },
+  });
 };
 
 /**

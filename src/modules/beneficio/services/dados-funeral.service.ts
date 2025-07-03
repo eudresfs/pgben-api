@@ -163,7 +163,7 @@ export class DadosFuneralService extends AbstractDadosBeneficioService<
       } else if (data.nome_completo_falecido.trim().length < 3) {
         errorBuilder.add(
           'nome_completo_falecido',
-          'Nome do falecido deve ter pelo menos 3 caracteres. Validação de tamanho falhou.',
+          'Nome do falecido deve ter pelo menos 3 caracteres.',
         );
       }
 
@@ -177,35 +177,37 @@ export class DadosFuneralService extends AbstractDadosBeneficioService<
       if (!data.local_obito?.trim()) {
         errorBuilder.add(
           'local_obito',
-          'Campo local_obito é obrigatório. Validação de campo obrigatório falhou.',
+          'Campo local_obito é obrigatório.',
         );
       }
 
       if (!data.grau_parentesco_requerente?.trim()) {
         errorBuilder.add(
           'grau_parentesco_requerente',
-          'Campo grau_parentesco_requerente é obrigatório. Validação de campo obrigatório falhou.',
+          'Campo grau_parentesco_requerente é obrigatório.',
         );
       }
 
       if (!data.tipo_urna_necessaria?.trim()) {
         errorBuilder.add(
           'tipo_urna_necessaria',
-          'Campo tipo_urna_necessaria é obrigatório. Validação de campo obrigatório falhou.',
+          'Campo tipo_urna_necessaria é obrigatório.',
         );
       }
 
-      if (!data.numero_certidao_obito?.trim()) {
+      // Validação de número da certidão (se fornecido)
+      if (data.numero_certidao_obito !== undefined && !data.numero_certidao_obito?.trim()) {
         errorBuilder.add(
           'numero_certidao_obito',
-          'Campo numero_certidao_obito é obrigatório. Validação de campo obrigatório falhou.',
+          'Número da certidão de óbito não pode estar vazio quando fornecido.',
         );
       }
 
-      if (!data.cartorio_emissor?.trim()) {
+      // Validação de cartório emissor (se fornecido)
+      if (data.cartorio_emissor !== undefined && !data.cartorio_emissor?.trim()) {
         errorBuilder.add(
           'cartorio_emissor',
-          'Campo cartorio_emissor é obrigatório. Validação de campo obrigatório falhou.',
+          'Cartório emissor não pode estar vazio quando fornecido.',
         );
       }
 
@@ -247,25 +249,28 @@ export class DadosFuneralService extends AbstractDadosBeneficioService<
         if (isNaN(dataAutorizacao.getTime())) {
           errorBuilder.add(
             'data_autorizacao',
-            'Data de autorização inválida. Validação de formato falhou.',
+            'Data de autorização inválida.',
           );
-        } else if (dataAutorizacao > new Date()) {
-          errorBuilder.add(
-            'data_autorizacao',
-            'Data de autorização não pode ser futura. Validação de data falhou.',
-          );
+        } else {
+          const hoje = new Date();
+          if (dataAutorizacao > hoje) {
+            errorBuilder.add(
+              'data_autorizacao',
+              'Data de autorização não pode ser futura.',
+            );
+          }
         }
       }
 
       // Validação de observações especiais (se fornecidas)
       if (
-        data.observacoes_especiais &&
-        data.observacoes_especiais.length >
+        data.observacoes &&
+        data.observacoes.length >
           BENEFICIO_CONSTANTS.VALIDATION.MAX_OBSERVACOES
       ) {
         errorBuilder.add(
-          'observacoes_especiais',
-          `Campo observacoes_especiais excede o limite máximo de ${BENEFICIO_CONSTANTS.VALIDATION.MAX_OBSERVACOES} caracteres. Validação de tamanho falhou.`,
+          'observacoes',
+          `Campo observacoes excede o limite máximo de ${BENEFICIO_CONSTANTS.VALIDATION.MAX_OBSERVACOES} caracteres. Validação de tamanho falhou.`,
         );
       }
 
@@ -424,11 +429,14 @@ export class DadosFuneralService extends AbstractDadosBeneficioService<
               'data_autorizacao',
               'Data de autorização inválida. Validação de formato falhou.',
             );
-          } else if (dataAutorizacao > new Date()) {
-            errorBuilder.add(
-              'data_autorizacao',
-              'Data de autorização não pode ser futura. Validação de data falhou.',
-            );
+          } else {
+            const hoje = new Date();
+            if (dataAutorizacao > hoje) {
+              errorBuilder.add(
+                'data_autorizacao',
+                'Data de autorização não pode ser futura. Validação de regra de negócio falhou.',
+              );
+            }
           }
         }
       }

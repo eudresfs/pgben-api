@@ -873,7 +873,7 @@ export class ConcessaoService {
   ): Promise<Concessao> {
     const concessao = await this.concessaoRepo.findOne({
       where: { id: concessaoId },
-      relations: ['solicitacao', 'solicitacao.cidadao'],
+      relations: ['solicitacao', 'solicitacao.beneficiario'],
     });
 
     if (!concessao) {

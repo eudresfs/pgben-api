@@ -208,10 +208,12 @@ export class DadosCestaBasicaService extends AbstractDadosBeneficioService<
         );
       }
 
-      if (!data.periodo_concessao?.trim()) {
+      if (!data.quantidade_parcelas || 
+        data.quantidade_parcelas <= 0
+      ) {
         errorBuilder.add(
-          'periodo_concessao',
-          'Campo periodo_concessao é obrigatório. Validação de campo obrigatório falhou.',
+          'quantidade_parcelas',
+          'Campo quantidade_parcelas é obrigatório. Validação de campo obrigatório falhou.',
         );
       }
 
@@ -260,13 +262,13 @@ export class DadosCestaBasicaService extends AbstractDadosBeneficioService<
 
       // Validação de observações especiais (se fornecidas)
       if (
-        data.observacoes_especiais &&
-        data.observacoes_especiais.length >
+        data.observacoes &&
+        data.observacoes.length >
           BENEFICIO_CONSTANTS.VALIDATION.MAX_OBSERVACOES
       ) {
         errorBuilder.add(
-          'observacoes_especiais',
-          `Campo observacoes_especiais excede o limite máximo de ${BENEFICIO_CONSTANTS.VALIDATION.MAX_OBSERVACOES} caracteres. Validação de tamanho falhou.`,
+          'observacoes',
+          `Campo observacoes excede o limite máximo de ${BENEFICIO_CONSTANTS.VALIDATION.MAX_OBSERVACOES} caracteres. Validação de tamanho falhou.`,
         );
       }
 

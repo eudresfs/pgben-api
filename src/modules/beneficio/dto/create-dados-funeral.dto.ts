@@ -83,7 +83,7 @@ export class CreateDadosFuneralDto {
     example: 'Família em situação de extrema vulnerabilidade social.',
   })
   @IsOptional()
-  observacoes_especiais?: string;
+  observacoes?: string;
 
   @ApiPropertyOptional({
     description: 'Número da certidão de óbito',
