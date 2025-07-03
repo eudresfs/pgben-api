@@ -8,11 +8,12 @@ import {
   MinLength,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ParentescoEnum, TipoUrnaEnum } from '@/enums';
+import { ParentescoEnum, TipoUrnaEnum, TransladoEnum } from '@/enums';
+import { EnderecoDto } from '@/shared/dtos/endereco.dto';
 import { ValidateTipoBeneficio } from '@/shared/validators/tipo-beneficio.validator';
 
 /**
- * DTO para criação de dados específicos do cidadão para Auxílio Funeral
+ * DTO para criação de dados específicos do cidadão para Benefício por Morte
  */
 export class CreateDadosFuneralDto {
   @ApiProperty({
@@ -86,11 +87,35 @@ export class CreateDadosFuneralDto {
   observacoes?: string;
 
   @ApiPropertyOptional({
-    description: 'Número da certidão de óbito',
+    description: 'Declaração de óbito',
     example: '123456789',
   })
   @IsOptional()
-  numero_certidao_obito?: string;
+  declaracao_obito?: string;
+
+  @ApiPropertyOptional({
+    description: 'Tipo de translado necessário',
+    enum: TransladoEnum,
+    example: TransladoEnum.SVO,
+    default: TransladoEnum.NAO_NECESSARIO,
+  })
+  @IsOptional()
+  @IsEnum(TransladoEnum, { message: 'Tipo de translado inválido' })
+  translado?: TransladoEnum;
+
+  @ApiPropertyOptional({
+    description: 'Endereço do local do velório',
+    type: EnderecoDto,
+  })
+  @IsOptional()
+  endereco_velorio?: EnderecoDto;
+
+  @ApiPropertyOptional({
+    description: 'Endereço do cemitério',
+    type: EnderecoDto,
+  })
+  @IsOptional()
+  endereco_cemiterio?: EnderecoDto;
 
   @ApiPropertyOptional({
     description: 'Cartório emissor da certidão de óbito',
@@ -163,14 +188,37 @@ export class UpdateDadosFuneralDto {
     example: 'Observações atualizadas após análise.',
   })
   @IsOptional()
-  observacoes_especiais?: string;
+  observacoes?: string;
 
   @ApiPropertyOptional({
-    description: 'Número da certidão de óbito',
+    description: 'Declaração de óbito',
     example: '123456789',
   })
   @IsOptional()
-  numero_certidao_obito?: string;
+  declaracao_obito?: string;
+
+  @ApiPropertyOptional({
+    description: 'Tipo de translado necessário',
+    enum: TransladoEnum,
+    example: TransladoEnum.SVO,
+  })
+  @IsOptional()
+  @IsEnum(TransladoEnum, { message: 'Tipo de translado inválido' })
+  translado?: TransladoEnum;
+
+  @ApiPropertyOptional({
+    description: 'Endereço do local do velório',
+    type: EnderecoDto,
+  })
+  @IsOptional()
+  endereco_velorio?: EnderecoDto;
+
+  @ApiPropertyOptional({
+    description: 'Endereço do cemitério',
+    type: EnderecoDto,
+  })
+  @IsOptional()
+  endereco_cemiterio?: EnderecoDto;
 
   @ApiPropertyOptional({
     description: 'Cartório emissor da certidão de óbito',

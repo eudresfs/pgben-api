@@ -23,8 +23,11 @@ import {
   BeneficioValidationErrorBuilder,
   BENEFICIO_TECH_MESSAGES,
 } from '../../../shared/exceptions/error-catalog/domains/beneficio.errors';
+import { TipoUrnaEnum } from '../../../enums/tipo-urna.enum';
+import { TransladoEnum } from '@/enums/translado.enum';
 import { BENEFICIO_CONSTANTS } from '../../../shared/constants/beneficio.constants';
 import { AppError } from '@/shared/exceptions';
+import { EnderecoDto } from '../../../shared/dtos/endereco.dto';
 
 /**
  * Serviço para gerenciar dados específicos de Auxílio Funeral
@@ -195,21 +198,21 @@ export class DadosFuneralService extends AbstractDadosBeneficioService<
         );
       }
 
-      // Validação de número da certidão (se fornecido)
-      if (data.numero_certidao_obito !== undefined && !data.numero_certidao_obito?.trim()) {
+      // Validação de declaração de óbito (se fornecida)
+      if (data.declaracao_obito !== undefined && !data.declaracao_obito?.trim()) {
         errorBuilder.add(
-          'numero_certidao_obito',
-          'Número da certidão de óbito não pode estar vazio quando fornecido.',
+          'declaracao_obito',
+          'Declaração de óbito não pode estar vazia quando fornecida.',
         );
       }
 
       // Validação de cartório emissor (se fornecido)
-      if (data.cartorio_emissor !== undefined && !data.cartorio_emissor?.trim()) {
-        errorBuilder.add(
-          'cartorio_emissor',
-          'Cartório emissor não pode estar vazio quando fornecido.',
-        );
-      }
+      // if (data.cartorio_emissor !== undefined && !data.cartorio_emissor?.trim()) {
+      //   errorBuilder.add(
+      //     'cartorio_emissor',
+      //     'Cartório emissor não pode estar vazio quando fornecido.',
+      //   );
+      // }
 
       // Validação de regras de negócio
       if (data.data_obito) {
@@ -270,7 +273,31 @@ export class DadosFuneralService extends AbstractDadosBeneficioService<
       ) {
         errorBuilder.add(
           'observacoes',
-          `Campo observacoes excede o limite máximo de ${BENEFICIO_CONSTANTS.VALIDATION.MAX_OBSERVACOES} caracteres. Validação de tamanho falhou.`,
+          `Campo observacoes excede o limite máximo de ${BENEFICIO_CONSTANTS.VALIDATION.MAX_OBSERVACOES} caracteres.`,
+        );
+      }
+
+      // Validação de translado (se fornecido)
+      if (data.translado && !Object.values(TransladoEnum).includes(data.translado)) {
+        errorBuilder.add(
+          'translado',
+          'Tipo de translado inválido.',
+        );
+      }
+
+      // Validação de endereço do velório (se fornecido)
+      if (data.endereco_velorio && !this.isValidEndereco(data.endereco_velorio)) {
+        errorBuilder.add(
+          'endereco_velorio',
+          'Endereço do velório incompleto ou inválido.',
+        );
+      }
+
+      // Validação de endereço do cemitério (se fornecido)
+      if (data.endereco_cemiterio && !this.isValidEndereco(data.endereco_cemiterio)) {
+        errorBuilder.add(
+          'endereco_cemiterio',
+          'Endereço do cemitério incompleto ou inválido.',
         );
       }
 
@@ -292,13 +319,13 @@ export class DadosFuneralService extends AbstractDadosBeneficioService<
       if (error instanceof AppError) {
         throw error;
       }
-      this.logger.error('Erro inesperado durante validação de funeral', {
+      this.logger.error('Erro inesperado durante validação do benefício por morte', {
         error: error.message,
         stack: error.stack,
         solicitacao_id: data.solicitacao_id,
       });
       throw new InternalServerErrorException(
-        'Erro interno durante validação dos dados de funeral',
+        'Erro interno durante validação dos dados do benefício por morte',
       );
     }
   }
@@ -319,12 +346,12 @@ export class DadosFuneralService extends AbstractDadosBeneficioService<
         if (!data.nome_completo_falecido?.trim()) {
           errorBuilder.add(
             'nome_completo_falecido',
-            'Nome do falecido não pode estar vazio quando fornecido. Validação de conteúdo falhou.',
+            'Nome do falecido não pode estar vazio quando fornecido.',
           );
         } else if (data.nome_completo_falecido.trim().length < 3) {
           errorBuilder.add(
             'nome_completo_falecido',
-            'Nome do falecido deve ter pelo menos 3 caracteres. Validação de tamanho falhou.',
+            'Nome do falecido deve ter pelo menos 3 caracteres.',
           );
         }
       }
@@ -334,7 +361,7 @@ export class DadosFuneralService extends AbstractDadosBeneficioService<
         if (!data.data_obito) {
           errorBuilder.add(
             'data_obito',
-            'Data de óbito não pode estar vazia quando fornecida. Validação de conteúdo falhou.',
+            'Data de óbito não pode estar vazia quando fornecida.',
           );
         } else {
           const hoje = new Date();
@@ -372,7 +399,7 @@ export class DadosFuneralService extends AbstractDadosBeneficioService<
       if (data.local_obito !== undefined && !data.local_obito?.trim()) {
         errorBuilder.add(
           'local_obito',
-          'Local do óbito não pode estar vazio quando fornecido. Validação de conteúdo falhou.',
+          'Local do óbito não pode estar vazio quando fornecido.',
         );
       }
 
@@ -383,7 +410,7 @@ export class DadosFuneralService extends AbstractDadosBeneficioService<
       ) {
         errorBuilder.add(
           'grau_parentesco_requerente',
-          'Grau de parentesco não pode estar vazio quando fornecido. Validação de conteúdo falhou.',
+          'Grau de parentesco não pode estar vazio quando fornecido.',
         );
       }
 
@@ -394,19 +421,47 @@ export class DadosFuneralService extends AbstractDadosBeneficioService<
       ) {
         errorBuilder.add(
           'tipo_urna_necessaria',
-          'Tipo de urna não pode estar vazio quando fornecido. Validação de conteúdo falhou.',
+          'Tipo de urna não pode estar vazio quando fornecido.',
         );
       }
 
-      // Validação de número da certidão (se fornecido)
+      // Validação de declaração de óbito (se fornecido)
       if (
-        data.numero_certidao_obito !== undefined &&
-        !data.numero_certidao_obito?.trim()
+        data.declaracao_obito !== undefined &&
+        !data.declaracao_obito?.trim()
       ) {
         errorBuilder.add(
-          'numero_certidao_obito',
-          'Número da certidão de óbito não pode estar vazio quando fornecido. Validação de conteúdo falhou.',
+          'declaracao_obito',
+          'Declaração de óbito não pode estar vazia quando fornecida.',
         );
+      }
+
+      // Validação de translado (se fornecido)
+      if (data.translado !== undefined && !Object.values(TransladoEnum).includes(data.translado)) {
+        errorBuilder.add(
+          'translado',
+          'Tipo de translado inválido.',
+        );
+      }
+
+      // Validação de endereço do velório (se fornecido)
+      if (data.endereco_velorio !== undefined) {
+        if (data.endereco_velorio && !this.isValidEndereco(data.endereco_velorio)) {
+          errorBuilder.add(
+            'endereco_velorio',
+            'Endereço do velório incompleto ou inválido.',
+          );
+        }
+      }
+
+      // Validação de endereço do cemitério (se fornecido)
+      if (data.endereco_cemiterio !== undefined) {
+        if (data.endereco_cemiterio && !this.isValidEndereco(data.endereco_cemiterio)) {
+          errorBuilder.add(
+            'endereco_cemiterio',
+            'Endereço do cemitério incompleto ou inválido.',
+          );
+        }
       }
 
       // Validação de cartório emissor (se fornecido)
@@ -416,7 +471,7 @@ export class DadosFuneralService extends AbstractDadosBeneficioService<
       ) {
         errorBuilder.add(
           'cartorio_emissor',
-          'Cartório emissor não pode estar vazio quando fornecido. Validação de conteúdo falhou.',
+          'Cartório emissor não pode estar vazio quando fornecido.',
         );
       }
 
@@ -427,14 +482,14 @@ export class DadosFuneralService extends AbstractDadosBeneficioService<
           if (isNaN(dataAutorizacao.getTime())) {
             errorBuilder.add(
               'data_autorizacao',
-              'Data de autorização inválida. Validação de formato falhou.',
+              'Data de autorização inválida.',
             );
           } else {
             const hoje = new Date();
             if (dataAutorizacao > hoje) {
               errorBuilder.add(
                 'data_autorizacao',
-                'Data de autorização não pode ser futura. Validação de regra de negócio falhou.',
+                'Data de autorização não pode ser futura.',
               );
             }
           }
@@ -443,14 +498,14 @@ export class DadosFuneralService extends AbstractDadosBeneficioService<
 
       // Validação de observações especiais (se fornecidas)
       if (
-        data.observacoes_especiais !== undefined &&
-        data.observacoes_especiais &&
-        data.observacoes_especiais.length >
+        data.observacoes !== undefined &&
+        data.observacoes &&
+        data.observacoes.length >
           BENEFICIO_CONSTANTS.VALIDATION.MAX_OBSERVACOES
       ) {
         errorBuilder.add(
-          'observacoes_especiais',
-          `Campo observacoes_especiais excede o limite máximo de ${BENEFICIO_CONSTANTS.VALIDATION.MAX_OBSERVACOES} caracteres. Validação de tamanho falhou.`,
+          'observacoes',
+          `Campo observacoes excede o limite máximo de ${BENEFICIO_CONSTANTS.VALIDATION.MAX_OBSERVACOES} caracteres.`,
         );
       }
 
@@ -460,7 +515,7 @@ export class DadosFuneralService extends AbstractDadosBeneficioService<
         throw error;
       }
       this.logger.error(
-        'Erro inesperado durante validação de atualização de funeral',
+        'Erro inesperado durante validação de atualização do benefício por morte.',
         {
           error: error.message,
           stack: error.stack,
@@ -468,8 +523,24 @@ export class DadosFuneralService extends AbstractDadosBeneficioService<
         },
       );
       throw new InternalServerErrorException(
-        'Erro interno durante validação dos dados de funeral',
+        'Erro interno durante validação dos dados do benefício por morte',
       );
     }
+  }
+
+  /**
+   * Validar estrutura de endereço
+   */
+  private isValidEndereco(endereco: EnderecoDto): boolean {
+    if (!endereco) return false;
+    
+    return !!(
+      endereco.logradouro?.trim() &&
+      endereco.numero?.trim() &&
+      endereco.bairro?.trim() &&
+      endereco.cidade?.trim() &&
+      endereco.estado?.trim() &&
+      endereco.cep?.trim()
+    );
   }
 }

@@ -356,7 +356,6 @@ export class DashboardService {
       percentual: number;
     }>;
   }> {
-    this.logger.log('Obtendo contagem de solicitações por status');
 
     try {
       // Obter total de solicitações
@@ -381,10 +380,6 @@ export class DashboardService {
               100
             : 0,
       }));
-
-      this.logger.log(
-        `Contagem obtida: ${total} solicitações em ${porStatus.length} status diferentes`,
-      );
 
       return {
         total,

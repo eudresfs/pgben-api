@@ -11,7 +11,7 @@ import {
 } from 'typeorm';
 import { IsNotEmpty, IsDateString, IsEnum, IsOptional } from 'class-validator';
 import { Solicitacao } from './solicitacao.entity';
-import { TipoUrnaEnum, ParentescoEnum } from '../enums';
+import { TipoUrnaEnum, ParentescoEnum, TransladoEnum } from '../enums';
 
 /**
  * Entidade para armazenar dados específicos do cidadão para Auxílio Funeral
@@ -75,11 +75,45 @@ export class DadosFuneral {
 
   @Column({ nullable: true })
   @IsOptional()
-  numero_certidao_obito?: string;
+  declaracao_obito?: string;
 
   @Column({ nullable: true })
   @IsOptional()
   cartorio_emissor?: string;
+
+  @Column({
+    type: 'enum',
+    enum: TransladoEnum,
+    enumName: 'translado_tipo',
+    nullable: true,
+  })
+  @IsOptional()
+  @IsEnum(TransladoEnum, { message: 'Tipo de translado inválido' })
+  translado?: TransladoEnum;
+
+  @Column('jsonb', { nullable: true })
+  @IsOptional()
+  endereco_velorio?: {
+    logradouro: string;
+    numero: string;
+    complemento?: string;
+    bairro: string;
+    cidade: string;
+    estado: string;
+    cep: string;
+  };
+
+  @Column('jsonb', { nullable: true })
+  @IsOptional()
+  endereco_cemiterio?: {
+    logradouro: string;
+    numero: string;
+    complemento?: string;
+    bairro: string;
+    cidade: string;
+    estado: string;
+    cep: string;
+  };
 
   @CreateDateColumn()
   created_at: Date;
