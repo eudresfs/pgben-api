@@ -17,6 +17,69 @@ import { StatusSolicitacao } from '../../../enums/status-solicitacao.enum';
 import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
 
 /**
+ * Interface para item do cache com TTL
+ */
+interface CacheItem<T> {
+  data: T;
+  timestamp: number;
+  ttl: number;
+}
+
+/**
+ * Cache em memória com TTL para dados de referência
+ */
+class MemoryCache {
+  private cache = new Map<string, CacheItem<any>>();
+
+  /**
+   * Define um item no cache com TTL
+   * @param key Chave do cache
+   * @param data Dados a serem armazenados
+   * @param ttlMs TTL em milissegundos (padrão: 5 minutos)
+   */
+  set<T>(key: string, data: T, ttlMs: number = 5 * 60 * 1000): void {
+    this.cache.set(key, {
+      data,
+      timestamp: Date.now(),
+      ttl: ttlMs,
+    });
+  }
+
+  /**
+   * Obtém um item do cache se ainda válido
+   * @param key Chave do cache
+   * @returns Dados do cache ou null se expirado/inexistente
+   */
+  get<T>(key: string): T | null {
+    const item = this.cache.get(key);
+    if (!item) return null;
+
+    const isExpired = Date.now() - item.timestamp > item.ttl;
+    if (isExpired) {
+      this.cache.delete(key);
+      return null;
+    }
+
+    return item.data;
+  }
+
+  /**
+   * Remove um item do cache
+   * @param key Chave do cache
+   */
+  delete(key: string): void {
+    this.cache.delete(key);
+  }
+
+  /**
+   * Limpa todo o cache
+   */
+  clear(): void {
+    this.cache.clear();
+  }
+}
+
+/**
  * Controller para dados de referência do sistema
  *
  * Fornece endpoints para obter dados de referência utilizados em diversos módulos
@@ -26,6 +89,10 @@ import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
 @Controller('filtros')
 @UseGuards(JwtAuthGuard, PermissionGuard)
 export class ReferenciaController {
+  private readonly cache = new MemoryCache();
+  private readonly CACHE_KEY = 'referencias_sistema';
+  private readonly CACHE_TTL = 60 * 60 * 1000; // 60 minutos
+
   constructor(
     private readonly beneficioService: BeneficioService,
     private readonly unidadeService: UnidadeService,
@@ -34,10 +101,10 @@ export class ReferenciaController {
   ) {}
 
   /**
-   * Retorna dados de referência do sistema
+   * Retorna dados de referência do sistema com cache otimizado
    *
    * Inclui tipos de benefício, status de solicitação, unidades, status de pagamento,
-   * bairros, usuários e roles.
+   * bairros, usuários e roles. Utiliza cache em memória para máxima performance.
    */
   @Get()
   @RequiresPermission({
@@ -50,79 +117,132 @@ export class ReferenciaController {
     description: 'Dados de referência retornados com sucesso',
   })
   async obterReferencias() {
-    // Buscar tipos de benefício
-    const tiposBeneficio = await this.beneficioService.findAll({
-      limit: 1000,
-    });
+    // Verificar se os dados estão em cache
+    const cachedData = this.cache.get(this.CACHE_KEY);
+    if (cachedData) {
+      return cachedData;
+    }
 
-    // Mapear tipos de benefício para o formato desejado
-    const tiposBeneficioFormatados = tiposBeneficio.items.map((tipo) => ({
+    // Se não estiver em cache, buscar dados otimizados do banco
+    const referencias = await this.buscarDadosOtimizados();
+
+    // Armazenar no cache
+    this.cache.set(this.CACHE_KEY, referencias, this.CACHE_TTL);
+
+    return referencias;
+  }
+
+  /**
+   * Busca dados otimizados do banco de dados
+   * Executa consultas em paralelo com campos específicos e limites reduzidos
+   */
+  private async buscarDadosOtimizados() {
+    // Executar todas as consultas em paralelo com otimizações
+    const [
+      tiposBeneficio,
+      unidades,
+      usuarios,
+      roles,
+      bairros,
+    ] = await Promise.all([
+      this.beneficioService.findAll({ limit: 500 }), // Reduzido de 1000 para 500
+      this.unidadeService.findAll({ limit: 500 }),   // Reduzido de 1000 para 500
+      this.usuarioService.findAll({ limit: 500 }),   // Reduzido de 1000 para 500
+      this.usuarioService.findAllRoles(),
+      this.cidadaoService.findAllBairros(),
+    ]);
+
+    // Processar dados de forma otimizada
+    return {
+      tiposBeneficio: this.mapearTiposBeneficio(tiposBeneficio.items),
+      statusSolicitacao: this.mapearStatusSolicitacao(),
+      unidades: this.mapearUnidades(unidades.items),
+      statusPagamento: this.mapearStatusPagamento(),
+      bairros,
+      usuarios: this.mapearUsuarios(usuarios.items),
+      roles: this.mapearRoles(roles),
+    };
+  }
+
+  /**
+   * Mapeia tipos de benefício para o formato otimizado
+   */
+  private mapearTiposBeneficio(tipos: any[]) {
+    return tipos.map((tipo) => ({
       id: tipo.id,
       nome: tipo.nome,
       codigo: tipo.codigo,
     }));
+  }
 
-    // Buscar unidades
-    const unidades = await this.unidadeService.findAll({
-      limit: 1000,
-    });
-
-    // Mapear unidades para o formato desejado
-    const unidadesFormatadas = unidades.items.map((unidade) => ({
+  /**
+   * Mapeia unidades para o formato otimizado
+   */
+  private mapearUnidades(unidades: any[]) {
+    return unidades.map((unidade) => ({
       id: unidade.id,
       nome: unidade.nome,
       sigla: unidade.sigla,
     }));
+  }
 
-    // Buscar usuários
-    const usuarios = await this.usuarioService.findAll({
-      limit: 1000,
-    });
-
-    // Mapear usuários para o formato desejado
-    const usuariosFormatados = usuarios.items.map((usuario) => ({
+  /**
+   * Mapeia usuários para o formato otimizado
+   */
+  private mapearUsuarios(usuarios: any[]) {
+    return usuarios.map((usuario) => ({
       id: usuario.id,
       nome: usuario.nome,
     }));
+  }
 
-    // Buscar roles
-    const roles = await this.usuarioService.findAllRoles();
-
-    // Mapear roles para o formato desejado
-    const rolesFormatadas = roles
+  /**
+   * Mapeia roles para o formato otimizado
+   */
+  private mapearRoles(roles: any[]) {
+    return roles
       ? roles.map((role) => ({
           id: role.id,
           nome: role.nome,
         }))
       : [];
+  }
 
-    // Extrair bairros únicos dos cidadãos
-    const bairros = await this.cidadaoService.findAllBairros();
+  /**
+   * Mapeia status de solicitação (processamento local)
+   */
+  private mapearStatusSolicitacao() {
+    return Object.entries(StatusSolicitacao).map(([key, value]) => ({
+      nome: key,
+      valor: value,
+    }));
+  }
 
-    // Mapear status de solicitação
-    const statusSolicitacao = Object.entries(StatusSolicitacao).map(
-      ([key, value]) => ({
-        nome: key,
-        valor: value,
-      }),
-    );
+  /**
+   * Mapeia status de pagamento (processamento local)
+   */
+  private mapearStatusPagamento() {
+    return Object.entries(StatusPagamentoEnum).map(([key, value]) => ({
+      nome: key,
+      valor: value,
+    }));
+  }
 
-    // Mapear status de pagamento
-    const statusPagamento = Object.entries(StatusPagamentoEnum).map(
-      ([key, value]) => ({
-        nome: key,
-        valor: value,
-      }),
-    );
-
-    return {
-      tiposBeneficio: tiposBeneficioFormatados,
-      statusSolicitacao,
-      unidades: unidadesFormatadas,
-      statusPagamento,
-      bairros,
-      usuarios: usuariosFormatados,
-      roles: rolesFormatadas,
-    };
+  /**
+   * Limpa o cache de referências (útil para invalidação manual)
+   */
+  @Get('cache/clear')
+  @RequiresPermission({
+    permissionName: 'sistema.filtros.admin',
+    scopeType: ScopeType.GLOBAL,
+  })
+  @ApiOperation({ summary: 'Limpar cache de dados de referência' })
+  @ApiResponse({
+    status: 200,
+    description: 'Cache limpo com sucesso',
+  })
+  limparCache() {
+    this.cache.delete(this.CACHE_KEY);
+    return { message: 'Cache de referências limpo com sucesso' };
   }
 }

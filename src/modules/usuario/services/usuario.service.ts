@@ -98,7 +98,6 @@ export class UsuarioService {
       // Enviar email direto usando o serviço de email
       await this.emailService.sendEmail({
         to: usuario.email,
-        subject: 'Credenciais de Acesso - Sistema PGBEN',
         template: 'usuario-credenciais-acesso',
         context: {
           nome: usuario.nome.split(' ')[0],
