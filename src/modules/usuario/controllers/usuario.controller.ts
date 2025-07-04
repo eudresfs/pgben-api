@@ -429,6 +429,57 @@ export class UsuarioController {
   }
 
   /**
+   * Reenvia credenciais de acesso para um usuário
+   */
+  @Post(':usuario_id/reenviar-credenciais')
+  @RequiresPermission({
+    permissionName: 'usuario.credenciais.reenviar',
+    scopeType: ScopeType.UNIT,
+    scopeIdExpression: 'usuario.unidade_id',
+  })
+  @ApiOperation({
+    summary: 'Reenviar credenciais de acesso',
+    description: 'Gera nova senha, atualiza no banco de dados e envia por email',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Credenciais reenviadas com sucesso',
+  })
+  @ApiResponse({ status: 400, description: 'Dados inválidos' })
+  @ApiResponse({ status: 404, description: 'Usuário não encontrado' })
+  async reenviarCredenciais(
+    @Param('usuario_id', ParseUUIDPipe) id: string,
+    @ReqContext() context: RequestContext,
+  ) {
+    // Buscar dados do usuário para auditoria
+    const userData = await this.usuarioService.findById(id);
+
+    const result = await this.usuarioService.reenviarCredenciais(id);
+
+    // Auditoria do reenvio de credenciais
+    await this.auditEventEmitter.emitEntityUpdated(
+      'Usuario',
+      id,
+      {
+        nome: userData.nome,
+        email: userData.email,
+        credenciaisReenviadas: false,
+      },
+      {
+        nome: userData.nome,
+        email: userData.email,
+        credenciaisReenviadas: true,
+      },
+      context.user?.id?.toString(),
+      {
+        synchronous: true,
+      },
+    );
+
+    return result;
+  }
+
+  /**
    * Solicita recuperação de senha
    */
   @Post('/recuperar-senha')

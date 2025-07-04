@@ -358,7 +358,6 @@ function setupGracefulShutdown(app: INestApplication): void {
 
   const shutdown = async (signal: string): Promise<void> => {
     if (isShuttingDown) {
-      logger.warn(`🔄 Shutdown já em andamento, ignorando sinal ${signal}`);
       return;
     }
 

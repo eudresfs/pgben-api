@@ -1003,6 +1003,85 @@ export class UsuarioService {
   }
 
   /**
+   * Reenvia credenciais de acesso para um usuário
+   * Gera nova senha, atualiza no banco e envia por email
+   * @param userId ID do usuário
+   * @returns Resultado da operação
+   */
+  async reenviarCredenciais(userId: string) {
+    this.logger.info(`Iniciando reenvio de credenciais para usuário: ${userId}`);
+    const startTime = Date.now();
+
+    try {
+      // ------------ Validações e leituras fora da transação ------------
+      // Buscar usuário pelo ID (versão completa para uso interno)
+      const usuario = await this.usuarioRepository.findById(userId);
+
+      if (!usuario) {
+        this.logger.warn(`Usuário não encontrado: ${userId}`);
+        throwUserNotFound(userId);
+      }
+
+      // Verificar se usuário está ativo
+      if (usuario.status !== Status.ATIVO) {
+        this.logger.warn(
+          `Tentativa de reenvio de credenciais para usuário inativo: ${userId}`,
+        );
+        throw new BadRequestException('Usuário deve estar ativo para reenvio de credenciais');
+      }
+
+      // Gerar nova senha
+      const novaSenha = this.generateRandomPassword();
+      const senhaHash = await bcrypt.hash(novaSenha, this.SALT_ROUNDS);
+
+      // ------------ Transação mínima (apenas UPDATE) ------------
+      await this.dataSource.transaction(async (manager) => {
+        const usuarioRepo = manager.getRepository(Usuario);
+
+        // Atualizar senha e marcar como primeiro acesso
+        await usuarioRepo.update(userId, {
+          senhaHash,
+          primeiro_acesso: true,
+          tentativas_login: 0,
+          updated_at: new Date(),
+        });
+      });
+
+      // ------------ Pós-transação: envio de email ------------
+      // Enviar credenciais por email
+      await this.enviarCredenciaisPorEmail(usuario, novaSenha);
+
+      const executionTime = Date.now() - startTime;
+      if (executionTime > 1000) {
+        // Alerta para operações que levam mais de 1 segundo
+        this.logger.warn(
+          `Reenvio de credenciais para usuário ${userId} levou ${executionTime}ms`,
+        );
+      }
+
+      this.logger.info(
+        `Credenciais reenviadas com sucesso para usuário: ${userId}`,
+      );
+
+      return {
+        data: null,
+        meta: null,
+        message: 'Credenciais reenviadas com sucesso. O usuário receberá um email com as novas credenciais.',
+      };
+    } catch (error) {
+      this.logger.error(
+        `Erro ao reenviar credenciais para usuário ${userId}: ${error.message}`,
+        error.stack,
+      );
+      if (error instanceof Error) {
+        throw error;
+      }
+      // Re-throw para garantir que o erro seja tratado adequadamente
+      throw new BadRequestException('Erro ao reenviar credenciais');
+    }
+  }
+
+  /**
    * Solicita recuperação de senha
    * @param email Email do usuário
    * @returns Resultado da operação
