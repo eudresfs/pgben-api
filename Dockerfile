@@ -71,6 +71,9 @@ RUN npm ci --omit=dev --no-audit --no-fund && \
 # Copy built application from build stage
 COPY --from=build --chown=nextjs:nodejs /app/dist ./dist
 
+# Copy templates directory for email service
+COPY --from=build --chown=nextjs:nodejs /app/src/templates ./templates
+
 # Copy docker entrypoint script
 COPY --chown=nextjs:nodejs docker-entrypoint.sh ./docker-entrypoint.sh
 RUN chmod +x ./docker-entrypoint.sh
