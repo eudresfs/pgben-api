@@ -510,9 +510,7 @@ export class NotificacaoService {
         case 'ALERTA':
           tipoNotificacao = TipoNotificacao.ALERTA;
           break;
-        case 'CONVERSAO_PAPEL':
-          tipoNotificacao = TipoNotificacao.ALERTA;
-          break;
+
         default:
           tipoNotificacao = TipoNotificacao.SISTEMA;
       }

@@ -81,21 +81,7 @@ export const VALIDACOES_CRITICAS_ERRORS: Record<string, ErrorDefinition> = {
     legalReference: 'Lei Municipal 7.205/2021',
   },
 
-  VAL_2004: {
-    code: 'VAL_2004',
-    message:
-      'Conflito de papéis: não pode ser beneficiário e membro familiar simultaneamente',
-    httpStatus: HttpStatus.CONFLICT,
-    category: ErrorCategory.VALIDATIONS,
-    severity: ErrorSeverity.CRITICAL,
-    localizedMessages: {
-      'pt-BR':
-        'Cidadão não pode ser beneficiário principal e membro da composição familiar simultaneamente',
-      'en-US':
-        'Citizen cannot be main beneficiary and family member simultaneously',
-    },
-    legalReference: 'Regra crítica do sistema - Exclusividade de papéis',
-  },
+
 
   VAL_2005: {
     code: 'VAL_2005',
@@ -200,49 +186,9 @@ export const VALIDACOES_CRITICAS_ERRORS: Record<string, ErrorDefinition> = {
 // HELPERS PARA VALIDAÇÕES CRÍTICAS
 // ========================================
 
-/**
- * Lança erro de conflito de papel - beneficiário ativo
- */
-export function throwConflitoPapelBeneficiario(
-  cpf: string,
-  context: ValidacoesCriticasErrorContext = {},
-  language: string = 'pt-BR',
-): never {
-  throw new AppError(
-    'VAL_2001',
-    {
-      ...context,
-      data: {
-        cpf,
-        ...context.data,
-      },
-    },
-    language,
-  );
-}
 
-/**
- * Lança erro de conflito de papel - composição familiar
- */
-export function throwConflitoPapelComposicao(
-  cpf: string,
-  beneficiarioOriginal: string,
-  context: ValidacoesCriticasErrorContext = {},
-  language: string = 'pt-BR',
-): never {
-  throw new AppError(
-    'VAL_2002',
-    {
-      ...context,
-      data: {
-        cpf,
-        beneficiarioOriginal,
-        ...context.data,
-      },
-    },
-    language,
-  );
-}
+
+
 
 /**
  * Lança erro de residência insuficiente
@@ -268,26 +214,7 @@ export function throwResidenciaInsuficiente(
   );
 }
 
-/**
- * Lança erro de conflito de papéis simultâneos
- */
-export function throwConflitoPapelSimultaneo(
-  cpf: string,
-  context: ValidacoesCriticasErrorContext = {},
-  language: string = 'pt-BR',
-): never {
-  throw new AppError(
-    'VAL_2004',
-    {
-      ...context,
-      data: {
-        cpf,
-        ...context.data,
-      },
-    },
-    language,
-  );
-}
+
 
 /**
  * Lança erro de renda familiar excedente

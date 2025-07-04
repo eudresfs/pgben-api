@@ -14,7 +14,6 @@ import { UpdateTipoBeneficioDto } from '../dto/update-tipo-beneficio.dto';
 import { CreateRequisitoDocumentoDto } from '../dto/create-requisito-documento.dto';
 import { Status, TipoDocumentoEnum } from '@/enums';
 import { TipoEtapa } from '../../../entities/fluxo-beneficio.entity';
-import { ConfigurarFluxoDto } from '../dto/configurar-fluxo.dto';
 import { Role as PerfilResponsavel } from '../../../enums/role.enum';
 import { normalizeEnumFields } from '../../../shared/utils/enum-normalizer.util';
 import { TipoBeneficioSchema } from '../../../entities/tipo-beneficio-schema.entity';
@@ -278,51 +277,5 @@ export class BeneficioService {
       message: 'Requisito removido com sucesso',
       requisitoId,
     };
-  }
-
-  /**
-   * Configura fluxo de aprovação de um benefício
-   */
-  async configurarFluxo(
-    beneficioId: string,
-    configurarFluxoDto: ConfigurarFluxoDto,
-  ) {
-    // Verificar se o benefício existe
-    const tipoBeneficio = await this.findById(beneficioId);
-
-    // Validar etapas do fluxo
-    if (!configurarFluxoDto.etapas || configurarFluxoDto.etapas.length === 0) {
-      throw new BadRequestException('O fluxo deve conter pelo menos uma etapa');
-    }
-
-    // Verificar se já existe um fluxo para este benefício
-    const fluxos = await this.fluxoBeneficioRepository.find({
-      where: { tipo_beneficio: { id: beneficioId } },
-      order: { ordem: 'ASC' },
-    });
-
-    // Remover fluxos existentes
-    if (fluxos && fluxos.length > 0) {
-      await this.fluxoBeneficioRepository.remove(fluxos);
-    }
-
-    // Criar novas etapas do fluxo
-    const novasEtapas = configurarFluxoDto.etapas.map((etapa, index) => {
-      return this.fluxoBeneficioRepository.create({
-        tipo_beneficio: tipoBeneficio,
-        nome_etapa: etapa.nome,
-        tipo_etapa: etapa.tipo_aprovador as unknown as TipoEtapa, // Converter o tipo de aprovador para tipo de etapa
-        perfil_responsavel:
-          etapa.tipo_aprovador as unknown as PerfilResponsavel, // Converter o tipo de aprovador para perfil responsável
-        ordem: etapa.ordem || index + 1,
-        descricao: etapa.descricao,
-        obrigatorio: true, // Valor padrão
-        permite_retorno: false, // Valor padrão
-        setor_id: etapa.prazo_dias ? etapa.prazo_dias.toString() : undefined, // Usar prazo_dias como setor_id temporário
-      });
-    });
-
-    // Salvar as novas etapas
-    return this.fluxoBeneficioRepository.save(novasEtapas);
   }
 }

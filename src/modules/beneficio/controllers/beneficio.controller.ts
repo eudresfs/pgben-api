@@ -23,7 +23,6 @@ import { BeneficioService } from '../services/beneficio.service';
 import { CreateTipoBeneficioDto } from '../dto/create-tipo-beneficio.dto';
 import { UpdateTipoBeneficioDto } from '../dto/update-tipo-beneficio.dto';
 import { CreateRequisitoDocumentoDto } from '../dto/create-requisito-documento.dto';
-import { ConfigurarFluxoDto } from '../dto/configurar-fluxo.dto';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../../../auth/guards/permission.guard';
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
@@ -356,44 +355,7 @@ export class BeneficioController {
 
     return result;
   }
-
-  /**
-   * Configura fluxo de aprovação de um benefício
-   */
-  @Put(':id/fluxo')
-  @RequiresPermission({
-    permissionName: 'beneficio.fluxo.configurar',
-    scopeType: ScopeType.GLOBAL,
-  })
-  @ApiOperation({ summary: 'Configurar fluxo de aprovação' })
-  @ApiResponse({ status: 200, description: 'Fluxo configurado com sucesso' })
-  @ApiResponse({ status: 400, description: 'Dados inválidos' })
-  @ApiResponse({ status: 404, description: 'Benefício não encontrado' })
-  async configurarFluxo(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() configurarFluxoDto: ConfigurarFluxoDto,
-    @GetUser() usuario: Usuario,
-    @ReqContext() ctx: any,
-  ) {
-    const result = await this.beneficioService.configurarFluxo(
-      id,
-      configurarFluxoDto,
-    );
-
-    // Auditoria: Configuração de fluxo de aprovação
-    await this.auditEventEmitter.emitEntityUpdated(
-      'TipoBeneficio',
-      id,
-      {},
-      {
-        action: 'configurar_fluxo',
-        fluxoAprovacao: configurarFluxoDto,
-      },
-      usuario.id,
-    );
-
-    return result;
-  }
+  
 
   @Delete(':id/requisitos/:requisitoId')
   @ApiOperation({ summary: 'Remove um requisito documental de um benefício' })

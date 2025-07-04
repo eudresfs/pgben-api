@@ -80,28 +80,6 @@ export class ComposicaoFamiliarService {
         excludeExtraneousValues: true,
       });
     } catch (error) {
-      // Capturar erro específico do constraint de exclusividade de papéis
-      if (
-        error.message?.includes(
-          'Cidadão não pode ser adicionado à composição familiar, pois já é beneficiário',
-        )
-      ) {
-        throw new ConflictException({
-          code: 'VAL_2004',
-          message:
-            'Conflito de papéis: O cidadão já possui papel de beneficiário ativo no sistema',
-          details: {
-            cpf: cpfLimpo,
-            reason:
-              'O cidadão já possui papel de beneficiário ativo no sistema',
-            action:
-              'Remova o papel de beneficiário antes de adicionar à composição familiar',
-          },
-          localizedMessage:
-            'Cidadão não pode ser beneficiário principal e membro da composição familiar simultaneamente',
-        });
-      }
-
       // Re-lançar outros erros não tratados
       throw error;
     }

@@ -223,10 +223,6 @@ const INTERNAL_ENDPOINTS_TO_REMOVE = [
   '/api/v1/judicial/determinacoes',
   '/api/v1/solicitacao/determinacao-judicial',
 
-  // Endpoints de verificação e conflitos internos
-  '/api/cidadao/verificacao-papel',
-  '/api/v1/cidadao/regra-conflito',
-  '/api/v1/cidadao/papel-conflito',
 
   // Endpoints de dados específicos de benefícios (internos)
   '/api/dados-funeral',

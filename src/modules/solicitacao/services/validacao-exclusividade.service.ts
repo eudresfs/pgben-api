@@ -37,7 +37,7 @@ export class ValidacaoExclusividadeService {
    */
   async validarExclusividadeBeneficiario(cidadaoId: string): Promise<boolean> {
     this.logger.log(
-      `Validando exclusividade de papel para cidadão ${cidadaoId}`,
+      `Validando exclusividade para cidadão ${cidadaoId}`,
     );
 
     // Verifica se o cidadão faz parte da composição familiar de alguma solicitação ativa

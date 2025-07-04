@@ -50,7 +50,7 @@ import { AvaliarSolicitacaoDto } from '../dto/avaliar-solicitacao.dto';
 import { VincularProcessoJudicialDto } from '../dto/vincular-processo-judicial.dto';
 import { normalizeEnumFields } from '../../../shared/utils/enum-normalizer.util';
 import { VincularDeterminacaoJudicialDto } from '../dto/vincular-determinacao-judicial.dto';
-import { ConverterPapelDto } from '../dto/converter-papel.dto';
+
 import { ProcessoJudicialRepository } from '../../judicial/repositories/processo-judicial.repository';
 import { ROLES } from '../../../shared/constants/roles.constants';
 import { ValidacaoExclusividadeService } from './validacao-exclusividade.service';
@@ -472,7 +472,7 @@ export class SolicitacaoService {
         );
       }
 
-      // Validar exclusividade de papel para o beneficiário
+      // Validar exclusividade para o beneficiário
       await this.validacaoExclusividadeService.validarExclusividadeBeneficiario(
         createSolicitacaoDto.beneficiario_id,
       );
@@ -1308,155 +1308,7 @@ export class SolicitacaoService {
     });
   }
 
-  /**
-   * Converte um cidadão da composição familiar para beneficiário principal de uma nova solicitação
-   * @param converterPapelDto Dados para conversão de papel
-   * @param user Usuário que está realizando a operação
-   * @returns Nova solicitação criada
-   */
-  async converterPapel(
-    converterPapelDto: ConverterPapelDto,
-    user: any,
-  ): Promise<Solicitacao> {
-    this.logger.log(
-      `Iniciando conversão de papel para cidadão ${converterPapelDto.cidadao_id}`,
-    );
 
-    return this.connection.transaction(async (manager) => {
-      try {
-        // Buscar a solicitação de origem
-        const solicitacaoOrigem = await this.findById(
-          converterPapelDto.solicitacao_origem_id,
-        );
-
-        if (!solicitacaoOrigem) {
-          throwSolicitacaoNotFound(converterPapelDto.solicitacao_origem_id, {
-            data: {
-              contexto: 'conversao_papel',
-            },
-          });
-        }
-
-        // Verificar se o cidadão está na composição familiar da solicitação
-        const composicaoFamiliar =
-          solicitacaoOrigem.dados_complementares?.composicao_familiar || [];
-        const membroIndex = composicaoFamiliar.findIndex(
-          (membro) => membro.cidadao_id === converterPapelDto.cidadao_id,
-        );
-
-        if (membroIndex === -1) {
-          throwCidadaoNotInComposicaoFamiliar(
-            converterPapelDto.cidadao_id,
-            converterPapelDto.solicitacao_origem_id,
-            {
-              data: {
-                contexto: 'conversao_papel',
-              },
-            },
-          );
-        }
-
-        // Obter o membro e remover da composição familiar
-        const membro = { ...composicaoFamiliar[membroIndex] };
-        composicaoFamiliar.splice(membroIndex, 1);
-
-        // Atualizar a solicitação de origem com a nova composição familiar
-        solicitacaoOrigem.dados_complementares = {
-          ...solicitacaoOrigem.dados_complementares,
-          composicao_familiar: composicaoFamiliar,
-        };
-
-        await manager.save(solicitacaoOrigem);
-
-        // Criar uma nova solicitação com o cidadão como beneficiário principal
-        const novaSolicitacao = new Solicitacao();
-        novaSolicitacao.beneficiario_id = converterPapelDto.cidadao_id;
-        novaSolicitacao.tipo_beneficio_id = converterPapelDto.tipo_beneficio_id;
-        novaSolicitacao.unidade_id = converterPapelDto.unidade_id;
-        novaSolicitacao.tecnico_id = user.id;
-        novaSolicitacao.status = StatusSolicitacao.RASCUNHO;
-        novaSolicitacao.data_abertura = new Date();
-        novaSolicitacao.solicitacao_original_id =
-          converterPapelDto.solicitacao_origem_id;
-        novaSolicitacao.dados_complementares =
-          converterPapelDto.dados_complementares || {};
-
-        // Adicionar observação sobre a conversão de papel
-        novaSolicitacao.observacoes = `Solicitação criada a partir da conversão de papel. Justificativa: ${converterPapelDto.justificativa}`;
-
-        await manager.save(novaSolicitacao);
-
-        // Registrar no histórico da solicitação de origem
-        const historicoOrigem = this.historicoRepository.create(
-          normalizeEnumFields({
-            solicitacao_id: solicitacaoOrigem.id,
-            status_anterior: solicitacaoOrigem.status,
-            status_atual: solicitacaoOrigem.status,
-            usuario_id: user.id,
-            observacao: `Cidadão removido da composição familiar para se tornar beneficiário principal em nova solicitação (${novaSolicitacao.protocolo})`,
-            dados_alterados: {
-              composicao_familiar: {
-                acao: 'remocao_membro',
-                cidadao_id: converterPapelDto.cidadao_id,
-                nova_solicitacao_id: novaSolicitacao.id,
-                nova_solicitacao_protocolo: novaSolicitacao.protocolo,
-              },
-            },
-            ip_usuario: user.ip || '0.0.0.0',
-          }),
-        );
-
-        await manager.save(historicoOrigem);
-
-        // Registrar no histórico da nova solicitação
-        const historicoNova = this.historicoRepository.create(
-          normalizeEnumFields({
-            solicitacao_id: novaSolicitacao.id,
-            status_anterior: StatusSolicitacao.RASCUNHO,
-            status_atual: StatusSolicitacao.RASCUNHO,
-            usuario_id: user.id,
-            observacao: `Solicitação criada a partir da conversão de papel do cidadão que estava na composição familiar da solicitação ${solicitacaoOrigem.protocolo}`,
-            dados_alterados: {
-              conversao_papel: {
-                solicitacao_origem_id: solicitacaoOrigem.id,
-                solicitacao_origem_protocolo: solicitacaoOrigem.protocolo,
-                justificativa: converterPapelDto.justificativa,
-              },
-            },
-            ip_usuario: user.ip || '0.0.0.0',
-          }),
-        );
-
-        await manager.save(historicoNova);
-
-        this.logger.log(
-          `Conversão de papel concluída com sucesso. Nova solicitação: ${novaSolicitacao.id}`,
-        );
-
-        return this.findById(novaSolicitacao.id);
-      } catch (error) {
-        // Se for um erro do catálogo, relançar
-        if (error.name === 'AppError') {
-          throw error;
-        }
-
-        this.logger.error(
-          `Erro ao converter papel do cidadão: ${error.message}`,
-          error.stack,
-        );
-        throwInternalError(
-          'Erro ao converter papel do cidadão para beneficiário principal',
-          {
-            data: {
-              cidadaoId: converterPapelDto.cidadao_id,
-              solicitacaoOrigemId: converterPapelDto.solicitacao_origem_id,
-              errorMessage: error.message,
-            },
-          },
-        );
-      }
-    });
-  }
 
   async desvincularDeterminacaoJudicial(
     solicitacaoId: string,

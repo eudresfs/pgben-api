@@ -3,7 +3,6 @@
  */
 
 export * from './tipo-beneficio.repository';
-export * from './campo-dinamico.repository';
 export * from './dados-natalidade.repository';
 export * from './dados-aluguel-social.repository';
 export * from './dados-funeral.repository';
