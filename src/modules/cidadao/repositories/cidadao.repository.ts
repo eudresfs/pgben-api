@@ -194,7 +194,6 @@ export class CidadaoRepository {
            AND e.bairro <> '' 
            AND TRIM(e.bairro) <> ''
            AND c.removed_at IS NULL
-           AND e.removed_at IS NULL
          ORDER BY e.bairro ASC`,
       );
 
