@@ -164,8 +164,8 @@ export class PagamentoRepository {
     status?: StatusPagamentoEnum;
     solicitacao_id?: string;
     concessao_id?: string;
-    data_inicio?: Date;
-    data_fim?: Date;
+    data_inicio?: string;
+    data_fim?: string;
     valorMinimo?: number;
     valorMaximo?: number;
     page?: number;
@@ -252,7 +252,7 @@ export class PagamentoRepository {
 
     if (filtros.data_inicio && filtros.data_fim) {
       queryBuilder.andWhere(
-        'pagamento.created_at BETWEEN :data_inicio AND :data_fim',
+        'CAST(pagamento.created_at AS DATE) BETWEEN :data_inicio AND :data_fim',
         {
           data_inicio: filtros.data_inicio,
           data_fim: filtros.data_fim,

@@ -87,15 +87,9 @@ export class PagamentoService {
     page?: number;
     limit?: number;
   }) {
-    // Converter strings de data para Date objects
-    const filtrosProcessados = {
-      ...filtros,
-      data_inicio: filtros.data_inicio ? new Date(filtros.data_inicio) : undefined,
-      data_fim: filtros.data_fim ? new Date(filtros.data_fim) : undefined,
-    };
 
     const { items, total } =
-      await this.pagamentoRepository.findWithFilters(filtrosProcessados);
+      await this.pagamentoRepository.findWithFilters(filtros);
 
     const page = filtros.page || 1;
     const limit = filtros.limit || 10;
