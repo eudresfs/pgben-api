@@ -105,8 +105,8 @@ export class ConcessaoService {
       }
 
       // Validação de filtros de data
-      if (filtro.dataInicioDe && filtro.dataInicioAte) {
-        if (new Date(filtro.dataInicioDe) > new Date(filtro.dataInicioAte)) {
+      if (filtro.data_inicio && filtro.data_fim) {
+        if (new Date(filtro.data_inicio) > new Date(filtro.data_fim)) {
           throw new BadRequestException(
             'Data de início deve ser anterior à data final',
           );
@@ -138,30 +138,30 @@ export class ConcessaoService {
       }
 
       // Aplicar filtros de busca
-      if (filtro.dataInicioDe) {
-        qb.andWhere('concessao.dataInicio >= :dataInicioDe', {
-          dataInicioDe: filtro.dataInicioDe,
+      if (filtro.data_inicio) {
+        qb.andWhere('concessao.data_inicio >= :data_inicio', {
+          data_inicio: filtro.data_inicio,
         });
       }
-      if (filtro.dataInicioAte) {
-        qb.andWhere('concessao.dataInicio <= :dataInicioAte', {
-          dataInicioAte: filtro.dataInicioAte,
+      if (filtro.data_fim) {
+        qb.andWhere('concessao.data_inicio <= :data_fim', {
+          data_fim: filtro.data_fim,
         });
       }
       if (filtro.status) {
         qb.andWhere('concessao.status = :status', { status: filtro.status });
       }
-      if (filtro.unidadeId) {
-        qb.andWhere('unidade.id = :unidadeId', { unidadeId: filtro.unidadeId });
+      if (filtro.unidade_id) {
+        qb.andWhere('unidade.id = :unidade_id', { unidade_id: filtro.unidade_id });
       }
-      if (filtro.tipoBeneficioId) {
-        qb.andWhere('tipo_beneficio.id = :tipoBeneficioId', {
-          tipoBeneficioId: filtro.tipoBeneficioId,
+      if (filtro.tipo_beneficio_id) {
+        qb.andWhere('tipo_beneficio.id = :tipo_beneficio_id', {
+          tipo_beneficio_id: filtro.tipo_beneficio_id,
         });
       }
-      if (filtro.determinacaoJudicial !== undefined) {
+      if (filtro.determinacao_judicial !== undefined) {
         qb.andWhere('solicitacao.determinacao_judicial_flag = :dj', {
-          dj: filtro.determinacaoJudicial,
+          dj: filtro.determinacao_judicial,
         });
       }
       if (filtro.prioridade) {

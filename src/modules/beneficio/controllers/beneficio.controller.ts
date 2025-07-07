@@ -23,6 +23,7 @@ import { BeneficioService } from '../services/beneficio.service';
 import { CreateTipoBeneficioDto } from '../dto/create-tipo-beneficio.dto';
 import { UpdateTipoBeneficioDto } from '../dto/update-tipo-beneficio.dto';
 import { CreateRequisitoDocumentoDto } from '../dto/create-requisito-documento.dto';
+import { UpdateRequisitoDocumentoDto } from '../dto/update-requisito-documento.dto';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../../../auth/guards/permission.guard';
 import { RequiresPermission } from '../../../auth/decorators/requires-permission.decorator';
@@ -357,18 +358,74 @@ export class BeneficioController {
   }
   
 
+  @Put(':id/requisitos/:requisitoId')
+  @ApiOperation({
+    summary: 'Atualiza requisito documental',
+    description: 'Atualiza um requisito documental de um tipo de benefício',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'ID do tipo de benefício',
+    example: 'uuid-do-beneficio',
+  })
+  @ApiParam({
+    name: 'requisitoId',
+    description: 'ID do requisito documental',
+    example: 'uuid-do-requisito',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Requisito atualizado com sucesso',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Benefício ou requisito não encontrado',
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'Conflito - tipo de documento já existe para este benefício',
+  })
+  async updateRequisito(
+    @Param('id') id: string,
+    @Param('requisitoId') requisitoId: string,
+    @Body() updateRequisitoDocumentoDto: UpdateRequisitoDocumentoDto,
+  ) {
+    return this.beneficioService.updateRequisito(
+      id,
+      requisitoId,
+      updateRequisitoDocumentoDto,
+    );
+  }
+
   @Delete(':id/requisitos/:requisitoId')
-  @ApiOperation({ summary: 'Remove um requisito documental de um benefício' })
-  @ApiParam({ name: 'id', description: 'ID do benefício' })
-  @ApiParam({ name: 'requisitoId', description: 'ID do requisito documental' })
+  @ApiOperation({
+    summary: 'Remove requisito documental',
+    description: 'Remove um requisito documental de um tipo de benefício',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'ID do tipo de benefício',
+    example: 'uuid-do-beneficio',
+  })
+  @ApiParam({
+    name: 'requisitoId',
+    description: 'ID do requisito documental',
+    example: 'uuid-do-requisito',
+  })
   @ApiResponse({
     status: 200,
     description: 'Requisito removido com sucesso',
     schema: {
       type: 'object',
       properties: {
-        message: { type: 'string', example: 'Requisito removido com sucesso' },
-        requisitoId: { type: 'string', format: 'uuid' },
+        message: {
+          type: 'string',
+          example: 'Requisito removido com sucesso',
+        },
+        requisitoId: {
+          type: 'string',
+          example: 'uuid-do-requisito',
+        },
       },
     },
   })
@@ -381,5 +438,72 @@ export class BeneficioController {
     @Param('requisitoId') requisitoId: string,
   ) {
     return this.beneficioService.removeRequisito(id, requisitoId);
+  }
+
+  @Get(':id/requisitos/:requisitoId/template')
+  @ApiOperation({
+    summary: 'Obtém informações do template',
+    description: 'Retorna as informações do template de um requisito documental',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'ID do tipo de benefício',
+    example: 'uuid-do-beneficio',
+  })
+  @ApiParam({
+    name: 'requisitoId',
+    description: 'ID do requisito documental',
+    example: 'uuid-do-requisito',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Informações do template retornadas com sucesso',
+    schema: {
+      type: 'object',
+      properties: {
+        temTemplate: {
+          type: 'boolean',
+          example: true,
+        },
+        template_url: {
+          type: 'string',
+          example: 'https://storage.exemplo.com/templates/comprovante.pdf',
+        },
+        template_nome: {
+          type: 'string',
+          example: 'modelo-comprovante.pdf',
+        },
+        template_descricao: {
+          type: 'string',
+          example: 'Template padrão para comprovante de residência',
+        },
+        extensao: {
+          type: 'string',
+          example: 'pdf',
+        },
+        ehPdf: {
+          type: 'boolean',
+          example: true,
+        },
+        ehImagem: {
+          type: 'boolean',
+          example: false,
+        },
+        ehDocumentoOffice: {
+          type: 'boolean',
+          example: false,
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Benefício ou requisito não encontrado',
+  })
+  async getTemplateInfo(
+    @Param('id') id: string,
+    @Param('requisitoId') requisitoId: string,
+  ) {
+    return this.beneficioService.getTemplateInfo(id, requisitoId);
   }
 }

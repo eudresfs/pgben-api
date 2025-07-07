@@ -15,6 +15,9 @@ import { UsuarioService } from '../../usuario/services/usuario.service';
 import { CidadaoService } from '../../cidadao/services/cidadao.service';
 import { StatusSolicitacao } from '../../../enums/status-solicitacao.enum';
 import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
+import { ConcessaoService } from '@/modules/beneficio/services/concessao.service';
+import { StatusConcessao } from '@/entities';
+import { Public } from '@/auth/decorators/public.decorator';
 
 /**
  * Interface para item do cache com TTL
@@ -107,10 +110,7 @@ export class ReferenciaController {
    * bairros, usuários e roles. Utiliza cache em memória para máxima performance.
    */
   @Get()
-  @RequiresPermission({
-    permissionName: 'sistema.filtros.listar',
-    scopeType: ScopeType.GLOBAL,
-  })
+  @Public()
   @ApiOperation({ summary: 'Obter dados de referência do sistema' })
   @ApiResponse({
     status: 200,
@@ -156,6 +156,7 @@ export class ReferenciaController {
     return {
       tiposBeneficio: this.mapearTiposBeneficio(tiposBeneficio.items),
       statusSolicitacao: this.mapearStatusSolicitacao(),
+      statusConcessao: this.mapearStatusConcessao(),
       unidades: this.mapearUnidades(unidades.items),
       statusPagamento: this.mapearStatusPagamento(),
       bairros,
@@ -213,6 +214,16 @@ export class ReferenciaController {
    */
   private mapearStatusSolicitacao() {
     return Object.entries(StatusSolicitacao).map(([key, value]) => ({
+      nome: key,
+      valor: value,
+    }));
+  }
+
+  /**
+   * Mapeia status de concessão (processamento local)
+   */
+  private mapearStatusConcessao() {
+    return Object.entries(StatusConcessao).map(([key, value]) => ({
       nome: key,
       valor: value,
     }));

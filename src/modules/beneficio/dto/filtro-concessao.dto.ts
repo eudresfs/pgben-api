@@ -23,7 +23,7 @@ export class FiltroConcessaoDto extends PaginationParamsDto {
   @IsOptional()
   @Transform(({ value }) => (value === '' ? undefined : value))
   @IsDateString()
-  dataInicioDe?: string;
+  data_inicio?: string;
 
   @ApiPropertyOptional({
     description: 'Data de início máxima (YYYY-MM-DD)',
@@ -33,7 +33,7 @@ export class FiltroConcessaoDto extends PaginationParamsDto {
   @IsOptional()
   @Transform(({ value }) => (value === '' ? undefined : value))
   @IsDateString()
-  dataInicioAte?: string;
+  data_fim?: string;
 
   @ApiPropertyOptional({ enum: StatusConcessao })
   @IsOptional()
@@ -45,19 +45,19 @@ export class FiltroConcessaoDto extends PaginationParamsDto {
   @IsOptional()
   @Transform(({ value }) => (value === '' ? undefined : value))
   @IsUUID()
-  unidadeId?: string;
+  unidade_id?: string;
 
   @ApiPropertyOptional({ description: 'UUID do tipo de benefício' })
   @IsOptional()
   @Transform(({ value }) => (value === '' ? undefined : value))
   @IsUUID()
-  tipoBeneficioId?: string;
+  tipo_beneficio_id?: string;
 
   @ApiPropertyOptional({ description: 'Flag de determinação judicial' })
   @IsOptional()
   @Transform(({ value }) => (value === '' ? undefined : value))
   @IsBoolean()
-  determinacaoJudicial?: boolean;
+  determinacao_judicial?: boolean;
 
   @ApiPropertyOptional({
     description: 'Prioridade (inteiro, 1-5)',

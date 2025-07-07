@@ -1,6 +1,5 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 import {
-  IsNotEmpty,
   IsString,
   IsBoolean,
   IsOptional,
@@ -11,45 +10,46 @@ import {
 import { TipoDocumentoEnum } from '@/enums';
 
 /**
- * DTO para criação de requisito documental
+ * DTO para atualização de requisito documental
  *
- * Define os documentos necessários para solicitação de um benefício
+ * Permite atualizar informações de documentos necessários para solicitação de um benefício
  */
-export class CreateRequisitoDocumentoDto {
-  @ApiProperty({
+export class UpdateRequisitoDocumentoDto {
+  @ApiPropertyOptional({
     description: 'Tipo do documento requerido',
     enum: TipoDocumentoEnum,
     example: TipoDocumentoEnum.COMPROVANTE_RESIDENCIA,
   })
-  @IsNotEmpty({ message: 'Tipo de documento é obrigatório' })
+  @IsOptional()
   @IsEnum(TipoDocumentoEnum, { message: 'Tipo de documento inválido' })
-  tipo_documento: TipoDocumentoEnum;
+  tipo_documento?: TipoDocumentoEnum;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'Nome personalizado do documento',
     example: 'Comprovante de Residência Atualizado',
     maxLength: 255,
   })
-  @IsNotEmpty({ message: 'Nome do documento é obrigatório' })
+  @IsOptional()
   @IsString({ message: 'Nome deve ser um texto' })
   @MaxLength(255, { message: 'Nome deve ter no máximo 255 caracteres' })
-  nome: string;
+  nome?: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'Descrição do documento e suas especificações',
     example:
       'Comprovante de residência dos últimos 3 meses (conta de água, luz ou telefone)',
   })
-  @IsNotEmpty({ message: 'Descrição é obrigatória' })
+  @IsOptional()
   @IsString({ message: 'Descrição deve ser um texto' })
-  descricao: string;
+  descricao?: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'Indica se o documento é obrigatório para a solicitação',
     default: true,
   })
+  @IsOptional()
   @IsBoolean({ message: 'Obrigatoriedade deve ser um booleano' })
-  obrigatorio: boolean;
+  obrigatorio?: boolean;
 
   @ApiPropertyOptional({
     description: 'Observações adicionais sobre o documento',

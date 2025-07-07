@@ -5,16 +5,15 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Not } from 'typeorm';
 import { TipoBeneficio } from '../../../entities/tipo-beneficio.entity';
 import { RequisitoDocumento } from '../../../entities/requisito-documento.entity';
 import { FluxoBeneficio } from '../../../entities/fluxo-beneficio.entity';
 import { CreateTipoBeneficioDto } from '../dto/create-tipo-beneficio.dto';
 import { UpdateTipoBeneficioDto } from '../dto/update-tipo-beneficio.dto';
 import { CreateRequisitoDocumentoDto } from '../dto/create-requisito-documento.dto';
+import { UpdateRequisitoDocumentoDto } from '../dto/update-requisito-documento.dto';
 import { Status, TipoDocumentoEnum } from '@/enums';
-import { TipoEtapa } from '../../../entities/fluxo-beneficio.entity';
-import { Role as PerfilResponsavel } from '../../../enums/role.enum';
 import { normalizeEnumFields } from '../../../shared/utils/enum-normalizer.util';
 import { TipoBeneficioSchema } from '../../../entities/tipo-beneficio-schema.entity';
 
@@ -240,12 +239,80 @@ export class BeneficioService {
       );
     }
 
+    // Validar URL do template se fornecida
+    if (createRequisitoDocumentoDto.template_url) {
+      try {
+        new URL(createRequisitoDocumentoDto.template_url);
+      } catch {
+        throw new BadRequestException('URL do template inválida');
+      }
+    }
+
     // Criar e salvar o requisito
     const requisito = this.requisitoDocumentoRepository.create({
       ...createRequisitoDocumentoDto,
       tipo_beneficio: tipoBeneficio,
     });
 
+    return this.requisitoDocumentoRepository.save(requisito);
+  }
+
+  /**
+   * Atualiza um requisito documental de um benefício
+   */
+  async updateRequisito(
+    beneficioId: string,
+    requisitoId: string,
+    updateRequisitoDocumentoDto: UpdateRequisitoDocumentoDto
+  ) {
+    // Verificar se o benefício existe
+    await this.findById(beneficioId);
+
+    // Verificar se o requisito existe e pertence ao benefício
+    const requisito = await this.requisitoDocumentoRepository.findOne({
+      where: {
+        id: requisitoId,
+        tipo_beneficio: { id: beneficioId },
+      },
+    });
+
+    if (!requisito) {
+      throw new NotFoundException(
+        `Requisito com ID ${requisitoId} não encontrado para o benefício ${beneficioId}`,
+      );
+    }
+
+    // Validar URL do template se fornecida
+    if (updateRequisitoDocumentoDto.template_url) {
+      try {
+        new URL(updateRequisitoDocumentoDto.template_url);
+      } catch {
+        throw new BadRequestException('URL do template inválida');
+      }
+    }
+
+    // Verificar se está tentando alterar o tipo de documento para um que já existe
+    if (
+      updateRequisitoDocumentoDto.tipo_documento &&
+      updateRequisitoDocumentoDto.tipo_documento !== requisito.tipo_documento
+    ) {
+      const existingRequisito = await this.requisitoDocumentoRepository.findOne({
+        where: {
+          tipo_documento: updateRequisitoDocumentoDto.tipo_documento,
+          tipo_beneficio: { id: beneficioId },
+          id: Not(requisitoId),
+        },
+      });
+
+      if (existingRequisito) {
+        throw new ConflictException(
+          `Já existe um requisito com o tipo de documento '${updateRequisitoDocumentoDto.tipo_documento}' para este benefício`,
+        );
+      }
+    }
+
+    // Atualizar o requisito
+    Object.assign(requisito, updateRequisitoDocumentoDto);
     return this.requisitoDocumentoRepository.save(requisito);
   }
 
@@ -276,6 +343,42 @@ export class BeneficioService {
     return {
       message: 'Requisito removido com sucesso',
       requisitoId,
+    };
+  }
+
+  /**
+   * Obtém informações do template de um requisito documental
+   */
+  async getTemplateInfo(beneficioId: string, requisitoId: string) {
+    // Verificar se o benefício existe
+    await this.findById(beneficioId);
+
+    // Verificar se o requisito existe e pertence ao benefício
+    const requisito = await this.requisitoDocumentoRepository.findOne({
+      where: {
+        id: requisitoId,
+        tipo_beneficio: { id: beneficioId },
+      },
+    });
+
+    if (!requisito) {
+      throw new NotFoundException(
+        `Requisito com ID ${requisitoId} não encontrado para o benefício ${beneficioId}`,
+      );
+    }
+
+    // Retornar informações do template usando os métodos da entidade
+    return {
+      temTemplate: requisito.temTemplate(),
+      template_url: requisito.template_url,
+      template_nome: requisito.getNomeTemplate(),
+      template_descricao: requisito.getDescricaoTemplate(),
+      extensao: requisito.getExtensaoTemplate(),
+      ehPdf: requisito.templateEhPdf(),
+      ehImagem: requisito.templateEhImagem(),
+      ehDocumentoOffice: requisito.templateEhDocumentoOffice(),
+      templateCompleto: requisito.templateEstaCompleto(),
+      infoTemplate: requisito.getInfoTemplate(),
     };
   }
 }
