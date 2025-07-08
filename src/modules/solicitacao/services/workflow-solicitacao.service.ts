@@ -2,9 +2,11 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  Logger,
   ForbiddenException,
   InternalServerErrorException,
-  Logger,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
@@ -22,6 +24,13 @@ import { NotificacaoService } from '../../notificacao/services/notificacao.servi
 import { TemplateMappingService } from './template-mapping.service';
 import { ConcessaoService } from '../../beneficio/services/concessao.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { DadosBeneficioFactoryService } from '../../beneficio/services/dados-beneficio-factory.service';
+import { BeneficioService } from '../../beneficio/services/beneficio.service';
+import { DocumentoService } from '../../documento/services/documento.service';
+import {
+  throwWorkflowStepRequired,
+  throwSolicitacaoNotFound,
+} from '../../../shared/exceptions/error-catalog/domains/solicitacao.errors';
 
 /**
  * Interface para o resultado da transição de estado
@@ -45,8 +54,6 @@ export interface ResultadoTransicaoEstado {
 export class WorkflowSolicitacaoService {
   private readonly logger = new Logger(WorkflowSolicitacaoService.name);
 
-  // As transições permitidas agora são gerenciadas pelo TransicaoEstadoService
-
   constructor(
     private readonly concessaoService: ConcessaoService,
     @InjectRepository(Solicitacao)
@@ -62,6 +69,11 @@ export class WorkflowSolicitacaoService {
     private readonly notificacaoService: NotificacaoService,
     private readonly templateMappingService: TemplateMappingService,
     private readonly eventEmitter: EventEmitter2,
+    @Inject(forwardRef(() => DadosBeneficioFactoryService))
+    private readonly dadosBeneficioFactoryService: DadosBeneficioFactoryService,
+    @Inject(forwardRef(() => BeneficioService))
+    private readonly beneficioService: BeneficioService,
+    private readonly documentoService: DocumentoService,
   ) {}
 
   /**
@@ -332,46 +344,138 @@ export class WorkflowSolicitacaoService {
   }
 
   /**
-   * Submete um rascunho de solicitação, alterando seu estado para PENDENTE
-   * @param solicitacaoId ID da solicitação
-   * @param usuarioId ID do usuário que está submetendo o rascunho
-   * @returns Resultado da transição
+   * Valida se uma solicitação pode ser enviada para análise
+   * Verifica se todos os requisitos obrigatórios foram atendidos
+   * @param solicitacaoId ID da solicitação a ser validada
+   * @throws {AppError} Se algum requisito obrigatório não foi atendido
+   * @private
    */
-  async submeterRascunho(
-    solicitacaoId: string,
-    usuarioId: string,
-  ): Promise<ResultadoTransicaoEstado> {
-    const resultado = await this.realizarTransicao(
-      solicitacaoId,
-      StatusSolicitacao.ABERTA,
-      usuarioId,
-      'Solicitação submetida',
-    );
+  private async validarEnvioParaAnalise(solicitacaoId: string): Promise<void> {
+    this.logger.debug(`Iniciando validação de envio para análise da solicitação ${solicitacaoId}`);
 
-    // Emitir notificação SSE específica para submissão de rascunho
-    if (resultado.sucesso && resultado.solicitacao) {
-      try {
-        this.eventEmitter.emit('sse.notificacao', {
-          userId: resultado.solicitacao.tecnico_id,
-          tipo: 'rascunho_submetido',
-          dados: {
-            solicitacaoId: resultado.solicitacao.id,
-            protocolo: resultado.solicitacao.protocolo,
-            statusAnterior: StatusSolicitacao.RASCUNHO,
-            statusAtual: StatusSolicitacao.ABERTA,
-            prioridade: 'medium',
-            dataSubmissao: new Date(),
-          },
-        });
-      } catch (sseError) {
-        this.logger.error(
-          `Erro ao emitir notificação SSE para submissão de rascunho ${solicitacaoId}: ${sseError.message}`,
-          sseError.stack,
-        );
-      }
+    // Buscar a solicitação com suas relações
+    const solicitacao = await this.solicitacaoRepository.findOne({
+      where: { id: solicitacaoId },
+      relations: ['tipo_beneficio', 'beneficiario'],
+    });
+
+    if (!solicitacao) {
+      this.logger.error(`Solicitação ${solicitacaoId} não encontrada durante validação de envio para análise`);
+      throwSolicitacaoNotFound(solicitacaoId, {
+        data: { 
+          context: 'validacao_envio_analise',
+          action: 'enviar_para_analise'
+        },
+      });
     }
 
-    return resultado;
+    const tipoBeneficio = solicitacao.tipo_beneficio;
+    const beneficiario = solicitacao.beneficiario;
+    
+    this.logger.debug(
+      `Validando solicitação ${solicitacaoId} do benefício '${tipoBeneficio.nome}' para beneficiário '${beneficiario?.nome}'`
+    );
+
+    // 1. Validar se existem dados específicos do benefício
+    try {
+      const possuiDadosBeneficio = await this.dadosBeneficioFactoryService.existsBySolicitacao(
+        tipoBeneficio.codigo,
+        solicitacaoId,
+      );
+
+      if (!possuiDadosBeneficio) {
+        this.logger.warn(
+          `Dados específicos do benefício '${tipoBeneficio.nome}' não preenchidos para solicitação ${solicitacaoId}`
+        );
+        
+        throwWorkflowStepRequired('dados_especificos_beneficio', {
+          data: {
+            solicitacaoId,
+            tipoBeneficio: tipoBeneficio.nome,
+            codigoBeneficio: tipoBeneficio.codigo,
+            beneficiario: beneficiario?.nome,
+            context: 'validacao_envio_analise',
+            action: 'preencher_dados_beneficio',
+          },
+        });
+      }
+    } catch (error) {
+      if (error.code === 'SOLICITACAO_WORKFLOW_STEP_REQUIRED') {
+        throw error;
+      }
+      this.logger.error(
+        `Erro ao verificar dados específicos do benefício para solicitação ${solicitacaoId}: ${error.message}`,
+        error.stack
+      );
+      throw error;
+    }
+
+    // 2. Validar se todos os requisitos documentais obrigatórios foram atendidos
+    try {
+      const requisitosObrigatorios = await this.beneficioService.findRequisitosByBeneficioId(
+        tipoBeneficio.id,
+      );
+
+      const tiposDocumentosObrigatorios = requisitosObrigatorios
+        .filter((requisito) => requisito.isObrigatorio())
+        .map((requisito) => requisito.tipo_documento);
+
+      this.logger.debug(
+        `Encontrados ${tiposDocumentosObrigatorios.length} tipos de documentos obrigatórios para benefício '${tipoBeneficio.nome}'`
+      );
+
+      if (tiposDocumentosObrigatorios.length > 0) {
+        const documentosEnviados = await this.documentoService.findBySolicitacao(solicitacaoId);
+        const tiposDocumentosEnviados = documentosEnviados.map((doc) => doc.tipo);
+
+        this.logger.debug(
+          `Documentos enviados para solicitação ${solicitacaoId}: [${tiposDocumentosEnviados.join(', ')}]`
+        );
+
+        const tiposFaltantes = tiposDocumentosObrigatorios.filter(
+          (tipoObrigatorio) => !tiposDocumentosEnviados.includes(tipoObrigatorio),
+        );
+
+        if (tiposFaltantes.length > 0) {
+          this.logger.warn(
+            `Documentos obrigatórios faltantes para solicitação ${solicitacaoId}: [${tiposFaltantes.join(', ')}]`
+          );
+          
+          throwWorkflowStepRequired('documentos_obrigatorios', {
+            data: {
+              solicitacaoId,
+              tipoBeneficio: tipoBeneficio.nome,
+              codigoBeneficio: tipoBeneficio.codigo,
+              beneficiario: beneficiario?.nome,
+              context: 'validacao_envio_analise',
+              action: 'anexar_documentos_obrigatorios',
+              documentosFaltantes: tiposFaltantes,
+              totalDocumentosFaltantes: tiposFaltantes.length,
+              documentosEnviados: tiposDocumentosEnviados,
+              totalDocumentosEnviados: tiposDocumentosEnviados.length,
+              totalDocumentosObrigatorios: tiposDocumentosObrigatorios.length,
+            },
+          });
+        }
+      } else {
+        this.logger.debug(
+          `Nenhum documento obrigatório configurado para benefício '${tipoBeneficio.nome}'`
+        );
+      }
+    } catch (error) {
+      if (error.code === 'SOLICITACAO_WORKFLOW_STEP_REQUIRED') {
+        throw error;
+      }
+      this.logger.error(
+        `Erro ao validar documentos obrigatórios para solicitação ${solicitacaoId}: ${error.message}`,
+        error.stack
+      );
+      throw error;
+    }
+
+    this.logger.log(
+      `Validação de envio para análise concluída com sucesso para solicitação ${solicitacaoId} do benefício '${tipoBeneficio.nome}'`,
+    );
   }
 
   /**
@@ -379,17 +483,59 @@ export class WorkflowSolicitacaoService {
    * @param solicitacaoId ID da solicitação
    * @param usuarioId ID do usuário que está enviando a solicitação
    * @returns Resultado da transição
+   * @throws {AppError} Se a validação falhar ou ocorrer erro na transição
    */
   async enviarParaAnalise(
     solicitacaoId: string,
     usuarioId: string,
   ): Promise<ResultadoTransicaoEstado> {
-    return this.realizarTransicao(
-      solicitacaoId,
-      StatusSolicitacao.EM_ANALISE,
-      usuarioId,
-      'Solicitação enviada para análise',
+    this.logger.log(
+      `Iniciando processo de envio para análise da solicitação ${solicitacaoId} pelo usuário ${usuarioId}`
     );
+
+    try {
+      // Validar se a solicitação pode ser enviada para análise
+      await this.validarEnvioParaAnalise(solicitacaoId);
+
+      this.logger.debug(
+        `Validação concluída com sucesso para solicitação ${solicitacaoId}. Iniciando transição de estado.`
+      );
+
+      // Se passou na validação, realizar a transição
+      const resultado = await this.realizarTransicao(
+        solicitacaoId,
+        StatusSolicitacao.EM_ANALISE,
+        usuarioId,
+        'Solicitação enviada para análise após validação completa',
+      );
+
+      if (resultado.sucesso) {
+        this.logger.log(
+          `Solicitação ${solicitacaoId} enviada para análise com sucesso. Status alterado de '${resultado.status_anterior}' para '${resultado.status_atual}'`
+        );
+      } else {
+        this.logger.warn(
+          `Falha ao enviar solicitação ${solicitacaoId} para análise. Motivo: ${resultado.mensagem || 'Não especificado'}`
+        );
+      }
+
+      return resultado;
+    } catch (error) {
+      // Log detalhado do erro para debugging
+      this.logger.error(
+        `Erro ao enviar solicitação ${solicitacaoId} para análise: ${error.message}`,
+        {
+          solicitacaoId,
+          usuarioId,
+          errorCode: error.code,
+          errorStack: error.stack,
+          context: 'enviarParaAnalise',
+        }
+      );
+
+      // Re-propagar o erro para que seja tratado pelo filtro de exceções
+      throw error;
+    }
   }
 
   /**

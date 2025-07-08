@@ -11,6 +11,7 @@ import { CidadaoModule } from '../cidadao/cidadao.module';
 import { UsuarioModule } from '../usuario/usuario.module';
 import { NotificacaoModule } from '../notificacao/notificacao.module';
 import { ConfiguracaoModule } from '../configuracao/configuracao.module';
+import { DocumentoModule } from '../documento/documento.module';
 import { SolicitacaoController } from './controllers/solicitacao.controller';
 import { SolicitacaoService } from './services/solicitacao.service';
 import { DeterminacaoJudicialController } from './controllers/determinacao-judicial.controller';
@@ -74,6 +75,8 @@ import { TemplateMappingService } from './services/template-mapping.service';
     // Módulo de agendamento para tarefas programadas
     ScheduleModule.forRoot(),
     forwardRef(() => BeneficioModule),
+    // Módulo de documentos para validação de requisitos documentais
+    DocumentoModule,
   ],
   controllers: [
     SolicitacaoController,

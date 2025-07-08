@@ -162,9 +162,13 @@ export class AppError extends HttpException {
    * Retorna dados seguros para resposta da API (sem informações sensíveis)
    */
   public getApiResponse(includeDetails: boolean = false): Record<string, any> {
+    // Usar contextualMessage se disponível, senão usar localizedMessage ou message padrão
+    const contextualMessage = this.context.data?.contextualMessage;
+    const userFriendlyMessage = this.context.data?.userFriendlyMessage;
+    
     const response = {
       code: this.errorCode,
-      message: this.localizedMessage || this.message,
+      message: contextualMessage || userFriendlyMessage || this.localizedMessage || this.message,
       category: this.definition.category,
       timestamp: this.timestamp.toISOString(),
     };

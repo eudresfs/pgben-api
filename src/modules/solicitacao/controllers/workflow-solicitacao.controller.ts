@@ -66,33 +66,6 @@ export class WorkflowSolicitacaoController {
   }
 
   /**
-   * Submete um rascunho de solicitação
-   * @param solicitacaoId ID da solicitação
-   * @param req Requisição
-   * @returns Resultado da transição
-   */
-  @Post(':solicitacaoId/submeter')
-  @RequiresPermission({
-    permissionName: 'solicitacao.submeter',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'solicitacao.unidadeId',
-  })
-  @ApiOperation({
-    summary: 'Submete um rascunho de solicitação',
-    description: 'Altera o estado de uma solicitação de RASCUNHO para ABERTA.',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Rascunho submetido com sucesso',
-  })
-  async submeterRascunho(
-    @Param('solicitacaoId', ParseUUIDPipe) solicitacaoId: string,
-    @Req() req: any,
-  ): Promise<ResultadoTransicaoEstado> {
-    return this.workflowService.submeterRascunho(solicitacaoId, req.user.id);
-  }
-
-  /**
    * Envia uma solicitação para análise
    * @param solicitacaoId ID da solicitação
    * @param req Requisição
