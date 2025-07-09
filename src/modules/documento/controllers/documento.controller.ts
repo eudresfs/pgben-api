@@ -852,7 +852,7 @@ export class DocumentoController {
   ): Promise<BatchDownloadResponseDto> {
     // Converter BatchDownloadDto para IDocumentoBatchFiltros
     const filtrosConvertidos: any = {
-      unidade_id: undefined, // Será definido pelo contexto do usuário
+      unidade_id: usuario.unidade_id || undefined, // Será definido pelo contexto do usuário
       data_inicio: filtros.dataInicio,
       data_fim: filtros.dataFim,
       tipo_documento: filtros.tiposDocumento,
@@ -864,7 +864,7 @@ export class DocumentoController {
 
     const jobId = await this.documentoBatchService.iniciarJob(
       filtrosConvertidos,
-      usuario.id,
+      usuario.id
     );
 
     return {

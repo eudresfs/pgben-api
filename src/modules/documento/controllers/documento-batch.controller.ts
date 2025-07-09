@@ -78,7 +78,7 @@ export class DocumentoBatchController {
   ): Promise<{ jobId: string; message: string; statusUrl: string }> {
     // Converter BatchDownloadDto para IDocumentoBatchFiltros
     const filtrosConvertidos: any = {
-      unidade_id: undefined, // Será definido pelo contexto do usuário
+      unidade_id: usuario.unidade_id || undefined, // Será definido pelo contexto do usuário
       data_inicio: filtros.dataInicio,
       data_fim: filtros.dataFim,
       tipo_documento: filtros.tiposDocumento,

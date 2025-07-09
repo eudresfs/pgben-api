@@ -9,6 +9,7 @@ import {
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { TipoDocumentoEnum } from '@/enums';
+import { StatusDownloadLoteEnum } from '@/entities/documento-batch-job.entity';
 
 /**
  * DTO para filtros de download em lote de documentos
@@ -108,7 +109,7 @@ export interface BatchDownloadFiltros {
  */
 export interface BatchJobStatus {
   id: string;
-  status: 'PROCESSING' | 'COMPLETED' | 'FAILED';
+  status: StatusDownloadLoteEnum.PENDING | StatusDownloadLoteEnum.COMPLETED | StatusDownloadLoteEnum.FAILED;
   usuarioId: string;
   filtros: BatchDownloadFiltros;
   documentos: any[]; // Será tipado com a entidade Documento

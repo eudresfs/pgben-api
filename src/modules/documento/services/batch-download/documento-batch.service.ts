@@ -447,7 +447,11 @@ export class DocumentoBatchService {
     for (const [cidadaoId, cidadaoDocumentos] of Object.entries(
       groupedByCidadao,
     )) {
-      const cidadaoFolder = `Cidadao_${cidadaoId.substring(0, 8)}`;
+      // Obter dados do cidadão para usar o CPF na nomenclatura
+      const cidadao = cidadaoDocumentos[0]?.cidadao;
+      const cidadaoFolder = cidadao?.cpf 
+        ? `cidadao_${cidadao.cpf}` 
+        : `Cidadao_${cidadaoId.substring(0, 8)}`;
 
       // Agrupar por solicitação dentro do cidadão
       const groupedBySolicitacao = this.groupBy(
@@ -458,7 +462,19 @@ export class DocumentoBatchService {
       for (const [solicitacaoId, solicitacaoDocumentos] of Object.entries(
         groupedBySolicitacao,
       )) {
-        const solicitacaoFolder = `${cidadaoFolder}/Solicitacao_${solicitacaoId?.substring(0, 8) || 'Sem_Solicitacao'}`;
+        // Obter dados da solicitação para usar protocolo e data na nomenclatura
+        const solicitacao = solicitacaoDocumentos[0]?.solicitacao;
+        let solicitacaoFolder: string;
+        
+        if (solicitacao?.protocolo && solicitacao?.data_abertura) {
+          const dataAbertura = new Date(solicitacao.data_abertura)
+            .toISOString()
+            .split('T')[0]
+            .replace(/-/g, '');
+          solicitacaoFolder = `${cidadaoFolder}/solicitacao_${solicitacao.protocolo}_${dataAbertura}`;
+        } else {
+          solicitacaoFolder = `${cidadaoFolder}/Solicitacao_${solicitacaoId?.substring(0, 8) || 'Sem_Solicitacao'}`;
+        }
 
         // Separar recibos/comprovantes dos demais documentos
         const recibos = solicitacaoDocumentos.filter((doc) =>
@@ -587,8 +603,8 @@ export class DocumentoBatchService {
     }
 
     if (filtros.tiposDocumento?.length) {
-      queryBuilder.andWhere('documento.tipo IN (:...tipos)', {
-        tipos: filtros.tiposDocumento,
+      queryBuilder.andWhere('documento.tipo IN (:...tiposDocumento)', {
+        tiposDocumento: filtros.tiposDocumento,
       });
     }
 
