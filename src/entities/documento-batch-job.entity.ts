@@ -8,18 +8,18 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm';
-import { Usuario } from '@/entities/usuario.entity';
-import { Unidade } from '@/entities/unidade.entity';
+import { Usuario, Unidade } from '@/entities';
 
 /**
  * Enum para status do job de download em lote
  */
 export enum StatusDownloadLoteEnum {
-  PENDING = 'PENDING',
-  PROCESSING = 'PROCESSING',
-  COMPLETED = 'COMPLETED',
-  FAILED = 'FAILED',
-  CANCELLED = 'CANCELLED',
+  PENDING = 'pendente',
+  PROCESSING = 'processando',
+  COMPLETED = 'concluido',
+  FAILED = 'erro',
+  CANCELLED = 'cancelado',
+  EXPIRED = 'expirado'
 }
 
 /**
