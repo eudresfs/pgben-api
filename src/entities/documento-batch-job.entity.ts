@@ -77,7 +77,7 @@ export class DocumentoBatchJob {
   erro_detalhes: string;
 
   @Column('timestamp', { nullable: true })
-  iniciado_em: Date;
+  data_inicio: Date;
 
   @Column('timestamp', { nullable: true })
   data_conclusao: Date;
@@ -130,15 +130,15 @@ export class DocumentoBatchJob {
   }
 
   getDurationInSeconds(): number | null {
-    if (!this.iniciado_em) return null;
+    if (!this.data_inicio) return null;
     const endTime = this.data_conclusao || new Date();
-    return Math.floor((endTime.getTime() - this.iniciado_em.getTime()) / 1000);
+    return Math.floor((endTime.getTime() - this.data_inicio.getTime()) / 1000);
   }
 
   getEstimatedTimeRemaining(): number | null {
-    if (!this.iniciado_em || this.progresso_percentual <= 0) return null;
+    if (!this.data_inicio || this.progresso_percentual <= 0) return null;
 
-    const elapsed = Date.now() - this.iniciado_em.getTime();
+    const elapsed = Date.now() - this.data_inicio.getTime();
     const progressRatio = Number(this.progresso_percentual) / 100;
     const estimatedTotal = elapsed / progressRatio;
     const remaining = estimatedTotal - elapsed;

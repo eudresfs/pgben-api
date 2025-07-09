@@ -25,11 +25,6 @@ export class CreateAdditionalIndexes1749330812427
     `);
 
     await queryRunner.query(`
-      CREATE INDEX IF NOT EXISTS idx_info_bancaria_chave_pix 
-      ON info_bancaria(chave_pix)
-    `);
-
-    await queryRunner.query(`
       CREATE INDEX IF NOT EXISTS idx_info_bancaria_ativo 
       ON info_bancaria(ativo)
     `);

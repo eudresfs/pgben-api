@@ -70,6 +70,12 @@ export class UsuarioController {
     description: 'Lista de usuários retornada com sucesso',
   })
   @ApiQuery({
+    name: 'includeRelations',
+    required: false,
+    type: Boolean,
+    description: 'Incluir relações com outras entidades (padrão: false)',
+  })
+  @ApiQuery({
     name: 'page',
     required: false,
     type: Number,
@@ -155,9 +161,10 @@ export class UsuarioController {
   })
   async findAll(@Query() query: any) {
     // Extrair page e limit, convertendo para números
-    const { page, limit, ...filters } = query;
+    const { includeRelations, page, limit, ...filters } = query;
 
     return this.usuarioService.findAll({
+      relations: includeRelations ? +includeRelations : true,
       page: page ? +page : undefined,
       limit: limit ? +limit : undefined,
       ...filters,

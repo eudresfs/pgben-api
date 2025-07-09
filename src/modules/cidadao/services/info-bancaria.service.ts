@@ -12,7 +12,7 @@ import { CreateInfoBancariaDto } from '../dto/create-info-bancaria.dto';
 import { UpdateInfoBancariaDto } from '../dto/update-info-bancaria.dto';
 import { InfoBancariaResponseDto } from '../dto/info-bancaria-response.dto';
 import { InfoBancaria } from '../../../entities/info-bancaria.entity';
-import { TipoChavePix } from '../../../enums/info-bancaria.enum';
+import { TipoChavePix, TipoConta } from '../../../enums/info-bancaria.enum';
 import { normalizeEnumFields } from '../../../shared/utils/enum-normalizer.util';
 /**
  * Service para gerenciamento de informações bancárias
@@ -38,76 +38,66 @@ export class InfoBancariaService {
   async create(
     createInfoBancariaDto: CreateInfoBancariaDto,
   ): Promise<InfoBancariaResponseDto> {
-    try {
-      this.logger.log(
-        `Criando informação bancária para cidadão ${createInfoBancariaDto.cidadao_id}`,
-      );
-
-      // Verifica se o cidadão existe
-      const cidadao = await this.cidadaoService.findById(
-        createInfoBancariaDto.cidadao_id,
-      );
-      if (!cidadao) {
-        throw new NotFoundException('Cidadão não encontrado');
-      }
-
-      // Verifica se já existe informação bancária ativa para o cidadão
-      const existingInfo =
-        await this.infoBancariaRepository.existsActiveByCidadaoId(
-          createInfoBancariaDto.cidadao_id,
-        );
-      if (existingInfo) {
-        throw new ConflictException(
-          'Cidadão já possui informação bancária ativa',
-        );
-      }
-
-      // Valida chave PIX se fornecida
-      if (createInfoBancariaDto.chave_pix) {
-        await this.validateChavePix(
-          createInfoBancariaDto.chave_pix,
-          createInfoBancariaDto.tipo_chave_pix,
-        );
-
-        // Verifica se a chave PIX já está em uso
-        const pixExists = await this.infoBancariaRepository.existsByChavePix(
-          createInfoBancariaDto.chave_pix,
-        );
-        if (pixExists) {
-          throw new ConflictException('Chave PIX já está em uso');
-        }
-      }
-
-      // Valida dados específicos do Banco do Brasil se aplicável
-      if (createInfoBancariaDto.banco === '001') {
-        this.validateBancoBrasil(createInfoBancariaDto);
-      }
-
-      const dadosNormalizados = normalizeEnumFields(createInfoBancariaDto);
-      const infoBancaria =
-        await this.infoBancariaRepository.create(dadosNormalizados);
-
-      this.logger.log(
-        `Informação bancária criada com sucesso: ${infoBancaria.id}`,
-      );
-      return this.mapToResponseDto(infoBancaria);
-    } catch (error) {
-      this.logger.error(
-        `Erro ao criar informação bancária: ${error.message}`,
-        error.stack,
-      );
-      if (
-        error instanceof NotFoundException ||
-        error instanceof ConflictException ||
-        error instanceof BadRequestException
-      ) {
-        throw error;
-      }
-      throw new InternalServerErrorException(
-        'Erro interno ao criar informação bancária',
-      );
-    }
+    return this.upsert(createInfoBancariaDto);
   }
+
+/**
+ * Cria ou atualiza informação bancária (upsert)
+ * @param createInfoBancariaDto Dados da informação bancária
+ * @returns Informação bancária criada ou atualizada
+ */
+async upsert(
+  createInfoBancariaDto: CreateInfoBancariaDto,
+): Promise<InfoBancariaResponseDto> {
+  try {
+
+    // Verifica se o cidadão existe
+    const cidadao = await this.cidadaoService.findById(
+      createInfoBancariaDto.cidadao_id,
+    );
+    if (!cidadao) {
+      throw new BadRequestException('Cidadão não encontrado');
+    }
+
+    // Preparar dados normalizados
+    const dadosNormalizados = normalizeEnumFields({
+      ...createInfoBancariaDto,
+      tipo_conta: createInfoBancariaDto.tipo_conta ?? TipoConta.POUPANCA_SOCIAL,
+      ativo: true,
+    });
+
+    // Upsert nativo do PostgreSQL
+    const result = await this.infoBancariaRepository.repository.upsert(
+      dadosNormalizados,
+      ['cidadao_id'], 
+    );
+
+    // Buscar o registro para retornar completo
+    const infoBancaria = await this.infoBancariaRepository.findByCidadaoIdForUpsert(
+      createInfoBancariaDto.cidadao_id,
+    );
+
+    this.logger.log(
+      `Informação bancária ${result.generatedMaps.length > 0 ? 'criada' : 'atualizada'}: ${infoBancaria.id}`,
+    );
+
+    return this.mapToResponseDto(infoBancaria);
+
+  } catch (error) {
+    this.logger.error(
+      `Erro ao criar/atualizar informação bancária: ${error.message}`,
+      error.stack,
+    );
+    
+    if (error instanceof NotFoundException) {
+      throw error;
+    }
+    
+    throw new InternalServerErrorException(
+      'Erro interno ao criar/atualizar informação bancária',
+    );
+  }
+}
 
   /**
    * Busca todas as informações bancárias com filtros
@@ -236,15 +226,6 @@ export class InfoBancariaService {
           updateInfoBancariaDto.chave_pix,
           updateInfoBancariaDto.tipo_chave_pix,
         );
-
-        // Verifica se a chave PIX já está em uso (excluindo a atual)
-        const pixExists = await this.infoBancariaRepository.existsByChavePix(
-          updateInfoBancariaDto.chave_pix,
-          id,
-        );
-        if (pixExists) {
-          throw new ConflictException('Chave PIX já está em uso');
-        }
       }
 
       // Valida dados específicos do Banco do Brasil se aplicável

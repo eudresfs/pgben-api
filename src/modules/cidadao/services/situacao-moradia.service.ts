@@ -26,13 +26,22 @@ export class SituacaoMoradiaService {
   ) {}
 
   /**
-   * Cria uma nova situação de moradia
+   * Cria uma nova situação de moradia (UPSERT)
    */
   async create(
     dto: CreateSituacaoMoradiaDto,
   ): Promise<SituacaoMoradiaResponseDto> {
+    return this.upsert(dto);
+  }
+
+  /**
+   * Cria ou atualiza situação de moradia (UPSERT) com limpeza de campos
+   */
+  async upsert(
+    dto: CreateSituacaoMoradiaDto,
+  ): Promise<SituacaoMoradiaResponseDto> {
     this.logger.log(
-      `Criando situação de moradia para cidadão: ${dto.cidadao_id}`,
+      `Criando/atualizando situação de moradia para cidadão: ${dto.cidadao_id}`,
     );
 
     // Verifica se o cidadão existe
@@ -46,34 +55,60 @@ export class SituacaoMoradiaService {
       );
     }
 
-    // Verifica se já existe situação de moradia para este cidadão
-    const existingSituacao = await this.situacaoMoradiaRepository.findOne({
+    // Verifica se já existe registro
+    const existing = await this.situacaoMoradiaRepository.findOne({
       where: { cidadao_id: dto.cidadao_id },
     });
 
-    if (existingSituacao) {
-      throw new ConflictException(
-        `Já existe situação de moradia cadastrada para o cidadão ${dto.cidadao_id}`,
-      );
-    }
-
     try {
-      const situacaoMoradia = this.situacaoMoradiaRepository.create(dto);
-      const savedSituacao =
-        await this.situacaoMoradiaRepository.save(situacaoMoradia);
+      if (existing) {
+        // Atualizar dados existentes, "limpando" campos não enviados
+        const dadosAtualizados = {
+          ...existing,
+          // Campos obrigatórios
+          cidadao_id: dto.cidadao_id,
+          
+          // Campos opcionais - limpar se não enviados
+          tipo_moradia: dto.tipo_moradia ?? null,
+          numero_comodos: dto.numero_comodos ?? null,
+          valor_aluguel: dto.valor_aluguel ?? null,
+          tempo_moradia: dto.tempo_moradia ?? null,
+          possui_banheiro: dto.possui_banheiro ?? null,
+          possui_energia_eletrica: dto.possui_energia_eletrica ?? null,
+          possui_agua_encanada: dto.possui_agua_encanada ?? null,
+          possui_coleta_lixo: dto.possui_coleta_lixo ?? null,
+          moradia_cedida: dto.moradia_cedida ?? null,
+          moradia_invadida: dto.moradia_invadida ?? null,
+          tipo_desastre: dto.tipo_desastre ?? null,
+          descricao_desastre: dto.descricao_desastre ?? null,
+          outro_tipo_moradia: dto.outro_tipo_moradia ?? null,
+          programa_habitacional: dto.programa_habitacional ?? null,
+          inscrito_programa_habitacional: dto.inscrito_programa_habitacional ?? null,
+          reside_2_anos_natal: dto.reside_2_anos_natal ?? null,
+          despesas_mensais: dto.despesas_mensais ?? null,
+          observacoes: dto.observacoes ?? null,
+        };
 
-      this.logger.log(
-        `Situação de moradia criada com sucesso: ${savedSituacao.id}`,
-      );
-      return plainToClass(SituacaoMoradiaResponseDto, savedSituacao, {
-        excludeExtraneousValues: true,
-      });
+        const updated = await this.situacaoMoradiaRepository.save(dadosAtualizados);
+        this.logger.log(`Situação de moradia atualizada: ${updated.id}`);
+        return plainToClass(SituacaoMoradiaResponseDto, updated, {
+          excludeExtraneousValues: true,
+        });
+      } else {
+        // Cria novo registro
+        const situacaoMoradia = this.situacaoMoradiaRepository.create(dto);
+        const saved = await this.situacaoMoradiaRepository.save(situacaoMoradia);
+        this.logger.log(`Situação de moradia criada: ${saved.id}`);
+        return plainToClass(SituacaoMoradiaResponseDto, saved, {
+          excludeExtraneousValues: true,
+        });
+      }
     } catch (error) {
       this.logger.error(
-        `Erro ao criar situação de moradia: ${error.message}`,
+        `Erro ao criar/atualizar situação de moradia: ${error.message}`,
         error.stack,
       );
-      throw new BadRequestException('Erro ao criar situação de moradia');
+      throw new BadRequestException('Erro ao processar situação de moradia');
     }
   }
 

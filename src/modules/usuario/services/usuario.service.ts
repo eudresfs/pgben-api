@@ -124,12 +124,13 @@ export class UsuarioService {
    * @returns Lista de usuários paginada
    */
   async findAll(options?: {
+    relations?: boolean;
     page?: number;
     limit?: number;
     search?: string;
     [key: string]: any; // Permite qualquer campo da entidade como filtro
   }) {
-    const { page = 1, limit = 10, search, ...filters } = options || {};
+    const { relations = true, page = 1, limit = 10, search, ...filters } = options || {};
 
     // Construir filtros dinâmicos
     const where: any = {};
@@ -229,6 +230,7 @@ export class UsuarioService {
 
     // Buscar usuários com filtros simples
     const [usuarios, total] = await this.usuarioRepository.findAll({
+      relations,
       skip,
       take: limit,
       where,

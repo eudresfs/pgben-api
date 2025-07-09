@@ -29,6 +29,13 @@ export class ComposicaoFamiliarService {
     createComposicaoFamiliarDto: CreateComposicaoFamiliarDto,
     userId: string,
   ): Promise<ComposicaoFamiliarResponseDto> {
+    return this.upsert(createComposicaoFamiliarDto, userId);
+  }
+
+  async upsert(
+    createComposicaoFamiliarDto: CreateComposicaoFamiliarDto,
+    userId: string,
+  ): Promise<ComposicaoFamiliarResponseDto> {
     // Validar se o cidadão existe
     const cidadao = await this.cidadaoRepository.findOne({
       where: { id: createComposicaoFamiliarDto.cidadao_id },
@@ -44,21 +51,6 @@ export class ComposicaoFamiliarService {
       throw new BadRequestException('CPF deve ter 11 dígitos');
     }
 
-    // Verificar duplicatas
-    const membroExistente = await this.composicaoFamiliarRepository.findOne({
-      where: {
-        cidadao_id: createComposicaoFamiliarDto.cidadao_id,
-        cpf: cpfLimpo,
-        removed_at: IsNull(),
-      },
-    });
-
-    if (membroExistente) {
-      throw new ConflictException(
-        'Já existe um membro com este CPF na composição familiar',
-      );
-    }
-
     // Verificar se CPF não é igual ao do cidadão responsável
     if (cidadao.cpf === cpfLimpo) {
       throw new ConflictException(
@@ -66,23 +58,131 @@ export class ComposicaoFamiliarService {
       );
     }
 
-    // Criar membro
-    const novoMembro = this.composicaoFamiliarRepository.create({
-      ...createComposicaoFamiliarDto,
-      cpf: cpfLimpo,
+    // Buscar membro existente por cidadao_id + nome (índice único)
+    const membroExistente = await this.composicaoFamiliarRepository.findOne({
+      where: {
+        cidadao_id: createComposicaoFamiliarDto.cidadao_id,
+        nome: createComposicaoFamiliarDto.nome,
+        removed_at: IsNull(),
+      },
     });
 
-    try {
-      const membroSalvo =
-        await this.composicaoFamiliarRepository.save(novoMembro);
+    if (membroExistente) {
+      // Verificar se o CPF é diferente e se já existe outro membro com este CPF
+      if (membroExistente.cpf !== cpfLimpo) {
+        const cpfDuplicado = await this.composicaoFamiliarRepository.findOne({
+          where: {
+            cidadao_id: createComposicaoFamiliarDto.cidadao_id,
+            cpf: cpfLimpo,
+            id: Not(membroExistente.id),
+            removed_at: IsNull(),
+          },
+        });
 
-      return plainToInstance(ComposicaoFamiliarResponseDto, membroSalvo, {
+        if (cpfDuplicado) {
+          throw new ConflictException(
+            'Já existe um membro com este CPF na composição familiar',
+          );
+        }
+      }
+
+      // Atualizar dados existentes, "limpando" campos não enviados
+      const dadosAtualizados = {
+        ...membroExistente,
+        // Campos obrigatórios sempre atualizados
+        nome: createComposicaoFamiliarDto.nome,
+        cpf: cpfLimpo,
+        idade: createComposicaoFamiliarDto.idade,
+        ocupacao: createComposicaoFamiliarDto.ocupacao,
+        escolaridade: createComposicaoFamiliarDto.escolaridade,
+        parentesco: createComposicaoFamiliarDto.parentesco,
+        
+        // Campos opcionais - limpar se não enviados
+        nis: createComposicaoFamiliarDto.nis ?? null,
+        renda: createComposicaoFamiliarDto.renda ?? null,
+        observacoes: createComposicaoFamiliarDto.observacoes ?? null,
+        updated_at: new Date(),
+      };
+
+      const membroAtualizado = await this.composicaoFamiliarRepository.save(dadosAtualizados);
+
+      return plainToInstance(ComposicaoFamiliarResponseDto, membroAtualizado, {
         excludeExtraneousValues: true,
       });
-    } catch (error) {
-      // Re-lançar outros erros não tratados
-      throw error;
+    } else {
+      // Verificar se já existe membro com este CPF
+      const cpfExistente = await this.composicaoFamiliarRepository.findOne({
+        where: {
+          cidadao_id: createComposicaoFamiliarDto.cidadao_id,
+          cpf: cpfLimpo,
+          removed_at: IsNull(),
+        },
+      });
+
+      if (cpfExistente) {
+        throw new ConflictException(
+          'Já existe um membro com este CPF na composição familiar',
+        );
+      }
+
+      // Criar novo membro
+      const novoMembro = this.composicaoFamiliarRepository.create({
+        ...createComposicaoFamiliarDto,
+        cpf: cpfLimpo,
+      });
+
+      try {
+        const membroSalvo = await this.composicaoFamiliarRepository.save(novoMembro);
+
+        return plainToInstance(ComposicaoFamiliarResponseDto, membroSalvo, {
+          excludeExtraneousValues: true,
+        });
+      } catch (error) {
+        // Re-lançar outros erros não tratados
+        throw error;
+      }
     }
+  }
+
+  async upsertMany(
+    cidadaoId: string,
+    membros: CreateComposicaoFamiliarDto[],
+    userId: string,
+  ): Promise<ComposicaoFamiliarResponseDto[]> {
+    // Validar se o cidadão existe
+    const cidadao = await this.cidadaoRepository.findOne({
+      where: { id: cidadaoId },
+    });
+
+    if (!cidadao) {
+      throw new NotFoundException('Cidadão não encontrado');
+    }
+
+    const resultados: ComposicaoFamiliarResponseDto[] = [];
+
+    // Processar cada membro
+    for (const membroDto of membros) {
+      const membroComCidadaoId = { ...membroDto, cidadao_id: cidadaoId };
+      const resultado = await this.upsert(membroComCidadaoId, userId);
+      resultados.push(resultado);
+    }
+
+    // Remover membros que não estão na lista enviada
+    const nomesEnviados = membros.map(m => m.nome);
+    const membrosExistentes = await this.composicaoFamiliarRepository.find({
+      where: {
+        cidadao_id: cidadaoId,
+        removed_at: IsNull(),
+      },
+    });
+
+    for (const membroExistente of membrosExistentes) {
+      if (!nomesEnviados.includes(membroExistente.nome)) {
+        await this.remove(membroExistente.id, userId);
+      }
+    }
+
+    return resultados;
   }
 
   async findByCidadao(

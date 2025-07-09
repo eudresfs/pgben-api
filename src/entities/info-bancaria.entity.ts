@@ -28,7 +28,7 @@ import { TipoConta, TipoChavePix } from '../enums/info-bancaria.enum';
  * e informações da chave PIX para facilitar pagamentos de benefícios eventuais.
  */
 @Entity('info_bancaria')
-@Index(['cidadao_id'], { unique: true }) // Um cidadão pode ter apenas uma conta bancária principal
+@Index(['cidadao_id'], { unique: true }) 
 @Index(['conta', 'agencia', 'banco'])
 @Index(['chave_pix'])
 export class InfoBancaria {

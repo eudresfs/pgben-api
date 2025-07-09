@@ -185,16 +185,6 @@ export class CreateInfoBancariaSchema1704067205000
       await queryRunner.createIndex(
         'info_bancaria',
         new TableIndex({
-          name: 'IDX_info_bancaria_chave_pix',
-          columnNames: ['chave_pix'],
-          isUnique: true,
-          where: 'chave_pix IS NOT NULL AND removed_at IS NULL',
-        }),
-      );
-
-      await queryRunner.createIndex(
-        'info_bancaria',
-        new TableIndex({
           name: 'IDX_info_bancaria_ativo',
           columnNames: ['ativo'],
         }),

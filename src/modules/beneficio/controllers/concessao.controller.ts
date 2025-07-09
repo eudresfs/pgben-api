@@ -43,6 +43,8 @@ import { ReqContext } from '../../../shared/request-context/req-context.decorato
 import { RequestContext } from '@/shared/request-context/request-context.dto';
 import { MotivosOperacaoResponseDto } from '../dto/motivos-operacao.dto';
 import { OperacaoConcessao } from '../../../enums/operacao-concessao.enum';
+import { ScopeType } from '@/entities';
+import { Roles } from '@/auth';
 
 @ApiTags('Benefícios')
 @Controller('concessoes')
@@ -148,7 +150,10 @@ export class ConcessaoController {
    * @returns Resposta paginada com lista de concessões e metadados
    */
   @Get()
-  @RequiresPermission({ permissionName: 'concessao.listar' })
+  @RequiresPermission({ 
+    permissionName: 'concessao.listar',
+    scopeType: ScopeType.UNIT
+  })
   @ApiOperation({
     summary: 'Lista concessões com paginação',
     description:

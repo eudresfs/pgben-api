@@ -23,26 +23,53 @@ export class UsuarioRepository {
    * @param options Opções de filtro e paginação
    * @returns Lista de usuários paginada
    */
-  async findAll(options?: {
-    skip?: number;
-    take?: number;
-    where?: any;
-    order?: any;
-  }): Promise<[Usuario[], number]> {
-    const {
-      skip = 0,
-      take = 10,
-      where = {},
-      order = { created_at: 'DESC' },
-    } = options || {};
+async findAll(options?: {
+  relations?: boolean;
+  skip?: number;
+  take?: number;
+  where?: any;
+  order?: any;
+}): Promise<[Usuario[], number]> {
+  const {
+    relations = false,
+    skip = 0,
+    take = 10,
+    where = {},
+    order = { created_at: 'DESC' },
+  } = options || {};
+  
+  const queryBuilder = this.repository.createQueryBuilder('usuario');
 
-    return this.repository.findAndCount({
-      skip,
-      take,
-      where,
-      order,
+  if (relations) {
+    queryBuilder
+      .leftJoinAndSelect('usuario.unidade', 'unidade')
+      .leftJoinAndSelect('usuario.role', 'role');
+  }
+
+  // Aplicar filtros where se fornecidos
+  if (where && Object.keys(where).length > 0) {
+    queryBuilder.where(where);
+  }
+
+  // Aplicar ordenação com prefixo correto da tabela
+  if (order && Object.keys(order).length > 0) {
+    const orderEntries = Object.entries(order);
+    orderEntries.forEach(([field, direction], index) => {
+      const columnName = field.includes('.') ? field : `usuario.${field}`;
+      if (index === 0) {
+        queryBuilder.orderBy(columnName, direction as 'ASC' | 'DESC');
+      } else {
+        queryBuilder.addOrderBy(columnName, direction as 'ASC' | 'DESC');
+      }
     });
   }
+
+  queryBuilder
+    .skip(skip)
+    .take(take);
+
+  return queryBuilder.getManyAndCount();
+}
 
   /**
    * Busca um usuário pelo ID
