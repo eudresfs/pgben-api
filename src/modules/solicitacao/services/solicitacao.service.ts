@@ -75,12 +75,12 @@ interface FindAllOptions {
 export interface PaginatedResponse<T> {
   items: T[];
   meta: {
-    currentPage: number;
-    itemsPerPage: number;
-    totalItems: number;
-    totalPages: number;
-    hasNextPage: boolean;
-    hasPreviousPage: boolean;
+    page: number;
+    limit: number;
+    total: number;
+    pages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
   };
 }
 
@@ -241,17 +241,17 @@ export class SolicitacaoService {
       });
     }
 
-    const totalPages = Math.ceil(total / limit);
+    const pages = Math.ceil(total / limit);
 
     return {
       items,
       meta: {
-        currentPage: page,
-        itemsPerPage: limit,
-        totalItems: total,
-        totalPages,
-        hasNextPage: page < totalPages,
-        hasPreviousPage: page > 1,
+        page,
+        limit,
+        total,
+        pages,
+        hasNext: page < pages,
+        hasPrev: page > 1,
       },
     };
   }
@@ -473,8 +473,9 @@ export class SolicitacaoService {
       }
 
       // Validar exclusividade para o beneficiário
-      await this.validacaoExclusividadeService.validarExclusividadeBeneficiario(
+      await this.validacaoExclusividadeService.validarExclusividade(
         createSolicitacaoDto.beneficiario_id,
+        createSolicitacaoDto.tipo_beneficio_id,
       );
 
       // Verificar se já existe uma solicitação em andamento para o mesmo cidadão e tipo de benefício

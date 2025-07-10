@@ -9,6 +9,7 @@ import { Repository, IsNull, Not } from 'typeorm';
 import { plainToInstance } from 'class-transformer';
 import { ComposicaoFamiliar } from '../../../entities/composicao-familiar.entity';
 import { Cidadao } from '../../../entities/cidadao.entity';
+import { Solicitacao } from '../../../entities/solicitacao.entity';
 import { CreateComposicaoFamiliarDto } from '../dto/create-composicao-familiar.dto';
 import { UpdateComposicaoFamiliarDto } from '../dto/update-composicao-familiar.dto';
 import {
@@ -23,6 +24,8 @@ export class ComposicaoFamiliarService {
     private readonly composicaoFamiliarRepository: Repository<ComposicaoFamiliar>,
     @InjectRepository(Cidadao)
     private readonly cidadaoRepository: Repository<Cidadao>,
+    @InjectRepository(Solicitacao)
+    private readonly solicitacaoRepository: Repository<Solicitacao>,
   ) {}
 
   async create(
@@ -57,6 +60,9 @@ export class ComposicaoFamiliarService {
         'O CPF do membro não pode ser igual ao CPF do cidadão responsável',
       );
     }
+
+    // Validar se o CPF não possui solicitação como beneficiário
+    await this.validarCpfNaoPossuiSolicitacaoComoBeneficiario(cpfLimpo);
 
     // Buscar membro existente por cidadao_id + nome (índice único)
     const membroExistente = await this.composicaoFamiliarRepository.findOne({
@@ -305,6 +311,9 @@ export class ComposicaoFamiliarService {
         );
       }
 
+      // Validar se o CPF não possui solicitação como beneficiário
+      await this.validarCpfNaoPossuiSolicitacaoComoBeneficiario(cpfLimpo);
+
       updateComposicaoFamiliarDto.cpf = cpfLimpo;
     }
 
@@ -380,5 +389,32 @@ export class ComposicaoFamiliarService {
         excludeExtraneousValues: true,
       }),
     );
+  }
+
+  /**
+   * Valida se o CPF não pertence a um cidadão que já possui solicitação como beneficiário
+   * @param cpf CPF do membro da composição familiar
+   * @throws ConflictException se o CPF já possui solicitação como beneficiário
+   */
+  private async validarCpfNaoPossuiSolicitacaoComoBeneficiario(
+    cpf: string,
+  ): Promise<void> {
+    // Buscar cidadão pelo CPF
+    const cidadaoComCpf = await this.cidadaoRepository.findOne({
+      where: { cpf },
+    });
+
+    if (cidadaoComCpf) {
+      // Verificar se este cidadão possui alguma solicitação como beneficiário
+      const solicitacaoExistente = await this.solicitacaoRepository.findOne({
+        where: { beneficiario_id: cidadaoComCpf.id },
+      });
+
+      if (solicitacaoExistente) {
+        throw new ConflictException(
+          `Não é possível cadastrar membro com CPF ${cpf}, pois este cidadão já possui uma solicitação como beneficiário.`,
+        );
+      }
+    }
   }
 }

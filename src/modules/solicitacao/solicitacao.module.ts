@@ -37,6 +37,7 @@ import {
   Pendencia,
   Usuario,
   NotificationTemplate,
+  ComposicaoFamiliar,
 } from '../../entities';
 import { MonitoramentoAluguelSocialService } from './services/monitoramento-aluguel-social.service';
 import { TemplateMappingService } from './services/template-mapping.service';
@@ -56,6 +57,7 @@ import { TemplateMappingService } from './services/template-mapping.service';
       DeterminacaoJudicial,
       Usuario, // Adicionado para permitir injeção do Repository<Usuario>
       NotificationTemplate, // Adicionado para permitir injeção do TemplateRepository
+      ComposicaoFamiliar, // Adicionado para validação cruzada com solicitações
     ]),
     // Importa o módulo judicial para acesso aos repositórios e serviços
     JudicialModule,

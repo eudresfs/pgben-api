@@ -145,7 +145,7 @@ export class PagamentoMapper {
   ): {
     data: T[];
     pagination: {
-      currentPage: number;
+      page: number;
       itemsPerPage: number;
       totalItems: number;
       totalPages: number;
@@ -158,7 +158,7 @@ export class PagamentoMapper {
     return {
       data: items,
       pagination: {
-        currentPage: page,
+        page: page,
         itemsPerPage: limit,
         totalItems: total,
         totalPages,

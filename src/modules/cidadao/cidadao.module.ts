@@ -11,6 +11,7 @@ import {
   SituacaoMoradia,
   Contato,
   Endereco,
+  Solicitacao,
 } from '../../entities';
 import { CacheModule } from '../../shared/cache';
 import { InfoBancariaController } from './controllers/info-bancaria.controller';
@@ -45,6 +46,7 @@ import { NotificacaoModule } from '../notificacao/notificacao.module';
       SituacaoMoradia,
       Contato,
       Endereco,
+      Solicitacao, // Adicionado para validação cruzada com composição familiar
     ]),
     CacheModule,
     AuthModule,

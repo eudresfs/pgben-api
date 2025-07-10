@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Pendencia, StatusPendencia } from '../../../entities';
@@ -25,7 +25,7 @@ export class ValidacaoSolicitacaoService {
     @InjectRepository(Pendencia)
     private readonly pendenciaRepository: Repository<Pendencia>,
     private readonly transicaoEstadoService: TransicaoEstadoService,
-  ) {}
+  ) { }
 
   /**
    * Valida se uma solicitação pode ser aprovada

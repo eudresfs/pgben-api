@@ -294,18 +294,8 @@ export class DadosCestaBasicaService extends AbstractDadosBeneficioService<
         );
       }
 
-      // Verificar se já existe dados para esta solicitação
-      if (data.solicitacao_id) {
-        const existingData = await this.existsBySolicitacao(
-          data.solicitacao_id,
-        );
-        if (existingData) {
-          errorBuilder.add(
-            'solicitacao_id',
-            BENEFICIO_TECH_MESSAGES.GENERIC.JA_EXISTE,
-          );
-        }
-      }
+      // Nota: Removida validação de duplicação para permitir comportamento de upsert
+      // A lógica de upsert é tratada no método create() da classe base
 
       errorBuilder.throwIfHasErrors();
     } catch (error) {

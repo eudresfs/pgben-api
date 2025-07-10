@@ -1,133 +1,87 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
-  Solicitacao,
-  StatusSolicitacao,
+ Solicitacao,
+ StatusSolicitacao,
 } from '../../../entities/solicitacao.entity';
 import {
-  throwCidadaoAlreadyBeneficiario,
-  throwCidadaoAlreadyInComposicaoFamiliar,
+ throwCidadaoAlreadyBeneficiario,
+ throwCidadaoAlreadyInComposicaoFamiliar,
 } from '../../../shared/exceptions/error-catalog/domains/solicitacao.errors';
+import { ComposicaoFamiliar, Cidadao } from '@/entities';
 
-/**
- * Serviço responsável por validar a exclusividade de papéis dos cidadãos
- * nas solicitações de benefícios.
- *
- * Conforme requisito crítico (5.1 Exclusividade de Papéis) da especificação técnica,
- * um cidadão não pode simultaneamente ser beneficiário principal e
- * fazer parte da composição familiar de outro beneficiário.
- */
 @Injectable()
 export class ValidacaoExclusividadeService {
-  private readonly logger = new Logger(ValidacaoExclusividadeService.name);
+ constructor(
+   @InjectRepository(Solicitacao)
+   private solicitacaoRepository: Repository<Solicitacao>,
+   @InjectRepository(ComposicaoFamiliar)
+   private composicaoFamiliarRepository: Repository<ComposicaoFamiliar>,
+   
+   @InjectRepository(Cidadao)
+   private cidadaoRepository: Repository<Cidadao>,
+ ) {}
 
-  constructor(
-    @InjectRepository(Solicitacao)
-    private solicitacaoRepository: Repository<Solicitacao>,
-  ) {}
+ async validarExclusividade(beneficiarioId: string, beneficioId: string): Promise<boolean> {
+   const beneficiario = await this.cidadaoRepository.findOne({
+     where: { id: beneficiarioId }
+   });
 
-  /**
-   * Valida se um cidadão pode ser beneficiário principal
-   * verificando se ele não faz parte da composição familiar de outras solicitações ativas
-   *
-   * @param cidadaoId ID do cidadão a ser validado
-   * @returns true se o cidadão pode ser beneficiário, false caso contrário
-   * @throws BadRequestException se o cidadão já faz parte da composição familiar de outra solicitação
-   */
-  async validarExclusividadeBeneficiario(cidadaoId: string): Promise<boolean> {
-    this.logger.log(
-      `Validando exclusividade para cidadão ${cidadaoId}`,
-    );
+   if (!beneficiario) {
+     throw new ConflictException('Beneficiário não encontrado');
+   }
 
-    // Verifica se o cidadão faz parte da composição familiar de alguma solicitação ativa
-    const solicitacoesComCidadaoNaComposicao = await this.solicitacaoRepository
-      .createQueryBuilder('solicitacao')
-      .where(
-        `solicitacao.dados_complementares->'composicao_familiar' @> :membro`,
-        {
-          membro: JSON.stringify([{ cidadao_id: cidadaoId }]),
-        },
-      )
-      .andWhere(`solicitacao.status NOT IN (:...statusInativos)`, {
-        statusInativos: [
-          StatusSolicitacao.CANCELADA,
-          StatusSolicitacao.INDEFERIDA,
-        ],
-      })
-      .getCount();
+   const beneficiarioCpf = beneficiario.cpf;
+   const statusInativos = [StatusSolicitacao.CANCELADA, StatusSolicitacao.INDEFERIDA];
 
-    if (solicitacoesComCidadaoNaComposicao > 0) {
-      this.logger.warn(
-        `Cidadão ${cidadaoId} já faz parte da composição familiar de outra solicitação ativa`,
-      );
-      throwCidadaoAlreadyInComposicaoFamiliar(cidadaoId, {
-        data: { context: 'validacao_exclusividade_beneficiario' },
-      });
-    }
+   // 1. Verifica se beneficiário faz parte da composição familiar de outro cidadão
+   const membroComposicao = await this.composicaoFamiliarRepository.findOne({
+     where: { cpf: beneficiarioCpf }
+   });
 
-    return true;
-  }
+   if (membroComposicao) {
+     throw new ConflictException(
+       `Cidadão não pode ser beneficiário pois faz parte da composição familiar de outro cidadão. Remover o membro da composição familiar do outro cidadão.`
+     );
+   }
 
-  /**
-   * Valida se um cidadão pode ser incluído na composição familiar
-   * verificando se ele não é beneficiário principal em outras solicitações ativas
-   *
-   * @param cidadaoId ID do cidadão a ser validado
-   * @returns true se o cidadão pode ser incluído na composição familiar, false caso contrário
-   * @throws BadRequestException se o cidadão já é beneficiário principal em outra solicitação
-   */
-  async validarExclusividadeComposicaoFamiliar(
-    cidadaoId: string,
-  ): Promise<boolean> {
-    this.logger.log(
-      `Validando exclusividade para composição familiar: cidadão ${cidadaoId}`,
-    );
+   // 2. Verifica se membros da composição familiar possuem solicitação ativa
+   const membrosComposicao = await this.composicaoFamiliarRepository.find({
+     where: { cidadao_id: beneficiarioId }
+   });
 
-    // Verifica se o cidadão é beneficiário principal em alguma solicitação ativa
-    const solicitacoesComCidadaoBeneficiario = await this.solicitacaoRepository
-      .createQueryBuilder('solicitacao')
-      .where('solicitacao.beneficiario_id = :cidadaoId', { cidadaoId })
-      .andWhere(`solicitacao.status NOT IN (:...statusInativos)`, {
-        statusInativos: [
-          StatusSolicitacao.CANCELADA,
-          StatusSolicitacao.INDEFERIDA,
-        ],
-      })
-      .getCount();
+   if (membrosComposicao.length > 0) {
+     const cpfsMembros = membrosComposicao.map(m => m.cpf);
+     
+     const membrosComConcessao = await this.solicitacaoRepository
+       .createQueryBuilder('s')
+       .innerJoin('s.beneficiario', 'b')
+       .where('b.cpf IN (:...cpfsMembros)', { cpfsMembros })
+       .andWhere('s.status NOT IN (:...statusInativos)', { statusInativos })
+       .getCount();
 
-    if (solicitacoesComCidadaoBeneficiario > 0) {
-      this.logger.warn(
-        `Cidadão ${cidadaoId} já é beneficiário principal em outra solicitação ativa`,
-      );
-      throwCidadaoAlreadyBeneficiario(cidadaoId, {
-        data: { context: 'validacao_exclusividade_composicao_familiar' },
-      });
-    }
+     if (membrosComConcessao > 0) {
+       throw new ConflictException(
+         `Cidadão não pode ter membros em sua composição familiar que possuam concessão ativa. Remover o membro da sua composição familiar.`
+       );
+     }
+   }
 
-    return true;
-  }
+   // 3. Verifica se beneficiário já tem solicitação/concessão para o mesmo benefício
+   const solicitacaoExistente = await this.solicitacaoRepository
+     .createQueryBuilder('s')
+     .where('s.beneficiario_id = :beneficiarioId', { beneficiarioId })
+     .andWhere('s.tipo_beneficio_id = :beneficioId', { beneficioId })
+     .andWhere('s.status NOT IN (:...statusInativos)', { statusInativos })
+     .getCount();
 
-  /**
-   * Valida a composição familiar completa, verificando se todos os membros
-   * podem ser incluídos (não são beneficiários principais em outras solicitações)
-   *
-   * @param composicaoFamiliar Array de IDs de cidadãos da composição familiar
-   * @returns true se todos os membros podem ser incluídos na composição familiar
-   * @throws BadRequestException se algum membro não pode ser incluído
-   */
-  async validarComposicaoFamiliarCompleta(
-    composicaoFamiliar: string[],
-  ): Promise<boolean> {
-    this.logger.log(
-      `Validando composição familiar completa com ${composicaoFamiliar.length} membros`,
-    );
+   if (solicitacaoExistente > 0) {
+     throw new ConflictException(
+       `Beneficiário já possui solicitação ou concessão ativa para este benefício.`
+     );
+   }
 
-    // Valida cada membro da composição familiar
-    for (const cidadaoId of composicaoFamiliar) {
-      await this.validarExclusividadeComposicaoFamiliar(cidadaoId);
-    }
-
-    return true;
-  }
+   return true;
+ }
 }

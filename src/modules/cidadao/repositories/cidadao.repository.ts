@@ -88,15 +88,17 @@ export class CidadaoRepository {
     // Relacionamentos
     if (includeRelations) {
       query.leftJoinAndSelect('cidadao.unidade', 'unidade');
-      query.leftJoinAndSelect('cidadao.contatos', 'contatos');
-      query.leftJoinAndSelect('cidadao.enderecos', 'enderecos');
-      query.leftJoinAndSelect(
-        'cidadao.composicao_familiar',
-        'composicao_familiar',
-      );
+      query.leftJoinAndSelect('cidadao.contatos', 'contato');
+      query.leftJoinAndSelect('cidadao.enderecos', 'endereco');
+      query.leftJoinAndSelect('cidadao.composicao_familiar', 'composicao_familiar');
     } else {
-      // Sempre incluir unidade, mesmo quando includeRelations for false
+      // Sempre incluir unidade, contatos e apenas o último endereço
       query.leftJoinAndSelect('cidadao.unidade', 'unidade');
+      query.leftJoinAndSelect(
+        'cidadao.enderecos',
+        'endereco',
+        'endereco.data_fim_vigencia IS NULL'
+      );
     }
 
     return query
@@ -110,13 +112,24 @@ export class CidadaoRepository {
     id: string,
     includeRelations = false,
   ): Promise<Cidadao | null> {
-    const relations = includeRelations
-      ? ['unidade', 'contatos', 'enderecos', 'composicao_familiar']
-      : ['unidade'];
-    return this.repository.findOne({
-      where: { id },
-      relations,
-    });
+    const query = this.repository.createQueryBuilder('cidadao')
+      .where('cidadao.id = :id', { id });
+
+    if (includeRelations) {
+      query.leftJoinAndSelect('cidadao.unidade', 'unidade');
+      query.leftJoinAndSelect('cidadao.contatos', 'contato');
+      query.leftJoinAndSelect('cidadao.enderecos', 'endereco');
+      query.leftJoinAndSelect('cidadao.composicao_familiar', 'composicao_familiar');
+    } else {
+      query.leftJoinAndSelect('cidadao.unidade', 'unidade');
+      query.leftJoinAndSelect(
+        'cidadao.enderecos',
+        'endereco',
+        'endereco.data_fim_vigencia IS NULL'
+      );
+    }
+
+    return query.getOne();
   }
 
   async findByCpf(
@@ -124,13 +137,24 @@ export class CidadaoRepository {
     includeRelations = false,
   ): Promise<Cidadao | null> {
     const cpfClean = cpf.replace(/\D/g, '');
-    const relations = includeRelations
-      ? ['unidade', 'contatos', 'enderecos', 'composicao_familiar']
-      : ['unidade'];
-    return this.repository.findOne({
-      where: { cpf: cpfClean },
-      relations,
-    });
+    const query = this.repository.createQueryBuilder('cidadao')
+      .where('cidadao.cpf = :cpf', { cpf: cpfClean });
+
+    if (includeRelations) {
+      query.leftJoinAndSelect('cidadao.unidade', 'unidade');
+      query.leftJoinAndSelect('cidadao.contatos', 'contato');
+      query.leftJoinAndSelect('cidadao.enderecos', 'endereco');
+      query.leftJoinAndSelect('cidadao.composicao_familiar', 'composicao_familiar');
+    } else {
+      query.leftJoinAndSelect('cidadao.unidade', 'unidade');
+      query.leftJoinAndSelect(
+        'cidadao.enderecos',
+        'endereco',
+        'endereco.data_fim_vigencia IS NULL'
+      );
+    }
+
+    return query.getOne();
   }
 
   async findByNis(
@@ -138,13 +162,24 @@ export class CidadaoRepository {
     includeRelations = false,
   ): Promise<Cidadao | null> {
     const nisClean = nis.replace(/\D/g, '');
-    const relations = includeRelations
-      ? ['unidade', 'contatos', 'enderecos', 'composicao_familiar']
-      : ['unidade'];
-    return this.repository.findOne({
-      where: { nis: nisClean },
-      relations,
-    });
+    const query = this.repository.createQueryBuilder('cidadao')
+      .where('cidadao.nis = :nis', { nis: nisClean });
+
+    if (includeRelations) {
+      query.leftJoinAndSelect('cidadao.unidade', 'unidade');
+      query.leftJoinAndSelect('cidadao.contatos', 'contato');
+      query.leftJoinAndSelect('cidadao.enderecos', 'endereco');
+      query.leftJoinAndSelect('cidadao.composicao_familiar', 'composicao_familiar');
+    } else {
+      query.leftJoinAndSelect('cidadao.unidade', 'unidade');
+      query.leftJoinAndSelect(
+        'cidadao.enderecos',
+        'endereco',
+        'endereco.data_fim_vigencia IS NULL'
+      );
+    }
+
+    return query.getOne();
   }
 
   async create(data: Partial<Cidadao>): Promise<Cidadao> {
