@@ -81,7 +81,9 @@ export abstract class AbstractDadosBeneficioService<
   ): Promise<void>;
 
   /**
-   * Criar dados de benefício
+   * Criar ou atualizar dados de benefício (upsert)
+   * Se já existirem dados para a solicitação, eles serão atualizados
+   * Caso contrário, novos dados serão criados
    */
   async create(createDto: TCreateDto): Promise<TEntity> {
     // Validação específica do benefício
@@ -92,25 +94,42 @@ export abstract class AbstractDadosBeneficioService<
       where: { solicitacao_id: createDto.solicitacao_id } as any,
     });
 
+    // Extrair usuarioId do createDto, se disponível
+    const usuarioId = createDto.usuario_id || null;
+    let savedEntity: TEntity;
+    let isUpdate = false;
+
     if (existingData) {
-      throw new ConflictException(
-        `Dados de ${this.entityName} já existem para esta solicitação`,
+      // Atualizar dados existentes (upsert)
+      isUpdate = true;
+      
+      // Validar dados para atualização
+      await this.validateUpdateData(createDto as any, existingData);
+      
+      // Atualizar entidade existente
+      Object.assign(existingData, createDto, {
+        updated_at: new Date(),
+      });
+      
+      savedEntity = await this.repository.save(existingData);
+      
+      this.logger.log(
+        `Dados de ${this.entityName} atualizados com sucesso para solicitação ${createDto.solicitacao_id}`,
+      );
+    } else {
+      // Criar nova entidade
+      const entity = this.repository.create(createDto as any);
+      savedEntity = await this.repository.save(entity) as unknown as TEntity;
+      
+      this.logger.log(
+        `Dados de ${this.entityName} criados com sucesso para solicitação ${createDto.solicitacao_id}`,
       );
     }
 
-    // Extrair usuarioId do createDto, se disponível
-    const usuarioId = createDto.usuario_id || null;
-
-    // Criar e salvar entidade
-    const entity = this.repository.create(createDto as any);
-    const savedEntity = await this.repository.save(entity);
-
-    this.logger.log(
-      `Dados de ${this.entityName} criados com sucesso para solicitação ${createDto.solicitacao_id}`,
-    );
-
-    // Atualizar status e substatus da solicitação após criação bem-sucedida
-    await this.atualizarStatusSolicitacao(createDto.solicitacao_id, usuarioId);
+    // Atualizar status e substatus da solicitação apenas se for criação (não atualização)
+    if (!isUpdate) {
+      await this.atualizarStatusSolicitacao(createDto.solicitacao_id, usuarioId);
+    }
 
     return savedEntity as unknown as TEntity;
   }

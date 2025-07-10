@@ -2,6 +2,7 @@ import {
   Injectable,
   BadRequestException,
   NotFoundException,
+  ConflictException,
 } from '@nestjs/common';
 import {
   TipoDadosBeneficio,
@@ -65,7 +66,9 @@ export class DadosBeneficioFactoryService {
   }
 
   /**
-   * Criar dados específicos de benefício
+   * Criar ou atualizar dados específicos de benefício (upsert)
+   * Se já existirem dados para a solicitação, eles serão atualizados
+   * Caso contrário, novos dados serão criados
    */
   async create(
     codigoOrId: string,
@@ -74,7 +77,41 @@ export class DadosBeneficioFactoryService {
     const tipoBeneficio = await this.resolveTipoFromCodigoOrId(codigoOrId);
     const service = this.getService(tipoBeneficio);
     // Garantir que o serviço específico receba o createDto contendo o usuario_id
+    // O método create agora funciona como upsert automaticamente
     return service.create(createDto);
+  }
+
+  /**
+   * Criar dados específicos de benefício (apenas criação, falha se já existir)
+   * @deprecated Use o método create() que agora suporta upsert
+   */
+  async createOnly(
+    codigoOrId: string,
+    createDto: ICreateDadosBeneficioDto,
+  ): Promise<IDadosBeneficio> {
+    const tipoBeneficio = await this.resolveTipoFromCodigoOrId(codigoOrId);
+    const service = this.getService(tipoBeneficio);
+    
+    // Verificar se já existem dados para esta solicitação
+    const exists = await service.existsBySolicitacao(createDto.solicitacao_id);
+    if (exists) {
+      throw new ConflictException(
+        `Dados de benefício já existem para esta solicitação`,
+      );
+    }
+    
+    return service.create(createDto);
+  }
+
+  /**
+   * Método explícito para upsert (criar ou atualizar)
+   */
+  async upsert(
+    codigoOrId: string,
+    createDto: ICreateDadosBeneficioDto,
+  ): Promise<IDadosBeneficio> {
+    // O método create agora já funciona como upsert
+    return this.create(codigoOrId, createDto);
   }
 
   /**
