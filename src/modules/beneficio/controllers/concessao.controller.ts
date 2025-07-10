@@ -269,19 +269,8 @@ export class ConcessaoController {
       hasPrev: hasPrevious,
     };
 
-    // Mapear dados para o DTO de resposta
-    const items: ConcessaoListResponseDto[] = result.data.map((item) => ({
-      concessao_id: item.concessao_id,
-      data_inicio: item.data_inicio,
-      status: item.status,
-      prioridade: item.prioridade,
-      protocolo: item.protocolo,
-      determinacao_judicial: item.determinacao_judicial,
-      nome_beneficiario: item.nome_beneficiario,
-      cpf_beneficiario: item.cpf_beneficiario,
-      nome_beneficio: item.nome_beneficio,
-      nome_unidade: item.nome_unidade,
-    }));
+    // Os dados já vêm na estrutura correta do service, sem necessidade de mapeamento
+    const items: ConcessaoListResponseDto[] = result.data as ConcessaoListResponseDto[];
 
     return new PaginatedResponseDto(items, meta);
   }
