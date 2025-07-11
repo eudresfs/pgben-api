@@ -68,20 +68,6 @@ export class ValidacaoExclusividadeService {
      }
    }
 
-   // 3. Verifica se beneficiário já tem solicitação/concessão para o mesmo benefício
-   const solicitacaoExistente = await this.solicitacaoRepository
-     .createQueryBuilder('s')
-     .where('s.beneficiario_id = :beneficiarioId', { beneficiarioId })
-     .andWhere('s.tipo_beneficio_id = :beneficioId', { beneficioId })
-     .andWhere('s.status NOT IN (:...statusInativos)', { statusInativos })
-     .getCount();
-
-   if (solicitacaoExistente > 0) {
-     throw new ConflictException(
-       `Beneficiário já possui solicitação ou concessão ativa para este benefício.`
-     );
-   }
-
    return true;
  }
 }
