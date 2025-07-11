@@ -43,14 +43,14 @@ check_connection ${REDIS_HOST:-localhost} ${REDIS_PORT:-6379} "Redis" 30
 check_connection ${MINIO_ENDPOINT:-localhost} ${MINIO_PORT:-9000} "MinIO" 30
 
 # Gerar chaves JWT se não existirem
-# if [ ! -f "keys/private.key" ] || [ ! -f "keys/public.key" ]; then
-#  echo "🔑 Gerando chaves JWT..."
-#  mkdir -p keys
-#  npm run jwt:generate || { echo "❌ Falha na geração das chaves JWT!"; exit 1; }
-#  echo "✅ Chaves JWT geradas com sucesso!"
-# else
-#  echo "✅ Chaves JWT já existem!"
-# fi
+if [ ! -f "keys/private.key" ] || [ ! -f "keys/public.key" ]; then
+  echo "🔑 Gerando chaves JWT..."
+  mkdir -p keys
+  npm run jwt:generate || { echo "❌ Falha na geração das chaves JWT!"; exit 1; }
+  echo "✅ Chaves JWT geradas com sucesso!"
+else
+  echo "✅ Chaves JWT já existem!"
+fi
 
 echo "🚀 Iniciando a aplicação PGBen-server..."
 exec node dist/main
