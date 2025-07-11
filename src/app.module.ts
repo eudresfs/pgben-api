@@ -1,7 +1,8 @@
-import { Module } from '@nestjs/common';
+import { Module, Logger } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CacheModule } from '@nestjs/cache-manager';
+import { BullModule } from '@nestjs/bull';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { createThrottlerConfig } from './config/throttler.config';
@@ -28,7 +29,6 @@ import { EmailModule } from './shared/modules/email.module';
 import { ConfiguracaoModule } from './modules/configuracao/configuracao.module';
 import { NotificacaoModule } from './modules/notificacao/notificacao.module';
 import { EasyUploadModule } from './modules/easy-upload/easy-upload.module';
-import { BullModule } from '@nestjs/bull';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { addTransactionalDataSource } from 'typeorm-transactional';
 import { DataSource } from 'typeorm';
@@ -63,14 +63,37 @@ import { DataSource } from 'typeorm';
     }),
     // Configuração do agendamento de tarefas
     ScheduleModule.forRoot(),
-    // Configuração de filas com BullMQ - usando configuração dinâmica
+    // Bull Queue Module para processamento assíncrono
+    // Configurado com tratamento de erro para evitar crash da aplicação
     BullModule.forRootAsync({
       imports: [ConfigModule],
-      inject: [ConfigService],
       useFactory: async (configService: ConfigService) => {
-        const { getBullConfig } = await import('./config/bull.config');
-        return getBullConfig(configService);
+        try {
+          const { getBullConfig } = await import('./config/bull.config');
+          const config = getBullConfig(configService);
+          const logger = new Logger('BullModule');
+          logger.log('Configuração do Bull inicializada com sucesso');
+          return config;
+        } catch (error) {
+          const logger = new Logger('BullModule');
+          logger.error(`Erro ao configurar Bull: ${error.message}`);
+          // Retornar configuração desabilitada em caso de erro
+          return {
+            redis: {
+              connectTimeout: 1,
+              lazyConnect: true,
+              retryStrategy: () => 300000, // 5 minutos - efetivamente desabilita
+              maxRetriesPerRequest: 0,
+            },
+            defaultJobOptions: {
+              attempts: 1,
+              removeOnComplete: true,
+              removeOnFail: true,
+            },
+          };
+        }
       },
+      inject: [ConfigService],
     }),
     // Configuração do TypeORM
     TypeOrmModule.forRootAsync({
@@ -103,7 +126,21 @@ import { DataSource } from 'typeorm';
         if (!options) {
           throw new Error('Invalid options passed');
         }
-        return addTransactionalDataSource(new DataSource(options));
+        
+        const dataSource = new DataSource(options);
+        
+        // Verificar se o DataSource já foi adicionado para evitar erro de duplicação
+        try {
+          return addTransactionalDataSource(dataSource);
+        } catch (error) {
+          // Se o DataSource já existe, apenas retornar o DataSource criado
+          if (error.message?.includes('has already added')) {
+            const logger = new Logger('TypeOrmModule');
+            logger.warn('DataSource já existe, reutilizando conexão existente');
+            return dataSource;
+          }
+          throw error;
+        }
       },
     }),
     // Módulo de documentos (necessário para StorageHealthService)
