@@ -51,7 +51,8 @@ import {
  * - `especificacoes`: Até 2 especificações adicionais (vítima de violência, LGBTQIA+, etc.)
  * - `situacao_moradia_atual`: Descrição detalhada da situação habitacional
  * - `possui_imovel_interditado`: Indica se possui imóvel interditado
- * - `caso_judicializado_maria_penha`: Casos sob Lei Maria da Penha
+ * - `processo_judicializado`: Tipo de processo judicializado (opcional)
+ * - `numero_processo`: Número do processo judicial (opcional)
  * - `observacoes`: Observações complementares
  *
  * ### Outros Benefícios
@@ -188,11 +189,15 @@ export class DadosBeneficioController {
               description: 'Indica se possui imóvel interditado',
               example: false,
             },
-            caso_judicializado_maria_penha: {
-              type: 'boolean',
-              description:
-                'Indica se é caso judicializado pela Lei Maria da Penha (Art. 23, inciso VI)',
-              example: false,
+            processo_judicializado: {
+              type: 'string',
+              description: 'Tipo de processo judicializado',
+              example: 'Lei Maria da Penha',
+            },
+            numero_processo: {
+              type: 'string',
+              description: 'Número do processo judicial',
+              example: '1234567-89.2024.8.26.0001',
             },
             observacoes: {
               type: 'string',
@@ -206,7 +211,8 @@ export class DadosBeneficioController {
             'publico_prioritario',
             'situacao_moradia_atual',
             'possui_imovel_interditado',
-            'caso_judicializado_maria_penha',
+            'processo_judicializado',
+                'numero_processo',
           ],
         },
         {
@@ -262,9 +268,15 @@ export class DadosBeneficioController {
               type: 'boolean',
               example: false,
             },
-            caso_judicializado_maria_penha: {
-              type: 'boolean',
-              example: false,
+            processo_judicializado: {
+              type: 'string',
+              description: 'Tipo de processo judicializado',
+              example: 'Lei Maria da Penha',
+            },
+            numero_processo: {
+              type: 'string',
+              description: 'Número do processo judicial',
+              example: '1234567-89.2024.8.26.0001',
             },
             observacoes: {
               type: 'string',
@@ -384,9 +396,15 @@ export class DadosBeneficioController {
               type: 'boolean',
               example: false,
             },
-            caso_judicializado_maria_penha: {
-              type: 'boolean',
-              example: false,
+            processo_judicializado: {
+              type: 'string',
+              description: 'Tipo de processo judicializado',
+              example: 'Lei Maria da Penha',
+            },
+            numero_processo: {
+              type: 'string',
+              description: 'Número do processo judicial',
+              example: '1234567-89.2024.8.26.0001',
             },
             observacoes: {
               type: 'string',
@@ -479,11 +497,15 @@ export class DadosBeneficioController {
               example: true,
               description: 'Indica se possui imóvel que foi interditado',
             },
-            caso_judicializado_maria_penha: {
-              type: 'boolean',
-              example: true,
-              description:
-                'Caso está sendo acompanhado pela Lei Maria da Penha',
+            processo_judicializado: {
+              type: 'string',
+              description: 'Tipo de processo judicializado',
+              example: 'Lei Maria da Penha',
+            },
+            numero_processo: {
+              type: 'string',
+              description: 'Número do processo judicial',
+              example: '1234567-89.2024.8.26.0001',
             },
             observacoes: {
               type: 'string',
@@ -600,10 +622,15 @@ export class DadosBeneficioController {
               description: 'Atualização sobre imóvel interditado',
               example: true,
             },
-            caso_judicializado_maria_penha: {
-              type: 'boolean',
-              description: 'Atualização sobre judicialização',
-              example: true,
+            processo_judicializado: {
+              type: 'string',
+              description: 'Tipo de processo judicializado',
+              example: 'Lei Maria da Penha',
+            },
+            numero_processo: {
+              type: 'string',
+              description: 'Número do processo judicial',
+              example: '1234567-89.2024.8.26.0001',
             },
             observacoes: {
               type: 'string',
@@ -660,9 +687,15 @@ export class DadosBeneficioController {
               type: 'boolean',
               example: true,
             },
-            caso_judicializado_maria_penha: {
-              type: 'boolean',
-              example: true,
+            processo_judicializado: {
+              type: 'string',
+              description: 'Tipo de processo judicializado',
+              example: 'Lei Maria da Penha',
+            },
+            numero_processo: {
+              type: 'string',
+              description: 'Número do processo judicial',
+              example: '1234567-89.2024.8.26.0001',
             },
             observacoes: {
               type: 'string',

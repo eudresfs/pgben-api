@@ -181,14 +181,33 @@ export class DadosAluguelSocialService extends AbstractDadosBeneficioService<
         );
       }
 
-      if (
-        data.caso_judicializado_maria_penha === undefined ||
-        data.caso_judicializado_maria_penha === null
-      ) {
-        errorBuilder.add(
-          'caso_judicializado_maria_penha',
-          'Campo caso_judicializado_maria_penha é obrigatório. Validação de campo obrigatório falhou.',
-        );
+      // Validação de campos opcionais de processo
+      if (data.processo_judicializado !== undefined && data.processo_judicializado !== null) {
+        if (typeof data.processo_judicializado !== 'string') {
+          errorBuilder.add(
+            'processo_judicializado',
+            'Campo processo_judicializado deve ser uma string. Validação de tipo falhou.',
+          );
+        } else if (data.processo_judicializado.trim().length === 0) {
+          errorBuilder.add(
+            'processo_judicializado',
+            'Campo processo_judicializado não pode estar vazio. Validação de conteúdo falhou.',
+          );
+        }
+      }
+
+      if (data.numero_processo !== undefined && data.numero_processo !== null) {
+        if (typeof data.numero_processo !== 'string') {
+          errorBuilder.add(
+            'numero_processo',
+            'Campo numero_processo deve ser uma string. Validação de tipo falhou.',
+          );
+        } else if (data.numero_processo.trim().length === 0) {
+          errorBuilder.add(
+            'numero_processo',
+            'Campo numero_processo não pode estar vazio. Validação de conteúdo falhou.',
+          );
+        }
       }
 
       // Validação de observações (se fornecidas)

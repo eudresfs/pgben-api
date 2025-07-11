@@ -63,11 +63,13 @@ export class DadosAluguelSocial {
   @IsBoolean({ message: 'Possui imóvel interditado deve ser um booleano' })
   possui_imovel_interditado: boolean;
 
-  @Column({ default: false })
-  @IsBoolean({
-    message: 'Caso judicializado Lei Maria da Penha deve ser um booleano',
-  })
-  caso_judicializado_maria_penha: boolean;
+  @Column('text', { nullable: true })
+  @IsOptional()
+  processo_judicializado?: string;
+
+  @Column('text', { nullable: true })
+  @IsOptional()
+  numero_processo?: string;
 
   @Column('text', { nullable: true })
   @IsOptional()
@@ -109,7 +111,7 @@ export class DadosAluguelSocial {
 
     return (
       casosAltaPrioridade.includes(this.publico_prioritario) ||
-      this.caso_judicializado_maria_penha
+      !!this.processo_judicializado
     );
   }
 
@@ -181,7 +183,7 @@ export class DadosAluguelSocial {
     }
 
     // Pontuação por situações especiais
-    if (this.caso_judicializado_maria_penha) {
+    if (this.processo_judicializado) {
       pontuacao += 50;
     }
     if (this.possui_imovel_interditado) {
