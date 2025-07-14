@@ -1,0 +1,105 @@
+{
+  "nome": "Maria da Silva",
+  "cpf": "95161870052",
+  "rg": "1234567",
+  "prontuario_suas": "SUAS1234567",
+  "naturalidade": "Natal",
+  "data_nascimento": "1985-10-15",
+  "sexo": "feminino",
+  "nis": "56937037597",
+  "nome_social": "Maria Santos",
+  "estado_civil": "casado",
+  "nome_mae": "Maria da Silva",
+  "unidade_id": "550e8400-e29b-41d4-a716-446655440000",
+  "composicao_familiar": [
+    {
+      "nome": "Maria Silva",
+      "cpf": "39120102003",
+      "idade": 25,
+      "ocupacao": "Estudante",
+      "escolaridade": "medio_completo",
+      "parentesco": "filho",
+      "renda": 2500,
+      "observacoes": "Observações adicionais sobre o membro familiar",
+      "data_nascimento": "1998-05-15"
+    },
+    {
+      "nome": "Maria Silva Santos",
+      "cpf": "65525305011",
+      "idade": 25,
+      "ocupacao": "Estudante",
+      "escolaridade": "medio_completo",
+      "parentesco": "filho",
+      "renda": 2500,
+      "observacoes": "Observações adicionais sobre o membro familiar",
+      "data_nascimento": "1998-05-15"
+    }
+  ],
+  "contatos": [
+    {
+      "telefone": "11999998888",
+      "is_whatsapp": false,
+      "possui_smartphone": true,
+      "email": "email@exemplo.com",
+      "instagram": "@maria_silva",
+      "facebook": "maria.silva.santos",
+      "proprietario": true,
+      "nome_contato": "Maria da Silva",
+      "grau_parentesco": "próprio"
+    }
+  ],
+  "enderecos": [
+    {
+      "logradouro": "Rua das Flores",
+      "numero": "123",
+      "complemento": "Apto 101",
+      "bairro": "Centro",
+      "cidade": "São Paulo",
+      "estado": "SP",
+      "cep": "01234567",
+      "ponto_referencia": "Próximo ao mercado",
+      "tempo_de_residencia": 24,
+      "data_inicio_vigencia": "2025-01-01"
+    }
+  ],
+  "dados_sociais": {
+    "escolaridade": "pos_graduacao",
+    "publico_prioritario": true,
+    "renda": 417,
+    "ocupacao_beneficiario": "Estudante",
+    "recebe_pbf": false,
+    "valor_pbf": 919,
+    "recebe_bpc": true,
+    "modalidade_bpc": "pcd",
+    "valor_bpc": 700,
+    "recebe_tributo_crianca": false,
+    "valor_tributo_crianca": 153,
+    "pensao_morte": false,
+    "aposentadoria": false,
+    "outros_beneficios": true,
+    "descricao_outros_beneficios": "Auxílio alimentação",
+    "curso_profissionalizante": "Informática básica",
+    "interesse_curso_profissionalizante": false,
+    "situacao_trabalho": "autonomo",
+    "area_trabalho": "Serviços gerais",
+    "familiar_apto_trabalho": false,
+    "area_interesse_familiar": "Construção civil",
+    "exerce_atividade_remunerada": true,
+    "tipo_insercao_beneficiario": "formal",
+    "nome_conjuge": "João da Silva",
+    "ocupacao_conjuge": "Pedreiro",
+    "exerce_atividade_remunerada_conjuge": false,
+    "tipo_insercao_conjuge": "formal",
+    "observacoes": "Família em situação de vulnerabilidade social"
+  },
+  "info_bancaria": {
+    "banco": "001",
+    "nome_banco": "Banco do Brasil S.A.",
+    "agencia": "1234-5",
+    "conta": "12345678-9",
+    "tipo_conta": "poupanca_social",
+    "chave_pix": "12345678901",
+    "tipo_chave_pix": "cpf",
+    "observacoes": "Conta poupança social para recebimento de benefícios"
+  }
+}

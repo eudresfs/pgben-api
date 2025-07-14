@@ -9,6 +9,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
+import { createWriteStream, WriteStream } from 'fs';
+import { join } from 'path';
 import {
   AuditEvent,
   AuditEventType,
@@ -23,11 +25,18 @@ import {
 @Injectable()
 export class AuditEventEmitter {
   private readonly logger = new Logger(AuditEventEmitter.name);
+  private readonly fallbackLog: WriteStream;
 
   constructor(
     private readonly eventEmitter: EventEmitter2,
     @InjectQueue('auditoria') private readonly auditQueue: Queue,
-  ) {}
+  ) {
+    // Inicializa o log de fallback para eventos que falharem no Redis
+    this.fallbackLog = createWriteStream(
+      join(process.cwd(), 'logs', 'audit-fallback.log'),
+      { flags: 'a' }
+    );
+  }
 
   /**
    * Emite um evento de auditoria
@@ -68,10 +77,8 @@ export class AuditEventEmitter {
           }
         }
       } else {
-        // Adiciona à fila para processamento assíncrono
-        try {
-          await this.addToQueue(enrichedEvent, config);
-        } catch (queueError) {
+        // Adiciona à fila para processamento assíncrono (fire-and-forget)
+        this.addToQueue(enrichedEvent, config).catch((queueError) => {
           this.logger.error(
             `Failed to add audit event to queue: ${queueError.message}`,
             {
@@ -80,9 +87,10 @@ export class AuditEventEmitter {
               error: queueError.stack,
             },
           );
-          // Para eventos assíncronos, não propagamos o erro para não afetar a API
-          // O evento foi emitido sincronamente, então listeners imediatos já foram notificados
-        }
+          
+          // Fallback: salva o evento em arquivo de log
+          this.writeToFallbackLog(enrichedEvent, queueError);
+        });
       }
 
       const duration = Date.now() - startTime;
@@ -346,48 +354,58 @@ export class AuditEventEmitter {
       },
     };
 
+    // Verifica se a fila está disponível antes de tentar adicionar
+    if (!this.auditQueue) {
+      throw new Error('Audit queue not available');
+    }
+
+    await this.auditQueue.add(
+      'process-audit-event',
+      {
+        event,
+        config,
+      },
+      jobOptions,
+    );
+
+    this.logger.debug(`Event added to queue: ${event.eventType}`);
+  }
+
+  /**
+   * Escreve evento no log de fallback quando o Redis falha
+   */
+  private writeToFallbackLog(event: AuditEvent, error: Error): void {
     try {
-      // Verifica se a fila está disponível antes de tentar adicionar
-      if (!this.auditQueue) {
-        throw new Error('Audit queue not available');
-      }
-
-      await this.auditQueue.add(
-        'process-audit-event',
-        {
-          event,
-          config,
+      const logEntry = {
+        timestamp: new Date().toISOString(),
+        event,
+        error: {
+          message: error.message,
+          name: error.name,
+          stack: error.stack,
         },
-        jobOptions,
+        source: 'audit-fallback',
+      };
+
+      this.fallbackLog.write(JSON.stringify(logEntry) + '\n');
+      
+      this.logger.warn(
+        `Audit event written to fallback log: ${event.eventType}`,
+        {
+          eventType: event.eventType,
+          entityName: event.entityName,
+          fallbackReason: error.message,
+        },
       );
-
-      this.logger.debug(`Event added to queue: ${event.eventType}`);
-    } catch (error) {
-      // Log detalhado do erro para diagnóstico
-      this.logger.error(`Failed to add event to queue: ${error.message}`, {
-        eventType: event.eventType,
-        entityName: event.entityName,
-        errorCode: error.code,
-        errorName: error.name,
-        isRedisError:
-          error.message.includes('Redis') ||
-          error.message.includes('ECONNREFUSED'),
-      });
-
-      // Para eventos críticos, tenta processamento síncrono como fallback
-      if (event.riskLevel === 'CRITICAL') {
-        this.logger.warn(
-          `Attempting sync fallback for critical event: ${event.eventType}`,
-        );
-        try {
-          this.eventEmitter.emit('audit.process.sync', event);
-        } catch (syncError) {
-          this.logger.error(`Sync fallback also failed: ${syncError.message}`);
-          throw error; // Re-throw original error
-        }
-      }
-
-      throw error;
+    } catch (fallbackError) {
+      this.logger.error(
+        `Failed to write to fallback log: ${fallbackError.message}`,
+        {
+          originalEvent: event.eventType,
+          originalError: error.message,
+          fallbackError: fallbackError.message,
+        },
+      );
     }
   }
 

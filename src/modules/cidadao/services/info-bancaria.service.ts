@@ -7,7 +7,7 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { InfoBancariaRepository } from '../repositories/info-bancaria.repository';
-import { CidadaoService } from './cidadao.service';
+import { CidadaoRepository } from '../repositories/cidadao.repository';
 import { CreateInfoBancariaDto } from '../dto/create-info-bancaria.dto';
 import { UpdateInfoBancariaDto } from '../dto/update-info-bancaria.dto';
 import { InfoBancariaResponseDto } from '../dto/info-bancaria-response.dto';
@@ -27,7 +27,7 @@ export class InfoBancariaService {
 
   constructor(
     private readonly infoBancariaRepository: InfoBancariaRepository,
-    private readonly cidadaoService: CidadaoService,
+    private readonly cidadaoRepository: CidadaoRepository,
   ) {}
 
   /**
@@ -52,11 +52,13 @@ async upsert(
   try {
 
     // Verifica se o cidadão existe
-    const cidadao = await this.cidadaoService.findById(
+    const cidadaoExiste = await this.cidadaoRepository.exists(
       createInfoBancariaDto.cidadao_id,
     );
-    if (!cidadao) {
-      throw new BadRequestException('Cidadão não encontrado');
+    if (!cidadaoExiste) {
+      throw new NotFoundException(
+        `Cidadão com ID ${createInfoBancariaDto.cidadao_id} não encontrado`,
+      );
     }
 
     // Preparar dados normalizados

@@ -4,28 +4,21 @@ import {
   IsEnum,
   IsString,
   MaxLength,
-  IsUUID,
   Matches,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { TipoConta, TipoChavePix } from '../../../enums/info-bancaria.enum';
 
 /**
- * DTO para criação de informações bancárias
+ * DTO para criação de informações bancárias no body da requisição
+ * Usado quando o cidadao_id ainda não existe (criação de cidadão)
  */
-export class CreateInfoBancariaDto {
-  @ApiProperty({
-    description: 'ID do cidadão',
-    example: '123e4567-e89b-12d3-a456-426614174000',
-  })
-  @IsNotEmpty({ message: 'ID do cidadão é obrigatório' })
-  @IsUUID('4', { message: 'ID do cidadão deve ser um UUID válido' })
-  cidadao_id: string;
-
+export class CreateInfoBancariaBodyDto {
   @ApiProperty({
     description: 'Código do banco (3 dígitos)',
     example: '001',
     maxLength: 3,
+    required: false,
   })
   @IsOptional()
   @IsString({ message: 'Código do banco deve ser uma string' })
@@ -36,6 +29,7 @@ export class CreateInfoBancariaDto {
     description: 'Nome do banco',
     example: 'Banco do Brasil S.A.',
     maxLength: 100,
+    required: false,
   })
   @IsOptional()
   @IsString({ message: 'Nome do banco deve ser uma string' })
@@ -48,6 +42,7 @@ export class CreateInfoBancariaDto {
     description: 'Número da agência',
     example: '1234-5',
     maxLength: 10,
+    required: false,
   })
   @IsOptional()
   @IsString({ message: 'Agência deve ser uma string' })
@@ -60,6 +55,7 @@ export class CreateInfoBancariaDto {
     description: 'Número da conta',
     example: '12345678-9',
     maxLength: 20,
+    required: false,
   })
   @IsOptional()
   @IsString({ message: 'Conta deve ser uma string' })
@@ -70,6 +66,7 @@ export class CreateInfoBancariaDto {
     description: 'Tipo da conta bancária',
     enum: TipoConta,
     example: TipoConta.POUPANCA_SOCIAL,
+    required: false,
   })
   @IsEnum(TipoConta, { message: 'Tipo de conta inválido' })
   @IsOptional()

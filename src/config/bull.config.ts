@@ -100,7 +100,7 @@ function getDisabledBullConfig(): BullModuleOptions {
       connectTimeout: 1,
       lazyConnect: true,
       retryStrategy: () => 300000, // 5 minutos - efetivamente desabilita
-      maxRetriesPerRequest: 0, // Não fazer requests
+      maxRetriesPerRequest: 3, // Não fazer requests
     },
     defaultJobOptions: {
       attempts: 1,

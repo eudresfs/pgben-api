@@ -35,8 +35,11 @@ export class HealthCheckService {
       password,
       connectTimeout: 2000,
       commandTimeout: 1000,
-      // Removido maxRetriesPerRequest para compatibilidade com Bull
-      retryStrategy: () => null,
+      maxRetriesPerRequest: 3,
+      retryStrategy: (times) => {
+        const delay = Math.min(times * 50, 2000);
+        return delay;
+      },
       lazyConnect: true,
     });
 

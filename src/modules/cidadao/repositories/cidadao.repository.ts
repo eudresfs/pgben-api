@@ -219,6 +219,10 @@ export class CidadaoRepository {
     }
   }
 
+  async exists(id: string): Promise<boolean> {
+    return this.repository.exist({ where: { id } });
+  }
+
   async findAllBairros(): Promise<string[]> {
     try {
       const result = await this.dataSource.query(

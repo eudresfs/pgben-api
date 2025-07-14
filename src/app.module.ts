@@ -83,7 +83,7 @@ import { DataSource } from 'typeorm';
               connectTimeout: 1,
               lazyConnect: true,
               retryStrategy: () => 300000, // 5 minutos - efetivamente desabilita
-              maxRetriesPerRequest: 0,
+              maxRetriesPerRequest: 3,
             },
             defaultJobOptions: {
               attempts: 1,

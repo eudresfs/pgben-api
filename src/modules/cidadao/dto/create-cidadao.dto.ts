@@ -1,25 +1,31 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
-  IsString,
-  IsOptional,
-  IsEnum,
   IsNotEmpty,
-  ValidateNested,
-  Validate,
-  ValidateIf,
+  IsOptional,
+  IsString,
+  IsDateString,
+  IsEnum,
   IsArray,
+  ValidateNested,
+  IsBoolean,
+  MaxLength,
   IsUUID,
-  IsObject,
+  Validate,
 } from 'class-validator';
-import { Type } from 'class-transformer';
-import { Sexo } from '../../../enums/sexo.enum';
+import { Type, Transform } from 'class-transformer';
+import { CreateComposicaoFamiliarBodyDto } from './create-composicao-familiar-body.dto';
+import { ContatoBodyDto } from './contato-body.dto';
+import { EnderecoBodyDto } from './endereco-body.dto';
+import { CreateDadosSociaisDto } from './create-dados-sociais.dto';
+import { CreateSituacaoMoradiaDto } from './create-situacao-moradia.dto';
+import { CreateInfoBancariaBodyDto } from './create-info-bancaria-body.dto';
+import {
+  Sexo,
+  EstadoCivil,
+  TipoDocumentoEnum,
+} from '../../../enums';
 import { CPFValidator } from '../validators/cpf-validator';
 import { NISValidator } from '../validators/nis-validator';
-
-import { CreateComposicaoFamiliarDto } from './create-composicao-familiar.dto';
-import { EstadoCivil } from '../../../enums/estado-civil.enum';
-import { ContatoDto } from './contato.dto';
-import { EnderecoDto } from './endereco.dto';
 
 /**
  * DTO para criação de cidadão
@@ -136,30 +142,57 @@ export class CreateCidadaoDto {
   @IsArray()
   @IsOptional()
   @ValidateNested({ each: true })
-  @Type(() => CreateComposicaoFamiliarDto)
+  @Type(() => CreateComposicaoFamiliarBodyDto)
   @ApiPropertyOptional({
-    type: [CreateComposicaoFamiliarDto],
+    type: [CreateComposicaoFamiliarBodyDto],
     description: 'Composição familiar do cidadão',
   })
-  composicao_familiar?: CreateComposicaoFamiliarDto[];
+  composicao_familiar?: CreateComposicaoFamiliarBodyDto[];
 
   @IsArray()
   @IsOptional()
   @ValidateNested({ each: true })
-  @Type(() => ContatoDto)
+  @Type(() => ContatoBodyDto)
   @ApiPropertyOptional({
-    type: [ContatoDto],
+    type: [ContatoBodyDto],
     description: 'Contatos do cidadão (nova estrutura normalizada)',
   })
-  contatos?: ContatoDto[];
+  contatos?: ContatoBodyDto[];
 
   @IsArray()
   @IsOptional()
   @ValidateNested({ each: true })
-  @Type(() => EnderecoDto)
+  @Type(() => EnderecoBodyDto)
   @ApiPropertyOptional({
-    type: [EnderecoDto],
+    type: [EnderecoBodyDto],
     description: 'Endereços do cidadão (nova estrutura normalizada)',
   })
-  enderecos?: EnderecoDto[];
+  enderecos?: EnderecoBodyDto[];
+
+  @ApiPropertyOptional({
+    description: 'Dados sociais do cidadão',
+    type: CreateDadosSociaisDto,
+  })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => CreateDadosSociaisDto)
+  dados_sociais?: CreateDadosSociaisDto;
+
+  @ApiPropertyOptional({
+    description: 'Situação de moradia do cidadão',
+    type: CreateSituacaoMoradiaDto,
+  })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => CreateSituacaoMoradiaDto)
+  situacao_moradia?: CreateSituacaoMoradiaDto;
+
+  @ApiPropertyOptional({
+    description: 'Informações bancárias do cidadão',
+    type: CreateInfoBancariaBodyDto,
+  })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => CreateInfoBancariaBodyDto)
+  info_bancaria?: CreateInfoBancariaBodyDto;
 }

@@ -13,8 +13,10 @@ import {
 import { plainToInstance } from 'class-transformer';
 import { ContatoService } from './contato.service';
 import { EnderecoService } from './endereco.service';
-import { ContatoDto } from '../dto/contato.dto';
-import { EnderecoDto } from '../dto/endereco.dto';
+import { DadosSociaisService } from './dados-sociais.service';
+import { SituacaoMoradiaService } from './situacao-moradia.service';
+import { InfoBancariaService } from './info-bancaria.service';
+import { ComposicaoFamiliarService } from './composicao-familiar.service';
 import { ConfigService } from '@nestjs/config';
 import { AuditEventEmitter, AuditEventType } from '../../auditoria';
 
@@ -24,6 +26,10 @@ export class CidadaoService {
     private readonly cidadaoRepository: CidadaoRepository,
     private readonly contatoService: ContatoService,
     private readonly enderecoService: EnderecoService,
+    private readonly dadosSociaisService: DadosSociaisService,
+    private readonly situacaoMoradiaService: SituacaoMoradiaService,
+    private readonly infoBancariaService: InfoBancariaService,
+    private readonly composicaoFamiliarService: ComposicaoFamiliarService,
     private readonly configService: ConfigService,
     private readonly auditEmitter: AuditEventEmitter,
   ) {}
@@ -198,8 +204,15 @@ export class CidadaoService {
     }
 
     // Separar campos que não pertencem à entidade Cidadao
-    const { composicao_familiar, contatos, enderecos, ...cidadaoData } =
-      createCidadaoDto;
+    const { 
+      composicao_familiar, 
+      contatos, 
+      enderecos, 
+      dados_sociais, 
+      situacao_moradia, 
+      info_bancaria, 
+      ...cidadaoData 
+    } = createCidadaoDto;
 
     // Preparar dados para criação
     const dadosParaCriacao = {
@@ -210,32 +223,77 @@ export class CidadaoService {
       usuario_id,
     };
 
-    const cidadao = await this.cidadaoRepository.create(dadosParaCriacao);
+    const cidadaoSalvo = await this.cidadaoRepository.create(dadosParaCriacao);
 
     // Processar contatos normalizados se existirem
     if (contatos && contatos.length > 0) {
-      await this.contatoService.upsertMany(cidadao.id, contatos);
+      const contatosComCidadaoId = contatos.map(contato => ({
+        ...contato,
+        cidadao_id: cidadaoSalvo.id
+      }));
+      await this.contatoService.upsertMany(cidadaoSalvo.id, contatosComCidadaoId);
     }
 
     // Processar endereços normalizados se existirem
     if (enderecos && enderecos.length > 0) {
-      await this.enderecoService.upsertMany(cidadao.id, enderecos);
+      const enderecosComCidadaoId = enderecos.map(endereco => ({
+        ...endereco,
+        cidadao_id: cidadaoSalvo.id
+      }));
+      await this.enderecoService.upsertMany(cidadaoSalvo.id, enderecosComCidadaoId);
+    }
+
+    // Processar composição familiar se fornecida
+    if (composicao_familiar && composicao_familiar.length > 0) {
+      const composicaoComCidadaoId = composicao_familiar.map(composicao => ({
+        ...composicao,
+        cidadao_id: cidadaoSalvo.id
+      }));
+      await this.composicaoFamiliarService.upsertMany(
+        cidadaoSalvo.id,
+        composicaoComCidadaoId,
+        usuario_id,
+      );
+    }
+
+    // Processar dados sociais se fornecidos
+    if (dados_sociais) {
+      await this.dadosSociaisService.upsert(
+        cidadaoSalvo.id,
+        dados_sociais,
+      );
+    }
+
+    // Processar situação de moradia se fornecida
+    if (situacao_moradia) {
+      await this.situacaoMoradiaService.upsert({
+        ...situacao_moradia,
+        cidadao_id: cidadaoSalvo.id,
+      });
+    }
+
+    // Processar informações bancárias se fornecidas
+    if (info_bancaria) {
+      await this.infoBancariaService.upsert({
+        ...info_bancaria,
+        cidadao_id: cidadaoSalvo.id,
+      });
     }
 
     // Auditoria de criação de cidadão
     await this.auditEmitter.emitEntityCreated(
       'Cidadao',
-      cidadao.id,
+      cidadaoSalvo.id,
       {
         cpf: cpfClean,
         nis: nisClean,
-        nome: cidadao.nome,
+        nome: cidadaoSalvo.nome,
         unidade_id,
       },
       usuario_id,
     );
 
-    return plainToInstance(CidadaoResponseDto, cidadao, {
+    return plainToInstance(CidadaoResponseDto, cidadaoSalvo, {
       excludeExtraneousValues: true,
     });
   }
@@ -251,7 +309,7 @@ export class CidadaoService {
     }
 
     // Separar campos que não pertencem à entidade Cidadao
-    const { composicao_familiar, contatos, enderecos, ...dadosAtualizacao } =
+    const { composicao_familiar, contatos, enderecos, dados_sociais, situacao_moradia, info_bancaria, ...dadosAtualizacao } =
       updateCidadaoDto;
 
     // Validar CPF se foi alterado
@@ -302,12 +360,57 @@ export class CidadaoService {
 
     // Processar contatos normalizados se existirem
     if (contatos && contatos.length > 0) {
-      await this.contatoService.upsertMany(id, contatos);
+      const contatosComCidadaoId = contatos.map(contato => ({
+        ...contato,
+        cidadao_id: id
+      }));
+      await this.contatoService.upsertMany(id, contatosComCidadaoId);
     }
 
     // Processar endereços normalizados se existirem
     if (enderecos && enderecos.length > 0) {
-      await this.enderecoService.upsertMany(id, enderecos);
+      const enderecosComCidadaoId = enderecos.map(endereco => ({
+        ...endereco,
+        cidadao_id: id
+      }));
+      await this.enderecoService.upsertMany(id, enderecosComCidadaoId);
+    }
+
+    // Processar composição familiar se fornecida
+    if (composicao_familiar && composicao_familiar.length > 0) {
+      const composicaoComCidadaoId = composicao_familiar.map(composicao => ({
+        ...composicao,
+        cidadao_id: id
+      }));
+      await this.composicaoFamiliarService.upsertMany(
+        id,
+        composicaoComCidadaoId,
+        usuario_id,
+      );
+    }
+
+    // Processar dados sociais se fornecidos
+    if (dados_sociais) {
+      await this.dadosSociaisService.upsert(
+        id,
+        dados_sociais,
+      );
+    }
+
+    // Processar situação de moradia se fornecida
+    if (situacao_moradia) {
+      await this.situacaoMoradiaService.upsert({
+        ...situacao_moradia,
+        cidadao_id: id,
+      });
+    }
+
+    // Processar informações bancárias se fornecidas
+    if (info_bancaria) {
+      await this.infoBancariaService.upsert({
+        ...info_bancaria,
+        cidadao_id: id,
+      });
     }
 
     return plainToInstance(CidadaoResponseDto, cidadaoAtualizado, {

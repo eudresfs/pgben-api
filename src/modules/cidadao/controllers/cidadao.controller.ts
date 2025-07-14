@@ -3,22 +3,22 @@ import {
   Get,
   Post,
   Body,
+  Put,
   Param,
   Query,
-  Put,
+  UseGuards,
   ParseUUIDPipe,
   DefaultValuePipe,
-  UseGuards,
-  Request,
   ParseIntPipe,
+  Request,
 } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
   ApiResponse,
-  ApiBearerAuth,
   ApiQuery,
   ApiParam,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
 import { CreateCidadaoDto } from '../dto/create-cidadao.dto';
 import { CidadaoService } from '../services/cidadao.service';
@@ -49,13 +49,69 @@ export class CidadaoController {
     permissionName: 'cidadao.listar',
     scopeType: ScopeType.UNIT,
   })
-  @ApiOperation({ summary: 'Listar cidadãos' })
-  @ApiResponse({ status: 200, type: CidadaoPaginatedResponseDto })
-  @ApiQuery({ name: 'page', required: false, type: Number })
-  @ApiQuery({ name: 'limit', required: false, type: Number })
-  @ApiQuery({ name: 'search', required: false, type: String })
-  @ApiQuery({ name: 'bairro', required: false, type: String })
-  @ApiQuery({ name: 'includeRelations', required: false, type: Boolean })
+  @ApiOperation({ 
+    summary: 'Listar cidadãos com paginação e filtros',
+    description: 'Retorna uma lista paginada de cidadãos com opções de busca por nome, CPF, NIS e filtro por bairro. Suporta inclusão de dados relacionados como contatos, endereços e composição familiar.'
+  })
+  @ApiResponse({ 
+    status: 200, 
+    type: CidadaoPaginatedResponseDto,
+    description: 'Lista paginada de cidadãos retornada com sucesso'
+  })
+  @ApiResponse({ 
+    status: 400, 
+    description: 'Parâmetros de consulta inválidos'
+  })
+  @ApiResponse({ 
+    status: 401, 
+    description: 'Token de autenticação inválido ou ausente'
+  })
+  @ApiResponse({ 
+    status: 403, 
+    description: 'Usuário não possui permissão para listar cidadãos'
+  })
+  @ApiQuery({ 
+    name: 'page', 
+    required: false, 
+    type: Number,
+    description: 'Número da página (padrão: 1)',
+    example: 1
+  })
+  @ApiQuery({ 
+    name: 'limit', 
+    required: false, 
+    type: Number,
+    description: 'Quantidade de registros por página (padrão: 10, máximo: 100)',
+    example: 10
+  })
+  @ApiQuery({ 
+    name: 'search', 
+    required: false, 
+    type: String,
+    description: 'Busca por nome, CPF ou NIS do cidadão',
+    example: 'Maria Silva'
+  })
+  @ApiQuery({ 
+    name: 'bairro', 
+    required: false, 
+    type: String,
+    description: 'Filtrar cidadãos por bairro de residência',
+    example: 'Centro'
+  })
+  @ApiQuery({ 
+    name: 'unidade_id', 
+    required: false, 
+    type: String,
+    description: 'Filtrar cidadãos por unidade específica (UUID)',
+    example: '550e8400-e29b-41d4-a716-446655440000'
+  })
+  @ApiQuery({ 
+    name: 'includeRelations', 
+    required: false, 
+    type: Boolean,
+    description: 'Incluir dados relacionados (contatos, endereços, composição familiar)',
+    example: false
+  })
   async findAll(
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
@@ -84,11 +140,43 @@ export class CidadaoController {
     requiresConsent: false,
     maskInLogs: true,
   })
-  @ApiOperation({ summary: 'Obter cidadão por ID' })
-  @ApiParam({ name: 'id', description: 'ID do cidadão' })
-  @ApiQuery({ name: 'includeRelations', required: false, type: Boolean })
-  @ApiResponse({ status: 200, type: CidadaoResponseDto })
-  @ApiResponse({ status: 404, description: 'Cidadão não encontrado' })
+  @ApiOperation({ 
+    summary: 'Obter cidadão por ID',
+    description: 'Retorna os dados completos de um cidadão específico. Opcionalmente inclui dados relacionados como contatos, endereços, composição familiar, dados sociais, situação de moradia e informações bancárias.'
+  })
+  @ApiParam({ 
+    name: 'id', 
+    description: 'ID único do cidadão (UUID v4)',
+    example: '550e8400-e29b-41d4-a716-446655440000'
+  })
+  @ApiQuery({ 
+    name: 'includeRelations', 
+    required: false, 
+    type: Boolean,
+    description: 'Incluir todos os dados relacionados (contatos, endereços, composição familiar, dados sociais, situação de moradia, informações bancárias)',
+    example: true
+  })
+  @ApiResponse({ 
+    status: 200, 
+    type: CidadaoResponseDto,
+    description: 'Dados do cidadão retornados com sucesso'
+  })
+  @ApiResponse({ 
+    status: 400, 
+    description: 'ID inválido (deve ser um UUID v4)'
+  })
+  @ApiResponse({ 
+    status: 401, 
+    description: 'Token de autenticação inválido ou ausente'
+  })
+  @ApiResponse({ 
+    status: 403, 
+    description: 'Usuário não possui permissão para visualizar este cidadão'
+  })
+  @ApiResponse({ 
+    status: 404, 
+    description: 'Cidadão não encontrado'
+  })
   async findOne(
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
     @Query('includeRelations', new DefaultValuePipe(false))
@@ -104,9 +192,35 @@ export class CidadaoController {
     requiresConsent: false,
     maskInLogs: true,
   })
-  @ApiOperation({ summary: 'Criar novo cidadão' })
-  @ApiResponse({ status: 201, type: CidadaoResponseDto })
-  @ApiResponse({ status: 400, description: 'Dados inválidos' })
+  @ApiOperation({ 
+    summary: 'Criar novo cidadão com dados relacionados',
+    description: 'Cria um novo cidadão no sistema. Suporta criação completa incluindo dados relacionados como contatos, endereços, composição familiar, dados sociais, situação de moradia e informações bancárias em uma única transação. Utiliza padrão Aggregate Root para garantir consistência dos dados.'
+  })
+  @ApiResponse({ 
+    status: 201, 
+    type: CidadaoResponseDto,
+    description: 'Cidadão criado com sucesso, incluindo todos os dados relacionados processados'
+  })
+  @ApiResponse({ 
+    status: 400, 
+    description: 'Dados inválidos - validação de CPF, NIS, campos obrigatórios ou estrutura de dados relacionados'
+  })
+  @ApiResponse({ 
+    status: 401, 
+    description: 'Token de autenticação inválido ou ausente'
+  })
+  @ApiResponse({ 
+    status: 403, 
+    description: 'Usuário não possui permissão para criar cidadãos'
+  })
+  @ApiResponse({ 
+    status: 409, 
+    description: 'Conflito - CPF ou NIS já cadastrado no sistema'
+  })
+  @ApiResponse({ 
+    status: 422, 
+    description: 'Erro de validação de dados relacionados (contatos, endereços, etc.)'
+  })
   async create(
     @Body() createCidadaoDto: CreateCidadaoDto,
     @Request() req,
@@ -127,10 +241,44 @@ export class CidadaoController {
     requiresConsent: false,
     maskInLogs: true,
   })
-  @ApiOperation({ summary: 'Atualizar cidadão' })
-  @ApiParam({ name: 'id', description: 'ID do cidadão' })
-  @ApiResponse({ status: 200, type: CidadaoResponseDto })
-  @ApiResponse({ status: 404, description: 'Cidadão não encontrado' })
+  @ApiOperation({ 
+    summary: 'Atualizar cidadão e dados relacionados',
+    description: 'Atualiza os dados de um cidadão existente. Suporta atualização completa incluindo dados relacionados como contatos, endereços, composição familiar, dados sociais, situação de moradia e informações bancárias. Utiliza operações upsert para dados relacionados, garantindo integridade referencial.'
+  })
+  @ApiParam({ 
+    name: 'id', 
+    description: 'ID único do cidadão a ser atualizado (UUID v4)',
+    example: '550e8400-e29b-41d4-a716-446655440000'
+  })
+  @ApiResponse({ 
+    status: 200, 
+    type: CidadaoResponseDto,
+    description: 'Cidadão atualizado com sucesso, incluindo todos os dados relacionados processados'
+  })
+  @ApiResponse({ 
+    status: 400, 
+    description: 'Dados inválidos - ID malformado ou validação de campos'
+  })
+  @ApiResponse({ 
+    status: 401, 
+    description: 'Token de autenticação inválido ou ausente'
+  })
+  @ApiResponse({ 
+    status: 403, 
+    description: 'Usuário não possui permissão para atualizar este cidadão'
+  })
+  @ApiResponse({ 
+    status: 404, 
+    description: 'Cidadão não encontrado'
+  })
+  @ApiResponse({ 
+    status: 409, 
+    description: 'Conflito - CPF ou NIS já existe para outro cidadão'
+  })
+  @ApiResponse({ 
+    status: 422, 
+    description: 'Erro de validação de dados relacionados durante atualização'
+  })
   async update(
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
     @Body() updateCidadaoDto: CreateCidadaoDto,
@@ -145,10 +293,36 @@ export class CidadaoController {
     requiresConsent: true,
     maskInLogs: true,
   })
-  @ApiOperation({ summary: 'Buscar cidadão por CPF' })
-  @ApiParam({ name: 'cpf', description: 'CPF do cidadão' })
-  @ApiResponse({ status: 200, type: CidadaoResponseDto })
-  @ApiResponse({ status: 404, description: 'Cidadão não encontrado' })
+  @ApiOperation({ 
+    summary: 'Buscar cidadão por CPF',
+    description: 'Busca um cidadão específico pelo número do CPF. Este endpoint requer consentimento para acesso a dados sensíveis e é auditado. Retorna dados completos incluindo relacionamentos.'
+  })
+  @ApiParam({ 
+    name: 'cpf', 
+    description: 'CPF do cidadão (com ou sem formatação)',
+    example: '123.456.789-00'
+  })
+  @ApiResponse({ 
+    status: 200, 
+    type: CidadaoResponseDto,
+    description: 'Cidadão encontrado com sucesso'
+  })
+  @ApiResponse({ 
+    status: 400, 
+    description: 'CPF inválido ou malformado'
+  })
+  @ApiResponse({ 
+    status: 401, 
+    description: 'Token de autenticação inválido ou ausente'
+  })
+  @ApiResponse({ 
+    status: 403, 
+    description: 'Usuário não possui permissão para buscar por CPF ou consentimento não fornecido'
+  })
+  @ApiResponse({ 
+    status: 404, 
+    description: 'Cidadão não encontrado com o CPF informado'
+  })
   async findByCpf(
     @Param('cpf') cpf: string,
     @Request() req,
@@ -162,10 +336,36 @@ export class CidadaoController {
     requiresConsent: true,
     maskInLogs: true,
   })
-  @ApiOperation({ summary: 'Buscar cidadão por NIS' })
-  @ApiParam({ name: 'nis', description: 'NIS do cidadão' })
-  @ApiResponse({ status: 200, type: CidadaoResponseDto })
-  @ApiResponse({ status: 404, description: 'Cidadão não encontrado' })
+  @ApiOperation({ 
+    summary: 'Buscar cidadão por NIS',
+    description: 'Busca um cidadão específico pelo Número de Identificação Social (NIS). Este endpoint requer consentimento para acesso a dados sensíveis e é auditado. Retorna dados completos incluindo relacionamentos.'
+  })
+  @ApiParam({ 
+    name: 'nis', 
+    description: 'NIS (Número de Identificação Social) do cidadão',
+    example: '12345678901'
+  })
+  @ApiResponse({ 
+    status: 200, 
+    type: CidadaoResponseDto,
+    description: 'Cidadão encontrado com sucesso'
+  })
+  @ApiResponse({ 
+    status: 400, 
+    description: 'NIS inválido ou malformado'
+  })
+  @ApiResponse({ 
+    status: 401, 
+    description: 'Token de autenticação inválido ou ausente'
+  })
+  @ApiResponse({ 
+    status: 403, 
+    description: 'Usuário não possui permissão para buscar por NIS ou consentimento não fornecido'
+  })
+  @ApiResponse({ 
+    status: 404, 
+    description: 'Cidadão não encontrado com o NIS informado'
+  })
   async findByNis(
     @Param('nis') nis: string,
     @Request() req,
