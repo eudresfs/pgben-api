@@ -129,7 +129,7 @@ export class ConcessaoService {
         .createQueryBuilder('concessao')
         .leftJoinAndSelect('concessao.solicitacao', 'solicitacao')
         .leftJoinAndSelect('solicitacao.beneficiario', 'beneficiario')
-        .leftJoinAndSelect('solicitacao.tipo_beneficio', 'beneficio')
+        .leftJoinAndSelect('solicitacao.tipo_beneficio', 'tipo_beneficio')
         .leftJoinAndSelect('solicitacao.unidade', 'unidade')
         .leftJoinAndSelect('solicitacao.tecnico', 'tecnico')
         .select([
@@ -149,9 +149,9 @@ export class ConcessaoService {
           'beneficiario.nome',
           'beneficiario.cpf',
           // Dados básicos do tipo de benefício
-          'beneficio.id',
-          'beneficio.nome',
-          'beneficio.codigo',
+          'tipo_beneficio.id',
+          'tipo_beneficio.nome',
+          'tipo_beneficio.codigo',
           // Dados básicos da unidade
           'unidade.id',
           'unidade.nome',
@@ -179,7 +179,7 @@ export class ConcessaoService {
         qb.andWhere('unidade.id = :unidade_id', { unidade_id: filtro.unidade_id });
       }
       if (filtro.tipo_beneficio_id) {
-        qb.andWhere('beneficio.id = :tipo_beneficio_id', {
+        qb.andWhere('tipo_beneficio.id = :tipo_beneficio_id', {
           tipo_beneficio_id: filtro.tipo_beneficio_id,
         });
       }
@@ -233,7 +233,7 @@ export class ConcessaoService {
           nome: concessao.solicitacao.beneficiario.nome,
           cpf: concessao.solicitacao.beneficiario.cpf,
         } : null,
-        beneficio: concessao.solicitacao?.tipo_beneficio ? {
+        tipo_beneficio: concessao.solicitacao?.tipo_beneficio ? {
           id: concessao.solicitacao.tipo_beneficio.id,
           nome: concessao.solicitacao.tipo_beneficio.nome,
           codigo: concessao.solicitacao.tipo_beneficio.codigo,
@@ -920,14 +920,16 @@ export class ConcessaoService {
    * Cancela uma concessão ativa
    *
    * @param concessaoId ID da concessão
-   * @param motivo Motivo do cancelamento
    * @param usuarioId ID do usuário que está cancelando
+   * @param motivo Motivo do cancelamento
+   * @param observacoes Observações adicionais sobre o cancelamento
    * @returns Concessão cancelada
    */
   async cancelarConcessao(
     concessaoId: string,
-    motivo: string,
     usuarioId: string,
+    motivo: string,
+    observacoes?: string,
   ): Promise<Concessao> {
     const concessao = await this.concessaoRepo.findOne({
       where: { id: concessaoId },
@@ -938,9 +940,9 @@ export class ConcessaoService {
       throw new NotFoundException('Concessão não encontrada');
     }
 
-    if (concessao.status !== StatusConcessao.ATIVO) {
+    if (concessao.status === StatusConcessao.CANCELADO) {
       throw new BadRequestException(
-        'Apenas concessões ativas podem ser canceladas',
+        `A concessão ${concessaoId} já está com status cancelado`,
       );
     }
 
@@ -958,6 +960,7 @@ export class ConcessaoService {
       statusAnterior,
       statusNovo: StatusConcessao.CANCELADO,
       motivo,
+      observacoes,
       alteradoPor: usuarioId,
     });
     await this.historicoRepo.save(historico);

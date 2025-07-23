@@ -622,6 +622,7 @@ export class ConcessaoController {
       id,
       usuario.id,
       dto.motivo,
+      dto.observacoes,
     );
 
     // Auditoria: Cancelamento de concessão
@@ -632,6 +633,7 @@ export class ConcessaoController {
       {
         action: 'cancelamento',
         motivo: dto.motivo,
+        observacoes: dto.observacoes,
         status: 'CANCELADA',
       },
       usuario.id,

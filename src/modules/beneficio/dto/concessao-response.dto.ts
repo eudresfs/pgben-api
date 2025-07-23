@@ -158,7 +158,7 @@ export class ConcessaoListResponseDto {
     description: 'Dados do tipo de benefício',
     type: BeneficioConcessaoDto,
   })
-  beneficio?: BeneficioConcessaoDto;
+  tipo_beneficio?: BeneficioConcessaoDto;
 
   @ApiPropertyOptional({
     description: 'Dados da unidade responsável',

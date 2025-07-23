@@ -446,15 +446,6 @@ export class DocumentoService {
     throw lastError;
   }
 
-  // Métodos privados removidos - funcionalidades movidas para serviços especializados:
-  // - validateUploadConfiguration -> DocumentoUploadValidationService
-  // - validateUploadInput -> DocumentoUploadValidationService
-  // - processFileValidation -> DocumentoFileProcessingService
-  // - checkDocumentReuse -> DocumentoReuseService
-  // - saveToStorage -> DocumentoStorageService
-  // - saveToDatabase -> DocumentoPersistenceService
-  // - handleUploadCleanup -> DocumentoStorageService
-
   /**
    * Método principal de upload refatorado - atua como orquestrador
    * Utiliza os novos serviços especializados para cada responsabilidade

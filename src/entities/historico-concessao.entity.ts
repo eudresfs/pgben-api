@@ -52,6 +52,10 @@ export class HistoricoConcessao {
   @IsOptional()
   motivo: string | null;
 
+  @Column({ type: 'text', nullable: true })
+  @IsOptional()
+  observacoes: string | null;
+
   @Column({ name: 'alterado_por', type: 'uuid', nullable: true })
   @IsOptional()
   @IsUUID('4')
