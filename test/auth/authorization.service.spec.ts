@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { AuthorizationService } from './authorization.service';
-import { PermissionService } from './permission.service';
+import { AuthorizationService } from '../../src/auth/services/authorization.service';
+import { PermissionService } from '../../src/auth/services/permission.service';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { ScopeType } from '../entities/user-permission.entity';
 import { Logger } from '@nestjs/common';

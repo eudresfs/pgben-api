@@ -1,10 +1,9 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { InjectQueue } from '@nestjs/bull';
-import { Job, Queue } from 'bull';
+import { Injectable, Logger } from '@nestjs/common';
+import { Processor, Process } from '@nestjs/bull';
+import { Job } from 'bull';
 import { LogAuditoriaRepository } from '../repositories/log-auditoria.repository';
 import { CreateLogAuditoriaDto } from '../dto/create-log-auditoria.dto';
 import { TipoOperacao } from '../../../enums/tipo-operacao.enum';
-import { registeredProcessors } from '../../../config/bull.config';
 
 /**
  * Processador da Fila de Auditoria
@@ -14,73 +13,23 @@ import { registeredProcessors } from '../../../config/bull.config';
  * na performance das requisições enquanto mantém a rastreabilidade
  * das operações para compliance com LGPD.
  *
- * Esta implementação não usa o decorador @Processor para evitar duplicação
- * de processadores. Em vez disso, registra o processador manualmente na fila.
+ * Utiliza os decoradores @Processor e @Process do NestJS para registrar
+ * os handlers dos jobs de forma declarativa.
  */
-@Injectable()
-export class AuditoriaQueueProcessor implements OnModuleInit {
+@Processor('auditoria')
+export class AuditoriaQueueProcessor {
   private readonly logger = new Logger(AuditoriaQueueProcessor.name);
 
   constructor(
-    // ← MUDANÇA: Use o repository customizado em vez do TypeORM direto
     private readonly logAuditoriaRepository: LogAuditoriaRepository,
-    @InjectQueue('auditoria')
-    private readonly auditoriaQueue: Queue,
   ) {}
-
-  /**
-   * Registra o processador manualmente na fila quando o módulo é inicializado de forma assíncrona
-   */
-  async onModuleInit() {
-    // Inicialização assíncrona sem bloqueio
-    setImmediate(async () => {
-      try {
-        // Registra o processador de logs de auditoria
-        if (!registeredProcessors.has('registrar-log')) {
-          await this.auditoriaQueue.process('registrar-log', async (job) => {
-            return this.processarLogAuditoria(job);
-          });
-
-          registeredProcessors.add('registrar-log');
-          this.logger.log('Processador registrar-log registrado com sucesso');
-        } else {
-          this.logger.warn(
-            'Processador registrar-log já registrado, ignorando registro duplicado',
-          );
-        }
-
-        // Registra o processador de acesso a dados sensíveis
-        if (!registeredProcessors.has('registrar-acesso-dados-sensiveis')) {
-          await this.auditoriaQueue.process(
-            'registrar-acesso-dados-sensiveis',
-            async (job) => {
-              return this.processarAcessoDadosSensiveis(job);
-            },
-          );
-
-          registeredProcessors.add('registrar-acesso-dados-sensiveis');
-          this.logger.log(
-            'Processador registrar-acesso-dados-sensiveis registrado com sucesso',
-          );
-        } else {
-          this.logger.warn(
-            'Processador registrar-acesso-dados-sensiveis já registrado, ignorando registro duplicado',
-          );
-        }
-      } catch (error) {
-        this.logger.error(
-          `Erro ao registrar processadores: ${error.message}`,
-          error.stack,
-        );
-      }
-    });
-  }
 
   /**
    * Processa os logs de auditoria enfileirados
    *
    * @param job Trabalho contendo os dados do log de auditoria
    */
+  @Process('registrar-log')
   async processarLogAuditoria(job: Job<CreateLogAuditoriaDto>): Promise<void> {
     try {
       const logData = job.data;
@@ -109,6 +58,7 @@ export class AuditoriaQueueProcessor implements OnModuleInit {
    *
    * @param job Trabalho contendo os dados de acesso a dados sensíveis
    */
+  @Process('registrar-acesso-dados-sensiveis')
   async processarAcessoDadosSensiveis(job: Job<any>): Promise<void> {
     try {
       const {

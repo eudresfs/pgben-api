@@ -4,16 +4,19 @@ import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
 
 import { AppLogger } from '../../shared/logger/logger.service';
-import { RequestContext } from '../../shared/request-context/request-context.dto';
-import { UsuarioService } from '../../modules/usuario/services/usuario.service';
+import { RequestContext } from '../../src/shared/request-context/request-context.dto';
+import { UsuarioService } from '../../src/modules/usuario/services/usuario.service';
 import { Role } from '../../shared/enums/role.enum';
 import { ROLE } from '../constants/role.constant';
 import {
   AuthTokenOutput,
   UserAccessTokenClaims,
-} from '../dtos/auth-token-output.dto';
-import { UserOutput } from '../adapters/usuario-adapter';
-import { AuthService } from './auth.service';
+} from '../../src/auth/dtos/auth-token-output.dto';
+import { UserOutput } from '../../src/auth/adapters/usuario-adapter';
+import { AuthService } from '../../src/auth/services/auth.service';
+import { PermissionService } from '../../src/auth/services/permission.service';
+import { RefreshTokenService } from '../../src/auth/services/refresh-token.service';
+import { AuditEventEmitter } from '../../src/modules/auditoria/events/emitters/audit-event.emitter';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -63,6 +66,20 @@ describe('AuthService', () => {
 
   const mockedLogger = { setContext: jest.fn(), log: jest.fn() };
 
+  const mockedPermissionService = {
+    getUserPermissions: jest.fn(),
+  };
+
+  const mockedRefreshTokenService = {
+    findToken: jest.fn(),
+    revokeToken: jest.fn(),
+    createToken: jest.fn(),
+  };
+
+  const mockedAuditEmitter = {
+    emitSecurityEvent: jest.fn(),
+  };
+
   beforeEach(async () => {
     const moduleRef: TestingModule = await Test.createTestingModule({
       providers: [
@@ -71,6 +88,9 @@ describe('AuthService', () => {
         { provide: JwtService, useValue: mockedJwtService },
         { provide: ConfigService, useValue: mockedConfigService },
         { provide: AppLogger, useValue: mockedLogger },
+        { provide: PermissionService, useValue: mockedPermissionService },
+        { provide: RefreshTokenService, useValue: mockedRefreshTokenService },
+        { provide: AuditEventEmitter, useValue: mockedAuditEmitter },
       ],
     }).compile();
 
@@ -211,14 +231,23 @@ describe('AuthService', () => {
         nome: 'John Doe',
         email: 'jhon@example.com',
         status: 'ativo',
-        role: Role.TECNICO,
+        role: { nome: Role.TECNICO },
         created_at: new Date(),
         updated_at: new Date(),
       };
 
+      const mockPermissions = [
+        { nome: 'read_users' },
+        { nome: 'write_users' },
+      ];
+
       jest
         .spyOn(mockedUsuarioService, 'findById')
         .mockImplementation(() => Promise.resolve(mockUsuario));
+
+      jest
+        .spyOn(mockedPermissionService, 'getUserPermissions')
+        .mockImplementation(() => Promise.resolve(mockPermissions));
 
       jest.spyOn(service, 'getAuthToken').mockImplementation(() => authToken);
 
@@ -231,27 +260,18 @@ describe('AuthService', () => {
       const mockRefreshToken = {
         token: 'valid-refresh-token',
         revoked: false,
-        expiresAt: new Date(Date.now() + 1000 * 60 * 60), // 1 hora no futuro
+        expires_at: new Date(Date.now() + 1000 * 60 * 60), // 1 hora no futuro
         usuario: { id: '123' },
       };
 
-      // Mock do serviço de tokens
-      const mockRefreshTokenService = {
-        findToken: jest.fn().mockResolvedValue(mockRefreshToken),
-        revokeToken: jest.fn().mockResolvedValue(true),
-        revokeDescendantTokens: jest.fn().mockResolvedValue(true),
-        createToken: jest
-          .fn()
-          .mockResolvedValue({ token: 'new-refresh-token' }),
-      };
-
-      // Substituir o serviço mockado
-      Object.defineProperty(service, 'refreshTokenService', {
-        value: mockRefreshTokenService,
-      });
+      // Configurar mocks do RefreshTokenService
+      mockedRefreshTokenService.findToken.mockResolvedValue(mockRefreshToken);
+      mockedRefreshTokenService.revokeToken.mockResolvedValue(true);
+      mockedRefreshTokenService.createToken.mockResolvedValue({ token: 'new-refresh-token' });
 
       const result = await service.refreshToken(ctx, refreshTokenInput);
 
+      expect(mockedPermissionService.getUserPermissions).toBeCalledWith('123');
       expect(service.getAuthToken).toBeCalled();
       expect(result).toMatchObject(authToken);
     });
@@ -270,22 +290,14 @@ describe('AuthService', () => {
       const mockRefreshToken = {
         token: 'invalid-refresh-token',
         revoked: false,
-        expiresAt: new Date(Date.now() + 1000 * 60 * 60), // 1 hora no futuro
+        expires_at: new Date(Date.now() + 1000 * 60 * 60), // 1 hora no futuro
         usuario: { id: '999' }, // ID que não existe
       };
 
-      // Mock do serviço de tokens
-      const mockRefreshTokenService = {
-        findToken: jest.fn().mockResolvedValue(mockRefreshToken),
-        revokeToken: jest.fn().mockResolvedValue(true),
-        revokeDescendantTokens: jest.fn().mockResolvedValue(true),
-        createToken: jest.fn().mockResolvedValue(null),
-      };
-
-      // Substituir o serviço mockado
-      Object.defineProperty(service, 'refreshTokenService', {
-        value: mockRefreshTokenService,
-      });
+      // Configurar mocks do RefreshTokenService
+      mockedRefreshTokenService.findToken.mockResolvedValue(mockRefreshToken);
+      mockedRefreshTokenService.revokeToken.mockResolvedValue(true);
+      mockedRefreshTokenService.createToken.mockResolvedValue(null);
 
       await expect(
         service.refreshToken(ctx, refreshTokenInput),

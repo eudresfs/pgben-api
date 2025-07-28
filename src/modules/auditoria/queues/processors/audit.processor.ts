@@ -73,7 +73,7 @@ export class AuditProcessor
     const startTime = Date.now();
 
     // Log detalhado de tentativa de processamento
-    console.log('🚨🚨🚨 WORKER TENTANDO PROCESSAR JOB:', {
+    this.logger.log('AuditProcessor - processAuditEvent:', {
       jobId: job.id,
       jobName: job.name,
       timestamp: new Date().toISOString(),
@@ -220,7 +220,6 @@ export class AuditProcessor
    */
   @OnQueueActive()
   onActive(job: Job<AuditJobData>) {
-    console.log('🚨 EVENTO QUEUE ACTIVE - JOB INICIOU:', job.id);
     this.logger.debug(
       `Job ${job.id} is now active. Processing: ${job.data.event?.eventType}`,
     );
@@ -231,7 +230,6 @@ export class AuditProcessor
    */
   @OnQueueProgress()
   onProgress(job: Job, progress: number) {
-    console.log('🚨 EVENTO QUEUE PROGRESS:', job.id, progress);
     this.logger.debug(`Job ${job.id} progress: ${progress}%`);
   }
 
@@ -240,7 +238,6 @@ export class AuditProcessor
    */
   @OnQueueCompleted()
   onCompleted(job: Job<AuditJobData>, result: AuditProcessingResult) {
-    console.log('🚨 EVENTO QUEUE COMPLETED:', job.id, result);
     this.logger.debug(
       `Job ${job.id} completed successfully in ${result.processingTime}ms`,
     );
@@ -258,7 +255,6 @@ export class AuditProcessor
    */
   @OnQueueFailed()
   onFailed(job: Job<AuditJobData>, error: Error) {
-    console.log('🚨 EVENTO QUEUE FAILED:', job.id, error.message);
     this.logger.error(
       `Job ${job.id} failed after ${job.attemptsMade} attempts: ${error.message}`,
       {
@@ -282,7 +278,6 @@ export class AuditProcessor
    */
   @OnQueueStalled()
   onStalled(job: Job) {
-    console.log('🚨 EVENTO QUEUE STALLED - JOB TRAVADO:', job.id);
     this.logger.warn(`Job ${job.id} está travado/stalled`);
   }
 
@@ -355,7 +350,6 @@ export class AuditProcessor
    * Método de teste direto do worker
    */
   async testDirectProcessing() {
-    console.log('🚨 TESTANDO PROCESSAMENTO DIRETO DO WORKER');
 
     // Gera um UUID válido para o teste
     const testUserId = '550e8400-e29b-41d4-a716-446655440000';
@@ -373,17 +367,17 @@ export class AuditProcessor
           riskLevel: 'LOW',
         },
       },
-      progress: async (p) => console.log(`Progress: ${p}%`),
+      progress: async (p) => this.logger.debug(`Progress: ${p}%`),
       opts: { attempts: 3 },
       attemptsMade: 0,
     } as any;
 
     try {
       const result = await this.processAuditEvent(mockJob);
-      console.log('🚨 PROCESSAMENTO DIRETO FUNCIONOU:', result);
+      this.logger.debug('Processamento direto executado com sucesso', result);
       return result;
     } catch (error) {
-      console.error('🚨 PROCESSAMENTO DIRETO FALHOU:', error);
+      this.logger.error('Processamento direto falhou', error);
       throw error;
     }
   }

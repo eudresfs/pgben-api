@@ -253,13 +253,11 @@ export class NotificacaoProativaService {
    */
   @Cron('0 */6 * * *') // A cada 6 horas
   async monitorarSistema(): Promise<void> {
-    this.logger.log('Iniciando monitoramento do sistema...');
-
     try {
       const metricas = await this.coletarMetricasSistema();
       await this.processarNotificacoesSistema(metricas);
 
-      this.logger.log('Monitoramento do sistema concluído');
+      // Monitoramento do sistema concluído
     } catch (error) {
       this.logger.error('Erro no monitoramento do sistema:', error);
     }
@@ -368,9 +366,7 @@ export class NotificacaoProativaService {
     });
 
     if (alertaRecente) {
-      this.logger.log(
-        `Alerta de sistema '${tipoAlerta}' já enviado recentemente`,
-      );
+      // Alerta de sistema já enviado recentemente
       return;
     }
 
@@ -399,9 +395,7 @@ export class NotificacaoProativaService {
       });
     }
 
-    this.logger.log(
-      `Alerta de sistema '${tipoAlerta}' enviado para ${adminIds.length} administradores`,
-    );
+    // Alerta de sistema enviado para administradores
   }
 
   /**
@@ -426,8 +420,6 @@ export class NotificacaoProativaService {
    */
   @Cron(CronExpression.EVERY_DAY_AT_2AM)
   async limpezaNotificacoesAntigas(): Promise<void> {
-    this.logger.log('Iniciando limpeza de notificações antigas...');
-
     try {
       const trintaDiasAtras = addDays(new Date(), -30);
 
@@ -449,9 +441,7 @@ export class NotificacaoProativaService {
         created_at: LessThan(noventaDiasAtras),
       });
 
-      this.logger.log(
-        `Limpeza concluída: ${notificacoesArquivadas.affected} arquivadas, ${notificacoesRemovidas.affected} removidas`,
-      );
+      // Limpeza concluída
     } catch (error) {
       this.logger.error('Erro na limpeza de notificações:', error);
     }

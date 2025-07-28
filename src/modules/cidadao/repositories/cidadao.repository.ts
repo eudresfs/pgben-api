@@ -82,7 +82,7 @@ export class CidadaoRepository {
         .andWhere('endereco_filter.bairro ILIKE :bairro', {
           bairro: `%${bairro.trim()}%`,
         })
-        .andWhere('endereco_filter.removed_at IS NULL');
+        .andWhere('endereco_filter.data_fim_vigencia IS NULL');
     }
 
     // Relacionamentos

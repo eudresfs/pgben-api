@@ -52,9 +52,7 @@ export class PagamentoCacheService {
           isValid,
           this.CACHE_TTL.STATUS_TRANSITION,
         );
-        this.logger.log(
-          `Status transition cached: ${statusAtual} -> ${novoStatus}`,
-        );
+        // Status transition cached
       }
 
       return isValid || false;
@@ -91,7 +89,7 @@ export class PagamentoCacheService {
           result,
           this.CACHE_TTL.PIX_VALIDATION,
         );
-        this.logger.log('PIX validation cached');
+        // PIX validation cached
       }
 
       return result || { isValid: false, errors: ['Erro na validação'] };
@@ -126,7 +124,7 @@ export class PagamentoCacheService {
           result,
           this.CACHE_TTL.DADOS_BANCARIOS,
         );
-        this.logger.log('Dados bancários validation cached');
+        // Dados bancários validation cached
       }
 
       return result || { isValid: false, errors: ['Erro na validação'] };
@@ -179,9 +177,7 @@ export class PagamentoCacheService {
           result,
           this.CACHE_TTL.VALIDATION,
         );
-        this.logger.log(
-          `Método pagamento validation cached: ${metodo_pagamento}`,
-        );
+        // Método pagamento validation cached
       }
 
       return result || { isValid: false, errors: ['Erro na validação'] };
@@ -235,7 +231,7 @@ export class PagamentoCacheService {
           result,
           this.CACHE_TTL.VALIDATION,
         );
-        this.logger.log(`Valor limites validation cached: ${valor}`);
+        // Valor limites validation cached
       }
 
       return result || { isValid: false, errors: ['Erro na validação'] };
@@ -277,12 +273,10 @@ export class PagamentoCacheService {
         for (const key of keysToDelete) {
           await this.cacheService.del(key);
         }
-        this.logger.log(
-          `Cache invalidation completed for payment: ${pagamentoId}`,
-        );
+        // Cache invalidation completed
       }
 
-      this.logger.log('Cache de validações invalidado');
+      // Cache de validações invalidado
     } catch (error) {
       this.logger.error(
         `Erro ao invalidar cache de validações: ${error.message}`,
@@ -325,7 +319,7 @@ export class PagamentoCacheService {
    */
   async warmupCache(): Promise<void> {
     try {
-      this.logger.log('Iniciando aquecimento do cache de validações');
+      // Iniciando aquecimento do cache de validações
 
       // Aquecer transições de status mais comuns
       const commonTransitions = [
@@ -356,7 +350,7 @@ export class PagamentoCacheService {
         }
       }
 
-      this.logger.log('Cache aquecido com sucesso');
+      // Cache aquecido com sucesso
     } catch (error) {
       this.logger.error(`Erro ao aquecer cache: ${error.message}`);
     }

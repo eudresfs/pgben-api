@@ -613,7 +613,7 @@ export class SolicitacaoService {
         throwSolicitacaoNotFound(solicitacaoSalva);
       }
 
-      this.logger.log(`Solicitação criada com sucesso: ${solicitacaoSalva}`);
+      // Solicitação criada com sucesso
       return solicitacaoCompleta;
     } catch (error) {
       this.logger.error(
@@ -632,7 +632,7 @@ export class SolicitacaoService {
     updateSolicitacaoDto: UpdateSolicitacaoDto,
     user: any,
   ): Promise<Solicitacao> {
-    this.logger.log(`Iniciando atualização da solicitação: ${id}`);
+    // Iniciando atualização da solicitação
 
     try {
       // ===== VALIDAÇÕES E LEITURAS FORA DA TRANSAÇÃO =====
@@ -709,7 +709,7 @@ export class SolicitacaoService {
       // ===== CONSULTA PÓS-TRANSAÇÃO =====
       const solicitacaoAtualizada = await this.findById(id);
 
-      this.logger.log(`Solicitação ${id} atualizada com sucesso`);
+      // Solicitação atualizada com sucesso
       return solicitacaoAtualizada;
     } catch (error) {
       this.logger.error(
@@ -724,7 +724,7 @@ export class SolicitacaoService {
    * Submete uma solicitação para análise
    */
   async submeterSolicitacao(id: string, user: any): Promise<Solicitacao> {
-    this.logger.log(`Iniciando submissão da solicitação: ${id}`);
+    // Iniciando submissão da solicitação
 
     try {
       // ===== VALIDAÇÕES E LEITURAS FORA DA TRANSAÇÃO =====
@@ -783,7 +783,7 @@ export class SolicitacaoService {
       // ===== CONSULTA PÓS-TRANSAÇÃO =====
       const solicitacaoAtualizada = await this.findById(id);
 
-      this.logger.log(`Solicitação ${id} submetida para análise com sucesso`);
+      // Solicitação submetida para análise com sucesso
       return solicitacaoAtualizada;
     } catch (error) {
       this.logger.error(
@@ -802,7 +802,7 @@ export class SolicitacaoService {
     avaliarSolicitacaoDto: AvaliarSolicitacaoDto,
     user: any,
   ): Promise<Solicitacao> {
-    this.logger.log(`Iniciando avaliação da solicitação: ${id}`);
+    // Iniciando avaliação da solicitação
 
     try {
       // ===== VALIDAÇÕES E LEITURAS FORA DA TRANSAÇÃO =====
@@ -920,7 +920,7 @@ export class SolicitacaoService {
    * Cancela uma solicitação
    */
   async cancelarSolicitacao(id: string, user: any): Promise<Solicitacao> {
-    this.logger.log(`Iniciando cancelamento da solicitação: ${id}`);
+    // Iniciando cancelamento da solicitação
 
     try {
       // ===== VALIDAÇÕES E LEITURAS FORA DA TRANSAÇÃO =====
@@ -971,7 +971,7 @@ export class SolicitacaoService {
       // ===== CONSULTA PÓS-TRANSAÇÃO =====
       const solicitacaoAtualizada = await this.findById(id);
 
-      this.logger.log(`Solicitação ${id} cancelada com sucesso`);
+      // Solicitação cancelada com sucesso
       return solicitacaoAtualizada;
     } catch (error) {
       this.logger.error(

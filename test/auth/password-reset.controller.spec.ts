@@ -2,8 +2,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { ThrottlerGuard } from '@nestjs/throttler';
-import { PasswordResetController } from './password-reset.controller';
-import { PasswordResetService } from '../services/password-reset.service';
+import { PasswordResetController } from '../../src/auth/controllers/password-reset.controller';
+import { PasswordResetService } from '../../src/auth/services/password-reset.service';
 import {
   ForgotPasswordDto,
   ResetPasswordDto,

@@ -2,7 +2,7 @@ import { Module, Logger } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CacheModule } from '@nestjs/cache-manager';
-import { BullModule } from '@nestjs/bull';
+import { SharedBullModule } from './shared/bull/bull.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { createThrottlerConfig } from './config/throttler.config';
@@ -65,36 +65,7 @@ import { DataSource } from 'typeorm';
     ScheduleModule.forRoot(),
     // Bull Queue Module para processamento assíncrono
     // Configurado com tratamento de erro para evitar crash da aplicação
-    BullModule.forRootAsync({
-      imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => {
-        try {
-          const { getBullConfig } = await import('./config/bull.config');
-          const config = getBullConfig(configService);
-          const logger = new Logger('BullModule');
-          logger.log('Configuração do Bull inicializada com sucesso');
-          return config;
-        } catch (error) {
-          const logger = new Logger('BullModule');
-          logger.error(`Erro ao configurar Bull: ${error.message}`);
-          // Retornar configuração desabilitada em caso de erro
-          return {
-            redis: {
-              connectTimeout: 1,
-              lazyConnect: true,
-              retryStrategy: () => 300000, // 5 minutos - efetivamente desabilita
-              maxRetriesPerRequest: 3,
-            },
-            defaultJobOptions: {
-              attempts: 1,
-              removeOnComplete: true,
-              removeOnFail: true,
-            },
-          };
-        }
-      },
-      inject: [ConfigService],
-    }),
+    SharedBullModule,
     // Configuração do TypeORM
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],

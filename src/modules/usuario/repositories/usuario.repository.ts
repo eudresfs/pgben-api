@@ -80,7 +80,7 @@ async findAll(options?: {
   async findById(id: string): Promise<Usuario> {
     const usuario = await this.repository.findOne({
       where: { id },
-      relations: ['unidade', 'setor'],
+      relations: ['role', 'unidade', 'setor'],
     });
 
     if (!usuario) {
@@ -96,7 +96,10 @@ async findAll(options?: {
    * @returns Usuário encontrado ou null
    */
   async findByEmail(email: string): Promise<Usuario | null> {
-    return this.repository.findOne({ where: { email } });
+    return this.repository.findOne({ 
+      where: { email },
+      relations: ['role', 'unidade', 'setor']
+    });
   }
 
   /**
@@ -105,7 +108,10 @@ async findAll(options?: {
    * @returns Usuário encontrado ou null
    */
   async findByCpf(cpf: string): Promise<Usuario | null> {
-    return this.repository.findOne({ where: { cpf } });
+    return this.repository.findOne({ 
+      where: { cpf },
+      relations: ['role', 'unidade', 'setor']
+    });
   }
 
   /**
@@ -114,7 +120,10 @@ async findAll(options?: {
    * @returns Usuário encontrado ou null
    */
   async findByMatricula(matricula: string): Promise<Usuario | null> {
-    return this.repository.findOne({ where: { matricula } });
+    return this.repository.findOne({ 
+      where: { matricula },
+      relations: ['role', 'unidade', 'setor']
+    });
   }
 
   /**

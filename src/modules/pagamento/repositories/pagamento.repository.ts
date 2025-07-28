@@ -41,6 +41,18 @@ export class PagamentoRepository {
   }
 
   /**
+   * Busca um pagamento por ID com as relações de concessão e solicitação.
+   */
+  async findPagamentoComRelacoes(id: string): Promise<Pagamento | null> {
+    return await this.repository
+      .createQueryBuilder('pagamento')
+      .leftJoinAndSelect('pagamento.concessao', 'concessao')
+      .leftJoinAndSelect('concessao.solicitacao', 'solicitacao')
+      .where('pagamento.id = :id', { id })
+      .getOne();
+  }
+
+  /**
    * Busca pagamento por ID com relacionamentos específicos
    */
   async findByIdWithRelations(

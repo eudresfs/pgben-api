@@ -1,10 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { PermissionService } from './permission.service';
-import { PermissionRepository } from '../repositories/permission.repository';
-import { UserPermissionRepository } from '../repositories/user-permission.repository';
-import { RolePermissionRepository } from '../repositories/role-permission.repository';
-import { PermissionGroupRepository } from '../repositories/permission-group.repository';
-import { PermissionGroupMappingRepository } from '../repositories/permission-group-mapping.repository';
+import { PermissionService } from '../../src/auth/services/permission.service';
+import { PermissionRepository } from '../../src/auth/repositories/permission.repository';
+import { UserPermissionRepository } from '../../src/auth/repositories/user-permission.repository';
+import { RolePermissionRepository } from '../../src/auth/repositories/role-permission.repository';
+import { PermissionGroupRepository } from '../../src/auth/repositories/permission-group.repository';
+import { PermissionGroupMappingRepository } from '../../src/auth/repositories/permission-group-mapping.repository';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Permission } from '../entities/permission.entity';
 import { UserPermission } from '../entities/user-permission.entity';

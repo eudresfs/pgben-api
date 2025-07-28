@@ -630,7 +630,7 @@ export class PagamentoWorkflowService {
    * Processa vencimentos automáticos
    */
   async processarVencimentosAutomaticos(): Promise<Pagamento[]> {
-    this.logger.log('Processando vencimentos automáticos');
+    // Processando vencimentos automáticos
 
     const pagamentosVencidos = await this.pagamentoRepository.findVencidos();
     const processados: Pagamento[] = [];
@@ -655,9 +655,7 @@ export class PagamentoWorkflowService {
       }
     }
 
-    this.logger.log(
-      `Processados ${processados.length} vencimentos automáticos`,
-    );
+    // Processados vencimentos automáticos
     return processados;
   }
 
@@ -734,9 +732,7 @@ export class PagamentoWorkflowService {
       if (pagamento.solicitacao?.tecnico_id) {
         // Aqui seria implementada a lógica de notificação
         // Por enquanto, apenas registramos que a notificação seria enviada
-        this.logger.log(
-          `Notificação de prazo enviada para técnico ${pagamento.solicitacao.tecnico_id} sobre pagamento ${pagamento.id}`,
-        );
+        // Notificação de prazo enviada para técnico
 
         notificacoesEnviadas.push({
           pagamentoId: pagamento.id,

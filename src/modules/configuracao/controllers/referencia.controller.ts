@@ -18,6 +18,8 @@ import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
 import { ConcessaoService } from '@/modules/beneficio/services/concessao.service';
 import { StatusConcessao } from '@/entities';
 import { Public } from '@/auth/decorators/public.decorator';
+import { GetUser } from '../../../auth/decorators/get-user.decorator';
+import { UserAccessTokenClaims } from '../../../auth/dtos/auth-token-output.dto';
 
 /**
  * Interface para item do cache com TTL
@@ -108,19 +110,20 @@ export class ReferenciaController {
    *
    * Inclui tipos de benefício, status de solicitação, unidades, status de pagamento,
    * bairros, usuários e roles. Utiliza cache em memória para máxima performance.
+   * 
+   * As unidades só são retornadas para usuários com roles: admin, super_admin ou gestor.
    */
   @Get()
-  @Public()
   @ApiOperation({ summary: 'Obter dados de referência do sistema' })
   @ApiResponse({
     status: 200,
     description: 'Dados de referência retornados com sucesso',
   })
-  async obterReferencias() {
+  async obterReferencias(@GetUser() user?: UserAccessTokenClaims) {
     // Verificar se os dados estão em cache
     const cachedData = this.cache.get(this.CACHE_KEY);
     if (cachedData) {
-      return cachedData;
+      return this.filtrarDadosPorRole(cachedData, user);
     }
 
     // Se não estiver em cache, buscar dados otimizados do banco
@@ -129,7 +132,38 @@ export class ReferenciaController {
     // Armazenar no cache
     this.cache.set(this.CACHE_KEY, referencias, this.CACHE_TTL);
 
-    return referencias;
+    return this.filtrarDadosPorRole(referencias, user);
+  }
+
+  /**
+   * Filtra os dados de referência baseado nas roles do usuário
+   * 
+   * @param dados Dados de referência completos
+   * @param user Usuário autenticado (opcional para endpoints públicos)
+   * @returns Dados filtrados conforme permissões do usuário
+   */
+  private filtrarDadosPorRole(dados: any, user?: UserAccessTokenClaims) {
+    // Se não há usuário autenticado, retornar dados sem unidades
+    if (!user) {
+      const { unidades, ...dadosSemUnidades } = dados;
+      return dadosSemUnidades;
+    }
+
+    // Roles que podem visualizar unidades
+    const rolesAutorizadas = ['SUPER_ADMIN', 'ADMIN', 'GESTOR'];
+    
+    // Verificar se o usuário possui uma das roles autorizadas
+    const temRoleAutorizada = user.roles?.some(role => 
+      rolesAutorizadas.includes(role)
+    );
+
+    // Se não tem role autorizada, remover unidades dos dados
+    if (!temRoleAutorizada) {
+      const { unidades, ...dadosSemUnidades } = dados;
+      return dadosSemUnidades;
+    }
+
+    return dados;
   }
 
   /**

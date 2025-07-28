@@ -3,6 +3,7 @@ import { Usuario } from '../../entities/usuario.entity';
 import { RoleType } from '../../shared/constants/roles.constants';
 import { Permission } from '../../entities/permission.entity';
 import { ScopeType, TipoEscopo } from '../../entities/user-permission.entity';
+import { UserAccessTokenClaims } from '../dtos/auth-token-output.dto';
 
 /**
  * DTO para saída de usuário compatível com o serviço de autenticação
@@ -36,17 +37,7 @@ export class UserOutput {
   unidade_id?: string;
 }
 
-/**
- * Claims do token de acesso do usuário
- */
-export interface UserAccessTokenClaims {
-  id: string | number;
-  username: string;
-  roles: RoleType[];
-  permissions?: string[];
-  permissionScopes?: Record<string, string>;
-  unidade_id?: string;
-}
+
 
 /**
  * Adaptador para converter a entidade Usuario para o formato esperado pelo serviço de autenticação

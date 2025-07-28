@@ -16,7 +16,7 @@
     "prestart:prod": "npm run build",
     "start": "nest start",
     "start:dev": "nest start --watch",
-    "dev": "tsnd --respawn --transpile-only --ignore-watch node_modules --no-notify src/main.ts",
+    "dev": "npx ts-node-dev -r tsconfig-paths/register --respawn --transpile-only --ignore-watch node_modules --no-notify src/main.ts",
     "start:debug": "nest start --debug --watch",
     "start:pm2": "pm2 start dist/main.js --no-daemon --name pgben-server",
     "start:prod": "node dist/main",

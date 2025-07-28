@@ -57,7 +57,7 @@ export class PagamentoService {
     // Criar pagamento
     const pagamento = await this.pagamentoRepository.create(dadosNormalizados);
 
-    this.logger.log(`Pagamento ${pagamento.id} criado com sucesso`);
+    // Pagamento criado com sucesso
     return pagamento;
   }
 
@@ -72,6 +72,13 @@ export class PagamentoService {
     }
 
     return pagamento;
+  }
+
+  /**
+   * Busca um pagamento por ID com todas as relações necessárias para o processamento da fila.
+   */
+  async findPagamentoCompleto(id: string): Promise<Pagamento> {
+    return this.pagamentoRepository.findPagamentoComRelacoes(id);
   }
 
   /**
@@ -96,7 +103,7 @@ export class PagamentoService {
 
     return {
       data: items,
-      pagination: {
+      meta: {
         page,
         limit,
         total,
@@ -206,7 +213,7 @@ export class PagamentoService {
       dadosAtualizacao,
     );
 
-    this.logger.log(`Pagamento ${id} cancelado com sucesso`);
+    // Pagamento cancelado com sucesso
     return pagamentoCancelado;
   }
 

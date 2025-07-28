@@ -1,6 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
+import { ConfigService } from '@nestjs/config';
 import { PagamentoCreateDto } from '../dtos/pagamento-create.dto';
 import { CancelarPagamentoDto } from '../dtos/cancelar-pagamento.dto';
 import { ConfirmacaoRecebimentoDto } from '../dtos/confirmacao-recebimento.dto';
@@ -8,14 +9,47 @@ import { ConfirmacaoRecebimentoDto } from '../dtos/confirmacao-recebimento.dto';
 /**
  * Serviço de fila para pagamentos
  * Implementa Event-Driven Architecture usando BullMQ
+ * Com fallback graceful quando Redis não está disponível
  */
 @Injectable()
 export class PagamentoQueueService {
   private readonly logger = new Logger(PagamentoQueueService.name);
+  private readonly isRedisDisabled: boolean;
 
   constructor(
-    @InjectQueue('pagamentos') private readonly pagamentosQueue: Queue,
-  ) {}
+    @Optional() @InjectQueue('pagamentos') private readonly pagamentosQueue: Queue,
+    private readonly configService: ConfigService,
+  ) {
+    this.isRedisDisabled = this.configService.get('DISABLE_REDIS') === 'true';
+    
+    if (this.isRedisDisabled) {
+      this.logger.warn('Redis desabilitado - operações de fila serão simuladas');
+    } else if (!this.pagamentosQueue) {
+      this.logger.warn('Fila de pagamentos não disponível - operações serão simuladas');
+    }
+  }
+
+  /**
+   * Verifica se as filas estão disponíveis
+   */
+  private isQueueAvailable(): boolean {
+    return !this.isRedisDisabled && !!this.pagamentosQueue;
+  }
+
+  /**
+   * Simula um job quando a fila não está disponível
+   */
+  private simulateJob(jobType: string, data: any): any {
+    const jobId = `simulated-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    this.logger.warn(`Simulando job ${jobType} (ID: ${jobId}) - Redis não disponível`);
+    return {
+      id: jobId,
+      data,
+      opts: {},
+      progress: () => 100,
+      remove: () => Promise.resolve(),
+    };
+  }
 
   /**
    * Adiciona job para criar pagamento
@@ -26,6 +60,15 @@ export class PagamentoQueueService {
     priority: number = 0,
   ) {
     try {
+      // Verificar se a fila está disponível
+      if (!this.isQueueAvailable()) {
+        this.logger.warn(`Fila não disponível - simulando job de criação de pagamento`);
+        return this.simulateJob('criar-pagamento', {
+          pagamentoData,
+          usuarioId,
+        });
+      }
+
       const job = await this.pagamentosQueue.add(
         'criar-pagamento',
         {
@@ -44,7 +87,7 @@ export class PagamentoQueueService {
         },
       );
 
-      this.logger.log(`Job de criação de pagamento adicionado: ${job.id}`);
+      // Job adicionado com sucesso
       return job;
     } catch (error) {
       this.logger.error(
@@ -64,6 +107,16 @@ export class PagamentoQueueService {
     priority: number = 5,
   ) {
     try {
+      // Verificar se a fila está disponível
+      if (!this.isQueueAvailable()) {
+        this.logger.warn(`Fila não disponível - simulando job de liberação de pagamento para: ${pagamentoId}`);
+        return this.simulateJob('liberar-pagamento', {
+          pagamentoId,
+          dadosLiberacao,
+          usuarioId,
+        });
+      }
+
       const job = await this.pagamentosQueue.add(
         'liberar-pagamento',
         {
@@ -83,7 +136,7 @@ export class PagamentoQueueService {
         },
       );
 
-      this.logger.log(`Job de liberação de pagamento adicionado: ${job.id}`);
+      // Job adicionado com sucesso
       return job;
     } catch (error) {
       this.logger.error(
@@ -122,7 +175,7 @@ export class PagamentoQueueService {
         },
       );
 
-      this.logger.log(`Job de cancelamento de pagamento adicionado: ${job.id}`);
+      // Job adicionado com sucesso
       return job;
     } catch (error) {
       this.logger.error(
@@ -161,9 +214,7 @@ export class PagamentoQueueService {
         },
       );
 
-      this.logger.log(
-        `Job de confirmação de recebimento adicionado: ${job.id}`,
-      );
+      // Job adicionado com sucesso
       return job;
     } catch (error) {
       this.logger.error(
@@ -200,7 +251,7 @@ export class PagamentoQueueService {
         },
       );
 
-      this.logger.log(`Job de validação de comprovante adicionado: ${job.id}`);
+      // Job adicionado com sucesso
       return job;
     } catch (error) {
       this.logger.error(
@@ -220,6 +271,16 @@ export class PagamentoQueueService {
     priority: number = 1,
   ) {
     try {
+      // Verificar se a fila está disponível
+      if (!this.isQueueAvailable()) {
+        this.logger.warn(`Fila não disponível - simulando job de processamento em lote: ${operacao}`);
+        return this.simulateJob('processamento-batch', {
+          operacao,
+          dados,
+          usuarioId,
+        });
+      }
+
       const job = await this.pagamentosQueue.add(
         'processamento-batch',
         {
@@ -239,7 +300,7 @@ export class PagamentoQueueService {
         },
       );
 
-      this.logger.log(`Job de processamento em lote adicionado: ${job.id}`);
+      // Job adicionado com sucesso
       return job;
     } catch (error) {
       this.logger.error(
@@ -287,7 +348,7 @@ export class PagamentoQueueService {
       await this.pagamentosQueue.clean(24 * 60 * 60 * 1000, 'completed'); // 24 horas
       await this.pagamentosQueue.clean(7 * 24 * 60 * 60 * 1000, 'failed'); // 7 dias
 
-      this.logger.log('Fila de pagamentos limpa com sucesso');
+      // Fila limpa com sucesso
     } catch (error) {
       this.logger.error(`Erro ao limpar fila: ${error.message}`);
       throw error;

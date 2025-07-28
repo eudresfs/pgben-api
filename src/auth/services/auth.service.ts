@@ -337,9 +337,21 @@ export class AuthService {
       throw new UnauthorizedException('Usuário não encontrado');
     }
 
-    // Gerar novos tokens
-    const userOutput = UsuarioAdapter.toUserOutput(usuario as any);
-    const tokens = this.getAuthToken(ctx, userOutput);
+    // Obter as permissões do usuário para incluir no novo token
+    const permissions = await this.permissionService.getUserPermissions(
+      usuario.id,
+    );
+
+    // Obter os escopos das permissões
+    const permissionScopes: Record<string, string> = {};
+
+    // Gerar novos tokens com permissões incluídas
+    const userAccessTokenClaims = UsuarioAdapter.toUserAccessTokenClaims(
+      usuario as Usuario,
+      permissions,
+      permissionScopes,
+    );
+    const tokens = this.getAuthToken(ctx, userAccessTokenClaims);
 
     // Obter o tempo de expiração
     const refreshTokenExpiresIn = this.getRefreshTokenExpiresIn();

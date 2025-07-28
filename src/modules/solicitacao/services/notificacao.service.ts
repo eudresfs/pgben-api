@@ -131,8 +131,6 @@ export class NotificacaoService {
     notificacao: DadosNotificacaoSolicitacao,
   ): Promise<void> {
     try {
-      this.logger.log(`Enviando notificação: ${notificacao.titulo}`);
-
       // Criar notificação usando o serviço principal
       await this.notificacaoSistemaService.criarNotificacaoSolicitacao({
         destinatario_id: notificacao.destinatarioId!,
@@ -155,7 +153,7 @@ export class NotificacaoService {
         },
       });
 
-      this.logger.log(`Notificação enviada com sucesso: ${notificacao.titulo}`);
+      // Notificação enviada com sucesso
     } catch (error) {
       this.logger.error(
         `Erro ao enviar notificação: ${error.message}`,

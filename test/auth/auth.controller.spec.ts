@@ -1,13 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
 
 import { AppLogger } from '../../shared/logger/logger.service';
-import { RequestContext } from '../../shared/request-context/request-context.dto';
-import { LoginInput } from '../dtos/auth-login-input.dto';
-import { RefreshTokenInput } from '../dtos/auth-refresh-token-input.dto';
-import { RegisterInput } from '../dtos/auth-register-input.dto';
-import { AuthTokenOutput } from '../dtos/auth-token-output.dto';
-import { AuthService } from '../services/auth.service';
-import { AuthController } from './auth.controller';
+import { RequestContext } from '../../src/shared/request-context/request-context.dto';
+import { LoginInput } from '../../src/auth/dtos/auth-login-input.dto';
+import { RefreshTokenInput } from '../../src/auth/dtos/auth-refresh-token-input.dto';
+import { RegisterInput } from '../../src/auth/dtos/auth-register-input.dto';
+import { AuthTokenOutput } from '../../src/auth/dtos/auth-token-output.dto';
+import { AuthService } from '../../src/auth/services/auth.service';
+import { AuthController } from '../../src/auth/controllers/auth.controller';
 
 describe('AuthController', () => {
   let moduleRef: TestingModule;

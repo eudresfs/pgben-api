@@ -121,7 +121,5 @@ export default (): any => {
         10,
       ),
     },
-    defaultAdminUserPassword:
-      process.env.DEFAULT_ADMIN_USER_PASSWORD || 'admin',
   };
 };

@@ -98,15 +98,6 @@ import { CacheModule } from '../../shared/cache/cache.module';
     // Configuração da fila BullMQ para pagamentos
     BullModule.registerQueue({
       name: 'pagamentos',
-      defaultJobOptions: {
-        removeOnComplete: 10,
-        removeOnFail: 5,
-        attempts: 3,
-        backoff: {
-          type: 'exponential',
-          delay: 2000,
-        },
-      },
     }),
     HttpModule.register({
       timeout: 5000,

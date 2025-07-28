@@ -3,6 +3,7 @@ import {
   BadRequestException,
   NotFoundException,
   UnauthorizedException,
+  ForbiddenException,
   Logger,
   InternalServerErrorException,
 } from '@nestjs/common';
@@ -178,6 +179,17 @@ export class PasswordResetService {
         lgpdRelevant: true,
       });
 
+      // Preservar erros de negócio específicos (rate limiting, validação, etc.)
+      if (
+        error instanceof BadRequestException ||
+        error instanceof UnauthorizedException ||
+        error instanceof NotFoundException ||
+        error instanceof ForbiddenException
+      ) {
+        throw error;
+      }
+
+      // Apenas transformar em erro interno se for um erro inesperado
       throw new InternalServerErrorException(
         'Erro interno. Tente novamente mais tarde.',
       );
@@ -356,12 +368,9 @@ export class PasswordResetService {
         return { valid: false };
       }
 
-      // Marcar token como usado após validação bem-sucedida
-      resetToken.markAsUsed('token_validated');
-      await this.passwordResetTokenRepository.save(resetToken);
 
       this.logger.log(
-        `Token validado e marcado como usado para usuário ${resetToken.usuario_id}`,
+        `Token validado para usuário ${resetToken.usuario_id}`,
       );
 
       return {

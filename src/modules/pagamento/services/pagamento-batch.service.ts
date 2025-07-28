@@ -189,9 +189,7 @@ export class PagamentoBatchService {
     result.successCount = result.success.length;
     result.errorCount = result.errors.length;
 
-    this.logger.log(
-      `Liberação em lote concluída: ${result.successCount} sucessos, ${result.errorCount} erros`,
-    );
+    // Liberação em lote concluída
 
     return result;
   }
@@ -211,9 +209,7 @@ export class PagamentoBatchService {
     const { batchSize = this.DEFAULT_BATCH_SIZE, useTransaction = true } =
       options;
 
-    this.logger.log(
-      `Iniciando atualização de status em lote de ${updates.length} pagamentos`,
-    );
+    // Iniciando atualização de status em lote
 
     const result: BatchResult<Pagamento> = {
       success: [],
@@ -239,9 +235,7 @@ export class PagamentoBatchService {
     result.successCount = result.success.length;
     result.errorCount = result.errors.length;
 
-    this.logger.log(
-      `Atualização de status em lote concluída: ${result.successCount} sucessos, ${result.errorCount} erros`,
-    );
+    // Atualização de status em lote concluída
 
     return result;
   }
@@ -259,9 +253,7 @@ export class PagamentoBatchService {
       maxConcurrency = this.DEFAULT_MAX_CONCURRENCY,
     } = options;
 
-    this.logger.log(
-      `Iniciando validação em lote de ${comprovante_ids.length} comprovantes`,
-    );
+    // Iniciando validação em lote de comprovantes
 
     const result: BatchResult<ComprovantePagamento> = {
       success: [],
@@ -297,9 +289,7 @@ export class PagamentoBatchService {
     result.successCount = result.success.length;
     result.errorCount = result.errors.length;
 
-    this.logger.log(
-      `Validação em lote concluída: ${result.successCount} sucessos, ${result.errorCount} erros`,
-    );
+    // Validação em lote concluída
 
     return result;
   }

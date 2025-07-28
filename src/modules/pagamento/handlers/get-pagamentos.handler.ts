@@ -93,9 +93,9 @@ export class GetPagamentosHandler {
               quantidade_comprovantes: 0,
             }) as unknown as PagamentoResponseDto,
         ),
-        total: serviceResult.pagination.total,
-        page: serviceResult.pagination.page,
-        limit: serviceResult.pagination.limit,
+        total: serviceResult.meta.total,
+        page: serviceResult.meta.page,
+        limit: serviceResult.meta.limit,
       };
 
       // Armazenar no cache por 5 minutos

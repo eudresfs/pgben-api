@@ -34,7 +34,7 @@ export class PagamentoQueueProcessor implements OnModuleDestroy {
     const { pagamentoData, usuarioId } = job.data;
 
     try {
-      this.logger.log(`Processando criação de pagamento: ${job.id}`);
+      // Processando criação de pagamento
 
       // Criar pagamento
       const pagamento = await this.pagamentoService.create(
@@ -51,16 +51,29 @@ export class PagamentoQueueProcessor implements OnModuleDestroy {
 
       await this.auditoriaService.create(logDto);
 
-      // Enviar notificação
-      await this.notificacaoService.enviarNotificacao({
-        tipo: 'PAGAMENTO_CRIADO',
-        destinatario_id: pagamento.solicitacao?.tecnico_id,
-        titulo: 'Pagamento Criado',
-        conteudo: 'Seu pagamento foi criado e está sendo processado.',
-        dados: { pagamentoId: pagamento.id },
-      });
+      // Enviar notificação (se houver técnico responsável)
+      const tecnicoId = pagamento.solicitacao?.tecnico_id;
+      if (tecnicoId) {
+        try {
+          await this.notificacaoService.enviarNotificacao({
+            tipo: 'PAGAMENTO_CRIADO',
+            destinatario_id: tecnicoId,
+            titulo: 'Pagamento Criado',
+            conteudo: 'Seu pagamento foi criado e está sendo processado.',
+            dados: { pagamentoId: pagamento.id },
+          });
+        } catch (notificationError) {
+          this.logger.warn(
+            `Falha ao enviar notificação de criação para pagamento ${pagamento.id}: ${notificationError.message}`,
+          );
+        }
+      } else {
+        this.logger.warn(
+          `Pagamento ${pagamento.id} criado sem técnico responsável definido - notificação não enviada`,
+        );
+      }
 
-      this.logger.log(`Pagamento criado com sucesso: ${pagamento.id}`);
+      // Pagamento criado com sucesso
       return pagamento;
     } catch (error) {
       this.logger.error(
@@ -79,10 +92,38 @@ export class PagamentoQueueProcessor implements OnModuleDestroy {
     const { pagamentoId, usuarioId, dadosLiberacao } = job.data;
 
     try {
-      this.logger.log(`Processando liberação de pagamento: ${pagamentoId}`);
+      // Processando liberação de pagamento
+
+      // Buscar o pagamento completo com suas relações
+      const pagamento = await this.pagamentoService.findPagamentoCompleto(pagamentoId);
+      if (!pagamento) {
+        this.logger.error(`Pagamento ${pagamentoId} não encontrado`);
+        return;
+      }
+
+      // Verificar se o pagamento está em status válido para liberação
+      if (pagamento.status === StatusPagamentoEnum.LIBERADO) {
+        this.logger.warn(`Pagamento ${pagamentoId} já está liberado`);
+        return;
+      }
+      
+      if (pagamento.status !== StatusPagamentoEnum.PENDENTE && pagamento.status !== StatusPagamentoEnum.AGENDADO) {
+        this.logger.warn(`Pagamento ${pagamentoId} não está em status válido para liberação. Status atual: ${pagamento.status}`);
+        return;
+      }
+
+      // Verificar se existe liberado_por
+      if (!pagamento.liberado_por) {
+        this.logger.error(`Liberador não encontrado para pagamento ${pagamentoId}`);
+        return;
+      }
+
+      // Obter informações do beneficiário para a mensagem
+      const beneficiarioId = pagamento.concessao?.solicitacao?.beneficiario_id;
+      const beneficiarioNome = pagamento.concessao?.solicitacao?.beneficiario?.nome || 'Beneficiário';
 
       // Liberar pagamento (usando updateStatus)
-      const pagamento = await this.pagamentoService.updateStatus(
+      const pagamentoAtualizado = await this.pagamentoService.updateStatus(
         pagamentoId,
         {
           status: StatusPagamentoEnum.LIBERADO,
@@ -100,17 +141,29 @@ export class PagamentoQueueProcessor implements OnModuleDestroy {
 
       await this.auditoriaService.create(logDto);
 
-      // Enviar notificação
-      await this.notificacaoService.enviarNotificacao({
-        tipo: 'PAGAMENTO_LIBERADO',
-        destinatario_id: pagamento.solicitacao?.tecnico_id,
-        titulo: 'Pagamento Liberado',
-        conteudo: 'Seu pagamento foi liberado e está disponível para saque.',
-        dados: { pagamentoId, valor: pagamento.valor },
-      });
+      // Enviar notificação para o liberador (se existir)
+      if (pagamento.liberado_por) {
+        try {
+          await this.notificacaoService.enviarNotificacao({
+            tipo: 'PAGAMENTO_LIBERADO',
+            destinatario_id: pagamento.liberado_por,
+            titulo: 'Pagamento Liberado com Sucesso',
+            conteudo: `O pagamento para ${beneficiarioNome} foi liberado com sucesso e está disponível para processamento.`,
+            dados: { pagamentoId, valor: pagamento.valor, beneficiarioNome },
+          });
+        } catch (notificationError) {
+          this.logger.warn(
+            `Falha ao enviar notificação de liberação para pagamento ${pagamentoId}: ${notificationError.message}`,
+          );
+        }
+      } else {
+        this.logger.warn(
+          `Pagamento ${pagamentoId} liberado sem responsável definido - notificação não enviada`,
+        );
+      }
 
-      this.logger.log(`Pagamento liberado com sucesso: ${pagamentoId}`);
-      return pagamento;
+      // Pagamento liberado com sucesso
+      return pagamentoAtualizado;
     } catch (error) {
       this.logger.error(
         `Erro ao processar liberação de pagamento: ${error.message}`,
@@ -128,7 +181,7 @@ export class PagamentoQueueProcessor implements OnModuleDestroy {
     const { pagamentoId, usuarioId, motivo } = job.data;
 
     try {
-      this.logger.log(`Processando cancelamento de pagamento: ${pagamentoId}`);
+      // Processando cancelamento de pagamento
 
       // Cancelar pagamento
       const pagamento = await this.pagamentoService.cancelar(
@@ -146,17 +199,30 @@ export class PagamentoQueueProcessor implements OnModuleDestroy {
 
       await this.auditoriaService.create(logDto);
 
-      // Enviar notificação
-      await this.notificacaoService.enviarNotificacao({
-        tipo: 'PAGAMENTO_CANCELADO',
-        destinatario_id: pagamento.solicitacao?.tecnico_id,
-        titulo: 'Pagamento Cancelado',
-        conteudo:
-          'Seu pagamento foi cancelado. Verifique os detalhes na sua conta.',
-        dados: { pagamentoId, motivo },
-      });
+      // Enviar notificação (se houver técnico responsável)
+      const tecnicoId = pagamento.solicitacao?.tecnico_id;
+      if (tecnicoId) {
+        try {
+          await this.notificacaoService.enviarNotificacao({
+            tipo: 'PAGAMENTO_CANCELADO',
+            destinatario_id: tecnicoId,
+            titulo: 'Pagamento Cancelado',
+            conteudo:
+              'Seu pagamento foi cancelado. Verifique os detalhes na sua conta.',
+            dados: { pagamentoId, motivo },
+          });
+        } catch (notificationError) {
+          this.logger.warn(
+            `Falha ao enviar notificação de cancelamento para pagamento ${pagamentoId}: ${notificationError.message}`,
+          );
+        }
+      } else {
+        this.logger.warn(
+          `Pagamento ${pagamentoId} cancelado sem técnico responsável definido - notificação não enviada`,
+        );
+      }
 
-      this.logger.log(`Pagamento cancelado com sucesso: ${pagamentoId}`);
+      // Pagamento cancelado com sucesso
       return pagamento;
     } catch (error) {
       this.logger.error(
@@ -175,7 +241,7 @@ export class PagamentoQueueProcessor implements OnModuleDestroy {
     const { pagamentoId, confirmacaoData, usuarioId } = job.data;
 
     try {
-      this.logger.log(`Processando confirmação de recebimento: ${pagamentoId}`);
+      // Processando confirmação de recebimento
 
       // Confirmar recebimento (usando updateStatus)
       const confirmacao = await this.pagamentoService.updateStatus(
@@ -196,7 +262,7 @@ export class PagamentoQueueProcessor implements OnModuleDestroy {
 
       await this.auditoriaService.create(logDto);
 
-      this.logger.log(`Recebimento confirmado com sucesso: ${confirmacao.id}`);
+      // Recebimento confirmado com sucesso
       return confirmacao;
     } catch (error) {
       this.logger.error(
@@ -215,7 +281,7 @@ export class PagamentoQueueProcessor implements OnModuleDestroy {
     const { comprovante_id, usuarioId } = job.data;
 
     try {
-      this.logger.log(`Processando validação de comprovante: ${comprovante_id}`);
+      // Processando validação de comprovante
 
       // Buscar comprovante
       const comprovante = await this.comprovanteService.findById(comprovante_id);
@@ -229,7 +295,7 @@ export class PagamentoQueueProcessor implements OnModuleDestroy {
 
       await this.auditoriaService.create(logDto);
 
-      this.logger.log(`Comprovante validado com sucesso: ${comprovante_id}`);
+      // Comprovante validado com sucesso
       return comprovante;
     } catch (error) {
       this.logger.error(

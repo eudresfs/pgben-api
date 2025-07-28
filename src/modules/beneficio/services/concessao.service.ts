@@ -475,7 +475,7 @@ export class ConcessaoService {
     }); // Buscar todos os pagamentos da concessão
 
     const quantidadeParcelasOriginal =
-      pagamentosOriginais.pagination.total;
+      pagamentosOriginais.meta.total;
 
     if (quantidadeParcelasOriginal === 0) {
       throw new BadRequestException(

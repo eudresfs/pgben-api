@@ -155,7 +155,7 @@ describe('UsuarioRepository', () => {
 
       expect(typeormRepository.findOne).toHaveBeenCalledWith({
         where: { id: '123e4567-e89b-12d3-a456-426614174000' },
-        relations: ['unidade', 'setor'],
+        relations: ['role', 'unidade', 'setor'],
       });
       expect(result).toEqual(mockUsuario);
     });
@@ -179,6 +179,7 @@ describe('UsuarioRepository', () => {
 
       expect(typeormRepository.findOne).toHaveBeenCalledWith({
         where: { email: 'joao.silva@semtas.natal.gov.br' },
+        relations: ['role', 'unidade', 'setor']
       });
       expect(result).toEqual(mockUsuario);
     });
@@ -200,6 +201,7 @@ describe('UsuarioRepository', () => {
 
       expect(typeormRepository.findOne).toHaveBeenCalledWith({
         where: { cpf: '123.456.789-00' },
+        relations: ['role', 'unidade', 'setor']
       });
       expect(result).toEqual(mockUsuario);
     });
