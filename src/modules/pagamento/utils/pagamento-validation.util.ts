@@ -143,11 +143,18 @@ export class PagamentoValidationUtil {
         StatusPagamentoEnum.CONFIRMADO,
         StatusPagamentoEnum.VENCIDO,
       ],
-      [StatusPagamentoEnum.CONFIRMADO]: [],
+      [StatusPagamentoEnum.CONFIRMADO]: [
+        StatusPagamentoEnum.RECEBIDO,
+      ],
+      [StatusPagamentoEnum.RECEBIDO]: [],
       [StatusPagamentoEnum.CANCELADO]: [],
       [StatusPagamentoEnum.VENCIDO]: [
-        StatusPagamentoEnum.PENDENTE,
+        StatusPagamentoEnum.REGULARIZADO,
         StatusPagamentoEnum.CANCELADO,
+      ],
+      [StatusPagamentoEnum.REGULARIZADO]: [
+        StatusPagamentoEnum.PENDENTE,
+        StatusPagamentoEnum.LIBERADO,
       ],
       [StatusPagamentoEnum.SUSPENSO]: [
         StatusPagamentoEnum.PENDENTE,

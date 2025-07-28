@@ -5,6 +5,7 @@ import { PagamentoCreateDto } from '../dtos/pagamento-create.dto';
 import { CancelarPagamentoDto } from '../dtos/cancelar-pagamento.dto';
 import { ConfirmacaoRecebimentoDto } from '../dtos/confirmacao-recebimento.dto';
 import { PagamentoService } from './pagamento.service';
+import { ComprovanteService } from './comprovante.service';
 import { NotificacaoService } from '../../notificacao/services/notificacao.service';
 import { AuditEventEmitter } from '../../auditoria/events/emitters/audit-event.emitter';
 import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
@@ -20,6 +21,7 @@ export class PagamentoQueueProcessor implements OnModuleDestroy {
 
   constructor(
     private readonly pagamentoService: PagamentoService,
+    private readonly comprovanteService: ComprovanteService,
     private readonly notificacaoService: NotificacaoService,
     private readonly auditEventEmitter: AuditEventEmitter,
   ) {}
@@ -48,18 +50,25 @@ export class PagamentoQueueProcessor implements OnModuleDestroy {
         userId,
       );
 
-      // Enviar notificação
-      try {
-        await this.notificacaoService.enviarNotificacao({
-          tipo: 'PAGAMENTO_CRIADO',
-          destinatario_id: userId,
-          titulo: 'Pagamento Criado',
-          conteudo: 'Seu pagamento foi criado com sucesso',
-          dados: { pagamento },
-        });
-      } catch (notificationError) {
+      // Enviar notificação (se houver técnico responsável)
+      const tecnicoId = pagamento.solicitacao?.tecnico_id;
+      if (tecnicoId) {
+        try {
+          await this.notificacaoService.enviarNotificacao({
+            tipo: 'PAGAMENTO_CRIADO',
+            destinatario_id: tecnicoId,
+            titulo: 'Pagamento Criado',
+            conteudo: 'Seu pagamento foi criado e está sendo processado.',
+            dados: { pagamentoId: pagamento.id },
+          });
+        } catch (notificationError) {
+          this.logger.warn(
+            `Falha ao enviar notificação de criação para pagamento ${pagamento.id}: ${notificationError.message}`,
+          );
+        }
+      } else {
         this.logger.warn(
-          `Falha ao enviar notificação de criação para pagamento ${pagamento.id}: ${notificationError.message}`,
+          `Pagamento ${pagamento.id} criado sem técnico responsável definido - notificação não enviada`,
         );
       }
 
@@ -88,14 +97,26 @@ export class PagamentoQueueProcessor implements OnModuleDestroy {
     const pagamento = await this.pagamentoService.findPagamentoCompleto(pagamentoId);
 
     if (!pagamento) {
-        this.logger.error(`Pagamento com ID ${pagamentoId} não encontrado.`);
-        return;
+      this.logger.error(`Pagamento com ID ${pagamentoId} não encontrado.`);
+      return;
     }
 
-    // Validação mais rigorosa de status para evitar processamento duplicado
+    // Verificar se o pagamento já foi confirmado como recebido
+    if (pagamento.status === StatusPagamentoEnum.RECEBIDO) {
+      this.logger.warn(`Pagamento ${pagamentoId} já foi confirmado como recebido`);
+      return;
+    }
+
+    // Verificar se o pagamento já está liberado
+    if (pagamento.status === StatusPagamentoEnum.LIBERADO) {
+      this.logger.warn(`Pagamento ${pagamentoId} já está liberado`);
+      return;
+    }
+
+    // Validar se o pagamento está em status válido para liberação (PENDENTE ou AGENDADO)
     if (![StatusPagamentoEnum.PENDENTE, StatusPagamentoEnum.AGENDADO].includes(pagamento.status)) {
-        this.logger.warn(`Pagamento ${pagamentoId} não está em status válido para liberação (${pagamento.status}). Job será ignorado.`);
-        return;
+      this.logger.warn(`Pagamento ${pagamentoId} não está em status válido para liberação. Status atual: ${pagamento.status}`);
+      return;
     }
 
     try {
@@ -116,18 +137,27 @@ export class PagamentoQueueProcessor implements OnModuleDestroy {
         userId,
       );
 
-      // Notificar o técnico responsável pela liberação
-      try {
-        await this.notificacaoService.enviarNotificacao({
-          tipo: 'PAGAMENTO_LIBERADO',
-          destinatario_id: userId,
-          titulo: 'Pagamento liberado com sucesso',
-          conteudo: `O pagamento no valor de R$ ${pagamento.valor} foi liberado e processado.`,
-          dados: { pagamento: pagamentoAtualizado },
-        });
-      } catch (notificationError) {
+      // Obter informações do beneficiário para a mensagem
+      const beneficiarioNome = pagamento.concessao?.solicitacao?.beneficiario?.nome || 'Beneficiário';
+
+      // Enviar notificação para o liberador (se existir)
+      if (pagamento.liberado_por) {
+        try {
+          await this.notificacaoService.enviarNotificacao({
+            tipo: 'PAGAMENTO_LIBERADO',
+            destinatario_id: pagamento.liberado_por,
+            titulo: 'Pagamento Liberado com Sucesso',
+            conteudo: `O pagamento para ${beneficiarioNome} foi liberado com sucesso e está disponível para processamento.`,
+            dados: { pagamentoId, valor: pagamento.valor, beneficiarioNome },
+          });
+        } catch (notificationError) {
+          this.logger.warn(
+            `Falha ao enviar notificação de liberação para pagamento ${pagamentoId}: ${notificationError.message}`,
+          );
+        }
+      } else {
         this.logger.warn(
-          `Falha ao enviar notificação de liberação para pagamento ${pagamentoId}: ${notificationError.message}`,
+          `Pagamento ${pagamentoId} liberado sem responsável definido - notificação não enviada`,
         );
       }
 
@@ -170,18 +200,25 @@ export class PagamentoQueueProcessor implements OnModuleDestroy {
         userId,
       );
 
-      // Enviar notificação
-      try {
-        await this.notificacaoService.enviarNotificacao({
-          tipo: 'PAGAMENTO_CANCELADO',
-          destinatario_id: userId,
-          titulo: 'Pagamento Cancelado',
-          conteudo: 'Seu pagamento foi cancelado',
-          dados: { pagamento, motivo },
-        });
-      } catch (notificationError) {
+      // Enviar notificação (se houver técnico responsável)
+      const tecnicoId = pagamento.solicitacao?.tecnico_id;
+      if (tecnicoId) {
+        try {
+          await this.notificacaoService.enviarNotificacao({
+            tipo: 'PAGAMENTO_CANCELADO',
+            destinatario_id: tecnicoId,
+            titulo: 'Pagamento Cancelado',
+            conteudo: 'Seu pagamento foi cancelado. Verifique os detalhes na sua conta.',
+            dados: { pagamentoId, motivo },
+          });
+        } catch (notificationError) {
+          this.logger.warn(
+            `Falha ao enviar notificação de cancelamento para pagamento ${pagamentoId}: ${notificationError.message}`,
+          );
+        }
+      } else {
         this.logger.warn(
-          `Falha ao enviar notificação de cancelamento para pagamento ${pagamentoId}: ${notificationError.message}`,
+          `Pagamento ${pagamentoId} cancelado sem técnico responsável definido - notificação não enviada`,
         );
       }
 
@@ -208,11 +245,37 @@ export class PagamentoQueueProcessor implements OnModuleDestroy {
     const { pagamentoId, data, userId } = job.data;
 
     try {
+      const pagamento = await this.pagamentoService.findPagamentoCompleto(pagamentoId);
+
+      if (!pagamento) {
+        this.logger.error(`Pagamento com ID ${pagamentoId} não encontrado.`);
+        return;
+      }
+
+      // Verificar se o pagamento já foi recebido
+      if (pagamento.status === StatusPagamentoEnum.RECEBIDO) {
+        this.logger.warn(`Pagamento ${pagamentoId} já foi confirmado como recebido.`);
+        return;
+      }
+
+      // Verificar se o pagamento está em um status válido para confirmação
+      const statusValidosParaConfirmacao = [
+        StatusPagamentoEnum.CONFIRMADO,
+        StatusPagamentoEnum.LIBERADO,
+      ];
+
+      if (!statusValidosParaConfirmacao.includes(pagamento.status)) {
+        this.logger.warn(
+          `Pagamento ${pagamentoId} não está em um status válido para confirmação de recebimento. Status atual: ${pagamento.status}`,
+        );
+        return;
+      }
+
       // Confirmar recebimento (usando updateStatus)
       const confirmacao = await this.pagamentoService.updateStatus(
         pagamentoId,
         {
-          status: StatusPagamentoEnum.CONFIRMADO,
+          status: StatusPagamentoEnum.RECEBIDO,
           observacoes: 'Recebimento confirmado',
         },
         userId,
@@ -222,8 +285,8 @@ export class PagamentoQueueProcessor implements OnModuleDestroy {
       await this.auditEventEmitter.emitEntityUpdated(
         'Pagamento',
         pagamentoId,
-        { status: 'LIBERADO' },
-        { status: StatusPagamentoEnum.CONFIRMADO, confirmacaoData: data },
+        { status: pagamento.status },
+        { status: StatusPagamentoEnum.RECEBIDO, confirmacaoData: data },
         userId,
       );
 
@@ -265,30 +328,91 @@ export class PagamentoQueueProcessor implements OnModuleDestroy {
     const { pagamentoId, comprovante_id, userId } = job.data;
 
     try {
-      // Validar comprovante (simulação - implementar conforme necessário)
-      const resultado = { valido: true, observacoes: 'Comprovante validado' };
+      const pagamento = await this.pagamentoService.findPagamentoCompleto(pagamentoId);
+
+      if (!pagamento) {
+        this.logger.error(`Pagamento com ID ${pagamentoId} não encontrado.`);
+        return;
+      }
+
+      // Verificar se o pagamento está em status válido para validação de comprovante
+      const statusValidosParaValidacao = [
+        StatusPagamentoEnum.CONFIRMADO,
+        StatusPagamentoEnum.RECEBIDO,
+      ];
+
+      if (!statusValidosParaValidacao.includes(pagamento.status)) {
+        this.logger.warn(
+          `Pagamento ${pagamentoId} não está em status válido para validação de comprovante. Status atual: ${pagamento.status}`,
+        );
+        return;
+      }
+
+      // Verificar se existe comprovante para validar
+      if (!comprovante_id) {
+        this.logger.error(
+          `ID do comprovante não fornecido para validação do pagamento ${pagamentoId}`,
+        );
+        return;
+      }
+
+      // Buscar o comprovante
+      const comprovante = await this.comprovanteService.findById(comprovante_id);
+      if (!comprovante) {
+        this.logger.error(
+          `Comprovante ${comprovante_id} não encontrado para validação.`,
+        );
+        return;
+      }
+
+      // Simular validação do comprovante (implementar lógica específica conforme necessário)
+      const resultado = {
+        valido: true, // Por enquanto, sempre válido - implementar lógica real
+        observacoes: 'Comprovante validado automaticamente'
+      };
+
+      // Atualizar o pagamento com o resultado da validação
+      const statusAtualizado = resultado.valido 
+        ? StatusPagamentoEnum.CONFIRMADO 
+        : StatusPagamentoEnum.PENDENTE;
+
+      await this.pagamentoService.updateStatus(
+        pagamentoId,
+        {
+          status: statusAtualizado,
+          observacoes: resultado.observacoes || (resultado.valido ? 'Comprovante validado com sucesso' : 'Comprovante rejeitado'),
+        },
+        userId,
+      );
 
       // Registrar auditoria
       await this.auditEventEmitter.emitEntityUpdated(
         'Pagamento',
         pagamentoId,
-        { comprovante_validado: false },
-        { comprovante_validado: true, comprovante_id, resultado },
+        { status: pagamento.status },
+        { status: statusAtualizado, comprovante_id, resultado },
         userId,
       );
 
-      // Enviar notificação
-      try {
-        await this.notificacaoService.enviarNotificacao({
-          tipo: 'COMPROVANTE_VALIDADO',
-          destinatario_id: userId,
-          titulo: 'Comprovante Validado',
-          conteudo: 'O comprovante do pagamento foi validado',
-          dados: { pagamentoId, comprovante_id, resultado },
-        });
-      } catch (notificationError) {
+      // Enviar notificação para o técnico responsável
+      const tecnicoId = pagamento.solicitacao?.tecnico_id;
+      if (tecnicoId) {
+        try {
+          await this.notificacaoService.enviarNotificacao({
+            tipo: 'COMPROVANTE_VALIDADO',
+            destinatario_id: tecnicoId,
+            titulo: resultado.valido ? 'Comprovante Validado' : 'Comprovante Rejeitado',
+            conteudo: `O comprovante do pagamento foi ${resultado.valido ? 'validado com sucesso' : 'rejeitado'}`,
+            dados: { pagamentoId, comprovante_id, resultado },
+          });
+        } catch (notificationError) {
+          this.logger.warn(
+            `Falha ao enviar notificação de validação para pagamento ${pagamentoId}: ${notificationError.message}`,
+          );
+        }
+      } else {
         this.logger.warn(
-          `Falha ao enviar notificação de validação para pagamento ${pagamentoId}: ${notificationError.message}`,
+          `Pagamento ${pagamentoId} sem técnico responsável definido - notificação não enviada`,
         );
       }
 
