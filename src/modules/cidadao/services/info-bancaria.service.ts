@@ -52,7 +52,7 @@ async upsert(
   try {
 
     // Verifica se o cidadão existe
-    const cidadaoExiste = await this.cidadaoRepository.exists(
+    const cidadaoExiste = await this.cidadaoRepository.existsCidadao(
       createInfoBancariaDto.cidadao_id,
     );
     if (!cidadaoExiste) {

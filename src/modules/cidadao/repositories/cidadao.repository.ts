@@ -3,8 +3,9 @@ import {
   ConflictException,
   NotFoundException,
 } from '@nestjs/common';
-import { Repository, DataSource } from 'typeorm';
+import { DataSource } from 'typeorm';
 import { Cidadao } from '../../../entities/cidadao.entity';
+import { ScopedRepository } from '../../../common/repositories/scoped-repository';
 
 export interface FindAllOptions {
   skip?: number;
@@ -15,16 +16,26 @@ export interface FindAllOptions {
   includeRelations?: boolean;
 }
 
+/**
+ * Repository para entidade Cidadao com aplicação automática de escopo
+ * 
+ * @description
+ * Estende ScopedRepository para aplicar automaticamente filtros de escopo
+ * baseados no contexto da requisição (GLOBAL, UNIDADE, PROPRIO)
+ */
 @Injectable()
-export class CidadaoRepository {
-  private repository: Repository<Cidadao>;
-
+export class CidadaoRepository extends ScopedRepository<Cidadao> {
   constructor(private readonly dataSource: DataSource) {
-    this.repository = this.dataSource.getRepository(Cidadao);
+    super(Cidadao, dataSource.createEntityManager());
   }
 
-  // Método principal simplificado
-  async findAll(options: FindAllOptions = {}): Promise<[Cidadao[], number]> {
+  /**
+   * Busca cidadãos com filtros específicos e escopo aplicado automaticamente
+   * 
+   * @param options - Opções de busca e filtros
+   * @returns Array de cidadãos e total de registros
+   */
+  async findAllWithFilters(options: FindAllOptions = {}): Promise<[Cidadao[], number]> {
     const {
       skip = 0,
       take = 10,
@@ -34,9 +45,11 @@ export class CidadaoRepository {
       includeRelations = false,
     } = options;
 
-    const query = this.repository.createQueryBuilder('cidadao');
+    // Criar QueryBuilder com escopo aplicado automaticamente
+    const query = this.createScopedQueryBuilder('cidadao');
 
-    // Filtro por unidade
+    // Filtro adicional por unidade (além do escopo automático)
+    // Útil para usuários com escopo GLOBAL que querem filtrar por unidade específica
     if (unidade_id) {
       query.andWhere('cidadao.unidade_id = :unidade_id', { unidade_id });
     }
@@ -45,10 +58,6 @@ export class CidadaoRepository {
     if (search && search.trim() !== '') {
       const searchTerm = search.trim();
       const searchClean = searchTerm.replace(/\D/g, ''); // Remove formatação para CPF/NIS
-
-      // Log para debug
-      console.log('🔍 Search term:', searchTerm);
-      console.log('🔍 Search clean:', searchClean);
 
       const conditions: string[] = [];
       const parameters: any = {};
@@ -108,11 +117,18 @@ export class CidadaoRepository {
       .getManyAndCount();
   }
 
+  /**
+   * Busca cidadão por ID com escopo aplicado automaticamente
+   * 
+   * @param id - ID do cidadão
+   * @param includeRelations - Se deve incluir relacionamentos
+   * @returns Cidadão encontrado ou null
+   */
   async findById(
     id: string,
     includeRelations = false,
   ): Promise<Cidadao | null> {
-    const query = this.repository.createQueryBuilder('cidadao')
+    const query = this.createScopedQueryBuilder('cidadao')
       .where('cidadao.id = :id', { id });
 
     if (includeRelations) {
@@ -132,12 +148,19 @@ export class CidadaoRepository {
     return query.getOne();
   }
 
+  /**
+   * Busca cidadão por CPF com escopo aplicado automaticamente
+   * 
+   * @param cpf - CPF do cidadão
+   * @param includeRelations - Se deve incluir relacionamentos
+   * @returns Cidadão encontrado ou null
+   */
   async findByCpf(
     cpf: string,
     includeRelations = false,
   ): Promise<Cidadao | null> {
     const cpfClean = cpf.replace(/\D/g, '');
-    const query = this.repository.createQueryBuilder('cidadao')
+    const query = this.createScopedQueryBuilder('cidadao')
       .where('cidadao.cpf = :cpf', { cpf: cpfClean });
 
     if (includeRelations) {
@@ -157,12 +180,19 @@ export class CidadaoRepository {
     return query.getOne();
   }
 
+  /**
+   * Busca cidadão por NIS com escopo aplicado automaticamente
+   * 
+   * @param nis - NIS do cidadão
+   * @param includeRelations - Se deve incluir relacionamentos
+   * @returns Cidadão encontrado ou null
+   */
   async findByNis(
     nis: string,
     includeRelations = false,
   ): Promise<Cidadao | null> {
     const nisClean = nis.replace(/\D/g, '');
-    const query = this.repository.createQueryBuilder('cidadao')
+    const query = this.createScopedQueryBuilder('cidadao')
       .where('cidadao.nis = :nis', { nis: nisClean });
 
     if (includeRelations) {
@@ -182,8 +212,14 @@ export class CidadaoRepository {
     return query.getOne();
   }
 
-  async create(data: Partial<Cidadao>): Promise<Cidadao> {
-    // Verificar duplicatas
+  /**
+   * Cria um novo cidadão com validações e escopo aplicado
+   * 
+   * @param data - Dados do cidadão
+   * @returns Cidadão criado
+   */
+  async createCidadao(data: Partial<Cidadao>): Promise<Cidadao> {
+    // Verificar duplicatas usando métodos com escopo
     if (data.cpf) {
       const existingCpf = await this.findByCpf(data.cpf);
       if (existingCpf) {
@@ -198,43 +234,67 @@ export class CidadaoRepository {
       }
     }
 
-    const cidadao = this.repository.create(data);
-    return this.repository.save(cidadao);
+    // Usar saveWithScope para aplicar campos de criação baseados no contexto
+    return this.saveWithScope(data);
   }
 
-  async update(id: string, data: Partial<Cidadao>): Promise<Cidadao> {
-    const exists = await this.repository.exist({ where: { id } });
-    if (!exists) {
+  /**
+   * Atualiza um cidadão com verificação de escopo
+   * 
+   * @param id - ID do cidadão
+   * @param data - Dados para atualização
+   * @returns Cidadão atualizado
+   */
+  async updateCidadao(id: string, data: Partial<Cidadao>): Promise<Cidadao> {
+    // Usar updateWithScope para verificar permissões de escopo
+    return this.updateWithScope(id, data);
+  }
+
+  /**
+   * Remove um cidadão com verificação de escopo
+   * 
+   * @param id - ID do cidadão
+   */
+  async removeCidadao(id: string): Promise<void> {
+    // Verificar se existe no escopo antes de remover
+    const cidadao = await this.findById(id);
+    if (!cidadao) {
       throw new NotFoundException('Cidadão não encontrado');
     }
 
-    await this.repository.update(id, data);
-    return this.findById(id, true) as Promise<Cidadao>;
+    // Usar soft delete
+    await this.softDelete(id);
   }
 
-  async remove(id: string): Promise<void> {
-    const result = await this.repository.softDelete(id);
-    if (result.affected === 0) {
-      throw new NotFoundException('Cidadão não encontrado');
-    }
+  /**
+   * Verifica se um cidadão existe no escopo atual
+   * 
+   * @param id - ID do cidadão
+   * @returns true se existe no escopo
+   */
+  async existsCidadao(id: string): Promise<boolean> {
+    const cidadao = await this.findById(id);
+    return !!cidadao;
   }
 
-  async exists(id: string): Promise<boolean> {
-    return this.repository.exist({ where: { id } });
-  }
-
+  /**
+   * Busca todos os bairros disponíveis no escopo atual
+   * 
+   * @returns Lista de bairros únicos
+   */
   async findAllBairros(): Promise<string[]> {
     try {
-      const result = await this.dataSource.query(
-        `SELECT DISTINCT e.bairro 
-         FROM endereco e 
-         INNER JOIN cidadao c ON e.cidadao_id = c.id 
-         WHERE e.bairro IS NOT NULL 
-           AND e.bairro <> '' 
-           AND TRIM(e.bairro) <> ''
-           AND c.removed_at IS NULL
-         ORDER BY e.bairro ASC`,
-      );
+      // Criar query com escopo aplicado
+      const query = this.createScopedQueryBuilder('cidadao')
+        .select('DISTINCT endereco.bairro', 'bairro')
+        .innerJoin('cidadao.enderecos', 'endereco')
+        .where('endereco.bairro IS NOT NULL')
+        .andWhere('endereco.bairro <> \'\'') 
+        .andWhere('TRIM(endereco.bairro) <> \'\'') 
+        .andWhere('endereco.data_fim_vigencia IS NULL')
+        .orderBy('endereco.bairro', 'ASC');
+
+      const result = await query.getRawMany();
 
       return result
         .map((item) => item.bairro.trim())
@@ -243,5 +303,86 @@ export class CidadaoRepository {
       console.error('Erro ao buscar bairros:', error);
       throw new Error('Erro ao buscar bairros');
     }
+  }
+
+  // ========== MÉTODOS ADMINISTRATIVOS (SEM ESCOPO) ==========
+  
+  /**
+   * Busca todos os cidadãos sem aplicar escopo (uso administrativo)
+   * 
+   * @param options - Opções de busca
+   * @returns Array de cidadãos e total
+   */
+  async findAllGlobalAdmin(options: FindAllOptions = {}): Promise<[Cidadao[], number]> {
+    const {
+      skip = 0,
+      take = 10,
+      search,
+      bairro,
+      unidade_id,
+      includeRelations = false,
+    } = options;
+
+    // Usar createQueryBuilder sem escopo
+    const query = this.createQueryBuilder('cidadao');
+
+    // Aplicar filtros normalmente
+    if (unidade_id) {
+      query.andWhere('cidadao.unidade_id = :unidade_id', { unidade_id });
+    }
+
+    if (search && search.trim() !== '') {
+      const searchTerm = search.trim();
+      const searchClean = searchTerm.replace(/\D/g, '');
+
+      const conditions: string[] = [];
+      const parameters: any = {};
+
+      conditions.push('LOWER(cidadao.nome) LIKE LOWER(:searchName)');
+      parameters.searchName = `%${searchTerm}%`;
+
+      if (searchClean.length > 0) {
+        conditions.push('cidadao.cpf LIKE :searchCpf');
+        parameters.searchCpf = `%${searchClean}%`;
+      }
+
+      if (searchClean.length > 0) {
+        conditions.push('cidadao.nis LIKE :searchNis');
+        parameters.searchNis = `%${searchClean}%`;
+      }
+
+      if (conditions.length > 0) {
+        query.andWhere(`(${conditions.join(' OR ')})`, parameters);
+      }
+    }
+
+    if (bairro && bairro.trim() !== '') {
+      query
+        .leftJoin('cidadao.enderecos', 'endereco_filter')
+        .andWhere('endereco_filter.bairro ILIKE :bairro', {
+          bairro: `%${bairro.trim()}%`,
+        })
+        .andWhere('endereco_filter.data_fim_vigencia IS NULL');
+    }
+
+    if (includeRelations) {
+      query.leftJoinAndSelect('cidadao.unidade', 'unidade');
+      query.leftJoinAndSelect('cidadao.contatos', 'contato');
+      query.leftJoinAndSelect('cidadao.enderecos', 'endereco');
+      query.leftJoinAndSelect('cidadao.composicao_familiar', 'composicao_familiar');
+    } else {
+      query.leftJoinAndSelect('cidadao.unidade', 'unidade');
+      query.leftJoinAndSelect(
+        'cidadao.enderecos',
+        'endereco',
+        'endereco.data_fim_vigencia IS NULL'
+      );
+    }
+
+    return query
+      .orderBy('cidadao.created_at', 'DESC')
+      .skip(skip)
+      .take(Math.min(take, 100))
+      .getManyAndCount();
   }
 }

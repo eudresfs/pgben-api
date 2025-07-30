@@ -111,6 +111,11 @@ export class JwtAuthStrategy extends PassportStrategy(
       claims.permissionScopes = payload.permissionScopes;
     }
 
+    // Extrair escopo se presente no payload
+    if (payload.escopo) {
+      claims.escopo = payload.escopo;
+    }
+
     return claims;
   }
 }

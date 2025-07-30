@@ -19,6 +19,7 @@ import { InfoBancariaService } from './info-bancaria.service';
 import { ComposicaoFamiliarService } from './composicao-familiar.service';
 import { ConfigService } from '@nestjs/config';
 import { AuditEventEmitter, AuditEventType } from '../../auditoria';
+import { Cidadao } from '../../../entities/cidadao.entity';
 
 @Injectable()
 export class CidadaoService {
@@ -56,7 +57,7 @@ export class CidadaoService {
     const skip = (page - 1) * limit;
     const take = Math.min(limit, 100);
 
-    const [cidadaos, total] = await this.cidadaoRepository.findAll({
+    const [cidadaos, total] = await this.cidadaoRepository.findAllWithFilters({
       skip,
       take,
       search,
@@ -223,7 +224,7 @@ export class CidadaoService {
       usuario_id,
     };
 
-    const cidadaoSalvo = await this.cidadaoRepository.create(dadosParaCriacao);
+    const cidadaoSalvo = await this.cidadaoRepository.createCidadao(dadosParaCriacao);
 
     // Processar contatos normalizados se existirem
     if (contatos && contatos.length > 0) {
@@ -336,7 +337,7 @@ export class CidadaoService {
       dadosAtualizacao.nis = nisClean;
     }
 
-    const cidadaoAtualizado = await this.cidadaoRepository.update(
+    const cidadaoAtualizado = await this.cidadaoRepository.updateCidadao(
       id,
       dadosAtualizacao,
     );
@@ -419,7 +420,7 @@ export class CidadaoService {
   }
 
   async remove(id: string): Promise<void> {
-    await this.cidadaoRepository.remove(id);
+    await this.cidadaoRepository.removeCidadao(id);
   }
 
   /**

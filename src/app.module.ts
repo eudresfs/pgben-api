@@ -1,4 +1,4 @@
-import { Module, Logger } from '@nestjs/common';
+import { Module, Logger, MiddlewareConsumer, NestModule, RequestMethod } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CacheModule } from '@nestjs/cache-manager';
@@ -21,7 +21,7 @@ import { MetricasModule } from './modules/metricas/metricas.module';
 import { RecursoModule } from './modules/recurso/recurso.module';
 import { LogsModule } from './modules/logs/logs.module';
 import { PagamentoModule } from './modules/pagamento/pagamento.module';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { CatalogAwareExceptionFilter } from './shared/exceptions/error-catalog';
 import { LoggingModule } from './shared/logging/logging.module';
 import { ResilienceModule } from './shared/modules/resilience.module';
@@ -32,6 +32,8 @@ import { EasyUploadModule } from './modules/easy-upload/easy-upload.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { addTransactionalDataSource } from 'typeorm-transactional';
 import { DataSource } from 'typeorm';
+import { ScopeContextInterceptor } from './common/interceptors/scope-context.interceptor';
+import { RequestContextHolder } from './common/services/request-context-holder.service';
 
 @Module({
   imports: [
@@ -169,15 +171,32 @@ import { DataSource } from 'typeorm';
   providers: [
     AppService,
     CatalogAwareExceptionFilter,
+    RequestContextHolder,
     // Aplicar rate limiting globalmente
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
     },
+    // Aplicar interceptor de escopo globalmente
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: ScopeContextInterceptor,
+    },
   ],
 })
-export class AppModule {
+export class AppModule implements NestModule {
   constructor() {
-    console.log('✅ AppModule inicializado - com autenticação');
+    console.log('✅ AppModule inicializado - com autenticação e ScopedRepository');
   }
-} //
+
+  /**
+   * Configura middlewares globais
+   * 
+   * @description
+   * Middlewares removidos em favor do ScopeContextInterceptor
+   * que executa após o processamento do JWT pelo AuthGuard.
+   */
+  configure(consumer: MiddlewareConsumer) {
+    // Middlewares removidos - usando interceptor para contexto de escopo
+  }
+}

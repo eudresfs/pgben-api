@@ -18,6 +18,7 @@ import { Usuario } from '../../entities/usuario.entity';
 import { PermissionService } from './permission.service';
 import { AuditEventEmitter } from '../../modules/auditoria/events/emitters/audit-event.emitter';
 import { AuditEventType } from '../../modules/auditoria/events/types/audit-event.types';
+import { SCOPE_CONSTANTS, ScopeType } from '../../common/types/scope.types';
 
 @Injectable()
 export class AuthService {
@@ -421,6 +422,16 @@ export class AuthService {
     // Adicionar escopos de permissões ao payload se disponíveis
     if ('permissionScopes' in user && user.permissionScopes) {
       payload['permissionScopes'] = user.permissionScopes;
+    }
+
+    // Determinar e adicionar o escopo baseado na role do usuário
+    if (user.roles && user.roles.length > 0) {
+      const primaryRole = user.roles[0]; // Usar a primeira role como primária
+      const scopeType = SCOPE_CONSTANTS.DEFAULT_ROLE_SCOPE_MAPPING[primaryRole] || ScopeType.PROPRIO;
+      payload['escopo'] = scopeType;
+    } else {
+      // Fallback para escopo PROPRIO se não houver roles
+      payload['escopo'] = ScopeType.PROPRIO;
     }
 
     // Garantir que estamos usando o algoritmo RS256 e a chave privada para assinar o token

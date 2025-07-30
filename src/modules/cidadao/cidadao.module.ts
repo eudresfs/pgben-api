@@ -29,6 +29,7 @@ import { EnderecoController } from './controllers/endereco.controller';
 import { EnderecoService } from './services/endereco.service';
 import { AuthModule } from '../../auth/auth.module';
 import { NotificacaoModule } from '../notificacao/notificacao.module';
+import { createScopedRepositoryProvider } from '../../common/providers/scoped-repository.provider';
 
 /**
  * Módulo de cidadãos
@@ -39,7 +40,7 @@ import { NotificacaoModule } from '../notificacao/notificacao.module';
 @Module({
   imports: [
     TypeOrmModule.forFeature([
-      Cidadao,
+      Cidadao, // Adicionado para resolver dependência do DadosSociaisService
       ComposicaoFamiliar,
       InfoBancaria,
       DadosSociais,
@@ -65,6 +66,7 @@ import { NotificacaoModule } from '../notificacao/notificacao.module';
     Logger,
     CidadaoService,
     CidadaoRepository,
+    createScopedRepositoryProvider(Cidadao),
     InfoBancariaService,
     InfoBancariaRepository,
     DadosSociaisService,
