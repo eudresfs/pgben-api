@@ -17,6 +17,7 @@ import {
 } from 'class-validator';
 import { Usuario } from './usuario.entity';
 import { Status } from '../enums/status.enum';
+import { TipoEscopo } from './user-permission.entity';
 
 /**
  * Entidade de Role (Papel)
@@ -54,6 +55,15 @@ export class Role {
   @IsOptional()
   @IsBoolean({ message: 'Status deve ser um valor booleano' })
   status: Status;
+
+  @Column({
+    type: 'enum',
+    enum: TipoEscopo,
+    default: TipoEscopo.UNIDADE,
+    enumName: 'scope_type',
+  })
+  @IsOptional()
+  escopo: TipoEscopo;
 
   @OneToMany(() => Usuario, (usuario) => usuario.role, {
     cascade: false,

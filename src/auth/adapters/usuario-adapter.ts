@@ -89,6 +89,11 @@ export class UsuarioAdapter {
       claims.unidade_id = usuario.unidade_id;
     }
 
+    // Incluir escopo da role se disponível
+    if (usuario.role && usuario.role.escopo) {
+      claims.escopo = usuario.role.escopo;
+    }
+
     // Adiciona permissões se disponíveis
     if (permissions && permissions.length > 0) {
       claims.permissions = permissions.map((p) => p.nome);

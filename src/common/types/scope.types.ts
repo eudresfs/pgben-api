@@ -151,9 +151,10 @@ export const SCOPE_CONSTANTS = {
   DEFAULT_ROLE_SCOPE_MAPPING: {
     'CIDADAO': ScopeType.PROPRIO,
     'TECNICO': ScopeType.UNIDADE,
+    'TECNICO_SEMTAS': ScopeType.GLOBAL,
     'ASSISTENTE_SOCIAL': ScopeType.UNIDADE,
     'COORDENADOR': ScopeType.UNIDADE,
-    'GESTOR': ScopeType.UNIDADE,
+    'GESTOR': ScopeType.GLOBAL,
     'ADMIN': ScopeType.GLOBAL,
     'SUPER_ADMIN': ScopeType.GLOBAL,
     'AUDITOR': ScopeType.GLOBAL

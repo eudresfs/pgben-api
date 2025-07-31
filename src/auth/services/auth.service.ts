@@ -425,7 +425,11 @@ export class AuthService {
     }
 
     // Determinar e adicionar o escopo baseado na role do usuário
-    if (user.roles && user.roles.length > 0) {
+    if ('escopo' in user && user.escopo) {
+      // Usar o escopo diretamente da role do usuário
+      payload['escopo'] = user.escopo;
+    } else if (user.roles && user.roles.length > 0) {
+      // Fallback para o mapeamento padrão se o escopo não estiver disponível
       const primaryRole = user.roles[0]; // Usar a primeira role como primária
       const scopeType = SCOPE_CONSTANTS.DEFAULT_ROLE_SCOPE_MAPPING[primaryRole] || ScopeType.PROPRIO;
       payload['escopo'] = scopeType;

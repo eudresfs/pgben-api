@@ -53,7 +53,7 @@ export class DocumentoBatchController {
    * Inicia um download em lote de documentos
    */
   @Post()
-  @RequiresPermission({ permissionName: 'documento.download_lote' })
+  @RequiresPermission({ permissionName: 'documento.download' })
   @ApiOperation({
     summary: 'Iniciar download em lote de documentos',
     description:
@@ -105,7 +105,7 @@ export class DocumentoBatchController {
    * Verifica o status de um job de download em lote
    */
   @Get(':jobId/status')
-  @RequiresPermission({ permissionName: 'documento.download_lote' })
+  @RequiresPermission({ permissionName: 'documento.download' })
   @ApiOperation({
     summary: 'Verificar status do download em lote',
     description: 'Retorna o status atual de um job de download em lote',
@@ -133,7 +133,7 @@ export class DocumentoBatchController {
    * Faz o download do arquivo ZIP gerado
    */
   @Get(':jobId/download')
-  @RequiresPermission({ permissionName: 'documento.download_lote' })
+  @RequiresPermission({ permissionName: 'documento.download' })
   @ApiOperation({
     summary: 'Download do arquivo ZIP gerado',
     description: 'Faz o download do arquivo ZIP com os documentos selecionados',
@@ -176,7 +176,7 @@ export class DocumentoBatchController {
     const fs = require('fs');
     const path = require('path');
     const filePath = path.join(
-      process.env.DOWNLOAD_LOTE_TEMP_DIR || path.join(process.cwd(), 'temp', 'batch-downloads'),
+      process.env.download_TEMP_DIR || path.join(process.cwd(), 'temp', 'batch-downloads'),
       jobId,
       'documentos.zip'
     );
@@ -207,7 +207,7 @@ export class DocumentoBatchController {
    * Lista os jobs de download do usuário
    */
   @Get('meus-jobs')
-  @RequiresPermission({ permissionName: 'documento.download_lote' })
+  @RequiresPermission({ permissionName: 'documento.download' })
   @ApiOperation({
     summary: 'Listar meus jobs de download',
     description: 'Retorna a lista de jobs de download em lote do usuário atual',
@@ -226,7 +226,7 @@ export class DocumentoBatchController {
    * Cancela um job de download em processamento
    */
   @Delete(':jobId')
-  @RequiresPermission({ permissionName: 'documento.download_lote' })
+  @RequiresPermission({ permissionName: 'documento.download' })
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
     summary: 'Cancelar job de download',
@@ -252,7 +252,7 @@ export class DocumentoBatchController {
    * Valida filtros de download em lote
    */
   @Post('validar-filtros')
-  @RequiresPermission({ permissionName: 'documento.download_lote' })
+  @RequiresPermission({ permissionName: 'documento.download' })
   @ApiOperation({
     summary: 'Validar filtros de download',
     description: 'Valida os filtros e retorna estimativas sem criar o job',

@@ -342,7 +342,7 @@ export class PagamentoRepository {
 
     if (filtros.data_inicio && filtros.data_fim) {
       queryBuilder.andWhere(
-        'CAST(pagamento.created_at AS DATE) BETWEEN :data_inicio AND :data_fim',
+        'CAST(pagamento.data_liberacao AS DATE) BETWEEN :data_inicio AND :data_fim',
         {
           data_inicio: filtros.data_inicio,
           data_fim: filtros.data_fim,
