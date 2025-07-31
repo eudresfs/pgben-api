@@ -93,6 +93,7 @@ import {
   Notificacao,
   Notification,
   NotificationTemplate,
+  NotificacaoSistema,
 
   // Entidades de Ocorrências e Demandas
   DemandaMotivo,

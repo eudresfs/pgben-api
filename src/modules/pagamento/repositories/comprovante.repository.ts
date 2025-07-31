@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { ComprovantePagamento } from '../../../entities/comprovante-pagamento.entity';
+import { ScopedRepository } from '../../../common/repositories/scoped-repository';
+import { InjectScopedRepository } from '../../../common/providers/scoped-repository.provider';
 
 /**
  * Repository para operações de banco de dados relacionadas a Comprovantes
@@ -9,8 +9,8 @@ import { ComprovantePagamento } from '../../../entities/comprovante-pagamento.en
 @Injectable()
 export class ComprovanteRepository {
   constructor(
-    @InjectRepository(ComprovantePagamento)
-    private readonly repository: Repository<ComprovantePagamento>,
+    @InjectScopedRepository(ComprovantePagamento)
+    private readonly scopedRepository: ScopedRepository<ComprovantePagamento>,
   ) {}
 
   /**
@@ -19,15 +19,19 @@ export class ComprovanteRepository {
   async create(
     dadosComprovante: Partial<ComprovantePagamento>,
   ): Promise<ComprovantePagamento> {
-    const comprovante = this.repository.create(dadosComprovante);
-    return await this.repository.save(comprovante);
+    const comprovante = this.scopedRepository.create(dadosComprovante);
+    return await this.scopedRepository.saveWithScope(comprovante);
   }
 
   /**
    * Busca comprovante por ID
    */
   async findById(id: string): Promise<ComprovantePagamento | null> {
-    return await this.repository.findOne({ where: { id } });
+    return await this.scopedRepository.createScopedQueryBuilder('comprovante')
+      .leftJoin('comprovante.pagamento', 'pagamento')
+      .leftJoin('pagamento.solicitacao', 'solicitacao')
+      .where('comprovante.id = :id', { id })
+      .getOne();
   }
 
   /**
@@ -37,27 +41,40 @@ export class ComprovanteRepository {
     id: string,
     relations: string[] = [],
   ): Promise<ComprovantePagamento | null> {
-    return await this.repository.findOne({
-      where: { id },
-      relations,
+    const queryBuilder = this.scopedRepository.createScopedQueryBuilder('comprovante')
+      .leftJoin('comprovante.pagamento', 'pagamento')
+      .leftJoin('pagamento.solicitacao', 'solicitacao')
+      .where('comprovante.id = :id', { id });
+
+    // Adicionar relações dinamicamente
+    relations.forEach(relation => {
+      queryBuilder.leftJoinAndSelect(`comprovante.${relation}`, relation);
     });
+
+    return await queryBuilder.getOne();
   }
 
   /**
    * Busca comprovantes por pagamento
    */
   async findByPagamento(pagamentoId: string): Promise<ComprovantePagamento[]> {
-    return await this.repository.find({
-      where: { pagamento_id: pagamentoId },
-      order: { data_upload: 'DESC' },
-    });
+    return await this.scopedRepository.createScopedQueryBuilder('comprovante')
+      .leftJoin('comprovante.pagamento', 'pagamento')
+      .leftJoin('pagamento.solicitacao', 'solicitacao')
+      .where('comprovante.pagamento_id = :pagamentoId', { pagamentoId })
+      .orderBy('comprovante.data_upload', 'DESC')
+      .getMany();
   }
 
   /**
    * Remove comprovante
    */
   async remove(id: string): Promise<void> {
-    await this.repository.delete(id);
+    const comprovante = await this.findById(id);
+    if (!comprovante) {
+      throw new Error('Comprovante não encontrado');
+    }
+    await this.scopedRepository.deleteWithScope(comprovante.id);
   }
 
   /**
@@ -67,21 +84,24 @@ export class ComprovanteRepository {
     id: string,
     dados: Partial<ComprovantePagamento>,
   ): Promise<ComprovantePagamento> {
-    await this.repository.update(id, dados);
     const comprovante = await this.findById(id);
     if (!comprovante) {
-      throw new Error('Comprovante não encontrado após atualização');
+      throw new Error('Comprovante não encontrado');
     }
-    return comprovante;
+    
+    Object.assign(comprovante, dados);
+    return await this.scopedRepository.saveWithScope(comprovante);
   }
 
   /**
    * Verifica se pagamento tem comprovantes
    */
   async hasComprovantes(pagamentoId: string): Promise<boolean> {
-    const count = await this.repository.count({
-      where: { pagamento_id: pagamentoId },
-    });
+    const count = await this.scopedRepository.createScopedQueryBuilder('comprovante')
+      .leftJoin('comprovante.pagamento', 'pagamento')
+      .leftJoin('pagamento.solicitacao', 'solicitacao')
+      .where('comprovante.pagamento_id = :pagamentoId', { pagamentoId })
+      .getCount();
     return count > 0;
   }
 }

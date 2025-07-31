@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ScheduleModule } from '@nestjs/schedule';
 import { AuthModule } from '../../auth/auth.module';
+import { createScopedRepositoryProvider } from '../../common/providers/scoped-repository.provider';
 
 import { forwardRef } from '@nestjs/common';
 import { BeneficioModule } from '../beneficio/beneficio.module';
@@ -41,6 +42,9 @@ import {
 } from '../../entities';
 import { MonitoramentoAluguelSocialService } from './services/monitoramento-aluguel-social.service';
 import { TemplateMappingService } from './services/template-mapping.service';
+import { SolicitacaoRepository } from './repositories/solicitacao.repository';
+import { HistoricoSolicitacaoRepository } from './repositories/historico-solicitacao.repository';
+import { PendenciaRepository } from './repositories/pendencia.repository';
 
 /**
  * Módulo de Solicitações
@@ -88,6 +92,17 @@ import { TemplateMappingService } from './services/template-mapping.service';
     PendenciaController,
   ],
   providers: [
+    // Repositórios com escopo
+    createScopedRepositoryProvider(Solicitacao),
+    createScopedRepositoryProvider(HistoricoSolicitacao),
+    createScopedRepositoryProvider(Pendencia),
+    
+    // Repositórios customizados
+    SolicitacaoRepository,
+    HistoricoSolicitacaoRepository,
+    PendenciaRepository,
+    
+    // Serviços
     SolicitacaoService,
     DeterminacaoJudicialService,
     DeterminacaoJudicialAdapterService,

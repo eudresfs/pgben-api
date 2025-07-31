@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Repository, DataSource, SelectQueryBuilder } from 'typeorm';
+import { DataSource, SelectQueryBuilder } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
   Solicitacao,
@@ -9,6 +9,8 @@ import {
   Unidade,
   Cidadao,
 } from '../../../entities';
+import { ScopedRepository } from '../../../common/repositories/scoped-repository';
+import { InjectScopedRepository } from '../../../common/providers/scoped-repository.provider';
 
 /**
  * Interface para filtros de busca de solicitações
@@ -51,18 +53,37 @@ export interface ResultadoPaginado<T> {
 }
 
 /**
- * Repository customizado para Solicitações
+ * Repository customizado para Solicitações com escopo automático
  *
  * Implementa consultas complexas e otimizadas para o módulo de solicitações,
  * incluindo filtros avançados, paginação e joins otimizados.
+ * Aplica automaticamente filtros de escopo baseados na unidade do usuário.
  */
 @Injectable()
 export class SolicitacaoRepository {
   constructor(
-    @InjectRepository(Solicitacao)
-    private readonly repository: Repository<Solicitacao>,
+    @InjectScopedRepository(Solicitacao)
+    private readonly scopedRepository: ScopedRepository<Solicitacao>,
     private readonly dataSource: DataSource,
   ) {}
+
+  /**
+   * Cria um QueryBuilder com escopo aplicado automaticamente
+   * @param alias Alias para a entidade principal
+   * @returns QueryBuilder com escopo aplicado
+   */
+  createScopedQueryBuilder(alias: string = 'solicitacao') {
+    return this.scopedRepository.createScopedQueryBuilder(alias);
+  }
+
+  /**
+   * Busca uma solicitação com base nas opções fornecidas
+   * @param options Opções de busca
+   * @returns Solicitação encontrada ou null
+   */
+  async findOne(options: any): Promise<Solicitacao | null> {
+    return this.scopedRepository.findOne(options);
+  }
 
   /**
    * Busca solicitações com filtros e paginação
@@ -74,7 +95,7 @@ export class SolicitacaoRepository {
     filtros: FiltrosSolicitacao,
     opcoesPaginacao: OpcoesPaginacao,
   ): Promise<ResultadoPaginado<Solicitacao>> {
-    const queryBuilder = this.criarQueryBuilder()
+    const queryBuilder = this.scopedRepository.createScopedQueryBuilder('solicitacao')
       .leftJoinAndSelect('solicitacao.beneficiario', 'beneficiario')
       .leftJoinAndSelect('solicitacao.tipo_beneficio', 'tipo_beneficio')
       .leftJoinAndSelect('solicitacao.unidade', 'unidade')
@@ -107,8 +128,7 @@ export class SolicitacaoRepository {
    * @returns Solicitação com relações carregadas
    */
   async buscarPorIdCompleto(id: string): Promise<Solicitacao | null> {
-    return this.repository.findOne({
-      where: { id },
+    return this.scopedRepository.findById(id, {
       relations: [
         'beneficiario',
         'tipo_beneficio',
@@ -131,10 +151,13 @@ export class SolicitacaoRepository {
    * @returns Solicitação encontrada
    */
   async buscarPorProtocolo(protocolo: string): Promise<Solicitacao | null> {
-    return this.repository.findOne({
-      where: { protocolo },
-      relations: ['beneficiario', 'tipo_beneficio', 'unidade'],
-    });
+    const queryBuilder = this.scopedRepository.createScopedQueryBuilder('solicitacao')
+      .leftJoinAndSelect('solicitacao.beneficiario', 'beneficiario')
+      .leftJoinAndSelect('solicitacao.tipo_beneficio', 'tipo_beneficio')
+      .leftJoinAndSelect('solicitacao.unidade', 'unidade')
+      .where('solicitacao.protocolo = :protocolo', { protocolo });
+
+    return queryBuilder.getOne();
   }
 
   /**
@@ -145,8 +168,7 @@ export class SolicitacaoRepository {
   async buscarComPrazosVencidos(
     dataReferencia: Date = new Date(),
   ): Promise<Solicitacao[]> {
-    return this.repository
-      .createQueryBuilder('solicitacao')
+    return this.scopedRepository.createScopedQueryBuilder('solicitacao')
       .leftJoinAndSelect('solicitacao.unidade', 'unidade')
       .leftJoinAndSelect('solicitacao.tecnico', 'tecnico')
       .where(
@@ -176,8 +198,7 @@ export class SolicitacaoRepository {
     const dataLimite = new Date();
     dataLimite.setDate(dataLimite.getDate() + diasAntecedencia);
 
-    return this.repository
-      .createQueryBuilder('solicitacao')
+    return this.scopedRepository.createScopedQueryBuilder('solicitacao')
       .leftJoinAndSelect('solicitacao.unidade', 'unidade')
       .leftJoinAndSelect('solicitacao.tecnico', 'tecnico')
       .where(
@@ -204,7 +225,7 @@ export class SolicitacaoRepository {
   async contarPorStatus(
     filtros?: Partial<FiltrosSolicitacao>,
   ): Promise<Record<StatusSolicitacao, number>> {
-    const queryBuilder = this.criarQueryBuilder()
+    const queryBuilder = this.scopedRepository.createScopedQueryBuilder('solicitacao')
       .select('solicitacao.status', 'status')
       .addSelect('COUNT(*)', 'total')
       .groupBy('solicitacao.status');
@@ -242,8 +263,7 @@ export class SolicitacaoRepository {
     beneficiarioId: string,
     incluirFinalizadas: boolean = false,
   ): Promise<Solicitacao[]> {
-    const queryBuilder = this.repository
-      .createQueryBuilder('solicitacao')
+    const queryBuilder = this.scopedRepository.createScopedQueryBuilder('solicitacao')
       .leftJoinAndSelect('solicitacao.tipo_beneficio', 'tipo_beneficio')
       .leftJoinAndSelect('solicitacao.unidade', 'unidade')
       .where('solicitacao.beneficiario_id = :beneficiarioId', {
@@ -267,9 +287,10 @@ export class SolicitacaoRepository {
   /**
    * Cria um query builder base para solicitações
    * @returns Query builder configurado
+   * @deprecated Use createScopedQueryBuilder instead
    */
   private criarQueryBuilder(): SelectQueryBuilder<Solicitacao> {
-    return this.repository.createQueryBuilder('solicitacao');
+    return this.scopedRepository.createScopedQueryBuilder('solicitacao');
   }
 
   /**
@@ -434,7 +455,7 @@ export class SolicitacaoRepository {
    * @returns Solicitação salva
    */
   async salvar(solicitacao: Solicitacao): Promise<Solicitacao> {
-    return this.repository.save(solicitacao);
+    return this.scopedRepository.saveWithScope(solicitacao);
   }
 
   /**
@@ -443,7 +464,7 @@ export class SolicitacaoRepository {
    * @returns Resultado da operação
    */
   async remover(id: string): Promise<void> {
-    await this.repository.softDelete(id);
+    await this.scopedRepository.deleteWithScope(id);
   }
 
   /**
@@ -452,7 +473,9 @@ export class SolicitacaoRepository {
    * @returns Lista de solicitações
    */
   async buscarPorIds(ids: string[]): Promise<Solicitacao[]> {
-    return this.repository.findByIds(ids);
+    const queryBuilder = this.scopedRepository.createScopedQueryBuilder('solicitacao')
+      .whereInIds(ids);
+    return queryBuilder.getMany();
   }
 
   /**
@@ -465,8 +488,8 @@ export class SolicitacaoRepository {
     protocolo: string,
     excluirId?: string,
   ): Promise<boolean> {
-    const queryBuilder = this.repository
-      .createQueryBuilder('solicitacao')
+    const queryBuilder = this.scopedRepository
+      .createScopedQueryBuilder('solicitacao')
       .where('solicitacao.protocolo = :protocolo', { protocolo });
 
     if (excluirId) {

@@ -102,6 +102,7 @@ export { Pendencia, StatusPendencia } from './pendencia.entity';
 export { Recurso } from './recurso.entity';
 
 // Entidades de Segurança e Autenticação
+export { JwtBlacklist } from './jwt-blacklist.entity';
 export { Role } from './role.entity';
 export { TokenRevogado } from './token-revogado.entity';
 export { Usuario } from './usuario.entity';

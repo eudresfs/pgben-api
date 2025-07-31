@@ -70,8 +70,7 @@ export class MetricasDashboardController {
    */
   @Get('graficos')
   @RequiresPermission({
-    permissionName: 'dashboard.visualizar',
-    scopeType: ScopeType.GLOBAL,
+    permissionName: 'dashboard.visualizar'
   })
   @ApiOperation({ summary: 'Obtém dados para gráficos do dashboard' })
   @ApiResponse({ status: 200, description: 'Dados obtidos com sucesso' })
@@ -90,8 +89,7 @@ export class MetricasDashboardController {
    */
   @Get('solicitacoes/status')
   @RequiresPermission({
-    permissionName: 'dashboard.visualizar',
-    scopeType: ScopeType.GLOBAL,
+    permissionName: 'dashboard.visualizar'
   })
   @ApiOperation({
     summary: 'Obtém contagem de solicitações por status',

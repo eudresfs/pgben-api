@@ -80,6 +80,7 @@ import { RequestContextHolder } from './common/services/request-context-holder.s
         password: configService.get('DB_PASS', 'postgres'),
         database: configService.get('DB_NAME', 'pgben') as string,
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
+        autoLoadEntities: true,
         synchronize: false,
         logging: configService.get('NODE_ENV') === 'development',
         maxQueryExecutionTime: 10000,

@@ -4,6 +4,7 @@ import { BullModule } from '@nestjs/bull';
 import { HttpModule } from '@nestjs/axios';
 import { LoggingService } from '../../shared/logging/logging.service';
 import { StorageService } from '../../shared/services/storage.service';
+import { createScopedRepositoryProvider } from '../../common/providers/scoped-repository.provider';
 
 // Entidades
 import {
@@ -120,7 +121,12 @@ import { CacheModule } from '../../shared/cache/cache.module';
     PagamentoBatchController,
   ],
   providers: [
-    // Repositórios
+    // Repositórios com escopo
+    createScopedRepositoryProvider(Pagamento),
+    createScopedRepositoryProvider(ComprovantePagamento),
+    createScopedRepositoryProvider(ConfirmacaoRecebimento),
+    
+    // Repositórios customizados
     PagamentoRepository,
     ComprovanteRepository,
     ConfirmacaoRepository,

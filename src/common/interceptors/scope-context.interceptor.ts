@@ -26,8 +26,6 @@ export class ScopeContextInterceptor implements NestInterceptor {
     const request = context.switchToHttp().getRequest();
     const user = request.user as UserAccessTokenClaims;
 
-    console.log('ScopeContextInterceptor - User:', JSON.stringify(user, null, 2));
-
     if (user) {
       // Determinar o tipo de escopo baseado no escopo do usuário
       let scopeType: ScopeType;
@@ -57,12 +55,9 @@ export class ScopeContextInterceptor implements NestInterceptor {
         unidade_id: user.unidade_id,
       };
 
-      console.log('ScopeContextInterceptor - Definindo contexto:', JSON.stringify(scopeContext, null, 2));
-
       // Validar contexto antes de definir
       if (this.isValidScopeContext(scopeContext)) {
         RequestContextHolder.set(scopeContext);
-        console.log('ScopeContextInterceptor - Contexto definido com sucesso');
       } else {
         console.error('ScopeContextInterceptor - Contexto inválido:', scopeContext);
       }

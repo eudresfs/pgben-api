@@ -7,6 +7,8 @@ import {
   InvalidOperationException,
 } from '../../../shared/exceptions';
 import { FiltrosPendenciaDto } from '../dto/pendencia';
+import { ScopedRepository } from '../../../common/repositories/scoped-repository';
+import { InjectScopedRepository } from '../../../common/providers/scoped-repository.provider';
 
 /**
  * Interface para filtros de busca de pendências (compatibilidade)
@@ -43,8 +45,8 @@ export interface EstatisticasPendencia {
 @Injectable()
 export class PendenciaRepository {
   constructor(
-    @InjectRepository(Pendencia)
-    private readonly repository: Repository<Pendencia>,
+    @InjectScopedRepository(Pendencia)
+    private readonly scopedRepository: ScopedRepository<Pendencia>,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -58,10 +60,10 @@ export class PendenciaRepository {
     solicitacaoId: string,
     incluirResolvidas: boolean = true,
   ): Promise<Pendencia[]> {
-    const queryBuilder = this.repository
-      .createQueryBuilder('pendencia')
+    const queryBuilder = this.scopedRepository.createScopedQueryBuilder('pendencia')
       .leftJoinAndSelect('pendencia.registrado_por', 'registrado_por')
       .leftJoinAndSelect('pendencia.resolvido_por', 'resolvido_por')
+      .leftJoin('pendencia.solicitacao', 'solicitacao')
       .where('pendencia.solicitacao_id = :solicitacaoId', { solicitacaoId })
       .orderBy('pendencia.created_at', 'DESC');
 
@@ -82,14 +84,13 @@ export class PendenciaRepository {
   async buscarAbertasPorSolicitacao(
     solicitacaoId: string,
   ): Promise<Pendencia[]> {
-    return this.repository.find({
-      where: {
-        solicitacao_id: solicitacaoId,
-        status: StatusPendencia.ABERTA,
-      },
-      relations: ['registrado_por'],
-      order: { created_at: 'DESC' },
-    });
+    return this.scopedRepository.createScopedQueryBuilder('pendencia')
+      .leftJoinAndSelect('pendencia.registrado_por', 'registrado_por')
+      .leftJoin('pendencia.solicitacao', 'solicitacao')
+      .where('pendencia.solicitacao_id = :solicitacaoId', { solicitacaoId })
+      .andWhere('pendencia.status = :status', { status: StatusPendencia.ABERTA })
+      .orderBy('pendencia.created_at', 'DESC')
+      .getMany();
   }
 
   /**
@@ -113,7 +114,7 @@ export class PendenciaRepository {
     pendencia.status = StatusPendencia.ABERTA;
     pendencia.prazo_resolucao = prazoResolucao || null;
 
-    return this.repository.save(pendencia);
+    return this.scopedRepository.saveWithScope(pendencia);
   }
 
   /**
@@ -140,7 +141,9 @@ export class PendenciaRepository {
       return pendencia;
     });
 
-    return this.repository.save(pendencias);
+    // Para múltiplas entidades, usamos o repository diretamente
+    // pois o saveWithScope não suporta arrays
+    return this.scopedRepository.save(pendencias);
   }
 
   /**
@@ -155,9 +158,7 @@ export class PendenciaRepository {
     resolvidoPorId: string,
     observacaoResolucao?: string,
   ): Promise<Pendencia> {
-    const pendencia = await this.repository.findOne({
-      where: { id: pendenciaId },
-    });
+    const pendencia = await this.scopedRepository.findById(pendenciaId);
 
     if (!pendencia) {
       throw new EntityNotFoundException('Pendência', pendenciaId);
@@ -177,7 +178,7 @@ export class PendenciaRepository {
     pendencia.data_resolucao = new Date();
     pendencia.observacao_resolucao = observacaoResolucao || null;
 
-    return this.repository.save(pendencia);
+    return this.scopedRepository.saveWithScope(pendencia);
   }
 
   /**
@@ -192,9 +193,7 @@ export class PendenciaRepository {
     resolvidoPorId: string,
     observacaoResolucao?: string,
   ): Promise<Pendencia> {
-    const pendencia = await this.repository.findOne({
-      where: { id: pendenciaId },
-    });
+    const pendencia = await this.scopedRepository.findById(pendenciaId);
 
     if (!pendencia) {
       throw new EntityNotFoundException('Pendência', pendenciaId);
@@ -215,7 +214,7 @@ export class PendenciaRepository {
     pendencia.observacao_resolucao =
       observacaoResolucao || 'Pendência cancelada';
 
-    return this.repository.save(pendencia);
+    return this.scopedRepository.saveWithScope(pendencia);
   }
 
   /**
@@ -224,8 +223,7 @@ export class PendenciaRepository {
    * @returns Lista de pendências filtradas
    */
   async buscarComFiltros(filtros: FiltrosPendencia): Promise<Pendencia[]> {
-    const queryBuilder = this.repository
-      .createQueryBuilder('pendencia')
+    const queryBuilder = this.scopedRepository.createScopedQueryBuilder('pendencia')
       .leftJoinAndSelect('pendencia.solicitacao', 'solicitacao')
       .leftJoinAndSelect('pendencia.registrado_por', 'registrado_por')
       .leftJoinAndSelect('pendencia.resolvido_por', 'resolvido_por');
@@ -285,8 +283,7 @@ export class PendenciaRepository {
   async buscarComPrazoVencido(
     dataReferencia: Date = new Date(),
   ): Promise<Pendencia[]> {
-    return this.repository
-      .createQueryBuilder('pendencia')
+    return this.scopedRepository.createScopedQueryBuilder('pendencia')
       .leftJoinAndSelect('pendencia.solicitacao', 'solicitacao')
       .leftJoinAndSelect('pendencia.registrado_por', 'registrado_por')
       .where('pendencia.status = :status', { status: StatusPendencia.ABERTA })
@@ -310,8 +307,7 @@ export class PendenciaRepository {
     const dataLimite = new Date();
     dataLimite.setDate(hoje.getDate() + diasAntecedencia);
 
-    return this.repository
-      .createQueryBuilder('pendencia')
+    return this.scopedRepository.createScopedQueryBuilder('pendencia')
       .leftJoinAndSelect('pendencia.solicitacao', 'solicitacao')
       .leftJoinAndSelect('pendencia.registrado_por', 'registrado_por')
       .where('pendencia.status = :status', { status: StatusPendencia.ABERTA })
@@ -332,8 +328,8 @@ export class PendenciaRepository {
   async contarPorStatus(
     filtros?: Partial<FiltrosPendencia>,
   ): Promise<Record<StatusPendencia, number>> {
-    const queryBuilder = this.repository
-      .createQueryBuilder('pendencia')
+    const queryBuilder = this.scopedRepository.createScopedQueryBuilder('pendencia')
+      .leftJoin('pendencia.solicitacao', 'solicitacao')
       .select('pendencia.status', 'status')
       .addSelect('COUNT(*)', 'total')
       .groupBy('pendencia.status');
@@ -382,12 +378,11 @@ export class PendenciaRepository {
    * @returns Boolean indicando se há pendências abertas
    */
   async temPendenciasAbertas(solicitacaoId: string): Promise<boolean> {
-    const count = await this.repository.count({
-      where: {
-        solicitacao_id: solicitacaoId,
-        status: StatusPendencia.ABERTA,
-      },
-    });
+    const count = await this.scopedRepository.createScopedQueryBuilder('pendencia')
+      .leftJoin('pendencia.solicitacao', 'solicitacao')
+      .where('pendencia.solicitacao_id = :solicitacaoId', { solicitacaoId })
+      .andWhere('pendencia.status = :status', { status: StatusPendencia.ABERTA })
+      .getCount();
 
     return count > 0;
   }
@@ -398,7 +393,7 @@ export class PendenciaRepository {
    * @returns Pendência salva
    */
   async salvar(pendencia: Pendencia): Promise<Pendencia> {
-    return this.repository.save(pendencia);
+    return this.scopedRepository.saveWithScope(pendencia);
   }
 
   /**
@@ -407,7 +402,7 @@ export class PendenciaRepository {
    * @returns Resultado da operação
    */
   async remover(id: string): Promise<void> {
-    await this.repository.softDelete(id);
+    await this.scopedRepository.deleteWithScope(id);
   }
 
   /**
@@ -416,8 +411,7 @@ export class PendenciaRepository {
    * @returns Pendência encontrada ou null
    */
   async buscarPorId(id: string): Promise<Pendencia | null> {
-    return this.repository.findOne({
-      where: { id },
+    return this.scopedRepository.findById(id, {
       relations: ['solicitacao', 'registrado_por', 'resolvido_por'],
     });
   }
@@ -434,8 +428,8 @@ export class PendenciaRepository {
     page: number = 1,
     limit: number = 10,
   ): Promise<[Pendencia[], number]> {
-    const queryBuilder = this.repository
-      .createQueryBuilder('pendencia')
+    const queryBuilder = this.scopedRepository
+      .createScopedQueryBuilder('pendencia')
       .leftJoinAndSelect('pendencia.solicitacao', 'solicitacao')
       .leftJoinAndSelect('pendencia.registrado_por', 'registrado_por')
       .leftJoinAndSelect('pendencia.resolvido_por', 'resolvido_por')
@@ -605,7 +599,7 @@ export class PendenciaRepository {
   async calcularEstatisticas(
     filtros?: Partial<FiltrosPendenciaDto>,
   ): Promise<EstatisticasPendencia> {
-    const queryBuilder = this.repository.createQueryBuilder('pendencia');
+    const queryBuilder = this.scopedRepository.createQueryBuilder('pendencia');
 
     // Aplicar filtros se fornecidos
     if (filtros?.solicitacao_id) {
@@ -629,7 +623,7 @@ export class PendenciaRepository {
     }
 
     // Contar por status
-    const contadorStatus = await this.repository
+    const contadorStatus = await this.scopedRepository
       .createQueryBuilder('pendencia')
       .select('pendencia.status', 'status')
       .addSelect('COUNT(*)', 'total')
@@ -665,14 +659,14 @@ export class PendenciaRepository {
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
 
-    estatisticas.total_vencidas = await this.repository.count({
+    estatisticas.total_vencidas = await this.scopedRepository.count({
       where: {
         status: StatusPendencia.ABERTA,
       },
     });
 
     // Filtrar vencidas manualmente (devido à complexidade da consulta)
-    const pendenciasAbertas = await this.repository.find({
+    const pendenciasAbertas = await this.scopedRepository.find({
       where: { status: StatusPendencia.ABERTA },
       select: ['id', 'prazo_resolucao'],
     });
@@ -700,7 +694,7 @@ export class PendenciaRepository {
     }).length;
 
     // Calcular tempo médio de resolução
-    const pendenciasResolvidas = await this.repository.find({
+    const pendenciasResolvidas = await this.scopedRepository.find({
       where: { status: StatusPendencia.RESOLVIDA },
       select: ['created_at', 'data_resolucao'],
     });
@@ -738,7 +732,7 @@ export class PendenciaRepository {
     const dataLimite = new Date();
     dataLimite.setDate(hoje.getDate() + diasAntecedencia);
 
-    const queryBuilder = this.repository
+    const queryBuilder = this.scopedRepository
       .createQueryBuilder('pendencia')
       .leftJoinAndSelect('pendencia.solicitacao', 'solicitacao')
       .leftJoinAndSelect('pendencia.registrado_por', 'registrado_por')

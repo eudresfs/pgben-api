@@ -45,13 +45,13 @@ export class FiltroConcessaoDto extends PaginationParamsDto {
   @IsOptional()
   @Transform(({ value }) => (value === '' ? undefined : value))
   @IsUUID()
-  unidade_id?: string;
+  unidadeId?: string;
 
   @ApiPropertyOptional({ description: 'UUID do tipo de benefício' })
   @IsOptional()
   @Transform(({ value }) => (value === '' ? undefined : value))
   @IsUUID()
-  tipo_beneficio_id?: string;
+  tipoBeneficioId?: string;
 
   @ApiPropertyOptional({ description: 'Flag de determinação judicial' })
   @IsOptional()

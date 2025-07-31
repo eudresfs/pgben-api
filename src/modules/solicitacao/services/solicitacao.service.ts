@@ -34,6 +34,7 @@ import {
   SelectQueryBuilder,
   Brackets,
 } from 'typeorm';
+import { SolicitacaoRepository } from '../repositories/solicitacao.repository';
 import {
   Solicitacao,
   StatusSolicitacao,
@@ -94,8 +95,7 @@ export class SolicitacaoService {
   private readonly logger: Logger;
 
   constructor(
-    @InjectRepository(Solicitacao)
-    private solicitacaoRepository: Repository<Solicitacao>,
+    private solicitacaoRepository: SolicitacaoRepository,
 
     @InjectRepository(HistoricoSolicitacao)
     private historicoRepository: Repository<HistoricoSolicitacao>,
@@ -159,7 +159,7 @@ export class SolicitacaoService {
     }
 
     const queryBuilder = this.solicitacaoRepository
-      .createQueryBuilder('solicitacao')
+      .createScopedQueryBuilder('solicitacao')
       .leftJoinAndSelect('solicitacao.beneficiario', 'beneficiario')
       .leftJoinAndSelect('solicitacao.tipo_beneficio', 'tipo_beneficio')
       .leftJoinAndSelect('solicitacao.unidade', 'unidade')
@@ -316,7 +316,7 @@ export class SolicitacaoService {
    */
   async findById(id: string): Promise<Solicitacao> {
     const solicitacao = await this.solicitacaoRepository
-      .createQueryBuilder('solicitacao')
+      .createScopedQueryBuilder('solicitacao')
       .leftJoinAndSelect('solicitacao.beneficiario', 'beneficiario')
       .leftJoinAndSelect('solicitacao.solicitante', 'solicitante')
       .leftJoinAndSelect('solicitacao.tipo_beneficio', 'tipo_beneficio')
@@ -397,23 +397,19 @@ export class SolicitacaoService {
     // Tenta buscar contato com proprietario = true primeiro
     let contato = await this.dataSource
       .getRepository(Contato)
-      .createQueryBuilder('contato')
-      .where('contato.cidadao_id = :cidadaoId', { cidadaoId })
-      .andWhere('contato.proprietario = :proprietario', { proprietario: true })
-      .orderBy('contato.created_at', 'DESC')
-      .getOne();
+      .findOne({
+        where: { cidadao_id: cidadaoId, proprietario: true },
+        order: { created_at: 'DESC' }
+      });
 
     // Se não encontrou, busca com proprietario = false
     if (!contato) {
       contato = await this.dataSource
         .getRepository(Contato)
-        .createQueryBuilder('contato')
-        .where('contato.cidadao_id = :cidadaoId', { cidadaoId })
-        .andWhere('contato.proprietario = :proprietario', {
-          proprietario: false,
-        })
-        .orderBy('contato.created_at', 'DESC')
-        .getOne();
+        .findOne({
+          where: { cidadao_id: cidadaoId, proprietario: false },
+          order: { created_at: 'DESC' }
+        });
     }
 
     return contato;
@@ -573,7 +569,7 @@ export class SolicitacaoService {
       // ===== CONSULTA PÓS-TRANSAÇÃO =====
       // Buscar a solicitação completa após a transação
       const solicitacaoCompleta = await this.solicitacaoRepository
-        .createQueryBuilder('solicitacao')
+        .createScopedQueryBuilder('solicitacao')
         .leftJoinAndSelect('solicitacao.beneficiario', 'beneficiario')
         .leftJoinAndSelect('solicitacao.tipo_beneficio', 'tipo_beneficio')
         .leftJoinAndSelect('solicitacao.tecnico', 'tecnico')

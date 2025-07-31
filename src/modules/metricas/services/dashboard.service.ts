@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between } from 'typeorm';
+import { Repository, Between, SelectQueryBuilder } from 'typeorm';
 import {
   Solicitacao,
   StatusSolicitacao,
@@ -9,6 +9,9 @@ import { Recurso, StatusRecurso } from '../../../entities/recurso.entity';
 import { TipoBeneficio } from '../../../entities/tipo-beneficio.entity';
 import { Unidade } from '../../../entities/unidade.entity';
 import { Usuario } from '../../../entities/usuario.entity';
+import { RequestContextHolder } from '../../../common/services/request-context-holder.service';
+import { ScopeType } from '../../../enums/scope-type.enum';
+import { ScopeViolationException } from '../../../common/exceptions/scope.exceptions';
 
 /**
  * Interface para o resumo do dashboard
@@ -104,49 +107,226 @@ export class DashboardService {
   }
 
   /**
+   * Aplica filtros de escopo ao QueryBuilder para solicitações
+   * @param queryBuilder QueryBuilder da entidade Solicitacao
+   * @param alias Alias da tabela principal
+   */
+  private applyScopeToSolicitacaoQuery(
+    queryBuilder: SelectQueryBuilder<Solicitacao>,
+    alias: string = 'solicitacao'
+  ): void {
+    const context = RequestContextHolder.get();
+    
+    if (!context) {
+      // Se não há contexto, não aplicar filtros (para rotas públicas)
+      return;
+    }
+    
+    switch (context.tipo) {
+      case ScopeType.GLOBAL:
+        // Escopo global: sem filtros adicionais
+        break;
+        
+      case ScopeType.UNIDADE:
+        // Escopo de unidade: filtrar por unidade_id
+        if (context.unidade_id) {
+          queryBuilder.andWhere(`${alias}.unidade_id = :unidadeId`, {
+            unidadeId: context.unidade_id
+          });
+        }
+        break;
+        
+      case ScopeType.PROPRIO:
+        // Escopo próprio: filtrar por user_id do criador
+        if (context.user_id) {
+          queryBuilder.andWhere(`${alias}.criado_por = :userId`, {
+            userId: context.user_id
+          });
+        }
+        break;
+        
+      default:
+        throw new ScopeViolationException(
+          `Tipo de escopo não suportado: ${context.tipo}`
+        );
+    }
+  }
+
+  /**
+   * Aplica filtros de escopo ao QueryBuilder para recursos
+   * @param queryBuilder QueryBuilder da entidade Recurso
+   * @param alias Alias da tabela principal
+   */
+  private applyScopeToRecursoQuery(
+    queryBuilder: SelectQueryBuilder<Recurso>,
+    alias: string = 'recurso'
+  ): void {
+    const context = RequestContextHolder.get();
+    
+    if (!context) {
+      return;
+    }
+    
+    switch (context.tipo) {
+      case ScopeType.GLOBAL:
+        break;
+        
+      case ScopeType.UNIDADE:
+        // Recursos são filtrados através da relação com solicitação
+        if (context.unidade_id) {
+          const hasJoin = queryBuilder.expressionMap.joinAttributes.some(
+            join => join.alias?.name === 'solicitacao' || 
+                   (join.relation && join.relation.propertyName === 'solicitacao')
+          );
+          
+          if (!hasJoin) {
+            queryBuilder.leftJoin(`${alias}.solicitacao`, 'solicitacao_scope');
+            queryBuilder.andWhere('solicitacao_scope.unidade_id = :unidadeId', {
+              unidadeId: context.unidade_id
+            });
+          } else {
+            const existingJoin = queryBuilder.expressionMap.joinAttributes.find(
+              join => join.alias?.name === 'solicitacao' || 
+                     (join.relation && join.relation.propertyName === 'solicitacao')
+            );
+            const joinAlias = existingJoin?.alias?.name || 'solicitacao';
+            queryBuilder.andWhere(`${joinAlias}.unidade_id = :unidadeId`, {
+              unidadeId: context.unidade_id
+            });
+          }
+        }
+        break;
+        
+      case ScopeType.PROPRIO:
+        if (context.user_id) {
+          queryBuilder.andWhere(`${alias}.criado_por = :userId`, {
+            userId: context.user_id
+          });
+        }
+        break;
+        
+      default:
+        throw new ScopeViolationException(
+          `Tipo de escopo não suportado: ${context.tipo}`
+        );
+    }
+  }
+
+  /**
+   * Cria QueryBuilder com escopo aplicado para solicitações
+   * @param alias Alias da tabela
+   * @returns QueryBuilder com filtros de escopo aplicados
+   */
+  private createScopedSolicitacaoQueryBuilder(alias: string = 'solicitacao'): SelectQueryBuilder<Solicitacao> {
+    const queryBuilder = this.solicitacaoRepository.createQueryBuilder(alias);
+    this.applyScopeToSolicitacaoQuery(queryBuilder, alias);
+    return queryBuilder;
+  }
+
+  /**
+   * Cria QueryBuilder com escopo aplicado para recursos
+   * @param alias Alias da tabela
+   * @returns QueryBuilder com filtros de escopo aplicados
+   */
+  private createScopedRecursoQueryBuilder(alias: string = 'recurso'): SelectQueryBuilder<Recurso> {
+    const queryBuilder = this.recursoRepository.createQueryBuilder(alias);
+    this.applyScopeToRecursoQuery(queryBuilder, alias);
+    return queryBuilder;
+  }
+
+  /**
+   * Obtém o total de unidades considerando o escopo do usuário
+   * @returns Número total de unidades acessíveis
+   */
+  private async obterTotalUnidadesComEscopo(): Promise<number> {
+    const context = RequestContextHolder.get();
+    
+    if (!context) {
+      return this.unidadeRepository.count();
+    }
+    
+    switch (context.tipo) {
+      case ScopeType.GLOBAL:
+        // Escopo global: todas as unidades
+        return this.unidadeRepository.count();
+        
+      case ScopeType.UNIDADE:
+        // Escopo de unidade: apenas a unidade do usuário
+        if (context.unidade_id) {
+          return this.unidadeRepository.count({
+            where: { id: context.unidade_id }
+          });
+        }
+        return 0;
+        
+      case ScopeType.PROPRIO:
+        // Escopo próprio: unidades onde o usuário tem solicitações
+        const unidadesComSolicitacoes = await this.unidadeRepository
+          .createQueryBuilder('unidade')
+          .innerJoin('unidade.solicitacoes', 'solicitacao')
+          .where('solicitacao.criado_por = :userId', { userId: context.user_id })
+          .getCount();
+        return unidadesComSolicitacoes;
+        
+      default:
+        return 0;
+    }
+  }
+
+  /**
    * Obtém o resumo para o dashboard
    * @returns Resumo do dashboard
    */
   async obterResumo(): Promise<ResumoDashboard> {
-    // Contagem de solicitações por status
-    const solicitacoesTotal = await this.solicitacaoRepository.count();
-    const solicitacoesPendentes = await this.solicitacaoRepository.count({
-      where: { status: StatusSolicitacao.PENDENTE },
-    });
-    const solicitacoesEmAnalise = await this.solicitacaoRepository.count({
-      where: { status: StatusSolicitacao.EM_ANALISE },
-    });
-    const solicitacoesAprovadas = await this.solicitacaoRepository.count({
-      where: { status: StatusSolicitacao.APROVADA },
-    });
-    const solicitacoesReprovadas = await this.solicitacaoRepository.count({
-      where: { status: StatusSolicitacao.INDEFERIDA },
-    });
-    const solicitacoesCanceladas = await this.solicitacaoRepository.count({
-      where: { status: StatusSolicitacao.CANCELADA },
-    });
+    // Contagem de solicitações por status com escopo aplicado
+    const solicitacoesTotal = await this.createScopedSolicitacaoQueryBuilder('solicitacao')
+      .getCount();
+    
+    const solicitacoesPendentes = await this.createScopedSolicitacaoQueryBuilder('solicitacao')
+      .where('solicitacao.status = :status', { status: StatusSolicitacao.PENDENTE })
+      .getCount();
+    
+    const solicitacoesEmAnalise = await this.createScopedSolicitacaoQueryBuilder('solicitacao')
+      .where('solicitacao.status = :status', { status: StatusSolicitacao.EM_ANALISE })
+      .getCount();
+    
+    const solicitacoesAprovadas = await this.createScopedSolicitacaoQueryBuilder('solicitacao')
+      .where('solicitacao.status = :status', { status: StatusSolicitacao.APROVADA })
+      .getCount();
+    
+    const solicitacoesReprovadas = await this.createScopedSolicitacaoQueryBuilder('solicitacao')
+      .where('solicitacao.status = :status', { status: StatusSolicitacao.INDEFERIDA })
+      .getCount();
+    
+    const solicitacoesCanceladas = await this.createScopedSolicitacaoQueryBuilder('solicitacao')
+      .where('solicitacao.status = :status', { status: StatusSolicitacao.CANCELADA })
+      .getCount();
 
-    // Contagem de recursos por status
-    const recursosTotal = await this.recursoRepository.count();
-    const recursosPendentes = await this.recursoRepository.count({
-      where: { status: StatusRecurso.PENDENTE },
-    });
-    const recursosEmAnalise = await this.recursoRepository.count({
-      where: { status: StatusRecurso.EM_ANALISE },
-    });
-    const recursosDeferidos = await this.recursoRepository.count({
-      where: { status: StatusRecurso.DEFERIDO },
-    });
-    const recursosIndeferidos = await this.recursoRepository.count({
-      where: { status: StatusRecurso.INDEFERIDO },
-    });
+    // Contagem de recursos por status com escopo aplicado
+    const recursosTotal = await this.createScopedRecursoQueryBuilder('recurso')
+      .getCount();
+    
+    const recursosPendentes = await this.createScopedRecursoQueryBuilder('recurso')
+      .where('recurso.status = :status', { status: StatusRecurso.PENDENTE })
+      .getCount();
+    
+    const recursosEmAnalise = await this.createScopedRecursoQueryBuilder('recurso')
+      .where('recurso.status = :status', { status: StatusRecurso.EM_ANALISE })
+      .getCount();
+    
+    const recursosDeferidos = await this.createScopedRecursoQueryBuilder('recurso')
+      .where('recurso.status = :status', { status: StatusRecurso.DEFERIDO })
+      .getCount();
+    
+    const recursosIndeferidos = await this.createScopedRecursoQueryBuilder('recurso')
+      .where('recurso.status = :status', { status: StatusRecurso.INDEFERIDO })
+      .getCount();
 
-    // Contagem de benefícios por tipo
-    const beneficiosPorTipo = await this.tipoBeneficioRepository
-      .createQueryBuilder('tipo')
+    // Contagem de benefícios por tipo com escopo aplicado
+    const beneficiosPorTipo = await this.createScopedSolicitacaoQueryBuilder('solicitacao')
+      .leftJoin('solicitacao.tipo_beneficio', 'tipo')
       .select('tipo.nome', 'tipo')
       .addSelect('COUNT(solicitacao.id)', 'quantidade')
-      .leftJoin('tipo.solicitacoes', 'solicitacao')
       .where('solicitacao.status = :status', {
         status: StatusSolicitacao.APROVADA,
       })
@@ -155,12 +335,36 @@ export class DashboardService {
       .limit(5)
       .getRawMany();
 
-    // Unidades mais ativas
-    const unidadesMaisAtivas = await this.unidadeRepository
+    // Unidades mais ativas com escopo aplicado
+    const unidadesMaisAtivasQuery = this.unidadeRepository
       .createQueryBuilder('unidade')
       .select('unidade.nome', 'nome')
       .addSelect('COUNT(solicitacao.id)', 'solicitacoes')
-      .leftJoin('unidade.solicitacoes', 'solicitacao')
+      .leftJoin('unidade.solicitacoes', 'solicitacao');
+    
+    // Aplicar filtro de escopo às solicitações relacionadas
+    const context = RequestContextHolder.get();
+    if (context) {
+      switch (context.tipo) {
+        case ScopeType.UNIDADE:
+          if (context.unidade_id) {
+            unidadesMaisAtivasQuery.andWhere('solicitacao.unidade_id = :unidadeId', {
+              unidadeId: context.unidade_id
+            });
+          }
+          break;
+        case ScopeType.PROPRIO:
+          if (context.user_id) {
+            unidadesMaisAtivasQuery.andWhere('solicitacao.criado_por = :userId', {
+              userId: context.user_id
+            });
+          }
+          break;
+        // GLOBAL não precisa de filtros adicionais
+      }
+    }
+    
+    const unidadesMaisAtivas = await unidadesMaisAtivasQuery
       .groupBy('unidade.id')
       .orderBy('solicitacoes', 'DESC')
       .limit(5)
@@ -188,7 +392,7 @@ export class DashboardService {
         porTipo: beneficiosPorTipo,
       },
       unidades: {
-        total: await this.unidadeRepository.count(),
+        total: await this.obterTotalUnidadesComEscopo(),
         maisAtivas: unidadesMaisAtivas,
       },
     };
@@ -199,9 +403,8 @@ export class DashboardService {
    * @returns KPIs do dashboard
    */
   async obterKPIs(): Promise<KpisDashboard> {
-    // Tempo médio de análise (em dias)
-    const tempoMedioAnaliseResult = await this.solicitacaoRepository
-      .createQueryBuilder('solicitacao')
+    // Tempo médio de análise (em dias) com escopo aplicado
+    const tempoMedioAnaliseResult = await this.createScopedSolicitacaoQueryBuilder('solicitacao')
       .select(
         'AVG(EXTRACT(EPOCH FROM (solicitacao.data_aprovacao - solicitacao.data_abertura)) / 86400)',
         'media',
@@ -214,66 +417,68 @@ export class DashboardService {
 
     const tempoMedioAnalise = tempoMedioAnaliseResult?.media || 0;
 
-    // Taxa de aprovação
-    const totalAnalisadas = await this.solicitacaoRepository.count({
-      where: [
-        { status: StatusSolicitacao.APROVADA },
-        { status: StatusSolicitacao.INDEFERIDA },
-      ],
-    });
+    // Taxa de aprovação com escopo aplicado
+    const totalAnalisadas = await this.createScopedSolicitacaoQueryBuilder('solicitacao')
+      .where('solicitacao.status IN (:...status)', {
+        status: [StatusSolicitacao.APROVADA, StatusSolicitacao.INDEFERIDA],
+      })
+      .getCount();
 
-    const totalAprovadas = await this.solicitacaoRepository.count({
-      where: { status: StatusSolicitacao.APROVADA },
-    });
+    const totalAprovadas = await this.createScopedSolicitacaoQueryBuilder('solicitacao')
+      .where('solicitacao.status = :status', { status: StatusSolicitacao.APROVADA })
+      .getCount();
 
     const taxaAprovacao =
       totalAnalisadas > 0 ? (totalAprovadas / totalAnalisadas) * 100 : 0;
 
-    // Taxa de recurso
-    const totalReprovadas = await this.solicitacaoRepository.count({
-      where: { status: StatusSolicitacao.INDEFERIDA },
-    });
+    // Taxa de recurso com escopo aplicado
+    const totalReprovadas = await this.createScopedSolicitacaoQueryBuilder('solicitacao')
+      .where('solicitacao.status = :status', { status: StatusSolicitacao.INDEFERIDA })
+      .getCount();
 
-    const totalRecursos = await this.recursoRepository.count();
+    const totalRecursos = await this.createScopedRecursoQueryBuilder('recurso')
+      .getCount();
+    
     const taxaRecurso =
       totalReprovadas > 0 ? (totalRecursos / totalReprovadas) * 100 : 0;
 
-    // Taxa de deferimento
-    const totalRecursosAnalisados = await this.recursoRepository.count({
-      where: [
-        { status: StatusRecurso.DEFERIDO },
-        { status: StatusRecurso.INDEFERIDO },
-      ],
-    });
+    // Taxa de deferimento com escopo aplicado
+    const totalRecursosAnalisados = await this.createScopedRecursoQueryBuilder('recurso')
+      .where('recurso.status IN (:...status)', {
+        status: [StatusRecurso.DEFERIDO, StatusRecurso.INDEFERIDO],
+      })
+      .getCount();
 
-    const totalDeferidos = await this.recursoRepository.count({
-      where: { status: StatusRecurso.DEFERIDO },
-    });
+    const totalDeferidos = await this.createScopedRecursoQueryBuilder('recurso')
+      .where('recurso.status = :status', { status: StatusRecurso.DEFERIDO })
+      .getCount();
 
     const taxaDeferimento =
       totalRecursosAnalisados > 0
         ? (totalDeferidos / totalRecursosAnalisados) * 100
         : 0;
 
-    // Solicitações por dia (últimos 30 dias)
+    // Solicitações por dia (últimos 30 dias) com escopo aplicado
     const dataInicio = new Date();
     dataInicio.setDate(dataInicio.getDate() - 30);
 
-    const totalSolicitacoes30Dias = await this.solicitacaoRepository.count({
-      where: {
-        data_abertura: Between(dataInicio, new Date()),
-      },
-    });
+    const totalSolicitacoes30Dias = await this.createScopedSolicitacaoQueryBuilder('solicitacao')
+      .where('solicitacao.data_abertura BETWEEN :dataInicio AND :dataFim', {
+        dataInicio,
+        dataFim: new Date(),
+      })
+      .getCount();
 
     const solicitacoesPorDia = totalSolicitacoes30Dias / 30;
 
-    // Benefícios por dia (últimos 30 dias)
-    const totalBeneficios30Dias = await this.solicitacaoRepository.count({
-      where: {
-        status: StatusSolicitacao.APROVADA,
-        data_aprovacao: Between(dataInicio, new Date()),
-      },
-    });
+    // Benefícios por dia (últimos 30 dias) com escopo aplicado
+    const totalBeneficios30Dias = await this.createScopedSolicitacaoQueryBuilder('solicitacao')
+      .where('solicitacao.status = :status', { status: StatusSolicitacao.APROVADA })
+      .andWhere('solicitacao.data_aprovacao BETWEEN :dataInicio AND :dataFim', {
+        dataInicio,
+        dataFim: new Date(),
+      })
+      .getCount();
 
     const beneficiosPorDia = totalBeneficios30Dias / 30;
 
@@ -296,9 +501,8 @@ export class DashboardService {
     const dataInicio = new Date();
     dataInicio.setDate(dataInicio.getDate() - periodo);
 
-    // Solicitações por período (agrupadas por dia)
-    const solicitacoesPorPeriodo = await this.solicitacaoRepository
-      .createQueryBuilder('solicitacao')
+    // Solicitações por período (agrupadas por dia) com escopo aplicado
+    const solicitacoesPorPeriodo = await this.createScopedSolicitacaoQueryBuilder('solicitacao')
       .select("TO_CHAR(solicitacao.data_abertura, 'YYYY-MM-DD')", 'data')
       .addSelect('COUNT(solicitacao.id)', 'quantidade')
       .where('solicitacao.data_abertura >= :dataInicio', { dataInicio })
@@ -306,18 +510,16 @@ export class DashboardService {
       .orderBy('data', 'ASC')
       .getRawMany();
 
-    // Solicitações por status
-    const solicitacoesPorStatus = await this.solicitacaoRepository
-      .createQueryBuilder('solicitacao')
+    // Solicitações por status com escopo aplicado
+    const solicitacoesPorStatus = await this.createScopedSolicitacaoQueryBuilder('solicitacao')
       .select('solicitacao.status', 'status')
       .addSelect('COUNT(solicitacao.id)', 'quantidade')
       .groupBy('solicitacao.status')
       .orderBy('quantidade', 'DESC')
       .getRawMany();
 
-    // Solicitações por unidade
-    const solicitacoesPorUnidade = await this.solicitacaoRepository
-      .createQueryBuilder('solicitacao')
+    // Solicitações por unidade com escopo aplicado
+    const solicitacoesPorUnidade = await this.createScopedSolicitacaoQueryBuilder('solicitacao')
       .select('unidade.nome', 'unidade')
       .addSelect('COUNT(solicitacao.id)', 'quantidade')
       .leftJoin('solicitacao.unidade', 'unidade')
@@ -326,9 +528,8 @@ export class DashboardService {
       .limit(10)
       .getRawMany();
 
-    // Solicitações por tipo de benefício
-    const solicitacoesPorBeneficio = await this.solicitacaoRepository
-      .createQueryBuilder('solicitacao')
+    // Solicitações por tipo de benefício com escopo aplicado
+    const solicitacoesPorBeneficio = await this.createScopedSolicitacaoQueryBuilder('solicitacao')
       .select('tipo.nome', 'beneficio')
       .addSelect('COUNT(solicitacao.id)', 'quantidade')
       .leftJoin('solicitacao.tipo_beneficio', 'tipo')
@@ -351,19 +552,19 @@ export class DashboardService {
   async obterContagemSolicitacoesPorStatus(): Promise<{
     total: number;
     porStatus: Array<{
-      status: string;
+      status: StatusSolicitacao;
       quantidade: number;
       percentual: number;
     }>;
   }> {
 
     try {
-      // Obter total de solicitações
-      const total = await this.solicitacaoRepository.count();
+      // Obter total de solicitações com escopo aplicado
+      const total = await this.createScopedSolicitacaoQueryBuilder('solicitacao')
+        .getCount();
 
-      // Obter contagem por status
-      const contagemPorStatus = await this.solicitacaoRepository
-        .createQueryBuilder('solicitacao')
+      // Obter contagem por status com escopo aplicado
+      const contagemPorStatus = await this.createScopedSolicitacaoQueryBuilder('solicitacao')
         .select('solicitacao.status', 'status')
         .addSelect('COUNT(solicitacao.id)', 'quantidade')
         .groupBy('solicitacao.status')
