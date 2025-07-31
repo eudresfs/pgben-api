@@ -175,12 +175,12 @@ export class ConcessaoService {
       if (filtro.status) {
         qb.andWhere('concessao.status = :status', { status: filtro.status });
       }
-      if (filtro.unidade_id) {
-        qb.andWhere('unidade.id = :unidade_id', { unidade_id: filtro.unidade_id });
+      if (filtro.unidade_id || filtro.unidadeId) {
+        qb.andWhere('unidade.id = :unidade_id', { unidade_id: filtro.unidade_id || filtro.unidadeId });
       }
-      if (filtro.tipo_beneficio_id) {
+      if (filtro.tipo_beneficio_id || filtro.tipoBeneficioId) {
         qb.andWhere('tipo_beneficio.id = :tipo_beneficio_id', {
-          tipo_beneficio_id: filtro.tipo_beneficio_id,
+          tipo_beneficio_id: filtro.tipo_beneficio_id || filtro.tipoBeneficioId,
         });
       }
       if (filtro.determinacao_judicial !== undefined) {

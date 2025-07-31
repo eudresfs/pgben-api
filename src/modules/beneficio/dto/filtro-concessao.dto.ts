@@ -53,17 +53,29 @@ export class FiltroConcessaoDto extends PaginationParamsDto {
   @IsUUID()
   unidade_id?: string;
 
+  @ApiPropertyOptional({ description: 'UUID do tipo de benefício' })
+  @IsOptional()
+  @Transform(({ value, obj }) => {
+    // Mapear tipoBeneficioId (camelCase) para tipo_beneficio_id (snake_case)
+    if (obj.tipoBeneficioId && !value) {
+      return obj.tipoBeneficioId === '' ? undefined : obj.tipoBeneficioId;
+    }
+    return value === '' ? undefined : value;
+  })
+  @IsUUID()
+  tipo_beneficio_id?: string;
+  
   // Propriedade temporária para aceitar unidadeId do interceptor
   @ApiHideProperty()
   @IsOptional()
   @IsUUID()
   unidadeId?: string;
 
-  @ApiPropertyOptional({ description: 'UUID do tipo de benefício' })
+  // Propriedade temporária para aceitar tipoBeneficioId do interceptor
+  @ApiHideProperty()
   @IsOptional()
-  @Transform(({ value }) => (value === '' ? undefined : value))
   @IsUUID()
-  tipo_beneficio_id?: string;
+  tipoBeneficioId?: string;
 
   @ApiPropertyOptional({ description: 'Flag de determinação judicial' })
   @IsOptional()
