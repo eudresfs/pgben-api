@@ -30,6 +30,7 @@ import {
   CidadaoPaginatedResponseDto,
 } from '../dto/cidadao-response.dto';
 import { AutoAudit, SensitiveDataAccess } from '../../auditoria';
+import { TransferirUnidadeDto } from '../dto/transferir-unidade.dto';
 
 @ApiTags('Cidadão')
 @Controller('cidadao')
@@ -371,5 +372,59 @@ export class CidadaoController {
     @Request() req,
   ): Promise<CidadaoResponseDto> {
     return this.cidadaoService.findByNis(nis, true, req.user.id);
+  }
+
+  @Put(':id/transferir-unidade')
+  @RequiresPermission({
+    permissionName: 'cidadao.transferir.unidade',
+  })
+  @SensitiveDataAccess(['unidade_id'], {
+    requiresConsent: false,
+    maskInLogs: false,
+  })
+  @ApiOperation({
+    summary: 'Transferir cidadão para outra unidade',
+    description: 'Transfere um cidadão para uma nova unidade e opcionalmente registra um novo endereço. A operação é auditada e registra o histórico de transferências.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'ID único do cidadão a ser transferido (UUID v4)',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
+  @ApiResponse({
+    status: 200,
+    type: CidadaoResponseDto,
+    description: 'Cidadão transferido com sucesso para a nova unidade',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Dados inválidos - ID malformado, unidade igual à atual ou dados de endereço inválidos',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Token de autenticação inválido ou ausente',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Usuário não possui permissão para transferir cidadãos entre unidades',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Cidadão não encontrado ou unidade de destino não existe',
+  })
+  @ApiResponse({
+    status: 422,
+    description: 'Erro de validação - unidade de destino inválida ou dados de endereço inconsistentes',
+  })
+  async transferirUnidade(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Body() transferirUnidadeDto: TransferirUnidadeDto,
+    @Request() req,
+  ): Promise<CidadaoResponseDto> {
+    return this.cidadaoService.transferirUnidade(
+      id,
+      transferirUnidadeDto,
+      req.user.id,
+    );
   }
 }

@@ -20,6 +20,7 @@ import { ComposicaoFamiliarService } from './composicao-familiar.service';
 import { ConfigService } from '@nestjs/config';
 import { AuditEventEmitter, AuditEventType } from '../../auditoria';
 import { Cidadao } from '../../../entities/cidadao.entity';
+import { TransferirUnidadeDto } from '../dto/transferir-unidade.dto';
 
 @Injectable()
 export class CidadaoService {
@@ -464,5 +465,97 @@ export class CidadaoService {
     } catch (error) {
       throw new BadRequestException('Erro ao buscar bairros');
     }
+  }
+
+  /**
+   * Transfere um cidadão para outra unidade
+   * @param cidadaoId ID do cidadão a ser transferido
+   * @param transferirUnidadeDto Dados da transferência
+   * @param usuarioId ID do usuário que está realizando a transferência
+   * @returns Dados atualizados do cidadão
+   */
+  async transferirUnidade(
+    cidadaoId: string,
+    transferirUnidadeDto: TransferirUnidadeDto,
+    usuarioId: string,
+  ): Promise<CidadaoResponseDto> {
+    const { unidade_id, endereco, motivo } = transferirUnidadeDto;
+
+    // Verificar se o cidadão existe
+    const cidadao = await this.cidadaoRepository.findById(cidadaoId);
+    if (!cidadao) {
+      throw new NotFoundException('Cidadão não encontrado');
+    }
+
+    // Verificar se a nova unidade é diferente da atual
+    if (cidadao.unidade_id === unidade_id) {
+      throw new BadRequestException(
+        'O cidadão já está vinculado a esta unidade',
+      );
+    }
+
+    // Armazenar dados anteriores para auditoria
+    const dadosAnteriores = {
+      unidade_id: cidadao.unidade_id,
+      nome: cidadao.nome,
+      cpf: cidadao.cpf,
+    };
+
+    // Atualizar a unidade do cidadão
+    const cidadaoAtualizado = await this.cidadaoRepository.updateCidadao(
+      cidadaoId,
+      { unidade_id },
+    );
+
+    // Processar novo endereço se fornecido
+    if (endereco) {
+      // Finalizar endereços atuais (definir data_fim_vigencia)
+      const enderecosAtuais = await this.enderecoService.findByCidadaoId(
+        cidadaoId,
+      );
+      
+      const dataAtual = new Date().toISOString().split('T')[0];
+      
+      // Finalizar endereços vigentes
+      for (const enderecoAtual of enderecosAtuais) {
+        if (!enderecoAtual.data_fim_vigencia) {
+          await this.enderecoService.update(enderecoAtual.id, {
+            ...enderecoAtual,
+            data_fim_vigencia: dataAtual,
+          });
+        }
+      }
+
+      // Criar novo endereço
+      await this.enderecoService.create({
+        ...endereco,
+        cidadao_id: cidadaoId,
+        data_inicio_vigencia: endereco.data_inicio_vigencia || dataAtual,
+      });
+    }
+
+    // Auditoria da transferência
+    await this.auditEmitter.emitEntityUpdated(
+      'Cidadao',
+      cidadaoId,
+      dadosAnteriores,
+      {
+        unidade_id: cidadaoAtualizado.unidade_id,
+        nome: cidadaoAtualizado.nome,
+        cpf: cidadaoAtualizado.cpf,
+        motivo_transferencia: motivo || 'Transferência de unidade',
+      },
+      usuarioId,
+    );
+
+    // Retornar dados atualizados com relacionamentos
+    const cidadaoCompleto = await this.cidadaoRepository.findById(
+      cidadaoId,
+      true,
+    );
+
+    return plainToInstance(CidadaoResponseDto, cidadaoCompleto, {
+      excludeExtraneousValues: true,
+    });
   }
 }
