@@ -80,12 +80,12 @@ export class UpdateUnidadeDto {
   })
   email?: string;
 
-  @IsString({ message: 'Responsável deve ser uma string' })
+  @IsString({ message: 'Matrícula do responsável deve ser uma string' })
   @IsOptional()
   @ApiProperty({
-    example: 'Maria da Silva',
-    description: 'Nome do responsável pela unidade',
+    example: '123456789',
+    description: 'Matrícula do responsável pela unidade',
     required: false,
   })
-  responsavel?: string;
+  responsavel_matricula?: string;
 }

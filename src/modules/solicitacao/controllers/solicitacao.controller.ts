@@ -158,7 +158,7 @@ export class SolicitacaoController {
     @Query('limit') limit?: number,
     @Query('status') status?: StatusSolicitacao,
     @Query('unidade_id') unidade_id?: string,
-    @Query('beneficio_id') beneficio_id?: string,
+    @Query('tipo_beneficio_id') beneficio_id?: string,
     @Query('beneficiario_id') beneficiario_id?: string,
     @Query('protocolo') protocolo?: string,
     @Query('data_inicio') data_inicio?: string,

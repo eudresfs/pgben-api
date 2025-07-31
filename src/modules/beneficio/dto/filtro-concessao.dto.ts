@@ -1,4 +1,4 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiPropertyOptional, ApiHideProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import {
   IsBoolean,
@@ -43,7 +43,19 @@ export class FiltroConcessaoDto extends PaginationParamsDto {
 
   @ApiPropertyOptional({ description: 'UUID da unidade' })
   @IsOptional()
-  @Transform(({ value }) => (value === '' ? undefined : value))
+  @Transform(({ value, obj }) => {
+    // Mapear unidadeId (camelCase) para unidade_id (snake_case)
+    if (obj.unidadeId && !value) {
+      return obj.unidadeId === '' ? undefined : obj.unidadeId;
+    }
+    return value === '' ? undefined : value;
+  })
+  @IsUUID()
+  unidade_id?: string;
+
+  // Propriedade temporária para aceitar unidadeId do interceptor
+  @ApiHideProperty()
+  @IsOptional()
   @IsUUID()
   unidadeId?: string;
 
@@ -51,7 +63,7 @@ export class FiltroConcessaoDto extends PaginationParamsDto {
   @IsOptional()
   @Transform(({ value }) => (value === '' ? undefined : value))
   @IsUUID()
-  tipoBeneficioId?: string;
+  tipo_beneficio_id?: string;
 
   @ApiPropertyOptional({ description: 'Flag de determinação judicial' })
   @IsOptional()
