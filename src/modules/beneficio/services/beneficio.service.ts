@@ -47,9 +47,9 @@ export class BeneficioService {
     page?: number;
     limit?: number;
     search?: string;
-    ativo?: boolean;
+    status?: Status;
   }) {
-    const { page = 1, limit = 10, search, ativo } = options;
+    const { page = 1, limit = 10, search, status } = options;
 
     const queryBuilder = this.tipoBeneficioRepository
       .createQueryBuilder('tipo_beneficio')
@@ -65,8 +65,8 @@ export class BeneficioService {
       });
     }
 
-    if (ativo !== undefined) {
-      queryBuilder.andWhere('tipo_beneficio.ativo = :ativo', { ativo });
+    if (status !== undefined) {
+      queryBuilder.andWhere('tipo_beneficio.status = :status', { status });
     }
 
     // Calcular paginação

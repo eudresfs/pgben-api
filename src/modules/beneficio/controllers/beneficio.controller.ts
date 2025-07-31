@@ -34,6 +34,7 @@ import { AuditEventType } from '../../auditoria/events/types/audit-event.types';
 import { ReqContext } from '../../../shared/request-context/req-context.decorator';
 import { GetUser } from '../../../auth/decorators/get-user.decorator';
 import { Usuario } from '../../../entities/usuario.entity';
+import { Status } from '@/enums';
 
 /**
  * Controlador de benefícios
@@ -102,13 +103,13 @@ export class BeneficioController {
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('search') search?: string,
-    @Query('ativo') ativo?: boolean,
+    @Query('status') status?: Status,
   ) {
     return this.beneficioService.findAll({
       page: page ? +page : undefined,
       limit: limit ? +limit : undefined,
       search,
-      ativo: ativo !== undefined ? ativo : undefined,
+      status,
     });
   }
 

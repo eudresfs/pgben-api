@@ -580,13 +580,6 @@ export class SolicitacaoController {
   @Get(':id/historico')
   @RequiresPermission({
     permissionName: 'solicitacao.visualizar',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'solicitacao.unidadeId',
-  })
-  @RequiresPermission({
-    permissionName: 'solicitacao.historico.visualizar',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'solicitacao.unidadeId',
   })
   @ApiOperation({ summary: 'Listar histórico de uma solicitação' })
   @ApiResponse({ status: 200, description: 'Histórico retornado com sucesso' })
@@ -601,8 +594,6 @@ export class SolicitacaoController {
   @Post(':id/processo-judicial')
   @RequiresPermission({
     permissionName: 'solicitacao.processo_judicial.vincular',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'solicitacao.unidadeId',
   })
   @ApiOperation({ summary: 'Vincular processo judicial a uma solicitação' })
   @ApiResponse({
@@ -637,8 +628,6 @@ export class SolicitacaoController {
   @Delete(':id/processo-judicial')
   @RequiresPermission({
     permissionName: 'solicitacao.processo_judicial.desvincular',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'solicitacao.unidadeId',
   })
   @ApiOperation({ summary: 'Desvincular processo judicial de uma solicitação' })
   @ApiResponse({
@@ -664,8 +653,6 @@ export class SolicitacaoController {
   @Post(':id/determinacao-judicial')
   @RequiresPermission({
     permissionName: 'solicitacao.determinacao_judicial.vincular',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'solicitacao.unidadeId',
   })
   @ApiOperation({ summary: 'Vincular determinação judicial a uma solicitação' })
   @ApiResponse({
@@ -700,8 +687,6 @@ export class SolicitacaoController {
   @Delete(':id/determinacao-judicial')
   @RequiresPermission({
     permissionName: 'solicitacao.determinacao_judicial.desvincular',
-    scopeType: ScopeType.UNIT,
-    scopeIdExpression: 'solicitacao.unidadeId',
   })
   @ApiOperation({
     summary: 'Desvincular determinação judicial de uma solicitação',

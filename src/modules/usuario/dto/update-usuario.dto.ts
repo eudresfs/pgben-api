@@ -22,9 +22,6 @@ export class UpdateUsuarioDto {
   @Matches(/^[A-Za-zÀ-ÿ\s]+$/, {
     message: 'Nome deve conter apenas letras e espaços',
   })
-  @Matches(/^\S+\s+\S+/, {
-    message: 'Nome deve conter pelo menos nome e sobrenome',
-  })
   @IsOptional()
   @ApiProperty({
     example: 'João da Silva',

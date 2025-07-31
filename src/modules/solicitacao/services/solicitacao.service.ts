@@ -44,6 +44,7 @@ import {
   StatusPendencia,
   Pendencia,
   Contato,
+  TipoBeneficio,
 } from '../../../entities';
 import { CreateSolicitacaoDto } from '../dto/create-solicitacao.dto';
 import { UpdateSolicitacaoDto } from '../dto/update-solicitacao.dto';
@@ -429,11 +430,12 @@ export class SolicitacaoService {
     try {
       // ===== VALIDAÇÕES E LEITURAS FORA DA TRANSAÇÃO =====
 
-      // Validar se o beneficiário existe
+      // Validar se o beneficiário existe e obter seus dados
+      let beneficiario;
       try {
-        await this.cidadaoService.findById(
+        beneficiario = await this.cidadaoService.findById(
           createSolicitacaoDto.beneficiario_id,
-          false,
+          true, // incluir relações para obter a unidade
         );
       } catch (error) {
         if (error.status === 404) {
@@ -465,6 +467,47 @@ export class SolicitacaoService {
       ) {
         throw new BadRequestException(
           'Solicitante não pode ser o mesmo que o beneficiário',
+        );
+      }
+
+      // Validar se o tipo de benefício existe e está ativo
+      const tipoBeneficio = await this.dataSource
+        .getRepository(TipoBeneficio)
+        .findOne({
+          where: { id: createSolicitacaoDto.tipo_beneficio_id },
+          select: ['id', 'status', 'nome'],
+        });
+
+      if (!tipoBeneficio) {
+        throw new BadRequestException('Tipo de benefício não encontrado');
+      }
+
+      // REGRA DE NEGÓCIO 2: Validar se o benefício está ativo
+      if (tipoBeneficio.status !== 'ativo') {
+        throw new BadRequestException(
+          `Uma solicitação só pode ser criada para benefícios ativos. O benefício "${tipoBeneficio.nome}" está inativo.`,
+        );
+      }
+
+      // REGRA DE NEGÓCIO 1: Validar se a unidade do beneficiário é igual à unidade do técnico
+      // Determinar a unidade do técnico
+      let unidadeTecnico: string;
+      if (!user.unidade_id) {
+        if (!createSolicitacaoDto.unidade_id) {
+          throwWorkflowStepRequired('unidade_id', {
+            data: { context: 'unidade_validation' },
+          });
+        }
+        unidadeTecnico = createSolicitacaoDto.unidade_id;
+      } else {
+        unidadeTecnico = user.unidade_id;
+      }
+
+      // Validar se a unidade do beneficiário é igual à unidade do técnico
+      if (beneficiario.unidade_id !== unidadeTecnico) {
+        throw new BadRequestException(
+          'Solicitações só podem ser feitas pela unidade atual do beneficiário. ' +
+          'Em caso de mudança de endereço, transfira o beneficiário de unidade antes.',
         );
       }
 
@@ -500,18 +543,8 @@ export class SolicitacaoService {
         return solicitacaoExistente;
       }
 
-      // Determinar a unidade: se usuário não tem unidade, usar do DTO (obrigatório)
-      let unidadeId: string;
-      if (!user.unidade_id) {
-        if (!createSolicitacaoDto.unidade_id) {
-          throwWorkflowStepRequired('unidade_id', {
-            data: { context: 'unidade_validation' },
-          });
-        }
-        unidadeId = createSolicitacaoDto.unidade_id;
-      } else {
-        unidadeId = user.unidade_id;
-      }
+      // Usar a unidade já validada nas regras de negócio
+      const unidadeId = unidadeTecnico;
 
       // Normalizar enums nos dados complementares antes de salvar
       const dadosComplementares =

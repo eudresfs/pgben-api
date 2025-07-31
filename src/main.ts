@@ -293,7 +293,7 @@ function createValidationException(
   });
 
   const response = {
-    message: 'Dados de entrada inválidos',
+    message: `Dados de entrada inválidos: ${formattedErrors.map((error) => error.messages.join(', ')).join('; ')}`,
     errors: formattedErrors,
     statusCode: 400,
     timestamp: new Date().toISOString(),

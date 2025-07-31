@@ -540,14 +540,6 @@ export class UsuarioService {
         throwUserNotFound(id);
       }
 
-      const executionTime = Date.now() - startTime;
-      if (executionTime > 1000) {
-        // Alerta para operações que levam mais de 1 segundo
-        this.logger.warn(
-          `Atualização do usuário ${id} levou ${executionTime}ms`,
-        );
-      }
-
       this.logger.info(`Usuário ${id} atualizado com sucesso`);
 
       // Remover campos sensíveis
