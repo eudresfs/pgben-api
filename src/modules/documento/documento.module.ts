@@ -25,7 +25,6 @@ import { StorageHealthService } from './services/storage-health.service';
 import { AuditoriaSharedModule } from '../../shared/auditoria/auditoria-shared.module';
 
 // Novos componentes de segurança
-import { DocumentoAccessGuard } from './guards/documento-access.guard';
 import { InputValidationInterceptor } from './interceptors/input-validation.interceptor';
 import { UrlSanitizerInterceptor } from './interceptors/url-sanitizer.interceptor';
 import { DocumentoRateLimitMiddleware } from './middleware/documento-rate-limit.middleware';
@@ -127,9 +126,6 @@ import { ThumbnailQueueService } from './services/thumbnail/thumbnail-queue.serv
       inject: [StorageProviderFactory],
     },
     ThumbnailQueueService,
-
-    // Guards de segurança (aplicados localmente nos controllers)
-    DocumentoAccessGuard,
 
     // Interceptors de segurança
     {

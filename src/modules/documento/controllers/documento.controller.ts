@@ -51,7 +51,6 @@ import { Usuario } from '../../../entities/usuario.entity';
 import { AuditEventEmitter } from '../../auditoria/events/emitters/audit-event.emitter';
 import { ReqContext } from '../../../shared/request-context/req-context.decorator';
 import { RequestContext } from '../../../shared/request-context/request-context.dto';
-import { DocumentoAccessGuard } from '../guards/documento-access.guard';
 import { Public } from '../../../auth/decorators/public.decorator';
 import {
   BatchDownloadDto,
@@ -184,7 +183,6 @@ export class DocumentoController {
    * Obtém detalhes de um documento específico com verificação de acesso
    */
   @Get(':id')
-  @UseGuards(DocumentoAccessGuard)
   @RequiresPermission({ permissionName: 'documento.visualizar' })
   @ApiOperation({ summary: 'Obter detalhes de um documento' })
   @ApiResponse({ status: 200, description: 'Documento encontrado com sucesso' })
@@ -201,13 +199,8 @@ export class DocumentoController {
     @GetUser() usuario: Usuario,
     @ReqContext() context: RequestContext,
   ) {
-    // Extrair roles do usuário do contexto
-    const userRoles = context.user?.roles || [];
-
-    const documento = await this.documentoService.findByIdWithAccess(
-      id,
-      usuario.id,
-      userRoles,
+    const documento = await this.documentoService.findById(
+      id
     );
 
     // Auditoria do acesso ao documento
@@ -225,7 +218,6 @@ export class DocumentoController {
    * Faz download de um documento com verificação de acesso
    */
   @Get(':id/download')
-  @UseGuards(DocumentoAccessGuard)
   @RequiresPermission({ permissionName: 'documento.download' })
   @ApiOperation({ summary: 'Fazer download de um documento' })
   @ApiResponse({ status: 200, description: 'Documento baixado com sucesso' })
@@ -243,13 +235,8 @@ export class DocumentoController {
     @GetUser() usuario: Usuario,
     @ReqContext() context: RequestContext,
   ) {
-    // Extrair roles do usuário do contexto
-    const userRoles = context.user?.roles || [];
-
     const resultado = await this.documentoService.download(
-      id,
-      usuario.id,
-      userRoles,
+      id
     );
 
     // Auditoria do download de documento com informações detalhadas
@@ -418,7 +405,6 @@ export class DocumentoController {
    * Marca um documento como verificado com verificação de acesso
    */
   @Post(':id/verificar')
-  @UseGuards(DocumentoAccessGuard)
   @RequiresPermission({ permissionName: 'documento.verificar' })
   @ApiOperation({ summary: 'Marcar documento como verificado' })
   @ApiResponse({
@@ -450,14 +436,9 @@ export class DocumentoController {
     @GetUser() usuario: Usuario,
     @ReqContext() context: RequestContext,
   ) {
-    // Extrair roles do usuário do contexto
-    const userRoles = context.user?.roles || [];
 
-    // Buscar dados do documento antes da verificação com verificação de acesso
-    const documentoAntes = await this.documentoService.findByIdWithAccess(
-      id,
-      usuario.id,
-      userRoles,
+    const documentoAntes = await this.documentoService.findById(
+      id
     );
 
     const resultado = await this.documentoService.verificar(
@@ -485,7 +466,6 @@ export class DocumentoController {
    * Remove um documento (soft delete) com verificação de acesso
    */
   @Delete(':id')
-  @UseGuards(DocumentoAccessGuard)
   @RequiresPermission({ permissionName: 'documento.excluir' })
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Remover um documento' })
@@ -503,14 +483,9 @@ export class DocumentoController {
     @GetUser() usuario: Usuario,
     @ReqContext() context: RequestContext,
   ) {
-    // Extrair roles do usuário do contexto
-    const userRoles = context.user?.roles || [];
-
     // Buscar dados do documento antes da remoção com verificação de acesso
-    const documentoAntes = await this.documentoService.findByIdWithAccess(
-      id,
-      usuario.id,
-      userRoles,
+    const documentoAntes = await this.documentoService.findById(
+      id
     );
 
     await this.documentoService.remover(id, usuario.id);
@@ -551,7 +526,6 @@ export class DocumentoController {
    * Obtém thumbnail de um documento
    */
   @Get(':id/thumbnail')
-  @UseGuards(DocumentoAccessGuard)
   @RequiresPermission({ permissionName: 'documento.visualizar' })
   @ApiOperation({
     summary: 'Obter thumbnail de um documento',
@@ -592,17 +566,12 @@ export class DocumentoController {
     @GetUser() usuario: Usuario,
     @ReqContext() context: RequestContext,
   ) {
-    // Extrair roles do usuário do contexto
-    const userRoles = context.user?.roles || [];
-
     // Verificar acesso ao documento
-    await this.documentoService.findByIdWithAccess(id, usuario.id, userRoles);
+    await this.documentoService.findById(id);
 
     // Obter documento e arquivo para gerar thumbnail
-    const documento = await this.documentoService.findByIdWithAccess(
-      id,
-      usuario.id,
-      userRoles,
+    const documento = await this.documentoService.findById(
+      id
     );
 
     const storageProvider = this.storageProviderFactory.getProvider();
@@ -637,7 +606,6 @@ export class DocumentoController {
    * Regenera thumbnail de um documento
    */
   @Post(':id/thumbnail/regenerar')
-  @UseGuards(DocumentoAccessGuard)
   @RequiresPermission({ permissionName: 'documento.gerenciar' })
   @ApiOperation({
     summary: 'Regenerar thumbnail de um documento',
@@ -660,14 +628,9 @@ export class DocumentoController {
     @GetUser() usuario: Usuario,
     @ReqContext() context: RequestContext,
   ): Promise<ThumbnailResponseDto> {
-    // Extrair roles do usuário do contexto
-    const userRoles = context.user?.roles || [];
-
     // Verificar acesso ao documento
-    const documento = await this.documentoService.findByIdWithAccess(
-      id,
-      usuario.id,
-      userRoles,
+    const documento = await this.documentoService.findById(
+      id
     );
 
     // Obter arquivo para regenerar thumbnail
@@ -708,7 +671,6 @@ export class DocumentoController {
    * Obtém status de processamento de thumbnail
    */
   @Get(':id/thumbnail/status')
-  @UseGuards(DocumentoAccessGuard)
   @RequiresPermission({ permissionName: 'documento.visualizar' })
   @ApiOperation({
     summary: 'Obter status de processamento de thumbnail',
@@ -733,11 +695,8 @@ export class DocumentoController {
     @GetUser() usuario: Usuario,
     @ReqContext() context: RequestContext,
   ): Promise<ThumbnailStatusResponseDto> {
-    // Extrair roles do usuário do contexto
-    const userRoles = context.user?.roles || [];
-
     // Verificar acesso ao documento
-    await this.documentoService.findByIdWithAccess(id, usuario.id, userRoles);
+    await this.documentoService.findById(id);
 
     // Obter status do processamento
     const status = await this.thumbnailQueueService.getProcessingStatus(id);
@@ -751,7 +710,6 @@ export class DocumentoController {
    * Adiciona documento à fila de processamento de thumbnails
    */
   @Post(':id/thumbnail/processar')
-  @UseGuards(DocumentoAccessGuard)
   @RequiresPermission({ permissionName: 'documento.gerenciar' })
   @ApiOperation({
     summary: 'Adicionar documento à fila de processamento',
@@ -775,11 +733,8 @@ export class DocumentoController {
     @GetUser() usuario: Usuario,
     @ReqContext() context: RequestContext,
   ) {
-    // Extrair roles do usuário do contexto
-    const userRoles = context.user?.roles || [];
-
     // Verificar acesso ao documento
-    await this.documentoService.findByIdWithAccess(id, usuario.id, userRoles);
+    await this.documentoService.findById(id);
 
     // Adicionar à fila
     await this.thumbnailQueueService.addToQueue(id);
