@@ -26,78 +26,7 @@ export class PagamentoRepository {
     private readonly scopedRepository: ScopedRepository<Pagamento>,
   ) {}
 
-  /**
-   * Aplica filtros de escopo ao QueryBuilder para pagamentos
-   * Como Pagamento não possui unidade_id direto, filtra através da relação com Solicitacao
-   */
-  private applyScopeToPaymentQuery(
-    queryBuilder: SelectQueryBuilder<Pagamento>,
-    alias: string = 'pagamento'
-  ): void {
-    const context = RequestContextHolder.get();
-    
-    if (!context) {
-      // Se não há contexto, não aplicar filtros (para rotas públicas)
-      return;
-    }
-    
-    switch (context.tipo) {
-      case ScopeType.GLOBAL:
-        // Escopo global: sem filtros adicionais
-        break;
-        
-      case ScopeType.UNIDADE:
-        // Escopo de unidade: filtrar por unidade_id através da relação com solicitacao
-        if (context.unidade_id) {
-          // Verificar se o join com solicitacao já existe (verificar tanto por alias quanto por relation)
-          const hasJoin = queryBuilder.expressionMap.joinAttributes.some(
-            join => join.alias?.name === 'solicitacao' || 
-                   (join.relation && join.relation.propertyName === 'solicitacao')
-          );
-          
-          if (!hasJoin) {
-            queryBuilder.leftJoin(`${alias}.solicitacao`, 'solicitacao_scope');
-            queryBuilder.andWhere('solicitacao_scope.unidade_id = :unidadeId', {
-              unidadeId: context.unidade_id
-            });
-          } else {
-            // Se já existe join, usar o alias existente
-            const existingJoin = queryBuilder.expressionMap.joinAttributes.find(
-              join => join.alias?.name === 'solicitacao' || 
-                     (join.relation && join.relation.propertyName === 'solicitacao')
-            );
-            const joinAlias = existingJoin?.alias?.name || 'solicitacao';
-            queryBuilder.andWhere(`${joinAlias}.unidade_id = :unidadeId`, {
-              unidadeId: context.unidade_id
-            });
-          }
-        }
-        break;
-        
-      case ScopeType.PROPRIO:
-        // Escopo próprio: filtrar por user_id do criador do pagamento
-        if (context.user_id) {
-          queryBuilder.andWhere(`${alias}.criado_por = :userId`, {
-            userId: context.user_id
-          });
-        }
-        break;
-        
-      default:
-        throw new ScopeViolationException(
-          `Tipo de escopo não suportado: ${context.tipo}`
-        );
-    }
-  }
 
-  /**
-   * Cria um QueryBuilder com escopo aplicado específico para pagamentos
-   */
-  private createScopedPaymentQueryBuilder(alias: string = 'pagamento'): SelectQueryBuilder<Pagamento> {
-    const queryBuilder = this.scopedRepository.createQueryBuilder(alias);
-    this.applyScopeToPaymentQuery(queryBuilder, alias);
-    return queryBuilder;
-  }
 
   /**
    * Cria um novo pagamento
@@ -111,7 +40,7 @@ export class PagamentoRepository {
    * Busca pagamento por ID
    */
   async findById(id: string): Promise<Pagamento | null> {
-    return await this.createScopedPaymentQueryBuilder('pagamento')
+    return await this.scopedRepository.createScopedQueryBuilder('pagamento')
       .leftJoinAndSelect('pagamento.solicitacao', 'solicitacao')
       .leftJoinAndSelect('pagamento.concessao', 'concessao')
       .leftJoinAndSelect('pagamento.comprovantes', 'comprovantes')
@@ -123,7 +52,7 @@ export class PagamentoRepository {
    * Busca um pagamento por ID com as relações de concessão e solicitação.
    */
   async findPagamentoComRelacoes(id: string): Promise<Pagamento | null> {
-    return await this.createScopedPaymentQueryBuilder('pagamento')
+    return await this.scopedRepository.createScopedQueryBuilder('pagamento')
       .leftJoinAndSelect('pagamento.concessao', 'concessao')
       .leftJoinAndSelect('concessao.solicitacao', 'solicitacao')
       .where('pagamento.id = :id', { id })
@@ -137,7 +66,7 @@ export class PagamentoRepository {
     id: string,
     relations: string[] = [],
   ): Promise<Pagamento | null> {
-    const queryBuilder = this.createScopedPaymentQueryBuilder('pagamento')
+    const queryBuilder = this.scopedRepository.createScopedQueryBuilder('pagamento')
       .where('pagamento.id = :id', { id });
 
     // Adicionar relações dinamicamente
@@ -152,7 +81,7 @@ export class PagamentoRepository {
    * Busca pagamentos por solicitação
    */
   async findBySolicitacao(solicitacao_id: string): Promise<Pagamento[]> {
-    return await this.createScopedPaymentQueryBuilder('pagamento')
+    return await this.scopedRepository.createScopedQueryBuilder('pagamento')
       .where('pagamento.solicitacao_id = :solicitacao_id', { solicitacao_id })
       .orderBy('pagamento.created_at', 'DESC')
       .getMany();
@@ -162,7 +91,7 @@ export class PagamentoRepository {
    * Busca pagamentos por concessão
    */
   async findByConcessao(concessao_id: string): Promise<Pagamento[]> {
-    return await this.createScopedPaymentQueryBuilder('pagamento')
+    return await this.scopedRepository.createScopedQueryBuilder('pagamento')
       .where('pagamento.concessao_id = :concessao_id', { concessao_id })
       .orderBy('pagamento.numero_parcela', 'ASC')
       .getMany();
@@ -175,7 +104,7 @@ export class PagamentoRepository {
     status: StatusPagamentoEnum,
     limit?: number,
   ): Promise<Pagamento[]> {
-    const queryBuilder = this.createScopedPaymentQueryBuilder('pagamento')
+    const queryBuilder = this.scopedRepository.createScopedQueryBuilder('pagamento')
       .leftJoinAndSelect('pagamento.concessao', 'concessao')
       .where('pagamento.status = :status', { status })
       .orderBy('pagamento.created_at', 'DESC');
@@ -193,7 +122,7 @@ export class PagamentoRepository {
   async findElegiveisParaLiberacao(limite: number = 100): Promise<Pagamento[]> {
     const agora = new Date();
 
-    return await this.createScopedPaymentQueryBuilder('pagamento')
+    return await this.scopedRepository.createScopedQueryBuilder('pagamento')
       .leftJoinAndSelect('pagamento.concessao', 'concessao')
       .where(
         new Brackets((qb) => {
@@ -218,7 +147,7 @@ export class PagamentoRepository {
   async findVencidos(): Promise<Pagamento[]> {
     const agora = new Date();
 
-    return await this.createScopedPaymentQueryBuilder('pagamento')
+    return await this.scopedRepository.createScopedQueryBuilder('pagamento')
       .leftJoinAndSelect('pagamento.concessao', 'concessao')
       .where('pagamento.status = :status', { status: StatusPagamentoEnum.PENDENTE })
       .andWhere('pagamento.data_vencimento <= :agora', { agora })
@@ -238,7 +167,7 @@ export class PagamentoRepository {
     const limite = new Date(dataLimite);
     limite.setHours(23, 59, 59, 999);
 
-    return await this.createScopedPaymentQueryBuilder('pagamento')
+    return await this.scopedRepository.createScopedQueryBuilder('pagamento')
       .leftJoinAndSelect('pagamento.concessao', 'concessao')
       .where('pagamento.status = :status', { status: StatusPagamentoEnum.PENDENTE })
       .andWhere('pagamento.data_vencimento BETWEEN :hoje AND :limite', { hoje, limite })
@@ -262,7 +191,7 @@ export class PagamentoRepository {
     page?: number;
     limit?: number;
   }): Promise<{ items: Pagamento[]; total: number }> {
-    const queryBuilder = this.createScopedPaymentQueryBuilder('pagamento')
+    const queryBuilder = this.scopedRepository.createScopedQueryBuilder('pagamento')
       .leftJoinAndSelect('pagamento.solicitacao', 'solicitacao')
       .leftJoin('solicitacao.tipo_beneficio', 'tipo_beneficio')
       .leftJoin('solicitacao.beneficiario', 'beneficiario')
@@ -386,7 +315,7 @@ export class PagamentoRepository {
     data_fim: Date,
     status?: StatusPagamentoEnum,
   ): Promise<Pagamento[]> {
-    const queryBuilder = this.createScopedPaymentQueryBuilder('pagamento')
+    const queryBuilder = this.scopedRepository.createScopedQueryBuilder('pagamento')
       .leftJoinAndSelect('pagamento.concessao', 'concessao')
       .where('pagamento.created_at BETWEEN :data_inicio AND :data_fim', {
         data_inicio,
@@ -453,7 +382,7 @@ export class PagamentoRepository {
    * Conta pagamentos por status
    */
   async countByStatus(status: StatusPagamentoEnum): Promise<number> {
-    return await this.createScopedPaymentQueryBuilder('pagamento')
+    return await this.scopedRepository.createScopedQueryBuilder('pagamento')
       .where('pagamento.status = :status', { status })
       .getCount();
   }
@@ -462,7 +391,7 @@ export class PagamentoRepository {
    * Verifica se existe pagamento para solicitação
    */
   async existsBySolicitacao(solicitacao_id: string): Promise<boolean> {
-    const count = await this.createScopedPaymentQueryBuilder('pagamento')
+    const count = await this.scopedRepository.createScopedQueryBuilder('pagamento')
       .where('pagamento.solicitacao_id = :solicitacao_id', { solicitacao_id })
       .getCount();
     return count > 0;
@@ -477,11 +406,11 @@ export class PagamentoRepository {
     valorTotal: number;
   }> {
     // Total de pagamentos
-    const totalPagamentos = await this.createScopedPaymentQueryBuilder('pagamento')
+    const totalPagamentos = await this.scopedRepository.createScopedQueryBuilder('pagamento')
       .getCount();
 
     // Count por status
-    const statusCounts = await this.createScopedPaymentQueryBuilder('pagamento')
+    const statusCounts = await this.scopedRepository.createScopedQueryBuilder('pagamento')
       .select('pagamento.status', 'status')
       .addSelect('COUNT(*)', 'count')
       .groupBy('pagamento.status')
@@ -493,7 +422,7 @@ export class PagamentoRepository {
     });
 
     // Valor total
-    const valorTotalResult = await this.createScopedPaymentQueryBuilder('pagamento')
+    const valorTotalResult = await this.scopedRepository.createScopedQueryBuilder('pagamento')
       .select('SUM(pagamento.valor)', 'total')
       .getRawOne();
 

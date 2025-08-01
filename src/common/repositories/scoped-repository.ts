@@ -219,11 +219,9 @@ export class ScopedRepository<Entity> extends Repository<Entity> {
         break;
         
       case ScopeType.UNIDADE:
-        // Escopo de unidade: filtrar por unidade_id (se a entidade possui esse campo)
-        if (context.unidade_id && this.hasColumn('unidade_id')) {
-          queryBuilder.andWhere(`${alias}.unidade_id = :unidadeId`, {
-            unidadeId: context.unidade_id
-          });
+        // Escopo de unidade: aplicar filtro baseado na entidade
+        if (context.unidade_id) {
+          this.applyCidadaoScopeToQuery(queryBuilder, alias, context.unidade_id);
         }
         break;
         
@@ -240,6 +238,73 @@ export class ScopedRepository<Entity> extends Repository<Entity> {
         throw new ScopeViolationException(
           `Tipo de escopo não suportado: ${context.tipo}`
         );
+    }
+  }
+
+  /**
+   * Aplica filtro de unidade_id através do cidadão para entidades relacionadas
+   */
+  private applyCidadaoScopeToQuery(
+    queryBuilder: SelectQueryBuilder<Entity>,
+    alias: string,
+    unidadeId: string
+  ): void {
+    const entityName = this.metadata.name;
+    
+    switch (entityName) {
+      case 'Solicitacao':
+        // Para Solicitacao: JOIN com beneficiario (cidadão)
+        queryBuilder
+          .leftJoin(`${alias}.beneficiario`, 'cidadao')
+          .andWhere('cidadao.unidade_id = :unidadeId', { unidadeId });
+        break;
+        
+      case 'Concessao':
+        // Para Concessao: JOIN com solicitacao.beneficiario
+        queryBuilder
+          .leftJoin(`${alias}.solicitacao`, 'solicitacao')
+          .leftJoin('solicitacao.beneficiario', 'cidadao')
+          .andWhere('cidadao.unidade_id = :unidadeId', { unidadeId });
+        break;
+        
+      case 'Pagamento':
+        // Para Pagamento: verificar se já existe JOIN com solicitacao
+        const existingJoins = queryBuilder.expressionMap.joinAttributes;
+        const hasExistingSolicitacaoJoin = existingJoins.some(join => 
+          join.alias?.name === 'solicitacao' || join.entityOrProperty === `${alias}.solicitacao`
+        );
+        const hasExistingConcessaoJoin = existingJoins.some(join => 
+          join.alias?.name === 'concessao' || join.entityOrProperty === `${alias}.concessao`
+        );
+        
+        // Só fazer JOIN se não existir
+        if (!hasExistingSolicitacaoJoin) {
+          queryBuilder.leftJoin(`${alias}.solicitacao`, 'solicitacao_scope');
+        }
+        if (!hasExistingConcessaoJoin) {
+          queryBuilder.leftJoin(`${alias}.concessao`, 'concessao_scope');
+        }
+        
+        // Usar aliases únicos para evitar conflitos
+        const solicitacaoAlias = hasExistingSolicitacaoJoin ? 'solicitacao' : 'solicitacao_scope';
+        const concessaoAlias = hasExistingConcessaoJoin ? 'concessao' : 'concessao_scope';
+        
+        queryBuilder
+          .leftJoin(`${solicitacaoAlias}.beneficiario`, 'cidadao_solicitacao_scope')
+          .leftJoin(`${concessaoAlias}.solicitacao`, 'concessao_solicitacao_scope')
+          .leftJoin('concessao_solicitacao_scope.beneficiario', 'cidadao_concessao_scope')
+          .andWhere(
+            '(cidadao_solicitacao_scope.unidade_id = :unidadeId OR cidadao_concessao_scope.unidade_id = :unidadeId)',
+            { unidadeId }
+          );
+        break;
+        
+      default:
+        // Para outras entidades: usar unidade_id direto se existir
+        if (this.hasColumn('unidade_id')) {
+          queryBuilder.andWhere(`${alias}.unidade_id = :unidadeId`, { unidadeId });
+        }
+        break;
     }
   }
   
