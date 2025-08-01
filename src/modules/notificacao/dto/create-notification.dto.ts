@@ -92,14 +92,14 @@ export class CreateNotificationDto {
 
   @ApiPropertyOptional({
     description: 'Forçar método de entrega específico',
-    enum: ['ably', 'sse'],
+    enum: ['ably'],
     example: 'ably',
   })
   @IsOptional()
-  @IsEnum(['ably', 'sse'], {
+  @IsEnum(['ably'], {
     message: 'Método de entrega inválido',
   })
-  forceMethod?: 'ably' | 'sse';
+  forceMethod?: 'ably';
 
   @ApiPropertyOptional({
     description: 'Tentar novamente em caso de falha',

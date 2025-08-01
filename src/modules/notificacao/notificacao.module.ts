@@ -10,40 +10,18 @@ import { UsuarioModule } from '../usuario/usuario.module';
 
 // Controladores
 import { NotificacaoController } from './controllers/notificacao.controller';
-import { NotificationSseController } from './controllers/notification-sse.controller';
 import { NotificacaoAvancadaController } from './controllers/notificacao-avancada.controller';
 
 // Serviços
 import { NotificacaoService } from './services/notificacao.service';
 import { NotificationManagerService } from './services/notification-manager.service';
-import { SseService } from './services/sse.service';
-import { SseRedisService } from './services/sse-redis.service';
-import { SseEventStoreService } from './services/sse-event-store.service';
-import { SseMetricsService } from './services/sse-metrics.service';
-import { SseHeartbeatService } from './services/sse-heartbeat.service';
-import { SseRateLimiterService } from './services/sse-rate-limiter.service';
-import { SseRetryPolicyService } from './services/sse-retry-policy.service';
-import { SseGracefulDegradationService } from './services/sse-graceful-degradation.service';
-import { SseStructuredLoggingService } from './services/sse-structured-logging.service';
-import { SseErrorBoundaryService } from './services/sse-error-boundary.service';
-import { SseHealthCheckService } from './services/sse-health-check.service';
-import { SseCircuitBreakerService } from './services/sse-circuit-breaker.service';
-import { SseRateLimitGuard } from './guards/sse-rate-limit.guard';
-import { SseRateLimitController } from './controllers/sse-rate-limit.controller';
 import { TemplateRendererService } from './services/template-renderer.service';
-import { createSseConfig, SSE_CONFIG } from '../../config/sse.config';
-import { SseRedisCircuitBreakerService } from './services/sse-redis-circuit-breaker.service';
 import { NotificacaoPreferenciasService } from './services/notificacao-preferencias.service';
 import { NotificacaoProativaService } from './services/notificacao-proativa.service';
-import { SseDatabaseCircuitBreakerService } from './services/sse-database-circuit-breaker.service';
 
 // Listener
-import { NotificationSseListener } from './listeners/notification-sse.listener';
 import { NotificationEmailListener } from './listeners/notification-email.listener';
 import { NotificationMetricsListener } from './listeners/notification-metrics.listener';
-
-// Guards
-import { SseGuard } from './guards/sse.guard';
 
 // Interceptors
 import { NotificationMetricsInterceptor } from './interceptors/notification-metrics.interceptor';
@@ -68,9 +46,9 @@ import { NotificacaoProativaScheduler } from './schedulers/notificacao-proativa.
  *
  * Responsável por:
  *  - Gerenciar notificações (criação, leitura, arquivamento)
- *  - Expor endpoints REST e SSE para clientes
+ *  - Expor endpoints REST para clientes
  *  - Emitir eventos de domínio para integração com outros módulos
- *  - Permitir extensão via listeners (SSE, e-mail, auditoria, etc)
+ *  - Permitir extensão via listeners (e-mail, auditoria, etc)
  *  - Integração com Ably via AblyModule (@Global)
  *
  * ## Exemplo de Integração com outros módulos
@@ -92,7 +70,7 @@ import { NotificacaoProativaScheduler } from './schedulers/notificacao-proativa.
  *
  * ## Registrando listeners adicionais
  * Basta implementar uma classe com @OnEvent('notification.created') e registrar no providers.
- * Veja exemplo em NotificationSseListener e NotificationEmailListener.
+ * Veja exemplo em NotificationEmailListener.
  *
  * ## Integração com Ably
  * Os serviços Ably (AblyService, AblyAuthService, AblyChannelService) são fornecidos
@@ -118,43 +96,17 @@ import { NotificacaoProativaScheduler } from './schedulers/notificacao-proativa.
   ],
   controllers: [
     NotificacaoController,
-    NotificationSseController,
-    SseRateLimitController,
     NotificacaoAvancadaController,
   ],
   providers: [
-    // Configurações
-    {
-      provide: SSE_CONFIG,
-      useFactory: createSseConfig,
-      inject: [ConfigService],
-    },
-
     // Serviços principais
     NotificacaoService,
     NotificationManagerService,
     TemplateRendererService,
-    SseRedisService,
-    SseEventStoreService,
-    SseService,
-    SseHeartbeatService,
-    SseMetricsService,
-    SseRateLimiterService,
-    SseRetryPolicyService,
-    SseGracefulDegradationService,
-    SseStructuredLoggingService,
-    SseErrorBoundaryService,
-    SseHealthCheckService,
-    SseCircuitBreakerService,
-    SseRedisCircuitBreakerService,
-    SseDatabaseCircuitBreakerService,
-    SseGuard,
-    SseRateLimitGuard,
     NotificacaoProativaService,
     NotificacaoPreferenciasService,
 
     // Listeners
-    NotificationSseListener,
     NotificationEmailListener,
     NotificationMetricsListener,
     UsuarioEventsListener,
@@ -170,10 +122,6 @@ import { NotificacaoProativaScheduler } from './schedulers/notificacao-proativa.
     TypeOrmModule,
     NotificacaoService,
     NotificationManagerService,
-    SseService,
-    SseEventStoreService,
-    SseMetricsService,
-    SseRateLimiterService,
     NotificationMetricsInterceptor,
     NotificacaoProativaService,
     NotificacaoPreferenciasService,

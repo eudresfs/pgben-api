@@ -104,14 +104,6 @@ export interface EnvironmentVariables {
   LOG_MAX_FILES?: number;
   LOG_MAX_SIZE?: string;
 
-  // Notificações SSE
-  SSE_HEARTBEAT_INTERVAL?: number;
-  SSE_CONNECTION_TIMEOUT?: number;
-  SSE_MAX_CONNECTIONS_PER_USER?: number;
-  SSE_CLEANUP_INTERVAL?: number;
-  SSE_ENABLE_COMPRESSION?: boolean;
-  SSE_CORS_ORIGINS?: string;
-
   // Usuário administrador padrão
   DEFAULT_ADMIN_USER_EMAIL?: string;
   DEFAULT_ADMIN_USER_NAME?: string;
@@ -236,25 +228,7 @@ export const env: EnvironmentVariables = {
   LOG_MAX_FILES: parseNumber(process.env.LOG_MAX_FILES, 30),
   LOG_MAX_SIZE: process.env.LOG_MAX_SIZE,
 
-  // Notificações SSE
-  SSE_HEARTBEAT_INTERVAL: parseNumber(
-    process.env.SSE_HEARTBEAT_INTERVAL,
-    30000,
-  ),
-  SSE_CONNECTION_TIMEOUT: parseNumber(
-    process.env.SSE_CONNECTION_TIMEOUT,
-    300000,
-  ),
-  SSE_MAX_CONNECTIONS_PER_USER: parseNumber(
-    process.env.SSE_MAX_CONNECTIONS_PER_USER,
-    5,
-  ),
-  SSE_CLEANUP_INTERVAL: parseNumber(process.env.SSE_CLEANUP_INTERVAL, 60000),
-  SSE_ENABLE_COMPRESSION: parseBoolean(
-    process.env.SSE_ENABLE_COMPRESSION,
-    true,
-  ),
-  SSE_CORS_ORIGINS: process.env.SSE_CORS_ORIGINS,
+  // Notificações SSE removidas
 
   // Usuário administrador padrão
   DEFAULT_ADMIN_USER_EMAIL: process.env.DEFAULT_ADMIN_USER_EMAIL,

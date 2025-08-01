@@ -111,10 +111,6 @@ export class NotificationMetricsInterceptor implements NestInterceptor {
         // Registrar operação de notificação
         this.recordNotificationOperation(operationType, success, duration);
 
-        // Se for SSE, registrar métricas específicas
-        if (route.includes('/sse')) {
-          this.recordSseMetrics(route, method, success, userId);
-        }
 
         // Se houver erro, registrar evento de segurança
         if (!success && error) {
@@ -138,13 +134,6 @@ export class NotificationMetricsInterceptor implements NestInterceptor {
    * Identifica o tipo de operação baseado na rota e método
    */
   private getOperationType(route: string, method: string): string {
-    if (route.includes('/sse')) {
-      if (method === 'GET' && route.endsWith('/sse')) return 'sse_connect';
-      if (route.includes('/stats')) return 'sse_stats';
-      if (route.includes('/status')) return 'sse_status';
-      return 'sse_operation';
-    }
-
     if (route.includes('/template')) {
       if (method === 'POST') return 'template_create';
       if (method === 'PUT') return 'template_update';
@@ -176,58 +165,11 @@ export class NotificationMetricsInterceptor implements NestInterceptor {
     success: boolean,
     duration: number,
   ) {
-    // Aqui podemos usar os métodos existentes do EnhancedMetricsService
-    // ou criar novos métodos específicos se necessário
-
-    // Por enquanto, vamos usar os métodos existentes de forma criativa
-    if (operationType.startsWith('sse_')) {
-      // Tratar como operação de cache para SSE (conexões ativas)
-      this.metricsService.recordCacheOperation(
-        success ? 'hit' : 'miss',
-        success,
-        'sse',
-      );
-      this.metricsService.recordCacheOperationDuration(
-        'sse_operation',
-        duration,
-        'sse',
-      );
-    } else {
-      // Tratar como operação de sistema
-      this.metricsService.recordSecurityEvent(
-        operationType,
-        success ? 'info' : 'error',
-        'notification_module',
-      );
-    }
-  }
-
-  /**
-   * Registra métricas específicas de SSE
-   */
-  private recordSseMetrics(
-    route: string,
-    method: string,
-    success: boolean,
-    userId?: string,
-  ) {
-    if (route.endsWith('/sse') && method === 'GET') {
-      // Nova conexão SSE
-      this.metricsService.recordSecurityEvent(
-        'sse_connection_attempt',
-        success ? 'info' : 'error',
-        'notification_module',
-      );
-
-      if (success && userId) {
-        // Registrar acesso a dados (LGPD compliance)
-        this.metricsService.recordLgpdDataAccess(
-          'notification_sse',
-          'read',
-          true,
-          'user',
-        );
-      }
-    }
+    // Registrar como operação de sistema
+    this.metricsService.recordSecurityEvent(
+      operationType,
+      success ? 'info' : 'error',
+      'notification_module',
+    );
   }
 }

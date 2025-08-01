@@ -317,7 +317,7 @@ export class NotificationManagerService implements OnModuleInit {
           assunto: 'Nova Notificação',
           corpo: mensagemPadrao,
           corpo_html: `<p>${mensagemPadrao}</p>`,
-          canais_disponiveis: ['sse', 'email'],
+          canais_disponiveis: ['ably', 'email'],
         };
 
         // Atribuir template padrão temporariamente para processamento
@@ -652,43 +652,7 @@ export class NotificationManagerService implements OnModuleInit {
         );
       }
 
-      // Registrar canal sistema (SSE - Fallback)
-      const canalSistema: CanalNotificacao = {
-        canal_id: 'sistema',
-        verificarDisponibilidade: async () => true, // SSE sempre disponível
-        enviar: async (notificacao) => {
-          try {
-            // Emitir evento para o listener SSE processar
-            this.eventEmitter.emit(
-              NOTIFICATION_CREATED,
-              new NotificationCreatedEvent(notificacao),
-            );
-
-            return {
-              sucesso: true,
-              mensagem: 'Notificação SSE enviada com sucesso (fallback)',
-              data_envio: new Date(),
-              dados_resposta: { canal: 'sistema', tipo: 'sse_fallback' },
-            };
-          } catch (error) {
-            this.logger.error(
-              `Erro ao enviar notificação SSE: ${error.message}`,
-              error.stack,
-            );
-            return {
-              sucesso: false,
-              mensagem: `Erro ao enviar notificação SSE: ${error.message}`,
-              data_envio: new Date(),
-              erro: error as Error,
-            };
-          }
-        },
-      };
-
-      this.canaisNotificacao.set('sistema', canalSistema);
-      this.logger.log(
-        'Canal de notificação registrado: sistema (SSE - Fallback)',
-      );
+      // Canal sistema removido - SSE não está mais disponível
 
       this.logger.log(
         `Total de ${this.canaisNotificacao.size} canais de notificação registrados`,

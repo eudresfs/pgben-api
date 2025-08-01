@@ -173,7 +173,7 @@ export class PendenciaController {
    */
   @Put(':pendenciaId/resolver')
   @RequiresPermission({
-    permissionName: 'pendencia.atualizar',
+    permissionName: 'pendencia.resolver',
     scopeType: TipoEscopo.UNIDADE,
   })
   @ApiOperation({
