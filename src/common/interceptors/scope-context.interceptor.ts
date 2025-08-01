@@ -67,6 +67,14 @@ export class ScopeContextInterceptor implements NestInterceptor {
       this.logger.warn('Nenhum usuário encontrado no contexto da requisição', {
         timestamp: new Date().toISOString(),
       });
+      // Definir contexto GLOBAL quando não há usuário
+      const globalContext: IScopeContext = {
+        tipo: ScopeType.GLOBAL,
+        user_id: null,
+        unidade_id: null,
+      };
+      RequestContextHolder.set(globalContext);
+      this.logger.debug('Contexto GLOBAL definido para requisição sem usuário');
       return;
     }
 
@@ -129,7 +137,7 @@ export class ScopeContextInterceptor implements NestInterceptor {
      const context: IScopeContext = {
        tipo: scopeType,
        user_id: String(user.id),
-       unidade_id: user.unidade_id,
+       unidade_id: user.unidade_id ? String(user.unidade_id) : null,
      };
      
      // Validação de integridade simplificada

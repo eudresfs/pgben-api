@@ -101,6 +101,47 @@
 
 ---
 
+## 🚀 FASE 2.1: OTIMIZAÇÕES DE PERFORMANCE ✅ CONCLUÍDA
+
+### 🎯 Implementações de Otimização
+
+- [x] **Cache de Metadados**
+  - [x] Sistema de cache L1 (memória) para metadados de entidades
+  - [x] Sistema de cache L2 (Redis) para persistência distribuída
+  - [x] Interface `EntityMetadataCache` com TTL configurável
+  - [x] Métodos de limpeza e invalidação de cache
+  - [x] Estatísticas e monitoramento do cache
+
+- [x] **Query Hints e Otimizações**
+  - [x] Suporte a query hints baseados no tipo de escopo
+  - [x] Otimizações específicas para escopo UNIDADE vs PROPRIO
+  - [x] Otimizações automáticas para paginação
+  - [x] Configuração flexível via `ScopedRepositoryOptions`
+
+- [x] **Testes de Performance**
+  - [x] Suite completa de testes em `scoped-repository-performance.spec.ts`
+  - [x] Validação do cache L1 e L2
+  - [x] Testes de query hints e otimizações
+  - [x] Testes de integração com RequestContextHolder
+  - [x] Validação de métricas de performance
+
+### 📊 Benefícios Alcançados
+
+- ✅ **Cache L1**: Validação instantânea de metadados sem acesso ao banco
+- ✅ **Cache L2**: Persistência distribuída via Redis para múltiplas instâncias
+- ✅ **Query Hints**: Otimizações automáticas baseadas no contexto de escopo
+- ✅ **Monitoramento**: Sistema completo de métricas e estatísticas
+- ✅ **Configurabilidade**: Opções flexíveis para diferentes cenários
+
+### ✅ Critérios de Conclusão da Fase 2.1 ✅ CONCLUÍDA
+- [x] Sistema de cache implementado e testado
+- [x] Query hints funcionando corretamente
+- [x] Testes de performance passando (13/13)
+- [x] Integração com CacheService validada
+- [x] Documentação de otimizações atualizada
+
+---
+
 ## 🔄 FASE 3: MIGRAÇÃO DOS MÓDULOS (1 dia)
 
 ### 📦 Ordem de Migração

@@ -1,7 +1,8 @@
-import { Provider, Inject } from '@nestjs/common';
+import { Provider, Inject, Optional } from '@nestjs/common';
 import { getDataSourceToken, getRepositoryToken } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { ScopedRepository } from '../repositories/scoped-repository';
+import { CacheService } from '../../shared/cache/cache.service';
 
 /**
  * Cria um provider para ScopedRepository de uma entidade específica
@@ -14,17 +15,29 @@ export function createScopedRepositoryProvider<Entity>(
 ): Provider {
   return {
     provide: getScopedRepositoryToken(entity),
-    useFactory: (dataSource: DataSource) => {
+    useFactory: (dataSource: DataSource, cacheService?: CacheService) => {
       // Obter o repository base do TypeORM
       const baseRepository = dataSource.getRepository(entity);
       
-      // Criar uma instância do ScopedRepository e copiar as propriedades do repository base
-      const scopedRepository = Object.create(ScopedRepository.prototype);
-      Object.assign(scopedRepository, baseRepository);
+      // Criar uma instância do ScopedRepository usando o construtor correto
+      const scopedRepository = new ScopedRepository(
+        entity,
+        baseRepository.manager,
+        baseRepository.queryRunner,
+        {
+          strictMode: true,
+          allowGlobalScope: false,
+          enableMetadataCache: true,
+          metadataCacheTTL: 3600,
+          enableQueryHints: true,
+          forceIndexUsage: false
+        },
+        cacheService
+      );
       
       return scopedRepository;
     },
-    inject: [getDataSourceToken()]
+    inject: [getDataSourceToken(), { token: CacheService, optional: true }]
   };
 }
 

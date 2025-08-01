@@ -4,6 +4,7 @@ import { Repository, SelectQueryBuilder } from 'typeorm';
 import { ScopedRepository } from '../repositories/scoped-repository';
 import { RequestContextHolder } from '../services/request-context-holder.service';
 import { ScopeType } from '../../enums/scope-type.enum';
+import { ScopeContextRequiredException } from '../exceptions/scope.exceptions';
 
 // Mock entity para testes
 class TestEntity {
@@ -50,6 +51,14 @@ describe('ScopedRepository', () => {
       delete: jest.fn(),
       metadata: {
         tableName: 'test_entity',
+        columns: [
+          { propertyName: 'id' },
+          { propertyName: 'name' },
+          { propertyName: 'user_id' },
+          { propertyName: 'unidade_id' },
+          { propertyName: 'created_at' },
+          { propertyName: 'updated_at' }
+        ]
       },
     } as any;
 
@@ -78,6 +87,17 @@ describe('ScopedRepository', () => {
     // Definir metadata usando defineProperty para evitar erro de read-only
     Object.defineProperty(scopedRepository, 'metadata', {
       value: mockRepository.metadata,
+      writable: false,
+      enumerable: true,
+      configurable: true
+    });
+    
+    // Configurar opções para permitir métodos globais
+    Object.defineProperty(scopedRepository, 'options', {
+      value: {
+        strictMode: false,
+        allowGlobalScope: true
+      },
       writable: false,
       enumerable: true,
       configurable: true
@@ -452,15 +472,18 @@ describe('ScopedRepository', () => {
   });
 
   describe('tratamento de contexto ausente', () => {
-    it('deve executar sem filtros quando não há contexto de requisição', async () => {
+    it('deve lançar ScopeContextRequiredException quando não há contexto de requisição', async () => {
       mockRequestContextHolder.get.mockReturnValue(undefined);
-      mockQueryBuilder.getMany.mockResolvedValue([]);
 
-      await scopedRepository.findAll();
-
-      expect(mockRepository.createQueryBuilder).toHaveBeenCalledWith('entity');
-      expect(mockQueryBuilder.andWhere).not.toHaveBeenCalled();
-      expect(mockQueryBuilder.getMany).toHaveBeenCalled();
+      await expect(scopedRepository.findAll()).rejects.toThrow(
+        ScopeContextRequiredException
+      );
+      await expect(scopedRepository.findById('test-id')).rejects.toThrow(
+        ScopeContextRequiredException
+      );
+      await expect(scopedRepository.countScoped()).rejects.toThrow(
+        ScopeContextRequiredException
+      );
     });
   });
 });

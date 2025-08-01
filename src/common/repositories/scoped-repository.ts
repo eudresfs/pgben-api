@@ -8,6 +8,7 @@ import {
   StrictModeViolationException 
 } from '../exceptions/scope.exceptions';
 import { Logger } from '@nestjs/common';
+import { CacheService } from '../../shared/cache/cache.service';
 
 /**
  * Opções de configuração para o ScopedRepository
@@ -19,6 +20,44 @@ export interface ScopedRepositoryOptions {
   allowGlobalScope?: boolean;
   /** Nome da operação para logs de auditoria */
   operationName?: string;
+  /** Habilitar cache de metadados para melhor performance */
+  enableMetadataCache?: boolean;
+  /** TTL do cache de metadados em segundos (padrão: 1 hora) */
+  metadataCacheTTL?: number;
+  /** Habilitar query hints para otimização de performance */
+  enableQueryHints?: boolean;
+  /** Forçar uso de índices específicos */
+  forceIndexUsage?: boolean;
+}
+
+/**
+ * Configurações de query hints para otimização
+ */
+interface QueryHintConfig {
+  /** Usar índice composto para escopo + ID */
+  useScopeIdIndex?: boolean;
+  /** Usar índice composto para escopo + data de criação */
+  useScopeCreatedAtIndex?: boolean;
+  /** Usar índice composto para escopo + status */
+  useScopeStatusIndex?: boolean;
+  /** Limite de registros para usar LIMIT otimizado */
+  optimizedLimitThreshold?: number;
+  /** Usar ORDER BY otimizado para paginação */
+  useOptimizedPagination?: boolean;
+}
+
+/**
+ * Interface para cache de metadados de entidade
+ */
+interface EntityMetadataCache {
+  /** Nomes das colunas da entidade */
+  columnNames: Set<string>;
+  /** Nome da entidade */
+  entityName: string;
+  /** Timestamp do cache */
+  cachedAt: number;
+  /** TTL do cache em milissegundos */
+  ttl: number;
 }
 
 /**
@@ -36,19 +75,39 @@ export interface ScopedRepositoryOptions {
 export class ScopedRepository<Entity> extends Repository<Entity> {
   private readonly logger = new Logger(ScopedRepository.name);
   private readonly options: ScopedRepositoryOptions;
+  private static cacheService: CacheService;
+  private static metadataCache = new Map<string, EntityMetadataCache>();
+  private readonly cacheKeyPrefix = 'scoped_repo_metadata';
 
   constructor(
     target: EntityTarget<Entity>,
     manager: EntityManager,
     queryRunner?: QueryRunner,
-    options: ScopedRepositoryOptions = {}
+    options: ScopedRepositoryOptions = {},
+    cacheService?: CacheService
   ) {
     super(target, manager, queryRunner);
     this.options = {
       strictMode: true, // Strict mode habilitado por padrão
       allowGlobalScope: false, // Desabilitar GLOBAL por padrão
+      enableMetadataCache: true, // Cache habilitado por padrão
+      metadataCacheTTL: 3600, // 1 hora por padrão
+      enableQueryHints: true, // Query hints habilitados por padrão
+      forceIndexUsage: false, // Não forçar índices por padrão
       ...options
     };
+    
+    // Configurar cache service se fornecido
+    if (cacheService && !ScopedRepository.cacheService) {
+      ScopedRepository.cacheService = cacheService;
+    }
+  }
+
+  /**
+   * Configura o serviço de cache globalmente para todos os ScopedRepositories
+   */
+  static setCacheService(cacheService: CacheService): void {
+    ScopedRepository.cacheService = cacheService;
   }
   
   /**
@@ -402,14 +461,173 @@ export class ScopedRepository<Entity> extends Repository<Entity> {
   }
   
   /**
-   * Verifica se uma coluna existe na entidade
+   * Verifica se uma coluna existe na entidade com cache otimizado
    */
   private hasColumn(columnName: string): boolean {
-    return this.metadata.columns.some(column => column.propertyName === columnName);
+    if (!this.options.enableMetadataCache) {
+      // Cache desabilitado: usar verificação direta
+      return this.metadata.columns.some(column => column.propertyName === columnName);
+    }
+
+    const entityName = this.metadata.name;
+    const cacheKey = `${this.cacheKeyPrefix}:${entityName}`;
+    
+    // Verificar cache em memória primeiro (L1)
+    const memoryCache = ScopedRepository.metadataCache.get(cacheKey);
+    if (memoryCache && this.isCacheValid(memoryCache)) {
+      return memoryCache.columnNames.has(columnName);
+    }
+
+    // Cache miss ou expirado: reconstruir
+    const columnNames = new Set(
+      this.metadata.columns.map(column => column.propertyName)
+    );
+    
+    const cacheEntry: EntityMetadataCache = {
+      columnNames,
+      entityName,
+      cachedAt: Date.now(),
+      ttl: (this.options.metadataCacheTTL || 3600) * 1000 // Converter para ms
+    };
+    
+    // Armazenar em cache L1 (memória)
+    ScopedRepository.metadataCache.set(cacheKey, cacheEntry);
+    
+    // Armazenar em cache L2 (Redis) se disponível
+    this.setCacheL2(cacheKey, cacheEntry);
+    
+    return columnNames.has(columnName);
   }
 
   /**
-   * Aplica filtros de escopo ao QueryBuilder com fail-fast
+   * Verifica se o cache ainda é válido
+   */
+  private isCacheValid(cache: EntityMetadataCache): boolean {
+    return (Date.now() - cache.cachedAt) < cache.ttl;
+  }
+
+  /**
+   * Armazena metadados no cache L2 (Redis) de forma assíncrona
+   */
+  private setCacheL2(key: string, data: EntityMetadataCache): void {
+    if (!ScopedRepository.cacheService) {
+      return;
+    }
+
+    // Executar de forma assíncrona para não bloquear
+    setImmediate(async () => {
+      try {
+        const serializedData = {
+          columnNames: Array.from(data.columnNames),
+          entityName: data.entityName,
+          cachedAt: data.cachedAt,
+          ttl: data.ttl
+        };
+        
+        await ScopedRepository.cacheService.set(
+          key, 
+          JSON.stringify(serializedData),
+          this.options.metadataCacheTTL || 3600
+        );
+        
+        this.logger.debug(`Cache L2 atualizado para entidade ${data.entityName}`);
+      } catch (error) {
+        this.logger.warn(`Erro ao armazenar cache L2 para ${data.entityName}: ${error.message}`);
+      }
+    });
+  }
+
+  /**
+   * Recupera metadados do cache L2 (Redis)
+   */
+  private async getCacheL2(key: string): Promise<EntityMetadataCache | null> {
+    if (!ScopedRepository.cacheService) {
+      return null;
+    }
+
+    try {
+      const cached = await ScopedRepository.cacheService.get(key);
+      if (!cached || typeof cached !== 'string') {
+        return null;
+      }
+
+      const data = JSON.parse(cached);
+      return {
+        columnNames: new Set(data.columnNames),
+        entityName: data.entityName,
+        cachedAt: data.cachedAt,
+        ttl: data.ttl
+      };
+    } catch (error) {
+      this.logger.warn(`Erro ao recuperar cache L2 para ${key}: ${error.message}`);
+      return null;
+    }
+  }
+
+  /**
+   * Limpa o cache de metadados para uma entidade específica
+   */
+  clearMetadataCache(): void {
+    const entityName = this.metadata.name;
+    const cacheKey = `${this.cacheKeyPrefix}:${entityName}`;
+    
+    // Limpar cache L1
+    ScopedRepository.metadataCache.delete(cacheKey);
+    
+    // Limpar cache L2 de forma assíncrona
+    if (ScopedRepository.cacheService) {
+      setImmediate(async () => {
+        try {
+          await ScopedRepository.cacheService.del(cacheKey);
+          this.logger.debug(`Cache limpo para entidade ${entityName}`);
+        } catch (error) {
+          this.logger.warn(`Erro ao limpar cache L2 para ${entityName}: ${error.message}`);
+        }
+      });
+    }
+  }
+
+  /**
+   * Limpa todo o cache de metadados (método estático)
+   */
+  static clearAllMetadataCache(): void {
+    ScopedRepository.metadataCache.clear();
+    
+    if (ScopedRepository.cacheService) {
+      setImmediate(async () => {
+        try {
+          // Como delPattern não existe, limpar todo o cache
+          // Em produção, seria melhor implementar delPattern no CacheService
+          await ScopedRepository.cacheService.clear();
+        } catch (error) {
+          console.warn(`Erro ao limpar cache L2 completo: ${error.message}`);
+        }
+      });
+    }
+  }
+
+  /**
+   * Obtém estatísticas do cache de metadados
+   */
+  static getCacheStats(): {
+    l1Size: number;
+    entities: string[];
+    oldestCache: number | null;
+    newestCache: number | null;
+  } {
+    const entities = Array.from(ScopedRepository.metadataCache.keys());
+    const caches = Array.from(ScopedRepository.metadataCache.values());
+    
+    return {
+      l1Size: ScopedRepository.metadataCache.size,
+      entities: entities.map(key => key.replace('scoped_repo_metadata:', '')),
+      oldestCache: caches.length > 0 ? Math.min(...caches.map(c => c.cachedAt)) : null,
+      newestCache: caches.length > 0 ? Math.max(...caches.map(c => c.cachedAt)) : null
+    };
+  }
+
+  /**
+   * Aplica filtros de escopo ao QueryBuilder com fail-fast e otimizações
    * 
    * @description
    * Método crítico que previne vazamento de dados aplicando fail-fast
@@ -447,6 +665,11 @@ export class ScopedRepository<Entity> extends Repository<Entity> {
       });
     }
     
+    // Aplicar query hints se habilitado
+    if (this.options.enableQueryHints) {
+      this.applyQueryHints(queryBuilder, context, alias);
+    }
+    
     switch (context.tipo) {
       case ScopeType.GLOBAL:
         // Escopo global: sem filtros adicionais
@@ -473,6 +696,100 @@ export class ScopedRepository<Entity> extends Repository<Entity> {
           `Tipo de escopo não suportado: ${context.tipo}`
         );
     }
+  }
+
+  /**
+   * Aplica query hints para otimização de performance
+   */
+  private applyQueryHints(
+    queryBuilder: SelectQueryBuilder<Entity>,
+    context: IScopeContext,
+    alias: string
+  ): void {
+    const tableName = this.metadata.tableName;
+    const hints: string[] = [];
+
+    // Sugerir índices compostos baseados no tipo de escopo
+    switch (context.tipo) {
+      case ScopeType.UNIDADE:
+        if (this.hasColumn('unidade_id')) {
+          // Sugerir índice composto (unidade_id, id) para consultas por escopo
+          hints.push(`USE INDEX (idx_${tableName}_unidade_id)`);
+          
+          // Para consultas com ordenação, sugerir índice com created_at
+          if (this.hasColumn('created_at')) {
+            hints.push(`USE INDEX (idx_${tableName}_unidade_created)`);
+          }
+        }
+        break;
+
+      case ScopeType.PROPRIO:
+        // Para escopo próprio, otimizar índice user_id
+        if (this.hasColumn('user_id')) {
+          hints.push(`USE INDEX (idx_${tableName}_user_id)`);
+        }
+        break;
+    }
+
+    // Aplicar hints se disponíveis (PostgreSQL usa diferentes sintaxes)
+    if (hints.length > 0 && this.options.forceIndexUsage) {
+      // Para PostgreSQL, usar comentários como hints
+      const hintComment = `/* ${hints.join(', ')} */`;
+      queryBuilder.comment(hintComment);
+    }
+
+    // Otimizações específicas para paginação
+    this.applyPaginationOptimizations(queryBuilder);
+  }
+
+  /**
+   * Aplica otimizações específicas para paginação
+   */
+  private applyPaginationOptimizations(
+    queryBuilder: SelectQueryBuilder<Entity>
+  ): void {
+    // Se a query tem LIMIT, otimizar para paginação
+    const queryString = queryBuilder.getQuery();
+    
+    if (queryString.includes('LIMIT') || queryString.includes('OFFSET')) {
+      // Para PostgreSQL, usar LIMIT otimizado
+      if (this.hasColumn('id')) {
+        // Sugerir ordenação por ID para paginação eficiente
+        queryBuilder.addOrderBy('entity.id', 'ASC');
+      }
+      
+      // Para consultas com muitos registros, usar cursor-based pagination hint
+      queryBuilder.comment('/* HINT: Consider cursor-based pagination for large datasets */');
+    }
+  }
+
+  /**
+   * Cria query builder otimizado com hints de performance
+   */
+  createOptimizedQueryBuilder(
+    alias?: string,
+    queryHints?: QueryHintConfig
+  ): SelectQueryBuilder<Entity> {
+    const query = this.createQueryBuilder(alias);
+    
+    if (this.options.enableQueryHints && queryHints) {
+      // Aplicar configurações específicas de hints
+      if (queryHints.useScopeIdIndex && this.hasColumn('unidade_id')) {
+        query.comment('/* USE INDEX: scope_id_composite */');
+      }
+      
+      if (queryHints.useOptimizedPagination) {
+        // Preparar para paginação otimizada
+        query.comment('/* HINT: Optimized for pagination */');
+      }
+      
+      if (queryHints.optimizedLimitThreshold) {
+        // Configurar threshold para LIMIT otimizado
+        query.comment(`/* LIMIT_THRESHOLD: ${queryHints.optimizedLimitThreshold} */`);
+      }
+    }
+    
+    return query;
   }
 
   /**
