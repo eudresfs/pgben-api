@@ -1,17 +1,55 @@
-import { Repository, SelectQueryBuilder, EntityTarget } from 'typeorm';
+import { Repository, SelectQueryBuilder, EntityTarget, UpdateResult, DeleteResult, EntityManager, QueryRunner } from 'typeorm';
 import { RequestContextHolder } from '../services/request-context-holder.service';
 import { ScopeType } from '../../enums/scope-type.enum';
 import { IScopeContext } from '../interfaces/scope-context.interface';
-import { ScopeViolationException } from '../exceptions/scope.exceptions';
+import { 
+  ScopeViolationException, 
+  ScopeContextRequiredException,
+  StrictModeViolationException 
+} from '../exceptions/scope.exceptions';
+import { Logger } from '@nestjs/common';
+
+/**
+ * Opções de configuração para o ScopedRepository
+ */
+export interface ScopedRepositoryOptions {
+  /** Modo strict: desabilita métodos globais e exige contexto sempre */
+  strictMode?: boolean;
+  /** Permite escopo GLOBAL (para administradores) */
+  allowGlobalScope?: boolean;
+  /** Nome da operação para logs de auditoria */
+  operationName?: string;
+}
 
 /**
  * Repository base com aplicação automática de escopo
  * 
  * @description
  * Estende o Repository do TypeORM para aplicar automaticamente
- * filtros de escopo baseados no contexto da requisição
+ * filtros de escopo baseados no contexto da requisição.
+ * 
+ * - Fail-fast quando contexto ausente (previne vazamento de dados)
+ * - Strict mode para desabilitar métodos globais
+ * - Proteção em operações bulk (update/delete)
+ * - Logs de auditoria para operações sensíveis
  */
 export class ScopedRepository<Entity> extends Repository<Entity> {
+  private readonly logger = new Logger(ScopedRepository.name);
+  private readonly options: ScopedRepositoryOptions;
+
+  constructor(
+    target: EntityTarget<Entity>,
+    manager: EntityManager,
+    queryRunner?: QueryRunner,
+    options: ScopedRepositoryOptions = {}
+  ) {
+    super(target, manager, queryRunner);
+    this.options = {
+      strictMode: true, // Strict mode habilitado por padrão
+      allowGlobalScope: false, // Desabilitar GLOBAL por padrão
+      ...options
+    };
+  }
   
   /**
    * Busca todas as entidades aplicando escopo automaticamente
@@ -151,8 +189,23 @@ export class ScopedRepository<Entity> extends Repository<Entity> {
   
   /**
    * Busca todas as entidades SEM aplicar escopo (uso administrativo)
+   * 
+   * @description
+   * Método protegido por strict mode para prevenir bypass acidental de filtros
    */
   async findAllGlobal(options?: any): Promise<Entity[]> {
+    // Verificar strict mode
+    this.validateGlobalAccess('findAllGlobal');
+    
+    // Log de auditoria para operação global
+    if (this.logger) {
+      this.logger.warn(`GLOBAL ACCESS: findAllGlobal executado`, {
+        entity: this.metadata.name,
+        timestamp: new Date().toISOString(),
+        context: RequestContextHolder.get()
+      });
+    }
+    
     const queryBuilder = this.createQueryBuilder('entity');
     
     if (options?.relations) {
@@ -171,6 +224,19 @@ export class ScopedRepository<Entity> extends Repository<Entity> {
    * Busca por ID SEM aplicar escopo (uso administrativo)
    */
   async findByIdGlobal(id: string | number, options?: any): Promise<Entity | null> {
+    // Verificar strict mode
+    this.validateGlobalAccess('findByIdGlobal');
+    
+    // Log de auditoria para operação global
+    if (this.logger) {
+      this.logger.warn(`GLOBAL ACCESS: findByIdGlobal executado para ID ${id}`, {
+        entity: this.metadata.name,
+        id,
+        timestamp: new Date().toISOString(),
+        context: RequestContextHolder.get()
+      });
+    }
+    
     const queryBuilder = this.createQueryBuilder('entity');
     queryBuilder.where('entity.id = :id', { id });
     
@@ -187,10 +253,153 @@ export class ScopedRepository<Entity> extends Repository<Entity> {
    * Conta todas as entidades SEM aplicar escopo
    */
   async countGlobal(): Promise<number> {
+    // Verificar strict mode
+    this.validateGlobalAccess('countGlobal');
+    
+    // Log de auditoria para operação global
+    if (this.logger) {
+      this.logger.warn(`GLOBAL ACCESS: countGlobal executado`, {
+        entity: this.metadata.name,
+        timestamp: new Date().toISOString(),
+        context: RequestContextHolder.get()
+      });
+    }
+    
     return this.createQueryBuilder('entity').getCount();
   }
   
+  // ========== PROTEÇÃO BULK OPERATIONS ==========
+  
+  /**
+   * Override do método update para aplicar escopo
+   * 
+   * @description
+   * Previne updates em massa que podem afetar dados de outras unidades
+   */
+  async update(criteria: any, partialEntity: any): Promise<UpdateResult> {
+    // Verificar se há contexto válido
+    const context = RequestContextHolder.get();
+    if (!context) {
+      throw new ScopeContextRequiredException('bulk update');
+    }
+    
+    // Log de auditoria para operação bulk
+    if (this.logger) {
+      this.logger.warn(`BULK UPDATE: Operação em massa detectada`, {
+        entity: this.metadata.name,
+        criteria: JSON.stringify(criteria),
+        context: context,
+        timestamp: new Date().toISOString()
+      });
+    }
+    
+    // Aplicar filtros de escopo aos critérios
+    const scopedCriteria = this.applyScopeToCriteria(criteria, context);
+    
+    return super.update(scopedCriteria, partialEntity);
+  }
+  
+  /**
+   * Override do método delete para aplicar escopo
+   * 
+   * @description
+   * Previne deletes em massa que podem afetar dados de outras unidades
+   */
+  async delete(criteria: any): Promise<DeleteResult> {
+    // Verificar se há contexto válido
+    const context = RequestContextHolder.get();
+    if (!context) {
+      throw new ScopeContextRequiredException('bulk delete');
+    }
+    
+    // Log de auditoria para operação bulk
+    if (this.logger) {
+      this.logger.warn(`BULK DELETE: Operação em massa detectada`, {
+        entity: this.metadata.name,
+        criteria: JSON.stringify(criteria),
+        context: context,
+        timestamp: new Date().toISOString()
+      });
+    }
+    
+    // Aplicar filtros de escopo aos critérios
+    const scopedCriteria = this.applyScopeToCriteria(criteria, context);
+    
+    return super.delete(scopedCriteria);
+  }
+  
   // ========== MÉTODOS PRIVADOS ==========
+  
+  /**
+   * Valida acesso a métodos globais
+   * 
+   * @description
+   * Verifica se operações globais são permitidas baseado na configuração
+   */
+  private validateGlobalAccess(methodName: string): void {
+    const context = RequestContextHolder.get();
+    
+    if (this.options?.strictMode) {
+      // Em strict mode, só permite se o usuário tem escopo GLOBAL
+      if (!context || context.tipo !== ScopeType.GLOBAL) {
+        throw new StrictModeViolationException(methodName);
+      }
+    }
+    
+    if (context && context.tipo !== ScopeType.GLOBAL && !this.options?.allowGlobalScope) {
+      throw new ScopeViolationException(
+        `Método ${methodName} requer escopo GLOBAL ou allowGlobalScope habilitado`
+      );
+    }
+  }
+  
+  /**
+   * Aplica filtros de escopo aos critérios de bulk operations
+   * 
+   * @description
+   * Adiciona filtros de escopo aos critérios de update/delete para prevenir
+   * operações em dados fora do escopo
+   */
+  private applyScopeToCriteria(criteria: any, context: IScopeContext): any {
+    const scopedCriteria = { ...criteria };
+    
+    switch (context.tipo) {
+      case ScopeType.GLOBAL:
+        // Escopo global: sem filtros adicionais
+        break;
+        
+      case ScopeType.UNIDADE:
+        if (context.unidade_id) {
+          // Para entidades com unidade_id direto
+          if (this.hasColumn('unidade_id')) {
+            scopedCriteria.unidade_id = context.unidade_id;
+          } else {
+            // Para entidades relacionadas, não permitir bulk operations
+            throw new ScopeViolationException(
+              'Operações em massa não suportadas para entidades relacionadas em escopo UNIDADE'
+            );
+          }
+        }
+        break;
+        
+      case ScopeType.PROPRIO:
+        if (this.hasColumn('user_id')) {
+          scopedCriteria.user_id = context.user_id;
+        } else {
+          throw new ScopeViolationException(
+            'Operações em massa não suportadas para entidades sem user_id em escopo PROPRIO'
+          );
+        }
+        break;
+        
+      default:
+        throw new ScopeViolationException(
+          `Tipo de escopo não suportado para bulk operations: ${context.tipo}`
+        );
+    }
+    
+    return scopedCriteria;
+  }
   
   /**
    * Verifica se uma coluna existe na entidade
@@ -200,7 +409,11 @@ export class ScopedRepository<Entity> extends Repository<Entity> {
   }
 
   /**
-   * Aplica filtros de escopo ao QueryBuilder
+   * Aplica filtros de escopo ao QueryBuilder com fail-fast
+   * 
+   * @description
+   * Método crítico que previne vazamento de dados aplicando fail-fast
+   * quando contexto não está disponível, ao invés de retornar dados sem filtros
    */
   private applyScopeToQuery(
     queryBuilder: SelectQueryBuilder<Entity>, 
@@ -208,9 +421,30 @@ export class ScopedRepository<Entity> extends Repository<Entity> {
   ): void {
     const context = RequestContextHolder.get();
     
+    // Fail-fast para prevenir vazamento de dados
     if (!context) {
-      // Se não há contexto, não aplicar filtros (para rotas públicas)
-      return;
+      const operation = this.options?.operationName || 'query';
+      
+      // Log de auditoria para tentativa de acesso sem contexto
+      if (this.logger) {
+        this.logger.error(`SECURITY ALERT: Tentativa de ${operation} sem contexto de escopo`, {
+          entity: this.metadata.name,
+          timestamp: new Date().toISOString(),
+          stackTrace: new Error().stack
+        });
+      }
+      
+      // Lançar exceção ao invés de retornar dados sem filtros
+      throw new ScopeContextRequiredException(operation);
+    }
+    
+    // Log de auditoria para operações com contexto válido
+    if (this.logger) {
+      this.logger.debug(`Aplicando escopo ${context.tipo} para ${this.metadata.name}`, {
+        userId: context.user_id,
+        unidadeId: context.unidade_id,
+        entity: this.metadata.name
+      });
     }
     
     switch (context.tipo) {

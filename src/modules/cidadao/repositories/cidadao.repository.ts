@@ -26,7 +26,13 @@ export interface FindAllOptions {
 @Injectable()
 export class CidadaoRepository extends ScopedRepository<Cidadao> {
   constructor(private readonly dataSource: DataSource) {
-    super(Cidadao, dataSource.createEntityManager());
+    const manager = dataSource.createEntityManager();
+    super(
+      Cidadao,
+      manager,
+      undefined,
+      { strictMode: true, allowGlobalScope: false }
+    );
   }
 
   /**
