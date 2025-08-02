@@ -8,7 +8,8 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm';
-import { Usuario, Unidade } from '@/entities';
+import { Usuario } from './usuario.entity';
+import { Unidade } from './unidade.entity';
 
 /**
  * Enum para status do job de download em lote
@@ -19,7 +20,7 @@ export enum StatusDownloadLoteEnum {
   COMPLETED = 'concluido',
   FAILED = 'erro',
   CANCELLED = 'cancelado',
-  EXPIRED = 'expirado'
+  EXPIRED = 'expirado',
 }
 
 /**

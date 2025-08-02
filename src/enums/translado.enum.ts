@@ -1,6 +1,6 @@
 /**
  * Enum para tipos de translado do benefício funeral
- * 
+ *
  * Define os tipos de translado disponíveis para o benefício funeral,
  * incluindo passagem pelo SVO (Serviço de Verificação de Óbitos) e ITEP
  * (Instituto Técnico-Científico de Perícia).

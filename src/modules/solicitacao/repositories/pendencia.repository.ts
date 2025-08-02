@@ -60,7 +60,8 @@ export class PendenciaRepository {
     solicitacaoId: string,
     incluirResolvidas: boolean = true,
   ): Promise<Pendencia[]> {
-    const queryBuilder = this.scopedRepository.createScopedQueryBuilder('pendencia')
+    const queryBuilder = this.scopedRepository
+      .createScopedQueryBuilder('pendencia')
       .leftJoinAndSelect('pendencia.registrado_por', 'registrado_por')
       .leftJoinAndSelect('pendencia.resolvido_por', 'resolvido_por')
       .leftJoin('pendencia.solicitacao', 'solicitacao')
@@ -84,11 +85,14 @@ export class PendenciaRepository {
   async buscarAbertasPorSolicitacao(
     solicitacaoId: string,
   ): Promise<Pendencia[]> {
-    return this.scopedRepository.createScopedQueryBuilder('pendencia')
+    return this.scopedRepository
+      .createScopedQueryBuilder('pendencia')
       .leftJoinAndSelect('pendencia.registrado_por', 'registrado_por')
       .leftJoin('pendencia.solicitacao', 'solicitacao')
       .where('pendencia.solicitacao_id = :solicitacaoId', { solicitacaoId })
-      .andWhere('pendencia.status = :status', { status: StatusPendencia.ABERTA })
+      .andWhere('pendencia.status = :status', {
+        status: StatusPendencia.ABERTA,
+      })
       .orderBy('pendencia.created_at', 'DESC')
       .getMany();
   }
@@ -223,7 +227,8 @@ export class PendenciaRepository {
    * @returns Lista de pendências filtradas
    */
   async buscarComFiltros(filtros: FiltrosPendencia): Promise<Pendencia[]> {
-    const queryBuilder = this.scopedRepository.createScopedQueryBuilder('pendencia')
+    const queryBuilder = this.scopedRepository
+      .createScopedQueryBuilder('pendencia')
       .leftJoinAndSelect('pendencia.solicitacao', 'solicitacao')
       .leftJoinAndSelect('pendencia.registrado_por', 'registrado_por')
       .leftJoinAndSelect('pendencia.resolvido_por', 'resolvido_por');
@@ -283,7 +288,8 @@ export class PendenciaRepository {
   async buscarComPrazoVencido(
     dataReferencia: Date = new Date(),
   ): Promise<Pendencia[]> {
-    return this.scopedRepository.createScopedQueryBuilder('pendencia')
+    return this.scopedRepository
+      .createScopedQueryBuilder('pendencia')
       .leftJoinAndSelect('pendencia.solicitacao', 'solicitacao')
       .leftJoinAndSelect('pendencia.registrado_por', 'registrado_por')
       .where('pendencia.status = :status', { status: StatusPendencia.ABERTA })
@@ -307,7 +313,8 @@ export class PendenciaRepository {
     const dataLimite = new Date();
     dataLimite.setDate(hoje.getDate() + diasAntecedencia);
 
-    return this.scopedRepository.createScopedQueryBuilder('pendencia')
+    return this.scopedRepository
+      .createScopedQueryBuilder('pendencia')
       .leftJoinAndSelect('pendencia.solicitacao', 'solicitacao')
       .leftJoinAndSelect('pendencia.registrado_por', 'registrado_por')
       .where('pendencia.status = :status', { status: StatusPendencia.ABERTA })
@@ -328,7 +335,8 @@ export class PendenciaRepository {
   async contarPorStatus(
     filtros?: Partial<FiltrosPendencia>,
   ): Promise<Record<StatusPendencia, number>> {
-    const queryBuilder = this.scopedRepository.createScopedQueryBuilder('pendencia')
+    const queryBuilder = this.scopedRepository
+      .createScopedQueryBuilder('pendencia')
       .leftJoin('pendencia.solicitacao', 'solicitacao')
       .select('pendencia.status', 'status')
       .addSelect('COUNT(*)', 'total')
@@ -378,10 +386,13 @@ export class PendenciaRepository {
    * @returns Boolean indicando se há pendências abertas
    */
   async temPendenciasAbertas(solicitacaoId: string): Promise<boolean> {
-    const count = await this.scopedRepository.createScopedQueryBuilder('pendencia')
+    const count = await this.scopedRepository
+      .createScopedQueryBuilder('pendencia')
       .leftJoin('pendencia.solicitacao', 'solicitacao')
       .where('pendencia.solicitacao_id = :solicitacaoId', { solicitacaoId })
-      .andWhere('pendencia.status = :status', { status: StatusPendencia.ABERTA })
+      .andWhere('pendencia.status = :status', {
+        status: StatusPendencia.ABERTA,
+      })
       .getCount();
 
     return count > 0;

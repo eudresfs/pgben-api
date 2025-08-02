@@ -59,6 +59,8 @@ export class CancelarConcessaoDto {
   })
   @IsOptional()
   @IsString({ message: 'Observações devem ser uma string' })
-  @MaxLength(1000, { message: 'Observações devem ter no máximo 1000 caracteres' })
+  @MaxLength(1000, {
+    message: 'Observações devem ter no máximo 1000 caracteres',
+  })
   observacoes?: string;
 }

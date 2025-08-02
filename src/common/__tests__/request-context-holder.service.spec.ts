@@ -17,7 +17,7 @@ describe('RequestContextHolder', () => {
       const context = {
         tipo: ScopeType.UNIDADE,
         user_id: 'user-123',
-        unidade_id: 'unidade-456'
+        unidade_id: 'unidade-456',
       };
 
       RequestContextHolder.set(context);
@@ -37,7 +37,7 @@ describe('RequestContextHolder', () => {
       const context = {
         tipo: ScopeType.PROPRIO,
         user_id: 'user-789',
-        unidade_id: 'unidade-101'
+        unidade_id: 'unidade-101',
       };
 
       RequestContextHolder.set(context);
@@ -49,7 +49,9 @@ describe('RequestContextHolder', () => {
     it('deve lançar erro quando não há contexto', () => {
       expect(() => {
         RequestContextHolder.getRequired();
-      }).toThrow('Contexto de escopo não encontrado. Verifique se o middleware está configurado.');
+      }).toThrow(
+        'Contexto de escopo não encontrado. Verifique se o middleware está configurado.',
+      );
     });
   });
 
@@ -58,7 +60,7 @@ describe('RequestContextHolder', () => {
       RequestContextHolder.set({
         tipo: ScopeType.GLOBAL,
         user_id: 'user-456',
-        unidade_id: 'unidade-789'
+        unidade_id: 'unidade-789',
       });
 
       expect(RequestContextHolder.hasContext()).toBe(true);
@@ -74,13 +76,13 @@ describe('RequestContextHolder', () => {
       const context1 = {
         tipo: ScopeType.UNIDADE,
         user_id: 'user-1',
-        unidade_id: 'unidade-1'
+        unidade_id: 'unidade-1',
       };
 
       const context2 = {
         tipo: ScopeType.PROPRIO,
         user_id: 'user-2',
-        unidade_id: 'unidade-2'
+        unidade_id: 'unidade-2',
       };
 
       RequestContextHolder.set(context1);
@@ -99,13 +101,13 @@ describe('RequestContextHolder', () => {
       const originalContext = {
         tipo: ScopeType.GLOBAL,
         user_id: 'original-user',
-        unidade_id: 'original-unidade'
+        unidade_id: 'original-unidade',
       };
 
       const tempContext = {
         tipo: ScopeType.UNIDADE,
         user_id: 'temp-user',
-        unidade_id: 'temp-unidade'
+        unidade_id: 'temp-unidade',
       };
 
       RequestContextHolder.set(originalContext);
@@ -125,16 +127,16 @@ describe('RequestContextHolder', () => {
       const context = {
         tipo: ScopeType.PROPRIO,
         user_id: 'async-user',
-        unidade_id: 'async-unidade'
+        unidade_id: 'async-unidade',
       };
 
       const result = await RequestContextHolder.runAsync(context, async () => {
         const currentContext = RequestContextHolder.get();
         expect(currentContext).toEqual(context);
-        
+
         // Simular operação assíncrona
-        await new Promise(resolve => setTimeout(resolve, 10));
-        
+        await new Promise((resolve) => setTimeout(resolve, 10));
+
         return 'async-result';
       });
 
@@ -145,15 +147,15 @@ describe('RequestContextHolder', () => {
       const context = {
         tipo: ScopeType.UNIDADE,
         user_id: 'async-user-2',
-        unidade_id: 'async-unidade-2'
+        unidade_id: 'async-unidade-2',
       };
 
       await RequestContextHolder.runAsync(context, async () => {
         // Verificar contexto antes da operação assíncrona
         expect(RequestContextHolder.get()).toEqual(context);
-        
-        await new Promise(resolve => setTimeout(resolve, 10));
-        
+
+        await new Promise((resolve) => setTimeout(resolve, 10));
+
         // Verificar contexto após a operação assíncrona
         expect(RequestContextHolder.get()).toEqual(context);
       });
@@ -165,13 +167,13 @@ describe('RequestContextHolder', () => {
       RequestContextHolder.set({
         tipo: ScopeType.GLOBAL,
         user_id: 'user-clear',
-        unidade_id: 'unidade-clear'
+        unidade_id: 'unidade-clear',
       });
 
       expect(RequestContextHolder.hasContext()).toBe(true);
-      
+
       RequestContextHolder.clear();
-      
+
       expect(RequestContextHolder.hasContext()).toBe(false);
       expect(RequestContextHolder.get()).toBeUndefined();
     });
@@ -188,24 +190,24 @@ describe('RequestContextHolder', () => {
       const context1 = {
         tipo: ScopeType.UNIDADE,
         user_id: 'parallel-user-1',
-        unidade_id: 'parallel-unidade-1'
+        unidade_id: 'parallel-unidade-1',
       };
 
       const context2 = {
         tipo: ScopeType.PROPRIO,
         user_id: 'parallel-user-2',
-        unidade_id: 'parallel-unidade-2'
+        unidade_id: 'parallel-unidade-2',
       };
 
       const promises = [
         RequestContextHolder.runAsync(context1, async () => {
-          await new Promise(resolve => setTimeout(resolve, 20));
+          await new Promise((resolve) => setTimeout(resolve, 20));
           return RequestContextHolder.get();
         }),
         RequestContextHolder.runAsync(context2, async () => {
-          await new Promise(resolve => setTimeout(resolve, 10));
+          await new Promise((resolve) => setTimeout(resolve, 10));
           return RequestContextHolder.get();
-        })
+        }),
       ];
 
       const results = await Promise.all(promises);

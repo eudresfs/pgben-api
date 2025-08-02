@@ -357,7 +357,6 @@ export class BeneficioController {
 
     return result;
   }
-  
 
   @Put(':id/requisitos/:requisitoId')
   @ApiOperation({
@@ -444,7 +443,8 @@ export class BeneficioController {
   @Get(':id/requisitos/:requisitoId/template')
   @ApiOperation({
     summary: 'Obtém informações do template',
-    description: 'Retorna as informações do template de um requisito documental',
+    description:
+      'Retorna as informações do template de um requisito documental',
   })
   @ApiParam({
     name: 'id',

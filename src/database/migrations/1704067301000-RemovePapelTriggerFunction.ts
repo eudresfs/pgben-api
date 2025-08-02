@@ -5,7 +5,9 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * Esta migração corrige o erro "relation 'papel_cidadao' does not exist" que ocorre
  * ao tentar criar membros da composição familiar
  */
-export class RemovePapelTriggerFunction1704067301000 implements MigrationInterface {
+export class RemovePapelTriggerFunction1704067301000
+  implements MigrationInterface
+{
   name = 'RemovePapelTriggerFunction1704067301000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

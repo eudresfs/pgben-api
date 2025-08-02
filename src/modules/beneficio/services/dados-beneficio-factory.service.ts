@@ -91,7 +91,7 @@ export class DadosBeneficioFactoryService {
   ): Promise<IDadosBeneficio> {
     const tipoBeneficio = await this.resolveTipoFromCodigoOrId(codigoOrId);
     const service = this.getService(tipoBeneficio);
-    
+
     // Verificar se já existem dados para esta solicitação
     const exists = await service.existsBySolicitacao(createDto.solicitacao_id);
     if (exists) {
@@ -99,7 +99,7 @@ export class DadosBeneficioFactoryService {
         `Dados de benefício já existem para esta solicitação`,
       );
     }
-    
+
     return service.create(createDto);
   }
 

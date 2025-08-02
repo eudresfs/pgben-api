@@ -80,9 +80,7 @@ import { DadosCestaBasicaRepository } from './repositories/dados-cesta-basica.re
       ),
     ), // Para WorkflowSolicitacaoService
     forwardRef(() =>
-      import('../pagamento/pagamento.module').then(
-        (m) => m.PagamentoModule,
-      ),
+      import('../pagamento/pagamento.module').then((m) => m.PagamentoModule),
     ), // Para PagamentoService usado pelo ConcessaoService
   ],
   controllers: [

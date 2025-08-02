@@ -396,21 +396,17 @@ export class SolicitacaoService {
     cidadaoId: string,
   ): Promise<Contato | null> {
     // Tenta buscar contato com proprietario = true primeiro
-    let contato = await this.dataSource
-      .getRepository(Contato)
-      .findOne({
-        where: { cidadao_id: cidadaoId, proprietario: true },
-        order: { created_at: 'DESC' }
-      });
+    let contato = await this.dataSource.getRepository(Contato).findOne({
+      where: { cidadao_id: cidadaoId, proprietario: true },
+      order: { created_at: 'DESC' },
+    });
 
     // Se não encontrou, busca com proprietario = false
     if (!contato) {
-      contato = await this.dataSource
-        .getRepository(Contato)
-        .findOne({
-          where: { cidadao_id: cidadaoId, proprietario: false },
-          order: { created_at: 'DESC' }
-        });
+      contato = await this.dataSource.getRepository(Contato).findOne({
+        where: { cidadao_id: cidadaoId, proprietario: false },
+        order: { created_at: 'DESC' },
+      });
     }
 
     return contato;
@@ -507,7 +503,7 @@ export class SolicitacaoService {
       if (beneficiario.unidade_id !== unidadeTecnico) {
         throw new BadRequestException(
           'Solicitações só podem ser feitas pela unidade atual do beneficiário. ' +
-          'Em caso de mudança de endereço, transfira o beneficiário de unidade antes.',
+            'Em caso de mudança de endereço, transfira o beneficiário de unidade antes.',
         );
       }
 
@@ -1337,8 +1333,6 @@ export class SolicitacaoService {
       }
     });
   }
-
-
 
   async desvincularDeterminacaoJudicial(
     solicitacaoId: string,

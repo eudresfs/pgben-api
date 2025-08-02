@@ -165,10 +165,14 @@ export class AppError extends HttpException {
     // Usar contextualMessage se disponível, senão usar localizedMessage ou message padrão
     const contextualMessage = this.context.data?.contextualMessage;
     const userFriendlyMessage = this.context.data?.userFriendlyMessage;
-    
+
     const response = {
       code: this.errorCode,
-      message: contextualMessage || userFriendlyMessage || this.localizedMessage || this.message,
+      message:
+        contextualMessage ||
+        userFriendlyMessage ||
+        this.localizedMessage ||
+        this.message,
       category: this.definition.category,
       timestamp: this.timestamp.toISOString(),
     };

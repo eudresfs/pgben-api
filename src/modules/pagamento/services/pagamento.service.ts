@@ -14,9 +14,9 @@ import { PagamentoUpdateStatusDto } from '../dtos/pagamento-update-status.dto';
 import { normalizeEnumFields } from '../../../shared/utils/enum-normalizer.util';
 import { PagamentoValidationUtil } from '../utils/pagamento-validation.util';
 import { PagamentoCalculatorService } from './pagamento-calculator.service';
-import { 
-  DadosPagamento, 
-  ResultadoCalculoPagamento 
+import {
+  DadosPagamento,
+  ResultadoCalculoPagamento,
 } from '../interfaces/pagamento-calculator.interface';
 import { format } from 'date-fns';
 
@@ -94,7 +94,6 @@ export class PagamentoService {
     page?: number;
     limit?: number;
   }) {
-
     const { items, total } =
       await this.pagamentoRepository.findWithFilters(filtros);
 
@@ -238,11 +237,9 @@ export class PagamentoService {
     return await this.pagamentoRepository.getEstatisticas();
   }
 
-
-
   /**
    * Gera pagamentos para uma concessão baseado no tipo de benefício
-   * 
+   *
    * Este método agora segue os princípios SOLID:
    * - Single Responsibility: apenas orquestra a criação de pagamentos
    * - Open/Closed: extensível via estratégias de cálculo
@@ -257,32 +254,36 @@ export class PagamentoService {
 
     try {
       // 1. Validar e preparar dados de entrada
-      const dadosPagamento = this.prepararDadosPagamento(concessao, solicitacao);
-      
+      const dadosPagamento = this.prepararDadosPagamento(
+        concessao,
+        solicitacao,
+      );
+
       // 2. Calcular dados do pagamento usando o serviço especializado
-      const resultadoCalculo = await this.pagamentoCalculatorService.calcularPagamento(dadosPagamento);
-      
+      const resultadoCalculo =
+        await this.pagamentoCalculatorService.calcularPagamento(dadosPagamento);
+
       // 3. Gerar as entidades de pagamento
       const pagamentosGerados = await this.criarPagamentos(
         concessao,
         solicitacao,
         resultadoCalculo,
-        usuarioId
+        usuarioId,
       );
 
       this.logger.log(
         `${pagamentosGerados.length} pagamentos gerados para concessão ${concessao.id} - ` +
-        `Total: R$ ${dadosPagamento.valor.toFixed(2)}`
+          `Total: R$ ${dadosPagamento.valor.toFixed(2)}`,
       );
 
       return pagamentosGerados;
     } catch (error) {
       this.logger.error(
         `Erro ao gerar pagamentos para concessão ${concessao.id}:`,
-        error.message
+        error.message,
       );
       throw new BadRequestException(
-        `Falha ao gerar pagamentos: ${error.message}`
+        `Falha ao gerar pagamentos: ${error.message}`,
       );
     }
   }
@@ -290,17 +291,26 @@ export class PagamentoService {
   /**
    * Prepara e valida os dados necessários para o cálculo do pagamento
    */
-  private prepararDadosPagamento(concessao: any, solicitacao: any): DadosPagamento {
+  private prepararDadosPagamento(
+    concessao: any,
+    solicitacao: any,
+  ): DadosPagamento {
     // Validar data de início
-    const dataInicio = concessao.data_inicio ? new Date(concessao.data_inicio) : new Date();
+    const dataInicio = concessao.data_inicio
+      ? new Date(concessao.data_inicio)
+      : new Date();
     if (isNaN(dataInicio.getTime())) {
-      throw new Error(`Data de início da concessão inválida: ${concessao.data_inicio}`);
+      throw new Error(
+        `Data de início da concessão inválida: ${concessao.data_inicio}`,
+      );
     }
 
     // Validar valor do benefício
     const valor = Number(solicitacao.tipo_beneficio?.valor) || 0;
     if (valor < 0) {
-      throw new Error(`Valor do benefício inválido: ${solicitacao.tipo_beneficio?.valor}`);
+      throw new Error(
+        `Valor do benefício inválido: ${solicitacao.tipo_beneficio?.valor}`,
+      );
     }
 
     // Validar tipo de benefício
@@ -313,7 +323,7 @@ export class PagamentoService {
       tipoBeneficio,
       valor,
       dataInicio,
-      dadosEspecificos: solicitacao.dados_especificos
+      dadosEspecificos: solicitacao.dados_especificos,
     };
   }
 
@@ -324,14 +334,20 @@ export class PagamentoService {
     concessao: any,
     solicitacao: any,
     resultado: ResultadoCalculoPagamento,
-    usuarioId: string
+    usuarioId: string,
   ): Promise<Pagamento[]> {
     const pagamentosGerados: Pagamento[] = [];
-    const { quantidadeParcelas, valorParcela, dataLiberacao, dataVencimento, intervaloParcelas } = resultado;
+    const {
+      quantidadeParcelas,
+      valorParcela,
+      dataLiberacao,
+      dataVencimento,
+      intervaloParcelas,
+    } = resultado;
 
     this.logger.log(
       `Criando ${quantidadeParcelas} parcelas de R$ ${valorParcela.toFixed(2)} ` +
-      `para ${solicitacao.tipo_beneficio?.nome}`
+        `para ${solicitacao.tipo_beneficio?.nome}`,
     );
 
     for (let i = 1; i <= quantidadeParcelas; i++) {
@@ -339,10 +355,11 @@ export class PagamentoService {
         concessao,
         solicitacao,
         resultado,
-        i
+        i,
       );
 
-      const user = usuarioId || solicitacao.liberador_id || solicitacao.tecnico_id;
+      const user =
+        usuarioId || solicitacao.liberador_id || solicitacao.tecnico_id;
       const pagamento = await this.create(dadosPagamento, user);
       pagamentosGerados.push(pagamento);
     }
@@ -357,14 +374,28 @@ export class PagamentoService {
     concessao: any,
     solicitacao: any,
     resultado: ResultadoCalculoPagamento,
-    numeroParcela: number
+    numeroParcela: number,
   ): any {
-    const { quantidadeParcelas, valorParcela, dataLiberacao, dataVencimento, intervaloParcelas } = resultado;
-    
+    const {
+      quantidadeParcelas,
+      valorParcela,
+      dataLiberacao,
+      dataVencimento,
+      intervaloParcelas,
+    } = resultado;
+
     // Calcular datas da parcela
-    const dataLiberacaoParcela = this.calcularDataParcela(dataLiberacao, numeroParcela - 1, intervaloParcelas);
-    const dataVencimentoParcela = this.calcularDataParcela(dataVencimento, numeroParcela - 1, intervaloParcelas);
-    
+    const dataLiberacaoParcela = this.calcularDataParcela(
+      dataLiberacao,
+      numeroParcela - 1,
+      intervaloParcelas,
+    );
+    const dataVencimentoParcela = this.calcularDataParcela(
+      dataVencimento,
+      numeroParcela - 1,
+      intervaloParcelas,
+    );
+
     // Ajustar valor da última parcela para compensar arredondamentos
     let valorFinal = valorParcela;
     if (numeroParcela === quantidadeParcelas && quantidadeParcelas > 1) {
@@ -372,11 +403,11 @@ export class PagamentoService {
       // Usar o valor total correto baseado no cálculo das parcelas
       const valorTotalCalculado = valorParcela * quantidadeParcelas;
       valorFinal = Number((valorTotalCalculado - totalCalculado).toFixed(2));
-      
+
       // Garantir que o valor final seja sempre positivo
       if (valorFinal <= 0) {
         this.logger.warn(
-          `Valor da última parcela calculado como ${valorFinal}, usando valor da parcela padrão: ${valorParcela}`
+          `Valor da última parcela calculado como ${valorFinal}, usando valor da parcela padrão: ${valorParcela}`,
         );
         valorFinal = valorParcela;
       }
@@ -399,7 +430,7 @@ export class PagamentoService {
         quantidadeParcelas,
         solicitacao.tipo_beneficio?.nome,
         dataLiberacaoParcela,
-        dataVencimentoParcela
+        dataVencimentoParcela,
       ),
     };
   }
@@ -407,13 +438,17 @@ export class PagamentoService {
   /**
    * Calcula a data de uma parcela específica
    */
-  private calcularDataParcela(dataBase: Date, indiceParcela: number, intervaloDias: number): Date {
+  private calcularDataParcela(
+    dataBase: Date,
+    indiceParcela: number,
+    intervaloDias: number,
+  ): Date {
     if (intervaloDias === 0 || indiceParcela === 0) {
       return new Date(dataBase);
     }
-    
+
     const novaData = new Date(dataBase);
-    novaData.setDate(novaData.getDate() + (indiceParcela * intervaloDias));
+    novaData.setDate(novaData.getDate() + indiceParcela * intervaloDias);
     return novaData;
   }
 
@@ -425,7 +460,7 @@ export class PagamentoService {
     totalParcelas: number,
     nomeBeneficio: string,
     dataLiberacao: Date,
-    dataVencimento: Date
+    dataVencimento: Date,
   ): string {
     return (
       `Pagamento ${numeroParcela}/${totalParcelas} - ${nomeBeneficio} - ` +

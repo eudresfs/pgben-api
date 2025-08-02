@@ -236,10 +236,7 @@ describe('AuthService', () => {
         updated_at: new Date(),
       };
 
-      const mockPermissions = [
-        { nome: 'read_users' },
-        { nome: 'write_users' },
-      ];
+      const mockPermissions = [{ nome: 'read_users' }, { nome: 'write_users' }];
 
       jest
         .spyOn(mockedUsuarioService, 'findById')
@@ -267,7 +264,9 @@ describe('AuthService', () => {
       // Configurar mocks do RefreshTokenService
       mockedRefreshTokenService.findToken.mockResolvedValue(mockRefreshToken);
       mockedRefreshTokenService.revokeToken.mockResolvedValue(true);
-      mockedRefreshTokenService.createToken.mockResolvedValue({ token: 'new-refresh-token' });
+      mockedRefreshTokenService.createToken.mockResolvedValue({
+        token: 'new-refresh-token',
+      });
 
       const result = await service.refreshToken(ctx, refreshTokenInput);
 

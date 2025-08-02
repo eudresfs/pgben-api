@@ -263,7 +263,7 @@ export class BeneficioService {
   async updateRequisito(
     beneficioId: string,
     requisitoId: string,
-    updateRequisitoDocumentoDto: UpdateRequisitoDocumentoDto
+    updateRequisitoDocumentoDto: UpdateRequisitoDocumentoDto,
   ) {
     // Verificar se o benefício existe
     await this.findById(beneficioId);
@@ -296,13 +296,15 @@ export class BeneficioService {
       updateRequisitoDocumentoDto.tipo_documento &&
       updateRequisitoDocumentoDto.tipo_documento !== requisito.tipo_documento
     ) {
-      const existingRequisito = await this.requisitoDocumentoRepository.findOne({
-        where: {
-          tipo_documento: updateRequisitoDocumentoDto.tipo_documento,
-          tipo_beneficio: { id: beneficioId },
-          id: Not(requisitoId),
+      const existingRequisito = await this.requisitoDocumentoRepository.findOne(
+        {
+          where: {
+            tipo_documento: updateRequisitoDocumentoDto.tipo_documento,
+            tipo_beneficio: { id: beneficioId },
+            id: Not(requisitoId),
+          },
         },
-      });
+      );
 
       if (existingRequisito) {
         throw new ConflictException(

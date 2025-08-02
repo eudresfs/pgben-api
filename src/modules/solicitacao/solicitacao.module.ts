@@ -96,12 +96,12 @@ import { PendenciaRepository } from './repositories/pendencia.repository';
     createScopedRepositoryProvider(Solicitacao),
     createScopedRepositoryProvider(HistoricoSolicitacao),
     createScopedRepositoryProvider(Pendencia),
-    
+
     // Repositórios customizados
     SolicitacaoRepository,
     HistoricoSolicitacaoRepository,
     PendenciaRepository,
-    
+
     // Serviços
     SolicitacaoService,
     DeterminacaoJudicialService,

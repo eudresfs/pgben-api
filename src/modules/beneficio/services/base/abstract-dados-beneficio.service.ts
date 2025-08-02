@@ -102,25 +102,25 @@ export abstract class AbstractDadosBeneficioService<
     if (existingData) {
       // Atualizar dados existentes (upsert)
       isUpdate = true;
-      
+
       // Validar dados para atualização
       await this.validateUpdateData(createDto as any, existingData);
-      
+
       // Atualizar entidade existente
       Object.assign(existingData, createDto, {
         updated_at: new Date(),
       });
-      
+
       savedEntity = await this.repository.save(existingData);
-      
+
       this.logger.log(
         `Dados de ${this.entityName} atualizados com sucesso para solicitação ${createDto.solicitacao_id}`,
       );
     } else {
       // Criar nova entidade
       const entity = this.repository.create(createDto as any);
-      savedEntity = await this.repository.save(entity) as unknown as TEntity;
-      
+      savedEntity = (await this.repository.save(entity)) as unknown as TEntity;
+
       this.logger.log(
         `Dados de ${this.entityName} criados com sucesso para solicitação ${createDto.solicitacao_id}`,
       );
@@ -128,7 +128,10 @@ export abstract class AbstractDadosBeneficioService<
 
     // Atualizar status e substatus da solicitação apenas se for criação (não atualização)
     if (!isUpdate) {
-      await this.atualizarStatusSolicitacao(createDto.solicitacao_id, usuarioId);
+      await this.atualizarStatusSolicitacao(
+        createDto.solicitacao_id,
+        usuarioId,
+      );
     }
 
     return savedEntity as unknown as TEntity;

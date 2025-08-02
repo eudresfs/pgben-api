@@ -11,8 +11,7 @@ import { CanalNotificacao } from '../../../entities/notification-template.entity
 export class UsuarioEventsListener {
   private readonly logger = new Logger(UsuarioEventsListener.name);
 
-  constructor() // private readonly notificationManager: NotificationManagerService, // TODO: Reativar após resolver dependência circular
-  {}
+  constructor() {} // private readonly notificationManager: NotificationManagerService, // TODO: Reativar após resolver dependência circular
 
   /**
    * Processa evento de criação de usuário para primeiro acesso

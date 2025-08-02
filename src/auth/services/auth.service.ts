@@ -431,7 +431,9 @@ export class AuthService {
     } else if (user.roles && user.roles.length > 0) {
       // Fallback para o mapeamento padrão se o escopo não estiver disponível
       const primaryRole = user.roles[0]; // Usar a primeira role como primária
-      const scopeType = SCOPE_CONSTANTS.DEFAULT_ROLE_SCOPE_MAPPING[primaryRole] || ScopeType.PROPRIO;
+      const scopeType =
+        SCOPE_CONSTANTS.DEFAULT_ROLE_SCOPE_MAPPING[primaryRole] ||
+        ScopeType.PROPRIO;
       payload['escopo'] = scopeType;
     } else {
       // Fallback para escopo PROPRIO se não houver roles

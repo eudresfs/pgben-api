@@ -355,23 +355,28 @@ export class WorkflowSolicitacaoService {
     solicitacaoAtualId: string,
   ): Promise<string[]> {
     this.logger.debug(
-      `Buscando histórico documental do cidadão ${cidadaoId} (excluindo solicitação ${solicitacaoAtualId})`
+      `Buscando histórico documental do cidadão ${cidadaoId} (excluindo solicitação ${solicitacaoAtualId})`,
     );
 
     // 1. Buscar documentos de solicitações anteriores do cidadão
-    const documentosHistoricos = await this.documentoService.findByCidadao(cidadaoId);
-    
+    const documentosHistoricos =
+      await this.documentoService.findByCidadao(cidadaoId);
+
     // Filtrar documentos que não sejam da solicitação atual
     const documentosOutrasSolicitacoes = documentosHistoricos.filter(
-      (doc) => doc.solicitacao_id !== solicitacaoAtualId
+      (doc) => doc.solicitacao_id !== solicitacaoAtualId,
     );
 
     // 2. Buscar documentos reutilizáveis válidos do cidadão
-    const documentosReutilizaveis = await this.documentoService.findReutilizaveis(cidadaoId);
-    
+    const documentosReutilizaveis =
+      await this.documentoService.findReutilizaveis(cidadaoId);
+
     // Combinar todos os documentos e extrair tipos únicos
-    const todosDocumentos = [...documentosOutrasSolicitacoes, ...documentosReutilizaveis];
-    
+    const todosDocumentos = [
+      ...documentosOutrasSolicitacoes,
+      ...documentosReutilizaveis,
+    ];
+
     // Filtrar apenas documentos válidos (não vencidos)
     const agora = new Date();
     const documentosValidos = todosDocumentos.filter((doc) => {
@@ -381,10 +386,12 @@ export class WorkflowSolicitacaoService {
       return new Date(doc.data_validade) >= agora;
     });
 
-    const tiposDocumentosHistoricos = [...new Set(documentosValidos.map((doc) => doc.tipo))];
+    const tiposDocumentosHistoricos = [
+      ...new Set(documentosValidos.map((doc) => doc.tipo)),
+    ];
 
     this.logger.debug(
-      `Encontrados ${tiposDocumentosHistoricos.length} tipos de documentos no histórico do cidadão: [${tiposDocumentosHistoricos.join(', ')}]`
+      `Encontrados ${tiposDocumentosHistoricos.length} tipos de documentos no histórico do cidadão: [${tiposDocumentosHistoricos.join(', ')}]`,
     );
 
     return tiposDocumentosHistoricos;
@@ -399,7 +406,9 @@ export class WorkflowSolicitacaoService {
    * @private
    */
   private async validarEnvioParaAnalise(solicitacaoId: string): Promise<void> {
-    this.logger.debug(`Iniciando validação de envio para análise da solicitação ${solicitacaoId}`);
+    this.logger.debug(
+      `Iniciando validação de envio para análise da solicitação ${solicitacaoId}`,
+    );
 
     // Buscar a solicitação com suas relações
     const solicitacao = await this.solicitacaoRepository.findOne({
@@ -408,34 +417,37 @@ export class WorkflowSolicitacaoService {
     });
 
     if (!solicitacao) {
-      this.logger.error(`Solicitação ${solicitacaoId} não encontrada durante validação de envio para análise`);
+      this.logger.error(
+        `Solicitação ${solicitacaoId} não encontrada durante validação de envio para análise`,
+      );
       throwSolicitacaoNotFound(solicitacaoId, {
-        data: { 
+        data: {
           context: 'validacao_envio_analise',
-          action: 'enviar_para_analise'
+          action: 'enviar_para_analise',
         },
       });
     }
 
     const tipoBeneficio = solicitacao.tipo_beneficio;
     const beneficiario = solicitacao.beneficiario;
-    
+
     this.logger.debug(
-      `Validando solicitação ${solicitacaoId} do benefício '${tipoBeneficio.nome}' para beneficiário '${beneficiario?.nome}'`
+      `Validando solicitação ${solicitacaoId} do benefício '${tipoBeneficio.nome}' para beneficiário '${beneficiario?.nome}'`,
     );
 
     // 1. Validar se existem dados específicos do benefício
     try {
-      const possuiDadosBeneficio = await this.dadosBeneficioFactoryService.existsBySolicitacao(
-        tipoBeneficio.codigo,
-        solicitacaoId,
-      );
+      const possuiDadosBeneficio =
+        await this.dadosBeneficioFactoryService.existsBySolicitacao(
+          tipoBeneficio.codigo,
+          solicitacaoId,
+        );
 
       if (!possuiDadosBeneficio) {
         this.logger.warn(
-          `Dados específicos do benefício '${tipoBeneficio.nome}' não preenchidos para solicitação ${solicitacaoId}`
+          `Dados específicos do benefício '${tipoBeneficio.nome}' não preenchidos para solicitação ${solicitacaoId}`,
         );
-        
+
         throwWorkflowStepRequired('dados_especificos_beneficio', {
           data: {
             solicitacaoId,
@@ -453,7 +465,7 @@ export class WorkflowSolicitacaoService {
       }
       this.logger.error(
         `Erro ao verificar dados específicos do benefício para solicitação ${solicitacaoId}: ${error.message}`,
-        error.stack
+        error.stack,
       );
       throw error;
     }
@@ -461,54 +473,63 @@ export class WorkflowSolicitacaoService {
     // 2. Validar se todos os requisitos documentais obrigatórios foram atendidos
     // Agora considera documentos já apresentados pelo cidadão anteriormente
     try {
-      const requisitosObrigatorios = await this.beneficioService.findRequisitosByBeneficioId(
-        tipoBeneficio.id,
-      );
+      const requisitosObrigatorios =
+        await this.beneficioService.findRequisitosByBeneficioId(
+          tipoBeneficio.id,
+        );
 
       const tiposDocumentosObrigatorios = requisitosObrigatorios
         .filter((requisito) => requisito.isObrigatorio())
         .map((requisito) => requisito.tipo_documento);
 
       this.logger.debug(
-        `Encontrados ${tiposDocumentosObrigatorios.length} tipos de documentos obrigatórios para benefício '${tipoBeneficio.nome}'`
+        `Encontrados ${tiposDocumentosObrigatorios.length} tipos de documentos obrigatórios para benefício '${tipoBeneficio.nome}'`,
       );
 
       if (tiposDocumentosObrigatorios.length > 0) {
         // Buscar documentos da solicitação atual
-        const documentosEnviados = await this.documentoService.findBySolicitacao(solicitacaoId);
-        const tiposDocumentosEnviados = documentosEnviados.map((doc) => doc.tipo);
+        const documentosEnviados =
+          await this.documentoService.findBySolicitacao(solicitacaoId);
+        const tiposDocumentosEnviados = documentosEnviados.map(
+          (doc) => doc.tipo,
+        );
 
         // Buscar documentos históricos do cidadão
-        const tiposDocumentosHistoricos = await this.buscarDocumentosHistoricosCidadao(
-          beneficiario.id,
-          solicitacaoId,
-        );
+        const tiposDocumentosHistoricos =
+          await this.buscarDocumentosHistoricosCidadao(
+            beneficiario.id,
+            solicitacaoId,
+          );
 
         // Combinar documentos da solicitação atual + histórico
         const todosDocumentosDisponiveis = [
-          ...new Set([...tiposDocumentosEnviados, ...tiposDocumentosHistoricos])
+          ...new Set([
+            ...tiposDocumentosEnviados,
+            ...tiposDocumentosHistoricos,
+          ]),
         ];
 
         this.logger.debug(
-          `Documentos enviados na solicitação atual ${solicitacaoId}: [${tiposDocumentosEnviados.join(', ')}]`
+          `Documentos enviados na solicitação atual ${solicitacaoId}: [${tiposDocumentosEnviados.join(', ')}]`,
         );
         this.logger.debug(
-          `Documentos disponíveis no histórico: [${tiposDocumentosHistoricos.join(', ')}]`
+          `Documentos disponíveis no histórico: [${tiposDocumentosHistoricos.join(', ')}]`,
         );
         this.logger.debug(
-          `Total de documentos disponíveis (atual + histórico): [${todosDocumentosDisponiveis.join(', ')}]`
+          `Total de documentos disponíveis (atual + histórico): [${todosDocumentosDisponiveis.join(', ')}]`,
         );
 
         // Verificar quais documentos obrigatórios ainda estão faltando
         const tiposFaltantes = tiposDocumentosObrigatorios.filter(
-          (tipoObrigatorio) => !todosDocumentosDisponiveis.includes(tipoObrigatorio),
+          (tipoObrigatorio) =>
+            !todosDocumentosDisponiveis.includes(tipoObrigatorio),
         );
 
         if (tiposFaltantes.length > 0) {
           this.logger.warn(
-            `Documentos obrigatórios ainda faltantes para solicitação ${solicitacaoId}: [${tiposFaltantes.join(', ')}]`
+            `Documentos obrigatórios ainda faltantes para solicitação ${solicitacaoId}: [${tiposFaltantes.join(', ')}]`,
           );
-          
+
           throwWorkflowStepRequired('documentos_obrigatorios', {
             data: {
               solicitacaoId,
@@ -531,13 +552,13 @@ export class WorkflowSolicitacaoService {
         } else {
           this.logger.log(
             `Todos os documentos obrigatórios foram atendidos para solicitação ${solicitacaoId}. ` +
-            `Documentos na solicitação atual: ${tiposDocumentosEnviados.length}, ` +
-            `Documentos do histórico: ${tiposDocumentosHistoricos.length}`
+              `Documentos na solicitação atual: ${tiposDocumentosEnviados.length}, ` +
+              `Documentos do histórico: ${tiposDocumentosHistoricos.length}`,
           );
         }
       } else {
         this.logger.debug(
-          `Nenhum documento obrigatório configurado para benefício '${tipoBeneficio.nome}'`
+          `Nenhum documento obrigatório configurado para benefício '${tipoBeneficio.nome}'`,
         );
       }
     } catch (error) {
@@ -546,7 +567,7 @@ export class WorkflowSolicitacaoService {
       }
       this.logger.error(
         `Erro ao validar documentos obrigatórios para solicitação ${solicitacaoId}: ${error.message}`,
-        error.stack
+        error.stack,
       );
       throw error;
     }
@@ -568,7 +589,7 @@ export class WorkflowSolicitacaoService {
     usuarioId: string,
   ): Promise<ResultadoTransicaoEstado> {
     this.logger.log(
-      `Iniciando processo de envio para análise da solicitação ${solicitacaoId} pelo usuário ${usuarioId}`
+      `Iniciando processo de envio para análise da solicitação ${solicitacaoId} pelo usuário ${usuarioId}`,
     );
 
     try {
@@ -576,7 +597,7 @@ export class WorkflowSolicitacaoService {
       await this.validarEnvioParaAnalise(solicitacaoId);
 
       this.logger.debug(
-        `Validação concluída com sucesso para solicitação ${solicitacaoId}. Iniciando transição de estado.`
+        `Validação concluída com sucesso para solicitação ${solicitacaoId}. Iniciando transição de estado.`,
       );
 
       // Se passou na validação, realizar a transição
@@ -589,11 +610,11 @@ export class WorkflowSolicitacaoService {
 
       if (resultado.sucesso) {
         this.logger.log(
-          `Solicitação ${solicitacaoId} enviada para análise com sucesso. Status alterado de '${resultado.status_anterior}' para '${resultado.status_atual}'`
+          `Solicitação ${solicitacaoId} enviada para análise com sucesso. Status alterado de '${resultado.status_anterior}' para '${resultado.status_atual}'`,
         );
       } else {
         this.logger.warn(
-          `Falha ao enviar solicitação ${solicitacaoId} para análise. Motivo: ${resultado.mensagem || 'Não especificado'}`
+          `Falha ao enviar solicitação ${solicitacaoId} para análise. Motivo: ${resultado.mensagem || 'Não especificado'}`,
         );
       }
 
@@ -608,7 +629,7 @@ export class WorkflowSolicitacaoService {
           errorCode: error.code,
           errorStack: error.stack,
           context: 'enviarParaAnalise',
-        }
+        },
       );
 
       // Re-propagar o erro para que seja tratado pelo filtro de exceções

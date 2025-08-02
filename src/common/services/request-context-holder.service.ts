@@ -5,7 +5,7 @@ import { InvalidScopeContextException } from '../exceptions/scope.exceptions';
 
 /**
  * Serviço responsável por gerenciar o contexto de escopo da requisição
- * 
+ *
  * @description
  * Utiliza AsyncLocalStorage para manter o contexto de escopo isolado
  * por requisição, garantindo thread-safety em aplicações assíncronas
@@ -16,7 +16,7 @@ export class RequestContextHolder {
 
   /**
    * Define o contexto de escopo para a requisição atual
-   * 
+   *
    * @param context - Contexto de escopo a ser definido
    */
   static set(context: IScopeContext): void {
@@ -25,7 +25,7 @@ export class RequestContextHolder {
 
   /**
    * Obtém o contexto de escopo da requisição atual
-   * 
+   *
    * @returns Contexto de escopo ou undefined se não estiver definido
    */
   static get(): IScopeContext | undefined {
@@ -34,7 +34,7 @@ export class RequestContextHolder {
 
   /**
    * Obtém o contexto de escopo da requisição atual ou lança exceção
-   * 
+   *
    * @returns Contexto de escopo
    * @throws InvalidScopeContextException se o contexto não estiver definido
    */
@@ -42,7 +42,7 @@ export class RequestContextHolder {
     const context = this.get();
     if (!context) {
       throw new InvalidScopeContextException(
-        'Contexto de escopo não encontrado. Verifique se o middleware está configurado.'
+        'Contexto de escopo não encontrado. Verifique se o middleware está configurado.',
       );
     }
     return context;
@@ -50,7 +50,7 @@ export class RequestContextHolder {
 
   /**
    * Executa uma função com um contexto específico
-   * 
+   *
    * @param context - Contexto a ser usado durante a execução
    * @param fn - Função a ser executada
    * @returns Resultado da função
@@ -61,18 +61,21 @@ export class RequestContextHolder {
 
   /**
    * Executa uma função assíncrona com um contexto específico
-   * 
+   *
    * @param context - Contexto a ser usado durante a execução
    * @param fn - Função assíncrona a ser executada
    * @returns Promise com o resultado da função
    */
-  static async runAsync<T>(context: IScopeContext, fn: () => Promise<T>): Promise<T> {
+  static async runAsync<T>(
+    context: IScopeContext,
+    fn: () => Promise<T>,
+  ): Promise<T> {
     return this.asyncLocalStorage.run(context, fn);
   }
 
   /**
    * Limpa o contexto atual
-   * 
+   *
    * @description
    * Útil para testes ou situações onde é necessário limpar o estado
    */
@@ -82,7 +85,7 @@ export class RequestContextHolder {
 
   /**
    * Verifica se há um contexto ativo
-   * 
+   *
    * @returns true se há contexto ativo, false caso contrário
    */
   static hasContext(): boolean {

@@ -236,7 +236,8 @@ export class PagamentoController {
   async findByConcessao(
     @Param('concessao_id', ParseUUIDPipe) concessao_id: string,
   ) {
-    const pagamentos = await this.pagamentoService.findByConcessao(concessao_id);
+    const pagamentos =
+      await this.pagamentoService.findByConcessao(concessao_id);
 
     return {
       success: true,

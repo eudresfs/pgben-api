@@ -6,6 +6,14 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import * as crypto from 'crypto';
+import {
+  DocumentoNaoEncontradoException,
+  AcessoNegadoDocumentoException,
+  IntegridadeDocumentoException,
+  ConfiguracaoStorageException,
+  DescriptografiaDocumentoException,
+  StorageIndisponivelException,
+} from '../../modules/documento/exceptions/documento.exceptions';
 
 /**
  * Serviço de integração com MinIO
@@ -432,6 +440,48 @@ export class MinioService implements OnModuleInit {
   }
 
   /**
+   * Obtém um stream de leitura de um arquivo do MinIO
+   * @param nomeArquivo Nome do arquivo no MinIO
+   * @returns Stream de leitura do arquivo
+   */
+  async getObjectStream(nomeArquivo: string): Promise<any> {
+    try {
+      this.logger.debug(
+        `Criando stream para arquivo do MinIO: ${nomeArquivo} do bucket: ${this.bucketName}`,
+      );
+
+      // Obter stream diretamente do MinIO
+      const stream = await this.minioClient.getObject(
+        this.bucketName,
+        nomeArquivo,
+      );
+
+      this.logger.debug(
+        `Stream criado com sucesso para arquivo: ${nomeArquivo}`,
+      );
+
+      return stream;
+    } catch (error) {
+      // Tratamento específico para diferentes tipos de erro
+      if (
+        error.code === 'NoSuchKey' ||
+        error.message?.includes('Not Found') ||
+        error.message?.includes('does not exist')
+      ) {
+        this.logger.warn(
+          `Arquivo não encontrado no MinIO: ${nomeArquivo} (bucket: ${this.bucketName})`,
+        );
+        throw new DocumentoNaoEncontradoException(undefined, nomeArquivo);
+      }
+
+      this.logger.error(
+        `Erro ao criar stream do arquivo do MinIO: ${error.message}`,
+      );
+      throw new StorageIndisponivelException(`Falha ao obter stream do documento: ${error.message}`);
+    }
+  }
+
+  /**
    * Baixa um arquivo do MinIO
    * @param nomeArquivo Nome do arquivo no MinIO
    * @returns Buffer com o conteúdo original do arquivo (descriptografado se necessário)
@@ -509,7 +559,7 @@ export class MinioService implements OnModuleInit {
           this.logger.error(
             `Erro ao descriptografar arquivo: ${error.message}`,
           );
-          throw new Error(
+          throw new DescriptografiaDocumentoException(
             `Falha ao descriptografar documento: ${error.message}`,
           );
         }
@@ -563,7 +613,7 @@ export class MinioService implements OnModuleInit {
             `Hash original: ${hashOriginal}, Hash calculado: ${hashCalculado}, ` +
             `Tamanho arquivo final: ${arquivoFinal.length}, Criptografado: ${criptografado}`,
         );
-        throw new Error(
+        throw new IntegridadeDocumentoException(
           'A integridade do documento foi comprometida. O hash não corresponde ao original.',
         );
       }
@@ -596,24 +646,33 @@ export class MinioService implements OnModuleInit {
         this.logger.warn(
           `Arquivo não encontrado no MinIO: ${nomeArquivo} (bucket: ${this.bucketName})`,
         );
-        throw new Error(`Documento não encontrado: ${nomeArquivo}`);
+        throw new DocumentoNaoEncontradoException(undefined, nomeArquivo);
       }
 
       if (error.code === 'NoSuchBucket') {
         this.logger.error(`Bucket não encontrado: ${this.bucketName}`);
-        throw new Error(
-          `Erro de configuração: bucket de armazenamento não encontrado`,
+        throw new ConfiguracaoStorageException(
+          `Bucket de armazenamento '${this.bucketName}' não encontrado`,
         );
       }
 
       if (error.code === 'AccessDenied') {
         this.logger.error(`Acesso negado ao arquivo: ${nomeArquivo}`);
-        throw new Error(`Acesso negado ao documento`);
+        throw new AcessoNegadoDocumentoException();
       }
 
       if (error.code === 'InvalidBucketName') {
         this.logger.error(`Nome do bucket inválido: ${this.bucketName}`);
-        throw new Error(`Erro de configuração: nome do bucket inválido`);
+        throw new ConfiguracaoStorageException(
+          `Nome do bucket '${this.bucketName}' é inválido`,
+        );
+      }
+
+      if (error.code === 'ECONNREFUSED' || error.message?.includes('connection')) {
+        this.logger.error(`Erro de conexão com MinIO: ${error.message}`);
+        throw new StorageIndisponivelException(
+          'Não foi possível conectar ao sistema de armazenamento',
+        );
       }
 
       // Log detalhado para outros erros
@@ -625,7 +684,9 @@ export class MinioService implements OnModuleInit {
         stack: error.stack,
       });
 
-      throw new Error(`Falha ao recuperar documento: ${error.message}`);
+      throw new StorageIndisponivelException(
+        `Falha ao recuperar documento: ${error.message}`,
+      );
     }
   }
 
@@ -654,14 +715,14 @@ export class MinioService implements OnModuleInit {
 
       if (error.code === 'NoSuchBucket') {
         this.logger.error(`Bucket não encontrado: ${this.bucketName}`);
-        throw new Error(
-          `Erro de configuração: bucket de armazenamento não encontrado`,
+        throw new ConfiguracaoStorageException(
+          `Bucket de armazenamento '${this.bucketName}' não encontrado`,
         );
       }
 
       if (error.code === 'AccessDenied') {
         this.logger.error(`Acesso negado para remover arquivo: ${nomeArquivo}`);
-        throw new Error(`Acesso negado para remover documento`);
+        throw new AcessoNegadoDocumentoException();
       }
 
       // Log detalhado para outros erros
@@ -673,7 +734,7 @@ export class MinioService implements OnModuleInit {
         stack: error.stack,
       });
 
-      throw new Error(`Falha ao remover documento: ${error.message}`);
+      throw new StorageIndisponivelException(`Falha ao remover documento: ${error.message}`);
     }
   }
 
@@ -731,7 +792,7 @@ export class MinioService implements OnModuleInit {
       );
     } catch (error) {
       this.logger.error(`Erro ao gerar URL pré-assinada: ${error.message}`);
-      throw new Error(
+      throw new StorageIndisponivelException(
         `Falha ao gerar URL para acesso ao documento: ${error.message}`,
       );
     }

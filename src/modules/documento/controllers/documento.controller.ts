@@ -199,9 +199,7 @@ export class DocumentoController {
     @GetUser() usuario: Usuario,
     @ReqContext() context: RequestContext,
   ) {
-    const documento = await this.documentoService.findById(
-      id
-    );
+    const documento = await this.documentoService.findById(id);
 
     // Auditoria do acesso ao documento
     await this.auditEventEmitter.emitEntityAccessed(
@@ -235,9 +233,7 @@ export class DocumentoController {
     @GetUser() usuario: Usuario,
     @ReqContext() context: RequestContext,
   ) {
-    const resultado = await this.documentoService.download(
-      id
-    );
+    const resultado = await this.documentoService.download(id);
 
     // Auditoria do download de documento com informações detalhadas
     await this.auditEventEmitter.emitEntityAccessed(
@@ -436,10 +432,7 @@ export class DocumentoController {
     @GetUser() usuario: Usuario,
     @ReqContext() context: RequestContext,
   ) {
-
-    const documentoAntes = await this.documentoService.findById(
-      id
-    );
+    const documentoAntes = await this.documentoService.findById(id);
 
     const resultado = await this.documentoService.verificar(
       id,
@@ -484,9 +477,7 @@ export class DocumentoController {
     @ReqContext() context: RequestContext,
   ) {
     // Buscar dados do documento antes da remoção com verificação de acesso
-    const documentoAntes = await this.documentoService.findById(
-      id
-    );
+    const documentoAntes = await this.documentoService.findById(id);
 
     await this.documentoService.remover(id, usuario.id);
 
@@ -570,9 +561,7 @@ export class DocumentoController {
     await this.documentoService.findById(id);
 
     // Obter documento e arquivo para gerar thumbnail
-    const documento = await this.documentoService.findById(
-      id
-    );
+    const documento = await this.documentoService.findById(id);
 
     const storageProvider = this.storageProviderFactory.getProvider();
     const fileBuffer = await storageProvider.obterArquivo(documento.caminho);
@@ -629,9 +618,7 @@ export class DocumentoController {
     @ReqContext() context: RequestContext,
   ): Promise<ThumbnailResponseDto> {
     // Verificar acesso ao documento
-    const documento = await this.documentoService.findById(
-      id
-    );
+    const documento = await this.documentoService.findById(id);
 
     // Obter arquivo para regenerar thumbnail
     const storageProvider = this.storageProviderFactory.getProvider();
@@ -819,7 +806,7 @@ export class DocumentoController {
 
     const jobId = await this.documentoBatchService.iniciarJob(
       filtrosConvertidos,
-      usuario.id
+      usuario.id,
     );
 
     return {
@@ -864,7 +851,7 @@ export class DocumentoController {
       status: this.mapStatusToResponseFormat(job.status),
       progress: job.progresso,
       documentCount: job.total_documentos,
-      estimatedSize: job.tamanho_estimado || 0,
+      estimatedSize: 0, // tamanho_estimado removido da interface
       actualSize: 0, // Será calculado quando o job for concluído
       createdAt: new Date(), // Será obtido da entidade quando necessário
       completedAt: undefined, // Será obtido da entidade quando necessário
@@ -916,7 +903,7 @@ export class DocumentoController {
     @Res() res: Response,
   ): Promise<void> {
     const resultado = await this.documentoBatchService.obterResultado(jobId);
-    
+
     if (!resultado.caminho_arquivo) {
       throw new Error('Arquivo não disponível para download');
     }
@@ -962,7 +949,9 @@ export class DocumentoController {
     return jobs.map((job) => ({
       id: job.job_id,
       status: this.mapStatusToResponseFormat(job.status),
-      progress: Math.round((job.documentos_processados / job.total_documentos) * 100) || 0,
+      progress:
+        Math.round((job.documentos_processados / job.total_documentos) * 100) ||
+        0,
       documentCount: job.total_documentos,
       estimatedSize: job.tamanho_arquivo || 0,
       actualSize: job.tamanho_arquivo || 0,
@@ -976,18 +965,20 @@ export class DocumentoController {
     }));
   }
 
-  private mapStatusToResponseFormat(status: StatusDownloadLoteEnum): 'PROCESSING' | 'COMPLETED' | 'FAILED' {
-     switch (status) {
-       case StatusDownloadLoteEnum.PROCESSING:
-         return 'PROCESSING';
-       case StatusDownloadLoteEnum.COMPLETED:
-         return 'COMPLETED';
-       case StatusDownloadLoteEnum.FAILED:
-         return 'FAILED';
-       default:
-         return 'PROCESSING';
-     }
-   }
+  private mapStatusToResponseFormat(
+    status: StatusDownloadLoteEnum,
+  ): 'PROCESSING' | 'COMPLETED' | 'FAILED' {
+    switch (status) {
+      case StatusDownloadLoteEnum.PROCESSING:
+        return 'PROCESSING';
+      case StatusDownloadLoteEnum.COMPLETED:
+        return 'COMPLETED';
+      case StatusDownloadLoteEnum.FAILED:
+        return 'FAILED';
+      default:
+        return 'PROCESSING';
+    }
+  }
 
   /**
    * Cancela um job de download em processamento

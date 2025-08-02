@@ -75,12 +75,15 @@ export class UpdateRequisitoDocumentoDto {
   })
   @IsOptional()
   @IsString({ message: 'Nome do template deve ser um texto' })
-  @MaxLength(255, { message: 'Nome do template deve ter no máximo 255 caracteres' })
+  @MaxLength(255, {
+    message: 'Nome do template deve ter no máximo 255 caracteres',
+  })
   template_nome?: string;
 
   @ApiPropertyOptional({
     description: 'Descrição ou instruções sobre o template',
-    example: 'Template padrão para comprovante de residência. Preencher com dados atualizados.',
+    example:
+      'Template padrão para comprovante de residência. Preencher com dados atualizados.',
   })
   @IsOptional()
   @IsString({ message: 'Descrição do template deve ser um texto' })

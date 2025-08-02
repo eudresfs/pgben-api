@@ -34,7 +34,7 @@ export class AuditEventEmitter {
     // Inicializa o log de fallback para eventos que falharem no Redis
     this.fallbackLog = createWriteStream(
       join(process.cwd(), 'logs', 'audit-fallback.log'),
-      { flags: 'a' }
+      { flags: 'a' },
     );
   }
 
@@ -87,7 +87,7 @@ export class AuditEventEmitter {
               error: queueError.stack,
             },
           );
-          
+
           // Fallback: salva o evento em arquivo de log
           this.writeToFallbackLog(enrichedEvent, queueError);
         });
@@ -388,7 +388,7 @@ export class AuditEventEmitter {
       };
 
       this.fallbackLog.write(JSON.stringify(logEntry) + '\n');
-      
+
       this.logger.warn(
         `Audit event written to fallback log: ${event.eventType}`,
         {

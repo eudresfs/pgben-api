@@ -32,7 +32,7 @@ export class ComprovanteService {
     private readonly comprovanteRepository: ComprovanteRepository,
     private readonly pagamentoRepository: PagamentoRepository,
     private readonly storageService: StorageService,
-  ) { }
+  ) {}
 
   /**
    * Faz upload de um comprovante
@@ -86,9 +86,9 @@ export class ComprovanteService {
     // Update payment with proof of payment details
     await this.pagamentoRepository.update(pagamento.id, {
       comprovante_id: comprovante.id,
-      data_pagamento: new Date(), 
+      data_pagamento: new Date(),
       data_conclusao: new Date(),
-      status: StatusPagamentoEnum.CONFIRMADO
+      status: StatusPagamentoEnum.CONFIRMADO,
     });
 
     this.logger.log(`Comprovante ${comprovante.id} criado com sucesso`);

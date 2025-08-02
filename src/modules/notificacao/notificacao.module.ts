@@ -94,10 +94,7 @@ import { NotificacaoProativaScheduler } from './schedulers/notificacao-proativa.
     forwardRef(() => MonitoringModule),
     AblyModule,
   ],
-  controllers: [
-    NotificacaoController,
-    NotificacaoAvancadaController,
-  ],
+  controllers: [NotificacaoController, NotificacaoAvancadaController],
   providers: [
     // Serviços principais
     NotificacaoService,

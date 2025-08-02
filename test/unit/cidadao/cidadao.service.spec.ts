@@ -81,7 +81,7 @@ describe('CidadaoService', () => {
     create: jest.fn(),
     update: jest.fn(),
     remove: jest.fn(),
-  }; };
+  };
 
   const mockCidadao: Cidadao = {
     id: '550e8400-e29b-41d4-a716-446655440000',
@@ -311,7 +311,7 @@ describe('CidadaoService', () => {
         mockCidadao.id,
         'user-123',
       );
-    });}]}}
+    });
 
     it('deve retornar os dados corretos no DTO de resposta', async () => {
       const cidadaoCompleto = {
@@ -395,7 +395,11 @@ describe('CidadaoService', () => {
     it('deve retornar um cidadão pelo CPF', async () => {
       mockCidadaoRepository.findByCpf.mockResolvedValue(mockCidadao);
 
-      const result = await service.findByCpf('123.456.789-09', false, 'user-123');
+      const result = await service.findByCpf(
+        '123.456.789-09',
+        false,
+        'user-123',
+      );
 
       expect(result).toEqual(
         plainToInstance(CidadaoResponseDto, mockCidadao, {
@@ -419,7 +423,11 @@ describe('CidadaoService', () => {
     it('deve retornar cidadão sem relacionamentos quando includeRelations for false', async () => {
       mockCidadaoRepository.findByCpf.mockResolvedValue(mockCidadao);
 
-      const result = await service.findByCpf('123.456.789-09', false, 'user-123');
+      const result = await service.findByCpf(
+        '123.456.789-09',
+        false,
+        'user-123',
+      );
 
       expect(result).toEqual(
         plainToInstance(CidadaoResponseDto, mockCidadao, {

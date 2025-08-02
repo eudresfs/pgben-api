@@ -1,4 +1,10 @@
-import { Module, Logger, MiddlewareConsumer, NestModule, RequestMethod } from '@nestjs/common';
+import {
+  Module,
+  Logger,
+  MiddlewareConsumer,
+  NestModule,
+  RequestMethod,
+} from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CacheModule } from '@nestjs/cache-manager';
@@ -100,9 +106,9 @@ import { RequestContextHolder } from './common/services/request-context-holder.s
         if (!options) {
           throw new Error('Invalid options passed');
         }
-        
+
         const dataSource = new DataSource(options);
-        
+
         // Verificar se o DataSource já foi adicionado para evitar erro de duplicação
         try {
           return addTransactionalDataSource(dataSource);
@@ -187,12 +193,14 @@ import { RequestContextHolder } from './common/services/request-context-holder.s
 })
 export class AppModule implements NestModule {
   constructor() {
-    console.log('✅ AppModule inicializado - com autenticação e ScopedRepository');
+    console.log(
+      '✅ AppModule inicializado - com autenticação e ScopedRepository',
+    );
   }
 
   /**
    * Configura middlewares globais
-   * 
+   *
    * @description
    * Middlewares removidos em favor do ScopeContextInterceptor
    * que executa após o processamento do JWT pelo AuthGuard.

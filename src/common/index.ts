@@ -8,7 +8,7 @@ export { IScopeContext } from './interfaces/scope-context.interface';
 export {
   ScopeViolationException,
   InvalidScopeContextException,
-  InvalidScopeTypeException
+  InvalidScopeTypeException,
 } from './exceptions/scope.exceptions';
 
 // Services
@@ -22,7 +22,7 @@ export {
   createScopedRepositoryProvider,
   getScopedRepositoryToken,
   InjectScopedRepository,
-  createScopedRepositoryProviders
+  createScopedRepositoryProviders,
 } from './providers/scoped-repository.provider';
 
 // Decorators
@@ -30,7 +30,7 @@ export {
   NoScope,
   hasNoScopeDecorator,
   NoScopeAuditInterceptor,
-  NO_SCOPE_KEY
+  NO_SCOPE_KEY,
 } from './decorators/no-scope.decorator';
 
 // Middleware

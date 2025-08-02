@@ -45,7 +45,7 @@ export class PagamentoBatchController {
   constructor(private readonly batchService: PagamentoBatchService) {}
 
   @Post('create')
-  @RequiresPermission({permissionName: 'pagamento.criar'})
+  @RequiresPermission({ permissionName: 'pagamento.criar' })
   @ApiOperation({
     summary: 'Criar múltiplos pagamentos em lote',
     description:
@@ -138,7 +138,7 @@ export class PagamentoBatchController {
   }
 
   @Post('liberar')
-  @RequiresPermission({permissionName: 'pagamento.liberar'})
+  @RequiresPermission({ permissionName: 'pagamento.liberar' })
   @ApiOperation({
     summary: 'Liberar múltiplos pagamentos em lote',
     description:
@@ -212,7 +212,7 @@ export class PagamentoBatchController {
   }
 
   @Post('update-status')
-  @RequiresPermission({permissionName: 'pagamento.atualizar_status'})
+  @RequiresPermission({ permissionName: 'pagamento.atualizar_status' })
   @ApiOperation({
     summary: 'Atualizar status de múltiplos pagamentos em lote',
     description: 'Atualiza o status de vários pagamentos de forma otimizada',
@@ -295,7 +295,7 @@ export class PagamentoBatchController {
   }
 
   @Post('validar-comprovantes')
-  @RequiresPermission({permissionName: 'pagamento.validar_comprovantes'})
+  @RequiresPermission({ permissionName: 'pagamento.validar_comprovantes' })
   @ApiOperation({
     summary: 'Validar múltiplos comprovantes em lote',
     description:
@@ -359,7 +359,7 @@ export class PagamentoBatchController {
   }
 
   @Get('status')
-  @RequiresPermission({permissionName: 'pagamento.visualizar_status'})
+  @RequiresPermission({ permissionName: 'pagamento.visualizar_status' })
   @ApiOperation({
     summary: 'Obter status das operações em lote',
     description:

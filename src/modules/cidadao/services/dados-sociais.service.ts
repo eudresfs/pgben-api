@@ -37,9 +37,7 @@ export class DadosSociaisService {
     });
 
     if (!cidadao) {
-      throw new NotFoundException(
-        `Cidadão com ID ${cidadaoId} não encontrado`,
-      );
+      throw new NotFoundException(`Cidadão com ID ${cidadaoId} não encontrado`);
     }
 
     // Validar benefícios
@@ -55,29 +53,38 @@ export class DadosSociaisService {
       this.dadosSociaisRepository.merge(dadosExistentes, {
         // Campos obrigatórios sempre atualizados
         escolaridade: createDadosSociaisDto.escolaridade,
-        exerce_atividade_remunerada: createDadosSociaisDto.exerce_atividade_remunerada ?? false,
+        exerce_atividade_remunerada:
+          createDadosSociaisDto.exerce_atividade_remunerada ?? false,
         recebe_pbf: createDadosSociaisDto.recebe_pbf ?? false,
         recebe_bpc: createDadosSociaisDto.recebe_bpc ?? false,
-        recebe_tributo_crianca: createDadosSociaisDto.recebe_tributo_crianca ?? false,
+        recebe_tributo_crianca:
+          createDadosSociaisDto.recebe_tributo_crianca ?? false,
         pensao_morte: createDadosSociaisDto.pensao_morte ?? false,
         aposentadoria: createDadosSociaisDto.aposentadoria ?? false,
         outros_beneficios: createDadosSociaisDto.outros_beneficios ?? false,
-        
+
         // Campos opcionais - limpar se não enviados
         publico_prioritario: createDadosSociaisDto.publico_prioritario ?? null,
         renda: createDadosSociaisDto.renda ?? null,
-        ocupacao_beneficiario: createDadosSociaisDto.ocupacao_beneficiario ?? null,
-        tipo_insercao_beneficiario: createDadosSociaisDto.tipo_insercao_beneficiario ?? null,
+        ocupacao_beneficiario:
+          createDadosSociaisDto.ocupacao_beneficiario ?? null,
+        tipo_insercao_beneficiario:
+          createDadosSociaisDto.tipo_insercao_beneficiario ?? null,
         valor_pbf: createDadosSociaisDto.valor_pbf ?? null,
         modalidade_bpc: createDadosSociaisDto.modalidade_bpc ?? null,
         valor_bpc: createDadosSociaisDto.valor_bpc ?? null,
-        valor_tributo_crianca: createDadosSociaisDto.valor_tributo_crianca ?? null,
-        descricao_outros_beneficios: createDadosSociaisDto.descricao_outros_beneficios ?? null,
-        curso_profissionalizante: createDadosSociaisDto.curso_profissionalizante ?? null,
-        interesse_curso_profissionalizante: createDadosSociaisDto.interesse_curso_profissionalizante ?? null,
+        valor_tributo_crianca:
+          createDadosSociaisDto.valor_tributo_crianca ?? null,
+        descricao_outros_beneficios:
+          createDadosSociaisDto.descricao_outros_beneficios ?? null,
+        curso_profissionalizante:
+          createDadosSociaisDto.curso_profissionalizante ?? null,
+        interesse_curso_profissionalizante:
+          createDadosSociaisDto.interesse_curso_profissionalizante ?? null,
         situacao_trabalho: createDadosSociaisDto.situacao_trabalho ?? null,
         area_trabalho: createDadosSociaisDto.area_trabalho ?? null,
-        familiar_apto_trabalho: createDadosSociaisDto.familiar_apto_trabalho ?? null,
+        familiar_apto_trabalho:
+          createDadosSociaisDto.familiar_apto_trabalho ?? null,
       });
 
       return await this.dadosSociaisRepository.save(dadosExistentes);
@@ -120,7 +127,9 @@ export class DadosSociaisService {
     });
 
     if (!dadosSociais) {
-      throw new BadRequestException('Dados sociais não encontrados para este cidadão');
+      throw new BadRequestException(
+        'Dados sociais não encontrados para este cidadão',
+      );
     }
 
     // Validações básicas de benefícios

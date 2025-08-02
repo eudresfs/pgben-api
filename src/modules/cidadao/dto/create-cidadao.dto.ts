@@ -19,11 +19,7 @@ import { EnderecoBodyDto } from './endereco-body.dto';
 import { CreateDadosSociaisDto } from './create-dados-sociais.dto';
 import { CreateSituacaoMoradiaDto } from './create-situacao-moradia.dto';
 import { CreateInfoBancariaBodyDto } from './create-info-bancaria-body.dto';
-import {
-  Sexo,
-  EstadoCivil,
-  TipoDocumentoEnum,
-} from '../../../enums';
+import { Sexo, EstadoCivil, TipoDocumentoEnum } from '../../../enums';
 import { CPFValidator } from '../validators/cpf-validator';
 import { NISValidator } from '../validators/nis-validator';
 

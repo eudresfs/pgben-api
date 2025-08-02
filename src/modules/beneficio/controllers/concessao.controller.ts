@@ -36,7 +36,10 @@ import { GetUser } from '../../../auth/decorators/get-user.decorator';
 import { Usuario } from '../../../entities/usuario.entity';
 import { FiltroConcessaoDto } from '../dto/filtro-concessao.dto';
 import { ConcessaoListResponseDto } from '../dto/concessao-response.dto';
-import { PaginatedResponseDto, PaginationMetaDto } from '../../../shared/dtos/pagination.dto';
+import {
+  PaginatedResponseDto,
+  PaginationMetaDto,
+} from '../../../shared/dtos/pagination.dto';
 import { AuditEventEmitter } from '../../auditoria/events/emitters/audit-event.emitter';
 import { AuditEventType } from '../../auditoria/events/types/audit-event.types';
 import { ReqContext } from '../../../shared/request-context/req-context.decorator';
@@ -150,9 +153,9 @@ export class ConcessaoController {
    * @returns Resposta paginada com lista de concessões e metadados
    */
   @Get()
-  @RequiresPermission({ 
+  @RequiresPermission({
     permissionName: 'concessao.listar',
-    scopeType: ScopeType.UNIT
+    scopeType: ScopeType.UNIT,
   })
   @ApiOperation({
     summary: 'Lista concessões com paginação',
@@ -162,7 +165,8 @@ export class ConcessaoController {
   @ApiQuery({
     name: 'page',
     required: false,
-    description: 'Número da página (começa em 1). Se informado, sobrescreve o offset',
+    description:
+      'Número da página (começa em 1). Se informado, sobrescreve o offset',
     type: Number,
     example: 1,
   })
@@ -176,7 +180,8 @@ export class ConcessaoController {
   @ApiQuery({
     name: 'offset',
     required: false,
-    description: 'Deslocamento para paginação (padrão: 0). Ignorado se page for informado',
+    description:
+      'Deslocamento para paginação (padrão: 0). Ignorado se page for informado',
     type: Number,
     example: 0,
   })
@@ -192,11 +197,11 @@ export class ConcessaoController {
     description: 'Data de início máxima (YYYY-MM-DD)',
     example: '2025-12-31',
   })
-  @ApiQuery({ 
-    name: 'status', 
-    required: false, 
+  @ApiQuery({
+    name: 'status',
+    required: false,
     enum: StatusConcessao,
-    description: 'Status da concessão para filtrar'
+    description: 'Status da concessão para filtrar',
   })
   @ApiQuery({
     name: 'unidadeId',
@@ -242,7 +247,10 @@ export class ConcessaoController {
       type: 'object',
       properties: {
         statusCode: { type: 'number', example: 400 },
-        message: { type: 'string', example: 'Data de início deve ser anterior à data final' },
+        message: {
+          type: 'string',
+          example: 'Data de início deve ser anterior à data final',
+        },
         error: { type: 'string', example: 'Bad Request' },
       },
     },
@@ -252,7 +260,7 @@ export class ConcessaoController {
     @GetUser() usuario: Usuario,
   ): Promise<PaginatedResponseDto<ConcessaoListResponseDto>> {
     const result = await this.concessaoService.findAll(filtro);
-    
+
     // Calcular metadados de paginação seguindo o padrão do projeto
     const page = filtro.page || Math.floor(result.offset / result.limit) + 1;
     const totalPages = Math.ceil(result.total / result.limit);
@@ -270,7 +278,8 @@ export class ConcessaoController {
     };
 
     // Os dados já vêm na estrutura correta do service, sem necessidade de mapeamento
-    const items: ConcessaoListResponseDto[] = result.data as ConcessaoListResponseDto[];
+    const items: ConcessaoListResponseDto[] =
+      result.data as ConcessaoListResponseDto[];
 
     return new PaginatedResponseDto(items, meta);
   }

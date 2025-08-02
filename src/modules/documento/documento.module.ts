@@ -45,6 +45,11 @@ import {
 import { ThumbnailService } from './services/thumbnail/thumbnail.service';
 import { ThumbnailQueueService } from './services/thumbnail/thumbnail-queue.service';
 
+// Serviços de download em lote
+import { BatchJobManagerService } from './services/batch-download/batch-job-manager.service';
+import { ZipGeneratorService } from './services/batch-download/zip-generator.service';
+import { DocumentFilterService } from './services/batch-download/document-filter.service';
+
 /**
  * Módulo de Documentos
  *
@@ -92,6 +97,7 @@ import { ThumbnailQueueService } from './services/thumbnail/thumbnail-queue.serv
     SharedModule,
     AuditoriaSharedModule,
     CacheModule,
+    // BatchDownloadModule removido para evitar dependência circular
   ],
   controllers: [DocumentoController, DocumentoOrganizacionalController],
   providers: [
@@ -127,6 +133,11 @@ import { ThumbnailQueueService } from './services/thumbnail/thumbnail-queue.serv
     },
     ThumbnailQueueService,
 
+    // Serviços de download em lote
+    BatchJobManagerService,
+    ZipGeneratorService,
+    DocumentFilterService,
+
     // Interceptors de segurança
     {
       provide: APP_INTERCEPTOR,
@@ -150,6 +161,9 @@ import { ThumbnailQueueService } from './services/thumbnail/thumbnail-queue.serv
     StorageHealthService,
     ThumbnailService,
     ThumbnailQueueService,
+    BatchJobManagerService,
+    ZipGeneratorService,
+    DocumentFilterService,
   ],
 })
 export class DocumentoModule implements NestModule {

@@ -4,6 +4,7 @@ import { StorageProvider } from '../interfaces/storage-provider.interface';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
+import { Readable } from 'stream';
 
 /**
  * Adaptador para armazenamento de documentos no sistema de arquivos local
@@ -120,6 +121,33 @@ export class LocalStorageAdapter implements StorageProvider {
     } catch (error) {
       this.logger.error(`Erro ao obter arquivo: ${error.message}`);
       throw new Error(`Erro ao obter arquivo: ${error.message}`);
+    }
+  }
+
+  /**
+   * Obtém um stream de leitura de um arquivo do sistema de arquivos local
+   * @param caminho Caminho relativo do arquivo
+   * @returns Stream de leitura do arquivo
+   */
+  async obterArquivoStream(caminho: string): Promise<Readable> {
+    try {
+      const filePath = path.join(this.baseDir, caminho);
+
+      if (!fs.existsSync(filePath)) {
+        throw new Error(`Arquivo não encontrado: ${caminho}`);
+      }
+
+      // Criar stream de leitura do arquivo
+      const readStream = fs.createReadStream(filePath);
+      
+      this.logger.debug(
+        `Stream de arquivo criado com sucesso: ${caminho}`,
+      );
+
+      return readStream;
+    } catch (error) {
+      this.logger.error(`Erro ao criar stream do arquivo: ${error.message}`);
+      throw new Error(`Erro ao criar stream do arquivo: ${error.message}`);
     }
   }
 

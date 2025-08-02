@@ -10,14 +10,17 @@ import { v4 as uuidv4 } from 'uuid';
 import * as path from 'path';
 import * as fs from 'fs';
 import { promisify } from 'util';
-import { pipeline } from 'stream';
+import { pipeline, Readable } from 'stream';
 import archiver from 'archiver';
 import { DocumentoService } from '../documento.service';
 import { StorageProviderFactory } from '../../factories/storage-provider.factory';
 import { env } from '../../../../config/env';
 import { Documento } from '../../../../entities/documento.entity';
 import { Usuario } from '../../../../entities/usuario.entity';
-import { DocumentoBatchJob, StatusDownloadLoteEnum } from '../../../../entities/documento-batch-job.entity';
+import {
+  DocumentoBatchJob,
+  StatusDownloadLoteEnum,
+} from '../../../../entities/documento-batch-job.entity';
 import {
   IDocumentoBatchFiltros,
   IDocumentoBatchMetadados,
@@ -32,13 +35,15 @@ import {
   BatchDownloadDto,
 } from '../../dto/batch-download.dto';
 import { TipoDocumentoEnum } from '../../../../enums';
+import { BatchJobManagerService } from './batch-job-manager.service';
+import { ZipGeneratorService } from './zip-generator.service';
+import { DocumentFilterService } from './document-filter.service';
 
 const pipelineAsync = promisify(pipeline);
 
 @Injectable()
 export class DocumentoBatchService {
   private readonly logger = new Logger(DocumentoBatchService.name);
-
 
   // Configurações (carregadas do env.ts)
   private readonly batchTempDir =
@@ -52,6 +57,7 @@ export class DocumentoBatchService {
     env.DOWNLOAD_LOTE_MAX_DOCUMENTOS || 1000;
   private readonly BATCH_SIZE = env.DOWNLOAD_LOTE_BATCH_SIZE || 50;
   private readonly TIMEOUT_MS = env.DOWNLOAD_LOTE_TIMEOUT_MS || 300000;
+  private readonly CONCURRENCY_LIMIT = env.DOWNLOAD_LOTE_CONCURRENCY_LIMIT || 8;
 
   constructor(
     @InjectRepository(Documento)
@@ -60,74 +66,119 @@ export class DocumentoBatchService {
     private readonly batchJobRepository: Repository<DocumentoBatchJob>,
     private readonly documentoService: DocumentoService,
     private readonly storageProviderFactory: StorageProviderFactory,
+    private readonly batchJobManager: BatchJobManagerService,
+    private readonly zipGenerator: ZipGeneratorService,
+    private readonly documentFilterService: DocumentFilterService,
   ) {
     this.ensureTempDirectory();
     this.startCleanupScheduler();
   }
 
   /**
-   * Inicia um job de download em lote
+   * Inicia um job de download em lote com métricas de performance
    */
   async iniciarJob(
     filtros: IDocumentoBatchFiltros,
     usuario_id: string,
     metadados?: IDocumentoBatchMetadados,
   ): Promise<string> {
+    const startTime = Date.now();
+    const metricas = {
+      inicio: startTime,
+      validacao_tempo: 0,
+      consulta_tempo: 0,
+      processamento_tempo: 0,
+      zip_tempo: 0,
+      total_documentos: 0,
+      tamanho_total: 0,
+    };
+
     this.logger.log(`Iniciando download em lote para usuário ${usuario_id}`);
 
-    // Validar filtros
-    const validacao = await this.validarFiltros(filtros as any, usuario_id);
-    if (!validacao.valido) {
-      throw new BadRequestException(`Filtros inválidos: ${validacao.erros.join(', ')}`);
-    }
+    try {
+      // Verificar se o usuário pode iniciar um novo job (rate limiting)
+      const podeIniciar = await this.batchJobManager.podeIniciarJob(usuario_id);
+      if (!podeIniciar.pode) {
+        throw new BadRequestException(podeIniciar.motivo);
+      }
 
-    // Buscar documentos
-    const documentos = await this.findDocumentsByFilters(filtros as any, { id: usuario_id } as Usuario);
-    
-    if (documentos.length === 0) {
-      throw new BadRequestException('Nenhum documento encontrado com os filtros especificados');
-    }
-
-    // Estimar tamanho
-    const estimatedSize = await this.estimateZipSize(documentos);
-    
-    if (estimatedSize > this.maxFileSize) {
-      throw new BadRequestException(
-        `O tamanho estimado do arquivo (${this.formatFileSize(estimatedSize)}) excede o limite máximo de ${this.formatFileSize(this.maxFileSize)}`
+      // Validar filtros usando o DocumentFilterService
+      const validacaoInicio = Date.now();
+      const validacao = await this.documentFilterService.validarFiltros(
+        filtros as any,
+        usuario_id,
       );
+      metricas.validacao_tempo = Date.now() - validacaoInicio;
+
+      if (!validacao.valido) {
+        this.logger.warn(`Validação falhou para usuário ${usuario_id}:`, validacao.erros);
+        throw new BadRequestException(
+          `Filtros inválidos: ${validacao.erros.join(', ')}`,
+        );
+      }
+
+      // Verificar se foram encontrados documentos na validação
+      if (validacao.estimativa.total_documentos === 0) {
+        throw new BadRequestException(
+          'Nenhum documento encontrado com os filtros especificados',
+        );
+      }
+
+      metricas.total_documentos = validacao.estimativa.total_documentos;
+      metricas.tamanho_total = validacao.estimativa.tamanho_estimado;
+
+      // Usar tamanho estimado da validação
+      const estimatedSize = validacao.estimativa.tamanho_estimado;
+
+      if (estimatedSize > this.maxFileSize) {
+        throw new BadRequestException(
+          `O tamanho estimado do arquivo (${this.formatFileSize(estimatedSize)}) excede o limite máximo de ${this.formatFileSize(this.maxFileSize)}`,
+        );
+      }
+
+      // Criar job na base de dados
+      const job = this.batchJobRepository.create({
+        usuario_id,
+        status: StatusDownloadLoteEnum.PENDING,
+        filtros: filtros,
+        metadados: { ...metadados, metricas },
+        total_documentos: validacao.estimativa.total_documentos,
+        documentos_processados: 0,
+        progresso_percentual: 0,
+        tamanho_estimado: estimatedSize,
+        created_at: new Date(),
+        data_expiracao: new Date(Date.now() + this.maxJobAge),
+      });
+
+      const savedJob = await this.batchJobRepository.save(job);
+
+      this.logger.log(
+        `Job ${savedJob.id} criado para usuário ${usuario_id} - Estimativa: ${metricas.total_documentos} documentos, ${this.formatFileSize(metricas.tamanho_total)} (${podeIniciar.jobsAtivos + 1}/2 jobs ativos)`,
+      );
+
+      // Processar assincronamente
+      this.processJobWithEntity(savedJob.id, metricas).catch((error) => {
+        const tempoTotal = Date.now() - startTime;
+        this.logger.error(`Erro no processamento do job ${savedJob.id} após ${tempoTotal}ms:`, error);
+        this.markJobAsFailedInDB(savedJob.id, error.message);
+      });
+
+      return savedJob.id;
+    } catch (error) {
+      const tempoTotal = Date.now() - startTime;
+      this.logger.error(`Erro ao iniciar job para usuário ${usuario_id} após ${tempoTotal}ms:`, error);
+      throw error;
     }
-
-    // Criar job na base de dados
-    const job = this.batchJobRepository.create({
-      usuario_id,
-      status: StatusDownloadLoteEnum.PENDING,
-      filtros: filtros,
-      metadados: metadados || {},
-      total_documentos: documentos.length,
-      documentos_processados: 0,
-      progresso_percentual: 0,
-      tamanho_estimado: estimatedSize,
-      created_at: new Date(),
-      data_expiracao: new Date(Date.now() + this.maxJobAge),
-    });
-
-    const savedJob = await this.batchJobRepository.save(job);
-    
-    // Processar assincronamente
-    this.processJobWithEntity(savedJob.id).catch((error) => {
-      this.logger.error(`Erro no processamento do job ${savedJob.id}:`, error);
-      this.markJobAsFailedInDB(savedJob.id, error.message);
-    });
-
-    return savedJob.id;
   }
 
   /**
    * Obtém o progresso de um job
    */
   async obterProgresso(job_id: string): Promise<IDocumentoBatchProgresso> {
-    const job = await this.batchJobRepository.findOne({ where: { id: job_id } });
-    
+    const job = await this.batchJobRepository.findOne({
+      where: { id: job_id },
+    });
+
     if (!job) {
       throw new NotFoundException('Job não encontrado');
     }
@@ -138,14 +189,10 @@ export class DocumentoBatchService {
       progresso: job.progresso_percentual,
       total_documentos: job.total_documentos,
       documentos_processados: job.documentos_processados,
-      tamanho_estimado: job.tamanho_estimado,
       tempo_decorrido: this.calculateElapsedTime(job),
-      tempo_estimado_restante: this.calculateRemainingTime(job),
       erros: job.erro_detalhes ? [job.erro_detalhes] : [],
-      avisos: [],
       data_inicio: job.created_at,
       updated_at: job.updated_at,
-      mensagem_status: job.erro_detalhes || this.getStatusMessage(job.status),
     };
   }
 
@@ -153,8 +200,10 @@ export class DocumentoBatchService {
    * Obtém o resultado de um job concluído
    */
   async obterResultado(job_id: string): Promise<IDocumentoBatchResultado> {
-    const job = await this.batchJobRepository.findOne({ where: { id: job_id } });
-    
+    const job = await this.batchJobRepository.findOne({
+      where: { id: job_id },
+    });
+
     if (!job) {
       throw new NotFoundException('Job não encontrado');
     }
@@ -174,41 +223,139 @@ export class DocumentoBatchService {
       nome_arquivo: job.nome_arquivo,
       tamanho_arquivo: job.tamanho_real,
       erros: job.erro_detalhes ? [job.erro_detalhes] : [],
-      avisos: [],
       arquivo_zip: {
         nome: job.nome_arquivo || `lote_${job.id}.zip`,
         tamanho: job.tamanho_real || 0,
         url_download: `/api/v1/documento/download-lote/${job.id}/download`,
         data_expiracao: job.data_expiracao,
       },
-      estatisticas: {
-        total_documentos: job.total_documentos,
-        documentos_processados: job.documentos_processados,
-        documentos_com_erro: job.total_documentos - job.documentos_processados,
-        tamanho_total: job.tamanho_real || 0,
-        tamanho_processado: job.tamanho_real || 0,
-        tempo_processamento: this.calculateProcessingTime(job),
-        arquivos_por_tipo: {},
-        erros_por_tipo: {},
-      },
-      estrutura: [],
       data_conclusao: job.data_conclusao,
-      metadados: job.metadados || {},
     };
+  }
+
+  /**
+   * Cria um stream de download direto sem usar arquivos temporários
+   */
+  async criarStreamDownload(jobId: string): Promise<{
+    stream: NodeJS.ReadableStream;
+    filename: string;
+    size?: number;
+  }> {
+    const job = await this.batchJobRepository.findOne({
+      where: { id: jobId },
+    });
+
+    if (!job) {
+      throw new NotFoundException(`Job ${jobId} não encontrado`);
+    }
+
+    if (job.status !== StatusDownloadLoteEnum.COMPLETED) {
+      throw new BadRequestException(
+        `Job ${jobId} não está concluído. Status atual: ${job.status}`,
+      );
+    }
+
+    // Buscar documentos baseado nos filtros do job
+    const documentos = await this.documentFilterService.aplicarFiltros(
+      job.filtros as any,
+      { id: job.usuario_id } as Usuario,
+    );
+
+    if (documentos.length === 0) {
+      throw new NotFoundException('Nenhum documento encontrado para download');
+    }
+
+    this.logger.log(
+      `Iniciando stream de download para job ${jobId} - ${documentos.length} documentos`,
+    );
+
+    // Usar o ZipGeneratorService para criar stream otimizado
+    const result = await this.zipGenerator.gerarZipStream(
+      documentos,
+      job.filtros as any,
+      {
+        bufferSize: 128 * 1024, // 128KB buffer para melhor performance
+        compressionLevel: 6, // Nível médio de compressão
+      },
+    );
+
+    const filename = `documentos_lote_${jobId.substring(0, 8)}.zip`;
+
+    // Log de métricas para monitoramento
+    this.logger.log(
+      `Stream criado para job ${jobId}: ${filename}, tamanho estimado: ${this.formatFileSize(result.estimatedSize || 0)}`,
+    );
+
+    return {
+      stream: result.stream,
+      filename,
+      size: result.estimatedSize,
+    };
+  }
+
+  /**
+   * Processa documentos para stream em paralelo
+   */
+  private async processDocumentosParaStream(
+    archive: any,
+    documentos: Documento[],
+    jobId: string,
+  ): Promise<void> {
+    // Criar estrutura do ZIP
+    const structure = await this.createZipStructure(
+      documentos,
+      {} as BatchDownloadFiltros,
+    );
+
+    // Adicionar arquivo de índice
+    const indexContent = this.generateBatchIndex(structure.files);
+    archive.append(indexContent, { name: 'INDICE.txt' });
+
+    // Processar arquivos em paralelo
+    const fileBuffers = await this.processWithConcurrencyLimit(
+      structure.files,
+      async (fileInfo) => {
+        try {
+          const storageProvider = this.storageProviderFactory.getProvider();
+          const fileBuffer = await storageProvider.obterArquivo(
+            fileInfo.documento.caminho,
+          );
+          return { fileInfo, fileBuffer };
+        } catch (error) {
+          this.logger.warn(
+            `Erro ao obter arquivo ${fileInfo.documento.caminho}:`,
+            error,
+          );
+          return null;
+        }
+      },
+      this.CONCURRENCY_LIMIT,
+    );
+
+    // Adicionar arquivos válidos ao ZIP
+    for (const result of fileBuffers) {
+      if (result && result.fileBuffer) {
+        archive.append(result.fileBuffer, { name: result.fileInfo.zipPath });
+      }
+    }
   }
 
   /**
    * Cancela um job
    */
   async cancelarJob(job_id: string): Promise<boolean> {
-    const job = await this.batchJobRepository.findOne({ where: { id: job_id } });
-    
+    const job = await this.batchJobRepository.findOne({
+      where: { id: job_id },
+    });
+
     if (!job) {
       throw new NotFoundException('Job não encontrado');
     }
 
     if (!['pendente', 'processando'].includes(job.status)) {
-      throw new BadRequestException('Apenas jobs pendentes ou em processamento podem ser cancelados');
+      throw new BadRequestException(
+        'Apenas jobs pendentes ou em processamento podem ser cancelados',
+      );
     }
 
     await this.batchJobRepository.update(job_id, {
@@ -238,31 +385,24 @@ export class DocumentoBatchService {
 
     const jobs = await queryBuilder.getMany();
 
-    return jobs.map(job => ({
+    return jobs.map((job) => ({
       job_id: job.id,
       status: job.status as any,
       caminho_arquivo: job.caminho_arquivo,
-      nome_arquivo: job.caminho_arquivo ? `documentos_lote_${job.id.substring(0, 8)}.zip` : undefined,
+      nome_arquivo: job.caminho_arquivo
+        ? `documentos_lote_${job.id.substring(0, 8)}.zip`
+        : undefined,
       tamanho_arquivo: job.tamanho_real,
       total_documentos: job.total_documentos,
       documentos_processados: job.documentos_processados,
       documentos_com_erro: job.total_documentos - job.documentos_processados,
       tempo_processamento: this.calculateProcessingTime(job),
-      url_download: job.status === StatusDownloadLoteEnum.COMPLETED ? `/api/v1/documento/download-lote/${job.id}/arquivo` : undefined,
+      url_download:
+        job.status === StatusDownloadLoteEnum.COMPLETED
+          ? `/api/v1/documento/download-lote/${job.id}/arquivo`
+          : undefined,
       data_expiracao: job.data_expiracao,
       erros: job.erro_detalhes ? [job.erro_detalhes] : [],
-      avisos: [],
-      estatisticas: {
-        total_documentos: job.total_documentos,
-        documentos_processados: job.documentos_processados,
-        documentos_com_erro: job.total_documentos - job.documentos_processados,
-        tamanho_total: job.tamanho_real || 0,
-        tamanho_processado: job.tamanho_real || 0,
-        tempo_estimado_restante: this.calculateRemainingTime(job),
-        velocidade_processamento: 0,
-        arquivos_por_tipo: {},
-        erros_por_tipo: {},
-      },
     }));
   }
 
@@ -271,7 +411,7 @@ export class DocumentoBatchService {
    */
   async limparJobsExpirados(): Promise<number> {
     const agora = new Date();
-    
+
     // Buscar jobs expirados
     const jobsExpirados = await this.batchJobRepository
       .createQueryBuilder('job')
@@ -291,7 +431,7 @@ export class DocumentoBatchService {
         // Remover job do banco
         await this.batchJobRepository.remove(job);
         jobsRemovidos++;
-        
+
         this.logger.log(`Job expirado ${job.id} removido`);
       } catch (error) {
         this.logger.warn(`Erro ao remover job expirado ${job.id}:`, error);
@@ -301,8 +441,6 @@ export class DocumentoBatchService {
     this.logger.log(`${jobsRemovidos} jobs expirados removidos`);
     return jobsRemovidos;
   }
-
-
 
   /**
    * Valida os filtros fornecidos para o download em lote
@@ -417,18 +555,6 @@ export class DocumentoBatchService {
     return validacao;
   }
 
-
-
-
-
-
-
-
-
-
-
-
-
   /**
    * Cria a estrutura do ZIP organizando os documentos
    */
@@ -437,7 +563,6 @@ export class DocumentoBatchService {
     filtros: BatchDownloadFiltros,
   ): Promise<ZipStructure> {
     const structure: ZipStructure = {
-      folders: new Map(),
       files: [],
     };
 
@@ -449,8 +574,8 @@ export class DocumentoBatchService {
     )) {
       // Obter dados do cidadão para usar o CPF na nomenclatura
       const cidadao = cidadaoDocumentos[0]?.cidadao;
-      const cidadaoFolder = cidadao?.cpf 
-        ? `cidadao_${cidadao.cpf}` 
+      const cidadaoFolder = cidadao?.cpf
+        ? `cidadao_${cidadao.cpf}`
         : `Cidadao_${cidadaoId.substring(0, 8)}`;
 
       // Agrupar por solicitação dentro do cidadão
@@ -465,7 +590,7 @@ export class DocumentoBatchService {
         // Obter dados da solicitação para usar protocolo e data na nomenclatura
         const solicitacao = solicitacaoDocumentos[0]?.solicitacao;
         let solicitacaoFolder: string;
-        
+
         if (solicitacao?.protocolo && solicitacao?.data_abertura) {
           const dataAbertura = new Date(solicitacao.data_abertura)
             .toISOString()
@@ -488,7 +613,11 @@ export class DocumentoBatchService {
         for (const documento of outrosDocumentos) {
           const fileName = this.generateFileName(documento);
           const zipPath = `${solicitacaoFolder}/${fileName}`;
-          structure.files.push({ documento, zipPath });
+          structure.files.push({ 
+            documento, 
+            zipPath, 
+            tamanho: documento.tamanho || 0 
+          });
         }
 
         // Adicionar recibos em subpasta
@@ -496,7 +625,11 @@ export class DocumentoBatchService {
           for (const recibo of recibos) {
             const fileName = this.generateFileName(recibo);
             const zipPath = `${solicitacaoFolder}/Recibos_Comprovantes/${fileName}`;
-            structure.files.push({ documento: recibo, zipPath });
+            structure.files.push({ 
+              documento: recibo, 
+              zipPath, 
+              tamanho: recibo.tamanho || 0 
+            });
           }
         }
       }
@@ -516,14 +649,60 @@ export class DocumentoBatchService {
     if (!fs.existsSync(jobDir)) {
       fs.mkdirSync(jobDir, { recursive: true });
     }
-    
-    const zipPath = path.join(jobDir, `documentos_lote_${jobId.substring(0, 8)}.zip`);
+
+    const zipPath = path.join(
+      jobDir,
+      `documentos_lote_${jobId.substring(0, 8)}.zip`,
+    );
     await this.createZipFile(structure, zipPath, jobId);
     return zipPath;
   }
 
   /**
-   * Cria o arquivo ZIP
+   * Função auxiliar para controlar concorrência em operações assíncronas
+   */
+  private async processWithConcurrencyLimit<T, R>(
+    items: T[],
+    processor: (item: T, index: number) => Promise<R>,
+    limit: number = this.CONCURRENCY_LIMIT,
+  ): Promise<R[]> {
+    const results: R[] = [];
+    const executing: Promise<void>[] = [];
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+
+      const promise = processor(item, i)
+        .then((result) => {
+          results[i] = result;
+        })
+        .catch((error) => {
+          this.logger.warn(`Erro no processamento do item ${i}:`, error);
+          // Continuar com outros itens mesmo se um falhar
+          results[i] = null as R;
+        });
+
+      executing.push(promise);
+
+      if (executing.length >= limit) {
+        await Promise.race(executing);
+        // Remove promises resolvidas
+        const resolvedIndex = executing.findIndex(
+          (p) => p === promise || (p as any).isResolved,
+        );
+        if (resolvedIndex !== -1) {
+          executing.splice(resolvedIndex, 1);
+        }
+      }
+    }
+
+    // Aguardar todas as promises restantes
+    await Promise.all(executing);
+    return results;
+  }
+
+  /**
+   * Cria o arquivo ZIP com streaming otimizado para reduzir uso de memória
    */
   private async createZipFile(
     structure: ZipStructure,
@@ -531,138 +710,103 @@ export class DocumentoBatchService {
     jobId: string,
   ): Promise<void> {
     const output = fs.createWriteStream(zipPath);
-    const archive = archiver('zip', { zlib: { level: 9 } });
+    const archive = archiver('zip', { 
+      zlib: { level: 6 }, // Reduzir nível de compressão para melhor performance
+      store: false // Habilitar compressão
+    });
 
     archive.pipe(output);
 
-    let processedFiles = 0;
     const totalFiles = structure.files.length;
+    let processedFiles = 0;
+    const STREAM_BATCH_SIZE = 5; // Processar apenas 5 arquivos por vez para otimizar memória
 
     // Adicionar arquivo de índice
     const indexContent = this.generateBatchIndex(structure.files);
     archive.append(indexContent, { name: 'INDICE.txt' });
 
-    // Adicionar arquivos
-    for (const fileInfo of structure.files) {
-      try {
-        const storageProvider = this.storageProviderFactory.getProvider();
-        const fileBuffer = await storageProvider.obterArquivo(
-          fileInfo.documento.caminho,
-        );
-        archive.append(fileBuffer, { name: fileInfo.zipPath });
+    // Processar arquivos em lotes pequenos com streaming
+    for (let i = 0; i < structure.files.length; i += STREAM_BATCH_SIZE) {
+      const batch = structure.files.slice(i, i + STREAM_BATCH_SIZE);
+      
+      await Promise.all(
+        batch.map(async (fileInfo) => {
+          try {
+            const storageProvider = this.storageProviderFactory.getProvider();
+            
+            // Usar stream em vez de buffer para arquivos grandes
+            if (fileInfo.tamanho > 10 * 1024 * 1024) { // > 10MB
+              const fileStream = await storageProvider.obterArquivoStream(fileInfo.documento.caminho);
+              
+              // Garantir que o stream é compatível com Node.js Readable
+              let readableStream: Readable;
+              if (fileStream && typeof fileStream.pipe === 'function') {
+                readableStream = fileStream as Readable;
+              } else {
+                // Converter para Readable se necessário
+                readableStream = Readable.from(fileStream);
+              }
+              
+              archive.append(readableStream, { name: fileInfo.zipPath });
+            } else {
+              // Para arquivos pequenos, usar buffer é mais eficiente
+              const fileBuffer = await storageProvider.obterArquivo(fileInfo.documento.caminho);
+              archive.append(fileBuffer, { name: fileInfo.zipPath });
+            }
 
-        processedFiles++;
-        const progress = 20 + Math.floor((processedFiles / totalFiles) * 70); // 20-90%
-        await this.updateJobProgress(jobId, progress);
-      } catch (error) {
-        this.logger.warn(
-          `Erro ao adicionar arquivo ${fileInfo.documento.caminho} ao ZIP:`,
-          error,
-        );
-        // Continuar com os outros arquivos
+            // Atualizar progresso
+            processedFiles++;
+            const progress = 20 + Math.floor((processedFiles / totalFiles) * 70); // 20-90%
+            await this.updateJobProgress(jobId, progress);
+            
+            this.logger.debug(`Arquivo processado: ${fileInfo.zipPath} (${processedFiles}/${totalFiles})`);
+            
+          } catch (error) {
+            this.logger.warn(
+              `Erro ao processar arquivo ${fileInfo.documento.caminho}:`,
+              error,
+            );
+            // Adicionar arquivo de erro em vez de falhar completamente
+            const errorContent = `Erro ao processar arquivo: ${error.message}`;
+            archive.append(errorContent, { name: `${fileInfo.zipPath}.error.txt` });
+          }
+        })
+      );
+      
+      // Pequena pausa entre lotes para evitar sobrecarga
+      if (i + STREAM_BATCH_SIZE < structure.files.length) {
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
     }
 
     await this.updateJobProgress(jobId, 95);
-    await archive.finalize();
-
-    return new Promise((resolve, reject) => {
-      output.on('close', resolve);
+    
+    // Finalizar arquivo ZIP
+    await new Promise<void>((resolve, reject) => {
+      archive.finalize();
+      
+      output.on('close', () => {
+        this.logger.log(`ZIP criado com sucesso: ${zipPath} (${archive.pointer()} bytes)`);
+        resolve();
+      });
+      
       output.on('error', reject);
       archive.on('error', reject);
+      
+      // Timeout de segurança
+      setTimeout(() => {
+        reject(new Error('Timeout na criação do arquivo ZIP'));
+      }, 30 * 60 * 1000); // 30 minutos
     });
-  }
-
-  /**
-   * Busca documentos com base nos filtros
-   */
-  private async findDocumentsByFilters(
-    filtros: BatchDownloadFiltros,
-    usuario: Usuario,
-  ): Promise<Documento[]> {
-    const queryBuilder = this.documentoRepository
-      .createQueryBuilder('documento')
-      .leftJoinAndSelect('documento.cidadao', 'cidadao')
-      .leftJoinAndSelect('documento.solicitacao', 'solicitacao')
-      .where('documento.removed_at IS NULL');
-
-    // Aplicar filtros
-    if (filtros.cidadaoIds?.length) {
-      queryBuilder.andWhere('documento.cidadao_id IN (:...cidadaoIds)', {
-        cidadaoIds: filtros.cidadaoIds,
-      });
-    }
-
-    if (filtros.solicitacaoIds?.length) {
-      queryBuilder.andWhere(
-        'documento.solicitacao_id IN (:...solicitacaoIds)',
-        {
-          solicitacaoIds: filtros.solicitacaoIds,
-        },
-      );
-    }
-
-    if (filtros.tiposDocumento?.length) {
-      queryBuilder.andWhere('documento.tipo IN (:...tiposDocumento)', {
-        tiposDocumento: filtros.tiposDocumento,
-      });
-    }
-
-    if (filtros.dataInicio) {
-      queryBuilder.andWhere('documento.created_at >= :dataInicio', {
-        dataInicio: filtros.dataInicio,
-      });
-    }
-
-    if (filtros.dataFim) {
-      queryBuilder.andWhere('documento.created_at <= :dataFim', {
-        dataFim: filtros.dataFim,
-      });
-    }
-
-    if (filtros.apenasVerificados) {
-      queryBuilder.andWhere('documento.verificado = :verificado', {
-        verificado: true,
-      });
-    }
-
-    // Verificar permissões de acesso
-    // TODO: Implementar verificação de permissões baseada no usuário
-    // Por enquanto, assumindo que o usuário tem acesso a todos os documentos retornados
-
-    return queryBuilder.getMany();
-  }
-
-  /**
-   * Estima o tamanho do ZIP
-   */
-  private async estimateZipSize(documentos: Documento[]): Promise<number> {
-    let totalSize = 0;
-
-    for (const documento of documentos) {
-      try {
-        const storageProvider = this.storageProviderFactory.getProvider();
-        // Estimativa baseada no tamanho médio dos arquivos (500KB por documento)
-        const estimatedSize = 500 * 1024; // 500KB
-        totalSize += estimatedSize;
-      } catch (error) {
-        this.logger.warn(
-          `Erro ao obter tamanho do arquivo ${documento.caminho}:`,
-          error,
-        );
-        // Estimar 1MB por arquivo não encontrado
-        totalSize += 1024 * 1024;
-      }
-    }
-
-    // Aplicar fator de compressão (estimativa de 70% do tamanho original)
-    return Math.floor(totalSize * 0.7);
   }
 
   /**
    * Atualiza o progresso do job no banco de dados
    */
-  private async updateJobProgress(jobId: string, progress: number): Promise<void> {
+  private async updateJobProgress(
+    jobId: string,
+    progress: number,
+  ): Promise<void> {
     await this.batchJobRepository.update(jobId, {
       progresso_percentual: progress,
       updated_at: new Date(),
@@ -672,30 +816,6 @@ export class DocumentoBatchService {
   /**
    * Métodos auxiliares
    */
-  private validateFilters(filtros: BatchDownloadFiltros): void {
-    if (
-      filtros.dataInicio &&
-      filtros.dataFim &&
-      filtros.dataInicio > filtros.dataFim
-    ) {
-      throw new BadRequestException(
-        'Data de início deve ser anterior à data de fim',
-      );
-    }
-
-    const hasFilter =
-      filtros.cidadaoIds?.length ||
-      filtros.solicitacaoIds?.length ||
-      filtros.tiposDocumento?.length ||
-      filtros.dataInicio ||
-      filtros.dataFim;
-
-    if (!hasFilter) {
-      throw new BadRequestException(
-        'Pelo menos um filtro deve ser especificado',
-      );
-    }
-  }
 
   private isReciboOrComprovante(documento: Documento): boolean {
     const tiposRecibo = [
@@ -759,8 +879,6 @@ export class DocumentoBatchService {
     return lines.join('\n');
   }
 
-
-
   private formatFileSize(bytes: number): string {
     const units = ['B', 'KB', 'MB', 'GB'];
     let size = bytes;
@@ -808,7 +926,10 @@ export class DocumentoBatchService {
    * Calcula o tempo restante estimado para conclusão do job
    */
   private calculateRemainingTime(job: DocumentoBatchJob): number | undefined {
-    if (job.status !== StatusDownloadLoteEnum.PROCESSING || job.progresso_percentual === 0) {
+    if (
+      job.status !== StatusDownloadLoteEnum.PROCESSING ||
+      job.progresso_percentual === 0
+    ) {
       return undefined;
     }
 
@@ -844,18 +965,31 @@ export class DocumentoBatchService {
       return 0;
     }
 
-    return Math.round((job.data_conclusao.getTime() - job.created_at.getTime()) / 1000);
+    return Math.round(
+      (job.data_conclusao.getTime() - job.created_at.getTime()) / 1000,
+    );
   }
 
   /**
-   * Processa um job usando a entidade DocumentoBatchJob
+   * Processa um job usando a entidade DocumentoBatchJob com métricas de performance
    */
-  private async processJobWithEntity(jobId: string): Promise<void> {
+  private async processJobWithEntity(jobId: string, metricas?: any): Promise<void> {
     const job = await this.batchJobRepository.findOne({ where: { id: jobId } });
     if (!job) {
       this.logger.error(`Job ${jobId} não encontrado para processamento`);
       return;
     }
+
+    const processamentoInicio = Date.now();
+    const jobMetricas = metricas || {
+      inicio: processamentoInicio,
+      validacao_tempo: 0,
+      consulta_tempo: 0,
+      processamento_tempo: 0,
+      zip_tempo: 0,
+      total_documentos: 0,
+      tamanho_total: 0,
+    };
 
     try {
       // Atualizar status para processando
@@ -864,21 +998,52 @@ export class DocumentoBatchService {
         updated_at: new Date(),
       });
 
-      // Buscar documentos baseado nos filtros
-      const documentos = await this.findDocumentsByFilters(
+      // Buscar documentos baseado nos filtros usando DocumentFilterService
+      const consultaInicio = Date.now();
+      const documentos = await this.documentFilterService.aplicarFiltros(
         job.filtros as any,
-        { id: job.usuario_id } as Usuario
+        { id: job.usuario_id } as Usuario,
       );
+      jobMetricas.consulta_tempo = Date.now() - consultaInicio;
 
-      // Criar estrutura do ZIP
-      const zipStructure = await this.createZipStructure(documentos, job.filtros as any);
+      if (documentos.length === 0) {
+        throw new Error(
+          'Nenhum documento encontrado para os filtros especificados',
+        );
+      }
+
+      this.logger.log(`Job ${jobId} - Consulta concluída em ${jobMetricas.consulta_tempo}ms: ${documentos.length} documentos`);
+
+      // Atualizar progresso inicial
       await this.batchJobRepository.update(jobId, {
         progresso_percentual: 20,
         updated_at: new Date(),
       });
 
-      // Gerar arquivo ZIP
+      // Criar estrutura do ZIP usando o novo serviço
+      const estruturaInicio = Date.now();
+      const zipStructure = await this.createZipStructure(
+        documentos,
+        job.filtros as any,
+      );
+      const estruturaTempo = Date.now() - estruturaInicio;
+
+      this.logger.log(`Job ${jobId} - Estrutura ZIP criada em ${estruturaTempo}ms`);
+
+      // Atualizar progresso
+      await this.batchJobRepository.update(jobId, {
+        progresso_percentual: 40,
+        updated_at: new Date(),
+      });
+
+      // Gerar arquivo ZIP usando método existente (será otimizado posteriormente)
+      const zipInicio = Date.now();
       const zipPath = await this.generateZipFile(jobId, zipStructure);
+      jobMetricas.zip_tempo = Date.now() - zipInicio;
+
+      this.logger.log(`Job ${jobId} - ZIP gerado em ${jobMetricas.zip_tempo}ms`);
+
+      // Atualizar progresso
       await this.batchJobRepository.update(jobId, {
         progresso_percentual: 80,
         updated_at: new Date(),
@@ -886,20 +1051,26 @@ export class DocumentoBatchService {
 
       // Finalizar job
       const zipStats = fs.statSync(zipPath);
+      jobMetricas.processamento_tempo = Date.now() - processamentoInicio;
+      jobMetricas.tamanho_real = zipStats.size;
+
       await this.batchJobRepository.update(jobId, {
         status: StatusDownloadLoteEnum.COMPLETED,
         progresso_percentual: 100,
         documentos_processados: documentos.length,
         tamanho_real: zipStats.size,
         caminho_arquivo: zipPath,
-        // estrutura_zip: zipStructure, // Campo removido da entidade
         data_conclusao: new Date(),
         updated_at: new Date(),
+        metadados: { ...job.metadados, metricas_finais: jobMetricas },
       });
 
-      this.logger.log(`Job ${jobId} processado com sucesso`);
+      this.logger.log(
+        `Job ${jobId} processado com sucesso - ${documentos.length} documentos, ${this.formatFileSize(zipStats.size)} em ${jobMetricas.processamento_tempo}ms (consulta: ${jobMetricas.consulta_tempo}ms, zip: ${jobMetricas.zip_tempo}ms)`,
+      );
     } catch (error) {
-      this.logger.error(`Erro no processamento do job ${jobId}:`, error);
+      jobMetricas.processamento_tempo = Date.now() - processamentoInicio;
+      this.logger.error(`Erro no processamento do job ${jobId} após ${jobMetricas.processamento_tempo}ms:`, error);
       await this.markJobAsFailedInDB(jobId, error.message);
     }
   }
@@ -907,11 +1078,22 @@ export class DocumentoBatchService {
   /**
    * Marca um job como falhou no banco de dados
    */
-  private async markJobAsFailedInDB(jobId: string, errorMessage: string): Promise<void> {
-    await this.batchJobRepository.update(jobId, {
-      status: StatusDownloadLoteEnum.FAILED,
-      erro_detalhes: errorMessage,
-      updated_at: new Date(),
-    });
+  private async markJobAsFailedInDB(
+    jobId: string,
+    errorMessage: string,
+  ): Promise<void> {
+    try {
+      await this.batchJobRepository.update(jobId, {
+        status: StatusDownloadLoteEnum.FAILED,
+        erro_detalhes: errorMessage,
+        data_conclusao: new Date(),
+        updated_at: new Date(),
+      });
+    } catch (updateError) {
+      this.logger.error(
+        `Erro ao atualizar status de falha do job ${jobId}:`,
+        updateError,
+      );
+    }
   }
 }

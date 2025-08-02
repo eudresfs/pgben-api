@@ -26,7 +26,7 @@ describe('ScopedRepository - Performance Optimizations', () => {
   const mockContext: IScopeContext = {
     tipo: ScopeType.UNIDADE,
     user_id: '123',
-    unidade_id: '1'
+    unidade_id: '1',
   };
 
   beforeEach(async () => {
@@ -39,13 +39,13 @@ describe('ScopedRepository - Performance Optimizations', () => {
       getQuery: jest.fn().mockReturnValue('SELECT * FROM test_entity'),
       getMany: jest.fn().mockResolvedValue([]),
       getOne: jest.fn().mockResolvedValue(null),
-      getCount: jest.fn().mockResolvedValue(0)
+      getCount: jest.fn().mockResolvedValue(0),
     } as any;
 
     // Mock do EntityManager
     mockEntityManager = {
       createQueryBuilder: jest.fn().mockReturnValue(mockQueryBuilder),
-      getRepository: jest.fn()
+      getRepository: jest.fn(),
     } as any;
 
     // Mock do CacheService
@@ -54,15 +54,17 @@ describe('ScopedRepository - Performance Optimizations', () => {
       set: jest.fn(),
       del: jest.fn(),
       clear: jest.fn(),
-      has: jest.fn()
+      has: jest.fn(),
     } as any;
 
     // Mock do RequestContextHolder (métodos estáticos)
     mockRequestContextHolder = {} as any;
-    
+
     // Mock dos métodos estáticos
     jest.spyOn(RequestContextHolder, 'get').mockReturnValue(mockContext);
-    jest.spyOn(RequestContextHolder, 'getRequired').mockReturnValue(mockContext);
+    jest
+      .spyOn(RequestContextHolder, 'getRequired')
+      .mockReturnValue(mockContext);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -77,25 +79,27 @@ describe('ScopedRepository - Performance Optimizations', () => {
                 { propertyName: 'unidade_id' },
                 { propertyName: 'user_id' },
                 { propertyName: 'created_at' },
-                { propertyName: 'nome' }
-              ]
+                { propertyName: 'nome' },
+              ],
             },
-            createQueryBuilder: jest.fn().mockReturnValue(mockQueryBuilder)
-          }
+            createQueryBuilder: jest.fn().mockReturnValue(mockQueryBuilder),
+          },
         },
         {
           provide: RequestContextHolder,
-          useValue: mockRequestContextHolder
+          useValue: mockRequestContextHolder,
         },
         {
           provide: CacheService,
-          useValue: mockCacheService
-        }
-      ]
+          useValue: mockCacheService,
+        },
+      ],
     }).compile();
 
-    const baseRepository = module.get<Repository<TestEntity>>(getRepositoryToken(TestEntity));
-    
+    const baseRepository = module.get<Repository<TestEntity>>(
+      getRepositoryToken(TestEntity),
+    );
+
     // Criar ScopedRepository com opções de performance
     scopedRepository = new ScopedRepository(
       TestEntity,
@@ -105,16 +109,16 @@ describe('ScopedRepository - Performance Optimizations', () => {
         enableMetadataCache: true,
         enableQueryHints: true,
         forceIndexUsage: true,
-        metadataCacheTTL: 3600
+        metadataCacheTTL: 3600,
       },
-      mockCacheService
+      mockCacheService,
     );
 
     // Configurar metadata mock usando Object.defineProperty
     Object.defineProperty(scopedRepository, 'metadata', {
       value: baseRepository.metadata,
       writable: false,
-      configurable: true
+      configurable: true,
     });
   });
 
@@ -137,14 +141,14 @@ describe('ScopedRepository - Performance Optimizations', () => {
     it('deve invalidar cache quando solicitado', () => {
       // Construir cache
       (scopedRepository as any).hasColumn('unidade_id');
-      
+
       // Verificar que cache existe
       let cacheStats = ScopedRepository.getCacheStats();
       expect(cacheStats.l1Size).toBeGreaterThan(0);
 
       // Limpar cache
       scopedRepository.clearMetadataCache();
-      
+
       // Verificar que cache foi limpo
       cacheStats = ScopedRepository.getCacheStats();
       expect(cacheStats.l1Size).toBe(0);
@@ -154,11 +158,11 @@ describe('ScopedRepository - Performance Optimizations', () => {
       // Primeira chamada - deve construir o cache
       const hasColumn1 = (scopedRepository as any).hasColumn('unidade_id');
       expect(hasColumn1).toBe(true);
-      
+
       // Segunda chamada - deve usar o cache L1
       const hasColumn2 = (scopedRepository as any).hasColumn('unidade_id');
       expect(hasColumn2).toBe(true);
-      
+
       // Verificar que o cache L1 está sendo usado
       const stats = ScopedRepository.getCacheStats();
       expect(stats.l1Size).toBeGreaterThan(0);
@@ -169,18 +173,18 @@ describe('ScopedRepository - Performance Optimizations', () => {
         TestEntity,
         mockEntityManager,
         undefined,
-        { enableMetadataCache: false }
+        { enableMetadataCache: false },
       );
-      
+
       Object.defineProperty(repoWithoutCache, 'metadata', {
         value: (scopedRepository as any).metadata,
         writable: false,
-        configurable: true
+        configurable: true,
       });
-      
+
       const hasColumn = (repoWithoutCache as any).hasColumn('unidade_id');
       expect(hasColumn).toBe(true);
-      
+
       // Cache não deve ter sido usado
       const cacheStats = ScopedRepository.getCacheStats();
       expect(cacheStats.entities).not.toContain('TestEntity');
@@ -189,27 +193,35 @@ describe('ScopedRepository - Performance Optimizations', () => {
 
   describe('Query Hints e Otimizações', () => {
     it('deve aplicar query hints para escopo UNIDADE', () => {
-      const queryBuilder = scopedRepository.createOptimizedQueryBuilder('entity', {
-        useScopeIdIndex: true,
-        useOptimizedPagination: true
-      });
-      
+      const queryBuilder = scopedRepository.createOptimizedQueryBuilder(
+        'entity',
+        {
+          useScopeIdIndex: true,
+          useOptimizedPagination: true,
+        },
+      );
+
       expect(mockQueryBuilder.comment).toHaveBeenCalledWith(
-        expect.stringContaining('USE INDEX: scope_id_composite')
+        expect.stringContaining('USE INDEX: scope_id_composite'),
       );
       expect(mockQueryBuilder.comment).toHaveBeenCalledWith(
-        expect.stringContaining('HINT: Optimized for pagination')
+        expect.stringContaining('HINT: Optimized for pagination'),
       );
     });
 
     it('deve aplicar otimizações de paginação', () => {
-      mockQueryBuilder.getQuery.mockReturnValue('SELECT * FROM test_entity LIMIT 10 OFFSET 20');
-      
+      mockQueryBuilder.getQuery.mockReturnValue(
+        'SELECT * FROM test_entity LIMIT 10 OFFSET 20',
+      );
+
       (scopedRepository as any).applyPaginationOptimizations(mockQueryBuilder);
-      
-      expect(mockQueryBuilder.addOrderBy).toHaveBeenCalledWith('entity.id', 'ASC');
+
+      expect(mockQueryBuilder.addOrderBy).toHaveBeenCalledWith(
+        'entity.id',
+        'ASC',
+      );
       expect(mockQueryBuilder.comment).toHaveBeenCalledWith(
-        expect.stringContaining('cursor-based pagination')
+        expect.stringContaining('cursor-based pagination'),
       );
     });
 
@@ -217,36 +229,47 @@ describe('ScopedRepository - Performance Optimizations', () => {
       const contextUnidade: IScopeContext = {
         tipo: ScopeType.UNIDADE,
         user_id: '123',
-        unidade_id: '1'
+        unidade_id: '1',
       };
-      
-      (scopedRepository as any).applyQueryHints(mockQueryBuilder, contextUnidade, 'entity');
-      
+
+      (scopedRepository as any).applyQueryHints(
+        mockQueryBuilder,
+        contextUnidade,
+        'entity',
+      );
+
       expect(mockQueryBuilder.comment).toHaveBeenCalledWith(
-        expect.stringContaining('idx_test_entity_unidade_id')
+        expect.stringContaining('idx_test_entity_unidade_id'),
       );
     });
 
     it('deve aplicar hints para escopo PROPRIO', () => {
       const contextProprio: IScopeContext = {
         tipo: ScopeType.PROPRIO,
-        user_id: '123'
+        user_id: '123',
       };
-      
-      (scopedRepository as any).applyQueryHints(mockQueryBuilder, contextProprio, 'entity');
-      
+
+      (scopedRepository as any).applyQueryHints(
+        mockQueryBuilder,
+        contextProprio,
+        'entity',
+      );
+
       expect(mockQueryBuilder.comment).toHaveBeenCalledWith(
-        expect.stringContaining('idx_test_entity_user_id')
+        expect.stringContaining('idx_test_entity_user_id'),
       );
     });
 
     it('deve configurar threshold para LIMIT otimizado', () => {
-      const queryBuilder = scopedRepository.createOptimizedQueryBuilder('entity', {
-        optimizedLimitThreshold: 1000
-      });
-      
+      const queryBuilder = scopedRepository.createOptimizedQueryBuilder(
+        'entity',
+        {
+          optimizedLimitThreshold: 1000,
+        },
+      );
+
       expect(mockQueryBuilder.comment).toHaveBeenCalledWith(
-        expect.stringContaining('LIMIT_THRESHOLD: 1000')
+        expect.stringContaining('LIMIT_THRESHOLD: 1000'),
       );
     });
   });
@@ -256,9 +279,9 @@ describe('ScopedRepository - Performance Optimizations', () => {
       // Construir alguns caches
       (scopedRepository as any).hasColumn('unidade_id');
       (scopedRepository as any).hasColumn('user_id');
-      
+
       const stats = ScopedRepository.getCacheStats();
-      
+
       expect(stats).toHaveProperty('l1Size');
       expect(stats).toHaveProperty('entities');
       expect(stats).toHaveProperty('oldestCache');
@@ -269,14 +292,14 @@ describe('ScopedRepository - Performance Optimizations', () => {
     it('deve limpar todo o cache de metadados', () => {
       // Construir cache
       (scopedRepository as any).hasColumn('unidade_id');
-      
+
       // Verificar que existe
       let stats = ScopedRepository.getCacheStats();
       expect(stats.l1Size).toBeGreaterThan(0);
-      
+
       // Limpar tudo
       ScopedRepository.clearAllMetadataCache();
-      
+
       // Verificar que foi limpo
       stats = ScopedRepository.getCacheStats();
       expect(stats.l1Size).toBe(0);
@@ -286,20 +309,22 @@ describe('ScopedRepository - Performance Optimizations', () => {
   describe('Configuração de Cache Service', () => {
     it('deve configurar cache service globalmente', () => {
       const newCacheService = {} as CacheService;
-      
+
       ScopedRepository.setCacheService(newCacheService);
-      
+
       // Verificar que foi configurado (através de efeito colateral)
-      expect(() => ScopedRepository.setCacheService(newCacheService)).not.toThrow();
+      expect(() =>
+        ScopedRepository.setCacheService(newCacheService),
+      ).not.toThrow();
     });
   });
 
   describe('Integração com RequestContextHolder', () => {
     it('deve usar query hints em operações com contexto', async () => {
       jest.spyOn(RequestContextHolder, 'get').mockReturnValue(mockContext);
-      
+
       await scopedRepository.findAll();
-      
+
       // Verificar que query hints foram aplicados
       expect(mockQueryBuilder.comment).toHaveBeenCalled();
     });

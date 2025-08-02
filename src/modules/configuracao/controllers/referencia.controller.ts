@@ -110,7 +110,7 @@ export class ReferenciaController {
    *
    * Inclui tipos de benefício, status de solicitação, unidades, status de pagamento,
    * bairros, usuários e roles. Utiliza cache em memória para máxima performance.
-   * 
+   *
    * As unidades só são retornadas para usuários com roles: admin, super_admin ou gestor.
    */
   @Get()
@@ -137,7 +137,7 @@ export class ReferenciaController {
 
   /**
    * Filtra os dados de referência baseado nas roles do usuário
-   * 
+   *
    * @param dados Dados de referência completos
    * @param user Usuário autenticado (opcional para endpoints públicos)
    * @returns Dados filtrados conforme permissões do usuário
@@ -151,10 +151,10 @@ export class ReferenciaController {
 
     // Roles que podem visualizar unidades
     const rolesAutorizadas = ['SUPER_ADMIN', 'ADMIN', 'GESTOR'];
-    
+
     // Verificar se o usuário possui uma das roles autorizadas
-    const temRoleAutorizada = user.roles?.some(role => 
-      rolesAutorizadas.includes(role)
+    const temRoleAutorizada = user.roles?.some((role) =>
+      rolesAutorizadas.includes(role),
     );
 
     // Se não tem role autorizada, remover unidades dos dados
@@ -172,19 +172,14 @@ export class ReferenciaController {
    */
   private async buscarDadosOtimizados() {
     // Executar todas as consultas em paralelo com otimizações
-    const [
-      tiposBeneficio,
-      unidades,
-      usuarios,
-      roles,
-      bairros,
-    ] = await Promise.all([
-      this.beneficioService.findAll({ limit: 500 }), // Reduzido de 1000 para 500
-      this.unidadeService.findAll({ limit: 500 }),   // Reduzido de 1000 para 500
-      this.usuarioService.findAll({ limit: 500 }),   // Reduzido de 1000 para 500
-      this.usuarioService.findAllRoles(),
-      this.cidadaoService.findAllBairros(),
-    ]);
+    const [tiposBeneficio, unidades, usuarios, roles, bairros] =
+      await Promise.all([
+        this.beneficioService.findAll({ limit: 500 }), // Reduzido de 1000 para 500
+        this.unidadeService.findAll({ limit: 500 }), // Reduzido de 1000 para 500
+        this.usuarioService.findAll({ limit: 500 }), // Reduzido de 1000 para 500
+        this.usuarioService.findAllRoles(),
+        this.cidadaoService.findAllBairros(),
+      ]);
 
     // Processar dados de forma otimizada
     return {
