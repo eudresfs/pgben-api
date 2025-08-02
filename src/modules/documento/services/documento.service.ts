@@ -168,6 +168,12 @@ export class DocumentoService {
     id: string,
     usuarioId?: string,
   ): Promise<{ buffer: Buffer; mimetype: string; nomeOriginal: string }> {
+    this.logger.info(
+      `Iniciando download do documento ${id}`,
+      DocumentoService.name,
+      { documentoId: id, usuarioId },
+    );
+
     let documento: Documento;
 
     if (usuarioId) {
@@ -182,6 +188,17 @@ export class DocumentoService {
         { documentoId: id },
       );
     }
+
+    this.logger.debug(
+      `Documento encontrado: ${documento.nome_original}`,
+      DocumentoService.name,
+      { 
+        documentoId: id, 
+        caminhoStorage: documento.caminho,
+        mimetype: documento.mimetype,
+        tamanho: documento.tamanho 
+      },
+    );
 
     const storageProvider = this.storageProviderFactory.getProvider();
 
@@ -200,15 +217,25 @@ export class DocumentoService {
         nomeOriginal: documento.nome_original,
       };
     } catch (error) {
+      // Log estruturado do erro para rastreabilidade
       this.logger.error(
-        `Erro ao fazer download do documento ${id}`,
+        `Falha no download do documento ${id}`,
         error,
         DocumentoService.name,
-        { documentoId: id, usuarioId },
+        {
+          documentoId: id,
+          usuarioId,
+          caminhoStorage: documento.caminho,
+          nomeOriginal: documento.nome_original,
+          errorType: error.constructor.name,
+          errorMessage: error.message,
+        },
       );
-      throw new InternalServerErrorException(
-        'Erro ao fazer download do documento',
-      );
+      
+      // Propagar a exceção específica do storage
+      // As exceções específicas (DocumentoNaoEncontradoException, etc.) 
+      // serão tratadas pelos interceptors globais
+      throw error;
     }
   }
 

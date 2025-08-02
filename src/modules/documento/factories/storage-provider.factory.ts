@@ -155,6 +155,22 @@ export class StorageProviderFactory {
         return resultado.arquivo;
       },
 
+      obterArquivoStream: async (caminho: string): Promise<any> => {
+        // Obter stream diretamente do MinIO sem carregar na memória
+        try {
+          const stream = await this.minioService.getObjectStream(caminho);
+          return stream;
+        } catch (error) {
+          // Fallback para o método tradicional se getObjectStream não existir
+          this.logger.warn(
+            `Método getObjectStream não disponível, usando fallback para: ${caminho}`,
+          );
+          const resultado = await this.minioService.downloadArquivo(caminho);
+          const { Readable } = require('stream');
+          return Readable.from(resultado.arquivo);
+        }
+      },
+
       removerArquivo: async (caminho: string): Promise<void> => {
         await this.minioService.removerArquivo(caminho);
       },

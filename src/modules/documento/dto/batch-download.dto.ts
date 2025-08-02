@@ -10,6 +10,7 @@ import {
 import { Transform } from 'class-transformer';
 import { TipoDocumentoEnum } from '@/enums';
 import { StatusDownloadLoteEnum } from '@/entities/documento-batch-job.entity';
+import { Documento } from '../../../entities/documento.entity';
 
 /**
  * DTO para filtros de download em lote de documentos
@@ -104,33 +105,12 @@ export interface BatchDownloadFiltros {
   incluirMetadados?: boolean;
 }
 
-/**
- * Interface para status do job de download em lote
- */
-export interface BatchJobStatus {
-  id: string;
-  status:
-    | StatusDownloadLoteEnum.PENDING
-    | StatusDownloadLoteEnum.COMPLETED
-    | StatusDownloadLoteEnum.FAILED;
-  usuarioId: string;
-  filtros: BatchDownloadFiltros;
-  documentos: any[]; // Será tipado com a entidade Documento
-  estimatedSize: number;
-  actualSize?: number;
-  documentCount: number;
-  createdAt: Date;
-  completedAt?: Date;
-  progress: number;
-  zipPath?: string;
-  error?: string;
-}
+
 
 /**
  * Interface para estrutura do ZIP
  */
 export interface ZipStructure {
-  folders: Map<string, string[]>;
   files: ZipFileInfo[];
 }
 
@@ -138,8 +118,9 @@ export interface ZipStructure {
  * Interface para informações de arquivo no ZIP
  */
 export interface ZipFileInfo {
-  documento: any; // Será tipado com a entidade Documento
+  documento: Documento;
   zipPath: string;
+  tamanho: number;
 }
 
 /**

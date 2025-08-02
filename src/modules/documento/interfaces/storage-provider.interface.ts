@@ -33,6 +33,13 @@ export interface StorageProvider {
   obterArquivo(caminho: string): Promise<Buffer>;
 
   /**
+   * Obtém um stream de arquivo do armazenamento (para arquivos grandes)
+   * @param caminho Caminho ou identificador do arquivo
+   * @returns Stream do arquivo
+   */
+  obterArquivoStream(caminho: string): Promise<NodeJS.ReadableStream>;
+
+  /**
    * Remove um arquivo do armazenamento
    * @param caminho Caminho ou identificador do arquivo
    */

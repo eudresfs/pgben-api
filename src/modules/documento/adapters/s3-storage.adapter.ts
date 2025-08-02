@@ -233,6 +233,74 @@ export class S3StorageAdapter implements StorageProvider {
   }
 
   /**
+   * Obtém um stream de leitura de um arquivo do armazenamento S3
+   * @param caminho Caminho ou identificador do arquivo
+   * @returns Stream de leitura do arquivo
+   */
+  async obterArquivoStream(caminho: string): Promise<Readable> {
+    const startTime = Date.now();
+
+    try {
+      this.loggingService.debug(
+        `Iniciando stream S3`,
+        S3StorageAdapter.name,
+        {
+          key: caminho,
+          bucket: this.bucketName,
+        },
+      );
+
+      // Obter stream do arquivo do S3 com retry
+      const streamOperation = async () => {
+        const command = new GetObjectCommand({
+          Bucket: this.bucketName,
+          Key: caminho,
+        });
+
+        return await this.s3Client.send(command);
+      };
+
+      const response = await this.retryOperation(
+        streamOperation,
+        `stream S3 [${caminho}]`,
+      );
+
+      const stream = response.Body as Readable;
+
+      if (!stream) {
+        throw new Error('Resposta do S3 não contém dados');
+      }
+
+      const duration = Date.now() - startTime;
+      this.loggingService.debug(
+        `Stream S3 criado com sucesso`,
+        S3StorageAdapter.name,
+        {
+          key: caminho,
+          bucket: this.bucketName,
+          duracao: duration,
+        },
+      );
+
+      return stream;
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      this.loggingService.error(
+        `Falha ao criar stream S3`,
+        error,
+        S3StorageAdapter.name,
+        {
+          key: caminho,
+          bucket: this.bucketName,
+          duracao: duration,
+        },
+      );
+
+      throw this.handleS3Error(error, 'stream', caminho);
+    }
+  }
+
+  /**
    * Remove um arquivo do armazenamento S3
    * @param caminho Caminho ou identificador do arquivo
    */

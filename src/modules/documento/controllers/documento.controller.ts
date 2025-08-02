@@ -851,7 +851,7 @@ export class DocumentoController {
       status: this.mapStatusToResponseFormat(job.status),
       progress: job.progresso,
       documentCount: job.total_documentos,
-      estimatedSize: job.tamanho_estimado || 0,
+      estimatedSize: 0, // tamanho_estimado removido da interface
       actualSize: 0, // Será calculado quando o job for concluído
       createdAt: new Date(), // Será obtido da entidade quando necessário
       completedAt: undefined, // Será obtido da entidade quando necessário
