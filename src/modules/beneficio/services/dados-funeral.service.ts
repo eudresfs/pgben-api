@@ -178,10 +178,7 @@ export class DadosFuneralService extends AbstractDadosBeneficioService<
       }
 
       if (!data.local_obito?.trim()) {
-        errorBuilder.add(
-          'local_obito',
-          'Campo local_obito é obrigatório.',
-        );
+        errorBuilder.add('local_obito', 'Campo local_obito é obrigatório.');
       }
 
       if (!data.grau_parentesco_requerente?.trim()) {
@@ -199,7 +196,10 @@ export class DadosFuneralService extends AbstractDadosBeneficioService<
       }
 
       // Validação de declaração de óbito (se fornecida)
-      if (data.declaracao_obito !== undefined && !data.declaracao_obito?.trim()) {
+      if (
+        data.declaracao_obito !== undefined &&
+        !data.declaracao_obito?.trim()
+      ) {
         errorBuilder.add(
           'declaracao_obito',
           'Declaração de óbito não pode estar vazia quando fornecida.',
@@ -250,10 +250,7 @@ export class DadosFuneralService extends AbstractDadosBeneficioService<
       if (data.data_autorizacao) {
         const dataAutorizacao = new Date(data.data_autorizacao);
         if (isNaN(dataAutorizacao.getTime())) {
-          errorBuilder.add(
-            'data_autorizacao',
-            'Data de autorização inválida.',
-          );
+          errorBuilder.add('data_autorizacao', 'Data de autorização inválida.');
         } else {
           const hoje = new Date();
           if (dataAutorizacao > hoje) {
@@ -268,8 +265,7 @@ export class DadosFuneralService extends AbstractDadosBeneficioService<
       // Validação de observações especiais (se fornecidas)
       if (
         data.observacoes &&
-        data.observacoes.length >
-          BENEFICIO_CONSTANTS.VALIDATION.MAX_OBSERVACOES
+        data.observacoes.length > BENEFICIO_CONSTANTS.VALIDATION.MAX_OBSERVACOES
       ) {
         errorBuilder.add(
           'observacoes',
@@ -278,15 +274,18 @@ export class DadosFuneralService extends AbstractDadosBeneficioService<
       }
 
       // Validação de translado (se fornecido)
-      if (data.translado && !Object.values(TransladoEnum).includes(data.translado)) {
-        errorBuilder.add(
-          'translado',
-          'Tipo de translado inválido.',
-        );
+      if (
+        data.translado &&
+        !Object.values(TransladoEnum).includes(data.translado)
+      ) {
+        errorBuilder.add('translado', 'Tipo de translado inválido.');
       }
 
       // Validação de endereço do velório (se fornecido)
-      if (data.endereco_velorio && !this.isValidEndereco(data.endereco_velorio)) {
+      if (
+        data.endereco_velorio &&
+        !this.isValidEndereco(data.endereco_velorio)
+      ) {
         errorBuilder.add(
           'endereco_velorio',
           'Endereço do velório incompleto ou inválido.',
@@ -294,7 +293,10 @@ export class DadosFuneralService extends AbstractDadosBeneficioService<
       }
 
       // Validação de endereço do cemitério (se fornecido)
-      if (data.endereco_cemiterio && !this.isValidEndereco(data.endereco_cemiterio)) {
+      if (
+        data.endereco_cemiterio &&
+        !this.isValidEndereco(data.endereco_cemiterio)
+      ) {
         errorBuilder.add(
           'endereco_cemiterio',
           'Endereço do cemitério incompleto ou inválido.',
@@ -309,11 +311,14 @@ export class DadosFuneralService extends AbstractDadosBeneficioService<
       if (error instanceof AppError) {
         throw error;
       }
-      this.logger.error('Erro inesperado durante validação do benefício por morte', {
-        error: error.message,
-        stack: error.stack,
-        solicitacao_id: data.solicitacao_id,
-      });
+      this.logger.error(
+        'Erro inesperado durante validação do benefício por morte',
+        {
+          error: error.message,
+          stack: error.stack,
+          solicitacao_id: data.solicitacao_id,
+        },
+      );
       throw new InternalServerErrorException(
         'Erro interno durante validação dos dados do benefício por morte',
       );
@@ -427,16 +432,19 @@ export class DadosFuneralService extends AbstractDadosBeneficioService<
       }
 
       // Validação de translado (se fornecido)
-      if (data.translado !== undefined && !Object.values(TransladoEnum).includes(data.translado)) {
-        errorBuilder.add(
-          'translado',
-          'Tipo de translado inválido.',
-        );
+      if (
+        data.translado !== undefined &&
+        !Object.values(TransladoEnum).includes(data.translado)
+      ) {
+        errorBuilder.add('translado', 'Tipo de translado inválido.');
       }
 
       // Validação de endereço do velório (se fornecido)
       if (data.endereco_velorio !== undefined) {
-        if (data.endereco_velorio && !this.isValidEndereco(data.endereco_velorio)) {
+        if (
+          data.endereco_velorio &&
+          !this.isValidEndereco(data.endereco_velorio)
+        ) {
           errorBuilder.add(
             'endereco_velorio',
             'Endereço do velório incompleto ou inválido.',
@@ -446,7 +454,10 @@ export class DadosFuneralService extends AbstractDadosBeneficioService<
 
       // Validação de endereço do cemitério (se fornecido)
       if (data.endereco_cemiterio !== undefined) {
-        if (data.endereco_cemiterio && !this.isValidEndereco(data.endereco_cemiterio)) {
+        if (
+          data.endereco_cemiterio &&
+          !this.isValidEndereco(data.endereco_cemiterio)
+        ) {
           errorBuilder.add(
             'endereco_cemiterio',
             'Endereço do cemitério incompleto ou inválido.',
@@ -490,8 +501,7 @@ export class DadosFuneralService extends AbstractDadosBeneficioService<
       if (
         data.observacoes !== undefined &&
         data.observacoes &&
-        data.observacoes.length >
-          BENEFICIO_CONSTANTS.VALIDATION.MAX_OBSERVACOES
+        data.observacoes.length > BENEFICIO_CONSTANTS.VALIDATION.MAX_OBSERVACOES
       ) {
         errorBuilder.add(
           'observacoes',
@@ -523,7 +533,7 @@ export class DadosFuneralService extends AbstractDadosBeneficioService<
    */
   private isValidEndereco(endereco: EnderecoDto): boolean {
     if (!endereco) return false;
-    
+
     return !!(
       endereco.logradouro?.trim() &&
       endereco.numero?.trim() &&

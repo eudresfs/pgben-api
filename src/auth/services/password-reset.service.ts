@@ -368,10 +368,7 @@ export class PasswordResetService {
         return { valid: false };
       }
 
-
-      this.logger.log(
-        `Token validado para usuário ${resetToken.usuario_id}`,
-      );
+      this.logger.log(`Token validado para usuário ${resetToken.usuario_id}`);
 
       return {
         valid: true,

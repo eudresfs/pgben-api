@@ -182,7 +182,10 @@ export class DadosAluguelSocialService extends AbstractDadosBeneficioService<
       }
 
       // Validação de campos opcionais de processo
-      if (data.processo_judicializado !== undefined && data.processo_judicializado !== null) {
+      if (
+        data.processo_judicializado !== undefined &&
+        data.processo_judicializado !== null
+      ) {
         if (typeof data.processo_judicializado !== 'string') {
           errorBuilder.add(
             'processo_judicializado',

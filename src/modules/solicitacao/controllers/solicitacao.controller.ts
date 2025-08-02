@@ -700,8 +700,6 @@ export class SolicitacaoController {
     status: 400,
     description: 'Solicitação não possui determinação judicial vinculada',
   })
-
-
   async desvincularDeterminacaoJudicial(
     @Param('id', ParseUUIDPipe) id: string,
     @Req() req: Request,

@@ -179,7 +179,7 @@ describe('UsuarioRepository', () => {
 
       expect(typeormRepository.findOne).toHaveBeenCalledWith({
         where: { email: 'joao.silva@semtas.natal.gov.br' },
-        relations: ['role', 'unidade', 'setor']
+        relations: ['role', 'unidade', 'setor'],
       });
       expect(result).toEqual(mockUsuario);
     });
@@ -201,7 +201,7 @@ describe('UsuarioRepository', () => {
 
       expect(typeormRepository.findOne).toHaveBeenCalledWith({
         where: { cpf: '123.456.789-00' },
-        relations: ['role', 'unidade', 'setor']
+        relations: ['role', 'unidade', 'setor'],
       });
       expect(result).toEqual(mockUsuario);
     });

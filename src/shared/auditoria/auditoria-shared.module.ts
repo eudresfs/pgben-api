@@ -27,7 +27,7 @@ import { AuditoriaSignatureService } from '../../modules/auditoria/services/audi
 
     // Configuração assíncrona do BullModule - usando mesma config do AppModule
     BullModule.registerQueueAsync({
-      name: 'auditoria', 
+      name: 'auditoria',
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => {
         const { getBullConfig } = await import('../../config/bull.config');

@@ -95,7 +95,8 @@ export class SolicitacaoRepository {
     filtros: FiltrosSolicitacao,
     opcoesPaginacao: OpcoesPaginacao,
   ): Promise<ResultadoPaginado<Solicitacao>> {
-    const queryBuilder = this.scopedRepository.createScopedQueryBuilder('solicitacao')
+    const queryBuilder = this.scopedRepository
+      .createScopedQueryBuilder('solicitacao')
       .leftJoinAndSelect('solicitacao.beneficiario', 'beneficiario')
       .leftJoinAndSelect('solicitacao.tipo_beneficio', 'tipo_beneficio')
       .leftJoinAndSelect('solicitacao.unidade', 'unidade')
@@ -151,7 +152,8 @@ export class SolicitacaoRepository {
    * @returns Solicitação encontrada
    */
   async buscarPorProtocolo(protocolo: string): Promise<Solicitacao | null> {
-    const queryBuilder = this.scopedRepository.createScopedQueryBuilder('solicitacao')
+    const queryBuilder = this.scopedRepository
+      .createScopedQueryBuilder('solicitacao')
       .leftJoinAndSelect('solicitacao.beneficiario', 'beneficiario')
       .leftJoinAndSelect('solicitacao.tipo_beneficio', 'tipo_beneficio')
       .leftJoinAndSelect('solicitacao.unidade', 'unidade')
@@ -168,7 +170,8 @@ export class SolicitacaoRepository {
   async buscarComPrazosVencidos(
     dataReferencia: Date = new Date(),
   ): Promise<Solicitacao[]> {
-    return this.scopedRepository.createScopedQueryBuilder('solicitacao')
+    return this.scopedRepository
+      .createScopedQueryBuilder('solicitacao')
       .leftJoinAndSelect('solicitacao.unidade', 'unidade')
       .leftJoinAndSelect('solicitacao.tecnico', 'tecnico')
       .where(
@@ -198,7 +201,8 @@ export class SolicitacaoRepository {
     const dataLimite = new Date();
     dataLimite.setDate(dataLimite.getDate() + diasAntecedencia);
 
-    return this.scopedRepository.createScopedQueryBuilder('solicitacao')
+    return this.scopedRepository
+      .createScopedQueryBuilder('solicitacao')
       .leftJoinAndSelect('solicitacao.unidade', 'unidade')
       .leftJoinAndSelect('solicitacao.tecnico', 'tecnico')
       .where(
@@ -225,7 +229,8 @@ export class SolicitacaoRepository {
   async contarPorStatus(
     filtros?: Partial<FiltrosSolicitacao>,
   ): Promise<Record<StatusSolicitacao, number>> {
-    const queryBuilder = this.scopedRepository.createScopedQueryBuilder('solicitacao')
+    const queryBuilder = this.scopedRepository
+      .createScopedQueryBuilder('solicitacao')
       .select('solicitacao.status', 'status')
       .addSelect('COUNT(*)', 'total')
       .groupBy('solicitacao.status');
@@ -263,7 +268,8 @@ export class SolicitacaoRepository {
     beneficiarioId: string,
     incluirFinalizadas: boolean = false,
   ): Promise<Solicitacao[]> {
-    const queryBuilder = this.scopedRepository.createScopedQueryBuilder('solicitacao')
+    const queryBuilder = this.scopedRepository
+      .createScopedQueryBuilder('solicitacao')
       .leftJoinAndSelect('solicitacao.tipo_beneficio', 'tipo_beneficio')
       .leftJoinAndSelect('solicitacao.unidade', 'unidade')
       .where('solicitacao.beneficiario_id = :beneficiarioId', {
@@ -473,7 +479,8 @@ export class SolicitacaoRepository {
    * @returns Lista de solicitações
    */
   async buscarPorIds(ids: string[]): Promise<Solicitacao[]> {
-    const queryBuilder = this.scopedRepository.createScopedQueryBuilder('solicitacao')
+    const queryBuilder = this.scopedRepository
+      .createScopedQueryBuilder('solicitacao')
       .whereInIds(ids);
     return queryBuilder.getMany();
   }

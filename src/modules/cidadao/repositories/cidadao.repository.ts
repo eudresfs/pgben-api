@@ -18,7 +18,7 @@ export interface FindAllOptions {
 
 /**
  * Repository para entidade Cidadao com aplicação automática de escopo
- * 
+ *
  * @description
  * Estende ScopedRepository para aplicar automaticamente filtros de escopo
  * baseados no contexto da requisição (GLOBAL, UNIDADE, PROPRIO)
@@ -27,21 +27,21 @@ export interface FindAllOptions {
 export class CidadaoRepository extends ScopedRepository<Cidadao> {
   constructor(private readonly dataSource: DataSource) {
     const manager = dataSource.createEntityManager();
-    super(
-      Cidadao,
-      manager,
-      undefined,
-      { strictMode: true, allowGlobalScope: false }
-    );
+    super(Cidadao, manager, undefined, {
+      strictMode: true,
+      allowGlobalScope: false,
+    });
   }
 
   /**
    * Busca cidadãos com filtros específicos e escopo aplicado automaticamente
-   * 
+   *
    * @param options - Opções de busca e filtros
    * @returns Array de cidadãos e total de registros
    */
-  async findAllWithFilters(options: FindAllOptions = {}): Promise<[Cidadao[], number]> {
+  async findAllWithFilters(
+    options: FindAllOptions = {},
+  ): Promise<[Cidadao[], number]> {
     const {
       skip = 0,
       take = 10,
@@ -105,14 +105,17 @@ export class CidadaoRepository extends ScopedRepository<Cidadao> {
       query.leftJoinAndSelect('cidadao.unidade', 'unidade');
       query.leftJoinAndSelect('cidadao.contatos', 'contato');
       query.leftJoinAndSelect('cidadao.enderecos', 'endereco');
-      query.leftJoinAndSelect('cidadao.composicao_familiar', 'composicao_familiar');
+      query.leftJoinAndSelect(
+        'cidadao.composicao_familiar',
+        'composicao_familiar',
+      );
     } else {
       // Sempre incluir unidade, contatos e apenas o último endereço
       query.leftJoinAndSelect('cidadao.unidade', 'unidade');
       query.leftJoinAndSelect(
         'cidadao.enderecos',
         'endereco',
-        'endereco.data_fim_vigencia IS NULL'
+        'endereco.data_fim_vigencia IS NULL',
       );
     }
 
@@ -125,7 +128,7 @@ export class CidadaoRepository extends ScopedRepository<Cidadao> {
 
   /**
    * Busca cidadão por ID com escopo aplicado automaticamente
-   * 
+   *
    * @param id - ID do cidadão
    * @param includeRelations - Se deve incluir relacionamentos
    * @returns Cidadão encontrado ou null
@@ -134,20 +137,25 @@ export class CidadaoRepository extends ScopedRepository<Cidadao> {
     id: string,
     includeRelations = false,
   ): Promise<Cidadao | null> {
-    const query = this.createScopedQueryBuilder('cidadao')
-      .where('cidadao.id = :id', { id });
+    const query = this.createScopedQueryBuilder('cidadao').where(
+      'cidadao.id = :id',
+      { id },
+    );
 
     if (includeRelations) {
       query.leftJoinAndSelect('cidadao.unidade', 'unidade');
       query.leftJoinAndSelect('cidadao.contatos', 'contato');
       query.leftJoinAndSelect('cidadao.enderecos', 'endereco');
-      query.leftJoinAndSelect('cidadao.composicao_familiar', 'composicao_familiar');
+      query.leftJoinAndSelect(
+        'cidadao.composicao_familiar',
+        'composicao_familiar',
+      );
     } else {
       query.leftJoinAndSelect('cidadao.unidade', 'unidade');
       query.leftJoinAndSelect(
         'cidadao.enderecos',
         'endereco',
-        'endereco.data_fim_vigencia IS NULL'
+        'endereco.data_fim_vigencia IS NULL',
       );
     }
 
@@ -156,7 +164,7 @@ export class CidadaoRepository extends ScopedRepository<Cidadao> {
 
   /**
    * Busca cidadão por CPF com escopo aplicado automaticamente
-   * 
+   *
    * @param cpf - CPF do cidadão
    * @param includeRelations - Se deve incluir relacionamentos
    * @returns Cidadão encontrado ou null
@@ -166,20 +174,25 @@ export class CidadaoRepository extends ScopedRepository<Cidadao> {
     includeRelations = false,
   ): Promise<Cidadao | null> {
     const cpfClean = cpf.replace(/\D/g, '');
-    const query = this.createScopedQueryBuilder('cidadao')
-      .where('cidadao.cpf = :cpf', { cpf: cpfClean });
+    const query = this.createScopedQueryBuilder('cidadao').where(
+      'cidadao.cpf = :cpf',
+      { cpf: cpfClean },
+    );
 
     if (includeRelations) {
       query.leftJoinAndSelect('cidadao.unidade', 'unidade');
       query.leftJoinAndSelect('cidadao.contatos', 'contato');
       query.leftJoinAndSelect('cidadao.enderecos', 'endereco');
-      query.leftJoinAndSelect('cidadao.composicao_familiar', 'composicao_familiar');
+      query.leftJoinAndSelect(
+        'cidadao.composicao_familiar',
+        'composicao_familiar',
+      );
     } else {
       query.leftJoinAndSelect('cidadao.unidade', 'unidade');
       query.leftJoinAndSelect(
         'cidadao.enderecos',
         'endereco',
-        'endereco.data_fim_vigencia IS NULL'
+        'endereco.data_fim_vigencia IS NULL',
       );
     }
 
@@ -188,7 +201,7 @@ export class CidadaoRepository extends ScopedRepository<Cidadao> {
 
   /**
    * Busca cidadão por NIS com escopo aplicado automaticamente
-   * 
+   *
    * @param nis - NIS do cidadão
    * @param includeRelations - Se deve incluir relacionamentos
    * @returns Cidadão encontrado ou null
@@ -198,20 +211,25 @@ export class CidadaoRepository extends ScopedRepository<Cidadao> {
     includeRelations = false,
   ): Promise<Cidadao | null> {
     const nisClean = nis.replace(/\D/g, '');
-    const query = this.createScopedQueryBuilder('cidadao')
-      .where('cidadao.nis = :nis', { nis: nisClean });
+    const query = this.createScopedQueryBuilder('cidadao').where(
+      'cidadao.nis = :nis',
+      { nis: nisClean },
+    );
 
     if (includeRelations) {
       query.leftJoinAndSelect('cidadao.unidade', 'unidade');
       query.leftJoinAndSelect('cidadao.contatos', 'contato');
       query.leftJoinAndSelect('cidadao.enderecos', 'endereco');
-      query.leftJoinAndSelect('cidadao.composicao_familiar', 'composicao_familiar');
+      query.leftJoinAndSelect(
+        'cidadao.composicao_familiar',
+        'composicao_familiar',
+      );
     } else {
       query.leftJoinAndSelect('cidadao.unidade', 'unidade');
       query.leftJoinAndSelect(
         'cidadao.enderecos',
         'endereco',
-        'endereco.data_fim_vigencia IS NULL'
+        'endereco.data_fim_vigencia IS NULL',
       );
     }
 
@@ -220,7 +238,7 @@ export class CidadaoRepository extends ScopedRepository<Cidadao> {
 
   /**
    * Cria um novo cidadão com validações e escopo aplicado
-   * 
+   *
    * @param data - Dados do cidadão
    * @returns Cidadão criado
    */
@@ -246,7 +264,7 @@ export class CidadaoRepository extends ScopedRepository<Cidadao> {
 
   /**
    * Atualiza um cidadão com verificação de escopo
-   * 
+   *
    * @param id - ID do cidadão
    * @param data - Dados para atualização
    * @returns Cidadão atualizado
@@ -258,7 +276,7 @@ export class CidadaoRepository extends ScopedRepository<Cidadao> {
 
   /**
    * Remove um cidadão com verificação de escopo
-   * 
+   *
    * @param id - ID do cidadão
    */
   async removeCidadao(id: string): Promise<void> {
@@ -274,7 +292,7 @@ export class CidadaoRepository extends ScopedRepository<Cidadao> {
 
   /**
    * Verifica se um cidadão existe no escopo atual
-   * 
+   *
    * @param id - ID do cidadão
    * @returns true se existe no escopo
    */
@@ -285,7 +303,7 @@ export class CidadaoRepository extends ScopedRepository<Cidadao> {
 
   /**
    * Busca todos os bairros disponíveis no escopo atual
-   * 
+   *
    * @returns Lista de bairros únicos
    */
   async findAllBairros(): Promise<string[]> {
@@ -295,8 +313,8 @@ export class CidadaoRepository extends ScopedRepository<Cidadao> {
         .select('DISTINCT endereco.bairro', 'bairro')
         .innerJoin('cidadao.enderecos', 'endereco')
         .where('endereco.bairro IS NOT NULL')
-        .andWhere('endereco.bairro <> \'\'') 
-        .andWhere('TRIM(endereco.bairro) <> \'\'') 
+        .andWhere("endereco.bairro <> ''")
+        .andWhere("TRIM(endereco.bairro) <> ''")
         .andWhere('endereco.data_fim_vigencia IS NULL')
         .orderBy('endereco.bairro', 'ASC');
 
@@ -312,14 +330,16 @@ export class CidadaoRepository extends ScopedRepository<Cidadao> {
   }
 
   // ========== MÉTODOS ADMINISTRATIVOS (SEM ESCOPO) ==========
-  
+
   /**
    * Busca todos os cidadãos sem aplicar escopo (uso administrativo)
-   * 
+   *
    * @param options - Opções de busca
    * @returns Array de cidadãos e total
    */
-  async findAllGlobalAdmin(options: FindAllOptions = {}): Promise<[Cidadao[], number]> {
+  async findAllGlobalAdmin(
+    options: FindAllOptions = {},
+  ): Promise<[Cidadao[], number]> {
     const {
       skip = 0,
       take = 10,
@@ -375,13 +395,16 @@ export class CidadaoRepository extends ScopedRepository<Cidadao> {
       query.leftJoinAndSelect('cidadao.unidade', 'unidade');
       query.leftJoinAndSelect('cidadao.contatos', 'contato');
       query.leftJoinAndSelect('cidadao.enderecos', 'endereco');
-      query.leftJoinAndSelect('cidadao.composicao_familiar', 'composicao_familiar');
+      query.leftJoinAndSelect(
+        'cidadao.composicao_familiar',
+        'composicao_familiar',
+      );
     } else {
       query.leftJoinAndSelect('cidadao.unidade', 'unidade');
       query.leftJoinAndSelect(
         'cidadao.enderecos',
         'endereco',
-        'endereco.data_fim_vigencia IS NULL'
+        'endereco.data_fim_vigencia IS NULL',
       );
     }
 

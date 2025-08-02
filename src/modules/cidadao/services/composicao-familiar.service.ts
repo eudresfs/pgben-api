@@ -102,7 +102,7 @@ export class ComposicaoFamiliarService {
         ocupacao: createComposicaoFamiliarDto.ocupacao,
         escolaridade: createComposicaoFamiliarDto.escolaridade,
         parentesco: createComposicaoFamiliarDto.parentesco,
-        
+
         // Campos opcionais - limpar se não enviados
         nis: createComposicaoFamiliarDto.nis ?? null,
         renda: createComposicaoFamiliarDto.renda ?? null,
@@ -110,7 +110,8 @@ export class ComposicaoFamiliarService {
         updated_at: new Date(),
       };
 
-      const membroAtualizado = await this.composicaoFamiliarRepository.save(dadosAtualizados);
+      const membroAtualizado =
+        await this.composicaoFamiliarRepository.save(dadosAtualizados);
 
       return plainToInstance(ComposicaoFamiliarResponseDto, membroAtualizado, {
         excludeExtraneousValues: true,
@@ -138,7 +139,8 @@ export class ComposicaoFamiliarService {
       });
 
       try {
-        const membroSalvo = await this.composicaoFamiliarRepository.save(novoMembro);
+        const membroSalvo =
+          await this.composicaoFamiliarRepository.save(novoMembro);
 
         return plainToInstance(ComposicaoFamiliarResponseDto, membroSalvo, {
           excludeExtraneousValues: true,
@@ -174,7 +176,7 @@ export class ComposicaoFamiliarService {
     }
 
     // Remover membros que não estão na lista enviada
-    const nomesEnviados = membros.map(m => m.nome);
+    const nomesEnviados = membros.map((m) => m.nome);
     const membrosExistentes = await this.composicaoFamiliarRepository.find({
       where: {
         cidadao_id: cidadaoId,

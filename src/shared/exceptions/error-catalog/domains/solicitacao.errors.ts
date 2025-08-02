@@ -110,8 +110,10 @@ export const SOLICITACAO_ERRORS: Record<string, ErrorDefinition> = {
       'en-US': 'Required workflow step has not been completed',
     },
     contextualMessages: {
-      'dados_especificos_beneficio': 'Complete o formulário de requerimento do benefício antes de enviar para análise',
-      'documentos_obrigatorios': 'Anexe todos os documentos obrigatórios antes de enviar para análise',
+      dados_especificos_beneficio:
+        'Complete o formulário de requerimento do benefício antes de enviar para análise',
+      documentos_obrigatorios:
+        'Anexe todos os documentos obrigatórios antes de enviar para análise',
     },
   },
 
@@ -463,44 +465,52 @@ export function throwWorkflowStepRequired(
 ): never {
   // Extrair informações do contexto para mensagem mais específica
   const { data = {} } = context;
-  const { 
-    message, 
-    userFriendlyMessage, 
-    tipoBeneficio, 
+  const {
+    message,
+    userFriendlyMessage,
+    tipoBeneficio,
     beneficiario,
     action,
     documentosFaltantes,
     totalDocumentosFaltantes,
-    totalDocumentosObrigatorios
+    totalDocumentosObrigatorios,
   } = data;
 
   // Importar o catálogo para acessar as mensagens contextuais
   const { ERROR_CATALOG } = require('../catalog');
   const errorDefinition = ERROR_CATALOG['SOLICITACAO_WORKFLOW_STEP_REQUIRED'];
-  
+
   // Construir mensagem contextual específica baseada nos dados disponíveis
   let contextualMessage = message;
   if (!contextualMessage) {
     switch (campo) {
       case 'dados_especificos_beneficio':
         // Para dados específicos, usar mensagem do catálogo ou construir uma específica
-        const catalogMessageDados = errorDefinition?.contextualMessages?.[campo];
-        contextualMessage = catalogMessageDados || 
-          (tipoBeneficio 
+        const catalogMessageDados =
+          errorDefinition?.contextualMessages?.[campo];
+        contextualMessage =
+          catalogMessageDados ||
+          (tipoBeneficio
             ? `Complete os dados específicos do benefício '${tipoBeneficio}' antes de enviar para análise.`
             : 'Complete os dados específicos do benefício antes de enviar para análise.');
         break;
       case 'documentos_obrigatorios':
         // Para documentos, priorizar mensagem específica com lista de documentos
         if (documentosFaltantes && documentosFaltantes.length > 0) {
-          const documentosFormatados = documentosFaltantes.map((doc: string) => `'${doc}'`).join(', ');
-          contextualMessage = totalDocumentosFaltantes === 1
-            ? `O documento ${documentosFormatados} é obrigatório e deve ser anexado antes de enviar para análise.`
-            : `Os documentos ${documentosFormatados} são obrigatórios e devem ser anexados antes de enviar para análise.`;
+          const documentosFormatados = documentosFaltantes
+            .map((doc: string) => `'${doc}'`)
+            .join(', ');
+          contextualMessage =
+            totalDocumentosFaltantes === 1
+              ? `O documento ${documentosFormatados} é obrigatório e deve ser anexado antes de enviar para análise.`
+              : `Os documentos ${documentosFormatados} são obrigatórios e devem ser anexados antes de enviar para análise.`;
         } else {
           // Usar mensagem do catálogo como fallback
-          const catalogMessageDocs = errorDefinition?.contextualMessages?.[campo];
-          contextualMessage = catalogMessageDocs || 'Anexe todos os documentos obrigatórios antes de enviar para análise.';
+          const catalogMessageDocs =
+            errorDefinition?.contextualMessages?.[campo];
+          contextualMessage =
+            catalogMessageDocs ||
+            'Anexe todos os documentos obrigatórios antes de enviar para análise.';
         }
         break;
       default:

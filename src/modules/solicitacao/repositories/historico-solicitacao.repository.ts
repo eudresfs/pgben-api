@@ -28,7 +28,8 @@ export class HistoricoSolicitacaoRepository {
   async buscarHistoricoPorSolicitacao(
     solicitacaoId: string,
   ): Promise<HistoricoSolicitacao[]> {
-    return this.scopedRepository.createScopedQueryBuilder('historico')
+    return this.scopedRepository
+      .createScopedQueryBuilder('historico')
       .leftJoinAndSelect('historico.usuario', 'usuario')
       .leftJoin('historico.solicitacao', 'solicitacao')
       .where('historico.solicitacao_id = :solicitacaoId', { solicitacaoId })
@@ -106,7 +107,8 @@ export class HistoricoSolicitacaoRepository {
   async buscarUltimoRegistro(
     solicitacaoId: string,
   ): Promise<HistoricoSolicitacao | null> {
-    return this.scopedRepository.createScopedQueryBuilder('historico')
+    return this.scopedRepository
+      .createScopedQueryBuilder('historico')
       .leftJoin('historico.solicitacao', 'solicitacao')
       .where('historico.solicitacao_id = :solicitacaoId', { solicitacaoId })
       .orderBy('historico.created_at', 'DESC')
@@ -125,7 +127,8 @@ export class HistoricoSolicitacaoRepository {
     unidadeId?: string;
   }): Promise<Record<StatusSolicitacao, number>> {
     // Construir a query para calcular o tempo médio entre status
-    const queryBuilder = this.scopedRepository.createScopedQueryBuilder('historico')
+    const queryBuilder = this.scopedRepository
+      .createScopedQueryBuilder('historico')
       .select('historico.status_anterior', 'status')
       .addSelect(
         'AVG(EXTRACT(EPOCH FROM (LEAD(historico.created_at) OVER (PARTITION BY historico.solicitacao_id ORDER BY historico.created_at) - historico.created_at)))/86400',
@@ -194,7 +197,8 @@ export class HistoricoSolicitacaoRepository {
     solicitacaoId: string,
     campo: string,
   ): Promise<HistoricoSolicitacao[]> {
-    return this.scopedRepository.createScopedQueryBuilder('historico')
+    return this.scopedRepository
+      .createScopedQueryBuilder('historico')
       .leftJoin('historico.solicitacao', 'solicitacao')
       .where('historico.solicitacao_id = :solicitacaoId', { solicitacaoId })
       .andWhere(`historico.dados_alterados->>'${campo}' IS NOT NULL`)

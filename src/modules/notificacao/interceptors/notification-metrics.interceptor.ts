@@ -111,7 +111,6 @@ export class NotificationMetricsInterceptor implements NestInterceptor {
         // Registrar operação de notificação
         this.recordNotificationOperation(operationType, success, duration);
 
-
         // Se houver erro, registrar evento de segurança
         if (!success && error) {
           this.metricsService.recordSecurityEvent(

@@ -29,7 +29,10 @@ export const createRedisInstance = (configService: ConfigService): Redis => {
     port: configService.get<number>('REDIS_PORT', 6379),
     db: configService.get<number>('REDIS_DB', 0),
     retryDelayOnFailover: 100,
-    maxRetriesPerRequest: configService.get<number>('REDIS_MAX_RETRIES_PER_REQUEST', 3),
+    maxRetriesPerRequest: configService.get<number>(
+      'REDIS_MAX_RETRIES_PER_REQUEST',
+      3,
+    ),
     lazyConnect: true,
     keepAlive: 30000,
     family: 4,
@@ -90,7 +93,10 @@ export const getRedisConfig = (configService: ConfigService) => {
         ...baseConfig,
         db: 0,
         retryDelayOnFailover: 100,
-        maxRetriesPerRequest: configService.get<number>('REDIS_MAX_RETRIES_PER_REQUEST', 3),
+        maxRetriesPerRequest: configService.get<number>(
+          'REDIS_MAX_RETRIES_PER_REQUEST',
+          3,
+        ),
         lazyConnect: true,
         keepAlive: 30000,
         connectTimeout: 10000,
@@ -106,7 +112,10 @@ export const getRedisConfig = (configService: ConfigService) => {
         ...baseConfig,
         db: 1,
         retryDelayOnFailover: 50,
-        maxRetriesPerRequest: configService.get<number>('REDIS_MAX_RETRIES_PER_REQUEST', 3),
+        maxRetriesPerRequest: configService.get<number>(
+          'REDIS_MAX_RETRIES_PER_REQUEST',
+          3,
+        ),
         lazyConnect: false,
         keepAlive: 1000,
         retryStrategy: (times: number) => {
@@ -120,7 +129,10 @@ export const getRedisConfig = (configService: ConfigService) => {
         ...baseConfig,
         db: 0,
         retryDelayOnFailover: 100,
-        maxRetriesPerRequest: configService.get<number>('REDIS_MAX_RETRIES_PER_REQUEST', 3),
+        maxRetriesPerRequest: configService.get<number>(
+          'REDIS_MAX_RETRIES_PER_REQUEST',
+          3,
+        ),
         lazyConnect: true,
         keepAlive: 30000,
         retryStrategy: (times: number) => {

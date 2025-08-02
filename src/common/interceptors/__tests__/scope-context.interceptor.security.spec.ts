@@ -8,7 +8,7 @@ import { IScopeContext } from '../../interfaces/scope-context.interface';
 
 /**
  * Testes de Segurança para ScopeContextInterceptor
- * 
+ *
  * Foca em casos extremos e vulnerabilidades de segurança:
  * - Tentativas de bypass de contexto
  * - Manipulação de headers maliciosos
@@ -27,10 +27,10 @@ describe('ScopeContextInterceptor - Security Tests', () => {
     }).compile();
 
     interceptor = module.get<ScopeContextInterceptor>(ScopeContextInterceptor);
-    
+
     // Spy no logger para verificar warnings de segurança
     loggerSpy = jest.spyOn(Logger.prototype, 'warn').mockImplementation();
-    
+
     mockCallHandler = {
       handle: jest.fn(() => of('test-result')),
     };
@@ -64,17 +64,20 @@ describe('ScopeContextInterceptor - Security Tests', () => {
       });
 
       // Act
-      const result$ = interceptor.intercept(mockExecutionContext, mockCallHandler);
+      const result$ = interceptor.intercept(
+        mockExecutionContext,
+        mockCallHandler,
+      );
       result$.subscribe();
     });
 
     it('deve sanitizar headers maliciosos', (done) => {
       // Arrange: Headers com tentativa de injeção
       mockExecutionContext = createMockContext({
-        user: { 
+        user: {
           id: 'user123',
           escopo: 'UNIDADE',
-          unidade_id: 'unidade123'
+          unidade_id: 'unidade123',
         },
         headers: {
           'x-unidade-id': "'; DROP TABLE usuarios; --",
@@ -92,7 +95,10 @@ describe('ScopeContextInterceptor - Security Tests', () => {
       });
 
       // Act
-      const result$ = interceptor.intercept(mockExecutionContext, mockCallHandler);
+      const result$ = interceptor.intercept(
+        mockExecutionContext,
+        mockCallHandler,
+      );
       result$.subscribe();
     });
 
@@ -120,7 +126,10 @@ describe('ScopeContextInterceptor - Security Tests', () => {
       });
 
       // Act
-      const result$ = interceptor.intercept(mockExecutionContext, mockCallHandler);
+      const result$ = interceptor.intercept(
+        mockExecutionContext,
+        mockCallHandler,
+      );
       result$.subscribe();
     });
   });
@@ -149,7 +158,10 @@ describe('ScopeContextInterceptor - Security Tests', () => {
       });
 
       // Act
-      const result$ = interceptor.intercept(mockExecutionContext, mockCallHandler);
+      const result$ = interceptor.intercept(
+        mockExecutionContext,
+        mockCallHandler,
+      );
       result$.subscribe();
     });
 
@@ -176,7 +188,10 @@ describe('ScopeContextInterceptor - Security Tests', () => {
       });
 
       // Act
-      const result$ = interceptor.intercept(mockExecutionContext, mockCallHandler);
+      const result$ = interceptor.intercept(
+        mockExecutionContext,
+        mockCallHandler,
+      );
       result$.subscribe();
     });
 
@@ -204,7 +219,10 @@ describe('ScopeContextInterceptor - Security Tests', () => {
       });
 
       // Act
-      const result$ = interceptor.intercept(mockExecutionContext, mockCallHandler);
+      const result$ = interceptor.intercept(
+        mockExecutionContext,
+        mockCallHandler,
+      );
       result$.subscribe();
     });
   });
@@ -218,7 +236,10 @@ describe('ScopeContextInterceptor - Security Tests', () => {
       });
 
       // Act
-      const result$ = interceptor.intercept(mockExecutionContext, mockCallHandler);
+      const result$ = interceptor.intercept(
+        mockExecutionContext,
+        mockCallHandler,
+      );
       await result$.toPromise();
 
       // Assert: Contexto deve ser limpo
@@ -232,7 +253,10 @@ describe('ScopeContextInterceptor - Security Tests', () => {
         headers: {},
       });
 
-      const result1$ = interceptor.intercept(mockExecutionContext, mockCallHandler);
+      const result1$ = interceptor.intercept(
+        mockExecutionContext,
+        mockCallHandler,
+      );
       await result1$.toPromise();
 
       // Verificar que contexto foi limpo
@@ -244,7 +268,10 @@ describe('ScopeContextInterceptor - Security Tests', () => {
         headers: {},
       });
 
-      const result2$ = interceptor.intercept(mockExecutionContext, mockCallHandler);
+      const result2$ = interceptor.intercept(
+        mockExecutionContext,
+        mockCallHandler,
+      );
       await result2$.toPromise();
 
       // Verificar isolamento

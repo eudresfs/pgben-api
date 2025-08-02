@@ -81,6 +81,18 @@ export const ThrottleReports = () => {
 };
 
 /**
+ * Rate limiting para download em lote
+ * Restritivo para operações que consomem muitos recursos
+ *
+ * Limite: 3 downloads por 10 minutos
+ */
+export const ThrottleBatchDownload = () => {
+  return applyDecorators(
+    Throttle({ default: { limit: 3, ttl: 600000 } }), // 3 downloads em 10 minutos
+  );
+};
+
+/**
  * Rate limiting customizável
  * Permite definir limites específicos
  *

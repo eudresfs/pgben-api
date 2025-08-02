@@ -77,12 +77,14 @@ export class CatalogAwareExceptionFilter implements ExceptionFilter {
         statusCode = appError.getStatus();
         errorName = appError.constructor.name;
         errorCode = appError.errorCode;
-        
+
         // Obter a resposta da API que já inclui a mensagem contextual
-        const apiResponse = appError.getApiResponse(this.shouldIncludeDetails());
+        const apiResponse = appError.getApiResponse(
+          this.shouldIncludeDetails(),
+        );
         message = apiResponse.message;
         localizedMessage = apiResponse.message;
-        
+
         category = appError.definition.category;
         severity = appError.definition.severity;
         legalReference = appError.definition.legalReference;
@@ -238,12 +240,16 @@ export class CatalogAwareExceptionFilter implements ExceptionFilter {
       appError.getStatus(),
       appError.definition.severity,
     );
-    
+
     // Usar contextualMessage se disponível, senão usar localizedMessage ou message padrão
     const contextualMessage = appError.context.data?.contextualMessage;
     const userFriendlyMessage = appError.context.data?.userFriendlyMessage;
-    const displayMessage = contextualMessage || userFriendlyMessage || appError.localizedMessage || appError.message;
-    
+    const displayMessage =
+      contextualMessage ||
+      userFriendlyMessage ||
+      appError.localizedMessage ||
+      appError.message;
+
     const logMessage = `[${appError.errorCode}] ${displayMessage}`;
 
     const logMeta = {

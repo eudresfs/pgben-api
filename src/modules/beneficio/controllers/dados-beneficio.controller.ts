@@ -212,7 +212,7 @@ export class DadosBeneficioController {
             'situacao_moradia_atual',
             'possui_imovel_interditado',
             'processo_judicializado',
-                'numero_processo',
+            'numero_processo',
           ],
         },
         {

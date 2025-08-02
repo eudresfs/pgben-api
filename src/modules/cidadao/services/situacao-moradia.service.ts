@@ -67,7 +67,7 @@ export class SituacaoMoradiaService {
           ...existing,
           // Campos obrigatórios
           cidadao_id: dto.cidadao_id,
-          
+
           // Campos opcionais - limpar se não enviados
           tipo_moradia: dto.tipo_moradia ?? null,
           numero_comodos: dto.numero_comodos ?? null,
@@ -83,13 +83,15 @@ export class SituacaoMoradiaService {
           descricao_desastre: dto.descricao_desastre ?? null,
           outro_tipo_moradia: dto.outro_tipo_moradia ?? null,
           programa_habitacional: dto.programa_habitacional ?? null,
-          inscrito_programa_habitacional: dto.inscrito_programa_habitacional ?? null,
+          inscrito_programa_habitacional:
+            dto.inscrito_programa_habitacional ?? null,
           reside_2_anos_natal: dto.reside_2_anos_natal ?? null,
           despesas_mensais: dto.despesas_mensais ?? null,
           observacoes: dto.observacoes ?? null,
         };
 
-        const updated = await this.situacaoMoradiaRepository.save(dadosAtualizados);
+        const updated =
+          await this.situacaoMoradiaRepository.save(dadosAtualizados);
         this.logger.log(`Situação de moradia atualizada: ${updated.id}`);
         return plainToClass(SituacaoMoradiaResponseDto, updated, {
           excludeExtraneousValues: true,
@@ -97,7 +99,8 @@ export class SituacaoMoradiaService {
       } else {
         // Cria novo registro
         const situacaoMoradia = this.situacaoMoradiaRepository.create(dto);
-        const saved = await this.situacaoMoradiaRepository.save(situacaoMoradia);
+        const saved =
+          await this.situacaoMoradiaRepository.save(situacaoMoradia);
         this.logger.log(`Situação de moradia criada: ${saved.id}`);
         return plainToClass(SituacaoMoradiaResponseDto, saved, {
           excludeExtraneousValues: true,

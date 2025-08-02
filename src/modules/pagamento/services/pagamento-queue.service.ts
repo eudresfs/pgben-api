@@ -17,15 +17,21 @@ export class PagamentoQueueService {
   private readonly isRedisDisabled: boolean;
 
   constructor(
-    @Optional() @InjectQueue('pagamentos') private readonly pagamentosQueue: Queue,
+    @Optional()
+    @InjectQueue('pagamentos')
+    private readonly pagamentosQueue: Queue,
     private readonly configService: ConfigService,
   ) {
     this.isRedisDisabled = this.configService.get('DISABLE_REDIS') === 'true';
-    
+
     if (this.isRedisDisabled) {
-      this.logger.warn('Redis desabilitado - operações de fila serão simuladas');
+      this.logger.warn(
+        'Redis desabilitado - operações de fila serão simuladas',
+      );
     } else if (!this.pagamentosQueue) {
-      this.logger.warn('Fila de pagamentos não disponível - operações serão simuladas');
+      this.logger.warn(
+        'Fila de pagamentos não disponível - operações serão simuladas',
+      );
     }
   }
 
@@ -41,7 +47,9 @@ export class PagamentoQueueService {
    */
   private simulateJob(jobType: string, data: any): any {
     const jobId = `simulated-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    this.logger.warn(`Simulando job ${jobType} (ID: ${jobId}) - Redis não disponível`);
+    this.logger.warn(
+      `Simulando job ${jobType} (ID: ${jobId}) - Redis não disponível`,
+    );
     return {
       id: jobId,
       data,
@@ -62,7 +70,9 @@ export class PagamentoQueueService {
     try {
       // Verificar se a fila está disponível
       if (!this.isQueueAvailable()) {
-        this.logger.warn(`Fila não disponível - simulando job de criação de pagamento`);
+        this.logger.warn(
+          `Fila não disponível - simulando job de criação de pagamento`,
+        );
         return this.simulateJob('criar-pagamento', {
           pagamentoData,
           usuarioId,
@@ -109,7 +119,9 @@ export class PagamentoQueueService {
     try {
       // Verificar se a fila está disponível
       if (!this.isQueueAvailable()) {
-        this.logger.warn(`Fila não disponível - simulando job de liberação de pagamento para: ${pagamentoId}`);
+        this.logger.warn(
+          `Fila não disponível - simulando job de liberação de pagamento para: ${pagamentoId}`,
+        );
         return this.simulateJob('liberar-pagamento', {
           pagamentoId,
           dadosLiberacao,
@@ -273,7 +285,9 @@ export class PagamentoQueueService {
     try {
       // Verificar se a fila está disponível
       if (!this.isQueueAvailable()) {
-        this.logger.warn(`Fila não disponível - simulando job de processamento em lote: ${operacao}`);
+        this.logger.warn(
+          `Fila não disponível - simulando job de processamento em lote: ${operacao}`,
+        );
         return this.simulateJob('processamento-batch', {
           operacao,
           dados,

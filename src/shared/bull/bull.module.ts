@@ -5,7 +5,7 @@ import { getBullConfig } from '../../config/bull.config';
 
 /**
  * Módulo compartilhado para configuração centralizada do BullMQ.
- * 
+ *
  * Este módulo utiliza `BullModule.forRootAsync` para carregar a configuração
  * do Redis de forma assíncrona, garantindo que as variáveis de ambiente
  * estejam disponíveis. Ao ser global, ele disponibiliza a configuração
@@ -17,7 +17,8 @@ import { getBullConfig } from '../../config/bull.config';
   imports: [
     BullModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => getBullConfig(configService),
+      useFactory: (configService: ConfigService) =>
+        getBullConfig(configService),
       inject: [ConfigService],
     }),
   ],

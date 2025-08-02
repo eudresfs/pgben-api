@@ -117,6 +117,7 @@ export interface EnvironmentVariables {
   DOWNLOAD_LOTE_MAX_SIZE_MB?: number;
   DOWNLOAD_LOTE_BATCH_SIZE?: number;
   DOWNLOAD_LOTE_TIMEOUT_MS?: number;
+  DOWNLOAD_LOTE_CONCURRENCY_LIMIT?: number;
 
   // Desenvolvimento
   DEBUG?: boolean;
@@ -256,6 +257,10 @@ export const env: EnvironmentVariables = {
   DOWNLOAD_LOTE_TIMEOUT_MS: parseNumber(
     process.env.DOWNLOAD_LOTE_TIMEOUT_MS,
     300000,
+  ),
+  DOWNLOAD_LOTE_CONCURRENCY_LIMIT: parseNumber(
+    process.env.DOWNLOAD_LOTE_CONCURRENCY_LIMIT,
+    8,
   ),
 
   // Desenvolvimento

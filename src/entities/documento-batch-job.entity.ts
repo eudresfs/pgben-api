@@ -19,7 +19,7 @@ export enum StatusDownloadLoteEnum {
   COMPLETED = 'concluido',
   FAILED = 'erro',
   CANCELLED = 'cancelado',
-  EXPIRED = 'expirado'
+  EXPIRED = 'expirado',
 }
 
 /**

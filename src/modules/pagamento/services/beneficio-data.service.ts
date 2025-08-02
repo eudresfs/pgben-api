@@ -2,13 +2,16 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { TipoBeneficio, Solicitacao } from '../../../entities';
-import { IBeneficioDataProvider, DadosBeneficio } from '../interfaces/pagamento-calculator.interface';
+import {
+  IBeneficioDataProvider,
+  DadosBeneficio,
+} from '../interfaces/pagamento-calculator.interface';
 import { Status } from '@/enums';
 
 /**
  * Serviço responsável por fornecer dados de benefício para o módulo de pagamento
  * sem criar dependência circular com o BeneficioModule.
- * 
+ *
  * Este serviço implementa a interface IBeneficioDataProvider e acessa diretamente
  * as entidades através do TypeORM, mantendo a separação de responsabilidades.
  */
@@ -26,7 +29,9 @@ export class BeneficioDataService implements IBeneficioDataProvider {
    * @param solicitacaoId ID da solicitação
    * @returns Dados do benefício ou null se não encontrado
    */
-  async buscarDadosBeneficio(solicitacaoId: string): Promise<DadosBeneficio | null> {
+  async buscarDadosBeneficio(
+    solicitacaoId: string,
+  ): Promise<DadosBeneficio | null> {
     try {
       const solicitacao = await this.solicitacaoRepository.findOne({
         where: { id: solicitacaoId },
@@ -75,7 +80,9 @@ export class BeneficioDataService implements IBeneficioDataProvider {
    * @param beneficioId ID do benefício
    * @returns Configuração do benefício
    */
-  async buscarConfiguracaoBeneficio(beneficioId: string): Promise<Record<string, any>> {
+  async buscarConfiguracaoBeneficio(
+    beneficioId: string,
+  ): Promise<Record<string, any>> {
     try {
       const tipo_beneficio = await this.beneficioRepository.findOne({
         where: { id: beneficioId },

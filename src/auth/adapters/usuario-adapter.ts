@@ -37,8 +37,6 @@ export class UserOutput {
   unidade_id?: string;
 }
 
-
-
 /**
  * Adaptador para converter a entidade Usuario para o formato esperado pelo serviço de autenticação
  */

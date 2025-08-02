@@ -81,8 +81,6 @@ export const VALIDACOES_CRITICAS_ERRORS: Record<string, ErrorDefinition> = {
     legalReference: 'Lei Municipal 7.205/2021',
   },
 
-
-
   VAL_2005: {
     code: 'VAL_2005',
     message: 'Renda familiar excede limite para benefício',
@@ -186,10 +184,6 @@ export const VALIDACOES_CRITICAS_ERRORS: Record<string, ErrorDefinition> = {
 // HELPERS PARA VALIDAÇÕES CRÍTICAS
 // ========================================
 
-
-
-
-
 /**
  * Lança erro de residência insuficiente
  */
@@ -213,8 +207,6 @@ export function throwResidenciaInsuficiente(
     language,
   );
 }
-
-
 
 /**
  * Lança erro de renda familiar excedente

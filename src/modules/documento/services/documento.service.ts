@@ -161,7 +161,6 @@ export class DocumentoService {
     return documento;
   }
 
-
   /**
    * Faz o download de um documento com verificação de acesso
    */

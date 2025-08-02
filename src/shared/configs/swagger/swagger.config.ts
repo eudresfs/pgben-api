@@ -223,7 +223,6 @@ const INTERNAL_ENDPOINTS_TO_REMOVE = [
   '/api/v1/judicial/determinacoes',
   '/api/v1/solicitacao/determinacao-judicial',
 
-
   // Endpoints de dados específicos de benefícios (internos)
   '/api/dados-funeral',
   '/api/dados-aluguel-social',

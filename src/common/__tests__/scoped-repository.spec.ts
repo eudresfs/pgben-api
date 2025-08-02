@@ -57,8 +57,8 @@ describe('ScopedRepository', () => {
           { propertyName: 'user_id' },
           { propertyName: 'unidade_id' },
           { propertyName: 'created_at' },
-          { propertyName: 'updated_at' }
-        ]
+          { propertyName: 'updated_at' },
+        ],
       },
     } as any;
 
@@ -83,39 +83,53 @@ describe('ScopedRepository', () => {
       update: mockRepository.update,
       delete: mockRepository.delete,
     });
-    
+
     // Definir metadata usando defineProperty para evitar erro de read-only
     Object.defineProperty(scopedRepository, 'metadata', {
       value: mockRepository.metadata,
       writable: false,
       enumerable: true,
-      configurable: true
+      configurable: true,
     });
-    
+
     // Configurar opções para permitir métodos globais
     Object.defineProperty(scopedRepository, 'options', {
       value: {
         strictMode: false,
-        allowGlobalScope: true
+        allowGlobalScope: true,
       },
       writable: false,
       enumerable: true,
-      configurable: true
+      configurable: true,
     });
-    
-    // Bind dos métodos do ScopedRepository para manter o contexto correto
-    scopedRepository.findAll = ScopedRepository.prototype.findAll.bind(scopedRepository);
-    scopedRepository.findById = ScopedRepository.prototype.findById.bind(scopedRepository);
-    scopedRepository.countScoped = ScopedRepository.prototype.countScoped.bind(scopedRepository);
-    scopedRepository.saveWithScope = ScopedRepository.prototype.saveWithScope.bind(scopedRepository);
-    scopedRepository.updateWithScope = ScopedRepository.prototype.updateWithScope.bind(scopedRepository);
-    scopedRepository.deleteWithScope = ScopedRepository.prototype.deleteWithScope.bind(scopedRepository);
-    scopedRepository.findAllGlobal = ScopedRepository.prototype.findAllGlobal.bind(scopedRepository);
-    scopedRepository.findByIdGlobal = ScopedRepository.prototype.findByIdGlobal.bind(scopedRepository);
-    scopedRepository.countGlobal = ScopedRepository.prototype.countGlobal.bind(scopedRepository);
-    scopedRepository.createScopedQueryBuilder = ScopedRepository.prototype.createScopedQueryBuilder.bind(scopedRepository);
 
-    mockRequestContextHolder = RequestContextHolder as jest.Mocked<typeof RequestContextHolder>;
+    // Bind dos métodos do ScopedRepository para manter o contexto correto
+    scopedRepository.findAll =
+      ScopedRepository.prototype.findAll.bind(scopedRepository);
+    scopedRepository.findById =
+      ScopedRepository.prototype.findById.bind(scopedRepository);
+    scopedRepository.countScoped =
+      ScopedRepository.prototype.countScoped.bind(scopedRepository);
+    scopedRepository.saveWithScope =
+      ScopedRepository.prototype.saveWithScope.bind(scopedRepository);
+    scopedRepository.updateWithScope =
+      ScopedRepository.prototype.updateWithScope.bind(scopedRepository);
+    scopedRepository.deleteWithScope =
+      ScopedRepository.prototype.deleteWithScope.bind(scopedRepository);
+    scopedRepository.findAllGlobal =
+      ScopedRepository.prototype.findAllGlobal.bind(scopedRepository);
+    scopedRepository.findByIdGlobal =
+      ScopedRepository.prototype.findByIdGlobal.bind(scopedRepository);
+    scopedRepository.countGlobal =
+      ScopedRepository.prototype.countGlobal.bind(scopedRepository);
+    scopedRepository.createScopedQueryBuilder =
+      ScopedRepository.prototype.createScopedQueryBuilder.bind(
+        scopedRepository,
+      );
+
+    mockRequestContextHolder = RequestContextHolder as jest.Mocked<
+      typeof RequestContextHolder
+    >;
 
     // Reset mocks
     jest.clearAllMocks();
@@ -135,9 +149,12 @@ describe('ScopedRepository', () => {
       await scopedRepository.findAll();
 
       expect(mockRepository.createQueryBuilder).toHaveBeenCalledWith('entity');
-      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('entity.user_id = :userId', {
-        userId: 'user-123',
-      });
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        'entity.user_id = :userId',
+        {
+          userId: 'user-123',
+        },
+      );
     });
 
     it('deve aplicar filtro de escopo UNIDADE', async () => {
@@ -152,9 +169,12 @@ describe('ScopedRepository', () => {
 
       await scopedRepository.findAll();
 
-      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('entity.unidade_id = :unidadeId', {
-        unidadeId: 'unidade-789',
-      });
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        'entity.unidade_id = :unidadeId',
+        {
+          unidadeId: 'unidade-789',
+        },
+      );
     });
 
     it('deve não aplicar filtro para escopo GLOBAL', async () => {
@@ -184,7 +204,10 @@ describe('ScopedRepository', () => {
 
       await scopedRepository.findAll();
 
-      expect(mockQueryBuilder.orderBy).toHaveBeenCalledWith('entity.created_at', 'DESC');
+      expect(mockQueryBuilder.orderBy).toHaveBeenCalledWith(
+        'entity.created_at',
+        'DESC',
+      );
     });
   });
 
@@ -201,10 +224,15 @@ describe('ScopedRepository', () => {
 
       await scopedRepository.findById('entity-id');
 
-      expect(mockQueryBuilder.where).toHaveBeenCalledWith('entity.id = :id', { id: 'entity-id' });
-      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('entity.user_id = :userId', {
-        userId: 'user-123',
+      expect(mockQueryBuilder.where).toHaveBeenCalledWith('entity.id = :id', {
+        id: 'entity-id',
       });
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        'entity.user_id = :userId',
+        {
+          userId: 'user-123',
+        },
+      );
     });
 
     it('deve buscar por ID com escopo UNIDADE', async () => {
@@ -219,10 +247,15 @@ describe('ScopedRepository', () => {
 
       await scopedRepository.findById('entity-id');
 
-      expect(mockQueryBuilder.where).toHaveBeenCalledWith('entity.id = :id', { id: 'entity-id' });
-      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('entity.unidade_id = :unidadeId', {
-        unidadeId: 'unidade-789',
+      expect(mockQueryBuilder.where).toHaveBeenCalledWith('entity.id = :id', {
+        id: 'entity-id',
       });
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        'entity.unidade_id = :unidadeId',
+        {
+          unidadeId: 'unidade-789',
+        },
+      );
     });
 
     it('deve buscar por ID sem filtro adicional para escopo GLOBAL', async () => {
@@ -237,7 +270,9 @@ describe('ScopedRepository', () => {
 
       await scopedRepository.findById('entity-id');
 
-      expect(mockQueryBuilder.where).toHaveBeenCalledWith('entity.id = :id', { id: 'entity-id' });
+      expect(mockQueryBuilder.where).toHaveBeenCalledWith('entity.id = :id', {
+        id: 'entity-id',
+      });
       expect(mockQueryBuilder.andWhere).not.toHaveBeenCalled();
     });
   });
@@ -256,9 +291,12 @@ describe('ScopedRepository', () => {
       const count = await scopedRepository.countScoped();
 
       expect(count).toBe(5);
-      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('entity.user_id = :userId', {
-        userId: 'user-123',
-      });
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        'entity.user_id = :userId',
+        {
+          userId: 'user-123',
+        },
+      );
     });
   });
 
@@ -271,7 +309,12 @@ describe('ScopedRepository', () => {
       };
 
       const entity = { name: 'Test Entity' } as TestEntity;
-      const savedEntity = { ...entity, id: 'new-id', user_id: 'user-123', unidade_id: 'unidade-456' };
+      const savedEntity = {
+        ...entity,
+        id: 'new-id',
+        user_id: 'user-123',
+        unidade_id: 'unidade-456',
+      };
 
       mockRequestContextHolder.get.mockReturnValue(context);
       mockRepository.save.mockResolvedValue(savedEntity);
@@ -295,7 +338,12 @@ describe('ScopedRepository', () => {
       };
 
       const entity = { name: 'Test Entity' } as TestEntity;
-      const savedEntity = { ...entity, id: 'new-id', user_id: 'operator-123', unidade_id: 'unidade-789' };
+      const savedEntity = {
+        ...entity,
+        id: 'new-id',
+        user_id: 'operator-123',
+        unidade_id: 'unidade-789',
+      };
 
       mockRequestContextHolder.get.mockReturnValue(context);
       mockRepository.save.mockResolvedValue(savedEntity);
@@ -345,24 +393,32 @@ describe('ScopedRepository', () => {
         unidade_id: 'unidade-456',
       };
 
-      const existingEntity = { 
-        id: 'entity-id', 
-        name: 'Original Name', 
+      const existingEntity = {
+        id: 'entity-id',
+        name: 'Original Name',
         user_id: 'user-123',
         unidade_id: 'unidade-456',
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       };
       const updateData = { name: 'Updated Name' };
       const updatedEntity = { ...existingEntity, ...updateData };
 
       mockRequestContextHolder.get.mockReturnValue(context);
-      mockQueryBuilder.getOne.mockResolvedValueOnce(existingEntity).mockResolvedValueOnce(updatedEntity);
+      mockQueryBuilder.getOne
+        .mockResolvedValueOnce(existingEntity)
+        .mockResolvedValueOnce(updatedEntity);
       mockRepository.update.mockResolvedValue({ affected: 1 } as any);
 
-      const result = await scopedRepository.updateWithScope('entity-id', updateData);
+      const result = await scopedRepository.updateWithScope(
+        'entity-id',
+        updateData,
+      );
 
-      expect(mockRepository.update).toHaveBeenCalledWith('entity-id', updateData);
+      expect(mockRepository.update).toHaveBeenCalledWith(
+        'entity-id',
+        updateData,
+      );
       expect(result).toEqual(updatedEntity);
     });
 
@@ -373,24 +429,32 @@ describe('ScopedRepository', () => {
         unidade_id: 'unidade-789',
       };
 
-      const existingEntity = { 
-        id: 'entity-id', 
-        name: 'Original Name', 
+      const existingEntity = {
+        id: 'entity-id',
+        name: 'Original Name',
         user_id: 'operator-123',
         unidade_id: 'unidade-789',
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       };
       const updateData = { name: 'Updated Name' };
       const updatedEntity = { ...existingEntity, ...updateData };
 
       mockRequestContextHolder.get.mockReturnValue(context);
-      mockQueryBuilder.getOne.mockResolvedValueOnce(existingEntity).mockResolvedValueOnce(updatedEntity);
+      mockQueryBuilder.getOne
+        .mockResolvedValueOnce(existingEntity)
+        .mockResolvedValueOnce(updatedEntity);
       mockRepository.update.mockResolvedValue({ affected: 1 } as any);
 
-      const result = await scopedRepository.updateWithScope('entity-id', updateData);
+      const result = await scopedRepository.updateWithScope(
+        'entity-id',
+        updateData,
+      );
 
-      expect(mockRepository.update).toHaveBeenCalledWith('entity-id', updateData);
+      expect(mockRepository.update).toHaveBeenCalledWith(
+        'entity-id',
+        updateData,
+      );
       expect(result).toEqual(updatedEntity);
     });
   });
@@ -403,13 +467,13 @@ describe('ScopedRepository', () => {
         unidade_id: 'unidade-456',
       };
 
-      const existingEntity = { 
-        id: 'entity-id', 
-        name: 'Test Entity', 
+      const existingEntity = {
+        id: 'entity-id',
+        name: 'Test Entity',
         user_id: 'user-123',
         unidade_id: 'unidade-456',
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       };
 
       mockRequestContextHolder.get.mockReturnValue(context);
@@ -430,7 +494,10 @@ describe('ScopedRepository', () => {
 
       expect(mockRepository.createQueryBuilder).toHaveBeenCalledWith('entity');
       expect(mockQueryBuilder.where).not.toHaveBeenCalled();
-      expect(mockQueryBuilder.orderBy).toHaveBeenCalledWith('entity.created_at', 'DESC');
+      expect(mockQueryBuilder.orderBy).toHaveBeenCalledWith(
+        'entity.created_at',
+        'DESC',
+      );
     });
 
     it('findByIdGlobal deve buscar por ID sem filtros de escopo', async () => {
@@ -438,7 +505,9 @@ describe('ScopedRepository', () => {
 
       await scopedRepository.findByIdGlobal('entity-id');
 
-      expect(mockQueryBuilder.where).toHaveBeenCalledWith('entity.id = :id', { id: 'entity-id' });
+      expect(mockQueryBuilder.where).toHaveBeenCalledWith('entity.id = :id', {
+        id: 'entity-id',
+      });
       expect(mockQueryBuilder.andWhere).not.toHaveBeenCalled();
     });
 
@@ -465,9 +534,12 @@ describe('ScopedRepository', () => {
       const queryBuilder = scopedRepository.createScopedQueryBuilder('test');
 
       expect(mockRepository.createQueryBuilder).toHaveBeenCalledWith('test');
-      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('test.user_id = :userId', {
-        userId: 'user-123',
-      });
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        'test.user_id = :userId',
+        {
+          userId: 'user-123',
+        },
+      );
     });
   });
 
@@ -476,13 +548,13 @@ describe('ScopedRepository', () => {
       mockRequestContextHolder.get.mockReturnValue(undefined);
 
       await expect(scopedRepository.findAll()).rejects.toThrow(
-        ScopeContextRequiredException
+        ScopeContextRequiredException,
       );
       await expect(scopedRepository.findById('test-id')).rejects.toThrow(
-        ScopeContextRequiredException
+        ScopeContextRequiredException,
       );
       await expect(scopedRepository.countScoped()).rejects.toThrow(
-        ScopeContextRequiredException
+        ScopeContextRequiredException,
       );
     });
   });

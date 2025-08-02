@@ -206,14 +206,14 @@ export class CidadaoService {
     }
 
     // Separar campos que não pertencem à entidade Cidadao
-    const { 
-      composicao_familiar, 
-      contatos, 
-      enderecos, 
-      dados_sociais, 
-      situacao_moradia, 
-      info_bancaria, 
-      ...cidadaoData 
+    const {
+      composicao_familiar,
+      contatos,
+      enderecos,
+      dados_sociais,
+      situacao_moradia,
+      info_bancaria,
+      ...cidadaoData
     } = createCidadaoDto;
 
     // Preparar dados para criação
@@ -225,31 +225,38 @@ export class CidadaoService {
       usuario_id,
     };
 
-    const cidadaoSalvo = await this.cidadaoRepository.createCidadao(dadosParaCriacao);
+    const cidadaoSalvo =
+      await this.cidadaoRepository.createCidadao(dadosParaCriacao);
 
     // Processar contatos normalizados se existirem
     if (contatos && contatos.length > 0) {
-      const contatosComCidadaoId = contatos.map(contato => ({
+      const contatosComCidadaoId = contatos.map((contato) => ({
         ...contato,
-        cidadao_id: cidadaoSalvo.id
+        cidadao_id: cidadaoSalvo.id,
       }));
-      await this.contatoService.upsertMany(cidadaoSalvo.id, contatosComCidadaoId);
+      await this.contatoService.upsertMany(
+        cidadaoSalvo.id,
+        contatosComCidadaoId,
+      );
     }
 
     // Processar endereços normalizados se existirem
     if (enderecos && enderecos.length > 0) {
-      const enderecosComCidadaoId = enderecos.map(endereco => ({
+      const enderecosComCidadaoId = enderecos.map((endereco) => ({
         ...endereco,
-        cidadao_id: cidadaoSalvo.id
+        cidadao_id: cidadaoSalvo.id,
       }));
-      await this.enderecoService.upsertMany(cidadaoSalvo.id, enderecosComCidadaoId);
+      await this.enderecoService.upsertMany(
+        cidadaoSalvo.id,
+        enderecosComCidadaoId,
+      );
     }
 
     // Processar composição familiar se fornecida
     if (composicao_familiar && composicao_familiar.length > 0) {
-      const composicaoComCidadaoId = composicao_familiar.map(composicao => ({
+      const composicaoComCidadaoId = composicao_familiar.map((composicao) => ({
         ...composicao,
-        cidadao_id: cidadaoSalvo.id
+        cidadao_id: cidadaoSalvo.id,
       }));
       await this.composicaoFamiliarService.upsertMany(
         cidadaoSalvo.id,
@@ -260,10 +267,7 @@ export class CidadaoService {
 
     // Processar dados sociais se fornecidos
     if (dados_sociais) {
-      await this.dadosSociaisService.upsert(
-        cidadaoSalvo.id,
-        dados_sociais,
-      );
+      await this.dadosSociaisService.upsert(cidadaoSalvo.id, dados_sociais);
     }
 
     // Processar situação de moradia se fornecida
@@ -311,8 +315,15 @@ export class CidadaoService {
     }
 
     // Separar campos que não pertencem à entidade Cidadao
-    const { composicao_familiar, contatos, enderecos, dados_sociais, situacao_moradia, info_bancaria, ...dadosAtualizacao } =
-      updateCidadaoDto;
+    const {
+      composicao_familiar,
+      contatos,
+      enderecos,
+      dados_sociais,
+      situacao_moradia,
+      info_bancaria,
+      ...dadosAtualizacao
+    } = updateCidadaoDto;
 
     // Validar CPF se foi alterado
     if (dadosAtualizacao.cpf) {
@@ -362,27 +373,27 @@ export class CidadaoService {
 
     // Processar contatos normalizados se existirem
     if (contatos && contatos.length > 0) {
-      const contatosComCidadaoId = contatos.map(contato => ({
+      const contatosComCidadaoId = contatos.map((contato) => ({
         ...contato,
-        cidadao_id: id
+        cidadao_id: id,
       }));
       await this.contatoService.upsertMany(id, contatosComCidadaoId);
     }
 
     // Processar endereços normalizados se existirem
     if (enderecos && enderecos.length > 0) {
-      const enderecosComCidadaoId = enderecos.map(endereco => ({
+      const enderecosComCidadaoId = enderecos.map((endereco) => ({
         ...endereco,
-        cidadao_id: id
+        cidadao_id: id,
       }));
       await this.enderecoService.upsertMany(id, enderecosComCidadaoId);
     }
 
     // Processar composição familiar se fornecida
     if (composicao_familiar && composicao_familiar.length > 0) {
-      const composicaoComCidadaoId = composicao_familiar.map(composicao => ({
+      const composicaoComCidadaoId = composicao_familiar.map((composicao) => ({
         ...composicao,
-        cidadao_id: id
+        cidadao_id: id,
       }));
       await this.composicaoFamiliarService.upsertMany(
         id,
@@ -393,10 +404,7 @@ export class CidadaoService {
 
     // Processar dados sociais se fornecidos
     if (dados_sociais) {
-      await this.dadosSociaisService.upsert(
-        id,
-        dados_sociais,
-      );
+      await this.dadosSociaisService.upsert(id, dados_sociais);
     }
 
     // Processar situação de moradia se fornecida
@@ -510,12 +518,11 @@ export class CidadaoService {
     // Processar novo endereço se fornecido
     if (endereco) {
       // Finalizar endereços atuais (definir data_fim_vigencia)
-      const enderecosAtuais = await this.enderecoService.findByCidadaoId(
-        cidadaoId,
-      );
-      
+      const enderecosAtuais =
+        await this.enderecoService.findByCidadaoId(cidadaoId);
+
       const dataAtual = new Date().toISOString().split('T')[0];
-      
+
       // Finalizar endereços vigentes
       for (const enderecoAtual of enderecosAtuais) {
         if (!enderecoAtual.data_fim_vigencia) {

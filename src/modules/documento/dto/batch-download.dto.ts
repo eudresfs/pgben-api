@@ -109,7 +109,10 @@ export interface BatchDownloadFiltros {
  */
 export interface BatchJobStatus {
   id: string;
-  status: StatusDownloadLoteEnum.PENDING | StatusDownloadLoteEnum.COMPLETED | StatusDownloadLoteEnum.FAILED;
+  status:
+    | StatusDownloadLoteEnum.PENDING
+    | StatusDownloadLoteEnum.COMPLETED
+    | StatusDownloadLoteEnum.FAILED;
   usuarioId: string;
   filtros: BatchDownloadFiltros;
   documentos: any[]; // Será tipado com a entidade Documento

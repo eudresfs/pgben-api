@@ -1,7 +1,14 @@
 import { TipoDocumentoEnum } from '@/enums';
 import { MimeTypeValidator } from '@/modules/documento/validators/mime-type.validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsNotEmpty, IsOptional, IsString, MaxLength, Validate } from 'class-validator';
+import {
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  MaxLength,
+  Validate,
+} from 'class-validator';
 
 /**
  * DTO para upload de comprovante de pagamento

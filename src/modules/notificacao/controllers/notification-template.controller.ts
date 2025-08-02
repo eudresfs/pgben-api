@@ -32,8 +32,7 @@ import { ROLES } from '../../../shared/constants/roles.constants';
 export class NotificationTemplateController {
   private readonly logger = new Logger(NotificationTemplateController.name);
 
-  constructor() // private readonly notificationManagerService: NotificationManagerService, // TODO: Reativar após resolver dependência circular
-  {}
+  constructor() {} // private readonly notificationManagerService: NotificationManagerService, // TODO: Reativar após resolver dependência circular
 
   /**
    * Cria um novo template de notificação

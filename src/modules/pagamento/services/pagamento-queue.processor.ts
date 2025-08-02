@@ -94,7 +94,8 @@ export class PagamentoQueueProcessor implements OnModuleDestroy {
   ): Promise<any> {
     const { pagamentoId, data, userId } = job.data;
 
-    const pagamento = await this.pagamentoService.findPagamentoCompleto(pagamentoId);
+    const pagamento =
+      await this.pagamentoService.findPagamentoCompleto(pagamentoId);
 
     if (!pagamento) {
       this.logger.error(`Pagamento com ID ${pagamentoId} não encontrado.`);
@@ -103,7 +104,9 @@ export class PagamentoQueueProcessor implements OnModuleDestroy {
 
     // Verificar se o pagamento já foi confirmado como recebido
     if (pagamento.status === StatusPagamentoEnum.RECEBIDO) {
-      this.logger.warn(`Pagamento ${pagamentoId} já foi confirmado como recebido`);
+      this.logger.warn(
+        `Pagamento ${pagamentoId} já foi confirmado como recebido`,
+      );
       return;
     }
 
@@ -114,8 +117,14 @@ export class PagamentoQueueProcessor implements OnModuleDestroy {
     }
 
     // Validar se o pagamento está em status válido para liberação (PENDENTE ou AGENDADO)
-    if (![StatusPagamentoEnum.PENDENTE, StatusPagamentoEnum.AGENDADO].includes(pagamento.status)) {
-      this.logger.warn(`Pagamento ${pagamentoId} não está em status válido para liberação. Status atual: ${pagamento.status}`);
+    if (
+      ![StatusPagamentoEnum.PENDENTE, StatusPagamentoEnum.AGENDADO].includes(
+        pagamento.status,
+      )
+    ) {
+      this.logger.warn(
+        `Pagamento ${pagamentoId} não está em status válido para liberação. Status atual: ${pagamento.status}`,
+      );
       return;
     }
 
@@ -138,7 +147,8 @@ export class PagamentoQueueProcessor implements OnModuleDestroy {
       );
 
       // Obter informações do beneficiário para a mensagem
-      const beneficiarioNome = pagamento.concessao?.solicitacao?.beneficiario?.nome || 'Beneficiário';
+      const beneficiarioNome =
+        pagamento.concessao?.solicitacao?.beneficiario?.nome || 'Beneficiário';
 
       // Enviar notificação para o liberador (se existir)
       if (pagamento.liberado_por) {
@@ -208,7 +218,8 @@ export class PagamentoQueueProcessor implements OnModuleDestroy {
             tipo: 'PAGAMENTO_CANCELADO',
             destinatario_id: tecnicoId,
             titulo: 'Pagamento Cancelado',
-            conteudo: 'Seu pagamento foi cancelado. Verifique os detalhes na sua conta.',
+            conteudo:
+              'Seu pagamento foi cancelado. Verifique os detalhes na sua conta.',
             dados: { pagamentoId, motivo },
           });
         } catch (notificationError) {
@@ -245,7 +256,8 @@ export class PagamentoQueueProcessor implements OnModuleDestroy {
     const { pagamentoId, data, userId } = job.data;
 
     try {
-      const pagamento = await this.pagamentoService.findPagamentoCompleto(pagamentoId);
+      const pagamento =
+        await this.pagamentoService.findPagamentoCompleto(pagamentoId);
 
       if (!pagamento) {
         this.logger.error(`Pagamento com ID ${pagamentoId} não encontrado.`);
@@ -254,7 +266,9 @@ export class PagamentoQueueProcessor implements OnModuleDestroy {
 
       // Verificar se o pagamento já foi recebido
       if (pagamento.status === StatusPagamentoEnum.RECEBIDO) {
-        this.logger.warn(`Pagamento ${pagamentoId} já foi confirmado como recebido.`);
+        this.logger.warn(
+          `Pagamento ${pagamentoId} já foi confirmado como recebido.`,
+        );
         return;
       }
 
@@ -328,7 +342,8 @@ export class PagamentoQueueProcessor implements OnModuleDestroy {
     const { pagamentoId, comprovante_id, userId } = job.data;
 
     try {
-      const pagamento = await this.pagamentoService.findPagamentoCompleto(pagamentoId);
+      const pagamento =
+        await this.pagamentoService.findPagamentoCompleto(pagamentoId);
 
       if (!pagamento) {
         this.logger.error(`Pagamento com ID ${pagamentoId} não encontrado.`);
@@ -357,7 +372,8 @@ export class PagamentoQueueProcessor implements OnModuleDestroy {
       }
 
       // Buscar o comprovante
-      const comprovante = await this.comprovanteService.findById(comprovante_id);
+      const comprovante =
+        await this.comprovanteService.findById(comprovante_id);
       if (!comprovante) {
         this.logger.error(
           `Comprovante ${comprovante_id} não encontrado para validação.`,
@@ -368,19 +384,23 @@ export class PagamentoQueueProcessor implements OnModuleDestroy {
       // Simular validação do comprovante (implementar lógica específica conforme necessário)
       const resultado = {
         valido: true, // Por enquanto, sempre válido - implementar lógica real
-        observacoes: 'Comprovante validado automaticamente'
+        observacoes: 'Comprovante validado automaticamente',
       };
 
       // Atualizar o pagamento com o resultado da validação
-      const statusAtualizado = resultado.valido 
-        ? StatusPagamentoEnum.CONFIRMADO 
+      const statusAtualizado = resultado.valido
+        ? StatusPagamentoEnum.CONFIRMADO
         : StatusPagamentoEnum.PENDENTE;
 
       await this.pagamentoService.updateStatus(
         pagamentoId,
         {
           status: statusAtualizado,
-          observacoes: resultado.observacoes || (resultado.valido ? 'Comprovante validado com sucesso' : 'Comprovante rejeitado'),
+          observacoes:
+            resultado.observacoes ||
+            (resultado.valido
+              ? 'Comprovante validado com sucesso'
+              : 'Comprovante rejeitado'),
         },
         userId,
       );
@@ -401,7 +421,9 @@ export class PagamentoQueueProcessor implements OnModuleDestroy {
           await this.notificacaoService.enviarNotificacao({
             tipo: 'COMPROVANTE_VALIDADO',
             destinatario_id: tecnicoId,
-            titulo: resultado.valido ? 'Comprovante Validado' : 'Comprovante Rejeitado',
+            titulo: resultado.valido
+              ? 'Comprovante Validado'
+              : 'Comprovante Rejeitado',
             conteudo: `O comprovante do pagamento foi ${resultado.valido ? 'validado com sucesso' : 'rejeitado'}`,
             dados: { pagamentoId, comprovante_id, resultado },
           });

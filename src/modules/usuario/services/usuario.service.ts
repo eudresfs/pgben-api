@@ -130,7 +130,13 @@ export class UsuarioService {
     search?: string;
     [key: string]: any; // Permite qualquer campo da entidade como filtro
   }) {
-    const { relations = true, page = 1, limit = 10, search, ...filters } = options || {};
+    const {
+      relations = true,
+      page = 1,
+      limit = 10,
+      search,
+      ...filters
+    } = options || {};
 
     // Construir filtros dinâmicos
     const where: any = {};
@@ -1003,7 +1009,9 @@ export class UsuarioService {
    * @returns Resultado da operação
    */
   async reenviarCredenciais(userId: string) {
-    this.logger.info(`Iniciando reenvio de credenciais para usuário: ${userId}`);
+    this.logger.info(
+      `Iniciando reenvio de credenciais para usuário: ${userId}`,
+    );
     const startTime = Date.now();
 
     try {
@@ -1021,7 +1029,9 @@ export class UsuarioService {
         this.logger.warn(
           `Tentativa de reenvio de credenciais para usuário inativo: ${userId}`,
         );
-        throw new BadRequestException('Usuário deve estar ativo para reenvio de credenciais');
+        throw new BadRequestException(
+          'Usuário deve estar ativo para reenvio de credenciais',
+        );
       }
 
       // Gerar nova senha
@@ -1060,7 +1070,8 @@ export class UsuarioService {
       return {
         data: null,
         meta: null,
-        message: 'Credenciais reenviadas com sucesso. O usuário receberá um email com as novas credenciais.',
+        message:
+          'Credenciais reenviadas com sucesso. O usuário receberá um email com as novas credenciais.',
       };
     } catch (error) {
       this.logger.error(

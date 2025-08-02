@@ -10,6 +10,7 @@ import {
   ParseUUIDPipe,
   HttpCode,
   HttpStatus,
+  Logger,
 } from '@nestjs/common';
 import { Response } from 'express';
 import {
@@ -35,6 +36,10 @@ import {
   IDocumentoBatchProgresso,
   IDocumentoBatchResultado,
 } from '../interfaces/documento-batch.interface';
+import {
+  ThrottleBatchDownload,
+  ThrottleReports,
+} from '../../../common/decorators/throttle.decorator';
 
 /**
  * Controller para Download em Lote de Documentos
@@ -47,12 +52,15 @@ import {
 @UseGuards(JwtAuthGuard, PermissionGuard)
 @ApiBearerAuth()
 export class DocumentoBatchController {
+  private readonly logger = new Logger(DocumentoBatchController.name);
+
   constructor(private readonly documentoBatchService: DocumentoBatchService) {}
 
   /**
    * Inicia um download em lote de documentos
    */
   @Post()
+  @ThrottleBatchDownload()
   @RequiresPermission({ permissionName: 'documento.download' })
   @ApiOperation({
     summary: 'Iniciar download em lote de documentos',
@@ -133,6 +141,7 @@ export class DocumentoBatchController {
    * Faz o download do arquivo ZIP gerado
    */
   @Get(':jobId/download')
+  @ThrottleBatchDownload()
   @RequiresPermission({ permissionName: 'documento.download' })
   @ApiOperation({
     summary: 'Download do arquivo ZIP gerado',
@@ -166,41 +175,60 @@ export class DocumentoBatchController {
     @GetUser() usuario: Usuario,
     @Res() res: Response,
   ): Promise<void> {
-    const resultado = await this.documentoBatchService.obterResultado(jobId);
-    
-    if (!resultado.caminho_arquivo) {
-      throw new Error('Arquivo não disponível para download');
+    try {
+      // Usar streaming direto sem arquivos temporários
+      const { stream, filename, size } =
+        await this.documentoBatchService.criarStreamDownload(jobId);
+
+      // Headers para download do ZIP
+      res.set({
+        'Content-Type': 'application/zip',
+        'Content-Disposition': `attachment; filename="${filename}"`,
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        Pragma: 'no-cache',
+        Expires: '0',
+        'Transfer-Encoding': 'chunked',
+      });
+
+      // Adicionar Content-Length se o tamanho for conhecido
+      if (size) {
+        res.set('Content-Length', size.toString());
+      }
+
+      // Configurar handlers de erro
+      stream.on('error', (error) => {
+        this.logger.error('Erro no stream de download:', error);
+        if (!res.headersSent) {
+          res.status(500).json({
+            message: 'Erro interno durante o download',
+            error: 'STREAM_ERROR',
+          });
+        }
+      });
+
+      // Fazer pipe do stream para a resposta
+      stream.pipe(res);
+    } catch (error) {
+      this.logger.error('Erro ao iniciar download:', error);
+      if (!res.headersSent) {
+        if (error.message.includes('não encontrado')) {
+          res.status(404).json({
+            message: error.message,
+            error: 'NOT_FOUND',
+          });
+        } else if (error.message.includes('não foi concluído')) {
+          res.status(400).json({
+            message: error.message,
+            error: 'JOB_NOT_COMPLETED',
+          });
+        } else {
+          res.status(500).json({
+            message: 'Erro interno do servidor',
+            error: 'INTERNAL_ERROR',
+          });
+        }
+      }
     }
-
-    // Construir caminho do arquivo baseado no job_id
-    const fs = require('fs');
-    const path = require('path');
-    const filePath = path.join(
-      process.env.download_TEMP_DIR || path.join(process.cwd(), 'temp', 'batch-downloads'),
-      jobId,
-      'documentos.zip'
-    );
-
-    if (!fs.existsSync(filePath)) {
-      throw new Error('Arquivo ZIP não encontrado');
-    }
-
-    // Obter informações do arquivo
-    const stats = await fs.promises.stat(filePath);
-
-    // Headers para download do ZIP
-    res.set({
-      'Content-Type': 'application/zip',
-      'Content-Disposition': `attachment; filename="${resultado.nome_arquivo || 'documentos.zip'}"`,
-      'Content-Length': stats.size.toString(),
-      'Cache-Control': 'no-cache, no-store, must-revalidate',
-      Pragma: 'no-cache',
-      Expires: '0',
-    });
-
-    // Stream do arquivo
-    const fileStream = fs.createReadStream(filePath);
-    fileStream.pipe(res);
   }
 
   /**
@@ -216,9 +244,7 @@ export class DocumentoBatchController {
     status: 200,
     description: 'Lista de jobs retornada com sucesso',
   })
-  async getUserJobs(
-    @GetUser() usuario: Usuario,
-  ) {
+  async getUserJobs(@GetUser() usuario: Usuario) {
     return await this.documentoBatchService.listarJobs(usuario.id);
   }
 
@@ -252,6 +278,7 @@ export class DocumentoBatchController {
    * Valida filtros de download em lote
    */
   @Post('validar-filtros')
+  @ThrottleReports()
   @RequiresPermission({ permissionName: 'documento.download' })
   @ApiOperation({
     summary: 'Validar filtros de download',

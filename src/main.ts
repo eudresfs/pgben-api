@@ -403,26 +403,29 @@ function setupGracefulShutdown(app: INestApplication): void {
       message: error.message,
       stack: error.stack,
     });
-    
+
     // Verificar se é um erro relacionado ao Redis que pode ser ignorado
     const redisErrors = [
       'ECONNREFUSED',
-      'ENOTFOUND', 
+      'ENOTFOUND',
       'ETIMEDOUT',
       'Redis connection',
       'Bull queue',
-      'ioredis'
+      'ioredis',
     ];
-    
-    const isRedisError = redisErrors.some(errorType => 
-      error.message?.includes(errorType) || error.stack?.includes(errorType)
+
+    const isRedisError = redisErrors.some(
+      (errorType) =>
+        error.message?.includes(errorType) || error.stack?.includes(errorType),
     );
-    
+
     if (isRedisError) {
-      logger.warn('Erro do Redis detectado, mas aplicação continuará funcionando sem filas.');
+      logger.warn(
+        'Erro do Redis detectado, mas aplicação continuará funcionando sem filas.',
+      );
       return; // Não fazer exit para erros de Redis
     }
-    
+
     shutdown('uncaughtException');
   });
 
@@ -431,25 +434,29 @@ function setupGracefulShutdown(app: INestApplication): void {
       promise,
       reason,
     });
-    
+
     // Verificar se é um erro relacionado ao Redis
     const reasonStr = String(reason);
     const redisErrors = [
       'ECONNREFUSED',
       'ENOTFOUND',
-      'ETIMEDOUT', 
+      'ETIMEDOUT',
       'Redis connection',
       'Bull queue',
-      'ioredis'
+      'ioredis',
     ];
-    
-    const isRedisError = redisErrors.some(errorType => reasonStr.includes(errorType));
-    
+
+    const isRedisError = redisErrors.some((errorType) =>
+      reasonStr.includes(errorType),
+    );
+
     if (isRedisError) {
-      logger.warn('Promise rejeitada relacionada ao Redis, mas aplicação continuará funcionando.');
+      logger.warn(
+        'Promise rejeitada relacionada ao Redis, mas aplicação continuará funcionando.',
+      );
       return; // Não fazer exit para erros de Redis
     }
-    
+
     shutdown('unhandledRejection');
   });
 

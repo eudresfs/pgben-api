@@ -8,7 +8,7 @@ import { of, throwError } from 'rxjs';
 
 /**
  * Testes de Integração para ScopeContextInterceptor
- * 
+ *
  * Valida o comportamento completo do sistema:
  * - Integração com guards e middlewares
  * - Fluxo completo de requisição
@@ -25,8 +25,10 @@ describe('ScopeContextInterceptor - Integration Tests', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    interceptor = moduleFixture.get<ScopeContextInterceptor>(ScopeContextInterceptor);
-    
+    interceptor = moduleFixture.get<ScopeContextInterceptor>(
+      ScopeContextInterceptor,
+    );
+
     await app.init();
   });
 
@@ -42,7 +44,7 @@ describe('ScopeContextInterceptor - Integration Tests', () => {
         user: null,
         headers: {},
       });
-      
+
       const mockHandler = {
         handle: () => {
           // Capturar contexto durante execução
@@ -71,7 +73,7 @@ describe('ScopeContextInterceptor - Integration Tests', () => {
         },
         headers: {},
       });
-      
+
       const mockHandler = {
         handle: () => {
           const context = RequestContextHolder.get();
@@ -98,7 +100,7 @@ describe('ScopeContextInterceptor - Integration Tests', () => {
         },
         headers: {},
       });
-      
+
       const mockHandler = {
         handle: () => {
           const context = RequestContextHolder.get();
@@ -126,7 +128,7 @@ describe('ScopeContextInterceptor - Integration Tests', () => {
           'x-unidade-id': 'unidade-do-header',
         },
       });
-      
+
       const mockHandler = {
         handle: () => {
           const context = RequestContextHolder.get();
@@ -156,9 +158,11 @@ describe('ScopeContextInterceptor - Integration Tests', () => {
           },
           headers: {},
         });
-        
+
         const mockHandler = createMockCallHandler();
-        const promise = interceptor.intercept(mockContext, mockHandler).toPromise();
+        const promise = interceptor
+          .intercept(mockContext, mockHandler)
+          .toPromise();
         promises.push(promise);
       }
 
@@ -170,7 +174,7 @@ describe('ScopeContextInterceptor - Integration Tests', () => {
       // Assert
       expect(results).toHaveLength(100);
       expect(duration).toBeLessThan(1000); // Menos de 1 segundo
-      
+
       // Verificar que contexto foi limpo
       expect(RequestContextHolder.get()).toBeUndefined();
     });
@@ -189,7 +193,7 @@ describe('ScopeContextInterceptor - Integration Tests', () => {
             },
             headers: {},
           });
-          
+
           const mockHandler = {
             handle: () => {
               // Capturar contexto durante execução
@@ -199,11 +203,14 @@ describe('ScopeContextInterceptor - Integration Tests', () => {
             },
           };
 
-          interceptor.intercept(mockContext, mockHandler).toPromise().then(() => {
-            resolve();
-          });
+          interceptor
+            .intercept(mockContext, mockHandler)
+            .toPromise()
+            .then(() => {
+              resolve();
+            });
         });
-        
+
         promises.push(promise);
       }
 
@@ -212,8 +219,8 @@ describe('ScopeContextInterceptor - Integration Tests', () => {
 
       // Assert: Verificar que cada contexto foi único
       expect(contexts).toHaveLength(50);
-      
-      const userIds = contexts.map(c => c.user_id);
+
+      const userIds = contexts.map((c) => c.user_id);
       const uniqueUserIds = [...new Set(userIds)];
       expect(uniqueUserIds).toHaveLength(50); // Todos únicos
     });
@@ -234,16 +241,16 @@ describe('ScopeContextInterceptor - Integration Tests', () => {
           'content-type': 'application/json',
         },
       });
-      
+
       const mockHandler = {
-          handle: () => {
-            const context = RequestContextHolder.get();
-            expect(context.tipo).toBe(ScopeType.PROPRIO);
-            expect(context.user_id).toBe('null'); // null convertido para string 'null'
-            done();
-            return of('mock-result');
-          },
-        };
+        handle: () => {
+          const context = RequestContextHolder.get();
+          expect(context.tipo).toBe(ScopeType.PROPRIO);
+          expect(context.user_id).toBe('null'); // null convertido para string 'null'
+          done();
+          return of('mock-result');
+        },
+      };
 
       // Act: Não deve lançar exceção
       interceptor.intercept(mockContext, mockHandler).toPromise();
@@ -255,7 +262,7 @@ describe('ScopeContextInterceptor - Integration Tests', () => {
         user: { id: 'user-test' },
         headers: {},
       });
-      
+
       const mockHandler = {
         handle: () => {
           return throwError(() => new Error('Falha simulada no handler'));
@@ -264,9 +271,9 @@ describe('ScopeContextInterceptor - Integration Tests', () => {
 
       // Act & Assert
       await expect(
-        interceptor.intercept(mockContext, mockHandler).toPromise()
+        interceptor.intercept(mockContext, mockHandler).toPromise(),
       ).rejects.toThrow('Falha simulada no handler');
-      
+
       // Contexto deve ser limpo mesmo com erro
       expect(RequestContextHolder.get()).toBeUndefined();
     });
@@ -274,14 +281,18 @@ describe('ScopeContextInterceptor - Integration Tests', () => {
     it('deve funcionar com headers case-insensitive', (done) => {
       // Arrange: Headers com diferentes cases
       const mockContext = createMockExecutionContext({
-        user: { id: 'user-case-test', escopo: 'UNIDADE', unidade_id: 'user-unidade-123' },
+        user: {
+          id: 'user-case-test',
+          escopo: 'UNIDADE',
+          unidade_id: 'user-unidade-123',
+        },
         headers: {
           'X-UNIDADE-ID': 'unidade-uppercase',
           'x-unidade-id': 'unidade-lowercase', // Deve ser ignorado
           'X-Unidade-Id': 'unidade-mixedcase', // Deve ser ignorado
         },
       });
-      
+
       const mockHandler = {
         handle: () => {
           // Assert: Deve usar a unidade do usuário (prioridade)
@@ -301,49 +312,55 @@ describe('ScopeContextInterceptor - Integration Tests', () => {
   describe('📊 Testes de Métricas e Logging', () => {
     it('deve gerar logs apropriados para diferentes cenários', (done) => {
       // Arrange: Spy no logger do interceptor
-      const debugSpy = jest.spyOn((interceptor as any).logger, 'debug').mockImplementation();
-      const warnSpy = jest.spyOn((interceptor as any).logger, 'warn').mockImplementation();
-      
+      const debugSpy = jest
+        .spyOn((interceptor as any).logger, 'debug')
+        .mockImplementation();
+      const warnSpy = jest
+        .spyOn((interceptor as any).logger, 'warn')
+        .mockImplementation();
+
       let callCount = 0;
       const expectedCalls = 2;
-      
+
       const checkCompletion = () => {
         callCount++;
         if (callCount === expectedCalls) {
           // Assert: Verificar que logs foram gerados
-          expect(debugSpy.mock.calls.length + warnSpy.mock.calls.length).toBeGreaterThan(0);
+          expect(
+            debugSpy.mock.calls.length + warnSpy.mock.calls.length,
+          ).toBeGreaterThan(0);
           debugSpy.mockRestore();
           warnSpy.mockRestore();
           done();
         }
       };
-      
+
       // Cenário 1: Usuário válido
       const mockContext1 = createMockExecutionContext({
         user: { id: 'valid-user', escopo: 'UNIDADE', unidade_id: 'unit-123' },
         headers: {},
       });
-      
+
       const mockHandler1 = {
         handle: () => {
           checkCompletion();
           return of('mock-result');
         },
       };
-      
+
       // Cenário 2: Usuário sem unidade (fallback)
       const mockContext2 = createMockExecutionContext({
         user: { id: 'no-unit-user', escopo: 'UNIDADE' }, // Sem unidade_id para trigger fallback
         headers: {},
       });
-      
+
       const mockHandler2 = {
         handle: () => {
           checkCompletion();
           return of('mock-result');
         },
       };
-      
+
       // Act
       interceptor.intercept(mockContext1, mockHandler1).toPromise();
       interceptor.intercept(mockContext2, mockHandler2).toPromise();
@@ -351,12 +368,14 @@ describe('ScopeContextInterceptor - Integration Tests', () => {
 
     it('deve gerar logs de auditoria', (done) => {
       // Arrange: Spy no logger do interceptor
-      const debugSpy = jest.spyOn((interceptor as any).logger, 'debug').mockImplementation();
+      const debugSpy = jest
+        .spyOn((interceptor as any).logger, 'debug')
+        .mockImplementation();
       const mockContext = createMockExecutionContext({
         user: { id: 'audit-user', escopo: 'PROPRIO' },
         headers: {},
       });
-      
+
       const mockHandler = {
         handle: () => {
           // Assert: Verificar que logs de debug foram gerados

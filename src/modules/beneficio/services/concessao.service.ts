@@ -31,7 +31,7 @@ export class ConcessaoService {
     private readonly historicoRepo: Repository<HistoricoConcessao>,
     private readonly validacaoBeneficioService: ValidacaoBeneficioService,
     private readonly logger: LoggingService,
-  ) { }
+  ) {}
 
   /**
    * Valida se a transição de status é permitida
@@ -176,7 +176,9 @@ export class ConcessaoService {
         qb.andWhere('concessao.status = :status', { status: filtro.status });
       }
       if (filtro.unidade_id || filtro.unidadeId) {
-        qb.andWhere('unidade.id = :unidade_id', { unidade_id: filtro.unidade_id || filtro.unidadeId });
+        qb.andWhere('unidade.id = :unidade_id', {
+          unidade_id: filtro.unidade_id || filtro.unidadeId,
+        });
       }
       if (filtro.tipo_beneficio_id || filtro.tipoBeneficioId) {
         qb.andWhere('tipo_beneficio.id = :tipo_beneficio_id', {
@@ -224,29 +226,38 @@ export class ConcessaoService {
         status: concessao.status,
         prioridade: concessao.solicitacao.prioridade,
         protocolo: concessao.solicitacao?.protocolo,
-        determinacao_judicial: concessao.solicitacao?.determinacao_judicial_flag || false,
+        determinacao_judicial:
+          concessao.solicitacao?.determinacao_judicial_flag || false,
         created_at: concessao.created_at,
         updated_at: concessao.updated_at,
         // Objetos relacionados estruturados
-        beneficiario: concessao.solicitacao?.beneficiario ? {
-          id: concessao.solicitacao.beneficiario.id,
-          nome: concessao.solicitacao.beneficiario.nome,
-          cpf: concessao.solicitacao.beneficiario.cpf,
-        } : null,
-        tipo_beneficio: concessao.solicitacao?.tipo_beneficio ? {
-          id: concessao.solicitacao.tipo_beneficio.id,
-          nome: concessao.solicitacao.tipo_beneficio.nome,
-          codigo: concessao.solicitacao.tipo_beneficio.codigo,
-        } : null,
-        unidade: concessao.solicitacao?.unidade ? {
-          id: concessao.solicitacao.unidade.id,
-          nome: concessao.solicitacao.unidade.nome,
-          codigo: concessao.solicitacao.unidade.codigo,
-        } : null,
-        tecnico: concessao.solicitacao?.tecnico ? {
-          id: concessao.solicitacao.tecnico.id,
-          nome: concessao.solicitacao.tecnico.nome,
-        } : null,
+        beneficiario: concessao.solicitacao?.beneficiario
+          ? {
+              id: concessao.solicitacao.beneficiario.id,
+              nome: concessao.solicitacao.beneficiario.nome,
+              cpf: concessao.solicitacao.beneficiario.cpf,
+            }
+          : null,
+        tipo_beneficio: concessao.solicitacao?.tipo_beneficio
+          ? {
+              id: concessao.solicitacao.tipo_beneficio.id,
+              nome: concessao.solicitacao.tipo_beneficio.nome,
+              codigo: concessao.solicitacao.tipo_beneficio.codigo,
+            }
+          : null,
+        unidade: concessao.solicitacao?.unidade
+          ? {
+              id: concessao.solicitacao.unidade.id,
+              nome: concessao.solicitacao.unidade.nome,
+              codigo: concessao.solicitacao.unidade.codigo,
+            }
+          : null,
+        tecnico: concessao.solicitacao?.tecnico
+          ? {
+              id: concessao.solicitacao.tecnico.id,
+              nome: concessao.solicitacao.tecnico.nome,
+            }
+          : null,
       }));
 
       this.logger.info(
@@ -474,8 +485,7 @@ export class ConcessaoService {
       concessao_id: concessaoOriginal.id,
     }); // Buscar todos os pagamentos da concessão
 
-    const quantidadeParcelasOriginal =
-      pagamentosOriginais.meta.total;
+    const quantidadeParcelasOriginal = pagamentosOriginais.meta.total;
 
     if (quantidadeParcelasOriginal === 0) {
       throw new BadRequestException(
@@ -567,7 +577,7 @@ export class ConcessaoService {
         dataEncerramento = new Date(dataInicio);
         dataEncerramento.setMonth(
           dataEncerramento.getMonth() +
-          solicitacao.tipo_beneficio.especificacoes.duracao_maxima_meses,
+            solicitacao.tipo_beneficio.especificacoes.duracao_maxima_meses,
         );
       }
 

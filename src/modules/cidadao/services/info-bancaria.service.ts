@@ -41,65 +41,65 @@ export class InfoBancariaService {
     return this.upsert(createInfoBancariaDto);
   }
 
-/**
- * Cria ou atualiza informação bancária (upsert)
- * @param createInfoBancariaDto Dados da informação bancária
- * @returns Informação bancária criada ou atualizada
- */
-async upsert(
-  createInfoBancariaDto: CreateInfoBancariaDto,
-): Promise<InfoBancariaResponseDto> {
-  try {
+  /**
+   * Cria ou atualiza informação bancária (upsert)
+   * @param createInfoBancariaDto Dados da informação bancária
+   * @returns Informação bancária criada ou atualizada
+   */
+  async upsert(
+    createInfoBancariaDto: CreateInfoBancariaDto,
+  ): Promise<InfoBancariaResponseDto> {
+    try {
+      // Verifica se o cidadão existe
+      const cidadaoExiste = await this.cidadaoRepository.existsCidadao(
+        createInfoBancariaDto.cidadao_id,
+      );
+      if (!cidadaoExiste) {
+        throw new NotFoundException(
+          `Cidadão com ID ${createInfoBancariaDto.cidadao_id} não encontrado`,
+        );
+      }
 
-    // Verifica se o cidadão existe
-    const cidadaoExiste = await this.cidadaoRepository.existsCidadao(
-      createInfoBancariaDto.cidadao_id,
-    );
-    if (!cidadaoExiste) {
-      throw new NotFoundException(
-        `Cidadão com ID ${createInfoBancariaDto.cidadao_id} não encontrado`,
+      // Preparar dados normalizados
+      const dadosNormalizados = normalizeEnumFields({
+        ...createInfoBancariaDto,
+        tipo_conta:
+          createInfoBancariaDto.tipo_conta ?? TipoConta.POUPANCA_SOCIAL,
+        ativo: true,
+      });
+
+      // Upsert nativo do PostgreSQL
+      const result = await this.infoBancariaRepository.repository.upsert(
+        dadosNormalizados,
+        ['cidadao_id'],
+      );
+
+      // Buscar o registro para retornar completo
+      const infoBancaria =
+        await this.infoBancariaRepository.findByCidadaoIdForUpsert(
+          createInfoBancariaDto.cidadao_id,
+        );
+
+      this.logger.log(
+        `Informação bancária ${result.generatedMaps.length > 0 ? 'criada' : 'atualizada'}: ${infoBancaria.id}`,
+      );
+
+      return this.mapToResponseDto(infoBancaria);
+    } catch (error) {
+      this.logger.error(
+        `Erro ao criar/atualizar informação bancária: ${error.message}`,
+        error.stack,
+      );
+
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException(
+        'Erro interno ao criar/atualizar informação bancária',
       );
     }
-
-    // Preparar dados normalizados
-    const dadosNormalizados = normalizeEnumFields({
-      ...createInfoBancariaDto,
-      tipo_conta: createInfoBancariaDto.tipo_conta ?? TipoConta.POUPANCA_SOCIAL,
-      ativo: true,
-    });
-
-    // Upsert nativo do PostgreSQL
-    const result = await this.infoBancariaRepository.repository.upsert(
-      dadosNormalizados,
-      ['cidadao_id'], 
-    );
-
-    // Buscar o registro para retornar completo
-    const infoBancaria = await this.infoBancariaRepository.findByCidadaoIdForUpsert(
-      createInfoBancariaDto.cidadao_id,
-    );
-
-    this.logger.log(
-      `Informação bancária ${result.generatedMaps.length > 0 ? 'criada' : 'atualizada'}: ${infoBancaria.id}`,
-    );
-
-    return this.mapToResponseDto(infoBancaria);
-
-  } catch (error) {
-    this.logger.error(
-      `Erro ao criar/atualizar informação bancária: ${error.message}`,
-      error.stack,
-    );
-    
-    if (error instanceof NotFoundException) {
-      throw error;
-    }
-    
-    throw new InternalServerErrorException(
-      'Erro interno ao criar/atualizar informação bancária',
-    );
   }
-}
 
   /**
    * Busca todas as informações bancárias com filtros

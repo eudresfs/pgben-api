@@ -25,7 +25,7 @@ export class ValidacaoSolicitacaoService {
     @InjectRepository(Pendencia)
     private readonly pendenciaRepository: Repository<Pendencia>,
     private readonly transicaoEstadoService: TransicaoEstadoService,
-  ) { }
+  ) {}
 
   /**
    * Valida se uma solicitação pode ser aprovada

@@ -687,7 +687,9 @@ export class RequisitoDocumento {
    * Verifica se o template possui descrição
    */
   temDescricaoTemplate(): boolean {
-    return !!this.template_descricao && this.template_descricao.trim().length > 0;
+    return (
+      !!this.template_descricao && this.template_descricao.trim().length > 0
+    );
   }
 
   /**
@@ -758,7 +760,9 @@ export class RequisitoDocumento {
    */
   templateEhImagem(): boolean {
     const extensao = this.getExtensaoTemplate();
-    return ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(extensao || '');
+    return ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(
+      extensao || '',
+    );
   }
 
   /**
@@ -766,7 +770,9 @@ export class RequisitoDocumento {
    */
   templateEhDocumentoOffice(): boolean {
     const extensao = this.getExtensaoTemplate();
-    return ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(extensao || '');
+    return ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(
+      extensao || '',
+    );
   }
 
   /**
@@ -799,7 +805,11 @@ export class RequisitoDocumento {
   /**
    * Atualiza as informações do template
    */
-  atualizarTemplate(templateUrl?: string, templateNome?: string, templateDescricao?: string): void {
+  atualizarTemplate(
+    templateUrl?: string,
+    templateNome?: string,
+    templateDescricao?: string,
+  ): void {
     if (templateUrl !== undefined) {
       this.template_url = templateUrl;
     }
@@ -824,7 +834,11 @@ export class RequisitoDocumento {
    * Verifica se o template está completo (tem URL, nome e descrição)
    */
   templateEstaCompleto(): boolean {
-    return this.temTemplate() && this.temNomeTemplate() && this.temDescricaoTemplate();
+    return (
+      this.temTemplate() &&
+      this.temNomeTemplate() &&
+      this.temDescricaoTemplate()
+    );
   }
 
   /**

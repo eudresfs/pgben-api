@@ -14,7 +14,7 @@ import { IScopeContext } from '../interfaces/scope-context.interface';
 
 /**
  * Interceptor para definir o contexto de escopo baseado no usuário autenticado
- * 
+ *
  * @description
  * Este interceptor executa APÓS o AuthGuard processar o JWT,
  * garantindo que o usuário esteja disponível em req.user.
@@ -54,8 +54,8 @@ export class ScopeContextInterceptor implements NestInterceptor {
           this.logger.debug('Contexto de escopo limpo', {
             timestamp: new Date().toISOString(),
           });
-        }
-      })
+        },
+      }),
     );
   }
 
@@ -80,83 +80,97 @@ export class ScopeContextInterceptor implements NestInterceptor {
 
     try {
       const context = this.buildScopeContext(user);
-      
+
       // Validação síncrona do contexto
       if (!this.isValidScopeContextSync(context)) {
         throw new Error('Contexto de escopo inválido');
       }
-      
-      this.logger.debug(`[ScopeContextInterceptor] Configurando contexto: ${JSON.stringify(context)}`);
-      
+
+      this.logger.debug(
+        `[ScopeContextInterceptor] Configurando contexto: ${JSON.stringify(context)}`,
+      );
+
       RequestContextHolder.set(context);
-      
-      this.logger.debug(`[ScopeContextInterceptor] Contexto configurado com sucesso`);
+
+      this.logger.debug(
+        `[ScopeContextInterceptor] Contexto configurado com sucesso`,
+      );
     } catch (error) {
-      this.logger.error(`[ScopeContextInterceptor] Erro ao configurar contexto: ${error.message}`);
+      this.logger.error(
+        `[ScopeContextInterceptor] Erro ao configurar contexto: ${error.message}`,
+      );
       // Em caso de erro, define contexto PROPRIO como fallback
       const fallbackContext = {
         tipo: ScopeType.PROPRIO,
         user_id: String(user?.id || ''),
-        unidade_id: null
+        unidade_id: null,
       };
       RequestContextHolder.set(fallbackContext);
-      this.logger.warn(`[ScopeContextInterceptor] Contexto fallback configurado: ${JSON.stringify(fallbackContext)}`);
+      this.logger.warn(
+        `[ScopeContextInterceptor] Contexto fallback configurado: ${JSON.stringify(fallbackContext)}`,
+      );
     }
   }
 
   /**
-    * Constrói o contexto de escopo baseado no usuário
-    */
-   private buildScopeContext(user: UserAccessTokenClaims): IScopeContext {
-     // Determinar o tipo de escopo baseado no escopo do usuário
-     let scopeType: ScopeType;
-     
-     switch (user.escopo) {
-       case 'GLOBAL':
-         scopeType = ScopeType.GLOBAL;
-         break;
-       case 'UNIDADE':
-         scopeType = ScopeType.UNIDADE;
-         break;
-       case 'PROPRIO':
-       default:
-         scopeType = ScopeType.PROPRIO;
-         break;
-     }
- 
-     // Aplicar fallback se escopo for UNIDADE mas não há unidade_id
-     if (scopeType === ScopeType.UNIDADE && !user.unidade_id) {
-       this.logger.warn('Fallback aplicado: UNIDADE sem unidade_id, usando PROPRIO', {
-         userId: user.id,
-         originalScope: user.escopo,
-         timestamp: new Date().toISOString(),
-       });
-       scopeType = ScopeType.PROPRIO;
-     }
- 
-     const context: IScopeContext = {
-       tipo: scopeType,
-       user_id: String(user.id),
-       unidade_id: user.unidade_id ? String(user.unidade_id) : null,
-     };
-     
-     // Validação de integridade simplificada
-     if (!this.validateScopeIntegritySync(context)) {
-       this.logger.warn('Contexto falhou na validação de integridade, aplicando fallback', {
-         originalContext: context,
-         timestamp: new Date().toISOString(),
-       });
-       
-       // Fallback para PROPRIO em caso de falha na validação
-       return {
-         tipo: ScopeType.PROPRIO,
-         user_id: String(user.id),
-         unidade_id: null,
-       };
-     }
-     
-     return context;
-   }
+   * Constrói o contexto de escopo baseado no usuário
+   */
+  private buildScopeContext(user: UserAccessTokenClaims): IScopeContext {
+    // Determinar o tipo de escopo baseado no escopo do usuário
+    let scopeType: ScopeType;
+
+    switch (user.escopo) {
+      case 'GLOBAL':
+        scopeType = ScopeType.GLOBAL;
+        break;
+      case 'UNIDADE':
+        scopeType = ScopeType.UNIDADE;
+        break;
+      case 'PROPRIO':
+      default:
+        scopeType = ScopeType.PROPRIO;
+        break;
+    }
+
+    // Aplicar fallback se escopo for UNIDADE mas não há unidade_id
+    if (scopeType === ScopeType.UNIDADE && !user.unidade_id) {
+      this.logger.warn(
+        'Fallback aplicado: UNIDADE sem unidade_id, usando PROPRIO',
+        {
+          userId: user.id,
+          originalScope: user.escopo,
+          timestamp: new Date().toISOString(),
+        },
+      );
+      scopeType = ScopeType.PROPRIO;
+    }
+
+    const context: IScopeContext = {
+      tipo: scopeType,
+      user_id: String(user.id),
+      unidade_id: user.unidade_id ? String(user.unidade_id) : null,
+    };
+
+    // Validação de integridade simplificada
+    if (!this.validateScopeIntegritySync(context)) {
+      this.logger.warn(
+        'Contexto falhou na validação de integridade, aplicando fallback',
+        {
+          originalContext: context,
+          timestamp: new Date().toISOString(),
+        },
+      );
+
+      // Fallback para PROPRIO em caso de falha na validação
+      return {
+        tipo: ScopeType.PROPRIO,
+        user_id: String(user.id),
+        unidade_id: null,
+      };
+    }
+
+    return context;
+  }
 
   /**
    * Valida se o contexto de escopo é válido (versão síncrona)
@@ -187,12 +201,12 @@ export class ScopeContextInterceptor implements NestInterceptor {
       if (!context.user_id) {
         return false;
       }
-      
+
       // Se for escopo UNIDADE, deve ter unidade_id
       if (context.tipo === ScopeType.UNIDADE && !context.unidade_id) {
         return false;
       }
-      
+
       return true;
     } catch (error) {
       this.logger.error('Erro na validação de integridade do escopo', {

@@ -17,7 +17,10 @@ export function getRedisConfig(configService: ConfigService): RedisOptions {
     port: configService.get<number>('REDIS_PORT', 6379),
     password: configService.get<string>('REDIS_PASSWORD', ''),
     db: configService.get<number>('REDIS_DB', 0),
-    maxRetriesPerRequest: configService.get<number>('REDIS_MAX_RETRIES_PER_REQUEST', 3),
+    maxRetriesPerRequest: configService.get<number>(
+      'REDIS_MAX_RETRIES_PER_REQUEST',
+      3,
+    ),
 
     // Configurações de timeout e reconexão
     connectTimeout: configService.get<number>('REDIS_CONNECT_TIMEOUT', 5000),

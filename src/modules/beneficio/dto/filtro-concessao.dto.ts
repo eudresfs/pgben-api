@@ -64,7 +64,7 @@ export class FiltroConcessaoDto extends PaginationParamsDto {
   })
   @IsUUID()
   tipo_beneficio_id?: string;
-  
+
   // Propriedade temporária para aceitar unidadeId do interceptor
   @ApiHideProperty()
   @IsOptional()

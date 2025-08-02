@@ -123,7 +123,9 @@ export class PagamentoMapper {
       status: filtros.status,
       solicitacao_id: filtros.solicitacao_id,
       concessao_id: filtros.concessao_id,
-      data_inicio: filtros.data_inicio ? new Date(filtros.data_inicio) : undefined,
+      data_inicio: filtros.data_inicio
+        ? new Date(filtros.data_inicio)
+        : undefined,
       data_fim: filtros.data_fim ? new Date(filtros.data_fim) : undefined,
       valorMinimo: filtros.valorMinimo
         ? parseFloat(filtros.valorMinimo)

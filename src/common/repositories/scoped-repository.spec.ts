@@ -56,7 +56,7 @@ describe('ScopedRepository - Correções de Segurança', () => {
       TestEntity,
       mockEntityManager,
       undefined,
-      { strictMode: true, allowGlobalScope: false }
+      { strictMode: true, allowGlobalScope: false },
     );
 
     // Spy no logger
@@ -77,7 +77,7 @@ describe('ScopedRepository - Correções de Segurança', () => {
 
       // Act & Assert
       await expect(scopedRepository.findAll()).rejects.toThrow(
-        ScopeContextRequiredException
+        ScopeContextRequiredException,
       );
 
       expect(loggerSpy).toHaveBeenCalledWith(
@@ -85,7 +85,7 @@ describe('ScopedRepository - Correções de Segurança', () => {
         expect.objectContaining({
           entity: 'TestEntity',
           timestamp: expect.any(String),
-        })
+        }),
       );
     });
 
@@ -104,7 +104,7 @@ describe('ScopedRepository - Correções de Segurança', () => {
       // Assert
       expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
         'entity.user_id = :userId',
-        { userId: '123' }
+        { userId: '123' },
       );
     });
 
@@ -114,10 +114,10 @@ describe('ScopedRepository - Correções de Segurança', () => {
 
       // Act & Assert
       await expect(scopedRepository.findById(1)).rejects.toThrow(
-        ScopeContextRequiredException
+        ScopeContextRequiredException,
       );
       await expect(scopedRepository.countScoped()).rejects.toThrow(
-        ScopeContextRequiredException
+        ScopeContextRequiredException,
       );
     });
   });
@@ -134,13 +134,13 @@ describe('ScopedRepository - Correções de Segurança', () => {
 
       // Act & Assert
       await expect(scopedRepository.findAllGlobal()).rejects.toThrow(
-        StrictModeViolationException
+        StrictModeViolationException,
       );
       await expect(scopedRepository.findByIdGlobal(1)).rejects.toThrow(
-        StrictModeViolationException
+        StrictModeViolationException,
       );
       await expect(scopedRepository.countGlobal()).rejects.toThrow(
-        StrictModeViolationException
+        StrictModeViolationException,
       );
     });
 
@@ -166,7 +166,7 @@ describe('ScopedRepository - Correções de Segurança', () => {
         TestEntity,
         mockEntityManager,
         undefined,
-        { strictMode: false, allowGlobalScope: true }
+        { strictMode: false, allowGlobalScope: true },
       );
       const mockContext: IScopeContext = {
         tipo: ScopeType.PROPRIO,
@@ -200,7 +200,7 @@ describe('ScopedRepository - Correções de Segurança', () => {
       // Assert
       expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
         'entity.user_id = :userId',
-        { userId: '123' }
+        { userId: '123' },
       );
     });
 
@@ -220,7 +220,7 @@ describe('ScopedRepository - Correções de Segurança', () => {
       // Para TestEntity, deve aplicar filtro direto de unidade_id
       expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
         'entity.unidade_id = :unidadeId',
-        { unidadeId: 'unidade-1' }
+        { unidadeId: 'unidade-1' },
       );
     });
 
@@ -259,7 +259,7 @@ describe('ScopedRepository - Correções de Segurança', () => {
         expect.objectContaining({
           entity: 'TestEntity',
           timestamp: expect.any(String),
-        })
+        }),
       );
     });
 
@@ -304,7 +304,7 @@ describe('ScopedRepository - Correções de Segurança', () => {
           userId: '123',
           unidadeId: 'unidade-1',
           entity: 'TestEntity',
-        })
+        }),
       );
     });
   });
@@ -315,7 +315,7 @@ describe('ScopedRepository - Correções de Segurança', () => {
       const defaultRepository = new ScopedRepository<TestEntity>(
         TestEntity,
         mockEntityManager,
-        undefined
+        undefined,
       );
 
       // Assert
@@ -332,7 +332,7 @@ describe('ScopedRepository - Correções de Segurança', () => {
         {
           strictMode: false,
           allowGlobalScope: true,
-        }
+        },
       );
 
       // Assert

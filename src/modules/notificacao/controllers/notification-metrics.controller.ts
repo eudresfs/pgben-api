@@ -5,9 +5,7 @@ import { AblyService } from '../services/ably.service';
 @ApiTags('Métricas – Notificações')
 @Controller('notificacao/metricas')
 export class NotificationMetricsController {
-  constructor(
-    private readonly ablyService: AblyService,
-  ) {}
+  constructor(private readonly ablyService: AblyService) {}
 
   @Get('resumo')
   @ApiOperation({ summary: 'Resumo de métricas de Ably' })

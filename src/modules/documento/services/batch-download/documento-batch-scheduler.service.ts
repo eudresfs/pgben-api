@@ -40,15 +40,17 @@ export class DocumentoBatchSchedulerService {
 
     try {
       const estatisticasAntes = await this.obterEstatisticasTemp();
-      
+
       // Limpar jobs expirados do banco de dados
       const jobsLimpos = await this.documentoBatchService.limparJobsExpirados();
-      
+
       // Limpar arquivos temporários órfãos
       const arquivosLimpos = await this.limparArquivosTemporarios();
-      
+
       const estatisticasDepois = await this.obterEstatisticasTemp();
-      const espacoLiberado = this.formatFileSize(estatisticasAntes.tamanhoTotal - estatisticasDepois.tamanhoTotal);
+      const espacoLiberado = this.formatFileSize(
+        estatisticasAntes.tamanhoTotal - estatisticasDepois.tamanhoTotal,
+      );
 
       const resultado = {
         jobsLimpos,
@@ -57,7 +59,9 @@ export class DocumentoBatchSchedulerService {
         timestamp: new Date(),
       };
 
-      this.logger.log(`Limpeza automática concluída: ${jobsLimpos} jobs e ${arquivosLimpos} arquivos removidos, ${espacoLiberado} liberados`);
+      this.logger.log(
+        `Limpeza automática concluída: ${jobsLimpos} jobs e ${arquivosLimpos} arquivos removidos, ${espacoLiberado} liberados`,
+      );
       return resultado;
     } catch (error) {
       this.logger.error('Erro durante limpeza automática:', error);
@@ -206,11 +210,11 @@ export class DocumentoBatchSchedulerService {
    */
   private formatFileSize(bytes: number): string {
     if (bytes === 0) return '0 B';
-    
+
     const k = 1024;
     const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    
+
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   }
 }

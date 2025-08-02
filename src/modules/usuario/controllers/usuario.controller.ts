@@ -446,7 +446,8 @@ export class UsuarioController {
   })
   @ApiOperation({
     summary: 'Reenviar credenciais de acesso',
-    description: 'Gera nova senha, atualiza no banco de dados e envia por email',
+    description:
+      'Gera nova senha, atualiza no banco de dados e envia por email',
   })
   @ApiResponse({
     status: 200,

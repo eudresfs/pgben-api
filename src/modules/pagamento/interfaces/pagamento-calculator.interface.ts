@@ -4,13 +4,13 @@
 export interface DadosPagamento {
   /** Tipo do benefício (aluguel-social, cesta-básica, funeral, natalidade) */
   tipoBeneficio: TipoBeneficio;
-  
+
   /** Valor total do benefício */
   valor: number;
-  
+
   /** Data de início do benefício */
   dataInicio: Date;
-  
+
   /** Dados específicos do benefício (opcional) */
   dadosEspecificos?: any;
 }
@@ -21,16 +21,16 @@ export interface DadosPagamento {
 export interface ResultadoCalculoPagamento {
   /** Quantidade de parcelas */
   quantidadeParcelas: number;
-  
+
   /** Valor por parcela */
   valorParcela: number;
-  
+
   /** Data de liberação do primeiro pagamento */
   dataLiberacao: Date;
-  
+
   /** Data de vencimento do primeiro pagamento */
   dataVencimento: Date;
-  
+
   /** Intervalo entre parcelas em dias */
   intervaloParcelas: number;
 }
@@ -41,10 +41,10 @@ export interface ResultadoCalculoPagamento {
 export interface IBeneficioCalculatorStrategy {
   /** Tipo de benefício que esta estratégia suporta */
   readonly tipoBeneficio: string;
-  
+
   /**
    * Calcula os dados de pagamento para este tipo de benefício
-   * 
+   *
    * @param dados - Dados do benefício
    * @returns Resultado do cálculo
    */
@@ -57,15 +57,15 @@ export interface IBeneficioCalculatorStrategy {
 export interface IPagamentoCalculatorService {
   /**
    * Calcula os dados de pagamento para um benefício
-   * 
+   *
    * @param dados - Dados do benefício
    * @returns Resultado do cálculo
    */
   calcularPagamento(dados: DadosPagamento): Promise<ResultadoCalculoPagamento>;
-  
+
   /**
    * Registra uma nova estratégia de cálculo
-   * 
+   *
    * @param strategy - Estratégia a ser registrada
    */
   registrarEstrategia(strategy: IBeneficioCalculatorStrategy): void;
@@ -78,7 +78,7 @@ export enum TipoBeneficio {
   ALUGUEL_SOCIAL = 'aluguel-social',
   CESTA_BASICA = 'cesta-basica',
   FUNERAL = 'funeral',
-  NATALIDADE = 'natalidade'
+  NATALIDADE = 'natalidade',
 }
 
 /**
@@ -87,13 +87,13 @@ export enum TipoBeneficio {
 export interface ConfiguracaoBeneficio {
   /** Quantidade padrão de parcelas */
   parcelasPadrao: number;
-  
+
   /** Intervalo entre parcelas em dias */
   intervaloParcelas: number;
-  
+
   /** Dias para liberação após aprovação */
   diasParaLiberacao: number;
-  
+
   /** Dias para vencimento após liberação */
   diasParaVencimento: number;
 }
@@ -117,14 +117,16 @@ export interface IBeneficioDataProvider {
    * Busca os dados de um benefício por ID da solicitação
    */
   buscarDadosBeneficio(solicitacaoId: string): Promise<DadosBeneficio | null>;
-  
+
   /**
    * Verifica se um benefício está ativo
    */
   verificarBeneficioAtivo(beneficioId: string): Promise<boolean>;
-  
+
   /**
    * Busca a configuração específica de um benefício
    */
-  buscarConfiguracaoBeneficio(beneficioId: string): Promise<Record<string, any>>;
+  buscarConfiguracaoBeneficio(
+    beneficioId: string,
+  ): Promise<Record<string, any>>;
 }

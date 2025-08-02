@@ -2,7 +2,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
  * Migration para adicionar campos de translado e endereços ao benefício funeral
- * 
+ *
  * Alterações:
  * - Renomeia campo numero_certidao_obito para declaracao_obito
  * - Adiciona campo translado (enum)

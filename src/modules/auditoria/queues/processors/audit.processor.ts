@@ -350,7 +350,6 @@ export class AuditProcessor
    * Método de teste direto do worker
    */
   async testDirectProcessing() {
-
     // Gera um UUID válido para o teste
     const testUserId = '550e8400-e29b-41d4-a716-446655440000';
 

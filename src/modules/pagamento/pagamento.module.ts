@@ -125,7 +125,7 @@ import { CacheModule } from '../../shared/cache/cache.module';
     createScopedRepositoryProvider(Pagamento),
     createScopedRepositoryProvider(ComprovantePagamento),
     createScopedRepositoryProvider(ConfirmacaoRecebimento),
-    
+
     // Repositórios customizados
     PagamentoRepository,
     ComprovanteRepository,
