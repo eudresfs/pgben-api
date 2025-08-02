@@ -804,18 +804,18 @@ export class DocumentoController {
       incluir_metadados: filtros.incluirMetadados,
     };
 
-    const jobId = await this.documentoBatchService.iniciarJob(
+    const resultado = await this.documentoBatchService.iniciarJob(
       filtrosConvertidos,
       usuario.id,
     );
 
     return {
-      jobId: jobId,
-      estimatedSize: 0, // Será calculado durante o processamento
-      documentCount: 0, // Será calculado durante o processamento
+      jobId: resultado.jobId,
+      estimatedSize: resultado.estimatedSize,
+      documentCount: resultado.documentCount,
       message:
         'Download em lote iniciado. Use o jobId para verificar o progresso.',
-      statusUrl: `/api/documento/download-lote/${jobId}/status`,
+      statusUrl: `/api/documento/download-lote/${resultado.jobId}/status`,
     };
   }
 
@@ -844,18 +844,21 @@ export class DocumentoController {
     @Param('jobId', ParseUUIDPipe) jobId: string,
     @GetUser() usuario: Usuario,
   ): Promise<BatchJobStatusResponseDto> {
-    const job = await this.documentoBatchService.obterProgresso(jobId);
+    const progresso = await this.documentoBatchService.obterProgresso(jobId);
+    
+    // Buscar a entidade completa para obter tamanho_estimado e outras informações
+    const job = await this.documentoBatchService.obterJobCompleto(jobId);
 
     const response: BatchJobStatusResponseDto = {
-      id: job.job_id,
-      status: this.mapStatusToResponseFormat(job.status),
-      progress: job.progresso,
-      documentCount: job.total_documentos,
-      estimatedSize: 0, // tamanho_estimado removido da interface
-      actualSize: 0, // Será calculado quando o job for concluído
-      createdAt: new Date(), // Será obtido da entidade quando necessário
-      completedAt: undefined, // Será obtido da entidade quando necessário
-      error: job.erros.join(', ') || undefined,
+      id: progresso.job_id,
+      status: this.mapStatusToResponseFormat(progresso.status),
+      progress: progresso.progresso,
+      documentCount: progresso.total_documentos,
+      estimatedSize: job.tamanho_estimado || 0,
+      actualSize: job.tamanho_real || 0,
+      createdAt: job.created_at,
+      completedAt: job.data_conclusao,
+      error: progresso.erros.join(', ') || undefined,
     };
 
     if (job.status === StatusDownloadLoteEnum.COMPLETED) {

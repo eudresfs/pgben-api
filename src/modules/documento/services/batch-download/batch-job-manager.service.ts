@@ -1,6 +1,6 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { DocumentoBatchJob } from '../../../../entities/documento-batch-job.entity';
 import { StatusDownloadLoteEnum } from '../../../../entities/documento-batch-job.entity';
 
@@ -53,10 +53,10 @@ export class BatchJobManagerService {
     return await this.batchJobRepository.count({
       where: {
         usuario_id: usuarioId,
-        status: [
+        status: In([
           StatusDownloadLoteEnum.PENDING,
           StatusDownloadLoteEnum.PROCESSING,
-        ] as any,
+        ]),
       },
     });
   }
@@ -82,10 +82,10 @@ export class BatchJobManagerService {
     
     const jobsExpirados = await this.batchJobRepository.find({
       where: {
-        status: [
+        status: In([
           StatusDownloadLoteEnum.PENDING,
           StatusDownloadLoteEnum.PROCESSING,
-        ] as any,
+        ]),
         created_at: {
           $lt: timeoutDate,
         } as any,
@@ -129,10 +129,10 @@ export class BatchJobManagerService {
       this.batchJobRepository.count({
         where: {
           usuario_id: usuarioId,
-          status: [
+          status: In([
             StatusDownloadLoteEnum.PENDING,
             StatusDownloadLoteEnum.PROCESSING,
-          ] as any,
+          ]),
         },
       }),
       this.batchJobRepository.count({
@@ -144,10 +144,10 @@ export class BatchJobManagerService {
       this.batchJobRepository.count({
         where: {
           usuario_id: usuarioId,
-          status: [
+          status: In([
             StatusDownloadLoteEnum.FAILED,
             StatusDownloadLoteEnum.CANCELLED,
-          ] as any,
+          ]),
         },
       }),
       this.batchJobRepository.count({

@@ -176,11 +176,14 @@ describe('Batch Download (Integração)', () => {
 
       // Act
       const usuarioId = 'test-user-id';
-      const jobId = await documentoBatchService.iniciarJob(filtros, usuarioId);
+      const resultado = await documentoBatchService.iniciarJob(filtros, usuarioId);
 
       // Assert
-      expect(jobId).toBeDefined();
-      expect(typeof jobId).toBe('string');
+      expect(resultado).toBeDefined();
+      expect(resultado.jobId).toBeDefined();
+      expect(typeof resultado.jobId).toBe('string');
+      expect(resultado.estimatedSize).toBeGreaterThan(0);
+      expect(resultado.documentCount).toBeGreaterThan(0);
       expect(mockMinioService.obterArquivoStream).toHaveBeenCalled();
     });
 
@@ -304,12 +307,13 @@ describe('Batch Download (Integração)', () => {
       // Act
       const startTime = Date.now();
       const usuarioId = 'test-user-id';
-      const jobId = await documentoBatchService.iniciarJob(filtros, usuarioId);
+      const resultado = await documentoBatchService.iniciarJob(filtros, usuarioId);
       const endTime = Date.now();
 
       // Assert
-      expect(jobId).toBeDefined();
-      expect(typeof jobId).toBe('string');
+      expect(resultado).toBeDefined();
+      expect(resultado.jobId).toBeDefined();
+      expect(typeof resultado.jobId).toBe('string');
       expect(endTime - startTime).toBeLessThan(5000); // Menos de 5 segundos
     });
 
@@ -349,12 +353,13 @@ describe('Batch Download (Integração)', () => {
       // Act
       const startTime = Date.now();
       const usuarioId = 'test-user-id';
-      const jobId = await documentoBatchService.iniciarJob(filtros, usuarioId);
+      const resultado = await documentoBatchService.iniciarJob(filtros, usuarioId);
       const endTime = Date.now();
 
       // Assert
-      expect(jobId).toBeDefined();
-      expect(typeof jobId).toBe('string');
+      expect(resultado).toBeDefined();
+      expect(resultado.jobId).toBeDefined();
+      expect(typeof resultado.jobId).toBe('string');
       expect(endTime - startTime).toBeLessThan(30000); // Menos de 30 segundos
       expect(mockMinioService.obterArquivoStream).toHaveBeenCalledTimes(52); // 2 originais + 50 adicionais
     });

@@ -1,4 +1,4 @@
-import { StatusDownloadLoteEnum } from '@/entities/documento-batch-job.entity';
+import { StatusDownloadLoteEnum, DocumentoBatchJob } from '../../../entities/documento-batch-job.entity';
 
 /**
  * Interface para filtros de busca de documentos
@@ -75,13 +75,6 @@ export interface IDocumentoBatchResultado {
 }
 
 
-
-
-
-
-
-
-
 /**
  * Interface para serviço de download em lote
  */
@@ -90,8 +83,18 @@ export interface IDocumentoBatchService {
     filtros: IDocumentoBatchFiltros,
     usuario_id: string,
     metadados?: IDocumentoBatchMetadados,
-  ): Promise<string>;
+  ): Promise<{
+    jobId: string;
+    estimatedSize: number;
+    documentCount: number;
+  }>;
   obterProgresso(job_id: string): Promise<IDocumentoBatchProgresso>;
+  
+  /**
+   * Obtém a entidade completa do job
+   */
+  obterJobCompleto(job_id: string): Promise<DocumentoBatchJob>;
+  
   obterResultado(job_id: string): Promise<IDocumentoBatchResultado>;
   cancelarJob(job_id: string): Promise<boolean>;
   listarJobs(

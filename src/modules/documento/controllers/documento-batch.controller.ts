@@ -96,16 +96,16 @@ export class DocumentoBatchController {
       incluir_metadados: filtros.incluirMetadados,
     };
 
-    const jobId = await this.documentoBatchService.iniciarJob(
+    const resultado = await this.documentoBatchService.iniciarJob(
       filtrosConvertidos,
       usuario.id,
     );
 
     return {
-      jobId,
+      jobId: resultado.jobId,
       message:
         'Download em lote iniciado. Use o jobId para verificar o progresso.',
-      statusUrl: `/api/v1/documento/download-lote/${jobId}/status`,
+      statusUrl: `/api/v1/documento/download-lote/${resultado.jobId}/status`,
     };
   }
 

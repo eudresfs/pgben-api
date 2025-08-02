@@ -81,7 +81,11 @@ export class DocumentoBatchService {
     filtros: IDocumentoBatchFiltros,
     usuario_id: string,
     metadados?: IDocumentoBatchMetadados,
-  ): Promise<string> {
+  ): Promise<{
+    jobId: string;
+    estimatedSize: number;
+    documentCount: number;
+  }> {
     const startTime = Date.now();
     const metricas = {
       inicio: startTime,
@@ -163,7 +167,11 @@ export class DocumentoBatchService {
         this.markJobAsFailedInDB(savedJob.id, error.message);
       });
 
-      return savedJob.id;
+      return {
+        jobId: savedJob.id,
+        estimatedSize: validacao.estimativa.tamanho_estimado,
+        documentCount: validacao.estimativa.total_documentos,
+      };
     } catch (error) {
       const tempoTotal = Date.now() - startTime;
       this.logger.error(`Erro ao iniciar job para usuário ${usuario_id} após ${tempoTotal}ms:`, error);
@@ -194,6 +202,21 @@ export class DocumentoBatchService {
       data_inicio: job.created_at,
       updated_at: job.updated_at,
     };
+  }
+
+  /**
+   * Obtém a entidade completa do job
+   */
+  async obterJobCompleto(job_id: string): Promise<DocumentoBatchJob> {
+    const job = await this.batchJobRepository.findOne({
+      where: { id: job_id },
+    });
+
+    if (!job) {
+      throw new NotFoundException('Job não encontrado');
+    }
+
+    return job;
   }
 
   /**

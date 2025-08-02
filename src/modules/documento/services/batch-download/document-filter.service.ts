@@ -230,53 +230,79 @@ export class DocumentFilterService {
 
   /**
    * Aplica filtros ao QueryBuilder (método auxiliar para reutilização)
+   * Aceita tanto formato camelCase (BatchDownloadDto) quanto snake_case (filtros convertidos)
    */
   private aplicarFiltrosQuery(
     queryBuilder: any,
-    filtros: BatchDownloadFiltros,
+    filtros: any,
   ): void {
-    if (filtros.cidadaoIds?.length) {
+
+
+    // Cidadão IDs - aceita ambos os formatos
+    const cidadaoIds = filtros.cidadaoIds || filtros.cidadao_ids;
+    if (cidadaoIds?.length) {
+
       queryBuilder.andWhere('documento.cidadao_id IN (:...cidadaoIds)', {
-        cidadaoIds: filtros.cidadaoIds,
+        cidadaoIds: cidadaoIds,
       });
     }
 
-    if (filtros.solicitacaoIds?.length) {
+    // Solicitação IDs - aceita ambos os formatos
+    const solicitacaoIds = filtros.solicitacaoIds || filtros.solicitacao_ids;
+    if (solicitacaoIds?.length) {
+
       queryBuilder.andWhere('documento.solicitacao_id IN (:...solicitacaoIds)', {
-        solicitacaoIds: filtros.solicitacaoIds,
+        solicitacaoIds: solicitacaoIds,
       });
     }
 
-    if (filtros.tiposDocumento?.length) {
+    // Tipos de documento - aceita ambos os formatos
+    const tiposDocumento = filtros.tiposDocumento || filtros.tipo_documento;
+    if (tiposDocumento?.length) {
+
       queryBuilder.andWhere('documento.tipo IN (:...tipos)', {
-        tipos: filtros.tiposDocumento,
+        tipos: tiposDocumento,
       });
     }
 
-    if (filtros.dataInicio) {
+    // Data início - aceita ambos os formatos
+    const dataInicio = filtros.dataInicio || filtros.data_inicio;
+    if (dataInicio) {
+
       queryBuilder.andWhere('documento.data_upload >= :dataInicio', {
-        dataInicio: filtros.dataInicio,
+        dataInicio: dataInicio,
       });
     }
 
-    if (filtros.dataFim) {
+    // Data fim - aceita ambos os formatos
+    const dataFim = filtros.dataFim || filtros.data_fim;
+    if (dataFim) {
+
       queryBuilder.andWhere('documento.data_upload <= :dataFim', {
-        dataFim: filtros.dataFim,
+        dataFim: dataFim,
       });
     }
   }
 
   /**
    * Verifica se os filtros fornecidos são válidos
+   * Aceita tanto formato camelCase (BatchDownloadDto) quanto snake_case (filtros convertidos)
    */
-  private hasValidFilters(filtros: BatchDownloadDto): boolean {
-    return !!(
-      (filtros.cidadaoIds?.length) ||
-      (filtros.solicitacaoIds?.length) ||
-      (filtros.tiposDocumento?.length) ||
-      filtros.dataInicio ||
-      filtros.dataFim
-    );
+  private hasValidFilters(filtros: any): boolean {
+
+
+    // Verificar ambos os formatos (camelCase e snake_case)
+    const temCidadaoIds = !!(filtros.cidadaoIds?.length || filtros.cidadao_ids?.length);
+    const temSolicitacaoIds = !!(filtros.solicitacaoIds?.length || filtros.solicitacao_ids?.length);
+    const temTiposDocumento = !!(filtros.tiposDocumento?.length || filtros.tipo_documento?.length);
+    const temDataInicio = !!(filtros.dataInicio || filtros.data_inicio);
+    const temDataFim = !!(filtros.dataFim || filtros.data_fim);
+
+    const resultado = temCidadaoIds || temSolicitacaoIds || temTiposDocumento || temDataInicio || temDataFim;
+
+
+
+    return resultado;
   }
 
   /**
