@@ -84,6 +84,7 @@ jobs:
                   "spec": {
                     "containers": [{
                       "name": "'"$DEPLOYMENT_NAME"'",
+                      "image": "'"$CONTAINER_PATH"'",
                       "resources": {
                         "requests": {
                           "memory": "512Mi",
