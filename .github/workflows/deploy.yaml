@@ -145,11 +145,32 @@ jobs:
           else
             DOMAIN="api-semtas-natal.pgben.com.br"
           fi
-
           echo "Configurando recursos para: $APP_NAME"
           echo "Namespace: $NAMESPACE"
           echo "Porta externa: $PORT, Porta interna: $TARGET_PORT"
           echo "Domínio: $DOMAIN"
+
+          # Verificar se o certificado já existe
+          if ! kubectl get certificate ${APP_NAME}-cert -n ${NAMESPACE} &> /dev/null; then
+            echo "Criando certificado ${APP_NAME}-cert..."
+            cat <<EOF | kubectl apply -f -
+          apiVersion: cert-manager.io/v1
+          kind: Certificate
+          metadata:
+            name: ${APP_NAME}-cert
+            namespace: ${NAMESPACE}
+          spec:
+            secretName: ${APP_NAME}-cert
+            issuerRef:
+              name: letsencrypt-prod
+              kind: Issuer
+            dnsNames:
+            - ${DOMAIN}
+          EOF
+            echo "Certificado ${APP_NAME}-cert criado com sucesso!"
+          else
+            echo "Certificado ${APP_NAME}-cert já existe. Pulando criação."
+          fi
 
           # Verificar se o serviço já existe
           if ! kubectl get svc ${APP_NAME}-svc -n ${NAMESPACE} &> /dev/null; then
@@ -211,7 +232,7 @@ jobs:
             tls:
             - hosts:
               - ${DOMAIN}
-              secretName: wildcard-cert
+              secretName: ${APP_NAME}-cert
           EOF
             echo "Ingress ${APP_NAME}-ingress criado com sucesso!"
             echo ""
