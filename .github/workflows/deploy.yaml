@@ -60,7 +60,10 @@ jobs:
             kubectl patch deployment $DEPLOYMENT_NAME -n $K8S_NAMESPACE -p '{"spec":{"template":{"spec":{"imagePullSecrets":[{"name":"cpr"}]}}}}'
           else
             echo "Deployment exists, updating image..."
-            kubectl -n $K8S_NAMESPACE set image deployment/$DEPLOYMENT_NAME $DEPLOYMENT_NAME=$CONTAINER_PATH
+            # Descobrir o nome real do container
+            CONTAINER_NAME=$(kubectl -n $K8S_NAMESPACE get deployment $DEPLOYMENT_NAME -o jsonpath='{.spec.template.spec.containers[0].name}')
+            echo "Container name found: $CONTAINER_NAME"
+            kubectl -n $K8S_NAMESPACE set image deployment/$DEPLOYMENT_NAME $CONTAINER_NAME=$CONTAINER_PATH
           fi
           
           echo "Aguardando rollout do deployment (timeout aumentado para 15 minutos)..."
@@ -69,6 +72,9 @@ jobs:
           # Aplicar configurações de progressDeadlineSeconds e probes
           if [ "$?" -eq 0 ]; then
             echo "Aplicando configurações otimizadas de health checks e recursos..."
+            # Descobrir o nome real do container para o patch
+            CONTAINER_NAME=$(kubectl -n $K8S_NAMESPACE get deployment $DEPLOYMENT_NAME -o jsonpath='{.spec.template.spec.containers[0].name}')
+            echo "Applying patch to container: $CONTAINER_NAME"
             kubectl -n $K8S_NAMESPACE patch deployment $DEPLOYMENT_NAME -p '
             {
               "spec": {
@@ -83,7 +89,7 @@ jobs:
                 "template": {
                   "spec": {
                     "containers": [{
-                      "name": "'"$DEPLOYMENT_NAME"'",
+                      "name": "'"$CONTAINER_NAME"'",
                       "image": "'"$CONTAINER_PATH"'",
                       "resources": {
                         "requests": {
