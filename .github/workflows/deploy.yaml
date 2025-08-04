@@ -143,7 +143,7 @@ jobs:
           if [[ "${{ github.ref }}" == "refs/heads/development" ]]; then
             DOMAIN="${{ github.event.repository.name }}.kemosoft.com.br"
           else
-            DOMAIN="xxx.kemosoft.com.br"
+            DOMAIN="api-semtas-natal.pgben.com.br"
           fi
 
           echo "Configurando recursos para: $APP_NAME"
