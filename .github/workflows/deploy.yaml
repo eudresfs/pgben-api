@@ -2,9 +2,9 @@ name: Build and Deploy
 
 on:
   push:
-    branches: ['main']
+    branches: ['main', 'development']
   pull_request:
-    branches: ['main']
+    branches: ['main', 'development']
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -13,7 +13,9 @@ concurrency:
 env:
   CPR_ADDR: cpr.kemosoft.com.br
   K8S_NAMESPACE: consigmais
-  DEPLOYMENT_NAME: ${{ github.event.repository.name }}
+  # Adiciona sufixo -dev para a branch development
+  ENV_SUFFIX: ${{ github.ref == 'refs/heads/development' && '-dev' || '' }}
+  DEPLOYMENT_NAME: ${{ github.event.repository.name }}${{ github.ref == 'refs/heads/development' && '-dev' || '' }}
   CONTAINER_PATH: cpr.kemosoft.com.br/${{ github.event.repository.name }}:${{ github.sha }}
 
 jobs:
@@ -134,16 +136,41 @@ jobs:
         run: |
           set -e
           # Parâmetros da linha de comando
-          NAMESPACE="consigmais"
-          APP_NAME="pgben-server"
+          NAMESPACE="${{ env.K8S_NAMESPACE }}"
+          APP_NAME="${{ github.event.repository.name }}${{ env.ENV_SUFFIX }}"
           PORT=80
           TARGET_PORT=3000  # Porta exposta no container
-          DOMAIN="${APP_NAME}.kemosoft.com.br"
-
+          if [[ "${{ github.ref }}" == "refs/heads/development" ]]; then
+            DOMAIN="${{ github.event.repository.name }}.kemosoft.com.br"
+          else
+            DOMAIN="api-semtas-natal.pgben.com.br"
+          fi
           echo "Configurando recursos para: $APP_NAME"
           echo "Namespace: $NAMESPACE"
           echo "Porta externa: $PORT, Porta interna: $TARGET_PORT"
           echo "Domínio: $DOMAIN"
+
+          # Verificar se o certificado já existe
+          if ! kubectl get certificate ${APP_NAME}-cert -n ${NAMESPACE} &> /dev/null; then
+            echo "Criando certificado ${APP_NAME}-cert..."
+            cat <<EOF | kubectl apply -f -
+          apiVersion: cert-manager.io/v1
+          kind: Certificate
+          metadata:
+            name: ${APP_NAME}-cert
+            namespace: ${NAMESPACE}
+          spec:
+            secretName: ${APP_NAME}-cert
+            issuerRef:
+              name: letsencrypt-prod
+              kind: Issuer
+            dnsNames:
+            - ${DOMAIN}
+          EOF
+            echo "Certificado ${APP_NAME}-cert criado com sucesso!"
+          else
+            echo "Certificado ${APP_NAME}-cert já existe. Pulando criação."
+          fi
 
           # Verificar se o serviço já existe
           if ! kubectl get svc ${APP_NAME}-svc -n ${NAMESPACE} &> /dev/null; then
@@ -205,7 +232,7 @@ jobs:
             tls:
             - hosts:
               - ${DOMAIN}
-              secretName: wildcard-cert
+              secretName: ${APP_NAME}-cert
           EOF
             echo "Ingress ${APP_NAME}-ingress criado com sucesso!"
             echo ""
