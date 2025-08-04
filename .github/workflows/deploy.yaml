@@ -2,9 +2,9 @@ name: Build and Deploy
 
 on:
   push:
-    branches: ['main', 'development']
+    branches: ['main']
   pull_request:
-    branches: ['main', 'development']
+    branches: ['main']
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -13,10 +13,8 @@ concurrency:
 env:
   CPR_ADDR: cpr.kemosoft.com.br
   K8S_NAMESPACE: consigmais
-  DEPLOYMENT_NAME: ${{ github.event.repository.name }}${{ github.ref_name == 'main' && '-prod' || '-dev' }}
+  DEPLOYMENT_NAME: ${{ github.event.repository.name }}
   CONTAINER_PATH: cpr.kemosoft.com.br/${{ github.event.repository.name }}:${{ github.sha }}
-  # Definir domínio baseado na branch
-  DOMAIN: ${{ github.ref_name == 'main' && 'api-semtas-natal.pgben.com.br' || format('{0}.kemosoft.com.br', github.event.repository.name) }}
 
 jobs:
   build:
@@ -48,10 +46,6 @@ jobs:
     steps:
       - name: patch deployment
         run: |
-          echo "Deploying to branch: ${{ github.ref_name }}"
-          echo "Deployment name: $DEPLOYMENT_NAME"
-          echo "Domain: $DOMAIN"
-          
           if ! kubectl get deployment $DEPLOYMENT_NAME -n $K8S_NAMESPACE &>/dev/null; then
             echo "Deployment does not exist, creating..."
             kubectl create deployment $DEPLOYMENT_NAME -n $K8S_NAMESPACE --image=$CONTAINER_PATH
@@ -60,10 +54,7 @@ jobs:
             kubectl patch deployment $DEPLOYMENT_NAME -n $K8S_NAMESPACE -p '{"spec":{"template":{"spec":{"imagePullSecrets":[{"name":"cpr"}]}}}}'
           else
             echo "Deployment exists, updating image..."
-            # Descobrir o nome real do container
-            CONTAINER_NAME=$(kubectl -n $K8S_NAMESPACE get deployment $DEPLOYMENT_NAME -o jsonpath='{.spec.template.spec.containers[0].name}')
-            echo "Container name found: $CONTAINER_NAME"
-            kubectl -n $K8S_NAMESPACE set image deployment/$DEPLOYMENT_NAME $CONTAINER_NAME=$CONTAINER_PATH
+            kubectl -n $K8S_NAMESPACE set image deployment/$DEPLOYMENT_NAME $DEPLOYMENT_NAME=$CONTAINER_PATH --record
           fi
           
           echo "Aguardando rollout do deployment (timeout aumentado para 15 minutos)..."
@@ -72,9 +63,6 @@ jobs:
           # Aplicar configurações de progressDeadlineSeconds e probes
           if [ "$?" -eq 0 ]; then
             echo "Aplicando configurações otimizadas de health checks e recursos..."
-            # Descobrir o nome real do container para o patch
-            CONTAINER_NAME=$(kubectl -n $K8S_NAMESPACE get deployment $DEPLOYMENT_NAME -o jsonpath='{.spec.template.spec.containers[0].name}')
-            echo "Applying patch to container: $CONTAINER_NAME"
             kubectl -n $K8S_NAMESPACE patch deployment $DEPLOYMENT_NAME -p '
             {
               "spec": {
@@ -89,8 +77,7 @@ jobs:
                 "template": {
                   "spec": {
                     "containers": [{
-                      "name": "'"$CONTAINER_NAME"'",
-                      "image": "'"$CONTAINER_PATH"'",
+                      "name": "'"$DEPLOYMENT_NAME"'",
                       "resources": {
                         "requests": {
                           "memory": "512Mi",
@@ -147,39 +134,16 @@ jobs:
         run: |
           set -e
           # Parâmetros da linha de comando
-          NAMESPACE="${{ env.K8S_NAMESPACE }}"
-          APP_NAME="${{ env.DEPLOYMENT_NAME }}"
+          NAMESPACE="consigmais"
+          APP_NAME="pgben-server"
           PORT=80
           TARGET_PORT=3000  # Porta exposta no container
-          DOMAIN="${{ env.DOMAIN }}"
+          DOMAIN="${APP_NAME}.kemosoft.com.br"
 
           echo "Configurando recursos para: $APP_NAME"
           echo "Namespace: $NAMESPACE"
-          echo "Branch: ${{ github.ref_name }}"
           echo "Porta externa: $PORT, Porta interna: $TARGET_PORT"
           echo "Domínio: $DOMAIN"
-
-          # Verificar se o certificado já existe
-          if ! kubectl get certificate ${APP_NAME}-cert -n ${NAMESPACE} &> /dev/null; then
-            echo "Criando certificado ${APP_NAME}-cert..."
-            cat <<EOF | kubectl apply -f -
-          apiVersion: cert-manager.io/v1
-          kind: Certificate
-          metadata:
-            name: ${APP_NAME}-cert
-            namespace: ${NAMESPACE}
-          spec:
-            secretName: ${APP_NAME}-cert
-            issuerRef:
-              name: letsencrypt-prod
-              kind: Issuer
-            dnsNames:
-            - ${DOMAIN}
-          EOF
-            echo "Certificado ${APP_NAME}-cert criado com sucesso!"
-          else
-            echo "Certificado ${APP_NAME}-cert já existe. Pulando criação."
-          fi
 
           # Verificar se o serviço já existe
           if ! kubectl get svc ${APP_NAME}-svc -n ${NAMESPACE} &> /dev/null; then
@@ -241,17 +205,15 @@ jobs:
             tls:
             - hosts:
               - ${DOMAIN}
-              secretName: ${APP_NAME}-cert
+              secretName: wildcard-cert
           EOF
             echo "Ingress ${APP_NAME}-ingress criado com sucesso!"
             echo ""
             echo "============================================================"
             echo "ATENÇÃO: CONFIGURAÇÃO DE DNS NECESSÁRIA"
             echo "============================================================"
-            echo "Para a branch ${{ github.ref_name }}: $DOMAIN"
-            echo "============================================================"
             echo ""
           else
             echo "Ingress ${APP_NAME}-ingress já existe. Pulando criação."
           fi
-          echo "Configuração concluída para a branch ${{ github.ref_name }}!"
+          echo "Configuração concluída!"
