@@ -2,9 +2,9 @@ name: Build and Deploy
 
 on:
   push:
-    branches: ['main']
+    branches: ['main', 'development']
   pull_request:
-    branches: ['main']
+    branches: ['main', 'development']
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -13,7 +13,9 @@ concurrency:
 env:
   CPR_ADDR: cpr.kemosoft.com.br
   K8S_NAMESPACE: consigmais
-  DEPLOYMENT_NAME: ${{ github.event.repository.name }}
+  # Adiciona sufixo -dev para a branch development
+  ENV_SUFFIX: ${{ github.ref == 'refs/heads/development' && '-dev' || '' }}
+  DEPLOYMENT_NAME: ${{ github.event.repository.name }}${{ github.ref == 'refs/heads/development' && '-dev' || '' }}
   CONTAINER_PATH: cpr.kemosoft.com.br/${{ github.event.repository.name }}:${{ github.sha }}
 
 jobs:
@@ -134,11 +136,15 @@ jobs:
         run: |
           set -e
           # Parâmetros da linha de comando
-          NAMESPACE="consigmais"
-          APP_NAME="pgben-server"
+          NAMESPACE="${{ env.K8S_NAMESPACE }}"
+          APP_NAME="${{ github.event.repository.name }}${{ env.ENV_SUFFIX }}"
           PORT=80
           TARGET_PORT=3000  # Porta exposta no container
-          DOMAIN="${APP_NAME}.kemosoft.com.br"
+          if [[ "${{ github.ref }}" == "refs/heads/development" ]]; then
+            DOMAIN="${{ github.event.repository.name }}.kemosoft.com.br"
+          else
+            DOMAIN="xxx.kemosoft.com.br"
+          fi
 
           echo "Configurando recursos para: $APP_NAME"
           echo "Namespace: $NAMESPACE"
