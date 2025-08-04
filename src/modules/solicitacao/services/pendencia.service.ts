@@ -255,7 +255,7 @@ export class PendenciaService {
       timestamp: new Date(),
       data: {
         pendenciaId: pendencia.id,
-        resolucao: resolverPendenciaDto.resolucao,
+        resolucao: resolverPendenciaDto.observacao_resolucao,
         usuarioId: usuarioId,
         dataResolucao: new Date(),
       },

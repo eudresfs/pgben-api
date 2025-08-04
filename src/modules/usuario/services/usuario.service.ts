@@ -1,7 +1,7 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { LoggingService } from '../../../shared/logging/logging.service';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository, DeepPartial, ILike } from 'typeorm';
+import { DataSource, Repository, DeepPartial, ILike, Not, In } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import * as bcrypt from 'bcrypt';
 import { Usuario } from '../../../entities/usuario.entity';
@@ -903,7 +903,10 @@ export class UsuarioService {
     try {
       const roles = await this.roleRepository.find({
         select: ['id', 'nome', 'descricao', 'status'],
-        where: { status: Status.ATIVO },
+        where: {
+          status: Status.ATIVO,
+          nome: Not(In(['SUPER_ADMIN', 'CIDADAO'])),
+        },
         order: { nome: 'ASC' },
       });
 
