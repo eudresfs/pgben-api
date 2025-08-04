@@ -9,14 +9,17 @@ import { BatchJobManagerService } from '../batch-job-manager.service';
 import { ZipGeneratorService } from '../zip-generator.service';
 import { DocumentFilterService } from '../document-filter.service';
 import { Documento } from '../../../../../entities/documento.entity';
-import { DocumentoBatchJob, StatusDownloadLoteEnum } from '../../../../../entities/documento-batch-job.entity';
+import {
+  DocumentoBatchJob,
+  StatusDownloadLoteEnum,
+} from '../../../../../entities/documento-batch-job.entity';
 import { Usuario } from '../../../../../entities/usuario.entity';
 import { TipoDocumentoEnum } from '../../../../../enums';
 import { PassThrough } from 'stream';
 
 /**
  * Testes unitários para DocumentoBatchService
- * 
+ *
  * Valida a orquestração de alto nível do sistema de download em lote,
  * incluindo inicialização de jobs, criação de streams e gerenciamento de status
  */
@@ -172,7 +175,10 @@ describe('DocumentoBatchService', () => {
         getEstimatedTimeRemaining: () => null,
       } as DocumentoBatchJob;
 
-      mockBatchJobManager.podeIniciarJob.mockResolvedValue({ pode: true, motivo: null });
+      mockBatchJobManager.podeIniciarJob.mockResolvedValue({
+        pode: true,
+        motivo: null,
+      });
       mockDocumentFilterService.validarFiltros.mockResolvedValue(mockValidacao);
       mockBatchJobRepository.create.mockReturnValue(mockJob);
       mockBatchJobRepository.save.mockResolvedValue(mockJob);
@@ -181,19 +187,30 @@ describe('DocumentoBatchService', () => {
       const result = await service.iniciarJob(mockFiltros, mockUsuarioId);
 
       // Assert
-      expect(result).toBe('job-123');
-      expect(mockBatchJobManager.podeIniciarJob).toHaveBeenCalledWith(mockUsuarioId);
-      expect(mockDocumentFilterService.validarFiltros).toHaveBeenCalledWith(mockFiltros, mockUsuarioId);
+      expect(result.jobId).toBe('job-123');
+      expect(result.documentCount).toBe(10);
+      expect(result.estimatedSize).toBe(1000000);
+      expect(mockBatchJobManager.podeIniciarJob).toHaveBeenCalledWith(
+        mockUsuarioId,
+      );
+      expect(mockDocumentFilterService.validarFiltros).toHaveBeenCalledWith(
+        mockFiltros,
+        mockUsuarioId,
+      );
       expect(mockBatchJobRepository.save).toHaveBeenCalled();
     });
 
     it('deve rejeitar se usuário não pode iniciar job', async () => {
       // Arrange
-      mockBatchJobManager.podeIniciarJob.mockResolvedValue({ pode: false, motivo: 'Limite de jobs atingido' });
+      mockBatchJobManager.podeIniciarJob.mockResolvedValue({
+        pode: false,
+        motivo: 'Limite de jobs atingido',
+      });
 
       // Act & Assert
-      await expect(service.iniciarJob(mockFiltros, mockUsuarioId))
-        .rejects.toThrow(BadRequestException);
+      await expect(
+        service.iniciarJob(mockFiltros, mockUsuarioId),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('deve rejeitar se filtros são inválidos', async () => {
@@ -208,12 +225,16 @@ describe('DocumentoBatchService', () => {
         },
       };
 
-      mockBatchJobManager.podeIniciarJob.mockResolvedValue({ pode: true, motivo: null });
+      mockBatchJobManager.podeIniciarJob.mockResolvedValue({
+        pode: true,
+        motivo: null,
+      });
       mockDocumentFilterService.validarFiltros.mockResolvedValue(mockValidacao);
 
       // Act & Assert
-      await expect(service.iniciarJob(mockFiltros, mockUsuarioId))
-        .rejects.toThrow(BadRequestException);
+      await expect(
+        service.iniciarJob(mockFiltros, mockUsuarioId),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('deve rejeitar se nenhum documento for encontrado', async () => {
@@ -228,12 +249,16 @@ describe('DocumentoBatchService', () => {
         },
       };
 
-      mockBatchJobManager.podeIniciarJob.mockResolvedValue({ pode: true, motivo: null });
+      mockBatchJobManager.podeIniciarJob.mockResolvedValue({
+        pode: true,
+        motivo: null,
+      });
       mockDocumentFilterService.validarFiltros.mockResolvedValue(mockValidacao);
 
       // Act & Assert
-      await expect(service.iniciarJob(mockFiltros, mockUsuarioId))
-        .rejects.toThrow(BadRequestException);
+      await expect(
+        service.iniciarJob(mockFiltros, mockUsuarioId),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 
@@ -287,7 +312,9 @@ describe('DocumentoBatchService', () => {
       const mockStream = new PassThrough();
 
       mockBatchJobRepository.findOne.mockResolvedValue(mockJob);
-      mockDocumentFilterService.aplicarFiltros.mockResolvedValue(mockDocumentos);
+      mockDocumentFilterService.aplicarFiltros.mockResolvedValue(
+        mockDocumentos,
+      );
       mockZipGenerator.gerarZipStream.mockResolvedValue({
         stream: mockStream,
         filename: 'documentos.zip',
@@ -309,8 +336,9 @@ describe('DocumentoBatchService', () => {
       mockBatchJobRepository.findOne.mockResolvedValue(null);
 
       // Act & Assert
-      await expect(service.criarStreamDownload(mockJobId))
-        .rejects.toThrow(NotFoundException);
+      await expect(service.criarStreamDownload(mockJobId)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('deve rejeitar se job não estiver em processamento', async () => {
@@ -323,8 +351,9 @@ describe('DocumentoBatchService', () => {
       mockBatchJobRepository.findOne.mockResolvedValue(mockJob);
 
       // Act & Assert
-      await expect(service.criarStreamDownload(mockJobId))
-        .rejects.toThrow(BadRequestException);
+      await expect(service.criarStreamDownload(mockJobId)).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 
@@ -383,8 +412,9 @@ describe('DocumentoBatchService', () => {
       mockBatchJobRepository.findOne.mockResolvedValue(null);
 
       // Act & Assert
-      await expect(service.obterProgresso(mockJobId))
-        .rejects.toThrow(NotFoundException);
+      await expect(service.obterProgresso(mockJobId)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('deve retornar progresso mesmo para usuário diferente (sem validação de autorização)', async () => {
@@ -460,7 +490,7 @@ describe('DocumentoBatchService', () => {
         mockJobId,
         expect.objectContaining({
           status: StatusDownloadLoteEnum.CANCELLED,
-        })
+        }),
       );
     });
 
@@ -469,8 +499,9 @@ describe('DocumentoBatchService', () => {
       mockBatchJobRepository.findOne.mockResolvedValue(null);
 
       // Act & Assert
-      await expect(service.cancelarJob(mockJobId))
-        .rejects.toThrow(NotFoundException);
+      await expect(service.cancelarJob(mockJobId)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('deve rejeitar se job já estiver concluído', async () => {
@@ -484,8 +515,9 @@ describe('DocumentoBatchService', () => {
       mockBatchJobRepository.findOne.mockResolvedValue(mockJob);
 
       // Act & Assert
-      await expect(service.cancelarJob(mockJobId))
-        .rejects.toThrow(BadRequestException);
+      await expect(service.cancelarJob(mockJobId)).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 

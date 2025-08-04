@@ -477,7 +477,9 @@ export class MinioService implements OnModuleInit {
       this.logger.error(
         `Erro ao criar stream do arquivo do MinIO: ${error.message}`,
       );
-      throw new StorageIndisponivelException(`Falha ao obter stream do documento: ${error.message}`);
+      throw new StorageIndisponivelException(
+        `Falha ao obter stream do documento: ${error.message}`,
+      );
     }
   }
 
@@ -668,7 +670,10 @@ export class MinioService implements OnModuleInit {
         );
       }
 
-      if (error.code === 'ECONNREFUSED' || error.message?.includes('connection')) {
+      if (
+        error.code === 'ECONNREFUSED' ||
+        error.message?.includes('connection')
+      ) {
         this.logger.error(`Erro de conexão com MinIO: ${error.message}`);
         throw new StorageIndisponivelException(
           'Não foi possível conectar ao sistema de armazenamento',
@@ -734,7 +739,9 @@ export class MinioService implements OnModuleInit {
         stack: error.stack,
       });
 
-      throw new StorageIndisponivelException(`Falha ao remover documento: ${error.message}`);
+      throw new StorageIndisponivelException(
+        `Falha ao remover documento: ${error.message}`,
+      );
     }
   }
 

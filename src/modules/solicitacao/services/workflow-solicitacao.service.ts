@@ -16,7 +16,10 @@ import {
   HistoricoSolicitacao,
   Pendencia,
   StatusPendencia,
+  DadosNatalidade,
 } from '../../../entities';
+import { DadosNatalidadeRepository } from '../../beneficio/repositories/dados-natalidade.repository';
+import { TipoDocumentoEnum, TipoContextoNatalidade } from '../../../enums';
 import { TransicaoEstadoService } from './transicao-estado.service';
 import { ValidacaoSolicitacaoService } from './validacao-solicitacao.service';
 import { PrazoSolicitacaoService } from './prazo-solicitacao.service';
@@ -62,6 +65,7 @@ export class WorkflowSolicitacaoService {
     private readonly historicoRepository: Repository<HistoricoSolicitacao>,
     @InjectRepository(Pendencia)
     private readonly pendenciaRepository: Repository<Pendencia>,
+    private readonly dadosNatalidadeRepository: DadosNatalidadeRepository,
     private readonly dataSource: DataSource,
     private readonly transicaoEstadoService: TransicaoEstadoService,
     private readonly validacaoService: ValidacaoSolicitacaoService,
@@ -353,7 +357,7 @@ export class WorkflowSolicitacaoService {
   private async buscarDocumentosHistoricosCidadao(
     cidadaoId: string,
     solicitacaoAtualId: string,
-  ): Promise<string[]> {
+  ): Promise<TipoDocumentoEnum[]> {
     this.logger.debug(
       `Buscando histórico documental do cidadão ${cidadaoId} (excluindo solicitação ${solicitacaoAtualId})`,
     );
@@ -386,7 +390,7 @@ export class WorkflowSolicitacaoService {
       return new Date(doc.data_validade) >= agora;
     });
 
-    const tiposDocumentosHistoricos = [
+    const tiposDocumentosHistoricos: TipoDocumentoEnum[] = [
       ...new Set(documentosValidos.map((doc) => doc.tipo)),
     ];
 
@@ -520,10 +524,19 @@ export class WorkflowSolicitacaoService {
         );
 
         // Verificar quais documentos obrigatórios ainda estão faltando
-        const tiposFaltantes = tiposDocumentosObrigatorios.filter(
+        let tiposFaltantes = tiposDocumentosObrigatorios.filter(
           (tipoObrigatorio) =>
             !todosDocumentosDisponiveis.includes(tipoObrigatorio),
         );
+
+        // Validação específica para benefício de natalidade
+        if (tipoBeneficio.codigo === 'NATALIDADE') {
+          tiposFaltantes = await this.validarDocumentosNatalidade(
+            solicitacaoId,
+            tiposFaltantes,
+            todosDocumentosDisponiveis,
+          );
+        }
 
         if (tiposFaltantes.length > 0) {
           this.logger.warn(
@@ -1127,6 +1140,79 @@ export class WorkflowSolicitacaoService {
       );
     } finally {
       await queryRunner.release();
+    }
+  }
+
+  /**
+   * Valida documentos específicos para benefício de natalidade
+   * @param solicitacaoId ID da solicitação
+   * @param tiposFaltantes Lista de tipos de documentos faltantes
+   * @param todosDocumentosDisponiveis Lista de todos os documentos disponíveis
+   * @returns Lista atualizada de tipos de documentos faltantes
+   * @private
+   */
+  private async validarDocumentosNatalidade(
+    solicitacaoId: string,
+    tiposFaltantes: TipoDocumentoEnum[],
+    todosDocumentosDisponiveis: TipoDocumentoEnum[],
+  ): Promise<TipoDocumentoEnum[]> {
+    this.logger.debug(
+      `Iniciando validação específica de documentos para natalidade - solicitação ${solicitacaoId}`,
+    );
+
+    try {
+      // Buscar dados de natalidade da solicitação
+      const dadosNatalidade = await this.dadosNatalidadeRepository.findOne({
+        where: { solicitacao_id: solicitacaoId },
+      });
+
+      if (!dadosNatalidade) {
+        this.logger.warn(
+          `Dados de natalidade não encontrados para solicitação ${solicitacaoId}`,
+        );
+        return tiposFaltantes;
+      }
+
+      // Se for contexto pós-natal, certidão de nascimento é obrigatória
+      if (dadosNatalidade.tipo_contexto === TipoContextoNatalidade.POS_NATAL) {
+        const temCertidaoNascimento = todosDocumentosDisponiveis.includes(
+          TipoDocumentoEnum.CERTIDAO_NASCIMENTO,
+        );
+
+        if (!temCertidaoNascimento) {
+          // Adicionar certidão de nascimento aos documentos faltantes se não estiver presente
+          if (!tiposFaltantes.includes(TipoDocumentoEnum.CERTIDAO_NASCIMENTO)) {
+            tiposFaltantes.push(TipoDocumentoEnum.CERTIDAO_NASCIMENTO);
+            this.logger.debug(
+              `Contexto pós-natal detectado para solicitação ${solicitacaoId}. ` +
+                `Adicionando certidão de nascimento como documento obrigatório.`,
+            );
+          }
+        } else {
+          this.logger.debug(
+            `Contexto pós-natal detectado para solicitação ${solicitacaoId}. ` +
+              `Certidão de nascimento já está presente nos documentos.`,
+          );
+        }
+
+        this.logger.debug(
+          `Documentos faltantes após validação pós-natal: [${tiposFaltantes.join(', ')}]`,
+        );
+      } else {
+        this.logger.debug(
+          `Contexto pré-natal detectado para solicitação ${solicitacaoId}. ` +
+            `Mantendo validação padrão de documentos.`,
+        );
+      }
+
+      return tiposFaltantes;
+    } catch (error) {
+      this.logger.error(
+        `Erro ao validar documentos específicos de natalidade para solicitação ${solicitacaoId}: ${error.message}`,
+        error.stack,
+      );
+      // Em caso de erro, retornar a lista original sem modificações
+      return tiposFaltantes;
     }
   }
 

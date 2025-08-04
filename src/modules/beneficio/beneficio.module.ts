@@ -114,6 +114,11 @@ import { DadosCestaBasicaRepository } from './repositories/dados-cesta-basica.re
     DadosFuneralService,
     DadosCestaBasicaService,
     DadosBeneficioFactoryService,
+    // Repositórios exportados
+    DadosNatalidadeRepository,
+    DadosAluguelSocialRepository,
+    DadosFuneralRepository,
+    DadosCestaBasicaRepository,
   ],
 })
 export class BeneficioModule {}

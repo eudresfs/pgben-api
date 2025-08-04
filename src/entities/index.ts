@@ -117,5 +117,9 @@ export { Solicitacao } from './solicitacao.entity';
 // Exportação do enum StatusSolicitacao
 export { StatusSolicitacao } from '../enums/status-solicitacao.enum';
 
+// Entidades de Upload
+export { UploadSession, UploadSessionStatus } from '../modules/easy-upload/entities/upload-session.entity';
+export { UploadToken, UploadTokenStatus } from '../modules/easy-upload/entities/upload-token.entity';
+
 // Exportações de Auth/Permissões
 export { ScopeType } from './user-permission.entity';

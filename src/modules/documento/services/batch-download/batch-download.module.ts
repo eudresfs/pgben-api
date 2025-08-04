@@ -25,9 +25,6 @@ import { SharedModule } from '../../../../shared/shared.module';
     LocalStorageAdapter,
     S3StorageAdapter,
   ],
-  exports: [
-    BatchJobManagerService,
-    ZipGeneratorService,
-  ],
+  exports: [BatchJobManagerService, ZipGeneratorService],
 })
 export class BatchDownloadModule {}

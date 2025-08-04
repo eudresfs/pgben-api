@@ -33,6 +33,7 @@ import { DocumentoService } from '../services/documento.service';
 import { DocumentoBatchService } from '../services/batch-download/documento-batch.service';
 import { DocumentoUrlService } from '../services/documento-url.service';
 import { ThumbnailService } from '../services/thumbnail/thumbnail.service';
+import { ThumbnailFacadeService } from '../services/thumbnail/thumbnail-facade.service';
 import { ThumbnailQueueService } from '../services/thumbnail/thumbnail-queue.service';
 import { StorageProviderFactory } from '../factories/storage-provider.factory';
 import { UploadDocumentoDto } from '../dto/upload-documento.dto';
@@ -52,12 +53,7 @@ import { AuditEventEmitter } from '../../auditoria/events/emitters/audit-event.e
 import { ReqContext } from '../../../shared/request-context/req-context.decorator';
 import { RequestContext } from '../../../shared/request-context/request-context.dto';
 import { Public } from '../../../auth/decorators/public.decorator';
-import {
-  BatchDownloadDto,
-  BatchDownloadResponseDto,
-  BatchJobStatusResponseDto,
-} from '../dto/batch-download.dto';
-import { StatusDownloadLoteEnum } from '@/entities/documento-batch-job.entity';
+import { ThrottleThumbnail } from '../../../common/decorators/throttle.decorator';
 
 /**
  * Controlador de Documentos
@@ -75,6 +71,7 @@ export class DocumentoController {
     private readonly documentoBatchService: DocumentoBatchService,
     private readonly documentoUrlService: DocumentoUrlService,
     private readonly thumbnailService: ThumbnailService,
+    private readonly thumbnailFacadeService: ThumbnailFacadeService,
     private readonly thumbnailQueueService: ThumbnailQueueService,
     private readonly storageProviderFactory: StorageProviderFactory,
     private readonly auditEventEmitter: AuditEventEmitter,
@@ -517,6 +514,7 @@ export class DocumentoController {
    * Obtém thumbnail de um documento
    */
   @Get(':id/thumbnail')
+  @ThrottleThumbnail()
   @RequiresPermission({ permissionName: 'documento.visualizar' })
   @ApiOperation({
     summary: 'Obter thumbnail de um documento',
@@ -537,6 +535,10 @@ export class DocumentoController {
   })
   @ApiResponse({ status: 404, description: 'Documento não encontrado' })
   @ApiResponse({ status: 403, description: 'Acesso negado ao documento' })
+  @ApiResponse({
+    status: 429,
+    description: 'Muitas requisições - rate limit excedido',
+  })
   @ApiParam({
     name: 'id',
     description: 'ID do documento',
@@ -558,19 +560,17 @@ export class DocumentoController {
     @ReqContext() context: RequestContext,
   ) {
     // Verificar acesso ao documento
-    await this.documentoService.findById(id);
-
-    // Obter documento e arquivo para gerar thumbnail
     const documento = await this.documentoService.findById(id);
 
     const storageProvider = this.storageProviderFactory.getProvider();
     const fileBuffer = await storageProvider.obterArquivo(documento.caminho);
 
-    // Gerar ou obter thumbnail
-    const thumbnailResult = await this.thumbnailService.generateThumbnail(
+    // Gerar ou obter thumbnail usando o facade (lazy generation + cache)
+    const thumbnailResult = await this.thumbnailFacadeService.getThumbnail(
+      id,
       fileBuffer,
       documento.mimetype,
-      id,
+      size,
     );
 
     // Auditoria do acesso ao thumbnail
@@ -581,11 +581,16 @@ export class DocumentoController {
       { synchronous: false },
     );
 
-    // Headers de resposta para imagem
+    // Headers de resposta para imagem com cache agressivo
     res.set({
       'Content-Type': 'image/jpeg',
       'Content-Length': thumbnailResult.thumbnailBuffer.length.toString(),
-      'Cache-Control': 'public, max-age=3600', // Cache por 1 hora
+      'Cache-Control': 'public, max-age=86400, immutable', // Cache por 24 horas, imutável
+      ETag: `"${id}-thumbnail"`, // ETag para validação de cache
+      'Last-Modified':
+        documento.updated_at?.toUTCString() ||
+        documento.created_at.toUTCString(),
+      Vary: 'Accept-Encoding',
     });
 
     res.send(thumbnailResult.thumbnailBuffer);
@@ -624,12 +629,13 @@ export class DocumentoController {
     const storageProvider = this.storageProviderFactory.getProvider();
     const fileBuffer = await storageProvider.obterArquivo(documento.caminho);
 
-    // Remover thumbnail existente e regenerar
-    await this.thumbnailService.removeThumbnail(id);
-    const thumbnailResult = await this.thumbnailService.generateThumbnail(
+    // Remover thumbnail existente do cache e regenerar
+    await this.thumbnailFacadeService.removeThumbnail(id);
+    const thumbnailResult = await this.thumbnailFacadeService.getThumbnail(
+      id,
       fileBuffer,
       documento.mimetype,
-      id,
+      'medium', // Tamanho padrão para regeneração
     );
 
     // Auditoria da regeneração
@@ -637,7 +643,7 @@ export class DocumentoController {
       'DocumentoThumbnail',
       id,
       null,
-      { thumbnailPath: thumbnailResult?.thumbnailPath },
+      { regenerated: true, fromCache: thumbnailResult?.fromCache },
       usuario.id?.toString(),
       { synchronous: false },
     );
@@ -646,7 +652,7 @@ export class DocumentoController {
       ThumbnailResponseDto,
       {
         message: 'Thumbnail regenerado com sucesso',
-        thumbnailPath: thumbnailResult?.thumbnailPath,
+        success: true,
       },
       {
         excludeExtraneousValues: true,
@@ -763,249 +769,5 @@ export class DocumentoController {
     return plainToInstance(ThumbnailStatsResponseDto, stats, {
       excludeExtraneousValues: true,
     });
-  }
-
-  /**
-   * Inicia um download em lote de documentos
-   */
-  @Post('download-lote')
-  @RequiresPermission({ permissionName: 'documento.download_lote' })
-  @ApiOperation({
-    summary: 'Iniciar download em lote de documentos',
-    description:
-      'Cria um job para download em lote de documentos com base nos filtros especificados',
-  })
-  @ApiResponse({
-    status: 201,
-    description: 'Job de download em lote criado com sucesso',
-    type: BatchDownloadResponseDto,
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Filtros inválidos ou nenhum documento encontrado',
-  })
-  @ApiBody({
-    description: 'Filtros para seleção de documentos',
-    type: BatchDownloadDto,
-  })
-  async startBatchDownload(
-    @Body() filtros: BatchDownloadDto,
-    @GetUser() usuario: Usuario,
-  ): Promise<BatchDownloadResponseDto> {
-    // Converter BatchDownloadDto para IDocumentoBatchFiltros
-    const filtrosConvertidos: any = {
-      unidade_id: usuario.unidade_id || undefined, // Será definido pelo contexto do usuário
-      data_inicio: filtros.dataInicio,
-      data_fim: filtros.dataFim,
-      tipo_documento: filtros.tiposDocumento,
-      cidadao_ids: filtros.cidadaoIds,
-      solicitacao_ids: filtros.solicitacaoIds,
-      apenas_verificados: filtros.apenasVerificados,
-      incluir_metadados: filtros.incluirMetadados,
-    };
-
-    const resultado = await this.documentoBatchService.iniciarJob(
-      filtrosConvertidos,
-      usuario.id,
-    );
-
-    return {
-      jobId: resultado.jobId,
-      estimatedSize: resultado.estimatedSize,
-      documentCount: resultado.documentCount,
-      message:
-        'Download em lote iniciado. Use o jobId para verificar o progresso.',
-      statusUrl: `/api/documento/download-lote/${resultado.jobId}/status`,
-    };
-  }
-
-  /**
-   * Verifica o status de um job de download em lote
-   */
-  @Get('download-lote/:jobId/status')
-  @RequiresPermission({ permissionName: 'documento.download_lote' })
-  @ApiOperation({
-    summary: 'Verificar status do download em lote',
-    description: 'Retorna o status atual de um job de download em lote',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Status do job retornado com sucesso',
-    type: BatchJobStatusResponseDto,
-  })
-  @ApiResponse({ status: 404, description: 'Job não encontrado' })
-  @ApiParam({
-    name: 'jobId',
-    description: 'ID do job de download',
-    type: 'string',
-    format: 'uuid',
-  })
-  async getBatchStatus(
-    @Param('jobId', ParseUUIDPipe) jobId: string,
-    @GetUser() usuario: Usuario,
-  ): Promise<BatchJobStatusResponseDto> {
-    const progresso = await this.documentoBatchService.obterProgresso(jobId);
-    
-    // Buscar a entidade completa para obter tamanho_estimado e outras informações
-    const job = await this.documentoBatchService.obterJobCompleto(jobId);
-
-    const response: BatchJobStatusResponseDto = {
-      id: progresso.job_id,
-      status: this.mapStatusToResponseFormat(progresso.status),
-      progress: progresso.progresso,
-      documentCount: progresso.total_documentos,
-      estimatedSize: job.tamanho_estimado || 0,
-      actualSize: job.tamanho_real || 0,
-      createdAt: job.created_at,
-      completedAt: job.data_conclusao,
-      error: progresso.erros.join(', ') || undefined,
-    };
-
-    if (job.status === StatusDownloadLoteEnum.COMPLETED) {
-      response.downloadUrl = `/api/v1/documento/download-lote/${jobId}/download`;
-    }
-
-    return response;
-  }
-
-  /**
-   * Faz o download do arquivo ZIP gerado
-   */
-  @Get('download-lote/:jobId/download')
-  @RequiresPermission({ permissionName: 'documento.download_lote' })
-  @ApiOperation({
-    summary: 'Download do arquivo ZIP gerado',
-    description: 'Faz o download do arquivo ZIP com os documentos selecionados',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Arquivo ZIP baixado com sucesso',
-    content: {
-      'application/zip': {
-        schema: {
-          type: 'string',
-          format: 'binary',
-        },
-      },
-    },
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'Job não encontrado ou arquivo não disponível',
-  })
-  @ApiResponse({ status: 400, description: 'Job ainda não foi concluído' })
-  @ApiParam({
-    name: 'jobId',
-    description: 'ID do job de download',
-    type: 'string',
-    format: 'uuid',
-  })
-  async downloadBatchFile(
-    @Param('jobId', ParseUUIDPipe) jobId: string,
-    @GetUser() usuario: Usuario,
-    @Res() res: Response,
-  ): Promise<void> {
-    const resultado = await this.documentoBatchService.obterResultado(jobId);
-
-    if (!resultado.caminho_arquivo) {
-      throw new Error('Arquivo não disponível para download');
-    }
-
-    // Obter informações do arquivo
-    const fs = require('fs');
-    const stats = await fs.promises.stat(resultado.caminho_arquivo);
-
-    // Headers para download do ZIP
-    res.set({
-      'Content-Type': 'application/zip',
-      'Content-Disposition': `attachment; filename="${resultado.nome_arquivo || 'documentos.zip'}"`,
-      'Content-Length': stats.size.toString(),
-      'Cache-Control': 'no-cache, no-store, must-revalidate',
-      Pragma: 'no-cache',
-      Expires: '0',
-    });
-
-    // Stream do arquivo
-    const fileStream = fs.createReadStream(resultado.caminho_arquivo);
-    fileStream.pipe(res);
-  }
-
-  /**
-   * Lista os jobs de download do usuário
-   */
-  @Get('download-lote/meus-jobs')
-  @RequiresPermission({ permissionName: 'documento.download_lote' })
-  @ApiOperation({
-    summary: 'Listar meus jobs de download',
-    description: 'Retorna a lista de jobs de download em lote do usuário atual',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Lista de jobs retornada com sucesso',
-    type: [BatchJobStatusResponseDto],
-  })
-  async getUserJobs(
-    @GetUser() usuario: Usuario,
-  ): Promise<BatchJobStatusResponseDto[]> {
-    const jobs = await this.documentoBatchService.listarJobs(usuario.id);
-
-    return jobs.map((job) => ({
-      id: job.job_id,
-      status: this.mapStatusToResponseFormat(job.status),
-      progress:
-        Math.round((job.documentos_processados / job.total_documentos) * 100) ||
-        0,
-      documentCount: job.total_documentos,
-      estimatedSize: job.tamanho_arquivo || 0,
-      actualSize: job.tamanho_arquivo || 0,
-      createdAt: new Date(), // Será obtido da entidade quando necessário
-      completedAt: undefined, // Será obtido da entidade quando necessário
-      error: job.erros.join(', ') || undefined,
-      downloadUrl:
-        job.status === StatusDownloadLoteEnum.COMPLETED
-          ? `/api/v1/documento/download-lote/${job.job_id}/download`
-          : undefined,
-    }));
-  }
-
-  private mapStatusToResponseFormat(
-    status: StatusDownloadLoteEnum,
-  ): 'PROCESSING' | 'COMPLETED' | 'FAILED' {
-    switch (status) {
-      case StatusDownloadLoteEnum.PROCESSING:
-        return 'PROCESSING';
-      case StatusDownloadLoteEnum.COMPLETED:
-        return 'COMPLETED';
-      case StatusDownloadLoteEnum.FAILED:
-        return 'FAILED';
-      default:
-        return 'PROCESSING';
-    }
-  }
-
-  /**
-   * Cancela um job de download em processamento
-   */
-  @Delete('download-lote/:jobId')
-  @RequiresPermission({ permissionName: 'documento.download_lote' })
-  @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({
-    summary: 'Cancelar job de download',
-    description: 'Cancela um job de download em lote que está em processamento',
-  })
-  @ApiResponse({ status: 204, description: 'Job cancelado com sucesso' })
-  @ApiResponse({ status: 404, description: 'Job não encontrado' })
-  @ApiResponse({ status: 400, description: 'Job não pode ser cancelado' })
-  @ApiParam({
-    name: 'jobId',
-    description: 'ID do job de download',
-    type: 'string',
-    format: 'uuid',
-  })
-  async cancelJob(
-    @Param('jobId', ParseUUIDPipe) jobId: string,
-    @GetUser() usuario: Usuario,
-  ): Promise<void> {
-    await this.documentoBatchService.cancelarJob(jobId);
   }
 }

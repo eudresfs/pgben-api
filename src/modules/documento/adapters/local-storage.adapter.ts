@@ -139,10 +139,8 @@ export class LocalStorageAdapter implements StorageProvider {
 
       // Criar stream de leitura do arquivo
       const readStream = fs.createReadStream(filePath);
-      
-      this.logger.debug(
-        `Stream de arquivo criado com sucesso: ${caminho}`,
-      );
+
+      this.logger.debug(`Stream de arquivo criado com sucesso: ${caminho}`);
 
       return readStream;
     } catch (error) {

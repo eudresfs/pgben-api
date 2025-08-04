@@ -961,19 +961,24 @@ export const BENEFICIO_TECH_MESSAGES = {
       'Campo solicitacao_id é obrigatório. Validação de campo obrigatório falhou.',
 
     NOME_FALECIDO_REQUIRED:
-      'Campo nome_falecido é obrigatório. Validação de campo obrigatório falhou.',
+      'Nome do falecido é obrigatório. Validação de campo obrigatório falhou.',
 
     DATA_OBITO_REQUIRED:
-      'Campo data_obito é obrigatório. Validação de campo obrigatório falhou.',
+      'Data do óbito é obrigatóra. Validação de campo obrigatório falhou.',
 
     PRAZO_EXCEDIDO:
       'Prazo de 30 dias para solicitação excedido. Regra de negócio temporal não atendida.',
 
     DATA_OBITO_FUTURA:
-      'Campo data_obito não pode ser futura. Validação lógica temporal falhou.',
+      'Data do óbito não pode ser futura. Validação lógica temporal falhou.',
 
-    DATA_AUTORIZACAO_INVALIDA:
-      'Campo data_autorizacao deve ser igual ou posterior à data_obito. Validação de sequência temporal falhou.',
+    DATA_OBITO_POSTERIOR_AUTORIZACAO:
+      'Data do óbito não pode ser posterior à data da autorização. Validação de sequência temporal falhou.',
+
+    DATA_AUTORIZACAO_FUTURA:
+      'Data de autorização não pode ser futura. Validação lógica temporal falhou.',
+
+    DATA_AUTORIZACAO_INVALIDA: 'Data de autorização inválida.',
 
     DATA_OBITO_LIMITE_EXCEDIDO:
       'Data do óbito excede o limite permitido para solicitação. Validação de prazo falhou.',

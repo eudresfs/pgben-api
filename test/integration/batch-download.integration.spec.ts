@@ -56,8 +56,12 @@ describe('Batch Download (Integração)', () => {
       getRepositoryToken(Usuario),
     );
     jwtService = module.get<JwtService>(JwtService);
-    documentoBatchService = module.get<DocumentoBatchService>(DocumentoBatchService);
-    batchJobManager = module.get<BatchJobManagerService>(BatchJobManagerService);
+    documentoBatchService = module.get<DocumentoBatchService>(
+      DocumentoBatchService,
+    );
+    batchJobManager = module.get<BatchJobManagerService>(
+      BatchJobManagerService,
+    );
     zipGenerator = module.get<ZipGeneratorService>(ZipGeneratorService);
     documentFilter = module.get<DocumentFilterService>(DocumentFilterService);
 
@@ -176,7 +180,10 @@ describe('Batch Download (Integração)', () => {
 
       // Act
       const usuarioId = 'test-user-id';
-      const resultado = await documentoBatchService.iniciarJob(filtros, usuarioId);
+      const resultado = await documentoBatchService.iniciarJob(
+        filtros,
+        usuarioId,
+      );
 
       // Assert
       expect(resultado).toBeDefined();
@@ -197,7 +204,9 @@ describe('Batch Download (Integração)', () => {
       // Act & Assert
       const validacao = await documentFilter.validarFiltros(filtrosInvalidos);
       expect(validacao.valido).toBe(false);
-      expect(validacao.erros).toContain('Data fim deve ser posterior à data início');
+      expect(validacao.erros).toContain(
+        'Data fim deve ser posterior à data início',
+      );
     });
 
     it('deve respeitar limite de jobs simultâneos', async () => {
@@ -215,8 +224,9 @@ describe('Batch Download (Integração)', () => {
 
       // Act & Assert
       const usuarioId = 'test-user-id';
-      await expect(documentoBatchService.iniciarJob(filtros, usuarioId))
-        .rejects.toThrow('Limite de jobs atingido');
+      await expect(
+        documentoBatchService.iniciarJob(filtros, usuarioId),
+      ).rejects.toThrow('Limite de jobs atingido');
     });
 
     it('deve retornar erro quando nenhum documento é encontrado', async () => {
@@ -227,8 +237,9 @@ describe('Batch Download (Integração)', () => {
 
       // Act & Assert
       const usuarioId = 'test-user-id';
-      await expect(documentoBatchService.iniciarJob(filtros, usuarioId))
-        .rejects.toThrow('Nenhum documento encontrado');
+      await expect(
+        documentoBatchService.iniciarJob(filtros, usuarioId),
+      ).rejects.toThrow('Nenhum documento encontrado');
     });
   });
 
@@ -241,14 +252,18 @@ describe('Batch Download (Integração)', () => {
       };
 
       // Act
-        const validacao = await documentFilter.validarFiltros(filtros);
-        const usuario = await usuarioRepository.findOne({ where: {} });
-        const documentos = await documentFilter.aplicarFiltros(filtros, usuario);
+      const validacao = await documentFilter.validarFiltros(filtros);
+      const usuario = await usuarioRepository.findOne({ where: {} });
+      const documentos = await documentFilter.aplicarFiltros(filtros, usuario);
 
-        // Assert
-        expect(validacao.valido).toBe(true);
-        expect(documentos).toHaveLength(2); // documento1 e documento3
-        expect(documentos.every(doc => doc.tipo === TipoDocumentoEnum.COMPROVANTE_RESIDENCIA)).toBe(true);
+      // Assert
+      expect(validacao.valido).toBe(true);
+      expect(documentos).toHaveLength(2); // documento1 e documento3
+      expect(
+        documentos.every(
+          (doc) => doc.tipo === TipoDocumentoEnum.COMPROVANTE_RESIDENCIA,
+        ),
+      ).toBe(true);
     });
 
     it('deve validar integração BatchJobManagerService', async () => {
@@ -257,7 +272,8 @@ describe('Batch Download (Integração)', () => {
 
       // Act
       const podeIniciar = await batchJobManager.podeIniciarJob(usuarioId);
-      const estatisticas = await batchJobManager.obterEstatisticasUsuario(usuarioId);
+      const estatisticas =
+        await batchJobManager.obterEstatisticasUsuario(usuarioId);
 
       // Assert
       expect(podeIniciar.pode).toBe(true);
@@ -280,7 +296,10 @@ describe('Batch Download (Integração)', () => {
       mockMinioService.obterArquivoStream.mockResolvedValue(mockFileStream);
 
       // Act
-      const zipResult = await zipGenerator.gerarZipStream(documentos, 'test-job-id');
+      const zipResult = await zipGenerator.gerarZipStream(
+        documentos,
+        'test-job-id',
+      );
 
       // Assert
       expect(zipResult).toBeDefined();
@@ -307,7 +326,10 @@ describe('Batch Download (Integração)', () => {
       // Act
       const startTime = Date.now();
       const usuarioId = 'test-user-id';
-      const resultado = await documentoBatchService.iniciarJob(filtros, usuarioId);
+      const resultado = await documentoBatchService.iniciarJob(
+        filtros,
+        usuarioId,
+      );
       const endTime = Date.now();
 
       // Assert
@@ -353,7 +375,10 @@ describe('Batch Download (Integração)', () => {
       // Act
       const startTime = Date.now();
       const usuarioId = 'test-user-id';
-      const resultado = await documentoBatchService.iniciarJob(filtros, usuarioId);
+      const resultado = await documentoBatchService.iniciarJob(
+        filtros,
+        usuarioId,
+      );
       const endTime = Date.now();
 
       // Assert
@@ -369,7 +394,10 @@ describe('Batch Download (Integração)', () => {
     it('deve processar documentos de diferentes tipos', async () => {
       // Arrange
       const filtros: IDocumentoBatchFiltros = {
-        tipo_documento: [TipoDocumentoEnum.COMPROVANTE_RESIDENCIA, TipoDocumentoEnum.LAUDO_MEDICO],
+        tipo_documento: [
+          TipoDocumentoEnum.COMPROVANTE_RESIDENCIA,
+          TipoDocumentoEnum.LAUDO_MEDICO,
+        ],
       };
 
       const mockFileStream = new Readable({

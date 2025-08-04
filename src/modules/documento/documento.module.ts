@@ -4,6 +4,7 @@ import { MulterModule } from '@nestjs/platform-express';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { DocumentoController } from './controllers/documento.controller';
 import { DocumentoOrganizacionalController } from './controllers/documento-organizacional.controller';
+import { DocumentoBatchController } from './controllers/documento-batch.controller';
 import { DocumentoService } from './services/documento.service';
 import { DocumentoBatchService } from './services/batch-download/documento-batch.service';
 import { DocumentoBatchSchedulerService } from './services/batch-download/documento-batch-scheduler.service';
@@ -44,6 +45,7 @@ import {
 // Serviços de thumbnail
 import { ThumbnailService } from './services/thumbnail/thumbnail.service';
 import { ThumbnailQueueService } from './services/thumbnail/thumbnail-queue.service';
+import { ThumbnailFacadeService } from './services/thumbnail/thumbnail-facade.service';
 
 // Serviços de download em lote
 import { BatchJobManagerService } from './services/batch-download/batch-job-manager.service';
@@ -99,7 +101,11 @@ import { DocumentFilterService } from './services/batch-download/document-filter
     CacheModule,
     // BatchDownloadModule removido para evitar dependência circular
   ],
-  controllers: [DocumentoController, DocumentoOrganizacionalController],
+  controllers: [
+    DocumentoController,
+    DocumentoOrganizacionalController,
+    DocumentoBatchController,
+  ],
   providers: [
     DocumentoService,
     DocumentoBatchService,
@@ -132,6 +138,7 @@ import { DocumentFilterService } from './services/batch-download/document-filter
       inject: [StorageProviderFactory],
     },
     ThumbnailQueueService,
+    ThumbnailFacadeService,
 
     // Serviços de download em lote
     BatchJobManagerService,
@@ -161,6 +168,7 @@ import { DocumentFilterService } from './services/batch-download/document-filter
     StorageHealthService,
     ThumbnailService,
     ThumbnailQueueService,
+    ThumbnailFacadeService,
     BatchJobManagerService,
     ZipGeneratorService,
     DocumentFilterService,

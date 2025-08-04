@@ -88,7 +88,11 @@ describe('ZipGeneratorService', () => {
     };
 
     // Act
-    const result = await service.gerarZipStream(arquivos as Documento[], 'job-123', options);
+    const result = await service.gerarZipStream(
+      arquivos as Documento[],
+      'job-123',
+      options,
+    );
 
     // Assert
     expect(result).toBeDefined();
@@ -99,7 +103,9 @@ describe('ZipGeneratorService', () => {
 
   it('deve lidar com arquivos não encontrados', async () => {
     // Arrange
-    mockStorageProvider.obterArquivo.mockRejectedValue(new Error('Arquivo não encontrado'));
+    mockStorageProvider.obterArquivo.mockRejectedValue(
+      new Error('Arquivo não encontrado'),
+    );
 
     const arquivos: Partial<Documento>[] = [
       {
@@ -121,7 +127,10 @@ describe('ZipGeneratorService', () => {
     ];
 
     // Act
-    const result = await service.gerarZipStream(arquivos as Documento[], 'job-456');
+    const result = await service.gerarZipStream(
+      arquivos as Documento[],
+      'job-456',
+    );
 
     // Assert
     expect(result).toBeDefined();
@@ -159,7 +168,11 @@ describe('ZipGeneratorService', () => {
     };
 
     // Act
-    const result = await service.gerarZipStream(arquivos as Documento[], 'job-789', options);
+    const result = await service.gerarZipStream(
+      arquivos as Documento[],
+      'job-789',
+      options,
+    );
 
     // Assert
     expect(result).toBeDefined();

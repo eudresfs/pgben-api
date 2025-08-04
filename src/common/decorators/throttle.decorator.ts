@@ -93,6 +93,18 @@ export const ThrottleBatchDownload = () => {
 };
 
 /**
+ * Rate limiting para geração de thumbnails
+ * Moderado para operações que consomem recursos de processamento
+ *
+ * Limite: 30 thumbnails por minuto
+ */
+export const ThrottleThumbnail = () => {
+  return applyDecorators(
+    Throttle({ default: { limit: 30, ttl: 60000 } }), // 30 thumbnails por minuto
+  );
+};
+
+/**
  * Rate limiting customizável
  * Permite definir limites específicos
  *

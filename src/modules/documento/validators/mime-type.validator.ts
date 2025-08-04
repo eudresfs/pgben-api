@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { fileTypeFromBuffer } from 'file-type';
+import { fromBuffer } from 'file-type';
 import {
   MIME_TYPE_CONFIGS,
   BLOCKED_MIME_TYPES,
@@ -80,7 +80,7 @@ export class MimeTypeValidator {
       }
 
       // 3. Detectar o tipo real do arquivo usando magic numbers
-      const fileTypeResult = await fileTypeFromBuffer(buffer);
+      const fileTypeResult = await fromBuffer(buffer);
 
       if (!fileTypeResult && SECURITY_CONFIG.VERIFY_MAGIC_NUMBERS) {
         // Para alguns tipos como text/plain, file-type pode não detectar

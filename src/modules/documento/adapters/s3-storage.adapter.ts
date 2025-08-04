@@ -241,14 +241,10 @@ export class S3StorageAdapter implements StorageProvider {
     const startTime = Date.now();
 
     try {
-      this.loggingService.debug(
-        `Iniciando stream S3`,
-        S3StorageAdapter.name,
-        {
-          key: caminho,
-          bucket: this.bucketName,
-        },
-      );
+      this.loggingService.debug(`Iniciando stream S3`, S3StorageAdapter.name, {
+        key: caminho,
+        bucket: this.bucketName,
+      });
 
       // Obter stream do arquivo do S3 com retry
       const streamOperation = async () => {

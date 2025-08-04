@@ -192,11 +192,11 @@ export class DocumentoService {
     this.logger.debug(
       `Documento encontrado: ${documento.nome_original}`,
       DocumentoService.name,
-      { 
-        documentoId: id, 
+      {
+        documentoId: id,
         caminhoStorage: documento.caminho,
         mimetype: documento.mimetype,
-        tamanho: documento.tamanho 
+        tamanho: documento.tamanho,
       },
     );
 
@@ -231,9 +231,9 @@ export class DocumentoService {
           errorMessage: error.message,
         },
       );
-      
+
       // Propagar a exceção específica do storage
-      // As exceções específicas (DocumentoNaoEncontradoException, etc.) 
+      // As exceções específicas (DocumentoNaoEncontradoException, etc.)
       // serão tratadas pelos interceptors globais
       throw error;
     }

@@ -7,9 +7,33 @@ import {
   ManyToOne,
   JoinColumn,
   Index,
+  ValueTransformer,
 } from 'typeorm';
 import { Usuario } from './usuario.entity';
 import { Unidade } from './unidade.entity';
+import {
+  createBrazilianDate,
+  convertFromUTCToBrazil,
+  convertFromBrazilToUTC,
+} from '../common/utils/timezone.util';
+
+/**
+ * Transformer para campos de data que garante o timezone brasileiro correto
+ * - Na escrita (to): converte datas brasileiras para UTC antes de salvar no banco
+ * - Na leitura (from): converte datas UTC do banco para timezone brasileiro
+ */
+const brazilianDateTransformer: ValueTransformer = {
+  to: (value: Date | string | null): Date | null => {
+    if (!value) return null;
+    // Converter data brasileira para UTC antes de salvar no banco
+    return convertFromBrazilToUTC(value);
+  },
+  from: (value: Date | string | null): Date | null => {
+    if (!value) return null;
+    // Converter de UTC para timezone brasileiro na leitura
+    return convertFromUTCToBrazil(value);
+  },
+};
 
 /**
  * Enum para status do job de download em lote

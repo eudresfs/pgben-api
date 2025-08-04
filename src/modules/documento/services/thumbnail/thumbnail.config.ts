@@ -90,14 +90,14 @@ export const DEFAULT_THUMBNAIL_CONFIG: ThumbnailConfig = {
     width: 200,
     height: 200,
     quality: 85,
-    timeoutMs: 30000, // 30 segundos
+    timeoutMs: 10000, // 10 segundos - reduzido para melhor performance
   },
 
   image: {
     width: 200,
     height: 200,
     quality: 80,
-    timeoutMs: 15000, // 15 segundos
+    timeoutMs: 5000, // 5 segundos - reduzido para melhor performance
     maxBufferSize: 10 * 1024 * 1024, // 10MB
     formatSettings: {
       jpeg: {
@@ -140,7 +140,7 @@ export const DEFAULT_THUMBNAIL_CONFIG: ThumbnailConfig = {
       image: 'image-default.jpg',
       default: 'document-default.jpg',
     },
-    enableDebugLogs: process.env.NODE_ENV === 'development',
+    enableDebugLogs: true, // Forçado para debug
     enableDependencyCheck: true,
   },
 };

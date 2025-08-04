@@ -65,6 +65,8 @@ import {
   DadosSociais,
   InfoBancaria,
   SituacaoMoradia,
+  Contato,
+  Endereco,
 
   // Entidades de Configuração
   ConfiguracaoIntegracao,
@@ -74,6 +76,7 @@ import {
 
   // Entidades de Documentos
   Documento,
+  DocumentoBatchJob,
   RequisitoDocumento,
 
   // Entidades de Histórico e Logs
@@ -116,6 +119,10 @@ import {
 
   // Entidades de Solicitação
   Solicitacao,
+
+  // Entidades de Upload
+  UploadSession,
+  UploadToken,
 } from './entities';
 
 /**
@@ -163,6 +170,8 @@ export const AppDataSource = new DataSource({
     DadosSociais,
     InfoBancaria,
     SituacaoMoradia,
+    Contato,
+    Endereco,
 
     // Entidades de benefício
     TipoBeneficio,
@@ -189,6 +198,7 @@ export const AppDataSource = new DataSource({
 
     // Entidades de documento
     Documento,
+    DocumentoBatchJob,
 
     // Entidades de recurso
     Recurso,
@@ -230,6 +240,10 @@ export const AppDataSource = new DataSource({
     Metrica,
     RegistroMetrica,
     RegraAlerta,
+
+    // Entidades de upload
+    UploadSession,
+    UploadToken,
   ],
   migrations: [__dirname + '/database/migrations/**/*{.ts,.js}'],
   migrationsTableName: 'migrations',
@@ -243,6 +257,7 @@ export const AppDataSource = new DataSource({
     max: 30,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 5000,
+    timezone: 'America/Sao_Paulo',
   },
   ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
 });

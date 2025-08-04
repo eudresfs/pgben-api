@@ -8,7 +8,7 @@ import { StatusDownloadLoteEnum } from '../../../../../entities/documento-batch-
 
 /**
  * Testes unitários para BatchJobManagerService
- * 
+ *
  * Valida o gerenciamento de jobs simultâneos por usuário,
  * incluindo rate limiting e controle de concorrência
  */
@@ -97,7 +97,9 @@ describe('BatchJobManagerService', () => {
 
       // Assert
       expect(resultado.pode).toBe(false);
-      expect(resultado.motivo).toContain('Limite de 2 jobs simultâneos atingido');
+      expect(resultado.motivo).toContain(
+        'Limite de 2 jobs simultâneos atingido',
+      );
     });
   });
 
@@ -166,7 +168,7 @@ describe('BatchJobManagerService', () => {
           created_at: new Date(Date.now() - 60 * 60 * 1000), // 60 minutos atrás
         },
       ];
-      
+
       mockRepository.find.mockResolvedValue(jobsExpirados);
       mockRepository.update.mockResolvedValue({ affected: 1 });
 

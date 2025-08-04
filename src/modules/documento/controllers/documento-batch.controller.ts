@@ -11,7 +11,9 @@ import {
   HttpCode,
   HttpStatus,
   Logger,
+  Req,
 } from '@nestjs/common';
+import { Request } from 'express';
 import { Response } from 'express';
 import {
   ApiTags,
@@ -81,24 +83,28 @@ export class DocumentoBatchController {
     type: BatchDownloadDto,
   })
   async startBatchDownload(
-    @Body() filtros: BatchDownloadDto,
+    @Body() body: BatchDownloadDto,
     @GetUser() usuario: Usuario,
+    @Req() req: Request,
   ): Promise<{ jobId: string; message: string; statusUrl: string }> {
     // Converter BatchDownloadDto para IDocumentoBatchFiltros
     const filtrosConvertidos: any = {
-      unidade_id: usuario.unidade_id || undefined, // Será definido pelo contexto do usuário
-      data_inicio: filtros.dataInicio,
-      data_fim: filtros.dataFim,
-      tipo_documento: filtros.tiposDocumento,
-      cidadao_ids: filtros.cidadaoIds,
-      solicitacao_ids: filtros.solicitacaoIds,
-      apenas_verificados: filtros.apenasVerificados,
-      incluir_metadados: filtros.incluirMetadados,
+      data_inicio: body.dataInicio,
+      data_fim: body.dataFim,
+      tipo_documento: body.tiposDocumento,
+      cidadao_ids: body.cidadaoIds,
+      solicitacao_ids: body.solicitacaoIds,
+      apenas_verificados: body.apenasVerificados,
+      incluir_metadados: body.incluirMetadados,
     };
+
+    const metadados = body.metadados;
 
     const resultado = await this.documentoBatchService.iniciarJob(
       filtrosConvertidos,
       usuario.id,
+      usuario.unidade_id,
+      metadados,
     );
 
     return {

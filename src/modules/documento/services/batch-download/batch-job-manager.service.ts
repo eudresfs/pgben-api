@@ -11,11 +11,11 @@ import { StatusDownloadLoteEnum } from '../../../../entities/documento-batch-job
 @Injectable()
 export class BatchJobManagerService {
   private readonly logger = new Logger(BatchJobManagerService.name);
-  
+
   // Configurações de rate limiting
   private readonly MAX_JOBS_PER_USER = 2; // Máximo 2 jobs simultâneos por usuário
   private readonly JOB_TIMEOUT_MINUTES = 30; // Timeout de 30 minutos para jobs
-  
+
   constructor(
     @InjectRepository(DocumentoBatchJob)
     private readonly batchJobRepository: Repository<DocumentoBatchJob>,
@@ -31,7 +31,7 @@ export class BatchJobManagerService {
     jobsAtivos: number;
   }> {
     const jobsAtivos = await this.contarJobsAtivos(usuarioId);
-    
+
     if (jobsAtivos >= this.MAX_JOBS_PER_USER) {
       return {
         pode: false,
@@ -39,7 +39,7 @@ export class BatchJobManagerService {
         jobsAtivos,
       };
     }
-    
+
     return {
       pode: true,
       jobsAtivos,
@@ -67,7 +67,7 @@ export class BatchJobManagerService {
    */
   async adicionarJobFila(usuarioId: string, filtros: any): Promise<void> {
     const verificacao = await this.podeIniciarJob(usuarioId);
-    
+
     if (!verificacao.pode) {
       throw new BadRequestException(verificacao.motivo);
     }
@@ -77,9 +77,10 @@ export class BatchJobManagerService {
    * Cancela jobs que excederam o timeout
    */
   async cancelarJobsExpirados(): Promise<number> {
-    const timeoutDate = new Date();
-    timeoutDate.setMinutes(timeoutDate.getMinutes() - this.JOB_TIMEOUT_MINUTES);
-    
+    const timeoutDate = new Date(
+      Date.now() - this.JOB_TIMEOUT_MINUTES * 60 * 1000,
+    );
+
     const jobsExpirados = await this.batchJobRepository.find({
       where: {
         status: In([
@@ -91,9 +92,9 @@ export class BatchJobManagerService {
         } as any,
       },
     });
-    
+
     let cancelados = 0;
-    
+
     for (const job of jobsExpirados) {
       try {
         await this.batchJobRepository.update(job.id, {
@@ -101,18 +102,18 @@ export class BatchJobManagerService {
           erro_detalhes: `Job cancelado por timeout (${this.JOB_TIMEOUT_MINUTES} minutos)`,
           updated_at: new Date(),
         });
-        
+
         cancelados++;
         this.logger.warn(`Job ${job.id} cancelado por timeout`);
       } catch (error) {
         this.logger.error(`Erro ao cancelar job ${job.id}:`, error);
       }
     }
-    
+
     if (cancelados > 0) {
       this.logger.log(`${cancelados} jobs cancelados por timeout`);
     }
-    
+
     return cancelados;
   }
 
@@ -125,38 +126,39 @@ export class BatchJobManagerService {
     jobsFalharam: number;
     totalJobs: number;
   }> {
-    const [jobsAtivos, jobsConcluidos, jobsFalharam, totalJobs] = await Promise.all([
-      this.batchJobRepository.count({
-        where: {
-          usuario_id: usuarioId,
-          status: In([
-            StatusDownloadLoteEnum.PENDING,
-            StatusDownloadLoteEnum.PROCESSING,
-          ]),
-        },
-      }),
-      this.batchJobRepository.count({
-        where: {
-          usuario_id: usuarioId,
-          status: StatusDownloadLoteEnum.COMPLETED,
-        },
-      }),
-      this.batchJobRepository.count({
-        where: {
-          usuario_id: usuarioId,
-          status: In([
-            StatusDownloadLoteEnum.FAILED,
-            StatusDownloadLoteEnum.CANCELLED,
-          ]),
-        },
-      }),
-      this.batchJobRepository.count({
-        where: {
-          usuario_id: usuarioId,
-        },
-      }),
-    ]);
-    
+    const [jobsAtivos, jobsConcluidos, jobsFalharam, totalJobs] =
+      await Promise.all([
+        this.batchJobRepository.count({
+          where: {
+            usuario_id: usuarioId,
+            status: In([
+              StatusDownloadLoteEnum.PENDING,
+              StatusDownloadLoteEnum.PROCESSING,
+            ]),
+          },
+        }),
+        this.batchJobRepository.count({
+          where: {
+            usuario_id: usuarioId,
+            status: StatusDownloadLoteEnum.COMPLETED,
+          },
+        }),
+        this.batchJobRepository.count({
+          where: {
+            usuario_id: usuarioId,
+            status: In([
+              StatusDownloadLoteEnum.FAILED,
+              StatusDownloadLoteEnum.CANCELLED,
+            ]),
+          },
+        }),
+        this.batchJobRepository.count({
+          where: {
+            usuario_id: usuarioId,
+          },
+        }),
+      ]);
+
     return {
       jobsAtivos,
       jobsConcluidos,

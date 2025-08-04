@@ -249,15 +249,30 @@ export class DadosFuneralService extends AbstractDadosBeneficioService<
       // Validação de data de autorização (se fornecida)
       if (data.data_autorizacao) {
         const dataAutorizacao = new Date(data.data_autorizacao);
+
         if (isNaN(dataAutorizacao.getTime())) {
-          errorBuilder.add('data_autorizacao', 'Data de autorização inválida.');
+          errorBuilder.add(
+            'data_autorizacao',
+            BENEFICIO_TECH_MESSAGES.FUNERAL.DATA_AUTORIZACAO_INVALIDA,
+          );
         } else {
           const hoje = new Date();
           if (dataAutorizacao > hoje) {
             errorBuilder.add(
               'data_autorizacao',
-              'Data de autorização não pode ser futura.',
+              BENEFICIO_TECH_MESSAGES.FUNERAL.DATA_AUTORIZACAO_FUTURA,
             );
+          }
+
+          if (data.data_obito) {
+            const dataObito = new Date(data.data_obito);
+            if (!isNaN(dataObito.getTime()) && dataAutorizacao < dataObito) {
+              errorBuilder.add(
+                'data_autorizacao',
+                BENEFICIO_TECH_MESSAGES.FUNERAL
+                  .DATA_OBITO_POSTERIOR_AUTORIZACAO,
+              );
+            }
           }
         }
       }

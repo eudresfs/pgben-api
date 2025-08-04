@@ -1,4 +1,7 @@
-import { StatusDownloadLoteEnum, DocumentoBatchJob } from '../../../entities/documento-batch-job.entity';
+import {
+  StatusDownloadLoteEnum,
+  DocumentoBatchJob,
+} from '../../../entities/documento-batch-job.entity';
 
 /**
  * Interface para filtros de busca de documentos
@@ -27,9 +30,8 @@ export interface IDocumentoBatchMetadados {
   incluir_estrutura_pastas?: boolean;
   formato_nome_arquivo?: 'original' | 'sequencial' | 'timestamp';
   compressao_nivel?: number;
+  pagina?: string;
 }
-
-
 
 /**
  * Interface para progresso do job
@@ -45,9 +47,8 @@ export interface IDocumentoBatchProgresso {
   erros: string[];
   data_inicio?: Date;
   updated_at?: Date;
+  metadados?: IDocumentoBatchMetadados;
 }
-
-
 
 /**
  * Interface para resultado do processamento
@@ -61,11 +62,15 @@ export interface IDocumentoBatchResultado {
   tempo_processamento: number;
   caminho_arquivo?: string;
   nome_arquivo?: string;
-  tamanho_arquivo?: number;
+  tamanho_estimado?: number;
+  tamanho_real?: number;
   url_download?: string;
   data_expiracao?: Date;
   erros: string[];
   data_conclusao?: Date;
+  created_at?: Date;
+  data_inicio?: string;
+  metadados?: IDocumentoBatchMetadados;
   arquivo_zip?: {
     url_download?: string;
     nome?: string;
@@ -73,7 +78,6 @@ export interface IDocumentoBatchResultado {
     data_expiracao?: Date;
   };
 }
-
 
 /**
  * Interface para serviço de download em lote
@@ -89,12 +93,12 @@ export interface IDocumentoBatchService {
     documentCount: number;
   }>;
   obterProgresso(job_id: string): Promise<IDocumentoBatchProgresso>;
-  
+
   /**
    * Obtém a entidade completa do job
    */
   obterJobCompleto(job_id: string): Promise<DocumentoBatchJob>;
-  
+
   obterResultado(job_id: string): Promise<IDocumentoBatchResultado>;
   cancelarJob(job_id: string): Promise<boolean>;
   listarJobs(

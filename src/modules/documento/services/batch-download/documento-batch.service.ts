@@ -80,6 +80,7 @@ export class DocumentoBatchService {
   async iniciarJob(
     filtros: IDocumentoBatchFiltros,
     usuario_id: string,
+    unidade_id: string,
     metadados?: IDocumentoBatchMetadados,
   ): Promise<{
     jobId: string;
@@ -115,7 +116,10 @@ export class DocumentoBatchService {
       metricas.validacao_tempo = Date.now() - validacaoInicio;
 
       if (!validacao.valido) {
-        this.logger.warn(`Validação falhou para usuário ${usuario_id}:`, validacao.erros);
+        this.logger.warn(
+          `Validação falhou para usuário ${usuario_id}:`,
+          validacao.erros,
+        );
         throw new BadRequestException(
           `Filtros inválidos: ${validacao.erros.join(', ')}`,
         );
@@ -143,6 +147,7 @@ export class DocumentoBatchService {
       // Criar job na base de dados
       const job = this.batchJobRepository.create({
         usuario_id,
+        unidade_id,
         status: StatusDownloadLoteEnum.PENDING,
         filtros: filtros,
         metadados: { ...metadados, metricas },
@@ -151,6 +156,7 @@ export class DocumentoBatchService {
         progresso_percentual: 0,
         tamanho_estimado: estimatedSize,
         created_at: new Date(),
+        updated_at: new Date(),
         data_expiracao: new Date(Date.now() + this.maxJobAge),
       });
 
@@ -163,7 +169,10 @@ export class DocumentoBatchService {
       // Processar assincronamente
       this.processJobWithEntity(savedJob.id, metricas).catch((error) => {
         const tempoTotal = Date.now() - startTime;
-        this.logger.error(`Erro no processamento do job ${savedJob.id} após ${tempoTotal}ms:`, error);
+        this.logger.error(
+          `Erro no processamento do job ${savedJob.id} após ${tempoTotal}ms:`,
+          error,
+        );
         this.markJobAsFailedInDB(savedJob.id, error.message);
       });
 
@@ -174,7 +183,10 @@ export class DocumentoBatchService {
       };
     } catch (error) {
       const tempoTotal = Date.now() - startTime;
-      this.logger.error(`Erro ao iniciar job para usuário ${usuario_id} após ${tempoTotal}ms:`, error);
+      this.logger.error(
+        `Erro ao iniciar job para usuário ${usuario_id} após ${tempoTotal}ms:`,
+        error,
+      );
       throw error;
     }
   }
@@ -199,8 +211,9 @@ export class DocumentoBatchService {
       documentos_processados: job.documentos_processados,
       tempo_decorrido: this.calculateElapsedTime(job),
       erros: job.erro_detalhes ? [job.erro_detalhes] : [],
-      data_inicio: job.created_at,
+      data_inicio: job.data_inicio || job.created_at,
       updated_at: job.updated_at,
+      metadados: job.metadados,
     };
   }
 
@@ -244,8 +257,10 @@ export class DocumentoBatchService {
       tempo_processamento: this.calculateProcessingTime(job),
       caminho_arquivo: job.caminho_arquivo,
       nome_arquivo: job.nome_arquivo,
-      tamanho_arquivo: job.tamanho_real,
+      tamanho_estimado: job.tamanho_estimado,
+      tamanho_real: job.tamanho_real,
       erros: job.erro_detalhes ? [job.erro_detalhes] : [],
+      metadados: job.metadados,
       arquivo_zip: {
         nome: job.nome_arquivo || `lote_${job.id}.zip`,
         tamanho: job.tamanho_real || 0,
@@ -400,6 +415,7 @@ export class DocumentoBatchService {
     const queryBuilder = this.batchJobRepository
       .createQueryBuilder('job')
       .where('job.usuario_id = :usuario_id', { usuario_id })
+      .andWhere('job.removed_at is null')
       .orderBy('job.created_at', 'DESC');
 
     if (status && status.length > 0) {
@@ -415,7 +431,8 @@ export class DocumentoBatchService {
       nome_arquivo: job.caminho_arquivo
         ? `documentos_lote_${job.id.substring(0, 8)}.zip`
         : undefined,
-      tamanho_arquivo: job.tamanho_real,
+      tamanho_estimado: job.tamanho_estimado,
+      tamanho_real: job.tamanho_real,
       total_documentos: job.total_documentos,
       documentos_processados: job.documentos_processados,
       documentos_com_erro: job.total_documentos - job.documentos_processados,
@@ -425,7 +442,10 @@ export class DocumentoBatchService {
           ? `/api/v1/documento/download-lote/${job.id}/arquivo`
           : undefined,
       data_expiracao: job.data_expiracao,
+      data_conclusao: job.data_conclusao,
+      created_at: job.created_at,
       erros: job.erro_detalhes ? [job.erro_detalhes] : [],
+      metadados: job.metadados,
     }));
   }
 
@@ -636,10 +656,10 @@ export class DocumentoBatchService {
         for (const documento of outrosDocumentos) {
           const fileName = this.generateFileName(documento);
           const zipPath = `${solicitacaoFolder}/${fileName}`;
-          structure.files.push({ 
-            documento, 
-            zipPath, 
-            tamanho: documento.tamanho || 0 
+          structure.files.push({
+            documento,
+            zipPath,
+            tamanho: documento.tamanho || 0,
           });
         }
 
@@ -648,10 +668,10 @@ export class DocumentoBatchService {
           for (const recibo of recibos) {
             const fileName = this.generateFileName(recibo);
             const zipPath = `${solicitacaoFolder}/Recibos_Comprovantes/${fileName}`;
-            structure.files.push({ 
-              documento: recibo, 
-              zipPath, 
-              tamanho: recibo.tamanho || 0 
+            structure.files.push({
+              documento: recibo,
+              zipPath,
+              tamanho: recibo.tamanho || 0,
             });
           }
         }
@@ -733,9 +753,9 @@ export class DocumentoBatchService {
     jobId: string,
   ): Promise<void> {
     const output = fs.createWriteStream(zipPath);
-    const archive = archiver('zip', { 
+    const archive = archiver('zip', {
       zlib: { level: 6 }, // Reduzir nível de compressão para melhor performance
-      store: false // Habilitar compressão
+      store: false, // Habilitar compressão
     });
 
     archive.pipe(output);
@@ -751,16 +771,19 @@ export class DocumentoBatchService {
     // Processar arquivos em lotes pequenos com streaming
     for (let i = 0; i < structure.files.length; i += STREAM_BATCH_SIZE) {
       const batch = structure.files.slice(i, i + STREAM_BATCH_SIZE);
-      
+
       await Promise.all(
         batch.map(async (fileInfo) => {
           try {
             const storageProvider = this.storageProviderFactory.getProvider();
-            
+
             // Usar stream em vez de buffer para arquivos grandes
-            if (fileInfo.tamanho > 10 * 1024 * 1024) { // > 10MB
-              const fileStream = await storageProvider.obterArquivoStream(fileInfo.documento.caminho);
-              
+            if (fileInfo.tamanho > 10 * 1024 * 1024) {
+              // > 10MB
+              const fileStream = await storageProvider.obterArquivoStream(
+                fileInfo.documento.caminho,
+              );
+
               // Garantir que o stream é compatível com Node.js Readable
               let readableStream: Readable;
               if (fileStream && typeof fileStream.pipe === 'function') {
@@ -769,21 +792,25 @@ export class DocumentoBatchService {
                 // Converter para Readable se necessário
                 readableStream = Readable.from(fileStream);
               }
-              
+
               archive.append(readableStream, { name: fileInfo.zipPath });
             } else {
               // Para arquivos pequenos, usar buffer é mais eficiente
-              const fileBuffer = await storageProvider.obterArquivo(fileInfo.documento.caminho);
+              const fileBuffer = await storageProvider.obterArquivo(
+                fileInfo.documento.caminho,
+              );
               archive.append(fileBuffer, { name: fileInfo.zipPath });
             }
 
             // Atualizar progresso
             processedFiles++;
-            const progress = 20 + Math.floor((processedFiles / totalFiles) * 70); // 20-90%
+            const progress =
+              20 + Math.floor((processedFiles / totalFiles) * 70); // 20-90%
             await this.updateJobProgress(jobId, progress);
-            
-            this.logger.debug(`Arquivo processado: ${fileInfo.zipPath} (${processedFiles}/${totalFiles})`);
-            
+
+            this.logger.debug(
+              `Arquivo processado: ${fileInfo.zipPath} (${processedFiles}/${totalFiles})`,
+            );
           } catch (error) {
             this.logger.warn(
               `Erro ao processar arquivo ${fileInfo.documento.caminho}:`,
@@ -791,35 +818,42 @@ export class DocumentoBatchService {
             );
             // Adicionar arquivo de erro em vez de falhar completamente
             const errorContent = `Erro ao processar arquivo: ${error.message}`;
-            archive.append(errorContent, { name: `${fileInfo.zipPath}.error.txt` });
+            archive.append(errorContent, {
+              name: `${fileInfo.zipPath}.error.txt`,
+            });
           }
-        })
+        }),
       );
-      
+
       // Pequena pausa entre lotes para evitar sobrecarga
       if (i + STREAM_BATCH_SIZE < structure.files.length) {
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 100));
       }
     }
 
     await this.updateJobProgress(jobId, 95);
-    
+
     // Finalizar arquivo ZIP
     await new Promise<void>((resolve, reject) => {
       archive.finalize();
-      
+
       output.on('close', () => {
-        this.logger.log(`ZIP criado com sucesso: ${zipPath} (${archive.pointer()} bytes)`);
+        this.logger.log(
+          `ZIP criado com sucesso: ${zipPath} (${archive.pointer()} bytes)`,
+        );
         resolve();
       });
-      
+
       output.on('error', reject);
       archive.on('error', reject);
-      
+
       // Timeout de segurança
-      setTimeout(() => {
-        reject(new Error('Timeout na criação do arquivo ZIP'));
-      }, 30 * 60 * 1000); // 30 minutos
+      setTimeout(
+        () => {
+          reject(new Error('Timeout na criação do arquivo ZIP'));
+        },
+        30 * 60 * 1000,
+      ); // 30 minutos
     });
   }
 
@@ -884,7 +918,7 @@ export class DocumentoBatchService {
   private generateBatchIndex(files: ZipFileInfo[]): string {
     const lines = [
       '=== ÍNDICE DE DOCUMENTOS ===',
-      `Gerado em: ${new Date().toLocaleString('pt-BR')}`,
+      `Gerado em: ${new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}`,
       `Total de arquivos: ${files.length}`,
       '',
       'ESTRUTURA:',
@@ -939,14 +973,17 @@ export class DocumentoBatchService {
   }
 
   /**
-   * Calcula o tempo decorrido desde o início do job
+   * Calcula o tempo decorrido desde o início do processamento do job
+   * Usa data_inicio se disponível, senão usa created_at como fallback
    */
   private calculateElapsedTime(job: DocumentoBatchJob): number {
-    return Math.round((Date.now() - job.created_at.getTime()) / 1000);
+    const dataInicio = job.data_inicio || job.created_at;
+    return Math.round((Date.now() - dataInicio.getTime()) / 1000);
   }
 
   /**
    * Calcula o tempo restante estimado para conclusão do job
+   * Usa data_inicio se disponível, senão usa created_at como fallback
    */
   private calculateRemainingTime(job: DocumentoBatchJob): number | undefined {
     if (
@@ -956,7 +993,8 @@ export class DocumentoBatchService {
       return undefined;
     }
 
-    const tempoDecorrido = Date.now() - job.created_at.getTime();
+    const dataInicio = job.data_inicio || job.created_at;
+    const tempoDecorrido = Date.now() - dataInicio.getTime();
     const progressoDecimal = job.progresso_percentual / 100;
     const tempoEstimadoTotal = tempoDecorrido / progressoDecimal;
     const tempoRestante = tempoEstimadoTotal - tempoDecorrido;
@@ -982,21 +1020,30 @@ export class DocumentoBatchService {
 
   /**
    * Calcula o tempo total de processamento do job
+   * Retorna o tempo em segundos entre data_inicio e data_conclusao
+   * Se o job ainda não foi concluído, retorna 0
    */
   private calculateProcessingTime(job: DocumentoBatchJob): number {
+    // Se não há data de conclusão, o job ainda não terminou
     if (!job.data_conclusao) {
       return 0;
     }
 
+    // Se não há data de início, usar created_at como fallback
+    const dataInicio = job.data_inicio || job.created_at;
+
     return Math.round(
-      (job.data_conclusao.getTime() - job.created_at.getTime()) / 1000,
+      (job.data_conclusao.getTime() - dataInicio.getTime()) / 1000,
     );
   }
 
   /**
    * Processa um job usando a entidade DocumentoBatchJob com métricas de performance
    */
-  private async processJobWithEntity(jobId: string, metricas?: any): Promise<void> {
+  private async processJobWithEntity(
+    jobId: string,
+    metricas?: any,
+  ): Promise<void> {
     const job = await this.batchJobRepository.findOne({ where: { id: jobId } });
     if (!job) {
       this.logger.error(`Job ${jobId} não encontrado para processamento`);
@@ -1015,9 +1062,10 @@ export class DocumentoBatchService {
     };
 
     try {
-      // Atualizar status para processando
+      // Atualizar status para processando e definir data de início
       await this.batchJobRepository.update(jobId, {
         status: StatusDownloadLoteEnum.PROCESSING,
+        data_inicio: new Date(),
         updated_at: new Date(),
       });
 
@@ -1035,7 +1083,9 @@ export class DocumentoBatchService {
         );
       }
 
-      this.logger.log(`Job ${jobId} - Consulta concluída em ${jobMetricas.consulta_tempo}ms: ${documentos.length} documentos`);
+      this.logger.log(
+        `Job ${jobId} - Consulta concluída em ${jobMetricas.consulta_tempo}ms: ${documentos.length} documentos`,
+      );
 
       // Atualizar progresso inicial
       await this.batchJobRepository.update(jobId, {
@@ -1051,7 +1101,9 @@ export class DocumentoBatchService {
       );
       const estruturaTempo = Date.now() - estruturaInicio;
 
-      this.logger.log(`Job ${jobId} - Estrutura ZIP criada em ${estruturaTempo}ms`);
+      this.logger.log(
+        `Job ${jobId} - Estrutura ZIP criada em ${estruturaTempo}ms`,
+      );
 
       // Atualizar progresso
       await this.batchJobRepository.update(jobId, {
@@ -1064,7 +1116,9 @@ export class DocumentoBatchService {
       const zipPath = await this.generateZipFile(jobId, zipStructure);
       jobMetricas.zip_tempo = Date.now() - zipInicio;
 
-      this.logger.log(`Job ${jobId} - ZIP gerado em ${jobMetricas.zip_tempo}ms`);
+      this.logger.log(
+        `Job ${jobId} - ZIP gerado em ${jobMetricas.zip_tempo}ms`,
+      );
 
       // Atualizar progresso
       await this.batchJobRepository.update(jobId, {
@@ -1093,7 +1147,10 @@ export class DocumentoBatchService {
       );
     } catch (error) {
       jobMetricas.processamento_tempo = Date.now() - processamentoInicio;
-      this.logger.error(`Erro no processamento do job ${jobId} após ${jobMetricas.processamento_tempo}ms:`, error);
+      this.logger.error(
+        `Erro no processamento do job ${jobId} após ${jobMetricas.processamento_tempo}ms:`,
+        error,
+      );
       await this.markJobAsFailedInDB(jobId, error.message);
     }
   }

@@ -15,9 +15,9 @@ export class DocumentoNaoEncontradoException extends NotFoundException {
     const message = documentoId
       ? `Documento com ID ${documentoId} não foi encontrado`
       : caminho
-      ? `Documento não encontrado no caminho: ${caminho}`
-      : 'Documento não encontrado';
-    
+        ? `Documento não encontrado no caminho: ${caminho}`
+        : 'Documento não encontrado';
+
     super({
       statusCode: HttpStatus.NOT_FOUND,
       message,
@@ -35,7 +35,7 @@ export class AcessoNegadoDocumentoException extends ForbiddenException {
     const message = documentoId
       ? `Acesso negado ao documento ${documentoId}`
       : 'Acesso negado ao documento';
-    
+
     super({
       statusCode: HttpStatus.FORBIDDEN,
       message,
@@ -53,7 +53,7 @@ export class IntegridadeDocumentoException extends BadRequestException {
     const message = documentoId
       ? `Integridade do documento ${documentoId} foi comprometida`
       : 'Integridade do documento foi comprometida';
-    
+
     super({
       statusCode: HttpStatus.BAD_REQUEST,
       message,
@@ -87,7 +87,7 @@ export class DescriptografiaDocumentoException extends BadRequestException {
     const message = documentoId
       ? `Falha ao descriptografar documento ${documentoId}`
       : 'Falha ao descriptografar documento';
-    
+
     super({
       statusCode: HttpStatus.BAD_REQUEST,
       message,

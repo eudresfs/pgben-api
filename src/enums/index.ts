@@ -53,6 +53,9 @@ export { TipoDado } from './tipo-dado.enum';
 // Enums de documentos
 export { TipoDocumentoEnum } from './tipo-documento.enum';
 
+// Enums específicos de benefícios
+export { TipoContextoNatalidade } from './tipo-contexto-natalidade.enum';
+
 // Enums de usuário e permissões
 export { Role } from './role.enum';
 export { Role as UserRole } from './role.enum';
