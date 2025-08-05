@@ -3,8 +3,6 @@ name: Build and Deploy
 on:
   push:
     branches: ['main', 'development']
-  # pull_request:
-  #   branches: ['main', 'development']
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
