@@ -17,6 +17,7 @@ env:
   ENV_SUFFIX: ${{ github.ref == 'refs/heads/development' && '-dev' || '' }}
   DEPLOYMENT_NAME: ${{ github.event.repository.name }}${{ github.ref == 'refs/heads/development' && '-dev' || '' }}
   CONTAINER_PATH: cpr.kemosoft.com.br/${{ github.event.repository.name }}:${{ github.sha }}
+  CONTAINER_NAME: cpr.kemosoft.com.br/${{ github.event.repository.name }}
 
 jobs:
   build:
@@ -79,7 +80,7 @@ jobs:
                 "template": {
                   "spec": {
                     "containers": [{
-                      "name": "'"$DEPLOYMENT_NAME"'",
+                      "name": "'"$CONTAINER_NAME"'",
                       "resources": {
                         "requests": {
                           "memory": "512Mi",
