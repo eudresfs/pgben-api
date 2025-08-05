@@ -54,6 +54,9 @@ export class CidadaoRepository extends ScopedRepository<Cidadao> {
     // Criar QueryBuilder com escopo aplicado automaticamente
     const query = this.createScopedQueryBuilder('cidadao');
 
+    // JOIN com composição familiar para busca
+    query.leftJoin('cidadao.composicao_familiar', 'composicao_familiar_search');
+
     // Filtro adicional por unidade (além do escopo automático)
     // Útil para usuários com escopo GLOBAL que querem filtrar por unidade específica
     if (unidade_id) {
@@ -76,6 +79,18 @@ export class CidadaoRepository extends ScopedRepository<Cidadao> {
       if (searchClean.length > 0) {
         conditions.push('cidadao.cpf LIKE :searchCpf');
         parameters.searchCpf = `%${searchClean}%`;
+      }
+
+      // Busca por CPF na composição familiar (se o termo tem dígitos)
+      if (searchClean.length > 0) {
+        conditions.push('composicao_familiar_search.cpf LIKE :searchCpfFamiliar');
+        parameters.searchCpfFamiliar = `%${searchClean}%`;
+      }
+
+      // Busca por NIS na composição familiar (se o termo tem dígitos)
+      if (searchClean.length > 0) {
+        conditions.push('composicao_familiar_search.nis LIKE :searchNisFamiliar');
+        parameters.searchNisFamiliar = `%${searchClean}%`;
       }
 
       // Busca por NIS (se o termo tem dígitos)
