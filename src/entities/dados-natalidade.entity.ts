@@ -86,22 +86,26 @@ export class DadosNatalidade {
   // Campos para contexto POS_NATAL
   @Column({ type: 'date', nullable: true })
   @ValidateIf((o) => o.tipo_contexto === TipoContextoNatalidade.POS_NATAL)
-  @IsNotEmpty({ message: 'Data de nascimento é obrigatória no contexto pós-natal' })
-  @IsDateString(
-    {},
-    { message: 'Data de nascimento deve ser uma data válida' },
-  )
+  @IsNotEmpty({
+    message: 'Data de nascimento é obrigatória no contexto pós-natal',
+  })
+  @IsDateString({}, { message: 'Data de nascimento deve ser uma data válida' })
   data_nascimento?: Date;
 
   @Column({ nullable: true })
   @ValidateIf((o) => o.tipo_contexto === TipoContextoNatalidade.POS_NATAL)
-  @IsNotEmpty({ message: 'Nome do recém-nascido é obrigatório no contexto pós-natal' })
+  @IsNotEmpty({
+    message: 'Nome do recém-nascido é obrigatório no contexto pós-natal',
+  })
   @IsString({ message: 'Nome do recém-nascido deve ser uma string válida' })
   nome_recem_nascido?: string;
 
   @Column({ nullable: true })
   @ValidateIf((o) => o.tipo_contexto === TipoContextoNatalidade.POS_NATAL)
-  @IsNotEmpty({ message: 'Número da certidão de nascimento é obrigatório no contexto pós-natal' })
+  @IsNotEmpty({
+    message:
+      'Número da certidão de nascimento é obrigatório no contexto pós-natal',
+  })
   @IsString({ message: 'Número da certidão deve ser uma string válida' })
   numero_certidao_nascimento?: string;
 
@@ -179,7 +183,7 @@ export class DadosNatalidade {
    */
   estaNoPrazoSolicitacao(prazoMaximoDias: number = 30): boolean {
     const hoje = new Date();
-    
+
     if (this.tipo_contexto === TipoContextoNatalidade.PRE_NATAL) {
       if (!this.data_provavel_parto) {
         return false;
@@ -188,7 +192,7 @@ export class DadosNatalidade {
       dataLimite.setDate(dataLimite.getDate() + prazoMaximoDias);
       return hoje <= dataLimite;
     }
-    
+
     if (this.tipo_contexto === TipoContextoNatalidade.POS_NATAL) {
       if (!this.data_nascimento) {
         return false;
@@ -197,7 +201,7 @@ export class DadosNatalidade {
       dataLimite.setDate(dataLimite.getDate() + 30); // Máximo 30 dias após nascimento
       return hoje <= dataLimite;
     }
-    
+
     return false;
   }
 
@@ -219,16 +223,19 @@ export class DadosNatalidade {
    * Verifica se está dentro do prazo de 30 dias para contexto pós-natal
    */
   estaDentroPrazoRecemNascido(): boolean {
-    if (this.tipo_contexto !== TipoContextoNatalidade.POS_NATAL || !this.data_nascimento) {
+    if (
+      this.tipo_contexto !== TipoContextoNatalidade.POS_NATAL ||
+      !this.data_nascimento
+    ) {
       return false;
     }
-    
+
     const hoje = new Date();
     const dataNascimento = new Date(this.data_nascimento);
     const diasDiferenca = Math.floor(
-      (hoje.getTime() - dataNascimento.getTime()) / (1000 * 60 * 60 * 24)
+      (hoje.getTime() - dataNascimento.getTime()) / (1000 * 60 * 60 * 24),
     );
-    
+
     return diasDiferenca >= 0 && diasDiferenca <= 30;
   }
 
@@ -249,9 +256,11 @@ export class DadosNatalidade {
     // Validações específicas por contexto
     if (this.tipo_contexto === TipoContextoNatalidade.PRE_NATAL) {
       if (!this.data_provavel_parto) {
-        erros.push('Data provável do parto é obrigatória no contexto pré-natal');
+        erros.push(
+          'Data provável do parto é obrigatória no contexto pré-natal',
+        );
       }
-      
+
       if (this.realiza_pre_natal && !this.atendida_psf_ubs) {
         erros.push(
           'Quando realiza pré-natal, deve informar se é atendida pelo PSF/UBS',
@@ -263,18 +272,22 @@ export class DadosNatalidade {
       if (!this.data_nascimento) {
         erros.push('Data de nascimento é obrigatória no contexto pós-natal');
       }
-      
+
       if (!this.nome_recem_nascido?.trim()) {
         erros.push('Nome do recém-nascido é obrigatório no contexto pós-natal');
       }
-      
+
       if (!this.numero_certidao_nascimento?.trim()) {
-        erros.push('Número da certidão de nascimento é obrigatório no contexto pós-natal');
+        erros.push(
+          'Número da certidão de nascimento é obrigatório no contexto pós-natal',
+        );
       }
-      
+
       // Verificar se está dentro do prazo de 30 dias
       if (!this.estaDentroPrazoRecemNascido()) {
-        erros.push('Solicitação deve ser feita em até 30 dias após o nascimento');
+        erros.push(
+          'Solicitação deve ser feita em até 30 dias após o nascimento',
+        );
       }
     }
 

@@ -38,6 +38,10 @@ import {
   TipoBeneficio,
   Unidade,
   Usuario,
+  ComposicaoFamiliar,
+  Concessao,
+  Pagamento,
+  Pendencia,
 } from '../../entities';
 
 // Módulos externos
@@ -80,6 +84,10 @@ import { RequestContextHolder } from '../../common/services/request-context-hold
       MetricaConfiguracao,
       // Entidades para dashboard
       Solicitacao,
+      Concessao,
+      ComposicaoFamiliar,
+      Pagamento,
+      Pendencia,
       Recurso,
       TipoBeneficio,
       Unidade,

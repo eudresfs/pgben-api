@@ -2,16 +2,18 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
  * Migration para atualizar a estrutura da tabela dados_natalidade
- * 
+ *
  * Adiciona:
  * - Enum TipoContextoNatalidade para diferenciar contextos pré-natal e pós-natal
  * - Campos específicos para contexto pós-natal (data_nascimento, nome_recem_nascido, etc.)
  * - Ajustes nos campos existentes para alinhamento com a entidade
- * 
+ *
  * Esta migration alinha a estrutura do banco de dados com a entidade DadosNatalidade,
  * permitindo o uso completo dos contextos pré-natal e pós-natal do benefício de Auxílio Natalidade.
  */
-export class UpdateDadosNatalidadeSchema1750950000000 implements MigrationInterface {
+export class UpdateDadosNatalidadeSchema1750950000000
+  implements MigrationInterface
+{
   name = 'UpdateDadosNatalidadeSchema1750950000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
