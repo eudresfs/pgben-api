@@ -57,7 +57,7 @@ jobs:
             kubectl patch deployment $DEPLOYMENT_NAME -n $K8S_NAMESPACE -p '{"spec":{"template":{"spec":{"imagePullSecrets":[{"name":"cpr"}]}}}}'
           else
             echo "Deployment exists, updating image..."
-            kubectl -n $K8S_NAMESPACE set image deployment/$DEPLOYMENT_NAME $DEPLOYMENT_NAME=$CONTAINER_PATH --record
+            kubectl -n $K8S_NAMESPACE set image deployment/$DEPLOYMENT_NAME $CONTAINER_NAME=$CONTAINER_PATH --record
           fi
           
           echo "Aguardando rollout do deployment (timeout aumentado para 15 minutos)..."
