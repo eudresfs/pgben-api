@@ -552,6 +552,14 @@ export class CidadaoResponseDto {
   @Expose()
   @Type(() => UnidadeResponseDto)
   unidade?: UnidadeResponseDto;
+
+  @ApiPropertyOptional({
+    example: false,
+    description: 'Indica se o cidadão foi encontrado através do CPF de um membro da composição familiar',
+    type: 'boolean',
+  })
+  @Expose()
+  encontrado_por_composicao_familiar?: boolean;
 }
 
 export class CidadaoPaginatedResponseDto {

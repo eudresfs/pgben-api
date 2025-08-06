@@ -63,7 +63,7 @@ export class CidadaoRepository extends ScopedRepository<Cidadao> {
       query.andWhere('cidadao.unidade_id = :unidade_id', { unidade_id });
     }
 
-    // Busca por nome/CPF/NIS - melhorada
+    // Busca por nome/CPF/NIS - melhorada com flag de composição familiar
     if (search && search.trim() !== '') {
       const searchTerm = search.trim();
       const searchClean = searchTerm.replace(/\D/g, ''); // Remove formatação para CPF/NIS
@@ -103,6 +103,20 @@ export class CidadaoRepository extends ScopedRepository<Cidadao> {
       if (conditions.length > 0) {
         query.andWhere(`(${conditions.join(' OR ')})`, parameters);
       }
+
+      // Adicionar flag para identificar se foi encontrado por composição familiar
+      // Só adiciona a flag quando há busca por CPF (searchClean tem dígitos)
+      if (searchClean.length > 0) {
+        query.addSelect(
+          `CASE 
+            WHEN composicao_familiar_search.cpf IS NOT NULL 
+            AND cidadao.cpf != '${searchClean}' 
+            THEN true 
+            ELSE false 
+          END`,
+          'encontrado_por_composicao_familiar'
+        );
+      }
     }
 
     // Filtro por bairro (nova estrutura normalizada)
@@ -134,6 +148,80 @@ export class CidadaoRepository extends ScopedRepository<Cidadao> {
       );
     }
 
+    // Quando há busca por CPF, precisamos usar getRawAndEntities para obter a flag calculada
+    if (search && search.trim() !== '' && search.replace(/\D/g, '').length > 0) {
+      const result = await query
+        .orderBy('cidadao.created_at', 'DESC')
+        .skip(skip)
+        .take(Math.min(take, 100))
+        .getRawAndEntities();
+      
+      const rawResults = result.raw;
+      const entities = result.entities;
+
+      // Mapear a flag calculada para as entidades
+      const entitiesWithFlag = entities.map((entity, index) => {
+        const rawResult = rawResults[index];
+        if (rawResult && rawResult.encontrado_por_composicao_familiar !== undefined) {
+          (entity as any).encontrado_por_composicao_familiar = rawResult.encontrado_por_composicao_familiar;
+        }
+        return entity;
+      });
+
+      // Para obter o count total, fazemos uma query separada
+      const countQuery = this.createScopedQueryBuilder('cidadao');
+      
+      if (unidade_id) {
+        countQuery.andWhere('cidadao.unidade_id = :unidade_id', { unidade_id });
+      }
+
+      const searchTerm = search.trim();
+      const searchClean = searchTerm.replace(/\D/g, '');
+      const conditions: string[] = [];
+      const parameters: any = {};
+
+      conditions.push('LOWER(cidadao.nome) LIKE LOWER(:searchName)');
+      parameters.searchName = `%${searchTerm}%`;
+
+      if (searchClean.length > 0) {
+        conditions.push('cidadao.cpf LIKE :searchCpf');
+        parameters.searchCpf = `%${searchClean}%`;
+        
+        // Adicionar busca na composição familiar
+        countQuery.leftJoin(
+          'cidadao.composicao_familiar',
+          'composicao_familiar_count',
+          'composicao_familiar_count.cpf = :searchCleanCount',
+          { searchCleanCount: searchClean }
+        );
+        conditions.push('composicao_familiar_count.cpf = :searchCpfFamiliar');
+        parameters.searchCpfFamiliar = searchClean;
+      }
+
+      if (searchClean.length > 0) {
+        conditions.push('cidadao.nis LIKE :searchNis');
+        parameters.searchNis = `%${searchClean}%`;
+      }
+
+      if (conditions.length > 0) {
+        countQuery.andWhere(`(${conditions.join(' OR ')})`, parameters);
+      }
+
+      if (bairro && bairro.trim() !== '') {
+        countQuery
+          .leftJoin('cidadao.enderecos', 'endereco_count')
+          .andWhere('endereco_count.bairro ILIKE :bairroCount', {
+            bairroCount: `%${bairro.trim()}%`,
+          })
+          .andWhere('endereco_count.data_fim_vigencia IS NULL');
+      }
+
+      const total = await countQuery.getCount();
+      
+      return [entitiesWithFlag, total];
+    }
+
+    // Para buscas sem CPF, usar o método normal
     return query
       .orderBy('cidadao.created_at', 'DESC')
       .skip(skip)
