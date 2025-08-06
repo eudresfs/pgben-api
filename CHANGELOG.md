@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.5](https://github.com/kemosoft-team/pgben-server/compare/v0.1.4...v0.1.5) (2025-08-06)
+
+
+### Features
+
+* **documento:** add office document conversion and thumbnail improvements ([0d2827e](https://github.com/kemosoft-team/pgben-server/commit/0d2827e15a1614276c502d9fd37e8085561f86a6))
+
 ### [0.1.4](https://github.com/kemosoft-team/pgben-server/compare/v0.1.3...v0.1.4) (2025-08-06)
 
 
