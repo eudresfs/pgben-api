@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, Inject, Optional } from '@nestjs/common';
 import { LoggingService } from '../../../shared/logging/logging.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository, DeepPartial, ILike, Not, In } from 'typeorm';
@@ -26,6 +26,7 @@ import {
 } from '../../../shared/exceptions/error-catalog/domains/usuario.errors';
 import { throwDuplicateCpf } from '../../../shared/exceptions/error-catalog/domains/cidadao.errors';
 import { EmailService } from '../../../common/services/email.service';
+import { INotificationManagerService, NOTIFICATION_MANAGER_SERVICE } from '../../notificacao/interfaces/notification-manager.interface';
 
 /**
  * Serviço de usuários
@@ -42,9 +43,9 @@ export class UsuarioService {
   constructor(
     private readonly dataSource: DataSource,
     private readonly usuarioRepository: UsuarioRepository,
-    // private readonly notificationManager: NotificationManagerService,
-    // @InjectRepository(NotificationTemplate)
-    // private readonly templateRepository: Repository<NotificationTemplate>,
+    @Optional()
+    @Inject(NOTIFICATION_MANAGER_SERVICE)
+    private readonly notificationManager: INotificationManagerService,
     @InjectRepository(Role)
     private readonly roleRepository: Repository<Role>,
     private readonly emailService: EmailService,
@@ -405,13 +406,6 @@ export class UsuarioService {
 
       // ------------ Pós-transação: eventos e e-mail ------------
       if (senhaGerada) {
-        this.eventEmitter.emit('user.created.first-access', {
-          userId: usuarioSalvo.id,
-          email: usuarioSalvo.email,
-          nome: usuarioSalvo.nome,
-          senha: senhaParaUso,
-          timestamp: new Date(),
-        });
         await this.enviarCredenciaisPorEmail(usuarioSalvo, senhaParaUso);
       } else {
         this.eventEmitter.emit('user.created.email-validation', {

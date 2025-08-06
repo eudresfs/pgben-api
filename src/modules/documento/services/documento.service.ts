@@ -24,6 +24,7 @@ import {
   DocumentoAuditService,
   DocumentoAuditContext,
 } from './documento-audit.service';
+import { AuditContextHolder } from '../../../common/interceptors/audit-context.interceptor';
 import { DocumentoPathService } from './documento-path.service';
 import {
   DocumentoUploadValidationService,
@@ -92,6 +93,25 @@ export class DocumentoService {
       'DOCUMENTO_RETRY_DELAY',
       1000,
     );
+  }
+
+  /**
+   * Obtém o contexto de auditoria com fallback seguro
+   * @param userId ID do usuário
+   * @returns Contexto de auditoria completo
+   */
+  private getAuditContext(userId: string): DocumentoAuditContext {
+    const context = AuditContextHolder.get();
+    
+    // Gera um UUID válido para usuários anônimos
+    const validUserId = userId === 'anonymous' ? '00000000-0000-0000-0000-000000000000' : userId;
+    
+    return {
+      userId: validUserId,
+      userRoles: context?.userRoles || [],
+      ip: context?.ip || 'unknown',
+      userAgent: context?.userAgent || 'unknown'
+    };
   }
 
   /**
@@ -205,6 +225,21 @@ export class DocumentoService {
     try {
       const buffer = await storageProvider.obterArquivo(documento.caminho);
 
+      // Auditoria do download com contexto completo
+      await this.auditService.auditAccess(
+        this.getAuditContext(usuarioId || '00000000-0000-0000-0000-000000000000'),
+        {
+          documentoId: documento.id,
+          filename: documento.nome_original,
+          mimetype: documento.mimetype,
+          fileSize: documento.tamanho,
+          cidadaoId: documento.cidadao_id,
+          solicitacaoId: documento.solicitacao_id,
+          accessType: 'download',
+          success: true,
+        },
+      );
+
       this.logger.info(
         `Download realizado com sucesso para documento ${id}`,
         DocumentoService.name,
@@ -217,6 +252,22 @@ export class DocumentoService {
         nomeOriginal: documento.nome_original,
       };
     } catch (error) {
+      // Auditoria de falha no download
+      await this.auditService.auditAccess(
+        this.getAuditContext(usuarioId || '00000000-0000-0000-0000-000000000000'),
+        {
+          documentoId: documento.id,
+          filename: documento.nome_original,
+          mimetype: documento.mimetype,
+          fileSize: documento.tamanho,
+          cidadaoId: documento.cidadao_id,
+          solicitacaoId: documento.solicitacao_id,
+          accessType: 'download',
+          success: false,
+          errorReason: error.message,
+        },
+      );
+
       // Log estruturado do erro para rastreabilidade
       this.logger.error(
         `Falha no download do documento ${id}`,
@@ -337,14 +388,9 @@ export class DocumentoService {
           DocumentoService.name,
         );
 
-        // Auditar reutilização
+        // Auditar reutilização com contexto completo
         await this.auditService.auditAccess(
-          {
-            userId: usuarioId,
-            userRoles: [], // TODO: Implementar roles
-            ip: 'unknown', // TODO: Capturar IP
-            userAgent: 'unknown', // TODO: Capturar User Agent
-          },
+          this.getAuditContext(usuarioId),
           {
             documentoId: reuseCheck.existingDocument.id,
             filename: reuseCheck.existingDocument.nome_original,
@@ -352,7 +398,7 @@ export class DocumentoService {
             fileSize: reuseCheck.existingDocument.tamanho,
             cidadaoId: reuseCheck.existingDocument.cidadao_id,
             solicitacaoId: reuseCheck.existingDocument.solicitacao_id,
-            accessType: 'upload',
+            accessType: 'view',
             success: true,
           },
         );
@@ -411,14 +457,9 @@ export class DocumentoService {
         DocumentoService.name,
       );
 
-      // 8. Auditoria do upload
+      // 8. Auditoria do upload com contexto completo
       await this.auditService.auditUpload(
-        {
-          userId: usuarioId,
-          userRoles: [], // TODO: Implementar roles
-          ip: 'unknown', // TODO: Capturar IP
-          userAgent: 'unknown', // TODO: Capturar User Agent
-        },
+        this.getAuditContext(usuarioId),
         {
           documentoId: savedDocument.id,
           operationType: 'upload',
@@ -426,7 +467,7 @@ export class DocumentoService {
             fileName: arquivo.originalname,
             fileSize: arquivo.size,
             mimetype: arquivo.mimetype,
-            uploadId: validation.uploadId || 'unknown',
+            uploadId: validation.uploadId || 'unknown'
           },
           success: true,
         },
@@ -440,6 +481,24 @@ export class DocumentoService {
 
       return savedDocument;
     } catch (error) {
+      // Auditoria de falha no upload
+      await this.auditService.auditUpload(
+        this.getAuditContext(usuarioId),
+        {
+          documentoId: 'unknown',
+          operationType: 'upload',
+          operationDetails: {
+            fileName: arquivo.originalname,
+            fileSize: arquivo.size,
+            mimetype: arquivo.mimetype,
+            errorType: error.constructor.name,
+            errorMessage: error.message
+          },
+          errorDetails: error.message,
+          success: false,
+        },
+      );
+
       // Cleanup em caso de erro usando o serviço especializado
       if (caminhoArmazenamento) {
         try {
@@ -488,6 +547,23 @@ export class DocumentoService {
 
     const documentoAtualizado = await this.documentoRepository.save(documento);
 
+    // Auditoria da verificação
+    await this.auditService.auditUpload(
+      this.getAuditContext(usuarioId),
+      {
+        documentoId: documento.id,
+        operationType: 'verify',
+        operationDetails: {
+          fileName: documento.nome_original,
+          fileSize: documento.tamanho,
+          mimetype: documento.mimetype,
+          observacoes: observacoes,
+          dataVerificacao: documento.data_verificacao,
+        },
+        success: true,
+      },
+    );
+
     return this.documentoRepository
       .createQueryBuilder('documento')
       .leftJoinAndSelect('documento.usuario_upload', 'usuario_upload')
@@ -505,7 +581,27 @@ export class DocumentoService {
     documento.removed_at = new Date();
     // Nota: removed_by não está definido na entidade, seria necessário adicionar se precisar
 
-    return this.documentoRepository.save(documento);
+    const documentoRemovido = await this.documentoRepository.save(documento);
+
+    // Auditoria da remoção
+    await this.auditService.auditUpload(
+      this.getAuditContext(usuarioId),
+      {
+        documentoId: documento.id,
+        operationType: 'delete',
+        operationDetails: {
+          fileName: documento.nome_original,
+          fileSize: documento.tamanho,
+          mimetype: documento.mimetype,
+          dataRemocao: documento.removed_at,
+          cidadaoId: documento.cidadao_id,
+          solicitacaoId: documento.solicitacao_id,
+        },
+        success: true,
+      },
+    );
+
+    return documentoRemovido;
   }
 
   /**

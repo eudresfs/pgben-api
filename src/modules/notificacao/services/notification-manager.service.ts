@@ -19,6 +19,7 @@ import { CreateNotificationTemplateDto } from '../dto/create-notification-templa
 import { EmailService } from '../../../common/services/email.service';
 import { NOTIFICATION_CREATED } from '../events/notification.events';
 import { NotificationCreatedEvent } from '../events/notification-created.event';
+import { INotificationManagerService } from '../interfaces/notification-manager.interface';
 
 /**
  * Serviço Gerenciador de Notificações
@@ -27,7 +28,7 @@ import { NotificationCreatedEvent } from '../events/notification-created.event';
  * de notificações através dos diferentes canais disponíveis
  */
 @Injectable()
-export class NotificationManagerService implements OnModuleInit {
+export class NotificationManagerService implements OnModuleInit, INotificationManagerService {
   private readonly logger = new Logger(NotificationManagerService.name);
   private canaisNotificacao: Map<string, CanalNotificacao> = new Map();
 

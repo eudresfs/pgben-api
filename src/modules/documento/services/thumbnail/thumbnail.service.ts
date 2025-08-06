@@ -12,6 +12,7 @@ import {
   mergeConfig,
   validateConfig,
 } from './thumbnail.config';
+import { OfficeConverterService } from '../office-converter/office-converter.service';
 
 /**
  * Interface para padronizar retornos de geração de thumbnails
@@ -61,6 +62,7 @@ export class ThumbnailService implements OnModuleInit {
 
   constructor(
     private readonly storageProviderFactory: StorageProviderFactory,
+    private readonly officeConverterService: OfficeConverterService,
     customConfig?: Partial<ThumbnailConfig>,
   ) {
     // Mesclar configuração personalizada com a padrão
@@ -338,7 +340,7 @@ export class ThumbnailService implements OnModuleInit {
   }
 
   /**
-   * Método de fallback para geração de thumbnail PDF usando pdf-thumbnail
+   * Método de fallback para geração de thumbnail PDF usando ImageMagick diretamente
    * @param pdfBuffer Buffer do PDF
    * @returns Buffer do thumbnail
    */
@@ -347,7 +349,7 @@ export class ThumbnailService implements OnModuleInit {
   ): Promise<Buffer> {
     const startTime = Date.now();
     this.logger.debug(
-      'Iniciando método de fallback para geração de thumbnail PDF',
+      'Iniciando método de fallback para geração de thumbnail PDF usando ImageMagick',
     );
 
     // Validação de tamanho do buffer
@@ -358,306 +360,28 @@ export class ThumbnailService implements OnModuleInit {
       return this.getDefaultThumbnail('pdf');
     }
 
-    // Verificar se a biblioteca pdf-thumbnail está disponível
+    // Usar ImageMagick diretamente (biblioteca pdf-thumbnail removida devido a problemas de compatibilidade)
+    this.logger.debug('Gerando thumbnail usando ImageMagick diretamente...');
     try {
-      const pdfThumbnail = require('pdf-thumbnail');
-      this.logger.debug('Biblioteca pdf-thumbnail carregada com sucesso');
-    } catch (error) {
-      this.logger.error(
-        'Erro ao carregar biblioteca pdf-thumbnail:',
-        error.message,
+      const thumbnailBuffer = await this.generatePdfThumbnailWithImageMagick(pdfBuffer);
+      const processingTime = Date.now() - startTime;
+      this.logger.debug(
+        `Thumbnail PDF fallback gerado com sucesso usando ImageMagick - Tamanho: ${thumbnailBuffer.length} bytes, Tempo: ${processingTime}ms`,
       );
-      return this.getDefaultThumbnail('pdf');
-    }
-
-    // Configurações simplificadas para melhor compatibilidade
-    const configs = [
-      // Configuração mais básica possível
-      {},
-      // Configuração simples com qualidade
-      {
-        quality: 80,
-      },
-      // Configuração com formato específico
-      {
-        format: 'jpeg',
-        quality: 75,
-      },
-      // Configuração com dimensões básicas
-      {
-        width: 200,
-        height: 200,
-        quality: 70,
-      },
-      // Configuração legada (mantida para compatibilidade)
-      {
-        compress: {
-          type: 'JPEG',
-          quality: 60,
-        },
-      },
-    ];
-
-    let lastError: Error;
-
-    for (let i = 0; i < configs.length; i++) {
-      try {
-        this.logger.debug(
-          `Tentativa ${i + 1}/${configs.length} de geração de thumbnail PDF fallback`,
-          configs[i],
-        );
-
-        // Implementar timeout para cada tentativa
-        const thumbnailPromise = this.generatePdfThumbnailWithPdfThumbnail(
-          pdfBuffer,
-          configs[i],
-        );
-        const timeoutPromise = new Promise<Buffer>((_, reject) => {
-          setTimeout(() => {
-            reject(
-              new Error(
-                `Timeout na tentativa ${i + 1} (${RESOURCE_LIMITS.MAX_PROCESSING_TIME}ms)`,
-              ),
-            );
-          }, RESOURCE_LIMITS.MAX_PROCESSING_TIME);
-        });
-
-        const thumbnailBuffer = await Promise.race([
-          thumbnailPromise,
-          timeoutPromise,
-        ]);
-
-        if (thumbnailBuffer && thumbnailBuffer.length > 0) {
-          this.logger.debug(
-            `Thumbnail PDF fallback gerado com sucesso na tentativa ${i + 1}, tamanho: ${thumbnailBuffer.length} bytes`,
-          );
-          return thumbnailBuffer;
-        } else {
-          this.logger.warn(
-            `Tentativa ${i + 1} de fallback resultou em thumbnail vazio`,
-          );
-        }
-      } catch (error) {
-        lastError = error;
-        this.logger.warn(
-          `Tentativa ${i + 1} de geração de thumbnail PDF fallback falhou: ${error.message}`,
-        );
-
-        if (i === configs.length - 1) {
-          this.logger.error(
-            'Todas as tentativas de geração de thumbnail PDF fallback falharam',
-          );
-        }
-      }
-    }
-
-    // Última tentativa: usar ImageMagick diretamente
-    this.logger.debug('Tentando última abordagem: ImageMagick direto...');
-    try {
-      return await this.generatePdfThumbnailWithImageMagick(pdfBuffer);
+      return thumbnailBuffer;
     } catch (imageMagickError) {
       this.logger.error(
-        `ImageMagick direto também falhou: ${imageMagickError.message}`,
+        `ImageMagick falhou na geração de thumbnail: ${imageMagickError.message}`,
+        imageMagickError.stack,
       );
-      lastError = imageMagickError;
+      
+      this.logger.warn('Fallback para ImageMagick falhou, usando thumbnail padrão');
+      return this.getDefaultThumbnail('pdf');
     }
-
-    this.logger.error(
-      'Todas as tentativas de geração de thumbnail PDF fallback falharam, incluindo ImageMagick direto',
-    );
-    this.logger.warn('Fallback falhou completamente, usando thumbnail padrão');
-    return this.getDefaultThumbnail('pdf');
   }
 
-  /**
-   * Gera thumbnail do PDF usando a biblioteca pdf-thumbnail com configuração específica
-   * @param pdfBuffer Buffer do PDF
-   * @param config Configuração para geração do thumbnail
-   * @returns Promise<Buffer> Buffer do thumbnail gerado
-   */
-  private async generatePdfThumbnailWithPdfThumbnail(
-    pdfBuffer: Buffer,
-    config: any,
-  ): Promise<Buffer> {
-    return new Promise(async (resolve, reject) => {
-      let timeoutId: NodeJS.Timeout | null = null;
-      let isResolved = false;
-
-      const cleanup = () => {
-        if (timeoutId) {
-          clearTimeout(timeoutId);
-          timeoutId = null;
-        }
-      };
-
-      const safeResolve = (value: Buffer) => {
-        if (!isResolved) {
-          isResolved = true;
-          cleanup();
-          resolve(value);
-        }
-      };
-
-      const safeReject = (error: Error) => {
-        if (!isResolved) {
-          isResolved = true;
-          cleanup();
-          reject(error);
-        }
-      };
-
-      timeoutId = setTimeout(() => {
-        safeReject(
-          new Error(
-            `Timeout na geração de thumbnail (${RESOURCE_LIMITS.MAX_PROCESSING_TIME}ms)`,
-          ),
-        );
-      }, RESOURCE_LIMITS.MAX_PROCESSING_TIME);
-
-      try {
-        this.logger.debug(
-          'Carregando biblioteca pdf-thumbnail para geração...',
-        );
-        const pdfThumbnail = require('pdf-thumbnail');
-
-        // Validar buffer do PDF
-        if (!this.isValidPdf(pdfBuffer)) {
-          reject(new Error('Buffer não é um PDF válido'));
-          return;
-        }
-
-        this.logger.debug('Iniciando geração com pdf-thumbnail...', {
-          bufferSize: pdfBuffer.length,
-          config: JSON.stringify(config),
-          pdfValid: true,
-        });
-
-        let result;
-
-        // Tentar diferentes abordagens de chamada com verificações mais rigorosas
-        try {
-          // Primeira tentativa: configuração mais simples possível
-          this.logger.debug('Tentativa 1: Configuração mais simples');
-          result = await pdfThumbnail(pdfBuffer, {
-            compress: {
-              type: 'JPEG',
-              quality: 70,
-            },
-          });
-
-          // Verificar imediatamente se o resultado é válido
-          if (!result || (result.pipe && result.readableLength === 0)) {
-            throw new Error('Resultado inválido ou stream vazio');
-          }
-        } catch (configError) {
-          this.logger.warn('Tentativa 1 falhou:', configError.message);
-
-          try {
-            // Segunda tentativa: apenas com qualidade
-            this.logger.debug('Tentativa 2: Apenas qualidade');
-            result = await pdfThumbnail(pdfBuffer, { quality: 70 });
-
-            if (!result || (result.pipe && result.readableLength === 0)) {
-              throw new Error('Resultado inválido ou stream vazio');
-            }
-          } catch (qualityError) {
-            this.logger.warn('Tentativa 2 falhou:', qualityError.message);
-
-            try {
-              // Terceira tentativa: sem configuração
-              this.logger.debug('Tentativa 3: Sem configuração');
-              result = await pdfThumbnail(pdfBuffer);
-
-              if (!result || (result.pipe && result.readableLength === 0)) {
-                throw new Error('Resultado inválido ou stream vazio');
-              }
-            } catch (noConfigError) {
-              this.logger.warn('Tentativa 3 falhou:', noConfigError.message);
-
-              // Quarta tentativa: forçar formato específico
-              this.logger.debug('Tentativa 4: Formato específico');
-              result = await pdfThumbnail(pdfBuffer, {
-                format: 'jpeg',
-                width: 200,
-                height: 200,
-              });
-            }
-          }
-        }
-
-        this.logger.debug('pdf-thumbnail retornou resultado:', {
-          hasResult: !!result,
-          resultType: typeof result,
-          isBuffer: Buffer.isBuffer(result),
-          resultLength: result ? result.length : 0,
-          resultConstructor: result ? result.constructor.name : 'null',
-        });
-
-        // Verificar se o resultado é um buffer válido
-        if (!result) {
-          reject(new Error('pdf-thumbnail retornou resultado nulo'));
-          return;
-        }
-
-        let thumbnailBuffer: Buffer;
-
-        // Se o resultado já é um buffer, usar diretamente
-        if (Buffer.isBuffer(result)) {
-          thumbnailBuffer = result;
-        } else if (result.pipe && typeof result.pipe === 'function') {
-          // Se é um stream, verificar se tem dados antes de converter
-          this.logger.debug('Verificando stream antes da conversão...');
-
-          // Verificar se o stream tem dados disponíveis
-          if (result.readable === false && result.readableLength === 0) {
-            this.logger.warn('Stream não tem dados disponíveis');
-            reject(new Error('Stream retornado pelo pdf-thumbnail está vazio'));
-            return;
-          }
-
-          this.logger.debug('Convertendo stream para buffer...');
-          thumbnailBuffer = await this.streamToBuffer(result);
-        } else if (result.data && Buffer.isBuffer(result.data)) {
-          // Alguns casos onde o resultado vem encapsulado
-          this.logger.debug('Extraindo buffer de result.data...');
-          thumbnailBuffer = result.data;
-        } else {
-          reject(
-            new Error(
-              `Resultado do pdf-thumbnail não é um buffer nem stream válido. Tipo: ${typeof result}, Constructor: ${result.constructor.name}`,
-            ),
-          );
-          return;
-        }
-
-        // Verificar se o thumbnail gerado não está vazio
-        if (!thumbnailBuffer || thumbnailBuffer.length === 0) {
-          reject(new Error('Thumbnail gerado está vazio'));
-          return;
-        }
-
-        // Validar se o buffer gerado é uma imagem válida
-        if (!this.isValidImageBuffer(thumbnailBuffer)) {
-          this.logger.warn(
-            'Buffer gerado não parece ser uma imagem válida, mas continuando...',
-          );
-        }
-
-        this.logger.debug(
-          `Thumbnail gerado com sucesso usando pdf-thumbnail - Tamanho: ${thumbnailBuffer.length} bytes`,
-        );
-        safeResolve(thumbnailBuffer);
-      } catch (error) {
-        this.logger.error('Erro na geração com pdf-thumbnail:', {
-          errorMessage: error.message,
-          errorName: error.name,
-          bufferSize: pdfBuffer.length,
-          config: JSON.stringify(config),
-        });
-        safeReject(error);
-      }
-    });
-  }
+  // Método generatePdfThumbnailWithPdfThumbnail removido - biblioteca pdf-thumbnail descontinuada
+  // devido a problemas de compatibilidade. Usar generatePdfThumbnailWithImageMagick diretamente.
 
   /**
    * Gera thumbnail de PDF usando ImageMagick diretamente via linha de comando
@@ -689,7 +413,8 @@ export class ThumbnailService implements OnModuleInit {
       this.logger.debug(`PDF salvo temporariamente: ${tempPdfPath}`);
 
       // Comando ImageMagick para converter PDF para thumbnail (usando caminhos sanitizados)
-      const command = `magick convert "${tempPdfPath}[0]" -thumbnail 200x200 -quality 75 -background white -alpha remove "${tempJpgPath}"`;
+      // Usando 'magick' em vez de 'convert' para evitar warnings de depreciação no IMv7
+      const command = `magick "${tempPdfPath}[0]" -thumbnail 200x200 -quality 75 -background white -alpha remove "${tempJpgPath}"`;
 
       this.logger.debug(`Executando comando: ${command}`);
 
@@ -750,16 +475,8 @@ export class ThumbnailService implements OnModuleInit {
     }
   }
 
-  /**
-   * Método legado mantido para compatibilidade
-   * @deprecated Use generatePdfThumbnailWithPdfThumbnail instead
-   */
-  private async generatePdfThumbnailWithConfig(
-    pdfBuffer: Buffer,
-    config: any,
-  ): Promise<Buffer> {
-    return this.generatePdfThumbnailWithPdfThumbnail(pdfBuffer, config);
-  }
+  // Método generatePdfThumbnailWithConfig removido - biblioteca pdf-thumbnail descontinuada
+  // devido a problemas de compatibilidade. Usar generatePdfThumbnailWithImageMagick diretamente.
 
   /**
    * Gera thumbnail para imagens com configurações otimizadas
@@ -981,15 +698,70 @@ export class ThumbnailService implements OnModuleInit {
    * Gera thumbnail para documentos Office
    * @param buffer Buffer do documento
    * @param type Tipo do documento (docx, xlsx, etc.)
-   * @returns Buffer do thumbnail padrão
+   * @returns Buffer do thumbnail
    */
   private async generateDocumentThumbnail(
     buffer: Buffer,
     type: string,
   ): Promise<Buffer> {
-    // Para documentos Office, usamos thumbnails padrão por enquanto
-    // TODO: Implementar conversão real usando LibreOffice ou similar
-    return this.getDefaultThumbnail(type);
+    const startTime = Date.now();
+
+    try {
+      this.logger.debug(
+        `Iniciando geração de thumbnail para documento ${type} - Tamanho: ${buffer.length} bytes`,
+      );
+
+      // Validação de entrada
+      if (!buffer || buffer.length === 0) {
+        throw new Error('Buffer do documento está vazio');
+      }
+
+      if (buffer.length > RESOURCE_LIMITS.MAX_BUFFER_SIZE) {
+        this.logger.warn(
+          `Documento ${type} muito grande (${buffer.length} bytes), usando thumbnail padrão`,
+        );
+        return this.getDefaultThumbnail(type);
+      }
+
+      // Determinar tipo MIME baseado na extensão
+       const mimeType = this.getMimeTypeFromExtension(type);
+       
+       if (!mimeType) {
+         throw new Error(`Tipo de arquivo não suportado: ${type}`);
+       }
+
+       // Tentar conversão para PDF usando OfficeConverterService
+       const conversionResult = await this.officeConverterService.convertToPdf(
+         buffer,
+         mimeType,
+       );
+
+       if (conversionResult.success && conversionResult.pdfBuffer) {
+         // Se a conversão foi bem-sucedida, gerar thumbnail do PDF
+         const pdfThumbnail = await this.generatePdfThumbnail(
+           conversionResult.pdfBuffer,
+         );
+
+         const processingTime = Date.now() - startTime;
+         this.logger.debug(
+           `Thumbnail de documento ${type} gerado via PDF - Original: ${buffer.length} bytes, PDF: ${conversionResult.convertedSize} bytes, Thumbnail: ${pdfThumbnail.length} bytes, Tempo: ${processingTime}ms`,
+         );
+
+         return pdfThumbnail;
+       } else {
+         throw new Error(
+           conversionResult.error || 'Conversão para PDF falhou',
+         );
+       }
+    } catch (error) {
+      const processingTime = Date.now() - startTime;
+      this.logger.warn(
+        `Falha na conversão de documento ${type}, usando thumbnail padrão: ${error.message} (Tempo: ${processingTime}ms)`,
+      );
+
+      // Fallback para thumbnail padrão
+      return this.getDefaultThumbnail(type);
+    }
   }
 
   /**
@@ -1327,6 +1099,29 @@ export class ThumbnailService implements OnModuleInit {
     }
 
     return false;
+  }
+
+  /**
+   * Obtém o tipo MIME baseado na extensão do arquivo
+   * @param extension Extensão do arquivo
+   * @returns Tipo MIME correspondente ou null se não suportado
+   */
+  private getMimeTypeFromExtension(extension: string): string | null {
+    const extensionToMime: Record<string, string> = {
+      'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      'doc': 'application/msword',
+      'xls': 'application/vnd.ms-excel',
+      'ppt': 'application/vnd.ms-powerpoint',
+      'odt': 'application/vnd.oasis.opendocument.text',
+      'ods': 'application/vnd.oasis.opendocument.spreadsheet',
+      'odp': 'application/vnd.oasis.opendocument.presentation',
+      'rtf': 'text/rtf',
+    };
+    
+    const normalizedExtension = extension.toLowerCase().replace('.', '');
+    return extensionToMime[normalizedExtension] || null;
   }
 
   /**

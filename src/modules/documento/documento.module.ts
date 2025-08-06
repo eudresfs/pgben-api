@@ -32,6 +32,7 @@ import { DocumentoRateLimitMiddleware } from './middleware/documento-rate-limit.
 import { DocumentoPathService } from './services/documento-path.service';
 import { CacheModule } from '../../shared/cache/cache.module';
 
+
 // Novos serviços especializados de upload
 import {
   DocumentoUploadValidationService,
@@ -46,6 +47,9 @@ import {
 import { ThumbnailService } from './services/thumbnail/thumbnail.service';
 import { ThumbnailQueueService } from './services/thumbnail/thumbnail-queue.service';
 import { ThumbnailFacadeService } from './services/thumbnail/thumbnail-facade.service';
+
+// Serviços de conversão de documentos Office
+import { OfficeConverterService } from './services/office-converter/office-converter.service';
 
 // Serviços de download em lote
 import { BatchJobManagerService } from './services/batch-download/batch-job-manager.service';
@@ -129,13 +133,22 @@ import { DocumentFilterService } from './services/batch-download/document-filter
     DocumentoMetadataService,
     DocumentoPersistenceService,
 
+    // Serviços de conversão de documentos Office
+    OfficeConverterService,
+
     // Serviços de thumbnail
     {
       provide: ThumbnailService,
-      useFactory: (storageProviderFactory: StorageProviderFactory) => {
-        return new ThumbnailService(storageProviderFactory);
+      useFactory: (
+        storageProviderFactory: StorageProviderFactory,
+        officeConverterService: OfficeConverterService,
+      ) => {
+        return new ThumbnailService(
+          storageProviderFactory,
+          officeConverterService,
+        );
       },
-      inject: [StorageProviderFactory],
+      inject: [StorageProviderFactory, OfficeConverterService],
     },
     ThumbnailQueueService,
     ThumbnailFacadeService,
@@ -155,6 +168,7 @@ import { DocumentFilterService } from './services/batch-download/document-filter
       useClass: UrlSanitizerInterceptor,
     },
 
+
     // Middleware será registrado via configure()
     DocumentoRateLimitMiddleware,
   ],
@@ -166,6 +180,7 @@ import { DocumentFilterService } from './services/batch-download/document-filter
     MimeValidationService,
     DocumentoPathService,
     StorageHealthService,
+    OfficeConverterService,
     ThumbnailService,
     ThumbnailQueueService,
     ThumbnailFacadeService,

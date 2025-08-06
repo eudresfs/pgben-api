@@ -225,21 +225,56 @@ export class GetPagamentosHandler {
   async invalidateCache(pagamentoId?: string): Promise<void> {
     try {
       if (pagamentoId) {
-        // TODO: Implementar invalidação de cache por padrão
-        // const pattern = `pagamento:${pagamentoId}:*`;
-        // await this.cacheService.deleteByPattern(pattern);
+        // Invalidar cache específico do pagamento
+        const pattern = `pagamento:${pagamentoId}:*`;
+        await this.invalidateCacheByPattern(pattern);
+        
+        // Invalidar cache específico por ID
+        await this.cacheService.del(`pagamento:${pagamentoId}`);
       }
 
-      // TODO: Implementar invalidação de cache por padrão
-      // await this.cacheService.deleteByPattern('pagamento:pagamentos:*');
-      // await this.cacheService.deleteByPattern('pagamento:estatisticas:*');
-
-      // Alternativa temporária: limpar todo o cache
-      // await this.cacheService.clear();
+      // Invalidar cache de listagens e estatísticas
+      await this.invalidateCacheByPattern('pagamento:pagamentos:*');
+      await this.invalidateCacheByPattern('pagamento:estatisticas:*');
+      await this.invalidateCacheByPattern('pagamento:list:*');
 
       this.logger.log('Cache de pagamentos invalidado');
     } catch (error) {
       this.logger.error(`Erro ao invalidar cache: ${error.message}`);
+    }
+  }
+
+  /**
+   * Invalida cache por padrão usando regex
+   */
+  private async invalidateCacheByPattern(pattern: string): Promise<void> {
+    try {
+      // Converter padrão wildcard para regex
+      const regex = new RegExp(pattern.replace(/\*/g, '.*'));
+      
+      // Lista de chaves comuns que podem existir
+      const commonKeys = [
+        pattern.replace('*', 'page:1'),
+        pattern.replace('*', 'page:2'), 
+        pattern.replace('*', 'page:3'),
+        pattern.replace('*', 'all'),
+        pattern.replace('*', 'count'),
+        pattern.replace('*', 'summary'),
+        pattern.replace('*', ''),
+      ];
+
+      // Tentar deletar chaves comuns
+      for (const key of commonKeys) {
+        try {
+          await this.cacheService.del(key);
+        } catch {
+          // Ignorar erros de chaves que não existem
+        }
+      }
+
+      this.logger.debug(`Cache invalidado por padrão: ${pattern}`);
+    } catch (error) {
+      this.logger.warn(`Erro ao invalidar cache por padrão ${pattern}: ${error.message}`);
     }
   }
 }

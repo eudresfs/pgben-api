@@ -247,7 +247,7 @@ export class AuditUtils {
    */
   static formatEventForLog(event: BaseAuditEvent): string {
     const timestamp = event.timestamp.toISOString();
-    const user = event.userId || 'anonymous';
+    const user = event.userId || '00000000-0000-0000-0000-000000000000';
     const ip = event.requestContext?.ip || 'unknown';
     const type = event.eventType;
     const risk = event.riskLevel;

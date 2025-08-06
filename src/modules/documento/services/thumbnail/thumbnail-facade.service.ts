@@ -72,7 +72,7 @@ export class ThumbnailFacadeService {
     documentoId: string,
     fileBuffer: Buffer,
     mimetype: string,
-    size: 'small' | 'medium' | 'large' = 'medium',
+    size: 'small' | 'medium' | 'large' = 'large',
   ): Promise<{ thumbnailBuffer: Buffer; fromCache: boolean }> {
     const cacheKey = this.generateCacheKey(documentoId, size);
     const cachePath = path.join(this.cacheDir, cacheKey);

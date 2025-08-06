@@ -7,6 +7,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 import { EmailModule } from '../../common/email.module';
 import { MonitoringModule } from '../../shared/monitoring/monitoring.module';
 import { UsuarioModule } from '../usuario/usuario.module';
+import { NOTIFICATION_MANAGER_SERVICE } from './interfaces/notification-manager.interface';
 
 // Controladores
 import { NotificacaoController } from './controllers/notificacao.controller';
@@ -99,6 +100,10 @@ import { NotificacaoProativaScheduler } from './schedulers/notificacao-proativa.
     // Serviços principais
     NotificacaoService,
     NotificationManagerService,
+    {
+      provide: NOTIFICATION_MANAGER_SERVICE,
+      useClass: NotificationManagerService,
+    },
     TemplateRendererService,
     NotificacaoProativaService,
     NotificacaoPreferenciasService,
@@ -119,6 +124,7 @@ import { NotificacaoProativaScheduler } from './schedulers/notificacao-proativa.
     TypeOrmModule,
     NotificacaoService,
     NotificationManagerService,
+    NOTIFICATION_MANAGER_SERVICE,
     NotificationMetricsInterceptor,
     NotificacaoProativaService,
     NotificacaoPreferenciasService,

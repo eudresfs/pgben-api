@@ -39,6 +39,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 import { addTransactionalDataSource } from 'typeorm-transactional';
 import { DataSource } from 'typeorm';
 import { ScopeContextInterceptor } from './common/interceptors/scope-context.interceptor';
+import { AuditContextInterceptor } from './common/interceptors/audit-context.interceptor';
 import { RequestContextHolder } from './common/services/request-context-holder.service';
 
 @Module({
@@ -188,6 +189,11 @@ import { RequestContextHolder } from './common/services/request-context-holder.s
     {
       provide: APP_INTERCEPTOR,
       useClass: ScopeContextInterceptor,
+    },
+    // Aplicar interceptor de contexto de auditoria globalmente
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: AuditContextInterceptor,
     },
   ],
 })

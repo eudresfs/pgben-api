@@ -241,10 +241,28 @@ export class ThumbnailQueueService {
       );
 
       if (result) {
-        this.logger.info(
-          `Thumbnail gerado com sucesso para documento ${job.documentoId}`,
-          ThumbnailQueueService.name,
-        );
+        // Salvar o buffer do thumbnail na coluna 'thumbnail' da entidade documento
+        try {
+          // Converter o buffer para base64 para armazenar no banco
+          const thumbnailBase64 = result.thumbnailBuffer.toString('base64');
+          
+          await this.documentoRepository.update(
+            { id: job.documentoId },
+            { thumbnail: thumbnailBase64 }
+          );
+          
+          this.logger.info(
+            `Thumbnail gerado e salvo com sucesso para documento ${job.documentoId} (${result.thumbnailBuffer.length} bytes)`,
+            ThumbnailQueueService.name,
+          );
+        } catch (updateError) {
+          this.logger.error(
+            `Erro ao salvar thumbnail no banco para documento ${job.documentoId}: ${updateError.message}`,
+            updateError.stack,
+            ThumbnailQueueService.name,
+          );
+          // Não falhar o job por erro de atualização do banco
+        }
       } else {
         this.logger.warn(
           `Não foi possível gerar thumbnail para documento ${job.documentoId} (tipo não suportado: ${documento.mimetype})`,

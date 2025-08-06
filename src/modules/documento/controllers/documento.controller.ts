@@ -29,6 +29,8 @@ import {
   ApiBearerAuth,
   ApiParam,
 } from '@nestjs/swagger';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { DocumentoService } from '../services/documento.service';
 import { DocumentoBatchService } from '../services/batch-download/documento-batch.service';
 import { DocumentoUrlService } from '../services/documento-url.service';
@@ -36,6 +38,8 @@ import { ThumbnailService } from '../services/thumbnail/thumbnail.service';
 import { ThumbnailFacadeService } from '../services/thumbnail/thumbnail-facade.service';
 import { ThumbnailQueueService } from '../services/thumbnail/thumbnail-queue.service';
 import { StorageProviderFactory } from '../factories/storage-provider.factory';
+import { Documento } from '../../../entities/documento.entity';
+import { LoggingService } from '../../../shared/logging/logging.service';
 import { UploadDocumentoDto } from '../dto/upload-documento.dto';
 import { DocumentoResponseDto } from '../dto/documento-response.dto';
 import {
@@ -67,6 +71,8 @@ import { ThrottleThumbnail } from '../../../common/decorators/throttle.decorator
 @ApiBearerAuth()
 export class DocumentoController {
   constructor(
+    @InjectRepository(Documento)
+    private readonly documentoRepository: Repository<Documento>,
     private readonly documentoService: DocumentoService,
     private readonly documentoBatchService: DocumentoBatchService,
     private readonly documentoUrlService: DocumentoUrlService,
@@ -75,6 +81,7 @@ export class DocumentoController {
     private readonly thumbnailQueueService: ThumbnailQueueService,
     private readonly storageProviderFactory: StorageProviderFactory,
     private readonly auditEventEmitter: AuditEventEmitter,
+    private readonly logger: LoggingService,
   ) {}
 
   /**
@@ -230,7 +237,7 @@ export class DocumentoController {
     @GetUser() usuario: Usuario,
     @ReqContext() context: RequestContext,
   ) {
-    const resultado = await this.documentoService.download(id);
+    const resultado = await this.documentoService.download(id, usuario.id);
 
     // Auditoria do download de documento com informações detalhadas
     await this.auditEventEmitter.emitEntityAccessed(
@@ -554,7 +561,7 @@ export class DocumentoController {
   })
   async getThumbnail(
     @Param('id', ParseUUIDPipe) id: string,
-    @Query('size') size: 'small' | 'medium' | 'large' = 'medium',
+    @Query('size') size: 'small' | 'medium' | 'large' = 'large',
     @Res() res: Response,
     @GetUser() usuario: Usuario,
     @ReqContext() context: RequestContext,
@@ -637,6 +644,32 @@ export class DocumentoController {
       documento.mimetype,
       'medium', // Tamanho padrão para regeneração
     );
+
+    // Salvar o thumbnail na entidade documento
+    try {
+      if (thumbnailResult?.thumbnailBuffer) {
+        // Converter buffer para base64
+        const thumbnailBase64 = thumbnailResult.thumbnailBuffer.toString('base64');
+        
+        // Atualizar a coluna thumbnail na entidade documento
+        await this.documentoRepository.update(id, {
+          thumbnail: thumbnailBase64,
+          updated_at: new Date(),
+        });
+        
+        this.logger.info(
+          `Thumbnail salvo na entidade documento: ${id}`,
+          DocumentoController.name,
+        );
+      }
+    } catch (error) {
+      this.logger.error(
+        `Erro ao salvar thumbnail na entidade documento ${id}: ${error.message}`,
+        error.stack,
+        DocumentoController.name,
+      );
+      // Não propagar o erro para não quebrar a regeneração
+    }
 
     // Auditoria da regeneração
     await this.auditEventEmitter.emitEntityUpdated(

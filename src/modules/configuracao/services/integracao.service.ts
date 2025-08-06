@@ -6,6 +6,7 @@ import { IntegracaoTestDto } from '../dtos/integracao/integracao-test.dto';
 import { IntegracaoResponseDto } from '../dtos/integracao/integracao-response.dto';
 import { IntegracaoTesteException } from '../exceptions/integracao-teste.exception';
 import { IntegracaoTipoEnum } from '../../../enums/integracao-tipo.enum';
+import { CriptografiaService } from '../../../shared/services/criptografia.service';
 
 /**
  * Serviço para gerenciamento de configurações de integração externa
@@ -22,6 +23,7 @@ export class IntegracaoService {
 
   constructor(
     private readonly integracaoRepository: ConfiguracaoIntegracaoRepository,
+    private readonly criptografiaService: CriptografiaService,
   ) {}
 
   /**
@@ -239,35 +241,65 @@ export class IntegracaoService {
   /**
    * Criptografa as credenciais sensíveis
    * @param credenciais Credenciais a serem criptografadas
-   * @returns Credenciais criptografadas
+   * @returns Credenciais criptografadas em base64
    */
   private criptografarCredenciais(credenciais: Record<string, any>): string {
     if (!credenciais) {
       return '';
     }
-    // Em uma implementação real, usaríamos uma biblioteca como crypto com AES-256-GCM
-    // Para simplificar neste momento, apenas serializa para JSON
-    // TODO: Implementar criptografia real
-    this.logger.log('Criptografando credenciais sensíveis');
-    return JSON.stringify(credenciais);
+    
+    try {
+      this.logger.log('Criptografando credenciais sensíveis com AES-256-GCM');
+      
+      // Converter credenciais para JSON e depois para Buffer
+      const credenciaisJson = JSON.stringify(credenciais);
+      const credenciaisBuffer = Buffer.from(credenciaisJson, 'utf8');
+      
+      // Usar o serviço de criptografia para criptografar
+      const resultadoCriptografia = this.criptografiaService.criptografarParaTransporte(credenciaisBuffer);
+      
+      // Retornar em base64 para armazenamento
+      return resultadoCriptografia.toString('base64');
+    } catch (error) {
+      this.logger.error('Erro ao criptografar credenciais', error);
+      throw new Error('Falha na criptografia das credenciais');
+    }
   }
 
   /**
    * Descriptografa as credenciais sensíveis
-   * @param credenciaisCriptografadas Credenciais criptografadas
+   * @param credenciaisCriptografadas Credenciais criptografadas em base64
    * @returns Credenciais descriptografadas
    */
   private descriptografarCredenciais(
     credenciaisCriptografadas: string,
   ): Record<string, any> {
-    // Em uma implementação real, usaríamos uma biblioteca como crypto com AES-256-GCM
-    // Para simplificar neste momento, apenas deserializa de JSON
-    // TODO: Implementar descriptografia real
+    if (!credenciaisCriptografadas) {
+      return {};
+    }
+    
     try {
-      return JSON.parse(credenciaisCriptografadas);
+      this.logger.debug('Descriptografando credenciais sensíveis');
+      
+      // Converter de base64 para Buffer
+      const credenciaisBuffer = Buffer.from(credenciaisCriptografadas, 'base64');
+      
+      // Usar o serviço de criptografia para descriptografar
+      const credenciaisDescriptografadas = this.criptografiaService.descriptografarDeTransporte(credenciaisBuffer);
+      
+      // Converter de Buffer para JSON e depois para objeto
+      const credenciaisJson = credenciaisDescriptografadas.toString('utf8');
+      return JSON.parse(credenciaisJson);
     } catch (error) {
       this.logger.error('Erro ao descriptografar credenciais', error);
-      return {};
+      // Tentar fallback para o formato antigo (JSON simples)
+      try {
+        this.logger.warn('Tentando fallback para formato de credenciais não criptografadas');
+        return JSON.parse(credenciaisCriptografadas);
+      } catch (fallbackError) {
+        this.logger.error('Falha no fallback para credenciais', fallbackError);
+        return {};
+      }
     }
   }
 

@@ -150,7 +150,6 @@
     "opossum": "^9.0.0",
     "passport-jwt": "^4.0.1",
     "passport-local": "^1.0.0",
-    "pdf-thumbnail": "^1.0.6",
     "pdf2pic": "^3.2.0",
     "pdfkit": "^0.17.1",
     "pg": "^8.16.0",

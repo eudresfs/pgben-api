@@ -5,6 +5,7 @@ import { AuditEventType } from '../../auditoria/events/types/audit-event.types';
 import { Documento } from '../../../entities/documento.entity';
 import { Usuario } from '../../../entities/usuario.entity';
 import { Request } from 'express';
+import { AuditContextHolder } from '../../../common/interceptors/audit-context.interceptor';
 
 export interface DocumentoAuditContext {
   userId: string;
@@ -304,19 +305,63 @@ export class DocumentoAuditService {
 
   /**
    * Extrai contexto de auditoria de uma requisição HTTP
+   * Prioriza o AuditContextHolder quando disponível
    */
   extractAuditContext(request: Request): DocumentoAuditContext {
+    // Tentar usar o contexto do AuditContextHolder primeiro
+    const auditContext = AuditContextHolder.get();
+    
+    if (auditContext) {
+      this.logger.debug(
+        `Usando contexto de auditoria do AuditContextHolder - userId: ${auditContext.userId}, ip: ${auditContext.ip}, userAgent: ${auditContext.userAgent}, roles: ${auditContext.userRoles?.join(', ')}`
+      );
+      
+      return {
+        userId: auditContext.userId === 'anonymous' ? '00000000-0000-0000-0000-000000000000' : (auditContext.userId || '00000000-0000-0000-0000-000000000000'),
+        userRoles: auditContext.userRoles || [],
+        ip: auditContext.ip,
+        userAgent: auditContext.userAgent,
+        sessionId: auditContext.sessionId,
+        requestId: auditContext.requestId,
+      };
+    }
+
+    // Fallback para extração manual da requisição
+    this.logger.debug('AuditContextHolder não disponível, extraindo contexto da requisição');
+    
     const user = (request as any).user;
     const requestContext = (request as any).requestContext;
+    const ip = this.extractClientIp(request);
 
     return {
-      userId: user?.id || 'anonymous',
+      userId: user?.id || '00000000-0000-0000-0000-000000000000',
       userRoles: user?.roles || [],
-      ip: request.ip || 'unknown',
+      ip,
       userAgent: request.headers['user-agent'] || 'unknown',
       sessionId: requestContext?.sessionId,
       requestId: requestContext?.requestId,
     };
+  }
+
+  /**
+   * Extrai o IP do cliente considerando proxies
+   */
+  private extractClientIp(request: Request): string {
+    const forwarded = request.headers['x-forwarded-for'];
+    const realIp = request.headers['x-real-ip'];
+    const remoteAddress = request.connection?.remoteAddress || request.socket?.remoteAddress;
+
+    if (forwarded) {
+      // x-forwarded-for pode conter múltiplos IPs separados por vírgula
+      const ips = Array.isArray(forwarded) ? forwarded[0] : forwarded;
+      return ips.split(',')[0].trim();
+    }
+
+    if (realIp) {
+      return Array.isArray(realIp) ? realIp[0] : realIp;
+    }
+
+    return remoteAddress || 'unknown';
   }
 
   /**

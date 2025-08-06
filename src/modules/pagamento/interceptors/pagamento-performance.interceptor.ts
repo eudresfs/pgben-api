@@ -270,8 +270,13 @@ export class PagamentoPerformanceInterceptor implements NestInterceptor {
   private async invalidateRelatedCache(url: string, body: any): Promise<void> {
     try {
       if (url.includes('/pagamentos')) {
-        // TODO: Implementar invalidação de cache por padrão
-        // await this.cacheService.clear(); // Alternativa temporária
+        // Invalidar cache de pagamentos por padrão
+        await this.invalidateCacheByPattern('pagamento:*');
+        
+        // Invalidar cache específico se houver ID no body
+        if (body?.id) {
+          await this.invalidateCacheByPattern(`pagamento:${body.id}:*`);
+        }
 
         // Invalidar cache de validações se necessário
         if (body?.status || body?.metodo_pagamento) {
@@ -280,11 +285,46 @@ export class PagamentoPerformanceInterceptor implements NestInterceptor {
       }
 
       if (url.includes('/comprovantes')) {
-        // TODO: Implementar invalidação de cache por padrão
-        // await this.cacheService.clear(); // Alternativa temporária
+        // Invalidar cache de comprovantes por padrão
+        await this.invalidateCacheByPattern('comprovante:*');
+        await this.invalidateCacheByPattern('pagamento:*'); // Comprovantes afetam pagamentos
       }
     } catch (error) {
       this.logger.warn(`Erro ao invalidar cache relacionado: ${error.message}`);
+    }
+  }
+
+  /**
+   * Invalida cache por padrão usando estratégia otimizada
+   */
+  private async invalidateCacheByPattern(pattern: string): Promise<void> {
+    try {
+      // Lista de sufixos comuns para chaves de cache
+      const commonSuffixes = [
+        '',
+        ':page:1',
+        ':page:2', 
+        ':page:3',
+        ':all',
+        ':list',
+        ':count',
+        ':stats',
+        ':summary',
+        ':metadata'
+      ];
+
+      // Gerar chaves baseadas no padrão
+      const basePattern = pattern.replace('*', '');
+      const keysToDelete = commonSuffixes.map(suffix => `${basePattern}${suffix}`);
+
+      // Deletar chaves em paralelo para melhor performance
+      await Promise.allSettled(
+        keysToDelete.map(key => this.cacheService.del(key))
+      );
+
+      this.logger.debug(`Cache invalidado por padrão: ${pattern}`);
+    } catch (error) {
+      this.logger.warn(`Erro ao invalidar cache por padrão ${pattern}: ${error.message}`);
     }
   }
 }

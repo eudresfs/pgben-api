@@ -147,28 +147,6 @@ export class AuditoriaController {
   }
 
   /**
-   * Endpoint para testar o worker de auditoria diretamente
-   */
-  @Get('/test-worker-direct')
-  @ApiOperation({ summary: 'Testa o worker de auditoria diretamente' })
-  @ApiResponse({
-    status: 200,
-    description: 'Teste do worker executado com sucesso',
-  })
-  @RequiresPermission({
-    permissionName: 'auditoria.teste.executar',
-    scopeType: ScopeType.GLOBAL,
-  })
-  async testWorkerDirect() {
-    try {
-      const result = await this.auditProcessor.testDirectProcessing();
-      return { success: true, result };
-    } catch (error) {
-      return { success: false, error: error.message };
-    }
-  }
-
-  /**
    * Busca um log de auditoria pelo ID
    */
   @Get(':id')

@@ -346,40 +346,6 @@ export class AuditProcessor
     );
   }
 
-  /**
-   * Método de teste direto do worker
-   */
-  async testDirectProcessing() {
-    // Gera um UUID válido para o teste
-    const testUserId = '550e8400-e29b-41d4-a716-446655440000';
-
-    const mockJob = {
-      id: 'test-direct-' + Date.now(),
-      name: 'process-audit-event',
-      data: {
-        event: {
-          eventType: 'TEST_DIRECT',
-          entityName: 'Test',
-          entityId: 'test-123',
-          userId: testUserId,
-          timestamp: new Date(),
-          riskLevel: 'LOW',
-        },
-      },
-      progress: async (p) => this.logger.debug(`Progress: ${p}%`),
-      opts: { attempts: 3 },
-      attemptsMade: 0,
-    } as any;
-
-    try {
-      const result = await this.processAuditEvent(mockJob);
-      this.logger.debug('Processamento direto executado com sucesso', result);
-      return result;
-    } catch (error) {
-      this.logger.error('Processamento direto falhou', error);
-      throw error;
-    }
-  }
 
   /**
    * Obtém métricas do processador
