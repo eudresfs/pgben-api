@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.4](https://github.com/kemosoft-team/pgben-server/compare/v0.1.3...v0.1.4) (2025-08-06)
+
+
+### Features
+
+* **cidadao:** add family composition search to citizen query ([73252ab](https://github.com/kemosoft-team/pgben-server/commit/73252ab3cc4d7fb9f918ae815e2005c054895bc9))
+* **cidadao:** add flag for citizens found via family composition ([428eeef](https://github.com/kemosoft-team/pgben-server/commit/428eeefc67595763f860c3ce0205da5e0ba9539d))
+* **enums:** add new document type for identification ([bcb7610](https://github.com/kemosoft-team/pgben-server/commit/bcb76105760c46dde64dad0b61b40f5e4f9dd6e1))
+
 ### [0.1.3](https://github.com/kemosoft-team/pgben-server/compare/v0.1.2...v0.1.3) (2025-08-05)
 
 
