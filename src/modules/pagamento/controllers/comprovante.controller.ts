@@ -85,7 +85,7 @@ export class ComprovanteController {
   @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Faz upload de comprovante' })
   @ApiParam({
-    name: 'pagamento_id',
+    name: 'pagamentoId',
     type: 'string',
     description: 'ID do pagamento',
   })
@@ -95,19 +95,18 @@ export class ComprovanteController {
     type: ComprovanteResponseDto,
   })
   @RequiresPermission({
-    permissionName: 'pagamento.editar',
-    scopeType: TipoEscopo.UNIDADE,
+    permissionName: 'pagamento.upload',
   })
   async upload(
-    @Param('pagamento_id') pagamentoId: string,
+    @Param('pagamentoId', ParseUUIDPipe) pagamentoId: string,
     @UploadedFile() arquivo: Express.Multer.File,
     @Body() uploadDto: ComprovanteUploadDto,
     @GetUser() usuario: Usuario,
   ) {
     const comprovante = await this.comprovanteService.upload(
-      arquivo,
       pagamentoId,
-      uploadDto.tipo_documento,
+      arquivo,
+      uploadDto,
       usuario.id,
     );
 
@@ -153,12 +152,7 @@ export class ComprovanteController {
    * Download de comprovante
    */
   @Get(':id/download')
-  @ApiOperation({ summary: 'Download de comprovante' })
-  @ApiParam({
-    name: 'pagamentoId',
-    type: 'string',
-    description: 'ID do pagamento',
-  })
+  @ApiOperation({ summary: 'Faz download de comprovante' })
   @ApiParam({
     name: 'id',
     type: 'string',
@@ -167,23 +161,29 @@ export class ComprovanteController {
   @ApiResponse({
     status: 200,
     description: 'Arquivo do comprovante',
+    content: {
+      'application/octet-stream': {
+        schema: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
   })
-  @RequiresPermission({
-    permissionName: 'pagamento.visualizar',
-    scopeType: TipoEscopo.UNIDADE,
-  })
-  async download(@Param('id', ParseUUIDPipe) id: string, @Res() res: Response) {
-    const { buffer, fileName, mimeType } =
-      await this.comprovanteService.getContent(id);
+  async download(
+    @Param('id') id: string,
+    @Res() res: Response,
+  ): Promise<void> {
+    const { buffer, mimetype, nomeOriginal } =
+      await this.comprovanteService.download(id);
 
     res.set({
-      'Content-Type': mimeType,
-      'Content-Disposition': `attachment; filename="${encodeURIComponent(fileName)}"`,
+      'Content-Type': mimetype,
+      'Content-Disposition': `attachment; filename="${nomeOriginal}"`,
       'Content-Length': buffer.length.toString(),
-      'Cache-Control': 'no-cache',
     });
 
-    res.end(buffer);
+    res.send(buffer);
   }
 
   /**
@@ -213,7 +213,7 @@ export class ComprovanteController {
     @Param('id', ParseUUIDPipe) id: string,
     @GetUser() usuario: Usuario,
   ) {
-    await this.comprovanteService.remove(id);
+    await this.comprovanteService.remove(id, usuario.id);
 
     return {
       message: 'Comprovante removido com sucesso',
@@ -229,18 +229,12 @@ export class ComprovanteController {
     return {
       id: comprovante.id,
       pagamento_id: comprovante.pagamento_id,
-      tipo_documento: comprovante.tipo_documento,
-      nome_arquivo: comprovante.nome_arquivo,
-      url: comprovante.url || '',
+      nome_original: comprovante.nome_original,
       tamanho: comprovante.tamanho,
-      mime_type: comprovante.mime_type,
+      mimetype: comprovante.mimetype,
       data_upload: comprovante.data_upload,
-      responsavel_upload: {
-        id: comprovante.responsavel_upload_id || '',
-        nome: comprovante.responsavel_upload_nome || '',
-      },
-      created_at: comprovante.created_at,
-      updated_at: comprovante.updated_at,
+      observacoes: comprovante.observacoes,
+      usuario_upload_id: comprovante.usuario_upload_id,
     };
   }
 }

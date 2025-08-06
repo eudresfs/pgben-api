@@ -6,7 +6,6 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { PagamentoRepository } from '../repositories/pagamento.repository';
-import { ComprovanteRepository } from '../repositories/comprovante.repository';
 import { ConfirmacaoRepository } from '../repositories/confirmacao.repository';
 import { Pagamento } from '../../../entities/pagamento.entity';
 import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
@@ -77,7 +76,7 @@ export class PagamentoWorkflowService {
 
   constructor(
     private readonly pagamentoRepository: PagamentoRepository,
-    private readonly comprovanteRepository: ComprovanteRepository,
+    // comprovanteRepository removido - agora usa DocumentoRepository
     private readonly confirmacaoRepository: ConfirmacaoRepository,
     private readonly validationService: PagamentoValidationService,
   ) {}
@@ -675,10 +674,9 @@ export class PagamentoWorkflowService {
     // Para demais parcelas, verificar recibo do mês anterior
     const documentos_obrigatorios = [TipoDocumentoEnum.RECIBO_ALUGUEL];
 
-    // Buscar recibos de aluguel
-    const recibos = await this.comprovanteRepository.findByPagamento(
-      pagamento.id,
-    );
+    // Buscar recibos de aluguel através do DocumentoRepository
+    // TODO: Implementar busca de documentos por pagamento_id
+    const recibos = [];
     const recibosAluguel = recibos.filter(
       (r) => r.tipo_documento === TipoDocumentoEnum.RECIBO_ALUGUEL,
     );

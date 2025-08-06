@@ -8,18 +8,14 @@ import {
  */
 export interface IDocumentoBatchFiltros {
   unidade_id?: string;
+  cidadao_ids?: string[];
+  solicitacao_ids?: string[];
+  pagamento_ids?: string[];
   data_inicio?: Date;
   data_fim?: Date;
   tipo_documento?: string[];
-  tags?: string[];
-  status?: string[];
-  usuario_criador?: string;
-  tamanho_min?: number;
-  tamanho_max?: number;
-  extensoes?: string[];
-  busca_texto?: string;
-  incluir_anexos?: boolean;
-  incluir_versoes?: boolean;
+  apenas_verificados?: boolean;
+  incluir_metadados?: boolean;
 }
 
 /**

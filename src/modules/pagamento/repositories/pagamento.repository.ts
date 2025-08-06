@@ -42,7 +42,6 @@ export class PagamentoRepository {
       .createScopedQueryBuilder('pagamento')
       .leftJoinAndSelect('pagamento.solicitacao', 'solicitacao')
       .leftJoinAndSelect('pagamento.concessao', 'concessao')
-      .leftJoinAndSelect('pagamento.comprovantes', 'comprovantes')
       .where('pagamento.id = :id', { id })
       .getOne();
   }
@@ -97,6 +96,16 @@ export class PagamentoRepository {
       .createScopedQueryBuilder('pagamento')
       .where('pagamento.concessao_id = :concessao_id', { concessao_id })
       .orderBy('pagamento.numero_parcela', 'ASC')
+      .getMany();
+  }
+
+  /**
+   * Busca pagamentos por comprovante_id
+   */
+  async findByComprovanteId(comprovante_id: string): Promise<Pagamento[]> {
+    return await this.scopedRepository
+      .createScopedQueryBuilder('pagamento')
+      .where('pagamento.comprovante_id = :comprovante_id', { comprovante_id })
       .getMany();
   }
 

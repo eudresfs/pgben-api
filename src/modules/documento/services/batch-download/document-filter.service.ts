@@ -266,6 +266,16 @@ export class DocumentFilterService {
       );
     }
 
+    // Pagamento IDs - filtra documentos cujo ID corresponde ao comprovante_id do pagamento
+    const pagamentoIds = filtros.pagamentoIds || filtros.pagamento_ids;
+    if (pagamentoIds?.length) {
+      queryBuilder
+        .innerJoin('pagamento', 'pagamento', 'pagamento.comprovante_id = documento.id')
+        .andWhere('pagamento.id IN (:...pagamentoIds)', {
+          pagamentoIds: pagamentoIds,
+        });
+    }
+
     // Tipos de documento - aceita ambos os formatos
     const tiposDocumento = filtros.tiposDocumento || filtros.tipo_documento;
     if (tiposDocumento?.length) {
@@ -303,6 +313,9 @@ export class DocumentFilterService {
     const temSolicitacaoIds = !!(
       filtros.solicitacaoIds?.length || filtros.solicitacao_ids?.length
     );
+    const temPagamentoIds = !!(
+      filtros.pagamentoIds?.length || filtros.pagamento_ids?.length
+    );
     const temTiposDocumento = !!(
       filtros.tiposDocumento?.length || filtros.tipo_documento?.length
     );
@@ -312,6 +325,7 @@ export class DocumentFilterService {
     const resultado =
       temCidadaoIds ||
       temSolicitacaoIds ||
+      temPagamentoIds ||
       temTiposDocumento ||
       temDataInicio ||
       temDataFim;
@@ -378,6 +392,7 @@ export class DocumentFilterService {
     const filtrosOrdenados = {
       cidadaoIds: filtros.cidadaoIds?.sort(),
       solicitacaoIds: filtros.solicitacaoIds?.sort(),
+      pagamentoIds: filtros.pagamentoIds?.sort(),
       tiposDocumento: filtros.tiposDocumento?.sort(),
       dataInicio: filtros.dataInicio,
       dataFim: filtros.dataFim,

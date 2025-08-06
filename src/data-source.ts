@@ -103,7 +103,6 @@ import {
   Ocorrencia,
 
   // Entidades de Pagamento
-  ComprovantePagamento,
   ConfirmacaoRecebimento,
   Pagamento,
 
@@ -225,7 +224,6 @@ export const AppDataSource = new DataSource({
 
     // Entidades de pagamento
     Pagamento,
-    ComprovantePagamento,
     ConfirmacaoRecebimento,
 
     // Entidades de métricas

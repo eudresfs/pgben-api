@@ -1,95 +1,90 @@
 import { ApiProperty } from '@nestjs/swagger';
-import {
-  ComprovanteBaseDto,
-  ResponsavelUploadInfo,
-} from './base/comprovante-base.dto';
 
-/**
- * DTO para resposta contendo dados de um comprovante de pagamento
- *
- * Este DTO define a estrutura de dados retornada pela API ao consultar
- * informações sobre um comprovante específico. Estende ComprovanteBaseDto
- * para reutilizar campos comuns.
- *
- * @author Equipe PGBen
- */
-export class ComprovanteResponseDto extends ComprovanteBaseDto {
-  // Campo 'id' herdado de ComprovanteBaseDto
+export class ComprovanteResponseDto {
+  @ApiProperty({
+    description: 'ID único do comprovante',
+    example: 'uuid-v4',
+  })
+  id: string;
 
-  /**
-   * Referência ao pagamento relacionado a este comprovante
-   */
   @ApiProperty({
     description: 'ID do pagamento relacionado',
-    example: 'uuid',
+    example: 'uuid-v4',
   })
   pagamento_id: string;
 
-  /**
-   * Tipo de documento (ex: comprovante_transferencia, recibo, etc.)
-   */
-  @ApiProperty({
-    description: 'Tipo do documento',
-    example: 'string',
-  })
-  tipo_documento: string;
-
-  /**
-   * Nome original do arquivo enviado
-   */
   @ApiProperty({
     description: 'Nome original do arquivo',
-    example: 'string',
+    example: 'comprovante_pagamento.pdf',
   })
-  nome_arquivo: string;
+  nome_original: string;
 
-  /**
-   * URL segura temporária para acesso ao arquivo
-   */
-  @ApiProperty({
-    description: 'URL para download/visualização do arquivo',
-    example: 'string',
-  })
-  url: string;
-
-  /**
-   * Tamanho do arquivo em bytes
-   */
   @ApiProperty({
     description: 'Tamanho do arquivo em bytes',
-    example: 0,
+    example: 1024000,
   })
   tamanho: number;
 
-  /**
-   * Tipo MIME do arquivo
-   */
   @ApiProperty({
     description: 'Tipo MIME do arquivo',
-    example: 'string',
+    example: 'application/pdf',
   })
-  mime_type: string;
+  mimetype: string;
 
-  /**
-   * Data de upload do comprovante
-   */
   @ApiProperty({
-    description: 'Data de upload do arquivo',
-    example: 'ISO 8601 date string',
+    description: 'Data de upload do comprovante',
+    example: '2024-01-15T10:30:00Z',
   })
   data_upload: Date;
 
-  /**
-   * Informações sobre o responsável pelo upload
-   */
   @ApiProperty({
-    description: 'Dados sobre quem fez o upload do comprovante',
-    example: {
-      id: 'uuid',
-      nome: 'string',
-    },
+    description: 'Observações sobre o comprovante',
+    example: 'Comprovante de transferência bancária',
+    required: false,
   })
-  responsavel_upload: ResponsavelUploadInfo;
+  observacoes?: string;
 
-  // Campos 'created_at' e 'updated_at' herdados de ComprovanteBaseDto
+  @ApiProperty({
+    description: 'ID do usuário que fez o upload',
+    example: 'uuid-v4',
+  })
+  usuario_upload_id: string;
+
+  @ApiProperty({
+    description: 'Hash SHA256 do arquivo',
+    example: 'a1b2c3d4e5f6...',
+    required: false,
+  })
+  hash_arquivo?: string;
+
+  @ApiProperty({
+    description: 'URL pública do arquivo (se disponível)',
+    example: 'https://storage.example.com/comprovantes/arquivo.pdf',
+    required: false,
+  })
+  url_publica?: string;
+
+  @ApiProperty({
+    description: 'Metadados do arquivo',
+    example: {
+      deteccao_mime: {
+        mime_declarado: 'application/pdf',
+        mime_detectado: 'application/pdf',
+        extensao_detectada: 'pdf'
+      },
+      upload_info: {
+        ip: 'sistema',
+        user_agent: 'comprovante-service'
+      }
+    },
+    required: false,
+  })
+  metadados?: any;
+
+  @ApiProperty({
+    description: 'Descrição do comprovante',
+    example: 'Comprovante de pagamento - documento.pdf',
+    required: false,
+  })
+  descricao?: string;
 }

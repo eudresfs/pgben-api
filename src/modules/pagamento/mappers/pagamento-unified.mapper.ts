@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Pagamento } from '../../../entities/pagamento.entity';
 import { ConfirmacaoRecebimento } from '../../../entities/confirmacao-recebimento.entity';
-import { ComprovantePagamento } from '../../../entities/comprovante-pagamento.entity';
+import { Documento } from '../../../entities/documento.entity';
 import { PagamentoCreateDto } from '../dtos/pagamento-create.dto';
 import { PagamentoResponseDto } from '../dtos/pagamento-response.dto';
 import { ComprovanteResponseDto } from '../dtos/comprovante-response.dto';
@@ -84,45 +84,45 @@ export class PagamentoUnifiedMapper {
       // Informações relacionadas
       solicitacao: pagamento.solicitacao
         ? {
-            id: pagamento.solicitacao.id,
-            beneficiario: pagamento.solicitacao.beneficiario?.nome || 'N/A',
-            tipo_beneficio: {
-              id: pagamento.solicitacao.tipo_beneficio?.id || '',
-              nome: pagamento.solicitacao.tipo_beneficio?.nome || 'EVENTUAL',
-            },
-            unidade: {
-              id: pagamento.solicitacao.unidade?.id || '',
-              nome: pagamento.solicitacao.unidade?.nome || 'N/A',
-            },
-            tecnico: {
-              id: pagamento.solicitacao.tecnico?.id || '',
-              nome: pagamento.solicitacao.tecnico?.nome || 'N/A',
-            },
-          }
+          id: pagamento.solicitacao.id,
+          beneficiario: pagamento.solicitacao.beneficiario?.nome || 'N/A',
+          tipo_beneficio: {
+            id: pagamento.solicitacao.tipo_beneficio?.id || '',
+            nome: pagamento.solicitacao.tipo_beneficio?.nome || 'EVENTUAL',
+          },
+          unidade: {
+            id: pagamento.solicitacao.unidade?.id || '',
+            nome: pagamento.solicitacao.unidade?.nome || 'N/A',
+          },
+          tecnico: {
+            id: pagamento.solicitacao.tecnico?.id || '',
+            nome: pagamento.solicitacao.tecnico?.nome || 'N/A',
+          },
+        }
         : undefined,
 
       info_bancaria: pagamento.info_bancaria
         ? {
-            tipo: pagamento.info_bancaria.tipo_conta || 'POUPANCA_SOCIAL',
-            chave_pix: incluirDadosSensiveis
-              ? pagamento.info_bancaria.chave_pix
-              : undefined,
-            pix_tipo: pagamento.info_bancaria.tipo_chave_pix?.toUpperCase() as
-              | 'CPF'
-              | 'CNPJ'
-              | 'EMAIL'
-              | 'TELEFONE'
-              | 'ALEATORIA',
-            banco: incluirDadosSensiveis
-              ? pagamento.info_bancaria.banco
-              : undefined,
-            agencia: incluirDadosSensiveis
-              ? pagamento.info_bancaria.agencia
-              : undefined,
-            conta: incluirDadosSensiveis
-              ? pagamento.info_bancaria.conta
-              : undefined,
-          }
+          tipo: pagamento.info_bancaria.tipo_conta || 'POUPANCA_SOCIAL',
+          chave_pix: incluirDadosSensiveis
+            ? pagamento.info_bancaria.chave_pix
+            : undefined,
+          pix_tipo: pagamento.info_bancaria.tipo_chave_pix?.toUpperCase() as
+            | 'CPF'
+            | 'CNPJ'
+            | 'EMAIL'
+            | 'TELEFONE'
+            | 'ALEATORIA',
+          banco: incluirDadosSensiveis
+            ? pagamento.info_bancaria.banco
+            : undefined,
+          agencia: incluirDadosSensiveis
+            ? pagamento.info_bancaria.agencia
+            : undefined,
+          conta: incluirDadosSensiveis
+            ? pagamento.info_bancaria.conta
+            : undefined,
+        }
         : undefined,
     };
 
@@ -243,10 +243,10 @@ export class PagamentoUnifiedMapper {
 
       destinatario: confirmacao.destinatario
         ? {
-            id: confirmacao.destinatario.id,
-            nome: confirmacao.destinatario.nome,
-            relacao: 'Beneficiário',
-          }
+          id: confirmacao.destinatario.id,
+          nome: confirmacao.destinatario.nome,
+          relacao: 'Beneficiário',
+        }
         : undefined,
     };
   }
@@ -274,55 +274,45 @@ export class PagamentoUnifiedMapper {
   // ==========================================
 
   /**
-   * Mapeia entidade ComprovantePagamento para DTO de resposta
+   * Mapeia entidade Documento para DTO de resposta
    *
-   * @param comprovante - Entidade do comprovante
+   * @param documento - Entidade do documento
    * @returns DTO de resposta do comprovante
    */
   static comprovanteToResponseDto(
-    comprovante: ComprovantePagamento,
+    documento: Documento,
   ): ComprovanteResponseDto {
-    if (!comprovante) {
-      throw new Error('Comprovante não pode ser nulo');
+    if (!documento) {
+      throw new Error('Documento não pode ser nulo');
     }
 
     return {
-      // Campos herdados de ComprovanteBaseDto
-      id: comprovante.id,
-      created_at: comprovante.created_at,
-      updated_at: comprovante.updated_at,
-
-      // Campos específicos do ComprovanteResponseDto
-      pagamento_id: comprovante.pagamento_id,
-      tipo_documento: comprovante.tipo_documento,
-      nome_arquivo: comprovante.nome_arquivo || 'documento.pdf',
-      url: comprovante.caminho_arquivo || '', // Usando caminho_arquivo como URL
-      tamanho: comprovante.tamanho || 0,
-      mime_type: comprovante.mime_type || 'application/pdf',
-      data_upload: comprovante.data_upload || comprovante.created_at,
-      responsavel_upload: {
-        id: comprovante.uploaded_por,
-        nome:
-          comprovante.responsavel_upload?.nome || 'Usuário não identificado',
-      },
+      id: documento.id,
+      pagamento_id: '', // TODO: Implementar busca do pagamento_id
+      nome_original: documento.nome_original,
+      tamanho: documento.tamanho,
+      mimetype: documento.mimetype,
+      data_upload: documento.data_upload,
+      observacoes: documento.observacoes_verificacao,
+      usuario_upload_id: documento.usuario_upload_id,
     };
   }
 
   /**
-   * Mapeia lista de comprovantes para DTOs de resposta
+   * Mapeia lista de documentos para DTOs de resposta
    *
-   * @param comprovantes - Lista de entidades de comprovante
+   * @param documentos - Lista de entidades de documento
    * @returns Lista de DTOs de resposta
    */
   static comprovanteToResponseDtoList(
-    comprovantes: ComprovantePagamento[],
+    documentos: Documento[],
   ): ComprovanteResponseDto[] {
-    if (!Array.isArray(comprovantes)) {
+    if (!Array.isArray(documentos)) {
       return [];
     }
 
-    return comprovantes.map((comprovante) =>
-      this.comprovanteToResponseDto(comprovante),
+    return documentos.map((documento) =>
+      this.comprovanteToResponseDto(documento),
     );
   }
 

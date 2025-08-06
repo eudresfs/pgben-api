@@ -37,6 +37,16 @@ export class BatchDownloadDto {
   solicitacaoIds?: string[];
 
   @ApiPropertyOptional({
+    description: 'Lista de IDs de pagamentos - baixa documentos cujo ID corresponde ao comprovante_id do pagamento',
+    type: [String],
+    example: ['3fa85f64-5717-4562-b3fc-2c963f66afa6'],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsUUID(4, { each: true })
+  pagamentoIds?: string[];
+
+  @ApiPropertyOptional({
     description: 'Tipos de documento para filtrar',
     enum: TipoDocumentoEnum,
     isArray: true,
@@ -114,6 +124,7 @@ export class BatchDownloadDto {
 export interface BatchDownloadFiltros {
   cidadaoIds?: string[];
   solicitacaoIds?: string[];
+  pagamentoIds?: string[];
   tiposDocumento?: string[];
   dataInicio?: Date;
   dataFim?: Date;

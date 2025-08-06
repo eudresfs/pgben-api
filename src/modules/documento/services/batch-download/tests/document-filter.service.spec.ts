@@ -20,6 +20,7 @@ describe('DocumentFilterService', () => {
 
   const mockQueryBuilder = {
     leftJoinAndSelect: jest.fn().mockReturnThis(),
+    innerJoin: jest.fn().mockReturnThis(),
     select: jest.fn().mockReturnThis(),
     where: jest.fn().mockReturnThis(),
     andWhere: jest.fn().mockReturnThis(),
@@ -229,6 +230,31 @@ describe('DocumentFilterService', () => {
       expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
         'documento.solicitacao_id IN (:...solicitacaoIds)',
         { solicitacaoIds: ['sol-1', 'sol-2'] },
+      );
+      expect(resultado).toEqual(mockDocumentos);
+    });
+
+    it('deve aplicar filtros de pagamentos', async () => {
+      const filtros = {
+        pagamentoIds: ['pag-1', 'pag-2'],
+      };
+
+      const mockDocumentos = [
+        { id: 'doc-1' },
+      ] as Documento[];
+
+      mockQueryBuilder.getMany.mockResolvedValue(mockDocumentos);
+
+      const resultado = await service.aplicarFiltros(filtros, mockUsuario);
+
+      expect(mockQueryBuilder.innerJoin).toHaveBeenCalledWith(
+        'pagamento',
+        'pagamento',
+        'pagamento.comprovante_id = documento.id',
+      );
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        'pagamento.id IN (:...pagamentoIds)',
+        { pagamentoIds: ['pag-1', 'pag-2'] },
       );
       expect(resultado).toEqual(mockDocumentos);
     });

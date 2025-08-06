@@ -25,6 +25,7 @@ import { Usuario } from './usuario.entity';
 import { Solicitacao } from './solicitacao.entity';
 import { Concessao } from './concessao.entity';
 import { InfoBancaria } from './info-bancaria.entity';
+import { Documento } from './documento.entity';
 
 /**
  * Entidade que representa um pagamento de benefício no sistema.
@@ -254,10 +255,12 @@ export class Pagamento {
   criador: Usuario;
 
   /**
-   * Comprovantes anexados a este pagamento
+   * Comprovantes anexados a este pagamento (via documento)
    */
-  @OneToMany('ComprovantePagamento', 'pagamento')
-  comprovantes: any[];
+  // @OneToMany(() => Documento, (documento) => documento.pagamento, {
+  //   cascade: true,
+  // })
+  // comprovantes: Documento[];
 
   /**
    * Confirmação de recebimento deste pagamento

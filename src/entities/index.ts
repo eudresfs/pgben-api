@@ -93,7 +93,6 @@ export { StatusConcessao } from '../enums/status-concessao.enum';
 export { HistoricoConcessao } from './historico-concessao.entity';
 
 // Entidades de Pagamento
-export { ComprovantePagamento } from './comprovante-pagamento.entity';
 export { ConfirmacaoRecebimento } from './confirmacao-recebimento.entity';
 export { Pagamento } from './pagamento.entity';
 

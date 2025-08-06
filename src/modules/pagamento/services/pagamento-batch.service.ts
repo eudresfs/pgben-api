@@ -2,10 +2,9 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, QueryRunner } from 'typeorm';
 import { Pagamento } from '../../../entities/pagamento.entity';
-import { ComprovantePagamento } from '../../../entities/comprovante-pagamento.entity';
+import { Documento } from '../../../entities/documento.entity';
 import { PagamentoQueueService } from './pagamento-queue.service';
 import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
-import { MetodoPagamentoEnum } from '../../../enums/metodo-pagamento.enum';
 import { PagamentoCreateDto } from '../dtos/pagamento-create.dto';
 import { CancelarPagamentoDto } from '../dtos/cancelar-pagamento.dto';
 
@@ -37,8 +36,8 @@ export class PagamentoBatchService {
   constructor(
     @InjectRepository(Pagamento)
     private readonly pagamentoRepository: Repository<Pagamento>,
-    @InjectRepository(ComprovantePagamento)
-    private readonly comprovanteRepository: Repository<ComprovantePagamento>,
+    @InjectRepository(Documento)
+    private readonly documentoRepository: Repository<Documento>,
     private readonly dataSource: DataSource,
     private readonly queueService: PagamentoQueueService,
   ) {}
@@ -247,7 +246,7 @@ export class PagamentoBatchService {
     comprovante_ids: string[],
     userId: string,
     options: BatchProcessOptions = {},
-  ): Promise<BatchResult<ComprovantePagamento>> {
+  ): Promise<BatchResult<Documento>> {
     const {
       batchSize = this.DEFAULT_BATCH_SIZE,
       maxConcurrency = this.DEFAULT_MAX_CONCURRENCY,
@@ -255,7 +254,7 @@ export class PagamentoBatchService {
 
     // Iniciando validação em lote de comprovantes
 
-    const result: BatchResult<ComprovantePagamento> = {
+    const result: BatchResult<Documento> = {
       success: [],
       errors: [],
       total: comprovante_ids.length,
@@ -485,8 +484,8 @@ export class PagamentoBatchService {
   private async processValidacaoComprovantesBatch(
     batch: string[],
     userId: string,
-  ): Promise<BatchResult<ComprovantePagamento>> {
-    const result: BatchResult<ComprovantePagamento> = {
+  ): Promise<BatchResult<Documento>> {
+    const result: BatchResult<Documento> = {
       success: [],
       errors: [],
       total: batch.length,
@@ -502,13 +501,13 @@ export class PagamentoBatchService {
           userId,
         );
 
-        // Para o resultado, buscar o comprovante
-        const comprovante = await this.comprovanteRepository.findOne({
+        // Para o resultado, buscar o documento
+        const documento = await this.documentoRepository.findOne({
           where: { id: comprovante_id },
         });
 
-        if (comprovante) {
-          result.success.push(comprovante);
+        if (documento) {
+          result.success.push(documento);
         }
       } catch (error) {
         result.errors.push({

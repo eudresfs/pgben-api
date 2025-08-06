@@ -29,7 +29,7 @@ export class CreateAdditionalIndexes1749330812427
       ON info_bancaria(ativo)
     `);
 
-    // Índices essenciais para ComprovantePagamento
+    // Índices essenciais para Documento (substituiu ComprovantePagamento)
     await queryRunner.query(`
       CREATE INDEX IF NOT EXISTS idx_comprovante_pagamento_id 
       ON comprovante_pagamento(pagamento_id)

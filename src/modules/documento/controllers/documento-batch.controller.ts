@@ -94,6 +94,7 @@ export class DocumentoBatchController {
       tipo_documento: body.tiposDocumento,
       cidadao_ids: body.cidadaoIds,
       solicitacao_ids: body.solicitacaoIds,
+      pagamento_ids: body.pagamentoIds,
       apenas_verificados: body.apenasVerificados,
       incluir_metadados: body.incluirMetadados,
     };

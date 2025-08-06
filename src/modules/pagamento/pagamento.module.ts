@@ -9,7 +9,7 @@ import { createScopedRepositoryProvider } from '../../common/providers/scoped-re
 // Entidades
 import {
   Pagamento,
-  ComprovantePagamento,
+  Documento,
   ConfirmacaoRecebimento,
   LogAuditoria,
   TipoBeneficio,
@@ -53,7 +53,6 @@ import {
 
 // Repositórios
 import { PagamentoRepository } from './repositories/pagamento.repository';
-import { ComprovanteRepository } from './repositories/comprovante.repository';
 import { ConfirmacaoRepository } from './repositories/confirmacao.repository';
 
 // Validadores
@@ -90,7 +89,7 @@ import { CacheModule } from '../../shared/cache/cache.module';
   imports: [
     TypeOrmModule.forFeature([
       Pagamento,
-      ComprovantePagamento,
+      Documento,
       ConfirmacaoRecebimento,
       LogAuditoria,
       TipoBeneficio,
@@ -123,12 +122,11 @@ import { CacheModule } from '../../shared/cache/cache.module';
   providers: [
     // Repositórios com escopo
     createScopedRepositoryProvider(Pagamento),
-    createScopedRepositoryProvider(ComprovantePagamento),
+    createScopedRepositoryProvider(Documento),
     createScopedRepositoryProvider(ConfirmacaoRecebimento),
 
     // Repositórios customizados
     PagamentoRepository,
-    ComprovanteRepository,
     ConfirmacaoRepository,
 
     // Serviços principais
@@ -183,7 +181,6 @@ import { CacheModule } from '../../shared/cache/cache.module';
 
     // Repositórios
     PagamentoRepository,
-    ComprovanteRepository,
     ConfirmacaoRepository,
 
     // Serviços principais
