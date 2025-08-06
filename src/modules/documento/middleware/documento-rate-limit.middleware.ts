@@ -24,7 +24,7 @@ interface UserRateLimit {
  * Middleware de rate limiting específico para operações de documentos
  *
  * Implementa limites diferenciados por tipo de operação:
- * - Downloads: 50 por hora por usuário
+ * - Downloads: 20 por minuto por usuário
  * - Uploads: 20 por hora por usuário
  * - Visualizações: 200 por hora por usuário
  */
@@ -36,11 +36,11 @@ export class DocumentoRateLimitMiddleware implements NestMiddleware {
   // Limites configuráveis
   private readonly limits = {
     downloads: {
-      max: this.configService.get<number>('DOCUMENTO_DOWNLOAD_RATE_LIMIT', 50),
+      max: this.configService.get<number>('DOCUMENTO_DOWNLOAD_RATE_LIMIT', 20),
       windowMs: this.configService.get<number>(
         'DOCUMENTO_DOWNLOAD_WINDOW_MS',
-        3600000,
-      ), // 1 hora
+        60000,
+      ), // 1 minuto
     },
     uploads: {
       max: this.configService.get<number>('DOCUMENTO_UPLOAD_RATE_LIMIT', 20),
