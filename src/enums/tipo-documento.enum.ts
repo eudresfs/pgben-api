@@ -4,6 +4,7 @@ export enum TipoDocumentoEnum {
   RG = 'rg',
   CNH = 'cnh',
   PASSAPORTE = 'passaporte',
+  DOCUMENTO_IDENTIFICACAO = 'documento_identificacao',
 
   // Certidões
   CERTIDAO_NASCIMENTO = 'certidao_nascimento',
