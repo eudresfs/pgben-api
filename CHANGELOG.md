@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.6](https://github.com/kemosoft-team/pgben-server/compare/v0.1.5...v0.1.6) (2025-08-07)
+
+
+### Features
+
+* **notificações:** implementar notificações agendadas e sistema de preferências ([afac0e2](https://github.com/kemosoft-team/pgben-server/commit/afac0e27e0ec59f0de35ceda4ccbfe2ac6409060))
+
 ### [0.1.5](https://github.com/kemosoft-team/pgben-server/compare/v0.1.4...v0.1.5) (2025-08-06)
 
 
