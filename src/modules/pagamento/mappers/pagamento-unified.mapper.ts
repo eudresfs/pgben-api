@@ -288,7 +288,7 @@ export class PagamentoUnifiedMapper {
 
     return {
       id: documento.id,
-      pagamento_id: '', // TODO: Implementar busca do pagamento_id
+      pagamento_id: this.extrairPagamentoId(documento),
       nome_original: documento.nome_original,
       tamanho: documento.tamanho,
       mimetype: documento.mimetype,
@@ -314,6 +314,129 @@ export class PagamentoUnifiedMapper {
     return documentos.map((documento) =>
       this.comprovanteToResponseDto(documento),
     );
+  }
+
+  // ==========================================
+  // MÉTODOS AUXILIARES PARA PAGAMENTO
+  // ==========================================
+
+  /**
+   * Extrai o ID do pagamento associado ao documento
+   *
+   * @param documento - Entidade do documento
+   * @returns ID do pagamento ou string vazia se não encontrado
+   */
+  private static extrairPagamentoId(documento: Documento): string {
+    // 1. Verificar se há referência nos metadados do documento
+    if (documento.metadados) {
+      const pagamentoId = this.extrairPagamentoDosMetadados(
+        documento.metadados,
+      );
+      if (pagamentoId) {
+        return pagamentoId;
+      }
+    }
+
+    // 2. Verificar se há referência nas observações
+    if (documento.observacoes_verificacao) {
+      const pagamentoId = this.extrairPagamentoDasObservacoes(
+        documento.observacoes_verificacao,
+      );
+      if (pagamentoId) {
+        return pagamentoId;
+      }
+    }
+
+    // 3. Verificar se o nome do arquivo contém referência ao pagamento
+    if (documento.nome_original) {
+      const pagamentoId = this.extrairPagamentoDoNomeArquivo(
+        documento.nome_original,
+      );
+      if (pagamentoId) {
+        return pagamentoId;
+      }
+    }
+
+    return '';
+  }
+
+  /**
+   * Extrai pagamento_id do contexto de referência
+   */
+  private static extrairPagamentoDoContexto(contexto: string): string {
+    try {
+      const contextoObj = JSON.parse(contexto);
+      return contextoObj.pagamento_id || contextoObj.pagamentoId || '';
+    } catch {
+      // Se não for JSON válido, tentar extrair por regex
+      const match = contexto.match(/pagamento[_-]?id[:\s]*([a-f0-9-]{36})/i);
+      return match ? match[1] : '';
+    }
+  }
+
+  /**
+   * Extrai pagamento_id das observações
+   */
+  private static extrairPagamentoDasObservacoes(observacoes: string): string {
+    const patterns = [
+      /pagamento[_\s-]*id[:\s]*([a-f0-9-]{36})/i,
+      /comprovante[_\s-]*pagamento[:\s]*([a-f0-9-]{36})/i,
+      /ref[_\s-]*pagamento[:\s]*([a-f0-9-]{36})/i,
+    ];
+
+    for (const pattern of patterns) {
+      const match = observacoes.match(pattern);
+      if (match) {
+        return match[1];
+      }
+    }
+
+    return '';
+  }
+
+  /**
+   * Extrai pagamento_id do nome do arquivo
+   */
+  private static extrairPagamentoDoNomeArquivo(nomeArquivo: string): string {
+    const patterns = [
+      /comprovante[_-]([a-f0-9-]{36})/i,
+      /pagamento[_-]([a-f0-9-]{36})/i,
+      /pag[_-]([a-f0-9-]{36})/i,
+    ];
+
+    for (const pattern of patterns) {
+      const match = nomeArquivo.match(pattern);
+      if (match) {
+        return match[1];
+      }
+    }
+
+    return '';
+  }
+
+  /**
+   * Extrai pagamento_id dos metadados
+   */
+  private static extrairPagamentoDosMetadados(metadados: any): string {
+    if (typeof metadados === 'string') {
+      try {
+        metadados = JSON.parse(metadados);
+      } catch {
+        return '';
+      }
+    }
+
+    if (typeof metadados === 'object' && metadados !== null) {
+      return (
+        metadados.pagamento_id ||
+        metadados.pagamentoId ||
+        metadados.payment_id ||
+        metadados.ref_pagamento ||
+        ''
+      );
+    }
+
+    return '';
   }
 
   // ==========================================

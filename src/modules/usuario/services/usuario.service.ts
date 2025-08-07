@@ -746,7 +746,7 @@ export class UsuarioService {
    * Incrementa o contador de tentativas de login
    * @param userId ID do usuário
    */
-  private async incrementLoginAttempts(userId: string): Promise<void> {
+  async incrementLoginAttempts(userId: string): Promise<void> {
     try {
       await this.dataSource.transaction(async (manager) => {
         const usuarioRepo = manager.getRepository(Usuario);
@@ -773,7 +773,7 @@ export class UsuarioService {
    * Reseta o contador de tentativas de login
    * @param userId ID do usuário
    */
-  private async resetLoginAttempts(userId: string): Promise<void> {
+  async resetLoginAttempts(userId: string): Promise<void> {
     try {
       await this.usuarioRepository.updateStatus(userId, Status.ATIVO);
       await this.dataSource.transaction(async (manager) => {
@@ -1184,6 +1184,82 @@ export class UsuarioService {
         message:
           'Se o email estiver cadastrado, você receberá instruções para recuperação de senha.',
       };
+    }
+  }
+
+  /**
+   * Busca usuários por permissões específicas
+   * @param permissoes Lista de permissões para filtrar
+   * @returns Lista de usuários com as permissões especificadas
+   */
+  async buscarPorPermissao(permissoes: string[]): Promise<Array<{ id: string; nome: string; email: string }>> {
+    try {
+      const usuarios = await this.dataSource
+        .createQueryBuilder(Usuario, 'usuario')
+        .innerJoin('usuario.role', 'role')
+        .innerJoin('role.permissoes', 'permissao')
+        .where('permissao.nome IN (:...permissoes)', { permissoes })
+        .andWhere('usuario.status = :status', { status: Status.ATIVO })
+        .select(['usuario.id', 'usuario.nome', 'usuario.email'])
+        .getMany();
+
+      return usuarios.map(usuario => ({
+        id: usuario.id,
+        nome: usuario.nome,
+        email: usuario.email,
+      }));
+    } catch (error) {
+      this.logger.error('Erro ao buscar usuários por permissão', error.stack);
+      return [];
+    }
+  }
+
+  /**
+   * Busca usuários por setores específicos
+   * @param setores Lista de setores para filtrar
+   * @returns Lista de usuários dos setores especificados
+   */
+  async buscarPorSetor(setores: string[]): Promise<Array<{ id: string; nome: string; email: string }>> {
+    try {
+      const usuarios = await this.dataSource
+        .createQueryBuilder(Usuario, 'usuario')
+        .innerJoin('usuario.setor', 'setor')
+        .where('setor.nome IN (:...setores)', { setores })
+        .andWhere('usuario.status = :status', { status: Status.ATIVO })
+        .select(['usuario.id', 'usuario.nome', 'usuario.email'])
+        .getMany();
+
+      return usuarios.map(usuario => ({
+        id: usuario.id,
+        nome: usuario.nome,
+        email: usuario.email,
+      }));
+    } catch (error) {
+      this.logger.error('Erro ao buscar usuários por setor', error.stack);
+      return [];
+    }
+  }
+
+  /**
+   * Busca todos os usuários ativos do sistema
+   * @returns Lista de todos os usuários ativos
+   */
+  async buscarTodosAtivos(): Promise<Array<{ id: string; nome: string; email: string }>> {
+    try {
+      const usuarios = await this.dataSource
+        .createQueryBuilder(Usuario, 'usuario')
+        .where('usuario.status = :status', { status: Status.ATIVO })
+        .select(['usuario.id', 'usuario.nome', 'usuario.email'])
+        .getMany();
+
+      return usuarios.map(usuario => ({
+        id: usuario.id,
+        nome: usuario.nome,
+        email: usuario.email,
+      }));
+    } catch (error) {
+      this.logger.error('Erro ao buscar todos os usuários ativos', error.stack);
+      return [];
     }
   }
 }

@@ -15,6 +15,7 @@ import { PagamentoCreateDto } from '../dtos/pagamento-create.dto';
 import { PagamentoUpdateStatusDto } from '../dtos/pagamento-update-status.dto';
 import { PagamentoValidationService } from './pagamento-validation.service';
 import { PagamentoUnifiedMapper } from '../mappers';
+import { DocumentoService } from '../../documento/services/documento.service';
 
 /**
  * Interface para resultado de verificação de elegibilidade
@@ -76,9 +77,9 @@ export class PagamentoWorkflowService {
 
   constructor(
     private readonly pagamentoRepository: PagamentoRepository,
-    // comprovanteRepository removido - agora usa DocumentoRepository
     private readonly confirmacaoRepository: ConfirmacaoRepository,
     private readonly validationService: PagamentoValidationService,
+    private readonly documentoService: DocumentoService,
   ) {}
 
   // ==========================================
@@ -675,10 +676,11 @@ export class PagamentoWorkflowService {
     const documentos_obrigatorios = [TipoDocumentoEnum.RECIBO_ALUGUEL];
 
     // Buscar recibos de aluguel através do DocumentoRepository
-    // TODO: Implementar busca de documentos por pagamento_id
-    const recibos = [];
+    // Busca documentos associados ao pagamento para verificação de elegibilidade
+    const documentos = await this.documentoService.findByPagamentoId(pagamento.id);
+    const recibos = documentos || [];
     const recibosAluguel = recibos.filter(
-      (r) => r.tipo_documento === TipoDocumentoEnum.RECIBO_ALUGUEL,
+      (r) => r.tipo === TipoDocumentoEnum.RECIBO_ALUGUEL,
     );
 
     if (recibosAluguel.length === 0) {

@@ -4,6 +4,8 @@ import {
   ConflictException,
   BadRequestException,
   Logger,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { PagamentoRepository } from '../repositories/pagamento.repository';
 import { Pagamento } from '../../../entities/pagamento.entity';
@@ -14,11 +16,18 @@ import { PagamentoUpdateStatusDto } from '../dtos/pagamento-update-status.dto';
 import { normalizeEnumFields } from '../../../shared/utils/enum-normalizer.util';
 import { PagamentoValidationUtil } from '../utils/pagamento-validation.util';
 import { PagamentoCalculatorService } from './pagamento-calculator.service';
+import { PagamentoCacheInvalidationService } from './pagamento-cache-invalidation.service';
 import {
   DadosPagamento,
   ResultadoCalculoPagamento,
 } from '../interfaces/pagamento-calculator.interface';
 import { format } from 'date-fns';
+import { AuditoriaService } from '@/modules/auditoria/services/auditoria.service';
+import { ConcessaoService } from '@/modules/beneficio/services/concessao.service';
+import { SolicitacaoService } from '@/modules/solicitacao/services/solicitacao.service';
+import { PagamentoUnifiedMapper } from '../mappers';
+import { PagamentoCacheService } from './pagamento-cache.service';
+import { PagamentoValidationService } from './pagamento-validation.service';
 
 /**
  * Service simplificado para gerenciamento de pagamentos
@@ -30,6 +39,14 @@ export class PagamentoService {
 
   constructor(
     private readonly pagamentoRepository: PagamentoRepository,
+    private readonly validationService: PagamentoValidationService,
+    private readonly cacheService: PagamentoCacheService,
+    private readonly cacheInvalidationService: PagamentoCacheInvalidationService,
+    private readonly auditoriaService: AuditoriaService,
+    private readonly solicitacaoService: SolicitacaoService,
+    @Inject(forwardRef(() => ConcessaoService))
+    private readonly concessaoService: ConcessaoService,
+    private readonly mapper: PagamentoUnifiedMapper,
     private readonly pagamentoCalculatorService: PagamentoCalculatorService,
   ) {}
 
@@ -56,6 +73,19 @@ export class PagamentoService {
 
     // Criar pagamento
     const pagamento = await this.pagamentoRepository.create(dadosNormalizados);
+
+    // Emitir evento de invalidação de cache
+    this.cacheInvalidationService.emitCacheInvalidationEvent({
+      pagamentoId: pagamento.id,
+      action: 'create',
+      solicitacaoId: pagamento.solicitacao_id,
+      concessaoId: pagamento.concessao_id,
+      metadata: {
+        status: pagamento.status,
+        metodo: pagamento.metodo_pagamento,
+        valor: pagamento.valor
+      }
+    });
 
     // Pagamento criado com sucesso
     return pagamento;
@@ -171,6 +201,21 @@ export class PagamentoService {
       dadosAtualizacao,
     );
 
+    // Emitir evento de invalidação de cache para mudança de status
+    this.cacheInvalidationService.emitCacheInvalidationEvent({
+      pagamentoId: pagamento.id,
+      action: 'status_change',
+      oldStatus: pagamento.status,
+      newStatus: updateDto.status,
+      solicitacaoId: pagamento.solicitacao_id,
+      concessaoId: pagamento.concessao_id,
+      metadata: {
+        previousStatus: pagamento.status,
+        newStatus: updateDto.status,
+        updatedAt: new Date()
+      }
+    });
+
     this.logger.log(
       `Status do pagamento ${id} atualizado para ${updateDto.status}`,
     );
@@ -211,6 +256,21 @@ export class PagamentoService {
       id,
       dadosAtualizacao,
     );
+
+    // Emitir evento de invalidação de cache para cancelamento
+    this.cacheInvalidationService.emitCacheInvalidationEvent({
+      pagamentoId: pagamento.id,
+      action: 'cancelled',
+      oldStatus: pagamento.status,
+      newStatus: StatusPagamentoEnum.CANCELADO,
+      solicitacaoId: pagamento.solicitacao_id,
+      concessaoId: pagamento.concessao_id,
+      metadata: {
+        cancelledAt: new Date(),
+        previousStatus: pagamento.status,
+        reason: 'Manual cancellation'
+      }
+    });
 
     // Pagamento cancelado com sucesso
     return pagamentoCancelado;
@@ -275,6 +335,23 @@ export class PagamentoService {
         `${pagamentosGerados.length} pagamentos gerados para concessão ${concessao.id} - ` +
           `Total: R$ ${dadosPagamento.valor.toFixed(2)}`,
       );
+
+      // Emitir eventos de invalidação de cache para cada pagamento criado
+      pagamentosGerados.forEach(pagamento => {
+        this.cacheInvalidationService.emitCacheInvalidationEvent({
+          pagamentoId: pagamento.id,
+          action: 'create',
+          solicitacaoId: pagamento.solicitacao_id,
+          concessaoId: pagamento.concessao_id,
+          metadata: {
+            status: pagamento.status,
+            metodo: pagamento.metodo_pagamento,
+            valor: pagamento.valor,
+            batchCreation: true,
+            batchSize: pagamentosGerados.length
+          }
+        });
+      });
 
       return pagamentosGerados;
     } catch (error) {

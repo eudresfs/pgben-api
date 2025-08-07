@@ -1,4 +1,4 @@
-55 results - 23 files
+29 results - 15 files
 
 .git\hooks\sendemail-validate.sample:
   26  	file="$1"
@@ -34,13 +34,13 @@ src\modules\auditoria\core\repositories\audit-core.repository.ts:
   333          topEntities,
 
 src\modules\auditoria\core\services\audit-core.service.ts:
-  551    ): Promise<CreateAuditLogDto> {
-  552:     // TODO: Implementar compressão real
-  553      // Por enquanto, apenas marca como comprimido
+  576    ): Promise<CreateAuditLogDto> {
+  577:     // TODO: Implementar compressão real
+  578      // Por enquanto, apenas marca como comprimido
 
-  569    ): Promise<CreateAuditLogDto> {
-  570:     // TODO: Implementar assinatura digital real
-  571      // Por enquanto, apenas adiciona hash simulado
+  594    ): Promise<CreateAuditLogDto> {
+  595:     // TODO: Implementar assinatura digital real
+  596      // Por enquanto, apenas adiciona hash simulado
 
 src\modules\auditoria\queues\jobs\audit-processing.job.ts:
   233    private async compressData(data: any): Promise<any> {
@@ -68,87 +68,10 @@ src\modules\auditoria\queues\processors\audit.processor.ts:
   338:     // TODO: Implementar dead letter queue real
   339      // Por enquanto, apenas log crítico
 
-src\modules\configuracao\services\integracao.service.ts:
-  249      // Para simplificar neste momento, apenas serializa para JSON
-  250:     // TODO: Implementar criptografia real
-  251      this.logger.log('Criptografando credenciais sensíveis');
-
-  264      // Para simplificar neste momento, apenas deserializa de JSON
-  265:     // TODO: Implementar descriptografia real
-  266      try {
-
-src\modules\documento\services\documento.service.ts:
-  343              userId: usuarioId,
-  344:             userRoles: [], // TODO: Implementar roles
-  345:             ip: 'unknown', // TODO: Capturar IP
-  346:             userAgent: 'unknown', // TODO: Capturar User Agent
-  347            },
-
-  417            userId: usuarioId,
-  418:           userRoles: [], // TODO: Implementar roles
-  419:           ip: 'unknown', // TODO: Capturar IP
-  420:           userAgent: 'unknown', // TODO: Capturar User Agent
-  421          },
-
 src\modules\documento\services\thumbnail\thumbnail-queue.service.ts:
-  464          successRate: 0.95, // 95% de taxa de sucesso
-  465:         totalProcessed: 0, // TODO: Implementar contador persistente
-  466        },
-
-src\modules\documento\services\thumbnail\thumbnail.service.ts:
-  990      // Para documentos Office, usamos thumbnails padrão por enquanto
-  991:     // TODO: Implementar conversão real usando LibreOffice ou similar
-  992      return this.getDefaultThumbnail(type);
-
-src\modules\notificacao\controllers\notification-template.controller.ts:
-   20  import { Roles } from '../../../auth/decorators/role.decorator';
-   21: // import { NotificationManagerService } from '../services/notification-manager.service'; // TODO: Reativar após resolver dependência circular
-   22  import { CreateNotificationTemplateDto } from '../dto/create-notification-template.dto';
-
-   34  
-   35:   constructor() {} // private readonly notificationManagerService: NotificationManagerService, // TODO: Reativar após resolver dependência circular
-   36  
-
-   50      this.logger.log(`Criando novo template: ${createTemplateDto.nome}`);
-   51:     // TODO: Reativar após resolver dependência circular
-   52      // return this.notificationManagerService.criarTemplate(createTemplateDto);
-
-   72    ) {
-   73:     // TODO: Reativar após resolver dependência circular
-   74      // return this.notificationManagerService.listarTemplates({
-
-   98    async buscarTemplatePorId(@Param('id') id: string) {
-   99:     // TODO: Reativar após resolver dependência circular
-  100      // return this.notificationManagerService.buscarTemplatePorId(id);
-
-  117      this.logger.log(`Ativando template ID: ${id}`);
-  118:     // TODO: Reativar após resolver dependência circular
-  119      // return this.notificationManagerService.ativarTemplate(id);
-
-  136      this.logger.log(`Desativando template ID: ${id}`);
-  137:     // TODO: Reativar após resolver dependência circular
-  138      // return this.notificationManagerService.desativarTemplate(id);
-
-src\modules\notificacao\listeners\usuario-events.listener.ts:
-    2  import { OnEvent } from '@nestjs/event-emitter';
-    3: // import { NotificationManagerService } from '../services/notification-manager.service'; // TODO: Reativar após resolver dependência circular
-    4  import { CanalNotificacao } from '../../../entities/notification-template.entity';
-
-   13  
-   14:   constructor() {} // private readonly notificationManager: NotificationManagerService, // TODO: Reativar após resolver dependência circular
-   15  
-
-   32      try {
-   33:       // TODO: Reativar após resolver dependência circular
-   34        // await this.notificationManager.criarNotificacao({
-
-   72      try {
-   73:       // TODO: Reativar após resolver dependência circular
-   74        // await this.notificationManager.criarNotificacao({
-
-  112      try {
-  113:       // TODO: Reativar após resolver dependência circular
-  114        // await this.notificationManager.criarNotificacao({
+  482          successRate: 0.95, // 95% de taxa de sucesso
+  483:         totalProcessed: 0, // TODO: Implementar contador persistente
+  484        },
 
 src\modules\notificacao\listeners\workflow-proativo.listener.ts:
   343    }) {
@@ -189,29 +112,6 @@ src\modules\notificacao\services\notificacao-proativa.service.ts:
   300:       pagamentosAtrasados: 0, // TODO: Implementar quando módulo de pagamentos estiver disponível
   301:       documentosPendentes: 0, // TODO: Implementar quando módulo de documentos estiver disponível
   302        usuariosAtivos,
-
-src\modules\notificacao\services\notification-manager.service.ts:
-  706  
-  707:       // TODO: Configurar job para verificar notificações pendentes periodicamente
-  708        // Temporariamente desabilitado - depende do ScheduleAdapter
-
-src\modules\pagamento\handlers\get-pagamentos.handler.ts:
-  227        if (pagamentoId) {
-  228:         // TODO: Implementar invalidação de cache por padrão
-  229          // const pattern = `pagamento:${pagamentoId}:*`;
-
-  232  
-  233:       // TODO: Implementar invalidação de cache por padrão
-  234        // await this.cacheService.deleteByPattern('pagamento:pagamentos:*');
-
-src\modules\pagamento\interceptors\pagamento-performance.interceptor.ts:
-  272        if (url.includes('/pagamentos')) {
-  273:         // TODO: Implementar invalidação de cache por padrão
-  274          // await this.cacheService.clear(); // Alternativa temporária
-
-  282        if (url.includes('/comprovantes')) {
-  283:         // TODO: Implementar invalidação de cache por padrão
-  284          // await this.cacheService.clear(); // Alternativa temporária
 
 src\modules\pagamento\mappers\pagamento-unified.mapper.ts:
   290        id: documento.id,

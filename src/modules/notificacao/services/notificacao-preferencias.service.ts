@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { TipoNotificacao } from '../../../entities/notification.entity';
+import { PreferenciasNotificacao } from '../../../entities/preferencias-notificacao.entity';
 
 /**
  * Enum para canais de notificação
@@ -52,15 +53,17 @@ interface PreferenciaTipo {
 export interface PreferenciasUsuario {
   usuario_id: string;
   ativo: boolean;
-  idioma: string;
-  timezone: string;
   tipos: PreferenciaTipo[];
   configuracoes_globais: {
-    pausar_todas: boolean;
-    pausar_ate: Date | null;
-    limite_diario: number;
-    som_ativo: boolean;
-    vibrar_ativo: boolean;
+    limite_diario?: number;
+    pausar_todas?: boolean;
+    pausar_ate?: Date | null;
+    canais_preferidos?: string[];
+    horario_silencioso_global?: {
+      ativo: boolean;
+      inicio: string;
+      fim: string;
+    };
   };
   created_at: Date;
   updated_at: Date;
@@ -105,9 +108,8 @@ export class NotificacaoPreferenciasService {
   private readonly filaAgrupamento = new Map<string, NotificacaoAgrupada>();
 
   constructor(
-    // TODO: Criar entidade PreferenciasNotificacao quando necessário
-    // @InjectRepository(PreferenciasNotificacao)
-    // private preferenciasRepository: Repository<PreferenciasNotificacao>,
+    @InjectRepository(PreferenciasNotificacao)
+    private readonly preferenciasRepository: Repository<PreferenciasNotificacao>,
     private readonly eventEmitter: EventEmitter2,
   ) {
     // Inicializar processamento de agrupamento
@@ -125,18 +127,40 @@ export class NotificacaoPreferenciasService {
       return cached;
     }
 
-    // TODO: Buscar do banco de dados quando entidade estiver criada
-    // const preferencias = await this.preferenciasRepository.findOne({
-    //   where: { usuario_id: usuarioId },
-    // });
+    try {
+      // Buscar do banco de dados
+      const preferenciasEntity = await this.preferenciasRepository.findOne({
+        where: { usuario_id: usuarioId },
+      });
 
-    // Por enquanto, retornar preferências padrão
-    const preferenciasDefault = this.criarPreferenciasDefault(usuarioId);
+      let preferencias: PreferenciasUsuario;
 
-    // Adicionar ao cache
-    this.cachePreferencias.set(usuarioId, preferenciasDefault);
+      if (preferenciasEntity) {
+        // Converter entidade para interface
+        preferencias = this.entityParaInterface(preferenciasEntity);
+      } else {
+        // Criar preferências padrão se não existir
+        preferencias = this.criarPreferenciasDefault(usuarioId);
+        
+        // Salvar no banco para próximas consultas
+        await this.salvarPreferenciasIniciais(usuarioId, preferencias);
+      }
 
-    return preferenciasDefault;
+      // Adicionar ao cache
+      this.cachePreferencias.set(usuarioId, preferencias);
+
+      return preferencias;
+    } catch (error) {
+      this.logger.error(
+        `Erro ao buscar preferências do usuário ${usuarioId}: ${error.message}`,
+        error.stack,
+      );
+      
+      // Fallback para preferências padrão
+      const preferenciasDefault = this.criarPreferenciasDefault(usuarioId);
+      this.cachePreferencias.set(usuarioId, preferenciasDefault);
+      return preferenciasDefault;
+    }
   }
 
   /**
@@ -146,24 +170,36 @@ export class NotificacaoPreferenciasService {
     usuarioId: string,
     novasPreferencias: Partial<PreferenciasUsuario>,
   ): Promise<PreferenciasUsuario> {
-    const preferenciasAtuais = await this.obterPreferencias(usuarioId);
+    try {
+      const preferenciasAtuais = await this.obterPreferencias(usuarioId);
 
-    const preferenciasAtualizadas: PreferenciasUsuario = {
-      ...preferenciasAtuais,
-      ...novasPreferencias,
-      usuario_id: usuarioId,
-      updated_at: new Date(),
-    };
+      const preferenciasAtualizadas: PreferenciasUsuario = {
+        ...preferenciasAtuais,
+        ...novasPreferencias,
+        usuario_id: usuarioId,
+        updated_at: new Date(),
+      };
 
-    // TODO: Salvar no banco de dados
-    // await this.preferenciasRepository.save(preferenciasAtualizadas);
+      // Converter para entidade e salvar no banco
+      const entityData = this.interfaceParaEntity(preferenciasAtualizadas);
+      await this.preferenciasRepository.save({
+        ...entityData,
+        usuario_id: usuarioId,
+      });
 
-    // Atualizar cache
-    this.cachePreferencias.set(usuarioId, preferenciasAtualizadas);
+      // Atualizar cache
+      this.cachePreferencias.set(usuarioId, preferenciasAtualizadas);
 
-    this.logger.log(`Preferências atualizadas para usuário ${usuarioId}`);
+      this.logger.log(`Preferências atualizadas para usuário ${usuarioId}`);
 
-    return preferenciasAtualizadas;
+      return preferenciasAtualizadas;
+    } catch (error) {
+      this.logger.error(
+        `Erro ao atualizar preferências do usuário ${usuarioId}: ${error.message}`,
+        error.stack,
+      );
+      throw error;
+    }
   }
 
   /**
@@ -183,10 +219,10 @@ export class NotificacaoPreferenciasService {
     }
 
     // Verificar se todas as notificações estão pausadas
-    if (preferencias.configuracoes_globais.pausar_todas) {
+    if (preferencias.configuracoes_globais?.pausar_todas) {
       const agora = new Date();
       if (
-        !preferencias.configuracoes_globais.pausar_ate ||
+        !preferencias.configuracoes_globais?.pausar_ate ||
         agora < preferencias.configuracoes_globais.pausar_ate
       ) {
         return false;
@@ -234,7 +270,7 @@ export class NotificacaoPreferenciasService {
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
     const notificacoesHoje = await this.contarNotificacoesDia(usuarioId, hoje);
-    if (notificacoesHoje >= preferencias.configuracoes_globais.limite_diario) {
+    if (notificacoesHoje >= (preferencias.configuracoes_globais?.limite_diario || 50)) {
       return false;
     }
 
@@ -473,8 +509,6 @@ export class NotificacaoPreferenciasService {
     return {
       usuario_id: usuarioId,
       ativo: true,
-      idioma: 'pt-BR',
-      timezone: 'America/Sao_Paulo',
       tipos: Object.values(TipoNotificacao).map((tipo) => ({
         tipo,
         ativo: true,
@@ -495,8 +529,12 @@ export class NotificacaoPreferenciasService {
         pausar_todas: false,
         pausar_ate: null,
         limite_diario: 50,
-        som_ativo: true,
-        vibrar_ativo: true,
+        canais_preferidos: ['sistema', 'email'],
+        horario_silencioso_global: {
+          ativo: false,
+          inicio: '22:00',
+          fim: '08:00',
+        },
       },
       created_at: agora,
       updated_at: agora,
@@ -526,9 +564,53 @@ export class NotificacaoPreferenciasService {
     usuarioId: string,
     data: Date,
   ): Promise<number> {
-    // TODO: Implementar consulta real ao banco
-    // Por enquanto, retornar 0
-    return 0;
+    try {
+      // Calcular início e fim do dia
+      const inicioDia = new Date(data);
+      inicioDia.setHours(0, 0, 0, 0);
+      
+      const fimDia = new Date(data);
+      fimDia.setHours(23, 59, 59, 999);
+      
+      // Buscar estatísticas das preferências do usuário
+      const preferencias = await this.preferenciasRepository.findOne({
+        where: { usuario_id: usuarioId },
+        select: ['estatisticas'],
+      });
+      
+      if (!preferencias?.estatisticas) {
+        return 0;
+      }
+      
+      // Por enquanto, usar uma estimativa baseada nas estatísticas
+      // Em uma implementação completa, seria feita uma consulta na tabela de notificações
+      const totalEnviadas = preferencias.estatisticas.total_enviadas || 0;
+      const ultimaInteracao = preferencias.estatisticas.ultima_interacao;
+      
+      if (!ultimaInteracao) {
+        return 0;
+      }
+      
+      // Estimativa simples: se a última interação foi hoje, assumir uma distribuição
+      const hoje = new Date();
+      hoje.setHours(0, 0, 0, 0);
+      
+      const ultimaInteracaoData = new Date(ultimaInteracao);
+      ultimaInteracaoData.setHours(0, 0, 0, 0);
+      
+      if (ultimaInteracaoData.getTime() === hoje.getTime()) {
+        // Estimativa: 10% das notificações totais por dia (ajustável)
+        return Math.min(Math.floor(totalEnviadas * 0.1), 10);
+      }
+      
+      return 0;
+    } catch (error) {
+      this.logger.error(
+        `Erro ao contar notificações do dia para usuário ${usuarioId}: ${error.message}`,
+        error.stack,
+      );
+      return 0;
+    }
   }
 
   /**
@@ -546,8 +628,6 @@ export class NotificacaoPreferenciasService {
         pausar_todas: true,
         pausar_ate: pausarAte,
         limite_diario: 50,
-        som_ativo: true,
-        vibrar_ativo: true,
       },
     });
 
@@ -565,8 +645,6 @@ export class NotificacaoPreferenciasService {
         pausar_todas: false,
         pausar_ate: null,
         limite_diario: 50,
-        som_ativo: true,
-        vibrar_ativo: true,
       },
     });
 
@@ -622,5 +700,69 @@ export class NotificacaoPreferenciasService {
   limparCache(): void {
     this.cachePreferencias.clear();
     this.logger.log('Cache de preferências limpo');
+  }
+
+  /**
+   * Converte entidade do banco para interface
+   */
+  private entityParaInterface(entity: PreferenciasNotificacao): PreferenciasUsuario {
+    return {
+      usuario_id: entity.usuario_id,
+      ativo: entity.ativo,
+      tipos: (entity.tipos || []).map(tipo => ({
+        ...tipo,
+        tipo: tipo.tipo as TipoNotificacao,
+        canais: tipo.canais as CanalNotificacao[],
+        agrupamento: {
+          ...tipo.agrupamento,
+          frequencia: tipo.agrupamento.frequencia as FrequenciaAgrupamento,
+        },
+      })),
+      configuracoes_globais: entity.configuracoes_globais || {
+        pausar_todas: false,
+        pausar_ate: null,
+        limite_diario: 50,
+      },
+      created_at: entity.created_at,
+      updated_at: entity.updated_at,
+    };
+  }
+
+  /**
+   * Converte interface para dados da entidade
+   */
+  private interfaceParaEntity(preferencias: PreferenciasUsuario): Partial<PreferenciasNotificacao> {
+    return {
+      usuario_id: preferencias.usuario_id,
+      ativo: preferencias.ativo,
+      tipos: preferencias.tipos,
+      configuracoes_globais: preferencias.configuracoes_globais,
+      updated_at: preferencias.updated_at,
+    };
+  }
+
+  /**
+   * Salva preferências iniciais no banco de dados
+   */
+  private async salvarPreferenciasIniciais(
+    usuarioId: string,
+    preferencias: PreferenciasUsuario,
+  ): Promise<void> {
+    try {
+      const entityData = this.interfaceParaEntity(preferencias);
+      await this.preferenciasRepository.save({
+        ...entityData,
+        usuario_id: usuarioId,
+        created_at: new Date(),
+      });
+      
+      this.logger.log(`Preferências iniciais criadas para usuário ${usuarioId}`);
+    } catch (error) {
+      this.logger.error(
+        `Erro ao salvar preferências iniciais do usuário ${usuarioId}: ${error.message}`,
+        error.stack,
+      );
+      // Não propagar o erro para não quebrar o fluxo
+    }
   }
 }

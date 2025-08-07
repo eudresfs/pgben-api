@@ -24,6 +24,7 @@ import {
   ApiHeader,
 } from '@nestjs/swagger';
 import { JwtBlacklistService } from '../services/jwt-blacklist.service';
+import { RefreshTokenService } from '../services/refresh-token.service';
 import {
   AddToBlacklistDto,
   CheckBlacklistDto,
@@ -60,6 +61,7 @@ import { AuditEventType } from '../../modules/auditoria/events/types/audit-event
 export class JwtBlacklistController {
   constructor(
     private readonly jwtBlacklistService: JwtBlacklistService,
+    private readonly refreshTokenService: RefreshTokenService,
     private readonly auditEmitter: AuditEventEmitter,
   ) {}
 
@@ -206,13 +208,31 @@ export class JwtBlacklistController {
       user_agent: userAgent,
     };
 
-    // TODO: Buscar tokens ativos do usuário do RefreshTokenService
-    // Por enquanto, retornamos uma resposta simulada
+    // Buscar tokens ativos do usuário do RefreshTokenService
+    const refreshTokens = await this.refreshTokenService.findActiveTokensByUserId(userId);
+    
     const activeTokens: Array<{
       jti: string;
       token_type: 'access' | 'refresh';
       expires_at: Date;
-    }> = [];
+    }> = refreshTokens.map(token => ({
+      jti: token.id, // Usando o ID do refresh token como JTI
+      token_type: 'refresh' as const,
+      expires_at: token.expires_at,
+    }));
+
+    // Emitir evento de auditoria para invalidação de tokens
+    await this.auditEmitter.emitSecurityEvent(
+      AuditEventType.SECURITY_TOKEN_INVALIDATION,
+      userId,
+      {
+        reason: body.reason,
+        token_type: body.token_type || 'all',
+        tokens_count: activeTokens.length,
+        client_ip: clientIp,
+        user_agent: userAgent,
+      },
+    );
 
     return this.jwtBlacklistService.invalidateUserTokens(
       invalidateDto,

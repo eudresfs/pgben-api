@@ -32,6 +32,7 @@ import { ConfirmacaoService } from './services/confirmacao.service';
 
 // Novos serviços de otimização
 import { PagamentoCacheService } from './services/pagamento-cache.service';
+import { PagamentoCacheInvalidationService } from './services/pagamento-cache-invalidation.service';
 import { PagamentoBatchService } from './services/pagamento-batch.service';
 import { PagamentoQueueService } from './services/pagamento-queue.service';
 import { PagamentoQueueProcessor } from './services/pagamento-queue.processor';
@@ -66,10 +67,14 @@ import { AuditoriaInterceptor } from './interceptors/auditoria.interceptor';
 import { PagamentoPerformanceInterceptor } from './interceptors/pagamento-performance.interceptor';
 import { Reflector } from '@nestjs/core';
 
+// Mappers
+import { PagamentoUnifiedMapper } from './mappers/pagamento-unified.mapper';
+
 // Módulos
 import { AuthModule } from '../../auth/auth.module';
 import { UsuarioModule } from '../usuario/usuario.module';
 import { SolicitacaoModule } from '../solicitacao/solicitacao.module';
+import { BeneficioModule } from '../beneficio/beneficio.module';
 import { AuditoriaSharedModule } from '../../shared/auditoria/auditoria-shared.module';
 import { DocumentoModule } from '../documento/documento.module';
 import { CidadaoModule } from '../cidadao/cidadao.module';
@@ -108,6 +113,7 @@ import { CacheModule } from '../../shared/cache/cache.module';
     CacheModule,
     UsuarioModule,
     forwardRef(() => SolicitacaoModule),
+    forwardRef(() => BeneficioModule),
     DocumentoModule,
     CidadaoModule,
     NotificacaoModule,
@@ -136,8 +142,9 @@ import { CacheModule } from '../../shared/cache/cache.module';
     ComprovanteService,
     ConfirmacaoService,
 
-    // Novos serviços de otimização
+    // Serviços de otimização
     PagamentoCacheService,
+    PagamentoCacheInvalidationService,
     PagamentoBatchService,
     PagamentoQueueService,
     PagamentoQueueProcessor,
@@ -174,6 +181,9 @@ import { CacheModule } from '../../shared/cache/cache.module';
 
     // Storage
     StorageService,
+
+    // Mappers
+    PagamentoUnifiedMapper,
   ],
   exports: [
     TypeOrmModule,

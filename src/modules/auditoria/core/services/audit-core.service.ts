@@ -22,6 +22,8 @@ import {
 } from '../../events/types/audit-event.types';
 import { TipoOperacao } from '../../../../enums/tipo-operacao.enum';
 import { AuditJobData } from '../../queues/jobs/audit-processing.job';
+import { AuditContextHolder } from '../../../../common/interceptors/audit-context.interceptor';
+import { AuditoriaSignatureService } from '../../services/auditoria-signature.service';
 
 /**
  * Interface para criação de log de auditoria
@@ -65,6 +67,7 @@ export class AuditCoreService implements OnModuleInit {
   constructor(
     private readonly auditRepository: AuditCoreRepository,
     private readonly eventEmitter: EventEmitter2,
+    private readonly auditoriaSignatureService: AuditoriaSignatureService,
   ) {
     // Listeners serão registrados após a inicialização completa do módulo
   }
@@ -496,15 +499,39 @@ export class AuditCoreService implements OnModuleInit {
   }
 
   /**
-   * Enriquece DTO com dados padrão
+   * Enriquece DTO com dados padrão e contexto de auditoria
    */
   private enrichCreateDto(dto: CreateAuditLogDto): CreateAuditLogDto {
+    // Captura contexto de auditoria do interceptor
+    const auditContext = AuditContextHolder.get();
+    
+    // Enriquece contexto de requisição com dados capturados
+    const enrichedContexto = {
+      ...dto.contexto_requisicao,
+      // Dados do contexto de auditoria
+      userId: auditContext?.userId,
+      userRoles: auditContext?.userRoles,
+      ip: auditContext?.ip,
+      userAgent: auditContext?.userAgent,
+      requestId: auditContext?.requestId,
+      sessionId: auditContext?.sessionId,
+      timestamp: auditContext?.timestamp,
+      method: auditContext?.method,
+      url: auditContext?.url,
+      controllerName: auditContext?.controllerName,
+      handlerName: auditContext?.handlerName,
+    };
+
     return {
       ...dto,
       nivel_risco: dto.nivel_risco || RiskLevel.LOW,
       lgpd_relevante: dto.lgpd_relevante ?? false,
       metadata: dto.metadata || {},
-      contexto_requisicao: dto.contexto_requisicao || {},
+      contexto_requisicao: enrichedContexto,
+      ip_origem: dto.ip_origem || auditContext?.ip,
+      user_agent: dto.user_agent || auditContext?.userAgent,
+      endpoint: dto.endpoint || auditContext?.url,
+      metodo_http: dto.metodo_http || auditContext?.method,
       descricao: dto.descricao || this.generateDefaultDescription(dto),
     };
   }
@@ -549,16 +576,81 @@ export class AuditCoreService implements OnModuleInit {
   private async compressAuditData(
     dto: CreateAuditLogDto,
   ): Promise<CreateAuditLogDto> {
-    // TODO: Implementar compressão real
-    // Por enquanto, apenas marca como comprimido
-    return {
-      ...dto,
-      metadata: {
-        ...dto.metadata,
-        _compressed: true,
-        _originalSize: JSON.stringify(dto).length,
-      },
-    };
+    try {
+      // Serializa os dados para compressão
+      const originalData = JSON.stringify(dto);
+      const originalSize = originalData.length;
+      
+      // Só comprime se os dados forem grandes o suficiente (> 1KB)
+      if (originalSize < 1024) {
+        return {
+          ...dto,
+          metadata: {
+            ...dto.metadata,
+            _compressed: false,
+            _originalSize: originalSize,
+            _reason: 'Data too small for compression',
+          },
+        };
+      }
+
+      // Implementa compressão usando gzip
+      const { gzip } = await import('zlib');
+      const { promisify } = await import('util');
+      const gzipAsync = promisify(gzip);
+      
+      // Comprime os dados sensíveis (contexto_requisicao e metadata)
+      const dataToCompress = {
+        contexto_requisicao: dto.contexto_requisicao,
+        metadata: dto.metadata,
+        dados_anteriores: dto.dados_anteriores,
+        dados_novos: dto.dados_novos,
+      };
+      
+      const compressedBuffer = await gzipAsync(JSON.stringify(dataToCompress));
+      const compressedSize = compressedBuffer.length;
+      const compressionRatio = ((originalSize - compressedSize) / originalSize * 100).toFixed(2);
+      
+      // Converte para base64 para armazenamento
+      const compressedData = compressedBuffer.toString('base64');
+      
+      this.logger.debug(
+        `Dados de auditoria comprimidos: ${originalSize}B -> ${compressedSize}B (${compressionRatio}% redução)`,
+      );
+      
+      return {
+        ...dto,
+        // Remove dados originais que foram comprimidos
+        contexto_requisicao: undefined,
+        dados_anteriores: undefined,
+        dados_novos: undefined,
+        metadata: {
+          _compressed: true,
+          _originalSize: originalSize,
+          _compressedSize: compressedSize,
+          _compressionRatio: compressionRatio,
+          _compressedData: compressedData,
+          _compressionAlgorithm: 'gzip',
+          _compressedAt: new Date().toISOString(),
+        },
+      };
+    } catch (error) {
+      this.logger.error(
+        `Erro ao comprimir dados de auditoria: ${error.message}`,
+        error.stack,
+      );
+      
+      // Fallback: retorna dados originais sem compressão
+      return {
+        ...dto,
+        metadata: {
+          ...dto.metadata,
+          _compressed: false,
+          _originalSize: JSON.stringify(dto).length,
+          _compressionError: error.message,
+        },
+      };
+    }
   }
 
   /**
@@ -567,19 +659,58 @@ export class AuditCoreService implements OnModuleInit {
   private async signAuditData(
     dto: CreateAuditLogDto,
   ): Promise<CreateAuditLogDto> {
-    // TODO: Implementar assinatura digital real
-    // Por enquanto, apenas adiciona hash simulado
-    const dataString = JSON.stringify(dto);
-    const hash = this.generateSimpleHash(dataString);
+    try {
+      // Criar um objeto temporário com os dados para assinatura
+      const tempLogData = {
+        id: dto.metadata?.tempId || this.generateTempId(),
+        tipo_operacao: dto.tipo_operacao,
+        entidade_afetada: dto.entidade_afetada,
+        entidade_id: dto.entidade_id,
+        usuario_id: dto.usuario_id,
+        endpoint: dto.endpoint,
+        metodo_http: dto.metodo_http,
+        ip_origem: dto.ip_origem,
+        data_hora: new Date(),
+      };
 
-    return {
-      ...dto,
-      metadata: {
-        ...dto.metadata,
-        _signature: hash,
-        _signedAt: new Date().toISOString(),
-      },
-    };
+      // Usar o serviço de assinatura real
+      const signature = await this.auditoriaSignatureService.assinarLog(tempLogData);
+
+      return {
+        ...dto,
+        metadata: {
+          ...dto.metadata,
+          _signature: signature,
+          _signedAt: new Date().toISOString(),
+          _tempId: tempLogData.id,
+        },
+      };
+    } catch (error) {
+      this.logger.error(
+        `Erro ao assinar dados de auditoria: ${error.message}`,
+        error.stack,
+      );
+      // Fallback para hash simples em caso de erro
+      const dataString = JSON.stringify(dto);
+      const hash = this.generateSimpleHash(dataString);
+
+      return {
+        ...dto,
+        metadata: {
+          ...dto.metadata,
+          _signature: hash,
+          _signedAt: new Date().toISOString(),
+          _fallback: true,
+        },
+      };
+    }
+  }
+
+  /**
+   * Gera um ID temporário para assinatura
+   */
+  private generateTempId(): string {
+    return `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 
   /**

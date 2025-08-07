@@ -173,22 +173,33 @@ export class AuthService {
 
       const senhaCorreta = await bcrypt.compare(pass, usuario.senhaHash);
       if (!senhaCorreta) {
+        // Incrementar contador de tentativas de login
+        await this.usuarioService.incrementLoginAttempts(usuario.id);
+        
+        // Buscar usuário atualizado para obter o contador atual
+        const usuarioAtualizado = await this.usuarioService.findById(usuario.id);
+        const consecutiveFailures = usuarioAtualizado?.tentativas_login || 1;
+        
         // Auditoria de tentativa de login com senha incorreta
         await this.auditEmitter.emitSecurityEvent(
           AuditEventType.FAILED_LOGIN,
           usuario.id,
           {
             operation: 'login_attempt',
-            riskLevel: 'high',
+            riskLevel: consecutiveFailures >= 3 ? 'critical' : 'high',
             email: usuario.email,
             clientIp: clientIp,
             userAgent: userAgent,
             reason: 'invalid_password',
-            consecutiveFailures: 1, // TODO: implementar contador
+            consecutiveFailures: consecutiveFailures,
+            accountLocked: consecutiveFailures >= 5,
           },
         );
         throw new UnauthorizedException('Nome de usuário ou senha inválidos');
       }
+      
+      // Login bem-sucedido - resetar contador de tentativas
+      await this.usuarioService.resetLoginAttempts(usuario.id);
 
       // Verificar se o usuário está ativo
       if (usuario.status === 'inativo') {
@@ -220,7 +231,7 @@ export class AuthService {
     // Obter os escopos das permissões
     const permissionScopes: Record<string, string> = {};
 
-    // ✅ Auditoria de login bem-sucedido (validação de credenciais)
+    // Auditoria de login bem-sucedido (validação de credenciais)
     await this.auditEmitter.emitSecurityEvent(
       AuditEventType.SUCCESSFUL_LOGIN,
       usuario.id,
@@ -274,7 +285,7 @@ export class AuthService {
       refreshTokenSeconds, // Converte para segundos para o RefreshTokenService
     );
 
-    // ✅ Auditoria de login completo (geração de tokens)
+    // Auditoria de login completo (geração de tokens)
     await this.auditEmitter.emitSecurityEvent(
       AuditEventType.SUCCESSFUL_LOGIN,
       String(ctx.user!.id),

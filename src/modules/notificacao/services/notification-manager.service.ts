@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, LessThanOrEqual, IsNull } from 'typeorm';
 import { ModuleRef } from '@nestjs/core';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-// import { ScheduleAdapterService } from '../../../shared/schedule/schedule-adapter.service'; // Removido temporariamente
+import { ScheduleAdapterService } from '../../../shared/schedule/schedule-adapter.service';
 import { NotificationTemplate } from '../../../entities/notification-template.entity';
 import {
   NotificacaoSistema,
@@ -17,8 +17,9 @@ import { TemplateRendererService } from './template-renderer.service';
 import { CreateNotificationDto } from '../dto/create-notification.dto';
 import { CreateNotificationTemplateDto } from '../dto/create-notification-template.dto';
 import { EmailService } from '../../../common/services/email.service';
-import { NOTIFICATION_CREATED } from '../events/notification.events';
+import { NOTIFICATION_CREATED, NOTIFICATION_SCHEDULED } from '../events/notification.events';
 import { NotificationCreatedEvent } from '../events/notification-created.event';
+import { NotificationScheduledEvent } from '../events/notification-scheduled.event';
 import { INotificationManagerService } from '../interfaces/notification-manager.interface';
 
 /**
@@ -39,7 +40,7 @@ export class NotificationManagerService implements OnModuleInit, INotificationMa
     private notificacaoRepository: Repository<NotificacaoSistema>,
     private templateRenderer: TemplateRendererService,
     private moduleRef: ModuleRef,
-    // private scheduleAdapter: ScheduleAdapterService, // Removido temporariamente
+    private scheduleAdapter: ScheduleAdapterService,
     private emailService: EmailService,
     private eventEmitter: EventEmitter2,
   ) {}
@@ -65,7 +66,7 @@ export class NotificationManagerService implements OnModuleInit, INotificationMa
       try {
         this.logger.log('Inicializando o gerenciador de notificações');
         await this.registrarCanaisDisponiveis();
-        // await this.iniciarProcessamentoFila(); // Removido temporariamente - depende do ScheduleAdapter
+        await this.iniciarProcessamentoFila();
         this.logger.log('Gerenciador de notificações inicializado com sucesso');
       } catch (error) {
         this.logger.error(
@@ -280,7 +281,7 @@ export class NotificationManagerService implements OnModuleInit, INotificationMa
    *
    * @param notificacaoId ID da notificação a processar
    */
-  async processarNotificacao(notificacaoId: string): Promise<void> {
+  public async processarNotificacao(notificacaoId: string): Promise<void> {
     const notificacao = await this.notificacaoRepository.findOne({
       where: { id: notificacaoId },
       relations: ['template'],
@@ -433,20 +434,50 @@ export class NotificationManagerService implements OnModuleInit, INotificationMa
 
   /**
    * Agenda o envio de uma notificação para uma data futura
-   * TEMPORARIAMENTE DESABILITADO - Depende do ScheduleAdapter
+   * Utiliza arquitetura event-driven para resolver dependência circular
    *
    * @param notificacao Notificação a ser agendada
    */
   private agendarNotificacao(notificacao: NotificacaoSistema): void {
-    this.logger.warn(
-      'Agendamento de notificações temporariamente desabilitado',
-    );
-    // Processar imediatamente como fallback
-    this.processarNotificacao(notificacao.id).catch((err) => {
-      this.logger.error(
-        `Erro ao processar notificação ${notificacao.id}: ${err.message}`,
+    try {
+      if (!notificacao.data_agendamento) {
+        this.logger.warn(
+          `Tentativa de agendar notificação ${notificacao.id} sem data de agendamento`,
+        );
+        // Processar imediatamente se não há data de agendamento
+        this.processarNotificacao(notificacao.id).catch((err) => {
+          this.logger.error(
+            `Erro ao processar notificação ${notificacao.id}: ${err.message}`,
+          );
+        });
+        return;
+      }
+
+      // Criar evento de agendamento
+      const scheduledEvent = new NotificationScheduledEvent(
+        notificacao,
+        notificacao.data_agendamento,
       );
-    });
+
+      // Emitir evento para o listener processar
+      this.eventEmitter.emit(NOTIFICATION_SCHEDULED, scheduledEvent);
+
+      this.logger.log(
+        `Evento de agendamento emitido para notificação ${notificacao.id} - Data: ${notificacao.data_agendamento.toISOString()}`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Erro ao agendar notificação ${notificacao.id}: ${error.message}`,
+        error.stack,
+      );
+      
+      // Fallback: processar imediatamente
+      this.processarNotificacao(notificacao.id).catch((err) => {
+        this.logger.error(
+          `Erro no fallback de processamento da notificação ${notificacao.id}: ${err.message}`,
+        );
+      });
+    }
   }
 
   /**
@@ -705,11 +736,14 @@ export class NotificationManagerService implements OnModuleInit, INotificationMa
         }, index * 500); // 500ms de intervalo entre cada processamento
       }
 
-      // TODO: Configurar job para verificar notificações pendentes periodicamente
-      // Temporariamente desabilitado - depende do ScheduleAdapter
-      this.logger.warn(
-        'Verificação periódica de notificações pendentes temporariamente desabilitada',
+      // Configurar job para verificar notificações pendentes periodicamente
+      this.scheduleAdapter.scheduleInterval(
+        'verificar-notificacoes-pendentes',
+        5 * 60 * 1000, // A cada 5 minutos (em milissegundos)
+        () => this.verificarNotificacoesPendentes(),
       );
+      
+      this.logger.log('Verificação periódica de notificações pendentes configurada (a cada 5 minutos)');
     } catch (error) {
       this.logger.error(
         `Erro ao iniciar processamento da fila de notificações: ${error.message}`,

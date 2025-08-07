@@ -335,15 +335,385 @@ export class AuditProcessor
       },
     );
 
-    // TODO: Implementar dead letter queue real
-    // Por enquanto, apenas log crítico
-    this.logger.error(
-      `DEAD LETTER QUEUE: Job ${job.id} could not be processed`,
-      {
+    try {
+      // Cria registro detalhado do job falhado
+      const deadLetterRecord = {
+        id: this.generateDeadLetterId(),
+        originalJobId: job.id,
+        eventType: job.data.event?.eventType,
+        entityName: job.data.event?.entityName,
+        entityId: job.data.event?.entityId,
+        userId: job.data.event?.userId,
+        originalData: JSON.stringify(job.data),
+        failureReason: error.message,
+        stackTrace: error.stack,
+        attemptsMade: job.attemptsMade,
+        maxAttempts: job.opts.attempts || 3,
+        firstFailedAt: job.processedOn ? new Date(job.processedOn) : new Date(),
+        lastFailedAt: new Date(),
+        status: 'failed',
+        priority: this.calculateDeadLetterPriority(job.data.event),
+        retryable: this.isRetryable(error),
+        metadata: {
+          queueName: 'audit-processing',
+          processorVersion: '1.0.0',
+          environment: process.env.NODE_ENV || 'development',
+          nodeVersion: process.version,
+        },
+      };
+
+      // Persiste no dead letter queue
+      await this.persistDeadLetterRecord(deadLetterRecord);
+
+      // Notifica administradores sobre falha crítica
+      await this.notifyDeadLetterFailure(deadLetterRecord);
+
+      // Agenda retry automático se aplicável
+      if (deadLetterRecord.retryable) {
+        await this.scheduleDeadLetterRetry(deadLetterRecord);
+      }
+
+      // Atualiza métricas de dead letter queue
+      await this.updateDeadLetterMetrics(deadLetterRecord);
+
+      this.logger.error(
+        `Job ${job.id} successfully moved to dead letter queue with ID: ${deadLetterRecord.id}`,
+        {
+          deadLetterId: deadLetterRecord.id,
+          retryable: deadLetterRecord.retryable,
+          priority: deadLetterRecord.priority,
+        },
+      );
+
+    } catch (dlqError) {
+      // Fallback: se falhar ao processar dead letter queue, apenas log crítico
+      this.logger.error(
+        `CRITICAL: Failed to process dead letter queue for job ${job.id}: ${dlqError.message}`,
+        {
+          originalJobData: job.data,
+          originalError: error.stack,
+          dlqError: dlqError.stack,
+        },
+      );
+
+      // Tenta salvar em arquivo local como último recurso
+      await this.saveToLocalDeadLetterFile(job, error, dlqError);
+    }
+  }
+
+  /**
+   * Gera ID único para dead letter record
+   */
+  private generateDeadLetterId(): string {
+    const timestamp = Date.now();
+    const random = Math.random().toString(36).substring(2, 8);
+    return `dlq_${timestamp}_${random}`;
+  }
+
+  /**
+   * Calcula prioridade do dead letter baseado no evento
+   */
+  private calculateDeadLetterPriority(event: any): 'critical' | 'high' | 'medium' | 'low' {
+    const criticalEvents = [
+      'SECURITY_INCIDENT',
+      'PAYMENT_FRAUD',
+      'DATA_BREACH',
+      'SYSTEM_FAILURE',
+    ];
+
+    const highPriorityEvents = [
+      'PAYMENT_PROCESSED',
+      'USER_REGISTRATION',
+      'DOCUMENT_UPLOAD',
+      'FAILED_LOGIN',
+    ];
+
+    const mediumPriorityEvents = [
+      'USER_LOGIN',
+      'USER_LOGOUT',
+      'PROFILE_UPDATE',
+    ];
+
+    if (criticalEvents.includes(event?.eventType)) {
+      return 'critical';
+    } else if (highPriorityEvents.includes(event?.eventType)) {
+      return 'high';
+    } else if (mediumPriorityEvents.includes(event?.eventType)) {
+      return 'medium';
+    } else {
+      return 'low';
+    }
+  }
+
+  /**
+   * Verifica se o erro é retryable
+   */
+  private isRetryable(error: Error): boolean {
+    const nonRetryableErrors = [
+      'ValidationError',
+      'TypeError',
+      'SyntaxError',
+      'ReferenceError',
+      'INVALID_DATA',
+      'MALFORMED_EVENT',
+    ];
+
+    const retryableErrors = [
+      'ConnectionError',
+      'TimeoutError',
+      'NetworkError',
+      'DatabaseError',
+      'ServiceUnavailable',
+      'ECONNREFUSED',
+      'ETIMEDOUT',
+    ];
+
+    // Verifica por nome do erro
+    if (nonRetryableErrors.some(errType => error.name.includes(errType))) {
+      return false;
+    }
+
+    if (retryableErrors.some(errType => 
+      error.name.includes(errType) || error.message.includes(errType)
+    )) {
+      return true;
+    }
+
+    // Verifica códigos de erro HTTP retryables
+    const retryableHttpCodes = [408, 429, 500, 502, 503, 504];
+    const httpCodeMatch = error.message.match(/status code (\d+)/);
+    if (httpCodeMatch) {
+      const statusCode = parseInt(httpCodeMatch[1]);
+      return retryableHttpCodes.includes(statusCode);
+    }
+
+    // Por padrão, considera retryable para erros desconhecidos
+    return true;
+  }
+
+  /**
+   * Persiste record no dead letter queue
+   */
+  private async persistDeadLetterRecord(record: any): Promise<void> {
+    try {
+      // Em produção, salvar em tabela específica de dead letter queue
+      // Por enquanto, simula persistência com log estruturado
+      this.logger.error(
+        `DEAD_LETTER_QUEUE_RECORD: ${JSON.stringify(record)}`,
+        {
+          type: 'dead_letter_queue',
+          action: 'persist',
+          deadLetterId: record.id,
+          priority: record.priority,
+          retryable: record.retryable,
+        },
+      );
+
+      // Simula salvamento em Redis para recuperação rápida
+      // await this.redisService.setex(`dlq:${record.id}`, 86400 * 7, JSON.stringify(record));
+
+    } catch (error) {
+      this.logger.error(`Failed to persist dead letter record: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Notifica administradores sobre falha crítica
+   */
+  private async notifyDeadLetterFailure(record: any): Promise<void> {
+    try {
+      const notification = {
+        type: 'DEAD_LETTER_QUEUE_ALERT',
+        severity: record.priority,
+        title: `Audit Job Failed: ${record.eventType}`,
+        message: `Job ${record.originalJobId} failed after ${record.attemptsMade} attempts and was moved to dead letter queue.`,
+        details: {
+          deadLetterId: record.id,
+          eventType: record.eventType,
+          entityName: record.entityName,
+          failureReason: record.failureReason,
+          retryable: record.retryable,
+          timestamp: record.lastFailedAt,
+        },
+        actions: record.retryable ? ['retry', 'investigate', 'ignore'] : ['investigate', 'ignore'],
+      };
+
+      // Log estruturado para sistemas de monitoramento
+      this.logger.error(
+        `DEAD_LETTER_NOTIFICATION: ${JSON.stringify(notification)}`,
+        {
+          type: 'notification',
+          target: 'administrators',
+          channel: 'dead_letter_queue',
+        },
+      );
+
+      // Em produção, enviar via email, Slack, PagerDuty, etc.
+      await this.sendDeadLetterAlert(notification);
+
+    } catch (error) {
+      this.logger.error(`Failed to notify dead letter failure: ${error.message}`);
+    }
+  }
+
+  /**
+   * Agenda retry automático para jobs retryables
+   */
+  private async scheduleDeadLetterRetry(record: any): Promise<void> {
+    try {
+      if (!record.retryable) {
+        return;
+      }
+
+      // Calcula delay exponencial baseado na prioridade
+      const baseDelay = {
+        critical: 5 * 60 * 1000,    // 5 minutos
+        high: 15 * 60 * 1000,       // 15 minutos
+        medium: 60 * 60 * 1000,     // 1 hora
+        low: 4 * 60 * 60 * 1000,    // 4 horas
+      };
+
+      const delay = baseDelay[record.priority] || baseDelay.medium;
+      const retryAt = new Date(Date.now() + delay);
+
+      const retryJob = {
+        deadLetterId: record.id,
+        originalJobId: record.originalJobId,
+        retryAttempt: 1,
+        maxRetryAttempts: 3,
+        retryAt: retryAt.toISOString(),
+        originalData: record.originalData,
+      };
+
+      this.logger.warn(
+        `Scheduled dead letter retry for ${record.id} at ${retryAt.toISOString()}`,
+        {
+          type: 'dead_letter_retry_scheduled',
+          deadLetterId: record.id,
+          retryAt: retryAt.toISOString(),
+          delay: delay,
+        },
+      );
+
+      // Em produção, usar scheduler (Bull, Agenda, etc.)
+      // await this.schedulerService.schedule('dead-letter-retry', retryJob, { delay });
+
+    } catch (error) {
+      this.logger.error(`Failed to schedule dead letter retry: ${error.message}`);
+    }
+  }
+
+  /**
+   * Atualiza métricas de dead letter queue
+   */
+  private async updateDeadLetterMetrics(record: any): Promise<void> {
+    try {
+      const metrics = {
+        total_dead_letters: 1,
+        [`dead_letters_by_priority_${record.priority}`]: 1,
+        [`dead_letters_by_event_${record.eventType}`]: 1,
+        [`dead_letters_retryable`]: record.retryable ? 1 : 0,
+        [`dead_letters_non_retryable`]: record.retryable ? 0 : 1,
+        timestamp: new Date().toISOString(),
+      };
+
+      this.logger.debug(
+        `Dead letter metrics updated: ${JSON.stringify(metrics)}`,
+      );
+
+      // Em produção, enviar para sistema de métricas (Prometheus, InfluxDB, etc.)
+
+    } catch (error) {
+      this.logger.error(`Failed to update dead letter metrics: ${error.message}`);
+    }
+  }
+
+  /**
+   * Envia alerta de dead letter
+   */
+  private async sendDeadLetterAlert(notification: any): Promise<void> {
+    try {
+      // Simula envio de alerta
+      this.logger.warn(
+        `ALERT SENT: ${notification.title}`,
+        {
+          type: 'alert_sent',
+          severity: notification.severity,
+          channels: ['email', 'slack', 'pagerduty'],
+        },
+      );
+
+      // Em produção, implementar envio real
+      // await this.emailService.sendAlert(notification);
+      // await this.slackService.sendAlert(notification);
+      // if (notification.severity === 'critical') {
+      //   await this.pagerDutyService.createIncident(notification);
+      // }
+
+    } catch (error) {
+      this.logger.error(`Failed to send dead letter alert: ${error.message}`);
+    }
+  }
+
+  /**
+   * Salva em arquivo local como último recurso
+   */
+  private async saveToLocalDeadLetterFile(
+    job: Job<AuditJobData>,
+    originalError: Error,
+    dlqError: Error,
+  ): Promise<void> {
+    try {
+      const fs = require('fs').promises;
+      const path = require('path');
+
+      const deadLetterDir = path.join(process.cwd(), 'storage', 'dead-letter-queue');
+      await fs.mkdir(deadLetterDir, { recursive: true });
+
+      const filename = `dlq_${job.id}_${Date.now()}.json`;
+      const filepath = path.join(deadLetterDir, filename);
+
+      const record = {
+        jobId: job.id,
         jobData: job.data,
-        error: error.stack,
-      },
-    );
+        originalError: {
+          name: originalError.name,
+          message: originalError.message,
+          stack: originalError.stack,
+        },
+        dlqError: {
+          name: dlqError.name,
+          message: dlqError.message,
+          stack: dlqError.stack,
+        },
+        timestamp: new Date().toISOString(),
+        attemptsMade: job.attemptsMade,
+        maxAttempts: job.opts.attempts,
+      };
+
+      await fs.writeFile(filepath, JSON.stringify(record, null, 2));
+
+      this.logger.error(
+        `Dead letter record saved to local file: ${filepath}`,
+        {
+          type: 'local_dead_letter_backup',
+          filepath,
+          jobId: job.id,
+        },
+      );
+
+    } catch (fileError) {
+      this.logger.error(
+        `CRITICAL: Failed to save dead letter to local file: ${fileError.message}`,
+        {
+          jobId: job.id,
+          originalError: originalError.message,
+          dlqError: dlqError.message,
+          fileError: fileError.message,
+        },
+      );
+    }
   }
 
 

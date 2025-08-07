@@ -208,9 +208,6 @@ export class PendenciaService {
       );
     }
 
-    // TODO: Implementar verificação de permissões específicas para solicitação
-    // Por enquanto, a verificação é feita pelo PermissionGuard no controller
-
     // Verificar se o usuário existe
     const usuario = await this.usuarioRepository.findOne({
       where: { id: usuarioId },

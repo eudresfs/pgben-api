@@ -53,16 +53,24 @@ interface SortOptions {
 }
 
 /**
+ * Interface para entrada do cache
+ */
+interface CachedQuery {
+  data: any;
+  timestamp: number;
+  ttl: number;
+}
+
+/**
  * Serviço para otimização automática de consultas ao banco de dados
  * Implementa paginação, cache, profiling e outras otimizações
  */
 @Injectable()
 export class QueryOptimizerService {
   private readonly logger = new Logger(QueryOptimizerService.name);
-  private readonly queryCache = new Map<
-    string,
-    { data: any; timestamp: number; ttl: number }
-  >();
+  private readonly queryCache = new Map<string, CachedQuery>();
+  private cacheHits = 0;
+  private cacheMisses = 0;
 
   private readonly defaultConfig: QueryOptimizationConfig = {
     enablePagination: true,
@@ -243,15 +251,18 @@ export class QueryOptimizerService {
     const cached = this.queryCache.get(key);
 
     if (!cached) {
+      this.cacheMisses++;
       return null;
     }
 
     // Verificar se o cache expirou
     if (Date.now() - cached.timestamp > cached.ttl) {
       this.queryCache.delete(key);
+      this.cacheMisses++;
       return null;
     }
 
+    this.cacheHits++;
     return cached.data;
   }
 
@@ -299,8 +310,37 @@ export class QueryOptimizerService {
    * Limpa todo o cache
    */
   public clearCache(): void {
+    const stats = this.getCacheStats();
     this.queryCache.clear();
-    this.logger.log('Query cache cleared');
+    this.logger.log(
+      `Query cache cleared. Previous stats: ${stats.size} entries, ${stats.hitRate}% hit rate`,
+    );
+  }
+
+  /**
+   * Reseta as estatísticas de cache
+   */
+  public resetCacheStats(): void {
+    const previousStats = this.getCacheStats();
+    this.cacheHits = 0;
+    this.cacheMisses = 0;
+    
+    this.logger.log(
+      `Cache statistics reset. Previous: ${previousStats.hits} hits, ${previousStats.misses} misses, ${previousStats.hitRate}% hit rate`,
+    );
+  }
+
+  /**
+   * Log das estatísticas atuais do cache
+   */
+  public logCacheStats(): void {
+    const stats = this.getCacheStats();
+    
+    this.logger.log(
+      `Cache Statistics - Size: ${stats.size}, Hit Rate: ${stats.hitRate}%, ` +
+      `Total Requests: ${stats.totalRequests}, Hits: ${stats.hits}, Misses: ${stats.misses}, ` +
+      `Memory Usage: ${Math.round(stats.memoryUsage / 1024)} KB`,
+    );
   }
 
   /**
@@ -310,14 +350,22 @@ export class QueryOptimizerService {
     size: number;
     hitRate: number;
     memoryUsage: number;
+    totalRequests: number;
+    hits: number;
+    misses: number;
   } {
     const size = this.queryCache.size;
     const memoryUsage = JSON.stringify([...this.queryCache.entries()]).length;
+    const totalRequests = this.cacheHits + this.cacheMisses;
+    const hitRate = totalRequests > 0 ? (this.cacheHits / totalRequests) * 100 : 0;
 
     return {
       size,
-      hitRate: 0, // TODO: Implementar tracking de hit rate
+      hitRate: Math.round(hitRate * 100) / 100, // Arredonda para 2 casas decimais
       memoryUsage,
+      totalRequests,
+      hits: this.cacheHits,
+      misses: this.cacheMisses,
     };
   }
 

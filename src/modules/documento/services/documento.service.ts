@@ -6,8 +6,9 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Brackets } from 'typeorm';
 import { Documento } from '../../../entities/documento.entity';
+import { TipoDocumentoEnum } from '../../../enums';
 import { InputSanitizerValidator } from '../validators/input-sanitizer.validator';
 import { StorageProviderFactory } from '../factories/storage-provider.factory';
 import { UploadDocumentoDto } from '../dto/upload-documento.dto';
@@ -668,6 +669,48 @@ export class DocumentoService {
       .andWhere('documento.removed_at IS NULL')
       .orderBy('documento.data_upload', 'DESC')
       .getMany();
+  }
+
+  /**
+   * Busca documentos associados a um pagamento específico
+   * @param pagamentoId ID do pagamento
+   * @returns Lista de documentos associados ao pagamento
+   */
+  async findByPagamentoId(pagamentoId: string): Promise<Documento[]> {
+    if (!pagamentoId) {
+      throw new BadRequestException('ID do pagamento é obrigatório');
+    }
+
+    // Busca documentos que tenham o pagamento_id nos metadados
+    // ou que sejam comprovantes de pagamento relacionados
+    const queryBuilder = this.documentoRepository
+      .createQueryBuilder('documento')
+      .leftJoinAndSelect('documento.usuario_upload', 'usuario_upload')
+      .leftJoinAndSelect('documento.usuario_verificacao', 'usuario_verificacao')
+      .where('documento.removed_at IS NULL')
+      .andWhere(
+        new Brackets((qb) => {
+          // Busca por pagamento_id nos metadados
+          qb.where(`documento.metadados->>'pagamento_id' = :pagamentoId`, {
+            pagamentoId,
+          })
+            // Ou busca comprovantes de pagamento que estejam associados via comprovante_id
+            .orWhere(
+              `documento.tipo = :tipoComprovante AND EXISTS (
+                SELECT 1 FROM pagamentos p 
+                WHERE p.comprovante_id = documento.id 
+                AND p.id = :pagamentoId
+              )`,
+              {
+                tipoComprovante: TipoDocumentoEnum.COMPROVANTE_PAGAMENTO,
+                pagamentoId,
+              },
+            );
+        }),
+      )
+      .orderBy('documento.data_upload', 'DESC');
+
+    return queryBuilder.getMany();
   }
 
   /**

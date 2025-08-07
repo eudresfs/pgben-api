@@ -25,6 +25,7 @@ export enum AuditEventType {
   TOKEN_REFRESH = 'security.token.refresh',
   PERMISSION_CHANGED = 'security.permission.changed',
   SUSPICIOUS_ACTIVITY = 'security.suspicious.activity',
+  SECURITY_TOKEN_INVALIDATION = 'security.token.invalidation',
 
   // Eventos de Sistema
   SYSTEM_ERROR = 'system.error',
@@ -137,7 +138,8 @@ export interface SecurityAuditEvent extends BaseAuditEvent {
     | AuditEventType.ACCOUNT_LOCKED
     | AuditEventType.TOKEN_REFRESH
     | AuditEventType.PERMISSION_CHANGED
-    | AuditEventType.SUSPICIOUS_ACTIVITY;
+    | AuditEventType.SUSPICIOUS_ACTIVITY
+    | AuditEventType.SECURITY_TOKEN_INVALIDATION;
 
   riskLevel: RiskLevel;
 }

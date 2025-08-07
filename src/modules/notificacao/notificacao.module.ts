@@ -12,6 +12,7 @@ import { NOTIFICATION_MANAGER_SERVICE } from './interfaces/notification-manager.
 // Controladores
 import { NotificacaoController } from './controllers/notificacao.controller';
 import { NotificacaoAvancadaController } from './controllers/notificacao-avancada.controller';
+import { NotificationTemplateController } from './controllers/notification-template.controller';
 
 // Serviços
 import { NotificacaoService } from './services/notificacao.service';
@@ -28,6 +29,7 @@ import { NotificationMetricsListener } from './listeners/notification-metrics.li
 import { NotificationMetricsInterceptor } from './interceptors/notification-metrics.interceptor';
 import { UsuarioEventsListener } from './listeners/usuario-events.listener';
 import { WorkflowProativoListener } from './listeners/workflow-proativo.listener';
+import { NotificationSchedulerListener } from './listeners/notification-scheduler.listener';
 
 // Módulo Ably - Importação limpa sem duplicação
 import { AblyModule } from './ably.module';
@@ -40,6 +42,8 @@ import {
   Usuario,
 } from '../../entities';
 import { Solicitacao } from '../../entities/solicitacao.entity';
+import { AgendamentoNotificacao } from '../../entities/agendamento-notificacao.entity';
+import { PreferenciasNotificacao } from '../../entities/preferencias-notificacao.entity';
 import { NotificacaoProativaScheduler } from './schedulers/notificacao-proativa.scheduler';
 
 /**
@@ -85,6 +89,8 @@ import { NotificacaoProativaScheduler } from './schedulers/notificacao-proativa.
       NotificationTemplate,
       Solicitacao,
       Usuario,
+      AgendamentoNotificacao,
+      PreferenciasNotificacao,
     ]),
     ConfigModule,
     ScheduleAdapterModule,
@@ -95,7 +101,7 @@ import { NotificacaoProativaScheduler } from './schedulers/notificacao-proativa.
     forwardRef(() => MonitoringModule),
     AblyModule,
   ],
-  controllers: [NotificacaoController, NotificacaoAvancadaController],
+  controllers: [NotificacaoController, NotificacaoAvancadaController, NotificationTemplateController],
   providers: [
     // Serviços principais
     NotificacaoService,
@@ -113,6 +119,7 @@ import { NotificacaoProativaScheduler } from './schedulers/notificacao-proativa.
     NotificationMetricsListener,
     UsuarioEventsListener,
     WorkflowProativoListener,
+    NotificationSchedulerListener,
 
     // Scheduler
     NotificacaoProativaScheduler,

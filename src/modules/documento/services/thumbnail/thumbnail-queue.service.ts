@@ -27,6 +27,12 @@ export class ThumbnailQueueService {
   private readonly processing: Set<string> = new Set();
   private readonly maxConcurrentJobs = 3;
   private processingInterval: NodeJS.Timeout | null = null;
+  
+  // Contadores persistentes
+  private totalProcessed = 0;
+  private totalSuccessful = 0;
+  private totalFailed = 0;
+  private processingTimes: number[] = [];
 
   constructor(
     private readonly thumbnailService: ThumbnailService,
@@ -34,6 +40,9 @@ export class ThumbnailQueueService {
     @InjectRepository(Documento)
     private readonly documentoRepository: Repository<Documento>,
   ) {
+    // Carregar contadores persistentes
+    this.loadPersistedCounters();
+    
     this.startProcessing();
   }
 
@@ -234,11 +243,13 @@ export class ThumbnailQueueService {
       const fileBuffer = await storageProvider.obterArquivo(documento.caminho);
 
       // Gerar thumbnail
+      const startTime = Date.now();
       const result = await this.thumbnailService.generateThumbnail(
         fileBuffer,
         documento.mimetype,
         documento.id,
       );
+      const processingTime = Date.now() - startTime;
 
       if (result) {
         // Salvar o buffer do thumbnail na coluna 'thumbnail' da entidade documento
@@ -250,6 +261,9 @@ export class ThumbnailQueueService {
             { id: job.documentoId },
             { thumbnail: thumbnailBase64 }
           );
+          
+          // Atualizar contadores de sucesso
+          this.updateSuccessCounters(processingTime);
           
           this.logger.info(
             `Thumbnail gerado e salvo com sucesso para documento ${job.documentoId} (${result.thumbnailBuffer.length} bytes)`,
@@ -283,6 +297,9 @@ export class ThumbnailQueueService {
       job.retryCount++;
 
       if (job.retryCount >= job.maxRetries) {
+        // Atualizar contadores de falha
+        this.updateFailureCounters();
+        
         this.logger.error(
           `Máximo de tentativas atingido para documento ${job.documentoId}, removendo da fila`,
           ThumbnailQueueService.name,
@@ -444,6 +461,80 @@ export class ThumbnailQueueService {
   }
 
   /**
+   * Carrega contadores persistentes (implementação básica)
+   */
+  private loadPersistedCounters(): void {
+    // Em uma implementação real, estes valores viriam de um banco de dados ou cache
+    this.totalProcessed = 0;
+    this.totalSuccessful = 0;
+    this.totalFailed = 0;
+    this.processingTimes = [];
+  }
+
+  /**
+   * Atualiza contadores de sucesso
+   */
+  private updateSuccessCounters(processingTime: number): void {
+    this.totalProcessed++;
+    this.totalSuccessful++;
+    this.processingTimes.push(processingTime);
+    
+    // Manter apenas os últimos 100 tempos para cálculo da média
+    if (this.processingTimes.length > 100) {
+      this.processingTimes.shift();
+    }
+    
+    // Persistir contadores (implementação básica)
+    this.persistCounters();
+  }
+
+  /**
+   * Atualiza contadores de falha
+   */
+  private updateFailureCounters(): void {
+    this.totalProcessed++;
+    this.totalFailed++;
+    
+    // Persistir contadores (implementação básica)
+    this.persistCounters();
+  }
+
+  /**
+   * Persiste contadores (implementação básica)
+   */
+  private persistCounters(): void {
+    // Em uma implementação real, salvaria no banco de dados ou cache
+    // Por enquanto, apenas log para debug
+    this.logger.debug(
+      `Contadores atualizados - Processados: ${this.totalProcessed}, Sucessos: ${this.totalSuccessful}, Falhas: ${this.totalFailed}`,
+      ThumbnailQueueService.name,
+    );
+  }
+
+  /**
+   * Calcula tempo médio de processamento
+   */
+  private calculateAverageProcessingTime(): number {
+    if (this.processingTimes.length === 0) {
+      return 0;
+    }
+    
+    const sum = this.processingTimes.reduce((acc, time) => acc + time, 0);
+    return Math.round(sum / this.processingTimes.length / 1000); // Converter para segundos
+  }
+
+  /**
+   * Calcula taxa de sucesso
+   */
+  private calculateSuccessRate(): number {
+    if (this.totalProcessed === 0) {
+      return 0;
+    }
+    
+    return this.totalSuccessful / this.totalProcessed;
+  }
+
+  /**
    * Obtém estatísticas do sistema de thumbnails
    */
   async getStats(): Promise<{
@@ -478,9 +569,9 @@ export class ThumbnailQueueService {
         oldestJob,
       },
       performance: {
-        averageProcessingTime: 25, // Média estimada em segundos
-        successRate: 0.95, // 95% de taxa de sucesso
-        totalProcessed: 0, // TODO: Implementar contador persistente
+        averageProcessingTime: this.calculateAverageProcessingTime(),
+        successRate: this.calculateSuccessRate(),
+        totalProcessed: this.totalProcessed,
       },
     };
   }

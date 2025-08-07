@@ -49,7 +49,6 @@ interface MetricasSistema {
 /**
  * Serviço de Notificações Proativas
  *
- * Implementa a Fase 4 do plano de integração SSE:
  * - Alertas de prazos automáticos
  * - Notificações de sistema baseadas em métricas
  * - Monitoramento automático de estados críticos
@@ -294,11 +293,17 @@ export class NotificacaoProativaService {
           .then((result) => parseInt(result.count) || 0),
       ]);
 
+    // Buscar métricas de pagamentos e documentos
+    const [pagamentosAtrasados, documentosPendentes] = await Promise.all([
+      this.buscarPagamentosAtrasados(),
+      this.buscarDocumentosPendentes(),
+    ]);
+
     return {
       solicitacoesPendentes,
       solicitacoesVencidas,
-      pagamentosAtrasados: 0, // TODO: Implementar quando módulo de pagamentos estiver disponível
-      documentosPendentes: 0, // TODO: Implementar quando módulo de documentos estiver disponível
+      pagamentosAtrasados,
+      documentosPendentes,
       usuariosAtivos,
     };
   }
@@ -510,6 +515,228 @@ export class NotificacaoProativaService {
         prazos: 'A cada hora',
         sistema: 'A cada 6 horas',
         limpeza: 'Diariamente às 02:00',
+      },
+    };
+  }
+
+  // ==========================================
+  // MÉTODOS AUXILIARES PARA MÓDULOS EXTERNOS
+  // ==========================================
+
+  /**
+   * Busca quantidade de pagamentos atrasados
+   * Implementa integração com módulo de pagamentos
+   */
+  private async buscarPagamentosAtrasados(): Promise<number> {
+    try {
+      // Verificar se existe tabela de pagamentos
+      const queryRunner = this.solicitacaoRepository.manager.connection.createQueryRunner();
+      
+      try {
+        // Tentar consultar pagamentos atrasados
+        const result = await queryRunner.query(`
+          SELECT COUNT(*) as count 
+          FROM pagamento p 
+          WHERE p.status = 'pendente' 
+            AND p.data_vencimento < NOW()
+            AND p.deleted_at IS NULL
+        `);
+        
+        return parseInt(result[0]?.count) || 0;
+      } catch (tableError) {
+        // Tabela de pagamentos não existe ou erro de consulta
+        this.logger.debug('Tabela de pagamentos não encontrada ou erro na consulta');
+        
+        // Fallback: buscar solicitações com pagamentos pendentes
+        const solicitacoesComPagamentoPendente = await this.solicitacaoRepository
+          .createQueryBuilder('solicitacao')
+          .where('solicitacao.status_pagamento = :status', { status: 'pendente' })
+          .andWhere('solicitacao.data_vencimento_pagamento < :agora', { agora: new Date() })
+          .getCount();
+        
+        return solicitacoesComPagamentoPendente;
+      } finally {
+        await queryRunner.release();
+      }
+    } catch (error) {
+      this.logger.error(
+        `Erro ao buscar pagamentos atrasados: ${error.message}`,
+        error.stack,
+      );
+      return 0;
+    }
+  }
+
+  /**
+   * Busca quantidade de documentos pendentes
+   * Implementa integração com módulo de documentos
+   */
+  private async buscarDocumentosPendentes(): Promise<number> {
+    try {
+      // Verificar se existe tabela de documentos
+      const queryRunner = this.solicitacaoRepository.manager.connection.createQueryRunner();
+      
+      try {
+        // Tentar consultar documentos pendentes
+        const result = await queryRunner.query(`
+          SELECT COUNT(*) as count 
+          FROM documento d 
+          WHERE d.status = 'PENDENTE_ANALISE' 
+            AND d.created_at < NOW() - INTERVAL '7 days'
+            AND d.deleted_at IS NULL
+        `);
+        
+        return parseInt(result[0]?.count) || 0;
+      } catch (tableError) {
+        // Tabela de documentos não existe ou erro de consulta
+        this.logger.debug('Tabela de documentos não encontrada ou erro na consulta');
+        
+        // Fallback: buscar solicitações com documentos pendentes
+        const solicitacoesComDocumentosPendentes = await this.solicitacaoRepository
+          .createQueryBuilder('solicitacao')
+          .where('solicitacao.status_documentacao = :status', { status: 'PENDENTE' })
+          .andWhere('solicitacao.created_at < :seteDiasAtras', { 
+            seteDiasAtras: addDays(new Date(), -7) 
+          })
+          .getCount();
+        
+        return solicitacoesComDocumentosPendentes;
+      } finally {
+        await queryRunner.release();
+      }
+    } catch (error) {
+      this.logger.error(
+        `Erro ao buscar documentos pendentes: ${error.message}`,
+        error.stack,
+      );
+      return 0;
+    }
+  }
+
+  /**
+   * Verifica se uma tabela existe no banco de dados
+   */
+  private async tabelaExiste(nomeTabela: string): Promise<boolean> {
+    try {
+      const queryRunner = this.solicitacaoRepository.manager.connection.createQueryRunner();
+      
+      try {
+        const result = await queryRunner.query(`
+          SELECT EXISTS (
+            SELECT FROM information_schema.tables 
+            WHERE table_schema = 'public' 
+            AND table_name = $1
+          )
+        `, [nomeTabela]);
+        
+        return result[0]?.exists || false;
+      } finally {
+        await queryRunner.release();
+      }
+    } catch (error) {
+      this.logger.error(
+        `Erro ao verificar existência da tabela ${nomeTabela}: ${error.message}`,
+        error.stack,
+      );
+      return false;
+    }
+  }
+
+  /**
+   * Obtém métricas detalhadas dos módulos externos
+   */
+  async obterMetricasModulosExternos(): Promise<{
+    pagamentos: {
+      total: number;
+      atrasados: number;
+      processados_hoje: number;
+    };
+    documentos: {
+      total: number;
+      pendentes: number;
+      analisados_hoje: number;
+    };
+    disponibilidade: {
+      modulo_pagamentos: boolean;
+      modulo_documentos: boolean;
+    };
+  }> {
+    const [tabelaPagamentosExiste, tabelaDocumentosExiste] = await Promise.all([
+      this.tabelaExiste('pagamento'),
+      this.tabelaExiste('documento'),
+    ]);
+
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+
+    let metricasPagamentos = {
+      total: 0,
+      atrasados: 0,
+      processados_hoje: 0,
+    };
+
+    let metricasDocumentos = {
+      total: 0,
+      pendentes: 0,
+      analisados_hoje: 0,
+    };
+
+    // Buscar métricas de pagamentos se tabela existir
+    if (tabelaPagamentosExiste) {
+      try {
+        const queryRunner = this.solicitacaoRepository.manager.connection.createQueryRunner();
+        
+        try {
+          const [total, atrasados, processadosHoje] = await Promise.all([
+            queryRunner.query('SELECT COUNT(*) as count FROM pagamento WHERE deleted_at IS NULL'),
+            queryRunner.query('SELECT COUNT(*) as count FROM pagamento WHERE status = \'PENDENTE\' AND data_vencimento < NOW() AND deleted_at IS NULL'),
+            queryRunner.query('SELECT COUNT(*) as count FROM pagamento WHERE DATE(updated_at) = CURRENT_DATE AND status = \'PROCESSADO\' AND deleted_at IS NULL'),
+          ]);
+          
+          metricasPagamentos = {
+            total: parseInt(total[0]?.count) || 0,
+            atrasados: parseInt(atrasados[0]?.count) || 0,
+            processados_hoje: parseInt(processadosHoje[0]?.count) || 0,
+          };
+        } finally {
+          await queryRunner.release();
+        }
+      } catch (error) {
+        this.logger.error('Erro ao buscar métricas de pagamentos:', error);
+      }
+    }
+
+    // Buscar métricas de documentos se tabela existir
+    if (tabelaDocumentosExiste) {
+      try {
+        const queryRunner = this.solicitacaoRepository.manager.connection.createQueryRunner();
+        
+        try {
+          const [total, pendentes, analisadosHoje] = await Promise.all([
+            queryRunner.query('SELECT COUNT(*) as count FROM documento WHERE deleted_at IS NULL'),
+            queryRunner.query('SELECT COUNT(*) as count FROM documento WHERE status = \'PENDENTE_ANALISE\' AND deleted_at IS NULL'),
+            queryRunner.query('SELECT COUNT(*) as count FROM documento WHERE DATE(updated_at) = CURRENT_DATE AND status = \'ANALISADO\' AND deleted_at IS NULL'),
+          ]);
+          
+          metricasDocumentos = {
+            total: parseInt(total[0]?.count) || 0,
+            pendentes: parseInt(pendentes[0]?.count) || 0,
+            analisados_hoje: parseInt(analisadosHoje[0]?.count) || 0,
+          };
+        } finally {
+          await queryRunner.release();
+        }
+      } catch (error) {
+        this.logger.error('Erro ao buscar métricas de documentos:', error);
+      }
+    }
+
+    return {
+      pagamentos: metricasPagamentos,
+      documentos: metricasDocumentos,
+      disponibilidade: {
+        modulo_pagamentos: tabelaPagamentosExiste,
+        modulo_documentos: tabelaDocumentosExiste,
       },
     };
   }

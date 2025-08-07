@@ -50,6 +50,13 @@ export interface INotificationManagerService {
    * @returns Promise<NotificacaoSistema>
    */
   criarNotificacao(createNotificationDto: any): Promise<any>;
+
+  /**
+   * Processa uma notificação específica
+   * @param notificacaoId ID da notificação a ser processada
+   * @returns Promise<void>
+   */
+  processarNotificacao(notificacaoId: string): Promise<void>;
 }
 
 /**
