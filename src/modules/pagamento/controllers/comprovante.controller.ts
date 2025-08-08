@@ -61,8 +61,7 @@ export class ComprovanteController {
     type: [ComprovanteResponseDto],
   })
   @RequiresPermission({
-    permissionName: 'pagamento.visualizar',
-    scopeType: TipoEscopo.UNIDADE,
+    permissionName: 'pagamento.visualizar'
   })
   async findAll(@Param('pagamentoId', ParseUUIDPipe) pagamentoId: string) {
     const comprovantes =
@@ -95,7 +94,7 @@ export class ComprovanteController {
     type: ComprovanteResponseDto,
   })
   @RequiresPermission({
-    permissionName: 'pagamento.upload',
+    permissionName: 'pagamento.comprovante.upload',
   })
   async upload(
     @Param('pagamentoId', ParseUUIDPipe) pagamentoId: string,
@@ -137,8 +136,7 @@ export class ComprovanteController {
     type: ComprovanteResponseDto,
   })
   @RequiresPermission({
-    permissionName: 'pagamento.visualizar',
-    scopeType: TipoEscopo.UNIDADE,
+    permissionName: 'pagamento.visualizar'
   })
   async findOne(@Param('id', ParseUUIDPipe) id: string) {
     const comprovante = await this.comprovanteService.findById(id);
@@ -153,6 +151,9 @@ export class ComprovanteController {
    */
   @Get(':id/download')
   @ApiOperation({ summary: 'Faz download de comprovante' })
+  @RequiresPermission({
+    permissionName: 'pagamento.comprovante.download',
+  })
   @ApiParam({
     name: 'id',
     type: 'string',
@@ -170,10 +171,7 @@ export class ComprovanteController {
       },
     },
   })
-  async download(
-    @Param('id') id: string,
-    @Res() res: Response,
-  ): Promise<void> {
+  async download(@Param('id') id: string, @Res() res: Response): Promise<void> {
     const { buffer, mimetype, nomeOriginal } =
       await this.comprovanteService.download(id);
 
@@ -206,8 +204,7 @@ export class ComprovanteController {
     description: 'Comprovante removido com sucesso',
   })
   @RequiresPermission({
-    permissionName: 'pagamento.editar',
-    scopeType: TipoEscopo.UNIDADE,
+    permissionName: 'pagamento.comprovante.excluir'
   })
   async remove(
     @Param('id', ParseUUIDPipe) id: string,
