@@ -37,20 +37,25 @@ export class MinioService implements OnModuleInit {
     // Configuração do cliente MinIO
     const useSSL = this.configService.get('MINIO_USE_SSL') === 'true';
     const region = this.configService.get<string>('MINIO_REGION', 'us-east-1');
-    this.logger.log(`Configurando MinIO com SSL: ${useSSL}, Região: ${region}`);
+    const endpoint = this.configService.get<string>('MINIO_ENDPOINT', 'localhost');
+    const port = this.configService.get<number>('MINIO_PORT', 9000);
+    const accessKey = this.configService.get<string>('MINIO_ACCESS_KEY', 'minioadmin');
+    const secretKey = this.configService.get<string>('MINIO_SECRET_KEY', 'minioadmin');
+    
+    // Log de configuração (sem expor credenciais completas)
+    this.logger.log(`Configurando MinIO:`);
+    this.logger.log(`  - Endpoint: ${endpoint}:${port}`);
+    this.logger.log(`  - SSL: ${useSSL}`);
+    this.logger.log(`  - Região: ${region}`);
+    this.logger.log(`  - Access Key: ${accessKey ? accessKey.substring(0, 4) + '***' : 'não definida'}`);
+    this.logger.log(`  - Secret Key: ${secretKey ? '***' + secretKey.substring(secretKey.length - 4) : 'não definida'}`);
 
     this.minioClient = new Minio.Client({
-      endPoint: this.configService.get<string>('MINIO_ENDPOINT', 'localhost'),
-      port: this.configService.get<number>('MINIO_PORT', 9000),
+      endPoint: endpoint,
+      port: port,
       useSSL: useSSL,
-      accessKey: this.configService.get<string>(
-        'MINIO_ACCESS_KEY',
-        'minioadmin',
-      ),
-      secretKey: this.configService.get<string>(
-        'MINIO_SECRET_KEY',
-        'minioadmin',
-      ),
+      accessKey: accessKey,
+      secretKey: secretKey,
       region: region,
     });
 
@@ -76,6 +81,9 @@ export class MinioService implements OnModuleInit {
     // Inicialização assíncrona sem bloqueio
     setImmediate(async () => {
       try {
+        // Validar configurações críticas
+        await this.validateConfiguration();
+        
         this.logger.log('Verificando conexão com MinIO...');
 
         // Timeout para evitar travamento
@@ -107,13 +115,81 @@ export class MinioService implements OnModuleInit {
         } else {
           this.logger.log(`Bucket '${this.bucketName}' já existe`);
         }
+        
+        // Teste de conectividade adicional
+        await this.testConnection();
+        
       } catch (error) {
-        this.logger.warn(
-          `MinIO não disponível: ${error.message}. Continuando sem storage externo.`,
+        this.logger.error(
+          `Erro na inicialização do MinIO: ${error.message}`,
         );
+        if (error.message?.includes('signature')) {
+          this.logger.error(
+            'ERRO DE ASSINATURA DETECTADO: Verifique as credenciais e configuração de região do MinIO',
+          );
+        }
         // Não falha a inicialização se MinIO não estiver disponível
       }
     });
+  }
+
+  /**
+   * Valida as configurações críticas do MinIO
+   */
+  private async validateConfiguration(): Promise<void> {
+    const endpoint = this.configService.get<string>('MINIO_ENDPOINT');
+    const accessKey = this.configService.get<string>('MINIO_ACCESS_KEY');
+    const secretKey = this.configService.get<string>('MINIO_SECRET_KEY');
+    const region = this.configService.get<string>('MINIO_REGION');
+
+    const errors: string[] = [];
+
+    if (!endpoint || endpoint === 'localhost') {
+      errors.push('MINIO_ENDPOINT não configurado ou usando valor padrão');
+    }
+
+    if (!accessKey || accessKey === 'minioadmin') {
+      errors.push('MINIO_ACCESS_KEY não configurado ou usando valor padrão');
+    }
+
+    if (!secretKey || secretKey === 'minioadmin') {
+      errors.push('MINIO_SECRET_KEY não configurado ou usando valor padrão');
+    }
+
+    if (!region) {
+      errors.push('MINIO_REGION não configurado');
+    }
+
+    if (errors.length > 0) {
+      this.logger.warn('Configurações do MinIO com valores padrão ou ausentes:');
+      errors.forEach(error => this.logger.warn(`  - ${error}`));
+    }
+  }
+
+  /**
+   * Testa a conectividade com o MinIO
+   */
+  private async testConnection(): Promise<void> {
+    try {
+      // Tenta listar buckets como teste de conectividade
+      const buckets = await this.minioClient.listBuckets();
+      this.logger.log(`Conectividade OK - ${buckets.length} bucket(s) encontrado(s)`);
+      
+      // Log das configurações (sem credenciais)
+      const endpoint = this.configService.get('MINIO_ENDPOINT');
+      const port = this.configService.get('MINIO_PORT');
+      const useSSL = this.configService.get('MINIO_USE_SSL') === 'true';
+      const region = this.configService.get('MINIO_REGION');
+      
+      this.logger.debug(`Teste de conectividade realizado com:`);
+      this.logger.debug(`  - Endpoint: ${endpoint}:${port}`);
+      this.logger.debug(`  - SSL: ${useSSL}`);
+      this.logger.debug(`  - Região: ${region}`);
+      
+    } catch (error) {
+      this.logger.error(`Teste de conectividade falhou: ${error.message}`);
+      throw error;
+    }
   }
 
   /**
@@ -278,6 +354,78 @@ export class MinioService implements OnModuleInit {
       this.logger.error(
         `Erro ao enviar arquivo para o MinIO: ${error.message}`,
       );
+      
+      // Log detalhado para erros de assinatura
+      if (error.message?.includes('signature')) {
+        this.logger.error('ERRO DE ASSINATURA DETECTADO NO UPLOAD DE DOCUMENTO:');
+        this.logger.error(`  - Bucket: ${this.bucketName}`);
+        this.logger.error(`  - Região configurada: ${this.configService.get('MINIO_REGION')}`);
+        this.logger.error(`  - SSL habilitado: ${this.configService.get('MINIO_USE_SSL')}`);
+        this.logger.error(`  - Endpoint: ${this.configService.get('MINIO_ENDPOINT')}:${this.configService.get('MINIO_PORT')}`);
+      }
+      
+      throw new Error(`Falha ao armazenar documento: ${error.message}`);
+    }
+  }
+
+
+
+  /**
+   * Faz upload de um arquivo para o MinIO com logs de debug detalhados
+   * @param fileName Nome do arquivo
+   * @param fileBuffer Buffer do arquivo
+   * @param contentType Tipo MIME do arquivo
+   * @returns Nome do objeto armazenado
+   */
+  async uploadFile(
+    fileName: string,
+    fileBuffer: Buffer,
+    contentType: string = 'application/octet-stream',
+  ): Promise<string> {
+    const objectName = `${Date.now()}-${fileName}`;
+    
+    try {
+      this.logger.debug(`Iniciando upload do arquivo: ${objectName}`);
+      this.logger.debug(`  - Bucket: ${this.bucketName}`);
+      this.logger.debug(`  - Tamanho: ${fileBuffer.length} bytes`);
+      this.logger.debug(`  - Content-Type: ${contentType}`);
+      
+      const metaData = {
+        'Content-Type': contentType,
+      };
+
+      // Log das configurações do cliente (sem credenciais)
+      const clientConfig = {
+        endPoint: this.configService.get('MINIO_ENDPOINT'),
+        port: this.configService.get('MINIO_PORT'),
+        useSSL: this.configService.get('MINIO_USE_SSL') === 'true',
+        region: this.configService.get('MINIO_REGION'),
+      };
+      this.logger.debug(`Configuração do cliente MinIO: ${JSON.stringify(clientConfig)}`);
+
+      await this.minioClient.putObject(
+        this.bucketName,
+        objectName,
+        fileBuffer,
+        fileBuffer.length,
+        metaData,
+      );
+
+      this.logger.log(`Arquivo ${objectName} enviado com sucesso`);
+      return objectName;
+    } catch (error) {
+      this.logger.error(`Erro ao enviar arquivo ${objectName}: ${error.message}`);
+      
+      // Log detalhado para erros de assinatura
+      if (error.message?.includes('signature')) {
+        this.logger.error('ERRO DE ASSINATURA DETECTADO:');
+        this.logger.error(`  - Bucket: ${this.bucketName}`);
+        this.logger.error(`  - Object: ${objectName}`);
+        this.logger.error(`  - Região configurada: ${this.configService.get('MINIO_REGION')}`);
+        this.logger.error(`  - SSL habilitado: ${this.configService.get('MINIO_USE_SSL')}`);
+        this.logger.error(`  - Endpoint: ${this.configService.get('MINIO_ENDPOINT')}:${this.configService.get('MINIO_PORT')}`);
+      }
+      
       throw new Error(`Falha ao armazenar documento: ${error.message}`);
     }
   }
@@ -380,6 +528,16 @@ export class MinioService implements OnModuleInit {
       this.logger.debug(
         `Metadados que serão salvos: ${JSON.stringify(metadados)}`,
       );
+      
+      // Log das configurações do cliente antes do upload
+      const clientConfig = {
+        endPoint: this.configService.get('MINIO_ENDPOINT'),
+        port: this.configService.get('MINIO_PORT'),
+        useSSL: this.configService.get('MINIO_USE_SSL') === 'true',
+        region: this.configService.get('MINIO_REGION'),
+      };
+      this.logger.debug(`Configuração do cliente MinIO para upload: ${JSON.stringify(clientConfig)}`);
+      this.logger.debug(`Upload iniciado - Bucket: ${this.bucketName}, Arquivo: ${nomeArquivo}, Tamanho: ${arquivoFinal.length} bytes`);
 
       // Fazer upload do arquivo para o MinIO
       await this.minioClient.putObject(
@@ -391,7 +549,7 @@ export class MinioService implements OnModuleInit {
       );
 
       this.logger.log(
-        `Arquivo ${arquivoFinal} enviado para o MinIO com sucesso`,
+        `Arquivo ${nomeArquivo} enviado para o MinIO com sucesso`,
       );
 
       this.logger.debug(
