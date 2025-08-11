@@ -69,6 +69,11 @@ export class DocumentoRateLimitMiddleware implements NestMiddleware {
   }
 
   use(req: Request, res: Response, next: NextFunction): void {
+    // Permitir requisições OPTIONS (preflight) sem rate limiting
+    if (req.method === 'OPTIONS') {
+      return next();
+    }
+
     const user = (req as any).user;
 
     // Se não há usuário autenticado, permitir (será bloqueado por outros guards)

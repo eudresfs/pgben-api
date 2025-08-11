@@ -230,6 +230,14 @@ export const createCorsConfig = (configService: ConfigService) => {
       'X-RateLimit-Reset',
       'X-Request-ID',
       'X-Response-Time',
+      // Headers necessários para downloads de arquivos
+      'Content-Disposition',
+      'Content-Length',
+      'Content-Type',
+      'Transfer-Encoding',
+      'Cache-Control',
+      'Pragma',
+      'Expires',
     ],
     maxAge: 86400, // 24 horas de cache para preflight
     optionsSuccessStatus: 204,
