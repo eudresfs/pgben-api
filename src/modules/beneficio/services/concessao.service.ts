@@ -927,7 +927,7 @@ export class ConcessaoService {
   }
 
   /**
-   * Cancela uma concessão ativa
+   * Cancela uma concessão ativa e todos os pagamentos vinculados a ela
    *
    * @param concessaoId ID da concessão
    * @param usuarioId ID do usuário que está cancelando
@@ -956,31 +956,87 @@ export class ConcessaoService {
       );
     }
 
-    // Atualizar status da concessão
-    const statusAnterior = concessao.status;
-    concessao.status = StatusConcessao.CANCELADO;
-    concessao.dataEncerramento = new Date();
-    concessao.motivoEncerramento = motivo;
+    try {
+      // Buscar todos os pagamentos vinculados à concessão
+      const pagamentos = await this.pagamentoService.findByConcessao(concessaoId);
+      
+      // Cancelar todos os pagamentos que não estão cancelados ou confirmados
+      const pagamentosCancelados = [];
+      for (const pagamento of pagamentos) {
+        try {
+          // Só tenta cancelar se o pagamento não estiver cancelado ou confirmado
+          if (pagamento.status !== StatusPagamentoEnum.CANCELADO && 
+              pagamento.status !== StatusPagamentoEnum.CONFIRMADO) {
+            const pagamentoCancelado = await this.pagamentoService.cancelar(
+              pagamento.id,
+              `Cancelamento automático - Concessão cancelada: ${motivo}`,
+              usuarioId
+            );
+            pagamentosCancelados.push(pagamentoCancelado);
+            
+            this.logger.info(
+              `Pagamento ${pagamento.id} cancelado automaticamente devido ao cancelamento da concessão ${concessaoId}`,
+              ConcessaoService.name,
+            );
+          }
+        } catch (pagamentoError) {
+          // Log do erro mas não interrompe o processo de cancelamento da concessão
+          this.logger.error(
+            `Erro ao cancelar pagamento ${pagamento.id} da concessão ${concessaoId}: ${pagamentoError.message}`,
+            pagamentoError.stack,
+            ConcessaoService.name,
+          );
+        }
+      }
 
-    const concessaoSalva = await this.concessaoRepo.save(concessao);
+      // Atualizar status da concessão
+      const statusAnterior = concessao.status;
+      concessao.status = StatusConcessao.CANCELADO;
+      concessao.dataEncerramento = new Date();
+      concessao.motivoEncerramento = motivo;
 
-    // Registrar no histórico
-    const historico = this.historicoRepo.create({
-      concessaoId: concessaoSalva.id,
-      statusAnterior,
-      statusNovo: StatusConcessao.CANCELADO,
-      motivo,
-      observacoes,
-      alteradoPor: usuarioId,
-    });
-    await this.historicoRepo.save(historico);
+      const concessaoSalva = await this.concessaoRepo.save(concessao);
 
-    this.logger.warn(
-      `Concessão ${concessaoId} cancelada por usuário ${usuarioId}`,
-      ConcessaoService.name,
-    );
+      // Registrar no histórico
+      const historico = this.historicoRepo.create({
+        concessaoId: concessaoSalva.id,
+        statusAnterior,
+        statusNovo: StatusConcessao.CANCELADO,
+        motivo,
+        observacoes: observacoes ? 
+          `${observacoes}. Pagamentos cancelados: ${pagamentosCancelados.length}/${pagamentos.length}` :
+          `Pagamentos cancelados: ${pagamentosCancelados.length}/${pagamentos.length}`,
+        alteradoPor: usuarioId,
+      });
+      await this.historicoRepo.save(historico);
 
-    return concessaoSalva;
+      this.logger.warn(
+        `Concessão ${concessaoId} cancelada por usuário ${usuarioId}. ` +
+        `${pagamentosCancelados.length} de ${pagamentos.length} pagamentos foram cancelados.`,
+        ConcessaoService.name,
+      );
+
+      return concessaoSalva;
+    } catch (error) {
+      this.logger.error(
+        `Erro ao cancelar concessão ${concessaoId}: ${error.message}`,
+        error.stack,
+        ConcessaoService.name,
+      );
+      
+      // Re-throw erros conhecidos
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
+      
+      // Para erros não tratados, lança um erro genérico mas informativo
+      throw new BadRequestException(
+        `Erro interno ao cancelar concessão. Verifique os logs para mais detalhes.`,
+      );
+    }
   }
 
   /**
