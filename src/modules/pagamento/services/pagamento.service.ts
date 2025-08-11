@@ -11,6 +11,7 @@ import { PagamentoRepository } from '../repositories/pagamento.repository';
 import { Pagamento } from '../../../entities/pagamento.entity';
 import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
 import { MetodoPagamentoEnum } from '../../../enums/metodo-pagamento.enum';
+import { StatusConcessao } from '../../../enums/status-concessao.enum';
 import { PagamentoCreateDto } from '../dtos/pagamento-create.dto';
 import { PagamentoUpdateStatusDto } from '../dtos/pagamento-update-status.dto';
 import { normalizeEnumFields } from '../../../shared/utils/enum-normalizer.util';
@@ -83,8 +84,8 @@ export class PagamentoService {
       metadata: {
         status: pagamento.status,
         metodo: pagamento.metodo_pagamento,
-        valor: pagamento.valor
-      }
+        valor: pagamento.valor,
+      },
     });
 
     // Pagamento criado com sucesso
@@ -155,8 +156,12 @@ export class PagamentoService {
       `Atualizando status do pagamento ${id} para ${updateDto.status}`,
     );
 
-    // Buscar pagamento existente
-    const pagamento = await this.findById(id);
+    // Buscar pagamento existente com relações necessárias
+    const pagamento = await this.pagamentoRepository.findPagamentoComRelacoes(id);
+    
+    if (!pagamento) {
+      throw new NotFoundException('Pagamento não encontrado');
+    }
 
     // Validar transição de status
     PagamentoValidationUtil.validarTransicaoStatus(
@@ -201,6 +206,27 @@ export class PagamentoService {
       dadosAtualizacao,
     );
 
+    // Se o número da parcela for 1, atualizar status da concessão para ATIVO
+    if (pagamento.numero_parcela === 1 && pagamento.concessao_id) {
+      try {
+        await this.concessaoService.atualizarStatus(
+           pagamento.concessao_id,
+           StatusConcessao.ATIVO,
+           usuarioId,
+           `Ativação automática - Primeira parcela do pagamento ${id} atualizada para ${updateDto.status}`,
+         );
+        
+        this.logger.log(
+          `Status da concessão ${pagamento.concessao_id} atualizado para ATIVO devido à atualização da primeira parcela`,
+        );
+      } catch (error) {
+        this.logger.warn(
+          `Erro ao atualizar status da concessão ${pagamento.concessao_id}: ${error.message}`,
+        );
+        // Não falha a operação principal se houver erro na atualização da concessão
+      }
+    }
+
     // Emitir evento de invalidação de cache para mudança de status
     this.cacheInvalidationService.emitCacheInvalidationEvent({
       pagamentoId: pagamento.id,
@@ -212,8 +238,9 @@ export class PagamentoService {
       metadata: {
         previousStatus: pagamento.status,
         newStatus: updateDto.status,
-        updatedAt: new Date()
-      }
+        updatedAt: new Date(),
+        isFirstInstallment: pagamento.numero_parcela === 1,
+      },
     });
 
     this.logger.log(
@@ -268,8 +295,8 @@ export class PagamentoService {
       metadata: {
         cancelledAt: new Date(),
         previousStatus: pagamento.status,
-        reason: 'Manual cancellation'
-      }
+        reason: 'Manual cancellation',
+      },
     });
 
     // Pagamento cancelado com sucesso
@@ -337,7 +364,7 @@ export class PagamentoService {
       );
 
       // Emitir eventos de invalidação de cache para cada pagamento criado
-      pagamentosGerados.forEach(pagamento => {
+      pagamentosGerados.forEach((pagamento) => {
         this.cacheInvalidationService.emitCacheInvalidationEvent({
           pagamentoId: pagamento.id,
           action: 'create',
@@ -348,8 +375,8 @@ export class PagamentoService {
             metodo: pagamento.metodo_pagamento,
             valor: pagamento.valor,
             batchCreation: true,
-            batchSize: pagamentosGerados.length
-          }
+            batchSize: pagamentosGerados.length,
+          },
         });
       });
 
