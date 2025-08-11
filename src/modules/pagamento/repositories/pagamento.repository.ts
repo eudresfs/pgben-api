@@ -89,6 +89,34 @@ export class PagamentoRepository {
   }
 
   /**
+   * Busca um pagamento específico por solicitação e número da parcela
+   */
+  async findBySolicitacaoAndParcela(
+    solicitacao_id: string,
+    numero_parcela: number,
+  ): Promise<Pagamento | null> {
+    return await this.scopedRepository
+      .createScopedQueryBuilder('pagamento')
+      .where('pagamento.solicitacao_id = :solicitacao_id', { solicitacao_id })
+      .andWhere('pagamento.numero_parcela = :numero_parcela', { numero_parcela })
+      .getOne();
+  }
+
+  /**
+   * Busca uma parcela anterior específica por concessão e número da parcela
+   */
+  async findParcelaAnterior(
+    concessao_id: string,
+    numero_parcela: number,
+  ): Promise<Pagamento | null> {
+    return await this.scopedRepository
+      .createScopedQueryBuilder('pagamento')
+      .where('pagamento.concessao_id = :concessao_id', { concessao_id })
+      .andWhere('pagamento.numero_parcela = :numero_parcela', { numero_parcela })
+      .getOne();
+  }
+
+  /**
    * Busca pagamentos por concessão
    */
   async findByConcessao(concessao_id: string): Promise<Pagamento[]> {

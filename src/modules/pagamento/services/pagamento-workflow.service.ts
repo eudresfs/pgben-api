@@ -250,6 +250,19 @@ export class PagamentoWorkflowService {
       };
     }
 
+    // Validar se a parcela anterior está confirmada (apenas para liberação a partir da 2ª parcela)
+    if (updateDto.status === StatusPagamentoEnum.LIBERADO && pagamento.numero_parcela > 1) {
+      try {
+        await this.validateParcelaAnteriorConfirmada(pagamento);
+      } catch (error) {
+        return {
+          success: false,
+          message: 'Não é possível liberar: parcela anterior não confirmada',
+          errors: [error.message],
+        };
+      }
+    }
+
     // Atualizar pagamento
     const pagamentoAtualizado = await this.pagamentoRepository.update(
       updateDto.id,
@@ -662,6 +675,30 @@ export class PagamentoWorkflowService {
   // ========== MÉTODOS PRIVADOS ==========
 
   /**
+   * Valida se a parcela anterior está confirmada
+   */
+  private async validateParcelaAnteriorConfirmada(
+    pagamento: Pagamento,
+  ): Promise<void> {
+    const parcelaAnterior = await this.pagamentoRepository.findParcelaAnterior(
+      pagamento.concessao_id,
+      pagamento.numero_parcela - 1,
+    );
+
+    if (!parcelaAnterior) {
+      throw new BadRequestException(
+        `Parcela anterior (${pagamento.numero_parcela - 1}) não encontrada`,
+      );
+    }
+
+    if (parcelaAnterior.status !== StatusPagamentoEnum.CONFIRMADO) {
+      throw new BadRequestException(
+        `Parcela anterior (${pagamento.numero_parcela - 1}) deve estar confirmada antes da liberação desta parcela`,
+      );
+    }
+  }
+
+  /**
    * Verifica elegibilidade específica para aluguel social
    */
   private async verificarElegibilidadeAluguelSocial(
@@ -677,7 +714,9 @@ export class PagamentoWorkflowService {
 
     // Buscar recibos de aluguel através do DocumentoRepository
     // Busca documentos associados ao pagamento para verificação de elegibilidade
-    const documentos = await this.documentoService.findByPagamentoId(pagamento.id);
+    const documentos = await this.documentoService.findByPagamentoId(
+      pagamento.id,
+    );
     const recibos = documentos || [];
     const recibosAluguel = recibos.filter(
       (r) => r.tipo === TipoDocumentoEnum.RECIBO_ALUGUEL,
