@@ -198,15 +198,15 @@ export class CidadaoController {
     maskInLogs: true,
   })
   @ApiOperation({
-    summary: 'Criar novo cidadão com dados relacionados',
+    summary: 'Criar ou atualizar cidadão com dados relacionados (Upsert)',
     description:
-      'Cria um novo cidadão no sistema. Suporta criação completa incluindo dados relacionados como contatos, endereços, composição familiar, dados sociais, situação de moradia e informações bancárias em uma única transação. Utiliza padrão Aggregate Root para garantir consistência dos dados.',
+      'Cria um novo cidadão ou atualiza um existente baseado no CPF. Se o CPF já estiver cadastrado, os dados do cidadão existente serão atualizados. Suporta operação completa incluindo dados relacionados como contatos, endereços, composição familiar, dados sociais, situação de moradia e informações bancárias em uma única transação. Utiliza padrão Aggregate Root para garantir consistência dos dados.',
   })
   @ApiResponse({
     status: 201,
     type: CidadaoResponseDto,
     description:
-      'Cidadão criado com sucesso, incluindo todos os dados relacionados processados',
+      'Cidadão criado ou atualizado com sucesso, incluindo todos os dados relacionados processados',
   })
   @ApiResponse({
     status: 400,
@@ -223,7 +223,7 @@ export class CidadaoController {
   })
   @ApiResponse({
     status: 409,
-    description: 'Conflito - CPF ou NIS já cadastrado no sistema',
+    description: 'Conflito - NIS já cadastrado para outro cidadão (CPF é usado para upsert)',
   })
   @ApiResponse({
     status: 422,

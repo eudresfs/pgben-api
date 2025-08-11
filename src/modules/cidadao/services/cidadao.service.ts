@@ -205,6 +205,14 @@ export class CidadaoService {
       }
     }
 
+    // Verificar se já existe um cidadão com o CPF informado
+    const cidadaoExistente = await this.cidadaoRepository.findByCpf(cpfClean);
+    
+    if (cidadaoExistente) {
+      // Se existe, atualizar os dados do cidadão existente (upsert)
+      return this.update(cidadaoExistente.id, createCidadaoDto, usuario_id);
+    }
+
     // Separar campos que não pertencem à entidade Cidadao
     const {
       composicao_familiar,
@@ -225,8 +233,8 @@ export class CidadaoService {
       usuario_id,
     };
 
-    const cidadaoSalvo =
-      await this.cidadaoRepository.createCidadao(dadosParaCriacao);
+    // Criar novo cidadão usando saveWithScope diretamente para evitar verificação de conflito
+    const cidadaoSalvo = await this.cidadaoRepository.saveWithScope(dadosParaCriacao);
 
     // Processar contatos normalizados se existirem
     if (contatos && contatos.length > 0) {

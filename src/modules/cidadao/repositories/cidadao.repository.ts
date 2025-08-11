@@ -83,13 +83,17 @@ export class CidadaoRepository extends ScopedRepository<Cidadao> {
 
       // Busca por CPF na composição familiar (se o termo tem dígitos)
       if (searchClean.length > 0) {
-        conditions.push('composicao_familiar_search.cpf LIKE :searchCpfFamiliar');
+        conditions.push(
+          'composicao_familiar_search.cpf LIKE :searchCpfFamiliar',
+        );
         parameters.searchCpfFamiliar = `%${searchClean}%`;
       }
 
       // Busca por NIS na composição familiar (se o termo tem dígitos)
       if (searchClean.length > 0) {
-        conditions.push('composicao_familiar_search.nis LIKE :searchNisFamiliar');
+        conditions.push(
+          'composicao_familiar_search.nis LIKE :searchNisFamiliar',
+        );
         parameters.searchNisFamiliar = `%${searchClean}%`;
       }
 
@@ -114,7 +118,7 @@ export class CidadaoRepository extends ScopedRepository<Cidadao> {
             THEN true 
             ELSE false 
           END`,
-          'encontrado_por_composicao_familiar'
+          'encontrado_por_composicao_familiar',
         );
       }
     }
@@ -149,28 +153,36 @@ export class CidadaoRepository extends ScopedRepository<Cidadao> {
     }
 
     // Quando há busca por CPF, precisamos usar getRawAndEntities para obter a flag calculada
-    if (search && search.trim() !== '' && search.replace(/\D/g, '').length > 0) {
+    if (
+      search &&
+      search.trim() !== '' &&
+      search.replace(/\D/g, '').length > 0
+    ) {
       const result = await query
         .orderBy('cidadao.created_at', 'DESC')
         .skip(skip)
         .take(Math.min(take, 100))
         .getRawAndEntities();
-      
+
       const rawResults = result.raw;
       const entities = result.entities;
 
       // Mapear a flag calculada para as entidades
       const entitiesWithFlag = entities.map((entity, index) => {
         const rawResult = rawResults[index];
-        if (rawResult && rawResult.encontrado_por_composicao_familiar !== undefined) {
-          (entity as any).encontrado_por_composicao_familiar = rawResult.encontrado_por_composicao_familiar;
+        if (
+          rawResult &&
+          rawResult.encontrado_por_composicao_familiar !== undefined
+        ) {
+          (entity as any).encontrado_por_composicao_familiar =
+            rawResult.encontrado_por_composicao_familiar;
         }
         return entity;
       });
 
       // Para obter o count total, fazemos uma query separada
       const countQuery = this.createScopedQueryBuilder('cidadao');
-      
+
       if (unidade_id) {
         countQuery.andWhere('cidadao.unidade_id = :unidade_id', { unidade_id });
       }
@@ -186,13 +198,13 @@ export class CidadaoRepository extends ScopedRepository<Cidadao> {
       if (searchClean.length > 0) {
         conditions.push('cidadao.cpf LIKE :searchCpf');
         parameters.searchCpf = `%${searchClean}%`;
-        
+
         // Adicionar busca na composição familiar
         countQuery.leftJoin(
           'cidadao.composicao_familiar',
           'composicao_familiar_count',
           'composicao_familiar_count.cpf = :searchCleanCount',
-          { searchCleanCount: searchClean }
+          { searchCleanCount: searchClean },
         );
         conditions.push('composicao_familiar_count.cpf = :searchCpfFamiliar');
         parameters.searchCpfFamiliar = searchClean;
@@ -217,7 +229,7 @@ export class CidadaoRepository extends ScopedRepository<Cidadao> {
       }
 
       const total = await countQuery.getCount();
-      
+
       return [entitiesWithFlag, total];
     }
 

@@ -555,7 +555,8 @@ export class CidadaoResponseDto {
 
   @ApiPropertyOptional({
     example: false,
-    description: 'Indica se o cidadão foi encontrado através do CPF de um membro da composição familiar',
+    description:
+      'Indica se o cidadão foi encontrado através do CPF de um membro da composição familiar',
     type: 'boolean',
   })
   @Expose()

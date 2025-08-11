@@ -234,8 +234,8 @@ export class ScopedRepository<Entity> extends Repository<Entity> {
       );
     }
 
-    // Aplicar atualização
-    await this.update(id, updateData as any);
+    // Aplicar atualização usando critérios corretos
+    await this.update({ id }, updateData as any);
 
     // Retornar entidade atualizada
     return this.findById(id);
@@ -254,7 +254,7 @@ export class ScopedRepository<Entity> extends Repository<Entity> {
       );
     }
 
-    await this.delete(id);
+    await this.delete({ id });
   }
 
   // ========== MÉTODOS GLOBAIS (SEM ESCOPO) ==========
