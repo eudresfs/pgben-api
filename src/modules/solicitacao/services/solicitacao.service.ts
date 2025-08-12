@@ -109,6 +109,9 @@ export class SolicitacaoService {
     @InjectRepository(DeterminacaoJudicial)
     private determinacaoJudicialRepository: Repository<DeterminacaoJudicial>,
 
+    @InjectRepository(TipoBeneficio)
+    private tipoBeneficioRepository: Repository<TipoBeneficio>,
+
     private connection: Connection,
     private dataSource: DataSource,
 
@@ -170,6 +173,7 @@ export class SolicitacaoService {
         'solicitacao.id',
         'solicitacao.protocolo',
         'solicitacao.status',
+        'solicitacao.valor',
         'solicitacao.data_abertura',
         'solicitacao.data_aprovacao',
         'solicitacao.observacoes',
@@ -326,13 +330,16 @@ export class SolicitacaoService {
       .leftJoinAndSelect('solicitacao.documentos', 'documentos')
       .leftJoinAndSelect('solicitacao.concessao', 'concessao')
       .select([
+        // Dados Solicitação
         'solicitacao.id',
         'solicitacao.protocolo',
         'solicitacao.status',
+        'solicitacao.valor',
         'solicitacao.parecer_semtas',
         'solicitacao.dados_complementares',
         'solicitacao.data_abertura',
         'solicitacao.observacoes',
+        // Dados Benefíciário
         'beneficiario.id',
         'beneficiario.nome',
         'beneficiario.cpf',
@@ -343,21 +350,25 @@ export class SolicitacaoService {
         'beneficiario.naturalidade',
         'beneficiario.sexo',
         'beneficiario.estado_civil',
+        // Dados Solicitante
         'solicitante.id',
         'solicitante.nome',
         'solicitante.cpf',
         'solicitante.nis',
         'solicitante.data_nascimento',
+        // Dados Benefício
         'tipo_beneficio.id',
         'tipo_beneficio.nome',
         'tipo_beneficio.descricao',
         'tipo_beneficio.codigo',
-        'tipo_beneficio.valor',
+        // Dados Técnico
         'tecnico.id',
         'tecnico.nome',
+        // Dados Unidade
         'unidade.id',
         'unidade.nome',
         'unidade.sigla',
+        // Dados Concessão
         'concessao.id',
       ])
       .where('solicitacao.id = :id', { id })
@@ -548,6 +559,22 @@ export class SolicitacaoService {
       const normalizedDadosComplementares =
         normalizeEnumFields(dadosComplementares);
 
+      // Buscar valor de referência do benefício se não foi fornecido
+      let valorSolicitacao = createSolicitacaoDto.valor;
+      if (!valorSolicitacao) {
+        const tipoBeneficio = await this.tipoBeneficioRepository.findOne({
+          where: { id: createSolicitacaoDto.tipo_beneficio_id },
+          select: ['valor'],
+        });
+        
+        if (tipoBeneficio && tipoBeneficio.valor) {
+          valorSolicitacao = tipoBeneficio.valor;
+          this.logger.log(
+            `Valor de referência do benefício aplicado: ${valorSolicitacao} para tipo de benefício ${createSolicitacaoDto.tipo_beneficio_id}`,
+          );
+        }
+      }
+
       // ===== TRANSAÇÃO MÍNIMA APENAS PARA OPERAÇÕES DE ESCRITA =====
       const solicitacaoSalva = await this.dataSource.transaction(
         async (manager) => {
@@ -564,6 +591,7 @@ export class SolicitacaoService {
             status: StatusSolicitacao.RASCUNHO,
             data_abertura: new Date(),
             dados_complementares: normalizedDadosComplementares,
+            valor: valorSolicitacao,
           });
 
           // Salvar a solicitação

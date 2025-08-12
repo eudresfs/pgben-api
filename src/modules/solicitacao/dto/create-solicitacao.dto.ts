@@ -8,6 +8,8 @@ import {
   IsArray,
   ArrayMinSize,
   IsBoolean,
+  IsNumber,
+  Min,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -84,6 +86,14 @@ export class CreateSolicitacaoDto {
   @IsOptional()
   @IsObject({ message: 'Dados complementares devem ser um objeto' })
   dados_complementares?: Record<string, any>;
+
+  @ApiPropertyOptional({
+    description: 'Valor da solicitação',
+  })
+  @IsOptional()
+  @IsNumber({ maxDecimalPlaces: 2 }, { message: 'Valor deve ser um número com no máximo 2 casas decimais' })
+  @Min(0, { message: 'Valor deve ser maior ou igual a zero' })
+  valor?: number;
 
   @ApiPropertyOptional({
     description: 'Documentos anexados à solicitação',

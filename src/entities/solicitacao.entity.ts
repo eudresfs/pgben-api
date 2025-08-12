@@ -56,7 +56,15 @@ export class Solicitacao {
     this.protocolo = `SOL${date.getFullYear()}${(date.getMonth() + 1).toString().padStart(2, '0')}${random}`;
   }
 
-  @Column({ select: false, insert: false, update: false })
+  @Column({ 
+    type: 'enum',
+    enum: StatusSolicitacao,
+    enumName: 'status_solicitacao',
+    nullable: true,
+    select: false,
+    insert: false,
+    update: false
+  })
   private statusAnterior: StatusSolicitacao;
 
   @Column({ select: false, insert: false, update: false })
@@ -183,6 +191,9 @@ export class Solicitacao {
 
   @Column('jsonb', { nullable: true })
   dados_complementares: Record<string, any>;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true, comment: 'Valor de referência do benefício' })
+  valor: number;
 
   @OneToMany(() => Documento, (documento) => documento.solicitacao, {
     cascade: ['insert', 'update'],
