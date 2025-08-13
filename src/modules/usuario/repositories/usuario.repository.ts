@@ -1,27 +1,46 @@
 import { Injectable } from '@nestjs/common';
-import { Repository, DataSource, DeepPartial } from 'typeorm';
-import { InjectRepository } from '@nestjs/typeorm';
+import { DataSource, DeepPartial } from 'typeorm';
 import { Usuario } from '../../../entities/usuario.entity';
 import { Status } from '../../../enums/status.enum';
 import { throwUserNotFound } from '../../../shared/exceptions/error-catalog/domains/usuario.errors';
+import { ScopedRepository } from '../../../common/repositories/scoped-repository';
+import { RequestContextHolder } from '../../../common/services/request-context-holder.service';
+import { ScopeType } from '../../../enums/scope-type.enum';
 
 /**
- * Repositório de usuários
+ * Repositório de usuários com escopo aplicado
  *
- * Responsável por operações de acesso a dados relacionadas a usuários
+ * Responsável por operações de acesso a dados relacionadas a usuários,
+ * aplicando automaticamente filtros de escopo baseados na unidade do usuário.
+ * 
+ * Para usuários, o escopo é aplicado da seguinte forma:
+ * - GLOBAL: Acesso a todos os usuários do sistema
+ * - UNIDADE: Acesso apenas aos usuários da mesma unidade
+ * - PROPRIO: Acesso apenas ao próprio usuário
  */
 @Injectable()
 export class UsuarioRepository {
-  private repository: Repository<Usuario>;
+  private scopedRepository: ScopedRepository<Usuario>;
 
   constructor(private dataSource: DataSource) {
-    this.repository = this.dataSource.getRepository(Usuario);
+    this.scopedRepository = new ScopedRepository(
+      Usuario,
+      this.dataSource.manager,
+      undefined,
+      {
+        strictMode: true,
+        allowGlobalScope: true,
+        operationName: 'usuario',
+        enableMetadataCache: true,
+        enableQueryHints: true,
+      },
+    );
   }
 
   /**
-   * Busca todos os usuários com filtros e paginação
+   * Busca todos os usuários com filtros, paginação e escopo aplicado
    * @param options Opções de filtro e paginação
-   * @returns Lista de usuários paginada
+   * @returns Lista de usuários paginada com escopo aplicado
    */
   async findAll(options?: {
     relations?: boolean;
@@ -38,17 +57,23 @@ export class UsuarioRepository {
       order = { created_at: 'DESC' },
     } = options || {};
 
-    const queryBuilder = this.repository.createQueryBuilder('usuario');
+    // Criar QueryBuilder com escopo aplicado
+    const queryBuilder = this.scopedRepository.createScopedQueryBuilder('usuario');
 
+    // Aplicar relacionamentos se solicitados
     if (relations) {
       queryBuilder
         .leftJoinAndSelect('usuario.unidade', 'unidade')
-        .leftJoinAndSelect('usuario.role', 'role');
+        .leftJoinAndSelect('usuario.role', 'role')
+      .leftJoinAndSelect('usuario.setor', 'setor');
     }
 
-    // Aplicar filtros where se fornecidos
+    // Aplicar filtros where adicionais se fornecidos
     if (where && Object.keys(where).length > 0) {
-      queryBuilder.where(where);
+      Object.entries(where).forEach(([key, value]) => {
+        const columnName = key.includes('.') ? key : `usuario.${key}`;
+        queryBuilder.andWhere(`${columnName} = :${key}`, { [key]: value });
+      });
     }
 
     // Aplicar ordenação com prefixo correto da tabela
@@ -64,22 +89,28 @@ export class UsuarioRepository {
       });
     }
 
+    // Aplicar paginação
     queryBuilder.skip(skip).take(take);
 
     return queryBuilder.getManyAndCount();
   }
 
   /**
-   * Busca um usuário pelo ID
+   * Busca um usuário pelo ID com escopo aplicado
    * @param id ID do usuário
-   * @returns Usuário encontrado
-   * @throws UsuarioError quando usuário não encontrado
+   * @returns Usuário encontrado dentro do escopo
+   * @throws UsuarioError quando usuário não encontrado ou fora do escopo
    */
   async findById(id: string): Promise<Usuario> {
-    const usuario = await this.repository.findOne({
-      where: { id },
-      relations: ['role', 'unidade', 'setor'],
-    });
+    const queryBuilder = this.scopedRepository.createScopedQueryBuilder('usuario');
+    
+    queryBuilder
+      .leftJoinAndSelect('usuario.role', 'role')
+      .leftJoinAndSelect('usuario.unidade', 'unidade')
+      .leftJoinAndSelect('usuario.setor', 'setor')
+      .where('usuario.id = :id', { id });
+
+    const usuario = await queryBuilder.getOne();
 
     if (!usuario) {
       throwUserNotFound(id);
@@ -89,39 +120,54 @@ export class UsuarioRepository {
   }
 
   /**
-   * Busca um usuário pelo email
+   * Busca um usuário pelo email com escopo aplicado
    * @param email Email do usuário
-   * @returns Usuário encontrado ou null
+   * @returns Usuário encontrado dentro do escopo ou null
    */
   async findByEmail(email: string): Promise<Usuario | null> {
-    return this.repository.findOne({
-      where: { email },
-      relations: ['role', 'unidade', 'setor'],
-    });
+    const queryBuilder = this.scopedRepository.createScopedQueryBuilder('usuario');
+    
+    queryBuilder
+      .leftJoinAndSelect('usuario.role', 'role')
+      .leftJoinAndSelect('usuario.unidade', 'unidade')
+      .leftJoinAndSelect('usuario.setor', 'setor')
+      .where('usuario.email = :email', { email });
+
+    return queryBuilder.getOne();
   }
 
   /**
-   * Busca um usuário pelo CPF
+   * Busca um usuário pelo CPF com escopo aplicado
    * @param cpf CPF do usuário
-   * @returns Usuário encontrado ou null
+   * @returns Usuário encontrado dentro do escopo ou null
    */
   async findByCpf(cpf: string): Promise<Usuario | null> {
-    return this.repository.findOne({
-      where: { cpf },
-      relations: ['role', 'unidade', 'setor'],
-    });
+    const queryBuilder = this.scopedRepository.createScopedQueryBuilder('usuario');
+    
+    queryBuilder
+      .leftJoinAndSelect('usuario.role', 'role')
+      .leftJoinAndSelect('usuario.unidade', 'unidade')
+      .leftJoinAndSelect('usuario.setor', 'setor')
+      .where('usuario.cpf = :cpf', { cpf });
+
+    return queryBuilder.getOne();
   }
 
   /**
-   * Busca um usuário pela matrícula
+   * Busca um usuário pela matrícula com escopo aplicado
    * @param matricula Matrícula do usuário
-   * @returns Usuário encontrado ou null
+   * @returns Usuário encontrado dentro do escopo ou null
    */
   async findByMatricula(matricula: string): Promise<Usuario | null> {
-    return this.repository.findOne({
-      where: { matricula },
-      relations: ['role', 'unidade', 'setor'],
-    });
+    const queryBuilder = this.scopedRepository.createScopedQueryBuilder('usuario');
+    
+    queryBuilder
+      .leftJoinAndSelect('usuario.role', 'role')
+      .leftJoinAndSelect('usuario.unidade', 'unidade')
+      .leftJoinAndSelect('usuario.setor', 'setor')
+      .where('usuario.matricula = :matricula', { matricula });
+
+    return queryBuilder.getOne();
   }
 
   /**
@@ -130,8 +176,10 @@ export class UsuarioRepository {
    * @returns Usuário criado
    */
   async create(data: Partial<Usuario>): Promise<Usuario> {
-    const usuario = this.repository.create(data);
-    return this.repository.save(usuario);
+    // Para criação, usar o repository original sem escopo
+    const repository = this.dataSource.getRepository(Usuario);
+    const usuario = repository.create(data);
+    return repository.save(usuario);
   }
 
   /**
@@ -141,11 +189,14 @@ export class UsuarioRepository {
    * @returns Usuário atualizado
    */
   async update(id: string, data: Partial<Usuario>): Promise<Usuario> {
-    const result = await this.repository.update(id, data);
+    // Para atualização, usar o repository original sem escopo
+    const repository = this.dataSource.getRepository(Usuario);
+    const result = await repository.update(id, data);
     if (result.affected === 0) {
       throwUserNotFound(id);
     }
-    const usuario = await this.findById(id);
+    // Buscar o usuário atualizado sem escopo para evitar problemas durante operações sem contexto
+    const usuario = await this.findByIdGlobal(id);
     if (!usuario) {
       throwUserNotFound(id);
     }
@@ -161,8 +212,11 @@ export class UsuarioRepository {
   async updateStatus(id: string, status: Status): Promise<Usuario> {
     const dadosAtualizacao: DeepPartial<Usuario> = { status };
 
-    await this.repository.update(id, dadosAtualizacao);
-    const usuario = await this.findById(id);
+    // Para atualização, usar o repository original sem escopo
+    const repository = this.dataSource.getRepository(Usuario);
+    await repository.update(id, dadosAtualizacao);
+    // Buscar o usuário atualizado sem escopo para evitar problemas durante autenticação
+    const usuario = await this.findByIdGlobal(id);
     if (!usuario) {
       throwUserNotFound(id);
     }
@@ -181,8 +235,11 @@ export class UsuarioRepository {
       primeiro_acesso: false,
     };
 
-    await this.repository.update(id, dadosAtualizacao);
-    const usuario = await this.findById(id);
+    // Para atualização, usar o repository original sem escopo
+    const repository = this.dataSource.getRepository(Usuario);
+    await repository.update(id, dadosAtualizacao);
+    // Buscar o usuário atualizado sem escopo para evitar problemas durante operações sem contexto
+    const usuario = await this.findByIdGlobal(id);
     if (!usuario) {
       throwUserNotFound(id);
     }
@@ -195,18 +252,152 @@ export class UsuarioRepository {
    * @returns Resultado da operação
    */
   async remove(id: string): Promise<void> {
-    const result = await this.repository.softDelete(id);
+    // Para remoção, usar o repository original sem escopo
+    const repository = this.dataSource.getRepository(Usuario);
+    const result = await repository.softDelete(id);
     if (result.affected === 0) {
       throwUserNotFound(id);
     }
   }
 
   /**
-   * Conta o total de usuários
+   * Conta o total de usuários com escopo aplicado
+   * @param where Condições de filtro adicionais
+   * @returns Número total de usuários dentro do escopo
+   */
+  async count(where?: any): Promise<number> {
+    const queryBuilder = this.scopedRepository.createScopedQueryBuilder('usuario');
+
+    // Aplicar filtros where adicionais se fornecidos
+    if (where && Object.keys(where).length > 0) {
+      Object.entries(where).forEach(([key, value]) => {
+        const columnName = key.includes('.') ? key : `usuario.${key}`;
+        queryBuilder.andWhere(`${columnName} = :${key}`, { [key]: value });
+      });
+    }
+
+    return queryBuilder.getCount();
+  }
+
+  // ========== MÉTODOS SEM ESCOPO (PARA AUTENTICAÇÃO E OPERAÇÕES ADMINISTRATIVAS) ==========
+
+  /**
+   * Busca um usuário pelo email SEM aplicar escopo (para autenticação)
+   * @param email Email do usuário
+   * @returns Usuário encontrado ou null
+   */
+  async findByEmailGlobal(email: string): Promise<Usuario | null> {
+    const repository = this.dataSource.getRepository(Usuario);
+    return repository.findOne({
+      where: { email },
+      relations: ['role', 'unidade', 'setor'],
+    });
+  }
+
+  /**
+   * Busca um usuário pelo ID SEM aplicar escopo (para operações administrativas)
+   * @param id ID do usuário
+   * @returns Usuário encontrado ou null
+   */
+  async findByIdGlobal(id: string): Promise<Usuario | null> {
+    const repository = this.dataSource.getRepository(Usuario);
+    return repository.findOne({
+      where: { id },
+      relations: ['role', 'unidade', 'setor'],
+    });
+  }
+
+  /**
+   * Busca um usuário pelo CPF SEM aplicar escopo (para validações)
+   * @param cpf CPF do usuário
+   * @returns Usuário encontrado ou null
+   */
+  async findByCpfGlobal(cpf: string): Promise<Usuario | null> {
+    const repository = this.dataSource.getRepository(Usuario);
+    return repository.findOne({
+      where: { cpf },
+      relations: ['role', 'unidade', 'setor'],
+    });
+  }
+
+  /**
+   * Busca um usuário pela matrícula SEM aplicar escopo (para validações)
+   * @param matricula Matrícula do usuário
+   * @returns Usuário encontrado ou null
+   */
+  async findByMatriculaGlobal(matricula: string): Promise<Usuario | null> {
+    const repository = this.dataSource.getRepository(Usuario);
+    return repository.findOne({
+      where: { matricula },
+      relations: ['role', 'unidade', 'setor'],
+    });
+  }
+
+  /**
+   * Busca todos os usuários SEM aplicar escopo (para operações administrativas)
+   * @param options Opções de filtro e paginação
+   * @returns Lista de usuários paginada sem escopo
+   */
+  async findAllGlobal(options?: {
+    relations?: boolean;
+    skip?: number;
+    take?: number;
+    where?: any;
+    order?: any;
+  }): Promise<[Usuario[], number]> {
+    const {
+      relations = false,
+      skip = 0,
+      take = 10,
+      where = {},
+      order = { created_at: 'DESC' },
+    } = options || {};
+
+    const repository = this.dataSource.getRepository(Usuario);
+    const queryBuilder = repository.createQueryBuilder('usuario');
+
+    // Aplicar relacionamentos se solicitados
+    if (relations) {
+      queryBuilder
+        .leftJoinAndSelect('usuario.unidade', 'unidade')
+        .leftJoinAndSelect('usuario.role', 'role')
+        .leftJoinAndSelect('usuario.setor', 'setor');
+    }
+
+    // Aplicar filtros where se fornecidos
+    if (where && Object.keys(where).length > 0) {
+      Object.entries(where).forEach(([key, value]) => {
+        const columnName = key.includes('.') ? key : `usuario.${key}`;
+        queryBuilder.andWhere(`${columnName} = :${key}`, { [key]: value });
+      });
+    }
+
+    // Aplicar ordenação
+    if (order && Object.keys(order).length > 0) {
+      const orderEntries = Object.entries(order);
+      orderEntries.forEach(([field, direction], index) => {
+        const columnName = field.includes('.') ? field : `usuario.${field}`;
+        if (index === 0) {
+          queryBuilder.orderBy(columnName, direction as 'ASC' | 'DESC');
+        } else {
+          queryBuilder.addOrderBy(columnName, direction as 'ASC' | 'DESC');
+        }
+      });
+    }
+
+    // Aplicar paginação
+    queryBuilder.skip(skip).take(take);
+
+    return queryBuilder.getManyAndCount();
+  }
+
+  /**
+   * Conta o total de usuários SEM aplicar escopo
    * @param where Condições de filtro
    * @returns Número total de usuários
    */
-  async count(where?: any): Promise<number> {
-    return this.repository.count({ where });
+  async countGlobal(where?: any): Promise<number> {
+    const repository = this.dataSource.getRepository(Usuario);
+    return repository.count({ where });
   }
 }

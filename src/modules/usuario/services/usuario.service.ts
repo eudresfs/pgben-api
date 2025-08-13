@@ -718,8 +718,8 @@ export class UsuarioService {
         this.logger.info(
           `Tentativa de login para: ${normalizedEmail}`,
           'SECURITY_LOGIN_ATTEMPT',
-          { email: normalizedEmail },
         );
+        return null;
       }
 
       return usuario;
@@ -728,7 +728,39 @@ export class UsuarioService {
         `Erro ao buscar usuário por email: ${error.message}`,
         error.stack,
       );
-      return null;
+      throw error;
+    }
+  }
+
+  /**
+   * Busca usuário por email SEM aplicar escopo (para autenticação)
+   * @param email Email do usuário
+   * @returns Usuário encontrado ou null
+   */
+  async findByEmailForAuth(email: string): Promise<Usuario | null> {
+    this.logger.info(`Buscando usuário por email para autenticação: ${email}`);
+
+    try {
+      // Normalizar email para minúsculas para evitar problemas de case sensitivity
+      const normalizedEmail = email.toLowerCase();
+      const usuario = await this.usuarioRepository.findByEmailGlobal(normalizedEmail);
+
+      if (!usuario) {
+        this.logger.info(
+          `Tentativa de login para: ${normalizedEmail}`,
+          'SECURITY_LOGIN_ATTEMPT',
+          { email: normalizedEmail },
+        );
+        return null;
+      }
+
+      return usuario;
+    } catch (error) {
+      this.logger.error(
+        `Erro ao buscar usuário por email para autenticação: ${error.message}`,
+        error.stack,
+      );
+      throw error;
     }
   }
 
@@ -816,7 +848,7 @@ export class UsuarioService {
     email: string,
     senha: string,
   ): Promise<Usuario | null> {
-    const usuario = await this.findByEmail(email);
+    const usuario = await this.findByEmailForAuth(email);
 
     if (!usuario) {
       return null;
@@ -891,34 +923,89 @@ export class UsuarioService {
   }
 
   /**
-   * Altera a senha do usuário no primeiro acesso
-   * @param userId ID do usuário
-   * @param alterarSenhaDto Dados da nova senha
-   * @returns Resultado da operação
+   * Busca todas as roles ativas disponíveis no sistema baseado na hierarquia do usuário
+   * Cada usuário só pode ver as roles abaixo da sua na hierarquia:
+   * SUPER_ADMIN > ADMIN > GESTOR > COORDENADOR
+   * @param usuarioAtualClaims - Claims do usuário autenticado (do JWT)
+   * @returns Lista de roles ativas filtradas pela hierarquia
    */
-  /**
-   * Busca todas as roles disponíveis no sistema
-   * @returns Lista de roles com id, nome e descrição
-   */
-  async findAllRoles() {
-    this.logger.info('Buscando todas as roles disponíveis');
+  async findAllRoles(usuarioAtualClaims?: any) {
+    this.logger.info('Buscando todas as roles ativas com filtro de hierarquia');
 
     try {
-      const roles = await this.roleRepository.find({
-        select: ['id', 'nome', 'descricao', 'status'],
-        where: {
-          status: Status.ATIVO,
-          nome: Not(In(['SUPER_ADMIN', 'CIDADAO'])),
-        },
+      // Definir hierarquia de roles (do maior para o menor privilégio)
+      const HIERARQUIA_ROLES = {
+        'SUPER_ADMIN': 4,
+        'ADMIN': 3,
+        'GESTOR': 2,
+        'COORDENADOR': 1,
+        'TECNICO_SEMTAS': 1,
+      };
+
+      const ROLES_IGNORADAS = ['SUPER_ADMIN', 'AUDITOR', 'CIDADAO'];
+      // Buscar todas as roles ativas
+      const todasRoles = await this.roleRepository.find({
+        where: { status: Status.ATIVO, nome: Not(In(ROLES_IGNORADAS)) },
         order: { nome: 'ASC' },
       });
 
-      return roles;
+      // Determinar o nível de hierarquia do usuário atual
+      const nivelUsuario = await this.obterNivelUsuario(usuarioAtualClaims, HIERARQUIA_ROLES);
+
+      // Filtrar roles baseado na hierarquia
+      const rolesPermitidas = todasRoles.filter(role => {
+        const nivelRole = HIERARQUIA_ROLES[role.nome];
+
+        // Se a role não está na hierarquia, todos podem vê-la
+        if (!nivelRole) {
+          return true;
+        }
+
+        // Se o usuário não tem nível definido, pode ver apenas roles não hierárquicas
+        if (nivelUsuario === null) {
+          return false;
+        }
+
+        // Usuário pode ver roles abaixo da sua na hierarquia
+        return nivelRole < nivelUsuario;
+      });
+
+      this.logger.info(`Encontradas ${rolesPermitidas.length} roles ativas para o usuário`);
+      return rolesPermitidas;
+
     } catch (error) {
       this.logger.error(`Erro ao buscar roles: ${error.message}`, error.stack);
-      // Retorna um array vazio em caso de erro para evitar erros de tipagem
       return [];
     }
+  }
+
+  /**
+   * Obtém o nível de hierarquia do usuário atual
+   * @param usuarioAtualClaims - Claims do usuário
+   * @param hierarquiaRoles - Mapa de hierarquia das roles
+   * @returns Nível do usuário ou null se não aplicável
+   */
+  private async obterNivelUsuario(usuarioAtualClaims: any, hierarquiaRoles: Record<string, number>): Promise<number | null> {
+    // Se não há usuário autenticado, retorna null
+    if (!usuarioAtualClaims?.id) {
+      this.logger.warn('Usuário não autenticado');
+      return null;
+    }
+
+    // Buscar o usuário completo com a role
+    const usuarioCompleto = await this.usuarioRepository.findByIdGlobal(usuarioAtualClaims.id);
+
+    if (!usuarioCompleto?.role?.nome) {
+      this.logger.warn(`Usuário ${usuarioAtualClaims.id} não encontrado ou sem role`);
+      return null;
+    }
+
+    const roleUsuario = usuarioCompleto.role.nome;
+    const nivelUsuario = hierarquiaRoles[roleUsuario];
+
+    this.logger.info(`Usuário ${usuarioCompleto.nome} tem role: ${roleUsuario} (nível: ${nivelUsuario || 'não hierárquica'})`);
+
+    return nivelUsuario || null;
   }
 
   /**
@@ -1106,8 +1193,8 @@ export class UsuarioService {
       // Normalizar email
       const normalizedEmail = email.toLowerCase();
 
-      // Buscar usuário pelo email
-      const usuario = await this.findByEmail(normalizedEmail);
+      // Buscar usuário pelo email - usando método sem escopo para recuperação de senha
+      const usuario = await this.findByEmailForAuth(normalizedEmail);
 
       if (!usuario) {
         // Por segurança, não revelar se o email existe ou não

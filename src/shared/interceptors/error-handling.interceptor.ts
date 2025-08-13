@@ -134,6 +134,25 @@ export class ErrorHandlingInterceptor implements NestInterceptor {
       );
     }
 
+    // Erro de UUID inválido
+    if (message.includes('invalid input syntax for type uuid')) {
+      const uuidMatch = message.match(/invalid input syntax for type uuid: "([^"]+)"/i);
+      if (uuidMatch) {
+        const invalidUuid = uuidMatch[1];
+        return new HttpException(
+          {
+            statusCode: HttpStatus.BAD_REQUEST,
+            message: `Identificador '${invalidUuid}' possui formato inválido`,
+            details: 'UUID deve conter apenas caracteres hexadecimais (0-9, a-f) e hífens no formato correto',
+            timestamp: new Date().toISOString(),
+            field: 'uuid',
+            invalidValue: invalidUuid,
+          },
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+    }
+
     // Erro de enum inválido
     if (message.includes('invalid input value for enum')) {
       const enumMatch = message.match(

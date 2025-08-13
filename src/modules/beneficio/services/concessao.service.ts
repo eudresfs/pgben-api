@@ -180,6 +180,11 @@ export class ConcessaoService {
           unidade_id: filtro.unidade_id || filtro.unidadeId,
         });
       }
+      if (filtro.usuario_id || filtro.usuarioId) {
+        qb.andWhere('solicitacao.tecnico.id = :usuario_id', {
+          usuario_id: filtro.usuario_id || filtro.usuarioId,
+        });
+      }
       if (filtro.tipo_beneficio_id || filtro.tipoBeneficioId) {
         qb.andWhere('tipo_beneficio.id = :tipo_beneficio_id', {
           tipo_beneficio_id: filtro.tipo_beneficio_id || filtro.tipoBeneficioId,

@@ -1,19 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import {
-  FindOptionsWhere,
-  Between,
-  LessThanOrEqual,
-  IsNull,
   Brackets,
-  SelectQueryBuilder,
 } from 'typeorm';
 import { Pagamento } from '../../../entities/pagamento.entity';
 import { StatusPagamentoEnum } from '../../../enums/status-pagamento.enum';
 import { ScopedRepository } from '../../../common/repositories/scoped-repository';
 import { InjectScopedRepository } from '../../../common/providers/scoped-repository.provider';
-import { RequestContextHolder } from '../../../common/services/request-context-holder.service';
-import { ScopeType } from '../../../enums/scope-type.enum';
-import { ScopeViolationException } from '../../../common/exceptions/scope.exceptions';
+import { UuidValidator } from '../../../common/utils/uuid-validator.util';
 
 /**
  * Repository para operações de banco de dados relacionadas a Pagamentos
@@ -38,6 +31,8 @@ export class PagamentoRepository {
    * Busca pagamento por ID
    */
   async findById(id: string): Promise<Pagamento | null> {
+    // Validar UUID antes de usar na query
+    UuidValidator.validateOrThrow(id, 'id');
     return await this.scopedRepository
       .createScopedQueryBuilder('pagamento')
       .leftJoinAndSelect('pagamento.solicitacao', 'solicitacao')
@@ -50,6 +45,8 @@ export class PagamentoRepository {
    * Busca um pagamento por ID com as relações de concessão e solicitação.
    */
   async findPagamentoComRelacoes(id: string): Promise<Pagamento | null> {
+    // Validar UUID antes de usar na query
+    UuidValidator.validateOrThrow(id, 'id');
     return await this.scopedRepository
       .createScopedQueryBuilder('pagamento')
       .leftJoinAndSelect('pagamento.concessao', 'concessao')
@@ -65,6 +62,8 @@ export class PagamentoRepository {
     id: string,
     relations: string[] = [],
   ): Promise<Pagamento | null> {
+    // Validar UUID antes de usar na query
+    UuidValidator.validateOrThrow(id, 'id');
     const queryBuilder = this.scopedRepository
       .createScopedQueryBuilder('pagamento')
       .where('pagamento.id = :id', { id });
@@ -81,6 +80,8 @@ export class PagamentoRepository {
    * Busca pagamentos por solicitação
    */
   async findBySolicitacao(solicitacao_id: string): Promise<Pagamento[]> {
+    // Validar UUID antes de usar na query
+    UuidValidator.validateOrThrow(solicitacao_id, 'solicitacao_id');
     return await this.scopedRepository
       .createScopedQueryBuilder('pagamento')
       .where('pagamento.solicitacao_id = :solicitacao_id', { solicitacao_id })
@@ -95,6 +96,8 @@ export class PagamentoRepository {
     solicitacao_id: string,
     numero_parcela: number,
   ): Promise<Pagamento | null> {
+    // Validar UUID antes de usar na query
+    UuidValidator.validateOrThrow(solicitacao_id, 'solicitacao_id');
     return await this.scopedRepository
       .createScopedQueryBuilder('pagamento')
       .where('pagamento.solicitacao_id = :solicitacao_id', { solicitacao_id })
@@ -109,6 +112,8 @@ export class PagamentoRepository {
     concessao_id: string,
     numero_parcela: number,
   ): Promise<Pagamento | null> {
+    // Validar UUID antes de usar na query
+    UuidValidator.validateOrThrow(concessao_id, 'concessao_id');
     return await this.scopedRepository
       .createScopedQueryBuilder('pagamento')
       .where('pagamento.concessao_id = :concessao_id', { concessao_id })
@@ -120,6 +125,8 @@ export class PagamentoRepository {
    * Busca pagamentos por concessão
    */
   async findByConcessao(concessao_id: string): Promise<Pagamento[]> {
+    // Validar UUID antes de usar na query
+    UuidValidator.validateOrThrow(concessao_id, 'concessao_id');
     return await this.scopedRepository
       .createScopedQueryBuilder('pagamento')
       .where('pagamento.concessao_id = :concessao_id', { concessao_id })
@@ -131,6 +138,8 @@ export class PagamentoRepository {
    * Busca pagamentos por comprovante_id
    */
   async findByComprovanteId(comprovante_id: string): Promise<Pagamento[]> {
+    // Validar UUID antes de usar na query
+    UuidValidator.validateOrThrow(comprovante_id, 'comprovante_id');
     return await this.scopedRepository
       .createScopedQueryBuilder('pagamento')
       .where('pagamento.comprovante_id = :comprovante_id', { comprovante_id })
@@ -235,18 +244,22 @@ export class PagamentoRepository {
    * Lista com filtros e paginação
    * Retorna também o nome do benefício, unidade e usuário
    */
-  async findWithFilters(filtros: {
-    search?: string;
-    status?: StatusPagamentoEnum;
-    solicitacao_id?: string;
-    concessao_id?: string;
-    data_inicio?: string;
-    data_fim?: string;
-    valorMinimo?: number;
-    valorMaximo?: number;
-    page?: number;
-    limit?: number;
-  }): Promise<{ items: Pagamento[]; total: number }> {
+  async findWithFilters(
+    filtros: {
+      search?: string;
+      status?: StatusPagamentoEnum;
+      unidade_id?: string;
+      solicitacao_id?: string;
+      concessao_id?: string;
+      data_inicio?: string;
+      data_fim?: string;
+      valorMinimo?: number;
+      valorMaximo?: number;
+      page?: number;
+      limit?: number;
+      usuarioId?: string;
+    },
+  ): Promise<{ items: Pagamento[]; total: number }> {
     const queryBuilder = this.scopedRepository
       .createScopedQueryBuilder('pagamento')
       .leftJoinAndSelect('pagamento.solicitacao', 'solicitacao')
@@ -313,13 +326,33 @@ export class PagamentoRepository {
       });
     }
 
+    if (filtros.unidade_id) {
+      // Validar UUID antes de usar na query
+      UuidValidator.validateOrThrow(filtros.unidade_id, 'unidade_id');
+      queryBuilder.andWhere('solicitacao.unidade_id = :unidade_id', {
+        unidade_id: filtros.unidade_id,
+      });
+    }
+
+    if (filtros.usuarioId) {
+      // Validar UUID antes de usar na query
+      UuidValidator.validateOrThrow(filtros.usuarioId, 'usuarioId');
+      queryBuilder.andWhere('solicitacao.tecnico_id = :usuarioId', {
+        usuarioId: filtros.usuarioId,
+      });
+    }
+
     if (filtros.solicitacao_id) {
+      // Validar UUID antes de usar na query
+      UuidValidator.validateOrThrow(filtros.solicitacao_id, 'solicitacao_id');
       queryBuilder.andWhere('pagamento.solicitacao_id = :solicitacao_id', {
         solicitacao_id: filtros.solicitacao_id,
       });
     }
 
     if (filtros.concessao_id) {
+      // Validar UUID antes de usar na query
+      UuidValidator.validateOrThrow(filtros.concessao_id, 'concessao_id');
       queryBuilder.andWhere('pagamento.concessao_id = :concessao_id', {
         concessao_id: filtros.concessao_id,
       });
@@ -394,6 +427,8 @@ export class PagamentoRepository {
     id: string,
     dadosAtualizacao: Partial<Pagamento>,
   ): Promise<Pagamento> {
+    // Validar UUID antes de usar na query
+    UuidValidator.validateOrThrow(id, 'id');
     const pagamento = await this.findById(id);
     if (!pagamento) {
       throw new Error('Pagamento não encontrado');
@@ -421,6 +456,8 @@ export class PagamentoRepository {
    * Remove um pagamento
    */
   async remove(id: string): Promise<void> {
+    // Validar UUID antes de usar na query
+    UuidValidator.validateOrThrow(id, 'id');
     await this.scopedRepository.deleteWithScope(id);
   }
 
@@ -428,6 +465,8 @@ export class PagamentoRepository {
    * Remove um pagamento (método alternativo)
    */
   async delete(id: string): Promise<void> {
+    // Validar UUID antes de usar na query
+    UuidValidator.validateOrThrow(id, 'id');
     const pagamento = await this.findById(id);
     if (!pagamento) {
       throw new Error('Pagamento não encontrado');
@@ -449,6 +488,8 @@ export class PagamentoRepository {
    * Verifica se existe pagamento para solicitação
    */
   async existsBySolicitacao(solicitacao_id: string): Promise<boolean> {
+    // Validar UUID antes de usar na query
+    UuidValidator.validateOrThrow(solicitacao_id, 'solicitacao_id');
     const count = await this.scopedRepository
       .createScopedQueryBuilder('pagamento')
       .where('pagamento.solicitacao_id = :solicitacao_id', { solicitacao_id })

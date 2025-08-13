@@ -172,20 +172,25 @@ export class UsuarioController {
   }
 
   /**
-   * Retorna todas as roles (papéis) disponíveis no sistema
+   * Retorna todas as roles (papéis) disponíveis no sistema baseado na hierarquia do usuário
+   * Cada usuário só pode ver as roles abaixo da sua na hierarquia:
+   * SUPER_ADMIN > ADMIN > GESTOR > COORDENADOR
    */
   @Get('roles')
   @RequiresPermission({
-    permissionName: 'usuario.listar',
-    scopeType: ScopeType.GLOBAL,
+    permissionName: 'usuario.listar'
   })
-  @ApiOperation({ summary: 'Listar todas as roles disponíveis' })
+  @ApiOperation({ 
+    summary: 'Listar roles disponíveis baseado na hierarquia do usuário',
+    description: 'Retorna apenas as roles que o usuário atual pode atribuir a outros usuários, baseado na hierarquia: SUPER_ADMIN > ADMIN > GESTOR > COORDENADOR'
+  })
   @ApiResponse({
     status: 200,
-    description: 'Lista de roles retornada com sucesso',
+    description: 'Lista de roles retornada com sucesso baseada na hierarquia',
   })
-  async findAllRoles() {
-    return this.usuarioService.findAllRoles();
+  async findAllRoles(@Request() req) {
+    const usuarioAtual = req.user;
+    return this.usuarioService.findAllRoles(usuarioAtual);
   }
 
   /**

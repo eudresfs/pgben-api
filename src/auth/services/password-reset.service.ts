@@ -84,8 +84,8 @@ export class PasswordResetService {
     const { email } = requestDto;
 
     try {
-      // Buscar usuário pelo email
-      const usuario = await this.usuarioRepository.findByEmail(
+      // Buscar usuário pelo email - usando método sem escopo para reset de senha
+      const usuario = await this.usuarioRepository.findByEmailGlobal(
         email.toLowerCase(),
       );
 

@@ -139,8 +139,8 @@ export class AuthService {
     const clientIp = (ctx as any).req?.ip || 'unknown';
     const userAgent = (ctx as any).req?.headers?.['user-agent'] || 'unknown';
 
-    // Buscar usuário pelo email (username)
-    const usuario = await this.usuarioService.findByEmail(username);
+    // Buscar usuário pelo email (username) - usando método sem escopo para autenticação
+    const usuario = await this.usuarioService.findByEmailForAuth(username);
 
     try {
       if (!usuario) {

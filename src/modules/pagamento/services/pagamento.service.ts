@@ -115,16 +115,20 @@ export class PagamentoService {
   /**
    * Lista pagamentos com filtros
    */
-  async findAll(filtros: {
-    search?: string;
-    status?: StatusPagamentoEnum;
-    solicitacao_id?: string;
-    concessao_id?: string;
-    data_inicio?: string;
-    data_fim?: string;
-    page?: number;
-    limit?: number;
-  }) {
+  async findAll(
+    filtros: {
+      search?: string;
+      status?: StatusPagamentoEnum;
+      unidade_id?: string;
+      solicitacao_id?: string;
+      concessao_id?: string;
+      data_inicio?: string;
+      data_fim?: string;
+      page?: number;
+      limit?: number;
+      usuarioId?: string;
+    },
+  ) {
     const { items, total } =
       await this.pagamentoRepository.findWithFilters(filtros);
 

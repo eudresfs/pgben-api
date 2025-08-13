@@ -12,6 +12,7 @@
   "scripts": {
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
+    "check": "npx tsc --noEmit",
     "build": "nest build",
     "release": "npx standard-version && git push --follow-tags origin main",
     "prestart:prod": "npm run build",

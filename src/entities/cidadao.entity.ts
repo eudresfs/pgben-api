@@ -34,6 +34,7 @@ import { DadosSociais } from './dados-sociais.entity';
 import { InfoBancaria } from './info-bancaria.entity';
 import { Contato } from './contato.entity';
 import { Endereco } from './endereco.entity';
+import { Usuario } from './usuario.entity';
 
 @Entity('cidadao')
 @Index(['cpf'], { unique: true })

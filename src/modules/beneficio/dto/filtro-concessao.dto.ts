@@ -53,6 +53,11 @@ export class FiltroConcessaoDto extends PaginationParamsDto {
   @IsUUID()
   unidade_id?: string;
 
+  @ApiPropertyOptional({ description: 'UUID do usuário' })
+  @IsOptional()
+  @IsUUID()
+  usuario_id?: string;
+
   @ApiPropertyOptional({ description: 'UUID do tipo de benefício' })
   @IsOptional()
   @Transform(({ value, obj }) => {
@@ -70,6 +75,11 @@ export class FiltroConcessaoDto extends PaginationParamsDto {
   @IsOptional()
   @IsUUID()
   unidadeId?: string;
+
+  @ApiHideProperty()
+  @IsOptional()
+  @IsUUID()
+  usuarioId?: string;
 
   // Propriedade temporária para aceitar tipoBeneficioId do interceptor
   @ApiHideProperty()

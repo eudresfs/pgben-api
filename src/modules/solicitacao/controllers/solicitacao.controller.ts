@@ -27,6 +27,7 @@ import {
 import {
   SolicitacaoService,
   PaginatedResponse,
+  FindAllOptions,
 } from '../services/solicitacao.service';
 import { CreateSolicitacaoDto } from '../dto/create-solicitacao.dto';
 import { UpdateSolicitacaoDto } from '../dto/update-solicitacao.dto';
@@ -153,53 +154,45 @@ export class SolicitacaoController {
   })
   async findAll(
     @Req() req: Request,
-    @Query('search') search?: string,
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
-    @Query('status') status?: StatusSolicitacao,
-    @Query('unidade_id') unidade_id?: string,
-    @Query('tipo_beneficio_id') beneficio_id?: string,
-    @Query('beneficiario_id') beneficiario_id?: string,
-    @Query('protocolo') protocolo?: string,
-    @Query('data_inicio') data_inicio?: string,
-    @Query('data_fim') data_fim?: string,
-    @Query('sortBy') sortBy?: 'data_abertura' | 'protocolo' | 'status',
-    @Query('sortOrder') sortOrder?: 'ASC' | 'DESC',
+    @Query() findAllOptions: FindAllOptions,
   ) {
-    const parsedPage = page ? Math.max(1, +page) : undefined;
-    const parsedLimit = limit ? Math.min(100, Math.max(1, +limit)) : undefined;
+    const parsedPage = findAllOptions.page ? Math.max(1, +findAllOptions.page) : undefined;
+    const parsedLimit = findAllOptions.limit ? Math.min(100, Math.max(1, +findAllOptions.limit)) : undefined;
 
-    if (data_inicio && !this.isValidDateFormat(data_inicio)) {
+    if (findAllOptions.data_inicio && !this.isValidDateFormat(findAllOptions.data_inicio)) {
       throw new BadRequestException(
         'Formato de data_inicio inválido. Use YYYY-MM-DD',
       );
     }
 
-    if (data_fim && !this.isValidDateFormat(data_fim)) {
+    if (findAllOptions.data_fim && !this.isValidDateFormat(findAllOptions.data_fim)) {
       throw new BadRequestException(
         'Formato de data_fim inválido. Use YYYY-MM-DD',
       );
     }
 
-    if (data_inicio && data_fim && new Date(data_inicio) > new Date(data_fim)) {
+    if (findAllOptions.data_inicio 
+      && findAllOptions.data_fim 
+      && new Date(findAllOptions.data_inicio) > new Date(findAllOptions.data_fim)) {
       throw new BadRequestException(
         'Data de início deve ser anterior ou igual à data de fim',
       );
     }
 
     return this.solicitacaoService.findAll({
-      search,
+      search: findAllOptions.search,
       page: parsedPage,
       limit: parsedLimit,
-      status,
-      unidade_id,
-      beneficio_id,
-      beneficiario_id,
-      protocolo,
-      data_inicio,
-      data_fim,
-      sortBy,
-      sortOrder,
+      status: findAllOptions.status,
+      unidade_id: findAllOptions.unidade_id,
+      beneficio_id: findAllOptions.beneficio_id,
+      beneficiario_id: findAllOptions.beneficiario_id,
+      usuario_id: findAllOptions.usuario_id,
+      protocolo: findAllOptions.protocolo,
+      data_inicio: findAllOptions.data_inicio,
+      data_fim: findAllOptions.data_fim,
+      sortBy: findAllOptions.sortBy,
+      sortOrder: findAllOptions.sortOrder,
     });
   }
 

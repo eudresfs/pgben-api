@@ -61,6 +61,8 @@ export class PagamentoController {
   async findAll(
     @Query('search') search?: string,
     @Query('status') status?: StatusPagamentoEnum,
+    @Query('usuario_id') usuario_id?: string,
+    @Query('unidade_id') unidade_id?: string,
     @Query('solicitacao_id') solicitacao_id?: string,
     @Query('concessao_id') concessao_id?: string,
     @Query('data_inicio') data_inicio?: string,
@@ -70,6 +72,8 @@ export class PagamentoController {
   ) {
     const filtros = {
       search,
+      usuario_id: usuario_id,
+      unidade_id: unidade_id,
       status,
       solicitacao_id: solicitacao_id,
       concessao_id: concessao_id,

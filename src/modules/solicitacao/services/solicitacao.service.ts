@@ -59,18 +59,19 @@ import { ValidacaoExclusividadeService } from './validacao-exclusividade.service
 import { CidadaoService } from '../../cidadao/services/cidadao.service';
 import { Logger } from '@nestjs/common';
 
-interface FindAllOptions {
+export interface FindAllOptions {
   search?: string;
   page?: number;
   limit?: number;
   status?: StatusSolicitacao;
+  usuario_id?: string;
   unidade_id?: string;
   beneficio_id?: string;
   beneficiario_id?: string;
   protocolo?: string;
   data_inicio?: string;
   data_fim?: string;
-  sortBy?: 'data_abertura' | 'protocolo' | 'status';
+  sortBy?: 'data_abertura' | 'data_aprovacao';
   sortOrder?: 'ASC' | 'DESC';
 }
 
@@ -137,7 +138,7 @@ export class SolicitacaoService {
     const sortBy = options.sortBy || 'data_abertura';
     const sortOrder = options.sortOrder || 'DESC';
 
-    const allowedSortFields = ['data_abertura', 'protocolo', 'status'];
+    const allowedSortFields = ['data_abertura', 'data_aprovacao'];
     if (!allowedSortFields.includes(sortBy)) {
       throw new BadRequestException(
         `Campo de ordenação '${sortBy}' não permitido`,
@@ -220,6 +221,7 @@ export class SolicitacaoService {
 
     this.applyFilters(queryBuilder, {
       status: options.status,
+      tecnico_id: options.usuario_id,
       unidade_id: options.unidade_id,
       beneficio_id: options.beneficio_id,
       beneficiario_id: options.beneficiario_id,
@@ -285,6 +287,12 @@ export class SolicitacaoService {
     if (filters.beneficio_id) {
       queryBuilder.andWhere('solicitacao.tipo_beneficio_id = :beneficio_id', {
         beneficio_id: filters.beneficio_id,
+      });
+    }
+
+    if (filters.tecnico_id) {
+      queryBuilder.andWhere('solicitacao.tecnico_id = :tecnico_id', {
+        tecnico_id: filters.tecnico_id,
       });
     }
 

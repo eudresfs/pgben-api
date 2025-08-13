@@ -20,6 +20,7 @@ import { StatusConcessao } from '@/entities';
 import { Public } from '@/auth/decorators/public.decorator';
 import { GetUser } from '../../../auth/decorators/get-user.decorator';
 import { UserAccessTokenClaims } from '../../../auth/dtos/auth-token-output.dto';
+import { Status } from '@/enums';
 
 /**
  * Interface para item do cache com TTL
@@ -174,9 +175,9 @@ export class ReferenciaController {
     // Executar todas as consultas em paralelo com otimizações
     const [tiposBeneficio, unidades, usuarios, roles, bairros] =
       await Promise.all([
-        this.beneficioService.findAll({ limit: 500 }), // Reduzido de 1000 para 500
-        this.unidadeService.findAll({ limit: 500 }), // Reduzido de 1000 para 500
-        this.usuarioService.findAll({ limit: 500 }), // Reduzido de 1000 para 500
+        this.beneficioService.findAll({}), 
+        this.unidadeService.findAll(), 
+        this.usuarioService.findAll(), 
         this.usuarioService.findAllRoles(),
         this.cidadaoService.findAllBairros(),
       ]);
